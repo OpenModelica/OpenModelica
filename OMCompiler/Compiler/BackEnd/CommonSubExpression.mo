@@ -297,15 +297,15 @@ algorithm
   (HT, exarray, orderedEqs_new) := inTuple;
 
   _ := match(inEq)
-    case BackendDAE.COMPLEX_EQUATION() equation
+    case BackendDAE.COMPLEX_EQUATION() algorithm
       if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
         BackendDump.dumpEquationList({inEq}, "wrapFunctionCalls_substitution (COMPLEX_EQUATION)");
       end if;
 
-      (eq, (HT, exarray, orderedEqs_new)) = BackendEquation.traverseExpsOfEquation(inEq, wrapFunctionCalls_substitution2, (HT, exarray, orderedEqs_new));
+      (eq, (HT, exarray, orderedEqs_new)) := BackendEquation.traverseExpsOfEquation(inEq, wrapFunctionCalls_substitution2, (HT, exarray, orderedEqs_new));
 
       if not isEquationRedundant(eq) then
-        orderedEqs_new = BackendEquation.add(eq, orderedEqs_new);
+        orderedEqs_new := BackendEquation.add(eq, orderedEqs_new);
         if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
           BackendDump.dumpEquationList({eq}, "isEquationRedundant? no");
         end if;
@@ -316,15 +316,15 @@ algorithm
       end if;
     then ();
 
-    case BackendDAE.EQUATION() equation
+    case BackendDAE.EQUATION() algorithm
       if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
         BackendDump.dumpEquationList({inEq}, "wrapFunctionCalls_substitution (EQUATION)");
       end if;
 
-      (eq, (HT, exarray, orderedEqs_new)) = BackendEquation.traverseExpsOfEquation(inEq, wrapFunctionCalls_substitution2, (HT, exarray, orderedEqs_new));
+      (eq, (HT, exarray, orderedEqs_new)) := BackendEquation.traverseExpsOfEquation(inEq, wrapFunctionCalls_substitution2, (HT, exarray, orderedEqs_new));
 
       if not isEquationRedundant(eq) then
-        orderedEqs_new = BackendEquation.add(eq, orderedEqs_new);
+        orderedEqs_new := BackendEquation.add(eq, orderedEqs_new);
       end if;
     then ();
 
@@ -976,7 +976,7 @@ algorithm
     case BackendDAE.EQUATION(exp=exp1, scalar=exp2)
     then Expression.expEqual(exp1, exp2);
 
-    case BackendDAE.EQUATION(exp=DAE.TUPLE(lhs), scalar=DAE.TUPLE(rhs)) guard (listLength(lhs) == listLength(rhs)) equation
+    case BackendDAE.EQUATION(exp=DAE.TUPLE(lhs), scalar=DAE.TUPLE(rhs)) guard (listLength(lhs) == listLength(rhs)) algorithm
       print("This should never appear\n");
     then isEquationRedundant2(lhs, rhs);
 
@@ -1257,20 +1257,20 @@ algorithm
     case ({}, {})
     then outExpLst;
 
-    case (e1::expLst1, e2::expLst2) equation
-      outExpLst = mergeCSETuples2(expLst1, expLst2);
+    case (e1::expLst1, e2::expLst2) algorithm
+      outExpLst := mergeCSETuples2(expLst1, expLst2);
       if not isWildCref(e1) and not isWildCref(e2) then
         if isCSEExp(e1) and not isCSEExp(e2) then
-          outExpLst = e2::outExpLst;
+          outExpLst := e2::outExpLst;
         else
-          outExpLst = e1::outExpLst;
+          outExpLst := e1::outExpLst;
         end if;
       elseif isWildCref(e1) and not isWildCref(e2) then
-        outExpLst = e2::outExpLst;
+        outExpLst := e2::outExpLst;
       elseif not isWildCref(e1) and isWildCref(e2) then
-        outExpLst = e1::outExpLst;
+        outExpLst := e1::outExpLst;
       elseif isWildCref(e1) and isWildCref(e2) then
-        outExpLst = e1::outExpLst;
+        outExpLst := e1::outExpLst;
       end if;
     then outExpLst;
   end match;
@@ -1390,8 +1390,8 @@ algorithm
       Absyn.Path path;
       DAE.Function func;
 
-    case DAE.CALL(path=path) equation
-      SOME(func) = DAE.AvlTreePathFunction.get(funcsIn,path);
+    case DAE.CALL(path=path) algorithm
+      SOME(func) := DAE.AvlTreePathFunction.get(funcsIn,path);
       then listEmpty(DAEUtil.getFunctionElements(func));
     else false;
   end matchcontinue;
@@ -1419,72 +1419,72 @@ algorithm
       list<DAE.Var> varLst;
       list<String> varNames;
 
-    case DAE.T_REAL() equation
-      str = inPrefix + intString(inIndex);
-      cr = DAE.CREF_IDENT(str, DAE.T_REAL_DEFAULT, {});
-      value = DAE.CREF(cr, DAE.T_REAL_DEFAULT);
+    case DAE.T_REAL() algorithm
+      str := inPrefix + intString(inIndex);
+      cr := DAE.CREF_IDENT(str, DAE.T_REAL_DEFAULT, {});
+      value := DAE.CREF(cr, DAE.T_REAL_DEFAULT);
     then (value, inIndex + 1);
 
-    case DAE.T_INTEGER() equation
-      str = inPrefix + intString(inIndex);
-      cr = DAE.CREF_IDENT(str, DAE.T_INTEGER_DEFAULT, {});
-      value = DAE.CREF(cr, DAE.T_INTEGER_DEFAULT);
+    case DAE.T_INTEGER() algorithm
+      str := inPrefix + intString(inIndex);
+      cr := DAE.CREF_IDENT(str, DAE.T_INTEGER_DEFAULT, {});
+      value := DAE.CREF(cr, DAE.T_INTEGER_DEFAULT);
     then (value, inIndex + 1);
 
-    case DAE.T_STRING() equation
-      str = inPrefix + intString(inIndex);
-      cr = DAE.CREF_IDENT(str, DAE.T_STRING_DEFAULT, {});
-      value = DAE.CREF(cr, DAE.T_STRING_DEFAULT);
+    case DAE.T_STRING() algorithm
+      str := inPrefix + intString(inIndex);
+      cr := DAE.CREF_IDENT(str, DAE.T_STRING_DEFAULT, {});
+      value := DAE.CREF(cr, DAE.T_STRING_DEFAULT);
     then (value, inIndex + 1);
 
-    case DAE.T_BOOL() equation
-      str = inPrefix + intString(inIndex);
-      cr = DAE.CREF_IDENT(str, DAE.T_BOOL_DEFAULT, {});
-      value = DAE.CREF(cr, DAE.T_BOOL_DEFAULT);
+    case DAE.T_BOOL() algorithm
+      str := inPrefix + intString(inIndex);
+      cr := DAE.CREF_IDENT(str, DAE.T_BOOL_DEFAULT, {});
+      value := DAE.CREF(cr, DAE.T_BOOL_DEFAULT);
     then (value, inIndex + 1);
 
-    case DAE.T_ENUMERATION() equation
-      str = inPrefix + intString(inIndex);
-      cr = DAE.CREF_IDENT(str, inType, {});
-      value = DAE.CREF(cr, inType);
+    case DAE.T_ENUMERATION() algorithm
+      str := inPrefix + intString(inIndex);
+      cr := DAE.CREF_IDENT(str, inType, {});
+      value := DAE.CREF(cr, inType);
     then (value, inIndex + 1);
 
-    case DAE.T_CLOCK() equation
-      str = inPrefix + intString(inIndex);
-      cr = DAE.CREF_IDENT(str, DAE.T_CLOCK_DEFAULT, {});
-      value = DAE.CREF(cr, DAE.T_CLOCK_DEFAULT);
+    case DAE.T_CLOCK() algorithm
+      str := inPrefix + intString(inIndex);
+      cr := DAE.CREF_IDENT(str, DAE.T_CLOCK_DEFAULT, {});
+      value := DAE.CREF(cr, DAE.T_CLOCK_DEFAULT);
     then (value, inIndex + 1);
 
-    case DAE.T_TUPLE(types=typeLst) equation
+    case DAE.T_TUPLE(types=typeLst) algorithm
       if inComplex then
-        (expLst, i) = List.mapFold(typeLst, function createReturnExp(inPrefix=inPrefix, inComplex=inComplex), inIndex);
-        value = DAE.TUPLE(expLst);
+        (expLst, i) := List.mapFold(typeLst, function createReturnExp(inPrefix=inPrefix, inComplex=inComplex), inIndex);
+        value := DAE.TUPLE(expLst);
       else
-        ty::_ = typeLst;
-        (value, i) = createReturnExp(ty, inIndex, inPrefix, false);
+        ty::_ := typeLst;
+        (value, i) := createReturnExp(ty, inIndex, inPrefix, false);
       end if;
     then (value, i);
 
     // Expanding
-    case DAE.T_ARRAY() equation
-      str = inPrefix + intString(inIndex);
-      cr = DAE.CREF_IDENT(str, inType, {});
+    case DAE.T_ARRAY() algorithm
+      str := inPrefix + intString(inIndex);
+      cr := DAE.CREF_IDENT(str, inType, {});
       // crefs = ComponentReference.expandCref(cr, false);
       // expLst = List.map(crefs, Expression.crefExp);
       // value = DAE.ARRAY(inType, true, expLst);
-      value = DAE.CREF(cr, inType);
+      value := DAE.CREF(cr, inType);
     then (value, inIndex + 1);
 
     // record types
-    case DAE.T_COMPLEX( complexClassType=ClassInf.RECORD(_)) equation
-      str = inPrefix + intString(inIndex);
-      cr = DAE.CREF_IDENT(str, inType, {});       //inType?
+    case DAE.T_COMPLEX( complexClassType=ClassInf.RECORD(_)) algorithm
+      str := inPrefix + intString(inIndex);
+      cr := DAE.CREF_IDENT(str, inType, {});       //inType?
       // crefs = ComponentReference.expandCref(cr, true);
       // expLst = List.map(crefs, Expression.crefExp);
       // varNames = List.map(varLst, Expression.varName);
       // value = DAE.RECORD(path, expLst, varNames, inType);
       // print("   DAE.T_COMPLEX \n");
-      value = DAE.CREF(cr, inType);
+      value := DAE.CREF(cr, inType);
     then (value, inIndex + 1);
 
     else equation
@@ -1545,23 +1545,23 @@ algorithm
       //expLst = list(DAE.CREF(cr_, ComponentReference.crefType(cr_)) for cr_ in crefs);
     then outVarLst;
 
-    case DAE.CREF(componentRef=cr) guard isCSECref(cr) equation
+    case DAE.CREF(componentRef=cr) guard isCSECref(cr) algorithm
       // use the correct type when creating var. The cref might have subs.
-      var = BackendVariable.createCSEVar(cr, Expression.typeof(inExp));
+      var := BackendVariable.createCSEVar(cr, Expression.typeof(inExp));
     then var::inAccumVarLst;
 
-    case DAE.TUPLE(expLst) equation
-      outVarLst = List.fold(expLst, createVarsForExp_onlyCSECrefs, inAccumVarLst);
+    case DAE.TUPLE(expLst) algorithm
+      outVarLst := List.fold(expLst, createVarsForExp_onlyCSECrefs, inAccumVarLst);
     then outVarLst;
 
-    case DAE.ARRAY(array=expLst) equation
+    case DAE.ARRAY(array=expLst) algorithm
       //print("This should never appear\n");
-      outVarLst = List.fold(expLst, createVarsForExp_onlyCSECrefs, inAccumVarLst);
+      outVarLst := List.fold(expLst, createVarsForExp_onlyCSECrefs, inAccumVarLst);
     then outVarLst;
 
-    case DAE.RECORD(exps=expLst) equation
+    case DAE.RECORD(exps=expLst) algorithm
       print("This should never appear\n");
-      outVarLst = List.fold(expLst, createVarsForExp_onlyCSECrefs, inAccumVarLst);
+      outVarLst := List.fold(expLst, createVarsForExp_onlyCSECrefs, inAccumVarLst);
     then outVarLst;
 
     // add no variable in all other cases
@@ -1621,26 +1621,26 @@ algorithm
       //expLst = list(DAE.CREF(cr_, ComponentReference.crefType(cr_)) for cr_ in crefs);
     then outVarLst;
 
-    case DAE.CREF(componentRef=cr) equation
+    case DAE.CREF(componentRef=cr) algorithm
       // use the correct type when creating var. The cref might have subs.
-      var = BackendVariable.createCSEVar(cr, Expression.typeof(inExp));
+      var := BackendVariable.createCSEVar(cr, Expression.typeof(inExp));
     then var::inAccumVarLst;
 
-    case DAE.TUPLE(expLst) equation
-      outVarLst = List.fold(expLst, createVarsForExp, inAccumVarLst);
+    case DAE.TUPLE(expLst) algorithm
+      outVarLst := List.fold(expLst, createVarsForExp, inAccumVarLst);
     then outVarLst;
 
-    case DAE.ARRAY(array=expLst) equation
+    case DAE.ARRAY(array=expLst) algorithm
       //print("This should never appear\n");
-      outVarLst = List.fold(expLst, createVarsForExp, inAccumVarLst);
+      outVarLst := List.fold(expLst, createVarsForExp, inAccumVarLst);
     then outVarLst;
 
-    case DAE.RECORD(exps=expLst) equation
-      outVarLst = List.fold(expLst, createVarsForExp, inAccumVarLst);
+    case DAE.RECORD(exps=expLst) algorithm
+      outVarLst := List.fold(expLst, createVarsForExp, inAccumVarLst);
     then outVarLst;
 
-    case DAE.CALL(expLst=expLst) equation
-      outVarLst = List.fold(expLst, createVarsForExp, inAccumVarLst);
+    case DAE.CALL(expLst=expLst) algorithm
+      outVarLst := List.fold(expLst, createVarsForExp, inAccumVarLst);
     then outVarLst;
 
     // add no variable in all other cases
@@ -1701,29 +1701,29 @@ algorithm
       HashTableExpToIndex.HashTable HT2, HT3;
       Integer index = inIndex;
 
-    case (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs)) equation
+    case (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs)) algorithm
     //if Flags.isSet(Flags.DUMP_CSE) then
     //  BackendDump.dumpVariables(orderedVars, "########### Updated Variable List ###########");
     //  BackendDump.dumpEquationArray(orderedEqs, "########### Updated Equation List ###########");
     //end if;
-        HT = HashTableExpToExp.emptyHashTableSized(49999);  //2053    4013    25343   536870879
-        HT2 = HashTableExpToIndex.emptyHashTableSized(49999);
-        HT3 = HashTableExpToIndex.emptyHashTableSized(49999);
+        HT := HashTableExpToExp.emptyHashTableSized(49999);  //2053    4013    25343   536870879
+        HT2 := HashTableExpToIndex.emptyHashTableSized(49999);
+        HT3 := HashTableExpToIndex.emptyHashTableSized(49999);
         if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
           print("collect statistics\n========================================\n");
         end if;
-        (HT, HT2, index) = BackendEquation.traverseEquationArray(orderedEqs, createStatistics, (HT, HT2, index));
+        (HT, HT2, index) := BackendEquation.traverseEquationArray(orderedEqs, createStatistics, (HT, HT2, index));
     //BaseHashTable.dumpHashTable(HT);
     //BaseHashTable.dumpHashTable(HT2);
         if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
           print("\nstart substitution\n========================================\n");
         end if;
-        (orderedEqs, (HT, HT2, _, eqList, varList)) = BackendEquation.traverseEquationArray_WithUpdate (orderedEqs, substituteCSE, (HT, HT2, HT3, {}, {}));
+        (orderedEqs, (HT, HT2, _, eqList, varList)) := BackendEquation.traverseEquationArray_WithUpdate (orderedEqs, substituteCSE, (HT, HT2, HT3, {}, {}));
         if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
           print("\n");
         end if;
-      syst.orderedEqs = BackendEquation.addList(eqList, orderedEqs);
-      syst.orderedVars = BackendVariable.addVars(varList, orderedVars);
+      syst.orderedEqs := BackendEquation.addList(eqList, orderedEqs);
+      syst.orderedVars := BackendVariable.addVars(varList, orderedVars);
       if Flags.isSet(Flags.DUMP_CSE) then
         BackendDump.dumpVariables(syst.orderedVars, "########### Updated Variable List ###########");
         BackendDump.dumpEquationArray(syst.orderedEqs, "########### Updated Equation List ###########");
@@ -1792,20 +1792,20 @@ algorithm
       list<DAE.Exp> expLst;
       DAE.ElementSource source;
 
-    case (DAE.BINARY(), ((HT, HT2, HT3, eqLst, varLst), source)) equation
-      value = BaseHashTable.get(inExp, HT);
-      counter = BaseHashTable.get(value, HT2);
-      true = intGt(counter, 1);
+    case (DAE.BINARY(), ((HT, HT2, HT3, eqLst, varLst), source)) algorithm
+      value := BaseHashTable.get(inExp, HT);
+      counter := BaseHashTable.get(value, HT2);
+      true := intGt(counter, 1);
 
       if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
         print("  - substitute cse binary: " + ExpressionDump.printExpStr(inExp) + " (counter: " + intString(counter) + ", id: " + ExpressionDump.printExpStr(value) + ")\n");
       end if;
 
       if not BaseHashTable.hasKey(value, HT3) then
-        HT3 = BaseHashTable.add((value, 1), HT3);
-        varLst = createVarsForExp_onlyCSECrefs(value, varLst);
-        eq = BackendEquation.generateEquation(value, inExp, source /* TODO: Add CSE? */, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
-        eqLst = eq::eqLst;
+        HT3 := BaseHashTable.add((value, 1), HT3);
+        varLst := createVarsForExp_onlyCSECrefs(value, varLst);
+        eq := BackendEquation.generateEquation(value, inExp, source /* TODO: Add CSE? */, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
+        eqLst := eq::eqLst;
       end if;
     then (value, true, ((HT, HT2, HT3, eqLst, varLst), source));
 
@@ -1872,24 +1872,24 @@ algorithm
       BackendDAE.Equation eq;
       DAE.Type tp;
 
-    case (DAE.BINARY(exp1, op, exp2), (HT, HT2, i)) equation
+    case (DAE.BINARY(exp1, op, exp2), (HT, HT2, i)) algorithm
       if checkOp(op) then
         if BaseHashTable.hasKey(inExp, HT) then
-          value = BaseHashTable.get(inExp, HT);
-          counter = BaseHashTable.get(value, HT2) + 1;
+          value := BaseHashTable.get(inExp, HT);
+          counter := BaseHashTable.get(value, HT2) + 1;
           BaseHashTable.update((value, counter), HT2);
 
           if isCommutative(op) then
-            value = BaseHashTable.get(DAE.BINARY(exp2, op, exp1), HT);
+            value := BaseHashTable.get(DAE.BINARY(exp2, op, exp1), HT);
             BaseHashTable.update((value, counter), HT2);
           end if;
         else
-          (value, i) = createReturnExp(Expression.typeof(inExp), i, "$cseb");
-          counter = 1;
-          HT = BaseHashTable.add((inExp, value), HT);
-          HT2 = BaseHashTable.add((value, counter), HT2);
+          (value, i) := createReturnExp(Expression.typeof(inExp), i, "$cseb");
+          counter := 1;
+          HT := BaseHashTable.add((inExp, value), HT);
+          HT2 := BaseHashTable.add((value, counter), HT2);
           if isCommutative(op) then
-            HT = BaseHashTable.add((DAE.BINARY(exp2, op, exp1), value), HT);
+            HT := BaseHashTable.add((DAE.BINARY(exp2, op, exp1), value), HT);
           end if;
         end if;
 
@@ -2197,37 +2197,37 @@ algorithm
     BackendDAE.Var sharedVar, var1, var2;
     DAE.Exp varExp1, varExp2, lhs, rhs1, rhs2;
   case({eqIdx1, eqIdx2}, _, _, _, _, _, _, _)
-    equation
+    algorithm
         //print("partition "+stringDelimitList(List.map(partition, intString), ", ")+"\n");
       // the partition consists of 2 equations
-      varIdcs1 = arrayGet(m, eqIdx1);
-      varIdcs2 = arrayGet(m, eqIdx2);
-      (sharedVarIdcs, varIdcs1, varIdcs2) = List.intersection1OnTrue(varIdcs1, varIdcs2, intEq);
+      varIdcs1 := arrayGet(m, eqIdx1);
+      varIdcs2 := arrayGet(m, eqIdx2);
+      (sharedVarIdcs, varIdcs1, varIdcs2) := List.intersection1OnTrue(varIdcs1, varIdcs2, intEq);
         //print("sharedVarIdcs "+stringDelimitList(List.map(sharedVarIdcs, intString), ", ")+"\n");
-      {varIdx1} = varIdcs1;
-      {varIdx2} = varIdcs2;
-      {sharedVarIdx} = sharedVarIdcs;
-      {eq1, eq2} = BackendEquation.getList(partition, eqs);
-      _ = BackendVariable.getVarAt(vars, sharedVarIdx);
-      var1 = BackendVariable.getVarAt(vars, varIdx1);
-      var2 = BackendVariable.getVarAt(vars, varIdx2);
+      {varIdx1} := varIdcs1;
+      {varIdx2} := varIdcs2;
+      {sharedVarIdx} := sharedVarIdcs;
+      {eq1, eq2} := BackendEquation.getList(partition, eqs);
+      _ := BackendVariable.getVarAt(vars, sharedVarIdx);
+      var1 := BackendVariable.getVarAt(vars, varIdx1);
+      var2 := BackendVariable.getVarAt(vars, varIdx2);
 
       // compare the actual equations
-      varExp1 = BackendVariable.varExp(var1);
-      varExp2 = BackendVariable.varExp(var2);
-      BackendDAE.EQUATION(exp=lhs, scalar=rhs1) = eq1;
-      (rhs1, _) = ExpressionSolve.solve(lhs, rhs1, varExp1);
-      BackendDAE.EQUATION(exp=lhs, scalar=rhs2) = eq2;
-      (rhs2, _) = ExpressionSolve.solve(lhs, rhs2, varExp2);
-      true = Expression.expEqual(rhs1, rhs2);
+      varExp1 := BackendVariable.varExp(var1);
+      varExp2 := BackendVariable.varExp(var2);
+      BackendDAE.EQUATION(exp=lhs, scalar=rhs1) := eq1;
+      (rhs1, _) := ExpressionSolve.solve(lhs, rhs1, varExp1);
+      BackendDAE.EQUATION(exp=lhs, scalar=rhs2) := eq2;
+      (rhs2, _) := ExpressionSolve.solve(lhs, rhs2, varExp2);
+      true := Expression.expEqual(rhs1, rhs2);
          //print("rhs1 " +ExpressionDump.printExpStr(rhs1)+"\n");
          //print("rhs2 " +ExpressionDump.printExpStr(rhs2)+"\n");
          //print("is equal\n");
       // build CSE
-      sharedVarIdcs = List.map1(sharedVarIdcs, List.getIndexFirst, varMap);
-      varIdcs2 = listAppend(varIdcs1, varIdcs2);
-      varIdcs2 = List.map1(varIdcs2, List.getIndexFirst, varMap);
-      eqIdcs = List.map1(partition, List.getIndexFirst, eqMap);
+      sharedVarIdcs := List.map1(sharedVarIdcs, List.getIndexFirst, varMap);
+      varIdcs2 := listAppend(varIdcs1, varIdcs2);
+      varIdcs2 := List.map1(varIdcs2, List.getIndexFirst, varMap);
+      eqIdcs := List.map1(partition, List.getIndexFirst, eqMap);
     then ASSIGNMENT_CSE(eqIdcs, sharedVarIdcs, varIdcs2)::cseIn;
   else cseIn;
   end matchcontinue;
@@ -2335,76 +2335,76 @@ algorithm
       DAE.ComponentRef cref;
       list<BackendDAE.Equation> eqLst;
   case({}, _, _, syst as BackendDAE.EQSYSTEM())
-    equation
+    algorithm
     then (BackendDAEUtil.clearEqSyst(syst));
 
   case ( ASSIGNMENT_CSE(eqIdcs={eqIdx1, eqIdx2}, aliasVars={varIdx1, varIdx2})::rest, _, _,
          syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs))
-    equation
+    algorithm
      // update the equations
-     repl = BackendVarTransform.emptyReplacements();
-     eqs1 = arrayGet(mT, varIdx1);
-     eqs2 = arrayGet(mT, varIdx2);
+     repl := BackendVarTransform.emptyReplacements();
+     eqs1 := arrayGet(mT, varIdx1);
+     eqs2 := arrayGet(mT, varIdx2);
            //print("eqs1 "+stringDelimitList(List.map(eqs1, intString), ", ")+"\n");
            //print("eqs2 "+stringDelimitList(List.map(eqs2, intString), ", ")+"\n");
 
-     var1 = BackendVariable.getVarAt(vars, varIdx1);
-     var2 = BackendVariable.getVarAt(vars, varIdx2);
+     var1 := BackendVariable.getVarAt(vars, varIdx1);
+     var2 := BackendVariable.getVarAt(vars, varIdx2);
 
      //choose alias variable
-     if BackendVariable.isStateVar(var1) then varIdxAlias = varIdx2; varIdx_remain = varIdx1;
-     elseif BackendVariable.isStateVar(var2) then varIdx_remain = varIdx2; varIdxAlias = varIdx1;
+     if BackendVariable.isStateVar(var1) then varIdxAlias := varIdx2; varIdx_remain := varIdx1;
+     elseif BackendVariable.isStateVar(var2) then varIdx_remain := varIdx2; varIdxAlias := varIdx1;
      else
-       if intLe(listLength(eqs2), listLength(eqs1)) then varIdxAlias = varIdx2; varIdx_remain = varIdx1; else varIdxAlias = varIdx1; varIdx_remain = varIdx2; end if;
+       if intLe(listLength(eqs2), listLength(eqs1)) then varIdxAlias := varIdx2; varIdx_remain := varIdx1; else varIdxAlias := varIdx1; varIdx_remain := varIdx2; end if;
      end if;
 
-     if intLe(listLength(eqs2), listLength(eqs1)) then eqIdxDel = eqIdx2; _ = eqIdx1; else eqIdxDel = eqIdx1; _ = eqIdx2; end if;
+     if intLe(listLength(eqs2), listLength(eqs1)) then eqIdxDel := eqIdx2; _ := eqIdx1; else eqIdxDel := eqIdx1; _ := eqIdx2; end if;
 
-     var_remain = BackendVariable.getVarAt(vars, varIdx_remain);
-     var_alias = BackendVariable.getVarAt(vars, varIdxAlias);
-     cref = BackendVariable.varCref(var_alias);
-     varExp_remain = BackendVariable.varExp(var_remain);
-     varExp_alias = BackendVariable.varExp(var_alias);
-     repl = BackendVarTransform.addReplacement(repl, cref, varExp_remain, NONE());
+     var_remain := BackendVariable.getVarAt(vars, varIdx_remain);
+     var_alias := BackendVariable.getVarAt(vars, varIdxAlias);
+     cref := BackendVariable.varCref(var_alias);
+     varExp_remain := BackendVariable.varExp(var_remain);
+     varExp_alias := BackendVariable.varExp(var_alias);
+     repl := BackendVarTransform.addReplacement(repl, cref, varExp_remain, NONE());
          //BackendVarTransform.dumpReplacements(repl);
 
      //replace in equations
-     eqIdcs = arrayGet(mT, varIdxAlias);
-     eqLst = BackendEquation.getList(eqIdcs, eqs);
+     eqIdcs := arrayGet(mT, varIdxAlias);
+     eqLst := BackendEquation.getList(eqIdcs, eqs);
      //(eqLst, _) = BackendVarTransform.replaceEquations(eqLst, repl, NONE());
-     eqs = List.threadFold(eqIdcs, eqLst, BackendEquation.setAtIndexFirst, eqs);
+     eqs := List.threadFold(eqIdcs, eqLst, BackendEquation.setAtIndexFirst, eqs);
 
      //replace original equation
      BackendEquation.setAtIndex(eqs,eqIdxDel,BackendDAE.EQUATION(varExp_remain,varExp_alias,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC));
     then commonSubExpressionUpdate(rest, m, mT, syst);
 
 case (SHORTCUT_CSE(eqIdcs={eqIdx1, eqIdx2}, sharedVar=sharedVar)::rest, _, _, syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs))
-    equation
-      {eq1, eq2} = BackendEquation.getList({eqIdx1, eqIdx2}, eqs);
-      var = BackendVariable.getVarAt(vars, sharedVar);
-      varExp = BackendVariable.varExp(var);
-      _ = Expression.typeof(varExp);
-      BackendDAE.EQUATION(exp=lhs1, scalar=rhs1) = eq1;
-      BackendDAE.EQUATION(exp=lhs2, scalar=rhs2) = eq2;
+    algorithm
+      {eq1, eq2} := BackendEquation.getList({eqIdx1, eqIdx2}, eqs);
+      var := BackendVariable.getVarAt(vars, sharedVar);
+      varExp := BackendVariable.varExp(var);
+      _ := Expression.typeof(varExp);
+      BackendDAE.EQUATION(exp=lhs1, scalar=rhs1) := eq1;
+      BackendDAE.EQUATION(exp=lhs2, scalar=rhs2) := eq2;
 
       // since ExpressionSolve is able to solve for vars in if-expressions, stop here
-      true = hasAlgebraicOperationsOnly(lhs1);
-      true = hasAlgebraicOperationsOnly(rhs1);
-      true = hasAlgebraicOperationsOnly(lhs2);
-      true = hasAlgebraicOperationsOnly(rhs2);
+      true := hasAlgebraicOperationsOnly(lhs1);
+      true := hasAlgebraicOperationsOnly(rhs1);
+      true := hasAlgebraicOperationsOnly(lhs2);
+      true := hasAlgebraicOperationsOnly(rhs2);
 
-      (rhs1, _) = ExpressionSolve.solve(lhs1, rhs1, varExp);
-      (lhs1, _) = ExpressionSolve.solve(lhs2, rhs2, varExp);
+      (rhs1, _) := ExpressionSolve.solve(lhs1, rhs1, varExp);
+      (lhs1, _) := ExpressionSolve.solve(lhs2, rhs2, varExp);
 
-      (_,lhs1,rhs1) = cancelExpressions(lhs1,rhs1);
-      n = listLength(Expression.getAllCrefs(Expression.expSub(lhs1,rhs1)));
+      (_,lhs1,rhs1) := cancelExpressions(lhs1,rhs1);
+      n := listLength(Expression.getAllCrefs(Expression.expSub(lhs1,rhs1)));
         //print("n1 "+intString(n1)+"\n");
         //print("n2 "+intString(n2)+"\n");
 
       if n <= 2 then
           //print("FROM "+BackendDump.equationString(eq1)+"\n");
           //print("AND  "+BackendDump.equationString(eq2)+"\n");
-        eqNew = BackendDAE.EQUATION(lhs1,rhs1,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+        eqNew := BackendDAE.EQUATION(lhs1,rhs1,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
           //print("MADE A NEW EQUATION "+BackendDump.equationString(eqNew)+"\n\n");
         //replace original equation
         BackendEquation.setAtIndex(eqs,eqIdx1,eqNew);
@@ -2431,13 +2431,13 @@ algorithm
     case(DAE.CREF())
       then true;
     case(DAE.BINARY(e1,_,e2))
-      equation
-        b = hasAlgebraicOperationsOnly(e1);
-        b = b and hasAlgebraicOperationsOnly(e2);
+      algorithm
+        b := hasAlgebraicOperationsOnly(e1);
+        b := b and hasAlgebraicOperationsOnly(e2);
       then b;
     case(DAE.UNARY(_,e1))
-      equation
-        b = hasAlgebraicOperationsOnly(e1);
+      algorithm
+        b := hasAlgebraicOperationsOnly(e1);
       then b;
     else
       then false;
@@ -2483,15 +2483,15 @@ algorithm
       DAE.Exp e1,e2;
       list<DAE.Exp> eLst;
   case(DAE.BINARY(e1,DAE.MUL(_),e2),_)
-    equation
-      eLst = getTopLevelFactors(e1,lstIn);
-      eLst = getTopLevelFactors(e2,eLst);
+    algorithm
+      eLst := getTopLevelFactors(e1,lstIn);
+      eLst := getTopLevelFactors(e2,eLst);
    then eLst;
   case(DAE.UNARY(_ ,e1 as DAE.CREF()),_)
-    equation
+    algorithm
    then e1::lstIn;
   case(e1 as DAE.CREF(),_)
-    equation
+    algorithm
    then e1::lstIn;
   else
     then lstIn;

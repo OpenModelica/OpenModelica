@@ -93,10 +93,10 @@ algorithm
     local
       String debugstr,res_with_debug,flagstr;
     case (Flags.DEBUG_FLAG(name = flagstr),_)
-      equation
-        true = Flags.isSet(inFlag);
-        debugstr = Print.getString();
-        res_with_debug = stringAppendList({res,"\n---DEBUG(",flagstr,")---\n",debugstr,"\n---/DEBUG(",flagstr,")---\n"});
+      algorithm
+        true := Flags.isSet(inFlag);
+        debugstr := Print.getString();
+        res_with_debug := stringAppendList({res,"\n---DEBUG(",flagstr,")---\n",debugstr,"\n---/DEBUG(",flagstr,")---\n"});
       then res_with_debug;
     else res;
   end matchcontinue;
@@ -118,17 +118,17 @@ algorithm
       String str;
 
     case (_)
-      equation
+      algorithm
         ErrorExt.setCheckpoint("parsestring");
-        stmts = Parser.parsestringexp(inCommand, "<interactive>");
+        stmts := Parser.parsestringexp(inCommand, "<interactive>");
         ErrorExt.delCheckpoint("parsestring");
       then
         (SOME(stmts), NONE());
 
     case (_)
-      equation
+      algorithm
         ErrorExt.rollBack("parsestring");
-        prog = Parser.parsestring(inCommand, "<interactive>");
+        prog := Parser.parsestring(inCommand, "<interactive>");
       then
         (NONE(), SOME(prog));
 
@@ -179,18 +179,18 @@ algorithm
 
     // Interactively evaluate an algorithm statement or expression.
     case (SOME(stmts), NONE())
-      equation
-        result = Interactive.evaluate(stmts, false);
+      algorithm
+        result := Interactive.evaluate(stmts, false);
       then result;
 
     // Add a class or function to the interactive symbol table.
     case (NONE(), SOME(prog))
-      equation
-        table = SymbolTable.get();
-        ast = table.ast;
-        vars = table.vars;
-        prog2 = Interactive.addScope(prog, vars);
-        prog2 = InteractiveUtil.updateProgram(prog2, ast);
+      algorithm
+        table := SymbolTable.get();
+        ast := table.ast;
+        vars := table.vars;
+        prog2 := Interactive.addScope(prog, vars);
+        prog2 := InteractiveUtil.updateProgram(prog2, ast);
         if Flags.isSet(Flags.DUMP) then
           Debug.trace("\n--------------- Parsed program ---------------\n");
           Print.printBuf(Dump.unparseStr(prog2));
@@ -198,7 +198,7 @@ algorithm
         if Flags.isSet(Flags.DUMP_GRAPHVIZ) then
           DumpGraphviz.dump(prog2);
         end if;
-        result = makeClassDefResult(prog) "Return vector of toplevel classnames.";
+        result := makeClassDefResult(prog) "Return vector of toplevel classnames.";
         SymbolTable.setAbsyn(prog2);
       then result;
 
@@ -206,18 +206,18 @@ algorithm
     // is handled here instead of in parseCommand, since parseCommand does not
     // return a result string.
     case (NONE(), NONE())
-      equation
+      algorithm
         Print.printBuf("Error occurred building AST\n");
-        result = Print.getString();
-        result = stringAppend(result, "Syntax Error\n");
-        result = stringAppend(result, Error.printMessagesStr(false));
+        result := Print.getString();
+        result := stringAppend(result, "Syntax Error\n");
+        result := stringAppend(result, Error.printMessagesStr(false));
       then result;
 
     // A non-parser error occured, display the error message.
     case (_, _)
-      equation
-        true = Util.isSome(inStatements) or Util.isSome(inProgram);
-        result = Error.printMessagesStr(false);
+      algorithm
+        true := Util.isSome(inStatements) or Util.isSome(inProgram);
+        result := Error.printMessagesStr(false);
       then result;
 
     else
@@ -241,16 +241,16 @@ algorithm
       list<Absyn.Class> cls;
 
     case(Absyn.PROGRAM(classes=cls,within_=Absyn.WITHIN(scope)))
-      equation
-        names = list(Absyn.Path.IDENT(AbsynUtil.className(c)) for c in cls);
-        names = List.map1(names,AbsynUtil.joinPaths,scope);
-        res = "{" + stringDelimitList(list(AbsynUtil.pathString(n) for n in names),",") + "}\n";
+      algorithm
+        names := list(Absyn.Path.IDENT(AbsynUtil.className(c)) for c in cls);
+        names := List.map1(names,AbsynUtil.joinPaths,scope);
+        res := "{" + stringDelimitList(list(AbsynUtil.pathString(n) for n in names),",") + "}\n";
       then res;
 
     case(Absyn.PROGRAM(classes=cls,within_=Absyn.TOP()))
-      equation
-        names = list(Absyn.Path.IDENT(AbsynUtil.className(c)) for c in cls);
-        res = "{" + stringDelimitList(list(AbsynUtil.pathString(n) for n in names),",") + "}\n";
+      algorithm
+        names := list(Absyn.Path.IDENT(AbsynUtil.className(c)) for c in cls);
+        res := "{" + stringDelimitList(list(AbsynUtil.pathString(n) for n in names),",") + "}\n";
       then res;
 
   end match;
@@ -281,7 +281,7 @@ algorithm
     local
       String f;
     case {} then ();
-    case f::_ equation true = isModelicaFile(f); then ();
+    case f::_ algorithm true := isModelicaFile(f); then ();
   end match;
 end isEmptyOrFirstIsModelicaFile;
 
@@ -356,31 +356,31 @@ algorithm
 
     // A .mo-file.
     case true
-      equation
-        p = SymbolTable.getAbsyn();
-        pnew = CevalScript.loadFile(inLib, "UTF-8", p, true, true, false);
+      algorithm
+        p := SymbolTable.getAbsyn();
+        pnew := CevalScript.loadFile(inLib, "UTF-8", p, true, true, false);
         SymbolTable.setAbsyn(pnew);
       then ();
 
     // some libs present
     case false
-      equation
-        path = AbsynUtil.stringPath(inLib);
-        mp = Settings.getModelicaPath(Testsuite.isRunning());
-        p = SymbolTable.getAbsyn();
-        (pnew, true) = CevalScript.loadModel({(path, "command-line argument", {"default"}, false)}, mp, p, true, true, true, false);
+      algorithm
+        path := AbsynUtil.stringPath(inLib);
+        mp := Settings.getModelicaPath(Testsuite.isRunning());
+        p := SymbolTable.getAbsyn();
+        (pnew, true) := CevalScript.loadModel({(path, "command-line argument", {"default"}, false)}, mp, p, true, true, true, false);
         SymbolTable.setAbsyn(pnew);
       then ();
 
     // problem with the libs, ignore!
     case false
-      equation
+      algorithm
         Print.printErrorBuf("Failed to load library: " + inLib + "!\n");
       then
         fail();
 
     case true
-      equation
+      algorithm
         Print.printErrorBuf("Failed to parse file: " + inLib + "!\n");
       then
         fail();
@@ -485,7 +485,7 @@ algorithm
         ();
 
     case {f} /* A template file .tpl (in the Susan language)*/
-      equation
+      algorithm
         isCodegenTemplateFile(f);
         TplMain.main(f);
       then
@@ -639,31 +639,31 @@ algorithm
 
     // check if we have OMDEV set
     case (omHome)
-      equation
+      algorithm
         System.setEnv("OPENMODELICAHOME",omHome,true);
-        omdevPath = Util.makeValueOrDefault(System.readEnv,"OMDEV","");
+        omdevPath := Util.makeValueOrDefault(System.readEnv,"OMDEV","");
         // if we don't have something in OMDEV use OMHOME
         if stringEq(omdevPath, "") then
-          omdevPath = omHome;
+          omdevPath := omHome;
         end if;
-        msysPath = omdevPath + "\\tools\\msys";
-        mingwDir = System.openModelicaPlatform();
-        msysBinDir = msysPath + "\\usr\\bin";
-        binDir = msysPath + "\\" + mingwDir + "\\bin";
+        msysPath := omdevPath + "\\tools\\msys";
+        mingwDir := System.openModelicaPlatform();
+        msysBinDir := msysPath + "\\usr\\bin";
+        binDir := msysPath + "\\" + mingwDir + "\\bin";
         // if compiler is gcc
         if System.getCCompiler() == "gcc" then
-          libBinDir = msysPath + "\\" + mingwDir + "\\lib\\gcc\\" + System.gccDumpMachine() + "\\" + System.gccVersion();
+          libBinDir := msysPath + "\\" + mingwDir + "\\lib\\gcc\\" + System.gccDumpMachine() + "\\" + System.gccVersion();
         else // if is clang
-          libBinDir = binDir;
+          libBinDir := binDir;
         end if;
         // do we have bin and lib bin?
-        hasBinDir = System.directoryExists(binDir);
-        hasLibBinDir = System.directoryExists(libBinDir);
+        hasBinDir := System.directoryExists(binDir);
+        hasLibBinDir := System.directoryExists(libBinDir);
         if hasBinDir and hasLibBinDir
         then
-          oldPath = System.readEnv("PATH");
-          newPath = stringAppendList({omHome, "\\bin;", omHome, "\\lib;", binDir + ";", libBinDir + ";", msysBinDir + ";"});
-          newPath = System.stringReplace(newPath, "/", "\\") + oldPath;
+          oldPath := System.readEnv("PATH");
+          newPath := stringAppendList({omHome, "\\bin;", omHome, "\\lib;", binDir + ";", libBinDir + ";", msysBinDir + ";"});
+          newPath := System.stringReplace(newPath, "/", "\\") + oldPath;
           // print("Path set: " + newPath + "\n");
           System.setEnv("PATH",newPath,true);
         else

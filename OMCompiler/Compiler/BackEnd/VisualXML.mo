@@ -300,11 +300,11 @@ algorithm
       (var, (idx+1, ass1, eqs));
 
   case (_, (idx, ass1, eqs))
-    equation
+    algorithm
       if (BackendVariable.isProtectedVar(varIn) and isVisualizationVar(varIn)) then
-        var = makeVarPublicHideResultFalse(varIn);
+        var := makeVarPublicHideResultFalse(varIn);
       else
-        var = varIn;
+        var := varIn;
       end if;
     then (var, (idx+1, ass1, eqs));
   end matchcontinue;

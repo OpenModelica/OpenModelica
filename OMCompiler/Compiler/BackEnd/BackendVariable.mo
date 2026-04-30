@@ -287,8 +287,8 @@ algorithm
       Option<DAE.VariableAttributes> attr;
       DAE.Exp exp;
 
-    case (BackendDAE.VAR(values=attr)) equation
-      exp = DAEUtil.getStartAttrFail(attr);
+    case (BackendDAE.VAR(values=attr)) algorithm
+      exp := DAEUtil.getStartAttrFail(attr);
     then SOME(exp);
 
     else NONE();
@@ -740,8 +740,8 @@ public function isState
 algorithm
   outBool:=
   matchcontinue(inCref, inVars)
-    case(_, _) equation
-      ((BackendDAE.VAR(varKind = BackendDAE.STATE()) :: _),_) = getVar(inCref, inVars);
+    case(_, _) algorithm
+      ((BackendDAE.VAR(varKind = BackendDAE.STATE()) :: _),_) := getVar(inCref, inVars);
     then true;
 
     else false;
@@ -792,8 +792,8 @@ public function isClockedState
 algorithm
   outBool :=
   matchcontinue(inCref, inVars)
-    case(_, _) equation
-      ((BackendDAE.VAR(varKind = BackendDAE.CLOCKED_STATE()) :: _),_) = getVar(inCref, inVars);
+    case(_, _) algorithm
+      ((BackendDAE.VAR(varKind = BackendDAE.CLOCKED_STATE()) :: _),_) := getVar(inCref, inVars);
     then true;
     else false;
   end matchcontinue;
@@ -1042,7 +1042,7 @@ public function isVarNonDiscreteAlg
 algorithm
   result := match (var)
     /* Real non discrete variable */
-    case (BackendDAE.VAR(varType = DAE.T_REAL())) equation
+    case (BackendDAE.VAR(varType = DAE.T_REAL())) algorithm
       then (isVarAlg(var) and not isVarDiscreteRealAlg(var)) or isOptInputVar(var);
 
     else false;
@@ -1631,8 +1631,8 @@ public function isOutput
 algorithm
   outBool:=
   matchcontinue(inCref, inVars)
-    case(_, _) equation
-      ((BackendDAE.VAR(varDirection = DAE.OUTPUT()) :: _),_) = getVar(inCref, inVars);
+    case(_, _) algorithm
+      ((BackendDAE.VAR(varDirection = DAE.OUTPUT()) :: _),_) := getVar(inCref, inVars);
     then true;
 
     else false;
@@ -1839,11 +1839,11 @@ algorithm
       Absyn.Path path;
       BackendDAE.VarKind varKind;
 
-    case (_) guard(ComponentReference.traverseCref(inCref, ComponentReference.crefIsRec, false)) equation
-      DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path)) = inType;
-      source = DAE.SOURCE(AbsynUtil.dummyInfo, {}, DAE.NOCOMPPRE(), {}, {path}, {}, {});
-      varKind = if Types.isDiscreteType(inType) then BackendDAE.DISCRETE() else BackendDAE.VARIABLE();
-      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), {}, source, DAEUtil.setProtectedAttr(NONE(), true), SOME(BackendDAE.NEVER()), SOME(DAE.BCONST(true)), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true,false,false);
+    case (_) guard(ComponentReference.traverseCref(inCref, ComponentReference.crefIsRec, false)) algorithm
+      DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path)) := inType;
+      source := DAE.SOURCE(AbsynUtil.dummyInfo, {}, DAE.NOCOMPPRE(), {}, {path}, {}, {});
+      varKind := if Types.isDiscreteType(inType) then BackendDAE.DISCRETE() else BackendDAE.VARIABLE();
+      outVar := BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), {}, source, DAEUtil.setProtectedAttr(NONE(), true), SOME(BackendDAE.NEVER()), SOME(DAE.BCONST(true)), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true,false,false);
     then outVar;
 
     else equation
@@ -1883,8 +1883,8 @@ algorithm
       DAE.InstDims subs;
       DAE.Type tp;
     case (_,_,DAE.T_ARRAY(ty=tp,dims=dims),_)
-      equation
-        crlst = ComponentReference.expandCref(name,false);
+      algorithm
+        crlst := ComponentReference.expandCref(name,false);
         /*
         TODO: mahge: what is this supposed to do?.
         Why are even these dims needed separetely in BackendDAE.VAR
@@ -1894,12 +1894,12 @@ algorithm
         subs = Expression.intSubscripts(ilst);
         */
         // the rest not
-        vars = List.map4(crlst,generateVar,varKind,tp,dims,NONE());
+        vars := List.map4(crlst,generateVar,varKind,tp,dims,NONE());
       then
         vars;
     case (_,_,_,_)
-      equation
-        var = BackendDAE.VAR(name,varKind,DAE.BIDIR(),DAE.NON_PARALLEL(),varType,NONE(),NONE(),{},DAE.emptyElementSource,attr,NONE(),NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NOT_INNER_OUTER(), false, false, false);
+      algorithm
+        var := BackendDAE.VAR(name,varKind,DAE.BIDIR(),DAE.NON_PARALLEL(),varType,NONE(),NONE(),{},DAE.emptyElementSource,attr,NONE(),NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NOT_INNER_OUTER(), false, false, false);
       then
         {var};
   end match;
@@ -1919,11 +1919,11 @@ algorithm
       Absyn.Path path;
       BackendDAE.VarKind varKind;
 
-    case (_) guard(ComponentReference.traverseCref(inCref, ComponentReference.crefIsRec, false)) equation
-      DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path)) = inType;
-      source = DAE.SOURCE(AbsynUtil.dummyInfo, {}, DAE.NOCOMPPRE(), {}, {path}, {}, {});
-      varKind = if Types.isDiscreteType(inType) then BackendDAE.DISCRETE() else BackendDAE.VARIABLE();
-      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), inArryDim, source, DAEUtil.setProtectedAttr(NONE(), true), SOME(BackendDAE.NEVER()), SOME(DAE.BCONST(true)), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true, false, false);
+    case (_) guard(ComponentReference.traverseCref(inCref, ComponentReference.crefIsRec, false)) algorithm
+      DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path)) := inType;
+      source := DAE.SOURCE(AbsynUtil.dummyInfo, {}, DAE.NOCOMPPRE(), {}, {path}, {}, {});
+      varKind := if Types.isDiscreteType(inType) then BackendDAE.DISCRETE() else BackendDAE.VARIABLE();
+      outVar := BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), inArryDim, source, DAEUtil.setProtectedAttr(NONE(), true), SOME(BackendDAE.NEVER()), SOME(DAE.BCONST(true)), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true, false, false);
     then outVar;
 
     else equation
@@ -2128,29 +2128,29 @@ algorithm
     case BackendDAE.VAR(varKind=BackendDAE.CONST())
     then inAsserts;
 
-    case BackendDAE.VAR(varName=name, values=attr, varType=varType, source=source) equation
-      (min, max) = DAEUtil.getMinMaxValues(attr);
+    case BackendDAE.VAR(varName=name, values=attr, varType=varType, source=source) algorithm
+      (min, max) := DAEUtil.getMinMaxValues(attr);
       if isNone(min) and isNone(max) then
         fail();
       end if;
-      e = Expression.crefExp(name);
-      tp = BackendDAEUtil.makeExpType(varType);
+      e := Expression.crefExp(name);
+      tp := BackendDAEUtil.makeExpType(varType);
 
       // do not add if const true
-      cond = getMinMaxAsserts1(min, max, e, tp);
-      (cond, _) = ExpressionSimplify.simplify(cond);
-      false = Expression.isConstTrue(cond);
-      str = getMinMaxAsserts1Str(min, max, ComponentReference.printComponentRefStr(name));
+      cond := getMinMaxAsserts1(min, max, e, tp);
+      (cond, _) := ExpressionSimplify.simplify(cond);
+      false := Expression.isConstTrue(cond);
+      str := getMinMaxAsserts1Str(min, max, ComponentReference.printComponentRefStr(name));
 
       if Flags.isSet(Flags.WARNING_MINMAX_ATTRIBUTES) then
-        level = DAE.ASSERTIONLEVEL_WARNING;
+        level := DAE.ASSERTIONLEVEL_WARNING;
       else
-        level = DAE.ASSERTIONLEVEL_ERROR;
+        level := DAE.ASSERTIONLEVEL_ERROR;
       end if;
 
       // if is real use %g otherwise use %d (ints and enums)
-      format = if Types.isRealOrSubTypeReal(tp) then "g" else "d";
-      msg = DAE.BINARY(DAE.SCONST(str), DAE.ADD(DAE.T_STRING_DEFAULT), DAE.CALL(Absyn.IDENT("String"), {e, DAE.SCONST(format)}, DAE.callAttrBuiltinString));
+      format := if Types.isRealOrSubTypeReal(tp) then "g" else "d";
+      msg := DAE.BINARY(DAE.SCONST(str), DAE.ADD(DAE.T_STRING_DEFAULT), DAE.CALL(Absyn.IDENT("String"), {e, DAE.SCONST(format)}, DAE.callAttrBuiltinString));
       BackendDAEUtil.checkAssertCondition(cond, msg, level, ElementSource.getElementSourceFileInfo(source));
     then DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond, msg, level, source)})::inAsserts;
 
@@ -2250,16 +2250,16 @@ algorithm
     case DAE.UNARY(operator=DAE.UMINUS_ARR(_),exp=DAE.CREF(componentRef=name)) then (name,true);
     case DAE.LUNARY(operator=DAE.NOT(_),exp=DAE.CREF(componentRef=name)) then (name,true);
     case DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=name)})
-      equation
-        name = ComponentReference.crefPrefixDer(name);
+      algorithm
+        name := ComponentReference.crefPrefixDer(name);
       then (name, false);
     case DAE.UNARY(operator=DAE.UMINUS(_),exp=DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=name)}))
-      equation
-       name = ComponentReference.crefPrefixDer(name);
+      algorithm
+       name := ComponentReference.crefPrefixDer(name);
     then (name,true);
     case DAE.UNARY(operator=DAE.UMINUS_ARR(_),exp=DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=name)}))
-      equation
-       name = ComponentReference.crefPrefixDer(name);
+      algorithm
+       name := ComponentReference.crefPrefixDer(name);
     then (name,true);
   end match;
 end getAlias1;
@@ -2593,13 +2593,13 @@ algorithm
       BackendDAE.Variables vars, globalKnownVars;
       BackendDAE.VarKind kind;
 
-    case (cr, vars, _) equation
-      ((BackendDAE.VAR(varKind=kind)::_), _) = getVar(cr, vars);
+    case (cr, vars, _) algorithm
+      ((BackendDAE.VAR(varKind=kind)::_), _) := getVar(cr, vars);
       isVarKindVariable(kind);
     then ();
 
-    case (cr, _, globalKnownVars) equation
-      ((BackendDAE.VAR(varKind = kind) :: _), _) = getVar(cr, globalKnownVars);
+    case (cr, _, globalKnownVars) algorithm
+      ((BackendDAE.VAR(varKind = kind) :: _), _) := getVar(cr, globalKnownVars);
       isVarKindVariable(kind);
     then ();
   end matchcontinue;
@@ -2661,10 +2661,10 @@ algorithm
       DAE.ComponentRef cr;
       BackendDAE.Var v;
     case _
-      equation (v::_, _) = getVar(inComponentRef, inVars);
+      algorithm (v::_, _) := getVar(inComponentRef, inVars);
       then isVarOnTopLevelAndOutput(v);
     case _
-      equation (v::_, _) = getVar(inComponentRef, inGlobalKnownVars);
+      algorithm (v::_, _) := getVar(inComponentRef, inGlobalKnownVars);
       then isVarOnTopLevelAndInput(v);
     else false;
   end matchcontinue;
@@ -2692,10 +2692,10 @@ algorithm
     local
       BackendDAE.Variables newvars;
     case (_,_)
-      equation
-        true = intGt(varsSize(inDelVars),0);
-        newvars = traverseBackendDAEVars(inDelVars, deleteVars1, inVariables);
-        newvars = listVar1(varList(newvars));
+      algorithm
+        true := intGt(varsSize(inDelVars),0);
+        newvars := traverseBackendDAEVars(inDelVars, deleteVars1, inVariables);
+        newvars := listVar1(varList(newvars));
       then
         newvars;
     else
@@ -2726,10 +2726,10 @@ algorithm
       DAE.ComponentRef cr;
       list<Integer> ilst;
 
-    case (cr,_) equation
-      (_,ilst) = getVar(cr,inVariables);
-      (vars,_) = removeVars(ilst,inVariables,{});
-      vars = listVar1(varList(vars));
+    case (cr,_) algorithm
+      (_,ilst) := getVar(cr,inVariables);
+      (vars,_) := removeVars(ilst,inVariables,{});
+      vars := listVar1(varList(vars));
     then vars;
   end match;
 end deleteVar;
@@ -2774,9 +2774,9 @@ algorithm
       DAE.ComponentRef cr;
       list<Integer> ilst;
     case (cr,_)
-      equation
-        (_,ilst) = getVar(cr,inVariables);
-        (vars,_) = removeVars(ilst,inVariables,{});
+      algorithm
+        (_,ilst) := getVar(cr,inVariables);
+        (vars,_) := removeVars(ilst,inVariables,{});
       then
         vars;
     else inVariables;
@@ -2800,14 +2800,14 @@ algorithm
       list<BackendDAE.Var> acc;
     case({},_,_) then (inVariables,iAcc);
     case(i::ilst,_,_)
-      equation
-        (vars,v) = removeVar(i,inVariables);
-        (vars,acc) = removeVars(ilst,vars,v::iAcc);
+      algorithm
+        (vars,v) := removeVar(i,inVariables);
+        (vars,acc) := removeVars(ilst,vars,v::iAcc);
       then
         (vars,acc);
     case(_::ilst,_,_)
-      equation
-        (vars,acc) = removeVars(ilst,inVariables,iAcc);
+      algorithm
+        (vars,acc) := removeVars(ilst,inVariables,iAcc);
       then
         (vars,acc);
   end matchcontinue;
@@ -3211,32 +3211,32 @@ algorithm
       list<DAE.ComponentRef> crlst;
       DAE.ComponentRef cr1;
     case (_,_)
-      equation
-        (v,indx) = getVar2(cr, inVariables) "if scalar found, return it";
+      algorithm
+        (v,indx) := getVar2(cr, inVariables) "if scalar found, return it";
       then
         ({v},if isPresent(outIntegerLst) then {indx} else {});
     case (_,_) /* check if array or record */
-      equation
-        crlst = ComponentReference.expandCref(cr,true);
+      algorithm
+        crlst := ComponentReference.expandCref(cr,true);
         if isPresent(outIntegerLst) then
-          (vLst as _::_,indxs) = getVarLst(crlst,inVariables);
+          (vLst as _::_,indxs) := getVarLst(crlst,inVariables);
         else
-          (vLst as _::_,_) = getVarLst(crlst,inVariables);
-          indxs = {};
+          (vLst as _::_,_) := getVarLst(crlst,inVariables);
+          indxs := {};
         end if;
       then
         (vLst,indxs);
     // try again check if variable indexes used
     case (_,_)
-      equation
+      algorithm
         // replace variables with WHOLEDIM()
-        (cr1,true) = replaceVarWithWholeDim(cr, false);
-        crlst = ComponentReference.expandCref(cr1,true);
+        (cr1,true) := replaceVarWithWholeDim(cr, false);
+        crlst := ComponentReference.expandCref(cr1,true);
         if isPresent(outIntegerLst) then
-          (vLst as _::_,indxs) = getVarLst(crlst,inVariables);
+          (vLst as _::_,indxs) := getVarLst(crlst,inVariables);
         else
-          (vLst as _::_,_) = getVarLst(crlst,inVariables);
-          indxs = {};
+          (vLst as _::_,_) := getVarLst(crlst,inVariables);
+          indxs := {};
         end if;
       then
         (vLst,indxs);
@@ -3272,32 +3272,32 @@ algorithm
       list<DAE.ComponentRef> crlst;
       DAE.ComponentRef cr1;
     case (_,_)
-      equation
-        (v,indx) = getVar2(cr, inVariables) "if scalar found, return it";
+      algorithm
+        (v,indx) := getVar2(cr, inVariables) "if scalar found, return it";
       then (v,indx);
     case (_,_) /* check if array or record */
-      equation
+      algorithm
         // TODO: Don't expand if > length 1
-        crlst = ComponentReference.expandCref(cr,true);
+        crlst := ComponentReference.expandCref(cr,true);
         if isPresent(outInteger) then
-          ({v},{indx}) = getVarLst(crlst,inVariables);
+          ({v},{indx}) := getVarLst(crlst,inVariables);
         else
-          ({v},_) = getVarLst(crlst,inVariables);
-          indx = 0;
+          ({v},_) := getVarLst(crlst,inVariables);
+          indx := 0;
         end if;
       then (v,indx);
     // try again check if variable indexes used
     case (_,_)
-      equation
+      algorithm
         // TODO: Don't expand if > length 1
         // replace variables with WHOLEDIM()
-        (cr1,true) = replaceVarWithWholeDim(cr, false);
-        crlst = ComponentReference.expandCref(cr1,true);
+        (cr1,true) := replaceVarWithWholeDim(cr, false);
+        crlst := ComponentReference.expandCref(cr1,true);
         if isPresent(outInteger) then
-          ({v},{indx}) = getVarLst(crlst,inVariables);
+          ({v},{indx}) := getVarLst(crlst,inVariables);
         else
-          ({v},_) = getVarLst(crlst,inVariables);
-          indx = 0;
+          ({v},_) := getVarLst(crlst,inVariables);
+          indx := 0;
         end if;
       then (v,indx);
     /* failure
@@ -3355,15 +3355,15 @@ algorithm
       Boolean b;
 
     case (DAE.CREF_QUAL(ident = name, identType = ty, subscriptLst = subs, componentRef = cr), _)
-      equation
-        (subs_1, b) = replaceVarWithWholeDimSubs(subs, iPerformed);
-        (cr_1, b) = replaceVarWithWholeDim(cr, b);
+      algorithm
+        (subs_1, b) := replaceVarWithWholeDimSubs(subs, iPerformed);
+        (cr_1, b) := replaceVarWithWholeDim(cr, b);
       then
         (if referenceEq(subs_1,subs) and referenceEq(cr_1,cr) then inCref else DAE.CREF_QUAL(name, ty, subs_1, cr_1), b);
 
     case (DAE.CREF_IDENT(ident = name, identType = ty, subscriptLst = subs), _)
-      equation
-        (subs_1, b) = replaceVarWithWholeDimSubs(subs, iPerformed);
+      algorithm
+        (subs_1, b) := replaceVarWithWholeDimSubs(subs, iPerformed);
       then
         (if referenceEq(subs_1,subs) then inCref else DAE.CREF_IDENT(name, ty, subs_1), b);
 
@@ -3392,31 +3392,31 @@ algorithm
 
     case ({}, _) then (inSubscript,iPerformed);
     case (DAE.WHOLEDIM()::rest, _)
-      equation
-        (_,b) = replaceVarWithWholeDimSubs(rest,iPerformed);
+      algorithm
+        (_,b) := replaceVarWithWholeDimSubs(rest,iPerformed);
       then (DAE.WHOLEDIM()::rest, b);
 
     case ((sub as DAE.SLICE(exp = sub_exp))::rest, _)
-      equation
-        (res,b) = replaceVarWithWholeDimSubs(rest,iPerformed);
-        const = Expression.isConst(sub_exp);
-        res = if const then sub::rest else (DAE.WHOLEDIM()::rest);
+      algorithm
+        (res,b) := replaceVarWithWholeDimSubs(rest,iPerformed);
+        const := Expression.isConst(sub_exp);
+        res := if const then sub::rest else (DAE.WHOLEDIM()::rest);
       then
         (res, b or not const);
 
     case ((sub as DAE.INDEX(exp = sub_exp))::rest, _)
-      equation
-        (sub_exp_,calcRange) = computeRangeExps(sub_exp); // the fact that if it can be calculated, we can take the wholedim is a bit weird, anyway, the whole function is weird
-        (res,b) = replaceVarWithWholeDimSubs(rest,iPerformed);
-        const = Expression.isConst(sub_exp_);
-        res = (if const then if referenceEq(sub_exp,sub_exp_) then sub else DAE.INDEX(sub_exp_) else DAE.WHOLEDIM())::rest;
+      algorithm
+        (sub_exp_,calcRange) := computeRangeExps(sub_exp); // the fact that if it can be calculated, we can take the wholedim is a bit weird, anyway, the whole function is weird
+        (res,b) := replaceVarWithWholeDimSubs(rest,iPerformed);
+        const := Expression.isConst(sub_exp_);
+        res := (if const then if referenceEq(sub_exp,sub_exp_) then sub else DAE.INDEX(sub_exp_) else DAE.WHOLEDIM())::rest;
       then
         (res, b or not const or calcRange);
     case ((sub as DAE.WHOLE_NONEXP(exp = sub_exp))::rest, _)
-      equation
-        (res,b) = replaceVarWithWholeDimSubs(rest,iPerformed);
-        const = Expression.isConst(sub_exp);
-        res = if const then sub::rest else (DAE.WHOLEDIM()::rest);
+      algorithm
+        (res,b) := replaceVarWithWholeDimSubs(rest,iPerformed);
+        const := Expression.isConst(sub_exp);
+        res := if const then sub::rest else (DAE.WHOLEDIM()::rest);
       then
         (res, b or not const);
   end match;
@@ -3433,9 +3433,9 @@ algorithm
       DAE.Exp exp;
       DAE.Type ty;
   case(DAE.BINARY(exp1=DAE.RANGE(ty=ty,start=DAE.ICONST(integer=1),stop=DAE.ICONST(integer=stop1)), operator=DAE.ADD(), exp2=DAE.RANGE(start=DAE.ICONST(integer=1),stop=DAE.ICONST(integer=stop2))))
-    equation
-      stop2= stop1+stop2;
-      exp = DAE.RANGE(ty,DAE.ICONST(1),NONE(),DAE.ICONST(stop2));
+    algorithm
+      stop2:= stop1+stop2;
+      exp := DAE.RANGE(ty,DAE.ICONST(1),NONE(),DAE.ICONST(stop2));
     then (exp,true);
    else
      then (inExp, false);
@@ -3838,8 +3838,8 @@ algorithm
       list<DAE.ComponentRef> cr_lst;
       DAE.ComponentRef cr;
     case (v,cr_lst)
-      equation
-        cr = varCref(v);
+      algorithm
+        cr := varCref(v);
       then (v,cr::cr_lst);
     else (inVar,inCrefs);
   end matchcontinue;
@@ -4043,19 +4043,19 @@ algorithm
     case (v,true,_,_,_,false,_,_,_,_)
       then v;
     case (v,false,_,_,_,true,SOME(sb),_,_,_)
-      equation
-        e = if negate then Expression.negate(sb) else sb;
-        v1 = setVarStartValue(v,e);
-        v2 = setVarFixed(v1,true);
+      algorithm
+        e := if negate then Expression.negate(sb) else sb;
+        v1 := setVarStartValue(v,e);
+        v2 := setVarFixed(v1,true);
       then v2;
     case (v,false,NONE(),_,_,true,NONE(),_,_,_)
-      equation
-        v1 = setVarFixed(v,true);
+      algorithm
+        v1 := setVarFixed(v,true);
       then v1;
     case (v,false,SOME(_),_,_,true,NONE(),_,_,_)
-      equation
-        _ = setVarStartValueOption(v,NONE());
-        v1 = setVarFixed(v,true);
+      algorithm
+        _ := setVarStartValueOption(v,NONE());
+        v1 := setVarFixed(v,true);
       then v1;
     // legal case both fixed=false
     case (v,false,NONE(),_,_,false,NONE(),_,_,_)
@@ -4063,52 +4063,52 @@ algorithm
     case (v,false,SOME(_),_,_,false,NONE(),_,_,_)
       then v;
     case (v,false,NONE(),_,_,false,SOME(sb),_,_,_)
-      equation
-        e = if negate then Expression.negate(sb) else sb;
-        v1 = setVarStartValue(v,e);
+      algorithm
+        e := if negate then Expression.negate(sb) else sb;
+        v1 := setVarStartValue(v,e);
       then v1;
     case (v as BackendDAE.VAR(varType=ty),false,_,_,BackendDAE.VAR(varType=tya),false,_,_,_,_)
-      equation
-        sa = startValueType(sv,ty);
-        sb = startValueType(sva,tya);
-        e = if negate then Expression.negate(sb) else sb;
-        (e,origin) = getNonZeroStart(false,sa,so,e,soa,globalKnownVars);
-        _ = setVarStartValue(v,e);
-        v1 = setVarStartOrigin(v,origin);
+      algorithm
+        sa := startValueType(sv,ty);
+        sb := startValueType(sva,tya);
+        e := if negate then Expression.negate(sb) else sb;
+        (e,origin) := getNonZeroStart(false,sa,so,e,soa,globalKnownVars);
+        _ := setVarStartValue(v,e);
+        v1 := setVarStartOrigin(v,origin);
       then v1;
     case (v as BackendDAE.VAR(varName=cr,varType=ty),false,_,_,BackendDAE.VAR(varName=cra,varType=tya),false,_,_,_,_)
-      equation
-        sa = startValueType(sv,ty);
-        sb = startValueType(sva,tya);
-        e = if negate then Expression.negate(sb) else sb;
+      algorithm
+        sa := startValueType(sv,ty);
+        sb := startValueType(sva,tya);
+        e := if negate then Expression.negate(sb) else sb;
         // according to MSL
         // use the value from the variable that is closer to the top of the
         // hierarchy i.e. A.B value has priority over X.Y.Z value!
-        i = ComponentReference.crefDepth(cr);
-        ia = ComponentReference.crefDepth(cra);
+        i := ComponentReference.crefDepth(cr);
+        ia := ComponentReference.crefDepth(cra);
       then
         mergeStartFixed1(intLt(ia,i),v,cr,sa,cra,e,soa,negate," have start values ");
     // legal case both fixed = true and start exp equal
     case (v,true,NONE(),_,_,true,NONE(),_,_,_)
       then v;
     case (v as BackendDAE.VAR(varType=ty),true,_,_,BackendDAE.VAR(varType=tya),true,_,_,_,_)
-      equation
-        sa = startValueType(sv,ty);
-        sb = startValueType(sva,tya);
-        e = if negate then Expression.negate(sb) else sb;
-        (e,origin) = getNonZeroStart(true,sa,so,e,soa,globalKnownVars);
-        _ = setVarStartValue(v,e);
-        v1 = setVarStartOrigin(v,origin);
+      algorithm
+        sa := startValueType(sv,ty);
+        sb := startValueType(sva,tya);
+        e := if negate then Expression.negate(sb) else sb;
+        (e,origin) := getNonZeroStart(true,sa,so,e,soa,globalKnownVars);
+        _ := setVarStartValue(v,e);
+        v1 := setVarStartOrigin(v,origin);
       then v1;
     // not legal case both fixed with unequal start values
     case (v as BackendDAE.VAR(varName=cr,varType=ty),true,_,_,BackendDAE.VAR(varName=cra,varType=tya),true,_,_,_,_)
-      equation
-        sa = startValueType(sv,ty);
-        sb = startValueType(sva,tya);
-        e = if negate then Expression.negate(sb) else sb;
+      algorithm
+        sa := startValueType(sv,ty);
+        sb := startValueType(sva,tya);
+        e := if negate then Expression.negate(sb) else sb;
         // overconstrained system report warning/error
-        i = ComponentReference.crefDepth(cr);
-        ia = ComponentReference.crefDepth(cra);
+        i := ComponentReference.crefDepth(cr);
+        ia := ComponentReference.crefDepth(cra);
       then
         mergeStartFixed1(intLt(ia,i),v,cr,sa,cra,e,soa,negate," both fixed and have start values ");
   end matchcontinue;
@@ -4163,27 +4163,27 @@ algorithm
       BackendDAE.Var v;
     // alias var has more dots in the name
     case (false,_,_,_,_,_,_,_,_)
-      equation
-        s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = if negate then " = -" else " = ";
-        s3 = ComponentReference.printComponentRefStr(cra);
-        s5 = ExpressionDump.printExpStr(sv);
-        s6 = ExpressionDump.printExpStr(sva);
-        s = stringAppendList({"Alias variables ",s1,s2,s3,s4,s5," != ",s6,". Use value from ",s1,"."});
+      algorithm
+        s1 := ComponentReference.printComponentRefStr(cr);
+        s2 := if negate then " = -" else " = ";
+        s3 := ComponentReference.printComponentRefStr(cra);
+        s5 := ExpressionDump.printExpStr(sv);
+        s6 := ExpressionDump.printExpStr(sva);
+        s := stringAppendList({"Alias variables ",s1,s2,s3,s4,s5," != ",s6,". Use value from ",s1,"."});
         Error.addMessage(Error.COMPILER_WARNING,{s});
       then
         inVar;
     case (true,_,_,_,_,_,_,_,_)
-      equation
-        s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = if negate then " = -" else " = ";
-        s3 = ComponentReference.printComponentRefStr(cra);
-        s5 = ExpressionDump.printExpStr(sv);
-        s6 = ExpressionDump.printExpStr(sva);
-        s = stringAppendList({"Alias variables ",s1,s2,s3,s4,s5," != ",s6,". Use value from ",s3,"."});
+      algorithm
+        s1 := ComponentReference.printComponentRefStr(cr);
+        s2 := if negate then " = -" else " = ";
+        s3 := ComponentReference.printComponentRefStr(cra);
+        s5 := ExpressionDump.printExpStr(sv);
+        s6 := ExpressionDump.printExpStr(sva);
+        s := stringAppendList({"Alias variables ",s1,s2,s3,s4,s5," != ",s6,". Use value from ",s3,"."});
         Error.addMessage(Error.COMPILER_WARNING,{s});
-        v = setVarStartValue(inVar,sva);
-        v = setVarStartOrigin(v,soa);
+        v := setVarStartValue(inVar,sva);
+        v := setVarStartOrigin(v,soa);
       then
         v;
   end match;
@@ -4203,12 +4203,12 @@ algorithm
       HashSet.HashSet hs;
     // true if crefs replaced in expression
     case (DAE.CREF(componentRef=cr), (vars,_,hs))
-      equation
+      algorithm
         // check for cyclic bindings in start value
-        false = BaseHashSet.has(cr, hs);
-        (BackendDAE.VAR(bindExp = SOME(e)), _) = getVarSingle(cr, vars);
-        hs = BaseHashSet.add(cr,hs);
-        (e, (_,_,hs)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (vars,false,hs));
+        false := BaseHashSet.has(cr, hs);
+        (BackendDAE.VAR(bindExp = SOME(e)), _) := getVarSingle(cr, vars);
+        hs := BaseHashSet.add(cr,hs);
+        (e, (_,_,hs)) := Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (vars,false,hs));
       then (e, (vars,true,hs));
     // true if crefs in expression
     case (e as DAE.CREF(), (vars,_,hs))
@@ -4236,35 +4236,35 @@ algorithm
       Boolean b1,b2;
       Option<DAE.Exp> origin;
     case (_,_,_,_,_,_)
-      equation
-        true = Expression.expEqual(exp1,exp2);
+      algorithm
+        true := Expression.expEqual(exp1,exp2);
         // use highest origin
-        i = startOriginToValue(so);
-        ia = startOriginToValue(sao);
-        origin = if intGt(ia,i) then sao else so;
+        i := startOriginToValue(so);
+        ia := startOriginToValue(sao);
+        origin := if intGt(ia,i) then sao else so;
       then (exp1,origin);
     case (false,_,_,_,_,_)
-      equation
+      algorithm
         // if one is bound and the other not use the bound one
-        i = startOriginToValue(so);
-        ia = startOriginToValue(sao);
-        false = intEq(i,ia);
-        ((exp1_1,origin)) = if intGt(ia,i) then (exp2,sao) else (exp1,so);
+        i := startOriginToValue(so);
+        ia := startOriginToValue(sao);
+        false := intEq(i,ia);
+        ((exp1_1,origin)) := if intGt(ia,i) then (exp2,sao) else (exp1,so);
       then
         (exp1_1,origin);
     case (_,_,_,_,_,_)
-      equation
+      algorithm
         // simple evaluation, by replace crefs with bind expressions recursivly
-        (exp1_1, (_,b1,_)) = Expression.traverseExpBottomUp(exp1, replaceCrefWithBindExp, (globalKnownVars,false,HashSet.emptyHashSet()));
-        (exp2_1, (_,b2,_)) = Expression.traverseExpBottomUp(exp2, replaceCrefWithBindExp, (globalKnownVars,false,HashSet.emptyHashSet()));
-        (exp1_1,_) = ExpressionSimplify.condsimplify(b1,exp1_1);
-        (exp2_1,_) = ExpressionSimplify.condsimplify(b2,exp2_1);
-        true = Expression.expEqual(exp1_1, exp2_1);
-        exp1_1 = if b1 then exp1 else exp2;
+        (exp1_1, (_,b1,_)) := Expression.traverseExpBottomUp(exp1, replaceCrefWithBindExp, (globalKnownVars,false,HashSet.emptyHashSet()));
+        (exp2_1, (_,b2,_)) := Expression.traverseExpBottomUp(exp2, replaceCrefWithBindExp, (globalKnownVars,false,HashSet.emptyHashSet()));
+        (exp1_1,_) := ExpressionSimplify.condsimplify(b1,exp1_1);
+        (exp2_1,_) := ExpressionSimplify.condsimplify(b2,exp2_1);
+        true := Expression.expEqual(exp1_1, exp2_1);
+        exp1_1 := if b1 then exp1 else exp2;
         // use highest origin
-        i = startOriginToValue(so);
-        ia = startOriginToValue(sao);
-        origin = if intGt(ia,i) then sao else so;
+        i := startOriginToValue(so);
+        ia := startOriginToValue(sao);
+        origin := if intGt(ia,i) then sao else so;
       then
         (exp1_1,origin);
   end matchcontinue;
@@ -4294,22 +4294,22 @@ algorithm
       BackendDAE.Var v,var,var1;
       DAE.Exp e,e_1,e1,esum,eaverage;
     case (v,var,_)
-      equation
+      algorithm
         // nominal
-        e = varNominalValue(v);
-        e1 = varNominalValue(var);
-        e_1 = if negate then Expression.negate(e) else e;
-        esum = Expression.makeSum({e_1,e1});
-        eaverage = Expression.expDiv(esum,DAE.RCONST(2.0)); // Real is legal because only Reals have nominal attribute
-        (eaverage,_) = ExpressionSimplify.simplify(eaverage);
-        var1 = setVarNominalValue(var,eaverage);
+        e := varNominalValue(v);
+        e1 := varNominalValue(var);
+        e_1 := if negate then Expression.negate(e) else e;
+        esum := Expression.makeSum({e_1,e1});
+        eaverage := Expression.expDiv(esum,DAE.RCONST(2.0)); // Real is legal because only Reals have nominal attribute
+        (eaverage,_) := ExpressionSimplify.simplify(eaverage);
+        var1 := setVarNominalValue(var,eaverage);
       then var1;
     case (v,var,_)
-      equation
+      algorithm
         // nominal
-        e = varNominalValue(v);
-        e_1 = if negate then Expression.negate(e) else e;
-        var1 = setVarNominalValue(var,e_1);
+        e := varNominalValue(v);
+        e_1 := if negate then Expression.negate(e) else e;
+        var1 := setVarNominalValue(var,e_1);
       then var1;
     case(_,_,_) then inVar;
   end matchcontinue;
@@ -4329,14 +4329,14 @@ algorithm
       DAE.ComponentRef cr,cr1;
 
     case (v as BackendDAE.VAR(values = attr),var as BackendDAE.VAR(values = attr1),_)
-      equation
+      algorithm
         // minmax
-        (min1, max1) = DAEUtil.getMinMaxValues(attr);
-        (min2, max2) = DAEUtil.getMinMaxValues(attr1);
-        cr = varCref(v);
-        cr1 = varCref(var);
-        (min1, max1) = mergeMinMax(negate, min1, min2, max1, max2, cr, cr1);
-        var1 = setVarMinMax(var, min1, max1);
+        (min1, max1) := DAEUtil.getMinMaxValues(attr);
+        (min2, max2) := DAEUtil.getMinMaxValues(attr1);
+        cr := varCref(v);
+        cr1 := varCref(var);
+        (min1, max1) := mergeMinMax(negate, min1, min2, max1, max2, cr, cr1);
+        var1 := setVarMinMax(var, min1, max1);
       then var1;
 
     else inVar;
@@ -4383,16 +4383,16 @@ algorithm
       String s, s1, s2, s3, s4, s5;
       Real rmin, rmax;
 
-    case (SOME(min), SOME(max)) equation
-      rmin = Expression.toReal(min);
-      rmax = Expression.toReal(max);
-      true = realGt(rmin, rmax);
-      s1 = ComponentReference.printComponentRefStr(cr1);
-      s2 = if negate then " = -" else " = ";
-      s3 = ComponentReference.printComponentRefStr(cr2);
-      s4 = ExpressionDump.printExpStr(min);
-      s5 = ExpressionDump.printExpStr(max);
-      s = stringAppendList({"Alias variables ", s1, s2, s3, " with invalid limits min ", s4, " > max ", s5});
+    case (SOME(min), SOME(max)) algorithm
+      rmin := Expression.toReal(min);
+      rmax := Expression.toReal(max);
+      true := realGt(rmin, rmax);
+      s1 := ComponentReference.printComponentRefStr(cr1);
+      s2 := if negate then " = -" else " = ";
+      s3 := ComponentReference.printComponentRefStr(cr2);
+      s4 := ExpressionDump.printExpStr(min);
+      s5 := ExpressionDump.printExpStr(max);
+      s := stringAppendList({"Alias variables ", s1, s2, s3, " with invalid limits min ", s4, " > max ", s5});
       Error.addMessage(Error.COMPILER_WARNING, {s});
     then ();
 
@@ -4515,10 +4515,10 @@ public function transformXToXd "author: PA
   output BackendDAE.Var outVar;
 algorithm
   outVar := match inVar
-    case BackendDAE.VAR(varKind=BackendDAE.STATE()) equation
-      outVar = inVar;
-      outVar.varName = ComponentReference.crefPrefixDer(inVar.varName);
-      outVar.varKind = BackendDAE.STATE_DER();
+    case BackendDAE.VAR(varKind=BackendDAE.STATE()) algorithm
+      outVar := inVar;
+      outVar.varName := ComponentReference.crefPrefixDer(inVar.varName);
+      outVar.varKind := BackendDAE.STATE_DER();
     then outVar;
 
     else inVar;
@@ -4561,8 +4561,8 @@ algorithm
     local
       DAE.Exp exp;
 
-    case(BackendDAE.VAR(varKind=BackendDAE.STATE(index=1))) equation
-      exp = Expression.crefExp(inVar.varName);
+    case(BackendDAE.VAR(varKind=BackendDAE.STATE(index=1))) algorithm
+      exp := Expression.crefExp(inVar.varName);
     then Expression.expDer(exp);
 
     else Expression.crefExp(inVar.varName);

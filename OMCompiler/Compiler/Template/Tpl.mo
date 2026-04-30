@@ -193,7 +193,7 @@ algorithm
     case (FILE_TEXT(), str)
       guard
         -1 == System.stringFind(str, "\n")
-      equation
+      algorithm
         stringFile(inText, str, line=false);
       then inText;
 
@@ -310,30 +310,30 @@ algorithm
 
     //leading new-lines
     case (txt, "\n" :: chars )
-      equation
-        txt = newLine(txt);
+      algorithm
+        txt := newLine(txt);
       then
         writeChars(txt, chars);
 
     case (txt, "\r\n" :: chars )
-      equation
-        txt = newLine(txt);
+      algorithm
+        txt := newLine(txt);
       then
         writeChars(txt, chars);
 
     //non-new-line at the start of the string, so a string or line only follows
     case (txt, c :: chars )
-      equation
-        (lschars, chars, isline) = takeLineOrString(chars);
-        txt = writeLineOrStr(txt, stringAppendList(c :: lschars), isline);
+      algorithm
+        (lschars, chars, isline) := takeLineOrString(chars);
+        txt := writeLineOrStr(txt, stringAppendList(c :: lschars), isline);
         //Error txt = writeLineOrStr(txt, stringCharListString( str :: lschars), isline);
       then
         writeChars(txt, chars);
 
     //should not ever happen
     case (_ , _)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.writeChars failed.\n");
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.writeChars failed.\n");
       then
         fail();
   end match;
@@ -410,8 +410,8 @@ algorithm
         ({"\n"}, chars, true);
 
     case (char :: chars)
-      equation
-        (tnlchars, restchars, isline) = takeLineOrString(chars);
+      algorithm
+        (tnlchars, restchars, isline) := takeLineOrString(chars);
       then
         (char ::  tnlchars, restchars, isline);
 
@@ -671,8 +671,8 @@ algorithm
     //should not ever happen
     //- when compilation is correct, this is impossible (pushs and pops should be balanced)
     case (_)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.popBlock failed - probably pushBlock and popBlock are not well balanced !\n");
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.popBlock failed - probably pushBlock and popBlock are not well balanced !\n");
       then
        fail();
   end match;
@@ -717,8 +717,8 @@ algorithm
 
     //should not ever happen
     case (_ , _)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.pushIter failed \n");
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.pushIter failed \n");
       then
         fail();
   end match;
@@ -759,8 +759,8 @@ algorithm
     //should not ever happen
     //- when compilation is correct, this is impossible (pushs and pops should be balanced)
     case (_)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.popIter failed - probably pushIter and popIter are not well balanced or something was written between the last nextIter and popIter ?\n");
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.popIter failed - probably pushIter and popIter are not well balanced or something was written between the last nextIter and popIter ?\n");
       then
        fail();
   end match;
@@ -799,7 +799,7 @@ algorithm
                                                             empty = SOME(emptok)),
                                        index0 = i0)) :: blstack
             ))
-      equation
+      algorithm
         arrayUpdate(i0, 1, arrayGet(i0,1) + 1);
       then
         MEM_TEXT(
@@ -813,7 +813,7 @@ algorithm
             tokens = {tok},
             blocksStack = (itertoks, bt as BT_ITER(index0 = i0)) :: blstack
             ))
-      equation
+      algorithm
         arrayUpdate(i0, 1, arrayGet(i0,1) + 1);
       then
         MEM_TEXT(
@@ -826,7 +826,7 @@ algorithm
             tokens = toks /* as (_::_) */,
             blocksStack = (itertoks, bt as BT_ITER(index0 = i0)) :: blstack
             ))
-      equation
+      algorithm
         arrayUpdate(i0, 1, arrayGet(i0,1) + 1);
       then
         MEM_TEXT(
@@ -899,8 +899,8 @@ algorithm
 
     //should not ever happen
     case (_ )
-      equation
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.getIter_i0 failed - getIter_i0 was called in a non-iteration context ? \n");
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.getIter_i0 failed - getIter_i0 was called in a non-iteration context ? \n");
       then
         fail();
   end match;
@@ -917,18 +917,18 @@ algorithm
       String str;
       Integer handle;
     case (txt)
-      equation
-        handle = Print.saveAndClearBuf();
+      algorithm
+        handle := Print.saveAndClearBuf();
         textStringBuf(txt);
-        str = Print.getString();
+        str := Print.getString();
         Print.restoreBuf(handle);
       then
         str;
 
     //should not ever happen
     case (_ )
-      equation
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.textString failed.\n");
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.textString failed.\n");
       then
         fail();
   end match;
@@ -946,23 +946,23 @@ algorithm
             tokens = toks,
             blocksStack = {}
             ))
-      equation
-        (_,_) = tokensString(listReverse(toks), 0, true, 0);
+      algorithm
+        (_,_) := tokensString(listReverse(toks), 0, true, 0);
       then
         ();
 
     case (MEM_TEXT(
             blocksStack = _::_
             ))
-      equation
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.textString failed - a non-comlete text was given.\n");
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.textString failed - a non-comlete text was given.\n");
       then
         fail();
 
     //should not ever happen
     case (_ )
-      equation
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.textString failed.\n");
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.textString failed.\n");
       then
         fail();
   end match;
@@ -1012,31 +1012,31 @@ algorithm
       Boolean isstart;
 
     case (ST_NEW_LINE(), _, _, aind)
-      equation
+      algorithm
         Print.printBufNewLine();
       then
         (aind, true, aind);
 
     case (ST_STRING(value = str), nchars, true, aind)
-      equation
-        blen = Print.getBufLength();
+      algorithm
+        blen := Print.getBufLength();
         Print.printBufSpace(nchars);
         Print.printBuf(str);
-        blen = Print.getBufLength() - blen;
+        blen := Print.getBufLength() - blen;
         //str = spaceStr(nchars) + str; //indent is actually stored in nchars when on start of the line
       then
         (blen, false, aind);
 
     case (ST_STRING(value = str), nchars, false, aind)
-      equation
-        blen = Print.getBufLength();
+      algorithm
+        blen := Print.getBufLength();
         Print.printBuf(str);
-        blen = Print.getBufLength() - blen;
+        blen := Print.getBufLength() - blen;
       then
         (nchars + blen, false, aind);
 
     case (ST_LINE(line = str), nchars, true, aind)
-      equation
+      algorithm
         Print.printBufSpace(nchars);
         Print.printBuf(str);
         //str = spaceStr(nchars) + str; //indent is actually stored in nchars when on start of the line
@@ -1044,24 +1044,24 @@ algorithm
         (aind, true, aind);
 
     case (ST_LINE(line = str), _, false, aind)
-      equation
+      algorithm
         Print.printBuf(str);
       then
         (aind, true, aind);
 
     case (ST_STRING_LIST( strList = strLst ), nchars, isstart, aind)
-      equation
+      algorithm
         (nchars, isstart, aind)
-          = stringListString(strLst, nchars, isstart, aind);
+          := stringListString(strLst, nchars, isstart, aind);
       then
         (nchars, isstart, aind);
 
     case (ST_BLOCK(
            tokens = toks,
            blockType = bt), nchars, isstart, aind)
-      equation
+      algorithm
         (nchars, isstart, aind)
-          = blockString(bt, listReverse(toks), nchars, isstart, aind);
+          := blockString(bt, listReverse(toks), nchars, isstart, aind);
       then
         (nchars, isstart, aind);
 
@@ -1115,49 +1115,49 @@ algorithm
       list<String> strLst;
 
     case (ST_NEW_LINE(), _, _, aind)
-      equation
+      algorithm
         File.write(file, "\n");
       then (aind, true, aind);
 
     case (ST_STRING(value = str), nchars, true, aind)
-      equation
+      algorithm
         File.writeSpace(file, nchars);
         File.write(file, str);
       then
         (nchars+stringLength(str), false, aind);
 
     case (ST_STRING(value = str), nchars, false, aind)
-      equation
+      algorithm
         File.write(file, str);
       then
         (nchars + stringLength(str), false, aind);
 
     case (ST_LINE(line = str), nchars, true, aind)
-      equation
+      algorithm
         File.writeSpace(file, nchars);
         File.write(file, str);
       then
         (aind, true, aind);
 
     case (ST_LINE(line = str), _, false, aind)
-      equation
+      algorithm
         File.write(file, str);
       then
         (aind, true, aind);
 
     case (ST_STRING_LIST( strList = strLst ), nchars, isstart, aind)
-      equation
+      algorithm
         (nchars, isstart, aind)
-          = stringListFile(file, strLst, nchars, isstart, aind);
+          := stringListFile(file, strLst, nchars, isstart, aind);
       then
         (nchars, isstart, aind);
 
     case (ST_BLOCK(
            tokens = toks,
            blockType = bt), nchars, isstart, aind)
-      equation
+      algorithm
         (nchars, isstart, aind)
-          = blockFile(file, bt, listReverse(toks), nchars, isstart, aind);
+          := blockFile(file, bt, listReverse(toks), nchars, isstart, aind);
       then
         (nchars, isstart, aind);
   end match;
@@ -1187,35 +1187,35 @@ algorithm
 
     //empty string ... for sure -> it can be a special case when allowed; when let for the case at start of a line, it would output an indent
     case ("" :: strLst, nchars, isstart, aind)
-      equation
+      algorithm
         (nchars, isstart, aind)
-         = stringListString(strLst, nchars, isstart, aind);
+         := stringListString(strLst, nchars, isstart, aind);
       then
         (nchars, isstart, aind);
 
 
     //at start, new line or no new line
     case (str :: strLst, nchars, true, aind)
-      equation
-        blen = Print.getBufLength();
+      algorithm
+        blen := Print.getBufLength();
         Print.printBufSpace(nchars); //indent is actually stored in nchars when on start of the line
         Print.printBuf(str);
-        blen = Print.getBufLength() - blen;
-        hasNL = Print.hasBufNewLineAtEnd();
-        nchars = if hasNL then aind else blen;
-        (nchars, isstart, aind) = stringListString(strLst, nchars, hasNL, aind);
+        blen := Print.getBufLength() - blen;
+        hasNL := Print.hasBufNewLineAtEnd();
+        nchars := if hasNL then aind else blen;
+        (nchars, isstart, aind) := stringListString(strLst, nchars, hasNL, aind);
       then
         (nchars, isstart, aind);
 
     //not at start, new line or no new line
     case (str :: strLst, nchars, false, aind)
-      equation
-        blen = Print.getBufLength();
+      algorithm
+        blen := Print.getBufLength();
         Print.printBuf(str);
-        blen = Print.getBufLength() - blen;
-        hasNL = Print.hasBufNewLineAtEnd();
-        nchars = if hasNL then aind else nchars+blen;
-        (nchars, isstart, aind) = stringListString(strLst, nchars, hasNL, aind);
+        blen := Print.getBufLength() - blen;
+        hasNL := Print.hasBufNewLineAtEnd();
+        nchars := if hasNL then aind else nchars+blen;
+        (nchars, isstart, aind) := stringListString(strLst, nchars, hasNL, aind);
       then
         (nchars, isstart, aind);
 
@@ -1248,31 +1248,31 @@ algorithm
 
     //empty string ... for sure -> it can be a special case when allowed; when let for the case at start of a line, it would output an indent
     case ("" :: strLst, nchars, isstart, aind)
-      equation
+      algorithm
         (nchars, isstart, aind)
-         = stringListFile(file, strLst, nchars, isstart, aind);
+         := stringListFile(file, strLst, nchars, isstart, aind);
       then
         (nchars, isstart, aind);
 
 
     //at start, new line or no new line
     case (str :: strLst, nchars, true, aind)
-      equation
+      algorithm
         File.writeSpace(file, nchars);
         File.write(file, str);
-        hasNL = StringUtil.endsWithNewline(str);
-        nchars = if hasNL then aind else (nchars+stringLength(str));
-        (nchars, isstart, aind) = stringListFile(file, strLst, nchars, hasNL, aind);
+        hasNL := StringUtil.endsWithNewline(str);
+        nchars := if hasNL then aind else (nchars+stringLength(str));
+        (nchars, isstart, aind) := stringListFile(file, strLst, nchars, hasNL, aind);
       then
         (nchars, isstart, aind);
 
     //not at start, new line or no new line
     case (str :: strLst, nchars, false, aind)
-      equation
+      algorithm
         File.write(file, str);
-        hasNL = StringUtil.endsWithNewline(str);
-        nchars = if hasNL then aind else (nchars+stringLength(str));
-        (nchars, isstart, aind) = stringListFile(file, strLst, nchars, hasNL, aind);
+        hasNL := StringUtil.endsWithNewline(str);
+        nchars := if hasNL then aind else (nchars+stringLength(str));
+        (nchars, isstart, aind) := stringListFile(file, strLst, nchars, hasNL, aind);
       then
         (nchars, isstart, aind);
 
@@ -1305,80 +1305,80 @@ algorithm
       Boolean isstart;
 
     case (BT_TEXT(), toks, nchars, isstart, aind)
-      equation
+      algorithm
         (nchars, isstart, aind)
-          = tokensString(toks, nchars, isstart, aind);
+          := tokensString(toks, nchars, isstart, aind);
       then
         (nchars, isstart, aind);
 
     case (BT_INDENT(width = w), toks, nchars, true, aind)
-      equation
+      algorithm
         (tsnchars, isstart)
-          = tokensString(toks, w + nchars, true, w + aind);
-        nchars = if isstart then nchars else tsnchars; //pop indent when at the start of a line
+          := tokensString(toks, w + nchars, true, w + aind);
+        nchars := if isstart then nchars else tsnchars; //pop indent when at the start of a line
       then
         (nchars, isstart, aind);
 
     case (BT_INDENT(width = w), toks, nchars, false, aind)
-      equation
+      algorithm
         Print.printBufSpace(w);
         (tsnchars, isstart)
-          = tokensString(toks, w + nchars, false, w + aind);
-        nchars = if isstart then aind else tsnchars; //pop indent when at the start of a line - there were a new line, so use the aind
+          := tokensString(toks, w + nchars, false, w + aind);
+        nchars := if isstart then aind else tsnchars; //pop indent when at the start of a line - there were a new line, so use the aind
       then
         (nchars, isstart, aind);
 
     case (BT_ABS_INDENT(width = w), toks, nchars, true, aind)
-      equation
-        blen = Print.getBufLength();
+      algorithm
+        blen := Print.getBufLength();
         (tsnchars, isstart)
-          = tokensString(toks, 0, true, w); //discard an indent when at the start of a line
-        blen = Print.getBufLength() - blen;
-        nchars = if blen == 0 then nchars else (if isstart then aind else tsnchars); //when no chars -> pop indent; when something written -> aind for the start of a line otherwise actual position
+          := tokensString(toks, 0, true, w); //discard an indent when at the start of a line
+        blen := Print.getBufLength() - blen;
+        nchars := if blen == 0 then nchars else (if isstart then aind else tsnchars); //when no chars -> pop indent; when something written -> aind for the start of a line otherwise actual position
       then
         (nchars, isstart, aind);
 
     case (BT_ABS_INDENT(width = w), toks, nchars, false, aind)
-      equation
+      algorithm
         (tsnchars, isstart)
-          = tokensString(toks, nchars, false, w);
-        nchars = if isstart then aind else tsnchars; //pop indent when at the start of a line - there were a new line, so use the aind
+          := tokensString(toks, nchars, false, w);
+        nchars := if isstart then aind else tsnchars; //pop indent when at the start of a line - there were a new line, so use the aind
       then
         (nchars, isstart, aind);
 
     case (BT_REL_INDENT(offset = w), toks, nchars, true, aind)
-      equation
-        blen = Print.getBufLength();
+      algorithm
+        blen := Print.getBufLength();
         (tsnchars, isstart)
-          = tokensString(toks, nchars, true, aind + w);
-        blen = Print.getBufLength() - blen;
-        nchars = if blen == 0 then nchars else (if isstart then aind else tsnchars); //when no chars -> pop indent; when something written -> aind for the start of a line otherwise actual position
+          := tokensString(toks, nchars, true, aind + w);
+        blen := Print.getBufLength() - blen;
+        nchars := if blen == 0 then nchars else (if isstart then aind else tsnchars); //when no chars -> pop indent; when something written -> aind for the start of a line otherwise actual position
       then
         (nchars, isstart, aind);
 
     case (BT_REL_INDENT(offset = w), toks, nchars, false, aind)
-      equation
+      algorithm
         (tsnchars, isstart)
-          = tokensString(toks, nchars, false, aind + w);
-        nchars = if isstart then aind else tsnchars; //pop indent when at the start of a line - there were a new line, so use the aind
+          := tokensString(toks, nchars, false, aind + w);
+        nchars := if isstart then aind else tsnchars; //pop indent when at the start of a line - there were a new line, so use the aind
       then
         (nchars, isstart, aind);
 
     case (BT_ANCHOR(offset = w), toks, nchars, true, aind)
-      equation
-        blen = Print.getBufLength();
+      algorithm
+        blen := Print.getBufLength();
         (tsnchars, isstart)
-          = tokensString(toks, nchars, true, nchars + w);
-        blen = Print.getBufLength() - blen;
-        nchars = if blen == 0 then nchars else (if isstart then aind else tsnchars); //when no chars -> pop indent; when something written -> aind for the start of a line otherwise actual position
+          := tokensString(toks, nchars, true, nchars + w);
+        blen := Print.getBufLength() - blen;
+        nchars := if blen == 0 then nchars else (if isstart then aind else tsnchars); //when no chars -> pop indent; when something written -> aind for the start of a line otherwise actual position
       then
         (nchars, isstart, aind);
 
     case (BT_ANCHOR(offset = w), toks, nchars, false, aind)
-      equation
+      algorithm
         (tsnchars, isstart)
-          = tokensString(toks, nchars, false, nchars + w);
-        nchars = if isstart then aind else tsnchars; //pop indent when at the start of a line - there were a new line, so use the aind
+          := tokensString(toks, nchars, false, nchars + w);
+        nchars := if isstart then aind else tsnchars; //pop indent when at the start of a line - there were a new line, so use the aind
       then
         (nchars, isstart, aind);
 
@@ -1393,9 +1393,9 @@ algorithm
                               separator = NONE(),
                               alignNum = 0,
                               wrapWidth = 0)), toks, nchars, isstart, aind)
-      equation
+      algorithm
         (nchars, isstart, aind)
-          = tokensString(toks, nchars, isstart, aind);
+          := tokensString(toks, nchars, isstart, aind);
       then
         (nchars, isstart, aind);
 
@@ -1405,11 +1405,11 @@ algorithm
                               separator = SOME(septok),
                               alignNum = 0,
                               wrapWidth = 0)), tok :: toks, nchars, isstart, aind)
-      equation
+      algorithm
         // put the first token, all the others with separator
-        (nchars, isstart, aind) = tokString(tok, nchars, isstart, aind);
+        (nchars, isstart, aind) := tokString(tok, nchars, isstart, aind);
         (nchars, isstart)
-          = iterSeparatorString(toks, septok, nchars, isstart, aind);
+          := iterSeparatorString(toks, septok, nchars, isstart, aind);
       then
         (nchars, isstart, aind);
 
@@ -1421,11 +1421,11 @@ algorithm
                               alignSeparator = asep,
                               wrapWidth = wwidth,
                               wrapSeparator = wsep)), tok :: toks, nchars, isstart, aind)
-      equation
+      algorithm
         // put the first token, all the others with separator
-        (nchars, isstart, aind) = tokString(tok, nchars, isstart, aind);
+        (nchars, isstart, aind) := tokString(tok, nchars, isstart, aind);
         (nchars, isstart)
-          = iterSeparatorAlignWrapString(toks, septok, 1 + aoffset, anum, asep, wwidth, wsep, nchars, isstart, aind);
+          := iterSeparatorAlignWrapString(toks, septok, 1 + aoffset, anum, asep, wwidth, wsep, nchars, isstart, aind);
       then
         (nchars, isstart, aind);
 
@@ -1437,9 +1437,9 @@ algorithm
                               alignSeparator = asep,
                               wrapWidth = wwidth,
                               wrapSeparator = wsep)), toks, nchars, isstart, aind)
-      equation
+      algorithm
         (nchars, isstart)
-          = iterAlignWrapString(toks, aoffset, anum, asep, wwidth, wsep, nchars, isstart, aind);
+          := iterAlignWrapString(toks, aoffset, anum, asep, wwidth, wsep, nchars, isstart, aind);
       then
         (nchars, isstart, aind);
 
@@ -1476,11 +1476,11 @@ algorithm
         (pos, isstart);
 
     case (tok :: toks, septok, pos, isstart, aind)
-      equation
-        (pos, isstart, aind) = tokString(septok, pos, isstart, aind);
-        (pos, isstart, aind) = tokString(tok, pos, isstart, aind);
+      algorithm
+        (pos, isstart, aind) := tokString(septok, pos, isstart, aind);
+        (pos, isstart, aind) := tokString(tok, pos, isstart, aind);
         (pos, isstart)
-         = iterSeparatorString(toks, septok, pos, isstart, aind);
+         := iterSeparatorString(toks, septok, pos, isstart, aind);
       then
         (pos, isstart);
   end match;
@@ -1559,12 +1559,12 @@ algorithm
     case (tok :: toks, idx, anum, asep, wwidth, wsep, pos, isstart, aind)
       guard
         (idx > 0) and (intMod(idx,anum) == 0)
-      equation
-        (pos, isstart, aind) = tokString(asep, pos, isstart, aind);
-        (pos, isstart, aind) = tryWrapString(wwidth, wsep, pos, isstart, aind);
-        (pos, isstart, aind) = tokString(tok, pos, isstart, aind);
+      algorithm
+        (pos, isstart, aind) := tokString(asep, pos, isstart, aind);
+        (pos, isstart, aind) := tryWrapString(wwidth, wsep, pos, isstart, aind);
+        (pos, isstart, aind) := tokString(tok, pos, isstart, aind);
         (pos, isstart)
-         = iterAlignWrapString(toks, idx + 1, anum, asep, wwidth, wsep,
+         := iterAlignWrapString(toks, idx + 1, anum, asep, wwidth, wsep,
                 pos, isstart, aind);
       then
         (pos, isstart);
@@ -1573,23 +1573,23 @@ algorithm
       guard
         //false = (idx > 0) and (intMod(idx,anum) == 0);
         (wwidth > 0) and (pos >= wwidth) //check wwidth for the invariant that should be always true here
-      equation
-        (pos, isstart, aind) = tokString(wsep, pos, isstart, aind);
-        (pos, isstart, aind) = tokString(tok, pos, isstart, aind);
+      algorithm
+        (pos, isstart, aind) := tokString(wsep, pos, isstart, aind);
+        (pos, isstart, aind) := tokString(tok, pos, isstart, aind);
         (pos, isstart)
-          = iterAlignWrapString(toks, idx + 1, anum, asep, wwidth, wsep,
+          := iterAlignWrapString(toks, idx + 1, anum, asep, wwidth, wsep,
                 pos, isstart, aind);
       then
         (pos, isstart);
 
     //item only
     case (tok :: toks, idx, anum, asep, wwidth, wsep, pos, isstart, aind)
-      equation
+      algorithm
         //false = (idx > 0) and (intMod(idx,anum) == 0);
         //false = (wwidth > 0) and (pos >= wwidth); //check wwidth for the invariant that should be always true here
-        (pos, isstart, aind) = tokString(tok, pos, isstart, aind);
+        (pos, isstart, aind) := tokString(tok, pos, isstart, aind);
         (pos, isstart)
-         = iterAlignWrapString(toks, idx + 1, anum, asep, wwidth, wsep,
+         := iterAlignWrapString(toks, idx + 1, anum, asep, wwidth, wsep,
               pos, isstart, aind);
       then
         (pos, isstart);
@@ -1655,80 +1655,80 @@ algorithm
       Boolean isstart;
 
     case (BT_TEXT(), toks, nchars, isstart, aind)
-      equation
+      algorithm
         (nchars, isstart, aind)
-          = tokensFile(file, toks, nchars, isstart, aind);
+          := tokensFile(file, toks, nchars, isstart, aind);
       then
         (nchars, isstart, aind);
 
     case (BT_INDENT(width = w), toks, nchars, true, aind)
-      equation
+      algorithm
         (tsnchars, isstart)
-          = tokensFile(file, toks, w + nchars, true, w + aind);
-        nchars = if isstart then nchars else tsnchars; //pop indent when at the start of a line
+          := tokensFile(file, toks, w + nchars, true, w + aind);
+        nchars := if isstart then nchars else tsnchars; //pop indent when at the start of a line
       then
         (nchars, isstart, aind);
 
     case (BT_INDENT(width = w), toks, nchars, false, aind)
-      equation
+      algorithm
         File.writeSpace(file, w);
         (tsnchars, isstart)
-          = tokensFile(file, toks, w + nchars, false, w + aind);
-        nchars = if isstart then aind else tsnchars; //pop indent when at the start of a line - there were a new line, so use the aind
+          := tokensFile(file, toks, w + nchars, false, w + aind);
+        nchars := if isstart then aind else tsnchars; //pop indent when at the start of a line - there were a new line, so use the aind
       then
         (nchars, isstart, aind);
 
     case (BT_ABS_INDENT(width = w), toks, nchars, true, aind)
-      equation
-        blen = File.tell(file);
+      algorithm
+        blen := File.tell(file);
         (tsnchars, isstart)
-          = tokensFile(file, toks, 0, true, w); //discard an indent when at the start of a line
-        blen = File.tell(file) - blen;
-        nchars = if blen == 0 then nchars else (if isstart then aind else tsnchars); //when no chars -> pop indent; when something written -> aind for the start of a line otherwise actual position
+          := tokensFile(file, toks, 0, true, w); //discard an indent when at the start of a line
+        blen := File.tell(file) - blen;
+        nchars := if blen == 0 then nchars else (if isstart then aind else tsnchars); //when no chars -> pop indent; when something written -> aind for the start of a line otherwise actual position
       then
         (nchars, isstart, aind);
 
     case (BT_ABS_INDENT(width = w), toks, nchars, false, aind)
-      equation
+      algorithm
         (tsnchars, isstart)
-          = tokensFile(file, toks, nchars, false, w);
-        nchars = if isstart then aind else tsnchars; //pop indent when at the start of a line - there were a new line, so use the aind
+          := tokensFile(file, toks, nchars, false, w);
+        nchars := if isstart then aind else tsnchars; //pop indent when at the start of a line - there were a new line, so use the aind
       then
         (nchars, isstart, aind);
 
     case (BT_REL_INDENT(offset = w), toks, nchars, true, aind)
-      equation
-        blen = File.tell(file);
+      algorithm
+        blen := File.tell(file);
         (tsnchars, isstart)
-          = tokensFile(file, toks, nchars, true, aind + w);
-        blen = File.tell(file) - blen;
-        nchars = if blen == 0 then nchars else (if isstart then aind else tsnchars); //when no chars -> pop indent; when something written -> aind for the start of a line otherwise actual position
+          := tokensFile(file, toks, nchars, true, aind + w);
+        blen := File.tell(file) - blen;
+        nchars := if blen == 0 then nchars else (if isstart then aind else tsnchars); //when no chars -> pop indent; when something written -> aind for the start of a line otherwise actual position
       then
         (nchars, isstart, aind);
 
     case (BT_REL_INDENT(offset = w), toks, nchars, false, aind)
-      equation
+      algorithm
         (tsnchars, isstart)
-          = tokensFile(file, toks, nchars, false, aind + w);
-        nchars = if isstart then aind else tsnchars; //pop indent when at the start of a line - there were a new line, so use the aind
+          := tokensFile(file, toks, nchars, false, aind + w);
+        nchars := if isstart then aind else tsnchars; //pop indent when at the start of a line - there were a new line, so use the aind
       then
         (nchars, isstart, aind);
 
     case (BT_ANCHOR(offset = w), toks, nchars, true, aind)
-      equation
-        blen = File.tell(file);
+      algorithm
+        blen := File.tell(file);
         (tsnchars, isstart)
-          = tokensFile(file, toks, nchars, true, nchars + w);
-        blen = File.tell(file) - blen;
-        nchars = if blen == 0 then nchars else (if isstart then aind else tsnchars); //when no chars -> pop indent; when something written -> aind for the start of a line otherwise actual position
+          := tokensFile(file, toks, nchars, true, nchars + w);
+        blen := File.tell(file) - blen;
+        nchars := if blen == 0 then nchars else (if isstart then aind else tsnchars); //when no chars -> pop indent; when something written -> aind for the start of a line otherwise actual position
       then
         (nchars, isstart, aind);
 
     case (BT_ANCHOR(offset = w), toks, nchars, false, aind)
-      equation
+      algorithm
         (tsnchars, isstart)
-          = tokensFile(file, toks, nchars, false, nchars + w);
-        nchars = if isstart then aind else tsnchars; //pop indent when at the start of a line - there were a new line, so use the aind
+          := tokensFile(file, toks, nchars, false, nchars + w);
+        nchars := if isstart then aind else tsnchars; //pop indent when at the start of a line - there were a new line, so use the aind
       then
         (nchars, isstart, aind);
 
@@ -1743,9 +1743,9 @@ algorithm
                               separator = NONE(),
                               alignNum = 0,
                               wrapWidth = 0)), toks, nchars, isstart, aind)
-      equation
+      algorithm
         (nchars, isstart, aind)
-          = tokensFile(file,toks, nchars, isstart, aind);
+          := tokensFile(file,toks, nchars, isstart, aind);
       then
         (nchars, isstart, aind);
 
@@ -1755,11 +1755,11 @@ algorithm
                               separator = SOME(septok),
                               alignNum = 0,
                               wrapWidth = 0)), tok :: toks, nchars, isstart, aind)
-      equation
+      algorithm
         // put the first token, all the others with separator
-        (nchars, isstart, aind) = tokFile(file, tok, nchars, isstart, aind);
+        (nchars, isstart, aind) := tokFile(file, tok, nchars, isstart, aind);
         (nchars, isstart)
-          = iterSeparatorFile(file, toks, septok, nchars, isstart, aind);
+          := iterSeparatorFile(file, toks, septok, nchars, isstart, aind);
       then
         (nchars, isstart, aind);
 
@@ -1771,11 +1771,11 @@ algorithm
                               alignSeparator = asep,
                               wrapWidth = wwidth,
                               wrapSeparator = wsep)), tok :: toks, nchars, isstart, aind)
-      equation
+      algorithm
         // put the first token, all the others with separator
-        (nchars, isstart, aind) = tokFile(file, tok, nchars, isstart, aind);
+        (nchars, isstart, aind) := tokFile(file, tok, nchars, isstart, aind);
         (nchars, isstart)
-          = iterSeparatorAlignWrapFile(file, toks, septok, 1 + aoffset, anum, asep, wwidth, wsep, nchars, isstart, aind);
+          := iterSeparatorAlignWrapFile(file, toks, septok, 1 + aoffset, anum, asep, wwidth, wsep, nchars, isstart, aind);
       then
         (nchars, isstart, aind);
 
@@ -1787,9 +1787,9 @@ algorithm
                               alignSeparator = asep,
                               wrapWidth = wwidth,
                               wrapSeparator = wsep)), toks, nchars, isstart, aind)
-      equation
+      algorithm
         (nchars, isstart)
-          = iterAlignWrapFile(file, toks, aoffset, anum, asep, wwidth, wsep, nchars, isstart, aind);
+          := iterAlignWrapFile(file, toks, aoffset, anum, asep, wwidth, wsep, nchars, isstart, aind);
       then
         (nchars, isstart, aind);
 
@@ -1826,11 +1826,11 @@ algorithm
         (pos, isstart);
 
     case (tok :: toks, septok, pos, isstart, aind)
-      equation
-        (pos, isstart, aind) = tokFile(file, septok, pos, isstart, aind);
-        (pos, isstart, aind) = tokFile(file, tok, pos, isstart, aind);
+      algorithm
+        (pos, isstart, aind) := tokFile(file, septok, pos, isstart, aind);
+        (pos, isstart, aind) := tokFile(file, tok, pos, isstart, aind);
         (pos, isstart)
-         = iterSeparatorFile(file, toks, septok, pos, isstart, aind);
+         := iterSeparatorFile(file, toks, septok, pos, isstart, aind);
       then
         (pos, isstart);
   end match;
@@ -1911,12 +1911,12 @@ algorithm
     case (tok :: toks, idx, anum, asep, wwidth, wsep, pos, isstart, aind)
       guard
         (idx > 0) and (intMod(idx,anum) == 0)
-      equation
-        (pos, isstart, aind) = tokFile(file, asep, pos, isstart, aind);
-        (pos, isstart, aind) = tryWrapFile(file, wwidth, wsep, pos, isstart, aind);
-        (pos, isstart, aind) = tokFile(file, tok, pos, isstart, aind);
+      algorithm
+        (pos, isstart, aind) := tokFile(file, asep, pos, isstart, aind);
+        (pos, isstart, aind) := tryWrapFile(file, wwidth, wsep, pos, isstart, aind);
+        (pos, isstart, aind) := tokFile(file, tok, pos, isstart, aind);
         (pos, isstart)
-         = iterAlignWrapFile(file, toks, idx + 1, anum, asep, wwidth, wsep,
+         := iterAlignWrapFile(file, toks, idx + 1, anum, asep, wwidth, wsep,
                 pos, isstart, aind);
       then
         (pos, isstart);
@@ -1925,23 +1925,23 @@ algorithm
       guard
         //false = (idx > 0) and (intMod(idx,anum) == 0);
         (wwidth > 0) and (pos >= wwidth) //check wwidth for the invariant that should be always true here
-      equation
-        (pos, isstart, aind) = tokFile(file, wsep, pos, isstart, aind);
-        (pos, isstart, aind) = tokFile(file, tok, pos, isstart, aind);
+      algorithm
+        (pos, isstart, aind) := tokFile(file, wsep, pos, isstart, aind);
+        (pos, isstart, aind) := tokFile(file, tok, pos, isstart, aind);
         (pos, isstart)
-          = iterAlignWrapFile(file, toks, idx + 1, anum, asep, wwidth, wsep,
+          := iterAlignWrapFile(file, toks, idx + 1, anum, asep, wwidth, wsep,
                 pos, isstart, aind);
       then
         (pos, isstart);
 
     //item only
     case (tok :: toks, idx, anum, asep, wwidth, wsep, pos, isstart, aind)
-      equation
+      algorithm
         //false = (idx > 0) and (intMod(idx,anum) == 0);
         //false = (wwidth > 0) and (pos >= wwidth); //check wwidth for the invariant that should be always true here
-        (pos, isstart, aind) = tokFile(file, tok, pos, isstart, aind);
+        (pos, isstart, aind) := tokFile(file, tok, pos, isstart, aind);
         (pos, isstart)
-         = iterAlignWrapFile(file, toks, idx + 1, anum, asep, wwidth, wsep,
+         := iterAlignWrapFile(file, toks, idx + 1, anum, asep, wwidth, wsep,
               pos, isstart, aind);
       then
         (pos, isstart);
@@ -2340,11 +2340,11 @@ algorithm
       String file;
       Real rtTickTxt, rtTickW;
     case (txt, file)
-      equation
-        rtTickTxt = System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL);
+      algorithm
+        rtTickTxt := System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL);
         Print.clearBuf();
         textStringBuf(txt);
-        rtTickW = System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL);
+        rtTickW := System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL);
         Print.writeBuf(file);
         if Testsuite.isRunning() then
           System.appendFile(Testsuite.getTempFilesFile(), file + "\n");
@@ -2382,11 +2382,11 @@ algorithm
       String file;
       Real rtTickTxt, rtTickW;
     case (txt, file)
-      equation
-        rtTickTxt = System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL);
+      algorithm
+        rtTickTxt := System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL);
         Print.clearBuf();
         textStringBuf(txt);
-        rtTickW = System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL);
+        rtTickW := System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL);
         System.writeFile(file, "") /* To make realpath work */;
         if /*Config.acceptMetaModelicaGrammar() or*/ Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then
           Print.writeBufConvertLines(System.realpath(file));

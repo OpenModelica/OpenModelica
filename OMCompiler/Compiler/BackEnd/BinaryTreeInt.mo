@@ -143,13 +143,13 @@ algorithm
     case (TREENODE(value = SOME(TREEVALUE(value=rval))),_,0) then rval;
     // search right
     case (TREENODE(rightSubTree = SOME(right)),_,1)
-      equation
-        compResult = treeGet2(right, ikey);
+      algorithm
+        compResult := treeGet2(right, ikey);
       then treeGet3(right, ikey, compResult);
     // search left
     case (TREENODE(leftSubTree = SOME(left)),_,-1)
-      equation
-        compResult = treeGet2(left, ikey);
+      algorithm
+        compResult := treeGet2(left, ikey);
       then treeGet3(left, ikey, compResult);
   end match;
 end treeGet3;
@@ -168,9 +168,9 @@ algorithm
     case (bt,{}) then bt;
 
     case (bt,key::res)
-      equation
-        bt_1 = treeAdd(bt,key,0);
-        bt_2 = treeAddList(bt_1,res);
+      algorithm
+        bt_1 := treeAdd(bt,key,0);
+        bt_2 := treeAddList(bt_1,res);
       then
         bt_2;
   end match;
@@ -201,36 +201,36 @@ algorithm
         TREENODE(SOME(TREEVALUE(inKey,inValue)),NONE(),NONE());
 
     case (TREENODE(value = SOME(TREEVALUE(rkey,_)),leftSubTree = left,rightSubTree = right),_,_)
-      equation
-        0 = keyCmp(rkey,inKey);
+      algorithm
+        0 := keyCmp(rkey,inKey);
       then
         TREENODE(SOME(TREEVALUE(rkey,inValue)),left,right);
 
     case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,_)),leftSubTree = left,rightSubTree = (SOME(t))),_,_)
-      equation
-        1 = keyCmp(rkey,inKey);
-        t_1 = treeAdd(t, inKey, inValue);
+      algorithm
+        1 := keyCmp(rkey,inKey);
+        t_1 := treeAdd(t, inKey, inValue);
       then
         TREENODE(optVal,left,SOME(t_1));
 
     case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,_)),leftSubTree = left,rightSubTree = (NONE())),_,_)
-      equation
-        1 = keyCmp(rkey,inKey);
-        right_1 = treeAdd(TREENODE(NONE(),NONE(),NONE()), inKey, inValue);
+      algorithm
+        1 := keyCmp(rkey,inKey);
+        right_1 := treeAdd(TREENODE(NONE(),NONE(),NONE()), inKey, inValue);
       then
         TREENODE(optVal,left,SOME(right_1));
 
     case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,_)),leftSubTree = (SOME(t)),rightSubTree = right),_,_)
-      equation
-        -1 = keyCmp(rkey,inKey);
-        t_1 = treeAdd(t, inKey, inValue);
+      algorithm
+        -1 := keyCmp(rkey,inKey);
+        t_1 := treeAdd(t, inKey, inValue);
       then
         TREENODE(optVal,SOME(t_1),right);
 
     case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,_)),leftSubTree = (NONE()),rightSubTree = right),_,_)
-      equation
-        -1 = keyCmp(rkey,inKey);
-        left_1 = treeAdd(TREENODE(NONE(),NONE(),NONE()), inKey, inValue);
+      algorithm
+        -1 := keyCmp(rkey,inKey);
+        left_1 := treeAdd(TREENODE(NONE(),NONE(),NONE()), inKey, inValue);
       then
         TREENODE(optVal,SOME(left_1),right);
 
@@ -419,12 +419,12 @@ algorithm
       list<Value> vlst;
       BinTree bt;
     case (bt)
-      equation
-        (klst,vlst) = bintreeToList2(bt, {}, {});
+      algorithm
+        (klst,vlst) := bintreeToList2(bt, {}, {});
       then
         (klst,vlst);
     case (_)
-      equation
+      algorithm
         print("- BackendDAEUtil.bintreeToList failed\n");
       then
         fail();
@@ -451,16 +451,16 @@ algorithm
       then (klst,vlst);
 
     case (TREENODE(value = SOME(TREEVALUE(key=key,value=value)),leftSubTree = left,rightSubTree = right),klst,vlst)
-      equation
-        (klst,vlst) = bintreeToListOpt(left, klst, vlst);
-        (klst,vlst) = bintreeToListOpt(right, klst, vlst);
+      algorithm
+        (klst,vlst) := bintreeToListOpt(left, klst, vlst);
+        (klst,vlst) := bintreeToListOpt(right, klst, vlst);
       then
         ((key :: klst),(value :: vlst));
 
     case (TREENODE(value = NONE(),leftSubTree = left),klst,vlst)
-      equation
-        (klst,vlst) = bintreeToListOpt(left, klst, vlst);
-        (klst,vlst) = bintreeToListOpt(left, klst, vlst);
+      algorithm
+        (klst,vlst) := bintreeToListOpt(left, klst, vlst);
+        (klst,vlst) := bintreeToListOpt(left, klst, vlst);
       then
         (klst,vlst);
   end matchcontinue;
@@ -483,8 +483,8 @@ algorithm
     case (NONE(),klst,vlst) then (klst,vlst);
 
     case (SOME(bt),klst,vlst)
-      equation
-        (klst,vlst) = bintreeToList2(bt, klst, vlst);
+      algorithm
+        (klst,vlst) := bintreeToList2(bt, klst, vlst);
       then
         (klst,vlst);
   end match;

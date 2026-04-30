@@ -410,42 +410,42 @@ algorithm
       Tpl.Text midCode;
       list<MidCode.Function> midfuncs;
     case (_, _, SOME(daeMainFunction), daeElements, _, includes)
-      equation
+      algorithm
         // Create FunctionCode
-        (daeElements,literals) = SimCodeFunctionUtil.findLiterals(daeMainFunction::daeElements);
-        (mainFunction::fns, extraRecordDecls, includes, includeDirs, libs, libPaths) = SimCodeFunctionUtil.elaborateFunctions(program, daeElements, metarecordTypes, literals, includes);
+        (daeElements,literals) := SimCodeFunctionUtil.findLiterals(daeMainFunction::daeElements);
+        (mainFunction::fns, extraRecordDecls, includes, includeDirs, libs, libPaths) := SimCodeFunctionUtil.elaborateFunctions(program, daeElements, metarecordTypes, literals, includes);
         SimCodeFunctionUtil.checkValidMainFunction(name, mainFunction);
-        makefileParams = SimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, true);
-        fnCode = FUNCTIONCODE(name, SOME(mainFunction), fns, literals, includes, makefileParams, extraRecordDecls);
+        makefileParams := SimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, true);
+        fnCode := FUNCTIONCODE(name, SOME(mainFunction), fns, literals, includes, makefileParams, extraRecordDecls);
 
         if Config.simCodeTarget() == "MidC" then
-          _ = Tpl.tplString(CodegenCFunctions.translateFunctionHeaderFiles, fnCode);
-          midfuncs = DAEToMid.DAEFunctionsToMid(mainFunction::fns);
-          midCode = Tpl.tplCallWithFailError(CodegenMidToC.genProgram, MidCode.PROGRAM(name, midfuncs));
-          _ = Tpl.textFileConvertLines(midCode, name + ".c");
+          _ := Tpl.tplString(CodegenCFunctions.translateFunctionHeaderFiles, fnCode);
+          midfuncs := DAEToMid.DAEFunctionsToMid(mainFunction::fns);
+          midCode := Tpl.tplCallWithFailError(CodegenMidToC.genProgram, MidCode.PROGRAM(name, midfuncs));
+          _ := Tpl.textFileConvertLines(midCode, name + ".c");
         else
-          _ = Tpl.tplString(CodegenCFunctions.translateFunctions, fnCode);
+          _ := Tpl.tplString(CodegenCFunctions.translateFunctions, fnCode);
         end if;
       then
         ();
     case (_, _, NONE(), daeElements, _, includes)
-      equation
+      algorithm
         // Create FunctionCode
-        (daeElements,literals) = SimCodeFunctionUtil.findLiterals(daeElements);
-        (fns, extraRecordDecls, includes, includeDirs, libs, libPaths) = SimCodeFunctionUtil.elaborateFunctions(program, daeElements, metarecordTypes, literals, includes);
-        makefileParams = SimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, true);
+        (daeElements,literals) := SimCodeFunctionUtil.findLiterals(daeElements);
+        (fns, extraRecordDecls, includes, includeDirs, libs, libPaths) := SimCodeFunctionUtil.elaborateFunctions(program, daeElements, metarecordTypes, literals, includes);
+        makefileParams := SimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, true);
         // remove OpenModelica.threadData.ThreadData
-        fns = removeThreadDataFunction(fns, {});
-        extraRecordDecls = removeThreadDataRecord(extraRecordDecls, {});
-        fnCode = FUNCTIONCODE(name, NONE(), fns, literals, includes, makefileParams, extraRecordDecls);
+        fns := removeThreadDataFunction(fns, {});
+        extraRecordDecls := removeThreadDataRecord(extraRecordDecls, {});
+        fnCode := FUNCTIONCODE(name, NONE(), fns, literals, includes, makefileParams, extraRecordDecls);
 
         if Config.simCodeTarget() == "MidC" then
-          _ = Tpl.tplString(CodegenCFunctions.translateFunctionHeaderFiles, fnCode);
-          midfuncs = DAEToMid.DAEFunctionsToMid(fns);
-          midCode = Tpl.tplCallWithFailError(CodegenMidToC.genProgram, MidCode.PROGRAM(name, midfuncs));
-          _ = Tpl.textFileConvertLines(midCode, name + ".c");
+          _ := Tpl.tplString(CodegenCFunctions.translateFunctionHeaderFiles, fnCode);
+          midfuncs := DAEToMid.DAEFunctionsToMid(fns);
+          midCode := Tpl.tplCallWithFailError(CodegenMidToC.genProgram, MidCode.PROGRAM(name, midfuncs));
+          _ := Tpl.textFileConvertLines(midCode, name + ".c");
         else
-          _ = Tpl.tplString(CodegenCFunctions.translateFunctions, fnCode);
+          _ := Tpl.tplString(CodegenCFunctions.translateFunctions, fnCode);
         end if;
       then
         ();
@@ -469,20 +469,20 @@ algorithm
     case ({}, _) then listReverse(inAcc);
 
     case (RECORD_DECL_FULL(name = "OpenModelica_threadData_ThreadData")::rest, _)
-     equation
-       acc = removeThreadDataRecord(rest, inAcc);
+     algorithm
+       acc := removeThreadDataRecord(rest, inAcc);
      then
        acc;
 
     case (RECORD_DECL_DEF(path = Absyn.QUALIFIED("OpenModelica",Absyn.QUALIFIED("threadData",Absyn.IDENT("ThreadData"))))::rest, _)
-     equation
-       acc = removeThreadDataRecord(rest, inAcc);
+     algorithm
+       acc := removeThreadDataRecord(rest, inAcc);
      then
        acc;
 
     case (r::rest, _)
-     equation
-       acc = removeThreadDataRecord(rest, r::inAcc);
+     algorithm
+       acc := removeThreadDataRecord(rest, r::inAcc);
      then
        acc;
 
@@ -505,14 +505,14 @@ algorithm
     case ({}, _) then listReverse(inAcc);
 
     case (RECORD_CONSTRUCTOR(name = Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("OpenModelica",Absyn.QUALIFIED("threadData",Absyn.IDENT("ThreadData")))))::rest, _)
-     equation
-       acc = removeThreadDataFunction(rest, inAcc);
+     algorithm
+       acc := removeThreadDataFunction(rest, inAcc);
      then
        acc;
 
     case (f::rest, _)
-     equation
-       acc = removeThreadDataFunction(rest, f::inAcc);
+     algorithm
+       acc := removeThreadDataFunction(rest, f::inAcc);
      then
        acc;
 

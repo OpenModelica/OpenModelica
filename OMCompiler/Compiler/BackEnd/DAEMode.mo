@@ -314,12 +314,12 @@ algorithm
 
     case ({eq}, false, false, _)
       guard(List.all(vars, BackendVariable.isCSEVar))
-      equation
-        newResVars = list(BackendVariable.setVarKind(v, BackendDAE.DAE_AUX_VAR()) for v in vars);
-        new_eq = BackendEquation.setEquationAttributes(eq, BackendDAE.EQ_ATTR_DEFAULT_AUX);
-        traverserArgs.newDAEVars = BackendVariable.addNewVars(newResVars, traverserArgs.newDAEVars);
-        traverserArgs.newDAEEquations = BackendEquation.addList({new_eq}, traverserArgs.newDAEEquations);
-        traverserArgs.systemVars = BackendVariable.removeCrefs(varCrefLst, traverserArgs.systemVars);
+      algorithm
+        newResVars := list(BackendVariable.setVarKind(v, BackendDAE.DAE_AUX_VAR()) for v in vars);
+        new_eq := BackendEquation.setEquationAttributes(eq, BackendDAE.EQ_ATTR_DEFAULT_AUX);
+        traverserArgs.newDAEVars := BackendVariable.addNewVars(newResVars, traverserArgs.newDAEVars);
+        traverserArgs.newDAEEquations := BackendEquation.addList({new_eq}, traverserArgs.newDAEEquations);
+        traverserArgs.systemVars := BackendVariable.removeCrefs(varCrefLst, traverserArgs.systemVars);
         if debug then print("[DAEmode] Added solved aux vars. vars:\n" +
                       BackendDump.varListString(vars, "") + "eq:\n" +
                       BackendDump.equationListString({eq}, "") + "\n"); end if;
@@ -327,10 +327,10 @@ algorithm
         (traverserArgs);
 
     case ({eq}, false, _, true)
-      equation
-        new_eq = BackendEquation.setEquationAttributes(eq, BackendDAE.EQ_ATTR_DEFAULT_DISCRETE);
-        traverserArgs.newDAEVars = BackendVariable.addNewVars(vars, traverserArgs.newDAEVars);
-        traverserArgs.newDAEEquations = BackendEquation.addList({new_eq}, traverserArgs.newDAEEquations);
+      algorithm
+        new_eq := BackendEquation.setEquationAttributes(eq, BackendDAE.EQ_ATTR_DEFAULT_DISCRETE);
+        traverserArgs.newDAEVars := BackendVariable.addNewVars(vars, traverserArgs.newDAEVars);
+        traverserArgs.newDAEEquations := BackendEquation.addList({new_eq}, traverserArgs.newDAEEquations);
         if debug then print("[DAEmode] Create solved discrete equation. vars:\n" +
                       BackendDump.varListString(vars, "") + "eq:\n" +
                       BackendDump.equationListString({new_eq}, "") + "\n"); end if;
@@ -338,10 +338,10 @@ algorithm
         (traverserArgs);
 
     case ({eq as BackendDAE.WHEN_EQUATION()}, false, _, _)
-      equation
-        new_eq = BackendEquation.setEquationAttributes(eq, BackendDAE.EQ_ATTR_DEFAULT_DISCRETE);
-        traverserArgs.newDAEVars = BackendVariable.addNewVars(vars, traverserArgs.newDAEVars);
-        traverserArgs.newDAEEquations = BackendEquation.addList({new_eq}, traverserArgs.newDAEEquations);
+      algorithm
+        new_eq := BackendEquation.setEquationAttributes(eq, BackendDAE.EQ_ATTR_DEFAULT_DISCRETE);
+        traverserArgs.newDAEVars := BackendVariable.addNewVars(vars, traverserArgs.newDAEVars);
+        traverserArgs.newDAEEquations := BackendEquation.addList({new_eq}, traverserArgs.newDAEEquations);
         if debug then print("[DAEmode] Create solved when equation. vars:\n" +
                       BackendDump.varListString(vars, "") + "eq:\n" +
                       BackendDump.equationListString({new_eq}, "") + "\n"); end if;
@@ -349,13 +349,13 @@ algorithm
         (traverserArgs);
 
     case ({eq as BackendDAE.EQUATION()}, false, false, _)
-      equation
-        {var} = vars;
-        eq.exp = ExpressionSolve.solve(eq.exp, eq.scalar, Expression.crefExp(var.varName));
-        new_eq = BackendDAE.SOLVED_EQUATION(var.varName, eq.exp, eq.source, eq.attr);
-        new_eq = BackendEquation.setEquationAttributes(new_eq, BackendDAE.EQ_ATTR_DEFAULT_AUX);
-        traverserArgs.newDAEVars = BackendVariable.addNewVars(vars, traverserArgs.newDAEVars);
-        traverserArgs.newDAEEquations = BackendEquation.addList({new_eq}, traverserArgs.newDAEEquations);
+      algorithm
+        {var} := vars;
+        eq.exp := ExpressionSolve.solve(eq.exp, eq.scalar, Expression.crefExp(var.varName));
+        new_eq := BackendDAE.SOLVED_EQUATION(var.varName, eq.exp, eq.source, eq.attr);
+        new_eq := BackendEquation.setEquationAttributes(new_eq, BackendDAE.EQ_ATTR_DEFAULT_AUX);
+        traverserArgs.newDAEVars := BackendVariable.addNewVars(vars, traverserArgs.newDAEVars);
+        traverserArgs.newDAEEquations := BackendEquation.addList({new_eq}, traverserArgs.newDAEEquations);
         if debug then print("[DAEmode] Create solved equation. vars:\n" +
                       BackendDump.varListString(vars, "") + "eq:\n" +
                       BackendDump.equationListString({new_eq}, "") + "\n"); end if;
@@ -363,10 +363,10 @@ algorithm
         (traverserArgs);
 
     case ({eq as BackendDAE.COMPLEX_EQUATION()}, false, false, _)
-      equation
-        new_eq = BackendEquation.setEquationAttributes(eq, BackendDAE.EQ_ATTR_DEFAULT_AUX);
-        traverserArgs.newDAEVars = BackendVariable.addNewVars(vars, traverserArgs.newDAEVars);
-        traverserArgs.newDAEEquations = BackendEquation.addList({new_eq}, traverserArgs.newDAEEquations);
+      algorithm
+        new_eq := BackendEquation.setEquationAttributes(eq, BackendDAE.EQ_ATTR_DEFAULT_AUX);
+        traverserArgs.newDAEVars := BackendVariable.addNewVars(vars, traverserArgs.newDAEVars);
+        traverserArgs.newDAEEquations := BackendEquation.addList({new_eq}, traverserArgs.newDAEEquations);
         if debug then print("[DAEmode] Create solved complex equation. vars:\n" +
                       BackendDump.varListString(vars, "") + "eq:\n" +
                       BackendDump.equationListString({new_eq}, "") + "\n"); end if;
@@ -374,10 +374,10 @@ algorithm
         (traverserArgs);
 
     case ({eq as BackendDAE.ARRAY_EQUATION()}, false, false, _)
-      equation
-        new_eq = BackendEquation.setEquationAttributes(eq, BackendDAE.EQ_ATTR_DEFAULT_AUX);
-        traverserArgs.newDAEVars = BackendVariable.addNewVars(vars, traverserArgs.newDAEVars);
-        traverserArgs.newDAEEquations = BackendEquation.addList({new_eq}, traverserArgs.newDAEEquations);
+      algorithm
+        new_eq := BackendEquation.setEquationAttributes(eq, BackendDAE.EQ_ATTR_DEFAULT_AUX);
+        traverserArgs.newDAEVars := BackendVariable.addNewVars(vars, traverserArgs.newDAEVars);
+        traverserArgs.newDAEEquations := BackendEquation.addList({new_eq}, traverserArgs.newDAEEquations);
         if debug then print("[DAEmode] Create solved array equations. vars:\n" +
                       BackendDump.varListString(vars, "") + "eq:\n" +
                       BackendDump.equationListString({new_eq}, "") + "\n"); end if;
@@ -385,12 +385,12 @@ algorithm
         (traverserArgs);
 
     case ({eq as BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand)}, false, false, _)
-      equation
+      algorithm
         // check that all vars
-        true = CheckModel.isCrefListAlgorithmOutput(varCrefLst, alg, source, crefExpand);
-        new_eq = BackendEquation.setEquationAttributes(eq, BackendDAE.EQ_ATTR_DEFAULT_AUX);
-        traverserArgs.newDAEVars = BackendVariable.addNewVars(vars, traverserArgs.newDAEVars);
-        traverserArgs.newDAEEquations = BackendEquation.addList({new_eq}, traverserArgs.newDAEEquations);
+        true := CheckModel.isCrefListAlgorithmOutput(varCrefLst, alg, source, crefExpand);
+        new_eq := BackendEquation.setEquationAttributes(eq, BackendDAE.EQ_ATTR_DEFAULT_AUX);
+        traverserArgs.newDAEVars := BackendVariable.addNewVars(vars, traverserArgs.newDAEVars);
+        traverserArgs.newDAEEquations := BackendEquation.addList({new_eq}, traverserArgs.newDAEEquations);
         if debug then print("[DAEmode] Create solved algorithms. vars:\n" +
                       BackendDump.varListString(vars, "") + "eq:\n" +
                       BackendDump.equationListString({new_eq}, "") + "\n"); end if;
@@ -400,40 +400,40 @@ algorithm
     // a = f(...) and a is an array
     case ({eq as BackendDAE.ARRAY_EQUATION(left=exp)}, b1, b2, _)
       guard ( Expression.isCref(exp) and (b1 or b2))
-      equation
-        globalDAEData = traverserArgs.globalDAEData;
+      algorithm
+        globalDAEData := traverserArgs.globalDAEData;
 
-        cref = Expression.expCref(exp);
+        cref := Expression.expCref(exp);
 
         // create aux variables for recordCref
-        newAuxVars = BackendVariable.getVar(cref, traverserArgs.systemVars);
-        crlst = ComponentReference.expandCref(cref, true);
-        newAuxVars = list(BackendVariable.copyVarNewName(ComponentReference.crefPrefixAux(cr), v) threaded for cr in crlst, v in newAuxVars);
-        newAuxVars = list(BackendVariable.setVarKind(v, BackendDAE.DAE_AUX_VAR()) for v in newAuxVars);
-        traverserArgs.newDAEVars = BackendVariable.addNewVars(newAuxVars, traverserArgs.newDAEVars);
+        newAuxVars := BackendVariable.getVar(cref, traverserArgs.systemVars);
+        crlst := ComponentReference.expandCref(cref, true);
+        newAuxVars := list(BackendVariable.copyVarNewName(ComponentReference.crefPrefixAux(cr), v) threaded for cr in crlst, v in newAuxVars);
+        newAuxVars := list(BackendVariable.setVarKind(v, BackendDAE.DAE_AUX_VAR()) for v in newAuxVars);
+        traverserArgs.newDAEVars := BackendVariable.addNewVars(newAuxVars, traverserArgs.newDAEVars);
 
         // create aux equation aux = f(...)
-        newCref = ComponentReference.crefPrefixAux(cref);
-        eq.left = Expression.crefExp(newCref);
-        aux_eq = eq;
+        newCref := ComponentReference.crefPrefixAux(cref);
+        eq.left := Expression.crefExp(newCref);
+        aux_eq := eq;
 
-        aux_eq = BackendEquation.setEquationAttributes(aux_eq, BackendDAE.EQ_ATTR_DEFAULT_AUX);
-        traverserArgs.newDAEEquations = BackendEquation.addList({aux_eq}, traverserArgs.newDAEEquations);
+        aux_eq := BackendEquation.setEquationAttributes(aux_eq, BackendDAE.EQ_ATTR_DEFAULT_AUX);
+        traverserArgs.newDAEEquations := BackendEquation.addList({aux_eq}, traverserArgs.newDAEEquations);
 
         // prepare res equation aux = recordCref
-        globalDAEData = traverserArgs.globalDAEData;
-        eq.right = Expression.crefToExp(cref);
-        newResEqns = BackendEquation.equationToScalarResidualForm(eq, traverserArgs.functionTree);
+        globalDAEData := traverserArgs.globalDAEData;
+        eq.right := Expression.crefToExp(cref);
+        newResEqns := BackendEquation.equationToScalarResidualForm(eq, traverserArgs.functionTree);
         //if debug then print("case: new eqns:\n" + BackendDump.dumpEqnsStr(newResEqns) + "\n"); end if;
-        (newResEqns, newResVars, newnumResVars) = BackendEquation.convertResidualsIntoSolvedEquations(newResEqns,
+        (newResEqns, newResVars, newnumResVars) := BackendEquation.convertResidualsIntoSolvedEquations(newResEqns,
             "$DAEres", globalDAEData.numResVars, true);
-        globalDAEData.numResVars = newnumResVars;
-        newResEqns = list(BackendEquation.setEquationAttributes(e, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC) for e in newResEqns);
-        traverserArgs.newDAEVars = BackendVariable.addNewVars(newResVars, traverserArgs.newDAEVars);
-        traverserArgs.newDAEEquations = BackendEquation.addList(newResEqns, traverserArgs.newDAEEquations);
-        globalDAEData = addVarsGlobalData(globalDAEData, vars);
+        globalDAEData.numResVars := newnumResVars;
+        newResEqns := list(BackendEquation.setEquationAttributes(e, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC) for e in newResEqns);
+        traverserArgs.newDAEVars := BackendVariable.addNewVars(newResVars, traverserArgs.newDAEVars);
+        traverserArgs.newDAEEquations := BackendEquation.addList(newResEqns, traverserArgs.newDAEEquations);
+        globalDAEData := addVarsGlobalData(globalDAEData, vars);
 
-        traverserArgs.globalDAEData = globalDAEData;
+        traverserArgs.globalDAEData := globalDAEData;
         if debug then print("[DAEmode] Added residual array equation\n" +
                       BackendDump.varListString(newResVars, "") + "states:\n" +
                       BackendDump.varListString(vars, "") + "eqs:\n" +
@@ -443,17 +443,17 @@ algorithm
 
     case ({eq}, b1, b2, _)
       guard ( b1 or b2)
-      equation
-        globalDAEData = traverserArgs.globalDAEData;
-        newResEqns = BackendEquation.equationToScalarResidualForm(eq, traverserArgs.functionTree);
-        (newResEqns, newResVars, newnumResVars) = BackendEquation.convertResidualsIntoSolvedEquations(newResEqns,
+      algorithm
+        globalDAEData := traverserArgs.globalDAEData;
+        newResEqns := BackendEquation.equationToScalarResidualForm(eq, traverserArgs.functionTree);
+        (newResEqns, newResVars, newnumResVars) := BackendEquation.convertResidualsIntoSolvedEquations(newResEqns,
             "$DAEres", globalDAEData.numResVars, true);
-        globalDAEData.numResVars = newnumResVars;
-        newResEqns = list(BackendEquation.setEquationAttributes(e, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC) for e in newResEqns);
-        traverserArgs.newDAEVars = BackendVariable.addNewVars(newResVars, traverserArgs.newDAEVars);
-        traverserArgs.newDAEEquations = BackendEquation.addList(newResEqns, traverserArgs.newDAEEquations);
-        globalDAEData = addVarsGlobalData(globalDAEData, vars);
-        traverserArgs.globalDAEData = globalDAEData;
+        globalDAEData.numResVars := newnumResVars;
+        newResEqns := list(BackendEquation.setEquationAttributes(e, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC) for e in newResEqns);
+        traverserArgs.newDAEVars := BackendVariable.addNewVars(newResVars, traverserArgs.newDAEVars);
+        traverserArgs.newDAEEquations := BackendEquation.addList(newResEqns, traverserArgs.newDAEEquations);
+        globalDAEData := addVarsGlobalData(globalDAEData, vars);
+        traverserArgs.globalDAEData := globalDAEData;
         if debug then print("[DAEmode] Added strong component or state eqns\n" +
                       BackendDump.varListString(newResVars, "") + "states:\n" +
                       BackendDump.varListString(vars, "") + "eqs:\n" +
@@ -465,40 +465,40 @@ algorithm
     case ({eq as BackendDAE.COMPLEX_EQUATION(left=exp)}, _, _, _)
       guard(Expression.isCref(exp))
       //guard( List.all(list(ComponentReference.crefTypeFull(v.varName) for v in vars), Expression.isRecordType))
-      equation
+      algorithm
         if debug then print("case: Complex: " + BackendDump.equationListString(inEqns, "") + "\n"); end if;
         /*
         if debug then print("case: left:  " + ExpressionDump.dumpExpStr(exp ,0) + "\n"); end if;
         if debug then print("case: right: " + ExpressionDump.dumpExpStr(exp2,0) + "\n"); end if;
         */
-        cref = Expression.expCref(exp);
+        cref := Expression.expCref(exp);
 
         // create aux variables for recordCref
-        newAuxVars = list(BackendVariable.copyVarNewName(ComponentReference.crefPrefixAux(cr), v) threaded for cr in varCrefLst, v in vars);
-        newAuxVars = list(BackendVariable.setVarKind(v, BackendDAE.DAE_AUX_VAR()) for v in newAuxVars);
-        traverserArgs.newDAEVars = BackendVariable.addNewVars(newAuxVars, traverserArgs.newDAEVars);
+        newAuxVars := list(BackendVariable.copyVarNewName(ComponentReference.crefPrefixAux(cr), v) threaded for cr in varCrefLst, v in vars);
+        newAuxVars := list(BackendVariable.setVarKind(v, BackendDAE.DAE_AUX_VAR()) for v in newAuxVars);
+        traverserArgs.newDAEVars := BackendVariable.addNewVars(newAuxVars, traverserArgs.newDAEVars);
 
         // create aux equation aux = f(...)
-        newCref = ComponentReference.crefPrefixAux(cref);
-        eq.left = Expression.crefToExp(newCref);
-        aux_eq = eq;
+        newCref := ComponentReference.crefPrefixAux(cref);
+        eq.left := Expression.crefToExp(newCref);
+        aux_eq := eq;
 
-        aux_eq = BackendEquation.setEquationAttributes(aux_eq, BackendDAE.EQ_ATTR_DEFAULT_AUX);
-        traverserArgs.newDAEEquations = BackendEquation.addList({aux_eq}, traverserArgs.newDAEEquations);
+        aux_eq := BackendEquation.setEquationAttributes(aux_eq, BackendDAE.EQ_ATTR_DEFAULT_AUX);
+        traverserArgs.newDAEEquations := BackendEquation.addList({aux_eq}, traverserArgs.newDAEEquations);
 
         // prepare res equation aux = recordCref
-        globalDAEData = traverserArgs.globalDAEData;
-        eq.right = Expression.crefToExp(cref);
-        newResEqns = BackendEquation.equationToScalarResidualForm(eq, traverserArgs.functionTree);
+        globalDAEData := traverserArgs.globalDAEData;
+        eq.right := Expression.crefToExp(cref);
+        newResEqns := BackendEquation.equationToScalarResidualForm(eq, traverserArgs.functionTree);
         //if debug then print("case: new eqns:\n" + BackendDump.dumpEqnsStr(newResEqns) + "\n"); end if;
-        (newResEqns, newResVars, newnumResVars) = BackendEquation.convertResidualsIntoSolvedEquations(newResEqns,
+        (newResEqns, newResVars, newnumResVars) := BackendEquation.convertResidualsIntoSolvedEquations(newResEqns,
             "$DAEres", globalDAEData.numResVars, true);
-        globalDAEData.numResVars = newnumResVars;
-        newResEqns = list(BackendEquation.setEquationAttributes(e, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC) for e in newResEqns);
-        traverserArgs.newDAEVars = BackendVariable.addNewVars(newResVars, traverserArgs.newDAEVars);
-        traverserArgs.newDAEEquations = BackendEquation.addList(newResEqns, traverserArgs.newDAEEquations);
-        globalDAEData = addVarsGlobalData(globalDAEData, vars);
-        traverserArgs.globalDAEData = globalDAEData;
+        globalDAEData.numResVars := newnumResVars;
+        newResEqns := list(BackendEquation.setEquationAttributes(e, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC) for e in newResEqns);
+        traverserArgs.newDAEVars := BackendVariable.addNewVars(newResVars, traverserArgs.newDAEVars);
+        traverserArgs.newDAEEquations := BackendEquation.addList(newResEqns, traverserArgs.newDAEEquations);
+        globalDAEData := addVarsGlobalData(globalDAEData, vars);
+        traverserArgs.globalDAEData := globalDAEData;
         if debug then print("[DAEmode] Added complex residual equation with aux variables. Res-vars:\n" +
                       BackendDump.varListString(newResVars, "") + "eqs:\n" +
                       BackendDump.equationListString(newResEqns, "") + "aux vars:\n" +
@@ -617,8 +617,8 @@ algorithm
       local
       case (BackendDAE.VAR(varKind=BackendDAE.STATE())) then v;
       case (BackendDAE.VAR(varKind=BackendDAE.VARIABLE()))
-        equation
-          v = BackendVariable.setVarKind(v, BackendDAE.ALG_STATE());
+        algorithm
+          v := BackendVariable.setVarKind(v, BackendDAE.ALG_STATE());
         then v;
       else fail();
     end match;

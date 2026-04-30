@@ -276,59 +276,59 @@ algorithm
       Boolean b;
       list<ComponentRef> crefList;
 
-    case UNIT() equation
-      str = realString(unit.factor) + " * ";
+    case UNIT() algorithm
+      str := realString(unit.factor) + " * ";
 
-      b = false;
-      s = "mol^(" + intString(unit.mol) + ")";
-      s = if intEq(unit.mol, 0) then "" else s;
-      b = b or intNe(unit.mol, 0);
-      str = str + s;
+      b := false;
+      s := "mol^(" + intString(unit.mol) + ")";
+      s := if intEq(unit.mol, 0) then "" else s;
+      b := b or intNe(unit.mol, 0);
+      str := str + s;
 
-      s = if b and intNe(unit.cd, 0) then " * " else "";
-      str = str + s;
-      s = "cd^(" + intString(unit.cd) + ")";
-      s = if intEq(unit.cd, 0) then "" else s;
-      b = b or intNe(unit.cd, 0);
-      str = str + s;
+      s := if b and intNe(unit.cd, 0) then " * " else "";
+      str := str + s;
+      s := "cd^(" + intString(unit.cd) + ")";
+      s := if intEq(unit.cd, 0) then "" else s;
+      b := b or intNe(unit.cd, 0);
+      str := str + s;
 
-      s = if b and intNe(unit.m, 0) then " * " else "";
-      str = str + s;
-      s = "m^(" + intString(unit.m) + ")";
-      s = if intEq(unit.m, 0) then "" else s;
-      b = b or intNe(unit.m, 0);
-      str = str + s;
+      s := if b and intNe(unit.m, 0) then " * " else "";
+      str := str + s;
+      s := "m^(" + intString(unit.m) + ")";
+      s := if intEq(unit.m, 0) then "" else s;
+      b := b or intNe(unit.m, 0);
+      str := str + s;
 
-      s = if b and intNe(unit.s, 0) then " * " else "";
-      str = str + s;
-      s = "s^(" + intString(unit.s) + ")";
-      s = if intEq(unit.s, 0) then "" else s;
-      b = b or intNe(unit.s, 0);
-      str = str + s;
+      s := if b and intNe(unit.s, 0) then " * " else "";
+      str := str + s;
+      s := "s^(" + intString(unit.s) + ")";
+      s := if intEq(unit.s, 0) then "" else s;
+      b := b or intNe(unit.s, 0);
+      str := str + s;
 
-      s = if b and intNe(unit.A, 0) then " * " else "";
-      str = str + s;
-      s = "A^(" + intString(unit.A) + ")";
-      s = if intEq(unit.A, 0) then "" else s;
-      b = b or intNe(unit.A, 0);
-      str = str + s;
+      s := if b and intNe(unit.A, 0) then " * " else "";
+      str := str + s;
+      s := "A^(" + intString(unit.A) + ")";
+      s := if intEq(unit.A, 0) then "" else s;
+      b := b or intNe(unit.A, 0);
+      str := str + s;
 
-      s = if b and intNe(unit.K, 0) then " * " else "";
-      str = str + s;
+      s := if b and intNe(unit.K, 0) then " * " else "";
+      str := str + s;
       //s = "(K-" + realString(unit.shift) + ")^(" + intString(unit.K) + ")";
-      s = "K^(" + intString(unit.K) + ")";
-      s = if intEq(unit.K, 0) then "" else s;
-      b = b or intNe(unit.K, 0);
-      str = str + s;
+      s := "K^(" + intString(unit.K) + ")";
+      s := if intEq(unit.K, 0) then "" else s;
+      b := b or intNe(unit.K, 0);
+      str := str + s;
 
-      s = if b and intNe(unit.g, 0) then " * " else "";
-      str = str + s;
-      s = "g^(" + intString(unit.g) + ")";
-      s = if intEq(unit.g, 0) then "" else s;
-      b = b or intNe(unit.g, 0);
-      str = str + s;
+      s := if b and intNe(unit.g, 0) then " * " else "";
+      str := str + s;
+      s := "g^(" + intString(unit.g) + ")";
+      s := if intEq(unit.g, 0) then "" else s;
+      b := b or intNe(unit.g, 0);
+      str := str + s;
 
-      str = str + (if b then "" else "1");
+      str := str + (if b then "" else "1");
     then str;
 
     case MASTER()   then "MASTER(" + printListCr(unit.varList) + ")";
@@ -349,13 +349,13 @@ algorithm
 
     case {} then "";
 
-    case cr::{} equation
-      s = ComponentRef.toString(cr);
+    case cr::{} algorithm
+      s := ComponentRef.toString(cr);
     then s;
 
-    case cr::lCr equation
-      s = ComponentRef.toString(cr);
-      s = s + ", " + printListCr(lCr);
+    case cr::lCr algorithm
+      s := ComponentRef.toString(cr);
+      s := s + ", " + printListCr(lCr);
     then s;
 
   end match;
@@ -499,51 +499,51 @@ algorithm
   end if;
 
   outString := match inUnit
-    case unit as UNIT() equation
-      s = if unit.factor == 1.0 then "" else prefix2String(unit.factor);
-      b = false;
-      sExponent = if intEq(unit.mol, 1) then "" else intString(unit.mol);
-      s1 = "mol" + sExponent;
-      s1 = if intEq(unit.mol, 0) then "" else s1;
-      b = b or intNe(unit.mol, 0);
+    case unit as UNIT() algorithm
+      s := if unit.factor == 1.0 then "" else prefix2String(unit.factor);
+      b := false;
+      sExponent := if intEq(unit.mol, 1) then "" else intString(unit.mol);
+      s1 := "mol" + sExponent;
+      s1 := if intEq(unit.mol, 0) then "" else s1;
+      b := b or intNe(unit.mol, 0);
 
-      s2 = if b and intNe(unit.cd, 0) then "." else "";
-      sExponent = if intEq(unit.cd, 1) then "" else intString(unit.cd);
-      s2 = s2 + "cd" + sExponent;
-      s2 = if intEq(unit.cd, 0) then "" else s2;
-      b = b or intNe(unit.cd, 0);
+      s2 := if b and intNe(unit.cd, 0) then "." else "";
+      sExponent := if intEq(unit.cd, 1) then "" else intString(unit.cd);
+      s2 := s2 + "cd" + sExponent;
+      s2 := if intEq(unit.cd, 0) then "" else s2;
+      b := b or intNe(unit.cd, 0);
 
-      s3 = if b and intNe(unit.m, 0) then "." else "";
-      sExponent = if intEq(unit.m, 1) then "" else intString(unit.m);
-      s3 = s3 + "m" + sExponent;
-      s3 = if intEq(unit.m, 0) then "" else s3;
-      b = b or intNe(unit.m, 0);
+      s3 := if b and intNe(unit.m, 0) then "." else "";
+      sExponent := if intEq(unit.m, 1) then "" else intString(unit.m);
+      s3 := s3 + "m" + sExponent;
+      s3 := if intEq(unit.m, 0) then "" else s3;
+      b := b or intNe(unit.m, 0);
 
-      s4 = if b and intNe(unit.s, 0) then "." else "";
-      sExponent = if intEq(unit.s, 1) then "" else intString(unit.s);
-      s4 = s4 + "s" + sExponent;
-      s4 = if intEq(unit.s, 0) then "" else s4;
-      b = b or intNe(unit.s, 0);
+      s4 := if b and intNe(unit.s, 0) then "." else "";
+      sExponent := if intEq(unit.s, 1) then "" else intString(unit.s);
+      s4 := s4 + "s" + sExponent;
+      s4 := if intEq(unit.s, 0) then "" else s4;
+      b := b or intNe(unit.s, 0);
 
-      s5 = if b and intNe(unit.A, 0) then "." else "";
-      sExponent = if intEq(unit.A, 1) then "" else intString(unit.A);
-      s5 = s5 + "A" + sExponent;
-      s5 = if intEq(unit.A, 0) then "" else s5;
-      b = b or intNe(unit.A, 0);
+      s5 := if b and intNe(unit.A, 0) then "." else "";
+      sExponent := if intEq(unit.A, 1) then "" else intString(unit.A);
+      s5 := s5 + "A" + sExponent;
+      s5 := if intEq(unit.A, 0) then "" else s5;
+      b := b or intNe(unit.A, 0);
 
-      s6 = if b and intNe(unit.K, 0) then "." else "";
-      sExponent = if intEq(unit.K, 1) then "" else intString(unit.K);
-      s6 = s6 + "K" + sExponent;
-      s6 = if intEq(unit.K, 0) then "" else s6;
-      b = b or intNe(unit.K, 0);
+      s6 := if b and intNe(unit.K, 0) then "." else "";
+      sExponent := if intEq(unit.K, 1) then "" else intString(unit.K);
+      s6 := s6 + "K" + sExponent;
+      s6 := if intEq(unit.K, 0) then "" else s6;
+      b := b or intNe(unit.K, 0);
 
-      s7 = if b and intNe(unit.g, 0) then "." else "";
-      sExponent = if intEq(unit.g, 1) then "" else intString(unit.g);
-      s7 = s7 + "g" + sExponent;
-      s7 = if intEq(unit.g, 0) then "" else s7;
-      b = b or intNe(unit.g, 0);
+      s7 := if b and intNe(unit.g, 0) then "." else "";
+      sExponent := if intEq(unit.g, 1) then "" else intString(unit.g);
+      s7 := s7 + "g" + sExponent;
+      s7 := if intEq(unit.g, 0) then "" else s7;
+      b := b or intNe(unit.g, 0);
 
-      s = if b then s + s1 + s2 + s3 + s4 + s5 + s6 + s7 else "1";
+      s := if b then s + s1 + s2 + s3 + s4 + s5 + s6 + s7 else "1";
     then s;
 
     else equation
@@ -636,52 +636,52 @@ algorithm
     case ({true}, {}, _, _) then inUnit;
 
     // "1"
-    case (bMul::bRest, T_NUMBER(number=1)::tokens, _, _) equation
-      ut = NFUnit.ONE;
-      ut = if bMul then unitMul(inUnit,ut) else unitDiv(inUnit, ut);
-      ut = parser3(bRest, tokens, ut, inHtS2U);
+    case (bMul::bRest, T_NUMBER(number=1)::tokens, _, _) algorithm
+      ut := NFUnit.ONE;
+      ut := if bMul then unitMul(inUnit,ut) else unitDiv(inUnit, ut);
+      ut := parser3(bRest, tokens, ut, inHtS2U);
     then ut;
 
     // "unit^i"
-    case (bMul::bRest, T_UNIT(unit=s)::T_NUMBER(exponent)::tokens, _, _) equation
-      ut = unitToken2unit(s, inHtS2U);
-      ut = unitPow(ut, exponent);
-      ut = if bMul then unitMul(inUnit,ut) else unitDiv(inUnit, ut);
-      ut = parser3(bRest, tokens, ut, inHtS2U);
+    case (bMul::bRest, T_UNIT(unit=s)::T_NUMBER(exponent)::tokens, _, _) algorithm
+      ut := unitToken2unit(s, inHtS2U);
+      ut := unitPow(ut, exponent);
+      ut := if bMul then unitMul(inUnit,ut) else unitDiv(inUnit, ut);
+      ut := parser3(bRest, tokens, ut, inHtS2U);
     then ut;
 
     // "unit"
-    case (bMul::bRest, T_UNIT(unit=s)::tokens, _, _) equation
-      ut = unitToken2unit(s, inHtS2U);
-      ut = if bMul then unitMul(inUnit,ut) else unitDiv(inUnit, ut);
-      ut = parser3(bRest, tokens, ut, inHtS2U);
+    case (bMul::bRest, T_UNIT(unit=s)::tokens, _, _) algorithm
+      ut := unitToken2unit(s, inHtS2U);
+      ut := if bMul then unitMul(inUnit,ut) else unitDiv(inUnit, ut);
+      ut := parser3(bRest, tokens, ut, inHtS2U);
     then ut;
 
     // "*("
-    case (bMul::_, T_MUL()::T_LPAREN()::tokens, _, _) equation
-      ut = parser3(bMul::bMul::inMul, tokens, inUnit, inHtS2U);
+    case (bMul::_, T_MUL()::T_LPAREN()::tokens, _, _) algorithm
+      ut := parser3(bMul::bMul::inMul, tokens, inUnit, inHtS2U);
     then ut;
 
     // "/("
-    case (bMul::_, T_DIV()::T_LPAREN()::tokens, _, _) equation
-      b = not bMul;
-      ut = parser3(b::b::inMul, tokens, inUnit, inHtS2U);
+    case (bMul::_, T_DIV()::T_LPAREN()::tokens, _, _) algorithm
+      b := not bMul;
+      ut := parser3(b::b::inMul, tokens, inUnit, inHtS2U);
     then ut;
 
     // ")"
-    case (_::bRest, T_RPAREN()::tokens, _, _) equation
-      ut = parser3(bRest, tokens, inUnit, inHtS2U);
+    case (_::bRest, T_RPAREN()::tokens, _, _) algorithm
+      ut := parser3(bRest, tokens, inUnit, inHtS2U);
     then ut;
 
     // "*"
-    case (bMul::_, T_MUL()::tokens, _, _) equation
-      ut = parser3(bMul::inMul, tokens, inUnit, inHtS2U);
+    case (bMul::_, T_MUL()::tokens, _, _) algorithm
+      ut := parser3(bMul::inMul, tokens, inUnit, inHtS2U);
     then ut;
 
     // "/"
-    case (bMul::_, T_DIV()::tokens, _, _) equation
-      b = not bMul;
-      ut = parser3(b::inMul, tokens, inUnit, inHtS2U);
+    case (bMul::_, T_DIV()::tokens, _, _) algorithm
+      b := not bMul;
+      ut := parser3(b::inMul, tokens, inUnit, inHtS2U);
     then ut;
 
     else UNKNOWN("");
@@ -721,118 +721,118 @@ algorithm
       String s;
 
     case ("y", _) //-24
-      equation
-        _::strRest = stringListStringChar(inS2);
-        s = stringCharListString(strRest);
+      algorithm
+        _::strRest := stringListStringChar(inS2);
+        s := stringCharListString(strRest);
     then (1e-24, s);
 
     case ("z", _) //-21
-      equation
-        _::strRest = stringListStringChar(inS2);
-        s = stringCharListString(strRest);
+      algorithm
+        _::strRest := stringListStringChar(inS2);
+        s := stringCharListString(strRest);
     then (1e-21, s);
 
     case ("a", _) //-18
-      equation
-        _::strRest = stringListStringChar(inS2);
-        s = stringCharListString(strRest);
+      algorithm
+        _::strRest := stringListStringChar(inS2);
+        s := stringCharListString(strRest);
     then (1e-18, s);
 
     case ("f", _) //-15
-      equation
-        _::strRest = stringListStringChar(inS2);
-        s = stringCharListString(strRest);
+      algorithm
+        _::strRest := stringListStringChar(inS2);
+        s := stringCharListString(strRest);
     then (1e-15, s);
 
     case ("p", _) //-12
-      equation
-        _::strRest = stringListStringChar(inS2);
-        s = stringCharListString(strRest);
+      algorithm
+        _::strRest := stringListStringChar(inS2);
+        s := stringCharListString(strRest);
     then (1e-12, s);
 
     case ("u", _) //-6
-      equation
-        _::strRest = stringListStringChar(inS2);
-        s = stringCharListString(strRest);
+      algorithm
+        _::strRest := stringListStringChar(inS2);
+        s := stringCharListString(strRest);
     then (1e-6, s);
 
     case ("m", _) //-3
-      equation
-        _::strRest = stringListStringChar(inS2);
-        s = stringCharListString(strRest);
+      algorithm
+        _::strRest := stringListStringChar(inS2);
+        s := stringCharListString(strRest);
     then (1e-3, s);
 
     case ("c", _) //-2
-      equation
-        _::strRest = stringListStringChar(inS2);
-        s = stringCharListString(strRest);
+      algorithm
+        _::strRest := stringListStringChar(inS2);
+        s := stringCharListString(strRest);
     then (1e-2, s);
 
     case ("d", _)  //+1
-      equation
-        strRest = stringListStringChar(inS2);
-        "d"::"a"::strRest = strRest;
-        s = stringCharListString(strRest);
+      algorithm
+        strRest := stringListStringChar(inS2);
+        "d"::"a"::strRest := strRest;
+        s := stringCharListString(strRest);
     then (1e1, s);
 
     case ("d", _) //-1
-      equation
-        _::strRest = stringListStringChar(inS2);
-        s = stringCharListString(strRest);
+      algorithm
+        _::strRest := stringListStringChar(inS2);
+        s := stringCharListString(strRest);
     then (1e-1, s);
 
     case ("h", _) //+2
-      equation
-        _::strRest = stringListStringChar(inS2);
-        s = stringCharListString(strRest);
+      algorithm
+        _::strRest := stringListStringChar(inS2);
+        s := stringCharListString(strRest);
     then (1e2, s);
 
     case ("k", _) //+3
-      equation
-        _::strRest = stringListStringChar(inS2);
-        s = stringCharListString(strRest);
+      algorithm
+        _::strRest := stringListStringChar(inS2);
+        s := stringCharListString(strRest);
     then (1e3, s);
 
     case ("M", _) //+6
-      equation
-        _::strRest = stringListStringChar(inS2);
-        s = stringCharListString(strRest);
+      algorithm
+        _::strRest := stringListStringChar(inS2);
+        s := stringCharListString(strRest);
     then (1e6, s);
 
     case ("G", _) //+9
-      equation
-        _::strRest = stringListStringChar(inS2);
-        s = stringCharListString(strRest);
+      algorithm
+        _::strRest := stringListStringChar(inS2);
+        s := stringCharListString(strRest);
     then (1e9, s);
 
     case ("T", _) //+12
-      equation
-        _::strRest = stringListStringChar(inS2);
-        s = stringCharListString(strRest);
+      algorithm
+        _::strRest := stringListStringChar(inS2);
+        s := stringCharListString(strRest);
     then (1e12, s);
 
     case ("P", _) //+15
-      equation
-        _::strRest = stringListStringChar(inS2);
-        s = stringCharListString(strRest);
+      algorithm
+        _::strRest := stringListStringChar(inS2);
+        s := stringCharListString(strRest);
     then (1e15, s);
 
     case ("E", _) //+18
-      equation
-        _::strRest = stringListStringChar(inS2);
-        s = stringCharListString(strRest);
+      algorithm
+        _::strRest := stringListStringChar(inS2);
+        s := stringCharListString(strRest);
     then (1e18, s);
 
     case ("Z", _) //+21
-      equation
-        _::strRest = stringListStringChar(inS2);
-        s = stringCharListString(strRest);
+      algorithm
+        _::strRest := stringListStringChar(inS2);
+        s := stringCharListString(strRest);
     then (1e21, s);
 
     case ("Y", _) //+24
-      equation
-        _::strRest = stringListStringChar(inS2);
-        s = stringCharListString(strRest);
+      algorithm
+        _::strRest := stringListStringChar(inS2);
+        s := stringCharListString(strRest);
     then (1e24, s);
 
     else fail();
@@ -854,47 +854,47 @@ algorithm
 
     case {} then {};
 
-    case "."::charList equation
-      tokenList = lexer(charList);
+    case "."::charList algorithm
+      tokenList := lexer(charList);
     then T_MUL()::tokenList;
 
-    case "("::charList equation
-      tokenList = lexer(charList);
+    case "("::charList algorithm
+      tokenList := lexer(charList);
     then T_LPAREN()::tokenList;
 
-    case ")"::charList equation
-      tokenList = lexer(charList);
+    case ")"::charList algorithm
+      tokenList := lexer(charList);
     then T_RPAREN()::tokenList;
 
-    case "/"::charList equation
-      tokenList = lexer(charList);
+    case "/"::charList algorithm
+      tokenList := lexer(charList);
     then T_DIV()::tokenList;
 
-    case "+"::charList equation
-      (charList, number) = popNumber(charList);
-      false = (number == "");
-      tokenList = lexer(charList);
-      i = stringInt(number);
+    case "+"::charList algorithm
+      (charList, number) := popNumber(charList);
+      false := (number == "");
+      tokenList := lexer(charList);
+      i := stringInt(number);
     then T_NUMBER(i)::tokenList;
 
-    case "-"::charList equation
-      (charList, number) = popNumber(charList);
-      false = (number == "");
-      tokenList = lexer(charList);
-      i = -stringInt(number);
+    case "-"::charList algorithm
+      (charList, number) := popNumber(charList);
+      false := (number == "");
+      tokenList := lexer(charList);
+      i := -stringInt(number);
     then T_NUMBER(i)::tokenList;
 
-    case charList equation
-      (charList, number) = popNumber(charList);
-      false = (number == "");
-      tokenList = lexer(charList);
-      i = stringInt(number);
+    case charList algorithm
+      (charList, number) := popNumber(charList);
+      false := (number == "");
+      tokenList := lexer(charList);
+      i := stringInt(number);
     then T_NUMBER(i)::tokenList;
 
-    case charList equation
-      (charList, unit) = popUnit(charList);
-      false = (unit == "");
-      tokenList = lexer(charList);
+    case charList algorithm
+      (charList, unit) := popUnit(charList);
+      false := (unit == "");
+      tokenList := lexer(charList);
     then T_UNIT(unit)::tokenList;
 
   end matchcontinue;
@@ -913,14 +913,14 @@ algorithm
     case {}
     then ({}, "");
 
-    case s1::strRest equation
-      true = (stringCompare(s1, "a") >= 0) and (stringCompare(s1, "z") <= 0);
-      (strRest, s2) = popUnit(strRest);
+    case s1::strRest algorithm
+      true := (stringCompare(s1, "a") >= 0) and (stringCompare(s1, "z") <= 0);
+      (strRest, s2) := popUnit(strRest);
     then (strRest, s1 + s2);
 
-    case s1::strRest equation
-      true = (stringCompare(s1, "A") >= 0) and (stringCompare(s1, "Z") <= 0) ;
-      (strRest, s2) = popUnit(strRest);
+    case s1::strRest algorithm
+      true := (stringCompare(s1, "A") >= 0) and (stringCompare(s1, "Z") <= 0) ;
+      (strRest, s2) := popUnit(strRest);
     then (strRest, s1 + s2);
 
     else (inCharList, "");
@@ -941,10 +941,10 @@ algorithm
     case {}
     then ({}, "");
 
-    case s1::strRest equation
-      i = stringInt(s1);
-      true = (intString(i) == s1);
-      (strRest, s2) = popNumber(strRest);
+    case s1::strRest algorithm
+      i := stringInt(s1);
+      true := (intString(i) == s1);
+      (strRest, s2) := popNumber(strRest);
     then (strRest, s1 + s2);
 
     else (inCharList, "");

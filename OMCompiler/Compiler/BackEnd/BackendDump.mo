@@ -174,8 +174,8 @@ algorithm
     local
       String buffer;
 
-    case (_, "") equation
-      ((_, _, buffer)) = List.fold(inEqns, equationList2String, (1, 1, ""));
+    case (_, "") algorithm
+      ((_, _, buffer)) := List.fold(inEqns, equationList2String, (1, 1, ""));
     then buffer;
 
     else equation
@@ -208,7 +208,7 @@ algorithm
       Integer n;
       list<Integer> rest;
     case ({}, _) then ();
-    case ((n :: rest), _) equation
+    case ((n :: rest), _) algorithm
       printEquations(rest, syst);
       printEquationNo(n, syst);
     then ();
@@ -227,8 +227,8 @@ algorithm
       BackendDAE.Equation eq;
       BackendDAE.EquationArray eqns;
     case (eqno,BackendDAE.EQSYSTEM(orderedEqs = eqns))
-      equation
-        eq = BackendEquation.get(eqns, eqno);
+      algorithm
+        eq := BackendEquation.get(eqns, eqno);
         printEquation(eq);
       then
         ();
@@ -424,8 +424,8 @@ algorithm
     local
       String buffer;
 
-    case (_, "") equation
-      ((_, buffer)) = List.fold(inVars, var1String, (1, ""));
+    case (_, "") algorithm
+      ((_, buffer)) := List.fold(inVars, var1String, (1, ""));
     then buffer;
 
     else equation
@@ -458,8 +458,8 @@ algorithm
     local
       String buffer;
 
-    case (_, "") equation
-      ((_, buffer)) = List.fold(inVars, varNameString, (1, ""));
+    case (_, "") algorithm
+      ((_, buffer)) := List.fold(inVars, varNameString, (1, ""));
     then buffer;
 
     else equation
@@ -492,8 +492,8 @@ algorithm
     local
       String buffer;
 
-    case (_, "") equation
-      ((_, buffer)) = List.fold(inVars, var1StringIndented, (1, ""));
+    case (_, "") algorithm
+      ((_, buffer)) := List.fold(inVars, var1StringIndented, (1, ""));
     then buffer;
 
     else equation
@@ -531,14 +531,14 @@ algorithm
 
     case {} then ();
 
-    case BackendDAE.EXTOBJCLASS(path,source)::_ equation
+    case BackendDAE.EXTOBJCLASS(path,source)::_ algorithm
       print("class ");
       print(AbsynUtil.pathString(path));
       print("\n  extends ExternalObject;");
       print("\n origin: ");
-      paths = ElementSource.getElementSourceTypes(source);
-      paths_lst = list(AbsynUtil.pathString(p) for p in paths);
-      path_str = stringDelimitList(paths_lst, ", ");
+      paths := ElementSource.getElementSourceTypes(source);
+      paths_lst := list(AbsynUtil.pathString(p) for p in paths);
+      path_str := stringDelimitList(paths_lst, ", ");
       print(path_str + "\n");
       print("end ");print(AbsynUtil.pathString(path));
     then ();
@@ -870,16 +870,16 @@ algorithm
       list<String> str_r,str_t;
       String str_r_f,str_r_1,str_t_f,str_t_1,str,sr,st;
     case (residualeqns::r,tearingvars::t)
-      equation
-        str_r = List.map(residualeqns, intString);
-        str_r_f = stringDelimitList(str_r, ", ");
-        str_r_1 = stringAppend(str_r_f, "\n");
-        sr = stringAppend("ResidualEqns: ",str_r_1);
-        str_t = List.map(tearingvars, intString);
-        str_t_f = stringDelimitList(str_t, ", ");
-        str_t_1 = stringAppend(str_t_f, "\n");
-        st = stringAppend("TearingVars: ",str_t_1);
-        str = stringAppend(sr, st);
+      algorithm
+        str_r := List.map(residualeqns, intString);
+        str_r_f := stringDelimitList(str_r, ", ");
+        str_r_1 := stringAppend(str_r_f, "\n");
+        sr := stringAppend("ResidualEqns: ",str_r_1);
+        str_t := List.map(tearingvars, intString);
+        str_t_f := stringDelimitList(str_t, ", ");
+        str_t_1 := stringAppend(str_t_f, "\n");
+        st := stringAppend("TearingVars: ",str_t_1);
+        str := stringAppend(sr, st);
         print(str);
         print("\n");
         dumpTearing(r,t);
@@ -919,102 +919,102 @@ algorithm
 
     case ({}, _) then ();
 
-    case (BackendDAE.EQUATION(exp=e1, scalar=e2, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res, _) equation /*done*/
-      str = "EQUATION: ";
-      str = str + ExpressionDump.printExpStr(e1);
-      str = str + " = ";
-      str = str + ExpressionDump.printExpStr(e2);
-      str = str + " (" + equationKindString(eqKind) + ")\n";
+    case (BackendDAE.EQUATION(exp=e1, scalar=e2, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res, _) algorithm /*done*/
+      str := "EQUATION: ";
+      str := str + ExpressionDump.printExpStr(e1);
+      str := str + " = ";
+      str := str + ExpressionDump.printExpStr(e2);
+      str := str + " (" + equationKindString(eqKind) + ")\n";
       print(str);
 
-      str = "LHS:\n";
-      str = str + ExpressionDump.dumpExpStr(e1, 0);
-      str = str + "RHS:\n";
-      str = str + ExpressionDump.dumpExpStr(e2, 0);
-      str = str + "\n";
-      str = if printExpTree then str else "";
+      str := "LHS:\n";
+      str := str + ExpressionDump.dumpExpStr(e1, 0);
+      str := str + "RHS:\n";
+      str := str + ExpressionDump.dumpExpStr(e2, 0);
+      str := str + "\n";
+      str := if printExpTree then str else "";
       print(str);
 
       dumpBackendDAEEqnList2(res, printExpTree);
     then ();
 
-    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res, _) equation /*done*/
-      str = "COMPLEX_EQUATION: ";
-      str = str + ExpressionDump.printExpStr(e1);
-      str = str + " = ";
-      str = str + ExpressionDump.printExpStr(e2);
-      str = str + " (" + equationKindString(eqKind) + ")\n";
+    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res, _) algorithm /*done*/
+      str := "COMPLEX_EQUATION: ";
+      str := str + ExpressionDump.printExpStr(e1);
+      str := str + " = ";
+      str := str + ExpressionDump.printExpStr(e2);
+      str := str + " (" + equationKindString(eqKind) + ")\n";
       print(str);
 
-      str = "LHS:\n";
-      str = str + ExpressionDump.dumpExpStr(e1, 0);
-      str = str + "RHS:\n";
-      str = str + ExpressionDump.dumpExpStr(e2, 0);
-      str = str + "\n";
-      str = if printExpTree then str else "";
+      str := "LHS:\n";
+      str := str + ExpressionDump.dumpExpStr(e1, 0);
+      str := str + "RHS:\n";
+      str := str + ExpressionDump.dumpExpStr(e2, 0);
+      str := str + "\n";
+      str := if printExpTree then str else "";
       print(str);
 
       dumpBackendDAEEqnList2(res,printExpTree);
     then ();
 
-    case (BackendDAE.SOLVED_EQUATION(exp=e, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res,_) equation
+    case (BackendDAE.SOLVED_EQUATION(exp=e, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res,_) algorithm
       print("SOLVED_EQUATION: ");
-      str = ExpressionDump.printExpStr(e);
+      str := ExpressionDump.printExpStr(e);
       print(str);
       print(" (" + equationKindString(eqKind) + ")\n");
-      str = ExpressionDump.dumpExpStr(e,0);
-      str = if printExpTree then str else "";
+      str := ExpressionDump.dumpExpStr(e,0);
+      str := if printExpTree then str else "";
       print(str);
       print("\n");
       dumpBackendDAEEqnList2(res,printExpTree);
     then ();
 
-    case (BackendDAE.RESIDUAL_EQUATION(exp=e, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res, _) equation /*done*/
-      str = "RESIDUAL_EQUATION: ";
-      str = str + ExpressionDump.printExpStr(e);
-      str = str + " (" + equationKindString(eqKind) + ")\n";
+    case (BackendDAE.RESIDUAL_EQUATION(exp=e, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res, _) algorithm /*done*/
+      str := "RESIDUAL_EQUATION: ";
+      str := str + ExpressionDump.printExpStr(e);
+      str := str + " (" + equationKindString(eqKind) + ")\n";
       print(str);
 
-      str = ExpressionDump.dumpExpStr(e, 0);
-      str = str + "\n";
-      str = if printExpTree then str else "";
+      str := ExpressionDump.dumpExpStr(e, 0);
+      str := str + "\n";
+      str := if printExpTree then str else "";
       print(str);
 
       dumpBackendDAEEqnList2(res, printExpTree);
     then ();
 
-    case (BackendDAE.ARRAY_EQUATION(left=e1, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res,_) equation
+    case (BackendDAE.ARRAY_EQUATION(left=e1, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res,_) algorithm
       print("ARRAY_EQUATION: ");
-      str = ExpressionDump.printExpStr(e1);
+      str := ExpressionDump.printExpStr(e1);
       print(str);
-      str = str + " (" + equationKindString(eqKind) + ")\n";
-      str = ExpressionDump.dumpExpStr(e1,0);
-      str = if printExpTree then str else "";
+      str := str + " (" + equationKindString(eqKind) + ")\n";
+      str := ExpressionDump.dumpExpStr(e1,0);
+      str := if printExpTree then str else "";
       print(str);
       print("\n");
       dumpBackendDAEEqnList2(res,printExpTree);
     then ();
 
-    case (BackendDAE.ALGORITHM(alg=alg, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res,_) equation
+    case (BackendDAE.ALGORITHM(alg=alg, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res,_) algorithm
       print("ALGORITHM: ");
       dumpAlgorithms({alg},0);
       print(" (" + equationKindString(eqKind) + ")\n");
       dumpBackendDAEEqnList2(res,printExpTree);
     then ();
 
-    case (BackendDAE.WHEN_EQUATION(whenEquation=weqn,  attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::_, _) equation
+    case (BackendDAE.WHEN_EQUATION(whenEquation=weqn,  attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::_, _) algorithm
       print("WHEN_EQUATION: ");
-      str = whenEquationString(weqn, true);
+      str := whenEquationString(weqn, true);
       print(str);
-      str = str + " (" + equationKindString(eqKind) + ")\n";
-      e = weqn.condition;
-      str = ExpressionDump.dumpExpStr(e,0);
-      str = if printExpTree then str else "";
+      str := str + " (" + equationKindString(eqKind) + ")\n";
+      e := weqn.condition;
+      str := ExpressionDump.dumpExpStr(e,0);
+      str := if printExpTree then str else "";
       print(str);
       print("\n");
     then ();
 
-    case (_::res, _) equation
+    case (_::res, _) algorithm
       print("SKIPED EQUATION\n");
       dumpBackendDAEEqnList2(res, printExpTree);
     then ();
@@ -1052,7 +1052,7 @@ algorithm
       BackendDAE.StrongComponents comps;
     case (BackendDAE.EQSYSTEM(orderedVars=vars,
                               orderedEqs=eqns,
-                              matching=BackendDAE.MATCHING(comps=comps))) equation
+                              matching=BackendDAE.MATCHING(comps=comps))) algorithm
       dumpEqnsSolved2(comps, eqns, vars);
     then ();
 
@@ -1086,22 +1086,22 @@ algorithm
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
     case ({},_,_)  then ();
     case (BackendDAE.SINGLEEQUATION(eqn=e,var=v)::rest,_,_)
-      equation
+      algorithm
         print("SingleEquation: " + intString(e) + "\n");
-        var = BackendVariable.getVarAt(vars,v);
+        var := BackendVariable.getVarAt(vars,v);
         printVarList({var});
-        eqn = BackendEquation.get(eqns,e);
+        eqn := BackendEquation.get(eqns,e);
         printEquationList({eqn});
         print("\n");
         dumpEqnsSolved2(rest,eqns,vars);
       then
         ();
     case (BackendDAE.EQUATIONSYSTEM(eqns=elst,vars=vlst,jac=BackendDAE.FULL_JACOBIAN(jac),jacType=jacType)::rest,_,_)
-      equation
+      algorithm
         print("Equationsystem " + jacobianTypeStr(jacType) + ":\n");
-        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+        varlst := List.map1r(vlst, BackendVariable.getVarAt, vars);
         printVarList(varlst);
-        eqnlst = BackendEquation.getList(elst,eqns);
+        eqnlst := BackendEquation.getList(elst,eqns);
         printEquationList(eqnlst);
         print("\n");
         print("Jac:\n" + dumpJacobianStr(jac) + "\n");
@@ -1110,55 +1110,55 @@ algorithm
       then
         ();
     case (BackendDAE.SINGLEARRAY(eqn=e,vars=vlst)::rest,_,_)
-      equation
+      algorithm
         print("ArrayEquation:\n");
-        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+        varlst := List.map1r(vlst, BackendVariable.getVarAt, vars);
         printVarList(varlst);
-        eqn = BackendEquation.get(eqns,e);
+        eqn := BackendEquation.get(eqns,e);
         printEquationList({eqn});
         print("\n");
         dumpEqnsSolved2(rest,eqns,vars);
       then
         ();
     case (BackendDAE.SINGLEIFEQUATION(eqn=e,vars=vlst)::rest,_,_)
-      equation
+      algorithm
         print("IfEquation:\n");
-        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+        varlst := List.map1r(vlst, BackendVariable.getVarAt, vars);
         printVarList(varlst);
-        eqn = BackendEquation.get(eqns,e);
+        eqn := BackendEquation.get(eqns,e);
         printEquationList({eqn});
         print("\n");
         dumpEqnsSolved2(rest,eqns,vars);
       then
         ();
     case (BackendDAE.SINGLEALGORITHM(eqn=e,vars=vlst)::rest,_,_)
-      equation
+      algorithm
         print("Algorithm:\n");
-        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+        varlst := List.map1r(vlst, BackendVariable.getVarAt, vars);
         printVarList(varlst);
-        eqn = BackendEquation.get(eqns,e);
+        eqn := BackendEquation.get(eqns,e);
         printEquationList({eqn});
         print("\n");
         dumpEqnsSolved2(rest,eqns,vars);
       then
         ();
     case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=e,vars=vlst)::rest,_,_)
-      equation
+      algorithm
         print("ComplexEquation:\n");
-        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+        varlst := List.map1r(vlst, BackendVariable.getVarAt, vars);
         printVarList(varlst);
-        eqn = BackendEquation.get(eqns,e);
+        eqn := BackendEquation.get(eqns,e);
         printEquationList({eqn});
         print("\n");
         dumpEqnsSolved2(rest,eqns,vars);
       then
         ();
     case (BackendDAE.SINGLEWHENEQUATION(eqn=e,vars=vlst)::rest,_,_)
-      equation
+      algorithm
         print("WhenEquation:\n");
-        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+        varlst := List.map1r(vlst, BackendVariable.getVarAt, vars);
         printVarList(varlst);
-        eqn = BackendEquation.get(eqns,e);
+        eqn := BackendEquation.get(eqns,e);
         printEquationList({eqn});
         print("\n");
         dumpEqnsSolved2(rest,eqns,vars);
@@ -1166,21 +1166,21 @@ algorithm
         ();
     // no dynamic tearing
     case (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=vlst,residualequations=elst,innerEquations=innerEquations),casualTearingSet=NONE(),linear=b)::rest,_,_)
-      equation
-        s = if b then "linear" else "nonlinear";
+      algorithm
+        s := if b then "linear" else "nonlinear";
         print("torn " + s + " Equationsystem:\n");
-        (elst1,vlst1Lst,_) = List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
-        vlst1 = List.flatten(vlst1Lst);
-        varlst = List.map1r(vlst1, BackendVariable.getVarAt, vars);
+        (elst1,vlst1Lst,_) := List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
+        vlst1 := List.flatten(vlst1Lst);
+        varlst := List.map1r(vlst1, BackendVariable.getVarAt, vars);
         print("\ninternal vars (" + intString(listLength(varlst)) + ")\n");
         printVarList(varlst);
-        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+        varlst := List.map1r(vlst, BackendVariable.getVarAt, vars);
         print("\nresidual vars (" + intString(listLength(varlst)) + ")\n");
         printVarList(varlst);
-        eqnlst = BackendEquation.getList(elst1,eqns);
+        eqnlst := BackendEquation.getList(elst1,eqns);
         print("\ninternal equations (" + intString(listLength(eqnlst)) + ")\n");
         printEquationList(eqnlst);
-        eqnlst = BackendEquation.getList(elst,eqns);
+        eqnlst := BackendEquation.getList(elst,eqns);
         print("\nresidual equations (" + intString(listLength(eqnlst)) + ")\n");
         printEquationList(eqnlst);
         print("\n");
@@ -1189,49 +1189,49 @@ algorithm
         ();
     // dynamic tearing
     case (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=vlst,residualequations=elst,innerEquations=innerEquations),casualTearingSet=SOME(BackendDAE.TEARINGSET(tearingvars=vlst2,residualequations=elst2,innerEquations=innerEquations2)),linear=b)::rest,_,_)
-      equation
-        s = if b then "linear" else "nonlinear";
+      algorithm
+        s := if b then "linear" else "nonlinear";
         print("Strict torn " + s + " Equationsystem:\n");
-        (elst1,vlst1Lst,_) = List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
-        vlst1 = List.flatten(vlst1Lst);
-        varlst = List.map1r(vlst1, BackendVariable.getVarAt, vars);
+        (elst1,vlst1Lst,_) := List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
+        vlst1 := List.flatten(vlst1Lst);
+        varlst := List.map1r(vlst1, BackendVariable.getVarAt, vars);
         printVarList(varlst);
-        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+        varlst := List.map1r(vlst, BackendVariable.getVarAt, vars);
         printVarList(varlst);
         print("\n");
-        eqnlst = BackendEquation.getList(elst1,eqns);
+        eqnlst := BackendEquation.getList(elst1,eqns);
         printEquationList(eqnlst);
         print("\n");
-        eqnlst = BackendEquation.getList(elst,eqns);
+        eqnlst := BackendEquation.getList(elst,eqns);
         printEquationList(eqnlst);
         print("\n");
         dumpEqnsSolved2(rest,eqns,vars);
         print("Casual torn " + s + " Equationsystem:\n");
-        (elst1,vlst1Lst,_) = List.map_3(innerEquations2, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
-        vlst1 = List.flatten(vlst1Lst);
-        varlst = List.map1r(vlst1, BackendVariable.getVarAt, vars);
+        (elst1,vlst1Lst,_) := List.map_3(innerEquations2, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
+        vlst1 := List.flatten(vlst1Lst);
+        varlst := List.map1r(vlst1, BackendVariable.getVarAt, vars);
         printVarList(varlst);
-        varlst = List.map1r(vlst2, BackendVariable.getVarAt, vars);
+        varlst := List.map1r(vlst2, BackendVariable.getVarAt, vars);
         printVarList(varlst);
         print("\n");
-        eqnlst = BackendEquation.getList(elst1,eqns);
+        eqnlst := BackendEquation.getList(elst1,eqns);
         printEquationList(eqnlst);
         print("\n");
-        eqnlst = BackendEquation.getList(elst2,eqns);
+        eqnlst := BackendEquation.getList(elst2,eqns);
         printEquationList(eqnlst);
         print("\n");
         dumpEqnsSolved2(rest,eqns,vars);
       then
         ();
     case (_::rest,_,_)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("BackendDump.dumpEqnsSolved2 failed!");
         dumpEqnsSolved2(rest,eqns,vars);
       then
         ();
   case (_::rest,_,_)
-      equation
+      algorithm
         dumpEqnsSolved2(rest,eqns,vars);
       then
         ();
@@ -1331,15 +1331,15 @@ algorithm
       list<list<Integer>> lst;
     case ({},_,_,_) then ();
     case ((l :: lst),i,_,_)
-      equation
+      algorithm
         print("{");
-        ls = List.map(l, intString);
-        s = stringDelimitList(ls, ", ");
+        ls := List.map(l, intString);
+        s := stringDelimitList(ls, ", ");
         print(s);
         print("} ");
         dumpComponentsAdvanced3(l,v2,vars);
         print("\n");
-        i_1 = i + 1;
+        i_1 := i + 1;
         dumpComponentsAdvanced2(lst, i_1,v2,vars);
       then ();
   end match;
@@ -1363,29 +1363,29 @@ algorithm
       Boolean b;
     case ({},_,_) then ();
     case (i::{},_,_)
-      equation
-        v = v2[i];
-        var = BackendVariable.getVarAt(vars,v);
-        c = BackendVariable.varCref(var);
-        b = BackendVariable.isStateVar(var);
-        s = if b then "der(" else "";
+      algorithm
+        v := v2[i];
+        var := BackendVariable.getVarAt(vars,v);
+        c := BackendVariable.varCref(var);
+        b := BackendVariable.isStateVar(var);
+        s := if b then "der(" else "";
         print(s);
-        s = ComponentReference.printComponentRefStr(c);
+        s := ComponentReference.printComponentRefStr(c);
         print(s);
-        s = if b then ") " else " ";
+        s := if b then ") " else " ";
         print(s);
       then ();
     case (i::l,_,_)
-      equation
-        v = v2[i];
-        var = BackendVariable.getVarAt(vars,v);
-        c = BackendVariable.varCref(var);
-        b = BackendVariable.isStateVar(var);
-        s = if b then "der(" else "";
+      algorithm
+        v := v2[i];
+        var := BackendVariable.getVarAt(vars,v);
+        c := BackendVariable.varCref(var);
+        b := BackendVariable.isStateVar(var);
+        s := if b then "der(" else "";
         print(s);
-        s = ComponentReference.printComponentRefStr(c);
+        s := ComponentReference.printComponentRefStr(c);
         print(s);
-        s = if b then ") " else " ";
+        s := if b then ") " else " ";
         print(s);
         dumpComponentsAdvanced3(l,v2,vars);
       then ();
@@ -1432,115 +1432,115 @@ algorithm
       BackendDAE.EqSystem eSys;
       Boolean b;
     case BackendDAE.SINGLEEQUATION(eqn=i,var=v)
-      equation
-        tmpStr = "{" + intString(i) + ":" + intString(v) + "}\n";
+      algorithm
+        tmpStr := "{" + intString(i) + ":" + intString(v) + "}\n";
       then tmpStr;
     case BackendDAE.EQUATIONSYSTEM(eqns=ilst,vars=vlst,jacType=jacType)
-      equation
-        ls = List.map(ilst, intString);
-        s = stringDelimitList(ls, ", ");
-        ls = List.map(vlst, intString);
-        s2 = stringDelimitList(ls, ", ");
+      algorithm
+        ls := List.map(ilst, intString);
+        s := stringDelimitList(ls, ", ");
+        ls := List.map(vlst, intString);
+        s2 := stringDelimitList(ls, ", ");
 
-        tmpStr = "{" + s + ":" + s2 + "} Size: " + intString(listLength(vlst)) + " " + jacobianTypeStr(jacType) + "\n";
+        tmpStr := "{" + s + ":" + s2 + "} Size: " + intString(listLength(vlst)) + " " + jacobianTypeStr(jacType) + "\n";
       then tmpStr;
     case BackendDAE.SINGLEARRAY(eqn=i,vars=vlst)
-      equation
-        ls = List.map(vlst, intString);
-        s = stringDelimitList(ls, ", ");
-        tmpStr = "Array " + " {{" + intString(i) + ":" + s + "}}\n";
+      algorithm
+        ls := List.map(vlst, intString);
+        s := stringDelimitList(ls, ", ");
+        tmpStr := "Array " + " {{" + intString(i) + ":" + s + "}}\n";
       then tmpStr;
     case BackendDAE.SINGLEIFEQUATION(eqn=i,vars=vlst)
-      equation
-        ls = List.map(vlst, intString);
-        s = stringDelimitList(ls, ", ");
-        tmpStr = "IfEquation " + " {{" + intString(i) + ":" + s + "}}\n";
+      algorithm
+        ls := List.map(vlst, intString);
+        s := stringDelimitList(ls, ", ");
+        tmpStr := "IfEquation " + " {{" + intString(i) + ":" + s + "}}\n";
       then tmpStr;
     case BackendDAE.SINGLEALGORITHM(eqn=i,vars=vlst)
-      equation
-        ls = List.map(vlst, intString);
-        s = stringDelimitList(ls, ", ");
-        tmpStr = "Algorithm " + " {{" + intString(i) + ":" + s + "}}\n";
+      algorithm
+        ls := List.map(vlst, intString);
+        s := stringDelimitList(ls, ", ");
+        tmpStr := "Algorithm " + " {{" + intString(i) + ":" + s + "}}\n";
       then tmpStr;
     case BackendDAE.SINGLECOMPLEXEQUATION(eqn=i,vars=vlst)
-      equation
-        ls = List.map(vlst, intString);
-        s = stringDelimitList(ls, ", ");
-        tmpStr = "ComplexEquation " + " {" + intString(i) + ":" + s + "}\n";
+      algorithm
+        ls := List.map(vlst, intString);
+        s := stringDelimitList(ls, ", ");
+        tmpStr := "ComplexEquation " + " {" + intString(i) + ":" + s + "}\n";
       then tmpStr;
     case BackendDAE.SINGLEWHENEQUATION(eqn=i,vars=vlst)
-      equation
-        ls = List.map(vlst, intString);
-        s = stringDelimitList(ls, ", ");
-        tmpStr = "WhenEquation " + " {" + intString(i) + ":" + s + "}\n";
+      algorithm
+        ls := List.map(vlst, intString);
+        s := stringDelimitList(ls, ", ");
+        tmpStr := "WhenEquation " + " {" + intString(i) + ":" + s + "}\n";
       then tmpStr;
     case BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(residualequations=ilst,tearingvars=vlst,innerEquations=innerEquations),casualTearingSet=NONE(),linear=b)
-      equation
-        ls = List.map(innerEquations, innerEquationString);
-        s = stringDelimitList(ls, ", ");
-        ls = List.map(ilst, intString);
-        s2 = stringDelimitList(ls, ", ");
-        ls = List.map(vlst, intString);
-        s3 = stringDelimitList(ls, ", ");
-        s4 = if b then "linear" else "nonlinear";
-        tmpStr = "{{" + s + "}\n,{" + s2 + ":" + s3 + "}} Size: " + intString(listLength(vlst)) + " " + s4 + "\n";
+      algorithm
+        ls := List.map(innerEquations, innerEquationString);
+        s := stringDelimitList(ls, ", ");
+        ls := List.map(ilst, intString);
+        s2 := stringDelimitList(ls, ", ");
+        ls := List.map(vlst, intString);
+        s3 := stringDelimitList(ls, ", ");
+        s4 := if b then "linear" else "nonlinear";
+        tmpStr := "{{" + s + "}\n,{" + s2 + ":" + s3 + "}} Size: " + intString(listLength(vlst)) + " " + s4 + "\n";
         if isSome(inSyst) then
           if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-            SOME(eSys) = inSyst;
-            (innerEqLst,innerVarLst,_) = BackendDAEUtil.getEqnAndVarsFromInnerEquationLst(innerEquations);
-            tmpStr = tmpStr
+            SOME(eSys) := inSyst;
+            (innerEqLst,innerVarLst,_) := BackendDAEUtil.getEqnAndVarsFromInnerEquationLst(innerEquations);
+            tmpStr := tmpStr
                      + "\nTearing Variables:\n-------------------------------------\n" + dumpMarkedVars(eSys,vlst) + "\n"
                      + "Residual Equations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,ilst) + "\n"
                      + "Inner Variables:\n-------------------------------------\n" + dumpMarkedVarsLsts(eSys,innerVarLst) + "\n"
                      + "InnerEquations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,innerEqLst);
           else
-            tmpStr = tmpStr + "For more information please use \"-d=tearingdump\".\n";
+            tmpStr := tmpStr + "For more information please use \"-d=tearingdump\".\n";
           end if;
         end if;
       then tmpStr;
     case BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(residualequations=ilst,tearingvars=vlst,innerEquations=innerEquations),casualTearingSet=SOME(BackendDAE.TEARINGSET(residualequations=ilst2,tearingvars=vlst2,innerEquations=innerEquations2)),linear=b)
-      equation
-        ls = List.map(innerEquations, innerEquationString);
-        s = stringDelimitList(ls, ", ");
-        ls = List.map(ilst, intString);
-        s2 = stringDelimitList(ls, ", ");
-        ls = List.map(vlst, intString);
-        s3 = stringDelimitList(ls, ", ");
-        s4 = if b then "linear" else "nonlinear";
-        tmpStr = "{{" + s + "}\n,{" + s2 + ":" + s3 + "}} Size: " + intString(listLength(vlst)) + " " + s4 + " (strict tearing set)\n";
+      algorithm
+        ls := List.map(innerEquations, innerEquationString);
+        s := stringDelimitList(ls, ", ");
+        ls := List.map(ilst, intString);
+        s2 := stringDelimitList(ls, ", ");
+        ls := List.map(vlst, intString);
+        s3 := stringDelimitList(ls, ", ");
+        s4 := if b then "linear" else "nonlinear";
+        tmpStr := "{{" + s + "}\n,{" + s2 + ":" + s3 + "}} Size: " + intString(listLength(vlst)) + " " + s4 + " (strict tearing set)\n";
         if isSome(inSyst) then
           if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-            SOME(eSys) = inSyst;
-            (innerEqLst,innerVarLst,_) = BackendDAEUtil.getEqnAndVarsFromInnerEquationLst(innerEquations);
-            tmpStr = tmpStr
+            SOME(eSys) := inSyst;
+            (innerEqLst,innerVarLst,_) := BackendDAEUtil.getEqnAndVarsFromInnerEquationLst(innerEquations);
+            tmpStr := tmpStr
                      + "\nTearing Variables:\n-------------------------------------\n" + dumpMarkedVars(eSys,vlst) + "\n"
                      + "Residual Equations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,ilst)
                      + "Inner Variables:\n-------------------------------------\n" + dumpMarkedVarsLsts(eSys,innerVarLst) + "\n"
                      + "InnerEquations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,innerEqLst);
           else
-            tmpStr = tmpStr + "For more information please use \"-d=tearingdump\".\n";
+            tmpStr := tmpStr + "For more information please use \"-d=tearingdump\".\n";
           end if;
         end if;
 
-        ls = List.map(innerEquations2, innerEquationString);
-        s = stringDelimitList(ls, ", ");
-        ls = List.map(ilst2, intString);
-        s2 = stringDelimitList(ls, ", ");
-        ls = List.map(vlst2, intString);
-        s3 = stringDelimitList(ls, ", ");
-        s4 = if b then "linear" else "nonlinear";
-        tmpStr2 = "{{" + s + "}\n,{" + s2 + ":" + s3 + "}} Size: " + intString(listLength(vlst2)) + " " + s4 + " (casual tearing set)\n";
+        ls := List.map(innerEquations2, innerEquationString);
+        s := stringDelimitList(ls, ", ");
+        ls := List.map(ilst2, intString);
+        s2 := stringDelimitList(ls, ", ");
+        ls := List.map(vlst2, intString);
+        s3 := stringDelimitList(ls, ", ");
+        s4 := if b then "linear" else "nonlinear";
+        tmpStr2 := "{{" + s + "}\n,{" + s2 + ":" + s3 + "}} Size: " + intString(listLength(vlst2)) + " " + s4 + " (casual tearing set)\n";
         if isSome(inSyst) then
           if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-            SOME(eSys) = inSyst;
-            (innerEqLst,innerVarLst,_) = BackendDAEUtil.getEqnAndVarsFromInnerEquationLst(innerEquations2);
-            tmpStr2 = tmpStr2
+            SOME(eSys) := inSyst;
+            (innerEqLst,innerVarLst,_) := BackendDAEUtil.getEqnAndVarsFromInnerEquationLst(innerEquations2);
+            tmpStr2 := tmpStr2
                       + "\nTearing Variables:\n-------------------------------------\n" + dumpMarkedVars(eSys,vlst2) + "\n"
                       + "Residual Equations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,ilst2)
                       + "Inner Variables:\n-------------------------------------\n" + dumpMarkedVarsLsts(eSys,innerVarLst) + "\n"
                       + "InnerEquations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,innerEqLst);
           else
-            tmpStr2 = tmpStr2 + "For more information please use \"-d=tearingdump\".\n";
+            tmpStr2 := tmpStr2 + "For more information please use \"-d=tearingdump\".\n";
           end if;
         end if;
       then tmpStr + tmpStr2;
@@ -1579,73 +1579,73 @@ algorithm
       BackendDAE.InnerEquations innerEquations;
       Boolean b;
     case BackendDAE.SINGLEEQUATION(eqn=i,var=v)
-      equation
-        s = intString(i);
-        s1 = intString(v);
-        s = stringAppendList({"{",s,":",s1,"}"});
+      algorithm
+        s := intString(i);
+        s1 := intString(v);
+        s := stringAppendList({"{",s,":",s1,"}"});
       then s;
     case BackendDAE.EQUATIONSYSTEM(eqns=ilst,vars=vlst,jacType=jacType)
-      equation
-        ls = List.map(ilst, intString);
-        s = stringDelimitList(ls, ", ");
-        ls1 = List.map(vlst, intString);
-        s1 = stringDelimitList(ls1, ", ");
-        sl = intString(listLength(ilst));
-        sj = jacobianTypeStr(jacType);
-        s2 = stringAppendList({"{",s,":",s1,"} Size: ",sl," ",sj});
+      algorithm
+        ls := List.map(ilst, intString);
+        s := stringDelimitList(ls, ", ");
+        ls1 := List.map(vlst, intString);
+        s1 := stringDelimitList(ls1, ", ");
+        sl := intString(listLength(ilst));
+        sj := jacobianTypeStr(jacType);
+        s2 := stringAppendList({"{",s,":",s1,"} Size: ",sl," ",sj});
       then
         s2;
     case BackendDAE.SINGLEARRAY(eqn=i,vars=vlst)
-      equation
-        ls = List.map(vlst, intString);
-        s = stringDelimitList(ls, ", ");
-        sl = intString(i);
-        s2 = stringAppendList({"Array ",sl," {",s,"}"});
+      algorithm
+        ls := List.map(vlst, intString);
+        s := stringDelimitList(ls, ", ");
+        sl := intString(i);
+        s2 := stringAppendList({"Array ",sl," {",s,"}"});
       then
         s2;
     case BackendDAE.SINGLEIFEQUATION(eqn=i,vars=vlst)
-      equation
-        ls = List.map(vlst, intString);
-        s = stringDelimitList(ls, ", ");
-        sl = intString(i);
-        s2 = stringAppendList({"Array ",sl," {",s,"}"});
+      algorithm
+        ls := List.map(vlst, intString);
+        s := stringDelimitList(ls, ", ");
+        sl := intString(i);
+        s2 := stringAppendList({"Array ",sl," {",s,"}"});
       then
         s2;
     case BackendDAE.SINGLEALGORITHM(eqn=i,vars=vlst)
-      equation
-        ls = List.map(vlst, intString);
-        s = stringDelimitList(ls, ", ");
-        sl = intString(i);
-        s2 = stringAppendList({"Algorithm ",sl," {",s,"}"});
+      algorithm
+        ls := List.map(vlst, intString);
+        s := stringDelimitList(ls, ", ");
+        sl := intString(i);
+        s2 := stringAppendList({"Algorithm ",sl," {",s,"}"});
       then
         s2;
     case BackendDAE.SINGLECOMPLEXEQUATION(eqn=i,vars=vlst)
-      equation
-        ls = List.map(vlst, intString);
-        s = stringDelimitList(ls, ", ");
-        sl = intString(i);
-        s2 = stringAppendList({"ComplexEquation ",sl," {",s,"}"});
+      algorithm
+        ls := List.map(vlst, intString);
+        s := stringDelimitList(ls, ", ");
+        sl := intString(i);
+        s2 := stringAppendList({"ComplexEquation ",sl," {",s,"}"});
       then
         s2;
     case BackendDAE.SINGLEWHENEQUATION(eqn=i,vars=vlst)
-      equation
-        ls = List.map(vlst, intString);
-        s = stringDelimitList(ls, ", ");
-        sl = intString(i);
-        s2 = stringAppendList({"WhenEquation ",sl," {",s,"}"});
+      algorithm
+        ls := List.map(vlst, intString);
+        s := stringDelimitList(ls, ", ");
+        sl := intString(i);
+        s2 := stringAppendList({"WhenEquation ",sl," {",s,"}"});
       then
         s2;
    case BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(residualequations=ilst,tearingvars=vlst,innerEquations=innerEquations),linear=b)
-      equation
-        ls = List.map(innerEquations, innerEquationString);
-        s = stringDelimitList(ls, ", ");
-        ls = List.map(ilst, intString);
-        s1 = stringDelimitList(ls, ", ");
-        ls = List.map(vlst, intString);
-        s2 = stringDelimitList(ls, ", ");
-        sj = intString(listLength(vlst));
-        sl = if b then "linear" else "nonlinear";
-        s2 = stringAppendList({"torn ",sl," Equationsystem","{{",s,"},\n{",s1,":",s2,"} Size: ",sj});
+      algorithm
+        ls := List.map(innerEquations, innerEquationString);
+        s := stringDelimitList(ls, ", ");
+        ls := List.map(ilst, intString);
+        s1 := stringDelimitList(ls, ", ");
+        ls := List.map(vlst, intString);
+        s2 := stringDelimitList(ls, ", ");
+        sj := intString(listLength(vlst));
+        sl := if b then "linear" else "nonlinear";
+        s2 := stringAppendList({"torn ",sl," Equationsystem","{{",s,"},\n{",s1,":",s2,"} Size: ",sj});
       then
         s2;
   end match;
@@ -1698,62 +1698,62 @@ algorithm
       list<BackendDAE.Equation> eqnsfalse,eqns;
       list<BackendDAE.WhenOperator> whenStmtLst;
     case (BackendDAE.EQUATION(exp = e1,scalar = e2))
-      equation
-        s1 = ExpressionDump.printExpStr(e1);
-        s2 = ExpressionDump.printExpStr(e2);
-        res = stringAppendList({s1," = ",s2});
+      algorithm
+        s1 := ExpressionDump.printExpStr(e1);
+        s2 := ExpressionDump.printExpStr(e2);
+        res := stringAppendList({s1," = ",s2});
       then
         res;
     case (BackendDAE.COMPLEX_EQUATION(left = e1,right = e2))
-      equation
-        s1 = ExpressionDump.printExpStr(e1);
-        s2 = ExpressionDump.printExpStr(e2);
-        res = stringAppendList({s1," = ",s2});
+      algorithm
+        s1 := ExpressionDump.printExpStr(e1);
+        s2 := ExpressionDump.printExpStr(e2);
+        res := stringAppendList({s1," = ",s2});
       then
         res;
     case (BackendDAE.ARRAY_EQUATION(left = e1,right = e2))
-      equation
-        s1 = ExpressionDump.printExpStr(e1);
-        s2 = ExpressionDump.printExpStr(e2);
-        res = stringAppendList({s1," = ",s2});
+      algorithm
+        s1 := ExpressionDump.printExpStr(e1);
+        s2 := ExpressionDump.printExpStr(e2);
+        res := stringAppendList({s1," = ",s2});
       then
         res;
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2))
-      equation
-        s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = ExpressionDump.printExpStr(e2);
-        res = stringAppendList({s1," := ",s2});
+      algorithm
+        s1 := ComponentReference.printComponentRefStr(cr);
+        s2 := ExpressionDump.printExpStr(e2);
+        res := stringAppendList({s1," := ",s2});
       then
         res;
     case (BackendDAE.WHEN_EQUATION(whenEquation = weqn))
-      equation
-        res = whenEquationString(weqn, true);
+      algorithm
+        res := whenEquationString(weqn, true);
       then
         res;
     case (BackendDAE.RESIDUAL_EQUATION(exp = e))
-      equation
-        s1 = ExpressionDump.printExpStr(e);
-        res = stringAppendList({s1,"= 0"});
+      algorithm
+        s1 := ExpressionDump.printExpStr(e);
+        res := stringAppendList({s1,"= 0"});
       then
         res;
     case (BackendDAE.ALGORITHM(alg = alg,source = source))
-      equation
-        res = DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
+      algorithm
+        res := DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
       then
         res;
     case (BackendDAE.IF_EQUATION(conditions=e1::expl, eqnstrue=eqns::eqnstrue, eqnsfalse=eqnsfalse))
-      equation
-        s1 = ExpressionDump.printExpStr(e1);
-        s2 = stringDelimitList(List.map(eqns,equationString),"\n  ");
-        s3 = stringAppendList({"if ",s1," then\n  ",s2});
-        res = ifequationString(expl,eqnstrue,eqnsfalse,s3);
+      algorithm
+        s1 := ExpressionDump.printExpStr(e1);
+        s2 := stringDelimitList(List.map(eqns,equationString),"\n  ");
+        s3 := stringAppendList({"if ",s1," then\n  ",s2});
+        res := ifequationString(expl,eqnstrue,eqnsfalse,s3);
       then
         res;
     case BackendDAE.FOR_EQUATION(iter = iter, start = start, stop = stop, body = eqn)
-      equation
-        s1 = ExpressionDump.printExpStr(iter) + " in " + ExpressionDump.printExpStr(start) + " : " + ExpressionDump.printExpStr(stop);
-        s2 = equationString(eqn);
-        res = stringAppendList({"for ", s1, " loop\n    ", s2, "; end for; "});
+      algorithm
+        s1 := ExpressionDump.printExpStr(iter) + " in " + ExpressionDump.printExpStr(start) + " : " + ExpressionDump.printExpStr(stop);
+        s2 := equationString(eqn);
+        res := stringAppendList({"for ", s1, " loop\n    ", s2, "; end for; "});
       then
         res;
   end match;
@@ -1771,33 +1771,33 @@ algorithm
       Integer index_;
       list<Integer> eq;
 
-    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.RELATION(index=index_),occurEquLst = eq) equation
-      eq_s_list = List.map(eq, intString);
-      eq_s = stringDelimitList(eq_s_list, ",");
-      str = ExpressionDump.printExpStr(e);
-      str_index=intString(index_);
-      str2 = stringAppendList({str," with index = ",str_index," in equations [",eq_s,"]"});
+    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.RELATION(index=index_),occurEquLst = eq) algorithm
+      eq_s_list := List.map(eq, intString);
+      eq_s := stringDelimitList(eq_s_list, ",");
+      str := ExpressionDump.printExpStr(e);
+      str_index:=intString(index_);
+      str2 := stringAppendList({str," with index = ",str_index," in equations [",eq_s,"]"});
     then str2;
 
-    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.LBINARY(),occurEquLst = eq) equation
-      eq_s_list = List.map(eq, intString);
-      eq_s = stringDelimitList(eq_s_list, ",");
-      str = ExpressionDump.printExpStr(e);
-      str2 = stringAppendList({str," in equations [",eq_s,"]"});
+    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.LBINARY(),occurEquLst = eq) algorithm
+      eq_s_list := List.map(eq, intString);
+      eq_s := stringDelimitList(eq_s_list, ",");
+      str := ExpressionDump.printExpStr(e);
+      str2 := stringAppendList({str," in equations [",eq_s,"]"});
     then str2;
 
-    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.LUNARY(),occurEquLst = eq) equation
-      eq_s_list = List.map(eq, intString);
-      eq_s = stringDelimitList(eq_s_list, ",");
-      str = ExpressionDump.printExpStr(e);
-      str2 = stringAppendList({str," in equations [",eq_s,"]"});
+    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.LUNARY(),occurEquLst = eq) algorithm
+      eq_s_list := List.map(eq, intString);
+      eq_s := stringDelimitList(eq_s_list, ",");
+      str := ExpressionDump.printExpStr(e);
+      str2 := stringAppendList({str," in equations [",eq_s,"]"});
     then str2;
 
-    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.CALL(path = Absyn.IDENT()),occurEquLst = eq) equation
-      eq_s_list = List.map(eq, intString);
-      eq_s = stringDelimitList(eq_s_list, ",");
-      str = ExpressionDump.printExpStr(e);
-      str2 = stringAppendList({str," in equations [",eq_s,"]"});
+    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.CALL(path = Absyn.IDENT()),occurEquLst = eq) algorithm
+      eq_s_list := List.map(eq, intString);
+      eq_s := stringDelimitList(eq_s_list, ",");
+      str := ExpressionDump.printExpStr(e);
+      str2 := stringAppendList({str," in equations [",eq_s,"]"});
     then str2;
 
     else "";
@@ -2046,16 +2046,16 @@ algorithm
       Type_a a;
       list<Type_a> rest;
     case {}
-      equation
+      algorithm
         print(se);
       then ();
     case a::{}
-      equation
+      algorithm
         print(f(a));
         print(se);
       then ();
     case a::rest
-      equation
+      algorithm
         print(f(a));
         print(c);
         debuglst(rest,f,c,se);
@@ -2091,28 +2091,28 @@ algorithm
       DAE.Exp e1,e2;
       DAE.Type  ty;
     case( DAE.CALL(path = Absyn.IDENT("DIVISION"), expLst = {e1,e2,DAE.SCONST(_)}, attr = DAE.CALL_ATTR(ty = ty)), _, _)
-      equation
-        s = ExpressionDump.printExp2Str(DAE.BINARY(e1,DAE.DIV(ty),e2),stringDelimiter,opcreffunc, SOME(printCallFunction2StrDIVISION));
+      algorithm
+        s := ExpressionDump.printExp2Str(DAE.BINARY(e1,DAE.DIV(ty),e2),stringDelimiter,opcreffunc, SOME(printCallFunction2StrDIVISION));
       then
         s;
     case( DAE.CALL(path = Absyn.IDENT("DIVISION_ARRAY_SCALAR"),expLst = {e1,e2,DAE.SCONST(_)}, attr = DAE.CALL_ATTR(ty =ty)), _, _)
-      equation
-        s = ExpressionDump.printExp2Str(DAE.BINARY(e1,DAE.DIV_ARRAY_SCALAR(ty),e2),stringDelimiter,opcreffunc, SOME(printCallFunction2StrDIVISION));
+      algorithm
+        s := ExpressionDump.printExp2Str(DAE.BINARY(e1,DAE.DIV_ARRAY_SCALAR(ty),e2),stringDelimiter,opcreffunc, SOME(printCallFunction2StrDIVISION));
       then
         s;
     case( DAE.CALL(path = Absyn.IDENT("DIVISION_SCALAR_ARRAY"),expLst = {e1,e2,DAE.SCONST(_)}, attr = DAE.CALL_ATTR(ty =ty)), _, _)
-      equation
-        s = ExpressionDump.printExp2Str(DAE.BINARY(e1,DAE.DIV_SCALAR_ARRAY(ty),e2),stringDelimiter,opcreffunc, SOME(printCallFunction2StrDIVISION));
+      algorithm
+        s := ExpressionDump.printExp2Str(DAE.BINARY(e1,DAE.DIV_SCALAR_ARRAY(ty),e2),stringDelimiter,opcreffunc, SOME(printCallFunction2StrDIVISION));
       then
         s;
     case (DAE.CALL(path = fcn,expLst = args), _,_)
-      equation
-        fs = AbsynUtil.pathString(fcn);
-        argstr = stringDelimitList(
+      algorithm
+        fs := AbsynUtil.pathString(fcn);
+        argstr := stringDelimitList(
           List.map3(args, ExpressionDump.printExp2Str, stringDelimiter,opcreffunc, SOME(printCallFunction2StrDIVISION)), ",");
-        s = stringAppend(fs, "(");
-        s_1 = stringAppend(s, argstr);
-        s_2 = stringAppend(s_1, ")");
+        s := stringAppend(fs, "(");
+        s_1 := stringAppend(s, argstr);
+        s_2 := stringAppend(s_1, ")");
       then
         s_2;
   end matchcontinue;
@@ -2170,30 +2170,30 @@ algorithm
       Absyn.Path functionName;
       list<DAE.Exp> functionArgs;
     case BackendDAE.ASSIGN(left=e1, right=e)
-     equation
-      scr = ExpressionDump.printExpStr(e1);
-      se = ExpressionDump.printExpStr(e);
-      str = stringAppendList({scr," := ",se});
+     algorithm
+      scr := ExpressionDump.printExpStr(e1);
+      se := ExpressionDump.printExpStr(e);
+      str := stringAppendList({scr," := ",se});
      then
       str;
     case BackendDAE.REINIT(stateVar=cr,value=e)
-     equation
-      scr = ComponentReference.printComponentRefStr(cr);
-      se = ExpressionDump.printExpStr(e);
-      str = stringAppendList({"reinit(",scr,",",se,")"});
+     algorithm
+      scr := ComponentReference.printComponentRefStr(cr);
+      se := ExpressionDump.printExpStr(e);
+      str := stringAppendList({"reinit(",scr,",",se,")"});
      then
       str;
     case BackendDAE.ASSERT(condition=e,message=e1)
-     equation
-      se = ExpressionDump.printExpStr(e);
-      se1 = ExpressionDump.printExpStr(e1);
-      str = stringAppendList({"assert(",se,",",se1,")"});
+     algorithm
+      se := ExpressionDump.printExpStr(e);
+      se1 := ExpressionDump.printExpStr(e1);
+      str := stringAppendList({"assert(",se,",",se1,")"});
      then
       str;
     case BackendDAE.TERMINATE(message=e)
-     equation
-      se = ExpressionDump.printExpStr(e);
-      str = stringAppendList({"terminate(",se,")"});
+     algorithm
+      se := ExpressionDump.printExpStr(e);
+      str := stringAppendList({"terminate(",se,")"});
      then
       str;
     case BackendDAE.NORETCALL(exp=e)
@@ -2214,7 +2214,7 @@ algorithm
   match(inType,infunc)
     local
       Type_A a;
-    case (SOME(a), _) equation infunc(a); then();
+    case (SOME(a), _) algorithm infunc(a); then();
     else ();
   end match;
 end dumpOption;
@@ -2232,11 +2232,11 @@ algorithm
 
     case({},_) then ();
     case(DAE.ALGORITHM_STMTS(stmts)::algs,_)
-      equation
-        is = intString(indx);
-        myStream = IOStream.create("", IOStream.LIST());
-        myStream = IOStream.append(myStream,stringAppend(is,". "));
-        myStream = DAEDump.dumpAlgorithmStream(DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),DAE.emptyElementSource), myStream);
+      algorithm
+        is := intString(indx);
+        myStream := IOStream.create("", IOStream.LIST());
+        myStream := IOStream.append(myStream,stringAppend(is,". "));
+        myStream := DAEDump.dumpAlgorithmStream(DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),DAE.emptyElementSource), myStream);
         IOStream.print(myStream, IOStream.stdOutput);
         dumpAlgorithms(algs,indx+1);
     then ();
@@ -2256,11 +2256,11 @@ algorithm
 
     case({},_) then ();
     case(DAE.CONSTRAINT_EXPS(exps)::constrs,_)
-      equation
-        is = intString(indx);
-        myStream = IOStream.create("", IOStream.LIST());
-        myStream = IOStream.append(myStream,stringAppend(is,". "));
-        myStream = DAEDump.dumpConstraintStream({DAE.CONSTRAINT(DAE.CONSTRAINT_EXPS(exps),DAE.emptyElementSource)}, myStream);
+      algorithm
+        is := intString(indx);
+        myStream := IOStream.create("", IOStream.LIST());
+        myStream := IOStream.append(myStream,stringAppend(is,". "));
+        myStream := DAEDump.dumpConstraintStream({DAE.CONSTRAINT(DAE.CONSTRAINT_EXPS(exps),DAE.emptyElementSource)}, myStream);
         IOStream.print(myStream, IOStream.stdOutput);
         dumpConstraints(constrs,indx+1);
     then ();
@@ -2303,8 +2303,8 @@ algorithm
     String sparsepatternStr;
     case({},_) then ();
     case(elem::rest,_)
-      equation
-      sparsepatternStr = List.toString(elem, intString,"Row[" + intString(inInteger) + "] = ","{",";","}",true);
+      algorithm
+      sparsepatternStr := List.toString(elem, intString,"Row[" + intString(inInteger) + "] = ","{",";","}",true);
       print(sparsepatternStr + "\n");
       dumpSparsePattern2(rest,inInteger+1);
     then ();
@@ -2324,9 +2324,9 @@ algorithm
       String res_1;
       list<tuple<Integer, Integer, BackendDAE.Equation>> eqns;
     case (SOME(eqns))
-      equation
-        res = dumpJacobianStr2(eqns);
-        res_1 = stringDelimitList(res, ",\n");
+      algorithm
+        res := dumpJacobianStr2(eqns);
+        res_1 := stringDelimitList(res, ",\n");
       then
         res_1;
     case (NONE()) then "No analytic jacobian available\n";
@@ -2348,12 +2348,12 @@ algorithm
       list<tuple<Integer, Integer, BackendDAE.Equation>> eqns;
     case ({}) then {};
     case (((row,col,BackendDAE.RESIDUAL_EQUATION(exp = e)) :: eqns))
-      equation
-        estr = ExpressionDump.printExpStr(e);
-        rowstr = intString(row);
-        colstr = intString(col);
-        str = stringAppendList({"{",rowstr,",",colstr,"}:",estr});
-        strs = dumpJacobianStr2(eqns);
+      algorithm
+        estr := ExpressionDump.printExpStr(e);
+        rowstr := intString(row);
+        colstr := intString(col);
+        str := stringAppendList({"{",rowstr,",",colstr,"}:",estr});
+        strs := dumpJacobianStr2(eqns);
       then
         (str :: strs);
   end match;
@@ -2387,16 +2387,16 @@ algorithm
       BackendDAE.SparseColoring coloring;
       String s;
   case(BackendDAE.FULL_JACOBIAN(jacobian=fJac))
-    equation
-      s = "###############\n" +
+    algorithm
+      s := "###############\n" +
           " FULL_JACOBIAN \n" +
           "###############\n\n" +
           dumpJacobianStr(fJac);
       print(s);
     then "";
   case(BackendDAE.GENERIC_JACOBIAN(jacobian=SOME(sJac),sparsePattern=sparsePattern))
-    equation
-      ((dae,_,_,_,_, _)) = sJac;
+    algorithm
+      ((dae,_,_,_,_, _)) := sJac;
       print("##################\n" +
             " GENERIC_JACOBIAN \n" +
             "##################\n\n");
@@ -2404,7 +2404,7 @@ algorithm
       dumpSparsityPattern(sparsePattern,"Sparse Pattern");
     then "";
   case(BackendDAE.GENERIC_JACOBIAN(jacobian=NONE(),sparsePattern=sparsePattern))
-    equation
+    algorithm
       print("##################\n" +
             " GENERIC_JACOBIAN \n" +
             "##################\n\n");
@@ -2412,7 +2412,7 @@ algorithm
     then "";
 
   case(BackendDAE.EMPTY_JACOBIAN())
-    equation
+    algorithm
       print("################\n" +
             " EMPTY_JACOBIAN \n" +
             "################\n\n");
@@ -2432,15 +2432,15 @@ algorithm
       BackendDAE.SparseColoring coloring;
       String s;
   case((SOME(sJac), sparsePattern, _))
-    equation
-      ((dae,_,_,_,_, _)) = sJac;
-      s = "GENERIC JACOBIAN:\n";
+    algorithm
+      ((dae,_,_,_,_, _)) := sJac;
+      s := "GENERIC JACOBIAN:\n";
       dumpBackendDAE(dae,"Directional Derivatives System");
       dumpSparsityPattern(sparsePattern,"Sparse Pattern");
     then s;
   case((NONE(), sparsePattern, _))
-    equation
-      s = "GENERIC JACOBIAN:\n";
+    algorithm
+      s := "GENERIC JACOBIAN:\n";
       dumpSparsityPattern(sparsePattern,"Sparse Pattern");
     then s;
 
@@ -2472,12 +2472,12 @@ algorithm
 
     case ({},_,acc) then listReverse(acc);
     case ((eqn :: eqns),index,acc)
-      equation
-        es = equationString(eqn);
-        is = intString(index);
-        str = (is + " : ") + es;
-        index_1 = index + 1;
-        acc = str::acc;
+      algorithm
+        es := equationString(eqn);
+        is := intString(index);
+        str := (is + " : ") + es;
+        index_1 := index + 1;
+        acc := str::acc;
       then dumpEqnsStr2(eqns, index_1, acc);
   end match;
 end dumpEqnsStr2;
@@ -2497,21 +2497,21 @@ algorithm
       DAE.Exp e;
       list<DAE.Exp> elst;
     case ({},_,{},_)
-      equation
-        s = stringAppendList({iString,"\nend if"});
+      algorithm
+        s := stringAppendList({iString,"\nend if"});
       then
         s;
     case ({},_,_,_)
-      equation
-        seqns = stringDelimitList(List.map(eqnsfalse,equationString),"\n  ");
-        s = stringAppendList({iString,"\nelse\n  ",seqns,"\nend if"});
+      algorithm
+        seqns := stringDelimitList(List.map(eqnsfalse,equationString),"\n  ");
+        s := stringAppendList({iString,"\nelse\n  ",seqns,"\nend if"});
       then
         s;
     case(e::elst,eqns::eqnslst,_,_)
-      equation
-        se = ExpressionDump.printExpStr(e);
-        seqns = stringDelimitList(List.map(eqns,equationString),"\n  ");
-        s = stringAppendList({iString,"\nelseif ",se," then\n  ",seqns});
+      algorithm
+        se := ExpressionDump.printExpStr(e);
+        seqns := stringDelimitList(List.map(eqns,equationString),"\n  ");
+        s := stringAppendList({iString,"\nelseif ",se," then\n  ",seqns});
       then
         ifequationString(elst,eqnslst,eqnsfalse,s);
   end match;
@@ -2624,7 +2624,7 @@ algorithm
     case SOME(DAE.VAR_ATTR_REAL(min=NONE(),max=NONE(),start=NONE(),fixed=NONE(),nominal=NONE(),stateSelectOption=NONE(),isProtected=NONE(),finalPrefix=NONE(),distributionOption=NONE()))
      then ();
     case SOME(DAE.VAR_ATTR_REAL(min=min,max=max,start=start,fixed=fixed,nominal=nominal,stateSelectOption=stateSelectOption,isProtected=isProtected,finalPrefix=finalPrefix,distributionOption=dist))
-      equation
+      algorithm
         dumpOptExpression(min,"min");
         dumpOptExpression(max,"max");
         dumpOptExpression(start,"start");
@@ -2638,7 +2638,7 @@ algorithm
     case SOME(DAE.VAR_ATTR_INT(min=NONE(),max=NONE(),start=NONE(),fixed=NONE(),isProtected=NONE(),finalPrefix=NONE(),distributionOption=NONE()))
      then ();
     case SOME(DAE.VAR_ATTR_INT(min=min,max=max,start=start,fixed=fixed,isProtected=isProtected,finalPrefix=finalPrefix,distributionOption=dist))
-      equation
+      algorithm
         dumpOptExpression(min,"min");
         dumpOptExpression(max,"max");
         dumpOptExpression(start,"start");
@@ -2650,7 +2650,7 @@ algorithm
     case SOME(DAE.VAR_ATTR_BOOL(start=NONE(),fixed=NONE(),isProtected=NONE(),finalPrefix=NONE()))
       then ();
     case SOME(DAE.VAR_ATTR_BOOL(start=start,fixed=fixed,isProtected=isProtected,finalPrefix=finalPrefix))
-      equation
+      algorithm
         dumpOptExpression(start,"start");
         dumpOptExpression(fixed,"fixed");
         dumpOptBoolean(isProtected,"protected");
@@ -2659,7 +2659,7 @@ algorithm
     case SOME(DAE.VAR_ATTR_STRING(start=NONE(),isProtected=NONE(),finalPrefix=NONE()))
      then ();
     case SOME(DAE.VAR_ATTR_STRING(start=start,isProtected=isProtected,finalPrefix=finalPrefix))
-      equation
+      algorithm
         dumpOptExpression(start,"start");
         dumpOptBoolean(isProtected,"protected");
         dumpOptBoolean(finalPrefix,"final");
@@ -2667,7 +2667,7 @@ algorithm
     case SOME(DAE.VAR_ATTR_ENUMERATION(min=NONE(),max=NONE(),start=NONE(),fixed=NONE(),isProtected=NONE(),finalPrefix=NONE()))
      then ();
     case SOME(DAE.VAR_ATTR_ENUMERATION(min=min,max=max,start=start,fixed=fixed,isProtected=isProtected,finalPrefix=finalPrefix))
-      equation
+      algorithm
         dumpOptExpression(min,"min");
         dumpOptExpression(max,"max");
         dumpOptExpression(start,"start");
@@ -2689,7 +2689,7 @@ algorithm
     DAE.Exp e1,e2,e3;
 
     case(NONE()) then ();
-    case(SOME(DAE.DISTRIBUTION(e1,e2,e3))) equation
+    case(SOME(DAE.DISTRIBUTION(e1,e2,e3))) algorithm
       print("distribution = Distribution("+ExpressionDump.printExpStr(e1)+", "
       +ExpressionDump.printExpStr(e2)+", "
       +ExpressionDump.printExpStr(e3)+")");
@@ -2705,11 +2705,11 @@ protected function dumpOptStateSelection "
 algorithm
   _ := match(ss)
   local
-    case(SOME(DAE.NEVER())) equation print("stateSelect=StateSelect.never "); then ();
-    case(SOME(DAE.AVOID())) equation print("stateSelect=StateSelect.avoid "); then ();
+    case(SOME(DAE.NEVER())) algorithm print("stateSelect=StateSelect.never "); then ();
+    case(SOME(DAE.AVOID())) algorithm print("stateSelect=StateSelect.avoid "); then ();
     case(SOME(DAE.DEFAULT())) then ();
-    case(SOME(DAE.PREFER())) equation print("stateSelect=StateSelect.prefer "); then ();
-    case(SOME(DAE.ALWAYS())) equation print("stateSelect=StateSelect.alwas "); then ();
+    case(SOME(DAE.PREFER())) algorithm print("stateSelect=StateSelect.prefer "); then ();
+    case(SOME(DAE.ALWAYS())) algorithm print("stateSelect=StateSelect.alwas "); then ();
     else ();
   end match;
 end dumpOptStateSelection;
@@ -2725,9 +2725,9 @@ algorithm
        DAE.Exp e;
        String s,se,str;
     case (SOME(e),s)
-      equation
-         se = ExpressionDump.printExpStr(e);
-         str = stringAppendList({s," = ",se," "});
+      algorithm
+         se := ExpressionDump.printExpStr(e);
+         str := stringAppendList({s," = ",se," "});
          print(str);
      then ();
     else ();
@@ -2744,8 +2744,8 @@ algorithm
     local
        String s,str;
     case (SOME(true),s)
-      equation
-         str = stringAppendList({s," = true "});
+      algorithm
+         str := stringAppendList({s," = true "});
          print(str);
      then ();
     else ();
@@ -2770,35 +2770,35 @@ algorithm
     case SOME(DAE.VAR_ATTR_REAL(min=NONE(),max=NONE(),start=NONE(),unit=NONE(),fixed=NONE(),nominal=NONE(),stateSelectOption=NONE(),isProtected=NONE(),finalPrefix=NONE(),distributionOption=NONE(),uncertainOption=NONE()))
      then "";
     case SOME(DAE.VAR_ATTR_REAL(min=min,max=max,start=start,unit=unit,fixed=fixed,nominal=nominal,stateSelectOption=stateSelectOption,isProtected=isProtected,finalPrefix=finalPrefix,distributionOption=dist,uncertainOption=uncertainopt))
-      equation
-        str = optExpressionString(min,"min") + optExpressionString(max,"max") + optExpressionString(start,"start") + optExpressionString(unit,"unit") + optExpressionString(fixed,"fixed")
+      algorithm
+        str := optExpressionString(min,"min") + optExpressionString(max,"max") + optExpressionString(start,"start") + optExpressionString(unit,"unit") + optExpressionString(fixed,"fixed")
              + optExpressionString(nominal,"nominal") + optStateSelectionString(stateSelectOption) + optBooleanString(isProtected,"protected")
              + optBooleanString(finalPrefix,"final") + optDistributionString(dist) + optUncertainty(uncertainopt);
      then str;
     case SOME(DAE.VAR_ATTR_INT(min=NONE(),max=NONE(),start=NONE(),fixed=NONE(),isProtected=NONE(),finalPrefix=NONE(),distributionOption=NONE(),uncertainOption=NONE()))
      then "";
     case SOME(DAE.VAR_ATTR_INT(min=min,max=max,start=start,fixed=fixed,isProtected=isProtected,finalPrefix=finalPrefix,uncertainOption=uncertainopt))
-      equation
-        str = optExpressionString(min,"min") + optExpressionString(max,"max") + optExpressionString(start,"start") + optExpressionString(fixed,"fixed")
+      algorithm
+        str := optExpressionString(min,"min") + optExpressionString(max,"max") + optExpressionString(start,"start") + optExpressionString(fixed,"fixed")
              + optBooleanString(isProtected,"protected") + optBooleanString(finalPrefix,"final") + optUncertainty(uncertainopt);
      then str;
     case SOME(DAE.VAR_ATTR_BOOL(start=NONE(),fixed=NONE(),isProtected=NONE(),finalPrefix=NONE()))
       then "";
     case SOME(DAE.VAR_ATTR_BOOL(start=start,fixed=fixed,isProtected=isProtected,finalPrefix=finalPrefix))
-      equation
-        str = optExpressionString(start,"start") + optExpressionString(fixed,"fixed") + optBooleanString(isProtected,"protected") + optBooleanString(finalPrefix,"final");
+      algorithm
+        str := optExpressionString(start,"start") + optExpressionString(fixed,"fixed") + optBooleanString(isProtected,"protected") + optBooleanString(finalPrefix,"final");
      then str;
     case SOME(DAE.VAR_ATTR_STRING(start=NONE(),isProtected=NONE(),finalPrefix=NONE()))
      then "";
     case SOME(DAE.VAR_ATTR_STRING(start=start,isProtected=isProtected,finalPrefix=finalPrefix))
-      equation
-        str = optExpressionString(start,"start") + optBooleanString(isProtected,"protected") + optBooleanString(finalPrefix,"final");
+      algorithm
+        str := optExpressionString(start,"start") + optBooleanString(isProtected,"protected") + optBooleanString(finalPrefix,"final");
      then str;
     case SOME(DAE.VAR_ATTR_ENUMERATION(min=NONE(),max=NONE(),start=NONE(),fixed=NONE(),isProtected=NONE(),finalPrefix=NONE()))
      then "";
     case SOME(DAE.VAR_ATTR_ENUMERATION(min=min,max=max,start=start,fixed=fixed,isProtected=isProtected,finalPrefix=finalPrefix))
-      equation
-        str = optExpressionString(min,"min") + optExpressionString(max,"max") + optExpressionString(start,"start") + optExpressionString(fixed,"fixed")
+      algorithm
+        str := optExpressionString(min,"min") + optExpressionString(max,"max") + optExpressionString(start,"start") + optExpressionString(fixed,"fixed")
              + optBooleanString(isProtected,"protected") + optBooleanString(finalPrefix,"final");
      then str;
     else "";
@@ -2816,8 +2816,8 @@ algorithm
       String str;
     case(NONE()) then "";
     case(SOME(DAE.DISTRIBUTION(e1,e2,e3)))
-      equation
-        str =  "distribution = Distribution(" + ExpressionDump.printExpStr(e1) + ", "
+      algorithm
+        str :=  "distribution = Distribution(" + ExpressionDump.printExpStr(e1) + ", "
              + ExpressionDump.printExpStr(e2) + ", "
              + ExpressionDump.printExpStr(e3) + ")";
     then str;
@@ -2894,8 +2894,8 @@ algorithm
     case BackendDAE.DISCRETE_EQUATION() then "discrete";
     case BackendDAE.UNKNOWN_EQUATION_KIND() then "unknown";
     case BackendDAE.CLOCKED_EQUATION(i)
-      equation
-        cr = DAE.CREF_IDENT(BackendDAE.WHENCLK_PRREFIX + intString(i), DAE.T_CLOCK_DEFAULT, {});
+      algorithm
+        cr := DAE.CREF_IDENT(BackendDAE.WHENCLK_PRREFIX + intString(i), DAE.T_CLOCK_DEFAULT, {});
       then "clocked(" + DAE.ComponentReference.printComponentRefStr(cr) + ")";
     else
       equation
@@ -2926,9 +2926,9 @@ algorithm
        DAE.Exp e;
        String se,str;
     case (SOME(e),_)
-      equation
-         se = ExpressionDump.printExpStr(e);
-         str = inString + " = " + se + " ";
+      algorithm
+         se := ExpressionDump.printExpStr(e);
+         str := inString + " = " + se + " ";
      then str;
     else "";
   end match;
@@ -2945,8 +2945,8 @@ algorithm
     local
        String str;
     case (SOME(true),_)
-      equation
-         str = inString + " = true ";
+      algorithm
+         str := inString + " = true ";
      then str;
     else "";
   end match;
@@ -2999,13 +2999,13 @@ algorithm
       Integer x;
       list<Integer> xs;
     case ({})
-      equation
+      algorithm
         print("\n");
       then
         ();
     case ((x :: xs))
-      equation
-        s = intString(x);
+      algorithm
+        s := intString(x);
         print(s);
         print(" ");
         dumpAdjacencyRow(xs);
@@ -3066,7 +3066,7 @@ algorithm
       list<BackendDAE.AdjacencyMatrixElementEnhanced> rows;
     case ({},_) then ();
     case ((row :: rows),_)
-      equation
+      algorithm
         print(intString(rowIndex));print(":");
         dumpAdjacencyRowEnhanced(row);
         dumpAdjacencyMatrixEnhanced2(rows,rowIndex+1);
@@ -3088,24 +3088,24 @@ algorithm
       BackendDAE.AdjacencyMatrixElementEnhanced xs;
       BackendDAE.Constraints cons;
     case ({})
-      equation
+      algorithm
         print("\n");
       then
         ();
     case (((x,solva,{}) :: xs))
-      equation
-        s = intString(x);
-        s1 = dumpSolvability(solva);
+      algorithm
+        s := intString(x);
+        s1 := dumpSolvability(solva);
         print("(" + s + "," + s1 + ")");
         print(" ");
         dumpAdjacencyRowEnhanced(xs);
       then
         ();
     case (((x,solva,cons) :: xs))
-      equation
-        s = intString(x);
-        s1 = dumpSolvability(solva);
-        s2 = ExpressionDump.constraintDTlistToString(cons,",");
+      algorithm
+        s := intString(x);
+        s1 := dumpSolvability(solva);
+        s2 := ExpressionDump.constraintDTlistToString(cons,",");
         print("(" + s + "," + s1 + s2 +")");
         print(" ");
         dumpAdjacencyRowEnhanced(xs);
@@ -3142,11 +3142,11 @@ algorithm
       array<Integer> ass1;
       BackendDAE.StrongComponents comps;
 
-    case (BackendDAE.NO_MATCHING()) equation
+    case (BackendDAE.NO_MATCHING()) algorithm
       print("no matching\n");
     then ();
 
-    case (BackendDAE.MATCHING(ass1, _, comps)) equation
+    case (BackendDAE.MATCHING(ass1, _, comps)) algorithm
       dumpMatching(ass1);
       print("\n\n");
       dumpComponents(comps,inSyst);
@@ -3181,11 +3181,11 @@ algorithm
       Integer eqn;
       String s,s2;
     case (_,_,_)
-      equation
-        true = intLe(i,len);
-        s = intString(i);
-        eqn = v[i];
-        s2 = intString(eqn);
+      algorithm
+        true := intLe(i,len);
+        s := intString(i);
+        eqn := v[i];
+        s2 := intString(eqn);
         print("var " + s + " is solved in eqn " + s2 + "\n");
         dumpMatching2(v, i+1, len);
       then
@@ -3399,13 +3399,13 @@ algorithm
       list<list<Integer>> lst;
     case ({},_) then ();
     case ((l :: lst),i)
-      equation
+      algorithm
         print("{");
-        ls = List.map(List.sort(l,intGt), intString);
-        s = stringDelimitList(ls, ", ");
+        ls := List.map(List.sort(l,intGt), intString);
+        s := stringDelimitList(ls, ", ");
         print(s);
         print("}\n");
-        i_1 = i + 1;
+        i_1 := i + 1;
         dumpComponents2(lst, i_1);
       then
         ();
@@ -3469,10 +3469,10 @@ algorithm
       DAE.ComponentRef cr;
       String scr;
     case (v,pos)
-      equation
-        true = BackendVariable.isStateVar(v);
-        cr = BackendVariable.varCref(v);
-        scr = ComponentReference.printComponentRefStr(cr);
+      algorithm
+        true := BackendVariable.isStateVar(v);
+        cr := BackendVariable.varCref(v);
+        scr := ComponentReference.printComponentRefStr(cr);
         print(intString(pos)); print(": ");
         print(scr); print("\n");
       then (v,pos+1);
@@ -3490,14 +3490,14 @@ algorithm
       BackendDAE.Shared shared;
       String str, strlow;
 
-    case _ equation
-      Flags.STRING_FLAG(data=str) = Flags.getConfigValue(Flags.DUMP_TARGET);
-      strlow = System.tolower(str);
-      true = intGt(System.stringFind(strlow, ".html"), 0);
+    case _ algorithm
+      Flags.STRING_FLAG(data=str) := Flags.getConfigValue(Flags.DUMP_TARGET);
+      strlow := System.tolower(str);
+      true := intGt(System.stringFind(strlow, ".html"), 0);
       DumpHTML.dumpDAE(inDAE, headerline, str);
     then ();
 
-    case BackendDAE.DAE(eqs, shared) equation
+    case BackendDAE.DAE(eqs, shared) algorithm
       print(headerline + ":\n");
       List.map_0(eqs, printEqSystem);
       print("\n");
@@ -3781,18 +3781,18 @@ algorithm
       DAE.ComponentRef cr;
       list<DAE.ComponentRef> states,discvars;
 
-    case (v,(inp,st,states,dvar,discvars)) equation
-      true = BackendVariable.isStateVar(v);
-      cr = BackendVariable.varCref(v);
+    case (v,(inp,st,states,dvar,discvars)) algorithm
+      true := BackendVariable.isStateVar(v);
+      cr := BackendVariable.varCref(v);
     then (v,(inp,st+1,cr::states,dvar,discvars));
 
-    case (v,(inp,st,states,dvar,discvars)) equation
-      true = BackendVariable.isVarDiscrete(v);
-      cr = BackendVariable.varCref(v);
+    case (v,(inp,st,states,dvar,discvars)) algorithm
+      true := BackendVariable.isVarDiscrete(v);
+      cr := BackendVariable.varCref(v);
     then (v,(inp,st,states,dvar+1,cr::discvars));
 
-    case (v,(inp,st,states,dvar,discvars)) equation
-      true = BackendVariable.isVarOnTopLevelAndInput(v);
+    case (v,(inp,st,states,dvar,discvars)) algorithm
+      true := BackendVariable.isVarOnTopLevelAndInput(v);
     then (v,(inp+1,st,states,dvar,discvars));
 
     else (inVar,inTpl);
@@ -3837,57 +3837,57 @@ algorithm
     case (BackendDAE.SINGLEWHENEQUATION(),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,teqsys,teqsys2))
     then ((seq,salg,sarr,sce,swe+1,sie,eqsys,meqsys,teqsys,teqsys2));
 
-    case (BackendDAE.EQUATIONSYSTEM(eqns=ilst,jacType=BackendDAE.JAC_CONSTANT()),(seq,salg,sarr,sce,swe,sie,(e_jc,e_jt,e_jn,e_nj),meqsys,teqsys,teqsys2)) equation
-        e = listLength(ilst);
+    case (BackendDAE.EQUATIONSYSTEM(eqns=ilst,jacType=BackendDAE.JAC_CONSTANT()),(seq,salg,sarr,sce,swe,sie,(e_jc,e_jt,e_jn,e_nj),meqsys,teqsys,teqsys2)) algorithm
+        e := listLength(ilst);
     then ((seq,salg,sarr,sce,swe,sie,(e::e_jc,e_jt,e_jn,e_nj),meqsys,teqsys,teqsys2));
 
     case (BackendDAE.EQUATIONSYSTEM(eqns=ilst,jac=BackendDAE.FULL_JACOBIAN(SOME(jac)),jacType=BackendDAE.JAC_LINEAR()),(seq,salg,sarr,sce,swe,sie,(e_jc,e_jt,e_jn,e_nj),meqsys,teqsys,teqsys2))
-      equation
-        e = listLength(ilst);
-        nnz = listLength(jac);
+      algorithm
+        e := listLength(ilst);
+        nnz := listLength(jac);
       then ((seq,salg,sarr,sce,swe,sie,(e_jc,(e,nnz)::e_jt,e_jn,e_nj),meqsys,teqsys,teqsys2));
 
-    case (BackendDAE.EQUATIONSYSTEM(eqns=ilst,jacType=BackendDAE.JAC_NONLINEAR()),(seq,salg,sarr,sce,swe,sie,(e_jc,e_jt,e_jn,e_nj),meqsys,teqsys,teqsys2)) equation
-      e = listLength(ilst);
+    case (BackendDAE.EQUATIONSYSTEM(eqns=ilst,jacType=BackendDAE.JAC_NONLINEAR()),(seq,salg,sarr,sce,swe,sie,(e_jc,e_jt,e_jn,e_nj),meqsys,teqsys,teqsys2)) algorithm
+      e := listLength(ilst);
     then ((seq,salg,sarr,sce,swe,sie,(e_jc,e_jt,e::e_jn,e_nj),meqsys,teqsys,teqsys2));
 
-    case (BackendDAE.EQUATIONSYSTEM(eqns=ilst,jacType=BackendDAE.JAC_GENERIC()),(seq,salg,sarr,sce,swe,sie,(e_jc,e_jt,e_jn,e_nj),meqsys,teqsys,teqsys2)) equation
-      e = listLength(ilst);
+    case (BackendDAE.EQUATIONSYSTEM(eqns=ilst,jacType=BackendDAE.JAC_GENERIC()),(seq,salg,sarr,sce,swe,sie,(e_jc,e_jt,e_jn,e_nj),meqsys,teqsys,teqsys2)) algorithm
+      e := listLength(ilst);
     then ((seq,salg,sarr,sce,swe,sie,(e_jc,e_jt,e::e_jn,e_nj),meqsys,teqsys,teqsys2));
 
-    case (BackendDAE.EQUATIONSYSTEM(eqns=ilst,jacType=BackendDAE.JAC_NO_ANALYTIC()),(seq,salg,sarr,sce,swe,sie,(e_jc,e_jt,e_jn,e_nj),meqsys,teqsys,teqsys2)) equation
-      e = listLength(ilst);
+    case (BackendDAE.EQUATIONSYSTEM(eqns=ilst,jacType=BackendDAE.JAC_NO_ANALYTIC()),(seq,salg,sarr,sce,swe,sie,(e_jc,e_jt,e_jn,e_nj),meqsys,teqsys,teqsys2)) algorithm
+      e := listLength(ilst);
     then ((seq,salg,sarr,sce,swe,sie,(e_jc,e_jt,e_jn,e::e_nj),meqsys,teqsys,teqsys2));
 
     // no dynamic tearing
-    case (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=ilst,innerEquations=innerEquations,jac=BackendDAE.GENERIC_JACOBIAN(_,(_,_,_,nnz),_)),casualTearingSet=NONE(),linear=true),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,te_nl),(te_l2,te_nl2))) equation
-      d = listLength(ilst);
-      e = listLength(innerEquations);
+    case (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=ilst,innerEquations=innerEquations,jac=BackendDAE.GENERIC_JACOBIAN(_,(_,_,_,nnz),_)),casualTearingSet=NONE(),linear=true),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,te_nl),(te_l2,te_nl2))) algorithm
+      d := listLength(ilst);
+      e := listLength(innerEquations);
     then ((seq,salg,sarr,sce,swe,sie,eqsys,meqsys,((d,e,nnz)::te_l,te_nl),((0,0,0)::te_l2,te_nl2)));
 
-    case (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=ilst,innerEquations=innerEquations),casualTearingSet=NONE(),linear=false),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,te_nl),(te_l2,te_nl2))) equation
-      d = listLength(ilst);
-      e = listLength(innerEquations);
+    case (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=ilst,innerEquations=innerEquations),casualTearingSet=NONE(),linear=false),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,te_nl),(te_l2,te_nl2))) algorithm
+      d := listLength(ilst);
+      e := listLength(innerEquations);
     then ((seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,(d,e)::te_nl),(te_l2,(0,0)::te_nl2)));
 
-    case (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=ilst,innerEquations=innerEquations,jac=BackendDAE.EMPTY_JACOBIAN()),casualTearingSet=NONE(),linear=true),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,te_nl),(te_l2,te_nl2))) equation
-      d = listLength(ilst);
-      e = listLength(innerEquations);
+    case (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=ilst,innerEquations=innerEquations,jac=BackendDAE.EMPTY_JACOBIAN()),casualTearingSet=NONE(),linear=true),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,te_nl),(te_l2,te_nl2))) algorithm
+      d := listLength(ilst);
+      e := listLength(innerEquations);
     then ((seq,salg,sarr,sce,swe,sie,eqsys,meqsys,((d,e,0)::te_l,te_nl),((0,0,0)::te_l2,te_nl2)));
 
     // dynamic tearing
-    case (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=ilst,innerEquations=innerEquations,jac=BackendDAE.GENERIC_JACOBIAN(_,(_,_,_,nnz),_)),casualTearingSet=SOME(BackendDAE.TEARINGSET(tearingvars=ilst2,innerEquations=innerEquations2,jac=BackendDAE.GENERIC_JACOBIAN(_,(_,_,_,nnz2),_))),linear=true),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,te_nl),(te_l2,te_nl2))) equation
-      d = listLength(ilst);
-      e = listLength(innerEquations);
-      d2 = listLength(ilst2);
-      e2 = listLength(innerEquations2);
+    case (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=ilst,innerEquations=innerEquations,jac=BackendDAE.GENERIC_JACOBIAN(_,(_,_,_,nnz),_)),casualTearingSet=SOME(BackendDAE.TEARINGSET(tearingvars=ilst2,innerEquations=innerEquations2,jac=BackendDAE.GENERIC_JACOBIAN(_,(_,_,_,nnz2),_))),linear=true),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,te_nl),(te_l2,te_nl2))) algorithm
+      d := listLength(ilst);
+      e := listLength(innerEquations);
+      d2 := listLength(ilst2);
+      e2 := listLength(innerEquations2);
     then ((seq,salg,sarr,sce,swe,sie,eqsys,meqsys,((d,e,nnz)::te_l,te_nl),((d2,e2,nnz2)::te_l2,te_nl2)));
 
-    case (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=ilst,innerEquations=innerEquations),casualTearingSet=SOME(BackendDAE.TEARINGSET(tearingvars=ilst2,innerEquations=innerEquations2)),linear=false),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,te_nl),(te_l2,te_nl2))) equation
-      d = listLength(ilst);
-      e = listLength(innerEquations);
-      d2 = listLength(ilst2);
-      e2 = listLength(innerEquations2);
+    case (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=ilst,innerEquations=innerEquations),casualTearingSet=SOME(BackendDAE.TEARINGSET(tearingvars=ilst2,innerEquations=innerEquations2)),linear=false),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,te_nl),(te_l2,te_nl2))) algorithm
+      d := listLength(ilst);
+      e := listLength(innerEquations);
+      d2 := listLength(ilst2);
+      e2 := listLength(innerEquations2);
     then ((seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,(d,e)::te_nl),(te_l2,(d2,e2)::te_nl2)));
 
     else equation
@@ -3932,33 +3932,33 @@ algorithm
       BackendDAE.CompInfo allOps, tornEqs ,otherEqs;
       BackendDAE.StrongComponent comp;
       case(BackendDAE.COUNTER(comp=comp,numAdds=numAdds,numMul=numMul,numDiv=numDiv,numTrig=numTrig,numRelations=numRel,numLog=numLog,numOth=numOth,funcCalls=numFuncs))
-        equation
-          s = "";
-          if BackendDAEUtil.isSingleEquationComp(comp) then s= "SE "+printComponent(comp);
-          elseif BackendDAEUtil.isWhenComp(comp) then s= "WE "+printComponent(comp);
-          elseif BackendDAEUtil.isArrayComp(comp) then s= "AE "+printComponent(comp);
+        algorithm
+          s := "";
+          if BackendDAEUtil.isSingleEquationComp(comp) then s:= "SE "+printComponent(comp);
+          elseif BackendDAEUtil.isWhenComp(comp) then s:= "WE "+printComponent(comp);
+          elseif BackendDAEUtil.isArrayComp(comp) then s:= "AE "+printComponent(comp);
           end if;
-          s = s+"\tadd|"+intString(numAdds)+"\tmul|"+intString(numMul)+"\tdiv|"+intString(numDiv)+"\ttrig|"+intString(numTrig)+"\trel|"+intString(numRel)+"\tlog|"+intString(numLog)+"\toth|"+intString(numOth)+"\tfuncs|"+intString(numFuncs)+"\n";
+          s := s+"\tadd|"+intString(numAdds)+"\tmul|"+intString(numMul)+"\tdiv|"+intString(numDiv)+"\ttrig|"+intString(numTrig)+"\trel|"+intString(numRel)+"\tlog|"+intString(numLog)+"\toth|"+intString(numOth)+"\tfuncs|"+intString(numFuncs)+"\n";
         then s;
       case(BackendDAE.SYSTEM(allOperations=allOps,comp=comp,size=size,density=dens))
-        equation
-          s = "";
-          if BackendDAEUtil.isLinearEqSystemComp(comp) then s= "LSYS";
-          else s = "NLSYS";
+        algorithm
+          s := "";
+          if BackendDAEUtil.isLinearEqSystemComp(comp) then s:= "LSYS";
+          else s := "NLSYS";
           end if;
-          s = s+printComponent(comp)+"\tsize|"+intString(size)+"\tdens|"+intString(realInt(dens*100.0))+ printCompInfo(allOps);
+          s := s+printComponent(comp)+"\tsize|"+intString(size)+"\tdens|"+intString(realInt(dens*100.0))+ printCompInfo(allOps);
         then s;
       case(BackendDAE.TORN_ANALYSE(tornEqs=tornEqs, otherEqs=otherEqs,comp=comp,tornSize=size))
-        equation
+        algorithm
           //if BackendDAEUtil.isLinearTornSystem(comp) then s = "linear"; else s = "nonlinear"; end if;
-          s = "TS "+printComponent(comp)+"\tsize|"+intString(size)+"\n";
-          s = s + "\tthe torn eqs:\t"+ printCompInfo(tornEqs);
-          s = s + "\tthe other eqs:\t" + printCompInfo(otherEqs);
+          s := "TS "+printComponent(comp)+"\tsize|"+intString(size)+"\n";
+          s := s + "\tthe torn eqs:\t"+ printCompInfo(tornEqs);
+          s := s + "\tthe other eqs:\t" + printCompInfo(otherEqs);
         then s;
       case(BackendDAE.NO_COMP(numAdds=numAdds,numMul=numMul,numDiv=numDiv,numTrig=numTrig,numRelations=numRel,numLog=numLog,numOth=numOth,funcCalls=numFuncs))
-        equation
-          s = "NC";
-          s = s+"\tadd|"+intString(numAdds)+"\tmul|"+intString(numMul)+"\tdiv|"+intString(numDiv)+"\ttrig|"+intString(numTrig)+"\trel|"+intString(numRel)+"\tlog|"+intString(numLog)+"\toth|"+intString(numOth)+"\tfuncs|"+intString(numFuncs)+"\n";
+        algorithm
+          s := "NC";
+          s := s+"\tadd|"+intString(numAdds)+"\tmul|"+intString(numMul)+"\tdiv|"+intString(numDiv)+"\ttrig|"+intString(numTrig)+"\trel|"+intString(numRel)+"\tlog|"+intString(numLog)+"\toth|"+intString(numOth)+"\tfuncs|"+intString(numFuncs)+"\n";
         then s;
       else
         then "Dont know this compInfo\n";
@@ -4135,48 +4135,48 @@ algorithm
       list<BackendDAE.Equation> compEqLst;
       list<BackendDAE.Var> compVarLst;
   case((BackendDAE.EQUATIONSYSTEM(eqns=eqIdcs,vars=varIdcs)),_,_,_,_)
-    equation
-      compEqLst = List.map1(eqIdcs,List.getIndexFirst,eqsIn);
-      compVarLst = List.map1(varIdcs,List.getIndexFirst,varsIn);
-      compVars = BackendVariable.listVar1(compVarLst);
-      compEqs = BackendEquation.listEquation(compEqLst);
+    algorithm
+      compEqLst := List.map1(eqIdcs,List.getIndexFirst,eqsIn);
+      compVarLst := List.map1(varIdcs,List.getIndexFirst,varsIn);
+      compVars := BackendVariable.listVar1(compVarLst);
+      compEqs := BackendEquation.listEquation(compEqLst);
 
-      numEqs = listLength(compEqLst);
-      numVars = listLength(compVarLst);
-      (_,m,_,_,_) = BackendDAEUtil.getAdjacencyMatrixScalar(BackendDAE.EQSYSTEM(compVars,compEqs,NONE(),NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION(),BackendEquation.emptyEqns()), BackendDAE.SOLVABLE(), funcs, false); // no shared available so dump regular system not initial
+      numEqs := listLength(compEqLst);
+      numVars := listLength(compVarLst);
+      (_,m,_,_,_) := BackendDAEUtil.getAdjacencyMatrixScalar(BackendDAE.EQSYSTEM(compVars,compEqs,NONE(),NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION(),BackendEquation.emptyEqns()), BackendDAE.SOLVABLE(), funcs, false); // no shared available so dump regular system not initial
 
-      varAtts = List.threadMap(List.fill(false,numVars),List.fill("",numVars),Util.makeTuple);
-      eqAtts = List.threadMap(List.fill(false,numEqs),List.fill("",numEqs),Util.makeTuple);
+      varAtts := List.threadMap(List.fill(false,numVars),List.fill("",numVars),Util.makeTuple);
+      eqAtts := List.threadMap(List.fill(false,numEqs),List.fill("",numEqs),Util.makeTuple);
       dumpBipartiteGraphStrongComponent2(compVars,compEqs,m,varAtts,eqAtts,"rL_eqSys_"+graphName);
     then ();
   case((BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=rEqIdcs,tearingvars=tVarIdcs,innerEquations=innerEquations))),_,_,_,_)
-    equation
+    algorithm
       //gather equations ans variables
-      (eqIdcs,varIdcsLst,_) = List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
-      varIdcs = List.flatten(varIdcsLst);
-      eqIdcs = listAppend(eqIdcs, rEqIdcs) annotation(__OpenModelica_DisableListAppendWarning=true);
-      varIdcs = listAppend(varIdcs, tVarIdcs) annotation(__OpenModelica_DisableListAppendWarning=true);
-      compEqLst = List.map1(eqIdcs,List.getIndexFirst,eqsIn);
-      compVarLst = List.map1(varIdcs,List.getIndexFirst,varsIn);
-      compVars = BackendVariable.listVar1(compVarLst);
-      compEqs = BackendEquation.listEquation(compEqLst);
+      (eqIdcs,varIdcsLst,_) := List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
+      varIdcs := List.flatten(varIdcsLst);
+      eqIdcs := listAppend(eqIdcs, rEqIdcs) annotation(__OpenModelica_DisableListAppendWarning=true);
+      varIdcs := listAppend(varIdcs, tVarIdcs) annotation(__OpenModelica_DisableListAppendWarning=true);
+      compEqLst := List.map1(eqIdcs,List.getIndexFirst,eqsIn);
+      compVarLst := List.map1(varIdcs,List.getIndexFirst,varsIn);
+      compVars := BackendVariable.listVar1(compVarLst);
+      compEqs := BackendEquation.listEquation(compEqLst);
 
       // get adjacency matrix
-      numEqs = listLength(compEqLst);
-      numVars = listLength(compVarLst);
-      (_,m,_,_,_) = BackendDAEUtil.getAdjacencyMatrixScalar(BackendDAE.EQSYSTEM(compVars,compEqs,NONE(),NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION(),BackendEquation.emptyEqns()), BackendDAE.SOLVABLE(), funcs, false); // no shared available so dump regular system not initial
+      numEqs := listLength(compEqLst);
+      numVars := listLength(compVarLst);
+      (_,m,_,_,_) := BackendDAEUtil.getAdjacencyMatrixScalar(BackendDAE.EQSYSTEM(compVars,compEqs,NONE(),NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION(),BackendEquation.emptyEqns()), BackendDAE.SOLVABLE(), funcs, false); // no shared available so dump regular system not initial
 
       // add tearing info to graph object and dump graph
-      addInfo = List.map(varIdcs,intString);// the DAE idcs for the vars
-      tornInfo = List.fill(true,numVars);
-      tVarIdcsNew = List.intRange(numVars-listLength(tVarIdcs));
-      tornInfo = List.fold1(tVarIdcsNew,List.replaceAtIndexFirst,false,tornInfo);//is it a tearing var or not
-      varAtts = List.threadMap(tornInfo,addInfo,Util.makeTuple);
-      addInfo = List.map(eqIdcs,intString);// the DAE idcs for the eqs
-      tornInfo = List.fill(true,numEqs);
-      rEqIdcsNew = List.intRange(numEqs-listLength(rEqIdcs));
-      tornInfo = List.fold1(rEqIdcsNew,List.replaceAtIndexFirst,false,tornInfo);//is it a residual eq or not
-      eqAtts = List.threadMap(tornInfo,addInfo,Util.makeTuple);
+      addInfo := List.map(varIdcs,intString);// the DAE idcs for the vars
+      tornInfo := List.fill(true,numVars);
+      tVarIdcsNew := List.intRange(numVars-listLength(tVarIdcs));
+      tornInfo := List.fold1(tVarIdcsNew,List.replaceAtIndexFirst,false,tornInfo);//is it a tearing var or not
+      varAtts := List.threadMap(tornInfo,addInfo,Util.makeTuple);
+      addInfo := List.map(eqIdcs,intString);// the DAE idcs for the eqs
+      tornInfo := List.fill(true,numEqs);
+      rEqIdcsNew := List.intRange(numEqs-listLength(rEqIdcs));
+      tornInfo := List.fold1(rEqIdcsNew,List.replaceAtIndexFirst,false,tornInfo);//is it a residual eq or not
+      eqAtts := List.threadMap(tornInfo,addInfo,Util.makeTuple);
       dumpBipartiteGraphStrongComponent2(compVars,compEqs,m,varAtts,eqAtts,graphName);
     then ();
   else
@@ -4679,13 +4679,13 @@ algorithm
       HashTable3.HashTable dht;
       list<tuple<DAE.ComponentRef,DAE.ComponentRef>> tplLst;
     case (BackendDAE.STATEORDER(ht,_))
-      equation
-        (tplLst) = BaseHashTable.hashTableList(ht);
+      algorithm
+        (tplLst) := BaseHashTable.hashTableList(ht);
         if not listEmpty(tplLst) then
           print("State Order: (");
-          str = stringDelimitList(List.map(tplLst,printStateOrderStr),"\n");
-          len = listLength(tplLst);
-          len_str = intString(len);
+          str := stringDelimitList(List.map(tplLst,printStateOrderStr),"\n");
+          len := listLength(tplLst);
+          len_str := intString(len);
           print(len_str);
           print(")\n");
           print("=============\n");

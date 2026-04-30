@@ -252,13 +252,13 @@ algorithm
     case (compelem::{}, BackendDAE.ALGORITHM()::{}, _, varindxs)
     then {BackendDAE.SINGLEALGORITHM(compelem, varindxs)};
 
-    case (compelem::{}, BackendDAE.ARRAY_EQUATION()::{}, var_lst, varindxs) equation
-      crlst = List.map(var_lst,BackendVariable.varCref);
+    case (compelem::{}, BackendDAE.ARRAY_EQUATION()::{}, var_lst, varindxs) algorithm
+      crlst := List.map(var_lst,BackendVariable.varCref);
        // its only an array equation if all the solved variables belong to an array. Otherwise we have to handle it as a non-linear system
-      b1 =  List.applyAndFold(crlst,boolAnd,ComponentReference.isArrayElement,true);
+      b1 :=  List.applyAndFold(crlst,boolAnd,ComponentReference.isArrayElement,true);
       if not b1 then
-        expLst = List.map(crlst, Expression.crefExp);
-        true = List.exist1(inEqnLst,crefsAreArray,expLst);
+        expLst := List.map(crlst, Expression.crefExp);
+        true := List.exist1(inEqnLst,crefsAreArray,expLst);
       end if;
     then {BackendDAE.SINGLEARRAY(compelem, varindxs)};
 
@@ -274,30 +274,30 @@ algorithm
     case (compelem::{}, _, _, v::{})
     then {BackendDAE.SINGLEEQUATION(compelem, v)};
 
-    case (comp, eqn_lst, var_lst, varindxs) equation
+    case (comp, eqn_lst, var_lst, varindxs) algorithm
       //false = BackendVariable.hasDiscreteVar(var_lst); //lochel: mixed systems and non-linear systems are treated the same
-      true = BackendVariable.hasContinuousVar(var_lst);   //lochel: pure discrete equation systems are not supported
-      eqn_lst1 = BackendEquation.replaceDerOpInEquationList(eqn_lst);
+      true := BackendVariable.hasContinuousVar(var_lst);   //lochel: pure discrete equation systems are not supported
+      eqn_lst1 := BackendEquation.replaceDerOpInEquationList(eqn_lst);
       // States are solved for der(x) not x.
-      var_lst_1 = List.map(var_lst, transformXToXd);
-      vars_1 = BackendVariable.listVar1(var_lst_1);
-      eqns_1 = BackendEquation.listEquation(eqn_lst1);
-      (mixedSystem, _) = BackendEquation.iterationVarsinRelations(eqn_lst1, vars_1);
+      var_lst_1 := List.map(var_lst, transformXToXd);
+      vars_1 := BackendVariable.listVar1(var_lst_1);
+      eqns_1 := BackendEquation.listEquation(eqn_lst1);
+      (mixedSystem, _) := BackendEquation.iterationVarsinRelations(eqn_lst1, vars_1);
       if not Flags.isSet(Flags.DISABLE_JACSCC) then
-        syst = BackendDAEUtil.createEqSystem(vars_1, eqns_1);
-        (m, mt) = BackendDAEUtil.adjacencyMatrix(syst, BackendDAE.ABSOLUTE(), NONE(), BackendDAEUtil.isInitializationDAE(ishared));
+        syst := BackendDAEUtil.createEqSystem(vars_1, eqns_1);
+        (m, mt) := BackendDAEUtil.adjacencyMatrix(syst, BackendDAE.ABSOLUTE(), NONE(), BackendDAEUtil.isInitializationDAE(ishared));
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
-        (jac, shared) = SymbolicJacobian.calculateJacobian(vars_1, eqns_1, m, true, ishared);
+        (jac, shared) := SymbolicJacobian.calculateJacobian(vars_1, eqns_1, m, true, ishared);
         // Jacobian of a Linear System is always linear
-        (jac_tp, jacConstant) = SymbolicJacobian.analyzeJacobian(vars_1, eqns_1, jac);
+        (jac_tp, jacConstant) := SymbolicJacobian.analyzeJacobian(vars_1, eqns_1, jac);
 
         // if Jacobian is constant, then check if it is singular
         if jacConstant and isSome(jac) then
-          true = analyzeConstantJacobian(Util.getOption(jac), arrayLength(mt), var_lst, eqn_lst, shared);
+          true := analyzeConstantJacobian(Util.getOption(jac), arrayLength(mt), var_lst, eqn_lst, shared);
         end if;
       else
-        jac = NONE();
-        jac_tp = BackendDAE.JAC_NO_ANALYTIC();
+        jac := NONE();
+        jac_tp := BackendDAE.JAC_NO_ANALYTIC();
       end if;
     then {BackendDAE.EQUATIONSYSTEM(comp, varindxs, BackendDAE.FULL_JACOBIAN(jac), jac_tp, mixedSystem)};
 
@@ -324,25 +324,25 @@ algorithm
     then algorithmComp;
 
     /* Purely discrete algebraic loops are not solvable. */
-    case (_, eqn_lst, var_lst, _) equation
-      true = BackendVariable.hasDiscreteVar(var_lst);
-      false = BackendVariable.hasContinuousVar(var_lst);
-      msg = getInstanceName() + " failed (Purely discrete algebraic loops cannot be solved by iterative processes. Try to break them open using the delay() operator.)\n";
-      crlst = List.map(var_lst, BackendVariable.varCref);
-      slst = List.map(crlst, ComponentReference.printComponentRefStr);
-      msg = msg + stringDelimitList(slst, "\n");
-      slst = List.map(eqn_lst, BackendDump.equationString);
-      msg = msg + "\n" + stringDelimitList(slst, "\n");
+    case (_, eqn_lst, var_lst, _) algorithm
+      true := BackendVariable.hasDiscreteVar(var_lst);
+      false := BackendVariable.hasContinuousVar(var_lst);
+      msg := getInstanceName() + " failed (Purely discrete algebraic loops cannot be solved by iterative processes. Try to break them open using the delay() operator.)\n";
+      crlst := List.map(var_lst, BackendVariable.varCref);
+      slst := List.map(crlst, ComponentReference.printComponentRefStr);
+      msg := msg + stringDelimitList(slst, "\n");
+      slst := List.map(eqn_lst, BackendDump.equationString);
+      msg := msg + "\n" + stringDelimitList(slst, "\n");
       Error.addInternalError(msg, sourceInfo());
     then fail();
 
-    case (_, eqn_lst, var_lst, _) equation
-      msg = getInstanceName() + " failed\nvariables:\n  ";
-      crlst = List.map(var_lst, BackendVariable.varCref);
-      slst = List.map(crlst, ComponentReference.printComponentRefStr);
-      msg = msg + stringDelimitList(slst, "\n  ");
-      slst = List.map(eqn_lst, BackendDump.equationString);
-      msg = msg + "\nequations:\n  " + stringDelimitList(slst, "\n  ");
+    case (_, eqn_lst, var_lst, _) algorithm
+      msg := getInstanceName() + " failed\nvariables:\n  ";
+      crlst := List.map(var_lst, BackendVariable.varCref);
+      slst := List.map(crlst, ComponentReference.printComponentRefStr);
+      msg := msg + stringDelimitList(slst, "\n  ");
+      slst := List.map(eqn_lst, BackendDump.equationString);
+      msg := msg + "\nequations:\n  " + stringDelimitList(slst, "\n  ");
       Error.addInternalError(msg, sourceInfo());
     then fail();
 
@@ -465,50 +465,50 @@ algorithm
       list<BackendDAE.Var> varlst, varlst1;
       BackendDAE.InnerEquations innerEquations;
 
-    case BackendDAE.SINGLEEQUATION(eqn=e, var=v) equation
-      eqn = BackendEquation.get(inEquationArray, e);
-      var = BackendVariable.getVarAt(inVariables, v);
+    case BackendDAE.SINGLEEQUATION(eqn=e, var=v) algorithm
+      eqn := BackendEquation.get(inEquationArray, e);
+      var := BackendVariable.getVarAt(inVariables, v);
     then ({eqn}, {var}, e);
 
-    case BackendDAE.EQUATIONSYSTEM(eqns=elst, vars=vlst) equation
-      eqnlst = BackendEquation.getList(elst, inEquationArray);
-      varlst = List.map1r(vlst, BackendVariable.getVarAt, inVariables);
-      e = listHead(elst);
+    case BackendDAE.EQUATIONSYSTEM(eqns=elst, vars=vlst) algorithm
+      eqnlst := BackendEquation.getList(elst, inEquationArray);
+      varlst := List.map1r(vlst, BackendVariable.getVarAt, inVariables);
+      e := listHead(elst);
     then (eqnlst, varlst, e);
 
-    case BackendDAE.SINGLEARRAY(eqn=e, vars=vlst) equation
-      eqn = BackendEquation.get(inEquationArray, e);
-      varlst = List.map1r(vlst, BackendVariable.getVarAt, inVariables);
+    case BackendDAE.SINGLEARRAY(eqn=e, vars=vlst) algorithm
+      eqn := BackendEquation.get(inEquationArray, e);
+      varlst := List.map1r(vlst, BackendVariable.getVarAt, inVariables);
     then ({eqn}, varlst, e);
 
-    case BackendDAE.SINGLEIFEQUATION(eqn=e, vars=vlst) equation
-      eqn = BackendEquation.get(inEquationArray, e);
-      varlst = List.map1r(vlst, BackendVariable.getVarAt, inVariables);
+    case BackendDAE.SINGLEIFEQUATION(eqn=e, vars=vlst) algorithm
+      eqn := BackendEquation.get(inEquationArray, e);
+      varlst := List.map1r(vlst, BackendVariable.getVarAt, inVariables);
     then ({eqn}, varlst, e);
 
-    case BackendDAE.SINGLEALGORITHM(eqn=e, vars=vlst) equation
-      eqn = BackendEquation.get(inEquationArray, e);
-      varlst = List.map1r(vlst, BackendVariable.getVarAt, inVariables);
+    case BackendDAE.SINGLEALGORITHM(eqn=e, vars=vlst) algorithm
+      eqn := BackendEquation.get(inEquationArray, e);
+      varlst := List.map1r(vlst, BackendVariable.getVarAt, inVariables);
     then ({eqn}, varlst, e);
 
-    case BackendDAE.SINGLECOMPLEXEQUATION(eqn=e, vars=vlst) equation
-      eqn = BackendEquation.get(inEquationArray, e);
-      varlst = List.map1r(vlst, BackendVariable.getVarAt, inVariables);
+    case BackendDAE.SINGLECOMPLEXEQUATION(eqn=e, vars=vlst) algorithm
+      eqn := BackendEquation.get(inEquationArray, e);
+      varlst := List.map1r(vlst, BackendVariable.getVarAt, inVariables);
     then ({eqn}, varlst, e);
 
-    case BackendDAE.SINGLEWHENEQUATION(eqn=e, vars=vlst) equation
-      eqn = BackendEquation.get(inEquationArray, e);
-      varlst = List.map1r(vlst, BackendVariable.getVarAt, inVariables);
+    case BackendDAE.SINGLEWHENEQUATION(eqn=e, vars=vlst) algorithm
+      eqn := BackendEquation.get(inEquationArray, e);
+      varlst := List.map1r(vlst, BackendVariable.getVarAt, inVariables);
     then ({eqn}, varlst, e);
 
-    case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst, residualequations=elst, innerEquations=innerEquations)) equation
-      eqnlst = BackendEquation.getList(elst, inEquationArray);
-      varlst = List.map1r(vlst, BackendVariable.getVarAt, inVariables);
-      (otherEqns,otherVarsLst,_) = List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
-      otherVars = List.flatten(otherVarsLst);
-      eqnlst1 = BackendEquation.getList(otherEqns, inEquationArray);
-      varlst1 = List.map1r(otherVars, BackendVariable.getVarAt, inVariables);
-      e = listHead(elst);
+    case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst, residualequations=elst, innerEquations=innerEquations)) algorithm
+      eqnlst := BackendEquation.getList(elst, inEquationArray);
+      varlst := List.map1r(vlst, BackendVariable.getVarAt, inVariables);
+      (otherEqns,otherVarsLst,_) := List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
+      otherVars := List.flatten(otherVarsLst);
+      eqnlst1 := BackendEquation.getList(otherEqns, inEquationArray);
+      varlst1 := List.map1r(otherVars, BackendVariable.getVarAt, inVariables);
+      e := listHead(elst);
     then (listAppend(eqnlst, eqnlst1), listAppend(varlst, varlst1), e);
 
     else equation
@@ -554,11 +554,11 @@ algorithm
     case BackendDAE.SINGLEWHENEQUATION(eqn=e, vars=vlst)
     then ({e}, vlst);
 
-    case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst, residualequations=elst, innerEquations=innerEquations)) equation
-      (elst1,vLstLst,_) = List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
-      vlst1 = List.flatten(vLstLst);
-      elst = listAppend(elst1, elst);
-      vlst = listAppend(vlst1, vlst);
+    case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst, residualequations=elst, innerEquations=innerEquations)) algorithm
+      (elst1,vLstLst,_) := List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
+      vlst1 := List.flatten(vLstLst);
+      elst := listAppend(elst1, elst);
+      vlst := listAppend(vlst1, vlst);
     then (elst, vlst);
 
     else equation
@@ -614,67 +614,67 @@ algorithm
       BackendDAE.EquationAttributes eqAttr;
       list<BackendDAE.WhenOperator> whenStmtLst;
 
-    case BackendDAE.EQUATION(exp = e1, scalar = e2, source = source, attr=eqAttr) equation
-      (e1_1, (ops, ext_arg_1)) = func(e1, ({}, inTypeA));
-      (e2_1, (ops, ext_arg_2)) = func(e2, (ops, ext_arg_1));
-      source = List.foldr(ops, ElementSource.addSymbolicTransformation, source);
+    case BackendDAE.EQUATION(exp = e1, scalar = e2, source = source, attr=eqAttr) algorithm
+      (e1_1, (ops, ext_arg_1)) := func(e1, ({}, inTypeA));
+      (e2_1, (ops, ext_arg_2)) := func(e2, (ops, ext_arg_1));
+      source := List.foldr(ops, ElementSource.addSymbolicTransformation, source);
     then (BackendDAE.EQUATION(e1_1, e2_1, source, eqAttr), ext_arg_2);
 
     // Array equation
-    case BackendDAE.ARRAY_EQUATION(dimSize=dimSize, left = e1, right = e2, source = source, attr=eqAttr, recordSize=recordSize) equation
-      (e1_1, (ops, ext_arg_1)) = func(e1, ({}, inTypeA));
-      (e2_1, (ops, ext_arg_2)) = func(e2, (ops, ext_arg_1));
-      source = List.foldr(ops, ElementSource.addSymbolicTransformation, source);
+    case BackendDAE.ARRAY_EQUATION(dimSize=dimSize, left = e1, right = e2, source = source, attr=eqAttr, recordSize=recordSize) algorithm
+      (e1_1, (ops, ext_arg_1)) := func(e1, ({}, inTypeA));
+      (e2_1, (ops, ext_arg_2)) := func(e2, (ops, ext_arg_1));
+      source := List.foldr(ops, ElementSource.addSymbolicTransformation, source);
     then (BackendDAE.ARRAY_EQUATION(dimSize, e1_1, e2_1, source, eqAttr, recordSize), ext_arg_2);
 
-    case BackendDAE.FOR_EQUATION(iter = iter, start = start, stop = stop, body = eqn, source = source, attr = eqAttr) equation
-      (eqn, outTypeA) = traverseBackendDAEExpsEqnWithSymbolicOperation(eqn, func, inTypeA);
+    case BackendDAE.FOR_EQUATION(iter = iter, start = start, stop = stop, body = eqn, source = source, attr = eqAttr) algorithm
+      (eqn, outTypeA) := traverseBackendDAEExpsEqnWithSymbolicOperation(eqn, func, inTypeA);
     then (BackendDAE.FOR_EQUATION(iter, start, stop, eqn, source, eqAttr), outTypeA);
 
-    case BackendDAE.SOLVED_EQUATION(componentRef = cr, exp = e2, source=source, attr=eqAttr) equation
-      e1 = Expression.crefExp(cr);
-      (DAE.CREF(cr1, _), (ops, ext_arg_1)) = func(e1, ({}, inTypeA));
-      (e2_1, (ops, _)) = func(e2, (ops, ext_arg_1));
-      source = List.foldr(ops, ElementSource.addSymbolicTransformation, source);
+    case BackendDAE.SOLVED_EQUATION(componentRef = cr, exp = e2, source=source, attr=eqAttr) algorithm
+      e1 := Expression.crefExp(cr);
+      (DAE.CREF(cr1, _), (ops, ext_arg_1)) := func(e1, ({}, inTypeA));
+      (e2_1, (ops, _)) := func(e2, (ops, ext_arg_1));
+      source := List.foldr(ops, ElementSource.addSymbolicTransformation, source);
     then (BackendDAE.SOLVED_EQUATION(cr1, e2_1, source, eqAttr), ext_arg_1);
 
-    case BackendDAE.RESIDUAL_EQUATION(exp = e1, source=source, attr=eqAttr) equation
-      (e1_1, (ops, ext_arg_1)) = func(e1, ({}, inTypeA));
-      source = List.foldr(ops, ElementSource.addSymbolicTransformation, source);
+    case BackendDAE.RESIDUAL_EQUATION(exp = e1, source=source, attr=eqAttr) algorithm
+      (e1_1, (ops, ext_arg_1)) := func(e1, ({}, inTypeA));
+      source := List.foldr(ops, ElementSource.addSymbolicTransformation, source);
     then (BackendDAE.RESIDUAL_EQUATION(e1_1, source, eqAttr), ext_arg_1);
 
     // Algorithms
-    case BackendDAE.ALGORITHM(size = size, alg=DAE.ALGORITHM_STMTS(statementLst = statementLst), source = source, expand = crefExpand, attr=eqAttr) equation
-      (statementLst, (ops, ext_arg_1)) = DAEUtil.traverseDAEEquationsStmts(statementLst, func, ({}, inTypeA));
-      source = List.foldr(ops, ElementSource.addSymbolicTransformation, source);
+    case BackendDAE.ALGORITHM(size = size, alg=DAE.ALGORITHM_STMTS(statementLst = statementLst), source = source, expand = crefExpand, attr=eqAttr) algorithm
+      (statementLst, (ops, ext_arg_1)) := DAEUtil.traverseDAEEquationsStmts(statementLst, func, ({}, inTypeA));
+      source := List.foldr(ops, ElementSource.addSymbolicTransformation, source);
     then (BackendDAE.ALGORITHM(size, DAE.ALGORITHM_STMTS(statementLst), source, crefExpand, eqAttr), ext_arg_1);
 
-    case BackendDAE.WHEN_EQUATION(size=size, whenEquation=BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst=whenStmtLst, elsewhenPart=oelsepart), source = source, attr=eqAttr) equation
-      (whenStmtLst, ext_arg_1) = traverseBackendDAEExpsWhenOperatorWithSymbolicOperation(whenStmtLst, func, inTypeA);
-      (cond, (ops, ext_arg_2)) = func(cond, ({}, ext_arg_1));
-      source = List.foldr(ops, ElementSource.addSymbolicTransformation, source);
+    case BackendDAE.WHEN_EQUATION(size=size, whenEquation=BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst=whenStmtLst, elsewhenPart=oelsepart), source = source, attr=eqAttr) algorithm
+      (whenStmtLst, ext_arg_1) := traverseBackendDAEExpsWhenOperatorWithSymbolicOperation(whenStmtLst, func, inTypeA);
+      (cond, (ops, ext_arg_2)) := func(cond, ({}, ext_arg_1));
+      source := List.foldr(ops, ElementSource.addSymbolicTransformation, source);
       if isSome(oelsepart) then
-        SOME(elsepart) = oelsepart;
-        (BackendDAE.WHEN_EQUATION(whenEquation=elsepartRes, source=source), ext_arg_3) = traverseBackendDAEExpsEqnWithSymbolicOperation(BackendDAE.WHEN_EQUATION(size, elsepart, source, eqAttr), func, ext_arg_2);
-        oelsepart = SOME(elsepartRes);
+        SOME(elsepart) := oelsepart;
+        (BackendDAE.WHEN_EQUATION(whenEquation=elsepartRes, source=source), ext_arg_3) := traverseBackendDAEExpsEqnWithSymbolicOperation(BackendDAE.WHEN_EQUATION(size, elsepart, source, eqAttr), func, ext_arg_2);
+        oelsepart := SOME(elsepartRes);
       else
-        oelsepart = NONE();
-        ext_arg_3 = ext_arg_2;
+        oelsepart := NONE();
+        ext_arg_3 := ext_arg_2;
       end if;
-      eqn = BackendDAE.WHEN_EQUATION(size, BackendDAE.WHEN_STMTS(cond, whenStmtLst, oelsepart), source, eqAttr);
+      eqn := BackendDAE.WHEN_EQUATION(size, BackendDAE.WHEN_STMTS(cond, whenStmtLst, oelsepart), source, eqAttr);
    then (eqn, ext_arg_3);
 
-    case BackendDAE.COMPLEX_EQUATION(size=size, left = e1, right = e2, source = source, attr=eqAttr) equation
-      (e1_1, (ops, ext_arg_1)) = func(e1, ({}, inTypeA));
-      (e2_1, (ops, ext_arg_2)) = func(e2, (ops, ext_arg_1));
-      source = List.foldr(ops, ElementSource.addSymbolicTransformation, source);
+    case BackendDAE.COMPLEX_EQUATION(size=size, left = e1, right = e2, source = source, attr=eqAttr) algorithm
+      (e1_1, (ops, ext_arg_1)) := func(e1, ({}, inTypeA));
+      (e2_1, (ops, ext_arg_2)) := func(e2, (ops, ext_arg_1));
+      source := List.foldr(ops, ElementSource.addSymbolicTransformation, source);
     then (BackendDAE.COMPLEX_EQUATION(size, e1_1, e2_1, source, eqAttr), ext_arg_2);
 
-    case BackendDAE.IF_EQUATION(conditions=expl, eqnstrue=eqnslst, eqnsfalse=eqns, source=source, attr=eqAttr) equation
-      (expl, (ops, ext_arg_1)) = traverseBackendDAEExpsLstEqnWithSymbolicOperation(expl, func, ({}, inTypeA), {});
-      source = List.foldr(ops, ElementSource.addSymbolicTransformation, source);
-      (eqnslst, ext_arg_1) = traverseBackendDAEExpsEqnLstLstWithSymbolicOperation(eqnslst, func, ext_arg_1, {});
-      (eqns, ext_arg_1) = traverseBackendDAEExpsEqnLstWithSymbolicOperation(eqns, func, ext_arg_1, {});
+    case BackendDAE.IF_EQUATION(conditions=expl, eqnstrue=eqnslst, eqnsfalse=eqns, source=source, attr=eqAttr) algorithm
+      (expl, (ops, ext_arg_1)) := traverseBackendDAEExpsLstEqnWithSymbolicOperation(expl, func, ({}, inTypeA), {});
+      source := List.foldr(ops, ElementSource.addSymbolicTransformation, source);
+      (eqnslst, ext_arg_1) := traverseBackendDAEExpsEqnLstLstWithSymbolicOperation(eqnslst, func, ext_arg_1, {});
+      (eqns, ext_arg_1) := traverseBackendDAEExpsEqnLstWithSymbolicOperation(eqns, func, ext_arg_1, {});
     then (BackendDAE.IF_EQUATION(expl, eqnslst, eqns, source, eqAttr), ext_arg_1);
 
     else equation
@@ -707,9 +707,9 @@ algorithm
     case {}
     then (listReverse(iAcc), inTypeA);
 
-    case exp::rest equation
-      (exp, arg) = func(exp, inTypeA);
-      (exps, arg) = traverseBackendDAEExpsLstEqnWithSymbolicOperation(rest, func, arg, exp::iAcc);
+    case exp::rest algorithm
+      (exp, arg) := func(exp, inTypeA);
+      (exps, arg) := traverseBackendDAEExpsLstEqnWithSymbolicOperation(rest, func, arg, exp::iAcc);
     then (exps, arg);
   end match;
 end traverseBackendDAEExpsLstEqnWithSymbolicOperation;
@@ -738,9 +738,9 @@ algorithm
     case {}
     then (listReverse(iAcc), inTypeA);
 
-    case eqn::rest equation
-      (eqn, arg) = traverseBackendDAEExpsEqnWithSymbolicOperation(eqn, func, inTypeA);
-      (eqns, arg) = traverseBackendDAEExpsEqnLstWithSymbolicOperation(rest, func, arg, eqn::iAcc);
+    case eqn::rest algorithm
+      (eqn, arg) := traverseBackendDAEExpsEqnWithSymbolicOperation(eqn, func, inTypeA);
+      (eqns, arg) := traverseBackendDAEExpsEqnLstWithSymbolicOperation(rest, func, arg, eqn::iAcc);
     then (eqns, arg);
   end match;
 end traverseBackendDAEExpsEqnLstWithSymbolicOperation;
@@ -767,9 +767,9 @@ algorithm
       Type_a arg;
     case({}, _, _, _) then (listReverse(iAcc), inTypeA);
     case(eqn::rest, _, _, _)
-      equation
-        (eqn, arg) = traverseBackendDAEExpsEqnLstWithSymbolicOperation(eqn, func, inTypeA, {});
-        (eqnslst, arg) = traverseBackendDAEExpsEqnLstLstWithSymbolicOperation(rest, func, arg, eqn::iAcc);
+      algorithm
+        (eqn, arg) := traverseBackendDAEExpsEqnLstWithSymbolicOperation(eqn, func, inTypeA, {});
+        (eqnslst, arg) := traverseBackendDAEExpsEqnLstLstWithSymbolicOperation(rest, func, arg, eqn::iAcc);
       then
         (eqnslst, arg);
   end match;
@@ -798,26 +798,26 @@ algorithm
         DAE.ElementSource src;
         list<DAE.SymbolicOperation> ops;
 
-      case BackendDAE.ASSIGN(lhs, cond, src) equation
-        (cond, (ops, outArg)) = func(cond, ({}, inArg));
-        (lhs, (ops, outArg)) = func(lhs, (ops,outArg));
-        src = List.foldr(ops, ElementSource.addSymbolicTransformation, src);
+      case BackendDAE.ASSIGN(lhs, cond, src) algorithm
+        (cond, (ops, outArg)) := func(cond, ({}, inArg));
+        (lhs, (ops, outArg)) := func(lhs, (ops,outArg));
+        src := List.foldr(ops, ElementSource.addSymbolicTransformation, src);
       then BackendDAE.ASSIGN(lhs, cond, src);
 
-      case BackendDAE.REINIT(cr, cond, src) equation
-        (cond, (ops, outArg)) = func(cond, ({}, inArg));
-        (DAE.CREF(componentRef = cr), (ops, outArg)) = func(Expression.crefExp(cr), (ops,outArg));
-        src = List.foldr(ops, ElementSource.addSymbolicTransformation, src);
+      case BackendDAE.REINIT(cr, cond, src) algorithm
+        (cond, (ops, outArg)) := func(cond, ({}, inArg));
+        (DAE.CREF(componentRef = cr), (ops, outArg)) := func(Expression.crefExp(cr), (ops,outArg));
+        src := List.foldr(ops, ElementSource.addSymbolicTransformation, src);
       then BackendDAE.REINIT(cr, cond, src);
 
-      case BackendDAE.ASSERT(cond, msg, level, src) equation
-        (cond, (ops, outArg)) = func(cond, ({}, inArg));
-        src = List.foldr(ops, ElementSource.addSymbolicTransformation, src);
+      case BackendDAE.ASSERT(cond, msg, level, src) algorithm
+        (cond, (ops, outArg)) := func(cond, ({}, inArg));
+        src := List.foldr(ops, ElementSource.addSymbolicTransformation, src);
       then BackendDAE.ASSERT(cond, msg, level, src);
 
-      case BackendDAE.NORETCALL(exp, src) equation
-        (exp, (ops, outArg)) = Expression.traverseExpBottomUp(exp, func, ({}, outArg));
-        src = List.foldr(ops, ElementSource.addSymbolicTransformation, src);
+      case BackendDAE.NORETCALL(exp, src) algorithm
+        (exp, (ops, outArg)) := Expression.traverseExpBottomUp(exp, func, ({}, outArg));
+        src := List.foldr(ops, ElementSource.addSymbolicTransformation, src);
       then BackendDAE.NORETCALL(exp, src);
 
       else rs;

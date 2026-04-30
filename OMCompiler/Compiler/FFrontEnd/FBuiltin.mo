@@ -350,7 +350,7 @@ algorithm
   match (inPath)
     local Absyn.Path path;
     case (Absyn.IDENT(name = "der")) then ();
-    case (Absyn.FULLYQUALIFIED(path)) equation isDer(path); then ();
+    case (Absyn.FULLYQUALIFIED(path)) algorithm isDer(path); then ();
   end match;
 end isDer;
 
@@ -488,33 +488,33 @@ algorithm
       list<SCode.Element> types;
 
     // First look for cached version
-    case (cache) equation
-      graph = FCore.getCachedInitialGraph(cache);
+    case (cache) algorithm
+      graph := FCore.getCachedInitialGraph(cache);
     then (cache,graph);
 
     // then look in the global roots[builtinEnvIndex]
     case (cache)
-      equation
-        graph = getSetInitialGraph(NONE());
+      algorithm
+        graph := getSetInitialGraph(NONE());
       then
         (cache, graph);
 
     // if no cached version found create initial graph.
     case (cache)
-      equation
-        graph = FGraph.new("graph", FCore.dummyTopModel);
-        graph = FGraphBuild.mkProgramGraph(basicTypes, FCore.BASIC_TYPE(), graph);
+      algorithm
+        graph := FGraph.new("graph", FCore.dummyTopModel);
+        graph := FGraphBuild.mkProgramGraph(basicTypes, FCore.BASIC_TYPE(), graph);
 
-        graph = initialGraphOptimica(graph, FGraphBuild.mkCompNode);
-        graph = initialGraphMetaModelica(graph, FGraphBuild.mkTypeNode);
-        graph = initialGraphModelica(graph, FGraphBuild.mkTypeNode, FGraphBuild.mkCompNode);
+        graph := initialGraphOptimica(graph, FGraphBuild.mkCompNode);
+        graph := initialGraphMetaModelica(graph, FGraphBuild.mkTypeNode);
+        graph := initialGraphModelica(graph, FGraphBuild.mkTypeNode, FGraphBuild.mkCompNode);
 
-        (_, initialProgram) = getInitialFunctions();
+        (_, initialProgram) := getInitialFunctions();
         // add the ModelicaBuiltin/MetaModelicaBuiltin classes in the initial graph
-        graph = FGraphBuild.mkProgramGraph(initialProgram, FCore.BUILTIN(), graph);
+        graph := FGraphBuild.mkProgramGraph(initialProgram, FCore.BUILTIN(), graph);
 
-        cache = FCore.setCachedInitialGraph(cache,graph);
-        _ = getSetInitialGraph(SOME(graph));
+        cache := FCore.setCachedInitialGraph(cache,graph);
+        _ := getSetInitialGraph(SOME(graph));
       then
         (cache,graph);
 
@@ -533,39 +533,39 @@ algorithm
 
     // nothing there
     case (_)
-      equation
-        failure(_ = getGlobalRoot(Global.builtinGraphIndex));
+      algorithm
+        failure(_ := getGlobalRoot(Global.builtinGraphIndex));
         setGlobalRoot(Global.builtinGraphIndex, {});
       then
         fail();
 
     // return the correct graph depending on flags
     case (NONE())
-      equation
-        assocLst = getGlobalRoot(Global.builtinGraphIndex);
+      algorithm
+        assocLst := getGlobalRoot(Global.builtinGraphIndex);
       then
         Util.assoc(Flags.getConfigEnum(Flags.GRAMMAR), assocLst);
 
     case (SOME(graph))
-      equation
-        true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.METAMODELICA);
-        assocLst = getGlobalRoot(Global.builtinGraphIndex);
+      algorithm
+        true := intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.METAMODELICA);
+        assocLst := getGlobalRoot(Global.builtinGraphIndex);
         setGlobalRoot(Global.builtinGraphIndex, (Flags.METAMODELICA,graph)::assocLst);
       then
         graph;
 
     case (SOME(graph))
-      equation
-        true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PARMODELICA);
-        assocLst = getGlobalRoot(Global.builtinGraphIndex);
+      algorithm
+        true := intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PARMODELICA);
+        assocLst := getGlobalRoot(Global.builtinGraphIndex);
         setGlobalRoot(Global.builtinGraphIndex, (Flags.PARMODELICA,graph)::assocLst);
       then
         graph;
 
     case (SOME(graph))
-      equation
-        true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.MODELICA) or intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.OPTIMICA);
-        assocLst = getGlobalRoot(Global.builtinGraphIndex);
+      algorithm
+        true := intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.MODELICA) or intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.OPTIMICA);
+        assocLst := getGlobalRoot(Global.builtinGraphIndex);
         setGlobalRoot(Global.builtinGraphIndex, (Flags.MODELICA,graph)::assocLst);
       then
         graph;

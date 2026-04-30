@@ -245,18 +245,18 @@ algorithm
     // Unqualified imports
     case (SCode.IMPORT(imp = imp as Absyn.UNQUAL_IMPORT()),
           FCore.IMPORT_TABLE(hidden, qual_imps, unqual_imps))
-      equation
-        unqual_imps = List.unionElt(imp, unqual_imps);
+      algorithm
+        unqual_imps := List.unionElt(imp, unqual_imps);
       then
         FCore.IMPORT_TABLE(hidden, qual_imps, unqual_imps);
 
     // Qualified imports
     case (SCode.IMPORT(imp = imp, info = info),
           FCore.IMPORT_TABLE(hidden, qual_imps, unqual_imps))
-      equation
-        imp = translateQualifiedImportToNamed(imp);
+      algorithm
+        imp := translateQualifiedImportToNamed(imp);
         checkUniqueQualifiedImport(imp, qual_imps, info);
-        qual_imps = List.unionElt(imp, qual_imps);
+        qual_imps := List.unionElt(imp, qual_imps);
       then
         FCore.IMPORT_TABLE(hidden, qual_imps, unqual_imps);
   end match;
@@ -277,8 +277,8 @@ algorithm
 
     // Get the last identifier from the import and use that as the name.
     case Absyn.QUAL_IMPORT(path = path)
-      equation
-        name = AbsynUtil.pathLastIdent(path);
+      algorithm
+        name := AbsynUtil.pathLastIdent(path);
       then
         Absyn.NAMED_IMPORT(name, path);
   end match;
@@ -296,14 +296,14 @@ algorithm
       Name name;
 
     case (_, _, _)
-      equation
-        false = List.isMemberOnTrue(inImport, inImports,
+      algorithm
+        false := List.isMemberOnTrue(inImport, inImports,
           compareQualifiedImportNames);
       then
         ();
 
     case (Absyn.NAMED_IMPORT(name = name), _, _)
-      equation
+      algorithm
         Error.addSourceMessage(Error.MULTIPLE_QUALIFIED_IMPORTS_WITH_SAME_NAME,
           {name}, inInfo);
       then
@@ -506,8 +506,8 @@ algorithm
   b := matchcontinue(inNode, inName)
 
     case (_, _)
-      equation
-        _ = childFromNode(inNode, inName);
+      algorithm
+        _ := childFromNode(inNode, inName);
       then
         true;
 
@@ -605,9 +605,9 @@ algorithm
     case (SCode.COMPONENT(n,SCode.PREFIXES(vis,_,_,io,_),
                                     SCode.ATTR(_,ct,prl,var,dir),
                                     _,_,_,_,_), _)
-      equation
-        nd = FCore.CO(inElement, DAE.NOMOD(), inKind, FCore.VAR_UNTYPED());
-        i  = DAE.TYPES_VAR(
+      algorithm
+        nd := FCore.CO(inElement, DAE.NOMOD(), inKind, FCore.VAR_UNTYPED());
+        i  := DAE.TYPES_VAR(
                   n,
                   DAE.ATTR(DAEUtil.toConnectorTypeNoState(ct),prl,var,dir,io,vis),
                   DAE.T_UNKNOWN_DEFAULT,
@@ -672,8 +672,8 @@ algorithm
      Data d;
 
     case (FCore.N(_, i, p, _, d))
-      equation
-        outStr =
+      algorithm
+        outStr :=
            "[i:" + intString(i) + "] " +
            "[p:" + stringDelimitList(List.map(List.map(List.map(p, fromRef), id), intString), ", ") + "] " +
            "[n:" + name(inNode) + "] " +
@@ -703,25 +703,25 @@ algorithm
 
     // top node
     case (FCore.N(_, _, {}, _, _))
-      equation
-        outStr = name(inNode);
+      algorithm
+        outStr := name(inNode);
       then
         outStr;
 
     case (FCore.N(_, _, p, _, _))
-      equation
-        nr = contextual(p);
-        true = hasParents(fromRef(nr));
-        s = toPathStr(fromRef(nr));
-        outStr = s + "." + name(inNode);
+      algorithm
+        nr := contextual(p);
+        true := hasParents(fromRef(nr));
+        s := toPathStr(fromRef(nr));
+        outStr := s + "." + name(inNode);
       then
         outStr;
 
     case (FCore.N(_, _, p, _, _))
-      equation
-        nr = contextual(p);
-        false = hasParents(fromRef(nr));
-        outStr = "." + name(inNode);
+      algorithm
+        nr := contextual(p);
+        false := hasParents(fromRef(nr));
+        outStr := "." + name(inNode);
       then
         outStr;
   end matchcontinue;
@@ -792,9 +792,9 @@ algorithm
     case FCore.N(data = FCore.CO(kind = FCore.USERDEFINED())) then true;
     // any parent is userdefined?
     case _ guard hasParents(inNode)
-      equation
-        p::_ = parents(inNode);
-        b = isRefUserDefined(p);
+      algorithm
+        p::_ := parents(inNode);
+        b := isRefUserDefined(p);
       then
         b;
     else false;
@@ -990,8 +990,8 @@ algorithm
   b := match(inNode)
     local Ref r;
     case FCore.N(parents = r::_)
-      equation
-        b = isRefVersion(r);
+      algorithm
+        b := isRefVersion(r);
       then b;
     else false;
   end match;
@@ -1032,12 +1032,12 @@ algorithm
       Boolean b1, b2;
 
     case (_, _)
-      equation
-        s = originalScope(toRef(inNode));
-        b1 = List.applyAndFold(s, boolOr, inFunctionRefIs, false);
-        s = contextualScope(toRef(inNode));
-        b2 = List.applyAndFold(s, boolOr, inFunctionRefIs, false);
-        b = boolOr(b1, b2);
+      algorithm
+        s := originalScope(toRef(inNode));
+        b1 := List.applyAndFold(s, boolOr, inFunctionRefIs, false);
+        s := contextualScope(toRef(inNode));
+        b2 := List.applyAndFold(s, boolOr, inFunctionRefIs, false);
+        b := boolOr(b1, b2);
       then
         b;
 
@@ -1137,10 +1137,10 @@ algorithm
 
     // we're done, return
     case (r) guard isRefModHolder(r)
-      equation
+      algorithm
         // get his parent
-        r = original(refParents(r));
-        r::_ = refRefTargetScope(r);
+        r := original(refParents(r));
+        r::_ := refRefTargetScope(r);
       then
         r;
 
@@ -1186,8 +1186,8 @@ algorithm
 
     // not top
     case (_, acc)
-      equation
-        r = original(parents(fromRef(inRef)));
+      algorithm
+        r := original(parents(fromRef(inRef)));
       then
         originalScope_dispatch(r, inRef::acc);
 
@@ -1239,8 +1239,8 @@ algorithm
 
     // not top
     case (_, acc)
-      equation
-        r = contextual(parents(fromRef(inRef)));
+      algorithm
+        r := contextual(parents(fromRef(inRef)));
       then
         contextualScope_dispatch(r, inRef::acc);
 
@@ -1274,11 +1274,11 @@ algorithm
     case (_, {_}) then inRef;
 
     case (_, s)
-      equation
+      algorithm
         // print("Searching for scope: " + toPathStr(fromRef(listHead(s))) + " in " + toPathStr(fromRef(inRef)) + "\n");
         // reverse and remove top
-        _::s = listReverse(s);
-        r = lookupRef_dispatch(inRef, s);
+        _::s := listReverse(s);
+        r := lookupRef_dispatch(inRef, s);
       then
         r;
   end matchcontinue;
@@ -1302,11 +1302,11 @@ algorithm
     case (_, {}) then inRef;
 
     case (_, r::rest)
-      equation
-        n = name(fromRef(r));
+      algorithm
+        n := name(fromRef(r));
         // print("Lookup child: " + n + " in " + toPathStr(fromRef(inRef)) + "\n");
-        r = child(inRef, n);
-        r = lookupRef_dispatch(r, rest);
+        r := child(inRef, n);
+        r := lookupRef_dispatch(r, rest);
       then
         r;
 
@@ -1528,11 +1528,11 @@ algorithm
       Children c;
 
     case _
-      equation
-        c = children(fromRef(inRef));
-        refs = RefTree.listValues(c);
-        refs = List.flatten(List.map(refs, dfs));
-        refs = inRef::refs;
+      algorithm
+        c := children(fromRef(inRef));
+        refs := RefTree.listValues(c);
+        refs := List.flatten(List.map(refs, dfs));
+        refs := inRef::refs;
       then
         refs;
 
@@ -1567,9 +1567,9 @@ algorithm
     local list<Import> qi, uqi;
 
     case (_)
-      equation
-        FCore.IMPORT_TABLE(_, qi, uqi) = importTable(fromRef(refImport(toRef(inNode))));
-        b = boolOr(not listEmpty(qi), not listEmpty(uqi));
+      algorithm
+        FCore.IMPORT_TABLE(_, qi, uqi) := importTable(fromRef(refImport(toRef(inNode))));
+        b := boolOr(not listEmpty(qi), not listEmpty(uqi));
       then
         b;
 
@@ -1585,8 +1585,8 @@ algorithm
   (outQualifiedImports, outUnQualifiedImports) := match(inNode)
     local list<Import> qi, uqi;
     case (_)
-      equation
-         FCore.IMPORT_TABLE(_, qi, uqi) = importTable(fromRef(refImport(toRef(inNode))));
+      algorithm
+         FCore.IMPORT_TABLE(_, qi, uqi) := importTable(fromRef(refImport(toRef(inNode))));
       then
         (qi, uqi);
     else ({}, {});
@@ -1618,13 +1618,13 @@ algorithm
       Refs refs, rd;
 
     case (_) guard isRefClass(inRef) // we have a class
-      equation
+      algorithm
         // get the derived ref
-        rd = derivedRef(inRef);
+        rd := derivedRef(inRef);
         // get the extends
-        refs = filter(inRef, isRefExtends);
-        refs = List.flatten(List.map1(refs, filter, isRefReference));
-        refs = listAppend(rd,refs);
+        refs := filter(inRef, isRefExtends);
+        refs := List.flatten(List.map1(refs, filter, isRefReference));
+        refs := listAppend(rd,refs);
       then
         refs;
 
@@ -1652,8 +1652,8 @@ algorithm
       Ref r;
 
     case (_, _, _, g)
-      equation
-        (g, r) = clone(fromRef(inRef), inParentRef, g);
+      algorithm
+        (g, r) := clone(fromRef(inRef), inParentRef, g);
         addChildRef(inParentRef, inName, r);
       then
         (g, r);
@@ -1684,17 +1684,17 @@ algorithm
       Data data;
 
     case (FCore.N(name, id, parents, children, data), _, g)
-      equation
+      algorithm
         // add parent
-        parents = inParentRef::parents;
+        parents := inParentRef::parents;
         // create node clone
-        (g, n as FCore.N(name, id, parents, _, data)) = FGraph.node(g, name, parents, data);
+        (g, n as FCore.N(name, id, parents, _, data)) := FGraph.node(g, name, parents, data);
         // make the reference to the new node
-        r = toRef(n);
+        r := toRef(n);
         // clone children
-        (g, children) = cloneTree(children, r, g);
+        (g, children) := cloneTree(children, r, g);
         // set the children in the new node
-        r = updateRef(r, FCore.N(name, id, parents, children, data));
+        r := updateRef(r, FCore.N(name, id, parents, children, data));
       then
         (g, r);
 
@@ -1743,13 +1743,13 @@ algorithm
       Ref r;
 
     case (_, g)
-      equation
+      algorithm
         // first copy the entire tree as it is
         // generating new array references
-        r = copyRefNoUpdate(inRef);
+        r := copyRefNoUpdate(inRef);
         // then update all array references
         // in the tree to their new places
-        (g, r) = updateRefs(r, g);
+        (g, r) := updateRefs(r, g);
       then
         (g, r);
 
@@ -1771,10 +1771,10 @@ algorithm
       Ref r;
 
     case (_, g)
-      equation
+      algorithm
         // for each node in the tree
         // update all refs from the node parents or node data
-        ((r, g)) = apply1(inRef, updateRefInGraph, (inRef, g));
+        ((r, g)) := apply1(inRef, updateRefInGraph, (inRef, g));
       then
         (g, r);
 
@@ -1798,12 +1798,12 @@ algorithm
       Data d;
 
     case (_, (t, g))
-      equation
+      algorithm
         // print("Updating references in node: " + toStr(fromRef(inRef)) + " / [" + toPathStr(fromRef(inRef)) + "]\n");
-        FCore.N(n, i, p, c, d) = fromRef(inRef);
-        p = List.map1r(p, lookupRefFromRef, t);
-        d = updateRefInData(d, t);
-        _ = updateRef(inRef, FCore.N(n, i, p, c, d));
+        FCore.N(n, i, p, c, d) := fromRef(inRef);
+        p := List.map1r(p, lookupRefFromRef, t);
+        d := updateRefInData(d, t);
+        _ := updateRef(inRef, FCore.N(n, i, p, c, d));
       then
         ((t, g));
 
@@ -1822,10 +1822,10 @@ algorithm
       Ref r;
       Scope s;
     case (_, _)
-      equation
+      algorithm
         // get the original scope from the old ref
-        s = originalScope(inOldRef);
-        r = lookupRef(inRef, s);
+        s := originalScope(inOldRef);
+        r := lookupRef(inRef, s);
       then
         r;
   end match;
@@ -1850,8 +1850,8 @@ algorithm
       Scope sc;
 
     case (FCore.REF(sc), _)
-      equation
-        sc = List.map1r(sc, lookupRefFromRef, inRef);
+      algorithm
+        sc := List.map1r(sc, lookupRefFromRef, inRef);
       then
         FCore.REF(sc);
 
@@ -1958,9 +1958,9 @@ algorithm
   b := matchcontinue(inRef)
 
     case (_)
-      equation
-        _ = refRef(inRef); // node exists
-        b = listEmpty(refRefTargetScope(inRef)); // with non empty scope
+      algorithm
+        _ := refRef(inRef); // node exists
+        b := listEmpty(refRefTargetScope(inRef)); // with non empty scope
       then
         b;
 

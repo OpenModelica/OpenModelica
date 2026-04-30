@@ -125,11 +125,11 @@ algorithm
     case true
     then (inM, inTypeA);
 
-    case false equation
-      (eqns, extArg) = func(inM[pos], pos, inTypeA);
-      eqns1 = List.removeOnTrue(pos, intLt, eqns);
-      (m1, extArg1) = traverseAdjacencyMatrixList(eqns1, inM, func, arrayLength(inM), pos, extArg);
-      (m2, extArg2) = traverseAdjacencyMatrix2(m1, func, pos+1, len, intGt(pos+1, len), extArg1);
+    case false algorithm
+      (eqns, extArg) := func(inM[pos], pos, inTypeA);
+      eqns1 := List.removeOnTrue(pos, intLt, eqns);
+      (m1, extArg1) := traverseAdjacencyMatrixList(eqns1, inM, func, arrayLength(inM), pos, extArg);
+      (m2, extArg2) := traverseAdjacencyMatrix2(m1, func, pos+1, len, intGt(pos+1, len), extArg1);
     then (m2, extArg2);
   end match;
 end traverseAdjacencyMatrix2;
@@ -161,21 +161,21 @@ algorithm
     case ({})
     then (inM, inTypeA);
 
-    case (pos::rest) equation
+    case (pos::rest) algorithm
       // do not leave the list
-      true = intLt(pos, len+1);
+      true := intLt(pos, len+1);
       // do not more than necesary
-      true = intLt(pos, maxpos);
-      (eqns, extArg) = func(inM[pos], pos, inTypeA);
-      eqns1 = List.removeOnTrue(maxpos, intLt, eqns);
-      alleqns = List.unionOnTrueList({rest, eqns1}, intEq);
-      (m, extArg1) = traverseAdjacencyMatrixList(alleqns, inM, func, len, maxpos, extArg);
+      true := intLt(pos, maxpos);
+      (eqns, extArg) := func(inM[pos], pos, inTypeA);
+      eqns1 := List.removeOnTrue(maxpos, intLt, eqns);
+      alleqns := List.unionOnTrueList({rest, eqns1}, intEq);
+      (m, extArg1) := traverseAdjacencyMatrixList(alleqns, inM, func, len, maxpos, extArg);
     then (m, extArg1);
 
-    case (pos::rest) equation
+    case (pos::rest) algorithm
       // do not leave the list
-      true = intLt(pos, len+1);
-      (m, extArg) = traverseAdjacencyMatrixList(rest, inM, func, len, maxpos, inTypeA);
+      true := intLt(pos, len+1);
+      (m, extArg) := traverseAdjacencyMatrixList(rest, inM, func, len, maxpos, inTypeA);
     then (m, extArg);
 
     else equation
@@ -203,12 +203,12 @@ algorithm
     then mnew;
 
     case (_) guard intGt(skip[index], 0)
-      equation
-      row = list(r for r guard intGt(r,0) and intGt(rowskip[r], 0) in m[index]);
+      algorithm
+      row := list(r for r guard intGt(r,0) and intGt(rowskip[r], 0) in m[index]);
       arrayUpdate(mnew, index, row);
     then getOtherEqSysAdjacencyMatrix(m, size, index+1, skip, rowskip, mnew);
 
-    case (_) equation
+    case (_) algorithm
       arrayUpdate(mnew,index,{});
     then getOtherEqSysAdjacencyMatrix(m, size, index+1, skip, rowskip, mnew);
   end match;
@@ -256,11 +256,11 @@ algorithm
     case {}
     then (mt, indx+1);
 
-    case i::res equation
-      iabs = intAbs(i);
-      mt = Array.expand(iabs - arrayLength(mt), mt, {});
-      col = mt[iabs];
-      indx1 = if intLt(i, 0) then -indx else indx;
+    case i::res algorithm
+      iabs := intAbs(i);
+      mt := Array.expand(iabs - arrayLength(mt), mt, {});
+      col := mt[iabs];
+      indx1 := if intLt(i, 0) then -indx else indx;
       arrayUpdate(mt, iabs, indx1::col);
     then transposeRow(res, mt, indx);
   end match;

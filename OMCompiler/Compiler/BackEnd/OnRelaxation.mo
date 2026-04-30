@@ -135,33 +135,33 @@ algorithm
       then (isyst, ishared, false);
     case (_, shared as BackendDAE.SHARED(functionTree=funcs),
       (BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(SOME(jac)), jacType=BackendDAE.JAC_LINEAR()))::comps)
-      equation
+      algorithm
         print("try to relax\n");
           Util.profilerinit();
           Util.profilerstart2();
           Util.profilerstart1();
-        size = listLength(vindx);
-        esize = listLength(eindex);
-        ass1 = arrayCreate(size, -1);
-        ass2 = arrayCreate(size, -1);
-        eqn_lst = BackendEquation.getList(eindex, BackendEquation.getEqnsFromEqSystem(isyst));
-        eqns = BackendEquation.listEquation(eqn_lst);
-        var_lst = List.map1r(vindx, BackendVariable.getVarAt, BackendVariable.daeVars(isyst));
-        vars = BackendVariable.listVar1(var_lst);
+        size := listLength(vindx);
+        esize := listLength(eindex);
+        ass1 := arrayCreate(size, -1);
+        ass2 := arrayCreate(size, -1);
+        eqn_lst := BackendEquation.getList(eindex, BackendEquation.getEqnsFromEqSystem(isyst));
+        eqns := BackendEquation.listEquation(eqn_lst);
+        var_lst := List.map1r(vindx, BackendVariable.getVarAt, BackendVariable.daeVars(isyst));
+        vars := BackendVariable.listVar1(var_lst);
 
-        subsyst = BackendDAEUtil.createEqSystem(vars, eqns);
-        (subsyst, m, mt, mapEqnIncRow, mapIncRowEqn) = BackendDAEUtil.getAdjacencyMatrixScalar(subsyst, BackendDAE.ABSOLUTE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(ishared));
+        subsyst := BackendDAEUtil.createEqSystem(vars, eqns);
+        (subsyst, m, mt, mapEqnIncRow, mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixScalar(subsyst, BackendDAE.ABSOLUTE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(ishared));
         //  BackendDump.dumpEqSystem(subsyst);
 
         // Vector Matching a=f(..), f(..)=a
-        ((_, ass1, ass2)) = List.fold1(eqn_lst, vectorMatching, vars, (1, ass1, ass2));
+        ((_, ass1, ass2)) := List.fold1(eqn_lst, vectorMatching, vars, (1, ass1, ass2));
         // Alias Matching only if one side is matched
-        ((_, ass1, ass2)) = List.fold1(eqn_lst, aliasMatching, vars, (1, ass1, ass2));
+        ((_, ass1, ass2)) := List.fold1(eqn_lst, aliasMatching, vars, (1, ass1, ass2));
         // Vector matching
-        m1 = arrayCreate(size, {});
+        m1 := arrayCreate(size, {});
         transformJacToAdjacencyMatrix2(jac, m1, mapIncRowEqn, eqns, ass1, ass2, isConstOneMinusOne);
         Matching.matchingExternalsetAdjacencyMatrix(size, size, m1);
-        true = BackendDAEEXT.setAssignment(size, size, ass2, ass1);
+        true := BackendDAEEXT.setAssignment(size, size, ass2, ass1);
         BackendDAEEXT.matching(size, size, 5, -1, 1.0, 0);
         BackendDAEEXT.getAssignment(ass2, ass1);
 
@@ -196,14 +196,14 @@ algorithm
         //  (subsyst, _, _) = BackendDAEUtil.getAdjacencyMatrix(subsyst, BackendDAE.ABSOLUTE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(shared));
         //   BackendDump.dumpEqSystem(subsyst);
         //   dumpJacMatrix(jac, 1, 1, size, vars);
-        m1 = arrayCreate(size, {});
+        m1 := arrayCreate(size, {});
         //mt1 = arrayCreate(size, {});
         transformJacToAdjacencyMatrix1(jac, m1, ass1, ass2, isConstOneMinusOne);
         //  BackendDump.dumpAdjacencyMatrix(m1);
         //  BackendDump.dumpAdjacencyMatrixT(mt1);
         //transformJacToAdjacencyMatrix(jac, 1, 1, size, m1, mt1, isConstOneMinusOne);
         Matching.matchingExternalsetAdjacencyMatrix(size, size, m1);
-        true = BackendDAEEXT.setAssignment(size, size, ass2, ass1);
+        true := BackendDAEEXT.setAssignment(size, size, ass2, ass1);
         BackendDAEEXT.matching(size, size, 1, -1, 1.0, 0);
         BackendDAEEXT.getAssignment(ass2, ass1);
 
@@ -215,8 +215,8 @@ algorithm
         // onefreeMatching
         //  print("mapEqnIncRow:\n");
         //  BackendDump.dumpAdjacencyMatrix(mapEqnIncRow);
-        unassigned = Matching.getUnassigned(size, ass2, {});
-        colummarks = arrayCreate(size, -1);
+        unassigned := Matching.getUnassigned(size, ass2, {});
+        colummarks := arrayCreate(size, -1);
         onefreeMatchingBFS(unassigned, m, mt, size, ass1, ass2, colummarks, 1, {});
 
         //  BackendDump.dumpMatching(ass1);
@@ -230,37 +230,37 @@ algorithm
           Util.profilerreset1();
           Util.profilerstart1();
         // collect tearing variables and residual equations
-        vorphans = getOrphans(1, size, ass1, {});
-        eorphans = getOrphans(1, size, ass2, {});
+        vorphans := getOrphans(1, size, ass1, {});
+        eorphans := getOrphans(1, size, ass2, {});
         //   print("Var Orphans: \n");
         //   BackendDump.debuglst((vorphans, intString, ", ", "\n"));
         //   print("Equation Orphans: \n");
         //   BackendDump.debuglst((eorphans, intString, ", ", "\n"));
 
         // transform to nonscalar
-        ass1 = BackendDAETransform.varAssignmentNonScalar(ass1, mapIncRowEqn);
-        ass22 = BackendDAETransform.eqnAssignmentNonScalar(mapEqnIncRow, ass2);
-        eorphans = List.uniqueIntN(List.map1r(eorphans, arrayGet, mapIncRowEqn), arrayLength(mapIncRowEqn));
-        (subsyst, m, mt) = BackendDAEUtil.getAdjacencyMatrix(subsyst, BackendDAE.ABSOLUTE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(ishared));
+        ass1 := BackendDAETransform.varAssignmentNonScalar(ass1, mapIncRowEqn);
+        ass22 := BackendDAETransform.eqnAssignmentNonScalar(mapEqnIncRow, ass2);
+        eorphans := List.uniqueIntN(List.map1r(eorphans, arrayGet, mapIncRowEqn), arrayLength(mapIncRowEqn));
+        (subsyst, m, mt) := BackendDAEUtil.getAdjacencyMatrix(subsyst, BackendDAE.ABSOLUTE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(ishared));
         //  BackendDump.dumpAdjacencyMatrix(m);
         //  BackendDump.dumpAdjacencyMatrixT(mt);
 
         // genereate cliques
-        rowmarks = arrayCreate(size, -1);
-        colummarks = arrayCreate(size, -1);
-        orowmarks = arrayCreate(size, -1);
-        ocolummarks = arrayCreate(size, -1);
-        vorphansarray1 = arrayCreate(size, {});
-        mc = arrayCreate(esize, {});
-        mct = arrayCreate(size, {});
-        mc = Array.copy(m, mc);
-        mct = Array.copy(mt, mct);
-        mark = 1 "init mark value";
-        (mark, constraintresidual) = generateCliquesResidual(eorphans, ass1, ass22, mc, mct, mark, rowmarks, colummarks, vars, {}) "generate cliques for residual equations";
+        rowmarks := arrayCreate(size, -1);
+        colummarks := arrayCreate(size, -1);
+        orowmarks := arrayCreate(size, -1);
+        ocolummarks := arrayCreate(size, -1);
+        vorphansarray1 := arrayCreate(size, {});
+        mc := arrayCreate(esize, {});
+        mct := arrayCreate(size, {});
+        mc := Array.copy(m, mc);
+        mct := Array.copy(mt, mct);
+        mark := 1 "init mark value";
+        (mark, constraintresidual) := generateCliquesResidual(eorphans, ass1, ass22, mc, mct, mark, rowmarks, colummarks, vars, {}) "generate cliques for residual equations";
         //  print("constraintresidual: \n");
         //   BackendDump.debuglst((constraintresidual, intString, ", ", "\n"));
-        (mark, roots, constraints) = prepairOrphansOrder(vorphans, ass1, ass22, mc, mct, mark, rowmarks, colummarks, vorphansarray1, vars, {}, {}) "generate cliques for tearing vars";
-        mark = prepairOrphansOrder2(vorphans, ass1, ass22, mc, mct, mark, rowmarks, colummarks, vorphansarray1);
+        (mark, roots, constraints) := prepairOrphansOrder(vorphans, ass1, ass22, mc, mct, mark, rowmarks, colummarks, vorphansarray1, vars, {}, {}) "generate cliques for tearing vars";
+        mark := prepairOrphansOrder2(vorphans, ass1, ass22, mc, mct, mark, rowmarks, colummarks, vorphansarray1);
         //  subsyst = BackendDAE.EQSYSTEM(vars, eqns, SOME(mc), SOME(mct), BackendDAE.NO_MATCHING(), {});
         //  DumpGraphML.dumpSystem(subsyst, shared, NONE(), intString(size) + "SystemPreIndex.graphml");
         //  print("roots:\n");
@@ -272,25 +272,25 @@ algorithm
           Util.profilerreset1();
           Util.profilerstart1();
         // Order of orphans
-        vorphansarray1 = arrayCreate(size, {});
+        vorphansarray1 := arrayCreate(size, {});
         List.map2_0(roots, doMark, rowmarks, mark);
         List.map2_0(constraints, doMark, rowmarks, mark);
-        otherorphans = List.select2(vorphans, unmarked, rowmarks, mark);
+        otherorphans := List.select2(vorphans, unmarked, rowmarks, mark);
         //  print("otherorphans:\n");
         //  BackendDump.debuglst((otherorphans, intString, ", ", "\n"));
-        mark = getOrphansOrderEdvanced(otherorphans, ass1, ass22, m, mt, mc, mct, mark, rowmarks, colummarks, vorphansarray1);
+        mark := getOrphansOrderEdvanced(otherorphans, ass1, ass22, m, mt, mc, mct, mark, rowmarks, colummarks, vorphansarray1);
         List.map2_0(otherorphans, removeRootConnections, vorphansarray1, roots);
-        mark = getConstraintesOrphansOrderEdvanced(constraints, ass1, ass22, m, mt, mc, mct, mark, rowmarks, colummarks, vorphansarray1);
+        mark := getConstraintesOrphansOrderEdvanced(constraints, ass1, ass22, m, mt, mc, mct, mark, rowmarks, colummarks, vorphansarray1);
         //  print("getOrphansOrderEdvanced:\n");
         //  BackendDump.dumpAdjacencyMatrix(vorphansarray1);
 
-        (vorphans, mark) = getOrphansOrderEdvanced3(roots, otherorphans, constraints, vorphans, vorphansarray1, mark, rowmarks);
+        (vorphans, mark) := getOrphansOrderEdvanced3(roots, otherorphans, constraints, vorphans, vorphansarray1, mark, rowmarks);
           Util.profilerstop1();
           print("Reihenfolge  time: " + realString(Util.profilertime1()) + "\n");
           Util.profilerreset1();
           Util.profilerstart1();
         List.map2_0(constraints, doMark, rowmarks, mark);
-        otherorphans = List.select2(vorphans, unmarked, rowmarks, mark);
+        otherorphans := List.select2(vorphans, unmarked, rowmarks, mark);
 
         //  print("sorted Var Orphans: \n");
         //   List.map1_0(vorphans, dumpVar, vars);
@@ -299,9 +299,9 @@ algorithm
 
         // get pairs of orphans
         List.map2_0(constraintresidual, doAssign, ass22, {-1});
-        mark = getOrphansPairs(otherorphans, ass1, ass22, m, mt, mark+1, rowmarks, colummarks);
+        mark := getOrphansPairs(otherorphans, ass1, ass22, m, mt, mark+1, rowmarks, colummarks);
         List.map2_0(constraintresidual, doAssign, ass22, {});
-        mark = getOrphansPairsConstraints(constraints, ass1, ass22, mc, mct, mark, rowmarks, colummarks, eqns);
+        mark := getOrphansPairsConstraints(constraints, ass1, ass22, mc, mct, mark, rowmarks, colummarks, eqns);
         //  print("Matching with Orphans:\n");
         //  BackendDump.dumpMatching(ass1);
         //  BackendDump.dumpAdjacencyMatrix(ass22);
@@ -309,12 +309,12 @@ algorithm
           print("Paarung  time: " + realString(Util.profilertime1()) + "\n");
           Util.profilerreset1();
           Util.profilerstart1();
-        vec1 = arrayCreate(esize, {});
-        vec2 = arrayCreate(esize, -1);
+        vec1 := arrayCreate(esize, {});
+        vec2 := arrayCreate(esize, -1);
 
-        orowmarks = List.fold1(vorphans, markOrphans, 1, orowmarks);
-        ocolummarks = List.fold1(eorphans, markOrphans, 1, ocolummarks);
-        mark = getIndexesForEqnsAdvanced(vorphans, 1, m, mt, mark, rowmarks, colummarks, orowmarks, ocolummarks, ass1, ass22, vec1, vec2, arrayCreate(esize, false), vars, eqns, shared, size);
+        orowmarks := List.fold1(vorphans, markOrphans, 1, orowmarks);
+        ocolummarks := List.fold1(eorphans, markOrphans, 1, ocolummarks);
+        mark := getIndexesForEqnsAdvanced(vorphans, 1, m, mt, mark, rowmarks, colummarks, orowmarks, ocolummarks, ass1, ass22, vec1, vec2, arrayCreate(esize, false), vars, eqns, shared, size);
 
         //  BackendDump.dumpAdjacencyMatrix(vec1);
         //  BackendDump.dumpMatching(vec2);
@@ -322,7 +322,7 @@ algorithm
         //  _ = List.fold1(arrayList(vec2), transposeOrphanVec, vec3, 1);
         //  DumpGraphML.dumpSystem(subsyst, shared, SOME(vec3), "System.graphml");
 
-        ((_, _, _, eqns, vars)) = Array.fold(vec2, getEqnsinOrder, (eqns, vars, ass22, BackendEquation.listEquation({}), BackendVariable.emptyVars()));
+        ((_, _, _, eqns, vars)) := Array.fold(vec2, getEqnsinOrder, (eqns, vars, ass22, BackendEquation.listEquation({}), BackendVariable.emptyVars()));
           Util.profilerstop1();
           print("Indizierung  time: " + realString(Util.profilertime1()) + "\n");
           Util.profilerreset1();
@@ -330,37 +330,37 @@ algorithm
         // replace evaluated parametes
         //_ = BackendDAEUtil.traverseBackendDAEExpsEqns(eqns, replaceFinalParameter, BackendVariable.daeGlobalKnownVars(shared));
 
-        subsyst = BackendDAEUtil.createEqSystem(vars, eqns);
-        (subsyst, m, _) = BackendDAEUtil.getAdjacencyMatrix(subsyst, BackendDAE.ABSOLUTE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(ishared));
+        subsyst := BackendDAEUtil.createEqSystem(vars, eqns);
+        (subsyst, m, _) := BackendDAEUtil.getAdjacencyMatrix(subsyst, BackendDAE.ABSOLUTE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(ishared));
         //  BackendDump.dumpEqSystem(subsyst);
         //  DumpGraphML.dumpSystem(subsyst, shared, NONE(), intString(size) + "SystemIndexed.graphml");
-        (SOME(jac), _) = SymbolicJacobian.calculateJacobian(vars, eqns, m, true, ishared);
-        (beqs, _) = BackendDAEUtil.getEqnSysRhs(eqns, vars, SOME(funcs));
-        beqs = listReverse(beqs);
+        (SOME(jac), _) := SymbolicJacobian.calculateJacobian(vars, eqns, m, true, ishared);
+        (beqs, _) := BackendDAEUtil.getEqnSysRhs(eqns, vars, SOME(funcs));
+        beqs := listReverse(beqs);
         //  print("Jacobian:\n");
         //  print(BackendDump.dumpJacobianStr(SOME(jac)) + "\n");
         // dumpJacMatrix(jac, 1, 1, size, vars);
 
-        matrix = arrayCreate(size, {});
+        matrix := arrayCreate(size, {});
         transformJacToMatrix(jac, 1, 1, size, beqs, matrix);
         //  print("Jacobian as Matrix:\n");
         //  dumpMatrix(1, size, matrix);
-        (tvars, teqns) = gaussElimination(1, size, matrix, BackendVariable.emptyVars(), BackendEquation.listEquation({}), (1, 1));
+        (tvars, teqns) := gaussElimination(1, size, matrix, BackendVariable.emptyVars(), BackendEquation.listEquation({}), (1, 1));
         //  dumpMatrix(1, size, matrix);
         //  subsyst = BackendDAEUtil.createEqSystem(tvars, teqns);
         //  BackendDump.dumpEqSystem(subsyst);
-        eqn_lst = BackendEquation.equationList(teqns);
-        var_lst = BackendVariable.varList(tvars);
-        syst = List.fold(eqn_lst, BackendEquation.equationAddDAE, isyst);
-        syst = List.fold(var_lst, BackendVariable.addVarDAE, syst);
-        crefexplst = List.map(BackendVariable.varList(vars), makeCrefExps);
-        crefexps = listArray(crefexplst);
-        neweqns = makeGausElimination(1, size, matrix, crefexps, {});
+        eqn_lst := BackendEquation.equationList(teqns);
+        var_lst := BackendVariable.varList(tvars);
+        syst := List.fold(eqn_lst, BackendEquation.equationAddDAE, isyst);
+        syst := List.fold(var_lst, BackendVariable.addVarDAE, syst);
+        crefexplst := List.map(BackendVariable.varList(vars), makeCrefExps);
+        crefexps := listArray(crefexplst);
+        neweqns := makeGausElimination(1, size, matrix, crefexps, {});
           Util.profilerstop1();
           print("Gaus Elimination time: " + realString(Util.profilertime1()) + "\n");
           Util.profilerreset1();
           Util.profilerstart1();
-        syst = replaceEquationsAddNew(eindex, neweqns, syst);
+        syst := replaceEquationsAddNew(eindex, neweqns, syst);
           Util.profilerstop2();
           print("Gesamt  time: " + realString(Util.profilertime2()) + "\n");
           Util.profilerreset1();
@@ -392,12 +392,12 @@ algorithm
         //  print("Mul Operations: " + intString(i2) + "\n");
         //  print("Oth Operations: " + intString(i3) + "\n");
           print("Ok system relaxed\n");
-        (syst, shared, _) = relaxSystem1(syst, shared, comps);
+        (syst, shared, _) := relaxSystem1(syst, shared, comps);
       then
         (syst, shared, true);
     case (_, _, _::comps)
-      equation
-        (syst, shared, b) = relaxSystem1(isyst, ishared, comps);
+      algorithm
+        (syst, shared, b) := relaxSystem1(isyst, ishared, comps);
       then
         (syst, shared, b);
   end matchcontinue;
@@ -412,10 +412,10 @@ algorithm
     local
       list<Integer> lst;
     case(_, _, _)
-      equation
-        lst = orphansarray[orphan];
-        true = intGt(listLength(lst), 1);
-        lst = List.fold1(roots, List.removeOnTrue, intEq, lst);
+      algorithm
+        lst := orphansarray[orphan];
+        true := intGt(listLength(lst), 1);
+        lst := List.fold1(roots, List.removeOnTrue, intEq, lst);
         arrayUpdate(orphansarray, orphan, lst);
       then
         ();
@@ -452,10 +452,10 @@ algorithm
       DAE.ComponentRef cr;
       BackendDAE.Var v;
     case (DAE.CREF(componentRef=cr), (knvars, _))
-      equation
-        (v::_, _) = BackendVariable.getVar(cr, knvars);
-        true = BackendVariable.isFinalVar(v);
-        e1 = BackendVariable.varBindExpStartValue(v);
+      algorithm
+        (v::_, _) := BackendVariable.getVar(cr, knvars);
+        true := BackendVariable.isFinalVar(v);
+        e1 := BackendVariable.varBindExpStartValue(v);
       then
         (e1, (knvars, true));
 
@@ -487,8 +487,8 @@ algorithm
     case ({}, _, _)
     then BackendEquation.equationsAddDAE(inEqns, inEqSystem);
 
-    case (index::indices, eqn::eqns, BackendDAE.EQSYSTEM(orderedEqs=orderedEqs)) equation
-      eqSystem = BackendDAEUtil.setEqSystEqs(inEqSystem, BackendEquation.setAtIndex(orderedEqs, index, eqn));
+    case (index::indices, eqn::eqns, BackendDAE.EQSYSTEM(orderedEqs=orderedEqs)) algorithm
+      eqSystem := BackendDAEUtil.setEqSystEqs(inEqSystem, BackendEquation.setAtIndex(orderedEqs, index, eqn));
     then replaceEquationsAddNew(indices, eqns, eqSystem);
   end match;
 end replaceEquationsAddNew;
@@ -513,9 +513,9 @@ algorithm
   outId := matchcontinue(c, vec3, inId)
     local list<Integer> lst;
     case (_, _, _)
-      equation
-        true = intGt(c, 0);
-        lst = vec3[c];
+      algorithm
+        true := intGt(c, 0);
+        lst := vec3[c];
         arrayUpdate(vec3, c, inId::lst);
       then
         inId + 1;
@@ -558,32 +558,32 @@ algorithm
       then
        (mark+2, iconstraints);
     case (o::rest, _, _, _, _, _, _, _, _, _)
-      equation
-        false = intEq(colummarks[o], mark);
+      algorithm
+        false := intEq(colummarks[o], mark);
         arrayUpdate(colummarks, o, mark);
         //  print("Process Residual " + intString(o) + "\n");
-        rlst = m[o];
+        rlst := m[o];
         // check for partner
-        elst = List.select1(List.flatten(List.map1r(rlst, arrayGet, mt)), intGt, 0);
+        elst := List.select1(List.flatten(List.map1r(rlst, arrayGet, mt)), intGt, 0);
         //  print("Search for " + intString(o) + " Parnters in: " + stringDelimitList(List.map(elst, intString), ", ") + "\n");
-        partner = List.select1(elst, isResOrphan, ass2);
-        partner = List.uniqueIntN(List.removeOnTrue(o, intEq, partner), arrayLength(colummarks));
+        partner := List.select1(elst, isResOrphan, ass2);
+        partner := List.uniqueIntN(List.removeOnTrue(o, intEq, partner), arrayLength(colummarks));
         List.map2_0(partner, doMark, colummarks, mark);
         //  print("Found for " + intString(o) + " Parnters: " + stringDelimitList(List.map(partner, intString), ", ") + "\n");
         //  BackendDump.debuglst((rlst, intString, ", ", "\n"));
-        vlst = List.map1r(rlst, BackendVariable.getVarAt, vars);
-        blst = List.map(vlst, BackendVariable.isFlowVar);
-        foundflow = List.any(blst, Util.id);
-        rlst = selectNonFlows(rlst, blst);
-        foundflow = generateCliquesResidual1(rlst, ass1, ass2, m, mt, mark, rowmarks, colummarks, foundflow, vars);
+        vlst := List.map1r(rlst, BackendVariable.getVarAt, vars);
+        blst := List.map(vlst, BackendVariable.isFlowVar);
+        foundflow := List.any(blst, Util.id);
+        rlst := selectNonFlows(rlst, blst);
+        foundflow := generateCliquesResidual1(rlst, ass1, ass2, m, mt, mark, rowmarks, colummarks, foundflow, vars);
         generateCliquesResidual2(rlst, ass1, ass2, m, mt, mark+1, rowmarks, colummarks, o::partner);
-        constraints = if not foundflow then listAppend(o::partner, iconstraints) else iconstraints;
-        (omark, constraints) = generateCliquesResidual(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, vars, constraints);
+        constraints := if not foundflow then listAppend(o::partner, iconstraints) else iconstraints;
+        (omark, constraints) := generateCliquesResidual(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, vars, constraints);
       then
        (omark, constraints);
     case (_::rest, _, _, _, _, _, _, _, _, _)
-      equation
-        (omark, constraints) = generateCliquesResidual(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, vars, iconstraints);
+      algorithm
+        (omark, constraints) := generateCliquesResidual(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, vars, iconstraints);
       then
         (omark, constraints);
   end matchcontinue;
@@ -671,16 +671,16 @@ algorithm
     case (r::rest, _, _, _, _, _, _, _, _)
       guard
         not intEq(rowmarks[r], mark)
-      equation
+      algorithm
         // marked?
-        e = ass1[r];
-        rlst = ass2[e];
-        lst = List.fold1(rlst, List.removeOnTrue, intEq, m[e]);
-        (lst1 as _::_) = List.select2(lst, unmarked, rowmarks, mark-1);
+        e := ass1[r];
+        rlst := ass2[e];
+        lst := List.fold1(rlst, List.removeOnTrue, intEq, m[e]);
+        (lst1 as _::_) := List.select2(lst, unmarked, rowmarks, mark-1);
         // print("generateClique " + intString(eqn) + " to " + stringDelimitList(List.map(lst1, intString), ", ") + "\n");
         List.map4_0(lst1, generateResidualClique, m, mt, orphan, e);
         List.map2_0(rlst, doMark, rowmarks, mark);
-        lst = List.select2(lst, marked, rowmarks, mark-1);
+        lst := List.select2(lst, marked, rowmarks, mark-1);
         // print("Go From " + intString(e) + " to " + stringDelimitList(List.map(r, intString), ", ") + "\n");
         arrayUpdate(colummarks, e, mark);
         // print("Go From " + intString(e) + " to " + stringDelimitList(List.map(next, intString), ", ") + "\n");
@@ -689,7 +689,7 @@ algorithm
       then
         ();
     case (_::rest, _, _, _, _, _, _, _, _)
-      equation
+      algorithm
         generateCliquesResidual2(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, orphan);
       then
         ();
@@ -725,25 +725,25 @@ algorithm
     case (o::rest, _, _, _, _, _, _, _, _, _, _, _)
       guard
         not intEq(rowmarks[o], mark)
-      equation
+      algorithm
         arrayUpdate(rowmarks, o, mark);
-        elst = mt[o];
-        rlst = List.flatten(List.map1r(elst, arrayGet, ass2));
+        elst := mt[o];
+        rlst := List.flatten(List.map1r(elst, arrayGet, ass2));
         // check for partner
         //  BackendDump.debuglst((rlst, intString, ", ", "\n"));
-        vlst = List.map1r(rlst, BackendVariable.getVarAt, vars);
-        constr = List.all(vlst, BackendVariable.isFlowVar);
-        constraints = List.consOnTrue(constr, o, iconstraints);
+        vlst := List.map1r(rlst, BackendVariable.getVarAt, vars);
+        constr := List.all(vlst, BackendVariable.isFlowVar);
+        constraints := List.consOnTrue(constr, o, iconstraints);
         //  print("Process Orphan " + intString(o) + "\n");
         //  BackendDump.debuglst((mt[o], intString, ", ", "\n"));
-        foundflow = prepairOrphansOrder1(mt[o], ass1, ass2, m, mt, mark, rowmarks, colummarks, o, orphans, {o}, false, vars);
-        roots = List.consOnTrue(foundflow and not constr, o, iroots);
-        (omark, roots, constraints) = prepairOrphansOrder(rest, ass1, ass2, m, mt, mark+1, rowmarks, colummarks, orphans, vars, roots, constraints);
+        foundflow := prepairOrphansOrder1(mt[o], ass1, ass2, m, mt, mark, rowmarks, colummarks, o, orphans, {o}, false, vars);
+        roots := List.consOnTrue(foundflow and not constr, o, iroots);
+        (omark, roots, constraints) := prepairOrphansOrder(rest, ass1, ass2, m, mt, mark+1, rowmarks, colummarks, orphans, vars, roots, constraints);
       then
        (omark, roots, constraints);
     case (_::rest, _, _, _, _, _, _, _, _, _, _, _)
-      equation
-        (omark, roots, constraints) = prepairOrphansOrder(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, orphans, vars, iroots, iconstraints);
+      algorithm
+        (omark, roots, constraints) := prepairOrphansOrder(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, orphans, vars, iroots, iconstraints);
       then
         (omark, roots, constraints);
   end match;
@@ -815,16 +815,16 @@ algorithm
       then
        imark+1;
     case (o::rest, _, _, _, _, _, _, _, _)
-      equation
-        false = intEq(rowmarks[o], imark);
+      algorithm
+        false := intEq(rowmarks[o], imark);
         arrayUpdate(rowmarks, o, imark);
         //  print("Process Orphan " + intString(o) + "\n");
         //  BackendDump.debuglst((mt[o], intString, ", ", "\n"));
         // check for partner
-        elst = List.select1(mt[o], intGt, 0) "eqns of orphan";
-        rlst = List.select1(List.flatten(List.map1r(elst, arrayGet, m)), intGt, 0);
-        partner = List.select1(rlst, isOrphan, ass1);
-        partner = List.unique(partner);
+        elst := List.select1(mt[o], intGt, 0) "eqns of orphan";
+        rlst := List.select1(List.flatten(List.map1r(elst, arrayGet, m)), intGt, 0);
+        partner := List.select1(rlst, isOrphan, ass1);
+        partner := List.unique(partner);
         List.map2_0(partner, doMark, rowmarks, imark);
         //  print("Found for " + intString(o) + " Parnters: " + stringDelimitList(List.map(partner, intString), ", ") + "\n");
         prepairOrphansOrder3(mt[o], ass1, ass2, m, mt, imark, rowmarks, colummarks, o, partner, orphans, {o});
@@ -858,34 +858,34 @@ algorithm
       then
         ();
     case (e::rest, _, _, _, _, _, _, _, _, _, _, _)
-      equation
-        false = intEq(colummarks[e], mark);
+      algorithm
+        false := intEq(colummarks[e], mark);
         // marked?
-        r = ass2[e];
-        lst = List.unique(List.flatten(List.map1r(r, arrayGet, orphans)));
-        true = listMember(preorphan, lst);
+        r := ass2[e];
+        lst := List.unique(List.flatten(List.map1r(r, arrayGet, orphans)));
+        true := listMember(preorphan, lst);
         arrayUpdate(colummarks, e, mark);
         // print("Go From " + intString(e) + " to " + stringDelimitList(List.map(r, intString), ", ") + "\n");
         List.map2_0(r, doMark, rowmarks, mark);
-        elst = List.select1(List.map1r(r, arrayGet, ass1), intGt, 0);
-        next = List.flatten(List.map1r(r, arrayGet, mt));
-        next = List.fold1(elst, List.removeOnTrue, intEq, next);
+        elst := List.select1(List.map1r(r, arrayGet, ass1), intGt, 0);
+        next := List.flatten(List.map1r(r, arrayGet, mt));
+        next := List.fold1(elst, List.removeOnTrue, intEq, next);
         // print("Go From " + intString(e) + " to " + stringDelimitList(List.map(next, intString), ", ") + "\n");
         prepairOrphansOrder3(next, ass1, ass2, m, mt, mark, rowmarks, colummarks, preorphan, partner, orphans, r);
         prepairOrphansOrder3(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, preorphan, partner, orphans, prer);
       then
         ();
     case (e::rest, _, _, _, _, _, _, _, _, _, _, _)
-      equation
+      algorithm
         //  print("check Eqn " + intString(e)  + " ass[e]: " + stringDelimitList(List.map(ass2[e], intString), ", ") + "\n");
-        false = intEq(colummarks[e], mark);
+        false := intEq(colummarks[e], mark);
         // update Adjacency Matrix
         List.map4_0(prer, generateClique, m, mt, partner, e);
         prepairOrphansOrder3(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, preorphan, partner, orphans, prer);
       then
         ();
     case (_::rest, _, _, _, _, _, _, _, _, _, _, _)
-      equation
+      algorithm
         prepairOrphansOrder3(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, preorphan, partner, orphans, prer);
       then
         ();
@@ -905,22 +905,22 @@ algorithm
       list<Integer> lst, rest;
     case (_, _, _, {}, _) then ();
     case (_, _, _, orphan::rest, _)
-      equation
+      algorithm
         //  print("Replace " + intString(r) + " with " + intString(orphan) + "\n");
-        lst = mt[r];
+        lst := mt[r];
         // mt[r]-e
-        lst = List.removeOnTrue(e, intEq, lst);
+        lst := List.removeOnTrue(e, intEq, lst);
         //  print("mt[ " + intString(r) + "]= " + stringDelimitList(List.map(lst, intString), ", ") + "\n");
         arrayUpdate(mt, r, lst);
         // mt[preorphan]+e
-        lst = mt[orphan];
-        lst = List.unique(e::lst);
+        lst := mt[orphan];
+        lst := List.unique(e::lst);
         //  print("mt[ " + intString(orphan) + "]= " + stringDelimitList(List.map(lst, intString), ", ") + "\n");
         arrayUpdate(mt, orphan, lst);
         // m[e] - r + preorphan
-        lst = m[e];
-        lst = List.removeOnTrue(r, intEq, lst);
-        lst = List.unique(orphan::lst);
+        lst := m[e];
+        lst := List.removeOnTrue(r, intEq, lst);
+        lst := List.unique(orphan::lst);
         //  print("m[ " + intString(e) + "]= " + stringDelimitList(List.map(lst, intString), ", ") + "\n");
         arrayUpdate(m, e, lst);
         generateClique(r, m, mt, rest, e);
@@ -943,22 +943,22 @@ algorithm
       list<Integer> lst, rest;
     case (_, _, _, {}, _) then ();
     case (_, _, _, orphan::rest, _)
-      equation
+      algorithm
         //  print("Replace " + intString(e) + " with " + intString(orphan) + "\n");
-        lst = m[e];
+        lst := m[e];
         // mt[e]-r
-        lst = List.removeOnTrue(r, intEq, lst);
+        lst := List.removeOnTrue(r, intEq, lst);
         //  print("m[ " + intString(e) + "]= " + stringDelimitList(List.map(lst, intString), ", ") + "\n");
         arrayUpdate(m, e, lst);
         // m[orphan]+r
-        lst = m[orphan];
-        lst = List.unique(r::lst);
+        lst := m[orphan];
+        lst := List.unique(r::lst);
         //  print("m[ " + intString(orphan) + "]= " + stringDelimitList(List.map(lst, intString), ", ") + "\n");
         arrayUpdate(m, orphan, lst);
         // mt[r] - e + orphan
-        lst = mt[r];
-        lst = List.removeOnTrue(e, intEq, lst);
-        lst = List.unique(orphan::lst);
+        lst := mt[r];
+        lst := List.removeOnTrue(e, intEq, lst);
+        lst := List.unique(orphan::lst);
         //  print("mt[ " + intString(r) + "]= " + stringDelimitList(List.map(lst, intString), ", ") + "\n");
         arrayUpdate(mt, r, lst);
         generateResidualClique(r, m, mt, rest, e);
@@ -989,8 +989,8 @@ algorithm
       then
        mark;
     case (o::rest, _, _, _, _, _, _, _, _, _, _)
-      equation
-        false = intEq(rowmarks[o], mark);
+      algorithm
+        false := intEq(rowmarks[o], mark);
         arrayUpdate(rowmarks, o, mark);
         //  print("Process Orphan " + intString(o) + "\n");
         getOrphansOrderEdvanced1(mct[o], ass1, ass2, m, mt, mark, rowmarks, colummarks, o, orphans, {});
@@ -1050,7 +1050,7 @@ algorithm
       list<Integer> rest;
     case(_, {}, _) then ();
     case(_, o::rest, _)
-      equation
+      algorithm
         addPreOrphan(orphan, o, arr);
         addPreOrphans(orphan, rest, arr);
       then
@@ -1079,37 +1079,37 @@ algorithm
       then
         ();
     case ({}, _, _, _, _, _, _, _, _, _, _)
-      equation
+      algorithm
         getOrphansOrderEdvanced1(nextQueue, ass1, ass2, m, mt, mark, rowmarks, colummarks, preorphan, orphans, {});
       then
         ();
     case (e::_, _, _, _, _, _, _, _, _, _, _)
-      equation
+      algorithm
         // print("Check Eqn: " + intString(e) + "\n");
-        false = intEq(colummarks[e], mark);
-        r = List.removeOnTrue(preorphan, intEq, m[e]) "vars of equation without preorphan";
+        false := intEq(colummarks[e], mark);
+        r := List.removeOnTrue(preorphan, intEq, m[e]) "vars of equation without preorphan";
         //  print("search in " + stringDelimitList(List.map(r, intString), ", ") + "\n");
-        olst = hasOrphanAdvanced(r, ass1, {});
+        olst := hasOrphanAdvanced(r, ass1, {});
         arrayUpdate(colummarks, e, mark);
         //  print("Found Orphans " + stringDelimitList(List.map(olst, intString), ", ") + " ChildOrphan is " + intString(preorphan) + "\n");
         addPreOrphans(preorphan, olst, orphans);
       then
         ();
     case (e::rest, _, _, _, _, _, _, _, _, _, _)
-      equation
-        false = intEq(colummarks[e], mark);
-        r = List.removeOnTrue(preorphan, intEq, m[e]) "vars of equation";
-        r1 = List.select1(ass2[e], intGt, 0) "vars assignt with equation";
-        r = List.fold1(r1, List.removeOnTrue, intEq, r) "needed vars of equation";
-        elst = List.select1(List.map1r(r, arrayGet, ass1), intGt, 0) "equations assigned with needed vars";
-        next = listAppend(nextQueue, elst);
+      algorithm
+        false := intEq(colummarks[e], mark);
+        r := List.removeOnTrue(preorphan, intEq, m[e]) "vars of equation";
+        r1 := List.select1(ass2[e], intGt, 0) "vars assignt with equation";
+        r := List.fold1(r1, List.removeOnTrue, intEq, r) "needed vars of equation";
+        elst := List.select1(List.map1r(r, arrayGet, ass1), intGt, 0) "equations assigned with needed vars";
+        next := listAppend(nextQueue, elst);
         arrayUpdate(colummarks, e, mark);
         //  print("goto " + stringDelimitList(List.map(next, intString), ", ") + "\n");
         getOrphansOrderEdvanced1(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, preorphan, orphans, next);
       then
         ();
     case (_::rest, _, _, _, _, _, _, _, _, _, _)
-      equation
+      algorithm
         getOrphansOrderEdvanced1(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, preorphan, orphans, nextQueue);
       then
        ();
@@ -1139,8 +1139,8 @@ algorithm
       then
        mark;
     case (o::rest, _, _, _, _, _, _, _, _, _, _)
-      equation
-        false = intEq(rowmarks[o], mark);
+      algorithm
+        false := intEq(rowmarks[o], mark);
         arrayUpdate(rowmarks, o, mark);
         //  print("Process Orphan " + intString(o) + "\n");
         getConstraintesOrphansOrderEdvanced1(mct[o], ass1, ass2, m, mt, mark, rowmarks, colummarks, o, orphans, {});
@@ -1173,42 +1173,42 @@ algorithm
       then
         ();
     case ({}, _, _, _, _, _, _, _, _, _, _)
-      equation
+      algorithm
         getConstraintesOrphansOrderEdvanced1(nextQueue, ass1, ass2, m, mt, mark, rowmarks, colummarks, preorphan, orphans, {});
       then
         ();
     case (e::rest, _, _, _, _, _, _, _, _, _, _)
-      equation
+      algorithm
         // print("Check Eqn: " + intString(e) + "\n");
-        false = intEq(colummarks[e], mark);
-        r = List.removeOnTrue(preorphan, intEq, m[e]) "vars of equation without preorphan";
+        false := intEq(colummarks[e], mark);
+        r := List.removeOnTrue(preorphan, intEq, m[e]) "vars of equation without preorphan";
         //  print("search in " + stringDelimitList(List.map(r, intString), ", ") + "\n");
-        olst = hasOrphanAdvanced(r, ass1, {});
+        olst := hasOrphanAdvanced(r, ass1, {});
         arrayUpdate(colummarks, e, mark);
         //  print("Found Orphans " + stringDelimitList(List.map(olst, intString), ", ") + " ChildOrphan is " + intString(preorphan) + "\n");
         addPreOrphans(preorphan, olst, orphans);
-        r1 = ass2[e] "vars assignt with equation";
-        r = List.fold1(r1, List.removeOnTrue, intEq, r) "needed vars of equation";
-        elst = List.select1(List.map1r(r, arrayGet, ass1), intGt, 0) "equations assigned with needed vars";
-        next = listAppend(nextQueue, elst);
+        r1 := ass2[e] "vars assignt with equation";
+        r := List.fold1(r1, List.removeOnTrue, intEq, r) "needed vars of equation";
+        elst := List.select1(List.map1r(r, arrayGet, ass1), intGt, 0) "equations assigned with needed vars";
+        next := listAppend(nextQueue, elst);
         getConstraintesOrphansOrderEdvanced1(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, preorphan, orphans, next);
       then
         ();
     case (e::rest, _, _, _, _, _, _, _, _, _, _)
-      equation
-        false = intEq(colummarks[e], mark);
-        r = List.removeOnTrue(preorphan, intEq, m[e]) "vars of equation";
-        r1 = ass2[e] "vars assignt with equation";
-        r = List.fold1(r1, List.removeOnTrue, intEq, r) "needed vars of equation";
-        elst = List.select1(List.map1r(r, arrayGet, ass1), intGt, 0) "equations assigned with needed vars";
-        next = listAppend(nextQueue, elst);
+      algorithm
+        false := intEq(colummarks[e], mark);
+        r := List.removeOnTrue(preorphan, intEq, m[e]) "vars of equation";
+        r1 := ass2[e] "vars assignt with equation";
+        r := List.fold1(r1, List.removeOnTrue, intEq, r) "needed vars of equation";
+        elst := List.select1(List.map1r(r, arrayGet, ass1), intGt, 0) "equations assigned with needed vars";
+        next := listAppend(nextQueue, elst);
         arrayUpdate(colummarks, e, mark);
         //  print("goto " + stringDelimitList(List.map(next, intString), ", ") + "\n");
         getConstraintesOrphansOrderEdvanced1(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, preorphan, orphans, next);
       then
         ();
     case (_::rest, _, _, _, _, _, _, _, _, _, _)
-      equation
+      algorithm
         getConstraintesOrphansOrderEdvanced1(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, preorphan, orphans, nextQueue);
       then
        ();
@@ -1227,13 +1227,13 @@ algorithm
       list<Integer> rest, lst;
     case({}, _, _) then iAcc;
     case(l::rest, _, _)
-      equation
-        {} = m[l];
+      algorithm
+        {} := m[l];
       then
         mergeOrphanParents(rest, m, iAcc);
     case(l::rest, _, _)
-      equation
-        lst = m[l];
+      algorithm
+        lst := m[l];
       then
         mergeOrphanParents(rest, m, listAppend(lst, iAcc));
   end matchcontinue;
@@ -1254,10 +1254,10 @@ algorithm
       list<Integer> rest, childs;
     case({}, _, _, _, _, _) then iAcc;
     case(o::rest, _, _, _, _, _)
-      equation
-        false = intEq(rowmarks[o], mark);
+      algorithm
+        false := intEq(rowmarks[o], mark);
         arrayUpdate(rowmarks, o, mark);
-        childs = getLinkPosition1(m[o], m, mt, mark, rowmarks, o, iAcc);
+        childs := getLinkPosition1(m[o], m, mt, mark, rowmarks, o, iAcc);
       then
         getLinkPosition(rest, m, mt, mark, rowmarks, childs);
     case(_::rest, _, _, _, _, _)
@@ -1282,19 +1282,19 @@ algorithm
       list<Integer> lst;
     case({}, _, _, _, _, _, _) then preorphan::iAcc;
     case(o::{}, _, _, _, _, _, _)
-      equation
-        false = intEq(rowmarks[o], mark);
+      algorithm
+        false := intEq(rowmarks[o], mark);
         arrayUpdate(rowmarks, o, mark);
       then
         getLinkPosition1(m[o], m, mt, mark, rowmarks, o, iAcc);
     case(o::{}, _, _, _, _, _, _)
-      equation
-        true = intEq(rowmarks[o], mark);
-        lst = listAppend(mt[0], iAcc);
+      algorithm
+        true := intEq(rowmarks[o], mark);
+        lst := listAppend(mt[0], iAcc);
       then
         lst;
     case(_, _, _, _, _, _, _)
-      equation
+      algorithm
         print("Error in getLinkPosition1! Found Orphan with more than one parents " + stringDelimitList(List.map(orphans, intString), ", ") + "\n");
       then
         fail();
@@ -1320,11 +1320,11 @@ algorithm
       then
         (listReverse(iAcc), imark);
     case(links::rest, _, _, _, _, _)
-      equation
-        lst = mergeOrphanParents(links, m, {});
-        childs = getLinkPosition(lst, m, mt, imark, rowmarks, {});
+      algorithm
+        lst := mergeOrphanParents(links, m, {});
+        childs := getLinkPosition(lst, m, mt, imark, rowmarks, {});
         //  print("Found for links " + stringDelimitList(List.map(links, intString), ", ") + " childs " + stringDelimitList(List.map(childs, intString), ", ") + "\n");
-        (acc, mark) = getOrphansOrderEdvanced5(rest, m, mt, imark+1, rowmarks, childs::iAcc);
+        (acc, mark) := getOrphansOrderEdvanced5(rest, m, mt, imark+1, rowmarks, childs::iAcc);
       then
         (acc, mark);
   end match;
@@ -1343,8 +1343,8 @@ algorithm
       then
         ();
     case(links::rest, childs::acc, _)
-      equation
-        lst = List.unique(List.flatten(List.map1r(childs, arrayGet, m)));
+      algorithm
+        lst := List.unique(List.flatten(List.map1r(childs, arrayGet, m)));
         List.map2_0(links, doAssign, m, lst);
         List.map2_0(childs, doAssign, m, links);
         getOrphansOrderEdvanced6(rest, acc, m);
@@ -1487,12 +1487,12 @@ algorithm
       list<list<Integer>> rest;
     case({}, _) then ();
     case((_::{})::rest, _)
-      equation
+      algorithm
         reduceOrphancMatrix(rest, m);
       then
         ();
     case(comp::rest, _)
-      equation
+      algorithm
         reduceOrphancMatrix1(comp, comp, m);
         reduceOrphancMatrix(rest, m);
       then
@@ -1511,9 +1511,9 @@ algorithm
       list<Integer> rest, lst;
     case({}, _, _) then ();
     case(c::rest, _, _)
-      equation
-        lst = m[c];
-        lst = List.setDifference(lst, comps1);
+      algorithm
+        lst := m[c];
+        lst := List.setDifference(lst, comps1);
         arrayUpdate(m, c, listReverse(lst)) "reverse the list to traveres from the nearest to the farest orphan";
         reduceOrphancMatrix1(rest, comps1, m);
       then
@@ -1532,10 +1532,10 @@ algorithm
       list<Integer> rest;
       Integer e, len, size;
     case (e::_, _, _)
-      equation
-        len = listLength(ass[e]);
-        size = BackendEquation.equationSize(BackendEquation.get(eqnsarr, e));
-        true = intLt(len, size);
+      algorithm
+        len := listLength(ass[e]);
+        size := BackendEquation.equationSize(BackendEquation.get(eqnsarr, e));
+        true := intLt(len, size);
       then
         e;
     case (_::rest, _, _)
@@ -1554,8 +1554,8 @@ algorithm
       list<Integer> rest;
       Integer e;
     case (e::_, _)
-      equation
-        {} = ass[e];
+      algorithm
+        {} := ass[e];
       then
         e;
     case (_::rest, _)
@@ -1588,16 +1588,16 @@ algorithm
       then
         (inExp, DAE.RCONST(0.0));
     case ((c, e)::_, _, _, _)
-      equation
-        true = intGt(c, size);
+      algorithm
+        true := intGt(c, size);
       then
         (inExp, e);
     case ((c, e)::rest, _, _, _)
-      equation
-        e1 = Expression.expMul(e, vars[c]);
-        e1 = Expression.expAdd(e1, inExp);
+      algorithm
+        e1 := Expression.expMul(e, vars[c]);
+        e1 := Expression.expAdd(e1, inExp);
         //  BackendDump.debugStrExpStrExpStr(("", inExp, " => ", e1, "\n"));
-        (e1, b) = makeGausEliminationRow(rest, size, vars, e1);
+        (e1, b) := makeGausEliminationRow(rest, size, vars, e1);
       then
         (e1, b);
   end matchcontinue;
@@ -1616,17 +1616,17 @@ algorithm
       DAE.Exp e, b;
       BackendDAE.Equation eqn;
     case (_, _, _, _, _)
-      equation
-        true = intGt(row, size);
+      algorithm
+        true := intGt(row, size);
       then
         listReverse(iAcc);
     case (_, _, _, _, _)
-      equation
-        (e, b) = makeGausEliminationRow(matrix[row], size, vars, DAE.RCONST(0.0));
+      algorithm
+        (e, b) := makeGausEliminationRow(matrix[row], size, vars, DAE.RCONST(0.0));
         //(e, _) = ExpressionSimplify.simplify(e);
         //(b, _) = ExpressionSimplify.simplify(b);
         //  BackendDump.debugStrExpStrExpStr(("", e, " = ", b, "\n"));
-        eqn = BackendDAE.EQUATION(e, b, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+        eqn := BackendDAE.EQUATION(e, b, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
       then
         makeGausElimination(row+1, size, matrix, vars, eqn::iAcc);
   end matchcontinue;
@@ -1638,11 +1638,11 @@ protected function dumpMatrix "author: Frenkel TUD 2012-05"
   input array<list<tuple<Integer, DAE.Exp>>> matrix;
 algorithm
   _ := matchcontinue(row, size, matrix)
-    case (_, _, _) equation
-      true = intGt(row, size);
+    case (_, _, _) algorithm
+      true := intGt(row, size);
     then ();
 
-    case (_, _, _) equation
+    case (_, _, _) algorithm
       print(intString(row) + ": ");
       BackendDump.debuglst(matrix[row], dumpMatrix1, ", ", "\n");
       dumpMatrix(row+1, size, matrix);
@@ -1695,45 +1695,45 @@ algorithm
       then
         (List.append_reverse(inElst, inA), inVars, inEqns, inTpl);
     case ((ca, _)::resta, (cb, _)::restb, _, _, _, _, _)
-      equation
-        true = intEq(ca, cb);
-        true = intEq(ca, col);
-        (elst, vars, eqns, tpl) = addRows(resta, restb, col, inVars, inEqns, inTpl, inElst);
+      algorithm
+        true := intEq(ca, cb);
+        true := intEq(ca, col);
+        (elst, vars, eqns, tpl) := addRows(resta, restb, col, inVars, inEqns, inTpl, inElst);
       then
         (elst, vars, eqns, tpl);
     case ((ca, ea)::resta, (cb, eb)::restb, _, _, _, _, _)
-      equation
-        true = intEq(ca, cb);
-        e = Expression.expAdd(ea, eb);
-        (e, _) = ExpressionSimplify.simplify(e);
-        (vars, eqns, e, tpl) = makeDummyVar(inTpl, e, inVars, inEqns);
-        (elst, vars, eqns, tpl) = addRows(resta, restb, col, vars, eqns, tpl, (ca, e)::inElst);
+      algorithm
+        true := intEq(ca, cb);
+        e := Expression.expAdd(ea, eb);
+        (e, _) := ExpressionSimplify.simplify(e);
+        (vars, eqns, e, tpl) := makeDummyVar(inTpl, e, inVars, inEqns);
+        (elst, vars, eqns, tpl) := addRows(resta, restb, col, vars, eqns, tpl, (ca, e)::inElst);
       then
         (elst, vars, eqns, tpl);
     case ((ca, _)::_, (cb, _)::restb, _, _, _, _, _)
-      equation
-        true = intGt(ca, cb);
-        true = intEq(cb, col);
-        (elst, vars, eqns, tpl) = addRows(inA, restb, col, inVars, inEqns, inTpl, inElst);
+      algorithm
+        true := intGt(ca, cb);
+        true := intEq(cb, col);
+        (elst, vars, eqns, tpl) := addRows(inA, restb, col, inVars, inEqns, inTpl, inElst);
       then
         (elst, vars, eqns, tpl);
     case ((ca, _)::_, (cb, eb)::restb, _, _, _, _, _)
-      equation
-        true = intGt(ca, cb);
-        (elst, vars, eqns, tpl) = addRows(inA, restb, col, inVars, inEqns, inTpl, (cb, eb)::inElst);
+      algorithm
+        true := intGt(ca, cb);
+        (elst, vars, eqns, tpl) := addRows(inA, restb, col, inVars, inEqns, inTpl, (cb, eb)::inElst);
       then
         (elst, vars, eqns, tpl);
     case ((ca, _)::resta, (cb, _)::_, _, _, _, _, _)
-      equation
-        true = intLt(ca, cb);
-        true = intEq(ca, col);
-        (elst, vars, eqns, tpl) = addRows(resta, inB, col, inVars, inEqns, inTpl, inElst);
+      algorithm
+        true := intLt(ca, cb);
+        true := intEq(ca, col);
+        (elst, vars, eqns, tpl) := addRows(resta, inB, col, inVars, inEqns, inTpl, inElst);
       then
         (elst, vars, eqns, tpl);
     case ((ca, ea)::resta, (cb, _)::_, _, _, _, _, _)
-      equation
-        true = intLt(ca, cb);
-        (elst, vars, eqns, tpl) = addRows(resta, inB, col, inVars, inEqns, inTpl, (ca, ea)::inElst);
+      algorithm
+        true := intLt(ca, cb);
+        (elst, vars, eqns, tpl) := addRows(resta, inB, col, inVars, inEqns, inTpl, (ca, ea)::inElst);
       then
         (elst, vars, eqns, tpl);
   end matchcontinue;
@@ -1807,19 +1807,19 @@ algorithm
       then
         (inVars, inEqns, e, inTpl);
     case (_, _, _, _)
-      equation
-        true = Expression.isConst(e);
+      algorithm
+        true := Expression.isConst(e);
       then
         (inVars, inEqns, e, inTpl);
     case((a, b), _, _, _)
-      equation
-      sa = intString(a);
-      sb = intString(b);
-      cr = ComponentReference.makeCrefIdent(stringAppendList({"$tmp", sa, "_", sb}), DAE.T_REAL_DEFAULT, {});
-      cexp = Expression.crefExp(cr);
-      eqns = BackendEquation.add(BackendDAE.EQUATION(cexp, e, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN), inEqns);
-      v = BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false, false);
-      vars = BackendVariable.addVar(v, inVars);
+      algorithm
+      sa := intString(a);
+      sb := intString(b);
+      cr := ComponentReference.makeCrefIdent(stringAppendList({"$tmp", sa, "_", sb}), DAE.T_REAL_DEFAULT, {});
+      cexp := Expression.crefExp(cr);
+      eqns := BackendEquation.add(BackendDAE.EQUATION(cexp, e, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN), inEqns);
+      v := BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false, false);
+      vars := BackendVariable.addVar(v, inVars);
     then
       (vars, eqns, cexp, (a, b+1));
   end matchcontinue;
@@ -1846,33 +1846,33 @@ algorithm
       list<tuple<Integer, DAE.Exp>> elst;
        tuple<Integer, Integer> tpl;
     case (_, _, _, _, _, _, _, _)
-      equation
-        true = intGt(row, size);
+      algorithm
+        true := intGt(row, size);
       then
         (inVars, inEqns, inTpl);
     case(_, _, _, _, _, _, _, _)
-      equation
-        SOME(e) = diagonalEntry(col, matrix[row]);
+      algorithm
+        SOME(e) := diagonalEntry(col, matrix[row]);
         //  print("Found entriy in " + intString(row) + "\n");
         //  BackendDump.debuglst((matrix[row], dumpMatrix1, ", ", "\n"));
-        e1 = Expression.expDiv(e, ce);
-        (e1, _) = ExpressionSimplify.simplify(e1);
-        (vars, eqns, cexp, tpl) = makeDummyVar(inTpl, e1, inVars, inEqns);
-        elst = matrix[col];
-        elst = List.map1(elst, mulRow, cexp);
+        e1 := Expression.expDiv(e, ce);
+        (e1, _) := ExpressionSimplify.simplify(e1);
+        (vars, eqns, cexp, tpl) := makeDummyVar(inTpl, e1, inVars, inEqns);
+        elst := matrix[col];
+        elst := List.map1(elst, mulRow, cexp);
         //  print("mulRow " + intString(col) + " with " + ExpressionDump.printExpStr(e1) + "\n");
         //  BackendDump.debuglst((elst, dumpMatrix1, ", ", "\n"));
-        (elst, vars, eqns, tpl) = addRows(matrix[row], elst, col, vars, eqns, tpl, {});
+        (elst, vars, eqns, tpl) := addRows(matrix[row], elst, col, vars, eqns, tpl, {});
         //  print("addRow\n");
         //  BackendDump.debuglst((elst, dumpMatrix1, ", ", "\n"));
         //elst = removeFromCol(col, elst, {});
         arrayUpdate(matrix, row, elst);
-        (vars, eqns, tpl) = gaussElimination1(col, row+1, size, ce, matrix, vars, eqns, tpl);
+        (vars, eqns, tpl) := gaussElimination1(col, row+1, size, ce, matrix, vars, eqns, tpl);
       then
         (vars, eqns, tpl);
     case(_, _, _, _, _, _, _, _)
-      equation
-        (vars, eqns, tpl) = gaussElimination1(col, row+1, size, ce, matrix, inVars, inEqns, inTpl);
+      algorithm
+        (vars, eqns, tpl) := gaussElimination1(col, row+1, size, ce, matrix, inVars, inEqns, inTpl);
       then
         (vars, eqns, tpl);
   end matchcontinue;
@@ -1895,23 +1895,23 @@ algorithm
       DAE.Exp e;
       tuple<Integer, Integer> tpl;
     case (_, _, _, _, _, _)
-      equation
-        true = intGt(col, size);
+      algorithm
+        true := intGt(col, size);
       then
         (inVars, inEqns);
     case(_, _, _, _, _, _)
-      equation
-        SOME(e) = diagonalEntry(col, matrix[col]);
+      algorithm
+        SOME(e) := diagonalEntry(col, matrix[col]);
         //  print("Jacobian as Matrix " + intString(col) + "\n");
         //  BackendDump.debuglst((matrix[col], dumpMatrix1, ", ", "\n"));
-        (vars, eqns, tpl) = gaussElimination1(col, col+1, size, e, matrix, inVars, inEqns, inTpl);
+        (vars, eqns, tpl) := gaussElimination1(col, col+1, size, e, matrix, inVars, inEqns, inTpl);
         //  dumpMatrix(1, size, matrix);
-        (vars, eqns) = gaussElimination(col+1, size, matrix, vars, eqns, tpl);
+        (vars, eqns) := gaussElimination(col+1, size, matrix, vars, eqns, tpl);
       then
         (vars, eqns);
     case(_, _, _, _, _, _)
-      equation
-        NONE() = diagonalEntry(col, matrix[col]);
+      algorithm
+        NONE() := diagonalEntry(col, matrix[col]);
         print("gaussElimination failt because of non diagonal Entry for col " + intString(col) + "\n");
       then
         fail();
@@ -1974,12 +1974,12 @@ algorithm
     case ({}, _, _, _, _, _, _)
       then ();
     case ((r, c, BackendDAE.RESIDUAL_EQUATION(exp = e))::rest, _, _, _, _, _, _)
-      equation
-        i = mapIncRowEqn[r];
-        eqn = BackendEquation.get(eqns, i);
-        b1 = BackendEquation.isArrayEquation(eqn);
-        b = func(e);
-        lst = List.consOnTrue(b and b1, c, m[r]);
+      algorithm
+        i := mapIncRowEqn[r];
+        eqn := BackendEquation.get(eqns, i);
+        b1 := BackendEquation.isArrayEquation(eqn);
+        b := func(e);
+        lst := List.consOnTrue(b and b1, c, m[r]);
         arrayUpdate(m, r, lst);
         transformJacToAdjacencyMatrix2(rest, m, mapIncRowEqn, eqns, ass1, ass2, func);
       then
@@ -2009,10 +2009,10 @@ algorithm
     case ({}, _, _, _, _)
       then ();
     case ((r, c, BackendDAE.RESIDUAL_EQUATION(exp=e))::rest, _, _, _, _)
-      equation
-        b1 = intLt(ass1[c], 1);
-        b = func(e);
-        lst = List.consOnTrue(b and b1, c, m[r]);
+      algorithm
+        b1 := intLt(ass1[c], 1);
+        b := func(e);
+        lst := List.consOnTrue(b and b1, c, m[r]);
         arrayUpdate(m, r, lst);
         transformJacToAdjacencyMatrix1(rest, m, ass1, ass2, func);
       then ();
@@ -2037,14 +2037,14 @@ algorithm
       list<tuple<Integer, Integer, BackendDAE.Equation>> rest;
       list<Integer> lst, lst1;
     case ({}, _, _, _)
-      equation
+      algorithm
         transformJacToAdjacencyMatrix(jac, m, mT, func);
       then ();
     case ((r, c, BackendDAE.RESIDUAL_EQUATION(exp = e))::rest, _, _, _)
-      equation
-        b = func(e);
-        lst = List.consOnTrue(b, c, m[r]);
-        lst1 = List.consOnTrue(b, r, mT[c]);
+      algorithm
+        b := func(e);
+        lst := List.consOnTrue(b, c, m[r]);
+        lst1 := List.consOnTrue(b, r, mT[c]);
         arrayUpdate(m, r, lst);
         arrayUpdate(mT, c, lst1);
         transformJacToAdjacencyMatrix(rest, m, mT, func);
@@ -2069,41 +2069,41 @@ algorithm
       list<tuple<Integer, Integer, BackendDAE.Equation>> rest;
       list<tuple<Integer, DAE.Exp>> lst;
 
-    case (_, _, _, _, _, _) equation
-      true = intGt(row, size);
+    case (_, _, _, _, _, _) algorithm
+      true := intGt(row, size);
     then ();
 
-    case (_, _, _, _, _, _) equation
-      true = intGt(col, size);
-      be::b1 = b;
-      lst = matrix[row];
-      lst = List.consOnTrue(not Expression.isZero(be), (col, be), lst);
-      lst = listReverse(lst);
+    case (_, _, _, _, _, _) algorithm
+      true := intGt(col, size);
+      be::b1 := b;
+      lst := matrix[row];
+      lst := List.consOnTrue(not Expression.isZero(be), (col, be), lst);
+      lst := listReverse(lst);
       arrayUpdate(matrix, row, lst);
       transformJacToMatrix(jac, row+1, 1, size, b1, matrix);
     then ();
 
-    case ({}, _, _, _, _, _) equation
+    case ({}, _, _, _, _, _) algorithm
       transformJacToMatrix(jac, row, col+1, size, b, matrix);
     then ();
 
-    case ((r, c, BackendDAE.RESIDUAL_EQUATION(exp = e))::rest, _, _, _, _, _) equation
-      true = intEq(r, row);
-      true = intEq(c, col);
-      lst = matrix[r];
-      lst = (c, e)::lst;
+    case ((r, c, BackendDAE.RESIDUAL_EQUATION(exp = e))::rest, _, _, _, _, _) algorithm
+      true := intEq(r, row);
+      true := intEq(c, col);
+      lst := matrix[r];
+      lst := (c, e)::lst;
       arrayUpdate(matrix, row, lst);
       transformJacToMatrix(rest, row, col+1, size, b, matrix);
     then ();
 
-    case ((r, c, _)::_, _, _, _, _, _) equation
-      true = intEq(r, row);
-      true = intLt(col, c);
+    case ((r, c, _)::_, _, _, _, _, _) algorithm
+      true := intEq(r, row);
+      true := intLt(col, c);
       transformJacToMatrix(jac, row, col+1, size, b, matrix);
     then ();
 
-    case ((r, _, _)::_, _, _, _, _, _) equation
-      true = intGe(r, row);
+    case ((r, _, _)::_, _, _, _, _, _) algorithm
+      true := intGe(r, row);
       transformJacToMatrix(jac, row, col+1, size, b, matrix);
     then ();
   end matchcontinue;
@@ -2125,14 +2125,14 @@ algorithm
       list<tuple<Integer, Integer, BackendDAE.Equation>> rest;
       DAE.ComponentRef cr;
 
-    case (_, _, _, _, _) equation
-      true = intGt(row, size);
+    case (_, _, _, _, _) algorithm
+      true := intGt(row, size);
     then ();
 
-    case (_, _, _, _, _) equation
-      true = intGt(col, size);
-      v = BackendVariable.getVarAt(vars, row);
-      cr = BackendVariable.varCref(v);
+    case (_, _, _, _, _) algorithm
+      true := intGt(col, size);
+      v := BackendVariable.getVarAt(vars, row);
+      cr := BackendVariable.varCref(v);
       print(";... % ");
       print(intString(row));
       print(" ");
@@ -2140,28 +2140,28 @@ algorithm
       dumpJacMatrix(jac, row+1, 1, size, vars);
     then ();
 
-    case ({}, _, _, _, _) equation
+    case ({}, _, _, _, _) algorithm
       print("0, ");
       dumpJacMatrix(jac, row, col+1, size, vars);
     then ();
 
-    case ((r, c, BackendDAE.RESIDUAL_EQUATION(exp = e))::rest, _, _, _, _) equation
-      true = intEq(r, row);
-      true = intEq(c, col);
-      estr = ExpressionDump.printExpStr(e);
+    case ((r, c, BackendDAE.RESIDUAL_EQUATION(exp = e))::rest, _, _, _, _) algorithm
+      true := intEq(r, row);
+      true := intEq(c, col);
+      estr := ExpressionDump.printExpStr(e);
       print(estr); print(", ");
       dumpJacMatrix(rest, row, col+1, size, vars);
     then ();
 
-    case ((r, c, _)::_, _, _, _, _) equation
-      true = intEq(r, row);
-      true = intLt(col, c);
+    case ((r, c, _)::_, _, _, _, _) algorithm
+      true := intEq(r, row);
+      true := intLt(col, c);
       print("0, ");
       dumpJacMatrix(jac, row, col+1, size, vars);
     then ();
 
-    case ((r, _, _)::_, _, _, _, _) equation
-      false = intEq(r, row);
+    case ((r, _, _)::_, _, _, _, _) algorithm
+      false := intEq(r, row);
       print("0, ");
       dumpJacMatrix(jac, row, col+1, size, vars);
     then ();
@@ -2207,28 +2207,28 @@ algorithm
       DAE.Exp e1;
       list<DAE.Exp> elst;
     case(BackendDAE.ARRAY_EQUATION(left=e1), _, _, _)
-      equation
+      algorithm
         // if array get all elements
-        elst = Expression.flattenArrayExpToList(e1);
+        elst := Expression.flattenArrayExpToList(e1);
         // check if all elements crefs
-        crlst = List.map(elst, Expression.expCrefNegCref);
+        crlst := List.map(elst, Expression.expCrefNegCref);
         //crlst = List.uniqueOnTrue(crlst, ComponentReference.crefEqualNoStringCompare);
-        vlst = sortVarsforOrder1(crlst, 1, inVarLst, vindxs, arrayCreate(listLength(vindxs), NONE()), vars);
+        vlst := sortVarsforOrder1(crlst, 1, inVarLst, vindxs, arrayCreate(listLength(vindxs), NONE()), vars);
       then
         vlst;
     case(BackendDAE.ARRAY_EQUATION(right=e1), _, _, _)
-      equation
+      algorithm
         // if array get all elements
-        elst = Expression.flattenArrayExpToList(e1);
+        elst := Expression.flattenArrayExpToList(e1);
         // check if all elements crefs
-        crlst = List.map(elst, Expression.expCrefNegCref);
+        crlst := List.map(elst, Expression.expCrefNegCref);
         //crlst = List.uniqueOnTrue(crlst, ComponentReference.crefEqualNoStringCompare);
-        vlst = sortVarsforOrder1(crlst, 1, inVarLst, vindxs, arrayCreate(listLength(vindxs), NONE()), vars);
+        vlst := sortVarsforOrder1(crlst, 1, inVarLst, vindxs, arrayCreate(listLength(vindxs), NONE()), vars);
       then
         vlst;
     case(_, _, _, _)
-      equation
-         vlst = List.sort(inVarLst, BackendVariable.varSortFunc);
+      algorithm
+         vlst := List.sort(inVarLst, BackendVariable.varSortFunc);
       then
         vlst;
   end matchcontinue;
@@ -2252,17 +2252,17 @@ algorithm
       DAE.ComponentRef cr;
       list<DAE.ComponentRef> rest;
     case({}, _, _, _, _, _)
-      equation
-        vlst = List.sort(inVarLst, BackendVariable.varSortFunc);
-        vlst = sortVarsforOrder2(1, vlst, vararray, {});
+      algorithm
+        vlst := List.sort(inVarLst, BackendVariable.varSortFunc);
+        vlst := sortVarsforOrder2(1, vlst, vararray, {});
       then
         vlst;
     case(cr::rest, _, _, _, _, _)
-      equation
-        (v, i) = BackendVariable.getVarSingle(cr, vars);
-        p = List.position(i, vindxs);
-        ilst = listDelete(vindxs, p);
-        vlst = listDelete(inVarLst, p);
+      algorithm
+        (v, i) := BackendVariable.getVarSingle(cr, vars);
+        p := List.position(i, vindxs);
+        ilst := listDelete(vindxs, p);
+        vlst := listDelete(inVarLst, p);
         arrayUpdate(vararray, index, SOME(v));
       then
         sortVarsforOrder1(rest, index+1, vlst, ilst, vararray, vars);
@@ -2284,13 +2284,13 @@ algorithm
       BackendDAE.Var v;
       list<BackendDAE.Var> vlst;
     case(_, _, _, _)
-      equation
-       true = intGt(index, arrayLength(vararray));
+      algorithm
+       true := intGt(index, arrayLength(vararray));
       then
         listReverse(iAcc);
     case(_, _, _, _)
-      equation
-        SOME(v) = vararray[index];
+      algorithm
+        SOME(v) := vararray[index];
       then
         sortVarsforOrder2(index+1, inVarLst, vararray, v::iAcc);
     case(_, v::vlst, _, _)
@@ -2319,8 +2319,8 @@ algorithm
       then
        mark;
     case (o::rest, _, _, _, _, _, _, _)
-      equation
-        false = intEq(rowmarks[o], mark);
+      algorithm
+        false := intEq(rowmarks[o], mark);
         //  print("Process Orphan " + intString(o) + "\n");
         getOrphansPairs1({o}, ass1, ass2, m, mt, mark, rowmarks, colummarks, o, {});
       then
@@ -2352,37 +2352,37 @@ algorithm
       then
         ();
     case ({}, _, _, _, _, _, _, _, _, _)
-      equation
+      algorithm
         //  print("next queue " + stringDelimitList(List.map(nextQueue, intString), ", ") + "\n");
         getOrphansPairs1(nextQueue, ass1, ass2, m, mt, mark, rowmarks, colummarks, orphan, {});
       then
         ();
     case (r::_, _, _, _, _, _, _, _, _, _)
-      equation
+      algorithm
         // print("Check Var: " + intString(r) + "\n");
-        false = intEq(rowmarks[r], mark);
-        elst = List.select1(mt[r], intGt, 0);
+        false := intEq(rowmarks[r], mark);
+        elst := List.select1(mt[r], intGt, 0);
         //  print("search in " + stringDelimitList(List.map(elst, intString), ", ") + "\n");
-        o = hasResidualOrphan(elst, ass2);
+        o := hasResidualOrphan(elst, ass2);
         //  print("Found Orphanpair " + intString(o) + " <-> " + intString(orphan) + "\n");
         arrayUpdate(ass1, orphan, o);
         arrayUpdate(ass2, o, {orphan});
       then
         ();
     case (r::rest, _, _, _, _, _, _, _, _, _)
-      equation
-        false = intEq(rowmarks[r], mark);
-        elst =  List.select1(mt[r], intGt, 0) "equations of var";
-        next = List.select1(List.flatten(List.map1r(elst, arrayGet, ass2)), intGt, 0) "vars assignt with equations";
+      algorithm
+        false := intEq(rowmarks[r], mark);
+        elst :=  List.select1(mt[r], intGt, 0) "equations of var";
+        next := List.select1(List.flatten(List.map1r(elst, arrayGet, ass2)), intGt, 0) "vars assignt with equations";
         //  print("add to queue " + stringDelimitList(List.map(next, intString), ", ") + "\n");
-        next = listAppend(nextQueue, next);
+        next := listAppend(nextQueue, next);
         arrayUpdate(rowmarks, r, mark);
         //  print("goto " + stringDelimitList(List.map(next, intString), ", ") + "\n");
         getOrphansPairs1(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, orphan, next);
       then
         ();
     case (_::rest, _, _, _, _, _, _, _, _, _)
-      equation
+      algorithm
         getOrphansPairs1(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, orphan, nextQueue);
       then
        ();
@@ -2410,8 +2410,8 @@ algorithm
       then
        mark;
     case (o::rest, _, _, _, _, _, _, _, _)
-      equation
-        false = intEq(colummarks[o], mark);
+      algorithm
+        false := intEq(colummarks[o], mark);
         arrayUpdate(colummarks, o, mark);
           print("getOrphansPairsConstraints Process Orphan " + intString(o) + "\n");
         getOrphansPairsConstraints1(mt[o], ass1, ass2, m, mt, mark, rowmarks, colummarks, eqns, o, {});
@@ -2445,42 +2445,42 @@ algorithm
       then
         ();
     case ({}, _, _, _, _, _, _, _, _, _, _)
-      equation
+      algorithm
         getOrphansPairsConstraints1(nextQueue, ass1, ass2, m, mt, mark, rowmarks, colummarks, eqnsarr, orphan, {});
       then
         ();
     case (e::_, _, _, _, _, _, _, _, _, _, _)
-      equation
+      algorithm
         // print("Check Eqn: " + intString(e) + "\n");
-        false = intEq(colummarks[e], mark);
-        rlst = List.select1(m[e], intGt, 0) "vars of eqns";
-        rlst = List.fold1(ass2[e], List.removeOnTrue, intEq, rlst);
-        next = List.select1(List.flatten(List.map1r(rlst, arrayGet, mt)), intGt, 0);
+        false := intEq(colummarks[e], mark);
+        rlst := List.select1(m[e], intGt, 0) "vars of eqns";
+        rlst := List.fold1(ass2[e], List.removeOnTrue, intEq, rlst);
+        next := List.select1(List.flatten(List.map1r(rlst, arrayGet, mt)), intGt, 0);
         //  print("search in " + stringDelimitList(List.map(next, intString), ", ") + "\n");
-        o = hasResidualOrphan1(next, ass2, eqnsarr);
+        o := hasResidualOrphan1(next, ass2, eqnsarr);
         //  print("Found Orphanpair " + intString(o) + " <-> " + intString(orphan) + "\n");
         arrayUpdate(ass1, orphan, o);
-        ass2lst = ass2[o];
-        ass2lst = orphan::ass2lst;
+        ass2lst := ass2[o];
+        ass2lst := orphan::ass2lst;
         arrayUpdate(ass2, o, ass2lst);
 
       then
         ();
     case (e::rest, _, _, _, _, _, _, _, _, _, _)
-      equation
-        false = intEq(colummarks[e], mark);
-        rlst = List.select1(m[e], intGt, 0) "vars of eqns";
-        lst = List.select1(List.map1r(rlst, arrayGet, ass1), intGt, 0) "assigments of eqns";
-        rlst = List.fold1(lst, List.removeOnTrue, intEq, rlst);
-        next = List.select1(List.map1r(rlst, arrayGet, ass1), intGt, 0);
-        next = listAppend(nextQueue, next);
+      algorithm
+        false := intEq(colummarks[e], mark);
+        rlst := List.select1(m[e], intGt, 0) "vars of eqns";
+        lst := List.select1(List.map1r(rlst, arrayGet, ass1), intGt, 0) "assigments of eqns";
+        rlst := List.fold1(lst, List.removeOnTrue, intEq, rlst);
+        next := List.select1(List.map1r(rlst, arrayGet, ass1), intGt, 0);
+        next := listAppend(nextQueue, next);
         arrayUpdate(colummarks, e, mark);
         //  print("goto " + stringDelimitList(List.map(next, intString), ", ") + "\n");
         getOrphansPairsConstraints1(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, eqnsarr, orphan, next);
       then
         ();
     case (_::rest, _, _, _, _, _, _, _, _, _, _)
-      equation
+      algorithm
         getOrphansPairsConstraints1(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, eqnsarr, orphan, nextQueue);
       then
        ();
@@ -2519,36 +2519,36 @@ algorithm
       list<list<Integer>> queuelst;
 
     case ({}, _, _, _, _, _, _, _, _, _, _, _ , _, _, _, _, _, _)
-      equation
+      algorithm
         //markIndexdColums(1, arrayLength(vec1), mark+1, colummarks, vec2);
         //getIndexesForEqnsRest(1, arrayLength(vec1), index, mark+1, colummarks, ass1, ass2, vec1, vec2);
       then imark;
     case (vorphan::rest, _, _, _, _, _, _, _, _, _, _, _ , _, _, _, _, _, _)
-      equation
-        true = intEq(orowmarks[vorphan], 1);
-        eorphan = ass1[vorphan];
-        vorphans = ass2[eorphan];
+      algorithm
+        true := intEq(orowmarks[vorphan], 1);
+        eorphan := ass1[vorphan];
+        vorphans := ass2[eorphan];
         //  print("getIndexesForEqnsAdvanced Process Orphans " + stringDelimitList(List.map(vorphans, intString), ", ") + "  " + intString(eorphan) + "\n");
         // generate subgraph from residual equation to tearing variable
-        rows = List.select(m[eorphan], Util.intPositive);
-        rows = List.fold1(ass2[eorphan], List.removeOnTrue, intEq, rows);
+        rows := List.select(m[eorphan], Util.intPositive);
+        rows := List.fold1(ass2[eorphan], List.removeOnTrue, intEq, rows);
         // BackendDump.debuglst((rows, intString, ", ", "\n"));
-        _ = getIndexSubGraph(rows, vorphans, m, mT, imark, rowmarks, colummarks, orowmarks, ocolummarks, ass1, ass2, false);
+        _ := getIndexSubGraph(rows, vorphans, m, mT, imark, rowmarks, colummarks, orowmarks, ocolummarks, ass1, ass2, false);
         // generate queue with BFS from tearing var to residual equation
         // print("getIndex ");
-        vorphanseqns = List.unique(List.flatten(List.map1r(vorphans, arrayGet, mT)));
+        vorphanseqns := List.unique(List.flatten(List.map1r(vorphans, arrayGet, mT)));
         //  BackendDump.debuglst((vorphanseqns, intString, ", ", "\n"));
-        queuelst = getIndexQueque(vorphanseqns, m, mT, imark, rowmarks, colummarks, ass1, ass2, vec2, queuemark, {}, {}, {});
-        queue = List.flatten(queuelst);
+        queuelst := getIndexQueque(vorphanseqns, m, mT, imark, rowmarks, colummarks, ass1, ass2, vec2, queuemark, {}, {}, {});
+        queue := List.flatten(queuelst);
         // print("final queue ");
         // BackendDump.debuglst((queue, intString, ", ", "\n"));
         // set indexes
-        mark = imark+2;
-        ((index1, queue, rqueue)) = List.fold1(queue, setIndexQueue, (vec1, vec2, ass2, queuemark, colummarks, mark), (index, {}, {}));
+        mark := imark+2;
+        ((index1, queue, rqueue)) := List.fold1(queue, setIndexQueue, (vec1, vec2, ass2, queuemark, colummarks, mark), (index, {}, {}));
         arrayUpdate(vec1, index1, vorphans);
         arrayUpdate(vec2, index1, eorphan);
         arrayUpdate(queuemark, eorphan, true);
-        mark = mark+1;
+        mark := mark+1;
         // collect all border vars and equations
         // mark all elements of the clique
         //  print("Mark all Index Vars " + stringDelimitList(List.map(rqueue, intString), ", ") + "\n");
@@ -2556,19 +2556,19 @@ algorithm
         //  print("Mark all Index Eqns " + stringDelimitList(List.map(queue, intString), ", ") + "\n");
         List.map2_0(queue, doMark, colummarks, mark);
         // get all unmarked elements -> boarder elements
-        bvars = getBorderElements(queue, m, mark, rowmarks, {});
-        bvars = List.fold1(vorphans, List.removeOnTrue, intEq, bvars);
+        bvars := getBorderElements(queue, m, mark, rowmarks, {});
+        bvars := List.fold1(vorphans, List.removeOnTrue, intEq, bvars);
         //  print("Mark all Index BVars " + stringDelimitList(List.map(bvars, intString), ", ") + "\n");
-        beqns = getBorderElements(rqueue, mT, mark, colummarks, {});
-        beqns = List.removeOnTrue(eorphan, intEq, beqns);
+        beqns := getBorderElements(rqueue, mT, mark, colummarks, {});
+        beqns := List.removeOnTrue(eorphan, intEq, beqns);
         //  print("Mark all Index BEqns " + stringDelimitList(List.map(beqns, intString), ", ") + "\n");
-        lst = List.select2(m[eorphan], unmarked, rowmarks, mark);
-        lst = listAppend(vorphans, listAppend(lst, bvars));
+        lst := List.select2(m[eorphan], unmarked, rowmarks, mark);
+        lst := listAppend(vorphans, listAppend(lst, bvars));
         //  print("Set eorphan " + intString(eorphan) + ": " + stringDelimitList(List.map(lst, intString), ", ") + "\n");
         arrayUpdate(m, eorphan, lst);
 
-        lst = List.select2(vorphanseqns, unmarked, colummarks, mark);
-        lst = listAppend(eorphan::lst, beqns);
+        lst := List.select2(vorphanseqns, unmarked, colummarks, mark);
+        lst := listAppend(eorphan::lst, beqns);
         //  print("Set vorphan " + intString(vorphan) + ": " + stringDelimitList(List.map(lst, intString), ", ") + "\n");
         arrayUpdate(mT, vorphan, lst);
 
@@ -2576,12 +2576,12 @@ algorithm
         setBoarderElemts(beqns, m, mark, rowmarks, vorphan);
         // unset orphanmark so it can passed
         //arrayUpdate(orowmarks, vorphan, -1);
-        _ = List.fold1(vorphans, markOrphans, -1, orowmarks);
+        _ := List.fold1(vorphans, markOrphans, -1, orowmarks);
         arrayUpdate(ocolummarks, eorphan, -1);
 
-       vorphans = List.removeOnTrue(vorphan, intEq, vorphans);
-       _ = List.fold1(vorphans, markOrphans, -1, orowmarks);
-       _ = List.fold1r(vorphans, arrayUpdate, {}, mT);
+       vorphans := List.removeOnTrue(vorphan, intEq, vorphans);
+       _ := List.fold1(vorphans, markOrphans, -1, orowmarks);
+       _ := List.fold1r(vorphans, arrayUpdate, {}, mT);
 
        //   syst = BackendDAE.EQSYSTEM(vars, eqns, SOME(m), SOME(mT), BackendDAE.NO_MATCHING(), {});
        //   DumpGraphML.dumpSystem(syst, shared, NONE(), intString(size) + "SystemIndexing" + intString(index) + ".graphml");
@@ -2610,12 +2610,12 @@ algorithm
       list<Integer> rest, lst, lst1;
     case({}, _, _, _, _) then iAcc;
     case(elem::rest, _, _, _, _)
-      equation
-        (lst, lst1) = List.split2OnTrue(m[elem], unmarked, arr, mark);
+      algorithm
+        (lst, lst1) := List.split2OnTrue(m[elem], unmarked, arr, mark);
         arrayUpdate(m, elem, lst1);
-        lst = List.select2(lst, unmarked, arr, mark+1);
+        lst := List.select2(lst, unmarked, arr, mark+1);
         List.map2_0(lst, doMark, arr, mark+1);
-        lst = getBorderElements(rest, m, mark, arr, listAppend(lst, iAcc));
+        lst := getBorderElements(rest, m, mark, arr, listAppend(lst, iAcc));
       then
         lst;
   end match;
@@ -2634,8 +2634,8 @@ algorithm
       list<Integer> rest, lst;
     case({}, _, _, _, _) then ();
     case(elem::rest, _, _, _, _)
-      equation
-        lst = List.select2(m[elem], unmarked, arr, mark);
+      algorithm
+        lst := List.select2(m[elem], unmarked, arr, mark);
         arrayUpdate(m, elem, orphan::lst);
         //  print("Set BElement " + intString(elem) + ": " + stringDelimitList(List.map(orphan::lst, intString), ", ") + "\n");
         setBoarderElemts(rest, m, mark, arr, orphan);
@@ -2658,9 +2658,9 @@ algorithm
       array<Boolean> queuemark;
       Integer index, mark;
     case (_, (vec1, vec2, ass2, queuemark, colummark, mark), (index, elst, rlst))
-      equation
-        r = ass2[col];
-        false = queuemark[col];
+      algorithm
+        r := ass2[col];
+        false := queuemark[col];
         //  print("Index: " + intString(index) + ":" + stringDelimitList(List.map(r, intString), ", ") + "  " + intString(col) + "\n");
         arrayUpdate(vec1, index, r);
         arrayUpdate(vec2, index, col);
@@ -2669,9 +2669,9 @@ algorithm
       then
         ((index+1, col::elst, listAppend(r, rlst)));
     case (_, (_, _, ass2, _, colummark, mark), (index, elst, rlst))
-      equation
-        r = ass2[col];
-        false = intEq(colummark[col], mark);
+      algorithm
+        r := ass2[col];
+        false := intEq(colummark[col], mark);
         arrayUpdate(colummark, col, mark);
       then
         ((index, col::elst, listAppend(r, rlst)));
@@ -2704,22 +2704,22 @@ algorithm
       Boolean b, b1, b2;
     case ({}, _, _, _, _, _, _, _, _, _, {}, _, _) then iqueue1;
     case ({}, _, _, _, _, _, _, _, _, _, _, _, _)
-      equation
-        queue = List.unique(iqueue);
+      algorithm
+        queue := List.unique(iqueue);
         // print("append level: "); BackendDump.debuglst((queue, intString, ", ", "\n"));
       then
         getIndexQueque(nextqueue, m, mT, mark, rowmarks, colummarks, ass1, ass2, vec2, queuemark, {}, {}, queue::iqueue1);
     case (c::rest, _, _, _, _, _, _, _, _, _, _, _, _)
-      equation
-        r = ass2[c];
+      algorithm
+        r := ass2[c];
         //  print("Process Colum " + intString(c) + " Rows " + stringDelimitList(List.map(r, intString), ", ") + "  " + boolString(b) +"\n");
-        (colums1, b2) = getIndexQueque1(r, c, mT, mark, rowmarks);
+        (colums1, b2) := getIndexQueque1(r, c, mT, mark, rowmarks);
         //  BackendDump.debuglst((colums1, intString, ", ", "\n"));
-        b1 = not listEmpty(colums);
+        b1 := not listEmpty(colums);
         // cons next rows in front to jump over marked nodes
-        queue = if b1 then List.unionOnTrue(colums1, nextqueue, intEq) else nextqueue;
+        queue := if b1 then List.unionOnTrue(colums1, nextqueue, intEq) else nextqueue;
         //  print("queue: "); BackendDump.debuglst((queue, intString, ", ", "\n"));
-        queue1 = List.consOnTrue(b2, c, iqueue);
+        queue1 := List.consOnTrue(b2, c, iqueue);
       then
        getIndexQueque(rest, m, mT, mark, rowmarks, colummarks, ass1, ass2, vec2, queuemark, queue, queue1, iqueue1);
   end match;
@@ -2836,43 +2836,43 @@ algorithm
       Boolean b;
     case ({}, _, _, _, _, _, _, _, _, _, _, _) then ifound;
     case (r::rest, _, _, _, _, _, _, _, _, _, _, _)
-      equation
+      algorithm
         // is my var orphan?
         //true = intEq(r, vorphan);
-        true = listMember(r, vorphan);
+        true := listMember(r, vorphan);
         // mark all entries in the queue
         // print("Found orphan " + intString(r) + "\n");
-         _ = getIndexSubGraph(rest, vorphan, m, mT, mark, rowmarks, colummarks, orowmarks, ocolummarks, ass1, ass2, false);
+         _ := getIndexSubGraph(rest, vorphan, m, mT, mark, rowmarks, colummarks, orowmarks, ocolummarks, ass1, ass2, false);
       then
         true;
     case (r::rest, _, _, _, _, _, _, _, _, _, _, _)
-      equation
+      algorithm
         //false = intEq(r, vorphan);
-        false = listMember(r, vorphan);
+        false := listMember(r, vorphan);
         // stop if it is an orphan
-        false = intEq(orowmarks[r], 1);
-        true = intEq(rowmarks[r], mark);
-        e = ass1[r];
+        false := intEq(orowmarks[r], 1);
+        true := intEq(rowmarks[r], mark);
+        e := ass1[r];
         List.map2_0(ass2[e], doMark, rowmarks, mark);
       then
         getIndexSubGraph(rest, vorphan, m, mT, mark, rowmarks, colummarks, orowmarks, ocolummarks, ass1, ass2, true);
     case (r::rest, _, _, _, _, _, _, _, _, _, _, _)
-      equation
+      algorithm
         //false = intEq(r, vorphan);
-        false = listMember(r, vorphan);
+        false := listMember(r, vorphan);
         // stop if it is an orphan
-        false = intEq(orowmarks[r], 1);
+        false := intEq(orowmarks[r], 1);
         //false = intEq(rowmarks[r], mark);
-        e = ass1[r];
-        false = intEq(ocolummarks[e], 1);
-        false = intEq(colummarks[e], mark);
-        nextrows = List.select(m[e], Util.intPositive);
-        nextrows = List.setDifferenceOnTrue(nextrows, ass2[e], intEq);
+        e := ass1[r];
+        false := intEq(ocolummarks[e], 1);
+        false := intEq(colummarks[e], mark);
+        nextrows := List.select(m[e], Util.intPositive);
+        nextrows := List.setDifferenceOnTrue(nextrows, ass2[e], intEq);
         //  print("search Subgraph: " + intString(r) + " across " + intString(e) + "\n");
         //arrayUpdate(rowmarks, r, mark);
         arrayUpdate(colummarks, e, mark);
         //  BackendDump.debuglst((nextrows, intString, ", ", "\n"));
-        b = getIndexSubGraph(nextrows, vorphan, m, mT, mark, rowmarks, colummarks, orowmarks, ocolummarks, ass1, ass2, false);
+        b := getIndexSubGraph(nextrows, vorphan, m, mT, mark, rowmarks, colummarks, orowmarks, ocolummarks, ass1, ass2, false);
         markIndexSubgraph(b, ass2[e], mark, rowmarks);
       then
         getIndexSubGraph(rest, vorphan, m, mT, mark, rowmarks, colummarks, orowmarks, ocolummarks, ass1, ass2, b or ifound);
@@ -2891,7 +2891,7 @@ algorithm
   _ := match(b, r, mark, rowmarks)
     case(false, _, _, _) then ();
     case(true, _, _, _)
-      equation
+      algorithm
         List.map2_0(r, doMark, rowmarks, mark);
       then
         ();
@@ -2911,15 +2911,15 @@ protected function getIndexesForEqnsRest
 algorithm
   _ := matchcontinue(i, size, id, mark, colummarks, ass1, ass2, vec1, vec2)
   case(_, _, _, _, _, _, _, _, _)
-    equation
-      false = intGt(i, size);
-      true = intEq(mark, colummarks[i]);
+    algorithm
+      false := intGt(i, size);
+      true := intEq(mark, colummarks[i]);
       getIndexesForEqnsRest(i+1, size, id, mark, colummarks, ass1, ass2, vec1, vec2);
     then
       ();
   case(_, _, _, _, _, _, _, _, _)
-    equation
-      false = intGt(i, size);
+    algorithm
+      false := intGt(i, size);
       arrayUpdate(vec1, id, ass2[i]);
       arrayUpdate(vec2, id, i);
       getIndexesForEqnsRest(i+1, size, id+1, mark, colummarks, ass1, ass2, vec1, vec2);
@@ -2940,16 +2940,16 @@ protected function markIndexdColums
 algorithm
   _ := matchcontinue(i, size, mark, colummarks, vec2)
   case(_, _, _, _, _)
-    equation
-      false = intGt(i, size);
-      true = intGt(vec2[i], 0);
+    algorithm
+      false := intGt(i, size);
+      true := intGt(vec2[i], 0);
       arrayUpdate(colummarks, vec2[i], mark);
       markIndexdColums(i+1, size, mark, colummarks, vec2);
     then
       ();
   case(_, _, _, _, _)
-    equation
-      false = intGt(i, size);
+    algorithm
+      false := intGt(i, size);
       markIndexdColums(i+1, size, mark, colummarks, vec2);
     then
       ();
@@ -2970,13 +2970,13 @@ algorithm
     local
       list<Integer> orphans;
     case (_, _, _, _)
-      equation
-        true = intGt(indx, size);
+      algorithm
+        true := intGt(indx, size);
       then
         inOrphans;
     case (_, _, _, _)
-      equation
-        orphans = List.consOnTrue(intLt(ass[indx], 1), indx, inOrphans);
+      algorithm
+        orphans := List.consOnTrue(intLt(ass[indx], 1), indx, inOrphans);
       then
         getOrphans(indx+1, size, ass, orphans);
   end matchcontinue;
@@ -3010,32 +3010,32 @@ algorithm
       DAE.Ident ident;
       list<DAE.Subscript> subscriptLst;
     case (cr as DAE.CREF_IDENT(), _, NONE())
-      equation
-        crlst = ComponentReference.expandCref(cr, true);
-        set = List.fold(cr::crlst, BaseHashSet.add, ihs);
+      algorithm
+        crlst := ComponentReference.expandCref(cr, true);
+        set := List.fold(cr::crlst, BaseHashSet.add, ihs);
       then set;
     case (cr as DAE.CREF_IDENT(), _, SOME(precr))
-      equation
-        crlst = ComponentReference.expandCref(cr, true);
-        crlst = List.map1r(cr::crlst, ComponentReference.joinCrefs, precr);
-        set = List.fold(crlst, BaseHashSet.add, ihs);
+      algorithm
+        crlst := ComponentReference.expandCref(cr, true);
+        crlst := List.map1r(cr::crlst, ComponentReference.joinCrefs, precr);
+        set := List.fold(crlst, BaseHashSet.add, ihs);
       then set;
     case (DAE.CREF_QUAL(ident=ident, identType=ty, subscriptLst=subscriptLst, componentRef=subcr), _, NONE())
-      equation
-        idcr = ComponentReference.makeCrefIdent(ident, ty, {});
-        set = BaseHashSet.add(idcr, ihs);
-        idcr = ComponentReference.makeCrefIdent(ident, ty, subscriptLst);
-        set = BaseHashSet.add(idcr, set);
+      algorithm
+        idcr := ComponentReference.makeCrefIdent(ident, ty, {});
+        set := BaseHashSet.add(idcr, ihs);
+        idcr := ComponentReference.makeCrefIdent(ident, ty, subscriptLst);
+        set := BaseHashSet.add(idcr, set);
       then
         addCrefandParentsToSet(subcr, set, SOME(idcr));
     case (DAE.CREF_QUAL(ident=ident, identType=ty, subscriptLst=subscriptLst, componentRef=subcr), _, SOME(precr))
-      equation
-        idcr = ComponentReference.makeCrefIdent(ident, ty, {});
-        idcr = ComponentReference.joinCrefs(precr, idcr);
-        set = BaseHashSet.add(idcr, ihs);
-        idcr = ComponentReference.makeCrefIdent(ident, ty, subscriptLst);
-        precr = ComponentReference.joinCrefs(precr, idcr);
-        set = BaseHashSet.add(precr, ihs);
+      algorithm
+        idcr := ComponentReference.makeCrefIdent(ident, ty, {});
+        idcr := ComponentReference.joinCrefs(precr, idcr);
+        set := BaseHashSet.add(idcr, ihs);
+        idcr := ComponentReference.makeCrefIdent(ident, ty, subscriptLst);
+        precr := ComponentReference.joinCrefs(precr, idcr);
+        set := BaseHashSet.add(precr, ihs);
       then
         addCrefandParentsToSet(subcr, set, SOME(precr));
   end match;
@@ -3056,8 +3056,8 @@ algorithm
       HashSet.HashSet set;
 
     case (DAE.CREF(componentRef = cr), (set, false))
-      equation
-        b = BaseHashSet.has(cr, set);
+      algorithm
+        b := BaseHashSet.has(cr, set);
       then
         (e, not b, (set, b));
 
@@ -3078,7 +3078,7 @@ algorithm
       list<Integer> rest;
     case ({}, _, _, _) then ();
     case (v::rest, _, _, _)
-      equation
+      algorithm
         arrayUpdate(ass1, v, e);
         arrayUpdate(ass2, e, v);
         assignLst(rest, e+1, ass1, ass2);
@@ -3097,8 +3097,8 @@ algorithm
       list<Integer> rest;
     case ({}, _) then ();
     case (v::rest, _)
-      equation
-        false = intGt(ass1[v], 0);
+      algorithm
+        false := intGt(ass1[v], 0);
         unassignedLst(rest, ass1);
       then
         ();
@@ -3122,17 +3122,17 @@ algorithm
       BackendDAE.AdjacencyMatrixElement rest, newqueue, rows;
     case ({}, _, _, _, _, _, _, _, {}) then ();
     case ({}, _, _, _, _, _, _, _, _)
-      equation
+      algorithm
         //  print("NextQeue\n");
         onefreeMatchingBFS(nextQeue, m, mt, size, ass1, ass2, columark, mark, {});
       then
         ();
     case(c::rest, _, _, _, _, _, _, _, _)
-      equation
+      algorithm
         //  print("Process Eqn " + intString(c) + "\n");
-        rows = List.removeOnTrue(ass1, isAssignedSaveEnhanced, m[c]);
+        rows := List.removeOnTrue(ass1, isAssignedSaveEnhanced, m[c]);
         //arrayUpdate(columark, c, mark);
-        newqueue = onefreeMatchingBFS1(rows, c, mt, ass1, ass2, columark, mark, nextQeue);
+        newqueue := onefreeMatchingBFS1(rows, c, mt, ass1, ass2, columark, mark, nextQeue);
         onefreeMatchingBFS(rest, m, mt, size, ass1, ass2, columark, mark, newqueue);
       then
         ();
@@ -3163,12 +3163,12 @@ algorithm
       Integer r;
       BackendDAE.AdjacencyMatrixElement vareqns;
     case (r::{}, _, _, _, _, _, _, _)
-      equation
+      algorithm
         //  print("Assign Var" + intString(r) + " with Eqn " + intString(c) + "\n");
         // assigen
         arrayUpdate(ass1, r, c);
         arrayUpdate(ass2, c, r);
-        vareqns = List.removeOnTrue(ass2, isAssignedSaveEnhanced, mt[r]);
+        vareqns := List.removeOnTrue(ass2, isAssignedSaveEnhanced, mt[r]);
         //vareqns = List.removeOnTrue((columark, mark), isMarked, vareqns);
         //markEqns(vareqns, columark, mark);
       then
@@ -3195,27 +3195,27 @@ algorithm
 
     // array equations
     case (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2), _, _)
-      equation
-        size = List.fold(ds, intMul, 1);
-        tpl = vectorMatching1(e1, e2, size, vars, inTpl);
+      algorithm
+        size := List.fold(ds, intMul, 1);
+        tpl := vectorMatching1(e1, e2, size, vars, inTpl);
       then tpl;
     case (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e2, right=e1), _, _)
-      equation
-        size = List.fold(ds, intMul, 1);
-        tpl = vectorMatching1(e2, e1, size, vars, inTpl);
+      algorithm
+        size := List.fold(ds, intMul, 1);
+        tpl := vectorMatching1(e2, e1, size, vars, inTpl);
       then tpl;
     // complex equations
     case (BackendDAE.COMPLEX_EQUATION(size=size, left=e1, right=e2), _, _)
-      equation
-        tpl = vectorMatching1(e1, e2, size, vars, inTpl);
+      algorithm
+        tpl := vectorMatching1(e1, e2, size, vars, inTpl);
       then tpl;
     case (BackendDAE.COMPLEX_EQUATION(size=size, left=e2, right=e1), _, _)
-      equation
-        tpl = vectorMatching1(e2, e1, size, vars, inTpl);
+      algorithm
+        tpl := vectorMatching1(e2, e1, size, vars, inTpl);
       then tpl;
     case (_, _, (id, vec1, vec2))
-      equation
-        size = BackendEquation.equationSize(eqn);
+      algorithm
+        size := BackendEquation.equationSize(eqn);
       then ((id+size, vec1, vec2));
   end matchcontinue;
 end vectorMatching;
@@ -3241,13 +3241,13 @@ algorithm
 
     // a = f(...)
     case (DAE.CREF(componentRef=cr), _, _, _, (id, vec1, vec2))
-      equation
+      algorithm
         // check if cref is not also at the other side
-        false = expHasCref(e2, cr);
+        false := expHasCref(e2, cr);
         // get Vars
-        (_, ilst) = BackendVariable.getVar(cr, vars);
+        (_, ilst) := BackendVariable.getVar(cr, vars);
         // size equal
-        true = intEq(size, listLength(ilst));
+        true := intEq(size, listLength(ilst));
         // unassgned
         unassignedLst(ilst, vec1);
         // assign
@@ -3255,13 +3255,13 @@ algorithm
       then ((id+size, vec1, vec2));
     // f(...) = a
     case (_, DAE.CREF(componentRef=cr), _, _, (id, vec1, vec2))
-      equation
+      algorithm
         // check if cref is not also at the other side
-        false = expHasCref(e1, cr);
+        false := expHasCref(e1, cr);
         // get Vars
-        (_, ilst) = BackendVariable.getVar(cr, vars);
+        (_, ilst) := BackendVariable.getVar(cr, vars);
         // size equal
-        true = intEq(size, listLength(ilst));
+        true := intEq(size, listLength(ilst));
         // unassgned
         unassignedLst(ilst, vec1);
         // assign
@@ -3269,13 +3269,13 @@ algorithm
       then ((id+size, vec1, vec2));
     // a = f(...)
     case (DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF(componentRef=cr)), _, _, _, (id, vec1, vec2))
-      equation
+      algorithm
         // check if cref is not also at the other side
-        false = expHasCref(e2, cr);
+        false := expHasCref(e2, cr);
         // get Vars
-        (_, ilst) = BackendVariable.getVar(cr, vars);
+        (_, ilst) := BackendVariable.getVar(cr, vars);
         // size equal
-        true = intEq(size, listLength(ilst));
+        true := intEq(size, listLength(ilst));
         // unassgned
         unassignedLst(ilst, vec1);
         // assign
@@ -3283,13 +3283,13 @@ algorithm
       then ((id+size, vec1, vec2));
     // f(...) = a
     case (_, DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF(componentRef=cr)), _, _, (id, vec1, vec2))
-      equation
+      algorithm
         // check if cref is not also at the other side
-        false = expHasCref(e1, cr);
+        false := expHasCref(e1, cr);
         // get Vars
-        (_, ilst) = BackendVariable.getVar(cr, vars);
+        (_, ilst) := BackendVariable.getVar(cr, vars);
         // size equal
-        true = intEq(size, listLength(ilst));
+        true := intEq(size, listLength(ilst));
         // unassgned
         unassignedLst(ilst, vec1);
         // assign
@@ -3297,22 +3297,22 @@ algorithm
       then ((id+size, vec1, vec2));
     // {a[1], a[2], a[3]} = f(...)
     case (_, _, _, _, (id, vec1, vec2))
-      equation
+      algorithm
         // if array get all elements
-        elst = Expression.flattenArrayExpToList(e1);
+        elst := Expression.flattenArrayExpToList(e1);
         // check if all elements crefs
-        crlst = List.map(elst, Expression.expCrefNegCref);
-        crlst = List.uniqueOnTrue(crlst, ComponentReference.crefEqualNoStringCompare);
-        true = intEq(size, listLength(crlst));
-        cr::crlst1 = crlst;
-        true = List.all(crlst1, function ComponentReference.crefEqualWithoutLastSubs(cr2 = cr));
+        crlst := List.map(elst, Expression.expCrefNegCref);
+        crlst := List.uniqueOnTrue(crlst, ComponentReference.crefEqualNoStringCompare);
+        true := intEq(size, listLength(crlst));
+        cr::crlst1 := crlst;
+        true := List.all(crlst1, function ComponentReference.crefEqualWithoutLastSubs(cr2 = cr));
         // check if crefs no on other side
-        set = HashSet.emptyHashSet();
-        crnosubs = ComponentReference.crefStripLastSubs(cr);
-        set = addCrefandParentsToSet(crnosubs, set, NONE());
-        set = List.fold(crlst, BaseHashSet.add, set);
-        (_, (_, false)) = Expression.traverseExpTopDown(e2, expHasCreftraverser, (set, false));
-        (_, ilst) = BackendVariable.getVarLst(crlst, vars);
+        set := HashSet.emptyHashSet();
+        crnosubs := ComponentReference.crefStripLastSubs(cr);
+        set := addCrefandParentsToSet(crnosubs, set, NONE());
+        set := List.fold(crlst, BaseHashSet.add, set);
+        (_, (_, false)) := Expression.traverseExpTopDown(e2, expHasCreftraverser, (set, false));
+        (_, ilst) := BackendVariable.getVarLst(crlst, vars);
         // unassgned
         unassignedLst(ilst, vec1);
         // assign
@@ -3320,22 +3320,22 @@ algorithm
       then ((id+size, vec1, vec2));
     // f(...) = {a[1], a[2], a[3]}
     case (_, _, _, _, (id, vec1, vec2))
-      equation
+      algorithm
         // if array get all elements
-        elst = Expression.flattenArrayExpToList(e2);
+        elst := Expression.flattenArrayExpToList(e2);
         // check if all elements crefs
-        crlst = List.map(elst, Expression.expCrefNegCref);
-        crlst = List.uniqueOnTrue(crlst, ComponentReference.crefEqualNoStringCompare);
-        true = intEq(size, listLength(crlst));
-        cr::crlst1 = crlst;
-        true = List.all(crlst1, function ComponentReference.crefEqualWithoutLastSubs(cr2 = cr));
+        crlst := List.map(elst, Expression.expCrefNegCref);
+        crlst := List.uniqueOnTrue(crlst, ComponentReference.crefEqualNoStringCompare);
+        true := intEq(size, listLength(crlst));
+        cr::crlst1 := crlst;
+        true := List.all(crlst1, function ComponentReference.crefEqualWithoutLastSubs(cr2 = cr));
         // check if crefs no on other side
-        set = HashSet.emptyHashSet();
-        crnosubs = ComponentReference.crefStripLastSubs(cr);
-        set = addCrefandParentsToSet(crnosubs, set, NONE());
-        set = List.fold(crlst, BaseHashSet.add, set);
-        (_, (_, false)) = Expression.traverseExpTopDown(e1, expHasCreftraverser, (set, false));
-        (_, ilst) = BackendVariable.getVarLst(crlst, vars);
+        set := HashSet.emptyHashSet();
+        crnosubs := ComponentReference.crefStripLastSubs(cr);
+        set := addCrefandParentsToSet(crnosubs, set, NONE());
+        set := List.fold(crlst, BaseHashSet.add, set);
+        (_, (_, false)) := Expression.traverseExpTopDown(e1, expHasCreftraverser, (set, false));
+        (_, ilst) := BackendVariable.getVarLst(crlst, vars);
         // unassgned
         unassignedLst(ilst, vec1);
         // assign
@@ -3357,17 +3357,17 @@ algorithm
       DAE.ComponentRef cr1, cr2;
 
     case (BackendDAE.EQUATION(exp = DAE.CREF(componentRef=cr1), scalar=DAE.CREF(componentRef=cr2)), _, (id, vec1, vec2))
-      equation
-        false = intGt(vec2[id], 0);
-        (_, i1) = BackendVariable.getVarSingle(cr1, vars);
-        (_, i2) = BackendVariable.getVarSingle(cr2, vars);
-        i = aliasMatching1(i1, i2, intGt(vec1[i1], 0), intGt(vec1[i2], 0));
-        vec1 = arrayUpdate(vec1, i, id);
-        vec2 = arrayUpdate(vec2, id, i);
+      algorithm
+        false := intGt(vec2[id], 0);
+        (_, i1) := BackendVariable.getVarSingle(cr1, vars);
+        (_, i2) := BackendVariable.getVarSingle(cr2, vars);
+        i := aliasMatching1(i1, i2, intGt(vec1[i1], 0), intGt(vec1[i2], 0));
+        vec1 := arrayUpdate(vec1, i, id);
+        vec2 := arrayUpdate(vec2, id, i);
       then ((id+1, vec1, vec2));
     case (_, _, (id, vec1, vec2))
-      equation
-        size = BackendEquation.equationSize(eqn);
+      algorithm
+        size := BackendEquation.equationSize(eqn);
       then ((id+size, vec1, vec2));
   end matchcontinue;
 end aliasMatching;
@@ -3400,12 +3400,12 @@ algorithm
       list<BackendDAE.Var> vlst;
 
     case (BackendDAE.EQUATION(exp = DAE.CREF(componentRef=cr)), _, (id, vec1, vec2))
-      equation
-        false = intGt(vec2[id], 0);
-        (_, i::_) = BackendVariable.getVar(cr, vars);
-        false = intGt(vec1[i], 0);
-        vec1 = arrayUpdate(vec1, i, id);
-        vec2 = arrayUpdate(vec2, id, i);
+      algorithm
+        false := intGt(vec2[id], 0);
+        (_, i::_) := BackendVariable.getVar(cr, vars);
+        false := intGt(vec1[i], 0);
+        vec1 := arrayUpdate(vec1, i, id);
+        vec2 := arrayUpdate(vec2, id, i);
       then ((id+1, vec1, vec2));
     case (_, _, (id, vec1, vec2))
       then ((id+1, vec1, vec2));
@@ -3427,12 +3427,12 @@ algorithm
       list<BackendDAE.Var> vlst;
 
     case (BackendDAE.EQUATION(scalar = DAE.CREF(componentRef=cr)), _, (id, vec1, vec2))
-      equation
-        false = intGt(vec2[id], 0);
-        (_, i::_) = BackendVariable.getVar(cr, vars);
-        false = intGt(vec1[i], 0);
-        vec1 = arrayUpdate(vec1, i, id);
-        vec2 = arrayUpdate(vec2, id, i);
+      algorithm
+        false := intGt(vec2[id], 0);
+        (_, i::_) := BackendVariable.getVar(cr, vars);
+        false := intGt(vec1[i], 0);
+        vec1 := arrayUpdate(vec1, i, id);
+        vec2 := arrayUpdate(vec2, id, i);
       then ((id+1, vec1, vec2));
     case (_, _, (id, vec1, vec2))
       then ((id+1, vec1, vec2));
@@ -3454,13 +3454,13 @@ algorithm
       list<BackendDAE.Var> vlst;
 
     case (BackendDAE.EQUATION(exp=e1, scalar = e2), _, (id, vec1, vec2))
-      equation
-        false = intGt(vec2[id], 0);
-        e = Expression.expSub(e1, e2);
-        vlst =BackendEquation.equationVars(eqn, vars);
-        (_, i) = getConstOneVariable(vlst, e, vec1, vars);
-        vec1 = arrayUpdate(vec1, i, id);
-        vec2 = arrayUpdate(vec2, id, i);
+      algorithm
+        false := intGt(vec2[id], 0);
+        e := Expression.expSub(e1, e2);
+        vlst :=BackendEquation.equationVars(eqn, vars);
+        (_, i) := getConstOneVariable(vlst, e, vec1, vars);
+        vec1 := arrayUpdate(vec1, i, id);
+        vec2 := arrayUpdate(vec2, id, i);
       then ((id+1, vec1, vec2));
     case (_, _, (id, vec1, vec2))
       then ((id+1, vec1, vec2));
@@ -3482,18 +3482,18 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Exp e1, e2;
     case (v::_, _, _, _)
-      equation
-        cr = BackendVariable.varCref(v);
-        (_, i::_) = BackendVariable.getVar(cr, vars);
-        false = intGt(vec1[i], 0);
-        e1 = Differentiate.differentiateExpSolve(e, cr, NONE());
-        (e2, _) = ExpressionSimplify.simplify(e1);
-        true = Expression.isConstOne(e2) or Expression.isConstMinusOne(e2);
+      algorithm
+        cr := BackendVariable.varCref(v);
+        (_, i::_) := BackendVariable.getVar(cr, vars);
+        false := intGt(vec1[i], 0);
+        e1 := Differentiate.differentiateExpSolve(e, cr, NONE());
+        (e2, _) := ExpressionSimplify.simplify(e1);
+        true := Expression.isConstOne(e2) or Expression.isConstMinusOne(e2);
       then
         (cr, i);
     case (_::rest, _, _, _)
-      equation
-        (cr, i) = getConstOneVariable(rest, e, vec1, vars);
+      algorithm
+        (cr, i) := getConstOneVariable(rest, e, vec1, vars);
       then
         (cr, i);
   end matchcontinue;

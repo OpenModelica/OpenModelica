@@ -119,7 +119,7 @@ algorithm
       BackendDAE.WhenOperator whenOp;
       list<DAE.ComponentRef> crefs, crefs2;
 
-    case SimCode.SES_RESIDUAL() equation
+    case SimCode.SES_RESIDUAL() algorithm
       File.write(file, "\n{\"eqIndex\":");
       File.writeInt(file, eq.index);
       if parent <> 0 then
@@ -137,7 +137,7 @@ algorithm
       File.write(file, "}");
     then true;
 
-    case SimCode.SES_SIMPLE_ASSIGN() equation
+    case SimCode.SES_SIMPLE_ASSIGN() algorithm
       File.write(file, "\n{\"eqIndex\":");
       File.writeInt(file, eq.index);
       if parent <> 0 then
@@ -163,7 +163,7 @@ algorithm
       File.write(file, "}");
     then true;
 
-    case SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS() equation
+    case SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS() algorithm
       File.write(file, "\n{\"eqIndex\":");
       File.writeInt(file, eq.index);
       if parent <> 0 then
@@ -189,7 +189,7 @@ algorithm
       File.write(file, "}");
     then true;
 
-    case SimCode.SES_ARRAY_CALL_ASSIGN() equation
+    case SimCode.SES_ARRAY_CALL_ASSIGN() algorithm
       File.write(file, "\n{\"eqIndex\":");
       File.writeInt(file, eq.index);
       if parent <> 0 then
@@ -636,7 +636,7 @@ algorithm
       File.write(file, section);
       for whenOps in eq.whenStmtLst loop
         _ := match whenOps
-          case whenOp as BackendDAE.ASSIGN() equation
+          case whenOp as BackendDAE.ASSIGN() algorithm
             File.write(file, "\",\"tag\":\"when\",\"defines\":[");
             serializeExp(file,whenOp.left);
             File.write(file, "],\"uses\":[");
@@ -647,7 +647,7 @@ algorithm
             serializeSource(file,eq.source,withOperations);
             File.write(file, "}");
           then ();
-          case whenOp as BackendDAE.REINIT() equation
+          case whenOp as BackendDAE.REINIT() algorithm
             File.write(file, "\",\"tag\":\"when\",\"defines\":[");
             serializeCref(file,whenOp.stateVar);
             File.write(file, "],\"uses\":[");
@@ -658,10 +658,10 @@ algorithm
             serializeSource(file,eq.source,withOperations);
             File.write(file, "}");
           then ();
-          case whenOp as BackendDAE.ASSERT() equation
+          case whenOp as BackendDAE.ASSERT() algorithm
             File.write(file, "\",\"tag\":\"when\"");
             File.write(file, ",\"uses\":[");
-            crefs = listAppend(Expression.extractUniqueCrefsFromExpDerPreStart(whenOp.condition), Expression.extractUniqueCrefsFromExpDerPreStart(whenOp.message));
+            crefs := listAppend(Expression.extractUniqueCrefsFromExpDerPreStart(whenOp.condition), Expression.extractUniqueCrefsFromExpDerPreStart(whenOp.message));
             serializeUses(file,List.union(eq.conditions,crefs));
             File.write(file, "],\"equation\":[");
             serializeExp(file,whenOp.message);
@@ -669,7 +669,7 @@ algorithm
             serializeSource(file,eq.source,withOperations);
             File.write(file, "}");
           then ();
-          case whenOp as BackendDAE.TERMINATE() equation
+          case whenOp as BackendDAE.TERMINATE() algorithm
             File.write(file, "\",\"tag\":\"when\"");
             File.write(file, ",\"uses\":[");
             serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExpDerPreStart(whenOp.message)));
@@ -679,7 +679,7 @@ algorithm
             serializeSource(file,eq.source,withOperations);
             File.write(file, "}");
           then ();
-          case whenOp as BackendDAE.NORETCALL() equation
+          case whenOp as BackendDAE.NORETCALL() algorithm
             File.write(file, "\",\"tag\":\"when\"");
             File.write(file, ",\"uses\":[");
             serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExpDerPreStart(whenOp.exp)));
@@ -694,12 +694,12 @@ algorithm
       _ := match eq.elseWhen
         local
           SimCode.SimEqSystem e;
-        case SOME(e) equation if SimCodeUtil.simEqSystemIndex(e) <>0 then serializeEquation(file,e,section,withOperations); end if; then ();
+        case SOME(e) algorithm if SimCodeUtil.simEqSystemIndex(e) <>0 then serializeEquation(file,e,section,withOperations); end if; then ();
         else ();
       end match;
     then true;
 
-    case SimCode.SES_FOR_LOOP() equation
+    case SimCode.SES_FOR_LOOP() algorithm
       File.write(file, "\n{\"eqIndex\":");
       File.writeInt(file, eq.index);
       if parent <> 0 then
@@ -725,7 +725,7 @@ algorithm
       File.write(file, "}");
     then true;
 
-    case SimCode.SES_ALIAS() equation
+    case SimCode.SES_ALIAS() algorithm
       File.write(file, "\n{\"eqIndex\":");
       File.writeInt(file, eq.index);
       File.write(file, ",\"tag\":\"alias\",\"equation\":[");
@@ -751,7 +751,7 @@ algorithm
       Integer i,j;
       SimCode.SimEqSystem eq;
     case (i,j,eq as SimCode.SES_RESIDUAL())
-      equation
+      algorithm
         File.write(file,"{\"row\":");
         File.write(file,intString(i));
         File.write(file,",\"column\":");
@@ -779,13 +779,13 @@ algorithm
       list<DAE.ComponentRef> rest;
     case {} then ();
     case {cr}
-      equation
+      algorithm
         File.write(file, "\"");
         writeCref(file, cr, escape=JSON);
         File.write(file, "\"");
       then ();
     case cr::rest
-      equation
+      algorithm
         File.write(file, "\"");
         writeCref(file, cr, escape=JSON);
         File.write(file, "\",");
@@ -819,11 +819,11 @@ algorithm
       list<ArgType> rest;
     case {} then ();
     case {a}
-      equation
+      algorithm
         func(file,a);
       then ();
     case a::rest
-      equation
+      algorithm
         func(file,a);
         File.write(file, ",");
         serializeList(file,rest,func);
@@ -849,11 +849,11 @@ algorithm
       list<ArgType> rest;
     case {} then ();
     case {a}
-      equation
+      algorithm
         func(file,a,extra);
       then ();
     case a::rest
-      equation
+      algorithm
         func(file,a,extra);
         File.write(file, ",");
         serializeList1(file,rest,extra,func);

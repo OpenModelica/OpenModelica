@@ -296,8 +296,8 @@ algorithm
    list<BackendDAE.Equation> e;
    BackendDAE.Variables v;
    list< .DAE.Exp> constraintLst;
-    case({DAE.CONSTRAINT_EXPS(constraintLst = constraintLst)}, _, _, _, _, _, _) equation
-      (v, e) = addOptimizationVarsEqns1(constraintLst, inI, inVars, inEqns, globalKnownVars,prefConCrefName,conKind);
+    case({DAE.CONSTRAINT_EXPS(constraintLst = constraintLst)}, _, _, _, _, _, _) algorithm
+      (v, e) := addOptimizationVarsEqns1(constraintLst, inI, inVars, inEqns, globalKnownVars,prefConCrefName,conKind);
       then (v, e);
   else (inVars, inEqns);
   end match;
@@ -363,8 +363,8 @@ algorithm
   mayer := match(inmayer1, inmayer2)
   local DAE.Exp e1, e2, e3;
 
-    case(SOME(e1), SOME(e2)) equation
-      e3 = Expression.expAdd(e1,e2);
+    case(SOME(e1), SOME(e2)) algorithm
+      e3 := Expression.expAdd(e1,e2);
     then SOME(e3);
     case(NONE(), SOME(_)) then inmayer2;
     case(_, NONE()) then inmayer1;
@@ -512,13 +512,13 @@ algorithm
       list<BackendDAE.Var> varLst;
 
     case (DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr)}),(vars,lst,lst1,varLst))
-      equation
-        (var,_) = BackendVariable.getVarSingle(cr, vars);
-        true = BackendVariable.isVarOnTopLevelAndInput(var);
-        var = BackendVariable.setHideResult(var, SOME(DAE.BCONST(true)));
-        cr1 = ComponentReference.prependStringCref("$TMP$DER$P", cr);
+      algorithm
+        (var,_) := BackendVariable.getVarSingle(cr, vars);
+        true := BackendVariable.isVarOnTopLevelAndInput(var);
+        var := BackendVariable.setHideResult(var, SOME(DAE.BCONST(true)));
+        cr1 := ComponentReference.prependStringCref("$TMP$DER$P", cr);
         //cr1 = ComponentReference.crefPrefixDer(cr);
-        e = Expression.crefExp(cr1);
+        e := Expression.crefExp(cr1);
       then (e,true,(vars, List.unionElt(cr1,lst), List.unionElt(cr,lst1),  List.unionElt(var,varLst)));
 
     else (inExp,true,tpl);

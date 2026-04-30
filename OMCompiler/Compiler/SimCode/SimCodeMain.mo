@@ -356,34 +356,34 @@ algorithm
       Integer numProc;
       SimCode.SimCode tmpSimCode;
 
-    case(_, _, _, _, _, _, _, _, _, _,_, _, _, _) equation
+    case(_, _, _, _, _, _, _, _, _, _,_, _, _, _) algorithm
       // MULTI_RATE PARTITIONINIG
-      true = Flags.isSet(Flags.MULTIRATE_PARTITION);
+      true := Flags.isSet(Flags.MULTIRATE_PARTITION);
     then HpcOmSimCodeMain.createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inRemovedInitialEquationLst, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs,libPaths, program, simSettingsOpt, recordDecls, literals, args);
 
-    case(_, _, _, _, _, _, _, _, _, _,_, _, _, _) equation
-      true = Flags.isSet(Flags.HPCOM);
+    case(_, _, _, _, _, _, _, _, _, _,_, _, _, _) algorithm
+      true := Flags.isSet(Flags.HPCOM);
 
       // either generate code for profiling or for parallel simulation
       //bcall(not stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL)),print,"Deactivate profiling if you want to simulate in parallel.\n");
       //_ = bcallret2((not stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL))) and (not stringEq("all_perf",Flags.getConfigString(Flags.PROFILING_LEVEL))),FlagsUtil.set,Flags.HPCOM,false,true);
       //true = stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL)) or stringEq("all_perf",Flags.getConfigString(Flags.PROFILING_LEVEL));
 
-      numProc = Flags.getConfigInt(Flags.NUM_PROC);
-      true = numProc == 0;
+      numProc := Flags.getConfigInt(Flags.NUM_PROC);
+      true := numProc == 0;
       print("hpcom computes the ideal number of processors. If you want to set the number manually, use the flag +n=_\n");
     then HpcOmSimCodeMain.createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inRemovedInitialEquationLst, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs,libPaths,program, simSettingsOpt, recordDecls, literals, args);
 
-    case(_, _, _, _, _, _, _, _, _,_, _, _, _, _) equation
-      true = Flags.isSet(Flags.HPCOM);
+    case(_, _, _, _, _, _, _, _, _,_, _, _, _, _) algorithm
+      true := Flags.isSet(Flags.HPCOM);
 
       // either generate code for profiling or for parallel simulation
       //bcall((not stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL))) and (not stringEq("all_perf",Flags.getConfigString(Flags.PROFILING_LEVEL))),print,"Deactivate profiling if you want to simulate in parallel.\n");
       //_ = bcallret2(not stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL)),FlagsUtil.set,Flags.HPCOM,false,true);
       //true = stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL)) or stringEq("all_perf",Flags.getConfigString(Flags.PROFILING_LEVEL));
 
-      numProc = Flags.getConfigInt(Flags.NUM_PROC);
-      true = (numProc > 0);
+      numProc := Flags.getConfigInt(Flags.NUM_PROC);
+      true := (numProc > 0);
     then HpcOmSimCodeMain.createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inRemovedInitialEquationLst, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, libPaths,program,simSettingsOpt, recordDecls, literals, args);
 
     else equation
@@ -692,8 +692,8 @@ algorithm
         // write the makefile last!
       then ();
 
-    case "JavaScript" equation
-      guid = System.getUUIDStr();
+    case "JavaScript" algorithm
+      guid := System.getUUIDStr();
       Tpl.tplNoret(CodegenC.translateModel, simCode);
       SerializeInitXML.simulationInitFile(simCode, guid);
       System.covertTextFileToCLiteral(simCode.fileNamePrefix+"_init.xml",simCode.fileNamePrefix+"_init.c", Config.simulationCodeTarget());
@@ -702,7 +702,7 @@ algorithm
       Tpl.tplNoret(CodegenJS.markdownFile, simCode);
     then ();
 
-    case "XML" equation
+    case "XML" algorithm
       Tpl.tplNoret(CodegenXML.translateModel, simCode);
     then ();
 
@@ -1079,7 +1079,7 @@ algorithm
         runTpl(func = function CodegenOMSI_common.generateEquationsCode(a_simCode=simCode, a_FileNamePrefix=fileprefix));
       then ();
     case (_,"Cpp")
-      equation
+      algorithm
         if(Flags.isSet(Flags.HPCOM)) then
           Tpl.tplNoret3(CodegenFMUCppHpcom.translateModel, simCode, FMUVersion, FMUType);
         else

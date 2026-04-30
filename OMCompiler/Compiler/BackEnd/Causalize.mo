@@ -95,26 +95,26 @@ algorithm
         singularSystemCheck1(nvars,neqns,isyst,BackendDAE.ALLOW_UNDERCONSTRAINED(),matchingAlgorithm,arg,ishared);
 
     case (_,_,_,(_,BackendDAE.EXACT()),_,_,_)
-      equation
-        true = intEq(nvars,neqns);
+      algorithm
+        true := intEq(nvars,neqns);
       then
         singularSystemCheck1(nvars,neqns,isyst,BackendDAE.EXACT(),matchingAlgorithm,arg,ishared);
 
     case (_,_,_,(_,BackendDAE.EXACT()),_,_,_)
-      equation
-        true = intGt(nvars,neqns);
-        esize_str = intString(neqns);
-        vsize_str = intString(nvars);
+      algorithm
+        true := intGt(nvars,neqns);
+        esize_str := intString(neqns);
+        vsize_str := intString(nvars);
         Error.addMessage(Error.UNDERDET_EQN_SYSTEM, {esize_str,vsize_str});
         BackendDAEUtil.checkAdjacencyMatrixSolvability(isyst, ishared.functionTree, BackendDAEUtil.isInitializationDAE(ishared));
       then
         fail();
 
     case (_,_,_,_,_,_,_)
-      equation
-        true = intLt(nvars,neqns);
-        esize_str = intString(neqns) ;
-        vsize_str = intString(nvars);
+      algorithm
+        true := intLt(nvars,neqns);
+        esize_str := intString(neqns) ;
+        vsize_str := intString(nvars);
         Error.addMessage(Error.OVERDET_EQN_SYSTEM, {esize_str,vsize_str});
         BackendDAEUtil.checkAdjacencyMatrixSolvability(isyst, ishared.functionTree, BackendDAEUtil.isInitializationDAE(ishared));
       then
@@ -190,10 +190,10 @@ algorithm
       array<Integer> ass1,ass2;
       BackendDAE.Var var;
     case (var as BackendDAE.VAR(varKind=BackendDAE.STATE()),(index,ass1,ass2))
-      equation
-        e = ass1[index];
-        ass1 = arrayUpdate(ass1,index,-1);
-        ass2 = arrayUpdate(ass2,e,-1);
+      algorithm
+        e := ass1[index];
+        ass1 := arrayUpdate(ass1,index,-1);
+        ass2 := arrayUpdate(ass2,e,-1);
       then (var,(index+1,ass1,ass2));
     case (var,(index,ass1,ass2)) then (var,(index+1,ass1,ass2));
   end match;

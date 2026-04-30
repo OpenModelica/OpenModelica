@@ -70,16 +70,16 @@ algorithm
       String file, strErrBuf;
 
     case ( "SusanTest.tpl" )
-      equation
+      algorithm
         tplMainTest("a");
       then ();
 
     case ( file )
-      equation
+      algorithm
         Print.clearBuf();
         translateFile(file);
-        strErrBuf = Print.getErrorString();
-        strErrBuf = if strErrBuf == "" then "" else ("### Error Buffer ###\n"+strErrBuf+"\n### End of Error Buffer ###\n");
+        strErrBuf := Print.getErrorString();
+        strErrBuf := if strErrBuf == "" then "" else ("### Error Buffer ###\n"+strErrBuf+"\n### End of Error Buffer ###\n");
         print(strErrBuf);
       then ();
 
@@ -101,35 +101,35 @@ algorithm
       Boolean wasError;
 
     case ( file )
-      equation
+      algorithm
         print("\nProcessing file '" + file + "'\n");
-        nErrors = Error.getNumErrorMessages();
+        nErrors := Error.getNumErrorMessages();
 
-        destFile = System.stringReplace(file + "*", ".tpl*", ".mo");
-        false = stringEq(file, destFile);
+        destFile := System.stringReplace(file + "*", ".tpl*", ".mo");
+        false := stringEq(file, destFile);
 
         //print(destFile);
-        tplPackage = TplParser.templPackageFromFile(file);
+        tplPackage := TplParser.templPackageFromFile(file);
 
-        mmPckg = TplAbsyn.transformAST(tplPackage);
-        txt = emptyTxt;
-        txt = TplCodegen.mmPackage(txt, mmPckg);
+        mmPckg := TplAbsyn.transformAST(tplPackage);
+        txt := emptyTxt;
+        txt := TplCodegen.mmPackage(txt, mmPckg);
         //res = "/* generated on " + System.getCurrentTimeStr() + "*/\n" + Tpl.textString(txt);
-        res = Tpl.textString(txt);
-        wasError = nErrors < Error.getNumErrorMessages();
+        res := Tpl.textString(txt);
+        wasError := nErrors < Error.getNumErrorMessages();
         //prevent overriding the previously generated .mo without errors
-        destFile = destFile + (if wasError then ".err.mo" else "");
+        destFile := destFile + (if wasError then ".err.mo" else "");
         print("\nWriting result to file '" + destFile + "'\n");
 
         System.writeFile(destFile, res);
         //print("\nReamining characters:\n" + stringCharListString(chars) + "\n<<");
         //Error.addMessage(Error.INTERNAL_ERROR, {"Pokus"});
         //fail when a new error
-        false = wasError;
+        false := wasError;
       then ();
 
     case (file)
-      equation
+      algorithm
         print("\n### translation of file '"+ file + "' failed!  ###\n" );
         print("### Error Buffer ###\n");
         print(Print.getErrorString());
@@ -163,15 +163,15 @@ algorithm
       Integer notPassedCnt;
 
     case ( strRet, strShouldBe, printResult, printErrBuf, strLabel, notPassedCnt)
-      equation
-        true = stringEq(strRet, strShouldBe);
+      algorithm
+        true := stringEq(strRet, strShouldBe);
         print("\n**************************************************\n" + strLabel);
 
-        strRes = if printResult then ("  returned <<\n" + strRet + ">>\n") else "\n result not shown \n";
+        strRes := if printResult then ("  returned <<\n" + strRet + ">>\n") else "\n result not shown \n";
         print(strRes);
 
-        strErrBuf = Print.getErrorString();
-        strErrBuf = if strErrBuf == "" then "" else
+        strErrBuf := Print.getErrorString();
+        strErrBuf := if strErrBuf == "" then "" else
           (if printErrBuf then ("### Error Buffer ###\n"+strErrBuf+"\n### End of Error Buffer ###\n") else
                                 "### Error Buffer is NOT empty - not shown ###\n");
         print(strErrBuf);
@@ -181,18 +181,18 @@ algorithm
         notPassedCnt;
 
     case ( strRet, strShouldBe, printResult,printErrBuf, strLabel, notPassedCnt)
-      equation
-        false = stringEq(strRet, strShouldBe);
+      algorithm
+        false := stringEq(strRet, strShouldBe);
         print("\n##################################################\n"
                 + strLabel );
 
-        strRes = if printResult then
+        strRes := if printResult then
            ("  returned <<\n" + strRet + ">>\nshould be <<\n" + strShouldBe + ">>\n")
           else "\n result not shown \n";
         print(strRes);
 
-        strErrBuf = Print.getErrorString();
-        strErrBuf = if strErrBuf == "" then "" else
+        strErrBuf := Print.getErrorString();
+        strErrBuf := if strErrBuf == "" then "" else
           (if printErrBuf then ("### Error Buffer ###\n"+strErrBuf+"\n### End of Error Buffer ###\n") else
                                 "### Error Buffer is NOT empty - not shown ###\n");
         print(strErrBuf);
@@ -227,23 +227,23 @@ algorithm
       Integer notPassedCnt;
 
     case ( file, printRes, printErrBuf, notPassedCnt)
-      equation
+      algorithm
         System.writeFile(file + ".mo", "Test failed.");
         translateFile(file + ".tpl");
-        res = System.stringReplace(System.readFile(file + ".mo"), intStringChar(13), "");
-        resToBe = System.stringReplace(System.readFile(file + "__testShouldBe.mo"), intStringChar(13), "");
-        notPassedCnt = testStringEquality(res,resToBe, printRes, printErrBuf,
+        res := System.stringReplace(System.readFile(file + ".mo"), intStringChar(13), "");
+        resToBe := System.stringReplace(System.readFile(file + "__testShouldBe.mo"), intStringChar(13), "");
+        notPassedCnt := testStringEquality(res,resToBe, printRes, printErrBuf,
                        "translateFile "+ file + ".tpl", notPassedCnt);
       then notPassedCnt;
 
     //failed
     case ( file, printRes, printErrBuf, notPassedCnt)
-      equation
+      algorithm
         System.writeFile(file + ".mo", "Test failed.");
         //failure( translateFile(file + ".tpl") );
-        res = System.stringReplace(System.readFile(file + ".mo"), intStringChar(13), "");
-        resToBe = System.stringReplace(System.readFile(file + "__testShouldBe.mo"), intStringChar(13), "");
-        notPassedCnt = testStringEquality(res,resToBe, printRes, printErrBuf,
+        res := System.stringReplace(System.readFile(file + ".mo"), intStringChar(13), "");
+        resToBe := System.stringReplace(System.readFile(file + "__testShouldBe.mo"), intStringChar(13), "");
+        notPassedCnt := testStringEquality(res,resToBe, printRes, printErrBuf,
                        "translateFile "+ file + ".tpl", notPassedCnt);
       then notPassedCnt;
 
@@ -273,63 +273,63 @@ algorithm
       Real tstart;
       Integer lnum,colnum, llen, notPassedCnt;
     case ( "a" )
-      equation
-        notPassedCnt = 0;
+      algorithm
+        notPassedCnt := 0;
         Print.clearErrorBuf();
         print("\n A Test:\n" );
-        tstart = clock();
+        tstart := clock();
 
         //*************
-        txt = Tpl.writeStr(emptyTxt, "Ahoj Susan");
+        txt := Tpl.writeStr(emptyTxt, "Ahoj Susan");
         //txt = newLine(txt);
-        txt = Tpl.pushBlock(txt,Tpl.BT_ANCHOR(0));
-        txt = Tpl.writeStr(txt, "Ahoj Susan");
-        txt = Tpl.newLine(txt);
-        txt = Tpl.writeStr(txt, "Ahoj Susan");
-        txt = Tpl.popBlock(txt);
-        str = Tpl.textString(txt);
-        notPassedCnt = testStringEquality(str,
+        txt := Tpl.pushBlock(txt,Tpl.BT_ANCHOR(0));
+        txt := Tpl.writeStr(txt, "Ahoj Susan");
+        txt := Tpl.newLine(txt);
+        txt := Tpl.writeStr(txt, "Ahoj Susan");
+        txt := Tpl.popBlock(txt);
+        str := Tpl.textString(txt);
+        notPassedCnt := testStringEquality(str,
 "Ahoj SusanAhoj Susan
           Ahoj Susan", true, true, "Anchor", notPassedCnt);
 
         //*************
-        txt = emptyTxt;
-        txt = TplCodegen.pathIdent(txt, TplAbsyn.IDENT("Susan"));
-        str = Tpl.textString(txt);
-        notPassedCnt = testStringEquality(str,
+        txt := emptyTxt;
+        txt := TplCodegen.pathIdent(txt, TplAbsyn.IDENT("Susan"));
+        str := Tpl.textString(txt);
+        notPassedCnt := testStringEquality(str,
 "Susan", true, true, "PathIdent IDENT", notPassedCnt);
 
         //*************
-        txt = emptyTxt;
-        txt = TplCodegen.pathIdent(txt, TplAbsyn.PATH_IDENT("Hej", TplAbsyn.IDENT("Susan")));
-        str = Tpl.textString(txt);
-        notPassedCnt = testStringEquality(str,
+        txt := emptyTxt;
+        txt := TplCodegen.pathIdent(txt, TplAbsyn.PATH_IDENT("Hej", TplAbsyn.IDENT("Susan")));
+        str := Tpl.textString(txt);
+        notPassedCnt := testStringEquality(str,
 "Hej.Susan", true, true, "PathIdent PATH_IDENT", notPassedCnt);
 
         //*************
-        txt = emptyTxt;
-        txt = TplCodegen.typedIdents(txt, {
+        txt := emptyTxt;
+        txt := TplCodegen.typedIdents(txt, {
                 ("Hej", TplAbsyn.TEXT_TYPE()),
                 ("Susan", TplAbsyn.LIST_TYPE(TplAbsyn.NAMED_TYPE(TplAbsyn.PATH_IDENT("Pa",TplAbsyn.IDENT("Li")))))} );
-        str = Tpl.textString(txt);
-        notPassedCnt = testStringEquality(str,
+        str := Tpl.textString(txt);
+        notPassedCnt := testStringEquality(str,
 "Tpl.Text Hej;
 list<Pa.Li> Susan;", true, true, "typedIdents", notPassedCnt);
 
         //*************
-        txt = emptyTxt;
-        txt = TplCodegen.typedIdentsEx(txt, {
+        txt := emptyTxt;
+        txt := TplCodegen.typedIdentsEx(txt, {
                 ("Hej", TplAbsyn.TEXT_TYPE()),
                 ("Susan", TplAbsyn.NAMED_TYPE(TplAbsyn.PATH_IDENT("Pa",TplAbsyn.IDENT("Li"))))},
                 "input","in" );
-        str = Tpl.textString(txt);
-        notPassedCnt = testStringEquality(str,
+        str := Tpl.textString(txt);
+        notPassedCnt := testStringEquality(str,
 "input Tpl.Text inHej;
 input Pa.Li inSusan;", true, true, "typedIdentsEx", notPassedCnt);
 
         //*************
-        txt = emptyTxt;
-        txt = TplCodegen.mmPackage(txt,
+        txt := emptyTxt;
+        txt := TplCodegen.mmPackage(txt,
           TplAbsyn.MM_PACKAGE(
             TplAbsyn.IDENT("Susan"),
             {
@@ -415,8 +415,8 @@ input Pa.Li inSusan;", true, true, "typedIdentsEx", notPassedCnt);
             ""
           )
         );
-        str = Tpl.textString(txt);
-        notPassedCnt = testStringEquality(str,
+        str := Tpl.textString(txt);
+        notPassedCnt := testStringEquality(str,
 "package Susan
 
 public import Tpl;
@@ -514,7 +514,7 @@ typedIdents(TypedIdents decls) <>=
 >
 
   */
-        tplPackage = TplAbsyn.TEMPL_PACKAGE(
+        tplPackage := TplAbsyn.TEMPL_PACKAGE(
            TplAbsyn.IDENT("Susan"),
            { TplAbsyn.AST_DEF(TplAbsyn.IDENT("TplAbsyn"), true,
              { ("Ident", TplAbsyn.TI_ALIAS_TYPE(TplAbsyn.STRING_TYPE())),
@@ -562,11 +562,11 @@ typedIdents(TypedIdents decls) <>=
            },
            ""
            );
-        mmPckg = TplAbsyn.transformAST(tplPackage);
-        txt = emptyTxt;
-        txt = TplCodegen.mmPackage(txt, mmPckg);
-        str = Tpl.textString(txt);
-        notPassedCnt = testStringEquality(str,
+        mmPckg := TplAbsyn.transformAST(tplPackage);
+        txt := emptyTxt;
+        txt := TplCodegen.mmPackage(txt, mmPckg);
+        str := Tpl.textString(txt);
+        notPassedCnt := testStringEquality(str,
 "package Susan
 
 public import Tpl;
@@ -661,90 +661,90 @@ end typedIdents;
 end Susan;", false, false, "transformAST - pathIdent() + typedIdents()", notPassedCnt);
 
         //*************
-        str = "// Hej Susan
+        str := "// Hej Susan
 /*this is another dance with Susan */
 /* event I will /*nest*/ into */ //and still comment
       Susan lives!";
-        chars = stringListStringChar( str );
+        chars := stringListStringChar( str );
 
-        (chars, _) = TplParser.interleave(chars, TplParser.makeStartLineInfo(chars, "in memory test"));
-        strOut = stringCharListString(chars);
-        notPassedCnt = testStringEquality(strOut,
+        (chars, _) := TplParser.interleave(chars, TplParser.makeStartLineInfo(chars, "in memory test"));
+        strOut := stringCharListString(chars);
+        notPassedCnt := testStringEquality(strOut,
            "Susan lives!", true, true, "TplParser.interleave \n\""+ str +"\"\n", notPassedCnt);
 
         //*************
-        str = "(Susan)";
-        chars = stringListStringChar( str );
+        str := "(Susan)";
+        chars := stringListStringChar( str );
 
         TplParser.afterKeyword(chars); //not fail
-        strOut = stringCharListString(chars);
-        notPassedCnt = testStringEquality(strOut,
+        strOut := stringCharListString(chars);
+        notPassedCnt := testStringEquality(strOut,
            "(Susan)", true, true, "TplParser.afterKeyword \n\""+ str +"\"\n", notPassedCnt);
 
         //*************
-        str = "Susan2:)";
-        chars = stringListStringChar( str );
+        str := "Susan2:)";
+        chars := stringListStringChar( str );
 
-        (chars, ident) = TplParser.identifier(chars);
-        strOut = "*" + ident + "*" + stringCharListString(chars);
-        notPassedCnt = testStringEquality(strOut,
+        (chars, ident) := TplParser.identifier(chars);
+        strOut := "*" + ident + "*" + stringCharListString(chars);
+        notPassedCnt := testStringEquality(strOut,
            "*Susan2*:)", true, true, "TplParser.identifier \n\""+ str +"\"\n", notPassedCnt);
 
         //*************
-        str = "Susan:)";
-        chars = stringListStringChar( str );
+        str := "Susan:)";
+        chars := stringListStringChar( str );
 
-        (chars,_, pid) = TplParser.pathIdent(chars, TplParser.makeStartLineInfo(chars, "in memory test"));
-        txt = emptyTxt;
-        txt = TplCodegen.pathIdent(txt, pid);
-        ident = Tpl.textString(txt);
-        strOut = "*" + ident + "*" + stringCharListString(chars);
-        notPassedCnt = testStringEquality(strOut,
+        (chars,_, pid) := TplParser.pathIdent(chars, TplParser.makeStartLineInfo(chars, "in memory test"));
+        txt := emptyTxt;
+        txt := TplCodegen.pathIdent(txt, pid);
+        ident := Tpl.textString(txt);
+        strOut := "*" + ident + "*" + stringCharListString(chars);
+        notPassedCnt := testStringEquality(strOut,
            "*Susan*:)", true, true, "TplParser.pathIdent \n\""+ str +"\"\n", notPassedCnt);
 
         //*************
-        str = "Susan./*comment*/ Susan2 . tpl3_h4:)";
-        chars = stringListStringChar( str );
+        str := "Susan./*comment*/ Susan2 . tpl3_h4:)";
+        chars := stringListStringChar( str );
 
-        (chars,_, pid) = TplParser.pathIdent(chars, TplParser.makeStartLineInfo(chars, "in memory test"));
-        txt = emptyTxt;
-        txt = TplCodegen.pathIdent(txt, pid);
-        ident = Tpl.textString(txt);
-        strOut = "*" + ident + "*" + stringCharListString(chars);
-        notPassedCnt = testStringEquality(strOut,
+        (chars,_, pid) := TplParser.pathIdent(chars, TplParser.makeStartLineInfo(chars, "in memory test"));
+        txt := emptyTxt;
+        txt := TplCodegen.pathIdent(txt, pid);
+        ident := Tpl.textString(txt);
+        strOut := "*" + ident + "*" + stringCharListString(chars);
+        notPassedCnt := testStringEquality(strOut,
            "*Susan.Susan2.tpl3_h4*:)", true, true, "TplParser.pathIdent \n\""+ str +"\"\n", notPassedCnt);
 
         //*************
-        str = "Tpl.Susan:)";
-        chars = stringListStringChar( str );
+        str := "Tpl.Susan:)";
+        chars := stringListStringChar( str );
 
-        (chars,_, ts) = TplParser.typeSig(chars, TplParser.makeStartLineInfo(chars, "in memory test"));
-        tequal = valueEq(ts, TplAbsyn.NAMED_TYPE(TplAbsyn.PATH_IDENT("Tpl", TplAbsyn.IDENT("Susan"))));
-        txt = emptyTxt;
-        txt = TplCodegen.typeSig(txt, ts);
-        ident = Tpl.textString(txt);
-        strOut = Tpl.booleanString(tequal) + "*" + ident + "*" + stringCharListString(chars);
-        notPassedCnt = testStringEquality(strOut,
+        (chars,_, ts) := TplParser.typeSig(chars, TplParser.makeStartLineInfo(chars, "in memory test"));
+        tequal := valueEq(ts, TplAbsyn.NAMED_TYPE(TplAbsyn.PATH_IDENT("Tpl", TplAbsyn.IDENT("Susan"))));
+        txt := emptyTxt;
+        txt := TplCodegen.typeSig(txt, ts);
+        ident := Tpl.textString(txt);
+        strOut := Tpl.booleanString(tequal) + "*" + ident + "*" + stringCharListString(chars);
+        notPassedCnt := testStringEquality(strOut,
            "true*Tpl.Susan*:)", true, true, "TplParser.typeSig \n\""+ str +"\"\n", notPassedCnt);
 
         //*************
-        str = "list< tuple<Hej.Susan,list <String>,Option< /*uáá*/Integer>> >:)";
-        chars = stringListStringChar( str );
+        str := "list< tuple<Hej.Susan,list <String>,Option< /*uáá*/Integer>> >:)";
+        chars := stringListStringChar( str );
 
-        (chars,_, ts) = TplParser.typeSig(chars, TplParser.makeStartLineInfo(chars, "in memory test"));
-        tequal = valueEq(ts, TplAbsyn.LIST_TYPE(TplAbsyn.TUPLE_TYPE({
+        (chars,_, ts) := TplParser.typeSig(chars, TplParser.makeStartLineInfo(chars, "in memory test"));
+        tequal := valueEq(ts, TplAbsyn.LIST_TYPE(TplAbsyn.TUPLE_TYPE({
                     TplAbsyn.NAMED_TYPE(TplAbsyn.PATH_IDENT("Hej", TplAbsyn.IDENT("Susan"))),
                     TplAbsyn.LIST_TYPE(TplAbsyn.STRING_TYPE()),
                     TplAbsyn.OPTION_TYPE(TplAbsyn.INTEGER_TYPE())})));
-        txt = emptyTxt;
-        txt = TplCodegen.typeSig(txt, ts);
-        ident = Tpl.textString(txt);
-        strOut = Tpl.booleanString(tequal) +"*" + ident + "*" + stringCharListString(chars);
-        notPassedCnt = testStringEquality(strOut,
+        txt := emptyTxt;
+        txt := TplCodegen.typeSig(txt, ts);
+        ident := Tpl.textString(txt);
+        strOut := Tpl.booleanString(tequal) +"*" + ident + "*" + stringCharListString(chars);
+        notPassedCnt := testStringEquality(strOut,
            "true*list<tuple<Hej.Susan, list<String>, Option<Integer>>>*:)", true, true, "TplParser.typeSig \n\""+ str +"\"\n", notPassedCnt);
 
         //*************
-        str = "
+        str := "
 interface package Susan
   package TplAbsyn
     type Ident = String;
@@ -762,9 +762,9 @@ interface package Susan
     end PathIdent;
   end TplAbsyn;
 end Susan;:)";
-        chars = stringListStringChar( str );
+        chars := stringListStringChar( str );
 
-        (chars,_, pid, astDefs) = TplParser.interfacePackage(chars, TplParser.makeStartLineInfo(chars, "in memory test"),{});
+        (chars,_, pid, astDefs) := TplParser.interfacePackage(chars, TplParser.makeStartLineInfo(chars, "in memory test"),{});
         /*{ TplAbsyn.AST_DEF(TplAbsyn.IDENT("TplAbsyn"), true, types) } = astDefs;
         (("Ident", TplAbsyn.TI_ALIAS_TYPE(TplAbsyn.STRING_TYPE()))
           :: ("TypedIdents", TplAbsyn.TI_ALIAS_TYPE(TplAbsyn.LIST_TYPE(TplAbsyn.TUPLE_TYPE({TplAbsyn.NAMED_TYPE(TplAbsyn.IDENT("Ident")), TplAbsyn.NAMED_TYPE(TplAbsyn.IDENT("PathIdent"))}))))
@@ -775,7 +775,7 @@ end Susan;:)";
                              }) )
           ::_) = types;*/
 
-        tequal = valueEq(astDefs,
+        tequal := valueEq(astDefs,
            { TplAbsyn.AST_DEF(TplAbsyn.IDENT("TplAbsyn"), true,
              { ("Ident", TplAbsyn.TI_ALIAS_TYPE(TplAbsyn.STRING_TYPE())),
                ("TypedIdents", TplAbsyn.TI_ALIAS_TYPE(TplAbsyn.LIST_TYPE(TplAbsyn.TUPLE_TYPE({TplAbsyn.NAMED_TYPE(TplAbsyn.IDENT("Ident")), TplAbsyn.NAMED_TYPE(TplAbsyn.IDENT("PathIdent"))})))),
@@ -787,16 +787,16 @@ end Susan;:)";
              } )
            });
 
-        txt = emptyTxt;
-        txt = TplCodegen.pathIdent(txt, pid);
-        ident = Tpl.textString(txt);
-        strOut = Tpl.booleanString(tequal) +"*" + ident + "*" + stringCharListString(chars);
-        notPassedCnt = testStringEquality(strOut,
+        txt := emptyTxt;
+        txt := TplCodegen.pathIdent(txt, pid);
+        ident := Tpl.textString(txt);
+        strOut := Tpl.booleanString(tequal) +"*" + ident + "*" + stringCharListString(chars);
+        notPassedCnt := testStringEquality(strOut,
            "true*Susan*:)", true, true, "TplParser.templPackage - absyn - type Ident, TypedIdents, PathIdent \n", notPassedCnt);
 
 
         //*************
-        str = "
+        str := "
 interface package Susan
 package builtin
   function stringListStringChar
@@ -805,11 +805,11 @@ package builtin
   end stringListStringChar;
 end builtin;
 end Susan;:)";
-        chars = stringListStringChar( str );
+        chars := stringListStringChar( str );
 
-        (chars,_, pid, astDefs) = TplParser.interfacePackage(chars, TplParser.makeStartLineInfo(chars, "in memory test"),{});
+        (chars,_, pid, astDefs) := TplParser.interfacePackage(chars, TplParser.makeStartLineInfo(chars, "in memory test"),{});
 
-        tequal = valueEq(astDefs,
+        tequal := valueEq(astDefs,
             { TplAbsyn.AST_DEF(TplAbsyn.IDENT("builtin"), true,
              { ("stringListStringChar",
                   TplAbsyn.TI_FUN_TYPE(
@@ -821,16 +821,16 @@ end Susan;:)";
             } )
            and valueEq(pid, TplAbsyn.IDENT("Susan"));
 
-        txt = emptyTxt;
-        txt = TplCodegen.pathIdent(txt, pid);
-        _ = Tpl.textString(txt);
-        strOut = Tpl.booleanString(tequal) +"*" + stringCharListString(chars);
-        notPassedCnt = testStringEquality(strOut,
+        txt := emptyTxt;
+        txt := TplCodegen.pathIdent(txt, pid);
+        _ := Tpl.textString(txt);
+        strOut := Tpl.booleanString(tequal) +"*" + stringCharListString(chars);
+        notPassedCnt := testStringEquality(strOut,
            "true*:)", true, true, "TplParser.templPackage - function stringListStringChar\n", notPassedCnt);
 
 
         //*************
-        str = "
+        str := "
 interface package Susan
 package builtin
   function stringListStringChar
@@ -1032,116 +1032,116 @@ package TplAbsyn
   end MMExp;
 end TplAbsyn;
 end Susan;:)";
-        chars = stringListStringChar( str );
+        chars := stringListStringChar( str );
 
-        (chars,_, pid,_) = TplParser.interfacePackage(chars, TplParser.makeStartLineInfo(chars, "in memory test"),{});
+        (chars,_, pid,_) := TplParser.interfacePackage(chars, TplParser.makeStartLineInfo(chars, "in memory test"),{});
 
-        txt = emptyTxt;
-        txt = TplCodegen.pathIdent(txt, pid);
-        _ = Tpl.textString(txt);
-        strOut = "parsed*" + stringCharListString(chars);
-        notPassedCnt = testStringEquality(strOut,
+        txt := emptyTxt;
+        txt := TplCodegen.pathIdent(txt, pid);
+        _ := Tpl.textString(txt);
+        strOut := "parsed*" + stringCharListString(chars);
+        notPassedCnt := testStringEquality(strOut,
            "parsed*:)", true, true, "TplParser.templPackage - all types for Susan's backend\n", notPassedCnt);
 
         //*************
-        str = "\"Susan\"~:)";
-        chars = stringListStringChar( str );
+        str := "\"Susan\"~:)";
+        chars := stringListStringChar( str );
 
-        (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
+        (chars,_, (expB,_)) := TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
 
-        tequal = valueEq(
+        tequal := valueEq(
           expB,
           TplAbsyn.STR_TOKEN(Tpl.ST_STRING("Susan"))
         );
 
-        TplAbsyn.STR_TOKEN(tok) = expB;
-        txt = emptyTxt;
-        txt = Tpl.writeTok(txt, tok);
-        strOut = Tpl.textString(txt);
-        strOut = Tpl.booleanString(tequal) + "*" + strOut + "*" + stringCharListString(chars);
-        notPassedCnt = testStringEquality(strOut,
+        TplAbsyn.STR_TOKEN(tok) := expB;
+        txt := emptyTxt;
+        txt := Tpl.writeTok(txt, tok);
+        strOut := Tpl.textString(txt);
+        strOut := Tpl.booleanString(tequal) + "*" + strOut + "*" + stringCharListString(chars);
+        notPassedCnt := testStringEquality(strOut,
            "true*Susan*~:)", true, true, "TplParser.expression \n>"+ str +"<\n", notPassedCnt);
 
         //*************
-        str = "\"\\n\"~:)";
-        chars = stringListStringChar( str );
+        str := "\"\\n\"~:)";
+        chars := stringListStringChar( str );
 
-        (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
+        (chars,_, (expB,_)) := TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
 
-        tequal = valueEq(
+        tequal := valueEq(
           expB,
           TplAbsyn.STR_TOKEN(Tpl.ST_NEW_LINE())
         );
 
-        TplAbsyn.STR_TOKEN(tok) = expB;
+        TplAbsyn.STR_TOKEN(tok) := expB;
         //Tpl.ST_STRING_LIST({"\n",""},false) = tok;
-        txt = emptyTxt;
-        txt = Tpl.writeTok(txt, tok);
-        strOut = Tpl.textString(txt);
-        strOut = Tpl.booleanString(tequal) + "*" + strOut + "*" + stringCharListString(chars);
-        notPassedCnt = testStringEquality(strOut,
+        txt := emptyTxt;
+        txt := Tpl.writeTok(txt, tok);
+        strOut := Tpl.textString(txt);
+        strOut := Tpl.booleanString(tequal) + "*" + strOut + "*" + stringCharListString(chars);
+        notPassedCnt := testStringEquality(strOut,
            "true*\n*~:)", true, true, "TplParser.expression \n>"+ str +"<\n", notPassedCnt);
 
         //*************
-        str = "\",\\n\"~:)";
-        chars = stringListStringChar( str );
+        str := "\",\\n\"~:)";
+        chars := stringListStringChar( str );
 
-        (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
+        (chars,_, (expB,_)) := TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
 
-        tequal = valueEq(
+        tequal := valueEq(
           expB,
           TplAbsyn.STR_TOKEN(Tpl.ST_LINE(",\n"))
         );
 
-        TplAbsyn.STR_TOKEN(tok) = expB;
+        TplAbsyn.STR_TOKEN(tok) := expB;
         //Tpl.ST_STRING_LIST({"\n",""},false) = tok;
-        txt = emptyTxt;
-        txt = Tpl.writeTok(txt, tok);
-        strOut = Tpl.textString(txt);
-        strOut = Tpl.booleanString(tequal) + "*" + strOut + "*" + stringCharListString(chars);
-        notPassedCnt = testStringEquality(strOut,
+        txt := emptyTxt;
+        txt := Tpl.writeTok(txt, tok);
+        strOut := Tpl.textString(txt);
+        strOut := Tpl.booleanString(tequal) + "*" + strOut + "*" + stringCharListString(chars);
+        notPassedCnt := testStringEquality(strOut,
            "true*,\n*~:)", true, true, "TplParser.expression \n>"+ str +"<\n", notPassedCnt);
 
         //*************
-        str = "\"Susan
+        str := "\"Susan
 is\\nfantastic!\"~:)";
-        chars = stringListStringChar( str );
+        chars := stringListStringChar( str );
 
-        (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
+        (chars,_, (expB,_)) := TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
 
-        tequal = valueEq(
+        tequal := valueEq(
           expB,
           TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST({"Susan\n", "is\n", "fantastic!"}, false))
         );
 
-        TplAbsyn.STR_TOKEN(tok) = expB;
-        txt = emptyTxt;
-        txt = Tpl.writeTok(txt, tok);
-        strOut = Tpl.textString(txt);
-        strOut = Tpl.booleanString(tequal) + "*" + strOut + "*" + stringCharListString(chars);
-        notPassedCnt = testStringEquality(strOut,
+        TplAbsyn.STR_TOKEN(tok) := expB;
+        txt := emptyTxt;
+        txt := Tpl.writeTok(txt, tok);
+        strOut := Tpl.textString(txt);
+        strOut := Tpl.booleanString(tequal) + "*" + strOut + "*" + stringCharListString(chars);
+        notPassedCnt := testStringEquality(strOut,
            "true*Susan\nis\nfantastic!*~:)", true, true, "TplParser.expression \n>"+ str +"<\n", notPassedCnt);
 
         //*************
-        str = "\"
+        str := "\"
 Susan
 is\\n new lined!
 \"~:)";
-        chars = stringListStringChar( str );
+        chars := stringListStringChar( str );
 
-        (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
+        (chars,_, (expB,_)) := TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
 
-        tequal = valueEq(
+        tequal := valueEq(
           expB,
           TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST({"\n","Susan\n", "is\n", " new lined!\n"}, true))
         );
 
-        TplAbsyn.STR_TOKEN(tok) = expB;
-        txt = emptyTxt;
-        txt = Tpl.writeTok(txt, tok);
-        strOut = Tpl.textString(txt);
-        strOut = Tpl.booleanString(tequal) + "*" + strOut + "*" + stringCharListString(chars);
-        notPassedCnt = testStringEquality(strOut,
+        TplAbsyn.STR_TOKEN(tok) := expB;
+        txt := emptyTxt;
+        txt := Tpl.writeTok(txt, tok);
+        strOut := Tpl.textString(txt);
+        strOut := Tpl.booleanString(tequal) + "*" + strOut + "*" + stringCharListString(chars);
+        notPassedCnt := testStringEquality(strOut,
            "true*\nSusan\nis\n new lined!\n*~:)", true, true, "TplParser.expression \n>"+ str +"<\n", notPassedCnt);
 
         //*************
@@ -1188,174 +1188,174 @@ is\\n verbatim!
            "true*Susan\nis\\n verbatim!*~:)", true, true, "TplParser.expression \n\""+ str +"\"\n", notPassedCnt);
         */
         //*************
-        str = "1234567~:)";
-        chars = stringListStringChar( str );
+        str := "1234567~:)";
+        chars := stringListStringChar( str );
 
-        (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
+        (chars,_, (expB,_)) := TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
 
-        tequal = valueEq(
+        tequal := valueEq(
           expB,
           TplAbsyn.LITERAL("1234567", TplAbsyn.INTEGER_TYPE())
         );
 
-        TplAbsyn.LITERAL(cval,_) = expB;
-        strOut = Tpl.booleanString(tequal) + "*" + cval + "*" + stringCharListString(chars);
-        notPassedCnt = testStringEquality(strOut,
+        TplAbsyn.LITERAL(cval,_) := expB;
+        strOut := Tpl.booleanString(tequal) + "*" + cval + "*" + stringCharListString(chars);
+        notPassedCnt := testStringEquality(strOut,
            "true*1234567*~:)", true, true, "TplParser.expression \n\""+ str +"\"\n", notPassedCnt);
 
         //*************
-        str = "- 1234567~:)";
-        chars = stringListStringChar( str );
+        str := "- 1234567~:)";
+        chars := stringListStringChar( str );
 
-        (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
+        (chars,_, (expB,_)) := TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
 
-        tequal = valueEq(
+        tequal := valueEq(
           expB,
           TplAbsyn.LITERAL("-1234567", TplAbsyn.INTEGER_TYPE())
         );
 
-        TplAbsyn.LITERAL(cval,_) = expB;
-        strOut = Tpl.booleanString(tequal) + "*" + cval + "*" + stringCharListString(chars);
-        notPassedCnt = testStringEquality(strOut,
+        TplAbsyn.LITERAL(cval,_) := expB;
+        strOut := Tpl.booleanString(tequal) + "*" + cval + "*" + stringCharListString(chars);
+        notPassedCnt := testStringEquality(strOut,
            "true*-1234567*~:)", true, true, "TplParser.expression \n\""+ str +"\"\n", notPassedCnt);
 
         //*************
-        str = "- 1234567.0123e-12~:)";
-        chars = stringListStringChar( str );
+        str := "- 1234567.0123e-12~:)";
+        chars := stringListStringChar( str );
 
-        (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
+        (chars,_, (expB,_)) := TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
 
-        tequal = valueEq(
+        tequal := valueEq(
           expB,
           TplAbsyn.LITERAL("-1234567.0123e-12", TplAbsyn.REAL_TYPE())
         );
 
-        TplAbsyn.LITERAL(cval,_) = expB;
-        strOut = Tpl.booleanString(tequal) + "*" + cval + "*" + stringCharListString(chars);
-        notPassedCnt = testStringEquality(strOut,
+        TplAbsyn.LITERAL(cval,_) := expB;
+        strOut := Tpl.booleanString(tequal) + "*" + cval + "*" + stringCharListString(chars);
+        notPassedCnt := testStringEquality(strOut,
            "true*-1234567.0123e-12*~:)", true, true, "TplParser.expression \n\""+ str +"\"\n", notPassedCnt);
 
         //*************
-        str = ".0123E12~:)";
-        chars = stringListStringChar( str );
+        str := ".0123E12~:)";
+        chars := stringListStringChar( str );
 
-        (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
+        (chars,_, (expB,_)) := TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
 
-        tequal = valueEq(
+        tequal := valueEq(
           expB,
           TplAbsyn.LITERAL(".0123E12", TplAbsyn.REAL_TYPE())
         );
 
-        TplAbsyn.LITERAL(cval,_) = expB;
-        strOut = Tpl.booleanString(tequal) + "*" + cval + "*" + stringCharListString(chars);
-        notPassedCnt = testStringEquality(strOut,
+        TplAbsyn.LITERAL(cval,_) := expB;
+        strOut := Tpl.booleanString(tequal) + "*" + cval + "*" + stringCharListString(chars);
+        notPassedCnt := testStringEquality(strOut,
            "true*.0123E12*~:)", true, true, "TplParser.expression \n\""+ str +"\"\n", notPassedCnt);
 
         //*************
-        str = "true~:)";
-        chars = stringListStringChar( str );
+        str := "true~:)";
+        chars := stringListStringChar( str );
 
-        (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
+        (chars,_, (expB,_)) := TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
 
-        tequal = valueEq(
+        tequal := valueEq(
           expB,
           TplAbsyn.LITERAL("true", TplAbsyn.BOOLEAN_TYPE())
         );
 
-        TplAbsyn.LITERAL(cval,_) = expB;
-        strOut = Tpl.booleanString(tequal) + "*" + cval + "*" + stringCharListString(chars);
-        notPassedCnt = testStringEquality(strOut,
+        TplAbsyn.LITERAL(cval,_) := expB;
+        strOut := Tpl.booleanString(tequal) + "*" + cval + "*" + stringCharListString(chars);
+        notPassedCnt := testStringEquality(strOut,
            "true*true*~:)", true, true, "TplParser.expression \n\""+ str +"\"\n", notPassedCnt);
 
         //*************
-        str = "false~:)";
-        chars = stringListStringChar( str );
+        str := "false~:)";
+        chars := stringListStringChar( str );
 
-        (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
+        (chars,_, (expB,_)) := TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
 
-        tequal = valueEq(
+        tequal := valueEq(
           expB,
           TplAbsyn.LITERAL("false", TplAbsyn.BOOLEAN_TYPE())
         );
 
-        TplAbsyn.LITERAL(cval,_) = expB;
-        strOut = Tpl.booleanString(tequal) + "*" + cval + "*" + stringCharListString(chars);
-        notPassedCnt = testStringEquality(strOut,
+        TplAbsyn.LITERAL(cval,_) := expB;
+        strOut := Tpl.booleanString(tequal) + "*" + cval + "*" + stringCharListString(chars);
+        notPassedCnt := testStringEquality(strOut,
            "true*false*~:)", true, true, "TplParser.expression \n\""+ str +"\"\n", notPassedCnt);
 
         //*************
-        str = "\\n~:)";
-        chars = stringListStringChar( str );
+        str := "\\n~:)";
+        chars := stringListStringChar( str );
 
-        (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
+        (chars,_, (expB,_)) := TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
 
-        tequal = valueEq(
+        tequal := valueEq(
           expB,
           TplAbsyn.STR_TOKEN(Tpl.ST_NEW_LINE())
         );
 
-        TplAbsyn.STR_TOKEN(tok) = expB;
+        TplAbsyn.STR_TOKEN(tok) := expB;
         //Tpl.ST_STRING_LIST({"\n",""},false) = tok;
-        txt = emptyTxt;
-        txt = Tpl.writeTok(txt, tok);
-        strOut = Tpl.textString(txt);
-        strOut = Tpl.booleanString(tequal) + "*" + strOut + "*" + stringCharListString(chars);
-        notPassedCnt = testStringEquality(strOut,
+        txt := emptyTxt;
+        txt := Tpl.writeTok(txt, tok);
+        strOut := Tpl.textString(txt);
+        strOut := Tpl.booleanString(tequal) + "*" + strOut + "*" + stringCharListString(chars);
+        notPassedCnt := testStringEquality(strOut,
            "true*\n*~:)", true, true, "TplParser.expression \n\""+ str +"\"\n", notPassedCnt);
 
         //*************
-        str = "\\\"\\n\\n\\ ~:)";
-        chars = stringListStringChar( str );
+        str := "\\\"\\n\\n\\ ~:)";
+        chars := stringListStringChar( str );
 
-        (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
+        (chars,_, (expB,_)) := TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
 
-        tequal = valueEq(
+        tequal := valueEq(
           expB,
           TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST({"\"\n", "\n"," "}, false))
         );
 
-        TplAbsyn.STR_TOKEN(tok) = expB;
-        txt = emptyTxt;
-        txt = Tpl.writeTok(txt, tok);
-        strOut = Tpl.textString(txt);
-        strOut = Tpl.booleanString(tequal) + "*" + strOut + "*" + stringCharListString(chars);
-        notPassedCnt = testStringEquality(strOut,
+        TplAbsyn.STR_TOKEN(tok) := expB;
+        txt := emptyTxt;
+        txt := Tpl.writeTok(txt, tok);
+        strOut := Tpl.textString(txt);
+        strOut := Tpl.booleanString(tequal) + "*" + strOut + "*" + stringCharListString(chars);
+        notPassedCnt := testStringEquality(strOut,
            "true*\"\n\n *~:)", true, true, "TplParser.expression \n\""+ str +"\"\n", notPassedCnt);
 
         //*************
-        str = "'Susan'~:)";
-        chars = stringListStringChar( str );
+        str := "'Susan'~:)";
+        chars := stringListStringChar( str );
 
-        (chars,_, (expB,_)) = TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
+        (chars,_, (expB,_)) := TplParser.expression(chars, TplParser.makeStartLineInfo(chars, "in memory test"),"<",">", false);
 
-        tequal = valueEq(
+        tequal := valueEq(
           expB,
           TplAbsyn.STR_TOKEN(Tpl.ST_STRING("Susan"))
         );
 
-        TplAbsyn.STR_TOKEN(tok) = expB; //dangerous, can fail fatally here
-        txt = emptyTxt;
-        txt = Tpl.writeTok(txt, tok);
-        strOut = Tpl.textString(txt);
-        strOut = Tpl.booleanString(tequal) + "*" + strOut + "*" + stringCharListString(chars);
-        notPassedCnt = testStringEquality(strOut,
+        TplAbsyn.STR_TOKEN(tok) := expB; //dangerous, can fail fatally here
+        txt := emptyTxt;
+        txt := Tpl.writeTok(txt, tok);
+        strOut := Tpl.textString(txt);
+        strOut := Tpl.booleanString(tequal) + "*" + strOut + "*" + stringCharListString(chars);
+        notPassedCnt := testStringEquality(strOut,
            "true*Susan*~:)", true, true, "TplParser.expression \n\""+ str +"\"\n", notPassedCnt);
 
 
         //*************
-        str = "Susan:)";
-        chars = stringListStringChar( str );
-        llen = TplParser.charsTillEndOfLine(chars, 1);
-        (_ :: _ :: chars) = chars;
-        (lnum,colnum) = TplParser.getPosition(chars, TplParser.LINE_INFO(TplParser.PARSE_INFO("test - no file",{},false), 11, llen, chars));
-        notPassedCnt = testStringEquality(intString(lnum) + "," + intString(colnum) + " of " + intString(llen),
+        str := "Susan:)";
+        chars := stringListStringChar( str );
+        llen := TplParser.charsTillEndOfLine(chars, 1);
+        (_ :: _ :: chars) := chars;
+        (lnum,colnum) := TplParser.getPosition(chars, TplParser.LINE_INFO(TplParser.PARSE_INFO("test - no file",{},false), 11, llen, chars));
+        notPassedCnt := testStringEquality(intString(lnum) + "," + intString(colnum) + " of " + intString(llen),
            "11,3 of 8", true, true, "TplParser.charsTillEndOfLine and getPosition \n", notPassedCnt);
 
 
 
         //*************
-        txt = emptyTxt;
-        txt = statement(txt,
+        txt := emptyTxt;
+        txt := statement(txt,
                WHILE( BINARY( VARIABLE("x"), LESS(), ICONST(20) ),
                  {ASSIGN(
                     VARIABLE("x"),
@@ -1366,41 +1366,41 @@ is\\n verbatim!
                )
 
                );
-        str = Tpl.textString(txt);
-        notPassedCnt = testStringEquality(str,
+        str := Tpl.textString(txt);
+        notPassedCnt := testStringEquality(str,
 "while((x < 20)) {
   x = (x + (y * 2));
 }", true, true, "Paper Example statement()", notPassedCnt);
 
         //*************
-        txt = emptyTxt;
-        txt = intMatrix(txt,
+        txt := emptyTxt;
+        txt := intMatrix(txt,
           {   { 1, 2, 3, 4, 5 },
               { 6, 7, 8, 9, 10 },
               { 11, 12, 13, 14, 15 }
           }
         );
-        str = Tpl.textString(txt);
-        notPassedCnt = testStringEquality(str,
+        str := Tpl.textString(txt);
+        notPassedCnt := testStringEquality(str,
 "[ 1, 2, 3, 4, 5;
   6, 7, 8, 9, 10;
   11, 12, 13, 14, 15 ]", true, true, "intMatrix() from test.tpl", notPassedCnt);
 
         //*************
-        notPassedCnt = testTranslateTplFile("TplCodegen", false, false, notPassedCnt);
+        notPassedCnt := testTranslateTplFile("TplCodegen", false, false, notPassedCnt);
 
         //*************
-        notPassedCnt = testTranslateTplFile("paper", false, false, notPassedCnt);
+        notPassedCnt := testTranslateTplFile("paper", false, false, notPassedCnt);
 
         //*************
-        notPassedCnt = testTranslateTplFile("test", false, true, notPassedCnt);
+        notPassedCnt := testTranslateTplFile("test", false, true, notPassedCnt);
 
         //*************
         //notPassedCnt = testTranslateTplFile("SimCodeC", false, true, notPassedCnt);
 
 
         print("All tests took " + realString(clock() - tstart) + " seconds.\n");
-        str = if notPassedCnt == 0 then
+        str := if notPassedCnt == 0 then
           "\n ***** All a) tests OK *****\n\n" else
           ("\n #### " + intString(notPassedCnt) + " test" + (if notPassedCnt > 1 then "s" else"") + " DID NOT passed ####\n\n");
         print(str);
@@ -1413,7 +1413,7 @@ is\\n verbatim!
 
     //should not ever happen -  a badly designed test ?
     case (str)
-      equation
+      algorithm
         print("\n######## tplMainTest '"+ str + "' (fatally) failed!  ########\n" );
         print("### Error Buffer ###\n");
         print(Print.getErrorString());
@@ -1482,16 +1482,16 @@ algorithm
 
     case ( txt,
            i_it :: rest )
-      equation
-        txt = statement(txt, i_it);
-        txt = Tpl.nextIter(txt);
-        txt = lm_1(txt, rest);
+      algorithm
+        txt := statement(txt, i_it);
+        txt := Tpl.nextIter(txt);
+        txt := lm_1(txt, rest);
       then txt;
 
     case ( txt,
            _ :: rest )
-      equation
-        txt = lm_1(txt, rest);
+      algorithm
+        txt := lm_1(txt, rest);
       then txt;
   end matchcontinue;
 end lm_1;
@@ -1513,26 +1513,26 @@ algorithm
 
     case ( txt,
            ASSIGN(lhs = i_lhs, rhs = i_rhs) )
-      equation
-        txt = exp(txt, i_lhs);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = "));
-        txt = exp(txt, i_rhs);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
+      algorithm
+        txt := exp(txt, i_lhs);
+        txt := Tpl.writeTok(txt, Tpl.ST_STRING(" = "));
+        txt := exp(txt, i_rhs);
+        txt := Tpl.writeTok(txt, Tpl.ST_STRING(";"));
       then txt;
 
     case ( txt,
            WHILE(condition = i_condition, statements = i_statements) )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("while("));
-        txt = exp(txt, i_condition);
-        txt = Tpl.writeTok(txt, Tpl.ST_LINE(") {\n"));
-        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0,NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        txt = lm_1(txt, i_statements);
-        txt = Tpl.popIter(txt);
-        txt = Tpl.softNewLine(txt);
-        txt = Tpl.popBlock(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("}"));
+      algorithm
+        txt := Tpl.writeTok(txt, Tpl.ST_STRING("while("));
+        txt := exp(txt, i_condition);
+        txt := Tpl.writeTok(txt, Tpl.ST_LINE(") {\n"));
+        txt := Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
+        txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0,NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        txt := lm_1(txt, i_statements);
+        txt := Tpl.popIter(txt);
+        txt := Tpl.softNewLine(txt);
+        txt := Tpl.popBlock(txt);
+        txt := Tpl.writeTok(txt, Tpl.ST_STRING("}"));
       then txt;
 
     case ( txt,
@@ -1559,26 +1559,26 @@ algorithm
 
     case ( txt,
            ICONST(value = i_value) )
-      equation
-        txt = Tpl.writeStr(txt, intString(i_value));
+      algorithm
+        txt := Tpl.writeStr(txt, intString(i_value));
       then txt;
 
     case ( txt,
            VARIABLE(name = i_name) )
-      equation
-        txt = Tpl.writeStr(txt, i_name);
+      algorithm
+        txt := Tpl.writeStr(txt, i_name);
       then txt;
 
     case ( txt,
            BINARY(lhs = i_lhs, op = i_op, rhs = i_rhs) )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
-        txt = exp(txt, i_lhs);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
-        txt = oper(txt, i_op);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
-        txt = exp(txt, i_rhs);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
+      algorithm
+        txt := Tpl.writeTok(txt, Tpl.ST_STRING("("));
+        txt := exp(txt, i_lhs);
+        txt := Tpl.writeTok(txt, Tpl.ST_STRING(" "));
+        txt := oper(txt, i_op);
+        txt := Tpl.writeTok(txt, Tpl.ST_STRING(" "));
+        txt := exp(txt, i_rhs);
+        txt := Tpl.writeTok(txt, Tpl.ST_STRING(")"));
       then txt;
 
     else in_txt;
@@ -1598,20 +1598,20 @@ algorithm
 
     case ( txt,
            PLUS() )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("+"));
+      algorithm
+        txt := Tpl.writeTok(txt, Tpl.ST_STRING("+"));
       then txt;
 
     case ( txt,
            TIMES() )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("*"));
+      algorithm
+        txt := Tpl.writeTok(txt, Tpl.ST_STRING("*"));
       then txt;
 
     case ( txt,
            LESS() )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("<"));
+      algorithm
+        txt := Tpl.writeTok(txt, Tpl.ST_STRING("<"));
       then txt;
 
     else in_txt;
@@ -1641,16 +1641,16 @@ algorithm
 
     case ( txt,
            i_it :: rest )
-      equation
-        txt = Tpl.writeStr(txt, intString(i_it));
-        txt = Tpl.nextIter(txt);
-        txt = lm_54(txt, rest);
+      algorithm
+        txt := Tpl.writeStr(txt, intString(i_it));
+        txt := Tpl.nextIter(txt);
+        txt := lm_54(txt, rest);
       then txt;
 
     case ( txt,
            _ :: rest )
-      equation
-        txt = lm_54(txt, rest);
+      algorithm
+        txt := lm_54(txt, rest);
       then txt;
   end matchcontinue;
 end lm_54;
@@ -1674,18 +1674,18 @@ algorithm
 
     case ( txt,
            i_intLst :: rest )
-      equation
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0,NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        txt = lm_54(txt, i_intLst);
-        txt = Tpl.popIter(txt);
-        txt = Tpl.nextIter(txt);
-        txt = lm_55(txt, rest);
+      algorithm
+        txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0,NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        txt := lm_54(txt, i_intLst);
+        txt := Tpl.popIter(txt);
+        txt := Tpl.nextIter(txt);
+        txt := lm_55(txt, rest);
       then txt;
 
     case ( txt,
            _ :: rest )
-      equation
-        txt = lm_55(txt, rest);
+      algorithm
+        txt := lm_55(txt, rest);
       then txt;
   end matchcontinue;
 end lm_55;

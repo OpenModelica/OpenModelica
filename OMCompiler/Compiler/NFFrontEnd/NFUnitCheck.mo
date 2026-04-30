@@ -866,11 +866,11 @@ algorithm
       Integer i;
       SourceInfo info;
     case (expList, _, _)
-      equation
-        info=Equation.info(inEq);
-        s = Equation.toString(inEq);
-        s1 = Errorfunction2(expList, inHtU2S);
-        s2="The following equation is INCONSISTENT due to specified unit information: " + s +"\n";
+      algorithm
+        info:=Equation.info(inEq);
+        s := Equation.toString(inEq);
+        s1 := Errorfunction2(expList, inHtU2S);
+        s2:="The following equation is INCONSISTENT due to specified unit information: " + s +"\n";
         Error.addSourceMessage(Error.COMPILER_WARNING,{s2},info);
         Error.addCompilerWarning("The units of following sub-expressions need to be equal:\n" + s1);
 
@@ -893,17 +893,17 @@ algorithm
       Unit.Unit ut;
       String s, s1, s2;
 
-    case ((exp, ut)::{}, _) equation
-      s = Expression.toString(exp);
-      s1 = Unit.unitString(ut, inHtU2S);
-      s = "- sub-expression \"" + s + "\" has unit \"" + s1 + "\"";
+    case ((exp, ut)::{}, _) algorithm
+      s := Expression.toString(exp);
+      s1 := Unit.unitString(ut, inHtU2S);
+      s := "- sub-expression \"" + s + "\" has unit \"" + s1 + "\"";
     then s;
 
-    case ((exp, ut)::expList, _) equation
-      s = Expression.toString(exp);
-      s1 = Unit.unitString(ut, inHtU2S);
-      s2 = Errorfunction2(expList, inHtU2S);
-      s = "- sub-expression \"" + s + "\" has unit \"" + s1 + "\"\n" + s2;
+    case ((exp, ut)::expList, _) algorithm
+      s := Expression.toString(exp);
+      s1 := Unit.unitString(ut, inHtU2S);
+      s2 := Errorfunction2(expList, inHtU2S);
+      s := "- sub-expression \"" + s + "\" has unit \"" + s1 + "\"\n" + s2;
     then s;
   end match;
 end Errorfunction2;

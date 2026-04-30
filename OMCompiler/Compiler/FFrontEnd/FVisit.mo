@@ -112,9 +112,9 @@ algorithm
 
     // there
     case (FCore.V(tree = a), _)
-      equation
-        _ = FNode.id(FNode.fromRef(inRef));
-        _ = avlTreeGet(a, FNode.id(FNode.fromRef(inRef)));
+      algorithm
+        _ := FNode.id(FNode.fromRef(inRef));
+        _ := avlTreeGet(a, FNode.id(FNode.fromRef(inRef)));
       then
         true;
 
@@ -161,20 +161,20 @@ algorithm
 
     // already there, something's fishy!
     case (_, _)
-      equation
-        _ = FNode.id(FNode.fromRef(inRef));
-        v = avlTreeGet(tree(inVisited), FNode.id(FNode.fromRef(inRef)));
+      algorithm
+        _ := FNode.id(FNode.fromRef(inRef));
+        v := avlTreeGet(tree(inVisited), FNode.id(FNode.fromRef(inRef)));
         print("Already visited: " + FNode.toStr(FNode.fromRef(inRef)) + " seq: " + intString(seq(v)) + "\n");
       then
         fail();
 
     case (FCore.V(a, _), _)
-      equation
-        id = FNode.id(FNode.fromRef(inRef));
-        failure(_ = avlTreeGet(tree(inVisited), id));
-        (FCore.V(next = n), s) = next(inVisited);
-        a = avlTreeAdd(a, id, FCore.VN(inRef, s));
-        outVisited = FCore.V(a, n);
+      algorithm
+        id := FNode.id(FNode.fromRef(inRef));
+        failure(_ := avlTreeGet(tree(inVisited), id));
+        (FCore.V(next = n), s) := next(inVisited);
+        a := avlTreeAdd(a, id, FCore.VN(inRef, s));
+        outVisited := FCore.V(a, n);
       then
         outVisited;
   end matchcontinue;
@@ -273,7 +273,7 @@ algorithm
 
     // replace this node
     case (FCore.VAVLTREENODE(value = SOME(FCore.VAVLTREEVALUE(key=rkey)),height=h,left = left,right = right),0,_,value)
-      equation
+      algorithm
         // inactive for now, but we should check if we don't replace a class with a var or vice-versa!
         // checkValueReplacementCompatible(rval, value);
       then
@@ -281,17 +281,17 @@ algorithm
 
     // insert to right
     case (FCore.VAVLTREENODE(value = oval,height=h,left = left,right = right),1,key,value)
-      equation
-        t = createEmptyAvlIfNone(right);
-        t_1 = avlTreeAdd(t, key, value);
+      algorithm
+        t := createEmptyAvlIfNone(right);
+        t_1 := avlTreeAdd(t, key, value);
       then
         FCore.VAVLTREENODE(oval,h,left,SOME(t_1));
 
     // insert to left subtree
     case (FCore.VAVLTREENODE(value = oval,height=h,left = left ,right = right),-1,key,value)
-      equation
-        t = createEmptyAvlIfNone(left);
-        t_1 = avlTreeAdd(t, key, value);
+      algorithm
+        t := createEmptyAvlIfNone(left);
+        t_1 := avlTreeAdd(t, key, value);
       then
         FCore.VAVLTREENODE(oval,h,SOME(t_1),right);
 
@@ -324,9 +324,9 @@ algorithm
   outBt := match (inBt)
     local Integer d; AvlTree bt;
     case (bt)
-      equation
-        d = differenceInHeight(bt);
-        bt = doBalance(d,bt);
+      algorithm
+        d := differenceInHeight(bt);
+        bt := doBalance(d,bt);
       then bt;
   end match;
 end balance;
@@ -343,8 +343,8 @@ algorithm
     case(1,bt) then computeHeight(bt);
       /* d < -1 or d > 1 */
     case(_,bt)
-      equation
-        bt = doBalance2(difference < 0,bt);
+      algorithm
+        bt := doBalance2(difference < 0,bt);
       then bt;
   end match;
 end doBalance;
@@ -357,14 +357,14 @@ algorithm
   outBt := match (differenceIsNegative,inBt)
     local AvlTree bt;
     case (true,bt)
-      equation
-        bt = doBalance3(bt);
-        bt = rotateLeft(bt);
+      algorithm
+        bt := doBalance3(bt);
+        bt := rotateLeft(bt);
       then bt;
     case (false,bt)
-      equation
-        bt = doBalance4(bt);
-        bt = rotateRight(bt);
+      algorithm
+        bt := doBalance4(bt);
+        bt := rotateRight(bt);
       then bt;
   end match;
 end doBalance2;
@@ -377,10 +377,10 @@ algorithm
     local
       AvlTree rr,bt;
     case(bt)
-      equation
-        true = differenceInHeight(getOption(rightNode(bt))) > 0;
-        rr = rotateRight(getOption(rightNode(bt)));
-        bt = setRight(bt,SOME(rr));
+      algorithm
+        true := differenceInHeight(getOption(rightNode(bt))) > 0;
+        rr := rotateRight(getOption(rightNode(bt)));
+        bt := setRight(bt,SOME(rr));
       then bt;
     else inBt;
   end matchcontinue;
@@ -394,10 +394,10 @@ algorithm
     local
       AvlTree rl,bt;
     case (bt)
-      equation
-        true = differenceInHeight(getOption(leftNode(bt))) < 0;
-        rl = rotateLeft(getOption(leftNode(bt)));
-        bt = setLeft(bt,SOME(rl));
+      algorithm
+        true := differenceInHeight(getOption(leftNode(bt))) < 0;
+        rl := rotateLeft(getOption(leftNode(bt)));
+        bt := setLeft(bt,SOME(rl));
       then bt;
     else inBt;
   end matchcontinue;
@@ -456,11 +456,11 @@ algorithm
     local
       AvlTree bt,node,parent;
 
-    case(node,parent) equation
-      parent = setRight(parent,leftNode(node));
-      parent = balance(parent);
-      node = setLeft(node,SOME(parent));
-      bt = balance(node);
+    case(node,parent) algorithm
+      parent := setRight(parent,leftNode(node));
+      parent := balance(parent);
+      node := setLeft(node,SOME(parent));
+      bt := balance(node);
     then bt;
   end match;
 end exchangeLeft;
@@ -472,11 +472,11 @@ protected function exchangeRight "help function to balance"
 algorithm
   outParent := match(inNode,inParent)
   local AvlTree bt,node,parent;
-    case(node,parent) equation
-      parent = setLeft(parent,rightNode(node));
-      parent = balance(parent);
-      node = setRight(node,SOME(parent));
-      bt = balance(node);
+    case(node,parent) algorithm
+      parent := setLeft(parent,rightNode(node));
+      parent := balance(parent);
+      node := setRight(node,SOME(parent));
+      bt := balance(node);
     then bt;
   end match;
 end exchangeRight;
@@ -515,9 +515,9 @@ algorithm
       Integer lh,rh;
       Option<AvlTree> l,r;
     case(FCore.VAVLTREENODE(left=l,right=r))
-      equation
-        lh = getHeight(l);
-        rh = getHeight(r);
+      algorithm
+        lh := getHeight(l);
+        rh := getHeight(r);
       then lh - rh;
   end match;
 end differenceInHeight;
@@ -581,8 +581,8 @@ algorithm
       Type_a a;
       FuncTypeType_aToString r;
     case (SOME(a),r)
-      equation
-        str = r(a);
+      algorithm
+        str := r(a);
       then
         str;
     case (NONE(),_) then "";
@@ -604,17 +604,17 @@ algorithm
       Integer h;
 
     case (FCore.VAVLTREENODE(value = SOME(FCore.VAVLTREEVALUE(_,rval)),left = l,right = r))
-      equation
-        s2 = getOptionStr(l, printAvlTreeStr);
-        s3 = getOptionStr(r, printAvlTreeStr);
-        res = "\n" + valueStr(rval) + ",  " + (if stringEq(s2, "") then "" else (s2 + ", ")) + s3;
+      algorithm
+        s2 := getOptionStr(l, printAvlTreeStr);
+        s3 := getOptionStr(r, printAvlTreeStr);
+        res := "\n" + valueStr(rval) + ",  " + (if stringEq(s2, "") then "" else (s2 + ", ")) + s3;
       then
         res;
     case (FCore.VAVLTREENODE(value = NONE(),left = l,right = r))
-      equation
-        s2 = getOptionStr(l, printAvlTreeStr);
-        s3 = getOptionStr(r, printAvlTreeStr);
-        res = (if stringEq(s2, "") then "" else (s2 + ", ")) + s3;
+      algorithm
+        s2 := getOptionStr(l, printAvlTreeStr);
+        s3 := getOptionStr(r, printAvlTreeStr);
+        res := (if stringEq(s2, "") then "" else (s2 + ", ")) + s3;
       then
         res;
   end match;
@@ -630,10 +630,10 @@ algorithm
       Option<AvlTreeValue> v;
       Integer hl,hr,height;
     case(FCore.VAVLTREENODE(value=v as SOME(_),left=l,right=r))
-      equation
-        hl = getHeight(l);
-        hr = getHeight(r);
-        height = intMax(hl,hr) + 1;
+      algorithm
+        hl := getHeight(l);
+        hr := getHeight(r);
+        height := intMax(hl,hr) + 1;
       then FCore.VAVLTREENODE(v,height,l,r);
   end match;
 end computeHeight;
@@ -669,20 +669,20 @@ algorithm
     case (NONE(), _) then "";
 
     case (SOME(FCore.VAVLTREENODE(value = SOME(FCore.VAVLTREEVALUE(key = rkey)), left = l, right = r)), _)
-      equation
-        indent = inIndent + "  ";
-        s1 = printAvlTreeStrPP2(l, indent);
-        s2 = printAvlTreeStrPP2(r, indent);
-        res = "\n" + inIndent + keyStr(rkey) + s1 + s2;
+      algorithm
+        indent := inIndent + "  ";
+        s1 := printAvlTreeStrPP2(l, indent);
+        s2 := printAvlTreeStrPP2(r, indent);
+        res := "\n" + inIndent + keyStr(rkey) + s1 + s2;
       then
         res;
 
     case (SOME(FCore.VAVLTREENODE(value = NONE(), left = l, right = r)), _)
-      equation
-        indent = inIndent + "  ";
-        s1 = printAvlTreeStrPP2(l, indent);
-        s2 = printAvlTreeStrPP2(r, indent);
-        res = "\n" + s1 + s2;
+      algorithm
+        indent := inIndent + "  ";
+        s1 := printAvlTreeStrPP2(l, indent);
+        s2 := printAvlTreeStrPP2(r, indent);
+        res := "\n" + s1 + s2;
       then
         res;
   end match;
@@ -736,18 +736,18 @@ algorithm
     // Insert into right subtree.
     case (FCore.VAVLTREENODE(value = oval, height = h, left = left, right = right),
         1, key, value)
-      equation
-        t = createEmptyAvlIfNone(right);
-        t = avlTreeReplace(t, key, value);
+      algorithm
+        t := createEmptyAvlIfNone(right);
+        t := avlTreeReplace(t, key, value);
       then
         FCore.VAVLTREENODE(oval, h, left, SOME(t));
 
     // Insert into left subtree.
     case (FCore.VAVLTREENODE(value = oval, height = h, left = left, right = right),
         -1, key, value)
-      equation
-        t = createEmptyAvlIfNone(left);
-        t = avlTreeReplace(t, key, value);
+      algorithm
+        t := createEmptyAvlIfNone(left);
+        t := avlTreeReplace(t, key, value);
       then
         FCore.VAVLTREENODE(oval, h, SOME(t), right);
   end match;

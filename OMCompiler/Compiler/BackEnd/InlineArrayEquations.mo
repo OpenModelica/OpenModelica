@@ -88,10 +88,10 @@ algorithm
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
 
-    case BackendDAE.EQSYSTEM(orderedEqs=orderedEqs) equation
-      eqnLst = BackendEquation.equationList(orderedEqs);
-      (eqnLst, true) = getScalarArrayEqns(eqnLst);
-      orderedEqs = BackendEquation.listEquation(eqnLst);
+    case BackendDAE.EQSYSTEM(orderedEqs=orderedEqs) algorithm
+      eqnLst := BackendEquation.equationList(orderedEqs);
+      (eqnLst, true) := getScalarArrayEqns(eqnLst);
+      orderedEqs := BackendEquation.listEquation(eqnLst);
     then (BackendDAEUtil.clearEqSyst(BackendDAEUtil.setEqSystEqs(inEqSystem, orderedEqs)), true);
 
     else (inEqSystem, inOptimized);
@@ -125,9 +125,9 @@ algorithm
     case ({}, _, _)
     then (listReverse(inAccEqnLst), inFound);
 
-    case (eqn::eqns, _, _) equation
-      (eqns1, b) = getScalarArrayEqns1(eqn, inAccEqnLst);
-      (eqns1, b) = getScalarArrayEqns0(eqns, eqns1, b or inFound);
+    case (eqn::eqns, _, _) algorithm
+      (eqns1, b) := getScalarArrayEqns1(eqn, inAccEqnLst);
+      (eqns1, b) := getScalarArrayEqns0(eqns, eqns1, b or inFound);
     then (eqns1, b);
   end match;
 end getScalarArrayEqns0;
@@ -206,35 +206,35 @@ algorithm
       DAE.ElementSource source;
 
     // complex types to complex equations
-    case (i, eqns) equation
-      tp = Expression.typeof(inExp1);
-      true = DAEUtil.expTypeComplex(tp);
-      size = Expression.sizeOf(tp);
-      source = ElementSource.addSymbolicTransformation(inSource, DAE.OP_SCALARIZE(eqExp, i, DAE.EQUALITY_EXPS(inExp1, inExp2)));
+    case (i, eqns) algorithm
+      tp := Expression.typeof(inExp1);
+      true := DAEUtil.expTypeComplex(tp);
+      size := Expression.sizeOf(tp);
+      source := ElementSource.addSymbolicTransformation(inSource, DAE.OP_SCALARIZE(eqExp, i, DAE.EQUALITY_EXPS(inExp1, inExp2)));
     then ((i+1, BackendDAE.COMPLEX_EQUATION(size, inExp1, inExp2, source, eqAttr)::eqns));
 
     // array types to array equations
-    case (i, eqns) equation
-      tp = Expression.typeof(inExp1);
-      true = DAEUtil.expTypeArray(tp);
-      dims = Expression.arrayDimension(tp);
-      tp = DAEUtil.expTypeElementType(tp);
+    case (i, eqns) algorithm
+      tp := Expression.typeof(inExp1);
+      true := DAEUtil.expTypeArray(tp);
+      dims := Expression.arrayDimension(tp);
+      tp := DAEUtil.expTypeElementType(tp);
       if DAEUtil.expTypeComplex(tp) then
-        recordSize = SOME(Expression.sizeOf(tp));
+        recordSize := SOME(Expression.sizeOf(tp));
       else
-        recordSize = NONE();
+        recordSize := NONE();
       end if;
-      ds = Expression.dimensionsSizes(dims);
-      source = ElementSource.addSymbolicTransformation(inSource, DAE.OP_SCALARIZE(eqExp, i, DAE.EQUALITY_EXPS(inExp1, inExp2)));
+      ds := Expression.dimensionsSizes(dims);
+      source := ElementSource.addSymbolicTransformation(inSource, DAE.OP_SCALARIZE(eqExp, i, DAE.EQUALITY_EXPS(inExp1, inExp2)));
     then ((i+1, BackendDAE.ARRAY_EQUATION(ds, inExp1, inExp2, source, eqAttr, recordSize)::eqns));
 
     // other types
-    case (i, eqns) equation
-      tp = Expression.typeof(inExp1);
-      b1 = DAEUtil.expTypeComplex(tp);
-      b2 = DAEUtil.expTypeArray(tp);
-      false = b1 or b2;
-      source = ElementSource.addSymbolicTransformation(inSource, DAE.OP_SCALARIZE(eqExp, i, DAE.EQUALITY_EXPS(inExp1, inExp2)));
+    case (i, eqns) algorithm
+      tp := Expression.typeof(inExp1);
+      b1 := DAEUtil.expTypeComplex(tp);
+      b2 := DAEUtil.expTypeArray(tp);
+      false := b1 or b2;
+      source := ElementSource.addSymbolicTransformation(inSource, DAE.OP_SCALARIZE(eqExp, i, DAE.EQUALITY_EXPS(inExp1, inExp2)));
     then ((i+1, BackendDAE.EQUATION(inExp1, inExp2, source, eqAttr)::eqns));
 
     else equation
