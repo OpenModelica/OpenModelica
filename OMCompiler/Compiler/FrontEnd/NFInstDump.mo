@@ -117,8 +117,8 @@ algorithm
       String dims_str;
 
     case NFInstTypes.UNTYPED_COMPONENT(dimensions = dims)
-      equation
-        dims_str = Array.toString(dims, dimensionStr, "", "[", ", ", "]", false);
+      algorithm
+        dims_str := Array.toString(dims, dimensionStr, "", "[", ", ", "]", false);
       then
         dims_str;
 

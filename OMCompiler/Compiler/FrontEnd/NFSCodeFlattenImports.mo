@@ -90,15 +90,15 @@ algorithm
       NFSCodeEnv.ClassType cls_ty;
 
     case (SCode.CLASS(name = name, classDef = cdef, info = info), _)
-      equation
-        (NFSCodeEnv.CLASS(env = {cls_env}, classType = cls_ty), _) =
+      algorithm
+        (NFSCodeEnv.CLASS(env = {cls_env}, classType = cls_ty), _) :=
           NFSCodeLookup.lookupInClass(name, inEnv);
-        env = NFSCodeEnv.enterFrame(cls_env, inEnv);
+        env := NFSCodeEnv.enterFrame(cls_env, inEnv);
 
-        (cdef, cls_env :: env) = flattenClassDef(cdef, env, info);
-        cls = SCodeUtil.setElementClassDefinition(cdef, inClass);
-        item = NFSCodeEnv.newClassItem(cls, {cls_env}, cls_ty);
-        env = NFSCodeEnv.updateItemInEnv(item, env, name);
+        (cdef, cls_env :: env) := flattenClassDef(cdef, env, info);
+        cls := SCodeUtil.setElementClassDefinition(cdef, inClass);
+        item := NFSCodeEnv.newClassItem(cls, {cls_env}, cls_ty);
+        env := NFSCodeEnv.updateItemInEnv(item, env, name);
       then
         (cls, env);
 
@@ -136,34 +136,34 @@ algorithm
       SCode.ClassDef cdef;
 
     case (SCode.PARTS(el, neql, ieql, nal, ial, nco, clats, extdecl), _, _)
-      equation
+      algorithm
         // Lookup elements.
-        el = List.filterOnTrue(el, isNotImport);
-        (el, env) = List.mapFold(el, flattenElement, inEnv);
+        el := List.filterOnTrue(el, isNotImport);
+        (el, env) := List.mapFold(el, flattenElement, inEnv);
 
         // Lookup equations and algorithm names.
-        neql = List.map1(neql, flattenEquation, env);
-        ieql = List.map1(ieql, flattenEquation, env);
-        nal = List.map1(nal, flattenAlgorithm, env);
-        ial = List.map1(ial, flattenAlgorithm, env);
-        nco = List.map2(nco, flattenConstraints, env, inInfo);
+        neql := List.map1(neql, flattenEquation, env);
+        ieql := List.map1(ieql, flattenEquation, env);
+        nal := List.map1(nal, flattenAlgorithm, env);
+        ial := List.map1(ial, flattenAlgorithm, env);
+        nco := List.map2(nco, flattenConstraints, env, inInfo);
       then
         (SCode.PARTS(el, neql, ieql, nal, ial, nco, clats, extdecl), env);
 
     case (SCode.CLASS_EXTENDS(mods, cdef), _, _)
-      equation
-        (cdef, env) = flattenClassDef(cdef, inEnv, inInfo);
-        mods = flattenModifier(mods, env, inInfo);
+      algorithm
+        (cdef, env) := flattenClassDef(cdef, inEnv, inInfo);
+        mods := flattenModifier(mods, env, inInfo);
       then
         (SCode.CLASS_EXTENDS(mods, cdef), env);
 
     case (SCode.DERIVED(ty, mods, attr), env, _)
-      equation
-        mods = flattenModifier(mods, env, inInfo);
+      algorithm
+        mods := flattenModifier(mods, env, inInfo);
         // Remove the extends from the local scope before flattening the derived
         // type, because the type should not be looked up via itself.
-        env = NFSCodeEnv.removeExtendsFromLocalScope(env);
-        ty = flattenTypeSpec(ty, env, inInfo);
+        env := NFSCodeEnv.removeExtendsFromLocalScope(env);
+        ty := flattenTypeSpec(ty, env, inInfo);
       then
         (SCode.DERIVED(ty, mods, attr), inEnv);
 
@@ -212,17 +212,17 @@ algorithm
 
     // Lookup component types, modifications and conditions.
     case (SCode.COMPONENT(name = name), _)
-      equation
-        elem = flattenComponent(inElement, inEnv);
-        item = NFSCodeEnv.newVarItem(elem, true);
-        env = NFSCodeEnv.updateItemInEnv(item, inEnv, name);
+      algorithm
+        elem := flattenComponent(inElement, inEnv);
+        item := NFSCodeEnv.newVarItem(elem, true);
+        env := NFSCodeEnv.updateItemInEnv(item, inEnv, name);
       then
         (elem, env);
 
     // Lookup class definitions.
     case (SCode.CLASS(), _)
-      equation
-        (elem, env) = flattenClass(inElement, inEnv);
+      algorithm
+        (elem, env) := flattenClass(inElement, inEnv);
       then
         (elem, env);
 
@@ -290,8 +290,8 @@ algorithm
 
     // A normal type.
     case (Absyn.TPATH(path = path, arrayDim = ad), _, _)
-      equation
-        (_, path, _) = NFSCodeLookup.lookupClassName(path, inEnv, inInfo);
+      algorithm
+        (_, path, _) := NFSCodeLookup.lookupClassName(path, inEnv, inInfo);
       then
         Absyn.TPATH(path, ad);
 
@@ -301,8 +301,8 @@ algorithm
 
     // A MetaModelica type such as list or tuple.
     case (Absyn.TCOMPLEX(path = path, typeSpecs = tys, arrayDim = ad), _, _)
-      equation
-        tys = List.map2(tys, flattenTypeSpec, inEnv, inInfo);
+      algorithm
+        tys := List.map2(tys, flattenTypeSpec, inEnv, inInfo);
       then
         Absyn.TCOMPLEX(path, tys, ad);
 
@@ -465,15 +465,15 @@ algorithm
       Option<String> cmt;
 
     case (SCode.MOD(fp, ep, sub_mods, opt_exp, cmt, info), _, _)
-      equation
-        opt_exp = flattenModOptExp(opt_exp, inEnv, inInfo);
-        sub_mods = List.map2(sub_mods, flattenSubMod, inEnv, inInfo);
+      algorithm
+        opt_exp := flattenModOptExp(opt_exp, inEnv, inInfo);
+        sub_mods := List.map2(sub_mods, flattenSubMod, inEnv, inInfo);
       then
         SCode.MOD(fp, ep, sub_mods, opt_exp, cmt, info);
 
     case (SCode.REDECL(fp, ep, el), _, _)
-      equation
-        el = flattenRedeclare(el, inEnv);
+      algorithm
+        el := flattenRedeclare(el, inEnv);
       then
         SCode.REDECL(fp, ep, el);
 
@@ -492,8 +492,8 @@ algorithm
       Absyn.Exp exp;
 
     case SOME(exp)
-      equation
-        exp = flattenExp(exp, inEnv, inInfo);
+      algorithm
+        exp := flattenExp(exp, inEnv, inInfo);
       then
         SOME(exp);
 
@@ -514,8 +514,8 @@ algorithm
       SCode.Mod mod;
 
     case (SCode.NAMEMOD(ident = ident, mod = mod), _, _)
-      equation
-        mod = flattenModifier(mod, inEnv, inInfo);
+      algorithm
+        mod := flattenModifier(mod, inEnv, inInfo);
       then
         SCode.NAMEMOD(ident, mod);
 
@@ -541,8 +541,8 @@ algorithm
 
     case (SCode.CLASS(name, prefixes, ep, pp, res,
           cdef as SCode.DERIVED(), cmt, info), _)
-      equation
-        cdef2 = flattenDerivedClassDef(cdef, inEnv, info);
+      algorithm
+        cdef2 := flattenDerivedClassDef(cdef, inEnv, info);
       then
         SCode.CLASS(name, prefixes, ep, pp, res, cdef2, cmt, info);
 
@@ -551,8 +551,8 @@ algorithm
         inElement;
 
     case (SCode.COMPONENT(), _)
-      equation
-        element = flattenComponent(inElement, inEnv);
+      algorithm
+        element := flattenComponent(inElement, inEnv);
       then
         element;
 
@@ -577,8 +577,8 @@ algorithm
       Absyn.Exp exp;
 
     case (Absyn.SUBSCRIPT(subscript = exp), _, _)
-      equation
-        exp = flattenExp(exp, inEnv, inInfo);
+      algorithm
+        exp := flattenExp(exp, inEnv, inInfo);
       then
         Absyn.SUBSCRIPT(exp);
 
@@ -606,8 +606,8 @@ algorithm
       Absyn.Exp exp;
 
     case (SOME(exp), _, _)
-      equation
-        exp = flattenExp(exp, inEnv, inInfo);
+      algorithm
+        exp := flattenExp(exp, inEnv, inInfo);
       then
         SOME(exp);
 
@@ -633,16 +633,16 @@ algorithm
       Absyn.ReductionIterType iterType;
 
     case (Absyn.CREF(componentRef = cref), tup as (env, info))
-      equation
-        cref = NFSCodeLookup.lookupComponentRef(cref, env, info);
+      algorithm
+        cref := NFSCodeLookup.lookupComponentRef(cref, env, info);
       then
         (Absyn.CREF(cref), tup);
 
     case (Absyn.CALL(function_ = cref, functionArgs = Absyn.FOR_ITER_FARG(exp = exp, iterType = iterType, iterators = iters)), (env, info))
-      equation
-        cref = NFSCodeLookup.lookupComponentRef(cref, env, info);
-        env = NFSCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
-        exp = flattenExp(exp, env, info);
+      algorithm
+        cref := NFSCodeLookup.lookupComponentRef(cref, env, info);
+        env := NFSCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
+        exp := flattenExp(exp, env, info);
       then
         (Absyn.CALL(cref, Absyn.FOR_ITER_FARG(exp, iterType, iters), inExp.typeVars), (env, info));
 
@@ -650,22 +650,22 @@ algorithm
       then (inExp,inTuple);
 
     case (Absyn.CALL(function_ = cref, functionArgs = args), tup as (env, info))
-      equation
-        cref = NFSCodeLookup.lookupComponentRef(cref, env, info);
+      algorithm
+        cref := NFSCodeLookup.lookupComponentRef(cref, env, info);
         // TODO: handle function arguments
       then
         (Absyn.CALL(cref, args, inExp.typeVars), tup);
 
     case (Absyn.PARTEVALFUNCTION(function_ = cref, functionArgs = args), tup as (env, info))
-      equation
-        cref = NFSCodeLookup.lookupComponentRef(cref, env, info);
+      algorithm
+        cref := NFSCodeLookup.lookupComponentRef(cref, env, info);
         // TODO: handle function arguments
       then
         (Absyn.PARTEVALFUNCTION(cref, args), tup);
 
     case (exp as Absyn.MATCHEXP(), (env, info))
-      equation
-        env = NFSCodeEnv.extendEnvWithMatch(exp, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
+      algorithm
+        env := NFSCodeEnv.extendEnvWithMatch(exp, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
       then
         (exp, (env, info));
     else (inExp,inTuple);
@@ -711,21 +711,21 @@ algorithm
       list<Absyn.Subscript> subs;
 
     case (Absyn.CREF_IDENT(name, subs), _, _)
-      equation
-        subs = List.map2(subs, flattenSubscript, inEnv, inInfo);
+      algorithm
+        subs := List.map2(subs, flattenSubscript, inEnv, inInfo);
       then
         Absyn.CREF_IDENT(name, subs);
 
     case (Absyn.CREF_QUAL(name, subs, cref), _, _)
-      equation
-        subs = List.map2(subs, flattenSubscript, inEnv, inInfo);
-        cref = flattenComponentRefSubs(cref, inEnv, inInfo);
+      algorithm
+        subs := List.map2(subs, flattenSubscript, inEnv, inInfo);
+        cref := flattenComponentRefSubs(cref, inEnv, inInfo);
       then
         Absyn.CREF_QUAL(name, subs, cref);
 
     case (Absyn.CREF_FULLYQUALIFIED(componentRef = cref), _, _)
-      equation
-        cref = flattenComponentRefSubs(cref, inEnv, inInfo);
+      algorithm
+        cref := flattenComponentRefSubs(cref, inEnv, inInfo);
       then
         AbsynUtil.crefMakeFullyQualified(cref);
 

@@ -333,19 +333,19 @@ algorithm
     //     class A end A;
     //   end A;
     case (Absyn.IDENT(name), true)
-      equation
+      algorithm
         // Only look the name up locally, otherwise we might get an infinite
         // loop if the class extends itself.
-        (elem, env) = Lookup.lookupClassLocal(inEnv, name);
+        (elem, env) := Lookup.lookupClassLocal(inEnv, name);
       then
         (inCache, SOME(elem), env);
 
     // Otherwise, remove the first identifier if it's the same as the class name
     // and look it up as normal.
     case (_, _)
-      equation
-        path = AbsynUtil.removePartialPrefix(Absyn.IDENT(inClassName), inPath);
-        (cache, elem, env) = Lookup.lookupClass(inCache, inEnv, path);
+      algorithm
+        path := AbsynUtil.removePartialPrefix(Absyn.IDENT(inClassName), inPath);
+        (cache, elem, env) := Lookup.lookupClass(inCache, inEnv, path);
       then
         (cache, SOME(elem), env);
 
@@ -466,18 +466,18 @@ algorithm
     case (emod,{},compelts) then (emod,compelts);
 
     case (emod,(first as SCode.CLASS(name=name))::rest,compelts)
-      equation
-        (emod,compelts) = instClassExtendsList2(inEnv,emod,name,first,compelts);
-        (emod,compelts) = instClassExtendsList(inEnv,emod,rest,compelts);
+      algorithm
+        (emod,compelts) := instClassExtendsList2(inEnv,emod,name,first,compelts);
+        (emod,compelts) := instClassExtendsList(inEnv,emod,rest,compelts);
       then (emod,compelts);
 
     case (_,SCode.CLASS(name=name)::_,compelts)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Inst.instClassExtendsList failed " + name);
         Debug.traceln("  Candidate classes: ");
-        els = List.map(compelts, Util.tuple31);
-        names = List.map(els, SCodeUtil.elementName);
+        els := List.map(compelts, Util.tuple31);
+        names := List.map(els, SCodeUtil.elementName);
         Debug.traceln(stringDelimitList(names, ","));
       then fail();
 
@@ -532,60 +532,60 @@ algorithm
 
     // found the base class with parts
     case (emod,name1,classExtendsElt,(cl as SCode.CLASS(name = name2, classDef = SCode.PARTS()),mod1,b)::rest)
-      equation
-        true = name1 == name2; // Compare the name before pattern-matching to speed this up
+      algorithm
+        true := name1 == name2; // Compare the name before pattern-matching to speed this up
 
-        env_path = AbsynUtil.pathString(FGraph.getGraphName(inEnv));
-        name2 = buildClassExtendsName(env_path,name2);
-        SCode.CLASS(_,prefixes2,encapsulatedPrefix2,partialPrefix2,restriction2,SCode.PARTS(els2,nEqn2,inEqn2,nAlg2,inAlg2,inCons2,clats,externalDecl2),comment2,info2) = cl;
+        env_path := AbsynUtil.pathString(FGraph.getGraphName(inEnv));
+        name2 := buildClassExtendsName(env_path,name2);
+        SCode.CLASS(_,prefixes2,encapsulatedPrefix2,partialPrefix2,restriction2,SCode.PARTS(els2,nEqn2,inEqn2,nAlg2,inAlg2,inCons2,clats,externalDecl2),comment2,info2) := cl;
 
-        SCode.CLASS(_, prefixes1, encapsulatedPrefix1, partialPrefix1, restriction1, classExtendsCdef, comment1, info1) = classExtendsElt;
-        SCode.CLASS_EXTENDS(mods,SCode.PARTS(els1,nEqn1,inEqn1,nAlg1,inAlg1,inCons1,_,externalDecl1)) = classExtendsCdef;
+        SCode.CLASS(_, prefixes1, encapsulatedPrefix1, partialPrefix1, restriction1, classExtendsCdef, comment1, info1) := classExtendsElt;
+        SCode.CLASS_EXTENDS(mods,SCode.PARTS(els1,nEqn1,inEqn1,nAlg1,inAlg1,inCons1,_,externalDecl1)) := classExtendsCdef;
 
-        classDef = SCode.PARTS(els2,nEqn2,inEqn2,nAlg2,inAlg2,inCons2,clats,externalDecl2);
-        compelt = SCode.CLASS(name2,prefixes2,encapsulatedPrefix2,partialPrefix2,restriction2,classDef,comment2,info2);
-        vis2 = SCodeUtil.prefixesVisibility(prefixes2);
-        elt = SCode.EXTENDS(Absyn.IDENT(name2),vis2,mods,NONE(),info1);
-        classDef = SCode.PARTS(elt::els1,nEqn1,inEqn1,nAlg1,inAlg1,inCons1,clats,externalDecl1);
-        elt = SCode.CLASS(name1, prefixes1, encapsulatedPrefix1, partialPrefix1, restriction1, classDef, comment1, info1);
-        emod = Mod.renameTopLevelNamedSubMod(emod,name1,name2);
+        classDef := SCode.PARTS(els2,nEqn2,inEqn2,nAlg2,inAlg2,inCons2,clats,externalDecl2);
+        compelt := SCode.CLASS(name2,prefixes2,encapsulatedPrefix2,partialPrefix2,restriction2,classDef,comment2,info2);
+        vis2 := SCodeUtil.prefixesVisibility(prefixes2);
+        elt := SCode.EXTENDS(Absyn.IDENT(name2),vis2,mods,NONE(),info1);
+        classDef := SCode.PARTS(elt::els1,nEqn1,inEqn1,nAlg1,inAlg1,inCons1,clats,externalDecl1);
+        elt := SCode.CLASS(name1, prefixes1, encapsulatedPrefix1, partialPrefix1, restriction1, classDef, comment1, info1);
+        emod := Mod.renameTopLevelNamedSubMod(emod,name1,name2);
         //Debug.traceln("class extends: " + SCodeDump.unparseElementStr(compelt) + "  " + SCodeDump.unparseElementStr(elt));
       then
         (emod,(compelt,mod1,b)::(elt,DAE.NOMOD(),true)::rest);
 
     // found the base class which is derived
     case (emod,name1,classExtendsElt,(cl as SCode.CLASS(name = name2, classDef = SCode.DERIVED()),mod1,b)::rest)
-      equation
-        true = name1 == name2; // Compare the name before pattern-matching to speed this up
+      algorithm
+        true := name1 == name2; // Compare the name before pattern-matching to speed this up
 
-        env_path = AbsynUtil.pathString(FGraph.getGraphName(inEnv));
-        name2 = buildClassExtendsName(env_path,name2);
-        SCode.CLASS(_,prefixes2,encapsulatedPrefix2,partialPrefix2,restriction2,SCode.DERIVED(derivedTySpec, derivedMod, attrs),comment2,info2) = cl;
+        env_path := AbsynUtil.pathString(FGraph.getGraphName(inEnv));
+        name2 := buildClassExtendsName(env_path,name2);
+        SCode.CLASS(_,prefixes2,encapsulatedPrefix2,partialPrefix2,restriction2,SCode.DERIVED(derivedTySpec, derivedMod, attrs),comment2,info2) := cl;
 
-        SCode.CLASS(_, prefixes1, encapsulatedPrefix1, partialPrefix1, restriction1, classExtendsCdef, comment1, info1) = classExtendsElt;
-        SCode.CLASS_EXTENDS(mods,SCode.PARTS(els1,nEqn1,inEqn1,nAlg1,inAlg1,inCons1,_,externalDecl1)) = classExtendsCdef;
+        SCode.CLASS(_, prefixes1, encapsulatedPrefix1, partialPrefix1, restriction1, classExtendsCdef, comment1, info1) := classExtendsElt;
+        SCode.CLASS_EXTENDS(mods,SCode.PARTS(els1,nEqn1,inEqn1,nAlg1,inAlg1,inCons1,_,externalDecl1)) := classExtendsCdef;
 
-        classDef = SCode.DERIVED(derivedTySpec, derivedMod, attrs);
-        compelt = SCode.CLASS(name2,prefixes2,encapsulatedPrefix2,partialPrefix2,restriction2,classDef,comment2,info2);
-        vis2 = SCodeUtil.prefixesVisibility(prefixes2);
-        elt = SCode.EXTENDS(Absyn.IDENT(name2),vis2,mods,NONE(),info1);
-        classDef = SCode.PARTS(elt::els1,nEqn1,inEqn1,nAlg1,inAlg1,inCons1,{},externalDecl1);
-        elt = SCode.CLASS(name1, prefixes1, encapsulatedPrefix1, partialPrefix1, restriction1, classDef, comment1, info1);
-        emod = Mod.renameTopLevelNamedSubMod(emod,name1,name2);
+        classDef := SCode.DERIVED(derivedTySpec, derivedMod, attrs);
+        compelt := SCode.CLASS(name2,prefixes2,encapsulatedPrefix2,partialPrefix2,restriction2,classDef,comment2,info2);
+        vis2 := SCodeUtil.prefixesVisibility(prefixes2);
+        elt := SCode.EXTENDS(Absyn.IDENT(name2),vis2,mods,NONE(),info1);
+        classDef := SCode.PARTS(elt::els1,nEqn1,inEqn1,nAlg1,inAlg1,inCons1,{},externalDecl1);
+        elt := SCode.CLASS(name1, prefixes1, encapsulatedPrefix1, partialPrefix1, restriction1, classDef, comment1, info1);
+        emod := Mod.renameTopLevelNamedSubMod(emod,name1,name2);
         //Debug.traceln("class extends: " + SCodeDump.unparseElementStr(compelt) + "  " + SCodeDump.unparseElementStr(elt));
       then
         (emod,(compelt,mod1,b)::(elt,DAE.NOMOD(),true)::rest);
 
     // not this one, switch to next one
     case (emod,name1,classExtendsElt,first::rest)
-      equation
-        (emod,rest) = instClassExtendsList2(inEnv,emod,name1,classExtendsElt,rest);
+      algorithm
+        (emod,rest) := instClassExtendsList2(inEnv,emod,name1,classExtendsElt,rest);
       then
         (emod,first::rest);
 
     // bah, we did not find it
     case (_,_,_,{})
-      equation
+      algorithm
 
         Debug.traceln("TODO: Make a proper Error message here - Inst.instClassExtendsList2 couldn't find the class to extend");
       then
@@ -674,8 +674,8 @@ algorithm
 
     // from basic types return nothing
     case (cache,env,ih,_,_,SCode.CLASS(name = name),_,_,_)
-      equation
-        true = InstUtil.isBuiltInClass(name);
+      algorithm
+        true := InstUtil.isBuiltInClass(name);
       then
         (cache,env,ih,{},{},{},{},{},inMod,{});
 
@@ -684,39 +684,39 @@ algorithm
                       normalEquationLst = eq,initialEquationLst = ieq,
                       normalAlgorithmLst = alg,initialAlgorithmLst = ialg,
                       externalDecl = extdecl)),_,info,_)
-      equation
+      algorithm
         /* elt_1 = noImportElements(elt); */
         Error.assertionOrAddSourceMessage(Util.isNone(extdecl), Error.EXTENDS_EXTERNAL, {name}, info);
       then
         (cache,env,ih,elt,eq,ieq,alg,ialg,inMod,{inClass.cmt});
 
     case (cache,env,ih,mod,pre,SCode.CLASS( info = info, classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(tp, _),modifications = dmod)),impl, _, false)
-      equation
+      algorithm
         // fprintln(Flags.INST_TRACE, "DERIVED: " + FGraph.printGraphPathStr(env) + " el: " + SCodeDump.unparseElementStr(inClass) + " mods: " + Mod.printModStr(mod));
-        (cache, c, cenv) = Lookup.lookupClass(cache, env, tp, SOME(info));
-        dmod = InstUtil.chainRedeclares(mod, dmod);
+        (cache, c, cenv) := Lookup.lookupClass(cache, env, tp, SOME(info));
+        dmod := InstUtil.chainRedeclares(mod, dmod);
         // false = AbsynUtil.pathEqual(FGraph.getGraphName(env),FGraph.getGraphName(cenv)) and SCodeUtil.elementEqual(c,inClass);
         // modifiers should be evaluated in the current scope for derived!
         //daeDMOD = Mod.elabUntypedMod(dmod, Mod.DERIVED(tp));
-        (cache,daeDMOD) = Mod.elabMod(cache, env, ih, pre, dmod, impl, Mod.DERIVED(tp), info);
-        mod = Mod.merge(mod, daeDMOD);
+        (cache,daeDMOD) := Mod.elabMod(cache, env, ih, pre, dmod, impl, Mod.DERIVED(tp), info);
+        mod := Mod.merge(mod, daeDMOD);
         // print("DER: " + SCodeDump.unparseElementStr(inClass, SCodeDump.defaultOptions) + "\n");
-        (cache,env,ih,elt,eq,ieq,alg,ialg,mod,outComments) = instDerivedClassesWork(cache, cenv, ih, mod, pre, c, impl, info, numIter >= Global.recursionDepthLimit, numIter+1)
+        (cache,env,ih,elt,eq,ieq,alg,ialg,mod,outComments) := instDerivedClassesWork(cache, cenv, ih, mod, pre, c, impl, info, numIter >= Global.recursionDepthLimit, numIter+1)
         "Mod.lookup_modification_p(mod, c) => innermod & We have to merge and apply modifications as well!" ;
       then
         (cache,env,ih,elt,eq,ieq,alg,ialg,mod,inClass.cmt::outComments);
 
     case (cache,env,ih,mod,pre,SCode.CLASS(name=n, prefixes = prefixes, classDef = SCode.ENUMERATION(enumLst), cmt = cmt, info = info),impl,_,false)
-      equation
-        c = SCodeInstUtil.expandEnumeration(n, enumLst, prefixes, cmt, info);
-        (cache,env,ih,elt,eq,ieq,alg,ialg,mod,outComments) = instDerivedClassesWork(cache, env, ih, mod, pre, c, impl,info, numIter >= Global.recursionDepthLimit, numIter+1);
+      algorithm
+        c := SCodeInstUtil.expandEnumeration(n, enumLst, prefixes, cmt, info);
+        (cache,env,ih,elt,eq,ieq,alg,ialg,mod,outComments) := instDerivedClassesWork(cache, env, ih, mod, pre, c, impl,info, numIter >= Global.recursionDepthLimit, numIter+1);
       then
         (cache,env,ih,elt,eq,ieq,alg,ialg,mod,outComments);
 
     case (_,_,_,_,_,_,_,_,true)
-      equation
-        str1 = SCodeDump.unparseElementStr(inClass,SCodeDump.defaultOptions);
-        str2 = FGraph.printGraphPathStr(inEnv);
+      algorithm
+        str1 := SCodeDump.unparseElementStr(inClass,SCodeDump.defaultOptions);
+        str2 := FGraph.printGraphPathStr(inEnv);
         // print("instDerivedClassesWork recursion depth... " + str1 + " " + str2 + "\n");
         Error.addSourceMessage(Error.RECURSION_DEPTH_DERIVED,{str1,str2},inInfo);
       then fail();
@@ -777,14 +777,14 @@ algorithm
       DAE.Mod cmod, mod_rest;
 
     case SCode.COMPONENT()
-      equation
+      algorithm
         // Debug.traceln(" comp: " + id + " " + Mod.printModStr(mod));
         // take ONLY the modification from the equation if is typed
         // cmod2 = Mod.getModifs(inMod, id, m);
-        cmod = Mod.lookupCompModificationFromEqu(inMod, el.name);
+        cmod := Mod.lookupCompModificationFromEqu(inMod, el.name);
         // Debug.traceln("\tSpecific mods on comp: " +  Mod.printModStr(cmod2));
-        cmod = Mod.merge(cmod, mod, el.name, false);
-        mod_rest = inMod; //mod_rest = Mod.removeMod(inMod, id);
+        cmod := Mod.merge(cmod, mod, el.name, false);
+        mod_rest := inMod; //mod_rest = Mod.removeMod(inMod, id);
       then
         ((el, cmod, b), mod_rest);
 
@@ -795,11 +795,11 @@ algorithm
       then ((el, DAE.NOMOD(), b), inMod);
 
     case SCode.CLASS(prefixes = SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_)))
-      equation
-        DAE.REDECL(element = comp, mod = cmod) = Mod.lookupCompModification(inMod, el.name);
-        mod_rest = inMod; //mod_rest = Mod.removeMod(inMod, id);
-        cmod = Mod.merge(cmod, mod, el.name, false);
-        comp = SCodeUtil.mergeWithOriginal(comp, el);
+      algorithm
+        DAE.REDECL(element = comp, mod = cmod) := Mod.lookupCompModification(inMod, el.name);
+        mod_rest := inMod; //mod_rest = Mod.removeMod(inMod, id);
+        cmod := Mod.merge(cmod, mod, el.name, false);
+        comp := SCodeUtil.mergeWithOriginal(comp, el);
         // comp2 = SCodeUtil.renameElement(comp2, id);
       then
         ((comp, cmod, b), mod_rest);
@@ -819,9 +819,9 @@ algorithm
     //       Density(start=10, nominal=10),
     //       AbsolutePressure(start=10e5, nominal=10e5)); <--- AbsolutePressure is a type and can have modifications!
     case SCode.CLASS()
-      equation
-        cmod = Mod.lookupCompModification(inMod, el.name);
-        outComponent = if valueEq(cmod, DAE.NOMOD()) then inComponent else (el,cmod,b);
+      algorithm
+        cmod := Mod.lookupCompModification(inMod, el.name);
+        outComponent := if valueEq(cmod, DAE.NOMOD()) then inComponent else (el,cmod,b);
       then
         (outComponent, inMod);
 
@@ -982,60 +982,60 @@ algorithm
 
     case (env,SCode.CLASS(name, prefixes as SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_)),
                                 SCode.ENCAPSULATED(), partialPrefix, restriction, _, comment, info))
-      equation
+      algorithm
         //fprintln(Flags.DEBUG,"fixClassdef " + name);
         // lookup as it might have been redeclared!!!
         (SCode.CLASS(prefixes = prefixes, partialPrefix = partialPrefix, restriction = restriction,
-                     cmt = comment, info = info,classDef=classDef1),env) = Lookup.lookupClassLocal(env, name);
-        env = FGraph.openScope(env, SCode.ENCAPSULATED(), name, FGraph.restrictionToScopeType(restriction));
-        classDef2 = fixClassdef(inCache, env,classDef1,tree);
+                     cmt = comment, info = info,classDef=classDef1),env) := Lookup.lookupClassLocal(env, name);
+        env := FGraph.openScope(env, SCode.ENCAPSULATED(), name, FGraph.restrictionToScopeType(restriction));
+        classDef2 := fixClassdef(inCache, env,classDef1,tree);
       then
         (if referenceEq(classDef1,classDef2) then inElt else SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef2, comment, info));
 
     // failed above
     case (env,SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef1, comment, info))
-      equation
+      algorithm
         //fprintln(Flags.DEBUG,"fixClassdef " + name);
-        env = FGraph.openScope(env, SCode.ENCAPSULATED(), name, FGraph.restrictionToScopeType(restriction));
-        classDef2 = fixClassdef(inCache, env,classDef1,tree);
+        env := FGraph.openScope(env, SCode.ENCAPSULATED(), name, FGraph.restrictionToScopeType(restriction));
+        classDef2 := fixClassdef(inCache, env,classDef1,tree);
       then
         (if referenceEq(classDef1,classDef2) then inElt else SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef2, comment, info));
 
     case (env,SCode.CLASS(name, prefixes as SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_)),
                                 SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, _, comment, info))
-      equation
+      algorithm
         //fprintln(Flags.DEBUG,"fixClassdef " + name + str);
         // lookup as it might have been redeclared!!!
         (SCode.CLASS(prefixes = prefixes, partialPrefix = partialPrefix, restriction = restriction,
-                     cmt = comment, info = info,classDef=classDef1),env) = Lookup.lookupClassLocal(env, name);
+                     cmt = comment, info = info,classDef=classDef1),env) := Lookup.lookupClassLocal(env, name);
 
-        env = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), name, FGraph.restrictionToScopeType(restriction));
-        classDef2 = fixClassdef(inCache,env,classDef1,tree);
+        env := FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), name, FGraph.restrictionToScopeType(restriction));
+        classDef2 := fixClassdef(inCache,env,classDef1,tree);
       then
         (if referenceEq(classDef1,classDef2) then inElt else SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef2, comment, info));
 
     // failed above
     case (env,SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef1, comment, info))
-      equation
+      algorithm
         //fprintln(Flags.DEBUG,"fixClassdef " + name + str);
-        env = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), name, FGraph.restrictionToScopeType(restriction));
-        classDef2 = fixClassdef(inCache,env,classDef1,tree);
+        env := FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), name, FGraph.restrictionToScopeType(restriction));
+        classDef2 := fixClassdef(inCache,env,classDef1,tree);
       then
         (if referenceEq(classDef1,classDef2) then inElt else SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef2, comment, info));
 
     case (env,SCode.EXTENDS(extendsPath1,vis,modifications1,optAnnotation,info))
-      equation
+      algorithm
         //fprintln(Flags.DEBUG,"fix extends " + SCodeDump.unparseElementStr(elt,SCodeDump.defaultOptions));
-        extendsPath2 = fixPath(inCache,env,extendsPath1,tree);
-        modifications2 = fixModifications(inCache,env,modifications1,tree);
+        extendsPath2 := fixPath(inCache,env,extendsPath1,tree);
+        modifications2 := fixModifications(inCache,env,modifications1,tree);
       then
         (if referenceEq(extendsPath1,extendsPath2) and referenceEq(modifications1,modifications2) then inElt else SCode.EXTENDS(extendsPath2,vis,modifications2,optAnnotation,info));
 
     case (_,SCode.IMPORT()) then inElt;
 
     case (_,elt)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("InstExtends.fixElement failed: " + SCodeDump.unparseElementStr(elt));
       then fail();
 
@@ -1083,23 +1083,23 @@ algorithm
            then inCd else SCode.PARTS(elts_1,ne_1,ie_1,na_1,ia_1,nc_1,clats,ed);
 
     case (env,SCode.CLASS_EXTENDS(mod,cd as SCode.PARTS(elts,ne,ie,na,ia,nc,clats,ed)))
-      equation
-        mod_1 = fixModifications(cache,env,mod,inTree);
-        elts_1 = fixList(cache,env,elts,tree,fixElement);
-        ne_1 = fixList(cache,env,ne,tree,fixEquation);
-        ie_1 = fixList(cache,env,ie,tree,fixEquation);
-        na_1 = fixList(cache,env,na,tree,fixAlgorithm);
-        ia_1 = fixList(cache,env,ia,tree,fixAlgorithm);
-        nc_1 = fixList(cache,env,nc,tree,fixConstraint);
-        cd_1 = if referenceEq(elts,elts_1) and referenceEq(ne,ne_1) and referenceEq(ie,ie_1) and referenceEq(na,na_1) and referenceEq(ia,ia_1) and referenceEq(nc,nc_1)
+      algorithm
+        mod_1 := fixModifications(cache,env,mod,inTree);
+        elts_1 := fixList(cache,env,elts,tree,fixElement);
+        ne_1 := fixList(cache,env,ne,tree,fixEquation);
+        ie_1 := fixList(cache,env,ie,tree,fixEquation);
+        na_1 := fixList(cache,env,na,tree,fixAlgorithm);
+        ia_1 := fixList(cache,env,ia,tree,fixAlgorithm);
+        nc_1 := fixList(cache,env,nc,tree,fixConstraint);
+        cd_1 := if referenceEq(elts,elts_1) and referenceEq(ne,ne_1) and referenceEq(ie,ie_1) and referenceEq(na,na_1) and referenceEq(ia,ia_1) and referenceEq(nc,nc_1)
              then cd else SCode.PARTS(elts_1,ne_1,ie_1,na_1,ia_1,nc_1,clats,ed);
       then if referenceEq(cd,cd_1) and referenceEq(mod,mod_1)
            then inCd else SCode.CLASS_EXTENDS(mod_1,cd_1);
 
     case (env,SCode.DERIVED(ts,mod,attr))
-      equation
-        ts_1 = fixTypeSpec(cache,env,ts,tree);
-        mod_1 = fixModifications(cache,env,mod,tree);
+      algorithm
+        ts_1 := fixTypeSpec(cache,env,ts,tree);
+        mod_1 := fixModifications(cache,env,mod,tree);
       then if referenceEq(ts,ts_1) and referenceEq(mod,mod_1) then inCd else SCode.DERIVED(ts_1,mod_1,attr);
 
     case (_,cd as SCode.ENUMERATION()) then cd;
@@ -1107,8 +1107,8 @@ algorithm
     case (_,cd as SCode.PDER()) then cd;
 
     case (_,cd)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("InstExtends.fixClassDef failed: " + SCodeDump.classDefStr(cd));
       then
         fail();
@@ -1141,56 +1141,56 @@ algorithm
       SourceInfo info;
 
     case SCode.EQ_IF(expl,eqll,eql,comment,info)
-      equation
-        expl = fixList(cache,inEnv,expl,tree,fixExp);
-        eqll = fixListList(cache,inEnv,eqll,tree,fixEquation);
-        eql = fixList(cache,inEnv,eql,tree,fixEquation);
+      algorithm
+        expl := fixList(cache,inEnv,expl,tree,fixExp);
+        eqll := fixListList(cache,inEnv,eqll,tree,fixEquation);
+        eql := fixList(cache,inEnv,eql,tree,fixEquation);
       then (SCode.EQ_IF(expl,eqll,eql,comment,info));
     case SCode.EQ_EQUALS(exp1,exp2,comment,info)
-      equation
-        exp1 = fixExp(cache,inEnv,exp1,tree);
-        exp2 = fixExp(cache,inEnv,exp2,tree);
+      algorithm
+        exp1 := fixExp(cache,inEnv,exp1,tree);
+        exp2 := fixExp(cache,inEnv,exp2,tree);
       then (SCode.EQ_EQUALS(exp1,exp2,comment,info));
     case SCode.EQ_PDE(exp1,exp2,cref,comment,info)
-      equation
-        exp1 = fixExp(cache,inEnv,exp1,tree);
-        exp2 = fixExp(cache,inEnv,exp2,tree);
-        cref = fixCref(cache,inEnv,cref,tree);
+      algorithm
+        exp1 := fixExp(cache,inEnv,exp1,tree);
+        exp2 := fixExp(cache,inEnv,exp2,tree);
+        cref := fixCref(cache,inEnv,cref,tree);
       then (SCode.EQ_PDE(exp1,exp2,cref,comment,info));
     case SCode.EQ_CONNECT(cref1,cref2,comment,info)
-      equation
-        cref1 = fixCref(cache,inEnv,cref1,tree);
-        cref2 = fixCref(cache,inEnv,cref2,tree);
+      algorithm
+        cref1 := fixCref(cache,inEnv,cref1,tree);
+        cref2 := fixCref(cache,inEnv,cref2,tree);
       then (SCode.EQ_CONNECT(cref1,cref2,comment,info));
     case SCode.EQ_FOR(id,optExp,eql,comment,info)
-      equation
-        optExp = fixOption(cache,inEnv,optExp,tree,fixExp);
-        eql = fixList(cache,inEnv,eql,tree,fixEquation);
+      algorithm
+        optExp := fixOption(cache,inEnv,optExp,tree,fixExp);
+        eql := fixList(cache,inEnv,eql,tree,fixEquation);
       then (SCode.EQ_FOR(id,optExp,eql,comment,info));
     case SCode.EQ_WHEN(exp,eql,whenlst,comment,info)
-      equation
-        exp = fixExp(cache,inEnv,exp,tree);
-        eql = fixList(cache,inEnv,eql,tree,fixEquation);
-        whenlst = fixListTuple2(cache,inEnv,whenlst,tree,fixExp,fixListEquation);
+      algorithm
+        exp := fixExp(cache,inEnv,exp,tree);
+        eql := fixList(cache,inEnv,eql,tree,fixEquation);
+        whenlst := fixListTuple2(cache,inEnv,whenlst,tree,fixExp,fixListEquation);
       then (SCode.EQ_WHEN(exp,eql,whenlst,comment,info));
     case SCode.EQ_ASSERT(exp1,exp2,exp3,comment,info)
-      equation
-        exp1 = fixExp(cache,inEnv,exp1,tree);
-        exp2 = fixExp(cache,inEnv,exp2,tree);
-        exp3 = fixExp(cache,inEnv,exp3,tree);
+      algorithm
+        exp1 := fixExp(cache,inEnv,exp1,tree);
+        exp2 := fixExp(cache,inEnv,exp2,tree);
+        exp3 := fixExp(cache,inEnv,exp3,tree);
       then (SCode.EQ_ASSERT(exp1,exp2,exp3,comment,info));
     case SCode.EQ_TERMINATE(exp,comment,info)
-      equation
-        exp = fixExp(cache,inEnv,exp,tree);
+      algorithm
+        exp := fixExp(cache,inEnv,exp,tree);
       then (SCode.EQ_TERMINATE(exp,comment,info));
     case SCode.EQ_REINIT(exp1,exp,comment,info)
-      equation
-        exp1 = fixExp(cache,inEnv,exp1,tree);
-        exp = fixExp(cache,inEnv,exp,tree);
+      algorithm
+        exp1 := fixExp(cache,inEnv,exp1,tree);
+        exp := fixExp(cache,inEnv,exp,tree);
       then (SCode.EQ_REINIT(exp1,exp,comment,info));
     case SCode.EQ_NORETCALL(exp,comment,info)
-      equation
-        exp = fixExp(cache,inEnv,exp,tree);
+      algorithm
+        exp := fixExp(cache,inEnv,exp,tree);
       then (SCode.EQ_NORETCALL(exp,comment,info));
   end match;
 end fixEquation;
@@ -1283,40 +1283,40 @@ algorithm
       Absyn.ComponentRef cr1,cr2;
 
     case SCode.ALG_ASSIGN(exp1,exp2,comment,info)
-      equation
-        exp1_1 = fixExp(cache,inEnv,exp1,tree);
-        exp2_1 = fixExp(cache,inEnv,exp2,tree);
+      algorithm
+        exp1_1 := fixExp(cache,inEnv,exp1,tree);
+        exp2_1 := fixExp(cache,inEnv,exp2,tree);
       then if referenceEq(exp1,exp1_1) and referenceEq(exp2,exp2_1) then inStmt else SCode.ALG_ASSIGN(exp1_1,exp2_1,comment,info);
 
     case SCode.ALG_IF(exp1,truebranch1,elseifbranch1,elsebranch1,comment,info)
-      equation
-        exp2 = fixExp(cache,inEnv,exp1,tree);
-        truebranch2 = fixList(cache,inEnv,truebranch1,tree,fixStatement);
-        elseifbranch2 = fixListTuple2(cache,inEnv,elseifbranch1,tree,fixExp,fixListAlgorithmItem);
-        elsebranch2 = fixList(cache,inEnv,elsebranch1,tree,fixStatement);
+      algorithm
+        exp2 := fixExp(cache,inEnv,exp1,tree);
+        truebranch2 := fixList(cache,inEnv,truebranch1,tree,fixStatement);
+        elseifbranch2 := fixListTuple2(cache,inEnv,elseifbranch1,tree,fixExp,fixListAlgorithmItem);
+        elsebranch2 := fixList(cache,inEnv,elsebranch1,tree,fixStatement);
       then if referenceEq(exp1,exp2) and referenceEq(truebranch1,truebranch2) and referenceEq(elseifbranch1,elseifbranch2) and referenceEq(elsebranch1,elsebranch2) then inStmt else SCode.ALG_IF(exp2,truebranch2,elseifbranch2,elsebranch2,comment,info);
 
     case SCode.ALG_FOR(iter,optExp1,body1,comment,info)
-      equation
-        optExp2 = fixOption(cache,inEnv,optExp1,tree,fixExp);
-        body2 = fixList(cache,inEnv,body1,tree,fixStatement);
+      algorithm
+        optExp2 := fixOption(cache,inEnv,optExp1,tree,fixExp);
+        body2 := fixList(cache,inEnv,body1,tree,fixStatement);
       then if referenceEq(optExp1,optExp2) and referenceEq(body1,body2) then inStmt else SCode.ALG_FOR(iter,optExp2,body2,comment,info);
 
     case SCode.ALG_PARFOR(iter,optExp1,body1,comment,info)
-      equation
-        optExp2 = fixOption(cache,inEnv,optExp1,tree,fixExp);
-        body2 = fixList(cache,inEnv,body1,tree,fixStatement);
+      algorithm
+        optExp2 := fixOption(cache,inEnv,optExp1,tree,fixExp);
+        body2 := fixList(cache,inEnv,body1,tree,fixStatement);
       then if referenceEq(optExp1,optExp2) and referenceEq(body1,body2) then inStmt else SCode.ALG_PARFOR(iter,optExp2,body2,comment,info);
 
     case SCode.ALG_WHILE(exp1,body1,comment,info)
-      equation
-        exp2 = fixExp(cache,inEnv,exp1,tree);
-        body2 = fixList(cache,inEnv,body1,tree,fixStatement);
+      algorithm
+        exp2 := fixExp(cache,inEnv,exp1,tree);
+        body2 := fixList(cache,inEnv,body1,tree,fixStatement);
       then if referenceEq(exp1,exp2) and referenceEq(body1,body2) then inStmt else SCode.ALG_WHILE(exp2,body2,comment,info);
 
     case SCode.ALG_WHEN_A(whenlst,comment,info)
-      equation
-        whenlst = fixListTuple2(cache,inEnv,whenlst,tree,fixExp,fixListAlgorithmItem);
+      algorithm
+        whenlst := fixListTuple2(cache,inEnv,whenlst,tree,fixExp,fixListAlgorithmItem);
       then SCode.ALG_WHEN_A(whenlst,comment,info);
 
     case SCode.ALG_ASSERT(exp, exp1, exp2, comment, info)
@@ -1338,8 +1338,8 @@ algorithm
       then if referenceEq(exp1, exp1_1) and referenceEq(exp2, exp2_1) then inStmt else SCode.ALG_REINIT(exp1_1, exp2_1, comment, info);
 
     case SCode.ALG_NORETCALL(exp1,comment,info)
-      equation
-        exp2 = fixExp(cache,inEnv,exp1,tree);
+      algorithm
+        exp2 := fixExp(cache,inEnv,exp1,tree);
       then if referenceEq(exp1,exp2) then inStmt else SCode.ALG_NORETCALL(exp2,comment,info);
 
     case SCode.ALG_RETURN() then inStmt;
@@ -1423,15 +1423,15 @@ algorithm
       list<Absyn.TypeSpec> typeSpecs1, typeSpecs2;
 
     case Absyn.TPATH(path1,arrayDim1)
-      equation
-        arrayDim2 = fixOption(cache,inEnv,arrayDim1,tree,fixArrayDim);
-        path2 = fixPath(cache,inEnv,path1,tree);
+      algorithm
+        arrayDim2 := fixOption(cache,inEnv,arrayDim1,tree,fixArrayDim);
+        path2 := fixPath(cache,inEnv,path1,tree);
       then if referenceEq(arrayDim2,arrayDim1) and referenceEq(path1,path2) then inTs else Absyn.TPATH(path2,arrayDim2);
     case Absyn.TCOMPLEX(path1,typeSpecs1,arrayDim1)
-      equation
-        arrayDim2 = fixOption(cache,inEnv,arrayDim1,tree,fixArrayDim);
-        path2 = fixPath(cache,inEnv,path1,tree);
-        typeSpecs2 = fixList(cache,inEnv,typeSpecs1,tree,fixTypeSpec);
+      algorithm
+        arrayDim2 := fixOption(cache,inEnv,arrayDim1,tree,fixArrayDim);
+        path2 := fixPath(cache,inEnv,path1,tree);
+        typeSpecs2 := fixList(cache,inEnv,typeSpecs1,tree,fixTypeSpec);
       then if referenceEq(arrayDim2,arrayDim1) and referenceEq(path1,path2) and referenceEq(typeSpecs1,typeSpecs2) then inTs else Absyn.TCOMPLEX(path2,typeSpecs2,arrayDim2);
   end match;
 end fixTypeSpec;
@@ -1456,28 +1456,28 @@ algorithm
       then inPath;
 
     case _
-      equation
-        id = AbsynUtil.pathFirstIdent(inPath);
-        true = AvlSetString.hasKey(tree, id);
-        path2 = FGraph.pathStripGraphScopePrefix(inPath, inEnv, false);
+      algorithm
+        id := AbsynUtil.pathFirstIdent(inPath);
+        true := AvlSetString.hasKey(tree, id);
+        path2 := FGraph.pathStripGraphScopePrefix(inPath, inEnv, false);
       then path2;
 
     // first indent is local in the inEnv, DO NOT QUALIFY!
     case _
-      equation
+      algorithm
         //fprintln(Flags.DEBUG,"Try makeFullyQualified " + AbsynUtil.pathString(path));
-        (_, _) = Lookup.lookupClassLocal(inEnv, AbsynUtil.pathFirstIdent(inPath));
-        path = FGraph.pathStripGraphScopePrefix(inPath, inEnv, false);
+        (_, _) := Lookup.lookupClassLocal(inEnv, AbsynUtil.pathFirstIdent(inPath));
+        path := FGraph.pathStripGraphScopePrefix(inPath, inEnv, false);
         //fprintln(Flags.DEBUG,"FullyQual: " + AbsynUtil.pathString(path));
       then path;
 
     case _
-      equation
+      algorithm
         // isOutside = isPathOutsideScope(cache, inEnv, path);
         //print("Try makeFullyQualified " + AbsynUtil.pathString(path) + "\n");
-        (cache, path) = Inst.makeFullyQualified(arrayGet(inCache,1), inEnv, inPath);
+        (cache, path) := Inst.makeFullyQualified(arrayGet(inCache,1), inEnv, inPath);
         // path = if_(isOutside, path, FGraph.pathStripGraphScopePrefix(path, inEnv, false));
-        path = FGraph.pathStripGraphScopePrefix(path, inEnv, false);
+        path := FGraph.pathStripGraphScopePrefix(path, inEnv, false);
         //print("FullyQual: " + AbsynUtil.pathString(path) + "\n");
         arrayUpdate(inCache, 1, cache);
       then path;
@@ -1544,35 +1544,35 @@ algorithm
 
     // try lookup var (constant in a package?)
     case (env,cref)
-      equation
-        id = AbsynUtil.crefFirstIdent(cref);
+      algorithm
+        id := AbsynUtil.crefFirstIdent(cref);
         //fprintln(Flags.DEBUG,"Try lookupV " + id);
-        (denv,id) = lookupVarNoErrorMessage(arrayGet(cache,1),env,id);
+        (denv,id) := lookupVarNoErrorMessage(arrayGet(cache,1),env,id);
         //fprintln(Flags.DEBUG,"Got env " + intString(listLength(env)));
         // isOutside = FGraph.graphPrefixOf(denv, env);
-        denv = FGraph.openScope(denv,SCode.ENCAPSULATED(),id,NONE());
-        cref = AbsynUtil.crefReplaceFirstIdent(cref,FGraph.getGraphName(denv));
+        denv := FGraph.openScope(denv,SCode.ENCAPSULATED(),id,NONE());
+        cref := AbsynUtil.crefReplaceFirstIdent(cref,FGraph.getGraphName(denv));
         // cref = if_(isOutside, cref, FGraph.crefStripGraphScopePrefix(cref, env, false));
-        cref = FGraph.crefStripGraphScopePrefix(cref, env, false);
+        cref := FGraph.crefStripGraphScopePrefix(cref, env, false);
         //fprintln(Flags.DEBUG, "Cref VAR fixed: " + Dump.printComponentRefStr(cref));
-        cref = if AbsynUtil.crefEqual(cref, inCref) then inCref else cref;
+        cref := if AbsynUtil.crefEqual(cref, inCref) then inCref else cref;
       then cref;
 
     case (env,cref)
-      equation
-        id = AbsynUtil.crefFirstIdent(cref);
+      algorithm
+        id := AbsynUtil.crefFirstIdent(cref);
         //print("Try lookupC " + id + "\n");
-        (_,c,denv) = Lookup.lookupClassIdent(arrayGet(cache,1),env,id);
+        (_,c,denv) := Lookup.lookupClassIdent(arrayGet(cache,1),env,id);
         // isOutside = FGraph.graphPrefixOf(denv, env);
         // id might come from named import, make sure you use the actual class name!
-        id = SCodeUtil.getElementName(c);
+        id := SCodeUtil.getElementName(c);
         //fprintln(Flags.DEBUG,"Got env " + intString(listLength(env)));
-        denv = FGraph.openScope(denv,SCode.ENCAPSULATED(),id,NONE());
-        cref = AbsynUtil.crefReplaceFirstIdent(cref,FGraph.getGraphName(denv));
+        denv := FGraph.openScope(denv,SCode.ENCAPSULATED(),id,NONE());
+        cref := AbsynUtil.crefReplaceFirstIdent(cref,FGraph.getGraphName(denv));
         // cref = if_(isOutside, cref, FGraph.crefStripGraphScopePrefix(cref, env, false));
-        cref = FGraph.crefStripGraphScopePrefix(cref, env, false);
+        cref := FGraph.crefStripGraphScopePrefix(cref, env, false);
         //print("Cref CLASS fixed: " + Dump.printComponentRefStr(cref) + "\n");
-        cref = if AbsynUtil.crefEqual(cref, inCref) then inCref else cref;
+        cref := if AbsynUtil.crefEqual(cref, inCref) then inCref else cref;
       then cref;
 
     else inCref;
@@ -1693,20 +1693,20 @@ algorithm
       AvlSetString.Tree tree;
 
     case (Absyn.CREF(cref),(cache,env,tree))
-      equation
-        cref1 = fixCref(cache,env,cref,tree);
+      algorithm
+        cref1 := fixCref(cache,env,cref,tree);
       then (if referenceEq(cref, cref1) then exp else Absyn.CREF(cref1));
 
     case (Absyn.CALL(function_ = cref),(cache,env,tree))
-      equation
+      algorithm
         // print("cref actual: " + AbsynUtil.crefString(cref) + " scope: " + FGraph.printGraphPathStr(env) + "\n");
-        cref1 = fixCref(cache,env,cref,tree);
+        cref1 := fixCref(cache,env,cref,tree);
         // print("cref fixed : " + AbsynUtil.crefString(cref) + "\n");
       then (if referenceEq(cref, cref1) then exp else Absyn.CALL(cref1, exp.functionArgs, exp.typeVars));
 
     case (Absyn.PARTEVALFUNCTION(cref,fargs),(cache,env,tree))
-      equation
-        cref1 = fixCref(cache,env,cref,tree);
+      algorithm
+        cref1 := fixCref(cache,env,cref,tree);
       then (if referenceEq(cref, cref1) then exp else Absyn.PARTEVALFUNCTION(cref1,fargs));
 
     else exp;
@@ -1736,8 +1736,8 @@ algorithm
 
     case NONE() then inA;
     case SOME(A1)
-      equation
-        A2 = fixA(inCache, inEnv, A1, tree);
+      algorithm
+        A2 := fixA(inCache, inEnv, A1, tree);
       then if referenceEq(A1,A2) then inA else SOME(A2);
   end match;
 end fixOption;

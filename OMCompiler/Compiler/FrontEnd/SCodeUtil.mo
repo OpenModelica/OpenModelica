@@ -120,15 +120,15 @@ algorithm
       list<SCode.Element> elts;
 
     case (id,SCode.CLASS(classDef = SCode.PARTS(elementLst = elts)))
-      equation
-        elt = getElementNamedFromElts(id, elts);
+      algorithm
+        elt := getElementNamedFromElts(id, elts);
       then
         elt;
 
     /* adrpo: handle also the case model extends X then X; */
     case (id,SCode.CLASS(classDef = SCode.CLASS_EXTENDS(composition = SCode.PARTS(elementLst = elts))))
-      equation
-        elt = getElementNamedFromElts(id, elts);
+      algorithm
+        elt := getElementNamedFromElts(id, elts);
       then
         elt;
   end match;
@@ -147,41 +147,41 @@ algorithm
       list<SCode.Element> xs;
 
     case (id2,((comp as SCode.COMPONENT(name = id1)) :: _))
-      equation
-        true = stringEq(id1, id2);
+      algorithm
+        true := stringEq(id1, id2);
       then
         comp;
 
     case (id2,(SCode.COMPONENT(name = id1) :: xs))
-      equation
-        false = stringEq(id1, id2);
-        elt = getElementNamedFromElts(id2, xs);
+      algorithm
+        false := stringEq(id1, id2);
+        elt := getElementNamedFromElts(id2, xs);
       then
         elt;
 
     case (id2,(SCode.CLASS(name = id1) :: xs))
-      equation
-        false = stringEq(id1, id2);
-        elt = getElementNamedFromElts(id2, xs);
+      algorithm
+        false := stringEq(id1, id2);
+        elt := getElementNamedFromElts(id2, xs);
       then
         elt;
 
     case (id2,(SCode.EXTENDS() :: xs))
-      equation
-        elt = getElementNamedFromElts(id2, xs);
+      algorithm
+        elt := getElementNamedFromElts(id2, xs);
       then
         elt;
 
     case (id2,((cdef as SCode.CLASS(name = id1)) :: _))
-      equation
-        true = stringEq(id1, id2);
+      algorithm
+        true := stringEq(id1, id2);
       then
         cdef;
 
     // Try next.
     case (id2, _:: xs)
-      equation
-        elt = getElementNamedFromElts(id2, xs);
+      algorithm
+        elt := getElementNamedFromElts(id2, xs);
       then
         elt;
   end matchcontinue;
@@ -255,15 +255,15 @@ algorithm
       list<SCode.Element> elts;
 
     case SCode.CLASS(classDef = SCode.PARTS(elementLst = elts))
-      equation
-        res = listLength(elts);
+      algorithm
+        res := listLength(elts);
       then
         res;
 
     /* adrpo: handle also model extends X ... parts ... end X; */
     case SCode.CLASS(classDef = SCode.CLASS_EXTENDS(composition = SCode.PARTS(elementLst = elts)))
-      equation
-        res = listLength(elts);
+      algorithm
+        res := listLength(elts);
       then
         res;
 
@@ -281,15 +281,15 @@ algorithm
     local list<String> res; list<SCode.Element> elts;
 
     case (SCode.CLASS(classDef = SCode.PARTS(elementLst = elts)))
-      equation
-        res = componentNamesFromElts(elts);
+      algorithm
+        res := componentNamesFromElts(elts);
       then
         res;
 
     /* adrpo: handle also the case model extends X end X;*/
     case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(composition = SCode.PARTS(elementLst = elts))))
-      equation
-        res = componentNamesFromElts(elts);
+      algorithm
+        res := componentNamesFromElts(elts);
       then
         res;
 
@@ -622,48 +622,43 @@ public function elementEqual
       SCode.ClassDef cd1,cd2;
 
     case (SCode.CLASS(name1,prefixes1,en1,p1,restr1,cd1,_,_),SCode.CLASS(name2,prefixes2,en2,p2,restr2,cd2,_,_))
-       equation
-         true = stringEq(name1,name2);
-         true = prefixesEqual(prefixes1,prefixes2);
-         true = valueEq(en1,en2);
-         true = valueEq(p1,p2);
-         true = restrictionEqual(restr1,restr2);
-         true = classDefEqual(cd1,cd2);
+       algorithm
+         true := stringEq(name1,name2);
+         true := prefixesEqual(prefixes1,prefixes2);
+         true := valueEq(en1,en2);
+         true := valueEq(p1,p2);
+         true := restrictionEqual(restr1,restr2);
+         true := classDefEqual(cd1,cd2);
        then
          true;
 
     case (SCode.COMPONENT(name1,prefixes1,attr1,tp1,mod1,_,cond1,_),
           SCode.COMPONENT(name2,prefixes2,attr2,tp2,mod2,_,cond2,_))
-       equation
-         equality(cond1 = cond2);
-         true = stringEq(name1,name2);
-         true = prefixesEqual(prefixes1,prefixes2);
-         true = attributesEqual(attr1,attr2);
-         true = modEqual(mod1,mod2);
-         true = AbsynUtil.typeSpecEqual(tp1,tp2);
+       algorithm
+         true := valueEq(cond1, cond2);
+         true := stringEq(name1,name2);
+         true := prefixesEqual(prefixes1,prefixes2);
+         true := attributesEqual(attr1,attr2);
+         true := modEqual(mod1,mod2);
+         true := AbsynUtil.typeSpecEqual(tp1,tp2);
        then
          true;
 
      case (SCode.EXTENDS(path1,_,mod1,_,_), SCode.EXTENDS(path2,_,mod2,_,_))
-       equation
-         true = AbsynUtil.pathEqual(path1,path2);
-         true = modEqual(mod1,mod2);
+       algorithm
+         true := AbsynUtil.pathEqual(path1,path2);
+         true := modEqual(mod1,mod2);
        then
          true;
 
     case (SCode.IMPORT(imp = im1), SCode.IMPORT(imp = im2))
-       equation
-         true = AbsynUtil.importEqual(im1,im2);
+       algorithm
+         true := AbsynUtil.importEqual(im1,im2);
        then
          true;
 
      case (SCode.DEFINEUNIT(name1,_,os1,or1), SCode.DEFINEUNIT(name2,_,os2,or2))
-       equation
-         true = stringEq(name1,name2);
-         equality(os1 = os2);
-         equality(or1 = or2);
-       then
-         true;
+       then stringEq(name1,name2) and valueEq(os1, os2) and valueEq(or1, or2);
 
      // otherwise false
      else false;
@@ -747,8 +742,8 @@ algorithm
       Boolean b1;
 
     case (SCode.ENUM(s1,_), SCode.ENUM(s2,_))
-      equation
-        b1 = stringEq(s1, s2);
+      algorithm
+        b1 := stringEq(s1, s2);
         // ignore comments here.
       then b1;
   end match;
@@ -778,7 +773,7 @@ protected function classDefEqual
 
      case(SCode.PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,_,_,_),
           SCode.PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,_,_,_))
-       equation
+       algorithm
          List.threadMapAllValue(elts1,elts2,elementEqual,true);
          List.threadMapAllValue(eqns1,eqns2,equationEqual,true);
          List.threadMapAllValue(ieqns1,ieqns2,equationEqual,true);
@@ -788,33 +783,33 @@ protected function classDefEqual
 
      case (SCode.DERIVED(tySpec1,mod1,attr1),
            SCode.DERIVED(tySpec2,mod2,attr2))
-       equation
-         true = AbsynUtil.typeSpecEqual(tySpec1, tySpec2);
-         true = modEqual(mod1,mod2);
-         true = attributesEqual(attr1, attr2);
+       algorithm
+         true := AbsynUtil.typeSpecEqual(tySpec1, tySpec2);
+         true := modEqual(mod1,mod2);
+         true := attributesEqual(attr1, attr2);
        then
          true;
 
      case (SCode.ENUMERATION(elst1),SCode.ENUMERATION(elst2))
-       equation
+       algorithm
          List.threadMapAllValue(elst1,elst2,enumEqual,true);
        then
          true;
 
      case (SCode.CLASS_EXTENDS(mod1,SCode.PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,_,_,_)),
            SCode.CLASS_EXTENDS(mod2,SCode.PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,_,_,_)))
-       equation
+       algorithm
          List.threadMapAllValue(elts1,elts2,elementEqual,true);
          List.threadMapAllValue(eqns1,eqns2,equationEqual,true);
          List.threadMapAllValue(ieqns1,ieqns2,equationEqual,true);
          List.threadMapAllValue(algs1,algs2,algorithmEqual,true);
          List.threadMapAllValue(ialgs1,ialgs2,algorithmEqual,true);
-         true = modEqual(mod1,mod2);
+         true := modEqual(mod1,mod2);
        then
          true;
 
      case (SCode.PDER(_,ilst1),SCode.PDER(_,ilst2))
-       equation
+       algorithm
          List.threadMapAllValue(ilst1,ilst2,stringEq,true);
        then
          true;
@@ -847,7 +842,7 @@ protected function arraydimOptEqual
       list<Boolean> blst;
     case(NONE(),NONE()) then true;
     case(SOME(lst1),SOME(lst2))
-      equation
+      algorithm
         List.threadMapAllValue(lst1,lst2,subscriptEqual,true);
       then
         true;
@@ -884,7 +879,7 @@ algorithm
       list<SCode.Statement> a1,a2;
 
     case(SCode.ALGORITHM(a1),SCode.ALGORITHM(a2))
-      equation
+      algorithm
         List.threadMapAllValue(a1,a2,algorithmEqual2,true);
       then
         true;
@@ -910,26 +905,24 @@ algorithm
 
     case(SCode.ALG_ASSIGN(assignComponent = Absyn.CREF(cr1), value = e1),
         SCode.ALG_ASSIGN(assignComponent = Absyn.CREF(cr2), value = e2))
-      equation
-        b1 = AbsynUtil.crefEqual(cr1,cr2);
-        b2 = AbsynUtil.expEqual(e1,e2);
-        equal = boolAnd(b1,b2);
+      algorithm
+        b1 := AbsynUtil.crefEqual(cr1,cr2);
+        b2 := AbsynUtil.expEqual(e1,e2);
+        equal := boolAnd(b1,b2);
       then equal;
     case(SCode.ALG_ASSIGN(assignComponent = e11 as Absyn.TUPLE(_), value = e12),SCode.ALG_ASSIGN(assignComponent = e21 as Absyn.TUPLE(_), value = e22))
-      equation
-        b1 = AbsynUtil.expEqual(e11,e21);
-        b2 = AbsynUtil.expEqual(e12,e22);
-        equal = boolAnd(b1,b2);
+      algorithm
+        b1 := AbsynUtil.expEqual(e11,e21);
+        b2 := AbsynUtil.expEqual(e12,e22);
+        equal := boolAnd(b1,b2);
       then equal;
     // base it on equality for now as the ones below are not implemented!
     case(a1, a2)
-      equation
-        Absyn.ALGORITHMITEM(algorithm_ = alg1) = statementToAlgorithmItem(a1);
-        Absyn.ALGORITHMITEM(algorithm_ = alg2) = statementToAlgorithmItem(a2);
+      algorithm
+        Absyn.ALGORITHMITEM(algorithm_ = alg1) := statementToAlgorithmItem(a1);
+        Absyn.ALGORITHMITEM(algorithm_ = alg2) := statementToAlgorithmItem(a2);
         // Don't compare comments and line numbers
-        equality(alg1 = alg2);
-      then
-        true;
+      then valueEq(alg1, alg2);
     // maybe replace failure/equality with these:
     //case(Absyn.ALG_IF(_,_,_,_),Absyn.ALG_IF(_,_,_,_)) then false; // TODO: SCode.ALG_IF
     //case (Absyn.ALG_FOR(_,_),Absyn.ALG_FOR(_,_)) then false; // TODO: SCode.ALG_FOR
@@ -957,74 +950,74 @@ algorithm
       list<SCode.Equation> fb1,fb2,eql1,eql2,elst1,elst2;
 
     case (SCode.EQ_IF(condition = ifcond1, thenBranch = tb1, elseBranch = fb1),SCode.EQ_IF(condition = ifcond2, thenBranch = tb2, elseBranch = fb2))
-      equation
-        true = equationEqual2(tb1,tb2);
+      algorithm
+        true := equationEqual2(tb1,tb2);
         List.threadMapAllValue(fb1,fb2,equationEqual,true);
         List.threadMapAllValue(ifcond1,ifcond2,AbsynUtil.expEqual,true);
       then
         true;
 
     case(SCode.EQ_EQUALS(expLeft = e11, expRight = e12),SCode.EQ_EQUALS(expLeft = e21, expRight = e22))
-      equation
-        true = AbsynUtil.expEqual(e11,e21);
-        true = AbsynUtil.expEqual(e12,e22);
+      algorithm
+        true := AbsynUtil.expEqual(e11,e21);
+        true := AbsynUtil.expEqual(e12,e22);
       then
         true;
 
     case(SCode.EQ_PDE(expLeft = e11, expRight = e12, domain = cr1),SCode.EQ_PDE(expLeft = e21, expRight = e22, domain = cr2))
-      equation
-        true = AbsynUtil.expEqual(e11,e21);
-        true = AbsynUtil.expEqual(e12,e22);
-        true = AbsynUtil.crefEqual(cr1,cr2);
+      algorithm
+        true := AbsynUtil.expEqual(e11,e21);
+        true := AbsynUtil.expEqual(e12,e22);
+        true := AbsynUtil.crefEqual(cr1,cr2);
       then
         true;
 
     case(SCode.EQ_CONNECT(crefLeft = cr11, crefRight = cr12),SCode.EQ_CONNECT(crefLeft = cr21, crefRight = cr22))
-      equation
-        true = AbsynUtil.crefEqual(cr11,cr21);
-        true = AbsynUtil.crefEqual(cr12,cr22);
+      algorithm
+        true := AbsynUtil.crefEqual(cr11,cr21);
+        true := AbsynUtil.crefEqual(cr12,cr22);
       then
         true;
 
     case (SCode.EQ_FOR(index = id1, range = SOME(exp1), eEquationLst = eql1),SCode.EQ_FOR(index = id2, range = SOME(exp2), eEquationLst = eql2))
-      equation
+      algorithm
         List.threadMapAllValue(eql1,eql2,equationEqual,true);
-        true = AbsynUtil.expEqual(exp1,exp2);
-        true = stringEq(id1,id2);
+        true := AbsynUtil.expEqual(exp1,exp2);
+        true := stringEq(id1,id2);
       then
         true;
 
     case (SCode.EQ_FOR(index = id1, range = NONE(), eEquationLst = eql1),SCode.EQ_FOR(index = id2, range = NONE(), eEquationLst = eql2))
-      equation
+      algorithm
         List.threadMapAllValue(eql1,eql2,equationEqual,true);
-        true = stringEq(id1,id2);
+        true := stringEq(id1,id2);
       then
         true;
 
     case (SCode.EQ_WHEN(condition = cond1, eEquationLst = elst1),SCode.EQ_WHEN(condition = cond2, eEquationLst = elst2)) // TODO: elsewhen not checked yet.
-      equation
+      algorithm
         List.threadMapAllValue(elst1,elst2,equationEqual,true);
-        true = AbsynUtil.expEqual(cond1,cond2);
+        true := AbsynUtil.expEqual(cond1,cond2);
       then
         true;
 
     case (SCode.EQ_ASSERT(condition = c1, message = m1),SCode.EQ_ASSERT(condition = c2, message = m2))
-      equation
-        true = AbsynUtil.expEqual(c1,c2);
-        true = AbsynUtil.expEqual(m1,m2);
+      algorithm
+        true := AbsynUtil.expEqual(c1,c2);
+        true := AbsynUtil.expEqual(m1,m2);
       then
         true;
 
     case (SCode.EQ_REINIT(), SCode.EQ_REINIT())
-      equation
-        true = AbsynUtil.expEqual(eq1.cref, eq2.cref);
-        true = AbsynUtil.expEqual(eq1.expReinit, eq2.expReinit);
+      algorithm
+        true := AbsynUtil.expEqual(eq1.cref, eq2.cref);
+        true := AbsynUtil.expEqual(eq1.expReinit, eq2.expReinit);
       then
         true;
 
     case (SCode.EQ_NORETCALL(exp = e1), SCode.EQ_NORETCALL(exp = e2))
-      equation
-        true = AbsynUtil.expEqual(e1,e2);
+      algorithm
+        true := AbsynUtil.expEqual(e1,e2);
       then
         true;
 
@@ -1049,9 +1042,9 @@ algorithm
     case(_,{}) then false;
     case({},_) then false;
     case(tb_1::tb1,tb_2::tb2)
-      equation
+      algorithm
         List.threadMapAllValue(tb_1,tb_2,equationEqual,true);
-        true = equationEqual2(tb1,tb2);
+        true := equationEqual2(tb1,tb2);
       then
         true;
     case(_::_,_::_) then false;
@@ -1074,29 +1067,29 @@ algorithm
       SCode.Element elt1,elt2;
 
     case (SCode.MOD(f1,each1,submodlst1,SOME(e1),_),SCode.MOD(f2,each2,submodlst2,SOME(e2),_))
-      equation
-        true = valueEq(f1,f2);
-        true = eachEqual(each1,each2);
-        true = subModsEqual(submodlst1,submodlst2);
-        true = AbsynUtil.expEqual(e1,e2);
+      algorithm
+        true := valueEq(f1,f2);
+        true := eachEqual(each1,each2);
+        true := subModsEqual(submodlst1,submodlst2);
+        true := AbsynUtil.expEqual(e1,e2);
       then
         true;
 
     case (SCode.MOD(f1,each1,submodlst1,NONE(),_),SCode.MOD(f2,each2,submodlst2,NONE(),_))
-      equation
-        true = valueEq(f1,f2);
-        true = eachEqual(each1,each2);
-        true = subModsEqual(submodlst1,submodlst2);
+      algorithm
+        true := valueEq(f1,f2);
+        true := eachEqual(each1,each2);
+        true := subModsEqual(submodlst1,submodlst2);
       then
         true;
 
     case (SCode.NOMOD(),SCode.NOMOD()) then true;
 
     case (SCode.REDECL(f1,each1,elt1),SCode.REDECL(f2,each2,elt2))
-      equation
-        true = valueEq(f1,f2);
-        true = eachEqual(each1,each2);
-        true = elementEqual(elt1, elt2);
+      algorithm
+        true := valueEq(f1,f2);
+        true := eachEqual(each1,each2);
+        true := elementEqual(elt1, elt2);
       then
         true;
 
@@ -1126,10 +1119,10 @@ algorithm
     case ({},{}) then true;
 
     case (SCode.NAMEMOD(id1,mod1)::subModLst1,SCode.NAMEMOD(id2,mod2)::subModLst2)
-        equation
-          true = stringEq(id1,id2);
-          true = modEqual(mod1,mod2);
-          true = subModsEqual(subModLst1,subModLst2);
+        algorithm
+          true := stringEq(id1,id2);
+          true := modEqual(mod1,mod2);
+          true := subModsEqual(subModLst1,subModLst2);
         then
           true;
 
@@ -1154,9 +1147,9 @@ algorithm
       then subscriptsEqual(ss1,ss2);
 
     case(Absyn.SUBSCRIPT(e1)::ss1,Absyn.SUBSCRIPT(e2)::ss2)
-      equation
-        true = AbsynUtil.expEqual(e1,e2);
-        true = subscriptsEqual(ss1,ss2);
+      algorithm
+        true := AbsynUtil.expEqual(e1,e2);
+        true := subscriptsEqual(ss1,ss2);
       then
         true;
 
@@ -1180,13 +1173,13 @@ algorithm
       Absyn.IsField if1,if2;
 
     case(SCode.ATTR(ad1,ct1,prl1,var1,dir1,if1),SCode.ATTR(ad2,ct2,prl2,var2,dir2,if2))
-      equation
-        true = arrayDimEqual(ad1,ad2);
-        true = valueEq(ct1, ct2);
-        true = parallelismEqual(prl1,prl2);
-        true = variabilityEqual(var1,var2);
-        true = AbsynUtil.directionEqual(dir1,dir2);
-        true = AbsynUtil.isFieldEqual(if1,if2);
+      algorithm
+        true := arrayDimEqual(ad1,ad2);
+        true := valueEq(ct1, ct2);
+        true := parallelismEqual(prl1,prl2);
+        true := variabilityEqual(var1,var2);
+        true := AbsynUtil.directionEqual(dir1,dir2);
+        true := AbsynUtil.isFieldEqual(if1,if2);
       then
         true;
 
@@ -1237,15 +1230,15 @@ protected function arrayDimEqual
      case({},{}) then true;
 
      case (Absyn.NOSUB()::ad1, Absyn.NOSUB()::ad2)
-       equation
-         true = arrayDimEqual(ad1,ad2);
+       algorithm
+         true := arrayDimEqual(ad1,ad2);
        then
          true;
 
      case (Absyn.SUBSCRIPT(e1)::ad1,Absyn.SUBSCRIPT(e2)::ad2)
-       equation
-         true = AbsynUtil.expEqual(e1,e2);
-         true =  arrayDimEqual(ad1,ad2);
+       algorithm
+         true := AbsynUtil.expEqual(e1,e2);
+         true :=  arrayDimEqual(ad1,ad2);
        then
          true;
 
@@ -1271,8 +1264,8 @@ algorithm
 
     // check if restrictions are equal, so you can return the same thing!
     case(_, SCode.CLASS(restriction = oldR))
-      equation
-        true = restrictionEqual(r, oldR);
+      algorithm
+        true := restrictionEqual(r, oldR);
       then cl;
 
     // not equal, change
@@ -1299,8 +1292,8 @@ algorithm
 
     // check if restrictions are equal, so you can return the same thing!
     case(_, SCode.CLASS(name = id))
-      equation
-        true = stringEqual(name, id);
+      algorithm
+        true := stringEqual(name, id);
       then
         cl;
 
@@ -1343,8 +1336,8 @@ algorithm
 
     // check if partial prefix are equal, so you can return the same thing!
     case(_,SCode.CLASS(partialPrefix = oldPartialPrefix))
-      equation
-        true = valueEq(partialPrefix, oldPartialPrefix);
+      algorithm
+        true := valueEq(partialPrefix, oldPartialPrefix);
       then
         cl;
 
@@ -1424,12 +1417,12 @@ algorithm
       list<String> names;
 
     case (SCode.CLASS(classDef = SCode.PARTS(elementLst = elts)))
-      equation
-        (comps, names) = filterComponents(elts);
+      algorithm
+        (comps, names) := filterComponents(elts);
       then (comps,names);
     case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(composition = SCode.PARTS(elementLst = elts))))
-      equation
-        (comps, names) = filterComponents(elts);
+      algorithm
+        (comps, names) := filterComponents(elts);
       then (comps,names);
   end match;
 end getClassComponents;
@@ -1513,38 +1506,38 @@ algorithm
     then Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(assignComponent,value),NONE(),info);
 
     case SCode.ALG_IF(boolExpr,trueBranch,branches,elseBranch,_,info)
-      equation
-        algs1 = List.map(trueBranch,statementToAlgorithmItem);
+      algorithm
+        algs1 := List.map(trueBranch,statementToAlgorithmItem);
 
-        conditions = List.map(branches, Util.tuple21);
-        stmtsList = List.map(branches, Util.tuple22);
-        algsLst = List.mapList(stmtsList, statementToAlgorithmItem);
-        abranches = List.zip(conditions,algsLst);
+        conditions := List.map(branches, Util.tuple21);
+        stmtsList := List.map(branches, Util.tuple22);
+        algsLst := List.mapList(stmtsList, statementToAlgorithmItem);
+        abranches := List.zip(conditions,algsLst);
 
-        algs2 = List.map(elseBranch,statementToAlgorithmItem);
+        algs2 := List.map(elseBranch,statementToAlgorithmItem);
       then Absyn.ALGORITHMITEM(Absyn.ALG_IF(boolExpr,algs1,abranches,algs2),NONE(),info);
 
     case SCode.ALG_FOR(iterator,range,body,_,info)
-      equation
-        algs1 = List.map(body,statementToAlgorithmItem);
+      algorithm
+        algs1 := List.map(body,statementToAlgorithmItem);
       then Absyn.ALGORITHMITEM(Absyn.ALG_FOR({Absyn.ITERATOR(iterator,NONE(),range)},algs1),NONE(),info);
 
     case SCode.ALG_PARFOR(iterator,range,body,_,info)
-      equation
-        algs1 = List.map(body,statementToAlgorithmItem);
+      algorithm
+        algs1 := List.map(body,statementToAlgorithmItem);
       then Absyn.ALGORITHMITEM(Absyn.ALG_PARFOR({Absyn.ITERATOR(iterator,NONE(),range)},algs1),NONE(),info);
 
     case SCode.ALG_WHILE(boolExpr,body,_,info)
-      equation
-        algs1 = List.map(body,statementToAlgorithmItem);
+      algorithm
+        algs1 := List.map(body,statementToAlgorithmItem);
       then Absyn.ALGORITHMITEM(Absyn.ALG_WHILE(boolExpr,algs1),NONE(),info);
 
     case SCode.ALG_WHEN_A(branches,_,info)
-      equation
-        (boolExpr::conditions) = List.map(branches, Util.tuple21);
-        stmtsList = List.map(branches, Util.tuple22);
-        (algs1::algsLst) = List.mapList(stmtsList, statementToAlgorithmItem);
-        abranches = List.zip(conditions,algsLst);
+      algorithm
+        (boolExpr::conditions) := List.map(branches, Util.tuple21);
+        stmtsList := List.map(branches, Util.tuple22);
+        (algs1::algsLst) := List.mapList(stmtsList, statementToAlgorithmItem);
+        abranches := List.zip(conditions,algsLst);
       then Absyn.ALGORITHMITEM(Absyn.ALG_WHEN_A(boolExpr,algs1,abranches),NONE(),info);
 
     case SCode.ALG_ASSERT()
@@ -1572,8 +1565,8 @@ algorithm
     then Absyn.ALGORITHMITEM(Absyn.ALG_CONTINUE(),NONE(),info);
 
     case SCode.ALG_FAILURE(body,_,info)
-      equation
-        algs1 = List.map(body,statementToAlgorithmItem);
+      algorithm
+        algs1 := List.map(body,statementToAlgorithmItem);
       then Absyn.ALGORITHMITEM(Absyn.ALG_FAILURE(algs1),NONE(),info);
   end match;
 end statementToAlgorithmItem;
@@ -1930,10 +1923,10 @@ algorithm
       SourceInfo info;
 
     case SCode.EQ_IF(expl1, then_branch, else_branch, comment, info)
-      equation
-        (then_branch, arg) = List.mapFold(then_branch,
+      algorithm
+        (then_branch, arg) := List.mapFold(then_branch,
           function mapFoldEquationsList(traverser = traverser), arg);
-        (else_branch, arg) = mapFoldEquationsList(else_branch, traverser, arg);
+        (else_branch, arg) := mapFoldEquationsList(else_branch, traverser, arg);
       then
         (SCode.EQ_IF(expl1, then_branch, else_branch, comment, info), arg);
 
@@ -1945,9 +1938,9 @@ algorithm
         (eq, arg);
 
     case SCode.EQ_WHEN(e1, eql, else_when, comment, info)
-      equation
-        (eql, arg) = mapFoldEquationsList(eql, traverser, arg);
-        (else_when, arg) = List.mapFold(else_when,
+      algorithm
+        (eql, arg) := mapFoldEquationsList(eql, traverser, arg);
+        (else_when, arg) := List.mapFold(else_when,
            function mapFoldElseWhenEquations(traverser = traverser), arg);
       then
         (SCode.EQ_WHEN(e1, eql, else_when, comment, info), arg);
@@ -2020,69 +2013,69 @@ algorithm
       SCode.Ident index;
 
     case SCode.EQ_IF(expl1, then_branch, else_branch, comment, info)
-      equation
-        (expl1, arg) = AbsynUtil.traverseExpList(expl1, traverser, arg);
+      algorithm
+        (expl1, arg) := AbsynUtil.traverseExpList(expl1, traverser, arg);
       then
         (SCode.EQ_IF(expl1, then_branch, else_branch, comment, info), arg);
 
     case SCode.EQ_EQUALS(e1, e2, comment, info)
-      equation
-        (e1, arg) = traverser(e1, arg);
-        (e2, arg) = traverser(e2, arg);
+      algorithm
+        (e1, arg) := traverser(e1, arg);
+        (e2, arg) := traverser(e2, arg);
       then
         (SCode.EQ_EQUALS(e1, e2, comment, info), arg);
 
     case SCode.EQ_PDE(e1, e2, domain, comment, info)
-      equation
-        (e1, arg) = traverser(e1, arg);
-        (e2, arg) = traverser(e2, arg);
+      algorithm
+        (e1, arg) := traverser(e1, arg);
+        (e2, arg) := traverser(e2, arg);
       then
         (SCode.EQ_PDE(e1, e2, domain, comment, info), arg);
 
     case SCode.EQ_CONNECT(cr1, cr2, comment, info)
-      equation
-        (cr1, arg) = mapFoldComponentRefExps(cr1, traverser, arg);
-        (cr2, arg) = mapFoldComponentRefExps(cr2, traverser, arg);
+      algorithm
+        (cr1, arg) := mapFoldComponentRefExps(cr1, traverser, arg);
+        (cr2, arg) := mapFoldComponentRefExps(cr2, traverser, arg);
       then
         (SCode.EQ_CONNECT(cr1, cr2, comment, info), arg);
 
     case SCode.EQ_FOR(index, SOME(e1), eql, comment, info)
-      equation
-        (e1, arg) = traverser(e1, arg);
+      algorithm
+        (e1, arg) := traverser(e1, arg);
       then
         (SCode.EQ_FOR(index, SOME(e1), eql, comment, info), arg);
 
     case SCode.EQ_WHEN(e1, eql, else_when, comment, info)
-      equation
-        (e1, arg) = traverser(e1, arg);
-        (else_when, arg) = List.map1Fold(else_when, mapFoldElseWhenExps, traverser, arg);
+      algorithm
+        (e1, arg) := traverser(e1, arg);
+        (else_when, arg) := List.map1Fold(else_when, mapFoldElseWhenExps, traverser, arg);
       then
         (SCode.EQ_WHEN(e1, eql, else_when, comment, info), arg);
 
     case SCode.EQ_ASSERT(e1, e2, e3, comment, info)
-      equation
-        (e1, arg) = traverser(e1, arg);
-        (e2, arg) = traverser(e2, arg);
-        (e3, arg) = traverser(e3, arg);
+      algorithm
+        (e1, arg) := traverser(e1, arg);
+        (e2, arg) := traverser(e2, arg);
+        (e3, arg) := traverser(e3, arg);
       then
         (SCode.EQ_ASSERT(e1, e2, e3, comment, info), arg);
 
     case SCode.EQ_TERMINATE(e1, comment, info)
-      equation
-        (e1, arg) = traverser(e1, arg);
+      algorithm
+        (e1, arg) := traverser(e1, arg);
       then
         (SCode.EQ_TERMINATE(e1, comment, info), arg);
 
     case SCode.EQ_REINIT(e1, e2, comment, info)
-      equation
-        (e1, arg) = traverser(e1, arg);
-        (e2, arg) = traverser(e2, arg);
+      algorithm
+        (e1, arg) := traverser(e1, arg);
+        (e2, arg) := traverser(e2, arg);
       then
         (SCode.EQ_REINIT(e1, e2, comment, info), arg);
 
     case SCode.EQ_NORETCALL(e1, comment, info)
-      equation
-        (e1, arg) = traverser(e1, arg);
+      algorithm
+        (e1, arg) := traverser(e1, arg);
       then
         (SCode.EQ_NORETCALL(e1, comment, info), arg);
 
@@ -2112,21 +2105,21 @@ algorithm
       ArgT arg;
 
     case (Absyn.CREF_FULLYQUALIFIED(componentRef = cr), _, _)
-      equation
-        (cr, arg) = mapFoldComponentRefExps(cr, inFunc, inArg);
+      algorithm
+        (cr, arg) := mapFoldComponentRefExps(cr, inFunc, inArg);
       then
         (AbsynUtil.crefMakeFullyQualified(cr), arg);
 
     case (Absyn.CREF_QUAL(name = name, subscripts = subs, componentRef = cr), _, _)
-      equation
-        (cr, arg) = mapFoldComponentRefExps(cr, inFunc, inArg);
-        (subs, arg) = List.map1Fold(subs, mapFoldSubscriptExps, inFunc, arg);
+      algorithm
+        (cr, arg) := mapFoldComponentRefExps(cr, inFunc, inArg);
+        (subs, arg) := List.map1Fold(subs, mapFoldSubscriptExps, inFunc, arg);
       then
         (Absyn.CREF_QUAL(name, subs, cr), arg);
 
     case (Absyn.CREF_IDENT(name = name, subscripts = subs), _, _)
-      equation
-        (subs, arg) = List.map1Fold(subs, mapFoldSubscriptExps, inFunc, inArg);
+      algorithm
+        (subs, arg) := List.map1Fold(subs, mapFoldSubscriptExps, inFunc, inArg);
       then
         (Absyn.CREF_IDENT(name, subs), arg);
 
@@ -2154,8 +2147,8 @@ algorithm
       ArgT arg;
 
     case (Absyn.SUBSCRIPT(subscript = sub_exp), traverser, arg)
-      equation
-        (sub_exp, arg) = traverser(sub_exp, arg);
+      algorithm
+        (sub_exp, arg) := traverser(sub_exp, arg);
       then
         (Absyn.SUBSCRIPT(sub_exp), arg);
 
@@ -2210,21 +2203,21 @@ algorithm
         (Absyn.ITERATOR(ident, NONE(), NONE()), arg);
 
     case (Absyn.ITERATOR(ident, NONE(), SOME(range)), traverser, arg)
-      equation
-        (range, arg) = traverser(range, arg);
+      algorithm
+        (range, arg) := traverser(range, arg);
       then
         (Absyn.ITERATOR(ident, NONE(), SOME(range)), arg);
 
     case (Absyn.ITERATOR(ident, SOME(guardExp), SOME(range)), traverser, arg)
-      equation
-        (guardExp, arg) = traverser(guardExp, arg);
-        (range, arg) = traverser(range, arg);
+      algorithm
+        (guardExp, arg) := traverser(guardExp, arg);
+        (range, arg) := traverser(range, arg);
       then
         (Absyn.ITERATOR(ident, SOME(guardExp), SOME(range)), arg);
 
     case (Absyn.ITERATOR(ident, SOME(guardExp), NONE()), traverser, arg)
-      equation
-        (guardExp, arg) = traverser(guardExp, arg);
+      algorithm
+        (guardExp, arg) := traverser(guardExp, arg);
       then
         (Absyn.ITERATOR(ident, SOME(guardExp), NONE()), arg);
 
@@ -2272,42 +2265,42 @@ algorithm
       Option<Absyn.Exp> range;
 
     case SCode.ALG_IF(e, stmts1, branches, stmts2, comment, info)
-      equation
-        (stmts1, arg) = mapFoldStatementsList(stmts1, traverser, arg);
-        (branches, arg) = List.mapFold(branches,
+      algorithm
+        (stmts1, arg) := mapFoldStatementsList(stmts1, traverser, arg);
+        (branches, arg) := List.mapFold(branches,
           function mapFoldBranchStatements(traverser = traverser), arg);
-        (stmts2, arg) = mapFoldStatementsList(stmts2, traverser, arg);
+        (stmts2, arg) := mapFoldStatementsList(stmts2, traverser, arg);
       then
         (SCode.ALG_IF(e, stmts1, branches, stmts2, comment, info), arg);
 
     case SCode.ALG_FOR(iter, range, stmts1, comment, info)
-      equation
-        (stmts1, arg) = mapFoldStatementsList(stmts1, traverser, arg);
+      algorithm
+        (stmts1, arg) := mapFoldStatementsList(stmts1, traverser, arg);
       then
         (SCode.ALG_FOR(iter, range, stmts1, comment, info), arg);
 
     case SCode.ALG_PARFOR(iter, range, stmts1, comment, info)
-      equation
-        (stmts1, arg) = mapFoldStatementsList(stmts1, traverser, arg);
+      algorithm
+        (stmts1, arg) := mapFoldStatementsList(stmts1, traverser, arg);
       then
         (SCode.ALG_PARFOR(iter, range, stmts1, comment, info), arg);
 
     case SCode.ALG_WHILE(e, stmts1, comment, info)
-      equation
-        (stmts1, arg) = mapFoldStatementsList(stmts1, traverser, arg);
+      algorithm
+        (stmts1, arg) := mapFoldStatementsList(stmts1, traverser, arg);
       then
         (SCode.ALG_WHILE(e, stmts1, comment, info), arg);
 
     case SCode.ALG_WHEN_A(branches, comment, info)
-      equation
-        (branches, arg) = List.mapFold(branches,
+      algorithm
+        (branches, arg) := List.mapFold(branches,
            function mapFoldBranchStatements(traverser = traverser), arg);
       then
         (SCode.ALG_WHEN_A(branches, comment, info), arg);
 
     case SCode.ALG_FAILURE(stmts1, comment, info)
-      equation
-        (stmts1, arg) = mapFoldStatementsList(stmts1, traverser, arg);
+      algorithm
+        (stmts1, arg) := mapFoldStatementsList(stmts1, traverser, arg);
       then
         (SCode.ALG_FAILURE(stmts1, comment, info), arg);
 
@@ -2381,41 +2374,41 @@ algorithm
       Absyn.ComponentRef cref;
 
     case (SCode.ALG_ASSIGN(e1, e2, comment, info), traverser, arg)
-      equation
-        (e1, arg) = traverser(e1, arg);
-        (e2, arg) = traverser(e2, arg);
+      algorithm
+        (e1, arg) := traverser(e1, arg);
+        (e2, arg) := traverser(e2, arg);
       then
         (SCode.ALG_ASSIGN(e1, e2, comment, info), arg);
 
     case (SCode.ALG_IF(e1, stmts1, branches, stmts2, comment, info), traverser, arg)
-      equation
-        (e1, arg) = traverser(e1, arg);
-        (branches, arg) = List.map1Fold(branches, mapFoldBranchExps, traverser, arg);
+      algorithm
+        (e1, arg) := traverser(e1, arg);
+        (branches, arg) := List.map1Fold(branches, mapFoldBranchExps, traverser, arg);
       then
         (SCode.ALG_IF(e1, stmts1, branches, stmts2, comment, info), arg);
 
     case (SCode.ALG_FOR(iterator, SOME(e1), stmts1, comment, info), traverser, arg)
-      equation
-        (e1, arg) = traverser(e1, arg);
+      algorithm
+        (e1, arg) := traverser(e1, arg);
       then
         (SCode.ALG_FOR(iterator, SOME(e1), stmts1, comment, info), arg);
 
 
     case (SCode.ALG_PARFOR(iterator, SOME(e1), stmts1, comment, info), traverser, arg)
-      equation
-        (e1, arg) = traverser(e1, arg);
+      algorithm
+        (e1, arg) := traverser(e1, arg);
       then
         (SCode.ALG_PARFOR(iterator, SOME(e1), stmts1, comment, info), arg);
 
     case (SCode.ALG_WHILE(e1, stmts1, comment, info), traverser, arg)
-      equation
-        (e1, arg) = traverser(e1, arg);
+      algorithm
+        (e1, arg) := traverser(e1, arg);
       then
         (SCode.ALG_WHILE(e1, stmts1, comment, info), arg);
 
     case (SCode.ALG_WHEN_A(branches, comment, info), traverser, arg)
-      equation
-        (branches, arg) = List.map1Fold(branches, mapFoldBranchExps, traverser, arg);
+      algorithm
+        (branches, arg) := List.map1Fold(branches, mapFoldBranchExps, traverser, arg);
       then
         (SCode.ALG_WHEN_A(branches, comment, info), arg);
 
@@ -2441,8 +2434,8 @@ algorithm
         (SCode.ALG_REINIT(e1, e2, inStatement.comment, inStatement.info), arg);
 
     case (SCode.ALG_NORETCALL(e1, comment, info), traverser, arg)
-      equation
-        (e1, arg) = traverser(e1,  arg);
+      algorithm
+        (e1, arg) := traverser(e1,  arg);
       then
         (SCode.ALG_NORETCALL(e1, comment, info), arg);
 
@@ -2544,17 +2537,17 @@ algorithm
     case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION()),classDef=SCode.PARTS(externalDecl=SOME(SCode.EXTERNALDECL(funcName=SOME(name),lang=SOME("builtin"))))),_,_)
       then name;
     case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION()), classDef=SCode.PARTS(externalDecl=SOME(SCode.EXTERNALDECL(funcName=SOME(name),lang=SOME("C"),output_=SOME(Absyn.CREF_IDENT(outVar2,{})),args=args)))),_,{outVar1})
-      equation
-        true = listMember(name,knownExternalCFunctions);
-        true = outVar2 == outVar1;
-        argsStr = List.mapMap(args, AbsynUtil.expCref, AbsynUtil.crefIdent);
-        equality(argsStr = inVars);
+      algorithm
+        true := listMember(name,knownExternalCFunctions);
+        true := outVar2 == outVar1;
+        argsStr := List.mapMap(args, AbsynUtil.expCref, AbsynUtil.crefIdent);
+        true := valueEq(argsStr, inVars);
       then name;
     case (SCode.CLASS(name=name,
       restriction=SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION()),
       classDef=SCode.PARTS(externalDecl=SOME(SCode.EXTERNALDECL(funcName=NONE(),lang=SOME("C"))))),_,_)
-      equation
-        true = listMember(name,knownExternalCFunctions);
+      algorithm
+        true := listMember(name,knownExternalCFunctions);
       then name;
   end match;
 end isBuiltinFunction;
@@ -2805,7 +2798,7 @@ algorithm
   outReplaceable := match(inBoolReplaceable, inOptConstrainClass)
     case (true, _) then SCode.REPLACEABLE(inOptConstrainClass);
     case (false, SOME(_))
-      equation
+      algorithm
         print("Ignoring constraint class because replaceable prefix is not present!\n");
       then SCode.NOT_REPLACEABLE();
     case (false, _) then SCode.NOT_REPLACEABLE();
@@ -2960,8 +2953,8 @@ algorithm
       SCode.Attributes cls_attr, attr;
 
     case (_, SCode.CLASS(classDef = SCode.DERIVED(attributes = cls_attr)))
-      equation
-        SOME(attr) = mergeAttributes(inAttributes, SOME(cls_attr));
+      algorithm
+        SOME(attr) := mergeAttributes(inAttributes, SOME(cls_attr));
       then
         attr;
 
@@ -2988,13 +2981,13 @@ algorithm
 
     case (_,NONE()) then SOME(ele);
     case(SCode.ATTR(ad1,ct1,p1,v1,d1,isf1), SOME(SCode.ATTR(_,ct2,p2,v2,d2,isf2)))
-      equation
-        ct = propagateConnectorType(ct1, ct2);
-        p = propagateParallelism(p1,p2);
-        v = propagateVariability(v1,v2);
-        d = propagateDirection(d1,d2);
-        isf = propagateIsField(isf1,isf2);
-        ad = ad1; // TODO! CHECK if ad1 == ad2!
+      algorithm
+        ct := propagateConnectorType(ct1, ct2);
+        p := propagateParallelism(p1,p2);
+        v := propagateVariability(v1,v2);
+        d := propagateDirection(d1,d2);
+        isf := propagateIsField(isf1,isf2);
+        ad := ad1; // TODO! CHECK if ad1 == ad2!
       then
         SOME(SCode.ATTR(ad,ct,p,v,d,isf));
   end match;
@@ -3047,9 +3040,9 @@ algorithm
 
     case(SCode.REPLACEABLE(SOME(SCode.CONSTRAINCLASS(constrainingClass = p1, modifier = m1))),
          SCode.REPLACEABLE(SOME(SCode.CONSTRAINCLASS(constrainingClass = p2, modifier = m2))))
-      equation
-        true = AbsynUtil.pathEqual(p1, p2);
-        true = modEqual(m1, m2);
+      algorithm
+        true := AbsynUtil.pathEqual(p1, p2);
+        true := modEqual(m1, m2);
       then
         true;
 
@@ -3706,24 +3699,24 @@ algorithm
       Absyn.Ident i;
 
     case (_, _, Absyn.QUALIFIED(i, p))
-      equation
-        e = getElementWithId(inProgram, i);
-        sp = getElementsFromElement(inProgram, e);
-        sp = replaceOrAddElementInProgram(sp, inElement, p);
-        e = replaceElementsInElement(inProgram, e, sp);
-        sp = replaceOrAddElementWithId(inProgram, e, i);
+      algorithm
+        e := getElementWithId(inProgram, i);
+        sp := getElementsFromElement(inProgram, e);
+        sp := replaceOrAddElementInProgram(sp, inElement, p);
+        e := replaceElementsInElement(inProgram, e, sp);
+        sp := replaceOrAddElementWithId(inProgram, e, i);
       then
         sp;
 
     case (_, _, Absyn.IDENT(i))
-      equation
-        sp = replaceOrAddElementWithId(inProgram, inElement, i);
+      algorithm
+        sp := replaceOrAddElementWithId(inProgram, inElement, i);
       then
         sp;
 
     case (_, _, Absyn.FULLYQUALIFIED(p))
-      equation
-        sp = replaceOrAddElementInProgram(inProgram, inElement, p);
+      algorithm
+        sp := replaceOrAddElementInProgram(inProgram, inElement, p);
       then
         sp;
   end match;
@@ -3745,33 +3738,33 @@ algorithm
       Absyn.Ident i, n;
 
     case (SCode.CLASS(name = n)::rest, _, i)
-      equation
-        true = stringEq(n, i);
+      algorithm
+        true := stringEq(n, i);
       then
         inElement::rest;
 
     case (SCode.COMPONENT(name = n)::rest, _, i)
-      equation
-        true = stringEq(n, i);
+      algorithm
+        true := stringEq(n, i);
       then
         inElement::rest;
 
     case (SCode.EXTENDS(baseClassPath = p)::rest, _, i)
-      equation
-        true = stringEq(AbsynUtil.pathString(p), i);
+      algorithm
+        true := stringEq(AbsynUtil.pathString(p), i);
       then
         inElement::rest;
 
     case (e::rest, _, i)
-      equation
-        sp = replaceOrAddElementWithId(rest, inElement, i);
+      algorithm
+        sp := replaceOrAddElementWithId(rest, inElement, i);
       then
         e::sp;
 
     // not found, add it
     case ({}, _, _)
-      equation
-        sp = {inElement};
+      algorithm
+        sp := {inElement};
       then
         sp;
   end matchcontinue;
@@ -3795,9 +3788,9 @@ algorithm
     case (_, SCode.CLASS(classDef = SCode.CLASS_EXTENDS(composition = SCode.PARTS(elementLst = els)))) then els;
     // a derived class
     case (_, SCode.CLASS(classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = p))))
-      equation
-        e = getElementWithPath(inProgram, p);
-        els = getElementsFromElement(inProgram, e);
+      algorithm
+        e := getElementWithPath(inProgram, p);
+        els := getElementsFromElement(inProgram, e);
       then
         els;
   end match;
@@ -3827,15 +3820,15 @@ algorithm
 
     // a class with parts, non derived
     case (_, SCode.CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef, cmt, info), _)
-      equation
-        (classDef, NONE()) = replaceElementsInClassDef(inProgram, classDef, inElements);
+      algorithm
+        (classDef, NONE()) := replaceElementsInClassDef(inProgram, classDef, inElements);
       then
         SCode.CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef, cmt, info);
 
     // a class derived
     case (_, SCode.CLASS(classDef = classDef), _)
-      equation
-        (classDef, SOME(e)) = replaceElementsInClassDef(inProgram, classDef, inElements);
+      algorithm
+        (classDef, SOME(e)) := replaceElementsInClassDef(inProgram, classDef, inElements);
       then
         e;
 
@@ -3939,16 +3932,16 @@ algorithm
       then getElementWithPath(inProgram, p);
 
     case (_, Absyn.IDENT(i))
-      equation
-        e = getElementWithId(inProgram, i);
+      algorithm
+        e := getElementWithId(inProgram, i);
       then
         e;
 
     case (_, Absyn.QUALIFIED(i, p))
-      equation
-        e = getElementWithId(inProgram, i);
-        sp = getElementsFromElement(inProgram, e);
-        e = getElementWithPath(sp, p);
+      algorithm
+        e := getElementWithId(inProgram, i);
+        sp := getElementsFromElement(inProgram, e);
+        e := getElementWithPath(sp, p);
       then
         e;
   end match;
@@ -4206,8 +4199,8 @@ algorithm
   hasReinit := match(inEqs)
     local Boolean b;
     case _
-      equation
-        b = List.applyAndFold(inEqs, boolOr, equationContainReinit, false);
+      algorithm
+        b := List.applyAndFold(inEqs, boolOr, equationContainReinit, false);
       then
         b;
   end match;
@@ -4228,23 +4221,23 @@ algorithm
 
     case SCode.EQ_REINIT() then true;
     case SCode.EQ_WHEN(eEquationLst = eqs, elseBranches = tpl_el)
-      equation
-        b = equationsContainReinit(eqs);
-        eqs_lst = List.map(tpl_el, Util.tuple22);
-        b = List.applyAndFold(eqs_lst, boolOr, equationsContainReinit, b);
+      algorithm
+        b := equationsContainReinit(eqs);
+        eqs_lst := List.map(tpl_el, Util.tuple22);
+        b := List.applyAndFold(eqs_lst, boolOr, equationsContainReinit, b);
       then
         b;
 
     case SCode.EQ_IF(thenBranch = eqs_lst, elseBranch = eqs)
-      equation
-        b = equationsContainReinit(eqs);
-        b = List.applyAndFold(eqs_lst, boolOr, equationsContainReinit, b);
+      algorithm
+        b := equationsContainReinit(eqs);
+        b := List.applyAndFold(eqs_lst, boolOr, equationsContainReinit, b);
       then
         b;
 
     case SCode.EQ_FOR(eEquationLst = eqs)
-      equation
-        b = equationsContainReinit(eqs);
+      algorithm
+        b := equationsContainReinit(eqs);
       then
         b;
 
@@ -4262,8 +4255,8 @@ algorithm
   hasReinit := match(inAlgs)
     local Boolean b;
     case _
-      equation
-        b = List.applyAndFold(inAlgs, boolOr, algorithmContainReinit, false);
+      algorithm
+        b := List.applyAndFold(inAlgs, boolOr, algorithmContainReinit, false);
       then
         b;
   end match;
@@ -4285,31 +4278,31 @@ algorithm
     case SCode.ALG_REINIT() then true;
 
     case SCode.ALG_WHEN_A(branches = tpl_alg)
-      equation
-        algs_lst = List.map(tpl_alg, Util.tuple22);
-        b = List.applyAndFold(algs_lst, boolOr, algorithmsContainReinit, false);
+      algorithm
+        algs_lst := List.map(tpl_alg, Util.tuple22);
+        b := List.applyAndFold(algs_lst, boolOr, algorithmsContainReinit, false);
       then
         b;
 
     case SCode.ALG_IF(trueBranch = algs1, elseIfBranch = tpl_alg, elseBranch = algs2)
-      equation
-        b1 = algorithmsContainReinit(algs1);
-        algs_lst = List.map(tpl_alg, Util.tuple22);
-        b2 = List.applyAndFold(algs_lst, boolOr, algorithmsContainReinit, b1);
-        b3 = algorithmsContainReinit(algs2);
-        b = boolOr(b1, boolOr(b2, b3));
+      algorithm
+        b1 := algorithmsContainReinit(algs1);
+        algs_lst := List.map(tpl_alg, Util.tuple22);
+        b2 := List.applyAndFold(algs_lst, boolOr, algorithmsContainReinit, b1);
+        b3 := algorithmsContainReinit(algs2);
+        b := boolOr(b1, boolOr(b2, b3));
       then
         b;
 
     case SCode.ALG_FOR(forBody = algs)
-      equation
-        b = algorithmsContainReinit(algs);
+      algorithm
+        b := algorithmsContainReinit(algs);
       then
         b;
 
     case SCode.ALG_WHILE(whileBody = algs)
-      equation
-        b = algorithmsContainReinit(algs);
+      algorithm
+        b := algorithmsContainReinit(algs);
       then
         b;
 
@@ -4432,8 +4425,8 @@ algorithm
       then SCode.COMPONENT(n, pf, attr, ty, inMod, cmt, cnd, i);
 
     case (SCode.CLASS(n, pf, ep, pp, res, cdef, cmt, i), _)
-      equation
-        cdef = setClassDefMod(cdef, inMod);
+      algorithm
+        cdef := setClassDefMod(cdef, inMod);
       then
         SCode.CLASS(n, pf, ep, pp, res, cdef, cmt, i);
 
@@ -4510,36 +4503,36 @@ algorithm
       list<SCode.Element> rest_el, comp, cls, ext, imp, def;
 
     case ((el as SCode.COMPONENT()) :: rest_el, comp, cls, ext, imp, def)
-      equation
-        (comp, cls, ext, imp, def) =
+      algorithm
+        (comp, cls, ext, imp, def) :=
           partitionElements2(rest_el, el :: comp, cls, ext, imp, def);
       then
         (comp, cls, ext, imp, def);
 
     case ((el as SCode.CLASS()) :: rest_el, comp, cls, ext, imp, def)
-      equation
-        (comp, cls, ext, imp, def) =
+      algorithm
+        (comp, cls, ext, imp, def) :=
           partitionElements2(rest_el, comp, el :: cls, ext, imp, def);
       then
         (comp, cls, ext, imp, def);
 
     case ((el as SCode.EXTENDS()) :: rest_el, comp, cls, ext, imp, def)
-      equation
-        (comp, cls, ext, imp, def) =
+      algorithm
+        (comp, cls, ext, imp, def) :=
           partitionElements2(rest_el, comp, cls, el :: ext, imp, def);
       then
         (comp, cls, ext, imp, def);
 
     case ((el as SCode.IMPORT()) :: rest_el, comp, cls, ext, imp, def)
-      equation
-        (comp, cls, ext, imp, def) =
+      algorithm
+        (comp, cls, ext, imp, def) :=
           partitionElements2(rest_el, comp, cls, ext, el :: imp, def);
       then
         (comp, cls, ext, imp, def);
 
     case ((el as SCode.DEFINEUNIT()) :: rest_el, comp, cls, ext, imp, def)
-      equation
-        (comp, cls, ext, imp, def) =
+      algorithm
+        (comp, cls, ext, imp, def) :=
           partitionElements2(rest_el, comp, cls, ext, imp, el :: def);
       then
         (comp, cls, ext, imp, def);
@@ -4649,14 +4642,14 @@ algorithm
       Option<Real> weight;
 
     case (SCode.COMPONENT(name, prefs, attr, ty, mod, cmt, cond, info), _)
-      equation
-        prefs = prefixesSetVisibility(prefs, inVisibility);
+      algorithm
+        prefs := prefixesSetVisibility(prefs, inVisibility);
       then
         SCode.COMPONENT(name, prefs, attr, ty, mod, cmt, cond, info);
 
     case (SCode.CLASS(name, prefs, ep, pp, res, cdef, cmt, info), _)
-      equation
-        prefs = prefixesSetVisibility(prefs, inVisibility);
+      algorithm
+        prefs := prefixesSetVisibility(prefs, inVisibility);
       then
         SCode.CLASS(name, prefs, ep, pp, res, cdef, cmt, info);
 
@@ -4779,18 +4772,18 @@ algorithm
 
     // for functions return the new one!
     case (_, _)
-      equation
-        true = isFunction(inNew);
+      algorithm
+        true := isFunction(inNew);
       then
         inNew;
 
     case (SCode.CLASS(name1,prefixes1,en1,p1,restr1,cd1,cm,i),SCode.CLASS(_,prefixes2,_,_,_,cd2,_,_))
-      equation
-        mCCNew = getConstrainedByModifiers(prefixes1);
-        mCCOld = getConstrainedByModifiers(prefixes2);
-        cd1 = mergeClassDef(cd1, cd2, mCCNew, mCCOld);
-        prefixes1 = propagatePrefixes(prefixes2, prefixes1);
-        n = SCode.CLASS(name1,prefixes1,en1,p1,restr1,cd1,cm,i);
+      algorithm
+        mCCNew := getConstrainedByModifiers(prefixes1);
+        mCCOld := getConstrainedByModifiers(prefixes2);
+        cd1 := mergeClassDef(cd1, cd2, mCCNew, mCCOld);
+        prefixes1 := propagatePrefixes(prefixes2, prefixes1);
+        n := SCode.CLASS(name1,prefixes1,en1,p1,restr1,cd1,cm,i);
       then
         n;
 
@@ -4829,12 +4822,12 @@ algorithm
 
     case (SCode.DERIVED(ts1,m1,a1),
           SCode.DERIVED(_,m2,a2), _, _)
-      equation
-        m2 = mergeModifiers(m2, inCCModOld);
-        m1 = mergeModifiers(m1, inCCModNew);
-        m2 = mergeModifiers(m1, m2);
-        a2 = propagateAttributes(a2, a1);
-        n = SCode.DERIVED(ts1,m2,a2);
+      algorithm
+        m2 := mergeModifiers(m2, inCCModOld);
+        m1 := mergeModifiers(m1, inCCModNew);
+        m2 := mergeModifiers(m1, m2);
+        a2 := propagateAttributes(a2, a1);
+        n := SCode.DERIVED(ts1,m2,a2);
       then
         n;
 
@@ -4862,15 +4855,15 @@ algorithm
 
     case (SCode.MOD(f1, e1, sl1, b1, cmt, i1),
           SCode.MOD(f2, e2, sl2, b2, _))
-      equation
-        b = mergeBindings(b1, b2);
-        sl = mergeSubMods(sl1, sl2);
+      algorithm
+        b := mergeBindings(b1, b2);
+        sl := mergeSubMods(sl1, sl2);
         if referenceEq(b, b1) and referenceEq(sl, sl1) then
-          m = inNewMod;
+          m := inNewMod;
         elseif referenceEq(b, b2) and referenceEq(sl, sl2) and valueEq(f1, f2) and valueEq(e1, e2) then
-          m = inOldMod;
+          m := inOldMod;
         else
-          m = SCode.MOD(f1, e1, sl, b, cmt, i1);
+          m := SCode.MOD(f1, e1, sl, b, cmt, i1);
         end if;
       then
         m;
@@ -4904,9 +4897,9 @@ algorithm
     case ({}, _) then inOld;
 
     case (s::rest, _)
-      equation
-        old = removeSub(s, inOld);
-        sl = mergeSubMods(rest, old);
+      algorithm
+        old := removeSub(s, inOld);
+        sl := mergeSubMods(rest, old);
       then
         s::sl;
 
@@ -4929,14 +4922,14 @@ algorithm
     case (_, {}) then inOld;
 
     case (SCode.NAMEMOD(ident = id1), SCode.NAMEMOD(ident = id2)::rest)
-      equation
-        true = stringEqual(id1, id2);
+      algorithm
+        true := stringEqual(id1, id2);
       then
         rest;
 
     case (_, s::rest)
-      equation
-        rest = removeSub(inSub, rest);
+      algorithm
+        rest := removeSub(inSub, rest);
       then
         s::rest;
   end matchcontinue;
@@ -4961,9 +4954,9 @@ algorithm
 
     case (SCode.COMPONENT(n1, p1, a1, t1, m1, c1, cnd1, i1),
           SCode.COMPONENT(_, _, _, _, m2, _, _, _))
-      equation
-        m = mergeModifiers(m1, m2);
-        c = SCode.COMPONENT(n1, p1, a1, t1, m, c1, cnd1, i1);
+      algorithm
+        m := mergeModifiers(m1, m2);
+        c := SCode.COMPONENT(n1, p1, a1, t1, m, c1, cnd1, i1);
       then
         c;
 
@@ -5309,7 +5302,7 @@ public function checkSameRestriction
 algorithm
   (outRes, outInfo) := match(inResNew, inResOrig, inInfoNew, inInfoOrig)
     case (_, _, _, _)
-      equation
+      algorithm
         // todo: check if the restrictions are the same for redeclared classes
       then
         (inResNew, inInfoNew);
@@ -5808,8 +5801,8 @@ algorithm
     case (NONE(),_) then inModInner;
     case (_,NONE()) then inModOuter;
     case (SOME(SCode.ANNOTATION(mod1)),SOME(SCode.ANNOTATION(mod2)))
-      equation
-        mod = mergeSCodeMods(mod1,mod2);
+      algorithm
+        mod := mergeSCodeMods(mod1,mod2);
       then SOME(SCode.ANNOTATION(mod));
   end match;
 end mergeSCodeOptAnn;
@@ -5829,9 +5822,9 @@ algorithm
 
     case (SCode.MOD(),
           SCode.MOD())
-      equation
-        subMods = listAppend(inModOuter.subModLst, inModInner.subModLst);
-        binding = if isSome(inModOuter.binding) then inModOuter.binding else inModInner.binding;
+      algorithm
+        subMods := listAppend(inModOuter.subModLst, inModInner.subModLst);
+        binding := if isSome(inModOuter.binding) then inModOuter.binding else inModInner.binding;
       then
         SCode.MOD(inModOuter.finalPrefix, inModOuter.eachPrefix, subMods,
           binding, inModOuter.comment, inModOuter.info);

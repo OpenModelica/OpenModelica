@@ -103,8 +103,8 @@ algorithm
       Env env;
 
     case (_, _, _)
-      equation
-        (item, env) = lookupClass(inClassName, inEnv, true, inInfo,
+      algorithm
+        (item, env) := lookupClass(inClassName, inEnv, true, inInfo,
           SOME(Error.LOOKUP_ERROR));
         checkItemIsClass(item);
         analyseItem(item, env);
@@ -143,16 +143,16 @@ algorithm
       ErrorTypes.Message error_id;
 
     case (_, _, _, _, _)
-      equation
-        (item, env) = lookupClass2(inPath, inEnv, inBuiltinPossible, inInfo, inErrorType);
-        (item, env, _) = NFSCodeEnv.resolveRedeclaredItem(item, env);
+      algorithm
+        (item, env) := lookupClass2(inPath, inEnv, inBuiltinPossible, inInfo, inErrorType);
+        (item, env, _) := NFSCodeEnv.resolveRedeclaredItem(item, env);
       then
         (item, env);
 
     case (_, _, _, _, SOME(error_id))
-      equation
-        name_str = AbsynUtil.pathString(inPath);
-        env_str = NFSCodeEnv.getEnvName(inEnv);
+      algorithm
+        name_str := AbsynUtil.pathString(inPath);
+        env_str := NFSCodeEnv.getEnvName(inEnv);
         Error.addSourceMessage(error_id, {name_str, env_str}, inInfo);
       then
         fail();
@@ -177,15 +177,15 @@ algorithm
       Absyn.Path rest_path;
 
     case (Absyn.IDENT(), _, true, _, _)
-      equation
-        (item, _, env) =
+      algorithm
+        (item, _, env) :=
           NFSCodeLookup.lookupNameSilent(inPath, inEnv, inInfo);
       then
         (item, env);
 
     case (Absyn.IDENT(), _, false, _, _)
-      equation
-        (item, _, env) =
+      algorithm
+        (item, _, env) :=
           NFSCodeLookup.lookupNameSilentNoBuiltin(inPath, inEnv, inInfo);
       then
         (item, env);
@@ -193,25 +193,25 @@ algorithm
     // Special case for the baseclass of a class extends. Should be looked up
     // among the inherited elements of the enclosing class.
     case (Absyn.QUALIFIED(name = "$ce", path = Absyn.IDENT(name = id)), _ :: env, _, _, _)
-      equation
-        (item, env) = NFSCodeLookup.lookupInheritedName(id, env);
+      algorithm
+        (item, env) := NFSCodeLookup.lookupInheritedName(id, env);
       then
         (item, env);
 
     case (Absyn.QUALIFIED(name = id, path = rest_path), _, _, _, _)
-      equation
-        (item, _, env) =
+      algorithm
+        (item, _, env) :=
           NFSCodeLookup.lookupNameSilent(Absyn.IDENT(id), inEnv, inInfo);
-        (item, env, _) = NFSCodeEnv.resolveRedeclaredItem(item, env);
+        (item, env, _) := NFSCodeEnv.resolveRedeclaredItem(item, env);
         analyseItem(item, env);
-        (item, env) = lookupNameInItem(rest_path, item, env, inErrorType);
+        (item, env) := lookupNameInItem(rest_path, item, env, inErrorType);
       then
         (item, env);
 
     case (Absyn.FULLYQUALIFIED(path = rest_path), _, _, _, _)
-      equation
-        env = NFSCodeEnv.getEnvTopScope(inEnv);
-        (item, env) = lookupClass2(rest_path, env, false, inInfo, inErrorType);
+      algorithm
+        env := NFSCodeEnv.getEnvTopScope(inEnv);
+        (item, env) := lookupClass2(rest_path, env, false, inInfo, inErrorType);
       then
         (item, env);
 
@@ -240,20 +240,20 @@ algorithm
 
     case (_, NFSCodeEnv.VAR(var = SCode.COMPONENT(typeSpec =
       Absyn.TPATH(path = type_path), modifications = mods, info = info)), _, _)
-      equation
-        (item, type_env) = lookupClass(type_path, inEnv, true, info, inErrorType);
-        true = NFSCodeEnv.isClassItem(item);
-        redeclares = NFSCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
-        (item, type_env, _) = NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
+      algorithm
+        (item, type_env) := lookupClass(type_path, inEnv, true, info, inErrorType);
+        true := NFSCodeEnv.isClassItem(item);
+        redeclares := NFSCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
+        (item, type_env, _) := NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
           redeclares, item, type_env, inEnv, NFInstPrefix.emptyPrefix);
-        (item, env) = lookupNameInItem(inName, item, type_env, inErrorType);
+        (item, env) := lookupNameInItem(inName, item, type_env, inErrorType);
       then
         (item, env);
 
     case (_, NFSCodeEnv.CLASS(cls = SCode.CLASS(info = info), env = {class_env}), _, _)
-      equation
-        env = NFSCodeEnv.enterFrame(class_env, inEnv);
-        (item, env) = lookupClass(inName, env, false, info, inErrorType);
+      algorithm
+        env := NFSCodeEnv.enterFrame(class_env, inEnv);
+        (item, env) := lookupClass(inName, env, false, info, inErrorType);
       then
         (item, env);
 
@@ -275,7 +275,7 @@ algorithm
     // We found a component instead, which might happen if the user tries to use
     // a variable name as a type.
     case NFSCodeEnv.VAR(var = SCode.COMPONENT(name = name, info = info))
-      equation
+      algorithm
         Error.addSourceMessage(Error.LOOKUP_TYPE_FOUND_COMP, {name}, info);
       then
         fail();
@@ -303,7 +303,7 @@ algorithm
 
     // A component, mark it and it's environment as used.
     case (NFSCodeEnv.VAR(), env)
-      equation
+      algorithm
         markItemAsUsed(inItem, env);
       then
         ();
@@ -315,16 +315,16 @@ algorithm
     // analyse its contents.
     case (NFSCodeEnv.CLASS(cls = cls as SCode.CLASS(classDef = cdef,
         restriction = res, info = info, cmt = cmt), env = {cls_env}), env)
-      equation
+      algorithm
         markItemAsUsed(inItem, env);
-        env = NFSCodeEnv.enterFrame(cls_env, env);
+        env := NFSCodeEnv.enterFrame(cls_env, env);
         if (if cls.name=="cardinality" then match inEnv case {NFSCodeEnv.FRAME(name=NONE())} then true; else false; end match else false) then
           System.setUsesCardinality(true);
         end if;
         analyseClassDef(cdef, res, env, false, info);
         analyseMetaType(res, env, info);
         analyseComment(cmt, env, info);
-        _ :: env = env;
+        _ :: env := env;
         analyseRedeclaredClass(cls, env);
       then
         ();
@@ -355,8 +355,8 @@ algorithm
     // no replacements happened on the environemnt! do nothing
     case ({}, _,  _) then ();
     case (_, _, _)
-      equation
-        _::env = inEnv;
+      algorithm
+        _::env := inEnv;
         //i = NFSCodeEnv.setItemEnv(inItem, {cls_frm});
         analyseItemNoStopOnUsed(inItem, env);
       then ();
@@ -380,7 +380,7 @@ algorithm
 
     // A component, mark it and it's environment as used.
     case (NFSCodeEnv.VAR(), env)
-      equation
+      algorithm
         markItemAsUsed(inItem, env);
       then
         ();
@@ -392,13 +392,13 @@ algorithm
     // analyse it's contents.
     case (NFSCodeEnv.CLASS(cls = cls as SCode.CLASS(classDef = cdef,
         restriction = res, info = info, cmt = cmt), env = {cls_env}), env)
-      equation
+      algorithm
         markItemAsUsed(inItem, env);
-        env = NFSCodeEnv.enterFrame(cls_env, env);
+        env := NFSCodeEnv.enterFrame(cls_env, env);
         analyseClassDef(cdef, res, env, false, info);
         analyseMetaType(res, env, info);
         analyseComment(cmt, env, info);
-        _ :: env = env;
+        _ :: env := env;
         analyseRedeclaredClass(cls, env);
       then
         ();
@@ -427,7 +427,7 @@ algorithm
       String name;
 
     case (NFSCodeEnv.VAR(isUsed = SOME(is_used)), _)
-      equation
+      algorithm
         Mutable.update(is_used, true);
         markEnvAsUsed(inEnv);
       then
@@ -436,7 +436,7 @@ algorithm
     case (NFSCodeEnv.VAR(isUsed = NONE()), _) then ();
 
     case (NFSCodeEnv.CLASS(env = {cls_env}, cls = SCode.CLASS()), _)
-      equation
+      algorithm
         markFrameAsUsed(cls_env);
         markEnvAsUsed(inEnv);
       then
@@ -453,7 +453,7 @@ algorithm
       Mutable<Boolean> is_used;
 
     case NFSCodeEnv.FRAME(isUsed = SOME(is_used))
-      equation
+      algorithm
         Mutable.update(is_used, true);
       then
         ();
@@ -475,8 +475,8 @@ algorithm
       NFSCodeEnv.Frame f;
 
     case ((f as NFSCodeEnv.FRAME(isUsed = SOME(is_used))) :: rest_env)
-      equation
-        false = Mutable.access(is_used);
+      algorithm
+        false := Mutable.access(is_used);
         markEnvAsUsed2(f, rest_env);
         Mutable.update(is_used, true);
         markEnvAsUsed(rest_env);
@@ -500,7 +500,7 @@ algorithm
     case (NFSCodeEnv.FRAME(frameType = NFSCodeEnv.IMPLICIT_SCOPE()), _) then ();
 
     case (NFSCodeEnv.FRAME(name = SOME(name)), _)
-      equation
+      algorithm
         analyseClass(Absyn.IDENT(name), inEnv, AbsynUtil.dummyInfo);
       then
         ();
@@ -537,7 +537,7 @@ algorithm
     case (SCode.PARTS(elementLst = el, normalEquationLst = nel,
         initialEquationLst = iel, normalAlgorithmLst = nal,
         initialAlgorithmLst = ial, externalDecl = ext_decl), _, _, _, _)
-      equation
+      algorithm
         analyseElements(el, inEnv, inRestriction);
         List.map1_0(nel, analyseEquation, inEnv);
         List.map1_0(iel, analyseEquation, inEnv);
@@ -551,7 +551,7 @@ algorithm
     // Check if the class definition is an external object and analyse it if
     // that's the case.
     case (SCode.PARTS(elementLst = el), _, _, _, _)
-      equation
+      algorithm
         isExternalObject(el, inEnv, inInfo);
         analyseClass(Absyn.IDENT("constructor"), inEnv, inInfo);
         analyseClass(Absyn.IDENT("destructor"), inEnv, inInfo);
@@ -560,7 +560,7 @@ algorithm
 
     // A class extends.
     case (SCode.CLASS_EXTENDS(), _, _, _, _)
-      equation
+      algorithm
         Error.addSourceMessage(Error.INTERNAL_ERROR,
           {"NFSCodeDependency.analyseClassDef failed on CLASS_EXTENDS"}, inInfo);
       then
@@ -569,15 +569,15 @@ algorithm
     // A derived class definition.
     case (SCode.DERIVED(typeSpec = ty, modifications = mods),
         _, _ :: env, _, _)
-      equation
-        env = if inInModifierScope then inEnv else env;
-        nore_env = NFSCodeEnv.removeRedeclaresFromLocalScope(env);
+      algorithm
+        env := if inInModifierScope then inEnv else env;
+        nore_env := NFSCodeEnv.removeRedeclaresFromLocalScope(env);
         analyseTypeSpec(ty, nore_env, inInfo);
-        (ty_item, _, ty_env) = NFSCodeLookup.lookupTypeSpec(ty, env, inInfo);
-        (ty_item, ty_env, _) = NFSCodeEnv.resolveRedeclaredItem(ty_item, ty_env);
-        ty_env = NFSCodeEnv.mergeItemEnv(ty_item, ty_env);
-        redecls = NFSCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
-        (ty_item, ty_env, repls) =
+        (ty_item, _, ty_env) := NFSCodeLookup.lookupTypeSpec(ty, env, inInfo);
+        (ty_item, ty_env, _) := NFSCodeEnv.resolveRedeclaredItem(ty_item, ty_env);
+        ty_env := NFSCodeEnv.mergeItemEnv(ty_item, ty_env);
+        redecls := NFSCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
+        (ty_item, ty_env, repls) :=
         NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(redecls, ty_item, ty_env, inEnv, NFInstPrefix.emptyPrefix);
         analyseItemIfRedeclares(repls, ty_item, ty_env);
         analyseModifier(mods, inEnv, ty_env, inInfo);
@@ -632,9 +632,9 @@ algorithm
     case SCode.DEFINEUNIT(name = name) then name;
 
     case SCode.EXTENDS(baseClassPath = bc)
-      equation
-        name = AbsynUtil.pathString(bc);
-        name = "extends " + name;
+      algorithm
+        name := AbsynUtil.pathString(bc);
+        name := "extends " + name;
       then
         name;
 
@@ -700,13 +700,13 @@ algorithm
     // The external object contains both a constructor and a destructor, so it
     // has to also contain some invalid elements.
     case (el, true, true, _, _)
-      equation
+      algorithm
         // Remove the constructor and destructor from the list of elements.
-        (el, _) = List.deleteMemberOnTrue("constructor", el, stringEqual);
-        (el, _) = List.deleteMemberOnTrue("destructor", el, stringEqual);
+        (el, _) := List.deleteMemberOnTrue("constructor", el, stringEqual);
+        (el, _) := List.deleteMemberOnTrue("destructor", el, stringEqual);
         // Print an error message with the rest of the elements.
-        el_str = stringDelimitList(el, ", ");
-        el_str = "contains invalid elements: " + el_str;
+        el_str := stringDelimitList(el, ", ");
+        el_str := "contains invalid elements: " + el_str;
         Error.addSourceMessage(Error.INVALID_EXTERNAL_OBJECT,
           {inObjectName, el_str}, inInfo);
       then
@@ -714,7 +714,7 @@ algorithm
 
     // The external object is missing a constructor.
     case (_, false, true, _, _)
-      equation
+      algorithm
         Error.addSourceMessage(Error.INVALID_EXTERNAL_OBJECT,
           {inObjectName, "missing constructor"}, inInfo);
       then
@@ -722,7 +722,7 @@ algorithm
 
     // The external object is missing a destructor.
     case (_, true, false, _, _)
-      equation
+      algorithm
         Error.addSourceMessage(Error.INVALID_EXTERNAL_OBJECT,
           {inObjectName, "missing destructor"}, inInfo);
       then
@@ -730,7 +730,7 @@ algorithm
 
     // The external object is missing both a constructor and a destructor.
     case (_, false, false, _, _)
-      equation
+      algorithm
         Error.addSourceMessage(Error.INVALID_EXTERNAL_OBJECT,
           {inObjectName, "missing both constructor and destructor"}, inInfo);
       then
@@ -749,7 +749,7 @@ algorithm
       Absyn.Path union_name;
 
     case (SCode.R_METARECORD(name = union_name), _, _)
-      equation
+      algorithm
         analyseClass(union_name, inEnv, inInfo);
       then
         ();
@@ -770,13 +770,13 @@ algorithm
       String name;
 
     case (SCode.CLASS(), _)
-      equation
-        false = SCodeUtil.isElementRedeclare(inClass);
+      algorithm
+        false := SCodeUtil.isElementRedeclare(inClass);
       then ();
 
     case (SCode.CLASS(), _)
-      equation
-        item = NFSCodeEnv.CLASS(inClass, NFSCodeEnv.emptyEnv, NFSCodeEnv.USERDEFINED());
+      algorithm
+        item := NFSCodeEnv.CLASS(inClass, NFSCodeEnv.emptyEnv, NFSCodeEnv.USERDEFINED());
         analyseRedeclaredClass2(item, inEnv);
       then
         ();
@@ -797,8 +797,8 @@ algorithm
       SourceInfo info;
 
     case (NFSCodeEnv.CLASS(cls=SCode.CLASS( info = info)), _)
-      equation
-        (item, env) = NFSCodeLookup.lookupRedeclaredClassByItem(inItem, inEnv, info);
+      algorithm
+        (item, env) := NFSCodeLookup.lookupRedeclaredClassByItem(inItem, inEnv, info);
         analyseItem(item, env);
       then
         ();
@@ -839,8 +839,8 @@ algorithm
       list<Extends> exts;
 
     case (el :: rest_el, _, _, _)
-      equation
-        exts = analyseElement(el, inEnv, inExtends, inClassRestriction);
+      algorithm
+        exts := analyseElement(el, inEnv, inExtends, inClassRestriction);
         analyseElements2(rest_el, inEnv, exts, inClassRestriction);
       then
         ();
@@ -884,13 +884,13 @@ algorithm
     // An extends-clause.
     case (SCode.EXTENDS(modifications = mods, info = info), _,
         NFSCodeEnv.EXTENDS(baseClass = bc) :: exts, _)
-      equation
+      algorithm
         //print("bc = " + AbsynUtil.pathString(bc) + "\n");
         //print("bc2 = " + AbsynUtil.pathString(bc2) + "\n");
-        (ty_item, _, ty_env) =
+        (ty_item, _, ty_env) :=
           NFSCodeLookup.lookupBaseClassName(bc, inEnv, info);
         analyseExtends(bc, inEnv, info);
-        ty_env = NFSCodeEnv.mergeItemEnv(ty_item, ty_env);
+        ty_env := NFSCodeEnv.mergeItemEnv(ty_item, ty_env);
         analyseModifier(mods, inEnv, ty_env, info);
       then
         exts;
@@ -898,18 +898,18 @@ algorithm
     // A component.
     case (SCode.COMPONENT(name = name, attributes = attr, typeSpec = ty,
         modifications = mods, condition = cond_exp, prefixes = prefixes, info = info), _, _, _)
-      equation
+      algorithm
         // *always* keep constants and parameters!
         // markAsUsedOnConstant(name, attr, inEnv, info);
         markAsUsedOnRestriction(name, inClassRestriction, inEnv, info);
         analyseAttributes(attr, inEnv, info);
         analyseTypeSpec(ty, inEnv, info);
-        (ty_item, _, ty_env) = NFSCodeLookup.lookupTypeSpec(ty, inEnv, info);
-        (ty_item, ty_env, _) = NFSCodeEnv.resolveRedeclaredItem(ty_item, ty_env);
-        ty_env = NFSCodeEnv.mergeItemEnv(ty_item, ty_env);
+        (ty_item, _, ty_env) := NFSCodeLookup.lookupTypeSpec(ty, inEnv, info);
+        (ty_item, ty_env, _) := NFSCodeEnv.resolveRedeclaredItem(ty_item, ty_env);
+        ty_env := NFSCodeEnv.mergeItemEnv(ty_item, ty_env);
         NFSCodeCheck.checkRecursiveComponentDeclaration(name, info, ty_env, ty_item, inEnv);
-        redecls = NFSCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
-        (ty_item, ty_env,_) =
+        redecls := NFSCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
+        (ty_item, ty_env,_) :=
         NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(redecls, ty_item, ty_env, inEnv, NFInstPrefix.emptyPrefix);
         // analyseItemIfRedeclares(repls, ty_item, ty_env);
         analyseModifier(mods, inEnv, ty_env, info);
@@ -920,7 +920,7 @@ algorithm
 
     //operators in operator record might be used later.
     case (SCode.CLASS(name = name, restriction=SCode.R_OPERATOR(), info = info), _, _, SCode.R_RECORD(true))
-      equation
+      algorithm
         analyseClass(Absyn.IDENT(name), inEnv, info);
       then
         inExtends;
@@ -928,40 +928,40 @@ algorithm
 
     //operators in any other class type are error.
     case (SCode.CLASS(name = name, restriction=SCode.R_OPERATOR(), info = info), _, _, _)
-      equation
-        str = SCodeDump.restrString(inClassRestriction);
+      algorithm
+        str := SCodeDump.restrString(inClassRestriction);
         Error.addSourceMessage(Error.OPERATOR_FUNCTION_NOT_EXPECTED, {name, str}, info);
       then fail();
 
     //operator functions in operator record might be used later.
     case (SCode.CLASS(name = name, restriction=SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()), info = info), _, _, SCode.R_RECORD(true))
-      equation
+      algorithm
         analyseClass(Absyn.IDENT(name), inEnv, info);
       then
         inExtends;
 
      //operators functions in any other class type are error.
     case (SCode.CLASS(name = name, restriction=SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()), info = info), _, _, _)
-      equation
-        str = SCodeDump.restrString(inClassRestriction);
+      algorithm
+        str := SCodeDump.restrString(inClassRestriction);
         Error.addSourceMessage(Error.OPERATOR_FUNCTION_NOT_EXPECTED, {name, str}, info);
       then
         fail();
 
     //functions in operator might be used later.
     case (SCode.CLASS(name = name, restriction=res, info = info), _, _, SCode.R_OPERATOR())
-      equation
+      algorithm
         // Allowing external functions to be used operator functions
-        true = SCodeUtil.isFunctionOrExtFunctionRestriction(res);
+        true := SCodeUtil.isFunctionOrExtFunctionRestriction(res);
         analyseClass(Absyn.IDENT(name), inEnv, info);
       then
         inExtends;
 
     //operators should only contain function definitions
     case (SCode.CLASS(name = name, restriction = res, info = info), _, _, SCode.R_OPERATOR())
-      equation
-        false = SCodeUtil.isFunctionOrExtFunctionRestriction(res);
-        str = SCodeDump.restrString(res);
+      algorithm
+        false := SCodeUtil.isFunctionOrExtFunctionRestriction(res);
+        str := SCodeDump.restrString(res);
         Error.addSourceMessage(Error.OPERATOR_FUNCTION_EXPECTED, {name, str}, info);
       then
         fail();
@@ -969,27 +969,27 @@ algorithm
     // equalityConstraints may not be explicitly used but might be needed anyway
     // (if the record is used in a connect for example), so always mark it as used.
     case (SCode.CLASS(name = name as "equalityConstraint", info = info), _, _, _)
-      equation
+      algorithm
         analyseClass(Absyn.IDENT(name), inEnv, info);
       then
         inExtends;
 
     case (SCode.CLASS(name = name, info = info, classDef=SCode.CLASS_EXTENDS()), _, _, _)
-      equation
+      algorithm
         analyseClass(Absyn.IDENT(name), inEnv, info);
       then
         inExtends;
 
     // inner/innerouter classes may not be explicitly used but might be needed anyway
     case (SCode.CLASS(name = name, prefixes = SCode.PREFIXES(innerOuter = Absyn.INNER()), info = info), _, _, _)
-      equation
+      algorithm
         analyseClass(Absyn.IDENT(name), inEnv, info);
       then
         inExtends;
 
     // inner/innerouter classes may not be explicitly used but might be needed anyway
     case (SCode.CLASS(name = name, prefixes = SCode.PREFIXES(innerOuter = Absyn.INNER_OUTER()), info = info), _, _, _)
-      equation
+      algorithm
         analyseClass(Absyn.IDENT(name), inEnv, info);
       then
         inExtends;
@@ -1011,9 +1011,9 @@ algorithm
       SCode.Variability var;
 
     case (_, SCode.ATTR(variability = var), NFSCodeEnv.FRAME(clsAndVars = cls_and_vars) :: _, _)
-      equation
-        true = SCodeUtil.isParameterOrConst(var);
-        NFSCodeEnv.VAR(isUsed = SOME(is_used)) =
+      algorithm
+        true := SCodeUtil.isParameterOrConst(var);
+        NFSCodeEnv.VAR(isUsed = SOME(is_used)) :=
           EnvTree.get(cls_and_vars, inName);
         Mutable.update(is_used, true);
       then
@@ -1035,9 +1035,9 @@ algorithm
       Mutable<Boolean> is_used;
 
     case (_, _, NFSCodeEnv.FRAME(clsAndVars = cls_and_vars) :: _, _)
-      equation
-        true = markAsUsedOnRestriction2(inRestriction);
-        NFSCodeEnv.VAR(isUsed = SOME(is_used)) =
+      algorithm
+        true := markAsUsedOnRestriction2(inRestriction);
+        NFSCodeEnv.VAR(isUsed = SOME(is_used)) :=
           EnvTree.get(cls_and_vars, inName);
         Mutable.update(is_used, true);
       then
@@ -1101,7 +1101,7 @@ algorithm
 
     // A normal modifier, analyse it's submodifiers and optional binding.
     case (SCode.MOD(subModLst = sub_mods, binding = bind_exp), _, _, _)
-      equation
+      algorithm
         List.map2_0(sub_mods, analyseSubMod, (inEnv, inTypeEnv), inInfo);
         analyseModBinding(bind_exp, inEnv, inInfo);
       then
@@ -1109,7 +1109,7 @@ algorithm
 
     // A redeclaration modifier, analyse the redeclaration.
     case (SCode.REDECL(element = el), _, _, _)
-      equation
+      algorithm
         analyseRedeclareModifier(el, inEnv, inTypeEnv);
       then
         ();
@@ -1135,7 +1135,7 @@ algorithm
     // call analyseClassDef
     case (SCode.CLASS(prefixes = prefixes, classDef = cdef,
         restriction = restr, info = info), _, _)
-      equation
+      algorithm
         analyseClassDef(cdef, restr, inEnv, true, info);
         analyseConstrainClass(SCodeUtil.replaceableOptConstraint(SCodeUtil.prefixesReplaceable(prefixes)), inEnv, info);
       then
@@ -1163,9 +1163,9 @@ algorithm
       Env env;
 
     case (SOME(SCode.CONSTRAINCLASS(constrainingClass = path, modifier = mod)), _, _)
-      equation
+      algorithm
         analyseClass(path, inEnv, inInfo);
-        (_, env) = lookupClass(path, inEnv, true, inInfo, SOME(Error.LOOKUP_ERROR));
+        (_, env) := lookupClass(path, inEnv, true, inInfo, SOME(Error.LOOKUP_ERROR));
         analyseModifier(mod, inEnv, env, inInfo);
       then
         ();
@@ -1188,7 +1188,7 @@ algorithm
       Env env,  ty_env;
 
     case (SCode.NAMEMOD(ident = ident, mod = m), (env, ty_env), _)
-      equation
+      algorithm
         analyseNameMod(ident, env, ty_env, m, inInfo);
       then
         ();
@@ -1225,10 +1225,10 @@ algorithm
       Env env;
 
     case (_, SOME(item), SOME(env), _, _, _, _)
-      equation
+      algorithm
         NFSCodeCheck.checkModifierIfRedeclare(item, inModifier, inInfo);
         analyseItem(item, env);
-        env = NFSCodeEnv.mergeItemEnv(item, env);
+        env := NFSCodeEnv.mergeItemEnv(item, env);
         analyseModifier(inModifier, inEnv, env, inInfo);
       then
         ();
@@ -1254,9 +1254,9 @@ algorithm
       Env env;
 
     case (_, _, _)
-      equation
-        (item, _, env) = NFSCodeLookup.lookupNameSilent(inPath, inEnv, inInfo);
-        (item, env, _) = NFSCodeEnv.resolveRedeclaredItem(item, env);
+      algorithm
+        (item, _, env) := NFSCodeLookup.lookupNameSilent(inPath, inEnv, inInfo);
+        (item, env, _) := NFSCodeEnv.resolveRedeclaredItem(item, env);
       then
         (SOME(item), SOME(env));
 
@@ -1277,7 +1277,7 @@ algorithm
     case (Absyn.NOSUB(), _, _) then ();
 
     case (Absyn.SUBSCRIPT(sub_exp), _, _)
-      equation
+      algorithm
         analyseExp(sub_exp, inEnv, inInfo);
       then
         ();
@@ -1297,7 +1297,7 @@ algorithm
     case NONE() then ();
 
     case SOME(bind_exp)
-      equation
+      algorithm
         analyseExp(bind_exp, inEnv, inInfo);
       then
         ();
@@ -1318,7 +1318,7 @@ algorithm
 
     // A normal type.
     case (Absyn.TPATH(path = type_path, arrayDim = ad), _, _)
-      equation
+      algorithm
         analyseClass(type_path, inEnv, inInfo);
         analyseTypeSpecDims(ad, inEnv, inInfo);
       then
@@ -1330,7 +1330,7 @@ algorithm
 
     // A MetaModelica type such as list or tuple.
     case (Absyn.TCOMPLEX(typeSpecs = tys), _, _)
-      equation
+      algorithm
         List.map2_0(tys, analyseTypeSpec, inEnv, inInfo);
       then
         ();
@@ -1348,7 +1348,7 @@ algorithm
       Absyn.ArrayDim dims;
 
     case (SOME(dims), _, _)
-      equation
+      algorithm
         List.map2_0(dims, analyseTypeSpecDim, inEnv, inInfo);
       then
         ();
@@ -1369,7 +1369,7 @@ algorithm
     case (Absyn.NOSUB(), _, _) then ();
 
     case (Absyn.SUBSCRIPT(subscript = dim), _, _)
-      equation
+      algorithm
         analyseExp(dim, inEnv, inInfo);
       then
         ();
@@ -1390,14 +1390,14 @@ algorithm
 
     // An external declaration might have arguments that we need to analyse.
     case (SOME(SCode.EXTERNALDECL(args = args, annotation_ = NONE())), _, _)
-      equation
+      algorithm
         List.map2_0(args, analyseExp, inEnv, inInfo);
       then
         ();
 
     // An external declaration might have arguments and an annotation that we need to analyse.
     case (SOME(SCode.EXTERNALDECL(args = args, annotation_ = SOME(ann))), _, _)
-      equation
+      algorithm
         List.map2_0(args, analyseExp, inEnv, inInfo);
         analyseAnnotation(ann, inEnv, inInfo);
       then
@@ -1419,7 +1419,7 @@ algorithm
 
     // A comment might have an annotation that we need to analyse.
     case (SCode.COMMENT(annotation_ = SOME(ann)), _, _)
-      equation
+      algorithm
         analyseAnnotation(ann, inEnv, inInfo);
       then
         ();
@@ -1441,7 +1441,7 @@ algorithm
 
     case (SCode.ANNOTATION(modification = SCode.MOD(subModLst = sub_mods)),
         _, _)
-      equation
+      algorithm
         List.map2_0(sub_mods, analyseAnnotationMod, inEnv, inInfo);
       then
         ();
@@ -1463,13 +1463,13 @@ algorithm
     // derivative is a bit special since it's not a builtin function, so just
     // analyse it's modifier to make sure that we get the derivation function.
     case (SCode.NAMEMOD(ident = "derivative", mod = mods), _, _)
-      equation
+      algorithm
         analyseModifier(mods, inEnv, NFSCodeEnv.emptyEnv, inInfo);
       then
         ();
 
     case (SCode.NAMEMOD(ident = "inverse", mod = mods), _, _)
-      equation
+      algorithm
         analyseModifier(mods, inEnv, NFSCodeEnv.emptyEnv, inInfo);
       then
         ();
@@ -1478,7 +1478,7 @@ algorithm
     // try and analyse the rest of the modification. This is needed for example
     // for the graphical annotations such as Icon.
     case (SCode.NAMEMOD(ident = id, mod = mods), _, _)
-      equation
+      algorithm
         analyseAnnotationName(id, inEnv, inInfo);
         analyseModifier(mods, inEnv, NFSCodeEnv.emptyEnv, inInfo);
       then
@@ -1523,7 +1523,7 @@ algorithm
       Absyn.Exp exp;
 
     case (SOME(exp), _, _)
-      equation
+      algorithm
         analyseExp(exp, inEnv, inInfo);
       then
         ();
@@ -1563,33 +1563,33 @@ algorithm
       Env env;
 
     case (Absyn.CREF(componentRef = cref), _, _)
-      equation
+      algorithm
         analyseCref(cref, inEnv, inInfo);
       then
         inEnv;
 
     case (Absyn.CALL(function_ = cref, functionArgs = Absyn.FOR_ITER_FARG(iterators = iters)), _, _)
-      equation
+      algorithm
         analyseCref(cref, inEnv, inInfo); // For user-defined reductions
-        env = NFSCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), inEnv);
+        env := NFSCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), inEnv);
       then
         env;
 
     case (Absyn.CALL(function_ = cref), _, _)
-      equation
+      algorithm
         analyseCref(cref, inEnv, inInfo);
       then
         inEnv;
 
     case (Absyn.PARTEVALFUNCTION(function_ = cref), _, _)
-      equation
+      algorithm
         analyseCref(cref, inEnv, inInfo);
       then
         inEnv;
 
     case (Absyn.MATCHEXP(), _, _)
-      equation
-        env = NFSCodeEnv.extendEnvWithMatch(inExp, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), inEnv);
+      algorithm
+        env := NFSCodeEnv.extendEnvWithMatch(inExp, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), inEnv);
       then
         env;
 
@@ -1612,11 +1612,11 @@ algorithm
     case (Absyn.WILD(), _, _) then ();
 
     case (_, _, _)
-      equation
+      algorithm
         // We want to use lookupClass since we need the item and environment, and
         // we don't care about any subscripts, so convert the cref to a path.
-        path = AbsynUtil.crefToPathIgnoreSubs(inCref);
-        (item, env) = lookupClass(path, inEnv, true, inInfo, NONE());
+        path := AbsynUtil.crefToPathIgnoreSubs(inCref);
+        (item, env) := lookupClass(path, inEnv, true, inInfo, NONE());
         analyseItem(item, env);
       then
         ();
@@ -1738,16 +1738,16 @@ algorithm
       String iter_name;
 
     case SCode.ALG_FOR(index = iter_name, info = info)
-      equation
-        env = NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
-        (_, _) = SCodeUtil.mapFoldStatementExps(stmt, traverseExp, (env, info));
+      algorithm
+        env := NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
+        (_, _) := SCodeUtil.mapFoldStatementExps(stmt, traverseExp, (env, info));
       then
         (stmt, env);
 
      case SCode.ALG_PARFOR(index = iter_name,  info = info)
-      equation
-        env = NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
-        (_, _) = SCodeUtil.mapFoldStatementExps(stmt, traverseExp, (env, info));
+      algorithm
+        env := NFSCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(iter_name, NONE(), NONE())}, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
+        (_, _) := SCodeUtil.mapFoldStatementExps(stmt, traverseExp, (env, info));
       then
         (stmt, env);
 
@@ -1810,8 +1810,8 @@ algorithm
         false;
 
     case (NFSCodeEnv.CLASS(cls = cls, env = {cls_env}, classType = cls_ty), _)
-      equation
-        env2 = NFSCodeEnv.enterFrame(cls_env, env);
+      algorithm
+        env2 := NFSCodeEnv.enterFrame(cls_env, env);
         analyseClassExtendsDef(cls, cls_ty, env2);
         // Check all classes inside of this class too.
         analyseClassExtends(env2);
@@ -1839,24 +1839,24 @@ algorithm
     case (SCode.CLASS(name = cls_name, classDef =
           SCode.PARTS(elementLst = SCode.EXTENDS(baseClassPath = bc) :: _),
           info = info), NFSCodeEnv.CLASS_EXTENDS(), _)
-      equation
+      algorithm
         // Look up the base class of the class extends, and check if it's used.
-        (item, _, env) = NFSCodeLookup.lookupBaseClassName(bc, inEnv, info);
-        true = NFSCodeEnv.isItemUsed(item);
+        (item, _, env) := NFSCodeLookup.lookupBaseClassName(bc, inEnv, info);
+        true := NFSCodeEnv.isItemUsed(item);
         // Ok, the base is used, analyse the class extends to mark it and it's
         // dependencies as used.
-        _ :: env = inEnv;
+        _ :: env := inEnv;
         analyseClass(Absyn.IDENT(cls_name), env, info);
       then
         ();
 
     case (SCode.CLASS(name = cls_name, info = info), NFSCodeEnv.USERDEFINED(), _)
-      equation
-        true = SCodeUtil.isElementRedeclare(inClass);
-        _ :: env = inEnv;
-        item = NFSCodeEnv.CLASS(inClass, NFSCodeEnv.emptyEnv, inClassType);
-        (item, _) = NFSCodeLookup.lookupRedeclaredClassByItem(item, env, info);
-        true = NFSCodeEnv.isItemUsed(item);
+      algorithm
+        true := SCodeUtil.isElementRedeclare(inClass);
+        _ :: env := inEnv;
+        item := NFSCodeEnv.CLASS(inClass, NFSCodeEnv.emptyEnv, inClassType);
+        (item, _) := NFSCodeLookup.lookupRedeclaredClassByItem(item, env, info);
+        true := NFSCodeEnv.isItemUsed(item);
         analyseClass(Absyn.IDENT(cls_name), env, info);
       then
         ();
@@ -1913,18 +1913,18 @@ algorithm
 
     // Try to collect the first class in the list.
     case (_, _, (cls as SCode.CLASS(name = name)) :: rest_prog, _, env)
-      equation
-        (cls_el as SCode.CLASS(), env) = collectUsedClass(cls, inEnv, clsAndVars,
+      algorithm
+        (cls_el as SCode.CLASS(), env) := collectUsedClass(cls, inEnv, clsAndVars,
           inClassName, env, Absyn.IDENT(name));
-        (rest_prog, env) =
+        (rest_prog, env) :=
           collectUsedProgram2(clsAndVars, inEnv, rest_prog, inClassName, env);
       then
         (cls_el :: rest_prog, env);
 
     // Could not collect the class (i.e. it's not used), continue with the rest.
     case (_, _, (SCode.CLASS()) :: rest_prog, _, env)
-      equation
-        (rest_prog, env) =
+      algorithm
+        (rest_prog, env) :=
           collectUsedProgram2(clsAndVars, inEnv, rest_prog, inClassName, env);
       then
         (rest_prog, env);
@@ -1963,44 +1963,44 @@ algorithm
 
     case (SCode.CLASS(name, prefixes as SCode.PREFIXES(replaceablePrefix =
         SCode.REPLACEABLE(_)), ep, pp, res, cdef, cmt, info), _, _, _, _, _)
-      equation
+      algorithm
         /*********************************************************************/
         // TODO: Fix the usage of alias items in this case.
         /*********************************************************************/
         // Check if the class is used.
-        item = EnvTree.get(inClsAndVars, name);
-        (resolved_item, _) = NFSCodeLookup.resolveAlias(item, inEnv);
-        true = checkClassUsed(resolved_item, cdef);
+        item := EnvTree.get(inClsAndVars, name);
+        (resolved_item, _) := NFSCodeLookup.resolveAlias(item, inEnv);
+        true := checkClassUsed(resolved_item, cdef);
         // The class is used, recursively collect its contents.
-        {class_frame} = NFSCodeEnv.getItemEnv(resolved_item);
-        enclosing_env = NFSCodeEnv.enterScope(inEnv, name);
-        (cdef, class_env) =
+        {class_frame} := NFSCodeEnv.getItemEnv(resolved_item);
+        enclosing_env := NFSCodeEnv.enterScope(inEnv, name);
+        (cdef, class_env) :=
           collectUsedClassDef(cdef, enclosing_env, class_frame, inClassName, inAccumPath);
 
-        cls = SCode.CLASS(name, prefixes, ep, pp, res, cdef, cmt, info);
-        resolved_item = updateItemEnv(resolved_item, cls, class_env);
-        basename = name + NFSCodeEnv.BASE_CLASS_SUFFIX;
-        env = NFSCodeEnv.extendEnvWithItem(resolved_item, inAccumEnv, basename);
-        env = NFSCodeEnv.extendEnvWithItem(item, env, name);
+        cls := SCode.CLASS(name, prefixes, ep, pp, res, cdef, cmt, info);
+        resolved_item := updateItemEnv(resolved_item, cls, class_env);
+        basename := name + NFSCodeEnv.BASE_CLASS_SUFFIX;
+        env := NFSCodeEnv.extendEnvWithItem(resolved_item, inAccumEnv, basename);
+        env := NFSCodeEnv.extendEnvWithItem(item, env, name);
       then
         (cls, env);
 
     case (SCode.CLASS(name, prefixes, ep, pp, res, cdef, cmt, info), _, _, _, _, _)
-      equation
+      algorithm
         // TODO! FIXME! add cc to the used classes!
-        _ = SCodeUtil.replaceableOptConstraint(SCodeUtil.prefixesReplaceable(prefixes));
+        _ := SCodeUtil.replaceableOptConstraint(SCodeUtil.prefixesReplaceable(prefixes));
         // Check if the class is used.
-        item = EnvTree.get(inClsAndVars, name);
-        true = checkClassUsed(item, cdef);
+        item := EnvTree.get(inClsAndVars, name);
+        true := checkClassUsed(item, cdef);
         // The class is used, recursively collect it's contents.
-        {class_frame} = NFSCodeEnv.getItemEnv(item);
-        enclosing_env = NFSCodeEnv.enterScope(inEnv, name);
-        (cdef, class_env) =
+        {class_frame} := NFSCodeEnv.getItemEnv(item);
+        enclosing_env := NFSCodeEnv.enterScope(inEnv, name);
+        (cdef, class_env) :=
           collectUsedClassDef(cdef, enclosing_env, class_frame, inClassName, inAccumPath);
         // Add the class to the new environment.
-        cls = SCode.CLASS(name, prefixes, ep, pp, res, cdef, cmt, info);
-        item = updateItemEnv(item, cls, class_env);
-        env = NFSCodeEnv.extendEnvWithItem(item, inAccumEnv, name);
+        cls := SCode.CLASS(name, prefixes, ep, pp, res, cdef, cmt, info);
+        item := updateItemEnv(item, cls, class_env);
+        env := NFSCodeEnv.extendEnvWithItem(item, inAccumEnv, name);
       then
         (cls, env);
 
@@ -2156,9 +2156,9 @@ algorithm
 
     // A class definition, just use collectUsedClass.
     case (SCode.CLASS(name = name), _, _, env, _, _, _)
-      equation
-        cls_path = AbsynUtil.joinPaths(inAccumPath, Absyn.IDENT(name));
-        (cls, env) =
+      algorithm
+        cls_path := AbsynUtil.joinPaths(inAccumPath, Absyn.IDENT(name));
+        (cls, env) :=
           collectUsedClass(inElement, inEnclosingEnv, inClsAndVars,
             inClassName,env, cls_path);
       then
@@ -2167,19 +2167,19 @@ algorithm
     // A constant.
     case (SCode.COMPONENT(name = name,
       attributes = SCode.ATTR(variability = SCode.CONST())), _, _, _, _, _, _)
-      equation
-        item = EnvTree.get(inClsAndVars, name);
-        true = inCollectConstants or NFSCodeEnv.isItemUsed(item);
-        env = NFSCodeEnv.extendEnvWithItem(item, inAccumEnv, name);
+      algorithm
+        item := EnvTree.get(inClsAndVars, name);
+        true := inCollectConstants or NFSCodeEnv.isItemUsed(item);
+        env := NFSCodeEnv.extendEnvWithItem(item, inAccumEnv, name);
       then
         (inElement, env);
 
     // Class components are always collected, regardless of whether they are
     // used or not.
     case (SCode.COMPONENT(name = name), _, _, _, _, _, _)
-      equation
-        item = NFSCodeEnv.newVarItem(inElement, true);
-        env = NFSCodeEnv.extendEnvWithItem(item, inAccumEnv, name);
+      algorithm
+        item := NFSCodeEnv.newVarItem(inElement, true);
+        env := NFSCodeEnv.extendEnvWithItem(item, inAccumEnv, name);
       then
         (inElement, env);
 

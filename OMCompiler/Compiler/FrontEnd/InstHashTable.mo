@@ -128,60 +128,60 @@ algorithm
 
     // nothing is we have -d=noCache
     case (_, _, _)
-      equation
-        false = Flags.isSet(Flags.CACHE);
+      algorithm
+        false := Flags.isSet(Flags.CACHE);
        then
          ();
 
     // we have them both
     case (_, SOME(_), SOME(_))
-      equation
-        instHash = getGlobalRoot(Global.instHashIndex);
-        instHash = BaseHashTable.add((fullEnvPathPlusClass,{fullInstOpt,partialInstOpt}),instHash);
+      algorithm
+        instHash := getGlobalRoot(Global.instHashIndex);
+        instHash := BaseHashTable.add((fullEnvPathPlusClass,{fullInstOpt,partialInstOpt}),instHash);
         setGlobalRoot(Global.instHashIndex, instHash);
       then
         ();
 
     // we have a partial inst result and the full in the cache
     case (_, NONE(), SOME(_))
-      equation
-        instHash = getGlobalRoot(Global.instHashIndex);
+      algorithm
+        instHash := getGlobalRoot(Global.instHashIndex);
         // see if we have a full inst here
-        {opt,_} = BaseHashTable.get(fullEnvPathPlusClass, instHash);
-        instHash = BaseHashTable.add((fullEnvPathPlusClass,{opt,partialInstOpt}),instHash);
+        {opt,_} := BaseHashTable.get(fullEnvPathPlusClass, instHash);
+        instHash := BaseHashTable.add((fullEnvPathPlusClass,{opt,partialInstOpt}),instHash);
         setGlobalRoot(Global.instHashIndex, instHash);
       then
         ();
 
     // we have a partial inst result and the full is NOT in the cache
     case (_, NONE(), SOME(_))
-      equation
-        instHash = getGlobalRoot(Global.instHashIndex);
+      algorithm
+        instHash := getGlobalRoot(Global.instHashIndex);
         // see if we have a full inst here
         // failed above {SOME(fullInst),_} = get(fullEnvPathPlusClass, instHash);
-        instHash = BaseHashTable.add((fullEnvPathPlusClass,{NONE(),partialInstOpt}),instHash);
+        instHash := BaseHashTable.add((fullEnvPathPlusClass,{NONE(),partialInstOpt}),instHash);
         setGlobalRoot(Global.instHashIndex, instHash);
       then
         ();
 
     // we have a full inst result and the partial in the cache
     case (_, SOME(_), NONE())
-      equation
-        instHash = getGlobalRoot(Global.instHashIndex);
+      algorithm
+        instHash := getGlobalRoot(Global.instHashIndex);
         // see if we have a partial inst here
-        (_::(lst as {SOME(_)})) = BaseHashTable.get(fullEnvPathPlusClass, instHash);
-        instHash = BaseHashTable.add((fullEnvPathPlusClass,fullInstOpt::lst),instHash);
+        (_::(lst as {SOME(_)})) := BaseHashTable.get(fullEnvPathPlusClass, instHash);
+        instHash := BaseHashTable.add((fullEnvPathPlusClass,fullInstOpt::lst),instHash);
         setGlobalRoot(Global.instHashIndex, instHash);
       then
         ();
 
     // we have a full inst result and the partial is NOT in the cache
     case (_, SOME(_), NONE())
-      equation
-        instHash = getGlobalRoot(Global.instHashIndex);
+      algorithm
+        instHash := getGlobalRoot(Global.instHashIndex);
         // see if we have a partial inst here
         // failed above {_,SOME(partialInst)} = get(fullEnvPathPlusClass, instHash);
-        instHash = BaseHashTable.add((fullEnvPathPlusClass,{fullInstOpt,NONE()}),instHash);
+        instHash := BaseHashTable.add((fullEnvPathPlusClass,{fullInstOpt,NONE()}),instHash);
         setGlobalRoot(Global.instHashIndex, instHash);
       then
         ();

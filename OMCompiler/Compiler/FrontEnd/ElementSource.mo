@@ -65,13 +65,13 @@ algorithm
       list<SCode.Comment> comment, comment1,comment2;
     case (DAE.SOURCE(info, partOfLst1, instanceOpt1, connectEquationOptLst1, typeLst1, operations1, comment1),
           DAE.SOURCE(_ /* Discard */, partOfLst2, instanceOpt2, connectEquationOptLst2, typeLst2, operations2, comment2))
-      equation
-        p = List.union(partOfLst1, partOfLst2);
-        i = match instanceOpt1 case DAE.NOCOMPPRE() then instanceOpt2; else instanceOpt1; end match;
-        c = List.union(connectEquationOptLst1, connectEquationOptLst2);
-        t = List.union(typeLst1, typeLst2);
-        o = listAppend(operations1, operations2);
-        comment = List.union(comment1,comment2);
+      algorithm
+        p := List.union(partOfLst1, partOfLst2);
+        i := match instanceOpt1 case DAE.NOCOMPPRE() then instanceOpt2; else instanceOpt1; end match;
+        c := List.union(connectEquationOptLst1, connectEquationOptLst2);
+        t := List.union(typeLst1, typeLst2);
+        o := listAppend(operations1, operations2);
+        comment := List.union(comment1,comment2);
       then DAE.SOURCE(info,p,i,c,t, o,comment);
  end match;
 end mergeSources;
@@ -138,10 +138,10 @@ algorithm
       SCode.Comment c;
 
     case (DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, operations, comment),_)
-      equation
-        c = SCode.COMMENT(NONE(), SOME(message));
-        b = listMember(c, comment);
-        comment = if b then comment else (c::comment);
+      algorithm
+        c := SCode.COMMENT(NONE(), SOME(message));
+        b := listMember(c, comment);
+        comment := if b then comment else (c::comment);
       then
         DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, operations, comment);
 
@@ -220,10 +220,10 @@ algorithm
       guard
         // The tail of the new substitution chain is the same as the head of the old one...
         Expression.expEqual(t2,h1)
-      equation
+      algorithm
         // Reference equality would be fine as otherwise it is not really a chain... But replaceExp is stupid :(
         // true = referenceEq(t2,h1);
-        es = listAppend(es2,es1);
+        es := listAppend(es2,es1);
       then DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, DAE.SUBSTITUTION(es,t1)::operations,comment);
 
     case (DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, operations, comment),_)
@@ -257,9 +257,9 @@ algorithm
       DAE.Exp exp1,exp2;
     case({},_) then source;
     case(exp1::rexplst1,exp2::rexplst2)
-      equation
-        op = DAE.OP_DIFFERENTIATE(DAE.crefTime,exp1,exp2);
-        source = addSymbolicTransformation(source,op);
+      algorithm
+        op := DAE.OP_DIFFERENTIATE(DAE.crefTime,exp1,exp2);
+        source := addSymbolicTransformation(source,op);
       then
         addSymbolicTransformationDeriveLst(source,rexplst1,rexplst2);
   end match;
@@ -287,7 +287,7 @@ algorithm
     case (DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, DAE.FLATTEN(scode,NONE())::operations,comment),_)
       then DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, DAE.FLATTEN(scode,SOME(elt))::operations,comment);
     case (DAE.SOURCE(info=info),_)
-      equation
+      algorithm
         Error.addSourceMessage(Error.INTERNAL_ERROR, {"Tried to add the flattened elements to the list of operations, but did not find the SCode equation"}, info);
       then fail();
   end match;
@@ -309,8 +309,8 @@ algorithm
       DAE.Exp exp1,exp2;
     case({},_,_) then source;
     case(true::brest,exp1::rexplst1,exp2::rexplst2)
-      equation
-        source = addSymbolicTransformationSubstitution(true,source,exp1,exp2);
+      algorithm
+        source := addSymbolicTransformationSubstitution(true,source,exp1,exp2);
       then
         addSymbolicTransformationSubstitutionLst(brest,source,rexplst1,rexplst2);
     case(false::brest,_::rexplst1,_::rexplst2)
@@ -347,8 +347,8 @@ algorithm
       DAE.Exp exp1,exp2;
     case({},_,_) then source;
     case(true::brest,exp1::rexplst1,exp2::rexplst2)
-      equation
-        source = addSymbolicTransformation(source, DAE.SIMPLIFY(DAE.PARTIAL_EQUATION(exp1),DAE.PARTIAL_EQUATION(exp2)));
+      algorithm
+        source := addSymbolicTransformation(source, DAE.SIMPLIFY(DAE.PARTIAL_EQUATION(exp1),DAE.PARTIAL_EQUATION(exp2)));
       then
         addSymbolicTransformationSimplifyLst(brest,source,rexplst1,rexplst2);
     case(false::brest,_::rexplst1,_::rexplst2)

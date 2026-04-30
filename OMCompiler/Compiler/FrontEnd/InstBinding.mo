@@ -166,30 +166,30 @@ algorithm
       list<DAE.Var> varLst;
 
     case (mod,_,expected_type,{},bind_name) /* No subscript/index */
-      equation
-        mod2 = Mod.lookupCompModification(mod, bind_name);
-        SOME(DAE.TYPED(e,optVal,DAE.PROP(ty2,_),_)) = Mod.modEquation(mod2);
-        (e_1,_) = Types.matchType(e, ty2, expected_type, true);
-        e_1 = InstUtil.checkUseConstValue(useConstValue,e_1,optVal);
+      algorithm
+        mod2 := Mod.lookupCompModification(mod, bind_name);
+        SOME(DAE.TYPED(e,optVal,DAE.PROP(ty2,_),_)) := Mod.modEquation(mod2);
+        (e_1,_) := Types.matchType(e, ty2, expected_type, true);
+        e_1 := InstUtil.checkUseConstValue(useConstValue,e_1,optVal);
       then
         SOME(e_1);
 
     case (mod,_,etype,index_list,bind_name) /* Have subscript/index */
-      equation
-        mod2 = Mod.lookupCompModification(mod, bind_name);
-        result = instBinding2(mod2, etype, index_list, bind_name, useConstValue);
+      algorithm
+        mod2 := Mod.lookupCompModification(mod, bind_name);
+        result := instBinding2(mod2, etype, index_list, bind_name, useConstValue);
       then
         result;
 
     case (mod,_,_,{},bind_name) /* No modifier for this name. */
-      equation
-        failure(_ = Mod.lookupCompModification(mod, bind_name));
+      algorithm
+        failure(_ := Mod.lookupCompModification(mod, bind_name));
       then
         NONE();
 
     case (_,DAE.TYPES_VAR(name=name,binding=binding)::_,_,_,bind_name)
-      equation
-        true = stringEq(name, bind_name);
+      algorithm
+        true := stringEq(name, bind_name);
       then
         DAEUtil.bindingExp(binding);
 
@@ -224,20 +224,20 @@ algorithm
       list<Integer> res;
       Option<Values.Value> optVal;
     case (mod,etype,(index :: {}),_) /* Only one element in the index-list */
-      equation
-        mod2 = Mod.lookupIdxModification(mod, DAE.ICONST(index));
-        SOME(DAE.TYPED(e,optVal,DAE.PROP(ty2,_),_)) = Mod.modEquation(mod2);
-        (e_1,_) = Types.matchType(e, ty2, etype, true);
-        e_1 = InstUtil.checkUseConstValue(useConstValue,e_1,optVal);
+      algorithm
+        mod2 := Mod.lookupIdxModification(mod, DAE.ICONST(index));
+        SOME(DAE.TYPED(e,optVal,DAE.PROP(ty2,_),_)) := Mod.modEquation(mod2);
+        (e_1,_) := Types.matchType(e, ty2, etype, true);
+        e_1 := InstUtil.checkUseConstValue(useConstValue,e_1,optVal);
       then
         SOME(e_1);
     case (mod,etype,(index :: res),bind_name) /* Several elements in the index-list */
-      equation
-        result = matchcontinue()
+      algorithm
+        result := matchcontinue()
           case ()
-            equation
-              mod2 = Mod.lookupIdxModification(mod, DAE.ICONST(index));
-              result = instBinding2(mod2, etype, res, bind_name,useConstValue);
+            algorithm
+              mod2 := Mod.lookupIdxModification(mod, DAE.ICONST(index));
+              result := instBinding2(mod2, etype, res, bind_name,useConstValue);
             then result;
           else NONE();
         end matchcontinue;
@@ -286,15 +286,15 @@ algorithm
       list<DAE.Var> varLst;
 
     case (mod,_,bind_name)
-      equation
-        mod2 = Mod.lookupCompModification(mod, bind_name);
-        SOME(_) = Mod.modEquation(mod2);
+      algorithm
+        mod2 := Mod.lookupCompModification(mod, bind_name);
+        SOME(_) := Mod.modEquation(mod2);
       then
         SOME(DAE.SCONST("binding"));
 
     case (_,DAE.TYPES_VAR(name=name)::_,bind_name)
-      equation
-        true = stringEq(name, bind_name);
+      algorithm
+        true := stringEq(name, bind_name);
       then
         SOME(DAE.SCONST("type"));
 
@@ -335,23 +335,23 @@ algorithm
 
     // Real
     case (cache,_,mod,DAE.T_REAL(varLst = varLst),index_list)
-      equation
-        (quantity_str) = instBinding(mod, varLst, DAE.T_STRING_DEFAULT,index_list, "quantity",false);
-        (unit_str) = instBinding(mod, varLst, DAE.T_STRING_DEFAULT, index_list, "unit",false);
-        (displayunit_str) = instBinding(mod, varLst,DAE.T_STRING_DEFAULT, index_list, "displayUnit",false);
-        (min_val) = instBinding(mod, varLst, DAE.T_REAL_DEFAULT,index_list, "min",false);
-        (max_val) = instBinding(mod, varLst, DAE.T_REAL_DEFAULT,index_list, "max",false);
-        (start_val) = instBinding(mod, varLst, DAE.T_REAL_DEFAULT,index_list, "start",false);
-        (fixed_val) = instBinding( mod, varLst, DAE.T_BOOL_DEFAULT,index_list, "fixed",true);
-        (nominal_val) = instBinding(mod, varLst, DAE.T_REAL_DEFAULT,index_list, "nominal",false);
+      algorithm
+        (quantity_str) := instBinding(mod, varLst, DAE.T_STRING_DEFAULT,index_list, "quantity",false);
+        (unit_str) := instBinding(mod, varLst, DAE.T_STRING_DEFAULT, index_list, "unit",false);
+        (displayunit_str) := instBinding(mod, varLst,DAE.T_STRING_DEFAULT, index_list, "displayUnit",false);
+        (min_val) := instBinding(mod, varLst, DAE.T_REAL_DEFAULT,index_list, "min",false);
+        (max_val) := instBinding(mod, varLst, DAE.T_REAL_DEFAULT,index_list, "max",false);
+        (start_val) := instBinding(mod, varLst, DAE.T_REAL_DEFAULT,index_list, "start",false);
+        (fixed_val) := instBinding( mod, varLst, DAE.T_BOOL_DEFAULT,index_list, "fixed",true);
+        (nominal_val) := instBinding(mod, varLst, DAE.T_REAL_DEFAULT,index_list, "nominal",false);
 
-        (exp_bind_select) = instEnumerationBinding(mod, varLst, index_list, "stateSelect",stateSelectType,true);
-        (stateSelect_value) = InstUtil.getStateSelectFromExpOption(exp_bind_select);
+        (exp_bind_select) := instEnumerationBinding(mod, varLst, index_list, "stateSelect",stateSelectType,true);
+        (stateSelect_value) := InstUtil.getStateSelectFromExpOption(exp_bind_select);
 
-        (exp_bind_uncertainty) = instEnumerationBinding(mod, varLst, index_list, "uncertain",uncertaintyType,true);
-        (uncertainty_value) = getUncertainFromExpOption(exp_bind_uncertainty);
-        distribution_value = instDistributionBinding(mod, varLst, index_list, "distribution", false);
-        startOrigin = instStartOrigin(mod, varLst, "start");
+        (exp_bind_uncertainty) := instEnumerationBinding(mod, varLst, index_list, "uncertain",uncertaintyType,true);
+        (uncertainty_value) := getUncertainFromExpOption(exp_bind_uncertainty);
+        distribution_value := instDistributionBinding(mod, varLst, index_list, "distribution", false);
+        startOrigin := instStartOrigin(mod, varLst, "start");
 
         //TODO: check for protected attribute (here and below matches)
       then
@@ -361,27 +361,27 @@ algorithm
 
     // Integer
     case (cache,_,mod,DAE.T_INTEGER(varLst = varLst),index_list)
-      equation
-        (quantity_str) = instBinding(mod, varLst, DAE.T_STRING_DEFAULT, index_list, "quantity",false);
-        (min_val) = instBinding(mod, varLst, DAE.T_INTEGER_DEFAULT, index_list, "min",false);
-        (max_val) = instBinding(mod, varLst, DAE.T_INTEGER_DEFAULT, index_list, "max",false);
-        (start_val) = instBinding(mod, varLst, DAE.T_INTEGER_DEFAULT, index_list, "start",false);
-        (fixed_val) = instBinding(mod, varLst, DAE.T_BOOL_DEFAULT,index_list, "fixed",true);
-        (exp_bind_uncertainty) = instEnumerationBinding(mod, varLst, index_list, "uncertain",uncertaintyType,true);
-        (uncertainty_value) = getUncertainFromExpOption(exp_bind_uncertainty);
-        distribution_value = instDistributionBinding(mod, varLst, index_list, "distribution", false);
+      algorithm
+        (quantity_str) := instBinding(mod, varLst, DAE.T_STRING_DEFAULT, index_list, "quantity",false);
+        (min_val) := instBinding(mod, varLst, DAE.T_INTEGER_DEFAULT, index_list, "min",false);
+        (max_val) := instBinding(mod, varLst, DAE.T_INTEGER_DEFAULT, index_list, "max",false);
+        (start_val) := instBinding(mod, varLst, DAE.T_INTEGER_DEFAULT, index_list, "start",false);
+        (fixed_val) := instBinding(mod, varLst, DAE.T_BOOL_DEFAULT,index_list, "fixed",true);
+        (exp_bind_uncertainty) := instEnumerationBinding(mod, varLst, index_list, "uncertain",uncertaintyType,true);
+        (uncertainty_value) := getUncertainFromExpOption(exp_bind_uncertainty);
+        distribution_value := instDistributionBinding(mod, varLst, index_list, "distribution", false);
 
-        startOrigin = instStartOrigin(mod, varLst, "start");
+        startOrigin := instStartOrigin(mod, varLst, "start");
       then
         (cache,SOME(DAE.VAR_ATTR_INT(quantity_str,min_val,max_val,start_val,fixed_val,uncertainty_value,distribution_value,NONE(),NONE(),NONE(),startOrigin)));
 
     // Boolean
     case (cache,_,mod,tp as DAE.T_BOOL(varLst = varLst),index_list)
-      equation
-        (quantity_str) = instBinding( mod, varLst, DAE.T_STRING_DEFAULT, index_list, "quantity",false);
-        (start_val) = instBinding(mod, varLst, tp, index_list, "start",false);
-        (fixed_val) = instBinding(mod, varLst, tp, index_list, "fixed",true);
-        startOrigin = instStartOrigin(mod, varLst, "start");
+      algorithm
+        (quantity_str) := instBinding( mod, varLst, DAE.T_STRING_DEFAULT, index_list, "quantity",false);
+        (start_val) := instBinding(mod, varLst, tp, index_list, "start",false);
+        (fixed_val) := instBinding(mod, varLst, tp, index_list, "fixed",true);
+        startOrigin := instStartOrigin(mod, varLst, "start");
       then
         (cache,SOME(DAE.VAR_ATTR_BOOL(quantity_str,start_val,fixed_val,NONE(),NONE(),NONE(),startOrigin)));
 
@@ -392,23 +392,23 @@ algorithm
 
     // String
     case (cache,_,mod,tp as DAE.T_STRING(varLst = varLst),index_list)
-      equation
-        (quantity_str) = instBinding(mod, varLst, tp, index_list, "quantity",false);
-        (start_val) = instBinding(mod, varLst, tp, index_list, "start",false);
-        (fixed_val) = instBinding(mod, varLst, DAE.T_BOOL_DEFAULT, index_list, "fixed",true);
-        startOrigin = instStartOrigin(mod, varLst, "start");
+      algorithm
+        (quantity_str) := instBinding(mod, varLst, tp, index_list, "quantity",false);
+        (start_val) := instBinding(mod, varLst, tp, index_list, "start",false);
+        (fixed_val) := instBinding(mod, varLst, DAE.T_BOOL_DEFAULT, index_list, "fixed",true);
+        startOrigin := instStartOrigin(mod, varLst, "start");
       then
         (cache,SOME(DAE.VAR_ATTR_STRING(quantity_str,start_val,fixed_val,NONE(),NONE(),NONE(),startOrigin)));
 
     // Enumeration
     case (cache,_,mod,enumtype as DAE.T_ENUMERATION(attributeLst = varLst),index_list)
-      equation
-        (quantity_str) = instBinding(mod, varLst, DAE.T_STRING_DEFAULT,index_list, "quantity",false);
-        (exp_bind_min) = instBinding(mod, varLst, enumtype, index_list, "min",false);
-        (exp_bind_max) = instBinding(mod, varLst, enumtype, index_list, "max",false);
-        (exp_bind_start) = instBinding(mod, varLst, enumtype, index_list, "start",false);
-        (fixed_val) = instBinding(mod, varLst, DAE.T_BOOL_DEFAULT, index_list, "fixed",true);
-        startOrigin = instStartOrigin(mod, varLst, "start");
+      algorithm
+        (quantity_str) := instBinding(mod, varLst, DAE.T_STRING_DEFAULT,index_list, "quantity",false);
+        (exp_bind_min) := instBinding(mod, varLst, enumtype, index_list, "min",false);
+        (exp_bind_max) := instBinding(mod, varLst, enumtype, index_list, "max",false);
+        (exp_bind_start) := instBinding(mod, varLst, enumtype, index_list, "start",false);
+        (fixed_val) := instBinding(mod, varLst, DAE.T_BOOL_DEFAULT, index_list, "fixed",true);
+        startOrigin := instStartOrigin(mod, varLst, "start");
       then
         (cache,SOME(DAE.VAR_ATTR_ENUMERATION(quantity_str,exp_bind_min,exp_bind_max,exp_bind_start,fixed_val,NONE(),NONE(),NONE(),startOrigin)));
 
@@ -462,31 +462,31 @@ algorithm
 
     //Record constructor
     case (mod, index_list, bind_name)
-      equation
-        SOME(DAE.CALL(path = path, expLst = {name,params, paramNames})) = instBinding(mod, varLst, distributionType, index_list, bind_name, useConstValue);
-        true = AbsynUtil.pathEqual(path, Absyn.IDENT("Distribution"));
+      algorithm
+        SOME(DAE.CALL(path = path, expLst = {name,params, paramNames})) := instBinding(mod, varLst, distributionType, index_list, bind_name, useConstValue);
+        true := AbsynUtil.pathEqual(path, Absyn.IDENT("Distribution"));
       then
         SOME(DAE.DISTRIBUTION(name, params, paramNames));
 
     case (mod, index_list, bind_name)
-      equation
-        SOME(DAE.RECORD(path = path, exps = {name,params, paramNames})) = instBinding(mod, varLst, distributionType, index_list, bind_name, useConstValue);
-        true = AbsynUtil.pathEqual(path, Absyn.IDENT("Distribution"));
+      algorithm
+        SOME(DAE.RECORD(path = path, exps = {name,params, paramNames})) := instBinding(mod, varLst, distributionType, index_list, bind_name, useConstValue);
+        true := AbsynUtil.pathEqual(path, Absyn.IDENT("Distribution"));
       then
         SOME(DAE.DISTRIBUTION(name, params, paramNames));
 
     // Cref
     case (mod, index_list, bind_name)
-      equation
-        SOME(DAE.CREF(cr,ty)) = instBinding(mod, varLst, distributionType, index_list, bind_name, useConstValue);
-        true = Types.isRecord(ty);
-        DAE.T_COMPLEX(varLst = _::DAE.TYPES_VAR(ty=DAE.T_ARRAY(dims={DAE.DIM_INTEGER(paramDim)}))::_) = ty;
+      algorithm
+        SOME(DAE.CREF(cr,ty)) := instBinding(mod, varLst, distributionType, index_list, bind_name, useConstValue);
+        true := Types.isRecord(ty);
+        DAE.T_COMPLEX(varLst = _::DAE.TYPES_VAR(ty=DAE.T_ARRAY(dims={DAE.DIM_INTEGER(paramDim)}))::_) := ty;
 
-        crName = ComponentReference.crefPrependIdent(cr,"name",{},DAE.T_STRING_DEFAULT);
-        crParams = ComponentReference.crefPrependIdent(cr,"params",{},DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(paramDim)}));
-        name = Expression.makeCrefExp(crName,DAE.T_STRING_DEFAULT);
-        params = Expression.makeCrefExp(crParams,DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(paramDim)}));
-        paramNames = Expression.makeCrefExp(crParams,DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(paramDim)}));
+        crName := ComponentReference.crefPrependIdent(cr,"name",{},DAE.T_STRING_DEFAULT);
+        crParams := ComponentReference.crefPrependIdent(cr,"params",{},DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(paramDim)}));
+        name := Expression.makeCrefExp(crName,DAE.T_STRING_DEFAULT);
+        params := Expression.makeCrefExp(crParams,DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(paramDim)}));
+        paramNames := Expression.makeCrefExp(crParams,DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(paramDim)}));
       then
          SOME(DAE.DISTRIBUTION(name, params, paramNames));
 
@@ -618,11 +618,11 @@ algorithm
 
     // A record might have bindings from the class, use those if there is no modifier!
     case (cache, _, DAE.NOMOD(), _)
-      equation
+      algorithm
         (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = tpath),
-           varLst = complex_vars)) = Types.arrayElementType(inType);
-        true = Types.allHaveBindings(complex_vars);
-        binding = makeRecordBinding(cache, inEnv, tpath, inType, complex_vars, {}, inInfo);
+           varLst = complex_vars)) := Types.arrayElementType(inType);
+        true := Types.allHaveBindings(complex_vars);
+        binding := makeRecordBinding(cache, inEnv, tpath, inType, complex_vars, {}, inInfo);
       then
         (cache, binding);
 
@@ -641,14 +641,14 @@ algorithm
     //             (BUG: #1156 at https://openmodelica.org:8443/cb/issue/1156)
     //             and maybe a lot others.
     case (cache,SCode.ATTR(variability = SCode.PARAM()),DAE.MOD(binding = NONE()),tp)
-      equation
-        true = Types.getFixedVarAttributeParameterOrConstant(tp);
+      algorithm
+        true := Types.getFixedVarAttributeParameterOrConstant(tp);
         // this always succeeds but return NOMOD if there is no (start = x)
-        startValueModification = Mod.lookupCompModification(inMod, "start");
+        startValueModification := Mod.lookupCompModification(inMod, "start");
         // make sure is NOT a DAE.NOMOD!
-        false = Mod.isEmptyMod(startValueModification);
-        (cache,binding) = makeBinding(cache,inEnv,inAttributes,startValueModification,inType,inPrefix,componentName,inInfo);
-        binding = DAEUtil.setBindingSource(binding, DAE.BINDING_FROM_START_VALUE());
+        false := Mod.isEmptyMod(startValueModification);
+        (cache,binding) := makeBinding(cache,inEnv,inAttributes,startValueModification,inType,inPrefix,componentName,inInfo);
+        binding := DAEUtil.setBindingSource(binding, DAE.BINDING_FROM_START_VALUE());
 
         // lochel: I moved the warning to the back end for now
         // s = componentName;
@@ -663,10 +663,10 @@ algorithm
     // binding for the whole record, in which case we need to assemble them into
     // a binding.
     case (cache, _, DAE.MOD(subModLst = sub_mods as _ :: _), _)
-      equation
+      algorithm
         (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = tpath),
-           varLst = complex_vars)) = Types.arrayElementType(inType);
-        binding = makeRecordBinding(cache, inEnv, tpath, inType, complex_vars, sub_mods, inInfo);
+           varLst = complex_vars)) := Types.arrayElementType(inType);
+        binding := makeRecordBinding(cache, inEnv, tpath, inType, complex_vars, sub_mods, inInfo);
       then
         (cache, binding);
 
@@ -681,45 +681,45 @@ algorithm
     */
 
     case (cache,_,DAE.MOD(binding = SOME(DAE.TYPED(e,SOME(v),prop,_))),e_tp) /* default */
-      equation
-        c = Types.propAllConst(prop);
-        tp = Types.getPropType(prop);
-        false = Types.equivtypes(tp,e_tp);
-        e_val_exp = ValuesUtil.valueExp(v, SOME(e));
+      algorithm
+        c := Types.propAllConst(prop);
+        tp := Types.getPropType(prop);
+        false := Types.equivtypes(tp,e_tp);
+        e_val_exp := ValuesUtil.valueExp(v, SOME(e));
         // Handle bindings of the type Boolean b[Boolean]={true,false}, enumerations, and similar
         // tp = Types.traverseType(tp, 1, Types.makeKnownDimensionsInteger);
         // e_tp = Types.traverseType(e_tp, 1, Types.makeKnownDimensionsInteger);
-        (e_1, _) = Types.matchType(e, tp, e_tp, false);
-        (e_1,_) = ExpressionSimplify.simplify(e_1);
-        (e_val_exp, _) = Types.matchType(e_val_exp, tp, e_tp, false);
-        (e_val_exp,_) = ExpressionSimplify.simplify(e_val_exp);
-        v = Ceval.cevalSimple(e_val_exp);
-        e_val = SOME(v);
+        (e_1, _) := Types.matchType(e, tp, e_tp, false);
+        (e_1,_) := ExpressionSimplify.simplify(e_1);
+        (e_val_exp, _) := Types.matchType(e_val_exp, tp, e_tp, false);
+        (e_val_exp,_) := ExpressionSimplify.simplify(e_val_exp);
+        v := Ceval.cevalSimple(e_val_exp);
+        e_val := SOME(v);
       then
         (cache,DAE.EQBOUND(e_1,e_val,c,DAE.BINDING_FROM_DEFAULT_VALUE()));
 
     case (cache,_,DAE.MOD(binding = SOME(DAE.TYPED(e,e_val,prop,_))),e_tp) /* default */
-      equation
-        c = Types.propAllConst(prop);
-        tp = Types.getPropType(prop);
+      algorithm
+        c := Types.propAllConst(prop);
+        tp := Types.getPropType(prop);
         // Handle bindings of the type Boolean b[Boolean]={true,false}, enumerations, and similar
         // tp = Types.traverseType(tp, 1, Types.makeKnownDimensionsInteger);
         // e_tp = Types.traverseType(e_tp, 1, Types.makeKnownDimensionsInteger);
-        (e_1, _) = Types.matchType(e, tp, e_tp, false);
-        (e_1,_) = ExpressionSimplify.simplify(e_1);
+        (e_1, _) := Types.matchType(e, tp, e_tp, false);
+        (e_1,_) := ExpressionSimplify.simplify(e_1);
       then
         (cache,DAE.EQBOUND(e_1,e_val,c,DAE.BINDING_FROM_DEFAULT_VALUE()));
 
     case (_,_,DAE.MOD(binding = SOME(DAE.TYPED(e,_,prop,_)), info = info),tp)
-      equation
-        e_tp = Types.getPropType(prop);
-        _ = Types.propAllConst(prop);
-        failure((_,_) = Types.matchType(e, e_tp, tp, false));
-        e_tp_str = Types.unparseTypeNoAttr(e_tp);
-        tp_str = Types.unparseTypeNoAttr(tp);
-        e_str = ExpressionDump.printExpStr(e);
-        e_str_1 = stringAppend("=", e_str);
-        str = PrefixUtil.printPrefixStrIgnoreNoPre(inPrefix) + "." + componentName;
+      algorithm
+        e_tp := Types.getPropType(prop);
+        _ := Types.propAllConst(prop);
+        failure((_,_) := Types.matchType(e, e_tp, tp, false));
+        e_tp_str := Types.unparseTypeNoAttr(e_tp);
+        tp_str := Types.unparseTypeNoAttr(tp);
+        e_str := ExpressionDump.printExpStr(e);
+        e_str_1 := stringAppend("=", e_str);
+        str := PrefixUtil.printPrefixStrIgnoreNoPre(inPrefix) + "." + componentName;
         Types.typeErrorSanityCheck(e_tp_str, tp_str, info);
         Error.addSourceMessage(Error.MODIFIER_TYPE_MISMATCH_ERROR, {str,tp_str,e_str_1,e_tp_str}, info);
       then
@@ -857,10 +857,10 @@ algorithm
 
     case (SOME(DAE.NAMEMOD(ident = ident, mod = DAE.MOD(binding =
         SOME(DAE.TYPED(modifierAsExp = exp, properties = DAE.PROP(type_ = ty)))))))
-      equation
-        binding_str = ExpressionDump.printExpStr(exp);
-        expected_type_str = Types.unparseTypeNoAttr(inType);
-        given_type_str = Types.unparseTypeNoAttr(ty);
+      algorithm
+        binding_str := ExpressionDump.printExpStr(exp);
+        expected_type_str := Types.unparseTypeNoAttr(inType);
+        given_type_str := Types.unparseTypeNoAttr(ty);
         Types.typeErrorSanityCheck(given_type_str, expected_type_str, inInfo);
         Error.addSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH,
         {ident, binding_str, expected_type_str, given_type_str}, inInfo);

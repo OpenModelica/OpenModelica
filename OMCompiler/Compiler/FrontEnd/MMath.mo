@@ -67,12 +67,12 @@ public function addRational "adds two rationals"
 algorithm
   r := match(r1,r2)
   local Integer i1,i2,i3,i4,ri1,ri2,d;
-    case(RATIONAL(i1,i2),RATIONAL(i3,i4)) equation
-      ri1 = i1*i4 + i3*i2;
-      ri2 = i2*i4;
-      d = intGcd(ri1,ri2);
-      ri1 = intDiv(ri1, d);
-      ri2 = intDiv(ri2, d);
+    case(RATIONAL(i1,i2),RATIONAL(i3,i4)) algorithm
+      ri1 := i1*i4 + i3*i2;
+      ri2 := i2*i4;
+      d := intGcd(ri1,ri2);
+      ri1 := intDiv(ri1, d);
+      ri2 := intDiv(ri2, d);
     then normalizeZero(RATIONAL(ri1,ri2));
   end match;
 end addRational;
@@ -93,8 +93,8 @@ output String str;
 algorithm
   str := match(r)
   local Integer n,d;
-    case(RATIONAL(n,d)) equation
-      str = intString(n)+"/"+intString(d);
+    case(RATIONAL(n,d)) algorithm
+      str := intString(n)+"/"+intString(d);
     then str;
   end match;
 end rationalString;
@@ -119,12 +119,12 @@ public function subRational "subtracts two rationals"
 algorithm
   r := match(r1,r2)
   local Integer i1,i2,i3,i4,ri1,ri2,d;
-    case(RATIONAL(i1,i2),RATIONAL(i3,i4)) equation
-      ri1 =  i1*i4 - i3*i2;
-      ri2 = i2*i4;
-      d = intGcd(ri1,ri2);
-      ri1 = intDiv(ri1, d);
-      ri2 = intDiv(ri2, d);
+    case(RATIONAL(i1,i2),RATIONAL(i3,i4)) algorithm
+      ri1 :=  i1*i4 - i3*i2;
+      ri2 := i2*i4;
+      d := intGcd(ri1,ri2);
+      ri1 := intDiv(ri1, d);
+      ri2 := intDiv(ri2, d);
     then normalizeZero(RATIONAL(ri1,ri2));
   end match;
 end subRational;
@@ -136,12 +136,12 @@ public function multRational "multiply two rationals"
 algorithm
   r := match(r1,r2)
     local Integer i1,i2,i3,i4,ri1,ri2,d;
-    case(RATIONAL(i1,i2),RATIONAL(i3,i4)) equation
-      ri1 = i1*i3;
-      ri2 = i2*i4;
-      d = intGcd(ri1,ri2);
-      ri1 = intDiv(ri1,d);
-      ri2 = intDiv(ri2,d);
+    case(RATIONAL(i1,i2),RATIONAL(i3,i4)) algorithm
+      ri1 := i1*i3;
+      ri2 := i2*i4;
+      d := intGcd(ri1,ri2);
+      ri1 := intDiv(ri1,d);
+      ri2 := intDiv(ri2,d);
    then normalizeZero(RATIONAL(ri1,ri2));
   end match;
 end multRational;
@@ -153,12 +153,12 @@ public function divRational "division of two rationals i1/i2 / i3/i4 = (i1*i4) /
 algorithm
   r := match(r1,r2)
   local Integer i1,i2,i3,i4,ri1,ri2,d;
-    case(RATIONAL(i1,i2),RATIONAL(i3,i4)) equation
-      ri1 = i1*i4;
-      ri2 = i3*i2;
-      d = intGcd(ri1,ri2);
-      ri1 = intDiv(ri1, d);
-      ri2 = intDiv(ri2, d);
+    case(RATIONAL(i1,i2),RATIONAL(i3,i4)) algorithm
+      ri1 := i1*i4;
+      ri2 := i3*i2;
+      d := intGcd(ri1,ri2);
+      ri1 := intDiv(ri1, d);
+      ri2 := intDiv(ri2, d);
    then normalizeZero(RATIONAL(ri1,ri2));
   end match;
 end divRational;
@@ -180,17 +180,17 @@ public function testRational "test rational operators"
 algorithm
   _ := matchcontinue()
 
-    case() equation
-      RATIONAL(7,6) = addRational(RATIONAL(1,2),RATIONAL(2,3));
-      RATIONAL(2,1) = addRational(RATIONAL(1,2),RATIONAL(3,2));
+    case() algorithm
+      RATIONAL(7,6) := addRational(RATIONAL(1,2),RATIONAL(2,3));
+      RATIONAL(2,1) := addRational(RATIONAL(1,2),RATIONAL(3,2));
 
-      RATIONAL(1,1) = subRational(RATIONAL(3,2),RATIONAL(1,2));
-      RATIONAL(1,3) = subRational(RATIONAL(1,2),RATIONAL(1,6));
+      RATIONAL(1,1) := subRational(RATIONAL(3,2),RATIONAL(1,2));
+      RATIONAL(1,3) := subRational(RATIONAL(1,2),RATIONAL(1,6));
 
-      RATIONAL(4,3) = multRational(RATIONAL(2,3),RATIONAL(4,2));
-      RATIONAL(1,1) = multRational(RATIONAL(1,1),RATIONAL(1,1));
+      RATIONAL(4,3) := multRational(RATIONAL(2,3),RATIONAL(4,2));
+      RATIONAL(1,1) := multRational(RATIONAL(1,1),RATIONAL(1,1));
 
-      RATIONAL(1,2) = divRational(RATIONAL(1,3),RATIONAL(2,3));
+      RATIONAL(1,2) := divRational(RATIONAL(1,3),RATIONAL(2,3));
       print("testRational succeeded\n");
     then ();
     else equation

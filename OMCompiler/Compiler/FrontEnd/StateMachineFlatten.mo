@@ -2045,12 +2045,12 @@ algorithm
       DAE.Ident firstIdent;
       DAE.Ident lastIdent;
     case DAE.EQUATION(exp=exp)
-      equation
-        DAE.CREF(componentRef=cref) = exp;
-        firstIdent = ComponentReference.crefFirstIdent(cref);
-        true = firstIdent == "smOf";
-        lastIdent = ComponentReference.crefLastIdent(cref);
-        true = lastIdent == inLastIdent;
+      algorithm
+        DAE.CREF(componentRef=cref) := exp;
+        firstIdent := ComponentReference.crefFirstIdent(cref);
+        true := firstIdent == "smOf";
+        lastIdent := ComponentReference.crefLastIdent(cref);
+        true := lastIdent == inLastIdent;
       then exp;
   end match;
 end extractSmOfExps;

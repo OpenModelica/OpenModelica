@@ -83,9 +83,9 @@ algorithm
       Option<String> cmt;
 
     case (SCode.MOD(fp, ep, sl, binding, cmt, i), _)
-      equation
-        binding = if onlyRedeclares then NONE() else constantBindingOrNone(binding);
-        sl = removeNonConstantBindingsKeepRedeclaresFromSubMod(sl, onlyRedeclares);
+      algorithm
+        binding := if onlyRedeclares then NONE() else constantBindingOrNone(binding);
+        sl := removeNonConstantBindingsKeepRedeclaresFromSubMod(sl, onlyRedeclares);
       then
         SCode.MOD(fp, ep, sl, binding, cmt, i);
 
@@ -113,9 +113,9 @@ algorithm
     case ({}, _) then {};
 
     case (SCode.NAMEMOD(n, m)::rest, _)
-      equation
-        m = removeNonConstantBindingsKeepRedeclares(m, onlyRedeclares);
-        sl = removeNonConstantBindingsKeepRedeclaresFromSubMod(rest, onlyRedeclares);
+      algorithm
+        m := removeNonConstantBindingsKeepRedeclares(m, onlyRedeclares);
+        sl := removeNonConstantBindingsKeepRedeclaresFromSubMod(rest, onlyRedeclares);
       then
         SCode.NAMEMOD(n, m)::sl;
 
@@ -148,18 +148,18 @@ algorithm
 
     // we got some
     case (SCode.EXTENDS(baseClassPath, visibility, mod, ann, info)::rest, redecls)
-      equation
-        submods = makeElementsIntoSubMods(SCode.NOT_FINAL(), SCode.NOT_EACH(), redecls);
-        redeclareMod = SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), submods, NONE(), NONE(), info);
-        mod = SCodeUtil.mergeSCodeMods(redeclareMod, mod);
-        out = addRedeclareAsElementsToExtends(rest, redecls);
+      algorithm
+        submods := makeElementsIntoSubMods(SCode.NOT_FINAL(), SCode.NOT_EACH(), redecls);
+        redeclareMod := SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), submods, NONE(), NONE(), info);
+        mod := SCodeUtil.mergeSCodeMods(redeclareMod, mod);
+        out := addRedeclareAsElementsToExtends(rest, redecls);
       then
         SCode.EXTENDS(baseClassPath, visibility, mod, ann, info)::out;
 
     // ignore non-extends
     case (el::rest, redecls)
-      equation
-        out = addRedeclareAsElementsToExtends(rest, redecls);
+      algorithm
+        out := addRedeclareAsElementsToExtends(rest, redecls);
       then
         el::out;
 
@@ -187,37 +187,37 @@ algorithm
 
     // class extends, error!
     case (f, e, (el as SCode.CLASS(classDef = SCode.CLASS_EXTENDS()))::rest)
-      equation
+      algorithm
         // print an error here
         print("- AbsynToSCode.makeElementsIntoSubMods ignoring class-extends redeclare-as-element: " + SCodeDump.unparseElementStr(el,SCodeDump.defaultOptions) + "\n");
         // recurse
-        newSubMods = makeElementsIntoSubMods(f, e, rest);
+        newSubMods := makeElementsIntoSubMods(f, e, rest);
       then
         newSubMods;
 
     // component
     case (f, e, (el as SCode.COMPONENT(name = n))::rest)
-      equation
+      algorithm
         // recurse
-        newSubMods = makeElementsIntoSubMods(f, e, rest);
+        newSubMods := makeElementsIntoSubMods(f, e, rest);
       then
         SCode.NAMEMOD(n,SCode.REDECL(f,e,el))::newSubMods;
 
     // class
     case (f, e, (el as SCode.CLASS(name = n))::rest)
-      equation
+      algorithm
         // recurse
-        newSubMods = makeElementsIntoSubMods(f, e, rest);
+        newSubMods := makeElementsIntoSubMods(f, e, rest);
       then
         SCode.NAMEMOD(n,SCode.REDECL(f,e,el))::newSubMods;
 
     // rest
     case (f, e, el::rest)
-      equation
+      algorithm
         // print an error here
         print("- AbsynToSCode.makeElementsIntoSubMods ignoring redeclare-as-element redeclaration: " + SCodeDump.unparseElementStr(el,SCodeDump.defaultOptions) + "\n");
         // recurse
-        newSubMods = makeElementsIntoSubMods(f, e, rest);
+        newSubMods := makeElementsIntoSubMods(f, e, rest);
       then
         newSubMods;
   end match;
@@ -237,9 +237,9 @@ algorithm
 
     // if cref is not present keep the binding!
     case SOME(e)
-      equation
-        crlst1 = AbsynUtil.getCrefFromExp(e, true, true);
-        crlst2 = AbsynUtil.removeCrefFromCrefs(crlst1, inCref);
+      algorithm
+        crlst1 := AbsynUtil.getCrefFromExp(e, true, true);
+        crlst2 := AbsynUtil.removeCrefFromCrefs(crlst1, inCref);
       then if intEq(listLength(crlst1), listLength(crlst2)) then inBinding else NONE();
     // else
     else NONE();
@@ -263,9 +263,9 @@ algorithm
       Option<String> cmt;
 
     case (SCode.MOD(fp, ep, sl, binding, cmt, i), _)
-      equation
-        binding = removeReferenceInBinding(binding, inCref);
-        sl = removeSelfReferenceFromSubMod(sl, inCref);
+      algorithm
+        binding := removeReferenceInBinding(binding, inCref);
+        sl := removeSelfReferenceFromSubMod(sl, inCref);
       then
         SCode.MOD(fp, ep, sl, binding, cmt, i);
 
@@ -293,9 +293,9 @@ algorithm
     case ({}, _) then {};
 
     case (SCode.NAMEMOD(n, m)::rest, _)
-      equation
-        m = removeSelfReferenceFromMod(m, inCref);
-        sl = removeSelfReferenceFromSubMod(rest, inCref);
+      algorithm
+        m := removeSelfReferenceFromMod(m, inCref);
+        sl := removeSelfReferenceFromSubMod(rest, inCref);
       then
         SCode.NAMEMOD(n, m)::sl;
 
@@ -313,8 +313,8 @@ algorithm
       SCode.Mod mod, mod1;
       SCode.Ident ident;
     case SCode.NAMEMOD(ident=ident, mod=mod)
-      equation
-        mod1 = expandEnumerationMod(mod);
+      algorithm
+        mod1 := expandEnumerationMod(mod);
       then
         if referenceEq(mod, mod1) then (inSubMod, inChanged) else (SCode.NAMEMOD(ident, mod1), true);
     else
@@ -337,14 +337,14 @@ protected
 algorithm
   outMod := match inMod
     case SCode.REDECL(f, e, el)
-      equation
-        el1 = expandEnumerationClass(el);
+      algorithm
+        el1 := expandEnumerationClass(el);
       then
         if referenceEq(el, el1) then inMod else SCode.REDECL(f, e, el1);
 
     case SCode.MOD(f, e, submod, binding, cmt, info)
-      equation
-        (submod, changed) = List.mapFold(submod, expandEnumerationSubMod, false);
+      algorithm
+        (submod, changed) := List.mapFold(submod, expandEnumerationSubMod, false);
       then if changed then SCode.MOD(f, e, submod, binding, cmt, info) else inMod;
 
     else inMod;
@@ -373,15 +373,15 @@ algorithm
 
     case SCode.CLASS(name = n,restriction = SCode.R_TYPE(), prefixes = prefixes,
                      classDef = SCode.ENUMERATION(enumLst=l),cmt=cmt,info = info)
-      equation
-        c = expandEnumeration(n, l, prefixes, cmt, info);
+      algorithm
+        c := expandEnumeration(n, l, prefixes, cmt, info);
       then
         c;
 
     case SCode.EXTENDS(baseClassPath = p, visibility = v, modifications = m, ann = ann, info = info)
-      equation
+      algorithm
 
-        m1 = expandEnumerationMod(m);
+        m1 := expandEnumerationMod(m);
       then
         if referenceEq(m, m1) then inElement else SCode.EXTENDS(p, v, m1, ann, info);
 

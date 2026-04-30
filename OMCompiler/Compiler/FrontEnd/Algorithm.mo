@@ -200,54 +200,54 @@ algorithm
 
     // assign to parameter in algorithm okay if record
     case ((lhs as DAE.CREF(componentRef=cr)), lhprop, rhs, rhprop, _, SCode.NON_INITIAL(), _)
-      equation
-        DAE.C_PARAM() = Types.propAnyConst(lhprop);
-        true = ComponentReference.isRecord(cr);
-        outStatement = makeAssignment2(lhs, lhprop, rhs, rhprop, source);
+      algorithm
+        DAE.C_PARAM() := Types.propAnyConst(lhprop);
+        true := ComponentReference.isRecord(cr);
+        outStatement := makeAssignment2(lhs, lhprop, rhs, rhprop, source);
       then outStatement;
 
     // assign to parameter in algorithm produce error
     case (lhs, lprop, rhs, _, _, SCode.NON_INITIAL(), _)
-      equation
-        DAE.C_PARAM() = Types.propAnyConst(lprop);
-        lhs_str = ExpressionDump.printExpStr(lhs);
-        rhs_str = ExpressionDump.printExpStr(rhs);
+      algorithm
+        DAE.C_PARAM() := Types.propAnyConst(lprop);
+        lhs_str := ExpressionDump.printExpStr(lhs);
+        rhs_str := ExpressionDump.printExpStr(rhs);
         Error.addSourceMessage(Error.ASSIGN_PARAM_ERROR, {lhs_str, rhs_str}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
 
     // assignment to a constant, report error
     case (lhs, _, _, _, DAE.ATTR(variability = SCode.CONST()), _, _)
-      equation
-        lhs_str = ExpressionDump.printExpStr(lhs);
+      algorithm
+        lhs_str := ExpressionDump.printExpStr(lhs);
         Error.addSourceMessage(Error.ASSIGN_READONLY_ERROR, {"constant", lhs_str}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
 
     // assignment to parameter ok in initial algorithm
     case (lhs, lhprop, rhs, rhprop, _, SCode.INITIAL(), _)
-      equation
-        DAE.C_PARAM() = Types.propAnyConst(lhprop);
-        outStatement = makeAssignment2(lhs, lhprop, rhs, rhprop, source);
+      algorithm
+        DAE.C_PARAM() := Types.propAnyConst(lhprop);
+        outStatement := makeAssignment2(lhs, lhprop, rhs, rhprop, source);
       then outStatement;
 
     case (lhs, lhprop, rhs, rhprop, DAE.ATTR(), _, _)
-      equation
-        DAE.C_VAR() = Types.propAnyConst(lhprop);
-        outStatement = makeAssignment2(lhs, lhprop, rhs, rhprop, source);
+      algorithm
+        DAE.C_VAR() := Types.propAnyConst(lhprop);
+        outStatement := makeAssignment2(lhs, lhprop, rhs, rhprop, source);
       then outStatement;
 
     /* report an error */
     case (lhs, lprop, rhs, rprop, _, _, _)
-      equation
-        lt = Types.getPropType(lprop);
-        rt = Types.getPropType(rprop);
-        false = Types.equivtypes(lt, rt);
-        lhs_str = ExpressionDump.printExpStr(lhs);
-        rhs_str = ExpressionDump.printExpStr(rhs);
-        lt_str = Types.unparseTypeNoAttr(lt);
-        rt_str = Types.unparseTypeNoAttr(rt);
-        info = ElementSource.getElementSourceFileInfo(source);
+      algorithm
+        lt := Types.getPropType(lprop);
+        rt := Types.getPropType(rprop);
+        false := Types.equivtypes(lt, rt);
+        lhs_str := ExpressionDump.printExpStr(lhs);
+        rhs_str := ExpressionDump.printExpStr(rhs);
+        lt_str := Types.unparseTypeNoAttr(lt);
+        rt_str := Types.unparseTypeNoAttr(rt);
+        info := ElementSource.getElementSourceFileInfo(source);
         Types.typeErrorSanityCheck(lt_str, rt_str, info);
         Error.addSourceMessage(Error.ASSIGN_TYPE_MISMATCH_ERROR,
           {lhs_str, rhs_str, lt_str, rt_str}, info);
@@ -256,8 +256,8 @@ algorithm
 
      /* failing */
     case (lhs, _, rhs, _, _, _, _)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Algorithm.makeAssignment failed");
         Debug.trace("    ");
         Debug.trace(ExpressionDump.printExpStr(lhs));
@@ -311,18 +311,18 @@ algorithm
         DAE.STMT_ASSIGN(t, e1, rhs_1);
       */
     case DAE.CREF() // guard Types.isPropArray(lhprop)
-      equation
-        (rhs_1, _) = Types.matchProp(rhs, rhprop, lhprop, false /* Don't duplicate errors */);
-        ty = Types.getPropType(lhprop);
-        t = Types.simplifyType(ty);
+      algorithm
+        (rhs_1, _) := Types.matchProp(rhs, rhprop, lhprop, false /* Don't duplicate errors */);
+        ty := Types.getPropType(lhprop);
+        t := Types.simplifyType(ty);
       then
         DAE.STMT_ASSIGN_ARR(t, lhs, rhs_1, source);
 
     case e3 as DAE.ASUB(_, _)
-      equation
-        (rhs_1, _) = Types.matchProp(rhs, rhprop, lhprop, true);
+      algorithm
+        (rhs_1, _) := Types.matchProp(rhs, rhprop, lhprop, true);
         //false = Types.isPropArray(lhprop);
-        t = getPropExpType(lhprop);
+        t := getPropExpType(lhprop);
       then
         DAE.STMT_ASSIGN(t, e3, rhs_1, source);
   end match;
@@ -363,9 +363,9 @@ algorithm
       then makeAssignmentsList(rest_lhs, rest_lhs_prop, rest_rhs, rest_rhs_prop, attributes, initial_, source);
     case (lhs :: rest_lhs, lhs_prop :: rest_lhs_prop,
           rhs :: rest_rhs, rhs_prop :: rest_rhs_prop, _, _, _)
-      equation
-        ass = makeAssignment(lhs, lhs_prop, rhs, rhs_prop, attributes, initial_, source);
-        rest_ass = makeAssignmentsList(rest_lhs, rest_lhs_prop, rest_rhs, rest_rhs_prop, attributes, initial_, source);
+      algorithm
+        ass := makeAssignment(lhs, lhs_prop, rhs, rhs_prop, attributes, initial_, source);
+        rest_ass := makeAssignmentsList(rest_lhs, rest_lhs_prop, rest_rhs, rest_rhs_prop, attributes, initial_, source);
       then
         ass :: rest_ass;
   end match;
@@ -390,20 +390,20 @@ algorithm
       case DAE.PROP(constFlag = DAE.C_VAR()) then ();
       // constant
       case DAE.PROP(_, DAE.C_CONST())
-        equation
-          l = stringAppendList({"(", stringDelimitList(List.map(lhs, ExpressionDump.printExpStr), ", "), ")"});
-          r = ExpressionDump.printExpStr(rhs);
+        algorithm
+          l := stringAppendList({"(", stringDelimitList(List.map(lhs, ExpressionDump.printExpStr), ", "), ")"});
+          r := ExpressionDump.printExpStr(rhs);
           Error.addSourceMessage(Error.ASSIGN_CONSTANT_ERROR, {l, r}, ElementSource.getElementSourceFileInfo(source));
           fail();
         then
           ();
       // parameters
       case DAE.PROP(ty, DAE.C_PARAM())
-        equation
+        algorithm
           if Types.getFixedVarAttributeParameterOrConstant(ty) then
-            l = stringAppendList({"(", stringDelimitList(List.map(lhs, ExpressionDump.printExpStr), ", "), ")"});
-            r = ExpressionDump.printExpStr(rhs);
-            c = ExpressionDump.printExpStr(listGet(lhs, i));
+            l := stringAppendList({"(", stringDelimitList(List.map(lhs, ExpressionDump.printExpStr), ", "), ")"});
+            r := ExpressionDump.printExpStr(rhs);
+            c := ExpressionDump.printExpStr(listGet(lhs, i));
             Error.addSourceMessage(Error.ASSIGN_PARAM_FIXED_ERROR, {c, l, r}, ElementSource.getElementSourceFileInfo(source));
             fail();
           end if;
@@ -442,54 +442,54 @@ algorithm
       DAE.Const const;
 
     case (lhs, lprop, rhs, _, _, _)
-      equation
-        bvals = List.map(lprop, Types.propAnyConst);
-        DAE.C_CONST() = List.reduce(bvals, Types.constOr);
-        sl = List.map(lhs, ExpressionDump.printExpStr);
-        s = stringDelimitList(sl, ", ");
-        lhs_str = stringAppendList({"(", s, ")"});
-        rhs_str = ExpressionDump.printExpStr(rhs);
+      algorithm
+        bvals := List.map(lprop, Types.propAnyConst);
+        DAE.C_CONST() := List.reduce(bvals, Types.constOr);
+        sl := List.map(lhs, ExpressionDump.printExpStr);
+        s := stringDelimitList(sl, ", ");
+        lhs_str := stringAppendList({"(", s, ")"});
+        rhs_str := ExpressionDump.printExpStr(rhs);
         Error.addSourceMessage(Error.ASSIGN_CONSTANT_ERROR, {lhs_str, rhs_str}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
     case (lhs, lprop, rhs, _, SCode.NON_INITIAL(), _)
-      equation
-        bvals = List.map(lprop, Types.propAnyConst);
-        DAE.C_PARAM() = List.reduce(bvals, Types.constOr);
-        sl = List.map(lhs, ExpressionDump.printExpStr);
-        s = stringDelimitList(sl, ", ");
-        lhs_str = stringAppendList({"(", s, ")"});
-        rhs_str = ExpressionDump.printExpStr(rhs);
+      algorithm
+        bvals := List.map(lprop, Types.propAnyConst);
+        DAE.C_PARAM() := List.reduce(bvals, Types.constOr);
+        sl := List.map(lhs, ExpressionDump.printExpStr);
+        s := stringDelimitList(sl, ", ");
+        lhs_str := stringAppendList({"(", s, ")"});
+        rhs_str := ExpressionDump.printExpStr(rhs);
         Error.addSourceMessage(Error.ASSIGN_PARAM_ERROR, {lhs_str, rhs_str}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
     // a normal prop in rhs that contains a T_TUPLE!
     case (expl, lhprops, rhs, DAE.PROP(type_ = ty as DAE.T_TUPLE(types = tpl)), _, _)
-      equation
+      algorithm
         checkLHSWritable(expl, lhprops, rhs, source);
-        lhrtypes = List.map(lhprops, Types.getPropType);
+        lhrtypes := List.map(lhprops, Types.getPropType);
         Types.matchTypeTupleCall(rhs, tpl, lhrtypes);
          /* Don\'t use new rhs\', since type conversions of
             several output args are not clearly defined. */
       then makeTupleAssignmentNoTypeCheck(ty, expl, rhs, source);
     // a tuple in rhs
     case (expl, lhprops, rhs, DAE.PROP_TUPLE(type_ = ty as DAE.T_TUPLE(types = tpl), tupleConst = DAE.TUPLE_CONST()), _, _)
-      equation
+      algorithm
         checkLHSWritable(expl, lhprops, rhs, source);
-        lhrtypes = List.map(lhprops, Types.getPropType);
+        lhrtypes := List.map(lhprops, Types.getPropType);
         Types.matchTypeTupleCall(rhs, tpl, lhrtypes);
          /* Don\'t use new rhs\', since type conversions of several output args are not clearly defined. */
       then makeTupleAssignmentNoTypeCheck(ty, expl, rhs, source);
     case (lhs, lprop, rhs, rprop, _, _)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        sl = List.map(lhs, ExpressionDump.printExpStr);
-        s = stringDelimitList(sl, ", ");
-        lhs_str = stringAppendList({"(", s, ")"});
-        rhs_str = ExpressionDump.printExpStr(rhs);
-        str1 = stringDelimitList(List.map(lprop, Types.printPropStr), ", ");
-        str2 = Types.printPropStr(rprop);
-        strInitial = SCodeDump.printInitialStr(initial_);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
+        sl := List.map(lhs, ExpressionDump.printExpStr);
+        s := stringDelimitList(sl, ", ");
+        lhs_str := stringAppendList({"(", s, ")"});
+        rhs_str := ExpressionDump.printExpStr(rhs);
+        str1 := stringDelimitList(List.map(lprop, Types.printPropStr), ", ");
+        str2 := Types.printPropStr(rprop);
+        strInitial := SCodeDump.printInitialStr(initial_);
         Debug.traceln("- Algorithm.makeTupleAssignment failed on: \n\t" +
           lhs_str + " = " + rhs_str +
           "\n\tprops lhs: (" + str1 + ") =  props rhs: " + str2 +
@@ -538,15 +538,15 @@ algorithm
     case (DAE.BCONST(false), _, _, (e, prop, tb)::eib, fb, _)
       then makeIf(e, prop, tb, eib, fb, source);
     case (e, DAE.PROP(type_ = t), tb, eib, fb, _)
-      equation
-        (e, _) = Types.matchType(e, t, DAE.T_BOOL_DEFAULT, true);
-        else_ = makeElse(eib, fb, source);
+      algorithm
+        (e, _) := Types.matchType(e, t, DAE.T_BOOL_DEFAULT, true);
+        else_ := makeElse(eib, fb, source);
       then
         {DAE.STMT_IF(e, tb, else_, source)};
     case (e, DAE.PROP(type_ = t), _, _, _, _)
-      equation
-        e_str = ExpressionDump.printExpStr(e);
-        t_str = Types.unparseTypeNoAttr(t);
+      algorithm
+        e_str := ExpressionDump.printExpStr(e);
+        t_str := Types.unparseTypeNoAttr(t);
         Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR, {e_str, t_str}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
@@ -567,8 +567,8 @@ algorithm
       list<tuple<DAE.Exp, list<DAE.Statement>>> rest;
     case ({}, _) then {};
     case ((e, br)::rest, _)
-      equation
-        else_ = makeElseFromBranches(rest);
+      algorithm
+        else_ := makeElseFromBranches(rest);
       then {DAE.STMT_IF(e, br, else_, source)};
   end match;
 end makeIfFromBranches;
@@ -586,8 +586,8 @@ algorithm
     case {} then DAE.NOELSE();
     case {(DAE.BCONST(true), b)} then DAE.ELSE(b);
     case ((e, b)::xs)
-      equation
-        else_ = makeElseFromBranches(xs);
+      algorithm
+        else_ := makeElseFromBranches(xs);
       then DAE.ELSEIF(e, b, else_);
   end match;
 end makeElseFromBranches;
@@ -611,7 +611,7 @@ algorithm
     case (DAE.BCONST(true), stmts, _, _) then (stmts,true);
     case (DAE.BCONST(false), _, DAE.NOELSE(), _) then ({},true);
     case (DAE.BCONST(false), _, DAE.ELSE(stmts), _) then (stmts,true);
-    case (DAE.BCONST(false), _, DAE.ELSEIF(cond, stmts, els), source) equation (ostmts,_) = optimizeIf(cond, stmts, els, source); then (ostmts,true);
+    case (DAE.BCONST(false), _, DAE.ELSEIF(cond, stmts, els), source) algorithm (ostmts,_) := optimizeIf(cond, stmts, els, source); then (ostmts,true);
     else (DAE.STMT_IF(icond, istmts, iels, isource)::{},false);
   end match;
 end optimizeIf;
@@ -651,16 +651,16 @@ algorithm
     case (((DAE.BCONST(true), DAE.PROP(), b) :: _), _, _) then DAE.ELSE(b);
     case (((DAE.BCONST(false), DAE.PROP(), _) :: xs), fb, _) then makeElse(xs, fb, inSource);
     case (((e, DAE.PROP(type_ = t), b) :: xs), fb, _)
-      equation
-        (e, _) = Types.matchType(e, t, DAE.T_BOOL_DEFAULT, true);
-        else_ = makeElse(xs, fb, inSource);
+      algorithm
+        (e, _) := Types.matchType(e, t, DAE.T_BOOL_DEFAULT, true);
+        else_ := makeElse(xs, fb, inSource);
       then
         DAE.ELSEIF(e, b, else_);
     case (((e, DAE.PROP(type_ = t), _) :: _), _, _)
-      equation
-        e_str = ExpressionDump.printExpStr(e);
-        t_str = Types.unparseTypeNoAttr(t);
-        info = ElementSource.getElementSourceFileInfo(inSource);
+      algorithm
+        e_str := ExpressionDump.printExpStr(e);
+        t_str := Types.unparseTypeNoAttr(t);
+        info := ElementSource.getElementSourceFileInfo(inSource);
         Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR, {e_str, t_str}, info);
       then
         fail();
@@ -687,24 +687,24 @@ algorithm
       DAE.Dimensions dims;
 
     case (i, e, DAE.PROP(type_ = DAE.T_ARRAY(ty = t, dims = dims)), stmts, _)
-      equation
-        isArray = Types.isNonscalarArray(t, dims);
+      algorithm
+        isArray := Types.isNonscalarArray(t, dims);
       then DAE.STMT_FOR(t, isArray, i, e, stmts, source);
 
     case (i, e, DAE.PROP(type_ = DAE.T_METALIST(ty = t)), stmts, _)
-      equation
-        t = Types.simplifyType(t);
+      algorithm
+        t := Types.simplifyType(t);
       then DAE.STMT_FOR(t, false, i, e, stmts, source);
 
     case (i, e, DAE.PROP(type_ = DAE.T_METAARRAY(ty = t)), stmts, _)
-      equation
-        t = Types.simplifyType(t);
+      algorithm
+        t := Types.simplifyType(t);
       then DAE.STMT_FOR(t, false, i, e, stmts, source);
 
     case (_, e, DAE.PROP(type_ = t), _, _)
-      equation
-        e_str = ExpressionDump.printExpStr(e);
-        t_str = Types.unparseTypeNoAttr(t);
+      algorithm
+        e_str := ExpressionDump.printExpStr(e);
+        t_str := Types.unparseTypeNoAttr(t);
         Error.addSourceMessage(Error.FOR_EXPRESSION_TYPE_ERROR, {e_str, t_str}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
@@ -732,16 +732,16 @@ algorithm
       DAE.Dimensions dims;
 
     case (i, e, DAE.PROP(type_ = DAE.T_ARRAY(ty = t, dims = dims)), stmts, _, _)
-      equation
-        isArray = Types.isNonscalarArray(t, dims);
-        _ = Types.simplifyType(t);
+      algorithm
+        isArray := Types.isNonscalarArray(t, dims);
+        _ := Types.simplifyType(t);
       then
         DAE.STMT_PARFOR(t, isArray, i, e, stmts, inLoopPrlVars, source);
 
     case (_, e, DAE.PROP(type_ = t), _, _, _)
-      equation
-        e_str = ExpressionDump.printExpStr(e);
-        t_str = Types.unparseTypeNoAttr(t);
+      algorithm
+        e_str := ExpressionDump.printExpStr(e);
+        t_str := Types.unparseTypeNoAttr(t);
         Error.addSourceMessage(Error.FOR_EXPRESSION_TYPE_ERROR, {e_str, t_str}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
@@ -765,9 +765,9 @@ algorithm
       DAE.Type t;
     case (e, DAE.PROP(type_ = DAE.T_BOOL()), stmts, _) then DAE.STMT_WHILE(e, stmts, source);
     case (e, DAE.PROP(type_ = t), _, _)
-      equation
-        e_str = ExpressionDump.printExpStr(e);
-        t_str = Types.unparseTypeNoAttr(t);
+      algorithm
+        e_str := ExpressionDump.printExpStr(e);
+        t_str := Types.unparseTypeNoAttr(t);
         Error.addSourceMessage(Error.WHILE_CONDITION_TYPE_ERROR, {e_str, t_str}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
@@ -794,9 +794,9 @@ algorithm
     case (e, DAE.PROP(type_ = DAE.T_BOOL()), stmts, elsew, _) then DAE.STMT_WHEN(e, {}, false, stmts, elsew, source);
     case (e, DAE.PROP(type_ = DAE.T_ARRAY(ty = DAE.T_BOOL())), stmts, elsew, _) then DAE.STMT_WHEN(e, {}, false, stmts, elsew, source);
     case (e, DAE.PROP(type_ = t), _, _, _)
-      equation
-        e_str = ExpressionDump.printExpStr(e);
-        t_str = Types.unparseTypeNoAttr(t);
+      algorithm
+        e_str := ExpressionDump.printExpStr(e);
+        t_str := Types.unparseTypeNoAttr(t);
         Error.addSourceMessage(Error.WHEN_CONDITION_TYPE_ERROR, {e_str, t_str}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
@@ -819,9 +819,9 @@ algorithm
       DAE.Type tp1, tp2;
 
     case (var as DAE.CREF(), val, DAE.PROP(tp1, _), DAE.PROP(tp2, _))
-      equation
-        val_1 = Types.matchType(val, tp2, DAE.T_REAL_DEFAULT, true);
-        var_1 = Types.matchType(var, tp1, DAE.T_REAL_DEFAULT, true);
+      algorithm
+        val_1 := Types.matchType(val, tp2, DAE.T_REAL_DEFAULT, true);
+        var_1 := Types.matchType(var, tp1, DAE.T_REAL_DEFAULT, true);
       then
         {DAE.STMT_REINIT(var_1, val_1, source)};
 
@@ -856,17 +856,17 @@ algorithm
     case (_, _, _, DAE.PROP(type_ = DAE.T_BOOL()), DAE.PROP(type_ = DAE.T_STRING()), DAE.PROP(type_ = DAE.T_ENUMERATION(path=Absyn.FULLYQUALIFIED(Absyn.IDENT("AssertionLevel")))), _)
       then {DAE.STMT_ASSERT(cond, msg, level, source)};
     case (_, _, _, DAE.PROP(type_ = t1), DAE.PROP(type_ = t2), DAE.PROP(type_ = t3), _)
-      equation
-        info = ElementSource.getElementSourceFileInfo(source);
-        strExp = ExpressionDump.printExpStr(cond);
-        strTy = Types.unparseType(t1);
+      algorithm
+        info := ElementSource.getElementSourceFileInfo(source);
+        strExp := ExpressionDump.printExpStr(cond);
+        strTy := Types.unparseType(t1);
         Error.assertionOrAddSourceMessage(Types.isBooleanOrSubTypeBoolean(t1), Error.EXP_TYPE_MISMATCH, {strExp, "Boolean", strTy}, info);
-        strExp = ExpressionDump.printExpStr(msg);
-        strTy = Types.unparseType(t2);
+        strExp := ExpressionDump.printExpStr(msg);
+        strTy := Types.unparseType(t2);
         Error.assertionOrAddSourceMessage(Types.isString(t2), Error.EXP_TYPE_MISMATCH, {strExp, "String", strTy}, info);
-        failure(DAE.T_ENUMERATION(path=Absyn.IDENT("AssertionLevel")) = t3);
-        strExp = ExpressionDump.printExpStr(level);
-        strTy = Types.unparseType(t3);
+        failure(DAE.T_ENUMERATION(path=Absyn.IDENT("AssertionLevel")) := t3);
+        strExp := ExpressionDump.printExpStr(level);
+        strTy := Types.unparseType(t3);
         Error.assertionOrAddSourceMessage(Types.isString(t3), Error.EXP_TYPE_MISMATCH, {strExp, "AssertionLevel", strTy}, info);
       then fail();
   end matchcontinue;
@@ -906,8 +906,8 @@ algorithm
       list<DAE.Exp> exps;
       list<DAE.Statement> stmts;
     case DAE.ALGORITHM_STMTS(statementLst = stmts)
-      equation
-        exps = getAllExpsStmts(stmts);
+      algorithm
+        exps := getAllExpsStmts(stmts);
       then
         exps;
   end match;
@@ -966,8 +966,8 @@ algorithm
     local
       DAE.Exp exp;
     case DAE.STMT_NORETCALL(exp=exp)
-      equation
-        (_,b) = Expression.traverseExpBottomUp(exp,Expression.hasNoSideEffects,true);
+      algorithm
+        (_,b) := Expression.traverseExpBottomUp(exp,Expression.hasNoSideEffects,true);
       then not b; // has side effects => this is an expression that could do something
     else true;
   end match;

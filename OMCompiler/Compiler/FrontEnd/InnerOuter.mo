@@ -151,21 +151,21 @@ algorithm
     // is an outer, remove equations
     // outer components do NOT change the connection graph!
     case (Absyn.OUTER(),dae,ih,_,graph)
-      equation
-        (odae,_) = DAEUtil.splitDAEIntoVarsAndEquations(dae);
+      algorithm
+        (odae,_) := DAEUtil.splitDAEIntoVarsAndEquations(dae);
       then
         (odae,ih,graph);
     // is both an inner and an outer,
     // rename inner vars in the equations to unique names
     // innerouter component change the connection graph
     case (Absyn.INNER_OUTER(),dae,ih,_,graph)
-      equation
-        (dae1,dae2) = DAEUtil.splitDAEIntoVarsAndEquations(dae);
+      algorithm
+        (dae1,dae2) := DAEUtil.splitDAEIntoVarsAndEquations(dae);
         // rename variables in the equations and algs.
         // inner vars from dae1 are kept with the same name.
-        dae2 = DAEUtil.nameUniqueOuterVars(dae2);
+        dae2 := DAEUtil.nameUniqueOuterVars(dae2);
 
-        dae = DAEUtil.joinDaes(dae1,dae2);
+        dae := DAEUtil.joinDaes(dae1,dae2);
         // adrpo: TODO! FIXME: here we should do a difference of graphNew-graph
         //                     and rename the new equations added with unique vars.
       then
@@ -205,23 +205,23 @@ algorithm
 
     // the left hand side is an outer!
     case Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2,source)
-      equation
-        (_,true) = innerOuterBooleans(io1);
-        ncr1 = PrefixUtil.prefixToCref(scope);
+      algorithm
+        (_,true) := innerOuterBooleans(io1);
+        ncr1 := PrefixUtil.prefixToCref(scope);
         // fprintln(Flags.IOS, "changeInnerOuterInOuterConnect: changing left: " +
         //   ComponentReference.printComponentRefStr(cr1) + " to inner");
-        false = ComponentReference.crefFirstCrefLastCrefEqual(ncr1,cr1);
+        false := ComponentReference.crefFirstCrefLastCrefEqual(ncr1,cr1);
       then
         Connect.OUTERCONNECT(scope,cr1,Absyn.INNER(),f1,cr2,io2,f2,source);
 
     // the right hand side is an outer!
     case Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2,source)
-      equation
-        (_,true) = innerOuterBooleans(io2);
-        ncr2 = PrefixUtil.prefixToCref(scope);
+      algorithm
+        (_,true) := innerOuterBooleans(io2);
+        ncr2 := PrefixUtil.prefixToCref(scope);
         // fprintln(Flags.IOS, "changeInnerOuterInOuterConnect: changing right: " +
         //   ComponentReference.printComponentRefStr(cr2) + " to inner");
-        false = ComponentReference.crefFirstCrefLastCrefEqual(ncr2,cr2);
+        false := ComponentReference.crefFirstCrefLastCrefEqual(ncr2,cr2);
       then
         Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,Absyn.INNER(),f2,source);
 
@@ -272,11 +272,11 @@ algorithm
 
     // we have a prefix, remove it from the cref
     case (_, _)
-      equation
+      algorithm
         // transform prefix into cref
-        crefPrefix = PrefixUtil.prefixToCref(inPrefix);
+        crefPrefix := PrefixUtil.prefixToCref(inPrefix);
         // remove the prefix from the component reference
-        crOuter = ComponentReference.crefStripPrefix(inCref, crefPrefix);
+        crOuter := ComponentReference.crefStripPrefix(inCref, crefPrefix);
       then
         crOuter;
 
@@ -327,55 +327,55 @@ algorithm
     // an inner only outer connect
     case(_, _, _, _, Connect.OUTERCONNECT(scope, cr1, io1, f1, cr2, io2, f2,
         source as DAE.SOURCE(info = info)) :: rest_oc, sets, _, graph)
-      equation
-        (inner1, outer1) = lookupVarInnerOuterAttr(inCache, inEnv, inIH, cr1, cr2);
+      algorithm
+        (inner1, outer1) := lookupVarInnerOuterAttr(inCache, inEnv, inIH, cr1, cr2);
 
-        true = inner1;
-        false = outer1;
+        true := inner1;
+        false := outer1;
 
         // remove the prefixes so we can find it in the DAE
-        cr1 = removeInnerPrefixFromCref(inPrefix, cr1);
-        cr2 = removeInnerPrefixFromCref(inPrefix, cr2);
+        cr1 := removeInnerPrefixFromCref(inPrefix, cr1);
+        cr2 := removeInnerPrefixFromCref(inPrefix, cr2);
 
-        (sets, added) = ConnectUtil.addOuterConnectToSets(cr1, cr2, io1, io2, f1, f2, sets, info);
+        (sets, added) := ConnectUtil.addOuterConnectToSets(cr1, cr2, io1, io2, f1, f2, sets, info);
 
         // if no connection set available (added = false), create new one
-        (sets, graph) = addOuterConnectIfEmpty(inCache, inEnv, inIH, inPrefix, sets,
+        (sets, graph) := addOuterConnectIfEmpty(inCache, inEnv, inIH, inPrefix, sets,
           added, cr1, io1, f1, cr2, io2, f2, info, graph);
 
-        (rest_oc, sets, ioc, graph) =
+        (rest_oc, sets, ioc, graph) :=
           retrieveOuterConnections2(inCache, inEnv, inIH, inPrefix, rest_oc, sets, inTopCall, graph);
 
         // if is also outer, then keep it also in the outer connects
-        rest_oc = if outer1 then Connect.OUTERCONNECT(scope, cr1, io1, f1, cr2, io2, f2, source) :: rest_oc else rest_oc;
+        rest_oc := if outer1 then Connect.OUTERCONNECT(scope, cr1, io1, f1, cr2, io2, f2, source) :: rest_oc else rest_oc;
       then
         (rest_oc, sets, ioc, graph);
 
     // this case is for innerouter declarations, since we do not have them in environment we need to treat them in a special way
     case(_, _, _, _, Connect.OUTERCONNECT(_, cr1, io1, f1, cr2, io2, f2,
         DAE.SOURCE(info = info)) :: rest_oc, sets, true, graph)
-      equation
-        (inner1, outer1) = innerOuterBooleans(io1);
-        (inner2, outer2) = innerOuterBooleans(io2);
-        true = boolOr(inner1, inner2); // for inner outer we set Absyn.INNER()
-        false = boolOr(outer1, outer2);
+      algorithm
+        (inner1, outer1) := innerOuterBooleans(io1);
+        (inner2, outer2) := innerOuterBooleans(io2);
+        true := boolOr(inner1, inner2); // for inner outer we set Absyn.INNER()
+        false := boolOr(outer1, outer2);
 
-        io1 = convertInnerOuterInnerToOuter(io1); // we need to change from inner to outer to be able to join sets in: addOuterConnectToSets
-        io2 = convertInnerOuterInnerToOuter(io2);
+        io1 := convertInnerOuterInnerToOuter(io1); // we need to change from inner to outer to be able to join sets in: addOuterConnectToSets
+        io2 := convertInnerOuterInnerToOuter(io2);
 
-        (sets, added) = ConnectUtil.addOuterConnectToSets(cr1, cr2, io1, io2, f1, f2, sets, info);
+        (sets, added) := ConnectUtil.addOuterConnectToSets(cr1, cr2, io1, io2, f1, f2, sets, info);
         // If no connection set available (added = false), create new one
-        (sets, graph) = addOuterConnectIfEmpty(inCache, inEnv, inIH, inPrefix, sets,
+        (sets, graph) := addOuterConnectIfEmpty(inCache, inEnv, inIH, inPrefix, sets,
           added, cr1, io1, f1, cr2, io2, f2, info, graph);
-        (rest_oc, sets, ioc, graph) =
+        (rest_oc, sets, ioc, graph) :=
           retrieveOuterConnections2(inCache, inEnv, inIH, inPrefix, rest_oc, sets, true, graph);
       then
         (rest_oc, sets, ioc, graph);
 
     // just keep the outer connects the same if we don't find them in the same scope
     case(_, _, _, _, oc :: rest_oc, sets, _, graph)
-      equation
-        (rest_oc, sets, ioc, graph) =
+      algorithm
+        (rest_oc, sets, ioc, graph) :=
           retrieveOuterConnections2(inCache, inEnv, inIH, inPrefix, rest_oc, sets, inTopCall, graph);
       then
         (oc :: rest_oc, sets, ioc, graph);
@@ -443,12 +443,12 @@ algorithm
 
     // if it was not added, add it (search for both components)
     case(cache,env,ih,_, Connect.SETS(sets, sc, cl, oc),false,_,io1,_,_,io2,_,_, graph)
-      equation
-        (cache,DAE.ATTR(connectorType = ct, variability = vt1),t1,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
-        (cache,DAE.ATTR(variability = vt2),t2,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
-        io1 = removeOuter(io1);
-        io2 = removeOuter(io2);
-        (cache,env,ih, Connect.SETS(sets = sets, setCount = sc, connections = cl),_, graph) =
+      algorithm
+        (cache,DAE.ATTR(connectorType = ct, variability = vt1),t1,_,_,_,_,_,_) := Lookup.lookupVar(cache,env,cr1);
+        (cache,DAE.ATTR(variability = vt2),t2,_,_,_,_,_,_) := Lookup.lookupVar(cache,env,cr2);
+        io1 := removeOuter(io1);
+        io2 := removeOuter(io2);
+        (cache,env,ih, Connect.SETS(sets = sets, setCount = sc, connections = cl),_, graph) :=
           InstSection.connectComponents(
             cache,env,ih,
             Connect.SETS(sets, sc, cl, {}),
@@ -501,30 +501,30 @@ algorithm
       InstHierarchy ih;
     // Search for both
     case(_,_,_,_,_)
-      equation
+      algorithm
         ErrorExt.setCheckpoint("lookupVarInnerOuterAttr");
-        (_,DAE.ATTR(innerOuter=io1),_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
-        (_,DAE.ATTR(innerOuter=io2),_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
-        (isInner1,isOuter1) = innerOuterBooleans(io1);
-        (isInner2,isOuter2) = innerOuterBooleans(io2);
-        isInner = isInner1 or isInner2;
-        isOuter = isOuter1 or isOuter2;
+        (_,DAE.ATTR(innerOuter=io1),_,_,_,_,_,_,_) := Lookup.lookupVar(cache,env,cr1);
+        (_,DAE.ATTR(innerOuter=io2),_,_,_,_,_,_,_) := Lookup.lookupVar(cache,env,cr2);
+        (isInner1,isOuter1) := innerOuterBooleans(io1);
+        (isInner2,isOuter2) := innerOuterBooleans(io2);
+        isInner := isInner1 or isInner2;
+        isOuter := isOuter1 or isOuter2;
         ErrorExt.rollBack("lookupVarInnerOuterAttr");
       then
         (isInner,isOuter);
     // try to find var cr1 (lookup can fail for one of them)
     case(_,_,_,_,_)
-      equation
-        (_,DAE.ATTR(innerOuter=io),_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
-        (isInner,isOuter) = innerOuterBooleans(io);
+      algorithm
+        (_,DAE.ATTR(innerOuter=io),_,_,_,_,_,_,_) := Lookup.lookupVar(cache,env,cr1);
+        (isInner,isOuter) := innerOuterBooleans(io);
         ErrorExt.rollBack("lookupVarInnerOuterAttr");
       then
         (isInner,isOuter);
      // ..else try cr2 (lookup can fail for one of them)
     case(_,_,_,_,_)
-      equation
-        (_,DAE.ATTR(innerOuter=io),_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
-        (isInner,isOuter) = innerOuterBooleans(io);
+      algorithm
+        (_,DAE.ATTR(innerOuter=io),_,_,_,_,_,_,_) := Lookup.lookupVar(cache,env,cr2);
+        (isInner,isOuter) := innerOuterBooleans(io);
         ErrorExt.rollBack("lookupVarInnerOuterAttr");
       then (isInner,isOuter);
      // failure
@@ -591,7 +591,7 @@ algorithm
     // disabled as this is used in Interactive.getComponents
     // and makes mosfiles/interactive_api_attributes.mos to fail!
     case (TOP_INSTANCE(), DAE.NOPRE(),  name)
-      equation
+      algorithm
         // fprintln(Flags.INNER_OUTER, "Error: outer component: " + name + " defined at the top level!");
         // fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : looking for: " + PrefixUtil.printPrefixStr(DAE.NOPRE()) + "/" + name + " REACHED TOP LEVEL!");
         // TODO! add warning!
@@ -599,20 +599,20 @@ algorithm
 
     // we have a prefix, remove the last cref from the prefix and search!
     case (TOP_INSTANCE(_, ht, _, _), _,  name)
-      equation
+      algorithm
         // back one step in the instance hierarchy
 
         // fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : looking for: " + PrefixUtil.printPrefixStr(inPrefix) + "/" + name);
 
-        prefix = PrefixUtil.prefixStripLast(inPrefix);
+        prefix := PrefixUtil.prefixStripLast(inPrefix);
 
         // fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : stripping and looking for: " + PrefixUtil.printPrefixStr(prefix) + "/" + name);
 
         // put the name as the last prefix
-        (_,cref) = PrefixUtil.prefixCref(FCore.emptyCache(), FGraph.empty(), emptyInstHierarchy, prefix, ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {}));
+        (_,cref) := PrefixUtil.prefixCref(FCore.emptyCache(), FGraph.empty(), emptyInstHierarchy, prefix, ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {}));
 
         // search in instance hierarchy
-        instInner = get(cref, ht);
+        instInner := get(cref, ht);
 
         // isInner = AbsynUtil.isInner(io);
         // instInner = if_(isInner, instInner, emptyInstInner(inPrefix, name));
@@ -624,30 +624,30 @@ algorithm
 
     // we have a prefix, search recursively as there was a failure before!
     case (TOP_INSTANCE(_, ht, _, _), _,  name)
-      equation
+      algorithm
         // back one step in the instance hierarchy
         // fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : looking for: " + PrefixUtil.printPrefixStr(inPrefix) + "/" + name);
 
-        prefix = PrefixUtil.prefixStripLast(inPrefix);
+        prefix := PrefixUtil.prefixStripLast(inPrefix);
 
         // fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : stripping and looking for: " + PrefixUtil.printPrefixStr(prefix) + "/" + name);
 
         // put the name as the last prefix
-        (_,cref) = PrefixUtil.prefixCref(FCore.emptyCache(), FGraph.empty(), emptyInstHierarchy, prefix, ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {}));
+        (_,cref) := PrefixUtil.prefixCref(FCore.emptyCache(), FGraph.empty(), emptyInstHierarchy, prefix, ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {}));
 
         // search in instance hierarchy we had a failure
-        failure(_ = get(cref, ht));
+        failure(_ := get(cref, ht));
 
         // fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : Couldn't find: " + ComponentReference.printComponentRefStr(cref) + " going deeper");
 
         // call recursively to back one more step!
-        instInner = lookupInnerInIH(inTIH, prefix, name);
+        instInner := lookupInnerInIH(inTIH, prefix, name);
       then
         instInner;
 
     // if we fail return nothing
     case (TOP_INSTANCE(), prefix, name)
-      equation
+      algorithm
         // fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : looking for: " + PrefixUtil.printPrefixStr(prefix) + "/" + name + " NOT FOUND!");
         // dumpInstHierarchyHashTable(ht);
       then
@@ -675,10 +675,10 @@ algorithm
       String s1,s2,s;
     // if we don't have the same modification on inner report error!
     case(_,_,_,_,_,_,DAE.MOD(),Absyn.OUTER(),_,_)
-      equation
-        s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = Mod.prettyPrintMod(inMod, 0);
-        s = s1 +  " " + s2;
+      algorithm
+        s1 := ComponentReference.printComponentRefStr(cr);
+        s2 := Mod.prettyPrintMod(inMod, 0);
+        s := s1 +  " " + s2;
         Error.addSourceMessage(Error.OUTER_MODIFICATION, {s}, inInfo);
       then
         true;
@@ -706,11 +706,11 @@ algorithm
     case (FCore.G(scope = {}), _) then inEnv;
     // only need to handle top frame!
     case (_, cr)
-      equation
-        r = FGraph.lastScopeRef(inEnv);
-        n = FNode.fromRef(r);
-        n = switchInnerToOuterInNode(n, cr);
-        r = FNode.updateRef(r, n);
+      algorithm
+        r := FGraph.lastScopeRef(inEnv);
+        n := FNode.fromRef(r);
+        n := switchInnerToOuterInNode(n, cr);
+        r := FNode.updateRef(r, n);
       then
         inEnv;
   end match;
@@ -776,28 +776,28 @@ algorithm
 
     // inner
     case (node, _)
-      equation
+      algorithm
         // get the instance child
-        r = FNode.childFromNode(node, FNode.itNodeName);
-        FCore.IT(DAE.TYPES_VAR(name, attributes, ty, binding, bndsrc, cnstForRange)) = FNode.refData(r);
-        DAE.ATTR(ct, parallelism, variability, direction, Absyn.INNER(), visibility) = attributes;
-        attributes = DAE.ATTR(ct, parallelism, variability, direction, Absyn.OUTER(), visibility);
+        r := FNode.childFromNode(node, FNode.itNodeName);
+        FCore.IT(DAE.TYPES_VAR(name, attributes, ty, binding, bndsrc, cnstForRange)) := FNode.refData(r);
+        DAE.ATTR(ct, parallelism, variability, direction, Absyn.INNER(), visibility) := attributes;
+        attributes := DAE.ATTR(ct, parallelism, variability, direction, Absyn.OUTER(), visibility);
         // update the ref
-        r = FNode.updateRef(r, FNode.setData(FNode.fromRef(r),FCore.IT(DAE.TYPES_VAR(name, attributes, ty, binding, bndsrc, cnstForRange))));
+        r := FNode.updateRef(r, FNode.setData(FNode.fromRef(r),FCore.IT(DAE.TYPES_VAR(name, attributes, ty, binding, bndsrc, cnstForRange))));
         // env = switchInnerToOuterInGraph(env, inCr);
       then
         node;
 
     // inner outer
     case (node, _)
-      equation
+      algorithm
         // get the instance child
-        r = FNode.childFromNode(node, FNode.itNodeName);
-        FCore.IT(DAE.TYPES_VAR(name, attributes, ty, binding, bndsrc, cnstForRange)) = FNode.refData(r);
-        DAE.ATTR(ct, parallelism, variability, direction, Absyn.INNER_OUTER(), visibility) = attributes;
-        attributes = DAE.ATTR(ct, parallelism, variability, direction, Absyn.OUTER(), visibility);
+        r := FNode.childFromNode(node, FNode.itNodeName);
+        FCore.IT(DAE.TYPES_VAR(name, attributes, ty, binding, bndsrc, cnstForRange)) := FNode.refData(r);
+        DAE.ATTR(ct, parallelism, variability, direction, Absyn.INNER_OUTER(), visibility) := attributes;
+        attributes := DAE.ATTR(ct, parallelism, variability, direction, Absyn.OUTER(), visibility);
         // update the ref
-        r = FNode.updateRef(r, FNode.setData(FNode.fromRef(r),FCore.IT(DAE.TYPES_VAR(name, attributes, ty, binding, bndsrc, cnstForRange))));
+        r := FNode.updateRef(r, FNode.setData(FNode.fromRef(r),FCore.IT(DAE.TYPES_VAR(name, attributes, ty, binding, bndsrc, cnstForRange))));
         // env = switchInnerToOuterInGraph(env, inCr);
       then
         node;
@@ -849,19 +849,19 @@ algorithm
     //        lookup the modification of the inner component and use it
     //        when we instantiate the outer component
     case (_,_,tih::_,pre,n,_)
-      equation
+      algorithm
         // is component an outer or an inner/outer?
         //true = AbsynUtil.isOuter(io);  // is outer
         //false = AbsynUtil.isInner(io); // and is not inner
         // search the instance hierarchy for the inner component
-        instInner = lookupInnerInIH(tih, pre, n);
+        instInner := lookupInnerInIH(tih, pre, n);
       then
         instInner;
 
     // failure in case we look for anything else but outer!
     case (_,_,_,pre,n,_)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("InnerOuter.lookupInnerVar failed on component: " + PrefixUtil.printPrefixStr(pre) + "/" + n);
       then
         fail();
@@ -903,31 +903,31 @@ algorithm
 
     // no hashtable, create one!
     case({},_,_,INST_INNER())
-      equation
+      algorithm
         // print ("InnerOuter.updateInstHierarchy creating an empty hash table! \n");
-        ht = emptyInstHierarchyHashTable();
-        sm = HashSet.emptyHashSet();
-        tih = TOP_INSTANCE(NONE(), ht, emptyOuterPrefixes, sm);
-        ih = updateInstHierarchy({tih}, inPrefix, inInnerOuter, inInstInner);
+        ht := emptyInstHierarchyHashTable();
+        sm := HashSet.emptyHashSet();
+        tih := TOP_INSTANCE(NONE(), ht, emptyOuterPrefixes, sm);
+        ih := updateInstHierarchy({tih}, inPrefix, inInnerOuter, inInstInner);
       then
         ih;
 
     // add to the hierarchy
     case((TOP_INSTANCE(pathOpt, ht, outerPrefixes, sm))::restIH,_,_,
          INST_INNER(name=name))
-      equation
+      algorithm
         // prefix the name!
-        cref_ = ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {});
-        (_,cref) = PrefixUtil.prefixCref(FCore.emptyCache(), FGraph.empty(), emptyInstHierarchy, inPrefix, cref_);
+        cref_ := ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {});
+        (_,cref) := PrefixUtil.prefixCref(FCore.emptyCache(), FGraph.empty(), emptyInstHierarchy, inPrefix, cref_);
         // add to hashtable!
         // fprintln(Flags.FAILTRACE, "InnerOuter.updateInstHierarchy adding: " + PrefixUtil.printPrefixStr(inPrefix) + "/" + name + " to IH");
-        ht = add((cref,inInstInner), ht);
+        ht := add((cref,inInstInner), ht);
       then
         TOP_INSTANCE(pathOpt, ht, outerPrefixes, sm)::restIH;
 
     // failure
     case(_,_,_,INST_INNER())
-      equation
+      algorithm
         // prefix the name!
         //(_,cref) = PrefixUtil.prefixCref(FCore.emptyCache(),{},emptyInstHierarchy,inPrefix, ComponentReference.makeCrefIdent("UNKNOWN", DAE.T_UNKNOWN_DEFAULT, {}));
         // fprintln(Flags.INNER_OUTER, "InnerOuter.updateInstHierarchy failure for: " +
@@ -958,30 +958,30 @@ algorithm
 
     // no hashtable, create one!
     case(_,{})
-      equation
-        ht = emptyInstHierarchyHashTable();
-        sm = HashSet.emptyHashSet();
+      algorithm
+        ht := emptyInstHierarchyHashTable();
+        sm := HashSet.emptyHashSet();
         //sm = Debug.bcallret2(true, BaseHashSet.add, smState, sm, sm);
-        sm2 = BaseHashSet.add(smState, sm);
+        sm2 := BaseHashSet.add(smState, sm);
         // FIXME what to put for emptyOuterPrefixes
-        tih = TOP_INSTANCE(NONE(), ht, emptyOuterPrefixes, sm2);
+        tih := TOP_INSTANCE(NONE(), ht, emptyOuterPrefixes, sm2);
 
-        ih = {tih};
+        ih := {tih};
       then
         ih;
 
     // add to the hierarchy
     case (cref,TOP_INSTANCE(pathOpt, ht, outerPrefixes, sm)::restIH)
-      equation
+      algorithm
         // add to hashtable!
-        sm = BaseHashSet.add(cref, sm); // add((cref,inInstInner), ht);
+        sm := BaseHashSet.add(cref, sm); // add((cref,inInstInner), ht);
       then
         TOP_INSTANCE(pathOpt, ht, outerPrefixes, sm)::restIH;
 
     // failure
     case (DAE.CREF_IDENT(ident=name),_)
-      equation
-        true = Flags.isSet(Flags.INSTANCE);
+      algorithm
+        true := Flags.isSet(Flags.INSTANCE);
         Debug.traceln("InnerOuter.updateSMHierarchy failure for: " + name);
       then
         fail();
@@ -1003,11 +1003,11 @@ algorithm
 
     // add inner or innerouter
     case (SCode.CLASS(name = name, prefixes = SCode.PREFIXES(innerOuter = io)), _, _, _)
-      equation
-        true = AbsynUtil.isInner(io);
-        scopeName = FGraph.getGraphNameStr(inScope);
+      algorithm
+        true := AbsynUtil.isInner(io);
+        scopeName := FGraph.getGraphNameStr(inScope);
         // add to instance hierarchy
-        outIH = updateInstHierarchy(inIH, inPrefix, io,
+        outIH := updateInstHierarchy(inIH, inPrefix, io,
           INST_INNER(
             inPrefix, // prefix
             name, // class name
@@ -1046,22 +1046,22 @@ algorithm
 
     // no hashtable, create one!
     case({}, _, _)
-      equation
+      algorithm
         // create an empty table and add the crefs to it.
-        ht = emptyInstHierarchyHashTable();
-        sm = HashSet.emptyHashSet();
-        tih = TOP_INSTANCE(NONE(), ht, {OUTER(ComponentReference.crefStripSubs(inOuterComponentRef), inInnerComponentRef)}, sm);
-        ih = {tih};
+        ht := emptyInstHierarchyHashTable();
+        sm := HashSet.emptyHashSet();
+        tih := TOP_INSTANCE(NONE(), ht, {OUTER(ComponentReference.crefStripSubs(inOuterComponentRef), inInnerComponentRef)}, sm);
+        ih := {tih};
       then
         ih;
 
     // add to the top instance
     case((TOP_INSTANCE(pathOpt, ht, outerPrefixes, sm))::restIH, _, _)
-      equation
+      algorithm
         // fprintln(Flags.INNER_OUTER, "InnerOuter.addOuterPrefix adding: outer cref: " +
         //   ComponentReference.printComponentRefStr(inOuterComponentRef) + " refers to inner cref: " +
         //   ComponentReference.printComponentRefStr(inInnerComponentRef) + " to IH");
-        outerPrefixes = List.unionElt(OUTER(ComponentReference.crefStripSubs(inOuterComponentRef), inInnerComponentRef), outerPrefixes);
+        outerPrefixes := List.unionElt(OUTER(ComponentReference.crefStripSubs(inOuterComponentRef), inInnerComponentRef), outerPrefixes);
       then
         TOP_INSTANCE(pathOpt, ht, outerPrefixes, sm)::restIH;
 
@@ -1097,13 +1097,13 @@ algorithm
 
     // we have some outer references, search for our prefix + cref in them
     case ({TOP_INSTANCE(_, _, outerPrefixes as _::_, _)}, _, _)
-      equation
-        (_,fullCref) = PrefixUtil.prefixCref(FCore.emptyCache(), FGraph.empty(), emptyInstHierarchy, inPrefix, inOuterComponentRef);
+      algorithm
+        (_,fullCref) := PrefixUtil.prefixCref(FCore.emptyCache(), FGraph.empty(), emptyInstHierarchy, inPrefix, inOuterComponentRef);
 
         // this will fail if we don't find it so prefixing can happen in the calling function
-        (outerCrefPrefix, innerCrefPrefix) = searchForInnerPrefix(fullCref, inOuterComponentRef, outerPrefixes);
+        (outerCrefPrefix, innerCrefPrefix) := searchForInnerPrefix(fullCref, inOuterComponentRef, outerPrefixes);
 
-        innerCref = changeOuterReferenceToInnerReference(fullCref, outerCrefPrefix, innerCrefPrefix);
+        innerCref := changeOuterReferenceToInnerReference(fullCref, outerCrefPrefix, innerCrefPrefix);
 
         // fprintln(Flags.FAILTRACE, "- InnerOuter.prefixOuterCrefWithTheInnerPrefix replaced cref " + ComponentReference.printComponentRefStr(fullCref) + " with cref: " + ComponentReference.printComponentRefStr(innerCref));
       then
@@ -1138,29 +1138,29 @@ algorithm
     // E.g. if we have a full cref a.b.c.d.e.f.g, an outer prefix a.b.c.d.e and
     // an inner prefix a.d.e, then we want a, d.e and f.g, resulting in a.d.e.f.g.
     case (ifull, ocp, icp)
-      equation
+      algorithm
         // print("F:" + ComponentReference.printComponentRefStr(ifull) + "\n" + "I:" + ComponentReference.printComponentRefStr(icp) + "\n" + "O:" + ComponentReference.printComponentRefStr(ocp) + "\n");
         // Explode the crefs to lists so that they are easier to work with.
-        eifull = ComponentReference.explode(ifull);
-        eicp = ComponentReference.explode(icp);
+        eifull := ComponentReference.explode(ifull);
+        eicp := ComponentReference.explode(icp);
 
         // Split the full cref so that we get the part that is equal to the
         // outer prefix and the rest of the suffix.
-        (eocp, esuffix) = List.split(eifull, ComponentReference.identifierCount(ocp));
+        (eocp, esuffix) := List.split(eifull, ComponentReference.identifierCount(ocp));
 
         // Extract the common prefix of the outer and inner prefix.
-        (epre, erest) = List.splitEqualPrefix(eocp, eicp, ComponentReference.crefFirstIdentEqual);
+        (epre, erest) := List.splitEqualPrefix(eocp, eicp, ComponentReference.crefFirstIdentEqual);
 
         // remove the common prefix from the inner!
-        (_, eicp) = List.splitEqualPrefix(eicp, epre, ComponentReference.crefFirstIdentEqual);
+        (_, eicp) := List.splitEqualPrefix(eicp, epre, ComponentReference.crefFirstIdentEqual);
 
         // Extract the common suffix of the outer and inner prefix.
-        (erest, _) = List.splitEqualPrefix(listReverse(erest), listReverse(eicp), ComponentReference.crefFirstIdentEqual);
+        (erest, _) := List.splitEqualPrefix(listReverse(erest), listReverse(eicp), ComponentReference.crefFirstIdentEqual);
 
         // Combine the parts into a new cref.
-        erest = List.append_reverse(erest, esuffix);
-        eifull = listAppend(epre, erest);
-        ic = ComponentReference.implode(eifull);
+        erest := List.append_reverse(erest, esuffix);
+        eifull := listAppend(epre, erest);
+        ic := ComponentReference.implode(eifull);
         // print("C:" + ComponentReference.printComponentRefStr(ic) + "\n");
       then
         ic;
@@ -1218,13 +1218,13 @@ algorithm
       String str, strOuters;
 
     case(INST_INNER(_, _, _, fullName, typePath, scope, _, outers, _))
-      equation
-        outers = List.uniqueOnTrue(outers, ComponentReference.crefEqualNoStringCompare);
-        strOuters = if listEmpty(outers)
+      algorithm
+        outers := List.uniqueOnTrue(outers, ComponentReference.crefEqualNoStringCompare);
+        strOuters := if listEmpty(outers)
                       then ""
                       else (" Referenced by 'outer' components: {" +
                         stringDelimitList(List.map(outers, ComponentReference.printComponentRefStr), ", ") + "}");
-        str = AbsynUtil.pathString(typePath) + " " + fullName + "; defined in scope: " + scope + "." + strOuters;
+        str := AbsynUtil.pathString(typePath) + " " + fullName + "; defined in scope: " + scope + "." + strOuters;
       then
         str;
   end match;
@@ -1254,9 +1254,9 @@ algorithm
 
     // get the list of components
     case((TOP_INSTANCE(_, ht, _, _))::_, _)
-      equation
-        inners = getInnersFromInstHierarchyHashTable(ht);
-        str = stringDelimitList(List.map(inners, printInnerDefStr), "\n    ");
+      algorithm
+        inners := getInnersFromInstHierarchyHashTable(ht);
+        str := stringDelimitList(List.map(inners, printInnerDefStr), "\n    ");
       then
         str;
   end match;
@@ -1317,8 +1317,8 @@ algorithm
     local
       Key k; Value v;
     case((k,_))
-      equation
-        str = "{" +
+      algorithm
+        str := "{" +
          ComponentReference.crefStr(k) +
          " opaque InstInner for now, implement printing. " + "}\n";
       then str;
@@ -1382,24 +1382,24 @@ algorithm
       Value value;
       /* Adding when not existing previously */
     case ((v as (key,_)),(HASHTABLE(hashvec,varr,bsize,_)))
-      equation
-        failure((_) = get(key, hashTable));
-        hval = hashFunc(key);
-        indx = intMod(hval, bsize);
-        newpos = valueArrayLength(varr);
-        varr_1 = valueArrayAdd(varr, v);
-        indexes = hashvec[indx + 1];
-        hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
-        n_1 = valueArrayLength(varr_1);
+      algorithm
+        failure((_) := get(key, hashTable));
+        hval := hashFunc(key);
+        indx := intMod(hval, bsize);
+        newpos := valueArrayLength(varr);
+        varr_1 := valueArrayAdd(varr, v);
+        indexes := hashvec[indx + 1];
+        hashvec_1 := arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
+        n_1 := valueArrayLength(varr_1);
         // print("Added NEW to IH: key:" + ComponentReference.printComponentRefStr(key) + " value: " + printInnerDefStr(value) + "\n");
       then HASHTABLE(hashvec_1,varr_1,bsize,n_1);
 
       /* adding when already present => Updating value */
     case ((newv as (key,_)),(HASHTABLE(hashvec,varr,bsize,n)))
-      equation
-        (_,indx) = get1(key, hashTable);
+      algorithm
+        (_,indx) := get1(key, hashTable);
         //print("adding when present, indx =" );print(intString(indx));print("\n");
-        varr_1 = valueArraySetnth(varr, indx, newv);
+        varr_1 := valueArraySetnth(varr, indx, newv);
         // print("Updated NEW to IH: key:" + ComponentReference.printComponentRefStr(key) + " value: " + printInnerDefStr(value) + "\n");
       then HASHTABLE(hashvec,varr_1,bsize,n);
     else
@@ -1436,13 +1436,13 @@ algorithm
       Key k;
 
     case (_,(HASHTABLE(hashvec,varr,bsize,_)))
-      equation
-        hval = hashFunc(key);
-        hashindx = intMod(hval, bsize);
-        indexes = hashvec[hashindx + 1];
-        indx = get2(key, indexes);
-        (k, v) = valueArrayNth(varr, indx);
-        true = keyEqual(k, key);
+      algorithm
+        hval := hashFunc(key);
+        hashindx := intMod(hval, bsize);
+        indexes := hashvec[hashindx + 1];
+        indx := get2(key, indexes);
+        (k, v) := valueArrayNth(varr, indx);
+        true := keyEqual(k, key);
       then
         (v,indx);
   end match;
@@ -1460,13 +1460,13 @@ algorithm
       Key key2;
       list<tuple<Key,Integer>> xs;
     case (_,((key2,index) :: _))
-      equation
-        true = keyEqual(key, key2);
+      algorithm
+        true := keyEqual(key, key2);
       then
         index;
     case (_,(_ :: xs))
-      equation
-        index = get2(key, xs);
+      algorithm
+        index := get2(key, xs);
       then
         index;
   end matchcontinue;
@@ -1478,8 +1478,8 @@ protected function hashTableList "returns the entries in the hashTable as a list
 algorithm
   tplLst := match(hashTable)
   local ValueArray varr;
-    case(HASHTABLE(valueArr = varr)) equation
-      tplLst = valueArrayList(varr);
+    case(HASHTABLE(valueArr = varr)) algorithm
+      tplLst := valueArrayList(varr);
     then tplLst;
   end match;
 end hashTableList;
@@ -1498,14 +1498,14 @@ algorithm
       list<tuple<Key,Value>> lst;
     case (VALUE_ARRAY(numberOfElements = 0)) then {};
     case (VALUE_ARRAY(numberOfElements = 1,valueArray = arr))
-      equation
-        SOME(elt) = arr[0 + 1];
+      algorithm
+        SOME(elt) := arr[0 + 1];
       then
         {elt};
     case (VALUE_ARRAY(numberOfElements = n,valueArray = arr))
-      equation
-        lastpos = n - 1;
-        lst = valueArrayList2(arr, 0, lastpos);
+      algorithm
+        lastpos := n - 1;
+        lst := valueArrayList2(arr, 0, lastpos);
       then
         lst;
   end matchcontinue;
@@ -1523,24 +1523,23 @@ algorithm
       array<Option<tuple<Key,Value>>> arr;
       Integer pos,lastpos,pos_1;
       list<tuple<Key,Value>> res;
-    case (arr,pos,lastpos)
-      equation
-        (pos == lastpos) = true;
-        SOME(v) = arr[pos + 1];
+    case (arr,pos,lastpos) guard pos == lastpos
+      algorithm
+        SOME(v) := arr[pos + 1];
       then
         {v};
     case (arr,pos,lastpos)
-      equation
-        pos_1 = pos + 1;
-        SOME(v) = arr[pos + 1];
-        res = valueArrayList2(arr, pos_1, lastpos);
+      algorithm
+        pos_1 := pos + 1;
+        SOME(v) := arr[pos + 1];
+        res := valueArrayList2(arr, pos_1, lastpos);
       then
         (v :: res);
     case (arr,pos,lastpos)
-      equation
-        pos_1 = pos + 1;
-        NONE() = arr[pos + 1];
-        res = valueArrayList2(arr, pos_1, lastpos);
+      algorithm
+        pos_1 := pos + 1;
+        NONE() := arr[pos + 1];
+        res := valueArrayList2(arr, pos_1, lastpos);
       then
         (res);
   end matchcontinue;
@@ -1570,25 +1569,23 @@ algorithm
       Integer n_1,n,size,expandsize,expandsize_1,newsize;
       array<Option<tuple<Key,Value>>> arr_1,arr,arr_2;
       Real rsize,rexpandsize;
-    case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),_)
-      equation
-        (n < arrayLength(arr)) = true "Have space to add array elt." ;
-        n_1 = n + 1;
-        arr_1 = arrayUpdate(arr, n + 1, SOME(entry));
+    case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),_) guard n < arrayLength(arr)
+      algorithm
+        n_1 := n + 1;
+        arr_1 := arrayUpdate(arr, n + 1, SOME(entry));
       then
         VALUE_ARRAY(n_1,arr_1);
 
-    case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),_)
-      equation
-        size = arrayLength(arr);
-        (n < size) = false "Do NOT have splace to add array elt. Expand with factor 1.4" ;
-        rsize = intReal(size);
-        rexpandsize = rsize * 0.4;
-        expandsize = realInt(rexpandsize);
-        expandsize_1 = intMax(expandsize, 1);
-        arr_1 = Array.expand(expandsize_1, arr,NONE());
-        n_1 = n + 1;
-        arr_2 = arrayUpdate(arr_1, n + 1, SOME(entry));
+    case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),_) guard n < arrayLength(arr)
+      algorithm
+        size := arrayLength(arr);
+        rsize := intReal(size);
+        rexpandsize := rsize * 0.4;
+        expandsize := realInt(rexpandsize);
+        expandsize_1 := intMax(expandsize, 1);
+        arr_1 := Array.expand(expandsize_1, arr,NONE());
+        n_1 := n + 1;
+        arr_2 := arrayUpdate(arr_1, n + 1, SOME(entry));
       then
         VALUE_ARRAY(n_1,arr_2);
     else
@@ -1611,9 +1608,8 @@ algorithm
     local
       array<Option<tuple<Key,Value>>> arr;
       Integer n,size;
-    case (VALUE_ARRAY(_,arr),_,_)
-      equation
-        (pos < arrayLength(arr)) = true;
+    case (VALUE_ARRAY(_,arr),_,_) guard pos < arrayLength(arr)
+      algorithm
         arrayUpdate(arr, pos + 1, SOME(entry));
       then
         valueArray;
@@ -1636,9 +1632,8 @@ algorithm
     local
       array<Option<tuple<Key,Value>>> arr;
       Integer n,size;
-    case (VALUE_ARRAY(_,arr),_)
-      equation
-        (pos < arrayLength(arr)) = true;
+    case (VALUE_ARRAY(_,arr),_) guard pos < arrayLength(arr)
+      algorithm
         arrayUpdate(arr, pos + 1,NONE());
       then
         valueArray;
@@ -1666,9 +1661,9 @@ algorithm
       array<Option<tuple<Key,Value>>> arr;
 
     case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),_)
-      equation
-        (pos < n) = true;
-        SOME((k,v)) = arr[pos + 1];
+      algorithm
+        true := (pos < n);
+        SOME((k,v)) := arr[pos + 1];
       then
         (k, v);
 
