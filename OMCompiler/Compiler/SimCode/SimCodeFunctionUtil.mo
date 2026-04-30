@@ -728,6 +728,7 @@ algorithm
 
         DAE.FUNCTION_ATTRIBUTES(functionParallelism=DAE.FP_NON_PARALLEL()) = funAttrs;
 
+        daeElts = optMRFAElems(daeElts);
         outVars = List.map(DAEUtil.getOutputElements(daeElts), daeInOutSimVar);
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
         collectRecDeclsFromElems(daeElts, recDeclsMap);
@@ -747,6 +748,7 @@ algorithm
 
         DAE.FUNCTION_ATTRIBUTES(functionParallelism=DAE.FP_KERNEL_FUNCTION()) = funAttrs;
 
+        daeElts = optMRFAElems(daeElts);
         outVars = List.map(DAEUtil.getOutputElements(daeElts), daeInOutSimVar);
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
         collectRecDeclsFromElems(daeElts, recDeclsMap);
@@ -766,6 +768,7 @@ algorithm
 
         DAE.FUNCTION_ATTRIBUTES(functionParallelism=DAE.FP_PARALLEL_FUNCTION()) = funAttrs;
 
+        daeElts = optMRFAElems(daeElts);
         outVars = List.map(DAEUtil.getOutputElements(daeElts), daeInOutSimVar);
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
         collectRecDeclsFromElems(daeElts, recDeclsMap);
@@ -1045,6 +1048,44 @@ algorithm
   DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = stmts)) := inElement;
 end elaborateStatement;
 
+protected function optMRFAElems
+  "Applies DAEUtil.optimizeMetaRecordFieldAssigns to every algorithm body in
+   the DAE element list and lifts the temp DAE.VAR declarations the pass
+   created into the function's local-var section. Runs before
+   collectRecDeclsFromElems so that any METARECORDCALL expressions
+   introduced by the pass are picked up when the record-declaration map
+   is populated. See issue #11909."
+  input output list<DAE.Element> elems;
+protected
+  list<DAE.Element> processed = {};
+  list<DAE.Element> tempVars = {};
+  DAE.Element e2;
+algorithm
+  for e in elems loop
+    (e2, tempVars) := optMRFAElem(e, tempVars);
+    processed := e2 :: processed;
+  end for;
+  // Prepend new temp DAE.VAR declarations. Inputs/outputs are filtered
+  // by direction downstream, not by position, so the extra BIDIR locals
+  // do not perturb the function signature.
+  elems := listAppend(listReverse(tempVars), listReverse(processed));
+end optMRFAElems;
+
+protected function optMRFAElem
+  input output DAE.Element elem;
+  input output list<DAE.Element> tempVars;
+algorithm
+  (elem, tempVars) := match elem
+    local
+      list<DAE.Statement> stmts;
+    case DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = stmts))
+      algorithm
+        (stmts, tempVars) := DAEUtil.optimizeMetaRecordFieldAssigns(stmts, tempVars);
+        elem.algorithm_ := DAE.ALGORITHM_STMTS(stmts);
+      then (elem, tempVars);
+    else (elem, tempVars);
+  end match;
+end optMRFAElem;
 
 public function checkValidMainFunction
 "Verifies that an in-function can be generated.

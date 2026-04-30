@@ -6759,5 +6759,547 @@ algorithm
     then fail();
   end match;
 end getInteger;
+
+public function optimizeMetaRecordFieldAssigns
+  "Merges consecutive field-update statements on the same MetaModelica
+   uniontype/metarecord variable into a single metarecord construction.
+   For N consecutive updates the emitted C code drops from N pairs of
+   mmc_alloc_words+memcpy to a single mmc_mk_box call. See issue #11909.
+
+   When a group is merged each rhs is first assigned to a fresh local temp
+   and the merged METARECORDCALL takes refs to those temps as arguments.
+   This pins evaluation order at the DAE level so the C codegen does not
+   leave it up to the C compiler's unspecified argument-evaluation order
+   (the inlined function-call args of mmc_mk_box would otherwise be
+   evaluated right-to-left under gcc and left-to-right under clang).
+   `tempVars` accumulates the DAE.VAR declarations the caller must lift
+   into the surrounding function's element list."
+  input list<DAE.Statement> inStmts;
+  output list<DAE.Statement> outStmts;
+  input output list<DAE.Element> tempVars;
+protected
+  DAE.Statement s2;
+algorithm
+  // First recurse into compound statements, then merge contiguous runs.
+  outStmts := {};
+  for s in inStmts loop
+    (s2, tempVars) := optMRFAInStmt(s, tempVars);
+    outStmts := s2 :: outStmts;
+  end for;
+  outStmts := listReverse(outStmts);
+  (outStmts, tempVars) := optMRFAMergeList(outStmts, tempVars);
+end optimizeMetaRecordFieldAssigns;
+
+protected function optMRFAInStmt
+  "Recurses into compound statements so inner bodies are optimized too."
+  input output DAE.Statement stmt;
+  input output list<DAE.Element> tempVars;
+algorithm
+  (stmt, tempVars) := match stmt
+    local
+      DAE.Statement ew;
+      list<DAE.Statement> stmts;
+      DAE.Else els;
+
+    case DAE.STMT_IF()
+      algorithm
+        (stmts, tempVars) := optimizeMetaRecordFieldAssigns(stmt.statementLst, tempVars);
+        stmt.statementLst := stmts;
+        (els, tempVars) := optMRFAInElse(stmt.else_, tempVars);
+        stmt.else_ := els;
+      then (stmt, tempVars);
+
+    case DAE.STMT_FOR()
+      algorithm
+        (stmts, tempVars) := optimizeMetaRecordFieldAssigns(stmt.statementLst, tempVars);
+        stmt.statementLst := stmts;
+      then (stmt, tempVars);
+
+    case DAE.STMT_PARFOR()
+      algorithm
+        (stmts, tempVars) := optimizeMetaRecordFieldAssigns(stmt.statementLst, tempVars);
+        stmt.statementLst := stmts;
+      then (stmt, tempVars);
+
+    case DAE.STMT_WHILE()
+      algorithm
+        (stmts, tempVars) := optimizeMetaRecordFieldAssigns(stmt.statementLst, tempVars);
+        stmt.statementLst := stmts;
+      then (stmt, tempVars);
+
+    case DAE.STMT_WHEN()
+      algorithm
+        (stmts, tempVars) := optimizeMetaRecordFieldAssigns(stmt.statementLst, tempVars);
+        stmt.statementLst := stmts;
+        stmt.elseWhen := match stmt.elseWhen
+          case SOME(ew)
+            algorithm
+              (ew, tempVars) := optMRFAInStmt(ew, tempVars);
+            then SOME(ew);
+          else NONE();
+        end match;
+      then (stmt, tempVars);
+
+    case DAE.STMT_FAILURE()
+      algorithm
+        (stmts, tempVars) := optimizeMetaRecordFieldAssigns(stmt.body, tempVars);
+        stmt.body := stmts;
+      then (stmt, tempVars);
+
+    else (stmt, tempVars);
+  end match;
+end optMRFAInStmt;
+
+protected function optMRFAInElse
+  input output DAE.Else els;
+  input output list<DAE.Element> tempVars;
+algorithm
+  (els, tempVars) := match els
+    local
+      list<DAE.Statement> stmts;
+      DAE.Else nestedEls;
+    case DAE.ELSEIF()
+      algorithm
+        (stmts, tempVars) := optimizeMetaRecordFieldAssigns(els.statementLst, tempVars);
+        els.statementLst := stmts;
+        (nestedEls, tempVars) := optMRFAInElse(els.else_, tempVars);
+        els.else_ := nestedEls;
+      then (els, tempVars);
+
+    case DAE.ELSE()
+      algorithm
+        (stmts, tempVars) := optimizeMetaRecordFieldAssigns(els.statementLst, tempVars);
+        els.statementLst := stmts;
+      then (els, tempVars);
+
+    else (els, tempVars);
+  end match;
+end optMRFAInElse;
+
+// (field name, rhs expression, originating statement -- kept so we can reuse
+// its ElementSource when the group is merged into a single statement).
+protected type MRFAUpdate = tuple<String, DAE.Exp, DAE.Statement>;
+
+protected function optMRFAMergeList
+  "Greedy pass: walks a flat statement list, gathers runs of consecutive
+   field-update statements that write the same base cref and that do not
+   observe each other's writes, and emits a single merged statement per run."
+  input list<DAE.Statement> inStmts;
+  output list<DAE.Statement> outStmts = {};
+  input output list<DAE.Element> tempVars;
+protected
+  list<DAE.Statement> rest = inStmts;
+  DAE.Statement stmt;
+  Option<tuple<DAE.Exp, DAE.Type, String, DAE.Exp>> m;
+  DAE.Exp base, rhs;
+  DAE.Type mrecTy;
+  String field;
+  list<MRFAUpdate> group;
+  list<String> writtenFields;
+  Boolean extended;
+algorithm
+  while not listEmpty(rest) loop
+    stmt :: rest := rest;
+    m := optMRFAMatch(stmt);
+    (outStmts, rest, tempVars) := match m
+      case SOME((base, mrecTy, field, rhs))
+        algorithm
+          group := {(field, rhs, stmt)};
+          writtenFields := {field};
+          extended := true;
+          while extended loop
+            (writtenFields, group, extended) :=
+              optMRFATryExtend(rest, base, mrecTy, writtenFields, group);
+            if extended then
+              rest := listRest(rest);
+            end if;
+          end while;
+          (outStmts, tempVars) := optMRFACommitGroup(listReverse(group), base, mrecTy, outStmts, tempVars);
+        then (outStmts, rest, tempVars);
+      else
+        (stmt :: outStmts, rest, tempVars);
+    end match;
+  end while;
+  outStmts := listReverse(outStmts);
+end optMRFAMergeList;
+
+protected function optMRFACommitGroup
+  "Emits either the original statement (group size 1) or the merged
+   metarecord construction (group size >= 2), accumulating in reverse
+   order onto `acc`. For a merged group also emits one STMT_ASSIGN per
+   updated field to a fresh local temp before the box statement, and
+   appends the temp's DAE.VAR declaration to tempVars."
+  input list<MRFAUpdate> group;
+  input DAE.Exp baseExp;
+  input DAE.Type mrecTy;
+  input list<DAE.Statement> acc;
+  output list<DAE.Statement> outAcc;
+  input output list<DAE.Element> tempVars;
+protected
+  DAE.Statement original;
+  list<DAE.Statement> mergedStmts;
+algorithm
+  (outAcc, tempVars) := match group
+    case {(_, _, original)} then (original :: acc, tempVars);
+    else
+      algorithm
+        // optMRFABuildMerged returns a list of statements: first the
+        // temp assignments in source order, then the final box. Push
+        // them onto `acc` in order so reversing acc later yields source
+        // order.
+        (mergedStmts, tempVars) := optMRFABuildMerged(group, baseExp, mrecTy, tempVars);
+      then (List.append_reverse(mergedStmts, acc), tempVars);
+  end match;
+end optMRFACommitGroup;
+
+protected function optMRFABuildMerged
+  "Builds the statements that replace a merged group of N field-update
+   statements: N STMT_ASSIGN to fresh local temps (one per updated
+   field, in source order) followed by one STMT_ASSIGN whose rhs is a
+   METARECORDCALL that builds the record from the temps and from RSUB
+   reads of the unchanged fields. The temp assignments fix the
+   evaluation order at the DAE level; the C codegen would otherwise
+   inline the rhses directly into mmc_mk_box arguments and leave the
+   order to the C compiler. Appends the temp DAE.VAR declarations to
+   tempVars; the caller lifts these into the surrounding function's
+   element list."
+  input list<MRFAUpdate> group;
+  input DAE.Exp baseExp;
+  input DAE.Type mrecTy;
+  output list<DAE.Statement> outStmts;
+  input output list<DAE.Element> tempVars;
+protected
+  Absyn.Path path;
+  Integer index;
+  list<DAE.Type> typeVars;
+  list<DAE.Var> fields;
+  list<DAE.Exp> args = {};
+  list<String> fieldNames = {};
+  DAE.Var fv;
+  String fname, gname, tname;
+  DAE.Type fty, gty;
+  DAE.Exp grhs;
+  Integer pos = 1;
+  DAE.Exp arg;
+  DAE.ElementSource src;
+  DAE.Type baseTy;
+  list<DAE.Statement> tempAssigns = {};
+  list<tuple<String, DAE.Exp>> fieldRefs = {};
+  DAE.ComponentRef tcref;
+  DAE.Exp tref;
+  DAE.Element tvar;
+algorithm
+  (path, index, typeVars) := optMRFAMetaRecordInfo(mrecTy);
+  fields := Types.getMetaRecordFields(mrecTy);
+  // Reuse the element source of the first statement in the group.
+  DAE.STMT_ASSIGN(source = src) := Util.tuple33(listHead(group));
+  // Walk the group in source order: emit one temp assignment per
+  // updated field, declare the temp's DAE.VAR, and remember the temp's
+  // CREF so the METARECORDCALL builder below can refer to it.
+  for upd in group loop
+    (gname, grhs, _) := upd;
+    gty := optMRFAFieldType(fields, gname);
+    tname := "$mrfa_" + Util.tickStr();
+    tcref := DAE.CREF_IDENT(tname, gty, {});
+    tref := DAE.CREF(tcref, gty);
+    tempAssigns := DAE.STMT_ASSIGN(gty, tref, grhs, src) :: tempAssigns;
+    tvar := DAE.VAR(tcref, DAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(),
+                    DAE.PROTECTED(), gty, NONE(), {}, DAE.NON_CONNECTOR(),
+                    src, NONE(), NONE(), Absyn.NOT_INNER_OUTER(), false);
+    tempVars := tvar :: tempVars;
+    fieldRefs := (gname, tref) :: fieldRefs;
+  end for;
+  // Build the METARECORDCALL args: temp ref for updated fields, RSUB
+  // read of the original record for unchanged fields. Field iteration
+  // order here is the metarecord's declaration order, which is what
+  // the box constructor needs.
+  for fv in fields loop
+    DAE.TYPES_VAR(name = fname, ty = fty) := fv;
+    arg := match optMRFALookupRef(fieldRefs, fname)
+      case SOME(arg) then arg;
+      else DAE.RSUB(baseExp, pos, fname, fty);
+    end match;
+    args := arg :: args;
+    fieldNames := fname :: fieldNames;
+    pos := pos + 1;
+  end for;
+  args := listReverse(args);
+  fieldNames := listReverse(fieldNames);
+  baseTy := Expression.typeof(baseExp);
+  // tempAssigns is in reverse source order (head = last temp). Prepend
+  // the box statement to that reverse-ordered list so a single
+  // listReverse produces [tassign_1, ..., tassign_N, boxStmt].
+  tempAssigns := DAE.STMT_ASSIGN(baseTy, baseExp,
+                                 DAE.METARECORDCALL(path, args, fieldNames, index, typeVars),
+                                 src) :: tempAssigns;
+  outStmts := listReverse(tempAssigns);
+end optMRFABuildMerged;
+
+protected function optMRFAFieldType
+  "Looks up the type of `fname` among the metarecord field descriptors."
+  input list<DAE.Var> fields;
+  input String fname;
+  output DAE.Type ty;
+protected
+  String n;
+algorithm
+  for fv in fields loop
+    DAE.TYPES_VAR(name = n, ty = ty) := fv;
+    if stringEq(n, fname) then return; end if;
+  end for;
+  // Should not happen: the merge pre-checks that the field belongs to
+  // the metarecord. If we ever get here, fail loudly so we notice.
+  Error.addInternalError("optMRFAFieldType: field " + fname + " not found in metarecord", sourceInfo());
+  fail();
+end optMRFAFieldType;
+
+protected function optMRFALookupRef
+  "Finds the temp CREF for `fname` in the field-ref list, or NONE() if
+   the field was not updated by the group."
+  input list<tuple<String, DAE.Exp>> fieldRefs;
+  input String fname;
+  output Option<DAE.Exp> outRef;
+protected
+  String n;
+  DAE.Exp r;
+algorithm
+  outRef := NONE();
+  for fr in fieldRefs loop
+    (n, r) := fr;
+    if stringEq(n, fname) then
+      outRef := SOME(r);
+      return;
+    end if;
+  end for;
+end optMRFALookupRef;
+
+protected function optMRFAMetaRecordInfo
+  "Extracts (path, ctor_index, typeVars) needed to construct a METARECORDCALL
+   from a T_METARECORD or singleton T_METAUNIONTYPE."
+  input DAE.Type ty;
+  output Absyn.Path path;
+  output Integer index;
+  output list<DAE.Type> typeVars;
+algorithm
+  (path, index, typeVars) := match ty
+    local
+      DAE.Type rec;
+      DAE.EvaluateSingletonTypeFunction fn;
+    case DAE.T_METARECORD() then (ty.path, ty.index, ty.typeVars);
+    case DAE.T_METAUNIONTYPE(singletonType = DAE.EVAL_SINGLETON_KNOWN_TYPE(ty = rec))
+      then optMRFAMetaRecordPieces(rec);
+    case DAE.T_METAUNIONTYPE(singletonType = DAE.EVAL_SINGLETON_TYPE_FUNCTION(fun = fn))
+      then optMRFAMetaRecordPieces(fn());
+  end match;
+end optMRFAMetaRecordInfo;
+
+protected function optMRFAMetaRecordPieces
+  "Destructures a T_METARECORD into (path, index, typeVars)."
+  input DAE.Type ty;
+  output Absyn.Path path;
+  output Integer index;
+  output list<DAE.Type> typeVars;
+algorithm
+  DAE.T_METARECORD(path = path, index = index, typeVars = typeVars) := ty;
+end optMRFAMetaRecordPieces;
+
+protected function optMRFAMatch
+  "Pattern matches a STMT_ASSIGN that updates a single field of a
+   MetaModelica uniontype/metarecord variable. Returns SOME((base, mrecTy,
+   fieldName, rhs)) on match, NONE() otherwise. Mirrors the four STMT_ASSIGN
+   shapes in CodegenCFunctions.tpl that emit the alloc+memcpy+set+reassign C."
+  input DAE.Statement stmt;
+  output Option<tuple<DAE.Exp, DAE.Type, String, DAE.Exp>> outMatch;
+algorithm
+  outMatch := match stmt
+    local
+      DAE.Exp baseExp, rhs;
+      DAE.Type t1, identTy;
+      DAE.ComponentRef topCref;
+      String fname, ident;
+      list<DAE.Subscript> subs;
+
+    // RSUB-shape on T_METARECORD.
+    case DAE.STMT_ASSIGN(exp1 = DAE.RSUB(exp = baseExp as DAE.CREF(ty = t1 as DAE.T_METARECORD()),
+                                         fieldName = fname), exp = rhs)
+      then SOME((baseExp, t1, fname, rhs));
+
+    // RSUB-shape on singleton T_METAUNIONTYPE.
+    case DAE.STMT_ASSIGN(exp1 = DAE.RSUB(exp = baseExp as DAE.CREF(ty = t1 as DAE.T_METAUNIONTYPE(knownSingleton = true)),
+                                         fieldName = fname), exp = rhs)
+      guard optMRFAResolvableSingleton(t1)
+      then SOME((baseExp, t1, fname, rhs));
+
+    // CREF_QUAL legacy shape with T_METATYPE(T_METARECORD).
+    case DAE.STMT_ASSIGN(exp1 = DAE.CREF(componentRef = DAE.CREF_QUAL(ident = ident,
+                                                                     identType = identTy as DAE.T_METATYPE(ty = t1 as DAE.T_METARECORD()),
+                                                                     subscriptLst = subs,
+                                                                     componentRef = DAE.CREF_IDENT(ident = fname))),
+                         exp = rhs)
+      algorithm
+        topCref := DAE.CREF_IDENT(ident, identTy, subs);
+        baseExp := DAE.CREF(topCref, identTy);
+      then SOME((baseExp, t1, fname, rhs));
+
+    // CREF_QUAL legacy shape with T_METATYPE(T_METAUNIONTYPE).
+    case DAE.STMT_ASSIGN(exp1 = DAE.CREF(componentRef = DAE.CREF_QUAL(ident = ident,
+                                                                     identType = identTy as DAE.T_METATYPE(ty = t1 as DAE.T_METAUNIONTYPE(knownSingleton = true)),
+                                                                     subscriptLst = subs,
+                                                                     componentRef = DAE.CREF_IDENT(ident = fname))),
+                         exp = rhs)
+      guard optMRFAResolvableSingleton(t1)
+      algorithm
+        topCref := DAE.CREF_IDENT(ident, identTy, subs);
+        baseExp := DAE.CREF(topCref, identTy);
+      then SOME((baseExp, t1, fname, rhs));
+
+    else NONE();
+  end match;
+end optMRFAMatch;
+
+protected function optMRFAResolvableSingleton
+  "Predicate: a T_METAUNIONTYPE whose singleton record type is resolvable at
+   codegen time (either a statically known record type or a function that
+   returns one)."
+  input DAE.Type ty;
+  output Boolean ok;
+algorithm
+  ok := match ty
+    case DAE.T_METAUNIONTYPE(singletonType = DAE.EVAL_SINGLETON_KNOWN_TYPE(ty = DAE.T_METARECORD())) then true;
+    case DAE.T_METAUNIONTYPE(singletonType = DAE.EVAL_SINGLETON_TYPE_FUNCTION()) then true;
+    else false;
+  end match;
+end optMRFAResolvableSingleton;
+
+protected function optMRFATryExtend
+  "Returns true if the head of `rest` is a field-update statement on the
+   same base cref, writing a field not yet written, and whose rhs does not
+   observe any previously written field of that base. Side effect: when
+   returning true, appends the new update to `group` and `writtenFields`.
+   On false, `group` and `writtenFields` are unchanged and the caller will
+   close the run."
+  input list<DAE.Statement> rest;
+  input DAE.Exp baseExp;
+  input DAE.Type mrecTy;
+  input output list<String> writtenFields;
+  input output list<MRFAUpdate> group;
+  output Boolean extended;
+protected
+  DAE.Statement stmt;
+  Option<tuple<DAE.Exp, DAE.Type, String, DAE.Exp>> m;
+  DAE.Exp base2, rhs;
+  DAE.Type t2;
+  String f;
+algorithm
+  if listEmpty(rest) then
+    extended := false;
+    return;
+  end if;
+  stmt := listHead(rest);
+  m := optMRFAMatch(stmt);
+  extended := match m
+    case SOME((base2, t2, f, rhs))
+      then optMRFACheckExtend(base2, t2, f, rhs, baseExp, mrecTy, writtenFields);
+    else false;
+  end match;
+  if extended then
+    SOME((_, _, f, rhs)) := m;
+    group := (f, rhs, stmt) :: group;
+    writtenFields := f :: writtenFields;
+  end if;
+end optMRFATryExtend;
+
+protected function optMRFACheckExtend
+  "Checks same-base, not-yet-written, and rhs-does-not-observe-writes."
+  input DAE.Exp newBase;
+  input DAE.Type newMrecTy;
+  input String newField;
+  input DAE.Exp newRhs;
+  input DAE.Exp baseExp;
+  input DAE.Type mrecTy;
+  input list<String> writtenFields;
+  output Boolean ok;
+algorithm
+  ok := Expression.expEqual(newBase, baseExp)
+        and not listMember(newField, writtenFields)
+        and optMRFARhsSafe(newRhs, baseExp, writtenFields);
+end optMRFACheckExtend;
+
+protected function optMRFARhsSafe
+  "Returns true if `rhs` never reads a field of `baseExp` that appears in
+   `writtenFields`, and never reads `baseExp` wholesale. Being conservative
+   here is fine: a false negative only skips an optimization."
+  input DAE.Exp rhs;
+  input DAE.Exp baseExp;
+  input list<String> writtenFields;
+  output Boolean safe;
+protected
+  tuple<DAE.Exp, list<String>, Boolean> acc;
+algorithm
+  (_, (_, _, safe)) := Expression.traverseExpTopDown(rhs, optMRFARhsCheck, (baseExp, writtenFields, true));
+end optMRFARhsSafe;
+
+protected function optMRFARhsCheck
+  input DAE.Exp inExp;
+  input tuple<DAE.Exp, list<String>, Boolean> inAcc;
+  output DAE.Exp outExp = inExp;
+  output Boolean cont;
+  output tuple<DAE.Exp, list<String>, Boolean> outAcc;
+protected
+  DAE.Exp baseExp, innerExp;
+  list<String> writtenFields;
+  Boolean safe, handled;
+  String fname;
+algorithm
+  (baseExp, writtenFields, safe) := inAcc;
+  if not safe then
+    cont := false;
+    outAcc := inAcc;
+    return;
+  end if;
+  handled := false;
+  (safe, handled) := match inExp
+    // RSUB(baseExp, _, f, _) is a field read of f. If f was written earlier
+    // in the group, merging would change semantics. Mark unsafe and skip
+    // descent so the wrapped CREF is not re-interpreted as a wholesale read.
+    case DAE.RSUB(exp = innerExp, fieldName = fname)
+      guard Expression.expEqual(innerExp, baseExp)
+      then (not listMember(fname, writtenFields), true);
+    case DAE.CREF()
+      then (optMRFACheckCrefRead(inExp, baseExp, writtenFields), false);
+    else (safe, false);
+  end match;
+  cont := safe and not handled;
+  outAcc := (baseExp, writtenFields, safe);
+end optMRFARhsCheck;
+
+protected function optMRFACheckCrefRead
+  "For a CREF expression encountered in an rhs, returns true if it is safe
+   (does not alias a recently-written field of baseExp)."
+  input DAE.Exp crefExp;
+  input DAE.Exp baseExp;
+  input list<String> writtenFields;
+  output Boolean safe;
+protected
+  DAE.ComponentRef cref, baseCref;
+  String baseIdent, headIdent, fname;
+algorithm
+  DAE.CREF(componentRef = cref) := crefExp;
+  DAE.CREF(componentRef = baseCref) := baseExp;
+  safe := matchcontinue (cref, baseCref)
+    // Wholesale c -- always disqualify if any field already written.
+    case (DAE.CREF_IDENT(ident = headIdent), DAE.CREF_IDENT(ident = baseIdent))
+      then not (stringEq(headIdent, baseIdent) and not listEmpty(writtenFields));
+    // c.f -- safe iff f not written yet.
+    case (DAE.CREF_QUAL(ident = headIdent, componentRef = DAE.CREF_IDENT(ident = fname)),
+          DAE.CREF_IDENT(ident = baseIdent))
+      then not (stringEq(headIdent, baseIdent) and listMember(fname, writtenFields));
+    // Deeper nesting or other shape -- be conservative, disallow if the
+    // heads match and there are any prior writes.
+    case (DAE.CREF_QUAL(ident = headIdent), DAE.CREF_IDENT(ident = baseIdent))
+      then not (stringEq(headIdent, baseIdent) and not listEmpty(writtenFields));
+    else true;
+  end matchcontinue;
+end optMRFACheckCrefRead;
 annotation(__OpenModelica_Interface="frontend");
 end DAEUtil;
