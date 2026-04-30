@@ -213,7 +213,7 @@ OSMC_PL_1_8_RUNTIME_LICENSE_TEXT_C = f"""
 # File-type groups
 # ---------------------------------------------------------------------------
 
-C_STYLE_EXTS = frozenset({".c", ".h", ".h.in", ".cpp", ".cc", ".cxx", ".inc", ".inl", ".hpp", ".cl", ".g", ".qss"})
+C_STYLE_EXTS = frozenset({".c", ".h", ".h.in", ".cpp", ".cpp.in", ".cc", ".cxx", ".inc", ".inl", ".hpp", ".cl", ".g", ".qss"})
 PYTHON_EXTS = frozenset({".py", ".pro", ".pri"})
 MODELICA_EXTS = frozenset({".mo", ".mos", ".tpl"})
 
@@ -223,7 +223,7 @@ SUPPORTED_EXTS = C_STYLE_EXTS | PYTHON_EXTS | MODELICA_EXTS
 def _file_ext(filename: str) -> str:
     """Return the file extension, handling double extensions like '.h.in'."""
     name = os.path.basename(filename)
-    for ext in (".h.in",):
+    for ext in (".h.in", ".cpp.in"):
         if name.endswith(ext):
             return ext
     return os.path.splitext(name)[1].lower()
@@ -499,11 +499,16 @@ def _update_copyright_year(filepath: str, content: str) -> bool:
     return True
 
 
-def _copyright_year_errors(filepath: str, content: str, fix_year: bool) -> list[str]:
-    """Return errors for a wrong or placeholder copyright year."""
-    if _PLACEHOLDER_COPYRIGHT_RE.search(content):
+def _copyright_year_errors(filepath: str, header: str, content: str, fix_year: bool) -> list[str]:
+    """Return errors for a wrong or placeholder copyright year.
+
+    Searches only *header* (the extracted license block) so that in-body
+    copyright strings (e.g. Python ``__copyright__`` variables) are ignored.
+    *content* is the full file text, used only when rewriting the year.
+    """
+    if _PLACEHOLDER_COPYRIGHT_RE.search(header):
         return ["copyright year is an unreplaced template placeholder (CurrentYear)"]
-    m = _COPYRIGHT_RE.search(content)
+    m = _COPYRIGHT_RE.search(header)
     if not m:
         return ["copyright year not found"]
     end_year = int(m.group(2) or m.group(1))
@@ -557,7 +562,7 @@ def check_file(
                     if _replace_license_header(filepath, content, is_runtime=True, ext=ext):
                         errors[-1] += " [FIXED]"
             else:
-                errors.extend(_copyright_year_errors(filepath, content, fix_year))
+                errors.extend(_copyright_year_errors(filepath, header, content, fix_year))
         elif not has_runtime_mark and has_osmc_pl_1_8:
             errors.append(
                 "wrong license type: has normal OSMC-PL 1.8 header, expected runtime header"
@@ -585,7 +590,7 @@ def check_file(
     else:
         if has_osmc_pl_1_8 and not has_runtime_mark:
             # Correct normal license; check/update year.
-            errors.extend(_copyright_year_errors(filepath, content, fix_year))
+            errors.extend(_copyright_year_errors(filepath, header, content, fix_year))
         elif has_osmc_pl_1_8 and has_runtime_mark:
             errors.append(
                 "wrong license type: has runtime header, expected normal OSMC-PL 1.8 header"

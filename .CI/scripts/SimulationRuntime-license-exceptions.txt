@@ -328,6 +328,14 @@ OMOptim/OMOptim/GUI/Scene/diagramtextitem.h
 OMPlot/qwt/
 
 # =============================================================================
+# OMSimulator
+# =============================================================================
+
+OMSimulator/3rdParty/
+OMSimulator/doc/
+OMSimulator/testsuite/
+
+# =============================================================================
 # Submodules
 # TODO: Check which submodules need a check
 # =============================================================================
@@ -335,7 +343,6 @@ OMPlot/qwt/
 libraries/
 OMCompiler/3rdParty/
 !OMCompiler/3rdParty/ryu/ryu/om_format.*
-OMSimulator/
 
 # =============================================================================
 # Build files
