@@ -102,8 +102,8 @@ try
 
     case ( <%mexps |> it => mmMatchingExp(it) ;separator=",\n"; anchor%> )
       <%if statements then <<
-      equation
-        <%statements |> it => '<%mmExp(it, "=")%>;' ;separator="\n"%>
+      algorithm
+        <%statements |> it => '<%mmExp(it, ":=")%>;' ;separator="\n"%>
       >>%>
       then <%match outArgs
             case {(nm,_)} then nm
@@ -289,7 +289,7 @@ end mmMatchingExp;
 // **** helper dumping functions (Susan unparser) ****
 
 template mmStatements(list<MMExp> stmts) ::=
-  (stmts |> it => '<%mmExp(it, "=")%>;' ;separator="\n")
+  (stmts |> it => '<%mmExp(it, ":=")%>;' ;separator="\n")
 end mmStatements;
 
 template sTemplPackage(TemplPackage it) ::=
