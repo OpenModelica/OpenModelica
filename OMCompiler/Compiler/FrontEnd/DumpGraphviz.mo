@@ -65,8 +65,8 @@ algorithm
       list<Absyn.Class> cs;
 
     case (Absyn.PROGRAM(classes = cs))
-      equation
-        nl = printClasses(cs);
+      algorithm
+        nl := printClasses(cs);
       then
         Graphviz.NODE("ROOT",{},nl);
   end match;
@@ -86,9 +86,9 @@ algorithm
     case {} then {};
 
     case (c :: cs)
-      equation
-        node = printClass(c);
-        nl = printClasses(cs);
+      algorithm
+        node := printClass(c);
+        nl := printClasses(cs);
       then
         (node :: nl);
   end match;
@@ -107,9 +107,9 @@ algorithm
       list<Absyn.ClassPart> parts;
 
     case (Absyn.CLASS(restriction = r,body = Absyn.PARTS(classParts = parts)))
-      equation
-        rs = AbsynUtil.restrString(r);
-        nl = printParts(parts);
+      algorithm
+        rs := AbsynUtil.restrString(r);
+        nl := printParts(parts);
       then
         Graphviz.NODE(rs,{},nl);
   end match;
@@ -129,9 +129,9 @@ algorithm
     case {} then {};
 
     case (c :: cs)
-      equation
-        node = printClassPart(c);
-        nl = printParts(cs);
+      algorithm
+        node := printClassPart(c);
+        nl := printParts(cs);
       then
         (node :: nl);
   end match;
@@ -149,26 +149,26 @@ algorithm
       list<Absyn.AlgorithmItem> als;
 
     case (Absyn.PUBLIC(contents = el))
-      equation
-        nl = printElementitems(el);
+      algorithm
+        nl := printElementitems(el);
       then
         Graphviz.NODE("PUBLIC",{},nl);
 
     case (Absyn.PROTECTED(contents = el))
-      equation
-        nl = printElementitems(el);
+      algorithm
+        nl := printElementitems(el);
       then
         Graphviz.NODE("PROTECTED",{},nl);
 
     case (Absyn.EQUATIONS(contents = eqs))
-      equation
-        nl = printEquations(eqs);
+      algorithm
+        nl := printEquations(eqs);
       then
         Graphviz.NODE("EQUATIONS",{},nl);
 
     case (Absyn.ALGORITHMS(contents = als))
-      equation
-        nl = printAlgorithms(als);
+      algorithm
+        nl := printAlgorithms(als);
       then
         Graphviz.NODE("ALGORITHMS",{},nl);
 
@@ -190,9 +190,9 @@ algorithm
     case {} then {};
 
     case ((Absyn.ELEMENTITEM(element = e) :: el))
-      equation
-        node = printElement(e);
-        nl = printElementitems(el);
+      algorithm
+        node := printElement(e);
+        nl := printElementitems(el);
       then
         (node :: nl);
   end match;
@@ -228,9 +228,9 @@ algorithm
       Absyn.ElementSpec spec;
 
     case (Absyn.ELEMENT(finalPrefix = finalPrefix,specification = spec))
-      equation
-        fa = makeBoolAttr("final", finalPrefix);
-        elsp = printElementspec(spec);
+      algorithm
+        fa := makeBoolAttr("final", finalPrefix);
+        elsp := printElementspec(spec);
       then
         Graphviz.NODE("ELEMENT",{fa},{elsp});
   end match;
@@ -265,23 +265,23 @@ algorithm
       String s;
 
     case (Absyn.CLASSDEF(replaceable_ = repl,class_ = cl))
-      equation
-        _ = printClass(cl);
-        ra = makeBoolAttr("replaceable", repl);
+      algorithm
+        _ := printClass(cl);
+        ra := makeBoolAttr("replaceable", repl);
       then
         Graphviz.NODE("CLASSDEF",{ra},{});
 
     case (Absyn.EXTENDS(path = p))
-      equation
-        en = printPath(p);
+      algorithm
+        en := printPath(p);
       then
         Graphviz.NODE("EXTENDS",{},{en});
 
     case (Absyn.COMPONENTS(typeSpec = tspec,components = cs))
-      equation
-        s = Dump.unparseTypeSpec(tspec);
-        pn = makeLeaf(s, {});
-        cns = printComponents(cs);
+      algorithm
+        s := Dump.unparseTypeSpec(tspec);
+        pn := makeLeaf(s, {});
+        cns := printComponents(cs);
       then
         Graphviz.NODE("COMPONENTS",{},(pn :: cns));
 
@@ -303,9 +303,9 @@ algorithm
     case {} then {};
 
     case (c :: cs)
-      equation
-        n = printComponentitem(c);
-        nl = printComponents(cs);
+      algorithm
+        n := printComponentitem(c);
+        nl := printComponents(cs);
       then
         (n :: nl);
   end match;
@@ -323,8 +323,8 @@ algorithm
       Option<Absyn.Modification> m;
 
     case (Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = n)))
-      equation
-        nn = Graphviz.NODE(n,{},{});
+      algorithm
+        nn := Graphviz.NODE(n,{},{});
       then
         Graphviz.LNODE("COMPONENT",{n},{},{nn});
   end match;
@@ -345,9 +345,9 @@ algorithm
     case {} then {};
 
     case (Absyn.EQUATIONITEM(equation_ = eq) :: el)
-      equation
-        node = printEquation(eq);
-        nl = printEquations(el);
+      algorithm
+        node := printEquation(eq);
+        nl := printEquations(el);
       then
         (node :: nl);
   end match;
@@ -368,41 +368,41 @@ algorithm
       Absyn.ForIterators iterators;
 
     case (Absyn.EQ_EQUALS(leftSide = e1,rightSide = e2))
-      equation
-        s1 = Dump.printExpStr(e1);
-        s2 = Dump.printExpStr(e2);
-        s = stringAppend(s1, " = ");
-        s_1 = stringAppend(s, s2);
+      algorithm
+        s1 := Dump.printExpStr(e1);
+        s2 := Dump.printExpStr(e2);
+        s := stringAppend(s1, " = ");
+        s_1 := stringAppend(s, s2);
       then
         Graphviz.LNODE("EQ_EQUALS",{s_1},{},{});
 
     case (Absyn.EQ_PDE(leftSide = e1,rightSide = e2,domain = c1))
-      equation
-        s1 = Dump.printExpStr(e1);
-        s2 = Dump.printExpStr(e2);
-        s3 = Dump.printComponentRefStr(c1);
-        s = stringAppend(s1, " = ");
-        s_1 = stringAppend(s, s2);
-        s_1 = stringAppend(s_1, " indomain ");
-        s_1 = stringAppend(s_1, s3);
+      algorithm
+        s1 := Dump.printExpStr(e1);
+        s2 := Dump.printExpStr(e2);
+        s3 := Dump.printComponentRefStr(c1);
+        s := stringAppend(s1, " = ");
+        s_1 := stringAppend(s, s2);
+        s_1 := stringAppend(s_1, " indomain ");
+        s_1 := stringAppend(s_1, s3);
       then
         Graphviz.LNODE("EQ_PDE",{s_1},{},{});
 
 
     case (Absyn.EQ_CONNECT(connector1 = c1,connector2 = c2))
-      equation
-        s1 = Dump.printComponentRefStr(c1);
-        s2 = Dump.printComponentRefStr(c2);
-        s = stringAppend("connect(", s1);
-        s_1 = stringAppend(s, s2);
-        s_2 = stringAppend(s_1, ")");
+      algorithm
+        s1 := Dump.printComponentRefStr(c1);
+        s2 := Dump.printComponentRefStr(c2);
+        s := stringAppend("connect(", s1);
+        s_1 := stringAppend(s, s2);
+        s_2 := stringAppend(s_1, ")");
       then
         Graphviz.LNODE("EQ_CONNECT",{s_2},{},{});
 
     case (Absyn.EQ_FOR(iterators=iterators,forEquations = eqs))
-      equation
-        eqn = printEquations(eqs);
-        es = Dump.printIteratorsStr(iterators);
+      algorithm
+        eqn := printEquations(eqs);
+        es := Dump.printIteratorsStr(iterators);
       then
         Graphviz.LNODE("EQ_FOR",{es},{},eqn);
 
@@ -425,9 +425,9 @@ algorithm
     case {} then {};
 
     case (e :: el)
-      equation
-        node = printAlgorithmitem(e);
-        nl = printAlgorithms(el);
+      algorithm
+        node := printAlgorithmitem(e);
+        nl := printAlgorithms(el);
       then
         (node :: nl);
   end match;
@@ -443,8 +443,8 @@ algorithm
       Absyn.Algorithm alg;
 
     case (Absyn.ALGORITHMITEM(algorithm_ = alg))
-      equation
-        node = printAlgorithm(alg);
+      algorithm
+        node := printAlgorithm(alg);
       then
         node;
     else Graphviz.NODE("ALG_ERROR",{},{});

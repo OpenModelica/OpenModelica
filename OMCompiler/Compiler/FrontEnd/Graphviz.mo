@@ -112,23 +112,23 @@ algorithm
       list<Label> lbl_1,lbl;
 
     case (NODE(type_ = typ,attributes = attr,children = children))
-      equation
-        nm = nodename(typ);
-        typlbl = makeLabel({typ});
-        newattr = ATTR("label",typlbl)::attr;
-        out = makeNode(nm, newattr);
+      algorithm
+        nm := nodename(typ);
+        typlbl := makeLabel({typ});
+        newattr := ATTR("label",typlbl)::attr;
+        out := makeNode(nm, newattr);
         print(out);
         dumpChildren(nm, children);
       then
         nm;
 
     case (LNODE(type_ = typ,labelLst = lbl,attributes = attr,children = children))
-      equation
-        nm = nodename(typ);
-        lbl_1 = typ::lbl;
-        lblstr = makeLabel(lbl_1);
-        newattr = ATTR("label",lblstr)::attr;
-        out = makeNode(nm, newattr);
+      algorithm
+        nm := nodename(typ);
+        lbl_1 := typ::lbl;
+        lblstr := makeLabel(lbl_1);
+        newattr := ATTR("label",lblstr)::attr;
+        out := makeNode(nm, newattr);
         print(out);
         dumpChildren(nm, children);
       then
@@ -160,16 +160,16 @@ algorithm
     case {s} then stringAppend(inString, s);
 
     case {s1,s2}
-      equation
-        s = stringAppend(inString, s1);
-        s = stringAppend(s, "\\n");
-        s = stringAppend(s, s2);
+      algorithm
+        s := stringAppend(inString, s1);
+        s := stringAppend(s, "\\n");
+        s := stringAppend(s, s2);
       then s;
 
     case (s1 :: rest)
-      equation
-        s = stringAppend(inString, s1);
-        s = stringAppend(s, "\\n");
+      algorithm
+        s := stringAppend(inString, s1);
+        s := stringAppend(s, "\\n");
       then
         makeLabelReq(rest, s);
   end match;
@@ -188,8 +188,8 @@ algorithm
     case (_,{}) then ();
 
     case (parent,(node :: rest))
-      equation
-        nm = dumpNode(node);
+      algorithm
+        nm := dumpNode(node);
         printEdge(nm, parent);
         dumpChildren(parent, rest);
       then
@@ -266,18 +266,18 @@ algorithm
       list<Attribute> rest;
 
     case {ATTR(name = name,value = v)}
-      equation
-        s = stringAppend(inString, name);
-        s = stringAppend(s, "=");
+      algorithm
+        s := stringAppend(inString, name);
+        s := stringAppend(s, "=");
       then
         stringAppend(s, v);
 
     case ((ATTR(name = name,value = v) :: rest))
-      equation
-        s = stringAppend(inString, name);
-        s = stringAppend(s, "=");
-        s = stringAppend(s, v);
-        s = stringAppend(s, ",");
+      algorithm
+        s := stringAppend(inString, name);
+        s := stringAppend(s, "=");
+        s := stringAppend(s, v);
+        s := stringAppend(s, ",");
       then
         makeAttrReq(rest, s);
   end match;

@@ -239,52 +239,52 @@ algorithm
       SCode.Partial pp;
 
     case SCode.EXTENDS(baseClassPath = path,modifications = mod)
-      equation
-        str = AbsynUtil.pathString(path);
-        str = str + printModStr(mod,defaultOptions);
-        res = stringAppendList({"extends ",str,";"});
+      algorithm
+        str := AbsynUtil.pathString(path);
+        str := str + printModStr(mod,defaultOptions);
+        res := stringAppendList({"extends ",str,";"});
       then
         res;
 
     case SCode.COMPONENT()
-      equation
-        res = unparseElementStr(inElement,defaultOptions);
+      algorithm
+        res := unparseElementStr(inElement,defaultOptions);
       then
         res;
 
     case SCode.CLASS(prefixes = SCode.PREFIXES(),
                      classDef = SCode.DERIVED())
-      equation
-        res = unparseElementStr(inElement,defaultOptions);
+      algorithm
+        res := unparseElementStr(inElement,defaultOptions);
       then
         res;
 
     case SCode.CLASS(name = n, partialPrefix = pp, prefixes = SCode.PREFIXES(innerOuter = io, redeclarePrefix = rdp, replaceablePrefix = rpp),
                      classDef = SCode.CLASS_EXTENDS())
-      equation
-        ioStr = Dump.unparseInnerOuterStr(io) + redeclareStr(rdp) + replaceablePrefixStr(rpp) + partialStr(pp);
-        res = stringAppendList({ioStr, "class extends ",n,";"});
+      algorithm
+        ioStr := Dump.unparseInnerOuterStr(io) + redeclareStr(rdp) + replaceablePrefixStr(rpp) + partialStr(pp);
+        res := stringAppendList({ioStr, "class extends ",n,";"});
       then
         res;
 
     case SCode.CLASS(name = n, partialPrefix = pp, prefixes = SCode.PREFIXES(innerOuter = io, redeclarePrefix = rdp, replaceablePrefix = rpp),
                      classDef = SCode.ENUMERATION())
-      equation
-        ioStr = Dump.unparseInnerOuterStr(io) + redeclareStr(rdp) + replaceablePrefixStr(rpp) + partialStr(pp);
-        res = stringAppendList({ioStr, "class ",n," enumeration;"});
+      algorithm
+        ioStr := Dump.unparseInnerOuterStr(io) + redeclareStr(rdp) + replaceablePrefixStr(rpp) + partialStr(pp);
+        res := stringAppendList({ioStr, "class ",n," enumeration;"});
       then
         res;
 
     case SCode.CLASS(name = n, partialPrefix = pp, prefixes = SCode.PREFIXES(innerOuter = io, redeclarePrefix = rdp, replaceablePrefix = rpp))
-      equation
-        ioStr = Dump.unparseInnerOuterStr(io) + redeclareStr(rdp) + replaceablePrefixStr(rpp) + partialStr(pp);
-        res = stringAppendList({ioStr, "class ",n,";"});
+      algorithm
+        ioStr := Dump.unparseInnerOuterStr(io) + redeclareStr(rdp) + replaceablePrefixStr(rpp) + partialStr(pp);
+        res := stringAppendList({ioStr, "class ",n,";"});
       then
         res;
 
     case (SCode.IMPORT(imp = imp))
-      equation
-         str = "import "+ AbsynUtil.printImportString(imp) + ";";
+      algorithm
+         str := "import "+ AbsynUtil.printImportString(imp) + ";";
       then str;
   end match;
 end shortElementStr;
@@ -446,9 +446,9 @@ algorithm
 
     case (SCode.REPLACEABLE(SOME(SCode.CONSTRAINCLASS(
         constrainingClass = path, modifier = mod))))
-      equation
-        path_str = AbsynUtil.pathString(path);
-        mod_str = printModStr(mod,defaultOptions);
+      algorithm
+        path_str := AbsynUtil.pathString(path);
+        mod_str := printModStr(mod,defaultOptions);
       then ("replaceable ", path_str + "(" + mod_str + ")");
     case (SCode.REPLACEABLE(NONE())) then ("replaceable ", "");
     case (SCode.NOT_REPLACEABLE()) then ("", "");
@@ -486,8 +486,8 @@ algorithm
       String s;
 
     case(SCode.PREFIXES(v,rd,f,io,rpl))
-      equation
-        s = visibilityStr(v) +
+      algorithm
+        s := visibilityStr(v) +
             redeclareStr(rd) +
             finalStr(f) +
             Dump.unparseInnerOuterStr(io) +

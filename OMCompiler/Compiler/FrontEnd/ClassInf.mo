@@ -244,98 +244,98 @@ algorithm
     local Absyn.Path p;
 
     case UNKNOWN(path = p)
-      equation
+      algorithm
         Print.printBuf("UNKNOWN ");
         Print.printBuf(AbsynUtil.pathString(p));
       then
         ();
     case OPTIMIZATION(path = p)
-      equation
+      algorithm
         Print.printBuf("OPTIMIZATION ");
         Print.printBuf(AbsynUtil.pathString(p));
       then
         ();
     case MODEL(path = p)
-      equation
+      algorithm
         Print.printBuf("MODEL ");
         Print.printBuf(AbsynUtil.pathString(p));
       then
         ();
     case RECORD(path = p)
-      equation
+      algorithm
         Print.printBuf("RECORD ");
         Print.printBuf(AbsynUtil.pathString(p));
       then
         ();
     case BLOCK(path = p)
-      equation
+      algorithm
         Print.printBuf("BLOCK ");
         Print.printBuf(AbsynUtil.pathString(p));
       then
         ();
     case CONNECTOR(path = p)
-      equation
+      algorithm
         Print.printBuf("CONNECTOR ");
         Print.printBuf(AbsynUtil.pathString(p));
       then
         ();
     case TYPE(path = p)
-      equation
+      algorithm
         Print.printBuf("TYPE ");
         Print.printBuf(AbsynUtil.pathString(p));
       then
         ();
     case PACKAGE(path = p)
-      equation
+      algorithm
         Print.printBuf("PACKAGE ");
         Print.printBuf(AbsynUtil.pathString(p));
       then
         ();
     case FUNCTION(path = p, isImpure = true)
-      equation
+      algorithm
         Print.printBuf("IMPURE FUNCTION ");
         Print.printBuf(AbsynUtil.pathString(p));
       then
         ();
     case FUNCTION(path = p)
-      equation
+      algorithm
         Print.printBuf("FUNCTION ");
         Print.printBuf(AbsynUtil.pathString(p));
       then
         ();
     case TYPE_INTEGER(path = p)
-      equation
+      algorithm
         Print.printBuf("TYPE_INTEGER ");
         Print.printBuf(AbsynUtil.pathString(p));
       then
         ();
     case TYPE_REAL(path = p)
-      equation
+      algorithm
         Print.printBuf("TYPE_REAL ");
         Print.printBuf(AbsynUtil.pathString(p));
       then
         ();
     case TYPE_STRING(path = p)
-      equation
+      algorithm
         Print.printBuf("TYPE_STRING ");
         Print.printBuf(AbsynUtil.pathString(p));
       then
         ();
     case TYPE_BOOL(path = p)
-      equation
+      algorithm
         Print.printBuf("TYPE_BOOL ");
         Print.printBuf(AbsynUtil.pathString(p));
       then
         ();
     // BTH
     case TYPE_CLOCK(path = p)
-      equation
+      algorithm
         Print.printBuf("TYPE_CLOCK ");
         Print.printBuf(AbsynUtil.pathString(p));
       then
         ();
     case HAS_RESTRICTIONS(path = p)
-      equation
+      algorithm
         Print.printBuf("HAS_RESTRICTIONS ");
         Print.printBuf(AbsynUtil.pathString(p));
         Print.printBuf(printStateStr(inState));
@@ -435,8 +435,8 @@ algorithm
     case (SCode.R_PREDEFINED_BOOLEAN(),p) then TYPE_BOOL(p);
     // BTH
     case (SCode.R_PREDEFINED_CLOCK(),p)
-      equation
-        true = Config.synchronousFeaturesAllowed();
+      algorithm
+        true := Config.synchronousFeaturesAllowed();
       then TYPE_CLOCK(p);
     case (SCode.R_PREDEFINED_ENUMERATION(),p) then TYPE_ENUM(p);
      /* Meta Modelica extensions */
@@ -489,7 +489,7 @@ algorithm
     case (BLOCK(),FOUND_COMPONENT()) then inState;
     case (CONNECTOR(),FOUND_COMPONENT()) then inState;
     case (TYPE(path = p),FOUND_COMPONENT(name = s)) // A type can not contain new components
-      equation
+      algorithm
         if not isBasicTypeComponentName(s) then
           Error.addMessage(Error.TYPE_NOT_FROM_PREDEFINED, {AbsynUtil.pathString(p)});
           fail();
@@ -534,8 +534,8 @@ algorithm
     case (_,FOUND_CONSTRAINT()) then fail();
 
     case (st,ev)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- ClassInf.trans failed: " + printStateStr(st) + ", " + printEventStr(ev));
       then
         fail();
@@ -622,15 +622,15 @@ algorithm
       SCode.Restriction re;
       String str1,str2,str3;
     case (st,re,_)
-      equation
+      algorithm
         valid(st, re);
       then
         ();
     case (st,re,_)
-      equation
-        str1 = AbsynUtil.pathString(getStateName(st));
-        str2 = printStateStr(st);
-        str3 = SCodeDump.restrictionStringPP(re);
+      algorithm
+        str1 := AbsynUtil.pathString(getStateName(st));
+        str2 := printStateStr(st);
+        str3 := SCodeDump.restrictionStringPP(re);
         Error.addSourceMessage(Error.RESTRICTION_VIOLATION, {str1,str2,str3}, info);
       then
         fail();
@@ -651,10 +651,10 @@ algorithm
     case (st,_,_)
       then trans(st, event);
     case (st,_,_)
-      equation
-        str1 = AbsynUtil.pathString(getStateName(st));
-        str2 = printStateStr(st);
-        str3 = printEventStr(event);
+      algorithm
+        str1 := AbsynUtil.pathString(getStateName(st));
+        str2 := printStateStr(st);
+        str3 := printEventStr(event);
         Error.addSourceMessage(Error.TRANS_VIOLATION, {str1,str2,str3}, info);
       then
         fail();
@@ -692,8 +692,8 @@ algorithm
     case (TYPE_CLOCK(),(TYPE_CLOCK() :: _)) then true;
     case (TYPE_ENUM(),(TYPE_ENUM() :: _)) then true;
     case (_,(_ :: rest))
-      equation
-        res = matchingState(inState, rest);
+      algorithm
+        res := matchingState(inState, rest);
       then
         res;
   end match;

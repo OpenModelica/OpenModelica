@@ -224,9 +224,9 @@ algorithm
       ExtendsTableArray ext_table;
 
     case (_)
-      equation
-        ext_count = System.tmpTickIndex(NFSCodeEnv.extendsTickIndex);
-        ext_table = createExtendsTable(ext_count);
+      algorithm
+        ext_count := System.tmpTickIndex(NFSCodeEnv.extendsTickIndex);
+        ext_table := createExtendsTable(ext_count);
       then
         qualify2(inEnv, NFSCodeEnv.USERDEFINED(), ext_table);
 
@@ -316,8 +316,8 @@ algorithm
     // Skip the first extends in a class extends, since it's added by the
     // compiler itself and shouldn't be qualified.
     case (ext :: extl, NFSCodeEnv.CLASS_EXTENDS(), _, _)
-      equation
-        extl = List.map2Reverse(extl, qualifyExtends, inEnv, inExtendsTable);
+      algorithm
+        extl := List.map2Reverse(extl, qualifyExtends, inEnv, inExtendsTable);
       then
         ext :: extl;
 
@@ -346,20 +346,20 @@ algorithm
     // Check if the base class is a built in type such as Real, then we don't
     // need to do anything.
     case (NFSCodeEnv.EXTENDS(baseClass = Absyn.IDENT(name = id)), _, _)
-      equation
-        _ = NFSCodeLookup.lookupBuiltinType(id);
+      algorithm
+        _ := NFSCodeLookup.lookupBuiltinType(id);
       then
         inExtends;
 
     case (_, _, _)
-      equation
-        SOME(ext) = qualifyExtends2(inExtends, inEnv, inExtendsTable);
+      algorithm
+        SOME(ext) := qualifyExtends2(inExtends, inEnv, inExtendsTable);
       then
         ext;
 
     case (NFSCodeEnv.EXTENDS(baseClass = bc), _, _)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- NFEnvExtends.qualifyExtends failed on " +
           AbsynUtil.pathString(bc) + "\n");
       then
@@ -387,15 +387,15 @@ algorithm
       then lookupQualifiedExtends(index, inExtendsTable);
 
     case (NFSCodeEnv.EXTENDS(bc, rl, index, info), _, _)
-      equation
+      algorithm
         addUnqualifiedToTable(inExtends, index, inExtendsTable);
-        env = NFSCodeEnv.removeExtendFromLocalScope(bc, inEnv);
-        bc = qualifyExtends3(bc, env, inExtendsTable, true, bc, info, NONE());
+        env := NFSCodeEnv.removeExtendFromLocalScope(bc, inEnv);
+        bc := qualifyExtends3(bc, env, inExtendsTable, true, bc, info, NONE());
         /*********************************************************************/
         // TODO: Convert this check to the delayed error system.
         /*********************************************************************/
         List.map2_0(rl, NFSCodeCheck.checkRedeclareModifier, bc, inEnv);
-        ext = NFSCodeEnv.EXTENDS(bc, rl, index, info);
+        ext := NFSCodeEnv.EXTENDS(bc, rl, index, info);
         updateQualifiedInTable(ext, index, inExtendsTable);
       then
         SOME(ext);
@@ -424,23 +424,23 @@ algorithm
     case (_, _, _, _, _, _, SOME(bc)) then bc;
 
     case (Absyn.IDENT(name = name), _, _, _, _, _, _)
-      equation
-        (opath, env, ep) = qualifyExtendsPart(name, inEnv, inExtendsTable, inIsFirst,
+      algorithm
+        (opath, env, ep) := qualifyExtendsPart(name, inEnv, inExtendsTable, inIsFirst,
           inFullPath, inInfo);
       then
         makeExtendsPath(opath, NONE(), env, ep, inIsFirst);
 
     case (Absyn.QUALIFIED(name = name, path = rest_path), _, _, _, _, _, _)
-      equation
-        (opath, env, ep) = qualifyExtendsPart(name, inEnv, inExtendsTable, inIsFirst,
+      algorithm
+        (opath, env, ep) := qualifyExtendsPart(name, inEnv, inExtendsTable, inIsFirst,
           inFullPath, inInfo);
-        rest_path = qualifyExtends3(rest_path, env, inExtendsTable, false, inFullPath, inInfo, ep);
+        rest_path := qualifyExtends3(rest_path, env, inExtendsTable, false, inFullPath, inInfo, ep);
       then
         makeExtendsPath(opath, SOME(rest_path), env, ep, inIsFirst);
 
     case (Absyn.FULLYQUALIFIED(path = rest_path), _, _, _, _, _, _)
-      equation
-        env = NFSCodeEnv.getEnvTopScope(inEnv);
+      algorithm
+        env := NFSCodeEnv.getEnvTopScope(inEnv);
       then
         qualifyExtends3(rest_path, env, inExtendsTable, inIsFirst, rest_path,
           inInfo, NONE());
@@ -470,10 +470,10 @@ algorithm
     // If inFirstPath is the very first part of the path, use the environment to
     // get the whole path.
     case (_, _, _, _, true)
-      equation
-        path = NFSCodeEnv.getEnvPath(inEnv);
-        path = AbsynUtil.joinPathsOptSuffix(path, inRestPath);
-        path = AbsynUtil.makeFullyQualified(path);
+      algorithm
+        path := NFSCodeEnv.getEnvPath(inEnv);
+        path := AbsynUtil.joinPathsOptSuffix(path, inRestPath);
+        path := AbsynUtil.makeFullyQualified(path);
       then
         path;
 
@@ -522,10 +522,10 @@ algorithm
       Option<Absyn.Path> ep;
 
     case (_, SOME(item), SOME(env), _, _, _, _)
-      equation
-        ep = checkExtendsPart(inIsFirst, inFromExtends, inPartName, item,
+      algorithm
+        ep := checkExtendsPart(inIsFirst, inFromExtends, inPartName, item,
           inFullPath, env, inOriginEnv);
-        env = NFSCodeEnv.mergeItemEnv(item, env);
+        env := NFSCodeEnv.mergeItemEnv(item, env);
       then
         (env, ep);
 
@@ -545,9 +545,9 @@ algorithm
       Absyn.Path path;
 
     case (_, _, _)
-      equation
-        path = AbsynUtil.joinPaths(inPart, Absyn.QUALIFIED("$bc", inBaseClass));
-        path = Absyn.QUALIFIED("$E", Absyn.QUALIFIED(inError, path));
+      algorithm
+        path := AbsynUtil.joinPaths(inPart, Absyn.QUALIFIED("$bc", inBaseClass));
+        path := Absyn.QUALIFIED("$E", Absyn.QUALIFIED(inError, path));
       then
         SOME(path);
 
@@ -587,8 +587,8 @@ algorithm
     // The base class part is actually not a class but a component, which is not
     // allowed either.
     case (_, _, _, NFSCodeEnv.VAR(), _, _, _)
-      equation
-        part = NFSCodeEnv.mergePathWithEnvPath(inPartName, inFoundEnv);
+      algorithm
+        part := NFSCodeEnv.mergePathWithEnvPath(inPartName, inFoundEnv);
       then
         makeExtendsError(inBaseClass, part, BASECLASS_IS_VAR_ERROR);
 
@@ -611,8 +611,8 @@ algorithm
       then (bc, Absyn.IDENT(part_str));
 
     case Absyn.QUALIFIED(part_str, part)
-      equation
-        (bc, part) = splitExtendsErrorPath(part);
+      algorithm
+        (bc, part) := splitExtendsErrorPath(part);
       then
         (bc, Absyn.QUALIFIED(part_str, part));
 
@@ -632,9 +632,9 @@ algorithm
 
     case (Absyn.QUALIFIED(name = "$E",
         path = Absyn.QUALIFIED(name = err_str, path = bc)), _, _)
-      equation
-        (bc, part) = splitExtendsErrorPath(bc);
-        env = NFSCodeEnv.removeExtendFromLocalScope(inErrorPath, inEnv);
+      algorithm
+        (bc, part) := splitExtendsErrorPath(bc);
+        env := NFSCodeEnv.removeExtendFromLocalScope(inErrorPath, inEnv);
         printExtendsError2(err_str, bc, part, env, inInfo);
       then
         ();
@@ -664,46 +664,46 @@ algorithm
       SourceInfo info;
 
     case (_, _, _, _, _)
-      equation
-        true = stringEq(inError, BASECLASS_NOT_FOUND_ERROR);
+      algorithm
+        true := stringEq(inError, BASECLASS_NOT_FOUND_ERROR);
 
-        bc_str = AbsynUtil.pathString(inBaseClass);
-        env_str = NFSCodeEnv.getEnvName(inEnv);
+        bc_str := AbsynUtil.pathString(inBaseClass);
+        env_str := NFSCodeEnv.getEnvName(inEnv);
         Error.addSourceMessage(Error.LOOKUP_BASECLASS_ERROR,
           {bc_str, env_str}, inInfo);
       then
         ();
 
     case (_, _, Absyn.IDENT(part), _, _)
-      equation
-        true = stringEq(inError, BASECLASS_INHERITED_ERROR);
+      algorithm
+        true := stringEq(inError, BASECLASS_INHERITED_ERROR);
 
-        bc_str = AbsynUtil.pathString(inBaseClass);
+        bc_str := AbsynUtil.pathString(inBaseClass);
         Error.addSourceMessage(Error.INHERITED_EXTENDS, {bc_str}, inInfo);
-        exts = NFSCodeEnv.getEnvExtendsFromTable(inEnv);
+        exts := NFSCodeEnv.getEnvExtendsFromTable(inEnv);
         printInheritedExtendsError(part, exts, inEnv);
       then
         ();
 
     case (_, _, _, _, _)
-      equation
-        true = stringEq(inError, BASECLASS_REPLACEABLE_ERROR);
+      algorithm
+        true := stringEq(inError, BASECLASS_REPLACEABLE_ERROR);
 
-        (NFSCodeEnv.CLASS(cls = SCode.CLASS(name = part, info = info)), _, _) =
+        (NFSCodeEnv.CLASS(cls = SCode.CLASS(name = part, info = info)), _, _) :=
           NFSCodeLookup.lookupFullyQualified(inPartPath, inEnv);
-        bc_str = AbsynUtil.pathString(inBaseClass);
+        bc_str := AbsynUtil.pathString(inBaseClass);
         Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inInfo);
         Error.addSourceMessage(Error.REPLACEABLE_BASE_CLASS, {part, bc_str}, info);
       then
         ();
 
     case (_, _, _, _, _)
-      equation
-        true = stringEq(inError, BASECLASS_IS_VAR_ERROR);
+      algorithm
+        true := stringEq(inError, BASECLASS_IS_VAR_ERROR);
 
-        (NFSCodeEnv.VAR(var = SCode.COMPONENT(name = part, info = info)), _, _) =
+        (NFSCodeEnv.VAR(var = SCode.COMPONENT(name = part, info = info)), _, _) :=
           NFSCodeLookup.lookupFullyQualified(inPartPath, inEnv);
-        bc_str = AbsynUtil.pathString(inBaseClass);
+        bc_str := AbsynUtil.pathString(inBaseClass);
         Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, info);
         Error.addSourceMessage(Error.EXTEND_THROUGH_COMPONENT,
           {part, bc_str}, inInfo);
@@ -728,13 +728,13 @@ algorithm
       String bc_str;
 
     case (_, (ext as NFSCodeEnv.EXTENDS(baseClass = bc, info = info2)) :: rest_ext, _)
-      equation
-        (SOME(item), _, _) = NFSCodeLookup.lookupInBaseClasses3(inName, ext,
+      algorithm
+        (SOME(item), _, _) := NFSCodeLookup.lookupInBaseClasses3(inName, ext,
           inEnv, inEnv, NFSCodeLookup.IGNORE_REDECLARES(), {});
-        info1 = NFSCodeEnv.getItemInfo(item);
-        NFSCodeEnv.EXTENDS(baseClass = bc, info = info2) = ext;
-        bc = AbsynUtil.makeNotFullyQualified(bc);
-        bc_str = AbsynUtil.pathString(bc);
+        info1 := NFSCodeEnv.getItemInfo(item);
+        NFSCodeEnv.EXTENDS(baseClass = bc, info = info2) := ext;
+        bc := AbsynUtil.makeNotFullyQualified(bc);
+        bc_str := AbsynUtil.pathString(bc);
         Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, info1);
         Error.addSourceMessage(Error.EXTENDS_INHERITED_FROM_LOCAL_EXTENDS,
           {inName, bc_str}, info2);
@@ -743,7 +743,7 @@ algorithm
         ();
 
     case (_, _ :: rest_ext, _)
-      equation
+      algorithm
         printInheritedExtendsError(inName, rest_ext, inEnv);
       then
         ();
@@ -773,15 +773,15 @@ algorithm
       Boolean fe;
 
     case (_, _, _)
-      equation
-        (opt_item, opt_path, opt_env, fe) = lookupInLocalScope(inName, inEnv, inExtendsTable);
+      algorithm
+        (opt_item, opt_path, opt_env, fe) := lookupInLocalScope(inName, inEnv, inExtendsTable);
       then
         (opt_item, opt_path, opt_env, fe);
 
     case (_, NFSCodeEnv.FRAME(frameType = frame_type) :: env, _)
-      equation
+      algorithm
         NFSCodeLookup.frameNotEncapsulated(frame_type);
-        (opt_item, opt_path, opt_env, _) = lookupSimpleName(inName, env, inExtendsTable);
+        (opt_item, opt_path, opt_env, _) := lookupSimpleName(inName, env, inExtendsTable);
       then
         (opt_item, opt_path, opt_env, false);
 
@@ -811,30 +811,30 @@ algorithm
       list<Import> imps;
 
     case (_, _, _)
-      equation
-        (item, env) = NFSCodeLookup.lookupInClass(inName, inEnv);
+      algorithm
+        (item, env) := NFSCodeLookup.lookupInClass(inName, inEnv);
       then
         (SOME(item), SOME(Absyn.IDENT(inName)), SOME(env), false);
 
     case (_, NFSCodeEnv.FRAME(extendsTable = NFSCodeEnv.EXTENDS_TABLE(
         baseClasses = bcl as _ :: _)) :: _, _)
-      equation
-        (oitem, oenv) = lookupInBaseClasses(inName, bcl, inEnv, inExtendsTable);
+      algorithm
+        (oitem, oenv) := lookupInBaseClasses(inName, bcl, inEnv, inExtendsTable);
       then
         (oitem, SOME(Absyn.IDENT(inName)), oenv, true);
 
     case (_, NFSCodeEnv.FRAME(importTable =
         NFSCodeEnv.IMPORT_TABLE(hidden = false, qualifiedImports = imps)) :: _, _)
-      equation
-        (oitem, opath, oenv) =
+      algorithm
+        (oitem, opath, oenv) :=
           lookupInQualifiedImports(inName, imps, inEnv, inExtendsTable);
       then
         (oitem, opath, oenv, false);
 
     case (_, NFSCodeEnv.FRAME(importTable =
         NFSCodeEnv.IMPORT_TABLE(hidden = false, unqualifiedImports = imps)) :: _, _)
-      equation
-        (oitem, opath, oenv) =
+      algorithm
+        (oitem, opath, oenv) :=
           lookupInUnqualifiedImports(inName, imps, inEnv, inExtendsTable);
       then
         (oitem, opath, oenv, false);
@@ -861,19 +861,19 @@ algorithm
       Env env;
 
     case (_, ext :: _, _, _)
-      equation
+      algorithm
         // Unhide the imports, otherwise we might not be able to find the base
         // classes.
-        env = NFSCodeEnv.setImportTableHidden(inEnv, false);
-        opt_ext = qualifyExtends2(ext, env, inExtendsTable);
-        (opt_item, opt_env) =
+        env := NFSCodeEnv.setImportTableHidden(inEnv, false);
+        opt_ext := qualifyExtends2(ext, env, inExtendsTable);
+        (opt_item, opt_env) :=
           lookupInBaseClasses2(inName, opt_ext, env, inExtendsTable);
       then
         (opt_item, opt_env);
 
     case (_, _ :: rest_ext, _, _)
-      equation
-        (opt_item, opt_env) =
+      algorithm
+        (opt_item, opt_env) :=
           lookupInBaseClasses(inName, rest_ext, inEnv, inExtendsTable);
       then
         (opt_item, opt_env);
@@ -898,13 +898,13 @@ algorithm
       Option<Env> opt_env;
 
     case (_, SOME(NFSCodeEnv.EXTENDS(baseClass = Absyn.FULLYQUALIFIED(bc))), _, _)
-      equation
-        (item, env) = lookupFullyQualified(bc, inEnv, inExtendsTable);
-        env = NFSCodeEnv.mergeItemEnv(item, env);
+      algorithm
+        (item, env) := lookupFullyQualified(bc, inEnv, inExtendsTable);
+        env := NFSCodeEnv.mergeItemEnv(item, env);
         // Hide the imports to make sure we don't find any elements through
         // them, since imports are not inherited.
-        env = NFSCodeEnv.setImportTableHidden(env, true);
-        (opt_item, _, opt_env, _) = lookupInLocalScope(inName, env, inExtendsTable);
+        env := NFSCodeEnv.setImportTableHidden(env, true);
+        (opt_item, _, opt_env, _) := lookupInLocalScope(inName, env, inExtendsTable);
       then
         (opt_item, opt_env);
 
@@ -932,25 +932,25 @@ algorithm
       Env env;
 
     case (_, Absyn.NAMED_IMPORT(name = name) :: rest_imps, _, _)
-      equation
-        false = stringEqual(inName, name);
-        (opt_item, opt_path, opt_env) =
+      algorithm
+        false := stringEqual(inName, name);
+        (opt_item, opt_path, opt_env) :=
           lookupInQualifiedImports(inName, rest_imps, inEnv, inExtendsTable);
       then
         (opt_item, opt_path, opt_env);
 
     case (_, Absyn.NAMED_IMPORT(name = name, path = path) :: _, _, _)
-      equation
-        true = stringEqual(inName, name);
-        (item, env) = lookupFullyQualified(path, inEnv, inExtendsTable);
-        path = NFSCodeEnv.prefixIdentWithEnv(inName, env);
-        path = AbsynUtil.makeFullyQualified(path);
+      algorithm
+        true := stringEqual(inName, name);
+        (item, env) := lookupFullyQualified(path, inEnv, inExtendsTable);
+        path := NFSCodeEnv.prefixIdentWithEnv(inName, env);
+        path := AbsynUtil.makeFullyQualified(path);
       then
         (SOME(item), SOME(path), SOME(env));
 
     case (_, Absyn.NAMED_IMPORT(name = name) :: _, _, _)
-      equation
-        true = stringEqual(inName, name);
+      algorithm
+        true := stringEqual(inName, name);
       then
         (NONE(), NONE(), NONE());
 
@@ -977,18 +977,18 @@ algorithm
       Option<Env> opt_env;
 
     case (_, Absyn.UNQUAL_IMPORT(path = path) :: _, _, _)
-      equation
-        (item, env) = lookupFullyQualified(path, inEnv, inExtendsTable);
-        env = NFSCodeEnv.mergeItemEnv(item, env);
-        (item, env) = lookupFullyQualified2(Absyn.IDENT(inName), env, inExtendsTable);
-        path = NFSCodeEnv.prefixIdentWithEnv(inName, env);
-        path = AbsynUtil.makeFullyQualified(path);
+      algorithm
+        (item, env) := lookupFullyQualified(path, inEnv, inExtendsTable);
+        env := NFSCodeEnv.mergeItemEnv(item, env);
+        (item, env) := lookupFullyQualified2(Absyn.IDENT(inName), env, inExtendsTable);
+        path := NFSCodeEnv.prefixIdentWithEnv(inName, env);
+        path := AbsynUtil.makeFullyQualified(path);
       then
         (SOME(item), SOME(path), SOME(env));
 
     case (_, _ :: rest_imps, _, _)
-      equation
-        (opt_item, opt_path, opt_env) =
+      algorithm
+        (opt_item, opt_path, opt_env) :=
           lookupInUnqualifiedImports(inName, rest_imps, inEnv, inExtendsTable);
       then
         (opt_item, opt_path, opt_env);
@@ -1024,18 +1024,18 @@ algorithm
       Env env;
 
     case (Absyn.IDENT(name = name), _, _)
-      equation
-        (SOME(item), _, SOME(env), _) =
+      algorithm
+        (SOME(item), _, SOME(env), _) :=
           lookupInLocalScope(name, inEnv, inExtendsTable);
       then
         (item, env);
 
     case (Absyn.QUALIFIED(name = name, path = rest_path), _, _)
-      equation
-        (SOME(item), _, SOME(env), _) =
+      algorithm
+        (SOME(item), _, SOME(env), _) :=
           lookupInLocalScope(name, inEnv, inExtendsTable);
-        env = NFSCodeEnv.mergeItemEnv(item, env);
-        (item, env) = lookupFullyQualified2(rest_path, env, inExtendsTable);
+        env := NFSCodeEnv.mergeItemEnv(item, env);
+        (item, env) := lookupFullyQualified2(rest_path, env, inExtendsTable);
       then
         (item, env);
 
@@ -1161,9 +1161,9 @@ algorithm
     case (_, NFSCodeEnv.FRAME(name = SOME(name),
         extendsTable = NFSCodeEnv.EXTENDS_TABLE(classExtendsInfo = SOME(ext))) :: _,
         NFSCodeEnv.CLASS_EXTENDS())
-      equation
-        SCode.EXTENDS(modifications = mods, info = info) = ext;
-        (cls, env) = updateClassExtends2(inClass, name, mods, info, inEnv);
+      algorithm
+        SCode.EXTENDS(modifications = mods, info = info) := ext;
+        (cls, env) := updateClassExtends2(inClass, name, mods, info, inEnv);
       then
         (cls, env);
 
@@ -1190,11 +1190,11 @@ algorithm
       Absyn.Path path;
 
     case (_, _, _, _, cls_frame :: env)
-      equation
-        (path,_) = lookupClassExtendsBaseClass(inName, env, inInfo);
-        ext = SCode.EXTENDS(path, SCode.PUBLIC(), inMods, NONE(), inInfo);
-        {cls_frame} = NFSCodeEnv.extendEnvWithExtends(ext, {cls_frame});
-        cls = SCodeUtil.addElementToClass(ext, inClass);
+      algorithm
+        (path,_) := lookupClassExtendsBaseClass(inName, env, inInfo);
+        ext := SCode.EXTENDS(path, SCode.PUBLIC(), inMods, NONE(), inInfo);
+        {cls_frame} := NFSCodeEnv.extendEnvWithExtends(ext, {cls_frame});
+        cls := SCodeUtil.addElementToClass(ext, inClass);
       then
         (cls, cls_frame :: env);
 
@@ -1222,12 +1222,12 @@ algorithm
 
     // Add the base class suffix to the name and try to look it up.
     case (_, _, _)
-      equation
-        basename = inName + NFSCodeEnv.BASE_CLASS_SUFFIX;
-        (item, _) = NFSCodeLookup.lookupInheritedName(basename, inEnv);
+      algorithm
+        basename := inName + NFSCodeEnv.BASE_CLASS_SUFFIX;
+        (item, _) := NFSCodeLookup.lookupInheritedName(basename, inEnv);
         // Use a special $ce qualified so that we can find the correct class
         // with NFSCodeLookup.lookupBaseClassName.
-        path = Absyn.QUALIFIED("$ce", Absyn.IDENT(basename));
+        path := Absyn.QUALIFIED("$ce", Absyn.IDENT(basename));
       then
         (path, item);
 
@@ -1236,9 +1236,9 @@ algorithm
     // correct error message later we look the class up via the non-alias name
     // instead and return that result if found.
     case (_, _, _)
-      equation
-        (item, _) = NFSCodeLookup.lookupInheritedName(inName, inEnv);
-        path = Absyn.IDENT(inName);
+      algorithm
+        (item, _) := NFSCodeLookup.lookupInheritedName(inName, inEnv);
+        path := Absyn.IDENT(inName);
       then
         (path, item);
 
@@ -1291,26 +1291,26 @@ algorithm
           modifications = mods,
           composition = cdef),
         cmt=cmt, info = info), _)
-      equation
+      algorithm
         // Construct a new PARTS class with the data from the class extends.
-        cls = SCode.CLASS(name, prefixes, ep, pp, res, cdef, cmt, info);
+        cls := SCode.CLASS(name, prefixes, ep, pp, res, cdef, cmt, info);
 
         // Construct the class environment and add the new extends to it.
-        cls_env = NFSCodeEnv.makeClassEnvironment(cls, false);
-        ext = SCode.EXTENDS(Absyn.IDENT(name), SCode.PUBLIC(), mods, NONE(), info);
-        cls_env = addClassExtendsInfoToEnv(ext, cls_env);
+        cls_env := NFSCodeEnv.makeClassEnvironment(cls, false);
+        ext := SCode.EXTENDS(Absyn.IDENT(name), SCode.PUBLIC(), mods, NONE(), info);
+        cls_env := addClassExtendsInfoToEnv(ext, cls_env);
 
         // Finally add the class to the environment.
-        env = NFSCodeEnv.extendEnvWithItem(
+        env := NFSCodeEnv.extendEnvWithItem(
           NFSCodeEnv.newClassItem(cls, cls_env, NFSCodeEnv.CLASS_EXTENDS()), inEnv, name);
       then env;
 
     case (_, _)
-      equation
-        info = SCodeUtil.elementInfo(inClassExtends);
-        el_str = SCodeDump.unparseElementStr(inClassExtends,SCodeDump.defaultOptions);
-        env_str = NFSCodeEnv.getEnvName(inEnv);
-        err_msg = "NFSCodeFlattenRedeclare.extendEnvWithClassExtends failed on unknown element " +
+      algorithm
+        info := SCodeUtil.elementInfo(inClassExtends);
+        el_str := SCodeDump.unparseElementStr(inClassExtends,SCodeDump.defaultOptions);
+        env_str := NFSCodeEnv.getEnvName(inEnv);
+        err_msg := "NFSCodeFlattenRedeclare.extendEnvWithClassExtends failed on unknown element " +
           el_str + " in " + env_str;
         Error.addSourceMessage(Error.INTERNAL_ERROR, {err_msg}, info);
       then
@@ -1333,10 +1333,10 @@ algorithm
       NFSCodeEnv.ExtendsTable ext;
 
     case (_, _)
-      equation
-        NFSCodeEnv.EXTENDS_TABLE(bcl, re, NONE()) =
+      algorithm
+        NFSCodeEnv.EXTENDS_TABLE(bcl, re, NONE()) :=
           NFSCodeEnv.getEnvExtendsTable(inEnv);
-        ext = NFSCodeEnv.EXTENDS_TABLE(bcl, re, SOME(inClassExtends));
+        ext := NFSCodeEnv.EXTENDS_TABLE(bcl, re, SOME(inClassExtends));
       then
         NFSCodeEnv.setEnvExtendsTable(ext, inEnv);
 

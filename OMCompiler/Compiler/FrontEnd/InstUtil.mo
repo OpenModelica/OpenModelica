@@ -131,14 +131,14 @@ algorithm
   outProgram := matchcontinue(inProgram, inPath)
 
     case (_, _)
-      equation
-        false = Flags.isSet(Flags.DO_SCODE_DEP);
+      algorithm
+        false := Flags.isSet(Flags.DO_SCODE_DEP);
       then
         inProgram;
 
     case (_, Absyn.IDENT(""))
-      equation
-        outProgram = scodeFlattenProgram(inProgram);
+      algorithm
+        outProgram := scodeFlattenProgram(inProgram);
       then
         outProgram;
 
@@ -158,9 +158,9 @@ algorithm
   outProgram := matchcontinue(inProgram)
 
     case (_)
-      equation
+      algorithm
         ErrorExt.setCheckpoint("scodeFlattenProgram");
-        outProgram = NFSCodeFlatten.flattenCompleteProgram(inProgram);
+        outProgram := NFSCodeFlatten.flattenCompleteProgram(inProgram);
         ErrorExt.delCheckpoint("scodeFlattenProgram");
       then
         outProgram;
@@ -188,8 +188,8 @@ algorithm
   local
     list<DAE.Element> elems;
   case(_,_,DAE.DAE(elementLst = elems),true)
-    equation
-      elems = listReverse(List.fold2r(elems,reEvaluateInitialIfEqns2,cache,env,{}));
+    algorithm
+      elems := listReverse(List.fold2r(elems,reEvaluateInitialIfEqns2,cache,env,{}));
     then
       DAE.DAE(elems);
   case(_,_,_,false) then dae;
@@ -214,14 +214,14 @@ algorithm
       FCore.Cache cache;
 
     case (_,DAE.INITIAL_IF_EQUATION(condition1 = conds, equations2=tbs, equations3=fb),cache,_)
-      equation
+      algorithm
         //print(" (Initial if)To ceval: " + stringDelimitList(List.map(conds,ExpressionDump.printExpStr),", ") + "\n");
-        (_,valList) = Ceval.cevalList(cache,env, conds, true, Absyn.NO_MSG(),0);
+        (_,valList) := Ceval.cevalList(cache,env, conds, true, Absyn.NO_MSG(),0);
         //print(" Ceval res: ("+stringDelimitList(List.map(valList,ValuesUtil.printValStr),",")+")\n");
 
-        blist = List.map(valList,ValuesUtil.valueBool);
-        selectedBranch = List.findBoolList(blist, tbs, fb);
-        selectedBranch = makeDAEElementInitial(selectedBranch);
+        blist := List.map(valList,ValuesUtil.valueBool);
+        selectedBranch := List.findBoolList(blist, tbs, fb);
+        selectedBranch := makeDAEElementInitial(selectedBranch);
       then listAppend(selectedBranch,acc);
     else elem::acc;
   end matchcontinue;
@@ -249,44 +249,44 @@ algorithm
     case({}) then {};
 
     case(DAE.DEFINE(cr,e1,s)::elems)
-      equation
-        outElems = makeDAEElementInitial(elems);
+      algorithm
+        outElems := makeDAEElementInitial(elems);
       then
         DAE.INITIALDEFINE(cr,e1,s)::outElems;
 
     case(DAE.ARRAY_EQUATION(dims,e1,e2,s)::elems)
-      equation
-        outElems = makeDAEElementInitial(elems);
+      algorithm
+        outElems := makeDAEElementInitial(elems);
       then
         DAE.INITIAL_ARRAY_EQUATION(dims,e1,e2,s)::outElems;
 
     case(DAE.EQUATION(e1,e2,s)::elems)
-      equation
-        outElems = makeDAEElementInitial(elems);
+      algorithm
+        outElems := makeDAEElementInitial(elems);
       then
         DAE.INITIALEQUATION(e1,e2,s)::outElems;
 
     case(DAE.IF_EQUATION(expl,tbs,fb,s)::elems)
-      equation
-        outElems = makeDAEElementInitial(elems);
+      algorithm
+        outElems := makeDAEElementInitial(elems);
       then
         DAE.INITIAL_IF_EQUATION(expl,tbs,fb,s)::outElems;
 
     case(DAE.ALGORITHM(al,s)::elems)
-      equation
-        outElems = makeDAEElementInitial(elems);
+      algorithm
+        outElems := makeDAEElementInitial(elems);
       then
         DAE.INITIALALGORITHM(al,s)::outElems;
 
     case(DAE.COMPLEX_EQUATION(e1,e2,s)::elems)
-      equation
-        outElems = makeDAEElementInitial(elems);
+      algorithm
+        outElems := makeDAEElementInitial(elems);
       then
         DAE.INITIAL_COMPLEX_EQUATION(e1,e2,s)::outElems;
 
     case(elem::elems) // safe "last case" since we can not fail in cases above.
-      equation
-        outElems = makeDAEElementInitial(elems);
+      algorithm
+        outElems := makeDAEElementInitial(elems);
       then
         elem::outElems;
   end match;
@@ -304,13 +304,13 @@ algorithm
       SCode.Element cls;
 
     case (_, _, _)
-      equation
-        cls = List.getMemberOnTrue(inName, inProgram, SCodeUtil.isClassNamed);
+      algorithm
+        cls := List.getMemberOnTrue(inName, inProgram, SCodeUtil.isClassNamed);
       then
         cls;
 
     case (_, _, true)
-      equation
+      algorithm
         Error.addMessage(Error.LOAD_MODEL_ERROR, {inName});
       then
         fail();
@@ -330,12 +330,12 @@ algorithm
       String name;
       Absyn.Path path1, path2;
     case (DAE.T_COMPLEX(complexClassType = ClassInf.State.TYPE(path=path1)),_)
-      equation
-        name = AbsynUtil.pathLastIdent(path1);
-        path2 = AbsynUtil.stripLast(path1);
-        "$Code" = AbsynUtil.pathLastIdent(path2);
-        path2 = AbsynUtil.stripLast(path2);
-        "OpenModelica" = AbsynUtil.pathLastIdent(path2);
+      algorithm
+        name := AbsynUtil.pathLastIdent(path1);
+        path2 := AbsynUtil.stripLast(path1);
+        "$Code" := AbsynUtil.pathLastIdent(path2);
+        path2 := AbsynUtil.stripLast(path2);
+        "OpenModelica" := AbsynUtil.pathLastIdent(path2);
       then Util.assoc(name,{
         ("Expression",    DAE.T_CODE(DAE.C_EXPRESSION())),
         ("ExpressionOrModification",    DAE.T_CODE(DAE.C_EXPRESSION_OR_MODIFICATION())),
@@ -368,8 +368,8 @@ algorithm
       Absyn.Path p,pname;
 
     case (cache,env,DAE.T_ENUMERATION(names = names, literalVarLst = vars, path=p),_,ClassInf.ENUMERATION(pname))
-      equation
-        (cache,env_1) = updateEnumerationEnvironment1(cache,env,AbsynUtil.pathString(pname),names,vars,p);
+      algorithm
+        (cache,env_1) := updateEnumerationEnvironment1(cache,env,AbsynUtil.pathString(pname),names,vars,p);
       then
        (cache,env_1);
 
@@ -405,17 +405,17 @@ algorithm
       Option<DAE.Const> cnstOpt;
 
     case (cache,env,_,nn::names,(DAE.TYPES_VAR(ty = ty))::vars,p)
-      equation
+      algorithm
         // get Var
-        (cache,var, _,_,_,compenv) =
+        (cache,var, _,_,_,compenv) :=
           Lookup.lookupIdentLocal(cache, env, nn);
         // print("updateEnumerationEnvironment1 -> component: " + name + " ty: " + Types.printTypeStr(ty) + "\n");
         // change type
-        var.ty = ty;
+        var.ty := ty;
         // update
-         env_1 = FGraph.updateComp(env, var, FCore.VAR_DAE(), compenv);
+         env_1 := FGraph.updateComp(env, var, FCore.VAR_DAE(), compenv);
         // next
-        (cache,env_2) = updateEnumerationEnvironment1(cache,env_1,var.name,names,vars,p);
+        (cache,env_2) := updateEnumerationEnvironment1(cache,env_1,var.name,names,vars,p);
       then
        (cache,env_2);
     case (cache,env,_,{},_,_) then (cache,env);
@@ -436,8 +436,8 @@ algorithm
 
       /* Only traverse on top scope */
     case (true,UnitAbsyn.INSTSTORE(UnitAbsyn.STORE(vec,_),ht,_),DAE.DAE(elts))
-      equation
-        elts = List.map2(elts,updateDeducedUnits2,vec,ht);
+      algorithm
+        elts := List.map2(elts,updateDeducedUnits2,vec,ht);
       then DAE.DAE(elts);
 
     else dae;
@@ -460,11 +460,11 @@ algorithm
 
       /* Only traverse on top scope */
     case ((DAE.VAR(componentRef=cr,variableAttributesOption=varOpt as SOME(DAE.VAR_ATTR_REAL(unit = NONE())))),_,_)
-      equation
-        indx = BaseHashTable.get(cr,ht);
-        SOME(unit) = vec[indx];
-        unitStr = UnitAbsynBuilder.unit2str(unit);
-        varOpt = DAEUtil.setUnitAttr(varOpt,DAE.SCONST(unitStr));
+      algorithm
+        indx := BaseHashTable.get(cr,ht);
+        SOME(unit) := vec[indx];
+        unitStr := UnitAbsynBuilder.unit2str(unit);
+        varOpt := DAEUtil.setUnitAttr(varOpt,DAE.SCONST(unitStr));
       then DAEUtil.setVariableAttributes(elt,varOpt);
 
     else elt;
@@ -480,7 +480,7 @@ algorithm
       Boolean complete; UnitAbsyn.Store st;
 
     case(_,_)
-      equation
+      algorithm
         // phi: very old unit checking
         /*
         false = Flags.getConfigBool(Flags.UNIT_CHECKING);
@@ -489,8 +489,8 @@ algorithm
         ();
 
     case(true,UnitAbsyn.INSTSTORE(st,_,SOME(UnitAbsyn.CONSISTENT())))
-      equation
-        (complete,_) = UnitChecker.isComplete(st);
+      algorithm
+        (complete,_) := UnitChecker.isComplete(st);
         Error.addMessage(if complete then Error.CONSISTENT_UNITS else Error.INCOMPLETE_UNITS,{});
       then
         ();
@@ -515,7 +515,7 @@ algorithm
 
     // If the bottom var is a connector, then it is not an outside connector. (spec 0.1.2)
     case(DAE.CREF_IDENT(_,_,_))
-      equation
+      algorithm
         // print(name + " is not a outside connector \n");
       then
         fail();
@@ -524,8 +524,8 @@ algorithm
       then ComponentReference.makeCrefIdent(name,ty,subs);
 
     case(DAE.CREF_QUAL(name,ty,subs,child))
-      equation
-        child = extractConnectorPrefix(child);
+      algorithm
+        child := extractConnectorPrefix(child);
       then
         ComponentReference.makeCrefQual(name,ty,subs,child);
 
@@ -544,15 +544,15 @@ algorithm outCref := matchcontinue(cr1,cr2)
     DAE.Type ty;
     list<DAE.Subscript> subs;
   case (DAE.CREF_IDENT(name,ty,subs),DAE.CREF_QUAL(name2,_,_,child2))
-    equation
-      true = stringEq(name,name2);
+    algorithm
+      true := stringEq(name,name2);
     then
       ComponentReference.makeCrefQual(name,ty,subs,child2);
 
   case (DAE.CREF_QUAL(name,ty,subs,child),DAE.CREF_QUAL(name2,_,_,child2))
-    equation
-      true = stringEq(name,name2);
-      outCref = updateCrefTypesWithConnectorPrefix(child,child2);
+    algorithm
+      true := stringEq(name,name2);
+      outCref := updateCrefTypesWithConnectorPrefix(child,child2);
     then
       ComponentReference.makeCrefQual(name,ty,subs,outCref);
   else
@@ -575,44 +575,35 @@ algorithm
       SCode.ClassDef cd1, cd2;
 
     // when -g=MetaModelica, check class equality!
-    case (_,_)
-      equation
-        true = Config.acceptMetaModelicaGrammar();
-        failure(equality(c1 = c2));
-      then
-        false;
+    case (_,_) guard Config.acceptMetaModelicaGrammar() and not valueEq(c1, c2)
+      then false;
 
     // check the types for equality!
-    case (SCode.CLASS(restriction = SCode.R_TYPE()),_)
-      equation
-        failure(equality(c1 = c2));
+    case (SCode.CLASS(restriction = SCode.R_TYPE()),_) guard not valueEq(c1, c2)
       then
         false;
 
     // anything else but functions, do not check equality
     case (SCode.CLASS(restriction = r),_)
-      equation
-        false = SCodeUtil.isFunctionRestriction(r);
+      algorithm
+        false := SCodeUtil.isFunctionRestriction(r);
       then
         true;
 
     // check the class equality only for functions, made of parts
     case (SCode.CLASS(classDef=SCode.PARTS(normalAlgorithmLst=normalAlgorithmLst1, initialAlgorithmLst=initialAlgorithmLst1)),
           SCode.CLASS(classDef=SCode.PARTS(normalAlgorithmLst=normalAlgorithmLst2, initialAlgorithmLst=initialAlgorithmLst2)))
-      equation
+      algorithm
         // only check if algorithm list lengths are the same!
-        true = intEq(listLength(normalAlgorithmLst1), listLength(normalAlgorithmLst2));
-        true = intEq(listLength(initialAlgorithmLst1), listLength(initialAlgorithmLst2));
+        true := intEq(listLength(normalAlgorithmLst1), listLength(normalAlgorithmLst2));
+        true := intEq(listLength(initialAlgorithmLst1), listLength(initialAlgorithmLst2));
       then
         true;
     // check the class equality only for functions, made of derived
     case (SCode.CLASS(classDef=cd1 as SCode.DERIVED()),
           SCode.CLASS(classDef=cd2 as SCode.DERIVED()))
-      equation
-        // only check class definitions are the same!
-        equality(cd1 = cd2);
-      then
-        true;
+      // only check class definitions are the same!
+      then valueEq(cd1, cd2);
     // anything else, false!
     else false;
   end matchcontinue;
@@ -649,14 +640,14 @@ algorithm
     case (_, _, SCode.CLASS(name = idn)) guard idn=="Real" or idn== "Integer" or idn=="String" or idn=="Boolean" then ();
     // BTH
     case (_, _, SCode.CLASS(name = "Clock"))
-      equation
-        true = Config.synchronousFeaturesAllowed();
+      algorithm
+        true := Config.synchronousFeaturesAllowed();
       then ();
 
     // anything else, check for equality!
     else
-      equation
-        equality(pre1 = pre2);
+      algorithm
+        true := valueEq(pre1, pre2);
       then ();
   end matchcontinue;
 end prefixEqualUnlessBasicType;
@@ -685,15 +676,15 @@ algorithm
   local
     list<SCode.Element> tail;
     Integer dim;
-    case({}) equation
+    case({}) algorithm
       then 0;
     case(SCode.COMPONENT(attributes = SCode.ATTR(
         direction = Absyn.OUTPUT(),
         arrayDims = {Absyn.SUBSCRIPT(Absyn.INTEGER(dim))}
-      )) :: _) equation
+      )) :: _) algorithm
       then dim;
-    case(_ :: tail) equation
-      dim = equalityConstraintOutputDimension(tail);
+    case(_ :: tail) algorithm
+      dim := equalityConstraintOutputDimension(tail);
       then dim;
   end match;
 end equalityConstraintOutputDimension;
@@ -761,14 +752,14 @@ algorithm
         (cache,env,store);
 
     case (_,_,store,_,_,_,_)
-      equation
+      algorithm
         // Perform unit checking/dimensional analysis
         //(daetemp,_) = ConnectUtil.equations(csets,pre,false,ConnectionGraph.EMPTY); // ToDO. calculation of connect eqns done twice. remove in future.
         // equations from components (dae1) not considered, they are checked in resp recursive call
         // but bindings on scalar variables must be considered, therefore passing dae1 separately
         //daetemp = DAEUtil.joinDaeLst(daetemp::daes);
-        daetemp = DAEUtil.joinDaeLst(daes);
-        (store,ut)=  UnitAbsynBuilder.instBuildUnitTerms(env,daetemp,compDAE,store);
+        daetemp := DAEUtil.joinDaeLst(daes);
+        (store,ut):=  UnitAbsynBuilder.instBuildUnitTerms(env,daetemp,compDAE,store);
 
         //print("built store for "+className+"\n");
         //UnitAbsynBuilder.printInstStore(store);
@@ -778,7 +769,7 @@ algorithm
         UnitAbsynBuilder.registerUnitWeights(cache,env,compDAE);
 
         // perform the check
-        store = UnitChecker.check(ut,store);
+        store := UnitChecker.check(ut,store);
 
         //print("store for "+className+"\n");
         //UnitAbsynBuilder.printInstStore(store);
@@ -859,36 +850,36 @@ algorithm
     // check the basics ....
     // type or connector can be extended by a type
     case (_, _, _, r, {SCode.EXTENDS(baseClassPath=Absyn.IDENT(id))})
-      equation
-        true = listMember(r, {SCode.R_TYPE(), SCode.R_CONNECTOR(false), SCode.R_CONNECTOR(true)});
-        true = listMember(id, {"Real", "Integer", "Boolean", "String"});
+      algorithm
+        true := listMember(r, {SCode.R_TYPE(), SCode.R_CONNECTOR(false), SCode.R_CONNECTOR(true)});
+        true := listMember(id, {"Real", "Integer", "Boolean", "String"});
       then ();
 
     //BTH same as above but extended with Clock type if Flags.SYNCHRONOUS_FEATURES == true
     case (_, _, _, r, {SCode.EXTENDS(baseClassPath=Absyn.IDENT(id))})
-      equation
-        true = Config.synchronousFeaturesAllowed();
-        true = listMember(r, {SCode.R_TYPE(), SCode.R_CONNECTOR(false), SCode.R_CONNECTOR(true)});
-        true = listMember(id, {"Real", "Integer", "Boolean", "String", "Clock"});
+      algorithm
+        true := Config.synchronousFeaturesAllowed();
+        true := listMember(r, {SCode.R_TYPE(), SCode.R_CONNECTOR(false), SCode.R_CONNECTOR(true)});
+        true := listMember(id, {"Real", "Integer", "Boolean", "String", "Clock"});
       then ();
 
     // we haven't found the class, do nothing
     case (_, _, _, _, {SCode.EXTENDS(baseClassPath=p)})
-      equation
-        failure((_, _, _) = Lookup.lookupClass(inCache, inEnv, p));
+      algorithm
+        failure((_, _, _) := Lookup.lookupClass(inCache, inEnv, p));
       then ();
 
     // we found te class, check the restriction
     case (_, _, _, r1, {SCode.EXTENDS(baseClassPath=p)})
-      equation
-        (_,SCode.CLASS(restriction=r2),_) = Lookup.lookupClass(inCache,inEnv,p);
+      algorithm
+        (_,SCode.CLASS(restriction=r2),_) := Lookup.lookupClass(inCache,inEnv,p);
         checkExtendsRestrictionMatch(r1, r2);
       then ();
 
     // make some waves that this is not correct
     case (_, _, _, r1, {SCode.EXTENDS(baseClassPath=p)})
-      equation
-        (_,SCode.CLASS(restriction=r2),_) = Lookup.lookupClass(inCache, inEnv, p);
+      algorithm
+        (_,SCode.CLASS(restriction=r2),_) := Lookup.lookupClass(inCache, inEnv, p);
         print("Error!: " + SCodeDump.restrString(r1) + " " + FGraph.printGraphPathStr(inEnv) +
               " cannot be extended by " + SCodeDump.restrString(r2) + " " + AbsynUtil.pathString(p) + " due to derived/base class restrictions.\n");
       then fail();
@@ -945,9 +936,9 @@ algorithm
     case(_,DAE.MOD(subModLst={}),_) then ();
 
     case({},_,_)
-      equation
-        s1 = Mod.prettyPrintMod(inmod,0);
-        s2 = s1 + " not found in <" + callingScope + ">";
+      algorithm
+        s1 := Mod.prettyPrintMod(inmod,0);
+        s2 := s1 + " not found in <" + callingScope + ">";
         // Line below can be used for testing test-suite for dangling modifiers when getErrorString() is not called.
         //print(" *** ERROR Unused modifer...: " + s2 + "\n");
         Error.addMessage(Error.UNUSED_MODIFIER,{s2});
@@ -955,29 +946,29 @@ algorithm
         fail();
 
     case((SCode.COMPONENT(name=cn))::elems,mod,_)
-      equation
-        mod = Mod.removeMod(mod,cn);
+      algorithm
+        mod := Mod.removeMod(mod,cn);
         matchModificationToComponents(elems,mod,callingScope);
       then
         ();
 
     case((SCode.EXTENDS())::elems,_,_)
-      equation matchModificationToComponents(elems,inmod,callingScope); then ();
+      algorithm matchModificationToComponents(elems,inmod,callingScope); then ();
         //TODO: only remove modifiers on replaceable classes, make special case for redeclaration of local classes
 
     case((SCode.CLASS(name=cn,prefixes=SCode.PREFIXES()))::elems,mod,_)
-      equation
-        mod = Mod.removeMod(mod,cn);
+      algorithm
+        mod := Mod.removeMod(mod,cn);
         matchModificationToComponents(elems,mod,callingScope);
       then ();
 
     case((SCode.IMPORT())::elems,_,_)
-      equation
+      algorithm
         matchModificationToComponents(elems,inmod,callingScope);
       then ();
 
     case( (SCode.CLASS(prefixes=SCode.PREFIXES(replaceablePrefix=SCode.NOT_REPLACEABLE())))::elems,_,_)
-      equation
+      algorithm
         matchModificationToComponents(elems,inmod,callingScope);
       then ();
   end match;
@@ -1022,18 +1013,18 @@ algorithm
 
     // handle some
     case(_, SOME(_), _, _, _, _, _, _)
-      equation
-        lst = List.map(inComps, Util.tuple21);
-        lst = extractConstantPlusDeps2(lst, ocr, allComps, className, {});
-        false = listEmpty(lst);
-        lst = listReverse(lst);
-        oel = List.filter1OnTrue(inComps, elementNameMember, lst);
+      algorithm
+        lst := List.map(inComps, Util.tuple21);
+        lst := extractConstantPlusDeps2(lst, ocr, allComps, className, {});
+        false := listEmpty(lst);
+        lst := listReverse(lst);
+        oel := List.filter1OnTrue(inComps, elementNameMember, lst);
       then
         (oel, {}, {}, {}, {});
 
     case(_, SOME(cr), _, _, _, _, _, _)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- InstUtil.extractConstantPlusDeps failure to find " + ComponentReference.printComponentRefStr(cr) + ", returning \n");
         Debug.trace("- InstUtil.extractConstantPlusDeps elements to instantiate:" + intString(listLength(inComps)) + "\n");
       then fail(); // TODO: This used to return the input only if failtrace was set; should it always succeed?
@@ -1074,16 +1065,16 @@ algorithm
 
     // handle some
     case(_, SOME(_), _, _)
-      equation
-        outComps = extractConstantPlusDeps2(inComps, ocr, allComps, className,{});
-        false = listEmpty(outComps);
-        outComps = listReverse(outComps);
+      algorithm
+        outComps := extractConstantPlusDeps2(inComps, ocr, allComps, className,{});
+        false := listEmpty(outComps);
+        outComps := listReverse(outComps);
       then
         outComps;
 
     case(_, SOME(cr), _, _)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- InstUtil.extractConstantPlusDeps failure to find " + ComponentReference.printComponentRefStr(cr) + ", returning \n");
         Debug.trace("- InstUtil.extractConstantPlusDeps elements to instantiate:" + intString(listLength(inComps)) + "\n");
       then fail(); // TODO: This used to return the input only if failtrace was set; should it always succeed?
@@ -1115,7 +1106,7 @@ algorithm
       list<String> existing;
 
     case({},SOME(_),_,_,_)
-      equation
+      algorithm
         //print(" failure to find: " + ComponentReference.printComponentRefStr(cr) + " in scope: " + className + "\n");
       then {};
     case({},_,_,_,_) then fail();
@@ -1129,47 +1120,47 @@ algorithm
         selem::outComps;
         */
     case( ((selem as SCode.CLASS(name=name2)))::comps,SOME(DAE.CREF_IDENT()),allComps,_,existing)
-      equation
+      algorithm
         //false = stringEq(name,name2);
-        allComps = selem::allComps;
-        existing = name2::existing;
-        outComps = extractConstantPlusDeps2(comps,ocr,allComps,className,existing);
+        allComps := selem::allComps;
+        existing := name2::existing;
+        outComps := extractConstantPlusDeps2(comps,ocr,allComps,className,existing);
       then //extractConstantPlusDeps2(comps,ocr,allComps,className,existing);
          selem::outComps;
 
     case((selem as SCode.COMPONENT(name=name2,modifications=scmod))::comps,SOME(DAE.CREF_IDENT(ident=name)),allComps,_,existing)
-      equation
-        true = stringEq(name,name2);
-        crefs = getCrefFromMod(scmod);
-        allComps = listAppend(comps,allComps);
-        existing = name2::existing;
-        recDeps = extractConstantPlusDeps3(crefs,allComps,className,existing);
+      algorithm
+        true := stringEq(name,name2);
+        crefs := getCrefFromMod(scmod);
+        allComps := listAppend(comps,allComps);
+        existing := name2::existing;
+        recDeps := extractConstantPlusDeps3(crefs,allComps,className,existing);
       then
         selem::recDeps;
 
     case( ( (selem as SCode.COMPONENT(name=name2)))::comps,SOME(DAE.CREF_IDENT(ident=name)),allComps,_,existing)
-      equation
-        false = stringEq(name,name2);
-        allComps = selem::allComps;
+      algorithm
+        false := stringEq(name,name2);
+        allComps := selem::allComps;
       then extractConstantPlusDeps2(comps,ocr,allComps,className,existing);
 
     case((compMod as SCode.EXTENDS())::comps,(SOME(DAE.CREF_IDENT())),allComps,_,existing)
-      equation
-        allComps = compMod::allComps;
-        recDeps = extractConstantPlusDeps2(comps,ocr,allComps,className,existing);
+      algorithm
+        allComps := compMod::allComps;
+        recDeps := extractConstantPlusDeps2(comps,ocr,allComps,className,existing);
         then
           compMod::recDeps;
     case((compMod as SCode.IMPORT())::comps,(SOME(DAE.CREF_IDENT())),allComps,_,existing)
-      equation
-        allComps = compMod::allComps;
-        recDeps = extractConstantPlusDeps2(comps,ocr,allComps,className,existing);
+      algorithm
+        allComps := compMod::allComps;
+        recDeps := extractConstantPlusDeps2(comps,ocr,allComps,className,existing);
       then
         compMod::recDeps;
 
     case((compMod as SCode.DEFINEUNIT())::comps,(SOME(DAE.CREF_IDENT())),allComps,_,existing)
-      equation
-        allComps = compMod::allComps;
-        recDeps = extractConstantPlusDeps2(comps,ocr,allComps,className,existing);
+      algorithm
+        allComps := compMod::allComps;
+        recDeps := extractConstantPlusDeps2(comps,ocr,allComps,className,existing);
       then
         compMod::recDeps;
     else
@@ -1209,9 +1200,9 @@ algorithm outComps := matchcontinue(inAcrefs,remainingComps,className,inExisting
     then
       extractConstantPlusDeps3(acr::acrefs,remainingComps,className,existing);
   case((Absyn.CREF_QUAL(_,_,_))::acrefs,_,_,existing)
-    equation
+    algorithm
       // false = stringEq(className,s1);
-      outComps = extractConstantPlusDeps3(acrefs,remainingComps,className,existing);
+      outComps := extractConstantPlusDeps3(acrefs,remainingComps,className,existing);
     then
       outComps;
   case(Absyn.CREF_IDENT(s1,_)::acrefs,_,_,existing) // modifer dep already added
@@ -1220,13 +1211,13 @@ algorithm outComps := matchcontinue(inAcrefs,remainingComps,className,inExisting
     then
       extractConstantPlusDeps3(acrefs,remainingComps,className,existing);
   case(Absyn.CREF_IDENT(s1,_)::acrefs,_,_,existing)
-    equation
-      cref_ = ComponentReference.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{});
-      localComps = extractConstantPlusDeps2(remainingComps,SOME(cref_),{},className,existing);
-      names = SCodeUtil.componentNamesFromElts(localComps);
-      existing = listAppend(names,existing);
-      outComps = extractConstantPlusDeps3(acrefs,remainingComps,className,existing);
-      outComps = listAppend(localComps,outComps);
+    algorithm
+      cref_ := ComponentReference.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{});
+      localComps := extractConstantPlusDeps2(remainingComps,SOME(cref_),{},className,existing);
+      names := SCodeUtil.componentNamesFromElts(localComps);
+      existing := listAppend(names,existing);
+      outComps := extractConstantPlusDeps3(acrefs,remainingComps,className,existing);
+      outComps := listAppend(localComps,outComps);
     then
       outComps;
   end matchcontinue;
@@ -1260,8 +1251,8 @@ algorithm
       list<tuple<SCode.Element, DAE.Mod>> els;
     case ({}) then ();
     case (((el,mod) :: els))
-      equation
-        s = SCodeDump.unparseElementStr(el,SCodeDump.defaultOptions);
+      algorithm
+        s := SCodeDump.unparseElementStr(el,SCodeDump.defaultOptions);
         print(s);
         print(", ");
         print(Mod.printModStr(mod));
@@ -1317,13 +1308,13 @@ algorithm
     case ({}) then {};
 
     case ((SCode.COMPONENT(name, prefixes, attributes, typeSpec, _, comment, condition, info))::els)
-      equation
-        els1 = removeBindings(els);
+      algorithm
+        els1 := removeBindings(els);
       then (SCode.COMPONENT(name, prefixes, attributes, typeSpec, SCode.NOMOD(), comment, condition, info)::els1);
 
     case (el::els)
-      equation
-        els1 = removeBindings(els);
+      algorithm
+        els1 := removeBindings(els);
       then el::els1;
   end match;
 end removeBindings;
@@ -1349,13 +1340,13 @@ algorithm
     case ({}) then {};
 
     case ((SCode.COMPONENT(name, prefixes, attributes, typeSpec, _, comment, condition, info),_)::els)
-      equation
-        els1 = removeExtBindings(els);
+      algorithm
+        els1 := removeExtBindings(els);
       then ((SCode.COMPONENT(name, prefixes, attributes, typeSpec, SCode.NOMOD(), comment, condition, info),DAE.NOMOD())::els1);
 
     case (el::els)
-      equation
-        els1 = removeExtBindings(els);
+      algorithm
+        els1 := removeExtBindings(els);
       then el::els1;
   end match;
 end removeExtBindings;
@@ -1379,15 +1370,15 @@ algorithm
     case(dep,((SCode.COMPONENT(),DAE.NOMOD()))::elems)
       then getModsForDep(dep,elems);
     case(dep,((SCode.COMPONENT(name=name1),cmod))::_)
-      equation
-        name2 = Dump.printComponentRefStr(dep);
-        true = stringEq(name2,name1);
-        cmod = DAE.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{DAE.NAMEMOD(name2,cmod)},NONE(), AbsynUtil.dummyInfo);
+      algorithm
+        name2 := Dump.printComponentRefStr(dep);
+        true := stringEq(name2,name1);
+        cmod := DAE.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{DAE.NAMEMOD(name2,cmod)},NONE(), AbsynUtil.dummyInfo);
       then
         cmod;
     case(dep,_::elems)
-      equation
-        cmod = getModsForDep(dep,elems);
+      algorithm
+        cmod := getModsForDep(dep,elems);
       then
         cmod;
   end matchcontinue;
@@ -1452,7 +1443,7 @@ algorithm
     case (_, {}, _, _) then ();
     // show me something!
     case (_, _, _, _)
-      equation
+      algorithm
         print("Graph for env: " + FGraph.printGraphPathStr(env) + "\n" + Graph.printGraph(g, elementName) + "\n");
         print("Element order:\n\t" + stringDelimitList(List.map(order, elementName), "\n\t") + "\n");
         print("Cycles:\n" + Graph.printGraph(cycles, elementName) + "\n");
@@ -1477,11 +1468,11 @@ algorithm
     case ({}, _) then inDependencies;
     // handle the normal case
     case (e::rest, deps)
-      equation
+      algorithm
         //(_, (_, _, (els, deps))) = AbsynUtil.traverseExpBidir(e, (getElementDependenciesTraverserEnter, getElementDependenciesTraverserExit, (inAllElements, deps)));
         //deps = getDepsFromExps(rest, els, deps);
-        (_, (_, _, deps, _)) = AbsynUtil.traverseExpBidir(e, getElementDependenciesTraverserEnter, getElementDependenciesTraverserExit, (inAllElements, {}, deps, isFunction));
-        deps = getDepsFromExps(rest, inAllElements, deps, isFunction);
+        (_, (_, _, deps, _)) := AbsynUtil.traverseExpBidir(e, getElementDependenciesTraverserEnter, getElementDependenciesTraverserExit, (inAllElements, {}, deps, isFunction));
+        deps := getDepsFromExps(rest, inAllElements, deps, isFunction);
       then
         deps;
   end match;
@@ -1514,8 +1505,8 @@ algorithm
 
     // yeha, we have a ccccc :)
     case (SCode.REPLACEABLE(SOME(SCode.CONSTRAINCLASS(modifier = m))))
-      equation
-        (l1, l2) = getExpsFromMod(m);
+      algorithm
+        (l1, l2) := getExpsFromMod(m);
       then
         (l1, l2);
 
@@ -1538,10 +1529,10 @@ algorithm
 
     // handle namemod
     case (SCode.NAMEMOD(mod = mod)::rest)
-      equation
-        (e, sm) = getExpsFromMod(mod);
-        exps = getExpsFromSubMods(rest);
-        exps = listAppend(e, listAppend(sm, exps));
+      algorithm
+        (e, sm) := getExpsFromMod(mod);
+        exps := getExpsFromSubMods(rest);
+        exps := listAppend(e, listAppend(sm, exps));
       then
         exps;
 
@@ -1557,9 +1548,9 @@ algorithm
       list<Absyn.Exp> l1, l2;
 
     case (_)
-      equation
-        (l1, l2) = getExpsFromMod(inMod);
-        outCrefs = List.flatten(List.map2(listAppend(l1, l2), AbsynUtil.getCrefFromExp, true, true));
+      algorithm
+        (l1, l2) := getExpsFromMod(inMod);
+        outCrefs := List.flatten(List.map2(listAppend(l1, l2), AbsynUtil.getCrefFromExp, true, true));
       then
         outCrefs;
 
@@ -1595,57 +1586,57 @@ algorithm
 
     // mods with binding
     case (SCode.MOD(subModLst = subs, binding = SOME(e)))
-      equation
-        se = getExpsFromSubMods(subs);
+      algorithm
+        se := getExpsFromSubMods(subs);
       then
         ({e}, se);
 
     // mods without binding
     case (SCode.MOD(subModLst = subs, binding = NONE()))
-      equation
-        se = getExpsFromSubMods(subs);
+      algorithm
+        se := getExpsFromSubMods(subs);
       then
         ({}, se);
 
     // redeclare short class, investigate cc mods and own mods/array dims
     case (SCode.REDECL(element = SCode.CLASS(prefixes = SCode.PREFIXES(replaceablePrefix = rp),
                                              classDef = SCode.DERIVED(Absyn.TPATH(_, ado), m, _))))
-      equation
-        (l1, l2) = getExpsFromConstrainClass(rp);
-        (_, se) = AbsynUtil.getExpsFromArrayDimOpt(ado);
-        (l3, l4) = getExpsFromMod(m);
-        l1 = listAppend(se, listAppend(l1, l3));
-        l4 = listAppend(l2, l4);
+      algorithm
+        (l1, l2) := getExpsFromConstrainClass(rp);
+        (_, se) := AbsynUtil.getExpsFromArrayDimOpt(ado);
+        (l3, l4) := getExpsFromMod(m);
+        l1 := listAppend(se, listAppend(l1, l3));
+        l4 := listAppend(l2, l4);
       then
         (l1, l4);
 
     // redeclare long class extends class, investigate cc and mods
     case (SCode.REDECL(element = SCode.CLASS(prefixes = SCode.PREFIXES(replaceablePrefix = rp),
                                              classDef = SCode.CLASS_EXTENDS(modifications = m))))
-      equation
-        (l1, l2) = getExpsFromConstrainClass(rp);
-        (l3, l4) = getExpsFromMod(m);
-        l3 = listAppend(l1, l3);
-        l4 = listAppend(l2, l4);
+      algorithm
+        (l1, l2) := getExpsFromConstrainClass(rp);
+        (l3, l4) := getExpsFromMod(m);
+        l3 := listAppend(l1, l3);
+        l4 := listAppend(l2, l4);
       then
         (l3, l4);
 
     // redeclare long class, investigate cc
     case SCode.REDECL(element = SCode.CLASS(prefixes = SCode.PREFIXES(replaceablePrefix = rp)))
-      equation
-        (l1, l2) = getExpsFromConstrainClass(rp);
+      algorithm
+        (l1, l2) := getExpsFromConstrainClass(rp);
       then
         (l1, l2);
 
     // redeclare component, investigate cc mods and own mods/array dims
     case (SCode.REDECL(element = SCode.COMPONENT(prefixes = SCode.PREFIXES(replaceablePrefix = rp),
                                                  modifications = m, attributes = SCode.ATTR(arrayDims = ad))))
-      equation
-        (l1, l2) = getExpsFromConstrainClass(rp);
-        (_, se) = AbsynUtil.getExpsFromArrayDim(ad);
-        (l3, l4) = getExpsFromMod(m);
-        l1 = listAppend(se, listAppend(l1, l3));
-        l4 = listAppend(l2, l4);
+      algorithm
+        (l1, l2) := getExpsFromConstrainClass(rp);
+        (_, se) := AbsynUtil.getExpsFromArrayDim(ad);
+        (l3, l4) := getExpsFromMod(m);
+        l1 := listAppend(se, listAppend(l1, l3));
+        l4 := listAppend(l2, l4);
       then
         (l1, l4);
 
@@ -1665,15 +1656,15 @@ algorithm
       Absyn.Exp exp;
       list<Absyn.Subscript> rest;
     case ((Absyn.SUBSCRIPT(subscript = exp) :: rest))
-      equation
-        l1 = getCrefFromDim(rest);
-        l2 = AbsynUtil.getCrefFromExp(exp,true,true);
-        res = List.union(l1, l2);
+      algorithm
+        l1 := getCrefFromDim(rest);
+        l2 := AbsynUtil.getCrefFromExp(exp,true,true);
+        res := List.union(l1, l2);
       then
         res;
     case ((Absyn.NOSUB() :: rest))
-      equation
-        res = getCrefFromDim(rest);
+      algorithm
+        res := getCrefFromDim(rest);
       then
         res;
     case ({}) then {};
@@ -1715,28 +1706,28 @@ algorithm
                            prefixes = SCode.PREFIXES(replaceablePrefix = rp),
                            attributes = SCode.ATTR(arrayDims = ad, variability = var),
                            modifications = mod), daeMod), (inAllElements, isFunction))
-      equation
-        true = SCodeUtil.isParameterOrConst(var);
-        (_, exps) = AbsynUtil.getExpsFromArrayDim(ad);
-        (bexps, sexps) = getExpsFromMod(mod);
-        exps = listAppend(bexps, listAppend(sexps, exps));
-        (bexps, sexps) = getExpsFromConstrainClass(rp);
-        exps = listAppend(bexps, listAppend(sexps, exps));
-        (bexps, sexps) = getExpsFromMod(Mod.unelabMod(daeMod));
-        exps = listAppend(bexps, listAppend(sexps, exps));
-        deps = getDepsFromExps(exps, inAllElements, {}, isFunction);
+      algorithm
+        true := SCodeUtil.isParameterOrConst(var);
+        (_, exps) := AbsynUtil.getExpsFromArrayDim(ad);
+        (bexps, sexps) := getExpsFromMod(mod);
+        exps := listAppend(bexps, listAppend(sexps, exps));
+        (bexps, sexps) := getExpsFromConstrainClass(rp);
+        exps := listAppend(bexps, listAppend(sexps, exps));
+        (bexps, sexps) := getExpsFromMod(Mod.unelabMod(daeMod));
+        exps := listAppend(bexps, listAppend(sexps, exps));
+        deps := getDepsFromExps(exps, inAllElements, {}, isFunction);
         // remove the current element from the deps as it is usally Real A[size(A,1)]; or self reference FlowModel fm(... blah = fcall(fm.x));
-        deps = removeCurrentElementFromArrayDimDeps(name, deps);
-        deps = getDepsFromExps(List.fromOption(cExpOpt), inAllElements, deps, isFunction);
-        deps = List.union(deps,{});
+        deps := removeCurrentElementFromArrayDimDeps(name, deps);
+        deps := getDepsFromExps(List.fromOption(cExpOpt), inAllElements, deps, isFunction);
+        deps := List.union(deps,{});
         // print(name + " deps " + stringDelimitList(list(SCodeUtil.elementName(Util.tuple21(e)) for e in deps),",") + "\n");
       then
         deps;
 
     // For input and output variables in function scope return no dependencies so they stay in order!
     case ((SCode.COMPONENT(attributes = SCode.ATTR(direction = direction)), _), (_, true))
-      equation
-        true = AbsynUtil.isInputOrOutput(direction);
+      algorithm
+        true := AbsynUtil.isInputOrOutput(direction);
       then
         {};
 
@@ -1745,25 +1736,25 @@ algorithm
                            prefixes = SCode.PREFIXES(replaceablePrefix = rp),
                            attributes = SCode.ATTR(arrayDims = ad),
                            modifications = mod), daeMod), (inAllElements, isFunction))
-      equation
-        (_, exps) = AbsynUtil.getExpsFromArrayDim(ad);
-        (bexps, sexps) = getExpsFromMod(mod);
-        exps = listAppend(sexps, exps);
+      algorithm
+        (_, exps) := AbsynUtil.getExpsFromArrayDim(ad);
+        (bexps, sexps) := getExpsFromMod(mod);
+        exps := listAppend(sexps, exps);
         // DO *NOT* ignore the bindings in function scope. We do not want to keep the order!
-        exps = listAppend(bexps, exps);
+        exps := listAppend(bexps, exps);
         // exps = if_(hasUnknownDims, listAppend(bexps, exps), exps);
-        (bexps, sexps) = getExpsFromConstrainClass(rp);
-        exps = listAppend(bexps, listAppend(sexps, exps));
-        (bexps, sexps) = getExpsFromMod(Mod.unelabMod(daeMod));
-        exps = listAppend(sexps, exps);
+        (bexps, sexps) := getExpsFromConstrainClass(rp);
+        exps := listAppend(bexps, listAppend(sexps, exps));
+        (bexps, sexps) := getExpsFromMod(Mod.unelabMod(daeMod));
+        exps := listAppend(sexps, exps);
         // DO *NOT* ignore the bindings in function scope so we keep the order!
-        exps = listAppend(bexps, exps);
+        exps := listAppend(bexps, exps);
         // exps = if_(hasUnknownDims, listAppend(bexps, exps), exps);
-        deps = getDepsFromExps(exps, inAllElements, {}, isFunction);
+        deps := getDepsFromExps(exps, inAllElements, {}, isFunction);
         // remove the current element from the deps as it is usally Real A[size(A,1)];
-        deps = removeCurrentElementFromArrayDimDeps(name, deps);
-        deps = getDepsFromExps(List.fromOption(cExpOpt), inAllElements, deps, isFunction);
-        deps = List.union(deps,{});
+        deps := removeCurrentElementFromArrayDimDeps(name, deps);
+        deps := getDepsFromExps(List.fromOption(cExpOpt), inAllElements, deps, isFunction);
+        deps := List.union(deps,{});
         // print(name + " deps " + stringDelimitList(list(SCodeUtil.elementName(Util.tuple21(e)) for e in deps),",") + "\n");
       then
         deps;
@@ -1773,17 +1764,17 @@ algorithm
                        prefixes = SCode.PREFIXES(replaceablePrefix = rp),
                        classDef = SCode.DERIVED(modifications = mod, attributes = SCode.ATTR(arrayDims = ad))),
                        daeMod), (inAllElements, isFunction))
-      equation
-        (_, exps) = AbsynUtil.getExpsFromArrayDim(ad);
-        (_, sexps) = getExpsFromMod(mod);
-        exps = listAppend(sexps, exps);
-        (bexps, sexps) = getExpsFromConstrainClass(rp);
-        exps = listAppend(bexps, listAppend(sexps, exps));
-        (_, sexps) = getExpsFromMod(Mod.unelabMod(daeMod));
-        exps = listAppend(sexps, exps);
-        deps = getDepsFromExps(exps, inAllElements, {}, isFunction);
-        deps = removeCurrentElementFromArrayDimDeps(name, deps);
-        deps = List.union(deps,{});
+      algorithm
+        (_, exps) := AbsynUtil.getExpsFromArrayDim(ad);
+        (_, sexps) := getExpsFromMod(mod);
+        exps := listAppend(sexps, exps);
+        (bexps, sexps) := getExpsFromConstrainClass(rp);
+        exps := listAppend(bexps, listAppend(sexps, exps));
+        (_, sexps) := getExpsFromMod(Mod.unelabMod(daeMod));
+        exps := listAppend(sexps, exps);
+        deps := getDepsFromExps(exps, inAllElements, {}, isFunction);
+        deps := removeCurrentElementFromArrayDimDeps(name, deps);
+        deps := List.union(deps,{});
       then
         deps;
 
@@ -1795,8 +1786,8 @@ algorithm
                        prefixes = SCode.PREFIXES(),
                        classDef = SCode.PARTS(externalDecl = externalDecl)),
            _), (inAllElements, isFunction))
-      equation
-        exps = getExpsFromExternalDecl(externalDecl);
+      algorithm
+        exps := getExpsFromExternalDecl(externalDecl);
         /*
         exps = getExpsFromDefaults(els, exps);
         (bexps, sexps) = getExpsFromConstrainClass(rp);
@@ -1804,9 +1795,9 @@ algorithm
         (bexps, sexps) = getExpsFromMod(Mod.unelabMod(daeMod));
         exps = listAppend(bexps, listAppend(sexps, exps));
         */
-        deps = getDepsFromExps(exps, inAllElements, {}, isFunction);
-        deps = removeCurrentElementFromArrayDimDeps(name, deps);
-        deps = List.union(deps,{});
+        deps := getDepsFromExps(exps, inAllElements, {}, isFunction);
+        deps := removeCurrentElementFromArrayDimDeps(name, deps);
+        deps := List.union(deps,{});
       then
         deps;
 
@@ -1845,19 +1836,19 @@ algorithm
     case (SCode.COMPONENT(
                   prefixes = SCode.PREFIXES(replaceablePrefix = rp),
                   modifications = m)::rest, _)
-      equation
-        exps = inAcc;
-        (bexps, sexps) = getExpsFromConstrainClass(rp);
-        exps = listAppend(bexps, listAppend(sexps, exps));
-        (bexps, sexps) = getExpsFromMod(m);
-        exps = listAppend(bexps, listAppend(sexps, exps));
-        exps = getExpsFromDefaults(rest, exps);
+      algorithm
+        exps := inAcc;
+        (bexps, sexps) := getExpsFromConstrainClass(rp);
+        exps := listAppend(bexps, listAppend(sexps, exps));
+        (bexps, sexps) := getExpsFromMod(m);
+        exps := listAppend(bexps, listAppend(sexps, exps));
+        exps := getExpsFromDefaults(rest, exps);
       then
         exps;
 
     case (_::rest, _)
-      equation
-        exps = getExpsFromDefaults(rest, inAcc);
+      algorithm
+        exps := getExpsFromDefaults(rest, inAcc);
       then
         exps;
   end matchcontinue;
@@ -1884,16 +1875,16 @@ algorithm
       Boolean b;
 
     case (exp as Absyn.CREF(componentRef = cref), (all_el, stack, accum_el, b))
-      equation
-        id = AbsynUtil.crefFirstIdent(cref);
-        e = List.find1(all_el, isElementNamed, id);
+      algorithm
+        id := AbsynUtil.crefFirstIdent(cref);
+        e := List.find1(all_el, isElementNamed, id);
       then
         (exp, (all_el, stack, e :: accum_el, b));
 
     case (exp as Absyn.CALL(function_ = cref), (all_el, stack, accum_el, b))
-      equation
-        id = AbsynUtil.crefFirstIdent(cref);
-        e = List.find1(all_el, isElementNamed, id);
+      algorithm
+        id := AbsynUtil.crefFirstIdent(cref);
+        e := List.find1(all_el, isElementNamed, id);
       then
         (exp, (all_el, stack, e :: accum_el, b));
 
@@ -1925,8 +1916,8 @@ algorithm
     // reset everything up to this point and pray that we didn't miss anything
     // important.
     case (exp as Absyn.IFEXP(ifExp = ifExp), (all_el, stack_el::rest_stack, _, false))
-      equation
-        (_, (_, _, deps, _)) = AbsynUtil.traverseExpBidir(ifExp, getElementDependenciesTraverserEnter, getElementDependenciesTraverserExit, (all_el, {}, {}, false));
+      algorithm
+        (_, (_, _, deps, _)) := AbsynUtil.traverseExpBidir(ifExp, getElementDependenciesTraverserEnter, getElementDependenciesTraverserExit, (all_el, {}, {}, false));
       then
         (exp, (all_el, rest_stack, listAppend(deps, stack_el), false));
 
@@ -1994,9 +1985,9 @@ algorithm
     case {} then ();
 
     case _
-      equation
-        graph = Graph.filterGraph(inCycles, isElementParamOrConst);
-        {} = Graph.findCycles(graph, isElementEqual);
+      algorithm
+        graph := Graph.filterGraph(inCycles, isElementParamOrConst);
+        {} := Graph.findCycles(graph, isElementEqual);
       then
         ();
 
@@ -2045,15 +2036,15 @@ algorithm
       String str;
 
     case (_)
-      equation
-        (elem, _) = inElement;
-        outName = SCodeUtil.elementName(elem);
+      algorithm
+        (elem, _) := inElement;
+        outName := SCodeUtil.elementName(elem);
       then
         outName;
 
     case (_)
-      equation
-        str = SCodeDump.shortElementStr(Util.tuple21(inElement));
+      algorithm
+        str := SCodeDump.shortElementStr(Util.tuple21(inElement));
       then
         str;
   end matchcontinue;
@@ -2076,23 +2067,23 @@ algorithm
       SCode.Attributes attr;
     case ({},_) then ({},{});
     case ((cdef as SCode.CLASS(restriction = SCode.R_PACKAGE()),_) :: xs,SCode.PARTIAL())
-      equation
-        (cdefs,els) = classdefElts2(xs,partialPrefix);
+      algorithm
+        (cdefs,els) := classdefElts2(xs,partialPrefix);
       then
         (cdef::cdefs,els);
     case (((cdef as SCode.CLASS(),_)) :: xs,SCode.NOT_PARTIAL())
-      equation
-        (cdefs,els) = classdefElts2(xs,partialPrefix);
+      algorithm
+        (cdefs,els) := classdefElts2(xs,partialPrefix);
       then
         (cdef::cdefs,els);
     case((el as (SCode.COMPONENT(attributes=attr),_))::xs,SCode.NOT_PARTIAL())
-       equation
-        SCode.CONST() = SCodeUtil.attrVariability(attr);
-         (cdefs,els) = classdefElts2(xs,partialPrefix);
+       algorithm
+        SCode.CONST() := SCodeUtil.attrVariability(attr);
+         (cdefs,els) := classdefElts2(xs,partialPrefix);
        then (cdefs,el::els);
     case ((_ :: xs),_)
-      equation
-        (cdefs,els) = classdefElts2(xs,partialPrefix);
+      algorithm
+        (cdefs,els) := classdefElts2(xs,partialPrefix);
       then
         (cdefs,els);
   end matchcontinue;
@@ -2114,20 +2105,20 @@ algorithm
     case ({}) then ({},{});
 
     case (((cdef as SCode.CLASS()) :: xs))
-      equation
-        (_,restElts) = classdefAndImpElts(xs);
+      algorithm
+        (_,restElts) := classdefAndImpElts(xs);
       then
         (cdef :: restElts,restElts);
 
     case (((imp as SCode.IMPORT()) :: xs))
-      equation
-        (cdefElts,restElts) = classdefAndImpElts(xs);
+      algorithm
+        (cdefElts,restElts) := classdefAndImpElts(xs);
       then
         (imp :: cdefElts,restElts);
 
     case ((e :: xs))
-      equation
-        (cdefElts,restElts) = classdefAndImpElts(xs);
+      algorithm
+        (cdefElts,restElts) := classdefAndImpElts(xs);
       then
         (cdefElts,e::restElts);
   end match;
@@ -2171,13 +2162,13 @@ algorithm
       SCode.Element cdef;
     case ({}) then {};
     case (((cdef as SCode.COMPONENT()) :: xs))
-      equation
-        res = componentElts(xs);
+      algorithm
+        res := componentElts(xs);
       then
         (cdef :: res);
     case ((_ :: xs))
-      equation
-        res = componentElts(xs);
+      algorithm
+        res := componentElts(xs);
       then
         res;
   end match;
@@ -2236,22 +2227,22 @@ algorithm
 
     // we do have a redeclaration of class.
     case (cache,env,ih,pre,( (sel1 as SCode.CLASS())),SOME(m))
-      equation
-        m = Mod.lookupCompModification(m, sel1.name);
-        false = valueEq(m, DAE.NOMOD());
-        env_1 = FGraph.mkClassNode(env, sel1, pre, m);
+      algorithm
+        m := Mod.lookupCompModification(m, sel1.name);
+        false := valueEq(m, DAE.NOMOD());
+        env_1 := FGraph.mkClassNode(env, sel1, pre, m);
         // call to redeclareType which calls updateComponents in env wich updates the class frame
-        (cache,env_1,ih,cl2) = addClassdefsToEnv3(cache, env_1, ih, pre, redeclareMod, sel1);
-        ih = InnerOuter.addClassIfInner(cl2, pre, env_1, ih);
+        (cache,env_1,ih,cl2) := addClassdefsToEnv3(cache, env_1, ih, pre, redeclareMod, sel1);
+        ih := InnerOuter.addClassIfInner(cl2, pre, env_1, ih);
       then
         (cache,env_1,ih);
 
     // otherwise, extend frame with in class.
     case (cache,env,ih,pre,(sel1 as SCode.CLASS()),_)
-      equation
+      algorithm
         // Debug.traceln("Extend frame " + FGraph.printGraphPathStr(env) + " with " + SCodeUtil.className(cl));
-        env_1 = FGraph.mkClassNode(env, sel1, pre, DAE.NOMOD(), checkDuplicates);
-        ih = InnerOuter.addClassIfInner(sel1, pre, env_1, ih);
+        env_1 := FGraph.mkClassNode(env, sel1, pre, DAE.NOMOD(), checkDuplicates);
+        ih := InnerOuter.addClassIfInner(sel1, pre, env_1, ih);
       then
         (cache,env_1,ih);
 
@@ -2259,14 +2250,14 @@ algorithm
     // unfortunately we do because of the way we evaluate
     // programs for interactive evaluation
     case (cache,env,ih,_,(imp as SCode.IMPORT()),_)
-      equation
-        env_1 = FGraph.mkImportNode(env, imp);
+      algorithm
+        env_1 := FGraph.mkImportNode(env, imp);
       then
         (cache,env_1,ih);
 
     case(cache,env,ih,_,((elt as SCode.DEFINEUNIT())),_)
-      equation
-        env_1 = FGraph.mkDefunitNode(env,elt);
+      algorithm
+        env_1 := FGraph.mkDefunitNode(env,elt);
       then (cache,env_1,ih);
 
     else
@@ -2295,9 +2286,9 @@ algorithm
     // it means that when we search for component A.B.P.Z.C
     // we might find the type: A.B.P.C instead.
     case (SOME(ep), tp)
-      equation
-        tp = AbsynUtil.stripLast(tp);
-        true = AbsynUtil.pathPrefixOf(tp, ep);
+      algorithm
+        tp := AbsynUtil.stripLast(tp);
+        true := AbsynUtil.pathPrefixOf(tp, ep);
       then
         ();
 
@@ -2409,15 +2400,15 @@ algorithm
       list<tuple<SCode.Element, DAE.Mod>> xs;
     case ({}) then {};
     case (((SCode.COMPONENT(attributes = SCode.ATTR(arrayDims = arraydim)),_) :: xs))
-      equation
-        crefs1 = getCrefFromDim(arraydim);
-        crefs2 = getCrefsFromCompdims(xs);
-        crefs = listAppend(crefs1, crefs2);
+      algorithm
+        crefs1 := getCrefFromDim(arraydim);
+        crefs2 := getCrefsFromCompdims(xs);
+        crefs := listAppend(crefs1, crefs2);
       then
         crefs;
     case ((_ :: xs))
-      equation
-        crefs = getCrefsFromCompdims(xs);
+      algorithm
+        crefs := getCrefsFromCompdims(xs);
       then
         crefs;
   end matchcontinue;
@@ -2456,8 +2447,8 @@ algorithm
           outMod;
       */
       case(_, _)
-        equation
-          (outMod,b) = chainRedeclare_dispatch(inModOuter,inModInner);
+        algorithm
+          (outMod,b) := chainRedeclare_dispatch(inModOuter,inModInner);
         then if b then outMod else inModInner;
   end match;
 end chainRedeclares;
@@ -2486,31 +2477,31 @@ algorithm
 
     // outer B(redeclare X = Y), inner B(redeclare Y = Z) -> B(redeclare X = Z)
     case (_,SCode.REDECL(f, e, SCode.CLASS(name = nInner, classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = Absyn.IDENT(nDerivedInner))))))
-      equation
+      algorithm
         // lookup the class mod in the outer
-        DAE.REDECL(element = cls) = Mod.lookupCompModification(inModOuter, nDerivedInner);
-        cls = SCodeUtil.setClassName(nInner, cls);
+        DAE.REDECL(element = cls) := Mod.lookupCompModification(inModOuter, nDerivedInner);
+        cls := SCodeUtil.setClassName(nInner, cls);
       then (SCode.REDECL(f, e, cls),true);
 
     // outer B(redeclare X = Y), inner B(redeclare X = Z) -> B(redeclare X = Z)
     case (_,SCode.REDECL(f, e, SCode.CLASS(name = nInner, classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = Absyn.IDENT(_))))))
-      equation
+      algorithm
         // lookup the class mod in the outer
-        DAE.REDECL(element = cls) = Mod.lookupCompModification(inModOuter, nInner);
+        DAE.REDECL(element = cls) := Mod.lookupCompModification(inModOuter, nInner);
       then (SCode.REDECL(f, e, cls),true);
 
     // a mod with a name mod
     case (_, SCode.MOD(f, e, SCode.NAMEMOD(name, m as SCode.REDECL())::rest, b, cmt, info))
-      equation
+      algorithm
         // lookup the class mod in the outer
-        m2 = chainRedeclare_dispatch(inModOuter, m);
-        (SCode.MOD(subModLst = subs),_) = chainRedeclare_dispatch(inModOuter, SCode.MOD(f, e, rest, b, cmt, info));
+        m2 := chainRedeclare_dispatch(inModOuter, m);
+        (SCode.MOD(subModLst = subs),_) := chainRedeclare_dispatch(inModOuter, SCode.MOD(f, e, rest, b, cmt, info));
       then (SCode.MOD(f, e, SCode.NAMEMOD(name, m2)::subs, b, cmt, info), true);
 
     // something else, move along!
     case (_, SCode.MOD(f, e, sm::rest, b, cmt, info))
-      equation
-        (SCode.MOD(subModLst = subs), change) = chainRedeclare_dispatch(inModOuter, SCode.MOD(f, e, rest, b, cmt, info));
+      algorithm
+        (SCode.MOD(subModLst = subs), change) := chainRedeclare_dispatch(inModOuter, SCode.MOD(f, e, rest, b, cmt, info));
       then (SCode.MOD(f, e, sm::subs, b, cmt, info), change);
 
     else (inModInner, false);
@@ -2546,15 +2537,15 @@ algorithm
     // add it to the cache if we have a input record component
     case (_, _, _, _, _, ClassInf.FUNCTION(path = path), _,
           SCode.CLASS(name = name, restriction = SCode.R_RECORD(_)), _)
-      equation
+      algorithm
         print("Depreciated record constructor used: Inst.addRecordConstructorsToTheCache");
 
         // false = Config.acceptMetaModelicaGrammar();
-        true = AbsynUtil.isInputOrOutput(inDirection);
+        true := AbsynUtil.isInputOrOutput(inDirection);
         // TODO, add the env path to the check!
-        false = stringEq(AbsynUtil.pathLastIdent(path), name);
+        false := stringEq(AbsynUtil.pathLastIdent(path), name);
         // print("InstFunction.implicitFunctionInstantiation: " + name + " in f:" + AbsynUtil.pathString(path) + " in s:" + FGraph.printGraphPathStr(inEnv) + " m: " + Mod.printModStr(inMod) + "\n");
-        (cache, env, ih) = InstFunction.implicitFunctionInstantiation(inCache, inEnv, inIH, inMod, inPrefix, inClass, inInstDims);
+        (cache, env, ih) := InstFunction.implicitFunctionInstantiation(inCache, inEnv, inIH, inMod, inPrefix, inClass, inInstDims);
       then
         (cache, env, ih);
 
@@ -2588,20 +2579,20 @@ algorithm
       FCore.Status instStatus;
       SCode.Element oldClass,newClass;
 
-    case (_,_,_,_,_,_,_,_) equation /*print(" dupe check setting ");*/ ErrorExt.setCheckpoint("checkMultiplyDeclared"); then fail();
+    case (_,_,_,_,_,_,_,_) algorithm /*print(" dupe check setting ");*/ ErrorExt.setCheckpoint("checkMultiplyDeclared"); then fail();
 
 
     // If a component definition is replaceable, skip check
     case (_,_,_,_,_,
           ((SCode.COMPONENT(prefixes = SCode.PREFIXES(replaceablePrefix=SCode.REPLACEABLE(_))),_)),_,_)
-      equation
+      algorithm
         ErrorExt.rollBack("checkMultiplyDeclared");
       then false;
 
     // If a comopnent definition is redeclaration, skip check
     case (_,_,_,_,_,
           ((SCode.COMPONENT(),DAE.REDECL(_,_,_))),_,_)
-      equation
+      algorithm
         ErrorExt.rollBack("checkMultiplyDeclared");
       then false;
 
@@ -2609,18 +2600,18 @@ algorithm
     // If the two variables are not identical, an error is given.
     case (_,_,_,_,_,
           (newComp as (SCode.COMPONENT(name = n),_)),_,_)
-      equation
-        (_,_,oldElt,oldMod,instStatus,_) = Lookup.lookupIdentLocal(cache, env, n);
+      algorithm
+        (_,_,oldElt,oldMod,instStatus,_) := Lookup.lookupIdentLocal(cache, env, n);
         checkMultipleElementsIdentical(cache,env,(oldElt,oldMod),newComp);
-        alreadyDeclared = instStatusToBool(instStatus);
+        alreadyDeclared := instStatusToBool(instStatus);
         ErrorExt.delCheckpoint("checkMultiplyDeclared");
       then alreadyDeclared;
 
     // If not multiply declared, return.
     case (_,_,_,_,_,
           ((SCode.COMPONENT(name = n),_)),_,_)
-      equation
-        failure((_,_,_,_,_,_) = Lookup.lookupIdentLocal(cache, env, n));
+      algorithm
+        failure((_,_,_,_,_,_) := Lookup.lookupIdentLocal(cache, env, n));
         ErrorExt.rollBack("checkMultiplyDeclared");
       then false;
 
@@ -2628,23 +2619,23 @@ algorithm
     // If a class definition is replaceable, skip check
     case (_,_,_,_,_,
           ((SCode.CLASS(prefixes = SCode.PREFIXES(replaceablePrefix=SCode.REPLACEABLE(_))),_)),_,_)
-      equation
+      algorithm
         ErrorExt.rollBack("checkMultiplyDeclared");
       then false;
 
     // If a class definition is redeclaration, skip check
     case (_,_,_,_,_,
           ((SCode.CLASS(),DAE.REDECL(_,_,_))),_,_)
-      equation
+      algorithm
         ErrorExt.rollBack("checkMultiplyDeclared");
       then false;
 
     // If a class definition is a product of InstExtends.instClassExtendsList2, skip check
     case (_,_,_,_,_,
           ((SCode.CLASS(name=n,classDef=SCode.PARTS(elementLst=SCode.EXTENDS(baseClassPath=Absyn.IDENT(n2))::_ )),_)),_,_)
-      equation
-        n = "$parent" + "." + n;
-        0 = System.stringFind(n, n2);
+      algorithm
+        n := "$parent" + "." + n;
+        0 := System.stringFind(n, n2);
         ErrorExt.rollBack("checkMultiplyDeclared");
       then false;
 
@@ -2652,8 +2643,8 @@ algorithm
     // If the two class definitions are not equivalent, an error is given.
     case (_,_,_,_,_,
           ((newClass as SCode.CLASS(name=n),_)),_,_)
-      equation
-        (oldClass,_) = Lookup.lookupClassLocal(env, n);
+      algorithm
+        (oldClass,_) := Lookup.lookupClassLocal(env, n);
         checkMultipleClassesEquivalent(oldClass,newClass);
         ErrorExt.delCheckpoint("checkMultiplyDeclared");
       then true;
@@ -2661,8 +2652,8 @@ algorithm
     // If a class not multiply defined, return.
     case (_,_,_,_,_,
           ((SCode.CLASS(name=n),_)),_,_)
-      equation
-        failure((_,_) = Lookup.lookupClassLocal(env, n));
+      algorithm
+        failure((_,_) := Lookup.lookupClassLocal(env, n));
         ErrorExt.rollBack("checkMultiplyDeclared");
       then false;
 
@@ -2717,10 +2708,10 @@ algorithm
 
     // try equality first!
     case(_,_,(oldElt,_),(newElt,_))
-      equation
+      algorithm
         // NOTE: Should be type identical instead? see spec.
         // p.23, check of flattening. "Check that duplicate elements are identical".
-        true = SCodeUtil.elementEqual(oldElt,newElt);
+        true := SCodeUtil.elementEqual(oldElt,newElt);
       then
         ();
 
@@ -2729,21 +2720,21 @@ algorithm
     // COMPONENT
     case (cache,env,(SCode.COMPONENT(n1, prefixes1, attr1, Absyn.TPATH(tpath1, ad1), smod1, _, cond1, _),_),
                     (SCode.COMPONENT(n2, prefixes2, attr2, Absyn.TPATH(tpath2, ad2), smod2, _, cond2, _),_))
-      equation
+      algorithm
         // see if the most stuff is the same!
-        true = stringEq(n1, n2);
-        true = SCodeUtil.prefixesEqual(prefixes1, prefixes2);
-        true = SCodeUtil.attributesEqual(attr1, attr2);
-        true = SCodeUtil.modEqual(smod1, smod2);
-        equality(ad1 = ad2);
-        equality(cond1 = cond2);
+        true := stringEq(n1, n2);
+        true := SCodeUtil.prefixesEqual(prefixes1, prefixes2);
+        true := SCodeUtil.attributesEqual(attr1, attr2);
+        true := SCodeUtil.modEqual(smod1, smod2);
+        true := valueEq(ad1, ad2);
+        true := valueEq(cond1, cond2);
         // if we lookup tpath1 and tpath2 and reach the same class, we're fine!
-        (_, c1, env1) = Lookup.lookupClass(cache, env, tpath1);
-        (_, c2, env2) = Lookup.lookupClass(cache, env, tpath2);
+        (_, c1, env1) := Lookup.lookupClass(cache, env, tpath1);
+        (_, c2, env2) := Lookup.lookupClass(cache, env, tpath2);
         // the class has the same environment
-        true = stringEq(FGraph.printGraphPathStr(env1), FGraph.printGraphPathStr(env2));
+        true := stringEq(FGraph.printGraphPathStr(env1), FGraph.printGraphPathStr(env2));
         // the classes are the same!
-        true = SCodeUtil.elementEqual(c1, c2);
+        true := SCodeUtil.elementEqual(c1, c2);
         /*
         // add a warning and let it continue!
         s1 = SCodeDump.unparseElementStr(oldElt);
@@ -2757,26 +2748,26 @@ algorithm
     //        TODO! FIXME! REMOVE! remove when the bug is fixed!
     case (cache,env,(oldElt as SCode.COMPONENT(n1, prefixes1, attr1, Absyn.TPATH(tpath1, ad1), smod1, _, cond1, old_info),_),
                     (newElt as SCode.COMPONENT(n2, prefixes2, attr2, Absyn.TPATH(tpath2, ad2), smod2, _, cond2, new_info),_))
-      equation
+      algorithm
         // see if the most stuff is the same!
-        true = stringEq(n1, n2);
-        true = stringEq(n1, "m_flow");
-        true = SCodeUtil.prefixesEqual(prefixes1, prefixes2);
-        true = SCodeUtil.attributesEqual(attr1, attr2);
-        false = SCodeUtil.modEqual(smod1, smod2);
-        equality(ad1 = ad2);
-        equality(cond1 = cond2);
+        true := stringEq(n1, n2);
+        true := stringEq(n1, "m_flow");
+        true := SCodeUtil.prefixesEqual(prefixes1, prefixes2);
+        true := SCodeUtil.attributesEqual(attr1, attr2);
+        false := SCodeUtil.modEqual(smod1, smod2);
+        true := valueEq(ad1, ad2);
+        true := valueEq(cond1, cond2);
         // if we lookup tpath1 and tpath2 and reach the same class, we're fine!
-        (_, c1, env1) = Lookup.lookupClass(cache, env, tpath1);
-        (_, c2, env2) = Lookup.lookupClass(cache, env, tpath2);
+        (_, c1, env1) := Lookup.lookupClass(cache, env, tpath1);
+        (_, c2, env2) := Lookup.lookupClass(cache, env, tpath2);
         // the class has the same environment
-        true = stringEq(FGraph.printGraphPathStr(env1), FGraph.printGraphPathStr(env2));
+        true := stringEq(FGraph.printGraphPathStr(env1), FGraph.printGraphPathStr(env2));
         // the classes are the same!
-        true = SCodeUtil.elementEqual(c1, c2);
+        true := SCodeUtil.elementEqual(c1, c2);
         // add a warning and let it continue!
-        s1 = SCodeDump.unparseElementStr(oldElt,SCodeDump.defaultOptions);
-        s2 = SCodeDump.unparseElementStr(newElt,SCodeDump.defaultOptions);
-        s = "Inherited elements are not identical: bug: https://trac.modelica.org/Modelica/ticket/627\n\tfirst:  " +
+        s1 := SCodeDump.unparseElementStr(oldElt,SCodeDump.defaultOptions);
+        s2 := SCodeDump.unparseElementStr(newElt,SCodeDump.defaultOptions);
+        s := "Inherited elements are not identical: bug: https://trac.modelica.org/Modelica/ticket/627\n\tfirst:  " +
             s1 + "\n\tsecond: " + s2 + "\nContinue ....";
         Error.addMultiSourceMessage(Error.COMPILER_WARNING, {s}, {old_info, new_info});
       then ();
@@ -2784,9 +2775,9 @@ algorithm
     // fail baby and add a source message!
     case (_, _, (oldElt as SCode.COMPONENT(info = old_info),_),
                       (newElt as SCode.COMPONENT(info = new_info),_))
-      equation
-        s1 = SCodeDump.unparseElementStr(oldElt,SCodeDump.defaultOptions);
-        s2 = SCodeDump.unparseElementStr(newElt,SCodeDump.defaultOptions);
+      algorithm
+        s1 := SCodeDump.unparseElementStr(oldElt,SCodeDump.defaultOptions);
+        s2 := SCodeDump.unparseElementStr(newElt,SCodeDump.defaultOptions);
         Error.addMultiSourceMessage(Error.DUPLICATE_ELEMENTS_NOT_IDENTICAL,
           {s1, s2}, {old_info, new_info});
       then
@@ -2812,33 +2803,33 @@ algorithm
 
     //   Special cases for checking enumerations which can be represented differently
     case(SCode.CLASS(classDef=SCode.ENUMERATION(enumLst=enumLst)), SCode.CLASS(restriction=SCode.R_ENUMERATION(),classDef=SCode.PARTS(elementLst=elementLst)))
-      equation
-        sl1=List.map(enumLst,SCodeUtil.enumName);
-        sl2=List.map(elementLst,SCodeUtil.elementName);
+      algorithm
+        sl1:=List.map(enumLst,SCodeUtil.enumName);
+        sl2:=List.map(elementLst,SCodeUtil.elementName);
         List.threadMapAllValue(sl1,sl2,stringEq,true);
       then
         ();
 
     case(SCode.CLASS(restriction=SCode.R_ENUMERATION(),classDef=SCode.PARTS(elementLst=elementLst)), SCode.CLASS(classDef=SCode.ENUMERATION(enumLst=enumLst)))
-      equation
-        sl1=List.map(enumLst,SCodeUtil.enumName);
-        sl2=List.map(elementLst,SCodeUtil.elementName);
+      algorithm
+        sl1:=List.map(enumLst,SCodeUtil.enumName);
+        sl2:=List.map(elementLst,SCodeUtil.elementName);
         List.threadMapAllValue(sl1,sl2,stringEq,true);
       then
         ();
 
     // try equality first!
     case(oldCl,newCl)
-      equation
-        true = SCodeUtil.elementEqual(oldCl,newCl);
+      algorithm
+        true := SCodeUtil.elementEqual(oldCl,newCl);
       then ();
 
     case (oldCl,newCl)
-      equation
-      s1 = SCodeDump.unparseElementStr(oldCl,SCodeDump.defaultOptions);
-      s2 = SCodeDump.unparseElementStr(newCl,SCodeDump.defaultOptions);
-      info1 = SCodeUtil.elementInfo(oldCl);
-      info2 = SCodeUtil.elementInfo(newCl);
+      algorithm
+      s1 := SCodeDump.unparseElementStr(oldCl,SCodeDump.defaultOptions);
+      s2 := SCodeDump.unparseElementStr(newCl,SCodeDump.defaultOptions);
+      info1 := SCodeUtil.elementInfo(oldCl);
+      info2 := SCodeUtil.elementInfo(newCl);
       Error.addMultiSourceMessage(Error.DUPLICATE_CLASSES_NOT_EQUIVALENT,
         {s1, s2}, {info1, info2});
       //print(" *** error message added *** \n");
@@ -2874,19 +2865,19 @@ algorithm
     case ({},_) then {};
     case ((Absyn.CREF_IDENT(name = n1,subscripts = {}) :: rest),cr2 as Absyn.CREF_IDENT(name = n2,subscripts = {}))
       guard stringEq(n1, n2)
-      equation
-        rest_1 = removeCrefFromCrefs(rest, cr2);
+      algorithm
+        rest_1 := removeCrefFromCrefs(rest, cr2);
       then
         rest_1;
     case ((Absyn.CREF_QUAL(name = n1) :: rest),cr2 as Absyn.CREF_IDENT(name = n2)) // If modifier like on comp like: T t(x=t.y) => t.y must be removed
       guard stringEq(n1, n2)
-      equation
-        rest_1 = removeCrefFromCrefs(rest, cr2);
+      algorithm
+        rest_1 := removeCrefFromCrefs(rest, cr2);
       then
         rest_1;
     case ((cr1 :: rest),cr2)
-      equation
-        rest_1 = removeCrefFromCrefs(rest, cr2);
+      algorithm
+        rest_1 := removeCrefFromCrefs(rest, cr2);
       then
         (cr1 :: rest_1);
   end match;
@@ -2912,9 +2903,9 @@ algorithm
     case(DAE.NOMOD(),_ ) then DAE.NOMOD();
     case(DAE.REDECL(_,_,_),_) then inMod;
     case(DAE.MOD(f,e,subs,oe,info),_)
-      equation
-        compNames = List.map(elems,SCodeUtil.elementName);
-        subs = keepConstrainingTypeModifersOnly2(subs,compNames);
+      algorithm
+        compNames := List.map(elems,SCodeUtil.elementName);
+        subs := keepConstrainingTypeModifersOnly2(subs,compNames);
       then
         DAE.MOD(f,e,subs,oe,info);
   end match;
@@ -2968,18 +2959,18 @@ algorithm
 
     case(NONE(),_,_) then {};
     case(SOME(SCode.CONSTRAINCLASS(constrainingClass = path)),_,_)
-      equation
-        (_,SCode.CLASS(name = name, classDef = SCode.PARTS(elementLst=selems)), _) = Lookup.lookupClass(FCore.emptyCache(),env,path);
-        (classes,classextendselts,extendselts,compelts) = splitElts(selems);
-        (_,_,_,_,extcomps,_,_,_,_) = InstExtends.instExtendsAndClassExtendsList(FCore.emptyCache(), env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(),  pre, extendselts, classextendselts, selems, ClassInf.UNKNOWN(Absyn.IDENT("")), name, true, false);
-        extcompelts = List.map(extcomps,Util.tuple21);
-        compelts = listAppend(classes,listAppend(compelts,extcompelts));
+      algorithm
+        (_,SCode.CLASS(name = name, classDef = SCode.PARTS(elementLst=selems)), _) := Lookup.lookupClass(FCore.emptyCache(),env,path);
+        (classes,classextendselts,extendselts,compelts) := splitElts(selems);
+        (_,_,_,_,extcomps,_,_,_,_) := InstExtends.instExtendsAndClassExtendsList(FCore.emptyCache(), env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(),  pre, extendselts, classextendselts, selems, ClassInf.UNKNOWN(Absyn.IDENT("")), name, true, false);
+        extcompelts := List.map(extcomps,Util.tuple21);
+        compelts := listAppend(classes,listAppend(compelts,extcompelts));
       then
         compelts;
     case (SOME(SCode.CONSTRAINCLASS(path, mod, cmt)), _, _)
-      equation
-        (_,SCode.CLASS(classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = path))),_) = Lookup.lookupClass(FCore.emptyCache(),env,path);
-        compelts = extractConstrainingComps(SOME(SCode.CONSTRAINCLASS(path, mod, cmt)),env,pre);
+      algorithm
+        (_,SCode.CLASS(classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = path))),_) := Lookup.lookupClass(FCore.emptyCache(),env,path);
+        compelts := extractConstrainingComps(SOME(SCode.CONSTRAINCLASS(path, mod, cmt)),env,pre);
       then
         compelts;
   end matchcontinue;
@@ -3031,14 +3022,14 @@ algorithm
       DAE.Exp bind_exp;
 
     case (_, DAE.VAR(cref, kind, dir, prl, vis, ty, _, dims, ct, src, attr, cmt, io, e))
-      equation
-        bind_exp = moveBindings3(inEquation);
+      algorithm
+        bind_exp := moveBindings3(inEquation);
       then
         DAE.VAR(cref, kind, dir, prl, vis, ty, SOME(bind_exp), dims, ct, src, attr, cmt, io, e);
 
     case (_, DAE.VAR(componentRef = cref))
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- InstUtil.moveBindings failed on " +
             ComponentReference.printComponentRefStr(cref));
       then
@@ -3087,15 +3078,15 @@ algorithm
       then ();
 
     case (_, _, InnerOuter.TOP_INSTANCE(sm=sm)::_, _, _, _, DAE.MOD(), _, Absyn.OUTER(), _, _)
-      equation
+      algorithm
         // BTH: we check if the outer variable is in an instance that is
         //      part of a Modelica state machine. In that case we have added
         //      an equation modification, binding the inner variable to
         //      the outer variable (instead of replacing the outer variable
         //      by the inner variable). See InstVar.instVar(..).
         //      Hence, such a modification should not throw an error.
-        cref = PrefixUtil.prefixToCref(inPrefix);
-        true = BaseHashSet.has(cref, sm);
+        cref := PrefixUtil.prefixToCref(inPrefix);
+        true := BaseHashSet.has(cref, sm);
       then ();
 
     else
@@ -3124,7 +3115,7 @@ algorithm
     // the MSL we just issue a warning for now.
     case (_, SCode.ATTR(direction = Absyn.BIDIR()),
         SCode.PREFIXES(visibility = SCode.PUBLIC()), _)
-      equation
+      algorithm
         Error.addSourceMessage(Error.NON_FORMAL_PUBLIC_FUNCTION_VAR,
           {inName}, inInfo);
       then
@@ -3138,7 +3129,7 @@ algorithm
     // Protected formal parameters are not allowed.
     case (_, SCode.ATTR(),
         SCode.PREFIXES(visibility = SCode.PROTECTED()), _)
-      equation
+      algorithm
         Error.addSourceMessage(Error.PROTECTED_FORMAL_FUNCTION_VAR,
           {inName}, inInfo);
       then
@@ -3160,8 +3151,8 @@ algorithm
       String ty_str;
 
     case (_, _, _, _)
-      equation
-        true = Types.isValidFunctionVarType(inType);
+      algorithm
+        true := Types.isValidFunctionVarType(inType);
       then
         ();
 
@@ -3189,8 +3180,8 @@ algorithm
   outTp:= matchcontinue(tp,dimt)
     local DAE.Type ty;
     case (DAE.T_SUBTYPE_BASIC(complexType = ty),_)
-      equation
-        false = listEmpty(Types.getDimensions(ty));
+      algorithm
+        false := listEmpty(Types.getDimensions(ty));
       then
         tp;
     else Types.liftArray(tp, dimt);
@@ -3213,26 +3204,24 @@ algorithm
     Ident n;
     String sc,sc1,se,sn;
     DAE.Exp e;
-  case (c,c1,_,_,_,_)
-    equation
-      equality(c=c1);
+  case (c,c1,_,_,_,_) guard valueEq(c,c1)
     then ();
 
   // When doing checkModel we might have parameters with variable bindings,
   // for example when the binding depends on the dimensions on an array with
   // unknown dimensions.
   case (DAE.C_PARAM(),DAE.C_UNKNOWN(),_,_,_,_)
-    equation
-      true = Flags.getConfigBool(Flags.CHECK_MODEL);
+    algorithm
+      true := Flags.getConfigBool(Flags.CHECK_MODEL);
     then ();
 
   // Since c1 is generated by Types.matchProp, it can not be lower that c, so no need to check that it is higher
   case (c,c1,_,n,e,_)
-    equation
-      sn = PrefixUtil.printPrefixStr2(pre)+n;
-      sc = DAEUtil.constStr(c);
-      sc1 = DAEUtil.constStr(c1);
-      se = ExpressionDump.printExpStr(e);
+    algorithm
+      sn := PrefixUtil.printPrefixStr2(pre)+n;
+      sc := DAEUtil.constStr(c);
+      sc1 := DAEUtil.constStr(c1);
+      se := ExpressionDump.printExpStr(e);
       Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING,{sn,sc,se,sc1}, info);
     then
       fail();
@@ -3267,8 +3256,8 @@ algorithm
     case ({},ty) then ty;
 
     case (dim :: xs, tty)
-      equation
-        ty_1 = makeArrayType(xs, tty);
+      algorithm
+        ty_1 := makeArrayType(xs, tty);
       then
         DAE.T_ARRAY(ty_1, {dim});
 
@@ -3324,8 +3313,8 @@ algorithm
     case (cache, _, _, _, cl as SCode.CLASS(name = id), _, _) guard id=="Real" or id=="Integer" or id=="String" or id=="Boolean" then (cache,{},cl,DAE.NOMOD());
     // BTH
     case (cache, _, _, _, cl as SCode.CLASS(name = "Clock"), _, _)
-      equation
-        true = Config.synchronousFeaturesAllowed();
+      algorithm
+        true := Config.synchronousFeaturesAllowed();
       then (cache,{},cl,DAE.NOMOD());
 
     case (cache, _, _, _, cl as SCode.CLASS(restriction = SCode.R_RECORD(_),
@@ -3336,12 +3325,12 @@ algorithm
     case (cache, env, _, pre, cl as SCode.CLASS(name = id, info=info,
                                        classDef = SCode.DERIVED(typeSpec = Absyn.TCOMPLEX(path = Absyn.IDENT(), arrayDim = ad))),
           dims,impl)
-      equation
-        true=Config.acceptMetaModelicaGrammar();
-        owncref = Absyn.CREF_IDENT(id,{});
-        ad_1 = getOptionArraydim(ad);
+      algorithm
+        true:=Config.acceptMetaModelicaGrammar();
+        owncref := Absyn.CREF_IDENT(id,{});
+        ad_1 := getOptionArraydim(ad);
         // Absyn.IDENT("Integer") used as a dummie
-        (cache,dim1) = elabArraydim(cache,env, owncref, Absyn.IDENT("Integer"), ad_1,NONE(),impl,true,false,pre,info,dims);
+        (cache,dim1) := elabArraydim(cache,env, owncref, Absyn.IDENT("Integer"), ad_1,NONE(),impl,true,false,pre,info,dims);
       then
         (cache,dim1,cl,DAE.NOMOD());
 
@@ -3355,7 +3344,7 @@ algorithm
     case (_, _, _, _,
       SCode.CLASS(name = id,info=info,restriction = SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(_)),
                   partialPrefix = SCode.NOT_PARTIAL()),_,_)
-      equation
+      algorithm
         Error.addSourceMessage(Error.META_FUNCTION_TYPE_NO_PARTIAL_PREFIX, {id}, info);
       then fail();
 
@@ -3370,21 +3359,21 @@ algorithm
       SCode.CLASS(name = id,restriction = SCode.R_TYPE(),info=info,
                             classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = cn, arrayDim = ad),modifications = mod)),
           dims, impl)
-      equation
-        (cache,cl,cenv) = Lookup.lookupClass(cache, env, cn, SOME(info));
-        owncref = Absyn.CREF_IDENT(id,{});
-        ad_1 = getOptionArraydim(ad);
-        env = addEnumerationLiteralsToEnv(env, cl);
+      algorithm
+        (cache,cl,cenv) := Lookup.lookupClass(cache, env, cn, SOME(info));
+        owncref := Absyn.CREF_IDENT(id,{});
+        ad_1 := getOptionArraydim(ad);
+        env := addEnumerationLiteralsToEnv(env, cl);
 
-        (cache,mod_1) = Mod.elabMod(cache, env, ih, pre, mod, impl, Mod.DERIVED(cn), info);
-        eq = Mod.modEquation(mod_1);
-        (cache,dim1,cl,type_mods) = getUsertypeDimensions(cache, cenv, ih, pre, cl, dims, impl);
-        (cache,dim2) = elabArraydim(cache, env, owncref, cn, ad_1, eq, impl, true, false, pre, info, dims);
-        type_mods = Mod.addEachIfNeeded(type_mods, dim2);
+        (cache,mod_1) := Mod.elabMod(cache, env, ih, pre, mod, impl, Mod.DERIVED(cn), info);
+        eq := Mod.modEquation(mod_1);
+        (cache,dim1,cl,type_mods) := getUsertypeDimensions(cache, cenv, ih, pre, cl, dims, impl);
+        (cache,dim2) := elabArraydim(cache, env, owncref, cn, ad_1, eq, impl, true, false, pre, info, dims);
+        type_mods := Mod.addEachIfNeeded(type_mods, dim2);
         // do not add each to mod_1, it should have it already!
         // mod_1 = Mod.addEachIfNeeded(mod_1, dim2);
-        type_mods = Mod.merge(mod_1, type_mods);
-        res = listAppend(dim2, dim1);
+        type_mods := Mod.merge(mod_1, type_mods);
+        res := listAppend(dim2, dim1);
       then
         (cache,res,cl,type_mods);
 
@@ -3397,13 +3386,13 @@ algorithm
                   normalAlgorithmLst = {},
                   initialAlgorithmLst = {})),
           _, impl)
-      equation
-        (_,_,{SCode.EXTENDS(path, _, mod,_, info)},{}) = splitElts(els); // ONLY ONE extends!
-        (cache,mod_1) = Mod.elabModForBasicType(cache, env, ih, pre, mod, impl, Mod.EXTENDS(path), info);
-        (cache,cl,_) = Lookup.lookupClass(cache, env, path);
-        (cache,res,cl,type_mods) = getUsertypeDimensions(cache,env,ih,pre,cl,{},impl);
+      algorithm
+        (_,_,{SCode.EXTENDS(path, _, mod,_, info)},{}) := splitElts(els); // ONLY ONE extends!
+        (cache,mod_1) := Mod.elabModForBasicType(cache, env, ih, pre, mod, impl, Mod.EXTENDS(path), info);
+        (cache,cl,_) := Lookup.lookupClass(cache, env, path);
+        (cache,res,cl,type_mods) := getUsertypeDimensions(cache,env,ih,pre,cl,{},impl);
         // type_mods = Mod.addEachIfNeeded(type_mods, res);
-        type_mods = Mod.merge(mod_1, type_mods);
+        type_mods := Mod.merge(mod_1, type_mods);
       then
         (cache,res,cl,type_mods);
 
@@ -3411,9 +3400,9 @@ algorithm
       then (cache,{},cl,DAE.NOMOD());
 
     case (_, _, _, _, SCode.CLASS(), _, _)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        id = SCodeDump.unparseElementStr(inClass,SCodeDump.defaultOptions);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
+        id := SCodeDump.unparseElementStr(inClass,SCodeDump.defaultOptions);
         Debug.traceln("InstUtil.getUsertypeDimensions failed: " + id);
       then
         fail();
@@ -3437,8 +3426,8 @@ algorithm
       list<SCode.Element> enums;
       FCore.Graph env;
     case (_, SCode.CLASS(restriction = SCode.R_ENUMERATION(), classDef = SCode.PARTS(elementLst = enums)))
-      equation
-        env = List.fold(enums, addEnumerationLiteralToEnv, inEnv);
+      algorithm
+        env := List.fold(enums, addEnumerationLiteralToEnv, inEnv);
       then env;
     else inEnv; // Not an enumeration, no need to do anything.
   end matchcontinue;
@@ -3455,8 +3444,8 @@ algorithm
       FCore.Graph env;
 
     case (SCode.COMPONENT(name = lit), _)
-      equation
-        env = FGraph.mkComponentNode(inEnv,
+      algorithm
+        env := FGraph.mkComponentNode(inEnv,
           DAE.TYPES_VAR(lit, DAE.dummyAttrVar, DAE.T_UNKNOWN_DEFAULT, DAE.UNBOUND(), false, NONE()),
           inEnum, DAE.NOMOD(), FCore.VAR_UNTYPED(), FGraph.empty());
       then env;
@@ -3484,15 +3473,15 @@ algorithm
 
     // top env, return the same ci_state
     case (_, _, _, ci_state)
-      equation
-        true = FGraph.isTopScope(inNewEnv);
+      algorithm
+        true := FGraph.isTopScope(inNewEnv);
       then
         ci_state;
 
     // same environment, return the same ci_state
     case (_, _, _, ci_state)
-      equation
-        true = stringEq(FGraph.getGraphNameStr(inNewEnv),
+      algorithm
+        true := stringEq(FGraph.getGraphNameStr(inNewEnv),
                         FGraph.getGraphNameStr(inOldEnv));
       then
         ci_state;
@@ -3500,13 +3489,13 @@ algorithm
     // not the same environment, try to
     // make a ci state from the new env
     case (_, _, _, _)
-      equation
+      algorithm
         // not top scope
-        false = FGraph.isTopScope(inNewEnv);
-        id = FNode.refName(FGraph.lastScopeRef(inNewEnv));
-        (rest, _) = FGraph.stripLastScopeRef(inNewEnv);
-        (_, cls, _) = Lookup.lookupClassIdent(inCache, rest, id);
-        ci_state = ClassInf.start(SCodeUtil.getClassRestriction(cls), FGraph.getGraphName(inNewEnv));
+        false := FGraph.isTopScope(inNewEnv);
+        id := FNode.refName(FGraph.lastScopeRef(inNewEnv));
+        (rest, _) := FGraph.stripLastScopeRef(inNewEnv);
+        (_, cls, _) := Lookup.lookupClassIdent(inCache, rest, id);
+        ci_state := ClassInf.start(SCodeUtil.getClassRestriction(cls), FGraph.getGraphName(inNewEnv));
       then
         ci_state;
 
@@ -3570,8 +3559,8 @@ algorithm
 
     case (DAE.DIM_UNKNOWN(), DAE.MOD(binding =
             SOME(DAE.TYPED(modifierAsExp = exp))), _, _)
-      equation
-        (d :: _) = Expression.expDimensions(exp);
+      algorithm
+        (d :: _) := Expression.expDimensions(exp);
       then d;
 
     // TODO: We should print an error if we fail to deduce the dimensions from
@@ -3579,16 +3568,16 @@ algorithm
     // Modelica.Blocks.Sources.KinematicPTP), so just print a warning for now.
     case (DAE.DIM_UNKNOWN(), DAE.MOD(binding =
             SOME(DAE.TYPED(modifierAsExp = exp))), _, _)
-      equation
-        exp_str = ExpressionDump.printExpStr(exp);
+      algorithm
+        exp_str := ExpressionDump.printExpStr(exp);
         Error.addSourceMessage(Error.FAILURE_TO_DEDUCE_DIMS_FROM_MOD,
           {inVarName, exp_str}, inInfo);
       then
         fail();
 
     case (DAE.DIM_UNKNOWN(), _, _, _)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- InstUtil.instWholeDimFromMod failed\n");
       then
         fail();
@@ -3683,21 +3672,21 @@ algorithm
           visibility = vis,
           finalPrefix = fp,
           innerOuter = io1), _)
-      equation
-        vdir = propagateDirection(vdir, dir, cr, inInfo);
-        vk = propagateVariability(vk, var);
-        vprl = propagateParallelism(vprl,sprl,cr,inInfo);
-        vvis = propagateVisibility(vvis, vis);
-        var_attrs = propagateFinal(var_attrs, fp);
-        io2 = propagateInnerOuter(io2, io1);
-        ct2 = propagateConnectorType(ct2, ct1, cr, inInfo);
+      algorithm
+        vdir := propagateDirection(vdir, dir, cr, inInfo);
+        vk := propagateVariability(vk, var);
+        vprl := propagateParallelism(vprl,sprl,cr,inInfo);
+        vvis := propagateVisibility(vvis, vis);
+        var_attrs := propagateFinal(var_attrs, fp);
+        io2 := propagateInnerOuter(io2, io1);
+        ct2 := propagateConnectorType(ct2, ct1, cr, inInfo);
       then
         DAE.VAR(cr, vk, vdir, vprl, vvis, ty, binding, dims, ct2, source, var_attrs, cmt, io2, e);
 
     // Structured component.
     case (DAE.COMP(ident = ident, dAElist = el, source = source, comment = cmt), _, _, _)
-      equation
-        el = List.map3(el, propagateAllAttributes, inAttributes, inPrefixes, inInfo);
+      algorithm
+        el := List.map3(el, propagateAllAttributes, inAttributes, inPrefixes, inInfo);
       then
         DAE.COMP(ident, el, source, cmt);
 
@@ -3730,10 +3719,10 @@ algorithm
     // Error when component declared as input or output if the variable already
     // has such a prefix.
     else
-      equation
-        s1 = Dump.directionSymbol(inDirection);
-        s2 = ComponentReference.printComponentRefStr(inCref);
-        s3 = DAEDump.dumpDirectionStr(inVarDirection);
+      algorithm
+        s1 := Dump.directionSymbol(inDirection);
+        s2 := ComponentReference.printComponentRefStr(inCref);
+        s3 := DAEDump.dumpDirectionStr(inVarDirection);
         Error.addSourceMessage(Error.COMPONENT_INPUT_OUTPUT_MISMATCH,
           {s1, s2, s3}, inInfo);
       then
@@ -3765,9 +3754,9 @@ algorithm
 
     // if the two parallelisms are equal then it is OK
     case(daeprl1,_,_,_)
-      equation
-        daeprl2 = DAEUtil.scodePrlToDaePrl(inParallelism);
-        true = DAEUtil.daeParallelismEqual(daeprl1,daeprl2);
+      algorithm
+        daeprl2 := DAEUtil.scodePrlToDaePrl(inParallelism);
+        true := DAEUtil.daeParallelismEqual(daeprl1,daeprl2);
       then
         daeprl1;
 
@@ -3775,14 +3764,14 @@ algorithm
     // and the subcomponent is declared as parglobal or parlocal, respectively.
     // Print a warning and override the subcomponent's parallelism.
     else
-      equation
-        daeprl2 = DAEUtil.scodePrlToDaePrl(inParallelism);
+      algorithm
+        daeprl2 := DAEUtil.scodePrlToDaePrl(inParallelism);
 
-        s1 = DAEDump.dumpVarParallelismStr(daeprl2);
-        s2 = ComponentReference.printComponentRefStr(inCref);
-        s3 = DAEDump.dumpVarParallelismStr(inVarParallelism);
+        s1 := DAEDump.dumpVarParallelismStr(daeprl2);
+        s2 := ComponentReference.printComponentRefStr(inCref);
+        s3 := DAEDump.dumpVarParallelismStr(inVarParallelism);
 
-        s4 = "\n" +
+        s4 := "\n" +
              "- Component declared as '" + s1 +
              "' when having the variable '" + s2 +
              "' declared as '" + s3 + "' : Subcomponent parallelism modified to." +
@@ -3883,10 +3872,10 @@ algorithm
 
     // Error if the component tries to overwrite the prefix of a subcomponent.
     else
-      equation
-        s1 = SCodeDump.connectorTypeStr(inConnectorType);
-        s2 = ComponentReference.printComponentRefStr(inCref);
-        s3 = DAEDump.dumpConnectorType(inVarConnectorType);
+      algorithm
+        s1 := SCodeDump.connectorTypeStr(inConnectorType);
+        s2 := ComponentReference.printComponentRefStr(inCref);
+        s3 := DAEDump.dumpConnectorType(inVarConnectorType);
         Error.addSourceMessage(Error.INVALID_TYPE_PREFIX,
           {s1, "variable", s2, s3}, inInfo);
       then
@@ -3946,30 +3935,30 @@ algorithm
       list<DAE.Subscript> subs;
 
     case (cache,env,DAE.CREF_IDENT(ident = id),_)
-      equation
+      algorithm
         (cache,_,SCode.COMPONENT(modifications = m),cmod,_,_)
-          = Lookup.lookupIdent(cache, env, id);
-        cmod_1 = Mod.stripSubmod(cmod);
-        m_1 = SCodeUtil.stripSubmod(m);
-        (cache,m_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, DAE.NOPRE(), m_1, false, Mod.COMPONENT(id), info);
-        mod_2 = Mod.merge(cmod_1, m_2);
-        SOME(eq) = Mod.modEquation(mod_2);
-        (cache,dims) = elabComponentArraydimFromEnv2(cache,eq, env);
+          := Lookup.lookupIdent(cache, env, id);
+        cmod_1 := Mod.stripSubmod(cmod);
+        m_1 := SCodeUtil.stripSubmod(m);
+        (cache,m_2) := Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, DAE.NOPRE(), m_1, false, Mod.COMPONENT(id), info);
+        mod_2 := Mod.merge(cmod_1, m_2);
+        SOME(eq) := Mod.modEquation(mod_2);
+        (cache,dims) := elabComponentArraydimFromEnv2(cache,eq, env);
       then
         (cache,dims);
 
     case (cache,env,DAE.CREF_IDENT(ident = id),_)
-      equation
+      algorithm
         (cache,_,SCode.COMPONENT(attributes = SCode.ATTR(arrayDims = ad)),_,_,_)
-          = Lookup.lookupIdent(cache,env, id);
-        (cache, subs) = Static.elabSubscripts(cache, env, ad, true, DAE.NOPRE(), info);
-        dims = Expression.subscriptDimensions(subs);
+          := Lookup.lookupIdent(cache,env, id);
+        (cache, subs) := Static.elabSubscripts(cache, env, ad, true, DAE.NOPRE(), info);
+        dims := Expression.subscriptDimensions(subs);
       then
         (cache,dims);
 
     case (_, _, cref,_)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- InstUtil.elabComponentArraydimFromEnv failed: " +
           ComponentReference.printComponentRefStr(cref));
       then
@@ -3999,9 +3988,9 @@ algorithm
       FCore.Cache cache;
 
     case (cache,DAE.TYPED(properties = DAE.PROP(type_ = t)),_)
-      equation
-        lst = Types.getDimensionSizes(t);
-        lst_1 = List.map(lst, Expression.intDimension);
+      algorithm
+        lst := Types.getDimensionSizes(t);
+        lst_1 := List.map(lst, Expression.intDimension);
       then
         (cache,lst_1);
 
@@ -4039,8 +4028,8 @@ algorithm
       DAE.Prefix pre;
       InstDims inst_dims;
     case (cache,env,owncref,_,SOME(ad),eq,impl,doVect,pre,_,inst_dims)
-      equation
-        (cache,res) = elabArraydim(cache,env, owncref, path,ad, eq, impl, doVect, false,pre,info,inst_dims);
+      algorithm
+        (cache,res) := elabArraydim(cache,env, owncref, path,ad, eq, impl, doVect, false,pre,info,inst_dims);
       then
         (cache,res);
     case (cache,_,_,_,NONE(),_,_,_,_,_,_) then (cache,{});
@@ -4100,61 +4089,61 @@ algorithm
     // may vary depending on the inputs. So we ignore any modifications on input
     // variables here.
     case (cache, env, cref, _, ad, _, _, doVect, true, pre, info, _)
-      equation
-        (cache, dim) = Static.elabArrayDims(cache, env, cref, ad, true, doVect, pre, info);
+      algorithm
+        (cache, dim) := Static.elabArrayDims(cache, env, cref, ad, true, doVect, pre, info);
       then
         (cache, dim);
 
     case (cache,_,_,_,{},_,_,_,_,_,_,_) then (cache, {});
 
     case (cache,env,cref,_,ad,NONE(),impl,doVect,_,pre,info,_) /* impl */
-      equation
-        (cache,dim) = Static.elabArrayDims(cache,env, cref, ad, impl,doVect,pre,info);
+      algorithm
+        (cache,dim) := Static.elabArrayDims(cache,env, cref, ad, impl,doVect,pre,info);
       then
         (cache,dim);
 
     case (cache,env,cref,_,ad,SOME(DAE.TYPED(e,_,prop,_)),impl,doVect,_ ,pre,info,inst_dims) /* Untyped expressions must be elaborated. */
-      equation
-        t = Types.getPropType(prop);
-        (cache,dim1) = Static.elabArrayDims(cache,env, cref, ad, impl,doVect,pre,info);
-        dim2 = elabArraydimType(t, ad, e, path, pre, cref, info,inst_dims);
+      algorithm
+        t := Types.getPropType(prop);
+        (cache,dim1) := Static.elabArrayDims(cache,env, cref, ad, impl,doVect,pre,info);
+        dim2 := elabArraydimType(t, ad, e, path, pre, cref, info,inst_dims);
         //Debug.traceln("TYPED: " + ExpressionDump.printExpStr(e) + " s: " + FGraph.printGraphPathStr(env));
-        dim3 = List.threadMap(dim1, dim2, compatibleArraydim);
+        dim3 := List.threadMap(dim1, dim2, compatibleArraydim);
       then
         (cache,dim3);
 
     case (cache,env,cref,_,ad,SOME(DAE.UNTYPED(aexp)),impl,doVect, _,pre,info,inst_dims)
-      equation
-        (cache,e_1,prop) = Static.elabExp(cache,env, aexp, impl,doVect,pre,info);
-        (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
-        t = Types.getPropType(prop);
-        (cache,dim1) = Static.elabArrayDims(cache,env, cref, ad, impl, doVect ,pre, info);
-        dim2 = elabArraydimType(t, ad, e_1, path, pre, cref, info,inst_dims);
+      algorithm
+        (cache,e_1,prop) := Static.elabExp(cache,env, aexp, impl,doVect,pre,info);
+        (cache, e_1, prop) := Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
+        t := Types.getPropType(prop);
+        (cache,dim1) := Static.elabArrayDims(cache,env, cref, ad, impl, doVect ,pre, info);
+        dim2 := elabArraydimType(t, ad, e_1, path, pre, cref, info,inst_dims);
         //Debug.traceln("UNTYPED");
-        dim3 = List.threadMap(dim1, dim2, compatibleArraydim);
+        dim3 := List.threadMap(dim1, dim2, compatibleArraydim);
       then
         (cache,dim3);
 
     case (cache,env,cref,_,ad,SOME(DAE.TYPED(e,_,DAE.PROP(t,_),_,info2)),impl,doVect, _,pre,info,inst_dims)
-      equation
+      algorithm
         // adrpo: do not display error when running checkModel
         //        TODO! FIXME! check if this doesn't actually get rid of useful error messages
-        false = Flags.getConfigBool(Flags.CHECK_MODEL);
-        (_,dim1) = Static.elabArrayDims(cache, env, cref, ad, impl, doVect,pre,info);
-        dim2 = elabArraydimType(t, ad, e, path, pre, cref, info,inst_dims);
-        failure(_ = List.threadMap(dim1, dim2, compatibleArraydim));
-        e_str = ExpressionDump.printExpStr(e);
-        t_str = Types.unparseType(t);
-        dim_str = ExpressionDump.dimensionsString(dim1);
+        false := Flags.getConfigBool(Flags.CHECK_MODEL);
+        (_,dim1) := Static.elabArrayDims(cache, env, cref, ad, impl, doVect,pre,info);
+        dim2 := elabArraydimType(t, ad, e, path, pre, cref, info,inst_dims);
+        failure(_ := List.threadMap(dim1, dim2, compatibleArraydim));
+        e_str := ExpressionDump.printExpStr(e);
+        t_str := Types.unparseType(t);
+        dim_str := ExpressionDump.dimensionsString(dim1);
         Error.addMultiSourceMessage(Error.ARRAY_DIMENSION_MISMATCH, {e_str,t_str,dim_str}, info2::info::{});
       then
         fail();
 
     // print some failures
     case (_,_,cref,_,ad,eq,_,_,_,_,_,_)
-      equation
+      algorithm
         // only display when the failtrace flag is on
-        true = Flags.isSet(Flags.FAILTRACE);
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- InstUtil.elabArraydim failed on: \n\tcref:");
         Debug.trace(AbsynUtil.pathString(path) + " " + Dump.printComponentRefStr(cref));
         Debug.traceln(Dump.printArraydimStr(ad) + " = " + Types.unparseOptionEqMod(eq));
@@ -4182,15 +4171,15 @@ algorithm
     case (_, DAE.DIM_EXP()) then inDimension1;
     case (DAE.DIM_EXP(), _) then inDimension2;
     case (_, _)
-      equation
-        true = intEq(Expression.dimensionSize(inDimension1),
+      algorithm
+        true := intEq(Expression.dimensionSize(inDimension1),
                      Expression.dimensionSize(inDimension2));
       then
         inDimension1;
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- InstUtil.compatibleArraydim failed\n");
       then
         fail();
@@ -4288,8 +4277,8 @@ algorithm
     case (_, {}, {}) then {};
 
     case (_, (_ :: _), _) // PR, for debugging
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("Undefined! The type detected: ");
         Debug.traceln(Types.printTypeStr(inType));
       then
@@ -4325,8 +4314,8 @@ algorithm
 
     // otherwise add it to the DAE!
     case (cache, _, _)
-      equation
-        cache = FCore.addDaeFunction(cache, funcs);
+      algorithm
+        cache := FCore.addDaeFunction(cache, funcs);
       then
         cache;
 
@@ -4450,17 +4439,17 @@ algorithm
     case {} then fail();
 
     case SCode.NAMEMOD("derivative",(SCode.MOD(subModLst = subs2,binding=SOME(Absyn.CREF(acr))))) :: subs
-      equation
-        deriveFunc = AbsynUtil.crefToPath(acr);
-        (_,deriveFunc) = Inst.makeFullyQualified(inCache,inEnv,deriveFunc);
-        order = getDerivativeOrder(subs2);
+      algorithm
+        deriveFunc := AbsynUtil.crefToPath(acr);
+        (_,deriveFunc) := Inst.makeFullyQualified(inCache,inEnv,deriveFunc);
+        order := getDerivativeOrder(subs2);
 
         ErrorExt.setCheckpoint("getDeriveAnnotation3") "don't report errors on modifers in functions";
-        conditionRefs = getDeriveCondition(subs2,elemDecl,inCache,inEnv,inIH,inPrefix,info);
+        conditionRefs := getDeriveCondition(subs2,elemDecl,inCache,inEnv,inIH,inPrefix,info);
         ErrorExt.rollBack("getDeriveAnnotation3");
 
-        conditionRefs = List.sort(conditionRefs,DAEUtil.derivativeOrder);
-        defaultDerivative = getDerivativeSubModsOptDefault(subs,inCache,inEnv,inPrefix);
+        conditionRefs := List.sort(conditionRefs,DAEUtil.derivativeOrder);
+        defaultDerivative := getDerivativeSubModsOptDefault(subs,inCache,inEnv,inPrefix);
 
 
         /*print("\n adding conditions on derivative count: " + intString(listLength(conditionRefs)) + "\n");
@@ -4473,7 +4462,7 @@ algorithm
         print(dbgString);*/
 
 
-        mapper = DAE.FUNCTION_DER_MAPPER(baseFunc,deriveFunc,order,conditionRefs,defaultDerivative,{});
+        mapper := DAE.FUNCTION_DER_MAPPER(baseFunc,deriveFunc,order,conditionRefs,defaultDerivative,{});
       then
         {mapper};
 
@@ -4509,27 +4498,27 @@ algorithm
     case({},_,_,_,_,_,_) then {};
 
     case(SCode.NAMEMOD("noDerivative",(SCode.MOD(binding = SOME(Absyn.CREF(acr)))))::subs,_,_,_,_,_,_)
-    equation
-      name = Dump.printComponentRefStr(acr);
-        outconds = getDeriveCondition(subs,elemDecl,inCache,inEnv,inIH,inPrefix,info);
-      varPos = setFunctionInputIndex(elemDecl,name,1);
+    algorithm
+      name := Dump.printComponentRefStr(acr);
+        outconds := getDeriveCondition(subs,elemDecl,inCache,inEnv,inIH,inPrefix,info);
+      varPos := setFunctionInputIndex(elemDecl,name,1);
     then
       (varPos,DAE.NO_DERIVATIVE(DAE.ICONST(99)))::outconds;
 
     case(SCode.NAMEMOD("zeroDerivative",(SCode.MOD(binding =  SOME(Absyn.CREF(acr)))))::subs,_,_,_,_,_,_)
-    equation
-      name = Dump.printComponentRefStr(acr);
-        outconds = getDeriveCondition(subs,elemDecl,inCache,inEnv,inIH,inPrefix,info);
-      varPos = setFunctionInputIndex(elemDecl,name,1);
+    algorithm
+      name := Dump.printComponentRefStr(acr);
+        outconds := getDeriveCondition(subs,elemDecl,inCache,inEnv,inIH,inPrefix,info);
+      varPos := setFunctionInputIndex(elemDecl,name,1);
     then
       (varPos,DAE.ZERO_DERIVATIVE())::outconds;
 
     case(SCode.NAMEMOD("noDerivative",(m as SCode.MOD()))::subs,_,_,_,_,_,_)
-    equation
-      (cache,DAE.MOD(subModLst={sub})) = Mod.elabMod(inCache, inEnv, inIH, inPrefix, m, false, Mod.COMPONENT("noDerivative"), info);
-      (name,cond) = extractNameAndExp(sub);
-      outconds = getDeriveCondition(subs,elemDecl,cache,inEnv,inIH,inPrefix,info);
-      varPos = setFunctionInputIndex(elemDecl,name,1);
+    algorithm
+      (cache,DAE.MOD(subModLst={sub})) := Mod.elabMod(inCache, inEnv, inIH, inPrefix, m, false, Mod.COMPONENT("noDerivative"), info);
+      (name,cond) := extractNameAndExp(sub);
+      outconds := getDeriveCondition(subs,elemDecl,cache,inEnv,inIH,inPrefix,info);
+      varPos := setFunctionInputIndex(elemDecl,name,1);
     then
       (varPos,cond)::outconds;
 
@@ -4551,14 +4540,14 @@ algorithm
     list<SCode.Element> elemDecl;
 
   case({},_,_)
-    equation
+    algorithm
       print(" failure in setFunctionInputIndex, didn't find any index for: " + str + "\n");
       then fail();
 
         /* found matching input*/
       case(SCode.COMPONENT(name=str2,attributes =SCode.ATTR(direction=Absyn.INPUT()))::_,_,_)
-        equation
-          true = stringEq(str2, str);
+        algorithm
+          true := stringEq(str2, str);
           then
             currPos;
 
@@ -4610,9 +4599,9 @@ algorithm defaultDerivative := matchcontinue(inSubs,inCache,inEnv,inPrefix)
 
   case({},_,_,_) then NONE();
   case(SCode.NAMEMOD("derivative",(SCode.MOD(binding =SOME(Absyn.CREF(acr)))))::_,_,_,_)
-    equation
-      p = AbsynUtil.crefToPath(acr);
-      (_,p) = Inst.makeFullyQualified(inCache,inEnv, p);
+    algorithm
+      p := AbsynUtil.crefToPath(acr);
+      (_,p) := Inst.makeFullyQualified(inCache,inEnv, p);
     then
       SOME(p);
   case(_::subs,_,_,_) then getDerivativeSubModsOptDefault(subs,inCache,inEnv,inPrefix);
@@ -4649,8 +4638,8 @@ algorithm
       DAE.Type tp;
 
     case resType as DAE.T_FUNCTION()
-      equation
-        resType.path = path;
+      algorithm
+        resType.path := path;
       then resType;
 
     else inType;
@@ -4695,38 +4684,38 @@ algorithm
     stop := match tp
 
        case SCode.NAMEMOD("Inline",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
-         equation
-           res = DAE.NORM_INLINE();
+         algorithm
+           res := DAE.NORM_INLINE();
          then false;
 
        case SCode.NAMEMOD("Inline",SCode.MOD(binding = SOME(Absyn.BOOL(false))))
-         equation
-           res = DAE.NO_INLINE();
+         algorithm
+           res := DAE.NO_INLINE();
          then false;
 
        case SCode.NAMEMOD("LateInline",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
-         equation
-          res = DAE.AFTER_INDEX_RED_INLINE();
+         algorithm
+          res := DAE.AFTER_INDEX_RED_INLINE();
          then true;
 
        case SCode.NAMEMOD("__MathCore_InlineAfterIndexReduction",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
-         equation
-          res = DAE.AFTER_INDEX_RED_INLINE();
+         algorithm
+          res := DAE.AFTER_INDEX_RED_INLINE();
          then true;
 
        case SCode.NAMEMOD("__Dymola_InlineAfterIndexReduction",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
-         equation
-          res = DAE.AFTER_INDEX_RED_INLINE();
+         algorithm
+          res := DAE.AFTER_INDEX_RED_INLINE();
          then true;
 
        case SCode.NAMEMOD("InlineAfterIndexReduction",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
-         equation
-          res = DAE.AFTER_INDEX_RED_INLINE();
+         algorithm
+          res := DAE.AFTER_INDEX_RED_INLINE();
          then true;
 
        case SCode.NAMEMOD("__OpenModelica_EarlyInline",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
-         equation
-          res = DAE.EARLY_INLINE();
+         algorithm
+          res := DAE.EARLY_INLINE();
          then true;
        else false;
        end match;
@@ -4802,8 +4791,8 @@ algorithm
       Option<SCode.Comment> cmt;
       DAE.ComponentRef cr;
     case DAE.VAR(comment = cmt)
-      equation
-        result = SCodeUtil.optCommentHasBooleanNamedAnnotation(cmt, "__OpenModelica_UnusedVariable");
+      algorithm
+        result := SCodeUtil.optCommentHasBooleanNamedAnnotation(cmt, "__OpenModelica_UnusedVariable");
       then not result;
     else true;
   end match;
@@ -4835,8 +4824,8 @@ algorithm
     case (names,NONE()) then names;
     case ({},_) then {};
     case (names,SOME(DAE.EXTERNALDECL(returnArg=arg,args=args)))
-      equation
-        names = List.select1(names,checkExternalDeclArgs,arg::args);
+      algorithm
+        names := List.select1(names,checkExternalDeclArgs,arg::args);
       then names;
   end match;
 end checkExternalDeclInputUsed;
@@ -4852,14 +4841,14 @@ algorithm
       DAE.ComponentRef cr;
       Absyn.Path path;
     case (exp as DAE.CREF(componentRef=cr),els)
-      equation
-        els = List.select1(els,checkExpInputUsed3,cr);
+      algorithm
+        els := List.select1(els,checkExpInputUsed3,cr);
       then (exp,els);
     case (exp as DAE.CALL(path=path),els)
-      equation
-        true = Config.acceptMetaModelicaGrammar();
-        cr = ComponentReference.pathToCref(path);
-        els = List.select1(els,checkExpInputUsed3,cr);
+      algorithm
+        true := Config.acceptMetaModelicaGrammar();
+        cr := ComponentReference.pathToCref(path);
+        els := List.select1(els,checkExpInputUsed3,cr);
       then (exp,els);
     else (inExp,inEls);
   end matchcontinue;
@@ -4924,11 +4913,11 @@ algorithm
       DAE.ComponentRef cr;
       DAE.ElementSource source;
     case (DAE.VAR(direction=DAE.OUTPUT(),componentRef=cr,binding=binding,source=source),DAE.EXTERNALDECL(returnArg=arg,args=args),_)
-      equation
+      algorithm
         // Some weird functions pass the same output twice so we cannot check for exactly 1 occurance
         // Interfacing with LAPACK routines is fun, fun, fun :)
         if not (List.isMemberOnTrue(v,arg::args,extArgCrefEq) or isSome(binding)) then
-          str = ComponentReference.printComponentRefStr(cr);
+          str := ComponentReference.printComponentRefStr(cr);
           Error.addSourceMessage(Error.EXTERNAL_NOT_SINGLE_RESULT,{str,name},ElementSource.getElementSourceFileInfo(source));
           fail();
         end if;
@@ -4949,18 +4938,18 @@ algorithm
       DAE.Exp exp;
 
     case (DAE.VAR(componentRef=cr1), DAE.EXTARG(componentRef=cr2))
-      equation
+      algorithm
         // If the external argument refers to a record member, i.e. a qualified
         // cref, consider the whole record to be used.
-        cr2 = ComponentReference.crefFirstCref(cr2);
+        cr2 := ComponentReference.crefFirstCref(cr2);
       then
         ComponentReference.crefEqualNoStringCompare(cr1,cr2);
 
     case (DAE.VAR(direction=DAE.OUTPUT()), _) then false;
 
     case (DAE.VAR(componentRef=cr1), DAE.EXTARGSIZE(componentRef=cr2))
-      equation
-        cr2 = ComponentReference.crefFirstCref(cr2);
+      algorithm
+        cr2 := ComponentReference.crefFirstCref(cr2);
       then
         ComponentReference.crefEqualNoStringCompare(cr1,cr2);
 
@@ -5083,9 +5072,9 @@ algorithm
       DAE.ComponentRef cr;
     case (cache,_,{},_,_,_) then (cache,{},{});
     case (cache,env,(e :: rest),impl,pre,_)
-      equation
-        (cache,exp,p) = elabExpExt(cache,env, e, impl,pre,info);
-        (cache,exps,props) = elabExpListExt(cache,env, rest, impl,pre,info);
+      algorithm
+        (cache,exp,p) := elabExpExt(cache,env, e, impl,pre,info);
+        (cache,exps,props) := elabExpListExt(cache,env, rest, impl,pre,info);
       then
         (cache,(exp :: exps),(p :: props));
   end match;
@@ -5124,24 +5113,24 @@ algorithm
     // special case for  size
     case (cache,env,(Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "size"),
           functionArgs = Absyn.FUNCTIONARGS(args = {arraycr,dim}))),impl,pre,_)
-      equation
-        (cache,dimp,prop as DAE.PROP(_,_)) = Static.elabExp(cache, env, dim, impl,false,pre,info);
-        (cache, dimp, prop) = Ceval.cevalIfConstant(cache, env, dimp, prop, impl, info);
-        (cache,arraycrefe,arraycrprop) = Static.elabExp(cache, env, arraycr, impl,false,pre,info);
-        (cache,arraycrefe,arraycrprop) = Ceval.cevalIfConstant(cache, env, arraycrefe, arraycrprop, impl, info);
-        exp = DAE.SIZE(arraycrefe,SOME(dimp));
+      algorithm
+        (cache,dimp,prop as DAE.PROP(_,_)) := Static.elabExp(cache, env, dim, impl,false,pre,info);
+        (cache, dimp, prop) := Ceval.cevalIfConstant(cache, env, dimp, prop, impl, info);
+        (cache,arraycrefe,arraycrprop) := Static.elabExp(cache, env, arraycr, impl,false,pre,info);
+        (cache,arraycrefe,arraycrprop) := Ceval.cevalIfConstant(cache, env, arraycrefe, arraycrprop, impl, info);
+        exp := DAE.SIZE(arraycrefe,SOME(dimp));
       then
         (cache,exp,DAE.PROP(DAE.T_INTEGER_DEFAULT,DAE.C_VAR()));
     // For all other expressions, use normal elaboration
     case (cache,env,absynExp,impl,pre,_)
-      equation
-        (cache,e,prop) = Static.elabExp(cache, env, absynExp, impl,false,pre,info);
-        (cache, e, prop) = Ceval.cevalIfConstant(cache, env, e, prop, impl,  info);
+      algorithm
+        (cache,e,prop) := Static.elabExp(cache, env, absynExp, impl,false,pre,info);
+        (cache, e, prop) := Ceval.cevalIfConstant(cache, env, e, prop, impl,  info);
       then
         (cache,e,prop);
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("-Inst.elabExpExt failed");
       then
         fail();
@@ -5174,14 +5163,14 @@ algorithm
       FCore.Cache cache;
       DAE.Prefix pre;
     case (cache,env,SCode.EXTERNALDECL(lang = lang,args = absexps),impl,pre,_)
-      equation
-        (cache,exps,props) = elabExpListExt(cache,env, absexps, impl, pre, info);
-        (cache,extargs) = instExtGetFargs2(cache, env, absexps, exps, props, lang, info);
+      algorithm
+        (cache,exps,props) := elabExpListExt(cache,env, absexps, impl, pre, info);
+        (cache,extargs) := instExtGetFargs2(cache, env, absexps, exps, props, lang, info);
       then
         (cache,extargs);
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- InstUtil.instExtGetFargs failed");
       then
         fail();
@@ -5215,9 +5204,9 @@ algorithm
       list<Absyn.Exp> aes;
     case (cache,_,_,{},_,_,_) then (cache,{});
     case (cache,env,ae :: aes, e :: exps,p :: props,_,_)
-      equation
-        (cache,SOME(extarg)) = instExtGetFargsSingle(cache, env, ae, e, p, lang, info);
-        (cache,extargs) = instExtGetFargs2(cache, env, aes, exps, props, lang, info);
+      algorithm
+        (cache,SOME(extarg)) := instExtGetFargsSingle(cache, env, ae, e, p, lang, info);
+        (cache,extargs) := instExtGetFargs2(cache, env, aes, exps, props, lang, info);
       then
         (cache,extarg :: extargs);
   end match;
@@ -5255,43 +5244,43 @@ algorithm
 
     case (_, _, _, DAE.CREF(componentRef = cref as DAE.CREF_QUAL()),
         DAE.PROP(constFlag = DAE.C_VAR()), _, _)
-      equation
-        (cache,_, ty,_, _, _, _, _, _) = Lookup.lookupVarLocal(inCache, inEnv, cref);
+      algorithm
+        (cache,_, ty,_, _, _, _, _, _) := Lookup.lookupVarLocal(inCache, inEnv, cref);
         // For qualified crefs, copy input/output from the first part of the
         // cref. This is done so that the correct code can be generated when
         // using qualified crefs in external function definitions.
-        fcr = ComponentReference.crefFirstCref(cref);
-        (cache, fattr, _, _, _, _, _, _, _) = Lookup.lookupVarLocal(cache, inEnv, fcr);
+        fcr := ComponentReference.crefFirstCref(cref);
+        (cache, fattr, _, _, _, _, _, _, _) := Lookup.lookupVarLocal(cache, inEnv, fcr);
       then
         (cache, SOME(DAE.EXTARG(cref, DAEUtil.getAttrDirection(fattr), ty)));
 
     case (_, _, _, DAE.CREF(componentRef = cref as DAE.CREF_IDENT()),
         DAE.PROP(constFlag = DAE.C_VAR()), _, _)
-      equation
-        (cache, attr, ty,_, _, _, _, _, _) = Lookup.lookupVarLocal(inCache, inEnv, cref);
+      algorithm
+        (cache, attr, ty,_, _, _, _, _, _) := Lookup.lookupVarLocal(inCache, inEnv, cref);
       then
         (cache,SOME(DAE.EXTARG(cref, DAEUtil.getAttrDirection(attr), ty)));
 
     case (cache,env,_,DAE.CREF(componentRef = cref),DAE.PROP(),_,_)
-      equation
-        failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env,cref));
-        crefstr = ComponentReference.printComponentRefStr(cref);
-        scope = FGraph.printGraphPathStr(env);
+      algorithm
+        failure((_,_,_,_,_,_,_,_,_) := Lookup.lookupVarLocal(cache,env,cref));
+        crefstr := ComponentReference.printComponentRefStr(cref);
+        scope := FGraph.printGraphPathStr(env);
         Error.addMessage(Error.LOOKUP_VARIABLE_ERROR, {crefstr,scope});
       then
         (cache, NONE());
 
     case (cache,env,_,DAE.SIZE(exp = DAE.CREF(componentRef = cref),sz = SOME(dim)),DAE.PROP(),_,_)
-      equation
-        (cache,_,varty,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env, cref);
+      algorithm
+        (cache,_,varty,_,_,_,_,_,_) := Lookup.lookupVarLocal(cache,env, cref);
       then
         (cache,SOME(DAE.EXTARGSIZE(cref,varty,dim)));
 
     // adrpo: these can be non-local if they are constants or parameters!
     case (cache,env,_,_,DAE.PROP(type_ = ty,constFlag = DAE.C_CONST()),_,_)
-      equation
-        (cache, exp) = Ceval.cevalIfConstant(cache, env, inExp, inProperties, false, info);
-        true = Expression.isScalarConst(exp);
+      algorithm
+        (cache, exp) := Ceval.cevalIfConstant(cache, env, inExp, inProperties, false, info);
+        true := Expression.isScalarConst(exp);
       then
         (cache,SOME(DAE.EXTARGEXP(exp, ty)));
 
@@ -5305,8 +5294,8 @@ algorithm
       then (cache,SOME(DAE.EXTARGEXP(inExp, ty)));
 
     case (cache,_,_,exp,DAE.PROP(),_,_)
-      equation
-        str = ExpressionDump.printExpStr(exp);
+      algorithm
+        str := ExpressionDump.printExpStr(exp);
         Error.addSourceMessage(Error.EXTERNAL_ARG_WRONG_EXP,{str},info);
       then
         (cache, NONE());
@@ -5343,16 +5332,16 @@ algorithm
     case (cache,_,SCode.EXTERNALDECL(output_ = NONE()),_,_,_) then (cache,DAE.NOEXTARG());  /* impl */
 
     case (cache,env,SCode.EXTERNALDECL(lang = lang,output_ = SOME(cref)),impl,pre,_)
-      equation
-        (cache,SOME((exp,prop,_))) = Static.elabCref(cache,env,cref,impl,false /* Do NOT vectorize arrays; we require a CREF */,pre,info);
-        (cache,SOME(extarg)) = instExtGetFargsSingle(cache,env,Absyn.CREF(cref),exp,prop,lang,info);
+      algorithm
+        (cache,SOME((exp,prop,_))) := Static.elabCref(cache,env,cref,impl,false /* Do NOT vectorize arrays; we require a CREF */,pre,info);
+        (cache,SOME(extarg)) := instExtGetFargsSingle(cache,env,Absyn.CREF(cref),exp,prop,lang,info);
         assertExtArgOutputIsCrefVariable(lang,extarg,Types.getPropType(prop),Types.propAllConst(prop),info);
       then
         (cache,extarg);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- InstUtil.instExtRettype failed");
       then
         fail();
@@ -5371,18 +5360,18 @@ algorithm
       String str;
     case (SOME("builtin"),_,_,_,_) then ();
     case (_,_,DAE.T_ARRAY(),_,_)
-      equation
-        str = Types.unparseType(ty);
+      algorithm
+        str := Types.unparseType(ty);
         Error.addSourceMessage(Error.EXTERNAL_FUNCTION_RESULT_ARRAY_TYPE,{str},info);
       then fail();
     case (_,DAE.EXTARG(),_,DAE.C_VAR(),_) then ();
     case (_,_,_,DAE.C_VAR(),_)
-      equation
-        str = DAEDump.dumpExtArgStr(arg);
+      algorithm
+        str := DAEDump.dumpExtArgStr(arg);
         Error.addSourceMessage(Error.EXTERNAL_FUNCTION_RESULT_NOT_CREF,{str},info);
       then fail();
     else
-      equation
+      algorithm
         Error.addSourceMessage(Error.EXTERNAL_FUNCTION_RESULT_NOT_VAR,{},info);
       then fail();
   end match;
@@ -5475,32 +5464,32 @@ algorithm
 
     // Insert function type construction here after checking input/output arguments? see Types.mo T_FUNCTION
     case (p,(ClassInf.FUNCTION()),vl,_,_,cl)
-      equation
-        funcattr = getFunctionAttributes(cl, vl, inheritedComment);
-        functype = Types.makeFunctionType(p, vl, funcattr);
+      algorithm
+        funcattr := getFunctionAttributes(cl, vl, inheritedComment);
+        functype := Types.makeFunctionType(p, vl, funcattr);
       then
         functype;
 
     case (_, ClassInf.ENUMERATION(path = p), _, SOME(enumtype), _, _)
-      equation
-        enumtype = Types.makeEnumerationType(p, enumtype);
+      algorithm
+        enumtype := Types.makeEnumerationType(p, enumtype);
       then
         enumtype;
 
     // Array of type extending from base type, adrpo: WITH NO EQUALITY CONSTRAINT, otherwise we loose it!
     case (_, ClassInf.TYPE(), _, SOME(DAE.T_ARRAY(ty = arrayType)), NONE(), _)
-      equation
-        classState = arrayTTypeToClassInfState(arrayType);
-        resType = mktype(inPath, classState, inTypesVarLst, inTypesTypeOption, inEqualityConstraint, inClass, inheritedComment);
+      algorithm
+        classState := arrayTTypeToClassInfState(arrayType);
+        resType := mktype(inPath, classState, inTypesVarLst, inTypesTypeOption, inEqualityConstraint, inClass, inheritedComment);
       then
         resType;
 
     // Array of type extending from base type, adrpo: WITH EQUALITY CONSTRAINT, build a T_SUBTYPE_BASIC
     case (_, ClassInf.TYPE(), _, SOME(DAE.T_ARRAY(ty = arrayType)), SOME(_), _)
-      equation
-        classState = arrayTTypeToClassInfState(arrayType);
-        resType = mktype(inPath, classState, inTypesVarLst, inTypesTypeOption, inEqualityConstraint, inClass, inheritedComment);
-        resType = DAE.T_SUBTYPE_BASIC(inState,{},resType,inEqualityConstraint);
+      algorithm
+        classState := arrayTTypeToClassInfState(arrayType);
+        resType := mktype(inPath, classState, inTypesVarLst, inTypesTypeOption, inEqualityConstraint, inClass, inheritedComment);
+        resType := DAE.T_SUBTYPE_BASIC(inState,{},resType,inEqualityConstraint);
       then
         resType;
 
@@ -5512,23 +5501,23 @@ algorithm
     case (_,ClassInf.META_ARRAY(_),_,SOME(bc2),_,_) then bc2;
     case (_,ClassInf.META_UNIONTYPE(_),_,SOME(bc2),_,_) then bc2;
     case (p,ClassInf.META_UNIONTYPE(_),_,_,_,_)
-      equation
-        pstr = AbsynUtil.pathString(p);
-        info = SCodeUtil.elementInfo(inClass);
+      algorithm
+        pstr := AbsynUtil.pathString(p);
+        info := SCodeUtil.elementInfo(inClass);
         Error.addSourceMessage(Error.META_UNIONTYPE_ALIAS_MODS, {pstr}, info);
       then fail();
     /*------------------------*/
 
     // not extending
     case (_,st,l,NONE(),equalityConstraint,_)
-      equation
-        failure(ClassInf.META_UNIONTYPE(_) = st);
+      algorithm
+        failure(ClassInf.META_UNIONTYPE(_) := st);
       then DAE.T_COMPLEX(st,l,equalityConstraint, true);
 
     // extending
     case (_,st,l,SOME(bc),equalityConstraint,_)
-      equation
-        failure(ClassInf.META_UNIONTYPE(_) = st);
+      algorithm
+        failure(ClassInf.META_UNIONTYPE(_) := st);
       then DAE.T_SUBTYPE_BASIC(st,l,bc,equalityConstraint);
   end matchcontinue;
 end mktype;
@@ -5549,8 +5538,8 @@ algorithm
     // BTH FIXME Dont understand for what this function is good to. Just adding clock anyway
     case (DAE.T_CLOCK()) then ClassInf.TYPE_CLOCK(Absyn.IDENT(""));
     case (DAE.T_ARRAY(ty = t))
-      equation
-        cs = arrayTTypeToClassInfState(t);
+      algorithm
+        cs := arrayTTypeToClassInfState(t);
       then cs;
   end match;
 end arrayTTypeToClassInfState;
@@ -5581,15 +5570,15 @@ algorithm
       DAE.FunctionAttributes funcattr;
 
     case (_,ci,_,SOME(tp),_)
-      equation
-        true = Types.isArray(tp);
+      algorithm
+        true := Types.isArray(tp);
         failure(ClassInf.isConnector(ci));
       then
         tp;
 
     case (p,ClassInf.TYPE_INTEGER(),v,_,_)
-      equation
-        _ = getOptPath(p);
+      algorithm
+        _ := getOptPath(p);
       then DAE.T_INTEGER(v);
 
     case (_,ClassInf.TYPE_REAL(),v,_,_)
@@ -5610,15 +5599,15 @@ algorithm
 
     // Insert function type construction here after checking input/output arguments? see Types.mo T_FUNCTION
     case (p,(ClassInf.FUNCTION()),vl,_,cl)
-      equation
-        funcattr = getFunctionAttributes(cl,vl,inheritedComment);
-        functype = Types.makeFunctionType(p, vl, funcattr);
+      algorithm
+        funcattr := getFunctionAttributes(cl,vl,inheritedComment);
+        functype := Types.makeFunctionType(p, vl, funcattr);
       then
         functype;
 
     case (p, ClassInf.ENUMERATION(), _, SOME(enumtype), _)
-      equation
-        enumtype = Types.makeEnumerationType(p, enumtype);
+      algorithm
+        enumtype := Types.makeEnumerationType(p, enumtype);
       then
         enumtype;
 
@@ -5630,7 +5619,7 @@ algorithm
       then DAE.T_SUBTYPE_BASIC(st,l,bc,NONE());
 
     else
-      equation
+      algorithm
         print("InstUtil.mktypeWithArrays failed\n");
       then fail();
 
@@ -5666,9 +5655,9 @@ algorithm
     case (_,DAE.NOMOD(),_,_) then ();
     case (_,DAE.MOD(_, _, {}, NONE()),_,_) then ();
     case (SCode.PROTECTED(),_,cref,_)
-      equation
-        str1 = ComponentReference.printComponentRefStr(cref);
-        str2 = Mod.prettyPrintMod(inMod, 0);
+      algorithm
+        str1 := ComponentReference.printComponentRefStr(cref);
+        str2 := Mod.prettyPrintMod(inMod, 0);
         Error.addSourceMessage(Error.MODIFY_PROTECTED, {str1, str2}, info);
       then
         ();
@@ -5731,20 +5720,20 @@ algorithm
       list<Values.Value> vals;
 
     case (DAE.T_ARRAY(dims = {dim}, ty = ty), _, _)
-      equation
-        int_dim = Expression.dimensionSize(dim);
-        (exp, val) = liftRecordBinding(ty, inExp, inValue);
-        ety = Types.simplifyType(inType);
-        expl = List.fill(exp, int_dim);
-        vals = List.fill(val, int_dim);
-        exp = DAE.ARRAY(ety, true, expl);
-        val = Values.ARRAY(vals, {int_dim});
+      algorithm
+        int_dim := Expression.dimensionSize(dim);
+        (exp, val) := liftRecordBinding(ty, inExp, inValue);
+        ety := Types.simplifyType(inType);
+        expl := List.fill(exp, int_dim);
+        vals := List.fill(val, int_dim);
+        exp := DAE.ARRAY(ety, true, expl);
+        val := Values.ARRAY(vals, {int_dim});
       then
         (exp, val);
 
     else
-      equation
-        false = Types.isArray(inType);
+      algorithm
+        false := Types.isArray(inType);
       then
         (inExp, inValue);
   end matchcontinue;
@@ -5780,13 +5769,13 @@ algorithm
     case(SCode.CLASS(name = name, info = info)) then (name, info);
     case(SCode.COMPONENT(name = name, info=info)) then (name, info);
     case(SCode.EXTENDS(baseClassPath=path, info = info))
-      equation
-        ret = AbsynUtil.pathString(path);
+      algorithm
+        ret := AbsynUtil.pathString(path);
       then
         (ret, info);
     case(SCode.IMPORT(imp = imp, info = info))
-      equation
-        name = AbsynUtil.printImportString(imp);
+      algorithm
+        name := AbsynUtil.printImportString(imp);
       then
         (name, info);
   end match;
@@ -5871,22 +5860,22 @@ algorithm
 
     // no sorting if we don't have any inner/outer in the model
     case _
-      equation
-        false = System.getHasInnerOuterDefinitions();
+      algorithm
+        false := System.getHasInnerOuterDefinitions();
       then
         inTplLstElementMod;
 
     // do sorting only if we have inner-outer
     case _
-      equation
+      algorithm
         // split into inner, inner outer and other elements
-        (innerElts, innerouterElts, otherElts) = splitInnerAndOtherTplLstElementMod(inTplLstElementMod);
+        (innerElts, innerouterElts, otherElts) := splitInnerAndOtherTplLstElementMod(inTplLstElementMod);
         // sort the inners to put Modelica types first!
-        (innerModelicaServices, innerModelica, innerOthers) = splitInners(innerElts, {}, {}, {});
+        (innerModelicaServices, innerModelica, innerOthers) := splitInners(innerElts, {}, {}, {});
 
         // put the inner elements first
         // put the innerouter elements second
-        sorted = listAppend(innerModelicaServices, listAppend(innerModelica, listAppend(innerOthers, listAppend(innerouterElts, otherElts))));
+        sorted := listAppend(innerModelicaServices, listAppend(innerModelica, listAppend(innerOthers, listAppend(innerouterElts, otherElts))));
       then
         sorted;
   end matchcontinue;
@@ -5919,26 +5908,26 @@ algorithm
       then (listReverse(inAcc1), listReverse(inAcc2), listReverse(inAcc3));
 
     case (em::rest, _, _, _)
-      equation
-        e = Util.tuple21(em);
-        Absyn.TPATH(p, _) = SCodeUtil.getComponentTypeSpec(e);
-        true = stringEq("ModelicaServices", AbsynUtil.pathFirstIdent(p));
-        (acc1, acc2, acc3) = splitInners(rest, em::inAcc1, inAcc2, inAcc3);
+      algorithm
+        e := Util.tuple21(em);
+        Absyn.TPATH(p, _) := SCodeUtil.getComponentTypeSpec(e);
+        true := stringEq("ModelicaServices", AbsynUtil.pathFirstIdent(p));
+        (acc1, acc2, acc3) := splitInners(rest, em::inAcc1, inAcc2, inAcc3);
       then
         (acc1, acc2, acc3);
 
     case (em::rest, _, _, _)
-      equation
-        e = Util.tuple21(em);
-        Absyn.TPATH(p, _) = SCodeUtil.getComponentTypeSpec(e);
-        true = stringEq("Modelica", AbsynUtil.pathFirstIdent(p));
-        (acc1, acc2, acc3) = splitInners(rest, inAcc1, em::inAcc2, inAcc3);
+      algorithm
+        e := Util.tuple21(em);
+        Absyn.TPATH(p, _) := SCodeUtil.getComponentTypeSpec(e);
+        true := stringEq("Modelica", AbsynUtil.pathFirstIdent(p));
+        (acc1, acc2, acc3) := splitInners(rest, inAcc1, em::inAcc2, inAcc3);
       then
         (acc1, acc2, acc3);
 
     case ((em as (_, _))::rest, _, _, _)
-      equation
-        (acc1, acc2, acc3) = splitInners(rest, inAcc1, inAcc2, em::inAcc3);
+      algorithm
+        (acc1, acc2, acc3) := splitInners(rest, inAcc1, inAcc2, em::inAcc3);
       then
         (acc1, acc2, acc3);
   end matchcontinue;
@@ -6001,11 +5990,11 @@ algorithm
       Absyn.InnerOuter io;
 
     case _
-      equation
-        (cdefImpElts,classextendsElts,extElts,innerComps,otherComps) = splitEltsInnerAndOther(elts);
+      algorithm
+        (cdefImpElts,classextendsElts,extElts,innerComps,otherComps) := splitEltsInnerAndOther(elts);
         // put inner elements first in the list of
         // elements so they are instantiated first!
-        comps = listAppend(innerComps, otherComps);
+        comps := listAppend(innerComps, otherComps);
       then
         (cdefImpElts,classextendsElts,extElts,comps);
   end match;
@@ -6089,36 +6078,36 @@ algorithm
 
     // class definitions with class extends
     case ((elt as SCode.CLASS(classDef = SCode.CLASS_EXTENDS()))::xs)
-      equation
-        (impElts,defElts,classextendsElts,filtered) = splitEltsNoComponents(xs);
+      algorithm
+        (impElts,defElts,classextendsElts,filtered) := splitEltsNoComponents(xs);
       then
         (impElts,defElts,elt::classextendsElts,filtered);
 
     // class definitions without class extends
     case (((elt as SCode.CLASS()) :: xs))
-      equation
-        (impElts,defElts,classextendsElts,filtered) = splitEltsNoComponents(xs);
+      algorithm
+        (impElts,defElts,classextendsElts,filtered) := splitEltsNoComponents(xs);
       then
         (impElts,elt::defElts,classextendsElts,elt::filtered);
 
     // imports
     case (((elt as SCode.IMPORT()) :: xs))
-      equation
-        (impElts,defElts,classextendsElts,filtered) = splitEltsNoComponents(xs);
+      algorithm
+        (impElts,defElts,classextendsElts,filtered) := splitEltsNoComponents(xs);
       then
         (elt::impElts,defElts,classextendsElts,filtered);
 
     // units
     case (((elt as SCode.DEFINEUNIT()) :: xs))
-      equation
-        (impElts,defElts,classextendsElts,filtered) = splitEltsNoComponents(xs);
+      algorithm
+        (impElts,defElts,classextendsElts,filtered) := splitEltsNoComponents(xs);
       then
         (impElts,elt::defElts,classextendsElts,elt::filtered);
 
     // extends and components elements
     case (elt::xs)
-      equation
-        (impElts,defElts,classextendsElts,filtered) = splitEltsNoComponents(xs);
+      algorithm
+        (impElts,defElts,classextendsElts,filtered) := splitEltsNoComponents(xs);
       then
         (impElts,defElts,classextendsElts,elt::filtered);
 
@@ -6151,51 +6140,51 @@ algorithm
 
     // class definitions with class extends
     case ((cdef as SCode.CLASS(classDef = SCode.CLASS_EXTENDS()))::xs)
-      equation
-        (cdefImpElts,classextendsElts,extElts,innerComps,otherComps) = splitEltsInnerAndOther(xs);
+      algorithm
+        (cdefImpElts,classextendsElts,extElts,innerComps,otherComps) := splitEltsInnerAndOther(xs);
       then
         (cdefImpElts,cdef :: classextendsElts,extElts,innerComps,otherComps);
 
     // class definitions without class extends
     case (((cdef as SCode.CLASS()) :: xs))
-      equation
-        (cdefImpElts,classextendsElts,extElts,innerComps,otherComps) = splitEltsInnerAndOther(xs);
+      algorithm
+        (cdefImpElts,classextendsElts,extElts,innerComps,otherComps) := splitEltsInnerAndOther(xs);
       then
         (cdef :: cdefImpElts,classextendsElts,extElts,innerComps,otherComps);
 
     // imports
     case (((imp as SCode.IMPORT()) :: xs))
-      equation
-        (cdefImpElts,classextendsElts,extElts,innerComps,otherComps) = splitEltsInnerAndOther(xs);
+      algorithm
+        (cdefImpElts,classextendsElts,extElts,innerComps,otherComps) := splitEltsInnerAndOther(xs);
       then
         (imp :: cdefImpElts,classextendsElts,extElts,innerComps,otherComps);
 
     // units
     case (((imp as SCode.DEFINEUNIT()) :: xs))
-      equation
-        (cdefImpElts,classextendsElts,extElts,innerComps,otherComps) = splitEltsInnerAndOther(xs);
+      algorithm
+        (cdefImpElts,classextendsElts,extElts,innerComps,otherComps) := splitEltsInnerAndOther(xs);
       then
         (imp :: cdefImpElts,classextendsElts,extElts,innerComps,otherComps);
 
     // extends elements
     case((ext as SCode.EXTENDS())::xs)
-      equation
-        (cdefImpElts,classextendsElts,extElts,innerComps,otherComps) = splitEltsInnerAndOther(xs);
+      algorithm
+        (cdefImpElts,classextendsElts,extElts,innerComps,otherComps) := splitEltsInnerAndOther(xs);
       then
         (cdefImpElts,classextendsElts,ext::extElts,innerComps,otherComps);
 
     // inner components
     case ((comp as SCode.COMPONENT(prefixes = SCode.PREFIXES(innerOuter = io))) :: xs)
-      equation
-        true = AbsynUtil.isInner(io);
-        (cdefImpElts,classextendsElts,extElts,innerComps,otherComps) = splitEltsInnerAndOther(xs);
+      algorithm
+        true := AbsynUtil.isInner(io);
+        (cdefImpElts,classextendsElts,extElts,innerComps,otherComps) := splitEltsInnerAndOther(xs);
       then
         (cdefImpElts,classextendsElts,extElts,comp::innerComps,otherComps);
 
     // any other components
     case ((comp as SCode.COMPONENT() ):: xs)
-      equation
-        (cdefImpElts,classextendsElts,extElts,innerComps,otherComps) = splitEltsInnerAndOther(xs);
+      algorithm
+        (cdefImpElts,classextendsElts,extElts,innerComps,otherComps) := splitEltsInnerAndOther(xs);
       then
         (cdefImpElts,classextendsElts,extElts,innerComps,comp::otherComps);
   end match;
@@ -6231,8 +6220,8 @@ algorithm
       then inComp::inCompElts;
     // all other append to the end.
     case (SCode.COMPONENT(), _)
-      equation
-        compElts = listAppend(inCompElts, {inComp});
+      algorithm
+        compElts := listAppend(inCompElts, {inComp});
       then compElts;
   end match;
 end orderComponents;
@@ -6252,14 +6241,14 @@ algorithm
     case ({}) then ({},{});
 
     case ((cdef as SCode.CLASS(classDef = SCode.CLASS_EXTENDS()))::xs)
-      equation
-        (classextendsElts,res) = splitClassExtendsElts(xs);
+      algorithm
+        (classextendsElts,res) := splitClassExtendsElts(xs);
       then
         (cdef :: classextendsElts, res);
 
     case cdef::xs
-      equation
-        (classextendsElts,res) = splitClassExtendsElts(xs);
+      algorithm
+        (classextendsElts,res) := splitClassExtendsElts(xs);
       then
         (classextendsElts, cdef :: res);
 
@@ -6293,12 +6282,12 @@ algorithm
     case(_,_,_,_,NONE(),_) then fail();
 
     case(cache, _, ih, pre, SOME(DAE.MOD(subModLst = lsm)), SCode.CLASS(name=str))
-      equation
+      algorithm
         // fprintln(Flags.INST_TRACE, "Mods in addClassdefsToEnv3: " + Mod.printModStr(mo) + " class name: " + str);
-        (mo2,_) = extractCorrectClassMod2(lsm,str,{});
+        (mo2,_) := extractCorrectClassMod2(lsm,str,{});
         // fprintln(Flags.INST_TRACE, "Mods in addClassdefsToEnv3 after extractCorrectClassMod2: " + Mod.printModStr(mo2) + " class name: " + str);
         // TODO: classinf below should be FQ
-        (cache, env2, ih, sele2 as SCode.CLASS() , _) =
+        (cache, env2, ih, sele2 as SCode.CLASS() , _) :=
         Inst.redeclareType(cache, env, ih, mo2, sele, pre, ClassInf.MODEL(Absyn.IDENT(str)), true, DAE.NOMOD());
       then
         (cache,env2,ih,sele2);
@@ -6326,14 +6315,14 @@ algorithm (omod,restmods) := match( smod , name , premod)
   case(DAE.NAMEMOD(id, mod) :: rest, _, _)
     guard
       stringEq(id, name)
-    equation
-      rest2 = listAppend(premod,rest);
+    algorithm
+      rest2 := listAppend(premod,rest);
     then
       (mod, rest2);
 
   case(sub::rest,_,_)
-    equation
-    (mod,rest2) = extractCorrectClassMod2(rest,name,premod);
+    algorithm
+    (mod,rest2) := extractCorrectClassMod2(rest,name,premod);
     then
       (mod, sub::rest2);
   end match;
@@ -6356,13 +6345,13 @@ algorithm
     case SCode.NOMOD() then mod;
 
     case SCode.REDECL(eachPrefix = each_, element = element1)
-      equation
-        element2 = traverseModAddFinal3(element1);
+      algorithm
+        element2 := traverseModAddFinal3(element1);
       then if referenceEq(element1,element2) then mod else SCode.REDECL(SCode.FINAL(),each_,element2);
 
     case(SCode.MOD(f,each_,subs1,eq,cmt,info))
-      equation
-        subs2 = List.mapCheckReferenceEq(subs1, traverseModAddFinal4);
+      algorithm
+        subs2 := List.mapCheckReferenceEq(subs1, traverseModAddFinal4);
       then
         if valueEq(SCode.FINAL(),f) and referenceEq(subs1, subs2) then mod else SCode.MOD(SCode.FINAL(),each_,subs2,eq,cmt,info);
 
@@ -6394,8 +6383,8 @@ algorithm
       SourceInfo info;
 
     case SCode.COMPONENT(name,prefixes,attr,tySpec,oldmod,cmt,cond,info)
-      equation
-        mod = traverseModAddFinal(oldmod);
+      algorithm
+        mod := traverseModAddFinal(oldmod);
       then
         if referenceEq(oldmod,mod) then inElement else SCode.COMPONENT(name,prefixes,attr,tySpec,mod,cmt,cond,info);
 
@@ -6403,8 +6392,8 @@ algorithm
     case SCode.CLASS() then inElement;
 
     case SCode.EXTENDS(p,vis,oldmod,ann,info)
-      equation
-        mod = traverseModAddFinal(oldmod);
+      algorithm
+        mod := traverseModAddFinal(oldmod);
       then if referenceEq(oldmod,mod) then inElement else SCode.EXTENDS(p,vis,mod,ann,info);
 
     else
@@ -6450,16 +6439,16 @@ algorithm
     list<Option<Absyn.Exp>> adims;
 
   case (_,_,_,mod,_) //If arrays are expanded, no action is needed
-    equation
-      true = Config.splitArrays();
+    algorithm
+      true := Config.splitArrays();
     then
       mod;
   case (_,_,_,_,{}) then inMod;
   case (cache,env,pre,mod,inst_dims)
-    equation
-      exps = List.map(inst_dims,Expression.dimensionsToExps);
-      aexps = List.mapList(exps, Expression.unelabExp);
-      mod2 = traverseModAddDims4(cache,env,pre,mod, aexps, true);
+    algorithm
+      exps := List.map(inst_dims,Expression.dimensionsToExps);
+      aexps := List.mapList(exps, Expression.unelabExp);
+      mod2 := traverseModAddDims4(cache,env,pre,mod, aexps, true);
 
     then
       mod2;
@@ -6489,9 +6478,9 @@ algorithm
     case (_,_,_,SCode.NOMOD(),_) then inMod;
     case (_,_,_,SCode.REDECL(),_) then inMod;  // Though redeclarations may need some processing as well
     case (cache,env,pre,SCode.MOD(eachPrefix = SCode.NOT_EACH()),exps)
-      equation
-        submods2 = traverseModAddDims5(cache,env,pre,inMod.subModLst,exps);
-        binding = insertSubsInBinding(inMod.binding, exps);
+      algorithm
+        submods2 := traverseModAddDims5(cache,env,pre,inMod.subModLst,exps);
+        binding := insertSubsInBinding(inMod.binding, exps);
       then
         SCode.MOD(inMod.finalPrefix, SCode.NOT_EACH(),submods2, binding, inMod.comment, inMod.info);
   end match;
@@ -6516,9 +6505,9 @@ algorithm
     Ident n;
     case (_,_,_,{},_) then {};
     case (cache,env,pre,SCode.NAMEMOD(n,mod)::smods,_)
-      equation
-        mod2 = traverseModAddDims4(cache,env,pre,mod,inExps,false);
-        smods2 = traverseModAddDims5(cache,env,pre,smods,inExps);
+      algorithm
+        mod2 := traverseModAddDims4(cache,env,pre,mod,inExps,false);
+        smods2 := traverseModAddDims5(cache,env,pre,smods,inExps);
       then
         SCode.NAMEMOD(n,mod2)::smods2;
   end match;
@@ -6538,11 +6527,11 @@ algorithm
 
     case (NONE(),_) then NONE();
     case (SOME(e), exps)
-      equation
-        vars = generateUnusedNamesLstCall(e,exps);
-        subs = List.mapList(vars,stringSub);
-        (e2,_) = AbsynUtil.traverseExp(e,AbsynUtil.crefInsertSubscriptLstLst, subs);
-        e2 = wrapIntoForLst(e2,vars,exps);
+      algorithm
+        vars := generateUnusedNamesLstCall(e,exps);
+        subs := List.mapList(vars,stringSub);
+        (e2,_) := AbsynUtil.traverseExp(e,AbsynUtil.crefInsertSubscriptLstLst, subs);
+        e2 := wrapIntoForLst(e2,vars,exps);
       then
         SOME(e2);
   end match;
@@ -6573,11 +6562,11 @@ algorithm
     list<Absyn.Exp> exps;
     case ({},i) then ({},i);
     case (_::exps,i)
-      equation
-        s = intString(i);
-        s = "i" + s;
-        i1 = i + 1;
-        (names,i2) = generateUnusedNames2(exps,i1);
+      algorithm
+        s := intString(i);
+        s := "i" + s;
+        i1 := i + 1;
+        (names,i2) := generateUnusedNames2(exps,i1);
       then
         (s::names,i2);
   end match;
@@ -6598,9 +6587,9 @@ algorithm
     list<Absyn.Exp> e0;
     case ({},i) then ({},i);
     case (e0::exps,i)
-      equation
-        (ns,i1) = generateUnusedNames2(e0,i);
-        (names,i2) = generateUnusedNamesLst(exps,i1);
+      algorithm
+        (ns,i1) := generateUnusedNames2(e0,i);
+        (names,i2) := generateUnusedNamesLst(exps,i1);
       then
         (ns::names,i2);
   end match;
@@ -6628,8 +6617,8 @@ algorithm
     list<Absyn.Subscript> subs;
     case {} then {};
     case n::names
-      equation
-        subs = stringsSubs(names);
+      algorithm
+        subs := stringsSubs(names);
       then
         Absyn.SUBSCRIPT(Absyn.CREF(Absyn.CREF_IDENT(n,{})))::subs;
   end match;
@@ -6662,8 +6651,8 @@ algorithm
     list<Absyn.Exp> ranges;
     case (e,{},{}) then e;
     case (e,n::names,r::ranges)
-      equation
-        e2 = wrapIntoFor(e, names, ranges);
+      algorithm
+        e2 := wrapIntoFor(e, names, ranges);
       then Absyn.CALL(Absyn.CREF_IDENT("array",{}), Absyn.FOR_ITER_FARG(e2, Absyn.COMBINE() ,{Absyn.ITERATOR(n,NONE(),SOME(Absyn.RANGE(Absyn.INTEGER(1),NONE(),r)))}),{});
   end match;
 end wrapIntoFor;
@@ -6683,9 +6672,9 @@ algorithm
     list<list<Absyn.Exp>> ranges;
     case (e,{},{}) then e;
     case (e,n::names,r::ranges)
-      equation
-        e2 = wrapIntoForLst(e, names, ranges);
-        e3 = wrapIntoFor(e2, n, r);
+      algorithm
+        e2 := wrapIntoForLst(e, names, ranges);
+        e3 := wrapIntoFor(e2, n, r);
       then
         e3;
   end match;
@@ -6718,8 +6707,8 @@ algorithm
       FCore.Cache cache;
 
     case SCode.COMPONENT(condition = SOME(cond_exp))
-      equation
-        (cond_val, cache) = instConditionalDeclaration(inCache, inEnv, cond_exp, prefix, info);
+      algorithm
+        (cond_val, cache) := instConditionalDeclaration(inCache, inEnv, cond_exp, prefix, info);
       then
         (SOME(cond_val), cache);
 
@@ -6766,7 +6755,7 @@ algorithm
   outIsConditional := match(val)
     case Values.BOOL(b) then b;
     case Values.EMPTY() // Print an error if the expression has no value.
-      equation
+      algorithm
         if not Config.getGraphicsExpMode() then
           Error.addSourceMessage(Error.CONDITIONAL_EXP_WITHOUT_VALUE,
             {Dump.printExpStr(inCondition)}, inInfo);
@@ -6826,8 +6815,8 @@ algorithm
       DAE.Exp e;
 
     case(false,e,_) then e;
-    case(true,_,SOME(val)) equation
-      e = ValuesUtil.valueExp(val);
+    case(true,_,SOME(val)) algorithm
+      e := ValuesUtil.valueExp(val);
     then e;
     case(_,e,_) then e;
   end matchcontinue;
@@ -6870,9 +6859,7 @@ algorithm
     case (_,NONE(), _) then v1;
     case(Absyn.BIDIR(),SOME(SCode.ATTR(direction=v2)), _) then v2;
     case (_,SOME(SCode.ATTR(direction=Absyn.BIDIR())), _) then v1;
-    case(_,SOME(SCode.ATTR(direction=v2)), _)
-      equation
-        equality(v1 = v2);
+    case(_,SOME(SCode.ATTR(direction=v2)), _) guard valueEq(v1, v2)
       then v1;
 
     else
@@ -6908,9 +6895,9 @@ algorithm
     // type ReferenceAngle extends .Modelica.SIunits.Angle; some equalityConstraint function end ReferenceAngle;
     // used like: ReferenceAngle[x] theta in a connector
     case (DAE.T_SUBTYPE_BASIC(complexType = ty), _)
-      equation
+      algorithm
         // check if it has any dimensions
-        false = listEmpty(Types.getDimensions(ty));
+        false := listEmpty(Types.getDimensions(ty));
       then
         ty;
 
@@ -7142,14 +7129,14 @@ algorithm
       list<SCode.SubMod> mods1,mods2,mods;
       SourceInfo info;
     case (SCode.COMMENT(SOME(SCode.ANNOTATION(SCode.MOD(subModLst=mods1,info=info))),str1),SCode.COMMENT(SOME(SCode.ANNOTATION(SCode.MOD(subModLst=mods2))),str2))
-      equation
-        str = if isSome(str1) then str1 else str2;
-        mods = listAppend(mods1,mods2);
+      algorithm
+        str := if isSome(str1) then str1 else str2;
+        mods := listAppend(mods1,mods2);
       then SCode.COMMENT(SOME(SCode.ANNOTATION(SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),mods,NONE(),NONE(),info))),str);
     case (SCode.COMMENT(ann1,str1),SCode.COMMENT(ann2,str2))
-      equation
-        str = if isSome(str1) then str1 else str2;
-        ann = if isSome(ann1) then ann1 else ann2;
+      algorithm
+        str := if isSome(str1) then str1 else str2;
+        ann := if isSome(ann1) then ann1 else ann2;
       then SCode.COMMENT(ann,str);
   end matchcontinue;
 end mergeClassComments;
@@ -7193,32 +7180,32 @@ algorithm
 
   attr := matchcontinue fres
     case SCode.FR_EXTERNAL_FUNCTION(purity)
-      equation
-        isImpure = AbsynUtil.isImpure(purity);
-        inVars = List.select(vl,Types.isInputVar);
-        outVars = List.select(vl,Types.isOutputVar);
-        name = SCodeUtil.isBuiltinFunction(cl,List.map(inVars,Types.getVarName),List.map(outVars,Types.getVarName));
-        inlineType = commentIsInlineFunc(inheritedComment);
-        unboxArgs = SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment, "__OpenModelica_UnboxArguments");
+      algorithm
+        isImpure := AbsynUtil.isImpure(purity);
+        inVars := List.select(vl,Types.isInputVar);
+        outVars := List.select(vl,Types.isOutputVar);
+        name := SCodeUtil.isBuiltinFunction(cl,List.map(inVars,Types.getVarName),List.map(outVars,Types.getVarName));
+        inlineType := commentIsInlineFunc(inheritedComment);
+        unboxArgs := SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment, "__OpenModelica_UnboxArguments");
       then (DAE.FUNCTION_ATTRIBUTES(inlineType,daePurity,false,DAE.FUNCTION_BUILTIN(SOME(name), unboxArgs),DAE.FP_NON_PARALLEL()));
 
     //parallel functions: There are some builtin functions.
     case SCode.FR_PARALLEL_FUNCTION()
-      equation
-        inVars = List.select(vl,Types.isInputVar);
-        outVars = List.select(vl,Types.isOutputVar);
-        name = SCodeUtil.isBuiltinFunction(cl,List.map(inVars,Types.getVarName),List.map(outVars,Types.getVarName));
-        inlineType = commentIsInlineFunc(inheritedComment);
-        isOpenModelicaPure = not SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_Impure");
-        unboxArgs = SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment, "__OpenModelica_UnboxArguments");
+      algorithm
+        inVars := List.select(vl,Types.isInputVar);
+        outVars := List.select(vl,Types.isOutputVar);
+        name := SCodeUtil.isBuiltinFunction(cl,List.map(inVars,Types.getVarName),List.map(outVars,Types.getVarName));
+        inlineType := commentIsInlineFunc(inheritedComment);
+        isOpenModelicaPure := not SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_Impure");
+        unboxArgs := SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment, "__OpenModelica_UnboxArguments");
       then (DAE.FUNCTION_ATTRIBUTES(inlineType,daePurity,false,DAE.FUNCTION_BUILTIN(SOME(name), unboxArgs),DAE.FP_PARALLEL_FUNCTION()));
 
     //parallel functions: non-builtin
     case SCode.FR_PARALLEL_FUNCTION()
-      equation
-        inlineType = commentIsInlineFunc(inheritedComment);
-        isBuiltin = if SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_BuiltinPtr") then DAE.FUNCTION_BUILTIN_PTR() else DAE.FUNCTION_NOT_BUILTIN();
-        isOpenModelicaPure = not SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_Impure");
+      algorithm
+        inlineType := commentIsInlineFunc(inheritedComment);
+        isBuiltin := if SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_BuiltinPtr") then DAE.FUNCTION_BUILTIN_PTR() else DAE.FUNCTION_NOT_BUILTIN();
+        isOpenModelicaPure := not SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_Impure");
       then DAE.FUNCTION_ATTRIBUTES(inlineType,daePurity,false,isBuiltin,DAE.FP_PARALLEL_FUNCTION());
 
     //kernel functions: never builtin and never inlined.
@@ -7279,7 +7266,7 @@ algorithm
 
     case (DAE.ALGORITHM(algorithm_= DAE.ALGORITHM_STMTS({DAE.STMT_ASSIGN(
         exp = DAE.METARECORDCALL())})), _, _)
-      equation
+      algorithm
         // We need to know the inlineType to make a good notification
         // Error.addSourceMessage(true,Error.COMPILER_NOTIFICATION, {"metarecordcall"}, info);
       then ();
@@ -7310,11 +7297,11 @@ algorithm
     case ({}) then "";
 
     case ((e,m)::rest)
-      equation
-        s1 = SCodeDump.unparseElementStr(e,SCodeDump.defaultOptions);
-        s2 = Mod.printModStr(m);
-        s3 = printElementAndModList(rest);
-        s = "Element:\n" + s1 + "\nModifier: " + s2 + "\n" + s3;
+      algorithm
+        s1 := SCodeDump.unparseElementStr(e,SCodeDump.defaultOptions);
+        s2 := Mod.printModStr(m);
+        s3 := printElementAndModList(rest);
+        s := "Element:\n" + s1 + "\nModifier: " + s2 + "\n" + s3;
       then
         s;
 
@@ -7337,15 +7324,15 @@ algorithm
 
     // components
     case ((e as SCode.COMPONENT(),m)::rest)
-      equation
-        (clsdefs, compdefs) = splitClassDefsAndComponents(rest);
+      algorithm
+        (clsdefs, compdefs) := splitClassDefsAndComponents(rest);
       then
         (clsdefs, (e,m)::compdefs);
 
     // classes and others
     case ((e,m)::rest)
-      equation
-        (clsdefs, compdefs) = splitClassDefsAndComponents(rest);
+      algorithm
+        (clsdefs, compdefs) := splitClassDefsAndComponents(rest);
       then
         ((e,m)::clsdefs, compdefs);
 
@@ -7372,8 +7359,8 @@ algorithm
     // if the thing we got from merging is a redeclare
     // for a component of a basic type, skip it!
     case (_, _, _)
-      equation
-        true = redeclareBasicType(fromMerging);
+      algorithm
+        true := redeclareBasicType(fromMerging);
       then
         (fromRedeclareType, fromRedeclareType);
 
@@ -7394,20 +7381,20 @@ algorithm
       Absyn.Path path;
     // you cannot redeclare a basic type, only the properties and the binding, i.e.
     // redeclare constant Boolean standardOrderComponents = true
-    case DAE.REDECL(element = SCode.COMPONENT(typeSpec=Absyn.TPATH(path=path))) equation
-      true = Config.synchronousFeaturesAllowed();
+    case DAE.REDECL(element = SCode.COMPONENT(typeSpec=Absyn.TPATH(path=path))) algorithm
+      true := Config.synchronousFeaturesAllowed();
 
-        name = AbsynUtil.pathFirstIdent(path);
+        name := AbsynUtil.pathFirstIdent(path);
       // BTH
-      true = listMember(name, {"Real", "Integer", "Boolean", "String", "Clock"});
+      true := listMember(name, {"Real", "Integer", "Boolean", "String", "Clock"});
     then true;
 
-    case DAE.REDECL(element = SCode.COMPONENT(typeSpec=Absyn.TPATH(path=path))) equation
-      false = Config.synchronousFeaturesAllowed();
+    case DAE.REDECL(element = SCode.COMPONENT(typeSpec=Absyn.TPATH(path=path))) algorithm
+      false := Config.synchronousFeaturesAllowed();
 
-      name = AbsynUtil.pathFirstIdent(path);
+      name := AbsynUtil.pathFirstIdent(path);
       // BTH
-        true = listMember(name, {"Real", "Integer", "Boolean", "String"});
+        true := listMember(name, {"Real", "Integer", "Boolean", "String"});
     then true;
 
     else false;
@@ -7434,16 +7421,16 @@ algorithm
     // No algorithm section; allowed
     case (_,{},NONE(),_,_,_) then listReverse(acc);
     case (_,{},SOME(DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),source)),_,_,_)
-      equation
+      algorithm
         // Adding tail recursion optimization
-        stmts = optimizeLastStatementTail(path,stmts,listReverse(invars),listReverse(outvars),{});
+        stmts := optimizeLastStatementTail(path,stmts,listReverse(invars),listReverse(outvars),{});
       then listReverse(DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),source)::acc);
       // Remove empty sections
     case (_,(DAE.ALGORITHM(algorithm_=DAE.ALGORITHM_STMTS({})))::elts,_,_,_,_)
       then optimizeFunctionCheckForLocals(path,elts,oalg,acc,invars,outvars);
     case (_,(elt1 as DAE.ALGORITHM(source=source))::elts,SOME(elt2),_,_,_)
-      equation
-        str = AbsynUtil.pathString(path);
+      algorithm
+        str := AbsynUtil.pathString(path);
         if not Config.acceptMetaModelicaGrammar() then
           Error.addSourceMessage(Error.FUNCTION_MULTIPLE_ALGORITHM,{str},ElementSource.getElementSourceFileInfo(source));
         end if;
@@ -7472,8 +7459,8 @@ algorithm
       list<DAE.Statement> stmts;
 
     case (_,{stmt},_,_,_)
-      equation
-        stmt = optimizeStatementTail(path,stmt,invars,outvars);
+      algorithm
+        stmt := optimizeStatementTail(path,stmt,invars,outvars);
       then listReverse(stmt::acc);
     case (_,stmt::stmts,_,_,_) then optimizeLastStatementTail(path,stmts,invars,outvars,stmt::acc);
   end match;
@@ -7499,26 +7486,26 @@ algorithm
       DAE.Else else_;
 
     case (_,DAE.STMT_ASSIGN(tp,lhs,rhs,source),_,_)
-      equation
-        name = Expression.simpleCrefName(lhs);
-        rhs = optimizeStatementTail2(path,rhs,{name},invars,outvars,source);
-        stmt = if Expression.isTailCall(rhs) then DAE.STMT_NORETCALL(rhs,source) else DAE.STMT_ASSIGN(tp,lhs,rhs,source);
+      algorithm
+        name := Expression.simpleCrefName(lhs);
+        rhs := optimizeStatementTail2(path,rhs,{name},invars,outvars,source);
+        stmt := if Expression.isTailCall(rhs) then DAE.STMT_NORETCALL(rhs,source) else DAE.STMT_ASSIGN(tp,lhs,rhs,source);
       then stmt;
     case (_,DAE.STMT_TUPLE_ASSIGN(tp,lhsLst,rhs,source),_,_)
-      equation
-        lhsNames = List.map(lhsLst,Expression.simpleCrefName);
-        rhs = optimizeStatementTail2(path,rhs,lhsNames,invars,outvars,source);
-        stmt = if Expression.isTailCall(rhs) then DAE.STMT_NORETCALL(rhs,source) else DAE.STMT_TUPLE_ASSIGN(tp,lhsLst,rhs,source);
+      algorithm
+        lhsNames := List.map(lhsLst,Expression.simpleCrefName);
+        rhs := optimizeStatementTail2(path,rhs,lhsNames,invars,outvars,source);
+        stmt := if Expression.isTailCall(rhs) then DAE.STMT_NORETCALL(rhs,source) else DAE.STMT_TUPLE_ASSIGN(tp,lhsLst,rhs,source);
       then stmt;
     case (_,DAE.STMT_IF(cond,stmts,else_,source),_,_)
-      equation
-        stmts = optimizeLastStatementTail(path,stmts,invars,outvars,{});
-        else_ = optimizeElseTail(path,else_,invars,outvars);
+      algorithm
+        stmts := optimizeLastStatementTail(path,stmts,invars,outvars,{});
+        else_ := optimizeElseTail(path,else_,invars,outvars);
       then DAE.STMT_IF(cond,stmts,else_,source);
     case (_,DAE.STMT_NORETCALL(rhs,source),_,{})
-      equation
-        rhs = optimizeStatementTail2(path,rhs,{},invars,{},source);
-        stmt = DAE.STMT_NORETCALL(rhs,source);
+      algorithm
+        rhs := optimizeStatementTail2(path,rhs,{},invars,{},source);
+        stmt := DAE.STMT_NORETCALL(rhs,source);
       then stmt;
     else inStmt;
   end matchcontinue;
@@ -7538,14 +7525,14 @@ algorithm
       DAE.Else else_;
 
     case (_,DAE.ELSEIF(cond,stmts,else_),_,_)
-      equation
-        stmts = optimizeLastStatementTail(path,stmts,invars,outvars,{});
-        else_ = optimizeElseTail(path,else_,invars,outvars);
+      algorithm
+        stmts := optimizeLastStatementTail(path,stmts,invars,outvars,{});
+        else_ := optimizeElseTail(path,else_,invars,outvars);
       then DAE.ELSEIF(cond,stmts,else_);
 
     case (_,DAE.ELSE(stmts),_,_)
-      equation
-        stmts = optimizeLastStatementTail(path,stmts,invars,outvars,{});
+      algorithm
+        stmts := optimizeLastStatementTail(path,stmts,invars,outvars,{});
       then DAE.ELSE(stmts);
 
     else inElse;
@@ -7590,24 +7577,24 @@ algorithm
       DAE.Exp call;
 
     case (path1,call as DAE.CALL(path=path2,attr=attr as DAE.CALL_ATTR(tailCall=DAE.NO_TAIL())),_,_)
-      equation
-        true = AbsynUtil.pathEqual(path1,path2);
-        str = "Tail recursion of: " + ExpressionDump.printExpStr(rhs) + " with input vars: " + stringDelimitList(vars,",");
+      algorithm
+        true := AbsynUtil.pathEqual(path1,path2);
+        str := "Tail recursion of: " + ExpressionDump.printExpStr(rhs) + " with input vars: " + stringDelimitList(vars,",");
         if Flags.isSet(Flags.TAIL) then
           Error.addSourceMessage(Error.COMPILER_NOTIFICATION,{str},ElementSource.getElementSourceFileInfo(source));
         end if;
-        attr.tailCall = DAE.TAIL(vars,lhsVars);
-        call.attr = attr;
+        attr.tailCall := DAE.TAIL(vars,lhsVars);
+        call.attr := attr;
       then (call,true);
     case (_,DAE.IFEXP(e1,e2,e3),_,_)
-      equation
-        (e2,b1) = optimizeStatementTail3(path,e2,vars,lhsVars,source);
-        (e3,b2) = optimizeStatementTail3(path,e3,vars,lhsVars,source);
-        true = b1 or b2;
+      algorithm
+        (e2,b1) := optimizeStatementTail3(path,e2,vars,lhsVars,source);
+        (e3,b2) := optimizeStatementTail3(path,e3,vars,lhsVars,source);
+        true := b1 or b2;
       then (DAE.IFEXP(e1,e2,e3),true);
     case (_,DAE.MATCHEXPRESSION(matchType as DAE.MATCH(_) /*TODO:matchcontinue*/,inputs,aliases,localDecls,cases,et),_,_)
-      equation
-        cases = optimizeStatementTailMatchCases(path,cases,false,{},vars,lhsVars,source);
+      algorithm
+        cases := optimizeStatementTailMatchCases(path,cases,false,{},vars,lhsVars,source);
       then (DAE.MATCHEXPRESSION(matchType,inputs,aliases,localDecls,cases,et),true);
     else (rhs,false);
   end matchcontinue;
@@ -7637,16 +7624,16 @@ algorithm
 
     case (_,{},true,acc,_,_) then listReverse(acc);
     case (_,DAE.CASE(patterns,patternGuard,localDecls,body,SOME(exp),resultInfo,jump,info)::cases,_,acc,_,_)
-      equation
-        (exp,true) = optimizeStatementTail3(path,exp,vars,lhsVars,source);
-        case_ = DAE.CASE(patterns,patternGuard,localDecls,body,SOME(exp),resultInfo,jump,info);
+      algorithm
+        (exp,true) := optimizeStatementTail3(path,exp,vars,lhsVars,source);
+        case_ := DAE.CASE(patterns,patternGuard,localDecls,body,SOME(exp),resultInfo,jump,info);
       then optimizeStatementTailMatchCases(path,cases,true,case_::acc,vars,lhsVars,source);
     case (_,DAE.CASE(patterns,patternGuard,localDecls,body,SOME(DAE.TUPLE({})),resultInfo,jump,info)::cases,_,acc,_,_)
-      equation
-        DAE.STMT_NORETCALL(exp,sourceStmt) = List.last(body);
-        (exp,true) = optimizeStatementTail3(path,exp,vars,lhsVars,source);
-        body = List.set(body,listLength(body),DAE.STMT_NORETCALL(exp,sourceStmt));
-        case_ = DAE.CASE(patterns,patternGuard,localDecls,body,SOME(DAE.TUPLE({})),resultInfo,jump,info);
+      algorithm
+        DAE.STMT_NORETCALL(exp,sourceStmt) := List.last(body);
+        (exp,true) := optimizeStatementTail3(path,exp,vars,lhsVars,source);
+        body := List.set(body,listLength(body),DAE.STMT_NORETCALL(exp,sourceStmt));
+        case_ := DAE.CASE(patterns,patternGuard,localDecls,body,SOME(DAE.TUPLE({})),resultInfo,jump,info);
       then optimizeStatementTailMatchCases(path,cases,true,case_::acc,vars,lhsVars,source);
     case (_,case_::cases,_,acc,_,_)
       then optimizeStatementTailMatchCases(path,cases,changed,case_::acc,vars,lhsVars,source);
@@ -7686,8 +7673,8 @@ algorithm
       Absyn.Path p;
       Absyn.Program program;
     case (FCore.CACHE(ie,f,(ht,crs::crss),p),_)
-      equation
-        ht = prefixAndAddCrefsToHt(cache,ht,pre,crs);
+      algorithm
+        ht := prefixAndAddCrefsToHt(cache,ht,pre,crs);
       then FCore.CACHE(ie,f,(ht,crss),p);
     case (FCore.CACHE(_,_,(_,{}),_),_) then cache;
     case (FCore.NO_CACHE(),_) then cache;
@@ -7725,8 +7712,8 @@ algorithm
   _ := matchcontinue (elts,info)
     local
     case (_,_)
-      equation
-        _ = checkFunctionDefUse2(elts,NONE(),{},{},info);
+      algorithm
+        _ := checkFunctionDefUse2(elts,NONE(),{},{},info);
       then ();
     else
       equation
@@ -7759,41 +7746,41 @@ algorithm
       //  unbound = List.fold1(outputs, checkOutputDefUse, inInfo, unbound);
       then inUnbound;
     case ({},SOME(stmts),unbound,outputs,_)
-      equation
-        ((_,_,unbound)) = List.fold1(stmts, checkFunctionDefUseStmt, false, (false,false,unbound));
-        unbound = List.fold1(outputs, checkOutputDefUse, inInfo, unbound);
+      algorithm
+        ((_,_,unbound)) := List.fold1(stmts, checkFunctionDefUseStmt, false, (false,false,unbound));
+        unbound := List.fold1(outputs, checkOutputDefUse, inInfo, unbound);
       then unbound;
     case (DAE.VAR(direction=DAE.INPUT())::rest,_,unbound,_,_)
-      equation
-        unbound = checkFunctionDefUse2(rest,alg,unbound,inOutputs,inInfo);
+      algorithm
+        unbound := checkFunctionDefUse2(rest,alg,unbound,inOutputs,inInfo);
       then unbound;
     case (DAE.VAR(direction=dir,componentRef=DAE.CREF_IDENT(ident=name),ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=vars),dims=dims,binding=NONE())::rest,_,unbound,_,_)
-      equation
-        vars = List.filterOnTrue(vars, Types.varIsVariable);
+      algorithm
+        vars := List.filterOnTrue(vars, Types.varIsVariable);
         // TODO: We filter out parameters at the moment. I'm unsure if this is correct. Might be that this is an automatic error...
-        names = List.map1r(List.map(vars, Types.getVarName), stringAppend, name + ".");
+        names := List.map1r(List.map(vars, Types.getVarName), stringAppend, name + ".");
         // print("for record: " + stringDelimitList(names,",") + "\n");
         // Arrays with unknown bounds (size(cr,1), etc) are treated as initialized because they may have 0 dimensions checked for in the code
-        outNames = if DAEUtil.varDirectionEqual(dir,DAE.OUTPUT()) then names else {};
-        names = if Expression.dimensionsKnownAndNonZero(dims) then names else {};
-        unbound = listAppend(names,unbound);
-        outputs = listAppend(outNames,inOutputs);
-        unbound = checkFunctionDefUse2(rest,alg,unbound,outputs,inInfo);
+        outNames := if DAEUtil.varDirectionEqual(dir,DAE.OUTPUT()) then names else {};
+        names := if Expression.dimensionsKnownAndNonZero(dims) then names else {};
+        unbound := listAppend(names,unbound);
+        outputs := listAppend(outNames,inOutputs);
+        unbound := checkFunctionDefUse2(rest,alg,unbound,outputs,inInfo);
       then unbound;
     case (DAE.VAR(direction=dir,componentRef=DAE.CREF_IDENT(ident=name),dims=dims,binding=NONE())::rest,_,unbound,_,_)
-      equation
+      algorithm
         // Arrays with unknown bounds (size(cr,1), etc) are treated as initialized because they may have 0 dimensions checked for in the code
-        unbound = List.consOnTrue(Expression.dimensionsKnownAndNonZero(dims),name,unbound);
-        outputs = List.consOnTrue(DAEUtil.varDirectionEqual(dir,DAE.OUTPUT()),name,inOutputs);
-        unbound = checkFunctionDefUse2(rest,alg,unbound,outputs,inInfo);
+        unbound := List.consOnTrue(Expression.dimensionsKnownAndNonZero(dims),name,unbound);
+        outputs := List.consOnTrue(DAEUtil.varDirectionEqual(dir,DAE.OUTPUT()),name,inOutputs);
+        unbound := checkFunctionDefUse2(rest,alg,unbound,outputs,inInfo);
       then unbound;
     case (DAE.ALGORITHM(algorithm_=DAE.ALGORITHM_STMTS(stmts))::rest,NONE(),unbound,_,_)
-      equation
-        unbound = checkFunctionDefUse2(rest,SOME(stmts),unbound,inOutputs,inInfo);
+      algorithm
+        unbound := checkFunctionDefUse2(rest,SOME(stmts),unbound,inOutputs,inInfo);
       then unbound;
     case (_::rest,_,unbound,_,_)
-      equation
-        unbound = checkFunctionDefUse2(rest,alg,unbound,inOutputs,inInfo);
+      algorithm
+        unbound := checkFunctionDefUse2(rest,alg,unbound,inOutputs,inInfo);
       then unbound;
   end match;
 end checkFunctionDefUse2;
@@ -7833,87 +7820,87 @@ algorithm
 
     case (_,_,(true,_,_)) then inUnbound;
     case (_,_,(false,true,_))
-      equation
-        info = ElementSource.getElementSourceFileInfo(ElementSource.getStatementSource(inStmt));
+      algorithm
+        info := ElementSource.getElementSourceFileInfo(ElementSource.getStatementSource(inStmt));
         Error.addSourceMessage(Error.INTERNAL_ERROR,
           {"InstUtil.checkFunctionDefUseStmt failed"}, info);
       then fail();
     case (DAE.STMT_ASSIGN(exp1=lhs,exp=rhs,source=source),_,(_,_,unbound))
-      equation
-        info = ElementSource.getElementSourceFileInfo(source);
-        (_,(unbound,_)) = Expression.traverseExpTopDown(rhs,findUnboundVariableUse,(unbound,info));
+      algorithm
+        info := ElementSource.getElementSourceFileInfo(source);
+        (_,(unbound,_)) := Expression.traverseExpTopDown(rhs,findUnboundVariableUse,(unbound,info));
         // Traverse subs too! arr[x] := ..., x unbound
-        unbound = traverseCrefSubs(lhs,info,unbound);
-        unbound = crefFiltering(lhs,unbound);
+        unbound := traverseCrefSubs(lhs,info,unbound);
+        unbound := crefFiltering(lhs,unbound);
       then ((false,false,unbound));
     case (DAE.STMT_TUPLE_ASSIGN(expExpLst=lhss,exp=rhs,source=source),_,(_,_,unbound))
-      equation
-        info = ElementSource.getElementSourceFileInfo(source);
-        (_,(unbound,_)) = Expression.traverseExpTopDown(rhs,findUnboundVariableUse,(unbound,info));
+      algorithm
+        info := ElementSource.getElementSourceFileInfo(source);
+        (_,(unbound,_)) := Expression.traverseExpTopDown(rhs,findUnboundVariableUse,(unbound,info));
         // Traverse subs too! arr[x] := ..., x unbound
-        unbound = List.fold1(lhss,traverseCrefSubs,info,unbound);
-        unbound = List.fold(lhss,crefFiltering,unbound);
+        unbound := List.fold1(lhss,traverseCrefSubs,info,unbound);
+        unbound := List.fold(lhss,crefFiltering,unbound);
       then ((false,false,unbound));
     case (DAE.STMT_ASSIGN_ARR(lhs=lhs,exp=rhs,source=source),_,(_,_,unbound))
-      equation
-        info = ElementSource.getElementSourceFileInfo(source);
-        (_,(unbound,_)) = Expression.traverseExpTopDown(rhs,findUnboundVariableUse,(unbound,info));
+      algorithm
+        info := ElementSource.getElementSourceFileInfo(source);
+        (_,(unbound,_)) := Expression.traverseExpTopDown(rhs,findUnboundVariableUse,(unbound,info));
         // Traverse subs too! arr[x] := ..., x unbound
-        unbound = traverseCrefSubs(lhs,info,unbound);
-        unbound = crefFiltering(lhs,unbound);
+        unbound := traverseCrefSubs(lhs,info,unbound);
+        unbound := crefFiltering(lhs,unbound);
       then ((false,false,unbound));
     case (DAE.STMT_IF(exp,stmts,else_,source),_,(_,_,unbound))
-      equation
-        info = ElementSource.getElementSourceFileInfo(source);
-        ((b1,b2,unbound)) = checkFunctionDefUseElse(DAE.ELSEIF(exp,stmts,else_),unbound,inLoop,info);
+      algorithm
+        info := ElementSource.getElementSourceFileInfo(source);
+        ((b1,b2,unbound)) := checkFunctionDefUseElse(DAE.ELSEIF(exp,stmts,else_),unbound,inLoop,info);
       then ((b1,b2,unbound));
     case (DAE.STMT_FOR(iter=iter,range=exp,statementLst=stmts,source=source),_,(_,_,unbound))
-      equation
-        info = ElementSource.getElementSourceFileInfo(source);
-        unbound = List.filter1OnTrue(unbound,Util.stringNotEqual,iter);
-        (_,(unbound,_)) = Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
-        ((_,b,unbound)) = List.fold1(stmts, checkFunctionDefUseStmt, true, (false,false,unbound));
+      algorithm
+        info := ElementSource.getElementSourceFileInfo(source);
+        unbound := List.filter1OnTrue(unbound,Util.stringNotEqual,iter);
+        (_,(unbound,_)) := Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
+        ((_,b,unbound)) := List.fold1(stmts, checkFunctionDefUseStmt, true, (false,false,unbound));
       then ((b,b,unbound));
     case (DAE.STMT_PARFOR(iter=iter,range=exp,statementLst=stmts,source=source),_,(_,_,unbound))
-      equation
-        info = ElementSource.getElementSourceFileInfo(source);
-        unbound = List.filter1OnTrue(unbound,Util.stringNotEqual,iter);
-        (_,(unbound,_)) = Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
-        ((_,b,unbound)) = List.fold1(stmts, checkFunctionDefUseStmt, true, (false,false,unbound));
+      algorithm
+        info := ElementSource.getElementSourceFileInfo(source);
+        unbound := List.filter1OnTrue(unbound,Util.stringNotEqual,iter);
+        (_,(unbound,_)) := Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
+        ((_,b,unbound)) := List.fold1(stmts, checkFunctionDefUseStmt, true, (false,false,unbound));
       then ((b,b,unbound));
     case (DAE.STMT_WHILE(exp=exp,statementLst=stmts,source=source),_,(_,_,unbound))
-      equation
-        info = ElementSource.getElementSourceFileInfo(source);
-        (_,(unbound,_)) = Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
-        ((_,b,unbound)) = List.fold1(stmts, checkFunctionDefUseStmt, true, (false,false,unbound));
+      algorithm
+        info := ElementSource.getElementSourceFileInfo(source);
+        (_,(unbound,_)) := Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
+        ((_,b,unbound)) := List.fold1(stmts, checkFunctionDefUseStmt, true, (false,false,unbound));
       then ((b,b,unbound));
     case (DAE.STMT_ASSERT(cond=DAE.BCONST(false)),_,(_,_,_)) // TODO: Re-write these earlier from assert(false,msg) to terminate(msg)
       then ((true,true,{}));
     case (DAE.STMT_ASSERT(cond=exp1,msg=exp2,source=source),_,(_,_,unbound))
-      equation
-        info = ElementSource.getElementSourceFileInfo(source);
-        (_,(unbound,_)) = Expression.traverseExpTopDown(exp1,findUnboundVariableUse,(unbound,info));
-        (_,(unbound,_)) = Expression.traverseExpTopDown(exp2,findUnboundVariableUse,(unbound,info));
+      algorithm
+        info := ElementSource.getElementSourceFileInfo(source);
+        (_,(unbound,_)) := Expression.traverseExpTopDown(exp1,findUnboundVariableUse,(unbound,info));
+        (_,(unbound,_)) := Expression.traverseExpTopDown(exp2,findUnboundVariableUse,(unbound,info));
       then ((false,false,unbound));
     case (DAE.STMT_TERMINATE(msg=exp,source=source),_,(_,_,unbound))
-      equation
-        info = ElementSource.getElementSourceFileInfo(source);
-        (_,(unbound,_)) = Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
+      algorithm
+        info := ElementSource.getElementSourceFileInfo(source);
+        (_,(unbound,_)) := Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
       then ((true,true,unbound));
     case (DAE.STMT_NORETCALL(exp=DAE.CALL(path=Absyn.IDENT("fail"),expLst={})),_,(_,_,_))
       then ((true,true,{}));
     case (DAE.STMT_NORETCALL(exp=exp,source=source),_,(_,_,unbound))
-      equation
-        info = ElementSource.getElementSourceFileInfo(source);
-        (_,(unbound,_)) = Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
+      algorithm
+        info := ElementSource.getElementSourceFileInfo(source);
+        (_,(unbound,_)) := Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
       then ((false,false,unbound));
     case (DAE.STMT_BREAK(),_,(_,_,unbound)) then ((true,false,unbound));
     case (DAE.STMT_RETURN(),_,(_,_,unbound)) then ((true,true,unbound));
     case (DAE.STMT_CONTINUE(),_,(_,_,unbound)) then ((false,false,unbound));
     case (DAE.STMT_ARRAY_INIT(),_,_) then inUnbound;
     case (DAE.STMT_FAILURE(body=stmts),_,(_,_,unbound))
-      equation
-        ((_,b,unbound)) = List.fold1(stmts, checkFunctionDefUseStmt, inLoop, (false,false,unbound));
+      algorithm
+        ((_,b,unbound)) := List.fold1(stmts, checkFunctionDefUseStmt, inLoop, (false,false,unbound));
       then ((b,b,unbound));
 
     // STMT_WHEN not in functions
@@ -7944,20 +7931,20 @@ algorithm
       Boolean b1,b2,b3,b4,iloop;
     case (DAE.NOELSE(),_,_,_) then ((false,false,inUnbound));
     case (DAE.ELSEIF(exp,stmts,else_),unbound,iloop,_)
-      equation
-        (_,(unbound,_)) = Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
-        ((b1,b2,unboundBranch)) = checkFunctionDefUseElse(else_,unbound,inLoop,info);
-        ((b3,b4,unbound)) = List.fold1(stmts, checkFunctionDefUseStmt, inLoop, (false,false,unbound));
-        iloop = true "We find a few false positives if we are too conservative, so let's do it non-exact";
-        unbound = if iloop then List.intersectionOnTrue(unboundBranch, unbound, stringEq) else unbound;
-        unbound = if not (iloop or b1) then List.union(unboundBranch, unbound) else unbound;
+      algorithm
+        (_,(unbound,_)) := Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
+        ((b1,b2,unboundBranch)) := checkFunctionDefUseElse(else_,unbound,inLoop,info);
+        ((b3,b4,unbound)) := List.fold1(stmts, checkFunctionDefUseStmt, inLoop, (false,false,unbound));
+        iloop := true "We find a few false positives if we are too conservative, so let's do it non-exact";
+        unbound := if iloop then List.intersectionOnTrue(unboundBranch, unbound, stringEq) else unbound;
+        unbound := if not (iloop or b1) then List.union(unboundBranch, unbound) else unbound;
         /* Merge the state of the two branches. Either they can break/return or not */
-        b1 = b1 and b3;
-        b2 = b2 and b4;
+        b1 := b1 and b3;
+        b2 := b2 and b4;
       then ((b1,b2,unbound));
     case (DAE.ELSE(stmts),unbound,_,_)
-      equation
-        ((b1,b2,unbound)) = List.fold1(stmts, checkFunctionDefUseStmt, inLoop, (false,false,unbound));
+      algorithm
+        ((b1,b2,unbound)) := List.fold1(stmts, checkFunctionDefUseStmt, inLoop, (false,false,unbound));
       then ((b1,b2,unbound));
   end match;
 end checkFunctionDefUseElse;
@@ -7978,23 +7965,23 @@ algorithm
     case (DAE.CREF(componentRef=DAE.WILD()),_) then inUnbound;
       // Assignment to part of a record
     case (DAE.CREF(componentRef=DAE.CREF_QUAL(ident=id1,componentRef=DAE.CREF_IDENT(ident=id2))),unbound)
-      equation
-        unbound = List.filter1OnTrue(unbound,Util.stringNotEqual,id1 + "." + id2);
+      algorithm
+        unbound := List.filter1OnTrue(unbound,Util.stringNotEqual,id1 + "." + id2);
       then unbound;
       // Assignment to the whole record - filter out everything it is prefix of
     case (DAE.CREF(componentRef=DAE.CREF_IDENT(ident=id1),ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_))),unbound)
-      equation
-        id1 = id1 + ".";
-        unbound = List.filter2OnTrue(unbound,Util.notStrncmp,id1,stringLength(id1));
+      algorithm
+        id1 := id1 + ".";
+        unbound := List.filter2OnTrue(unbound,Util.notStrncmp,id1,stringLength(id1));
       then unbound;
     case (DAE.CREF(componentRef=cr),unbound)
-      equation
-        unbound = List.filter1OnTrue(unbound,Util.stringNotEqual,ComponentReference.crefFirstIdent(cr));
+      algorithm
+        unbound := List.filter1OnTrue(unbound,Util.stringNotEqual,ComponentReference.crefFirstIdent(cr));
       then unbound;
     case (DAE.ASUB(exp=exp),unbound) then crefFiltering(exp,unbound);
     case (DAE.PATTERN(pattern=pattern),unbound)
-      equation
-        (_,unbound) = Patternm.traversePattern(pattern,patternFiltering,unbound);
+      algorithm
+        (_,unbound) := Patternm.traversePattern(pattern,patternFiltering,unbound);
       then unbound;
     else inUnbound;
   end match;
@@ -8026,8 +8013,8 @@ algorithm
       list<String> unbound;
       DAE.ComponentRef cr;
     case (DAE.CREF(componentRef=cr),_,unbound)
-      equation
-        (_,(unbound,_)) = Expression.traverseExpTopDownCrefHelper(cr,findUnboundVariableUse,(unbound,info));
+      algorithm
+        (_,(unbound,_)) := Expression.traverseExpTopDownCrefHelper(cr,findUnboundVariableUse,(unbound,info));
       then unbound;
     else inUnbound;
   end match;
@@ -8063,25 +8050,25 @@ algorithm
         Error.addSourceMessage(Error.WARNING_DEF_USE, {"_"}, info);
       then (inExp, true, inTpl);
     case (exp as DAE.CREF(componentRef=cr),(unbound,info))
-      equation
-        b = listMember(ComponentReference.crefFirstIdent(cr),unbound);
-        str = ComponentReference.crefFirstIdent(cr);
+      algorithm
+        b := listMember(ComponentReference.crefFirstIdent(cr),unbound);
+        str := ComponentReference.crefFirstIdent(cr);
         Error.assertionOrAddSourceMessage(not b, Error.WARNING_DEF_USE, {str}, info);
-        unbound = List.filter1OnTrue(unbound,Util.stringNotEqual,str);
+        unbound := List.filter1OnTrue(unbound,Util.stringNotEqual,str);
       then (exp,true,(unbound,info));
     case (exp as DAE.CALL(path=Absyn.IDENT(name)),(unbound,info))
-      equation
-        b = listMember(name,unbound);
+      algorithm
+        b := listMember(name,unbound);
         Error.assertionOrAddSourceMessage(not b, Error.WARNING_DEF_USE, {name}, info);
-        unbound = List.filter1OnTrue(unbound,Util.stringNotEqual,name);
+        unbound := List.filter1OnTrue(unbound,Util.stringNotEqual,name);
       then (exp,true,(unbound,info));
     case (exp as DAE.MATCHEXPRESSION(inputs=inputs,localDecls=localDecls,cases=cases),(unbound,info))
-      equation
-        (_,(unbound,_)) = Expression.traverseExpTopDown(DAE.LIST(inputs),findUnboundVariableUse,(unbound,info));
-        unboundLocal = checkFunctionDefUse2(localDecls,NONE(),unbound,{},info);
-        unbounds = List.map1(cases,findUnboundVariableUseInCase,unboundLocal);
+      algorithm
+        (_,(unbound,_)) := Expression.traverseExpTopDown(DAE.LIST(inputs),findUnboundVariableUse,(unbound,info));
+        unboundLocal := checkFunctionDefUse2(localDecls,NONE(),unbound,{},info);
+        unbounds := List.map1(cases,findUnboundVariableUseInCase,unboundLocal);
         // Find variables assigned in a case, like: _ = match () case () equation o = 1.5; then ();
-        unbound = List.fold1r(unbounds, List.intersectionOnTrue, stringEq, unbound);
+        unbound := List.fold1r(unbounds, List.intersectionOnTrue, stringEq, unbound);
       then (exp,false,(unbound,info));
     case (exp,arg) then (exp,true,arg);
   end match;
@@ -8099,11 +8086,11 @@ algorithm
       list<DAE.Pattern> patterns;
       list<DAE.Statement> body;
     case (DAE.CASE(patterns=patterns,patternGuard=patternGuard,body=body,result=result,info=info,resultInfo=resultInfo),unbound)
-      equation
-        (_,unbound) = Patternm.traversePatternList(patterns,patternFiltering,unbound);
-        (_,(unbound,_)) = Expression.traverseExpTopDown(DAE.META_OPTION(patternGuard),findUnboundVariableUse,(unbound,info));
-        ((_,_,unbound)) = List.fold1(body, checkFunctionDefUseStmt, true, (false,false,unbound));
-        (_,(unbound,_)) = Expression.traverseExpTopDown(DAE.META_OPTION(result),findUnboundVariableUse,(unbound,resultInfo));
+      algorithm
+        (_,unbound) := Patternm.traversePatternList(patterns,patternFiltering,unbound);
+        (_,(unbound,_)) := Expression.traverseExpTopDown(DAE.META_OPTION(patternGuard),findUnboundVariableUse,(unbound,info));
+        ((_,_,unbound)) := List.fold1(body, checkFunctionDefUseStmt, true, (false,false,unbound));
+        (_,(unbound,_)) := Expression.traverseExpTopDown(DAE.META_OPTION(result),findUnboundVariableUse,(unbound,resultInfo));
       then unbound;
   end match;
 end findUnboundVariableUseInCase;
@@ -8125,16 +8112,16 @@ algorithm
       FCore.Ref r;
 
     case(_, _, SCode.ATTR(parallelism = prl, direction = dir), _)
-      equation
-        r = FGraph.lastScopeRef(inEnv);
-        false = FNode.isRefTop(r);
-        scopeName = FNode.refName(r);
-        true = FGraph.checkScopeType({r}, SOME(FCore.PARALLEL_SCOPE()));
-        isparglobal = SCodeUtil.parallelismEqual(prl, SCode.PARGLOBAL());
-        hasnodir = not AbsynUtil.isInputOrOutput(dir);
-        true = isparglobal and hasnodir;
+      algorithm
+        r := FGraph.lastScopeRef(inEnv);
+        false := FNode.isRefTop(r);
+        scopeName := FNode.refName(r);
+        true := FGraph.checkScopeType({r}, SOME(FCore.PARALLEL_SCOPE()));
+        isparglobal := SCodeUtil.parallelismEqual(prl, SCode.PARGLOBAL());
+        hasnodir := not AbsynUtil.isInputOrOutput(dir);
+        true := isparglobal and hasnodir;
 
-        errorString = "\n" +
+        errorString := "\n" +
         "- local parglobal component '" + inName +
         "' is declared in parallel/parkernel function '" + scopeName + "'. \n" +
         "- parglobal variables can be declared only in normal functions. \n";
@@ -8158,8 +8145,8 @@ algorithm
       InstDims rest_dims;
 
     case (dims :: _)
-      equation
-        true = List.any(dims, Expression.dimensionIsZero);
+      algorithm
+        true := List.any(dims, Expression.dimensionIsZero);
       then
         true;
 
@@ -8185,7 +8172,7 @@ algorithm
   (outMods,outCmod,outM) := matchcontinue(variability,updatedComps,cref,mods,cmod,m)
     case (_,_,_,_,_,_)
       guard BaseHashTable.hasKey(cref,updatedComps)
-      equation
+      algorithm
         checkVariabilityOfUpdatedComponent(variability,cref);
       then (DAE.NOMOD(),DAE.NOMOD(),SCode.NOMOD());
 
@@ -8314,18 +8301,16 @@ algorithm
                        variability, direction, Absyn.FIELD()
             ), typeSpec,
             mod as SCode.MOD()/*modifications*/,
-            comment, condition, info),daeMod)
-      equation
-        listMember(name, fieldNamesP) = true;
-
+            comment, condition, info),daeMod) guard listMember(name, fieldNamesP)
+      algorithm
         //remove domain from the subModLst:
-        mod.subModLst = List.filterOnFalse(mod.subModLst,isSubModDomainOrStart);
+        mod.subModLst := List.filterOnFalse(mod.subModLst,isSubModDomainOrStart);
 
-        ghostL = (SCode.COMPONENT(stringAppend(name,"$ghostL"), prefixes,
+        ghostL := (SCode.COMPONENT(stringAppend(name,"$ghostL"), prefixes,
               SCode.ATTR(arrayDims,connectorType,parallelism,
              variability, direction, Absyn.NONFIELD()), typeSpec, mod,
              comment, condition, info),daeMod);
-        ghostR = (SCode.COMPONENT(stringAppend(name,"$ghostR"), prefixes,
+        ghostR := (SCode.COMPONENT(stringAppend(name,"$ghostR"), prefixes,
              SCode.ATTR(arrayDims,connectorType,parallelism,
              variability, direction, Absyn.NONFIELD()), typeSpec, mod,
              comment, condition, info),daeMod);
@@ -8380,23 +8365,23 @@ algorithm
       then
         (inDims,inMod,NONE());
     case(SCode.ATTR(isField=Absyn.FIELD()),DAE.MOD(finalPrefix = finalPrefix, eachPrefix = eachPrefix, subModLst = subModLst, binding = binding, info = info))
-      equation
+      algorithm
         //find the domain modifier:
-        (domainSubMod, subModLst) = List.findAndRemove(subModLst, findDomainSubMod);
-        dcr = getQualDcr(domainSubMod, inInfo);
+        (domainSubMod, subModLst) := List.findAndRemove(subModLst, findDomainSubMod);
+        dcr := getQualDcr(domainSubMod, inInfo);
         //get N from the domain and remove domain from the subModLst:
-        (N, dcr) = getNDcr(dcr);
+        (N, dcr) := getNDcr(dcr);
         if (N == -1) then Error.addSourceMessageAndFail(Error.PDEModelica_ERROR,
             {"Domain of the field variable '" + name + "' not found."}, inInfo);
         end if;
-        subModLst = listReverse(subModLst);
-        subModLst = List.map(subModLst,addEach);
-        outMod = DAE.MOD(finalPrefix, eachPrefix, subModLst, binding, info);
-        dim_f = DAE.DIM_INTEGER(N);
+        subModLst := listReverse(subModLst);
+        subModLst := List.map(subModLst,addEach);
+        outMod := DAE.MOD(finalPrefix, eachPrefix, subModLst, binding, info);
+        dim_f := DAE.DIM_INTEGER(N);
       then
         (dim_f::inDims, outMod, SOME((Absyn.CREF_IDENT(name, {}),dcr)));
     case(_,DAE.NOMOD())
-      equation
+      algorithm
         Error.addSourceMessageAndFail(Error.PDEModelica_ERROR,
             {"Field variable '" + name + "' has no domain modifier."}, inInfo);
       then
@@ -8438,7 +8423,7 @@ algorithm
     )))
     then cr;
     case _
-      equation
+      algorithm
         Error.addSourceMessageAndFail(Error.PDEModelica_ERROR,
             {"The domain type is wrong.\n"}, inInfo);
       then
@@ -8459,8 +8444,8 @@ algorithm
     case DAE.CREF_QUAL(componentRef = cr1)
       then getNDcr(cr1);
     case DAE.CREF_IDENT(identType = DAE.T_COMPLEX(varLst = varLst))
-      equation
-        SOME(N) = List.findSome(varLst,findN);
+      algorithm
+        SOME(N) := List.findSome(varLst,findN);
       then (N,dcr);
   end match;
 end getNDcr;
@@ -8516,10 +8501,10 @@ algorithm
     case NONE()
       then inDomFieldsLst;
     case SOME((fieldCr,domainCr))
-      equation
-        (outDomFieldsLst, found) = List.map2Fold(inDomFieldsLst,optAppendFieldMapFun,domainCr,fieldCr,false);
+      algorithm
+        (outDomFieldsLst, found) := List.map2Fold(inDomFieldsLst,optAppendFieldMapFun,domainCr,fieldCr,false);
         if not found then
-          outDomFieldsLst = (domainCr,{fieldCr})::inDomFieldsLst;
+          outDomFieldsLst := (domainCr,{fieldCr})::inDomFieldsLst;
         end if;
       then
         outDomFieldsLst;
@@ -8539,8 +8524,8 @@ algorithm
     DAE.ComponentRef domainCr;
     List<Absyn.ComponentRef> fieldCrLst;
   case ((domainCr,fieldCrLst),false)
-    equation
-      true = ComponentReference.crefEqual(domainCr,domainCrToAdd);
+    algorithm
+      true := ComponentReference.crefEqual(domainCr,domainCrToAdd);
     then
       ((domainCr,fieldCrToAdd::fieldCrLst),true);
     else
@@ -8573,28 +8558,28 @@ algorithm
       //PDE with domain specified, allow for field variables:
       case SCode.EQ_PDE(expLeft = lhs_exp, expRight = rhs_exp,
                   domain = domainCr as Absyn.CREF_IDENT(), comment = comment, info = info)
-        equation
-          (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr,info);
+        algorithm
+          (N,fieldLst) := getDomNFields(inDomFieldLst,domainCr,info);
         then creatFieldEqs(lhs_exp, rhs_exp, domainCr, N, fieldLst, comment, info);
 
       //same as previous but with ".interior"
       case SCode.EQ_PDE(expLeft = lhs_exp, expRight = rhs_exp,
                   domain = domainCr as Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="interior")),
                   comment = comment, info = info)
-        equation
-          domainCr1 = Absyn.CREF_IDENT(name, subscripts);
-          (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr1,info);
+        algorithm
+          domainCr1 := Absyn.CREF_IDENT(name, subscripts);
+          (N,fieldLst) := getDomNFields(inDomFieldLst,domainCr1,info);
         then creatFieldEqs(lhs_exp, rhs_exp, domainCr, N, fieldLst, comment, info);
 
       //left boundary condition or extrapolation
       case SCode.EQ_PDE(expLeft = lhs_exp, expRight = rhs_exp,
                   domain = Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="left")),
                   comment = comment, info = info)
-        equation
-          domainCr1 = Absyn.CREF_IDENT(name, subscripts);
-          (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr1,info);
-          (lhs_exp, _) = AbsynUtil.traverseExp(lhs_exp, extrapFieldTraverseFun, 1);
-          (rhs_exp, _) = AbsynUtil.traverseExp(rhs_exp, extrapFieldTraverseFun, 1);
+        algorithm
+          domainCr1 := Absyn.CREF_IDENT(name, subscripts);
+          (N,fieldLst) := getDomNFields(inDomFieldLst,domainCr1,info);
+          (lhs_exp, _) := AbsynUtil.traverseExp(lhs_exp, extrapFieldTraverseFun, 1);
+          (rhs_exp, _) := AbsynUtil.traverseExp(rhs_exp, extrapFieldTraverseFun, 1);
         then
           {newEQFun(1, lhs_exp, rhs_exp, domainCr1, N, true, fieldLst, comment, info)};
 
@@ -8602,16 +8587,16 @@ algorithm
       case SCode.EQ_PDE(expLeft = lhs_exp, expRight = rhs_exp,
                   domain = Absyn.CREF_QUAL(name, subscripts, Absyn.CREF_IDENT(name="right")),
                   comment = comment, info = info)
-        equation
-          domainCr1 = Absyn.CREF_IDENT(name, subscripts);
-          (N,fieldLst) = getDomNFields(inDomFieldLst,domainCr1,info);
-          (lhs_exp, _) = AbsynUtil.traverseExp(lhs_exp, extrapFieldTraverseFun, N);
-          (rhs_exp, _) = AbsynUtil.traverseExp(rhs_exp, extrapFieldTraverseFun, N);
+        algorithm
+          domainCr1 := Absyn.CREF_IDENT(name, subscripts);
+          (N,fieldLst) := getDomNFields(inDomFieldLst,domainCr1,info);
+          (lhs_exp, _) := AbsynUtil.traverseExp(lhs_exp, extrapFieldTraverseFun, N);
+          (rhs_exp, _) := AbsynUtil.traverseExp(rhs_exp, extrapFieldTraverseFun, N);
         then
           {newEQFun(N, lhs_exp, rhs_exp, domainCr1, N, true, fieldLst, comment, info)};
       //Unhandled pde
       case SCode.EQ_PDE()
-        equation
+        algorithm
           print("Unhandled type of EQ_PDE in discretizePDE\n");
           fail();
       then {};
@@ -8637,11 +8622,11 @@ algorithm
                           function_ = Absyn.CREF_IDENT(name="extrapolateField", subscripts={}),
                           functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(Absyn.CREF_IDENT(name,subscripts))})
                     )
-    equation
+    algorithm
       if inN == 1 then
-        i = 1;
+        i := 1;
       else
-        i = -1;
+        i := -1;
       end if;
     then
       //TODO: add check wheter the field in extrapolateField arg is in given domain.
@@ -8688,10 +8673,10 @@ algorithm
     list<DAE.Var> varLst;
     Integer N;
     case (domainCr, fieldCrLst)
-      equation
-      true = absynDAECrefEqualName(inDomainCr,domainCr);
-      DAE.CREF_IDENT(identType = DAE.T_COMPLEX(varLst = varLst)) = domainCr;
-      SOME(N) = List.findSome(varLst,findN);
+      algorithm
+      true := absynDAECrefEqualName(inDomainCr,domainCr);
+      DAE.CREF_IDENT(identType = DAE.T_COMPLEX(varLst = varLst)) := domainCr;
+      SOME(N) := List.findSome(varLst,findN);
     then
       SOME((N,fieldCrLst));
     else
@@ -8850,9 +8835,9 @@ algorithm
       Absyn.CREF(Absyn.CREF_QUAL(name = domName, subscripts = {}, componentRef=Absyn.CREF_IDENT(name="x",subscripts = {Absyn.SUBSCRIPT(Absyn.INTEGER(i))})));
     case Absyn.CREF(fieldCr as Absyn.CREF_IDENT(name, subscripts))
     //field
-      equation
-        true = List.isMemberOnTrue(fieldCr,fieldLst,AbsynUtil.crefEqual);
-        exp = (if isBC and i == 1 then
+      algorithm
+        true := List.isMemberOnTrue(fieldCr,fieldLst,AbsynUtil.crefEqual);
+        exp := (if isBC and i == 1 then
                 Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,"$ghostL"), subscripts))  //left BC
               elseif isBC and i == N then
                 Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,"$ghostR"), subscripts))  //right BC
@@ -8863,18 +8848,18 @@ algorithm
         exp;
     case Absyn.CALL(Absyn.CREF_IDENT("pder",{}),Absyn.FUNCTIONARGS({Absyn.CREF(fieldCr as Absyn.CREF_IDENT(name, subscripts)),Absyn.CREF(Absyn.CREF_IDENT(name="x"))},_),{})
     //pder - first derivative
-      equation
+      algorithm
         if not List.isMemberOnTrue(fieldCr,fieldLst,AbsynUtil.crefEqual) then
-          failVar = true;
+          failVar := true;
           Error.addSourceMessageAndFail(Error.COMPILER_ERROR,{"Field variable '" +  name + "' has different domain than the equation or is not a field." }, info);
         end if;
         //skip = true
-        leftVar = (if i == 1 then
+        leftVar := (if i == 1 then
                      Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,"$ghostL"), subscripts))
                    else
                      Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i-1))::subscripts))
                   );
-        rightVar = (if i == N then
+        rightVar := (if i == N then
                      Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,"$ghostR"), subscripts))
                    else
                      Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i+1))::subscripts))
@@ -8891,19 +8876,19 @@ algorithm
           );
     case Absyn.CALL(Absyn.CREF_IDENT("pder",{}),Absyn.FUNCTIONARGS({Absyn.CREF(fieldCr as Absyn.CREF_IDENT(name, subscripts)),Absyn.CREF(Absyn.CREF_IDENT(name="x")),Absyn.CREF(Absyn.CREF_IDENT(name="x"))},_),{})
     //pder - second derivative
-      equation
+      algorithm
         if not List.isMemberOnTrue(fieldCr,fieldLst,AbsynUtil.crefEqual) then
-          failVar = true;
+          failVar := true;
           Error.addSourceMessageAndFail(Error.COMPILER_ERROR,{"Field variable '" +  name + "' has different domain than the equation or is not a field." }, info);
         end if;
         //skip = true
-        leftVar = (if i == 1 then
+        leftVar := (if i == 1 then
                      Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,"$ghostL"), subscripts))
                    else
                      Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i-1))::subscripts))
                   );
-        actualVar = Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i))::subscripts));
-        rightVar = (if i == N then
+        actualVar := Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i))::subscripts));
+        rightVar := (if i == N then
                      Absyn.CREF(Absyn.CREF_IDENT(stringAppend(name,"$ghostR"), subscripts))
                    else
                      Absyn.CREF(Absyn.CREF_IDENT(name, Absyn.SUBSCRIPT(Absyn.INTEGER(i+1))::subscripts))
@@ -8925,12 +8910,12 @@ algorithm
 
     case Absyn.CALL(function_ = Absyn.CREF_IDENT("pder",{}), functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(_),_},_))
     //pder with differentiating wrt wrong variable
-      equation
+      algorithm
         Error.addSourceMessageAndFail(Error.COMPILER_ERROR,{"You are differentiating with respect to variable that is not a coordinate."}, info);
       then
         inExp;
     case Absyn.CALL(function_ = Absyn.CREF_IDENT("pder",{}), functionArgs = Absyn.FUNCTIONARGS({_,_},_))
-      equation
+      algorithm
         Error.addSourceMessageAndFail(Error.COMPILER_ERROR,{"Unsupported partial derivative."}, info);
       then
         inExp;

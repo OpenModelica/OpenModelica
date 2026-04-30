@@ -71,10 +71,10 @@ algorithm
     case (_, _, {}, _) then ();
 
     case (_, _, _ :: _, _)
-      equation
-        ts_path = AbsynUtil.typeSpecPath(inTypeSpec);
-        ty_path = NFSCodeEnv.getEnvPath(inTypeEnv);
-        false = isSelfReference(inTypeName, ty_path, ts_path);
+      algorithm
+        ts_path := AbsynUtil.typeSpecPath(inTypeSpec);
+        ty_path := NFSCodeEnv.getEnvPath(inTypeEnv);
+        false := isSelfReference(inTypeName, ty_path, ts_path);
       then
         ();
 
@@ -133,7 +133,7 @@ algorithm
 
     case (NFSCodeEnv.RAW_MODIFIER(e as SCode.CLASS(classDef =
         SCode.DERIVED())), _, _)
-      equation
+      algorithm
         checkRedeclareModifier2(e, inBaseClass, inEnv);
       then
         ();
@@ -156,16 +156,16 @@ algorithm
 
     case (SCode.CLASS(name = name,
         classDef = SCode.DERIVED(typeSpec = ty)), _, _)
-      equation
-        ty_path = AbsynUtil.typeSpecPath(ty);
-        false = isSelfReference(name, inBaseClass, ty_path);
+      algorithm
+        ty_path := AbsynUtil.typeSpecPath(ty);
+        false := isSelfReference(name, inBaseClass, ty_path);
       then
         ();
 
     case (SCode.CLASS(name = name,
         classDef = SCode.DERIVED(typeSpec = ty), info = info), _, _)
-      equation
-        ty_str = Dump.unparseTypeSpec(ty);
+      algorithm
+        ty_str := Dump.unparseTypeSpec(ty);
         Error.addSourceMessage(Error.RECURSIVE_SHORT_CLASS_DEFINITION,
           {name, ty_str}, info);
       then
@@ -184,7 +184,7 @@ algorithm
       SCode.Element el;
 
     case (_, SCode.REDECL(element = el), _)
-      equation
+      algorithm
         checkRedeclaredElementPrefix(inItem, el, inInfo);
       then
         ();
@@ -413,9 +413,9 @@ algorithm
     case (_, _, {}) then false;
 
     case (_, _, redecl :: _)
-      equation
-        (el_name, el_info) = NFSCodeEnv.getRedeclarationNameInfo(redecl);
-        true = stringEqual(inRedeclareName, el_name);
+      algorithm
+        (el_name, el_info) := NFSCodeEnv.getRedeclarationNameInfo(redecl);
+        true := stringEqual(inRedeclareName, el_name);
         Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, el_info);
         Error.addSourceMessage(Error.DUPLICATE_REDECLARATION,
           {inRedeclareName}, inRedeclareInfo);
@@ -457,17 +457,17 @@ algorithm
     // Check that the environment of the components type is not an enclosing
     // scope of the component itself.
     case (_, _, _, _, _)
-      equation
-        false = NFSCodeEnv.envPrefixOf(inTypeEnv, inComponentEnv);
+      algorithm
+        false := NFSCodeEnv.envPrefixOf(inTypeEnv, inComponentEnv);
       then
         ();
 
     // Make an exception for components in functions
     case (_, _, _, _, NFSCodeEnv.FRAME(name = SOME(cls_name)) ::
         NFSCodeEnv.FRAME(clsAndVars = tree) :: _)
-      equation
-        NFSCodeEnv.CLASS(cls = el) = EnvTree.get(tree, cls_name);
-        true = SCodeUtil.isFunction(el);
+      algorithm
+        NFSCodeEnv.CLASS(cls = el) := EnvTree.get(tree, cls_name);
+        true := SCodeUtil.isFunction(el);
       then
         ();
 
@@ -504,8 +504,8 @@ algorithm
       String id, ty;
 
     case (id, Absyn.TPATH(path = Absyn.IDENT(ty)), _)
-      equation
-        true = stringEq(id, ty);
+      algorithm
+        true := stringEq(id, ty);
         Error.addSourceMessage(Error.LOOKUP_TYPE_FOUND_COMP, {id}, inInfo);
       then
         false;
@@ -520,7 +520,7 @@ public function checkComponentsEqual
 algorithm
   _ := match(inComponent1, inComponent2)
     case (_, _)
-      equation
+      algorithm
         print("Found duplicate component\n");
       then
         ();
@@ -539,15 +539,15 @@ algorithm
       String pre_str, res_str;
 
     case (NFSCodeEnv.CLASS(cls = SCode.CLASS(restriction = res)), _, _)
-      equation
-        true = SCodeUtil.isInstantiableClassRestriction(res);
+      algorithm
+        true := SCodeUtil.isInstantiableClassRestriction(res);
       then
         ();
 
     case (NFSCodeEnv.CLASS(cls = SCode.CLASS(restriction = res)), _, _)
-      equation
-        res_str = SCodeDump.restrictionStringPP(res);
-        pre_str = NFInstDump.prefixStr(inPrefix);
+      algorithm
+        res_str := SCodeDump.restrictionStringPP(res);
+        pre_str := NFInstDump.prefixStr(inPrefix);
         Error.addSourceMessage(Error.INVALID_CLASS_RESTRICTION,
           {res_str, pre_str}, inInfo);
       then
@@ -575,7 +575,7 @@ algorithm
 
     case (NFSCodeEnv.CLASS(cls = SCode.CLASS(name = name, partialPrefix =
         SCode.PARTIAL())), _)
-      equation
+      algorithm
         Error.addSourceMessage(Error.INST_PARTIAL_CLASS, {name}, inInfo);
       then
         fail();

@@ -114,7 +114,7 @@ algorithm
       SCode.Program prog;
 
     case (_, prog)
-      equation
+      algorithm
         //System.startTimer();
         System.tmpTickResetIndex(0, NFSCodeEnv.tmpTickIndex);
         System.tmpTickResetIndex(1, NFSCodeEnv.extendsTickIndex);
@@ -122,14 +122,14 @@ algorithm
         // TODO: Enable this when NFSCodeEnv.tmpTickIndex is removed.
         //System.tmpTickResetIndex(0, NFSCodeEnv.tmpTickIndex);
 
-        env = NFSCodeEnv.buildInitialEnv();
-        env = NFSCodeEnv.extendEnvWithClasses(prog, env);
-        env = NFEnvExtends.update(env);
+        env := NFSCodeEnv.buildInitialEnv();
+        env := NFSCodeEnv.extendEnvWithClasses(prog, env);
+        env := NFEnvExtends.update(env);
 
-        (prog, env) = NFSCodeDependency.analyse(inClassName, env, prog);
+        (prog, env) := NFSCodeDependency.analyse(inClassName, env, prog);
 
         if not Flags.isSet(Flags.SCODE_INST) then
-          (prog, env) = NFSCodeFlattenImports.flattenProgram(prog, env);
+          (prog, env) := NFSCodeFlattenImports.flattenProgram(prog, env);
         end if;
 
         //System.stopTimer();
@@ -160,11 +160,11 @@ algorithm
       SCode.Program prog;
 
     case (prog)
-      equation
-        env = NFSCodeEnv.buildInitialEnv();
-        env = NFSCodeEnv.extendEnvWithClasses(prog, env);
-        env = NFEnvExtends.update(env);
-        (prog, env) = NFSCodeFlattenImports.flattenProgram(prog, env);
+      algorithm
+        env := NFSCodeEnv.buildInitialEnv();
+        env := NFSCodeEnv.extendEnvWithClasses(prog, env);
+        env := NFEnvExtends.update(env);
+        (prog, env) := NFSCodeFlattenImports.flattenProgram(prog, env);
       then
         prog;
 

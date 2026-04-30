@@ -170,8 +170,8 @@ algorithm
     case (_, EMPTY_PREFIX()) then inCref;
 
     case (_, PREFIX(name = name, restPrefix = rest_prefix))
-      equation
-        cref = DAE.CREF_QUAL(name, DAE.T_UNKNOWN_DEFAULT, {}, inCref);
+      algorithm
+        cref := DAE.CREF_QUAL(name, DAE.T_UNKNOWN_DEFAULT, {}, inCref);
       then
         prefixCref(cref, rest_prefix);
 
@@ -193,8 +193,8 @@ algorithm
     case (_, EMPTY_PREFIX()) then inPath;
 
     case (_, PREFIX(name = name, restPrefix = rest_prefix))
-      equation
-        path = Absyn.QUALIFIED(name, inPath);
+      algorithm
+        path := Absyn.QUALIFIED(name, inPath);
       then
         prefixPath(path, rest_prefix);
 
@@ -239,8 +239,8 @@ algorithm
         DAE.CREF_IDENT(name, DAE.T_UNKNOWN_DEFAULT, {});
 
     case (PREFIX(name = name, restPrefix = rest_prefix))
-      equation
-        cref = DAE.CREF_IDENT(name, DAE.T_UNKNOWN_DEFAULT, {});
+      algorithm
+        cref := DAE.CREF_IDENT(name, DAE.T_UNKNOWN_DEFAULT, {});
       then
         prefixCref(cref, rest_prefix);
 
@@ -262,8 +262,8 @@ algorithm
       then Absyn.IDENT(name);
 
     case PREFIX(name = name, restPrefix = rest_prefix)
-      equation
-        path = Absyn.IDENT(name);
+      algorithm
+        path := Absyn.IDENT(name);
       then
         prefixPath(path, rest_prefix);
 
@@ -342,8 +342,8 @@ algorithm
       then name;
 
     case PREFIX(name = name, restPrefix = rest_prefix)
-      equation
-        str = toStr(rest_prefix) + "." + name;
+      algorithm
+        str := toStr(rest_prefix) + "." + name;
       then
         str;
 
@@ -365,14 +365,14 @@ algorithm
     case EMPTY_PREFIX(classPath = NONE()) then "E()";
 
     case EMPTY_PREFIX(classPath = SOME(path))
-      equation
-        str = "E(" + AbsynUtil.pathLastIdent(path) + ")";
+      algorithm
+        str := "E(" + AbsynUtil.pathLastIdent(path) + ")";
       then
         str;
 
     case PREFIX(name = name, restPrefix = rest_prefix)
-      equation
-        str = toStrWithEmpty(rest_prefix) + "." + name;
+      algorithm
+        str := toStrWithEmpty(rest_prefix) + "." + name;
       then
         str;
 
@@ -407,8 +407,8 @@ algorithm
       Prefix rest_prefix;
 
     case PREFIX(name, dims, rest_prefix)
-      equation
-        rest_prefix = toPackagePrefix(rest_prefix);
+      algorithm
+        rest_prefix := toPackagePrefix(rest_prefix);
       then
         PREFIX(name, dims, rest_prefix);
 

@@ -77,23 +77,23 @@ algorithm
     case (_,_,{}) then {};
 
     case (from as DAE.T_INTEGER(),to as DAE.T_REAL(),(Values.INTEGER(integer = i) :: vrest))
-      equation
-        vallst = typeConvert(from, to, vrest);
-        rval = intReal(i);
+      algorithm
+        vallst := typeConvert(from, to, vrest);
+        rval := intReal(i);
       then
         (Values.REAL(rval) :: vallst);
 
     case (from as DAE.T_REAL(),to as DAE.T_INTEGER(),(Values.REAL(real = r) :: vrest))
-      equation
-        vallst = typeConvert(from, to, vrest);
-        ival = realInt(r);
+      algorithm
+        vallst := typeConvert(from, to, vrest);
+        ival := realInt(r);
       then
         (Values.INTEGER(ival) :: vallst);
 
     case (from,to,(Values.ARRAY(valueLst = vals, dimLst = dims) :: vrest))
-      equation
-        vallst = typeConvert(from, to, vals);
-        vallst2 = typeConvert(from, to, vrest);
+      algorithm
+        vallst := typeConvert(from, to, vals);
+        vallst2 := typeConvert(from, to, vrest);
       then
         (Values.ARRAY(vallst,dims) :: vallst2);
   end match;
@@ -120,21 +120,21 @@ algorithm
     case(Values.BOOL(_)) then DAE.T_BOOL_DEFAULT;
     case(Values.STRING(_)) then DAE.T_STRING_DEFAULT;
     case(Values.ENUM_LITERAL(name = path))
-      equation
-        path = AbsynUtil.pathPrefix(path);
+      algorithm
+        path := AbsynUtil.pathPrefix(path);
       then DAE.T_ENUMERATION(NONE(),path,{},{},{});
-    case(Values.ARRAY(valLst,int_dims)) equation
-      eltTp=valueExpType(listHead(valLst));
-      dims = List.map(int_dims, Expression.intDimension);
+    case(Values.ARRAY(valLst,int_dims)) algorithm
+      eltTp:=valueExpType(listHead(valLst));
+      dims := List.map(int_dims, Expression.intDimension);
     then DAE.T_ARRAY(eltTp,dims);
 
-    case(Values.RECORD(path,valLst,nameLst,_)) equation
-      eltTps = List.map(valLst,valueExpType);
-      varLst = List.threadMap(eltTps,nameLst,valueExpTypeExpVar);
+    case(Values.RECORD(path,valLst,nameLst,_)) algorithm
+      eltTps := List.map(valLst,valueExpType);
+      varLst := List.threadMap(eltTps,nameLst,valueExpTypeExpVar);
     then DAE.T_COMPLEX(ClassInf.RECORD(path),varLst,NONE(), false);
 
     case _
-      equation
+      algorithm
         print("valueExpType on "+valString(inValue) + " not implemented yet\n");
       then fail();
   end matchcontinue;
@@ -216,11 +216,11 @@ algorithm
       Values.Value v;
       list<Values.Value> vallst;
     case ((v :: vallst))
-      equation
-        s1 = unparseDescription({v});
-        s2 = unparseValueNumbers({v});
-        s3 = unparseValues(vallst);
-        str = stringAppendList({s1,s2,"\n",s3});
+      algorithm
+        s1 := unparseDescription({v});
+        s2 := unparseValueNumbers({v});
+        s3 := unparseValues(vallst);
+        str := stringAppendList({s1,s2,"\n",s3});
       then
         str;
     case ({}) then "";
@@ -239,47 +239,47 @@ algorithm
       Integer i;
       Real r;
     case ((Values.TUPLE(valueLst = lst) :: xs))
-      equation
-        s1 = unparseValueNumbers(lst);
-        s2 = unparseValueNumbers(xs);
-        res = stringAppend(s1, s2);
+      algorithm
+        s1 := unparseValueNumbers(lst);
+        s2 := unparseValueNumbers(xs);
+        res := stringAppend(s1, s2);
       then
         res;
     case ((Values.META_TUPLE(valueLst = lst) :: xs))
-      equation
-        s1 = unparseValueNumbers(lst);
-        s2 = unparseValueNumbers(xs);
-        res = stringAppend(s1, s2);
+      algorithm
+        s1 := unparseValueNumbers(lst);
+        s2 := unparseValueNumbers(xs);
+        res := stringAppend(s1, s2);
       then
         res;
     case ((Values.ARRAY(valueLst = lst) :: xs))
-      equation
-        s1 = unparseValueNumbers(lst);
-        s2 = unparseValueNumbers(xs);
-        res = stringAppend(s1, s2);
+      algorithm
+        s1 := unparseValueNumbers(lst);
+        s2 := unparseValueNumbers(xs);
+        res := stringAppend(s1, s2);
       then
         res;
     case ((Values.INTEGER(integer = i) :: xs))
-      equation
-        s1 = unparseValueNumbers(xs);
-        istr = intString(i);
-        s2 = stringAppend(istr, " ");
-        res = stringAppend(s2, s1);
+      algorithm
+        s1 := unparseValueNumbers(xs);
+        istr := intString(i);
+        s2 := stringAppend(istr, " ");
+        res := stringAppend(s2, s1);
       then
         res;
     case ((Values.REAL(real = r) :: xs))
-      equation
-        s1 = unparseValueNumbers(xs);
-        istr = realString(r);
-        s2 = stringAppend(istr, " ");
-        res = stringAppend(s2, s1);
+      algorithm
+        s1 := unparseValueNumbers(xs);
+        istr := realString(r);
+        s2 := stringAppend(istr, " ");
+        res := stringAppend(s2, s1);
       then
         res;
     case ((Values.STRING(string = sval) :: xs))
-      equation
-        s1 = unparseValueNumbers(xs);
-        s2 = stringAppend(sval, " ");
-        res = stringAppend(s2, s1);
+      algorithm
+        s1 := unparseValueNumbers(xs);
+        s2 := stringAppend(sval, " ");
+        res := stringAppend(s2, s1);
       then
         res;
     case ({}) then "";
@@ -308,137 +308,137 @@ algorithm
       DAE.Exp e;
       //MUL
     case (Values.INTEGER(iv1),Values.INTEGER(iv2), Values.MULOP())
-      equation
-        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplifyTypes.MULOP());
-        outv = expValue(e);
+      algorithm
+        e := ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplifyTypes.MULOP());
+        outv := expValue(e);
       then
         outv;
     case (Values.REAL(rv1),Values.INTEGER(iv2), Values.MULOP())
-      equation
-        rv2 = intReal(iv2);
-        rv3 = rv1 * rv2;
+      algorithm
+        rv2 := intReal(iv2);
+        rv3 := rv1 * rv2;
       then
         Values.REAL(rv3);
     case (Values.INTEGER(iv1), Values.REAL(rv2), Values.MULOP())
-      equation
-        rv1 = intReal(iv1);
-        rv3 = rv1 * rv2;
+      algorithm
+        rv1 := intReal(iv1);
+        rv3 := rv1 * rv2;
       then
         Values.REAL(rv3);
     case (Values.REAL(rv1), Values.REAL(rv2), Values.MULOP())
-      equation
-        rv3 = rv1 * rv2;
+      algorithm
+        rv3 := rv1 * rv2;
       then
         Values.REAL(rv3);
         //DIV
     case (Values.INTEGER(iv1),Values.INTEGER(iv2), Values.DIVOP())
-      equation
-        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplifyTypes.DIVOP());
-        outv = expValue(e);
+      algorithm
+        e := ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplifyTypes.DIVOP());
+        outv := expValue(e);
       then
         outv;
     case (Values.REAL(rv1),Values.INTEGER(iv2), Values.DIVOP())
-      equation
-        rv2 = intReal(iv2);
-        rv3 = rv1 / rv2;
+      algorithm
+        rv2 := intReal(iv2);
+        rv3 := rv1 / rv2;
       then
         Values.REAL(rv3);
     case (Values.INTEGER(iv1), Values.REAL(rv2), Values.DIVOP())
-      equation
-        rv1 = intReal(iv1);
-        rv3 = rv1 / rv2;
+      algorithm
+        rv1 := intReal(iv1);
+        rv3 := rv1 / rv2;
       then
         Values.REAL(rv3);
     case (Values.REAL(rv1), Values.REAL(rv2), Values.DIVOP())
-      equation
-        rv3 = rv1 / rv2;
+      algorithm
+        rv3 := rv1 / rv2;
       then
         Values.REAL(rv3);
         //POW
     case (Values.INTEGER(iv1),Values.INTEGER(iv2), Values.POWOP()) // this means indirect that we are dealing with decimal numbers (a^(-b)) = 1/a^b
-      equation
-        true = (iv2 < 0);
-        rv1 = intReal(iv1);
-        rv2 = intReal(iv2);
-        rv3 = realPow(rv1, rv2);
+      algorithm
+        true := (iv2 < 0);
+        rv1 := intReal(iv1);
+        rv2 := intReal(iv2);
+        rv3 := realPow(rv1, rv2);
       then
         Values.REAL(rv3);
     case (Values.INTEGER(iv1),Values.INTEGER(iv2), Values.POWOP())
-      equation
-        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplifyTypes.POWOP());
-        outv = expValue(e);
+      algorithm
+        e := ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplifyTypes.POWOP());
+        outv := expValue(e);
       then
         outv;
     case (Values.REAL(rv1),Values.INTEGER(iv2), Values.POWOP())
-      equation
-        rv2 = intReal(iv2);
-        rv3 = realPow(rv1, rv2);
+      algorithm
+        rv2 := intReal(iv2);
+        rv3 := realPow(rv1, rv2);
       then
         Values.REAL(rv3);
     case (Values.INTEGER(iv1), Values.REAL(rv2), Values.POWOP())
-      equation
-        iv2 = realInt(rv2);
-        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplifyTypes.POWOP());
-        outv = expValue(e);
+      algorithm
+        iv2 := realInt(rv2);
+        e := ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplifyTypes.POWOP());
+        outv := expValue(e);
       then
         outv;
     case (Values.INTEGER(iv1), Values.REAL(rv2), Values.POWOP())
-      equation
-        rv1 = intReal(iv1);
-        rv3 = realPow(rv1, rv2);
+      algorithm
+        rv1 := intReal(iv1);
+        rv3 := realPow(rv1, rv2);
       then
         Values.REAL(rv3);
     case (Values.REAL(rv1), Values.REAL(rv2), Values.POWOP())
-      equation
-        rv3 = realPow(rv1, rv2);
+      algorithm
+        rv3 := realPow(rv1, rv2);
       then
         Values.REAL(rv3);
         //ADD
     case (Values.INTEGER(iv1),Values.INTEGER(iv2), Values.ADDOP())
-      equation
-        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplifyTypes.ADDOP());
-        outv = expValue(e);
+      algorithm
+        e := ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplifyTypes.ADDOP());
+        outv := expValue(e);
       then
         outv;
     case (Values.REAL(rv1),Values.INTEGER(iv2), Values.ADDOP())
-      equation
-        rv2 = intReal(iv2);
-        rv3 = rv1 + rv2;
+      algorithm
+        rv2 := intReal(iv2);
+        rv3 := rv1 + rv2;
       then
         Values.REAL(rv3);
     case (Values.INTEGER(iv1), Values.REAL(rv2), Values.ADDOP())
-      equation
-        rv1 = intReal(iv1);
-        rv3 = rv1 + rv2;
+      algorithm
+        rv1 := intReal(iv1);
+        rv3 := rv1 + rv2;
       then
         Values.REAL(rv3);
     case (Values.REAL(rv1), Values.REAL(rv2), Values.ADDOP())
-      equation
-        rv3 = rv1 + rv2;
+      algorithm
+        rv3 := rv1 + rv2;
       then
         Values.REAL(rv3);
         //SUB
     case (Values.INTEGER(iv1),Values.INTEGER(iv2), Values.SUBOP())
-      equation
-        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplifyTypes.SUBOP());
-        outv = expValue(e);
+      algorithm
+        e := ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplifyTypes.SUBOP());
+        outv := expValue(e);
       then
         outv;
     case (Values.REAL(rv1),Values.INTEGER(iv2), Values.SUBOP())
-      equation
-        rv2 = intReal(iv2);
-        rv3 = rv1 - rv2;
+      algorithm
+        rv2 := intReal(iv2);
+        rv3 := rv1 - rv2;
       then
         Values.REAL(rv3);
     case (Values.INTEGER(iv1), Values.REAL(rv2), Values.SUBOP())
-      equation
-        rv1 = intReal(iv1);
-        rv3 = rv1 - rv2;
+      algorithm
+        rv1 := intReal(iv1);
+        rv3 := rv1 - rv2;
       then
         Values.REAL(rv3);
     case (Values.REAL(rv1), Values.REAL(rv2), Values.SUBOP())
-      equation
-        rv3 = rv1 - rv2;
+      algorithm
+        rv3 := rv1 - rv2;
       then
         Values.REAL(rv3);
   end matchcontinue;
@@ -460,19 +460,19 @@ algorithm
       then (r1 <= r2);
 
     case (Values.REAL(r1), _)
-      equation
-        r2 = intReal(valueInteger(val2));
+      algorithm
+        r2 := intReal(valueInteger(val2));
       then (r1 <= r2);
 
     case (_, Values.REAL(r2))
-      equation
-        r1 = intReal(valueInteger(val1));
+      algorithm
+        r1 := intReal(valueInteger(val1));
       then (r1 <= r2);
 
     case (_, _)
-      equation
-        i1 = valueInteger(val1);
-        i2 = valueInteger(val2);
+      algorithm
+        i1 := valueInteger(val1);
+        i2 := valueInteger(val2);
       then
         (i1 <= i2);
   end match;
@@ -492,31 +492,31 @@ algorithm
       list<Values.Value> xs,vallst;
       Integer slen;
     case ((Values.INTEGER() :: xs))
-      equation
-        s1 = unparseDescription(xs);
-        str = stringAppend("# i!\n", s1);
+      algorithm
+        s1 := unparseDescription(xs);
+        str := stringAppend("# i!\n", s1);
       then
         str;
     case ((Values.REAL() :: xs))
-      equation
-        s1 = unparseDescription(xs);
-        str = stringAppend("# r!\n", s1);
+      algorithm
+        s1 := unparseDescription(xs);
+        str := stringAppend("# r!\n", s1);
       then
         str;
     case ((Values.STRING(string = sval) :: xs))
-      equation
-        s1 = unparseDescription(xs);
-        slen = stringLength(sval);
-        slenstr = intString(slen);
-        str = stringAppendList({"# s! 1 ",slenstr,"\n",s1});
+      algorithm
+        s1 := unparseDescription(xs);
+        slen := stringLength(sval);
+        slenstr := intString(slen);
+        str := stringAppendList({"# s! 1 ",slenstr,"\n",s1});
       then
         str;
     case ((Values.ARRAY(valueLst = vallst) :: xs))
-      equation
-        s1 = unparseDescription(xs);
-        s2 = unparseArrayDescription(vallst);
-        s4 = stringAppend(s2, s1);
-        str = stringAppend(s4, " \n");
+      algorithm
+        s1 := unparseDescription(xs);
+        s2 := unparseArrayDescription(vallst);
+        s4 := stringAppend(s2, s1);
+        str := stringAppend(s4, " \n");
       then
         str;
     case ({}) then "";
@@ -555,8 +555,8 @@ algorithm
       String res;
       list<Values.Value> elts;
     case ((Values.ARRAY(valueLst = elts) :: _))
-      equation
-        res = unparsePrimType(elts);
+      algorithm
+        res := unparsePrimType(elts);
       then
         res;
     case ((Values.INTEGER() :: _)) then "i";
@@ -600,18 +600,18 @@ algorithm
       String s1,s2,s3,res;
       list<Values.Value> lst,vals;
     case ((lst as (Values.ARRAY(valueLst = vals) :: _)))
-      equation
-        i1 = listLength(lst);
-        s1 = intString(i1);
-        s2 = stringAppend(s1, " ");
-        s3 = unparseDimSizes(vals);
-        res = stringAppend(s2, s3);
+      algorithm
+        i1 := listLength(lst);
+        s1 := intString(i1);
+        s2 := stringAppend(s1, " ");
+        s3 := unparseDimSizes(vals);
+        res := stringAppend(s2, s3);
       then
         res;
     case (lst)
-      equation
-        len = listLength(lst);
-        res = intString(len);
+      algorithm
+        len := listLength(lst);
+        res := intString(len);
       then
         res;
   end matchcontinue;
@@ -647,27 +647,27 @@ algorithm
       String s1,s2,sres;
       list<Integer> dims;
     case ((Values.ARRAY(valueLst = v1lst, dimLst = dims) :: rest1),(Values.ARRAY(valueLst = v2lst) :: rest2))
-      equation
-        reslst = addElementwiseArrayelt(v1lst, v2lst);
-        res2 = addElementwiseArrayelt(rest1, rest2);
+      algorithm
+        reslst := addElementwiseArrayelt(v1lst, v2lst);
+        res2 := addElementwiseArrayelt(rest1, rest2);
       then
         (Values.ARRAY(reslst,dims) :: res2);
     case ((Values.INTEGER(integer = v1) :: rest1),(Values.INTEGER(integer = v2) :: rest2))
-      equation
-        res = v1 + v2;
-        res2 = addElementwiseArrayelt(rest1, rest2);
+      algorithm
+        res := v1 + v2;
+        res2 := addElementwiseArrayelt(rest1, rest2);
       then
         (Values.INTEGER(res) :: res2);
     case ((Values.REAL(real = r1) :: rest1),(Values.REAL(real = r2) :: rest2))
-      equation
-        rres = r1 + r2;
-        res2 = addElementwiseArrayelt(rest1, rest2);
+      algorithm
+        rres := r1 + r2;
+        res2 := addElementwiseArrayelt(rest1, rest2);
       then
         (Values.REAL(rres) :: res2);
     case ((Values.STRING(string = s1) :: rest1),(Values.STRING(string = s2) :: rest2))
-      equation
-        sres = stringAppend(s1, s2);
-        res2 = addElementwiseArrayelt(rest1, rest2) "Addition of strings is string concatenation" ;
+      algorithm
+        sres := stringAppend(s1, s2);
+        res2 := addElementwiseArrayelt(rest1, rest2) "Addition of strings is string concatenation" ;
       then
         (Values.STRING(sres) :: res2);
     case ({},{}) then {};
@@ -689,21 +689,21 @@ algorithm
       list<Integer> dims;
       Real r1,r2,rres;
     case ((Values.ARRAY(valueLst = v1lst, dimLst = dims) :: rest1),(Values.ARRAY(valueLst = v2lst) :: rest2))
-      equation
-        reslst = subElementwiseArrayelt(v1lst, v2lst);
-        res2 = subElementwiseArrayelt(rest1, rest2);
+      algorithm
+        reslst := subElementwiseArrayelt(v1lst, v2lst);
+        res2 := subElementwiseArrayelt(rest1, rest2);
       then
         (Values.ARRAY(reslst,dims) :: res2);
     case ((Values.INTEGER(integer = v1) :: rest1),(Values.INTEGER(integer = v2) :: rest2))
-      equation
-        res = v1 - v2;
-        res2 = subElementwiseArrayelt(rest1, rest2);
+      algorithm
+        res := v1 - v2;
+        res2 := subElementwiseArrayelt(rest1, rest2);
       then
         (Values.INTEGER(res) :: res2);
     case ((Values.REAL(real = r1) :: rest1),(Values.REAL(real = r2) :: rest2))
-      equation
-        rres = r1 - r2;
-        res2 = subElementwiseArrayelt(rest1, rest2);
+      algorithm
+        rres := r1 - r2;
+        res2 := subElementwiseArrayelt(rest1, rest2);
       then
         (Values.REAL(rres) :: res2);
     case ({},{}) then {};
@@ -725,21 +725,21 @@ algorithm
       list<Integer> dims;
       Real rres,r1,r2;
     case ((Values.ARRAY(valueLst = v1lst, dimLst = dims) :: rest1),(Values.ARRAY(valueLst = v2lst) :: rest2))
-      equation
-        reslst = mulElementwiseArrayelt(v1lst, v2lst);
-        res2 = mulElementwiseArrayelt(rest1, rest2);
+      algorithm
+        reslst := mulElementwiseArrayelt(v1lst, v2lst);
+        res2 := mulElementwiseArrayelt(rest1, rest2);
       then
         (Values.ARRAY(reslst,dims) :: res2);
     case ((Values.INTEGER(integer = v1) :: rest1),(Values.INTEGER(integer = v2) :: rest2))
-      equation
-        res = v1 * v2;
-        res2 = mulElementwiseArrayelt(rest1, rest2);
+      algorithm
+        res := v1 * v2;
+        res2 := mulElementwiseArrayelt(rest1, rest2);
       then
         (Values.INTEGER(res) :: res2);
     case ((Values.REAL(real = r1) :: rest1),(Values.REAL(real = r2) :: rest2))
-      equation
-        rres = r1 * r2;
-        res2 = mulElementwiseArrayelt(rest1, rest2);
+      algorithm
+        rres := r1 * r2;
+        res2 := mulElementwiseArrayelt(rest1, rest2);
       then
         (Values.REAL(rres) :: res2);
     case ({},{}) then {};
@@ -761,23 +761,23 @@ algorithm
       Integer i1,i2;
       list<Integer> dims;
     case ((Values.ARRAY(valueLst = v1lst, dimLst = dims) :: rest1),(Values.ARRAY(valueLst = v2lst) :: rest2))
-      equation
-        reslst = divElementwiseArrayelt(v1lst, v2lst);
-        res2 = divElementwiseArrayelt(rest1, rest2);
+      algorithm
+        reslst := divElementwiseArrayelt(v1lst, v2lst);
+        res2 := divElementwiseArrayelt(rest1, rest2);
       then
         (Values.ARRAY(reslst,dims) :: res2);
     case ((Values.INTEGER(integer = i1) :: rest1),(Values.INTEGER(integer = i2) :: rest2))
-      equation
-        r1=intReal(i1);
-        r2=intReal(i2);
-        res = r1 / r2;
-        res2 = divElementwiseArrayelt(rest1, rest2);
+      algorithm
+        r1:=intReal(i1);
+        r2:=intReal(i2);
+        res := r1 / r2;
+        res2 := divElementwiseArrayelt(rest1, rest2);
       then
         (Values.REAL(res) :: res2);
     case ((Values.REAL(real = r1) :: rest1),(Values.REAL(real = r2) :: rest2))
-      equation
-        res = r1 / r2;
-        res2 = divElementwiseArrayelt(rest1, rest2);
+      algorithm
+        res := r1 / r2;
+        res2 := divElementwiseArrayelt(rest1, rest2);
       then
         (Values.REAL(res) :: res2);
     case ({},{}) then {};
@@ -799,23 +799,23 @@ algorithm
       Real res,r1,r2;
       list<Integer> dims;
     case ((Values.ARRAY(valueLst = v1lst, dimLst = dims) :: rest1),(Values.ARRAY(valueLst = v2lst) :: rest2))
-      equation
-        reslst = powElementwiseArrayelt(v1lst, v2lst);
-        res2 = powElementwiseArrayelt(rest1, rest2);
+      algorithm
+        reslst := powElementwiseArrayelt(v1lst, v2lst);
+        res2 := powElementwiseArrayelt(rest1, rest2);
       then
         (Values.ARRAY(reslst,dims) :: res2);
     case ((Values.INTEGER(integer = i1) :: rest1),(Values.INTEGER(integer = i2) :: rest2))
-      equation
-        r1=intReal(i1);
-        r2=intReal(i2);
-        res = r1 ^ r2;
-        res2 = powElementwiseArrayelt(rest1, rest2);
+      algorithm
+        r1:=intReal(i1);
+        r2:=intReal(i2);
+        res := r1 ^ r2;
+        res2 := powElementwiseArrayelt(rest1, rest2);
       then
         (Values.REAL(res) :: res2);
     case ((Values.REAL(real = r1) :: rest1),(Values.REAL(real = r2) :: rest2))
-      equation
-        res = r1 ^ r2;
-        res2 = powElementwiseArrayelt(rest1, rest2);
+      algorithm
+        res := r1 ^ r2;
+        res2 := powElementwiseArrayelt(rest1, rest2);
       then
         (Values.REAL(res) :: res2);
     case ({},{}) then {};
@@ -896,76 +896,76 @@ algorithm
     case (Values.ARRAY(valueLst = vallist, dimLst = int_dims)) then valueExpArray(vallist,int_dims, originalExp);
 
     case (Values.TUPLE(valueLst = vallist))
-      equation
-        explist = List.map(vallist, function valueExp(originalExp=NONE()));
+      algorithm
+        explist := List.map(vallist, function valueExp(originalExp=NONE()));
       then
         DAE.TUPLE(explist);
 
     case(Values.RECORD(path,vallist,namelst,-1))
-      equation
-        expl = List.map(vallist,function valueExp(originalExp=NONE()));
-        tpl = List.map(expl,Expression.typeof);
-        varlst = List.threadMap(namelst,tpl,Expression.makeVar);
-        t = DAE.T_COMPLEX(ClassInf.RECORD(path),varlst,NONE(), false);
+      algorithm
+        expl := List.map(vallist,function valueExp(originalExp=NONE()));
+        tpl := List.map(expl,Expression.typeof);
+        varlst := List.threadMap(namelst,tpl,Expression.makeVar);
+        t := DAE.T_COMPLEX(ClassInf.RECORD(path),varlst,NONE(), false);
       then DAE.RECORD(path,expl,namelst,t);
 
     case(Values.ENUM_LITERAL(name = path, index = ix))
       then DAE.ENUM_LITERAL(path, ix);
 
     case (Values.TUPLE(vallist))
-      equation
-        explist = List.map(vallist, function valueExp(originalExp=NONE()));
+      algorithm
+        explist := List.map(vallist, function valueExp(originalExp=NONE()));
       then DAE.TUPLE(explist);
 
     /* MetaModelica types */
     case (Values.OPTION(SOME(v)))
-      equation
-        e = valueExp(v);
-        (e,_) = Types.matchType(e, Types.typeOfValue(v), DAE.T_METABOXED_DEFAULT, true);
+      algorithm
+        e := valueExp(v);
+        (e,_) := Types.matchType(e, Types.typeOfValue(v), DAE.T_METABOXED_DEFAULT, true);
       then DAE.META_OPTION(SOME(e));
 
     case (Values.OPTION(NONE())) then DAE.META_OPTION(NONE());
 
     case (Values.META_TUPLE(vallist))
-      equation
-        explist = List.map(vallist, function valueExp(originalExp=NONE()));
-        typelist = List.map(vallist, Types.typeOfValue);
-        (explist,_) = Types.matchTypeTuple(explist, typelist, List.map(typelist, Types.boxIfUnboxedType), true);
+      algorithm
+        explist := List.map(vallist, function valueExp(originalExp=NONE()));
+        typelist := List.map(vallist, Types.typeOfValue);
+        (explist,_) := Types.matchTypeTuple(explist, typelist, List.map(typelist, Types.boxIfUnboxedType), true);
       then DAE.META_TUPLE(explist);
 
     case (Values.LIST({})) then DAE.LIST({});
 
     case (Values.LIST(vallist))
-      equation
-        explist = List.map(vallist, function valueExp(originalExp=NONE()));
-        typelist = List.map(vallist, Types.typeOfValue);
-        vt = Types.boxIfUnboxedType(List.reduce(typelist,Types.superType));
-        (explist,_) = Types.matchTypes(explist, typelist, vt, true);
+      algorithm
+        explist := List.map(vallist, function valueExp(originalExp=NONE()));
+        typelist := List.map(vallist, Types.typeOfValue);
+        vt := Types.boxIfUnboxedType(List.reduce(typelist,Types.superType));
+        (explist,_) := Types.matchTypes(explist, typelist, vt, true);
       then DAE.LIST(explist);
 
     case (Values.META_ARRAY(vallist))
-      equation
-        explist = List.map(vallist, function valueExp(originalExp=NONE()));
-        typelist = List.map(vallist, Types.typeOfValue);
-        vt = Types.boxIfUnboxedType(List.reduce(typelist,Types.superType));
-        (explist,_) = Types.matchTypes(explist, typelist, vt, true);
+      algorithm
+        explist := List.map(vallist, function valueExp(originalExp=NONE()));
+        typelist := List.map(vallist, Types.typeOfValue);
+        vt := Types.boxIfUnboxedType(List.reduce(typelist,Types.superType));
+        (explist,_) := Types.matchTypes(explist, typelist, vt, true);
       then Expression.makeBuiltinCall("listArrayLiteral", {DAE.LIST(explist)}, DAE.T_METAARRAY(vt), false);
 
       /* MetaRecord */
     case (Values.RECORD(path,vallist,namelst,ix))
-      equation
-        true = ix >= 0;
-        explist = List.map(vallist, function valueExp(originalExp=NONE()));
-        typelist = List.map(vallist, Types.typeOfValue);
-        (explist,_) = Types.matchTypeTuple(explist, typelist, List.map(typelist, Types.boxIfUnboxedType), true);
+      algorithm
+        true := ix >= 0;
+        explist := List.map(vallist, function valueExp(originalExp=NONE()));
+        typelist := List.map(vallist, Types.typeOfValue);
+        (explist,_) := Types.matchTypeTuple(explist, typelist, List.map(typelist, Types.boxIfUnboxedType), true);
       then DAE.METARECORDCALL(path,explist,namelst,ix,{});
 
     case (Values.META_FAIL())
       then DAE.CALL(Absyn.IDENT("fail"),{},DAE.callAttrBuiltinOther);
 
     case (Values.META_BOX(v))
-      equation
-        e = valueExp(v);
+      algorithm
+        e := valueExp(v);
       then DAE.BOX(e);
 
     case (Values.CODE(A=code))
@@ -986,8 +986,8 @@ algorithm
       then DAE.TUPLE({});
 
     case (v)
-      equation
-        s = "ValuesUtil.valueExp failed for " + valString(v);
+      algorithm
+        s := "ValuesUtil.valueExp failed for " + valString(v);
         Error.addMessage(Error.INTERNAL_ERROR, {s});
       then
         fail();
@@ -1013,55 +1013,55 @@ algorithm
       list<list<DAE.Exp>> mexpl;
     case ({},{},_) then DAE.ARRAY(DAE.T_UNKNOWN_DEFAULT,false,{});
     case ({},_,_)
-      equation
-        dims = List.map(inDims, Expression.intDimension);
+      algorithm
+        dims := List.map(inDims, Expression.intDimension);
       then DAE.ARRAY(DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT, dims),false,{});
 
     // Matrix
     case(Values.ARRAY(valueLst=v::xs)::xs2,dim::int_dims,_)
-      equation
-        failure(Values.ARRAY() = v);
-        explist = List.map((v :: xs), function valueExp(originalExp=NONE()));
-        DAE.MATRIX(t,_,mexpl) = valueExp(Values.ARRAY(xs2,int_dims));
-        t = Expression.arrayDimensionSetFirst(t, DAE.DIM_INTEGER(dim));
+      algorithm
+        failure(Values.ARRAY() := v);
+        explist := List.map((v :: xs), function valueExp(originalExp=NONE()));
+        DAE.MATRIX(t,_,mexpl) := valueExp(Values.ARRAY(xs2,int_dims));
+        t := Expression.arrayDimensionSetFirst(t, DAE.DIM_INTEGER(dim));
       then
         DAE.MATRIX(t,dim,explist::mexpl);
 
     // Matrix last row
     case({Values.ARRAY(valueLst=v::xs)},_,_)
-      equation
-        failure(Values.ARRAY() = v);
-        dim = listLength(v::xs);
-        explist = List.map((v :: xs), function valueExp(originalExp=NONE()));
-        vt = Types.typeOfValue(v);
-        t = Types.simplifyType(vt);
-        dim = listLength(v::xs);
-        t = Expression.liftArrayR(t,DAE.DIM_INTEGER(dim));
-        t = Expression.liftArrayR(t,DAE.DIM_INTEGER(1));
+      algorithm
+        failure(Values.ARRAY() := v);
+        dim := listLength(v::xs);
+        explist := List.map((v :: xs), function valueExp(originalExp=NONE()));
+        vt := Types.typeOfValue(v);
+        t := Types.simplifyType(vt);
+        dim := listLength(v::xs);
+        t := Expression.liftArrayR(t,DAE.DIM_INTEGER(dim));
+        t := Expression.liftArrayR(t,DAE.DIM_INTEGER(1));
       then
         DAE.MATRIX(t,dim,{explist});
 
     // Generic array and we have original exp
     case (v :: xs,_, SOME(DAE.ARRAY(array=exps1)))
-      equation
-        explist = list(valueExp(e1, SOME(e2)) threaded for e1 in values, e2 in exps1);
-        vt = Types.typeOfValue(v);
-        t = Types.simplifyType(vt);
-        dim = listLength(v::xs);
-        t = Expression.liftArrayR(t,DAE.DIM_INTEGER(dim));
-        b = Types.isArray(vt);
-        b = boolNot(b);
+      algorithm
+        explist := list(valueExp(e1, SOME(e2)) threaded for e1 in values, e2 in exps1);
+        vt := Types.typeOfValue(v);
+        t := Types.simplifyType(vt);
+        dim := listLength(v::xs);
+        t := Expression.liftArrayR(t,DAE.DIM_INTEGER(dim));
+        b := Types.isArray(vt);
+        b := boolNot(b);
       then DAE.ARRAY(t,b,explist);
 
     case (v :: xs,_,_)
-      equation
-        explist = List.map((v :: xs), function valueExp(originalExp=NONE()));
-        vt = Types.typeOfValue(v);
-        t = Types.simplifyType(vt);
-        dim = listLength(v::xs);
-        t = Expression.liftArrayR(t,DAE.DIM_INTEGER(dim));
-        b = Types.isArray(vt);
-        b = boolNot(b);
+      algorithm
+        explist := List.map((v :: xs), function valueExp(originalExp=NONE()));
+        vt := Types.typeOfValue(v);
+        t := Types.simplifyType(vt);
+        dim := listLength(v::xs);
+        t := Expression.liftArrayR(t,DAE.DIM_INTEGER(dim));
+        b := Types.isArray(vt);
+        b := boolNot(b);
       then DAE.ARRAY(t,b,explist);
   end matchcontinue;
 end valueExpArray;
@@ -1104,19 +1104,19 @@ algorithm
       Integer i;
     case ({}) then {};
     case (Values.REAL(real = r)::rest)
-      equation
-        res = valueReals(rest);
+      algorithm
+        res := valueReals(rest);
        then
          r::res;
     case (Values.INTEGER(integer = i)::rest)
-      equation
-        r = intReal(i);
-        res = valueReals(rest);
+      algorithm
+        r := intReal(i);
+        res := valueReals(rest);
       then
         r::res;
     case (_::rest)
-      equation
-        res = valueReals(rest);
+      algorithm
+        res := valueReals(rest);
       then
         res;
   end matchcontinue;
@@ -1169,8 +1169,8 @@ algorithm
 
     // A 1-dimensional array.
     case Values.ARRAY(valueLst = vals)
-      equation
-        reals = valueReals(vals);
+      algorithm
+        reals := valueReals(vals);
       then
         List.map(reals, List.create);
 
@@ -1199,18 +1199,18 @@ algorithm
       list<Values.Value> vlst_1,vlst;
       list<Integer> dims;
     case (Values.REAL(real = r))
-      equation
-        r_1 = - r;
+      algorithm
+        r_1 := - r;
       then
         Values.REAL(r_1);
     case (Values.INTEGER(integer = i))
-      equation
-        i_1 = -i;
+      algorithm
+        i_1 := -i;
       then
         Values.INTEGER(i_1);
     case Values.ARRAY(valueLst = vlst, dimLst = dims)
-      equation
-        vlst_1 = List.map(vlst, valueNeg);
+      algorithm
+        vlst_1 := List.map(vlst, valueNeg);
       then
         Values.ARRAY(vlst_1,dims);
   end match;
@@ -1447,70 +1447,70 @@ algorithm
       list<Integer> dims;
       Real r1,r2,rres;
     case ((Values.INTEGER(integer = i1) :: (v1lst as (_ :: _))),(Values.INTEGER(integer = i2) :: (v2lst as (_ :: _))))
-      equation
-        i1 = i1*i2;
-        Values.INTEGER(i2) = multScalarProduct(v1lst, v2lst);
-        res = i1 + i2;
+      algorithm
+        i1 := i1*i2;
+        Values.INTEGER(i2) := multScalarProduct(v1lst, v2lst);
+        res := i1 + i2;
       then
         Values.INTEGER(res);
     case ({Values.INTEGER(integer = v1)},{Values.INTEGER(integer = v2)})
-      equation
-        res = v1*v2;
+      algorithm
+        res := v1*v2;
       then
         Values.INTEGER(res);
     case ((Values.REAL(real = r1) :: (v1lst as (_ :: _))),(Values.REAL(real = r2) :: (v2lst as (_ :: _))))
-      equation
-        r1 = r1 * r2;
-        Values.REAL(r2) = multScalarProduct(v1lst, v2lst);
-        rres = r1 + r2;
+      algorithm
+        r1 := r1 * r2;
+        Values.REAL(r2) := multScalarProduct(v1lst, v2lst);
+        rres := r1 + r2;
       then
         Values.REAL(rres);
     case ({Values.REAL(real = r1)},{Values.REAL(real = r2)})
-      equation
-        rres = r1 * r2;
+      algorithm
+        rres := r1 * r2;
       then
         Values.REAL(rres);
     case ((Values.ARRAY(valueLst = v2lst) :: rest),(vlst as (Values.INTEGER() :: _)))
-      equation
-        sres = multScalarProduct(v2lst, vlst);
-        Values.ARRAY(vres,dim::dims) = multScalarProduct(rest, vlst);
-        dim = dim+1;
+      algorithm
+        sres := multScalarProduct(v2lst, vlst);
+        Values.ARRAY(vres,dim::dims) := multScalarProduct(rest, vlst);
+        dim := dim+1;
       then
         Values.ARRAY(sres :: vres, dim::dims);
     case ({},(Values.INTEGER() :: _)) then makeArray({});
     case ((Values.ARRAY(valueLst = v2lst) :: rest),(vlst as (Values.REAL() :: _)))
-      equation
-        sres = multScalarProduct(v2lst, vlst);
-        Values.ARRAY(vres,dim::dims) = multScalarProduct(rest, vlst);
-        dim = dim+1;
+      algorithm
+        sres := multScalarProduct(v2lst, vlst);
+        Values.ARRAY(vres,dim::dims) := multScalarProduct(rest, vlst);
+        dim := dim+1;
       then
         Values.ARRAY(sres :: vres,dim::dims);
     case ({},(Values.REAL() :: _)) then makeArray({});
     case ((vlst as (Values.INTEGER() :: _)),(mat as (Values.ARRAY(valueLst = (_ :: (_ :: _))) :: _)))
-      equation
-        (Values.ARRAY(valueLst = col),mat_1) = matrixStripFirstColumn(mat);
-        v = multScalarProduct(vlst, col);
-        Values.ARRAY(vals,dim::dims) = multScalarProduct(vlst, mat_1);
+      algorithm
+        (Values.ARRAY(valueLst = col),mat_1) := matrixStripFirstColumn(mat);
+        v := multScalarProduct(vlst, col);
+        Values.ARRAY(vals,dim::dims) := multScalarProduct(vlst, mat_1);
       then
         Values.ARRAY(v :: vals, dim::dims);
     case ((vlst as (Values.INTEGER() :: _)),(mat as (Values.ARRAY(valueLst = {_}) :: _)))
-      equation
-        (Values.ARRAY(valueLst = col),_) = matrixStripFirstColumn(mat);
-        Values.INTEGER(i1) = multScalarProduct(vlst, col);
+      algorithm
+        (Values.ARRAY(valueLst = col),_) := matrixStripFirstColumn(mat);
+        Values.INTEGER(i1) := multScalarProduct(vlst, col);
       then
         makeArray({Values.INTEGER(i1)});
     case ((vlst as (Values.REAL() :: _)),(mat as (Values.ARRAY(valueLst = (_ :: (_ :: _))) :: _)))
-      equation
-        (Values.ARRAY(valueLst = col),mat_1) = matrixStripFirstColumn(mat);
-        v = multScalarProduct(vlst, col);
-        Values.ARRAY(valueLst = vals, dimLst = dim::dims) = multScalarProduct(vlst, mat_1);
-        dim = dim+1;
+      algorithm
+        (Values.ARRAY(valueLst = col),mat_1) := matrixStripFirstColumn(mat);
+        v := multScalarProduct(vlst, col);
+        Values.ARRAY(valueLst = vals, dimLst = dim::dims) := multScalarProduct(vlst, mat_1);
+        dim := dim+1;
       then
         Values.ARRAY(v :: vals, dim::dims);
     case ((vlst as (Values.REAL() :: _)),(mat as (Values.ARRAY(valueLst = {_}) :: _)))
-      equation
-        (Values.ARRAY(valueLst = col),_) = matrixStripFirstColumn(mat);
-        Values.REAL(r1) = multScalarProduct(vlst, col);
+      algorithm
+        (Values.ARRAY(valueLst = col),_) := matrixStripFirstColumn(mat);
+        Values.REAL(r1) := multScalarProduct(vlst, col);
       then
         makeArray({Values.REAL(r1)});
     else
@@ -1536,18 +1536,18 @@ algorithm
       Real x1,x2,x3,y1,y2,y3,z1,z2,z3;
     case ({Values.REAL(x1),Values.REAL(x2),Values.REAL(x3)},
           {Values.REAL(y1),Values.REAL(y2),Values.REAL(y3)})
-      equation
-        z1 = realSub(realMul(x2,y3),realMul(x3,y2));
-        z2 = realSub(realMul(x3,y1),realMul(x1,y3));
-        z3 = realSub(realMul(x1,y2),realMul(x2,y1));
+      algorithm
+        z1 := realSub(realMul(x2,y3),realMul(x3,y2));
+        z2 := realSub(realMul(x3,y1),realMul(x1,y3));
+        z3 := realSub(realMul(x1,y2),realMul(x2,y1));
       then
         makeArray({Values.REAL(z1),Values.REAL(z2),Values.REAL(z3)});
     case ({Values.INTEGER(ix1),Values.INTEGER(ix2),Values.INTEGER(ix3)},
           {Values.INTEGER(iy1),Values.INTEGER(iy2),Values.INTEGER(iy3)})
-      equation
-        iz1 = intSub(intMul(ix2,iy3),intMul(ix3,iy2));
-        iz2 = intSub(intMul(ix3,iy1),intMul(ix1,iy3));
-        iz3 = intSub(intMul(ix1,iy2),intMul(ix2,iy1));
+      algorithm
+        iz1 := intSub(intMul(ix2,iy3),intMul(ix3,iy2));
+        iz2 := intSub(intMul(ix3,iy1),intMul(ix1,iy3));
+        iz3 := intSub(intMul(ix1,iy2),intMul(ix2,iy1));
       then
         makeArray({Values.INTEGER(iz1),Values.INTEGER(iz2),Values.INTEGER(iz3)});
     else
@@ -1572,9 +1572,9 @@ algorithm
       Values.Value res1;
       list<Values.Value> res2,m1,v1lst,rest1,m2;
     case (((Values.ARRAY(valueLst = v1lst) :: rest1)),(m2 as (Values.ARRAY() :: _)))
-      equation
-        res1 = multScalarProduct(v1lst, m2);
-        res2 = multMatrix(rest1, m2);
+      algorithm
+        res1 := multScalarProduct(v1lst, m2);
+        res2 := multMatrix(rest1, m2);
       then
         (res1 :: res2);
     case ({},_) then {};
@@ -1595,10 +1595,10 @@ algorithm
       Integer i;
       Integer dim;
     case ((Values.ARRAY(valueLst = (v1 :: vrest), dimLst = {dim}) :: rest))
-      equation
-        (Values.ARRAY(resl,{i}),resl2) = matrixStripFirstColumn(rest);
-        i = i+1;
-        dim = dim - 1;
+      algorithm
+        (Values.ARRAY(resl,{i}),resl2) := matrixStripFirstColumn(rest);
+        i := i+1;
+        dim := dim - 1;
       then
         (Values.ARRAY((v1 :: resl),{i}),(Values.ARRAY(vrest,{dim}) :: resl2));
 
@@ -1621,9 +1621,9 @@ algorithm
       list<Integer> lst;
     case ({}) then Values.ARRAY({},{0});
     case ((i :: lst))
-      equation
-        Values.ARRAY(res,{len}) = intlistToValue(lst);
-        len = len+1;
+      algorithm
+        Values.ARRAY(res,{len}) := intlistToValue(lst);
+        len := len+1;
       then
         Values.ARRAY((Values.INTEGER(i) :: res),{len});
   end match;
@@ -1705,12 +1705,12 @@ algorithm
       list<Integer> il;
       list<Values.Value> vlst;
     case (vlst as (Values.ARRAY(dimLst = il)::_))
-      equation
-        i1 = listLength(vlst);
+      algorithm
+        i1 := listLength(vlst);
       then Values.ARRAY(vlst,i1::il);
     case (vlst)
-      equation
-        i1 = listLength(vlst);
+      algorithm
+        i1 := listLength(vlst);
       then Values.ARRAY(vlst,{i1});
   end matchcontinue;
 end makeArray;
@@ -1781,42 +1781,42 @@ algorithm
       Absyn.Path path;
 
     case Values.INTEGER(integer = n)
-      equation
-        s = intString(n);
+      algorithm
+        s := intString(n);
         Print.printBuf(s);
       then
         ();
     case Values.REAL(real = x)
-      equation
-        s = realString(x);
+      algorithm
+        s := realString(x);
         Print.printBuf(s);
       then
         ();
     case Values.STRING(string = s)
-      equation
+      algorithm
         Print.printBuf("\"");
         Print.printBuf(System.escapedString(s, false));
         Print.printBuf("\"");
       then
         ();
     case Values.BOOL(boolean = false)
-      equation
+      algorithm
         Print.printBuf("false");
       then
         ();
     case Values.BOOL(boolean = true)
-      equation
+      algorithm
         Print.printBuf("true");
       then
         ();
     case Values.ENUM_LITERAL(name = p)
-      equation
-        s = AbsynUtil.pathString(p);
+      algorithm
+        s := AbsynUtil.pathString(p);
         Print.printBuf(s);
       then
         ();
     case Values.ARRAY(valueLst = vs)
-      equation
+      algorithm
         Print.printBuf("{");
         valListString(vs);
         Print.printBuf("}");
@@ -1825,7 +1825,7 @@ algorithm
     case Values.TUPLE(valueLst = {})
       then ();
     case Values.TUPLE(valueLst = vs)
-      equation
+      algorithm
         Print.printBuf("(");
         valListString(vs);
         Print.printBuf(")");
@@ -1834,7 +1834,7 @@ algorithm
     case Values.META_TUPLE(valueLst = {})
       then ();
     case Values.META_TUPLE(valueLst = vs)
-      equation
+      algorithm
         Print.printBuf("(");
         valListString(vs);
         Print.printBuf(")");
@@ -1842,17 +1842,17 @@ algorithm
         ();
 
     case ((Values.RECORD(record_ = Absyn.IDENT("SimulationResult"), orderd = xs, comp = ids)))
-      equation
+      algorithm
         Print.printBuf("record SimulationResult\n");
-        (xs,ids) = filterSimulationResults(Flags.isSet(Flags.SHORT_OUTPUT),xs,ids,{},{});
+        (xs,ids) := filterSimulationResults(Flags.isSet(Flags.SHORT_OUTPUT),xs,ids,{},{});
         valRecordString(xs,ids);
         Print.printBuf("end SimulationResult;");
       then
         ();
 
     case ((Values.RECORD(record_ = recordPath, orderd = xs, comp = ids)))
-      equation
-        recordName = AbsynUtil.pathStringNoQual(recordPath);
+      algorithm
+        recordName := AbsynUtil.pathStringNoQual(recordPath);
 
         Print.printBuf("record " + recordName + "\n");
         valRecordString(xs,ids);
@@ -1861,20 +1861,20 @@ algorithm
         ();
 
     case ((Values.OPTION(SOME(r))))
-      equation
+      algorithm
         Print.printBuf("SOME(");
         valString2(r);
         Print.printBuf(")");
       then
         ();
     case ((Values.OPTION(NONE())))
-      equation
+      algorithm
         Print.printBuf("NONE()");
       then
         ();
 
     case ((Values.META_BOX(r)))
-      equation
+      algorithm
         Print.printBuf("#(");
         valString2(r);
         Print.printBuf(")");
@@ -1882,19 +1882,19 @@ algorithm
         ();
 
     case (Values.CODE(A = Absyn.C_TYPENAME(path)))
-      equation
+      algorithm
         Print.printBuf(AbsynUtil.pathString(path));
       then
         ();
 
     case (Values.CODE(A = Absyn.C_VARIABLENAME(cr)))
-      equation
+      algorithm
         Print.printBuf(Dump.printComponentRefStr(cr));
       then
         ();
 
     case (Values.CODE(A = c))
-      equation
+      algorithm
         Print.printBuf("$Code(");
         Print.printBuf(Dump.printCodeStr(c));
         Print.printBuf(")");
@@ -1903,7 +1903,7 @@ algorithm
 
     // MetaModelica list
     case Values.LIST(valueLst = vs)
-      equation
+      algorithm
         Print.printBuf("{");
         valListString(vs);
         Print.printBuf("}");
@@ -1912,7 +1912,7 @@ algorithm
 
     // MetaModelica array
     case Values.META_ARRAY(valueLst = vs)
-      equation
+      algorithm
         Print.printBuf("meta_array(");
         valListString(vs);
         Print.printBuf(")");
@@ -1922,8 +1922,8 @@ algorithm
     /* Until is it no able to get from an string Enumeration the C-Enumeration use the index value */
     /* Example: This is yet not possible Enum.e1 \\ PEnum   ->  1 \\ PEnum  with enum Enum(e1,e2), Enum PEnum; */
     case (Values.ENUM_LITERAL(index = n, name=p))
-      equation
-        s = intString(n) + " /* ENUM: " + AbsynUtil.pathString(p) + " */";
+      algorithm
+        s := intString(n) + " /* ENUM: " + AbsynUtil.pathString(p) + " */";
         Print.printBuf(s);
       then
         ();
@@ -1932,12 +1932,12 @@ algorithm
       then ();
 
     case (Values.META_FAIL())
-      equation
+      algorithm
         Print.printBuf("fail()");
       then ();
 
     case (Values.EMPTY(scope = scope, name = name, tyStr = tyStr))
-      equation
+      algorithm
         Print.printBuf("/* <EMPTY(scope: " + scope + ", name: " + name + ", ty: " + tyStr + ")> */");
       then ();
 
@@ -1966,17 +1966,17 @@ algorithm
       list<String> idrest;
     case (_,{},{},_,_) then (listReverse(valacc),listReverse(idacc));
     case (true,v::vrest,(id as "messages")::idrest,_,_)
-      equation
-        (outValues,outIds) = filterSimulationResults(filter,vrest,idrest,v::valacc,id::idacc);
+      algorithm
+        (outValues,outIds) := filterSimulationResults(filter,vrest,idrest,v::valacc,id::idacc);
       then (outValues,outIds);
     case (true,Values.STRING(str)::vrest,(id as "resultFile")::idrest,_,_)
-      equation
-        str = System.basename(str);
-        (outValues,outIds) = filterSimulationResults(filter,vrest,idrest,Values.STRING(str)::valacc,id::idacc);
+      algorithm
+        str := System.basename(str);
+        (outValues,outIds) := filterSimulationResults(filter,vrest,idrest,Values.STRING(str)::valacc,id::idacc);
       then (outValues,outIds);
     case (true,_::vrest,_::idrest,_,_)
-      equation
-        (outValues,outIds) = filterSimulationResults(filter,vrest,idrest,valacc,idacc);
+      algorithm
+        (outValues,outIds) := filterSimulationResults(filter,vrest,idrest,valacc,idacc);
       then (outValues,outIds);
     case (false,_,_,_,_) then (inValues,inIds);
   end match;
@@ -1998,7 +1998,7 @@ algorithm
     case ({},{}) then ();
 
     case (x :: (xs as (_ :: _)),id :: (ids as (_ :: _)))
-      equation
+      algorithm
         Print.printBuf("    ");
         Print.printBuf(id);
         Print.printBuf(" = ");
@@ -2009,7 +2009,7 @@ algorithm
         ();
 
     case (x :: {},id :: {})
-      equation
+      algorithm
         Print.printBuf("    ");
         Print.printBuf(id);
         Print.printBuf(" = ");
@@ -2019,7 +2019,7 @@ algorithm
         ();
 
     case (xs,ids)
-      equation
+      algorithm
         print("ValuesUtil.valRecordString failed:\nids: "+ stringDelimitList(ids, ", ") +
         "\nvals: " + stringDelimitList(List.map(xs, valString), ", ") + "\n");
       then
@@ -2040,12 +2040,12 @@ algorithm
       list<Values.Value> vs;
     case {} then ();
     case {v}
-      equation
+      algorithm
         valString2(v);
       then
         ();
     case (v :: vs)
-      equation
+      algorithm
         valString2(v);
         Print.printBuf(", ");
         valListString(vs);
@@ -2075,15 +2075,15 @@ algorithm
       Integer handle;
 
     case (filename,Values.ARRAY(valueLst = (t :: rest)),(_ :: varnames),message) /* filename values Variable names message string */
-      equation
-        handle = Print.saveAndClearBuf();
+      algorithm
+        handle := Print.saveAndClearBuf();
 
         Print.printBuf("#Ptolemy Plot generated by OpenModelica\nTitleText: ");
         Print.printBuf(message);
         Print.printBuf("\n");
         unparsePtolemyValues(t, rest, varnames);
 
-        str = Print.getString();
+        str := Print.getString();
         Print.restoreBuf(handle);
 
         System.writeFile(filename, str);
@@ -2106,7 +2106,7 @@ algorithm
 
     case (_,{},_) then ();
     case (t,(s1 :: xs),(v1 :: vs))
-      equation
+      algorithm
         unparsePtolemySet(t, s1, v1);
         unparsePtolemyValues(t, xs, vs);
       then
@@ -2136,7 +2136,7 @@ algorithm
     // adrpo: ignore dimenstions here as we're just printing! otherwise it fails.
     //        TODO! FIXME! see why the dimension list is wrong!
     case (Values.ARRAY(valueLst = (v1 :: v1s)),Values.ARRAY(valueLst = (v2 :: v2s)))
-      equation
+      algorithm
         valString2(v1);
         Print.printBuf(",");
         valString2(v2);
@@ -2145,8 +2145,8 @@ algorithm
       then
         ();
     case (v1, _)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- ValuesUtil.unparsePtolemySet2 failed on v1: " +
           printValStr(v1) + " and v2: " + printValStr(v1));
       then
@@ -2165,9 +2165,9 @@ algorithm
       Values.Value value;
       list<Integer> dims;
     case (Values.ARRAY(valueLst = lst, dimLst = dims))
-      equation
-        lst_1 = List.map(lst, reverseMatrix);
-        lst_2 = listReverse(lst_1);
+      algorithm
+        lst_1 := List.map(lst, reverseMatrix);
+        lst_2 := listReverse(lst_1);
       then
         Values.ARRAY(lst_2,dims);
     case (value) then value;
@@ -2210,19 +2210,19 @@ algorithm
 
     case({},_, preRes) then preRes;
     case (((Values.INTEGER(integer=n))::vlst2),Values.ARRAY(valueLst = vlst),_)
-      equation
-        res = listGet(vlst, n);
-        res = nthnthArrayelt(vlst2,res,res);
+      algorithm
+        res := listGet(vlst, n);
+        res := nthnthArrayelt(vlst2,res,res);
       then res;
     case (((Values.ENUM_LITERAL(index=n))::vlst2),Values.ARRAY(valueLst = vlst),_)
-      equation
-        res = listGet(vlst, n);
-        res = nthnthArrayelt(vlst2,res,res);
+      algorithm
+        res := listGet(vlst, n);
+        res := nthnthArrayelt(vlst2,res,res);
       then res;
     case (((Values.BOOL(boolean=b))::vlst2),Values.ARRAY(valueLst = vlst),_)
-      equation
-        res = listGet(vlst, if b then 2 else 1);
-        res = nthnthArrayelt(vlst2,res,res);
+      algorithm
+        res := listGet(vlst, if b then 2 else 1);
+        res := nthnthArrayelt(vlst2,res,res);
       then res;
   end match;
 end nthnthArrayelt;

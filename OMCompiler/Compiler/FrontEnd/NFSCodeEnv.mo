@@ -236,18 +236,18 @@ algorithm
       Item item;
 
     case (_, _)
-      equation
+      algorithm
         /*********************************************************************/
         // TODO: Should we use the environment returned by lookupInClass?
         /*********************************************************************/
-        (item, _) = NFSCodeLookup.lookupInClass(inName, inEnv);
-        {cls_env} = getItemEnv(item);
-        outEnv = enterFrame(cls_env, inEnv);
+        (item, _) := NFSCodeLookup.lookupInClass(inName, inEnv);
+        {cls_env} := getItemEnv(item);
+        outEnv := enterFrame(cls_env, inEnv);
       then
         outEnv;
 
     case (_, _)
-      equation
+      algorithm
         print("Failed to enterScope: " + inName + " in env: " + printEnvStr(inEnv) + "\n");
       then
         fail();
@@ -266,8 +266,8 @@ algorithm
       Env env;
 
     case (_, Absyn.QUALIFIED(name = name, path = path))
-      equation
-        env = enterScope(inEnv, name);
+      algorithm
+        env := enterScope(inEnv, name);
       then
         enterScopePath(env, path);
 
@@ -275,8 +275,8 @@ algorithm
       then enterScope(inEnv, name);
 
     case (_, Absyn.FULLYQUALIFIED(path = path))
-      equation
-        env = getEnvTopScope(inEnv);
+      algorithm
+        env := getEnvTopScope(inEnv);
       then
         enterScopePath(env, path);
 
@@ -357,9 +357,9 @@ algorithm
       Item item;
 
     case SCode.CLASS()
-      equation
-        class_env = makeClassEnvironment(inElement, true);
-        item = newClassItem(inElement, class_env, USERDEFINED());
+      algorithm
+        class_env := makeClassEnvironment(inElement, true);
+        item := newClassItem(inElement, class_env, USERDEFINED());
       then
         item;
 
@@ -578,8 +578,8 @@ algorithm
       ClassType cls_ty;
 
     case (CLASS(cls = cls, env = env, classType = cls_ty), _)
-      equation
-        env = setImportTableHidden(env, inHidden);
+      algorithm
+        env := setImportTableHidden(env, inHidden);
       then
         CLASS(cls, env, cls_ty);
 
@@ -640,8 +640,8 @@ algorithm
       then CLASS(elem, {FRAME(name, ft, cv, exts, imps, is_used)}, cls_ty);
 
     case (_, REDECLARED_ITEM(item, env))
-      equation
-        item = linkItemUsage(inSrcItem, item);
+      algorithm
+        item := linkItemUsage(inSrcItem, item);
       then
         REDECLARED_ITEM(item, env);
 
@@ -712,24 +712,24 @@ algorithm
 
     case (SCode.CLASS(name = cls_name, classDef = cdef, prefixes = SCode.PREFIXES(
         replaceablePrefix = SCode.REPLACEABLE(_)), info = info), _)
-      equation
-        class_env = makeClassEnvironment(inClassDefElement, false);
-        cls_type = getClassType(cdef);
-        alias_name = cls_name + BASE_CLASS_SUFFIX;
-        env = extendEnvWithItem(newClassItem(inClassDefElement, class_env, cls_type),
+      algorithm
+        class_env := makeClassEnvironment(inClassDefElement, false);
+        cls_type := getClassType(cdef);
+        alias_name := cls_name + BASE_CLASS_SUFFIX;
+        env := extendEnvWithItem(newClassItem(inClassDefElement, class_env, cls_type),
           inEnv, alias_name);
-        env = extendEnvWithItem(ALIAS(alias_name, NONE(), info), env, cls_name);
+        env := extendEnvWithItem(ALIAS(alias_name, NONE(), info), env, cls_name);
       then
         env;
 
     // A normal class.
     case (SCode.CLASS(name = cls_name, classDef = cdef), _)
-      equation
+      algorithm
         // Create a new environment and add the class's components to it.
-        class_env = makeClassEnvironment(inClassDefElement, false);
-        cls_type = getClassType(cdef);
+        class_env := makeClassEnvironment(inClassDefElement, false);
+        cls_type := getClassType(cdef);
         // Add the class with it's environment to the environment.
-        env = extendEnvWithItem(newClassItem(inClassDefElement, class_env, cls_type),
+        env := extendEnvWithItem(newClassItem(inClassDefElement, class_env, cls_type),
           inEnv, cls_name);
       then
         env;
@@ -842,8 +842,8 @@ algorithm
     case (SCode.IMPORT(imp = imp as Absyn.UNQUAL_IMPORT()),
         FRAME(name, ty, tree, exts,
           IMPORT_TABLE(hidden, qual_imps, unqual_imps), is_used) :: rest)
-      equation
-        unqual_imps = imp :: unqual_imps;
+      algorithm
+        unqual_imps := imp :: unqual_imps;
       then
         FRAME(name, ty, tree, exts,
           IMPORT_TABLE(hidden, qual_imps, unqual_imps), is_used) :: rest;
@@ -851,9 +851,9 @@ algorithm
     // Qualified imports
     case (SCode.IMPORT(imp = imp), FRAME(name, ty, tree, exts,
         IMPORT_TABLE(hidden, qual_imps, unqual_imps), is_used) :: rest)
-      equation
-        imp = translateQualifiedImportToNamed(imp);
-        qual_imps = imp :: qual_imps;
+      algorithm
+        imp := translateQualifiedImportToNamed(imp);
+        qual_imps := imp :: qual_imps;
       then
         FRAME(name, ty, tree, exts,
           IMPORT_TABLE(hidden, qual_imps, unqual_imps), is_used) :: rest;
@@ -875,8 +875,8 @@ algorithm
 
     // Get the last identifier from the import and use that as the name.
     case Absyn.QUAL_IMPORT(path = path)
-      equation
-        name = AbsynUtil.pathLastIdent(path);
+      algorithm
+        name := AbsynUtil.pathLastIdent(path);
       then
         Absyn.NAMED_IMPORT(name, path);
   end match;
@@ -950,25 +950,25 @@ algorithm
       Absyn.Path path;
 
     case (_, SCode.PARTS(elementLst = el), _, _, _)
-      equation
-        env = List.fold(el, extendEnvWithElement, inEnv);
+      algorithm
+        env := List.fold(el, extendEnvWithElement, inEnv);
       then
         env;
 
     case (_, SCode.DERIVED(typeSpec = ty as Absyn.TPATH(path = path),
         modifications = mods), _, _, _)
-      equation
+      algorithm
         NFSCodeCheck.checkRecursiveShortDefinition(ty, inClassName,
           inEnclosingScope, inInfo);
-        env = extendEnvWithExtends(SCode.EXTENDS(path, SCode.PUBLIC(), mods,
+        env := extendEnvWithExtends(SCode.EXTENDS(path, SCode.PUBLIC(), mods,
           NONE(), inInfo), inEnv);
       then
         env;
 
     case (_, SCode.ENUMERATION(enumLst = enums), _, _, _)
-      equation
-        path = Absyn.IDENT(inClassName);
-        env = extendEnvWithEnumLiterals(enums, path, 1, inEnv, inInfo);
+      algorithm
+        path := Absyn.IDENT(inClassName);
+        env := extendEnvWithEnumLiterals(enums, path, 1, inEnv, inInfo);
       then
         env;
 
@@ -989,43 +989,43 @@ algorithm
 
     // redeclare-as-element component
     case (SCode.COMPONENT(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE())), _)
-      equation
-        env = addElementRedeclarationToEnvExtendsTable(inElement, inEnv);
-        env = extendEnvWithVar(inElement, env);
+      algorithm
+        env := addElementRedeclarationToEnvExtendsTable(inElement, inEnv);
+        env := extendEnvWithVar(inElement, env);
       then
         env;
 
     // normal component
     case (SCode.COMPONENT(), _)
-      equation
-        env = extendEnvWithVar(inElement, inEnv);
+      algorithm
+        env := extendEnvWithVar(inElement, inEnv);
       then
         env;
 
     // redeclare-as-element class
     case (SCode.CLASS( prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE())), _)
-      equation
-        env = addElementRedeclarationToEnvExtendsTable(inElement, inEnv);
-        env = extendEnvWithClassDef(inElement, env);
+      algorithm
+        env := addElementRedeclarationToEnvExtendsTable(inElement, inEnv);
+        env := extendEnvWithClassDef(inElement, env);
       then
         env;
 
     // normal class
     case (SCode.CLASS(), _)
-      equation
-        env = extendEnvWithClassDef(inElement, inEnv);
+      algorithm
+        env := extendEnvWithClassDef(inElement, inEnv);
       then
         env;
 
     case (SCode.EXTENDS(), _)
-      equation
-        env = extendEnvWithExtends(inElement, inEnv);
+      algorithm
+        env := extendEnvWithExtends(inElement, inEnv);
       then
         env;
 
     case (SCode.IMPORT(), _)
-      equation
-        env = extendEnvWithImport(inElement, inEnv);
+      algorithm
+        env := extendEnvWithImport(inElement, inEnv);
       then
         env;
 
@@ -1047,14 +1047,14 @@ algorithm
       Absyn.Ident name;
 
     case (_, _, _)
-      equation
-        false = List.isMemberOnTrue(inImport, inImports,
+      algorithm
+        false := List.isMemberOnTrue(inImport, inImports,
           compareQualifiedImportNames);
       then
         ();
 
     case (Absyn.NAMED_IMPORT(name = name), _, _)
-      equation
+      algorithm
         Error.addSourceMessage(Error.MULTIPLE_QUALIFIED_IMPORTS_WITH_SAME_NAME,
           {name}, inInfo);
       then
@@ -1097,8 +1097,8 @@ algorithm
       Env env;
 
     case (lit :: rest_lits, _, _, _, _)
-      equation
-        env = extendEnvWithEnum(lit, inEnumPath, inNextValue, inEnv, inInfo);
+      algorithm
+        env := extendEnvWithEnum(lit, inEnumPath, inNextValue, inEnv, inInfo);
       then
         extendEnvWithEnumLiterals(rest_lits, inEnumPath, inNextValue + 1, env, inInfo);
 
@@ -1191,10 +1191,10 @@ algorithm
       Env env;
 
     case (Absyn.ELEMENTITEM(element = element), _)
-      equation
+      algorithm
         // Translate the element item to a SCode element.
-        el = AbsynToSCode.translateElement(element, SCode.PROTECTED());
-        env = List.fold(el, extendEnvWithElement, inEnv);
+        el := AbsynToSCode.translateElement(element, SCode.PROTECTED());
+        env := List.fold(el, extendEnvWithElement, inEnv);
       then
         env;
 
@@ -1212,8 +1212,8 @@ algorithm
       String str;
 
     case _
-      equation
-        str = AbsynUtil.pathString(getEnvPath(inEnv));
+      algorithm
+        str := AbsynUtil.pathString(getEnvPath(inEnv));
       then
         str;
 
@@ -1243,9 +1243,9 @@ algorithm
       then Absyn.IDENT(name);
 
     case (FRAME(name = SOME(name)) :: rest)
-      equation
-        path = getEnvPath(rest);
-        path = AbsynUtil.joinPaths(path, Absyn.IDENT(name));
+      algorithm
+        path := getEnvPath(rest);
+        path := AbsynUtil.joinPaths(path, Absyn.IDENT(name));
       then
         path;
   end match;
@@ -1292,8 +1292,8 @@ algorithm
       then envPrefixOf2(rest1, rest2);
 
     case (FRAME(name = SOME(n1)) :: rest1, FRAME(name = SOME(n2)) :: rest2)
-      equation
-        true = stringEqual(n1, n2);
+      algorithm
+        true := stringEqual(n1, n2);
       then
         envPrefixOf2(rest1, rest2);
 
@@ -1320,8 +1320,8 @@ algorithm
       list<String> names;
 
     case (FRAME(name = SOME(name)) :: rest_env, _)
-      equation
-        names = envScopeNames2(rest_env, name :: inAccumNames);
+      algorithm
+        names := envScopeNames2(rest_env, name :: inAccumNames);
       then
         names;
 
@@ -1355,9 +1355,9 @@ algorithm
 
     case ((frame as FRAME(name = SOME(name1))) :: rest_env1,
           FRAME(name = SOME(name2)) :: rest_env2, _)
-      equation
-        true = stringEq(name1, name2);
-        env = envEqualPrefix2(rest_env1, rest_env2, frame :: inAccumEnv);
+      algorithm
+        true := stringEq(name1, name2);
+        env := envEqualPrefix2(rest_env1, rest_env2, frame :: inAccumEnv);
       then
         env;
 
@@ -1403,15 +1403,15 @@ algorithm
     case CLASS(cls = el)
       then SCodeDump.unparseElementStr(el,SCodeDump.defaultOptions);
     case ALIAS(name = name, path = SOME(path))
-      equation
-        alias_str = AbsynUtil.pathString(path);
+      algorithm
+        alias_str := AbsynUtil.pathString(path);
       then
         "alias " + name + " -> (" + alias_str + "." + name + ")";
     case ALIAS(name = name, path = NONE())
       then "alias " + name + " -> ()";
     case REDECLARED_ITEM(item = item)
-      equation
-        name = itemStr(item);
+      algorithm
+        name := itemStr(item);
       then
         "redeclared " + name;
 
@@ -1596,18 +1596,18 @@ algorithm
 
     // only one extends!
     case (_, Absyn.TPATH(path, _), _)
-      equation
-        {EXTENDS(baseClass = bc, redeclareModifiers = rm)} =
+      algorithm
+        {EXTENDS(baseClass = bc, redeclareModifiers = rm)} :=
           getEnvExtendsFromTable(inEnv);
-        true = AbsynUtil.pathSuffixOf(path, bc);
+        true := AbsynUtil.pathSuffixOf(path, bc);
       then
         rm;
 
     case (_, Absyn.TPATH(path, _), _)
-      equation
-        {EXTENDS(baseClass = bc, redeclareModifiers = rm)} =
+      algorithm
+        {EXTENDS(baseClass = bc, redeclareModifiers = rm)} :=
           getEnvExtendsFromTable(inEnv);
-        false = AbsynUtil.pathSuffixOf(path, bc);
+        false := AbsynUtil.pathSuffixOf(path, bc);
         print("Derived paths are not the same: " + AbsynUtil.pathString(path) + " != " + AbsynUtil.pathString(bc) + "\n");
       then
         rm;
@@ -1663,9 +1663,9 @@ algorithm
 
     // Try to merge the last identifier in the path with the environment path.
     case (_, _)
-      equation
-        env_path = getEnvPath(inEnv);
-        id = AbsynUtil.pathLastIdent(inPath);
+      algorithm
+        env_path := getEnvPath(inEnv);
+        id := AbsynUtil.pathLastIdent(inPath);
       then
         AbsynUtil.joinPaths(env_path, Absyn.IDENT(id));
 
@@ -1689,9 +1689,9 @@ algorithm
 
     // Try to merge the last identifier in the path with the environment path.
     case (Absyn.TPATH(path, ad), _)
-      equation
-        id = AbsynUtil.pathLastIdent(path);
-        path = AbsynUtil.joinPaths(getEnvPath(inEnv), Absyn.IDENT(id));
+      algorithm
+        id := AbsynUtil.pathLastIdent(path);
+        path := AbsynUtil.joinPaths(getEnvPath(inEnv), Absyn.IDENT(id));
       then
         Absyn.TPATH(path, ad);
 
@@ -1828,14 +1828,14 @@ algorithm
       String name_str, ty_str, tree_str, ext_str, imp_str, out;
 
     case (FRAME(name, ty, tree, exts, imps, _))
-      equation
-        name_str = printFrameNameStr(name);
-        ty_str = printFrameTypeStr(ty);
-        tree_str = EnvTree.printTreeStr(tree);
-        ext_str = printExtendsTableStr(exts);
-        imp_str = printImportTableStr(imps);
-        name_str = "<<<" + ty_str + " frame " + name_str + ">>>\n";
-        out = name_str +
+      algorithm
+        name_str := printFrameNameStr(name);
+        ty_str := printFrameTypeStr(ty);
+        tree_str := EnvTree.printTreeStr(tree);
+        ext_str := printExtendsTableStr(exts);
+        imp_str := printImportTableStr(imps);
+        name_str := "<<<" + ty_str + " frame " + name_str + ">>>\n";
+        out := name_str +
               "\tImports:\n" + imp_str +
               "\n\tExtends:\n" + ext_str +
               "\n\tComponents:\n" + tree_str + "\n";

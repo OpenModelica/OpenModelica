@@ -319,8 +319,8 @@ algorithm
       String libraryKey, licenseFile;
 
     case (SOME(Absyn.CLASSMOD(elementArgLst = arglst)))
-      equation
-        (libraryKey, licenseFile) = getLicenseAnnotationWork2(arglst);
+      algorithm
+        (libraryKey, licenseFile) := getLicenseAnnotationWork2(arglst);
       then (libraryKey, licenseFile);
   end match;
 end getLicenseAnnotationWork1;
@@ -339,13 +339,13 @@ algorithm
     case ({}) then ("", "");
 
     case (Absyn.MODIFICATION(path = Absyn.IDENT(name="License"), modification = mod)::_)
-      equation
-        (libraryKey, licenseFile) = getLicenseAnnotationTuple(mod);
+      algorithm
+        (libraryKey, licenseFile) := getLicenseAnnotationTuple(mod);
       then (libraryKey, licenseFile);
 
     case (_::xs)
-      equation
-        (libraryKey, licenseFile) = getLicenseAnnotationWork2(xs);
+      algorithm
+        (libraryKey, licenseFile) := getLicenseAnnotationWork2(xs);
       then (libraryKey, licenseFile);
 
   end match;
@@ -362,9 +362,9 @@ algorithm
       String libraryKey, licenseFile;
 
     case (SOME(Absyn.CLASSMOD(elementArgLst = arglst)))
-      equation
-        libraryKey = getLicenseAnnotationLibraryKey(arglst);
-        licenseFile = getLicenseAnnotationLicenseFile(arglst);
+      algorithm
+        libraryKey := getLicenseAnnotationLibraryKey(arglst);
+        licenseFile := getLicenseAnnotationLicenseFile(arglst);
       then (libraryKey, licenseFile);
   end match;
 end getLicenseAnnotationTuple;
@@ -385,8 +385,8 @@ algorithm
       then s;
 
     case (_::xs)
-      equation
-        s = getLicenseAnnotationLibraryKey(xs);
+      algorithm
+        s := getLicenseAnnotationLibraryKey(xs);
       then s;
 
     end match;
@@ -408,8 +408,8 @@ algorithm
       then s;
 
     case (_::xs)
-      equation
-        s = getLicenseAnnotationLicenseFile(xs);
+      algorithm
+        s := getLicenseAnnotationLicenseFile(xs);
       then s;
 
     end match;
@@ -457,13 +457,13 @@ algorithm
     case ({}) then {};
 
     case (Absyn.MODIFICATION(path = Absyn.IDENT(name="features"), modification = SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.ARRAY(expList)))))::_)
-      equation
-        featuresList = List.map(expList, expToString);
+      algorithm
+        featuresList := List.map(expList, expToString);
       then featuresList;
 
     case (_::xs)
-      equation
-        featuresList = getFeaturesAnnotationList2(xs);
+      algorithm
+        featuresList := getFeaturesAnnotationList2(xs);
       then featuresList;
 
     end match;

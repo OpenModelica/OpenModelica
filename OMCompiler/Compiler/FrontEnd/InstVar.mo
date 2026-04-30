@@ -189,31 +189,31 @@ algorithm
 
     // is ONLY inner
     case (cache,env,ih,store,ci_state,mod,pre,n,cl as SCode.CLASS(name=typeName),attr,pf,dims,idxs,inst_dims,impl,comment,_,graph,csets,_)
-      equation
+      algorithm
         // only inner!
-        true = AbsynUtil.isOnlyInner(io);
+        true := AbsynUtil.isOnlyInner(io);
 
         // fprintln(Flags.INNER_OUTER, "- InstVar.instVar inner: " + PrefixUtil.printPrefixStr(pre) + "/" + n + " in env: " + FGraph.printGraphPathStr(env));
 
         // instantiate as inner
-        (cache,innerCompEnv,ih,store,dae,csets,ty,graph) =
+        (cache,innerCompEnv,ih,store,dae,csets,ty,graph) :=
           instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph,csets);
 
-        (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
-        fullName = ComponentReference.printComponentRefStr(cref);
-        (cache, typePath) = Inst.makeFullyQualifiedIdent(cache, env, typeName);
+        (cache,cref) := PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
+        fullName := ComponentReference.printComponentRefStr(cref);
+        (cache, typePath) := Inst.makeFullyQualifiedIdent(cache, env, typeName);
 
         // also all the components in the environment should be updated to be outer!
         // switch components from inner to outer in the component env.
-        outerCompEnv = InnerOuter.switchInnerToOuterInGraph(innerCompEnv, cref);
+        outerCompEnv := InnerOuter.switchInnerToOuterInGraph(innerCompEnv, cref);
 
         // outer doesn't generate a visible DAE
-        outerDAE = DAE.emptyDae;
+        outerDAE := DAE.emptyDae;
 
-        innerScope = FGraph.printGraphPathStr(componentDefinitionParentEnv);
+        innerScope := FGraph.printGraphPathStr(componentDefinitionParentEnv);
 
         // add to instance hierarchy
-        ih = InnerOuter.updateInstHierarchy(ih, pre, io,
+        ih := InnerOuter.updateInstHierarchy(ih, pre, io,
                InnerOuter.INST_INNER(
                   pre, // prefix
                   n, // component name,
@@ -230,33 +230,33 @@ algorithm
 
     // is ONLY outer and it has modifications on it!
     case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,_,graph,csets,_)
-      equation
+      algorithm
         // only outer!
-        true = AbsynUtil.isOnlyOuter(io);
+        true := AbsynUtil.isOnlyOuter(io);
 
         // we should have here any kind of modification!
-        false = Mod.modEqual(mod, DAE.NOMOD());
-        (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
-        s1 = ComponentReference.printComponentRefStr(cref);
-        s2 = Mod.prettyPrintMod(mod, 0);
-        s = s1 +  " " + s2;
+        false := Mod.modEqual(mod, DAE.NOMOD());
+        (cache,cref) := PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
+        s1 := ComponentReference.printComponentRefStr(cref);
+        s2 := Mod.prettyPrintMod(mod, 0);
+        s := s1 +  " " + s2;
         // add a warning!
         Error.addSourceMessage(Error.OUTER_MODIFICATION, {s}, info);
 
         // call myself without any modification!
-        (cache,compenv,ih,store,dae,csets,ty,graph) =
+        (cache,compenv,ih,store,dae,csets,ty,graph) :=
           instVar(cache,env,ih,store,ci_state,DAE.NOMOD(),pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph,csets,componentDefinitionParentEnv);
      then
         (cache,compenv,ih,store,dae,csets,ty,graph);
 
     // is ONLY outer output and is inside an instance of a State Machine state
     case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr as SCode.ATTR(direction=Absyn.OUTPUT()),pf,dims,idxs,inst_dims,impl,comment,_,graph, csets, _)
-      equation
+      algorithm
         // only outer!
-        true = AbsynUtil.isOnlyOuter(io);
+        true := AbsynUtil.isOnlyOuter(io);
 
         // we should have NO modifications on only outer!
-        true = Mod.modEqual(mod, DAE.NOMOD());
+        true := Mod.modEqual(mod, DAE.NOMOD());
 
         // lookup in IH
         InnerOuter.INST_INNER(
@@ -267,18 +267,18 @@ algorithm
            _,
            _,
            SOME(InnerOuter.INST_RESULT(cache,compenv,store,_,_,ty,graph)),
-           _,_) =
+           _,_) :=
           InnerOuter.lookupInnerVar(cache, env, ih, pre, n, io);
 
 
         // the outer must be in an instance that is part of a State Machine
-        topInstance = listHead(ih);
-        InnerOuter.TOP_INSTANCE(sm=sm) = topInstance;
-        true = BaseHashSet.currentSize(sm) > 0;
-        cref = PrefixUtil.prefixToCref(inPrefix);
-        true = BaseHashSet.has(cref, sm);
+        topInstance := listHead(ih);
+        InnerOuter.TOP_INSTANCE(sm=sm) := topInstance;
+        true := BaseHashSet.currentSize(sm) > 0;
+        cref := PrefixUtil.prefixToCref(inPrefix);
+        true := BaseHashSet.has(cref, sm);
 
-        (cache,compenv,ih,store,dae,csets,ty,graph) =
+        (cache,compenv,ih,store,dae,csets,ty,graph) :=
           instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph,csets);
       then
         (inCache,compenv,ih,store,dae,csets,ty,graph);
@@ -286,12 +286,12 @@ algorithm
 
     // is ONLY outer
     case (cache,env,ih,store,_,mod,pre,n,_,_,_,_,_,_,_,_,_,graph,csets,_)
-      equation
+      algorithm
         // only outer!
-        true = AbsynUtil.isOnlyOuter(io);
+        true := AbsynUtil.isOnlyOuter(io);
 
         // we should have NO modifications on only outer!
-        true = Mod.modEqual(mod, DAE.NOMOD());
+        true := Mod.modEqual(mod, DAE.NOMOD());
 
         // lookup in IH
         InnerOuter.INST_INNER(
@@ -302,16 +302,16 @@ algorithm
            typePath,
            innerScope,
            instResult as SOME(InnerOuter.INST_RESULT(cache,compenv,store,outerDAE,_,ty,graph)),
-           outers,_) =
+           outers,_) :=
           InnerOuter.lookupInnerVar(cache, env, ih, pre, n, io);
 
         // add outer prefix + component name and its corresponding inner prefix to the IH
-        (cache,crefOuter) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
-        (cache,crefInner) = PrefixUtil.prefixCref(cache,env,ih,innerPrefix, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
-        ih = InnerOuter.addOuterPrefixToIH(ih, crefOuter, crefInner);
-        outers = List.unionElt(crefOuter, outers);
+        (cache,crefOuter) := PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
+        (cache,crefInner) := PrefixUtil.prefixCref(cache,env,ih,innerPrefix, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
+        ih := InnerOuter.addOuterPrefixToIH(ih, crefOuter, crefInner);
+        outers := List.unionElt(crefOuter, outers);
         // update the inner with the outer for easy reference
-        ih = InnerOuter.updateInstHierarchy(ih, innerPrefix, ioInner,
+        ih := InnerOuter.updateInstHierarchy(ih, innerPrefix, ioInner,
                InnerOuter.INST_INNER(
                   innerPrefix, // prefix
                   nInner, // component name,
@@ -325,18 +325,18 @@ algorithm
                   ));
 
         // outer dae has no meaning!
-        outerDAE = DAE.emptyDae;
+        outerDAE := DAE.emptyDae;
       then
         (inCache /* we don't want to return the old, crappy cache as ours was newer */,compenv,ih,store,outerDAE,csets,ty,graph);
 
     // is ONLY outer and the inner was not yet set in the IH or we have no inner declaration!
     case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,_,graph, csets, _)
-      equation
+      algorithm
         // only outer!
-        true = AbsynUtil.isOnlyOuter(io);
+        true := AbsynUtil.isOnlyOuter(io);
 
         // no modifications!
-        true = Mod.modEqual(mod, DAE.NOMOD());
+        true := Mod.modEqual(mod, DAE.NOMOD());
 
         // lookup in IH, crap, we couldn't find it!
         // lookup in IH
@@ -348,97 +348,97 @@ algorithm
            typePath,
            _,
            NONE(),
-           _,_) =
+           _,_) :=
           InnerOuter.lookupInnerVar(cache, env, ih, pre, n, io);
 
         // fprintln(Flags.INNER_OUTER, "- InstVar.instVar failed to lookup inner: " + PrefixUtil.printPrefixStr(pre) + "/" + n + " in env: " + FGraph.printGraphPathStr(env));
 
         // display an error message!
-        (cache,crefOuter) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
-        typeName = SCodeUtil.className(cl);
-        (cache, typePath) = Inst.makeFullyQualifiedIdent(cache, env, typeName);
+        (cache,crefOuter) := PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
+        typeName := SCodeUtil.className(cl);
+        (cache, typePath) := Inst.makeFullyQualifiedIdent(cache, env, typeName);
         // adrpo: do NOT! display an error message if impl = true and prefix is DAE.NOPRE()
         // print(if_(impl, "impl crap\n", "no impl\n"));
         if not (impl and listMember(pre, {DAE.NOPRE()})) and not Config.getGraphicsExpMode() then
-          s1 = ComponentReference.printComponentRefStr(crefOuter);
-          s2 = AbsynUtil.innerOuterStr(io);
-          s3 = InnerOuter.getExistingInnerDeclarations(ih, componentDefinitionParentEnv);
-          s1 = AbsynUtil.pathString(typePath) + " " + s1;
+          s1 := ComponentReference.printComponentRefStr(crefOuter);
+          s2 := AbsynUtil.innerOuterStr(io);
+          s3 := InnerOuter.getExistingInnerDeclarations(ih, componentDefinitionParentEnv);
+          s1 := AbsynUtil.pathString(typePath) + " " + s1;
           Error.addSourceMessage(Error.MISSING_INNER_PREFIX,{s1, s2, s3}, info);
         end if;
 
         // call it normaly
-        (cache,compenv,ih,store,dae,_,ty,graph) =
+        (cache,compenv,ih,store,dae,_,ty,graph) :=
           instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph, csets);
       then
         (cache,compenv,ih,store,dae,csets,ty,graph);
 
     // is ONLY outer and the inner was not yet set in the IH or we have no inner declaration!
     case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,_,graph,csets,_)
-      equation
+      algorithm
         // only outer!
-        true = AbsynUtil.isOnlyOuter(io);
+        true := AbsynUtil.isOnlyOuter(io);
 
         // no modifications!
-        true = Mod.modEqual(mod, DAE.NOMOD());
+        true := Mod.modEqual(mod, DAE.NOMOD());
 
         // lookup in IH, crap, we couldn't find it!
-        failure(_ = InnerOuter.lookupInnerVar(cache, env, ih, pre, n, io));
+        failure(_ := InnerOuter.lookupInnerVar(cache, env, ih, pre, n, io));
 
         // fprintln(Flags.INNER_OUTER, "- InstVar.instVar failed to lookup inner: " + PrefixUtil.printPrefixStr(pre) + "/" + n + " in env: " + FGraph.printGraphPathStr(env));
 
         // display an error message!
-        (cache,crefOuter) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
-        typeName = SCodeUtil.className(cl);
-        (cache, typePath) = Inst.makeFullyQualifiedIdent(cache, env, typeName);
+        (cache,crefOuter) := PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
+        typeName := SCodeUtil.className(cl);
+        (cache, typePath) := Inst.makeFullyQualifiedIdent(cache, env, typeName);
         // print(if_(impl, "impl crap\n", "no impl\n"));
         // adrpo: do NOT! display an error message if impl = true and prefix is DAE.NOPRE()
         if not (impl and listMember(pre, {DAE.NOPRE()})) and not Config.getGraphicsExpMode() then
-          s1 = ComponentReference.printComponentRefStr(crefOuter);
-          s2 = AbsynUtil.innerOuterStr(io);
-          s3 = InnerOuter.getExistingInnerDeclarations(ih,componentDefinitionParentEnv);
-          s1 = AbsynUtil.pathString(typePath) + " " + s1;
+          s1 := ComponentReference.printComponentRefStr(crefOuter);
+          s2 := AbsynUtil.innerOuterStr(io);
+          s3 := InnerOuter.getExistingInnerDeclarations(ih,componentDefinitionParentEnv);
+          s1 := AbsynUtil.pathString(typePath) + " " + s1;
           Error.addSourceMessage(Error.MISSING_INNER_PREFIX,{s1, s2, s3}, info);
         end if;
 
         // call it normally
-        (cache,compenv,ih,store,dae,_,ty,graph) =
+        (cache,compenv,ih,store,dae,_,ty,graph) :=
            instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph, csets);
       then
         (cache,compenv,ih,store,dae,csets,ty,graph);
 
     // is inner outer output and is inside an instance of a State Machine state!
     case (cache,env,ih,store,ci_state,mod,pre,n,cl as SCode.CLASS(name=typeName),attr as SCode.ATTR(direction=Absyn.OUTPUT()) ,pf,dims,idxs,inst_dims,impl,comment,_,graph, csets, _)
-      equation
+      algorithm
         // both inner and outer
-        true = AbsynUtil.isInnerOuter(io);
+        true := AbsynUtil.isInnerOuter(io);
 
         // the inner outer must be in an instance that is part of a State Machine
-        topInstance = listHead(ih);
-        InnerOuter.TOP_INSTANCE(sm=sm) = topInstance;
-        true = BaseHashSet.currentSize(sm) > 0;
-        cref = PrefixUtil.prefixToCref(inPrefix);
-        true = BaseHashSet.has(cref, sm);
+        topInstance := listHead(ih);
+        InnerOuter.TOP_INSTANCE(sm=sm) := topInstance;
+        true := BaseHashSet.currentSize(sm) > 0;
+        cref := PrefixUtil.prefixToCref(inPrefix);
+        true := BaseHashSet.has(cref, sm);
 
-        (cache,innerCompEnv,ih,store,dae,csetsInner,ty,graph) =
+        (cache,innerCompEnv,ih,store,dae,csetsInner,ty,graph) :=
            instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph, csets);
 
         // add it to the instance hierarchy
-        (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
-        fullName = ComponentReference.printComponentRefStr(cref);
-        (cache, typePath) = Inst.makeFullyQualifiedIdent(cache, env, typeName);
+        (cache,cref) := PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
+        fullName := ComponentReference.printComponentRefStr(cref);
+        (cache, typePath) := Inst.makeFullyQualifiedIdent(cache, env, typeName);
 
         // also all the components in the environment should be updated to be outer!
         // switch components from inner to outer in the component env.
-        outerCompEnv = InnerOuter.switchInnerToOuterInGraph(innerCompEnv, cref);
+        outerCompEnv := InnerOuter.switchInnerToOuterInGraph(innerCompEnv, cref);
 
         // keep the dae we get from the instantiation of the inner
-        innerDAE = dae;
+        innerDAE := dae;
 
-        innerScope = FGraph.printGraphPathStr(componentDefinitionParentEnv);
+        innerScope := FGraph.printGraphPathStr(componentDefinitionParentEnv);
 
         // add inner to the instance hierarchy
-        ih = InnerOuter.updateInstHierarchy(ih, pre, io,
+        ih := InnerOuter.updateInstHierarchy(ih, pre, io,
                InnerOuter.INST_INNER(
                   pre,
                   n,
@@ -451,38 +451,38 @@ algorithm
                   NONE()));
 
         // now call it normally
-        (cache,compenv,ih,store,dae,_,ty,graph) =
+        (cache,compenv,ih,store,dae,_,ty,graph) :=
            instVar_dispatch(cache,env,ih,store,ci_state,DAE.NOMOD(),pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph, csets);
       then
         (cache,compenv,ih,store,dae,csetsInner,ty,graph);
 
     // is inner outer!
     case (cache,env,ih,store,ci_state,mod,pre,n,cl as SCode.CLASS(name=typeName),attr,pf,dims,idxs,inst_dims,impl,comment,_,graph, csets, _)
-      equation
+      algorithm
         // both inner and outer
-        true = AbsynUtil.isInnerOuter(io);
+        true := AbsynUtil.isInnerOuter(io);
 
         // fprintln(Flags.INNER_OUTER, "- InstVar.instVar inner outer: " + PrefixUtil.printPrefixStr(pre) + "/" + n + " in env: " + FGraph.printGraphPathStr(env));
 
-        (cache,innerCompEnv,ih,store,dae,csetsInner,ty,graph) =
+        (cache,innerCompEnv,ih,store,dae,csetsInner,ty,graph) :=
            instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph, csets);
 
         // add it to the instance hierarchy
-        (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
-        fullName = ComponentReference.printComponentRefStr(cref);
-        (cache, typePath) = Inst.makeFullyQualifiedIdent(cache, env, typeName);
+        (cache,cref) := PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
+        fullName := ComponentReference.printComponentRefStr(cref);
+        (cache, typePath) := Inst.makeFullyQualifiedIdent(cache, env, typeName);
 
         // also all the components in the environment should be updated to be outer!
         // switch components from inner to outer in the component env.
-        outerCompEnv = InnerOuter.switchInnerToOuterInGraph(innerCompEnv, cref);
+        outerCompEnv := InnerOuter.switchInnerToOuterInGraph(innerCompEnv, cref);
 
         // keep the dae we get from the instantiation of the inner
-        innerDAE = dae;
+        innerDAE := dae;
 
-        innerScope = FGraph.printGraphPathStr(componentDefinitionParentEnv);
+        innerScope := FGraph.printGraphPathStr(componentDefinitionParentEnv);
 
         // add inner to the instance hierarchy
-        ih = InnerOuter.updateInstHierarchy(ih, pre, io,
+        ih := InnerOuter.updateInstHierarchy(ih, pre, io,
                InnerOuter.INST_INNER(
                   pre,
                   n,
@@ -495,36 +495,36 @@ algorithm
                   NONE()));
 
         // now instantiate it as an outer with no modifications
-        pf = SCodeUtil.prefixesSetInnerOuter(pf, Absyn.OUTER());
-        (cache,compenv,ih,store,dae,_,ty,graph) =
+        pf := SCodeUtil.prefixesSetInnerOuter(pf, Absyn.OUTER());
+        (cache,compenv,ih,store,dae,_,ty,graph) :=
           instVar(cache,env,ih,store,ci_state,DAE.NOMOD(),pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph,csets,componentDefinitionParentEnv);
 
         // keep the dae we get from the instantiation of the outer
-        outerDAE = dae;
+        outerDAE := dae;
 
         // join the dae's (even thou' the outer is empty)
-        dae = DAEUtil.joinDaes(outerDAE, innerDAE);
+        dae := DAEUtil.joinDaes(outerDAE, innerDAE);
       then
         (cache,compenv,ih,store,dae,csetsInner,ty,graph);
 
     // is NO INNER NOR OUTER or it failed before!
     case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,_,graph, csets, _)
-      equation
+      algorithm
         // no inner no outer
-        true = AbsynUtil.isNotInnerOuter(io);
+        true := AbsynUtil.isNotInnerOuter(io);
 
         // fprintln(Flags.INNER_OUTER, "- InstVar.instVar NO inner NO outer: " + PrefixUtil.printPrefixStr(pre) + "/" + n + " in env: " + FGraph.printGraphPathStr(env));
 
-        (cache,compenv,ih,store,dae,csets,ty,graph) =
+        (cache,compenv,ih,store,dae,csets,ty,graph) :=
           instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph,csets);
       then
         (cache,compenv,ih,store,dae,csets,ty,graph);
 
     // failtrace
     case (cache,env,ih,_,_,mod,pre,n,cl,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
+        (cache,cref) := PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
         Debug.traceln("- InstVar.instVar failed while instatiating variable: " +
           ComponentReference.printComponentRefStr(cref) + " " + Mod.prettyPrintMod(mod, 0) +
           "\nin scope: " + FGraph.printGraphPathStr(env) + " class:\n" + SCodeDump.unparseElementStr(cl));
@@ -718,22 +718,22 @@ algorithm
 
     // Don't add array equations if +scalarizeBindings is set.
     case (_, _)
-      equation
-        true = Config.scalarizeBindings();
+      algorithm
+        true := Config.scalarizeBindings();
       then
         (inCache, inDae);
 
     case (DAE.DAE(dae), DAE.C_VAR())
-      equation
-        false = ClassInf.isFunctionOrRecord(inState);
-        ty = Types.simplifyType(inType);
-        false = Types.isExternalObject(Types.arrayElementType(ty));
-        false = Types.isComplexType(Types.arrayElementType(ty));
-        (dims as _::_) = Types.getDimensions(ty);
-        SOME(exp) = InstBinding.makeVariableBinding(ty, mod, const, pre, n);
-        cr = ComponentReference.makeCrefIdent(n,ty,{});
-        (cache,cr) = PrefixUtil.prefixCref(inCache,inEnv,inIH,pre,cr);
-        eq = DAE.ARRAY_EQUATION(dims, DAE.CREF(cr,ty), exp, source);
+      algorithm
+        false := ClassInf.isFunctionOrRecord(inState);
+        ty := Types.simplifyType(inType);
+        false := Types.isExternalObject(Types.arrayElementType(ty));
+        false := Types.isComplexType(Types.arrayElementType(ty));
+        (dims as _::_) := Types.getDimensions(ty);
+        SOME(exp) := InstBinding.makeVariableBinding(ty, mod, const, pre, n);
+        cr := ComponentReference.makeCrefIdent(n,ty,{});
+        (cache,cr) := PrefixUtil.prefixCref(inCache,inEnv,inIH,pre,cr);
+        eq := DAE.ARRAY_EQUATION(dims, DAE.CREF(cr,ty), exp, source);
         // print("Creating array equation for " + PrefixUtil.printPrefixStr(pre) + "." + n + " of const " + DAEUtil.constStr(const) + " in classinf " + ClassInf.printStateStr(inState) + "\n");
       then (cache,DAE.DAE(eq::dae));
 
@@ -832,8 +832,8 @@ algorithm
         // end out;
         // see testsuit/mofiles/RecordBindings.mo.
      case (cache,env,ih,store,ci_state,mod as DAE.MOD(binding = NONE()),pre,n,cl as SCode.CLASS(restriction = SCode.R_RECORD(_)),attr,pf,dims,_,inst_dims,impl,comment,info,graph,csets)
-      equation
-        true = ClassInf.isFunction(ci_state);
+      algorithm
+        true := ClassInf.isFunction(ci_state);
         InstUtil.checkFunctionVar(n, attr, pf, info);
 
 
@@ -842,101 +842,101 @@ algorithm
         //        anyhow the modifications are handled below.
         //        input Integer sequence[3](min = {1,1,1}, max = {3,3,3}) = {1,2,3}; // this will fail if we send in the mod.
         //        see testsuite/mofiles/Sequence.mo
-        (cache,env_1,ih,store,_,csets,ty,_,_,graph) =
+        (cache,env_1,ih,store,_,csets,ty,_,_,graph) :=
           Inst.instClass(cache, env, ih, store, DAE.NOMOD(), pre, cl, inst_dims, impl, InstTypes.INNER_CALL(), graph, csets);
         //Make it an array type since we are not flattening
-        ty_1 = InstUtil.makeArrayType(dims, ty);
+        ty_1 := InstUtil.makeArrayType(dims, ty);
         InstUtil.checkFunctionVarType(ty_1, ci_state, n, info);
 
-        (cache,dae_var_attr) = InstBinding.instDaeVariableAttributes(cache,env, mod, ty, {});
+        (cache,dae_var_attr) := InstBinding.instDaeVariableAttributes(cache,env, mod, ty, {});
 
         //Generate variable with default binding
-        ty_2 = Types.simplifyType(ty_1);
-        (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,ty_2,{}));
+        ty_2 := Types.simplifyType(ty_1);
+        (cache,cr) := PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,ty_2,{}));
 
         //We should get a call exp from here
-        (cache, DAE.EQBOUND(e,_,_,_)) = InstBinding.makeBinding(cache,env,attr,mod,ty_2,pre,n,info);
+        (cache, DAE.EQBOUND(e,_,_,_)) := InstBinding.makeBinding(cache,env,attr,mod,ty_2,pre,n,info);
 
         // set the source of this element
-        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), pre);
+        source := ElementSource.createElementSource(info, FGraph.getScopePath(env), pre);
 
 
-        SCode.PREFIXES(visibility = vis, finalPrefix = fin, innerOuter = io) = pf;
-        dae = InstDAE.daeDeclare(cache, env, env_1, cr, ci_state, ty, attr, vis, SOME(e), {dims}, NONE(), dae_var_attr, SOME(comment), io, fin, source, true);
-        store = UnitAbsynBuilder.instAddStore(store,ty,cr);
+        SCode.PREFIXES(visibility = vis, finalPrefix = fin, innerOuter = io) := pf;
+        dae := InstDAE.daeDeclare(cache, env, env_1, cr, ci_state, ty, attr, vis, SOME(e), {dims}, NONE(), dae_var_attr, SOME(comment), io, fin, source, true);
+        store := UnitAbsynBuilder.instAddStore(store,ty,cr);
       then
         (cache,env_1,ih,store,dae,csets,ty_1,graph);
 
     // mahge: function variables with eqMod modifications.
     // FIXHERE: They might have subMods too (variable attributes). see testsuite/mofiles/Sequence.mo
     case (cache,env,ih,store,ci_state,mod as DAE.MOD(binding = SOME(_)),pre,n,cl,attr,pf,dims,_,inst_dims,impl,comment,info,graph,csets)
-      equation
-        true = ClassInf.isFunction(ci_state);
+      algorithm
+        true := ClassInf.isFunction(ci_state);
         InstUtil.checkFunctionVar(n, attr, pf, info);
 
         //get the equation modification
-        SOME(DAE.TYPED(e,_,p,_)) = Mod.modEquation(mod);
+        SOME(DAE.TYPED(e,_,p,_)) := Mod.modEquation(mod);
         //Instantiate type of the component, skip dae/not flattening (but extract functions)
         // adrpo: do not send in the modifications as it will fail if the modification is an ARRAY.
         //        anyhow the modifications are handled below.
         //        input Integer sequence[3](min = {1,1,1}, max = {3,3,3}) = {1,2,3}; // this will fail if we send in the mod.
         //        see testsuite/mofiles/Sequence.mo
-        (cache,env_1,ih,store,_,csets,ty,_,_,graph) =
+        (cache,env_1,ih,store,_,csets,ty,_,_,graph) :=
           Inst.instClass(cache, env, ih, store, /* mod */ DAE.NOMOD(), pre, cl, inst_dims, impl, InstTypes.INNER_CALL(), graph, csets);
 
         //Make it an array type since we are not flattening
-        ty_1 = InstUtil.makeArrayType(dims, ty);
+        ty_1 := InstUtil.makeArrayType(dims, ty);
         InstUtil.checkFunctionVarType(ty_1, ci_state, n, info);
 
-        (cache,dae_var_attr) = InstBinding.instDaeVariableAttributes(cache, env, mod, ty, {});
+        (cache,dae_var_attr) := InstBinding.instDaeVariableAttributes(cache, env, mod, ty, {});
         // Check binding type matches variable type
-        (e_1,_) = Types.matchProp(e,p,DAE.PROP(ty_1,DAE.C_VAR()),true);
+        (e_1,_) := Types.matchProp(e,p,DAE.PROP(ty_1,DAE.C_VAR()),true);
 
         //Generate variable with default binding
-        ty_2 = Types.simplifyType(ty_1);
-        (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,ty_2,{}));
+        ty_2 := Types.simplifyType(ty_1);
+        (cache,cr) := PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,ty_2,{}));
 
         // set the source of this element
-        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), pre);
+        source := ElementSource.createElementSource(info, FGraph.getScopePath(env), pre);
 
 
-        SCode.PREFIXES(visibility = vis, finalPrefix = fin, innerOuter = io) = pf;
-        dae = InstDAE.daeDeclare(cache, env, env_1, cr, ci_state, ty, attr, vis, SOME(e_1), {dims}, NONE(), dae_var_attr, SOME(comment), io, fin, source, true);
-        store = UnitAbsynBuilder.instAddStore(store,ty,cr);
+        SCode.PREFIXES(visibility = vis, finalPrefix = fin, innerOuter = io) := pf;
+        dae := InstDAE.daeDeclare(cache, env, env_1, cr, ci_state, ty, attr, vis, SOME(e_1), {dims}, NONE(), dae_var_attr, SOME(comment), io, fin, source, true);
+        store := UnitAbsynBuilder.instAddStore(store,ty,cr);
       then
         (cache,env_1,ih,store,dae,csets,ty_1,graph);
 
 
     // Function variables without binding
     case (cache,env,ih,store,ci_state,mod,pre,n,(cl as SCode.CLASS()),attr,pf,dims,_,inst_dims,impl,comment,info,graph,csets)
-       equation
-        true = ClassInf.isFunction(ci_state);
+       algorithm
+        true := ClassInf.isFunction(ci_state);
         InstUtil.checkFunctionVar(n, attr, pf, info);
 
          //Instantiate type of the component, skip dae/not flattening
-        (cache,env_1,ih,store,_,csets,ty,_,_,_) =
+        (cache,env_1,ih,store,_,csets,ty,_,_,_) :=
           Inst.instClass(cache, env, ih, store, mod, pre, cl, inst_dims, impl, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, csets);
 
-        arrty = InstUtil.makeArrayType(dims, ty);
+        arrty := InstUtil.makeArrayType(dims, ty);
         InstUtil.checkFunctionVarType(arrty, ci_state, n, info);
-        (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,arrty,{}));
-        (cache,dae_var_attr) = InstBinding.instDaeVariableAttributes(cache,env, mod, ty, {});
+        (cache,cr) := PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,arrty,{}));
+        (cache,dae_var_attr) := InstBinding.instDaeVariableAttributes(cache,env, mod, ty, {});
 
         // set the source of this element
-        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), pre);
+        source := ElementSource.createElementSource(info, FGraph.getScopePath(env), pre);
 
-        SCode.PREFIXES(visibility = vis, finalPrefix = fin, innerOuter = io) = pf;
-        dae = InstDAE.daeDeclare(cache, env, env_1, cr, ci_state, ty, attr,vis,NONE(), {dims},NONE(), dae_var_attr, SOME(comment),io,fin,source,true);
-        store = UnitAbsynBuilder.instAddStore(store,ty,cr);
+        SCode.PREFIXES(visibility = vis, finalPrefix = fin, innerOuter = io) := pf;
+        dae := InstDAE.daeDeclare(cache, env, env_1, cr, ci_state, ty, attr,vis,NONE(), {dims},NONE(), dae_var_attr, SOME(comment),io,fin,source,true);
+        store := UnitAbsynBuilder.instAddStore(store,ty,cr);
       then
         (cache,env_1,ih,store,dae,csets,arrty,graph);
 
     // Scalar variables.
     case (_, _, _, _, _, _, _, _, _, _, _, {}, _, _, _, _, _, _, _)
-      equation
-        false = ClassInf.isFunction(inState);
+      algorithm
+        false := ClassInf.isFunction(inState);
         // print("InstVar.instVar2: Scalar variables case: inClass: " + SCodeDump.unparseElementStr(inClass) + "\n");
-        (cache, env, ih, store, dae, csets, ty, graph) = instScalar(
+        (cache, env, ih, store, dae, csets, ty, graph) := instScalar(
             inCache, inEnv, inIH, inStore, inState, inMod, inPrefix,
             inName, inClass, inAttributes, inPrefixes, inSubscripts,
             inInstDims, inImpl, SOME(inComment), inInfo, inGraph, inSets);
@@ -946,26 +946,26 @@ algorithm
     // Array variables with unknown dimensions, e.g. Real x[:] = [some expression that can be used to determine dimension].
     case (cache,env,ih,store,ci_state,(mod as DAE.MOD(binding = SOME(DAE.TYPED()))),pre,n,cl,attr,pf,
         ((dim as DAE.DIM_UNKNOWN()) :: dims),idxs,inst_dims,impl,comment,info,graph, csets)
-      equation
-        true = Config.splitArrays();
-        false = ClassInf.isFunction(ci_state);
+      algorithm
+        true := Config.splitArrays();
+        false := ClassInf.isFunction(ci_state);
 
         // Try to deduce the dimension from the modifier.
-        dim2 = InstUtil.instWholeDimFromMod(dim, mod, n, info);
-        inst_dims_1 = List.appendLastList(inst_dims, {dim2});
+        dim2 := InstUtil.instWholeDimFromMod(dim, mod, n, info);
+        inst_dims_1 := List.appendLastList(inst_dims, {dim2});
 
-        (cache,compenv,ih,store,dae,csets,ty,graph) =
+        (cache,compenv,ih,store,dae,csets,ty,graph) :=
           instArray(cache,env,ih,store, ci_state, mod, pre, n, (cl,attr), pf, 1, dim2, dims, idxs, inst_dims_1, impl, comment,info,graph, csets);
-        ty_1 = InstUtil.liftNonBasicTypes(ty,dim2); // Do not lift types extending basic type, they are already array types.
+        ty_1 := InstUtil.liftNonBasicTypes(ty,dim2); // Do not lift types extending basic type, they are already array types.
       then
         (cache,compenv,ih,store,dae,csets,ty_1,graph);
 
     // Array variables with unknown dimensions, non-expanding case
     case (cache,env,ih,store,ci_state,(mod as DAE.MOD(binding = SOME(DAE.TYPED()))),pre,n,cl,attr,pf,
       ((dim as DAE.DIM_UNKNOWN()) :: dims),idxs,inst_dims,impl,comment,info,graph, csets)
-      equation
-        false = Config.splitArrays();
-        false = ClassInf.isFunction(ci_state);
+      algorithm
+        false := Config.splitArrays();
+        false := ClassInf.isFunction(ci_state);
         // Try to deduce the dimension from the modifier.
         /*TODO : mahge: remove this*/
         /*
@@ -974,45 +974,45 @@ algorithm
         dim2 = Expression.subscriptDimension(dime);
         inst_dims_1 = List.appendLastList(inst_dims, {dime2});
         */
-        dim2 = InstUtil.instWholeDimFromMod(dim, mod, n, info);
-        inst_dims_1 = List.appendLastList(inst_dims, {dim2});
-        dime2 = Expression.dimensionSubscript(dim2);
+        dim2 := InstUtil.instWholeDimFromMod(dim, mod, n, info);
+        inst_dims_1 := List.appendLastList(inst_dims, {dim2});
+        dime2 := Expression.dimensionSubscript(dim2);
 
-        (cache,compenv,ih,store,dae,csets,ty,graph) =
+        (cache,compenv,ih,store,dae,csets,ty,graph) :=
           instVar2(cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,dime2::idxs,inst_dims_1,impl,comment,info,graph,csets);
-        ty_1 = InstUtil.liftNonBasicTypes(ty,dim2); // Do not lift types extending basic type, they are already array types.
+        ty_1 := InstUtil.liftNonBasicTypes(ty,dim2); // Do not lift types extending basic type, they are already array types.
       then
         (cache,compenv,ih,store,dae,csets,ty_1,graph);
 
     // Array variables , e.g. Real x[3]
     case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,(dim :: dims),idxs,inst_dims,impl,comment,info,graph,csets)
-      equation
-        true = Config.splitArrays();
-        false = ClassInf.isFunction(ci_state);
+      algorithm
+        true := Config.splitArrays();
+        false := ClassInf.isFunction(ci_state);
 
         // dim = InstUtil.evalEnumAndBoolDim(dim);
-        inst_dims_1 = List.appendLastList(inst_dims, {dim});
+        inst_dims_1 := List.appendLastList(inst_dims, {dim});
 
-        (cache,compenv,ih,store,dae,csets,ty,graph) =
+        (cache,compenv,ih,store,dae,csets,ty,graph) :=
           instArray(cache,env,ih,store, ci_state, mod, pre, n, (cl,attr), pf, 1, dim, dims, idxs, inst_dims_1, impl, comment,info,graph,csets);
-        ty_1 = InstUtil.liftNonBasicTypes(ty,dim); // Do not lift types extending basic type, they are already array types.
+        ty_1 := InstUtil.liftNonBasicTypes(ty,dim); // Do not lift types extending basic type, they are already array types.
       then
         (cache,compenv,ih,store,dae,csets,ty_1,graph);
 
     // Array variables , non-expanding case
     case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,(dim :: dims),idxs,inst_dims,impl,comment,info,graph,csets)
-      equation
-        false = Config.splitArrays();
-        false = ClassInf.isFunction(ci_state);
+      algorithm
+        false := Config.splitArrays();
+        false := ClassInf.isFunction(ci_state);
         /*TODO : mahge: remove this*/
         /*
         dime = InstUtil.instDimExpNonSplit(dim, impl);
         inst_dims_1 = List.appendLastList(inst_dims, {dime});
         */
-        inst_dims_1 = List.appendLastList(inst_dims, {dim});
-        dime = Expression.dimensionSubscript(dim);
+        inst_dims_1 := List.appendLastList(inst_dims, {dim});
+        dime := Expression.dimensionSubscript(dim);
 
-        (cache,compenv,ih,store,dae,csets,ty,graph) =
+        (cache,compenv,ih,store,dae,csets,ty,graph) :=
           instVar2(cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,dime::idxs,inst_dims_1,impl,comment,info,graph,csets);
         // Type lifting is done in the "scalar" case
         //ty_1 = InstUtil.liftNonBasicTypes(ty,dim); // Do not lift types extending basic type, they are already array types.
@@ -1022,7 +1022,7 @@ algorithm
     // Array variable with unknown dimensions, but no binding
     case (_,_,_,_,_,DAE.NOMOD(),_,n,_,_,_,
       ((DAE.DIM_UNKNOWN()) :: _),_,_,_,_,info,_,_)
-      equation
+      algorithm
         Error.addSourceMessage(Error.FAILURE_TO_DEDUCE_DIMS_NO_MOD,
           {String(listLength(inSubscripts) + 1), n},info);
       then
@@ -1030,8 +1030,8 @@ algorithm
 
     // failtrace
     case (_,env,_,_,_,mod,pre,n,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- InstVar.instVar2 failed: " +
           PrefixUtil.printPrefixStr(pre) + "." +
           n + "(" + Mod.prettyPrintMod(mod, 0) + ")\n  Scope: " +
@@ -1111,16 +1111,16 @@ algorithm
         SCode.CLASS(name = cls_name, restriction = res), SCode.ATTR(variability = vt),
         SCode.PREFIXES(visibility = vis, finalPrefix = fin, innerOuter = io),
         idxs, _, _, _, _, _, _)
-      equation
+      algorithm
         // Instantiate the components class.
-        idxs = listReverse(idxs);
-        ci_state = ClassInf.start(res, Absyn.IDENT(cls_name));
-        predims = List.lastListOrEmpty(inInstDims);
-        pre = PrefixUtil.prefixAdd(inName, predims, idxs, inPrefix, vt, ci_state, inInfo);
+        idxs := listReverse(idxs);
+        ci_state := ClassInf.start(res, Absyn.IDENT(cls_name));
+        predims := List.lastListOrEmpty(inInstDims);
+        pre := PrefixUtil.prefixAdd(inName, predims, idxs, inPrefix, vt, ci_state, inInfo);
         if Config.acceptMetaModelicaGrammar() then
-          stateName = AbsynUtil.pathString(ClassInf.getStateName(inState), delimiter = "");
-          inStateAndClassNameIsEqual = stringEqual(stateName, cls_name);
-          implicitInstantiation = SCodeUtil.isUniontype(inClass)
+          stateName := AbsynUtil.pathString(ClassInf.getStateName(inState), delimiter = "");
+          inStateAndClassNameIsEqual := stringEqual(stateName, cls_name);
+          implicitInstantiation := SCodeUtil.isUniontype(inClass)
                                 and SCodeUtil.isConstant(inAttributes.variability)
                                 and inStateAndClassNameIsEqual;
           /*
@@ -1131,28 +1131,28 @@ algorithm
             TODO: Keep records?
           */
           if implicitInstantiation then
-            classWithElementsRemoved = SCodeUtil.setElementClassDefinition(SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()), inClass);
-            (_, env_1, ih, store, dae1, csets, ty,_, opt_attr, graph) =
+            classWithElementsRemoved := SCodeUtil.setElementClassDefinition(SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()), inClass);
+            (_, env_1, ih, store, dae1, csets, ty,_, opt_attr, graph) :=
             Inst.instClass(cache, env, ih, store, inMod, pre, classWithElementsRemoved, inInstDims,
                            inImpl, InstTypes.INNER_CALL(), inGraph, inSets);
           else /* Continue as usual */
-            (cache, env_1, ih, store, dae1, csets, ty,_, opt_attr, graph) =
+            (cache, env_1, ih, store, dae1, csets, ty,_, opt_attr, graph) :=
               Inst.instClass(cache, env, ih, store, inMod, pre, inClass, inInstDims,
                          inImpl, InstTypes.INNER_CALL(), inGraph, inSets);
           end if;
        else
-       (cache, env_1, ih, store, dae1, csets, ty,_, opt_attr, graph) =
+       (cache, env_1, ih, store, dae1, csets, ty,_, opt_attr, graph) :=
           Inst.instClass(cache, env, ih, store, inMod, pre, inClass, inInstDims,
                          inImpl, InstTypes.INNER_CALL(), inGraph, inSets);
        end if;
         // Propagate and instantiate attributes.
-        (cache, dae_var_attr) = InstBinding.instDaeVariableAttributes(cache, env_1, inMod, ty, {});
-        attr = InstUtil.propagateAbSCDirection(vt, inAttributes, opt_attr, inInfo);
-        attr = SCodeUtil.removeAttributeDimensions(attr);
+        (cache, dae_var_attr) := InstBinding.instDaeVariableAttributes(cache, env_1, inMod, ty, {});
+        attr := InstUtil.propagateAbSCDirection(vt, inAttributes, opt_attr, inInfo);
+        attr := SCodeUtil.removeAttributeDimensions(attr);
         // Make a component reference for the component.
-        ident_ty = InstUtil.makeCrefBaseType(ty, inInstDims);
-        cr = ComponentReference.makeCrefIdent(inName, ident_ty, idxs);
-        (cache, cr) = PrefixUtil.prefixCref(cache, env, ih, inPrefix, cr);
+        ident_ty := InstUtil.makeCrefBaseType(ty, inInstDims);
+        cr := ComponentReference.makeCrefIdent(inName, ident_ty, idxs);
+        (cache, cr) := PrefixUtil.prefixCref(cache, env, ih, inPrefix, cr);
         // adrpo: we cannot check this here as:
         //        we might have modifications on inner that we copy here
         //        Dymola doesn't report modifications on outer as error!
@@ -1161,27 +1161,27 @@ algorithm
         InstUtil.checkModificationOnOuter(cache, env_1, ih, inPrefix, inName, cr, inMod,
           vt, io, inImpl, inInfo);
         // Set the source of this element.
-        source = ElementSource.createElementSource(inInfo, FGraph.getScopePath(env_1), inPrefix);
+        source := ElementSource.createElementSource(inInfo, FGraph.getScopePath(env_1), inPrefix);
         // Instantiate the components binding.
-        mod = if not listEmpty(inSubscripts) and not SCodeUtil.isParameterOrConst(vt) and not ClassInf.isFunctionOrRecord(inState) and not Types.isComplexType(Types.arrayElementType(ty)) and not Types.isExternalObject(Types.arrayElementType(ty)) and not Config.scalarizeBindings()
+        mod := if not listEmpty(inSubscripts) and not SCodeUtil.isParameterOrConst(vt) and not ClassInf.isFunctionOrRecord(inState) and not Types.isComplexType(Types.arrayElementType(ty)) and not Types.isExternalObject(Types.arrayElementType(ty)) and not Config.scalarizeBindings()
                  then DAE.NOMOD()
                  else inMod;
-        opt_binding = InstBinding.makeVariableBinding(ty, mod, Types.variabilityToConst(vt), inPrefix, inName);
-        start = InstBinding.instStartBindingExp(inMod /* Yup, let's keep the start-binding. It seems sane. */, ty, vt);
+        opt_binding := InstBinding.makeVariableBinding(ty, mod, Types.variabilityToConst(vt), inPrefix, inName);
+        start := InstBinding.instStartBindingExp(inMod /* Yup, let's keep the start-binding. It seems sane. */, ty, vt);
         // Propagate the final prefix from the modifier.
         //fin = InstUtil.propagateModFinal(mod, fin);
         if not Flags.getConfigBool(Flags.USE_LOCAL_DIRECTION) then
-          attr = stripVarAttrDirection(cr, ih, inState, inPrefix, attr);
+          attr := stripVarAttrDirection(cr, ih, inState, inPrefix, attr);
         end if;
         // Propagate prefixes to any elements inside this components if it's a
         // structured component.
-        dae1 = InstUtil.propagateAttributes(dae1, attr, inPrefixes, inInfo);
+        dae1 := InstUtil.propagateAttributes(dae1, attr, inPrefixes, inInfo);
         // Add the component to the DAE.
-        dae2 = InstDAE.daeDeclare(cache, env, env_1, cr, inState, ty, attr, vis, opt_binding, inInstDims,
+        dae2 := InstDAE.daeDeclare(cache, env, env_1, cr, inState, ty, attr, vis, opt_binding, inInstDims,
           start, dae_var_attr, inComment, io, fin, source, false);
-        store = UnitAbsynBuilder.instAddStore(store, ty, cr);
+        store := UnitAbsynBuilder.instAddStore(store, ty, cr);
         // The remaining work is done in instScalar2.
-        dae = instScalar2(cr, ty, vt, inMod, dae2, dae1, source, inImpl);
+        dae := instScalar2(cr, ty, vt, inMod, dae2, dae1, source, inImpl);
       then
         (cache, env_1, ih, store, dae, csets, ty, graph);
     else
@@ -1218,12 +1218,12 @@ algorithm
       then inAttributes;
     // Component with input/output that is part of a state machine
     case (_, _, _)
-      equation
-        topInstance = listHead(ih);
-        InnerOuter.TOP_INSTANCE(sm=sm) = topInstance;
-        true = BaseHashSet.currentSize(sm) > 0;
-        cref = PrefixUtil.prefixToCref(inPrefix);
-        true = BaseHashSet.has(cref, sm);
+      algorithm
+        topInstance := listHead(ih);
+        InnerOuter.TOP_INSTANCE(sm=sm) := topInstance;
+        true := BaseHashSet.currentSize(sm) > 0;
+        cref := PrefixUtil.prefixToCref(inPrefix);
+        true := BaseHashSet.has(cref, sm);
       then inAttributes;
     // Everything else, strip the input/output prefix.
     else SCodeUtil.setAttributesDirection(inAttributes, Absyn.BIDIR());
@@ -1251,8 +1251,8 @@ algorithm
     // Constant with binding.
     case (_, _, SCode.CONST(), DAE.MOD(binding = SOME(DAE.TYPED())),
         _, _, _, _)
-      equation
-        dae = DAEUtil.joinDaes(inClassDae, inDae);
+      algorithm
+        dae := DAEUtil.joinDaes(inClassDae, inDae);
       then
         dae;
 
@@ -1269,32 +1269,32 @@ algorithm
     // SEE testsuit/records/RecordBindingsOrdered.mo and RecordBindingsOrderedSimple.mo
     case (_, DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)), _, DAE.MOD(binding = SOME(DAE.TYPED(modifierAsExp = DAE.CREF(_, _)))),
         _, _, _, _)
-      equation
-        dae = InstBinding.instModEquation(inCref, inType, inMod, inSource, inImpl);
+      algorithm
+        dae := InstBinding.instModEquation(inCref, inType, inMod, inSource, inImpl);
         //move bindings from dae to inClassDae and use the resulting dae
-        dae = InstUtil.moveBindings(dae,inClassDae);
-        dae = DAEUtil.joinDaes(dae, inDae);
+        dae := InstUtil.moveBindings(dae,inClassDae);
+        dae := DAEUtil.joinDaes(dae, inDae);
       then
         dae;
 
     case (_, DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)), _, DAE.MOD(binding = SOME(DAE.TYPED(modifierAsExp = DAE.CAST(exp=DAE.CREF(_, _))))),
         _, _, _, _)
-      equation
-        dae = InstBinding.instModEquation(inCref, inType, inMod, inSource, inImpl);
+      algorithm
+        dae := InstBinding.instModEquation(inCref, inType, inMod, inSource, inImpl);
         //move bindings from dae to inClassDae and use the resulting dae
-        dae = InstUtil.moveBindings(dae,inClassDae);
-        dae = DAEUtil.joinDaes(dae, inDae);
+        dae := InstUtil.moveBindings(dae,inClassDae);
+        dae := DAEUtil.joinDaes(dae, inDae);
       then dae;
 
     // Parameter with binding.
     case (_, _, SCode.PARAM(), DAE.MOD(binding = SOME(DAE.TYPED())),
         _, _, _, _)
-      equation
-        dae = InstBinding.instModEquation(inCref, inType, inMod, inSource, inImpl);
+      algorithm
+        dae := InstBinding.instModEquation(inCref, inType, inMod, inSource, inImpl);
         // The equations generated by InstBinding.instModEquation are used only to modify
         // the bindings of parameters. No extra equations are added. -- alleb
-        dae = InstUtil.propagateBinding(inClassDae, dae);
-        dae = DAEUtil.joinDaes(dae, inDae);
+        dae := InstUtil.propagateBinding(inClassDae, dae);
+        dae := DAEUtil.joinDaes(dae, inDae);
       then
         dae;
 
@@ -1328,9 +1328,9 @@ algorithm
     case (DAE.DAE(elementLst = els),
           DAE.T_COMPLEX(complexClassType = ClassInf.RECORD()),
           DAE.DAE(elementLst = eqs as _ :: _))
-      equation
+      algorithm
         // This assumes that the equations are ordered the same as the variables.
-        (els, _) = List.mapFold(els, stripRecordDefaultBindingsFromElement, eqs);
+        (els, _) := List.mapFold(els, stripRecordDefaultBindingsFromElement, eqs);
       then
         DAE.DAE(els);
 
@@ -1436,9 +1436,9 @@ algorithm
 
     case DAE.NAMEMOD(ident = name, mod = DAE.MOD(eachPrefix = SCode.NOT_EACH(),
         binding = eqmod))
-      equation
-        name = inIdent + "." + name;
-        true = checkArrayModBindingDimSize(eqmod, inDimension, inPrefix, name, inInfo);
+      algorithm
+        name := inIdent + "." + name;
+        true := checkArrayModBindingDimSize(eqmod, inDimension, inPrefix, name, inInfo);
       then
         ();
 
@@ -1465,18 +1465,18 @@ algorithm
       SourceInfo info;
 
     case SOME(DAE.TYPED(modifierAsExp = exp, properties = DAE.PROP(type_ = ty), info=info))
-      equation
-        ty_dim = Types.getDimensionNth(ty, 1);
-        dim_size1 = Expression.dimensionSize(inDimension);
-        dim_size2 = Expression.dimensionSize(ty_dim);
-        true = dim_size1 <> dim_size2;
+      algorithm
+        ty_dim := Types.getDimensionNth(ty, 1);
+        dim_size1 := Expression.dimensionSize(inDimension);
+        dim_size2 := Expression.dimensionSize(ty_dim);
+        true := dim_size1 <> dim_size2;
         // If the dimensions are not equal, print an error message.
-        exp_str = ExpressionDump.printExpStr(exp);
-        exp_ty_str = Types.unparseType(ty);
+        exp_str := ExpressionDump.printExpStr(exp);
+        exp_ty_str := Types.unparseType(ty);
         // We don't know the complete expected type, so lets assume that the
         // rest of the expression's type is correct (will be caught later anyway).
-        _ :: ty_dims = Types.getDimensions(ty);
-        dims_str = ExpressionDump.dimensionsString(inDimension :: ty_dims);
+        _ :: ty_dims := Types.getDimensions(ty);
+        dims_str := ExpressionDump.dimensionsString(inDimension :: ty_dims);
         Error.addMultiSourceMessage(Error.ARRAY_DIMENSION_MISMATCH,
           {exp_str, exp_ty_str, dims_str}, info::inInfo::{});
       then
@@ -1562,49 +1562,49 @@ algorithm
 
     // component environment If is a function var.
     case (cache,env,ih,store,(ClassInf.FUNCTION()),mod,pre,n,(cl,_),_,_,dim,_,_,inst_dims,_,_,_,graph, csets)
-      equation
-        true = Expression.dimensionUnknownOrExp(dim);
-        SOME(DAE.TYPED(modifierAsExp = e, properties = p)) = Mod.modEquation(mod);
-        (cache,env_1,ih,store,_,_,ty,_,_,graph) =
+      algorithm
+        true := Expression.dimensionUnknownOrExp(dim);
+        SOME(DAE.TYPED(modifierAsExp = e, properties = p)) := Mod.modEquation(mod);
+        (cache,env_1,ih,store,_,_,ty,_,_,graph) :=
           Inst.instClass(cache,env,ih,store, mod, pre, cl, inst_dims, true, InstTypes.INNER_CALL(), graph, csets) "Which has an expression binding";
-        ty_1 = Types.simplifyType(ty);
-        (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre,ComponentReference.makeCrefIdent(n,ty_1,{})) "check their types";
-        (rhs,_) = Types.matchProp(e,p,DAE.PROP(ty,DAE.C_VAR()),true);
+        ty_1 := Types.simplifyType(ty);
+        (cache,cr) := PrefixUtil.prefixCref(cache,env,ih,pre,ComponentReference.makeCrefIdent(n,ty_1,{})) "check their types";
+        (rhs,_) := Types.matchProp(e,p,DAE.PROP(ty,DAE.C_VAR()),true);
 
         // set the source of this element
-        source = ElementSource.createElementSource(info, FGraph.getScopePath(env), pre);
+        source := ElementSource.createElementSource(info, FGraph.getScopePath(env), pre);
 
-        lhs = Expression.makeCrefExp(cr,ty_1);
+        lhs := Expression.makeCrefExp(cr,ty_1);
 
-        dae = InstSection.makeDaeEquation(lhs, rhs, source, SCode.NON_INITIAL());
+        dae := InstSection.makeDaeEquation(lhs, rhs, source, SCode.NON_INITIAL());
         // dae = DAEUtil.joinDaes(dae,DAEUtil.extractFunctions(dae1));
       then
         (cache,env_1,ih,store,dae,inSets,ty,graph);
 
     case (cache,env,ih,store,ci_state,mod,pre,n,(cl,attr),pf,i,_,dims,idxs,inst_dims,impl,comment,_,graph,csets)
-      equation
-        false = Expression.dimensionKnown(inDimension);
-        e = DAE.ICONST(i);
-        s = DAE.INDEX(e);
-        mod = Mod.lookupIdxModification(mod, e);
-        (cache,compenv,ih,store,daeLst,csets,ty,graph) =
+      algorithm
+        false := Expression.dimensionKnown(inDimension);
+        e := DAE.ICONST(i);
+        s := DAE.INDEX(e);
+        mod := Mod.lookupIdxModification(mod, e);
+        (cache,compenv,ih,store,daeLst,csets,ty,graph) :=
           instVar2(cache, env, ih, store, ci_state, mod, pre, n, cl, attr, pf, dims, (s :: idxs), inst_dims, impl, comment,info,graph, csets);
       then
         (cache,compenv,ih,store,daeLst,csets,ty,graph);
 
     // Special case when instantiating Real[0]. We need to know the type
     case (cache,env,ih,store,ci_state,_,pre,n,(cl,attr),pf,_,DAE.DIM_INTEGER(0),dims,idxs,inst_dims,impl,comment,_,graph, csets)
-      equation
+      algorithm
         ErrorExt.setCheckpoint("instArray Real[0]");
-        e = DAE.ICONST(0);
-        s = DAE.INDEX(e);
+        e := DAE.ICONST(0);
+        s := DAE.INDEX(e);
         // Normal modifiers doesn't really matter since the empty array will be
         // removed anyway, and causes issues since you can't look up an element
         // in an empty array. But redeclares are still needed to get the correct
         // types, so we filter out only the redeclares.
-        mod = Mod.filterRedeclares(inMod);
-        mod = Mod.lookupIdxModification(mod, e);
-        (cache,compenv,ih,store,_,csets,ty,graph) =
+        mod := Mod.filterRedeclares(inMod);
+        mod := Mod.lookupIdxModification(mod, e);
+        (cache,compenv,ih,store,_,csets,ty,graph) :=
            instVar2(cache,env,ih,store, ci_state, mod, pre, n, cl, attr,pf, dims, (s :: idxs), inst_dims, impl, comment,info,graph, csets);
         ErrorExt.rollBack("instArray Real[0]");
       then
@@ -1612,15 +1612,15 @@ algorithm
 
     // Keep the errors if we somehow fail
     case (_, _, _, _, _, _, _, _, _, _, _, DAE.DIM_INTEGER(0), _, _, _, _, _, _, _, _)
-      equation
+      algorithm
         ErrorExt.delCheckpoint("instArray Real[0]");
       then
         fail();
 
     // Handle DIM_INTEGER, where the dimension is >0
     case (cache,env,ih,store,ci_state,_,_,_,(_,_),_,_,DAE.DIM_INTEGER(integer = stop),_,_,_,_,_,_,graph,csets)
-      equation
-        (cache,env,ih,store,dae,csets,ty,graph) = instArrayDimInteger(cache,env,ih,store,ci_state,inMod,inPrefix,inIdent,inElement,inPrefixes,stop,inDimensionLst,inIntegerLst,inInstDims,inBoolean,inComment,info,graph,csets);
+      algorithm
+        (cache,env,ih,store,dae,csets,ty,graph) := instArrayDimInteger(cache,env,ih,store,ci_state,inMod,inPrefix,inIdent,inElement,inPrefixes,stop,inDimensionLst,inIntegerLst,inInstDims,inBoolean,inComment,info,graph,csets);
       then
         (cache,env,ih,store,dae,csets,ty,graph);
 
@@ -1632,25 +1632,25 @@ algorithm
           graph, csets);
 
     case (cache, env, ih, store, ci_state, mod, pre, n, (cl, attr), pf, _, DAE.DIM_BOOLEAN(), dims, idxs, inst_dims, impl, comment, _, graph, csets)
-      equation
-        mod_1 = Mod.lookupIdxModification(mod, DAE.BCONST(false));
-        mod_2 = Mod.lookupIdxModification(mod, DAE.BCONST(true));
-        (cache, env_1, ih, store, dae1, csets, ty, graph) =
+      algorithm
+        mod_1 := Mod.lookupIdxModification(mod, DAE.BCONST(false));
+        mod_2 := Mod.lookupIdxModification(mod, DAE.BCONST(true));
+        (cache, env_1, ih, store, dae1, csets, ty, graph) :=
           instVar2(cache, env, ih, store, ci_state, mod_1, pre, n, cl, attr, pf, dims, (DAE.INDEX(DAE.BCONST(false)) :: idxs), inst_dims, impl, comment, info, graph, csets);
-        (cache, _, ih, store, dae2, csets, ty, graph) =
+        (cache, _, ih, store, dae2, csets, ty, graph) :=
           instVar2(cache, env, ih, store, ci_state, mod_2, pre, n, cl, attr, pf, dims, (DAE.INDEX(DAE.BCONST(true))  :: idxs), inst_dims, impl, comment, info, graph, csets);
-        daeLst = DAEUtil.joinDaes(dae1, dae2);
+        daeLst := DAEUtil.joinDaes(dae1, dae2);
       then
         (cache, env_1, ih, store, daeLst, csets, ty, graph);
 
     case (_,_,_,_,ci_state,mod,pre,n,(_,_),_,i,_,_,idxs,_,_,_,_,_,_)
-      equation
-        failure(_ = Mod.lookupIdxModification(mod, DAE.ICONST(i)));
-        str1 = PrefixUtil.printPrefixStrIgnoreNoPre(PrefixUtil.prefixAdd(n, {}, {}, pre, SCode.VAR(), ci_state, info));
-        str2 = "[" + stringDelimitList(List.map(idxs, ExpressionDump.printSubscriptStr), ", ") + "]";
-        str3 = Mod.prettyPrintMod(mod, 1);
-        str4 = PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "(" + n + str2 + "=" + str3 + ")";
-        str2 = str1 + str2;
+      algorithm
+        failure(_ := Mod.lookupIdxModification(mod, DAE.ICONST(i)));
+        str1 := PrefixUtil.printPrefixStrIgnoreNoPre(PrefixUtil.prefixAdd(n, {}, {}, pre, SCode.VAR(), ci_state, info));
+        str2 := "[" + stringDelimitList(List.map(idxs, ExpressionDump.printSubscriptStr), ", ") + "]";
+        str3 := Mod.prettyPrintMod(mod, 1);
+        str4 := PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "(" + n + str2 + "=" + str3 + ")";
+        str2 := str1 + str2;
         Error.addSourceMessage(Error.MODIFICATION_INDEX_NOT_FOUND, {str1,str4,str2,str3}, info);
       then
         fail();

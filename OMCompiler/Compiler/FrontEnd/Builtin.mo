@@ -97,7 +97,7 @@ algorithm
   match (inPath)
     local Absyn.Path path;
     case (Absyn.IDENT(name = "der")) then ();
-    case (Absyn.FULLYQUALIFIED(path)) equation isDer(path); then ();
+    case (Absyn.FULLYQUALIFIED(path)) algorithm isDer(path); then ();
   end match;
 end isDer;
 
@@ -138,38 +138,38 @@ algorithm
       list<SCode.Element> types;
 
     // First look for cached version
-    case (cache) equation
-      graph = FCore.getCachedInitialGraph(cache);
+    case (cache) algorithm
+      graph := FCore.getCachedInitialGraph(cache);
       // we have references in the graph so we need to clone it before giving it away
-      graph = FGraph.clone(graph);
+      graph := FGraph.clone(graph);
     then (cache,graph);
 
     // then look in the global roots[builtinEnvIndex]
     case (cache)
-      equation
-        graph = getSetInitialGraph(NONE());
+      algorithm
+        graph := getSetInitialGraph(NONE());
       then
         (cache, graph);
 
     // if no cached version found create initial graph.
     case (cache)
-      equation
-        graph = FGraph.new("graph", FCore.dummyTopModel);
-        graph = FGraphBuildEnv.mkProgramGraph(FBuiltin.getBasicTypes(), FCore.BASIC_TYPE(), graph);
+      algorithm
+        graph := FGraph.new("graph", FCore.dummyTopModel);
+        graph := FGraphBuildEnv.mkProgramGraph(FBuiltin.getBasicTypes(), FCore.BASIC_TYPE(), graph);
 
-        graph = FBuiltin.initialGraphModelica(graph, FGraphBuildEnv.mkTypeNode, FGraphBuildEnv.mkCompNode);
+        graph := FBuiltin.initialGraphModelica(graph, FGraphBuildEnv.mkTypeNode, FGraphBuildEnv.mkCompNode);
 
-        (_, initialProgram) = FBuiltin.getInitialFunctions();
+        (_, initialProgram) := FBuiltin.getInitialFunctions();
         // add the ModelicaBuiltin/MetaModelicaBuiltin classes in the initial graph
-        graph = FGraphBuildEnv.mkProgramGraph(initialProgram, FCore.BUILTIN(), graph);
+        graph := FGraphBuildEnv.mkProgramGraph(initialProgram, FCore.BUILTIN(), graph);
 
-        graph = FBuiltin.initialGraphOptimica(graph, FGraphBuildEnv.mkCompNode);
-        graph = FBuiltin.initialGraphMetaModelica(graph, FGraphBuildEnv.mkTypeNode);
+        graph := FBuiltin.initialGraphOptimica(graph, FGraphBuildEnv.mkCompNode);
+        graph := FBuiltin.initialGraphMetaModelica(graph, FGraphBuildEnv.mkTypeNode);
 
-        cache = FCore.setCachedInitialGraph(cache,graph);
-        _ = getSetInitialGraph(SOME(graph));
+        cache := FCore.setCachedInitialGraph(cache,graph);
+        _ := getSetInitialGraph(SOME(graph));
 
-        graph = FGraph.clone(graph); // we have references in the graph so we need to clone it before returning it
+        graph := FGraph.clone(graph); // we have references in the graph so we need to clone it before returning it
       then
         (cache,graph);
 
@@ -189,26 +189,26 @@ algorithm
 
     // nothing there
     case (_)
-      equation
-        failure(_ = getGlobalRoot(Global.builtinGraphIndex));
+      algorithm
+        failure(_ := getGlobalRoot(Global.builtinGraphIndex));
         setGlobalRoot(Global.builtinGraphIndex, {});
       then
         fail();
 
     // return the correct graph depending on flags
     case (NONE())
-      equation
-        assocLst = getGlobalRoot(Global.builtinGraphIndex);
+      algorithm
+        assocLst := getGlobalRoot(Global.builtinGraphIndex);
         // we have references in the graph so we need to clone it before giving it away
-        graph = FGraph.clone(Util.assoc(Flags.getConfigEnum(Flags.GRAMMAR), assocLst));
+        graph := FGraph.clone(Util.assoc(Flags.getConfigEnum(Flags.GRAMMAR), assocLst));
       then
         graph;
 
     case (SOME(graph))
-      equation
-        assocLst = getGlobalRoot(Global.builtinGraphIndex);
-        f = Flags.getConfigEnum(Flags.GRAMMAR);
-        assocLst = if f == Flags.METAMODELICA
+      algorithm
+        assocLst := getGlobalRoot(Global.builtinGraphIndex);
+        f := Flags.getConfigEnum(Flags.GRAMMAR);
+        assocLst := if f == Flags.METAMODELICA
                    then (Flags.METAMODELICA,graph)::assocLst
                    else if f == Flags.PARMODELICA
                         then (Flags.PARMODELICA,graph)::assocLst

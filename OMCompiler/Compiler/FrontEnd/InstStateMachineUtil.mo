@@ -340,22 +340,22 @@ algorithm
       List<DAE.ComponentRef> rest;
       DAE.Exp outerCrefExp, innerCrefExp, crefStateExp, ifExp, expCond, expElse;
     case (outerCref::{})
-      equation
-        outerCrefExp = DAE.CREF(outerCref, ty);
-        crefState = ComponentReference.crefStripLastIdent(outerCref);
-        crefStateExp = DAE.CREF(crefState, ty);
-        expCond = DAE.CALL(Absyn.IDENT("activeState"), {crefStateExp}, callAttributes);
-        expElse = DAE.RCONST(0);
-        ifExp = DAE.IFEXP(expCond, outerCrefExp, expElse);
+      algorithm
+        outerCrefExp := DAE.CREF(outerCref, ty);
+        crefState := ComponentReference.crefStripLastIdent(outerCref);
+        crefStateExp := DAE.CREF(crefState, ty);
+        expCond := DAE.CALL(Absyn.IDENT("activeState"), {crefStateExp}, callAttributes);
+        expElse := DAE.RCONST(0);
+        ifExp := DAE.IFEXP(expCond, outerCrefExp, expElse);
       then ifExp;
     case (outerCref::rest)
-      equation
-        outerCrefExp = DAE.CREF(outerCref, ty);
-        crefState = ComponentReference.crefStripLastIdent(outerCref);
-        crefStateExp = DAE.CREF(crefState, ty);
-        expCond = DAE.CALL(Absyn.IDENT("activeState"), {crefStateExp}, callAttributes);
-        expElse = mergingRhs_der(rest, inInnerCref, ty);
-        ifExp = DAE.IFEXP(expCond, outerCrefExp, expElse);
+      algorithm
+        outerCrefExp := DAE.CREF(outerCref, ty);
+        crefState := ComponentReference.crefStripLastIdent(outerCref);
+        crefStateExp := DAE.CREF(crefState, ty);
+        expCond := DAE.CALL(Absyn.IDENT("activeState"), {crefStateExp}, callAttributes);
+        expElse := mergingRhs_der(rest, inInnerCref, ty);
+        ifExp := DAE.IFEXP(expCond, outerCrefExp, expElse);
       then ifExp;
   end match;
 
@@ -426,23 +426,23 @@ algorithm
       List<DAE.ComponentRef> rest;
       DAE.Exp outerCrefExp, innerCrefExp, crefStateExp, ifExp, expCond, expElse;
     case (outerCref::{})
-      equation
-        outerCrefExp = DAE.CREF(outerCref, ty);
-        innerCrefExp = DAE.CREF(inInnerCref, ty);
-        crefState = ComponentReference.crefStripLastIdent(outerCref);
-        crefStateExp = DAE.CREF(crefState, ty);
-        expCond = DAE.CALL(Absyn.IDENT("activeState"), {crefStateExp}, callAttributes);
-        expElse = DAE.CALL(Absyn.IDENT("previous"), {innerCrefExp}, callAttributes);
-        ifExp = DAE.IFEXP(expCond, outerCrefExp, expElse);
+      algorithm
+        outerCrefExp := DAE.CREF(outerCref, ty);
+        innerCrefExp := DAE.CREF(inInnerCref, ty);
+        crefState := ComponentReference.crefStripLastIdent(outerCref);
+        crefStateExp := DAE.CREF(crefState, ty);
+        expCond := DAE.CALL(Absyn.IDENT("activeState"), {crefStateExp}, callAttributes);
+        expElse := DAE.CALL(Absyn.IDENT("previous"), {innerCrefExp}, callAttributes);
+        ifExp := DAE.IFEXP(expCond, outerCrefExp, expElse);
       then ifExp;
     case (outerCref::rest)
-      equation
-        outerCrefExp = DAE.CREF(outerCref, ty);
-        crefState = ComponentReference.crefStripLastIdent(outerCref);
-        crefStateExp = DAE.CREF(crefState, ty);
-        expCond = DAE.CALL(Absyn.IDENT("activeState"), {crefStateExp}, callAttributes);
-        expElse = mergingRhs(rest, inInnerCref, ty);
-        ifExp = DAE.IFEXP(expCond, outerCrefExp, expElse);
+      algorithm
+        outerCrefExp := DAE.CREF(outerCref, ty);
+        crefState := ComponentReference.crefStripLastIdent(outerCref);
+        crefStateExp := DAE.CREF(crefState, ty);
+        expCond := DAE.CALL(Absyn.IDENT("activeState"), {crefStateExp}, callAttributes);
+        expElse := mergingRhs(rest, inInnerCref, ty);
+        ifExp := DAE.IFEXP(expCond, outerCrefExp, expElse);
       then ifExp;
   end match;
 
@@ -994,37 +994,37 @@ algorithm
       HashSet.HashSet edges1, edges2;
     case DAE.NORETCALL(exp=DAE.CALL(path=Absyn.IDENT("transition"),
       expLst=DAE.CREF(componentRef=cref1)::DAE.CREF(componentRef=cref2)::_))
-      equation
+      algorithm
         //print("InstStateMachineUtil.extractSMStates: transition("+ComponentReference.crefStr(cref1)+", "+ComponentReference.crefStr(cref2)+")\n");
-        smnode1 = if BaseHashTable.hasKey(cref1, outTable)
+        smnode1 := if BaseHashTable.hasKey(cref1, outTable)
           then BaseHashTable.get(cref1, outTable)
             else SMNODE(cref1, false, HashSet.emptyHashSet());
-        SMNODE(_,isInitial1,edges1) = smnode1;
-        edges1 = BaseHashSet.add(cref1, edges1);
-        edges1 = BaseHashSet.add(cref2, edges1);
-        smnode1 = SMNODE(cref1, isInitial1, edges1);
-        outTable = BaseHashTable.add((cref1, smnode1), outTable);
+        SMNODE(_,isInitial1,edges1) := smnode1;
+        edges1 := BaseHashSet.add(cref1, edges1);
+        edges1 := BaseHashSet.add(cref2, edges1);
+        smnode1 := SMNODE(cref1, isInitial1, edges1);
+        outTable := BaseHashTable.add((cref1, smnode1), outTable);
 
-        smnode2 = if BaseHashTable.hasKey(cref2, outTable)
+        smnode2 := if BaseHashTable.hasKey(cref2, outTable)
           then BaseHashTable.get(cref2, outTable)
             else SMNODE(cref2, false, HashSet.emptyHashSet());
-        SMNODE(_,isInitial2,edges2) = smnode2;
-        edges2 = BaseHashSet.add(cref1, edges2);
-        edges2 = BaseHashSet.add(cref2, edges2);
-        smnode2 = SMNODE(cref2, isInitial2, edges2);
-        outTable = BaseHashTable.add((cref2, smnode2), outTable);
+        SMNODE(_,isInitial2,edges2) := smnode2;
+        edges2 := BaseHashSet.add(cref1, edges2);
+        edges2 := BaseHashSet.add(cref2, edges2);
+        smnode2 := SMNODE(cref2, isInitial2, edges2);
+        outTable := BaseHashTable.add((cref2, smnode2), outTable);
       then outTable;
     case DAE.NORETCALL(exp=DAE.CALL(path=Absyn.IDENT("initialState"),
       expLst={DAE.CREF(componentRef=cref1)}))
-      equation
+      algorithm
         //print("InstStateMachineUtil.extractSMStates: initialState("+ComponentReference.crefStr(cref1)+")\n");
-        smnode1 = if BaseHashTable.hasKey(cref1, outTable)
+        smnode1 := if BaseHashTable.hasKey(cref1, outTable)
           then BaseHashTable.get(cref1, outTable)
             else SMNODE(cref1, true, HashSet.emptyHashSet());
-        SMNODE(_,_,edges1) = smnode1;
-        edges1 = BaseHashSet.add(cref1, edges1);
-        smnode1 = SMNODE(cref1,true,edges1);
-        outTable = BaseHashTable.add((cref1, smnode1), outTable);
+        SMNODE(_,_,edges1) := smnode1;
+        edges1 := BaseHashSet.add(cref1, edges1);
+        smnode1 := SMNODE(cref1,true,edges1);
+        outTable := BaseHashTable.add((cref1, smnode1), outTable);
       then outTable;
   end match;
 

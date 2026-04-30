@@ -108,19 +108,19 @@ algorithm
       Absyn.Path rest;
     /* Simple names: Just load the file if it can be found in $OPENMODELICALIBRARY */
     case (Absyn.IDENT(name = classname),_,mp,_)
-      equation
-        gd = Autoconf.groupDelimiter;
-        mps = System.strtok(mp, gd);
-        p = loadClassFromMps(classname, priorityList, mps, encoding, requireExactVersion, encrypted);
+      algorithm
+        gd := Autoconf.groupDelimiter;
+        mps := System.strtok(mp, gd);
+        p := loadClassFromMps(classname, priorityList, mps, encoding, requireExactVersion, encrypted);
         checkOnLoadMessage(p);
       then
         p;
     /* Qualified names: First check if it is defined in a file pack.mo */
     case (Absyn.QUALIFIED(name = pack),_,mp,_)
-      equation
-        gd = Autoconf.groupDelimiter;
-        mps = System.strtok(mp, gd);
-        p = loadClassFromMps(pack, priorityList, mps, encoding, requireExactVersion, encrypted);
+      algorithm
+        gd := Autoconf.groupDelimiter;
+        mps := System.strtok(mp, gd);
+        p := loadClassFromMps(pack, priorityList, mps, encoding, requireExactVersion, encrypted);
         checkOnLoadMessage(p);
       then
         p;
@@ -226,26 +226,26 @@ algorithm
       Option<Integer> lveInstance;
 
     case (_,_,_,false,_)
-      equation
-        pd = Autoconf.pathDelimiter;
+      algorithm
+        pd := Autoconf.pathDelimiter;
         /* Check for path/package.encoding; OpenModelica extension */
-        encodingfile = stringAppendList({path,pd,"package.encoding"});
-        encoding = System.trimChar(System.trimChar(if System.regularFileExists(encodingfile) then System.readFile(encodingfile) else Util.getOptionOrDefault(optEncoding,"UTF-8"),"\n")," ");
-        strategy = STRATEGY_ON_DEMAND(encoding);
-        cl = parsePackageFile(path + pd + name, strategy, false, Absyn.TOP(), id, encrypted);
+        encodingfile := stringAppendList({path,pd,"package.encoding"});
+        encoding := System.trimChar(System.trimChar(if System.regularFileExists(encodingfile) then System.readFile(encodingfile) else Util.getOptionOrDefault(optEncoding,"UTF-8"),"\n")," ");
+        strategy := STRATEGY_ON_DEMAND(encoding);
+        cl := parsePackageFile(path + pd + name, strategy, false, Absyn.TOP(), id, encrypted);
       then
         cl;
 
     case (_,_,_,true,_)
-      equation
+      algorithm
         /* Check for path/package.encoding; OpenModelica extension */
-        pd = Autoconf.pathDelimiter;
-        encodingfile = stringAppendList({path,pd,name,pd,"package.encoding"});
-        encoding = System.trimChar(System.trimChar(if System.regularFileExists(encodingfile) then System.readFile(encodingfile) else Util.getOptionOrDefault(optEncoding,"UTF-8"),"\n")," ");
+        pd := Autoconf.pathDelimiter;
+        encodingfile := stringAppendList({path,pd,name,pd,"package.encoding"});
+        encoding := System.trimChar(System.trimChar(if System.regularFileExists(encodingfile) then System.readFile(encodingfile) else Util.getOptionOrDefault(optEncoding,"UTF-8"),"\n")," ");
 
-        lveInstance = NONE();
+        lveInstance := NONE();
         if encrypted then
-          (lveStarted, lveInstance) = Parser.startLibraryVendorExecutable(path + pd + name);
+          (lveStarted, lveInstance) := Parser.startLibraryVendorExecutable(path + pd + name);
           if not lveStarted then
             Error.addMessage(Error.INTERNAL_ERROR, {"Unable to start library vendor executable."});
             fail();
@@ -253,13 +253,13 @@ algorithm
         end if;
 
         if (Testsuite.isRunning() or Config.noProc()==1) and not encrypted then
-          strategy = STRATEGY_ON_DEMAND(encoding);
+          strategy := STRATEGY_ON_DEMAND(encoding);
         else
-          filenames = getAllFilesFromDirectory(path + pd + name, encrypted);
+          filenames := getAllFilesFromDirectory(path + pd + name, encrypted);
       // print("Files load in parallel:\n" + stringDelimitList(filenames, "\n") + "\n");
-          strategy = STRATEGY_HASHTABLE(Parser.parallelParseFiles(filenames, encoding, Config.noProc(), path + pd + name, lveInstance));
+          strategy := STRATEGY_HASHTABLE(Parser.parallelParseFiles(filenames, encoding, Config.noProc(), path + pd + name, lveInstance));
         end if;
-        cl = loadCompletePackageFromMp(id, name, path, strategy, Absyn.TOP(), Error.getNumErrorMessages(), encrypted);
+        cl := loadCompletePackageFromMp(id, name, path, strategy, Absyn.TOP(), Error.getNumErrorMessages(), encrypted);
         if (encrypted and lveStarted) then
           Parser.stopLibraryVendorExecutable(lveInstance);
         end if;
@@ -315,31 +315,31 @@ algorithm
       list<PackageOrder> reverseOrder;
       list<Absyn.Annotation> ann;
     case (_,pack,mp,within_)
-      equation
-        pd = Autoconf.pathDelimiter;
-        mp_1 = stringAppendList({mp,pd,pack});
-        packagefile = stringAppendList({mp_1,pd,if encrypted then "package.moc" else "package.mo"});
-        orderfile = stringAppendList({mp_1,pd,"package.order"});
+      algorithm
+        pd := Autoconf.pathDelimiter;
+        mp_1 := stringAppendList({mp,pd,pack});
+        packagefile := stringAppendList({mp_1,pd,if encrypted then "package.moc" else "package.mo"});
+        orderfile := stringAppendList({mp_1,pd,"package.order"});
         if not System.regularFileExists(packagefile) then
           Error.addInternalError("Expected file " + packagefile + " to exist", sourceInfo());
           fail();
         end if;
         // print("Look for " + packagefile + "\n");
-        opt_cl = parsePackageFile(packagefile, strategy, true, within_, id, encrypted);
+        opt_cl := parsePackageFile(packagefile, strategy, true, within_, id, encrypted);
         // print("Got " + packagefile + "\n");
         if (isSome(opt_cl)) then
-          (class_ as Absyn.CLASS(body=Absyn.PARTS(tv,ca,cp,ann,cmt))) = Util.getOption(opt_cl);
-          reverseOrder = getPackageContentNames(class_, orderfile, mp_1, Error.getNumErrorMessages(), encrypted);
-          path = AbsynUtil.joinWithinPath(within_,Absyn.IDENT(id));
-          w2 = Absyn.WITHIN(path);
-          cp = List.fold4(reverseOrder, loadCompletePackageFromMp2, mp_1, strategy, w2, encrypted, {});
-          class_.body = Absyn.PARTS(tv,ca,cp,ann,cmt);
-          opt_cl = SOME(class_);
+          (class_ as Absyn.CLASS(body=Absyn.PARTS(tv,ca,cp,ann,cmt))) := Util.getOption(opt_cl);
+          reverseOrder := getPackageContentNames(class_, orderfile, mp_1, Error.getNumErrorMessages(), encrypted);
+          path := AbsynUtil.joinWithinPath(within_,Absyn.IDENT(id));
+          w2 := Absyn.WITHIN(path);
+          cp := List.fold4(reverseOrder, loadCompletePackageFromMp2, mp_1, strategy, w2, encrypted, {});
+          class_.body := Absyn.PARTS(tv,ca,cp,ann,cmt);
+          opt_cl := SOME(class_);
         end if;
       then opt_cl;
     case (_,pack,mp,_)
-      equation
-        true = numError == Error.getNumErrorMessages();
+      algorithm
+        true := numError == Error.getNumErrorMessages();
         Error.addInternalError("loadCompletePackageFromMp failed for unknown reason: mp=" + mp + " pack=" + pack, sourceInfo());
       then fail();
   end matchcontinue;
@@ -355,12 +355,12 @@ algorithm
       list<Absyn.ElementItem> ei1,ei2,ei;
       list<Absyn.ClassPart> rest;
     case (Absyn.PUBLIC(ei1),Absyn.PUBLIC(ei2)::rest)
-      equation
-        ei = listAppend(ei1,ei2);
+      algorithm
+        ei := listAppend(ei1,ei2);
       then Absyn.PUBLIC(ei)::rest;
     case (Absyn.PROTECTED(ei1),Absyn.PROTECTED(ei2)::rest)
-      equation
-        ei = listAppend(ei1,ei2);
+      algorithm
+        ei := listAppend(ei1,ei2);
       then Absyn.PROTECTED(ei)::rest;
     else cp::cps;
   end match;
@@ -385,45 +385,45 @@ algorithm
       Boolean bDirectoryAndFileExists;
 
     case CLASSPART(cp)
-      equation
-        cps = mergeBefore(cp,acc);
+      algorithm
+        cps := mergeBefore(cp,acc);
       then cps;
 
     case ELEMENT(ei,true)
-      equation
-        cps = mergeBefore(Absyn.PUBLIC({ei}),acc);
+      algorithm
+        cps := mergeBefore(Absyn.PUBLIC({ei}),acc);
       then cps;
 
     case ELEMENT(ei,false)
-      equation
-        cps = mergeBefore(Absyn.PROTECTED({ei}),acc);
+      algorithm
+        cps := mergeBefore(Absyn.PROTECTED({ei}),acc);
       then cps;
 
     case CLASSLOAD(id)
-      equation
-        pd = Autoconf.pathDelimiter;
-        file = mp + pd + id + (if encrypted then "/package.moc" else "/package.mo");
-        bDirectoryAndFileExists = System.directoryExists(mp + pd + id) and System.regularFileExists(file);
+      algorithm
+        pd := Autoconf.pathDelimiter;
+        file := mp + pd + id + (if encrypted then "/package.moc" else "/package.mo");
+        bDirectoryAndFileExists := System.directoryExists(mp + pd + id) and System.regularFileExists(file);
         if bDirectoryAndFileExists then
-          cl = loadCompletePackageFromMp(id,id,mp,strategy,w1,Error.getNumErrorMessages(),encrypted);
+          cl := loadCompletePackageFromMp(id,id,mp,strategy,w1,Error.getNumErrorMessages(),encrypted);
           if (isSome(cl)) then
-            ei = AbsynUtil.makeClassElement(Util.getOption(cl));
-            cps = mergeBefore(Absyn.PUBLIC({ei}),acc);
+            ei := AbsynUtil.makeClassElement(Util.getOption(cl));
+            cps := mergeBefore(Absyn.PUBLIC({ei}),acc);
           else
-            cps = acc;
+            cps := acc;
           end if;
         else
-          file = mp + pd + id + (if encrypted then ".moc" else ".mo");
+          file := mp + pd + id + (if encrypted then ".moc" else ".mo");
           if not System.regularFileExists(file) then
             Error.addInternalError("Expected file " + file + " to exist", sourceInfo());
             fail();
           end if;
-          cl = parsePackageFile(file, strategy, false, w1, id, encrypted);
+          cl := parsePackageFile(file, strategy, false, w1, id, encrypted);
           if (isSome(cl)) then
-            ei = AbsynUtil.makeClassElement(Util.getOption(cl));
-            cps = mergeBefore(Absyn.PUBLIC({ei}),acc);
+            ei := AbsynUtil.makeClassElement(Util.getOption(cl));
+            cps := mergeBefore(Absyn.PUBLIC({ei}),acc);
           else
-            cps = acc;
+            cps := acc;
           end if;
         end if;
       then cps;
@@ -565,8 +565,8 @@ algorithm
         po;
 
     case (Absyn.CLASS(info=info),_,_,_)
-      equation
-        true = numError == Error.getNumErrorMessages();
+      algorithm
+        true := numError == Error.getNumErrorMessages();
         Error.addSourceMessage(Error.INTERNAL_ERROR,{"getPackageContentNames failed for unknown reason"},info);
       then fail();
 
@@ -652,22 +652,22 @@ algorithm
       list<String> namesToSort;
       Absyn.ClassPart cp;
     case (namesToSort,{},_)
-      equation
-        outOrder = listAppend(List.mapReverse(namesToSort,makeClassLoad),acc);
+      algorithm
+        outOrder := listAppend(List.mapReverse(namesToSort,makeClassLoad),acc);
       then outOrder;
     case (namesToSort,Absyn.PUBLIC(elts)::rcp,_)
-      equation
-        (outOrder,namesToSort) = getPackageContentNamesinElts(namesToSort,elts,acc,true);
-        (outOrder) = getPackageContentNamesinParts(namesToSort,rcp,outOrder);
+      algorithm
+        (outOrder,namesToSort) := getPackageContentNamesinElts(namesToSort,elts,acc,true);
+        (outOrder) := getPackageContentNamesinParts(namesToSort,rcp,outOrder);
       then outOrder;
     case (namesToSort,Absyn.PROTECTED(elts)::rcp,_)
-      equation
-        (outOrder,namesToSort) = getPackageContentNamesinElts(namesToSort,elts,acc,false);
-        (outOrder) = getPackageContentNamesinParts(namesToSort,rcp,outOrder);
+      algorithm
+        (outOrder,namesToSort) := getPackageContentNamesinElts(namesToSort,elts,acc,false);
+        (outOrder) := getPackageContentNamesinParts(namesToSort,rcp,outOrder);
       then outOrder;
     case (namesToSort,cp::rcp,_)
-      equation
-        (outOrder) = getPackageContentNamesinParts(namesToSort,rcp,CLASSPART(cp)::acc);
+      algorithm
+        (outOrder) := getPackageContentNamesinParts(namesToSort,rcp,CLASSPART(cp)::acc);
       then outOrder;
   end match;
 end getPackageContentNamesinParts;
@@ -693,41 +693,41 @@ algorithm
     case (namesToSort,{},_,_) then (po,namesToSort);
 
     case (name1::_,(ei as Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.COMPONENTS(components=comps),info=info)))::elts,_,_)
-      equation
-        compNames = List.map(comps,AbsynUtil.componentName);
-        (names,b) = matchCompNames(inNamesToSort,compNames,info);
-        orderElt = if b then makeElement(ei,pub) else makeClassLoad(name1);
-        (outOrder,names) = getPackageContentNamesinElts(names,if b then elts else inElts,orderElt :: po,pub);
+      algorithm
+        compNames := List.map(comps,AbsynUtil.componentName);
+        (names,b) := matchCompNames(inNamesToSort,compNames,info);
+        orderElt := if b then makeElement(ei,pub) else makeClassLoad(name1);
+        (outOrder,names) := getPackageContentNamesinElts(names,if b then elts else inElts,orderElt :: po,pub);
       then (outOrder,names);
 
     case (name1::namesToSort,(ei as Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(class_=Absyn.CLASS(name=name2,info=info)))))::elts,_,_)
-      equation
-        load = makeClassLoad(name1);
-        b = name1 == name2;
+      algorithm
+        load := makeClassLoad(name1);
+        b := name1 == name2;
         Error.assertionOrAddSourceMessage(if b then not listMember(load,po) else true, Error.PACKAGE_MO_NOT_IN_ORDER, {name2}, info);
-        orderElt = if b then makeElement(ei,pub) else load;
-        (outOrder,names) = getPackageContentNamesinElts(namesToSort,if b then elts else inElts,orderElt :: po, pub);
+        orderElt := if b then makeElement(ei,pub) else load;
+        (outOrder,names) := getPackageContentNamesinElts(namesToSort,if b then elts else inElts,orderElt :: po, pub);
       then (outOrder,names);
 
     case ({},(Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(class_=Absyn.CLASS(name=name2,info=info)))))::_,_,_)
-      equation
-        load = makeClassLoad(name2);
+      algorithm
+        load := makeClassLoad(name2);
         Error.assertionOrAddSourceMessage(not listMember(load,po), Error.PACKAGE_MO_NOT_IN_ORDER, {name2}, info);
         Error.addSourceMessage(Error.FOUND_ELEMENT_NOT_IN_ORDER_FILE, {name2}, info);
-        (outOrder,names) = getPackageContentNamesinElts(name2 :: inNamesToSort, inElts, po, pub);
+        (outOrder,names) := getPackageContentNamesinElts(name2 :: inNamesToSort, inElts, po, pub);
       then (outOrder,names);
 
     case ({},Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.COMPONENTS(components=Absyn.COMPONENTITEM(component=Absyn.COMPONENT(name=name2))::_),info=info))::_,_,_)
-      equation
-        load = makeClassLoad(name2);
+      algorithm
+        load := makeClassLoad(name2);
         Error.assertionOrAddSourceMessage(not listMember(load,po), Error.PACKAGE_MO_NOT_IN_ORDER, {name2}, info);
         Error.addSourceMessage(Error.FOUND_ELEMENT_NOT_IN_ORDER_FILE, {name2}, info);
-        (outOrder,names) = getPackageContentNamesinElts(name2 :: inNamesToSort, inElts, po, pub);
+        (outOrder,names) := getPackageContentNamesinElts(name2 :: inNamesToSort, inElts, po, pub);
       then (outOrder,names);
 
     case (namesToSort,ei::elts,_,_)
-      equation
-        (outOrder,names) = getPackageContentNamesinElts(namesToSort,elts,ELEMENT(ei,pub) :: po, pub);
+      algorithm
+        (outOrder,names) := getPackageContentNamesinElts(namesToSort,elts,ELEMENT(ei,pub) :: po, pub);
       then (outOrder,names);
   end match;
 end getPackageContentNamesinElts;
@@ -748,14 +748,14 @@ algorithm
     case (_,{},_) then (names,true);
 
     case (n1::rest1,n2::rest2,_)
-      equation
+      algorithm
         if (n1 == n2)
         then
-          (rest1,b) = matchCompNames(rest1,rest2,info);
+          (rest1,b) := matchCompNames(rest1,rest2,info);
           Error.assertionOrAddSourceMessage(b, Error.ORDER_FILE_COMPONENTS, {}, info);
-          b1 = true;
+          b1 := true;
         else
-          b1 = false;
+          b1 := false;
         end if;
       then (rest1,b1);
 
@@ -792,7 +792,7 @@ algorithm
       String str;
       SourceInfo info;
     case SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(info=info,exp=Absyn.STRING(str))))
-      equation
+      algorithm
         Error.addSourceMessage(Error.COMPILER_NOTIFICATION_SCRIPTING,{str},info);
       then 1;
   end match;
