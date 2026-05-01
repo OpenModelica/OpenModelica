@@ -98,8 +98,8 @@ algorithm
       Integer fileID, bufferID;
 
     case (_, FILE(fileName))
-      equation
-        fileID = IOStreamExt.createFile(fileName);
+      algorithm
+        fileID := IOStreamExt.createFile(fileName);
       then
         IOSTREAM(streamName, streamType, FILE_DATA(fileID));
 
@@ -108,8 +108,8 @@ algorithm
         IOSTREAM(streamName, streamType, LIST_DATA({}));
 
     case (_, BUFFER())
-      equation
-        bufferID = IOStreamExt.createBuffer();
+      algorithm
+        bufferID := IOStreamExt.createBuffer();
       then
         IOSTREAM(streamName, streamType, BUFFER_DATA(bufferID));
   end match;
@@ -129,7 +129,7 @@ algorithm
       IOStreamType streamType;
 
     case (fStream as IOSTREAM(data = FILE_DATA(fileID)), _)
-      equation
+      algorithm
         IOStreamExt.appendFile(fileID, inString);
       then
         fStream;
@@ -139,7 +139,7 @@ algorithm
         IOSTREAM(streamName, streamType, LIST_DATA(inString::listData));
 
     case (bStream as IOSTREAM(data = BUFFER_DATA(bufferID)), _)
-      equation
+      algorithm
         IOStreamExt.appendBuffer(bufferID, inString);
       then
         bStream;
@@ -207,7 +207,7 @@ algorithm
       IOStream fStream, lStream, bStream;
 
     case (fStream as IOSTREAM(data = FILE_DATA(fileID)))
-      equation
+      algorithm
         IOStreamExt.closeFile(fileID);
       then
         fStream;
@@ -227,7 +227,7 @@ algorithm
       IOStream fStream, lStream, bStream;
 
     case (IOSTREAM(data = FILE_DATA(fileID)))
-      equation
+      algorithm
         IOStreamExt.deleteFile(fileID);
       then
         ();
@@ -237,7 +237,7 @@ algorithm
         ();
 
     case (IOSTREAM(data = BUFFER_DATA(bufferID)))
-      equation
+      algorithm
         IOStreamExt.deleteBuffer(bufferID);
       then
         ();
@@ -258,7 +258,7 @@ algorithm
       IOStreamType ty;
 
     case (fStream as IOSTREAM(data = FILE_DATA(fileID)))
-      equation
+      algorithm
         IOStreamExt.clearFile(fileID);
       then
         fStream;
@@ -268,7 +268,7 @@ algorithm
         IOSTREAM(name, ty, LIST_DATA({}));
 
     case (bStream as IOSTREAM(data = BUFFER_DATA(bufferID)))
-      equation
+      algorithm
         IOStreamExt.clearBuffer(bufferID);
       then
         bStream;
@@ -298,20 +298,20 @@ algorithm
       String str;
 
     case (IOSTREAM(data = FILE_DATA(fileID)))
-      equation
-        str = IOStreamExt.readFile(fileID);
+      algorithm
+        str := IOStreamExt.readFile(fileID);
       then
         str;
 
     case (IOSTREAM(data = LIST_DATA(listData)))
-      equation
-        str = IOStreamExt.appendReversedList(listData);
+      algorithm
+        str := IOStreamExt.appendReversedList(listData);
       then
         str;
 
     case (IOSTREAM(data = BUFFER_DATA(bufferID)))
-      equation
-        str = IOStreamExt.readBuffer(bufferID);
+      algorithm
+        str := IOStreamExt.readBuffer(bufferID);
       then
         str;
   end match;
@@ -332,19 +332,19 @@ algorithm
       IOStream fStream, lStream, bStream;
 
     case (IOSTREAM(data = FILE_DATA(fileID)), _)
-      equation
+      algorithm
         IOStreamExt.printFile(fileID, whereToPrint);
       then
         ();
 
     case (IOSTREAM(data = BUFFER_DATA(bufferID)), _)
-      equation
+      algorithm
         IOStreamExt.printBuffer(bufferID, whereToPrint);
       then
         ();
 
     case (IOSTREAM(data = LIST_DATA(listData)), _)
-      equation
+      algorithm
         IOStreamExt.printReversedList(listData, whereToPrint);
       then
         ();

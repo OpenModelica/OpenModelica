@@ -58,8 +58,8 @@ public function translateContent "Translate content to a string"
 algorithm
   str := match msg
     case gettext(str)
-      equation
-        str = System.gettext(str);
+      algorithm
+        str := System.gettext(str);
       then str;
     case notrans(str) then str;
   end match;

@@ -108,15 +108,15 @@ algorithm
       String path;
 
     case ()
-      equation
+      algorithm
         // we're running the testsuite
-        true = isRunning();
+        true := isRunning();
         // directory or file does not exist in this directory
-        false = System.directoryExists(inPath);
-        false = System.regularFileExists(inPath);
+        false := System.directoryExists(inPath);
+        false := System.regularFileExists(inPath);
         // prefix the path
-        path = "../" + inPath;
-        true = System.directoryExists(path) or System.regularFileExists(path);
+        path := "../" + inPath;
+        true := System.directoryExists(path) or System.regularFileExists(path);
       then
         path;
 

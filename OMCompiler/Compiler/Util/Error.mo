@@ -1444,8 +1444,8 @@ algorithm
         SOURCEINFO(fileName = file,isReadOnly = isReadOnly,
           lineNumberStart = sline, columnNumberStart = scol,
           lineNumberEnd = eline,columnNumberEnd = ecol))
-      equation
-        msg_str = Gettext.translateContent(msg);
+      algorithm
+        msg_str := Gettext.translateContent(msg);
         ErrorExt.addSourceMessage(error_id, msg_type, severity, sline, scol,
           eline, ecol, isReadOnly, Testsuite.friendly(file), msg_str, tokens);
       then ();
@@ -1503,14 +1503,14 @@ algorithm
 
     // Only one info left, print out the message.
     case (_, _, {info})
-      equation
+      algorithm
         addSourceMessage(inErrorMsg, inMessageTokens, info);
       then
         ();
 
     // Multiple infos left, print a trace with the first info.
     case (_, _, info :: rest_info)
-      equation
+      algorithm
         if not listMember(info, rest_info) then
           addSourceMessage(ERROR_FROM_HERE, {}, info);
         end if;
@@ -1520,7 +1520,7 @@ algorithm
 
     // No infos given, print a sourceless error.
     case (_, _, {})
-      equation
+      algorithm
         addMessage(inErrorMsg, inMessageTokens);
       then
         ();
@@ -1543,13 +1543,13 @@ algorithm
 
     // we DON'T have an info, add message
     case (_, _, NONE())
-      equation
+      algorithm
         addMessage(inErrorMsg, inMessageTokens);
       then ();
 
     // we have an info, add source message
     case (_, _, SOME(info))
-      equation
+      algorithm
         addSourceMessage(inErrorMsg, inMessageTokens, info);
       then ();
   end match;
@@ -1706,8 +1706,8 @@ algorithm
       Integer line_start, line_end, col_start, col_end;
     case (SOURCEINFO(fileName = filename, lineNumberStart = line_start,
         columnNumberStart = col_start, lineNumberEnd = line_end, columnNumberEnd = col_end))
-        equation
-          info_str = "[" + Testsuite.friendly(filename) + ":" +
+        algorithm
+          info_str := "[" + Testsuite.friendly(filename) + ":" +
                      intString(line_start) + ":" + intString(col_start) + "-" +
                      intString(line_end) + ":" + intString(col_end) + "]";
       then info_str;
