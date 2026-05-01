@@ -569,9 +569,9 @@ algorithm
       Integer n, size;
 
     case ((n, size, arr), _, _)
-      equation
-        true = pos <= size;
-        arr = arrayUpdate(arr, pos, SOME(entry));
+      algorithm
+        true := pos <= size;
+        arr := arrayUpdate(arr, pos, SOME(entry));
       then
         ((n, size, arr));
   end match;

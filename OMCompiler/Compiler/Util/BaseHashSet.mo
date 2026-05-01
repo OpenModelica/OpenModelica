@@ -319,11 +319,11 @@ algorithm
       Boolean b;
 
     case (_,(hashvec,varr,bsize,_,(hashFunc,keyEqual,_)))
-      equation
-        hashindx = intMod(hashFunc(key), bsize);
-        indexes = hashvec[hashindx + 1];
-        (indx,b) = get2(key, indexes, keyEqual);
-        k = if b then valueArrayNthT(varr, indx) else NONE();
+      algorithm
+        hashindx := intMod(hashFunc(key), bsize);
+        indexes := hashvec[hashindx + 1];
+        (indx,b) := get2(key, indexes, keyEqual);
+        k := if b then valueArrayNthT(varr, indx) else NONE();
       then
         (k,indx);
 
@@ -485,12 +485,10 @@ algorithm
       Key k;
       Integer n;
       array<Option<Key>> arr;
-    case ((n,_,arr),_)
-      equation
-        (pos <= n) = true; // should be pos<n
-        SOME(k) = arr[pos + 1];
-      then
-        k;
+    case ((n,_,arr),_) guard pos <= n // should be pos<n
+      algorithm
+        SOME(k) := arr[pos + 1];
+      then k;
   end match;
 end valueArrayNth;
 
@@ -505,11 +503,8 @@ algorithm
       Key k;
       Integer n;
       array<Option<Key>> arr;
-    case ((n,_,arr),_)
-      equation
-        (pos <= n) = true; // should be pos<n
-      then
-        arr[pos + 1];
+    case ((n,_,arr),_) guard pos <= n // should be pos<n
+      then arr[pos + 1];
   end match;
 end valueArrayNthT;
 
