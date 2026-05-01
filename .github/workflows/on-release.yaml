@@ -1,27 +1,30 @@
 name: on-release
 
 on:
-  release:
-    types: [published]
   workflow_dispatch:
+  push: # run only on push tags
+    tags:
+      - 'v*.*.*' # Trigger on version tags like v1.0.0
 
 jobs:
-  build: # run only on pushes to the default branch (master)
+  build:
     runs-on: ubuntu-latest
     env:
-      REVISION : ''
+      OMVERSION : ''
     steps:
       - uses: actions/checkout@v6
         with:
+          fetch-depth: 0
           fetch-tags: true
           submodules: recursive
       - name: Build Assets
         run: |
-          export REVISION=`git describe --match "v*.*" --always`
+          export OMVERSION=`git describe --tags --match "v*.*" --always`
+          echo Version: $OMVERSION
           cd ..
-          ln -s ${{ github.event.repository.name }} ${{ github.event.repository.name }}-$REVISION
-          zip ${{ github.event.repository.name }}/${{ github.event.repository.name }}-nightly.zip ${{ github.event.repository.name }}-$REVISION -r -x '*/.git/*'
-          rm -f ${{ github.event.repository.name }}-$REVISION
+          ln -s ${{ github.event.repository.name }} ${{ github.event.repository.name }}-$OMVERSION
+          zip ${{ github.event.repository.name }}/${{ github.event.repository.name }}-nightly.zip ${{ github.event.repository.name }}-$OMVERSION -r -x '*/.git/*'
+          rm -f ${{ github.event.repository.name }}-$OMVERSION
       - name: Upload Release Assets
         if: ${{ github.event_name != 'workflow_dispatch' }}
         uses: softprops/action-gh-release@v3
