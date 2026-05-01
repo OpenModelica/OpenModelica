@@ -558,7 +558,7 @@ algorithm
       then
         ((n, size, arr), n);
 
-    case ((n, size, arr), _) guard n < size
+    case ((n, size, arr), _) guard not (n < size)
       algorithm
         rsize := intReal(size);
         rexpandsize := rsize * 0.4;
