@@ -35,7 +35,7 @@
 
 encapsulated package SimpleModelicaParser
 
-import LexerModelicaDiff.{Token,TokenId,tokenContent,printToken,modelicaDiffTokenEq};
+import LexerModelicaDiff.{Token,TokenId,tokenContent,printToken,modelicaDiffTokenEq,newlineToken};
 import DoubleEnded;
 
 protected
@@ -50,8 +50,6 @@ import System;
 import List;
 import StringUtil;
 import MetaModelica.Dangerous.listReverseInPlace;
-
-constant Token newlineToken = Token.TOKEN("", TokenId.NEWLINE, "\n", 1, 1, 1, 1, 1, 1);
 
 public
 
@@ -2399,7 +2397,7 @@ algorithm
       // EQ(...) + ADD(..., NOT(NEWLINE)) + EQ(END, ...) => EQ(...) + ADD(..., NEWLINE) + EQ(END, ...)
       case (diff1 as (Diff.Equal,_))::(Diff.Add,tree2)::diffLocal as (Diff.Equal,t1::_)::_
         guard not parseTreeIsNewLine(List.last(tree2)) and parseTreeIsOnlyEnd(t1)
-        then diff1::(Diff.Add,listAppend(tree2, {LEAF(makeToken(TokenId.NEWLINE, "\n"))}))::diffLocal;
+        then diff1::(Diff.Add,listAppend(tree2, {LEAF(newlineToken)}))::diffLocal;
 
       // EQ(...) + ADD(WS, ...) => EQ(...) + ADD(...)
       case ((diff1 as (Diff.Equal,tree1))::(Diff.Add, tree2 as _::_::_)::diffLocal)
@@ -3411,9 +3409,12 @@ function parseTreeStrWork
   input ParseTree tree;
 protected
   Integer i;
+  String fname;
 algorithm
   _ := match tree
     // TODO: Normalize line-endings? We can output mixed CRLF/LF now...
+    // ignore the fake new line we add at the end
+    case LEAF(token = LexerModelicaDiff.TOKEN(fileName=fname, id=TokenId.NEWLINE)) guard fname=="<FAKE_EOF>" then ();
     case LEAF() algorithm Print.printBuf(tokenContent(tree.token)); then ();
     case EMPTY() then ();
     case NODE()

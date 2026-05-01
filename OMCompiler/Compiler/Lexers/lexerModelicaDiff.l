@@ -11,6 +11,7 @@ public
 %x c_string
 
 whitespace1  [ \t]+
+/* this will not work on older mac when one has just \r as line ending */
 whitespace2  \r?\n
 letter       [a-zA-Z]
 wild         [_]
