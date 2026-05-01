@@ -485,8 +485,8 @@ algorithm
     case(GRAPHINFO(graphCount=0))
       then NONE();
     case(GRAPHINFO(graphs=graphs))
-      equation
-        firstGraph = listHead(graphs);
+      algorithm
+        firstGraph := listHead(graphs);
       then SOME((1,firstGraph));
   end match;
 end getMainGraph;
@@ -502,12 +502,12 @@ protected
 algorithm
   oAttribute := match(iAttributeName,iAttributeTarget,iGraphInfo)
     case(_,_,GRAPHINFO(attributes=attributes))
-      equation
-        tmpRes = getAttributeByNameAndTargetTail(attributes, iAttributeName, iAttributeTarget);
+      algorithm
+        tmpRes := getAttributeByNameAndTargetTail(attributes, iAttributeName, iAttributeTarget);
       then tmpRes;
     case(_,_,GRAPHINFO(attributes=attributes))
-      equation
-        tmpRes = getAttributeByNameAndTargetTail(attributes, iAttributeName, iAttributeTarget);
+      algorithm
+        tmpRes := getAttributeByNameAndTargetTail(attributes, iAttributeName, iAttributeTarget);
       then tmpRes;
    end match;
 end getAttributeByNameAndTarget;
@@ -527,13 +527,13 @@ protected
 algorithm
   oAttribute := matchcontinue(iList,iAttributeName,iAttributeTarget)
     case((head as ATTRIBUTE(attIdx=attIdx,name=name,attTarget=attTarget))::rest,_,_)
-      equation
-        true = stringEq(name, iAttributeName);
-        true = compareAttributeTargets(iAttributeTarget,attTarget);
+      algorithm
+        true := stringEq(name, iAttributeName);
+        true := compareAttributeTargets(iAttributeTarget,attTarget);
       then SOME((head,attIdx));
     case(head::rest,_,_)
-      equation
-        tmpAttribute = getAttributeByNameAndTargetTail(rest,iAttributeName,iAttributeTarget);
+      algorithm
+        tmpAttribute := getAttributeByNameAndTargetTail(rest,iAttributeName,iAttributeTarget);
       then tmpAttribute;
     else
       then NONE();
