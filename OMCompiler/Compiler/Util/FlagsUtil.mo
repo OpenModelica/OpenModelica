@@ -832,15 +832,15 @@ algorithm
 
     // Special case for +d, +debug, set the given debug flags.
     case (Flags.CONFIG_FLAG(index = 1), Flags.FLAGS(debugFlags = debug_flags))
-      equation
+      algorithm
         List.map1_0(splitCSV(inValue), setDebugFlag, debug_flags);
       then
         ();
 
     // Special case for +h, +help, show help text.
     case (Flags.CONFIG_FLAG(index = 2), _)
-      equation
-        values = splitCSV(System.tolower(inValue));
+      algorithm
+        values := splitCSV(System.tolower(inValue));
         System.gettextInit(if Flags.getConfigString(Flags.RUNNING_TESTSUITE) == "" then Flags.getConfigString(Flags.LOCALE_FLAG) else "C");
         print(printHelp(values));
         setConfigString(Flags.HELP, "omc");
@@ -849,49 +849,49 @@ algorithm
 
     // Special case for --preOptModules+=<value>
     case (_, _) guard(configFlagEq(inFlag, Flags.PRE_OPT_MODULES_ADD))
-      equation
+      algorithm
         setAdditionalOptModules(Flags.PRE_OPT_MODULES_ADD, Flags.PRE_OPT_MODULES_SUB, splitCSV(inValue));
       then
         ();
 
     // Special case for --preOptModules-=<value>
     case (_, _) guard(configFlagEq(inFlag, Flags.PRE_OPT_MODULES_SUB))
-      equation
+      algorithm
         setAdditionalOptModules(Flags.PRE_OPT_MODULES_SUB, Flags.PRE_OPT_MODULES_ADD, splitCSV(inValue));
       then
         ();
 
     // Special case for --postOptModules+=<value>
     case (_, _) guard(configFlagEq(inFlag, Flags.POST_OPT_MODULES_ADD))
-      equation
+      algorithm
         setAdditionalOptModules(Flags.POST_OPT_MODULES_ADD, Flags.POST_OPT_MODULES_SUB, splitCSV(inValue));
       then
         ();
 
     // Special case for --postOptModules-=<value>
     case (_, _) guard(configFlagEq(inFlag, Flags.POST_OPT_MODULES_SUB))
-      equation
+      algorithm
         setAdditionalOptModules(Flags.POST_OPT_MODULES_SUB, Flags.POST_OPT_MODULES_ADD, splitCSV(inValue));
       then
         ();
 
     // Special case for --initOptModules+=<value>
     case (_, _) guard(configFlagEq(inFlag, Flags.INIT_OPT_MODULES_ADD))
-      equation
+      algorithm
         setAdditionalOptModules(Flags.INIT_OPT_MODULES_ADD, Flags.INIT_OPT_MODULES_SUB, splitCSV(inValue));
       then
         ();
 
     // Special case for --initOptModules-=<value>
     case (_, _) guard(configFlagEq(inFlag, Flags.INIT_OPT_MODULES_SUB))
-      equation
+      algorithm
         setAdditionalOptModules(Flags.INIT_OPT_MODULES_SUB, Flags.INIT_OPT_MODULES_ADD, splitCSV(inValue));
       then
         ();
 
     // All other configuration flags, set the flag to the given values.
     case (_, Flags.FLAGS(configFlags = config_flags))
-      equation
+      algorithm
         setConfigFlag(inFlag, config_flags, inValue);
       then
         ();
@@ -925,9 +925,9 @@ algorithm
       Flags.DebugFlag flag;
 
     case (_, _, _)
-      equation
-        flag = List.getMemberOnTrue(inFlag, allDebugFlags, matchDebugFlag);
-        (_, _) = updateDebugFlagArray(inFlags, inValue, flag);
+      algorithm
+        flag := List.getMemberOnTrue(inFlag, allDebugFlags, matchDebugFlag);
+        (_, _) := updateDebugFlagArray(inFlags, inValue, flag);
       then
         ();
 
@@ -1008,16 +1008,16 @@ algorithm
 
     // A boolean value.
     case (_, Flags.BOOL_FLAG(), _, _)
-      equation
-        b = Util.stringBool(inValue);
+      algorithm
+        b := Util.stringBool(inValue);
       then
         Flags.BOOL_FLAG(b);
 
     // An integer value.
     case (_, Flags.INT_FLAG(), _, _)
-      equation
-        i = stringInt(inValue);
-        true = stringEq(intString(i), inValue);
+      algorithm
+        i := stringInt(inValue);
+        true := stringEq(intString(i), inValue);
       then
         Flags.INT_FLAG(i);
 
@@ -1034,9 +1034,9 @@ algorithm
 
     // A string value with valid options specified.
     case (_, Flags.STRING_FLAG(), SOME(options), _)
-      equation
-        flags = getValidStringOptions(options);
-        true = listMember(inValue,flags);
+      algorithm
+        flags := getValidStringOptions(options);
+        true := listMember(inValue,flags);
       then Flags.STRING_FLAG(inValue);
 
     // A string value without valid options specified.
@@ -1049,25 +1049,25 @@ algorithm
 
     // An enumeration value.
     case (_, Flags.ENUM_FLAG(validValues = enums), _, _)
-      equation
-        i = Util.assoc(inValue, enums);
+      algorithm
+        i := Util.assoc(inValue, enums);
       then
         Flags.ENUM_FLAG(i, enums);
 
     // Type mismatch, print error.
     case (_, _, NONE(), _)
-      equation
-        et = printExpectedTypeStr(inExpectedType);
-        at = printActualTypeStr(inValue);
+      algorithm
+        et := printExpectedTypeStr(inExpectedType);
+        at := printActualTypeStr(inValue);
         Error.addMessage(Error.INVALID_FLAG_TYPE, {inName, et, at});
       then
         fail();
 
     case (_, _, SOME(options), _)
-      equation
-        flags = getValidStringOptions(options);
-        et = stringDelimitList(flags, ", ");
-        at = printActualTypeStr(inValue);
+      algorithm
+        flags := getValidStringOptions(options);
+        et := stringDelimitList(flags, ", ");
+        at := printActualTypeStr(inValue);
         Error.addMessage(Error.INVALID_FLAG_TYPE_STRINGS, {inName, et, at});
       then
         fail();
@@ -1091,8 +1091,8 @@ algorithm
     case Flags.STRING_FLAG() then "a string";
     case Flags.STRING_LIST_FLAG() then "a comma-separated list of strings";
     case Flags.ENUM_FLAG(validValues = enums)
-      equation
-        enum_strs = List.map(enums, Util.tuple21);
+      algorithm
+        enum_strs := List.map(enums, Util.tuple21);
       then
         "one of the values {" + stringDelimitList(enum_strs, ", ") + "}";
   end match;
@@ -1109,13 +1109,13 @@ algorithm
       Integer i;
 
     case "" then "nothing";
-    case _ equation Util.stringBool(inType); then "the boolean value " + inType;
+    case _ algorithm Util.stringBool(inType); then "the boolean value " + inType;
     case _
-      equation
-        i = stringInt(inType);
+      algorithm
+        i := stringInt(inType);
         // intString returns 0 on failure, so this is to make sure that it
         // actually succeeded.
-        true = stringEq(intString(i), inType);
+        true := stringEq(intString(i), inType);
       then
         "the number " + intString(i);
     //case {s}
@@ -1220,27 +1220,27 @@ algorithm
 
     // +showErrorMessages needs to be sent to the C runtime.
     case (_, _)
-      equation
-        true = configFlagsIsEqualIndex(inFlag, Flags.SHOW_ERROR_MESSAGES);
-        Flags.BOOL_FLAG(data = value) = inValue;
+      algorithm
+        true := configFlagsIsEqualIndex(inFlag, Flags.SHOW_ERROR_MESSAGES);
+        Flags.BOOL_FLAG(data = value) := inValue;
         ErrorExt.setShowErrorMessages(value);
       then
         ();
 
     // The corba object reference file path needs to be sent to the C runtime.
     case (_, _)
-      equation
-        true = configFlagsIsEqualIndex(inFlag, Flags.CORBA_OBJECT_REFERENCE_FILE_PATH);
-        Flags.STRING_FLAG(data = corba_objid_path) = inValue;
+      algorithm
+        true := configFlagsIsEqualIndex(inFlag, Flags.CORBA_OBJECT_REFERENCE_FILE_PATH);
+        Flags.STRING_FLAG(data = corba_objid_path) := inValue;
         Corba.setObjectReferenceFilePath(corba_objid_path);
       then
         ();
 
     // The corba session name needs to be sent to the C runtime.
     case (_, _)
-      equation
-        true = configFlagsIsEqualIndex(inFlag, Flags.CORBA_SESSION);
-        Flags.STRING_FLAG(data = corba_name) = inValue;
+      algorithm
+        true := configFlagsIsEqualIndex(inFlag, Flags.CORBA_SESSION);
+        Flags.STRING_FLAG(data = corba_name) := inValue;
         Corba.setSessionName(corba_name);
       then
         ();
@@ -1354,8 +1354,8 @@ algorithm
     //case {"mos"} then System.gettext("TODO: Write help-text");
 
     case {"topics"}
-      equation
-        topics = {
+      algorithm
+        topics := {
           //("mos",System.gettext("Help on the command-line and scripting environments, including OMShell and OMNotebook.")),
           ("omc",System.gettext("The command-line options available for omc.")),
           ("debug",System.gettext("Flags that enable debugging, diagnostics, and research prototypes.")),
@@ -1364,90 +1364,90 @@ algorithm
           ("<flagname>",System.gettext("Displays option descriptions for multi-option flag <flagname>.")),
           ("topics",System.gettext("This help-text."))
         };
-        str = System.gettext("The available topics (help(\"topics\")) are as follows:\n");
-        strs = List.map(topics,makeTopicString);
-        help = str + stringDelimitList(strs,"\n") + "\n";
+        str := System.gettext("The available topics (help(\"topics\")) are as follows:\n");
+        strs := List.map(topics,makeTopicString);
+        help := str + stringDelimitList(strs,"\n") + "\n";
       then help;
 
     case {"simulation"}
-      equation
-        help = System.gettext("The simulation executable takes the following flags:\n\n") + System.getSimulationHelpText(true);
+      algorithm
+        help := System.gettext("The simulation executable takes the following flags:\n\n") + System.getSimulationHelpText(true);
       then help;
 
     case {"simulation-sphinxoutput"}
-      equation
-        help = System.gettext("The simulation executable takes the following flags:\n\n") + System.getSimulationHelpText(true,sphinx=true);
+      algorithm
+        help := System.gettext("The simulation executable takes the following flags:\n\n") + System.getSimulationHelpText(true,sphinx=true);
       then help;
 
     case {"debug"}
-      equation
-        str1 = System.gettext("The debug flag takes a comma-separated list of flags which are used by the\ncompiler for debugging or experimental purposes.\nFlags prefixed with \"-\" or \"no\" will be disabled.\n");
-        str2 = System.gettext("The available flags are (+ are enabled by default, - are disabled):\n\n");
-        strs = list(printDebugFlag(flag) for flag in List.sort(allDebugFlags,compareDebugFlags));
-        help = stringAppendList(str1 :: str2 :: strs);
+      algorithm
+        str1 := System.gettext("The debug flag takes a comma-separated list of flags which are used by the\ncompiler for debugging or experimental purposes.\nFlags prefixed with \"-\" or \"no\" will be disabled.\n");
+        str2 := System.gettext("The available flags are (+ are enabled by default, - are disabled):\n\n");
+        strs := list(printDebugFlag(flag) for flag in List.sort(allDebugFlags,compareDebugFlags));
+        help := stringAppendList(str1 :: str2 :: strs);
       then help;
 
     case {"optmodules"}
-      equation
+      algorithm
         // pre-optimization
-        str1 = System.gettext("The --preOptModules flag sets the optimization modules which are used before the\nmatching and index reduction in the back end. These modules are specified as a comma-separated list.");
-        str1 = stringAppendList(StringUtil.wordWrap(str1,System.getTerminalWidth(),"\n"));
-        Flags.CONFIG_FLAG(defaultValue=Flags.STRING_LIST_FLAG(data=data)) = Flags.PRE_OPT_MODULES;
-        str1a = System.gettext("The modules used by default are:") + "\n--preOptModules=" + stringDelimitList(data, ",");
-        str1b = System.gettext("The valid modules are:");
-        str2 = printFlagValidOptionsDesc(Flags.PRE_OPT_MODULES);
+        str1 := System.gettext("The --preOptModules flag sets the optimization modules which are used before the\nmatching and index reduction in the back end. These modules are specified as a comma-separated list.");
+        str1 := stringAppendList(StringUtil.wordWrap(str1,System.getTerminalWidth(),"\n"));
+        Flags.CONFIG_FLAG(defaultValue=Flags.STRING_LIST_FLAG(data=data)) := Flags.PRE_OPT_MODULES;
+        str1a := System.gettext("The modules used by default are:") + "\n--preOptModules=" + stringDelimitList(data, ",");
+        str1b := System.gettext("The valid modules are:");
+        str2 := printFlagValidOptionsDesc(Flags.PRE_OPT_MODULES);
 
         // matching
-        str3 = System.gettext("The --matchingAlgorithm sets the method that is used for the matching algorithm, after the pre optimization modules.");
-        str3 = stringAppendList(StringUtil.wordWrap(str3,System.getTerminalWidth(),"\n"));
-        Flags.CONFIG_FLAG(defaultValue=Flags.STRING_FLAG(data=str3a)) = Flags.MATCHING_ALGORITHM;
-        str3a = System.gettext("The method used by default is:") + "\n--matchingAlgorithm=" + str3a;
-        str3b = System.gettext("The valid methods are:");
-        str4 = printFlagValidOptionsDesc(Flags.MATCHING_ALGORITHM);
+        str3 := System.gettext("The --matchingAlgorithm sets the method that is used for the matching algorithm, after the pre optimization modules.");
+        str3 := stringAppendList(StringUtil.wordWrap(str3,System.getTerminalWidth(),"\n"));
+        Flags.CONFIG_FLAG(defaultValue=Flags.STRING_FLAG(data=str3a)) := Flags.MATCHING_ALGORITHM;
+        str3a := System.gettext("The method used by default is:") + "\n--matchingAlgorithm=" + str3a;
+        str3b := System.gettext("The valid methods are:");
+        str4 := printFlagValidOptionsDesc(Flags.MATCHING_ALGORITHM);
 
         // index reduction
-        str5 = System.gettext("The --indexReductionMethod sets the method that is used for the index reduction, after the pre optimization modules.");
-        str5 = stringAppendList(StringUtil.wordWrap(str5,System.getTerminalWidth(),"\n"));
-        Flags.CONFIG_FLAG(defaultValue=Flags.STRING_FLAG(data=str5a)) = Flags.INDEX_REDUCTION_METHOD;
-        str5a = System.gettext("The method used by default is:") + "\n--indexReductionMethod=" + str5a;
-        str5b = System.gettext("The valid methods are:");
-        str6 = printFlagValidOptionsDesc(Flags.INDEX_REDUCTION_METHOD);
+        str5 := System.gettext("The --indexReductionMethod sets the method that is used for the index reduction, after the pre optimization modules.");
+        str5 := stringAppendList(StringUtil.wordWrap(str5,System.getTerminalWidth(),"\n"));
+        Flags.CONFIG_FLAG(defaultValue=Flags.STRING_FLAG(data=str5a)) := Flags.INDEX_REDUCTION_METHOD;
+        str5a := System.gettext("The method used by default is:") + "\n--indexReductionMethod=" + str5a;
+        str5b := System.gettext("The valid methods are:");
+        str6 := printFlagValidOptionsDesc(Flags.INDEX_REDUCTION_METHOD);
 
         // post-optimization (initialization)
-        str7 = System.gettext("The --initOptModules then sets the optimization modules which are used after the index reduction to optimize the system for initialization, specified as a comma-separated list.");
-        str7 = stringAppendList(StringUtil.wordWrap(str7,System.getTerminalWidth(),"\n"));
-        Flags.CONFIG_FLAG(defaultValue=Flags.STRING_LIST_FLAG(data=data)) = Flags.INIT_OPT_MODULES;
-        str7a = System.gettext("The modules used by default are:") + "\n--initOptModules=" + stringDelimitList(data, ",");
-        str7b = System.gettext("The valid modules are:");
-        str8 = printFlagValidOptionsDesc(Flags.INIT_OPT_MODULES);
+        str7 := System.gettext("The --initOptModules then sets the optimization modules which are used after the index reduction to optimize the system for initialization, specified as a comma-separated list.");
+        str7 := stringAppendList(StringUtil.wordWrap(str7,System.getTerminalWidth(),"\n"));
+        Flags.CONFIG_FLAG(defaultValue=Flags.STRING_LIST_FLAG(data=data)) := Flags.INIT_OPT_MODULES;
+        str7a := System.gettext("The modules used by default are:") + "\n--initOptModules=" + stringDelimitList(data, ",");
+        str7b := System.gettext("The valid modules are:");
+        str8 := printFlagValidOptionsDesc(Flags.INIT_OPT_MODULES);
 
         // post-optimization (simulation)
-        str9 = System.gettext("The --postOptModules then sets the optimization modules which are used after the index reduction to optimize the system for simulation, specified as a comma-separated list.");
-        str9 = stringAppendList(StringUtil.wordWrap(str9,System.getTerminalWidth(),"\n"));
-        Flags.CONFIG_FLAG(defaultValue=Flags.STRING_LIST_FLAG(data=data)) = Flags.POST_OPT_MODULES;
-        str9a = System.gettext("The modules used by default are:") + "\n--postOptModules=" + stringDelimitList(data, ",");
-        str9b = System.gettext("The valid modules are:");
-        str10 = printFlagValidOptionsDesc(Flags.POST_OPT_MODULES);
+        str9 := System.gettext("The --postOptModules then sets the optimization modules which are used after the index reduction to optimize the system for simulation, specified as a comma-separated list.");
+        str9 := stringAppendList(StringUtil.wordWrap(str9,System.getTerminalWidth(),"\n"));
+        Flags.CONFIG_FLAG(defaultValue=Flags.STRING_LIST_FLAG(data=data)) := Flags.POST_OPT_MODULES;
+        str9a := System.gettext("The modules used by default are:") + "\n--postOptModules=" + stringDelimitList(data, ",");
+        str9b := System.gettext("The valid modules are:");
+        str10 := printFlagValidOptionsDesc(Flags.POST_OPT_MODULES);
 
-        help = stringAppendList({str1,"\n\n",str1a,"\n\n",str1b,"\n",str2,"\n",str3,"\n\n",str3a,"\n\n",str3b,"\n",str4,"\n",str5,"\n\n",str5a,"\n\n",str5b,"\n",str6,"\n",str7,"\n\n",str7a,"\n\n",str7b,"\n",str8,"\n",str9,"\n\n",str9a,"\n\n",str9b,"\n",str10,"\n"});
+        help := stringAppendList({str1,"\n\n",str1a,"\n\n",str1b,"\n",str2,"\n",str3,"\n\n",str3a,"\n\n",str3b,"\n",str4,"\n",str5,"\n\n",str5a,"\n\n",str5b,"\n",str6,"\n",str7,"\n\n",str7a,"\n\n",str7b,"\n",str8,"\n",str9,"\n\n",str9a,"\n\n",str9b,"\n",str10,"\n"});
       then help;
 
     case {str}
-      equation
-        (config_flag as Flags.CONFIG_FLAG(name=name,description=desc)) = List.getMemberOnTrue(str, allConfigFlags, matchConfigFlag);
-        str1 = "-" + name;
-        str2 = stringAppendList(StringUtil.wordWrap(Gettext.translateContent(desc), System.getTerminalWidth(), "\n"));
-        str = printFlagValidOptionsDesc(config_flag);
-        help = stringAppendList({str1,"\n",str2,"\n",str});
+      algorithm
+        (config_flag as Flags.CONFIG_FLAG(name=name,description=desc)) := List.getMemberOnTrue(str, allConfigFlags, matchConfigFlag);
+        str1 := "-" + name;
+        str2 := stringAppendList(StringUtil.wordWrap(Gettext.translateContent(desc), System.getTerminalWidth(), "\n"));
+        str := printFlagValidOptionsDesc(config_flag);
+        help := stringAppendList({str1,"\n",str2,"\n",str});
       then help;
 
     case {str}
       then "I'm sorry, I don't know what " + str + " is.\n";
 
     case (str :: (rest_topics as _::_))
-      equation
-        str = printHelp({str}) + "\n";
-        help = printHelp(rest_topics);
+      algorithm
+        str := printHelp({str}) + "\n";
+        help := printHelp(rest_topics);
       then str + help;
 
   end matchcontinue;
@@ -1477,9 +1477,9 @@ algorithm
       list<tuple<String,Gettext.TranslatableContent>> options;
     case Flags.STRING_OPTION(validStrings) then (validStrings,{});
     case Flags.STRING_DESC_OPTION(options)
-      equation
-        validStrings = List.map(options,Util.tuple21);
-        descriptions = List.mapMap(options,Util.tuple22,Gettext.translateContent);
+      algorithm
+        validStrings := List.map(options,Util.tuple21);
+        descriptions := List.mapMap(options,Util.tuple22,Gettext.translateContent);
       then (validStrings,descriptions);
   end match;
 end getValidOptionsAndDescription2;
@@ -1621,14 +1621,14 @@ algorithm
     case Flags.CONFIG_FLAG(visibility = Flags.INTERNAL()) then "";
 
     case Flags.CONFIG_FLAG(description = desc)
-      equation
-        desc_str = Gettext.translateContent(desc);
-        name = Util.stringPadRight(printConfigFlagName(inFlag), 28, " ");
-        flag_str = stringAppendList({name, " ", desc_str});
-        delim_str = descriptionIndent + "  ";
-        wrapped_str = StringUtil.wordWrap(flag_str, System.getTerminalWidth(), delim_str);
-        opt_str = printValidOptions(inFlag);
-        flag_str = stringDelimitList(wrapped_str, "\n") + opt_str + "\n";
+      algorithm
+        desc_str := Gettext.translateContent(desc);
+        name := Util.stringPadRight(printConfigFlagName(inFlag), 28, " ");
+        flag_str := stringAppendList({name, " ", desc_str});
+        delim_str := descriptionIndent + "  ";
+        wrapped_str := StringUtil.wordWrap(flag_str, System.getTerminalWidth(), delim_str);
+        opt_str := printValidOptions(inFlag);
+        flag_str := stringDelimitList(wrapped_str, "\n") + opt_str + "\n";
       then
         flag_str;
 
@@ -1649,13 +1649,13 @@ algorithm
     case Flags.CONFIG_FLAG(visibility = Flags.INTERNAL()) then "";
 
     case Flags.CONFIG_FLAG(description = desc)
-      equation
-        desc_str = Gettext.translateContent(desc);
-        desc_str = System.stringReplace(desc_str, "--help=debug", ":ref:`--help=debug <omcflag-debug-section>`");
-        desc_str = System.stringReplace(desc_str, "--help=optmodules", ":ref:`--help=optmodules <omcflag-optmodules-section>`");
-        (name,longName) = printConfigFlagName(inFlag,sphinx=true);
-        opt_str = printValidOptionsSphinx(inFlag);
-        flag_str = stringAppendList({".. _omcflag-", longName, ":\n\n:ref:`", name, "<omcflag-",longName,">`\n\n", desc_str, "\n", opt_str + "\n"});
+      algorithm
+        desc_str := Gettext.translateContent(desc);
+        desc_str := System.stringReplace(desc_str, "--help=debug", ":ref:`--help=debug <omcflag-debug-section>`");
+        desc_str := System.stringReplace(desc_str, "--help=optmodules", ":ref:`--help=optmodules <omcflag-optmodules-section>`");
+        (name,longName) := printConfigFlagName(inFlag,sphinx=true);
+        opt_str := printValidOptionsSphinx(inFlag);
+        flag_str := stringAppendList({".. _omcflag-", longName, ":\n\n:ref:`", name, "<omcflag-",longName,">`\n\n", desc_str, "\n", opt_str + "\n"});
       then flag_str;
 
   end match;
@@ -1674,8 +1674,8 @@ algorithm
       String name, shortname;
 
     case Flags.CONFIG_FLAG(name = name, shortname = SOME(shortname))
-      equation
-        shortname = if sphinx then "-" + shortname else Util.stringPadLeft("-" + shortname, 4, " ");
+      algorithm
+        shortname := if sphinx then "-" + shortname else Util.stringPadLeft("-" + shortname, 4, " ");
       then (stringAppendList({shortname, ", --", name}), name);
 
     case Flags.CONFIG_FLAG(name = name, shortname = NONE())
@@ -1697,17 +1697,17 @@ algorithm
 
     case Flags.CONFIG_FLAG(validOptions = NONE()) then "";
     case Flags.CONFIG_FLAG(validOptions = SOME(Flags.STRING_OPTION(options = strl)))
-      equation
-        opt_str = descriptionIndent + "   " + System.gettext("Valid options:") + " " +
+      algorithm
+        opt_str := descriptionIndent + "   " + System.gettext("Valid options:") + " " +
           stringDelimitList(strl, ", ");
-        strl = StringUtil.wordWrap(opt_str, System.getTerminalWidth(), descriptionIndent + "     ");
-        opt_str = stringDelimitList(strl, "\n");
-        opt_str = "\n" + opt_str;
+        strl := StringUtil.wordWrap(opt_str, System.getTerminalWidth(), descriptionIndent + "     ");
+        opt_str := stringDelimitList(strl, "\n");
+        opt_str := "\n" + opt_str;
       then
         opt_str;
     case Flags.CONFIG_FLAG(validOptions = SOME(Flags.STRING_DESC_OPTION(options = descl)))
-      equation
-        opt_str = "\n" + descriptionIndent + "   " + System.gettext("Valid options:") + "\n" +
+      algorithm
+        opt_str := "\n" + descriptionIndent + "   " + System.gettext("Valid options:") + "\n" +
           stringAppendList(list(printFlagOptionDescShort(d) for d in descl));
       then
         opt_str;
@@ -1727,13 +1727,13 @@ algorithm
 
     case Flags.CONFIG_FLAG(validOptions = NONE()) then "\n" + defaultFlagSphinx(inFlag.defaultValue) + "\n";
     case Flags.CONFIG_FLAG(validOptions = SOME(Flags.STRING_OPTION(options = strl)))
-      equation
-        opt_str = "\n" + defaultFlagSphinx(inFlag.defaultValue) + " " + System.gettext("Valid options") + ":\n\n" +
+      algorithm
+        opt_str := "\n" + defaultFlagSphinx(inFlag.defaultValue) + " " + System.gettext("Valid options") + ":\n\n" +
           sum("* " + s + "\n" for s in strl);
       then opt_str;
     case Flags.CONFIG_FLAG(validOptions = SOME(Flags.STRING_DESC_OPTION(options = descl)))
-      equation
-        opt_str = "\n" + defaultFlagSphinx(inFlag.defaultValue) + " " + System.gettext("Valid options") + ":\n\n" +
+      algorithm
+        opt_str := "\n" + defaultFlagSphinx(inFlag.defaultValue) + " " + System.gettext("Valid options") + ":\n\n" +
           sum(printFlagOptionDesc(s, sphinx=true) for s in descl);
       then
         opt_str;

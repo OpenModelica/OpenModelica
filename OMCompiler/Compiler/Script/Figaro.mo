@@ -181,16 +181,16 @@ algorithm
       Path p;
     // Element is an extends clause.
     case (fb, ft, program, SOME(cn), SCode.EXTENDS(baseClassPath = bcp, modifications = m), e)
-      equation
+      algorithm
 
-        true = fb == getLastIdent(bcp);
-        tn = fcMod1(m);
+        true := fb == getLastIdent(bcp);
+        tn := fcMod1(m);
       then fcAddFigaroClass(ft, program, cn, tn, e);
     case (fb, ft, program, SOME(cn), SCode.EXTENDS(baseClassPath = bcp, modifications = m), e)
-      equation
-        cdef = FBuiltin.getElementWithPathCheckBuiltin(e, bcp);
-        true = fcExtends(fb, ft, program, SOME(cn), cdef, e);
-        tn = fcMod1(m);
+      algorithm
+        cdef := FBuiltin.getElementWithPathCheckBuiltin(e, bcp);
+        true := fcExtends(fb, ft, program, SOME(cn), cdef, e);
+        tn := fcMod1(m);
       then fcAddFigaroClass(ft, program, cn, tn, e);
     // Nested class of some sort.
     case (fb, ft, program, _, SCode.CLASS(name = n, classDef = cd), e)
@@ -223,15 +223,15 @@ algorithm
       Path p;
     // Element is an extends clause.
     case (fb, ft, program, _, SCode.CLASS(name = n, classDef = SCode.PARTS(elementLst = el)), e)
-      equation
+      algorithm
       then fcElementListExt(fb, ft, program, SOME(n), el, e);
     case (fb, _, _, SOME(_), SCode.EXTENDS(baseClassPath = bcp), _)
-      equation
-        true = fb == getLastIdent(bcp);
+      algorithm
+        true := fb == getLastIdent(bcp);
       then true;
     case (fb, ft, program, SOME(cn), SCode.EXTENDS(baseClassPath = bcp), e)
-      equation
-        cdef = FBuiltin.getElementWithPathCheckBuiltin(e, bcp);
+      algorithm
+        cdef := FBuiltin.getElementWithPathCheckBuiltin(e, bcp);
       then fcExtends(fb, ft, program, SOME(cn), cdef, e);
     // Nested class of some sort.
     case (_, _, _, _, _, _)
@@ -261,8 +261,8 @@ algorithm
     case (_, _, _, _, {}, _)
       then false;
     case (fb, ft, program, cn, first :: _, e)
-      equation
-        true = fcExtends(fb, ft, program, cn, first, e);
+      algorithm
+        true := fcExtends(fb, ft, program, cn, first, e);
       then true;
     case (fb, ft, program, cn, _ :: rest, e)
       then fcElementListExt(fb, ft, program, cn, rest, e);
@@ -312,10 +312,10 @@ algorithm
       then fcElementList(fb, ft, program, SOME(cn), el, e);
     // Short class definitions.
     case (fb, ft, program, cn, SCode.DERIVED(typeSpec = ts, modifications = m), e)
-      equation
-        p = AbsynUtil.typeSpecPath(ts);
-        true = fb == getLastIdent(p);
-        tn = fcMod1(m);
+      algorithm
+        p := AbsynUtil.typeSpecPath(ts);
+        true := fb == getLastIdent(p);
+        tn := fcMod1(m);
       then fcAddFigaroClass(ft, program, cn, tn, e);
   end match;
 end fcClassDef;
@@ -342,9 +342,9 @@ algorithm
     case (_, _, _, _, {}, _)
       then {};
     case (fb, ft, program, cn, first :: rest, e)
-      equation
-        rf = fcElement(fb, ft, program, cn, first, e);
-        rr = fcElementList(fb, ft, program, cn, rest, e);
+      algorithm
+        rf := fcElement(fb, ft, program, cn, first, e);
+        rr := fcElementList(fb, ft, program, cn, rest, e);
       then listAppend(rf, rr);
     case (fb, ft, program, cn, _ :: rest, e)
       then fcElementList(fb, ft, program, cn, rest, e);
@@ -391,8 +391,8 @@ algorithm
       Ident n;
       SCode.Mod m;
     case SCode.NAMEMOD(ident = n, mod = m)
-      equation
-        true = n == "fullClassName";
+      algorithm
+        true := n == "fullClassName";
       then fcMod2(m);
   end match;
 end fcSubMod;
@@ -447,13 +447,13 @@ algorithm
     case (fcl, SCode.CLASS(classDef = cd))
       then foClassDef(fcl, cd);
     case (fcl, SCode.COMPONENT(name = n, typeSpec = ts, modifications = m))
-      equation
-        p = AbsynUtil.typeSpecPath(ts);
+      algorithm
+        p := AbsynUtil.typeSpecPath(ts);
         //tn = findFigaroTypeName(p, fcl);
-        tmp = foMod1(m, "fullClassName");
-        tn = if tmp == "" then findFigaroTypeName(p, fcl) else tmp;
-        c = foMod1(m, "codeInstanceFigaro");
-        fo = FIGAROOBJECT(n, tn, c);
+        tmp := foMod1(m, "fullClassName");
+        tn := if tmp == "" then findFigaroTypeName(p, fcl) else tmp;
+        c := foMod1(m, "codeInstanceFigaro");
+        fo := FIGAROOBJECT(n, tn, c);
       then {fo};
   end match;
 end foElement;
@@ -488,9 +488,9 @@ algorithm
     case (_, {})
       then {};
     case (fcl, first :: rest)
-      equation
-        rf = foElement(fcl, first);
-        rr = foElementList(fcl, rest);
+      algorithm
+        rf := foElement(fcl, first);
+        rr := foElementList(fcl, rest);
       then listAppend(rf, rr);
     case (fcl, _ :: rest)
       then foElementList(fcl, rest);
@@ -511,12 +511,12 @@ algorithm
     case (_, {})
       then fail();
     case (p, first :: _)
-      equation
-        tn = getFigaroTypeName(p, first);
+      algorithm
+        tn := getFigaroTypeName(p, first);
       then tn;
     case (p, _ :: rest)
-      equation
-        tn = findFigaroTypeName(p, rest);
+      algorithm
+        tn := findFigaroTypeName(p, rest);
       then tn;
   end matchcontinue;
 end findFigaroTypeName;
@@ -532,8 +532,8 @@ algorithm
       Ident cn;
       String tn;
     case (p, FIGAROCLASS(className = cn, typeName = tn))
-      equation
-        true = getLastIdent(p) == cn;
+      algorithm
+        true := getLastIdent(p) == cn;
       then tn;
   end match;
 end getFigaroTypeName;
@@ -581,8 +581,8 @@ algorithm
       Ident n;
       SCode.Mod m;
     case SCode.NAMEMOD(ident = n, mod = m)
-      equation
-        true = n == name;
+      algorithm
+        true := n == name;
       then foMod2(m);
   end match;
 end foSubMod;
@@ -642,9 +642,9 @@ algorithm
     case {}
       then "";
     case first :: rest
-      equation
-        rf = figaroObjectToString(first);
-        rr = figaroObjectListToString(rest);
+      algorithm
+        rf := figaroObjectToString(first);
+        rr := figaroObjectListToString(rest);
       then rf + rr;
   end match;
 end figaroObjectListToString;
@@ -660,8 +660,8 @@ algorithm
       String fc;
       String middle;
     case FIGAROOBJECT(objectName = on, typeName = tn, figaroCode = fc)
-      equation
-        middle = if fc == "" then "" else "\n" + fc;
+      algorithm
+        middle := if fc == "" then "" else "\n" + fc;
       then "OBJECT " + on + " IS_A " + tn + ";" + middle + "\n\n";
   end match;
 end figaroObjectToString;
@@ -760,15 +760,15 @@ algorithm
       list<String> sl, sl2;
       list<Token> tl, tl2, tl3;
     case s
-      equation
-        sl = stringListStringChar(s);
-        tl = scan(sl);
-        tl2 = removeFirstIfText(tl);
-        tl3 = removeTokens(tl2);
-        sl2 = parse(tl3);
+      algorithm
+        sl := stringListStringChar(s);
+        tl := scan(sl);
+        tl2 := removeFirstIfText(tl);
+        tl3 := removeTokens(tl2);
+        sl2 := parse(tl3);
       then sl2;
     case _
-      equation
+      algorithm
         // Report unknown error. Bad XML.
       then fail();
   end match;
@@ -788,26 +788,26 @@ algorithm
       then {};
     // XML declaration.
     case "<" :: "?" :: rest
-      equation
-        r = scanDeclaration(rest);
+      algorithm
+        r := scanDeclaration(rest);
       then scan(r);
     // Closing tag.
     case "<" :: "/" :: rest
-      equation
-        (r, s) = scanTagName(rest);
-        t = CLOSETAG(s);
+      algorithm
+        (r, s) := scanTagName(rest);
+        t := CLOSETAG(s);
       then t :: scan(r);
     // Opening tag.
     case "<" :: rest
-      equation
-        (r, s) = scanTagName(rest);
-        t = OPENTAG(s);
+      algorithm
+        (r, s) := scanTagName(rest);
+        t := OPENTAG(s);
       then t :: scan(r);
     // Some text.
     case rest
-      equation
-        (r, s) = scanText(rest);
-        t = TEXT(s);
+      algorithm
+        (r, s) := scanText(rest);
+        t := TEXT(s);
       then t :: scan(r);
   end matchcontinue;
 end scan;
@@ -878,19 +878,19 @@ algorithm
     case {}
       then {};
     case OPENTAG(tagName = tn) :: rest
-      equation
-        true = isKnownTag(tn);
-        false = isInfoTag(tn);
-        r = removeFirstIfText(rest);
+      algorithm
+        true := isKnownTag(tn);
+        false := isInfoTag(tn);
+        r := removeFirstIfText(rest);
       then OPENTAG(tn) :: removeTokens(r);
     case OPENTAG(tagName = tn) :: rest
-      equation
-        false = isKnownTag(tn);
-        r = removeUnknown(rest, tn);
+      algorithm
+        false := isKnownTag(tn);
+        r := removeUnknown(rest, tn);
       then removeTokens(r);
     case CLOSETAG(tagName = tn) :: rest
-      equation
-        r = removeFirstIfText(rest);
+      algorithm
+        r := removeFirstIfText(rest);
       then CLOSETAG(tn) :: removeTokens(r);
     case first :: rest
       then first :: removeTokens(rest);
@@ -923,8 +923,8 @@ algorithm
     case {}
       then {};
     case CLOSETAG(tagName = tn) :: rest
-      equation
-        true = tn == inTagName;
+      algorithm
+        true := tn == inTagName;
       then removeFirstIfText(rest);
     case _ :: rest
       then removeUnknown(rest, inTagName);
@@ -962,8 +962,8 @@ algorithm
     case {}
       then {};
     case OPENTAG(tagName = tn) :: rest
-      equation
-        true = tn == "ANSWERS";
+      algorithm
+        true := tn == "ANSWERS";
       then parseAnswers(rest);
   end match;
 end parse;
@@ -989,14 +989,14 @@ algorithm
       list<String> sl, sl2;
       list<Token> rest, tl, tl2;
     case OPENTAG(tagName = tn) :: rest
-      equation
-        true = tn == "ANSWER";
-        (sl, tl) = parseAnswer(rest);
-        (sl2, tl2) = parseAnswerList(tl);
+      algorithm
+        true := tn == "ANSWER";
+        (sl, tl) := parseAnswer(rest);
+        (sl2, tl2) := parseAnswerList(tl);
       then (listAppend(sl, sl2), tl2);
     case CLOSETAG(tagName = tn) :: rest
-      equation
-        true = tn == "ANSWERS";
+      algorithm
+        true := tn == "ANSWERS";
       then ({}, rest);
   end match;
 end parseAnswerList;
@@ -1020,14 +1020,14 @@ algorithm
       list<String> sl, sl2;
       list<Token> rest, tl, tl2;
     case OPENTAG(tagName = tn) :: rest
-      equation
-        true = tn == "ERROR";
-        (sl, tl) = parseError(rest);
-        (sl2, tl2) = parseErrorList(tl);
+      algorithm
+        true := tn == "ERROR";
+        (sl, tl) := parseError(rest);
+        (sl2, tl2) := parseErrorList(tl);
       then (listAppend(sl, sl2), tl2);
     case CLOSETAG(tagName = tn) :: rest
-      equation
-        true = tn == "ANSWER";
+      algorithm
+        true := tn == "ANSWER";
       then ({}, rest);
   end match;
 end parseErrorList;
@@ -1057,13 +1057,13 @@ algorithm
       list<tuple<String, String>> stl;
       list<Token> rest, tl, tl2;
     case OPENTAG(tagName = tn) :: rest
-      equation
-        (s, tl) = parseInfo(rest);
-        (stl, tl2) = parseInfoList(tl);
+      algorithm
+        (s, tl) := parseInfo(rest);
+        (stl, tl2) := parseInfoList(tl);
       then ((tn, s) :: stl, tl2);
     case CLOSETAG(tagName = tn) :: rest
-      equation
-        true = tn == "ERROR";
+      algorithm
+        true := tn == "ERROR";
       then ({}, rest);
   end match;
 end parseInfoList;
@@ -1095,8 +1095,8 @@ algorithm
     case {}
       then false;
     case (k, v) :: _
-      equation
-        true = k == "CRITICITY";
+      algorithm
+        true := k == "CRITICITY";
       then listMember(v, errorsToReport);
     case _ :: rest
       then isToBeReported(rest);
@@ -1112,8 +1112,8 @@ algorithm
       String k, v;
       list<tuple<String, String>> rest;
     case (k, v) :: _
-      equation
-        true = k == "LABEL";
+      algorithm
+        true := k == "LABEL";
       then v;
     case _ :: rest
       then getMessage(rest);
@@ -1131,7 +1131,7 @@ algorithm
     case {}
       then false;
     case first :: rest
-      equation
+      algorithm
         // It has its own kind of error, because it is not a Modelica error.
         Error.addMessage(Error.FIGARO_ERROR, {first});
         reportErrors(rest);
@@ -1152,12 +1152,12 @@ algorithm
     case {}
       then ();
     case first :: rest
-      equation
+      algorithm
         printFigaroClass(first);
         printFigaroClassList(rest);
       then ();
     case _ :: rest
-      equation
+      algorithm
         printFigaroClassList(rest);
       then ();
   end matchcontinue;
@@ -1171,7 +1171,7 @@ algorithm
       Ident cn;
       String tn;
     case FIGAROCLASS(className = cn, typeName = tn)
-      equation
+      algorithm
         print(cn + " = " + tn + "\n");
       then ();
   end match;
@@ -1187,12 +1187,12 @@ algorithm
     case {}
       then ();
     case first :: rest
-      equation
+      algorithm
         print(figaroObjectToString(first));
         printFigaroObjectList(rest);
       then ();
     case _ :: rest
-      equation
+      algorithm
         printFigaroObjectList(rest);
       then ();
   end matchcontinue;
@@ -1208,13 +1208,13 @@ algorithm
     case {}
       then ();
     case first :: rest
-      equation
+      algorithm
         printToken(first);
         print("\n");
         printTokenList(rest);
       then ();
     case _ :: rest
-      equation
+      algorithm
         printTokenList(rest);
       then ();
   end matchcontinue;
@@ -1227,15 +1227,15 @@ algorithm
     local
       String s;
     case OPENTAG(tagName = s)
-      equation
+      algorithm
         print("OPEN: " + s);
       then ();
     case CLOSETAG(tagName = s)
-      equation
+      algorithm
         print("CLOSE: " + s);
       then ();
     case TEXT(text = s)
-      equation
+      algorithm
         print("\"" + s + "\"");
       then ();
   end match;

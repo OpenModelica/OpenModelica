@@ -104,9 +104,9 @@ algorithm
       Boolean b;
 
     case (_)
-      equation
-        rules = getRulesFrontEnd(getAllRules());
-        (outExp, b) = matchAndRewriteExpFrontEnd(inExp, rules);
+      algorithm
+        rules := getRulesFrontEnd(getAllRules());
+        (outExp, b) := matchAndRewriteExpFrontEnd(inExp, rules);
       then
         (outExp, b);
 
@@ -134,10 +134,10 @@ algorithm
 
     // matches the head
     case (_, FRONTEND_RULE(from, to)::_)
-      equation
-        (binds as _::_) = matchesFrontEnd(inExp, from, {});
-        outExp = rewriteExpFrontEnd(to, binds);
-        b = boolNot(referenceEq(inExp, outExp));
+      algorithm
+        (binds as _::_) := matchesFrontEnd(inExp, from, {});
+        outExp := rewriteExpFrontEnd(to, binds);
+        b := boolNot(referenceEq(inExp, outExp));
         print("FrontEnd Exp:     " + Dump.printExpStr(inExp) + "\n" +
               "FrontEnd From:    " + Dump.printExpStr(from) + "\n" +
               "FrontEnd To:      " + Dump.printExpStr(to) + "\n" +
@@ -147,8 +147,8 @@ algorithm
 
     // not match for the head, try next
     case (_, _::rest)
-      equation
-        (outExp, b) = matchAndRewriteExpFrontEnd(inExp, rest);
+      algorithm
+        (outExp, b) := matchAndRewriteExpFrontEnd(inExp, rest);
       then
         (outExp, b);
 
@@ -175,8 +175,8 @@ algorithm
       Binds bnds;
 
     case (e1 as Absyn.CREF(_), bnds)
-      equation
-        e2 = replaceBindFrontEnd(e1, bnds);
+      algorithm
+        e2 := replaceBindFrontEnd(e1, bnds);
       then
         (e2, bnds);
 
@@ -232,129 +232,129 @@ algorithm
 
     // we have a place holder
     case (_, Absyn.CREF(_), _)
-      equation
-        true = isPlaceHolderFrontEnd(inUnifyWith);
-        outBinds = FRONTEND_BIND(inUnifyWith, inExp)::inAcc;
+      algorithm
+        true := isPlaceHolderFrontEnd(inUnifyWith);
+        outBinds := FRONTEND_BIND(inUnifyWith, inExp)::inAcc;
       then
         outBinds;
 
     // must be equal
     case (Absyn.INTEGER(_), _, _)
-      equation
-        true = AbsynUtil.expEqual(inExp, inUnifyWith);
+      algorithm
+        true := AbsynUtil.expEqual(inExp, inUnifyWith);
       then
         inAcc;
 
     case (Absyn.REAL(_), _, _)
-      equation
-        true = AbsynUtil.expEqual(inExp, inUnifyWith);
+      algorithm
+        true := AbsynUtil.expEqual(inExp, inUnifyWith);
       then
         inAcc;
 
     case (Absyn.STRING(_), _, _)
-      equation
-        true = AbsynUtil.expEqual(inExp, inUnifyWith);
+      algorithm
+        true := AbsynUtil.expEqual(inExp, inUnifyWith);
       then
         inAcc;
 
     case (Absyn.BOOL(_), _, _)
-      equation
-        true = AbsynUtil.expEqual(inExp, inUnifyWith);
+      algorithm
+        true := AbsynUtil.expEqual(inExp, inUnifyWith);
       then
         inAcc;
 
     // cref
     case (Absyn.CREF(_), _, _)
-      equation
-        true = AbsynUtil.expEqual(inExp, inUnifyWith);
+      algorithm
+        true := AbsynUtil.expEqual(inExp, inUnifyWith);
       then
         inAcc;
 
     case (Absyn.BINARY(e1a, op1a, e2a), Absyn.BINARY(e1b, op1b, e2b), _)
-      equation
-        true = AbsynUtil.opEqual(op1a, op1b);
-        outBinds = matchesFrontEnd(e1a, e1b, inAcc);
-        outBinds = matchesFrontEnd(e2a, e2b, outBinds);
+      algorithm
+        true := AbsynUtil.opEqual(op1a, op1b);
+        outBinds := matchesFrontEnd(e1a, e1b, inAcc);
+        outBinds := matchesFrontEnd(e2a, e2b, outBinds);
       then
         outBinds;
 
     case (Absyn.UNARY(op1a, e1a), Absyn.UNARY(op1b, e1b), _)
-      equation
-        true = AbsynUtil.opEqual(op1a, op1b);
-        outBinds = matchesFrontEnd(e1a, e1b, inAcc);
+      algorithm
+        true := AbsynUtil.opEqual(op1a, op1b);
+        outBinds := matchesFrontEnd(e1a, e1b, inAcc);
       then
         outBinds;
 
     case (Absyn.LBINARY(e1a, op1a, e2a), Absyn.LBINARY(e1b, op1b, e2b), _)
-      equation
-        true = AbsynUtil.opEqual(op1a, op1b);
-        outBinds = matchesFrontEnd(e1a, e1b, inAcc);
-        outBinds = matchesFrontEnd(e2a, e2b, outBinds);
+      algorithm
+        true := AbsynUtil.opEqual(op1a, op1b);
+        outBinds := matchesFrontEnd(e1a, e1b, inAcc);
+        outBinds := matchesFrontEnd(e2a, e2b, outBinds);
       then
         outBinds;
 
     case (Absyn.LUNARY(op1a, e1a), Absyn.LUNARY(op1b, e1b), _)
-      equation
-        true = AbsynUtil.opEqual(op1a, op1b);
-        outBinds = matchesFrontEnd(e1a, e1b, inAcc);
+      algorithm
+        true := AbsynUtil.opEqual(op1a, op1b);
+        outBinds := matchesFrontEnd(e1a, e1b, inAcc);
       then
         outBinds;
 
     case (Absyn.RELATION(e1a, op1a, e2a), Absyn.RELATION(e1b, op1b, e2b), _)
-      equation
-        true = AbsynUtil.opEqual(op1a, op1b);
-        outBinds = matchesFrontEnd(e1a, e1b, inAcc);
-        outBinds = matchesFrontEnd(e2a, e2b, outBinds);
+      algorithm
+        true := AbsynUtil.opEqual(op1a, op1b);
+        outBinds := matchesFrontEnd(e1a, e1b, inAcc);
+        outBinds := matchesFrontEnd(e2a, e2b, outBinds);
       then
         outBinds;
 
     case (Absyn.IFEXP(cond1a, e1a, e2a, _), Absyn.IFEXP(cond1b, e1b, e2b, _), _)
-      equation
-        outBinds = matchesFrontEnd(cond1a, cond1b, inAcc);
-        outBinds = matchesFrontEnd(e1a, e1b, outBinds);
-        outBinds = matchesFrontEnd(e2a, e2b, outBinds);
+      algorithm
+        outBinds := matchesFrontEnd(cond1a, cond1b, inAcc);
+        outBinds := matchesFrontEnd(e1a, e1b, outBinds);
+        outBinds := matchesFrontEnd(e2a, e2b, outBinds);
         // TODO! handle elseif
         // outBinds = matchesElseIf(elseIfa, elseIfb, outBinds);
       then
         outBinds;
 
     case (Absyn.CALL(cr1a, fargs1a), Absyn.CALL(cr1b, fargs1b), _)
-      equation
-        true = AbsynUtil.crefEqual(cr1a, cr1b);
-        outBinds = matchesFargsFrontEnd(fargs1a, fargs1b, inAcc);
+      algorithm
+        true := AbsynUtil.crefEqual(cr1a, cr1b);
+        outBinds := matchesFargsFrontEnd(fargs1a, fargs1b, inAcc);
       then
         outBinds;
 
     case (Absyn.PARTEVALFUNCTION(cr1a, fargs1a), Absyn.PARTEVALFUNCTION(cr1b, fargs1b), _)
-      equation
-        true = AbsynUtil.crefEqual(cr1a, cr1b);
-        outBinds = matchesFargsFrontEnd(fargs1a, fargs1b, inAcc);
+      algorithm
+        true := AbsynUtil.crefEqual(cr1a, cr1b);
+        outBinds := matchesFargsFrontEnd(fargs1a, fargs1b, inAcc);
       then
         outBinds;
 
     case (Absyn.ARRAY(exps1a), Absyn.ARRAY(exps1b), _)
-      equation
-        outBinds = matchesExpLstFrontEnd(exps1a, exps1b, inAcc);
+      algorithm
+        outBinds := matchesExpLstFrontEnd(exps1a, exps1b, inAcc);
       then
         outBinds;
 
     case (Absyn.MATRIX(expsLst1a), Absyn.MATRIX(expsLst1b), _)
-      equation
-        outBinds = matchesExpLstLstFrontEnd(expsLst1a, expsLst1b, inAcc);
+      algorithm
+        outBinds := matchesExpLstLstFrontEnd(expsLst1a, expsLst1b, inAcc);
       then
         outBinds;
 
     case (Absyn.RANGE(e1a, oe1a, e2a), Absyn.RANGE(e1b, oe1b, e2b), _)
-      equation
-        outBinds = matchesFrontEnd(e1a, e1b, inAcc);
-        outBinds = matchesExpOptFrontEnd(oe1a, oe1b, outBinds);
-        outBinds = matchesFrontEnd(e2a, e2b, outBinds);
+      algorithm
+        outBinds := matchesFrontEnd(e1a, e1b, inAcc);
+        outBinds := matchesExpOptFrontEnd(oe1a, oe1b, outBinds);
+        outBinds := matchesFrontEnd(e2a, e2b, outBinds);
       then
         outBinds;
 
     case (Absyn.TUPLE(exps1a), Absyn.TUPLE(exps1b), _)
-      equation
-        outBinds = matchesExpLstFrontEnd(exps1a, exps1b, inAcc);
+      algorithm
+        outBinds := matchesExpLstFrontEnd(exps1a, exps1b, inAcc);
       then
         outBinds;
 
@@ -363,15 +363,15 @@ algorithm
     case (Absyn.CODE(_), Absyn.CODE(_), _) then inAcc;
 
     case (Absyn.AS(id1a, e1a), Absyn.AS(id1b, e1b), _)
-      equation
-        true = stringEq(id1a, id1b);
-        outBinds = matchesFrontEnd(e1a, e1b, inAcc);
+      algorithm
+        true := stringEq(id1a, id1b);
+        outBinds := matchesFrontEnd(e1a, e1b, inAcc);
       then outBinds;
 
     case (Absyn.CONS(e1a, e2a), Absyn.CONS(e1b, e2b), _)
-      equation
-        outBinds = matchesFrontEnd(e1a, e1b, inAcc);
-        outBinds = matchesFrontEnd(e2a, e2b, outBinds);
+      algorithm
+        outBinds := matchesFrontEnd(e1a, e1b, inAcc);
+        outBinds := matchesFrontEnd(e2a, e2b, outBinds);
       then outBinds;
 
     // TODO! support matchexp
@@ -379,8 +379,8 @@ algorithm
       then inAcc;
 
     case (Absyn.LIST(exps1a), Absyn.LIST(exps1b), _)
-      equation
-        outBinds = matchesExpLstFrontEnd(exps1a, exps1b, inAcc);
+      algorithm
+        outBinds := matchesExpLstFrontEnd(exps1a, exps1b, inAcc);
       then
         outBinds;
   end matchcontinue;
@@ -396,8 +396,8 @@ algorithm
     local Absyn.Exp e1a, e1b;
     case (NONE(), NONE(), _) then inAcc;
     case (SOME(e1a), SOME(e1b), _)
-      equation
-        outBinds = matchesFrontEnd(e1a, e1b, inAcc);
+      algorithm
+        outBinds := matchesFrontEnd(e1a, e1b, inAcc);
       then
         outBinds;
     else fail();
@@ -417,9 +417,9 @@ algorithm
 
     case ({}, {}, _) then inAcc;
     case (e1a::exps1a, e1b::exps1b, _)
-      equation
-        outBinds = matchesFrontEnd(e1a, e1b, inAcc);
-        outBinds = matchesExpLstFrontEnd(exps1a, exps1b, outBinds);
+      algorithm
+        outBinds := matchesFrontEnd(e1a, e1b, inAcc);
+        outBinds := matchesExpLstFrontEnd(exps1a, exps1b, outBinds);
       then
         outBinds;
 
@@ -439,19 +439,19 @@ algorithm
       Absyn.Exp e1a, e1b;
 
     case (Absyn.FUNCTIONARGS(exps1a, nargs1a), Absyn.FUNCTIONARGS(exps1b, nargs1b), _)
-      equation
-        outBinds = matchesExpLstFrontEnd(exps1a, exps1b, inAcc);
+      algorithm
+        outBinds := matchesExpLstFrontEnd(exps1a, exps1b, inAcc);
         // fargs should be equal
-        true = intEq(listLength(nargs1a), listLength(nargs1b));
+        true := intEq(listLength(nargs1a), listLength(nargs1b));
         // match nargs
-        outBinds = matchesNargsFrontEnd(sortNargsFrontEnd(nargs1a), sortNargsFrontEnd(nargs1b), outBinds);
+        outBinds := matchesNargsFrontEnd(sortNargsFrontEnd(nargs1a), sortNargsFrontEnd(nargs1b), outBinds);
       then
         outBinds;
 
     // TODO, handle for iterators!
     case (Absyn.FOR_ITER_FARG(e1a, _, _), Absyn.FOR_ITER_FARG(e1b, _, _), _)
-      equation
-        outBinds = matchesFrontEnd(e1a, e1b, inAcc);
+      algorithm
+        outBinds := matchesFrontEnd(e1a, e1b, inAcc);
       then
         outBinds;
   end match;
@@ -491,10 +491,10 @@ algorithm
     case ({}, {}, _) then inAcc;
 
     case (Absyn.NAMEDARG(n1a, e1a)::nargs1a, Absyn.NAMEDARG(n1b, e1b)::nargs1b, _)
-      equation
-        true = stringEq(n1a, n1b);
-        outBinds = matchesFrontEnd(e1a, e1b, inAcc);
-        outBinds = matchesNargsFrontEnd(nargs1a, nargs1b, outBinds);
+      algorithm
+        true := stringEq(n1a, n1b);
+        outBinds := matchesFrontEnd(e1a, e1b, inAcc);
+        outBinds := matchesNargsFrontEnd(nargs1a, nargs1b, outBinds);
       then
         outBinds;
 
@@ -514,9 +514,9 @@ algorithm
 
     case ({}, {}, _) then inAcc;
     case (e1a::exps1a, e1b::exps1b, _)
-      equation
-        outBinds = matchesExpLstFrontEnd(e1a, e1b, inAcc);
-        outBinds = matchesExpLstLstFrontEnd(exps1a, exps1b, outBinds);
+      algorithm
+        outBinds := matchesExpLstFrontEnd(e1a, e1b, inAcc);
+        outBinds := matchesExpLstLstFrontEnd(exps1a, exps1b, outBinds);
       then
         outBinds;
 
@@ -535,9 +535,9 @@ algorithm
      Absyn.Ident name;
 
    case (Absyn.CREF(Absyn.CREF_IDENT(name, _)))
-     equation
+     algorithm
        // find the string '$ at position 0
-       b = intEq(System.stringFind(name, "'$"), 0);
+       b := intEq(System.stringFind(name, "'$"), 0);
      then
        b;
    else false;
@@ -559,9 +559,9 @@ algorithm
      Boolean b;
 
    case (_)
-     equation
-       rules = getRulesBackEnd(getAllRules());
-       (outExp, b) = matchAndRewriteExpBackEnd(inExp, rules);
+     algorithm
+       rules := getRulesBackEnd(getAllRules());
+       (outExp, b) := matchAndRewriteExpBackEnd(inExp, rules);
      then
        (outExp, b);
 
@@ -590,12 +590,12 @@ algorithm
 
     // matches the head
     case (_, BACKEND_RULE(afrom, ato)::_)
-      equation
-        from = Expression.fromAbsynExp(afrom);
-        to =  Expression.fromAbsynExp(ato);
-        (binds as _::_) = matchesBackEnd(inExp, from, {});
-        outExp = rewriteExpBackEnd(to, binds);
-        b = boolNot(referenceEq(inExp, outExp));
+      algorithm
+        from := Expression.fromAbsynExp(afrom);
+        to :=  Expression.fromAbsynExp(ato);
+        (binds as _::_) := matchesBackEnd(inExp, from, {});
+        outExp := rewriteExpBackEnd(to, binds);
+        b := boolNot(referenceEq(inExp, outExp));
         print("BackEnd Exp:     " + ExpressionDump.printExpStr(inExp) + "\n" +
               "BackEnd From:    " + ExpressionDump.printExpStr(from) + "\n" +
               "BackEnd To:      " + ExpressionDump.printExpStr(to) + "\n" +
@@ -605,8 +605,8 @@ algorithm
 
     // not match for the head, try next
     case (_, _::rest)
-      equation
-        (outExp, b) = matchAndRewriteExpBackEnd(inExp, rest);
+      algorithm
+        (outExp, b) := matchAndRewriteExpBackEnd(inExp, rest);
       then
         (outExp, b);
   end matchcontinue;
@@ -632,8 +632,8 @@ algorithm
       Binds bnds;
 
     case (e1 as DAE.CREF(_, _), bnds)
-      equation
-        e2 = replaceBindBackEnd(e1, bnds);
+      algorithm
+        e2 := replaceBindBackEnd(e1, bnds);
       then
         (e2, bnds);
 
@@ -689,134 +689,134 @@ algorithm
 
     // we have a place holder
     case (_, DAE.CREF(_, _), _)
-      equation
-        true = isPlaceHolderBackEnd(inUnifyWith);
-        outBinds = BACKEND_BIND(inUnifyWith, inExp)::inAcc;
+      algorithm
+        true := isPlaceHolderBackEnd(inUnifyWith);
+        outBinds := BACKEND_BIND(inUnifyWith, inExp)::inAcc;
       then
         outBinds;
 
     // must be equal
     case (DAE.ICONST(_), _, _)
-      equation
-        true = expEqual(inExp, inUnifyWith);
+      algorithm
+        true := expEqual(inExp, inUnifyWith);
       then
         inAcc;
 
     case (DAE.RCONST(_), _, _)
-      equation
-        true = expEqual(inExp, inUnifyWith);
+      algorithm
+        true := expEqual(inExp, inUnifyWith);
       then
         inAcc;
 
     case (DAE.SCONST(_), _, _)
-      equation
-        true = expEqual(inExp, inUnifyWith);
+      algorithm
+        true := expEqual(inExp, inUnifyWith);
       then
         inAcc;
 
     case (DAE.BCONST(_), _, _)
-      equation
-        true = expEqual(inExp, inUnifyWith);
+      algorithm
+        true := expEqual(inExp, inUnifyWith);
       then
         inAcc;
 
     // cref
     case (DAE.CREF(_, _), _, _)
-      equation
-        true = expEqual(inExp, inUnifyWith);
+      algorithm
+        true := expEqual(inExp, inUnifyWith);
       then
         inAcc;
 
     case (DAE.BINARY(e1a, op1a, e2a), DAE.BINARY(e1b, op1b, e2b), _)
-      equation
-        true = operatorMatches(op1a, op1b);
-        outBinds = matchesBackEnd(e1a, e1b, inAcc);
-        outBinds = matchesBackEnd(e2a, e2b, outBinds);
+      algorithm
+        true := operatorMatches(op1a, op1b);
+        outBinds := matchesBackEnd(e1a, e1b, inAcc);
+        outBinds := matchesBackEnd(e2a, e2b, outBinds);
       then
         outBinds;
 
     case (DAE.UNARY(op1a, e1a), DAE.UNARY(op1b, e1b), _)
-      equation
-        true = operatorMatches(op1a, op1b);
-        outBinds = matchesBackEnd(e1a, e1b, inAcc);
+      algorithm
+        true := operatorMatches(op1a, op1b);
+        outBinds := matchesBackEnd(e1a, e1b, inAcc);
       then
         outBinds;
 
     case (DAE.LBINARY(e1a, op1a, e2a), DAE.LBINARY(e1b, op1b, e2b), _)
-      equation
-        true = operatorMatches(op1a, op1b);
-        outBinds = matchesBackEnd(e1a, e1b, inAcc);
-        outBinds = matchesBackEnd(e2a, e2b, outBinds);
+      algorithm
+        true := operatorMatches(op1a, op1b);
+        outBinds := matchesBackEnd(e1a, e1b, inAcc);
+        outBinds := matchesBackEnd(e2a, e2b, outBinds);
       then
         outBinds;
 
     case (DAE.LUNARY(op1a, e1a), DAE.LUNARY(op1b, e1b), _)
-      equation
-        true = operatorMatches(op1a, op1b);
-        outBinds = matchesBackEnd(e1a, e1b, inAcc);
+      algorithm
+        true := operatorMatches(op1a, op1b);
+        outBinds := matchesBackEnd(e1a, e1b, inAcc);
       then
         outBinds;
 
     case (DAE.RELATION(e1a, op1a, e2a, _, _), DAE.RELATION(e1b, op1b, e2b, _, _), _)
-      equation
-        true = operatorMatches(op1a, op1b);
-        outBinds = matchesBackEnd(e1a, e1b, inAcc);
-        outBinds = matchesBackEnd(e2a, e2b, outBinds);
+      algorithm
+        true := operatorMatches(op1a, op1b);
+        outBinds := matchesBackEnd(e1a, e1b, inAcc);
+        outBinds := matchesBackEnd(e2a, e2b, outBinds);
       then
         outBinds;
 
     case (DAE.IFEXP(cond1a, e1a, e2a), DAE.IFEXP(cond1b, e1b, e2b), _)
-      equation
-        outBinds = matchesBackEnd(cond1a, cond1b, inAcc);
-        outBinds = matchesBackEnd(e1a, e1b, outBinds);
-        outBinds = matchesBackEnd(e2a, e2b, outBinds);
+      algorithm
+        outBinds := matchesBackEnd(cond1a, cond1b, inAcc);
+        outBinds := matchesBackEnd(e1a, e1b, outBinds);
+        outBinds := matchesBackEnd(e2a, e2b, outBinds);
       then
         outBinds;
 
     case (DAE.CALL(p1a, exps1a, _), DAE.CALL(p1b, exps1b, _), _)
-      equation
-        true = AbsynUtil.pathEqual(p1a, p1b);
-        outBinds = matchesExpLstBackEnd(exps1a, exps1b, inAcc);
+      algorithm
+        true := AbsynUtil.pathEqual(p1a, p1b);
+        outBinds := matchesExpLstBackEnd(exps1a, exps1b, inAcc);
       then
         outBinds;
 
     case (DAE.PARTEVALFUNCTION(p1a, exps1a, _, _), DAE.PARTEVALFUNCTION(p1b, exps1b, _, _), _)
-      equation
-        true = AbsynUtil.pathEqual(p1a, p1b);
-        outBinds = matchesExpLstBackEnd(exps1a, exps1b, inAcc);
+      algorithm
+        true := AbsynUtil.pathEqual(p1a, p1b);
+        outBinds := matchesExpLstBackEnd(exps1a, exps1b, inAcc);
       then
         outBinds;
 
     case (DAE.ARRAY(array = exps1a), DAE.ARRAY(array = exps1b), _)
-      equation
-        outBinds = matchesExpLstBackEnd(exps1a, exps1b, inAcc);
+      algorithm
+        outBinds := matchesExpLstBackEnd(exps1a, exps1b, inAcc);
       then
         outBinds;
 
     case (DAE.MATRIX(matrix = expsLst1a), DAE.MATRIX(matrix = expsLst1b), _)
-      equation
-        outBinds = matchesExpLstLstBackEnd(expsLst1a, expsLst1b, inAcc);
+      algorithm
+        outBinds := matchesExpLstLstBackEnd(expsLst1a, expsLst1b, inAcc);
       then
         outBinds;
 
     case (DAE.RANGE(_, e1a, oe1a, e2a), DAE.RANGE(_, e1b, oe1b, e2b), _)
-      equation
-        outBinds = matchesBackEnd(e1a, e1b, inAcc);
-        outBinds = matchesExpOptBackEnd(oe1a, oe1b, outBinds);
-        outBinds = matchesBackEnd(e2a, e2b, outBinds);
+      algorithm
+        outBinds := matchesBackEnd(e1a, e1b, inAcc);
+        outBinds := matchesExpOptBackEnd(oe1a, oe1b, outBinds);
+        outBinds := matchesBackEnd(e2a, e2b, outBinds);
       then
         outBinds;
 
     case (DAE.TUPLE(exps1a), DAE.TUPLE(exps1b), _)
-      equation
-        outBinds = matchesExpLstBackEnd(exps1a, exps1b, inAcc);
+      algorithm
+        outBinds := matchesExpLstBackEnd(exps1a, exps1b, inAcc);
       then
         outBinds;
 
     case (DAE.CONS(e1a, e2a), DAE.CONS(e1b, e2b), _)
-      equation
-        outBinds = matchesBackEnd(e1a, e1b, inAcc);
-        outBinds = matchesBackEnd(e2a, e2b, outBinds);
+      algorithm
+        outBinds := matchesBackEnd(e1a, e1b, inAcc);
+        outBinds := matchesBackEnd(e2a, e2b, outBinds);
       then outBinds;
 
     // TODO! support matchexp
@@ -824,8 +824,8 @@ algorithm
       then inAcc;
 
     case (DAE.LIST(exps1a), DAE.LIST(exps1b), _)
-      equation
-        outBinds = matchesExpLstBackEnd(exps1a, exps1b, inAcc);
+      algorithm
+        outBinds := matchesExpLstBackEnd(exps1a, exps1b, inAcc);
       then
         outBinds;
 
@@ -842,8 +842,8 @@ algorithm
     local DAE.Exp e1a, e1b;
     case (NONE(), NONE(), _) then inAcc;
     case (SOME(e1a), SOME(e1b), _)
-      equation
-        outBinds = matchesBackEnd(e1a, e1b, inAcc);
+      algorithm
+        outBinds := matchesBackEnd(e1a, e1b, inAcc);
       then
         outBinds;
     else fail();
@@ -863,9 +863,9 @@ algorithm
 
     case ({}, {}, _) then inAcc;
     case (e1a::exps1a, e1b::exps1b, _)
-      equation
-        outBinds = matchesBackEnd(e1a, e1b, inAcc);
-        outBinds = matchesExpLstBackEnd(exps1a, exps1b, outBinds);
+      algorithm
+        outBinds := matchesBackEnd(e1a, e1b, inAcc);
+        outBinds := matchesExpLstBackEnd(exps1a, exps1b, outBinds);
       then
         outBinds;
 
@@ -885,9 +885,9 @@ algorithm
 
     case ({}, {}, _) then inAcc;
     case (e1a::exps1a, e1b::exps1b, _)
-      equation
-        outBinds = matchesExpLstBackEnd(e1a, e1b, inAcc);
-        outBinds = matchesExpLstLstBackEnd(exps1a, exps1b, outBinds);
+      algorithm
+        outBinds := matchesExpLstBackEnd(e1a, e1b, inAcc);
+        outBinds := matchesExpLstLstBackEnd(exps1a, exps1b, outBinds);
       then
         outBinds;
 
@@ -906,9 +906,9 @@ algorithm
      Absyn.Ident name;
 
    case (DAE.CREF(DAE.CREF_IDENT(ident = name), _))
-     equation
+     algorithm
        // find the string '$ at position 0
-       b = intEq(System.stringFind(name, "'$"), 0);
+       b := intEq(System.stringFind(name, "'$"), 0);
      then
        b;
    else false;
@@ -928,14 +928,14 @@ algorithm
 
     // we need additional rules here for int/real
     case (DAE.ICONST(i), DAE.RCONST(r))
-      equation
-        true = realEq(intReal(i), r);
+      algorithm
+        true := realEq(intReal(i), r);
       then
         true;
 
     case (DAE.RCONST(r), DAE.ICONST(i))
-      equation
-        true = realEq(intReal(i), r);
+      algorithm
+        true := realEq(intReal(i), r);
       then
         true;
 
@@ -989,8 +989,8 @@ algorithm
       String file;
 
     case ()
-      equation
-        file = Flags.getConfigString(Flags.REWRITE_RULES_FILE);
+      algorithm
+        file := Flags.getConfigString(Flags.REWRITE_RULES_FILE);
         loadRulesFromFile(file);
       then ();
 
@@ -1004,8 +1004,8 @@ public function noRewriteRules
 algorithm
   noRules := matchcontinue()
     case ()
-      equation
-        NONE() = getGlobalRoot(Global.rewriteRulesIndex);
+      algorithm
+        NONE() := getGlobalRoot(Global.rewriteRulesIndex);
       then
         true;
     else false;
@@ -1020,14 +1020,14 @@ algorithm
   noRules := matchcontinue()
 
     case ()
-      equation
-        NONE() = getGlobalRoot(Global.rewriteRulesIndex);
+      algorithm
+        NONE() := getGlobalRoot(Global.rewriteRulesIndex);
       then
         true;
 
     case ()
-      equation
-        {} = getRulesFrontEnd(getAllRules());
+      algorithm
+        {} := getRulesFrontEnd(getAllRules());
       then
         true;
 
@@ -1044,14 +1044,14 @@ algorithm
   noRules := matchcontinue()
 
     case ()
-      equation
-        NONE() = getGlobalRoot(Global.rewriteRulesIndex);
+      algorithm
+        NONE() := getGlobalRoot(Global.rewriteRulesIndex);
       then
         true;
 
     case ()
-      equation
-        {} = getRulesBackEnd(getAllRules());
+      algorithm
+        {} := getRulesBackEnd(getAllRules());
       then
         true;
 
@@ -1072,23 +1072,23 @@ algorithm
 
     // no file, set it to NONE
     case ""
-      equation
+      algorithm
         setGlobalRoot(Global.rewriteRulesIndex, NONE());
       then ();
 
     // already loaded
     case _
-      equation
-        oR = getGlobalRoot(Global.rewriteRulesIndex);
-        true = isSome(oR);
+      algorithm
+        oR := getGlobalRoot(Global.rewriteRulesIndex);
+        true := isSome(oR);
       then ();
 
     // not loaded, load it
     case _
-      equation
-        NONE() = getGlobalRoot(Global.rewriteRulesIndex);
-        GlobalScript.ISTMTS(stmts, _) = Parser.parseexp(inFile);
-        rules = stmtsToRules(stmts, {});
+      algorithm
+        NONE() := getGlobalRoot(Global.rewriteRulesIndex);
+        GlobalScript.ISTMTS(stmts, _) := Parser.parseexp(inFile);
+        rules := stmtsToRules(stmts, {});
         print("-------------\n");
         setGlobalRoot(Global.rewriteRulesIndex, SOME(rules));
       then
@@ -1132,8 +1132,8 @@ algorithm
     case ({}) then {};
 
     case ((r as FRONTEND_RULE())::rest)
-      equation
-        lst = getRulesFrontEnd(rest);
+      algorithm
+        lst := getRulesFrontEnd(rest);
       then r::lst;
 
     case (_::rest) then getRulesFrontEnd(rest);
@@ -1153,8 +1153,8 @@ algorithm
     case ({}) then {};
 
     case ((r as BACKEND_RULE())::rest)
-      equation
-        lst = getRulesBackEnd(rest);
+      algorithm
+        lst := getRulesBackEnd(rest);
       then r::lst;
 
     case (_::rest) then getRulesBackEnd(rest);
@@ -1183,9 +1183,9 @@ algorithm
              Absyn.CREF_IDENT(name = "rewrite"),
              Absyn.FUNCTIONARGS({from, to}, {}))
            )::rest, _)
-      equation
+      algorithm
         print("FrontEnd rule: " + Dump.printExpStr(from) + " -> " + Dump.printExpStr(to) + "\n");
-        acc = stmtsToRules(rest, FRONTEND_RULE(from, to)::inAcc);
+        acc := stmtsToRules(rest, FRONTEND_RULE(from, to)::inAcc);
       then
         acc;
 
@@ -1195,9 +1195,9 @@ algorithm
              Absyn.CREF_IDENT(name = "rewriteFrontEnd"),
              Absyn.FUNCTIONARGS({from, to}, {}))
            )::rest, _)
-      equation
+      algorithm
         print("FrontEnd rule: " + Dump.printExpStr(from) + " -> " + Dump.printExpStr(to) + "\n");
-        acc = stmtsToRules(rest, FRONTEND_RULE(from, to)::inAcc);
+        acc := stmtsToRules(rest, FRONTEND_RULE(from, to)::inAcc);
       then
         acc;
 
@@ -1207,14 +1207,14 @@ algorithm
              Absyn.CREF_IDENT(name = "rewriteBackEnd"),
              Absyn.FUNCTIONARGS({from, to}, {}))
            )::rest, _)
-      equation
+      algorithm
         print("BackEnd rule: " + Dump.printExpStr(from) + " -> " + Dump.printExpStr(to) + "\n");
-        acc = stmtsToRules(rest, BACKEND_RULE(from, to)::inAcc);
+        acc := stmtsToRules(rest, BACKEND_RULE(from, to)::inAcc);
       then
         acc;
 
     case (s::_, _)
-      equation
+      algorithm
         Error.addInternalError("Unable to parse rewrite rule: " + GlobalScriptDump.printIstmtStr(s), sourceInfo());
       then
         fail();

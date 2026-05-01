@@ -292,8 +292,8 @@ algorithm
   (outCache,filename) := match (inCache,env,inputFilename,msg)
     local FCore.Cache cache;
     case (cache,_,"<default>",_)
-      equation
-        (cache,Values.STRING(filename)) = Ceval.ceval(cache,env,buildCurrentSimulationResultExp(),true,msg,0);
+      algorithm
+        (cache,Values.STRING(filename)) := Ceval.ceval(cache,env,buildCurrentSimulationResultExp(),true,msg,0);
       then (cache,filename);
     else (inCache,inputFilename);
   end match;
@@ -321,8 +321,8 @@ algorithm
       DAE.SCONST(format),
       DAE.SCONST(varFilter),
       DAE.SCONST(cflags),
-      DAE.SCONST(simflags))) equation
-        options = "";
+      DAE.SCONST(simflags))) algorithm
+        options := "";
 
     then SimCode.SIMULATION_SETTINGS(startTime,stopTime,nIntervals,stepSize,tolerance,method,options,format,varFilter,cflags,simflags);
   end match;
@@ -387,8 +387,8 @@ algorithm
     case (GlobalScript.SIMULATION_OPTIONS(cflags = e),            "cflags")            then e;
     case (GlobalScript.SIMULATION_OPTIONS(simflags = e),          "simflags")          then e;
     case (_,                                         name)
-      equation
-        msg = "Unknown simulation option: " + name;
+      algorithm
+        msg := "Unknown simulation option: " + name;
         Error.addCompilerWarning(msg);
       then
         fail();
@@ -412,26 +412,26 @@ algorithm
 
     // search inside annotation(experiment(...))
     case (_, _, _)
-      equation
-        defaults = Util.getOptionOrDefault(defaultOption, setFileNamePrefixInSimulationOptions(defaultSimulationOptions, inFileNamePrefix));
+      algorithm
+        defaults := Util.getOptionOrDefault(defaultOption, setFileNamePrefixInSimulationOptions(defaultSimulationOptions, inFileNamePrefix));
 
-        experiment_ann = InteractiveUtil.getInheritedAnnotation(inModelPath, "experiment", SymbolTable.getAbsyn());
+        experiment_ann := InteractiveUtil.getInheritedAnnotation(inModelPath, "experiment", SymbolTable.getAbsyn());
 
         // TODO: Get the values from the modifier directly instead of this mess.
-        experimentAnnotationStr = Interactive.getExperimentAnnotationString(experiment_ann);
+        experimentAnnotationStr := Interactive.getExperimentAnnotationString(experiment_ann);
 
         // parse the string we get back, either {} or {StopTime=5, Tolerance = 0.10};
         // jump to next case if the annotation is empty
-        false = stringEq(experimentAnnotationStr, "{}");
+        false := stringEq(experimentAnnotationStr, "{}");
 
         // get rid of '{' and '}'
-        experimentAnnotationStr = System.stringReplace(experimentAnnotationStr, "{", "");
-        experimentAnnotationStr = System.stringReplace(experimentAnnotationStr, "}", "");
+        experimentAnnotationStr := System.stringReplace(experimentAnnotationStr, "{", "");
+        experimentAnnotationStr := System.stringReplace(experimentAnnotationStr, "}", "");
 
         GlobalScript.ISTMTS({GlobalScript.IEXP(exp = Absyn.CALL(functionArgs = Absyn.FUNCTIONARGS(_, named)))}, _)
-        = Parser.parsestringexp("experiment(" + experimentAnnotationStr + ");\n", "<experiment>");
+        := Parser.parsestringexp("experiment(" + experimentAnnotationStr + ");\n", "<experiment>");
 
-        simOpt = populateSimulationOptions(defaults, named);
+        simOpt := populateSimulationOptions(defaults, named);
       then
         simOpt;
 
@@ -477,22 +477,22 @@ algorithm
       String str;
 
     case (Absyn.UNARY(Absyn.UMINUS(),exp), _)
-      equation
-        DAE.ICONST(i) = getConst(exp, inExpType);
-        i = intNeg(i);
+      algorithm
+        DAE.ICONST(i) := getConst(exp, inExpType);
+        i := intNeg(i);
       then
         DAE.ICONST(i);
 
     case (Absyn.UNARY(Absyn.UMINUS(),exp), _)
-      equation
-        DAE.RCONST(r) = getConst(exp, inExpType);
-        r = realNeg(r);
+      algorithm
+        DAE.RCONST(r) := getConst(exp, inExpType);
+        r := realNeg(r);
       then
         DAE.RCONST(r);
 
     case (Absyn.INTEGER(i), DAE.T_INTEGER())  then DAE.ICONST(i);
-    case (Absyn.REAL(str),    DAE.T_REAL()) equation r = System.stringReal(str); then DAE.RCONST(r);
-    case (Absyn.INTEGER(i), DAE.T_REAL()) equation r = intReal(i); then DAE.RCONST(r);
+    case (Absyn.REAL(str),    DAE.T_REAL()) algorithm r := System.stringReal(str); then DAE.RCONST(r);
+    case (Absyn.INTEGER(i), DAE.T_REAL()) algorithm r := intReal(i); then DAE.RCONST(r);
 
     else
       equation
@@ -566,25 +566,25 @@ algorithm
       list<Values.Value> lst;
 
     case _::lst
-      equation
+      algorithm
         // build a list with the values
-        simOptsValues = List.map(lst, ValuesUtil.valString);
+        simOptsValues := List.map(lst, ValuesUtil.valString);
         // trim " from strings!
-        simOptsValues = List.map2(simOptsValues, System.stringReplace, "\"", "\'");
+        simOptsValues := List.map2(simOptsValues, System.stringReplace, "\"", "\'");
 
-        str = Util.buildMapStr(simulationOptionsNames, simOptsValues, " = ", ", ");
+        str := Util.buildMapStr(simulationOptionsNames, simOptsValues, " = ", ", ");
       then
         str;
 
     // on failure
     case (_::lst)
-      equation
+      algorithm
         // build a list with the values
-        simOptsValues = List.map(lst, ValuesUtil.valString);
+        simOptsValues := List.map(lst, ValuesUtil.valString);
         // trim " from strings!
-        simOptsValues = List.map2(simOptsValues, System.stringReplace, "\"", "\'");
+        simOptsValues := List.map2(simOptsValues, System.stringReplace, "\"", "\'");
 
-        str = stringDelimitList(simOptsValues, ", ");
+        str := stringDelimitList(simOptsValues, ", ");
       then
         str;
   end matchcontinue;
@@ -656,24 +656,24 @@ algorithm
       SimCode.SimulationSettings simSettings;
 
     case ("runScriptParallel",{Values.ARRAY(valueLst=vals),Values.INTEGER(i),Values.BOOL(true)})
-      equation
-        strs = List.map(vals,ValuesUtil.extractValueString);
+      algorithm
+        strs := List.map(vals,ValuesUtil.extractValueString);
         /* One of the few times we can allow to directly manipulate the symbol table
          * Each thread will get a copy of the symbol table and the results will not
          * be stored in the parent.
          */
-        forkedSymbolTable = SymbolTable.get();
-        blst = System.launchParallelTasks(i, List.map1(strs, Util.makeTuple, forkedSymbolTable), Interactive.evaluateFork);
-        v = ValuesUtil.makeArray(List.map(blst, ValuesUtil.makeBoolean));
+        forkedSymbolTable := SymbolTable.get();
+        blst := System.launchParallelTasks(i, List.map1(strs, Util.makeTuple, forkedSymbolTable), Interactive.evaluateFork);
+        v := ValuesUtil.makeArray(List.map(blst, ValuesUtil.makeBoolean));
         SymbolTable.update(forkedSymbolTable);
       then
         v;
 
     case ("runScriptParallel",{Values.ARRAY(valueLst=vals),Values.INTEGER(i),Values.BOOL(false)})
-      equation
-        strs = List.map(vals,ValuesUtil.extractValueString);
-        strs = List.map1r(strs, stringAppend, stringAppend(Settings.getInstallationDirectoryPath(),"/bin/omc "));
-        is = System.systemCallParallel(strs,i);
+      algorithm
+        strs := List.map(vals,ValuesUtil.extractValueString);
+        strs := List.map1r(strs, stringAppend, stringAppend(Settings.getInstallationDirectoryPath(),"/bin/omc "));
+        is := System.systemCallParallel(strs,i);
       then
         ValuesUtil.makeArray(List.map(List.map1(is,intEq,0), ValuesUtil.makeBoolean));
 
@@ -681,24 +681,24 @@ algorithm
       then ValuesUtil.makeArray(List.fill(Values.BOOL(false), listLength(vals)));
 
     case ("setClassComment",{Values.CODE(Absyn.C_TYPENAME(path)),Values.STRING(str)})
-      equation
-        (p,b) = Interactive.setClassComment(path, str, SymbolTable.getAbsyn());
+      algorithm
+        (p,b) := Interactive.setClassComment(path, str, SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(p);
       then
         Values.BOOL(b);
 
     case ("isShortDefinition", {Values.CODE(Absyn.C_TYPENAME(path))})
-      equation
-        b = isShortDefinition(path, SymbolTable.getAbsyn());
+      algorithm
+        b := isShortDefinition(path, SymbolTable.getAbsyn());
       then
         Values.BOOL(b);
 
     case ("getUsedClassNames",{Values.CODE(Absyn.C_TYPENAME(path))})
-      equation
-        sp = SymbolTable.getSCode();
-        (sp, _) = NFSCodeFlatten.flattenClassInProgram(path, sp);
-        sp = SCodeUtil.removeBuiltinsFromTopScope(sp);
-        paths = Interactive.getSCodeClassNamesRecursive(sp);
+      algorithm
+        sp := SymbolTable.getSCode();
+        (sp, _) := NFSCodeFlatten.flattenClassInProgram(path, sp);
+        sp := SCodeUtil.removeBuiltinsFromTopScope(sp);
+        paths := Interactive.getSCodeClassNamesRecursive(sp);
         // paths = bcallret2(sort, List.sort, paths, AbsynUtil.pathGe, paths);
       then
         ValuesUtil.makeCodeTypeNameArray(paths);
@@ -707,9 +707,9 @@ algorithm
       then ValuesUtil.makeArray({});
 
     case ("getClassComment",{Values.CODE(Absyn.C_TYPENAME(path))})
-      equation
-        elem = InteractiveUtil.getPathedElementInProgram(path, SymbolTable.getAbsyn());
-        str = System.unescapedString(getClassElementComment(elem));
+      algorithm
+        elem := InteractiveUtil.getPathedElementInProgram(path, SymbolTable.getAbsyn());
+        str := System.unescapedString(getClassElementComment(elem));
       then
         Values.STRING(str);
 
@@ -718,30 +718,30 @@ algorithm
         Values.STRING("");
 
     case ("getPackages",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses")))})
-      equation
-        paths = Interactive.getTopPackages(SymbolTable.getAbsyn());
+      algorithm
+        paths := Interactive.getTopPackages(SymbolTable.getAbsyn());
       then
         ValuesUtil.makeCodeTypeNameArray(paths);
 
     case ("getPackages",{Values.CODE(Absyn.C_TYPENAME(path))})
-      equation
-        paths = Interactive.getPackagesInPath(path, SymbolTable.getAbsyn());
+      algorithm
+        paths := Interactive.getPackagesInPath(path, SymbolTable.getAbsyn());
       then
         ValuesUtil.makeCodeTypeNameArray(paths);
 
     case ("convertUnits",{Values.STRING(str1),Values.STRING(str2)})
-      equation
+      algorithm
         Error.clearMessages() "Clear messages";
         UnitParserExt.initSIUnits();
-        (u1,scaleFactor1,offset1) = UnitAbsynBuilder.str2unitWithScaleFactor(str1,NONE());
-        (u2,scaleFactor2,offset2) = UnitAbsynBuilder.str2unitWithScaleFactor(str2,NONE());
-        b = valueEq(u1,u2);
+        (u1,scaleFactor1,offset1) := UnitAbsynBuilder.str2unitWithScaleFactor(str1,NONE());
+        (u2,scaleFactor2,offset2) := UnitAbsynBuilder.str2unitWithScaleFactor(str2,NONE());
+        b := valueEq(u1,u2);
         /* How to calculate the final scale factor and offset:
         F = C*1.8 + 32
         C = (F - 32)/1.8 = F/1.8 - 32/1.8
         */
-        scaleFactor = realDiv(scaleFactor2, scaleFactor1);
-        offset = realDiv(realSub(offset2, offset1), scaleFactor1);
+        scaleFactor := realDiv(scaleFactor2, scaleFactor1);
+        offset := realDiv(realSub(offset2, offset1), scaleFactor1);
       then
         Values.TUPLE({Values.BOOL(b),Values.REAL(scaleFactor),Values.REAL(offset)});
 
@@ -749,11 +749,11 @@ algorithm
       then Values.TUPLE({Values.BOOL(false),Values.REAL(1.0),Values.REAL(0.0)});
 
     case ("getDerivedUnits",{Values.STRING(str1)})
-      equation
+      algorithm
         Error.clearMessages() "Clear messages";
         UnitParserExt.initSIUnits();
-        u1 = UnitAbsynBuilder.str2unit(str1, NONE());
-        strs = UnitAbsynBuilder.getDerivedUnits(u1, str1);
+        u1 := UnitAbsynBuilder.str2unit(str1, NONE());
+        strs := UnitAbsynBuilder.getDerivedUnits(u1, str1);
       then
         ValuesUtil.makeArray(List.map(strs, ValuesUtil.makeString));
 
@@ -769,9 +769,9 @@ algorithm
                                 Values.BOOL(false),Values.BOOL(false),Values.STRING(""),Values.STRING(""),Values.BOOL(false),Values.STRING("")});
 
     case ("getTransitions",{Values.CODE(Absyn.C_TYPENAME(className))})
-      equation
-        false = Interactive.existClass(className, SymbolTable.getAbsyn());
-        str = AbsynUtil.pathString(className);
+      algorithm
+        false := Interactive.existClass(className, SymbolTable.getAbsyn());
+        str := AbsynUtil.pathString(className);
         Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
       then ValuesUtil.makeArray({});
 
@@ -783,9 +783,9 @@ algorithm
 
     case ("addTransition",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(_), Values.STRING(_), Values.STRING(_),
                            Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.INTEGER(_), Values.CODE(Absyn.C_EXPRESSION(_))})
-      equation
-        false = Interactive.existClass(classpath, SymbolTable.getAbsyn());
-        str = AbsynUtil.pathString(classpath);
+      algorithm
+        false := Interactive.existClass(classpath, SymbolTable.getAbsyn());
+        str := AbsynUtil.pathString(classpath);
         Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
       then
         Values.BOOL(false);
@@ -793,17 +793,17 @@ algorithm
     case ("addTransition",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(_), Values.STRING(_), Values.STRING(_),
                            Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.INTEGER(_),
                            Values.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(eqMod=Absyn.NOMOD())))})
-      equation
-        false = Interactive.existClass(classpath, SymbolTable.getAbsyn());
-        str = AbsynUtil.pathString(classpath);
+      algorithm
+        false := Interactive.existClass(classpath, SymbolTable.getAbsyn());
+        str := AbsynUtil.pathString(classpath);
         Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
       then
         Values.BOOL(false);
 
     case ("addTransition",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str1), Values.STRING(str2), Values.STRING(str3),
                            Values.BOOL(b), Values.BOOL(b1), Values.BOOL(b2), Values.INTEGER(i), Values.CODE(Absyn.C_EXPRESSION(aexp))})
-      equation
-        (bval, p) = Interactive.addTransition(AbsynUtil.pathToCref(classpath), str1, str2, str3, b, b1, b2, i, Absyn.NAMEDARG("annotate",aexp)::{}, SymbolTable.getAbsyn());
+      algorithm
+        (bval, p) := Interactive.addTransition(AbsynUtil.pathToCref(classpath), str1, str2, str3, b, b1, b2, i, Absyn.NAMEDARG("annotate",aexp)::{}, SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(p);
       then
         Values.BOOL(bval);
@@ -811,8 +811,8 @@ algorithm
     case ("addTransition",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str1), Values.STRING(str2), Values.STRING(str3),
                            Values.BOOL(b), Values.BOOL(b1), Values.BOOL(b2), Values.INTEGER(i),
                            Values.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(elementArgLst=eltargs,eqMod=Absyn.NOMOD())))})
-      equation
-        (bval, p) = Interactive.addTransitionWithAnnotation(AbsynUtil.pathToCref(classpath), str1, str2, str3, b, b1, b2, i, Absyn.ANNOTATION(eltargs), SymbolTable.getAbsyn());
+      algorithm
+        (bval, p) := Interactive.addTransitionWithAnnotation(AbsynUtil.pathToCref(classpath), str1, str2, str3, b, b1, b2, i, Absyn.ANNOTATION(eltargs), SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(p);
       then
         Values.BOOL(bval);
@@ -822,17 +822,17 @@ algorithm
 
     case ("deleteTransition",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(_), Values.STRING(_), Values.STRING(_),
                               Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.INTEGER(_)})
-      equation
-        false = Interactive.existClass(classpath, SymbolTable.getAbsyn());
-        str = AbsynUtil.pathString(classpath);
+      algorithm
+        false := Interactive.existClass(classpath, SymbolTable.getAbsyn());
+        str := AbsynUtil.pathString(classpath);
         Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
       then
         Values.BOOL(false);
 
     case ("deleteTransition",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str1), Values.STRING(str2), Values.STRING(str3),
                               Values.BOOL(b), Values.BOOL(b1), Values.BOOL(b2), Values.INTEGER(i)})
-      equation
-        (bval, p) = Interactive.deleteTransition(AbsynUtil.pathToCref(classpath), str1, str2, str3, b, b1, b2, i, SymbolTable.getAbsyn());
+      algorithm
+        (bval, p) := Interactive.deleteTransition(AbsynUtil.pathToCref(classpath), str1, str2, str3, b, b1, b2, i, SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(p);
       then
         Values.BOOL(bval);
@@ -844,9 +844,9 @@ algorithm
     case ("updateTransition",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(_), Values.STRING(_), Values.STRING(_),
                               Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.INTEGER(_), Values.STRING(_),
                               Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.INTEGER(_), Values.CODE(Absyn.C_EXPRESSION(_))})
-      equation
-        false = Interactive.existClass(classpath, SymbolTable.getAbsyn());
-        str = AbsynUtil.pathString(classpath);
+      algorithm
+        false := Interactive.existClass(classpath, SymbolTable.getAbsyn());
+        str := AbsynUtil.pathString(classpath);
         Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
       then
         Values.BOOL(false);
@@ -855,9 +855,9 @@ algorithm
                               Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.INTEGER(_), Values.STRING(_),
                               Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.INTEGER(_),
                               Values.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(eqMod=Absyn.NOMOD())))})
-      equation
-        false = Interactive.existClass(classpath, SymbolTable.getAbsyn());
-        str = AbsynUtil.pathString(classpath);
+      algorithm
+        false := Interactive.existClass(classpath, SymbolTable.getAbsyn());
+        str := AbsynUtil.pathString(classpath);
         Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
       then
         Values.BOOL(false);
@@ -865,9 +865,9 @@ algorithm
     case ("updateTransition",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str1), Values.STRING(str2), Values.STRING(str3),
                               Values.BOOL(b), Values.BOOL(b1), Values.BOOL(b2), Values.INTEGER(i), Values.STRING(str4),
                               Values.BOOL(b3), Values.BOOL(b4), Values.BOOL(b5), Values.INTEGER(i1), Values.CODE(Absyn.C_EXPRESSION(aexp))})
-      equation
-        (bval, p) = Interactive.deleteTransition(AbsynUtil.pathToCref(classpath), str1, str2, str3, b, b1, b2, i, SymbolTable.getAbsyn());
-        (bval, p) = Interactive.addTransition(AbsynUtil.pathToCref(classpath), str1, str2, str4, b3, b4, b5, i1, Absyn.NAMEDARG("annotate",aexp)::{}, p);
+      algorithm
+        (bval, p) := Interactive.deleteTransition(AbsynUtil.pathToCref(classpath), str1, str2, str3, b, b1, b2, i, SymbolTable.getAbsyn());
+        (bval, p) := Interactive.addTransition(AbsynUtil.pathToCref(classpath), str1, str2, str4, b3, b4, b5, i1, Absyn.NAMEDARG("annotate",aexp)::{}, p);
         SymbolTable.setAbsyn(p);
       then
         Values.BOOL(bval);
@@ -876,9 +876,9 @@ algorithm
                               Values.BOOL(b), Values.BOOL(b1), Values.BOOL(b2), Values.INTEGER(i), Values.STRING(str4),
                               Values.BOOL(b3), Values.BOOL(b4), Values.BOOL(b5), Values.INTEGER(i1),
                               Values.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(elementArgLst=eltargs,eqMod=Absyn.NOMOD())))})
-      equation
-        (bval, p) = Interactive.deleteTransition(AbsynUtil.pathToCref(classpath), str1, str2, str3, b, b1, b2, i, SymbolTable.getAbsyn());
-        (bval, p) = Interactive.addTransitionWithAnnotation(AbsynUtil.pathToCref(classpath), str1, str2, str4, b3, b4, b5, i1, Absyn.ANNOTATION(eltargs), p);
+      algorithm
+        (bval, p) := Interactive.deleteTransition(AbsynUtil.pathToCref(classpath), str1, str2, str3, b, b1, b2, i, SymbolTable.getAbsyn());
+        (bval, p) := Interactive.addTransitionWithAnnotation(AbsynUtil.pathToCref(classpath), str1, str2, str4, b3, b4, b5, i1, Absyn.ANNOTATION(eltargs), p);
         SymbolTable.setAbsyn(p);
       then
         Values.BOOL(bval);
@@ -888,9 +888,9 @@ algorithm
         Values.BOOL(false);
 
     case ("getInitialStates",{Values.CODE(Absyn.C_TYPENAME(className))})
-      equation
-        false = Interactive.existClass(className, SymbolTable.getAbsyn());
-        str = AbsynUtil.pathString(className);
+      algorithm
+        false := Interactive.existClass(className, SymbolTable.getAbsyn());
+        str := AbsynUtil.pathString(className);
         Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
       then
         ValuesUtil.makeArray({});
@@ -902,33 +902,33 @@ algorithm
       then ValuesUtil.makeArray({});
 
     case ("addInitialState",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(_), Values.CODE(Absyn.C_EXPRESSION(_))})
-      equation
-        false = Interactive.existClass(classpath, SymbolTable.getAbsyn());
-        str = AbsynUtil.pathString(classpath);
+      algorithm
+        false := Interactive.existClass(classpath, SymbolTable.getAbsyn());
+        str := AbsynUtil.pathString(classpath);
         Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
       then
         Values.BOOL(false);
 
     case ("addInitialState",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(_),
                              Values.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(eqMod=Absyn.NOMOD())))})
-      equation
-        false = Interactive.existClass(classpath, SymbolTable.getAbsyn());
-        str = AbsynUtil.pathString(classpath);
+      algorithm
+        false := Interactive.existClass(classpath, SymbolTable.getAbsyn());
+        str := AbsynUtil.pathString(classpath);
         Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
       then
         Values.BOOL(false);
 
     case ("addInitialState",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str1), Values.CODE(Absyn.C_EXPRESSION(aexp))})
-      equation
-        (bval, p) = addInitialState(classpath, str1, Absyn.NAMEDARG("annotate",aexp)::{}, SymbolTable.getAbsyn());
+      algorithm
+        (bval, p) := addInitialState(classpath, str1, Absyn.NAMEDARG("annotate",aexp)::{}, SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(p);
       then
         Values.BOOL(bval);
 
     case ("addInitialState",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str1),
                              Values.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(elementArgLst=eltargs,eqMod=Absyn.NOMOD())))})
-      equation
-        (bval, p) = addInitialStateWithAnnotation(classpath, str1, Absyn.ANNOTATION(eltargs), SymbolTable.getAbsyn());
+      algorithm
+        (bval, p) := addInitialStateWithAnnotation(classpath, str1, Absyn.ANNOTATION(eltargs), SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(p);
       then
         Values.BOOL(bval);
@@ -937,16 +937,16 @@ algorithm
       then Values.BOOL(false);
 
     case ("deleteInitialState",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(_)})
-      equation
-        false = Interactive.existClass(classpath, SymbolTable.getAbsyn());
-        str = AbsynUtil.pathString(classpath);
+      algorithm
+        false := Interactive.existClass(classpath, SymbolTable.getAbsyn());
+        str := AbsynUtil.pathString(classpath);
         Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
       then
         Values.BOOL(false);
 
     case ("deleteInitialState",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str1)})
-      equation
-        (bval, p) = deleteInitialState(classpath, str1, SymbolTable.getAbsyn());
+      algorithm
+        (bval, p) := deleteInitialState(classpath, str1, SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(p);
       then
         Values.BOOL(bval);
@@ -956,35 +956,35 @@ algorithm
         Values.BOOL(false);
 
     case ("updateInitialState",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(_), Values.CODE(Absyn.C_EXPRESSION(_))})
-      equation
-        false = Interactive.existClass(classpath, SymbolTable.getAbsyn());
-        str = AbsynUtil.pathString(classpath);
+      algorithm
+        false := Interactive.existClass(classpath, SymbolTable.getAbsyn());
+        str := AbsynUtil.pathString(classpath);
         Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
       then
         Values.BOOL(false);
 
     case ("updateInitialState",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(_),
                                 Values.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(eqMod=Absyn.NOMOD())))})
-      equation
-        false = Interactive.existClass(classpath, SymbolTable.getAbsyn());
-        str = AbsynUtil.pathString(classpath);
+      algorithm
+        false := Interactive.existClass(classpath, SymbolTable.getAbsyn());
+        str := AbsynUtil.pathString(classpath);
         Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
       then
         Values.BOOL(false);
 
     case ("updateInitialState",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str1), Values.CODE(Absyn.C_EXPRESSION(aexp))})
-      equation
-        (bval, p) = deleteInitialState(classpath, str1, SymbolTable.getAbsyn());
-        (bval, p) = addInitialState(classpath, str1, Absyn.NAMEDARG("annotate",aexp)::{}, p);
+      algorithm
+        (bval, p) := deleteInitialState(classpath, str1, SymbolTable.getAbsyn());
+        (bval, p) := addInitialState(classpath, str1, Absyn.NAMEDARG("annotate",aexp)::{}, p);
         SymbolTable.setAbsyn(p);
       then
         Values.BOOL(bval);
 
     case ("updateInitialState",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str1),
                                 Values.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(elementArgLst=eltargs,eqMod=Absyn.NOMOD())))})
-      equation
-        (bval, p) = deleteInitialState(classpath, str1, SymbolTable.getAbsyn());
-        (bval, p) = addInitialStateWithAnnotation(classpath, str1, Absyn.ANNOTATION(eltargs), p);
+      algorithm
+        (bval, p) := deleteInitialState(classpath, str1, SymbolTable.getAbsyn());
+        (bval, p) := addInitialStateWithAnnotation(classpath, str1, Absyn.ANNOTATION(eltargs), p);
         SymbolTable.setAbsyn(p);
       then
         Values.BOOL(bval);
@@ -1100,8 +1100,8 @@ algorithm
 
     // exportToFigaro cases added by Alexander Carlqvist
     case ("exportToFigaro", {Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(s1), Values.STRING(str), Values.STRING(str1), Values.STRING(str2), Values.STRING(str3)})
-      equation
-        sp = SymbolTable.getSCode();
+      algorithm
+        sp := SymbolTable.getSCode();
         /* The following line of code should be commented out when building from trunk.
         Uncomment when bootstrapping. */
         Figaro.run(sp, path, s1, str, str1, str2, str3);
@@ -1111,42 +1111,42 @@ algorithm
     case ("exportToFigaro", _) then Values.BOOL(false);
 
     case ("inferBindings", {Values.CODE(Absyn.C_TYPENAME(classpath))})
-       equation
-        pnew = Binding.inferBindings(classpath, SymbolTable.getAbsyn());
+       algorithm
+        pnew := Binding.inferBindings(classpath, SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(pnew);
       then
          Values.BOOL(true);
 
     case ("inferBindings", _)
-      equation
+      algorithm
         print("failed inferBindings\n");
       then
         Values.BOOL(false);
 
      case ("generateVerificationScenarios", {Values.CODE(Absyn.C_TYPENAME(classpath))})
-       equation
-        pnew = Binding.generateVerificationScenarios(classpath, SymbolTable.getAbsyn());
+       algorithm
+        pnew := Binding.generateVerificationScenarios(classpath, SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(pnew);
       then
         Values.BOOL(true);
 
     case ("generateVerificationScenarios", _)
-      equation
+      algorithm
         print("failed to generateVerificationScenarios\n");
       then
         Values.BOOL(false);
 
     case ("rewriteBlockCall",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path))})
-      equation
-        p = SymbolTable.getAbsyn();
-        absynClass = InteractiveUtil.getPathedClassInProgram(path, p);
-        classes = {absynClass};
-        absynClass = InteractiveUtil.getPathedClassInProgram(classpath, p);
-        within_ = InteractiveUtil.buildWithin(classpath);
-        pnew = BlockCallRewrite.rewriteBlockCall(Absyn.PROGRAM({absynClass}, within_), Absyn.PROGRAM(classes, within_));
-        pnew = InteractiveUtil.updateProgram(pnew, p);
+      algorithm
+        p := SymbolTable.getAbsyn();
+        absynClass := InteractiveUtil.getPathedClassInProgram(path, p);
+        classes := {absynClass};
+        absynClass := InteractiveUtil.getPathedClassInProgram(classpath, p);
+        within_ := InteractiveUtil.buildWithin(classpath);
+        pnew := BlockCallRewrite.rewriteBlockCall(Absyn.PROGRAM({absynClass}, within_), Absyn.PROGRAM(classes, within_));
+        pnew := InteractiveUtil.updateProgram(pnew, p);
         SymbolTable.setAbsyn(pnew);
-        outCache = FCore.emptyCache();
+        outCache := FCore.emptyCache();
       then
         Values.BOOL(true);
 
@@ -1154,24 +1154,24 @@ algorithm
       then Values.BOOL(false);
 
     case ("jacobian",{Values.CODE(Absyn.C_TYPENAME(path))})
-      equation
-        (outCache, env, SOME(dae), _) = runFrontEnd(outCache, inEnv, path, true, transform = true);
-        filenameprefix = AbsynUtil.pathString(path);
-        description = DAEUtil.daeDescription(dae);
-        daelow = BackendDAECreate.lower(dae,outCache,env,BackendDAE.EXTRA_INFO(description,filenameprefix,NONE()));
-        (BackendDAE.DAE({syst},shared)) = BackendDAEUtil.preOptimizeBackendDAE(daelow,NONE());
-        (syst,m,_) = BackendDAEUtil.getAdjacencyMatrixfromOption(syst,BackendDAE.NORMAL(),NONE(),BackendDAEUtil.isInitializationDAE(shared));
-        vars = BackendVariable.daeVars(syst);
-        eqnarr = BackendEquation.getEqnsFromEqSystem(syst);
-        (jac, _) = SymbolicJacobian.calculateJacobian(vars, eqnarr, m, false,shared);
-        res = BackendDump.dumpJacobianStr(jac);
+      algorithm
+        (outCache, env, SOME(dae), _) := runFrontEnd(outCache, inEnv, path, true, transform = true);
+        filenameprefix := AbsynUtil.pathString(path);
+        description := DAEUtil.daeDescription(dae);
+        daelow := BackendDAECreate.lower(dae,outCache,env,BackendDAE.EXTRA_INFO(description,filenameprefix,NONE()));
+        (BackendDAE.DAE({syst},shared)) := BackendDAEUtil.preOptimizeBackendDAE(daelow,NONE());
+        (syst,m,_) := BackendDAEUtil.getAdjacencyMatrixfromOption(syst,BackendDAE.NORMAL(),NONE(),BackendDAEUtil.isInitializationDAE(shared));
+        vars := BackendVariable.daeVars(syst);
+        eqnarr := BackendEquation.getEqnsFromEqSystem(syst);
+        (jac, _) := SymbolicJacobian.calculateJacobian(vars, eqnarr, m, false,shared);
+        res := BackendDump.dumpJacobianStr(jac);
       then
         Values.STRING(res);
 
     case ("translateModel",vals as {Values.CODE(Absyn.C_TYPENAME(className)),_,_,_,_,_,Values.STRING(filenameprefix),_,_,_,_,_})
-      equation
-        (outCache,simSettings) = calculateSimulationSettings(outCache, vals);
-        (b,outCache) = translateModel(outCache, inEnv, className, filenameprefix, true, true, SOME(simSettings));
+      algorithm
+        (outCache,simSettings) := calculateSimulationSettings(outCache, vals);
+        (b,outCache) := translateModel(outCache, inEnv, className, filenameprefix, true, true, SOME(simSettings));
       then
         Values.BOOL(b);
 
@@ -1179,8 +1179,8 @@ algorithm
       then Values.BOOL(false);
 
     case ("modelEquationsUC",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(outputFile),Values.BOOL(dumpExtractionSteps)})
-      equation
-        (outCache, ret_val) = Uncertainties.modelEquationsUC(outCache, inEnv, className, outputFile,dumpExtractionSteps);
+      algorithm
+        (outCache, ret_val) := Uncertainties.modelEquationsUC(outCache, inEnv, className, outputFile,dumpExtractionSteps);
       then
         ret_val;
 
@@ -1216,29 +1216,29 @@ algorithm
       then Values.BOOL(false);
 
     case ("translateModelXML",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)})
-      equation
-        filenameprefix = Util.stringReplaceChar(filenameprefix,".","_");
-        (outCache, ret_val) = translateModelXML(outCache, inEnv, className, filenameprefix, true, NONE());
+      algorithm
+        filenameprefix := Util.stringReplaceChar(filenameprefix,".","_");
+        (outCache, ret_val) := translateModelXML(outCache, inEnv, className, filenameprefix, true, NONE());
       then
         ret_val;
 
     case ("exportDAEtoMatlab",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)})
-      equation
-        (outCache, ret_val, _) = getAdjacencyMatrix(outCache, inEnv, className, msg, filenameprefix);
+      algorithm
+        (outCache, ret_val, _) := getAdjacencyMatrix(outCache, inEnv, className, msg, filenameprefix);
       then
         ret_val;
 
     case ("checkModel",{Values.CODE(Absyn.C_TYPENAME(className))})
-      equation
+      algorithm
         FlagsUtil.setConfigBool(Flags.CHECK_MODEL, true);
-        (outCache, ret_val) = checkModel(outCache, inEnv, className, msg);
+        (outCache, ret_val) := checkModel(outCache, inEnv, className, msg);
         FlagsUtil.setConfigBool(Flags.CHECK_MODEL, false);
       then
         ret_val;
 
     case ("checkAllModelsRecursive",{Values.CODE(Absyn.C_TYPENAME(className)),Values.BOOL(showProtected)})
-      equation
-        (outCache, ret_val) = checkAllModelsRecursive(outCache, inEnv, className, showProtected, msg);
+      algorithm
+        (outCache, ret_val) := checkAllModelsRecursive(outCache, inEnv, className, showProtected, msg);
       then
         ret_val;
 
@@ -1252,8 +1252,8 @@ algorithm
         ValuesUtil.makeArray(List.fold(p.classes,makeLoadLibrariesEntryAbsyn,{}));
 
     case ("OpenModelica_uriToFilename",{Values.STRING(s1)})
-      equation
-        res = OpenModelica.Scripting.uriToFilename(s1);
+      algorithm
+        res := OpenModelica.Scripting.uriToFilename(s1);
         if Flags.getConfigBool(Flags.BUILDING_FMU) then
           print("The following path is a loaded resource... "+res+"\n");
           fail();
@@ -1267,44 +1267,44 @@ algorithm
       then Values.STRING("");
 
     case ("getAnnotationVersion",{})
-      equation
-        res = Config.getAnnotationVersion();
+      algorithm
+        res := Config.getAnnotationVersion();
       then
         Values.STRING(res);
 
     case ("getNoSimplify",{})
-      equation
-        b = Config.getNoSimplify();
+      algorithm
+        b := Config.getNoSimplify();
       then
         Values.BOOL(b);
 
     case ("setNoSimplify",{Values.BOOL(b)})
-      equation
+      algorithm
         Config.setNoSimplify(b);
       then
         Values.BOOL(true);
 
     case ("getShowAnnotations",{})
-      equation
-        b = Config.showAnnotations();
+      algorithm
+        b := Config.showAnnotations();
       then
         Values.BOOL(b);
 
     case ("setShowAnnotations",{Values.BOOL(b)})
-      equation
+      algorithm
         Config.setShowAnnotations(b);
       then
         Values.BOOL(true);
 
     case ("getVectorizationLimit",{})
-      equation
-        i = Config.vectorizationLimit();
+      algorithm
+        i := Config.vectorizationLimit();
       then
         Values.INTEGER(i);
 
     case ("getOrderConnections",{})
-      equation
-        b = Config.orderConnections();
+      algorithm
+        b := Config.orderConnections();
       then
         Values.BOOL(b);
 
@@ -1337,17 +1337,17 @@ algorithm
       then ValuesUtil.makeArray({Values.STRING(""),Values.STRING("")});
 
     case ("buildLabel",vals)
-      equation
+      algorithm
         FlagsUtil.setConfigBool(Flags.GENERATE_LABELED_SIMCODE, true);
         //FlagsUtil.set(Flags.WRITE_TO_BUFFER,true);
         List.map_0(ClockIndexes.buildModelClocks,System.realtimeClear);
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
-        (b,outCache,_,executable,_,_,initfilename,_,_,vals,_) = buildModel(outCache,inEnv, vals, msg);
+        (b,outCache,_,executable,_,_,initfilename,_,_,vals,_) := buildModel(outCache,inEnv, vals, msg);
       then
         ValuesUtil.makeArray(if b then {Values.STRING(executable),Values.STRING(initfilename)} else {Values.STRING(""),Values.STRING("")});
 
      case ("reduceTerms",vals)
-      equation
+      algorithm
         FlagsUtil.setConfigBool(Flags.REDUCE_TERMS, true);
         // FlagsUtil.setConfigBool(Flags.DISABLE_EXTRA_LABELING, true);
         FlagsUtil.setConfigBool(Flags.GENERATE_LABELED_SIMCODE, false);
@@ -1358,19 +1358,19 @@ algorithm
         if listLength(vals)<>13 then
           Error.addInternalError("reduceTerms expected 13 arguments", sourceInfo());
         end if;
-        _ =listGet(vals,13);
-        vals=listDelete(vals,13);
+        _ :=listGet(vals,13);
+        vals:=listDelete(vals,13);
         /* labelstoCancel; doesn't do anything */
 
-        (b,outCache,_,executable,_,_,initfilename,_,_,_) = buildModel(outCache,inEnv, vals, msg);
+        (b,outCache,_,executable,_,_,initfilename,_,_,_) := buildModel(outCache,inEnv, vals, msg);
       then
         ValuesUtil.makeArray(if b then {Values.STRING(executable),Values.STRING(initfilename)} else {Values.STRING(""),Values.STRING("")});
 
     // adrpo: see if the model exists before simulation!
     case ("simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
-      equation
-        false = Interactive.existClass(className, SymbolTable.getAbsyn());
-        errMsg = "Simulation Failed. Model: " + AbsynUtil.pathString(className) + " does not exist! Please load it first before simulation.";
+      algorithm
+        false := Interactive.existClass(className, SymbolTable.getAbsyn());
+        errMsg := "Simulation Failed. Model: " + AbsynUtil.pathString(className) + " does not exist! Please load it first before simulation.";
       then
         createSimulationResultFailure(errMsg, simOptionsAsString(vals));
 
@@ -1442,16 +1442,16 @@ algorithm
         simValue;
 
     case ("simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
-      equation
+      algorithm
         Settings.getInstallationDirectoryPath() "simulation fail for some other reason than OPENMODELICAHOME not being set." ;
-        str = AbsynUtil.pathString(className);
-        res = "Failed to build model: " + str;
+        str := AbsynUtil.pathString(className);
+        res := "Failed to build model: " + str;
       then
         createSimulationResultFailure(res, simOptionsAsString(vals));
 
     case ("simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
-      equation
-        str = AbsynUtil.pathString(className);
+      algorithm
+        str := AbsynUtil.pathString(className);
       then
         createSimulationResultFailure(
           "Simulation failed for model: " + str +
@@ -1487,10 +1487,10 @@ algorithm
     case ("moveClassToBottom", _) then Values.BOOL(false);
 
     case ("copyClass",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(name), Values.CODE(Absyn.C_TYPENAME(path))})
-      equation
-        p = SymbolTable.getAbsyn();
-        absynClass = InteractiveUtil.getPathedClassInProgram(classpath, p);
-        p = copyClass(absynClass, name, InteractiveUtil.parseWithinPath(path), classpath, p);
+      algorithm
+        p := SymbolTable.getAbsyn();
+        absynClass := InteractiveUtil.getPathedClassInProgram(classpath, p);
+        p := copyClass(absynClass, name, InteractiveUtil.parseWithinPath(path), classpath, p);
         SymbolTable.setAbsyn(p);
       then
         Values.BOOL(true);
@@ -1499,39 +1499,39 @@ algorithm
 
     // see if the model exists before linearization!
     case ("linearize",vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
-      equation
-        false = Interactive.existClass(className, SymbolTable.getAbsyn());
-        errMsg = "Linearization Failed. Model: " + AbsynUtil.pathString(className) + " does not exist! Please load it first before linearization.";
+      algorithm
+        false := Interactive.existClass(className, SymbolTable.getAbsyn());
+        errMsg := "Linearization Failed. Model: " + AbsynUtil.pathString(className) + " does not exist! Please load it first before linearization.";
       then
         createSimulationResultFailure(errMsg, simOptionsAsString(vals));
 
     case ("linearize",(vals as Values.CODE(Absyn.C_TYPENAME(className))::_))
-      equation
+      algorithm
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
         // Ensure that the linearization dump language is set to modelica if it is none
-        str = Flags.getConfigString(Flags.LINEARIZATION_DUMP_LANGUAGE);
+        str := Flags.getConfigString(Flags.LINEARIZATION_DUMP_LANGUAGE);
         if (stringEq(str,"none")) then
           FlagsUtil.setConfigString(Flags.LINEARIZATION_DUMP_LANGUAGE, "modelica");
         end if;
 
-        (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,dirs) = buildModel(outCache,inEnv,vals,msg);
+        (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,dirs) := buildModel(outCache,inEnv,vals,msg);
         if b then
-          Values.REAL(linearizeTime) = getListNthShowError(vals,"try to get stop time",0,2);
-          executableSuffixedExe = stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
-          logFile = stringAppend(executable,".log");
+          Values.REAL(linearizeTime) := getListNthShowError(vals,"try to get stop time",0,2);
+          executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
+          logFile := stringAppend(executable,".log");
           if System.regularFileExists(logFile) then
-            0 = System.removeFile(logFile);
+            0 := System.removeFile(logFile);
           end if;
-          strlinearizeTime = realString(linearizeTime);
-          sim_call = stringAppendList({"\"",compileDir,executableSuffixedExe,"\""," ","-l=",strlinearizeTime," ",simflags});
+          strlinearizeTime := realString(linearizeTime);
+          sim_call := stringAppendList({"\"",compileDir,executableSuffixedExe,"\""," ","-l=",strlinearizeTime," ",simflags});
           System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
           SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
 
           if 0 == System.systemCallRestrictedEnv(sim_call, logFile) then
-            result_file = stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
-            timeSimulation = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
-            timeTotal = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
-            simValue = createSimulationResult(
+            result_file := stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
+            timeSimulation := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
+            timeTotal := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
+            simValue := createSimulationResult(
                result_file,
                simOptionsAsString(vals),
                System.readFile(logFile),
@@ -1542,13 +1542,13 @@ algorithm
               DAE.CREF_IDENT("currentSimulationResult", DAE.T_STRING_DEFAULT, {}),
               Values.STRING(result_file), FGraph.empty());
           else
-            res = "Succeeding building the linearized executable, but failed to run the linearize command: " + sim_call + "\n" + System.readFile(logFile);
-            simValue = createSimulationResultFailure(res, simOptionsAsString(vals));
+            res := "Succeeding building the linearized executable, but failed to run the linearize command: " + sim_call + "\n" + System.readFile(logFile);
+            simValue := createSimulationResultFailure(res, simOptionsAsString(vals));
           end if;
         else
-          timeSimulation = 0.0;
-          timeTotal = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
-          simValue = createSimulationResult(
+          timeSimulation := 0.0;
+          timeTotal := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
+          simValue := createSimulationResult(
                "",
                simOptionsAsString(vals),
                "Failed to run the linearize command: " + AbsynUtil.pathString(className),
@@ -1560,53 +1560,53 @@ algorithm
         simValue;
 
     case ("linearize",vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
-      equation
-        str = AbsynUtil.pathString(className);
-        res = "Failed to run the linearize command: " + str;
+      algorithm
+        str := AbsynUtil.pathString(className);
+        res := "Failed to run the linearize command: " + str;
       then
         createSimulationResultFailure(res, simOptionsAsString(vals));
 
     case ("optimize",(vals as Values.CODE(Absyn.C_TYPENAME(className))::_))
-      equation
+      algorithm
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
 
         FlagsUtil.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION,true);
         FlagsUtil.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
         FlagsUtil.setConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM,true);
 
-        (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,dirs) = buildModel(outCache,inEnv,vals,msg);
+        (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,dirs) := buildModel(outCache,inEnv,vals,msg);
         if b then
-          exeDir=compileDir;
-          (outCache,simSettings) = calculateSimulationSettings(outCache, vals);
-          SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str) = simSettings;
-          result_file = stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
-          executableSuffixedExe = stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
-          logFile = stringAppend(executable,".log");
+          exeDir:=compileDir;
+          (outCache,simSettings) := calculateSimulationSettings(outCache, vals);
+          SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str) := simSettings;
+          result_file := stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
+          executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
+          logFile := stringAppend(executable,".log");
           // adrpo: log file is deleted by buildModel! do NOT DELTE IT AGAIN!
           // we should really have different log files for simulation/compilation!
           // as the buildModel log file will be deleted here and that gives less information to the user!
           if System.regularFileExists(logFile) then
-            0 = System.removeFile(logFile);
+            0 := System.removeFile(logFile);
           end if;
-          sim_call = stringAppendList({"\"",exeDir,executableSuffixedExe,"\""," ",simflags});
+          sim_call := stringAppendList({"\"",exeDir,executableSuffixedExe,"\""," ",simflags});
           System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
           SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
-          resI = System.systemCallRestrictedEnv(sim_call, logFile);
-          timeSimulation = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
+          resI := System.systemCallRestrictedEnv(sim_call, logFile);
+          timeSimulation := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
         else
-          result_file = "";
-          timeSimulation = 0.0;
-          resI = 1;
+          result_file := "";
+          timeSimulation := 0.0;
+          resI := 1;
         end if;
-        timeTotal = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
-        (outCache,simValue) = createSimulationResultFromcallModelExecutable(b,resI,timeTotal,timeSimulation,resultValues,outCache,className,vals,result_file,logFile);
+        timeTotal := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
+        (outCache,simValue) := createSimulationResultFromcallModelExecutable(b,resI,timeTotal,timeSimulation,resultValues,outCache,className,vals,result_file,logFile);
       then
         simValue;
 
     case ("optimize",vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
-      equation
-        str = AbsynUtil.pathString(className);
-        res = "Failed to run the optimize command: " + str;
+      algorithm
+        str := AbsynUtil.pathString(className);
+        res := "Failed to run the optimize command: " + str;
       then
         createSimulationResultFailure(res, simOptionsAsString(vals));
 
@@ -1617,70 +1617,70 @@ algorithm
         ret_val;
 
     case ("moo",(vals as Values.CODE(Absyn.C_TYPENAME(className))::_))
-      equation
+      algorithm
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
 
         FlagsUtil.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION,true);
         FlagsUtil.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
         FlagsUtil.setConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM,true);
 
-        (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,dirs) = buildModel(outCache,inEnv,vals,msg);
-        simflags = stringAppend(simflags, " -moo");
+        (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,dirs) := buildModel(outCache,inEnv,vals,msg);
+        simflags := stringAppend(simflags, " -moo");
         if b then
-          exeDir=compileDir;
-          (outCache,simSettings) = calculateSimulationSettings(outCache, vals);
-          SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str) = simSettings;
-          result_file = stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
-          executableSuffixedExe = stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
-          logFile = stringAppend(executable,".log");
+          exeDir:=compileDir;
+          (outCache,simSettings) := calculateSimulationSettings(outCache, vals);
+          SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str) := simSettings;
+          result_file := stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
+          executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
+          logFile := stringAppend(executable,".log");
           // adrpo: log file is deleted by buildModel! do NOT DELTE IT AGAIN!
           // we should really have different log files for simulation/compilation!
           // as the buildModel log file will be deleted here and that gives less information to the user!
           if System.regularFileExists(logFile) then
-            0 = System.removeFile(logFile);
+            0 := System.removeFile(logFile);
           end if;
-          sim_call = stringAppendList({"\"",exeDir,executableSuffixedExe,"\""," ",simflags});
+          sim_call := stringAppendList({"\"",exeDir,executableSuffixedExe,"\""," ",simflags});
           System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
           SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
-          resI = System.systemCallRestrictedEnv(sim_call, logFile);
-          timeSimulation = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
+          resI := System.systemCallRestrictedEnv(sim_call, logFile);
+          timeSimulation := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
         else
-          result_file = "";
-          timeSimulation = 0.0;
-          resI = 1;
+          result_file := "";
+          timeSimulation := 0.0;
+          resI := 1;
         end if;
-        timeTotal = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
-        (outCache,simValue) = createSimulationResultFromcallModelExecutable(b,resI,timeTotal,timeSimulation,resultValues,outCache,className,vals,result_file,logFile);
+        timeTotal := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
+        (outCache,simValue) := createSimulationResultFromcallModelExecutable(b,resI,timeTotal,timeSimulation,resultValues,outCache,className,vals,result_file,logFile);
       then
         simValue;
 
     case ("moo",vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
-      equation
-        str = AbsynUtil.pathString(className);
-        res = "Failed to run the moo command: " + str;
+      algorithm
+        str := AbsynUtil.pathString(className);
+        res := "Failed to run the moo command: " + str;
       then
         createSimulationResultFailure(res, simOptionsAsString(vals));
 
     case ("importFMU",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel),Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(inputConnectors), Values.BOOL(outputConnectors), Values.CODE(Absyn.C_TYPENAME(classpath))})
-      equation
+      algorithm
         Error.clearMessages() "Clear messages";
-        true = System.regularFileExists(filename);
-        workdir = if System.directoryExists(workdir) then workdir else System.pwd();
+        true := System.regularFileExists(filename);
+        workdir := if System.directoryExists(workdir) then workdir else System.pwd();
         /* Initialize FMI objects */
-        (b, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList) = FMIExt.initializeFMIImport(filename, workdir, fmiLogLevel, inputConnectors, outputConnectors);
-        true = b; /* if something goes wrong while initializing */
-        fmiTypeDefinitionsList = listReverse(fmiTypeDefinitionsList);
-        fmiModelVariablesList = listReverse(fmiModelVariablesList);
-        s1 = System.tolower(Autoconf.platform);
-        name = AbsynUtil.pathString(classpath);
-        name = if stringEq(name, "Default") or stringEq(name, "default") then "" else name;
-        str = Tpl.tplString2(CodegenFMU.importFMUModelica, FMI.FMIIMPORT(s1, filename, workdir, fmiLogLevel, b2, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList, inputConnectors, outputConnectors), name);
-        pd = Autoconf.pathDelimiter;
-        str1 = FMI.getFMIModelIdentifier(fmiInfo);
-        str2 = FMI.getFMIType(fmiInfo);
-        str3 = FMI.getFMIVersion(fmiInfo);
-        outputFile = if stringEmpty(name) then stringAppendList({str1,"_",str2,"_FMU.mo"}) else stringAppendList({name,".mo"});
-        filename_1 = if b1 then stringAppendList({workdir,pd,outputFile}) else outputFile;
+        (b, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList) := FMIExt.initializeFMIImport(filename, workdir, fmiLogLevel, inputConnectors, outputConnectors);
+        true := b; /* if something goes wrong while initializing */
+        fmiTypeDefinitionsList := listReverse(fmiTypeDefinitionsList);
+        fmiModelVariablesList := listReverse(fmiModelVariablesList);
+        s1 := System.tolower(Autoconf.platform);
+        name := AbsynUtil.pathString(classpath);
+        name := if stringEq(name, "Default") or stringEq(name, "default") then "" else name;
+        str := Tpl.tplString2(CodegenFMU.importFMUModelica, FMI.FMIIMPORT(s1, filename, workdir, fmiLogLevel, b2, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList, inputConnectors, outputConnectors), name);
+        pd := Autoconf.pathDelimiter;
+        str1 := FMI.getFMIModelIdentifier(fmiInfo);
+        str2 := FMI.getFMIType(fmiInfo);
+        str3 := FMI.getFMIVersion(fmiInfo);
+        outputFile := if stringEmpty(name) then stringAppendList({str1,"_",str2,"_FMU.mo"}) else stringAppendList({name,".mo"});
+        filename_1 := if b1 then stringAppendList({workdir,pd,outputFile}) else outputFile;
         System.writeFile(stringAppendList({workdir,pd,outputFile}), str);
         /* Release FMI objects */
         FMIExt.releaseFMIImport(fmiModelVariablesInstance, fmiInstance, fmiContext, str3);
@@ -1688,8 +1688,8 @@ algorithm
         Values.STRING(filename_1);
 
     case ("importFMU",{Values.STRING(filename),Values.STRING(_),Values.INTEGER(_),Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.CODE(_)})
-      equation
-        false = System.regularFileExists(filename);
+      algorithm
+        false := System.regularFileExists(filename);
         Error.clearMessages() "Clear messages";
         Error.addMessage(Error.FILE_NOT_FOUND_ERROR, {filename});
       then
@@ -1700,30 +1700,30 @@ algorithm
         Values.STRING("");
 
     case ("importFMUModelDescription",{Values.STRING(filename), Values.STRING(workdir),Values.INTEGER(fmiLogLevel),Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(inputConnectors), Values.BOOL(outputConnectors)})
-      equation
+      algorithm
         Error.clearMessages() "Clear messages";
-        true = System.regularFileExists(filename);
-        workdir = if System.directoryExists(workdir) then workdir else System.pwd();
+        true := System.regularFileExists(filename);
+        workdir := if System.directoryExists(workdir) then workdir else System.pwd();
         // create a temporary directory
-        tmpDir = System.createTemporaryDirectory(Settings.getTempDirectoryPath() + "/" + "fmuTmp" + intString(System.intRand(1000)));
-        tmpFile = tmpDir + "/" + "modelDescription.xml";
+        tmpDir := System.createTemporaryDirectory(Settings.getTempDirectoryPath() + "/" + "fmuTmp" + intString(System.intRand(1000)));
+        tmpFile := tmpDir + "/" + "modelDescription.xml";
         System.systemCall("cp -f " + filename + " " + tmpFile);
-        modeldescriptionfilename = tmpDir + "/modelDescription.fmu";
+        modeldescriptionfilename := tmpDir + "/modelDescription.fmu";
         System.systemCall("zip -j " +  modeldescriptionfilename + " " + tmpFile);
-        true = System.regularFileExists(modeldescriptionfilename);
+        true := System.regularFileExists(modeldescriptionfilename);
         /* Initialize FMI objects */
-        (b, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList) =
+        (b, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList) :=
           FMIExt.initializeFMIImport(modeldescriptionfilename, tmpDir, fmiLogLevel, inputConnectors, outputConnectors, true);
-        true = b; /* if something goes wrong while initializing */
-        fmiTypeDefinitionsList = listReverse(fmiTypeDefinitionsList);
-        fmiModelVariablesList = listReverse(fmiModelVariablesList);
-        s1 = System.tolower(Autoconf.platform);
-        str = Tpl.tplString(CodegenFMU.importFMUModelDescription, FMI.FMIIMPORT(s1, modeldescriptionfilename, workdir, fmiLogLevel, b2, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList, inputConnectors, outputConnectors));
-        pd = Autoconf.pathDelimiter;
-        str1 = FMI.getFMIModelIdentifier(fmiInfo);
-        str3 = FMI.getFMIVersion(fmiInfo);
-        outputFile = stringAppendList({workdir,pd,str1,"_Input_Output_FMU.mo"});
-        filename_1 = if b1 then stringAppendList({workdir,pd,str1,"_Input_Output_FMU.mo"}) else stringAppendList({str1,"_Input_Output_FMU.mo"});
+        true := b; /* if something goes wrong while initializing */
+        fmiTypeDefinitionsList := listReverse(fmiTypeDefinitionsList);
+        fmiModelVariablesList := listReverse(fmiModelVariablesList);
+        s1 := System.tolower(Autoconf.platform);
+        str := Tpl.tplString(CodegenFMU.importFMUModelDescription, FMI.FMIIMPORT(s1, modeldescriptionfilename, workdir, fmiLogLevel, b2, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList, inputConnectors, outputConnectors));
+        pd := Autoconf.pathDelimiter;
+        str1 := FMI.getFMIModelIdentifier(fmiInfo);
+        str3 := FMI.getFMIVersion(fmiInfo);
+        outputFile := stringAppendList({workdir,pd,str1,"_Input_Output_FMU.mo"});
+        filename_1 := if b1 then stringAppendList({workdir,pd,str1,"_Input_Output_FMU.mo"}) else stringAppendList({str1,"_Input_Output_FMU.mo"});
         System.writeFile(outputFile, str);
         /* Release FMI objects */
         FMIExt.releaseFMIImport(fmiModelVariablesInstance, fmiInstance, fmiContext, str3);
@@ -1732,7 +1732,7 @@ algorithm
         Values.STRING(filename_1);
 
     case ("importFMUModelDescription",{Values.STRING(filename),Values.STRING(_),Values.INTEGER(_),Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.BOOL(_)})
-      equation
+      algorithm
         if not System.regularFileExists(filename) then
           Error.addMessage(Error.FILE_NOT_FOUND_ERROR, {filename});
         end if;
@@ -1744,16 +1744,16 @@ algorithm
         Values.STRING("");
 
     case ("getIndexReductionMethod",_)
-      equation
-        str = Config.getIndexReductionMethod();
+      algorithm
+        str := Config.getIndexReductionMethod();
       then
         Values.STRING(str);
 
     case ("getAvailableIndexReductionMethods",_)
-      equation
-        (strs1,strs2) = FlagsUtil.getConfigOptionsStringList(Flags.INDEX_REDUCTION_METHOD);
-        v1 = ValuesUtil.makeArray(List.map(strs1, ValuesUtil.makeString));
-        v2 = ValuesUtil.makeArray(List.map(strs2, ValuesUtil.makeString));
+      algorithm
+        (strs1,strs2) := FlagsUtil.getConfigOptionsStringList(Flags.INDEX_REDUCTION_METHOD);
+        v1 := ValuesUtil.makeArray(List.map(strs1, ValuesUtil.makeString));
+        v2 := ValuesUtil.makeArray(List.map(strs2, ValuesUtil.makeString));
       then
         Values.TUPLE({v1,v2});
 
@@ -1818,10 +1818,10 @@ algorithm
       Absyn.Modification mod;
 
     case ("getAvailableIndexReductionMethods",_)
-      equation
-        (strs1,strs2) = FlagsUtil.getConfigOptionsStringList(Flags.INDEX_REDUCTION_METHOD);
-        v1 = ValuesUtil.makeArray(List.map(strs1, ValuesUtil.makeString));
-        v2 = ValuesUtil.makeArray(List.map(strs2, ValuesUtil.makeString));
+      algorithm
+        (strs1,strs2) := FlagsUtil.getConfigOptionsStringList(Flags.INDEX_REDUCTION_METHOD);
+        v1 := ValuesUtil.makeArray(List.map(strs1, ValuesUtil.makeString));
+        v2 := ValuesUtil.makeArray(List.map(strs2, ValuesUtil.makeString));
       then
         Values.TUPLE({v1,v2});
 
@@ -1829,10 +1829,10 @@ algorithm
       then Values.STRING(Config.getMatchingAlgorithm());
 
     case ("getAvailableMatchingAlgorithms",_)
-      equation
-        (strs1,strs2) = FlagsUtil.getConfigOptionsStringList(Flags.MATCHING_ALGORITHM);
-        v1 = ValuesUtil.makeArray(List.map(strs1, ValuesUtil.makeString));
-        v2 = ValuesUtil.makeArray(List.map(strs2, ValuesUtil.makeString));
+      algorithm
+        (strs1,strs2) := FlagsUtil.getConfigOptionsStringList(Flags.MATCHING_ALGORITHM);
+        v1 := ValuesUtil.makeArray(List.map(strs1, ValuesUtil.makeString));
+        v2 := ValuesUtil.makeArray(List.map(strs2, ValuesUtil.makeString));
       then
         Values.TUPLE({v1,v2});
 
@@ -1840,10 +1840,10 @@ algorithm
       then Values.STRING(Config.getTearingMethod());
 
     case ("getAvailableTearingMethods",_)
-      equation
-        (strs1,strs2) = FlagsUtil.getConfigOptionsStringList(Flags.TEARING_METHOD);
-        v1 = ValuesUtil.makeArray(List.map(strs1, ValuesUtil.makeString));
-        v2 = ValuesUtil.makeArray(List.map(strs2, ValuesUtil.makeString));
+      algorithm
+        (strs1,strs2) := FlagsUtil.getConfigOptionsStringList(Flags.TEARING_METHOD);
+        v1 := ValuesUtil.makeArray(List.map(strs1, ValuesUtil.makeString));
+        v2 := ValuesUtil.makeArray(List.map(strs2, ValuesUtil.makeString));
       then
         Values.TUPLE({v1,v2});
 
@@ -1868,16 +1868,16 @@ algorithm
         Values.BOOL(b);
 
     case ("save",{Values.CODE(Absyn.C_TYPENAME(classpath))})
-      equation
-        access = Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
+      algorithm
+        access := Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
         if access >= Access.all then // i.e., The class is not encrypted.
-          (newp,filename) = Interactive.getContainedClassAndFile(classpath, SymbolTable.getAbsyn());
-          str = Dump.unparseStr(newp);
+          (newp,filename) := Interactive.getContainedClassAndFile(classpath, SymbolTable.getAbsyn());
+          str := Dump.unparseStr(newp);
           System.writeFile(filename, str);
-          b = true;
+          b := true;
         else
           Error.addMessage(Error.SAVE_ENCRYPTED_CLASS_ERROR, {});
-          b = false;
+          b := false;
         end if;
       then
         Values.BOOL(b);
@@ -1886,29 +1886,29 @@ algorithm
       then Values.BOOL(false);
 
     case ("saveAll",{Values.STRING(filename)})
-      equation
-        str = Dump.unparseStr(SymbolTable.getAbsyn(),true);
+      algorithm
+        str := Dump.unparseStr(SymbolTable.getAbsyn(),true);
         System.writeFile(filename, str);
       then
         Values.BOOL(true);
 
     case ("saveModel",{Values.STRING(_),Values.CODE(Absyn.C_TYPENAME(classpath))})
-      equation
-        cname = AbsynUtil.pathString(classpath);
+      algorithm
+        cname := AbsynUtil.pathString(classpath);
         Error.addMessage(Error.LOOKUP_ERROR, {cname,"global"});
       then
         Values.BOOL(false);
 
     case ("getTotalModel",{Values.CODE(Absyn.C_TYPENAME(classpath)),
                            Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(b3)})
-      equation
-        access = Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
+      algorithm
+        access := Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
         if access >= Access.all then
-          s1 = getTotalModel(classpath, b1, b2, b3);
-          b = true;
+          s1 := getTotalModel(classpath, b1, b2, b3);
+          b := true;
         else
           Error.addMessage(Error.SAVE_ENCRYPTED_CLASS_ERROR, {});
-          b = false;
+          b := false;
         end if;
       then
         Values.STRING(s1);
@@ -1919,14 +1919,14 @@ algorithm
 
     case ("saveTotalModel",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath)),
                                     Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(b3)})
-      equation
-        access = Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
+      algorithm
+        access := Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
         if access >= Access.all then
           saveTotalModel(filename, classpath, b1, b2, b3);
-          b = true;
+          b := true;
         else
           Error.addMessage(Error.SAVE_ENCRYPTED_CLASS_ERROR, {});
-          b = false;
+          b := false;
         end if;
       then
         Values.BOOL(b);
@@ -1937,14 +1937,14 @@ algorithm
 
     case ("saveTotalModelDebug",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath)),
                                  Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(b3)})
-      equation
-        access = Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
+      algorithm
+        access := Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
         if access >= Access.all then // i.e., Access.documentation
           saveTotalModelDebug(filename, classpath, b1, b2, b3);
-          b = true;
+          b := true;
         else
           Error.addMessage(Error.SAVE_ENCRYPTED_CLASS_ERROR, {});
-          b = false;
+          b := false;
         end if;
       then
         Values.BOOL(b);
@@ -1953,20 +1953,20 @@ algorithm
       then Values.BOOL(false);
 
     case ("getDocumentationAnnotation",{Values.CODE(Absyn.C_TYPENAME(classpath))})
-      equation
-        access = Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
+      algorithm
+        access := Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
         if access >= Access.documentation then
-          ((str1,str2,str3)) = Interactive.getNamedAnnotationExp(classpath, SymbolTable.getAbsyn(), Absyn.IDENT("Documentation"), SOME(("","","")),Interactive.getDocumentationAnnotationString);
+          ((str1,str2,str3)) := Interactive.getNamedAnnotationExp(classpath, SymbolTable.getAbsyn(), Absyn.IDENT("Documentation"), SOME(("","","")),Interactive.getDocumentationAnnotationString);
         else
           Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
-          ((str1,str2,str3)) = ("", "", "");
+          ((str1,str2,str3)) := ("", "", "");
         end if;
       then
         ValuesUtil.makeArray({Values.STRING(str1),Values.STRING(str2),Values.STRING(str3)});
 
     case ("addClassAnnotation",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.CODE(Absyn.C_EXPRESSION(aexp))})
-      equation
-        p = Interactive.addClassAnnotation(AbsynUtil.pathToCref(classpath), Absyn.NAMEDARG("annotate",aexp)::{}, SymbolTable.getAbsyn());
+      algorithm
+        p := Interactive.addClassAnnotation(AbsynUtil.pathToCref(classpath), Absyn.NAMEDARG("annotate",aexp)::{}, SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(p);
       then
         Values.BOOL(true);
@@ -1985,12 +1985,12 @@ algorithm
       then Values.BOOL(false);
 
     case ("setDocumentationAnnotation",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(str1),Values.STRING(str2)})
-      equation
-        p = SymbolTable.getAbsyn();
-        nargs = List.consOnTrue(not stringEq(str1,""), Absyn.NAMEDARG("info",Absyn.STRING(System.escapedString(str1,false))), {});
-        nargs = List.consOnTrue(not stringEq(str2,""), Absyn.NAMEDARG("revisions",Absyn.STRING(System.escapedString(str2,false))), nargs);
-        aexp = Absyn.CALL(Absyn.CREF_IDENT("Documentation",{}),Absyn.FUNCTIONARGS({},nargs),{});
-        p = Interactive.addClassAnnotation(AbsynUtil.pathToCref(classpath), Absyn.NAMEDARG("annotate",aexp)::{}, p);
+      algorithm
+        p := SymbolTable.getAbsyn();
+        nargs := List.consOnTrue(not stringEq(str1,""), Absyn.NAMEDARG("info",Absyn.STRING(System.escapedString(str1,false))), {});
+        nargs := List.consOnTrue(not stringEq(str2,""), Absyn.NAMEDARG("revisions",Absyn.STRING(System.escapedString(str2,false))), nargs);
+        aexp := Absyn.CALL(Absyn.CREF_IDENT("Documentation",{}),Absyn.FUNCTIONARGS({},nargs),{});
+        p := Interactive.addClassAnnotation(AbsynUtil.pathToCref(classpath), Absyn.NAMEDARG("annotate",aexp)::{}, p);
         SymbolTable.setAbsyn(p);
       then
         Values.BOOL(true);
@@ -2017,111 +2017,111 @@ algorithm
       then Values.STRING(System.realpath(str));
 
     case ("isType",{Values.CODE(Absyn.C_TYPENAME(classpath))})
-      equation
-        b = Interactive.isType(classpath, SymbolTable.getAbsyn());
+      algorithm
+        b := Interactive.isType(classpath, SymbolTable.getAbsyn());
       then
         Values.BOOL(b);
 
     case ("isPackage",{Values.CODE(Absyn.C_TYPENAME(classpath))})
-      equation
-        b = Interactive.isPackage(classpath, SymbolTable.getAbsyn());
+      algorithm
+        b := Interactive.isPackage(classpath, SymbolTable.getAbsyn());
       then
         Values.BOOL(b);
 
     case ("isClass",{Values.CODE(Absyn.C_TYPENAME(classpath))})
-      equation
-        b = Interactive.isClass(classpath, SymbolTable.getAbsyn());
+      algorithm
+        b := Interactive.isClass(classpath, SymbolTable.getAbsyn());
       then
         Values.BOOL(b);
 
     case ("isRecord",{Values.CODE(Absyn.C_TYPENAME(classpath))})
-      equation
-        b = Interactive.isRecord(classpath, SymbolTable.getAbsyn());
+      algorithm
+        b := Interactive.isRecord(classpath, SymbolTable.getAbsyn());
       then
         Values.BOOL(b);
 
     case ("isBlock",{Values.CODE(Absyn.C_TYPENAME(classpath))})
-      equation
-        b = Interactive.isBlock(classpath, SymbolTable.getAbsyn());
+      algorithm
+        b := Interactive.isBlock(classpath, SymbolTable.getAbsyn());
       then
         Values.BOOL(b);
 
     case ("isFunction",{Values.CODE(Absyn.C_TYPENAME(classpath))})
-      equation
-        b = Interactive.isFunction(classpath, SymbolTable.getAbsyn());
+      algorithm
+        b := Interactive.isFunction(classpath, SymbolTable.getAbsyn());
       then
         Values.BOOL(b);
 
     case ("isPartial",{Values.CODE(Absyn.C_TYPENAME(classpath))})
-      equation
-        b = Interactive.isPartial(classpath, SymbolTable.getAbsyn());
+      algorithm
+        b := Interactive.isPartial(classpath, SymbolTable.getAbsyn());
       then
         Values.BOOL(b);
 
     case ("isReplaceable",{Values.CODE(Absyn.C_TYPENAME(path))})
-      equation
-        b = Interactive.isReplaceable(path, SymbolTable.getAbsyn());
+      algorithm
+        b := Interactive.isReplaceable(path, SymbolTable.getAbsyn());
       then
         Values.BOOL(b);
 
     case ("isRedeclare",{Values.CODE(Absyn.C_TYPENAME(path))})
-      equation
-        b = Interactive.isRedeclare(path, SymbolTable.getAbsyn());
+      algorithm
+        b := Interactive.isRedeclare(path, SymbolTable.getAbsyn());
       then
         Values.BOOL(b);
 
     case ("isModel",{Values.CODE(Absyn.C_TYPENAME(classpath))})
-      equation
-        b = Interactive.isModel(classpath, SymbolTable.getAbsyn());
+      algorithm
+        b := Interactive.isModel(classpath, SymbolTable.getAbsyn());
       then
         Values.BOOL(b);
 
     case ("isConnector",{Values.CODE(Absyn.C_TYPENAME(classpath))})
-      equation
-        b = Interactive.isConnector(classpath, SymbolTable.getAbsyn());
+      algorithm
+        b := Interactive.isConnector(classpath, SymbolTable.getAbsyn());
       then
         Values.BOOL(b);
 
     case ("isOptimization",{Values.CODE(Absyn.C_TYPENAME(classpath))})
-      equation
-        b = Interactive.isOptimization(classpath, SymbolTable.getAbsyn());
+      algorithm
+        b := Interactive.isOptimization(classpath, SymbolTable.getAbsyn());
       then
         Values.BOOL(b);
 
     case ("isEnumeration",{Values.CODE(Absyn.C_TYPENAME(classpath))})
-      equation
-        b = Interactive.isEnumeration(classpath, SymbolTable.getAbsyn());
+      algorithm
+        b := Interactive.isEnumeration(classpath, SymbolTable.getAbsyn());
       then
         Values.BOOL(b);
 
     case ("isOperator",{Values.CODE(Absyn.C_TYPENAME(classpath))})
-      equation
-        b = Interactive.isOperator(classpath, SymbolTable.getAbsyn());
+      algorithm
+        b := Interactive.isOperator(classpath, SymbolTable.getAbsyn());
       then
         Values.BOOL(b);
 
     case ("isOperatorRecord",{Values.CODE(Absyn.C_TYPENAME(classpath))})
-      equation
-        b = Interactive.isOperatorRecord(classpath, SymbolTable.getAbsyn());
+      algorithm
+        b := Interactive.isOperatorRecord(classpath, SymbolTable.getAbsyn());
       then
         Values.BOOL(b);
 
     case ("isOperatorFunction",{Values.CODE(Absyn.C_TYPENAME(classpath))})
-      equation
-        b = Interactive.isOperatorFunction(classpath, SymbolTable.getAbsyn());
+      algorithm
+        b := Interactive.isOperatorFunction(classpath, SymbolTable.getAbsyn());
       then
         Values.BOOL(b);
 
     case ("isProtectedClass",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(name)})
-      equation
-        b = Interactive.isProtectedClass(classpath, name, SymbolTable.getAbsyn());
+      algorithm
+        b := Interactive.isProtectedClass(classpath, name, SymbolTable.getAbsyn());
       then
         Values.BOOL(b);
 
     case ("getBuiltinType",{Values.CODE(Absyn.C_TYPENAME(classpath))})
-      equation
-        (_, tp, _) = Lookup.lookupType(outCache, inEnv, classpath, SOME(AbsynUtil.dummyInfo));
-        str = Types.unparseType(tp);
+      algorithm
+        (_, tp, _) := Lookup.lookupType(outCache, inEnv, classpath, SOME(AbsynUtil.dummyInfo));
+        str := Types.unparseType(tp);
       then
         Values.STRING(str);
 
@@ -2132,9 +2132,9 @@ algorithm
     case ("extendsFrom",
           {Values.CODE(Absyn.C_TYPENAME(classpath)),
            Values.CODE(Absyn.C_TYPENAME(baseClassPath))})
-      equation
-        paths = Interactive.getAllInheritedClasses(classpath, SymbolTable.getAbsyn());
-        b = List.applyAndFold1(paths, boolOr, AbsynUtil.pathSuffixOfr, baseClassPath, false);
+      algorithm
+        paths := Interactive.getAllInheritedClasses(classpath, SymbolTable.getAbsyn());
+        b := List.applyAndFold1(paths, boolOr, AbsynUtil.pathSuffixOfr, baseClassPath, false);
       then
         Values.BOOL(b);
 
@@ -2145,8 +2145,8 @@ algorithm
       then Values.BOOL(isExperiment(classpath, SymbolTable.getAbsyn()));
 
     case ("getInheritedClasses",{Values.CODE(Absyn.C_TYPENAME(classpath))})
-      equation
-        paths = Interactive.getInheritedClasses(classpath);
+      algorithm
+        paths := Interactive.getInheritedClasses(classpath);
       then
         ValuesUtil.makeCodeTypeNameArray(paths);
 
@@ -2154,32 +2154,32 @@ algorithm
       then ValuesUtil.makeArray({});
 
     case ("getComponentsTest",{Values.CODE(Absyn.C_TYPENAME(classpath))})
-      equation
-        absynClass = InteractiveUtil.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
-        genv = Interactive.getClassEnv(SymbolTable.getAbsyn(), classpath);
-        valsLst = list(getComponentInfo(c, genv, isProtected=false) for c in InteractiveUtil.getPublicComponentsInClass(absynClass));
-        valsLst = listAppend(list(getComponentInfo(c, genv, isProtected=true) for c in InteractiveUtil.getProtectedComponentsInClass(absynClass)), valsLst);
+      algorithm
+        absynClass := InteractiveUtil.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
+        genv := Interactive.getClassEnv(SymbolTable.getAbsyn(), classpath);
+        valsLst := list(getComponentInfo(c, genv, isProtected=false) for c in InteractiveUtil.getPublicComponentsInClass(absynClass));
+        valsLst := listAppend(list(getComponentInfo(c, genv, isProtected=true) for c in InteractiveUtil.getProtectedComponentsInClass(absynClass)), valsLst);
       then ValuesUtil.makeArray(List.flatten(valsLst));
 
     case ("getComponentsTest",{Values.CODE(Absyn.C_TYPENAME(_))})
       then ValuesUtil.makeArray({});
 
     case ("getSimulationOptions",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.REAL(startTime),Values.REAL(stopTime),Values.REAL(tolerance),Values.INTEGER(numberOfIntervals),Values.REAL(interval)})
-      equation
-        cr = AbsynUtil.pathToCref(classpath);
+      algorithm
+        cr := AbsynUtil.pathToCref(classpath);
         // ignore the name of the model
         ErrorExt.setCheckpoint("getSimulationOptions");
-        simOpt = GlobalScript.SIMULATION_OPTIONS(DAE.RCONST(startTime),DAE.RCONST(stopTime),DAE.ICONST(numberOfIntervals),DAE.RCONST(0.0),DAE.RCONST(tolerance),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""));
+        simOpt := GlobalScript.SIMULATION_OPTIONS(DAE.RCONST(startTime),DAE.RCONST(stopTime),DAE.ICONST(numberOfIntervals),DAE.RCONST(0.0),DAE.RCONST(tolerance),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""));
         ErrorExt.rollBack("getSimulationOptions");
-        (_, _::startTimeExp::stopTimeExp::intervalExp::toleranceExp::_) = StaticScript.getSimulationArguments(FCore.emptyCache(), FGraph.empty(), {Absyn.CREF(cr)},{},false,DAE.NOPRE(), "getSimulationOptions", AbsynUtil.dummyInfo,SOME(simOpt));
-        startTime = ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,startTimeExp,Values.REAL(startTime)));
-        stopTime = ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,stopTimeExp,Values.REAL(stopTime)));
-        tolerance = ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,toleranceExp,Values.REAL(tolerance)));
-        Values.INTEGER(numberOfIntervals) = Util.makeValueOrDefault(Ceval.cevalSimple,intervalExp,Values.INTEGER(numberOfIntervals)); // number of intervals
+        (_, _::startTimeExp::stopTimeExp::intervalExp::toleranceExp::_) := StaticScript.getSimulationArguments(FCore.emptyCache(), FGraph.empty(), {Absyn.CREF(cr)},{},false,DAE.NOPRE(), "getSimulationOptions", AbsynUtil.dummyInfo,SOME(simOpt));
+        startTime := ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,startTimeExp,Values.REAL(startTime)));
+        stopTime := ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,stopTimeExp,Values.REAL(stopTime)));
+        tolerance := ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,toleranceExp,Values.REAL(tolerance)));
+        Values.INTEGER(numberOfIntervals) := Util.makeValueOrDefault(Ceval.cevalSimple,intervalExp,Values.INTEGER(numberOfIntervals)); // number of intervals
         if numberOfIntervals == 0 then
-          numberOfIntervals = if interval > 0.0 then integer(ceil((stopTime - startTime)/interval)) else 0;
+          numberOfIntervals := if interval > 0.0 then integer(ceil((stopTime - startTime)/interval)) else 0;
         else
-          interval = (stopTime-startTime) / max(numberOfIntervals,1);
+          interval := (stopTime-startTime) / max(numberOfIntervals,1);
         end if;
       then
         Values.TUPLE({Values.REAL(startTime), Values.REAL(stopTime), Values.REAL(tolerance), Values.INTEGER(numberOfIntervals), Values.REAL(interval)});
@@ -2191,11 +2191,11 @@ algorithm
        then getAnnotationModifierValue(classpath, annotationname, modifiername, SymbolTable.getAbsyn());
 
     case ("searchClassNames",{Values.STRING(str), Values.BOOL(b)})
-      equation
-        (_,paths) = InteractiveUtil.getClassNamesRecursive(NONE(),SymbolTable.getAbsyn(),false,false,{});
-        paths = listReverse(paths);
-        vals = List.map(paths,ValuesUtil.makeCodeTypeName);
-        vals = searchClassNames(vals, str, b, SymbolTable.getAbsyn());
+      algorithm
+        (_,paths) := InteractiveUtil.getClassNamesRecursive(NONE(),SymbolTable.getAbsyn(),false,false,{});
+        paths := listReverse(paths);
+        vals := List.map(paths,ValuesUtil.makeCodeTypeName);
+        vals := searchClassNames(vals, str, b, SymbolTable.getAbsyn());
       then
         ValuesUtil.makeArray(vals);
 
@@ -2250,97 +2250,97 @@ algorithm
       then ValuesUtil.makeArray({});
 
     case ("getUses",{Values.CODE(Absyn.C_TYPENAME(classpath))})
-      equation
-        (absynClass as Absyn.CLASS()) = InteractiveUtil.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
-        uses = Interactive.getUsesAnnotation(Absyn.PROGRAM({absynClass},Absyn.TOP()));
+      algorithm
+        (absynClass as Absyn.CLASS()) := InteractiveUtil.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
+        uses := Interactive.getUsesAnnotation(Absyn.PROGRAM({absynClass},Absyn.TOP()));
       then
         ValuesUtil.makeArray(List.map(uses,makeUsesArray));
 
     case ("getConversionsFromVersions",{Values.CODE(Absyn.C_TYPENAME(classpath))})
-      equation
-        (absynClass as Absyn.CLASS()) = InteractiveUtil.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
-        (withoutConversion,withConversion) = Interactive.getConversionAnnotation(absynClass);
+      algorithm
+        (absynClass as Absyn.CLASS()) := InteractiveUtil.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
+        (withoutConversion,withConversion) := Interactive.getConversionAnnotation(absynClass);
       then
         Values.TUPLE({ValuesUtil.makeArray(List.map(withoutConversion,ValuesUtil.makeString)), ValuesUtil.makeArray(List.map(withConversion,ValuesUtil.makeString))});
 
     case ("getDerivedClassModifierNames",{Values.CODE(Absyn.C_TYPENAME(classpath))})
-      equation
-        absynClass = InteractiveUtil.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
-        args = Interactive.getDerivedClassModifierNames(absynClass);
-        vals = List.map(args, ValuesUtil.makeString);
+      algorithm
+        absynClass := InteractiveUtil.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
+        args := Interactive.getDerivedClassModifierNames(absynClass);
+        vals := List.map(args, ValuesUtil.makeString);
       then
         ValuesUtil.makeArray(vals);
 
     case ("getDerivedClassModifierValue",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path))})
-      equation
-        absynClass = InteractiveUtil.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
-        str = Interactive.getDerivedClassModifierValue(absynClass, path);
+      algorithm
+        absynClass := InteractiveUtil.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
+        str := Interactive.getDerivedClassModifierValue(absynClass, path);
       then
         Values.STRING(str);
 
     case ("getAstAsCorbaString",{Values.STRING("<interactive>")})
-      equation
+      algorithm
         Print.clearBuf();
         Dump.getAstAsCorbaString(SymbolTable.getAbsyn());
-        str = Print.getString();
+        str := Print.getString();
         Print.clearBuf();
       then
         Values.STRING(str);
 
     case ("getAstAsCorbaString",{Values.STRING(str)})
-      equation
+      algorithm
         Print.clearBuf();
         Dump.getAstAsCorbaString(SymbolTable.getAbsyn());
         Print.writeBuf(str);
         Print.clearBuf();
-        str = "Wrote result to file: " + str;
+        str := "Wrote result to file: " + str;
       then
         Values.STRING(str);
 
     case ("getAstAsCorbaString",_)
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{"getAstAsCorbaString failed"});
       then
         Values.STRING("");
 
     case ("readSimulationResult",{Values.STRING(filename),Values.ARRAY(valueLst=cvars),Values.INTEGER(size)})
-      equation
-        vars_1 = List.map(cvars, ValuesUtil.printCodeVariableName);
-        filename = Util.absoluteOrRelative(filename);
+      algorithm
+        vars_1 := List.map(cvars, ValuesUtil.printCodeVariableName);
+        filename := Util.absoluteOrRelative(filename);
       then
         SimulationResults.readDataset(filename, vars_1, size);
 
     case ("readSimulationResult",_)
-      equation
+      algorithm
         Error.addMessage(Error.SCRIPT_READ_SIM_RES_ERROR, {});
       then
         Values.META_FAIL();
 
     case ("readSimulationResultSize",{Values.STRING(filename)})
-      equation
-        filename = Util.absoluteOrRelative(filename);
-        i = SimulationResults.readSimulationResultSize(filename);
+      algorithm
+        filename := Util.absoluteOrRelative(filename);
+        i := SimulationResults.readSimulationResultSize(filename);
       then
         Values.INTEGER(i);
 
     case ("readSimulationResultVars",{Values.STRING(filename),Values.BOOL(b1),Values.BOOL(b2)})
-      equation
-        filename = Util.absoluteOrRelative(filename);
-        args = SimulationResults.readVariables(filename, b1, b2);
-        vals = List.map(args, ValuesUtil.makeString);
+      algorithm
+        filename := Util.absoluteOrRelative(filename);
+        args := SimulationResults.readVariables(filename, b1, b2);
+        vals := List.map(args, ValuesUtil.makeString);
       then
         ValuesUtil.makeArray(vals);
 
     case ("compareSimulationResults",{Values.STRING(filename),Values.STRING(filename_1),Values.STRING(filename2),Values.REAL(x1),Values.REAL(x2),Values.ARRAY(valueLst=cvars)})
-      equation
+      algorithm
         Error.addMessage(Error.DEPRECATED_API_CALL, {"compareSimulationResults", "diffSimulationResults"});
-        filename = Util.absoluteOrRelative(filename);
-        filename_1 = Testsuite.friendlyPath(filename_1);
-        filename_1 = Util.absoluteOrRelative(filename_1);
-        filename2 = Util.absoluteOrRelative(filename2);
-        vars_1 = List.map(cvars, ValuesUtil.extractValueString);
-        strings = SimulationResults.cmpSimulationResults(Testsuite.isRunning(),filename,filename_1,filename2,x1,x2,vars_1);
-        cvars = List.map(strings,ValuesUtil.makeString);
+        filename := Util.absoluteOrRelative(filename);
+        filename_1 := Testsuite.friendlyPath(filename_1);
+        filename_1 := Util.absoluteOrRelative(filename_1);
+        filename2 := Util.absoluteOrRelative(filename2);
+        vars_1 := List.map(cvars, ValuesUtil.extractValueString);
+        strings := SimulationResults.cmpSimulationResults(Testsuite.isRunning(),filename,filename_1,filename2,x1,x2,vars_1);
+        cvars := List.map(strings,ValuesUtil.makeString);
       then
         ValuesUtil.makeArray(cvars);
 
@@ -2348,12 +2348,12 @@ algorithm
       then Values.STRING("Error in compareSimulationResults");
 
     case ("deltaSimulationResults",{Values.STRING(filename),Values.STRING(filename_1),Values.STRING(method_str),Values.ARRAY(valueLst=cvars)})
-      equation
-        filename = Util.absoluteOrRelative(filename);
-        filename_1 = Testsuite.friendlyPath(filename_1);
-        filename_1 = Util.absoluteOrRelative(filename_1);
-        vars_1 = List.map(cvars, ValuesUtil.extractValueString);
-        val = SimulationResults.deltaSimulationResults(filename,filename_1,method_str,vars_1);
+      algorithm
+        filename := Util.absoluteOrRelative(filename);
+        filename_1 := Testsuite.friendlyPath(filename_1);
+        filename_1 := Util.absoluteOrRelative(filename_1);
+        vars_1 := List.map(cvars, ValuesUtil.extractValueString);
+        val := SimulationResults.deltaSimulationResults(filename,filename_1,method_str,vars_1);
       then
         Values.REAL(val);
 
@@ -2361,9 +2361,9 @@ algorithm
       then Values.STRING("Error in deltaSimulationResults");
 
     case ("filterSimulationResults",{Values.STRING(filename),Values.STRING(filename_1),Values.ARRAY(valueLst=cvars),Values.INTEGER(numberOfIntervals),Values.BOOL(b),Values.BOOL(hintReadAllVars)})
-      equation
-        vars_1 = List.map(cvars, ValuesUtil.extractValueString);
-        b = SimulationResults.filterSimulationResults(filename,filename_1,vars_1,numberOfIntervals,b,hintReadAllVars=hintReadAllVars);
+      algorithm
+        vars_1 := List.map(cvars, ValuesUtil.extractValueString);
+        b := SimulationResults.filterSimulationResults(filename,filename_1,vars_1,numberOfIntervals,b,hintReadAllVars=hintReadAllVars);
       then
         Values.BOOL(b);
 
@@ -2371,30 +2371,30 @@ algorithm
       then Values.BOOL(false);
 
     case ("diffSimulationResults",{Values.STRING(filename),Values.STRING(filename_1),Values.STRING(filename2),Values.REAL(reltol),Values.REAL(reltolDiffMinMax),Values.REAL(rangeDelta),Values.ARRAY(valueLst=cvars),Values.BOOL(b)})
-      equation
-        filename = Util.absoluteOrRelative(filename);
-        filename_1 = Testsuite.friendlyPath(filename_1);
-        filename_1 = Util.absoluteOrRelative(filename_1);
-        filename2 = Util.absoluteOrRelative(filename2);
-        vars_1 = List.map(cvars, ValuesUtil.extractValueString);
-        (b,strings) = SimulationResults.diffSimulationResults(Testsuite.isRunning(),filename,filename_1,filename2,reltol,reltolDiffMinMax,rangeDelta,vars_1,b);
-        cvars = List.map(strings,ValuesUtil.makeString);
-        v1 = ValuesUtil.makeArray(cvars);
+      algorithm
+        filename := Util.absoluteOrRelative(filename);
+        filename_1 := Testsuite.friendlyPath(filename_1);
+        filename_1 := Util.absoluteOrRelative(filename_1);
+        filename2 := Util.absoluteOrRelative(filename2);
+        vars_1 := List.map(cvars, ValuesUtil.extractValueString);
+        (b,strings) := SimulationResults.diffSimulationResults(Testsuite.isRunning(),filename,filename_1,filename2,reltol,reltolDiffMinMax,rangeDelta,vars_1,b);
+        cvars := List.map(strings,ValuesUtil.makeString);
+        v1 := ValuesUtil.makeArray(cvars);
       then
         Values.TUPLE({Values.BOOL(b),v1});
 
     case ("diffSimulationResults",_)
-      equation
-        v = ValuesUtil.makeArray({});
+      algorithm
+        v := ValuesUtil.makeArray({});
       then
         Values.TUPLE({Values.BOOL(false),v});
 
     case ("diffSimulationResultsHtml",{Values.STRING(str),Values.STRING(filename),Values.STRING(filename_1),Values.REAL(reltol),Values.REAL(reltolDiffMinMax),Values.REAL(rangeDelta)})
-      equation
-        filename = Util.absoluteOrRelative(filename);
-        filename_1 = Testsuite.friendlyPath(filename_1);
-        filename_1 = Util.absoluteOrRelative(filename_1);
-        str = SimulationResults.diffSimulationResultsHtml(Testsuite.isRunning(),filename,filename_1,reltol,reltolDiffMinMax,rangeDelta,str);
+      algorithm
+        filename := Util.absoluteOrRelative(filename);
+        filename_1 := Testsuite.friendlyPath(filename_1);
+        filename_1 := Util.absoluteOrRelative(filename_1);
+        str := SimulationResults.diffSimulationResultsHtml(Testsuite.isRunning(),filename,filename_1,reltol,reltolDiffMinMax,rangeDelta,str);
       then
         Values.STRING(str);
 
@@ -2402,13 +2402,13 @@ algorithm
       then Values.STRING("");
 
     case ("checkTaskGraph",{Values.STRING(filename),Values.STRING(filename_1)})
-      equation
-        pwd = System.pwd();
-        pd = Autoconf.pathDelimiter;
-        filename = if StringUtil.startsWith(filename, "/") then filename else stringAppendList({pwd,pd,filename});
-        filename_1 = if StringUtil.startsWith(filename_1, "/") then filename_1 else stringAppendList({pwd,pd,filename_1});
-        strings = TaskGraphResults.checkTaskGraph(filename, filename_1);
-        cvars = List.map(strings,ValuesUtil.makeString);
+      algorithm
+        pwd := System.pwd();
+        pd := Autoconf.pathDelimiter;
+        filename := if StringUtil.startsWith(filename, "/") then filename else stringAppendList({pwd,pd,filename});
+        filename_1 := if StringUtil.startsWith(filename_1, "/") then filename_1 else stringAppendList({pwd,pd,filename_1});
+        strings := TaskGraphResults.checkTaskGraph(filename, filename_1);
+        cvars := List.map(strings,ValuesUtil.makeString);
       then
         ValuesUtil.makeArray(cvars);
 
@@ -2416,13 +2416,13 @@ algorithm
       then Values.STRING("Error in checkTaskGraph");
 
     case ("checkCodeGraph",{Values.STRING(filename),Values.STRING(filename_1)})
-      equation
-        pwd = System.pwd();
-        pd = Autoconf.pathDelimiter;
-        filename = if StringUtil.startsWith(filename, "/") then filename else stringAppendList({pwd,pd,filename});
-        filename_1 = if StringUtil.startsWith(filename_1, "/") then filename_1 else stringAppendList({pwd,pd,filename_1});
-        strings = TaskGraphResults.checkCodeGraph(filename, filename_1);
-        cvars = List.map(strings,ValuesUtil.makeString);
+      algorithm
+        pwd := System.pwd();
+        pd := Autoconf.pathDelimiter;
+        filename := if StringUtil.startsWith(filename, "/") then filename else stringAppendList({pwd,pd,filename});
+        filename_1 := if StringUtil.startsWith(filename_1, "/") then filename_1 else stringAppendList({pwd,pd,filename_1});
+        strings := TaskGraphResults.checkCodeGraph(filename, filename_1);
+        cvars := List.map(strings,ValuesUtil.makeString);
       then
         ValuesUtil.makeArray(cvars);
 
@@ -2452,35 +2452,35 @@ algorithm
           Values.STRING(yLabelRight),
           Values.ARRAY(valueLst={Values.REAL(y1R),Values.REAL(y2R)})
         })
-      equation
+      algorithm
         // get OPENMODELICAHOME
-        omhome = Settings.getInstallationDirectoryPath();
+        omhome := Settings.getInstallationDirectoryPath();
         // get the simulation filename
-        (outCache,filename) = cevalCurrentSimulationResultExp(outCache,inEnv,filename,msg);
-        pd = Autoconf.pathDelimiter;
+        (outCache,filename) := cevalCurrentSimulationResultExp(outCache,inEnv,filename,msg);
+        pd := Autoconf.pathDelimiter;
         // create absolute path of simulation result file
-        str1 = System.pwd() + pd + filename;
-        s1 = if Autoconf.os == "Windows_NT" then ".exe" else "";
-        filename = if System.regularFileExists(str1) then str1 else filename;
+        str1 := System.pwd() + pd + filename;
+        s1 := if Autoconf.os == "Windows_NT" then ".exe" else "";
+        filename := if System.regularFileExists(str1) then str1 else filename;
         // check if plot callback is defined
-        b = System.plotCallBackDefined();
+        b := System.plotCallBackDefined();
         if boolOr(forceOMPlot, boolNot(b)) then
           // create the path till OMPlot
-          str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
+          str2 := stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
           // create the list of arguments for OMPlot
-          str3 = "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plotAll --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --yaxis=\"" + yAxis + "\" --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --ylabel-right=\"" + yLabelRight + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --yrange-right=" + realString(y1R) + ":" + realString(y2R) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale);
-          call = stringAppendList({"\"",str2,"\""," ",str3});
-          0 = System.spawnCall(str2, call);
+          str3 := "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plotAll --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --yaxis=\"" + yAxis + "\" --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --ylabel-right=\"" + yLabelRight + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --yrange-right=" + realString(y1R) + ":" + realString(y2R) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale);
+          call := stringAppendList({"\"",str2,"\""," ",str3});
+          0 := System.spawnCall(str2, call);
         elseif b then
-          logXStr = boolString(logX);
-          logYStr = boolString(logY);
-          x1Str = realString(x1);
-          x2Str = realString(x2);
-          y1Str = realString(y1);
-          y2Str = realString(y2);
-          curveWidthStr = realString(curveWidth);
-          curveStyleStr = intString(curveStyle);
-          autoScaleStr = boolString(autoScale);
+          logXStr := boolString(logX);
+          logYStr := boolString(logY);
+          x1Str := realString(x1);
+          x2Str := realString(x2);
+          y1Str := realString(y1);
+          y2Str := realString(y2);
+          curveWidthStr := realString(curveWidth);
+          curveStyleStr := intString(curveStyle);
+          autoScaleStr := boolString(autoScale);
           System.plotCallBack(externalWindow,filename,title,gridStr,"plotall",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition,footer,autoScaleStr,"");
         end if;
       then
@@ -2513,41 +2513,41 @@ algorithm
           Values.STRING(yLabelRight),
           Values.ARRAY(valueLst={Values.REAL(y1R),Values.REAL(y2R)})
         })
-      equation
+      algorithm
         // get the variables list
-        vars_1 = List.map(cvars, ValuesUtil.printCodeVariableName);
+        vars_1 := List.map(cvars, ValuesUtil.printCodeVariableName);
         // get OPENMODELICAHOME
-        omhome = Settings.getInstallationDirectoryPath();
+        omhome := Settings.getInstallationDirectoryPath();
         // get the simulation filename
-        (outCache,filename) = cevalCurrentSimulationResultExp(outCache,inEnv,filename,msg);
-        pd = Autoconf.pathDelimiter;
+        (outCache,filename) := cevalCurrentSimulationResultExp(outCache,inEnv,filename,msg);
+        pd := Autoconf.pathDelimiter;
         // create absolute path of simulation result file
-        str1 = System.pwd() + pd + filename;
-        s1 = if Autoconf.os == "Windows_NT" then ".exe" else "";
-        filename = if System.regularFileExists(str1) then str1 else filename;
+        str1 := System.pwd() + pd + filename;
+        s1 := if Autoconf.os == "Windows_NT" then ".exe" else "";
+        filename := if System.regularFileExists(str1) then str1 else filename;
         // check if plot callback is defined
-        b = System.plotCallBackDefined();
+        b := System.plotCallBackDefined();
         if boolOr(forceOMPlot, boolNot(b)) then
           // seperate the variables
-          str = stringDelimitList(vars_1,"\" \"");
+          str := stringDelimitList(vars_1,"\" \"");
           // create the path till OMPlot
-          str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
+          str2 := stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
           // create the list of arguments for OMPlot
-          str3 = "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plot --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --yaxis=\"" + yAxis + "\" --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --ylabel-right=\"" + yLabelRight + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --yrange-right=" + realString(y1R) + ":" + realString(y2R) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale) + " \"" + str + "\"";
-          call = stringAppendList({"\"",str2,"\""," ",str3});
-          0 = System.spawnCall(str2, call);
+          str3 := "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plot --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --yaxis=\"" + yAxis + "\" --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --ylabel-right=\"" + yLabelRight + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --yrange-right=" + realString(y1R) + ":" + realString(y2R) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale) + " \"" + str + "\"";
+          call := stringAppendList({"\"",str2,"\""," ",str3});
+          0 := System.spawnCall(str2, call);
         elseif b then
-          logXStr = boolString(logX);
-          logYStr = boolString(logY);
-          x1Str = realString(x1);
-          x2Str = realString(x2);
-          y1Str = realString(y1);
-          y2Str = realString(y2);
-          curveWidthStr = realString(curveWidth);
-          curveStyleStr = intString(curveStyle);
-          autoScaleStr = boolString(autoScale);
+          logXStr := boolString(logX);
+          logYStr := boolString(logY);
+          x1Str := realString(x1);
+          x2Str := realString(x2);
+          y1Str := realString(y1);
+          y2Str := realString(y2);
+          curveWidthStr := realString(curveWidth);
+          curveStyleStr := intString(curveStyle);
+          autoScaleStr := boolString(autoScale);
           // seperate the variables
-          str = stringDelimitList(vars_1, " ");
+          str := stringDelimitList(vars_1, " ");
           System.plotCallBack(externalWindow,filename,title,gridStr,"plot",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition,footer,autoScaleStr,str);
         end if;
       then
@@ -2557,37 +2557,37 @@ algorithm
       then Values.BOOL(false);
 
     case ("val",{cvar,Values.REAL(timeStamp),Values.STRING("<default>")})
-      equation
-        (outCache,Values.STRING(filename)) = Ceval.ceval(outCache,inEnv,buildCurrentSimulationResultExp(), true, msg, 0);
-        varNameStr = ValuesUtil.printCodeVariableName(cvar);
-        val = SimulationResults.val(filename,varNameStr,timeStamp);
+      algorithm
+        (outCache,Values.STRING(filename)) := Ceval.ceval(outCache,inEnv,buildCurrentSimulationResultExp(), true, msg, 0);
+        varNameStr := ValuesUtil.printCodeVariableName(cvar);
+        val := SimulationResults.val(filename,varNameStr,timeStamp);
       then
         Values.REAL(val);
 
     case ("val",{cvar,Values.REAL(timeStamp),Values.STRING(filename)})
-      equation
-        false = stringEq(filename,"<default>");
-        varNameStr = ValuesUtil.printCodeVariableName(cvar);
-        val = SimulationResults.val(filename,varNameStr,timeStamp);
+      algorithm
+        false := stringEq(filename,"<default>");
+        varNameStr := ValuesUtil.printCodeVariableName(cvar);
+        val := SimulationResults.val(filename,varNameStr,timeStamp);
       then
         Values.REAL(val);
 
     case ("closeSimulationResultFile",_)
-      equation
+      algorithm
         SimulationResults.close();
       then
         Values.BOOL(true);
 
     case ("getParameterNames",{Values.CODE(Absyn.C_TYPENAME(path))})
-      equation
-        strings = Interactive.getParameterNames(path, SymbolTable.getAbsyn());
-        vals = List.map(strings, ValuesUtil.makeString);
+      algorithm
+        strings := Interactive.getParameterNames(path, SymbolTable.getAbsyn());
+        vals := List.map(strings, ValuesUtil.makeString);
       then
         ValuesUtil.makeArray(vals);
 
     case ("getParameterValue",{Values.CODE(Absyn.C_TYPENAME(path)),Values.STRING(str1)})
-      equation
-        str2 = Interactive.getComponentBinding(path, str1, SymbolTable.getAbsyn());
+      algorithm
+        str2 := Interactive.getComponentBinding(path, str1, SymbolTable.getAbsyn());
       then
         Values.STRING(str2);
 
@@ -2601,36 +2601,36 @@ algorithm
         ValuesUtil.makeBoolean(b);
 
     case ("getComponentModifierNames",{Values.CODE(Absyn.C_TYPENAME(path)),Values.STRING(str1)})
-      equation
-        strings = Interactive.getComponentModifierNames(path, str1, SymbolTable.getAbsyn());
-        vals = List.map(strings, ValuesUtil.makeString);
+      algorithm
+        strings := Interactive.getComponentModifierNames(path, str1, SymbolTable.getAbsyn());
+        vals := List.map(strings, ValuesUtil.makeString);
       then
         ValuesUtil.makeArray(vals);
 
     case ("getComponentModifierValue",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.CODE(Absyn.C_TYPENAME(path))})
-      equation
-        cr = AbsynUtil.pathToCref(path);
+      algorithm
+        cr := AbsynUtil.pathToCref(path);
         if AbsynUtil.crefIsIdent(cr) then
-          Absyn.CREF_IDENT(name = s1) = cr;
-          str = Interactive.getComponentBinding(classpath, s1, SymbolTable.getAbsyn());
+          Absyn.CREF_IDENT(name = s1) := cr;
+          str := Interactive.getComponentBinding(classpath, s1, SymbolTable.getAbsyn());
         else
-          s1 = AbsynUtil.crefFirstIdent(cr);
-          cr = AbsynUtil.crefStripFirst(cr);
-          str = Interactive.getComponentModifierValue(AbsynUtil.pathToCref(classpath), Absyn.CREF_IDENT(s1, {}), cr, SymbolTable.getAbsyn());
+          s1 := AbsynUtil.crefFirstIdent(cr);
+          cr := AbsynUtil.crefStripFirst(cr);
+          str := Interactive.getComponentModifierValue(AbsynUtil.pathToCref(classpath), Absyn.CREF_IDENT(s1, {}), cr, SymbolTable.getAbsyn());
         end if;
       then
         Values.STRING(str);
 
     case ("getComponentModifierValues",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.CODE(Absyn.C_TYPENAME(path))})
-      equation
-        cr = AbsynUtil.pathToCref(path);
+      algorithm
+        cr := AbsynUtil.pathToCref(path);
         if AbsynUtil.crefIsIdent(cr) then
-          Absyn.CREF_IDENT(name = s1) = cr;
-          str = Interactive.getComponentBinding(classpath, s1, SymbolTable.getAbsyn());
+          Absyn.CREF_IDENT(name = s1) := cr;
+          str := Interactive.getComponentBinding(classpath, s1, SymbolTable.getAbsyn());
         else
-          s1 = AbsynUtil.crefFirstIdent(cr);
-          cr = AbsynUtil.crefStripFirst(cr);
-          str = Interactive.getComponentModifierValues(AbsynUtil.pathToCref(classpath), Absyn.CREF_IDENT(s1, {}), cr, SymbolTable.getAbsyn());
+          s1 := AbsynUtil.crefFirstIdent(cr);
+          cr := AbsynUtil.crefStripFirst(cr);
+          str := Interactive.getComponentModifierValues(AbsynUtil.pathToCref(classpath), Absyn.CREF_IDENT(s1, {}), cr, SymbolTable.getAbsyn());
         end if;
       then
         Values.STRING(str);
@@ -2682,43 +2682,43 @@ algorithm
         Values.CODE(Absyn.C_TYPENAME(path))::
       Values.STRING(str1)::
       Values.BOOL(keepRedeclares)::_)
-      equation
-        (p,b) = Interactive.removeComponentModifiers(path, str1, SymbolTable.getAbsyn(), keepRedeclares);
+      algorithm
+        (p,b) := Interactive.removeComponentModifiers(path, str1, SymbolTable.getAbsyn(), keepRedeclares);
         SymbolTable.setAbsyn(p);
       then
         Values.BOOL(b);
 
     case ("getElementModifierNames",{Values.CODE(Absyn.C_TYPENAME(path)),Values.STRING(str1)})
-      equation
-        strings = InteractiveUtil.getElementModifierNames(path, str1, SymbolTable.getAbsyn());
-        vals = List.map(strings, ValuesUtil.makeString);
+      algorithm
+        strings := InteractiveUtil.getElementModifierNames(path, str1, SymbolTable.getAbsyn());
+        vals := List.map(strings, ValuesUtil.makeString);
       then
         ValuesUtil.makeArray(vals);
 
     case ("getElementModifierValue",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.CODE(Absyn.C_TYPENAME(path))})
-      equation
-        cr = AbsynUtil.pathToCref(path);
+      algorithm
+        cr := AbsynUtil.pathToCref(path);
         if AbsynUtil.crefIsIdent(cr) then
-          Absyn.CREF_IDENT(name = s1) = cr;
-          str = InteractiveUtil.getElementBinding(classpath, s1, SymbolTable.getAbsyn());
+          Absyn.CREF_IDENT(name = s1) := cr;
+          str := InteractiveUtil.getElementBinding(classpath, s1, SymbolTable.getAbsyn());
         else
-          s1 = AbsynUtil.crefFirstIdent(cr);
-          cr = AbsynUtil.crefStripFirst(cr);
-          str = InteractiveUtil.getElementModifierValue(AbsynUtil.pathToCref(classpath), Absyn.CREF_IDENT(s1, {}), cr, SymbolTable.getAbsyn());
+          s1 := AbsynUtil.crefFirstIdent(cr);
+          cr := AbsynUtil.crefStripFirst(cr);
+          str := InteractiveUtil.getElementModifierValue(AbsynUtil.pathToCref(classpath), Absyn.CREF_IDENT(s1, {}), cr, SymbolTable.getAbsyn());
         end if;
       then
         Values.STRING(str);
 
     case ("getElementModifierValues",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.CODE(Absyn.C_TYPENAME(path))})
-      equation
-        cr = AbsynUtil.pathToCref(path);
+      algorithm
+        cr := AbsynUtil.pathToCref(path);
         if AbsynUtil.crefIsIdent(cr) then
-          Absyn.CREF_IDENT(name = s1) = cr;
-          str = InteractiveUtil.getElementBinding(classpath, s1, SymbolTable.getAbsyn());
+          Absyn.CREF_IDENT(name = s1) := cr;
+          str := InteractiveUtil.getElementBinding(classpath, s1, SymbolTable.getAbsyn());
         else
-          s1 = AbsynUtil.crefFirstIdent(cr);
-          cr = AbsynUtil.crefStripFirst(cr);
-          str = InteractiveUtil.getElementModifierValues(AbsynUtil.pathToCref(classpath), Absyn.CREF_IDENT(s1, {}), cr, SymbolTable.getAbsyn());
+          s1 := AbsynUtil.crefFirstIdent(cr);
+          cr := AbsynUtil.crefStripFirst(cr);
+          str := InteractiveUtil.getElementModifierValues(AbsynUtil.pathToCref(classpath), Absyn.CREF_IDENT(s1, {}), cr, SymbolTable.getAbsyn());
         end if;
       then
         Values.STRING(str);
@@ -2727,8 +2727,8 @@ algorithm
         Values.CODE(Absyn.C_TYPENAME(path))::
       Values.STRING(str1)::
       Values.BOOL(keepRedeclares)::_)
-      equation
-        (p,b) = InteractiveUtil.removeElementModifiers(path, str1, SymbolTable.getAbsyn(), keepRedeclares);
+      algorithm
+        (p,b) := InteractiveUtil.removeElementModifiers(path, str1, SymbolTable.getAbsyn(), keepRedeclares);
         SymbolTable.setAbsyn(p);
       then
         Values.BOOL(b);
@@ -2737,29 +2737,29 @@ algorithm
           Values.CODE(Absyn.C_TYPENAME(classpath))::
           Values.CODE(Absyn.C_TYPENAME(baseClassPath))::
           Values.BOOL(keepRedeclares)::_)
-      equation
-        (p,b) = Interactive.removeExtendsModifiers(classpath, baseClassPath, SymbolTable.getAbsyn(), keepRedeclares);
+      algorithm
+        (p,b) := Interactive.removeExtendsModifiers(classpath, baseClassPath, SymbolTable.getAbsyn(), keepRedeclares);
         SymbolTable.setAbsyn(p);
       then
         Values.BOOL(b);
 
     case ("getInstantiatedParametersAndValues",{Values.CODE(Absyn.C_TYPENAME(classpath))})
-      equation
-        (outCache,_,odae) = runFrontEnd(outCache,inEnv,classpath,true);
-        strings = Interactive.getInstantiatedParametersAndValues(odae);
-        vals = List.map(strings, ValuesUtil.makeString);
+      algorithm
+        (outCache,_,odae) := runFrontEnd(outCache,inEnv,classpath,true);
+        strings := Interactive.getInstantiatedParametersAndValues(odae);
+        vals := List.map(strings, ValuesUtil.makeString);
       then
         ValuesUtil.makeArray(vals);
 
     case ("getInstantiatedParametersAndValues",_)
-      equation
+      algorithm
         Error.addCompilerWarning("getInstantiatedParametersAndValues failed to instantiate the model.");
       then
         ValuesUtil.makeArray({});
 
     case ("updateConnection",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(str1), Values.STRING(str2),Values.CODE(Absyn.C_EXPRESSION(aexp))})
-      equation
-        p = InteractiveUtil.updateConnectionAnnotation(AbsynUtil.pathToCref(classpath), str1, str2, Absyn.NAMEDARG("annotate",aexp)::{}, SymbolTable.getAbsyn());
+      algorithm
+        p := InteractiveUtil.updateConnectionAnnotation(AbsynUtil.pathToCref(classpath), str1, str2, Absyn.NAMEDARG("annotate",aexp)::{}, SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(p);
       then
         Values.BOOL(true);
@@ -2795,8 +2795,8 @@ algorithm
 
     case ("updateConnectionNames",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(str1), Values.STRING(str2),
                                            Values.STRING(str3), Values.STRING(str4)})
-      equation
-        (b, p) = InteractiveUtil.updateConnectionNames(classpath, str1, str2, str3, str4, SymbolTable.getAbsyn());
+      algorithm
+        (b, p) := InteractiveUtil.updateConnectionNames(classpath, str1, str2, str3, str4, SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(p);
       then
         Values.BOOL(b);
@@ -2804,14 +2804,14 @@ algorithm
     case ("updateConnectionNames",_) then Values.BOOL(false);
 
     case ("getConnectionCount",{Values.CODE(Absyn.C_TYPENAME(path))})
-      equation
-        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
-        access = Interactive.checkAccessAnnotationAndEncryption(path, SymbolTable.getAbsyn());
+      algorithm
+        absynClass := InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        access := Interactive.checkAccessAnnotationAndEncryption(path, SymbolTable.getAbsyn());
         if access >= Access.diagram then
-          n = listLength(Interactive.getConnections(absynClass));
+          n := listLength(Interactive.getConnections(absynClass));
         else
           Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
-          n = 0;
+          n := 0;
         end if;
       then
         Values.INTEGER(n);
@@ -2819,13 +2819,13 @@ algorithm
     case ("getConnectionCount",_) then Values.INTEGER(0);
 
     case ("getNthConnection",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)})
-      equation
-        access = Interactive.checkAccessAnnotationAndEncryption(path, SymbolTable.getAbsyn());
+      algorithm
+        access := Interactive.checkAccessAnnotationAndEncryption(path, SymbolTable.getAbsyn());
         if access >= Access.diagram then
-          vals = Interactive.getNthConnection(AbsynUtil.pathToCref(path), SymbolTable.getAbsyn(), n);
+          vals := Interactive.getNthConnection(AbsynUtil.pathToCref(path), SymbolTable.getAbsyn(), n);
         else
           Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
-          vals = {};
+          vals := {};
         end if;
       then
         ValuesUtil.makeArray(vals);
@@ -2836,180 +2836,180 @@ algorithm
       then getConnectionList(path);
 
     case ("getAlgorithmCount",{Values.CODE(Absyn.C_TYPENAME(path))})
-      equation
-        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
-        n = listLength(getAlgorithms(absynClass));
+      algorithm
+        absynClass := InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        n := listLength(getAlgorithms(absynClass));
       then
         Values.INTEGER(n);
 
     case ("getAlgorithmCount",_) then Values.INTEGER(0);
 
     case ("getNthAlgorithm",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)})
-      equation
-        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
-        str = getNthAlgorithm(absynClass, n);
+      algorithm
+        absynClass := InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        str := getNthAlgorithm(absynClass, n);
       then
         Values.STRING(str);
 
     case ("getNthAlgorithm",_) then Values.STRING("");
 
     case ("getInitialAlgorithmCount",{Values.CODE(Absyn.C_TYPENAME(path))})
-      equation
-        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
-        n = listLength(getInitialAlgorithms(absynClass));
+      algorithm
+        absynClass := InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        n := listLength(getInitialAlgorithms(absynClass));
       then
         Values.INTEGER(n);
 
     case ("getInitialAlgorithmCount",_) then Values.INTEGER(0);
 
     case ("getNthInitialAlgorithm",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)})
-      equation
-        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
-        str = getNthInitialAlgorithm(absynClass, n);
+      algorithm
+        absynClass := InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        str := getNthInitialAlgorithm(absynClass, n);
       then
         Values.STRING(str);
 
     case ("getNthInitialAlgorithm",_) then Values.STRING("");
 
     case ("getAlgorithmItemsCount",{Values.CODE(Absyn.C_TYPENAME(path))})
-      equation
-        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
-        n = getAlgorithmItemsCount(absynClass);
+      algorithm
+        absynClass := InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        n := getAlgorithmItemsCount(absynClass);
       then
         Values.INTEGER(n);
 
     case ("getAlgorithmItemsCount",_) then Values.INTEGER(0);
 
     case ("getNthAlgorithmItem",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)})
-      equation
-        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
-        str = getNthAlgorithmItem(absynClass, n);
+      algorithm
+        absynClass := InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        str := getNthAlgorithmItem(absynClass, n);
       then
         Values.STRING(str);
 
     case ("getNthAlgorithmItem",_) then Values.STRING("");
 
     case ("getInitialAlgorithmItemsCount",{Values.CODE(Absyn.C_TYPENAME(path))})
-      equation
-        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
-        n = getInitialAlgorithmItemsCount(absynClass);
+      algorithm
+        absynClass := InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        n := getInitialAlgorithmItemsCount(absynClass);
       then
         Values.INTEGER(n);
 
     case ("getInitialAlgorithmItemsCount",_) then Values.INTEGER(0);
 
     case ("getNthInitialAlgorithmItem",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)})
-      equation
-        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
-        str = getNthInitialAlgorithmItem(absynClass, n);
+      algorithm
+        absynClass := InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        str := getNthInitialAlgorithmItem(absynClass, n);
       then
         Values.STRING(str);
 
     case ("getNthInitialAlgorithmItem",_) then Values.STRING("");
 
     case ("getEquationCount",{Values.CODE(Absyn.C_TYPENAME(path))})
-      equation
-        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
-        n = listLength(getEquations(absynClass));
+      algorithm
+        absynClass := InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        n := listLength(getEquations(absynClass));
       then
         Values.INTEGER(n);
 
     case ("getEquationCount",_) then Values.INTEGER(0);
 
     case ("getNthEquation",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)})
-      equation
-        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
-        str = getNthEquation(absynClass, n);
+      algorithm
+        absynClass := InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        str := getNthEquation(absynClass, n);
       then
         Values.STRING(str);
 
     case ("getNthEquation",_) then Values.STRING("");
 
     case ("getInitialEquationCount",{Values.CODE(Absyn.C_TYPENAME(path))})
-      equation
-        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
-        n = listLength(getInitialEquations(absynClass));
+      algorithm
+        absynClass := InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        n := listLength(getInitialEquations(absynClass));
       then
         Values.INTEGER(n);
 
     case ("getInitialEquationCount",_) then Values.INTEGER(0);
 
     case ("getNthInitialEquation",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)})
-      equation
-        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
-        str = getNthInitialEquation(absynClass, n);
+      algorithm
+        absynClass := InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        str := getNthInitialEquation(absynClass, n);
       then
         Values.STRING(str);
 
     case ("getNthInitialEquation",_) then Values.STRING("");
 
     case ("getEquationItemsCount",{Values.CODE(Absyn.C_TYPENAME(path))})
-      equation
-        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
-        n = getEquationItemsCount(absynClass);
+      algorithm
+        absynClass := InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        n := getEquationItemsCount(absynClass);
       then
         Values.INTEGER(n);
 
     case ("getEquationItemsCount",_) then Values.INTEGER(0);
 
     case ("getNthEquationItem",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)})
-      equation
-        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
-        str = getNthEquationItem(absynClass, n);
+      algorithm
+        absynClass := InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        str := getNthEquationItem(absynClass, n);
       then
         Values.STRING(str);
 
     case ("getNthEquationItem",_) then Values.STRING("");
 
     case ("getInitialEquationItemsCount",{Values.CODE(Absyn.C_TYPENAME(path))})
-      equation
-        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
-        n = getInitialEquationItemsCount(absynClass);
+      algorithm
+        absynClass := InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        n := getInitialEquationItemsCount(absynClass);
       then
         Values.INTEGER(n);
 
     case ("getInitialEquationItemsCount",_) then Values.INTEGER(0);
 
     case ("getNthInitialEquationItem",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)})
-      equation
-        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
-        str = getNthInitialEquationItem(absynClass, n);
+      algorithm
+        absynClass := InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        str := getNthInitialEquationItem(absynClass, n);
       then
         Values.STRING(str);
 
     case ("getNthInitialEquationItem",_) then Values.STRING("");
 
     case ("getAnnotationCount",{Values.CODE(Absyn.C_TYPENAME(path))})
-      equation
-        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
-        n = getAnnotationCount(absynClass);
+      algorithm
+        absynClass := InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        n := getAnnotationCount(absynClass);
       then
         Values.INTEGER(n);
 
     case ("getAnnotationCount",_) then Values.INTEGER(0);
 
     case ("getNthAnnotationString",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)})
-      equation
-        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
-        str = getNthAnnotationString(absynClass, n);
+      algorithm
+        absynClass := InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        str := getNthAnnotationString(absynClass, n);
       then
         Values.STRING(str);
 
     case ("getNthAnnotationString",_) then Values.STRING("");
 
     case ("getImportCount",{Values.CODE(Absyn.C_TYPENAME(path))})
-      equation
-        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
-        n = getImportCount(absynClass);
+      algorithm
+        absynClass := InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        n := getImportCount(absynClass);
       then
         Values.INTEGER(n);
 
     case ("getImportCount",_) then Values.INTEGER(0);
 
     case ("getNthImport",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)})
-      equation
-        absynClass = InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
-        vals = getNthImport(absynClass, n);
+      algorithm
+        absynClass := InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        vals := getNthImport(absynClass, n);
       then
         ValuesUtil.makeArray(vals);
 
@@ -3040,39 +3040,39 @@ algorithm
           Values.STRING(yLabelRight),
           Values.ARRAY(valueLst={Values.REAL(y1R),Values.REAL(y2R)})
         })
-      equation
+      algorithm
         // get OPENMODELICAHOME
-        omhome = Settings.getInstallationDirectoryPath();
+        omhome := Settings.getInstallationDirectoryPath();
         // get the simulation filename
-        (outCache,filename) = cevalCurrentSimulationResultExp(outCache,inEnv,filename,msg);
-        pd = Autoconf.pathDelimiter;
+        (outCache,filename) := cevalCurrentSimulationResultExp(outCache,inEnv,filename,msg);
+        pd := Autoconf.pathDelimiter;
         // create absolute path of simulation result file
-        str1 = System.pwd() + pd + filename;
-        s1 = if Autoconf.os == "Windows_NT" then ".exe" else "";
-        filename = if System.regularFileExists(str1) then str1 else filename;
+        str1 := System.pwd() + pd + filename;
+        s1 := if Autoconf.os == "Windows_NT" then ".exe" else "";
+        filename := if System.regularFileExists(str1) then str1 else filename;
         // check if plot callback is defined
-        b = System.plotCallBackDefined();
+        b := System.plotCallBackDefined();
         if boolOr(forceOMPlot, boolNot(b)) then
           // get the variables
-          str = ValuesUtil.printCodeVariableName(cvar) + "\" \"" + ValuesUtil.printCodeVariableName(cvar2);
+          str := ValuesUtil.printCodeVariableName(cvar) + "\" \"" + ValuesUtil.printCodeVariableName(cvar2);
           // create the path till OMPlot
-          str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
+          str2 := stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
           // create the list of arguments for OMPlot
-          str3 = "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plotParametric --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --yaxis=\"" + yAxis + "\" --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --ylabel-right=\"" + yLabelRight + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --yrange-right=" + realString(y1R) + ":" + realString(y2R) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale) + " \"" + str + "\"";
-          call = stringAppendList({"\"",str2,"\""," ",str3});
-          0 = System.spawnCall(str2, call);
+          str3 := "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plotParametric --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --yaxis=\"" + yAxis + "\" --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --ylabel-right=\"" + yLabelRight + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --yrange-right=" + realString(y1R) + ":" + realString(y2R) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale) + " \"" + str + "\"";
+          call := stringAppendList({"\"",str2,"\""," ",str3});
+          0 := System.spawnCall(str2, call);
         elseif b then
           // get the variables
-          str = ValuesUtil.printCodeVariableName(cvar) + " " + ValuesUtil.printCodeVariableName(cvar2);
-          logXStr = boolString(logX);
-          logYStr = boolString(logY);
-          x1Str = realString(x1);
-          x2Str = realString(x2);
-          y1Str = realString(y1);
-          y2Str = realString(y2);
-          curveWidthStr = realString(curveWidth);
-          curveStyleStr = intString(curveStyle);
-          autoScaleStr = boolString(autoScale);
+          str := ValuesUtil.printCodeVariableName(cvar) + " " + ValuesUtil.printCodeVariableName(cvar2);
+          logXStr := boolString(logX);
+          logYStr := boolString(logY);
+          x1Str := realString(x1);
+          x2Str := realString(x2);
+          y1Str := realString(y1);
+          y2Str := realString(y2);
+          curveWidthStr := realString(curveWidth);
+          curveStyleStr := intString(curveStyle);
+          autoScaleStr := boolString(autoScale);
           System.plotCallBack(externalWindow,filename,title,gridStr,"plotparametric",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition,footer,autoScaleStr,str);
         end if;
       then
@@ -3082,8 +3082,8 @@ algorithm
       then Values.BOOL(false);
 
     case ("dumpXMLDAE",vals)
-      equation
-        (outCache,xml_filename) = dumpXMLDAE(outCache,inEnv,vals, msg);
+      algorithm
+        (outCache,xml_filename) := dumpXMLDAE(outCache,inEnv,vals, msg);
       then
         ValuesUtil.makeTuple({Values.BOOL(true),Values.STRING(xml_filename)});
 
@@ -3092,14 +3092,14 @@ algorithm
         ValuesUtil.makeTuple({Values.BOOL(false),Values.STRING("")});
 
     case ("solveLinearSystem",{Values.ARRAY(valueLst=vals),v})
-      equation
-        (realVals,i) = System.dgesv(List.map(vals,ValuesUtil.arrayValueReals),ValuesUtil.arrayValueReals(v));
-        v = ValuesUtil.makeArray(List.map(realVals,ValuesUtil.makeReal));
+      algorithm
+        (realVals,i) := System.dgesv(List.map(vals,ValuesUtil.arrayValueReals),ValuesUtil.arrayValueReals(v));
+        v := ValuesUtil.makeArray(List.map(realVals,ValuesUtil.makeReal));
       then
         Values.TUPLE({v,Values.INTEGER(i)});
 
     case ("solveLinearSystem",{_,v,_,_})
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{"Unknown input to solveLinearSystem scripting function"});
       then
         Values.TUPLE({v,Values.INTEGER(-1)});
@@ -3490,20 +3490,20 @@ algorithm
       String flatModelicaStr,description;
 
     case (cache,env,_,_,_) /* mo file directory */
-      equation
-        (cache, env, SOME(dae), _) = runFrontEnd(cache, env, className, true, transform = true);
-        description = DAEUtil.daeDescription(dae);
-        a_cref = AbsynUtil.pathToCref(className);
-        file_dir = getFileDir(a_cref, SymbolTable.getAbsyn());
-        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix,NONE()));
-        dlow = FindZeroCrossings.findZeroCrossings(dlow);
-        flatModelicaStr = DAEDump.dumpStr(dae,FCore.getFunctionTree(cache));
-        flatModelicaStr = stringAppend("OldEqStr={'", flatModelicaStr);
-        flatModelicaStr = System.stringReplace(flatModelicaStr, "\n", "%##%");
-        flatModelicaStr = System.stringReplace(flatModelicaStr, "%##%", "','");
-        flatModelicaStr = stringAppend(flatModelicaStr,"'};");
-        filename = DAEQuery.writeAdjacencyMatrix(dlow, filenameprefix, flatModelicaStr);
-        str = stringAppend("The equation system was dumped to Matlab file:", filename);
+      algorithm
+        (cache, env, SOME(dae), _) := runFrontEnd(cache, env, className, true, transform = true);
+        description := DAEUtil.daeDescription(dae);
+        a_cref := AbsynUtil.pathToCref(className);
+        file_dir := getFileDir(a_cref, SymbolTable.getAbsyn());
+        dlow := BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix,NONE()));
+        dlow := FindZeroCrossings.findZeroCrossings(dlow);
+        flatModelicaStr := DAEDump.dumpStr(dae,FCore.getFunctionTree(cache));
+        flatModelicaStr := stringAppend("OldEqStr={'", flatModelicaStr);
+        flatModelicaStr := System.stringReplace(flatModelicaStr, "\n", "%##%");
+        flatModelicaStr := System.stringReplace(flatModelicaStr, "%##%", "','");
+        flatModelicaStr := stringAppend(flatModelicaStr,"'};");
+        filename := DAEQuery.writeAdjacencyMatrix(dlow, filenameprefix, flatModelicaStr);
+        str := stringAppend("The equation system was dumped to Matlab file:", filename);
       then
         (cache,Values.STRING(str),file_dir);
   end match;
@@ -4615,14 +4615,14 @@ algorithm
       Boolean strEmpty;
 
     case (_,_)
-      equation
-        p = SymbolTable.getAbsyn();
-        cls = InteractiveUtil.getPathedClassInProgram(className, p);
-        refactoredClass = Refactor.refactorGraphicalAnnotation(p, cls);
-        within_ = InteractiveUtil.buildWithin(className);
+      algorithm
+        p := SymbolTable.getAbsyn();
+        cls := InteractiveUtil.getPathedClassInProgram(className, p);
+        refactoredClass := Refactor.refactorGraphicalAnnotation(p, cls);
+        within_ := InteractiveUtil.buildWithin(className);
         SymbolTable.setAbsyn(InteractiveUtil.updateProgram(Absyn.PROGRAM({refactoredClass}, within_), p));
-        s1 = AbsynUtil.pathString(className);
-        retStr=stringAppendList({"Translation of ",s1," successful.\n"});
+        s1 := AbsynUtil.pathString(className);
+        retStr:=stringAppendList({"Translation of ",s1," successful.\n"});
       then Values.STRING(retStr);
 
     else
@@ -4651,11 +4651,11 @@ algorithm
       FCore.Cache cache;
       String cflags, simflags;
     case (cache, {Values.CODE(Absyn.C_TYPENAME(_)),starttime_v,stoptime_v,Values.INTEGER(interval_i),tolerance_v,Values.STRING(method_str),_,Values.STRING(options_str),Values.STRING(outputFormat_str),Values.STRING(variableFilter_str),Values.STRING(cflags),Values.STRING(simflags)})
-      equation
-        starttime_r = ValuesUtil.valueReal(starttime_v);
-        stoptime_r = ValuesUtil.valueReal(stoptime_v);
-        tolerance_r = ValuesUtil.valueReal(tolerance_v);
-        outSimSettings = SimCodeMain.createSimulationSettings(starttime_r,stoptime_r,interval_i,tolerance_r,method_str,options_str,outputFormat_str,variableFilter_str,cflags,simflags);
+      algorithm
+        starttime_r := ValuesUtil.valueReal(starttime_v);
+        stoptime_r := ValuesUtil.valueReal(stoptime_v);
+        tolerance_r := ValuesUtil.valueReal(tolerance_v);
+        outSimSettings := SimCodeMain.createSimulationSettings(starttime_r,stoptime_r,interval_i,tolerance_r,method_str,options_str,outputFormat_str,variableFilter_str,cflags,simflags);
       then
         (cache, outSimSettings);
     else
@@ -4685,7 +4685,7 @@ algorithm
 
     // ups, we're missing an argument
     case ({}, _)
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {errorMessage});
       then
         fail();
@@ -4710,16 +4710,16 @@ algorithm
 
     // everything is fine and dandy
     case (lst, _, i, n)
-      equation
-        true = i < n;
-        (_,rest) = getListFirstShowError(lst,errorMessage);
-        v = getListNthShowError(rest,errorMessage, i+1, n);
+      algorithm
+        true := i < n;
+        (_,rest) := getListFirstShowError(lst,errorMessage);
+        v := getListNthShowError(rest,errorMessage, i+1, n);
       then v;
 
     // everything is fine and dandy
     case (lst, _, _, _)
-      equation
-      (v, _) = getListFirstShowError(lst,errorMessage);
+      algorithm
+      (v, _) := getListFirstShowError(lst,errorMessage);
     then v;
 
   end matchcontinue;
@@ -6071,8 +6071,8 @@ algorithm
       Values.Value simValue;
 
     case (false,_)
-      equation
-        simValue = createSimulationResult(
+      algorithm
+        simValue := createSimulationResult(
            result_file,
            simOptionsAsString(inVals),
            "Failed to build model: " + AbsynUtil.pathString(className),
@@ -6082,8 +6082,8 @@ algorithm
       then (inCache,simValue);
 
     case (_,0)
-      equation
-        simValue = createSimulationResult(
+      algorithm
+        simValue := createSimulationResult(
            result_file,
            simOptionsAsString(inVals),
            System.readFile(logFile),
@@ -6127,23 +6127,23 @@ algorithm
       Absyn.ComponentRef class_;
       Absyn.Program p;
     case (class_,p)
-      equation
-        p_class = AbsynUtil.crefToPath(class_) "change to the saved files directory" ;
-        cdef = InteractiveUtil.getPathedClassInProgram(p_class, p);
-        filename = AbsynUtil.classFilename(cdef);
-        pd = Autoconf.pathDelimiter;
-        (pd_1 :: _) = stringListStringChar(pd);
-        filename_1 = Util.stringSplitAtChar(filename, pd_1);
-        dir = List.stripLast(filename_1);
-        dir_1 = stringDelimitList(dir, pd);
+      algorithm
+        p_class := AbsynUtil.crefToPath(class_) "change to the saved files directory" ;
+        cdef := InteractiveUtil.getPathedClassInProgram(p_class, p);
+        filename := AbsynUtil.classFilename(cdef);
+        pd := Autoconf.pathDelimiter;
+        (pd_1 :: _) := stringListStringChar(pd);
+        filename_1 := Util.stringSplitAtChar(filename, pd_1);
+        dir := List.stripLast(filename_1);
+        dir_1 := stringDelimitList(dir, pd);
       then
         dir_1;
     case (_,_)
-      equation
-        omhome = Settings.getInstallationDirectoryPath() "model not yet saved! change to $OPENMODELICAHOME/work" ;
-        omhome_1 = System.trim(omhome, "\"");
-        pd = Autoconf.pathDelimiter;
-        dir_1 = stringAppendList({"\"",omhome_1,pd,"work","\""});
+      algorithm
+        omhome := Settings.getInstallationDirectoryPath() "model not yet saved! change to $OPENMODELICAHOME/work" ;
+        omhome_1 := System.trim(omhome, "\"");
+        pd := Autoconf.pathDelimiter;
+        dir_1 := stringAppendList({"\"",omhome_1,pd,"work","\""});
       then
         dir_1;
     else "";  /* this function should never fail */
@@ -6186,8 +6186,8 @@ algorithm
       then Values.STRING(retStr);
 
     case ()
-      equation
-        false = Interactive.existClass(className, SymbolTable.getAbsyn());
+      algorithm
+        false := Interactive.existClass(className, SymbolTable.getAbsyn());
         Error.addMessage(Error.LOOKUP_ERROR, {AbsynUtil.pathString(className), "<TOP>"});
       then Values.STRING("");
 
@@ -6208,7 +6208,7 @@ protected function getWithinStatement "To get a correct Within-path with unknown
   output Absyn.Within op;
 algorithm op :=  matchcontinue(ip)
   local Absyn.Path path;
-    case(path) equation path = AbsynUtil.stripLast(path); then Absyn.WITHIN(path);
+    case(path) algorithm path := AbsynUtil.stripLast(path); then Absyn.WITHIN(path);
     else Absyn.TOP();
   end matchcontinue;
 end getWithinStatement;
@@ -6240,7 +6240,7 @@ algorithm
                      Values.BOOL(addOriginalAdjacencyMatrix),Values.BOOL(addSolvingInfo),
                      Values.BOOL(addMathMLCode),Values.BOOL(dumpResiduals),
                      Values.STRING(filenameprefix),Values.STRING(rewriteRulesFile)},_)
-      equation
+      algorithm
         Error.clearMessages() "Clear messages";
 
         // set the rewrite rules flag
@@ -6248,26 +6248,26 @@ algorithm
         // load the rewrite rules
         RewriteRules.loadRules();
 
-        (cache, env, SOME(dae), _) = runFrontEnd(cache, env, classname, true, transform = true);
-        description = DAEUtil.daeDescription(dae);
+        (cache, env, SOME(dae), _) := runFrontEnd(cache, env, classname, true, transform = true);
+        description := DAEUtil.daeDescription(dae);
 
-        compileDir = System.pwd() + Autoconf.pathDelimiter;
-        cname_str = AbsynUtil.pathString(classname);
-        filenameprefix = if filenameprefix == "<default>" then cname_str else filenameprefix;
+        compileDir := System.pwd() + Autoconf.pathDelimiter;
+        cname_str := AbsynUtil.pathString(classname);
+        filenameprefix := if filenameprefix == "<default>" then cname_str else filenameprefix;
 
-        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix,NONE())); //Verificare cosa fa
-        dlow_1 = BackendDAEUtil.preOptimizeBackendDAE(dlow,NONE());
-        dlow_1 = FindZeroCrossings.findZeroCrossings(dlow_1);
-        xml_filename = stringAppendList({filenameprefix,".xml"});
+        dlow := BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix,NONE())); //Verificare cosa fa
+        dlow_1 := BackendDAEUtil.preOptimizeBackendDAE(dlow,NONE());
+        dlow_1 := FindZeroCrossings.findZeroCrossings(dlow_1);
+        xml_filename := stringAppendList({filenameprefix,".xml"});
 
         // apply rewrite rules to the back-end
-        dlow_1 = applyRewriteRulesOnBackend(dlow_1);
+        dlow_1 := applyRewriteRulesOnBackend(dlow_1);
 
         Print.clearBuf();
         XMLDump.dumpBackendDAE(dlow_1,addOriginalAdjacencyMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,false);
         Print.writeBuf(xml_filename);
         Print.clearBuf();
-        compileDir = if Testsuite.isRunning() then "" else compileDir;
+        compileDir := if Testsuite.isRunning() then "" else compileDir;
 
         // clear the rewrite rules!
         FlagsUtil.setConfigString(Flags.REWRITE_RULES_FILE, "");
@@ -6279,7 +6279,7 @@ algorithm
                      Values.BOOL(addOriginalAdjacencyMatrix),Values.BOOL(addSolvingInfo),
                      Values.BOOL(addMathMLCode),Values.BOOL(dumpResiduals),
                      Values.STRING(filenameprefix),Values.STRING(rewriteRulesFile)},_)
-      equation
+      algorithm
         //asInSimulationCode==false => it's NOT necessary to do all the translation's steps before dumping with xml
         Error.clearMessages() "Clear messages";
 
@@ -6288,27 +6288,27 @@ algorithm
         // load the rewrite rules
         RewriteRules.loadRules();
 
-        (cache, env, SOME(dae), _) = runFrontEnd(cache, env, classname, true, transform = true);
-        description = DAEUtil.daeDescription(dae);
+        (cache, env, SOME(dae), _) := runFrontEnd(cache, env, classname, true, transform = true);
+        description := DAEUtil.daeDescription(dae);
 
-        compileDir = System.pwd() + Autoconf.pathDelimiter;
-        cname_str = AbsynUtil.pathString(classname);
-        filenameprefix = if filenameprefix == "<default>" then cname_str else filenameprefix;
+        compileDir := System.pwd() + Autoconf.pathDelimiter;
+        cname_str := AbsynUtil.pathString(classname);
+        filenameprefix := if filenameprefix == "<default>" then cname_str else filenameprefix;
 
-        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix,NONE())); //Verificare cosa fa
-        dlow_1 = BackendDAEUtil.preOptimizeBackendDAE(dlow,NONE());
-        dlow_1 = BackendDAEUtil.transformBackendDAE(dlow_1,NONE(),NONE(),NONE());
-        dlow_1 = FindZeroCrossings.findZeroCrossings(dlow_1);
-        xml_filename = stringAppendList({filenameprefix,".xml"});
+        dlow := BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix,NONE())); //Verificare cosa fa
+        dlow_1 := BackendDAEUtil.preOptimizeBackendDAE(dlow,NONE());
+        dlow_1 := BackendDAEUtil.transformBackendDAE(dlow_1,NONE(),NONE(),NONE());
+        dlow_1 := FindZeroCrossings.findZeroCrossings(dlow_1);
+        xml_filename := stringAppendList({filenameprefix,".xml"});
 
         // apply rewrite rules to the back-end
-        dlow_1 = applyRewriteRulesOnBackend(dlow_1);
+        dlow_1 := applyRewriteRulesOnBackend(dlow_1);
 
         Print.clearBuf();
         XMLDump.dumpBackendDAE(dlow_1,addOriginalAdjacencyMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,false);
         Print.writeBuf(xml_filename);
         Print.clearBuf();
-        compileDir = if Testsuite.isRunning() then "" else compileDir;
+        compileDir := if Testsuite.isRunning() then "" else compileDir;
 
         // clear the rewrite rules!
         FlagsUtil.setConfigString(Flags.REWRITE_RULES_FILE, "");
@@ -6320,7 +6320,7 @@ algorithm
                      Values.BOOL(addOriginalAdjacencyMatrix),Values.BOOL(addSolvingInfo),
                      Values.BOOL(addMathMLCode),Values.BOOL(dumpResiduals),
                      Values.STRING(filenameprefix),Values.STRING(rewriteRulesFile)},_)
-      equation
+      algorithm
         //asInSimulationCode==true => it's necessary to do all the translation's steps before dumping with xml
         Error.clearMessages() "Clear messages";
 
@@ -6329,25 +6329,25 @@ algorithm
         // load the rewrite rules
         RewriteRules.loadRules();
 
-        (cache, env, SOME(dae), _) = runFrontEnd(cache, env, classname, true, transform = true);
-        description = DAEUtil.daeDescription(dae);
+        (cache, env, SOME(dae), _) := runFrontEnd(cache, env, classname, true, transform = true);
+        description := DAEUtil.daeDescription(dae);
 
-        compileDir = System.pwd() + Autoconf.pathDelimiter;
-        cname_str = AbsynUtil.pathString(classname);
-        filenameprefix = if filenameprefix == "<default>" then cname_str else filenameprefix;
+        compileDir := System.pwd() + Autoconf.pathDelimiter;
+        cname_str := AbsynUtil.pathString(classname);
+        filenameprefix := if filenameprefix == "<default>" then cname_str else filenameprefix;
 
-        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix, NONE()));
-        indexed_dlow = BackendDAEUtil.getSolvedSystem(dlow,"");
-        xml_filename = stringAppendList({filenameprefix,".xml"});
+        dlow := BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix, NONE()));
+        indexed_dlow := BackendDAEUtil.getSolvedSystem(dlow,"");
+        xml_filename := stringAppendList({filenameprefix,".xml"});
 
         // apply rewrite rules to the back-end
-        indexed_dlow = applyRewriteRulesOnBackend(indexed_dlow);
+        indexed_dlow := applyRewriteRulesOnBackend(indexed_dlow);
 
         Print.clearBuf();
         XMLDump.dumpBackendDAE(indexed_dlow,addOriginalAdjacencyMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,false);
         Print.writeBuf(xml_filename);
         Print.clearBuf();
-        compileDir = if Testsuite.isRunning() then "" else compileDir;
+        compileDir := if Testsuite.isRunning() then "" else compileDir;
 
         // clear the rewrite rules!
         FlagsUtil.setConfigString(Flags.REWRITE_RULES_FILE, "");
@@ -6359,7 +6359,7 @@ algorithm
                      Values.BOOL(addOriginalAdjacencyMatrix),Values.BOOL(addSolvingInfo),
                      Values.BOOL(addMathMLCode),Values.BOOL(dumpResiduals),
                      Values.STRING(filenameprefix),Values.STRING(rewriteRulesFile)},_)
-      equation
+      algorithm
         //asInSimulationCode==true => it's necessary to do all the translation's steps before dumping with xml
         Error.clearMessages() "Clear messages";
 
@@ -6368,25 +6368,25 @@ algorithm
         // load the rewrite rules
         RewriteRules.loadRules();
 
-        (cache, env, SOME(dae), _) = runFrontEnd(cache, env, classname, true, transform = true);
-        description = DAEUtil.daeDescription(dae);
+        (cache, env, SOME(dae), _) := runFrontEnd(cache, env, classname, true, transform = true);
+        description := DAEUtil.daeDescription(dae);
 
-        compileDir = System.pwd() + Autoconf.pathDelimiter;
-        cname_str = AbsynUtil.pathString(classname);
-        filenameprefix = if filenameprefix == "<default>" then cname_str else filenameprefix;
+        compileDir := System.pwd() + Autoconf.pathDelimiter;
+        cname_str := AbsynUtil.pathString(classname);
+        filenameprefix := if filenameprefix == "<default>" then cname_str else filenameprefix;
 
-        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix,NONE()));
-        indexed_dlow = BackendDAEUtil.getSolvedSystem(dlow,"");
-        xml_filename = stringAppendList({filenameprefix,".xml"});
+        dlow := BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix,NONE()));
+        indexed_dlow := BackendDAEUtil.getSolvedSystem(dlow,"");
+        xml_filename := stringAppendList({filenameprefix,".xml"});
 
         // apply rewrite rules to the back-end
-        indexed_dlow = applyRewriteRulesOnBackend(indexed_dlow);
+        indexed_dlow := applyRewriteRulesOnBackend(indexed_dlow);
 
         Print.clearBuf();
         XMLDump.dumpBackendDAE(indexed_dlow,addOriginalAdjacencyMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,true);
         Print.writeBuf(xml_filename);
         Print.clearBuf();
-        compileDir = if Testsuite.isRunning() then "" else compileDir;
+        compileDir := if Testsuite.isRunning() then "" else compileDir;
 
         // clear the rewrite rules!
         FlagsUtil.setConfigString(Flags.REWRITE_RULES_FILE, "");
@@ -6430,16 +6430,16 @@ algorithm
 
     // no rewrites!
     case _
-      equation
-        true = RewriteRules.noRewriteRulesBackEnd();
+      algorithm
+        true := RewriteRules.noRewriteRulesBackEnd();
       then
         inBackendDAE;
 
     // some rewrites
     case _
-      equation
-        false = RewriteRules.noRewriteRulesBackEnd();
-        outBackendDAE = BackendDAEOptimize.applyRewriteRulesBackend(inBackendDAE);
+      algorithm
+        false := RewriteRules.noRewriteRulesBackEnd();
+        outBackendDAE := BackendDAEOptimize.applyRewriteRulesBackend(inBackendDAE);
       then
         outBackendDAE;
 
@@ -6463,31 +6463,31 @@ algorithm
       String  baseClassName;
       Boolean b;
     case (_,_,Absyn.CLASS(body = Absyn.PARTS(classParts = parts)),b)
-      equation
-        strlist = InteractiveUtil.getClassnamesInParts(parts,b,false);
+      algorithm
+        strlist := InteractiveUtil.getClassnamesInParts(parts,b,false);
       then
         strlist;
 
     case (_,_,Absyn.CLASS(body = Absyn.DERIVED(typeSpec=Absyn.TPATH())),_)
-      equation
+      algorithm
       then
         {};
 
     case (_,_,Absyn.CLASS(body = Absyn.OVERLOAD(_, _)),_)
-      equation
+      algorithm
       then {};
 
     case (_,_,Absyn.CLASS(body = Absyn.ENUMERATION(_, _)),_)
-      equation
+      algorithm
       then {};
 
     case (_,_,Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts=parts)),b)
-      equation
-        strlist = InteractiveUtil.getClassnamesInParts(parts,b,false);
+      algorithm
+        strlist := InteractiveUtil.getClassnamesInParts(parts,b,false);
       then strlist;
 
     case (_,_,Absyn.CLASS(body = Absyn.PDER(_,_,_)),_)
-      equation
+      algorithm
       then {};
 
   end match;
@@ -6503,8 +6503,8 @@ algorithm
       Absyn.Path r, res;
       String c;
     case (c, r)
-      equation
-        res = AbsynUtil.joinPaths(r, Absyn.IDENT(c));
+      algorithm
+        res := AbsynUtil.joinPaths(r, Absyn.IDENT(c));
       then res;
   end match;
 end joinPaths;
@@ -6527,11 +6527,11 @@ algorithm
       list<Absyn.Path> result_path_lst, result;
       Boolean b;
     case (_, b, p)
-      equation
-        cdef = InteractiveUtil.getPathedClassInProgram(inPath, p);
-        strlst = getClassnamesInClassList(inPath, p, cdef, b);
-        result_path_lst = List.map1(strlst, joinPaths, inPath);
-        result = List.flatten(List.map2(result_path_lst, getAllClassPathsRecursive, b, p));
+      algorithm
+        cdef := InteractiveUtil.getPathedClassInProgram(inPath, p);
+        strlst := getClassnamesInClassList(inPath, p, cdef, b);
+        result_path_lst := List.map1(strlst, joinPaths, inPath);
+        result := List.flatten(List.map2(result_path_lst, getAllClassPathsRecursive, b, p));
       then
         inPath::result;
     else
@@ -6568,18 +6568,18 @@ algorithm
       Integer failed;
 
     case (cache,env,_,b,msg)
-      equation
-        allClassPaths = getAllClassPathsRecursive(className, b, SymbolTable.getAbsyn());
+      algorithm
+        allClassPaths := getAllClassPathsRecursive(className, b, SymbolTable.getAbsyn());
         print("Number of classes to check: " + intString(listLength(allClassPaths)) + "\n");
         // print ("All paths:\n" + stringDelimitList(List.map(allClassPaths, AbsynUtil.pathString), "\n") + "\n");
-        failed = checkAll(cache, env, allClassPaths, msg, not Testsuite.isRunning(), 0);
-        ret = "Number of classes checked / failed: " + intString(listLength(allClassPaths)) + "/" + intString(failed);
+        failed := checkAll(cache, env, allClassPaths, msg, not Testsuite.isRunning(), 0);
+        ret := "Number of classes checked / failed: " + intString(listLength(allClassPaths)) + "/" + intString(failed);
       then
         (cache,Values.STRING(ret));
 
     case (cache,_,_,_,_)
-      equation
-        ret = stringAppend("Error checking: ", AbsynUtil.pathString(className));
+      algorithm
+        ret := stringAppend("Error checking: ", AbsynUtil.pathString(className));
     then
       (cache,Values.STRING(ret));
   end matchcontinue;
@@ -6637,26 +6637,26 @@ algorithm
     case (_,_,{},_) then ();
 
     case (cache,env,className::rest,msg)
-      equation
-        c = InteractiveUtil.getPathedClassInProgram(className, p);
+      algorithm
+        c := InteractiveUtil.getPathedClassInProgram(className, p);
         // filter out partial classes
         // Absyn.CLASS(partialPrefix = false) = c; // do not filter partial classes
         // filter out packages
-        false = Interactive.isPackage(className, p);
+        false := Interactive.isPackage(className, p);
         // filter out functions
         // false = Interactive.isFunction(cr, p);
         // filter out types
-        false = Interactive.isType(className, p);
+        false := Interactive.isType(className, p);
         print("Checking: " + Dump.unparseClassAttributesStr(c) + " " + AbsynUtil.pathString(className) + "... ");
-        t1 = clock();
+        t1 := clock();
         FlagsUtil.setConfigBool(Flags.CHECK_MODEL, true);
-        (_,Values.STRING(str)) = checkModel(FCore.emptyCache(), env, className, msg);
+        (_,Values.STRING(str)) := checkModel(FCore.emptyCache(), env, className, msg);
         FlagsUtil.setConfigBool(Flags.CHECK_MODEL, false);
-        t2 = clock();
-        elapsedTime = t2 - t1;
-        s = realString(elapsedTime);
-        (smsg, f) = failOrSuccess(str);
-        failed = if f then failed + 1 else failed;
+        t2 := clock();
+        elapsedTime := t2 - t1;
+        s := realString(elapsedTime);
+        (smsg, f) := failOrSuccess(str);
+        failed := if f then failed + 1 else failed;
 
         if reportTimes then
           print (s + " seconds -> " + smsg + "\n");
@@ -6676,14 +6676,14 @@ algorithm
           (if reportTimes then realString(elapsedTime) + ", " else "") +
           AbsynUtil.pathString(className) + "\n");
         print ("-------------------------------------------------------------------------\n");
-        failed = checkAll(cache, env, rest, msg, reportTimes, failed);
+        failed := checkAll(cache, env, rest, msg, reportTimes, failed);
       then ();
 
     case (cache,env,className::rest,msg)
-      equation
-        c = InteractiveUtil.getPathedClassInProgram(className, p);
+      algorithm
+        c := InteractiveUtil.getPathedClassInProgram(className, p);
         print("Checking skipped: " + Dump.unparseClassAttributesStr(c) + " " + AbsynUtil.pathString(className) + "...\n");
-        failed = checkAll(cache, env, rest, msg, reportTimes, failed);
+        failed := checkAll(cache, env, rest, msg, reportTimes, failed);
       then
         ();
   end matchcontinue;
@@ -6699,14 +6699,14 @@ algorithm
       list<Absyn.ClassPart> algsList;
       list<Absyn.ClassPart> parts;
     case Absyn.CLASS(body = Absyn.PARTS(classParts = parts))
-      equation
-        algsList = getAlgorithmsInClassParts(parts);
+      algorithm
+        algsList := getAlgorithmsInClassParts(parts);
       then
         algsList;
     // check also the case model extends X end X;
     case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))
-      equation
-        algsList = getAlgorithmsInClassParts(parts);
+      algorithm
+        algsList := getAlgorithmsInClassParts(parts);
       then
         algsList;
     case Absyn.CLASS(body = Absyn.DERIVED()) then {};
@@ -6725,13 +6725,13 @@ algorithm
       list<Absyn.ClassPart> xs;
       Absyn.ClassPart cp;
     case ((cp as Absyn.ALGORITHMS()) :: xs)
-      equation
-        algsList = getAlgorithmsInClassParts(xs);
+      algorithm
+        algsList := getAlgorithmsInClassParts(xs);
       then
         cp::algsList;
     case ((_ :: xs))
-      equation
-        algsList = getAlgorithmsInClassParts(xs);
+      algorithm
+        algsList := getAlgorithmsInClassParts(xs);
       then
         algsList;
     case ({}) then {};
@@ -6759,8 +6759,8 @@ algorithm
       String str;
       list<Absyn.AlgorithmItem> algs;
   case (Absyn.ALGORITHMS(contents = algs))
-      equation
-        str = Dump.unparseAlgorithmStrLst(algs, "\n");
+      algorithm
+        str := Dump.unparseAlgorithmStrLst(algs, "\n");
       then
         str;
   end match;
@@ -6776,14 +6776,14 @@ algorithm
       list<Absyn.ClassPart> algsList;
       list<Absyn.ClassPart> parts;
     case Absyn.CLASS(body = Absyn.PARTS(classParts = parts))
-      equation
-        algsList = getInitialAlgorithmsInClassParts(parts);
+      algorithm
+        algsList := getInitialAlgorithmsInClassParts(parts);
       then
         algsList;
     // check also the case model extends X end X;
     case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))
-      equation
-        algsList = getInitialAlgorithmsInClassParts(parts);
+      algorithm
+        algsList := getInitialAlgorithmsInClassParts(parts);
       then
         algsList;
     case Absyn.CLASS(body = Absyn.DERIVED()) then {};
@@ -6802,13 +6802,13 @@ algorithm
       list<Absyn.ClassPart> xs;
       Absyn.ClassPart cp;
     case ((cp as Absyn.INITIALALGORITHMS()) :: xs)
-      equation
-        algsList = getInitialAlgorithmsInClassParts(xs);
+      algorithm
+        algsList := getInitialAlgorithmsInClassParts(xs);
       then
         cp::algsList;
     case ((_ :: xs))
-      equation
-        algsList = getInitialAlgorithmsInClassParts(xs);
+      algorithm
+        algsList := getInitialAlgorithmsInClassParts(xs);
       then
         algsList;
     case ({}) then {};
@@ -6836,8 +6836,8 @@ algorithm
       String str;
       list<Absyn.AlgorithmItem> algs;
   case (Absyn.INITIALALGORITHMS(contents = algs))
-      equation
-        str = Dump.unparseAlgorithmStrLst(algs, "\n");
+      algorithm
+        str := Dump.unparseAlgorithmStrLst(algs, "\n");
       then
         str;
   end match;
@@ -6853,14 +6853,14 @@ algorithm
       list<Absyn.ClassPart> parts;
       Integer count;
     case Absyn.CLASS(body = Absyn.PARTS(classParts = parts))
-      equation
-        count = getAlgorithmItemsCountInClassParts(parts);
+      algorithm
+        count := getAlgorithmItemsCountInClassParts(parts);
       then
         count;
     // check also the case model extends X end X;
     case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))
-      equation
-        count = getAlgorithmItemsCountInClassParts(parts);
+      algorithm
+        count := getAlgorithmItemsCountInClassParts(parts);
       then
         count;
     case Absyn.CLASS(body = Absyn.DERIVED()) then 0;
@@ -6878,14 +6878,14 @@ algorithm
       list<Absyn.ClassPart> xs;
       Integer c1, c2, res;
     case (Absyn.ALGORITHMS(contents = algs) :: xs)
-      equation
-        c1 = getAlgorithmItemsCountInAlgorithmItems(algs);
-        c2 = getAlgorithmItemsCountInClassParts(xs);
+      algorithm
+        c1 := getAlgorithmItemsCountInAlgorithmItems(algs);
+        c2 := getAlgorithmItemsCountInClassParts(xs);
       then
         c1 + c2;
     case ((_ :: xs))
-      equation
-        res = getAlgorithmItemsCountInClassParts(xs);
+      algorithm
+        res := getAlgorithmItemsCountInClassParts(xs);
       then
         res;
     case ({}) then 0;
@@ -6903,13 +6903,13 @@ algorithm
       Absyn.Algorithm alg;
       Integer c1, res;
     case (Absyn.ALGORITHMITEM() :: xs)
-      equation
-        c1 = getAlgorithmItemsCountInAlgorithmItems(xs);
+      algorithm
+        c1 := getAlgorithmItemsCountInAlgorithmItems(xs);
       then
         c1 + 1;
     case ((_ :: xs))
-      equation
-        res = getAlgorithmItemsCountInAlgorithmItems(xs);
+      algorithm
+        res := getAlgorithmItemsCountInAlgorithmItems(xs);
       then
         res;
     case ({}) then 0;
@@ -6928,14 +6928,14 @@ algorithm
       String str;
       Integer n;
     case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)),n)
-      equation
-        str = getNthAlgorithmItemInClassParts(parts,n);
+      algorithm
+        str := getNthAlgorithmItemInClassParts(parts,n);
       then
         str;
     // check also the case model extends X end X;
     case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)),n)
-      equation
-        str = getNthAlgorithmItemInClassParts(parts,n);
+      algorithm
+        str := getNthAlgorithmItemInClassParts(parts,n);
       then
         str;
   end match;
@@ -6954,20 +6954,20 @@ algorithm
       list<Absyn.ClassPart> xs;
       Integer n,c1,newn;
     case ((Absyn.ALGORITHMS(contents = algs) :: _),n)
-      equation
-        str = getNthAlgorithmItemInAlgorithms(algs, n);
+      algorithm
+        str := getNthAlgorithmItemInAlgorithms(algs, n);
       then
         str;
     case ((Absyn.ALGORITHMS(contents = algs) :: xs),n) /* The rule above failed, subtract the number of algorithms in the first section and try with the rest of the classparts */
-      equation
-        c1 = getAlgorithmItemsCountInAlgorithmItems(algs);
-        newn = n - c1;
-        str = getNthAlgorithmItemInClassParts(xs, newn);
+      algorithm
+        c1 := getAlgorithmItemsCountInAlgorithmItems(algs);
+        newn := n - c1;
+        str := getNthAlgorithmItemInClassParts(xs, newn);
       then
         str;
     case ((_ :: xs),n)
-      equation
-        str = getNthAlgorithmItemInClassParts(xs, n);
+      algorithm
+        str := getNthAlgorithmItemInClassParts(xs, n);
       then
         str;
   end matchcontinue;
@@ -6991,14 +6991,14 @@ algorithm
       list<Absyn.AlgorithmItem> xs;
       Integer newn,n;
     case ((Absyn.ALGORITHMITEM(algorithm_ = alg, comment = cmt, info = inf) :: _), 1)
-      equation
-        str = Dump.unparseAlgorithmStr(Absyn.ALGORITHMITEM(alg, cmt, inf));
+      algorithm
+        str := Dump.unparseAlgorithmStr(Absyn.ALGORITHMITEM(alg, cmt, inf));
       then
         str;
     case ((_ :: xs),n)
-      equation
-        newn = n - 1;
-        str = getNthAlgorithmItemInAlgorithms(xs, newn);
+      algorithm
+        newn := n - 1;
+        str := getNthAlgorithmItemInAlgorithms(xs, newn);
       then
         str;
     case ({},_) then fail();
@@ -7015,14 +7015,14 @@ algorithm
       list<Absyn.ClassPart> parts;
       Integer count;
     case Absyn.CLASS(body = Absyn.PARTS(classParts = parts))
-      equation
-        count = getInitialAlgorithmItemsCountInClassParts(parts);
+      algorithm
+        count := getInitialAlgorithmItemsCountInClassParts(parts);
       then
         count;
     // check also the case model extends X end X;
     case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))
-      equation
-        count = getInitialAlgorithmItemsCountInClassParts(parts);
+      algorithm
+        count := getInitialAlgorithmItemsCountInClassParts(parts);
       then
         count;
     case Absyn.CLASS(body = Absyn.DERIVED()) then 0;
@@ -7040,14 +7040,14 @@ algorithm
       list<Absyn.ClassPart> xs;
       Integer c1, c2, res;
     case (Absyn.INITIALALGORITHMS(contents = algs) :: xs)
-      equation
-        c1 = getAlgorithmItemsCountInAlgorithmItems(algs);
-        c2 = getInitialAlgorithmItemsCountInClassParts(xs);
+      algorithm
+        c1 := getAlgorithmItemsCountInAlgorithmItems(algs);
+        c2 := getInitialAlgorithmItemsCountInClassParts(xs);
       then
         c1 + c2;
     case ((_ :: xs))
-      equation
-        res = getInitialAlgorithmItemsCountInClassParts(xs);
+      algorithm
+        res := getInitialAlgorithmItemsCountInClassParts(xs);
       then
         res;
     case ({}) then 0;
@@ -7066,14 +7066,14 @@ algorithm
       String str;
       Integer n;
     case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)),n)
-      equation
-        str = getNthInitialAlgorithmItemInClassParts(parts,n);
+      algorithm
+        str := getNthInitialAlgorithmItemInClassParts(parts,n);
       then
         str;
     // check also the case model extends X end X;
     case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)),n)
-      equation
-        str = getNthInitialAlgorithmItemInClassParts(parts,n);
+      algorithm
+        str := getNthInitialAlgorithmItemInClassParts(parts,n);
       then
         str;
   end match;
@@ -7092,20 +7092,20 @@ algorithm
       list<Absyn.ClassPart> xs;
       Integer n,c1,newn;
     case ((Absyn.INITIALALGORITHMS(contents = algs) :: _),n)
-      equation
-        str = getNthAlgorithmItemInAlgorithms(algs, n);
+      algorithm
+        str := getNthAlgorithmItemInAlgorithms(algs, n);
       then
         str;
     case ((Absyn.INITIALALGORITHMS(contents = algs) :: xs),n) /* The rule above failed, subtract the number of algorithms in the first section and try with the rest of the classparts */
-      equation
-        c1 = getAlgorithmItemsCountInAlgorithmItems(algs);
-        newn = n - c1;
-        str = getNthInitialAlgorithmItemInClassParts(xs, newn);
+      algorithm
+        c1 := getAlgorithmItemsCountInAlgorithmItems(algs);
+        newn := n - c1;
+        str := getNthInitialAlgorithmItemInClassParts(xs, newn);
       then
         str;
     case ((_ :: xs),n)
-      equation
-        str = getNthInitialAlgorithmItemInClassParts(xs, n);
+      algorithm
+        str := getNthInitialAlgorithmItemInClassParts(xs, n);
       then
         str;
   end matchcontinue;
@@ -7121,14 +7121,14 @@ algorithm
       list<Absyn.ClassPart> eqsList;
       list<Absyn.ClassPart> parts;
     case Absyn.CLASS(body = Absyn.PARTS(classParts = parts))
-      equation
-        eqsList = getEquationsInClassParts(parts);
+      algorithm
+        eqsList := getEquationsInClassParts(parts);
       then
         eqsList;
     // check also the case model extends X end X;
     case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))
-      equation
-        eqsList = getEquationsInClassParts(parts);
+      algorithm
+        eqsList := getEquationsInClassParts(parts);
       then
         eqsList;
     case Absyn.CLASS(body = Absyn.DERIVED()) then {};
@@ -7147,13 +7147,13 @@ algorithm
       list<Absyn.ClassPart> xs;
       Absyn.ClassPart cp;
     case ((cp as Absyn.EQUATIONS()) :: xs)
-      equation
-        eqsList = getEquationsInClassParts(xs);
+      algorithm
+        eqsList := getEquationsInClassParts(xs);
       then
         cp::eqsList;
     case ((_ :: xs))
-      equation
-        eqsList = getEquationsInClassParts(xs);
+      algorithm
+        eqsList := getEquationsInClassParts(xs);
       then
         eqsList;
     case ({}) then {};
@@ -7181,8 +7181,8 @@ algorithm
       String str;
       list<Absyn.EquationItem> eqs;
   case (Absyn.EQUATIONS(contents = eqs))
-      equation
-        str = Dump.unparseEquationItemStrLst(eqs, "\n");
+      algorithm
+        str := Dump.unparseEquationItemStrLst(eqs, "\n");
       then
         str;
   end match;
@@ -7198,14 +7198,14 @@ algorithm
       list<Absyn.ClassPart> eqsList;
       list<Absyn.ClassPart> parts;
     case Absyn.CLASS(body = Absyn.PARTS(classParts = parts))
-      equation
-        eqsList = getInitialEquationsInClassParts(parts);
+      algorithm
+        eqsList := getInitialEquationsInClassParts(parts);
       then
         eqsList;
     // check also the case model extends X end X;
     case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))
-      equation
-        eqsList = getInitialEquationsInClassParts(parts);
+      algorithm
+        eqsList := getInitialEquationsInClassParts(parts);
       then
         eqsList;
     case Absyn.CLASS(body = Absyn.DERIVED()) then {};
@@ -7224,13 +7224,13 @@ algorithm
       list<Absyn.ClassPart> xs;
       Absyn.ClassPart cp;
     case ((cp as Absyn.INITIALEQUATIONS()) :: xs)
-      equation
-        eqsList = getInitialEquationsInClassParts(xs);
+      algorithm
+        eqsList := getInitialEquationsInClassParts(xs);
       then
         cp::eqsList;
     case ((_ :: xs))
-      equation
-        eqsList = getInitialEquationsInClassParts(xs);
+      algorithm
+        eqsList := getInitialEquationsInClassParts(xs);
       then
         eqsList;
     case ({}) then {};
@@ -7258,8 +7258,8 @@ algorithm
       String str;
       list<Absyn.EquationItem> eqs;
   case (Absyn.INITIALEQUATIONS(contents = eqs))
-      equation
-        str = Dump.unparseEquationItemStrLst(eqs, "\n");
+      algorithm
+        str := Dump.unparseEquationItemStrLst(eqs, "\n");
       then
         str;
   end match;
@@ -7275,14 +7275,14 @@ algorithm
       list<Absyn.ClassPart> parts;
       Integer count;
     case Absyn.CLASS(body = Absyn.PARTS(classParts = parts))
-      equation
-        count = getEquationItemsCountInClassParts(parts);
+      algorithm
+        count := getEquationItemsCountInClassParts(parts);
       then
         count;
     // check also the case model extends X end X;
     case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))
-      equation
-        count = getEquationItemsCountInClassParts(parts);
+      algorithm
+        count := getEquationItemsCountInClassParts(parts);
       then
         count;
     case Absyn.CLASS(body = Absyn.DERIVED()) then 0;
@@ -7300,14 +7300,14 @@ algorithm
       list<Absyn.ClassPart> xs;
       Integer c1, c2, res;
     case (Absyn.EQUATIONS(contents = eqs) :: xs)
-      equation
-        c1 = getEquationItemsCountInEquationItems(eqs);
-        c2 = getEquationItemsCountInClassParts(xs);
+      algorithm
+        c1 := getEquationItemsCountInEquationItems(eqs);
+        c2 := getEquationItemsCountInClassParts(xs);
       then
         c1 + c2;
     case ((_ :: xs))
-      equation
-        res = getEquationItemsCountInClassParts(xs);
+      algorithm
+        res := getEquationItemsCountInClassParts(xs);
       then
         res;
     case ({}) then 0;
@@ -7325,13 +7325,13 @@ algorithm
       Absyn.Equation eq;
       Integer c1, res;
     case (Absyn.EQUATIONITEM() :: xs)
-      equation
-        c1 = getEquationItemsCountInEquationItems(xs);
+      algorithm
+        c1 := getEquationItemsCountInEquationItems(xs);
       then
         c1 + 1;
     case ((_ :: xs))
-      equation
-        res = getEquationItemsCountInEquationItems(xs);
+      algorithm
+        res := getEquationItemsCountInEquationItems(xs);
       then
         res;
     case ({}) then 0;
@@ -7350,14 +7350,14 @@ algorithm
       String str;
       Integer n;
     case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)),n)
-      equation
-        str = getNthEquationItemInClassParts(parts,n);
+      algorithm
+        str := getNthEquationItemInClassParts(parts,n);
       then
         str;
     // check also the case model extends X end X;
     case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)),n)
-      equation
-        str = getNthEquationItemInClassParts(parts,n);
+      algorithm
+        str := getNthEquationItemInClassParts(parts,n);
       then
         str;
   end match;
@@ -7376,20 +7376,20 @@ algorithm
       list<Absyn.ClassPart> xs;
       Integer n,c1,newn;
     case ((Absyn.EQUATIONS(contents = eqs) :: _),n)
-      equation
-        str = getNthEquationItemInEquations(eqs, n);
+      algorithm
+        str := getNthEquationItemInEquations(eqs, n);
       then
         str;
     case ((Absyn.EQUATIONS(contents = eqs) :: xs),n) /* The rule above failed, subtract the number of equations in the first section and try with the rest of the classparts */
-      equation
-        c1 = getEquationItemsCountInEquationItems(eqs);
-        newn = n - c1;
-        str = getNthEquationItemInClassParts(xs, newn);
+      algorithm
+        c1 := getEquationItemsCountInEquationItems(eqs);
+        newn := n - c1;
+        str := getNthEquationItemInClassParts(xs, newn);
       then
         str;
     case ((_ :: xs),n)
-      equation
-        str = getNthEquationItemInClassParts(xs, n);
+      algorithm
+        str := getNthEquationItemInClassParts(xs, n);
       then
         str;
   end matchcontinue;
@@ -7411,16 +7411,16 @@ algorithm
       list<Absyn.EquationItem> xs;
       Integer newn,n;
     case ((Absyn.EQUATIONITEM(equation_ = eq) :: _), 1)
-      equation
-        str = Dump.unparseEquationStr(eq);
-        str = stringAppend(str, ";");
-        str = System.trim(str, " ");
+      algorithm
+        str := Dump.unparseEquationStr(eq);
+        str := stringAppend(str, ";");
+        str := System.trim(str, " ");
       then
         str;
     case ((_ :: xs),n)
-      equation
-        newn = n - 1;
-        str = getNthEquationItemInEquations(xs, newn);
+      algorithm
+        newn := n - 1;
+        str := getNthEquationItemInEquations(xs, newn);
       then
         str;
     case ({},_) then fail();
@@ -7437,14 +7437,14 @@ algorithm
       list<Absyn.ClassPart> parts;
       Integer count;
     case Absyn.CLASS(body = Absyn.PARTS(classParts = parts))
-      equation
-        count = getInitialEquationItemsCountInClassParts(parts);
+      algorithm
+        count := getInitialEquationItemsCountInClassParts(parts);
       then
         count;
     // check also the case model extends X end X;
     case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))
-      equation
-        count = getInitialEquationItemsCountInClassParts(parts);
+      algorithm
+        count := getInitialEquationItemsCountInClassParts(parts);
       then
         count;
     case Absyn.CLASS(body = Absyn.DERIVED()) then 0;
@@ -7462,14 +7462,14 @@ algorithm
       list<Absyn.ClassPart> xs;
       Integer c1, c2, res;
     case (Absyn.INITIALEQUATIONS(contents = eqs) :: xs)
-      equation
-        c1 = getEquationItemsCountInEquationItems(eqs);
-        c2 = getInitialEquationItemsCountInClassParts(xs);
+      algorithm
+        c1 := getEquationItemsCountInEquationItems(eqs);
+        c2 := getInitialEquationItemsCountInClassParts(xs);
       then
         c1 + c2;
     case ((_ :: xs))
-      equation
-        res = getInitialEquationItemsCountInClassParts(xs);
+      algorithm
+        res := getInitialEquationItemsCountInClassParts(xs);
       then
         res;
     case ({}) then 0;
@@ -7488,14 +7488,14 @@ algorithm
       String str;
       Integer n;
     case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)),n)
-      equation
-        str = getNthInitialEquationItemInClassParts(parts,n);
+      algorithm
+        str := getNthInitialEquationItemInClassParts(parts,n);
       then
         str;
     // check also the case model extends X end X;
     case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)),n)
-      equation
-        str = getNthInitialEquationItemInClassParts(parts,n);
+      algorithm
+        str := getNthInitialEquationItemInClassParts(parts,n);
       then
         str;
   end match;
@@ -7514,20 +7514,20 @@ algorithm
       list<Absyn.ClassPart> xs;
       Integer n,c1,newn;
     case ((Absyn.INITIALEQUATIONS(contents = eqs) :: _),n)
-      equation
-        str = getNthEquationItemInEquations(eqs, n);
+      algorithm
+        str := getNthEquationItemInEquations(eqs, n);
       then
         str;
     case ((Absyn.INITIALEQUATIONS(contents = eqs) :: xs),n) /* The rule above failed, subtract the number of equations in the first section and try with the rest of the classparts */
-      equation
-        c1 = getEquationItemsCountInEquationItems(eqs);
-        newn = n - c1;
-        str = getNthInitialEquationItemInClassParts(xs, newn);
+      algorithm
+        c1 := getEquationItemsCountInEquationItems(eqs);
+        newn := n - c1;
+        str := getNthInitialEquationItemInClassParts(xs, newn);
       then
         str;
     case ((_ :: xs),n)
-      equation
-        str = getNthInitialEquationItemInClassParts(xs, n);
+      algorithm
+        str := getNthInitialEquationItemInClassParts(xs, n);
       then
         str;
   end matchcontinue;
@@ -7564,20 +7564,20 @@ algorithm
       String str;
       Integer n;
     case (Absyn.CLASS(body = Absyn.PARTS(ann = anns)),n)
-      equation
-        ann = listGet(anns,n);
-        str = Dump.unparseAnnotation(ann);
-        str = stringAppend(str, ";");
-        str = System.trim(str, " ");
+      algorithm
+        ann := listGet(anns,n);
+        str := Dump.unparseAnnotation(ann);
+        str := stringAppend(str, ";");
+        str := System.trim(str, " ");
       then
         str;
     // check also the case model extends X end X;
     case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(ann = anns)),n)
-      equation
-        ann = listGet(anns,n);
-        str = Dump.unparseAnnotation(ann);
-        str = stringAppend(str, ";");
-        str = System.trim(str, " ");
+      algorithm
+        ann := listGet(anns,n);
+        str := Dump.unparseAnnotation(ann);
+        str := stringAppend(str, ";");
+        str := System.trim(str, " ");
       then
         str;
   end match;
@@ -7619,30 +7619,30 @@ algorithm
       String path_str,id;
       Absyn.Path path;
     case (Absyn.NAMED_IMPORT(name = id,path = path))
-      equation
-        path_str = AbsynUtil.pathString(path);
-        vals = {Values.STRING(path_str),Values.STRING(id),Values.STRING("named")};
+      algorithm
+        path_str := AbsynUtil.pathString(path);
+        vals := {Values.STRING(path_str),Values.STRING(id),Values.STRING("named")};
       then
         vals;
     case (Absyn.QUAL_IMPORT(path = path))
-      equation
-        path_str = AbsynUtil.pathString(path);
-        vals = {Values.STRING(path_str),Values.STRING(""),Values.STRING("qualified")};
+      algorithm
+        path_str := AbsynUtil.pathString(path);
+        vals := {Values.STRING(path_str),Values.STRING(""),Values.STRING("qualified")};
       then
         vals;
     case (Absyn.UNQUAL_IMPORT(path = path))
-      equation
-        path_str = AbsynUtil.pathString(path);
-        path_str = stringAppendList({path_str, ".*"});
-        vals = {Values.STRING(path_str),Values.STRING(""),Values.STRING("unqualified")};
+      algorithm
+        path_str := AbsynUtil.pathString(path);
+        path_str := stringAppendList({path_str, ".*"});
+        vals := {Values.STRING(path_str),Values.STRING(""),Values.STRING("unqualified")};
       then
         vals;
     case (Absyn.GROUP_IMPORT(prefix = path, groups = gi))
-      equation
-        path_str = AbsynUtil.pathString(path);
-        id = stringDelimitList(unparseGroupImport(gi),",");
-        path_str = stringAppendList({path_str,".{",id,"}"});
-        vals = {Values.STRING(path_str),Values.STRING(""),Values.STRING("multiple")};
+      algorithm
+        path_str := AbsynUtil.pathString(path);
+        id := stringDelimitList(unparseGroupImport(gi),",");
+        path_str := stringAppendList({path_str,".{",id,"}"});
+        vals := {Values.STRING(path_str),Values.STRING(""),Values.STRING("multiple")};
       then
         vals;
   end match;
@@ -7659,13 +7659,13 @@ algorithm
     String str;
     case {} then {};
     case (Absyn.GROUP_IMPORT_NAME(name = str) :: rest)
-      equation
-        lst = unparseGroupImport(rest);
+      algorithm
+        lst := unparseGroupImport(rest);
       then
         (str::lst);
     case ((_ :: rest))
-      equation
-        lst = unparseGroupImport(rest);
+      algorithm
+        lst := unparseGroupImport(rest);
       then
         lst;
   end matchcontinue;
@@ -7684,8 +7684,8 @@ algorithm
       Absyn.Path path;
       Absyn.Program p;
     case (path,p)
-      equation
-        Absyn.CLASS(body = Absyn.DERIVED()) = InteractiveUtil.getPathedClassInProgram(path, p);
+      algorithm
+        Absyn.CLASS(body = Absyn.DERIVED()) := InteractiveUtil.getPathedClassInProgram(path, p);
       then
         true;
     else false;
@@ -7753,28 +7753,28 @@ algorithm
       list<Values.Value> xs;
       Values.Value val;
     case ((val as Values.CODE(_)) :: xs, str1, true, p)
-      equation
-        absynClass = InteractiveUtil.getPathedClassInProgram(ValuesUtil.getPath(val), p);
-        p1 = Absyn.PROGRAM({absynClass},Absyn.TOP());
+      algorithm
+        absynClass := InteractiveUtil.getPathedClassInProgram(ValuesUtil.getPath(val), p);
+        p1 := Absyn.PROGRAM({absynClass},Absyn.TOP());
         /* Don't consider packages for FindInText search */
-        false = Interactive.isPackage(ValuesUtil.getPath(val), inProgram);
-        str = Dump.unparseStr(p1, false);
-        position = System.stringFind(System.tolower(str), System.tolower(str1));
-        true = (position > -1);
-        valsList = searchClassNames(xs, str1, true, p);
+        false := Interactive.isPackage(ValuesUtil.getPath(val), inProgram);
+        str := Dump.unparseStr(p1, false);
+        position := System.stringFind(System.tolower(str), System.tolower(str1));
+        true := (position > -1);
+        valsList := searchClassNames(xs, str1, true, p);
       then
         val::valsList;
     case ((val as Values.CODE(_)) :: xs, str1, b, p)
-      equation
-        str = ValuesUtil.valString(val);
-        position = System.stringFind(System.tolower(str), System.tolower(str1));
-        true = (position > -1);
-        valsList = searchClassNames(xs, str1, b, p);
+      algorithm
+        str := ValuesUtil.valString(val);
+        position := System.stringFind(System.tolower(str), System.tolower(str1));
+        true := (position > -1);
+        valsList := searchClassNames(xs, str1, b, p);
       then
         val::valsList;
     case ((_ :: xs), str1, b, p)
-      equation
-        valsList = searchClassNames(xs, str1, b, p);
+      algorithm
+        valsList := searchClassNames(xs, str1, b, p);
       then
         valsList;
     case ({}, _, _, _) then {};
@@ -7790,8 +7790,8 @@ algorithm
       Absyn.Path p;
       String pstr,ver;
     case ((p,_,{ver},_))
-      equation
-        pstr = AbsynUtil.pathString(p);
+      algorithm
+        pstr := AbsynUtil.pathString(p);
       then ValuesUtil.makeArray({Values.STRING(pstr),Values.STRING(ver)});
     else
       equation
@@ -7904,8 +7904,8 @@ algorithm
     local
       String stateStr;
     case(_,_)
-      equation
-        stateStr = Interactive.getNamedAnnotationExp(className, p, Absyn.IDENT("__Dymola_state"), SOME("false"), getDymolaStateAnnotationModStr);
+      algorithm
+        stateStr := Interactive.getNamedAnnotationExp(className, p, Absyn.IDENT("__Dymola_state"), SOME("false"), getDymolaStateAnnotationModStr);
       then
         stringEq(stateStr, "true");
   end match;
@@ -7920,8 +7920,8 @@ algorithm
     local Absyn.Exp e;
 
     case(SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=e))))
-      equation
-        stateStr = Dump.printExpStr(e);
+      algorithm
+        stateStr := Dump.printExpStr(e);
       then
         stateStr;
 
@@ -8073,9 +8073,9 @@ algorithm
       list<Absyn.ElementArg> annotations;
 
     case (Absyn.EQUATIONITEM(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annotations)),_))))
-      equation
-        annotationList = getAnnotationInEquationElArgs(annotations);
-        annotationStr = stringDelimitList(annotationList, ", ");
+      algorithm
+        annotationList := getAnnotationInEquationElArgs(annotations);
+        annotationStr := stringDelimitList(annotationList, ", ");
       then
         annotationStr;
     case (Absyn.EQUATIONITEM(comment = NONE()))
@@ -8105,22 +8105,22 @@ algorithm
     case ({}) then {};
 
     case (Absyn.MODIFICATION(path = Absyn.IDENT(annName), modification = SOME(Absyn.CLASSMOD(mod,_))) :: rest)
-      equation
-        lineProgram = InteractiveUtil.modelicaAnnotationProgram(Config.getAnnotationVersion());
-        fargs = Interactive.createFuncargsFromElementargs(mod);
-        p_1 = AbsynToSCode.translateAbsyn2SCode(lineProgram);
-        (cache,env) = Inst.makeEnvFromProgram(p_1);
-        (_,newexp,prop) = StaticScript.elabGraphicsExp(cache,env, Absyn.CALL(Absyn.CREF_IDENT(annName,{}),fargs,{}), false,DAE.NOPRE(), sourceInfo()) "impl" ;
-        (cache, newexp, prop) = Ceval.cevalIfConstant(cache, env, newexp, prop, false, sourceInfo());
+      algorithm
+        lineProgram := InteractiveUtil.modelicaAnnotationProgram(Config.getAnnotationVersion());
+        fargs := Interactive.createFuncargsFromElementargs(mod);
+        p_1 := AbsynToSCode.translateAbsyn2SCode(lineProgram);
+        (cache,env) := Inst.makeEnvFromProgram(p_1);
+        (_,newexp,prop) := StaticScript.elabGraphicsExp(cache,env, Absyn.CALL(Absyn.CREF_IDENT(annName,{}),fargs,{}), false,DAE.NOPRE(), sourceInfo()) "impl" ;
+        (cache, newexp, prop) := Ceval.cevalIfConstant(cache, env, newexp, prop, false, sourceInfo());
         Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
-        gexpstr = ExpressionDump.printExpStr(newexp);
-        res = getAnnotationInEquationElArgs(rest);
+        gexpstr := ExpressionDump.printExpStr(newexp);
+        res := getAnnotationInEquationElArgs(rest);
       then
         (gexpstr :: res);
     case (Absyn.MODIFICATION(path = Absyn.IDENT(annName), modification = SOME(Absyn.CLASSMOD(_,Absyn.NOMOD()))) :: rest)
-      equation
-        gexpstr_1 = stringAppendList({annName,"(error)"});
-        res = getAnnotationInEquationElArgs(rest);
+      algorithm
+        gexpstr_1 := stringAppendList({annName,"(error)"});
+        res := getAnnotationInEquationElArgs(rest);
       then
         (gexpstr_1 :: res);
   end matchcontinue;
@@ -8150,15 +8150,15 @@ algorithm
       list<Absyn.ClassPart> parts;
 
     case Absyn.CLASS(body = Absyn.PARTS(classParts = parts))
-      equation
-        transitions = getTransitionsInClassParts(parts);
+      algorithm
+        transitions := getTransitionsInClassParts(parts);
       then
         transitions;
 
     // handle also the case model extends X end X;
     case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))
-      equation
-        transitions = getTransitionsInClassParts(parts);
+      algorithm
+        transitions := getTransitionsInClassParts(parts);
       then
         transitions;
 
@@ -8179,15 +8179,15 @@ algorithm
       list<Absyn.ClassPart> xs;
 
     case ((Absyn.EQUATIONS(contents = eqlist) :: xs))
-      equation
-        transitions1 = getTransitionsInEquations(eqlist, {});
-        transitions2 = getTransitionsInClassParts(xs);
+      algorithm
+        transitions1 := getTransitionsInEquations(eqlist, {});
+        transitions2 := getTransitionsInClassParts(xs);
       then
         listAppend(transitions1, transitions2);
 
     case ((_ :: xs))
-      equation
-        transitions1 = getTransitionsInClassParts(xs);
+      algorithm
+        transitions1 := getTransitionsInClassParts(xs);
       then
         transitions1;
 
@@ -8212,10 +8212,10 @@ algorithm
       list<Absyn.EquationItem> xs;
 
     case (((eqItem as Absyn.EQUATIONITEM(equation_ = eq as Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT(name = "transition")))) :: xs),transitions)
-      equation
-        transition = getTransitionInEquation(eq);
-        transition = List.insert(transition, listLength(transition) + 1, getAnnotationInEquation(eqItem));
-        transitions = listAppend({transition}, transitions);
+      algorithm
+        transition := getTransitionInEquation(eq);
+        transition := List.insert(transition, listLength(transition) + 1, getAnnotationInEquation(eqItem));
+        transitions := listAppend({transition}, transitions);
       then
         getTransitionsInEquations(xs, transitions);
 
@@ -8244,13 +8244,13 @@ algorithm
       list<String> transition;
 
     case Absyn.EQ_NORETCALL(functionArgs = Absyn.FUNCTIONARGS(args = expArgs, argNames = namedArgs))
-      equation
-        transition = List.map(expArgs, Dump.printExpStr);
+      algorithm
+        transition := List.map(expArgs, Dump.printExpStr);
         // if we have named args then give them preference
-        transition = Interactive.addOrUpdateNamedArg(namedArgs, "immediate", "true", transition, 4);
-        transition = Interactive.addOrUpdateNamedArg(namedArgs, "reset", "true", transition, 5);
-        transition = Interactive.addOrUpdateNamedArg(namedArgs, "synchronize", "false", transition, 6);
-        transition = Interactive.addOrUpdateNamedArg(namedArgs, "priority", "1", transition, 7);
+        transition := Interactive.addOrUpdateNamedArg(namedArgs, "immediate", "true", transition, 4);
+        transition := Interactive.addOrUpdateNamedArg(namedArgs, "reset", "true", transition, 5);
+        transition := Interactive.addOrUpdateNamedArg(namedArgs, "synchronize", "false", transition, 6);
+        transition := Interactive.addOrUpdateNamedArg(namedArgs, "priority", "1", transition, 7);
       then
         transition;
 
@@ -8283,15 +8283,15 @@ algorithm
       list<Absyn.ClassPart> parts;
 
     case Absyn.CLASS(body = Absyn.PARTS(classParts = parts))
-      equation
-        initialStates = getInitialStatesInClassParts(parts);
+      algorithm
+        initialStates := getInitialStatesInClassParts(parts);
       then
         initialStates;
 
     // handle also the case model extends X end X;
     case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))
-      equation
-        initialStates = getInitialStatesInClassParts(parts);
+      algorithm
+        initialStates := getInitialStatesInClassParts(parts);
       then
         initialStates;
 
@@ -8312,15 +8312,15 @@ algorithm
       list<Absyn.ClassPart> xs;
 
     case ((Absyn.EQUATIONS(contents = eqlist) :: xs))
-      equation
-        initialStates1 = getInitialStatesInEquations(eqlist, {});
-        initialStates2 = getInitialStatesInClassParts(xs);
+      algorithm
+        initialStates1 := getInitialStatesInEquations(eqlist, {});
+        initialStates2 := getInitialStatesInClassParts(xs);
       then
         listAppend(initialStates1, initialStates2);
 
     case ((_ :: xs))
-      equation
-        initialStates1 = getInitialStatesInClassParts(xs);
+      algorithm
+        initialStates1 := getInitialStatesInClassParts(xs);
       then
         initialStates1;
 
@@ -8345,10 +8345,10 @@ algorithm
       list<Absyn.EquationItem> xs;
 
     case (((eqItem as Absyn.EQUATIONITEM(equation_ = eq as Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT(name = "initialState")))) :: xs),initialStates)
-      equation
-        initialState = getInitialStateInEquation(eq);
-        initialState = List.insert(initialState, listLength(initialState) + 1, getAnnotationInEquation(eqItem));
-        initialStates = listAppend({initialState}, initialStates);
+      algorithm
+        initialState := getInitialStateInEquation(eq);
+        initialState := List.insert(initialState, listLength(initialState) + 1, getAnnotationInEquation(eqItem));
+        initialStates := listAppend({initialState}, initialStates);
       then
         getInitialStatesInEquations(xs, initialStates);
 
@@ -8377,8 +8377,8 @@ algorithm
       list<String> initialState;
 
     case Absyn.EQ_NORETCALL(functionArgs = Absyn.FUNCTIONARGS(args = expArgs))
-      equation
-        initialState = List.map(expArgs, Dump.printExpStr);
+      algorithm
+        initialState := List.map(expArgs, Dump.printExpStr);
       then
         initialState;
 
@@ -8418,16 +8418,16 @@ algorithm
       Option<Absyn.Comment> cmt;
 
     case (modelpath, state_, ann,(p as Absyn.PROGRAM()))
-      equation
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        cmt = SOME(Absyn.COMMENT(SOME(ann), NONE()));
-        newcdef = InteractiveUtil.addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("initialState", {}),
+      algorithm
+        cdef := InteractiveUtil.getPathedClassInProgram(modelpath, p);
+        cmt := SOME(Absyn.COMMENT(SOME(ann), NONE()));
+        newcdef := InteractiveUtil.addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("initialState", {}),
                                 Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(state_, {}))}, {})), cmt, AbsynUtil.dummyInfo));
         if AbsynUtil.pathIsIdent(AbsynUtil.makeNotFullyQualified(modelpath)) then
-          newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef},p.within_), p);
+          newp := InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef},p.within_), p);
         else
-          package_ = AbsynUtil.stripLast(modelpath);
-          newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(package_)), p);
+          package_ := AbsynUtil.stripLast(modelpath);
+          newp := InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(package_)), p);
         end if;
       then
         (true, newp);
@@ -8452,14 +8452,14 @@ algorithm
       String state_;
 
     case (modelpath, state_, (p as Absyn.PROGRAM()))
-      equation
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        newcdef = deleteInitialStateInClass(cdef, state_);
+      algorithm
+        cdef := InteractiveUtil.getPathedClassInProgram(modelpath, p);
+        newcdef := deleteInitialStateInClass(cdef, state_);
         if AbsynUtil.pathIsIdent(AbsynUtil.makeNotFullyQualified(modelpath)) then
-          newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef}, Absyn.TOP()), p);
+          newp := InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef}, Absyn.TOP()), p);
         else
-          modelwithin = AbsynUtil.stripLast(modelpath);
-          newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef}, Absyn.WITHIN(modelwithin)), p);
+          modelwithin := AbsynUtil.stripLast(modelpath);
+          newp := InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef}, Absyn.WITHIN(modelwithin)), p);
         end if;
       then
         (true, newp);
@@ -8491,21 +8491,21 @@ algorithm
     case (outClass as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                       body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann=ann,comment = cmt),
                       info = file_info), state_)
-      equation
-        eqlst = InteractiveUtil.getEquationList(parts);
-        eqlst_1 = deleteInitialStateInEqlist(eqlst, state_);
-        parts2 = InteractiveUtil.replaceEquationList(parts, eqlst_1);
-        outClass.body = Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt);
+      algorithm
+        eqlst := InteractiveUtil.getEquationList(parts);
+        eqlst_1 := deleteInitialStateInEqlist(eqlst, state_);
+        parts2 := InteractiveUtil.replaceEquationList(parts, eqlst_1);
+        outClass.body := Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt);
       then outClass;
     /* an extended class with parts: model extends M end M;  */
     case (outClass as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                       body = Absyn.CLASS_EXTENDS(baseClassName = bcname,modifications=modif,parts = parts,ann = ann,comment = cmt)
                       ,info = file_info), state_)
-      equation
-        eqlst = InteractiveUtil.getEquationList(parts);
-        eqlst_1 = deleteInitialStateInEqlist(eqlst, state_);
-        parts2 = InteractiveUtil.replaceEquationList(parts, eqlst_1);
-        outClass.body = Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann);
+      algorithm
+        eqlst := InteractiveUtil.getEquationList(parts);
+        eqlst_1 := deleteInitialStateInEqlist(eqlst, state_);
+        parts2 := InteractiveUtil.replaceEquationList(parts, eqlst_1);
+        outClass.body := Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann);
       then outClass;
   end match;
 end deleteInitialStateInClass;
@@ -8529,14 +8529,14 @@ algorithm
     case ({},_) then {};
     case ((Absyn.EQUATIONITEM(equation_ = Absyn.EQ_NORETCALL(name, Absyn.FUNCTIONARGS(expArgs, _))) :: xs), state_)
       guard AbsynUtil.crefEqual(name, Absyn.CREF_IDENT("initialState", {}))
-      equation
-        args = List.map(expArgs, Dump.printExpStr);
-        true = compareInitialStateFuncArgs(args, state_);
+      algorithm
+        args := List.map(expArgs, Dump.printExpStr);
+        true := compareInitialStateFuncArgs(args, state_);
       then
         deleteInitialStateInEqlist(xs, state_);
     case ((x :: xs), state_)
-      equation
-        res = deleteInitialStateInEqlist(xs, state_);
+      algorithm
+        res := deleteInitialStateInEqlist(xs, state_);
       then
         (x :: res);
   end matchcontinue;
@@ -8587,8 +8587,8 @@ algorithm
       algorithm
         typename := matchcontinue ()
           case ()
-            equation
-              (_, p_1) = Interactive.mkFullyQual(inEnv, p);
+            algorithm
+              (_, p_1) := Interactive.mkFullyQual(inEnv, p);
             then AbsynUtil.pathString(p_1);
           else AbsynUtil.pathString(p);
         end matchcontinue;
@@ -8770,11 +8770,11 @@ algorithm
       Boolean b;
     case (Absyn.CLASS(info=SOURCEINFO(fileName="<interactive>")),_) then acc;
     case (Absyn.CLASS(name=name,info=SOURCEINFO(fileName=fileName)),_)
-      equation
-        dir = System.dirname(fileName);
-        fileName = System.basename(fileName);
-        v = ValuesUtil.makeArray({Values.STRING(name),Values.STRING(dir)});
-        b = stringEq(fileName,"ModelicaBuiltin.mo") or stringEq(fileName,"MetaModelicaBuiltin.mo") or stringEq(dir,".");
+      algorithm
+        dir := System.dirname(fileName);
+        fileName := System.basename(fileName);
+        v := ValuesUtil.makeArray({Values.STRING(name),Values.STRING(dir)});
+        b := stringEq(fileName,"ModelicaBuiltin.mo") or stringEq(fileName,"MetaModelicaBuiltin.mo") or stringEq(dir,".");
       then List.consOnTrue(not b,v,acc);
   end match;
 end makeLoadLibrariesEntryAbsyn;

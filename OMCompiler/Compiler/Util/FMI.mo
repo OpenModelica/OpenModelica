@@ -322,8 +322,8 @@ algorithm
       then
         name_;
     case ((_ :: xs), baseType)
-      equation
-        name_ = getEnumerationTypeFromTypes(xs, baseType);
+      algorithm
+        name_ := getEnumerationTypeFromTypes(xs, baseType);
       then
         name_;
     case ({}, _) then "";

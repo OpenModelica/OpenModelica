@@ -133,12 +133,12 @@ algorithm
       T ts1,ts2;
 
     case (true,_,_,ts1,_,ts2)
-      equation
-        ts = meld(ts1,t2::ts2);
+      algorithm
+        ts := meld(ts1,t2::ts2);
       then t1::ts;
     case (_,true,_,ts1,_,ts2)
-      equation
-        ts = meld(t1::ts1,ts2);
+      algorithm
+        ts := meld(t1::ts1,ts2);
       then t2::ts;
     else ins(link(t1,t2), meld(inTs1,inTs2));
   end match;
@@ -156,9 +156,9 @@ algorithm
 
     case {t} then root(t);
     case t::ts
-      equation
-        x = root(t);
-        y = findMin(ts);
+      algorithm
+        x := root(t);
+        y := findMin(ts);
       then if compareElement(x,y) then x else y;
   end match;
 end findMin;
@@ -202,8 +202,8 @@ algorithm
       T ts;
     case ({},_) then listReverse(acc);
     case (ts,_)
-      equation
-        (ts,elt) = deleteAndReturnMin(ts);
+      algorithm
+        (ts,elt) := deleteAndReturnMin(ts);
       then elements2(ts,elt::acc);
   end match;
 end elements2;
@@ -247,11 +247,11 @@ algorithm
       Rank r1,r2;
       T ts1,ts2;
     case (NODE(e1,r1,ts1),NODE(e2,r2,ts2))
-      equation
-        r1 = r1+1;
-        r2 = r2+1;
-        ts1 = t2::ts1;
-        ts2 = t1::ts2;
+      algorithm
+        r1 := r1+1;
+        r2 := r2+1;
+        ts1 := t2::ts1;
+        ts2 := t1::ts2;
       then if compareElement(root(t1),root(t2)) then NODE(e1,r1,ts1) else NODE(e2,r2,ts2);
   end match;
 end link;
@@ -282,9 +282,9 @@ algorithm
       Boolean b;
     case {t} then (t,{});
     case t1::ts1
-      equation
-        (t2,ts2) = getMin(ts1);
-        b = compareElement(root(t1),root(t2));
+      algorithm
+        (t2,ts2) := getMin(ts1);
+        b := compareElement(root(t1),root(t2));
       then (if b then t1 else t2, if b then ts1 else t1::ts2);
   end match;
 end getMin;

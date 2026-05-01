@@ -455,8 +455,8 @@ algorithm
 
     // Assigning array slice => update the old variable's value.
     case (true, GlobalScript.IVAR(id, val, ty), DAE.CREF_IDENT(subscriptLst = subs), _, _)
-      equation
-        (_, val) = CevalFunction.assignVector(inValue, val, subs, FCore.emptyCache(), inEnv);
+      algorithm
+        (_, val) := CevalFunction.assignVector(inValue, val, subs, FCore.emptyCache(), inEnv);
       then
         GlobalScript.IVAR(id, val, ty);
 
@@ -485,7 +485,7 @@ algorithm
     // Assigning to an array slice is only allowed for variables that have
     // already been defined, i.e. that have a size. Print an error otherwise.
     case (false, DAE.CREF_IDENT(ident = id, subscriptLst = _ :: _), _, _)
-      equation
+      algorithm
         Error.addMessage(Error.SLICE_ASSIGN_NON_ARRAY, {id});
       then
         fail();
@@ -530,11 +530,11 @@ algorithm
       DAE.ComponentRef cref;
 
     case (GlobalScript.IVAR(varIdent = id, value = v, type_ = tp), env)
-      equation
-        cref = ComponentReference.makeCrefIdent(id, DAE.T_UNKNOWN_DEFAULT, {});
-        empty_env = FGraph.empty();
-        (_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(FCore.emptyCache(), env, cref);
-        env = FGraph.updateComp(
+      algorithm
+        cref := ComponentReference.makeCrefIdent(id, DAE.T_UNKNOWN_DEFAULT, {});
+        empty_env := FGraph.empty();
+        (_,_,_,_,_,_,_,_,_) := Lookup.lookupVar(FCore.emptyCache(), env, cref);
+        env := FGraph.updateComp(
                   env,
                   DAE.TYPES_VAR(
                     id,
@@ -549,9 +549,9 @@ algorithm
         env;
 
     case (GlobalScript.IVAR(varIdent = id, value = v, type_ = tp), env)
-      equation
-        empty_env = FGraph.empty();
-        env = FGraph.mkComponentNode(
+      algorithm
+        empty_env := FGraph.empty();
+        env := FGraph.mkComponentNode(
                  env,
                  DAE.TYPES_VAR(id,DAE.dummyAttrVar,tp,DAE.VALBOUND(v,DAE.BINDING_FROM_DEFAULT_VALUE()),false,NONE()),
                   SCode.COMPONENT(

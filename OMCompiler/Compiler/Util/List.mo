@@ -527,13 +527,13 @@ algorithm
     case(_,{},_,_)
       then append_reverse(inList, inResultList);
     case(listHead::listRest, listHead2::listRest2,_,_)
-      equation
+      algorithm
         if(inCompFunc(listHead, listHead2)) then
-          tmpResultList = listHead::inResultList;
-          tmpResultList = insertListSorted1(listRest, inList2, inCompFunc, tmpResultList);
+          tmpResultList := listHead::inResultList;
+          tmpResultList := insertListSorted1(listRest, inList2, inCompFunc, tmpResultList);
         else
-          tmpResultList = listHead2::inResultList;
-          tmpResultList = insertListSorted1(inList, listRest2, inCompFunc, tmpResultList);
+          tmpResultList := listHead2::inResultList;
+          tmpResultList := insertListSorted1(inList, listRest2, inCompFunc, tmpResultList);
         end if;
       then tmpResultList;
   end match;
@@ -3387,9 +3387,9 @@ algorithm
       TO res;
 
     case (e1 :: rest1, e2 :: rest2)
-      equation
-        res = inMapFunc(e1, e2);
-        equality(res = inValue);
+      algorithm
+        res := inMapFunc(e1, e2);
+        true := valueEq(res, inValue);
         threadMapAllValue(rest1, rest2, inMapFunc, inValue);
       then
         ();
@@ -3442,7 +3442,7 @@ algorithm
 
     case ({}, {}, _, _) then ();
     case (e1 :: rest1, e2 :: rest2, _, _)
-      equation
+      algorithm
         inMapFunc(e1, e2, inArg1);
         threadMap1_0(rest1, rest2, inMapFunc, inArg1);
       then
@@ -3559,8 +3559,8 @@ algorithm
       FT res;
 
     case (e1 :: rest1, e2 :: rest2)
-      equation
-        res = inFoldFunc(e1, e2, inArg1, inFoldArg);
+      algorithm
+        res := inFoldFunc(e1, e2, inArg1, inFoldArg);
       then
         threadFold1(rest1, rest2, inFoldFunc, inArg1, res);
 
@@ -3599,8 +3599,8 @@ algorithm
       FT res;
 
     case (e1 :: rest1, e2 :: rest2)
-      equation
-        res = inFoldFunc(e1, e2, inArg1, inArg2, inFoldArg);
+      algorithm
+        res := inFoldFunc(e1, e2, inArg1, inArg2, inFoldArg);
       then
         threadFold2(rest1, rest2, inFoldFunc, inArg1, inArg2, res);
 
@@ -3641,8 +3641,8 @@ algorithm
       FT res;
 
     case (e1 :: rest1, e2 :: rest2)
-      equation
-        res = inFoldFunc(e1, e2, inArg1, inArg2, inArg3, inFoldArg);
+      algorithm
+        res := inFoldFunc(e1, e2, inArg1, inArg2, inArg3, inFoldArg);
       then
         threadFold3(rest1, rest2, inFoldFunc, inArg1, inArg2, inArg3, res);
 
@@ -3676,8 +3676,8 @@ algorithm
       FT res;
 
     case (e1 :: rest1, e2 :: rest2)
-      equation
-        res = inFoldFunc(e1, e2, inFoldArg);
+      algorithm
+        res := inFoldFunc(e1, e2, inFoldArg);
       then
         threadFold(rest1, rest2, inFoldFunc, res);
 

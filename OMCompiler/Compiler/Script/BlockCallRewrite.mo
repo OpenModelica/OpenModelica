@@ -56,10 +56,10 @@ algorithm
       Absyn.Program pg, pg2, defs;
       String res;
     case (_, _)
-      equation
-        pg2 = parseProgram(inPg, inDefs);
+      algorithm
+        pg2 := parseProgram(inPg, inDefs);
 
-        res = Dump.unparseStr(pg2, false);
+        res := Dump.unparseStr(pg2, false);
         print(res);
 
       then
@@ -73,8 +73,8 @@ protected function parseProgram
 algorithm
   outPg := match outPg
     case Absyn.PROGRAM()
-      equation
-        outPg.classes = parseClasses(outPg.classes, defs);
+      algorithm
+        outPg.classes := parseClasses(outPg.classes, defs);
       then outPg;
   end match;
 end parseProgram;
@@ -91,9 +91,9 @@ algorithm
       Absyn.Class cls, n_cls;
     case({}) then {};
     case(cls :: r_classes)
-      equation
-        nr_classes = parseClasses(r_classes, defs);
-        n_cls = parseClass(cls, defs);
+      algorithm
+        nr_classes := parseClasses(r_classes, defs);
+        n_cls := parseClass(cls, defs);
       then
         n_cls :: nr_classes;
   end match;
@@ -116,8 +116,8 @@ algorithm
       Absyn.ClassDef    body, nbody;
       SourceInfo       info ;
     case(out_class as Absyn.CLASS(body=body))
-      equation
-        out_class.body = parseClassDef(body, defs);
+      algorithm
+        out_class.body := parseClassDef(body, defs);
       then
         out_class;
   end match;
@@ -140,8 +140,8 @@ algorithm
       list<Absyn.EquationItem> eqs;
       list<Absyn.ElementItem> elems;
     case(Absyn.PARTS(typeVars, classAttrs, classParts, ann, comment))
-      equation
-        (nclsp, eqs, elems) = parseClassParts(classParts, defs, {}, {}, 0);
+      algorithm
+        (nclsp, eqs, elems) := parseClassParts(classParts, defs, {}, {}, 0);
       then
         Absyn.PARTS(typeVars, classAttrs, Absyn.PUBLIC(elems)::Absyn.EQUATIONS(eqs)::nclsp, ann, comment);
   end match;
@@ -168,9 +168,9 @@ algorithm
       Integer count, count1;
     case({}) then ({}, oldEqs, oldElems, instNo);
     case(cls :: r_classes)
-      equation
-        (n_cls,eqs2, elems2, count1) = parseClassPart(cls, defs, oldEqs, oldElems, instNo);
-        (nr_classes, eqs1, elems1, count) = parseClassParts(r_classes, defs, eqs2, elems2, count1);
+      algorithm
+        (n_cls,eqs2, elems2, count1) := parseClassPart(cls, defs, oldEqs, oldElems, instNo);
+        (nr_classes, eqs1, elems1, count) := parseClassParts(r_classes, defs, eqs2, elems2, count1);
         //print("classparts" + intString(count) + intString(count1) + "\n");
       then
         (n_cls :: nr_classes, eqs1, elems1, count);
@@ -210,14 +210,14 @@ algorithm
     then
       (Absyn.CONSTRAINTS(exps), {}, {}, instNo);
     case(Absyn.EQUATIONS(eqs))
-      equation
-        (neqs, eqs1, elems1, count) = parseEquations(eqs, defs, oldEqs, oldElems, instNo);
+      algorithm
+        (neqs, eqs1, elems1, count) := parseEquations(eqs, defs, oldEqs, oldElems, instNo);
          //print("equations" + intString(count) + "\n");
       then
         (Absyn.EQUATIONS(neqs), eqs1, elems1, count);
     case(Absyn.INITIALEQUATIONS(eqs))
-      equation
-        (neqs, eqs1, elems1, count) = parseEquations(eqs, defs, oldEqs, oldElems, instNo);
+      algorithm
+        (neqs, eqs1, elems1, count) := parseEquations(eqs, defs, oldEqs, oldElems, instNo);
          //print("equations" + intString(count) + "\n");
       then
         (Absyn.INITIALEQUATIONS(neqs), eqs1, elems1, count);
@@ -257,16 +257,16 @@ algorithm
       Integer count, count1;
     case({}) then ({}, oldEqs, oldElems, instNo);
     case(Absyn.EQUATIONITEM(eq, cmt, info) :: r_classes)
-      equation
+      algorithm
         //print("in equation item\n");
-        (neq, eqs2, elems2, count1) = parseEquation(eq, defs, oldEqs, oldElems, instNo);
-        (nr_classes, eqs1, elems1, count) = parseEquations(r_classes, defs, eqs2, elems2, count1);
+        (neq, eqs2, elems2, count1) := parseEquation(eq, defs, oldEqs, oldElems, instNo);
+        (nr_classes, eqs1, elems1, count) := parseEquations(r_classes, defs, eqs2, elems2, count1);
 
       then
         (Absyn.EQUATIONITEM(neq, cmt, info) :: nr_classes, eqs1, elems1, count);
     case(Absyn.EQUATIONITEMCOMMENT(comment) :: r_classes)
-      equation
-        (nr_classes, eqs1, elems1, count) = parseEquations(r_classes, defs, oldEqs, oldElems, instNo);
+      algorithm
+        (nr_classes, eqs1, elems1, count) := parseEquations(r_classes, defs, oldEqs, oldElems, instNo);
       then
         (Absyn.EQUATIONITEMCOMMENT(comment) :: nr_classes, eqs1, elems1, count);
   end match;
@@ -297,29 +297,29 @@ algorithm
       list<Absyn.ElementItem> elems1, elems2, elems3;
       Integer count, count1, count2;
     case(Absyn.EQ_IF(exp1, leq1, tup1, leq2))
-      equation
+      algorithm
        // print("IF STATEMENT\n");
-        (nexp1, eqs1, elems1, count) = parseExpression(exp1, defs, oldEqs, oldElems, instNo);
-        (nleq1, eqs2, elems2, count1) = parseEquations(leq1, defs, eqs1, elems1, count);
-        (nleq2, eqs3, elems3, count2) = parseEquations(leq2, defs, eqs2, elems2, count1);
+        (nexp1, eqs1, elems1, count) := parseExpression(exp1, defs, oldEqs, oldElems, instNo);
+        (nleq1, eqs2, elems2, count1) := parseEquations(leq1, defs, eqs1, elems1, count);
+        (nleq2, eqs3, elems3, count2) := parseEquations(leq2, defs, eqs2, elems2, count1);
         //print("IF STATEMENT2\n");
         //ntup1 = parseEquationTuple(tup1); TODO
       then
         (Absyn.EQ_IF(nexp1, nleq1, tup1, nleq2),  eqs3, elems3, count2);
     case(Absyn.EQ_EQUALS(exp1, exp2))
-      equation
+      algorithm
         // print("EQUALS STATEMENT\n");
-        (nexp1, eqs1, elems1, count) = parseExpression(exp1, defs, oldEqs, oldElems, instNo);
-        (nexp2, eqs2, elems2, count1) = parseExpression(exp2, defs, eqs1, elems1, count);
+        (nexp1, eqs1, elems1, count) := parseExpression(exp1, defs, oldEqs, oldElems, instNo);
+        (nexp2, eqs2, elems2, count1) := parseExpression(exp2, defs, eqs1, elems1, count);
        // print("EQ_Equals count1 " + intString(count1) + "\n");
       then
         (Absyn.EQ_EQUALS(nexp1, nexp2), eqs2, elems2, count1);
 
     case(Absyn.EQ_PDE(exp1, exp2, domain))
-      equation
+      algorithm
         // print("EQUALS STATEMENT\n");
-        (nexp1, eqs1, elems1, count) = parseExpression(exp1, defs, oldEqs, oldElems, instNo);
-        (nexp2, eqs2, elems2, count1) = parseExpression(exp2, defs, eqs1, elems1, count);
+        (nexp1, eqs1, elems1, count) := parseExpression(exp1, defs, oldEqs, oldElems, instNo);
+        (nexp2, eqs2, elems2, count1) := parseExpression(exp2, defs, eqs1, elems1, count);
        // print("EQ_Equals count1 " + intString(count1) + "\n");
       then
         (Absyn.EQ_PDE(nexp1, nexp2, domain), eqs2, elems2, count1);
@@ -328,14 +328,14 @@ algorithm
     then
       (Absyn.EQ_CONNECT(cr1, cr2), oldEqs, oldElems, instNo);
     case(Absyn.EQ_FOR(fi, leq1))
-      equation
-        (nleq1, eqs2, elems2, count) = parseEquations(leq1, defs, oldEqs, oldElems, instNo);
+      algorithm
+        (nleq1, eqs2, elems2, count) := parseEquations(leq1, defs, oldEqs, oldElems, instNo);
       then
         (Absyn.EQ_FOR(fi, nleq1), eqs2, elems2, count);
     case(Absyn.EQ_WHEN_E(exp1, leq1, tup1))
-      equation
-        nexp1 = parseExpression(exp1, defs, oldEqs, oldElems, instNo);
-        nleq1 = parseEquations(leq1, defs, oldEqs, oldElems, instNo);
+      algorithm
+        nexp1 := parseExpression(exp1, defs, oldEqs, oldElems, instNo);
+        nleq1 := parseEquations(leq1, defs, oldEqs, oldElems, instNo);
         //ntup1 = parseEquationTuple(tup1); TODO
       then
         (Absyn.EQ_WHEN_E(nexp1, nleq1, tup1), oldEqs, oldElems, instNo);
@@ -343,7 +343,7 @@ algorithm
     then
       (Absyn.EQ_NORETCALL(cr1, farg), oldEqs, oldElems, instNo);
     case(Absyn.EQ_FAILURE(eqi))
-      equation
+      algorithm
         //neqi = parseEquation(eqi);
       then
         (Absyn.EQ_FAILURE(eqi), oldEqs, oldElems, instNo);
@@ -379,39 +379,39 @@ algorithm
       list<tuple<Absyn.Exp, Absyn.Exp>> elif, nelif;
 
     case(Absyn.BINARY(exp1, op, exp2))
-      equation
-        (nexp1, eqs1, elems1, count) =  parseExpression(exp1, defs, oldEqs, oldElems, instNo);
-        (nexp2, eqs2, elems2, count2)  = parseExpression(exp2, defs, eqs1, elems1, count);
+      algorithm
+        (nexp1, eqs1, elems1, count) :=  parseExpression(exp1, defs, oldEqs, oldElems, instNo);
+        (nexp2, eqs2, elems2, count2)  := parseExpression(exp2, defs, eqs1, elems1, count);
       then (Absyn.BINARY(nexp1, op, nexp2), eqs2, elems2, count2);
 
     case(Absyn.LBINARY(exp1, op, exp2))
-      equation
-        (nexp1, eqs1, elems1, count) =  parseExpression(exp1, defs, oldEqs, oldElems, instNo);
-        (nexp2, eqs2, elems2, count2)  = parseExpression(exp2, defs, eqs1, elems1, count);
+      algorithm
+        (nexp1, eqs1, elems1, count) :=  parseExpression(exp1, defs, oldEqs, oldElems, instNo);
+        (nexp2, eqs2, elems2, count2)  := parseExpression(exp2, defs, eqs1, elems1, count);
       then (Absyn.LBINARY(nexp1, op, nexp2), eqs2, elems2, count2);
 
     case(Absyn.UNARY(op, exp2))
-      equation
-        (nexp2, eqs2, elems2, count) = parseExpression(exp2, defs, oldEqs, oldElems, instNo);
+      algorithm
+        (nexp2, eqs2, elems2, count) := parseExpression(exp2, defs, oldEqs, oldElems, instNo);
       then (Absyn.UNARY(op, nexp2), eqs2, elems2, count);
 
      case(Absyn.LUNARY(op, exp2))
-      equation
-        (nexp2, eqs2, elems2, count) = parseExpression(exp2, defs, oldEqs, oldElems, instNo);
+      algorithm
+        (nexp2, eqs2, elems2, count) := parseExpression(exp2, defs, oldEqs, oldElems, instNo);
       then (Absyn.LUNARY(op, nexp2), eqs2, elems2, count);
 
     case(Absyn.IFEXP(ife, exp1, exp2, elif))
-      equation
-        (nife, eqs1, elems1, count) =  parseExpression(ife, defs, oldEqs, oldElems, instNo);
-        (nexp1, eqs2, elems2, count2) = parseExpression(exp1, defs, eqs1, elems1, count);
-        (nexp2, eqs3, elems3, count3) =  parseExpression(exp2, defs, eqs2, elems2, count2);
-        (nelif, eqs4, elems4, count4) = parseExpressionTuple(elif, defs, eqs3, elems3, count3);
+      algorithm
+        (nife, eqs1, elems1, count) :=  parseExpression(ife, defs, oldEqs, oldElems, instNo);
+        (nexp1, eqs2, elems2, count2) := parseExpression(exp1, defs, eqs1, elems1, count);
+        (nexp2, eqs3, elems3, count3) :=  parseExpression(exp2, defs, eqs2, elems2, count2);
+        (nelif, eqs4, elems4, count4) := parseExpressionTuple(elif, defs, eqs3, elems3, count3);
       then (Absyn.IFEXP(nife, nexp1, nexp2, nelif), eqs4, elems4, count4);
 
     case(Absyn.CALL())
-      equation
+      algorithm
         //print("call" + intString(instNo) + "\n");
-        (nexp1, eqs1, elems1, count) = parseCall(in_eq, defs, instNo, oldEqs, oldElems);
+        (nexp1, eqs1, elems1, count) := parseCall(in_eq, defs, instNo, oldEqs, oldElems);
       then (nexp1, eqs1, elems1, count);
      case(_)
        then (in_eq, oldEqs, oldElems, instNo);
@@ -444,11 +444,11 @@ algorithm
       Absyn.Exp exp1, exp2, nexp1, nexp2;
     case({}) then ({}, oldEqs, oldElems, instNo);
     case(((exp1, exp2):: r_tuple_list))
-      equation
+      algorithm
        // print("in equation item\n");
-        (nexp1, eqs1, elems1, count1) = parseExpression(exp1, defs, oldEqs, oldElems, instNo);
-        (nexp2,_,_,_) = parseExpression(exp2, defs, eqs1, elems1, count1);
-        (ntuples, eqs3, elems3, count3) = parseExpressionTuple(r_tuple_list, defs, eqs1, elems1, count1);
+        (nexp1, eqs1, elems1, count1) := parseExpression(exp1, defs, oldEqs, oldElems, instNo);
+        (nexp2,_,_,_) := parseExpression(exp2, defs, eqs1, elems1, count1);
+        (ntuples, eqs3, elems3, count3) := parseExpressionTuple(r_tuple_list, defs, eqs1, elems1, count1);
       then
         ((nexp1, nexp2) :: ntuples, eqs3, elems3, count3);
   end match;
@@ -483,13 +483,13 @@ algorithm
       Integer count;
 
     case Absyn.CALL(function_ = Absyn.CREF_IDENT(id, _), functionArgs = fargs)
-      equation
+      algorithm
         //print("Found function call " + id + "\n");
-        (eqs, mods, true, count) = getDefinition(id, instNo, defs, fargs, oldEqs, {});
-        elName = "_autogen_" + id + intString(instNo);
+        (eqs, mods, true, count) := getDefinition(id, instNo, defs, fargs, oldEqs, {});
+        elName := "_autogen_" + id + intString(instNo);
         //print("Parsed function call " + id + "\n");
         // create element, instert modifiers here
-        elem = Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE(), Absyn.NOT_INNER_OUTER(), Absyn.COMPONENTS(Absyn.ATTR(false, false, Absyn.NON_PARALLEL(), Absyn.VAR(), Absyn.BIDIR(), Absyn.NONFIELD(), {}),
+        elem := Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE(), Absyn.NOT_INNER_OUTER(), Absyn.COMPONENTS(Absyn.ATTR(false, false, Absyn.NON_PARALLEL(), Absyn.VAR(), Absyn.BIDIR(), Absyn.NONFIELD(), {}),
                       Absyn.TPATH(Absyn.IDENT(id), NONE()), {Absyn.COMPONENTITEM(Absyn.COMPONENT(elName,{}, SOME(Absyn.CLASSMOD(mods, Absyn.NOMOD()))), NONE(), NONE())}), AbsynUtil.dummyInfo, NONE()));
       then (Absyn.CREF(Absyn.CREF_QUAL(elName, {}, Absyn.CREF_IDENT("out", {}))),  eqs, elem::oldElems, count);
 
@@ -544,17 +544,17 @@ algorithm
     case({}) then ({}, {}, false, instNo);
       //R_PACKAGE
      case(Absyn.CLASS(_, _, _, _, Absyn.R_PACKAGE(), Absyn.PARTS(_, _, classParts, _, _), _) :: _)
-       equation
+       algorithm
       // print("In package: "); print(id2); print("\n");
 
-       (eqs, mods, true) = lookThroughClasses(id, instNo,  fargs, classParts, oldEqs, oldModif);
+       (eqs, mods, true) := lookThroughClasses(id, instNo,  fargs, classParts, oldEqs, oldModif);
        then
        (eqs, mods, true, instNo + 1) ;
     case(Absyn.CLASS(id2, _, _, _, Absyn.R_BLOCK(), Absyn.PARTS(_, _, classParts, _, _), _) :: _)
-      equation
+      algorithm
         //print("TESTING1: "); print(id); print(" "); print(id2); print("\n");
-        true = (id2 == id);
-        (eqs, mods) = parseArgs("_autogen_" + id + intString(instNo), classParts, fargs, oldEqs, oldModif);
+        true := (id2 == id);
+        (eqs, mods) := parseArgs("_autogen_" + id + intString(instNo), classParts, fargs, oldEqs, oldModif);
         //print("TESTING2: "); print(id); print(" "); print(id2); print("\n");
       then
         (eqs, mods, true, instNo + 1) ;
@@ -586,8 +586,8 @@ algorithm
     case({})
         then (oldEqs, oldModif, false);
     case(Absyn.PUBLIC(elems1) :: _)
-      equation
-        (eq1, modif, true) = lookThroughElems(id, instNo, fargs, elems1, oldEqs, oldModif);
+      algorithm
+        (eq1, modif, true) := lookThroughElems(id, instNo, fargs, elems1, oldEqs, oldModif);
         then (eq1, modif, true);
     case(_ :: r_classes)
       then
@@ -622,15 +622,15 @@ algorithm
     case({}) then (oldEqs, oldModif, false);
    case(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,
        Absyn.CLASSDEF(_, Absyn.CLASS(id2, _, _, _, Absyn.R_BLOCK(), Absyn.PARTS(_, _, classParts, _, _), _)),_,_)) :: _)
-       equation
-          true = (id2 == id);
-        (eqs, mods) = parseArgs("_autogen_" + id + intString(instNo), classParts, fargs, oldEqs, oldModif);
+       algorithm
+          true := (id2 == id);
+        (eqs, mods) := parseArgs("_autogen_" + id + intString(instNo), classParts, fargs, oldEqs, oldModif);
       then
         (eqs, mods, true);
      case(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,
        Absyn.CLASSDEF(_, Absyn.CLASS(_, _, _, _, Absyn.R_PACKAGE(), Absyn.PARTS(_, _, classParts, _, _), _)),_,_)) :: _)
-    equation
-        (eqs, mods, true)  =  lookThroughClasses(id, instNo, fargs, classParts, oldEqs, oldModif);
+    algorithm
+        (eqs, mods, true)  :=  lookThroughClasses(id, instNo, fargs, classParts, oldEqs, oldModif);
       then (eqs, mods, true);
     case( _ :: r_elems)
     then
@@ -659,8 +659,8 @@ algorithm
       list<Absyn.ElementArg> mods1;
 
     case(Absyn.FUNCTIONARGS(args, argNames))
-      equation
-        (eqs1, mods1) = matchArgsClass(elemId, args, classes, oldEqs, oldModif);
+      algorithm
+        (eqs1, mods1) := matchArgsClass(elemId, args, classes, oldEqs, oldModif);
       then
         matchNamedArgsClass(elemId, argNames, classes, eqs1, mods1);
   end match;
@@ -699,12 +699,12 @@ algorithm
     case(_, {}) then  (oldEqs, oldModif);
     case({}, _) then (oldEqs, oldModif);
     case(Absyn.PUBLIC(elems1) :: r_classes, _)
-      equation
-        (eq1, modif, r_args) = matchArgsElems(elemId, args, elems1, oldEqs, oldModif);
+      algorithm
+        (eq1, modif, r_args) := matchArgsElems(elemId, args, elems1, oldEqs, oldModif);
       then
         matchArgsClass(elemId, r_args, r_classes, eq1, modif);
     case(_ :: r_classes, _)
-      equation
+      algorithm
       then
         matchArgsClass(elemId, args, r_classes, oldEqs, oldModif);
   end match;
@@ -734,13 +734,13 @@ algorithm
     case({}, _) then (oldEqs, oldModif, args);
     case(_, {}) then (oldEqs, oldModif, args);
     case(_::r_args, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.COMPONENTS(Absyn.ATTR(_,_,_,Absyn.PARAM(),_,_), _, comps),_,_)) :: r_elems)
-      equation
-        (modif, r_args) = matchParamArgs(args, comps, oldModif);
+      algorithm
+        (modif, r_args) := matchParamArgs(args, comps, oldModif);
       then
         matchArgsElems(elemId, r_args, r_elems, oldEqs, modif) ;
     case(_::r_args, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.COMPONENTS(Absyn.ATTR(_,_,_,Absyn.VAR(),_,_), _, comps),_,_)) :: r_elems)
-      equation
-        (eqs, r_args) = matchVarArgs(elemId, args, comps, oldEqs);
+      algorithm
+        (eqs, r_args) := matchVarArgs(elemId, args, comps, oldEqs);
       then
         matchArgsElems(elemId, r_args, r_elems, eqs, oldModif);
     case(_, _ :: r_elems)
@@ -769,8 +769,8 @@ algorithm
     case({}, _) then (oldModif, args);
     case(_, {}) then (oldModif, args);
     case(Absyn.COMPONENTITEM(Absyn.COMPONENT(cName,_,_), _, _) :: r_comps, arg::r_args)
-      equation
-        modif = Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.IDENT(cName), SOME(Absyn.CLASSMOD({}, Absyn.EQMOD(arg, AbsynUtil.dummyInfo))),
+      algorithm
+        modif := Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.IDENT(cName), SOME(Absyn.CLASSMOD({}, Absyn.EQMOD(arg, AbsynUtil.dummyInfo))),
           NONE(), AbsynUtil.dummyInfo);
       then
         matchParamArgs(r_args, r_comps, modif::oldModif);
@@ -798,8 +798,8 @@ algorithm
 
     case({}, _) then (oldEqs, args);
     case(Absyn.COMPONENTITEM(Absyn.COMPONENT(cName,_,_), _, _) :: r_comps, arg::r_args)
-      equation
-        eq = Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(Absyn.CREF(Absyn.CREF_QUAL(elemId, {}, Absyn.CREF_IDENT(cName, {}))), arg), NONE(), AbsynUtil.dummyInfo);
+      algorithm
+        eq := Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(Absyn.CREF(Absyn.CREF_QUAL(elemId, {}, Absyn.CREF_IDENT(cName, {}))), arg), NONE(), AbsynUtil.dummyInfo);
       then
         matchVarArgs(elemId, r_args, r_comps, eq::oldEqs);
 
@@ -831,8 +831,8 @@ algorithm
     case(_, {}) then  (oldEqs, oldModif);
     case({}, _) then (oldEqs, oldModif); // TODO fix to fail
     case(_, Absyn.NAMEDARG(argName, argValue)::r_nargs)
-      equation
-        (eq1, modif) = matchNamedArgClass(elemId, argName, argValue, classes, oldEqs, oldModif);
+      algorithm
+        (eq1, modif) := matchNamedArgClass(elemId, argName, argValue, classes, oldEqs, oldModif);
       then
         matchNamedArgsClass(elemId, r_nargs, classes, eq1, modif);
   end match;
@@ -860,12 +860,12 @@ algorithm
 
     case({}) then  (oldEqs, oldModif);
     case(Absyn.PUBLIC(elems1) :: _)
-      equation
-        (eq1, modif, true) = matchNamedArgElems(elemId, argName, argValue, elems1, oldEqs, oldModif);
+      algorithm
+        (eq1, modif, true) := matchNamedArgElems(elemId, argName, argValue, elems1, oldEqs, oldModif);
       then
         (eq1, modif);
     case(_ :: r_classes)
-      equation
+      algorithm
       then
         matchNamedArgClass(elemId, argName, argValue, r_classes, oldEqs, oldModif);
   end matchcontinue;
@@ -895,13 +895,13 @@ algorithm
 
     case({}) then (oldEqs, oldModif, false);
     case(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.COMPONENTS(Absyn.ATTR(_,_,_,Absyn.PARAM(),_,_), _, comps),_,_)) :: _)
-      equation
-        (modif, true) = matchParamNamedArg(argName, argValue, comps, oldModif);
+      algorithm
+        (modif, true) := matchParamNamedArg(argName, argValue, comps, oldModif);
       then
        (oldEqs, modif, true) ;
     case(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.COMPONENTS(Absyn.ATTR(_,_,_,Absyn.VAR(),_,_), _, comps),_,_)) :: _)
-      equation
-        (eqs, true) = matchVarNamedArg(elemId, argName, argValue, comps, oldEqs);
+      algorithm
+        (eqs, true) := matchVarNamedArg(elemId, argName, argValue, comps, oldEqs);
       then
        (eqs, oldModif, true);
     case(_ :: r_elems)
@@ -929,15 +929,14 @@ algorithm
       Absyn.ElementArg modif;
 
     case({}) then (oldModif, false);
-    case(Absyn.COMPONENTITEM(Absyn.COMPONENT(cName,_,_), _, _) :: _)
-      equation
-        (cName == argName) = true;
-        modif = Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.IDENT(cName), SOME(Absyn.CLASSMOD({}, Absyn.EQMOD(argValue, AbsynUtil.dummyInfo))),
+    case(Absyn.COMPONENTITEM(Absyn.COMPONENT(cName,_,_), _, _) :: _) guard cName == argName
+      algorithm
+        modif := Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.IDENT(cName), SOME(Absyn.CLASSMOD({}, Absyn.EQMOD(argValue, AbsynUtil.dummyInfo))),
           NONE(), AbsynUtil.dummyInfo);
       then
         (modif::oldModif, true);
        case(_ :: r_comps)
-      equation
+      algorithm
       then
         matchParamNamedArg(argName, argValue, r_comps, oldModif);
 
@@ -955,7 +954,7 @@ protected function matchVarNamedArg
   output list<Absyn.EquationItem> newEqs "modifiers to add to component";
    output Boolean found;
 algorithm
-  (newEqs, found) := matchcontinue(comps)
+  (newEqs, found) := match (comps)
     local
       list<Absyn.ComponentItem>  r_comps;
       list<Absyn.Exp> r_args;
@@ -964,17 +963,16 @@ algorithm
       Absyn.EquationItem eq;
 
     case({}) then (oldEqs, false);
-    case(Absyn.COMPONENTITEM(Absyn.COMPONENT(cName,_,_), _, _) :: _)
-      equation
-         (cName == argName) = true;
-        eq = Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(Absyn.CREF(Absyn.CREF_QUAL(elemId, {}, Absyn.CREF_IDENT(cName, {}))), argValue), NONE(), AbsynUtil.dummyInfo);
+    case(Absyn.COMPONENTITEM(Absyn.COMPONENT(cName,_,_), _, _) :: _) guard cName == argName
+      algorithm
+        eq := Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(Absyn.CREF(Absyn.CREF_QUAL(elemId, {}, Absyn.CREF_IDENT(cName, {}))), argValue), NONE(), AbsynUtil.dummyInfo);
       then
         (eq::oldEqs, true);
        case(_ :: r_comps)
-         equation
+         algorithm
          then
         matchVarNamedArg(elemId, argName, argValue, r_comps, oldEqs);
-  end matchcontinue;
+  end match;
 end matchVarNamedArg;
 
 annotation(__OpenModelica_Interface="frontend");

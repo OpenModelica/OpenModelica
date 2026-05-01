@@ -345,8 +345,8 @@ public function stringContainsChar "Returns true if a string contains a specifie
 algorithm
   res := matchcontinue()
     case ()
-      equation
-        _::_::_ = stringSplitAtChar(str,char);
+      algorithm
+        _::_::_ := stringSplitAtChar(str,char);
       then true;
     else false;
   end matchcontinue;
@@ -366,9 +366,9 @@ algorithm
       String f,delim,str1,str2,str;
       list<String> r;
     case {} then ();
-    case {f} equation Print.printBuf(f); then ();
+    case {f} algorithm Print.printBuf(f); then ();
     case f :: r
-      equation
+      algorithm
         stringDelimitListPrintBuf(r, inDelimiter);
         Print.printBuf(f);
         Print.printBuf(inDelimiter);
@@ -410,26 +410,26 @@ algorithm
       list<String> r;
       Integer n,iter_1,iter;
     case ({},_,_,_,_) then ();  /* iterator */
-    case ({s},_,_,_,_) equation
+    case ({s},_,_,_,_) algorithm
       Print.printBuf(s);
     then ();
     case ((f :: r),sep1,sep2,n,0)
-      equation
+      algorithm
         Print.printBuf(f);Print.printBuf(sep1);
         stringDelimitListAndSeparate2(r, sep1, sep2, n, 1) "special case for first element" ;
       then
         ();
     case ((f :: r),sep1,sep2,n,iter)
-      equation
-        0 = intMod(iter, n) "insert second delimiter" ;
-        iter_1 = iter + 1;
+      algorithm
+        0 := intMod(iter, n) "insert second delimiter" ;
+        iter_1 := iter + 1;
         Print.printBuf(f);Print.printBuf(sep1);Print.printBuf(sep2);
         stringDelimitListAndSeparate2(r, sep1, sep2, n, iter_1);
       then
         ();
     case ((f :: r),sep1,sep2,n,iter)
-      equation
-        iter_1 = iter + 1 "not inserting second delimiter" ;
+      algorithm
+        iter_1 := iter + 1 "not inserting second delimiter" ;
         Print.printBuf(f);Print.printBuf(sep1);
         stringDelimitListAndSeparate2(r, sep1, sep2, n, iter_1);
       then
@@ -1101,15 +1101,15 @@ algorithm
     case ({}, {}, _, _) then "";
 
     case ({fa}, {fb}, md, _)
-      equation
-        str = stringAppendList({fa, md, fb});
+      algorithm
+        str := stringAppendList({fa, md, fb});
       then
         str;
 
     case (fa :: ra, fb :: rb, md, ed)
-      equation
-        str = buildMapStr(ra, rb, md, ed);
-        str = stringAppendList({fa, md, fb, ed, str});
+      algorithm
+        str := buildMapStr(ra, rb, md, ed);
+        str := stringAppendList({fa, md, fb, ed, str});
       then
         str;
 
@@ -1343,22 +1343,22 @@ algorithm
       Boolean b;
 
     case _
-      equation
+      algorithm
         // this is because System.dirname(".openmodelica") != ".openmodelica"
         // System.dirname(".openmodelica") = "." on Windows!
-        true = stringEqual(parentDir, System.dirname(parentDir));
-        b = System.createDirectory(inString);
+        true := stringEqual(parentDir, System.dirname(parentDir));
+        b := System.createDirectory(inString);
       then b;
 
     case true
-      equation
-        b = System.createDirectory(inString);
+      algorithm
+        b := System.createDirectory(inString);
     then b;
 
     case false
-      equation
-        true = createDirectoryTree(parentDir);
-        b = System.createDirectory(inString);
+      algorithm
+        true := createDirectoryTree(parentDir);
+        b := System.createDirectory(inString);
       then b;
 
     else false;
