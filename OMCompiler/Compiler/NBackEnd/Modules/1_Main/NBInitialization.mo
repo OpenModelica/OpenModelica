@@ -1037,6 +1037,7 @@ public
   end collectNonInitial;
 
   function collectAlgorithmOutputs
+    "collect all non-pre variable outputs"
     input output Equation eqn;
     input UnorderedSet<ComponentRef> outputs;
   algorithm
@@ -1048,7 +1049,10 @@ public
       case Equation.ALGORITHM(alg = alg) algorithm
         out_crefs := List.flatten(list(BVariable.getRecordChildrenCrefOrSelf(o) for o in alg.outputs));
         for cr in out_crefs loop
-          UnorderedSet.add(cr, outputs);
+          // do not apply for previous() or discretes that have a previous() variable
+          if not (BVariable.checkCref(cr, BVariable.isPrevious, sourceInfo()) or BVariable.checkCref(cr, BVariable.hasPre, sourceInfo())) then
+            UnorderedSet.add(cr, outputs);
+          end if;
         end for;
 
       then ();
