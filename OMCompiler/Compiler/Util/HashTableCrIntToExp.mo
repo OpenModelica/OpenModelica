@@ -101,8 +101,8 @@ algorithm
       DAE.ComponentRef cr1,cr2;
       Integer i1,i2;
     case ((cr1,i1),(cr2,i2))
-      equation
-        true = intEq(i1,i2) "int compare is less expensive";
+      algorithm
+        true := intEq(i1,i2) "int compare is less expensive";
       then ComponentReference.crefEqual(cr1,cr2);
     else false;
   end matchcontinue;
