@@ -141,30 +141,30 @@ algorithm
 
     // Adding when not existing previously
     case (key,((hashvec,varr,bsize,n,fntpl as (hashFunc,_,_))))
-      equation
-        (fkey,indx) = get1(key, hashSet);
+      algorithm
+        (fkey,indx) := get1(key, hashSet);
         if isSome(fkey) then
           //print("adding when present, indx =" );print(intString(indx));print("\n");
-          varr = valueArraySetnth(varr, indx, key);
+          varr := valueArraySetnth(varr, indx, key);
         else
-          indx = intMod(hashFunc(key), bsize);
-          newpos = valueArrayLength(varr);
-          varr = valueArrayAdd(varr, key);
-          indexes = hashvec[indx + 1];
-          hashvec = arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
-          n = valueArrayLength(varr);
+          indx := intMod(hashFunc(key), bsize);
+          newpos := valueArrayLength(varr);
+          varr := valueArrayAdd(varr, key);
+          indexes := hashvec[indx + 1];
+          hashvec := arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
+          n := valueArrayLength(varr);
         end if;
       then ((hashvec,varr,bsize,n,fntpl));
 
     case (key,((_,_,bsize,_,(hashFunc,_,keystrFunc))))
-      equation
+      algorithm
         print("- BaseHashSet.add failed: ");
         print("bsize: ");
         print(intString(bsize));
         print(" key: ");
-        s = keystrFunc(key);
+        s := keystrFunc(key);
         print(s + " Hash: ");
-        hval = intMod(hashFunc(key),bsize);
+        hval := intMod(hashFunc(key),bsize);
         print(intString(hval));
         print("\n");
       then
@@ -193,13 +193,13 @@ algorithm
 
     // Adding when not existing previously
     case (key,(hashvec,varr,bsize,_,fntpl as (hashFunc,_,_)))
-      equation
-        indx = intMod(hashFunc(key), bsize);
-        newpos = valueArrayLength(varr);
-        varr_1 = valueArrayAdd(varr, key);
-        indexes = hashvec[indx + 1];
-        hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
-        n_1 = valueArrayLength(varr_1);
+      algorithm
+        indx := intMod(hashFunc(key), bsize);
+        newpos := valueArrayLength(varr);
+        varr_1 := valueArrayAdd(varr, key);
+        indexes := hashvec[indx + 1];
+        hashvec_1 := arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
+        n_1 := valueArrayLength(varr_1);
       then ((hashvec_1,varr_1,bsize,n_1,fntpl));
 
     else
@@ -228,13 +228,13 @@ algorithm
     // Adding when not existing previously
     case (_,
         ((hashvec, varr, bsize, _, fntpl as (hashFunc, _, _)))) guard not has(key, hashSet)
-      equation
-        indx = intMod(hashFunc(key), bsize);
-        newpos = valueArrayLength(varr);
-        varr_1 = valueArrayAdd(varr, key);
-        indexes = hashvec[indx + 1];
-        hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key, newpos) :: indexes));
-        n_1 = valueArrayLength(varr_1);
+      algorithm
+        indx := intMod(hashFunc(key), bsize);
+        newpos := valueArrayLength(varr);
+        varr_1 := valueArrayAdd(varr, key);
+        indexes := hashvec[indx + 1];
+        hashvec_1 := arrayUpdate(hashvec, indx + 1, ((key, newpos) :: indexes));
+        n_1 := valueArrayLength(varr_1);
       then
         ((hashvec_1, varr_1, bsize, n_1, fntpl));
 
@@ -261,9 +261,9 @@ algorithm
       FuncsTuple fntpl;
       /* adding when already present => Updating value */
     case (_,(hashvec,varr,bsize,n,fntpl))
-      equation
-        (SOME(_),indx) = get1(key, hashSet);
-        varr_1 = valueArrayClearnth(varr, indx);
+      algorithm
+        (SOME(_),indx) := get1(key, hashSet);
+        varr_1 := valueArrayClearnth(varr, indx);
       then ((hashvec,varr_1,bsize,n,fntpl));
     else
       equation
@@ -335,11 +335,11 @@ algorithm
       Boolean b;
 
     case (_,(hashvec,varr,bsize,_,(hashFunc,keyEqual,_)))
-      equation
-        hashindx = intMod(hashFunc(key), bsize);
-        indexes = hashvec[hashindx + 1];
-        (indx,b) = get2(key, indexes, keyEqual);
-        k = if b then valueArrayNthT(varr, indx) else NONE();
+      algorithm
+        hashindx := intMod(hashFunc(key), bsize);
+        indexes := hashvec[hashindx + 1];
+        (indx,b) := get2(key, indexes, keyEqual);
+        k := if b then valueArrayNthT(varr, indx) else NONE();
       then
         (k,indx);
 
@@ -448,25 +448,25 @@ algorithm
       Integer n_1,n,size,expandsize,expandsize_1,newsize;
       array<Option<Key>> arr_1,arr,arr_2;
       Real rsize,rexpandsize;
-    case ((n,size,arr),_)
-      equation
-        (n < size) = true "Have space to add array elt." ;
-        n_1 = n + 1;
-        arr_1 = arrayUpdate(arr, n + 1, SOME(entry));
+    case ((n,size,arr),_) guard n < size
+      algorithm
+        // "Have space to add array elt."
+        n_1 := n + 1;
+        arr_1 := arrayUpdate(arr, n + 1, SOME(entry));
       then
         ((n_1,size,arr_1));
 
-    case ((n,size,arr),_)
-      equation
-        (n < size) = false "Do NOT have space to add array elt. Expand with factor 1.4" ;
-        rsize = intReal(size);
-        rexpandsize = rsize * 0.4;
-        expandsize = realInt(rexpandsize);
-        expandsize_1 = intMax(expandsize, 1);
-        newsize = expandsize_1 + size;
-        arr_1 = Array.expand(expandsize_1, arr, NONE());
-        n_1 = n + 1;
-        arr_2 = arrayUpdate(arr_1, n + 1, SOME(entry));
+    case ((n,size,arr),_) guard n < size
+      algorithm
+        // Do NOT have space to add array elt. Expand with factor 1.4
+        rsize := intReal(size);
+        rexpandsize := rsize * 0.4;
+        expandsize := realInt(rexpandsize);
+        expandsize_1 := intMax(expandsize, 1);
+        newsize := expandsize_1 + size;
+        arr_1 := Array.expand(expandsize_1, arr, NONE());
+        n_1 := n + 1;
+        arr_2 := arrayUpdate(arr_1, n + 1, SOME(entry));
       then
         ((n_1,newsize,arr_2));
     else
@@ -489,10 +489,9 @@ algorithm
     local
       array<Option<Key>> arr_1,arr;
       Integer n,size;
-    case ((n,size,arr),_,_)
-      equation
-        (pos < size) = true;
-        arr_1 = arrayUpdate(arr, pos + 1, SOME(entry));
+    case ((n,size,arr),_,_) guard pos < size
+      algorithm
+        arr_1 := arrayUpdate(arr, pos + 1, SOME(entry));
       then
         ((n,size,arr_1));
     else
@@ -513,10 +512,9 @@ algorithm
     local
       array<Option<Key>> arr_1,arr;
       Integer n,size;
-    case ((n,size,arr),_)
-      equation
-        (pos < size) = true;
-        arr_1 = arrayUpdate(arr, pos + 1,NONE());
+    case ((n,size,arr),_) guard pos < size
+      algorithm
+        arr_1 := arrayUpdate(arr, pos + 1,NONE());
       then
         ((n,size,arr_1));
     else
@@ -538,12 +536,10 @@ algorithm
       Key k;
       Integer n;
       array<Option<Key>> arr;
-    case ((n,_,arr),_)
-      equation
-        (pos <= n) = true; // should be pos<n
-        SOME(k) = arr[pos + 1];
-      then
-        k;
+    case ((n,_,arr),_) guard pos <= n // should be pos<n
+      algorithm
+        SOME(k) := arr[pos + 1];
+      then k;
   end match;
 end valueArrayNth;
 
@@ -558,11 +554,8 @@ algorithm
       Key k;
       Integer n;
       array<Option<Key>> arr;
-    case ((n,_,arr),_)
-      equation
-        (pos <= n) = true; // should be pos<n
-      then
-        arr[pos + 1];
+    case ((n,_,arr),_) guard pos <= n // should be pos<n
+      then arr[pos + 1];
   end match;
 end valueArrayNthT;
 
