@@ -129,16 +129,16 @@ algorithm
       SimCodeVar.SimVar sv;
 
     case (sv as SimCodeVar.SIMVAR(name = cr, arrayCref = NONE()), _)
-      equation
+      algorithm
         //print("addSimVarToHashTable: handling variable '" + ComponentReference.printComponentRefStr(cr) + "'\n");
-        outHT = BaseHashTable.add((cr, sv), inHT);
+        outHT := BaseHashTable.add((cr, sv), inHT);
       then outHT;
         // add the whole array crefs to the hashtable, too
     case (sv as SimCodeVar.SIMVAR(name = cr, arrayCref = SOME(acr)), _)
-      equation
+      algorithm
         //print("addSimVarToHashTable: handling array variable '" + ComponentReference.printComponentRefStr(cr) + "'\n");
-        outHT = BaseHashTable.add((acr, sv), inHT);
-        outHT = BaseHashTable.add((cr, sv), outHT);
+        outHT := BaseHashTable.add((acr, sv), inHT);
+        outHT := BaseHashTable.add((cr, sv), outHT);
       then outHT;
     else
       equation
