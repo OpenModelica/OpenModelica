@@ -158,17 +158,17 @@ algorithm
       then (result, {});
 
     case ((node1, {}) :: rest_start, rest_rest, _, _)
-      equation
+      algorithm
         // Remove the first start node from the graph.
-        rest_rest = List.map2(rest_rest, removeEdge, node1, inEqualFunc);
+        rest_rest := List.map2(rest_rest, removeEdge, node1, inEqualFunc);
         // Fetch any new nodes that has no dependencies.
-        (rest_rest, new_start) =
+        (rest_rest, new_start) :=
           List.splitOnTrue(rest_rest, hasOutgoingEdges);
         // Append those nodes to the list of start nodes.
-        rest_start_ = listAppend(rest_start, new_start);
+        rest_start_ := listAppend(rest_start, new_start);
         // Add the first node to the list of sorted nodes and continue with the
         // rest of the nodes.
-        (result, rest_rest) = topologicalSort2(rest_start_,  rest_rest,
+        (result, rest_rest) := topologicalSort2(rest_start_,  rest_rest,
           node1 :: inAccumNodes, inEqualFunc);
       then
         (result, rest_rest);
@@ -259,18 +259,18 @@ algorithm
 
     // Try and find a cycle for the first node.
     case (node :: rest_nodes, _, _)
-      equation
-        SOME(cycle) = findCycleForNode(node, inGraph, {}, inEqualFunc);
-        rest_nodes = removeNodesFromGraph(cycle, rest_nodes, inEqualFunc);
-        rest_cycles = findCycles2(rest_nodes, inGraph, inEqualFunc);
+      algorithm
+        SOME(cycle) := findCycleForNode(node, inGraph, {}, inEqualFunc);
+        rest_nodes := removeNodesFromGraph(cycle, rest_nodes, inEqualFunc);
+        rest_cycles := findCycles2(rest_nodes, inGraph, inEqualFunc);
       then
         cycle :: rest_cycles;
 
     // If previous case failed we couldn't find a cycle for that node, so
     // continue with the rest of the nodes.
     case (_ :: rest_nodes, _, _)
-      equation
-        rest_cycles = findCycles2(rest_nodes, inGraph, inEqualFunc);
+      algorithm
+        rest_cycles := findCycles2(rest_nodes, inGraph, inEqualFunc);
       then
         rest_cycles;
 
@@ -306,24 +306,24 @@ algorithm
       Option<list<NodeType>> opt_cycle;
 
     case ((node, _), _, _ :: _, _)
-      equation
+      algorithm
         // Check if we have already visited this node.
-        true = List.isMemberOnTrue(node, inVisitedNodes, inEqualFunc);
+        true := List.isMemberOnTrue(node, inVisitedNodes, inEqualFunc);
         // Check if the current node is the start node, in that case we're back
         // where we started and we have a cycle. Otherwise we just encountered a
         // cycle in the graph that the start node is not part of.
-        start_node = List.last(inVisitedNodes);
-        is_start_node = inEqualFunc(node, start_node);
-        opt_cycle = if is_start_node then SOME(inVisitedNodes) else NONE();
+        start_node := List.last(inVisitedNodes);
+        is_start_node := inEqualFunc(node, start_node);
+        opt_cycle := if is_start_node then SOME(inVisitedNodes) else NONE();
       then
         opt_cycle;
 
     case ((node, edges), _, _, _)
-      equation
+      algorithm
         // If we have not visited the current node yet we add it to the list of
         // visited nodes, and then call findCycleForNode2 on the edges of the node.
-        visited_nodes = node :: inVisitedNodes;
-        cycle = findCycleForNode2(edges, inGraph, visited_nodes, inEqualFunc);
+        visited_nodes := node :: inVisitedNodes;
+        cycle := findCycleForNode2(edges, inGraph, visited_nodes, inEqualFunc);
       then
         SOME(cycle);
 
@@ -354,17 +354,17 @@ algorithm
 
     // Try and find a cycle by following this edge.
     case (node :: _, _, _, _)
-      equation
-        graph_node = findNodeInGraph(node, inGraph, inEqualFunc);
-        SOME(cycle) = findCycleForNode(graph_node, inGraph, inVisitedNodes,
+      algorithm
+        graph_node := findNodeInGraph(node, inGraph, inEqualFunc);
+        SOME(cycle) := findCycleForNode(graph_node, inGraph, inVisitedNodes,
           inEqualFunc);
       then
         cycle;
 
     // No cycle found in previous case, check the rest of the edges.
     case (_ :: rest_nodes, _, _, _)
-      equation
-        cycle = findCycleForNode2(rest_nodes, inGraph, inVisitedNodes,
+      algorithm
+        cycle := findCycleForNode2(rest_nodes, inGraph, inVisitedNodes,
           inEqualFunc);
       then
         cycle;
@@ -394,8 +394,8 @@ algorithm
       list<tuple<NodeType, list<NodeType>>> rest_graph;
 
     case (_, (graph_node as (node, _)) :: _, _)
-      equation
-        true = inEqualFunc(inNode, node);
+      algorithm
+        true := inEqualFunc(inNode, node);
       then
         graph_node;
 
@@ -428,8 +428,8 @@ algorithm
       list<tuple<NodeType, list<NodeType>>> rest_graph;
 
     case (_, (node, _) :: _, _, _)
-      equation
-        true = inEqualFunc(inNode, node);
+      algorithm
+        true := inEqualFunc(inNode, node);
       then
         inIndex;
 
@@ -465,15 +465,15 @@ algorithm
     case (_, {}, _) then {};
 
     case (_, ((node, _)) :: rest_graph, _)
-      equation
-        (rest_nodes, SOME(_)) = List.deleteMemberOnTrue(node, inNodes,
+      algorithm
+        (rest_nodes, SOME(_)) := List.deleteMemberOnTrue(node, inNodes,
           inEqualFunc);
       then
         removeNodesFromGraph(rest_nodes, rest_graph, inEqualFunc);
 
     case (_, graph_node :: rest_graph, _)
-      equation
-        rest_graph = removeNodesFromGraph(inNodes, rest_graph, inEqualFunc);
+      algorithm
+        rest_graph := removeNodesFromGraph(inNodes, rest_graph, inEqualFunc);
       then
         graph_node :: rest_graph;
 
@@ -505,9 +505,9 @@ algorithm
       list<tuple<NodeType, list<NodeType>>> restGraph,tmpGraph;
     case(_,{},_) then intmpGraph;
     case(_,(node,nodeList)::restGraph,_)
-      equation
-        tmpGraph = List.fold2(nodeList,insertNodetoGraph,node,inEqualFunc,intmpGraph);
-        tmpGraph = transposeGraph(tmpGraph,restGraph,inEqualFunc);
+      algorithm
+        tmpGraph := List.fold2(nodeList,insertNodetoGraph,node,inEqualFunc,intmpGraph);
+        tmpGraph := transposeGraph(tmpGraph,restGraph,inEqualFunc);
       then tmpGraph;
     else
       equation
@@ -542,15 +542,15 @@ algorithm
 
   case (_, _, _, {}) then {};
   case (_, _, _, (node,rest)::restGraph)
-    equation
-      true = inEqualFunc(node, inNode);
-      rest = List.unionList({rest, {inVertex}});
-      restGraph = insertNodetoGraph(inNode, inVertex, inEqualFunc, restGraph);
+    algorithm
+      true := inEqualFunc(node, inNode);
+      rest := List.unionList({rest, {inVertex}});
+      restGraph := insertNodetoGraph(inNode, inVertex, inEqualFunc, restGraph);
     then (node,rest)::restGraph;
   case (_, _, _, (node,rest)::restGraph)
-    equation
-      false = inEqualFunc(node, inNode);
-      restGraph = insertNodetoGraph(inNode, inVertex, inEqualFunc, restGraph);
+    algorithm
+      false := inEqualFunc(node, inNode);
+      restGraph := insertNodetoGraph(inNode, inVertex, inEqualFunc, restGraph);
     then (node,rest)::restGraph;
   end matchcontinue;
 end insertNodetoGraph;
@@ -597,23 +597,23 @@ algorithm
       list<NodeType> edges,M,L;
       list<tuple<NodeType, list<NodeType>>> restGraph;
     case (({},L),_,_)
-      equation
-        L = listReverse(L);
+      algorithm
+        L := listReverse(L);
       then SOME(L);
 
     case ((node::M,L),_,_)
-      equation
+      algorithm
         List.getMemberOnTrue(node,L,inEqualFunc);
       then allReachableNodesWork((M,L),inGraph,inEqualFunc);
 
     case ((node::M,L),_,_)
-      equation
-        L = node::L;
+      algorithm
+        L := node::L;
         //print(" List size 1 " + intString(listLength(L)) + "\n");
-        ((_,edges)) = findNodeInGraph(node,inGraph,inEqualFunc);
+        ((_,edges)) := findNodeInGraph(node,inGraph,inEqualFunc);
         //print(" List size 2 " + intString(listLength(edges)) + "\n");
         //print(" List size 3 " + intString(listLength(edges)) + "\n");
-        M = listAppend(edges,M);
+        M := listAppend(edges,M);
         //print("Start new round!\n");
       then allReachableNodesWork((M,L),inGraph,inEqualFunc);
     else
@@ -666,13 +666,13 @@ algorithm
     Integer color, index;
     case ({},_,_,_,_,_, _, _) then inColored;
     case (node::rest, _, _, _, _, _, _, _)
-      equation
-        index = arrayLength(inColored) - listLength(rest);
-        ((_,nodes)) = findNodeInGraph(node, inGraphT, inEqualFunc);
-        forbiddenColor = addForbiddenColors(node, nodes, inColored, inforbiddenColor, inGraph, inEqualFunc, inPrintFunc);
-        color = arrayFindMinColorIndex(forbiddenColor, node, 1, arrayLength(inColored)+1, inEqualFunc, inPrintFunc);
-        colored = arrayUpdate(inColored, index, color);
-        colored = partialDistance2color(rest, forbiddenColor, inColors, inGraph, inGraphT, colored, inEqualFunc, inPrintFunc);
+      algorithm
+        index := arrayLength(inColored) - listLength(rest);
+        ((_,nodes)) := findNodeInGraph(node, inGraphT, inEqualFunc);
+        forbiddenColor := addForbiddenColors(node, nodes, inColored, inforbiddenColor, inGraph, inEqualFunc, inPrintFunc);
+        color := arrayFindMinColorIndex(forbiddenColor, node, 1, arrayLength(inColored)+1, inEqualFunc, inPrintFunc);
+        colored := arrayUpdate(inColored, index, color);
+        colored := partialDistance2color(rest, forbiddenColor, inColors, inGraph, inGraphT, colored, inEqualFunc, inPrintFunc);
       then colored;
     else
       equation
@@ -717,13 +717,13 @@ algorithm
     list<list<NodeType>> listFobiddenColors;
     case (_, {}, _, _, _, _, _) then inForbiddenColor;
     case (_, node::rest, _, forbiddenColor, _, _, _)
-      equation
-        ((_,nodes)) = findNodeInGraph(node, inGraph, inEqualFunc);
-        indexes = List.map3(nodes, findIndexofNodeInGraph, inGraph, inEqualFunc, 1);
-        indexes = List.select1(indexes, arrayElemetGtZero, inColored);
-        indexesColor = List.map1(indexes, getArrayElem, inColored);
+      algorithm
+        ((_,nodes)) := findNodeInGraph(node, inGraph, inEqualFunc);
+        indexes := List.map3(nodes, findIndexofNodeInGraph, inGraph, inEqualFunc, 1);
+        indexes := List.select1(indexes, arrayElemetGtZero, inColored);
+        indexesColor := List.map1(indexes, getArrayElem, inColored);
         List.map2_0(indexesColor, arrayUpdateListAppend, forbiddenColor, SOME({inNode}));
-        forbiddenColor1 = addForbiddenColors(inNode, rest, inColored, forbiddenColor, inGraph, inEqualFunc, inPrintFunc);
+        forbiddenColor1 := addForbiddenColors(inNode, rest, inColored, forbiddenColor, inGraph, inEqualFunc, inPrintFunc);
       then forbiddenColor1;
       else
       equation
@@ -753,7 +753,7 @@ algorithm
     local
       list<NodeType> arrElem;
     case (_, _)
-      equation
+      algorithm
         arrayUpdate(inArray, inIndex, inNode);
       then ();
     else
@@ -797,15 +797,15 @@ algorithm
     list<NodeType> nodes;
     Integer index;
     case (_, _, _, _, _, _)
-      equation
-        NONE() = arrayGet(inForbiddenColor, inIndex);
+      algorithm
+        NONE() := arrayGet(inForbiddenColor, inIndex);
         //print("Found color on index : " + intString(inIndex) + "\n");
       then inIndex;
     case (_, _, _, _, _, _)
-      equation
-        SOME(nodes) = arrayGet(inForbiddenColor, inIndex);
+      algorithm
+        SOME(nodes) := arrayGet(inForbiddenColor, inIndex);
         //inPrintFunc(nodes,"FobiddenColors:" );
-        failure(_ = List.getMemberOnTrue(inNode, nodes, inEqualFunc));
+        failure(_ := List.getMemberOnTrue(inNode, nodes, inEqualFunc));
         //print("Found color on index : " + intString(inIndex) + "\n");
       then inIndex;
     else
@@ -868,10 +868,10 @@ algorithm
      list<tuple<Integer, list<Integer>>> restGraph;
      case({}) then ();
      case((node,edges)::restGraph)
-       equation
+       algorithm
          print("Node : " + intString(node) + " Edges: ");
-         strEdges = List.map(edges, intString);
-         strEdges = List.map1(strEdges, stringAppend, " ");
+         strEdges := List.map(edges, intString);
+         strEdges := List.map1(strEdges, stringAppend, " ");
          List.map_0(strEdges, print);
          print("\n");
          printGraphInt(restGraph);
@@ -889,14 +889,14 @@ algorithm
      local
        list<String> strNodes;
      case ({}, _)
-       equation
+       algorithm
          print(inName + "\n");
        then ();
      case (_, _)
-       equation
+       algorithm
          print(inName + " : ");
-         strNodes = List.map(inListNodes, intString);
-         strNodes = List.map1(strNodes, stringAppend, " ");
+         strNodes := List.map(inListNodes, intString);
+         strNodes := List.map1(strNodes, stringAppend, " ");
          List.map_0(strNodes, print);
          print("\n");
       then ();
@@ -920,19 +920,19 @@ algorithm
       list<Integer> edges,M,L;
     case (({},L),_,_,_) then L;
     case ((node::M,L),_,_,_)
-      equation
-        L = List.union(L,{node});
-        false = intGe(node,inMaxGraphNode);
-        ((_,edges)) = arrayGet(inGraph, node);
-        edges = List.filter1OnTrue(edges, List.notMember, L);
-        M = List.union(M,edges);
-        reachableNodes = allReachableNodesInt((M,L),inGraph,inMaxGraphNode,inMaxNodexIndex);
+      algorithm
+        L := List.union(L,{node});
+        false := intGe(node,inMaxGraphNode);
+        ((_,edges)) := arrayGet(inGraph, node);
+        edges := List.filter1OnTrue(edges, List.notMember, L);
+        M := List.union(M,edges);
+        reachableNodes := allReachableNodesInt((M,L),inGraph,inMaxGraphNode,inMaxNodexIndex);
       then reachableNodes;
     case ((node::M,L),_,_,_)
-      equation
-        L = List.union(L,{node});
-        true = intGe(node,inMaxGraphNode);
-        reachableNodes = allReachableNodesInt((M,L),inGraph,inMaxGraphNode,inMaxNodexIndex);
+      algorithm
+        L := List.union(L,{node});
+        true := intGe(node,inMaxGraphNode);
+        reachableNodes := allReachableNodesInt((M,L),inGraph,inMaxGraphNode,inMaxNodexIndex);
       then reachableNodes;
     else
       equation
@@ -1059,14 +1059,14 @@ algorithm
       list<NodeType> edges;
 
     case ((node, _), _, _)
-      equation
-        false = inCondFunc(node);
+      algorithm
+        false := inCondFunc(node);
       then
         inAccumGraph;
 
     case ((node, edges), _, _)
-      equation
-        edges = List.filterOnTrue(edges, inCondFunc);
+      algorithm
+        edges := List.filterOnTrue(edges, inCondFunc);
       then
         (node, edges) :: inAccumGraph;
 
@@ -1117,9 +1117,9 @@ algorithm
     case ({},_,_) then listReverse(inAcc);
     case ({node},_,_) then listReverse(node::inAcc);
     case ((n1,e1)::(n2,e2)::rest,_,_)
-      equation
-        b = eqFunc(n1,n2);
-        (node,rest) = merge3(b,n1,e1,n2,e2,rest,eqFunc);
+      algorithm
+        b := eqFunc(n1,n2);
+        (node,rest) := merge3(b,n1,e1,n2,e2,rest,eqFunc);
       then merge2(rest,eqFunc,node::inAcc);
   end match;
 end merge2;

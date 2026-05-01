@@ -218,8 +218,8 @@ algorithm
 
     // call addNode on the root
     case (TREE(node, cf, kf, vf, uf, n), key, val)
-      equation
-        node = addNode(inTree, node, key, val); // send the tree down to the nodes for compare function and update check
+      algorithm
+        node := addNode(inTree, node, key, val); // send the tree down to the nodes for compare function and update check
       then
         TREE(node, cf, kf, vf, uf, n);
 
@@ -253,22 +253,22 @@ algorithm
 
     // empty node
     case (_, NO_NODE(), _, _)
-     equation
-       n = newLeafNode(ITEM(inKey, inVal), 1);
+     algorithm
+       n := newLeafNode(ITEM(inKey, inVal), 1);
      then
        n;
 
     // empty node item
     case (_, NODE(item = NO_ITEM(), left = NO_NODE(), right = NO_NODE()), key, val)
-      equation
-        n = newLeafNode(ITEM(key, val), 1);
+      algorithm
+        n := newLeafNode(ITEM(key, val), 1);
       then
         n;
 
     case (TREE(keyCompareFunc = keyCompareFunc), NODE(item = ITEM(key = rkey)), key, val)
-      equation
-        order = keyCompareFunc(key, rkey);
-        n = balance(addNode_dispatch(inTree,inNode,order,key, val));
+      algorithm
+        order := keyCompareFunc(key, rkey);
+        n := balance(addNode_dispatch(inTree,inNode,order,key, val));
       then
         n;
 
@@ -301,46 +301,46 @@ algorithm
 
     // replacements of nodes is allowed! no update check function
     case (_, NODE(_, h, l, r), 0, key, val)
-      equation
-        false = hasUpdateCheckFunction(inTree);
+      algorithm
+        false := hasUpdateCheckFunction(inTree);
       then
         NODE(ITEM(key,val), h, l, r);
 
     // replacements of nodes maybe allowed!
     // we have an update check function
     case (_, NODE(i, h, l, r), 0, key, val)
-      equation
-        true = hasUpdateCheckFunction(inTree);
-        updateCheckFunc = getUpdateCheckFunc(inTree);
+      algorithm
+        true := hasUpdateCheckFunction(inTree);
+        updateCheckFunc := getUpdateCheckFunc(inTree);
         // update is allowed
-        true = updateCheckFunc(i, ITEM(key, val));
+        true := updateCheckFunc(i, ITEM(key, val));
       then
         NODE(ITEM(key,val), h, l, r);
 
     // replacements of nodes maybe allowed!
     // we have an update check function
     case (_, NODE(i, _, _, _), 0, key, val)
-      equation
-        true = hasUpdateCheckFunction(inTree);
-        updateCheckFunc = getUpdateCheckFunc(inTree);
+      algorithm
+        true := hasUpdateCheckFunction(inTree);
+        updateCheckFunc := getUpdateCheckFunc(inTree);
         // update is NOT allowed
-        false = updateCheckFunc(i, ITEM(key, val));
+        false := updateCheckFunc(i, ITEM(key, val));
       then
         inNode; // return the same node, no update!
 
     // insert into right subtree.
     case (_, NODE(item = i, height = h, left = l, right = r), 1, key, val)
-      equation
-        n = emptyNodeIfNoNode(r);
-        n = addNode(inTree, n, key, val);
+      algorithm
+        n := emptyNodeIfNoNode(r);
+        n := addNode(inTree, n, key, val);
       then
         NODE(i, h, l, n);
 
     // Insert into left subtree.
     case (_, NODE(item = i, height = h, left = l, right = r), -1, key, val)
-      equation
-        n = emptyNodeIfNoNode(l);
-        n = addNode(inTree, n, key, val);
+      algorithm
+        n := emptyNodeIfNoNode(l);
+        n := addNode(inTree, n, key, val);
       then
         NODE(i, h, n, r);
   end matchcontinue;
@@ -425,8 +425,8 @@ algorithm
       String n, str;
 
     case (TREE(node, keyCompareFunc, kf, vf, uf, n), key, val)
-      equation
-        node = replaceNode(inTree, node, key, val);
+      algorithm
+        node := replaceNode(inTree, node, key, val);
       then
         TREE(node, keyCompareFunc, kf, vf, uf, n);
 
@@ -458,9 +458,9 @@ algorithm
     case (TREE(keyCompareFunc = keyCompareFunc),
           NODE(item = ITEM(key = rkey)),
           key, val)
-      equation
-        order = keyCompareFunc(key, rkey);
-        n = replaceNode_dispatch(inTree, inNode, order, key, val);
+      algorithm
+        order := keyCompareFunc(key, rkey);
+        n := replaceNode_dispatch(inTree, inNode, order, key, val);
       then
         n;
 
@@ -491,17 +491,17 @@ algorithm
 
     // insert into right subtree.
     case (_, NODE(item = i, height = h, left = l, right = r), 1, key, val)
-      equation
-        n = emptyNodeIfNoNode(r);
-        n = replaceNode(inTree, n, key, val);
+      algorithm
+        n := emptyNodeIfNoNode(r);
+        n := replaceNode(inTree, n, key, val);
       then
         NODE(i, h, l, n);
 
     // insert into left subtree.
     case (_, NODE(item = i, height = h, left = l, right = r), -1, key, val)
-      equation
-        n = emptyNodeIfNoNode(l);
-        n = replaceNode(inTree, n, key, val);
+      algorithm
+        n := emptyNodeIfNoNode(l);
+        n := replaceNode(inTree, n, key, val);
       then
         NODE(i, h, n, r);
   end match;
@@ -555,15 +555,15 @@ algorithm
       Node<Key,Val> n;
 
     case(true, n)
-      equation
-        n = doBalance3(n);
-        n = rotateLeft(n);
+      algorithm
+        n := doBalance3(n);
+        n := rotateLeft(n);
       then n;
 
     case(false,n)
-      equation
-        n = doBalance4(n);
-        n = rotateRight(n);
+      algorithm
+        n := doBalance4(n);
+        n := rotateRight(n);
       then n;
   end match;
 end doBalance2;
@@ -578,11 +578,11 @@ algorithm
       Node<Key,Val> n, rr, rN;
 
     case(n)
-      equation
-        rN = rightNode(n);
-        true = differenceInHeight(rN) > 0;
-        rr = rotateRight(rN);
-        n = setRight(n, rr);
+      algorithm
+        rN := rightNode(n);
+        true := differenceInHeight(rN) > 0;
+        rr := rotateRight(rN);
+        n := setRight(n, rr);
       then n;
 
     else inNode;
@@ -599,11 +599,11 @@ algorithm
       Node<Key,Val> rl, n, lN;
 
     case (n)
-      equation
-        lN = leftNode(n);
-        true = differenceInHeight(lN) < 0;
-        rl = rotateLeft(lN);
-        n = setLeft(n, rl);
+      algorithm
+        lN := leftNode(n);
+        true := differenceInHeight(lN) < 0;
+        rl := rotateLeft(lN);
+        n := setLeft(n, rl);
       then n;
 
     else inNode;
@@ -777,20 +777,20 @@ algorithm
     case (_, NO_NODE(), _) then "";
 
     case (_, NODE(item = NO_ITEM(), left = l, right = r), _)
-      equation
-        indent = inIndent + "  ";
-        s1 = prettyPrintNodeStr(inTree, l, indent);
-        s2 = prettyPrintNodeStr(inTree, r, indent);
-        res = "\n" + s1 + s2;
+      algorithm
+        indent := inIndent + "  ";
+        s1 := prettyPrintNodeStr(inTree, l, indent);
+        s2 := prettyPrintNodeStr(inTree, r, indent);
+        res := "\n" + s1 + s2;
       then
         res;
 
     case (_, NODE(item = item as ITEM(), left = l, right = r), _)
-      equation
-        indent = inIndent + "  ";
-        s1 = prettyPrintNodeStr(inTree, l, indent);
-        s2 = prettyPrintNodeStr(inTree, r, indent);
-        res = "\n" + inIndent + printItemStr(inTree, item) + s1 + s2;
+      algorithm
+        indent := inIndent + "  ";
+        s1 := prettyPrintNodeStr(inTree, l, indent);
+        s2 := prettyPrintNodeStr(inTree, r, indent);
+        res := "\n" + inIndent + printItemStr(inTree, item) + s1 + s2;
       then
         res;
 
@@ -825,11 +825,11 @@ algorithm
     case (_, NO_NODE()) then "";
     case (_, NODE(item = NO_ITEM())) then "";
     case (_, NODE(item = item as ITEM(), left = left, right = right))
-      equation
-        left_str = printNodeStr(inTree, left);
-        right_str = printNodeStr(inTree, right);
-        item_str = printItemStr(inTree, item);
-        str = stringAppendList({"i: ",item_str, ", l: ", left_str, ", r: ", right_str});
+      algorithm
+        left_str := printNodeStr(inTree, left);
+        right_str := printNodeStr(inTree, right);
+        item_str := printItemStr(inTree, item);
+        str := stringAppendList({"i: ",item_str, ", l: ", left_str, ", r: ", right_str});
       then
         str;
 
@@ -851,12 +851,12 @@ algorithm
 
     case (_, NO_ITEM()) then "[]";
     case (_, ITEM(key = key, val = val))
-      equation
-        key2Str = getKeyToStrFunc(inTree);
-        val2Str = getValToStrFunc(inTree);
-        keyStr = key2Str(key);
-        valStr = val2Str(val);
-        str = "[" + keyStr + ", " + valStr + "]";
+      algorithm
+        key2Str := getKeyToStrFunc(inTree);
+        val2Str := getValToStrFunc(inTree);
+        keyStr := key2Str(key);
+        valStr := val2Str(val);
+        str := "[" + keyStr + ", " + valStr + "]";
       then
         str;
   end match;
@@ -891,24 +891,24 @@ algorithm
       Key k;
 
     case NODE(item=ITEM(k,v))
-      equation
-        true = valueEq(v, inVal);
+      algorithm
+        true := valueEq(v, inVal);
       then
         k;
 
     // search left
     case NODE(item=ITEM(_,v), left = left)
-      equation
-        false = valueEq(v, inVal);
-        k = getKeyOfValNode(inTree, left, inVal);
+      algorithm
+        false := valueEq(v, inVal);
+        k := getKeyOfValNode(inTree, left, inVal);
       then
         k;
 
     // search right
     case NODE(item=ITEM(_,v),  right = right)
-      equation
-        false = valueEq(v, inVal);
-        k = getKeyOfValNode(inTree, right, inVal);
+      algorithm
+        false := valueEq(v, inVal);
+        k := getKeyOfValNode(inTree, right, inVal);
       then
         k;
 
@@ -940,8 +940,8 @@ algorithm
 
     // call addNode on the root
     case (TREE(node, cf, kf, vf, uf, n), key, val)
-      equation
-        (node, item) = addNodeUnique(inTree, node, key, val); // send the tree down to the nodes for compare function and update check
+      algorithm
+        (node, item) := addNodeUnique(inTree, node, key, val); // send the tree down to the nodes for compare function and update check
       then
         (TREE(node, cf, kf, vf, uf, n), item);
 
@@ -977,25 +977,25 @@ algorithm
 
     // empty node
     case (_, NO_NODE(), _, _)
-     equation
-       item = ITEM(inKey, inVal);
-       n = newLeafNode(item, 1);
+     algorithm
+       item := ITEM(inKey, inVal);
+       n := newLeafNode(item, 1);
      then
        (n, item);
 
     // empty node item
     case (_, NODE(item = NO_ITEM(), left = NO_NODE(), right = NO_NODE()), key, val)
-      equation
-        item = ITEM(key, val);
-        n = newLeafNode(item, 1);
+      algorithm
+        item := ITEM(key, val);
+        n := newLeafNode(item, 1);
       then
         (n, item);
 
     case (TREE(keyCompareFunc = keyCompareFunc), NODE(item = ITEM(key = rkey)), key, val)
-      equation
-        order = keyCompareFunc(key, rkey);
-        (n, item) = addNodeUnique_dispatch(inTree,inNode,order,key,val);
-        n = balance(n);
+      algorithm
+        order := keyCompareFunc(key, rkey);
+        (n, item) := addNodeUnique_dispatch(inTree,inNode,order,key,val);
+        n := balance(n);
       then
         (n, item);
 
@@ -1035,17 +1035,17 @@ algorithm
 
     // insert into right subtree.
     case (_, NODE(item = i, height = h, left = l, right = r), 1, key, val)
-      equation
-        n = emptyNodeIfNoNode(r);
-        (n, it) = addNodeUnique(inTree, n, key, val);
+      algorithm
+        n := emptyNodeIfNoNode(r);
+        (n, it) := addNodeUnique(inTree, n, key, val);
       then
         (NODE(i, h, l, n), it);
 
     // Insert into left subtree.
     case (_, NODE(item = i, height = h, left = l, right = r), -1, key, val)
-      equation
-        n = emptyNodeIfNoNode(l);
-        (n, it) = addNodeUnique(inTree, n, key, val);
+      algorithm
+        n := emptyNodeIfNoNode(l);
+        (n, it) := addNodeUnique(inTree, n, key, val);
       then
         (NODE(i, h, n, r), it);
   end match;
