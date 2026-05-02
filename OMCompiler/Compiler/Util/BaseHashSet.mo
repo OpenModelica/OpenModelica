@@ -456,7 +456,7 @@ algorithm
       then
         ((n_1,size,arr_1));
 
-    case ((n,size,arr),_) guard n < size
+    case ((n,size,arr),_) not (guard n < size)
       algorithm
         // Do NOT have space to add array elt. Expand with factor 1.4
         rsize := intReal(size);
