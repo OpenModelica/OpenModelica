@@ -59,8 +59,7 @@ getErrorString();
 
 // Result:
 // true
-// "[metamodelica/meta/MatchCaseInteractive1.mo:90:7-91:7:writable] Warning: case local declarations are deprecated. Move all case- and else-declarations to the match local declarations.
-// "
+// ""
 // 2
 // ""
 // 4
