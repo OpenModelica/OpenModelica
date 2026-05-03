@@ -3605,7 +3605,7 @@ algorithm
       then explst;
 
     case (DAE.CALL(path=p1,expLst=explst,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(p2)))),_)
-      guard AbsynUtil.pathEqual(p1,p2) "is record constructor"
+      guard AbsynUtil.pathEqual(p1,p2) // is record constructor
       then List.flatten(List.map1(explst, generateCrefsExpLstFromExp, inCrefPrefix));
 
     case (DAE.RECORD(path=p1,exps=explst),_)
