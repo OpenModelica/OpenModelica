@@ -171,7 +171,7 @@ dump statistics on how many entries per hash value. Useful to see how hash funct
 algorithm
  _ := match(hashTable)
  local HashVector hvec;
-   case((hvec,_,_,_)) equation
+   case((hvec,_,_,_)) algorithm
       print("index list lengths:\n");
       print(stringDelimitList(list(intString(listLength(l)) for l in hvec),","));
       print("\n");
@@ -205,11 +205,11 @@ algorithm
     // Adding when not existing previously
     case ((v as (key, _)),
        (hashvec, varr, bsize, fntpl as (hashFunc, _, _, _)))
-      equation
-        indx = intMod(hashFunc(key), bsize)+1;
-        (varr,newpos) = valueArrayAdd(varr, v);
-        indexes = hashvec[indx];
-        hashvec = arrayUpdate(hashvec, indx, ((key, newpos) :: indexes));
+      algorithm
+        indx := intMod(hashFunc(key), bsize)+1;
+        (varr,newpos) := valueArrayAdd(varr, v);
+        indexes := hashvec[indx];
+        hashvec := arrayUpdate(hashvec, indx, ((key, newpos) :: indexes));
       then
         ((hashvec, varr, bsize, fntpl));
 
@@ -551,25 +551,23 @@ algorithm
       array<Option<HashEntry>> arr;
       Real rsize, rexpandsize;
 
-    case ((n, size, arr), _)
-      equation
-        (n < size) = true "Have space to add array elt.";
-        n = n + 1;
-        arr = arrayUpdate(arr, n, SOME(entry));
+    case ((n, size, arr), _) guard n < size
+      algorithm
+        n := n + 1;
+        arr := arrayUpdate(arr, n, SOME(entry));
       then
         ((n, size, arr), n);
 
-    case ((n, size, arr), _)
-      equation
-        (n < size) = false "Do NOT have space to add array elt. Expand with factor 1.4";
-        rsize = intReal(size);
-        rexpandsize = rsize * 0.4;
-        expandsize = realInt(rexpandsize);
-        expandsize = intMax(expandsize, 1);
-        newsize = expandsize + size;
-        arr = Array.expand(expandsize, arr, NONE());
-        n = n + 1;
-        arr = arrayUpdate(arr, n, SOME(entry));
+    case ((n, size, arr), _) guard not (n < size)
+      algorithm
+        rsize := intReal(size);
+        rexpandsize := rsize * 0.4;
+        expandsize := realInt(rexpandsize);
+        expandsize := intMax(expandsize, 1);
+        newsize := expandsize + size;
+        arr := Array.expand(expandsize, arr, NONE());
+        n := n + 1;
+        arr := arrayUpdate(arr, n, SOME(entry));
       then
         ((n, newsize, arr), n);
 
@@ -595,14 +593,14 @@ algorithm
       Integer n, size;
 
     case ((n, size, arr), _, _)
-      equation
-        true = pos <= size;
-        arr = arrayUpdate(arr, pos, SOME(entry));
+      algorithm
+        true := pos <= size;
+        arr := arrayUpdate(arr, pos, SOME(entry));
       then
         ((n, size, arr));
 
     case ((_, size, arr), _, _)
-      equation
+      algorithm
         Error.addInternalError("HashTable.valueArraySet(pos="+String(pos)+") size="+String(size)+" arrSize="+String(arrayLength(arr))+" failed\n", sourceInfo());
       then
         fail();
