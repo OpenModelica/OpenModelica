@@ -23,7 +23,7 @@ jobs:
           echo Version: $OMVERSION
           cd ..
           ln -s ${{ github.event.repository.name }} ${{ github.event.repository.name }}-$OMVERSION
-          zip ${{ github.event.repository.name }}/${{ github.event.repository.name }}-nightly.zip ${{ github.event.repository.name }}-$OMVERSION -r -x '*/.git/*'
+          zip ${{ github.event.repository.name }}/${{ github.event.repository.name }}-$OMVERSION-src-with-submodules.zip ${{ github.event.repository.name }}-$OMVERSION -r -x '*/.git/*'
           rm -f ${{ github.event.repository.name }}-$OMVERSION
       - name: Upload Release Assets
         if: ${{ github.event_name != 'workflow_dispatch' }}
