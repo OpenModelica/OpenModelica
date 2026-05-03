@@ -283,7 +283,7 @@ algorithm
       Option<CrefExpTable> derConst;
     case (REPLACEMENTS(hashTable=ht),src,_) /* source dest */
       guard
-        isSome(UnorderedMap.getOrDefault(src, ht, NONE())) "if rule a->b exists, fail"
+        isSome(UnorderedMap.getOrDefault(src, ht, NONE())) // if rule a->b exists, fail
       then
         fail();
     case (REPLACEMENTS(ht,invHt,eht,iv,derConst),src,dst)

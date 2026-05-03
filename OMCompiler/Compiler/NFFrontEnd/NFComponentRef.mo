@@ -1916,7 +1916,7 @@ public
         then d;
 
       case WILD() then 0;
-      else "EMPTY_CREF" then 0;
+      else /* EMPTY_CREF */ then 0;
     end match;
   end depth;
 

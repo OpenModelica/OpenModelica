@@ -2267,18 +2267,18 @@ interactive_stmt_list returns [void* ast]
 
 /* MetaModelica */
 match_expression returns [void* ast]
-@init{ ty = 0; exp.ast = 0; cmt = 0; es = 0; cs = 0; } :
-  ( (ty=MATCHCONTINUE exp=expression[metamodelica_enabled()] cmt=string_comment
+@init{ ty = 0; exp.ast = 0; es = 0; cs = 0; } :
+  ( (ty=MATCHCONTINUE exp=expression[metamodelica_enabled()]
      es=local_clause
      cs=cases
      END_MATCHCONTINUE)
-  | (ty=MATCH exp=expression[metamodelica_enabled()] cmt=string_comment
+  | (ty=MATCH exp=expression[metamodelica_enabled()]
      es=local_clause
      cs=cases
      END_MATCH)
   )
      {
-       ast = Absyn__MATCHEXP(ty->type==MATCHCONTINUE ? Absyn__MATCHCONTINUE : Absyn__MATCH, exp.ast, or_nil(es), cs, mmc_mk_some_or_none(cmt));
+       ast = Absyn__MATCHEXP(ty->type==MATCHCONTINUE ? Absyn__MATCHCONTINUE : Absyn__MATCH, exp.ast, or_nil(es), cs, mmc_mk_none());
      }
   ;
 
@@ -2299,16 +2299,12 @@ cases returns [void* ast]
   ;
 
 cases2 returns [void* ast]
-@init{ el = 0; cmt = 0; es = 0; eqs = 0; th = 0; exp.ast = 0; c.ast = 0; cs.ast = 0; } :
-  ( (el=ELSE (cmt=string_comment es=local_clause ((EQUATION eqs=equation_list_then)|(al=T_ALGORITHM algs=algorithm_annotation_list[NULL,1]))? th=THEN)? exp=expression[metamodelica_enabled()] SEMICOLON)?
+@init{ el = 0; eqs = 0; th = 0; exp.ast = 0; c.ast = 0; cs.ast = 0; } :
+  ( (el=ELSE (((EQUATION eqs=equation_list_then)|(al=T_ALGORITHM algs=algorithm_annotation_list[NULL,1]))? th=THEN)? exp=expression[metamodelica_enabled()] SEMICOLON)?
     {
-      if (es != NULL)
-        c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, "case local declarations are deprecated. Move all case- and else-declarations to the match local declarations.",
-                             NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
-                             ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
       if ($th) $el = $th;
       if (exp.ast) {
-       $ast = mmc_mk_cons_typed(Absyn_Case, Absyn__ELSE(or_nil(es),eqs ? Absyn__EQUATIONS(eqs) : (al ? Absyn__ALGORITHMS(algs.ast) : Absyn__EQUATIONS(mmc_mk_nil())),exp.ast,PARSER_INFO($el),mmc_mk_some_or_none(cmt),PARSER_INFO($start)),mmc_mk_nil());
+       $ast = mmc_mk_cons_typed(Absyn_Case, Absyn__ELSE(mmc_mk_nil(),eqs ? Absyn__EQUATIONS(eqs) : (al ? Absyn__ALGORITHMS(algs.ast) : Absyn__EQUATIONS(mmc_mk_nil())),exp.ast,PARSER_INFO($el),mmc_mk_none(),PARSER_INFO($start)),mmc_mk_nil());
       } else {
        $ast = mmc_mk_nil();
       }
@@ -2321,15 +2317,10 @@ cases2 returns [void* ast]
   ;
 
 onecase returns [void* ast]
-@init{ pat.ast = 0; guard.ast = 0; cmt = 0; es = 0; eqs = 0; th = 0; exp.ast = 0; } :
-  (CASE pat=pattern ((IF|GUARD) guard=expression[metamodelica_enabled()])? cmt=string_comment es=local_clause ((EQUATION eqs=equation_list_then)|(al=T_ALGORITHM algs=algorithm_annotation_list[NULL,1]))? th=THEN exp=expression[metamodelica_enabled()] SEMICOLON)
+@init{ pat.ast = 0; guard.ast = 0; eqs = 0; th = 0; exp.ast = 0; } :
+  (CASE pat=pattern ((IF|GUARD) guard=expression[metamodelica_enabled()])? ((EQUATION eqs=equation_list_then)|(al=T_ALGORITHM algs=algorithm_annotation_list[NULL,1]))? th=THEN exp=expression[metamodelica_enabled()] SEMICOLON)
     {
-        if (es != NULL) {
-          c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, "case local declarations are deprecated. Move all case- and else-declarations to the match local declarations.",
-                               NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
-                               ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
-        }
-        $ast = Absyn__CASE(pat.ast,mmc_mk_some_or_none(guard.ast),pat.info,or_nil(es),eqs ? Absyn__EQUATIONS(eqs) : (al ? Absyn__ALGORITHMS(algs.ast) : Absyn__EQUATIONS(mmc_mk_nil())),exp.ast,PARSER_INFO($th),mmc_mk_some_or_none(cmt),PARSER_INFO($start));
+        $ast = Absyn__CASE(pat.ast,mmc_mk_some_or_none(guard.ast),pat.info,mmc_mk_nil(),eqs ? Absyn__EQUATIONS(eqs) : (al ? Absyn__ALGORITHMS(algs.ast) : Absyn__EQUATIONS(mmc_mk_nil())),exp.ast,PARSER_INFO($th),mmc_mk_none(),PARSER_INFO($start));
     }
   ;
 

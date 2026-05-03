@@ -557,7 +557,7 @@ uniontype Algorithm "The Algorithm type describes one algorithm statement in an
 
   // MetaModelica extensions
   record ALG_FAILURE
-    list<AlgorithmItem> equ;
+    list<AlgorithmItem> equ; // TODO: This is only 1 AlgorithmItem in the parser
   end ALG_FAILURE;
 
   record ALG_TRY
@@ -815,7 +815,7 @@ uniontype Exp "The Exp uniontype is the container of a Modelica expression.
     Exp inputExp                 " match expression of         ";
     list<ElementItem> localDecls " local declarations          ";
     list<Case> cases             " case list + else in the end ";
-    Option<String> comment       " match expr comment_optional ";
+    Option<String> comment       "TODO: Remove this as it was removed from the grammar";
   end MATCHEXP;
 
   // The following are only used internally in the compiler
@@ -849,20 +849,20 @@ uniontype Case "case in match or matchcontinue"
     Exp pattern " patterns to be matched ";
     Option<Exp> patternGuard;
     Info patternInfo "file information of the pattern";
-    list<ElementItem> localDecls " local decls ";
+    list<ElementItem> localDecls "TODO: Remove this as it was removed from the grammar";
     ClassPart classPart " equation or algorithm section ";
     Exp result " result ";
     Info resultInfo "file information of the result-exp";
-    Option<String> comment " comment after case like: case pattern string_comment ";
+    Option<String> comment "TODO: Remove this as it was removed from the grammar";
     Info info "file information of the whole case";
   end CASE;
 
   record ELSE "else in match or matchcontinue"
-    list<ElementItem> localDecls " local decls ";
+    list<ElementItem> localDecls "TODO: Remove this as it was removed from the grammar";
     ClassPart classPart " equation or algorithm section ";
     Exp result " result ";
     Info resultInfo "file information of the result-exp";
-    Option<String> comment " comment after case like: case pattern string_comment ";
+    Option<String> comment "TODO: Remove this as it was removed from the grammar";
     Info info "file information of the whole case";
   end ELSE;
 end Case;
