@@ -2278,7 +2278,7 @@ match_expression returns [void* ast]
      END_MATCH)
   )
      {
-       ast = Absyn__MATCHEXP(ty->type==MATCHCONTINUE ? Absyn__MATCHCONTINUE : Absyn__MATCH, exp.ast, mmc_mk_nil(), cs, mmc_mk_none());
+       ast = Absyn__MATCHEXP(ty->type==MATCHCONTINUE ? Absyn__MATCHCONTINUE : Absyn__MATCH, exp.ast, or_nil(es), cs, mmc_mk_none());
      }
   ;
 
