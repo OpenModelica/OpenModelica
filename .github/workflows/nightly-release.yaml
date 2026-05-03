@@ -25,11 +25,11 @@ jobs:
           echo Version: $OMVERSION
           cd ..
           ln -s ${{ github.event.repository.name }} ${{ github.event.repository.name }}-$OMVERSION
-          zip ${{ github.event.repository.name }}/${{ github.event.repository.name }}-nightly.zip ${{ github.event.repository.name }}-$OMVERSION -r -x '*/.git/*'
+          zip ${{ github.event.repository.name }}/${{ github.event.repository.name }}-$OMVERSION-nightly.zip ${{ github.event.repository.name }}-$OMVERSION -r -x '*/.git/*'
           rm -f ${{ github.event.repository.name }}-$OMVERSION
 
       - uses: pyTooling/Actions/releaser@r0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: nightly
-          files: ${{ github.event.repository.name }}-nightly.zip
+          files: ${{ github.event.repository.name }}-*nightly.zip
