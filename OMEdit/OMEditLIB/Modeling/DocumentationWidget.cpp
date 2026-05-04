@@ -1048,7 +1048,7 @@ void DocumentationWidget::editInfoHeaderDocumentation()
  */
 QString buildDocumentationAnnotationString(const QString &info, const QString &revisions, const QString &infoHeader)
 {
-  static const struct { const char *key; const QString &value; } fields[] = {
+  const struct { const char *key; const QString &value; } fields[] = {
   {"info", info},
   {"revisions", revisions},
   {"__OpenModelica_infoHeader", infoHeader},
