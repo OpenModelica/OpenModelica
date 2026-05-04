@@ -264,7 +264,7 @@ public
           comps_indices := tarjanScalar(adj.m, matching);
 
           // phase 2 tarjan
-          (phase2_adj, phase2_matching, super_nodes) := SuperNode.create(adj, matching, eqns.map, comps_indices, buckets);
+          (phase2_adj, phase2_matching, super_nodes) := SuperNode.create(adj, adj.mapping, matching, eqns.map, comps_indices, buckets);
 
           // kabdelhak: this match-statement is superfluous, SuperNode.create always returns these types.
           // it is just safer if something is changed in the future
@@ -340,6 +340,45 @@ public
     comps := listReverse(comps);
   end tarjanScalar;
 
+  type SCC = list<Integer>;
+
+  uniontype LoopIdentifier
+    "used to identify algebraic loops that are structurally equal just differ in local indexing"
+    record LOOP_IDENTIFIER
+      UnorderedSet<Integer> eqns;
+      UnorderedSet<Integer> vars;
+    end LOOP_IDENTIFIER;
+
+    function hash
+      input LoopIdentifier li;
+      output Integer i = stringHashDjb2(toString(li));
+    end hash;
+
+    function isEqual
+      input LoopIdentifier li1;
+      input LoopIdentifier li2;
+      output Boolean b = UnorderedSet.isEqual(li1.eqns, li2.eqns) and UnorderedSet.isEqual(li1.vars, li2.vars);
+    end isEqual;
+
+    function toString
+      input LoopIdentifier li;
+      output String str;
+    algorithm
+      str := " eqns: " + UnorderedSet.toString(li.eqns, intString) + "\n vars:" + UnorderedSet.toString(li.vars, intString) + "\n";
+    end toString;
+
+    function fromSCC
+      input list<Integer> scc;
+      input Adjacency.Mapping mapping;
+      input Matching matching;
+      output LoopIdentifier li;
+    algorithm
+      li := LOOP_IDENTIFIER(
+        eqns = UnorderedSet.fromList(list(mapping.eqn_StA[i] for i in scc), Util.id, intEq),
+        vars = UnorderedSet.fromList(list(mapping.var_StA[matching.eqn_to_var[i]] for i in scc), Util.id, intEq));
+    end fromSCC;
+  end LoopIdentifier;
+
   uniontype SuperNode
     record SINGLE
       "does not belong to an algebraic loop or array"
@@ -409,15 +448,18 @@ public
 
     function create
       input Adjacency.Matrix adj;
+      input Adjacency.Mapping mapping;
       input Matching matching;
       input UnorderedMap<ComponentRef, Integer> eqn_map;
-      input list<list<Integer>> scc_phase1;
+      input list<SCC> scc_phase1;
       input UnorderedMap<Mode, Value> buck;
       output Adjacency.Matrix phase2_adj = adj;
       output Matching phase2_matching = matching;
       output array<SuperNode> super_nodes;
     protected
-      list<list<Integer>> algebraic_loops = list(scc for scc guard List.hasSeveralElements(scc) in scc_phase1);
+      LoopIdentifier li;
+      UnorderedMap<LoopIdentifier, SCC> loop_map = UnorderedMap.new<SCC>(LoopIdentifier.hash, LoopIdentifier.isEqual);
+      list<SCC> algebraic_loops = list(scc for scc guard List.hasSeveralElements(scc) in scc_phase1);
       list<tuple<Mode, Value>> buckets = UnorderedMap.toList(buck);
       Mode mode;
       Value val;
@@ -427,6 +469,14 @@ public
     algorithm
       phase2_adj := match phase2_adj
         case Adjacency.FINAL() algorithm
+          // merge algebraic loops with identical interface (array based)
+          // ToDo: proper handling without merging them all and having a for-loop around instead
+          for scc in algebraic_loops loop
+            li := LoopIdentifier.fromSCC(scc, mapping, matching);
+            UnorderedMap.add(li, listAppend(scc, UnorderedMap.getOrDefault(li, loop_map, {})), loop_map);
+          end for;
+          algebraic_loops := UnorderedMap.valueList(loop_map);
+
           //### 1. store all loop indices ###
           for scc in algebraic_loops loop for idx in scc loop
             UnorderedSet.add(idx, alg_loop_set);
