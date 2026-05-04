@@ -68,7 +68,7 @@ protected
   // Util
   import MetaModelica.Dangerous;
   import DoubleEnded;
-  import Rational;
+  import NBBackendUtil.Rational;
   import UnorderedMap;
   import UnorderedSet;
 
@@ -339,8 +339,8 @@ public
     algorithm
       dest := match (dest, src)
         case (SUB_CLOCK(), SUB_CLOCK()) algorithm
-          dest.shift  := Rational.add(dest.shift, Rational.mul(src.shift, dest.factor));
-          dest.factor := Rational.mul(dest.factor, src.factor);
+          dest.shift  := Rational.add(dest.shift, Rational.multiply(src.shift, dest.factor));
+          dest.factor := Rational.multiply(dest.factor, src.factor);
         then dest;
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + toString(dest) + " and " + toString(src) + " because of incorrect clock types."});

@@ -38,9 +38,6 @@ encapsulated uniontype Rational
 protected
   import Util;
 
-  // old imports
-  import MMath;
-
 public
   record RATIONAL
     Integer n "numerator";
@@ -55,11 +52,6 @@ public
     input Rational r2;
     output Boolean b = r1.n == r2.n and r1.d == r2.d;
   end isEqual;
-
-  function convert
-    input Rational r;
-    output MMath.Rational oldR = MMath.RATIONAL(r.n, r.d);
-  end convert;
 
   function compare "Compares two rationals and return -1 if the first is smallest, 1 if the second is smallest, or 0 if they are equal."
     input Rational r1;
@@ -83,6 +75,8 @@ public
   algorithm
     if r.n == 0 then
       r.d := 1;
+    elseif r.d < 0 then
+      r := RATIONAL(-r.n, -r.d);
     end if;
   end normalize;
 
@@ -148,6 +142,5 @@ protected
   algorithm
     r := normalize(RATIONAL(intDiv(i1, d), intDiv(i2, d)));
   end reduce;
-
-annotation(__OpenModelica_Interface="util");
+  annotation(__OpenModelica_Interface="util");
 end Rational;
