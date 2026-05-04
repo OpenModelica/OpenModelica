@@ -146,7 +146,6 @@ if true then /* Suppress output */
     "../Util/ClockIndexes.mo",
     "../Util/Config.mo",
     "../Util/Corba.mo",
-    //"../Util/Database.mo",
     "../Util/Debug.mo",
     "../Util/DoubleEnded.mo",
     "../Util/DynLoad.mo",
