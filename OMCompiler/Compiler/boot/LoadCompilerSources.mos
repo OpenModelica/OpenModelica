@@ -522,6 +522,7 @@ if true then /* Suppress output */
     "../Util/HashTableSM1.mo",
     "../Util/OMSimulatorExt.mo",
     "../Util/PriorityQueue.mo",
+    "../Util/Rational.mo",
     "../Util/SBAtomicSet.mo",
     "../Util/SBFunctions.mo",
     "../Util/SBGraph.mo",
