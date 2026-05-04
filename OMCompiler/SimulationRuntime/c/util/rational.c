@@ -123,7 +123,7 @@ RATIONAL makeRATIONAL(rat_int_t numerator, rat_int_t denominator)
 /**
  * @brief Addition of two rational numbers.
  *
- * a/b + c/d = (ad+bc)/(bd) = (a(d/g)+(b/g)c)/((b/g)d)
+ * a/b + c/d = (ad + bc)/(bd) = (a(d/g) + (b/g)c)/((b/g)d)
  *
  * @param r1          First rational number.
  * @param r2          Second rational number.
@@ -178,7 +178,7 @@ RATIONAL subRat(RATIONAL r1, RATIONAL r2) {
 /**
  * @brief Multiplication of two rational numbers.
  *
- * a/b * c/d = (ac)/(bd)
+ * a/b * c/d = (ac)/(bd) = ((a/g1)(c/g2))/((b/g2)(d/g1))
  *
  * @param r1          First rational number.
  * @param r2          Second rational number.
@@ -220,7 +220,7 @@ RATIONAL invRat(RATIONAL r)
  * @brief Division of two rational numers.
  * A.k.a multiplication with multiplicative inverse.
  *
- * (a/b) / (c/d) = a/b * d/c = (ad)/(bc)
+ * (a/b) / (c/d) = a/b * d/c
  *
  * @param r1          First rational number.
  * @param r2          Second rational number.

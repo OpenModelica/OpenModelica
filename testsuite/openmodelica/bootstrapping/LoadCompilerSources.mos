@@ -257,6 +257,7 @@ if true then /* Suppress output */
     prefixPath + "Util/Pointer.mo",
     prefixPath + "Util/Print.mo",
     prefixPath + "Util/PriorityQueue.mo",
+    prefixPath + "Util/Rational.mo",
     prefixPath + "Util/Settings.mo",
     prefixPath + "Util/SimulationResults.mo",
     prefixPath + "Util/Socket.mo",
