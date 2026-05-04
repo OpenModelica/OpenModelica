@@ -1764,6 +1764,11 @@ protected
         UnorderedSet<ComponentRef> seenCrefs;
         ComponentRef origCref, finalSsaCref, pDerOrigCref, pDerSsaCref;
         Type vty;
+        // x_bar algorithm locals (used in ALGEBRAIC_LOOP adjoint)
+        list<Statement> xbarStmts;
+        SizeClassification sc_x;
+        Operator addOp_x;
+        Expression accRhs;
 
       // ===================== ALGEBRAIC_LOOP =====================
       case StrongComponent.ALGEBRAIC_LOOP(strict = tearing) algorithm
@@ -1836,7 +1841,8 @@ protected
           adjointComps := loopComp :: adjointComps;
         end if;
 
-        // Build x_bar = -lambda^T * (dr/dx) post-update components
+        // Build x_bar = -lambda^T * (dr/dx) as a single algorithm component
+        xbarStmts := {};
         for seedVarPtrX in seedPtrListX loop
           baseX := BVariable.getVarName(seedVarPtrX);
           o_pDerX := UnorderedMap.get(baseX, diff_map_x);
@@ -1850,11 +1856,32 @@ protected
             // end if;
             if not listEmpty(terms_x) then
               rhs_x := Expression.negate(buildAdjointRhs(pDerX, list(Util.tuple22(t) for t in terms_x)));
-              adjointComps := makeAdjointAccumulationComponent(pDerX, rhs_x, contextName, Pointer.access(idx)) :: adjointComps;
-              Pointer.update(idx, Pointer.access(idx) + 1);
+              vty := ComponentRef.getComponentType(pDerX);
+              if Expression.containsCref(rhs_x, pDerX) then
+                accRhs := rhs_x;
+              else
+                sc_x := sizeClassificationFromType(vty);
+                addOp_x := Operator.fromClassification((MathClassification.ADDITION, sc_x), vty);
+                accRhs := SimplifyExp.simplify(Expression.MULTARY({Expression.fromCref(pDerX), rhs_x}, {}, addOp_x));
+              end if;
+              accRhs := Expression.map(accRhs, Expression.repairOperator);
+              xbarStmts := Statement.ASSIGNMENT(
+                Expression.fromCref(pDerX), accRhs, vty, DAE.emptyElementSource
+              ) :: xbarStmts;
             end if;
           end if;
         end for;
+        xbarStmts := listReverse(xbarStmts);
+        if not listEmpty(xbarStmts) then
+          eqPtr := Equation.makeAlgorithm(xbarStmts, init);
+          Equation.createName(eqPtr, idx, contextName);
+          adjVarSlices := listReverse(collectAdjointVarSlices(xbarStmts, {}));
+          adjointComps := StrongComponent.MULTI_COMPONENT(
+            vars   = adjVarSlices,
+            eqn    = Slice.SLICE(eqPtr, {}),
+            status = NBSolve.Status.EXPLICIT
+          ) :: adjointComps;
+        end if;
       then ();
 
       // ===================== SINGLE_COMPONENT (scalar/array/record equation) =====================
@@ -1962,10 +1989,10 @@ protected
                 // Desired execution order: (1) pDer.x_N := pDer.x  then  (2) pDer.x := 0
                 // So prepend (2) first so (1) ends up at HEAD and executes first.
                 // pDer.x := 0  —  reset so it only accumulates from RHS reads of x
-                adjStmts := Statement.ASSIGNMENT(
-                  Expression.fromCref(pDerOrigCref),
-                  Expression.makeZero(vty),
-                  vty, DAE.emptyElementSource) :: adjStmts;
+                // adjStmts := Statement.ASSIGNMENT(
+                //   Expression.fromCref(pDerOrigCref),
+                //   Expression.makeZero(vty),
+                //   vty, DAE.emptyElementSource) :: adjStmts;
                 // pDer.x_N := pDer.x  —  seed the final SSA bar from the incoming x-bar
                 adjStmts := Statement.ASSIGNMENT(
                   Expression.fromCref(pDerSsaCref),
@@ -2173,7 +2200,7 @@ protected
           });
           fail();
         end if;
-        //print("Primal component: " + StrongComponent.toString(c) + "\n");
+        print("Primal component: " + StrongComponent.toString(c) + "\n");
       end for;
     else
       Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed because no strong components were given!"});

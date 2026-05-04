@@ -507,14 +507,14 @@ public
           // Emit accumulation statements from adjoint_map
           (diffArguments, stmts) := makeAdjointAccumulationStatements(diffArguments);
 
-          // Emit seed reset: seed := 0
-          vty := ComponentRef.getSubscriptedType(seedCref, true);
-          stmts := Statement.ASSIGNMENT(
-            Expression.fromCref(seedCref),
-            Expression.makeZero(vty),
-            vty,
-            DAE.emptyElementSource
-          ) :: stmts;
+          // // Emit seed reset: seed := 0
+          // vty := ComponentRef.getSubscriptedType(seedCref, true);
+          // stmts := Statement.ASSIGNMENT(
+          //   Expression.fromCref(seedCref),
+          //   Expression.makeZero(vty),
+          //   vty,
+          //   DAE.emptyElementSource
+          // ) :: stmts;
           stmts := listReverse(stmts);
         else
           stmts := {};
@@ -575,14 +575,14 @@ public
 
           (diffArguments, stmts) := makeAdjointAccumulationStatements(diffArguments);
 
-          // Seed reset
-          vty := ComponentRef.getSubscriptedType(seed_base, true);
-          stmts := Statement.ASSIGNMENT(
-            Expression.fromCref(seed_base),
-            Expression.makeZero(vty),
-            vty,
-            DAE.emptyElementSource
-          ) :: stmts;
+          // // Seed reset
+          // vty := ComponentRef.getSubscriptedType(seed_base, true);
+          // stmts := Statement.ASSIGNMENT(
+          //   Expression.fromCref(seed_base),
+          //   Expression.makeZero(vty),
+          //   vty,
+          //   DAE.emptyElementSource
+          // ) :: stmts;
           stmts := listReverse(stmts);
         else
           stmts := {};
@@ -607,13 +607,13 @@ public
 
           (diffArguments, stmts) := makeAdjointAccumulationStatements(diffArguments);
 
-          vty := ComponentRef.getSubscriptedType(seedCref, true);
-          stmts := Statement.ASSIGNMENT(
-            Expression.fromCref(seedCref),
-            Expression.makeZero(vty),
-            vty,
-            DAE.emptyElementSource
-          ) :: stmts;
+          // vty := ComponentRef.getSubscriptedType(seedCref, true);
+          // stmts := Statement.ASSIGNMENT(
+          //   Expression.fromCref(seedCref),
+          //   Expression.makeZero(vty),
+          //   vty,
+          //   DAE.emptyElementSource
+          // ) :: stmts;
           stmts := listReverse(stmts);
         else
           stmts := {};
@@ -719,15 +719,15 @@ public
           // A carry exists when lhsCref appears as the LHS of one of the emitted statements
           // (meaning the seed variable undergoes a self-overwrite transition, e.g.
           // x := x * c, and the gradient must be propagated forward rather than zeroed).
-          if not List.any(stmts, function stmtHasCrefAsLhs(key = lhsCref)) then
-            vty := ComponentRef.getSubscriptedType(lhsCref, true);
-            stmts := Statement.ASSIGNMENT(
-              Expression.fromCref(lhsCref),
-              Expression.makeZero(vty),
-              vty,
-              DAE.emptyElementSource
-            ) :: stmts;
-          end if;
+          // if not List.any(stmts, function stmtHasCrefAsLhs(key = lhsCref)) then
+          //   vty := ComponentRef.getSubscriptedType(lhsCref, true);
+          //   stmts := Statement.ASSIGNMENT(
+          //     Expression.fromCref(lhsCref),
+          //     Expression.makeZero(vty),
+          //     vty,
+          //     DAE.emptyElementSource
+          //   ) :: stmts;
+          // end if;
         else
           stmts := {};
         end if;
