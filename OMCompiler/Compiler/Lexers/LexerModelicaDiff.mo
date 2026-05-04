@@ -20,14 +20,14 @@ constant Boolean debug = false;
 replaceable package LexTable
   constant Integer yy_limit;
   constant Integer yy_finish;
-  constant Integer yy_acclist[:];
-  constant Integer yy_accept[:];
-  constant Integer yy_ec[:];
-  constant Integer yy_meta[:];
-  constant Integer yy_base[:];
-  constant Integer yy_def[:];
-  constant Integer yy_nxt[:];
-  constant Integer yy_chk[:];
+  constant array<Integer> yy_acclist;
+  constant array<Integer> yy_accept;
+  constant array<Integer> yy_ec;
+  constant array<Integer> yy_meta;
+  constant array<Integer> yy_base;
+  constant array<Integer> yy_def;
+  constant array<Integer> yy_nxt;
+  constant array<Integer> yy_chk;
 end LexTable;
 
 function scan "Scan starts the lexical analysis, load the tables and consume the program to output the tokens"
@@ -989,16 +989,16 @@ algorithm
 end checkArray;
 
 function checkArrayModelica
-  input Integer arr[:];
+  input array<Integer> arr;
   input Integer index;
   input SourceInfo info;
 protected
   String filename;
   Integer lineStart;
 algorithm
-  if index<1 or index>size(arr,1) then
+  if index<1 or index>arrayLength(arr) then
     SOURCEINFO(fileName=filename, lineNumberStart=lineStart) := info;
-    print("\n[" + filename + ":" + String(lineStart) + "]: checkArray failed: arrayLength="+String(size(arr,1))+" index=" + String(index) + "\n");
+    print("\n[" + filename + ":" + String(lineStart) + "]: checkArray failed: arrayLength="+String(arrayLength(arr))+" index=" + String(index) + "\n");
     fail();
   end if;
 end checkArrayModelica;
@@ -1006,7 +1006,7 @@ end checkArrayModelica;
 package LexTable
   constant Integer yy_limit = 395;
   constant Integer yy_finish = 453;
-  constant Integer yy_acclist[:] = array(
+  constant array<Integer> yy_acclist = listArray({
       115,  114,    1,  114,    2,  114,  114,  101,  114,  114,
        64,  114,   65,  114,   85,  114,   87,  114,   72,  114,
        86,  114,   97,  114,   94,  114,  100,  114,   75,  114,
@@ -1060,8 +1060,8 @@ package LexTable
        98,   98,   95,   98,    8,   98,   98,   16,   98,   98,
        98,   25,   98,   98,   98,   98,   98,   22,   98,   98,
        55,   98,   98,   24,   98,   79,   98,   27,   98
-   );
-  constant Integer yy_accept[:] = array(
+   });
+  constant array<Integer> yy_accept = listArray({
         1,    1,    1,    1,    1,    1,    1,    1,    1,    2,
         3,    5,    7,    8,   10,   11,   13,   15,   17,   19,
        21,   23,   25,   27,   29,   31,   33,   35,   37,   39,
@@ -1106,8 +1106,8 @@ package LexTable
       471,  472,  474,  475,  476,  477,  478,  480,  481,  483,
       484,  486,  488,  490,  490
 
-   );
-  constant Integer yy_ec[:] = array(
+   });
+  constant array<Integer> yy_ec = listArray({
         1,    1,    1,    1,    1,    1,    1,    1,    2,    3,
         1,    1,    4,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
@@ -1136,16 +1136,16 @@ package LexTable
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1
-   );
-  constant Integer yy_meta[:] = array(
+   });
+  constant array<Integer> yy_meta = listArray({
         1,    1,    1,    1,    2,    2,    3,    3,    2,    2,
         2,    2,    2,    2,    2,    2,    4,    2,    2,    2,
         5,    2,    4,    4,    2,    5,    2,    2,    6,    6,
         4,    4,    4,    6,    4,    4,    4,    4,    4,    4,
         6,    4,    4,    4,    6,    4,    4,    4,    6,    4,
         4,    6,    4,    2,    2
-   );
-  constant Integer yy_base[:] = array(
+   });
+  constant array<Integer> yy_base = listArray({
         0,    0,   53,   54,  449,  448,   55,   56,  450,  453,
        64,  453,  446,  453,  422,  453,  453,  453,  453,  453,
       453,   56,   60,   62,   57,  453,   39,  426,  425,    0,
@@ -1190,8 +1190,8 @@ package LexTable
       150,    0,  148,  154,  156,  131,    0,   91,    0,   39,
         0,    0,    0,  453,  201,  207,  213,  218,  221,  225
 
-   );
-  constant Integer yy_def[:] = array(
+   });
+  constant array<Integer> yy_def = listArray({
       394,    1,  395,  395,  396,  396,  397,  397,  394,  394,
       394,  394,  394,  394,  398,  394,  394,  394,  394,  394,
       394,  394,  394,  394,  394,  394,  394,  394,  394,  399,
@@ -1236,8 +1236,8 @@ package LexTable
       399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
       399,  399,  399,    0,  394,  394,  394,  394,  394,  394
 
-   );
-  constant Integer yy_nxt[:] = array(
+   });
+  constant array<Integer> yy_nxt = listArray({
        10,   11,   12,   13,   11,   10,   14,   15,   16,   17,
        18,   19,   20,   21,   22,   23,   24,   25,   26,   27,
        28,   29,   30,   30,   31,   10,   32,   33,   34,   35,
@@ -1294,8 +1294,8 @@ package LexTable
       394,  394,  394,  394,  394,  394,  394,  394,  394,  394,
 
       394,  394,  394,  394,  394,  394,  394,  394
-   );
-  constant Integer yy_chk[:] = array(
+   });
+  constant array<Integer> yy_chk = listArray({
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
@@ -1352,7 +1352,7 @@ package LexTable
       394,  394,  394,  394,  394,  394,  394,  394,  394,  394,
 
       394,  394,  394,  394,  394,  394,  394,  394
-   );
+   });
 
 end LexTable;
 

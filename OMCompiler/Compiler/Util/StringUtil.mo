@@ -403,13 +403,13 @@ function convertCharNonAsciiToHex "Converts a single character string to a hex r
   input output String s;
 protected
   Integer i;
-  constant String hex[:] = array("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F");
+  constant array<String> hex = listArray({"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"});
 algorithm
   i := stringCharInt(s);
   if i < 128 then
     return;
   end if;
-  s := "0x" + hex[intDiv(i, 16)+1] + hex[intMod(i, 16)+1];
+  s := "0x" + arrayGet(hex, intDiv(i, 16)+1) + arrayGet(hex, intMod(i, 16)+1);
 end convertCharNonAsciiToHex;
 
 function stripBOM

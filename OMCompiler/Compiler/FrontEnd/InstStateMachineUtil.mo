@@ -79,7 +79,7 @@ end FlatSMGroup;
 public uniontype AdjacencyTable
   record ADJACENCY_TABLE
     HashTable.HashTable cref2index "Map cref to corresponding index in adjacency matrix";
-    Boolean adjacency[:,:] "Adjacency matrix showing which modes are connected by transitions";
+    array<array<Boolean>> adjacency "Adjacency matrix showing which modes are connected by transitions";
   end ADJACENCY_TABLE;
 end AdjacencyTable;
 
@@ -695,7 +695,7 @@ transitive closure associated with that initial state."
   output list<FlatSMGroup> flatSMGroup;
 protected
   HashTable.HashTable cref2index;
-  Boolean adjacency[nStates,nStates];
+  array<array<Boolean>> adjacency;
   list<tuple<DAE.ComponentRef, Integer>> entries;
   array<DAE.ComponentRef> i2cref;
   DAE.ComponentRef cref;
@@ -719,8 +719,8 @@ algorithm
     i := BaseHashTable.get(cref, cref2index);
     members := {};
     for j in 1:n loop
-      if adjacency[i,j] then
-        members := i2cref[j]::members;
+      if arrayGet(arrayGet(adjacency,i),j) then
+        members := arrayGet(i2cref,j)::members;
       end if;
     end for;
 
@@ -798,7 +798,7 @@ http://de.wikipedia.org/wiki/Warshall-Algorithmus
   output AdjacencyTable  transClosure;
 protected
   HashTable.HashTable cref2index;
-  Boolean adjacency[nStates,nStates];
+  array<array<Boolean>> adjacency;
   Integer n,k,i,j;
   Boolean c;
 algorithm
@@ -810,10 +810,10 @@ algorithm
   // Warshall's algorithm for computing the transitive closure
   for k in 1:n loop
     for i in 1:n loop
-      if adjacency[i,k] then
+      if arrayGet(arrayGet(adjacency,i),k) then
         for j in 1:n loop
-          if adjacency[k,j] then
-            adjacency[i,j] := true;
+          if arrayGet(arrayGet(adjacency,k),j) then
+            arrayUpdate(arrayGet(adjacency,i), j, true);
           end if;
         end for;
       end if;
@@ -831,7 +831,7 @@ Create adjacency table showing which modes are connected by transitions."
   output AdjacencyTable iTable;
 protected
   HashTable.HashTable cref2index "Map cref to corresponding index in adjacency matrix";
-  Boolean adjacency[nStates,nStates] "Adjacency matrix showing which states are connected by transitions";
+  array<array<Boolean>> adjacency "Adjacency matrix showing which states are connected by transitions";
   array<Boolean> iRow;
   Integer n,m,i,j,k;
   DAE.ComponentRef cref;
@@ -842,7 +842,7 @@ algorithm
   n := arrayLength(crefs1);
   cref2index := HashTable.emptyHashTableSized(n);
   assert(n == nStates, "Value of nStates needs to be equal to number of modes within mode table argument.");
-  adjacency := fill(false,n,n);
+  adjacency := listArray(list(arrayCreate(n, false) for i in 1:n));
 
   for i in 1:n loop
     cref2index := BaseHashTable.addNoUpdCheck((crefs1[i], i), cref2index);
@@ -855,7 +855,7 @@ algorithm
     for j in 1:m loop
       cref := crefs2[j];
       k := BaseHashTable.get(cref, cref2index);
-      adjacency[i,k] := true;
+      arrayUpdate(arrayGet(adjacency,i), k, true);
     end for;
   end for;
 
@@ -869,7 +869,7 @@ Print adjacency table."
   input Integer nStates "Number of states";
 protected
   HashTable.HashTable cref2index;
-  Boolean adjacency[nStates,nStates];
+  array<array<Boolean>> adjacency;
   list<tuple<DAE.ComponentRef, Integer>> entries;
   tuple<DAE.ComponentRef, Integer> entry;
   DAE.ComponentRef cref;
@@ -903,7 +903,7 @@ algorithm
   for i in 1:n loop
     str := Util.stringPadRight(intString(i), padn, pads);
     for j in 1:n loop
-      b := adjacency[i,j];
+      b := arrayGet(arrayGet(adjacency,i),j);
       str := str + Util.stringPadLeft(boolString(b)+",", padn, pads);
     end for;
     print(str + "\n");
