@@ -3,10 +3,10 @@ SET(CMAKE_VERBOSE_MAKEFILE ON)
 
 PROJECT(OMSIBaseSimulationRuntime)
 
-# enable warnings and use ANSI C compatible compiler
+# enable warnings; sources use C99 features such as snprintf so do not pass -ansi
 if(CMAKE_COMPILER_IS_GNUCXX)
     message(STATUS "GCC detected, adding compile flags")
-    set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -Wall -Wextra -ansi -pedantic -g")
+    set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -Wall -Wextra -pedantic -g")
     IF(NOT WIN32)
         SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
     ENDIF()
