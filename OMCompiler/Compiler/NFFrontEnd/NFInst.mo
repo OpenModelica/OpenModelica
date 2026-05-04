@@ -265,25 +265,16 @@ algorithm
   end if;
 
   VerifyModel.verify(flatModel, InstNode.isPartial(inst_cls));
-  InstUtil.dumpFlatModelDebug("afterVerify", flatModel);
 
   (flatModel, functions) := InstUtil.expandSlicedCrefs(flatModel, functions);
-  InstUtil.dumpFlatModelDebug("afterExpandSlicedCrefs", flatModel);
 
   flatModel := InstUtil.combineSubscripts(flatModel);
-  InstUtil.dumpFlatModelDebug("afterCombineSubscripts", flatModel);
 
   // propagate hide result attribute
   // ticket #4346
-  try
-    flatModel.variables := list(Variable.propagateAnnotation("HideResult", false, true, var) for var in flatModel.variables);
-  else
-    // SM-generated variables may use NAME_NODEs that propagateAnnotation can't handle; skip
-  end try;
-  InstUtil.dumpFlatModelDebug("afterPropAnnot", flatModel);
+  flatModel.variables := list(Variable.propagateAnnotation("HideResult", false, true, var) for var in flatModel.variables);
 
   flatModel := FlatModel.removeNonTopLevelDirections(flatModel);
-  InstUtil.dumpFlatModelDebug("afterRemoveDirections", flatModel);
 
   if Flags.getConfigString(Flags.OBFUSCATE) == "protected" or
      Flags.getConfigString(Flags.OBFUSCATE) == "encrypted" then
