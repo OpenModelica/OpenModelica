@@ -176,7 +176,7 @@ protected
   String s;
   Unit ut;
 algorithm
-  outKnownUnits := UnorderedMap.new<Unit>(stringHashDjb2, stringEq);
+  outKnownUnits := UnorderedMap.new<Unit>(stringHashDjb2, stringEq, Util.nextPrime(listLength(LU_COMPLEXUNITS)));
 
   for unit in LU_COMPLEXUNITS loop
     (s, ut) := unit;
@@ -190,7 +190,7 @@ protected
   String s;
   Unit ut;
 algorithm
-  outKnownUnitsInverse := UnorderedMap.new<String>(hash, isEqual);
+  outKnownUnitsInverse := UnorderedMap.new<String>(hash, isEqual, Util.nextPrime(listLength(LU_COMPLEXUNITS)));
 
   for unit in LU_COMPLEXUNITS loop
     (s, ut) := unit;
@@ -202,7 +202,7 @@ public function newCrefUnitTable
   input Integer size;
   output CrefToUnitTable table;
 algorithm
-  table := UnorderedMap.new<Unit>(ComponentRef.hash, ComponentRef.isEqual);
+  table := UnorderedMap.new<Unit>(ComponentRef.hash, ComponentRef.isEqual, size);
 end newCrefUnitTable;
 
 public function isUnit
@@ -274,7 +274,6 @@ algorithm
     local
       String s, str;
       Boolean b;
-      list<ComponentRef> crefList;
 
     case UNIT() algorithm
       str := realString(unit.factor) + " * ";
@@ -315,7 +314,7 @@ algorithm
 
       s := if b and intNe(unit.K, 0) then " * " else "";
       str := str + s;
-      //s = "(K-" + realString(unit.shift) + ")^(" + intString(unit.K) + ")";
+      //s := "(K-" + realString(unit.shift) + ")^(" + intString(unit.K) + ")";
       s := "K^(" + intString(unit.K) + ")";
       s := if intEq(unit.K, 0) then "" else s;
       b := b or intNe(unit.K, 0);
@@ -331,35 +330,10 @@ algorithm
       str := str + (if b then "" else "1");
     then str;
 
-    case MASTER()   then "MASTER(" + printListCr(unit.varList) + ")";
+    case MASTER()   then List.toString(unit.varList, ComponentRef.toString, "MASTER", "(", ", ", ")");
     case UNKNOWN()  then "UNKOWN(" + unit.unit + ")";
   end match;
 end unit2string;
-
-public function printListCr
- input list<ComponentRef> inlCr;
- output String outS;
-algorithm
-  outS := match(inlCr)
-
-  local
-    list<ComponentRef> lCr;
-    ComponentRef cr;
-    String s;
-
-    case {} then "";
-
-    case cr::{} algorithm
-      s := ComponentRef.toString(cr);
-    then s;
-
-    case cr::lCr algorithm
-      s := ComponentRef.toString(cr);
-      s := s + ", " + printListCr(lCr);
-    then s;
-
-  end match;
-end printListCr;
 
 public function unitMul
   input Unit inUnit1;
