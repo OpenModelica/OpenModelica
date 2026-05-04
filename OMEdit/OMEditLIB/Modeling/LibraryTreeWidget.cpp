@@ -680,38 +680,33 @@ void LibraryTreeItem::setModelWidget(ModelWidget *pModelWidget)
   mComponentsLoaded = false;
 }
 
-#define FETCH_COMPONENTS() \
-  if (!mComponentsLoaded) { \
-    mComponents = MainWindow::instance()->getOMCProxy()->getElements(getNameStructure()); \
-    mComponentsLoaded = true; \
-  }
-
 const QList<ElementInfo> &LibraryTreeItem::getComponentsList()
 {
-  if (mpModelWidget) {
-    if (mpModelWidget->isDiagramViewLoaded()) {
-      QVector<ModelInstance::Element*> elements = mpModelWidget->getModelInstance()->getElements();
-      // reuse the mComponents list
-      mComponents.clear();
-      foreach (auto pElement, elements) {
-        if (pElement->isComponent()) {
-          /* construct the ElementInfo from the new instance API Element
-           * We only need the name, type and comment.
-           */
-          ElementInfo elementInfo;
-          elementInfo.setName(pElement->getName());
-          elementInfo.setClassName(pElement->getType());
-          elementInfo.setComment(pElement->getComment());
-          mComponents.append(elementInfo);
-        }
+  if (mpModelWidget && mpModelWidget->isDiagramViewLoaded()) {
+    QVector<ModelInstance::Element*> elements = mpModelWidget->getModelInstance()->getElements();
+    // reuse the mComponents list
+    mComponents.clear();
+    foreach (auto pElement, elements) {
+      if (pElement->isComponent()) {
+        /* construct the ElementInfo from the new instance API Element
+         * We only need the name, type and comment.
+         */
+        ElementInfo elementInfo;
+        elementInfo.setName(pElement->getName());
+        elementInfo.setClassName(pElement->getType());
+        elementInfo.setComment(pElement->getComment());
+        mComponents.append(elementInfo);
       }
-      return mComponents;
-    } else {
-      FETCH_COMPONENTS();
-      return mComponents;
     }
+    return mComponents;
   } else {
-    FETCH_COMPONENTS();
+    if (!mComponentsLoaded) {
+      const QString nameStructure = getNameStructure();
+      if (!nameStructure.isEmpty()) {
+        mComponents = MainWindow::instance()->getOMCProxy()->getElements(nameStructure);
+      }
+      mComponentsLoaded = true;
+    }
     return mComponents;
   }
 }
