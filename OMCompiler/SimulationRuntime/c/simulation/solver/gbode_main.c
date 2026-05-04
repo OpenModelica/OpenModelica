@@ -1602,9 +1602,9 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       if (gbData->multi_rate) {
         // Multi-rate integration enabled:
 
+        // TODO: how to work with this threshold rigorously?
         // Calculate the error threshold for slow states (used to separate slow and fast states).
-        err_states = getErrorThreshold(gbData);
-        err = err_states;
+        // err_states = getErrorThreshold(gbData);
 
         // Classify states into fast and slow based on the scaled error:
         // - States with error >= 1 are considered fast.
@@ -1628,6 +1628,23 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
             gbData->nSlowStates++;
             gbData->err_slow = fmax(gbData->err_slow, gbData->err[i]);
           }
+        }
+
+        if ((double) gbData->nFastStates > (double) gbData->nStates * gbData->percentage)
+        {
+          // too many fast states => reject
+          err = INFINITY;
+        }
+        else
+        {
+          // do scaled 2 norm as error measure of slow states error
+          err = 0.0;
+          for (int slow_idx = 0; slow_idx < gbData->nSlowStates; slow_idx++)
+          {
+            int full_idx = gbData->slowStatesIdx[slow_idx];
+            err += gbData->err[full_idx] * gbData->err[full_idx];
+          }
+          err = sqrt(err / (double) gbData->nSlowStates);
         }
       }
 
