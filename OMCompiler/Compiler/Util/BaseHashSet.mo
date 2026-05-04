@@ -141,30 +141,30 @@ algorithm
 
     // Adding when not existing previously
     case (key,((hashvec,varr,bsize,n,fntpl as (hashFunc,_,_))))
-      equation
-        (fkey,indx) = get1(key, hashSet);
+      algorithm
+        (fkey,indx) := get1(key, hashSet);
         if isSome(fkey) then
           //print("adding when present, indx =" );print(intString(indx));print("\n");
-          varr = valueArraySetnth(varr, indx, key);
+          varr := valueArraySetnth(varr, indx, key);
         else
-          indx = intMod(hashFunc(key), bsize);
-          newpos = valueArrayLength(varr);
-          varr = valueArrayAdd(varr, key);
-          indexes = hashvec[indx + 1];
-          hashvec = arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
-          n = valueArrayLength(varr);
+          indx := intMod(hashFunc(key), bsize);
+          newpos := valueArrayLength(varr);
+          varr := valueArrayAdd(varr, key);
+          indexes := hashvec[indx + 1];
+          hashvec := arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
+          n := valueArrayLength(varr);
         end if;
       then ((hashvec,varr,bsize,n,fntpl));
 
     case (key,((_,_,bsize,_,(hashFunc,_,keystrFunc))))
-      equation
+      algorithm
         print("- BaseHashSet.add failed: ");
         print("bsize: ");
         print(intString(bsize));
         print(" key: ");
-        s = keystrFunc(key);
+        s := keystrFunc(key);
         print(s + " Hash: ");
-        hval = intMod(hashFunc(key),bsize);
+        hval := intMod(hashFunc(key),bsize);
         print(intString(hval));
         print("\n");
       then
@@ -193,17 +193,17 @@ algorithm
 
     // Adding when not existing previously
     case (key,(hashvec,varr,bsize,_,fntpl as (hashFunc,_,_)))
-      equation
-        indx = intMod(hashFunc(key), bsize);
-        newpos = valueArrayLength(varr);
-        varr_1 = valueArrayAdd(varr, key);
-        indexes = hashvec[indx + 1];
-        hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
-        n_1 = valueArrayLength(varr_1);
+      algorithm
+        indx := intMod(hashFunc(key), bsize);
+        newpos := valueArrayLength(varr);
+        varr_1 := valueArrayAdd(varr, key);
+        indexes := hashvec[indx + 1];
+        hashvec_1 := arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
+        n_1 := valueArrayLength(varr_1);
       then ((hashvec_1,varr_1,bsize,n_1,fntpl));
 
     else
-      equation
+      algorithm
         print("- BaseHashSet.addNoUpdCheck failed\n");
       then
         fail();
@@ -228,13 +228,13 @@ algorithm
     // Adding when not existing previously
     case (_,
         ((hashvec, varr, bsize, _, fntpl as (hashFunc, _, _)))) guard not has(key, hashSet)
-      equation
-        indx = intMod(hashFunc(key), bsize);
-        newpos = valueArrayLength(varr);
-        varr_1 = valueArrayAdd(varr, key);
-        indexes = hashvec[indx + 1];
-        hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key, newpos) :: indexes));
-        n_1 = valueArrayLength(varr_1);
+      algorithm
+        indx := intMod(hashFunc(key), bsize);
+        newpos := valueArrayLength(varr);
+        varr_1 := valueArrayAdd(varr, key);
+        indexes := hashvec[indx + 1];
+        hashvec_1 := arrayUpdate(hashvec, indx + 1, ((key, newpos) :: indexes));
+        n_1 := valueArrayLength(varr_1);
       then
         ((hashvec_1, varr_1, bsize, n_1, fntpl));
 
@@ -261,12 +261,12 @@ algorithm
       FuncsTuple fntpl;
       /* adding when already present => Updating value */
     case (_,(hashvec,varr,bsize,n,fntpl))
-      equation
-        (SOME(_),indx) = get1(key, hashSet);
-        varr_1 = valueArrayClearnth(varr, indx);
+      algorithm
+        (SOME(_),indx) := get1(key, hashSet);
+        varr_1 := valueArrayClearnth(varr, indx);
       then ((hashvec,varr_1,bsize,n,fntpl));
     else
-      equation
+      algorithm
         print("-HashSet.delete failed\n");
       then
         fail();
@@ -287,8 +287,8 @@ algorithm
       then
         false;
     else
-      equation
-        (oKey,_) = get1(key,hashSet);
+      algorithm
+        (oKey,_) := get1(key,hashSet);
       then
         isSome(oKey);
   end match;
@@ -470,7 +470,7 @@ algorithm
       then
         ((n_1,newsize,arr_2));
     else
-      equation
+      algorithm
         print("-HashSet.valueArrayAdd failed\n");
       then
         fail();
@@ -496,7 +496,7 @@ algorithm
       then
         ((n,size,arr_1));
     else
-      equation
+      algorithm
         print("-HashSet.valueArraySetnth failed\n");
       then
         fail();
@@ -520,7 +520,7 @@ algorithm
       then
         ((n,size,arr_1));
     else
-      equation
+      algorithm
         print("-HashSet.valueArrayClearnth failed\n");
       then
         fail();

@@ -171,7 +171,7 @@ dump statistics on how many entries per hash value. Useful to see how hash funct
 algorithm
  _ := match(hashTable)
  local HashVector hvec;
-   case((hvec,_,_,_)) equation
+   case((hvec,_,_,_)) algorithm
       print("index list lengths:\n");
       print(stringDelimitList(list(intString(listLength(l)) for l in hvec),","));
       print("\n");
@@ -205,16 +205,16 @@ algorithm
     // Adding when not existing previously
     case ((v as (key, _)),
        (hashvec, varr, bsize, fntpl as (hashFunc, _, _, _)))
-      equation
-        indx = intMod(hashFunc(key), bsize)+1;
-        (varr,newpos) = valueArrayAdd(varr, v);
-        indexes = hashvec[indx];
-        hashvec = arrayUpdate(hashvec, indx, ((key, newpos) :: indexes));
+      algorithm
+        indx := intMod(hashFunc(key), bsize)+1;
+        (varr,newpos) := valueArrayAdd(varr, v);
+        indexes := hashvec[indx];
+        hashvec := arrayUpdate(hashvec, indx, ((key, newpos) :: indexes));
       then
         ((hashvec, varr, bsize, fntpl));
 
     else
-      equation
+      algorithm
         print("- BaseHashTable.addNoUpdCheck failed\n");
       then
         fail();
@@ -574,7 +574,7 @@ algorithm
         ((n, newsize, arr), n);
 
     else
-      equation
+      algorithm
         print("-HashTable.valueArrayAdd failed\n");
       then
         fail();
@@ -602,7 +602,7 @@ algorithm
         ((n, size, arr));
 
     case ((_, size, arr), _, _)
-      equation
+      algorithm
         Error.addInternalError("HashTable.valueArraySet(pos="+String(pos)+") size="+String(size)+" arrSize="+String(arrayLength(arr))+" failed\n", sourceInfo());
       then
         fail();
