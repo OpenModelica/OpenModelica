@@ -65,6 +65,8 @@ import NFPrefixes.{Variability, Purity, Visibility};
 import SCode;
 import UnorderedMap;
 import Util;
+import NFEquation.ScalarizeMode;
+
 
 // ============================================================
 // Internal data types
@@ -703,7 +705,7 @@ algorithm
     // Substitute previous(x) → x_previous for state variables in RHS
     (newRhs, _) := Expression.mapFold(rhs,
       function subsPreviousCrefs(stateVarCrefs = stateVarCrefs), false);
-    eq1 := Equation.EQUALITY(lhs, newRhs, lhsTy, eqScope, eqSource);
+    eq1 := Equation.EQUALITY(lhs, newRhs, lhsTy, eqScope, eqSource, ScalarizeMode.NO_PREFERENCE);
 
     // Check if this is an outer-output equation:
     // LHS is NOT state-prefixed but the equation's scope is the state component
@@ -720,7 +722,7 @@ algorithm
         getDefaultStart(lhsTy));
       perStateVarExp := makeCrefExp(perStateVarCref, lhsTy);
       // state1.x = if state1.active then rhs else previous(state1.x)
-      eq1 := Equation.EQUALITY(perStateVarExp, newRhs, lhsTy, eqScope, eqSource);
+      eq1 := Equation.EQUALITY(perStateVarExp, newRhs, lhsTy, eqScope, eqSource, ScalarizeMode.NO_PREFERENCE);
       eq1 := wrapInStateActivationConditional(eq1, stateCref, false);
       accEqs := eq1 :: accEqs;
       accVars := perStateVar :: accVars;
@@ -1326,7 +1328,7 @@ algorithm
         Expression.CREF(cref = lhsRef) := eq.lhs;
         if ComponentRef.isEqual(cRef, lhsRef) then
           (newRhs, _) := subsXInState(eq.rhs, xInState, substExp);
-          outEq := Equation.EQUALITY(eq.lhs, newRhs, eq.ty, eq.scope, eq.source);
+          outEq := Equation.EQUALITY(eq.lhs, newRhs, eq.ty, eq.scope, eq.source, ScalarizeMode.NO_PREFERENCE);
         end if;
       then outEq;
     else eq;
@@ -1460,7 +1462,7 @@ algorithm
   else
     expElse := makePreviousCall(lhs, ty);
   end if;
-  outEq := Equation.EQUALITY(lhs, makeIfExp(activeRef, rhs, expElse, ty), ty, eqScope, eqSource);
+  outEq := Equation.EQUALITY(lhs, makeIfExp(activeRef, rhs, expElse, ty), ty, eqScope, eqSource, ScalarizeMode.NO_PREFERENCE);
 end wrapInStateActivationConditional;
 
 protected
@@ -1839,7 +1841,7 @@ algorithm
   end for;
 
   src := ElementSource.createElementSource(AbsynUtil.dummyInfo);
-  accEqs := Equation.EQUALITY(outerVarExp, mergeRhs, ty, InstNode.EMPTY_NODE(), src) :: accEqs;
+  accEqs := Equation.EQUALITY(outerVarExp, mergeRhs, ty, InstNode.EMPTY_NODE(), src, ScalarizeMode.NO_PREFERENCE) :: accEqs;
 end generateMergeEquation;
 
 // ============================================================
@@ -1931,7 +1933,7 @@ function makeEq
   input Type ty;
   output Equation eq;
 algorithm
-  eq := Equation.EQUALITY(lhs, rhs, ty, InstNode.EMPTY_NODE(), DAE.emptyElementSource);
+  eq := Equation.EQUALITY(lhs, rhs, ty, InstNode.EMPTY_NODE(), DAE.emptyElementSource, ScalarizeMode.NO_PREFERENCE);
 end makeEq;
 
 // ============================================================
