@@ -1833,12 +1833,12 @@ void MainWindow::switchToWindowMode(QMdiArea *pMdiArea)
 void MainWindow::switchToTabbedMode(QMdiArea *pMdiArea)
 {
   pMdiArea->setViewMode(QMdiArea::TabbedView);
-
+#ifdef Q_OS_WIN
   /* See #15239
    * When switching to tabbed mode, the order of subwindows is not updated until a tab is moved.
    * To fix this, we connect to the tabMoved signal and set the active subwindow to the moved window.
    * This way, the order of subwindows is updated immediately after switching to tabbed mode.
-   * This issue is not seen in Qt6.
+   * This issue is not seen in Linux.
    */
   QTabBar* tabBar = pMdiArea->findChild<QTabBar*>();
   if (tabBar) {
@@ -1850,6 +1850,7 @@ void MainWindow::switchToTabbedMode(QMdiArea *pMdiArea)
       }
     });
   }
+#endif // #ifdef Q_OS_WIN
 }
 
 /*!
