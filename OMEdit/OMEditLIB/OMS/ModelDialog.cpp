@@ -157,18 +157,36 @@ void CreateModelDialog::createNewModel()
     QString systemNameStructure = QString("%1.%2").arg(mpNameTextBox->text(), mpSystemWidget->getNameTextBox()->text());
     if (OMSProxy::instance()->addSystem(systemNameStructure, (oms_system_enu_t)mpSystemWidget->getTypeComboBox()->itemData(mpSystemWidget->getTypeComboBox()->currentIndex()).toInt())) {
       LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-      LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text(), mpNameTextBox->text(), "", false, pLibraryTreeModel->getRootLibraryTreeItem());
+        qDebug() << "Adding System";
+      LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItemArun(mpNameTextBox->text(), mpNameTextBox->text(), "", false, pLibraryTreeModel->getRootLibraryTreeItem());
+        qDebug() << "Adding System completed";
+
       if (pLibraryTreeItem) {
+            qDebug() << "D1";
         pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
+            qDebug() << "D2";
+
         // expand the ssp model
         QModelIndex modelIndex = pLibraryTreeModel->libraryTreeItemIndex(pLibraryTreeItem);
+            qDebug() << "D3";
+
         QModelIndex proxyIndex = MainWindow::instance()->getLibraryWidget()->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
+            qDebug() << "D4";
         MainWindow::instance()->getLibraryWidget()->getLibraryTreeView()->expand(proxyIndex);
+            qDebug() << "D5";
+
         // open the root system inside it
         if (pLibraryTreeItem->childrenSize() > 0) {
+                qDebug() << "D6";
           LibraryTreeItem *pRootSystemLibraryTreeItem  = pLibraryTreeItem->childAt(0);
+                qDebug() << "D7";
+
           if (pRootSystemLibraryTreeItem) {
+                    qDebug() << "D8";
+
             pLibraryTreeModel->showModelWidget(pRootSystemLibraryTreeItem);
+                    qDebug() << "D9";
+
           }
         }
       }

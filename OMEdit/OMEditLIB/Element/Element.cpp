@@ -1336,90 +1336,164 @@ void Element::drawModelicaElement()
  * \brief Element::drawOMSElement
  * Draws the OMSimulator component.
  */
+
 void Element::drawOMSElement()
 {
-  if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
-    if (!mpLibraryTreeItem->getModelWidget()) {
-      MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
+    if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
+        if (!mpLibraryTreeItem->getModelWidget()) {
+            MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
+        }
+
+        // draw shapes first
+        createClassShapes();
+
+        // draw connectors now
+        foreach (Element *pElement, mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getElementsList()) {
+            Element *pNewElement = new Element(pElement, this, getRootParentElement());
+            mElementsList.append(pNewElement);
+        }
+
+    } else if (mpLibraryTreeItem->isOMSConnectorJson()) {
+        QString causality = mpLibraryTreeItem->getOMSConnectorCausalityJson();
+        QString signalType = mpLibraryTreeItem->getOMSConnectorSignalTypeJson();
+
+        if (causality == "input") {
+            PolygonAnnotation *pInputPolygonAnnotation = new PolygonAnnotation(this);
+
+            QVector<QPointF> points;
+            points << QPointF(-100.0, 100.0)
+                   << QPointF(100.0, 0.0)
+                   << QPointF(-100.0, -100.0)
+                   << QPointF(-100.0, 100.0);
+
+            pInputPolygonAnnotation->setPoints(points);
+            pInputPolygonAnnotation->setFillPattern(StringHandler::FillSolid);
+
+            if (signalType == "integer" || signalType == "enum") {
+                pInputPolygonAnnotation->setLineColor(QColor(255, 127, 0));
+                pInputPolygonAnnotation->setFillColor(QColor(255, 127, 0));
+            } else if (signalType == "boolean") {
+                pInputPolygonAnnotation->setLineColor(QColor(255, 0, 255));
+                pInputPolygonAnnotation->setFillColor(QColor(255, 0, 255));
+            } else {
+                pInputPolygonAnnotation->setLineColor(QColor(0, 0, 127));
+                pInputPolygonAnnotation->setFillColor(QColor(0, 0, 127));
+            }
+
+            mShapesList.append(pInputPolygonAnnotation);
+
+        } else if (causality == "output") {
+            PolygonAnnotation *pOutputPolygonAnnotation = new PolygonAnnotation(this);
+
+            QVector<QPointF> points;
+            points << QPointF(-100.0, 100.0)
+                   << QPointF(100.0, 0.0)
+                   << QPointF(-100.0, -100.0)
+                   << QPointF(-100.0, 100.0);
+
+            pOutputPolygonAnnotation->setPoints(points);
+            pOutputPolygonAnnotation->setFillPattern(StringHandler::FillSolid);
+
+            if (signalType == "integer" || signalType == "enum") {
+                pOutputPolygonAnnotation->setLineColor(QColor(255, 127, 0));
+                pOutputPolygonAnnotation->setFillColor(QColor(255, 255, 255));
+            } else if (signalType == "boolean") {
+                pOutputPolygonAnnotation->setLineColor(QColor(255, 0, 255));
+                pOutputPolygonAnnotation->setFillColor(QColor(255, 255, 255));
+            } else {
+                pOutputPolygonAnnotation->setLineColor(QColor(0, 0, 127));
+                pOutputPolygonAnnotation->setFillColor(QColor(255, 255, 255));
+            }
+
+            mShapesList.append(pOutputPolygonAnnotation);
+        }
     }
-    // draw shapes first
-    createClassShapes();
-    // draw connectors now
-    foreach (Element *pElement, mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getElementsList()) {
-      Element *pNewElement = new Element(pElement, this, getRootParentElement());
-      mElementsList.append(pNewElement);
-    }
-  } else if (mpLibraryTreeItem->getOMSConnector()) { // if component is a signal i.e., input/output
-    if (mpLibraryTreeItem->getOMSConnector()->causality == oms_causality_input) {
-      PolygonAnnotation *pInputPolygonAnnotation = new PolygonAnnotation(this);
-      QVector<QPointF> points;
-      points << QPointF(-100.0, 100.0) << QPointF(100.0, 0.0) << QPointF(-100.0, -100.0) << QPointF(-100.0, 100.0);
-      pInputPolygonAnnotation->setPoints(points);
-      pInputPolygonAnnotation->setFillPattern(StringHandler::FillSolid);
-      switch (mpLibraryTreeItem->getOMSConnector()->type) {
-        case oms_signal_type_integer:
-        case oms_signal_type_enum:
-          pInputPolygonAnnotation->setLineColor(QColor(255,127,0));
-          pInputPolygonAnnotation->setFillColor(QColor(255,127,0));
-          break;
-        case oms_signal_type_boolean:
-          pInputPolygonAnnotation->setLineColor(QColor(255,0,255));
-          pInputPolygonAnnotation->setFillColor(QColor(255,0,255));
-          break;
-        case oms_signal_type_string:
-          qDebug() << "Element::drawOMSElement oms_signal_type_string not implemented yet.";
-          break;
-        case oms_signal_type_bus:
-          qDebug() << "Element::drawOMSElement oms_signal_type_bus not implemented yet.";
-          break;
-        case oms_signal_type_real:
-        default:
-          pInputPolygonAnnotation->setLineColor(QColor(0, 0, 127));
-          pInputPolygonAnnotation->setFillColor(QColor(0, 0, 127));
-          break;
-      }
-      mShapesList.append(pInputPolygonAnnotation);
-    } else if (mpLibraryTreeItem->getOMSConnector()->causality == oms_causality_output) {
-      PolygonAnnotation *pOutputPolygonAnnotation = new PolygonAnnotation(this);
-      QVector<QPointF> points;
-      points << QPointF(-100.0, 100.0) << QPointF(100.0, 0.0) << QPointF(-100.0, -100.0) << QPointF(-100.0, 100.0);
-      pOutputPolygonAnnotation->setPoints(points);
-      pOutputPolygonAnnotation->setFillPattern(StringHandler::FillSolid);
-      switch (mpLibraryTreeItem->getOMSConnector()->type) {
-        case oms_signal_type_integer:
-        case oms_signal_type_enum:
-          pOutputPolygonAnnotation->setLineColor(QColor(255, 127, 0));
-          pOutputPolygonAnnotation->setFillColor(QColor(255, 255, 255));
-          break;
-        case oms_signal_type_boolean:
-          pOutputPolygonAnnotation->setLineColor(QColor(255, 0, 255));
-          pOutputPolygonAnnotation->setFillColor(QColor(255, 255, 255));
-          break;
-        case oms_signal_type_string:
-          qDebug() << "Element::drawOMSElement oms_signal_type_string not implemented yet.";
-          break;
-        case oms_signal_type_bus:
-          qDebug() << "Element::drawOMSElement oms_signal_type_bus not implemented yet.";
-          break;
-        case oms_signal_type_real:
-        default:
-          pOutputPolygonAnnotation->setLineColor(QColor(0, 0, 127));
-          pOutputPolygonAnnotation->setFillColor(QColor(255, 255, 255));
-          break;
-      }
-      mShapesList.append(pOutputPolygonAnnotation);
-    }
-  } else if (mpLibraryTreeItem->getOMSBusConnector()) { // if component is a bus
-    RectangleAnnotation *pBusRectangleAnnotation = new RectangleAnnotation(this);
-    QVector<QPointF> extents;
-    extents << QPointF(-100, -100) << QPointF(100, 100);
-    pBusRectangleAnnotation->setExtents(extents);
-    pBusRectangleAnnotation->setLineColor(QColor(73, 151, 60));
-    pBusRectangleAnnotation->setFillColor(QColor(73, 151, 60));
-    pBusRectangleAnnotation->setFillPattern(StringHandler::FillSolid);
-    mShapesList.append(pBusRectangleAnnotation);
-  }
 }
+
+// void Element::drawOMSElement()
+// {
+//   if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
+//     if (!mpLibraryTreeItem->getModelWidget()) {
+//       MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
+//     }
+//     // draw shapes first
+//     createClassShapes();
+//     // draw connectors now
+//     foreach (Element *pElement, mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getElementsList()) {
+//       Element *pNewElement = new Element(pElement, this, getRootParentElement());
+//       mElementsList.append(pNewElement);
+//     }
+//   } else if (mpLibraryTreeItem->getOMSConnector()) { // if component is a signal i.e., input/output
+//     if (mpLibraryTreeItem->getOMSConnector()->causality == oms_causality_input) {
+//       PolygonAnnotation *pInputPolygonAnnotation = new PolygonAnnotation(this);
+//       QVector<QPointF> points;
+//       points << QPointF(-100.0, 100.0) << QPointF(100.0, 0.0) << QPointF(-100.0, -100.0) << QPointF(-100.0, 100.0);
+//       pInputPolygonAnnotation->setPoints(points);
+//       pInputPolygonAnnotation->setFillPattern(StringHandler::FillSolid);
+//       switch (mpLibraryTreeItem->getOMSConnector()->type) {
+//         case oms_signal_type_integer:
+//         case oms_signal_type_enum:
+//           pInputPolygonAnnotation->setLineColor(QColor(255,127,0));
+//           pInputPolygonAnnotation->setFillColor(QColor(255,127,0));
+//           break;
+//         case oms_signal_type_boolean:
+//           pInputPolygonAnnotation->setLineColor(QColor(255,0,255));
+//           pInputPolygonAnnotation->setFillColor(QColor(255,0,255));
+//           break;
+//         case oms_signal_type_string:
+//           qDebug() << "Element::drawOMSElement oms_signal_type_string not implemented yet.";
+//           break;
+//         case oms_signal_type_bus:
+//           qDebug() << "Element::drawOMSElement oms_signal_type_bus not implemented yet.";
+//           break;
+//         case oms_signal_type_real:
+//         default:
+//           pInputPolygonAnnotation->setLineColor(QColor(0, 0, 127));
+//           pInputPolygonAnnotation->setFillColor(QColor(0, 0, 127));
+//           break;
+//       }
+//       mShapesList.append(pInputPolygonAnnotation);
+//     } else if (mpLibraryTreeItem->getOMSConnector()->causality == oms_causality_output) {
+//       PolygonAnnotation *pOutputPolygonAnnotation = new PolygonAnnotation(this);
+//       QVector<QPointF> points;
+//       points << QPointF(-100.0, 100.0) << QPointF(100.0, 0.0) << QPointF(-100.0, -100.0) << QPointF(-100.0, 100.0);
+//       pOutputPolygonAnnotation->setPoints(points);
+//       pOutputPolygonAnnotation->setFillPattern(StringHandler::FillSolid);
+//       switch (mpLibraryTreeItem->getOMSConnector()->type) {
+//         case oms_signal_type_integer:
+//         case oms_signal_type_enum:
+//           pOutputPolygonAnnotation->setLineColor(QColor(255, 127, 0));
+//           pOutputPolygonAnnotation->setFillColor(QColor(255, 255, 255));
+//           break;
+//         case oms_signal_type_boolean:
+//           pOutputPolygonAnnotation->setLineColor(QColor(255, 0, 255));
+//           pOutputPolygonAnnotation->setFillColor(QColor(255, 255, 255));
+//           break;
+//         case oms_signal_type_string:
+//           qDebug() << "Element::drawOMSElement oms_signal_type_string not implemented yet.";
+//           break;
+//         case oms_signal_type_bus:
+//           qDebug() << "Element::drawOMSElement oms_signal_type_bus not implemented yet.";
+//           break;
+//         case oms_signal_type_real:
+//         default:
+//           pOutputPolygonAnnotation->setLineColor(QColor(0, 0, 127));
+//           pOutputPolygonAnnotation->setFillColor(QColor(255, 255, 255));
+//           break;
+//       }
+//       mShapesList.append(pOutputPolygonAnnotation);
+//     }
+//   } else if (mpLibraryTreeItem->getOMSBusConnector()) { // if component is a bus
+//     RectangleAnnotation *pBusRectangleAnnotation = new RectangleAnnotation(this);
+//     QVector<QPointF> extents;
+//     extents << QPointF(-100, -100) << QPointF(100, 100);
+//     pBusRectangleAnnotation->setExtents(extents);
+//     pBusRectangleAnnotation->setLineColor(QColor(73, 151, 60));
+//     pBusRectangleAnnotation->setFillColor(QColor(73, 151, 60));
+//     pBusRectangleAnnotation->setFillPattern(StringHandler::FillSolid);
+//     mShapesList.append(pBusRectangleAnnotation);
+//   }
+// }
 
 /*!
  * \brief Element::drawInheritedElementsAndShapes
@@ -1788,7 +1862,7 @@ void Element::updatePlacementAnnotation()
   // Add component annotation.
   LibraryTreeItem *pLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
   if (pLibraryTreeItem->isSSP()) {
-    if (mpLibraryTreeItem && mpLibraryTreeItem->getOMSElement()) {
+    if (mpLibraryTreeItem && mpLibraryTreeItem->getOMSElement() || mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
       ssd_element_geometry_t elementGeometry = mpLibraryTreeItem->getOMSElementGeometry();
       ExtentAnnotation extent = mTransformation.getExtent();
       QPointF extent1 = extent.at(0);
