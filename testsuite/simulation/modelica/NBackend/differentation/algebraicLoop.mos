@@ -54,10 +54,7 @@ buildModel(algebraicLoop); getErrorString();
 //
 // ODE Partition 1
 // -----------------
-//   (8) Nonlinear System (size = 2, homotopy = false, mixed = false, torn = true)
-//   --Iteration Vars:{$DER.x, $DER.y}
-//   --(6) 0 = -($DER.x ^ 3.0 - (x + y + $DER.y ^ 2.0))
-//   --(7) 0 = -(($DER.x ^ 2.0 + $DER.y ^ 3.0) - x * y)
+//   (6) Alias of 3
 //
 // Event Partition
 // -----------------
@@ -79,10 +76,10 @@ buildModel(algebraicLoop); getErrorString();
 //
 // Column Equations (size = 1)
 // -----------------------------
-//   (11) Nonlinear System (size = 2, homotopy = false, mixed = false, torn = true)
-//   --Iteration Vars:{$pDER_ODE_JAC.$DER.x, $pDER_ODE_JAC.$DER.y}
-//   --(9) 0 = -(3.0 * $DER.x ^ 2.0 * $pDER_ODE_JAC.$DER.x - ($SEED_ODE_JAC.x + $SEED_ODE_JAC.y + 2.0 * $DER.y * $pDER_ODE_JAC.$DER.y))
-//   --(10) 0 = -((2.0 * $DER.x * $pDER_ODE_JAC.$DER.x + 3.0 * $DER.y ^ 2.0 * $pDER_ODE_JAC.$DER.y) - ($SEED_ODE_JAC.x * y + x * $SEED_ODE_JAC.y))
+//   (9) Nonlinear System (size = 2, homotopy = false, mixed = false, torn = true)
+//   --Iteration Vars:{$pDER_ODE_JAC.$DER.y, $pDER_ODE_JAC.$DER.x}
+//   --(7) 0 = -(3.0 * $DER.x ^ 2.0 * $pDER_ODE_JAC.$DER.x - ($SEED_ODE_JAC.x + $SEED_ODE_JAC.y + 2.0 * $DER.y * $pDER_ODE_JAC.$DER.y))
+//   --(8) 0 = -((2.0 * $DER.x * $pDER_ODE_JAC.$DER.x + 3.0 * $DER.y ^ 2.0 * $pDER_ODE_JAC.$DER.y) - ($SEED_ODE_JAC.x * y + x * $SEED_ODE_JAC.y))
 //
 // Sparsity Pattern Cols
 // ***********************
@@ -138,22 +135,14 @@ buildModel(algebraicLoop); getErrorString();
 // allEquations:
 // ========================================
 //
-// 8:  (NONLINEAR) index:1 jacobian: false
-// crefs: $DER.x , $DER.y
-// 	6: -($DER.x ^ 3.0 - x - y - $DER.y ^ 2.0) (RESIDUAL)
-// 	7: -($DER.x ^ 2.0 + $DER.y ^ 3.0 - x * y) (RESIDUAL)
-//
+// 6: alias of 3
 // ========================================
 //
 //
 //
 // odeEquations (1 systems):
 // ========================================
-// 8:  (NONLINEAR) index:1 jacobian: false
-// crefs: $DER.x , $DER.y
-// 	6: -($DER.x ^ 3.0 - x - y - $DER.y ^ 2.0) (RESIDUAL)
-// 	7: -($DER.x ^ 2.0 + $DER.y ^ 3.0 - x * y) (RESIDUAL)
-//
+// 6: alias of 3
 // ========================================
 //
 //
@@ -217,19 +206,19 @@ buildModel(algebraicLoop); getErrorString();
 //
 // jacobianEquations:
 // ========================================
-// 11:  (NONLINEAR) index:2 jacobian: false
-// crefs: $pDER_ODE_JAC.$DER.x , $pDER_ODE_JAC.$DER.y
-// 	9: -(3.0 * $DER.x ^ 2.0 * $pDER_ODE_JAC.$DER.x - $SEED_ODE_JAC.x - $SEED_ODE_JAC.y - 2.0 * $DER.y * $pDER_ODE_JAC.$DER.y) (RESIDUAL)
-// 	10: -(2.0 * $DER.x * $pDER_ODE_JAC.$DER.x + 3.0 * $DER.y ^ 2.0 * $pDER_ODE_JAC.$DER.y - ($SEED_ODE_JAC.x * y + x * $SEED_ODE_JAC.y)) (RESIDUAL)
+// 9:  (NONLINEAR) index:1 jacobian: false
+// crefs: $pDER_ODE_JAC.$DER.y , $pDER_ODE_JAC.$DER.x
+// 	7: -(3.0 * $DER.x ^ 2.0 * $pDER_ODE_JAC.$DER.x - $SEED_ODE_JAC.x - $SEED_ODE_JAC.y - 2.0 * $DER.y * $pDER_ODE_JAC.$DER.y) (RESIDUAL)
+// 	8: -(2.0 * $DER.x * $pDER_ODE_JAC.$DER.x + 3.0 * $DER.y ^ 2.0 * $pDER_ODE_JAC.$DER.y - ($SEED_ODE_JAC.x * y + x * $SEED_ODE_JAC.y)) (RESIDUAL)
 //
 //
 // jacobianMatrices:
 // ========================================
 // 	Jacobian idx: 0
-// 	11:  (NONLINEAR) index:2 jacobian: false
-// crefs: $pDER_ODE_JAC.$DER.x , $pDER_ODE_JAC.$DER.y
-// 	9: -(3.0 * $DER.x ^ 2.0 * $pDER_ODE_JAC.$DER.x - $SEED_ODE_JAC.x - $SEED_ODE_JAC.y - 2.0 * $DER.y * $pDER_ODE_JAC.$DER.y) (RESIDUAL)
-// 	10: -(2.0 * $DER.x * $pDER_ODE_JAC.$DER.x + 3.0 * $DER.y ^ 2.0 * $pDER_ODE_JAC.$DER.y - ($SEED_ODE_JAC.x * y + x * $SEED_ODE_JAC.y)) (RESIDUAL)
+// 	9:  (NONLINEAR) index:1 jacobian: false
+// crefs: $pDER_ODE_JAC.$DER.y , $pDER_ODE_JAC.$DER.x
+// 	7: -(3.0 * $DER.x ^ 2.0 * $pDER_ODE_JAC.$DER.x - $SEED_ODE_JAC.x - $SEED_ODE_JAC.y - 2.0 * $DER.y * $pDER_ODE_JAC.$DER.y) (RESIDUAL)
+// 	8: -(2.0 * $DER.x * $pDER_ODE_JAC.$DER.x + 3.0 * $DER.y ^ 2.0 * $pDER_ODE_JAC.$DER.y - ($SEED_ODE_JAC.x * y + x * $SEED_ODE_JAC.y)) (RESIDUAL)
 //
 //
 // 	Jacobian idx: 2

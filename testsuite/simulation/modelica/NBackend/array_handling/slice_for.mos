@@ -67,17 +67,8 @@ simulate(slice_for); getErrorString();
 //
 // Algebraic Partition 1
 // -----------------------
-//   (8) Alias of 4
-//   (7) Nonlinear System (size = 6, homotopy = false, mixed = false, torn = true)
-//   --Iteration Vars:{x[2], x[3], x[4], y[1], y[2], y[3]}
-//   --(5) For-Loop-Residual:
-//   --for {$i1 in 1:3} loop
-//   --  0 = (x[$i1] + x[1 + $i1]) - y[$i1];
-//   --end for;
-//   --(6) For-Loop-Residual:
-//   --for {$i1 in 1:3} loop
-//   --  0 = 1.0 - (y[4 - $i1] + x[1 + $i1]);
-//   --end for;
+//   (6) Alias of 4
+//   (5) Alias of 3
 //
 // Event Partition
 // -----------------
@@ -120,12 +111,8 @@ simulate(slice_for); getErrorString();
 // allEquations:
 // ========================================
 //
-// 8: alias of 4
-// 7:  (NONLINEAR) index:1 jacobian: false
-// crefs: x[2] , x[3] , x[4] , y[1] , y[2] , y[3]
-// 	5: x[$i1] + x[1 + $i1] - y[$i1] (FOR_RESIDUAL)
-// 	6: 1.0 - (y[4 - $i1] + x[1 + $i1]) (FOR_RESIDUAL)
-//
+// 6: alias of 4
+// 5: alias of 3
 // ========================================
 //
 //
@@ -138,12 +125,8 @@ simulate(slice_for); getErrorString();
 //
 // algebraicEquations (1 systems):
 // ========================================
-// 8: alias of 4
-// 7:  (NONLINEAR) index:1 jacobian: false
-// crefs: x[2] , x[3] , x[4] , y[1] , y[2] , y[3]
-// 	5: x[$i1] + x[1 + $i1] - y[$i1] (FOR_RESIDUAL)
-// 	6: 1.0 - (y[4 - $i1] + x[1 + $i1]) (FOR_RESIDUAL)
-//
+// 6: alias of 4
+// 5: alias of 3
 // ========================================
 //
 //
