@@ -55,10 +55,7 @@ buildModel(scalarAdjointJacobian3); getErrorString();
 //
 // ODE Partition 1
 // -----------------
-//   (8) Nonlinear System (size = 2, homotopy = false, mixed = false, torn = true)
-//   --Iteration Vars:{$DER.x, $DER.y}
-//   --(6) 0 = -($DER.x ^ 3.0 - (x + y + $DER.y ^ 2.0))
-//   --(7) 0 = -(($DER.x ^ 2.0 + $DER.y ^ 3.0) - x * y)
+//   (6) Alias of 3
 //
 // Event Partition
 // -----------------
@@ -93,8 +90,8 @@ buildModel(scalarAdjointJacobian3); getErrorString();
 //
 // SeedVars (size = 2)
 // *********************
-//   (0)[SEED] (1) Real $SEED_ODE_LS_JAC_1.$DER.y
-//   (1)[SEED] (1) Real $SEED_ODE_LS_JAC_1.$DER.x
+//   (0)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.y
+//   (1)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.x
 //
 // TmpVars (size = 2)
 // ********************
@@ -106,12 +103,12 @@ buildModel(scalarAdjointJacobian3); getErrorString();
 //
 // Column Equations (size = 3)
 // -----------------------------
-//   (13) Nonlinear System (size = 2, homotopy = false, mixed = false, torn = true)
+//   (11) Nonlinear System (size = 2, homotopy = false, mixed = false, torn = true)
 //   --Iteration Vars:{$pDER_ODE_JAC_ADJ.$TMP_1, $pDER_ODE_JAC_ADJ.$TMP_2}
-//   --(11) 0 = $SEED_ODE_LS_JAC_1.$DER.x - (-(2.0 * $pDER_ODE_JAC_ADJ.$TMP_2 * $DER.x + 3.0 * $pDER_ODE_JAC_ADJ.$TMP_1 * $DER.x ^ 2.0))
-//   --(12) 0 = $SEED_ODE_LS_JAC_1.$DER.y - (2.0 * $pDER_ODE_JAC_ADJ.$TMP_1 * $DER.y - 3.0 * $pDER_ODE_JAC_ADJ.$TMP_2 * $DER.y ^ 2.0)
-//   (10) $pDER_ODE_JAC_ADJ.x := -($pDER_ODE_JAC_ADJ.$TMP_2 * y + $pDER_ODE_JAC_ADJ.$TMP_1)
-//   (9) $pDER_ODE_JAC_ADJ.y := -($pDER_ODE_JAC_ADJ.$TMP_2 * x + $pDER_ODE_JAC_ADJ.$TMP_1)
+//   --(9) 0 = $SEED_ODE_JAC_ADJ.$DER.y - (2.0 * $pDER_ODE_JAC_ADJ.$TMP_2 * $DER.y - 3.0 * $pDER_ODE_JAC_ADJ.$TMP_1 * $DER.y ^ 2.0)
+//   --(10) 0 = $SEED_ODE_JAC_ADJ.$DER.x - (-(3.0 * $pDER_ODE_JAC_ADJ.$TMP_2 * $DER.x ^ 2.0 + 2.0 * $pDER_ODE_JAC_ADJ.$TMP_1 * $DER.x))
+//   (8) $pDER_ODE_JAC_ADJ.x := -($pDER_ODE_JAC_ADJ.$TMP_2 + $pDER_ODE_JAC_ADJ.$TMP_1 * y)
+//   (7) $pDER_ODE_JAC_ADJ.y := -($pDER_ODE_JAC_ADJ.$TMP_2 + $pDER_ODE_JAC_ADJ.$TMP_1 * x)
 //
 // Sparsity Pattern Cols
 // ***********************
@@ -143,22 +140,14 @@ buildModel(scalarAdjointJacobian3); getErrorString();
 // allEquations:
 // ========================================
 //
-// 8:  (NONLINEAR) index:1 jacobian: false
-// crefs: $DER.x , $DER.y
-// 	6: -($DER.x ^ 3.0 - x - y - $DER.y ^ 2.0) (RESIDUAL)
-// 	7: -($DER.x ^ 2.0 + $DER.y ^ 3.0 - x * y) (RESIDUAL)
-//
+// 6: alias of 3
 // ========================================
 //
 //
 //
 // odeEquations (1 systems):
 // ========================================
-// 8:  (NONLINEAR) index:1 jacobian: false
-// crefs: $DER.x , $DER.y
-// 	6: -($DER.x ^ 3.0 - x - y - $DER.y ^ 2.0) (RESIDUAL)
-// 	7: -($DER.x ^ 2.0 + $DER.y ^ 3.0 - x * y) (RESIDUAL)
-//
+// 6: alias of 3
 // ========================================
 //
 //
@@ -222,12 +211,12 @@ buildModel(scalarAdjointJacobian3); getErrorString();
 //
 // jacobianEquations:
 // ========================================
-// 15: $pDER_ODE_JAC_ADJ.y=-($pDER_ODE_JAC_ADJ.$TMP_2 * x + $pDER_ODE_JAC_ADJ.$TMP_1) [Real]
-// 14: $pDER_ODE_JAC_ADJ.x=-($pDER_ODE_JAC_ADJ.$TMP_2 * y + $pDER_ODE_JAC_ADJ.$TMP_1) [Real]
-// 13:  (NONLINEAR) index:2 jacobian: false
+// 13: $pDER_ODE_JAC_ADJ.y=-($pDER_ODE_JAC_ADJ.$TMP_2 + $pDER_ODE_JAC_ADJ.$TMP_1 * x) [Real]
+// 12: $pDER_ODE_JAC_ADJ.x=-($pDER_ODE_JAC_ADJ.$TMP_2 + $pDER_ODE_JAC_ADJ.$TMP_1 * y) [Real]
+// 11:  (NONLINEAR) index:1 jacobian: false
 // crefs: $pDER_ODE_JAC_ADJ.$TMP_1 , $pDER_ODE_JAC_ADJ.$TMP_2
-// 	11: $SEED_ODE_LS_JAC_1.$DER.x - ((-2.0 * $pDER_ODE_JAC_ADJ.$TMP_2 * $DER.x) - 3.0 * $pDER_ODE_JAC_ADJ.$TMP_1 * $DER.x ^ 2.0) (RESIDUAL)
-// 	12: $SEED_ODE_LS_JAC_1.$DER.y - (2.0 * $pDER_ODE_JAC_ADJ.$TMP_1 * $DER.y - 3.0 * $pDER_ODE_JAC_ADJ.$TMP_2 * $DER.y ^ 2.0) (RESIDUAL)
+// 	9: $SEED_ODE_JAC_ADJ.$DER.y - (2.0 * $pDER_ODE_JAC_ADJ.$TMP_2 * $DER.y - 3.0 * $pDER_ODE_JAC_ADJ.$TMP_1 * $DER.y ^ 2.0) (RESIDUAL)
+// 	10: $SEED_ODE_JAC_ADJ.$DER.x - ((-3.0 * $pDER_ODE_JAC_ADJ.$TMP_2 * $DER.x ^ 2.0) - 2.0 * $pDER_ODE_JAC_ADJ.$TMP_1 * $DER.x) (RESIDUAL)
 //
 //
 // jacobianMatrices:
@@ -245,13 +234,13 @@ buildModel(scalarAdjointJacobian3); getErrorString();
 // 	Jacobian idx: 6
 //
 // 	Jacobian idx: 1
-// 	13:  (NONLINEAR) index:2 jacobian: false
+// 	11:  (NONLINEAR) index:1 jacobian: false
 // crefs: $pDER_ODE_JAC_ADJ.$TMP_1 , $pDER_ODE_JAC_ADJ.$TMP_2
-// 	11: $SEED_ODE_LS_JAC_1.$DER.x - ((-2.0 * $pDER_ODE_JAC_ADJ.$TMP_2 * $DER.x) - 3.0 * $pDER_ODE_JAC_ADJ.$TMP_1 * $DER.x ^ 2.0) (RESIDUAL)
-// 	12: $SEED_ODE_LS_JAC_1.$DER.y - (2.0 * $pDER_ODE_JAC_ADJ.$TMP_1 * $DER.y - 3.0 * $pDER_ODE_JAC_ADJ.$TMP_2 * $DER.y ^ 2.0) (RESIDUAL)
+// 	9: $SEED_ODE_JAC_ADJ.$DER.y - (2.0 * $pDER_ODE_JAC_ADJ.$TMP_2 * $DER.y - 3.0 * $pDER_ODE_JAC_ADJ.$TMP_1 * $DER.y ^ 2.0) (RESIDUAL)
+// 	10: $SEED_ODE_JAC_ADJ.$DER.x - ((-3.0 * $pDER_ODE_JAC_ADJ.$TMP_2 * $DER.x ^ 2.0) - 2.0 * $pDER_ODE_JAC_ADJ.$TMP_1 * $DER.x) (RESIDUAL)
 //
-// 	10: $pDER_ODE_JAC_ADJ.x=-($pDER_ODE_JAC_ADJ.$TMP_2 * y + $pDER_ODE_JAC_ADJ.$TMP_1) [Real]
-// 	9: $pDER_ODE_JAC_ADJ.y=-($pDER_ODE_JAC_ADJ.$TMP_2 * x + $pDER_ODE_JAC_ADJ.$TMP_1) [Real]
+// 	8: $pDER_ODE_JAC_ADJ.x=-($pDER_ODE_JAC_ADJ.$TMP_2 + $pDER_ODE_JAC_ADJ.$TMP_1 * y) [Real]
+// 	7: $pDER_ODE_JAC_ADJ.y=-($pDER_ODE_JAC_ADJ.$TMP_2 + $pDER_ODE_JAC_ADJ.$TMP_1 * x) [Real]
 //
 // columnVars(2)
 // ----------------------

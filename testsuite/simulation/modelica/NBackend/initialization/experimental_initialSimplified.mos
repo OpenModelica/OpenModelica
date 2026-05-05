@@ -88,14 +88,8 @@ simulate(P.experimental_initialSimplified); getErrorString();
 //
 // Algebraic Partition 1
 // -----------------------
-//   (20) y2 := y_fix
-//   (19) Nonlinear System (size = 5, homotopy = false, mixed = false, torn = true)
-//   --Iteration Vars:{$FUN_3, u, $FUN_1, y1, $FUN_2}
-//   --(14) 0 = sin(1e-6 * u) - $FUN_3
-//   --(15) 0 = sin(u) - $FUN_1
-//   --(16) 0 = (u ^ 3.0 + $FUN_1) - y1
-//   --(17) 0 = sqrt(y1) - $FUN_2
-//   --(18) 0 = ($FUN_2 + $FUN_3) - y2
+//   (15) y2 := y_fix
+//   (14) Alias of 6
 //
 // Event Partition
 // -----------------
@@ -138,15 +132,8 @@ simulate(P.experimental_initialSimplified); getErrorString();
 // allEquations:
 // ========================================
 //
-// 20: y2=y_fix [Real]
-// 19:  (NONLINEAR) index:1 jacobian: false
-// crefs: $FUN_3 , u , $FUN_1 , y1 , $FUN_2
-// 	14: sin(1e-6 * u) - $FUN_3 (RESIDUAL)
-// 	15: sin(u) - $FUN_1 (RESIDUAL)
-// 	16: u ^ 3.0 + $FUN_1 - y1 (RESIDUAL)
-// 	17: sqrt(y1) - $FUN_2 (RESIDUAL)
-// 	18: $FUN_2 + $FUN_3 - y2 (RESIDUAL)
-//
+// 15: y2=y_fix [Real]
+// 14: alias of 6
 // ========================================
 //
 //
@@ -159,15 +146,8 @@ simulate(P.experimental_initialSimplified); getErrorString();
 //
 // algebraicEquations (1 systems):
 // ========================================
-// 20: y2=y_fix [Real]
-// 19:  (NONLINEAR) index:1 jacobian: false
-// crefs: $FUN_3 , u , $FUN_1 , y1 , $FUN_2
-// 	14: sin(1e-6 * u) - $FUN_3 (RESIDUAL)
-// 	15: sin(u) - $FUN_1 (RESIDUAL)
-// 	16: u ^ 3.0 + $FUN_1 - y1 (RESIDUAL)
-// 	17: sqrt(y1) - $FUN_2 (RESIDUAL)
-// 	18: $FUN_2 + $FUN_3 - y2 (RESIDUAL)
-//
+// 15: y2=y_fix [Real]
+// 14: alias of 6
 // ========================================
 //
 //

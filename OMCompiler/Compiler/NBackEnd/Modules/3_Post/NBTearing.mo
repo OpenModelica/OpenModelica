@@ -90,16 +90,9 @@ public
   end TEARING_SET;
 
   function hash
-    "compute hash value by only using iteration variables with their first index should be unique enough"
+    "compute hash value independent of ordering by adding hash of iteration variables, should be unique enough"
     input Tearing set;
-    output Integer h = Util.HASH_SEED;
-  algorithm
-    for var in set.iteration_vars loop
-      h := stringHashDjb2Continue(BVariable.pointerToString(Slice.getT(var)), h);
-      for i in List.firstOrEmpty(var.indices) loop
-        h := stringHashDjb2Continue(intString(i), h);
-      end for;
-    end for;
+    output Integer h = sum(Slice.hash(var, BVariable.hash) for var in set.iteration_vars);
   end hash;
 
   function isEqual
@@ -108,9 +101,9 @@ public
     input Tearing set2;
     output Boolean b;
   algorithm
-     b := List.isEqualOnTrue(set1.residual_eqns, set2.residual_eqns, function Slice.isEqual(func = Equation.isEqualPtr));
-     b := if b then Array.isEqualOnTrue(set1.innerEquations, set2.innerEquations, StrongComponent.isEqual) else b;
-     b := if b then List.isEqualOnTrue(set1.iteration_vars, set2.iteration_vars, function Slice.isEqual(func = BVariable.equalName)) else b;
+    b := UnorderedSet.equal_list(set1.residual_eqns, set2.residual_eqns, function Slice.hash(func = Equation.hash), function Slice.isEqual(func = Equation.isEqualPtr));
+    b := if b then Array.isEqualOnTrue(set1.innerEquations, set2.innerEquations, StrongComponent.isEqual) else b; // TODO inner equations don't need to be sorted identically
+    b := if b then UnorderedSet.equal_list(set1.iteration_vars, set2.iteration_vars, function Slice.hash(func = BVariable.hash), function Slice.isEqual(func = BVariable.equalName)) else b;
   end isEqual;
 
   function size

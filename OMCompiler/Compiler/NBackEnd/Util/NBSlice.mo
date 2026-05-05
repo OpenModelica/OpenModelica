@@ -86,7 +86,12 @@ public
   function hash
     input Slice<T> slice;
     input hashT func;
-    output Integer i = func(slice.t);
+    output Integer h = func(slice.t);
+  algorithm
+    // first index should be unique enough
+    for i in List.firstOrEmpty(slice.indices) loop
+      h := stringHashDjb2Continue(intString(i), h);
+    end for;
   end hash;
 
   function isEqual

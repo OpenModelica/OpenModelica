@@ -96,9 +96,6 @@ public
     Pointer<Integer> implicit_index_ptr = Pointer.create(1);
     type StrongComponentLst = list<StrongComponent>;
     UnorderedMap<StrongComponent, list<StrongComponent>> duplicate_map = UnorderedMap.new<StrongComponentLst>(StrongComponent.hash, StrongComponent.isEqual);
-  protected
-    StrongComponent unsolved;
-    list<StrongComponent> solved;
   algorithm
     bdae := match bdae
       case BackendDAE.MAIN() algorithm
