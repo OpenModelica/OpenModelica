@@ -185,7 +185,7 @@ algorithm
     case _ then solveSimple(inExp1, inExp2, inExp3, 0);
     case _ then solveSimple(inExp2, inExp1, inExp3, 0);
     case _ then solveWork(inExp1, inExp2, inExp3, NONE(), functions, NONE(), 0, false, false);
-    else equation
+    else algorithm
       if Flags.isSet(Flags.FAILTRACE) then
         Error.addInternalError("Failed to solve \"" + ExpressionDump.printExpStr(inExp1) + " = " + ExpressionDump.printExpStr(inExp2) + "\" w.r.t. \"" + ExpressionDump.printExpStr(inExp3) + "\"", sourceInfo());
       end if;
@@ -221,7 +221,7 @@ algorithm
     case _ then solveSimple(inExp1, inExp2, inExp3, 0);
     case _ then solveSimple(inExp2, inExp1, inExp3, 0);
     case _ then solveWork(inExp1, inExp2, inExp3, NONE(), functions, uniqueEqIndex, 0, doInline, isContinuousIntegration);
-    else equation
+    else algorithm
       if Flags.isSet(Flags.FAILTRACE) then
         Error.addInternalError("Failed to solve \"" + ExpressionDump.printExpStr(inExp1) + " = " + ExpressionDump.printExpStr(inExp2) + "\" w.r.t. \"" + ExpressionDump.printExpStr(inExp3) + "\"", sourceInfo());
       end if;
@@ -253,7 +253,7 @@ algorithm
   (e1, e2, eqnForNewVars1, newVarsCrefs1, depth) := matchcontinue inExp1
     case _ then preprocessingSolve(inExp1, inExp2, inExp3, optCond, functions, uniqueEqIndex, idepth, doInline);
     else
-      equation
+      algorithm
         if Flags.isSet(Flags.FAILTRACE) then
           Debug.trace("\n-ExpressionSolve.preprocessingSolve failed:\n");
           Debug.trace(ExpressionDump.printExpStr(inExp1) + " = " + ExpressionDump.printExpStr(inExp2));
@@ -803,8 +803,8 @@ algorithm
      then res;
 
      else
-      equation
-       res = expAddX2(inExp1, inExp2, inExp3);
+      algorithm
+       res := expAddX2(inExp1, inExp2, inExp3);
       then res;
 
  end matchcontinue;
@@ -1810,7 +1810,7 @@ algorithm
           case(_, DAE.CREF(componentRef = cr)) then Expression.expHasCrefNoPreOrStart(inExp1, cr);
           case(_, DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})) then Expression.expHasDerCref(inExp1, cr);
           else
-           equation
+           algorithm
             if Flags.isSet(Flags.FAILTRACE) then
               print("\n-ExpressionSolve.solve failed:");
               print(" with respect to: ");print(ExpressionDump.printExpStr(inExp3));

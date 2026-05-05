@@ -231,8 +231,8 @@ algorithm
         qualify2(inEnv, NFSCodeEnv.USERDEFINED(), ext_table);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- NFEnvExtends.qualify failed.");
       then
         fail();
@@ -323,8 +323,8 @@ algorithm
 
     // Otherwise, qualify all the extends.
     else
-      equation
-        extl = List.map2Reverse(inExtends, qualifyExtends, inEnv, inExtendsTable);
+      algorithm
+        extl := List.map2Reverse(inExtends, qualifyExtends, inEnv, inExtendsTable);
       then
         extl;
 
@@ -640,8 +640,8 @@ algorithm
         ();
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- NFEnvExtends.printExtendsError failed to print error " +
           AbsynUtil.pathString(inErrorPath));
       then
@@ -1244,7 +1244,7 @@ algorithm
 
     // If the class doesn't even exist, show an error.
     else
-      equation
+      algorithm
         Error.addSourceMessage(Error.INVALID_REDECLARATION_OF_CLASS,
           {inName}, inInfo);
       then
@@ -1341,8 +1341,8 @@ algorithm
         NFSCodeEnv.setEnvExtendsTable(ext, inEnv);
 
     else
-      equation
-        estr = "- NFEnvExtends.addClassExtendsInfoToEnv: Trying to overwrite " +
+      algorithm
+        estr := "- NFEnvExtends.addClassExtendsInfoToEnv: Trying to overwrite " +
                "existing class extends information, this should not happen!.";
         Error.addMessage(Error.INTERNAL_ERROR, {estr});
       then

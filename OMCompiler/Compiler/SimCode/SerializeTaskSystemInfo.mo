@@ -735,7 +735,7 @@ algorithm
       File.write(file, "\"}");
     then true;
 
-    else equation
+    else algorithm
       Error.addInternalError("serializeEquation failed: " + anyString(eq), sourceInfo());
     then fail();
   end match;
@@ -763,7 +763,7 @@ algorithm
         File.write(file,"}");
       then ();
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{"SerializeTaskSystemInfo.serializeLinearCell failed. Expected only SES_RESIDUAL as input."});
       then fail();
   end match;

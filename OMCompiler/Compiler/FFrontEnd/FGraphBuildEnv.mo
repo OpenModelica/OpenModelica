@@ -829,8 +829,8 @@ algorithm
         g;
 
     else
-      equation
-        pr = FGraph.top(inGraph);
+      algorithm
+        pr := FGraph.top(inGraph);
         print("FGraphBuildEnv.mkTypeNode: Error making type node: " + inName +
               " in parent: " + FNode.name(FNode.fromRef(pr)) + "\n");
       then

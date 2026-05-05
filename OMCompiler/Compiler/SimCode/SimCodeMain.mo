@@ -386,8 +386,8 @@ algorithm
       true := (numProc > 0);
     then HpcOmSimCodeMain.createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inRemovedInitialEquationLst, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, libPaths,program,simSettingsOpt, recordDecls, literals, args);
 
-    else equation
-      (tmpSimCode, _) = SimCodeUtil.createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inInlineData, inRemovedInitialEquationLst, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs,libPaths,program, simSettingsOpt, recordDecls, literals, args, isFMU=isFMU, FMUVersion=FMUVersion, fmuTargetName=fmuTargetName, inFMIDer=inFMIDer);
+    else algorithm
+      (tmpSimCode, _) := SimCodeUtil.createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inInlineData, inRemovedInitialEquationLst, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs,libPaths,program, simSettingsOpt, recordDecls, literals, args, isFMU=isFMU, FMUVersion=FMUVersion, fmuTargetName=fmuTargetName, inFMIDer=inFMIDer);
     then tmpSimCode;
   end matchcontinue;
 end createSimCode;
@@ -709,8 +709,8 @@ algorithm
     case "None"
     then ();
 
-    else equation
-      str = "Unknown template target: " + target;
+    else algorithm
+      str := "Unknown template target: " + target;
       Error.addMessage(Error.INTERNAL_ERROR, {str});
     then fail();
   end match;
@@ -1087,8 +1087,8 @@ algorithm
         end if;
       then ();
     else
-      equation
-        str = "Unknown FMU template target: " + target;
+      algorithm
+        str := "Unknown FMU template target: " + target;
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end match;
@@ -1510,9 +1510,9 @@ algorithm
 
     then (libs, file_dir);
 
-    else equation
-      resstr = AbsynUtil.pathStringNoQual(className);
-      resstr = stringAppendList({"SimCode DAEmode: The model ", resstr, " could not be translated"});
+    else algorithm
+      resstr := AbsynUtil.pathStringNoQual(className);
+      resstr := stringAppendList({"SimCode DAEmode: The model ", resstr, " could not be translated"});
       Error.addMessage(Error.INTERNAL_ERROR, {resstr});
     then fail();
 

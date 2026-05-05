@@ -163,8 +163,8 @@ algorithm
 
     // handle the connection breaking
     else
-      equation
-        true = Flags.isSet(Flags.CGRAPH);
+      algorithm
+        true := Flags.isSet(Flags.CGRAPH);
         Debug.traceln("- ConnectionGraph.handleOverconstrainedConnections failed for model: " + modelNameQualified);
       then
         fail();
@@ -881,7 +881,7 @@ algorithm
       then
         setRootDistance(rest,table,distance,nextLevel,rooted);
 /*    case(cr::rest,_,_,_,_)
-      equation
+      algorithm
         i = BaseHashTable.get(cr, irooted);
         print("- ConnectionGraph.setRootDistance: found " +
            ComponentReference.printComponentRefStr(cr) + " twice, value is " + intString(i) + "\n");
@@ -969,21 +969,21 @@ algorithm
     case (_,_, {}) then {};
 
     else
-      equation
+      algorithm
         // built table
-        table = HashTable3.emptyHashTable();
+        table := HashTable3.emptyHashTable();
         // add branches to table
-        branches = getBranches(graph);
-        table = List.fold(branches,addBranches,table);
+        branches := getBranches(graph);
+        table := List.fold(branches,addBranches,table);
         // add connections to table
-        connections = getConnections(graph);
-        table = List.fold(connections,addConnectionsRooted,table);
+        connections := getConnections(graph);
+        table := List.fold(connections,addConnectionsRooted,table);
         // get distanste to root
         //  print("Roots: " + stringDelimitList(List.map(inRoots,ComponentReference.printComponentRefStr),"\n") + "\n");
         //  BaseHashTable.dumpHashTable(table);
-        rooted = setRootDistance(inRoots,table,0,{},HashTable.emptyHashTable());
+        rooted := setRootDistance(inRoots,table,0,{},HashTable.emptyHashTable());
         //  BaseHashTable.dumpHashTable(rooted);
-        (outDae, _) = DAEUtil.traverseDAEElementList(inDae, evalConnectionsOperatorsHelper, (rooted,inRoots,graph));
+        (outDae, _) := DAEUtil.traverseDAEElementList(inDae, evalConnectionsOperatorsHelper, (rooted,inRoots,graph));
       then outDae;
 
   end matchcontinue;
@@ -1153,8 +1153,8 @@ algorithm
       then
         cref2;
     else
-      equation
-        true = ComponentReference.crefEqualNoStringCompare(cr,cref2);
+      algorithm
+        true := ComponentReference.crefEqualNoStringCompare(cr,cref2);
       then
         cref1;
   end matchcontinue;
@@ -1581,24 +1581,24 @@ algorithm
         "";
 
     else
-      equation
-        fileNameTraceRemovedConnections = modelNameQualified + "_removed_connections.txt";
+      algorithm
+        fileNameTraceRemovedConnections := modelNameQualified + "_removed_connections.txt";
         Debug.traceln("Tyring to start GraphViz *lefty* to visualize the graph. You need to have lefty in your PATH variable");
         Debug.traceln("Make sure you quit GraphViz *lefty* via Right Click->quit to be sure the process will be exited.");
         Debug.traceln("If you quit the GraphViz *lefty* window via X, please kill the process in task manager to continue.");
-        omhome = Settings.getInstallationDirectoryPath();
-        omhome = System.stringReplace(omhome, "\"", "");
+        omhome := Settings.getInstallationDirectoryPath();
+        omhome := System.stringReplace(omhome, "\"", "");
         // omhome = System.stringReplace(omhome, "\\", "/");
 
         // create a lefty command and execute it
-        leftyCMD = "load('" + omhome + "/share/omc/scripts/openmodelica.lefty');" + "openmodelica.init();openmodelica.createviewandgraph('" +
+        leftyCMD := "load('" + omhome + "/share/omc/scripts/openmodelica.lefty');" + "openmodelica.init();openmodelica.createviewandgraph('" +
             fileNameGraphViz + "','file',null,null);txtview('off');";
         Debug.traceln("Running command: " + "lefty -e " + leftyCMD + " > " + fileNameTraceRemovedConnections);
         // execute lefty
-        leftyExitStatus = System.systemCall("lefty -e " + leftyCMD, fileNameTraceRemovedConnections);
+        leftyExitStatus := System.systemCall("lefty -e " + leftyCMD, fileNameTraceRemovedConnections);
         // show the exit status
         Debug.traceln("GraphViz *lefty* exited with status:" + intString(leftyExitStatus));
-        brokenConnects = System.readFile(fileNameTraceRemovedConnections);
+        brokenConnects := System.readFile(fileNameTraceRemovedConnections);
         Debug.traceln("GraphViz OpenModelica assistant returned the following broken connects: " + brokenConnects);
       then
         brokenConnects;
@@ -1782,9 +1782,9 @@ algorithm
     case (_, {}) then inDAE;
 
     else
-      equation
-        equalityConstraintElements = List.flatten(List.map(inBroken, Util.tuple33));
-        dae = DAEUtil.joinDaes(DAE.DAE(equalityConstraintElements), inDAE);
+      algorithm
+        equalityConstraintElements := List.flatten(List.map(inBroken, Util.tuple33));
+        dae := DAEUtil.joinDaes(DAE.DAE(equalityConstraintElements), inDAE);
       then
         dae;
 

@@ -118,8 +118,8 @@ algorithm
       then (cache, t, env);
 
     else
-      equation
-        (cache, t, env) = lookupTypeQual(inCache,inEnv,inPath,msg);
+      algorithm
+        (cache, t, env) := lookupTypeQual(inCache,inEnv,inPath,msg);
       then (cache, t, env);
   end match;
 end lookupType;
@@ -463,7 +463,7 @@ algorithm
 
     /*
     case (_,_,_,_)
-      equation
+      algorithm
         print("CL: " + AbsynUtil.pathString(inPath) + " env: " + FGraph.printGraphPathStr(inEnv) + " msg: " + boolString(msg) + "\n");
       then
         fail();*/
@@ -587,7 +587,7 @@ algorithm
 
     /*
     case (cache,env,p,_,_,_)
-      equation
+      algorithm
         Debug.traceln("lookupClass failed " + AbsynUtil.pathString(p) + " " + FGraph.printGraphPathStr(env));
       then fail();
     */
@@ -1282,7 +1282,7 @@ algorithm
 
     /*/ debugging
     case (cache,env,cref)
-      equation
+      algorithm
         print("CO: " + ComponentReference.printComponentRefStr(cref) + " env: " + FGraph.printGraphPathStr(env) + "\n");
       then
         fail();*/
@@ -1307,7 +1307,7 @@ algorithm
 
     /*/ fail if we couldn't find it
     case (_,env,cref)
-      equation
+      algorithm
         fprintln(Flags.FAILTRACE,  "- Lookup.lookupVar failed:\n" +
           ComponentReference.printComponentRefStr(cref) + " in:\n" +
           FGraph.printGraphPathStr(env));
@@ -1383,7 +1383,7 @@ algorithm
 
     /*/ do not fail if is a parameter in non-package
     case (_, _, _,DAE.ATTR(variability = SCode.PARAM()),_,_)
-      equation
+      algorithm
         FCore.CL(e = cl) = FNode.refData(FGraph.lastScopeRef(classEnv));
         false = SCodeUtil.isPackage(cl);
         // print("cref:  " + ComponentReference.printComponentRefStr(cref) + "\nprenv: " + FGraph.getGraphNameStr(parentEnv) + "\nclenv: " + FGraph.getGraphNameStr(classEnv) + "\ncoenv: " + FGraph.getGraphNameStr(componentEnv) + "\n");
@@ -1392,11 +1392,11 @@ algorithm
 
     // fail if is not a constant
     else
-      equation
-        s1 = ComponentReference.printComponentRefStr(cref);
-        s2 = FGraph.printGraphPathStr(classEnv);
+      algorithm
+        s1 := ComponentReference.printComponentRefStr(cref);
+        s2 := FGraph.printGraphPathStr(classEnv);
         Error.addMessage(Error.PACKAGE_VARIABLE_NOT_CONSTANT,{s1,s2});
-        true = Flags.isSet(Flags.FAILTRACE);
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Lookup.checkPackageVariableConstant failed: " + s1 + " in " + s2);
       then fail();
   end matchcontinue;
@@ -1663,7 +1663,7 @@ algorithm
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name);
 
     else
-      equation
+      algorithm
         //true = Flags.isSet(Flags.FAILTRACE);
         //Debug.traceln("- Lookup.lookupVarInPackages failed on exp:" + ComponentReference.printComponentRefStr(cr) + " in scope: " + FGraph.printGraphPathStr(env));
       then
@@ -1781,7 +1781,7 @@ algorithm
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name);
 
     else
-      equation
+      algorithm
         //true = Flags.isSet(Flags.FAILTRACE);
         //Debug.traceln("- Lookup.lookupVarInPackages failed on exp:" + ComponentReference.printComponentRefStr(cr) + " in scope: " + FGraph.printGraphPathStr(env));
       then
@@ -1956,14 +1956,14 @@ algorithm
 
     /*
     case (cache,env,id,info)
-      equation
+      algorithm
         print("Looking up: " + AbsynUtil.pathString(id) + " in env: " + FGraph.printGraphPathStr(env) + "\n");
       then
         fail();*/
 
     /*/ strip env if path is fully qualified in env
     case (cache,env,id,info)
-      equation
+      algorithm
         id = Env.pathStripEnvIfFullyQualifedInEnv(id, env);
         (cache,res) = lookupFunctionsInEnv(cache,env,id,info);
       then
@@ -2526,8 +2526,8 @@ algorithm
       then
         (cache,env,cl);
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("buildRecordConstructorClass failed\n");
       then fail();
   end matchcontinue;
@@ -2575,7 +2575,7 @@ algorithm
       then (cache,env1,funcelts,elts);
 
     // fail
-    else equation
+    else algorithm
       Debug.traceln("buildRecordConstructorClass2 failed, cl:"+SCodeDump.unparseElementStr(cl,SCodeDump.defaultOptions)+"\n");
     then fail();
       /* TODO: short class defs */
@@ -3311,7 +3311,7 @@ algorithm
 
     /*
     case (DAE.CREF_QUAL(id, _, ss, DAE.CREF_IDENT(cId, _, {})), _, _, DAE.EQBOUND(e, ov, c, s), _)
-      equation
+      algorithm
         true = Types.isArray(inParentType);
         tyElement = Types.arrayElementType(inParentType);
         true = Types.isRecord(tyElement);
@@ -3338,7 +3338,7 @@ algorithm
 
     /*
     case (DAE.CREF_QUAL(id, _, ss, DAE.CREF_IDENT(cId, _, {})), _, _, DAE.VALBOUND(v, s), _)
-      equation
+      algorithm
         true = Types.isArray(inParentType);
         tyElement = Types.arrayElementType(inParentType);
         true = Types.isRecord(tyElement);

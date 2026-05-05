@@ -1469,10 +1469,10 @@ algorithm
     case CLASS(env = env) then env;
     case REDECLARED_ITEM(item = item) then getItemEnvNoFail(item);
     else
-      equation
-        str = "NO ENV FOR ITEM: " + getItemName(inItem);
-        f = newFrame(SOME(str), ENCAPSULATED_SCOPE());
-        env = {f};
+      algorithm
+        str := "NO ENV FOR ITEM: " + getItemName(inItem);
+        f := newFrame(SOME(str), ENCAPSULATED_SCOPE());
+        env := {f};
       then
         env;
 
@@ -1713,9 +1713,9 @@ algorithm
 
     case (_, {FRAME(name = NONE())}) then Absyn.IDENT(inIdent);
     else
-      equation
-        path = getEnvPath(inEnv);
-        path = AbsynUtil.suffixPath(path, inIdent);
+      algorithm
+        path := getEnvPath(inEnv);
+        path := AbsynUtil.suffixPath(path, inIdent);
       then
         path;
 
@@ -1754,9 +1754,9 @@ algorithm
       then (name, info);
 
     else
-      equation
-        el = getRedeclarationElement(inRedeclare);
-        (name, info) = SCodeUtil.elementNameInfo(el);
+      algorithm
+        el := getRedeclarationElement(inRedeclare);
+        (name, info) := SCodeUtil.elementNameInfo(el);
       then
         (name, info);
 

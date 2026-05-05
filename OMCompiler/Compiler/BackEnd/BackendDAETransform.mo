@@ -346,7 +346,7 @@ algorithm
       Error.addInternalError(msg, sourceInfo());
     then fail();
 
-    else equation
+    else algorithm
       Error.addInternalError("function analyseStrongComponentBlock failed", sourceInfo());
     then fail();
   end matchcontinue;
@@ -511,8 +511,8 @@ algorithm
       e := listHead(elst);
     then (listAppend(eqnlst, eqnlst1), listAppend(varlst, varlst1), e);
 
-    else equation
-      true = Flags.isSet(Flags.FAILTRACE);
+    else algorithm
+      true := Flags.isSet(Flags.FAILTRACE);
       Debug.traceln("BackendDAETransform.getEquationAndSolvedVar failed!");
     then fail();
   end match;
@@ -561,8 +561,8 @@ algorithm
       vlst := listAppend(vlst1, vlst);
     then (elst, vlst);
 
-    else equation
-      true = Flags.isSet(Flags.FAILTRACE);
+    else algorithm
+      true := Flags.isSet(Flags.FAILTRACE);
       Debug.traceln("BackendDAETransform.getEquationAndSolvedVarIndxes failed!");
     then fail();
   end matchcontinue;
@@ -677,7 +677,7 @@ algorithm
       (eqns, ext_arg_1) := traverseBackendDAEExpsEqnLstWithSymbolicOperation(eqns, func, ext_arg_1, {});
     then (BackendDAE.IF_EQUATION(expl, eqnslst, eqns, source, eqAttr), ext_arg_1);
 
-    else equation
+    else algorithm
       Error.addInternalError("function traverseBackendDAEExpsEqnWithSymbolicOperation failed", sourceInfo());
     then fail();
   end matchcontinue;

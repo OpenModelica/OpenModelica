@@ -103,8 +103,8 @@ algorithm
         (cls, env);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- NFSCodeFlattenImports.flattenClass failed on " +
           SCodeUtil.elementName(inClass) + " in " + NFSCodeEnv.getEnvName(inEnv));
       then
@@ -557,7 +557,7 @@ algorithm
         element;
 
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR,
           {"Unknown redeclare in NFSCodeFlattenImports.flattenRedeclare"});
       then

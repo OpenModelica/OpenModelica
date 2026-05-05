@@ -1095,7 +1095,7 @@ algorithm
         ();
 
     else
-      equation
+      algorithm
         Error.addInternalError("Unable to parse rewrite rules file: " + inFile, sourceInfo());
         setGlobalRoot(Global.rewriteRulesIndex, NONE());
       then

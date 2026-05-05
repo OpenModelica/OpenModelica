@@ -235,7 +235,7 @@ algorithm
         TREENODE(optVal,SOME(left_1),right);
 
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{"- BinaryTreeInt.treeAdd failed\n"});
       then
         fail();

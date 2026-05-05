@@ -143,7 +143,7 @@ algorithm
       then
         (systTmp, tornSysIdx);
     else
-      equation
+      algorithm
         print("reduceLinearTornSystem failed!");
       then
         fail();
@@ -307,8 +307,8 @@ algorithm
         (syst,tornSysIdx);
     else
       // go to next StrongComponent
-      equation
-        (syst, tornSysIdx) = reduceLinearTornSystem1(compIdx+1,compsIn,ass1,ass2,systIn,sharedIn,tornSysIdxIn);
+      algorithm
+        (syst, tornSysIdx) := reduceLinearTornSystem1(compIdx+1,compsIn,ass1,ass2,systIn,sharedIn,tornSysIdxIn);
       then
         (syst, tornSysIdx);
   end matchcontinue;
@@ -696,12 +696,12 @@ algorithm
         comps := List.threadMap(eqIdcsIn,varIdcsIn,BackendDAEUtil.makeSingleEquationComp);
       then (comps,resEqs,tVarsIn,addEqs,addVars);
     else
-      equation
+      algorithm
         // build a BackendDAE.EQUATIONSYSTEM
-        _::jacValues = arrayList(jacValuesIn);
-        jac = buildLinearJacobian(jacValues,List.intRange(listLength(resEqsIn)),List.intRange(listLength(tVarsIn)));
-        mixedSystem = BackendVariable.hasDiscreteVar(tVarsIn);
-        comp = BackendDAE.EQUATIONSYSTEM(eqIdcsIn,varIdcsIn,BackendDAE.FULL_JACOBIAN(jac),BackendDAE.JAC_LINEAR(), mixedSystem);
+        _::jacValues := arrayList(jacValuesIn);
+        jac := buildLinearJacobian(jacValues,List.intRange(listLength(resEqsIn)),List.intRange(listLength(tVarsIn)));
+        mixedSystem := BackendVariable.hasDiscreteVar(tVarsIn);
+        comp := BackendDAE.EQUATIONSYSTEM(eqIdcsIn,varIdcsIn,BackendDAE.FULL_JACOBIAN(jac),BackendDAE.JAC_LINEAR(), mixedSystem);
       then ({comp},resEqsIn,tVarsIn,{},{});
   end matchcontinue;
 end buildEqSystemComponent;
@@ -847,7 +847,7 @@ algorithm
       then
         ((ass1,ass2,compsTmp));
     else
-      equation
+      algorithm
         print("getOtherComps failed\n");
       then
         fail();
@@ -893,7 +893,7 @@ algorithm
       then
         compTmp;
     else
-      equation
+      algorithm
         print("updateVarEqIndices failed\n");
       then
         fail();
@@ -939,7 +939,7 @@ algorithm
       then
         eqLstTmp;
     else
-      equation
+      algorithm
         print("buildNewResidualEquation failed");
       then
         fail();
@@ -991,7 +991,7 @@ algorithm
       then expIn;
 
     else
-      equation
+      algorithm
         print("buildNewResidualEquation2 failed!\n");
       then fail();
 
@@ -1069,7 +1069,7 @@ algorithm
       then
         matchingTmp;
     else
-      equation
+      algorithm
         print("buildSingleEquationSystem failed\n");
       then
         fail();
@@ -1118,7 +1118,7 @@ algorithm
       then (hs_iArrTmp,a_iArrTmp);
 
     else
-      equation
+      algorithm
         print("getTornSystemCoefficients failed!\n");
       then fail();
 
@@ -1218,7 +1218,7 @@ algorithm
       then (hs_iArrTmp,a_iArrTmp);
 
     else
-      equation
+      algorithm
         print("getTornSystemCoefficients1 failed\n");
       then fail();
 
@@ -1274,7 +1274,7 @@ algorithm
         h_iArr := arrayUpdate(h_iArrIn,i+1,h_i);
       then h_iArr;
     else
-      equation
+      algorithm
         print("getResidualExpressions failed \n");
       then
         fail();
@@ -1297,7 +1297,7 @@ algorithm
       (rhs,_) := ExpressionSimplify.simplify(rhs);
       then rhs;
   else
-    equation
+    algorithm
       print("getResidualExpressionForEquation failed\n");
     then fail();
   end match;
@@ -1433,7 +1433,7 @@ algorithm
       (g_iArrTmp,xa_iArrTmp,replArrTmp);
 
   else
-    equation
+    algorithm
       print("getAlgebraicEquationsForEI failed\n");
     then
       fail();
@@ -1616,7 +1616,7 @@ algorithm
       expLst2 := listAppend(expLst1,expLst2);
     then expLst2;
   else
-    equation
+    algorithm
       print("getSummands failed! for"+BackendDump.equationString(eq)+"\n\n");
     then {};
   end matchcontinue;
@@ -2012,7 +2012,7 @@ algorithm
       (det,_) := ExpressionSimplify.simplify(det);
   then det;
   else
-    equation
+    algorithm
       print("computation fo determinant failed!\n");
     then fail();
   end matchcontinue;
@@ -2259,7 +2259,7 @@ algorithm
    case({},_,_,_,_)
      then (compIdxIn,taskLstIn);
     else
-      equation
+      algorithm
         print("pts_traverseEqSystems failed\n");
       then fail();
   end matchcontinue;
@@ -2416,7 +2416,7 @@ algorithm
       then
         HpcOmSimCode.SCHEDULED_TASK(compIdx,numThreads,schedule);
     else
-      equation
+      algorithm
         print("pts_transformScheduleToTask failed\n");
       then fail();
   end matchcontinue;

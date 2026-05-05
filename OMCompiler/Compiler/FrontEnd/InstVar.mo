@@ -1185,8 +1185,8 @@ algorithm
       then
         (cache, env_1, ih, store, dae, csets, ty, graph);
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Inst.instScalar failed on " + inName + " in scope " + PrefixUtil.printPrefixStr(inPrefix) + " env: " + FGraph.printGraphPathStr(inEnv) + "\n");
       then
         fail();
@@ -1300,11 +1300,11 @@ algorithm
 
     // All other scalars.
     else
-      equation
-        dae = if Types.isComplexType(inType) then InstBinding.instModEquation(inCref, inType, inMod, inSource, inImpl) else DAE.emptyDae;
-        cls_dae = stripRecordDefaultBindingsFromDAE(inClassDae, inType, dae);
-        dae = DAEUtil.joinDaes(dae, inDae);
-        dae = DAEUtil.joinDaes(cls_dae, dae);
+      algorithm
+        dae := if Types.isComplexType(inType) then InstBinding.instModEquation(inCref, inType, inMod, inSource, inImpl) else DAE.emptyDae;
+        cls_dae := stripRecordDefaultBindingsFromDAE(inClassDae, inType, dae);
+        dae := DAEUtil.joinDaes(dae, inDae);
+        dae := DAEUtil.joinDaes(cls_dae, dae);
       then
         dae;
   end match;
@@ -1656,8 +1656,8 @@ algorithm
         fail();
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Inst.instArray failed: " + inIdent);
       then
         fail();

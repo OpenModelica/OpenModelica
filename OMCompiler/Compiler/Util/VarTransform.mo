@@ -302,7 +302,7 @@ algorithm
 
     // failtrace. adrpo: TODO! FIXME! this SHOULD NOT FAIL!
     else
-      equation
+      algorithm
         // Debug.fprintln(Flags.FAILTRACE, "- VarTransform.applyReplacementsDAEElts could not apply replacements to: " + DAEDump.dumpElementsStr({elt}));
         Error.addInternalError("applyReplacementsDAEElts should not fail", sourceInfo());
       then fail();
@@ -459,10 +459,10 @@ algorithm
         print("Internal error, emptyReplacementsArray2 called with negative n!");
       then fail();
     else
-      equation
-        true = n > 0;
-        r = emptyReplacements();
-        replLst = emptyReplacementsArray2(n-1);
+      algorithm
+        true := n > 0;
+        r := emptyReplacements();
+        replLst := emptyReplacementsArray2(n-1);
       then r::replLst;
   end matchcontinue;
 end emptyReplacementsArray2;
@@ -890,7 +890,7 @@ algorithm
       then
         REPLACEMENTS(ht_1,invHt_1);
     else
-      equation
+      algorithm
         print("-add_replacement failed\n");
       then
         fail();
@@ -1218,9 +1218,9 @@ algorithm
       then e;
     case (_,_,_,_,_,true) then e;
     else
-      equation
-        (e1,b) = replaceExp(e,repl,func);
-        res = replaceExpRepeated2(e1,repl,func,maxIter,i+1,not b /*Expression.expEqual(e,e1)*/);
+      algorithm
+        (e1,b) := replaceExp(e,repl,func);
+        res := replaceExpRepeated2(e1,repl,func,maxIter,i+1,not b /*Expression.expEqual(e,e1)*/);
       then res;
   end matchcontinue;
 end replaceExpRepeated2;

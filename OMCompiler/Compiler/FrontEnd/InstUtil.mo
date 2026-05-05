@@ -143,8 +143,8 @@ algorithm
         outProgram;
 
     else
-      equation
-        (outProgram, _) = NFSCodeFlatten.flattenClassInProgram(inPath, inProgram);
+      algorithm
+        (outProgram, _) := NFSCodeFlatten.flattenClassInProgram(inPath, inProgram);
       then
         outProgram;
 
@@ -166,7 +166,7 @@ algorithm
         outProgram;
 
     else
-      equation
+      algorithm
         ErrorExt.rollBack("scodeFlattenProgram");
       then
         inProgram;
@@ -556,7 +556,7 @@ algorithm outCref := matchcontinue(cr1,cr2)
     then
       ComponentReference.makeCrefQual(name,ty,subs,outCref);
   else
-    equation
+    algorithm
       print(" ***** FAILURE with " + ComponentReference.printComponentRefStr(cr1) + " _and_ " + ComponentReference.printComponentRefStr(cr2) + "\n");
     then fail();
   end matchcontinue;
@@ -1113,7 +1113,7 @@ algorithm
     case (_,NONE(),_,_,_) then inComps;
       /*
     case( (selem as SCode.CLASS(name=name2))::comps,SOME(DAE.CREF_IDENT(ident=name)),allComps,className,existing)
-      equation
+      algorithm
         true = stringEq(name,name2);
         outComps = extractConstantPlusDeps2(comps,ocr,allComps,className,existing);
       then
@@ -1164,7 +1164,7 @@ algorithm
       then
         compMod::recDeps;
     else
-      equation
+      algorithm
         //debug_print("all",  (inComps, ocr, allComps, className, existing));
         print(" failure in get_Constant_PlusDeps \n");
       then fail();
@@ -1555,7 +1555,7 @@ algorithm
         outCrefs;
 
     else
-      equation
+      algorithm
         print(getInstanceName() + ": could not retrieve crefs from SCode.Mod: " + SCodeDump.printModStr(inMod,SCodeDump.defaultOptions) + "\n");
       then
         fail();
@@ -1669,8 +1669,8 @@ algorithm
         res;
     case ({}) then {};
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- InstUtil.getCrefFromDim failed\n");
       then
         fail();
@@ -1992,13 +1992,13 @@ algorithm
         ();
 
     else
-      equation
-        cycles = Graph.findCycles(inCycles, isElementEqual);
-        names = List.mapList(cycles, elementName);
-        cycles_strs = List.map1(names, stringDelimitList, ",");
-        cycles_str = stringDelimitList(cycles_strs, "}, {");
-        cycles_str = "{" + cycles_str + "}";
-        scope_str = FGraph.printGraphPathStr(inEnv);
+      algorithm
+        cycles := Graph.findCycles(inCycles, isElementEqual);
+        names := List.mapList(cycles, elementName);
+        cycles_strs := List.map1(names, stringDelimitList, ",");
+        cycles_str := stringDelimitList(cycles_strs, "}, {");
+        cycles_str := "{" + cycles_str + "}";
+        scope_str := FGraph.printGraphPathStr(inEnv);
         Error.addMessage(Error.CIRCULAR_COMPONENTS, {scope_str, cycles_str});
 
         if not Flags.isSet(Flags.IGNORE_CYCLES) then
@@ -2137,12 +2137,12 @@ algorithm
       SCode.Element cdef;
     case ({}) then {};
     case (((cdef as SCode.EXTENDS(baseClassPath = _)) :: xs))
-      equation
+      algorithm
         res = extendsElts(xs);
       then
         (cdef :: res);
     case ((_ :: xs))
-      equation
+      algorithm
         res = extendsElts(xs);
       then
         res;
@@ -2261,8 +2261,8 @@ algorithm
       then (cache,env_1,ih);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- InstUtil.addClassdefToEnv2 failed\n");
       then
         fail();
@@ -2439,7 +2439,7 @@ algorithm
   outMod := match(inModOuter,inModInner)
       /*
       case(_, _)
-        equation
+        algorithm
           outMod = chainRedeclare_dispatch(inModOuter,inModInner);
           false = SCodeUtil.modEqual(inModInner, outMod);
           print("Chain:\nO:" + Mod.printModStr(inModOuter) + "\nI:" + SCodeDump.printModStr(inModInner, SCodeDump.defaultOptions) + "\nR:" + SCodeDump.printModStr(outMod, SCodeDump.defaultOptions) + "\n");
@@ -2659,7 +2659,7 @@ algorithm
 
     // failure
     else
-      equation
+      algorithm
         ErrorExt.delCheckpoint("checkMultiplyDeclared");
         if Flags.isSet(Flags.FAILTRACE) then
           Debug.trace("-Inst.checkMultiplyDeclared failed\n");
@@ -3090,13 +3090,13 @@ algorithm
       then ();
 
     else
-      equation
+      algorithm
         // adrpo: we cannot check this here as:
         //        we might have modifications on inner that we copy here
         //        Dymola doesn't report modifications on outer as error!
         //        instead we check here if the modification is not the same
         //        as the one on inner
-        false = InnerOuter.modificationOnOuter(inCache, inEnv, inIH, inPrefix,
+        false := InnerOuter.modificationOnOuter(inCache, inEnv, inIH, inPrefix,
           inName, inCref, inMod, inInnerOuter, inImpl, inInfo);
       then
         ();
@@ -3157,8 +3157,8 @@ algorithm
         ();
 
     else
-      equation
-        ty_str = Types.getTypeName(inType);
+      algorithm
+        ty_str := Types.getTypeName(inType);
         Error.addSourceMessage(Error.INVALID_FUNCTION_VAR_TYPE,
           {ty_str, inVarName}, inInfo);
       then
@@ -3262,8 +3262,8 @@ algorithm
         DAE.T_ARRAY(ty_1, {dim});
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- InstUtil.makeArrayType failed\n");
       then
         fail();
@@ -3451,7 +3451,7 @@ algorithm
       then env;
 
     else
-      equation
+      algorithm
         print("InstUtil.addEnumerationLiteralToEnv: Unknown enumeration type!\n");
       then fail();
   end matchcontinue;
@@ -4302,7 +4302,7 @@ algorithm
 
     /*/ if not meta-modelica and we have a partial function, DO NOT ADD IT TO THE DAE!
     case (cache, funcs, pPrefix as SCode.PARTIAL())
-      equation
+      algorithm
         false = Config.acceptMetaModelicaGrammar();
         true = System.getPartialInstantiation();
         // if all the functions are complete, add them, otherwise, NO
@@ -6356,7 +6356,7 @@ algorithm
         if valueEq(SCode.FINAL(),f) and referenceEq(subs1, subs2) then mod else SCode.MOD(SCode.FINAL(),each_,subs2,eq,cmt,info);
 
     else
-      equation
+      algorithm
         Error.addInternalError(getInstanceName(), sourceInfo());
       then fail();
 
@@ -6397,7 +6397,7 @@ algorithm
       then if referenceEq(oldmod,mod) then inElement else SCode.EXTENDS(p,vis,mod,ann,info);
 
     else
-      equation
+      algorithm
         print(" we failed with traverseModAddFinal3\n");
       then
         fail();
@@ -6763,7 +6763,7 @@ algorithm
         end if;
       then true; // Randomly pick a default for graphics mode...
     else
-      equation
+      algorithm
         Error.addInternalError("InstUtil.instConditionalDeclaration got unexpected value " + ValuesUtil.valString(val), sourceInfo());
       then
         fail();
@@ -6836,9 +6836,9 @@ algorithm
     case (SCode.CONST(), _, _, _) then inAttributes;
     case (SCode.PARAM(), _, _, _) then inAttributes;
     else
-      equation
-        SCode.ATTR(direction = dir) = inAttributes;
-        dir = propagateAbSCDirection2(dir, inClassAttributes, inInfo);
+      algorithm
+        SCode.ATTR(direction = dir) := inAttributes;
+        dir := propagateAbSCDirection2(dir, inClassAttributes, inInfo);
       then
         SCodeUtil.setAttributesDirection(inAttributes, dir);
   end match;
@@ -6863,7 +6863,7 @@ algorithm
       then v1;
 
     else
-      equation
+      algorithm
         print(" failure in propagateAbSCDirection2, Absyn.DIRECTION mismatch");
         Error.addSourceMessage(Error.COMPONENT_INPUT_OUTPUT_MISMATCH, {"",""}, inInfo);
       then
@@ -6904,9 +6904,9 @@ algorithm
     case (_, {}) then inBaseType;
 
     else
-      equation
-        dims = List.last(inDimensions);
-        ty = Expression.liftArrayLeftList(inBaseType, dims);
+      algorithm
+        dims := List.last(inDimensions);
+        ty := Expression.liftArrayLeftList(inBaseType, dims);
       then
         ty;
 
@@ -6959,7 +6959,7 @@ algorithm
     case (SCode.VAR(),_) then ();
     case (SCode.DISCRETE(),_) then ();
     else
-      equation
+      algorithm
         /* Doesn't work anyway right away
         crefStr = Dump.printComponentRefStr(cref);
         varStr = SCodeDump.variabilityString(variability);
@@ -7276,8 +7276,8 @@ algorithm
     case (DAE.COMMENT(), _, _) then ();
 
     else
-      equation
-        str = DAEDump.dumpElementsStr({elt});
+      algorithm
+        str := DAEDump.dumpElementsStr({elt});
         Error.addSourceMessage(Error.FUNCTION_ELEMENT_WRONG_KIND,{str},info);
       then fail();
   end match;
@@ -7716,7 +7716,7 @@ algorithm
         _ := checkFunctionDefUse2(elts,NONE(),{},{},info);
       then ();
     else
-      equation
+      algorithm
         Error.addSourceMessage(Error.INTERNAL_ERROR, {"InstUtil.checkFunctionDefUse failed"}, info);
       then ();
   end matchcontinue;
@@ -7906,10 +7906,10 @@ algorithm
     // STMT_WHEN not in functions
     // STMT_REINIT not in functions
     else
-      equation
-        str = DAEDump.ppStatementStr(inStmt);
-        str = "InstUtil.checkFunctionDefUseStmt failed: " + str;
-        info = ElementSource.getElementSourceFileInfo(ElementSource.getStatementSource(inStmt));
+      algorithm
+        str := DAEDump.ppStatementStr(inStmt);
+        str := "InstUtil.checkFunctionDefUseStmt failed: " + str;
+        info := ElementSource.getElementSourceFileInfo(ElementSource.getStatementSource(inStmt));
         Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
       then fail();
   end match;

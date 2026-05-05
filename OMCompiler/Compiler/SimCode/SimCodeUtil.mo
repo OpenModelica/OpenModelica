@@ -1932,8 +1932,8 @@ algorithm
 
     // detailed error message
     else
-      equation
-        message = "function createEquationsForSystem1 failed for component " + BackendDump.strongComponentString(comp);
+      algorithm
+        message := "function createEquationsForSystem1 failed for component " + BackendDump.strongComponentString(comp);
         Error.addInternalError(message, sourceInfo());
       then fail();
   end match;
@@ -2097,7 +2097,7 @@ algorithm
 
     // failure
     else
-      equation
+      algorithm
         Error.addInternalError("createEquation failed", sourceInfo());
      then fail();
   end match;
@@ -2775,10 +2775,10 @@ algorithm
     then (eqSystlst, (eq_idx, res_idx), tempvars);
 
     // failure
-    else equation
-      s1 = ExpressionDump.printExpStr(inExp);
-      s2 = ExpressionDump.printExpStr(inExp1);
-      s = stringAppendList({"function createNonlinearResidualEquationsComplex failed for: ", s1, " = " , s2 });
+    else algorithm
+      s1 := ExpressionDump.printExpStr(inExp);
+      s2 := ExpressionDump.printExpStr(inExp1);
+      s := stringAppendList({"function createNonlinearResidualEquationsComplex failed for: ", s1, " = " , s2 });
       Error.addInternalError(s, sourceInfo());
     then fail();
   end matchcontinue;
@@ -2980,7 +2980,7 @@ algorithm
       then e;
 
     else
-      equation
+      algorithm
         print("SimCodeUtil.createTmpCrefExpsForComplexEqnSys_work: fail for" + ExpressionDump.printExpStr(inExp) + "\n");
       then fail();
   end match;
@@ -3578,8 +3578,8 @@ algorithm
       then (equations_, equations_, uniqueEqIndex, tempvars, tmpEqSccMapping, tmpBackendMapping);
 
     else
-      equation
-        msg = "function createOdeSystem failed for component " + BackendDump.strongComponentString(inComp);
+      algorithm
+        msg := "function createOdeSystem failed for component " + BackendDump.strongComponentString(inComp);
         Error.addInternalError(msg, sourceInfo());
       then fail();
   end matchcontinue;
@@ -3689,9 +3689,9 @@ algorithm
     then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, crefs, 0, inVars.numberOfVars+listLength(tempvars)-listLength(itempvars), NONE(), homotopySupport, mixedSystem, false, clockIndex), NONE(), BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)}, uniqueEqIndex+1, tempvars);
 
     // failure
-    else equation
-      str = BackendDump.jacobianTypeStr(inJacobianType);
-      str = stringAppendList({"createOdeSystem2 failed for ", str});
+    else algorithm
+      str := BackendDump.jacobianTypeStr(inJacobianType);
+      str := stringAppendList({"createOdeSystem2 failed for ", str});
       Error.addInternalError(str, sourceInfo());
     then fail();
   end matchcontinue;
@@ -4107,7 +4107,7 @@ algorithm
         BackendDAE.SINGLEWHENEQUATION(eqnindx, varindx);
 
     else
-      equation
+      algorithm
         print("SimCodeUtil.createTornSystemInnerEqns1 failed for\n");
         BackendDump.printEquationList({eqn});
         print("Eqn: " + intString(eqnindx) + " Vars: " + stringDelimitList(List.map(varindx, intString), ", ") + "\n");
@@ -4520,8 +4520,8 @@ algorithm
     then();
 
     // no matched equation
-    else equation
-      str = BackendDump.equationString(eqn);
+    else algorithm
+      str := BackendDump.equationString(eqn);
       Error.addInternalError("- " + str + " not implemented SimCodeUtil.generateSingleEquation", sourceInfo());
       fail();
     then ();
@@ -4746,8 +4746,8 @@ algorithm
       then
         (simequations, uniqueEqIndex, tempvars, numStateSets);
     else
-      equation
-        errorMessage = "function createStateSetsSets failed.";
+      algorithm
+        errorMessage := "function createStateSetsSets failed.";
         Error.addInternalError(errorMessage, sourceInfo());
       then
         fail();
@@ -4926,9 +4926,9 @@ algorithm
       then (SOME(SimCode.JAC_MATRIX({SimCode.JAC_COLUMN(allEquations, columnVars, nRows, constantEqns)}, seedVars, name, sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, {}, maxColor, -1, 0, {}, SOME(crefToSimVarHTJacobian), false)), uniqueEqIndex, tempvars);
 
     else
-      equation
+      algorithm
         if Flags.isSet(Flags.JAC_DUMP) then
-          errorMessage = "function createSymbolicSimulationJacobian failed.";
+          errorMessage := "function createSymbolicSimulationJacobian failed.";
           Error.addInternalError(errorMessage, sourceInfo());
         end if;
       then (NONE(), iuniqueEqIndex, itempvars);
@@ -5307,7 +5307,7 @@ algorithm
      then
        (linearModelMatrices, uniqueEqIndex);
     else
-      equation
+      algorithm
         Error.addInternalError("Generation of symbolic matrix SimCode (SimCodeUtil.createSymbolicJacobianssSimCode) failed", sourceInfo());
       then
         fail();
@@ -5394,7 +5394,7 @@ algorithm
        createJacSimVarsColumn(restVar, inCref, inAllVars, resIndex, tmpIndex, inMatrixName, tmpVars, resVars);
 
     else
-     equation
+     algorithm
       Error.addInternalError("function createAllDiffedSimVars failed", sourceInfo());
     then fail();
   end match;
@@ -5833,9 +5833,9 @@ algorithm
       then (outRes, uniqueEqIndex);
 
   else
-    equation
+    algorithm
       if Flags.isSet(Flags.JAC_DUMP) then
-        errorMessage = "function createSymbolicSimulationJacobian failed.";
+        errorMessage := "function createSymbolicSimulationJacobian failed.";
         Error.addInternalError(errorMessage, sourceInfo());
       end if;
     then (NONE(), iuniqueEqIndex);
@@ -5914,7 +5914,7 @@ algorithm
       then
         (delayedExps, maxDelayedExpIndex+1);
     else
-      equation
+      algorithm
         Error.addInternalError("function extractDelayedExpressions failed", sourceInfo());
       then
         fail();
@@ -6054,9 +6054,9 @@ algorithm
           aliases := (name, cr)::aliases;
         then ();
       else
-        equation
-          sv = dlowvarToSimvar(bv, NONE(), evars);
-          vars = sv::vars;
+        algorithm
+          sv := dlowvarToSimvar(bv, NONE(), evars);
+          vars := sv::vars;
         then ();
       end match;
   end for;
@@ -6086,7 +6086,7 @@ algorithm
         (result, uniqueEqIndex) := List.mapFold(res, dlowAlgToSimEqSystem, uniqueEqIndex);
       then ((uniqueEqIndex, listAppend(result, simeqns)));
     else
-      equation
+      algorithm
         Error.addInternalError("function createAlgorithmAndEquationAsserts failed", sourceInfo());
       then fail();
   end matchcontinue;
@@ -6133,7 +6133,7 @@ algorithm
         // vLst2 = List.unionOnTrue(vLst2, vLst1, ComponentReference.crefEqual);
       then vLst2;
     else
-      equation
+      algorithm
         Error.addInternalError("function extractDiscreteModelVars failed", sourceInfo());
       then fail();
   end matchcontinue;
@@ -6251,7 +6251,7 @@ algorithm
 
     // failure
     else
-      equation
+      algorithm
         Error.addInternalError("function createSingleWhenEqnCode failed. When equations currently only supported on form v = ...", sourceInfo());
       then fail();
   end matchcontinue;
@@ -6334,7 +6334,7 @@ algorithm
       (equations_, uniqueEqIndex, tempvars) := createEquationsfromList(elseqns, inVars, uniqueEqIndex, tempvars, ei, genDiscrete);
     then ({SimCode.SES_IFEQUATION(uniqueEqIndex, ifbranches, equations_, source_, eqAttr)}, uniqueEqIndex+1, tempvars);
 
-    else equation
+    else algorithm
       Error.addInternalError("SimCodeUtil.createSingleIfEqnCode failed.", sourceInfo());
     then fail();
   end matchcontinue;
@@ -6376,7 +6376,7 @@ algorithm
       ifbranches := ifbranch::ifbranches;
     then (ifbranches, uniqueEqIndex, tempvars);
 
-    else equation
+    else algorithm
       Error.addInternalError("SimCodeUtil.createEquationfromList failed.", sourceInfo());
     then fail();
   end matchcontinue;
@@ -6454,7 +6454,7 @@ algorithm
       (equations_, _, uniqueEqIndex, tempvars) := createEquations(includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, syst, shared, comps, iuniqueEqIndex, itempvars);
     then (equations_, uniqueEqIndex, tempvars);
 
-    else equation
+    else algorithm
       Error.addInternalError("SimCodeUtil.createEquationfromList failed.", sourceInfo());
     then fail();
 
@@ -6994,10 +6994,10 @@ algorithm
     then ({equation_}, {equation_}, uniqueEqIndex, itempvars);
 
     // failure
-    else equation
-      BackendDAE.VAR(varName = cr)::_ = inVars;
-      str = BackendDump.dumpEqnsStr(inEquations);
-      str = "solving array equation: " + str + "\nfor variable: " + ComponentReference.printComponentRefStr(cr) + ".";
+    else algorithm
+      BackendDAE.VAR(varName = cr)::_ := inVars;
+      str := BackendDump.dumpEqnsStr(inEquations);
+      str := "solving array equation: " + str + "\nfor variable: " + ComponentReference.printComponentRefStr(cr) + ".";
       Error.addInternalError(str, sourceInfo());
     then fail();
   end matchcontinue;
@@ -7109,7 +7109,7 @@ algorithm
     then fail();
 
     // failure
-    else equation
+    else algorithm
       Error.addInternalError("function createSingleAlgorithmCode failed", sourceInfo());
     then fail();
   end matchcontinue;
@@ -7282,7 +7282,7 @@ algorithm
     then
       (SimCode.SES_WHEN(iuniqueEqIndex, conditions, initialCall, whenStmtLst, oelseWhenSimEq, source, eqAttr), uniqueEqIndex);
 
-    else equation
+    else algorithm
       if Flags.isSet(Flags.FAILTRACE) then
         Error.addInternalError("function dlowEqToSimEqSystem failed.", sourceInfo());
       end if;
@@ -7329,7 +7329,7 @@ algorithm
       (simeqns1, uniqueEqIndex) := List.mapFold(startValueEquationsTmp2, dlowEqToSimEqSystem, uniqueEqIndex);
     then ((uniqueEqIndex, listAppend(simeqns1, simeqns), globalKnownVars));
 
-    else equation
+    else algorithm
       Error.addInternalError("function createStartValueEquations failed", sourceInfo());
     then fail();
   end matchcontinue;
@@ -7362,7 +7362,7 @@ algorithm
       (simeqns1, uniqueEqIndex) := List.mapFold(maxValueEquationsTmp, dlowEqToSimEqSystem, uniqueEqIndex);
     then ((uniqueEqIndex, listAppend(simeqns1, simeqns)));
 
-    else equation
+    else algorithm
       Error.addInternalError("function createValueEquationsShared failed", sourceInfo());
     then fail();
   end match;
@@ -7388,7 +7388,7 @@ algorithm
       (simeqns1, uniqueEqIndex) := List.mapFold(nominalValueEquationsTmp, dlowEqToSimEqSystem, uniqueEqIndex);
     then ((uniqueEqIndex, listAppend(simeqns1, simeqns)));
 
-    else equation
+    else algorithm
       Error.addInternalError("function createNominalValueEquations failed", sourceInfo());
     then fail();
   end match;
@@ -7414,7 +7414,7 @@ algorithm
       (simeqns1, uniqueEqIndex) := List.mapFold(minValueEquationsTmp, dlowEqToSimEqSystem, uniqueEqIndex);
     then ((uniqueEqIndex, listAppend(simeqns1, simeqns)));
 
-    else equation
+    else algorithm
       Error.addInternalError("function createMinValueEquations failed", sourceInfo());
     then fail();
   end match;
@@ -7440,7 +7440,7 @@ algorithm
       (simeqns1, uniqueEqIndex) := List.mapFold(maxValueEquationsTmp, dlowEqToSimEqSystem, uniqueEqIndex);
     then ((uniqueEqIndex, listAppend(simeqns1, simeqns)));
 
-    else equation
+    else algorithm
       Error.addInternalError("function createMaxValueEquations failed", sourceInfo());
     then fail();
   end match;
@@ -8210,7 +8210,7 @@ algorithm
      then (exp,varsIn);
 
    else
-     equation
+     algorithm
        //print("Without START:"+ ExpressionDump.printExpStr(expIn)+"\n");
      then (expIn,varsIn);
 
@@ -8984,7 +8984,7 @@ algorithm
         dumpVariablesString(rest,delimiter);
       then ();
     else
-      equation
+      algorithm
         print("<unknown>" + delimiter);
       then ();
   end match;
@@ -9370,7 +9370,7 @@ algorithm
     then ();
 
     else
-      equation
+      algorithm
         print(simEqSystemString(eqSysIn));
     then ();
   end matchcontinue;
@@ -10745,7 +10745,7 @@ algorithm
     case SimCode.SES_FOR_LOOP(index=index) then index;
     case SimCode.SES_ALIAS(index=index) then index;
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{"SimCodeUtil.simEqSystemIndex failed"});
       then fail();
   end match;
@@ -10799,7 +10799,7 @@ algorithm outOrder := matchcontinue(inDlow, inEqSystems)
       variableIndex3 := listAppend(variableIndex, variableIndex2);
     then variableIndex3;
   else
-    equation
+    algorithm
       print(" Failure in setVariableDerIndex\n");
     then fail();
  end matchcontinue;
@@ -10853,7 +10853,7 @@ algorithm outOrder := matchcontinue(inDlow, syst)
      then
       variableIndex;
   else
-      equation
+      algorithm
          print(" Failure in setVariableDerIndex2\n");
          then fail();
  end matchcontinue;
@@ -11180,7 +11180,7 @@ algorithm (OutInteger1, OutInteger2):= matchcontinue(dae_low)
       then
         (nvar1, nvar2);
   else
-    equation print(" failure in dimensions\n"); then fail();
+    algorithm print(" failure in dimensions\n"); then fail();
 end matchcontinue;
 end dimensions;
 
@@ -11835,7 +11835,7 @@ algorithm
         index;
 
     else
-      equation
+      algorithm
         // errstr = "Template did not find the file: "+ file + " in the SimCode.modelInfo.files.";
         // Error.addInternalError(errstr, sourceInfo());
       then
@@ -12251,7 +12251,7 @@ algorithm
     case(SOME(DAE.BCONST(false))) then SOME(false);
     case(SOME(DAE.BCONST(true))) then SOME(true);
     else
-      equation
+      algorithm
         Error.addSourceMessage(Error.HIDE_RESULT_NOT_EVALUATED,
           {ComponentReference.printComponentRefStr(name)}, ElementSource.getInfo(source));
      then NONE();

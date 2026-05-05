@@ -139,8 +139,8 @@ algorithm
         dae;
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Inst.daeDeclare failed\n");
       then
         fail();

@@ -636,7 +636,7 @@ algorithm
         restriction;
 
     else
-      equation
+      algorithm
 //        debug_print("\ngetPathedClassInProgram:", "failed!");
       then fail();
   end matchcontinue;
@@ -1004,7 +1004,7 @@ algorithm
         (x1,y1,x2,y2);//(Absyn.REAL(-100.0),Absyn.REAL(-100.0),Absyn.REAL(100.0),Absyn.REAL(100.0));
 
     else // if it doesn't work, try the hard way
-      equation
+      algorithm
   //     debug_print("\ngetPathedClassInProgram:", "failed!");
       then fail();
 
@@ -1695,8 +1695,8 @@ algorithm
       then outArgs;
 
     else
-      equation
-        outArgs = cleanStyleAttrs2(inArgs,resultList,inCon);
+      algorithm
+        outArgs := cleanStyleAttrs2(inArgs,resultList,inCon);
       then outArgs;
   end matchcontinue;
 end cleanStyleAttrs;
@@ -1939,7 +1939,7 @@ algorithm
       then outList;
 
  /*   case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "string"), modification = m, comment = com)) :: rest, resultList,context as("Text" :: c))
-      equation
+      algorithm
         resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs(rest,resultList,context);
       then outList;

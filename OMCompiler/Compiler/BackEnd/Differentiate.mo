@@ -418,7 +418,7 @@ algorithm
 
       then
         (BackendDAE.WHEN_EQUATION(size, whenEqn, source, eqAttr), funcs);
-    else equation
+    else algorithm
       Error.addSourceMessage(Error.NON_EXISTING_DERIVATIVE, {BackendDump.equationString(inEquation), ComponentReference.crefStr(inDiffwrtCref)}, sourceInfo());
      then fail();
   end match;
@@ -761,11 +761,11 @@ algorithm
       then
         (res, functionTree);
 
-    else equation
-      true = Flags.isSet(Flags.FAILTRACE);
-      s1 = ExpressionDump.printExpStr(inExp);
-      s2 = ComponentReference.printComponentRefStr(inDiffwrtCref);
-      stp = Types.printTypeStr(Expression.typeof(inExp));
+    else algorithm
+      true := Flags.isSet(Flags.FAILTRACE);
+      s1 := ExpressionDump.printExpStr(inExp);
+      s2 := ComponentReference.printComponentRefStr(inDiffwrtCref);
+      stp := Types.printTypeStr(Expression.typeof(inExp));
       Debug.trace("- differentiateExp " + s1 + " type: " + stp + " w.r.t " + s2 + " failed\n");
     then fail();
   end match;
@@ -955,11 +955,11 @@ algorithm
       then (derivedStatements1, functions);
 
     else
-      equation
+      algorithm
         if Flags.isSet(Flags.FAILTRACE) then
-          (currStatement::_) = inStmts;
-          s1 = DAEDump.ppStatementStr(currStatement);
-          s2 = ComponentReference.printComponentRefStr(inDiffwrtCref);
+          (currStatement::_) := inStmts;
+          s1 := DAEDump.ppStatementStr(currStatement);
+          s2 := ComponentReference.printComponentRefStr(inDiffwrtCref);
           Debug.trace("- differentiateStatements " + s1 + " w.r.t: " + s2 + " failed\n");
         end if;
       then fail();
@@ -1279,12 +1279,12 @@ algorithm
         (zero, inFunctionTree);
 
    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        s1 = ExpressionDump.printExpStr(inExp);
-        se1 = Types.printTypeStr(Expression.typeof(inExp));
-        s2 = ComponentReference.printComponentRefStr(inDiffwrtCref);
-        serr = stringAppendList({"\n- differentiateCrefs ",s1," type:", se1 ," w.r.t: ",s2," failed\n"});
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
+        s1 := ExpressionDump.printExpStr(inExp);
+        se1 := Types.printTypeStr(Expression.typeof(inExp));
+        s2 := ComponentReference.printComponentRefStr(inDiffwrtCref);
+        serr := stringAppendList({"\n- differentiateCrefs ",s1," type:", se1 ," w.r.t: ",s2," failed\n"});
         Debug.trace(serr);
       then
         fail();
@@ -1486,17 +1486,17 @@ algorithm
         (e1, funcs);
 /*
     case (e as DAE.CALL(expLst = _), _, _, _, _)
-      equation
+      algorithm
         Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {ExpressionDump.printExpStr(e), ComponentReference.printComponentRefStr(inDiffwrtCref)});
       then
         fail();
 */
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        s1 = ExpressionDump.printExpStr(inExp);
-        s2 = ComponentReference.printComponentRefStr(inDiffwrtCref);
-        serr = stringAppendList({"\n- Function differentiateCalls failed. differentiateExp ",s1," w.r.t: ",s2," failed\n"});
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
+        s1 := ExpressionDump.printExpStr(inExp);
+        s2 := ComponentReference.printComponentRefStr(inDiffwrtCref);
+        serr := stringAppendList({"\n- Function differentiateCalls failed. differentiateExp ",s1," w.r.t: ",s2," failed\n"});
         Debug.trace(serr);
       then
         fail();
@@ -2156,11 +2156,11 @@ algorithm
         (e, funcs);
 
    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        s1 = ExpressionDump.printExpStr(inExp);
-        s2 = ComponentReference.printComponentRefStr(inDiffwrtCref);
-        serr = stringAppendList({"\n- Function differentiateBinary failed. differentiateExp ",s1," w.r.t: ",s2," failed\n"});
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
+        s1 := ExpressionDump.printExpStr(inExp);
+        s2 := ComponentReference.printComponentRefStr(inDiffwrtCref);
+        serr := stringAppendList({"\n- Function differentiateBinary failed. differentiateExp ",s1," w.r.t: ",s2," failed\n"});
         Debug.trace(serr);
       then
         fail();
@@ -2312,8 +2312,8 @@ algorithm
       then (zero, inFunctionTree);
 
       else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace(getInstanceName() + " failed for " + ExpressionDump.printExpStr(inExp) + "\n");
       then fail();
   end matchcontinue;
@@ -2493,9 +2493,9 @@ algorithm
         (exp, functions);
 
       else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        str = "Differentiate.differentiateFunctionCallPartial failed for " + ExpressionDump.printExpStr(inExp) + "\n";
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
+        str := "Differentiate.differentiateFunctionCallPartial failed for " + ExpressionDump.printExpStr(inExp) + "\n";
         Debug.trace(str);
       then fail();
   end matchcontinue;
@@ -2669,13 +2669,13 @@ for de in inDiffExpl loop
     then e;
 
     else
-     equation
-      tp = Expression.typeof(de);
-      dims = Expression.arrayDimension(tp);
-      (eone,_) = Expression.makeOneExpression(dims);
-      dexpLst = List.set(inDiffExplZero, i, eone);
-      expLst = listAppend(inOrginalExpl,dexpLst);
-      e = createPartialSum({expLst}, {de}, inCall, outExp);
+     algorithm
+      tp := Expression.typeof(de);
+      dims := Expression.arrayDimension(tp);
+      (eone,_) := Expression.makeOneExpression(dims);
+      dexpLst := List.set(inDiffExplZero, i, eone);
+      expLst := listAppend(inOrginalExpl,dexpLst);
+      e := createPartialSum({expLst}, {de}, inCall, outExp);
     then e;
   end match;
   i := i + 1;
@@ -2855,10 +2855,10 @@ algorithm
     then (dfunc, functions, blst);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        path = DAEUtil.functionName(inFunction);
-        str = "\nDifferentiate.differentiatePartialFunction failed for function: " + AbsynUtil.pathString(path) + "\n";
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
+        path := DAEUtil.functionName(inFunction);
+        str := "\nDifferentiate.differentiatePartialFunction failed for function: " + AbsynUtil.pathString(path) + "\n";
         Debug.trace(str);
       then fail();
   end matchcontinue;

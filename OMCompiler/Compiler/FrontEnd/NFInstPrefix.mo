@@ -214,9 +214,9 @@ algorithm
     case (_, EMPTY_PREFIX()) then inString;
 
     else
-      equation
-        str = toStr(inPrefix);
-        str = str + "." + inString;
+      algorithm
+        str := toStr(inPrefix);
+        str := str + "." + inString;
       then
         str;
 

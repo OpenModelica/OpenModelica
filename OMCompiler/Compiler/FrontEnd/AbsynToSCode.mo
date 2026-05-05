@@ -206,7 +206,7 @@ algorithm
       then
         (SCode.PARTS(els,{},{},{},{},{},{},NONE()),cmt);
     else
-      equation
+      algorithm
         Error.addSourceMessage(Error.INTERNAL_ERROR, {"Could not translate operator to SCode because it is not using class parts."}, info);
       then fail();
   end match;
@@ -504,7 +504,7 @@ algorithm
         (SCode.PDER(path,vars),scodeCmt);
 
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{"AbsynToSCode.translateClassdef failed"});
       then
         fail();
@@ -1236,7 +1236,7 @@ algorithm
         xs_1;
 
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {"AbsynToSCode.translateElementspec failed"});
       then fail();
   end match;
@@ -1303,7 +1303,7 @@ algorithm
     case (Absyn.NOT_INNER_OUTER()) then ();
     // has inner, outer or innerouter components
     else
-      equation
+      algorithm
          System.setHasInnerOuterDefinitions(true);
       then ();
   end match;

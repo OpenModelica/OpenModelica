@@ -63,7 +63,7 @@ algorithm
 
     // handle something
     case (el::rest)
-      equation
+      algorithm
         c = simplifyClass(el);
         acc = simplifyProgram(rest);
       then
@@ -89,7 +89,7 @@ algorithm
       SCode.Comment cmt;
 
     case (SCode.CLASS(n, pref, ecpf, ppf, res, cDef, cmt, info))
-      equation
+      algorithm
         ncDef = simplifyClassDef(cDef);
       then
         SCode.CLASS(n, pref, ecpf, ppf, res, ncDef, cmt, info);
@@ -123,14 +123,14 @@ algorithm
 
     // handle parts
     case (SCode.PARTS(els, ne, ie, na, ia, nc, clats, ed))
-      equation
+      algorithm
         els = simplifyElements(els);
       then
         SCode.PARTS(els, ne, ie, na, ia, nc, clats, ed);
 
     // handle class extends
     case (SCode.CLASS_EXTENDS(baseClassName, mod, cDef))
-      equation
+      algorithm
         cDef = simplifyClassDef(cDef);
       then
         SCode.CLASS_EXTENDS(baseClassName, mod, cDef);
@@ -174,7 +174,7 @@ algorithm
 
     // handle extends Modelica.Icons.*
     case (SCode.EXTENDS(baseClassPath = bcp)::rest)
-      equation
+      algorithm
         true = AbsynUtil.pathContains(bcp, "Icons");
         els = simplifyElements(rest);
       then
@@ -189,7 +189,7 @@ algorithm
 
     // handle classes
     case ((el as SCode.CLASS())::rest)
-      equation
+      algorithm
         el2 = simplifyClass(el);
         els = simplifyElements(rest);
       then
@@ -197,7 +197,7 @@ algorithm
 
     // handle rest
     case (el::rest)
-      equation
+      algorithm
         els = simplifyElements(rest);
       then
         el::els;

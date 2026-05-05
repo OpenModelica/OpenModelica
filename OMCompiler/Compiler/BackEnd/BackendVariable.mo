@@ -622,7 +622,7 @@ algorithm
     case DAE.T_BOOL() then DAE.VAR_ATTR_BOOL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
     case DAE.T_STRING() then DAE.VAR_ATTR_STRING(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
     case DAE.T_ENUMERATION() then DAE.VAR_ATTR_ENUMERATION(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
-    else equation
+    else algorithm
       // repord a warning on failtrace
       if Flags.isSet(Flags.FAILTRACE) then
         Debug.trace("getVariableAttributefromType called with unsopported Type!\n");
@@ -1846,9 +1846,9 @@ algorithm
       outVar := BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), {}, source, DAEUtil.setProtectedAttr(NONE(), true), SOME(BackendDAE.NEVER()), SOME(DAE.BCONST(true)), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true,false,false);
     then outVar;
 
-    else equation
-      varKind = if Types.isDiscreteType(inType) then BackendDAE.DISCRETE() else BackendDAE.VARIABLE();
-      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), {}, DAE.emptyElementSource, DAEUtil.setProtectedAttr(NONE(), true), SOME(BackendDAE.NEVER()), SOME(DAE.BCONST(true)), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true,false,false);
+    else algorithm
+      varKind := if Types.isDiscreteType(inType) then BackendDAE.DISCRETE() else BackendDAE.VARIABLE();
+      outVar := BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), {}, DAE.emptyElementSource, DAEUtil.setProtectedAttr(NONE(), true), SOME(BackendDAE.NEVER()), SOME(DAE.BCONST(true)), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true,false,false);
     then outVar;
   end match;
 end createCSEVar;
@@ -1926,9 +1926,9 @@ algorithm
       outVar := BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), inArryDim, source, DAEUtil.setProtectedAttr(NONE(), true), SOME(BackendDAE.NEVER()), SOME(DAE.BCONST(true)), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true, false, false);
     then outVar;
 
-    else equation
-      varKind = if Types.isDiscreteType(inType) then BackendDAE.DISCRETE() else BackendDAE.VARIABLE();
-      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), inArryDim, DAE.emptyElementSource, DAEUtil.setProtectedAttr(NONE(), true), SOME(BackendDAE.NEVER()), SOME(DAE.BCONST(true)), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true, false, false);
+    else algorithm
+      varKind := if Types.isDiscreteType(inType) then BackendDAE.DISCRETE() else BackendDAE.VARIABLE();
+      outVar := BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), inArryDim, DAE.emptyElementSource, DAEUtil.setProtectedAttr(NONE(), true), SOME(BackendDAE.NEVER()), SOME(DAE.BCONST(true)), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true, false, false);
     then outVar;
   end match;
 end createCSEArrayVar;
@@ -3242,7 +3242,7 @@ algorithm
         (vLst,indxs);
     /* failure
     case (_,_)
-      equation
+      algorithm
         fprintln(Flags.DAE_LOW, "- getVar failed on component reference: " + ComponentReference.printComponentRefStr(cr));
       then
         fail();
@@ -3302,7 +3302,7 @@ algorithm
       then (v,indx);
     /* failure
     case (_,_)
-      equation
+      algorithm
         fprintln(Flags.DAE_LOW, "- getVar failed on component reference: " + ComponentReference.printComponentRefStr(cr));
       then
         fail();
@@ -3371,7 +3371,7 @@ algorithm
     case (DAE.WILD(), _) then (inCref, iPerformed);
 
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {"BackendVariable.replaceVarWithWholeDim: Unknown cref"});
       then fail();
   end match;

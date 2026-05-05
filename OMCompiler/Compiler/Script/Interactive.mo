@@ -223,7 +223,7 @@ algorithm
         print(Error.printMessagesStr(false));
       then true;
     else
-      equation
+      algorithm
         print(Error.printMessagesStr(false));
       then false;
   end matchcontinue;
@@ -747,8 +747,8 @@ algorithm
         DAE.CREF_IDENT(id, inType, dsubs);
 
     else
-      equation
-        str = Dump.printExpStr(inCref);
+      algorithm
+        str := Dump.printExpStr(inCref);
         Error.addMessage(Error.INVALID_TUPLE_CONTENT, {str});
       then
         fail();
@@ -1134,7 +1134,7 @@ algorithm
       then
         (comp :: res_1);
     else
-      equation
+      algorithm
         print("-Interactive.renameComponentInComponentitems failed\n");
       then
         fail();
@@ -1195,7 +1195,7 @@ algorithm
       then
         ((exp1_1,eqn_item_1) :: res_1);
     else
-      equation
+      algorithm
         print("-rename_component_in_exp_equationitem_list failed\n");
       then
         fail();
@@ -1265,7 +1265,7 @@ algorithm
       then
         Absyn.EQ_NORETCALL(cref,function_args);
     else
-      equation
+      algorithm
         print("-rename_component_in_equation failed\n");
       then
         fail();
@@ -1293,7 +1293,7 @@ algorithm
       then
         (exp_1 :: res_1);
     else
-      equation
+      algorithm
         print("-rename_component_in_exp_list failed\n");
       then
         fail();
@@ -1321,7 +1321,7 @@ algorithm
       then
         (exp_1 :: res_1);
     else
-      equation
+      algorithm
         print("-rename_component_in_exp_list_list failed\n");
       then
         fail();
@@ -1350,7 +1350,7 @@ algorithm
       then
         ((exp1_1,exp2_1) :: res_1);
     else
-      equation
+      algorithm
         print("-rename_component_in_exp_tuple_list failed\n");
       then
         fail();
@@ -1378,7 +1378,7 @@ algorithm
       then
         (element_arg_1 :: res_1);
     else
-      equation
+      algorithm
         print("-rename_component_in_element_arg_list failed\n");
       then
         fail();
@@ -1614,7 +1614,7 @@ algorithm
       then
         Absyn.CODE(code_1);
     else
-      equation
+      algorithm
         print("-rename_component_in_exp failed\n");
       then
         fail();
@@ -1734,7 +1734,7 @@ algorithm
       then
         ((exp_1,algs_1) :: res_1);
     else
-      equation
+      algorithm
         print("-rename_component_in_exp_algoritms_list failed\n");
       then
         fail();
@@ -1772,7 +1772,7 @@ algorithm
       then
         Absyn.FOR_ITER_FARG(exp1_1, iterType, iteratorsRenamed);
     else
-      equation
+      algorithm
         print("-rename_component_in_function_args failed\n");
       then
         fail();
@@ -1823,7 +1823,7 @@ algorithm
       then
         (Absyn.NAMEDARG(id,exp_1) :: res_1);
     else
-      equation
+      algorithm
         print("-rename_component_in_namedArgs failed\n");
       then
         fail();
@@ -1935,7 +1935,7 @@ algorithm
       then
         comp_reps_res;
     else
-      equation
+      algorithm
         print("-get_componentreplacementsrules failed\n");
       then
         fail();
@@ -1974,7 +1974,7 @@ algorithm
       then
         comp_reps_3;
     else
-      equation
+      algorithm
         print(
           "-get_new_componentreplacementsrules_for_each_rule failed\n");
       then
@@ -2027,7 +2027,7 @@ algorithm
       then
         comp_reps_res;
     else
-      equation
+      algorithm
         print("-make_componentsReplacementRules_from_components failed\n");
       then
         fail();
@@ -2166,7 +2166,7 @@ algorithm
       then
         comps_1;
     else
-      equation
+      algorithm
         print("-get_components_with_type failed\n");
       then
         GlobalScript.COMPONENTS({},0);
@@ -2274,7 +2274,7 @@ algorithm
       then
         comps_1;
     else
-      equation
+      algorithm
         print("-extract_components_from_class failed\n");
       then
         fail();
@@ -2465,7 +2465,7 @@ algorithm
       then
         comps_3;
     else
-      equation
+      algorithm
         print("-extract_components_from_componentitems failed\n");
       then
         fail();
@@ -5860,7 +5860,7 @@ algorithm
 
     /* adrpo: fixme, handle this case too!
     case (modelpath,n,inClass,p)
-      equation
+      algorithm
         cdef = inClass;
         p_1 = AbsynToSCode.translateAbsyn2SCode(p);
         (cache,env) = Inst.makeEnvFromProgram(p_1);
@@ -9274,7 +9274,7 @@ algorithm
       then ((cl,pa,i));
 
     else
-      equation
+      algorithm
         print("Interactive.transformFlatClass failed\n");
       then fail();
   end matchcontinue;
@@ -9317,7 +9317,7 @@ algorithm
         partsTransformed := List.map(parts,transformFlatPart);
       then
         Absyn.CLASS_EXTENDS(baseClassName, modifications, cmt, partsTransformed, ann);
-    else equation print("Interactive.transformFlatClassDef failed\n");
+    else algorithm print("Interactive.transformFlatClassDef failed\n");
       then fail();
   end matchcontinue;
 end transformFlatClassDef;
@@ -9358,7 +9358,7 @@ algorithm
       then Absyn.INITIALALGORITHMS(algitems1);
     case(Absyn.EXTERNAL(_,_)) then part;
     else
-      equation print("Interactive.transformFlatPart failed\n");
+      algorithm print("Interactive.transformFlatPart failed\n");
       then fail();
   end matchcontinue;
 end transformFlatPart;

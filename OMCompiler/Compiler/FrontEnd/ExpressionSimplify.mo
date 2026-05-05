@@ -298,7 +298,7 @@ algorithm
 
       // Look for things we really *should* have simplified, but only if we did not modify anything!
 /*    case ((e,(false,_)))
-      equation
+      algorithm
         true = Flags.isSet(Flags.CHECK_SIMPLIFY);
         true = Expression.isConst(e);
         false = Expression.isConstValue(e);
@@ -1572,8 +1572,8 @@ algorithm
         (_,{_}) := Types.flattenArrayType(Expression.typeof(inExp));
       then DAE.SIZE(exp,SOME(DAE.ICONST(1)));
     else
-      equation
-        (_,{}) = Types.flattenArrayType(Expression.typeof(inExp));
+      algorithm
+        (_,{}) := Types.flattenArrayType(Expression.typeof(inExp));
       then inExp;
   end match;
 end simplifyScalar;
@@ -1599,10 +1599,10 @@ algorithm
       DAE.Exp exp;
     case (_,0,1) then ();
     else
-      equation
-        v1 = arrayGet(marr, i1);
-        v2 = arrayGet(marr, i2);
-        exp = arrayGet(v1,i2);
+      algorithm
+        v1 := arrayGet(marr, i1);
+        v2 := arrayGet(marr, i2);
+        exp := arrayGet(v1,i2);
         arrayUpdate(v2, i1, exp);
         simplifySymmetric(marr, if i1==1 then (i2-2) else (i1-1), if i1==1 then (i2-1) else i2);
       then ();
@@ -2597,8 +2597,8 @@ algorithm
         Expression.negate(e2);
 
     else
-      equation
-        true = Expression.isZero(e2);
+      algorithm
+        true := Expression.isZero(e2);
       then
         e1;
 
@@ -5486,8 +5486,8 @@ algorithm
       then {inStart};
 
     else
-      equation
-        steps = Util.realRangeSize(inStart, inStep, inStop) - 1;
+      algorithm
+        steps := Util.realRangeSize(inStart, inStep, inStop) - 1;
       then
         simplifyRangeReal2(inStart, inStep, steps, {});
 
@@ -5510,9 +5510,9 @@ algorithm
     case (_, _, -1, _) then inValues;
 
     else
-      equation
-        next = inStart + inStep * intReal(inSteps);
-        vals = next :: inValues;
+      algorithm
+        next := inStart + inStep * intReal(inSteps);
+        vals := next :: inValues;
       then
         simplifyRangeReal2(inStart, inStep, inSteps - 1, vals);
 
@@ -5869,7 +5869,7 @@ algorithm
         outSource := ElementSource.condAddSymbolicTransformation(changed,source,DAE.SIMPLIFY(exp,outExp));
       then (outExp,outSource);
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {"ExpressionSimplify.simplifyAddSymbolicOperation failed"});
       then fail();
   end match;

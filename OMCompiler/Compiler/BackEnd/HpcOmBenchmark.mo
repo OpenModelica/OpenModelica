@@ -96,7 +96,7 @@ algorithm
         tmpCalcTimes := readCalcTimesFromXml(fullFileName);
       then tmpCalcTimes;
     else
-      equation
+      algorithm
         print("readCalcTimesFromFile: No valid profiling-file found.\n");
       then fail();
   end matchcontinue;
@@ -149,7 +149,7 @@ algorithm
   case ({},_)
     then iTuples;
   else
-    equation
+    algorithm
       print("expandCalcTimes: Invalid number of list-entries\n");
     then fail();
   end matchcontinue;

@@ -1104,7 +1104,7 @@ public function fromEquationsToAlgAssignments " Converts equations to algorithm 
 
  case(...)
  local
- equation
+ algorithm
      (var1,_,MYREC(...)) = func(...);
     fail();
  then 1;"
@@ -1134,7 +1134,7 @@ protected function fromEquationsToAlgAssignmentsWork
    in a normal equation section. For instance:
 
      case(...)
-       equation
+       algorithm
          (var1, _, MYREC(...)) = func(...);
          fail();
        then
@@ -1261,8 +1261,8 @@ algorithm
       then {res};
 
     else
-      equation
-        str = Dump.equationName(eq);
+      algorithm
+        str := Dump.equationName(eq);
         Error.addSourceMessage(Error.META_MATCH_EQUATION_FORBIDDEN, {str}, info);
       then fail();
   end matchcontinue;
@@ -1768,14 +1768,14 @@ algorithm
         (env, SOME(exp));
 
     else
-      equation
-        cr = AbsynUtil.pathToCref(path);
+      algorithm
+        cr := AbsynUtil.pathToCref(path);
         // print("makeReductionFoldExp => " + AbsynUtil.pathString(path) + Types.unparseType(expty) + "\n");
-        env = FGraph.addForIterator(inEnv, foldId, expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
-        env = FGraph.addForIterator(env, resultId, resultTy, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
-        cr1 = Absyn.CREF_IDENT(foldId, {});
-        cr2 = Absyn.CREF_IDENT(resultId, {});
-        exp = Absyn.CALL(cr, Absyn.FUNCTIONARGS({Absyn.CREF(cr1), Absyn.CREF(cr2)}, {}), {});
+        env := FGraph.addForIterator(inEnv, foldId, expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
+        env := FGraph.addForIterator(env, resultId, resultTy, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
+        cr1 := Absyn.CREF_IDENT(foldId, {});
+        cr2 := Absyn.CREF_IDENT(resultId, {});
+        exp := Absyn.CALL(cr, Absyn.FUNCTIONARGS({Absyn.CREF(cr1), Absyn.CREF(cr2)}, {}), {});
       then
         (env, SOME(exp));
   end match;
@@ -2607,8 +2607,8 @@ algorithm
         outType;
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Static.stripExtraArgsFromType failed\n");
       then
         fail();
@@ -3404,11 +3404,11 @@ algorithm
     // If we couldn't evaluate the size expression or find any problems with it,
     // just generate a call to size and let the runtime sort it out.
     else
-      equation
-        exp = DAE.SIZE(inArrayExp, SOME(inIndexExp));
-        cnst = DAE.C_PARAM(); // Types.getPropConst(inArrayProp);
-        cnst = if FGraph.inFunctionScope(inEnv) then DAE.C_VAR() else cnst;
-        prop = DAE.PROP(DAE.T_INTEGER_DEFAULT, cnst);
+      algorithm
+        exp := DAE.SIZE(inArrayExp, SOME(inIndexExp));
+        cnst := DAE.C_PARAM(); // Types.getPropConst(inArrayProp);
+        cnst := if FGraph.inFunctionScope(inEnv) then DAE.C_VAR() else cnst;
+        prop := DAE.PROP(DAE.T_INTEGER_DEFAULT, cnst);
       then
         (SOME(exp), SOME(prop));
 
@@ -3630,8 +3630,8 @@ algorithm
         (cache,DAE.ARRAY(at,false,arraylist),DAE.PROP(sty2,c1));
 
     else
-      equation
-        str = "Static.elabBuiltinFill2 failed in component" + PrefixUtil.printPrefixStr3(inPrefix) +
+      algorithm
+        str := "Static.elabBuiltinFill2 failed in component" + PrefixUtil.printPrefixStr3(inPrefix) +
               " and scope: " + FGraph.printGraphPathStr(inEnv) +
               " for expression: fill(" + Dump.printExpLstStr(inDims) + ")";
         Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, inInfo);
@@ -3845,7 +3845,7 @@ algorithm
     // combination
     case ({e1}, {Absyn.NAMEDARG("simplified", e2)}) then {e1, e2};
     else
-      equation
+      algorithm
         Error.addCompilerError("+replaceHomotopy: homotopy called with wrong arguments: " +
           Dump.printFunctionArgsStr(Absyn.FUNCTIONARGS(args, nargs)));
       then
@@ -4204,11 +4204,11 @@ algorithm
     case DAE.ARRAY(array = {}) then inExp;
 
     else
-      equation
-        exp :: _ = Expression.flattenArrayExpToList(inExp);
+      algorithm
+        exp :: _ := Expression.flattenArrayExpToList(inExp);
         validateBuiltinStreamOperator(inCache, inEnv, exp, inType, inOperator, inInfo);
-        et = Types.simplifyType(inType);
-        exp = Expression.makePureBuiltinCall(inOperator, {exp}, et);
+        et := Types.simplifyType(inType);
+        exp := Expression.makePureBuiltinCall(inOperator, {exp}, et);
       then
         exp;
 
@@ -10318,7 +10318,7 @@ algorithm
     /*
     // maybe we do have it but without a binding, so maybe we can actually type it!
     case (cache,env,c,impl,doVect,pre,info)
-      equation
+      algorithm
         failure((_,_,_) = elabCrefSubs(cache,env, c, pre, DAE.NOPRE(),impl,info));
         id = AbsynUtil.crefFirstIdent(c);
         (cache,DAE.TYPES_VAR(name, attributes, visibility, ty, binding, constOfForIteratorRange),
@@ -10432,7 +10432,7 @@ algorithm
         (outCache, outTypesTypeLst);
 
     else
-      equation
+      algorithm
         // rollback lookup errors!
         ErrorExt.rollBack("Static.lookupFunctionsInEnvNoError");
       then
@@ -11360,8 +11360,8 @@ algorithm
       then
         (DAE.CALL(fn,(e :: args),attr) :: es_1);
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Static.callVectorize failed\n");
       then
         fail();
@@ -11394,7 +11394,7 @@ algorithm
     // index
     /*
     case (cr,indx,ds,et,t,crefIdType)
-      equation
+      algorithm
         (DAE.INDEX(e_1) :: ss) = ComponentReference.crefLastSubs(cr);
         cr_1 = ComponentReference.crefStripLastSubs(cr);
         cr_1 = ComponentReference.subscriptCref(cr_1,ss);
@@ -11774,7 +11774,7 @@ algorithm
     // adrpo 2012-12-02 this does not work as we need to evaluate final parameters!
     //                  and we have now way yet of knowing which ones those are
     case (_, _, _, _, _, _, _, _, _)
-      equation
+      algorithm
         true = Types.isParameter(inConst);
       then
         (inCache, inSubscript);*/
@@ -11822,10 +11822,10 @@ algorithm
       then (inCache, inSubscript);
 
     else
-      equation
-        sub_str = ExpressionDump.printSubscriptStr(inSubscript);
-        dim_str = ExpressionDump.dimensionString(inDimension);
-        cref_str = Dump.printComponentRefStr(inCref);
+      algorithm
+        sub_str := ExpressionDump.printSubscriptStr(inSubscript);
+        dim_str := ExpressionDump.dimensionString(inDimension);
+        cref_str := Dump.printComponentRefStr(inCref);
         Error.addSourceMessage(Error.ILLEGAL_SUBSCRIPT, {sub_str, dim_str, cref_str}, inInfo);
       then
         fail();
@@ -11877,8 +11877,8 @@ algorithm
 
     // failtrace
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Static.elabSubscript failed on " +
           Dump.printSubscriptStr(inSubscript) + " in env: " +
           FGraph.printGraphPathStr(inEnv));
@@ -11912,9 +11912,9 @@ algorithm
       then elabSubscriptType(inType.ty, inAbsynExp, inDaeExp, inInfo);
 
     else
-      equation
-        e_str = Dump.printExpStr(inAbsynExp);
-        t_str = Types.unparseType(inType);
+      algorithm
+        e_str := Dump.printExpStr(inAbsynExp);
+        t_str := Types.unparseType(inType);
         Error.addSourceMessage(Error.WRONG_DIMENSION_TYPE, {e_str, t_str}, inInfo);
       then
         fail();
@@ -12318,10 +12318,10 @@ algorithm
 
     // failure
     else
-      equation
-        failure(DAE.C_VARIABLENAMES() = ct);
-        s1 = Dump.printExpStr(exp);
-        s2 = Types.printCodeTypeStr(ct);
+      algorithm
+        failure(DAE.C_VARIABLENAMES() := ct);
+        s1 := Dump.printExpStr(exp);
+        s2 := Types.printCodeTypeStr(ct);
         Error.addSourceMessage(Error.ELAB_CODE_EXP_FAILED, {s1,s2}, info);
       then fail();
   end matchcontinue;
@@ -12399,8 +12399,8 @@ algorithm
       then dexp;
 
     else
-      equation
-        false = AbsynUtil.isCref(exp);
+      algorithm
+        false := AbsynUtil.isCref(exp);
         ErrorExt.rollBack("elabCodeExp_dispatch");
       then fail();
 
@@ -12551,8 +12551,8 @@ algorithm
         (cache, dim);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Static.elabArrayDim failed on: " +
           Dump.printComponentRefStr(inCref) +
           Dump.printArraydimStr({inDimension}));

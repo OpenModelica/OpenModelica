@@ -99,8 +99,8 @@ algorithm
 
      // failtrace
      else
-       equation
-         true = Flags.isSet(Flags.FAILTRACE);
+       algorithm
+         true := Flags.isSet(Flags.FAILTRACE);
          Debug.trace("UnitChecker::check() failed\n");
          print("check failed\n");
        then
@@ -237,8 +237,8 @@ algorithm
        then(res1,su2,st2);
 
      else
-       equation
-         true = Flags.isSet(Flags.FAILTRACE);
+       algorithm
+         true := Flags.isSet(Flags.FAILTRACE);
          Debug.trace("UnitChecker::checkTerm() failed\n");
        then fail();
    end matchcontinue;
@@ -258,8 +258,8 @@ algorithm
     case(UnitAbsyn.CONSISTENT(),incon,_) then incon;
     case(incon,_,_) then incon;
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("UnitChecker::chooseResult() failed\n");
       then fail();
   end match;
@@ -389,8 +389,8 @@ algorithm
       then (loc1,su2);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("UnitChecker::getUnknown() failed\n");
       then
         fail();
@@ -405,8 +405,8 @@ algorithm
     case(UnitAbsyn.SPECUNIT({},_)) then false;
     case(UnitAbsyn.SPECUNIT(_,_)) then true;
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("UnitChecker::hasUnknown() failed\n");
       then fail();
   end matchcontinue;
@@ -447,8 +447,8 @@ algorithm
         UnitAbsyn.SPECUNIT(tparams4,units);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("UnitChecker::mulSpecUnit() failed\n");
       then
         fail();
@@ -487,8 +487,8 @@ algorithm
       then (expo1::rest3);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("UnitChecker::powUnitVec() failed\n");
       then fail();
   end matchcontinue;
@@ -514,8 +514,8 @@ algorithm
         UnitAbsyn.SPECUNIT(tparams5,units);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("UnitChecker::divSpecUnit() failed\n");
       then fail();
   end matchcontinue;
@@ -554,8 +554,8 @@ algorithm
         (expo2::rest3);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("UnitChecker::powUnitVec() failed\n");
       then fail();
   end matchcontinue;
@@ -579,8 +579,8 @@ algorithm
         UnitAbsyn.SPECUNIT(params2,unitvec2);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("UnitChecker::powSpecUnit() failed\n");
       then
         fail();
@@ -608,8 +608,8 @@ algorithm
         ((expo3,param)::rest2);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("UnitChecker::powUnitParams() failed\n");
       then fail();
   end matchcontinue;
@@ -635,8 +635,8 @@ algorithm
         (expo3::rest2);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("UnitChecker::powUnitVec() failed\n");
       then fail();
   end matchcontinue;
@@ -663,8 +663,8 @@ algorithm
       then pres;
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("UnitChecker::negParamList() failed\n");
       then fail();
   end matchcontinue;
@@ -708,8 +708,8 @@ algorithm
         (UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(params3,unitvec2)),st2);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("UnitChecker::normalizeOnUnit() failed\n");
       then fail();
   end matchcontinue;
@@ -754,8 +754,8 @@ algorithm
         (param::rest2);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("UnitChecker::normalizeParamsExponents() failed\n");
       then
         fail();
@@ -793,8 +793,8 @@ algorithm
         (found2,expo,param::rest2);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("UnitChecker::getParam() failed\n");
       then fail();
   end matchcontinue;
@@ -828,8 +828,8 @@ algorithm
         (su3,st3);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("UnitChecker::normalizeParamsValues() failed\n");
       then fail();
   end matchcontinue;
@@ -860,8 +860,8 @@ algorithm
         su4;
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("UnitChecker::mulSpecUnitWithNorm() failed\n");
       then fail();
   end matchcontinue;

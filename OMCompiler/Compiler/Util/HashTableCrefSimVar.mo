@@ -141,7 +141,7 @@ algorithm
         outHT := BaseHashTable.add((cr, sv), outHT);
       then outHT;
     else
-      equation
+      algorithm
         Error.addInternalError("function addSimVarToHashTable failed", sourceInfo());
       then
         fail();

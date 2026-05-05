@@ -284,8 +284,8 @@ algorithm
     //should not ever happen
     //- when compilation is correct, this is impossible (only completed texts can be accessible to write out)
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.writeText failed - incomplete text was passed to be written\n");
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.writeText failed - incomplete text was passed to be written\n");
       then
         fail();
   end match;
@@ -455,8 +455,8 @@ algorithm
 
     //should not ever happen
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.softNL failed. \n");
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.softNL failed. \n");
       then
         fail();
 
@@ -588,8 +588,8 @@ algorithm
 
     //should not ever happen
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.pushBlock failed \n");
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.pushBlock failed \n");
       then
         fail();
 
@@ -872,7 +872,7 @@ algorithm
 
     //should not ever happen
     else
-      equation
+      algorithm
         Error.addInternalError("-!!!Tpl.nextIter failed - nextIter was called in a non-iteration context?", sourceInfo());
       then
         fail();
@@ -1067,8 +1067,8 @@ algorithm
 
     //should not ever happen
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.tokString failed.\n");
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.tokString failed.\n");
       then
         fail();
   end match;
@@ -1221,8 +1221,8 @@ algorithm
 
     //should not ever happen
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.stringListString failed.\n");
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.stringListString failed.\n");
       then
         fail();
   end match;
@@ -1278,8 +1278,8 @@ algorithm
 
     //should not ever happen
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.stringListFile failed.\n");
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.stringListFile failed.\n");
       then
         fail();
   end match;
@@ -1446,8 +1446,8 @@ algorithm
 
     //should not ever happen
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.tokString failed.\n");
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.tokString failed.\n");
       then
         fail();
   end match;
@@ -1596,8 +1596,8 @@ algorithm
 
     //should not ever happen
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.iterAlignWrapString failed.\n");
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.iterAlignWrapString failed.\n");
       then
         fail();
   end match;
@@ -1796,8 +1796,8 @@ algorithm
 
     //should not ever happen
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.tokString failed.\n");
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.tokString failed.\n");
       then
         fail();
   end match;
@@ -1948,8 +1948,8 @@ algorithm
 
     //should not ever happen
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.iterAlignWrapString failed.\n");
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.iterAlignWrapString failed.\n");
       then
         fail();
   end match;
@@ -2017,8 +2017,8 @@ algorithm
     //should not ever happen
     //- when compilation is correct, this is impossible (only completed texts can be accessible to write out)
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.textStrTok failed - incomplete text was passed to be converted.\n");
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.textStrTok failed - incomplete text was passed to be converted.\n");
       then
         fail();
   end match;
@@ -2361,7 +2361,7 @@ algorithm
 
     //TODO: let this function fail and the error message can be reported via  # ( textFile(txt,"file.cpp") ; failMsg="error" )
     else
-      equation
+      algorithm
         if Flags.isSet(Flags.FAILTRACE) then
           Debug.trace("-!!!Tpl.textFile failed - a system error ?\n");
         end if;
@@ -2408,8 +2408,8 @@ algorithm
 
     //TODO: let this function fail and the error message can be reported via  # ( textFile(txt,"file.cpp") ; failMsg="error" )
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.textFile failed - a system error ?\n");
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.textFile failed - a system error ?\n");
       then
         ();
 

@@ -592,7 +592,7 @@ algorithm
       (stmts, leftCrs) := inlineWhenForInitializationWhenStmt(stmt, leftCrs, inAcc);
     then (stmts, leftCrs);
 
-    else equation
+    else algorithm
       Error.addInternalError("function inlineWhenForInitializationWhenStmt failed", sourceInfo());
     then fail();
   end match;
@@ -900,8 +900,8 @@ algorithm
           then ();
 
         else
-          equation
-            otherVariables = BackendVariable.addVar(v, otherVariables);
+          algorithm
+            otherVariables := BackendVariable.addVar(v, otherVariables);
           then ();
       end match;
     end for;
@@ -1168,10 +1168,10 @@ algorithm
       vars := BackendVariable.listVar1(BackendVariable.varList(inVars));
     then (vars, inEqs, true, inDumpVars);
 
-    else equation
-      true = n > 0;
-      (vars, eqs, b, dumpVars) = preBalanceInitialSystem2(n, mt, inVars, inEqs, initVars, isLambda0, inB, inDumpVars);
-      (vars, eqs, b, dumpVars) = preBalanceInitialSystem1(n-1, mt, vars, eqs, initVars, isLambda0, b, dumpVars);
+    else algorithm
+      true := n > 0;
+      (vars, eqs, b, dumpVars) := preBalanceInitialSystem2(n, mt, inVars, inEqs, initVars, isLambda0, inB, inDumpVars);
+      (vars, eqs, b, dumpVars) := preBalanceInitialSystem1(n-1, mt, vars, eqs, initVars, isLambda0, b, dumpVars);
     then (vars, eqs, b, dumpVars);
   end match;
 end preBalanceInitialSystem1;
@@ -1936,7 +1936,7 @@ algorithm
       markedEqns := compsMarker2(var_list2, inVecVarToEq, inM, inFlatComps, inMarkedEqns, inLoopListComps);
     then markedEqns;
 
-    else equation
+    else algorithm
       Error.addCompilerNotification("It was not possible to check the given initialization system for consistency symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.");
     then fail();
   end matchcontinue;
@@ -2713,7 +2713,7 @@ algorithm
       // Error.addCompilerNotification("VARIABLE (fixed=false); " + BackendDump.varString(var));
     then (var, (vars, fixvars, eqns, stateSetFixCounts, hs, allPrimaryParameters, datarecon));
 
-    else equation
+    else algorithm
       Error.addInternalError("function collectInitialVars failed for: " + BackendDump.varString(inVar), sourceInfo());
     then fail();
   end matchcontinue;
@@ -2878,7 +2878,7 @@ algorithm
       eqns := BackendEquation.add(eqn, eqns);
     then (var, (eqns, reeqns));
 
-    else equation
+    else algorithm
       Error.addInternalError("function collectInitialBindings failed for: " + BackendDump.varString(inVar), sourceInfo());
     then fail();
   end match;

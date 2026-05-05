@@ -435,7 +435,7 @@ algorithm
       then
         ();
     else
-      equation
+      algorithm
         print("- stringDelimitListAndSeparate2 failed\n");
       then
         fail();

@@ -1087,8 +1087,8 @@ algorithm
       then inHtCr2U;
 
         else
-      equation
-        HtCr2U = BaseHashTable.add((FUnit.UPDATECREF, Unit.MASTER({})),inHtCr2U);
+      algorithm
+        HtCr2U := BaseHashTable.add((FUnit.UPDATECREF, Unit.MASTER({})),inHtCr2U);
         BaseHashTable.update((inCr,inUt),HtCr2U);
       then HtCr2U;
 

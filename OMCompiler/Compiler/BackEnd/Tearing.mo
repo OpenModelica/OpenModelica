@@ -148,7 +148,7 @@ algorithm
     case ("omcTearing") then OMC_TEARING();
     case ("cellier") then CELLIER_TEARING();
 
-    else equation
+    else algorithm
       Error.addInternalError(getInstanceName() + " got invalid name \"" + inTearingMethod + "\".", sourceInfo());
     then fail();
   end match;
@@ -967,7 +967,7 @@ algorithm
       then
         (outTVars,oMark);
     else
-      equation
+      algorithm
         print("Tearing.omcTearing2 failed!");
       then
         fail();
@@ -1087,7 +1087,7 @@ algorithm
       then
         tvar;
       else
-    equation
+    algorithm
         print("omcTearingSelectTearingVar failed because no unmatched var!\n");
       then
         fail();
@@ -1440,7 +1440,7 @@ algorithm
       guard
         intEq(listLength(rows),size) and
         not solvableLst(rows);
-      equation
+      algorithm
           //fcall(Flags.TEARING_DUMPVERBOSE, print,"cannot Assign Var" + intString(r) + " with Eqn " + intString(c) + "\n");
       then
         inNextQueue;
@@ -1572,8 +1572,8 @@ algorithm
     local
     case ({},_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_) then (inTVars,mark);
     else
-      equation
-        (outTVars,oMark) = omcTearing2(unsolvables,tSel_always,tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark,inTVars);
+      algorithm
+        (outTVars,oMark) := omcTearing2(unsolvables,tSel_always,tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark,inTVars);
       then
         (outTVars,oMark);
   end match;
@@ -2543,11 +2543,11 @@ algorithm
 
   // case: There are unsolvables and/or variables with annotation '__OpenModelica_tearingSelect = TearingSelect.always'
   else
-    equation
+    algorithm
       // First choose unsolvables and 'always'-vars as tVars
-      tvars = List.unique(listAppend(Unsolvables,tSel_always));
-      tVar_never = List.intersectionOnTrue(tSel_never,tvars,intEq);
-      tVar_discrete = List.intersectionOnTrue(discreteVars,tvars,intEq);
+      tvars := List.unique(listAppend(Unsolvables,tSel_always));
+      tVar_never := List.intersectionOnTrue(tSel_never,tvars,intEq);
+      tVar_discrete := List.intersectionOnTrue(discreteVars,tvars,intEq);
       if not listEmpty(tVar_never) then
         Error.addCompilerWarning("There are tearing variables with annotation attribute '__OpenModelica_tearingSelect = TearingSelect.never'. Use -d=tearingdump and -d=tearingdumpV for more information.");
       end if;
@@ -2573,10 +2573,10 @@ algorithm
         print("\n" + BORDER + "\nBEGINNING of TarjanMatching\n\n");
       end if;
 
-      tvars = listAppend(tvars,tvarsIn) annotation(__OpenModelica_DisableListAppendWarning=true);
+      tvars := listAppend(tvars,tvarsIn) annotation(__OpenModelica_DisableListAppendWarning=true);
 
       // assign vars to eqs until complete or partially causalisation(and restart algorithm)
-      (order,causal) = TarjanMatching(mIn,mtIn,meIn,ass1In,ass2In,orderIn,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
+      (order,causal) := TarjanMatching(mIn,mtIn,meIn,ass1In,ass2In,orderIn,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nEND of TarjanMatching\n" + BORDER + "\n\n");
         print("\n" + BORDER + "\n* TARJAN RESULTS:\n* ass1: " + stringDelimitList(List.mapArray(ass1In, intString),",")+"\n");
@@ -2590,12 +2590,12 @@ algorithm
       end if;
 
       // ascertain if there are new unsolvables now
-      unsolvables = getUnsolvableVarsConsiderMatching(arrayLength(meTIn),meTIn,ass1In,ass2In);
-      (_,unsolvables,_) = List.intersection1OnTrue(unsolvables,tvars,intEq);
+      unsolvables := getUnsolvableVarsConsiderMatching(arrayLength(meTIn),meTIn,ass1In,ass2In);
+      (_,unsolvables,_) := List.intersection1OnTrue(unsolvables,tvars,intEq);
       if debug then execStat("Tearing.CellierTearing2 - 2"); end if;
 
       // repeat until system is causal
-      (tvars, order) = CellierTearing2(causal,mIn,mtIn,meIn,meTIn,ass1In,ass2In,unsolvables,tvars,discreteVars,{},tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
+      (tvars, order) := CellierTearing2(causal,mIn,mtIn,meIn,meTIn,ass1In,ass2In,unsolvables,tvars,discreteVars,{},tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
 
    then
      (tvars, order);
@@ -2635,7 +2635,7 @@ algorithm
     case "MC3" then ModifiedCellierHeuristic_3;
     case "MC4" then ModifiedCellierHeuristic_4;
     else
-      equation
+      algorithm
         Error.addInternalError("Unknown tearing heuristic: " + heuristic, sourceInfo());
      then fail();
   end match;
@@ -3530,7 +3530,7 @@ algorithm
         (outVarList, outMax) := getAllVarsWithMostPoints(vrest, prest, outVarList, outMax);
       then ();
     else
-      equation
+      algorithm
         Error.addCompilerError("Tearing.getAllVarsWithMostPoints: Finding variables with most points failed.");
         fail();
       then ();

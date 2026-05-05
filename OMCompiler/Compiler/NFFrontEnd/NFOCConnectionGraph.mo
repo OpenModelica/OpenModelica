@@ -1613,24 +1613,24 @@ algorithm
         "";
 
     else
-      equation
-        fileNameTraceRemovedConnections = modelNameQualified + "_removed_connections.txt";
+      algorithm
+        fileNameTraceRemovedConnections := modelNameQualified + "_removed_connections.txt";
         print("Tyring to start GraphViz *lefty* to visualize the graph. You need to have lefty in your PATH variable\n");
         print("Make sure you quit GraphViz *lefty* via Right Click->quit to be sure the process will be exited.\n");
         print("If you quit the GraphViz *lefty* window via X, please kill the process in task manager to continue.\n");
-        omhome = Settings.getInstallationDirectoryPath();
-        omhome = System.stringReplace(omhome, "\"", "");
+        omhome := Settings.getInstallationDirectoryPath();
+        omhome := System.stringReplace(omhome, "\"", "");
         // omhome = System.stringReplace(omhome, "\\", "/");
 
         // create a lefty command and execute it
-        leftyCMD = "load('" + omhome + "/share/omc/scripts/openmodelica.lefty');" + "openmodelica.init();openmodelica.createviewandgraph('" +
+        leftyCMD := "load('" + omhome + "/share/omc/scripts/openmodelica.lefty');" + "openmodelica.init();openmodelica.createviewandgraph('" +
             fileNameGraphViz + "','file',null,null);txtview('off');";
         print("Running command: " + "lefty -e " + leftyCMD + " > " + fileNameTraceRemovedConnections + "\n");
         // execute lefty
-        leftyExitStatus = System.systemCall("lefty -e " + leftyCMD, fileNameTraceRemovedConnections);
+        leftyExitStatus := System.systemCall("lefty -e " + leftyCMD, fileNameTraceRemovedConnections);
         // show the exit status
         print("GraphViz *lefty* exited with status:" + intString(leftyExitStatus) + "\n");
-        brokenConnects = System.readFile(fileNameTraceRemovedConnections);
+        brokenConnects := System.readFile(fileNameTraceRemovedConnections);
         print("GraphViz OpenModelica assistant returned the following broken connects: " + brokenConnects + "\n");
       then
         brokenConnects;

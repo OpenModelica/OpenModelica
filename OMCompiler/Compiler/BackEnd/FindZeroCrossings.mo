@@ -270,7 +270,7 @@ algorithm
       eqns1 := listAppend(eqns, eqns1);
     then (whenEquation, vars1, eqns1, index, ht);
 
-    else equation
+    else algorithm
       Error.addInternalError(getInstanceName() + " failed.", sourceInfo());
     then fail();
   end match;
@@ -447,7 +447,7 @@ algorithm
       stmts := listAppend(preStmts, stmts);
     then (stmt::stmts, {}, index);
 
-    else equation
+    else algorithm
       Error.addInternalError(getInstanceName() + " failed.", sourceInfo());
     then fail();
   end match;
@@ -513,7 +513,7 @@ algorithm
       condition := DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT);
     then (condition, {var}, {stmt}, inIndex+1);
 
-    else equation
+    else algorithm
       Error.addInternalError(getInstanceName() + " failed.", sourceInfo());Error.addInternalError(getInstanceName() + " failed.", sourceInfo());
     then fail();
   end match;
@@ -1577,7 +1577,7 @@ algorithm
       res2 := res1 :: res2;
     then (res2, index);
 
-    else equation
+    else algorithm
       Error.addInternalError(getInstanceName() + " failed.", sourceInfo());
     then fail();
   end match;
@@ -1619,7 +1619,7 @@ algorithm
         ZeroCrossings.add(zeroCrossings, zc);
       then (relation, index+2);
 
-    else equation
+    else algorithm
       Error.addInternalError(getInstanceName() + " failed for: " + ExpressionDump.printExpStr(relation), sourceInfo());
     then fail();
   end match;
@@ -1661,7 +1661,7 @@ algorithm
     case (_, BackendDAE.ZERO_CROSSING(relation_=rel)::_)
       then (rel, index);
 
-    else equation
+    else algorithm
       Error.addInternalError(getInstanceName() + " failed for: " + ExpressionDump.printExpStr(relation), sourceInfo());
     then fail();
   end match;
@@ -1741,7 +1741,7 @@ algorithm
     case (_, DAE.CALL(path=Absyn.IDENT("sample"), expLst={_, _, _}))
     then inZCexp2;
 
-    else equation
+    else algorithm
       Error.addInternalError(getInstanceName() + " failed for {" + ExpressionDump.printExpStr(inZCexp1) + "} and {" + ExpressionDump.printExpStr(inZCexp2) + "}", sourceInfo());
     then fail();
   end match;
@@ -1919,7 +1919,7 @@ algorithm
       (statementLst, extraArg) := traverseStmtsExps(inStmts, (inIteratorExp, inExplst, inRange, tpl2, tpl3), inKnvars);
     then (statementLst, extraArg);
 
-    else equation
+    else algorithm
       Error.addInternalError(getInstanceName() + " failed.", sourceInfo());
     then fail();
   end match;

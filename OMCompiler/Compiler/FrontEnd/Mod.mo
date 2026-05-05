@@ -200,7 +200,7 @@ algorithm
 
     /*/ failure
     case (cache,env,ih,pre,m,impl,info)
-      equation
+      algorithm
         str = "- Mod.elabMod  failed: " +
               SCodeDump.printModStr(m) +
               " in env: " +
@@ -380,7 +380,7 @@ algorithm
     // replaceable package Medium = Modelica.Media.Air.MoistAir constrainedby Modelica.Media.Interfaces.PartialMedium;
     // modifier: redeclare Medium = Medium
     case SCode.CLASS(cn, prefixes as SCode.PREFIXES(vis,redecl,fi,io,repl), enc, p, restr, SCode.DERIVED(Absyn.TPATH(Absyn.IDENT(bcn), NONE()),mod,attr1), cmt, i)
-      equation
+      algorithm
         true = stringEq(cn, bcn);
         (c, _) = Lookup.lookupClassLocal(inEnv, bcn);
         tp = SCodeUtil.getDerivedTypeSpec(c);
@@ -574,7 +574,7 @@ algorithm
     /* / use the expression second
     case ((DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,
                         binding = SOME(DAE.TYPED(modifierAsExp = dexp, info = info)))))
-      equation
+      algorithm
         //es = ExpressionDump.printExpStr(e);
         subs_1 = unelabSubmods(subs);
         e_1 = Expression.unelabExp(dexp);
@@ -763,9 +763,9 @@ algorithm
       then
         DAE.REDECL(finalPrefix,each_,elem, DAE.NOMOD());
     else
-      equation
+      algorithm
         print("- elab_untyped_mod ");
-        s = SCodeDump.printModStr(inMod,SCodeDump.defaultOptions);
+        s := SCodeDump.printModStr(inMod,SCodeDump.defaultOptions);
         print(s);
         print(" failed\n");
       then
@@ -926,11 +926,11 @@ algorithm
 
     // Both modifiers have a binding.
     else
-      equation
-        info1 = SCodeUtil.getModifierInfo(mod1);
-        info2 = SCodeUtil.getModifierInfo(mod2);
-        scope = printModScope(inModScope);
-        name = stringDelimitList(listReverse(inElementName), ".");
+      algorithm
+        info1 := SCodeUtil.getModifierInfo(mod1);
+        info2 := SCodeUtil.getModifierInfo(mod2);
+        scope := printModScope(inModScope);
+        name := stringDelimitList(listReverse(inElementName), ".");
         Error.addMultiSourceMessage(Error.DUPLICATE_MODIFICATIONS,
           {name, scope}, {info2, info1});
       then
@@ -1034,7 +1034,7 @@ algorithm
       then
         mod_1;
     else
-      equation
+      algorithm
         Print.printBuf("- Mod.lookupModificationP failed\n");
       then
         fail();
@@ -1089,8 +1089,8 @@ algorithm
         m;
 
     else
-      equation
-        m = mergeModifiers(inMods, DAE.NOMOD(), inSMod);
+      algorithm
+        m := mergeModifiers(inMods, DAE.NOMOD(), inSMod);
       then
         m;
   end matchcontinue;
@@ -1196,8 +1196,8 @@ algorithm
     case (_, DAE.NOMOD(), _) then subMod;
     case (_,DAE.MOD(binding = SOME(DAE.TYPED())), _) then eqMod;
     else
-      equation
-        mod = checkDuplicateModifications(subMod,eqMod,n);
+      algorithm
+        mod := checkDuplicateModifications(subMod,eqMod,n);
       then
         mod;
   end match;
@@ -2192,7 +2192,7 @@ algorithm
       then
         str;
 
-    else equation print(" failure in printModStr \n"); then fail();
+    else algorithm print(" failure in printModStr \n"); then fail();
 
   end matchcontinue;
 end printModStr;
@@ -2231,7 +2231,7 @@ algorithm
     case(DAE.NOMOD(),_) then "";
 
     else
-      equation
+      algorithm
         print(" failed prettyPrintMod\n");
       then
         fail();
@@ -2381,8 +2381,8 @@ algorithm
         res;
 
     else
-      equation
-        res = "---Mod.printEqmodStr FAILED---";
+      algorithm
+        res := "---Mod.printEqmodStr FAILED---";
       then
         res;
   end matchcontinue;
@@ -2893,7 +2893,7 @@ algorithm
         DAE.MOD(finalPrefix,eachPrefix,subs,eq,info);
 
     else
-      equation
+      algorithm
         print("Mod.addEachIfNeeded failed on: " + printModStr(inMod) + "\n");
       then
         fail();
@@ -2928,7 +2928,7 @@ algorithm
         DAE.MOD(finalPrefix,SCode.EACH(),subs,eq,info);
 
     else
-      equation
+      algorithm
         print("Mod.addEachOneLevel failed on: " + printModStr(inMod) + "\n");
       then
         fail();

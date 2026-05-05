@@ -1128,8 +1128,8 @@ algorithm
     case (v as BackendDAE.VAR(varKind = BackendDAE.PARAM()),_)
       then (v,inVars);
     else
-      equation
-        vars1 = BackendVariable.addVar(inVar,inVars);
+      algorithm
+        vars1 := BackendVariable.addVar(inVar,inVars);
       then (inVar,vars1);
   end match;
 end copyNonParamVariables;
@@ -1606,9 +1606,9 @@ algorithm
         (systs,shared) := partitionIndependentBlocksHelper(syst,shared,Error.getNumErrorMessages(),false);
       then BackendDAE.DAE(systs,shared);
     else // TODO: Improve support for partitioned systems of equations
-      equation
-        BackendDAE.DAE({syst},shared) = collapseIndependentBlocks(dlow);
-        (systs,shared) = partitionIndependentBlocksHelper(syst,shared,Error.getNumErrorMessages(),false);
+      algorithm
+        BackendDAE.DAE({syst},shared) := collapseIndependentBlocks(dlow);
+        (systs,shared) := partitionIndependentBlocksHelper(syst,shared,Error.getNumErrorMessages(),false);
       then BackendDAE.DAE(systs,shared);
   end match;
 end partitionIndependentBlocks;
@@ -1657,7 +1657,7 @@ algorithm
         GCExt.free(rixs);
       then (systs,shared);
     else
-      equation
+      algorithm
         Error.assertion(not (numErrorMessages==Error.getNumErrorMessages()),"BackendDAEOptimize.partitionIndependentBlocks failed without good error message",AbsynUtil.dummyInfo);
       then fail();
   end matchcontinue;
@@ -1922,7 +1922,7 @@ algorithm
           listLength(vars1) == listLength(vars2)
         then listLength(vars1);
       else
-        equation
+        algorithm
           //print(BackendDump.jacobianString(inJac));
           print("another JAC\n");
         then -1;
@@ -2060,7 +2060,7 @@ algorithm
       (i1,i2,i3,i4,i5,i6,i7,i8) := countOperationsInFunction(elemLst,shared,inTuple);
       then (e, (i1,i2,i3,i4,i5,i6,i7,i8+1));
     else
-      equation
+      algorithm
         //print(ExpressionDump.dumpExpStr(inExp,0)+"\n");
         then (inExp,inTuple);
   end matchcontinue;
@@ -2181,7 +2181,7 @@ algorithm
     case (DAE.USERDEFINED(),(i1,i2,i3,i4,i5,i6,i7,i8))
       then (i1,i2,i3,i4,i5,i6+1,i7,i8);
     else
-    equation
+    algorithm
       print("not supported operator\n");
       then inTpl;
   end match;

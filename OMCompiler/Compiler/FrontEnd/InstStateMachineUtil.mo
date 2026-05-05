@@ -644,8 +644,8 @@ algorithm
       expLst={DAE.CREF(componentRef=cref1)})) guard BaseHashTable.hasKey(cref1, smNodeToFlatSMGroup)
       then BaseHashTable.get(cref1, smNodeToFlatSMGroup);
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- InstStateMachineUtil.isInFlatSM failed: Hash table lookup failed for " + DAEDump.dumpElementsStr({inElement}));
         BaseHashTable.dumpHashTableStatistics(smNodeToFlatSMGroup);
       then fail();

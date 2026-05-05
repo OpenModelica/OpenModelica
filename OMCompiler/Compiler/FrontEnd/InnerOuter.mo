@@ -176,7 +176,7 @@ algorithm
     case (Absyn.NOT_INNER_OUTER (),dae,ih,graphNew,_) then (dae,ih,graphNew);
     // something went totally wrong!
     else
-      equation
+      algorithm
         print("- InnerOuter.handleInnerOuterEquations failed!\n");
       then fail();
   end matchcontinue;
@@ -282,7 +282,7 @@ algorithm
 
     // something went wrong, print a failtrace and then
     else
-      equation
+      algorithm
         //true = Flags.isSet(Flags.FAILTRACE);
         //Debug.traceln("- InnerOuter.removeInnerPrefixFromCref failed on prefix: " + PrefixUtil.printPrefixStr(inPrefix) +
         // " cref: " + ComponentReference.printComponentRefStr(inCref));
@@ -460,7 +460,7 @@ algorithm
 
     // This can fail, for innerouter, the inner part is not declared in env so instead the call to addOuterConnectIfEmptyNoEnv will succed.
     else
-      equation
+      algorithm
         //print("Failed lookup: " + ComponentReference.printComponentRefStr(cr1) + "\n");
         //print("Failed lookup: " + ComponentReference.printComponentRefStr(cr2) + "\n");
         // print("#FAILURE# in: addOuterConnectIfEmpty:__ " + ComponentReference.printComponentRefStr(cr1) + " " + ComponentReference.printComponentRefStr(cr2) + "\n");
@@ -529,7 +529,7 @@ algorithm
       then (isInner,isOuter);
      // failure
     else
-      equation
+      algorithm
         ErrorExt.rollBack("lookupVarInnerOuterAttr");
       then fail();
   end matchcontinue;
@@ -893,7 +893,7 @@ algorithm
 
     /* only add inner elements
     case(ih,inPrefix,inInnerOuter,inInstInner as INST_INNER(name=name))
-      equation
+      algorithm
         false = AbsynUtil.isInner(inInnerOuter);
         // prefix the name!
         (_,cref) = PrefixUtil.prefixCref(FCore.emptyCache(),{},emptyInstHierarchy,inPrefix, ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {}));
@@ -1067,8 +1067,8 @@ algorithm
 
     // failure
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("InnerOuter.addOuterPrefix failed to add: outer cref: " +
           ComponentReference.printComponentRefStr(inOuterComponentRef) + " refers to inner cref: " +
           ComponentReference.printComponentRefStr(inInnerComponentRef) + " to IH");
@@ -1111,7 +1111,7 @@ algorithm
 
     // failure
     else
-      equation
+      algorithm
         // true = Flags.isSet(Flags.FAILTRACE);
         // Debug.traceln("- InnerOuter.prefixOuterCrefWithTheInnerPrefix failed to find prefix of inner for outer: prefix/cref " + PrefixUtil.printPrefixStr(inPrefix) + "/" + ComponentReference.printComponentRefStr(inOuterComponentRef));
       then
@@ -1403,7 +1403,7 @@ algorithm
         // print("Updated NEW to IH: key:" + ComponentReference.printComponentRefStr(key) + " value: " + printInnerDefStr(value) + "\n");
       then HASHTABLE(hashvec,varr_1,bsize,n);
     else
-      equation
+      algorithm
         print("- InnerOuter.add failed\n");
       then
         fail();
@@ -1589,7 +1589,7 @@ algorithm
       then
         VALUE_ARRAY(n_1,arr_2);
     else
-      equation
+      algorithm
         print("-InstHierarchyHashTable.valueArrayAdd failed\n");
       then
         fail();
@@ -1614,7 +1614,7 @@ algorithm
       then
         valueArray;
     else
-      equation
+      algorithm
         print("-InstHierarchyHashTable.valueArraySetnth failed\n");
       then
         fail();
@@ -1638,7 +1638,7 @@ algorithm
       then
         valueArray;
     else
-      equation
+      algorithm
         print("-InstHierarchyHashTable.valueArrayClearnth failed\n");
       then
         fail();

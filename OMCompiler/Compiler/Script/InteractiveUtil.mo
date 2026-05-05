@@ -2886,7 +2886,7 @@ algorithm
         outClass;
 
     else
-      equation
+      algorithm
         Print.printBuf("Failed in replaceInnerClass\n");
       then
         fail();
@@ -2999,7 +2999,7 @@ algorithm
 
 /* Does nothing
     case (c as Absyn.CLASS(),name)
-      equation
+      algorithm
         handle = Print.saveAndClearBuf();
         Print.printBuf("InteractiveUtil.getInnerClass failed, c:");
         Dump.dump(Absyn.PROGRAM({c},Absyn.TOP()));
@@ -3447,7 +3447,7 @@ algorithm
       then
         res;
     else
-      equation
+      algorithm
         Print.printBuf("InteractiveUtil.recordConstructorToModification failed, exp=");
         Print.printBuf(Dump.printExpStr(inExp));
         Print.printBuf("\n");
@@ -3482,7 +3482,7 @@ algorithm
       then
         res;
     else
-      equation
+      algorithm
         Print.printBuf("- InteractiveUtil.namedargToModification failed\n");
       then
         fail();

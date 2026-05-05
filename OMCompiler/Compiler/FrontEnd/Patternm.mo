@@ -155,10 +155,10 @@ algorithm
       String str1,str2;
     case ({},_,_,_) then status;
     else
-      equation
-        (argsNames,_) = AbsynUtil.getNamedFuncArgNamesAndValues(args);
-        str1 = stringDelimitList(argsNames, ",");
-        str2 = stringDelimitList(fieldNameList, ",");
+      algorithm
+        (argsNames,_) := AbsynUtil.getNamedFuncArgNamesAndValues(args);
+        str1 := stringDelimitList(argsNames, ",");
+        str2 := stringDelimitList(fieldNameList, ",");
         Error.addSourceMessage(Error.META_INVALID_PATTERN_NAMED_FIELD, {str1,str2}, info);
       then Util.FAILURE();
   end match;
@@ -451,9 +451,9 @@ algorithm
       then (cache,pattern::patterns);
 
     else
-      equation
-        s = Dump.printExpStr(lhs);
-        s = "pattern " + s;
+      algorithm
+        s := Dump.printExpStr(lhs);
+        s := "pattern " + s;
         Error.addSourceMessage(Error.WRONG_NO_OF_ARGS, {s}, info);
       then fail();
   end match;
@@ -587,7 +587,7 @@ algorithm
     case (_,_,{},0,_) then ();
 /* Language extension to not have to bind everything...
     case (_,_,strs,0,_)
-      equation
+      algorithm
         str = stringDelimitList(strs,",");
         str = AbsynUtil.pathString(path) + " missing pattern for fields: " + str;
         Error.addSourceMessage(Error.META_INVALID_PATTERN,{str},info);
@@ -595,7 +595,7 @@ algorithm
 */
     /*
     case (path,_,_,_,info)
-      equation
+      algorithm
         str = AbsynUtil.pathString(path) + " mixing positional and named patterns";
         Error.addSourceMessage(Error.META_INVALID_PATTERN,{str},info);
       then fail();
@@ -672,10 +672,10 @@ algorithm
         true := AbsynUtil.pathEqual(path1,path2);
       then ();
     else
-      equation
-        s = Dump.printExpStr(lhs);
-        s1 = AbsynUtil.pathString(path1);
-        s2 = AbsynUtil.pathString(path2);
+      algorithm
+        s := Dump.printExpStr(lhs);
+        s1 := AbsynUtil.pathString(path1);
+        s2 := AbsynUtil.pathString(path2);
         Error.addSourceMessage(Error.META_CONSTRUCTOR_NOT_PART_OF_UNIONTYPE, {s,s1,s2}, info);
       then fail();
   end matchcontinue;
@@ -732,7 +732,7 @@ algorithm
     case DAE.PAT_AS(id=id,pat=pat) then id + " as " + patternStr(pat);
     case DAE.PAT_AS_FUNC_PTR(id, pat) then id + " as " + patternStr(pat);
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {"Patternm.patternStr not implemented correctly"});
       then "*PATTERN*";
   end matchcontinue;
@@ -807,9 +807,9 @@ algorithm
         exp := DAE.MATCHEXPRESSION(elabMatchTy,elabExps,inputAliases,matchDecls,elabCases,et);
       then (cache,exp,prop);
     else
-      equation
-        true = numError == Error.getNumErrorMessages();
-        str = Dump.printExpStr(matchExp);
+      algorithm
+        true := numError == Error.getNumErrorMessages();
+        str := Dump.printExpStr(matchExp);
         Error.addSourceMessage(Error.META_MATCH_GENERAL_FAILURE, {str}, info);
       then fail();
   end matchcontinue;
@@ -1031,8 +1031,8 @@ algorithm
         // This mod was high enough that all values were distinct
       then mod;
     else
-      equation
-        true = inMod < 65536;
+      algorithm
+        true := inMod < 65536;
       then findMinMod(inIxs,inMod*2);
   end matchcontinue;
 end findMinMod;
@@ -1712,7 +1712,7 @@ algorithm
       then caseDeadCodeElimination(matchType,listReverse(acc),{},{},false);
         /* Tricky to get right; I'll try again later as it probably only gives marginal results anyway
     case (Absyn.MATCH(),DAE.CASE(patterns=pats,info=info)::rest,prevPatterns as _::_,acc,iter)
-      equation
+      algorithm
         oinfo = findOverlappingPattern(pats,acc);
         Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO), Error.META_DEAD_CODE, {"Unreachable pattern"}, info);
         Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO), Error.META_DEAD_CODE, {"Shadowing case"}, oinfo);
@@ -1738,7 +1738,7 @@ algorithm
     local
       list<DAE.Pattern> ps1,ps2;
     case (ps1,DAE.CASE(patterns=ps2,info=info)::_)
-      equation
+      algorithm
         true = patternListsDoOverlap(ps1,ps2); ???
       then info;
     case (ps1,_::prevCases) then findOverlappingPattern(ps1,prevCases);
@@ -2302,9 +2302,9 @@ algorithm
       then (cases,ty);
 
     else
-      equation
-        tys = List.unionOnTrue(itys, {}, Types.equivtypes);
-        str = stringAppendList(List.map1r(List.map(tys, Types.unparseType), stringAppend, "\n  "));
+      algorithm
+        tys := List.unionOnTrue(itys, {}, Types.equivtypes);
+        str := stringAppendList(List.map1r(List.map(tys, Types.unparseType), stringAppend, "\n  "));
         Error.addSourceMessage(Error.META_MATCHEXP_RESULT_TYPES, {str}, info);
       then fail();
 
@@ -2344,7 +2344,7 @@ algorithm
       then case_::cases;
 
     else
-      equation
+      algorithm
         Error.addSourceMessage(Error.INTERNAL_ERROR, {"Patternm.fixCaseReturnTypes2 failed"}, inInfo);
       then fail();
   end matchcontinue;
@@ -2588,7 +2588,7 @@ algorithm
       then (cache,NONE());
 
     else
-      equation
+      algorithm
         Error.addSourceMessage(Error.INTERNAL_ERROR,{"Patternm.addLocalDecls failed"},info);
       then (inCache,NONE());
   end matchcontinue;

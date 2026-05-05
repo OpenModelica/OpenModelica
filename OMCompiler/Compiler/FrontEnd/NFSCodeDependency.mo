@@ -112,8 +112,8 @@ algorithm
         ();
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- NFSCodeDependency.analyseClass failed for " +
           AbsynUtil.pathString(inClassName) + " in " +
           NFSCodeEnv.getEnvName(inEnv));
@@ -330,8 +330,8 @@ algorithm
         ();
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- NFSCodeDependency.analyseItem failed on " +
           NFSCodeEnv.getItemName(inItem) + " in " +
           NFSCodeEnv.getEnvName(inEnv));
@@ -404,8 +404,8 @@ algorithm
         ();
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- NFSCodeDependency.analyseItemNoStopOnUsed failed on " +
           NFSCodeEnv.getItemName(inItem) + " in " +
           NFSCodeEnv.getEnvName(inEnv));
@@ -670,12 +670,12 @@ algorithm
 
     // Otherwise it's not valid, so print an error message.
     else
-      equation
-        has_con = List.isMemberOnTrue(
+      algorithm
+        has_con := List.isMemberOnTrue(
           "constructor", inElements, stringEqual);
-        has_des = List.isMemberOnTrue(
+        has_des := List.isMemberOnTrue(
           "destructor", inElements, stringEqual);
-        env_str = NFSCodeEnv.getEnvName(inEnv);
+        env_str := NFSCodeEnv.getEnvName(inEnv);
         checkExternalObject2(inElements, has_con, has_des, env_str, inInfo);
       then
         fail();
@@ -804,8 +804,8 @@ algorithm
         ();
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- NFSCodeDependency.analyseRedeclaredClass2 failed for " +
           NFSCodeEnv.getItemName(inItem) + " in " +
           NFSCodeEnv.getEnvName(inEnv));
@@ -1143,8 +1143,8 @@ algorithm
 
     // Otherwise we can just use analyseElements.
     else
-      equation
-        _ = analyseElement(inElement, inEnv, {}, SCode.R_CLASS());
+      algorithm
+        _ := analyseElement(inElement, inEnv, {}, SCode.R_CLASS());
       then
         ();
   end matchcontinue;
@@ -1234,7 +1234,7 @@ algorithm
         ();
 
     else
-      equation
+      algorithm
         analyseModifier(inModifier, inEnv, inTypeEnv, inInfo);
       then
         ();
@@ -1752,9 +1752,9 @@ algorithm
         (stmt, env);
 
     else
-      equation
-        info = SCodeUtil.getStatementInfo(stmt);
-        (_, _) = SCodeUtil.mapFoldStatementExps(stmt, traverseExp, (env, info));
+      algorithm
+        info := SCodeUtil.getStatementInfo(stmt);
+        (_, _) := SCodeUtil.mapFoldStatementExps(stmt, traverseExp, (env, info));
       then
         (stmt, env);
 

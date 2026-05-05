@@ -587,7 +587,7 @@ algorithm
 
   else
   // could not evaluate it
-   equation
+   algorithm
     then expIn;
   end matchcontinue;
 end evaluateConstantFunctionCallExp;
@@ -932,14 +932,14 @@ algorithm
     then (exp,lhsExpIn,{},funcsIn,eqIdx,changed,callSignLst);
 
     else
-      equation
-        callSignLst = callSignLstIn;
+      algorithm
+        callSignLst := callSignLstIn;
         if Expression.isCall(rhsExpIn) then
           //Add a call signature for the call that could not been evaluated
-          signature = getCallSignatureForCall(rhsExpIn);
-          signature.canBeEvaluated = false;
+          signature := getCallSignatureForCall(rhsExpIn);
+          signature.canBeEvaluated := false;
           if not List.isMemberOnTrue(signature,callSignLstIn,callSignatureIsEqual) then
-            callSignLst = signature::callSignLst;
+            callSignLst := signature::callSignLst;
           end if;
         end if;
       then (rhsExpIn,lhsExpIn,{},funcsIn,eqIdx,false,callSignLst);
@@ -982,7 +982,7 @@ algorithm
       then
         lst;
     else
-      equation
+      algorithm
         //print("Could not scalarize EXP:\n");
         //print(ExpressionDump.dumpExpStr(e,0)+"\n");
       then {e};
@@ -1005,8 +1005,8 @@ algorithm
       then
         lst;
     else
-      equation
-        cref = DAEUtil.varCref(e);
+      algorithm
+        cref := DAEUtil.varCref(e);
       then {cref};
   end matchcontinue;
 end expandComplexElementsToCrefs;
@@ -1096,7 +1096,7 @@ algorithm
         expLst := List.map(expLst,setRecordTypes);
       then DAE.TUPLE(expLst);
     else
-    equation
+    algorithm
       then inExp;
   end matchcontinue;
 end setRecordTypes;
@@ -1292,7 +1292,7 @@ algorithm
       then
         (varOutputs,outputExp,varScalarCrefs);
     else
-      equation
+      algorithm
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
           print("buildVariableFunctionParts failed!\n");
           print("\n scalarOutputs \n"+stringDelimitList(List.map(List.flatten(scalarOutputs),ComponentReference.printComponentRefStr),"\n")+"\n");
@@ -1427,7 +1427,7 @@ algorithm
       then
         (constCompl,varCompl,constScalar,varScalar);
     else
-      equation
+      algorithm
         print("checkIfOutputIsEvaluatedConstant failed!\n");
         then
           fail();
@@ -1486,7 +1486,7 @@ algorithm
       then
         var;
     else
-      equation
+      algorithm
         print("generateOutputElements failed!\n");
       then fail();
   end match;
@@ -1531,7 +1531,7 @@ algorithm
       then
         var;
     else
-      equation
+      algorithm
         print("generateProtectedElements failed!\n");
       then fail();
   end match;
@@ -1853,7 +1853,7 @@ algorithm
       then
         eqs;
     else
-      equation
+      algorithm
         print("generateConstEqs failed!\n");
       then
         fail();
@@ -2324,7 +2324,7 @@ algorithm
   case(DAE.RANGE(start=DAE.ICONST(i1),step=SOME(DAE.ICONST(i3)),stop=DAE.ICONST(i2)))
     then (i1,i2,i3);
   else
-  equation
+  algorithm
     //print("getRangeBounds failed!"+ExpressionDump.printExpStr(range)+"\n");
     then fail();
   end match;
@@ -2394,7 +2394,7 @@ algorithm
      then
        (eval,stmts1,repl);
      else
-       equation
+       algorithm
          if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
            print("evaluateIfStatement failed \n");
          end if;
@@ -2488,7 +2488,7 @@ algorithm
       then
         DAE.STMT_ASSIGN(typ,lhs,rhs,source);
     else
-      equation
+      algorithm
         print("equationToStatement failed!\n");
       then fail();
   end match;
@@ -2596,7 +2596,7 @@ algorithm
       end if;
     then fail();
   else
-    equation
+    algorithm
       print("getStatementLHS update for !\n"+DAEDump.ppStatementStr(stmt));
     then fail();
   end match;
@@ -2648,8 +2648,8 @@ algorithm
       listAppend(expLst, expsIn);
 
   else
-    equation
-      expLst = getStatementLHS(stmt,{});
+    algorithm
+      expLst := getStatementLHS(stmt,{});
     then
       listAppend(expLst, expsIn);
 
@@ -2762,7 +2762,7 @@ algorithm
         then
           DAE.STMT_ASSIGN(typ,lhs,rhs,source);
       else
-        equation
+        algorithm
           print("equationToStmt failed for: "+BackendDump.dumpEqnsStr({eqIn})+"\n");
         then fail();
   end matchcontinue;
@@ -2779,7 +2779,7 @@ algorithm
       then
         t;
     else
-      equation
+      algorithm
       print("expType failed for: "+ExpressionDump.printExpStr(eIn)+"\n");
       then
         fail();
@@ -2870,7 +2870,7 @@ algorithm
       then
         {};
     else
-    equation
+    algorithm
       then
         {};
   end matchcontinue;
@@ -3267,7 +3267,7 @@ algorithm
       then
         repl;
     else
-      equation
+      algorithm
         print("collectReplacements failed\n");
       then
         fail();

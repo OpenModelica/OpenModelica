@@ -126,8 +126,8 @@ algorithm
         p;
     /* failure */
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("ClassLoader.loadClass failed\n");
       then
         fail();

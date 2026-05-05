@@ -2130,7 +2130,7 @@ protected
 
       model M
         SomeType a;
-      equation
+      algorithm
         a.b = 0;
       end M;
 
@@ -2138,7 +2138,7 @@ protected
 
       model M
         SomeType a;
-      equation
+      algorithm
         a.c = 0;
       end M;
     "

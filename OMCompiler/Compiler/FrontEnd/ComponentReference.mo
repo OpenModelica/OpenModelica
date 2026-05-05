@@ -1058,7 +1058,7 @@ algorithm
     //        NOTE: THIS IS NOT A BUG IN MMC!
     /* adrpo: comment this and try to make it work faster with the two cases below!
     case (cr1 as DAE.CREF_QUAL(ident = n1),cr2 as DAE.CREF_IDENT)
-      equation
+      algorithm
         s1 = printComponentRefStr(cr1);
         s2 = printComponentRefStr(cr2);
         true = stringEq(s1, s2);
@@ -1506,7 +1506,7 @@ algorithm
       arg := func(cref,argIn);
     then traverseCref(cr,func,arg);
   else
-    equation
+    algorithm
       print("traverseCref failed!");
       then fail();
   end matchcontinue;
@@ -1794,8 +1794,8 @@ algorithm
       then (basety, dims);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("ComponentReference.crefTypeFull2 failed on cref: ");
         Debug.traceln(printComponentRefStr(inCref));
       then
@@ -1851,8 +1851,8 @@ algorithm
     case DAE.CREF_QUAL(identType = ty) then ty;
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("ComponentReference.crefType failed on cref: ");
         Debug.traceln(printComponentRefStr(inCref));
       then
@@ -2012,10 +2012,10 @@ algorithm
     case(DAE.CREF_QUAL(name,t2,_,_)) then (name,t2);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("-ComponentReference.crefType failed on Cref:");
-        s = printComponentRefStr(inRef);
+        s := printComponentRefStr(inRef);
         Debug.traceln(s);
       then
         fail();
@@ -2646,8 +2646,8 @@ algorithm
         makeCrefQual(name,identType,subs,child);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Expression.replaceCref_SliceSub failed\n");
       then
         fail();
@@ -3313,8 +3313,8 @@ algorithm
     case (_,_) then expandCref_impl(inCref,expandRecord);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- ComponentReference.expandCref failed on " +
           printComponentRefStr(inCref));
       then
@@ -3555,8 +3555,8 @@ algorithm
         joinCrefs(outCref, cr);
 
       // all other should probably fails or evaluated before
-      else equation
-        str = ExpressionDump.printSubscriptStr(subScript);
+      else algorithm
+        str := ExpressionDump.printSubscriptStr(subScript);
         Error.addInternalError("function ComponentReference.makeCrefsFromSubScriptLst for:" + str + "\n", sourceInfo());
       then
         fail();
@@ -3599,8 +3599,8 @@ algorithm
     then
       DAE.CREF_IDENT(str,DAE.T_UNKNOWN_DEFAULT,{});
 
-    else equation
-      str = ExpressionDump.dumpExpStr(inExp, 0);
+    else algorithm
+      str := ExpressionDump.dumpExpStr(inExp, 0);
       Error.addInternalError("function ComponentReference.makeCrefsFromSubScriptExp for:" + str + "\n", sourceInfo());
     then
       fail();
@@ -3672,8 +3672,8 @@ algorithm
       then inAccumCrefs;
 
     else
-      equation
-        cref = crefSetLastSubs(inCr,inAccumSubs);
+      algorithm
+        cref := crefSetLastSubs(inCr,inAccumSubs);
       then
         cref :: inAccumCrefs;
 
@@ -3880,7 +3880,7 @@ algorithm
     /*/ allow index 0 with dimension 0
     case (DAE.INDEX(exp = exp as DAE.ICONST(integer = idx)),
           DAE.DIM_INTEGER(integer = dim), _, _, _)
-      equation
+      algorithm
         true = idx == 0 and dim == 0;
       then
         true;*/

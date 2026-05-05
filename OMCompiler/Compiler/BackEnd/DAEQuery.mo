@@ -710,7 +710,7 @@ algorithm
 /*      local String ss,sb;
         String ss, ss1, ss2, ss3;
         DAE.ComponentRef cref1;
-      equation
+      algorithm
         sb = printExpStr(e1);
         s1 = adjacencyRowExp(e1, vars);
         ss1 = getAdjacencyRow(s1);

@@ -388,7 +388,7 @@ algorithm
         inRef;
 
    else
-    equation
+    algorithm
       Error.addCompilerError("FGraph.updateInstance failed for node: " + FNode.toPathStr(FNode.fromRef(inRef)) + " variable:" + Types.printVarStr(inVar));
     then
       fail();
@@ -622,7 +622,7 @@ algorithm
         g;
 
     else
-      equation
+      algorithm
         Error.addCompilerError("FGraph.openNewScope: failed to open new scope in scope: " + getGraphNameStr(inGraph) + " name: " + Util.getOptionOrDefault(inName, "") + "\n");
       then
         fail();
@@ -680,7 +680,7 @@ algorithm
         g;
 
     else
-      equation
+      algorithm
         Error.addCompilerError("FGraph.openScope: failed to open new scope in scope: " + getGraphNameStr(inGraph) + " name: " + inName + "\n");
       then
         fail();
@@ -1563,7 +1563,7 @@ algorithm
 
     /*
     case (_, _, _, _, _, _, _)
-      equation
+      algorithm
         c = inTargetClass;
         gclass = inTargetClassEnv;
         targetClassName = SCodeUtil.elementName(c);
@@ -1620,10 +1620,10 @@ algorithm
         (gclass, c, ih);
 
     else
-      equation
-        c = inTargetClass;
-        targetClassName = SCodeUtil.elementName(c);
-        (newTargetClassName,_) = mkVersionName(inSourceEnv, inSourceName, inPrefix, inMod, inTargetClassEnv, targetClassName);
+      algorithm
+        c := inTargetClass;
+        targetClassName := SCodeUtil.elementName(c);
+        (newTargetClassName,_) := mkVersionName(inSourceEnv, inSourceName, inPrefix, inMod, inTargetClassEnv, targetClassName);
 
         Error.addCompilerWarning(
           "FGraph.mkVersionNode: failed to create version node:\n" +
@@ -1656,7 +1656,7 @@ algorithm
 
     /*
     case (_, _, _, _, _, _, _)
-      equation
+      algorithm
         print(AbsynUtil.pathString(PrefixUtil.prefixToPath(inPrefix)) + " S:" + getGraphNameStr(inSourceEnv) + "/" + inSourceName + " ||| " + "T:" + getGraphNameStr(inTargetClassEnv) + "/" + SCodeUtil.elementName(inTargetClass) + "\n");
       then
         fail();*/

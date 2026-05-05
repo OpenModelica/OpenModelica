@@ -121,8 +121,8 @@ algorithm
         fail();
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Causalize.singularSystemCheck failed\n");
       then
         fail();

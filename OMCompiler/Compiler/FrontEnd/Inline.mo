@@ -437,8 +437,8 @@ algorithm
       then
         (DAE.ALGORITHM_STMTS(stmts_1),inlined);
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("Inline.inlineAlgorithm failed\n");
       then
         fail();
@@ -1393,8 +1393,8 @@ algorithm
         exp := Expression.makeCrefExp(e1,tp);
       then ((c1,exp));
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("Inline.extendCrefRecords1 failed\n");
       then
         fail();
@@ -1418,8 +1418,8 @@ algorithm
         c1 := ComponentReference.crefPrependIdent(c,name,{},tp);
       then c1;
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("Inline.extendCrefRecords2 failed\n");
       then
         fail();
@@ -1443,8 +1443,8 @@ algorithm
         SOME(DAE.FUNCTION( functions = DAE.FUNCTION_DEF(body = body)::_,comment=comment)) := DAE.AvlTreePathFunction.get(ftree,p);
       then (body,comment);
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("Inline.getFunctionBody failed for function: " + AbsynUtil.pathString(p));
         // Error.addMessage(Error.INTERNAL_ERROR, {"Inline.getFunctionBody failed"});
       then
@@ -1467,8 +1467,8 @@ algorithm
         SOME(func) := DAE.AvlTreePathFunction.get(ftree,p);
       then func;
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("Inline.getFunction failed for function: " + AbsynUtil.pathString(p));
       then
         fail();
@@ -1783,7 +1783,7 @@ algorithm
         (eq2,source) := ExpressionSimplify.condSimplifyAddSymbolicOperation(changed, eq2, source);
       then (eq2,source);
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {"Inline.inlineEquationExp failed"});
       then fail();
   end match;
