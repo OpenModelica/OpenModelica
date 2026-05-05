@@ -450,7 +450,7 @@ protected function languageStandardInt
 protected
   constant array<Integer> lookup = listArray({10, 20, 30, 31, 32, 33, 34, 35, 36, 1000, 9999});
 algorithm
-  outValue := lookup[inStandard];
+  outValue := arrayGet(lookup, Integer(inStandard));
 end languageStandardInt;
 
 protected function intLanguageStandard
