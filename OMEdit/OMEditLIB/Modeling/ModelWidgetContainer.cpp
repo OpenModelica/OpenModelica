@@ -5705,6 +5705,7 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     mUpdateModelTimer.setInterval(500);
     connect(&mUpdateModelTimer, SIGNAL(timeout()), SLOT(updateModel()));
   } else if (mpLibraryTreeItem->isSSP()) {
+    qDebug() << "inside SSP" << mpLibraryTreeItem->isSystemElement();
     // icon graphics framework
     if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
       mpIconGraphicsScene = new GraphicsScene(StringHandler::Icon, this);
@@ -5722,7 +5723,9 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     mpDiagramGraphicsView->hide();
     mpLibraryTreeItem->getClassText(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel());
     createUndoStack();
+    qDebug() << "Icon1";
     drawOMSModelIconElements();
+    qDebug() << "Icon2";
   } else {
     // icon graphics framework
     mpIconGraphicsScene = 0;
@@ -6167,7 +6170,7 @@ void ModelWidget::createModelWidgetComponents()
  */
 ShapeAnnotation* ModelWidget::drawOMSModelElement()
 {
-  if (mpLibraryTreeItem->getOMSElement()->geometry && mpLibraryTreeItem->getOMSElement()->geometry->iconSource) {
+  if (mpLibraryTreeItem->getOMSElement() && mpLibraryTreeItem->getOMSElement()->geometry && mpLibraryTreeItem->getOMSElement()->geometry->iconSource) {
     // Draw bitmap with icon source
     QUrl url(mpLibraryTreeItem->getOMSElement()->geometry->iconSource);
     QFileInfo fileInfo(url.toLocalFile());
@@ -6181,10 +6184,12 @@ ShapeAnnotation* ModelWidget::drawOMSModelElement()
   } else {
     // Rectangle shape as base
     RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation(mpIconGraphicsView);
+    qDebug() << "drawing oms element" << mpLibraryTreeItem->getOMSElementJson() << "=>" << mpLibraryTreeItem->isSystemElement() << "=>" << mpLibraryTreeItem->isComponentElement();
     if (mpLibraryTreeItem->isSystemElement()) {
       pRectangleAnnotation->setLineColor(QColor(128, 128, 0));
       pRectangleAnnotation->setFillColor(Qt::white);
     } else if (mpLibraryTreeItem->isFMUComponent()) {
+      qDebug() << "FMU component detected";
       pRectangleAnnotation->setFillColor(Qt::white);
     } else if (mpLibraryTreeItem->isTableComponent()) {
       pRectangleAnnotation->setLinePattern(StringHandler::LineNone);
@@ -6226,8 +6231,10 @@ ShapeAnnotation* ModelWidget::drawOMSModelElement()
         pInfoTextAnnotation->setLineColor(QColor(128, 128, 0));
         pInfoTextAnnotation->setTextString(OMSProxy::getSystemTypeShortString(mpLibraryTreeItem->getSystemType()));
       } else {
+        qDebug() << "drawing fmu type";
         pInfoTextAnnotation->setTextString(QString("%1 %2").arg(OMSProxy::getFMUKindString(mpLibraryTreeItem->getFMUInfo()->fmiKind))
-                                           .arg(QString(mpLibraryTreeItem->getFMUInfo()->fmiVersion)));
+                                            .arg(QString(mpLibraryTreeItem->getFMUInfo()->fmiVersion)));
+        qDebug() << "drawing fmu type completed";
       }
       pInfoTextAnnotation->drawCornerItems();
       pInfoTextAnnotation->setCornerItemsActiveOrPassive();
@@ -7208,31 +7215,58 @@ void ModelWidget::drawOMSModelIconElements()
   if (mpLibraryTreeItem->isTopLevel()) {
     return;
   } else if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
+    qDebug() << "draw1";
     drawOMSModelElement();
+    qDebug() << "draw2";
     // draw connectors
+    // for (int i = 0 ; i < mpLibraryTreeItem->childrenSize() ; i++) {
+    //   LibraryTreeItem *pChildLibraryTreeItem = mpLibraryTreeItem->childAt(i);
+    //   if ((pChildLibraryTreeItem->getOMSConnector()
+    //       && (pChildLibraryTreeItem->getOMSConnector()->causality == oms_causality_input
+    //           || pChildLibraryTreeItem->getOMSConnector()->causality == oms_causality_output))
+    //       || (pChildLibraryTreeItem->getOMSBusConnector())) {
+    //     double x = 0.5;
+    //     double y = 0.5;
+    //     if (pChildLibraryTreeItem->getOMSConnector() && pChildLibraryTreeItem->getOMSConnector()->geometry) {
+    //       x = pChildLibraryTreeItem->getOMSConnector()->geometry->x;
+    //       y = pChildLibraryTreeItem->getOMSConnector()->geometry->y;
+    //     } else if (pChildLibraryTreeItem->getOMSBusConnector() && pChildLibraryTreeItem->getOMSBusConnector()->geometry) {
+    //       x = pChildLibraryTreeItem->getOMSBusConnector()->geometry->x;
+    //       y = pChildLibraryTreeItem->getOMSBusConnector()->geometry->y;
+    //     }
+    //     QString annotation = QString("Placement(true,%1,%2,-10.0,-10.0,10.0,10.0,0,%1,%2,-10.0,-10.0,10.0,10.0,)")
+    //                          .arg(Utilities::mapToCoordinateSystem(x, 0, 1, -100, 100))
+    //                          .arg(Utilities::mapToCoordinateSystem(y, 0, 1, -100, 100));
+    //     drawOMSElement(pChildLibraryTreeItem, annotation);
+    //     // assoicated the bus component with each of its connector component
+    //     if (pChildLibraryTreeItem->getOMSBusConnector()) {
+    //       associateBusWithConnectors(pChildLibraryTreeItem->getName());
+    //     }
+    //   }
+    // }
+
+    // draw oms3 connectors
     for (int i = 0 ; i < mpLibraryTreeItem->childrenSize() ; i++) {
       LibraryTreeItem *pChildLibraryTreeItem = mpLibraryTreeItem->childAt(i);
-      if ((pChildLibraryTreeItem->getOMSConnector()
-          && (pChildLibraryTreeItem->getOMSConnector()->causality == oms_causality_input
-              || pChildLibraryTreeItem->getOMSConnector()->causality == oms_causality_output))
-          || (pChildLibraryTreeItem->getOMSBusConnector())) {
+
+      if (pChildLibraryTreeItem->isOMSConnectorJson()
+          && (pChildLibraryTreeItem->getOMSConnectorCausalityJson() == "input"
+              || pChildLibraryTreeItem->getOMSConnectorCausalityJson() == "output")) {
+
         double x = 0.5;
         double y = 0.5;
-        if (pChildLibraryTreeItem->getOMSConnector() && pChildLibraryTreeItem->getOMSConnector()->geometry) {
-          x = pChildLibraryTreeItem->getOMSConnector()->geometry->x;
-          y = pChildLibraryTreeItem->getOMSConnector()->geometry->y;
-        } else if (pChildLibraryTreeItem->getOMSBusConnector() && pChildLibraryTreeItem->getOMSBusConnector()->geometry) {
-          x = pChildLibraryTreeItem->getOMSBusConnector()->geometry->x;
-          y = pChildLibraryTreeItem->getOMSBusConnector()->geometry->y;
+
+        QJsonObject geometry = pChildLibraryTreeItem->getOMSConnectorGeometryJson();
+        if (!geometry.isEmpty()) {
+          x = geometry["x"].toDouble(0.5);
+          y = geometry["y"].toDouble(0.5);
         }
+
         QString annotation = QString("Placement(true,%1,%2,-10.0,-10.0,10.0,10.0,0,%1,%2,-10.0,-10.0,10.0,10.0,)")
                              .arg(Utilities::mapToCoordinateSystem(x, 0, 1, -100, 100))
                              .arg(Utilities::mapToCoordinateSystem(y, 0, 1, -100, 100));
+
         drawOMSElement(pChildLibraryTreeItem, annotation);
-        // assoicated the bus component with each of its connector component
-        if (pChildLibraryTreeItem->getOMSBusConnector()) {
-          associateBusWithConnectors(pChildLibraryTreeItem->getName());
-        }
       }
     }
   }
@@ -7250,13 +7284,29 @@ void ModelWidget::drawOMSModelDiagramElements()
       /* We only draw the elements here
        * Connectors are already drawn as part of ModelWidget::drawOMSModelIconElements();
        */
-      if (pChildLibraryTreeItem->getOMSElement() && pChildLibraryTreeItem->getOMSElement()->geometry) {
-        // check if we have zero width and height
-        double x1, y1, x2, y2;
-        x1 = pChildLibraryTreeItem->getOMSElement()->geometry->x1;
-        y1 = pChildLibraryTreeItem->getOMSElement()->geometry->y1;
-        x2 = pChildLibraryTreeItem->getOMSElement()->geometry->x2;
-        y2 = pChildLibraryTreeItem->getOMSElement()->geometry->y2;
+      ssd_element_geometry_t elementGeometry = pChildLibraryTreeItem->getOMSElementGeometry();
+
+      //if (pChildLibraryTreeItem->getOMSElement() && pChildLibraryTreeItem->getOMSElement()->geometry) {
+      //if (pChildLibraryTreeItem->getOMSElementJson().contains("geometry")) {
+        //QJsonObject geometry = pChildLibraryTreeItem->getOMSElementJson()["geometry"].toObject();
+      //check if we have zero width and height
+        double x1, y1, x2, y2, rotation;
+        // x1 = pChildLibraryTreeItem->getOMSElement()->geometry->x1;
+        // y1 = pChildLibraryTreeItem->getOMSElement()->geometry->y1;
+        // x2 = pChildLibraryTreeItem->getOMSElement()->geometry->x2;
+        // y2 = pChildLibraryTreeItem->getOMSElement()->geometry->y2;
+        // x1 = geometry["x1"].toDouble(-10.0);
+        // y1 = geometry["y1"].toDouble(-10.0);
+        // x2 = geometry["x2"].toDouble(10.0);
+        // y2 = geometry["y2"].toDouble(10.0);
+        // rotation = geometry["rotation"].toDouble(0.0);
+        //elementGeometry.iconRotation = geometry["iconRotation"].toDouble(0.0);
+
+        x1 = elementGeometry.x1;
+        y1 = elementGeometry.y1;
+        x2 = elementGeometry.x2;
+        y2 = elementGeometry.y2;
+
         double width = x2 - x1;
         double height = y2 - y1;
         // check zero width
@@ -7287,15 +7337,37 @@ void ModelWidget::drawOMSModelDiagramElements()
                              .arg(origX).arg(origY)
                              .arg(x1).arg(y1)
                              .arg(x2).arg(y2)
-                             .arg(pChildLibraryTreeItem->getOMSElement()->geometry->rotation);
+                             .arg(elementGeometry.rotation);
 
         if (pChildLibraryTreeItem->isSystemElement() || pChildLibraryTreeItem->isComponentElement()) {
           drawOMSElement(pChildLibraryTreeItem, annotation);
         }
-      }
+      //}
     }
   }
 }
+
+// void ModelWidget::drawOMSModelDiagramElements()
+// {
+//   if (mpLibraryTreeItem->isTopLevel() || mpLibraryTreeItem->isSystemElement()) {
+//     for (int i = 0 ; i < mpLibraryTreeItem->childrenSize() ; i++) {
+//       LibraryTreeItem *pChildLibraryTreeItem = mpLibraryTreeItem->childAt(i);
+
+//       if (pChildLibraryTreeItem->isSystemElement() || pChildLibraryTreeItem->isComponentElement()) {
+//         // Load the ModelWidget if not loaded already
+//         if (!pChildLibraryTreeItem->getModelWidget()) {
+//           MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pChildLibraryTreeItem, false);
+//         }
+
+//         // Temporary default placement for JSON-created OMS elements.
+//         QString annotation = QString("Placement(true,0,0,-10.0,-10.0,10.0,10.0,0,-,-,-,-,-,-,)");
+
+//         drawOMSElement(pChildLibraryTreeItem, annotation);
+//       }
+//     }
+//   }
+// }
+
 
 /*!
  * \brief ModelWidget::drawOMSElement
@@ -7306,10 +7378,14 @@ void ModelWidget::drawOMSModelDiagramElements()
 void ModelWidget::drawOMSElement(LibraryTreeItem *pLibraryTreeItem, const QString &annotation)
 {
   // add the connector element to icon view
-  if ((pLibraryTreeItem->getOMSConnector()
-      && (pLibraryTreeItem->getOMSConnector()->causality == oms_causality_input
-          || pLibraryTreeItem->getOMSConnector()->causality == oms_causality_output))
-      || (pLibraryTreeItem->getOMSBusConnector())) {
+  // if ((pLibraryTreeItem->getOMSConnector()
+  //     && (pLibraryTreeItem->getOMSConnector()->causality == oms_causality_input
+  //         || pLibraryTreeItem->getOMSConnector()->causality == oms_causality_output))
+  //     || (pLibraryTreeItem->getOMSBusConnector())) {
+    if (pLibraryTreeItem->isOMSConnectorJson()
+        && (pLibraryTreeItem->getOMSConnectorCausalityJson() == "input"
+            || pLibraryTreeItem->getOMSConnectorCausalityJson() == "output")) {
+
     Element *pIconComponent = new Element(pLibraryTreeItem->getName(), pLibraryTreeItem, annotation, QPointF(0, 0), mpIconGraphicsView);
     mpIconGraphicsView->addElementItem(pIconComponent);
     mpIconGraphicsView->addElementToList(pIconComponent);
@@ -8397,7 +8473,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getExportXMLAction()->setEnabled(enabled && modelica);
   MainWindow::instance()->getExportFigaroAction()->setEnabled(enabled && modelica);
   MainWindow::instance()->getExportToOMNotebookAction()->setEnabled(enabled && modelica);
-  MainWindow::instance()->getAddSystemAction()->setEnabled(enabled && !iconGraphicsView && !textView && (omsModel || (omsSystem && (!pLibraryTreeItem->isSCSystem()))));
+  MainWindow::instance()->getAddSystemAction()->setEnabled(enabled && !iconGraphicsView && !textView && (omsModel || (omsSystem)));
   MainWindow::instance()->getAddOrEditIconAction()->setEnabled(enabled && !diagramGraphicsView && !textView && (omsSystem || omsSubmodel));
   MainWindow::instance()->getDeleteIconAction()->setEnabled(enabled && !diagramGraphicsView && !textView && (omsSystem || omsSubmodel));
   MainWindow::instance()->getAddConnectorAction()->setEnabled(enabled && !textView && omsSystem);

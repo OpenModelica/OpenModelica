@@ -41,6 +41,10 @@
 #include "Util/Helper.h"
 #include "MainWindow.h"
 #include "Util/Utilities.h"
+#include "zmq.h"
+#include <QJsonObject>
+#include <QJsonDocument>
+#include <QJsonArray>
 
 #include <QTime>
 
@@ -49,6 +53,70 @@
   commandTime.start(); \
   command = QString("%1(%2)").arg(command, args.join(",")); \
   logCommand(command);
+
+GuiRequestSocket::GuiRequestSocket()
+{
+  mpContext = zmq_ctx_new();
+  mpSocket = zmq_socket(mpContext, ZMQ_REQ);
+
+  int rc = zmq_bind(mpSocket, "tcp://127.0.0.1:*");
+  if (rc == 0) {
+    char endPoint[30];
+    size_t endPointSize = sizeof(endPoint);
+    zmq_getsockopt(mpSocket, ZMQ_LAST_ENDPOINT, endPoint, &endPointSize);
+    mEndPoint = QString(endPoint);
+    mSocketConnected = true;
+  } else {
+    mEndPoint = "";
+    mSocketConnected = false;
+    qDebug() << "Failed to bind GUI ZMQ socket:" << strerror(errno);
+  }
+}
+
+GuiRequestSocket::~GuiRequestSocket()
+{
+  zmq_close(mpSocket);
+  zmq_ctx_destroy(mpContext);
+}
+
+void GuiRequestSocket::sendCommand(const QJsonObject &command, QJsonObject &reply)
+{
+  if (!mSocketConnected)
+      return;
+
+  QByteArray data = QJsonDocument(command).toJson(QJsonDocument::Compact);
+
+  zmq_msg_t msg;
+  zmq_msg_init_size(&msg, data.size());
+
+  memcpy(zmq_msg_data(&msg), data.constData(), data.size());
+
+  int rc = zmq_msg_send(&msg, mpSocket, 0);
+  zmq_msg_close(&msg);
+
+  if (rc == -1)
+      return;
+
+  zmq_msg_t rep;
+  zmq_msg_init(&rep);
+
+  rc = zmq_msg_recv(&rep, mpSocket, 0);
+  if (rc == -1) {
+      zmq_msg_close(&rep);
+      return;
+  }
+
+  QByteArray response((char*)zmq_msg_data(&rep), zmq_msg_size(&rep));
+  zmq_msg_close(&rep);
+
+  QJsonDocument doc = QJsonDocument::fromJson(response);
+  if (!doc.isObject())
+      return;
+
+  reply = doc.object();
+  //emit replyReady(doc.object());
+}
+
 
 /*!
  * \brief loggingCallback
@@ -124,6 +192,8 @@ OMSProxy::OMSProxy()
   setLoggingCallback();
   qRegisterMetaType<MessageItem>("MessageItem");
   connect(this, SIGNAL(logGUIMessage(MessageItem)), MessagesWidget::instance(), SLOT(addGUIMessage(MessageItem)));
+  mpGuiRequestSocket = new GuiRequestSocket();
+  startGuiServer();
 }
 
 OMSProxy::~OMSProxy()
@@ -131,6 +201,71 @@ OMSProxy::~OMSProxy()
   if (mpCommunicationLogFile) {
     fclose(mpCommunicationLogFile);
   }
+}
+
+void OMSProxy::startGuiServer()
+{
+  QString pythonExe = "C:/ProgramData/anaconda3/python.exe"; // full path if needed
+  QString script = "C:/OPENMODELICAGIT/OpenModelica/OMSimulator/src/OMSimulatorServer/OMSimulatorCommand.py";
+
+  mpGuiProcess = new QProcess(this);
+
+  // connect signals
+  connect(mpGuiProcess, &QProcess::started, this, &OMSProxy::guiProcessStarted);
+  connect(mpGuiProcess, &QProcess::errorOccurred, this, &OMSProxy::guiProcessError);
+  connect(mpGuiProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &OMSProxy::guiProcessFinished);
+
+  //connect(mpGuiProcess, SIGNAL(readyReadStandardOutput()), SLOT(readSimulationStandardOutput()));
+  //connect(mpGuiProcess, SIGNAL(readyReadStandardError()), SLOT(readSimulationStandardError()));
+
+  // VERY IMPORTANT: capture python output
+  connect(mpGuiProcess, &QProcess::readyReadStandardOutput, [=](){ qDebug().noquote() << mpGuiProcess->readAllStandardOutput();});
+  connect(mpGuiProcess, &QProcess::readyReadStandardError, [=](){ qDebug().noquote() << mpGuiProcess->readAllStandardError();});
+  QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+  env.insert("PYTHONPATH", "C:/ProgramData/anaconda3/python.exe");
+  mpGuiProcess->setProcessEnvironment(env);
+  QString endpoint = mpGuiRequestSocket->endPoint();
+  QStringList args;
+  args << script << "--endpoint-rep" << endpoint;
+  mpGuiProcess->start(pythonExe, args);
+}
+
+void OMSProxy::guiProcessStarted()
+{
+  qDebug() << "GUI server process started at" << mpGuiRequestSocket->endPoint();
+  mServerReady = true;
+}
+
+void OMSProxy::guiProcessError(QProcess::ProcessError error)
+{
+  qDebug() << "GUI server process error:" << error;
+}
+
+void OMSProxy::guiProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
+{
+  qDebug() << "GUI server finished with code" << exitCode << "status" << exitStatus;
+}
+
+/*!
+ * \brief OMSSimulationOutputWidget::readSimulationStandardOutput
+ * Reads the simulation stdout.
+ */
+void OMSProxy::readSimulationStandardOutput()
+{
+  //writeSimulationOutput(QString(mpSimulationProcess->readAllStandardOutput()), StringHandler::Unknown);
+  QString output = mpGuiProcess->readAllStandardOutput();
+  qDebug() << "read output: " << output;
+}
+
+/*!
+ * \brief OMSSimulationOutputWidget::readSimulationStandardError
+ * Reads the simulation stderr.
+ */
+void OMSProxy::readSimulationStandardError()
+{
+  //writeSimulationOutput(QString(mpSimulationProcess->readAllStandardError()), StringHandler::Error);
+  QString output = mpGuiProcess->readAllStandardError();
+  qDebug() << "error:" << output;
 }
 
 /*!
@@ -195,7 +330,7 @@ QString OMSProxy::getSystemTypeString(oms_system_enu_t type)
       return Helper::systemSC;
     default:
       // should never be reached
-      return "";
+      return Helper::systemWC;
   }
 }
 
@@ -214,7 +349,7 @@ QString OMSProxy::getSystemTypeShortString(oms_system_enu_t type)
       return "SC";
     default:
       // should never be reached
-      return "";
+      return "WC";
   }
 }
 
@@ -389,13 +524,41 @@ bool OMSProxy::addConnectorToBus(QString busCref, QString connectorCref)
  */
 bool OMSProxy::addSubModel(QString cref, QString fmuPath)
 {
+    qDebug() << "addSubModel Arun: " << cref;
   QString command = "oms_addSubModel";
   QStringList args;
   args << "\"" + cref + "\"" << fmuPath;
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms_addSubModel(cref.toUtf8().constData(), fmuPath.toUtf8().constData());
   logResponse(command, status, &commandTime);
-  return statusToBool(status);
+
+  QStringList parts = cref.split(".");
+  parts.removeFirst();
+  QJsonObject obj, args_;
+  obj["method"] = "addComponent";
+  args_["cref"] = QJsonArray::fromStringList(parts);
+  args_["source"] = fmuPath;
+  args_["new_name"] = "resources/" + parts.last() + ".fmu";
+  obj["args"] = args_;
+
+  qDebug() << QJsonDocument(obj).toJson(QJsonDocument::Compact);
+  QJsonObject reply;
+  //emit sendGuiCommand(obj);
+  mpGuiRequestSocket->sendCommand(obj, reply);
+
+
+  qDebug() << "inside add submodel completed";
+
+  QString method = reply["method"].toString();
+  QString status_ = reply["status"].toString();
+
+  QString msg = tr("%1 : %2").arg(method).arg(status_);
+
+  MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::notificationLevel));
+
+
+  //return statusToBool(status);
+  return true;
 }
 
 /*!
@@ -458,6 +621,7 @@ bool OMSProxy::addSystem(QString cref, oms_system_enu_t type)
   oms_status_enu_t status = oms_addSystem(cref.toUtf8().constData(), type);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
+  return true;
 }
 
 /*!
@@ -601,6 +765,7 @@ bool OMSProxy::getElement(QString cref, oms_element_t** pElement)
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms_getElement(cref.toUtf8().constData(), pElement);
   logResponse(command, status, &commandTime);
+
   return statusToBool(status);
 }
 
@@ -621,6 +786,103 @@ bool OMSProxy::getElements(QString cref, oms_element_t*** pElements)
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
+
+// bool OMSProxy::getElements(QString cref, oms_element_t*** pElements)
+// {
+//     QJsonObject obj;
+//     obj["method"] = "getElements";
+
+//     QJsonObject args;
+//     args["cref"] = cref;
+//     obj["args"] = args;
+
+//     QJsonObject reply;
+//     mpGuiRequestSocket->sendCommand(obj, reply);
+
+//     QString status = reply["status"].toString();
+//     if (status != "ok")
+//         return false;
+
+//     QJsonArray arr = reply["elements"].toArray();
+
+//     qDebug() << "Qjson Reply elements :" << arr;
+
+//     *pElements = jsonArrayToElements(arr);
+
+//     return true;
+// }
+
+oms_element_t** OMSProxy::jsonArrayToElements(const QJsonArray &arr)
+{
+    int n = arr.size();
+
+    oms_element_t **list =
+        (oms_element_t**)calloc(n + 1, sizeof(oms_element_t*));
+
+    for (int i = 0; i < n; ++i) {
+        list[i] = jsonToElement(arr[i].toObject());
+    }
+
+    list[n] = nullptr;
+    return list;
+}
+
+oms_element_t* OMSProxy::jsonToElement(const QJsonObject &obj)
+{
+    oms_element_t *e =
+        (oms_element_t*)calloc(1, sizeof(oms_element_t));
+
+    QString name = obj["name"].toString();
+    e->name = strdup(name.toUtf8().constData());
+
+    QString type = obj["type"].toString();
+
+    if (type == "system")
+        e->type = oms_element_system;
+    else
+        e->type = oms_element_component;
+
+    e->elements =
+        jsonArrayToElements(obj["elements"].toArray());
+
+    // later:
+    // e->connectors = ...
+    // e->busconnectors = ...
+    // e->geometry = ...
+
+    return e;
+}
+
+
+bool OMSProxy::getElementsJson(QString cref, QJsonArray &elements)
+{
+  qDebug() << "GetElements via ZMQ";
+
+  QJsonObject obj;
+  obj["method"] = "getElements";
+
+  QJsonObject args;
+  args["cref"] = cref;
+  obj["args"] = args;
+
+  QJsonObject reply;
+  mpGuiRequestSocket->sendCommand(obj, reply);
+
+  QString status = reply["status"].toString();
+
+  if (status != "ok") {
+    qDebug() << "getElements failed";
+    return false;
+  }
+
+  elements = reply["elements"].toArray();
+  //qDebug().noquote() << "getElements reply:" << QJsonDocument(reply).toJson(QJsonDocument::Indented);
+  qDebug() << "Qjson Reply elements :" << elements;
+  return true;
+}
+
+
+
 
 /*!
  * \brief OMSProxy::getFixedStepSize
@@ -795,13 +1057,15 @@ bool OMSProxy::getSubModelPath(QString cref, QString* pPath)
  */
 bool OMSProxy::getSystemType(QString cref, oms_system_enu_t *pType)
 {
-  QString command = "oms_getSystemType";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getSystemType(cref.toUtf8().constData(), pType);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
+  // QString command = "oms_getSystemType";
+  // QStringList args;
+  // args << "\"" + cref + "\"";
+  // LOG_COMMAND(command, args);
+  // oms_status_enu_t status = oms_getSystemType(cref.toUtf8().constData(), pType);
+  // logResponse(command, status, &commandTime);
+  // return statusToBool(status);
+   *pType = oms_system_none;
+  return true;
 }
 
 /*!
@@ -959,7 +1223,25 @@ bool OMSProxy::newModel(QString cref)
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms_newModel(cref.toUtf8().constData());
   logResponse(command, status, &commandTime);
+
+    QJsonObject obj, args_;
+    obj["method"] = "newModel";
+    args_["name"] = cref;
+    args_["system_name"] = "Root";
+    obj["args"] = args_;
+    qDebug() << QJsonDocument(obj).toJson(QJsonDocument::Compact);
+    QJsonObject reply;
+    mpGuiRequestSocket->sendCommand(obj, reply);
+
+    QString method = reply["method"].toString();
+    QString status_ = reply["status"].toString();
+
+    QString msg = tr("%1 : %2").arg(method).arg(status_);
+
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::notificationLevel));
+    // return true;
   return statusToBool(status);
+
 }
 
 /*!
@@ -1095,6 +1377,7 @@ bool OMSProxy::setConnectionGeometry(QString crefA, QString crefB, const ssd_con
  */
 bool OMSProxy::setConnectorGeometry(QString cref, const ssd_connector_geometry_t* pGeometry)
 {
+    qDebug() << "setConnectorGemetry";
   QString command = "oms_setConnectorGeometry";
   QStringList args;
   args << "\"" + cref + "\"";
@@ -1113,13 +1396,43 @@ bool OMSProxy::setConnectorGeometry(QString cref, const ssd_connector_geometry_t
  */
 bool OMSProxy::setElementGeometry(QString cref, const ssd_element_geometry_t* pGeometry)
 {
-  QString command = "oms_setElementGeometry";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setElementGeometry(cref.toUtf8().constData(), pGeometry);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
+  // QString command = "oms_setElementGeometry";
+  // QStringList args;
+  // args << "\"" + cref + "\"";
+  // LOG_COMMAND(command, args);
+  // oms_status_enu_t status = oms_setElementGeometry(cref.toUtf8().constData(), pGeometry);
+  // logResponse(command, status, &commandTime);
+  // return statusToBool(status);
+
+
+  // Todo set geometry position via zmq
+  QStringList parts = cref.split(".");
+  parts.removeFirst(); // remove model name, e.g. "test"
+
+  QJsonObject geometry;
+  geometry["x1"] = pGeometry->x1;
+  geometry["y1"] = pGeometry->y1;
+  geometry["x2"] = pGeometry->x2;
+  geometry["y2"] = pGeometry->y2;
+  geometry["rotation"] = pGeometry->rotation;
+  geometry["iconSource"] = pGeometry->iconSource ? QString(pGeometry->iconSource) : QString();
+  geometry["iconRotation"] = pGeometry->iconRotation;
+  geometry["iconFlip"] = pGeometry->iconFlip;
+  geometry["iconFixedAspectRatio"] = pGeometry->iconFixedAspectRatio;
+
+  QJsonObject args;
+  args["cref"] = QJsonArray::fromStringList(parts);
+  args["geometry"] = geometry;
+
+  QJsonObject obj;
+  obj["method"] = "setElementGeometry";
+  obj["args"] = args;
+
+  QJsonObject reply;
+  mpGuiRequestSocket->sendCommand(obj, reply);
+
+  //return reply["status"].toString() == "ok";
+  return true;
 }
 
 /*!

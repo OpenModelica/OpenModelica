@@ -46,6 +46,21 @@
 #include <QObject>
 #include <QElapsedTimer>
 
+class GuiRequestSocket : public QObject
+{
+public:
+  GuiRequestSocket();
+  ~GuiRequestSocket();
+  QString endPoint() const { return mEndPoint; }
+  bool isConnected() const { return mSocketConnected; }
+  void sendCommand(const QJsonObject &obj, QJsonObject &reply);
+private:
+  void* mpContext;
+  void* mpSocket;
+  QString mEndPoint;
+  bool mSocketConnected;
+};
+
 class OMSProxy : public QObject
 {
   Q_OBJECT
@@ -65,6 +80,18 @@ private:
 
   void logCommand(QString command);
   void logResponse(QString command, oms_status_enu_t status, QElapsedTimer *responseTime);
+
+  GuiRequestSocket* mpGuiRequestSocket;
+  QProcess* mpGuiProcess;
+  void startGuiServer();
+  bool mServerReady;
+private slots:
+  //void onReply(QJsonObject reply);
+  void guiProcessStarted();
+  void guiProcessError(QProcess::ProcessError error);
+  void guiProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
+  void readSimulationStandardOutput();
+  void readSimulationStandardError();
 public:
   static OMSProxy* instance() {return mpInstance;}
 
@@ -95,6 +122,9 @@ public:
   bool getConnector(QString cref, oms_connector_t **pConnector);
   bool getElement(QString cref, oms_element_t **pElement);
   bool getElements(QString cref, oms_element_t ***pElements);
+  bool getElementsJson(QString cref, QJsonArray &elements);
+  oms_element_t** jsonArrayToElements(const QJsonArray &arr);
+  oms_element_t* jsonToElement(const QJsonObject &obj);
   bool getFixedStepSize(QString cref, double* stepSize);
   bool getFMUInfo(QString cref, const oms_fmu_info_t** pFmuInfo);
   bool getInteger(QString signal, int* value);

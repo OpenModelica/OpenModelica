@@ -146,9 +146,24 @@ public:
   void setAccessAnnotations(bool accessAnnotations) {mAccessAnnotations = accessAnnotations;}
   void setOMSElement(oms_element_t *pOMSComponent) {mpOMSElement = pOMSComponent;}
   oms_element_t* getOMSElement() const {return mpOMSElement;}
-  bool isSystemElement() const {return (mpOMSElement && (mpOMSElement->type == oms_element_system));}
-  bool isComponentElement() const {return (mpOMSElement && (mpOMSElement->type == oms_element_component));}
-  bool isFMUComponent() const {return (mpOMSElement && (mpOMSElement->type == oms_element_component) && (mComponentType == oms_component_fmu));}
+
+  void setOMSElementJson(const QJsonObject &obj) { mpOMSElementJson = obj; }
+  QJsonObject getOMSElementJson() const { return mpOMSElementJson; }
+
+  // bool isSystemElement() const {return (mpOMSElement && (mpOMSElement->type == oms_element_system));}
+  // bool isComponentElement() const {return (mpOMSElement && (mpOMSElement->type == oms_element_component));}
+  // bool isFMUComponent() const {return (mpOMSElement && (mpOMSElement->type == oms_element_component) && (mComponentType == oms_component_fmu));}
+
+  bool isSystemElement() const { return mpOMSElementJson["type"].toString() == "system";}
+  bool isComponentElement() const {return mpOMSElementJson["type"].toString() == "component";}
+  bool isFMUComponent() const {return mpOMSElementJson["type"].toString() == "component";}
+
+  // helper connectors
+  bool isOMSConnectorJson() const {return mpOMSElementJson["type"].toString() == "connector";}
+  QString getOMSConnectorCausalityJson() const {return mpOMSElementJson["causality"].toString();}
+  QString getOMSConnectorSignalTypeJson() const {return mpOMSElementJson["signalType"].toString();}
+  QJsonObject getOMSConnectorGeometryJson() const {return mpOMSElementJson["geometry"].toObject();}
+
   bool isExternalTLMModelComponent() const {return (mpOMSElement && (mpOMSElement->type == oms_element_component) && (mComponentType == oms_component_external));}
   bool isTableComponent() const {return (mpOMSElement && (mpOMSElement->type == oms_element_component) && (mComponentType == oms_component_table));}
   void setSystemType(oms_system_enu_t type) {mSystemType = type;}
@@ -230,6 +245,8 @@ private:
   oms_busconnector_t *mpOMSBusConnector = 0;
   const oms_fmu_info_t *mpFMUInfo = 0;
   QString mSubModelPath;
+  // new oms3 JSON format
+  QJsonObject mpOMSElementJson;
 signals:
   void iconUpdated();
 public slots:
@@ -277,6 +294,8 @@ public:
                                          LibraryTreeItem *pParentLibraryTreeItem, int row = -1);
   LibraryTreeItem* createLibraryTreeItem(QString name, QString nameStructursre, QString path, bool isSaved, LibraryTreeItem *pParentLibraryTreeItem,
                                          oms_element_t *pOMSElement = 0, oms_connector_t *pOMSConnector = 0, oms_busconnector_t *pOMSBusConnector = 0, int row = -1);
+  LibraryTreeItem* createLibraryTreeItemArun(QString name, QString nameStructure, QString path, bool isSaved, LibraryTreeItem *pParentLibraryTreeItem,
+                                         const QJsonObject &pOMSElement = QJsonObject(), int row = -1);
   void updateLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
   void updateChildLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem, QString contents, QString fileName);
@@ -321,6 +340,10 @@ private:
   LibraryTreeItem* createOMSLibraryTreeItemImpl(QString name, QString nameStructure, QString path, bool isSaved,
                                                 LibraryTreeItem *pParentLibraryTreeItem, oms_element_t *pOMSElement = 0,
                                                 oms_connector_t *pOMSConnector = 0, oms_busconnector_t *pOMSBusConnector = 0);
+  LibraryTreeItem* createOMSLibraryTreeItemImpl(QString name, QString nameStructure, QString path, bool isSaved,
+                                                LibraryTreeItem *pParentLibraryTreeItem, const QJsonObject& pOMSElement);
+
+  void createLibraryTreeItemsFromJson(const QJsonArray &elements, LibraryTreeItem *pParent);
   void createOMSConnectorLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
   void createOMSBusConnectorLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
   void unloadClassChildren(LibraryTreeItem *pLibraryTreeItem, bool deleteFile);
