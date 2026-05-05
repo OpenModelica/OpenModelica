@@ -180,7 +180,7 @@ public function addNoUpdCheck
   input HashSet hashSet;
   output HashSet outHashSet;
 algorithm
-  outHashSet := matchcontinue (entry,hashSet)
+  outHashSet := match (entry,hashSet)
     local
       Integer hval,indx,newpos,n,n_1,bsize,indx_1;
       tuple<Integer,Integer,array<Option<Key>>> varr_1,varr;
@@ -201,13 +201,7 @@ algorithm
         hashvec_1 := arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
         n_1 := valueArrayLength(varr_1);
       then ((hashvec_1,varr_1,bsize,n_1,fntpl));
-
-    else
-      algorithm
-        print("- BaseHashSet.addNoUpdCheck failed\n");
-      then
-        fail();
-  end matchcontinue;
+  end match;
 end addNoUpdCheck;
 
 public function addUnique
@@ -251,27 +245,17 @@ public function delete
   input Key key;
   input HashSet hashSet;
   output HashSet outHashSet;
+protected
+  Integer indx,n,bsize,indx_1;
+  tuple<Integer,Integer,array<Option<Key>>> varr_1,varr;
+  array<list<tuple<Key,Integer>>> hashvec;
+  FuncsTuple fntpl;
 algorithm
-  outHashSet :=
-  matchcontinue (key,hashSet)
-    local
-      Integer indx,n,bsize,indx_1;
-      tuple<Integer,Integer,array<Option<Key>>> varr_1,varr;
-      array<list<tuple<Key,Integer>>> hashvec;
-      FuncsTuple fntpl;
-      /* adding when already present => Updating value */
-    case (_,(hashvec,varr,bsize,n,fntpl))
-      algorithm
-        (SOME(_),indx) := get1(key, hashSet);
-        varr_1 := valueArrayClearnth(varr, indx);
-      then ((hashvec,varr_1,bsize,n,fntpl));
-    else
-      algorithm
-        print("-HashSet.delete failed\n");
-      then
-        fail();
-  end matchcontinue;
-end delete;
+  (hashvec,varr,bsize,n,fntpl) := hashSet;
+  (SOME(_),indx) := get1(key, hashSet);
+  varr_1 := valueArrayClearnth(varr, indx);
+  outHashSet := ((hashvec,varr_1,bsize,n,fntpl));
+ end delete;
 
 public function has
 "Returns true if Key is in the HashSet."
@@ -441,40 +425,22 @@ by factor 1.4"
   input ValueArray valueArray;
   input Key entry;
   output ValueArray outValueArray;
+protected
+  Integer n_1,n,size,expandsize,expandsize_1,newsize;
+  array<Option<Key>> arr_1,arr,arr_2;
+  Real rsize,rexpandsize;
 algorithm
-  outValueArray:=
-  matchcontinue (valueArray,entry)
-    local
-      Integer n_1,n,size,expandsize,expandsize_1,newsize;
-      array<Option<Key>> arr_1,arr,arr_2;
-      Real rsize,rexpandsize;
-    case ((n,size,arr),_)
-      equation
-        (n < size) = true "Have space to add array elt." ;
-        n_1 = n + 1;
-        arr_1 = arrayUpdate(arr, n + 1, SOME(entry));
-      then
-        ((n_1,size,arr_1));
-
-    case ((n,size,arr),_)
-      equation
-        (n < size) = false "Do NOT have space to add array elt. Expand with factor 1.4" ;
-        rsize = intReal(size);
-        rexpandsize = rsize * 0.4;
-        expandsize = realInt(rexpandsize);
-        expandsize_1 = intMax(expandsize, 1);
-        newsize = expandsize_1 + size;
-        arr_1 = Array.expand(expandsize_1, arr, NONE());
-        n_1 = n + 1;
-        arr_2 = arrayUpdate(arr_1, n + 1, SOME(entry));
-      then
-        ((n_1,newsize,arr_2));
-    else
-      algorithm
-        print("-HashSet.valueArrayAdd failed\n");
-      then
-        fail();
-  end matchcontinue;
+  (n,size,arr) := valueArray;
+  if n >= size then
+    rsize := intReal(size);
+    rexpandsize := rsize * 0.4;
+    expandsize := realInt(rexpandsize);
+    expandsize_1 := intMax(expandsize, 1);
+    size := expandsize_1 + size;
+    arr := Array.expand(expandsize_1, arr, NONE());
+  end if;
+  arr := arrayUpdate(arr, n + 1, SOME(entry));
+  outValueArray := (n+1,size,arr);
 end valueArrayAdd;
 
 public function valueArraySetnth
@@ -483,24 +449,14 @@ public function valueArraySetnth
   input Integer pos;
   input Key entry;
   output ValueArray outValueArray;
+protected
+  array<Option<Key>> arr_1,arr;
+  Integer n,size;
 algorithm
-  outValueArray:=
-  matchcontinue (valueArray,pos,entry)
-    local
-      array<Option<Key>> arr_1,arr;
-      Integer n,size;
-    case ((n,size,arr),_,_)
-      equation
-        (pos < size) = true;
-        arr_1 = arrayUpdate(arr, pos + 1, SOME(entry));
-      then
-        ((n,size,arr_1));
-    else
-      algorithm
-        print("-HashSet.valueArraySetnth failed\n");
-      then
-        fail();
-  end matchcontinue;
+  (n,size,arr) := valueArray;
+  true := (pos < size);
+  arr_1 := arrayUpdate(arr, pos + 1, SOME(entry));
+  outValueArray := (n,size,arr_1);
 end valueArraySetnth;
 
 public function valueArrayClearnth
@@ -508,23 +464,14 @@ public function valueArrayClearnth
   input ValueArray valueArray;
   input Integer pos;
   output ValueArray outValueArray;
+protected
+  array<Option<Key>> arr_1,arr;
+  Integer n,size;
 algorithm
-  outValueArray := matchcontinue (valueArray,pos)
-    local
-      array<Option<Key>> arr_1,arr;
-      Integer n,size;
-    case ((n,size,arr),_)
-      equation
-        (pos < size) = true;
-        arr_1 = arrayUpdate(arr, pos + 1,NONE());
-      then
-        ((n,size,arr_1));
-    else
-      algorithm
-        print("-HashSet.valueArrayClearnth failed\n");
-      then
-        fail();
-  end matchcontinue;
+  (n,size,arr) := valueArray;
+  true := (pos < size);
+  arr_1 := arrayUpdate(arr, pos + 1,NONE());
+  outValueArray := ((n,size,arr_1));
 end valueArrayClearnth;
 
 public function valueArrayNth

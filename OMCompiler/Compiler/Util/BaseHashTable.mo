@@ -190,7 +190,7 @@ public function addNoUpdCheck
   input HashTable hashTable;
   output HashTable outHashTable;
 algorithm
-  outHashTable := matchcontinue(entry, hashTable)
+  outHashTable := match (entry, hashTable)
     local
       Integer indx, newpos, n, bsize;
       ValueArray varr;
@@ -213,13 +213,7 @@ algorithm
       then
         ((hashvec, varr, bsize, fntpl));
 
-    else
-      algorithm
-        print("- BaseHashTable.addNoUpdCheck failed\n");
-      then
-        fail();
-
-  end matchcontinue;
+  end match;
 end addNoUpdCheck;
 
 public function addUnique
@@ -544,42 +538,23 @@ function valueArrayAdd
   input HashEntry entry;
   output ValueArray outValueArray;
   output Integer newpos;
+protected
+  Integer n_1,n,size,expandsize,expandsize_1,newsize;
+  array<Option<HashEntry>> arr_1,arr,arr_2;
+  Real rsize,rexpandsize;
 algorithm
-  (outValueArray, newpos) := matchcontinue(valueArray, entry)
-    local
-      Integer n, size, expandsize, newsize;
-      array<Option<HashEntry>> arr;
-      Real rsize, rexpandsize;
-
-    case ((n, size, arr), _)
-      equation
-        (n < size) = true "Have space to add array elt.";
-        n = n + 1;
-        arr = arrayUpdate(arr, n, SOME(entry));
-      then
-        ((n, size, arr), n);
-
-    case ((n, size, arr), _)
-      equation
-        (n < size) = false "Do NOT have space to add array elt. Expand with factor 1.4";
-        rsize = intReal(size);
-        rexpandsize = rsize * 0.4;
-        expandsize = realInt(rexpandsize);
-        expandsize = intMax(expandsize, 1);
-        newsize = expandsize + size;
-        arr = Array.expand(expandsize, arr, NONE());
-        n = n + 1;
-        arr = arrayUpdate(arr, n, SOME(entry));
-      then
-        ((n, newsize, arr), n);
-
-    else
-      algorithm
-        print("-HashTable.valueArrayAdd failed\n");
-      then
-        fail();
-
-  end matchcontinue;
+  (n,size,arr) := valueArray;
+  if n >= size then
+    rsize := intReal(size);
+    rexpandsize := rsize * 0.4;
+    expandsize := realInt(rexpandsize);
+    expandsize_1 := intMax(expandsize, 1);
+    size := expandsize_1 + size;
+    arr := Array.expand(expandsize_1, arr, NONE());
+  end if;
+  arr := arrayUpdate(arr, n + 1, SOME(entry));
+  outValueArray := (n+1,size,arr);
+  newpos := n + 1;
 end valueArrayAdd;
 
 function valueArraySet
@@ -589,7 +564,7 @@ function valueArraySet
   input HashEntry entry;
   output ValueArray outValueArray;
 algorithm
-  outValueArray := matchcontinue(valueArray, pos, entry)
+  outValueArray := match (valueArray, pos, entry)
     local
       array<Option<HashEntry>> arr;
       Integer n, size;
@@ -600,14 +575,7 @@ algorithm
         arr = arrayUpdate(arr, pos, SOME(entry));
       then
         ((n, size, arr));
-
-    case ((_, size, arr), _, _)
-      algorithm
-        Error.addInternalError("HashTable.valueArraySet(pos="+String(pos)+") size="+String(size)+" arrSize="+String(arrayLength(arr))+" failed\n", sourceInfo());
-      then
-        fail();
-
-  end matchcontinue;
+  end match;
 end valueArraySet;
 
 function valueArrayClear
