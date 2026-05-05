@@ -1159,8 +1159,10 @@ public
 
           // try to get a fitting function from derivatives -> if none is found, differentiate
           der_func_opt := Function.getDerivative(func, interface_map);
+
           if Util.isSome(der_func_opt) then
             SOME(der_func) := der_func_opt;
+            der_func := addDiffInfo(func, der_func, diffArguments);
           else
             (der_func, diffArguments) := differentiateFunction(func, interface_map, diffArguments);
           end if;
@@ -2038,6 +2040,31 @@ public
       then fail();
     end match;
   end differentiateBuiltinCall2Arg;
+
+  function addDiffInfo
+    "adds differentiation info to a pre-defined derivative function
+    ToDo: do this generally when creating the function tree instead.
+    Current approach only works if differentiated in the proper order."
+    input Function func;
+    input output Function der_func;
+    input output DifferentiationArguments diffArguments;
+  protected
+    UnorderedSet<InstNode> diffInfo;
+  algorithm
+    diffInfo := match func.interfaceDiffInfo
+      case SOME(diffInfo) then UnorderedSet.copy(diffInfo);
+      else UnorderedSet.new(InstNode.hash, InstNode.nameEqual);
+    end match;
+
+    for node in func.inputs loop
+      UnorderedSet.add(node, diffInfo);
+    end for;
+
+    der_func.interfaceDiffInfo  := SOME(diffInfo);
+
+    // add function to function tree
+    UnorderedMap.add(der_func.path, der_func, diffArguments.funcMap);
+  end addDiffInfo;
 
   function differentiateFunction
     input Function func;
