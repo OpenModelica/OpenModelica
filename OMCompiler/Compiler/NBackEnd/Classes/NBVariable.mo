@@ -322,8 +322,7 @@ public
     Variable var = Pointer.access(var_ptr);
   end checkVar;
 
-  function isArray
-    extends checkVar;
+  function isArray extends checkVar;
   algorithm
     b := Type.isArray(var.ty);
   end isArray;
@@ -338,14 +337,22 @@ public
     dims := Type.arrayDims(var.ty);
   end getDimensions;
 
-  function isEmpty
-    extends checkVar;
+  function isEmpty extends checkVar;
   algorithm
     b := ComponentRef.isEmpty(var.name);
   end isEmpty;
 
-  function isState
-    extends checkVar;
+  function isForcedState extends checkVar;
+  algorithm
+    b := match var.backendinfo.varKind
+      local
+        Boolean natural;
+      case VariableKind.STATE(natural = natural) then not natural;
+      else false;
+    end match;
+  end isForcedState;
+
+  function isState extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.STATE() then true;
@@ -353,8 +360,7 @@ public
     end match;
   end isState;
 
-  function isStateDerivative
-    extends checkVar;
+  function isStateDerivative extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.STATE_DER() then true;
@@ -362,8 +368,7 @@ public
     end match;
   end isStateDerivative;
 
-  function isAlgebraic
-    extends checkVar;
+  function isAlgebraic extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.ALGEBRAIC() then true;
@@ -371,8 +376,7 @@ public
     end match;
   end isAlgebraic;
 
-  function isStart
-    extends checkVar;
+  function isStart extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.START() then true;
@@ -380,8 +384,7 @@ public
     end match;
   end isStart;
 
-  function isExtObj
-    extends checkVar;
+  function isExtObj extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.EXTOBJ() then true;
@@ -389,8 +392,7 @@ public
     end match;
   end isExtObj;
 
-  function isTime
-    extends checkVar;
+  function isTime extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.TIME() then true;
@@ -398,8 +400,7 @@ public
     end match;
   end isTime;
 
-  function isContinuous
-    extends checkVar;
+  function isContinuous extends checkVar;
     input Boolean init  "true if it's an initial system";
   algorithm
     b := match var.backendinfo.varKind
@@ -415,8 +416,7 @@ public
     end match;
   end isContinuous;
 
-  function isDiscontinuous "only for function interface purposes"
-    extends checkVar;
+  function isDiscontinuous "only for function interface purposes" extends checkVar;
     input Boolean init  "true if it's an initial system";
   algorithm
     b := not isContinuous(var_ptr, init);
@@ -435,8 +435,7 @@ public
     end match;
   end isContinuousRecordAware;
 
-  function isDiscreteState
-    extends checkVar;
+  function isDiscreteState extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.DISCRETE_STATE() then true;
@@ -444,8 +443,7 @@ public
     end match;
   end isDiscreteState;
 
-  function isDiscrete
-    extends checkVar;
+  function isDiscrete extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.DISCRETE() then true;
@@ -453,8 +451,7 @@ public
     end match;
   end isDiscrete;
 
-  function isPrevious
-    extends checkVar;
+  function isPrevious extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.PREVIOUS() then true;
@@ -462,8 +459,7 @@ public
     end match;
   end isPrevious;
 
-  function isRecord
-    extends checkVar;
+  function isRecord extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.RECORD() then true;
@@ -471,8 +467,7 @@ public
     end match;
   end isRecord;
 
-  function isKnownRecord
-    extends checkVar;
+  function isKnownRecord extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
       local
@@ -482,8 +477,7 @@ public
     end match;
   end isKnownRecord;
 
- function isUnknownRecord
-    extends checkVar;
+ function isUnknownRecord extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
       local
@@ -493,8 +487,7 @@ public
     end match;
   end isUnknownRecord;
 
-  function isClock
-    extends checkVar;
+  function isClock extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.CLOCK() then true;
@@ -502,8 +495,7 @@ public
     end match;
   end isClock;
 
-  function isClocked
-    extends checkVar;
+  function isClocked extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.CLOCKED() then true;
@@ -511,8 +503,7 @@ public
     end match;
   end isClocked;
 
-  function isClockOrClocked
-    extends checkVar;
+  function isClockOrClocked extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.CLOCK()   then true;
@@ -521,8 +512,7 @@ public
     end match;
   end isClockOrClocked;
 
-  function isIterator
-    extends checkVar;
+  function isIterator extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.ITERATOR() then true;
@@ -530,8 +520,7 @@ public
     end match;
   end isIterator;
 
-  function isPDer
-    extends checkVar;
+  function isPDer extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.JAC_VAR()     then true;

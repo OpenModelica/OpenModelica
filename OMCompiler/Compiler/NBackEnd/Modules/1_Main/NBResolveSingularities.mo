@@ -105,7 +105,7 @@ public
   extends Module.resolveSingularitiesInterface;
   protected
     Adjacency.Mapping mapping;
-    array<Boolean> discrete_eqns;
+    array<Boolean> excluded_eqns;
     array<list<Integer>> msss;
     list<Integer> marked_eqns;
     Adjacency.Matrix state_adj;
@@ -135,12 +135,12 @@ public
       then fail();
     end match;
 
-    // mark the discrete equations
-    discrete_eqns := listArray(list(Equation.isDiscrete(eqn) for eqn in EquationPointers.toList(equations)));
+    // mark the forbidden equations (discrete and already differentiated in previous index reduction steps)
+    excluded_eqns := listArray(list(Equation.isDiscrete(eqn) or Equation.hasDerivative(eqn) for eqn in EquationPointers.toList(equations)));
 
     // get the minimally structurally singular subset
     msss := match adj
-      case Adjacency.FINAL() then getMSSS(adj.m, adj.mT, matching, discrete_eqns, mapping);
+      case Adjacency.FINAL() then getMSSS(adj.m, adj.mT, matching, excluded_eqns, mapping);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " expected final matrix as adj input but got :\n"
           + Adjacency.Matrix.toString(adj)});
@@ -452,7 +452,7 @@ protected
     input array<list<Integer>> m              "eqn -> list<var>";
     input array<list<Integer>> mT             "var -> list<eqn>";
     input Matching matching;
-    input array<Boolean> discrete_eqns;
+    input array<Boolean> excluded_eqns;
     input Adjacency.Mapping mapping;
     output array<list<Integer>> msss;
   protected
@@ -483,7 +483,7 @@ protected
     // fill the msss array, sorting each equation to their respective color
     msss := arrayCreate(color, {});
     for eqn in 1:arrayLength(eqn_coloring) loop
-      if eqn_coloring[eqn] <> -1 and not discrete_eqns[mapping.eqn_StA[eqn]] then
+      if eqn_coloring[eqn] <> -1 and not excluded_eqns[mapping.eqn_StA[eqn]] then
         color := color_clustering[eqn_coloring[eqn]];
         msss[color] := eqn :: msss[color];
       end if;
@@ -611,7 +611,7 @@ protected
       input Pointer<Variable> var;
       input UnorderedSet<ComponentRef> acc    "accumulator for relevant crefs";
     algorithm
-      if (BVariable.isContinuous(var, false) and not (BVariable.isTime(var) or BVariable.isDummyVariable(var))) then
+      if (BVariable.isContinuous(var, false) and not (BVariable.isTime(var) or BVariable.isDummyVariable(var) or BVariable.isDummyState(var) or BVariable.isForcedState(var) )) then
         UnorderedSet.add(BVariable.getVarName(var), acc);
       end if;
     end getStateCandidateVar;

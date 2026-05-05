@@ -2512,6 +2512,14 @@ public
       b := Type.isResizable(getType(Pointer.access(eqn_ptr)));
     end isResizable;
 
+    function hasDerivative extends checkEqn;
+    algorithm
+      b := match getAttributes(Pointer.access(eqn_ptr))
+        case EQUATION_ATTRIBUTES(derivative = SOME(_)) then true;
+        else false;
+      end match;
+    end hasDerivative;
+
     function expIsParamOrConst
       input output Expression exp;
       input Pointer<Boolean> b_ptr;
