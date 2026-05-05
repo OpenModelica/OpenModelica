@@ -2051,11 +2051,13 @@ public
   protected
     UnorderedSet<InstNode> diffInfo;
   algorithm
+    // use the previous differentiation info and extend upon it
     diffInfo := match func.interfaceDiffInfo
       case SOME(diffInfo) then UnorderedSet.copy(diffInfo);
       else UnorderedSet.new(InstNode.hash, InstNode.nameEqual);
     end match;
 
+    // only add inputs as its the only relevant part for pre-defined function derivatives
     for node in func.inputs loop
       UnorderedSet.add(node, diffInfo);
     end for;
