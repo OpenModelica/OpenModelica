@@ -582,6 +582,42 @@ public
     end match;
   end categorize;
 
+  function extractClocksEqn
+    input output Equation eqn;
+    input UnorderedMap<BClock, ComponentRef> clck_coll;
+    input UnorderedMap<BClock, ComponentRef> infr_coll;
+    input Pointer<list<Pointer<Variable>>> new_clocks;
+    input Pointer<list<Pointer<Variable>>> new_infers;
+    input Pointer<Integer> idx;
+  algorithm
+    eqn := match eqn
+      case Equation.WHEN_EQUATION() algorithm
+        eqn.body := Util.getOption(extractClocksWhenCond(SOME(eqn.body), clck_coll, infr_coll, new_clocks, new_infers, idx));
+      then eqn;
+      else eqn;
+    end match;
+    eqn := Equation.map(eqn, function extractClocks(clck_coll = clck_coll, infr_coll = infr_coll, new_clocks = new_clocks, new_infers = new_infers, idx = idx, when_cond = false));
+  end extractClocksEqn;
+
+  function extractClocksWhenCond
+    input output Option<WhenEquationBody> body_opt;
+    input UnorderedMap<BClock, ComponentRef> clck_coll;
+    input UnorderedMap<BClock, ComponentRef> infr_coll;
+    input Pointer<list<Pointer<Variable>>> new_clocks;
+    input Pointer<list<Pointer<Variable>>> new_infers;
+    input Pointer<Integer> idx;
+  algorithm
+    body_opt := match body_opt
+      local
+        WhenEquationBody body;
+      case SOME(body) algorithm
+        body.condition := Expression.map(body.condition, function extractClocks(clck_coll = clck_coll, infr_coll = infr_coll, new_clocks = new_clocks, new_infers = new_infers, idx = idx, when_cond = true));
+        body.else_when := extractClocksWhenCond(body.else_when, clck_coll, infr_coll, new_clocks, new_infers, idx);
+      then SOME(body);
+      else body_opt;
+    end match;
+  end extractClocksWhenCond;
+
   function extractClocks
     "replace clock constructors in expressions with variables"
     input output Expression exp;
@@ -590,6 +626,7 @@ public
     input Pointer<list<Pointer<Variable>>> new_clocks;
     input Pointer<list<Pointer<Variable>>> new_infers;
     input Pointer<Integer> idx;
+    input Boolean when_cond;
   algorithm
     exp := match exp
       local
@@ -597,7 +634,7 @@ public
         Pointer<Variable> clock_var;
         ComponentRef clock_name;
 
-      case Expression.CLKCONST() algorithm
+      case Expression.CLKCONST() guard(when_cond or not ClockKind.isInferred(exp.clk)) algorithm
         clock := BClock.BASE_CLOCK(exp.clk);
         if UnorderedMap.contains(clock, clck_coll) then
           // clock already exists

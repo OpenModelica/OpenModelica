@@ -803,7 +803,7 @@ protected
     BClock clock;
     ComponentRef clock_name;
   algorithm
-    EquationPointers.mapExp(equations, function Partitioning.extractClocks(
+    EquationPointers.map(equations, function Partitioning.extractClocksEqn(
       clck_coll = clck_coll, infr_coll = infr_coll, new_clocks = new_clocks, new_infers = new_infers, idx = idx));
 
     // create clocks
