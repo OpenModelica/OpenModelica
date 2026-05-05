@@ -57,7 +57,6 @@ encapsulated package BaseHashTable
 
 protected
 import Array;
-import Error;
 import List;
 
 // Generic hashtable code below
