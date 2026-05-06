@@ -360,7 +360,7 @@ algorithm
     case (_,SOME(DAE.VAR_ATTR_ENUMERATION(e1,min,max,e2,e3,_,ip,fn,so)))
       then SOME(DAE.VAR_ATTR_ENUMERATION(e1,min,max,e2,e3,SOME(bindExp),ip,fn,so));
 
-    else equation print("-failure in DAEUtil.addEquationBoundString\n"); then fail();
+    else algorithm print("-failure in DAEUtil.addEquationBoundString\n"); then fail();
   end match;
 end addEquationBoundString;
 
@@ -636,8 +636,8 @@ algorithm
 
       // anything else, just keep it
       else
-        equation
-          outElements = el::outElements;
+        algorithm
+          outElements := el::outElements;
         then ();
     end match;
   end for;
@@ -1411,7 +1411,7 @@ algorithm
   prot := match(vp)
     case(DAE.PUBLIC()) then false;
     case(DAE.PROTECTED()) then true;
-    else equation print("- DAEUtil.boolVarVisibility failed\n"); then fail();
+    else algorithm print("- DAEUtil.boolVarVisibility failed\n"); then fail();
   end match;
 end boolVarVisibility;
 
@@ -2022,9 +2022,9 @@ algorithm
               f(e);
             then SOME(e);
           else
-            equation
+            algorithm
               failure(f(e));
-              e_1 = findElement(rest, f);
+              e_1 := findElement(rest, f);
             then e_1;
         end matchcontinue;
       then
@@ -2144,7 +2144,7 @@ algorithm
       algorithm
         (outc,oute) := getBindings(rest);
       then (outc,oute);
-    else equation print(" error in getBindings \n"); then fail();
+    else algorithm print(" error in getBindings \n"); then fail();
   end matchcontinue;
 end getBindings;
 
@@ -2861,10 +2861,10 @@ algorithm
 
     case (_,_) then Util.getOption(DAE.AvlTreePathFunction.get(functions, path));
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        msg = stringDelimitList(List.mapMap(getFunctionList(functions), functionName, AbsynUtil.pathStringDefault), "\n  ");
-        msg = "DAEUtil.getNamedFunction failed: " + AbsynUtil.pathString(path) + "\nThe following functions were part of the cache:\n  " + msg;
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
+        msg := stringDelimitList(List.mapMap(getFunctionList(functions), functionName, AbsynUtil.pathStringDefault), "\n  ");
+        msg := "DAEUtil.getNamedFunction failed: " + AbsynUtil.pathString(path) + "\nThe following functions were part of the cache:\n  " + msg;
         // Error.addMessage(Error.INTERNAL_ERROR,{msg});
         Debug.traceln(msg);
       then
@@ -2884,9 +2884,9 @@ algorithm
 
     case (_,_,_) then Util.getOption(DAE.AvlTreePathFunction.get(functions, path));
     else
-      equation
-        msg = stringDelimitList(List.mapMap(getFunctionList(functions), functionName, AbsynUtil.pathStringDefault), "\n  ");
-        msg = "DAEUtil.getNamedFunction failed: " + AbsynUtil.pathString(path) + "\nThe following functions were part of the cache:\n  " + msg;
+      algorithm
+        msg := stringDelimitList(List.mapMap(getFunctionList(functions), functionName, AbsynUtil.pathStringDefault), "\n  ");
+        msg := "DAEUtil.getNamedFunction failed: " + AbsynUtil.pathString(path) + "\nThe following functions were part of the cache:\n  " + msg;
         Error.addSourceMessage(Error.INTERNAL_ERROR,{msg},info);
       then fail();
   end matchcontinue;
@@ -3041,8 +3041,8 @@ algorithm
     then
       stmts;
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Differentiatte.getStatement failed\n");
       then
         fail();
@@ -3376,9 +3376,9 @@ algorithm
     case DAE.CREF(cr, _) then cr::inCrefs;
     case DAE.TUPLE(exps) then collectWhenCrefs(exps, source, inCrefs);
     else
-      equation
-        msg = ExpressionDump.printExpStr(inExp);
-        info = ElementSource.getElementSourceFileInfo(source);
+      algorithm
+        msg := ExpressionDump.printExpStr(inExp);
+        info := ElementSource.getElementSourceFileInfo(source);
         Error.addSourceMessage(Error.WHEN_EQ_LHS, {msg}, info);
       then fail();
   end match;
@@ -3659,8 +3659,8 @@ algorithm
       FCore.Cache cache;
     case(true,_,_,DAE.DAE(elst),_,_) then (elst,inHt,inCache);
     else
-      equation
-        (elst,ht,cache) = evaluateAnnotation2_loop(inCache,env,inDAElist,inHt,sizeBefore);
+      algorithm
+        (elst,ht,cache) := evaluateAnnotation2_loop(inCache,env,inDAElist,inHt,sizeBefore);
       then
         (elst,ht,cache);
   end match;
@@ -4470,7 +4470,7 @@ algorithm
     case DAE.COMMENT()
       then ();
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR,
           {"DAEUtil.traverseDAEElement not implemented correctly for element: " +
            DAEDump.dumpElementsStr({element})});
@@ -4654,9 +4654,9 @@ algorithm
              then
                ();
           else
-            equation
-              failure((DAE.CREF(_,_), _) = func(e, extraArg));
-              x = if referenceEq(e2,e_2) then inStmt else DAE.STMT_ASSIGN_ARR(tp,e,e_2,source);
+            algorithm
+              failure((DAE.CREF(_,_), _) := func(e, extraArg));
+              x := if referenceEq(e2,e_2) then inStmt else DAE.STMT_ASSIGN_ARR(tp,e,e_2,source);
               /* We need to pass this through because simplify/etc may scalarize the cref...
                  true = Flags.isSet(Flags.FAILTRACE);
                  print(DAEDump.ppStatementStr(x));
@@ -4963,9 +4963,9 @@ algorithm
           if referenceEq(stmts,stmts2) then stmt :: outStmts else DAE.STMT_FAILURE(stmts2,source)::outStmts;
 
       else
-        equation
-          str = DAEDump.ppStatementStr(stmt);
-          str = "DAEUtil.traverseDAEStmts not implemented correctly: " + str;
+        algorithm
+          str := DAEDump.ppStatementStr(stmt);
+          str := "DAEUtil.traverseDAEStmts not implemented correctly: " + str;
           Error.addMessage(Error.INTERNAL_ERROR, {str});
         then fail();
       end matchcontinue;
@@ -5453,11 +5453,11 @@ algorithm
         false := Config.acceptMetaModelicaGrammar();
       then {};
     else
-      equation
-        paths1 = getUniontypePathsFunctions(funcs);
-        paths2 = getUniontypePathsElements(els,{});
+      algorithm
+        paths1 := getUniontypePathsFunctions(funcs);
+        paths2 := getUniontypePathsElements(els,{});
         // Use accumulators? Small gain as T_METAUNIONTYPE has lists of paths anyway?
-        outPaths = listAppend(paths1, paths2);
+        outPaths := listAppend(paths1, paths2);
       then outPaths;
   end matchcontinue;
 end getUniontypePaths;
@@ -6684,8 +6684,8 @@ algorithm
           istmts := List.append_reverse(s, istmts);
         then ();
       else
-        equation
-          newEls = e::newEls;
+        algorithm
+          newEls := e::newEls;
         then ();
     end match;
   end for;

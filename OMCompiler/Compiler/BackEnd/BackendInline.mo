@@ -438,8 +438,8 @@ algorithm
       then
         (BackendDAE.VARIABLES(crefind,BackendDAE.VARIABLE_ARRAY(i3,vararr),i1,i2),inlined);
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("Inline.inlineVariables failed\n");
       then
         fail();
@@ -540,8 +540,8 @@ algorithm
     then ();
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("Inline.inlineEventInfo failed\n");
       then fail();
   end matchcontinue;

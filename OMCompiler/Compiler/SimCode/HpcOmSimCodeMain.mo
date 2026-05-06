@@ -373,7 +373,7 @@ algorithm
       ExecStat.execStat("hpcom other");
       print("HpcOm is still under construction.\n");
       then simCode;
-    else equation
+    else algorithm
       Error.addMessage(Error.INTERNAL_ERROR, {"function createSimCode failed."});
     then fail();
   end matchcontinue;
@@ -440,8 +440,8 @@ algorithm
       then
         (numProc,true);
     else
-      equation
-        numProcSys = System.numProcessors();
+      algorithm
+        numProcSys := System.numProcessors();
         if intGt(numProcFlag,numProcSys) and Flags.isSet(Flags.HPCOM_DUMP) then
           print("Warning: Your system provides only "+intString(numProcSys)+" processors!\n");
         end if;
@@ -864,9 +864,9 @@ algorithm
         schedule := HpcOmScheduler.createSingleThreadSchedule(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping,iNumProc);
       then (schedule,iSimCode,iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
     else
-      equation
+      algorithm
         print("HpcOmSimCode.createSchedule failed!\n");
-        schedule = HpcOmScheduler.createEmptySchedule(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
+        schedule := HpcOmScheduler.createEmptySchedule(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
       then (schedule,iSimCode,iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
   end matchcontinue;
 end createSchedule1;
@@ -1017,12 +1017,12 @@ algorithm
         then
           (scheduleIn,numProcIn,0);
     case(_,_,_,_,_,_,_,_,false,_,_,_)
-      equation
+      algorithm
         true = numIterIn == 0; // the max number of schedules with increased num of procs
         then
           (scheduleIn,numProcIn,0);
     case(_,_,_,_,_,_,_,_,false,_,_,_)
-      equation
+      algorithm
         (_,_,speedUp,speedUpMax) = HpcOmScheduler.predictExecutionTime(scheduleIn,SOME(cpCostsWoC),numProcIn,taskGraphIn,taskGraphMetaIn);
         diff = speedUpMax -. speedUp;
         //print("the new speedUp with "+intString(numProcIn)+" processors: "+realString(speedUp)+"\n");
@@ -1031,7 +1031,7 @@ algorithm
       then
         (scheduleIn,numProcIn,numIterIn);
     else
-      equation
+      algorithm
         numProc = numProcIn+1; // increase the number of procs
         numIt = numIterIn-1; // lower the counter of scheduling runs
         scheduleAgain = intLe(numProc,maxNumProc);

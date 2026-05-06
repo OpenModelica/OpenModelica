@@ -1365,8 +1365,8 @@ algorithm
         (BackendDAE.VAR(name, kind_1, dir, prl, tp, bind, NONE(), dims, source, dae_var_attr, ts, hideResult, comment, ct, DAEUtil.toDAEInnerOuter(io), false, false, encrypted), iInlineHT, eqLst);
 
     else
-      equation
-        str = "BackendDAECreate.lowerKnownVar failed for " + DAEDump.dumpElementsStr({inElement});
+      algorithm
+        str := "BackendDAECreate.lowerKnownVar failed for " + DAEDump.dumpElementsStr({inElement});
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end matchcontinue;
@@ -1724,7 +1724,7 @@ algorithm
     //  then
     //    BackendDAE.VARIABLE();
     else
-      equation
+      algorithm
         Error.addInternalError("function lowerKnownVarkind failed", sourceInfo());
       then
         fail();
@@ -1748,7 +1748,7 @@ algorithm
     case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD()) then inType;
     case DAE.T_ARRAY() then inType;
     case DAE.T_FUNCTION() then inType;
-    else equation print("lowerType: " + Types.printTypeStr(inType) + " failed\n"); then fail();
+    else algorithm print("lowerType: " + Types.printTypeStr(inType) + " failed\n"); then fail();
   end matchcontinue;
 end lowerType;
 
@@ -2062,8 +2062,8 @@ algorithm
         (eqns,reqns,ieqns);
 
     else
-      equation
-        s = "BackendDAECreate.lowerEqn failed for " + DAEDump.dumpElementsStr({inElement});
+      algorithm
+        s := "BackendDAECreate.lowerEqn failed for " + DAEDump.dumpElementsStr({inElement});
         Error.addSourceMessage(Error.INTERNAL_ERROR, {s}, ElementSource.getElementSourceFileInfo(ElementSource.getElementSource(inElement)));
       then fail();
 
@@ -2429,9 +2429,9 @@ algorithm
       then
         BackendDAE.EQUATION(inExp1, inExp2, source, inEqAttributes)::inEqns;
     else
-      equation
+      algorithm
         // show only on failtrace!
-        true = Flags.isSet(Flags.FAILTRACE);
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- BackendDAECreate.lowerExtendedRecordEqn failed on: " + ExpressionDump.printExpStr(inExp1) + " = " + ExpressionDump.printExpStr(inExp2) + "\n");
       then
         fail();
@@ -2561,9 +2561,9 @@ algorithm
         (res, rEqns);
 
     else
-      equation
-        source = ElementSource.getElementSource(inElement);
-        str = "BackendDAECreate.lowerWhenEqn: equation not handled:\n" +
+      algorithm
+        source := ElementSource.getElementSource(inElement);
+        str := "BackendDAECreate.lowerWhenEqn: equation not handled:\n" +
               DAEDump.dumpElementsStr({inElement});
         Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, ElementSource.getElementSourceFileInfo(source));
       then
@@ -3118,8 +3118,8 @@ algorithm
                           result := res::result;
                           added := true;
                         then ();
-                        else equation
-                          elseEqnsRest = eqn::elseEqnsRest;
+                        else algorithm
+                          elseEqnsRest := eqn::elseEqnsRest;
                         then ();
                       end matchcontinue;
                     end for;
@@ -3137,24 +3137,24 @@ algorithm
                           result := res::result;
                           added := true;
                         then ();
-                        else equation
-                          elseEqnsRest = eqn::elseEqnsRest;
+                        else algorithm
+                          elseEqnsRest := eqn::elseEqnsRest;
                         then ();
                       end matchcontinue;
                     end for;
                   then ();
-                  else equation
-                    whenEqRes = BackendEquation.setWhenElsePart(whenEq, eq);
-                    res = BackendDAE.WHEN_EQUATION(size, whenEqRes, source, attr);
-                    result = res::result;
-                    added = true;
+                  else algorithm
+                    whenEqRes := BackendEquation.setWhenElsePart(whenEq, eq);
+                    res := BackendDAE.WHEN_EQUATION(size, whenEqRes, source, attr);
+                    result := res::result;
+                    added := true;
                   then ();
                 end match;
               end for;
             then ();
-            else equation
-              res = BackendDAE.WHEN_EQUATION(size, BackendDAE.WHEN_STMTS(cond, whenStmtLst, whenElsePart), source, attr);
-              result = res::result;
+            else algorithm
+              res := BackendDAE.WHEN_EQUATION(size, BackendDAE.WHEN_STMTS(cond, whenStmtLst, whenElsePart), source, attr);
+              result := res::result;
             then ();
           end match;
         end for;
@@ -3166,7 +3166,7 @@ algorithm
         result := mergeWhenEqns(trueEqns, elseEqnsRest, result);
       then result;
 
-    else equation
+    else algorithm
       Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAECreate.mergeWhenEqns: Error in mergeWhenEqns."});
     then fail();
   end matchcontinue;
@@ -3312,10 +3312,10 @@ algorithm
       alg := DAE.ALGORITHM_STMTS({DAE.STMT_NORETCALL(e, source)});
     then (inEquations, inREquations, BackendDAE.ALGORITHM(0, alg, source, inCrefExpansion, eqAttributes)::inIEquations);
 
-    else equation
+    else algorithm
       // only report error if no other error is in the queue!
-      0 = Error.getNumErrorMessages();
-      str = "BackendDAECreate.lowerAlgorithm failed for:\n" + DAEDump.dumpElementsStr({inElement});
+      0 := Error.getNumErrorMessages();
+      str := "BackendDAECreate.lowerAlgorithm failed for:\n" + DAEDump.dumpElementsStr({inElement});
       Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, ElementSource.getElementSourceFileInfo(ElementSource.getElementSource(inElement)));
     then fail();
   end matchcontinue;
@@ -4010,7 +4010,7 @@ algorithm
 
 /*
     case (v, globalKnownVars, (DAE.STMT_PARFOR(type_= tp, iter = iteratorName, range = e, statementLst = statementLst, loopPrlVars=loopPrlVars)::xs), true)
-      equation
+      algorithm
         cr = ComponentReference.makeCrefIdent(iteratorName, tp, {});
         iteratorExp = Expression.crefExp(cr);
         iteratorexps = BackendDAEUtil.extendRange(e, globalKnownVars);

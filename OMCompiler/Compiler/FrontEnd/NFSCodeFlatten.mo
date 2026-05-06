@@ -140,8 +140,8 @@ algorithm
         (prog, env);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("NFSCodeFlatten.flattenClassInProgram failed on " +
           AbsynUtil.pathString(inClassName));
       then
@@ -169,8 +169,8 @@ algorithm
         prog;
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("NFSCodeFlatten.flattenCompleteProgram failed\n");
       then
         fail();

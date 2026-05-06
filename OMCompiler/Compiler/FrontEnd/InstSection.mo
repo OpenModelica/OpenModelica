@@ -1505,8 +1505,8 @@ algorithm
      then dae;
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- InstSection.instEqEquation2 failed\n");
       then
         fail();
@@ -1727,8 +1727,8 @@ algorithm
         fail();
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- InstSection.instArrayEquation failed\n");
       then
         fail();
@@ -1941,10 +1941,10 @@ algorithm
 
     // complex equation that is not of restriction record is not allowed
     else
-      equation
-        false = Types.isRecord(tp);
-        s = ExpressionDump.printExpStr(lhs) + " = " + ExpressionDump.printExpStr(rhs);
-        info = ElementSource.getElementSourceFileInfo(source);
+      algorithm
+        false := Types.isRecord(tp);
+        s := ExpressionDump.printExpStr(lhs) + " = " + ExpressionDump.printExpStr(rhs);
+        info := ElementSource.getElementSourceFileInfo(source);
         Error.addSourceMessage(Error.ILLEGAL_EQUATION_TYPE, {s}, info);
       then fail();
   end matchcontinue;
@@ -2031,8 +2031,8 @@ algorithm
       then fail();
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- InstSection.instAlgorithm failed");
       then
         fail();
@@ -2090,8 +2090,8 @@ algorithm
         (cache,env,ih,dae,csets,ci_state,graph);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- InstSection.instInitialAlgorithm failed\n");
       then
         fail();
@@ -2138,15 +2138,15 @@ algorithm
         (cache,env,dae,ci_state);
 /*
     case (_,_,_,_,_,_,ci_state,SCode.ALGORITHM(constraints = exp::_),_,_,_)
-      equation
+      algorithm
         failure(_ = ClassInf.trans(ci_state,ClassInf.FOUND_ALGORITHM()));
         s = ClassInf.printStateStr(ci_state);
         Error.addMessage(Error.ALGORITHM_TRANSITION_FAILURE,{s});
       then fail();
 */
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- InstSection.instConstraints failed\n");
       then
         fail();
@@ -2824,8 +2824,8 @@ algorithm
         (cache,(e_2,prop,stmts) :: tail_1);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- InstSection.instElseIfs failed\n");
       then
         fail();
@@ -3536,7 +3536,7 @@ algorithm
 
     /*/ failtrace
     case (cache,env,_,_,pre,c1,c2,impl,_,_)
-      equation
+      algorithm
         true = Flags.isSet(Flags.SHOW_EXPANDABLE_INFO);
         (cache,_) = Static.elabCref(cache, env, c1, impl, false, pre, info);
         (cache,_) = Static.elabCref(cache, env, c2, impl, false, pre, info);
@@ -3891,8 +3891,8 @@ algorithm
         ();
 
     else
-      equation
-        str = ComponentReference.printComponentRefStr(inCref);
+      algorithm
+        str := ComponentReference.printComponentRefStr(inCref);
         Error.addSourceMessage(Error.INVALID_CONNECTOR_TYPE, {str}, inInfo);
       then
         fail();
@@ -4001,12 +4001,12 @@ algorithm
         ();
 
     else
-      equation
-        cref_str1 = ComponentReference.printComponentRefStr(inLhsCref);
-        cref_str2 = ComponentReference.printComponentRefStr(inRhsCref);
-        pre_str1 = DAEUtil.connectorTypeStr(inLhsConnectorType);
-        pre_str2 = DAEUtil.connectorTypeStr(inRhsConnectorType);
-        err_strl = if DAEUtil.potentialBool(inLhsConnectorType)
+      algorithm
+        cref_str1 := ComponentReference.printComponentRefStr(inLhsCref);
+        cref_str2 := ComponentReference.printComponentRefStr(inRhsCref);
+        pre_str1 := DAEUtil.connectorTypeStr(inLhsConnectorType);
+        pre_str2 := DAEUtil.connectorTypeStr(inRhsConnectorType);
+        err_strl := if DAEUtil.potentialBool(inLhsConnectorType)
           then {pre_str2, cref_str2, cref_str1}
           else {pre_str1, cref_str1, cref_str2};
         Error.addSourceMessage(Error.CONNECT_PREFIX_MISMATCH, err_strl, inInfo);
@@ -4042,9 +4042,9 @@ algorithm
         ();
 
     else
-      equation
-        cref_str1 = ComponentReference.printComponentRefStr(inLhsCref);
-        cref_str2 = ComponentReference.printComponentRefStr(inRhsCref);
+      algorithm
+        cref_str1 := ComponentReference.printComponentRefStr(inLhsCref);
+        cref_str2 := ComponentReference.printComponentRefStr(inRhsCref);
         Error.addSourceMessage(Error.CONNECT_TWO_SOURCES,
           {cref_str1, cref_str2}, inInfo);
       then
@@ -4229,7 +4229,7 @@ algorithm
         c1,f1,t1 as DAE.T_ARRAY(dims = {dim1}, ty = _),_,
         c2,f2,t2 as DAE.T_ARRAY(dims = {dim2}, ty = _),_,
         ct,_,_,graph,_)
-      equation
+      algorithm
         0 = Expression.dimensionSize(dim1);
         0 = Expression.dimensionSize(dim2);
         (cache,_) = PrefixUtil.prefixCref(cache,env,ih,pre,c1);
@@ -4452,8 +4452,8 @@ algorithm
         fail();
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- InstSection.connectComponents failed\n");
       then
         fail();
@@ -5185,10 +5185,10 @@ algorithm
         fail();
 
     else
-      equation
-        true = numError == Error.getNumErrorMessages();
-        s1 = Dump.printExpStr(var);
-        s2 = ExpressionDump.printExpStr(value);
+      algorithm
+        true := numError == Error.getNumErrorMessages();
+        s1 := Dump.printExpStr(var);
+        s2 := ExpressionDump.printExpStr(value);
         Error.addSourceMessage(Error.ASSIGN_UNKNOWN_ERROR, {s1,s2}, info);
       then
         fail();
@@ -5232,8 +5232,8 @@ algorithm
     case DAE.T_METAARRAY(ty = oty) then Types.boxIfUnboxedType(oty);
     case DAE.T_METATYPE(ty = oty) then getIteratorType(ty.ty, id, info);
     else
-      equation
-        str = Types.unparseType(ty);
+      algorithm
+        str := Types.unparseType(ty);
         Error.addSourceMessage(Error.ITERATOR_NON_ARRAY,{id,str},info);
       then fail();
   end match;
@@ -5687,8 +5687,8 @@ algorithm
     case (DAE.REDUCTION(),_) then ();
     case (DAE.TUPLE({}),_) then ();
     else
-      equation
-        str = ExpressionDump.printExpStr(exp);
+      algorithm
+        str := ExpressionDump.printExpStr(exp);
         Error.addSourceMessage(Error.NORETCALL_INVALID_EXP,{str},info);
       then fail();
   end match;

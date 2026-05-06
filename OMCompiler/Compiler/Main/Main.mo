@@ -221,8 +221,8 @@ algorithm
       then result;
 
     else
-      equation
-        true = Util.isSome(inStatements) or Util.isSome(inProgram);
+      algorithm
+        true := Util.isSome(inStatements) or Util.isSome(inProgram);
         Error.addMessage(Error.STACK_OVERFLOW, {inCommand});
       then "";
 

@@ -142,8 +142,8 @@ algorithm
 
     // failed
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- InstFunction.instantiateExternalObject failed.\n");
       then fail();
   end matchcontinue;
@@ -199,8 +199,8 @@ algorithm
       then
         (cache,ih);
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- InstFunction.instantiateExternalObjectDestructor failed.\n");
       then fail();
    end matchcontinue;
@@ -230,8 +230,8 @@ algorithm
       then
         (cache,ih,ty);
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- InstFunction.instantiateExternalObjectConstructor failed.\n");
       then fail();
   end matchcontinue;
@@ -495,23 +495,23 @@ algorithm
               FCore.checkCachedInstFuncGuard(cache,p);
             then ();
           else // add to cache before instantiating, to break recursion for recursive definitions.
-            equation
-              cache = FCore.addCachedInstFuncGuard(cache,p);
-             (cache,_,ih,funcs) =
+            algorithm
+              cache := FCore.addCachedInstFuncGuard(cache,p);
+             (cache,_,ih,funcs) :=
                 implicitFunctionInstantiation2(cache,cenv,ih,DAE.NOMOD(),DAE.NOPRE(),cdef,{},false);
 
-             funcs = InstUtil.addNameToDerivativeMapping(funcs,path);
-             cache = FCore.addDaeFunction(cache, funcs);
+             funcs := InstUtil.addNameToDerivativeMapping(funcs,path);
+             cache := FCore.addDaeFunction(cache, funcs);
           then ();
         end matchcontinue;
       then
         instantiateDerivativeFuncs2(cache,env,ih,paths,path,info);
 
     else
-      equation
-        p :: _ = inPaths;
-        fun = AbsynUtil.pathString(p);
-        scope = FGraph.printGraphPathStr(inEnv);
+      algorithm
+        p :: _ := inPaths;
+        fun := AbsynUtil.pathString(p);
+        scope := FGraph.printGraphPathStr(inEnv);
         Error.addSourceMessage(Error.LOOKUP_FUNCTION_ERROR,{fun,scope},info);
       then fail();
 
@@ -859,8 +859,8 @@ algorithm
           (cache,func);
 
       else
-        equation
-          true = Flags.isSet(Flags.FAILTRACE);
+        algorithm
+          true := Flags.isSet(Flags.FAILTRACE);
           Debug.traceln("InstFunction.getRecordConstructorFunction failed for " + AbsynUtil.pathString(inPath));
         then
           fail();

@@ -293,7 +293,7 @@ algorithm
 
    then (deadEndVarsMark,deadEndEqsMark);
     else
-      equation
+      algorithm
         Error.addInternalError("function resolveLoops_cutNodes failed", sourceInfo());
       then
         fail();
@@ -532,7 +532,7 @@ algorithm
          //print("GOT SOME NEW LOOPS: \n"+stringDelimitList(List.map(paths,HpcOmTaskGraph.intLstString)," / ")+"\n");
       then (paths,NONE());
     else
-      equation
+      algorithm
         Error.addInternalError("function resolveLoops_findLoops2 failed", sourceInfo());
       then
         fail();
@@ -836,7 +836,7 @@ algorithm
       then
         path;
     else
-      equation
+      algorithm
       then
         {};
   end matchcontinue;
@@ -1136,7 +1136,7 @@ algorithm
       then
         elemR::foldLst;
     else
-      equation
+      algorithm
       then
         foldLstIn;
   end matchcontinue;
@@ -1383,7 +1383,7 @@ algorithm
       then
         path;
     else
-      equation
+      algorithm
         Error.addInternalError("function ResolveLoops.closePathDirectly failed", sourceInfo());
       then
         fail();
@@ -1417,7 +1417,7 @@ algorithm
       then
         {};
     else
-      equation
+      algorithm
         Error.addInternalError("function ResolveLoops.findPathByEnds failed", sourceInfo());
       then
         fail();
@@ -1538,7 +1538,7 @@ algorithm
       then
         eqPathsIn;
     else
-      equation
+      algorithm
         Error.addInternalError("function ResolveLoops.getPathTillNextCrossEq failed", sourceInfo());
         then
           fail();
@@ -1744,7 +1744,7 @@ algorithm
     sign1 := if exists1 then not sign1 else sign2;
   then sign1;
 
-  else equation
+  else algorithm
     print("add a case to CRefIsPosOnRHS"+BackendDump.equationString(eqIn)+"\n");
     then fail();
   end matchcontinue;
@@ -1824,7 +1824,7 @@ algorithm
     then
       (false,false);
   else
-    equation
+    algorithm
       print("add a case to expIsCref:"+ExpressionDump.printExpStr(expIn)+"\n");
     then
       (false,false);
@@ -2046,7 +2046,7 @@ algorithm
         b := Expression.isConst(exp1) and BackendVariable.isState(cref, vars);
       then (inExp,(b,vars));
     else
-    equation
+    algorithm
       then
       (inExp,(false,Util.tuple22(inTuple)));
   end match;
@@ -2096,7 +2096,7 @@ algorithm
       then
         pathLst;
     else
-      equation
+      algorithm
       then
         pathsIn;
   end matchcontinue;
@@ -2165,13 +2165,13 @@ algorithm
       then
         sortedPaths;
     else
-      equation// TODO: this case just put another, unconnectable path to the front of the list.
+      algorithm// TODO: this case just put another, unconnectable path to the front of the list.
               //this path is currently only appendable through the startNode but it has to be also appendable throught the endNode.
               //this might have no effect because in those partitions is either one long path or none.
-        path::rest = pathsIn;
-        sortedPaths = path::sortedPathsIn;
-        startNode = listHead(path);
-        sortedPaths = sortPathsAsChain1(rest,startNode,lastNode,sortedPaths);
+        path::rest := pathsIn;
+        sortedPaths := path::sortedPathsIn;
+        startNode := listHead(path);
+        sortedPaths := sortPathsAsChain1(rest,startNode,lastNode,sortedPaths);
         then
           sortedPaths;
   end matchcontinue;
@@ -2257,7 +2257,7 @@ algorithm
       then
         (loops,restPaths);
     else
-      equation
+      algorithm
         print("connect2PathsToLoops failed\n");
       then
         fail();
@@ -2418,7 +2418,7 @@ algorithm
         eqPairs := List.filterOnTrue(eqPairs,List.hasSeveralElements);
       then eqPairs;
     else
-      equation
+      algorithm
         print("reshuffling_post3_selectShuffleEqs failed!\n");
      then {};
   end matchcontinue;
@@ -2456,7 +2456,7 @@ algorithm
             //BackendDump.dumpEquationList(unassEqs,"updated unassEqs");
       then reshuffling_post4_resolveAndReplace(rest,unassEqs,unassVarsIn,me,meT);
    else
-     equation
+     algorithm
        print("reshuffling_post4_resolveAndReplace failed!\n");
      then fail();
   end matchcontinue;
@@ -2583,7 +2583,7 @@ algorithm
           //BackendDump.dumpEquationList({eq2},"resolved Eq");
      then resolveEquations(SOME(eq2),rest,me,meT,eqsIn,varsIn);
     else
-      equation
+      algorithm
       print("resolveEquations failed!\n");
     then fail();
   end matchcontinue;

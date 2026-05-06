@@ -149,7 +149,7 @@ algorithm
        SCode.DEFINEUNIT("Sv",SCode.PUBLIC(),SOME("cd.sr"),NONE(), SCodeUtil.dummyInfo),
        SCode.DEFINEUNIT("kat",SCode.PUBLIC(),SOME("s-1.mol"),NONE(), SCodeUtil.dummyInfo)
        });   then ();
-     else equation registerUnitWeightDefineunits2(du); then ();
+     else algorithm registerUnitWeightDefineunits2(du); then ();
   end matchcontinue;
 end registerUnitWeightDefineunits;
 
@@ -191,8 +191,8 @@ algorithm
       then ();
 
     else
-      equation
-        false = Flags.getConfigBool(Flags.UNIT_CHECKING);
+      algorithm
+        false := Flags.getConfigBool(Flags.UNIT_CHECKING);
       then ();
   end matchcontinue;
 end registerUnits;
@@ -257,7 +257,7 @@ algorithm
      then ();
 
      else
-       equation
+       algorithm
          registerDefineunits2(elts);
        then ();
   end matchcontinue;
@@ -299,7 +299,7 @@ algorithm
        then ();
 
      else
-       equation
+       algorithm
          print("registerDefineunits failed\n");
        then fail();
   end matchcontinue;
@@ -365,7 +365,7 @@ algorithm
       vector := arrayUpdate(vector,index,SOME(unit)) "destroys ";
     then UnitAbsyn.STORE(vector,indx);
 
-    else equation
+    else algorithm
       print("storing unit at index ");print(intString(index));print(" failed\n");
     then fail();
   end matchcontinue;
@@ -383,7 +383,7 @@ algorithm
     case(_,UnitAbsyn.STORE(vector,_)) algorithm
       SOME(unit) := vector[index];
     then unit;
-    else equation
+    else algorithm
       print(" finding store at index ");print(intString(index));
       print(" failed\n");
     then fail();
@@ -678,7 +678,7 @@ algorithm
         st := createTypeParameterLocations(st);
         // print("built type param, store :"); printStore(st);
      then (UnitAbsyn.INSTSTORE(st,ht,res),terms);
-    else equation
+    else algorithm
       print("instBuildUnitTerms failed!!\n");
     then fail();
   end matchcontinue;
@@ -876,7 +876,7 @@ algorithm
     case(param::params,ht,nextElt) algorithm
        (params,ht,nextElt) := createTypeParameterLocations4(params,ht,nextElt);
     then(param::params,ht,nextElt);
-    else equation
+    else algorithm
       print("createTypeParameterLocations4 failed\n");
     then fail();
   end matchcontinue;
@@ -1179,7 +1179,7 @@ algorithm
     case(DAE.T_FUNCTION(funcResultType=DAE.T_TUPLE(types = typeLst)),_,_,store) algorithm
       (terms,extraTerms,store) := buildTupleResultTerms(typeLst,funcInstId,funcCallExp,store);
      then (terms,extraTerms,store);
-    else equation
+    else algorithm
       print("buildResultTerms failed\n");
     then fail();
   end matchcontinue;
@@ -1326,7 +1326,7 @@ algorithm
       terms := buildFormal2ActualParamTerms(formalParamIndxs,actualParamIndxs);
       e := origExpInTerm(ut);
     then UnitAbsyn.EQN(UnitAbsyn.LOC(loc1,e),ut,e)::terms;
-    else equation
+    else algorithm
       print("buildFormal2ActualParamTerms failed\n");
     then fail();
   end matchcontinue;
@@ -1607,7 +1607,7 @@ model Test1 "CONSISTENT: All units defined. No inference"
   Position x;
   Velocity v;
   Acceleration a;
-equation
+algorithm
   der(x) = v;
   der(v) = a;
 end Test1;
@@ -1647,7 +1647,7 @@ protected
 /* Test2:
 model Test2 "CONSISTENT: Subtraction operator. All units defined. No inference"
 Position x,y,z;
-equation
+algorithm
 z = x-y;
 end Test2;
 */
@@ -1676,7 +1676,7 @@ protected
  model Test3 "OVERDETERMINED: All units defined. No inference"
  Position x,y;
  Velocity z;
-equation
+algorithm
  z = x-y;
 end Test3;
  */
@@ -1706,7 +1706,7 @@ protected
  model Test5 "CONSTISTENT: Multiplication operator. Not all units defined. inference"
   Position x,y;
   Real z;
- equation
+ algorithm
  z = x*y;
 end test5;
 */
@@ -1746,7 +1746,7 @@ model Test8 "CONSISTENT. type inference in function call "
   Position x,y;
   Velocity v1,v2;
 
-equation
+algorithm
   x = Foo8(y);
   v1 = Foo8(v2);
 end Test8;

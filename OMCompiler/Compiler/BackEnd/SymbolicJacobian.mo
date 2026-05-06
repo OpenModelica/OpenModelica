@@ -1569,8 +1569,8 @@ algorithm
         result := getSparsePattern(rest, result,  invarSparse, inMark, inUsed, inmarkValue+1, inMatrix, inMatrixT);
       then result;
     else
-       equation
-         (comp::_) = inComponents;
+       algorithm
+         (comp::_) := inComponents;
          BackendDump.dumpComponent(comp);
          Error.addInternalError("function getSparsePattern failed", sourceInfo());
        then fail();
@@ -2152,7 +2152,7 @@ algorithm
       then
         (listReverse(linearModelMatrices), functionTree);
     else
-      equation
+      algorithm
         Error.addInternalError("Generation of LinearModel Matrices failed.", sourceInfo());
       then
         fail();
@@ -2272,7 +2272,7 @@ algorithm
      then
         ((backendDAE, inName, inDiffVars, diffedVars, inVars, dependencies), funcs);
     else
-      equation
+      algorithm
         Error.addInternalError("function createJacobian failed", sourceInfo());
       then
         fail();
@@ -2355,7 +2355,7 @@ algorithm
           end if;
         then backendDAE2;
      else
-       equation
+       algorithm
          Error.addInternalError("function optimizeJacobianMatrix failed", sourceInfo());
        then fail();
    end matchcontinue;
@@ -2481,7 +2481,7 @@ algorithm
     then (jacobian, functions);
 
     else
-     equation
+     algorithm
       Error.addInternalError(getInstanceName() + " failed", sourceInfo());
     then fail();
   end matchcontinue;
@@ -2673,7 +2673,7 @@ algorithm
     case (BackendDAE.GENERIC_JACOBIAN(jacobian=NONE()))
     then {};
 
-    else equation
+    else algorithm
       Error.addInternalError("function getJacobianDependencies failed", sourceInfo());
     then fail();
 
@@ -3239,11 +3239,11 @@ algorithm
     case (_, (expLst, _, true)) guard(Expression.isRecord(inExp)) then (inExp, false, (inExp::expLst, false, true));
     case (_, (expLst, _, true)) guard(Expression.isMatrix(inExp)) then (inExp, false, (inExp::expLst, false, true));
     case (DAE.CALL(attr=DAE.CALL_ATTR(ty = ty, builtin=false)), (expLst, b, insideCall))
-      equation
+      algorithm
         true = isRecordInvoled(ty);
     then (inExp, false, (inExp::expLst, false, insideCall));
     case (DAE.CALL(expLst=expLst1,attr=DAE.CALL_ATTR(builtin=false)), (expLst, b, insideCall))
-      equation
+      algorithm
         (_, (_, false, _)) = Expression.traverseExpListTopDown(expLst1, hasEqnNonDiffParts, (expLst, b, true));
     then (inExp, false, (inExp::expLst, false, insideCall));
 */
@@ -3806,9 +3806,9 @@ algorithm
         (eqns, size, shared);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        str = BackendDump.dumpEqnsStr({inEquation});
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
+        str := BackendDump.dumpEqnsStr({inEquation});
         Debug.traceln("- BackendDAE.calculateJacobianRow failed on " + str);
       then
         fail();

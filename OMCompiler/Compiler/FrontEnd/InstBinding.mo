@@ -673,7 +673,7 @@ algorithm
     case (cache,_,DAE.MOD(binding = NONE()),_) then (cache,DAE.UNBOUND());
     /* adrpo: CHECK! do we need this here? numerical values
     case (cache,env,_,DAE.MOD(binding = SOME(DAE.TYPED(e,_,DAE.PROP(e_tp,_)))),tp,_,_)
-      equation
+      algorithm
         (e_1,_) = Types.matchType(e, e_tp, tp);
         (cache,v,_) = Ceval.ceval(cache,env, e_1, false,NONE(), NONE(), Absyn.NO_MSG(),0);
       then
@@ -726,8 +726,8 @@ algorithm
         fail();
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Inst.makeBinding failed on component:" + PrefixUtil.printPrefixStr(inPrefix) + "." + componentName);
       then
         fail();

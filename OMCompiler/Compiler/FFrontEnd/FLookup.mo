@@ -113,7 +113,7 @@ algorithm
 
     /*/ self?
     case (g, _, _, _, _)
-      equation
+      algorithm
         true = FNode.isRefImplicitScope(inRef);
         true = stringEq(FNode.name(FNode.fromRef(inRef)), inName);
         r = FNode.child(inRef, inName);

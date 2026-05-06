@@ -1514,8 +1514,8 @@ algorithm
       then
         makeArray({Values.REAL(r1)});
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("Values.multScalarProduct failed\n");
       then
         fail();
@@ -1551,7 +1551,7 @@ algorithm
       then
         makeArray({Values.INTEGER(iz1),Values.INTEGER(iz2),Values.INTEGER(iz3)});
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {"ValuesUtil.crossProduct failed"});
       then
         fail();
@@ -1942,7 +1942,7 @@ algorithm
       then ();
 
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {"ValuesUtil.valString2 failed"});
       then
         fail();

@@ -843,8 +843,8 @@ algorithm
         g;
 
     else
-      equation
-        pr = FGraph.top(inGraph);
+      algorithm
+        pr := FGraph.top(inGraph);
         print("FGraphBuild.mkTypeNode: Error making type node: " + inName +
               " in parent: " + FNode.name(FNode.fromRef(pr)) + "\n");
       then
@@ -1433,7 +1433,7 @@ algorithm
 
     // not in section (eq or alg), modifiers or dimensions/subscripts
     case (_, _, _, g)
-      equation
+      algorithm
         false = FNode.isRefIn(inParentRef, FNode.isRefSection);
         false = FNode.isRefIn(inParentRef, FNode.isRefMod);
         false = FNode.isRefIn(inParentRef, FNode.isRefDims);

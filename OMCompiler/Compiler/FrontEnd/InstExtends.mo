@@ -288,8 +288,8 @@ algorithm
 
       // Instantiation failed.
       else
-        equation
-          true = Flags.isSet(Flags.FAILTRACE);
+        algorithm
+          true := Flags.isSet(Flags.FAILTRACE);
           Debug.traceln("- Inst.instExtendsList failed on:\n\t" +
             "className: " +  inClassName + "\n\t" +
             "env:       " +  FGraph.printGraphPathStr(outEnv) + "\n\t" +
@@ -722,8 +722,8 @@ algorithm
       then fail();
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Inst.instDerivedClasses failed\n");
       then
         fail();
@@ -826,8 +826,8 @@ algorithm
         (outComponent, inMod);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln(
           "- InstExtends.updateComponentsAndClassdefs2 failed on:\n" +
           "env = " + FGraph.printGraphPathStr(inEnv) +
@@ -1362,7 +1362,7 @@ algorithm
     case SCode.ALG_CONTINUE() then inStmt;
 
     else
-      equation
+      algorithm
         Error.addInternalError(getInstanceName() + " failed: " +
           Dump.unparseAlgorithmStr(SCodeUtil.statementToAlgorithmItem(inStmt)), sourceInfo());
       then fail();
@@ -1483,8 +1483,8 @@ algorithm
       then path;
 
     else
-      equation
-        path = FGraph.pathStripGraphScopePrefix(inPath, inEnv, false);
+      algorithm
+        path := FGraph.pathStripGraphScopePrefix(inPath, inEnv, false);
         //fprintln(Flags.DEBUG, "Path not fixed: " + AbsynUtil.pathString(path) + "\n");
       then path;
 
@@ -1631,8 +1631,8 @@ algorithm
       then outMod;
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("InstExtends.fixModifications failed: " + SCodeDump.printModStr(inMod));
       then
         fail();

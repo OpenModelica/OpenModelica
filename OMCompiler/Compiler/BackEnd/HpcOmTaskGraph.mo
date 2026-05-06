@@ -240,7 +240,7 @@ algorithm
         //print("--getSystemComponents0 end (found " + intString(listLength(comps)) + " components in system " + intString(currentIdx) + ")\n");
       then ((comps, tmpSystMapping, currentIdx+1));
     else
-      equation
+      algorithm
         print("getSystemComponents0 failed\n");
       then fail();
   end match;
@@ -751,9 +751,9 @@ algorithm
     then
       descLst;
   else
-    equation
-      desc = ("no singleEquation");
-      descLst = desc::iEqDesc;
+    algorithm
+      desc := ("no singleEquation");
+      descLst := desc::iEqDesc;
     then
       descLst;
   end matchcontinue;
@@ -982,7 +982,7 @@ algorithm
       then
         (tmpVars, paramVars);
     else
-      equation
+      algorithm
         print("getUnsolvedVarsBySCC failed\n");
         then fail();
    end matchcontinue;
@@ -1060,7 +1060,7 @@ algorithm
         stringVarIdc := varIdx::stringVarIdc;
       then ((intVarIdc,realVarIdc,boolVarIdc,stringVarIdc));
     else
-      equation
+      algorithm
         print("getUnsolvedVarsBySCC2: Warning, unknown varType for variable " + intString(Util.tuple21(iVarIdx)) +" !\n");
      then iUnsolvedVars;
   end match;
@@ -1226,7 +1226,7 @@ algorithm
       then
         (eqnVars, paramVars);
     else
-      equation
+      algorithm
         print("Error in getVarsBySCC! Unsupported component-type \n");
       then fail();
   end match;
@@ -1404,8 +1404,8 @@ algorithm
         then
           iSccIdx+1;
     else
-      equation
-        helperStr = BackendDump.strongComponentString(component);
+      algorithm
+        helperStr := BackendDump.strongComponentString(component);
         print("getVarEqCompMapping0 - Unsupported component-type:\n" + helperStr + "\n");
       then fail();
   end matchcontinue;
@@ -1488,7 +1488,7 @@ algorithm
       then
         ((eqLst,varLst));
     else
-      equation
+      algorithm
       print("check number of vars in relation to number of eqs in otherEqnVarTpl in the torn system\n");
       then
         fail();
@@ -1660,7 +1660,7 @@ algorithm
         (graphODE,cutNodes) := cutTaskGraph2(List.intRange(sizeDAE),graphODE,{},graphIn,odeMap);
       then (graphODE,cutNodes);
     else
-      equation
+      algorithm
         print("cutTaskGraph failed\n");
       then fail();
   end matchcontinue;
@@ -1795,7 +1795,7 @@ algorithm
       then
         -1;
     else
-      equation
+      algorithm
         print("getCompInComps failed! CompIn idx: " + intString(compIn) + " | Component array-size: " + intString(arrayLength(inComps)) + "\n");
       then
         fail();
@@ -1823,7 +1823,7 @@ algorithm
         successors1 := List.unique(successors1);
       then getAllSuccessors2(successors1,graph,alreadyVisited,successors1);
     else
-      equation
+      algorithm
         print("getAllSuccessors failed!\n");
       then fail();
   end matchcontinue;
@@ -1941,7 +1941,7 @@ algorithm
       offset := arrayGet(deleteEntriesIn,entryIn);
     then entryIn-offset;
   else
-    equation
+    algorithm
       print("removeContinuousEntries1 failed!\n");
     then entryIn;
   end matchcontinue;
@@ -1991,7 +1991,7 @@ algorithm
       then
         arrayTmp;
     else
-      equation
+      algorithm
       then
         newArray;
   end matchcontinue;
@@ -2492,7 +2492,7 @@ algorithm
         //BackendDump.debugCrefStr((iRef, "\n"));
       then true;
     else
-      equation
+      algorithm
         //BackendDump.debugCrefStr((iRef, "\n"));
       then (false or iIncludingTime);
   end match;
@@ -3297,7 +3297,7 @@ algorithm
     then
       ();
   else
-    equation
+    algorithm
     print("--------------------------------\n");
     print(" CRITICAL PATH INFO\n");
     print("--------------------------------\n");
@@ -3461,7 +3461,7 @@ algorithm
       (clusters,clusterValues) := distributeToClusters1((lst1,valuesIn),(clusters,clusterValues),numClusters);
     then (clusters,clusterValues);
   else
-    equation
+    algorithm
       print("distributeToClusters failed!\n");
     then fail();
   end matchcontinue;
@@ -4187,7 +4187,7 @@ algorithm
      then
        compNamesIn;
      else
-      equation
+      algorithm
         print("updateCompNamesForMerging failed!\n");
       then fail();
    end matchcontinue;
@@ -4408,14 +4408,14 @@ algorithm
         lstTmp;
     /* case((head::rest),_,_,_,_,_)
       // follow path and check that there are more children or a child with more parents. end path before this node
-      equation
+      algorithm
         false = intEq(inPath,0);
         print("findOneChildParents case 8 for task " + intString(head) + "\n");
         lstTmp = findOneChildParents(allNodes,graphIn,doNotMerge,lstIn,0,contrNodes);
       then
         lstTmp; */
     else
-      equation
+      algorithm
         print("findOneChildParents failed\n");
       then
         fail();
@@ -4518,8 +4518,8 @@ algorithm
         (_, tmpTaskGraphMeta) := Array.fold(inComps, function createCosts0(iComps_shared = (comps,shared), iCompMapping = compMapping, reqTimeOp = reqTimeOp, reqTimeCom = reqTimeCom), (1,iTaskGraphMeta));
       then tmpTaskGraphMeta;
     else
-      equation
-        tmpTaskGraphMeta = estimateCosts(iDae,iTaskGraphMeta);
+      algorithm
+        tmpTaskGraphMeta := estimateCosts(iDae,iTaskGraphMeta);
         print("Warning: The costs have been estimated. Maybe " + iBenchFilePrefix + "-file is missing.\n");
       then tmpTaskGraphMeta;
   end matchcontinue;
@@ -4628,7 +4628,7 @@ algorithm
      then (ops,intReal(costs));
 
       else
-        equation
+        algorithm
           print("calculate costs failed!\n");
         then (-1,-1.0);
   end matchcontinue;
@@ -4714,7 +4714,7 @@ algorithm
         then
           true;
     else
-      equation
+      algorithm
       then
         false;
   end matchcontinue;
@@ -4800,7 +4800,7 @@ algorithm
         reqTime := convertSimEqToSccCosts2(reqTime, 0.0, simEqIdx, iSimeqCompMapping);
       then ((simEqIdx+1,reqTime));
     else
-      equation
+      algorithm
         print("convertSimEqToSccCosts1 failed!\n");
       then fail();
   end matchcontinue;
@@ -5069,7 +5069,7 @@ algorithm
         end while;
       then true;
     else
-      equation
+      algorithm
         print("Different components in graph and system\n");
       then false;
   end matchcontinue;
@@ -5286,7 +5286,7 @@ algorithm
       then
         (({{}},0.0),({{}},0.0));
     else
-      equation
+      algorithm
         print("getCriticalPaths failed!\n");
       then
         (({{}},0.0),({{}},0.0));
@@ -5368,7 +5368,7 @@ algorithm
         arrayUpdate(iNodeCriticalPaths, iNode, (calcTime, criticalPath));
       then ((calcTime, criticalPath));
     else
-      equation
+      algorithm
         print("HpcOmTaskGraph.getCriticalPath_1 failed\n");
       then fail();
   end matchcontinue;
@@ -5518,7 +5518,7 @@ algorithm
       then
         costs;
     else
-      equation
+      algorithm
         print("getCostsForNode failed! \n");
       then
         fail();
@@ -5615,7 +5615,7 @@ algorithm
       then
         parallelSetTmp;
     else
-      equation
+      algorithm
         print("getParallelSetForComp failed!\n");
       then
         fail();
@@ -6686,7 +6686,7 @@ algorithm
         newElem := (eqIdx,sccIdx-1);
       then newElem::iNewList;
     else
-      equation
+      algorithm
         print("removeDummyStateFromMapping1 failed\n");
     then iNewList;
   end matchcontinue;
@@ -6775,8 +6775,8 @@ algorithm
         tmpMapping := arrayUpdate(iMapping, simEqIdx, SOME(iEquation));
       then tmpMapping;
     else
-      equation
-        (simEqIdx,_) = getIndexBySimCodeEq(iEquation);
+      algorithm
+        (simEqIdx,_) := getIndexBySimCodeEq(iEquation);
         //print("getSimEqIdxSimEqMapping1: Can't access idx " + intString(simEqIdx) + "\n");
       then iMapping;
   end matchcontinue;
@@ -6806,7 +6806,7 @@ algorithm
     case(SOME(tmpSys),_)
       then tmpSys;
     else
-      equation
+      algorithm
         print("getSimCodeEqByIndexAndMapping1 failed. Looking for Index " + intString(iIdx) + "\n");
         //print(" -- available indices: " + stringDelimitList(List.map(List.map(iEqs,getIndexBySimCodeEq), intString), ",") + "\n");
       then fail();
@@ -6832,7 +6832,7 @@ algorithm
       then head;
     case(head::rest,_) then getSimCodeEqByIndex(rest,iIdx);
     else
-      equation
+      algorithm
         print("getSimCodeEqByIndex failed. Looking for Index " + intString(iIdx) + "\n");
         //print(" -- available indices: " + stringDelimitList(List.map(List.map(iEqs,getIndexBySimCodeEq), intString), ",") + "\n");
       then fail();

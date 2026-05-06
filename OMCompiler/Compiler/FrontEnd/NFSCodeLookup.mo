@@ -1178,8 +1178,8 @@ algorithm
     // adding the redeclaration to the environment, and lookupRedeclaredClass2
     // outputs its own errors.
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- NFSCodeLookup.lookupRedeclaredClassByItem failed on " +
             NFSCodeEnv.getItemName(inItem) + " in " +
             NFSCodeEnv.getEnvName(inEnv));
@@ -1249,8 +1249,8 @@ algorithm
         fail();
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- NFSCodeLookup.lookupRedeclaredClass2 failed on " +
             NFSCodeEnv.getItemName(inItem) + " in " +
             NFSCodeEnv.getEnvName(inEnv));
@@ -1489,8 +1489,8 @@ algorithm
 
     // Normal baseclass.
     else
-      equation
-        (item, path, env) = lookupName(inName, inEnv, LOOKUP_ANY(), inInfo,
+      algorithm
+        (item, path, env) := lookupName(inName, inEnv, LOOKUP_ANY(), inInfo,
           SOME(Error.LOOKUP_BASECLASS_ERROR));
       then
         (item, path, env);
@@ -1815,8 +1815,8 @@ algorithm
         path;
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- NFSCodeLookup.qualifyPath failed on " +
           AbsynUtil.pathString(inPath) + " in " +
           NFSCodeEnv.getEnvName(inEnv));

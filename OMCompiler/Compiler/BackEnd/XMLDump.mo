@@ -443,9 +443,9 @@ algorithm
     case (DAE.MUL_MATRIX_PRODUCT()) then MathMLVectorproduct;
     case (DAE.DIV_ARRAY_SCALAR()) then MathMLDivide;
     else
-      equation
-        error_msg = "in XMLDump.binopSymbol2 - Unknown operator: ";
-        error_msg = error_msg + ExpressionDump.debugBinopSymbol(inOperator);
+      algorithm
+        error_msg := "in XMLDump.binopSymbol2 - Unknown operator: ";
+        error_msg := error_msg + ExpressionDump.debugBinopSymbol(inOperator);
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
       then
         fail();
@@ -771,7 +771,7 @@ algorithm
     case ({},_)
       then ();
     else
-      equation
+      algorithm
         dumpStrOpenTag(Content);
         dumpCrefIdxLst2(crefIdxLst);
         dumpStrCloseTag(Content);
@@ -826,7 +826,7 @@ algorithm
     case ({},_)
       then ();
     else
-      equation
+      algorithm
         dumpStrOpenTag(Content);
         dumpDAEInstDims2(arry_Dim);
         dumpStrCloseTag(Content);
@@ -1061,7 +1061,7 @@ algorithm
         dumpStrCloseTag(DAE_CLOSE);
       then ();
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {"XMLDump.dumpBackendDAE failed"});
       then
         fail();
@@ -1349,8 +1349,8 @@ algorithm
     case DAE.OUTPUT() then VARDIR_OUTPUT;
     case DAE.BIDIR()  then VARDIR_NONE;
     else
-      equation
-        error_msg = "in XMLDump.dumpDirectionStr - Unknown var direction";
+      algorithm
+        error_msg := "in XMLDump.dumpDirectionStr - Unknown var direction";
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
       then
         fail();
@@ -1706,8 +1706,8 @@ algorithm
       then ();
 
     else
-      equation
-        res = "in XMLDump.dumpEquation - Unknown equation";
+      algorithm
+        res := "in XMLDump.dumpEquation - Unknown equation";
         Error.addMessage(Error.INTERNAL_ERROR, {res});
       then
         fail();
@@ -1914,7 +1914,7 @@ algorithm
       then ();
 /*
     case (DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = args))
-      equation
+      algorithm
         fs = AbsynUtil.pathStringNoQual(fcn);
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag("selector");          ----THIS IS FOR ALGORITHM----
@@ -2322,8 +2322,8 @@ algorithm
     case BackendDAE.EXTOBJ(path)
       then (stringAppend(VARIABILITY_EXTERNALOBJECT,stringAppend(":",AbsynUtil.pathStringNoQual(path))));
     else
-      equation
-        error_msg = "in XMLDump.dumpKind - Unknown kind";
+      algorithm
+        error_msg := "in XMLDump.dumpKind - Unknown kind";
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
       then
         fail();
@@ -3091,8 +3091,8 @@ algorithm
         dumpStrCloseTag(ADDITIONAL_INFO);
       then ();
     else
-      equation
-        error_msg = "in XMLDump.dumpVarsAdditionalInfo - Unknown info";
+      algorithm
+        error_msg := "in XMLDump.dumpVarsAdditionalInfo - Unknown info";
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
       then ();
   end matchcontinue;
@@ -3655,9 +3655,9 @@ algorithm
     case (DAE.AND()) then MathMLAnd;
     case (DAE.OR()) then MathMLOr;
     else
-      equation
-        error_msg = "in XMLDump.lbinopSymbol - Unknown operator";
-        error_msg = error_msg + ExpressionDump.debugBinopSymbol(inOperator);
+      algorithm
+        error_msg := "in XMLDump.lbinopSymbol - Unknown operator";
+        error_msg := error_msg + ExpressionDump.debugBinopSymbol(inOperator);
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
       then
         fail();
@@ -3677,9 +3677,9 @@ algorithm
     local String error_msg;
     case (DAE.NOT()) then MathMLNot;
     else
-      equation
-        error_msg = "in XMLDump.lunaryopSymbol - Unknown operator";
-        error_msg = error_msg + ExpressionDump.debugBinopSymbol(inOperator);
+      algorithm
+        error_msg := "in XMLDump.lunaryopSymbol - Unknown operator";
+        error_msg := error_msg + ExpressionDump.debugBinopSymbol(inOperator);
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
       then
         fail();
@@ -3704,9 +3704,9 @@ algorithm
     case (DAE.EQUAL()) then MathMLEquivalent;
     case (DAE.NEQUAL()) then MathMLNotEqual;
     else
-      equation
-        error_msg = "in XMLDump.relopSymbol - Unknown operator";
-        error_msg = error_msg + ExpressionDump.debugBinopSymbol(inOperator);
+      algorithm
+        error_msg := "in XMLDump.relopSymbol - Unknown operator";
+        error_msg := error_msg + ExpressionDump.debugBinopSymbol(inOperator);
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
       then
         fail();

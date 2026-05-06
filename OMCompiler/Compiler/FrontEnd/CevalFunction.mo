@@ -236,8 +236,8 @@ algorithm
         (cache, return_value);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- CevalFunction.evaluateFunction failed.\n");
       then
         fail();
@@ -392,9 +392,9 @@ algorithm
         (val, cache);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        err_str = DAEDump.dumpExtArgStr(inArgument);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
+        err_str := DAEDump.dumpExtArgStr(inArgument);
         Debug.traceln("- CevalFunction.evaluateExtInputArg failed on " + err_str);
       then
         fail();
@@ -1172,8 +1172,8 @@ algorithm
         (inCache, inEnv, BREAK());
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- CevalFunction.evaluateStatement failed for:");
         Debug.traceln(DAEDump.ppStatementStr(inStatement));
       then
@@ -1471,8 +1471,8 @@ algorithm
       DAE.ComponentRef cref;
     case DAE.CREF(componentRef = cref) then cref;
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- CevalFunction.extractLhsComponentRef failed on " + ExpressionDump.printExpStr(inExp));
       then
         fail();
@@ -1693,12 +1693,12 @@ algorithm
 
     // Normal variables.
     else
-      equation
-        binding = makeBinding(inOptValue);
-        (cache, ty) =
+      algorithm
+        binding := makeBinding(inOptValue);
+        (cache, ty) :=
           appendDimensions(inType, inOptValue, inDims, inCache, inEnv);
-        var = makeFunctionVariable(inName, ty, binding);
-        env = FGraph.mkComponentNode(
+        var := makeFunctionVariable(inName, ty, binding);
+        env := FGraph.mkComponentNode(
                 inEnv,
                 var,
                 SCode.COMPONENT(
@@ -2423,8 +2423,8 @@ algorithm
         Values.RECORD(path, values, var_names, -1);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- CevalFunction.generateDefaultBinding failed\n");
       then
         fail();
@@ -2503,8 +2503,8 @@ algorithm
 
     // All other variables we can just look up in the environment.
     else
-      equation
-        (_, val) = getVariableTypeAndValue(inCref, inEnv);
+      algorithm
+        (_, val) := getVariableTypeAndValue(inCref, inEnv);
       then
         val;
   end matchcontinue;
@@ -2790,7 +2790,7 @@ algorithm
 
     // This should never happen, print an error if it does.
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR,
           {"Different iterators in CevalFunction.compareIterators."});
       then
@@ -2844,17 +2844,17 @@ algorithm
     case ({}, _) then ();
 
     else
-      equation
-        cycles = Graph.findCycles(inCycles, isElementEqual);
-        elements = List.mapList(cycles, Util.tuple21);
-        crefs = List.mapList(elements, DAEUtil.varCref);
-        names = List.mapList(crefs,
+      algorithm
+        cycles := Graph.findCycles(inCycles, isElementEqual);
+        elements := List.mapList(cycles, Util.tuple21);
+        crefs := List.mapList(elements, DAEUtil.varCref);
+        names := List.mapList(crefs,
           ComponentReference.printComponentRefStr);
-        cycles_strs = List.map1(names, stringDelimitList, ",");
-        cycles_str = stringDelimitList(cycles_strs, "}, {");
-        cycles_str = "{" + cycles_str + "}";
-        scope_str = "";
-        info = ElementSource.getElementSourceFileInfo(inSource);
+        cycles_strs := List.map1(names, stringDelimitList, ",");
+        cycles_str := stringDelimitList(cycles_strs, "}, {");
+        cycles_str := "{" + cycles_str + "}";
+        scope_str := "";
+        info := ElementSource.getElementSourceFileInfo(inSource);
         Error.addSourceMessage(Error.CIRCULAR_COMPONENTS, {scope_str, cycles_str}, info);
       then
         fail();

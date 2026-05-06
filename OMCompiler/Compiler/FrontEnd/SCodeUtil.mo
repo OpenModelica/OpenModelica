@@ -817,12 +817,12 @@ protected function classDefEqual
     /* adrpo: TODO! FIXME! are these below really needed??!!
     // as far as I can tell we handle all the cases.
     case(cdef1, cdef2)
-      equation
+      algorithm
         equality(cdef1=cdef2);
       then true;
 
     case(cdef1, cdef2)
-      equation
+      algorithm
         failure(equality(cdef1=cdef2));
       then false;*/
 
@@ -2593,7 +2593,7 @@ algorithm
     case SCode.ALG_TRY() then inStatement.info;
     case SCode.ALG_CONTINUE() then inStatement.info;
     else
-      equation
+      algorithm
         Error.addInternalError("SCodeUtil.getStatementInfo failed", sourceInfo());
       then AbsynUtil.dummyInfo;
   end match;

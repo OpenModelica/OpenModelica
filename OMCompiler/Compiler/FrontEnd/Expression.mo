@@ -303,8 +303,8 @@ algorithm
       then Absyn.CALL(acref, Absyn.FOR_ITER_FARG(ae1, iterType, aiters),{});
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         print("Expression.unelabExp failed on: " + ExpressionDump.printExpStr(inExp) + "\n");
       then
         fail();
@@ -673,9 +673,9 @@ algorithm
         case (DAE.T_BOOL()) // not e
           then DAE.LUNARY(DAE.NOT(t),e);
         else
-          equation
-            b = DAEUtil.expTypeArray(t);
-            op = if b then DAE.UMINUS_ARR(t) else DAE.UMINUS(t);
+          algorithm
+            b := DAEUtil.expTypeArray(t);
+            op := if b then DAE.UMINUS_ARR(t) else DAE.UMINUS(t);
           then DAE.UNARY(op,e);
         end match;
       then
@@ -1251,8 +1251,8 @@ algorithm
     case (DAE.NEQUAL(), _) then inOp;
     case (DAE.USERDEFINED(), _) then inOp;
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Expression.setOpType failed on unknown operator");
       then
         fail();
@@ -1441,8 +1441,8 @@ algorithm
 
     case (_,0) then inType;
     else
-      equation
-        ty = unliftArray(inType);
+      algorithm
+        ty := unliftArray(inType);
       then
         unliftArrayX(ty,x-1);
   end match;
@@ -1473,8 +1473,8 @@ algorithm
         DAE.ARRAY(DAE.T_ARRAY(ty, dims), scalar, head :: expl);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Expression.arrayAppend failed.");
       then
         fail();
@@ -2112,9 +2112,9 @@ algorithm
         DAE.DIM_EXP(e);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        sub_str = ExpressionDump.subscriptString(inSubscript);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
+        sub_str := ExpressionDump.subscriptString(inSubscript);
         Debug.traceln("- Expression.subscriptDimension failed on " + sub_str);
       then
         fail();
@@ -2852,13 +2852,13 @@ algorithm
         (fx1, f1);
 
     else
-      equation
+      algorithm
         if inFunc(inExp,cr) then
-          res = {};
-          resx = {inExp};
+          res := {};
+          resx := {inExp};
         else
-          resx = {};
-          res = {inExp};
+          resx := {};
+          res := {inExp};
         end if;
         then (resx, res);
   end matchcontinue;
@@ -3119,8 +3119,8 @@ algorithm
       then e::acc;
 
    else
-     equation
-       acc = expandFactorsWork3(inExp,acc,doInverseFactors);
+     algorithm
+       acc := expandFactorsWork3(inExp,acc,doInverseFactors);
      then expandFactorsWork2(acc,doInverseFactors);
 
    end match;
@@ -3257,7 +3257,7 @@ algorithm
       then
         (xt,nonxt);
     else
-      equation
+      algorithm
         /*Print.printBuf("Expression.getTerms_containingX failed: ");
         ExpressionDump.printExp(e);
         Print.printBuf("\nsolving for: ");
@@ -3573,7 +3573,7 @@ algorithm
     case DAE.UNARY(exp=e)
       then negate(generateCrefsExpFromExp(e, inCrefPrefix)); /*ToDo: check*/
     else
-      equation
+      algorithm
         print("Expression.generateCrefsExpFromExp: fail for" + ExpressionDump.printExpStr(inExp) + "\n");
       then fail();
   end match;
@@ -3631,7 +3631,7 @@ algorithm
       then generateCrefsExpLstFromExp(e, inCrefPrefix);/*ToDo: check*/
 
     else
-      equation
+      algorithm
         print("Expression.generateCrefsExpLstFromExp: fail for " + ExpressionDump.printExpStr(inExp) + "\n");
       then fail();
 
@@ -3850,8 +3850,8 @@ algorithm
         res := DAE.LBINARY(e1,op,res);
       then res;
     else
-      equation
-        str = "Expression.makeLBinary failed for operator " + ExpressionDump.lbinopSymbol(op);
+      algorithm
+        str := "Expression.makeLBinary failed for operator " + ExpressionDump.lbinopSymbol(op);
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end match;
@@ -3879,7 +3879,7 @@ algorithm
             case({e1,e2}) then expAdd(e1,e2);
             case(_)then makeSumWork(inExpLst, simplify);
             else
-              equation
+              algorithm
                if Flags.isSet(Flags.FAILTRACE) then
                  Debug.trace("-Expression.makeSum1 failed, DAE.Exp lst:");
                  Debug.trace(ExpressionDump.printExpListStr(inExpLst));
@@ -3950,7 +3950,7 @@ algorithm
         //res = DAE.BINARY(e1, DAE.ADD(tp), e2);
       //then res;
     /*case ({e1,e2})
-      equation
+      algorithm
         b1 = isZero(e1);
         tp = typeof(e1) "Take type info from e1, ok since type checking already performed." ;
         res = DAE.BINARY(e1,DAE.ADD(tp),e2);
@@ -4022,17 +4022,17 @@ algorithm
       then
         DAE.ICONST(i1);
     else
-      equation
-        tp = typeof(e1);
-        true = Types.isIntegerOrRealOrSubTypeOfEither(tp);
-        b1 = DAEUtil.expTypeArray(tp);
-        tp = typeof(e2);
-        true = Types.isIntegerOrRealOrSubTypeOfEither(tp);
-        b2 = DAEUtil.expTypeArray(tp);
+      algorithm
+        tp := typeof(e1);
+        true := Types.isIntegerOrRealOrSubTypeOfEither(tp);
+        b1 := DAEUtil.expTypeArray(tp);
+        tp := typeof(e2);
+        true := Types.isIntegerOrRealOrSubTypeOfEither(tp);
+        b2 := DAEUtil.expTypeArray(tp);
         /* swap e1 and e2 if we have scalar mul array */
-        (e1_1,e2_1) = Util.swap((not b1) and b2, e1, e2);
+        (e1_1,e2_1) := Util.swap((not b1) and b2, e1, e2);
         /* Create all kinds of multiplication with scalars or arrays */
-        op = if b1 and b2 then DAE.MUL_ARR(tp) else (if b1==b2 then DAE.MUL(tp) else DAE.MUL_ARRAY_SCALAR(tp));
+        op := if b1 and b2 then DAE.MUL_ARR(tp) else (if b1==b2 then DAE.MUL(tp) else DAE.MUL_ARRAY_SCALAR(tp));
       then
         DAE.BINARY(e1_1,op,e2_1);
   end matchcontinue;
@@ -4087,10 +4087,10 @@ algorithm
     case (_, _) guard(isHalf(e2) and isPositiveOrZero(e1))
     then Expression.makePureBuiltinCall("sqrt",{e1},DAE.T_REAL_DEFAULT);
 
-    else equation
-      tp = typeof(e1);
-      b = DAEUtil.expTypeArray(tp);
-      op = if b then DAE.POW_ARR(tp) else DAE.POW(tp);
+    else algorithm
+      tp := typeof(e1);
+      b := DAEUtil.expTypeArray(tp);
+      op := if b then DAE.POW_ARR(tp) else DAE.POW(tp);
     then DAE.BINARY(e1,op,e2);
 
   end match;
@@ -4739,8 +4739,8 @@ algorithm
     case({},_) then inExp;
 
     else
-      equation
-        oExp = arrayFill2(dims,inExp);
+      algorithm
+        oExp := arrayFill2(dims,inExp);
       then
         oExp;
 
@@ -5251,9 +5251,9 @@ algorithm
     // Why don't we call inFunc() for these expressions?
     case DAE.CODE() then (inExp, inExtArg);
 
-    else equation
-      str = ExpressionDump.printExpStr(inExp);
-      str = "Expression.traverseExpBottomUp or one of the user-defined functions using it is not implemented correctly: " + str;
+    else algorithm
+      str := ExpressionDump.printExpStr(inExp);
+      str := "Expression.traverseExpBottomUp or one of the user-defined functions using it is not implemented correctly: " + str;
       Error.addInternalError(str, sourceInfo());
     then fail();
   end match;
@@ -5817,9 +5817,9 @@ algorithm
       then (inExp,ext_arg);
 
     else
-      equation
-        str = ExpressionDump.printExpStr(inExp);
-        str = getInstanceName() + " or " + System.dladdr(func) + "not implemented correctly: " + str;
+      algorithm
+        str := ExpressionDump.printExpStr(inExp);
+        str := getInstanceName() + " or " + System.dladdr(func) + "not implemented correctly: " + str;
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end match;
@@ -6638,7 +6638,7 @@ algorithm
 
 /* Not reachable...
     case (DAE.CREF(componentRef = cr1), (cr,false))
-      equation
+      algorithm
         b = ComponentReference.crefPrefixOf(cr1,cr);
       then (inExp,not b,(cr,b));
 */
@@ -7238,7 +7238,7 @@ algorithm
     case DAE.PATTERN() then (inExp, inArg);
 
     else
-      equation
+      algorithm
         Error.addInternalError(getInstanceName() + " - Unknown expression " + ExpressionDump.printExpStr(inExp) + ". Called using: " + System.dladdr(inEnterFunc) + " " + System.dladdr(inExitFunc), sourceInfo());
       then
         fail();
@@ -7343,7 +7343,7 @@ algorithm
     case (DAE.WILD(), _, arg) then (inCref, arg);
 
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {"Expression.traverseExpCref: Unknown cref"});
       then fail();
   end match;
@@ -9561,11 +9561,11 @@ algorithm
     // end id
     /*// everything else failed, try structural equality
     case (e1,e2)
-      equation
+      algorithm
         equality(e1 = e2);
       then true;
     case (e1,e2)
-      equation
+      algorithm
         failure(equality(e1 = e2));
       then false;
     */
@@ -9744,12 +9744,12 @@ algorithm
     case (DAE.ASUB(exp=e, sub=subs), _) then expContainsList(list(Expression.getSubscriptExp(sub) for sub in subs), inExp2) or expContains(e, inExp2);
     case (DAE.REDUCTION(expr=e), _) then expContains(e, inExp2);
 
-    else equation
-      true = Flags.isSet(Flags.FAILTRACE);
+    else algorithm
+      true := Flags.isSet(Flags.FAILTRACE);
       Debug.trace("- Expression.expContains failed\n");
-      s1 = ExpressionDump.printExpStr(inExp1);
-      s2 = ExpressionDump.printExpStr(inExp2);
-      str = stringAppendList({"exp = ", s1," subexp = ", s2});
+      s1 := ExpressionDump.printExpStr(inExp1);
+      s2 := ExpressionDump.printExpStr(inExp2);
+      str := stringAppendList({"exp = ", s1," subexp = ", s2});
       Debug.traceln(str);
     then fail();
   end matchcontinue;
@@ -9926,8 +9926,8 @@ algorithm
     case (_, DAE.DIM_EXP()) then true;
 
     else
-      equation
-        b = intEq(dimensionSize(dim1), dimensionSize(dim2));
+      algorithm
+        b := intEq(dimensionSize(dim1), dimensionSize(dim2));
       then
         b;
   end match;
@@ -9990,10 +9990,10 @@ algorithm
     case (_, DAE.DIM_EXP()) then true;
 
     else
-      equation
-        d1 = dimensionSize(dim1);
-        d2 = dimensionSize(dim2);
-        b = boolOr(
+      algorithm
+        d1 := dimensionSize(dim1);
+        d2 := dimensionSize(dim2);
+        b := boolOr(
               intEq(d1, d2),
               boolOr(
                 boolAnd(intEq(d1,0), intNe(d2,0)),
@@ -10179,7 +10179,7 @@ algorithm
       then b;
 /*    case(ss1::ssl1, (ss2 as DAE.SLICE(exp)) ::ssl2)
       local DAE.Exp exp;
-        equation
+        algorithm
          b = subscriptContain(ssl1,ssl2);
         then
           b;
@@ -10634,8 +10634,8 @@ algorithm
     case DAE.UNBOX(exp=e) then 1+complexity(e);
     case DAE.PATTERN() then 0;
     else
-      equation
-        str = "Expression.complexityWork failed: " + ExpressionDump.printExpStr(exp);
+      algorithm
+        str := "Expression.complexityWork failed: " + ExpressionDump.printExpStr(exp);
         Error.addMessage(Error.INTERNAL_ERROR,{str});
       then fail();
   end match;
@@ -10723,7 +10723,7 @@ algorithm
     case DAE.NEQUAL() then 1;
     case DAE.USERDEFINED() then 100;
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{"Expression.opWCET failed"});
       then fail();
   end match;
@@ -10768,8 +10768,8 @@ algorithm
     case DAE.UNARY() then true;
 
     else
-      equation
-        diff = Util.intCompare(priority(inOperand, inLhs),
+      algorithm
+        diff := Util.intCompare(priority(inOperand, inLhs),
                                priority(inOperator, inLhs));
       then
         shouldParenthesize2(diff, inOperand, inLhs);
@@ -11593,7 +11593,7 @@ algorithm
         e;
 
     else
-    equation
+    algorithm
       print("Expression.fromAbsynExp: Unhandled expression: " + Dump.printExpStr(inAExp) + "\n");
     then
       fail();
@@ -11669,7 +11669,7 @@ algorithm
     case(Absyn.EQUAL(), _) then DAE.EQUAL(ty);
     case(Absyn.NEQUAL(), _) then DAE.NEQUAL(ty);
     else
-    equation
+    algorithm
       print("Expression.fromAbsynOperator: Unhandled operator: " + Dump.opSymbol(aop) + "\n");
     then
       fail();
@@ -11849,7 +11849,7 @@ algorithm
     case({})
       then true;
     else
-      equation
+      algorithm
         //print("isCrefListWithEqualIdents: returns false\n\n");
       then false;
   end matchcontinue;
@@ -12279,9 +12279,9 @@ algorithm
       then
         res;
     else
-      equation
-        res = expSub(iExp1, iExp2);
-       (res, _) = ExpressionSimplify.simplify(res);
+      algorithm
+        res := expSub(iExp1, iExp2);
+       (res, _) := ExpressionSimplify.simplify(res);
       then
         res;
   end matchcontinue;

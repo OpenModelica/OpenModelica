@@ -237,9 +237,9 @@ algorithm
       source := ElementSource.addSymbolicTransformation(inSource, DAE.OP_SCALARIZE(eqExp, i, DAE.EQUALITY_EXPS(inExp1, inExp2)));
     then ((i+1, BackendDAE.EQUATION(inExp1, inExp2, source, eqAttr)::eqns));
 
-    else equation
+    else algorithm
       // show only on failtrace!
-      true = Flags.isSet(Flags.FAILTRACE);
+      true := Flags.isSet(Flags.FAILTRACE);
       Debug.traceln("- InlineArrayEquations.generateScalarArrayEqns2 failed on: " + ExpressionDump.printExpStr(inExp1) + " = " + ExpressionDump.printExpStr(inExp2) + "\n");
     then fail();
   end matchcontinue;

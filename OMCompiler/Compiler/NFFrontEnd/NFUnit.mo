@@ -520,7 +520,7 @@ algorithm
       s := if b then s + s1 + s2 + s3 + s4 + s5 + s6 + s7 else "1";
     then s;
 
-    else equation
+    else algorithm
       Error.addCompilerWarning("function Unit.unitString failed for \"" + unit2string(inUnit) +"\".");
     then fail();
   end match;

@@ -1723,7 +1723,7 @@ public function assertion "
 algorithm
   _ := match (b,message,info)
     case (true, _, _) then ();
-    else equation
+    else algorithm
       addSourceMessage(INTERNAL_ERROR, {message}, info);
     then fail();
   end match;
@@ -1740,7 +1740,7 @@ public function assertionOrAddSourceMessage "
 algorithm
   _ := match (inCond, inErrorMsg, inMessageTokens, inInfo)
     case (true, _, _, _) then ();
-    else equation
+    else algorithm
       addSourceMessage(inErrorMsg, inMessageTokens, inInfo);
       failOnErrorMsg(inErrorMsg);
     then ();

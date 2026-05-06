@@ -238,7 +238,7 @@ algorithm
       then (tmpSchedule,tmpThreadReadyTimes);
     case({},_,_,_,_,_,_,_,_,_) then (iSchedule,iThreadReadyTimes);
     else
-      equation
+      algorithm
         print("HpcOmScheduler.createListSchedule1 failed\n");
       then (iSchedule,iThreadReadyTimes);
   end match;
@@ -424,7 +424,7 @@ algorithm
       then (tmpSchedule,tmpThreadReadyTimes);
     case({},_,_,_,_,_,_,_,_,_,_) then (iSchedule, iThreadReadyTimes);
     else
-      equation
+      algorithm
         print("HpcOmScheduler.createRandomSchedule1 failed\n");
       then fail();
   end matchcontinue;
@@ -507,7 +507,7 @@ algorithm
         tmpSchedule := HpcOmSimCode.THREADSCHEDULE(allThreadTasks,outgoingDepTasks,{},allCalcTasks);
     then tmpSchedule;
     else
-      equation
+      algorithm
         print("HpcOmScheduler.addReleaseLocksToSchedule failed\n");
       then fail();
   end match;
@@ -585,7 +585,7 @@ algorithm
         tmpThreadTasks := iTask :: tmpThreadTasks;
       then tmpThreadTasks;
     else
-      equation
+      algorithm
         print("HpcOmScheduler.addReleaseLocksToSchedule0 failed\n");
       then fail();
   end match;
@@ -851,7 +851,7 @@ algorithm
         tmpTask := createDepTask(iSourceTask, iTargetTask, iOutgoing, commInfo);
       then tmpTask;
     /*case(HpcOmSimCode.CALCTASK(index=predIndex),HpcOmSimCode.CALCTASK(index=taskIndex),false,_,_,_)
-      equation
+      algorithm
         //print("predIndex"+intString(predIndex)+"\n");
         //print("taskIndex"+intString(taskIndex)+"\n");
         commBetweenTasks = getCommunicationObjBetweenMergedTasks(predIndex,taskIndex,iCompTaskMapping,iCommCosts);
@@ -859,7 +859,7 @@ algorithm
         tmpTask = createDepTask(iSourceTask, iTargetTask, false, commInfo);
       then tmpTask; */
     else
-      equation
+      algorithm
         print("CreateDepTaskAndCommunicationInfo failed!\n");
       then fail();
   end matchcontinue;
@@ -980,7 +980,7 @@ algorithm
     case((head,_)::tail, SOME(_)) then getTaskWithHighestFinishTime(tail, iCurrentTask);
     case({},SOME(tmpTask)) then tmpTask;
     else
-      equation
+      algorithm
         print("HpcOmScheduler.getTaskWithHighestFinishTime failed!\n");
       then fail();
   end matchcontinue;
@@ -1064,7 +1064,7 @@ algorithm
         ((_,exeCost)) := HpcOmTaskGraph.getExeCost(iNodeIdx,iTaskGraphMeta);
       then HpcOmSimCode.CALCTASK(nodeMark,iNodeIdx,exeCost,-1.0,-1, components);
     else
-      equation
+      algorithm
         print("HpcOmScheduler.convertNodeToTask failed!\n");
       then fail();
   end match;
@@ -1093,7 +1093,7 @@ algorithm
         nodeMark := nodeMark * (-1);
       then HpcOmSimCode.CALCTASK(nodeMark,iNodeIdx,exeCost,-1.0,-1, components);
     else
-      equation
+      algorithm
         print("HpcOmScheduler.convertNodeToTask failed!\n");
       then fail();
   end match;
@@ -1160,7 +1160,7 @@ algorithm
         commCost := getMaxCommCostsByTaskList(iTask,predecessorTasksOtherTh, iCommCosts);
       then realAdd(realAdd(startTime, commCost), calcTime);
     else
-      equation
+      algorithm
         print("HpcOmScheduler.calculateFinishTimeByThreadId can only handle CALCTASKs\n");
       then fail();
   end match;
@@ -1219,7 +1219,7 @@ algorithm
       then head;
     case(_::tail, _) then getMaxCommCostsByTaskList2(tail, iIdx);
     else
-      equation
+      algorithm
         print("HpcOmScheduler.getMaxCommCostsByTaskList2 failed\n");
       then fail();
   end matchcontinue;
@@ -1252,7 +1252,7 @@ algorithm
         tmpTasks := List.map1(successors, getTaskByIndex, iAllCalcTasks);
       then (tmpTasks, successors);
     else
-      equation
+      algorithm
         print("HpcOmScheduler.getSuccessorsByTask can only handle CALCTASKs.");
       then fail();
   end matchcontinue;
@@ -1270,7 +1270,7 @@ algorithm
     case(HpcOmSimCode.CALCTASK(weighting=weightingTask1), HpcOmSimCode.CALCTASK(weighting=weightingTask2))
       then intGt(weightingTask1,weightingTask2);
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {"HpcOmScheduler.compareTasksByWeighting can only compare CALCTASKs! Task 1 has type " + getTaskTypeString(iTask1) + " and task 2 has type " + getTaskTypeString(iTask2)});
       then fail();
   end match;
@@ -1288,7 +1288,7 @@ algorithm
     case(HpcOmSimCode.CALCTASK(eqIdc=eqIdcTask1), HpcOmSimCode.CALCTASK(eqIdc=eqIdcTask2))
       then intGt(List.last(eqIdcTask1),List.last(eqIdcTask2));
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {"HpcOmScheduler.compareTasksByEqIdc can only compare CALCTASKs with at least one equation index! Task 1 has type " + getTaskTypeString(iTask1) + " and task 2 has type " + getTaskTypeString(iTask2)});
       then fail();
   end match;
@@ -1305,7 +1305,7 @@ algorithm
     case(_,(HpcOmSimCode.CALCTASK(threadIdx=threadIdx),_))
       then intEq(threadIdx,iThreadIdx);
     else
-      equation
+      algorithm
         print("HpcOmScheduler.compareTaskWithThreadIdx can only compare CALCTASKs!\n");
       then fail();
   end match;
@@ -1387,7 +1387,7 @@ algorithm
     case(HpcOmSimCode.TASKEMPTY())
       then "empty task\n";
     else
-      equation
+      algorithm
         print("HpcOmScheduler.dumpTask failed\n");
       then fail();
   end match;
@@ -1433,7 +1433,7 @@ algorithm
         tmpScheduleInfo := arrayCreate(iTaskCount,(-1,-1,-1.0));
       then tmpScheduleInfo;
     else
-      equation
+      algorithm
         print("HpcOmScheduler.convertScheduleStrucToInfo unknown Schedule-Type.\n");
       then fail();
   end match;
@@ -1466,7 +1466,7 @@ algorithm
       then ((tmpScheduleInfo,taskNumber+1));
     case (HpcOmSimCode.DEPTASK(),_) then iScheduleInfo;
     else
-      equation
+      algorithm
         print("HpcOmScheduler.convertScheduleStrucToInfo1 failed. Unknown Task-Type.\n");
       then fail();
   end match;
@@ -1495,7 +1495,7 @@ algorithm
         scheduleInfo := convertScheduleStrucToInfoLevel1(tasks,sectionsNumber,1,iScheduleInfo);
       then convertScheduleStrucToInfoLevel(rest,sectionsNumber+1,scheduleInfo);
     else
-    equation
+    algorithm
       print("convertScheduleStrucToInfoLevel failed\n");
     then fail();
   end matchcontinue;
@@ -1834,7 +1834,7 @@ algorithm
       dependentNodes := BLS_getDependentGroups(listAppend(rest,dependentNodes),iGraph,iGraphT,referenceNodes,listAppend(allNodes,dependentsIn));
    then dependentNodes;
   else
-    equation
+    algorithm
       print("BLS_getDependentGroups failed!\n");
     then fail();
   end matchcontinue;
@@ -1893,7 +1893,7 @@ algorithm
       (clusterTmp,clusterCostsTmp) := BLS_mergeToTargetSize(nodeRest,costRest,targetSize,group::restGroups);
     then (clusterTmp,clusterCostsTmp);
   else
-    equation
+    algorithm
       print("BLS_mergeToTargetSize failed!");
     then fail();
   end matchcontinue;
@@ -2067,7 +2067,7 @@ algorithm
         s := s + dumpTaskList(tasks);
       then (s,iLevel + 1);
     else
-      equation
+      algorithm
         print("printLevelSchedule failed!\n");
       then fail();
    end match;
@@ -2352,7 +2352,7 @@ algorithm
         readyTime := if isLower then iThreadReadyTime else readyTime;
       then ((firstThreadIdx, readyTime, currentThreadIdx+1));
     else
-      equation
+      algorithm
         print("getFirstReadyThread0 failed\n");
     then iFirstReadyThread;
   end match;
@@ -2387,7 +2387,7 @@ algorithm
         tmpSchedule := HpcOmSimCode.TASKDEPSCHEDULE(filteredNodeLevelMap);
       then tmpSchedule;
     else
-      equation
+      algorithm
         print("HpcOmScheduler.createTaskDepSchedule failed.\n");
       then fail();
   end matchcontinue;
@@ -2533,7 +2533,7 @@ algorithm
         //tmpSchedule = addSuccessorLocksToSchedule(iTaskGraph,addReleaseLocksToSchedule,commCosts,inComps,iSimVarMapping,tmpSchedule);
       then setScheduleLockIds(tmpSchedule); // set unique lock ids
     else
-      equation
+      algorithm
         print("HpcOmScheduler.createMetisSchedule not every node has a scheduler-info.\n");
       then fail();
   end matchcontinue;
@@ -2683,7 +2683,7 @@ algorithm
         //printSchedule(tmpSchedule);
       then setScheduleLockIds(tmpSchedule); // set unique lock ids
     else
-      equation
+      algorithm
         print("HpcOmScheduler.createHMetisSchedule not every node has a scheduler-info.\n");
       then fail();
   end matchcontinue;
@@ -2929,7 +2929,7 @@ algorithm
         //printSchedule(tmpSchedule);
       then tmpSchedule;
     else
-      equation
+      algorithm
         print("HpcOmScheduler.createExtSchedule not every node has a scheduler-info.\n");
       then fail();
   end matchcontinue;
@@ -3046,7 +3046,7 @@ algorithm
       then tmpSchedule;
     case({},_,_,_,_,_,_,_,_,_) then iSchedule;
     else
-      equation
+      algorithm
         print("HpcOmScheduler.createExtSchedule1 failed. Tasks in List:\n");
         printTaskList(iNodeList);
       then fail();
@@ -3336,7 +3336,7 @@ algorithm
       then
         (schedule,simCode,taskGraph,meta,sccSimEqMap);
     else
-      equation
+      algorithm
         print("TDS_schedule1 failed!\n");
       then fail();
   end matchcontinue;
@@ -3994,9 +3994,9 @@ algorithm
        (duplicated,simEqSysIdx)  := TDS_duplicateSystemOfEquations(rest,simEqSysIdx,repl,simEqSys::simEqsFold);
      then (duplicated,simEqSysIdx);
    else
-     equation
-       simEqSys::rest = simEqsIn;
-       (duplicated,simEqSysIdx)  = TDS_duplicateSystemOfEquations(rest,simEqSysIdxIn,repl,simEqSys::simEqsFold);
+     algorithm
+       simEqSys::rest := simEqsIn;
+       (duplicated,simEqSysIdx)  := TDS_duplicateSystemOfEquations(rest,simEqSysIdxIn,repl,simEqSys::simEqsFold);
      then (duplicated,simEqSysIdx);
   end matchcontinue;
 end TDS_duplicateSystemOfEquations;
@@ -4211,7 +4211,7 @@ algorithm
         simEqSys.elseWhen := SOME(elseWhen);
     then (simEqSys,changed);
   else
-    equation
+    algorithm
       print("replaceExpsInSimEqSystem failed\n");
     then fail();
   end matchcontinue;
@@ -4429,7 +4429,7 @@ algorithm
         clusters := TDS_InitialCluster1(iTaskGraph,iTaskGraphT,iTaskGraphMeta,lastArrayIn,lactArrayIn,fpredArrayIn,rootNodes,taskAssIn,currThread,rest,clusters);
       then clusters;
     else
-     equation
+     algorithm
        print("TDS_InitialCluster1 failed\n");
      then
        fail();
@@ -4820,7 +4820,7 @@ algorithm
       then
         (taskAss,procAss);
     else
-      equation
+      algorithm
         print("MCP_getTaskAssignment1 failed!\n");
       then
         fail();
@@ -4853,7 +4853,7 @@ algorithm
       then
         schedule;
     else
-      equation
+      algorithm
         print("this is not a thread schedule!\n");
       then
         scheduleIn;
@@ -5227,26 +5227,26 @@ algorithm
       algorithm
       then (lstIn,orderIn);
     else
-      equation
-        p = listGet(lstIn,pivotIdx);
-        (leftLst,rightLst)= List.split(lstIn,pivotIdx);
-        rightLst = listReverse(rightLst);
-        (_,lIdx,b1) = getMemberOnTrueWithIdx(p,leftLst,realLt);
-        (_,rIdx,b2) = getMemberOnTrueWithIdx(p,rightLst,realGt);
-        rIdx = size+1-rIdx;
-        lstTmp = if b1 then swapEntriesInList(pivotIdx,lIdx,lstIn) else lstIn;
-        lstTmp = if b2 then swapEntriesInList(pivotIdx,rIdx,lstTmp) else lstTmp;
-        orderTmp = if b1 then swapEntriesInList(pivotIdx,lIdx,orderIn) else orderIn;
-        orderTmp = if b2 then swapEntriesInList(pivotIdx,rIdx,orderTmp) else orderTmp;
+      algorithm
+        p := listGet(lstIn,pivotIdx);
+        (leftLst,rightLst):= List.split(lstIn,pivotIdx);
+        rightLst := listReverse(rightLst);
+        (_,lIdx,b1) := getMemberOnTrueWithIdx(p,leftLst,realLt);
+        (_,rIdx,b2) := getMemberOnTrueWithIdx(p,rightLst,realGt);
+        rIdx := size+1-rIdx;
+        lstTmp := if b1 then swapEntriesInList(pivotIdx,lIdx,lstIn) else lstIn;
+        lstTmp := if b2 then swapEntriesInList(pivotIdx,rIdx,lstTmp) else lstTmp;
+        orderTmp := if b1 then swapEntriesInList(pivotIdx,lIdx,orderIn) else orderIn;
+        orderTmp := if b2 then swapEntriesInList(pivotIdx,rIdx,orderTmp) else orderTmp;
         // if both are false(no member left or rigth found) than the pivot has the right place
         if not b1 and not b2 then
-          (marked, pivot) = getNextPivot(lstTmp,markedIn,pivotIdx);
+          (marked, pivot) := getNextPivot(lstTmp,markedIn,pivotIdx);
         else
-          marked = markedIn;
-          pivot = pivotIdx;
+          marked := markedIn;
+          pivot := pivotIdx;
         end if;
 
-        (lstTmp,orderTmp) = quicksortWithOrder1(lstTmp,orderTmp,pivot,marked,size);
+        (lstTmp,orderTmp) := quicksortWithOrder1(lstTmp,orderTmp,pivot,marked,size);
       then
         (lstTmp,orderTmp);
   end match;
@@ -5476,7 +5476,7 @@ algorithm
     then
       (asapIn,estIn,ectIn,{node});
   else
-    equation
+    algorithm
       print("computeGraphValuesBottomUp2 failed!\n");
     then fail();
   end matchcontinue;
@@ -5735,7 +5735,7 @@ algorithm
         criticalPathInfo := HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
       then criticalPathInfo;
     else
-      equation
+      algorithm
         print("HpcOmScheduler.analyseScheduledTaskGraph failed\n");
       then
         "HpcOmScheduler.analyseScheduledTaskGraph failed\n";
@@ -5855,7 +5855,7 @@ algorithm
     case(HpcOmSimCode.SERIALTASKLIST(tasks=tasks))
       then tasks;
     else
-      equation
+      algorithm
         print("getTasksOfTaskList failed! Unsupported task list.\n");
       then {};
   end match;
@@ -5889,7 +5889,7 @@ algorithm
         costs := List.fold(nodeCosts,realAdd,0.0);
       then costs;
     else
-      equation
+      algorithm
         print("getLevelTaskCosts failed!\n");
       then
         fail();
@@ -5954,7 +5954,7 @@ algorithm
       then
         ();
     else
-      equation
+      algorithm
         if Flags.isSet(Flags.HPCOM_DUMP) then
           if speedUp > speedUpMax then
             print("Something is weird. The predicted SpeedUp is "+ System.snprintff("%.2f", 25, speedUp)+" and the theoretical maximum speedUp is "+ System.snprintff("%.2f", 25, speedUpMax)+"\n");
@@ -6031,7 +6031,7 @@ algorithm
       then
         (schedule,finTime);
     else
-      equation
+      algorithm
         print("getFinishingTimesForSchedule failed\n");
     then fail();
   end matchcontinue;
@@ -6147,7 +6147,7 @@ algorithm
       then
         (nextThreadIdx,closedThreads1);
     else
-      equation
+      algorithm
         print("computeTimeFinished failed!\n");
       then
         fail();
@@ -6503,8 +6503,8 @@ algorithm
         //print("convertFixedLevelScheduleToTaskLists: len of tmpResultLists[0]=" + intString(listLength(Util.tuple21(arrayGet(tmpResultLists, 1)))) + "\n");
       then tmpResultLists;
     else
-      equation
-        tmpResultLists = arrayCreate(iNumOfThreads, ({},{},{}));
+      algorithm
+        tmpResultLists := arrayCreate(iNumOfThreads, ({},{},{}));
       then tmpResultLists;
   end match;
 end convertFixedLevelScheduleToTaskLists;

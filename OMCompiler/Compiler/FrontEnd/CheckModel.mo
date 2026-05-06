@@ -282,9 +282,9 @@ algorithm
       then List.fold(daeElts, countVarEqnSize, inArg);
 
     else
-      equation
+      algorithm
         // show only on failtrace!
-        true = Flags.isSet(Flags.FAILTRACE);
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- CheckModel.countVarEqnSize failed on: " + DAEDump.dumpElementsStr({element}));
       then
         fail();
@@ -322,7 +322,7 @@ algorithm
         else algorithmOutputs(inAlgorithm, inCrefExpansionRule);
 
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {"checkAndGetAlgorithmOutputs failed."});
       then fail();
   end matchcontinue;
@@ -485,9 +485,9 @@ algorithm
       then ht;
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        str = DAEDump.ppStatementStr(inStatement);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
+        str := DAEDump.ppStatementStr(inStatement);
         Debug.traceln("- CheckModel.statementOutputs failed for " + str);
     then
       fail();

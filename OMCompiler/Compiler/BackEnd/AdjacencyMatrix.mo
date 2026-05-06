@@ -178,8 +178,8 @@ algorithm
       (m, extArg) := traverseAdjacencyMatrixList(rest, inM, func, len, maxpos, inTypeA);
     then (m, extArg);
 
-    else equation
-      true = Flags.isSet(Flags.FAILTRACE);
+    else algorithm
+      true := Flags.isSet(Flags.FAILTRACE);
       Debug.trace("- BackendDAEOptimize.traverseAdjacencyMatrixList failed\n");
     then fail();
   end matchcontinue;

@@ -437,8 +437,8 @@ algorithm
 
     // if we fail, just use the defaults
     else
-      equation
-        defaults = setFileNamePrefixInSimulationOptions(defaultSimulationOptions, inFileNamePrefix);
+      algorithm
+        defaults := setFileNamePrefixInSimulationOptions(defaultSimulationOptions, inFileNamePrefix);
       then defaults;
   end matchcontinue;
 end buildSimulationOptionsFromModelExperimentAnnotation;
@@ -495,8 +495,8 @@ algorithm
     case (Absyn.INTEGER(i), DAE.T_REAL()) algorithm r := intReal(i); then DAE.RCONST(r);
 
     else
-      equation
-        str = "CevalScript.getConst: experiment annotation contains unsupported expression: " + Dump.printExpStr(inAbsynExp) + " of type " + Types.unparseType(inExpType) + "\n";
+      algorithm
+        str := "CevalScript.getConst: experiment annotation contains unsupported expression: " + Dump.printExpStr(inAbsynExp) + " of type " + Types.unparseType(inExpType) + "\n";
         Error.addCompilerError(str);
       then
         fail();
@@ -4626,10 +4626,10 @@ algorithm
       then Values.STRING(retStr);
 
     else
-      equation
-        errorMsg = Error.printMessagesStr(false);
-        strEmpty = (stringCompare("",errorMsg)==0);
-        errorMsg = if strEmpty then "Internal error, translating graphics to new version" else errorMsg;
+      algorithm
+        errorMsg := Error.printMessagesStr(false);
+        strEmpty := (stringCompare("",errorMsg)==0);
+        errorMsg := if strEmpty then "Internal error, translating graphics to new version" else errorMsg;
       then Values.STRING(errorMsg);
   end matchcontinue;
 end translateGraphics;
@@ -4659,7 +4659,7 @@ algorithm
       then
         (cache, outSimSettings);
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {"CevalScript.calculateSimulationSettings failed: " + ValuesUtil.valString(Values.TUPLE(vals))});
       then
         fail();
@@ -6006,7 +6006,7 @@ algorithm
 
     // failure
     else
-      equation
+      algorithm
         Error.assertion(listLength(inValues) == 12, "buildModel failure, length = " + intString(listLength(inValues)), AbsynUtil.dummyInfo);
       then fail();
   end matchcontinue;
@@ -6096,11 +6096,11 @@ algorithm
       then
         (inCache,simValue);
     else
-      equation
-        res = if System.regularFileExists(logFile) then System.readFile(logFile) else (logFile + " does not exist");
-        str = AbsynUtil.pathString(className);
-        res = stringAppendList({"Simulation execution failed for model: ", str, "\n", res});
-        simValue = createSimulationResult("", simOptionsAsString(inVals), res,
+      algorithm
+        res := if System.regularFileExists(logFile) then System.readFile(logFile) else (logFile + " does not exist");
+        str := AbsynUtil.pathString(className);
+        res := stringAppendList({"Simulation execution failed for model: ", str, "\n", res});
+        simValue := createSimulationResult("", simOptionsAsString(inVals), res,
           ("timeTotal", Values.REAL(timeTotal)) ::
           ("timeSimulation", Values.REAL(timeSimulation)) ::
           resultValues);
@@ -6193,7 +6193,7 @@ algorithm
 
     // errors
     else
-      equation
+      algorithm
         if Error.getNumMessages() == 0 then
           Error.addMessage(Error.INTERNAL_ERROR,
             {"Check of " + AbsynUtil.pathString(className) + " failed with no error message","<TOP>"});
@@ -6395,7 +6395,7 @@ algorithm
         (cache,stringAppendList({compileDir,xml_filename}));
 
     else
-    equation
+    algorithm
         // clear the rewrite rules if we fail!
         FlagsUtil.setConfigString(Flags.REWRITE_RULES_FILE, "");
         RewriteRules.clearRules();
@@ -6535,10 +6535,10 @@ algorithm
       then
         inPath::result;
     else
-      equation
-        parent_string = AbsynUtil.pathString(inPath);
-        s = Error.printMessagesStr(false);
-        s = stringAppendList({parent_string,"->","PROBLEM GETTING CLASS PATHS: ", s, "\n"});
+      algorithm
+        parent_string := AbsynUtil.pathString(inPath);
+        s := Error.printMessagesStr(false);
+        s := stringAppendList({parent_string,"->","PROBLEM GETTING CLASS PATHS: ", s, "\n"});
         print(s);
       then {};
   end matchcontinue;
@@ -7794,7 +7794,7 @@ algorithm
         pstr := AbsynUtil.pathString(p);
       then ValuesUtil.makeArray({Values.STRING(pstr),Values.STRING(ver)});
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{"makeUsesArray failed"});
       then fail();
   end match;

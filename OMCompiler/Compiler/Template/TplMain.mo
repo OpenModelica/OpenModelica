@@ -204,8 +204,8 @@ algorithm
 
     //should not ever happen
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.tplMainTest failed.\n");
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.tplMainTest failed.\n");
       then
         fail();
   end matchcontinue;
@@ -460,7 +460,7 @@ algorithm
       local
         String v_hej;
         list<String> v_jokes;
-      equation
+      algorithm
         txt = Tpl.writeStr(txt, v_hej);
       then txt;
 
@@ -469,7 +469,7 @@ algorithm
            _ )
       local
         String v_hej;
-      equation
+      algorithm
         txt = Tpl.writeStr(txt, \"Not hej:\");
         txt = Tpl.writeStr(txt, v_hej);
       then txt;
@@ -477,7 +477,7 @@ algorithm
     case ( txt,
            NONE(),
            _ )
-      equation
+      algorithm
         txt = Tpl.writeStr(txt, \"NONE at all\");
       then txt;
   end matchcontinue;
@@ -588,7 +588,7 @@ algorithm
            TplAbsyn.IDENT(ident = i_ident) )
       local
         TplAbsyn.Ident i_ident;
-      equation
+      algorithm
         txt = Tpl.writeStr(txt, i_ident);
       then txt;
 
@@ -597,7 +597,7 @@ algorithm
       local
         TplAbsyn.PathIdent i_path;
         TplAbsyn.Ident i_ident;
-      equation
+      algorithm
         txt = Tpl.writeStr(txt, i_ident);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(\".\"));
         txt = pathIdent(txt, i_path);
@@ -628,7 +628,7 @@ algorithm
         TplAbsyn.TypedIdents rest;
         TplAbsyn.PathIdent i_pid;
         TplAbsyn.Ident i_id;
-      equation
+      algorithm
         txt = pathIdent(txt, i_pid);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(\" \"));
         txt = Tpl.writeStr(txt, i_id);
@@ -641,7 +641,7 @@ algorithm
            _ :: rest )
       local
         TplAbsyn.TypedIdents rest;
-      equation
+      algorithm
         txt = lm_2(txt, rest);
       then txt;
   end matchcontinue;

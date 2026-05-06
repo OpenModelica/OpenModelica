@@ -1067,8 +1067,8 @@ algorithm
         expOut := getReplacement(replIn,crefIn);
       then (expOut,true);
     else
-    equation
-      expOut = DAE.CREF(crefIn,ComponentReference.crefType(crefIn));
+    algorithm
+      expOut := DAE.CREF(crefIn,ComponentReference.crefType(crefIn));
       then (expOut,false);
  end match;
 end replaceCref;
@@ -1598,9 +1598,9 @@ algorithm
     case(DAE.UNARY(operator=op,exp=DAE.CREF(componentRef=cr)),_,_) then (cr,DAE.UNARY(op,inRhs));
     case(DAE.LUNARY(operator=op,exp=DAE.CREF(componentRef=cr)),_,_) then (cr,DAE.LUNARY(op,inRhs));
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        msg = "BackendVarTransform: failed to replace left hand side of when equation " +
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
+        msg := "BackendVarTransform: failed to replace left hand side of when equation " +
               ComponentReference.printComponentRefStr(oldCr) + " with " + ExpressionDump.printExpStr(inLhs) + "\n";
         // print(msg + "\n");
         Debug.trace(msg);
@@ -2047,9 +2047,9 @@ algorithm
       then
         statementLst;
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        msg = "BackendVarTransform: failed to replace left hand side of array assign statement " +
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
+        msg := "BackendVarTransform: failed to replace left hand side of array assign statement " +
               ComponentReference.printComponentRefStr(oldCr) + " with " + ExpressionDump.printExpStr(lhs) + "\n";
         // print(msg + "\n");
         Debug.trace(msg);

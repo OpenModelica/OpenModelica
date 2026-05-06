@@ -1541,8 +1541,8 @@ algorithm
     then {backendEq};
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         BackendDump.printEquation(inEquation);
         Debug.trace("- BackendDAE.equationToScalarResidualForm failed\n");
       then fail();
@@ -1640,8 +1640,8 @@ algorithm
     then backendEq;
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- BackendDAE.equationToResidualForm failed\n");
       then fail();
   end matchcontinue;
@@ -1667,8 +1667,8 @@ algorithm
       then (eqn, (funcs, eqns));
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Error.addInternalError(getInstanceName() + " failed", sourceInfo());
       then fail();
   end match;
@@ -1711,8 +1711,8 @@ algorithm
           outVariableList := currVariable::outVariableList;
         then ();
       else
-        equation
-          true = Flags.isSet(Flags.FAILTRACE);
+        algorithm
+          true := Flags.isSet(Flags.FAILTRACE);
           Error.addInternalError(getInstanceName() + " failed", sourceInfo());
         then fail();
     end match;
@@ -1752,7 +1752,7 @@ algorithm
     case BackendDAE.ALGORITHM(source=source) then source;
     case BackendDAE.COMPLEX_EQUATION(source=source) then source;
     case BackendDAE.IF_EQUATION(source=source) then source;
-    else equation
+    else algorithm
       Error.addInternalError("BackendEquation.equationSource failed!", sourceInfo());
     then fail();
   end match;
@@ -1816,7 +1816,7 @@ algorithm
       size := (stop - start + 1) * equationSize(eq.body);
     then size;
 
-    else equation
+    else algorithm
       Error.addInternalError("BackendEquation.equationSize failed!", sourceInfo());
     then fail();
   end match;
@@ -1934,7 +1934,7 @@ algorithm
     case BackendDAE.ALGORITHM(attr=BackendDAE.EQUATION_ATTRIBUTES(kind=kind)) then kind;
     case BackendDAE.COMPLEX_EQUATION(attr=BackendDAE.EQUATION_ATTRIBUTES(kind=kind)) then kind;
     case BackendDAE.IF_EQUATION(attr=BackendDAE.EQUATION_ATTRIBUTES(kind=kind)) then kind;
-    else equation
+    else algorithm
       Error.addInternalError(getInstanceName() + " failed!", sourceInfo());
     then fail();
   end match;
@@ -2093,9 +2093,9 @@ algorithm
       not DAEUtil.expTypeArray(ty)
     then BackendDAE.EQUATION(lhs, rhs, source, inEqAttr);
 
-    else equation
+    else algorithm
       // show only on failtrace!
-      true = Flags.isSet(Flags.FAILTRACE);
+      true := Flags.isSet(Flags.FAILTRACE);
       Debug.traceln("- BackendEquation.generateEquation failed on: " + ExpressionDump.printExpStr(lhs) + " = " + ExpressionDump.printExpStr(rhs) + "\n");
     then fail();
   end match;
@@ -2130,7 +2130,7 @@ algorithm
     case BackendDAE.IF_EQUATION(attr=attr) then attr;
     case BackendDAE.FOR_EQUATION(attr=attr) then attr;
 
-    else equation
+    else algorithm
       Error.addInternalError("function getEquationAttributes failed", sourceInfo());
     then fail();
   end match;
@@ -2184,7 +2184,7 @@ algorithm
     case (BackendDAE.IF_EQUATION(conditions=conditions, eqnstrue=eqnstrue, eqnsfalse=eqnsfalse, source=source), _)
     then BackendDAE.IF_EQUATION(conditions, eqnstrue, eqnsfalse, source, inAttr);
 
-    else equation
+    else algorithm
       Error.addInternalError("function setEquationAttributes failed", sourceInfo());
     then fail();
   end match;
@@ -2527,7 +2527,7 @@ algorithm
     BackendDAE.WHEN_EQUATION
     BackendDAE.IF_EQUATION
 */
-    else equation
+    else algorithm
       BackendDump.dumpBackendDAEEqnList({eqn}, "function BackendEquation.solveEquation failed w.r.t " + ExpressionDump.printExpStr(crefExp), true);
       Error.addInternalError("function solveEquation failed", sourceInfo());
     then fail();
@@ -3008,7 +3008,7 @@ algorithm
       eqn.source := ElementSource.addSymbolicTransformation(eqn.source, inSymOp);
     then eqn;
 
-    else equation
+    else algorithm
       Error.addInternalError("BackendEquation.addOperation failed", sourceInfo());
     then fail();
   end match;

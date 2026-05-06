@@ -236,7 +236,7 @@ algorithm
       then
        (syst,shared,ass1,ass2,arg,notDiffableMSS);
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {"- IndexReduction.pantelidesIndexReduction1 failed! Use -d=bltdump to get more information."});
       then
         fail();
@@ -306,7 +306,7 @@ algorithm
       then
         (syst,shared,ass1,ass2,(so,orgEqnsLst1,mapEqnIncRow,mapIncRowEqn,noofeqns),notDiffableMSS);
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {"- IndexReduction.pantelidesIndexReductionMSS failed! Use -d=bltdump to get more information."});
       then
         fail();
@@ -494,7 +494,7 @@ algorithm
       list<BackendDAE.Var> vlst;
       Boolean b,ba;
 /*    case((unassignedEqns,eqnsLst))
-      equation
+      algorithm
         vindx = ass2[eindx];
         true = intGt(vindx,0);
         v = BackendVariable.getVarAt(vars, vindx);
@@ -1026,7 +1026,7 @@ algorithm
 
 /* Debugging case
     case (false,_,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,stateSets))
-      equation
+      algorithm
         varlst = BackendEquation.equationsLstVars(notDiffedEquations,v);
         varlst = List.select(varlst,BackendVariable.isStateVar);
         fcall(Flags.BLT_DUMP, print, "state vars of undiffed Eqns\n");
@@ -1806,7 +1806,7 @@ algorithm
       then
         (syst,shared,ht,setIndex);
     else
-      equation
+      algorithm
         ErrorExt.delCheckpoint("DynamicStateSelection");
       then
         fail();
@@ -2591,7 +2591,7 @@ algorithm
         nsystems := partitionSystemstraverseRows(rows,{},m,mT,rowmarkarr,collmarkarr,iNSystems);
       then
         partitionSystem1(index-1,m,mT,rowmarkarr,collmarkarr,nsystems);
-    else equation
+    else algorithm
       // if marked skip it
     then partitionSystem1(index-1,m,mT,rowmarkarr,collmarkarr,iNSystems);
   end match;
@@ -3325,7 +3325,7 @@ algorithm
       then
         (varlst,iStateSets);
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {"- IndexReduction.selectDummyDerivatives2new failed!"});
       then
         fail();
@@ -3862,7 +3862,7 @@ algorithm
     case (0,_,_,_,_,_,_,_,_) then (iVarLst,iHt);
     // state
 /*    case (_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // check state order and use the derivative
         cr = getStateOrder(iName,so);
         ({var},_) = BackendVariable.getVar(cr,vars);
@@ -3889,7 +3889,7 @@ algorithm
         (vlst,ht) := makeAllDummyVarandDummyDerivativeRepl1(diffCount-1,diffedCount+1,iOrigName,name,inVar,vars,so,var::iVarLst,ht);
       then (vlst,ht);
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {"IndexReduction.makeAllDummyVarandDummyDerivativeRepl1 failed!"});
       then
         fail();
@@ -3982,8 +3982,8 @@ algorithm
       then
         ((vars,ht));
     else
-      equation
-        msg = "IndexReduction.makeDummyVarandDummyDerivative failed " + BackendDump.varString(inVar) + "!";
+      algorithm
+        msg := "IndexReduction.makeDummyVarandDummyDerivative failed " + BackendDump.varString(inVar) + "!";
         Error.addMessage(Error.INTERNAL_ERROR, {msg});
       then
         fail();
@@ -4008,9 +4008,9 @@ algorithm
       then
         (iName,dername);
     else
-      equation
-        dername = ComponentReference.crefPrefixDer(iName);
-        (name,dername) = crefPrefixDerN(n-1,dername);
+      algorithm
+        dername := ComponentReference.crefPrefixDer(iName);
+        (name,dername) := crefPrefixDerN(n-1,dername);
       then
         (name,dername);
   end match;
@@ -4290,7 +4290,7 @@ algorithm
     then
       (vars,ilst);
    else
-     equation
+     algorithm
        print("IndexReduction.increaseDifferentiation failt because of wrong input:\n");
        BackendDump.printVar(listHead(inVarLst));
      then
@@ -4458,7 +4458,7 @@ algorithm
       Error.addMessage(Error.INTERNAL_ERROR, {msg});
     then fail();
 
-    else equation
+    else algorithm
       Error.addMessage(Error.INTERNAL_ERROR, {"IndexReduction.addStateOrderFinder failed!"});
     then fail();
   end match;
@@ -4560,17 +4560,17 @@ algorithm
 
     case ({},_,_) then {(e,{inEqn})};
     case ((e1,_)::_,_,_)
-      equation
+      algorithm
         true = intGt(e1,e);
       then
         (e,{inEqn})::inOrgEqns;
     case ((e1,orgeqns)::rest,_,_)
-      equation
+      algorithm
         true = intEq(e1,e);
       then
         (e1,inEqn::orgeqns)::rest;
     case ((e1,orgeqns)::rest,_,_)
-      equation
+      algorithm
         orgeqnslst = addOrgEqn(rest,e,inEqn);
       then
         (e1,orgeqns)::orgeqnslst;

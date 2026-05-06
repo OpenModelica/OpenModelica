@@ -556,7 +556,7 @@ algorithm
   tp := match (v)
     case(DAE.TYPES_VAR(ty = tp)) then tp;
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {"Types.getVarType failed"});
       then fail();
   end match;
@@ -969,8 +969,8 @@ algorithm
       then getDimensionSizes(tp);
 
     else
-      equation
-        false = arrayType(inType);
+      algorithm
+        false := arrayType(inType);
       then
         {};
   end matchcontinue;
@@ -994,8 +994,8 @@ algorithm
       then getDimensionProduct(tp);
 
     else
-      equation
-        false = arrayType(inType);
+      algorithm
+        false := arrayType(inType);
       then 1;
   end match;
 end getDimensionProduct;
@@ -1102,8 +1102,8 @@ algorithm
         (DAE.TYPES_VAR(id, DAE.dummyAttrVar, tp, DAE.UNBOUND(), false, NONE()) :: rest);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("-values_to_vars failed\n");
       then
         fail();
@@ -1598,7 +1598,7 @@ algorithm
     case (DAE.T_METATYPE(ty = t1),t2) then subtype(t1,t2,requireRecordNamesEqual);
 
     else
-      equation
+      algorithm
         /* Uncomment for debugging
         l1 = unparseType(t1);
         l2 = unparseType(t2);
@@ -1728,7 +1728,7 @@ algorithm
         v;
 
     else
-      equation
+      algorithm
         // Print.printBuf("- Looking up " + id + " in noncomplex type\n");
       then fail();
   end matchcontinue;
@@ -2274,7 +2274,7 @@ algorithm
     // MetaModelica uniontype (but we know which record in the UT it is)
 /*
     case (DAE.T_METARECORD(utPath=_, fields = vs, source = {p}))
-      equation
+      algorithm
         str = AbsynUtil.pathStringNoQual(p);
         vars = List.map(vs, unparseVar);
         vstr = stringAppendList(vars);
@@ -2568,8 +2568,8 @@ algorithm
 
     // All the other ones we don't handle
     else
-      equation
-        str = "Types.printTypeStr failed";
+      algorithm
+        str := "Types.printTypeStr failed";
       then
         str;
 
@@ -2947,8 +2947,8 @@ algorithm
       then makeEnumerationType(inPath, ty);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Types.makeEnumerationType failed on " + printTypeStr(inType));
       then
         fail();
@@ -3905,8 +3905,8 @@ algorithm
       then DAE.T_UNKNOWN_DEFAULT;
 
     else
-      equation
-        str = "Types.simplifyType failed for: " + unparseType(inType);
+      algorithm
+        str := "Types.simplifyType failed for: " + unparseType(inType);
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end matchcontinue;
@@ -4445,7 +4445,7 @@ algorithm
           (DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()},ty = ty1),_),
           ty0 as (DAE.T_ARRAY(dims = {dim2},ty = ty2),p2),
           printFailtrace)
-      equation
+      algorithm
         true = Expression.dimensionKnown(dim2);
         elist_1 = typeConvertArray(elist,ty1,ty2,printFailtrace);
         at = simplifyType(ty0);
@@ -4903,8 +4903,8 @@ algorithm
         {};
 
     else
-      equation
-        expl = List.map_2(inArray, function typeConvert(actual = inActualType, expected = inExpectedType, printFailtrace = inPrintFailtrace));
+      algorithm
+        expl := List.map_2(inArray, function typeConvert(actual = inActualType, expected = inExpectedType, printFailtrace = inPrintFailtrace));
       then
         expl;
 
@@ -4974,8 +4974,8 @@ algorithm
         (expl,_) := typeConvertMatrixToList(rest, inType, outType, printFailtrace);
       then (e::expl,DAE.T_METALIST(t1));
     else
-      equation
-        true = Flags.isSet(Flags.TYPES);
+      algorithm
+        true := Flags.isSet(Flags.TYPES);
         Debug.trace("- typeConvertMatrixToList failed\n");
       then fail();
   end matchcontinue;
@@ -5132,8 +5132,8 @@ algorithm
         DAE.PROP(DAE.T_REAL_DEFAULT,c);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Types.matchWithPromote failed on: " +
            "\nprop1: " + printPropStr(inProperties1) +
            "\nprop2: " + printPropStr(inProperties2) +
@@ -5502,8 +5502,8 @@ algorithm
     case DAE.UNBOUND() then {};
     case DAE.VALBOUND() then {};
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("-- Types.getAllExpsBinding failed\n");
       then
         fail();
@@ -5632,8 +5632,8 @@ algorithm
         elist := listMatchSuperType2(ielist,typeList,st,printFailtrace);
       then (elist, st);
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Types.listMatchSuperType failed\n");
       then fail();
   end matchcontinue;
@@ -5814,10 +5814,10 @@ algorithm
         (exp,actual,polymorphicBindings) := matchTypePolymorphic(exp,actual,expected,envPath,polymorphicBindings,false);
       then (exp,actual,polymorphicBindings);
     else
-      equation
-        str1 = ExpressionDump.printExpStr(iexp);
-        str2 = unparseType(iactual);
-        str3 = unparseType(iexpected);
+      algorithm
+        str1 := ExpressionDump.printExpStr(iexp);
+        str2 := unparseType(iactual);
+        str3 := unparseType(iexpected);
         Error.addSourceMessage(Error.EXP_TYPE_MISMATCH, {str1,str3,str2}, info);
       then fail();
   end matchcontinue;
@@ -5941,8 +5941,8 @@ algorithm
         (e, ty);
 
     else
-      equation
-        str = "- Types.matchTypes failed for " + ExpressionDump.printExpStr(inExp)
+      algorithm
+        str := "- Types.matchTypes failed for " + ExpressionDump.printExpStr(inExp)
            + " from " + unparseType(inType) + " to " + unparseType(inExpected) + "\n";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
@@ -6086,10 +6086,10 @@ algorithm
       then ty;
 
     else
-      equation
-        tstr = unparseType(ty);
-        bstr = polymorphicBindingsStr(bindings);
-        id = "Types.fixPolymorphicRestype failed for type: " + tstr + " using bindings: " + bstr;
+      algorithm
+        tstr := unparseType(ty);
+        bstr := polymorphicBindingsStr(bindings);
+        id := "Types.fixPolymorphicRestype failed for type: " + tstr + " using bindings: " + bstr;
         Error.addSourceMessage(Error.INTERNAL_ERROR, {id}, info);
       then fail();
   end matchcontinue;
@@ -6249,7 +6249,7 @@ algorithm
     case (ty1 as (tty1 as DAE.T_FUNCTION(funcArgs1,resType),SOME(path)))
       local
         list<Boolean> boolList;
-      equation
+      algorithm
         funcArgTypes1 = List.map(funcArgs1, Util.tuple22);
         boolList = List.map(funcArgTypes1, isBoxedType);
         true = List.reduce(boolList, boolAnd);
@@ -6824,7 +6824,7 @@ algorithm
       then bindings;
 
     else
-      equation
+      algorithm
         // print("subtypePolymorphic failed: " + unparseType(actual) + " and " + unparseType(expected) + "\n");
       then fail();
 
@@ -7121,8 +7121,8 @@ algorithm
       then (oty, a);
 
     else
-      equation
-        str = "Types.traverseType not implemented correctly: " + unparseType(ty);
+      algorithm
+        str := "Types.traverseType not implemented correctly: " + unparseType(ty);
         Error.addMessage(Error.INTERNAL_ERROR,{str});
       then
         fail();
@@ -7382,10 +7382,10 @@ algorithm
 
     // All the other ones we don't handle
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Types.typeToValue failed on unhandled Type ");
-        s1 = printTypeStr(inType);
+        s1 := printTypeStr(inType);
         Debug.traceln(s1);
       then
         fail();
@@ -7419,8 +7419,8 @@ algorithm
         (v::restVals, id::restIds);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Types.varsToValues failed\n");
       then
         fail();
@@ -7742,8 +7742,8 @@ algorithm
     // assume true for constants and parameters
     // false otherwise
     else
-      equation
-        b = listMember(inVariability, {SCode.PARAM(), SCode.CONST()});
+      algorithm
+        b := listMember(inVariability, {SCode.PARAM(), SCode.CONST()});
       then
         b;
 
@@ -7800,7 +7800,7 @@ algorithm
         ();
 
     else
-      equation
+      algorithm
         Error.addSourceMessage(Error.ERRONEOUS_TYPE_ERROR, {inType1}, inInfo);
       then
         fail();

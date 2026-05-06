@@ -2025,7 +2025,7 @@ algorithm
     case Absyn.BREAK() then {};
 
     else
-      equation
+      algorithm
         Error.addInternalError(getInstanceName() + " failed " + Dump.printExpStr(inExp), sourceInfo());
       then fail();
   end match;

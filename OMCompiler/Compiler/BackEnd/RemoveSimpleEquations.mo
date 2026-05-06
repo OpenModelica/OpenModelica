@@ -1442,9 +1442,9 @@ algorithm
       then
         ((v, s, BackendDAE.EQUATION(lhs, rhs, source, eqAttr)::eqns, seqns, index, mT, b));
     else
-      equation
+      algorithm
         // show only on failtrace!
-        true = Flags.isSet(Flags.FAILTRACE);
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- BackendDAEOptimize.generateEquation failed on: " + ExpressionDump.printExpStr(lhs) + " = " + ExpressionDump.printExpStr(rhs) + "\n");
       then
         fail();
@@ -3101,7 +3101,7 @@ algorithm
       then
         (fixedset, (setorigin, startvalues));
     else
-      equation
+      algorithm
         print("RemoveSimpleEquations.addStartValue failed!\n");
       then
         fail();
@@ -3223,8 +3223,8 @@ algorithm
       then BackendVariable.setVarNominalValue(inVar, e);
 
     else
-      equation
-        warnAliasConflicts = not Flags.isSet(Flags.ALIAS_CONFLICTS);
+      algorithm
+        warnAliasConflicts := not Flags.isSet(Flags.ALIAS_CONFLICTS);
       then selectFreeValue1(nominalList, {}, "Alias set with conflicting nominal values\n", "nominal", BackendVariable.setVarNominalValue, inVar, globalKnownVars);
   end matchcontinue;
 end mergeNominalAttribute;
@@ -3295,7 +3295,7 @@ algorithm
       then
         minMax;
     else
-      equation
+      algorithm
         print("RemoveSimpleEquations.mergeMinMax failed!\n");
       then
         fail();
@@ -3393,7 +3393,7 @@ algorithm
       warnAliasConflicts := b1 or b2;
     then vars;
 
-    else equation
+    else algorithm
       print("RemoveSimpleEquations.handleVarSetAttributes failed!\n");
     then fail();
   end matchcontinue;
@@ -4130,9 +4130,9 @@ algorithm
       BackendVarTransform.VariableReplacements repl;
     case (SOME(repl), _) then repl;
     else
-      equation
-        repl = BackendVarTransform.emptyReplacementsSized(BackendVariable.varsSize(aliasVars));
-        repl = BackendVariable.traverseBackendDAEVars(aliasVars, getAliasVarReplacements, repl);
+      algorithm
+        repl := BackendVarTransform.emptyReplacementsSized(BackendVariable.varsSize(aliasVars));
+        repl := BackendVariable.traverseBackendDAEVars(aliasVars, getAliasVarReplacements, repl);
       then
         repl;
   end match;
@@ -4966,7 +4966,7 @@ algorithm
     case (_,(vars, HTCrToExp, HTCrToCrEqLst, eqList, simpleEqList))algorithm
        eqList := inEq::eqList;
     then (inEq, (vars, HTCrToExp, HTCrToCrEqLst, eqList, simpleEqList));
-    else equation
+    else algorithm
       print("\n++++++++++ Error in RemoveSimpleEquations.findSimpleEquations ++++++++++\n");
     then (inEq, inTuple);
   end matchcontinue;
@@ -5035,7 +5035,7 @@ algorithm
     end if;
     HTCrToCrEqLst := BaseHashTable.add((cr1, cr_eq_lst), HTCrToCrEqLst);
   then HTCrToCrEqLst;
-  else equation
+  else algorithm
       print("\n++++++++++ Error in RemoveSimpleEquations.addToCrAndEqLists ++++++++++\n");
       BackendDump.printEquation(eq);
       print("Solve for:" + ComponentReference.debugPrintComponentRefTypeStr(cr1) + "\n");
@@ -5066,7 +5066,7 @@ algorithm
       // end if;
       outHTCrToExp := solveAllCrefs(cr, value, outHTCrToExp, inHTCrToCrEqLst);
     then outHTCrToExp;
-    else equation
+    else algorithm
       print("\n++++++++++ Error in RemoveSimpleEquations.addToCrToExp ++++++++++\n");
       BackendDump.printEquation(eq);
       print(ComponentReference.debugPrintComponentRefTypeStr(cr) + "\n");
@@ -5094,7 +5094,7 @@ algorithm
       HTCrToExp := solveAllCrefs1(cr, value, cr_eq_lst, HTCrToExp, inHTCrToCrEqLst);
     end if;
   then (HTCrToExp);
-  else equation
+  else algorithm
      print("\n++++++++++ Error in RemoveSimpleEquations.solveAllCrefs ++++++++++\n");
   then (inHTCrToExp);
   end matchcontinue;
@@ -5131,7 +5131,7 @@ algorithm
       end if;
       HTCrToExp := solveAllCrefs1(cr, value, cr_eq_rest, HTCrToExp, inHTCrToCrEqLst);
     then (HTCrToExp);
-    else equation
+    else algorithm
       print("\n++++++++++ Error in RemoveSimpleEquations.solveAllCrefs1 ++++++++++\n");
     then (inHTCrToExp);
   end matchcontinue;
@@ -5200,7 +5200,7 @@ algorithm
       end if;
       HTCrToExp := addThisCrefs(cr_eq_rest, HTCrToExp, inHTCrToCrEqLst);
     then (HTCrToExp);
-    else equation
+    else algorithm
       print("\n++++++++++ Error in RemoveSimpleEquations.addThisCrefs ++++++++++\n");
     then (inHTCrToExp);
   end matchcontinue;
@@ -5494,7 +5494,7 @@ algorithm
       end if;
       (outHTStartExpToInt,outHTNominalExpToInt) := getThisAttributes(cr, cr_eq_rest, inAliasVars, outHTStartExpToInt, outHTNominalExpToInt);
     then (outHTStartExpToInt,outHTNominalExpToInt);
-    else equation
+    else algorithm
       print("\n++++++++++ Error in RemoveSimpleEquations.getThisAttributes ++++++++++\n");
     then (outHTStartExpToInt,outHTNominalExpToInt);
   end matchcontinue;

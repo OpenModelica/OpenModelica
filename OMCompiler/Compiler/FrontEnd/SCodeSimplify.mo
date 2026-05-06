@@ -63,9 +63,9 @@ algorithm
 
     // handle something
     case (el::rest)
-      equation
-        c = simplifyClass(el);
-        acc = simplifyProgram(rest);
+      algorithm
+        c := simplifyClass(el);
+        acc := simplifyProgram(rest);
       then
         c::acc;
 
@@ -89,8 +89,8 @@ algorithm
       SCode.Comment cmt;
 
     case (SCode.CLASS(n, pref, ecpf, ppf, res, cDef, cmt, info))
-      equation
-        ncDef = simplifyClassDef(cDef);
+      algorithm
+        ncDef := simplifyClassDef(cDef);
       then
         SCode.CLASS(n, pref, ecpf, ppf, res, ncDef, cmt, info);
 
@@ -123,15 +123,15 @@ algorithm
 
     // handle parts
     case (SCode.PARTS(els, ne, ie, na, ia, nc, clats, ed))
-      equation
-        els = simplifyElements(els);
+      algorithm
+        els := simplifyElements(els);
       then
         SCode.PARTS(els, ne, ie, na, ia, nc, clats, ed);
 
     // handle class extends
     case (SCode.CLASS_EXTENDS(baseClassName, mod, cDef))
-      equation
-        cDef = simplifyClassDef(cDef);
+      algorithm
+        cDef := simplifyClassDef(cDef);
       then
         SCode.CLASS_EXTENDS(baseClassName, mod, cDef);
 
@@ -174,9 +174,9 @@ algorithm
 
     // handle extends Modelica.Icons.*
     case (SCode.EXTENDS(baseClassPath = bcp)::rest)
-      equation
-        true = AbsynUtil.pathContains(bcp, "Icons");
-        els = simplifyElements(rest);
+      algorithm
+        true := AbsynUtil.pathContains(bcp, "Icons");
+        els := simplifyElements(rest);
       then
         els;
 
@@ -189,16 +189,16 @@ algorithm
 
     // handle classes
     case ((el as SCode.CLASS())::rest)
-      equation
-        el2 = simplifyClass(el);
-        els = simplifyElements(rest);
+      algorithm
+        el2 := simplifyClass(el);
+        els := simplifyElements(rest);
       then
         el2::els;
 
     // handle rest
     case (el::rest)
-      equation
-        els = simplifyElements(rest);
+      algorithm
+        els := simplifyElements(rest);
       then
         el::els;
   end matchcontinue;

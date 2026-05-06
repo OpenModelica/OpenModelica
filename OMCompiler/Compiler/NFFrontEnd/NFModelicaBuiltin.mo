@@ -1501,7 +1501,7 @@ Example:
 <pre>
 loadClassContentString(\"
     Real y;
-  equation
+  algorithm
     y = x;
 \", P.M);
 </pre>

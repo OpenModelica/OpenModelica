@@ -499,8 +499,8 @@ algorithm
         (cache, env, ih, dae);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("Inst.instClassInProgram failed\n");
       then
         fail();
@@ -1304,7 +1304,7 @@ algorithm
 
     // failure
     else
-      equation
+      algorithm
         //print("instClassIn(");print(n);print(") failed\n");
         //fprintln(Flags.FAILTRACE, "- Inst.instClassIn failed" + n);
       then
@@ -1383,7 +1383,7 @@ algorithm
     case ("uncertain", _, _) then InstBinding.uncertaintyType;
     case ("distribution", _, _) then InstBinding.distributionType;
     else
-      equation
+      algorithm
         Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
           {inAttrName, "Real"}, inInfo);
       then
@@ -1407,7 +1407,7 @@ algorithm
     case ("uncertain", _, _) then InstBinding.uncertaintyType;
     case ("distribution", _, _) then InstBinding.distributionType;
     else
-      equation
+      algorithm
         Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
           {inAttrName, "Integer"}, inInfo);
       then
@@ -1425,7 +1425,7 @@ algorithm
     case ("quantity", _, _) then DAE.T_STRING_DEFAULT;
     case ("start", _, _) then inBaseType;
     else
-      equation
+      algorithm
         Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
           {inAttrName, "String"}, inInfo);
       then
@@ -1444,7 +1444,7 @@ algorithm
     case ("start", _, _) then inBaseType;
     case ("fixed", _, _) then DAE.T_BOOL_DEFAULT;
     else
-      equation
+      algorithm
         Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
           {inAttrName, "Boolean"}, inInfo);
       then
@@ -1481,7 +1481,7 @@ algorithm
     case ("start", _, _) then inBaseType;
     case ("fixed", _, _) then DAE.T_BOOL_DEFAULT;
     else
-      equation
+      algorithm
         Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
           {inAttrName, "enumeration(:)"}, inInfo);
       then
@@ -1668,9 +1668,9 @@ algorithm
     case ({}, _) then NONE();
 
     else
-      equation
-        dims = List.last(inInstDims);
-        ty = Expression.liftArrayLeftList(inType, dims);
+      algorithm
+        dims := List.last(inInstDims);
+        ty := Expression.liftArrayLeftList(inType, dims);
       then
         SOME(ty);
 
@@ -2084,7 +2084,7 @@ algorithm
     /*// uncomment for debugging
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,inClassDef6,
           re,vis,_,_,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
-      equation
+      algorithm
         // fprintln(Flags.INST_TRACE, "ICD BEGIN: " + FGraph.printGraphPathStr(env) + " cn:" + className + " mods: " + Mod.printModStr(mods));
       then
         fail();*/
@@ -2125,7 +2125,7 @@ algorithm
     /*// uncomment for debugging
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,inClassDef6,
           re,vis,_,_,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
-      equation
+      algorithm
         // fprintln(Flags.INST_TRACE, "ICD AFTER BASIC TYPE: " + FGraph.printGraphPathStr(env) + " cn:" + className + " mods: " + Mod.printModStr(mods));
       then
         fail();*/
@@ -2686,10 +2686,10 @@ algorithm
         fail();
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Inst.instClassdef failed");
-        s = FGraph.printGraphPathStr(inEnv);
+        s := FGraph.printGraphPathStr(inEnv);
         Debug.traceln("  class :" + s);
         // Debug.traceln("  Env :" + FGraph.printGraphStr(env));
       then
@@ -2956,7 +2956,7 @@ algorithm
 
     // if not error above, then do not report error at all, try another case in instClassdef.
     else
-      equation
+      algorithm
         ErrorExt.rollBack("instBasictypeBaseclass2");
       then ();
     end matchcontinue;
@@ -3839,7 +3839,7 @@ algorithm
 
     /*
     case (_,_,_,_,_,_,_)
-      equation
+      algorithm
         true = Config.acceptMetaModelicaGrammar();
       then
         (inCache,inEnv,inIH,inComponents);*/
@@ -3854,7 +3854,7 @@ algorithm
         (outCache,outEnv,outIH,outComponents);
 
     else
-      equation
+      algorithm
         ErrorExt.rollBack("updateCompeltsMods") "roll back any errors";
       then
         (inCache,inEnv,inIH,inComponents);
@@ -4234,7 +4234,7 @@ algorithm
                 subModLst = {
                   DAE.NAMEMOD(ident=n,
                   mod = rmod as DAE.REDECL(_, _, {(SCode.COMPONENT(name = name),_)}))}),_,_,_,_,_)
-      equation
+      algorithm
         id = AbsynUtil.crefFirstIdent(cref);
         true = stringEq(id, name);
         true = stringEq(id, n);
@@ -4525,7 +4525,7 @@ algorithm
 
     /*/ did not work, elab it untyped!
     case (cache, _, _, _, _, _)
-      equation
+      algorithm
         ErrorExt.rollBack("updateComponentInEnv3");
         ErrorExt.setCheckpoint("updateComponentInEnv3");
         mod = Mod.elabUntypedMod(inMod, inEnv, DAE.NOPRE());
@@ -4537,7 +4537,7 @@ algorithm
         (cache, mod);*/
 
     else
-      equation
+      algorithm
         ErrorExt.rollBack("updateComponentInEnv3");
       then
         fail();
@@ -4839,8 +4839,8 @@ algorithm
       then
         (cache,env2,dae,ci_state);
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Inst.instConstraints failed\n");
       then
         fail();
@@ -4876,8 +4876,8 @@ algorithm
         (cache,env,dae) := instClassAttributes2(inCache,inEnv,inPrefix,inAttrs,inImplicit,inInfo,clsAttrs);
       then (cache,env,dae);
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Inst.instClassAttributes failed\n");
       then
         fail();
@@ -4925,7 +4925,7 @@ algorithm
         (cache,env_2,clsAttrs);
 
     else
-      equation
+      algorithm
         Error.addMessage(Error.OPTIMICA_ERROR, {"Class Attributes allowed only for Optimization classes."});
       then fail();
   end match;
@@ -4966,8 +4966,8 @@ algorithm
         attrs := DAE.DAE({DAE.CLASS_ATTRIBUTES(DAE.OPTIMIZATION_ATTRS(objectiveE,objectiveIntegrandE,startTimeE,SOME(inAttrExp)))});
       then attrs;
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Inst.insertClassAttribute failed\n");
       then
         fail();
@@ -5335,7 +5335,7 @@ algorithm
          (attr as SCode.ATTR(arrayDims = ad, connectorType = ct,
                              parallelism= prl1, variability = var1, direction = dir)),
          _,_,_,_,_,_,_)
-      equation
+      algorithm
         ErrorExt.setCheckpoint("Inst.removeSelfReferenceAndUpdate");
         cl2 = InstUtil.removeCrefFromCrefs(cl1, c1);
         (cache,c,cenv) = Lookup.lookupClass(cache,env, sty, SOME(info));
@@ -5362,7 +5362,7 @@ algorithm
         (cache,env,ih,store,cl2);
 
     case(_, _, _, _, _, Absyn.CREF_IDENT(name = n), _, _, _, _, _, _, _, _, _, _)
-      equation
+      algorithm
         ErrorExt.rollBack("Inst.removeSelfReferenceAndUpdate");
       then
         fail();

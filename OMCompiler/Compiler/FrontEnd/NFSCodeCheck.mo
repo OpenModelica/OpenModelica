@@ -79,8 +79,8 @@ algorithm
         ();
 
     else
-      equation
-        ty = Dump.unparseTypeSpec(inTypeSpec);
+      algorithm
+        ty := Dump.unparseTypeSpec(inTypeSpec);
         Error.addSourceMessage(Error.RECURSIVE_SHORT_CLASS_DEFINITION,
         {inTypeName, ty}, inInfo);
       then
@@ -481,8 +481,8 @@ algorithm
         ();
 
     else
-      equation
-        ty_name = NFSCodeEnv.getItemName(inTypeItem);
+      algorithm
+        ty_name := NFSCodeEnv.getItemName(inTypeItem);
 
         Error.addSourceMessage(Error.RECURSIVE_DEFINITION,
           {inComponentName, ty_name}, inComponentInfo);
@@ -554,8 +554,8 @@ algorithm
         fail();
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- NFSCodeCheck.checkInstanceRestriction failed on unknown item.");
       then
         fail();

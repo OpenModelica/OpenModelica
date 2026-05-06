@@ -239,7 +239,7 @@ algorithm
       then balance(avlTreeAdd2(inAvlTree,keyCompare(key,rkey),key,value));
 
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {"Env.avlTreeAdd failed"});
       then fail();
   end match;
@@ -264,7 +264,7 @@ algorithm
 
     /*/ Don't allow replacing of nodes.
     case (_, 0, key, _)
-      equation
+      algorithm
         info = getItemInfo(inValue);
         Error.addSourceMessage(Error.DOUBLE_DECLARATION_OF_ELEMENTS,
           {inKey}, info);
@@ -704,7 +704,7 @@ algorithm
       then avlTreeReplace2(inAvlTree, keyCompare(key, rkey), key, value);
 
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed"});
       then fail();
 

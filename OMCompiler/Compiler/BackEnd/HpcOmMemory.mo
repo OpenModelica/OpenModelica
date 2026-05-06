@@ -426,7 +426,7 @@ import Util;
           GraphML.dumpGraph(graphInfo, fileName);
         then(tmpMemoryMapOpt, varToArrayIndexMapping, varToIndexMapping);
       else
-        equation
+        algorithm
           Error.addInternalError("CreateMemoryMap failed!", sourceInfo());
         then (NONE(), iVarToArrayIndexMapping, iVarToIndexMapping);
     end matchcontinue;
@@ -463,7 +463,7 @@ import Util;
   algorithm
     (oCacheMap,oScVarCLMapping,oNumCL) := match(iTaskGraph,iTaskGraphMeta,iAllSCVarsMapping,iSimCodeVarTypes,iScVarSolvedTaskMapping,iScVarUnsolvedTaskMapping,iCacheLineSize,iAllComponents,iSchedule, iNumberOfThreads, iTaskSolvedVarsMapping, iTaskUnsolvedVarsMapping)
       /* case(_,_,_,_,_,_,_,HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=tasksOfLevels, useFixedAssignments=false),_,_)
-        equation
+        algorithm
           (cacheMap,scVarCLMapping,numCL) = createCacheMapLevelOptimized(iAllSCVarsMapping,iSimCodeVarTypes,iScVarTaskMapping,iCacheLineSize,iAllComponents,tasksOfLevels,iNodeSimCodeVarMapping);
         then (cacheMap,scVarCLMapping,numCL); */
       case(_,_,_,_,_,_,_,_,HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=tasksOfLevels, useFixedAssignments=true),_,_,_)
@@ -492,9 +492,9 @@ import Util;
                                                                           scheduleInfo,iTaskSolvedVarsMapping,iTaskUnsolvedVarsMapping,iScVarInfos);
         then (cacheMap,scVarCLMapping,numCL);
       else
-        equation
+        algorithm
           print("No optimized cache map for the selected scheduler avaiable. Using default cacheMap!\n");
-          (cacheMap,scVarCLMapping,numCL) = createCacheMapDefault(iAllSCVarsMapping, iCacheLineSize, iSimCodeVars, iScVarSolvedTaskMapping, iSchedulerInfo, iSimCodeVarTypes);
+          (cacheMap,scVarCLMapping,numCL) := createCacheMapDefault(iAllSCVarsMapping, iCacheLineSize, iSimCodeVars, iScVarSolvedTaskMapping, iSchedulerInfo, iSimCodeVarTypes);
         then (cacheMap,scVarCLMapping,numCL);
      end match;
   end createCacheMapOptimized;
@@ -585,7 +585,7 @@ import Util;
           tmpInfo := List.fold(nodeIdc, function appendNodeVarsToCacheMap(iNodeSimCodeVarMapping=iNodeSimCodeVarMapping,iOwnerThread=-1), iInfo);
         then tmpInfo;
       else
-        equation
+        algorithm
           print("createCacheMapLevelOptimized1: Unsupported task type\n");
         then fail();
     end match;
@@ -724,7 +724,7 @@ import Util;
           print("createCacheMapLevelOptimized1: Calctask without threadIdx given\n");
         then fail();
       else
-        equation
+        algorithm
           print("createCacheMapLevelOptimized1: Unsupported task type\n");
         then fail();
     end match;
@@ -871,7 +871,7 @@ import Util;
       case(HpcOmSimCode.DEPTASK(_),_,_,_,_,_,_,_,_,_,_,_,_,_,(cacheMap, cacheMapMeta as CACHEMAPMETA(allSCVarsMapping=allSCVarsMapping), numOfCLs))
         then iInfo;
       else
-        equation
+        algorithm
           print("createCacheMapThreadOptimizedForTask failed!\n");
         then iInfo;
     end match;
@@ -1353,7 +1353,7 @@ import Util;
       case(_,_,_,_,_,{})
         then NONE();
       else
-        equation
+        algorithm
           print("findMatchingSharedCLLevelfix0: Unknown partly filled cache line type given.\n");
         then NONE();
     end match;
@@ -1724,7 +1724,7 @@ import Util;
           res := List.isMemberOnTrue(clIdx,iWrittenCLs, intEq);
         then res;
       else
-        equation
+        algorithm
           print("appendNodeVarsToCacheMap0 failed!\n");
         then fail();
     end matchcontinue;
@@ -1824,7 +1824,7 @@ import Util;
           //printCacheMap(cacheMap);
         then ((cacheMap, cacheMapMeta, numNewCL+1, cacheLineCandidates, writtenCL, currentCLCandidateIdx));
       else
-        equation
+        algorithm
           print("appendSCVarToCacheMap failed! Variable skipped.\n");
         then iInfo;
     end matchcontinue;
@@ -2039,7 +2039,7 @@ import Util;
           Error.addMessage(Error.INTERNAL_ERROR, {"ConvertCacheToVarArrayMapping: Uniform-CacheMap not supported!"});
         then fail();
       else
-        equation
+        algorithm
           Error.addMessage(Error.INTERNAL_ERROR, {"ConvertCacheToVarArrayMapping: CacheMap-Type not supported!"});
         then fail();
      end match;
@@ -2073,7 +2073,7 @@ import Util;
           //_ = convertCacheToVarArrayMapping2Helper(iVarIdxOffsets, 1, dataType);
         then ((varArrayIndexMappingHashTable, varIndexMappingHashTable));
        else
-        equation
+        algorithm
           Error.addMessage(Error.INTERNAL_ERROR, {"addCacheLineMapToVarArrayMapping failed! CacheLineMap-Type not supported!"});
         then fail();
      end match;
@@ -2114,7 +2114,7 @@ import Util;
           //print("convertCacheMapToMemoryMap2: " + ComponentReference.debugPrintComponentRefTypeStr(name) + " [" + intString(arrayPosition) + "] with array-pos: " + intString(arrayPosition) + " | array-index: " + intString(iArrayIdx) + " | start: " + intString(start) + "\n");
         then ((varArrayIndexMappingHashTable, varIndexMappingHashTable));
       else
-        equation
+        algorithm
           Error.addMessage(Error.INTERNAL_ERROR, {"addCacheLineEntryToVarArrayMapping failed! Unsupported entry-type\n"});
         then fail();
     end match;
@@ -2892,7 +2892,7 @@ import Util;
           true := intEq(graphCount,0);
         then iGraphInfo;
       else
-        equation
+        algorithm
           print("HpcOmSimCode.appendCacheLinesToGraph failed!\n");
         then fail();
      end matchcontinue;
@@ -3124,7 +3124,7 @@ import Util;
           List.map1_0(cacheLines, printCacheLineMap, cacheVariables);
         then ();
       else
-        equation
+        algorithm
           print("printCacheMap: Unsupported cache map type!\n");
         then ();
     end match;
@@ -3344,7 +3344,7 @@ import Util;
           tmpString := dumpSimCodeVar(simVar);
         then tmpString;
       else
-        equation
+        algorithm
           print("dumpScVarsByIdx: Failed to find simcode-variable with index " + intString(iSimCodeVarIdx) + "\n");
         then "NONE";
     end matchcontinue;
@@ -3432,7 +3432,7 @@ import Util;
       case(DAE.DIM_INTEGER(integer))
         then intString(integer);
       else
-       equation
+       algorithm
          print("getDimStringOfDimElement: unsupported Dimension-type given!\n");
        then "";
     end match;
@@ -3490,7 +3490,7 @@ import Util;
           tmpDims := listLength(subscriptLst);
         then tmpDims;
       else
-        equation
+        algorithm
           print("HpcOmMemory.getCrefDims failed!\n");
         then 0;
     end match;
@@ -3512,12 +3512,12 @@ import Util;
           true := intEq(listLength(tmpCrefs), iElems);
         then tmpCrefs;
       else
-        equation
+        algorithm
           //print("expandCref1: " + ComponentReference.printComponentRefStr(iCref) + " elems: " + intString(iElems) + " dims: " + intString(listLength(iDimElemCount)) + "\n");
-          idxList = List.intRange(List.reduce(iDimElemCount, intMul));
+          idxList := List.intRange(List.reduce(iDimElemCount, intMul));
           //print("expandCref1 idxList-count: " + intString(listLength(idxList)) + "\n");
           //ComponentReference.printComponentRefList(List.map2(idxList, createArrayIndexCref, iDimElemCount, iCref));
-          tmpCrefs = List.map2(idxList, createArrayIndexCref, iDimElemCount, iCref);
+          tmpCrefs := List.map2(idxList, createArrayIndexCref, iDimElemCount, iCref);
           //ComponentReference.printComponentRefList(tmpCrefs);
         then tmpCrefs;
     end matchcontinue;
@@ -3585,7 +3585,7 @@ import Util;
           //print("createArrayIndexCref_impl case5: listLen=" + intString(listLength(iDimElemCount)) + " currentDim= " + intString(currentDim) + "\n");
         then iRefCurrentDim;
       else
-        equation
+        algorithm
           print("createArrayIndexCref_impl failed!\n");
         then iRefCurrentDim;
     end matchcontinue;
@@ -3607,7 +3607,7 @@ import Util;
       case(HpcOmSimCode.PARALLELTASKLIST(tasks=tasks))
       then tasks;
       else
-       equation
+       algorithm
          print("getTaskListTasks failed!\n");
       then {};
     end match;

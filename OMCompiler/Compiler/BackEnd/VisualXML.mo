@@ -213,11 +213,11 @@ algorithm
       case DAE.CREF(_) then getConstCrefBinding(Expression.expCref(e),vars);
           /*
       case(DAE.CALL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Modelica",Absyn.QUALIFIED("Utilities",Absyn.QUALIFIED("Files",Absyn.IDENT("fullPathName"))))),{DAE.SCONST(s)},_))
-        equation
+        algorithm
         then System.realpath(s);
         */
       else
-        equation
+        algorithm
           Error.addCompilerWarning("The binding expression "+ExpressionDump.printExpStr(e)+" of the visualization type component " +ComponentReference.crefStr(cr)+ "  cannot be evaluated. Please specify a visualization type (CAD files are specified as modelica://packagename/filename.stl)");
         then e;
     end matchcontinue;

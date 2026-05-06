@@ -178,9 +178,9 @@ algorithm
       ((_, _, buffer)) := List.fold(inEqns, equationList2String, (1, 1, ""));
     then buffer;
 
-    else equation
-      ((_, _, buffer)) = List.fold(inEqns, equationList2String, (1, 1, ""));
-      buffer = heading + "\n" + UNDERLINE + "\n" + buffer;
+    else algorithm
+      ((_, _, buffer)) := List.fold(inEqns, equationList2String, (1, 1, ""));
+      buffer := heading + "\n" + UNDERLINE + "\n" + buffer;
     then buffer;
   end match;
 end equationListString;
@@ -428,9 +428,9 @@ algorithm
       ((_, buffer)) := List.fold(inVars, var1String, (1, ""));
     then buffer;
 
-    else equation
-      ((_, buffer)) = List.fold(inVars, var1String, (1, ""));
-      buffer = heading + "\n" + UNDERLINE + "\n" + buffer;
+    else algorithm
+      ((_, buffer)) := List.fold(inVars, var1String, (1, ""));
+      buffer := heading + "\n" + UNDERLINE + "\n" + buffer;
     then buffer;
   end match;
 end varListString;
@@ -462,9 +462,9 @@ algorithm
       ((_, buffer)) := List.fold(inVars, varNameString, (1, ""));
     then buffer;
 
-    else equation
-      ((_, buffer)) = List.fold(inVars, varNameString, (1, ""));
-      buffer = heading + "\n" + UNDERLINE + "\n" + buffer;
+    else algorithm
+      ((_, buffer)) := List.fold(inVars, varNameString, (1, ""));
+      buffer := heading + "\n" + UNDERLINE + "\n" + buffer;
     then buffer;
   end match;
 end varListStringShort;
@@ -496,9 +496,9 @@ algorithm
       ((_, buffer)) := List.fold(inVars, var1StringIndented, (1, ""));
     then buffer;
 
-    else equation
-      ((_, buffer)) = List.fold(inVars, var1StringIndented, (1, ""));
-      buffer = heading + "\n" + buffer;
+    else algorithm
+      ((_, buffer)) := List.fold(inVars, var1StringIndented, (1, ""));
+      buffer := heading + "\n" + buffer;
     then buffer;
   end match;
 end varListStringIndented;
@@ -1056,7 +1056,7 @@ algorithm
       dumpEqnsSolved2(comps, eqns, vars);
     then ();
 
-    else equation
+    else algorithm
       print("No Matching\n");
     then ();
   end match;
@@ -2862,7 +2862,7 @@ algorithm
     case BackendDAE.CONTINUOUS_TIME_PARTITION() then "continuous time partition";
     case BackendDAE.UNSPECIFIED_PARTITION() then "unspecified partition";
     case BackendDAE.UNKNOWN_PARTITION() then "unknown partition";
-    else equation
+    else algorithm
       Error.addInternalError("function partitionKindString failed", sourceInfo());
     then fail();
   end match;
@@ -2898,7 +2898,7 @@ algorithm
         cr := DAE.CREF_IDENT(BackendDAE.WHENCLK_PRREFIX + intString(i), DAE.T_CLOCK_DEFAULT, {});
       then "clocked(" + DAE.ComponentReference.printComponentRefStr(cr) + ")";
     else
-      equation
+      algorithm
         Error.addInternalError("function equationKindString failed", sourceInfo());
       then fail();
   end match;
@@ -3890,7 +3890,7 @@ algorithm
       e2 := listLength(innerEquations2);
     then ((seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,(d,e)::te_nl),(te_l2,(d2,e2)::te_nl2)));
 
-    else equation
+    else algorithm
       print("dumpCompShort2 failed with:\n");
       dumpComponent(inComp);
     then fail();
@@ -4180,7 +4180,7 @@ algorithm
       dumpBipartiteGraphStrongComponent2(compVars,compEqs,m,varAtts,eqAtts,graphName);
     then ();
   else
-    equation
+    algorithm
       print("dumpTornSystemBipartiteGraphML1 failed\n");
     then ();
   end matchcontinue;

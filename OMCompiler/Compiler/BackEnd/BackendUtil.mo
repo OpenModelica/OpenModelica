@@ -111,7 +111,7 @@ algorithm
       then
         res_str;
     else
-      equation
+      algorithm
         print(getInstanceName() + " failed for str:"+inString+"\n");
       then
         fail();

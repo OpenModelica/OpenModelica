@@ -191,7 +191,7 @@ algorithm
       printcheckBackendDAEWithErrorMsg(expCrefs, wrongEqns);
     then ();
 
-    else equation
+    else algorithm
       Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEUtil.mo: function checkBackendDAEWithErrorMsg failed"});
     then fail();
   end matchcontinue;
@@ -306,8 +306,8 @@ algorithm
         (expcrefs, wrongEqns);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- BackendDAEUtil.checkBackendDAE failed\n");
       then
         fail();
@@ -1475,8 +1475,8 @@ algorithm
       then
         removeNegative(m[indx]);
     else
-      equation
-        s = "- BackendDAEUtil.varsInEqn failed, indx= " + intString(indx) + "array length: " + intString(arrayLength(m)) + "\n";
+      algorithm
+        s := "- BackendDAEUtil.varsInEqn failed, indx= " + intString(indx) + "array length: " + intString(arrayLength(m)) + "\n";
         Error.addMessage(Error.INTERNAL_ERROR,{s});
       then
         fail();
@@ -2050,7 +2050,7 @@ algorithm
       then xs;
 
     /*case ((DAE.STMT_TUPLE_ASSIGN(expExpLst = expl1)::rest),vars)
-      equation
+      algorithm
         crefLst = List.map(expl1,Expression.expCref);
         (vlst,_) = List.map1_2(crefLst,BackendVariable.getVar,vars);
         //blst = List.map(vlst,BackendVariable.isVarDiscrete);
@@ -2820,9 +2820,9 @@ algorithm
         (res,size);
 
     else
-      equation
-        eqnstr = BackendDump.equationString(inEquation);
-        str = "- BackendDAEUtil.adjacencyRow failed for equation: " + eqnstr;
+      algorithm
+        eqnstr := BackendDump.equationString(inEquation);
+        str := "- BackendDAEUtil.adjacencyRow failed for equation: " + eqnstr;
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();
@@ -3071,10 +3071,10 @@ algorithm
       (_, (_, vallst, _)) := Expression.traverseExpTopDown(inExp, traversingAdjacencyRowExpFinderSubClock, (inVariables, inIntegerLst, isInitial));
     then vallst;
 
-    else equation
-      (_, (_, vallst, _)) = Expression.traverseExpTopDown(inExp, traversingadjacencyRowExpFinder, (inVariables, inIntegerLst, isInitial));
+    else algorithm
+      (_, (_, vallst, _)) := Expression.traverseExpTopDown(inExp, traversingadjacencyRowExpFinder, (inVariables, inIntegerLst, isInitial));
       // only absolute indices?
-      vallst = applyIndexType(vallst, inIndexType);
+      vallst := applyIndexType(vallst, inIndexType);
     then vallst;
   end match;
 end adjacencyRowExp;
@@ -3860,7 +3860,7 @@ algorithm
       then BackendDAEUtil.setEqSystMatrices(syst, SOME(m), SOME(mt), SOME(mapping));
 
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAEUtil.updateAdjacencyMatrix failed"});
       then fail();
 
@@ -3973,7 +3973,7 @@ algorithm
         (BackendDAEUtil.setEqSystMatrices(syst, SOME(m), SOME(mt), SOME((mapEqnIncRow, mapIncRowEqn, indexType, scalar, processed))), mapEqnIncRow, mapIncRowEqn);
 
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAEUtil.updateAdjacencyMatrixScalar failed"});
       then
         fail();
@@ -4101,18 +4101,18 @@ algorithm
         (m,mt,iMapEqnIncRow,iMapIncRowEqn);
 
     else
-      equation
-        abse = intAbs(index);
-        rowsize = 1;
-        row = AvlSetInt.EMPTY();
-        new_size = size+rowsize;
-        scalarindxs = List.intRange2(size+1,new_size);
-        mapEqnIncRow = arrayUpdate(iMapEqnIncRow,abse,scalarindxs);
-        mapIncRowEqn = List.fold1r(scalarindxs,arrayUpdate,abse,iMapIncRowEqn);
-        row_lst = AvlSetInt.listKeys(row);
-        m1= List.fold1r(scalarindxs,arrayUpdate,row_lst,m);
-        mt1 = filladjacencyMatrixT(row_lst,scalarindxs,mt);
-        (m1,mt1,mapEqnIncRow,mapIncRowEqn) = updateAdjacencyMatrixScalar2(index+1,n,new_size,vars,daeeqns,m1,mt1,mapEqnIncRow,mapIncRowEqn,inIndxType,functionTree,isInitial);
+      algorithm
+        abse := intAbs(index);
+        rowsize := 1;
+        row := AvlSetInt.EMPTY();
+        new_size := size+rowsize;
+        scalarindxs := List.intRange2(size+1,new_size);
+        mapEqnIncRow := arrayUpdate(iMapEqnIncRow,abse,scalarindxs);
+        mapIncRowEqn := List.fold1r(scalarindxs,arrayUpdate,abse,iMapIncRowEqn);
+        row_lst := AvlSetInt.listKeys(row);
+        m1:= List.fold1r(scalarindxs,arrayUpdate,row_lst,m);
+        mt1 := filladjacencyMatrixT(row_lst,scalarindxs,mt);
+        (m1,mt1,mapEqnIncRow,mapIncRowEqn) := updateAdjacencyMatrixScalar2(index+1,n,new_size,vars,daeeqns,m1,mt1,mapEqnIncRow,mapIncRowEqn,inIndxType,functionTree,isInitial);
       then
         (m1,mt1,mapEqnIncRow,mapIncRowEqn);
   end matchcontinue;
@@ -4457,9 +4457,9 @@ algorithm
         then traverseStmts(stmts,func,extraArg);
 
       else
-        equation
-          str = DAEDump.ppStatementStr(stmt);
-          str = "BackenddAEUtil.traverseStmts not implemented correctly: " + str;
+        algorithm
+          str := DAEDump.ppStatementStr(stmt);
+          str := "BackenddAEUtil.traverseStmts not implemented correctly: " + str;
           Error.addMessage(Error.INTERNAL_ERROR, {str});
         then fail();
     end matchcontinue;
@@ -4563,7 +4563,7 @@ algorithm
         (arr,arrT,mapEqnIncRow,mapIncRowEqn);
 
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAEUtil.getAdjacencyMatrixEnhancedScalar failed"});
       then
         fail();
@@ -4707,7 +4707,7 @@ algorithm
         (arr,arrT);
 
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAEUtil.getAdjacencyMatrixEnhanced failed"});
       then
         fail();
@@ -4975,9 +4975,9 @@ algorithm
         (row,size);
 
     else
-      equation
-        eqnstr = BackendDump.equationString(inEquation);
-        eqnstr = stringAppendList({"BackendDAE.adjacencyRowEnhanced failed for eqn:\n",eqnstr,"\n"});
+      algorithm
+        eqnstr := BackendDump.equationString(inEquation);
+        eqnstr := stringAppendList({"BackendDAE.adjacencyRowEnhanced failed for eqn:\n",eqnstr,"\n"});
         Error.addMessage(Error.INTERNAL_ERROR,{eqnstr});
       then
         fail();
@@ -5248,7 +5248,7 @@ algorithm
       BackendDAE.Constraints cons;
     case({},_,_,_,_,_,_,_) then inRow;
 /*    case(r::rest,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // if r negativ then unsolvable
         true = intLt(r,0);
       then
@@ -6681,10 +6681,10 @@ algorithm
       then
         outExp;
     else
-      equation
-        repl = makeZeroReplacements(inVariables);
-       (outExp,(_,_,_,true)) = Expression.traverseExpTopDown(inExp, getEqnsysRhsExp1, (repl,inVariables,funcs,true));
-       (outExp,_) = ExpressionSimplify.simplify(outExp);
+      algorithm
+        repl := makeZeroReplacements(inVariables);
+       (outExp,(_,_,_,true)) := Expression.traverseExpTopDown(inExp, getEqnsysRhsExp1, (repl,inVariables,funcs,true));
+       (outExp,_) := ExpressionSimplify.simplify(outExp);
       then
         outExp;
   end match;
@@ -6876,8 +6876,8 @@ algorithm
       then
         outTypeA;
 
-    else equation
-      (_, _, name) = System.dladdr(func);
+    else algorithm
+      (_, _, name) := System.dladdr(func);
       Error.addInternalError("traverseBackendDAEExps failed for " + name, sourceInfo());
     then fail();
   end matchcontinue;
@@ -7101,9 +7101,9 @@ algorithm
       then
         ext_arg_1;
 
-    else equation
-      true = Flags.isSet(Flags.FAILTRACE);
-      (_, _, name) = System.dladdr(func);
+    else algorithm
+      true := Flags.isSet(Flags.FAILTRACE);
+      (_, _, name) := System.dladdr(func);
       Debug.trace("- BackendDAE.traverseBackendDAEExpsVars failed for " + name + "\n");
     then fail();
   end matchcontinue;
@@ -7134,8 +7134,8 @@ algorithm
       then
         ext_arg_1;
 
-    else equation
-      (_, _, name) = System.dladdr(func);
+    else algorithm
+      (_, _, name) := System.dladdr(func);
       Error.addInternalError("traverseBackendDAEExpsVarsWithUpdate failed for " + name, sourceInfo());
     then fail();
   end matchcontinue;
@@ -7323,9 +7323,9 @@ algorithm
       end if;
     then (v, ext_arg_2);
 
-    else equation
-      true = Flags.isSet(Flags.FAILTRACE);
-      (_, _, name) = System.dladdr(func);
+    else algorithm
+      true := Flags.isSet(Flags.FAILTRACE);
+      (_, _, name) := System.dladdr(func);
       Debug.trace("- BackendDAE.traverseBackendDAEExpsVar failed for " + name + "\n");
     then fail();
   end matchcontinue;
@@ -8330,8 +8330,8 @@ algorithm
       then
         method;
     else
-      equation
-        str = stringAppendList({"Selection of Index Reduction Method ",strIndexReductionMethod," failed."});
+      algorithm
+        str := stringAppendList({"Selection of Index Reduction Method ",strIndexReductionMethod," failed."});
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();
@@ -8405,8 +8405,8 @@ algorithm
       then
         method;
     else
-      equation
-        str = stringAppendList({"Selection of Matching Algorithm ",strMatchingAlgorithm," failed."});
+      algorithm
+        str := stringAppendList({"Selection of Matching Algorithm ",strMatchingAlgorithm," failed."});
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();
@@ -8835,7 +8835,7 @@ algorithm
     case (_, name)::rest guard(not stringEqual(name, strOptModule))
     then selectOptModules1(strOptModule, rest);
 
-    else equation
+    else algorithm
       Error.addInternalError("Selection of optimization module " + strOptModule + " failed.", sourceInfo());
     then fail();
   end match;
@@ -9089,8 +9089,8 @@ algorithm
       then (conditionVarList, initialCall);
 
     else
-      equation
-        (conditionVarList, initialCall) = getConditionList1({inCondition}, {}, false);
+      algorithm
+        (conditionVarList, initialCall) := getConditionList1({inCondition}, {}, false);
       then (conditionVarList, initialCall);
   end match;
 end getConditionList;

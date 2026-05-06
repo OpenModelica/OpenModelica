@@ -529,7 +529,7 @@ algorithm
       s := if b then s + s1 + s2 + s3 + s4 + s5 + s6 + s7 else "1";
     then s;
 
-    else equation
+    else algorithm
       Error.addCompilerWarning("function Unit.unitString failed for \"" + unit2string(inUnit) +"\".");
     then fail();
   end match;
@@ -670,11 +670,11 @@ algorithm
       ut:=BaseHashTable.get(inS, inHtS2U);
     then ut;
 
-    else equation
-      s = stringGetStringChar(inS, 1);
-      (r, s) = getPrefix(s, inS);
-      ut = unitToken2unit(s, inHtS2U);
-      ut = unitMulReal(ut, r);
+    else algorithm
+      s := stringGetStringChar(inS, 1);
+      (r, s) := getPrefix(s, inS);
+      ut := unitToken2unit(s, inHtS2U);
+      ut := unitMulReal(ut, r);
     then ut;
   end matchcontinue;
 end unitToken2unit;
@@ -867,7 +867,7 @@ algorithm
       tokenList := lexer(charList);
     then T_UNIT(unit)::tokenList;
 
-    else equation
+    else algorithm
       Error.addInternalError("function lexer failed", sourceInfo());
     then fail();
   end matchcontinue;

@@ -126,7 +126,7 @@ algorithm
         File.write(file, "\n]\n}");
       then (true,fileName);
     else
-      equation
+      algorithm
         Error.addInternalError("SerializeModelInfo.serialize failed", sourceInfo());
       then (false,"");
   end matchcontinue;
@@ -397,7 +397,7 @@ algorithm
       then ();
 
     else
-      equation
+      algorithm
         Error.addInternalError("serializeOperation failed: " + anyString(op), sourceInfo());
       then fail();
   end match;
@@ -1130,7 +1130,7 @@ algorithm
         File.write(file,"}");
       then ();
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{"SerializeModelInfo.serializeLinearCell failed. Expected only SES_RESIDUAL as input."});
       then fail();
   end match;

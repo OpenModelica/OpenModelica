@@ -458,7 +458,7 @@ algorithm
       then (p,sp);
 
     else
-      equation
+      algorithm
         Error.addInternalError("FBuiltin.getInitialFunctions failed.", sourceInfo());
       then fail();
   end matchcontinue;
@@ -685,8 +685,8 @@ algorithm
       then SCodeUtil.getElementWithPath(inProgram, inPath);
 
     else
-      equation
-        (_,sp) = FBuiltin.getInitialFunctions();
+      algorithm
+        (_,sp) := FBuiltin.getInitialFunctions();
       then SCodeUtil.getElementWithPath(sp, inPath);
   end matchcontinue;
 end getElementWithPathCheckBuiltin;

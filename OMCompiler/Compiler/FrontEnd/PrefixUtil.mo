@@ -638,7 +638,7 @@ algorithm
     /*
     // adrpo: prefix normally if we have an inner outer variable!
     case (cache,env,ih,cref,pre)
-      equation
+      algorithm
         (cache,DAE.ATTR(innerOuter = io),_,_,_,_) = Lookup.lookupVarLocal(cache, env, cref);
         // fprintln(Flags.INNER_OUTER, printPrefixStr(inPrefix) + "/" + ComponentReference.printComponentRefStr(cref) +
         //   if_(AbsynUtil.isOuter(io), " [outer] ", " ") +
@@ -653,7 +653,7 @@ algorithm
 
     // adrpo: prefix with *CORRECT* prefix from inner if we have an outer variable!
     case (cache,env,ih,cref as DAE.CREF_IDENT(ident=_),pre)
-      equation
+      algorithm
         (cache,DAE.ATTR(innerOuter = io),_,_,_,_) = Lookup.lookupVarLocal(cache, env, cref);
         // fprintln(Flags.INNER_OUTER, printPrefixStr(inPrefix) + "/" + ComponentReference.printComponentRefStr(cref) +
         //   if_(AbsynUtil.isOuter(io), " [outer] ", " ") +
@@ -675,7 +675,7 @@ algorithm
     // adrpo: we have a qualified cref, search for the prefix!
     // bar2/world.someCrap
     case (cache,env,ih,cref as DAE.CREF_QUAL(ident=_),pre)
-      equation
+      algorithm
         (cache,DAE.ATTR(innerOuter = io),_,_,_,_) = Lookup.lookupVarLocal(cache, env, cref);
         true = AbsynUtil.isOuter(io);
         (cache,innerPrefix) = searchForInnerPrefix(cache,env,ih,cref,pre,io);
@@ -1266,8 +1266,8 @@ algorithm
        (inCache, inTy);
 
     else
-      equation
-        (outTy, (outCache, _, _, _)) = Types.traverseType(inTy, (inCache, inEnv, inIH, inPre), prefixArrayDimensions);
+      algorithm
+        (outTy, (outCache, _, _, _)) := Types.traverseType(inTy, (inCache, inEnv, inIH, inPre), prefixArrayDimensions);
       then
         (outCache, outTy);
   end matchcontinue;

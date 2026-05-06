@@ -428,7 +428,7 @@ algorithm
     case DAE.INITIAL_NORETCALL() then element.source;
 
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {"ElementSource.getElementSource failed: Element does not have a source"});
       then fail();
   end match;

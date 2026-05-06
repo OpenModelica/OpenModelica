@@ -932,7 +932,7 @@ algorithm
         ();
 
     else
-      equation
+      algorithm
         Error.addMessage(Error.UNKNOWN_DEBUG_FLAG, {inFlag});
       then
         fail();

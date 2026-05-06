@@ -244,8 +244,8 @@ algorithm
               v := Values.ARRAY(es_1,dims);
             then v;
           else
-            equation
-              v = ValuesUtil.makeArray(es_1);
+            algorithm
+              v := ValuesUtil.makeArray(es_1);
             then
               v;
         end matchcontinue;
@@ -265,8 +265,8 @@ algorithm
               v := Values.ARRAY(es_1,dims);
             then v;
           else
-            equation
-              v = ValuesUtil.makeArray(es_1);
+            algorithm
+              v := ValuesUtil.makeArray(es_1);
             then
               v;
         end matchcontinue;
@@ -1074,7 +1074,7 @@ algorithm
     // BTH
     /*
     case "Clock"
-      equation
+      algorithm
         true = Config.synchronousFeaturesAllowed();
       then cevalBuiltinClock; */
     // MetaModelica type conversions
@@ -1498,8 +1498,8 @@ algorithm
         dimVal;
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Ceval.cevalBuiltinSize2 failed\n");
       then
         fail();
@@ -1784,8 +1784,8 @@ algorithm
         (v as Values.ARRAY(dimLst = il)) := cevalBuiltinPromote2(v, n_1);
       then Values.ARRAY({v},1::il);
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Ceval.cevalBuiltinPromote2 failed\n");
       then fail();
   end matchcontinue;
@@ -4245,7 +4245,7 @@ algorithm
 
     // failure in lookup but NO_MSG, silently fail and move along
     /*case (cache,env,c,(impl as false),Absyn.NO_MSG(),_)
-      equation
+      algorithm
         failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, c));
       then
         fail();*/
@@ -4352,7 +4352,7 @@ algorithm
 
     /*
     case (cache,env,cr,_,impl,msg)
-      equation
+      algorithm
         print("Ceval: " +
           ComponentReference.printComponentRefStr(cr) + " | " +
           FGraph.printGraphPathStr(env) + " | " +
@@ -4535,7 +4535,7 @@ algorithm
 
     /*// failtrace
     case (cache, env, subs, inValue, dims, _, _, _)
-      equation
+      algorithm
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Ceval.cevalSubscriptValue failed on:" +
           "\n env: " + FGraph.printGraphPathStr(env) +

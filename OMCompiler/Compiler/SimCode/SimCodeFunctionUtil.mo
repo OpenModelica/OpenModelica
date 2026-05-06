@@ -912,7 +912,7 @@ algorithm
         // inst_dims_exp := List.map(inst_dims, Expression.dimensionSizeExpHandleUnkown);
       then SimCodeFunction.VARIABLE(id, daeType, binding, inst_dims, prl, kind, false);
     else
-      equation
+      algorithm
         // TODO: ArrayEqn fails here
         Error.addInternalError("function daeInOutSimVar failed\n", sourceInfo());
       then
@@ -1105,7 +1105,7 @@ algorithm
         failure(_ := List.find(inVars, isFunctionPtr));
       then ();
     else
-      equation
+      algorithm
         Error.addMessage(Error.GENERATECODE_INVARS_HAS_FUNCTION_PTR, {name});
       then fail();
   end matchcontinue;
@@ -1589,7 +1589,7 @@ algorithm
         crefa;
 
     else
-      equation
+      algorithm
         Error.addInternalError("function getCrefFromExp failed: input was not of type DAE.CREF", sourceInfo());
       then
         fail();
@@ -2203,7 +2203,7 @@ algorithm
       then ({str},{});
 
     else
-      equation
+      algorithm
         Error.addInternalError("Failed to process Library annotation for external function", sourceInfo());
       then fail();
   end matchcontinue;
@@ -2310,7 +2310,7 @@ algorithm
       then (strs,names);
 
     else
-      equation
+      algorithm
         Error.addInternalError("Failed to process Library annotation for external function", sourceInfo());
       then fail();
   end matchcontinue;
@@ -2602,8 +2602,8 @@ algorithm
         aliasStr := AbsynUtil.pathStringUnquoteReplaceDot(BaseHashTable.get(str, inHt),"_");
       then (SOME(aliasStr),inHt);
     else
-      equation
-        ht = BaseHashTable.add((str,path),inHt);
+      algorithm
+        ht := BaseHashTable.add((str,path),inHt);
       then (NONE(),ht);
   end matchcontinue;
 end aliasRecordDeclarations2;

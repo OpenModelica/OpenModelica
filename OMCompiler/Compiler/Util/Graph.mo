@@ -510,7 +510,7 @@ algorithm
         tmpGraph := transposeGraph(tmpGraph,restGraph,inEqualFunc);
       then tmpGraph;
     else
-      equation
+      algorithm
         Error.addSourceMessage(Error.INTERNAL_ERROR, {"Graph.transpose failed."}, sourceInfo());
       then fail();
   end matchcontinue;
@@ -617,7 +617,7 @@ algorithm
         //print("Start new round!\n");
       then allReachableNodesWork((M,L),inGraph,inEqualFunc);
     else
-      equation
+      algorithm
         Error.addSourceMessage(Error.INTERNAL_ERROR, {"Graph.allReachableNodes failed."}, sourceInfo());
       then NONE();
   end matchcontinue;
@@ -675,7 +675,7 @@ algorithm
         colored := partialDistance2color(rest, forbiddenColor, inColors, inGraph, inGraphT, colored, inEqualFunc, inPrintFunc);
       then colored;
     else
-      equation
+      algorithm
         Error.addSourceMessage(Error.INTERNAL_ERROR, {"Graph.partialDistance2color failed."}, sourceInfo());
       then fail();
   end matchcontinue;
@@ -726,7 +726,7 @@ algorithm
         forbiddenColor1 := addForbiddenColors(inNode, rest, inColored, forbiddenColor, inGraph, inEqualFunc, inPrintFunc);
       then forbiddenColor1;
       else
-      equation
+      algorithm
         Error.addSourceMessage(Error.INTERNAL_ERROR, {"Graph.addForbiddenColors failed."}, sourceInfo());
       then fail();
   end matchcontinue;
@@ -757,7 +757,7 @@ algorithm
         arrayUpdate(inArray, inIndex, inNode);
       then ();
     else
-      equation
+      algorithm
         Error.addSourceMessage(Error.INTERNAL_ERROR, {"Graph.arrayUpdateListAppend failed."}, sourceInfo());
       then fail();
   end matchcontinue;
@@ -809,12 +809,12 @@ algorithm
         //print("Found color on index : " + intString(inIndex) + "\n");
       then inIndex;
     else
-      equation
-        SOME(nodes) = arrayGet(inForbiddenColor, inIndex);
+      algorithm
+        SOME(nodes) := arrayGet(inForbiddenColor, inIndex);
         //inPrintFunc(nodes,"FobiddenColors:" );
         List.getMemberOnTrue(inNode, nodes, inEqualFunc);
         //print("Not found color on index : " + intString(inIndex) + "\n");
-        index = arrayFindMinColorIndex(inForbiddenColor, inNode, inIndex+1, inmaxIndex, inEqualFunc, inPrintFunc);
+        index := arrayFindMinColorIndex(inForbiddenColor, inNode, inIndex+1, inmaxIndex, inEqualFunc, inPrintFunc);
       then index;
   end matchcontinue;
 end arrayFindMinColorIndex;
@@ -935,7 +935,7 @@ algorithm
         reachableNodes := allReachableNodesInt((M,L),inGraph,inMaxGraphNode,inMaxNodexIndex);
       then reachableNodes;
     else
-      equation
+      algorithm
         Error.addSourceMessage(Error.INTERNAL_ERROR, {"Graph.allReachableNodesInt failed."}, sourceInfo());
       then fail();
   end matchcontinue;

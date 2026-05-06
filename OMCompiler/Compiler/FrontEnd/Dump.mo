@@ -726,8 +726,8 @@ algorithm
     case Absyn.UNARY() then true;
 
     else
-      equation
-        diff = Util.intCompare(expPriority(inOperand, inLhs),
+      algorithm
+        diff := Util.intCompare(expPriority(inOperand, inLhs),
                                expPriority(inOperator, inLhs));
       then
         shouldParenthesize2(diff, inOperand, inLhs);
@@ -1314,7 +1314,7 @@ algorithm
         printInfoAsCorbaString(info);
         Print.printBuf(" end Absyn.CLASS;");
       then ();
-    else equation Error.addMessage(Error.INTERNAL_ERROR,{"printClassAsCorbaString failed"}); then fail();
+    else algorithm Error.addMessage(Error.INTERNAL_ERROR,{"printClassAsCorbaString failed"}); then fail();
   end match;
 end printClassAsCorbaString;
 
@@ -1345,7 +1345,7 @@ algorithm
         Print.printBuf(realString(lastModified));
         Print.printBuf(" end SOURCEINFO;");
       then ();
-    else equation Error.addMessage(Error.INTERNAL_ERROR,{"printInfoAsCorbaString failed"}); then fail();
+    else algorithm Error.addMessage(Error.INTERNAL_ERROR,{"printInfoAsCorbaString failed"}); then fail();
   end match;
 end printInfoAsCorbaString;
 
@@ -1431,7 +1431,7 @@ algorithm
         printOption(comment, printCommentAsCorbaString);
         Print.printBuf("end Absyn.PDER;");
       then ();
-    else equation Error.addMessage(Error.INTERNAL_ERROR,{"printClassDefAsCorbaString failed"}); then fail();
+    else algorithm Error.addMessage(Error.INTERNAL_ERROR,{"printClassDefAsCorbaString failed"}); then fail();
   end match;
 end printClassDefAsCorbaString;
 
@@ -1451,7 +1451,7 @@ algorithm
       algorithm
         Print.printBuf("record Absyn.ENUM_COLON end Absyn.ENUM_COLON;");
       then ();
-    else equation Error.addMessage(Error.INTERNAL_ERROR,{"printEnumDefAsCorbaString failed"}); then fail();
+    else algorithm Error.addMessage(Error.INTERNAL_ERROR,{"printEnumDefAsCorbaString failed"}); then fail();
   end match;
 end printEnumDefAsCorbaString;
 
@@ -1470,7 +1470,7 @@ algorithm
         printOption(comment, printCommentAsCorbaString);
         Print.printBuf("end Absyn.ENUMLITERAL;");
       then ();
-    else equation Error.addMessage(Error.INTERNAL_ERROR,{"printEnumLiteralAsCorbaString failed"}); then fail();
+    else algorithm Error.addMessage(Error.INTERNAL_ERROR,{"printEnumLiteralAsCorbaString failed"}); then fail();
   end match;
 end printEnumLiteralAsCorbaString;
 
@@ -1595,7 +1595,7 @@ algorithm
         Print.printBuf("record Absyn.R_UNKNOWN end Absyn.R_UNKNOWN;");
       then ();
 
-    else equation Error.addMessage(Error.INTERNAL_ERROR,{"printRestrictionAsCorbaString failed"}); then fail();
+    else algorithm Error.addMessage(Error.INTERNAL_ERROR,{"printRestrictionAsCorbaString failed"}); then fail();
   end match;
 end printRestrictionAsCorbaString;
 
@@ -1698,7 +1698,7 @@ algorithm
         printOption(annotation_, printAnnotationAsCorbaString);
         Print.printBuf(" end Absyn.EXTERNAL;");
       then ();
-    else equation Error.addMessage(Error.INTERNAL_ERROR,{"printClassPartAsCorbaString failed"}); then fail();
+    else algorithm Error.addMessage(Error.INTERNAL_ERROR,{"printClassPartAsCorbaString failed"}); then fail();
   end match;
 end printClassPartAsCorbaString;
 
@@ -1725,7 +1725,7 @@ algorithm
         printOption(annotation_, printAnnotationAsCorbaString);
         Print.printBuf(" end Absyn.EXTERNALDECL;");
       then ();
-    else equation Error.addMessage(Error.INTERNAL_ERROR,{"printExternalDeclAsCorbaString failed"}); then fail();
+    else algorithm Error.addMessage(Error.INTERNAL_ERROR,{"printExternalDeclAsCorbaString failed"}); then fail();
   end match;
 end printExternalDeclAsCorbaString;
 
@@ -1749,7 +1749,7 @@ algorithm
         Print.printBuf(cmt);
         Print.printBuf("\" end Absyn.ELEMENTITEM;");
       then ();
-    else equation Error.addMessage(Error.INTERNAL_ERROR,{"printElementItemAsCorbaString failed"}); then fail();
+    else algorithm Error.addMessage(Error.INTERNAL_ERROR,{"printElementItemAsCorbaString failed"}); then fail();
   end match;
 end printElementItemAsCorbaString;
 
@@ -1801,7 +1801,7 @@ algorithm
         printInfoAsCorbaString(info);
         Print.printBuf(" end Absyn.TEXT;");
       then ();
-    else equation Error.addMessage(Error.INTERNAL_ERROR,{"printElementAsCorbaString failed"}); then fail();
+    else algorithm Error.addMessage(Error.INTERNAL_ERROR,{"printElementAsCorbaString failed"}); then fail();
   end match;
 end printElementAsCorbaString;
 

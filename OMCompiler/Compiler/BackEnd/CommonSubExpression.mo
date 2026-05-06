@@ -329,8 +329,8 @@ algorithm
     then ();
 
     // all other cases are not handled (e.g. algorithms)
-    else equation
-      orderedEqs_new = BackendEquation.add(inEq, orderedEqs_new);
+    else algorithm
+      orderedEqs_new := BackendEquation.add(inEq, orderedEqs_new);
     then ();
   end match;
 
@@ -1487,7 +1487,7 @@ algorithm
       value := DAE.CREF(cr, inType);
     then (value, inIndex + 1);
 
-    else equation
+    else algorithm
       Error.addInternalError("  - createReturnExp failed for " + Types.printTypeStr(inType) + "\n", sourceInfo());
     then fail();
   end match;
@@ -1751,11 +1751,11 @@ algorithm
     //case BackendDAE.ARRAY_EQUATION() then (inEq, inTuple);
     case BackendDAE.IF_EQUATION() then (inEq, inTuple);
 
-    else equation
+    else algorithm
       if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
         print("traverse " + BackendDump.equationString(inEq) + "\n");
       end if;
-      (eq, (tpl, _)) = BackendEquation.traverseExpsOfEquation(inEq, substituteCSE1, (inTuple, BackendEquation.equationSource(inEq)));
+      (eq, (tpl, _)) := BackendEquation.traverseExpsOfEquation(inEq, substituteCSE1, (inTuple, BackendEquation.equationSource(inEq)));
     then (eq, tpl);
   end match;
 end substituteCSE;
@@ -1830,11 +1830,11 @@ algorithm
     //case BackendDAE.ARRAY_EQUATION() then (inEq, inTuple);
     case BackendDAE.IF_EQUATION() then (inEq, inTuple);
 
-    else equation
+    else algorithm
       if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
         print("traverse " + BackendDump.equationString(inEq) + "\n");
       end if;
-      (eq, tpl) = BackendEquation.traverseExpsOfEquation(inEq, createStatistics1, inTuple);
+      (eq, tpl) := BackendEquation.traverseExpsOfEquation(inEq, createStatistics1, inTuple);
     then (eq, tpl);
   end match;
 end createStatistics;

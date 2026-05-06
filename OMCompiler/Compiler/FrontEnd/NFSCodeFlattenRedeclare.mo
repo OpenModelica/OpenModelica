@@ -147,8 +147,8 @@ algorithm
         env;
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- NFSCodeFlattenRedeclare.addElementRedeclarationsToEnv failed for " +
           SCodeUtil.elementName(inRedeclare) + " in " +
           NFSCodeEnv.getEnvName(inEnv) + "\n");
@@ -174,7 +174,7 @@ algorithm
         paths;
 
     else
-      equation
+      algorithm
         Error.addSourceMessage(Error.REDECLARE_NONEXISTING_ELEMENT,
           {inName}, inInfo);
       then
@@ -269,8 +269,8 @@ algorithm
     case (NFSCodeEnv.PROCESSED_MODIFIER(), _, _) then inRedeclare;
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- NFSCodeFlattenRedeclare.processRedeclare failed on " +
           SCodeDump.unparseElementStr(NFSCodeEnv.getRedeclarationElement(inRedeclare),SCodeDump.defaultOptions) +
           " in " + AbsynUtil.pathString(NFSCodeEnv.getEnvPath(inEnv)));
@@ -354,8 +354,8 @@ algorithm
         (NFSCodeEnv.CLASS(cls, {item_env}, cls_ty), env, repl);
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv failed for:\n\t");
         Debug.traceln("redeclares: " +
           stringDelimitList(List.map(inRedeclares, NFSCodeEnv.printRedeclarationStr), "\n---------\n") +
@@ -680,7 +680,7 @@ algorithm
       NFSCodeEnv.REDECLARED_ITEM(item, env1);
 
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR,
           {"NFSCodeFlattenRedeclare.propagateAttributes failed on unknown item."});
       then
@@ -867,7 +867,7 @@ algorithm
       then ();
 
     else
-      equation
+      algorithm
         print("traceReplaceElementInScope failed on element: " + inElementName + "\n");
       then ();
   end matchcontinue;
@@ -894,7 +894,7 @@ algorithm
       then ();
 
     else
-      equation
+      algorithm
         print("tracePushRedeclareIntoExtends failed on element: " + inName + "\n");
       then ();
 

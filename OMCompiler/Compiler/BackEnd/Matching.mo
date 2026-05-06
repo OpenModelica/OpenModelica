@@ -366,7 +366,7 @@ algorithm
       then
         (syst,ishared,inArg);
     else
-      equation
+      algorithm
         if Flags.isSet(Flags.FAILTRACE) then
           Debug.trace("- Matching.DFSLH failed\n");
         end if;
@@ -716,7 +716,7 @@ algorithm
         (syst,ishared,inArg);
 
     else
-      equation
+      algorithm
         if Flags.isSet(Flags.FAILTRACE) then
           Debug.trace("- Matching.BFSB failed\n");
         end if;
@@ -788,7 +788,7 @@ algorithm
         (ass1_1,ass2_1,syst,shared,arg);
 
     else
-      equation
+      algorithm
         Error.addInternalError("function BFSB1 failed in equation " + intString(i), sourceInfo());
       then
         fail();
@@ -833,7 +833,7 @@ algorithm
       then
         BFSBphase1(b,rest,rowmark,i,nv,ne,m,mT,rowmarks,parentcolum,ass1,ass2,queue1,c::inVisitedColums);
     else
-      equation
+      algorithm
         Error.addInternalError("function BFSBphase failed in equation " + intString(i), sourceInfo());
       then
         fail();
@@ -867,7 +867,7 @@ algorithm
       then
         BFSBphase(queue,rowmark,i,nv,ne,m,mT,rowmarks,parentcolum,ass1,ass2,nextQueue,inVisitedColums);
     else
-      equation
+      algorithm
         Error.addInternalError("function BFSBphase1 failed", sourceInfo());
       then
         fail();
@@ -917,7 +917,7 @@ algorithm
       then
         (queue2,b);
     else
-      equation
+      algorithm
         Error.addInternalError("function BFSBtraverseRows failed in equation " + intString(i), sourceInfo());
       then
         fail();
@@ -955,7 +955,7 @@ algorithm
       then
         ();
     else
-      equation
+      algorithm
         Error.addInternalError("function BFSBreasign failed", sourceInfo());
       then
         fail();
@@ -987,7 +987,7 @@ algorithm
       then
         (rc::queue);
     else
-      equation
+      algorithm
         Error.addInternalError("function BFSBenque failed", sourceInfo());
       then
         fail();
@@ -1049,7 +1049,7 @@ algorithm
         (syst,ishared,inArg);
 
     else
-      equation
+      algorithm
         if Flags.isSet(Flags.FAILTRACE) then
          Debug.trace("- Matching.BFSB failed\n");
         end if;
@@ -1118,7 +1118,7 @@ algorithm
         (ass1_1,ass2_1,syst,shared,arg);
 
     else
-      equation
+      algorithm
         Error.addInternalError("function DFSB1 failed in equation " + intString(i), sourceInfo());
       then
         fail();
@@ -1155,7 +1155,7 @@ algorithm
       then
         DFSBtraverseRows(rows,stack,i,nv,ne,m,mT,rowmarks,ass1,ass2,inVisitedColums);
     else
-      equation
+      algorithm
         Error.addInternalError("function DFSBphase failed in equation " + intString(c), sourceInfo());
       then
         fail();
@@ -1206,7 +1206,7 @@ algorithm
       then
         DFSBtraverseRows(rest,stack,i,nv,ne,m,mT,rowmarks,ass1,ass2,inVisitedColums);
     else
-      equation
+      algorithm
         Error.addInternalError("function DFSBtraverseRows failed", sourceInfo());
       then
         fail();
@@ -1314,7 +1314,7 @@ algorithm
       then
         (syst,ishared,inArg);
     else
-      equation
+      algorithm
         if Flags.isSet(Flags.FAILTRACE) then
           Debug.trace("- Matching.MC21A failed\n");
         end if;
@@ -1382,7 +1382,7 @@ algorithm
       then
         (ass1_1,ass2_1,syst,shared,arg);
     else
-      equation
+      algorithm
         Error.addInternalError("function MC21A1 failed in equation " + intString(i), sourceInfo());
       then
         fail();
@@ -1416,7 +1416,7 @@ algorithm
       then
         (rowmarks1,lookahead1);
     else
-      equation
+      algorithm
         Error.addInternalError("function MC21A1fixArrays failed", sourceInfo());
       then
         fail();
@@ -1441,7 +1441,7 @@ algorithm
       then
         ();
     else
-      equation
+      algorithm
         Error.addInternalError("function MC21A1fixArray failed", sourceInfo());
       then
         fail();
@@ -1480,7 +1480,7 @@ algorithm
      then
         MC21Achecklookahead(b,rows,stack,i,c,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,inVisitedColums);
     else
-      equation
+      algorithm
         Error.addInternalError("function MC21Aphase failed in equation " + intString(c), sourceInfo());
       then
         fail();
@@ -1596,7 +1596,7 @@ algorithm
       then
         MC21AtraverseRows(rest,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,inVisitedColums);
     else
-      equation
+      algorithm
         Error.addInternalError("function MC21AtraverseRows failed", sourceInfo());
       then
         fail();
@@ -1680,7 +1680,7 @@ algorithm
       then
         (syst,ishared,inArg);
     else
-      equation
+      algorithm
         if Flags.isSet(Flags.FAILTRACE) then
           Debug.trace("- Matching.PF failed\n");
         end if;
@@ -1848,7 +1848,7 @@ algorithm
       then
         (i_1,unmatched);
     else
-      equation
+      algorithm
         Error.addInternalError("function PFaugmentmatching failed", sourceInfo());
       then
         fail();
@@ -1885,7 +1885,7 @@ algorithm
       then
         PFchecklookahead(b,rows,stack,i,c,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2);
     else
-      equation
+      algorithm
         Error.addInternalError("function PFphase failed in equation " + intString(c), sourceInfo());
       then
         fail();
@@ -2000,7 +2000,7 @@ algorithm
       then
         PFtraverseRows(rest,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2);
     else
-      equation
+      algorithm
         Error.addInternalError("function PFtraverseRows failed", sourceInfo());
       then
         fail();
@@ -2083,7 +2083,7 @@ algorithm
       then
         (syst,ishared,inArg);
     else
-      equation
+      algorithm
         if Flags.isSet(Flags.FAILTRACE) then
           Debug.trace("- Matching.PFPlus failed\n");
         end if;
@@ -2192,7 +2192,7 @@ algorithm
       then
         (i_1,unmatched);
     else
-      equation
+      algorithm
         Error.addInternalError("function PFPlusaugmentmatching failed", sourceInfo());
       then
         fail();
@@ -2237,7 +2237,7 @@ algorithm
       then
         PFPluschecklookahead(b,listReverse(rows),stack,i,c,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows);
     else
-      equation
+      algorithm
         Error.addInternalError("function PFPlusphase failed in equation " + intString(c), sourceInfo());
       then
         fail();
@@ -2355,7 +2355,7 @@ algorithm
       then
         PFPlustraverseRows(rest,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows);
     else
-      equation
+      algorithm
         Error.addInternalError("function PFPlustraverseRows failed", sourceInfo());
       then
         fail();
@@ -2440,7 +2440,7 @@ algorithm
       then
         (syst,ishared,inArg);
     else
-      equation
+      algorithm
         if Flags.isSet(Flags.FAILTRACE) then
           Debug.trace("- Matching.HK failed\n");
         end if;
@@ -2610,7 +2610,7 @@ algorithm
       then
         (i_1,unmatched);
     else
-      equation
+      algorithm
         Error.addInternalError("function HKphase failed", sourceInfo());
       then
         fail();
@@ -2672,7 +2672,7 @@ algorithm
       then
         HKBFS(rest,nv,ne,m,mT,rowmarks,i,level,ll,ass1,ass2,rows);
     else
-      equation
+      algorithm
         Error.addInternalError("function HKBFS failed in phase " + intString(i), sourceInfo());
       then
         fail();
@@ -2732,7 +2732,7 @@ algorithm
       then
         (rows,ll);
     else
-      equation
+      algorithm
         Error.addInternalError("function HKBFSBphase failed in phase " + intString(i), sourceInfo());
       then
         fail();
@@ -2773,7 +2773,7 @@ algorithm
       then
         (rows,ll);
     else
-      equation
+      algorithm
         Error.addInternalError("function HKBFSBphase1 failed", sourceInfo());
       then
         fail();
@@ -2832,7 +2832,7 @@ algorithm
       then
         (queue1,rowstpl,b);
     else
-      equation
+      algorithm
         Error.addInternalError("function HKBFStraverseRows failed in phase " + intString(i), sourceInfo());
       then
         fail();
@@ -2872,7 +2872,7 @@ algorithm
       then
         HKDFS(rest,i,nv,ne,m,mT,collummarks,level,ass1,ass2,ur);
     else
-      equation
+      algorithm
         Error.addInternalError("function HKDFS failed in phase " + intString(i), sourceInfo());
       then
         fail();
@@ -2910,7 +2910,7 @@ algorithm
       then
         HKDFStraverseCollums(collums,stack,i,l,nv,ne,m,mT,collummarks,level,ass1,ass2,inMatched);
     else
-      equation
+      algorithm
         Error.addInternalError("function HKDFSphase failed in phase " + intString(i), sourceInfo());
       then
         fail();
@@ -2981,7 +2981,7 @@ algorithm
       then
         HKDFStraverseCollums(rest,stack,i,l,nv,ne,m,mT,collummarks,level,ass1,ass2,inMatched);
     else
-      equation
+      algorithm
         Error.addInternalError("function HKDFStraverseCollums failed", sourceInfo());
       then
         fail();
@@ -3092,7 +3092,7 @@ algorithm
       then
         (syst,ishared,inArg);
     else
-      equation
+      algorithm
         if Flags.isSet(Flags.FAILTRACE) then
           Debug.trace("- Matching.HKDW failed\n");
         end if;
@@ -3202,7 +3202,7 @@ algorithm
       then
         (i_1,unmatched);
     else
-      equation
+      algorithm
         Error.addInternalError("function HKDWphase failed", sourceInfo());
       then
         fail();
@@ -3236,7 +3236,7 @@ algorithm
       then
         ();
     else
-      equation
+      algorithm
         Error.addInternalError("function HKDWDFS failed in phase " + intString(i), sourceInfo());
       then
         fail();
@@ -3272,7 +3272,7 @@ algorithm
       then
         HKDWDFStraverseCollums(collums,stack,i,nv,ne,m,mT,collummarks,ass1,ass2,inMatched);
     else
-      equation
+      algorithm
         Error.addInternalError("function HKDWDFSphase failed in phase " + intString(i), sourceInfo());
       then
         fail();
@@ -3329,7 +3329,7 @@ algorithm
       then
         HKDWDFStraverseCollums(rest,stack,i,nv,ne,m,mT,collummarks,ass1,ass2,inMatched);
     else
-      equation
+      algorithm
         Error.addInternalError("function HKDWDFStraverseCollums failed", sourceInfo());
       then
         fail();
@@ -3415,7 +3415,7 @@ algorithm
       then
         (syst,ishared,inArg);
     else
-      equation
+      algorithm
         if Flags.isSet(Flags.FAILTRACE) then
           Debug.trace("- Matching.ABMP failed\n");
         end if;
@@ -3573,7 +3573,7 @@ algorithm
       then
         ABMPphase1(U,ur,i,nv,ne,m,mT,rowmarks,level,colptrs,lim,ass1,ass2);
     else
-      equation
+      algorithm
         Error.addInternalError("function ABMPphase failed", sourceInfo());
       then
         fail();
@@ -3615,7 +3615,7 @@ algorithm
       then
         ABMPphase2(unmatched,i,L,nv,ne,m,mT,rowmarks,level,colptrs,lim,ass1,ass2);
     else
-      equation
+      algorithm
         Error.addInternalError("function ABMPphase1 failed", sourceInfo());
       then
         fail();
@@ -3655,7 +3655,7 @@ algorithm
       then
        ABMPphase(U,i,nv,ne,m,mT,rowmarks,level,colptrs,lim,ass1,ass2);
     else
-      equation
+      algorithm
         Error.addInternalError("function ABMPphase2 failed", sourceInfo());
       then
         fail();
@@ -3703,7 +3703,7 @@ algorithm
       then
         ABMPBFSphase(rest,i,L,lim,lim1,nv,ne,m,mT,rowmarks,level,ass1,ass2,queue1,unmatched);
     else
-      equation
+      algorithm
         Error.addInternalError("function ABMPBFSphase failed", sourceInfo());
       then
         fail();
@@ -3738,7 +3738,7 @@ algorithm
       then
         ABMPBFSphase(queue,i,L,lim,lim1,nv,ne,m,mT,rowmarks,level,ass1,ass2,nextqueue,unMatched);
     else
-      equation
+      algorithm
         Error.addInternalError("function ABMPBFSphase1 failed", sourceInfo());
       then
         fail();
@@ -3800,7 +3800,7 @@ algorithm
       then
         (queue1,unmatched);
     else
-      equation
+      algorithm
         Error.addInternalError("function ABMPBFStraverseRows failed", sourceInfo());
       then
         fail();
@@ -3844,7 +3844,7 @@ algorithm
       then
         ();
     else
-      equation
+      algorithm
         Error.addInternalError("function ABMPBFS failed", sourceInfo());
       then
         fail();
@@ -3920,7 +3920,7 @@ algorithm
         ABMPDFS(unmatchedRows,i,L,nv,ne,m,mT,level,colptrs,ass1,ass2,unMatched);
       then ();
     else
-      equation
+      algorithm
         Error.addInternalError("function ABMPBFS1 failed", sourceInfo());
       then
         fail();
@@ -3961,7 +3961,7 @@ algorithm
       then
         (i_1,b);
     else
-      equation
+      algorithm
         Error.addInternalError("function ABMPDFSphase failed in phase " + intString(i), sourceInfo());
       then
         fail();
@@ -4026,7 +4026,7 @@ algorithm
       then
         (i_1,b);
     else
-      equation
+      algorithm
         Error.addInternalError("function ABMPDFSBtraverseCollums failed", sourceInfo());
       then
         fail();
@@ -4062,8 +4062,8 @@ algorithm
     case (true,_,_,_,_,i_1,_,_,_,_,_,_,_,_,_)
        then (i_1,true);
     else
-      equation
-        (i_1,b) = ABMPDFStraverseCollums(rows,counter,stack,r,i,desL,nv,ne,m,mT,level,colptrs,ass1,ass2);
+      algorithm
+        (i_1,b) := ABMPDFStraverseCollums(rows,counter,stack,r,i,desL,nv,ne,m,mT,level,colptrs,ass1,ass2);
       then
         (i_1,b);
   end match;
@@ -4123,7 +4123,7 @@ algorithm
       then
         (syst,ishared,inArg);
     else
-      equation
+      algorithm
         if Flags.isSet(Flags.FAILTRACE) then
           Debug.trace("- Matching.PR_FIFO_FAIR failed\n");
         end if;
@@ -4294,7 +4294,7 @@ algorithm
       then
         ();
     else
-      equation
+      algorithm
         arrayUpdate(l_label,i,max);
         PR_Global_Relabel_init_l_label(i+1,ne,max,l_label);
       then
@@ -4327,7 +4327,7 @@ algorithm
       then
         PR_Global_Relabel_init_r_label(i+1,nv,max,r_label,ass2,i::inQueue);
     else
-      equation
+      algorithm
         arrayUpdate(r_label,i,max);
       then
         PR_Global_Relabel_init_r_label(i+1,nv,max,r_label,ass2,inQueue);
@@ -4407,7 +4407,7 @@ algorithm
       then
         PR_Global_Relabel_traverseCollums(rest,max,r,l_label,r_label,nv,ne,m,mT,ass1,ass2,nextqueue);
     else
-      equation
+      algorithm
         Error.addInternalError("function PR_Global_Relabel_traverseCollums failed", sourceInfo());
       then
         fail();
@@ -4526,10 +4526,10 @@ algorithm
       then
         (rel,minlab,minvert);
     else
-      equation
-        rows = List.select(m[max_vertex], Util.intPositive);
-        rows = listReverse(rows);
-        (rel,minlab,minvert) = PR_FIFO_FAIRphase_traverseRows(rows,relabels,max_vertex,min_vertec,min_label,max,nv,ne,m,mT,l_label,r_label,ass1,ass2);
+      algorithm
+        rows := List.select(m[max_vertex], Util.intPositive);
+        rows := listReverse(rows);
+        (rel,minlab,minvert) := PR_FIFO_FAIRphase_traverseRows(rows,relabels,max_vertex,min_vertec,min_label,max,nv,ne,m,mT,l_label,r_label,ass1,ass2);
       then
        (rel,minlab,minvert);
   end match;
@@ -4585,7 +4585,7 @@ algorithm
       then
         (rel,minlabel,minvertex);
     else
-      equation
+      algorithm
         Error.addInternalError("function PR_FIFO_FAIRphase_traverseRows failed", sourceInfo());
       then
         fail();
@@ -4715,7 +4715,7 @@ algorithm
       then
         cheapmatching(i+1,nv,ne,m,mT,ass1,ass2,i::inUnMatched);
     else
-      equation
+      algorithm
         Error.addInternalError("function cheapmatching failed in equation " + intString(i), sourceInfo());
       then
         fail();
@@ -4938,11 +4938,11 @@ algorithm
       Integer l;
     case(0,_,_,_) then listReverse(inOneRows);
     else
-      equation
-        lst = List.select(m[n], Util.intPositive);
-        l = listLength(lst);
+      algorithm
+        lst := List.select(m[n], Util.intPositive);
+        l := listLength(lst);
         arrayUpdate(degrees,n,l);
-        onerows = List.consOnTrue(intEq(l,1),n,inOneRows);
+        onerows := List.consOnTrue(intEq(l,1),n,inOneRows);
      then
         getOneRows(n-1,m,degrees,onerows);
   end match;
@@ -4960,9 +4960,9 @@ algorithm
       Integer z,tmp;
     case(0,_) then ();
     else
-      equation
-        z = realInt(realMod(System.realRand(),intReal(n)))+1;
-        tmp = randarr[n];
+      algorithm
+        z := realInt(realMod(System.realRand(),intReal(n)))+1;
+        tmp := randarr[n];
         arrayUpdate(randarr,n,randarr[z]);
         arrayUpdate(randarr,z,tmp);
         setrandArray(n-1,randarr);
@@ -5143,7 +5143,7 @@ algorithm
       then
         (syst,ishared,inArg);
     else
-      equation
+      algorithm
         if Flags.isSet(Flags.FAILTRACE) then
           Debug.trace("- Matching.DFSBExternal failed\n");
         end if;
@@ -5197,7 +5197,7 @@ algorithm
       then
         (syst,ishared,inArg);
     else
-      equation
+      algorithm
         if Flags.isSet(Flags.FAILTRACE) then
           Debug.trace("- Matching.BFSBExternal failed\n");
         end if;
@@ -5251,7 +5251,7 @@ algorithm
       then
         (syst,ishared,inArg);
     else
-      equation
+      algorithm
         if Flags.isSet(Flags.FAILTRACE) then
           Debug.trace("- Matching.MC21AExternal failed\n");
         end if;
@@ -5305,7 +5305,7 @@ algorithm
       then
         (syst,ishared,inArg);
     else
-      equation
+      algorithm
         if Flags.isSet(Flags.FAILTRACE) then
           Debug.trace("- Matching.PFExternal failed\n");
         end if;
@@ -5354,7 +5354,7 @@ algorithm
       then
         (syst,ishared,inArg);
     else
-      equation
+      algorithm
         if Flags.isSet(Flags.FAILTRACE) then
           Debug.trace("- Matching.PFPlusExternal failed\n");
         end if;
@@ -5408,7 +5408,7 @@ algorithm
       then
         (syst,ishared,inArg);
     else
-      equation
+      algorithm
         if Flags.isSet(Flags.FAILTRACE) then
           Debug.trace("- Matching.HKExternal failed\n");
         end if;
@@ -5462,7 +5462,7 @@ algorithm
       then
         (syst,ishared,inArg);
     else
-      equation
+      algorithm
         if Flags.isSet(Flags.FAILTRACE) then
           Debug.trace("- Matching.HKDWExternal failed\n");
         end if;
@@ -5516,7 +5516,7 @@ algorithm
       then
         (syst,ishared,inArg);
     else
-      equation
+      algorithm
         if Flags.isSet(Flags.FAILTRACE) then
           Debug.trace("- Matching.ABMPExternal failed\n");
         end if;
@@ -5570,7 +5570,7 @@ algorithm
       then
         (syst,ishared,inArg);
     else
-      equation
+      algorithm
         if Flags.isSet(Flags.FAILTRACE) then
           Debug.trace("- Matching.PR_FIFO_FAIRExternal failed\n");
         end if;
@@ -5716,7 +5716,7 @@ algorithm
         (ass1_3,ass2_3,syst,shared,arg1);
 
     else
-      equation
+      algorithm
         singularSystemError(meqns,0,isyst,ishared,ass1,ass2,inArg);
       then
         fail();
@@ -6420,7 +6420,7 @@ algorithm
       then
         Array.expand(needed-memsize, ass, default);
     else
-      equation
+      algorithm
         Error.addInternalError("function assignmentsArrayExpand failed", sourceInfo());
       then
         fail();
@@ -6448,7 +6448,7 @@ algorithm
       then
         Array.expand(needed-memsize, ass, default);
     else
-      equation
+      algorithm
         Error.addInternalError("function assignmentsArrayExpand failed", sourceInfo());
       then
         fail();
@@ -6500,9 +6500,9 @@ algorithm
       then
         (ass2,ass1);
     else
-      equation
-        ass2 = arrayCreate(nEqns,-1);
-        ass1 = arrayCreate(nVars,-1);
+      algorithm
+        ass2 := arrayCreate(nEqns,-1);
+        ass1 := arrayCreate(nVars,-1);
       then
         (ass2,ass1);
   end matchcontinue;
@@ -6625,9 +6625,9 @@ algorithm
     case (0,_,_,_,_)
       then ();
     else
-      equation
-        arg = IndexReduction.getStructurallySingularSystemHandlerArg(isyst,ishared,listArray({}),listArray({}));
-        (_,_,_) = matchingAlgorithm(isyst,ishared,true,inMatchingOptions,IndexReduction.pantelidesIndexReduction,arg);
+      algorithm
+        arg := IndexReduction.getStructurallySingularSystemHandlerArg(isyst,ishared,listArray({}),listArray({}));
+        (_,_,_) := matchingAlgorithm(isyst,ishared,true,inMatchingOptions,IndexReduction.pantelidesIndexReduction,arg);
         testMatchingAlgorithm(index-1,matchingAlgorithm,isyst,ishared,inMatchingOptions);
       then
         ();
@@ -6673,7 +6673,7 @@ algorithm
     case (0,_,_,_,_)
       then ();
     else
-      equation
+      algorithm
         BackendDAEEXT.matching(nv,ne,matchingAlgorithm,cheapId,1.0,1);
         testExternMatchingAlgorithm(index-1,matchingAlgorithm,cheapId,nv,ne);
       then
@@ -6743,9 +6743,9 @@ algorithm
     case (0,_,_,_,_,_,_)
       then newTypeA;
     else
-      equation
-        tb = get(oldTypeA,randarr[index]+offset);
-        ta = set(tb,newTypeA);
+      algorithm
+        tb := get(oldTypeA,randarr[index]+offset);
+        ta := set(tb,newTypeA);
       then
        randSortSystem1(index-1,offset,randarr,oldTypeA,ta,get,set);
   end match;

@@ -1082,7 +1082,7 @@ algorithm
       (exp,b) := reduceLoopExpressions(exp,maxSub);
   then (exp,b);
    else
-     equation
+     algorithm
          //print("else: "+ExpressionDump.dumpExpStr(expIn,0)+"\n");
      then (expIn,true);
   end matchcontinue;

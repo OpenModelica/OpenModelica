@@ -534,7 +534,7 @@ algorithm
       then
         (traverserArgs);
 
-    else equation
+    else algorithm
       Error.addInternalError("DAEMode.traverserStrongComponents failed on equation:\n" +
                               BackendDump.equationListString(inEqns, "") + "\nVariables:\n" +
                               BackendDump.varListString(inVars, "") + "\n", sourceInfo());

@@ -663,7 +663,7 @@ algorithm
       then fail();
       */
     else
-      equation
+      algorithm
         errorMultipleValid(List.map(inExps,Util.tuple21),info);
       then fail();
   end match;
@@ -1458,9 +1458,9 @@ algorithm
       String str1,str2;
     case (true,_,_,_) then ();
     else
-      equation
-        str1 = Types.unparseType(opType);
-        str2 = Types.unparseType(ty);
+      algorithm
+        str1 := Types.unparseType(opType);
+        str2 := Types.unparseType(ty);
         Error.addSourceMessage(Error.OP_OVERLOAD_OPERATOR_NOT_INPUT,{str1,str2},info);
       then fail();
   end match;
@@ -1499,7 +1499,7 @@ algorithm
         // Error.assertionOrAddSourceMessage(isBinaryFunc, Error.COMPILER_WARNING, {"TODO: Better warning for: " + Types.unparseType(ty) + ", expected arguments 3..n to have default values"}, info);
       then isBinaryFunc; // Unary functions are legal even if we are not interested in them
     else
-      equation
+      algorithm
         // Error.addSourceMessage(Error.COMPILER_WARNING, {"TODO: Better warning for: " + Types.unparseType(ty) + ", expected arguments 1&2 to not have default values"}, info);
       then false;
   end match;
@@ -2133,7 +2133,7 @@ algorithm
         resExps := deoverloadBinaryUserdefNoConstructorListRhs(types,inExp1,exps2,inType1,resExps);
       then (cache,resExps);
     else
-      equation
+      algorithm
         errorMultipleValid(List.map(exps,Util.tuple21),info);
       then fail();
   end match;
@@ -2158,7 +2158,7 @@ algorithm
         (cache, v) := Ceval.ceval(inCache, env, zc, impl, Absyn.MSG(info), 0);
       then (cache,SOME(v));
     else
-      equation
+      algorithm
         errorMultipleValid(zexps,info);
       then fail();
   end match;

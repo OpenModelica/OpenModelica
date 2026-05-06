@@ -303,7 +303,7 @@ algorithm
         DAE.STMT_ASSIGN(t, lhs, rhs_1, source);
         /* TODO: Use this when we have fixed states in BackendDAE .lower(...)
         case (e1 as DAE.CALL(Absyn.IDENT("der"), {DAE.CREF(_, _)}, _, _, _), lhprop, rhs, rhprop)
-      equation
+      algorithm
         (rhs_1, _) = Types.matchProp(rhs, rhprop, lhprop);
         false = Types.isPropArray(lhprop);
         t = getPropExpType(lhprop);
@@ -826,7 +826,7 @@ algorithm
         {DAE.STMT_REINIT(var_1, val_1, source)};
 
     else
-      equation
+      algorithm
         Error.addSourceMessage(Error.INTERNAL_ERROR, {"reinit called with wrong args"}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
@@ -945,7 +945,7 @@ algorithm
     case DAE.STMT_CONTINUE(source=source) then source;
     case DAE.STMT_FAILURE(source=source) then source;
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {"Algorithm.getStatementSource"});
       then fail();
   end match;

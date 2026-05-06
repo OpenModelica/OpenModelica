@@ -218,11 +218,11 @@ algorithm
 
     // Both modifiers have a binding.
     else
-      equation
-        info1 = SCodeUtil.getModifierInfo(mod1);
-        info2 = SCodeUtil.getModifierInfo(mod2);
-        scope = printModScope(inModScope);
-        name = stringDelimitList(listReverse(inElementName), ".");
+      algorithm
+        info1 := SCodeUtil.getModifierInfo(mod1);
+        info2 := SCodeUtil.getModifierInfo(mod2);
+        scope := printModScope(inModScope);
+        name := stringDelimitList(listReverse(inElementName), ".");
         Error.addMultiSourceMessage(Error.DUPLICATE_MODIFICATIONS,
           {name, scope}, {info2, info1});
       then

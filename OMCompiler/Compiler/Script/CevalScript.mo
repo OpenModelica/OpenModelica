@@ -1723,7 +1723,7 @@ algorithm
     case ErrorTypes.SIMULATION() then makeErrorEnumLiteral("ErrorKind","runtime",5);
     case ErrorTypes.SCRIPTING() then makeErrorEnumLiteral("ErrorKind","scripting",6);
     else
-      equation
+      algorithm
         print("errorTypeToValue failed\n");
       then fail();
   end match;
@@ -1739,7 +1739,7 @@ algorithm
     case ErrorTypes.WARNING() then makeErrorEnumLiteral("ErrorLevel","warning",3);
     case ErrorTypes.NOTIFICATION() then makeErrorEnumLiteral("ErrorLevel","notification",4);
     else
-      equation
+      algorithm
         print("errorLevelToValue failed\n");
       then fail();
   end match;
@@ -2035,7 +2035,7 @@ algorithm
         cache := if cleanCache then icache else cache;
       then (cache,env);
     else
-      equation
+      algorithm
         Error.addSourceMessage(Error.SEPARATE_COMPILATION_PACKAGE_FAILED,{name},info);
       then fail();
   end matchcontinue;
@@ -2214,7 +2214,7 @@ algorithm
         fail();
 /*
     case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), _, _, msg as Absyn.MSG(info), _)
-      equation
+      algorithm
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
         true = isCompleteFunction(cache, env, funcpath);
         true = Types.hasMetaArray(ty);
@@ -2539,7 +2539,7 @@ algorithm
         Error.assertionOrAddSourceMessage(listMember(str, expected), Error.MISMATCHING_INTERFACE_TYPE, {str,name}, info);
       then ();
     else
-      equation
+      algorithm
         print(SCodeDump.unparseElementStr(elt)+"\n");
         Error.addSourceMessage(Error.MISSING_INTERFACE_TYPE,{},SCodeUtil.elementInfo(elt));
       then fail();
@@ -2563,7 +2563,7 @@ algorithm
         it := Util.assoc(str,assoc);
       then it;
     else
-      equation
+      algorithm
         Error.addSourceMessage(Error.MISSING_INTERFACE_TYPE,{},SCodeUtil.elementInfo(elt));
       then fail();
   end matchcontinue;
@@ -2632,8 +2632,8 @@ algorithm
       String str;
     case (_,_) then List.setDifference(Graph.allReachableNodes(({name},{}),oldgraph,stringEq),{name});
     else
-      equation
-        str = "CevalScript.buildTransitiveDependencyGraph failed: " + name;
+      algorithm
+        str := "CevalScript.buildTransitiveDependencyGraph failed: " + name;
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end matchcontinue;
@@ -2717,9 +2717,9 @@ algorithm
     case SCode.CLASS(restriction=SCode.R_PACKAGE(), encapsulatedPrefix=SCode.ENCAPSULATED(), classDef=SCode.PARTS(elementLst=elts))
       then List.any(elts, containsPublicInterface2);
     else
-      equation
-        name = SCodeUtil.elementName(elt);
-        name = "CevalScript.containsPublicInterface failed: " + name;
+      algorithm
+        name := SCodeUtil.elementName(elt);
+        name := "CevalScript.containsPublicInterface failed: " + name;
         Error.addMessage(Error.INTERNAL_ERROR, {name});
       then fail();
   end match;
@@ -2760,9 +2760,9 @@ algorithm
     case (SCode.CLASS(restriction=SCode.R_PACKAGE(), encapsulatedPrefix=SCode.ENCAPSULATED(), classDef=SCode.PARTS(elementLst=elts)),_)
       then List.exist1(elts, containsImport2, visibility);
     else
-      equation
-        name = SCodeUtil.elementName(elt);
-        name = "CevalScript.containsPublicInterface failed: " + name;
+      algorithm
+        name := SCodeUtil.elementName(elt);
+        name := "CevalScript.containsPublicInterface failed: " + name;
         Error.addMessage(Error.INTERNAL_ERROR, {name});
       then fail();
   end match;

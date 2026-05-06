@@ -88,8 +88,8 @@ algorithm
     then clockPartitioning1(syst, shared);
 
     // TODO: Improve support for partitioned systems of equations
-    else equation
-      BackendDAE.DAE({syst}, shared) = BackendDAEOptimize.collapseIndependentBlocks(inDAE);
+    else algorithm
+      BackendDAE.DAE({syst}, shared) := BackendDAEOptimize.collapseIndependentBlocks(inDAE);
     then clockPartitioning1(syst, shared);
   end match;
 end clockPartitioning;
@@ -1344,7 +1344,7 @@ algorithm
         //print("Thats also not a base clock "+BackendDump.equationString(eq)+"\n");
       then (clockEqsIn, subClockInterfaceEqIdxsIn, subClockInterfaceEqsIn);
     else
-      equation
+      algorithm
       then (clockEqsIn, subClockInterfaceEqIdxsIn, subClockInterfaceEqsIn);
   end match;
 end findBaseClockInterfaces1;
@@ -1988,7 +1988,7 @@ algorithm
     case DAE.ICONST(0)
       then (e, inNewEqs, inNewVars, inClkCnt);
     else
-      equation
+      algorithm
         (var, eq) = createSubClockVar(inPartitionIdx, inClkCnt, inPath, inExpLst, inAttr, inPartitions, inVars, mT);
       then
         (e, eq::inNewEqs, var::inNewVars, inClkCnt + 1);
@@ -2805,8 +2805,8 @@ algorithm
     case (SOME(oldVal), SOME(newVal)) guard (oldVal == newVal)
       then inNewPartitionType;
     else
-      equation
-        (msg, tokens) = getPartitionConflictError(inComp);
+      algorithm
+        (msg, tokens) := getPartitionConflictError(inComp);
         Error.addSourceMessage(msg, tokens, info);
       then fail();
   end match;

@@ -640,7 +640,7 @@ protected function addLabelToElse
       DAE.Exp e;
     case(DAE.NOELSE(),vars,idx,reduceList,inVarRepl) then (DAE.NOELSE(),vars,idx,{});
     case(DAE.ELSEIF(e,stmtLst,else_),vars,idx,reduceList,inVarRepl)
-      equation
+      algorithm
         ////Debug.fcall(Flags.CPP,print,"---Replace elseif with else\n" );
         (stmtLst2,vars_1,idx2,labels) = addLabelToAlgorithms(stmtLst,vars,idx,reduceList,inVarRepl);
         (else2,vars_2,idx3,labels2) = addLabelToElse(else_,vars_1,idx2,reduceList,inVarRepl);
@@ -648,7 +648,7 @@ protected function addLabelToElse
       then
         (DAE.ELSEIF(e,stmtLst2,else2),vars_2,idx3,labels3);
     case(DAE.ELSE(stmtLst),vars,idx,reduceList,inVarRepl)
-      equation
+      algorithm
         //Debug.fcall(Flags.CPP,print,"---Replace else\n" );
         (stmtLst2,vars_1,idx2,labels) = addLabelToAlgorithms(stmtLst,vars,idx,reduceList,inVarRepl);
       then
@@ -1280,7 +1280,7 @@ algorithm
       BackendVarTransform.VariableReplacements repl;
     case ({},vars,idx1,reduceList) then ({},vars,idx1,{});
     case ((e1 :: er),vars,idx1,reduceList)
-      equation
+      algorithm
         repl=BackendVarTransform.emptyReplacements();
         (e_1,vars_1,idx2,labels) = addLabelToExp(e1,vars,idx1,true,reduceList,repl);
         (er2,vars_2,idx3,labels2) = addLabelToExpList(er, vars_1, idx2,reduceList);
@@ -2100,7 +2100,7 @@ algorithm
       BackendVarTransform.VariableReplacements repl;
     case ({},vars,idx1,reduceList,repl) then ({},vars,idx1,{});
     case ((e1 :: er),vars,idx1,reduceList,repl)
-      equation
+      algorithm
         (e_1,vars_1,idx2,labels) = addLabelToExpForSubstitution(e1,vars,idx1,reduceList,repl);
         (er2,vars_2,idx3,labels2) = addLabelToExpListForSubstitution(er, vars_1, idx2,reduceList,repl);
         labels3=listAppend(labels,labels2);

@@ -224,8 +224,8 @@ algorithm
         TREE(node, cf, kf, vf, uf, n);
 
     else
-      equation
-        str = "AvlTree.add name: " + name(inTree) + " failed!";
+      algorithm
+        str := "AvlTree.add name: " + name(inTree) + " failed!";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();
@@ -273,8 +273,8 @@ algorithm
         n;
 
     else
-      equation
-        str = "AvlTree.addNode name: " + name(inTree) + " failed!";
+      algorithm
+        str := "AvlTree.addNode name: " + name(inTree) + " failed!";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
 
@@ -431,8 +431,8 @@ algorithm
         TREE(node, keyCompareFunc, kf, vf, uf, n);
 
     else
-      equation
-        str = "AvlTree.replace name: " + name(inTree) + " failed!";
+      algorithm
+        str := "AvlTree.replace name: " + name(inTree) + " failed!";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
 
@@ -946,8 +946,8 @@ algorithm
         (TREE(node, cf, kf, vf, uf, n), item);
 
     else
-      equation
-        str = "AvlTree.addUnique name: " + name(inTree) + " failed!";
+      algorithm
+        str := "AvlTree.addUnique name: " + name(inTree) + " failed!";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();
@@ -1000,8 +1000,8 @@ algorithm
         (n, item);
 
     else
-      equation
-        str = "AvlTree.addNodeUnique name: " + name(inTree) + " failed!";
+      algorithm
+        str := "AvlTree.addNodeUnique name: " + name(inTree) + " failed!";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();

@@ -2201,9 +2201,9 @@ algorithm
       dae := DAEUtil.transformationsBeforeBackend(cache,graph,dae);
     then (dae,cache,graph);
   else
-      equation
-        resstr = AbsynUtil.pathStringNoQual(className);
-        resstr = stringAppendList({"modelEquationsUC: The model ",resstr," could not be flattened"});
+      algorithm
+        resstr := AbsynUtil.pathStringNoQual(className);
+        resstr := stringAppendList({"modelEquationsUC: The model ",resstr," could not be flattened"});
         Error.addMessage(Error.INTERNAL_ERROR, {resstr});
       then fail();
 end matchcontinue;
@@ -3793,11 +3793,11 @@ algorithm
     case {} then {};
     case {e} then {e};
     else
-      equation
-        middle = intDiv(listLength(inList), 2);
-        (left, right) = List.split(inList, middle);
-        left = sortBy1(left, inCompFunc,inArgument1);
-        right = sortBy1(right, inCompFunc,inArgument1);
+      algorithm
+        middle := intDiv(listLength(inList), 2);
+        (left, right) := List.split(inList, middle);
+        left := sortBy1(left, inCompFunc,inArgument1);
+        right := sortBy1(right, inCompFunc,inArgument1);
       then
         mergeBy1(left, right, inCompFunc,inArgument1);
 
@@ -4279,7 +4279,7 @@ algorithm
         new_sets:=pushToSetList(sets,cr1,e1,-1,cr2,e2,-1,source);
       then (new_sets,eqn_acc);
     else
-      equation
+      algorithm
       then (sets,eqn::eqn_acc);
     end match;
 end addPairToSet;

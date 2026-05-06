@@ -193,7 +193,7 @@ algorithm
       RATIONAL(1,2) := divRational(RATIONAL(1,3),RATIONAL(2,3));
       print("testRational succeeded\n");
     then ();
-    else equation
+    else algorithm
       print("testRationals failed\n");
     then ();
 
