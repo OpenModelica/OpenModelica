@@ -403,7 +403,7 @@ function convertCharNonAsciiToHex "Converts a single character string to a hex r
   input output String s;
 protected
   Integer i;
-  constant array<String> hex = listArrayLiteral({"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"});
+  constant array<String> hex = MetaModelica.Dangerous.listArrayLiteral({"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"});
 algorithm
   i := stringCharInt(s);
   if i < 128 then
