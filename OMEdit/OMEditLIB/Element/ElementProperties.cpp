@@ -884,6 +884,7 @@ void Parameter::editClassButtonClicked()
     value = mpValueTextBox->text();
     defaultValue = mpValueTextBox->placeholderText();
   }
+  value = value.startsWith('(') ? mName % value : value;
   QString modifier = value;
   QString defaultModifier = defaultValue;
   ModelInstance::Modifier *pReplaceableConstrainedByModifier = nullptr;
@@ -987,7 +988,7 @@ void Parameter::editClassButtonClicked()
           if (modification.isEmpty()) {
             setValueWidget("", false, mUnit, true);
           } else {
-            setValueWidget(mpModelInstanceElement->getName() % modification, false, mUnit, true);
+            setValueWidget(modification, false, mUnit, true);
           }
         }
       }
@@ -1514,21 +1515,12 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
             }
           }
         } else {
-          pParameter->setValueWidget(value, defaultValue, pParameter->getUnit(), mNested);
+          pParameter->setValueWidget(pModifier->toString(true, true, false, true), defaultValue, pParameter->getUnit(), mNested);
           // set final and each checkboxes in the menu
           setFinalEachBreak(pParameter->getFinalEachMenu(), pModifier);
         }
-      } else { // if not builtin type then use all sub modifiers
-        QString modifierValue;
-        if (pModifier->isValueDefined()) {
-          modifierValue = pModifier->getValue();
-        } else {
-          modifierValue = pModifier->toString(true, true);
-          if (modifierValue.startsWith("(")) {
-            modifierValue = pParameter->getModelInstanceElement()->getName() % modifierValue;
-          }
-        }
-        pParameter->setValueWidget(modifierValue, defaultValue, pParameter->getUnit(), mNested);
+      } else {
+        pParameter->setValueWidget(pModifier->toString(true, true, false, true), defaultValue, pParameter->getUnit(), mNested);
         setFinalEachBreak(pParameter->getFinalEachMenu(), pModifier);
       }
       // displayUnit
@@ -2228,19 +2220,23 @@ void ElementParameters::updateElementParameters()
     // apply the new Component modifiers if any
     QList<Modifier> modifiersList;
     foreach (ElementModifier elementModifier, elementModifiersList) {
-      int index = elementModifier.mValue.indexOf('(');
-      QString modifierStartStr;
-      if (index > -1) {
-        modifierStartStr = elementModifier.mValue.left(index);
-        modifierStartStr = modifierStartStr.remove('(').trimmed();
-      }
-      QString modifierValue;
-      if (elementModifier.mValue.isEmpty()) {
-        modifierValue = QString(elementModifier.mKey);
-      } else if (elementModifier.mValue.startsWith(QStringLiteral("redeclare")) || ((index > -1) && (modifierStartStr.compare(elementModifier.mKey) == 0))) {
-        modifierValue = QString(elementModifier.mValue);
+      QString modifierValue = elementModifier.mValue.trimmed();
+      const int index = modifierValue.indexOf('(');
+
+      if (modifierValue.isEmpty()) {
+        modifierValue = elementModifier.mKey;
+      } else if (modifierValue.startsWith(QLatin1String("redeclare"))) {
+        // keep as-is
+      } else if (index > -1) {
+        const QString modifierStartStr = modifierValue.left(index).trimmed();
+        if (modifierStartStr == elementModifier.mKey) {
+          // keep as-is: value already leads with the key name (e.g. "Foo(...)")
+        } else {
+          // prepend key
+          modifierValue = elementModifier.mKey % modifierValue;
+        }
       } else {
-        modifierValue = QString(elementModifier.mKey % " = " % elementModifier.mValue);
+        modifierValue = elementModifier.mKey % QLatin1String(" = ") % modifierValue;
       }
       // if startandfixed then the final and each are handled with the start value.
       if (!elementModifier.mStartAndFixed) {
@@ -2260,12 +2256,15 @@ void ElementParameters::updateElementParameters()
           modifierValue.prepend(modifier);
         }
       }
-      Modifier modifier;
-      modifier.mName = elementModifier.mName;
-      modifier.mExtendName = elementModifier.mExtendName;
-      modifier.mInherited = elementModifier.mInherited;
-      modifier.mValue = modifierValue;
-      modifiersList.append(modifier);
+
+      if (!modifierValue.isEmpty()) {
+        Modifier modifier;
+        modifier.mName = elementModifier.mName;
+        modifier.mExtendName = elementModifier.mExtendName;
+        modifier.mInherited = elementModifier.mInherited;
+        modifier.mValue = modifierValue;
+        modifiersList.append(modifier);
+      }
     }
     if (mNested) {
       if (modifiersList.isEmpty()) {
