@@ -517,20 +517,20 @@ end checkArrayModelica;
 package LexTable
   constant Integer yy_limit = 46;
   constant Integer yy_finish = 82;
-  constant array<Integer> yy_acclist = listArray({
+  constant array<Integer> yy_acclist = MetaModelica.Dangerous.listArrayLiteral({
        17,   16,   15,   16,   16,   13,   16,    5,   16,   14,
        16,   11,   16,   12,   16,   16,   16,   16,    9,   16,
        10,   16,   15,    1,    5,    2,    3,    4,    8,    6,
         3,    7
    });
-  constant array<Integer> yy_accept = listArray({
+  constant array<Integer> yy_accept = MetaModelica.Dangerous.listArrayLiteral({
         1,    1,    1,    2,    3,    5,    6,    8,   10,   12,
        14,   16,   17,   18,   19,   21,   23,   24,   24,   25,
        25,   25,   26,   26,   26,   26,   26,   27,   27,   28,
        28,   29,   29,   29,   29,   29,   29,   29,   30,   31,
        31,   31,   32,   33,   33,   33
    });
-  constant array<Integer> yy_ec = listArray({
+  constant array<Integer> yy_ec = MetaModelica.Dangerous.listArrayLiteral({
         1,    1,    1,    1,    1,    1,    1,    1,    2,    2,
         1,    1,    2,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
@@ -560,12 +560,12 @@ package LexTable
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1
   });
-  constant array<Integer> yy_meta = listArray({
+  constant array<Integer> yy_meta = MetaModelica.Dangerous.listArrayLiteral({
         1,    1,    2,    1,    1,    1,    1,    2,    3,    1,
         3,    3,    1,    2,    1,    3,    4,    3,    4,    1,
         2,    2,    1,    2,    2,    1,    1
    });
-  constant array<Integer> yy_base = listArray({
+  constant array<Integer> yy_base = MetaModelica.Dangerous.listArrayLiteral({
         0,    0,   81,   82,   78,   25,   82,   22,   82,   82,
        82,   63,   53,   55,   82,   82,   74,   27,   82,   50,
        65,   26,   39,   53,   52,   37,   82,    0,   37,   45,
@@ -573,7 +573,7 @@ package LexTable
        27,   23,   82,    0,   82,   56,   59,   61,   63,   65,
        67
   });
-  constant array<Integer> yy_def = listArray({
+  constant array<Integer> yy_def = MetaModelica.Dangerous.listArrayLiteral({
        45,    1,   45,   45,   45,   46,   45,   45,   45,   45,
        45,   45,   45,   45,   45,   45,   45,   46,   45,   47,
        45,   45,   45,   45,   45,   45,   45,   48,   45,   45,
@@ -581,7 +581,7 @@ package LexTable
        45,   45,   45,   51,    0,   45,   45,   45,   45,   45,
        45
   });
-  constant array<Integer> yy_nxt = listArray({
+  constant array<Integer> yy_nxt = MetaModelica.Dangerous.listArrayLiteral({
         4,    5,    6,    4,    7,    4,    4,    4,    8,    9,
         4,    4,   10,    4,   11,    4,    4,    4,   12,    4,
        13,    4,    4,   14,    4,   15,   16,   19,   21,   27,
@@ -595,7 +595,7 @@ package LexTable
 
        45,   45,   45,   45,   45,   45,   45,   45,   45
   });
-  constant array<Integer> yy_chk = listArray({
+  constant array<Integer> yy_chk = MetaModelica.Dangerous.listArrayLiteral({
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    6,    8,   18,
