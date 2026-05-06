@@ -448,7 +448,7 @@ protected function languageStandardInt
   input LanguageStandard inStandard;
   output Integer outValue;
 protected
-  constant array<Integer> lookup = listArray({10, 20, 30, 31, 32, 33, 34, 35, 36, 1000, 9999});
+  constant array<Integer> lookup = listArrayLiteral({10, 20, 30, 31, 32, 33, 34, 35, 36, 1000, 9999});
 algorithm
   outValue := arrayGet(lookup, Integer(inStandard));
 end languageStandardInt;
@@ -476,7 +476,7 @@ public function languageStandardString
   input LanguageStandard inStandard;
   output String outString;
 protected
-  constant array<String> lookup = listArray({"1.x","2.x","3.0","3.1","3.2","3.3","3.4","3.5","3.6","3.6","experimental" /*Change this to latest version if you add more versions!*/});
+  constant array<String> lookup = listArrayLiteral({"1.x","2.x","3.0","3.1","3.2","3.3","3.4","3.5","3.6","3.6","experimental" /*Change this to latest version if you add more versions!*/});
 algorithm
   outString := arrayGet(lookup, Integer(inStandard));
 end languageStandardString;
