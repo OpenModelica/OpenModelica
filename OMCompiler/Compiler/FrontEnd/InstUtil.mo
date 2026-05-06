@@ -8283,7 +8283,7 @@ algorithm
     SCode.Mod modifications;
     SCode.Comment comment;
     Option<Absyn.Exp> condition;
-    SCode.SourceInfo info;
+    SourceInfo info;
     SCode.Mod mod;
 
     Absyn.ArrayDim arrayDims;
@@ -8356,7 +8356,7 @@ algorithm
       SCode.Each  eachPrefix;
       list<DAE.SubMod> subModLst;
       Option<DAE.EqMod> binding;
-      DAE.SourceInfo info;
+      SourceInfo info;
       Integer N = -1;
       DAE.ComponentRef dcr;
       DAE.SubMod domainSubMod;
@@ -8474,7 +8474,7 @@ protected function addEach
   protected SCode.Each eachPrefix;
   protected list<DAE.SubMod> subModLst;
   protected Option<DAE.EqMod> binding;
-  protected DAE.SourceInfo info;
+  protected SourceInfo info;
 
 /*  equation
     DAE.NAMEMOD(ident, DAE.MOD(finalPrefix, _, subModLst, eqModOption)) = inSubMod;
@@ -8549,7 +8549,7 @@ algorithm
         Absyn.Exp lhs_exp, rhs_exp;
         Absyn.ComponentRef domainCr, domainCr1, fieldCr;
         SCode.Comment comment;
-        SCode.SourceInfo info;
+        SourceInfo info;
         Integer N;
         List<Absyn.ComponentRef> fieldLst;
         Absyn.Ident name;
@@ -8650,7 +8650,7 @@ end extrapFieldTraverseFun;
 protected function getDomNFields
   input DomainFieldsLst inDomFieldLst;
   input Absyn.ComponentRef inDomainCr;
-  input SCode.SourceInfo info;
+  input SourceInfo info;
   output Integer outN = 0;
   output List<Absyn.ComponentRef> outFieldLst = {};
 algorithm
@@ -8710,7 +8710,7 @@ protected function extrapolateFieldEq
   input Absyn.ComponentRef domainCr;
   input Integer N;
   input SCode.Comment comment;
-  input SCode.SourceInfo info;
+  input SourceInfo info;
   input List<Absyn.ComponentRef> fieldLst;
   output SCode.Equation outEQ;
   protected Absyn.Ident name;
@@ -8751,7 +8751,7 @@ protected function creatFieldEqs "creates list of equations for fields. If the e
   input Integer N;
   input List<Absyn.ComponentRef> fieldLst;
   input SCode.Comment comment;
-  input SCode.SourceInfo info;
+  input SourceInfo info;
   output List<SCode.Equation> outDiscretizedEQs;
   protected Boolean bl, br;
 algorithm
@@ -8793,7 +8793,7 @@ protected function newEQFun
   input Boolean isBC;  //-1 left ghost cell, 0 no ghost cell, 1 right ghost cell
   input list<Absyn.ComponentRef> fieldLst;
   input SCode.Comment comment;
-  input SCode.SourceInfo info;
+  input SourceInfo info;
   output SCode.Equation outEQ;
   protected Absyn.Exp outLhs_exp, outRhs_exp;
 algorithm
@@ -8804,13 +8804,13 @@ end newEQFun;
 
 protected function discretizeTraverseFun
   input Absyn.Exp inExp;
-  input tuple<Integer, list<Absyn.ComponentRef>, Absyn.ComponentRef, SCode.SourceInfo,Boolean,Integer,Boolean> inTup;
+  input tuple<Integer, list<Absyn.ComponentRef>, Absyn.ComponentRef, SourceInfo,Boolean,Integer,Boolean> inTup;
   output Absyn.Exp outExp;
-  output tuple<Integer, list<Absyn.ComponentRef>, Absyn.ComponentRef, SCode.SourceInfo,Boolean,Integer,Boolean> outTup;
+  output tuple<Integer, list<Absyn.ComponentRef>, Absyn.ComponentRef, SourceInfo,Boolean,Integer,Boolean> outTup;
   protected Integer i,N;
 //   protected String eqDomainName;
   protected list<Absyn.ComponentRef> fieldLst;
-  protected SCode.SourceInfo info;
+  protected SourceInfo info;
   protected Boolean skip, failVar,isBC;
   protected Absyn.ComponentRef domainCr;
   protected Absyn.Ident domName;

@@ -4323,7 +4323,6 @@ protected function elabBuiltinArray2
   output DAE.Properties outProperties;
 protected
   String pre_str;
-  list<DAE.Types> types;
   Boolean have_real = false;
   DAE.Properties prop;
 algorithm
