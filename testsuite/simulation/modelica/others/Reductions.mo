@@ -21,7 +21,6 @@ equation
   ery = min(i for i in 1.0:0.0);
   erz = max(i for i in 1.0:0.0);
   erw = product(i for i in 1.0:0.0);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Reductions;
 
 // class Reductions

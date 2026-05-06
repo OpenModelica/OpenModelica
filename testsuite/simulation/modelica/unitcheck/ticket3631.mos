@@ -1,6 +1,5 @@
 // name: ticket3631
 // status: correct
-// cflags: -d=-newInst
 
 loadString("
 package unitCheckTests
@@ -14,7 +13,7 @@ package unitCheckTests
 end unitCheckTests;
 "); getErrorString();
 
-setCommandLineOptions("--unitChecking -d=dumpUnits,newInst"); getErrorString();
+setCommandLineOptions("--unitChecking -d=dumpUnits"); getErrorString();
 instantiateModel(unitCheckTests.ticket3631); getErrorString();
 
 // Result:

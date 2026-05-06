@@ -2,7 +2,6 @@
 // keywords: simulation, terminal, initial
 // status: correct
 // teardown_command: rm -rf testTerminal* output.log
-// cflags: -d=-newInst
 //
 //  Simulate model that contain terminal and initial
 //

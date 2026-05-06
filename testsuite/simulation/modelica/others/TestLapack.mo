@@ -14,7 +14,7 @@ external "Fortran 77" dgeev("N", "N", size(A, 1), Awork, size(A, 1),
     annotation (Library="Lapack");
 end dgeev_eigenValues;
 
-class TestLapack
+model TestLapack
   Real A[4,4] = [1.0, 0.0, 0.0, 0.0;
                  3.0, 2.0, 0.0, 0.0;
                  0.0, 0.0, 3.0, 1.5;

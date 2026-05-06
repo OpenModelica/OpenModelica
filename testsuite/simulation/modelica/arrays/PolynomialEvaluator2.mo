@@ -25,7 +25,6 @@ model PolynomialEvaluator2
   Real result;
 equation
   result = polyeval(inVector);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end PolynomialEvaluator2;
 
 // function polyeval

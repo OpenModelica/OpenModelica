@@ -28,7 +28,7 @@ bug_2217.mos \
 bug_2911.mos \
 bug_3184.mos \
 Bug3187.mos \
-Bug3916.mos
+Bug3916.mos \
 ConstructFunc.mos \
 crefIndex.mos \
 DimConvert.mos \

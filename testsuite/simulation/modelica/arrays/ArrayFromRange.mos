@@ -1,7 +1,6 @@
 // name:     ArrayFromRange.mos
 // keywords: Array, range, fill
 // status: correct
-// cflags: -d=-newInst
 // 
 // Test for creating or filling of arrays from range expressions.
 // 

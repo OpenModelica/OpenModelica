@@ -5,7 +5,6 @@
 //  MORE WORK HAS TO BE DONE ON THIS FILE!
 //
 // Drmodelica: 7.4 Array Indexing operator (p. 216) 
-// cflags: -d=-newInst
 // 
 loadModel(Modelica, {"3.2.3"});
 loadFile("SubArrayIndex.mo");

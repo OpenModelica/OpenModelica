@@ -23,7 +23,6 @@ end simpleLoop;
 "); getErrorString();
 
 // Build FMU
-setCommandLineOptions("-d=newInst"); getErrorString();
 buildModelFMU(simpleLoop, version="2.0", fmuType="me"); getErrorString();
 
 // Re-build FMU
@@ -35,8 +34,6 @@ system(getInstallationDirectoryPath() + "/bin/OMSimulator simpleLoop.fmu", "simp
 readFile("simpleLoop_me_systemCall.log");
 
 // Result:
-// true
-// ""
 // true
 // ""
 // "simpleLoop.fmu"

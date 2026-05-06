@@ -19,7 +19,6 @@ equation
   xpowers[4] = xpowers[3]*x;
   xpowers[4 + 1] = xpowers[4]*x;
   y = a * xpowers[5];
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Xpowers1;
 
 // class Xpowers1

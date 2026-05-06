@@ -8,7 +8,7 @@
 loadModel(Modelica, {"3.2.3"});
 getErrorString();
 
-setCommandLineOptions("-d=newInst,-disableDirectionalDerivatives");
+setCommandLineOptions("-d=-disableDirectionalDerivatives");
 getErrorString();
 
 // Build 2.0 FMU

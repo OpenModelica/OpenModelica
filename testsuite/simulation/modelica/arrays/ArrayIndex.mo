@@ -15,7 +15,6 @@ algorithm
   B := fill(1,2,2); // B will have the values {{1, 1}, {1, 1}}
   B[2, 1] := 8; // Assignment to the array element B[2, 1]
   c := A[1, 1];
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayIndex;
 
 // insert expected flat file here. Can be done by issuing the command

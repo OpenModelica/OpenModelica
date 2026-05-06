@@ -1,7 +1,6 @@
 // name: Bug3500.mos
 // keywords: solver error, state selection, non-linear solver start values
 // status: correct
-// cflags: -d=-newInst
 //
 // test for #3500
 //

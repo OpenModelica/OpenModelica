@@ -12,6 +12,5 @@ class DimSize
   parameter Real specsize[3] = size(x);    // Returns the vector {4, 1, 6}
 equation
  // size(2*x + x) = size(x);                // This equation holds
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DimSize;
 

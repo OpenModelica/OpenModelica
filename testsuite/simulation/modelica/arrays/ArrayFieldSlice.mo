@@ -40,5 +40,4 @@ equation
   children   = pList.persons.children;  // Returns: {{"Carl", "Eva"},
                 //     {"Anders", "Dan"},
                 //     {"John", "Daniel"}}
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end getPerson;

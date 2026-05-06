@@ -2,7 +2,6 @@
 // keywords: parameter sensitivities, ida
 // status: correct
 // teardown_command: rm -rf predPray* output.log
-// cflags: -d=-newInst
 
 
 loadString("

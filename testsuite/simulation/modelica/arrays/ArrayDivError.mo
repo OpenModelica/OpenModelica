@@ -4,7 +4,7 @@
 //
 // Drmodelica: 7.6 Arithmetic Array Operators (p. 223)
 //
-class ArrayDivError
+model ArrayDivError
   Real Div1[1, 3], Div2, Div3;
 equation
   Div1 = {2, 4, 6} / 2;
@@ -15,5 +15,4 @@ equation
 
   Div3 = {1, 2, 3} / {1, 2, 2};
   // Not allowed!
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayDivError;

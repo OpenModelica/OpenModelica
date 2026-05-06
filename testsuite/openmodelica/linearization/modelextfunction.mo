@@ -31,5 +31,4 @@ model extfunction
 equation
  der(x) = f(y)*x;
  der(y) = f1(x)*y;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end extfunction;

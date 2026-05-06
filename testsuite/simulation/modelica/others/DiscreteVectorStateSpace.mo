@@ -27,7 +27,6 @@ model DVSSTest
   DiscreteVectorStateSpace dvss;
 equation
   dvss.u= fill(time,dvss.m);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DVSSTest;
 
 

@@ -2,7 +2,6 @@
 // keywords: array tmp variable
 // status: correct
 // teardown_command: rm -rf BugTest2911*  output.log
-// cflags: -d=-newInst
 // 
 //  Simulate model with array equations
 //

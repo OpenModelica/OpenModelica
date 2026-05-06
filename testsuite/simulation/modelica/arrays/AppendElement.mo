@@ -43,7 +43,6 @@ equation
   XA4 = cat(2, {{-1}}, zeros(1, 2), {{1}});
   // Append OK, result is {{-1, 0, 0, 1}}
 
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AppendElement;
 
 

@@ -27,7 +27,6 @@ equation
   x = z2;
   der(z1) = y;
   der(z2) = 1;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end simple_test;
 
 // Result:

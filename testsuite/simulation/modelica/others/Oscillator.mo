@@ -66,7 +66,6 @@ model Oscillator
 equation
   connect(spring1.flange_b, fixed1.flange_b);
   connect(mass1.flange_b, spring1.flange_a);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Oscillator;
 
 // insert expected flat file here. Can be done by issuing the command

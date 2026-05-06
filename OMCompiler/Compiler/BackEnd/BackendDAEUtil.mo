@@ -10231,7 +10231,11 @@ protected function getVariableNamesForErrorMessage
   input list<Integer> vars;
   output String names;
 algorithm
-  names := stringDelimitList(list(ComponentReference.printComponentRefStr(BackendVariable.varCref(BackendVariable.getVarAt(varsArray, v))) for v in vars), ", ");
+  if listEmpty(vars) then
+    names := "";
+  else
+    names := " " + stringDelimitList(list(ComponentReference.printComponentRefStr(BackendVariable.varCref(BackendVariable.getVarAt(varsArray, v))) for v in vars), ", ");
+  end if;
 end getVariableNamesForErrorMessage;
 
 // =============================================================================
