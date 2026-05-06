@@ -9,7 +9,6 @@
 class ConcatArr1
   Real[5] c1 = cat(1, {1, 2}, {10, 12, 13}); // Result: {1, 2, 10, 12, 13}
   Real[2, 3] c2 = cat(2, {{1, 2}, {3, 4}}, {{10}, {11}}); // Result: {{1, 2, 10}, {3, 4, 11}}
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConcatArr1;
 
 // insert expected flat file here. Can be done by issuing the command

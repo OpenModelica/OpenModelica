@@ -1,7 +1,7 @@
 // name: UnitCheck24
 // keywords:
 // status: correct
-// cflags: -d=newInst --unitChecking -d=dumpUnits
+// cflags: --unitChecking -d=dumpUnits
 
 loadString("
   function to_deg

@@ -2,7 +2,7 @@ TEST = ../../../rtest -v
 
 
 TESTFILES = \
-nlssMaxDensity \
+nlssMaxDensity.mos \
 nlssMinSize.mos \
 testOutputIntervalDASSL.mos \
 testOutputIntervalDASSLsteps.mos \

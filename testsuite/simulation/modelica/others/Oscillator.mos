@@ -5,7 +5,6 @@
 //  MORE WORK ON THIS FILE HAS TO BE DONE!
 //
 // Drmodelica: 5.3 Oscillating Mass Connected to a Spring (p. 156)
-// cflags: -d=-newInst
 // 
 loadModel(Modelica, {"3.2.3"});
 loadFile("Oscillator.mo");
@@ -28,13 +27,17 @@ z:=z/10.0;
 system("rm -rf Oscillator_* Oscillator.exe Oscillator.cpp Oscillator.makefile Oscillator.libs Oscillator.log output.log"); // remove tmp files.
 // Result:
 // true
+// true
 // record SimulationResult
-//     resultFile = "Oscillator_res.mat"
+//     resultFile = "Oscillator_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-5, method = 'dassl', fileNamePrefix = 'Oscillator', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // true
-// -9490.7
-// -8597.7
-// 2.9
-// ""
+// -9498.300000000001
+// -8606.300000000001
+// 2.9000000000000004
 // 0
 // endResult

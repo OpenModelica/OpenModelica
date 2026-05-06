@@ -1078,7 +1078,7 @@ public constant ErrorTypes.Message CLASS_EXTENDS_TARGET_NOT_FOUND = ErrorTypes.M
 public constant ErrorTypes.Message ASSIGN_PARAM_FIXED_ERROR = ErrorTypes.MESSAGE(580, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Trying to assign to parameter component %s(fixed=true) in %s := %s"));
 public constant ErrorTypes.Message EQN_NO_SPACE_TO_SOLVE = ErrorTypes.MESSAGE(581, ErrorTypes.SYMBOLIC(), ErrorTypes.WARNING(),
-  Gettext.gettext("Equation %s (size: %s) %s is not big enough to solve for enough variables.\n  Remaining unsolved variables are: %s\n  Already solved: %s\n  Equations used to solve those variables:%s"));
+  Gettext.gettext("Equation %s (size: %s) %s is not big enough to solve for enough variables.\n  Remaining unsolved variables are:%s\n  Already solved:%s\n  Equations used to solve those variables:%s"));
 public constant ErrorTypes.Message VAR_NO_REMAINING_EQN = ErrorTypes.MESSAGE(582, ErrorTypes.SYMBOLIC(), ErrorTypes.WARNING(),
   Gettext.gettext("Variable %s does not have any remaining equation to be solved in.\n  The original equations were:%s"));
 public constant ErrorTypes.Message MOVING_PARAMETER_BINDING_TO_INITIAL_EQ_SECTION = ErrorTypes.MESSAGE(583, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),

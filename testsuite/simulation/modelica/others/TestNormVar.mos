@@ -1,6 +1,5 @@
 // name: TestNormVar
 // status: correct
-// cflags: -d=-newInst
 
 setCommandLineOptions("+d=dumpindxdae --postOptModules+=addScaledVars_states");
 loadString("
@@ -68,19 +67,19 @@ simulate(foo,stopTime=0);
 //
 // Equations (5, 5)
 // ========================================
-// 1/1 (1): x_norm = 0.01 * x   [binding |0|0|0|0|]
-// 2/2 (1): u_norm = 0.05 * u   [dynamic |0|0|0|0|]
-// 3/3 (1): der(x) = $cse1   [dynamic |0|0|0|0|]
-// 4/4 (1): $cse1 = sin(10.0 * time * u_norm)   [unknown |0|0|0|0|]
+// 1/1 (1): u_norm = 0.05 * u   [dynamic |0|0|0|0|]
+// 2/2 (1): der(x) = $cse1   [dynamic |0|0|0|0|]
+// 3/3 (1): x_norm = x * 0.01   [binding |0|0|0|0|]
+// 4/4 (1): $cse1 = sin(time * 10.0 * u_norm)   [unknown |0|0|0|0|]
 // 5/5 (1): x__OMC$scaled_state = 0.01 * x   [dynamic |0|0|0|0|]
 //
 //
 // Matching
 // ========================================
 // 5 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
-// var 3 is solved in eqn 3
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 3
+// var 3 is solved in eqn 2
 // var 4 is solved in eqn 4
 // var 5 is solved in eqn 5
 //
@@ -88,10 +87,10 @@ simulate(foo,stopTime=0);
 // StrongComponents
 // ========================================
 // {5:5}
-// {2:1}
+// {3:2}
+// {1:1}
 // {4:4}
-// {3:3}
-// {1:2}
+// {2:3}
 //
 //
 //
@@ -132,19 +131,19 @@ simulate(foo,stopTime=0);
 //
 // Equations (5, 5)
 // ========================================
-// 1/1 (1): x_norm = 0.01 * x   [binding |0|0|0|0|]
-// 2/2 (1): u_norm = 0.05 * u   [dynamic |0|0|0|0|]
-// 3/3 (1): der(x) = $cse1   [dynamic |0|0|0|0|]
-// 4/4 (1): $cse1 = sin(10.0 * time * u_norm)   [unknown |0|0|0|0|]
+// 1/1 (1): u_norm = 0.05 * u   [dynamic |0|0|0|0|]
+// 2/2 (1): der(x) = $cse1   [dynamic |0|0|0|0|]
+// 3/3 (1): x_norm = x * 0.01   [binding |0|0|0|0|]
+// 4/4 (1): $cse1 = sin(time * 10.0 * u_norm)   [unknown |0|0|0|0|]
 // 5/5 (1): u__OMC$scaled_input = 0.05 * u   [dynamic |0|0|0|0|]
 //
 //
 // Matching
 // ========================================
 // 5 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
-// var 3 is solved in eqn 3
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 3
+// var 3 is solved in eqn 2
 // var 4 is solved in eqn 4
 // var 5 is solved in eqn 5
 //
@@ -152,10 +151,10 @@ simulate(foo,stopTime=0);
 // StrongComponents
 // ========================================
 // {5:5}
-// {2:1}
+// {3:2}
+// {1:1}
 // {4:4}
-// {3:3}
-// {1:2}
+// {2:3}
 //
 //
 //
@@ -197,10 +196,10 @@ simulate(foo,stopTime=0);
 //
 // Equations (6, 6)
 // ========================================
-// 1/1 (1): x_norm = 0.01 * x   [binding |0|0|0|0|]
-// 2/2 (1): u_norm = 0.05 * u   [dynamic |0|0|0|0|]
-// 3/3 (1): der(x) = $cse1   [dynamic |0|0|0|0|]
-// 4/4 (1): $cse1 = sin(10.0 * time * u_norm)   [unknown |0|0|0|0|]
+// 1/1 (1): u_norm = 0.05 * u   [dynamic |0|0|0|0|]
+// 2/2 (1): der(x) = $cse1   [dynamic |0|0|0|0|]
+// 3/3 (1): x_norm = x * 0.01   [binding |0|0|0|0|]
+// 4/4 (1): $cse1 = sin(time * 10.0 * u_norm)   [unknown |0|0|0|0|]
 // 5/5 (1): x__OMC$scaled_state = 0.01 * x   [dynamic |0|0|0|0|]
 // 6/6 (1): u__OMC$scaled_input = 0.05 * u   [dynamic |0|0|0|0|]
 //
@@ -208,9 +207,9 @@ simulate(foo,stopTime=0);
 // Matching
 // ========================================
 // 6 variables and equations
-// var 1 is solved in eqn 2
-// var 2 is solved in eqn 1
-// var 3 is solved in eqn 3
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 3
+// var 3 is solved in eqn 2
 // var 4 is solved in eqn 4
 // var 5 is solved in eqn 5
 // var 6 is solved in eqn 6
@@ -220,10 +219,10 @@ simulate(foo,stopTime=0);
 // ========================================
 // {6:6}
 // {5:5}
-// {2:1}
+// {3:2}
+// {1:1}
 // {4:4}
-// {3:3}
-// {1:2}
+// {2:3}
 //
 //
 //

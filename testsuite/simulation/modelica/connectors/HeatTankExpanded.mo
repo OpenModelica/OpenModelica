@@ -30,7 +30,6 @@ equation
 
   outlet.temp = temp;
   outlet.volumeFlowRate = 2;
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end HeatTankExpanded;
 
 // class HeatTankExpanded

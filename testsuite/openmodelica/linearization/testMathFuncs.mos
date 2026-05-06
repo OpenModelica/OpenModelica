@@ -2,7 +2,6 @@
 // keywords: differentiation linearization
 // status:   correct
 // teardown_command: rm -rf mathFuncsTest* output.log linearized_model*
-// cflags: -d=-newInst
 //
 //
 

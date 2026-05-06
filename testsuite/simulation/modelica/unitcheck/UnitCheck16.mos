@@ -1,7 +1,6 @@
 // name: UnitCheck16
 // keywords: initialization
 // status: correct
-// cflags: -d=-newInst
 
 loadString("
 model UnitCheck16
@@ -11,7 +10,7 @@ equation
 end UnitCheck16;
 "); getErrorString();
 
-setCommandLineOptions("--unitChecking -d=dumpUnits,newInst"); getErrorString();
+setCommandLineOptions("--unitChecking -d=dumpUnits"); getErrorString();
 instantiateModel(UnitCheck16); getErrorString();
 
 // Result:

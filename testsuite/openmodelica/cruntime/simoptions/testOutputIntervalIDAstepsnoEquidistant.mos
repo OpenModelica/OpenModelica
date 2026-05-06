@@ -2,7 +2,6 @@
 // keywords: emit, results, ida
 // status: correct
 // teardown_command: rm -rf testModel* output.log
-// cflags: -d=-newInst
 //
 //
 loadString("

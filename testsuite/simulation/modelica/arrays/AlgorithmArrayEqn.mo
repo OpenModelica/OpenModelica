@@ -10,7 +10,6 @@ model AlgorithmArrayEqn
    Real p2[2,2];
 algorithm
   p2 := transpose(p1);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AlgorithmArrayEqn;
 
 // Result:

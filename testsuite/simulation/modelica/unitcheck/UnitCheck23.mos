@@ -1,7 +1,7 @@
 // name: UnitCheck23
 // keywords: initialization
 // status: correct
-// cflags: -d=newInst --unitChecking -d=dumpUnits
+// cflags: --unitChecking -d=dumpUnits
 
 loadString("
   model UnitCheck23

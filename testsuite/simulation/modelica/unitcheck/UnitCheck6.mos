@@ -1,7 +1,6 @@
 // name: UnitCheck6
 // keywords: initialization
 // status: correct
-// cflags: -d=-newInst
 
 loadString("
 package unitCheckTests
@@ -17,7 +16,7 @@ package unitCheckTests
 end unitCheckTests;
 "); getErrorString();
 
-setCommandLineOptions("--unitChecking -d=dumpUnits,newInst"); getErrorString();
+setCommandLineOptions("--unitChecking -d=dumpUnits"); getErrorString();
 instantiateModel(unitCheckTests.UnitCheck6); getErrorString();
 
 // Result:

@@ -48,8 +48,6 @@ equation
          outlet.volumeFlowRate*outlet.temp;
 
   outlet.temp = temp;
-
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end HeatTank;
 
 
