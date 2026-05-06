@@ -2448,6 +2448,7 @@ public
 
     record VAR_DATA_SIM
       "Only to be used for simulation systems."
+      Pointer<Integer> uniqueIndex        "use when trying to create unique variables";
       VariablePointers variables          "All variables";
       /* subset of full variable array */
       VariablePointers unknowns           "All state derivatives, algebraic variables,
@@ -2680,6 +2681,18 @@ public
         else fail();
       end match;
     end setVariables;
+
+    function getUniqueIndex
+      input VarData varData;
+      output Pointer<Integer> uniqueIndex;
+    algorithm
+      uniqueIndex := match varData
+        case VAR_DATA_SIM() then varData.uniqueIndex;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed because of incorrect record type."});
+        then fail();
+      end match;
+    end getUniqueIndex;
 
     function getStateOrder
       input VarData varData;

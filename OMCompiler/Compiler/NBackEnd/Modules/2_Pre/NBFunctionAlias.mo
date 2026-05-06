@@ -172,7 +172,6 @@ public
     end if;
   end introduceSlicedStateAlias;
 
-protected
   uniontype Call_Id
     "key for UnorderedMap.
     used to uniquely identify a function call"
@@ -271,6 +270,7 @@ protected
     end createName;
   end Call_Aux;
 
+protected
   function functionAliasTplString
     input tuple<String, String> tpl;
     input Integer max_length;
