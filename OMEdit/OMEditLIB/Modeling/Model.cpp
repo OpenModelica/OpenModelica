@@ -817,8 +817,26 @@ namespace ModelInstance
     }
   }
 
-  QString Modifier::toString(bool skipTopLevel, bool includeComment, bool onlyType) const
+  /*!
+   * \brief Modifier::toString
+   * Converts the Modifier to string.\n
+   * \param skipTopLevel - if true then it will skip the top level modifier each and final.
+   * \param includeComment - if true then it will include the comment in the string.
+   * \param onlyType - if true then it will return only the type of the modifier.
+   * \param elementPropertiesDialog - if true then it will return the string for element properties dialog.
+   * \return
+   */
+  QString Modifier::toString(bool skipTopLevel, bool includeComment, bool onlyType, bool elementPropertiesDialog) const
   {
+    /*! We need to return empty string for displayUnit modifier in Element Properties dialog
+     *  because we are showing a drop down for the display unit in separate column.
+     */
+    if (elementPropertiesDialog) {
+      if (mName == QStringLiteral("displayUnit")) {
+        return "";
+      }
+    }
+
     if (mpElement) {
       if (onlyType) {
         if (mpElement->isClass()) {
@@ -827,7 +845,6 @@ namespace ModelInstance
         } else {
           return mpElement->getType();
         }
-
       } else {
         return mpElement->toString(skipTopLevel, false, includeComment);
       }
@@ -836,11 +853,11 @@ namespace ModelInstance
       if (!skipTopLevel) {
         value.append(toStringEach());
         value.append(toStringFinal());
+        value.append(mName);
       }
-      value.append(mName);
       QStringList subModifiers;
       foreach (auto *pSubModifier, mModifiers) {
-        QString subValue = pSubModifier->toString(skipTopLevel, includeComment);
+        QString subValue = pSubModifier->toString(false, includeComment, onlyType, elementPropertiesDialog);
         if (!subValue.isEmpty()) {
           subModifiers.append(subValue);
         }
@@ -849,7 +866,11 @@ namespace ModelInstance
         value.append("(" % subModifiers.join(", ") % ")");
       }
       if (!mValue.isEmpty()) {
-        value.append(mName.isEmpty() ? mValue : " = " % mValue);
+        if (skipTopLevel && value.isEmpty()) {
+          value.append(mValue);
+        } else {
+          value.append(mName.isEmpty() ? mValue : " = " % mValue);
+        }
       }
       if (includeComment && !mComment.isEmpty()) {
         value.append(" \"" % mComment % "\"");
