@@ -46,6 +46,7 @@ public
 import SCode;
 import DAE;
 import FCore;
+import FCore.RefTree;
 import FNode;
 import FGraph;
 import GraphML;
@@ -60,7 +61,6 @@ type Data = FCore.Data;
 type Kind = FCore.Kind;
 type Ref = FCore.Ref;
 type Refs = FCore.Refs;
-type RefTree = FCore.RefTree;
 type Children = FCore.Children;
 type Parents = FCore.Parents;
 type ImportTable = FCore.ImportTable;

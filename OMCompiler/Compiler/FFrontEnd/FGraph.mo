@@ -51,6 +51,7 @@ import ClassInf;
 import FCore;
 import FNode;
 import InnerOuter;
+import FCore.RefTree;
 
 protected
 import List;
@@ -80,7 +81,6 @@ type Data = FCore.Data;
 type Kind = FCore.Kind;
 type Ref = FCore.Ref;
 type Refs = FCore.Refs;
-type RefTree = FCore.RefTree;
 type Children = FCore.Children;
 type Parents = FCore.Parents;
 type Scope = FCore.Scope;
