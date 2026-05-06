@@ -1294,7 +1294,11 @@ algorithm
       then
         (resultType, op);
 
-    // scalar * scalar and array * array => elemOp.
+    // array * array => Op.{elemOp}_EW
+    case (true, true)
+      then (resultType, Operator.makeEW(Operator.OPERATOR(resultType, elemOp)));
+
+    // scalar * scalar => Op.{elemOp}
     else (resultType, Operator.OPERATOR(resultType, elemOp));
   end match;
 

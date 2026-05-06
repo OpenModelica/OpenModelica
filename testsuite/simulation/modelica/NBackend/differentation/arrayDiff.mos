@@ -24,12 +24,12 @@ diffSimulationResults("MWE_14574_res.mat", "ReferenceFiles/MWE_14574_res.mat", "
 // true
 // ""
 // ### dumpSimplify | NBSolve.solveBody ###
-// [BEFORE] ({0.0, 0.0} * x .+ y * {0.0, 0.0}) .- (0.0 * $DER.x .+ M * {1.0, 1.0})
+// [BEFORE] ({0.0, 0.0} .* x .+ y .* {0.0, 0.0}) .- (0.0 * $DER.x .+ M * {1.0, 1.0})
 // [AFTER ] -M
 //
 // ### dumpSimplify | NBSolve.solveBody ###
-// [BEFORE] -(y * x .- M * {0.0, 0.0}) / (-M)
-// [AFTER ] (y * x) / M
+// [BEFORE] -(y .* x .- M * {0.0, 0.0}) / (-M)
+// [AFTER ] (y .* x) / M
 //
 // record SimulationResult
 //     resultFile = "MWE_14574_res.mat",
