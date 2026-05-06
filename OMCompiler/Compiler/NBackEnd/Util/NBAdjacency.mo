@@ -1397,7 +1397,7 @@ public
 
     record DEPENDENCY
       array<list<Integer>> skips;
-      list<Dependency.Kind> kinds;
+      list<Kind> kinds;
     end DEPENDENCY;
 
     function toString
