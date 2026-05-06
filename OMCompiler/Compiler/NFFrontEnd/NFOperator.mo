@@ -713,6 +713,19 @@ public
     outOp := OPERATOR(ty, o);
   end makeArrayScalar;
 
+  function makeEW
+    input output Operator op;
+  algorithm
+    () := match op.op
+      case Op.ADD algorithm op.op := Op.ADD_EW; then ();
+      case Op.SUB algorithm op.op := Op.SUB_EW; then ();
+      case Op.MUL algorithm op.op := Op.MUL_EW; then ();
+      case Op.DIV algorithm op.op := Op.DIV_EW; then ();
+      case Op.POW algorithm op.op := Op.POW_EW; then ();
+      else ();
+    end match;
+  end makeEW;
+
   function stripEW
     input output Operator op;
   algorithm

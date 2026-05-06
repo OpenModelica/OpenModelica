@@ -982,6 +982,9 @@ algorithm
     case Op.MUL then evalBinaryMul(exp1, exp2);
     case Op.DIV then evalBinaryDiv(exp1, exp2, target);
     case Op.POW then evalBinaryPow(exp1, exp2, target);
+    case Op.ADD_EW then evalBinaryAdd(exp1, exp2);
+    case Op.SUB_EW then evalBinarySub(exp1, exp2);
+    case Op.MUL_EW then evalBinaryMul(exp1, exp2);
     case Op.ADD_SCALAR_ARRAY then evalBinaryScalarArray(exp1, exp2, evalBinaryAdd);
     case Op.ADD_ARRAY_SCALAR then evalBinaryArrayScalar(exp1, exp2, evalBinaryAdd);
     case Op.SUB_SCALAR_ARRAY then evalBinaryScalarArray(exp1, exp2, evalBinarySub);
