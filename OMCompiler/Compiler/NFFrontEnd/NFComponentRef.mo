@@ -176,6 +176,16 @@ public
     end match;
   end isSimple;
 
+  function isQualified
+    input ComponentRef cref;
+    output Boolean qualified;
+  algorithm
+    qualified := match cref
+      case CREF(restCref = CREF()) then true;
+      else false;
+    end match;
+  end isQualified;
+
   function isTopLevel
     input ComponentRef cref;
     output Boolean b;

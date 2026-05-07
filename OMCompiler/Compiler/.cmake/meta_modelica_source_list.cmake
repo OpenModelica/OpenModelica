@@ -379,6 +379,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFSimplifyExp.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFSimplifyModel.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFStatement.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFStreamFlowAlias.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFStructural.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFSubscript.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFTypeCheck.mo

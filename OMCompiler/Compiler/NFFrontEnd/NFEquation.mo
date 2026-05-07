@@ -1166,6 +1166,16 @@ public
       function Expression.replaceIterator(iterator = iterator, iteratorValue = value));
   end replaceIteratorList;
 
+  function isArrayEquality
+    input Equation eq;
+    output Boolean isArray;
+  algorithm
+    isArray := match eq
+      case EQUALITY() then Type.isArray(eq.ty);
+      else false;
+    end match;
+  end isArrayEquality;
+
   function isConnect
     "Checks if an equation is a connect equation."
     input Equation eq;

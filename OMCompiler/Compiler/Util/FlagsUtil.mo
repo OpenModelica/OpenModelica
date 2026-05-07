@@ -258,7 +258,8 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.DUMP_RESIZABLE,
   Flags.DUMP_SOLVE,
   Flags.FORCE_SCALARIZE,
-  Flags.DEBUG_ADJOINT
+  Flags.DEBUG_ADJOINT,
+  Flags.FLOW_ALIAS_ELIMINATION
 };
 
 protected
