@@ -44,6 +44,7 @@
 #include "Util/StringHandler.h"
 #include "Simulation/SimulationOptions.h"
 #include "OMS/OMSProxy.h"
+#include "OMS/OMSModel.h"
 
 #include <QTreeView>
 #include <QRegExp>
@@ -154,15 +155,85 @@ public:
   // bool isComponentElement() const {return (mpOMSElement && (mpOMSElement->type == oms_element_component));}
   // bool isFMUComponent() const {return (mpOMSElement && (mpOMSElement->type == oms_element_component) && (mComponentType == oms_component_fmu));}
 
-  bool isSystemElement() const { return mpOMSElementJson["type"].toString() == "system";}
-  bool isComponentElement() const {return mpOMSElementJson["type"].toString() == "component";}
-  bool isFMUComponent() const {return mpOMSElementJson["type"].toString() == "component";}
+  // bool isSystemElement() const { return mpOMSElementJson["type"].toString() == "system";}
+  // bool isComponentElement() const {return mpOMSElementJson["type"].toString() == "component";}
+  // bool isFMUComponent() const {return mpOMSElementJson["type"].toString() == "component";}
+
+  // // helper connectors
+  // bool isOMSConnectorJson() const {return mpOMSElementJson["type"].toString() == "connector";}
+  // QString getOMSConnectorCausalityJson() const {return mpOMSElementJson["causality"].toString();}
+  // QString getOMSConnectorSignalTypeJson() const {return mpOMSElementJson["signalType"].toString();}
+  // QJsonObject getOMSConnectorGeometryJson() const {return mpOMSElementJson["geometry"].toObject();}
+
+  bool isSystemElement() const
+  {
+      if (mpOMSModelElement) {
+          qDebug() << "isSystemElement:" << mpOMSModelElement->isSystem();
+          return mpOMSModelElement->isSystem();
+      }
+
+      return mpOMSElementJson["type"].toString() == "system";
+  }
+
+  bool isComponentElement() const
+  {
+      if (mpOMSModelElement) {
+          return mpOMSModelElement->isComponent();
+      }
+
+      return mpOMSElementJson["type"].toString() == "component";
+  }
+
+  bool isFMUComponent() const
+  {
+      if (mpOMSModelElement) {
+          return mpOMSModelElement->isComponent();
+      }
+
+      return mpOMSElementJson["type"].toString() == "component";
+  }
 
   // helper connectors
-  bool isOMSConnectorJson() const {return mpOMSElementJson["type"].toString() == "connector";}
-  QString getOMSConnectorCausalityJson() const {return mpOMSElementJson["causality"].toString();}
-  QString getOMSConnectorSignalTypeJson() const {return mpOMSElementJson["signalType"].toString();}
-  QJsonObject getOMSConnectorGeometryJson() const {return mpOMSElementJson["geometry"].toObject();}
+  bool isOMSConnectorJson() const
+  {
+      return mpOMSModelConnector || mpOMSElementJson["type"].toString() == "connector";
+  }
+  QString getOMSConnectorCausalityJson() const
+  {
+      if (mpOMSModelConnector) {
+          return mpOMSModelConnector->getCausality();
+      }
+
+      return mpOMSElementJson["causality"].toString();
+  }
+  QString getOMSConnectorSignalTypeJson() const
+  {
+      if (mpOMSModelConnector) {
+          return mpOMSModelConnector->getSignalType();
+      }
+
+      return mpOMSElementJson["signalType"].toString();
+  }
+
+  QJsonObject getOMSConnectorGeometryJson() const
+  {
+      if (mpOMSModelConnector) {
+          QJsonObject geometry;
+          geometry["x"] = mpOMSModelConnector->getGeometry().getX();
+          geometry["y"] = mpOMSModelConnector->getGeometry().getY();
+          return geometry;
+      }
+
+      return mpOMSElementJson["geometry"].toObject();
+  }
+
+  void setOMSModel(OMSModel::Model *pOMSModel) {mpOMSModel = pOMSModel;}
+
+  void setOMSModelElement(OMSModel::Element *pElement) {mpOMSModelElement = pElement;}
+  OMSModel::Element* getOMSModelElement() const {return mpOMSModelElement;}
+
+  void setOMSModelConnector(OMSModel::Connector *pConnector) {mpOMSModelConnector = pConnector;}
+  OMSModel::Connector* getOMSModelConnector() const {return mpOMSModelConnector;}
 
   bool isExternalTLMModelComponent() const {return (mpOMSElement && (mpOMSElement->type == oms_element_component) && (mComponentType == oms_component_external));}
   bool isTableComponent() const {return (mpOMSElement && (mpOMSElement->type == oms_element_component) && (mComponentType == oms_component_table));}
@@ -247,6 +318,9 @@ private:
   QString mSubModelPath;
   // new oms3 JSON format
   QJsonObject mpOMSElementJson;
+  OMSModel::Model * mpOMSModel = 0;
+  OMSModel::Element *mpOMSModelElement = 0;
+  OMSModel::Connector *mpOMSModelConnector = 0;
 signals:
   void iconUpdated();
 public slots:
@@ -295,7 +369,7 @@ public:
   LibraryTreeItem* createLibraryTreeItem(QString name, QString nameStructursre, QString path, bool isSaved, LibraryTreeItem *pParentLibraryTreeItem,
                                          oms_element_t *pOMSElement = 0, oms_connector_t *pOMSConnector = 0, oms_busconnector_t *pOMSBusConnector = 0, int row = -1);
   LibraryTreeItem* createLibraryTreeItemArun(QString name, QString nameStructure, QString path, bool isSaved, LibraryTreeItem *pParentLibraryTreeItem,
-                                         const QJsonObject &pOMSElement = QJsonObject(), int row = -1);
+                                         OMSModel::Element *pOMSElement = 0, OMSModel::Connector *pOMSConnector = 0, int row = -1);
   void updateLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
   void updateChildLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem, QString contents, QString fileName);
@@ -341,9 +415,13 @@ private:
                                                 LibraryTreeItem *pParentLibraryTreeItem, oms_element_t *pOMSElement = 0,
                                                 oms_connector_t *pOMSConnector = 0, oms_busconnector_t *pOMSBusConnector = 0);
   LibraryTreeItem* createOMSLibraryTreeItemImpl(QString name, QString nameStructure, QString path, bool isSaved,
-                                                LibraryTreeItem *pParentLibraryTreeItem, const QJsonObject& pOMSElement);
+                                                LibraryTreeItem *pParentLibraryTreeItem, OMSModel::Element* pOMSElement = 0, OMSModel::Connector *pOMSConnector = 0);
 
-  void createLibraryTreeItemsFromJson(const QJsonArray &elements, LibraryTreeItem *pParent);
+  //void createLibraryTreeItemsFromJson(const QJsonArray &elements, LibraryTreeItem *pParent);
+  void createLibraryTreeItemsFromOMSModel(const QVector<OMSModel::Element*> &elements, LibraryTreeItem *pParent);
+  LibraryTreeItem* createLibraryTreeItemFromOMSModelElement(OMSModel::Element *pElement, LibraryTreeItem *pParent);
+  LibraryTreeItem* createLibraryTreeItemFromOMSModelConnector(OMSModel::Connector *pConnector, LibraryTreeItem *pParent);
+
   void createOMSConnectorLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
   void createOMSBusConnectorLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
   void unloadClassChildren(LibraryTreeItem *pLibraryTreeItem, bool deleteFile);
