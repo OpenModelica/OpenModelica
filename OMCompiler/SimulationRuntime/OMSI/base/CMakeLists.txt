@@ -44,6 +44,14 @@ endif()
 
 install(TARGETS ${OSUBaseName} DESTINATION ${LIBINSTALLEXT})
 
+# Fallback for "standalone" makefile build
+# TODO: Remove when switching to CMake build
+if(NOT TARGET omc::3rd::FMIL::expat)
+  install(FILES
+    ${CMAKE_SOURCE_DIR}/../../3rdParty/FMIL/build/ThirdParty/Expat/expat-2.1.0/libexpat.a
+    DESTINATION ${CMAKE_INSTALL_LIBDIR})
+endif()
+
 install(FILES
   include/omsi_event_helper.h
   include/omsi_getters_and_setters.h
