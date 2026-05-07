@@ -40,6 +40,7 @@ import AbsynUtil;
 import SCode;
 import DAE;
 import NFModifier.Modifier;
+import Values;
 
 protected
 
@@ -100,7 +101,6 @@ import SymbolTable;
 import Typing = NFTyping;
 import UnitCheck = NFUnitCheck;
 import Util;
-import Values;
 import Variable = NFVariable;
 import VerifyModel = NFVerifyModel;
 import SCodeUtil;

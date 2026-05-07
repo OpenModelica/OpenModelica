@@ -42,6 +42,7 @@ encapsulated package Initialization
 
 public
 import Absyn;
+import AvlSetCR;
 import BackendDAE;
 import BackendDAEFunc;
 import DAE;
@@ -51,7 +52,6 @@ import Util;
 
 protected
 import Array;
-import AvlSetCR;
 import BackendDAECreate;
 import BackendDAEEXT;
 import BackendDAEOptimize;

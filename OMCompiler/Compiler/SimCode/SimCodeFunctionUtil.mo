@@ -37,6 +37,7 @@ encapsulated package SimCodeFunctionUtil "SimCode functions not related to equat
 
 import DAE;
 import HashTableExpToIndex;
+import HashTableStringToPath;
 import SimCodeFunction;
 import SimCodeVar;
 
@@ -56,7 +57,6 @@ import ExpressionSimplify;
 import ExpressionDump;
 import Flags;
 import Graph;
-import HashTableStringToPath;
 import List;
 import Mod;
 import Patternm;

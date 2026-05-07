@@ -44,6 +44,8 @@ encapsulated package NBJacobian
 public
   import BackendDAE = NBackendDAE;
   import Module = NBModule;
+  import NBEquation;
+  import NBVariable;
 
 protected
   // OF imports
@@ -86,8 +88,6 @@ protected
   import UnorderedMap;
   import UnorderedSet;
   import Util;
-  import NBEquation;
-  import NBVariable;
 
 public
   type JacobianType = enumeration(ODE, DAE, LS, NLS, OPT_LFG, OPT_MRF, OPT_R0);

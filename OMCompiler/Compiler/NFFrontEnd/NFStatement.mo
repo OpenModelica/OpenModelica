@@ -39,10 +39,10 @@ encapsulated uniontype NFStatement
   import NFInstNode.InstNode;
   import DAE;
   import ComponentRef = NFComponentRef;
+  import BaseModelica;
 
 protected
   import Statement = NFStatement;
-  import BaseModelica;
   import ElementSource;
   import FlatModelicaUtil = NFFlatModelicaUtil;
   import Util;

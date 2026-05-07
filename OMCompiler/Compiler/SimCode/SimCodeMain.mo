@@ -52,6 +52,7 @@ import HashTableExpToIndex;
 import Tpl;
 import Values;
 import SimCode;
+import SimCodeFunction;
 import NSimCode; /* used for new backend */
 
 protected
@@ -103,7 +104,6 @@ import SemanticVersion;
 import SerializeInitXML;
 import SerializeModelInfo;
 import SerializeSparsityPattern;
-import SimCodeFunction;
 import SimCodeUtil;
 import SimCodeVar;
 import StackOverflow;

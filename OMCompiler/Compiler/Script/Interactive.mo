@@ -60,6 +60,7 @@ import Global;
 import SCode;
 import AbsynToSCode;
 import Settings;
+import GlobalScript;
 import Values;
 
 
@@ -82,7 +83,6 @@ import ExpressionSimplify;
 import FGraph;
 import Flags;
 import GCExt;
-import GlobalScript;
 import GlobalScriptDump;
 import InnerOuter;
 import Inst;

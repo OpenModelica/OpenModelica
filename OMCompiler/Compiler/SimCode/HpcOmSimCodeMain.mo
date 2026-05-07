@@ -48,6 +48,7 @@ public import HpcOmSimCode;
 public import HpcOmTaskGraph;
 public import HpcOmEqSystems;
 public import SimCode;
+public import SimCodeFunction;
 
 // protected imports
 protected
@@ -65,7 +66,6 @@ import FlagsUtil;
 import HpcOmMemory;
 import HpcOmScheduler;
 import List;
-import SimCodeFunction;
 import SimCodeUtil;
 import SimCodeVar;
 import System;

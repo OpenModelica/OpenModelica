@@ -45,6 +45,7 @@ import NFFunction.FuncType;
 import NFInstNode.CachedData;
 import NFInstNode.InstNode;
 import NFInstNode.InstNodeType;
+import NFInstNode;
 import Component = NFComponent;
 import NFComponent.ComponentState;
 import Type = NFType;
@@ -68,7 +69,6 @@ import NFFunction.FunctionStatus;
 
 protected
 import MetaModelica.Dangerous.*;
-import NFInstNode;
 
 public
 constant SCode.Element DUMMY_ELEMENT = SCode.CLASS(

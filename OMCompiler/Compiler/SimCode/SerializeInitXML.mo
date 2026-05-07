@@ -39,6 +39,7 @@ import SimCode;
 import SimCode.ModelInfo;
 import SimCode.SimCode.SIMCODE;
 import File;
+import SimCodeVar;
 
 protected
 import BackendDAE.VarKind;
@@ -49,7 +50,6 @@ import ExpressionDump.printExpStr;
 import File.Escape.XML;
 import Settings;
 import SimCode.{SimulationSettings,VarInfo};
-import SimCodeVar;
 import SimCodeVar.{AliasVariable,Causality,SimVar};
 import SimCodeUtil;
 import Types;

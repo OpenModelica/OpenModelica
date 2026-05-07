@@ -50,9 +50,9 @@ encapsulated uniontype NFVariable
   import NFPrefixes.AccessLevel;
   import Type = NFType;
   import NFBackendExtension.{BackendInfo, VariableKind, VariableAttributes};
+  import BaseModelica;
 
 protected
-  import BaseModelica;
   import Ceval = NFCeval;
   import ExpandExp = NFExpandExp;
   import FlatModelicaUtil = NFFlatModelicaUtil;

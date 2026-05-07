@@ -37,6 +37,7 @@ encapsulated package HpcOmMemory
 
 import BackendDAE;
 import DAE;
+import HashTableCrIListArray;
 import HashTableCrILst;
 import HpcOmSimCode;
 import HpcOmTaskGraph;
@@ -58,7 +59,6 @@ import ExpandableArray;
 import Expression;
 import Flags;
 import GraphML;
-import HashTableCrIListArray;
 import HpcOmScheduler;
 import List;
 import SimCodeUtil;

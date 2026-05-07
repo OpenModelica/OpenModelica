@@ -50,11 +50,11 @@ public import SCode;
 public import Values;
 public import ValuesUtil;
 public import HashTable;
+public import AvlSetCR;
 public import HashTable2;
 
 protected
 import Algorithm;
-import AvlSetCR;
 import BaseHashTable;
 import Ceval;
 import DAE.AvlTreePathFunction;

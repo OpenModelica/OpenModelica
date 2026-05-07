@@ -41,10 +41,10 @@ protected
   import Prefixes = NFPrefixes;
   import List;
   import SimplifyExp = NFSimplifyExp;
-  import BaseModelica;
   import Ceval = NFCeval;
 
 public
+  import BaseModelica;
   import Absyn.{Exp, Path, Subscript};
   import Class = NFClass;
   import Expression = NFExpression;

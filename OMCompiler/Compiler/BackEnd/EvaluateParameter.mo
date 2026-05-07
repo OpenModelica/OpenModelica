@@ -60,8 +60,9 @@ public import BackendDAE;
 public import DAE;
 public import FCore;
 
+public import AvlSetCR;
+
 protected import Array;
-protected import AvlSetCR;
 protected import AvlSetInt;
 protected import BackendDAEUtil;
 protected import BackendDump;

@@ -44,6 +44,7 @@ import Absyn;
 import GlobalScript;
 import FCore;
 import SCode;
+import Values;
 import Vector;
 
 protected
@@ -59,7 +60,6 @@ import List;
 import AbsynToSCode;
 import System;
 import SCodeUtil;
-import Values;
 
 public
 

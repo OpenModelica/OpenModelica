@@ -41,13 +41,13 @@ encapsulated package FlagsUtil
   This package contains function for using the compiler flags in Flags.mo."
 
 import Flags;
+import Gettext;
 
 protected
 
 import Corba;
 import Error;
 import ErrorExt;
-import Gettext;
 import Global;
 import List;
 import Print;
