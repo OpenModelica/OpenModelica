@@ -37,6 +37,7 @@ encapsulated uniontype NFFlatModel
   import Equation = NFEquation;
   import Algorithm = NFAlgorithm;
   import Variable = NFVariable;
+  import BaseModelica;
 
 protected
   import Binding = NFBinding;

@@ -41,6 +41,7 @@ encapsulated package FlagsUtil
   This package contains function for using the compiler flags in Flags.mo."
 
 import Flags;
+import Gettext;
 
 protected
 

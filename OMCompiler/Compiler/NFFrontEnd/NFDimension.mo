@@ -44,6 +44,7 @@ protected
   import Ceval = NFCeval;
 
 public
+  import BaseModelica;
   import Absyn.{Exp, Path, Subscript};
   import Class = NFClass;
   import Expression = NFExpression;

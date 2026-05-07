@@ -45,6 +45,7 @@ protected
   import NFClassTree.ClassTree;
 
 public
+  import BaseModelica;
   import Dimension = NFDimension;
   import NFInstNode.InstNode;
   import Subscript = NFSubscript;

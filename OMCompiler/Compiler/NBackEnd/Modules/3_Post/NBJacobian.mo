@@ -44,6 +44,8 @@ encapsulated package NBJacobian
 public
   import BackendDAE = NBackendDAE;
   import Module = NBModule;
+  import NBEquation;
+  import NBVariable;
 
 protected
   // OF imports

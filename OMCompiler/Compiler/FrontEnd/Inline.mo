@@ -70,6 +70,8 @@ import ExpressionDump;
 import ExpressionSimplify;
 import Flags;
 import Global;
+import HashTable2;
+import HashTable3;
 import List;
 import SCodeUtil;
 import Types;

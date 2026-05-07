@@ -42,6 +42,7 @@ encapsulated package Initialization
 
 public
 import Absyn;
+import AvlSetCR;
 import BackendDAE;
 import BackendDAEFunc;
 import DAE;
@@ -78,6 +79,7 @@ import MetaModelica.Dangerous.listReverseInPlace;
 import Sorting;
 import SymbolicJacobian;
 import SynchronousFeatures;
+import System;
 
 // =============================================================================
 // section for all public functions

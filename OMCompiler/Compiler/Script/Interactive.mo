@@ -60,6 +60,7 @@ import Global;
 import SCode;
 import AbsynToSCode;
 import Settings;
+import GlobalScript;
 import Values;
 
 

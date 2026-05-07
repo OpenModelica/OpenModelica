@@ -45,6 +45,7 @@ import NFFunction.FuncType;
 import NFInstNode.CachedData;
 import NFInstNode.InstNode;
 import NFInstNode.InstNodeType;
+import NFInstNode;
 import Component = NFComponent;
 import NFComponent.ComponentState;
 import Type = NFType;

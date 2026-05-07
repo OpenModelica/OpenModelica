@@ -46,6 +46,7 @@ import List;
 import FunctionDerivative = NFFunctionDerivative;
 import FunctionInverse = NFFunctionInverse;
 import NFModifier.Modifier;
+import BaseModelica;
 
 protected
 import ErrorExt;

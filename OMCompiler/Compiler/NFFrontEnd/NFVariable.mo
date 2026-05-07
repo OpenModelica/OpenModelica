@@ -50,6 +50,7 @@ encapsulated uniontype NFVariable
   import NFPrefixes.AccessLevel;
   import Type = NFType;
   import NFBackendExtension.{BackendInfo, VariableKind, VariableAttributes};
+  import BaseModelica;
 
 protected
   import Ceval = NFCeval;

@@ -55,6 +55,7 @@ import Component = NFComponent;
 import NFComponent.ComponentState;
 import Expression = NFExpression;
 import NFInstNode.InstNode;
+import NFInstNode;
 import NFInstNode.InstNodeType;
 import NFModifier.Modifier;
 import Type = NFType;

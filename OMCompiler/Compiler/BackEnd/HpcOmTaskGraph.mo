@@ -59,6 +59,7 @@ import Expression;
 import Flags;
 import HpcOmBenchmark;
 import HpcOmScheduler;
+import HpcOmSimCode;
 import List;
 import SCode;
 import SimCodeUtil;

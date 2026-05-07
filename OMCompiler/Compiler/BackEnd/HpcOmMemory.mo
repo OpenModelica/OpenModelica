@@ -37,6 +37,7 @@ encapsulated package HpcOmMemory
 
 import BackendDAE;
 import DAE;
+import HashTableCrIListArray;
 import HashTableCrILst;
 import HpcOmSimCode;
 import HpcOmTaskGraph;

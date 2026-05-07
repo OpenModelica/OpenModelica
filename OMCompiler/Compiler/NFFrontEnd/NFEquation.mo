@@ -41,6 +41,7 @@ encapsulated uniontype NFEquation
   import ComponentRef = NFComponentRef;
   import NFPrefixes.Variability;
   import ErrorTypes;
+  import BaseModelica;
 
 protected
   import ElementSource;

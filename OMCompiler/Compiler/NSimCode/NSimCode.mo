@@ -39,6 +39,8 @@ encapsulated package NSimCode
  description: This file contains the main data type for the backend containing
               all data. It further contains the lower and solve main function.
 "
+import SimCodeFunction;
+
 protected
   // OF imports
   import Absyn;
@@ -81,6 +83,8 @@ protected
   import SymbolTable;
 
   // Old SimCode imports
+  import HashTableCrIListArray;
+  import HashTableCrILst;
   import HpcOmSimCode;
   import InteractiveUtil;
   import OldSimCode = SimCode;

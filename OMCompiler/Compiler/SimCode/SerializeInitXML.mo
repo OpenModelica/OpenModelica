@@ -39,6 +39,7 @@ import SimCode;
 import SimCode.ModelInfo;
 import SimCode.SimCode.SIMCODE;
 import File;
+import SimCodeVar;
 
 protected
 import BackendDAE.VarKind;
