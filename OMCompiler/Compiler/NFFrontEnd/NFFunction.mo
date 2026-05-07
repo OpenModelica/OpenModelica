@@ -48,6 +48,7 @@ import FunctionInverse = NFFunctionInverse;
 import NFModifier.Modifier;
 
 protected
+import BaseModelica;
 import ErrorExt;
 import Inst = NFInst;
 import NFInst.InstSettings;

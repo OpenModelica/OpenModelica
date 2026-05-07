@@ -127,6 +127,7 @@ import SCodeUtil;
 import SemanticVersion;
 import Settings;
 import SimCodeMain;
+import SimCodeFunction;
 import SimCodeFunctionUtil;
 import SimpleModelicaParser;
 import SimulationResults;

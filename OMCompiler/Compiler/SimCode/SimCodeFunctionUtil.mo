@@ -56,6 +56,7 @@ import ExpressionSimplify;
 import ExpressionDump;
 import Flags;
 import Graph;
+import HashTableStringToPath;
 import List;
 import Mod;
 import Patternm;

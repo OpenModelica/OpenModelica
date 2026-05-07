@@ -54,6 +54,7 @@ public import HashTable2;
 
 protected
 import Algorithm;
+import AvlSetCR;
 import BaseHashTable;
 import Ceval;
 import DAE.AvlTreePathFunction;

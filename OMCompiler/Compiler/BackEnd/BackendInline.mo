@@ -65,6 +65,7 @@ protected
  import ExpandableArray;
  import ExpressionDump;
  import Flags;
+ import HashTableCG;
  import InlineArrayEquations;
  import List;
 

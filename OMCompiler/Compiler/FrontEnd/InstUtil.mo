@@ -57,6 +57,7 @@ import HashTable;
 import HashTable5;
 
 protected
+import AvlSetCR;
 import DoubleEnded;
 import List;
 import BaseHashTable;

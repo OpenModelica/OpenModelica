@@ -49,6 +49,7 @@ import ExpressionDump.printExpStr;
 import File.Escape.XML;
 import Settings;
 import SimCode.{SimulationSettings,VarInfo};
+import SimCodeVar;
 import SimCodeVar.{AliasVariable,Causality,SimVar};
 import SimCodeUtil;
 import Types;

@@ -100,6 +100,7 @@ import SymbolTable;
 import Typing = NFTyping;
 import UnitCheck = NFUnitCheck;
 import Util;
+import Values;
 import Variable = NFVariable;
 import VerifyModel = NFVerifyModel;
 import SCodeUtil;

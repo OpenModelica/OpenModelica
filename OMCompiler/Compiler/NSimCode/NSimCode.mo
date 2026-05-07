@@ -81,7 +81,10 @@ protected
   import SymbolTable;
 
   // Old SimCode imports
+  import HashTableCrIListArray;
+  import HashTableCrILst;
   import HpcOmSimCode;
+  import SimCodeFunction;
   import InteractiveUtil;
   import OldSimCode = SimCode;
   import OldSimCodeFunction = SimCodeFunction;

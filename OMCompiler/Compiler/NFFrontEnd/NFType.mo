@@ -37,6 +37,7 @@ encapsulated uniontype NFType
 protected
   import Type = NFType;
   import Array;
+  import BaseModelica;
   import List;
   import Class = NFClass;
   import IOStream;

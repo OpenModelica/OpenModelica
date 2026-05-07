@@ -68,6 +68,7 @@ import NFFunction.FunctionStatus;
 
 protected
 import MetaModelica.Dangerous.*;
+import NFInstNode;
 
 public
 constant SCode.Element DUMMY_ELEMENT = SCode.CLASS(

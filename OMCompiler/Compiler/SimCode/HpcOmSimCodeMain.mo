@@ -65,7 +65,9 @@ import FlagsUtil;
 import HpcOmMemory;
 import HpcOmScheduler;
 import List;
+import SimCodeFunction;
 import SimCodeUtil;
+import SimCodeVar;
 import System;
 import Util;
 

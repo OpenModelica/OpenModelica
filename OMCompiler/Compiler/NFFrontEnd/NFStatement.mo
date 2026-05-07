@@ -42,6 +42,7 @@ encapsulated uniontype NFStatement
 
 protected
   import Statement = NFStatement;
+  import BaseModelica;
   import ElementSource;
   import FlatModelicaUtil = NFFlatModelicaUtil;
   import Util;

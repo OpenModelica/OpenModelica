@@ -85,6 +85,11 @@ public
   import UnorderedMap;
   import Slice = NBSlice;
 
+protected
+  import NFFunction;
+  import NFPrefixes;
+
+public
   // ================================
   //        TYPES AND UNIONTYPES
   // ================================

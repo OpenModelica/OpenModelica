@@ -47,6 +47,7 @@ protected
 import Corba;
 import Error;
 import ErrorExt;
+import Gettext;
 import Global;
 import List;
 import Print;

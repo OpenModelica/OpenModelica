@@ -82,6 +82,7 @@ import ExpressionSimplify;
 import FGraph;
 import Flags;
 import GCExt;
+import GlobalScript;
 import GlobalScriptDump;
 import InnerOuter;
 import Inst;

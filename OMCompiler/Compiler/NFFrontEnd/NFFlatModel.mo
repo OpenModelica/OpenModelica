@@ -39,6 +39,7 @@ encapsulated uniontype NFFlatModel
   import Variable = NFVariable;
 
 protected
+  import BaseModelica;
   import Binding = NFBinding;
   import Call = NFCall;
   import Class = NFClass;

@@ -61,6 +61,8 @@ public import DAE;
 public import FCore;
 
 protected import Array;
+protected import AvlSetCR;
+protected import AvlSetInt;
 protected import BackendDAEUtil;
 protected import BackendDump;
 protected import BackendEquation;

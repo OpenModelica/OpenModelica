@@ -43,6 +43,7 @@ encapsulated uniontype NFEquation
   import ErrorTypes;
 
 protected
+  import BaseModelica;
   import ElementSource;
   import Equation = NFEquation;
   import Error;

@@ -70,6 +70,7 @@ import NFDuplicateTree;
 
 protected
 import MetaModelica.Dangerous.*;
+import NFInstNode;
 
 public
 encapsulated package Elements

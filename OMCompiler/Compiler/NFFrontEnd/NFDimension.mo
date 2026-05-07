@@ -41,6 +41,7 @@ protected
   import Prefixes = NFPrefixes;
   import List;
   import SimplifyExp = NFSimplifyExp;
+  import BaseModelica;
   import Ceval = NFCeval;
 
 public

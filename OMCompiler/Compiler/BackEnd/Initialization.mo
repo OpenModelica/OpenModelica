@@ -51,6 +51,7 @@ import Util;
 
 protected
 import Array;
+import AvlSetCR;
 import BackendDAECreate;
 import BackendDAEEXT;
 import BackendDAEOptimize;
@@ -78,6 +79,7 @@ import MetaModelica.Dangerous.listReverseInPlace;
 import Sorting;
 import SymbolicJacobian;
 import SynchronousFeatures;
+import System;
 
 // =============================================================================
 // section for all public functions

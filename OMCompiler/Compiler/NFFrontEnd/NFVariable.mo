@@ -52,6 +52,7 @@ encapsulated uniontype NFVariable
   import NFBackendExtension.{BackendInfo, VariableKind, VariableAttributes};
 
 protected
+  import BaseModelica;
   import Ceval = NFCeval;
   import ExpandExp = NFExpandExp;
   import FlatModelicaUtil = NFFlatModelicaUtil;
