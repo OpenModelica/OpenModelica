@@ -28,14 +28,12 @@ jobs:
           zip ${{ github.event.repository.name }}/${{ github.event.repository.name }}-$OMVERSION-nightly.zip ${{ github.event.repository.name }}-$OMVERSION -r -x '*/.git/*'
           rm -f ${{ github.event.repository.name }}-$OMVERSION
 
-      - name: Delete old release assets
       - uses: mknejp/delete-release-assets@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: nightly
           assets: '*nightly.zip'
 
-      - name: Upload the new assets
       - uses: pyTooling/Actions/releaser@r0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
