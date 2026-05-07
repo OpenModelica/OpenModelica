@@ -1857,7 +1857,7 @@ protected
   BackendDAE.Equation eqn;
   list<Integer> eqlistToRemove;
   DAE.ComponentRef cr;
-  list<DAE.ComponentRef> crefsVarsToRemove;
+  list<DAE.ComponentRef> crefsVarsToRemove, protectedCrefs;
   BackendDAE.Variables newVars;
 algorithm
 try
@@ -1872,7 +1872,9 @@ try
    parameter Real x = 10;
    Real m = x; */
   BackendDAE.DAE(currentSystem::{}, shared) := backendDAE_1;
+  protectedCrefs := {};
   for var in depVars loop
+    protectedCrefs := var.varName :: protectedCrefs;
     if BackendVariable.isParam(var) and not BackendVariable.varHasConstantBindExp(var) then
       //print("\n PARAM_CHECK: " + ComponentReference.printComponentRefStr(var.varName));
       lhs := BackendVariable.varExp(var);
@@ -1896,7 +1898,7 @@ try
       // print("\nlhs :" + anyString(lhs));
       // print("\nrhs :" + anyString(rhs));
       // BackendDump.printEquation(eq);
-      if Expression.isExpCref(lhs) and Expression.isExpCref(rhs) and (ComponentReference.isStartCref(Expression.expCref(rhs)) and ComponentReference.crefEqual(ComponentReference.popCref(Expression.expCref(rhs)), Expression.expCref(lhs))) then
+      if (Expression.isExpCref(lhs) and Expression.isExpCref(rhs) and not listMember(Expression.expCref(lhs), protectedCrefs)) and (ComponentReference.isStartCref(Expression.expCref(rhs)) and ComponentReference.crefEqual(ComponentReference.popCref(Expression.expCref(rhs)), Expression.expCref(lhs))) then
         crefsVarsToRemove := Expression.expCref(lhs) :: crefsVarsToRemove;
       else
         BackendEquation.add(eq, newOrderedEquationArray);
@@ -1925,6 +1927,7 @@ try
 
 
   backendDAE_1 := BackendDAE.DAE({currentSystem}, shared);
+  backendDAE_1 := BackendDAEOptimize.collapseIndependentBlocks(backendDAE_1);
   backendDAE_1 := BackendDAEUtil.transformBackendDAE(backendDAE_1, SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
 
   //BackendDump.printBackendDAE(backendDAE_1);
