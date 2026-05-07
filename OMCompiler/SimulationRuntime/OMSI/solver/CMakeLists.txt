@@ -1,29 +1,22 @@
-
 cmake_minimum_required(VERSION 3.14)
 SET(CMAKE_VERBOSE_MAKEFILE ON)
 
 #OpenModelica Simulation Interface solver
 PROJECT(OMSISolver)
 
-# Global Variables
-IF(NOT OMCTRUNCHOME)
-  SET(OMCTRUNCHOME ${CMAKE_CURRENT_SOURCE_DIR}/../../../..)
-ENDIF (NOT OMCTRUNCHOME)
-GET_FILENAME_COMPONENT(OMCTRUNCHOME "${OMCTRUNCHOME}" ABSOLUTE)
-
 ############################
 # Find BLAS and LAPACK
 ############################
 
-FIND_PACKAGE(BLAS)
-FIND_PACKAGE(LAPACK)
+find_package(BLAS)
+find_package(LAPACK)
 
-IF (BLAS_FSOUND STREQUAL "NOTFOUND")
-  MESSAGE(FATAL_ERROR "Error: Blas Libraries not found!")
-ENDIF()
-IF (LAPACK_FOUND STREQUAL "NOTFOUND")
-  MESSAGE(FATAL_ERROR "Error: Lapack Libraries not found!")
-ENDIF()
+if(NOT BLAS_FOUND)
+  message(FATAL_ERROR "Error: Blas Libraries not found!")
+endif()
+if(NOT LAPACK_FOUND)
+  message(FATAL_ERROR "Error: Lapack Libraries not found!")
+endif()
 MESSAGE(STATUS "Lapack Libraries: ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES}")
 
 IF(MSVC)
@@ -43,13 +36,13 @@ ENDIF(MSVC)
 # Fallback for "standalone" makefile build
 # TODO: Remove when switching to CMake build
 if(NOT TARGET omc::3rd::sundials::kinsol)
-  IF(MSVC)
-    SET(SUNDIALS_PATH ${OMCTRUNCHOME}/OMCompiler/3rdParty/sundials-5.4.0/build_msvc)
-  ELSE(MSVC)
-    # Shouldn't this point to the build directory with the installed libraries?
-    SET(SUNDIALS_PATH ${OMCTRUNCHOME}/OMCompiler/3rdParty/sundials-5.4.0/build)
-  ENDIF(MSVC)
-  GET_FILENAME_COMPONENT(SUNDIALS_PATH "${SUNDIALS_PATH}" ABSOLUTE)
+  # Fallback path for standalone builds
+  if(MSVC)
+    set(SUNDIALS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../../../OMCompiler/3rdParty/sundials-5.4.0/build_msvc")
+  else()
+    set(SUNDIALS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../../../OMCompiler/3rdParty/sundials-5.4.0/build")
+  endif()
+  get_filename_component(SUNDIALS_PATH "${SUNDIALS_PATH}" ABSOLUTE)
   MESSAGE(STATUS "Sundials PATH:")
   MESSAGE(STATUS "${SUNDIALS_PATH}")
 
@@ -69,7 +62,6 @@ if(NOT TARGET omc::3rd::sundials::kinsol)
 
   MESSAGE(STATUS "Sundials include:")
   MESSAGE(STATUS "${SUNDIALS_INCLUDE_DIR}")
-  INCLUDE_DIRECTORIES(${SUNDIALS_INCLUDE_DIR})
 
   # SUNDIALS Libraires
   FIND_LIBRARY(SUNDIALS_LIBRARY_NVEC    NAMES sundials_nvecserial    PATHS ${SUNDIALS_LIB_DIR})
@@ -99,8 +91,9 @@ if(NOT TARGET omc::3rd::sundials::kinsol)
     SET(SUNDIALS_MINOR_VERSION "${CMAKE_MATCH_2}")
     SET(SUNDIALS_PATCH_VERSION "${CMAKE_MATCH_3}")
 
-    ADD_DEFINITIONS("-DSUNDIALS_MAJOR_VERSION=${SUNDIALS_MAJOR_VERSION}")
-    ADD_DEFINITIONS("-DSUNDIALS_MINOR_VERSION=${SUNDIALS_MINOR_VERSION}")
+    set(SUNDIALS_VERSION_DEFS
+        "-DSUNDIALS_MAJOR_VERSION=${SUNDIALS_MAJOR_VERSION}"
+        "-DSUNDIALS_MINOR_VERSION=${SUNDIALS_MINOR_VERSION}")
   ELSE()
     MESSAGE(FATAL_ERROR "Could not determine sundials version")
   ENDIF()
@@ -118,14 +111,15 @@ add_library(${OMSISolverName}
   src/solver_lapack.c
 )
 
-target_include_directories(${OMSISolverName} PUBLIC include)
+target_include_directories(${OMSISolverName} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 if(NOT TARGET omc::3rd::sundials::kinsol)
-  target_include_directories(${OMSISolverName} PUBLIC ${SUNDIALS_INCLUDE_DIR})
+  target_include_directories(${OMSISolverName} SYSTEM PUBLIC "${SUNDIALS_INCLUDE_DIR}")
+  target_compile_definitions(${OMSISolverName} PRIVATE ${SUNDIALS_VERSION_DEFS})
 endif()
 
-set(CMAKE_MACOSX_RPATH 1)   # Handle rpath on mac in makefiles
+set_target_properties(${OMSISolverName} PROPERTIES MACOSX_RPATH ON)
 
-target_link_libraries(${OMSISolverName} INTERFACE ${CMAKE_DL_LIBS})
+target_link_libraries(${OMSISolverName} PUBLIC ${CMAKE_DL_LIBS})
 target_link_libraries(${OMSISolverName} PUBLIC ${LAPACK_LIBRARIES})
 if(TARGET omc::3rd::sundials::kinsol)
   target_link_libraries(${OMSISolverName} PUBLIC omc::3rd::sundials::kinsol)

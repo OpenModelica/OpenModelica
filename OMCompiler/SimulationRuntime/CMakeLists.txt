@@ -14,8 +14,14 @@ if(NOT MSVC)
   omc_add_subdirectory(ModelicaExternalC)
 endif()
 
+# OMSI
+#
+# Makefiles currently prefer the static version of libOMSI*
+if(NOT PLATFORM)
+  set(PLATFORM "static")
+endif()
 omc_add_subdirectory(OMSI)
-#omc_add_subdirectory(OMSIC)
+omc_add_subdirectory(OMSIC)
 #omc_add_subdirectory(OMSICpp)
 
 # omc_add_subdirectory(opc)

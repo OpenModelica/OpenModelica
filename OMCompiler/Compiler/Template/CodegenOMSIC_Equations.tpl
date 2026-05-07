@@ -76,29 +76,33 @@ template generateEquationFunction(SimEqSystem eq, String modelNamePrefixStr,Stri
       "algSystFunction"
     else
         "eqFunction"
- 
+
     )
 
   let funcArguments = (match eq
     case SES_RESIDUAL(__) then
-      "omsi_function_t* this_function, const omsi_values* model_vars_and_params, omsi_real* res"
+      "struct omsi_function_t* this_function, const omsi_values* model_vars_and_params, void* data"
     case SES_ALGEBRAIC_SYSTEM(__) then
-      "omsi_function_t* this_function, const omsi_values* model_vars_and_params"
+      "struct omsi_function_t* this_function, const omsi_values* model_vars_and_params"
     else
-      "omsi_function_t* this_function, const omsi_values* model_vars_and_params"
+      "struct omsi_function_t* this_function, const omsi_values* model_vars_and_params"
   )
 
-  let &functionPrototypes +=  
+  let dataCast = match eq
+    case SES_RESIDUAL(__) then
+    "omsi_real* res = (omsi_real*) data;"
+    else ""
+
+  let &functionPrototypes +=
        'void <%CodegenUtil.symbolName(modelNamePrefixStr,funcName)%>_<%ix%>(<%funcArguments%>);<%\n%>'
-   
 
   <<
   /*
   <%equationInfos%>
   */
    void <%CodegenUtil.symbolName(modelNamePrefixStr,funcName)%>_<%ix%>(<%funcArguments%>){
+    <%dataCast%>
 
-  
     <%if not stringEq(varDecls, "") then
       <<
       /* Variables */
@@ -151,11 +155,11 @@ template equationCall(SimEqSystem eq, String modelNamePrefixStr,String modelFunc
   case SES_SIMPLE_ASSIGN(__)
   case SES_WHEN(__) then
     let i = index
-   
+
       <<
       <%CodegenUtil.symbolName(modelNamePrefixStr,"eqFunction")%>_<%i%>(<%input%>);
       >>
-   
+
   case SES_RESIDUAL(__) then
     <<
     <%CodegenUtil.symbolName(modelNamePrefixStr,"resFunction")%>_<%index%>(<%input%>);
@@ -271,13 +275,13 @@ template generateDereivativeMatrixColumnCall(OMSIFunction column, String modelNa
       >>
     ;separator="\n")
 
-  let &functionPrototypes += <<omsi_status <%CodegenUtil.symbolName(modelName,omsiName)%>_derivativeMatFunc_<%index%>(omsi_function_t* this_function, const omsi_values* model_vars_and_params, void* data);<%\n%>>>
+  let &functionPrototypes += <<omsi_status <%CodegenUtil.symbolName(modelName,omsiName)%>_derivativeMatFunc_<%index%>(struct omsi_function_t* this_function, const omsi_values* model_vars_and_params, void* data);<%\n%>>>
 
   <<
   /*
   Description something
   */
-  omsi_status <%CodegenUtil.symbolName(modelName,omsiName)%>_derivativeMatFunc_<%index%>(omsi_function_t* this_function, const omsi_values* model_vars_and_params, void* data){
+  omsi_status <%CodegenUtil.symbolName(modelName,omsiName)%>_derivativeMatFunc_<%index%>(struct omsi_function_t* this_function, const omsi_values* model_vars_and_params, void* data){
 
     <%bodyBuffer%>
 

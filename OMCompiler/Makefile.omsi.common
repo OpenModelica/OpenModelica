@@ -37,14 +37,6 @@ OMSIBaseInstall: $(SUNDIALS_TARGET) fmil
 	  (cd ./Build_$(PLATFORM); echo "change to Build_$(PLATFORM)"; \
 		 $(CMAKE_CALL); \
 	   $(MAKE) install);)
-	test ! `uname` = Darwin || install_name_tool -id @rpath/omsi/libOMSIBase.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSIBase.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/omsi/libOMSISolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSISolver.dylib
-
-	test ! `uname` = Darwin || install_name_tool -change libsundials_nvecserial.5.dylib @rpath/libsundials_nvecserial.5.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSIBase.dylib
-	test ! `uname` = Darwin || install_name_tool -change libsundials_kinsol.5.dylib @rpath/libsundials_kinsol.5.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSIBase.dylib
-	test ! `uname` = Darwin || install_name_tool -change libOMSISolver.dylib @rpath/libOMSISolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSIBase.dylib
-	test ! `uname` = Darwin || install_name_tool -change libsundials_nvecserial.5.dylib @rpath/libsundials_nvecserial.5.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSISolver.dylib
-	test ! `uname` = Darwin || install_name_tool -change libsundials_kinsol.5.dylib @rpath/libsundials_kinsol.5.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSISolver.dylib
 
 OMSIBaseMSVC: fmil_msvc sundials_msvc
 	$(MAKE) -C SimulationRuntime/OMSI/ -f Makefile.omdev.mingw OMSIBaseMSVC OMBUILDDIR=$(OMBUILDDIR)
@@ -52,10 +44,8 @@ OMSIBaseMSVC: fmil_msvc sundials_msvc
 	cp -R --verbose SimulationRuntime/OMSI/Build_MSVC/tmp/* $(builddir_build)
 
 OMSIBaseClean:
-	cd SimulationRuntime/OMSI; \
 	$(foreach PLATFORM, $(PLATFORMS), \
-	  test -d Build_$(PLATFORM) && cd Build_$(PLATFORM) && $(MAKE) uninstall && $(MAKE) DESTDIR=$(OMBUILDDIR) clean && cd ..; \
-	  rm -R -f Build_$(PLATFORM); \
+	  rm -rf SimulationRuntime/OMSI/Build_$(PLATFORM); \
 	)
 
 
@@ -73,10 +63,8 @@ OMSICInstall: OMSIBaseInstall
 		 $(MAKE) install);)
 
 OMSICClean:
-	cd SimulationRuntime/OMSIC; \
 	$(foreach PLATFORM, $(PLATFORMS), \
-	  test -d Build_$(PLATFORM) && cd Build_$(PLATFORM) && $(MAKE) uninstall && $(MAKE) DESTDIR=$(OMBUILDDIR) clean && cd ..; \
-	  rm -R -f Build_$(PLATFORM); \
+	  rm -rf SimulationRuntime/OMSIC/Build_$(PLATFORM); \
 	)
 
 #############################

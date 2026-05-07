@@ -159,7 +159,7 @@ template createMakefile(SimCode simCode, String target, String makeflieName)
     OMLIB='<%makefileParams.omhome%>/<%OMLibs%>'
 
     CC=<%makefileParams.ccompiler%>
-    CFLAGS= <%fPIC%>-Wall -Wextra -ansi -pedantic -g
+    CFLAGS= <%fPIC%>-Wall -Wextra -pedantic -g
     CXX=<%makefileParams.cxxcompiler%>
     LD=$(CC) -shared
 
@@ -188,10 +188,10 @@ template createMakefile(SimCode simCode, String target, String makeflieName)
     INCLUDE_DIR_OMSI_SOLVER=$(OMHOME)/include/omc/omsi/solver
     INCLUDE_DIR_OMSI_FMI2=$(OMHOME)/include/omc/omsi/fmi2
     INCLUDE_DIR_OMSIC=$(OMHOME)/include/omc/omsic
-    INCLUDE_DIR_OMSIC_FMI2=$(OMHOME)/include/omc/omsic/fmi2
+    INCLUDE_DIR_OMSU=$(OMHOME)/include/omc/omsic/omsu
 
     # Libraries
-    EXPAT_LIBDIR=$(OMLIB)/omc/omsi
+    EXPAT_LIBDIR=$(OMLIB)/omc
     EXPAT_LIB=expat
 
     LAPACK_LIBDIR=<%lapackDirWin%>
@@ -204,13 +204,13 @@ template createMakefile(SimCode simCode, String target, String makeflieName)
 
     OMSU_STATIC_LIB=-Wl,--whole-archive -lOMSISolver_static -lOMSIBase_static -lOMSIC_static -Wl,--no-whole-archive
     OMSU_STATIC_LIBDIR=-L$(OMLIB)/omc/omsi
-    LIBS = $(OMSU_STATIC_LIB) -Wl,-Bdynamic -l$(EXPAT_LIB) -l$(LAPACK_LIB) <%match makefileParams.platform case "win32" case "win64" then '' else '-l$(BLAS_LIB)'%> $(KINSOL_LIBDIR)/lib$(KINSOL_LIB).<%libEnding%> $(KINSOL_LIBDIR)/lib$(SUNDIALS_NVECSERIAL).<%libEnding%>
+    LIBS = $(OMSU_STATIC_LIB) -Wl,-Bdynamic -l$(EXPAT_LIB) -l$(LAPACK_LIB) <%match makefileParams.platform case "win32" case "win64" then '' else '-l$(BLAS_LIB)'%> -l$(KINSOL_LIB) -l$(SUNDIALS_NVECSERIAL)
     LIBSDIR= $(OMSU_STATIC_LIBDIR) -L$(EXPAT_LIBDIR) -L$(LAPACK_LIBDIR) -L$(KINSOL_LIBDIR)
 
     THIRD_PARTY_DYNAMIC_LIBS =<%match makefileParams.platform case "win32" case "win64" then
-    '$(LAPACK_LIBDIR)/lib$(LAPACK_LIB).<%libEnding%>' else ''%>       \
-     $(KINSOL_LIBDIR)/lib$(KINSOL_LIB).<%libEnding%><%star%>                                \
-     $(KINSOL_LIBDIR)/lib$(SUNDIALS_NVECSERIAL).<%libEnding%><%star%>                       \
+    '$(LAPACK_LIBDIR)/lib$(LAPACK_LIB).<%star%>' else ''%>       \
+     $(KINSOL_LIBDIR)/lib$(KINSOL_LIB).<%star%>                                \
+     $(KINSOL_LIBDIR)/lib$(SUNDIALS_NVECSERIAL).<%star%>                       \
 
     .PHONY: copyFiles makeStructure compile fmiImport OMSimulation clean
 
@@ -228,7 +228,6 @@ template createMakefile(SimCode simCode, String target, String makeflieName)
      >>
      end match
     %>
-    
 
     copyFiles: makeStructure
     <%\t%># Basic OMSI and OMSIC files
@@ -257,7 +256,7 @@ template createMakefile(SimCode simCode, String target, String makeflieName)
     <%\t%>cp -a <%fileNamePrefix%><%makefileParams.dllext%> <%fileNamePrefix%>.fmutmp/binaries/<%makefileParams.platform%>/
 
     %.o : %.c copyFiles
-    <%\t%>$(CC) $(CFLAGS) -I$(INCLUDE_DIR_OMSI)  -I$(INCLUDE_DIR_OMSI_BASE) -I$(INCLUDE_DIR_OMSI_SOLVER) -I$(INCLUDE_DIR_OMSI_FMI2) -I$(INCLUDE_DIR_OMSIC) -I$(INCLUDE_DIR_OMSIC_FMI2) -c $<
+    <%\t%>$(CC) $(CFLAGS) -I$(INCLUDE_DIR_OMSI)  -I$(INCLUDE_DIR_OMSI_BASE) -I$(INCLUDE_DIR_OMSI_SOLVER) -I$(INCLUDE_DIR_OMSI_FMI2) -I$(INCLUDE_DIR_OMSIC) -I$(INCLUDE_DIR_OMSU) -c $<
 
     fmiImport:
     <%\t%>cd ..; omc <%fileNamePrefix%>.fmutmp/<%fileNamePrefix%>_fmiImport.mos

@@ -3,7 +3,7 @@ SET(CMAKE_VERBOSE_MAKEFILE ON)
 
 PROJECT(OMSIBaseSimulationRuntime)
 
-# enable warnings; sources use C99 features such as snprintf so do not pass -ansi
+# enable warnings
 if(CMAKE_COMPILER_IS_GNUCXX)
     message(STATUS "GCC detected, adding compile flags")
     set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -Wall -Wextra -pedantic -g")
@@ -17,7 +17,6 @@ if(NOT PLATFORM OR PLATFORM STREQUAL "dynamic")
   set(BUILD_SHARED_LIBS ON)
 elseif(PLATFORM STREQUAL "static")
   set(BUILD_SHARED_LIBS OFF)
-else()
 endif()
 
 IF(BUILD_SHARED_LIBS)
@@ -26,36 +25,24 @@ ELSE(BUILD_SHARED_LIBS)
   SET(LIBSUFFIX "_static")
 ENDIF(BUILD_SHARED_LIBS)
 
-IF(MSVC)
-  MESSAGE(STATUS "MSVC")
-  IF(LIB_OMC)
-    SET(LIBINSTALLEXT "${LIB_OMC}/omsi/msvc" CACHE STRING "library directory" FORCE)
-  ELSE(LIB_OMC)
-    SET(LIBINSTALLEXT "omsi/msvc" CACHE STRING "library directory" FORCE)
-  ENDIF(LIB_OMC)
-ELSE(MSVC)
-  IF(LIB_OMC)
-    SET(LIBINSTALLEXT "${LIB_OMC}/omsi" CACHE STRING "library directory" FORCE)
-  ELSE(LIB_OMC)
-    SET(LIBINSTALLEXT "omsi" CACHE STRING "library directory" FORCE)
-  ENDIF(LIB_OMC)
-ENDIF(MSVC)
+if(MSVC)
+  set(LIBINSTALLEXT "${CMAKE_INSTALL_LIBDIR}/omsi/msvc")
+else()
+  set(LIBINSTALLEXT "${CMAKE_INSTALL_LIBDIR}/omsi")
+endif()
 message(STATUS "Libs will be installed in ${CMAKE_INSTALL_PREFIX}/${LIBINSTALLEXT}")
 
 
 # OMSIBaseSimulationRuntime interface library
 add_library(OMSIBaseSimulationRuntime INTERFACE)
-target_include_directories(OMSIBaseSimulationRuntime INTERFACE include)
-target_include_directories(OMSIBaseSimulationRuntime INTERFACE include/fmi2)
-target_include_directories(OMSIBaseSimulationRuntime INTERFACE solver/include)
-
-install(DIRECTORY include DESTINATION include/omc/omsi)
-install(DIRECTORY include/fmi2 DESTINATION include/omc/omsi/fmi2)
+target_include_directories(OMSIBaseSimulationRuntime INTERFACE
+    "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/fmi2"
+    "${CMAKE_CURRENT_SOURCE_DIR}/solver/include"
+)
 
 SET(OSUBaseName ${LIBPREFIX}OMSIBase${LIBSUFFIX})
 SET(OMSISolverName ${LIBPREFIX}OMSISolver${LIBSUFFIX})
-
-include_directories ("${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 # omsi base simulation runtime
 ADD_SUBDIRECTORY(solver)
@@ -75,14 +62,3 @@ install(FILES
   include/fmi2/fmi2FunctionTypes.h
   include/fmi2/fmi2TypesPlatform.h
   DESTINATION include/omc/omsi/fmi2/)
-
-# uninstall target
-if(NOT TARGET uninstall)
-    configure_file(
-        "${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in"
-        "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
-        IMMEDIATE @ONLY)
-
-    add_custom_target(uninstall
-        COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
-endif()

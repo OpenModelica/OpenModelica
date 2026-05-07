@@ -241,8 +241,8 @@ template generateOmsiMemberFunction(OMSIFunction omsiFunction, String FileNamePr
     )
 
   <<
-    virtual omsi_status initialize_omsi_<%FunctionnamePrefix%>_functions (omsi_function_t* omsi_function);
-    virtual omsi_status omsi_<%FunctionnamePrefix%>All(omsi_function_t* simulation, const omsi_values* model_vars_and_params, void* data);
+    virtual omsi_status initialize_omsi_<%FunctionnamePrefix%>_functions (struct omsi_function_t* omsi_function);
+    virtual omsi_status omsi_<%FunctionnamePrefix%>All(struct omsi_function_t* simulation, const omsi_values* model_vars_and_params, void* data);
     <%functionPrototypes%>
   >>
 end generateOmsiMemberFunction;
@@ -276,7 +276,7 @@ template generateOmsiAlgSystemCode (SimEqSystem equationSystem, String FileNameP
     // generate algebraic system header file
     let &functionPrototypes +=
       <<
-      omsi_status <%FileNamePrefix%>_<%omsiName%>_resFunction_<%algSystem.algSysIndex%> (omsi_function_t* this_function, const omsi_values* model_vars_and_params, omsi_real* res);
+      omsi_status <%FileNamePrefix%>_<%omsiName%>_resFunction_<%algSystem.algSysIndex%> (struct omsi_function_t* this_function, const omsi_values* model_vars_and_params, void* data);
       omsi_status <%FileNamePrefix%>_<%omsiName%>_algSystFunction_<%algSystem.algSysIndex%>(omsi_algebraic_system_t* this_alg_system, const omsi_values* model_vars_and_params, void* data);
       >>
     let headerFileName = fileNamePrefix+"_"+omsiName+"_algSyst_"+algSystem.algSysIndex
@@ -300,7 +300,8 @@ template generateOmsiAlgSystemCode (SimEqSystem equationSystem, String FileNameP
     /* Evaluation functions for <%FileNamePrefix%>_<%omsiName%>_resFunction_<%algSystem.algSysIndex%> */
     <%evaluationCode%>
 
-    omsi_status <%FileNamePrefix%>_<%omsiName%>_resFunction_<%algSystem.algSysIndex%> (omsi_function_t* this_function, const omsi_values* model_vars_and_params, omsi_real* res) {
+    omsi_status <%FileNamePrefix%>_<%omsiName%>_resFunction_<%algSystem.algSysIndex%> (struct omsi_function_t* this_function, const omsi_values* model_vars_and_params, void* data) {
+      omsi_real* res = (omsi_real*) data;
       omsi_unsigned_int i=0;
       <%functionCall%>
       <%residualCall%>
@@ -351,7 +352,7 @@ template generateOmsiAlgSystemCode (SimEqSystem equationSystem, String FileNameP
     // generate algebraic system header file
     let &functionPrototypes +=
       <<
-      omsi_status <%FileNamePrefix%>_<%omsiName%>_resFunction_<%algSystem.algSysIndex%> (omsi_function_t* this_function, const omsi_values* model_vars_and_params, omsi_real* res);
+      omsi_status <%FileNamePrefix%>_<%omsiName%>_resFunction_<%algSystem.algSysIndex%> (struct omsi_function_t* this_function, const omsi_values* model_vars_and_params, void* data);
       omsi_status <%FileNamePrefix%>_<%omsiName%>_algSystFunction_<%algSystem.algSysIndex%>(omsi_algebraic_system_t* this_alg_system, const omsi_values* model_vars_and_params, void* data);
       >>
     let headerFileName = fileNamePrefix+"_"+omsiName+"_algSyst_"+algSystem.algSysIndex
@@ -375,7 +376,8 @@ template generateOmsiAlgSystemCode (SimEqSystem equationSystem, String FileNameP
     /* Evaluation functions for <%FileNamePrefix%>_<%omsiName%>_resFunction_<%algSystem.algSysIndex%> */
     <%evaluationCode%>
 
-    omsi_status <%FileNamePrefix%>_<%omsiName%>_resFunction_<%algSystem.algSysIndex%> (omsi_function_t* this_function, const omsi_values* model_vars_and_params, omsi_real* res) {
+    omsi_status <%FileNamePrefix%>_<%omsiName%>_resFunction_<%algSystem.algSysIndex%> (struct omsi_function_t* this_function, const omsi_values* model_vars_and_params, void* data) {
+      omsi_real* res = (omsi_real*) data;
       omsi_unsigned_int i=0;
       <%functionCall%>
       <%residualCall%>
@@ -621,7 +623,7 @@ template generateInitalizationOMSIFunction (OMSIFunction omsiFunction, String fu
 ::=
   match omsiFunction
   case func as OMSI_FUNCTION(__) then
-    let &functionPrototypes += "omsi_status " + FileNamePrefix + "_" + omsiName + "_instantiate_" + functionName + "_OMSIFunc (omsi_function_t* omsi_function);\n"
+    let &functionPrototypes += "omsi_status " + FileNamePrefix + "_" + omsiName + "_instantiate_" + functionName + "_OMSIFunc (struct omsi_function_t* omsi_function);\n"
 
     let evaluationTarget = FileNamePrefix+"_"+omsiName+"_"+functionName
     let algSystemInit = generateAlgebraicSystemInstantiation (FileNamePrefix, nAlgebraicSystems, equations, omsiName)
@@ -639,7 +641,7 @@ template generateInitalizationOMSIFunction (OMSIFunction omsiFunction, String fu
     <<
 
 
-    omsi_status <%FileNamePrefix%>_<%omsiName%>_instantiate_<%functionName%>_OMSIFunc (omsi_function_t* omsi_function) {
+    omsi_status <%FileNamePrefix%>_<%omsiName%>_instantiate_<%functionName%>_OMSIFunc (struct omsi_function_t* omsi_function) {
 
 
 
