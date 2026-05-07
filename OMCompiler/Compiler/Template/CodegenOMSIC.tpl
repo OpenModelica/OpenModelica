@@ -150,7 +150,6 @@ template createMakefile(SimCode simCode, String target, String makeflieName)
     let lapackDirWin = match makefileParams.platform case "win64" then '$(MSYSTEM_PREFIX)/bin' else ''
     let libEnding = match makefileParams.platform case "win32" case "win64" then 'dll' else 'so'
     let rpath = match makefileParams.platform case "win32" case "win64" then '' else "\"-Wl,-rpath,\$$ORIGIN/.\""
-    let star = match makefileParams.platform case "win32" case "win64" then '' else '*'
     let fPIC = match makefileParams.platform case "win32" case "win64" then '' else '-fPIC '
 
     <<
@@ -208,9 +207,9 @@ template createMakefile(SimCode simCode, String target, String makeflieName)
     LIBSDIR= $(OMSU_STATIC_LIBDIR) -L$(EXPAT_LIBDIR) -L$(LAPACK_LIBDIR) -L$(KINSOL_LIBDIR)
 
     THIRD_PARTY_DYNAMIC_LIBS =<%match makefileParams.platform case "win32" case "win64" then
-    '$(LAPACK_LIBDIR)/lib$(LAPACK_LIB).<%star%>' else ''%>       \
-     $(KINSOL_LIBDIR)/lib$(KINSOL_LIB).<%star%>                                \
-     $(KINSOL_LIBDIR)/lib$(SUNDIALS_NVECSERIAL).<%star%>                       \
+    '$(LAPACK_LIBDIR)/lib$(LAPACK_LIB).<%libEnding%>' else ''%>       \
+     $(KINSOL_LIBDIR)/lib$(KINSOL_LIB).*                                \
+     $(KINSOL_LIBDIR)/lib$(SUNDIALS_NVECSERIAL).*                       \
 
     .PHONY: copyFiles makeStructure compile fmiImport OMSimulation clean
 
