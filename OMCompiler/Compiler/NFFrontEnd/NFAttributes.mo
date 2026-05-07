@@ -42,7 +42,10 @@ encapsulated uniontype NFAttributes
   import Restriction = NFRestriction;
 
 protected
+  import Absyn;
   import Class = NFClass;
+  import ConnectorType;
+  import DAE;
   import IOStream;
   import Prefixes = NFPrefixes;
   import SCodeUtil;

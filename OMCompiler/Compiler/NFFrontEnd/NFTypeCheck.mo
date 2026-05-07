@@ -42,6 +42,7 @@ encapsulated package NFTypeCheck
   Functions used by SCodeInst for type checking and type conversion where needed.
 "
 
+import Absyn;
 import DAE;
 import Dimension = NFDimension;
 import Expression = NFExpression;

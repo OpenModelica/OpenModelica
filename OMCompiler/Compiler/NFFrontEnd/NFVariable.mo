@@ -53,12 +53,14 @@ encapsulated uniontype NFVariable
   import BaseModelica;
 
 protected
+  import Absyn;
   import Ceval = NFCeval;
   import ExpandExp = NFExpandExp;
   import FlatModelicaUtil = NFFlatModelicaUtil;
   import Inst = NFInst;
   import IOStream;
   import MetaModelica.Dangerous.listReverseInPlace;
+  import SCode;
   import StringUtil;
   import Typing = NFTyping;
   import Util;

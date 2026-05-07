@@ -41,9 +41,11 @@ encapsulated package NFConnectBreakTree
   import NFInstNode.InstNode;
 
 protected
+  import Absyn;
   import Dump;
   import Lookup = NFLookup;
   import Mutable;
+  import SCode;
 
 public
   uniontype Entry

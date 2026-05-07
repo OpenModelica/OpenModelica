@@ -49,6 +49,8 @@ import BackendDAE;
 import Ceval;
 import DAE;
 import DoubleEnded;
+import File;
+import HashTable;
 import HashTableCrIListArray;
 import HashTableCrILst;
 import HashTableExpToIndex;

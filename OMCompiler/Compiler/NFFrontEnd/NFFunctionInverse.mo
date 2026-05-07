@@ -34,6 +34,7 @@
  */
 
 encapsulated uniontype NFFunctionInverse
+  import Absyn;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import NFFunction.Function;
@@ -43,6 +44,7 @@ encapsulated uniontype NFFunctionInverse
 
 protected
   import Call = NFCall;
+  import DAE;
   import Inst = NFInst;
   import Lookup = NFLookup;
   import SCodeUtil;

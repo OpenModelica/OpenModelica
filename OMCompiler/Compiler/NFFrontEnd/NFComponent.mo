@@ -54,6 +54,7 @@ import Prefixes = NFPrefixes;
 import SCodeUtil;
 import Restriction = NFRestriction;
 import Component = NFComponent;
+import ConnectorType;
 import IOStream;
 import NFFunction.Function;
 

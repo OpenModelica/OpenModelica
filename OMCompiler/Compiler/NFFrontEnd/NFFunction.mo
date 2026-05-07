@@ -50,6 +50,7 @@ import BaseModelica;
 
 protected
 import ErrorExt;
+import SCode.ConnectorType;
 import Inst = NFInst;
 import NFInst.InstSettings;
 import Binding = NFBinding;
@@ -74,6 +75,7 @@ import Record = NFRecord;
 import NFTyping.ClassScope;
 import MatchKind = NFTypeCheck.MatchKind;
 import Restriction = NFRestriction;
+import SCode;
 import Dimension = NFDimension;
 import Statement = NFStatement;
 import Sections = NFSections;

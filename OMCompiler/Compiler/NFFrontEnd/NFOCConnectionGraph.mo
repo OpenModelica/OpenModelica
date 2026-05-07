@@ -85,6 +85,7 @@ type FlatEdges = NFConnections.BrokenEdges
 
 protected
 import Absyn;
+import DAE;
 import NFBuiltin;
 import Binding = NFBinding;
 import Call = NFCall;

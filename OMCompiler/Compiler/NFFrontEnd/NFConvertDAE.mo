@@ -69,6 +69,7 @@ import NFPrefixes.Variability;
 import NFPrefixes.Visibility;
 import Prefixes = NFPrefixes;
 import Sections = NFSections;
+import SCode;
 import Type = NFType;
 import Util;
 import Variable = NFVariable;

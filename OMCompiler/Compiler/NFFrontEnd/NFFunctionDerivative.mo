@@ -51,6 +51,7 @@ protected
   import TypeCheck = NFTypeCheck;
   import MatchKind = NFTypeCheck.MatchKind;
   import Ceval = NFCeval;
+  import DAE;
   import EvalTarget = NFCeval.EvalTarget;
   import Prefixes = NFPrefixes;
   import NFPrefixes.Variability;

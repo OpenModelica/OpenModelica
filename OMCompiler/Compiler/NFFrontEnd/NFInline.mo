@@ -43,6 +43,7 @@ import Binding = NFBinding;
 import Class = NFClass;
 import Component = NFComponent;
 import ComponentRef = NFComponentRef;
+import DAE;
 import DAE.InlineType;
 import Dimension = NFDimension;
 import Flags;

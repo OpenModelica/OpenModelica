@@ -39,6 +39,7 @@ encapsulated package NFPackage
   import NFFlatten.FunctionTree;
 
 protected
+  import Absyn;
   import Algorithm = NFAlgorithm;
   import Binding = NFBinding;
   import Ceval = NFCeval;

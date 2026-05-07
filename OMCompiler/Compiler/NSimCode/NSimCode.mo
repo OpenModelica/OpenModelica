@@ -45,6 +45,8 @@ protected
   // OF imports
   import Absyn;
   import AbsynUtil;
+  import DAE;
+  import HashTable;
   import OldExpression = Expression;
 
   // NF imports

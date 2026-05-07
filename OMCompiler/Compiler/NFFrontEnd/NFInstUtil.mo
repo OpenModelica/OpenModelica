@@ -57,6 +57,7 @@ encapsulated package NFInstUtil
 
 protected
   import AbsynUtil;
+  import DAE;
   import BaseModelica;
   import SCodeUtil;
   import Dump;

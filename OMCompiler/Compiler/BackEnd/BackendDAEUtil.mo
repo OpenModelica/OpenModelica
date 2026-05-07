@@ -102,6 +102,7 @@ import Flags;
 import FlagsUtil;
 import Global;
 import HpcOmEqSystems;
+import HashSet;
 import IndexReduction;
 import Initialization;
 import Inline;

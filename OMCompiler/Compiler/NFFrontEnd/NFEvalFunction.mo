@@ -54,6 +54,7 @@ import Subscript = NFSubscript;
 import Type = NFType;
 
 protected
+import Absyn;
 import Array;
 import Autoconf;
 import Ceval = NFCeval;

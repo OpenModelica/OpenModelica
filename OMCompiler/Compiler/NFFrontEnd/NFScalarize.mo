@@ -62,6 +62,7 @@ import Statement = NFStatement;
 import Algorithm = NFAlgorithm;
 import ExpandExp = NFExpandExp;
 import NFInstNode.InstNode;
+import SCode;
 
 public
 function scalarize

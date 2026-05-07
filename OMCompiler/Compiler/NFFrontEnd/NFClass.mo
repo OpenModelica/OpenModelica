@@ -53,11 +53,14 @@ import SCode.Element;
 import Type = NFType;
 
 protected
+import Absyn;
+import DAE;
 import AbsynUtil;
 import Binding = NFBinding;
 import Class = NFClass;
 import ComplexType = NFComplexType;
 import IOStream;
+import SCode;
 import SCodeUtil;
 import System;
 import MetaModelica.Dangerous.listReverseInPlace;

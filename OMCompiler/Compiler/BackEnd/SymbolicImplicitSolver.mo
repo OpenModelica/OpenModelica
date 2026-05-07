@@ -50,6 +50,7 @@ public import BackendDAE;
 
 protected
 import BackendDAEUtil;
+import DAE;
 import BackendDump;
 import BackendEquation;
 import BackendVariable;

@@ -83,6 +83,7 @@ import GCExt;
 import HashSet;
 import HashTableExpToIndex;
 import HpcOmTaskGraph;
+import Inline;
 import List;
 import Matching;
 import MetaModelica.Dangerous;

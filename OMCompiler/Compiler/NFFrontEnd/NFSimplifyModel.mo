@@ -53,11 +53,12 @@ import Dimension = NFDimension;
 import Subscript = NFSubscript;
 
 protected
-import MetaModelica.Dangerous.*;
-import ExecStat.execStat;
-import SimplifyExp = NFSimplifyExp;
-import NFPrefixes.Variability;
 import Ceval = NFCeval;
+import DAE;
+import ExecStat.execStat;
+import MetaModelica.Dangerous.*;
+import NFPrefixes.Variability;
+import SimplifyExp = NFSimplifyExp;
 
 public
 function simplify

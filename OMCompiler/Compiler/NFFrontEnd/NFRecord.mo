@@ -58,6 +58,8 @@ import InstContext = NFInstContext;
 import IOStream;
 
 protected
+import Absyn;
+import DAE;
 import Inst = NFInst;
 import NFInst.InstSettings;
 import Lookup = NFLookup;

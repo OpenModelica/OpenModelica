@@ -35,6 +35,7 @@
 
 encapsulated package MidCode
 
+import Absyn;
 import DAE;
 import DAEDump;
 

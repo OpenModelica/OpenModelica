@@ -43,6 +43,7 @@ import SimCodeVar;
 
 protected
 
+import Absyn;
 import Array;
 import Autoconf;
 import BaseHashTable;

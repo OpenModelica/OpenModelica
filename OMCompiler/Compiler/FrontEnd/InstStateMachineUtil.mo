@@ -42,6 +42,7 @@ encapsulated package InstStateMachineUtil
 
 public import DAE;
 
+protected import Absyn;
 protected import Config;
 protected import Flags;
 protected import List;
@@ -59,6 +60,7 @@ protected import Expression;
 protected import Debug;
 protected import PrefixUtil;
 protected import DAEDump;
+protected import SCode;
 
 public uniontype SMNode
   record SMNODE "Collecting information about a state/mode"

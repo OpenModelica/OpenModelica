@@ -37,10 +37,12 @@ encapsulated uniontype NFImport
   import NFInstNode.InstNode;
 
 protected
+  import Absyn;
+  import Class = NFClass;
+  import DAE;
   import Inst = NFInst;
   import Lookup = NFLookup;
   import NFClassTree.ClassTree;
-  import Class = NFClass;
 
   import Import = NFImport;
   import Error;

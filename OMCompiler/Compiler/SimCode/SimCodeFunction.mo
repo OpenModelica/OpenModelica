@@ -56,6 +56,7 @@ protected import Global;
 protected import List;
 protected import MidCode;
 protected import SimCodeFunctionUtil;
+protected import SCode;
 protected import Types;
 
 public uniontype FunctionCode

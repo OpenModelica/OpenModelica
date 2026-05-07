@@ -40,6 +40,8 @@ import AbsynUtil;
 import SCode;
 import DAE;
 import NFModifier.Modifier;
+import SimCode;
+import SimCodeMain;
 import Values;
 
 protected

@@ -58,6 +58,7 @@ protected import ExpressionSimplify;
 protected import Flags;
 protected import List;
 protected import Inline;
+protected import BackendDAE;
 protected import BackendDAEUtil;
 protected import BackendEquation;
 protected import BackendVariable;

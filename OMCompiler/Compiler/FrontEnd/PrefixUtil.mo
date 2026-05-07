@@ -50,6 +50,7 @@ encapsulated package PrefixUtil
 public import Absyn;
 public import AbsynUtil;
 public import DAE;
+public import File;
 public import FCore;
 public import FGraph;
 public import Lookup;

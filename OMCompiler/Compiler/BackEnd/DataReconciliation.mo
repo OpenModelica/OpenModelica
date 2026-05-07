@@ -61,6 +61,7 @@ import Util;
 import System;
 import Settings;
 import SimCode;
+import SCode;
 import SymbolTable;
 import Absyn;
 import CevalScript;
