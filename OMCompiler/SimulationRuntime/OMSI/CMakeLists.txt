@@ -5,7 +5,7 @@ PROJECT(OMSIBaseSimulationRuntime)
 include(GNUInstallDirs)
 
 # enable warnings
-if(CMAKE_COMPILER_IS_GNUCXX)
+if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
     message(STATUS "GCC detected, adding compile flags")
     set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -Wall -Wextra -pedantic")
     IF(NOT WIN32)

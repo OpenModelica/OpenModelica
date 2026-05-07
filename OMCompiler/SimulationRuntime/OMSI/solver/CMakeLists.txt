@@ -138,7 +138,10 @@ else()
 endif()
 
 
-install(TARGETS ${OMSISolverName} DESTINATION ${LIBINSTALLEXT})
+install(TARGETS ${OMSISolverName}
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION ${LIBINSTALLEXT}
+  ARCHIVE DESTINATION ${LIBINSTALLEXT})
 
 install(FILES
   include/omsi_solver.h

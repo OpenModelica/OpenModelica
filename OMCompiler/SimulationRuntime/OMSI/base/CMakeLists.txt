@@ -42,7 +42,10 @@ if(WIN32)
   target_link_libraries(${OSUBaseName} PRIVATE wsock32 ws2_32)
 endif()
 
-install(TARGETS ${OSUBaseName} DESTINATION ${LIBINSTALLEXT})
+install(TARGETS ${OSUBaseName}
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION ${LIBINSTALLEXT}
+  ARCHIVE DESTINATION ${LIBINSTALLEXT})
 
 # Fallback for "standalone" makefile build
 # TODO: Remove when switching to CMake build
