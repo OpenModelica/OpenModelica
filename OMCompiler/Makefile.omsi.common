@@ -53,14 +53,12 @@ OMSIBaseClean:
 # Rules for OMSIC libraries
 #############################
 
-
 OMSICInstall: OMSIBaseInstall
-	cd SimulationRuntime/OMSIC; \
-	$(foreach PLATFORM, $(PLATFORMS), \
-	  mkdir -p Build_$(PLATFORM); \
-	  (cd ./Build_$(PLATFORM); echo "change to Build_$(PLATFORM)"; \
-		 $(CMAKE_CALL); \
-		 $(MAKE) install);)
+	cd SimulationRuntime/OMSIC
+	mkdir -p Build_static
+	cd Build_static; echo "change to Build_static"
+	PLATFORM=static $(CMAKE_CALL)
+	$(MAKE) install
 
 OMSICClean:
 	$(foreach PLATFORM, $(PLATFORMS), \
