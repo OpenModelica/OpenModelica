@@ -45,11 +45,33 @@ add_library(${OMSICName}
 target_include_directories(${OMSICName} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_include_directories(${OMSICName} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/omsu")
 
+# Fallback for "standalone" makefile build: OMSIBaseSimulationRuntime INTERFACE
+# target is not available, so add OMSI includes explicitly.
+# TODO: Remove when switching to CMake build
+if(NOT TARGET OMSIBaseSimulationRuntime)
+  set(OMSI_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../OMSI")
+  target_include_directories(${OMSICName} PRIVATE
+    "${OMSI_SOURCE_DIR}/include"
+    "${OMSI_SOURCE_DIR}/include/fmi2"
+    "${OMSI_SOURCE_DIR}/base/include"
+    "${OMSI_SOURCE_DIR}/solver/include")
+endif()
+
 set_target_properties(${OMSICName} PROPERTIES MACOSX_RPATH ON)
 
-target_link_libraries(${OMSICName}
-    PRIVATE ${CMAKE_DL_LIBS}
-    PUBLIC ${OSUBaseName})
+if(TARGET OMSIBaseSimulationRuntime)
+  target_link_libraries(${OMSICName}
+      PRIVATE ${CMAKE_DL_LIBS}
+      PUBLIC ${OSUBaseName})
+else()
+  # Standalone  makefile build: OSUBaseName is not a CMake target, so link by full path
+  if(BUILD_SHARED_LIBS)
+    set(OSUBaseLib "${CMAKE_INSTALL_PREFIX}/${LIBINSTALLEXT}/libOMSIBase${CMAKE_SHARED_LIBRARY_SUFFIX}")
+  else()
+    set(OSUBaseLib "${CMAKE_INSTALL_PREFIX}/${LIBINSTALLEXT}/libOMSIBase_static${CMAKE_STATIC_LIBRARY_SUFFIX}")
+  endif()
+  target_link_libraries(${OMSICName} PRIVATE ${CMAKE_DL_LIBS} PUBLIC ${OSUBaseLib})
+endif()
 
 install(TARGETS ${OMSICName} DESTINATION ${LIBINSTALLEXT})
 

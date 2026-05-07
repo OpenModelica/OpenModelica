@@ -21,8 +21,23 @@ target_include_directories(${OSUBaseName} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/in
 
 set_target_properties(${OSUBaseName} PROPERTIES MACOSX_RPATH ON)
 
+# Fallback for "standalone" makefile build
+# TODO: Remove when switching to CMake build
+if(NOT TARGET omc::3rd::FMIL::expat)
+  find_library(LIB_EXPAT NAMES expat libexpat
+    PATHS ${OMBUILDDIR}/lib/omc ${CMAKE_CURRENT_SOURCE_DIR}/../../3rdParty/FMIL/build/ExpatEx/)
+  if(NOT LIB_EXPAT)
+    message(FATAL_ERROR "Could not find expat library")
+  endif()
+endif()
+
 target_link_libraries(${OSUBaseName}
-    PUBLIC OMSIBaseSimulationRuntime ${OMSISolverName} ${CMAKE_DL_LIBS} omc::3rd::FMIL::expat)
+    PUBLIC OMSIBaseSimulationRuntime ${OMSISolverName} ${CMAKE_DL_LIBS})
+if(TARGET omc::3rd::FMIL::expat)
+  target_link_libraries(${OSUBaseName} PUBLIC omc::3rd::FMIL::expat)
+else()
+  target_link_libraries(${OSUBaseName} PUBLIC ${LIB_EXPAT})
+endif()
 if(WIN32)
   target_link_libraries(${OSUBaseName} PRIVATE wsock32 ws2_32)
 endif()
