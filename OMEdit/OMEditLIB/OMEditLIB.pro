@@ -88,6 +88,8 @@ INCLUDEPATH += . ../ \
   $$OPENMODELICAHOME/../OMParser/3rdParty/antlr4/runtime/Cpp/runtime/src
 
 SOURCES += Util/Helper.cpp \
+  OMS/OMSModel.cpp \
+  Search/FindUsageWidget.cpp \
   Util/Utilities.cpp \
   Util/StringHandler.cpp \
   Util/OutputPlainTextEdit.cpp \
@@ -207,6 +209,8 @@ SOURCES += Util/Helper.cpp \
   Search/FindUsageWidget.cpp
 
 HEADERS  += Util/Helper.h \
+  OMS/OMSModel.h \
+  Search/FindUsageWidget.h \
   Util/Utilities.h \
   Util/StringHandler.h \
   Util/OutputPlainTextEdit.h \

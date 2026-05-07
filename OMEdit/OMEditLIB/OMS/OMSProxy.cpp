@@ -1151,19 +1151,34 @@ bool OMSProxy::initialize(QString cref)
  */
 bool OMSProxy::exportSnapshot(QString cref, QString *pContents)
 {
-  QString command = "oms_exportSnapshot";
-  QString cref_ = cref + ":SystemStructure.ssd";
-  QStringList args;
-  args << "\"" + cref_ + "\"";
-  LOG_COMMAND(command, args);
-  char* contents = NULL;
-  oms_status_enu_t status = oms_exportSnapshot(cref_.toUtf8().constData(), &contents);
-  if (contents) {
-    *pContents = QString(contents);
-    free(contents);
+  // QString command = "oms_exportSnapshot";
+  // QString cref_ = cref + ":SystemStructure.ssd";
+  // QStringList args;
+  // args << "\"" + cref_ + "\"";
+  // LOG_COMMAND(command, args);
+  // char* contents = NULL;
+  // oms_status_enu_t status = oms_exportSnapshot(cref_.toUtf8().constData(), &contents);
+  // if (contents) {
+  //   *pContents = QString(contents);
+  //   free(contents);
+  // }
+  // logResponse(command, status, &commandTime);
+  // return statusToBool(status);
+  QJsonObject obj;
+  obj["method"] = "exportSnapshot";
+  QJsonObject reply;
+
+  mpGuiRequestSocket->sendCommand(obj, reply);
+  qDebug() << "inside export snapshot completed";
+
+  QString method = reply["method"].toString();
+  QString status = reply["status"].toString();
+  QString xml = reply["xml"].toString();
+  if (!xml.isEmpty()) {
+      *pContents = xml;
   }
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
+  //QString msg = tr("%1 : %2").arg(method).arg(status);
+  return true;
 }
 
 /*!
@@ -1224,23 +1239,23 @@ bool OMSProxy::newModel(QString cref)
   oms_status_enu_t status = oms_newModel(cref.toUtf8().constData());
   logResponse(command, status, &commandTime);
 
-    QJsonObject obj, args_;
-    obj["method"] = "newModel";
-    args_["name"] = cref;
-    args_["system_name"] = "Root";
-    obj["args"] = args_;
-    qDebug() << QJsonDocument(obj).toJson(QJsonDocument::Compact);
-    QJsonObject reply;
-    mpGuiRequestSocket->sendCommand(obj, reply);
+  QJsonObject obj, args_;
+  obj["method"] = "newModel";
+  args_["name"] = cref;
+  args_["system_name"] = "Root";
+  obj["args"] = args_;
+  qDebug() << QJsonDocument(obj).toJson(QJsonDocument::Compact);
+  QJsonObject reply;
+  mpGuiRequestSocket->sendCommand(obj, reply);
 
-    QString method = reply["method"].toString();
-    QString status_ = reply["status"].toString();
+  QString method = reply["method"].toString();
+  QString status_ = reply["status"].toString();
 
-    QString msg = tr("%1 : %2").arg(method).arg(status_);
+  QString msg = tr("%1 : %2").arg(method).arg(status_);
 
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::notificationLevel));
-    // return true;
-  return statusToBool(status);
+  MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::notificationLevel));
+
+  return true;
 
 }
 
@@ -1402,7 +1417,7 @@ bool OMSProxy::setElementGeometry(QString cref, const ssd_element_geometry_t* pG
   // LOG_COMMAND(command, args);
   // oms_status_enu_t status = oms_setElementGeometry(cref.toUtf8().constData(), pGeometry);
   // logResponse(command, status, &commandTime);
-  // return statusToBool(status);
+  //return statusToBool(status);
 
 
   // Todo set geometry position via zmq
@@ -1420,13 +1435,13 @@ bool OMSProxy::setElementGeometry(QString cref, const ssd_element_geometry_t* pG
   geometry["iconFlip"] = pGeometry->iconFlip;
   geometry["iconFixedAspectRatio"] = pGeometry->iconFixedAspectRatio;
 
-  QJsonObject args;
-  args["cref"] = QJsonArray::fromStringList(parts);
-  args["geometry"] = geometry;
+  QJsonObject args_;
+  args_["cref"] = QJsonArray::fromStringList(parts);
+  args_["geometry"] = geometry;
 
   QJsonObject obj;
   obj["method"] = "setElementGeometry";
-  obj["args"] = args;
+  obj["args"] = args_;
 
   QJsonObject reply;
   mpGuiRequestSocket->sendCommand(obj, reply);
