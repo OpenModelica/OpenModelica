@@ -29,7 +29,7 @@ jobs:
           rm -f ${{ github.event.repository.name }}-$OMVERSION
 
       - name: Delete old release assets
-        uses: mknejp/delete-release-assets@v1
+      - uses: mknejp/delete-release-assets@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: nightly
