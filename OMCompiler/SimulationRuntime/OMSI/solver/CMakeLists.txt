@@ -64,8 +64,10 @@ if(NOT TARGET omc::3rd::sundials::kinsol)
   MESSAGE(STATUS "${SUNDIALS_INCLUDE_DIR}")
 
   # SUNDIALS Libraires
-  FIND_LIBRARY(SUNDIALS_LIBRARY_NVEC    NAMES sundials_nvecserial    PATHS ${SUNDIALS_LIB_DIR})
-  FIND_LIBRARY(SUNDIALS_KINSOL          NAMES sundials_kinsol        PATHS ${SUNDIALS_LIB_DIR})
+  FIND_LIBRARY(SUNDIALS_LIBRARY_NVEC         NAMES sundials_nvecserial           PATHS ${SUNDIALS_LIB_DIR})
+  FIND_LIBRARY(SUNDIALS_KINSOL               NAMES sundials_kinsol               PATHS ${SUNDIALS_LIB_DIR})
+  FIND_LIBRARY(SUNDIALS_SUNLINSOLKLU         NAMES sundials_sunlinsolklu         PATHS ${SUNDIALS_LIB_DIR})
+  FIND_LIBRARY(SUNDIALS_SUNLINSOLLAPACKDENSE NAMES sundials_sunlinsollapackdense PATHS ${SUNDIALS_LIB_DIR})
 
   # Check if all libraries found
   IF(NOT SUNDIALS_LIBRARY_NVEC)
@@ -74,8 +76,14 @@ if(NOT TARGET omc::3rd::sundials::kinsol)
   IF(NOT SUNDIALS_KINSOL)
     MESSAGE(FATAL_ERROR "Could not find libsundials_kinsol!")
   ENDIF()
+  IF(NOT SUNDIALS_SUNLINSOLKLU)
+    MESSAGE(FATAL_ERROR "Could not find sundials_sunlinsolklu!")
+  ENDIF()
+  IF(NOT SUNDIALS_SUNLINSOLLAPACKDENSE)
+    MESSAGE(FATAL_ERROR "Could not find sundials_sunlinsollapackdense!")
+  ENDIF()
 
-  SET(SUNDIALS_LIBRARIES ${SUNDIALS_LIBRARY_NVEC} ${SUNDIALS_KINSOL})
+  SET(SUNDIALS_LIBRARIES ${SUNDIALS_LIBRARY_NVEC} ${SUNDIALS_KINSOL} ${SUNDIALS_SUNLINSOLKLU} ${SUNDIALS_SUNLINSOLLAPACKDENSE})
   MESSAGE(STATUS "Used Sundials libraries: ${SUNDIALS_LIBRARIES}")
 
   # Extract the version number from sundials_config.h

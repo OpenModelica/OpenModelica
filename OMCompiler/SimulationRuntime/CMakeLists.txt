@@ -17,7 +17,7 @@ endif()
 # OMSI
 #
 # Makefiles currently prefer the static version of libOMSI*
-if(NOT PLATFORM)
+if(NOT DEFINED PLATFORM AND NOT DEFINED CACHE{PLATFORM})
   set(PLATFORM "static")
 endif()
 omc_add_subdirectory(OMSI)

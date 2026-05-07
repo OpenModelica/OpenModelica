@@ -6,7 +6,7 @@ PROJECT(OMSICSimulationRuntime)
 # enable warnings
 if(CMAKE_COMPILER_IS_GNUCXX)
     message(STATUS "GCC detected, adding compile flags")
-    set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -Wall -Wextra -pedantic -g")
+    set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -Wall -Wextra -pedantic")
     IF(NOT WIN32)
         SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
     ENDIF()
