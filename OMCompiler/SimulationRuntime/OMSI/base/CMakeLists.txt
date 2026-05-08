@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.14)
-SET(CMAKE_VERBOSE_MAKEFILE ON)
+set(CMAKE_VERBOSE_MAKEFILE ON)
 
-#OMSI base simulation runtime
-PROJECT(OMSIBASE)
+# OMSI base simulation runtime
+project(OMSIBASE)
 
 add_library(${OSUBaseName}
   src/omsi_event_helper.c
@@ -32,7 +32,7 @@ if(NOT TARGET omc::3rd::FMIL::expat)
 endif()
 
 target_link_libraries(${OSUBaseName}
-    PUBLIC OMSIBaseSimulationRuntime ${OMSISolverName} ${CMAKE_DL_LIBS})
+  PUBLIC OMSIBaseSimulationRuntime ${OMSISolverName} ${CMAKE_DL_LIBS})
 if(TARGET omc::3rd::FMIL::expat)
   target_link_libraries(${OSUBaseName} PUBLIC omc::3rd::FMIL::expat)
 else()

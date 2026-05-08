@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.14)
-SET(CMAKE_VERBOSE_MAKEFILE ON)
+set(CMAKE_VERBOSE_MAKEFILE ON)
 
-#OpenModelica Simulation Interface solver
-PROJECT(OMSISolver)
+# OpenModelica Simulation Interface solver
+project(OMSISolver)
 
 ############################
 # Find BLAS and LAPACK
@@ -17,20 +17,20 @@ endif()
 if(NOT LAPACK_FOUND)
   message(FATAL_ERROR "Error: Lapack Libraries not found!")
 endif()
-MESSAGE(STATUS "Lapack Libraries: ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES}")
+message(STATUS "Lapack Libraries: ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES}")
 
-IF(MSVC)
-  #workaround  because cmake does not find the lapack libraries for Visual Studio 10
-  SET(LAPACK_MSVC_10  $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack_win32.lib )
-  SET(BLAS_MSVC_10 $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/blas_win32.lib )
-  SET(LAPACK_LIBRARIES  ${LAPACK_MSVC_10}  )
-  SET(BLAS_LIBRARIES    ${BLAS_MSVC_10} )
-  MESSAGE(STATUS "Using manual set Lapack Libraries: ${LAPACK_LIBRARIES}")
-ENDIF(MSVC)
+if(MSVC)
+  # workaround because cmake does not find the lapack libraries for Visual Studio 10
+  set(LAPACK_MSVC_10 $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack_win32.lib)
+  set(BLAS_MSVC_10 $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/blas_win32.lib)
+  set(LAPACK_LIBRARIES ${LAPACK_MSVC_10})
+  set(BLAS_LIBRARIES ${BLAS_MSVC_10})
+  message(STATUS "Using manual set Lapack Libraries: ${LAPACK_LIBRARIES}")
+endif()
 
 
 ############################
-# Find SUNDIALS  libraries #
+# Find SUNDIALS libraries  #
 ############################
 
 # Fallback for "standalone" makefile build
@@ -43,8 +43,8 @@ if(NOT TARGET omc::3rd::sundials::kinsol)
     set(SUNDIALS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../../../OMCompiler/3rdParty/sundials-5.4.0/build")
   endif()
   get_filename_component(SUNDIALS_PATH "${SUNDIALS_PATH}" ABSOLUTE)
-  MESSAGE(STATUS "Sundials PATH:")
-  MESSAGE(STATUS "${SUNDIALS_PATH}")
+  message(STATUS "Sundials PATH:")
+  message(STATUS "${SUNDIALS_PATH}")
 
   file(GLOB
     SUNDIALS_POTENTIAL_LIBS
@@ -52,72 +52,80 @@ if(NOT TARGET omc::3rd::sundials::kinsol)
     ${SUNDIALS_PATH}/lib*/* ${SUNDIALS_PATH}/lib*
   )
 
-  FIND_PATH(SUNDIALS_LIB_DIR NAMES sundials_nvecserial libsundials_nvecserial sundials_nvecserial.dll libsundials_nvecserial.so sundials_nvecserial.a libsundials_nvecserial.a sundials_nvecserial.lib PATHS ${SUNDIALS_POTENTIAL_LIBS} )
+  find_path(SUNDIALS_LIB_DIR
+    NAMES sundials_nvecserial libsundials_nvecserial sundials_nvecserial.dll
+          libsundials_nvecserial.so sundials_nvecserial.a libsundials_nvecserial.a
+          sundials_nvecserial.lib
+    PATHS ${SUNDIALS_POTENTIAL_LIBS})
 
-  MESSAGE(STATUS "Sundials libs:")
-  MESSAGE(STATUS "${SUNDIALS_LIB_DIR}")
+  message(STATUS "Sundials libs:")
+  message(STATUS "${SUNDIALS_LIB_DIR}")
 
   # SUNDIALS Header
-  FIND_PATH(SUNDIALS_INCLUDE_DIR "sundials/sundials_config.h" ${SUNDIALS_PATH}/include/sundials NO_DEFAULT_PATH)
+  find_path(SUNDIALS_INCLUDE_DIR "sundials/sundials_config.h"
+    ${SUNDIALS_PATH}/include/sundials NO_DEFAULT_PATH)
 
-  MESSAGE(STATUS "Sundials include:")
-  MESSAGE(STATUS "${SUNDIALS_INCLUDE_DIR}")
+  message(STATUS "Sundials include:")
+  message(STATUS "${SUNDIALS_INCLUDE_DIR}")
 
-  # SUNDIALS Libraires
-  FIND_LIBRARY(SUNDIALS_LIBRARY_NVEC         NAMES sundials_nvecserial           PATHS ${SUNDIALS_LIB_DIR})
-  FIND_LIBRARY(SUNDIALS_KINSOL               NAMES sundials_kinsol               PATHS ${SUNDIALS_LIB_DIR})
-  FIND_LIBRARY(SUNDIALS_SUNLINSOLKLU         NAMES sundials_sunlinsolklu         PATHS ${SUNDIALS_LIB_DIR})
-  FIND_LIBRARY(SUNDIALS_SUNLINSOLLAPACKDENSE NAMES sundials_sunlinsollapackdense PATHS ${SUNDIALS_LIB_DIR})
+  # SUNDIALS Libraries
+  find_library(SUNDIALS_LIBRARY_NVEC         NAMES sundials_nvecserial           PATHS ${SUNDIALS_LIB_DIR})
+  find_library(SUNDIALS_KINSOL               NAMES sundials_kinsol               PATHS ${SUNDIALS_LIB_DIR})
+  find_library(SUNDIALS_SUNLINSOLKLU         NAMES sundials_sunlinsolklu         PATHS ${SUNDIALS_LIB_DIR})
+  find_library(SUNDIALS_SUNLINSOLLAPACKDENSE NAMES sundials_sunlinsollapackdense PATHS ${SUNDIALS_LIB_DIR})
 
   # Check if all libraries found
-  IF(NOT SUNDIALS_LIBRARY_NVEC)
-    MESSAGE(FATAL_ERROR "Could not find libsundials_nvecserial!")
-  ENDIF()
-  IF(NOT SUNDIALS_KINSOL)
-    MESSAGE(FATAL_ERROR "Could not find libsundials_kinsol!")
-  ENDIF()
-  IF(NOT SUNDIALS_SUNLINSOLKLU)
-    MESSAGE(FATAL_ERROR "Could not find sundials_sunlinsolklu!")
-  ENDIF()
-  IF(NOT SUNDIALS_SUNLINSOLLAPACKDENSE)
-    MESSAGE(FATAL_ERROR "Could not find sundials_sunlinsollapackdense!")
-  ENDIF()
+  if(NOT SUNDIALS_LIBRARY_NVEC)
+    message(FATAL_ERROR "Could not find libsundials_nvecserial!")
+  endif()
+  if(NOT SUNDIALS_KINSOL)
+    message(FATAL_ERROR "Could not find libsundials_kinsol!")
+  endif()
+  if(NOT SUNDIALS_SUNLINSOLKLU)
+    message(FATAL_ERROR "Could not find sundials_sunlinsolklu!")
+  endif()
+  if(NOT SUNDIALS_SUNLINSOLLAPACKDENSE)
+    message(FATAL_ERROR "Could not find sundials_sunlinsollapackdense!")
+  endif()
 
-  SET(SUNDIALS_LIBRARIES ${SUNDIALS_LIBRARY_NVEC} ${SUNDIALS_KINSOL} ${SUNDIALS_SUNLINSOLKLU} ${SUNDIALS_SUNLINSOLLAPACKDENSE})
-  MESSAGE(STATUS "Used Sundials libraries: ${SUNDIALS_LIBRARIES}")
+  set(SUNDIALS_LIBRARIES
+    ${SUNDIALS_LIBRARY_NVEC}
+    ${SUNDIALS_KINSOL}
+    ${SUNDIALS_SUNLINSOLKLU}
+    ${SUNDIALS_SUNLINSOLLAPACKDENSE})
+  message(STATUS "Used Sundials libraries: ${SUNDIALS_LIBRARIES}")
 
   # Extract the version number from sundials_config.h
-  SET(SUNDIALS_CONFIG_FILE "${SUNDIALS_INCLUDE_DIR}/sundials/sundials_config.h")
-  IF(NOT EXISTS "${SUNDIALS_CONFIG_FILE}")
-    MESSAGE(FATAL_ERROR "Could not find sundials_config.h")
-  ENDIF()
-  FILE(READ "${SUNDIALS_CONFIG_FILE}" SUNDIALS_CONFIG_FILE_CONTENT)
-  STRING(REGEX MATCH "#define SUNDIALS_VERSION .([0-9]+)\\.([0-9]+)\\.([0-9]+)." _ ${SUNDIALS_CONFIG_FILE_CONTENT})
+  set(SUNDIALS_CONFIG_FILE "${SUNDIALS_INCLUDE_DIR}/sundials/sundials_config.h")
+  if(NOT EXISTS "${SUNDIALS_CONFIG_FILE}")
+    message(FATAL_ERROR "Could not find sundials_config.h")
+  endif()
+  file(READ "${SUNDIALS_CONFIG_FILE}" SUNDIALS_CONFIG_FILE_CONTENT)
+  string(REGEX MATCH "#define SUNDIALS_VERSION .([0-9]+)\\.([0-9]+)\\.([0-9]+)." _ ${SUNDIALS_CONFIG_FILE_CONTENT})
 
-  IF(DEFINED CMAKE_MATCH_1 AND DEFINED CMAKE_MATCH_2 AND DEFINED CMAKE_MATCH_3)
-    SET(SUNDIALS_MAJOR_VERSION "${CMAKE_MATCH_1}")
-    SET(SUNDIALS_MINOR_VERSION "${CMAKE_MATCH_2}")
-    SET(SUNDIALS_PATCH_VERSION "${CMAKE_MATCH_3}")
+  if(DEFINED CMAKE_MATCH_1 AND DEFINED CMAKE_MATCH_2 AND DEFINED CMAKE_MATCH_3)
+    set(SUNDIALS_MAJOR_VERSION "${CMAKE_MATCH_1}")
+    set(SUNDIALS_MINOR_VERSION "${CMAKE_MATCH_2}")
+    set(SUNDIALS_PATCH_VERSION "${CMAKE_MATCH_3}")
 
     set(SUNDIALS_VERSION_DEFS
-        "-DSUNDIALS_MAJOR_VERSION=${SUNDIALS_MAJOR_VERSION}"
-        "-DSUNDIALS_MINOR_VERSION=${SUNDIALS_MINOR_VERSION}")
-  ELSE()
-    MESSAGE(FATAL_ERROR "Could not determine sundials version")
-  ENDIF()
-  MESSAGE(STATUS "Using sundials ${SUNDIALS_MAJOR_VERSION}.${SUNDIALS_MINOR_VERSION}.${SUNDIALS_PATCH_VERSION}")
-endif(NOT TARGET omc::3rd::sundials::kinsol)
+      "-DSUNDIALS_MAJOR_VERSION=${SUNDIALS_MAJOR_VERSION}"
+      "-DSUNDIALS_MINOR_VERSION=${SUNDIALS_MINOR_VERSION}")
+  else()
+    message(FATAL_ERROR "Could not determine sundials version")
+  endif()
+  message(STATUS "Using sundials ${SUNDIALS_MAJOR_VERSION}.${SUNDIALS_MINOR_VERSION}.${SUNDIALS_PATCH_VERSION}")
+endif()
 
 ####################################
-# OMSISolver includes
+# OMSISolver
 ####################################
 
 add_library(${OMSISolverName}
   src/solver_api.c
   src/solver_helper.c
   src/solver_kinsol.c
-  src/solver_lapack.c
-)
+  src/solver_lapack.c)
 
 target_include_directories(${OMSISolverName} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 if(NOT TARGET omc::3rd::sundials::kinsol)
@@ -137,7 +145,6 @@ else()
   target_link_libraries(${OMSISolverName} PUBLIC ${SUNDIALS_LIBRARIES})
 endif()
 
-
 install(TARGETS ${OMSISolverName}
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION ${LIBINSTALLEXT}
@@ -147,4 +154,4 @@ install(FILES
   include/omsi_solver.h
   include/solver_api.h
   include/solver_helper.h
-DESTINATION include/omc/omsi/solver)
+  DESTINATION include/omc/omsi/solver)

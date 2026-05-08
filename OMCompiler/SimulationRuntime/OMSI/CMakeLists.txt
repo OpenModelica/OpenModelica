@@ -1,17 +1,17 @@
 cmake_minimum_required(VERSION 3.14)
-SET(CMAKE_VERBOSE_MAKEFILE ON)
+set(CMAKE_VERBOSE_MAKEFILE ON)
 
-PROJECT(OMSIBaseSimulationRuntime)
+project(OMSIBaseSimulationRuntime)
 include(GNUInstallDirs)
 
 # enable warnings
 if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
-    message(STATUS "GCC detected, adding compile flags")
-    set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -Wall -Wextra -pedantic")
-    IF(NOT WIN32)
-        SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
-    ENDIF()
-endif(CMAKE_COMPILER_IS_GNUCXX)
+  message(STATUS "GCC detected, adding compile flags")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -pedantic")
+  if(NOT WIN32)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
+  endif()
+endif()
 message(STATUS "Compiling with C flags: ${CMAKE_C_FLAGS}")
 
 if(NOT PLATFORM OR PLATFORM STREQUAL "dynamic")
@@ -20,11 +20,11 @@ elseif(PLATFORM STREQUAL "static")
   set(BUILD_SHARED_LIBS OFF)
 endif()
 
-IF(BUILD_SHARED_LIBS)
-  SET(LIBSUFFIX "")
-ELSE(BUILD_SHARED_LIBS)
-  SET(LIBSUFFIX "_static")
-ENDIF(BUILD_SHARED_LIBS)
+if(BUILD_SHARED_LIBS)
+  set(LIBSUFFIX "")
+else()
+  set(LIBSUFFIX "_static")
+endif()
 
 if(MSVC)
   set(LIBINSTALLEXT "${CMAKE_INSTALL_LIBDIR}/omsi/msvc")
@@ -37,17 +37,17 @@ message(STATUS "Libs will be installed in ${CMAKE_INSTALL_PREFIX}/${LIBINSTALLEX
 # OMSIBaseSimulationRuntime interface library
 add_library(OMSIBaseSimulationRuntime INTERFACE)
 target_include_directories(OMSIBaseSimulationRuntime INTERFACE
-    "${CMAKE_CURRENT_SOURCE_DIR}/include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/fmi2"
-    "${CMAKE_CURRENT_SOURCE_DIR}/solver/include"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/fmi2"
+  "${CMAKE_CURRENT_SOURCE_DIR}/solver/include"
 )
 
-SET(OSUBaseName ${LIBPREFIX}OMSIBase${LIBSUFFIX})
-SET(OMSISolverName ${LIBPREFIX}OMSISolver${LIBSUFFIX})
+set(OSUBaseName ${LIBPREFIX}OMSIBase${LIBSUFFIX})
+set(OMSISolverName ${LIBPREFIX}OMSISolver${LIBSUFFIX})
 
 # omsi base simulation runtime
-ADD_SUBDIRECTORY(solver)
-ADD_SUBDIRECTORY(base)
+add_subdirectory(solver)
+add_subdirectory(base)
 
 install(FILES
   include/omsi.h

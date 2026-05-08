@@ -1,16 +1,16 @@
 cmake_minimum_required(VERSION 3.14)
-SET(CMAKE_VERBOSE_MAKEFILE ON)
+set(CMAKE_VERBOSE_MAKEFILE ON)
 
-PROJECT(OMSICSimulationRuntime)
+project(OMSICSimulationRuntime)
 
 # enable warnings
-if(CMAKE_COMPILER_IS_GNUCXX)
-    message(STATUS "GCC detected, adding compile flags")
-    set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -Wall -Wextra -pedantic")
-    IF(NOT WIN32)
-        SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
-    ENDIF()
-endif(CMAKE_COMPILER_IS_GNUCXX)
+if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
+  message(STATUS "GCC detected, adding compile flags")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -pedantic")
+  if(NOT WIN32)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
+  endif()
+endif()
 message(STATUS "Compiling with C flags: ${CMAKE_C_FLAGS}")
 
 if(NOT PLATFORM OR PLATFORM STREQUAL "dynamic")
@@ -19,13 +19,13 @@ elseif(PLATFORM STREQUAL "static")
   set(BUILD_SHARED_LIBS OFF)
 endif()
 
-IF(BUILD_SHARED_LIBS)
-  SET(LIBSUFFIX "")
-ELSE(BUILD_SHARED_LIBS)
-  SET(LIBSUFFIX "_static")
-ENDIF(BUILD_SHARED_LIBS)
-SET(OMSICName ${LIBPREFIX}OMSIC${LIBSUFFIX})
-SET(OSUBaseName ${LIBPREFIX}OMSIBase${LIBSUFFIX})
+if(BUILD_SHARED_LIBS)
+  set(LIBSUFFIX "")
+else()
+  set(LIBSUFFIX "_static")
+endif()
+set(OMSICName ${LIBPREFIX}OMSIC${LIBSUFFIX})
+set(OSUBaseName ${LIBPREFIX}OMSIBase${LIBSUFFIX})
 
 if(MSVC)
   set(LIBINSTALLEXT "${CMAKE_INSTALL_LIBDIR}/omsi/msvc")
@@ -57,23 +57,20 @@ if(NOT TARGET OMSIBaseSimulationRuntime)
     "${OMSI_SOURCE_DIR}/solver/include")
 endif()
 
-set_target_properties(${OMSICName} PROPERTIES MACOSX_RPATH ON)
-
 if(TARGET OMSIBaseSimulationRuntime)
   target_link_libraries(${OMSICName}
-      PRIVATE ${CMAKE_DL_LIBS}
-      PUBLIC ${OSUBaseName})
+    PRIVATE ${CMAKE_DL_LIBS}
+    PUBLIC ${OSUBaseName})
 else()
-  # Standalone  makefile build: OSUBaseName is not a CMake target, so link by full path
-  if(BUILD_SHARED_LIBS)
-    set(OSUBaseLib "${CMAKE_INSTALL_PREFIX}/${LIBINSTALLEXT}/libOMSIBase${CMAKE_SHARED_LIBRARY_SUFFIX}")
-  else()
-    set(OSUBaseLib "${CMAKE_INSTALL_PREFIX}/${LIBINSTALLEXT}/libOMSIBase_static${CMAKE_STATIC_LIBRARY_SUFFIX}")
-  endif()
+  # Standalone makefile build: OSUBaseName is not a CMake target, so link by full path
+  set(OSUBaseLib "${CMAKE_INSTALL_PREFIX}/${LIBINSTALLEXT}/${OSUBaseName}")
   target_link_libraries(${OMSICName} PRIVATE ${CMAKE_DL_LIBS} PUBLIC ${OSUBaseLib})
 endif()
 
-install(TARGETS ${OMSICName} DESTINATION ${LIBINSTALLEXT})
+install(TARGETS ${OMSICName}
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION ${LIBINSTALLEXT}
+  ARCHIVE DESTINATION ${LIBINSTALLEXT})
 
 install(FILES
   include/omsic.h
@@ -88,15 +85,14 @@ install(FILES
   include/omsu/omsu_initialization.h
   DESTINATION include/omc/omsic/omsu)
 
-
 # uninstall target for makefile build
 # TODO: Remove when switching to CMake build
 if(NOT TARGET uninstall)
-    configure_file(
-        "${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in"
-        "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
-        IMMEDIATE @ONLY)
+  configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+    IMMEDIATE @ONLY)
 
-    add_custom_target(uninstall
-        COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
+  add_custom_target(uninstall
+    COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
 endif()
