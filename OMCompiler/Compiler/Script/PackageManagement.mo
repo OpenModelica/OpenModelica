@@ -58,7 +58,7 @@ public
 
 encapsulated package AvailableLibraries
   import BaseAvlTree;
-  import VersionMap;
+  import PackageManagement.VersionMap;
   extends BaseAvlTree;
   redeclare type Key = String;
   redeclare type Value = PackageManagement.VersionMap.Tree;

@@ -44,12 +44,28 @@ public import FCore;
 public import Values;
 
 protected
-import CevalScript;
-import RewriteRules;
-import StaticScript;
-import SymbolTable;
+import Global;
 
-public function cevalInteractiveFunctions
+public
+
+uniontype BackendInterfaceFunctions
+  record BACKEND_INTERFACE_FUNCTIONS
+    partialCevalInteractiveFunctions cevalInteractiveFunctions;
+    partialCevalCallFunction cevalCallFunction;
+    partialElabCallInteractive elabCallInteractive;
+    partialNoRewriteRulesFrontEnd noRewriteRulesFrontEnd;
+    partialRewriteFrontEnd rewriteFrontEnd;
+    partialAppendLibrary appendLibrary;
+  end BACKEND_INTERFACE_FUNCTIONS;
+end BackendInterfaceFunctions;
+
+public function initializeBackendInterface
+  input BackendInterfaceFunctions inFunctions;
+algorithm
+  setGlobalRoot(Global.backendInterface, inFunctions);
+end initializeBackendInterface;
+
+function cevalInteractiveFunctions
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input DAE.Exp inExp;
@@ -57,11 +73,16 @@ public function cevalInteractiveFunctions
   input Integer inNumIter;
   output FCore.Cache outCache;
   output Values.Value outValue;
+protected
+  BackendInterfaceFunctions functions;
+  partialCevalInteractiveFunctions func;
 algorithm
-  (outCache, outValue) := CevalScript.cevalInteractiveFunctions( inCache, inEnv, inExp, inMsg, inNumIter);
+  functions := getGlobalRoot(Global.backendInterface);
+  func := functions.cevalInteractiveFunctions;
+  (outCache,outValue) := func(inCache, inEnv, inExp, inMsg, inNumIter);
 end cevalInteractiveFunctions;
 
-public function cevalCallFunction
+function cevalCallFunction
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input DAE.Exp inExp;
@@ -71,11 +92,16 @@ public function cevalCallFunction
   input Integer inNumIter = 1;
   output FCore.Cache outCache;
   output Values.Value outValue;
+protected
+  BackendInterfaceFunctions functions;
+  partialCevalCallFunction func;
 algorithm
-  (outCache, outValue) := CevalScript.cevalCallFunction(inCache, inEnv, inExp, inValues, inImplInst, inMsg, inNumIter);
+  functions := getGlobalRoot(Global.backendInterface);
+  func := functions.cevalCallFunction;
+  (outCache,outValue) := func(inCache, inEnv, inExp, inValues, inImplInst, inMsg, inNumIter);
 end cevalCallFunction;
 
-public function elabCallInteractive "Note: elabCall_InteractiveFunction is set in the error buffer; the called function should pop it"
+function elabCallInteractive "Note: elabCall_InteractiveFunction is set in the error buffer; the called function should pop it"
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input Absyn.ComponentRef inCref;
@@ -87,23 +113,37 @@ public function elabCallInteractive "Note: elabCall_InteractiveFunction is set i
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
+protected
+  BackendInterfaceFunctions functions;
+  partialElabCallInteractive func;
 algorithm
-  (outCache, outExp, outProperties) :=
-    StaticScript.elabCallInteractive(inCache, inEnv, inCref, inExps, inNamedArgs, inImplInst, inPrefix, inInfo);
+  functions := getGlobalRoot(Global.backendInterface);
+  func := functions.elabCallInteractive;
+  (outCache, outExp, outProperties) := func(inCache, inEnv, inCref, inExps, inNamedArgs, inImplInst, inPrefix, inInfo);
 end elabCallInteractive;
 
 function noRewriteRulesFrontEnd
   output Boolean noRules;
+protected
+  BackendInterfaceFunctions functions;
+  partialNoRewriteRulesFrontEnd func;
 algorithm
-  noRules := RewriteRules.noRewriteRulesFrontEnd();
+  functions := getGlobalRoot(Global.backendInterface);
+  func := functions.noRewriteRulesFrontEnd;
+  noRules := func();
 end noRewriteRulesFrontEnd;
 
 function rewriteFrontEnd
   input Absyn.Exp inExp;
   output Absyn.Exp outExp;
   output Boolean isChanged;
+protected
+  BackendInterfaceFunctions functions;
+  partialRewriteFrontEnd func;
 algorithm
-  (outExp,isChanged) := RewriteRules.rewriteFrontEnd(inExp);
+  functions := getGlobalRoot(Global.backendInterface);
+  func := functions.rewriteFrontEnd;
+  (outExp,isChanged) := func(inExp);
 end rewriteFrontEnd;
 
 function appendLibrary
@@ -111,12 +151,67 @@ function appendLibrary
   input String modelicaPath;
   output Absyn.Program program;
   output Boolean success;
+protected
+  BackendInterfaceFunctions functions;
+  partialAppendLibrary func;
 algorithm
-  program := SymbolTable.getAbsyn();
-  (program, success) := CevalScript.loadModel({(modelName, "", {"default"}, false)},
-    modelicaPath, program, true, true, true, false);
-  SymbolTable.setAbsyn(program);
+  functions := getGlobalRoot(Global.backendInterface);
+  func := functions.appendLibrary;
+  (program, success) := func(modelName, modelicaPath);
 end appendLibrary;
 
-annotation(__OpenModelica_Interface="backendInterface");
+partial function partialCevalInteractiveFunctions
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input DAE.Exp inExp;
+  input Absyn.Msg inMsg;
+  input Integer inNumIter;
+  output FCore.Cache outCache;
+  output Values.Value outValue;
+end partialCevalInteractiveFunctions;
+
+partial function partialCevalCallFunction
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input DAE.Exp inExp;
+  input list<Values.Value> inValues;
+  input Boolean inImplInst;
+  input Absyn.Msg inMsg;
+  input Integer inNumIter = 1;
+  output FCore.Cache outCache;
+  output Values.Value outValue;
+end partialCevalCallFunction;
+
+partial function partialElabCallInteractive "Note: elabCall_InteractiveFunction is set in the error buffer; the called function should pop it"
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input Absyn.ComponentRef inCref;
+  input list<Absyn.Exp> inExps;
+  input list<Absyn.NamedArg> inNamedArgs;
+  input Boolean inImplInst;
+  input DAE.Prefix inPrefix;
+  input SourceInfo inInfo;
+  output FCore.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+end partialElabCallInteractive;
+
+partial function partialNoRewriteRulesFrontEnd
+  output Boolean noRules;
+end partialNoRewriteRulesFrontEnd;
+
+partial function partialRewriteFrontEnd
+  input Absyn.Exp inExp;
+  output Absyn.Exp outExp;
+  output Boolean isChanged;
+end partialRewriteFrontEnd;
+
+partial function partialAppendLibrary
+  input Absyn.Path modelName;
+  input String modelicaPath;
+  output Absyn.Program program;
+  output Boolean success;
+end partialAppendLibrary;
+
+annotation(__OpenModelica_Interface="frontend");
 end BackendInterface;
