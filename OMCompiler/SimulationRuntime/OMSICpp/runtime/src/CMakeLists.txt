@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 3.5)
 
 
 # Needs to be included before Core/Modelica othwise environment variables are not set.
-IF(USE_DGESV)
+if(USE_DGESV)
   add_subdirectory(Solver/Dgesv)
-ENDIF(USE_DGESV)
+endif(USE_DGESV)
 
 # adrpo: make sure this is first for the precompiled headers!
 if(NOT FMU_TARGET)
@@ -40,18 +40,18 @@ endif(NOT FMU_TARGET)
 # add Newton solver
 add_subdirectory(Solver/Newton)
 
-IF(USE_SUNDIALS)
+if(USE_SUNDIALS)
   #add  Cvode solver project
-  ADD_SUBDIRECTORY (Solver/CVode)
-  ADD_SUBDIRECTORY(Solver/IDA)
-  ADD_SUBDIRECTORY(Solver/Kinsol)
-ENDIF(USE_SUNDIALS)
+  add_subdirectory(Solver/CVode)
+  add_subdirectory(Solver/IDA)
+  add_subdirectory(Solver/Kinsol)
+endif(USE_SUNDIALS)
 
 if(NOT FMU_TARGET)
 
   # add more algebraic loop solvers
   if(BUILD_BROYDEN)
-     add_subdirectory(Solver/Broyden)
+    add_subdirectory(Solver/Broyden)
   endif(BUILD_BROYDEN)
   if(USE_MINPACK)
     add_subdirectory(Solver/Hybrj)
@@ -68,7 +68,7 @@ if(NOT FMU_TARGET)
   if(OPENMP_FOUND)
     if(SUITESPARSE_UMFPACK_FOUND)
       message(STATUS "CppDassl enabled")
-      add_subdirectory (Solver/CppDASSL)
+      add_subdirectory(Solver/CppDASSL)
     else(SUITESPARSE_UMFPACK_FOUND)
       message(STATUS "CppDassl disabled, because of missing UMFPACK support")
     endif(SUITESPARSE_UMFPACK_FOUND)

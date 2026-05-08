@@ -3,8 +3,8 @@ include_directories ("../../../../../OMSI/include")
 project(${SystemOMSIName})
 
 
-MESSAGE(STATUS "Build omsi library with fmilib:")
-MESSAGE(STATUS "${FMILIB_LIB}")
+message(STATUS "Build omsi library with fmilib:")
+message(STATUS "${FMILIB_LIB}")
 
 add_library(${SystemOMSIName} OMSUSystem.cpp FactoryExport.cpp)
 target_link_libraries(${SystemOMSIName} ${ExtendedSystemName} ${SystemBaseName} ${Boost_LIBRARIES} ${OMCFactoryName} ${SimulationSettings} ${FMILIB_LIB} ${FMILIB_LIB_EXTRA} ${LibZName})
@@ -13,9 +13,9 @@ target_link_libraries(${SystemOMSIName} ${ExtendedSystemName} ${SystemBaseName} 
 if(NOT BUILD_SHARED_LIBS)
   set_target_properties(${SystemOMSIName} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING;ENABLE_SUNDIALS_STATIC")
 else(NOT BUILD_SHARED_LIBS)
-IF(MSVC)
-  install(FILES $<TARGET_PDB_FILE:${SystemOMSIName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
-ENDIF(MSVC)
+  if(MSVC)
+    install(FILES $<TARGET_PDB_FILE:${SystemOMSIName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+  endif(MSVC)
 endif(NOT BUILD_SHARED_LIBS)
 
 

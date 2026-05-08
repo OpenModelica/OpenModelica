@@ -16,9 +16,9 @@ target_link_libraries(${ExtendedSystemName} ${SystemBaseName}  ${Boost_LIBRARIES
 if(NOT BUILD_SHARED_LIBS)
   set_target_properties(${ExtendedSystemName} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING;ENABLE_SUNDIALS_STATIC")
 else(NOT BUILD_SHARED_LIBS)
-IF(MSVC)
-  install(FILES $<TARGET_PDB_FILE:${ExtendedSystemName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
-ENDIF(MSVC)
+  if(MSVC)
+    install(FILES $<TARGET_PDB_FILE:${ExtendedSystemName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+  endif(MSVC)
 endif(NOT BUILD_SHARED_LIBS)
 
 
