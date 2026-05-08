@@ -75,6 +75,7 @@ constant Integer isInStream = 27;
 constant Integer MMToJLListIndex = 28;
 constant Integer packageIndexCacheIndex = 29;
 constant Integer sharedLibraryCacheIndex = 30;
+constant Integer backendInterface = 31;
 
 // indexes in System.tick
 // ----------------------

@@ -49,6 +49,7 @@ import Absyn;
 import AbsynJLDumpTpl;
 import AbsynUtil;
 import Autoconf;
+import BackendInterfaceImplementation;
 import CevalScript;
 import CevalScriptBackend;
 import ClockIndexes;
@@ -713,6 +714,7 @@ algorithm
   System.gettextInit(if Testsuite.isRunning() then "C" else Flags.getConfigString(Flags.LOCALE_FLAG));
   setDefaultCC();
   SymbolTable.reset();
+  BackendInterfaceImplementation.initializeBackendInterface();
 end init;
 
 public function main

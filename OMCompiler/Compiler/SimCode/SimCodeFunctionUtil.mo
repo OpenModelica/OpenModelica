@@ -2770,5 +2770,5 @@ algorithm
   end match;
 end appendCurrentCrefPrefix;
 
-annotation(__OpenModelica_Interface="backendInterface");
+annotation(__OpenModelica_Interface="backend");
 end SimCodeFunctionUtil;
