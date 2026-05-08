@@ -35,6 +35,7 @@
 
 encapsulated uniontype NFType
 protected
+  import Type = NFType;
   import Array;
   import Absyn;
   import Class = NFClass;
@@ -46,7 +47,6 @@ protected
   import NFClassTree.ClassTree;
 
 public
-  import Type = NFType;
   import BaseModelica;
   import Dimension = NFDimension;
   import NFInstNode.InstNode;
