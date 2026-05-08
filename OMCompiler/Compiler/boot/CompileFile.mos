@@ -6,6 +6,7 @@ end if;
 mkdir("build/tmp");
 cd("build/tmp");
 if not checkInterfaceOfPackages(mainClass, {
+// Also update Compiler/.cmake/mm_check_interface.in.mos if you change this file.
   {"backend", "frontend", "util", "susan", "nf_frontend"},
   {"frontend", "util", "susan", "", ""},
   {"nf_frontend", "util", "susan", "frontend", ""},
