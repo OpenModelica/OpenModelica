@@ -34,6 +34,6 @@ add_precompiled_header(${PeerName} runtime/include/Core/Modelica.h)
 
 install(TARGETS ${PeerName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
-  ${CMAKE_SOURCE_DIR}/runtime/include/Solver/Peer/Peer.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Solver/Peer/FactoryExport.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Solver/Peer/Peer.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Solver/Peer/FactoryExport.h
   DESTINATION include/omc/omsicpp/Solver/Peer)

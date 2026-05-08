@@ -106,7 +106,7 @@ MACRO(CREATE_PRECOMPILED_HEADER _targetName _input)
 
   IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
     GET_FILENAME_COMPONENT(_name ${_input} NAME)
-    SET(_source "${CMAKE_SOURCE_DIR}/${_input}")
+    SET(_source "${OMSICPP_SOURCE_DIR}/${_input}")
     SET(_outdir "${CMAKE_BINARY_DIR}/runtime/Core/${_name}.gch")
     MAKE_DIRECTORY(${_outdir})
     #changed output so that gcc automaticly finds pre compiled header for Modelica system
@@ -170,7 +170,7 @@ MACRO(CREATE_PRECOMPILED_HEADER _targetName _input)
   IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     GET_FILENAME_COMPONENT(_name ${_input} NAME)
 
-    SET(_source "${CMAKE_SOURCE_DIR}/${_input}")
+    SET(_source "${OMSICPP_SOURCE_DIR}/${_input}")
     SET(_outdir "${CMAKE_BINARY_DIR}/${_name}.gch")
     MAKE_DIRECTORY(${_outdir})
     #changed output so that gcc automaticly finds pre compiled header for Modelica system

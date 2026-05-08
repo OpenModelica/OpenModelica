@@ -55,12 +55,12 @@ add_precompiled_header(${SimControllerName} runtime/include/Core/Modelica.h)
 
 install(TARGETS ${SimControllerName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/SimController/ISimData.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/SimController/ISimController.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/SimController/SimController.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/SimController/SimManager.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/SimController/SimController.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/SimController/SimManager.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/SimController/Configuration.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/SimController/Initialization.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/SimController/ISimData.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/SimController/ISimController.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/SimController/SimController.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/SimController/SimManager.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/SimController/SimController.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/SimController/SimManager.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/SimController/Configuration.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/SimController/Initialization.h
   DESTINATION include/omc/omsicpp/Core/SimController)

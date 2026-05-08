@@ -19,33 +19,33 @@ add_precompiled_header(${OMCFactoryName} runtime/include/Core/Modelica.h)
 
 
 install(FILES
-  ${CMAKE_SOURCE_DIR}/runtime/include/SimCoreFactory/Policies/FactoryConfig.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/SimCoreFactory/Policies/FactoryPolicy.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/SimCoreFactory/Policies/SolverOMCFactory.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/SimCoreFactory/Policies/LinSolverOMCFactory.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/SimCoreFactory/Policies/NonLinSolverOMCFactory.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/SimCoreFactory/Policies/SystemOMCFactory.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/SimCoreFactory/Policies/SolverSettingsOMCFactory.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/SimCoreFactory/Policies/StaticSolverOMCFactory.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/SimCoreFactory/Policies/StaticLinSolverOMCFactory.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/SimCoreFactory/Policies/StaticNonLinSolverOMCFactory.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/SimCoreFactory/Policies/StaticSystemOMCFactory.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/SimCoreFactory/Policies/StaticSolverSettingsOMCFactory.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/SimCoreFactory/Policies/FactoryConfig.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/SimCoreFactory/Policies/FactoryPolicy.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/SimCoreFactory/Policies/SolverOMCFactory.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/SimCoreFactory/Policies/LinSolverOMCFactory.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/SimCoreFactory/Policies/NonLinSolverOMCFactory.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/SimCoreFactory/Policies/SystemOMCFactory.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/SimCoreFactory/Policies/SolverSettingsOMCFactory.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/SimCoreFactory/Policies/StaticSolverOMCFactory.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/SimCoreFactory/Policies/StaticLinSolverOMCFactory.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/SimCoreFactory/Policies/StaticNonLinSolverOMCFactory.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/SimCoreFactory/Policies/StaticSystemOMCFactory.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/SimCoreFactory/Policies/StaticSolverSettingsOMCFactory.h
 
-  ${CMAKE_SOURCE_DIR}/runtime/include/SimCoreFactory/Policies/SolverVxWorksFactory.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/SimCoreFactory/Policies/LinSolverVxWorksFactory.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/SimCoreFactory/Policies/NonLinSolverVxWorksFactory.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/SimCoreFactory/Policies/SystemVxWorksFactory.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/SimCoreFactory/Policies/SolverSettingsVxWorksFactory.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/SimCoreFactory/Policies/SolverVxWorksFactory.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/SimCoreFactory/Policies/LinSolverVxWorksFactory.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/SimCoreFactory/Policies/NonLinSolverVxWorksFactory.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/SimCoreFactory/Policies/SystemVxWorksFactory.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/SimCoreFactory/Policies/SolverSettingsVxWorksFactory.h
   DESTINATION include/omc/omsicpp/SimCoreFactory/Policies)
 
 install(FILES
-  ${CMAKE_SOURCE_DIR}/runtime/include/SimCoreFactory/OMCFactory/StaticOMCFactory.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/SimCoreFactory/OMCFactory/OMCFactory.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/SimCoreFactory/OMCFactory/StaticOMCFactory.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/SimCoreFactory/OMCFactory/OMCFactory.h
   DESTINATION include/omc/omsicpp/SimCoreFactory/OMCFactory/)
 install(FILES
-  ${CMAKE_SOURCE_DIR}/runtime/include/SimCoreFactory/VxWorksFactory/VxWorksFactory.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/SimCoreFactory/VxWorksFactory/VxWorksFactory.h
   DESTINATION include/omc/omsicpp/SimCoreFactory/VxWorksFactory/)
 install(FILES
-  ${CMAKE_SOURCE_DIR}/runtime/include/SimCoreFactory/ObjectFactory.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/SimCoreFactory/ObjectFactory.h
   DESTINATION include/omc/omsicpp/SimCoreFactory)

@@ -19,6 +19,6 @@ add_precompiled_header(${IDAName} runtime/include/Core/Modelica.h )
 
 install(TARGETS ${IDAName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
-  ${CMAKE_SOURCE_DIR}/runtime/include/Solver/IDA/IDA.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Solver/IDA/FactoryExport.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Solver/IDA/IDA.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Solver/IDA/FactoryExport.h
   DESTINATION include/omc/omsicpp/Solver/IDA)

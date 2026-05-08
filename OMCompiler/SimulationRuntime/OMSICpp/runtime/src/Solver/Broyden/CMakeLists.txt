@@ -20,7 +20,7 @@ add_precompiled_header(${BroydenName} runtime/include/Solver/Modelica.h)
 
 install(TARGETS ${BroydenName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
-  ${CMAKE_SOURCE_DIR}/runtime/include/Solver/Broyden/Broyden.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Solver/Broyden/BroydenSettings.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Solver/Broyden/FactoryExport.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Solver/Broyden/Broyden.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Solver/Broyden/BroydenSettings.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Solver/Broyden/FactoryExport.h
   DESTINATION include/omc/omsicpp/Solver/Broyden)

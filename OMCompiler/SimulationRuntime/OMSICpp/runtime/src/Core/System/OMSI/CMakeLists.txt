@@ -7,7 +7,15 @@ message(STATUS "Build omsi library with fmilib:")
 message(STATUS "${FMILIB_LIB}")
 
 add_library(${SystemOMSIName} OMSUSystem.cpp FactoryExport.cpp)
-target_link_libraries(${SystemOMSIName} ${ExtendedSystemName} ${SystemBaseName} ${Boost_LIBRARIES} ${OMCFactoryName} ${SimulationSettings} ${FMILIB_LIB} ${FMILIB_LIB_EXTRA} ${LibZName})
+if(TARGET omc::3rd::fmilib)
+  target_link_libraries(${SystemOMSIName} ${ExtendedSystemName} ${SystemBaseName}
+    ${Boost_LIBRARIES} ${OMCFactoryName} ${SimulationSettings}
+    omc::3rd::fmilib ${FMILIB_LIB_EXTRA} ${LibZName})
+else()
+  target_link_libraries(${SystemOMSIName} ${ExtendedSystemName} ${SystemBaseName}
+    ${Boost_LIBRARIES} ${OMCFactoryName} ${SimulationSettings}
+    ${FMILIB_LIB} ${FMILIB_LIB_EXTRA} ${LibZName})
+endif()
 
 
 if(NOT BUILD_SHARED_LIBS)
@@ -29,6 +37,6 @@ install(TARGETS ${SystemOMSIName} DESTINATION ${LIBINSTALLEXT})
 #install (TARGETS ${BasiLibName} DESTINATION ${LIBINSTALLEXT})
 #ENDIF (NOT ((${CMAKE_SYSTEM_NAME} MATCHES "Darwin") OR  MSVC))
 install(FILES
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/System/IOMSI.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/System/OMSUSystem.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/System/IOMSI.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/System/OMSUSystem.h
   DESTINATION include/omc/omsicpp/Core/System)

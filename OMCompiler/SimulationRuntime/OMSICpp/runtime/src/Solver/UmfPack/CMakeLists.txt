@@ -21,7 +21,7 @@ target_link_libraries(${UmfPackName}  ${SolverName}  ${MathName} ${SUITESPARSE_L
 
 install(TARGETS ${UmfPackName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
-  ${CMAKE_SOURCE_DIR}/runtime/include/Solver/UmfPack/UmfPack.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Solver/UmfPack/UmfPackSettings.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Solver/UmfPack/FactoryExport.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Solver/UmfPack/UmfPack.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Solver/UmfPack/UmfPackSettings.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Solver/UmfPack/FactoryExport.h
   DESTINATION include/omc/omsicpp/Solver/UmfPack)

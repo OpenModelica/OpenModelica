@@ -44,7 +44,7 @@ add_precompiled_header(${NewtonName} runtime/include/Core/Modelica.h)
 
 install(TARGETS ${NewtonName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
-  ${CMAKE_SOURCE_DIR}/runtime/include/Solver/Newton/Newton.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Solver/Newton/NewtonSettings.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Solver/CVode/FactoryExport.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Solver/Newton/Newton.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Solver/Newton/NewtonSettings.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Solver/CVode/FactoryExport.h
   DESTINATION include/omc/omsicpp/Solver/Newton)

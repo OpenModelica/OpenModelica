@@ -22,7 +22,7 @@ if(NOT DEFINED PLATFORM AND NOT DEFINED CACHE{PLATFORM})
 endif()
 omc_add_subdirectory(OMSI)
 omc_add_subdirectory(OMSIC)
-#omc_add_subdirectory(OMSICpp)
+omc_add_subdirectory(OMSICpp)
 
 # omc_add_subdirectory(opc)
 

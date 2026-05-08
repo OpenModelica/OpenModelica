@@ -22,6 +22,6 @@ add_precompiled_header(${CVodeName} runtime/include/Solver/Modelica.h)
 
 install(TARGETS ${CVodeName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
-  ${CMAKE_SOURCE_DIR}/runtime/include/Solver/CVode/CVode.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Solver/CVode/FactoryExport.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Solver/CVode/CVode.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Solver/CVode/FactoryExport.h
   DESTINATION include/omc/omsicpp/Solver/CVode)

@@ -27,7 +27,7 @@ target_link_libraries(${KinsolName}  ${SolverName}  ${ExtensionUtilitiesName} ${
 
 install(TARGETS ${KinsolName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
-  ${CMAKE_SOURCE_DIR}/runtime/include/Solver/Kinsol/Kinsol.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Solver/Kinsol/KinsolSettings.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Solver/Kinsol/FactoryExport.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Solver/Kinsol/Kinsol.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Solver/Kinsol/KinsolSettings.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Solver/Kinsol/FactoryExport.h
   DESTINATION include/omc/omsicpp/Solver/Kinsol)

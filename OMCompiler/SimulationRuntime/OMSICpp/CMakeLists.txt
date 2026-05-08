@@ -35,6 +35,20 @@
 
 cmake_minimum_required(VERSION 3.5)
 
+# OMSICPP_SOURCE_DIR is used by sub-CMakeLists.txt to reference paths relative
+# to the OMSICpp directory. In standalone mode it equals CMAKE_SOURCE_DIR; in
+# integrated mode (add_subdirectory from the parent) CMAKE_CURRENT_SOURCE_DIR
+# points to the OMSICpp directory which is what we want.
+set(OMSICPP_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
+# When included as a subdirectory in the full OpenModelica CMake build,
+# delegate to cmake_integrated.cmake which sets up the build using CMake
+# targets from the parent project instead of find_library() calls.
+if(OPENMODELICA_NEW_CMAKE_BUILD)
+  include(${CMAKE_CURRENT_SOURCE_DIR}/cmake_integrated.cmake)
+  return()
+endif()
+
 project(CppOMSISimulation)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)

@@ -11,7 +11,7 @@ option(USE_ZEROMQ "USE zeromq and cppzmq" ON)
 
 set(OMCZeroMQName OMCZeroMQ)
 #set include variable of omc C-api library
-set(OMCCAPI_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/omcCAPI/include")
+set(OMCCAPI_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/omcCAPI/include")
 
 include(../CMake/CheckCXX11.cmake)
 
@@ -26,16 +26,16 @@ include_directories(${OMC_PATH}/include/omc/)
 
 
 if(MSVC)
-  set(ZeroMQ_DIR  "${CMAKE_SOURCE_DIR}/../../../3rdParty/libzmq/build_msvc/share/cmake/ZeroMQ")
-  set(cppzmq_DIR "${CMAKE_SOURCE_DIR}/../../../3rdParty/cppzmq/build_msvc/share/cmake/cppzmq")
+  set(ZeroMQ_DIR  "${CMAKE_CURRENT_SOURCE_DIR}/../../../3rdParty/libzmq/build_msvc/share/cmake/ZeroMQ")
+  set(cppzmq_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../3rdParty/cppzmq/build_msvc/share/cmake/cppzmq")
 else(MSVC)
-  set(ZeroMQ_DIR  "${CMAKE_SOURCE_DIR}/../../../3rdParty/libzmq/build/share/cmake/ZeroMQ")
-  set(cppzmq_DIR "${CMAKE_SOURCE_DIR}/../../../3rdParty/cppzmq/build/share/cmake/cppzmq")
+  set(ZeroMQ_DIR  "${CMAKE_CURRENT_SOURCE_DIR}/../../../3rdParty/libzmq/build/share/cmake/ZeroMQ")
+  set(cppzmq_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../3rdParty/cppzmq/build/share/cmake/cppzmq")
 endif(MSVC)
 
 
-find_package(ZeroMQ )
-find_package(cppzmq )
+find_package(ZeroMQ NO_DEFAULT_PATH)
+find_package(cppzmq NO_DEFAULT_PATH)
 
 #find gc library
 #FIND_LIBRARY(OMCGC_LIB "gcmt-lib" NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH PATHS "D:/temp/gc/Debug")
@@ -85,7 +85,7 @@ if((NOT MSVC) AND (NOT ((${CMAKE_SYSTEM_NAME} MATCHES "Darwin") )))
   add_subdirectory(omcCAPI)
 else((NOT MSVC) AND (NOT ((${CMAKE_SYSTEM_NAME} MATCHES "Darwin") )))
   #link to the above descriped import library
-  set(OMCAPI_ROOT  "${CMAKE_SOURCE_DIR}/../Build_CAPI/tmp/")
+  set(OMCAPI_ROOT  "${CMAKE_CURRENT_SOURCE_DIR}/../Build_CAPI/tmp/")
   message(STATUS "om c dll libary path ${OMCAPI_ROOT}" )
 endif((NOT MSVC) AND (NOT ((${CMAKE_SYSTEM_NAME} MATCHES "Darwin") )))
 
