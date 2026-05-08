@@ -112,7 +112,7 @@ Set compiler flag :ref:`--fmuCMakeBuild=false<omcflag-fmuCMakeBuild>` to use the
 Makefiles export.
 
 The FMU contains a CMakeLists.txt file in the sources directory that can be used to
-re-compile the FMU for a different host and is also used to cross-compile for different
+re-compile the FMU for a different host and is also used to cross compile for different
 platforms.
 
 The CMake compilation accepts the following settings:
@@ -142,6 +142,9 @@ The CMake compilation accepts the following settings:
 
   * ``all``: Add system and Modelica runtime dependencies. Needs CMake version v3.21 or
     newer.
+
+  CMake install TARGETS RUNTIME_DEPENDENCIES is not supported when cross compiling.
+  Use ``none`` when cross compiling FMUs.
 
 * ``NEED_CVODE``:
   Boolean value to integrate CVODE integrator into CoSimulation FMU.
@@ -191,17 +194,100 @@ The ``platforms`` setting specifies for what target system the FMU is compiled:
   E.g. ``x86_64-linux-gnu`` for a 64 bit Linux OS or ``i686-w64-mingw32`` for a 32 bit
   Windows OS using MINGW.
 
+* ``<cpu>-<vendor>-<os> docker run ghcr.io/openmodelica/crossbuild:v1.27.0``
+  Host triple with Docker image provided by OpenModelica:
+  OpenModelica will use Docker image
+  `ghcr.io/openmodelica/crossbuild:v1.27.0 <https://github.com/OpenModelica/openmodelica-crossbuild>`_
+  to cross compile. The image provides compiler toolchain files to
+  cross compile with CMake for the following host triples:
+
+    * ``i686-linux-gnu``
+    * ``x86_64-linux-gnu``
+    * ``aarch64-linux-gnu``
+    * ``arm-linux-gnueabi``
+    * ``arm-linux-gnueabihf``
+    * ``i686-w64-mingw32``
+    * ``x86_64-w64-mingw32``
+
+  OpenModelica will add a matching ``CMAKE_TOOLCHAIN_FILE`` to the compilation
+  process.
+
+  If your model depends on external C libraries cross compilation can be
+  difficult. Providing pre-compiled static libraries can be necessary.
+  Installing runtime dependencies using CMake isn't supported when
+  cross compiling.
+
 * ``<cpu>-<vendor>-<os> docker run <image>`` Host triple with Docker image:
-  OpenModelica will use the specified Docker image to cross-compile for given host triple.
+  OpenModelica will use the specified Docker image to cross compile for given host triple.
   Because privilege escalation is very easy to achieve with Docker OMEdit adds
   ``--pull=never`` to the Docker calls for the ``multiarch/crossbuild`` images. Only use
   this option if you understand the security risks associated with Docker images from
   unknown sources.
-  E.g. ``x86_64-linux-gnu docker run --pull=never multiarch/crossbuild`` to cross-compile
+  E.g. ``x86_64-linux-gnu docker run --pull=never multiarch/crossbuild`` to cross compile
   for a 64 bit Linux OS.
   Because system libraries can be different for different versions of the same operating
   system, it is advised to use :ref:`--fmuRuntimeDepends=all<omcflag-fmuRuntimeDepends>`.
 
+Cross Compilation
+~~~~~~~~~~~~~~~~~
+
+Cross compilation can be done by using platform
+``<cpu>-<vendor>-<os> docker run ghcr.io/openmodelica/crossbuild:v1.27.0``
+or done manually. Both can be difficult at times.
+
+To `cross compile with CMake <https://cmake.org/cmake/help/book/mastering-cmake/chapter/Cross%20Compiling%20With%20CMake.html>`_
+provide a toolchain file specifying the target system and where to find the
+compiler toolchain for the target system.
+
+For example the Docker image
+`ghcr.io/openmodelica/crossbuild:v1.27.0 <https://github.com/OpenModelica/openmodelica-crossbuild>`_
+provided by OpenModelica is based on Linux (Ubuntu 24.04 at the time of writing)
+and has toolchains installed to cross compile together with matching
+`toolchain files <https://github.com/OpenModelica/openmodelica-crossbuild/tree/main/toolchain>`_.
+
+Manual Cross Compilation
+""""""""""""""""""""""""
+
+Let's have a look at example model ``BouncingBall``:
+
+First generate C sources for the FMU:
+
+.. omc-mos ::
+  :parsed:
+
+  loadFile(getInstallationDirectoryPath() + "/share/doc/omc/testmodels/BouncingBall.mo")
+  buildModelFMU(BouncingBall, platforms = {""})
+
+OpenModelica won't zip the FMU in this case.
+If you already have an existing FMU unzip it into some directory
+``<Model>.fmutmp``. Optionally delete existing binaries like
+``<Model>.fmutmp/binaries/linux64/``.
+
+Then cross compile the sources with a suitable toolchain file.
+
+.. code-block:: bash
+  # Optional: Work inside interactive Docker container
+  docker run --rm -it \
+    -v $PWD:/fmu \
+    -v /home/andreas/workdir/OM/OpenModelica/build_cmake/install_cmake/include/omc/FMI2:/fmiInclude \
+    -w/fmu \
+    ghcr.io/openmodelica/crossbuild:v1.27.0 bash
+
+  cd <Model>.fmutmp/sources
+  cmake -S . -B build \
+    -DCMAKE_TOOLCHAIN_FILE=/opt/cmake/toolchain/x86_64-w64-mingw32.cmake \
+    -DRUNTIME_DEPENDENCIES_LEVEL=none \
+    -DFMI_INTERFACE_HEADER_FILES_DIRECTORY=/fmiInclude \
+    -G "Unix Makefiles"
+  cmake --build build --parallel --target install
+
+Now the FMU should contain ``binaries/win64/BouncingBall.dll``.
+Compile additional binaries in the same way and when done zip the FMU by running
+
+.. code-block:: bash
+  cmake --build build --parallel --target create_fmu
+
+Now there should be a FMU with ``win64`` binaries ``BouncingBall-fmu``.
 
 .. _fmi-import :
 
