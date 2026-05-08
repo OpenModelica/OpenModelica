@@ -1119,5 +1119,5 @@ public
     end match;
   end opToString;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFOperator;

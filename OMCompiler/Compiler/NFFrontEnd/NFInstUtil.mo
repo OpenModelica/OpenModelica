@@ -1163,5 +1163,5 @@ public
     funcs := FunctionTree.add(funcs, fn_name, indexed_fn);
   end createExtractorModelDummyEq;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFInstUtil;

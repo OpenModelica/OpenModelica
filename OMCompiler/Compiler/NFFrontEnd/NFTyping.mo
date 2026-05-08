@@ -3937,5 +3937,5 @@ algorithm
   end if;
 end deduceIterationRange2;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFTyping;

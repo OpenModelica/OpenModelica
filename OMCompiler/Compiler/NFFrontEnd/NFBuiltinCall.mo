@@ -2299,5 +2299,5 @@ protected
     pur := Call.purity(outCall);
   end typeBuiltinCall;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFBuiltinCall;

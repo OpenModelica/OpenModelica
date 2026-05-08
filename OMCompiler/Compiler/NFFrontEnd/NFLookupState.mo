@@ -676,5 +676,5 @@ uniontype LookupState
   end isNonConstantComponent;
 end LookupState;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFLookupState;

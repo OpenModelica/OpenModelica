@@ -206,5 +206,5 @@ protected
     end match;
   end instInverseSubMod;
 
-  annotation(__OpenModelica_Interface="frontend");
+  annotation(__OpenModelica_Interface="nf_frontend");
 end NFFunctionInverse;

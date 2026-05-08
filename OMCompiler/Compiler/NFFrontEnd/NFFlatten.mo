@@ -3339,5 +3339,5 @@ algorithm
   end for;
 end checkDeletedVarRefsInAlg;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFFlatten;

@@ -383,6 +383,6 @@ protected
       for fn_der in fn.derivatives);
   end addLowerOrderDerivative2;
 
-  annotation(__OpenModelica_Interface="frontend");
+  annotation(__OpenModelica_Interface="nf_frontend");
 end NFFunctionDerivative;
 

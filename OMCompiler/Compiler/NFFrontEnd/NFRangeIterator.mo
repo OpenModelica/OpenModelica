@@ -314,5 +314,5 @@ public
     end while;
   end fold;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFRangeIterator;

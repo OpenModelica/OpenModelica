@@ -144,9 +144,7 @@ package ConnectionSets
       end if;
     end for;
   end isBroken;
-
-  annotation(__OpenModelica_Interface="frontend");
 end ConnectionSets;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFConnectionSets;

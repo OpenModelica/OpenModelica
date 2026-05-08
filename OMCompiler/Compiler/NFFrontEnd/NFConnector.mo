@@ -392,5 +392,5 @@ protected
     end for;
   end splitImpl2;
 
-  annotation(__OpenModelica_Interface="frontend");
+  annotation(__OpenModelica_Interface="nf_frontend");
 end NFConnector;

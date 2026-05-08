@@ -367,5 +367,5 @@ public
     name := "E" + String(System.tmpTick());
   end linearMapFromIntervals;
 
-  annotation(__OpenModelica_Interface="frontend");
+  annotation(__OpenModelica_Interface="nf_frontend");
 end NFSBGraphUtil;

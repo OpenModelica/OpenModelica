@@ -747,5 +747,5 @@ public
     end match;
   end typeOf;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFDimension;

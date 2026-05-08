@@ -109,5 +109,5 @@ extends BaseAvlTree(redeclare type Key = String,
     outResult := stringCompare(inKey1, inKey2);
   end keyCompare;
 
-  annotation(__OpenModelica_Interface="frontend");
+  annotation(__OpenModelica_Interface="nf_frontend");
 end NFDuplicateTree;

@@ -408,5 +408,5 @@ algorithm
   end if;
 end getDeclarationNode;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFRecord;

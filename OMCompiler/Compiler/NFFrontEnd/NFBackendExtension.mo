@@ -1582,5 +1582,5 @@ public
 
   constant Annotations EMPTY_ANNOTATIONS = ANNOTATIONS(false, false, false, NONE());
 
-  annotation(__OpenModelica_Interface="frontend");
+  annotation(__OpenModelica_Interface="nf_frontend");
 end NFBackendExtension;

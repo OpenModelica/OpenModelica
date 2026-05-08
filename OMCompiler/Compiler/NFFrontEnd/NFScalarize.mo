@@ -542,5 +542,5 @@ algorithm
   res := false;
 end variableHasForcedScalarAttribute;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFScalarize;

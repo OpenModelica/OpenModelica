@@ -1741,5 +1741,5 @@ algorithm
   table := UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
 end newCrefCrefTable;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFOCConnectionGraph;

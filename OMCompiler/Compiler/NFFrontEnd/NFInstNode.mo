@@ -2298,5 +2298,5 @@ uniontype InstNode
   end getAccessLevel;
 end InstNode;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFInstNode;

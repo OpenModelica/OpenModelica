@@ -963,5 +963,5 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
     IOStream.delete(s);
   end toFlatString;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFClass;

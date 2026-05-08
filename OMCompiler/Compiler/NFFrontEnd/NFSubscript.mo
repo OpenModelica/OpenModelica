@@ -1434,5 +1434,5 @@ public
     subs := listAppend(List.fill(Subscript.WHOLE(), targetLength - listLength(subs)), subs);
   end fillWithWholeLeft;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFSubscript;

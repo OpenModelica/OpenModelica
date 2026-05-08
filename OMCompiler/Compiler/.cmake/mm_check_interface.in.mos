@@ -18,9 +18,9 @@ if not loadFile(mm_src_file) then
 end if;
 
 if not checkInterfaceOfPackages(class_typename, {
-  {"backendInterface", "backend", "frontend", "util", "susan"},
-  {"backend", "frontend", "util", "susan", "backendInterface"},
-  {"frontend", "util", "susan", "backendInterface", ""},
+  {"backend", "frontend", "util", "susan", "nf_frontend"},
+  {"frontend", "util", "susan", "", ""},
+  {"nf_frontend", "util", "susan", "frontend", ""},
   {"susan", "util", "", "", ""},
   {"util", "", "", "", ""}
 }) then

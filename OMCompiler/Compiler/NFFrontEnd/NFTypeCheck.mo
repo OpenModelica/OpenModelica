@@ -3301,5 +3301,5 @@ algorithm
   end match;
 end matchIfBranches;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFTypeCheck;

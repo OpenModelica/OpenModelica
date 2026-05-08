@@ -514,5 +514,5 @@ algorithm
   res := stringHashDjb2(ComponentRef.firstName(conn.name));
 end hashConnector;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFExpandableConnectors;

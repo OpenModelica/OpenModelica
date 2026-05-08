@@ -1073,5 +1073,5 @@ public
     end if;
   end countConnectorVars;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFComponent;

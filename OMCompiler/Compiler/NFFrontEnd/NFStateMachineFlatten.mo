@@ -2093,5 +2093,5 @@ algorithm
   end if;
 end crefHasPrefix;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFStateMachineFlatten;

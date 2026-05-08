@@ -580,5 +580,5 @@ protected
     end for;
   end checkDiscreteRealRecord;
 
-  annotation(__OpenModelica_Interface="frontend");
+  annotation(__OpenModelica_Interface="nf_frontend");
 end NFVerifyModel;

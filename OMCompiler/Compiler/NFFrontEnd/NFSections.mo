@@ -509,5 +509,5 @@ public
     end match;
   end toFlatStream;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFSections;

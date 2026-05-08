@@ -1580,5 +1580,5 @@ algorithm
   end if;
 end checkExtReturnValue;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFEvalFunction;
