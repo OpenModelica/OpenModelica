@@ -41,12 +41,12 @@ protected
   import DAE;
   import IOStream;
   import List;
-  import IOStream;
   import StringUtil;
   import Util;
   import NFClassTree.ClassTree;
 
 public
+  import Type = NFType;
   import BaseModelica;
   import Dimension = NFDimension;
   import NFInstNode.InstNode;
