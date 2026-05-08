@@ -50,7 +50,6 @@ import BaseModelica;
 
 protected
 import ErrorExt;
-import SCode.ConnectorType;
 import Inst = NFInst;
 import NFInst.InstSettings;
 import Binding = NFBinding;
