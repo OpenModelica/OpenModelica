@@ -35,8 +35,6 @@
 
 encapsulated package SimCodeUtil
 
-import File;
-import HashTable;
 import SimCode;
 import SimCodeFunction;
 import SimCodeVar;

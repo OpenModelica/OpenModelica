@@ -39,7 +39,6 @@ encapsulated uniontype NFImport
 protected
   import Absyn;
   import Class = NFClass;
-  import DAE;
   import Inst = NFInst;
   import Lookup = NFLookup;
   import NFClassTree.ClassTree;
