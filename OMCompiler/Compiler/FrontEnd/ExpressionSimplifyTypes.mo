@@ -41,43 +41,12 @@ encapsulated package ExpressionSimplifyTypes
 
   This file contains types for the module ExpressionSimplify"
 
-import DAE;
-import SCode;
-
 uniontype Evaluate "The expression should be evaluated to a literal value; return an error if this fails"
   record NO_EVAL end NO_EVAL;
-  record DO_EVAL end DO_EVAL;
+  record DO_EVAL end DO_EVAL; // Nothing seems to use this
 end Evaluate;
 
-type SymbolTable = Integer /* TODO: Make replaceable type or specialized package for bootstrapping */;
-
-type SymbolTableInterface = tuple<SymbolTableLookupValue,SymbolTableLookupVariability,SymbolTableAddScope,SymbolTableRemoveScope>;
-
-partial function SymbolTableLookupValue
-  input SymbolTable st;
-  input DAE.ComponentRef cr;
-  output DAE.Exp exp;
-end SymbolTableLookupValue;
-
-partial function SymbolTableLookupVariability
-  input SymbolTable st;
-  input DAE.ComponentRef cr;
-  output SCode.Variability var;
-end SymbolTableLookupVariability;
-
-partial function SymbolTableAddScope
-  input SymbolTable st;
-  input DAE.ComponentRef cr;
-  input DAE.Exp exp;
-  output SymbolTable ost;
-end SymbolTableAddScope;
-
-partial function SymbolTableRemoveScope
-  input SymbolTable st;
-  output SymbolTable ost;
-end SymbolTableRemoveScope;
-
-type Options = tuple<Option<tuple<SymbolTable,SymbolTableInterface>>,Evaluate> "I am a stupid tuple because MM does not like type variables in records";
+type Options = Evaluate;
 
 uniontype IntOp
   record MULOP end MULOP;
@@ -87,7 +56,7 @@ uniontype IntOp
   record POWOP end POWOP;
 end IntOp;
 
-constant Options optionSimplifyOnly = (NONE(),NO_EVAL());
+constant Options optionSimplifyOnly = NO_EVAL();
 
 annotation(__OpenModelica_Interface="frontend");
 end ExpressionSimplifyTypes;
