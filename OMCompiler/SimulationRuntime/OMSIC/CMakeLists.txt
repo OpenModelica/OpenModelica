@@ -62,8 +62,14 @@ if(TARGET OMSIBaseSimulationRuntime)
     PRIVATE ${CMAKE_DL_LIBS}
     PUBLIC ${OSUBaseName})
 else()
-  # Standalone makefile build: OSUBaseName is not a CMake target, so link by full path
-  set(OSUBaseLib "${CMAKE_INSTALL_PREFIX}/${LIBINSTALLEXT}/${OSUBaseName}")
+  # Standalone makefile build: OSUBaseName is not a CMake target, so find by path
+  find_library(OSUBaseLib
+    NAMES ${OSUBaseName}
+    PATHS "${CMAKE_INSTALL_PREFIX}/${LIBINSTALLEXT}"
+    NO_DEFAULT_PATH)
+  if(NOT OSUBaseLib)
+    message(FATAL_ERROR "Could not find ${OSUBaseName} in ${CMAKE_INSTALL_PREFIX}/${LIBINSTALLEXT}")
+  endif()
   target_link_libraries(${OMSICName} PRIVATE ${CMAKE_DL_LIBS} PUBLIC ${OSUBaseLib})
 endif()
 

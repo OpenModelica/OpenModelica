@@ -51,7 +51,6 @@ OMSIBaseClean:
 	  rm -rf Build_$(PLATFORM); \
 	)
 
-
 #############################
 # Rules for OMSIC libraries
 #############################
