@@ -35,6 +35,7 @@
 
 encapsulated package SerializeInitXML
 
+import Absyn;
 import SimCode;
 import SimCode.ModelInfo;
 import SimCode.SimCode.SIMCODE;

@@ -35,7 +35,9 @@
 
 encapsulated uniontype NFDimension
 protected
+  import Absyn;
   import Dimension = NFDimension;
+  import DAE;
   import Dump;
   import Operator = NFOperator;
   import Prefixes = NFPrefixes;

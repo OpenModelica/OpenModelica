@@ -45,6 +45,7 @@ import FCore;
 import SCode;
 
 protected
+import Absyn;
 
 import Flags;
 import Lookup;

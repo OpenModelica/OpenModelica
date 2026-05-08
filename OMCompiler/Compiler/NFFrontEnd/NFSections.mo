@@ -43,6 +43,7 @@ encapsulated uniontype NFSections
   import SCode;
 
 protected
+  import Absyn;
   import DAEDump;
   import Sections = NFSections;
   import SCodeUtil;

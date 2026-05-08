@@ -52,6 +52,7 @@ protected
   import Call = NFCall;
   import Ceval = NFCeval;
   import Component = NFComponent;
+  import DAE;
   import Dimension = NFDimension;
   import ElementSource;
   import MetaModelica.Dangerous.*;

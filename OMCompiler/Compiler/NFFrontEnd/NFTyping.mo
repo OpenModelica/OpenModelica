@@ -64,6 +64,7 @@ import Record = NFRecord;
 import InstContext = NFInstContext;
 
 protected
+import Absyn;
 import Attributes = NFAttributes;
 import Builtin = NFBuiltin;
 import BuiltinCall = NFBuiltinCall;
@@ -75,6 +76,7 @@ import ExecStat.execStat;
 import Lookup = NFLookup;
 import MatchKind = NFTypeCheck.MatchKind;
 import Call = NFCall;
+import DAE;
 import NFClassTree.ClassTree;
 import Subscript = NFSubscript;
 import TypeCheck = NFTypeCheck;

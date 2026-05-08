@@ -34,6 +34,7 @@
  */
 
 encapsulated uniontype NFRestriction
+  import Absyn;
   import ClassInf;
   import InstContext = NFInstContext;
   import NFInstNode.InstNode;

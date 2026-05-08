@@ -52,6 +52,7 @@ import Algorithm = NFAlgorithm;
 import CardinalityTable = NFCardinalityTable;
 
 protected
+import Absyn;
 import Attributes = NFAttributes;
 import ComponentRef = NFComponentRef;
 import Dimension = NFDimension;
@@ -93,6 +94,7 @@ import EvalConstants = NFEvalConstants;
 import SimplifyModel = NFSimplifyModel;
 import InstNodeType = NFInstNode.InstNodeType;
 import ExpandableConnectors = NFExpandableConnectors;
+import SCode;
 import SCodeUtil;
 import DAE;
 import Structural = NFStructural;

@@ -35,8 +35,10 @@
 
 encapsulated package NFPrefixes
 
+import Absyn;
 import DAE;
 import NFInstNode.InstNode;
+import SCode;
 import Type = NFType;
 
 package ConnectorType

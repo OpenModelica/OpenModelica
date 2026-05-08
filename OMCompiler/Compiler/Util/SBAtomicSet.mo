@@ -36,6 +36,7 @@
 encapsulated uniontype SBAtomicSet
 
   import SBMultiInterval;
+  import SBInterval;
   import UnorderedSet;
 
 protected

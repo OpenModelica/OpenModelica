@@ -43,6 +43,7 @@ encapsulated uniontype NFConnections
 
 protected
   import Connections = NFConnections;
+  import DAE;
   import ElementSource;
   import ExpandExp = NFExpandExp;
   import Expression = NFExpression;

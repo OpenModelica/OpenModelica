@@ -46,7 +46,9 @@ public
   import Subscript = NFSubscript;
 
 protected
+  import Absyn;
   import Binding = NFBinding;
+  import DAE;
   import Dump;
   import Error;
 

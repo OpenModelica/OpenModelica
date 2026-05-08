@@ -41,6 +41,7 @@ encapsulated uniontype NBackendDAE
 "
 public
   import BVariable = NBVariable;
+  import DAE;
   import BEquation = NBEquation;
   import NBEquation.{Equation, EquationPointer, EquationPointers, EqData, EquationAttributes, EquationKind, IfEquationBody, Iterator};
   import NBVariable.{VariablePointer, VariablePointers, VarData};

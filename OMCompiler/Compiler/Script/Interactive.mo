@@ -6290,7 +6290,7 @@ protected
     Absyn.Class cdef;
     list<Absyn.Element> comps;
 
-    OpenModelica.AutoCompletion.Annotations.Access access;
+    Access access;
   algorithm
     cdef := InteractiveUtil.getPathedClassInProgram(classPath, program);
 

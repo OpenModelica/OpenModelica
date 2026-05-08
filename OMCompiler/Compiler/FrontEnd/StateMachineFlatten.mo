@@ -57,6 +57,7 @@ protected import DAEDump;
 protected import Error;
 protected import HashTableCrToExpOption;
 protected import Flags;
+protected import SCode;
 
 protected
 uniontype Transition "

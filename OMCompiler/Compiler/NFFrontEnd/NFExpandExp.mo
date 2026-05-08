@@ -52,6 +52,7 @@ protected
   import SimplifyExp = NFSimplifyExp;
   import NFPrefixes.{Variability, Purity};
   import MetaModelica.Dangerous.*;
+  import Absyn;
   import EvalTarget = NFCeval.EvalTarget;
   import Array;
 

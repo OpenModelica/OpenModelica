@@ -40,11 +40,13 @@ encapsulated uniontype NFFlatModel
   import BaseModelica;
 
 protected
+  import Absyn;
   import Binding = NFBinding;
   import Call = NFCall;
   import Class = NFClass;
   import ComplexType = NFComplexType;
   import Component = NFComponent;
+  import DAE;
   import DAE.ElementSource;
   import Dimension = NFDimension;
   import ErrorExt;
@@ -67,6 +69,7 @@ protected
   import NFSubscript.Subscript;
   import Prefixes = NFPrefixes;
   import Scalarize = NFScalarize;
+  import SCode;
   import Statement = NFStatement;
   import StringUtil;
   import Type = NFType;

@@ -37,9 +37,11 @@ encapsulated uniontype NFType
 protected
   import Type = NFType;
   import Array;
-  import List;
+  import Absyn;
   import Class = NFClass;
+  import DAE;
   import IOStream;
+  import List;
   import StringUtil;
   import Util;
   import NFClassTree.ClassTree;

@@ -70,6 +70,7 @@ import ExpandExp = NFExpandExp;
 import Prefixes = NFPrefixes;
 import SimplifyExp = NFSimplifyExp;
 import UnorderedMap;
+import Absyn;
 import ErrorExt;
 import Array;
 import Vector;

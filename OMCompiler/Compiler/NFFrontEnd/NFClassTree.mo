@@ -45,6 +45,7 @@ encapsulated package NFClassTree
   import UnorderedMap;
 
 protected
+  import Absyn;
   import Array;
   import Error;
   import Flags;

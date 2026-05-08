@@ -62,6 +62,7 @@ import HpcOmScheduler;
 import HpcOmSimCode;
 import List;
 import SCode;
+import SimCode;
 import SimCodeUtil;
 import SimCodeVar;
 import System;

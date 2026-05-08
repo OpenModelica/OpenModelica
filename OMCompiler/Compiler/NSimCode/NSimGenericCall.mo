@@ -49,6 +49,7 @@ protected
   // NF import
   import ComponentRef = NFComponentRef;
   import ConvertDAE = NFConvertDAE;
+  import DAE;
   import Expression = NFExpression;
   import Operator = NFOperator;
   import SimplifyExp = NFSimplifyExp;

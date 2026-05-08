@@ -47,6 +47,7 @@ algorithm
 end DAEFunctionsToMid;
 
 protected
+import Absyn;
 import DAE;
 import DAEDump;
 import MidToMid;
