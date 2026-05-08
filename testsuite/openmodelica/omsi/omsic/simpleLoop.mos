@@ -1,7 +1,7 @@
 // name: simpleLoop
 // keywords: omsi omsic fmu fmi
 // status: correct
-// teardown_command: rm -rf simpleLoop.fmutmp simpleLoop.fmu simpleLoop_systemCall.log simpleLoop-tmp simpleLoop*res.mat simpleLoop_result_diff.log
+// teardown_command: rm -rf simpleLoop.fmu simpleLoop_systemCall.log simpleLoop-tmp simpleLoop*res.mat simpleLoop_result_diff.log *.fmutmp/ *.bin
 // cflags: -d=-newInst
 //
 // Tests simulating OMSIC OMSU/FMU with OMSimulator and check results

@@ -33,6 +33,8 @@
 /** \addtogroup SOLVER OMSI Solver Library
   *  \{ */
 
+#include <stdio.h>
+
 #include <solver_api.h>
 
 #include <solver_global.h>

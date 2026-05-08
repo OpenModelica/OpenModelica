@@ -6,7 +6,7 @@ PLATFORMS=static dynamic
 
 CMAKE_FLAGS=-DCMAKE_BUILD_TYPE=$(BUILDTYPE)
 
-CMAKE_CALL=$(CMAKE) .. -G $(CMAKE_TARGET) -DPLATFORM=$(PLATFORM) $(CMAKE_FLAGS) $(IS_MINGW32) $(IS_MINGW64) -DCMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" -DLIB_OMC=$(LIB_OMC) && $(CMAKE) --build .
+CMAKE_CALL=$(CMAKE) .. -G $(CMAKE_TARGET) -DPLATFORM=$(PLATFORM) $(CMAKE_FLAGS) $(IS_MINGW32) $(IS_MINGW64) -DCMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" -DCMAKE_INSTALL_LIBDIR=$(LIB_OMC) && $(CMAKE) --build .
 
 .PHONY: OMSIBaseClean OMSICClean OMSIBaseMSVC OMSI OMSIBaseInstall OMSICInstall OMSI-clean OMSICClean OMSICPP OMSICPPinstall
 
@@ -37,14 +37,6 @@ OMSIBaseInstall: $(SUNDIALS_TARGET) fmil
 	  (cd ./Build_$(PLATFORM); echo "change to Build_$(PLATFORM)"; \
 		 $(CMAKE_CALL); \
 	   $(MAKE) install);)
-	test ! `uname` = Darwin || install_name_tool -id @rpath/omsi/libOMSIBase.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSIBase.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/omsi/libOMSISolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSISolver.dylib
-
-	test ! `uname` = Darwin || install_name_tool -change libsundials_nvecserial.5.dylib @rpath/libsundials_nvecserial.5.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSIBase.dylib
-	test ! `uname` = Darwin || install_name_tool -change libsundials_kinsol.5.dylib @rpath/libsundials_kinsol.5.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSIBase.dylib
-	test ! `uname` = Darwin || install_name_tool -change libOMSISolver.dylib @rpath/libOMSISolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSIBase.dylib
-	test ! `uname` = Darwin || install_name_tool -change libsundials_nvecserial.5.dylib @rpath/libsundials_nvecserial.5.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSISolver.dylib
-	test ! `uname` = Darwin || install_name_tool -change libsundials_kinsol.5.dylib @rpath/libsundials_kinsol.5.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSISolver.dylib
 
 OMSIBaseMSVC: fmil_msvc sundials_msvc
 	$(MAKE) -C SimulationRuntime/OMSI/ -f Makefile.omdev.mingw OMSIBaseMSVC OMBUILDDIR=$(OMBUILDDIR)
@@ -54,30 +46,28 @@ OMSIBaseMSVC: fmil_msvc sundials_msvc
 OMSIBaseClean:
 	cd SimulationRuntime/OMSI; \
 	$(foreach PLATFORM, $(PLATFORMS), \
-	  test -d Build_$(PLATFORM) && cd Build_$(PLATFORM) && $(MAKE) uninstall && $(MAKE) DESTDIR=$(OMBUILDDIR) clean && cd ..; \
-	  rm -R -f Build_$(PLATFORM); \
+	  test -d Build_$(PLATFORM) && \
+	  (cd Build_$(PLATFORM) && $(MAKE) uninstall && $(MAKE) clean); \
+	  rm -rf Build_$(PLATFORM); \
 	)
-
 
 #############################
 # Rules for OMSIC libraries
 #############################
 
-
 OMSICInstall: OMSIBaseInstall
 	cd SimulationRuntime/OMSIC; \
-	$(foreach PLATFORM, $(PLATFORMS), \
+	$(foreach PLATFORM, static, \
 	  mkdir -p Build_$(PLATFORM); \
-	  (cd ./Build_$(PLATFORM); echo "change to Build_$(PLATFORM)"; \
-		 $(CMAKE_CALL); \
-		 $(MAKE) install);)
+	  (cd Build_$(PLATFORM); echo "change to Build_$(PLATFORM)"; \
+	   $(CMAKE_CALL); \
+	   $(MAKE) install);)
 
 OMSICClean:
 	cd SimulationRuntime/OMSIC; \
-	$(foreach PLATFORM, $(PLATFORMS), \
-	  test -d Build_$(PLATFORM) && cd Build_$(PLATFORM) && $(MAKE) uninstall && $(MAKE) DESTDIR=$(OMBUILDDIR) clean && cd ..; \
-	  rm -R -f Build_$(PLATFORM); \
-	)
+	test -d Build_static && \
+	(cd Build_static && $(MAKE) uninstall && $(MAKE) clean); \
+	rm -rf Build_static
 
 #############################
 # Rules for OMSICpp libraries

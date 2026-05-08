@@ -1,10 +1,9 @@
 
 omc_add_subdirectory(c)
-omc_add_subdirectory(fmi)
-
 if(OM_OMC_ENABLE_CPP_RUNTIME)
   omc_add_subdirectory(cpp)
 endif()
+omc_add_subdirectory(fmi)
 
 # ModelicaExternalC
 # Disable ModelicaExternalC for MSVC since right now we are building static
@@ -15,6 +14,16 @@ if(NOT MSVC)
   omc_add_subdirectory(ModelicaExternalC)
 endif()
 
+# OMSI
+#
+# Makefiles currently prefer the static version of libOMSI*
+if(NOT DEFINED PLATFORM AND NOT DEFINED CACHE{PLATFORM})
+  set(PLATFORM "static")
+endif()
+omc_add_subdirectory(OMSI)
+omc_add_subdirectory(OMSIC)
+#omc_add_subdirectory(OMSICpp)
+
 # omc_add_subdirectory(opc)
 
 # ParModelica
@@ -22,7 +31,3 @@ endif()
 if(NOT MSVC)
   omc_add_subdirectory(ParModelica)
 endif()
-
-#ADD_SUBDIRECTORY(cpp)
-#ADD_SUBDIRECTORY(interactive)
-

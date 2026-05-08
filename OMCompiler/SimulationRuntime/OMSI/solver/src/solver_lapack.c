@@ -35,6 +35,8 @@
   *  @{ */
 
 
+#include <stdio.h>
+
 #include <solver_lapack.h>
 
 /*
