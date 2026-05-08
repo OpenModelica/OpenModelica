@@ -58,10 +58,11 @@ OMSIBaseClean:
 
 OMSICInstall: OMSIBaseInstall
 	cd SimulationRuntime/OMSIC; \
-	mkdir -p Build_static; \
-	(cd Build_static; echo "change to Build_static"; \
-	 PLATFORM=static $(CMAKE_CALL); \
-	 $(MAKE) install)
+	$(foreach PLATFORM, static, \
+	  mkdir -p Build_$(PLATFORM); \
+	  (cd Build_$(PLATFORM); echo "change to Build_$(PLATFORM)"; \
+	   $(CMAKE_CALL); \
+	   $(MAKE) install);)
 
 OMSICClean:
 	cd SimulationRuntime/OMSIC; \
