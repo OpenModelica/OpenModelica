@@ -88,7 +88,7 @@ end DumpFlatModel1;
 // end DumpFlatModel1;
 //
 // ########################################
-// stateMachineFlatten
+// simplify
 // ########################################
 //
 // class DumpFlatModel1
@@ -110,7 +110,7 @@ end DumpFlatModel1;
 // end DumpFlatModel1;
 //
 // ########################################
-// simplify
+// stateMachineFlatten
 // ########################################
 //
 // class DumpFlatModel1
