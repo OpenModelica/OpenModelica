@@ -1856,7 +1856,7 @@ protected
   DAE.Exp lhs, rhs;
   BackendDAE.Equation eqn;
   list<Integer> eqlistToRemove;
-  DAE.ComponentRef cr;
+  DAE.ComponentRef cr, rhsCr;
   list<DAE.ComponentRef> crefsVarsToRemove, protectedCrefs;
   BackendDAE.Variables newVars;
 algorithm
@@ -1888,18 +1888,32 @@ try
     end if;
   end for;
 
-  // remove equations and vars of the form a = $START.b from Eqsyst to simplify jacobian calculations
+  // Remove initialization start-value helper variables from the system used for
+  // symbolic differentiation. Differentiate treats $START.* crefs as constants,
+  // so keeping these variables would create derivative variables without
+  // remaining equations after simplification.
   newOrderedEquationArray := BackendEquation.emptyEqns();
   crefsVarsToRemove:= {};
   for eq in BackendEquation.equationList(currentSystem.orderedEqs) loop
     if not BackendEquation.isAlgorithm(eq) then
       lhs := BackendEquation.getEquationLHS(eq);
       rhs := BackendEquation.getEquationRHS(eq);
-      // print("\nlhs :" + anyString(lhs));
-      // print("\nrhs :" + anyString(rhs));
-      // BackendDump.printEquation(eq);
-      if (Expression.isExpCref(lhs) and Expression.isExpCref(rhs) and not listMember(Expression.expCref(lhs), protectedCrefs)) and (ComponentReference.isStartCref(Expression.expCref(rhs)) and ComponentReference.crefEqual(ComponentReference.popCref(Expression.expCref(rhs)), Expression.expCref(lhs))) then
-        crefsVarsToRemove := Expression.expCref(lhs) :: crefsVarsToRemove;
+      if Expression.isExpCref(lhs) then
+        cr := Expression.expCref(lhs);
+        // remove lhs equation of type $Start.a = ... as it does not contribute to the jacobian and create a variable a with constant binding which is not wanted
+        if ComponentReference.isStartCref(cr) then
+          crefsVarsToRemove := cr :: crefsVarsToRemove;
+        elseif Expression.isExpCref(rhs) and not listMember(cr, protectedCrefs) then
+          rhsCr := Expression.expCref(rhs);
+          // remove equation of form a = $START.a as it does not contribute to the jacobian and create a variable a with constant binding which is not wanted
+          if ComponentReference.isStartCref(rhsCr) and ComponentReference.crefEqual(ComponentReference.popCref(rhsCr), cr) then
+            crefsVarsToRemove := cr :: crefsVarsToRemove;
+          else
+            BackendEquation.add(eq, newOrderedEquationArray);
+          end if;
+        else
+          BackendEquation.add(eq, newOrderedEquationArray);
+        end if;
       else
         BackendEquation.add(eq, newOrderedEquationArray);
       end if;
@@ -1911,6 +1925,10 @@ try
   newVars := BackendVariable.emptyVars();
   for var in BackendVariable.varList(currentSystem.orderedVars) loop
     if not listMember(var.varName, crefsVarsToRemove) then
+      // make depVars crefs as unreplaceable as it might be removed by removeSimpleEquation and Optimization fails for jacobians
+      if listMember(var.varName, protectedCrefs) then
+        var := BackendVariable.setVarUnreplaceable(var, true);
+      end if;
       newVars := BackendVariable.addVar(var, newVars);
     end if;
   end for;
