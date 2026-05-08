@@ -91,5 +91,5 @@ public
     output Boolean enabled = Flags.isConfigFlagSet(Flags.BASE_MODELICA_OPTIONS, "inlineFunctions");
   end inlineFunctions;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end BaseModelica;

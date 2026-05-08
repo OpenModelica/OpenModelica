@@ -656,5 +656,5 @@ constant SCode.Element BASE_MODELICA_POSITIVE_MAX_SIMPLE = SCode.Element.CLASS(
   AbsynUtil.dummyInfo
 );
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFBuiltinFuncs;

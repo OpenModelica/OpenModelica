@@ -379,5 +379,5 @@ public
     end match;
   end markSubscript;
 
-  annotation(__OpenModelica_Interface="frontend");
+  annotation(__OpenModelica_Interface="nf_frontend");
 end NFStructural;

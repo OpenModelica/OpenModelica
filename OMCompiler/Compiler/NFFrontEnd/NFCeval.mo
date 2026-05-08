@@ -3530,5 +3530,5 @@ algorithm
     List.toString(args, Expression.toString, "", "(", ", ", ")", true), info);
 end printWrongArgsError;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFCeval;

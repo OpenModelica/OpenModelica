@@ -325,6 +325,6 @@ public
       set(nodeContext, FUNCTION) else set(nodeContext, CLASS);
   end nodeContext;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFInstContext;
 

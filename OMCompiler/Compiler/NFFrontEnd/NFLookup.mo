@@ -1220,5 +1220,5 @@ algorithm
   InstNode.updateClass(cls, scope);
 end loadLibrary_work;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFLookup;

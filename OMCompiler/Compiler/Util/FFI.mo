@@ -60,5 +60,5 @@ encapsulated package FFI
     annotation(Library = "omcruntime");
   end callFunction;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end FFI;

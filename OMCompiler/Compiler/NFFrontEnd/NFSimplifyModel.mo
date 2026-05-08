@@ -666,5 +666,5 @@ algorithm
   flatModel.initialAlgorithms := list(Algorithm.mapExp(alg, SimplifyExp.combineBinaries) for alg in flatModel.initialAlgorithms);
 end combineBinaries;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFSimplifyModel;

@@ -56,5 +56,5 @@ public
       attr.isImpure, attr.isFunctionPointerCall, attr.inlineType, attr.tailCall);
   end toDAE;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFCallAttributes;

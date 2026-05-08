@@ -206,5 +206,5 @@ public
     Error.addSourceMessage(err_msg, {name(imp2)}, info(imp2));
   end printImportError;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFImport;

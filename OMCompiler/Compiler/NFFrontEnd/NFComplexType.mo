@@ -74,5 +74,5 @@ public
     InstNode destructor;
   end EXTERNAL_OBJECT;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFComplexType;

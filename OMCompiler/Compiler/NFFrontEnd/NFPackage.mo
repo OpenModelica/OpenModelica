@@ -356,5 +356,5 @@ public
     end match;
   end replaceFuncConstants;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFPackage;

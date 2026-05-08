@@ -82,7 +82,6 @@ encapsulated package ModTable
   algorithm
     outResult := stringCompare(inKey1, inKey2);
   end keyCompare;
-  annotation(__OpenModelica_Interface="util");
 end ModTable;
 
 public
@@ -757,5 +756,5 @@ protected
   end mergeLocal;
 end Modifier;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFModifier;

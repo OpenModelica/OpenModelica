@@ -471,5 +471,5 @@ algorithm
   print("\n");
 end makeBuiltinLookupTree;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFBuiltin;

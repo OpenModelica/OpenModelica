@@ -351,5 +351,5 @@ public
     strl := list({Connector.toString(c.lhs), Connector.toString(c.rhs)} for c in conns.connections);
   end toStringList;
 
-  annotation(__OpenModelica_Interface="frontend");
+  annotation(__OpenModelica_Interface="nf_frontend");
 end NFConnections;

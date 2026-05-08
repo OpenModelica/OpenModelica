@@ -267,5 +267,5 @@ encapsulated package NFFlatModelicaUtil
     end match;
   end quoteCref;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFFlatModelicaUtil;

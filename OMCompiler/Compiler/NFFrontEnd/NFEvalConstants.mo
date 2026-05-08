@@ -691,5 +691,5 @@ algorithm
   InstNode.updateComponent(comp, fieldNode);
 end evaluateRecordDeclarationField;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="nf_frontend");
 end NFEvalConstants;

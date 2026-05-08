@@ -244,5 +244,5 @@ protected
     end match;
   end patchOperatorRecordConstructorBinding_traverser;
 
-  annotation(__OpenModelica_Interface="frontend");
+  annotation(__OpenModelica_Interface="nf_frontend");
 end NFOperatorOverloading;

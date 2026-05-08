@@ -756,5 +756,5 @@ protected
     outExpl := listReverseInPlace(outExpl);
   end transMulti;
 
-  annotation(__OpenModelica_Interface="frontend");
+  annotation(__OpenModelica_Interface="nf_frontend");
 end NFArrayConnections;
