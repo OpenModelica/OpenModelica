@@ -214,6 +214,7 @@ algorithm
   // Apply simplifications to the model.
   if not Flags.getConfigBool(Flags.NO_SIMPLIFY) then
     flatModel := SimplifyModel.simplify(flatModel);
+    InstUtil.dumpFlatModelDebug("simplify", flatModel);
   end if;
 
   // Flatten state machines to data-flow equations (MLS §17).
@@ -233,7 +234,6 @@ algorithm
     flatString := if dumpFlat then InstUtil.dumpFlatModel(flatModel, functions) else "";
   end if;
 
-  InstUtil.dumpFlatModelDebug("simplify", flatModel, functions);
   InstUtil.printStructuralParameters(flatModel);
 
   // Scalarize array components in the flat model.
