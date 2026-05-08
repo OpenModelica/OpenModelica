@@ -92,6 +92,7 @@ set(OMC_MM_ALWAYS_SOURCES
 
   # Only files needed for compiling MetaModelica
   # "Script";
+    ${CMAKE_CURRENT_SOURCE_DIR}/Script/BackendInterfaceImplementation.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/CevalScript.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/GlobalScript.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/GlobalScriptDump.mo
