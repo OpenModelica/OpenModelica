@@ -63,3 +63,15 @@ install(FILES
   include/fmi2/fmi2FunctionTypes.h
   include/fmi2/fmi2TypesPlatform.h
   DESTINATION include/omc/omsi/fmi2/)
+
+# uninstall target for makefile build
+# TODO: Remove when switching to CMake build
+if(NOT TARGET uninstall)
+  configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+    IMMEDIATE @ONLY)
+
+  add_custom_target(uninstall
+    COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
+endif()
