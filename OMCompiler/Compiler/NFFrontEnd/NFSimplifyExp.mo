@@ -1135,7 +1135,7 @@ function simplifyBinaryEW
 algorithm
   outExp := Expression.makeArray(Operator.typeOf(op),
     Array.threadMap(Expression.arrayElements(exp1), Expression.arrayElements(exp2),
-                    function simplifyBinaryOp(op = Operator.unlift(op))));
+                    function simplifyBinaryOp(op = Operator.stripEW(Operator.unlift(op)))));
 end simplifyBinaryEW;
 
 function simplifyUnary
