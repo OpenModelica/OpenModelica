@@ -60,7 +60,6 @@ function action
   input Integer startSt;
   input Integer mm_currSt,mm_pos,mm_sPos,mm_ePos,mm_linenr,lineNrStart;
   input Integer buffer;
-  input Boolean debug;
   input String fileNm;
   input String fileContents;
   input list<Token> inErrorTokens;
@@ -366,7 +365,7 @@ algorithm
       print("\nFound rule: " + String(act));
     end if;
 
-    (tok,mm_startSt,buffer2,errorTokens) := action(act,mm_startSt,mm_currSt,mm_pos,mm_sPos,mm_ePos,mm_linenr,lineNrStart,buffer,debug,fileName,fileContents,errorTokens);
+    (tok,mm_startSt,buffer2,errorTokens) := action(act,mm_startSt,mm_currSt,mm_pos,mm_sPos,mm_ePos,mm_linenr,lineNrStart,buffer,fileName,fileContents,errorTokens);
 
     if (debug==true) then
       print("\nDid action");
