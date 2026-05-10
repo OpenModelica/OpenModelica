@@ -840,22 +840,22 @@ algorithm
   end for;
 end allEqual;
 
-function isLess<T1, T2>
+function isLess<T>
   "Returns true if arr1 is less than arr2 using a lexicographical comparison."
-  input array<T1> arr1;
-  input array<T2> arr2;
+  input array<T> arr1;
+  input array<T> arr2;
   input LessFn lessFn;
   output Boolean res;
 
   partial function LessFn
-    input T1 e1;
-    input T2 e2;
+    input T e1;
+    input T e2;
     output Boolean res;
   end LessFn;
 protected
   Integer len1, len2;
-  T1 e1;
-  T2 e2;
+  T e1;
+  T e2;
 algorithm
   len1 := arrayLength(arr1);
   len2 := arrayLength(arr2);

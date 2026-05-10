@@ -263,7 +263,7 @@ public
       input array<Integer> set2;
       output Boolean res;
     algorithm
-      res := Array.isLess(set1, set1, intLt);
+      res := Array.isLess(set1, set2, intLt);
     end lessFn;
 
     list<array<Integer>> min_elems;
