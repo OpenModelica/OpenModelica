@@ -331,7 +331,8 @@ public
       (function Tearing.main(kind = kind),    "Tearing"),
       (Partitioning.categorize,               "Categorize"),
       (Solve.main,                            "Solve"),
-      (function Jacobian.main(kind = kind),   "Jacobian")
+      (function Jacobian.main(kind = kind),   "Jacobian"),
+      (Initialization.minimizeHomotopySystem, "Minimize Homotopy System")
     };
 
     (bdae, preOptClocks)  := applyModules(bdae, preOptModules, eq_filter_opt, ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE);

@@ -92,7 +92,6 @@ package TestInversePlant
   model BackwardOffDesignHomotopy
     Plant plant;
     parameter Real load = 0.3;
-    Real x(start=0);
   equation
     if initialSimplified() then
       plant.w = 1;
@@ -101,7 +100,6 @@ package TestInversePlant
       plant.P = homotopy(plant.Pnom*load, plant.Pnom);
       plant.Ts = plant.Tsnom;
     end if;
-    0 = homotopy(x^3 + x, x); // TODO fix runtime to use homotopy steps even when there is no alg loop with homotopy
   end BackwardOffDesignHomotopy;
 end TestInversePlant;"); getErrorString();
 
@@ -121,7 +119,7 @@ simulate(TestInversePlant.BackwardOffDesignHomotopy); getErrorString();
 // ============
 //   SimVars
 // ============
-// Algebraic Variables (37)
+// Algebraic Variables (36)
 // **************************
 //   (0)[ALGB] (1) Real plant.w
 //   (1)[ALGB] (1) Real plant.wfg
@@ -158,8 +156,7 @@ simulate(TestInversePlant.BackwardOffDesignHomotopy); getErrorString();
 //   (32)[ALGB] (1) Real plant.Ts
 //   (33)[ALGB] (1) Real plant.TIP
 //   (34)[ALGB] (1) Real plant.pin
-//   (35)[ALGB] (1) Real x = 0.0
-//   (36)[ALGB] (1) Real $FUN_1
+//   (35)[ALGB] (1) Real $FUN_1
 //
 // Real Parameters (12)
 // **********************
@@ -180,120 +177,109 @@ simulate(TestInversePlant.BackwardOffDesignHomotopy); getErrorString();
 // ************************
 //   (0)[PRMT] (1) Integer plant.N = 5
 //
-// Residual Variables (26)
+// Residual Variables (25)
 // *************************
-//   (0)[RES-] (1) Real $RES_SIM_0
-//   (1)[RES-] (1) Real $RES_SIM_11[1]
-//   (2)[RES-] (1) Real $RES_SIM_11[2]
-//   (3)[RES-] (1) Real $RES_SIM_11[3]
-//   (4)[RES-] (1) Real $RES_SIM_11[4]
-//   (5)[RES-] (1) Real $RES_SIM_11[5]
-//   (6)[RES-] (1) Real $RES_BND_21
-//   (7)[RES-] (1) Real $RES_SIM_7
-//   (8)[RES-] (1) Real $RES_BND_23
-//   (9)[RES-] (1) Real $RES_SIM_8
-//   (10)[RES-] (1) Real $RES_AUX_25
-//   (11)[RES-] (1) Real $RES_SIM_9[1]
-//   (12)[RES-] (1) Real $RES_SIM_9[2]
-//   (13)[RES-] (1) Real $RES_SIM_9[3]
-//   (14)[RES-] (1) Real $RES_SIM_9[4]
-//   (15)[RES-] (1) Real $RES_SIM_9[5]
-//   (16)[RES-] (1) Real $RES_SIM_13[1]
-//   (17)[RES-] (1) Real $RES_SIM_13[2]
-//   (18)[RES-] (1) Real $RES_SIM_13[3]
-//   (19)[RES-] (1) Real $RES_SIM_13[4]
-//   (20)[RES-] (1) Real $RES_SIM_13[5]
-//   (21)[RES-] (1) Real $RES_SIM_15[1]
-//   (22)[RES-] (1) Real $RES_SIM_15[2]
-//   (23)[RES-] (1) Real $RES_SIM_15[3]
-//   (24)[RES-] (1) Real $RES_SIM_15[4]
-//   (25)[RES-] (1) Real $RES_SIM_15[5]
+//   (0)[RES-] (1) Real $RES_SIM_10[1]
+//   (1)[RES-] (1) Real $RES_SIM_10[2]
+//   (2)[RES-] (1) Real $RES_SIM_10[3]
+//   (3)[RES-] (1) Real $RES_SIM_10[4]
+//   (4)[RES-] (1) Real $RES_SIM_10[5]
+//   (5)[RES-] (1) Real $RES_BND_20
+//   (6)[RES-] (1) Real $RES_SIM_6
+//   (7)[RES-] (1) Real $RES_BND_22
+//   (8)[RES-] (1) Real $RES_SIM_7
+//   (9)[RES-] (1) Real $RES_AUX_24
+//   (10)[RES-] (1) Real $RES_SIM_8[1]
+//   (11)[RES-] (1) Real $RES_SIM_8[2]
+//   (12)[RES-] (1) Real $RES_SIM_8[3]
+//   (13)[RES-] (1) Real $RES_SIM_8[4]
+//   (14)[RES-] (1) Real $RES_SIM_8[5]
+//   (15)[RES-] (1) Real $RES_SIM_12[1]
+//   (16)[RES-] (1) Real $RES_SIM_12[2]
+//   (17)[RES-] (1) Real $RES_SIM_12[3]
+//   (18)[RES-] (1) Real $RES_SIM_12[4]
+//   (19)[RES-] (1) Real $RES_SIM_12[5]
+//   (20)[RES-] (1) Real $RES_SIM_14[1]
+//   (21)[RES-] (1) Real $RES_SIM_14[2]
+//   (22)[RES-] (1) Real $RES_SIM_14[3]
+//   (23)[RES-] (1) Real $RES_SIM_14[4]
+//   (24)[RES-] (1) Real $RES_SIM_14[5]
 //
 // Initial Partition (Lambda = 0)
 // --------------------------------
-//   (39) plant.w := 1.0
-//   (38) plant.wfg := 1.0
-//   (37) Alias of 20
-//   (36) Alias of 19
-//   (35) resizable call [index  1]
-//   (34) Nonlinear System (size = 15, homotopy = false, mixed = false, torn = true)
+//   (36) plant.w := 1.0
+//   (35) plant.wfg := 1.0
+//   (34) Alias of 18
+//   (33) Alias of 17
+//   (32) resizable call [index  1]
+//   (31) Nonlinear System (size = 15, homotopy = false, mixed = false, torn = true)
 //   --Iteration Vars:{plant.T[2], plant.T[3], plant.T[4], plant.T[5], plant.T[6], plant.Q[1], plant.Q[2], plant.Q[3], plant.Q[4], plant.Q[5], ...}
-//   --(31) For-Loop-Residual:
+//   --(28) For-Loop-Residual:
 //   --for {$i1 in 1:5} loop
 //   --  0 = (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * plant.G[$i1] - plant.Q[$i1];
 //   --end for;
-//   --(32) For-Loop-Residual:
+//   --(29) For-Loop-Residual:
 //   --for {$i1 in 1:5} loop
 //   --  0 = plant.cp * plant.w * (plant.T[$i1] - plant.T[1 + $i1]) + plant.Q[$i1];
 //   --end for;
-//   --(33) For-Loop-Residual:
+//   --(30) For-Loop-Residual:
 //   --for {$i1 in 1:5} loop
 //   --  0 = plant.cp * plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) - plant.Q[$i1];
 //   --end for;
-//   (30) plant.TIT := plant.T[6]
-//   (29) $FUN_1 := sqrt(plant.TIT / plant.Tnom)
-//   (28) plant.p[6] := plant.w / ((plant.Kt * $FUN_1) / $FUN_1 ^ 2.0)
-//   (27) plant.TIP := plant.p[6]
-//   (26) plant.P := plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma))
-//   (25) plant.Ts := plant.Tfg[6]
-//   (24) Alias of 5
-//   (23) Alias of 4
-//   (22) x := 0.0
-//   (21) Alias of 1
+//   (27) plant.TIT := plant.T[6]
+//   (26) $FUN_1 := sqrt(plant.TIT / plant.Tnom)
+//   (25) plant.p[6] := plant.w / ((plant.Kt * $FUN_1) / $FUN_1 ^ 2.0)
+//   (24) plant.TIP := plant.p[6]
+//   (23) plant.P := plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma))
+//   (22) plant.Ts := plant.Tfg[6]
+//   (21) Alias of 3
+//   (20) Alias of 2
+//   (19) Alias of 1
 //
 // Initial Partition
 // -------------------
-//   (20) plant.T[1] := 300.0
-//   (19) plant.Tfg[1] := 800.0
-//   (18) plant.Ts := plant.Tsnom
-//   (17) plant.Tfg[6] := plant.Ts
-//   (16) plant.P := homotopy(plant.Pnom * load, plant.Pnom)
-//   (15) Nonlinear System (size = 25, homotopy = false, mixed = false, torn = true)
+//   (18) plant.T[1] := 300.0
+//   (17) plant.Tfg[1] := 800.0
+//   (16) plant.Ts := plant.Tsnom
+//   (15) plant.Tfg[6] := plant.Ts
+//   (14) plant.P := homotopy(plant.Pnom * load, plant.Pnom)
+//   (13) Nonlinear System (size = 25, homotopy = true, mixed = false, torn = true)
 //   --Iteration Vars:{plant.w, plant.wfg, plant.Tfg[2], plant.Tfg[3], plant.Tfg[4], plant.Tfg[5], plant.TIT, plant.TIP, plant.p[6], $FUN_1, ...}
-//   --(6) For-Loop-Residual:
+//   --(4) For-Loop-Residual:
 //   --for {$i1 in 1:5} loop
 //   --  0 = plant.cp * plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) - plant.Q[$i1];
 //   --end for;
-//   --(7) 0 = plant.T[6] - plant.TIT
-//   --(8) 0 = plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) - plant.P
-//   --(9) 0 = plant.p[6] - plant.TIP
-//   --(10) 0 = (plant.p[6] * plant.Kt) / $FUN_1 - plant.w
-//   --(11) 0 = sqrt(plant.TIT / plant.Tnom) - $FUN_1
-//   --(12) For-Loop-Residual:
+//   --(5) 0 = plant.T[6] - plant.TIT
+//   --(6) 0 = plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) - plant.P
+//   --(7) 0 = plant.p[6] - plant.TIP
+//   --(8) 0 = (plant.p[6] * plant.Kt) / $FUN_1 - plant.w
+//   --(9) 0 = sqrt(plant.TIT / plant.Tnom) - $FUN_1
+//   --(10) For-Loop-Residual:
 //   --for {$i1 in 1:5} loop
 //   --  0 = plant.cp * plant.w * (plant.T[$i1] - plant.T[1 + $i1]) + plant.Q[$i1];
 //   --end for;
-//   --(13) For-Loop-Residual:
+//   --(11) For-Loop-Residual:
 //   --for {$i1 in 1:5} loop
 //   --  0 = (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * plant.G[$i1] - plant.Q[$i1];
 //   --end for;
-//   --(14) For-Loop-Residual:
+//   --(12) For-Loop-Residual:
 //   --for {$i1 in 1:5} loop
 //   --  0 = (0.2 * plant.NTU) * plant.w ^ 0.8 - plant.G[$i1];
 //   --end for;
-//   (5) resizable call [index  0]
-//   (4) plant.pin := plant.p[1]
-//   (3) Nonlinear System (size = 1, homotopy = true, mixed = false, torn = true)
-//   --Iteration Vars:{x}
-//   --(2) 0 = homotopy(x ^ 3.0 + x, x)
+//   (3) resizable call [index  0]
+//   (2) plant.pin := plant.p[1]
 //   (1) plant.Gtot := plant.NTU
 //
 // Algebraic Partition 1
 // -----------------------
-//   (49) Nonlinear System (size = 1, homotopy = false, mixed = false, torn = true)
-//   --Iteration Vars:{x}
-//   --(48) 0 = x ^ 3.0 + x
-//
-// Algebraic Partition 2
-// -----------------------
-//   (47) Alias of 19
-//   (46) plant.Ts := plant.Tsnom
-//   (45) Alias of 17
-//   (44) plant.P := plant.Pnom * load
-//   (43) Alias of 20
+//   (44) Alias of 17
+//   (43) plant.Ts := plant.Tsnom
 //   (42) Alias of 15
-//   (41) Alias of 5
-//   (40) Alias of 4
+//   (41) plant.P := plant.Pnom * load
+//   (40) Alias of 18
+//   (39) Alias of 13
+//   (38) Alias of 3
+//   (37) Alias of 2
 //
 // Event Partition
 // -----------------
@@ -343,18 +329,14 @@ simulate(TestInversePlant.BackwardOffDesignHomotopy); getErrorString();
 // allEquations:
 // ========================================
 //
-// 49:  (NONLINEAR) index:3 jacobian: false
-// crefs: x
-// 	48: x ^ 3.0 + x (RESIDUAL)
-//
-// 47: alias of 19
-// 46: plant.Ts=plant.Tsnom [Real]
-// 45: alias of 17
-// 44: plant.P=plant.Pnom * load [Real]
-// 43: alias of 20
+// 44: alias of 17
+// 43: plant.Ts=plant.Tsnom [Real]
 // 42: alias of 15
-// 41: alias of 5
-// 40: alias of 4
+// 41: plant.P=plant.Pnom * load [Real]
+// 40: alias of 18
+// 39: alias of 13
+// 38: alias of 3
+// 37: alias of 2
 // ========================================
 //
 //
@@ -365,20 +347,16 @@ simulate(TestInversePlant.BackwardOffDesignHomotopy); getErrorString();
 //
 //
 //
-// algebraicEquations (2 systems):
+// algebraicEquations (1 systems):
 // ========================================
-// 49:  (NONLINEAR) index:3 jacobian: false
-// crefs: x
-// 	48: x ^ 3.0 + x (RESIDUAL)
-//
-// 47: alias of 19
-// 46: plant.Ts=plant.Tsnom [Real]
-// 45: alias of 17
-// 44: plant.P=plant.Pnom * load [Real]
-// 43: alias of 20
+// 44: alias of 17
+// 43: plant.Ts=plant.Tsnom [Real]
 // 42: alias of 15
-// 41: alias of 5
-// 40: alias of 4
+// 41: plant.P=plant.Pnom * load [Real]
+// 40: alias of 18
+// 39: alias of 13
+// 38: alias of 3
+// 37: alias of 2
 // ========================================
 //
 //
@@ -388,61 +366,56 @@ simulate(TestInversePlant.BackwardOffDesignHomotopy); getErrorString();
 //
 //
 //
-// initialEquations: (10)
+// initialEquations: (9)
 // ========================================
-// 20: plant.T[1]=300.0 [Real]
-// 19: plant.Tfg[1]=800.0 [Real]
-// 18: plant.Ts=plant.Tsnom [Real]
-// 17: plant.Tfg[6]=plant.Ts [Real]
-// 16: plant.P=homotopy(plant.Pnom * load, plant.Pnom) [Real]
-// 15:  (NONLINEAR) index:1 jacobian: false
+// 18: plant.T[1]=300.0 [Real]
+// 17: plant.Tfg[1]=800.0 [Real]
+// 16: plant.Ts=plant.Tsnom [Real]
+// 15: plant.Tfg[6]=plant.Ts [Real]
+// 14: plant.P=homotopy(plant.Pnom * load, plant.Pnom) [Real]
+// 13:  (NONLINEAR) index:0 jacobian: false
 // crefs: plant.w , plant.wfg , plant.Tfg[2] , plant.Tfg[3] , plant.Tfg[4] , plant.Tfg[5] , plant.TIT , plant.TIP , plant.p[6] , $FUN_1 , plant.Q[1] , plant.Q[2] , plant.Q[3] , plant.Q[4] , plant.Q[5] , plant.T[2] , plant.T[3] , plant.T[4] , plant.T[5] , plant.T[6] , plant.G[1] , plant.G[2] , plant.G[3] , plant.G[4] , plant.G[5]
-// 	6: plant.cp * plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) - plant.Q[$i1] (FOR_RESIDUAL)
-// 	7: plant.T[6] - plant.TIT (RESIDUAL)
-// 	8: plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) - plant.P (RESIDUAL)
-// 	9: plant.p[6] - plant.TIP (RESIDUAL)
-// 	10: plant.p[6] * plant.Kt / $FUN_1 - plant.w (RESIDUAL)
-// 	11: sqrt(plant.TIT / plant.Tnom) - $FUN_1 (RESIDUAL)
-// 	12: plant.cp * plant.w * (plant.T[$i1] - plant.T[1 + $i1]) + plant.Q[$i1] (FOR_RESIDUAL)
-// 	13: (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * plant.G[$i1] - plant.Q[$i1] (FOR_RESIDUAL)
-// 	14: 0.2 * plant.NTU * plant.w ^ 0.8 - plant.G[$i1] (FOR_RESIDUAL)
+// 	4: plant.cp * plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) - plant.Q[$i1] (FOR_RESIDUAL)
+// 	5: plant.T[6] - plant.TIT (RESIDUAL)
+// 	6: plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) - plant.P (RESIDUAL)
+// 	7: plant.p[6] - plant.TIP (RESIDUAL)
+// 	8: plant.p[6] * plant.Kt / $FUN_1 - plant.w (RESIDUAL)
+// 	9: sqrt(plant.TIT / plant.Tnom) - $FUN_1 (RESIDUAL)
+// 	10: plant.cp * plant.w * (plant.T[$i1] - plant.T[1 + $i1]) + plant.Q[$i1] (FOR_RESIDUAL)
+// 	11: (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * plant.G[$i1] - plant.Q[$i1] (FOR_RESIDUAL)
+// 	12: 0.2 * plant.NTU * plant.w ^ 0.8 - plant.G[$i1] (FOR_RESIDUAL)
 //
-// 5:  (SES_RESIZABLE_ASSIGN)  call index: 0
+// 3:  (SES_RESIZABLE_ASSIGN)  call index: 0
 //
-// 4: plant.pin=plant.p[1] [Real]
-// 3:  (NONLINEAR) index:0 jacobian: false
-// crefs: x
-// 	2: homotopy(x ^ 3.0 + x, x) (RESIDUAL)
-//
+// 2: plant.pin=plant.p[1] [Real]
 // 1: plant.Gtot=plant.NTU [Real]
 // ========================================
 //
 //
 //
-// initialEquations_lambda0: (16)
+// initialEquations_lambda0: (15)
 // ========================================
-// 39: plant.w=1.0 [Real]
-// 38: plant.wfg=1.0 [Real]
-// 37: alias of 20
-// 36: alias of 19
-// 35:  (SES_RESIZABLE_ASSIGN)  call index: 1
+// 36: plant.w=1.0 [Real]
+// 35: plant.wfg=1.0 [Real]
+// 34: alias of 18
+// 33: alias of 17
+// 32:  (SES_RESIZABLE_ASSIGN)  call index: 1
 //
-// 34:  (NONLINEAR) index:2 jacobian: false
+// 31:  (NONLINEAR) index:1 jacobian: false
 // crefs: plant.T[2] , plant.T[3] , plant.T[4] , plant.T[5] , plant.T[6] , plant.Q[1] , plant.Q[2] , plant.Q[3] , plant.Q[4] , plant.Q[5] , plant.Tfg[2] , plant.Tfg[3] , plant.Tfg[4] , plant.Tfg[5] , plant.Tfg[6]
-// 	31: (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * plant.G[$i1] - plant.Q[$i1] (FOR_RESIDUAL)
-// 	32: plant.cp * plant.w * (plant.T[$i1] - plant.T[1 + $i1]) + plant.Q[$i1] (FOR_RESIDUAL)
-// 	33: plant.cp * plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) - plant.Q[$i1] (FOR_RESIDUAL)
+// 	28: (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * plant.G[$i1] - plant.Q[$i1] (FOR_RESIDUAL)
+// 	29: plant.cp * plant.w * (plant.T[$i1] - plant.T[1 + $i1]) + plant.Q[$i1] (FOR_RESIDUAL)
+// 	30: plant.cp * plant.wfg * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) - plant.Q[$i1] (FOR_RESIDUAL)
 //
-// 30: plant.TIT=plant.T[6] [Real]
-// 29: $FUN_1=sqrt(plant.TIT / plant.Tnom) [Real]
-// 28: plant.p[6]=plant.w / (plant.Kt * $FUN_1 / $FUN_1 ^ 2.0) [Real]
-// 27: plant.TIP=plant.p[6] [Real]
-// 26: plant.P=plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) [Real]
-// 25: plant.Ts=plant.Tfg[6] [Real]
-// 24: alias of 5
-// 23: alias of 4
-// 22: x=0.0 [Real]
-// 21: alias of 1
+// 27: plant.TIT=plant.T[6] [Real]
+// 26: $FUN_1=sqrt(plant.TIT / plant.Tnom) [Real]
+// 25: plant.p[6]=plant.w / (plant.Kt * $FUN_1 / $FUN_1 ^ 2.0) [Real]
+// 24: plant.TIP=plant.p[6] [Real]
+// 23: plant.P=plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) [Real]
+// 22: plant.Ts=plant.Tfg[6] [Real]
+// 21: alias of 3
+// 20: alias of 2
+// 19: alias of 1
 //
 // removedInitialEquations:
 // ========================================
@@ -499,7 +472,7 @@ simulate(TestInversePlant.BackwardOffDesignHomotopy); getErrorString();
 //
 // modelInfo:
 // ========================================
-// algVars (37)
+// algVars (36)
 // ----------------------
 // index:0: plant.w (no alias)  initial: 	no arrCref index:(1) []
 // index:1: plant.wfg (no alias)  initial: 	no arrCref index:(2) []
@@ -536,25 +509,24 @@ simulate(TestInversePlant.BackwardOffDesignHomotopy); getErrorString();
 // index:32: plant.Ts (no alias)  initial: 	no arrCref index:(33) []
 // index:33: plant.TIP (no alias)  initial: 	no arrCref index:(34) []
 // index:34: plant.pin (no alias)  initial: 	no arrCref index:(35) []
-// index:35: x (no alias)  initial: 0.0	no arrCref index:(36) []
-// index:36: $FUN_1 (no alias)  hideResult  initial: 	no arrCref index:(37) []
+// index:35: $FUN_1 (no alias)  hideResult  initial: 	no arrCref index:(36) []
 // paramVars
 // ----------------------
-// index:0: plant.NTU (no alias)  initial: 4.0	no arrCref index:(39) []
-// index:1: plant.Gtot (no alias)  initial: 	no arrCref index:(40) []
-// index:2: plant.cp (no alias)  initial: 1.0	no arrCref index:(41) []
-// index:3: plant.kf (no alias)  initial: 0.1	no arrCref index:(42) []
-// index:4: plant.Kt (no alias)  initial: 1.0	no arrCref index:(43) []
-// index:5: plant.Tnom (no alias)  initial: 700.0	no arrCref index:(44) []
-// index:6: plant.Tsnom (no alias)  initial: 400.0	no arrCref index:(45) []
-// index:7: plant.Pnom (no alias)  initial: 223.0	no arrCref index:(46) []
-// index:8: plant.pnom (no alias)  initial: 1.1	no arrCref index:(47) []
-// index:9: plant.TOP (no alias)  initial: 0.1	no arrCref index:(48) []
-// index:10: plant.gamma (no alias)  initial: 1.2	no arrCref index:(49) []
-// index:11: load (no alias)  initial: 0.3	no arrCref index:(50) []
+// index:0: plant.NTU (no alias)  initial: 4.0	no arrCref index:(38) []
+// index:1: plant.Gtot (no alias)  initial: 	no arrCref index:(39) []
+// index:2: plant.cp (no alias)  initial: 1.0	no arrCref index:(40) []
+// index:3: plant.kf (no alias)  initial: 0.1	no arrCref index:(41) []
+// index:4: plant.Kt (no alias)  initial: 1.0	no arrCref index:(42) []
+// index:5: plant.Tnom (no alias)  initial: 700.0	no arrCref index:(43) []
+// index:6: plant.Tsnom (no alias)  initial: 400.0	no arrCref index:(44) []
+// index:7: plant.Pnom (no alias)  initial: 223.0	no arrCref index:(45) []
+// index:8: plant.pnom (no alias)  initial: 1.1	no arrCref index:(46) []
+// index:9: plant.TOP (no alias)  initial: 0.1	no arrCref index:(47) []
+// index:10: plant.gamma (no alias)  initial: 1.2	no arrCref index:(48) []
+// index:11: load (no alias)  initial: 0.3	no arrCref index:(49) []
 // intParamVars
 // ----------------------
-// index:0: plant.N (no alias)  initial: 5	no arrCref index:(38) []
+// index:0: plant.N (no alias)  initial: 5	no arrCref index:(37) []
 // functions:
 // -----------
 //

@@ -1056,6 +1056,18 @@ public
     end match;
   end isAlgebraicLoop;
 
+  function setHomotopy
+    input output StrongComponent comp;
+    input Boolean homotopy;
+  algorithm
+    comp := match comp
+      case ALGEBRAIC_LOOP() algorithm
+        comp.homotopy := homotopy;
+      then comp;
+      else comp;
+    end match;
+  end setHomotopy;
+
   function createPseudoScalar
     input list<Integer> comp_indices;
     input array<Integer> eqn_to_var;
