@@ -7219,33 +7219,6 @@ void ModelWidget::drawOMSModelIconElements()
     drawOMSModelElement();
     qDebug() << "draw2";
     // draw connectors
-    // for (int i = 0 ; i < mpLibraryTreeItem->childrenSize() ; i++) {
-    //   LibraryTreeItem *pChildLibraryTreeItem = mpLibraryTreeItem->childAt(i);
-    //   if ((pChildLibraryTreeItem->getOMSConnector()
-    //       && (pChildLibraryTreeItem->getOMSConnector()->causality == oms_causality_input
-    //           || pChildLibraryTreeItem->getOMSConnector()->causality == oms_causality_output))
-    //       || (pChildLibraryTreeItem->getOMSBusConnector())) {
-    //     double x = 0.5;
-    //     double y = 0.5;
-    //     if (pChildLibraryTreeItem->getOMSConnector() && pChildLibraryTreeItem->getOMSConnector()->geometry) {
-    //       x = pChildLibraryTreeItem->getOMSConnector()->geometry->x;
-    //       y = pChildLibraryTreeItem->getOMSConnector()->geometry->y;
-    //     } else if (pChildLibraryTreeItem->getOMSBusConnector() && pChildLibraryTreeItem->getOMSBusConnector()->geometry) {
-    //       x = pChildLibraryTreeItem->getOMSBusConnector()->geometry->x;
-    //       y = pChildLibraryTreeItem->getOMSBusConnector()->geometry->y;
-    //     }
-    //     QString annotation = QString("Placement(true,%1,%2,-10.0,-10.0,10.0,10.0,0,%1,%2,-10.0,-10.0,10.0,10.0,)")
-    //                          .arg(Utilities::mapToCoordinateSystem(x, 0, 1, -100, 100))
-    //                          .arg(Utilities::mapToCoordinateSystem(y, 0, 1, -100, 100));
-    //     drawOMSElement(pChildLibraryTreeItem, annotation);
-    //     // assoicated the bus component with each of its connector component
-    //     if (pChildLibraryTreeItem->getOMSBusConnector()) {
-    //       associateBusWithConnectors(pChildLibraryTreeItem->getName());
-    //     }
-    //   }
-    // }
-
-    // draw oms3 connectors
     for (int i = 0 ; i < mpLibraryTreeItem->childrenSize() ; i++) {
       LibraryTreeItem *pChildLibraryTreeItem = mpLibraryTreeItem->childAt(i);
 
