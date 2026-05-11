@@ -496,32 +496,32 @@ QIcon LibraryTreeItem::getLibraryTreeItemIcon() const
       } else {
         return ResourceCache::getIcon(":/Resources/icons/mat.svg");
       }
-    } else if (mpOMSConnector) {
-      switch (mpOMSConnector->type) {
-        case oms_signal_type_real:
-          switch (mpOMSConnector->causality) {
-            case oms_causality_input:
+    } else if (mpOMSModelConnector) {
+      switch (mpOMSModelConnector->getSignalType()) {
+        case OMSModel::SignalType::oms_signal_type_real:
+          switch (mpOMSModelConnector->getCausality()) {
+            case OMSModel::Causality::oms_causality_input:
               return ResourceCache::getIcon(":/Resources/icons/real-input-connector.svg");
-            case oms_causality_output:
+            case OMSModel::Causality::oms_causality_output:
               return ResourceCache::getIcon(":/Resources/icons/real-output-connector.svg");
             default:
               return ResourceCache::getIcon(":/Resources/icons/package-icon.svg");
           }
-        case oms_signal_type_integer:
-        case oms_signal_type_enum:
-          switch (mpOMSConnector->causality) {
-            case oms_causality_input:
+        case OMSModel::SignalType::oms_signal_type_integer:
+        case OMSModel::SignalType::oms_signal_type_enum:
+          switch (mpOMSModelConnector->getCausality()) {
+            case OMSModel::Causality::oms_causality_input:
               return ResourceCache::getIcon(":/Resources/icons/integer-input-connector.svg");
-            case oms_causality_output:
+            case OMSModel::Causality::oms_causality_output:
               return ResourceCache::getIcon(":/Resources/icons/integer-output-connector.svg");
             default:
               return ResourceCache::getIcon(":/Resources/icons/package-icon.svg");
           }
-        case oms_signal_type_boolean:
-          switch (mpOMSConnector->causality) {
-            case oms_causality_input:
+        case OMSModel::SignalType::oms_signal_type_boolean:
+          switch (mpOMSModelConnector->getCausality()) {
+            case OMSModel::Causality::oms_causality_input:
               return ResourceCache::getIcon(":/Resources/icons/boolean-input-connector.svg");
-            case oms_causality_output:
+            case OMSModel::Causality::oms_causality_output:
               return ResourceCache::getIcon(":/Resources/icons/boolean-output-connector.svg");
             default:
               return ResourceCache::getIcon(":/Resources/icons/package-icon.svg");
