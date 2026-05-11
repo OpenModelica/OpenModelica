@@ -455,11 +455,11 @@ QString LibraryTreeItem::getTooltip() const {
       tooltip = QString("%1 %2<br />%3: %4")
                 .arg(Helper::name).arg(mName)
                 .arg(Helper::fileLocation).arg(mSubModelPath);
-    } else if (mpOMSConnector) {
+    } else if (mpOMSModelConnector) {
       tooltip = QString("%1 %2<br />%3: %4<br />%5: %6")
                 .arg(Helper::name).arg(mName)
-                .arg(Helper::type).arg(OMSProxy::getSignalTypeString(mpOMSConnector->type))
-                .arg(QObject::tr("Causality")).arg(OMSProxy::getCausalityString(mpOMSConnector->causality));
+                .arg(Helper::type).arg(mpOMSModelConnector->getSignalTypeString())
+                .arg(QObject::tr("Causality")).arg(mpOMSModelConnector->getCausalityString());
     } else if (mpOMSBusConnector) {
       tooltip = QString("%1 %2<br />%3: %4")
                 .arg(Helper::name).arg(mName)
