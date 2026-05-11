@@ -2064,10 +2064,14 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
         if (!pPlotCurve && !pPlotWindow->getPlot()->getPlotCurvesList().isEmpty()) {
           pPlotCurve = pPlotWindow->getPlot()->getPlotCurvesList().last();
         }
-        assert(pPlotCurve != pLastPlotCurve);
+        assert(pPlotCurve != pLastPlotCurve); // implies pPlotCurve != nullptr
         bool requiresUpdate = false;
         if (!pVariablesTreeItem->isString() && pVariablesTreeItem->getUnit().compare(pVariablesTreeItem->getDisplayUnit()) != 0) {
-          OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(pVariablesTreeItem->getUnit(), pVariablesTreeItem->getDisplayUnit());
+          /* Ticket:15501. We could have prefix unit when we called pPlotWindow->plot(pPlotCurve); above.
+           * So use it when converting since the values represent prefix + unit and not just unit.
+           */
+          QString yUnitPrefix = pPlotCurve->getYUnitPrefix();
+          OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(yUnitPrefix + pVariablesTreeItem->getUnit(), pVariablesTreeItem->getDisplayUnit());
           if (convertUnit.unitsCompatible) {
             requiresUpdate = true;
             for (int i = 0 ; i < pPlotCurve->mYAxisVector.size() ; i++) {
@@ -2181,11 +2185,12 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             if (!pPlotCurve && !pPlotWindow->getPlot()->getPlotCurvesList().isEmpty()) {
               pPlotCurve = pPlotWindow->getPlot()->getPlotCurvesList().last();
             }
-            assert(pPlotCurve != pLastPlotCurve);
+            assert(pPlotCurve != pLastPlotCurve); // implies pPlotCurve != nullptr
             bool requiresUpdate = false;
             // convert x value
             if (!plotParametricCurve.xVariable.isString && plotParametricCurve.xVariable.unit.compare(plotParametricCurve.xVariable.displayUnit) != 0) {
-              OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(plotParametricCurve.xVariable.unit, plotParametricCurve.xVariable.displayUnit);
+              QString xUnitPrefix = pPlotCurve->getXUnitPrefix();
+              OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(xUnitPrefix + plotParametricCurve.xVariable.unit, plotParametricCurve.xVariable.displayUnit);
               if (convertUnit.unitsCompatible) {
                 requiresUpdate = true;
                 for (int i = 0 ; i < pPlotCurve->mXAxisVector.size() ; i++) {
@@ -2197,7 +2202,8 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             }
             // convert y value
             if (!plotParametricVariable.isString && plotParametricVariable.unit.compare(plotParametricVariable.displayUnit) != 0) {
-              OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(plotParametricVariable.unit, plotParametricVariable.displayUnit);
+              QString yUnitPrefix = pPlotCurve->getYUnitPrefix();
+              OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(yUnitPrefix + plotParametricVariable.unit, plotParametricVariable.displayUnit);
               if (convertUnit.unitsCompatible) {
                 requiresUpdate = true;
                 for (int i = 0 ; i < pPlotCurve->mYAxisVector.size() ; i++) {
