@@ -4,23 +4,25 @@
 
 namespace OMSModel
 {
+
+
 void ConnectorGeometry::deserialize(const QJsonObject &jsonObject)
 {
-    mX = jsonObject.value("x").toDouble(0.5);
-    mY = jsonObject.value("y").toDouble(0.5);
+  mX = jsonObject.value("x").toDouble(0.5);
+  mY = jsonObject.value("y").toDouble(0.5);
 }
 
 void ElementGeometry::deserialize(const QJsonObject &jsonObject)
 {
-    mX1 = jsonObject.value("x1").toDouble(-10.0);
-    mY1 = jsonObject.value("y1").toDouble(-10.0);
-    mX2 = jsonObject.value("x2").toDouble(10.0);
-    mY2 = jsonObject.value("y2").toDouble(10.0);
-    mRotation = jsonObject.value("rotation").toDouble(0.0);
-    mIconSource = jsonObject.value("iconSource").toString();
-    mIconRotation = jsonObject.value("iconRotation").toDouble(0.0);
-    mIconFlip = jsonObject.value("iconFlip").toBool(false);
-    mIconFixedAspectRatio = jsonObject.value("iconFixedAspectRatio").toBool(false);
+  mX1 = jsonObject.value("x1").toDouble(-10.0);
+  mY1 = jsonObject.value("y1").toDouble(-10.0);
+  mX2 = jsonObject.value("x2").toDouble(10.0);
+  mY2 = jsonObject.value("y2").toDouble(10.0);
+  mRotation = jsonObject.value("rotation").toDouble(0.0);
+  mIconSource = jsonObject.value("iconSource").toString();
+  mIconRotation = jsonObject.value("iconRotation").toDouble(0.0);
+  mIconFlip = jsonObject.value("iconFlip").toBool(false);
+  mIconFixedAspectRatio = jsonObject.value("iconFixedAspectRatio").toBool(false);
 }
 
 ssd_element_geometry_t ElementGeometry::toSsdElementGeometry() const
@@ -48,28 +50,84 @@ ssd_element_geometry_t ElementGeometry::toSsdElementGeometry() const
 
 void Connector::deserialize(const QJsonObject &jsonObject)
 {
-    mName = jsonObject.value("name").toString();
-    mCausality = jsonObject.value("causality").toString().toLower();
-    mSignalType = jsonObject.value("signalType").toString().toLower();
+  mName = jsonObject.value("name").toString();
+  mCausality = causalityFromString(jsonObject.value("causality").toString());
+  mSignalType = signalTypeFromString(jsonObject.value("signalType").toString());
 
-    if (jsonObject.value("geometry").isObject()) {
-        mGeometry.deserialize(jsonObject.value("geometry").toObject());
-    }
+  if (jsonObject.value("geometry").isObject()) {
+    mGeometry.deserialize(jsonObject.value("geometry").toObject());
+  }
 }
 
-bool Connector::isInput() const
+Causality Connector::causalityFromString(const QString &value)
 {
-    return mCausality == "input";
+  const QString v = value.toLower();
+  if (v == "input") {
+      return Causality::oms_causality_input;
+  } else if (v == "output") {
+      return Causality::oms_causality_output;
+  } else if (v == "parameter") {
+      return Causality::oms_causality_parameter;
+  } else if (v == "calculatedParameter") {
+      return Causality::oms_causality_calculatedParameter;
+  } else if (v == "bidir") {
+      return Causality::oms_causality_bidir;
+  }
+  return Causality::oms_causality_undefined;
 }
 
-bool Connector::isOutput() const
+SignalType Connector::signalTypeFromString(const QString &value)
 {
-    return mCausality == "output";
+  const QString v = value.toLower();
+  if (v == "real") {
+      return SignalType::oms_signal_type_real;
+  } else if (v == "integer") {
+      return SignalType::oms_signal_type_integer;
+  } else if (v == "boolean") {
+      return SignalType::oms_signal_type_boolean;
+  } else if (v == "string") {
+      return SignalType::oms_signal_type_string;
+  } else if (v == "enum" || v == "enumeration") {
+      return SignalType::oms_signal_type_enum;
+  }
+  return SignalType::oms_signal_type_real;
 }
 
-bool Connector::isParameter() const
+QString Connector::getCausalityString() const
 {
-    return mCausality == "parameter";
+  switch (mCausality) {
+  case Causality::oms_causality_input:
+    return "input";
+  case Causality::oms_causality_output:
+    return "output";
+  case Causality::oms_causality_parameter:
+    return "parameter";
+  case Causality::oms_causality_calculatedParameter:
+    return "calculatedParameter";
+  case Causality::oms_causality_bidir:
+    return "bidir";
+  case Causality::oms_causality_undefined:
+  default:
+    return "undefined";
+  }
+}
+
+QString Connector::getSignalTypeString() const
+{
+  switch (mSignalType) {
+  case SignalType::oms_signal_type_real:
+    return "real";
+  case SignalType::oms_signal_type_integer:
+    return "integer";
+  case SignalType::oms_signal_type_boolean:
+    return "boolean";
+  case SignalType::oms_signal_type_string:
+    return "string";
+  case SignalType::oms_signal_type_enum:
+    return "enum";
+  default:
+    return "unknown";
+  }
 }
 
 Element::~Element()
@@ -157,8 +215,8 @@ void Model::printElement(const OMSModel::Element *element, int indent)
 
     for (const OMSModel::Connector *conn : element->getConnectors()) {
         qDebug() << pad + "  " << "connector:" << conn->getName()
-        << "causality:" << conn->getCausality()
-        << "signalType:" << conn->getSignalType()
+        << "causality:" << conn->getCausalityString()
+        << "signalType:" << conn->getSignalTypeString()
         << "x:" << conn->getGeometry().getX()
         << "y:" << conn->getGeometry().getY();
     }

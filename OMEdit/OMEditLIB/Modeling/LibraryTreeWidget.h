@@ -148,9 +148,6 @@ public:
   void setOMSElement(oms_element_t *pOMSComponent) {mpOMSElement = pOMSComponent;}
   oms_element_t* getOMSElement() const {return mpOMSElement;}
 
-  void setOMSElementJson(const QJsonObject &obj) { mpOMSElementJson = obj; }
-  QJsonObject getOMSElementJson() const { return mpOMSElementJson; }
-
   // bool isSystemElement() const {return (mpOMSElement && (mpOMSElement->type == oms_element_system));}
   // bool isComponentElement() const {return (mpOMSElement && (mpOMSElement->type == oms_element_component));}
   // bool isFMUComponent() const {return (mpOMSElement && (mpOMSElement->type == oms_element_component) && (mComponentType == oms_component_fmu));}
@@ -165,67 +162,10 @@ public:
   // QString getOMSConnectorSignalTypeJson() const {return mpOMSElementJson["signalType"].toString();}
   // QJsonObject getOMSConnectorGeometryJson() const {return mpOMSElementJson["geometry"].toObject();}
 
-  bool isSystemElement() const
-  {
-      if (mpOMSModelElement) {
-          qDebug() << "isSystemElement:" << mpOMSModelElement->isSystem();
-          return mpOMSModelElement->isSystem();
-      }
+  bool isSystemElement() const { return (mpOMSModelElement && mpOMSModelElement->isSystem()); }
+  bool isComponentElement() const {return (mpOMSModelElement && mpOMSModelElement->isComponent());}
+  bool isFMUComponent() const {return (mpOMSModelElement && mpOMSModelElement->isComponent());}
 
-      return mpOMSElementJson["type"].toString() == "system";
-  }
-
-  bool isComponentElement() const
-  {
-      if (mpOMSModelElement) {
-          return mpOMSModelElement->isComponent();
-      }
-
-      return mpOMSElementJson["type"].toString() == "component";
-  }
-
-  bool isFMUComponent() const
-  {
-      if (mpOMSModelElement) {
-          return mpOMSModelElement->isComponent();
-      }
-
-      return mpOMSElementJson["type"].toString() == "component";
-  }
-
-  // helper connectors
-  bool isOMSConnectorJson() const
-  {
-      return mpOMSModelConnector || mpOMSElementJson["type"].toString() == "connector";
-  }
-  QString getOMSConnectorCausalityJson() const
-  {
-      if (mpOMSModelConnector) {
-          return mpOMSModelConnector->getCausality();
-      }
-
-      return mpOMSElementJson["causality"].toString();
-  }
-  QString getOMSConnectorSignalTypeJson() const
-  {
-      if (mpOMSModelConnector) {
-          return mpOMSModelConnector->getSignalType();
-      }
-
-      return mpOMSElementJson["signalType"].toString();
-  }
-
-  QJsonObject getOMSConnectorGeometryJson() const
-  {
-      if (mpOMSModelConnector) {
-          QJsonObject geometry;
-          geometry["x"] = mpOMSModelConnector->getGeometry().getX();
-          geometry["y"] = mpOMSModelConnector->getGeometry().getY();
-          return geometry;
-      }
-
-      return mpOMSElementJson["geometry"].toObject();
-  }
 
   void setOMSModel(OMSModel::Model *pOMSModel) {mpOMSModel = pOMSModel;}
 
@@ -317,7 +257,6 @@ private:
   const oms_fmu_info_t *mpFMUInfo = 0;
   QString mSubModelPath;
   // new oms3 JSON format
-  QJsonObject mpOMSElementJson;
   OMSModel::Model * mpOMSModel = 0;
   OMSModel::Element *mpOMSModelElement = 0;
   OMSModel::Connector *mpOMSModelConnector = 0;

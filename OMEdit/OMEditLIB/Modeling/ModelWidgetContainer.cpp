@@ -6184,7 +6184,7 @@ ShapeAnnotation* ModelWidget::drawOMSModelElement()
   } else {
     // Rectangle shape as base
     RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation(mpIconGraphicsView);
-    qDebug() << "drawing oms element" << mpLibraryTreeItem->getOMSElementJson() << "=>" << mpLibraryTreeItem->isSystemElement() << "=>" << mpLibraryTreeItem->isComponentElement();
+    qDebug() << "drawing oms element: " << mpLibraryTreeItem->isSystemElement() << "=>" << mpLibraryTreeItem->isComponentElement();
     if (mpLibraryTreeItem->isSystemElement()) {
       pRectangleAnnotation->setLineColor(QColor(128, 128, 0));
       pRectangleAnnotation->setFillColor(Qt::white);
@@ -7249,18 +7249,16 @@ void ModelWidget::drawOMSModelIconElements()
     for (int i = 0 ; i < mpLibraryTreeItem->childrenSize() ; i++) {
       LibraryTreeItem *pChildLibraryTreeItem = mpLibraryTreeItem->childAt(i);
 
-      if (pChildLibraryTreeItem->isOMSConnectorJson()
-          && (pChildLibraryTreeItem->getOMSConnectorCausalityJson() == "input"
-              || pChildLibraryTreeItem->getOMSConnectorCausalityJson() == "output")) {
+      if (pChildLibraryTreeItem->getOMSModelConnector()
+          && (pChildLibraryTreeItem->getOMSModelConnector()->isInput()
+              || pChildLibraryTreeItem->getOMSModelConnector()->isOutput())) {
 
         double x = 0.5;
         double y = 0.5;
 
-        QJsonObject geometry = pChildLibraryTreeItem->getOMSConnectorGeometryJson();
-        if (!geometry.isEmpty()) {
-          x = geometry["x"].toDouble(0.5);
-          y = geometry["y"].toDouble(0.5);
-        }
+        // set the connector geometry
+        x = pChildLibraryTreeItem->getOMSModelConnector()->getGeometry().getX();
+        y = pChildLibraryTreeItem->getOMSModelConnector()->getGeometry().getY();
 
         QString annotation = QString("Placement(true,%1,%2,-10.0,-10.0,10.0,10.0,0,%1,%2,-10.0,-10.0,10.0,10.0,)")
                              .arg(Utilities::mapToCoordinateSystem(x, 0, 1, -100, 100))
@@ -7382,9 +7380,9 @@ void ModelWidget::drawOMSElement(LibraryTreeItem *pLibraryTreeItem, const QStrin
   //     && (pLibraryTreeItem->getOMSConnector()->causality == oms_causality_input
   //         || pLibraryTreeItem->getOMSConnector()->causality == oms_causality_output))
   //     || (pLibraryTreeItem->getOMSBusConnector())) {
-    if (pLibraryTreeItem->isOMSConnectorJson()
-        && (pLibraryTreeItem->getOMSConnectorCausalityJson() == "input"
-            || pLibraryTreeItem->getOMSConnectorCausalityJson() == "output")) {
+    if (pLibraryTreeItem->getOMSModelConnector()
+        && (pLibraryTreeItem->getOMSModelConnector()->isInput()
+            || pLibraryTreeItem->getOMSModelConnector()->isOutput())) {
 
     Element *pIconComponent = new Element(pLibraryTreeItem->getName(), pLibraryTreeItem, annotation, QPointF(0, 0), mpIconGraphicsView);
     mpIconGraphicsView->addElementItem(pIconComponent);
