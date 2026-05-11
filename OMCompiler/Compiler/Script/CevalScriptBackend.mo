@@ -414,6 +414,7 @@ algorithm
     // search inside annotation(experiment(...))
     case (_, _, _)
       algorithm
+        loadProgram(inModelPath);
         defaults := Util.getOptionOrDefault(defaultOption, setFileNamePrefixInSimulationOptions(defaultSimulationOptions, inFileNamePrefix));
 
         experiment_ann := InteractiveUtil.getInheritedAnnotation(inModelPath, "experiment", SymbolTable.getAbsyn());
@@ -1366,14 +1367,6 @@ algorithm
         (b,outCache,_,executable,_,_,initfilename,_,_,_) := buildModel(outCache,inEnv, vals, msg);
       then
         ValuesUtil.makeArray(if b then {Values.STRING(executable),Values.STRING(initfilename)} else {Values.STRING(""),Values.STRING("")});
-
-    // adrpo: see if the model exists before simulation!
-    case ("simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
-      algorithm
-        false := Interactive.existClass(className, SymbolTable.getAbsyn());
-        errMsg := "Simulation Failed. Model: " + AbsynUtil.pathString(className) + " does not exist! Please load it first before simulation.";
-      then
-        createSimulationResultFailure(errMsg, simOptionsAsString(vals));
 
     case ("simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
       algorithm
@@ -3530,7 +3523,7 @@ algorithm
   // URIs in external functions IncludeDirectory/LibraryDirectory
   FlagsUtil.setConfigBool(Flags.BUILDING_MODEL, true);
   try
-    b := runFrontEndLoadProgram(className);
+    b := loadProgram(className);
     true := b;
     if Flags.isSet(Flags.GC_PROF) then
       print(GCExt.profStatsStr(GCExt.getProfStats(), head="GC stats before front-end:") + "\n");
@@ -3561,39 +3554,37 @@ public function runFrontEndNF
   output NFFlatten.FunctionTree functions;
   output String flatString;
 algorithm
-  true := runFrontEndLoadProgram(className);
+  true := loadProgram(className);
   (flatModel, functions, flatString) := runFrontEndWorkNF(className, relaxedFrontEnd, dumpFlat);
 end runFrontEndNF;
 
-protected function runFrontEndLoadProgram
+protected function loadProgram
   input Absyn.Path className;
   output Boolean success;
 protected
   Absyn.Restriction restriction;
   Absyn.Class absynClass;
-  String str;
+  String lib_name;
   SCode.Program scodeP;
   Absyn.Program p;
   DAE.FunctionTree funcs;
   Boolean b;
 algorithm
   p := SymbolTable.getAbsyn();
-  try
-    InteractiveUtil.getPathedClassInProgram(className, p, true);
-  else
-    str := AbsynUtil.pathFirstIdent(className);
-    (p,b) := CevalScript.loadModel({(Absyn.IDENT(str),"the given model name to instantiate",{"default"},false)},Settings.getModelicaPath(Testsuite.isRunning()),p,true,true,true,false);
-    Error.assertionOrAddSourceMessage(not b,Error.NOTIFY_IMPLICIT_LOAD,{str,"default"},AbsynUtil.dummyInfo);
-    System.loadModelCallBack(str);
-    // print(stringDelimitList(list(AbsynUtil.pathString(path) for path in Interactive.getTopClassnames(p)), ",") + "\n");
-    SymbolTable.setAbsyn(p);
-  end try;
+  lib_name := AbsynUtil.pathFirstIdent(className);
 
-  (p,success) := CevalScript.loadModel(Interactive.getUsesAnnotationOrDefault(p, false),Settings.getModelicaPath(Testsuite.isRunning()),p,false,true,true,false);
-  SymbolTable.setAbsyn(p);
-  // Always update the SCode structure; otherwise the cache plays tricks on us
-  SymbolTable.clearSCode();
-end runFrontEndLoadProgram;
+  try
+    InteractiveUtil.getClassInProgram(lib_name, p);
+    success := true;
+  else
+    (p,b) := CevalScript.loadModel({(Absyn.IDENT(lib_name),"the given model name to instantiate",{"default"},false)},Settings.getModelicaPath(Testsuite.isRunning()),p,true,true,true,false);
+    Error.assertionOrAddSourceMessage(not b,Error.NOTIFY_IMPLICIT_LOAD,{lib_name,"default"},AbsynUtil.dummyInfo);
+    System.loadModelCallBack(lib_name);
+    SymbolTable.setAbsyn(p);
+    // Always update the SCode structure; otherwise the cache plays tricks on us
+    SymbolTable.clearSCode();
+  end try;
+end loadProgram;
 
 protected function runFrontEndWork
   input output FCore.Cache cache;
@@ -4215,11 +4206,8 @@ protected
   Absyn.Program p;
   Flags.Flag flags;
 algorithm
-  // handle encryption
-  // if AST contains encrypted class show nothing
-  p := SymbolTable.getAbsyn();
-  if Interactive.astContainsEncryptedClass(p) then
-    Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
+  if isProtectedContentAccess(className) then
+    // if AST contains encrypted class show nothing
     cache := inCache;
     outValue := Values.STRING("");
   else
@@ -4327,11 +4315,8 @@ protected
   Absyn.Program p;
   Flags.Flag flags;
 algorithm
-  // handle encryption
-  // if AST contains encrypted class show nothing
-  p := SymbolTable.getAbsyn();
-  if Interactive.astContainsEncryptedClass(p) then
-    Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
+  if isProtectedContentAccess(className) then
+    // if AST contains encrypted class show nothing
     cache := inCache;
     outValue := Values.STRING("");
   else
@@ -4588,11 +4573,8 @@ protected
   Absyn.Program p;
   Boolean success;
 algorithm
-  // handle encryption
-  // if AST contains encrypted class show nothing
-  p := SymbolTable.getAbsyn();
-  if Interactive.astContainsEncryptedClass(p) then
-    Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
+  if isProtectedContentAccess(className) then
+    // if AST contains encrypted class show nothing
     outValue := Values.STRING("");
   else
     (success,cache) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.XML(), cache, env, className, fileNamePrefix, true, false, true, inSimSettingsOpt);
@@ -5963,6 +5945,7 @@ algorithm
         // If simflags is empty and --ignoreSimulationFlagsAnnotation isn't used,
         // use the __OpenModelica_simulationFlags annotation in the class to be simulated.
         if stringEmpty(simflags) and not Flags.getConfigBool(Flags.IGNORE_SIMULATION_FLAGS_ANNOTATION) then
+          loadProgram(classname);
           simflags_mod := Interactive.getNamedAnnotationExp(classname, SymbolTable.getAbsyn(),
             Absyn.IDENT("__OpenModelica_simulationFlags"), SOME(NONE()), Util.id);
           simflags := formatSimulationFlagsString(simflags_mod);
@@ -7831,7 +7814,7 @@ protected
   SCode.Comment cmt;
   Absyn.Path cls_path = classpath;
 algorithm
-  runFrontEndLoadProgram(cls_path);
+  loadProgram(cls_path);
   scodeP := SymbolTable.getSCode();
   (scodeP, env) := NFSCodeFlatten.flattenClassInProgram(cls_path, scodeP);
   (NFSCodeEnv.CLASS(cls=SCode.CLASS(cmt=cmt)),_,_) := NFSCodeLookup.lookupClassName(cls_path, env, AbsynUtil.dummyInfo);
@@ -7868,7 +7851,7 @@ protected
   Option<SCode.Comment> ocmt;
   SCode.Comment cmt;
 algorithm
-  runFrontEndLoadProgram(cls_path);
+  loadProgram(cls_path);
   prog := SymbolTable.getSCode();
   prog := TotalModelDebug.getTotalModel(prog, cls_path);
   prog := SCodeUtil.removeBuiltinsFromTopScope(prog);
@@ -8841,17 +8824,13 @@ protected
   NFFlatten.FunctionTree funcs;
   Flags.Flag flags;
 algorithm
-  str := matchcontinue ()
-    // handle encryption
-    case ()
-      algorithm
-        // if AST contains encrypted class show nothing
-        p := SymbolTable.getAbsyn();
-        true := Interactive.astContainsEncryptedClass(p);
-        Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
-      then
-        "";
+  if isProtectedContentAccess(path) then
+    // if AST contains encrypted class show nothing
+    result := Values.STRING("");
+    return;
+  end if;
 
+  str := matchcontinue ()
     case ()
       algorithm
         ExecStat.execStatReset();
@@ -9113,6 +9092,8 @@ algorithm
     return;
   end if;
 
+  loadProgram(className);
+
   // read the __OpenModelica_commandLineOptions
   Absyn.STRING(opts) := Interactive.getNamedAnnotationExp(className, SymbolTable.getAbsyn(),
     Absyn.IDENT("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
@@ -9126,6 +9107,23 @@ algorithm
     oldFlags := FlagsUtil.loadFlags();
   end if;
 end loadCommandLineOptionsFromModel;
+
+public function isProtectedContentAccess
+  "Loads the given class, then checks if any encrypted classes are present.
+   Note that this checks for encrypted classes everywhere, not just in the
+   given class. The reason the class is loaded first is to make sure it's
+   included in the check, otherwise it might be automatically loaded later and
+   bypass the check."
+  input Absyn.Path className;
+  output Boolean restricted;
+algorithm
+  loadProgram(className);
+  restricted := Interactive.astContainsEncryptedClass(SymbolTable.getAbsyn());
+
+  if restricted then
+    Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
+  end if;
+end isProtectedContentAccess;
 
 annotation(__OpenModelica_Interface="backend");
 

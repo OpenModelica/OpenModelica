@@ -503,6 +503,7 @@ algorithm
     if checkModelLoaded(modelToLoad, program, forceLoad, NONE()) then
       pnew := Absyn.PROGRAM({}, Absyn.TOP());
       version := "";
+      return;
     else
       if pathToFile=="" then
         pnew := ClassLoader.loadClass(path, versionsLst, thisModelicaPath, NONE(), requireExactVersion, encrypted);
