@@ -863,15 +863,6 @@ algorithm
   cString := System.escapedString(modelicaString,true);
 end escapeModelicaStringToCString;
 
-public function escapeModelicaStringToCStringNoQuotation
-  input String modelicaString;
-  output String cString;
-algorithm
-  // remove the quotation marks if the string is used as a string literal in c-code
-  cString := System.stringReplace(modelicaString, "\"", "");
-  cString := System.escapedString(cString,true);
-end escapeModelicaStringToCStringNoQuotation;
-
 public function escapeModelicaStringToJLString
   input String modelicaString;
   output String cString;
