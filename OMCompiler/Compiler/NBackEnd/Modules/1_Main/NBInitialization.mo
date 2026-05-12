@@ -70,6 +70,7 @@ protected
   import Replacements = NBReplacements;
   import BPartition = NBPartition;
   import NBPartition.Partition;
+  import StrongComponent = NBStrongComponent;
   import Tearing = NBTearing;
 
   // Util imports
@@ -803,6 +804,22 @@ public
       Pointer.update(b, true);
     end if;
   end containsLambda0;
+
+  function minimizeHomotopySystem
+    extends Module.wrapper;
+  algorithm
+    bdae := match bdae
+      case BackendDAE.MAIN() algorithm
+        if isSome(bdae.init_0) then
+          // for now all strong components have homotopy if init_0 exists
+          // TODO reduced analysis on what needs to be computed for homotopy
+          bdae.init := list(Partition.mapStrongComponents(par, function StrongComponent.setHomotopy(homotopy = true)) for par in bdae.init);
+        end if;
+      then bdae;
+
+      else bdae;
+    end match;
+  end minimizeHomotopySystem;
 
   function removeWhenEquation
     "this function checks if an equation has to be removed before initialization.

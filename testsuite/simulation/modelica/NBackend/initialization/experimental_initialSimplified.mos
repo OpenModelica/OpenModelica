@@ -78,7 +78,7 @@ simulate(P.experimental_initialSimplified); getErrorString();
 // Initial Partition
 // -------------------
 //   (7) y2 := homotopy(y_fix, y_fix0)
-//   (6) Nonlinear System (size = 5, homotopy = false, mixed = false, torn = true)
+//   (6) Nonlinear System (size = 5, homotopy = true, mixed = false, torn = true)
 //   --Iteration Vars:{u, $FUN_3, $FUN_2, y1, $FUN_1}
 //   --(1) 0 = sin(1e-6 * u) - $FUN_3
 //   --(2) 0 = ($FUN_2 + $FUN_3) - y2
@@ -256,7 +256,7 @@ simulate(P.experimental_initialSimplified); getErrorString();
 // record SimulationResult
 //     resultFile = "P.experimental_initialSimplified_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'P.experimental_initialSimplified', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
