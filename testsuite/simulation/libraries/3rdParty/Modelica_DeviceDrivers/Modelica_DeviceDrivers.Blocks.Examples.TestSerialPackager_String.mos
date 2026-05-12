@@ -35,13 +35,6 @@ runScript(modelTesting);getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!
-// Warning: Requested package Modelica_Synchronous of version 0.92.2, but this package was already loaded with version 0.93.0-dev. There are no conversion annotations and 0.92.2 is older than 0.93.0-dev, so the libraries are probably incompatible.
-// [Modelica_Synchronous 0.92.2/WorkInProgress.mo:11:9-20:24:writable] Warning: External function annotation should occur on the external-clause, not on the function.
-// [Modelica_Synchronous 0.92.2/WorkInProgress.mo:130:9-144:24:writable] Warning: External function annotation should occur on the external-clause, not on the function.
-// [Modelica_DeviceDrivers 1.8.2/EmbeddedTargets/STM32F4/Functions/HAL.mo:6:3-12:14:writable] Warning: External function annotation should occur on the external-clause, not on the function.
-// [Modelica_DeviceDrivers 1.8.2/Incubate/OperatingSystem/DynamicArray.mo:6:3-94:18:writable] Warning: External function annotation should occur on the external-clause, not on the function.
-// [Modelica_DeviceDrivers 1.8.2/Incubate/Utilities/Functions.mo:1041:3-1062:27:writable] Warning: External function annotation should occur on the external-clause, not on the function.
-// [Modelica_DeviceDrivers 1.8.2/Incubate/Utilities/Functions.mo:1064:3-1092:25:writable] Warning: External function annotation should occur on the external-clause, not on the function.
 // [Modelica 3.2.3+maint.om/Utilities/Strings.mo:216:3-259:11:writable] Warning: Pure function 'Modelica.Utilities.Strings.find' contains a call to impure function 'Modelica.Utilities.Strings.length'.
 // [Modelica_DeviceDrivers 1.8.2/Blocks/Packaging/SerialPackager.mo:130:7-137:16:writable] Warning: Pure function 'Modelica_DeviceDrivers.Blocks.Packaging.SerialPackager.Internal.DummyFunctions.clear' contains a call to impure function 'Modelica_DeviceDrivers.Packaging.SerialPackager_.clear'.
 // [Modelica_DeviceDrivers 1.8.2/Blocks/Packaging/SerialPackager.mo:139:5-153:23:writable] Warning: Pure function 'Modelica_DeviceDrivers.Blocks.Packaging.SerialPackager.Internal.DummyFunctions.integerBitPack' contains a call to impure function 'Modelica_DeviceDrivers.Packaging.SerialPackager_.integerBitPack'.

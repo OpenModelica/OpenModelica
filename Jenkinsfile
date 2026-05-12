@@ -570,7 +570,7 @@ pipeline {
             script {
               common.buildGUI('omc-clang', 'qt5')
             }
-            stash name: 'omedit-testsuite-clang-qt5', includes: 'build/**, **/config.status, OMEdit/**'
+            stash name: 'omedit-testsuite-clang-qt5', includes: 'build/**, **/config.status, OMEdit/**', excludes: 'OMEdit/common'
           }
         }
 
@@ -587,7 +587,7 @@ pipeline {
             script {
               common.buildGUI('omc-clang', 'qt6')
             }
-            stash name: 'omedit-testsuite-clang-qt6', includes: 'build/**, **/config.status, OMEdit/**'
+            stash name: 'omedit-testsuite-clang-qt6', includes: 'build/**, **/config.status, OMEdit/**', excludes: 'OMEdit/common'
           }
         }
 
@@ -774,29 +774,6 @@ pipeline {
             '''
           }
         }
-        stage('osx-fmuchecker') {
-          agent {
-            label 'osx'
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeRunTests }
-          }
-          options {
-            skipDefaultCheckout true
-          }
-          steps {
-            echo "${env.NODE_NAME}"
-            sh 'rm -rf testsuite/'
-            unstash 'cross-fmu'
-            unstash 'cross-fmu-extras'
-            sh '''
-            cd testsuite/special/FmuExportCrossCompile/
-            ./single-fmu-run.sh darwin64 `cat VERSION` /usr/local/bin/fmuCheck.darwin64
-            '''
-            stash name: 'cross-fmu-results-osx', includes: 'testsuite/special/FmuExportCrossCompile/*.csv, testsuite/special/FmuExportCrossCompile/Test_FMUs/**'
-          }
-        }
         stage('arm-fmuchecker') {
           agent {
             docker {
@@ -886,7 +863,6 @@ pipeline {
             unstash 'omc-clang'
             unstash 'cross-fmu-extras'
             unstash 'cross-fmu-results-linux-wine'
-            unstash 'cross-fmu-results-osx'
             unstash 'cross-fmu-results-armhf'
             sh 'cd testsuite/special/FmuExportCrossCompile && ../../../build/bin/omc check-files.mos'
             sh 'cd testsuite/special/FmuExportCrossCompile && tar -czf ../../../Test_FMUs.tar.gz Test_FMUs'

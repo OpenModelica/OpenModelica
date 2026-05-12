@@ -392,6 +392,7 @@ void buildAndRunOMEditTestsuite(stash, qtVersion) {
 
   if (stash) {
     standardSetup()
+    sh 'rm -rf OMEdit/common'
     unstash stash
   }
   sh 'autoreconf --install'
