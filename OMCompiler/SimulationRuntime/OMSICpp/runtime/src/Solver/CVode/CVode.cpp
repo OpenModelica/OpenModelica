@@ -332,14 +332,12 @@ void Cvode::initialize()
 
         // Use own jacobian matrix
         // Check if Colored Jacobians are worth to use
-#if SUNDIALS_MAJOR_VERSION >= 2 || (SUNDIALS_MAJOR_VERSION == 2 && SUNDIALS_MINOR_VERSION >= 4)
         _maxColors = _system->getAMaxColors();
         if (_maxColors < _dimSys && _continuous_system->getDimContinuousStates() > 0)
         {
             // _idid = CVDlsSetDenseJacFn(_cvodeMem, &CV_JCallback);
             // initializeColoredJac();
         }
-#endif
 
         if (_idid < 0)
             throw ModelicaSimulationError(SOLVER, "CVode::initialize()");
