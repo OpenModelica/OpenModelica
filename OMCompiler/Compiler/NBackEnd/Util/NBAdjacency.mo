@@ -860,11 +860,16 @@ public
         case FULL() algorithm
           for eqn_idx in UnorderedMap.valueArray(e) loop
             eqn_ptr := EquationPointers.getEqnAt(eqns, eqn_idx);
+            // do not analyze algorithms
+            if Equation.isAlgorithm(eqn_ptr) then continue; end if;
+
+            // handle residual expressions only if not discrete or if equation
             eqnIsDiscrete := Equation.isDiscrete(eqn_ptr) or Equation.isWhenEquation(eqn_ptr);
             eqnIsIf := Equation.isIfEquation(eqn_ptr);
             if not (eqnIsDiscrete or eqnIsIf) then
               residual := Equation.getResidualExp(Pointer.access(eqn_ptr));
             end if;
+
             for var in UnorderedSet.toArray(full.occurrences[eqn_idx]) loop
               // only do something if var is to be refined
               if UnorderedMap.contains(var, v) then
