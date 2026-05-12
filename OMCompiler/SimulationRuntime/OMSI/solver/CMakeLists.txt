@@ -94,27 +94,6 @@ if(NOT TARGET omc::3rd::sundials::kinsol)
     ${SUNDIALS_SUNLINSOLKLU}
     ${SUNDIALS_SUNLINSOLLAPACKDENSE})
   message(STATUS "Used Sundials libraries: ${SUNDIALS_LIBRARIES}")
-
-  # Extract the version number from sundials_config.h
-  set(SUNDIALS_CONFIG_FILE "${SUNDIALS_INCLUDE_DIR}/sundials/sundials_config.h")
-  if(NOT EXISTS "${SUNDIALS_CONFIG_FILE}")
-    message(FATAL_ERROR "Could not find sundials_config.h")
-  endif()
-  file(READ "${SUNDIALS_CONFIG_FILE}" SUNDIALS_CONFIG_FILE_CONTENT)
-  string(REGEX MATCH "#define SUNDIALS_VERSION .([0-9]+)\\.([0-9]+)\\.([0-9]+)." _ ${SUNDIALS_CONFIG_FILE_CONTENT})
-
-  if(DEFINED CMAKE_MATCH_1 AND DEFINED CMAKE_MATCH_2 AND DEFINED CMAKE_MATCH_3)
-    set(SUNDIALS_MAJOR_VERSION "${CMAKE_MATCH_1}")
-    set(SUNDIALS_MINOR_VERSION "${CMAKE_MATCH_2}")
-    set(SUNDIALS_PATCH_VERSION "${CMAKE_MATCH_3}")
-
-    set(SUNDIALS_VERSION_DEFS
-      "-DSUNDIALS_MAJOR_VERSION=${SUNDIALS_MAJOR_VERSION}"
-      "-DSUNDIALS_MINOR_VERSION=${SUNDIALS_MINOR_VERSION}")
-  else()
-    message(FATAL_ERROR "Could not determine sundials version")
-  endif()
-  message(STATUS "Using sundials ${SUNDIALS_MAJOR_VERSION}.${SUNDIALS_MINOR_VERSION}.${SUNDIALS_PATCH_VERSION}")
 endif()
 
 ####################################
