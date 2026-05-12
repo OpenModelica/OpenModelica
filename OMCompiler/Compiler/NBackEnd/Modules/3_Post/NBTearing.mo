@@ -56,6 +56,8 @@ protected
   import Absyn.Path;
 
   // NF imports
+  import Algorithm = NFAlgorithm;
+  import Expression = NFExpression;
   import NFFunction.Function;
   import Variable = NFVariable;
   import ComponentRef = NFComponentRef;
@@ -397,7 +399,7 @@ protected
     // only extracts discrete variables to be solved as inner equations
   protected
     Tearing strict;
-    list<Pointer<Variable>> vars_lst, cont_vars, disc_vars;
+    list<Pointer<Variable>> vars_lst, cont_vars, disc_vars, implied_vars;
     list<Pointer<Equation>> eqns_lst, cont_eqns, disc_eqns;
     Integer num_vars, num_eqns;
     list<Slice<VariablePointer>> matched_vars, iteration_vars = {};
@@ -415,6 +417,12 @@ protected
         eqns_lst := list(Slice.getT(eqn) for eqn in strict.residual_eqns);
         (cont_vars, disc_vars) := filterDiscreteVariables(vars_lst, Partition.kindIsInitial(kind));
         (cont_eqns, disc_eqns) := List.splitOnTrue(eqns_lst, Equation.isContinousRecordAware);
+
+        // get the implied vars by algorithms and tuples
+        implied_vars := List.flatten(list(getImpliedInnerVars(eqn) for eqn in disc_eqns));
+        disc_vars := UnorderedSet.unique_list(listAppend(disc_vars, implied_vars), BVariable.hash, BVariable.equalName);
+        cont_vars := UnorderedSet.difference_list(cont_vars, implied_vars, BVariable.hash, BVariable.equalName);
+
         num_vars := sum(BVariable.size(var) for var in disc_vars);
         num_eqns := sum(Equation.size(eqn) for eqn in disc_eqns);
 
@@ -436,6 +444,7 @@ protected
           for var in matched_vars loop
             UnorderedSet.add(BVariable.getVarName(Slice.getT(var)), matched_set);
           end for;
+
           // only take variables that are not in the set
           for var in strict.iteration_vars loop
             if not UnorderedSet.contains(BVariable.getVarName(Slice.getT(var)), matched_set) then
@@ -668,6 +677,31 @@ protected
     // add the continous record variables that might be solved alongside discretes to the list
     disc_vars := listReverse(listAppend(rec_disc_vars, disc_vars));
   end filterDiscreteVariables;
+
+  function getImpliedInnerVars
+    "returns all implied inner variables if the equation is solved. necessary if e.g. trying to solve a single discrete output
+    from an algorithm. The full algorithm and all outputs need to be made inner variables."
+    input Pointer<Equation> eqn;
+    output list<Pointer<Variable>> vars;
+  algorithm
+    vars := match Pointer.access(eqn)
+      local
+        Algorithm alg;
+        Expression tpl, cref;
+
+      case Equation.ALGORITHM(alg = alg)
+      then list(BVariable.getVarPointer(out_cr, sourceInfo()) for out_cr in alg.outputs);
+
+      case Equation.RECORD_EQUATION(lhs = tpl as Expression.TUPLE()) algorithm
+      then list(BVariable.getVarPointer(tpl_cr, sourceInfo()) for tpl_cr in UnorderedSet.toList(Expression.extractCrefs(tpl)));
+
+      case Equation.RECORD_EQUATION(lhs = cref as Expression.CREF()) algorithm
+        // ToDo: if vars contains any child of cref add all children of cref
+      then {};
+
+      else {};
+    end match;
+  end getImpliedInnerVars;
 
   annotation(__OpenModelica_Interface="backend");
 end NBTearing;
