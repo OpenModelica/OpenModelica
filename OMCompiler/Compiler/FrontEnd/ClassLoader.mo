@@ -474,7 +474,7 @@ algorithm
   if expectPackage and not AbsynUtil.isParts(body) then
     Error.addSourceMessage(Error.LIBRARY_EXPECTED_PARTS, {pack}, info);
     fail();
-  elseif not (AbsynUtil.withinEqual(w1,w2) or Config.languageStandardAtMost(Config.LanguageStandard.'2.x')) then
+  elseif not (AbsynUtil.withinEqual(w1,w2) or Config.languageStandardAtMost(Config.LanguageStandard._2_x)) then
      s1 := AbsynUtil.withinString(w1);
      s2 := AbsynUtil.withinString(w2);
      if AbsynUtil.withinEqualCaseInsensitive(w1,w2) then

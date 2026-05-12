@@ -51,7 +51,7 @@ import System;
 
 public
 
-type LanguageStandard = enumeration('1.x', '2.x', '3.0', '3.1', '3.2', '3.3', '3.4', '3.5', '3.6', latest, experimental)
+type LanguageStandard = enumeration(_1_x, _2_x, _3_0, _3_1, _3_2, _3_3, _3_4, _3_5, _3_6, latest, experimental)
   "Defines the various modelica language versions that OMC can use.";
 
 public function typeinfo "+t"
@@ -458,15 +458,15 @@ protected function intLanguageStandard
   output LanguageStandard outStandard;
 algorithm
   outStandard := match(inValue)
-    case 10 then LanguageStandard.'1.x';
-    case 20 then LanguageStandard.'2.x';
-    case 30 then LanguageStandard.'3.0';
-    case 31 then LanguageStandard.'3.1';
-    case 32 then LanguageStandard.'3.2';
-    case 33 then LanguageStandard.'3.3';
-    case 34 then LanguageStandard.'3.4';
-    case 35 then LanguageStandard.'3.5';
-    case 36 then LanguageStandard.'3.6';
+    case 10 then LanguageStandard._1_x;
+    case 20 then LanguageStandard._2_x;
+    case 30 then LanguageStandard._3_0;
+    case 31 then LanguageStandard._3_1;
+    case 32 then LanguageStandard._3_2;
+    case 33 then LanguageStandard._3_3;
+    case 34 then LanguageStandard._3_4;
+    case 35 then LanguageStandard._3_5;
+    case 36 then LanguageStandard._3_6;
     case 1000 then LanguageStandard.latest;
     case 9999 then LanguageStandard.experimental;
   end match;
@@ -524,7 +524,7 @@ algorithm
   // If the old standard wasn't set by the user, then we consider it to have
   // changed only if the new standard is 3.0 or less. This is to avoid
   // printing a notice if the user loads e.g. MSL 3.1.
-  outHasChanged := languageStandardAtMost(LanguageStandard.'3.0');
+  outHasChanged := languageStandardAtMost(LanguageStandard._3_0);
 end hasLanguageStandardChanged;
 
 public function versionStringToStd
@@ -542,13 +542,13 @@ protected function versionStringToStd2
   output LanguageStandard outStandard;
 algorithm
   outStandard := match(inVersion)
-    case "1" :: _ then LanguageStandard.'1.x';
-    case "2" :: _ then LanguageStandard.'2.x';
-    case "3" :: "0" :: _ then LanguageStandard.'3.0';
-    case "3" :: "1" :: _ then LanguageStandard.'3.1';
-    case "3" :: _ then LanguageStandard.'3.2';
-    case "4" :: "0" :: _ then LanguageStandard.'3.4';
-    case "4" :: "1" :: _ then LanguageStandard.'3.6';
+    case "1" :: _ then LanguageStandard._1_x;
+    case "2" :: _ then LanguageStandard._2_x;
+    case "3" :: "0" :: _ then LanguageStandard._3_0;
+    case "3" :: "1" :: _ then LanguageStandard._3_1;
+    case "3" :: _ then LanguageStandard._3_2;
+    case "4" :: "0" :: _ then LanguageStandard._3_4;
+    case "4" :: "1" :: _ then LanguageStandard._3_6;
     case _ then LanguageStandard.latest;
   end match;
 end versionStringToStd2;
@@ -647,7 +647,7 @@ end replacedHomotopy;
 public function synchronousFeaturesAllowed
 "@autor: adrpo
  checks returns true if language standard is above or equal to Modelica 3.3"
-  output Boolean outRes = getLanguageStandard() >= LanguageStandard.'3.3';
+  output Boolean outRes = getLanguageStandard() >= LanguageStandard._3_3;
 end synchronousFeaturesAllowed;
 
 public function flatModelica

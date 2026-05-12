@@ -1777,7 +1777,7 @@ try
   varlst := BackendVariable.varList(v);
   knvarlst := BackendVariable.varList(globalKnownVars);
 
-  states := if Config.languageStandardAtLeast(Config.LanguageStandard.'3.3') then
+  states := if Config.languageStandardAtLeast(Config.LanguageStandard._3_3) then
     BackendVariable.getAllClockedStatesFromVariables(v) else {};
 
   states := listAppend(BackendVariable.getAllStateVarFromVariables(v), states);
@@ -1957,7 +1957,7 @@ try
   eqSyst::{} := backendDAE.eqs;
   v := eqSyst.orderedVars;
   // get state var from simulation DAE
-  states := if Config.languageStandardAtLeast(Config.LanguageStandard.'3.3') then
+  states := if Config.languageStandardAtLeast(Config.LanguageStandard._3_3) then
     BackendVariable.getAllClockedStatesFromVariables(v) else {};
   states := listAppend(BackendVariable.getAllStateVarFromVariables(v), states);
 

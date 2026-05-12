@@ -2790,7 +2790,7 @@ protected
   String error_str, flow_str, potential_str, class_str;
 algorithm
   // Don't check connector balance for language version 2.x and earlier.
-  if Config.languageStandardAtMost(Config.LanguageStandard.'2.x') then
+  if Config.languageStandardAtMost(Config.LanguageStandard._2_x) then
     return;
   end if;
 
