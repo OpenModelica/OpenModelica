@@ -4892,7 +4892,7 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
   let zeroCrossingsCode = zeroCrossingsTpl(zeroCrossings, &varDecls2, &auxFunction)
 
   let resDesc = (zeroCrossings |> ZERO_CROSSING(__) =>
-    let &descStr = buffer '<%Util.escapeModelicaStringToCString(dumpExp(relation_,""))%>"'
+    let &descStr = buffer '<%Util.escapeModelicaStringToCStringNoQuotation(dumpExp(relation_,""))%>"'
     <<<%descriptionString(&descStr, iter)%>>>
     ;separator=",\n")
 
@@ -5109,7 +5109,7 @@ template functionRelations(list<ZeroCrossing> relations, String modelNamePrefix)
   let relationsCodeElse = relationsTpl(relations, contextOther, &varDecls, &auxFunction)
 
   let resDesc = (relations |> ZERO_CROSSING(__) =>
-    let &descStr = buffer '<%dumpExp(relation_,"")%>"'
+    let &descStr = buffer '<%Util.escapeModelicaStringToCStringNoQuotation(dumpExp(relation_,""))%>"'
     <<<%descriptionString(&descStr, iter)%>>>
     ;separator=",\n")
 

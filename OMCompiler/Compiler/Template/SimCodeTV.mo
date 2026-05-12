@@ -3559,6 +3559,11 @@ package Util
     output String cString;
   end escapeModelicaStringToCString;
 
+  function escapeModelicaStringToCStringNoQuotation
+    input String modelicaString;
+    output String cString;
+  end escapeModelicaStringToCStringNoQuotation;
+
   function escapeModelicaStringToXmlString
     input String modelicaString;
     output String xmlString;
