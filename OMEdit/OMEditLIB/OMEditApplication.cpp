@@ -50,6 +50,9 @@
 #include <locale.h>
 #include <QMessageBox>
 #include <QTextCodec>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+#include <QStyleHints>
+#endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
 
 #include "../../OMCompiler/Compiler/runtime/settingsimpl.h"
 
@@ -99,11 +102,18 @@ QFont getWindowsUIFont()
 OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threadData, bool testsuiteRunning)
   : QApplication(argc, argv)
 {
+/* We need a better handling of ligth and dark themes.
+ * For now just force light theme for Qt 6.8
+ * The default color scheme is based on the system theme, so Qt will automatically use light or dark theme based on the user's system settings.
+ */
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+  styleHints()->setColorScheme(Qt::ColorScheme::Light);  // must be before setStyleSheet
+#endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
   // set the stylesheet
   setStyleSheet("file:///:/Resources/css/stylesheet.qss");
 #ifndef WIN32
   QTextCodec::setCodecForLocale(QTextCodec::codecForName(Helper::utf8.toUtf8().constData()));
-#endif
+#endif // #ifndef WIN32
   setAttribute(Qt::AA_DontShowIconsInMenus, false);
 #ifdef Q_OS_WIN
   /*! @todo Qt by default uses "MS Shell Dlg 2" on Windows which doesn't scale good.
@@ -112,7 +122,7 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
    *  Qt6 automatically uses the Windows UI font.
    */
   setFont(getWindowsUIFont());
-#endif
+#endif // #ifdef Q_OS_WIN
   // Localization
   //*a.severin/ add localization
   const char *installationDirectoryPath = SettingsImpl__getInstallationDirectoryPath();
