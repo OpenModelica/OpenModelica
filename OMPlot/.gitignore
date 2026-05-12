@@ -36,3 +36,4 @@ OMPlotLib.pro.*
 qwt.pro.user
 qwt/src/release/
 qwt/src/debug/
+.qtc_clangd/
