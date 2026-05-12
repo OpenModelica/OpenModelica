@@ -578,6 +578,12 @@ public
             case Equation.SCALAR_EQUATION(lhs = Expression.CREF(cref = cref))
             then createEquation(NBVariable.getVar(cref, sourceInfo()), eqn, NBSolve.Status.EXPLICIT, simCodeIndices, kind, simcode_map, equation_map);
 
+            case Equation.ARRAY_EQUATION(lhs = Expression.CREF(cref = cref))
+            then createEquation(NBVariable.getVar(cref, sourceInfo()), eqn, NBSolve.Status.EXPLICIT, simCodeIndices, kind, simcode_map, equation_map);
+
+            case Equation.RECORD_EQUATION(lhs = Expression.CREF(cref = cref))
+            then createEquation(NBVariable.getVar(cref, sourceInfo()), eqn, NBSolve.Status.EXPLICIT, simCodeIndices, kind, simcode_map, equation_map);
+
             case Equation.WHEN_EQUATION()
             then createEquation(NBVariable.DUMMY_VARIABLE, eqn, NBSolve.Status.EXPLICIT, simCodeIndices, kind, simcode_map, equation_map);
 
@@ -587,7 +593,7 @@ public
             case Equation.FOR_EQUATION()
             then createAlgorithm(eqn, simCodeIndices, equation_map);
 
-            /* ToDo: ARRAY_EQUATION ... */
+            /* ToDo: other equations ... */
 
             else algorithm
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + Equation.toString(eqn)});

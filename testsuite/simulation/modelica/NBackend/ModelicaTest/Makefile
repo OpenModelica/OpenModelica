@@ -21,6 +21,7 @@ ModelicaTest.Fluid.TestComponents.Sensors.TestSpecificEnthalpy.mos \
 ModelicaTest.Tables.CombiTimeTable.Test1.mos \
 ModelicaTest.Utilities.TestInternal.mos \
 ModelicaTest.Tables.CombiTable1Ds.Test3.mos \
+ModelicaTest.MultiBody.Parts.Bodies.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
