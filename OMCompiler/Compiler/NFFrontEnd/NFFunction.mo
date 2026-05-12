@@ -1765,7 +1765,7 @@ uniontype Function
     if Expression.isImpureCall(exp) then
       pure := false;
 
-      if Config.languageStandardAtLeast(Config.LanguageStandard.'3.3') then
+      if Config.languageStandardAtLeast(Config.LanguageStandard._3_3) then
         Error.addSourceMessage(Error.PURE_FUNCTION_WITH_IMPURE_CALLS,
           {AbsynUtil.pathString(Function.name(fn)), Expression.getName(exp)},
           InstNode.info(fn.node));
@@ -2626,7 +2626,7 @@ protected
           inline_ty := InstUtil.commentIsInlineFunc(cmt);
 
           // Since Modelica 3.3, normal functions are pure by default and external functions are impure.
-          if purity == DAE.Purity.UNDEFINED and Config.languageStandardAtLeast(Config.LanguageStandard.'3.3') then
+          if purity == DAE.Purity.UNDEFINED and Config.languageStandardAtLeast(Config.LanguageStandard._3_3) then
             purity := if SCodeUtil.isExternalFunctionRestriction(fres) then DAE.Purity.IMPURE else DAE.Purity.PURE;
           end if;
 

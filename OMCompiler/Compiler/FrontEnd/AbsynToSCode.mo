@@ -548,7 +548,7 @@ algorithm
 
         // If any matching modifiers were found, issue a warning and copy them to the external declaration.
         if not SCodeUtil.isEmptyMod(ann.modification) then
-          if Config.languageStandardAtLeast(Config.LanguageStandard.'3.3') then
+          if Config.languageStandardAtLeast(Config.LanguageStandard._3_3) then
             Error.addSourceMessage(Error.MISPLACED_EXTERNAL_ANNOTATION, {}, info);
           end if;
           ext_decl.annotation_ := SOME(ann);

@@ -7221,7 +7221,7 @@ algorithm
 
         // In Modelica 3.2 and before, external functions with side-effects are not marked.
         if daePurity == DAE.Purity.UNDEFINED and SCodeUtil.isExternalFunctionRestriction(fres) and
-           not (hasOutVars or Config.languageStandardAtLeast(Config.LanguageStandard.'3.3')) then
+           not (hasOutVars or Config.languageStandardAtLeast(Config.LanguageStandard._3_3)) then
           daePurity := DAE.Purity.IMPURE;
         end if;
       then
