@@ -1051,9 +1051,11 @@ protected
       // if equation
       case FEquation.IF() then lowerIfEquation(frontend_equation, init, in_for);
 
-      // When equation cases
+      // when equation
       case FEquation.WHEN()   then lowerWhenEquation(frontend_equation, init);
-      case FEquation.ASSERT() then lowerWhenEquation(frontend_equation, init);
+
+      // assert
+      case FEquation.ASSERT() then lowerAssert(frontend_equation, init);
 
       // wrap no return call in algorithm
       case FEquation.NORETCALL() algorithm
@@ -1202,6 +1204,34 @@ protected
     end match;
   end lowerIfBranchBody;
 
+  function lowerAssert
+    input FEquation frontend_eq;
+    input Boolean init;
+    output list<Pointer<Equation>> backend_equations;
+  algorithm
+    backend_equations := match frontend_eq
+      local
+        EquationAttributes attr;
+        Algorithm alg;
+        Expression cond;
+
+      case FEquation.ASSERT() algorithm
+        attr := EquationAttributes.default(EquationKind.EMPTY, init);
+        cond := if Expression.isCall(frontend_eq.condition) then frontend_eq.condition else Expression.CALL(Call.makeTypedCall(
+          fn          = NFBuiltinFuncs.NO_EVENT,
+          args        = {frontend_eq.condition},
+          variability = Expression.variability(frontend_eq.condition),
+          purity      = NFPrefixes.Purity.PURE));
+        alg := Algorithm.ALGORITHM({Statement.ASSERT(cond, frontend_eq.message, frontend_eq.level, frontend_eq.source)},
+          {}, {}, NONE(), frontend_eq.scope, frontend_eq.source);
+      then {lowerAlgorithm(alg, init)};
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + FEquation.toString(frontend_eq)});
+      then fail();
+    end match;
+  end lowerAssert;
+
   function lowerWhenEquation
     input FEquation frontend_eq;
     input Boolean init;
@@ -1211,9 +1241,6 @@ protected
       local
         BEquation.WhenEquationBody whenEqBody;
         list<BEquation.WhenEquationBody> bodies;
-        EquationAttributes attr;
-        Call call;
-        Algorithm alg;
 
       case FEquation.WHEN() algorithm
         // When equation inside initial actually not allowed. Throw error?
@@ -1225,18 +1252,6 @@ protected
         source  = frontend_eq.source,
         attr    = EquationAttributes.default(if BEquation.WhenEquationBody.size(b) > 0 then EquationKind.DISCRETE else EquationKind.EMPTY, init)
       )) for b in bodies);
-
-      case FEquation.ASSERT(condition = Expression.CALL(call = call)) guard(Call.isNamed(call, "noEvent")) algorithm
-        attr := EquationAttributes.default(EquationKind.EMPTY, init);
-        alg := Algorithm.ALGORITHM({Statement.ASSERT(frontend_eq.condition, frontend_eq.message, frontend_eq.level, frontend_eq.source)},
-          {}, {}, NONE(), frontend_eq.scope, frontend_eq.source);
-      then {lowerAlgorithm(alg, init)};
-
-      case FEquation.ASSERT() algorithm
-        attr := EquationAttributes.default(EquationKind.EMPTY, init);
-        whenEqBody := BEquation.WHEN_EQUATION_BODY(frontend_eq.condition,
-          {BEquation.ASSERT(frontend_eq.condition, frontend_eq.message, frontend_eq.level, frontend_eq.source)}, NONE());
-      then {Pointer.create(BEquation.WHEN_EQUATION(0, whenEqBody, frontend_eq.source, attr))};
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + FEquation.toString(frontend_eq)});
