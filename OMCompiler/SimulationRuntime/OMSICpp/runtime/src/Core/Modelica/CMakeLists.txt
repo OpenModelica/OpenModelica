@@ -200,11 +200,23 @@ endforeach()
 set(Boost_LIBRARIES_ ${Boost_LIBRARIES_NEW})
 
 set(SUNDIALS_LIBARIES_ "")
-foreach(lib ${SUNDIALS_LIBRARIES})
-  get_filename_component(libNew "${lib}" NAME_WE)
-  string(REGEX REPLACE "^lib" "" libNew ${libNew})
-  set(SUNDIALS_LIBRARIES_ "${SUNDIALS_LIBRARIES_} ${LINKER_LIB_PREFIX}${libNew}")
-endforeach(lib ${SUNDIALS_LIBRARIES})
+if(TARGET omc::3rd::sundials::cvode)
+  # Integrated CMake build: SUNDIALS_LIBRARIES contains CMake targets, not paths.
+  # Derive the linker flags directly from the known static library names.
+  set(SUNDIALS_LIBRARIES_
+    " ${LINKER_LIB_PREFIX}sundials_nvecserial_static"
+    " ${LINKER_LIB_PREFIX}sundials_cvode_static"
+    " ${LINKER_LIB_PREFIX}sundials_cvodes_static"
+    " ${LINKER_LIB_PREFIX}sundials_idas_static"
+    " ${LINKER_LIB_PREFIX}sundials_kinsol_static")
+  string(REPLACE ";" "" SUNDIALS_LIBRARIES_ "${SUNDIALS_LIBRARIES_}")
+else()
+  foreach(lib ${SUNDIALS_LIBRARIES})
+    get_filename_component(libNew "${lib}" NAME_WE)
+    string(REGEX REPLACE "^lib" "" libNew ${libNew})
+    set(SUNDIALS_LIBRARIES_ "${SUNDIALS_LIBRARIES_} ${LINKER_LIB_PREFIX}${libNew}")
+  endforeach(lib ${SUNDIALS_LIBRARIES})
+endif()
 
 set(LAPACK_LIBRARIES_ "")
 foreach(lib ${LAPACK_LIBRARIES})
@@ -293,15 +305,15 @@ endif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" ST
 
 install(TARGETS ${ModelicaName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/Modelica.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/ModelicaDefine.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/Modelica.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/ModelicaDefine.h
   DESTINATION include/omc/omsicpp/Core)
 install(FILES
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/DataExchange/Policies/TextfileWriter.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/DataExchange/Policies/TextfileWriter.h
   DESTINATION include/omc/omsicpp/Core/DataExchange/Policies)
 install(FILES
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/DataExchange/Policies/MatfileWriter.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/DataExchange/Policies/MatfileWriter.h
   DESTINATION include/omc/omsicpp/Core/DataExchange/Policies)
 install(FILES
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/DataExchange/Policies/BufferReaderWriter.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/DataExchange/Policies/BufferReaderWriter.h
   DESTINATION include/omc/omsicpp/Core/DataExchange/Policies)

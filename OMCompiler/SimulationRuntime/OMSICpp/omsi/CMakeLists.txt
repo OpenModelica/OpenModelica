@@ -3,10 +3,10 @@ project(omsicpp)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 
-include_directories ("${CMAKE_SOURCE_DIR}/omsi/include")
-include_directories ("${CMAKE_SOURCE_DIR}/omsi/src")
+include_directories ("${OMSICPP_SOURCE_DIR}/omsi/include")
+include_directories ("${OMSICPP_SOURCE_DIR}/omsi/src")
 # FMI 2.0 Header
-include_directories ("${CMAKE_SOURCE_DIR}/../../3rdParty/FMIL/ThirdParty/FMI/default/FMI2")
+include_directories ("${OMSICPP_SOURCE_DIR}/../../3rdParty/FMIL/ThirdParty/FMI/default/FMI2")
 
   message(STATUS "OMSI Library:")
   message(STATUS "${OMSIBASE_LIB}")

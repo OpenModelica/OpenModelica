@@ -23,16 +23,16 @@ add_precompiled_header(${DataExchangeName} runtime/include/Core/Modelica.h)
 
 install(TARGETS ${DataExchangeName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/DataExchange/IHistory.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/DataExchange/ISimVar.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/DataExchange/SimData.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/DataExchange/Writer.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/DataExchange/SimDouble.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/DataExchange/SimBoolean.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/DataExchange/XmlPropertyReader.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/DataExchange/IPropertyReader.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/DataExchange/FactoryExport.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/DataExchange/FactoryPolicy.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/DataExchange/DefaultContainerManager.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/DataExchange/ParallelContainerManager.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/DataExchange/IHistory.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/DataExchange/ISimVar.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/DataExchange/SimData.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/DataExchange/Writer.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/DataExchange/SimDouble.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/DataExchange/SimBoolean.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/DataExchange/XmlPropertyReader.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/DataExchange/IPropertyReader.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/DataExchange/FactoryExport.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/DataExchange/FactoryPolicy.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/DataExchange/DefaultContainerManager.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/DataExchange/ParallelContainerManager.h
   DESTINATION include/omc/omsicpp/Core/DataExchange)

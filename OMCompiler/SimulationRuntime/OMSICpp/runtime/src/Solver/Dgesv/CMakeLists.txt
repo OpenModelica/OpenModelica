@@ -15,8 +15,8 @@ if(DGESV_FOUND)
   set_target_properties(${DgesvSolverName} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING;ENABLE_SUNDIALS_STATIC")
   install(TARGETS ${DgesvSolverName} DESTINATION ${LIBINSTALLEXT})
   install(FILES
-    ${CMAKE_SOURCE_DIR}/runtime/include/Solver/Dgesv/DgesvSolver.h
-    ${CMAKE_SOURCE_DIR}/runtime/include/Solver/Dgesv/FactoryExport.h
+    ${OMSICPP_SOURCE_DIR}/runtime/include/Solver/Dgesv/DgesvSolver.h
+    ${OMSICPP_SOURCE_DIR}/runtime/include/Solver/Dgesv/FactoryExport.h
     DESTINATION include/omc/omsicpp/Solver/Dgesv)
 
 else()

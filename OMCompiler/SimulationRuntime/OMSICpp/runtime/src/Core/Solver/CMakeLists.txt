@@ -19,15 +19,15 @@ add_precompiled_header(${SolverName} runtime/include/Core/Modelica.h)
 
 install(TARGETS ${SolverName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/Solver/ILinearAlgLoopSolver.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/Solver/INonLinearAlgLoopSolver.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/Solver/ILinSolverSettings.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/Solver/INonLinSolverSettings.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/Solver/ISolver.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/Solver/ISolverSettings.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/Solver/SolverSettings.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/Solver/SolverDefaultImplementation.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/Solver/SystemStateSelection.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/Solver/SimulationMonitor.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/Solver/FactoryExport.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/Solver/ILinearAlgLoopSolver.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/Solver/INonLinearAlgLoopSolver.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/Solver/ILinSolverSettings.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/Solver/INonLinSolverSettings.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/Solver/ISolver.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/Solver/ISolverSettings.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/Solver/SolverSettings.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/Solver/SolverDefaultImplementation.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/Solver/SystemStateSelection.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/Solver/SimulationMonitor.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/Solver/FactoryExport.h
   DESTINATION include/omc/omsicpp/Core/Solver)

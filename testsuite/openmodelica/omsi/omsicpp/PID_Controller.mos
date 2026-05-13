@@ -1,0 +1,26 @@
+// name: PID_Controller
+// keywords: omsi omsicpp fmu fmi
+// status: correct
+// teardown_command: rm -rf Modelica.Blocks.Examples.PID_Controller* PID_Controller.fmu  PID_Controller.log PID_Controller_*
+// cflags: -d=-newInst
+//
+// Tests generating and simulating an OMSICPP FMU for PID_Controller
+
+loadModel(Modelica, {"4.1.0"}); getErrorString();
+
+setCommandLineOptions("--simCodeTarget=omsicpp"); getErrorString();
+
+simulate(Modelica.Blocks.Examples.PID_Controller); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Modelica.Blocks.Examples.PID_Controller_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 4.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.PID_Controller', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// endResult

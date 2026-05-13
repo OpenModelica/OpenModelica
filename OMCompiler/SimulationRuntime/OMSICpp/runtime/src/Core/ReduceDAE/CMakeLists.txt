@@ -15,10 +15,10 @@ add_precompiled_header(${ReduceDAEName} Include/Core/Modelica.h)
 
 install(FILES "ReduceDAESettings.xml" DESTINATION share/omc/runtime/cpp/config)
 install(FILES
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/ReduceDAE/IReduceDAE.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/ReduceDAE/IReduceDAESettings.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/ReduceDAE/ReduceDAESettings.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/ReduceDAE/Ranking.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/ReduceDAE/Reduction.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/ReduceDAE/com/ModelicaCompiler.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/ReduceDAE/IReduceDAE.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/ReduceDAE/IReduceDAESettings.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/ReduceDAE/ReduceDAESettings.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/ReduceDAE/Ranking.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/ReduceDAE/Reduction.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/ReduceDAE/com/ModelicaCompiler.h
   DESTINATION include/omc/omsicpp/Core/ReduceDAE)

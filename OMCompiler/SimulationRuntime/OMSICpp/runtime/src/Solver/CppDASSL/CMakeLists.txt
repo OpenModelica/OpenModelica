@@ -34,6 +34,6 @@ add_precompiled_header(${CppDASSLName} runtime/include/Solver/Modelica.h)
 
 install(TARGETS ${CppDASSLName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
-  ${CMAKE_SOURCE_DIR}/runtime/include/Solver/CppDASSL/CppDASSL.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Solver/CppDASSL/FactoryExport.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Solver/CppDASSL/CppDASSL.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Solver/CppDASSL/FactoryExport.h
   DESTINATION include/omc/omsicpp/Solver/CppDASSL)

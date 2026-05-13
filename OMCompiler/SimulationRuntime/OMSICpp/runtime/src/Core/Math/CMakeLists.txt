@@ -18,13 +18,13 @@ add_precompiled_header(${MathName} runtime/include/Core/Modelica.h )
 
 
 install(TARGETS ${MathName} DESTINATION ${LIBINSTALLEXT})
-install(FILES ${CMAKE_SOURCE_DIR}/runtime/include/Core/Math/Functions.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/Math/ArrayOperations.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/Math/Utility.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/Math/Constants.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/Math/SparseMatrix.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/Math/ILapack.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/Math/OMAPI.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/Math/Array.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/Math/ArraySlice.h
+install(FILES ${OMSICPP_SOURCE_DIR}/runtime/include/Core/Math/Functions.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/Math/ArrayOperations.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/Math/Utility.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/Math/Constants.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/Math/SparseMatrix.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/Math/ILapack.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/Math/OMAPI.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/Math/Array.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/Math/ArraySlice.h
   DESTINATION include/omc/omsicpp/Core/Math)

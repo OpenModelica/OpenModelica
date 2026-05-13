@@ -121,7 +121,7 @@ template simulationOMSUCPPMainRunScript(SimCode simCode ,Text& extraFuncs,Text& 
     let modelName =  dotPath(modelInfo.name)
     let fileNamePrefixx = fileNamePrefix
     let platformstr = match makefileParams.platform case "i386-pc-linux" then 'linux32' case "x86_64-linux" then 'linux64' else '<%makefileParams.platform%>'
-    let execParameters = '-S <%start%> -E <%end%> -H <%stepsize%> -G <%intervals%> -P <%outputformat%> -T <%tol%> -I <%solver%> -R <%simulationLibDir(simulationCodeTarget(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%> -M <%moLib%> -r <%simulationResults(Testsuite.isRunning(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%> -a <%moLib%> -o <%modelName%>.fmu'
+    let execParameters = '-S <%start%> -E <%end%> -H <%stepsize%> -G <%intervals%> -P <%outputformat%> -T <%tol%> -I <%solver%> -R <%simulationLibDir(simulationCodeTarget(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%> -M <%moLib%> -r <%simulationResults(Testsuite.isRunning(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%> -a <%moLib%> -o <%fileNamePrefixx%>.fmu'
     let outputParameter = if (stringEq(settings.outputFormat, "empty")) then "-O none" else ""
 
 

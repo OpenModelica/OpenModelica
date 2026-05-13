@@ -32,7 +32,7 @@ install(TARGETS ${ExtendedSystemName} DESTINATION ${LIBINSTALLEXT})
 #install (TARGETS ${BasiLibName} DESTINATION ${LIBINSTALLEXT})
 #ENDIF (NOT ((${CMAKE_SYSTEM_NAME} MATCHES "Darwin") OR  MSVC))
 install(FILES
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/System/IExtendedSimObjects.h
-  ${CMAKE_SOURCE_DIR}/runtime/include/Core/System/ExtendedSimObjects.h
-   ${CMAKE_SOURCE_DIR}/runtime/include/Core/System/ExtendedSystem.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/System/IExtendedSimObjects.h
+  ${OMSICPP_SOURCE_DIR}/runtime/include/Core/System/ExtendedSimObjects.h
+   ${OMSICPP_SOURCE_DIR}/runtime/include/Core/System/ExtendedSystem.h
   DESTINATION include/omc/omsicpp/Core/System)
