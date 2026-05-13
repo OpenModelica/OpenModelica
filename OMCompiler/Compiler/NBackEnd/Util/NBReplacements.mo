@@ -306,16 +306,19 @@ public
     input output EqData eqData;
     input VariablePointers variables;
     input UnorderedMap<Absyn.Path, Function> replacements;
+  protected
+    UnorderedMap<Expression, Expression> prev_replacements = UnorderedMap.new<Expression>(Expression.hash, Expression.isEqual);
   algorithm
     // do nothing if replacements are empty
     if UnorderedMap.isEmpty(replacements) then return; end if;
-    eqData := EqData.mapExp(eqData, function applyFuncExp(replacements = replacements, variables = variables));
+    eqData := EqData.mapExp(eqData, function applyFuncExp(replacements = replacements, prev_replacements = prev_replacements, variables = variables));
   end replaceFunctions;
 
   function applyFuncExp
     "Needs to be mapped with Expression.map()"
-    input output Expression exp                               "Replacement happens inside this expression";
-    input UnorderedMap<Absyn.Path, Function> replacements     "rules for replacements are stored inside here";
+    input output Expression exp                                   "Replacement happens inside this expression";
+    input UnorderedMap<Absyn.Path, Function> replacements         "rules for replacements are stored inside here";
+    input UnorderedMap<Expression, Expression> prev_replacements  "previously found replacements that need not be done again";
     input VariablePointers variables;
   algorithm
     exp := match exp
@@ -326,55 +329,64 @@ public
         list<ComponentRef> input_crefs;
         ComponentRef local_cref;
         Option<Expression> binding_exp_opt;
-        Expression binding_exp, body_exp;
+        Expression binding_exp, body_exp, res_exp;
 
       case Expression.CALL(call = call as Call.TYPED_CALL(fn = fn)) guard(UnorderedMap.contains(fn.path, replacements)) algorithm
-        // use the function from the tree, in case it was changed
-        fn := UnorderedMap.getOrFail(fn.path, replacements);
+        // check if the function was previously replaced
+        res_exp := match UnorderedMap.get(exp, prev_replacements)
+          case SOME(res_exp) then res_exp;
+          else algorithm
+            // use the function from the tree, in case it was changed
+            fn := UnorderedMap.getOrFail(fn.path, replacements);
 
-        // map all the inputs to the arguments and add to local replacement map
-        local_replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
-        input_crefs := list(ComponentRef.fromNode(node, InstNode.getType(node)) for node in fn.inputs);
-        // ToDo: rather use the function slots for this?
-        for tpl in List.zip(input_crefs, call.arguments) loop
-          addInputArgTpl(tpl, local_replacements, false);
-        end for;
+            // map all the inputs to the arguments and add to local replacement map
+            local_replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+            input_crefs := list(ComponentRef.fromNode(node, InstNode.getType(node)) for node in fn.inputs);
+            // ToDo: rather use the function slots for this?
+            for tpl in List.zip(input_crefs, call.arguments) loop
+              addInputArgTpl(tpl, local_replacements, false);
+            end for;
 
-        // add replacement rules for local (protected) variables
-        for local_node in fn.locals loop
-          local_cref      := ComponentRef.fromNode(local_node, InstNode.getType(local_node));
-          binding_exp_opt := InstNode.getBindingExpOpt(local_node);
-          if Util.isSome(binding_exp_opt) then
-            // replace binding expression with already gathered input replacements
-            binding_exp := Expression.map(Util.getOption(binding_exp_opt), function applySimpleExp(replacements = local_replacements));
-          else
-            // add a "wild" binding. This will result in unused outputs being ignored.
-            binding_exp := Expression.CREF(Type.UNKNOWN(), ComponentRef.WILD());
-          end if;
-          addInputArgTpl((local_cref, binding_exp), local_replacements, false);
-        end for;
+            // add replacement rules for local (protected) variables
+            for local_node in fn.locals loop
+              local_cref      := ComponentRef.fromNode(local_node, InstNode.getType(local_node));
+              binding_exp_opt := InstNode.getBindingExpOpt(local_node);
+              if Util.isSome(binding_exp_opt) then
+                // replace binding expression with already gathered input replacements
+                binding_exp := Expression.map(Util.getOption(binding_exp_opt), function applySimpleExp(replacements = local_replacements));
+              else
+                // add a "wild" binding. This will result in unused outputs being ignored.
+                binding_exp := Expression.CREF(Type.UNKNOWN(), ComponentRef.WILD());
+              end if;
+              addInputArgTpl((local_cref, binding_exp), local_replacements, false);
+            end for;
 
-        // get the expression from function body (fails if its not a single replacable assignment)
-        body_exp := getFunctionBody(fn);
-        // replace input withs arguments in expression
-        body_exp := Expression.map(body_exp, function applySimpleExp(replacements = local_replacements));
-        // if any of the inputs had an undetermined size, retype the new body
-        if not List.all(input_crefs, ComponentRef.sizeKnown) then
-          body_exp := Typing.typeExp(body_exp, NFInstContext.RHS, sourceInfo(), true);
-        end if;
+            // get the expression from function body (fails if its not a single replacable assignment)
+            body_exp := getFunctionBody(fn);
+            // replace input withs arguments in expression
+            body_exp := Expression.map(body_exp, function applySimpleExp(replacements = local_replacements));
+            // if any of the inputs had an undetermined size, retype the new body
+            if not List.all(input_crefs, ComponentRef.sizeKnown) then
+              body_exp := Typing.typeExp(body_exp, NFInstContext.RHS, sourceInfo(), true);
+            end if;
 
-        // combine binaries and simplify
-        body_exp := SimplifyExp.combineBinaries(body_exp);
-        body_exp := SimplifyExp.simplifyDump(body_exp, true, getInstanceName());
+            // combine binaries and simplify
+            body_exp := SimplifyExp.combineBinaries(body_exp);
+            body_exp := SimplifyExp.simplifyDump(body_exp, true, getInstanceName());
 
-        // replace body with possible nested functions
-        body_exp := Expression.map(body_exp, function applyFuncExp(replacements = replacements, variables = variables));
+            // replace body with possible nested functions
+            res_exp := Expression.map(body_exp, function applyFuncExp(replacements = replacements, prev_replacements = prev_replacements, variables = variables));
 
-        if Flags.isSet(Flags.DUMPBACKENDINLINE) then
-          print("[" + getInstanceName() + "] Inlining: " + Expression.toString(exp) + "\n");
-          print("-- Result: " + Expression.toString(body_exp) + "\n\n");
-        end if;
-      then body_exp;
+            // add the new replacement to the map
+            UnorderedMap.add(exp, res_exp, prev_replacements);
+
+            if Flags.isSet(Flags.DUMPBACKENDINLINE) then
+              print("[" + getInstanceName() + "] Inlining: " + Expression.toString(exp) + "\n");
+              print("-- Result: " + Expression.toString(body_exp) + "\n\n");
+            end if;
+          then res_exp;
+        end match;
+      then res_exp;
 
       else exp;
     end match;
