@@ -988,7 +988,16 @@ void Parameter::editClassButtonClicked()
           if (modification.isEmpty()) {
             setValueWidget("", false, mUnit, true);
           } else {
-            setValueWidget(modification, false, mUnit, true);
+            /*! Issue #15548
+             *  If record then prepend the type. It will become a binding equation.
+             */
+            if (mpModelInstanceElement->getModel() && mpModelInstanceElement->getModel()->isRecord()) {
+              const QString name = StringHandler::makeClassNameRelative(mpModelInstanceElement->getType(),
+                                                                        mpElementParameters->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure());
+              setValueWidget(name % modification, false, mUnit, true);
+            } else {
+              setValueWidget(modification, false, mUnit, true);
+            }
           }
         }
       }
@@ -2221,20 +2230,13 @@ void ElementParameters::updateElementParameters()
     QList<Modifier> modifiersList;
     foreach (ElementModifier elementModifier, elementModifiersList) {
       QString modifierValue = elementModifier.mValue.trimmed();
-      const int index = modifierValue.indexOf('(');
 
       if (modifierValue.isEmpty()) {
         modifierValue = elementModifier.mKey;
       } else if (modifierValue.startsWith(QLatin1String("redeclare"))) {
         // keep as-is
-      } else if (index > -1) {
-        const QString modifierStartStr = modifierValue.left(index).trimmed();
-        if (modifierStartStr == elementModifier.mKey) {
-          // keep as-is: value already leads with the key name (e.g. "Foo(...)")
-        } else {
-          // prepend key
-          modifierValue = elementModifier.mKey % modifierValue;
-        }
+      } else if (modifierValue.startsWith("(")) {
+        modifierValue = elementModifier.mKey % modifierValue;
       } else {
         modifierValue = elementModifier.mKey % QLatin1String(" = ") % modifierValue;
       }
