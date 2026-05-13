@@ -589,9 +589,9 @@ public
 
   uniontype StateEvent
     record STATE_EVENT
-      Integer index                       "index for simcode";
-      Pointer<Variable> auxiliary         "auxiliary variable representing the relation";
-      list<Pointer<Equation>> eqns        "list of equations where the function occurs";
+      Integer index                         "index for simcode";
+      Pointer<Variable> auxiliary           "auxiliary variable representing the relation";
+      UnorderedSet<Pointer<Equation>> eqns  "equations where the function occurs";
     end STATE_EVENT;
 
     function toString
@@ -696,7 +696,7 @@ public
       if Util.isSome(sev_opt) then
         // if the state event already exist update the equations it belongs to
         SOME(sev) := sev_opt;
-        sev.eqns := eqn :: sev.eqns;
+        UnorderedSet.add(eqn, sev.eqns);
         UnorderedMap.add(condition, sev, bucket.state_map);
         // return the auxiliary instead of the zero crossing
         aux_cref := BVariable.getVarName(sev.auxiliary);
@@ -707,7 +707,7 @@ public
         exp := Expression.fromCref(aux_cref);
 
         // add the new event to the map
-        sev := STATE_EVENT(UnorderedMap.size(bucket.state_map), aux_var, {eqn});
+        sev := STATE_EVENT(UnorderedMap.size(bucket.state_map), aux_var, UnorderedSet.fromList({eqn}, Equation.hash, Equation.equalName));
         condition := Condition.setRelationIndex(condition, sev.index);
         UnorderedMap.add(condition, sev, bucket.state_map);
       end if;
@@ -730,7 +730,7 @@ public
     algorithm
       (cond, sev) := sev_tpl;
       iter        := if Iterator.isEmpty(cond.iter) then NONE() else SOME(list(SimIterator.convert(it) for it in SimIterator.fromIterator(cond.iter)));
-      eqn_names   := list(Equation.getEqnName(eqn) for eqn guard(not Equation.isDummy(Pointer.access(eqn))) in sev.eqns);
+      eqn_names   := list(Equation.getEqnName(eqn) for eqn guard(not Equation.isDummy(Pointer.access(eqn))) in UnorderedSet.toList(sev.eqns));
       eqn_indices := list(Block.getIndex(UnorderedMap.getSafe(name, equation_map, sourceInfo())) for name guard(UnorderedMap.contains(name, equation_map)) in eqn_names);
       oldZc := OldBackendDAE.ZERO_CROSSING(
         index       = sev.index,
