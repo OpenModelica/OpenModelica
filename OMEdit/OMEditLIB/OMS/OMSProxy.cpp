@@ -41,6 +41,7 @@
 #include "Util/Helper.h"
 #include "MainWindow.h"
 #include "Util/Utilities.h"
+#include "OMS/OMSModel.h"
 #include "zmq.h"
 #include <QJsonObject>
 #include <QJsonDocument>
@@ -487,6 +488,7 @@ bool OMSProxy::addConnection(QString crefA, QString crefB, bool suppressUnitConv
  */
 bool OMSProxy::addConnector(QString cref, oms_causality_enu_t causality, oms_signal_type_enu_t type)
 {
+  qDebug() <<"addConnector: " << cref;
   QString command = "oms_addConnector";
   QStringList args;
   args << "\"" + cref + "\"" << QString::number(causality) << QString::number(type);
@@ -1392,7 +1394,7 @@ bool OMSProxy::setConnectionGeometry(QString crefA, QString crefB, const ssd_con
  */
 bool OMSProxy::setConnectorGeometry(QString cref, const ssd_connector_geometry_t* pGeometry)
 {
-    qDebug() << "setConnectorGemetry";
+  qDebug() << "setConnectorGemetry:" << cref;
   QString command = "oms_setConnectorGeometry";
   QStringList args;
   args << "\"" + cref + "\"";
@@ -1400,6 +1402,26 @@ bool OMSProxy::setConnectorGeometry(QString cref, const ssd_connector_geometry_t
   oms_status_enu_t status = oms_setConnectorGeometry(cref.toUtf8().constData(), pGeometry);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
+
+  // QStringList parts = cref.split(".");
+  // parts.removeFirst(); // remove model name, e.g. "test"
+
+  // QJsonObject geometry;
+  // geometry["x"] = pGeometry->x;
+  // geometry["y"] = pGeometry->y;
+  // QJsonObject args_;
+  // args_["cref"] = QJsonArray::fromStringList(parts);
+  // args_["geometry"] = geometry;
+
+  // QJsonObject obj;
+  // obj["method"] = "setConnectorGeometry";
+  // obj["args"] = args_;
+
+  // QJsonObject reply;
+  // mpGuiRequestSocket->sendCommand(obj, reply);
+
+  // //return reply["status"].toString() == "ok";
+  // return true;
 }
 
 /*!

@@ -69,11 +69,11 @@ class ConnectorGeometry
 {
 public:
   void deserialize(const QJsonObject &jsonObject);
-  double getX() const {return mX;}
-  double getY() const {return mY;}
+  double getX() const {return x;}
+  double getY() const {return y;}
 private:
-  double mX = 0.5;
-  double mY = 0.5;
+  double x = 0.5;
+  double y = 0.5;
 };
 
 class ElementGeometry

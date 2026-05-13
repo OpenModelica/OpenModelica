@@ -1576,7 +1576,7 @@ void Element::createResizerItems()
   bool isElementMode = mpGraphicsView->getModelWidget()->isElementMode();
   bool isOMSConnector = (mpLibraryTreeItem
                          && mpLibraryTreeItem->isSSP()
-                         && mpLibraryTreeItem->getOMSConnector());
+                         && mpLibraryTreeItem->getOMSModelConnector());
   bool isOMSBusConnecor = (mpLibraryTreeItem
                            && mpLibraryTreeItem->isSSP()
                            && mpLibraryTreeItem->getOMSBusConnector());
@@ -1800,10 +1800,11 @@ void Element::updatePlacementAnnotation()
       OMSProxy::instance()->setElementGeometry(mpLibraryTreeItem->getNameStructure(), &elementGeometry);
     } else if (mpLibraryTreeItem && (mpLibraryTreeItem->getOMSConnector()
                                      || mpLibraryTreeItem->getOMSBusConnector())) {
+      //OMSModel::ConnectorGeometry connectorGeometry;
       ssd_connector_geometry_t connectorGeometry;
       connectorGeometry.x = Utilities::mapToCoordinateSystem(mTransformation.getOrigin().x(), -100, 100, 0, 1);
       connectorGeometry.y = Utilities::mapToCoordinateSystem(mTransformation.getOrigin().y(), -100, 100, 0, 1);
-      if (mpLibraryTreeItem->getOMSConnector()) {
+      if (mpLibraryTreeItem->getOMSModelConnector()) {
         OMSProxy::instance()->setConnectorGeometry(mpLibraryTreeItem->getNameStructure(), &connectorGeometry);
       } else if (mpLibraryTreeItem->getOMSBusConnector()) {
         OMSProxy::instance()->setBusGeometry(mpLibraryTreeItem->getNameStructure(), &connectorGeometry);

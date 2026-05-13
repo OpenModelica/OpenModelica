@@ -8,8 +8,8 @@ namespace OMSModel
 
 void ConnectorGeometry::deserialize(const QJsonObject &jsonObject)
 {
-  mX = jsonObject.value("x").toDouble(0.5);
-  mY = jsonObject.value("y").toDouble(0.5);
+  x = jsonObject.value("x").toDouble(0.5);
+  y = jsonObject.value("y").toDouble(0.5);
 }
 
 void ElementGeometry::deserialize(const QJsonObject &jsonObject)

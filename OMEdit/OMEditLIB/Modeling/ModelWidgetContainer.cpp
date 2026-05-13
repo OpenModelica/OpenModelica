@@ -3137,7 +3137,7 @@ Element* GraphicsView::connectorElementAtPosition(QPoint position)
             !(mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView()) &&
             (pElement->isConnector() ||
              (mpModelWidget->getLibraryTreeItem()->isSSP() &&
-              (pElement->getLibraryTreeItem()->getOMSConnector() || pElement->getLibraryTreeItem()->getOMSBusConnector()
+              (pElement->getLibraryTreeItem()->getOMSModelConnector() || pElement->getLibraryTreeItem()->getOMSBusConnector()
                || pElement->isPort())))) {
           return pElement;
         }
@@ -5218,7 +5218,7 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
       } else if (mpModelWidget->getLibraryTreeItem()->isSSP()) {
         // No context menu for component of type OMS connector i.e., input/output signal or OMS bus connector.
         if (pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isSSP()
-            && (pComponent->getLibraryTreeItem()->getOMSConnector()
+            && (pComponent->getLibraryTreeItem()->getOMSModelConnector()
                 || pComponent->getLibraryTreeItem()->getOMSBusConnector())) {
           return;
         }
@@ -7318,28 +7318,6 @@ void ModelWidget::drawOMSModelDiagramElements()
   }
 }
 
-// void ModelWidget::drawOMSModelDiagramElements()
-// {
-//   if (mpLibraryTreeItem->isTopLevel() || mpLibraryTreeItem->isSystemElement()) {
-//     for (int i = 0 ; i < mpLibraryTreeItem->childrenSize() ; i++) {
-//       LibraryTreeItem *pChildLibraryTreeItem = mpLibraryTreeItem->childAt(i);
-
-//       if (pChildLibraryTreeItem->isSystemElement() || pChildLibraryTreeItem->isComponentElement()) {
-//         // Load the ModelWidget if not loaded already
-//         if (!pChildLibraryTreeItem->getModelWidget()) {
-//           MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pChildLibraryTreeItem, false);
-//         }
-
-//         // Temporary default placement for JSON-created OMS elements.
-//         QString annotation = QString("Placement(true,0,0,-10.0,-10.0,10.0,10.0,0,-,-,-,-,-,-,)");
-
-//         drawOMSElement(pChildLibraryTreeItem, annotation);
-//       }
-//     }
-//   }
-// }
-
-
 /*!
  * \brief ModelWidget::drawOMSElement
  * Draws the OMSimulator element.
@@ -7349,11 +7327,7 @@ void ModelWidget::drawOMSModelDiagramElements()
 void ModelWidget::drawOMSElement(LibraryTreeItem *pLibraryTreeItem, const QString &annotation)
 {
   // add the connector element to icon view
-  // if ((pLibraryTreeItem->getOMSConnector()
-  //     && (pLibraryTreeItem->getOMSConnector()->causality == oms_causality_input
-  //         || pLibraryTreeItem->getOMSConnector()->causality == oms_causality_output))
-  //     || (pLibraryTreeItem->getOMSBusConnector())) {
-    if (pLibraryTreeItem->getOMSModelConnector()
+  if (pLibraryTreeItem->getOMSModelConnector()
         && (pLibraryTreeItem->getOMSModelConnector()->isInput()
             || pLibraryTreeItem->getOMSModelConnector()->isOutput())) {
 
@@ -8387,7 +8361,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
       } else if (pLibraryTreeItem->isComponentElement()) {
         omsSubmodel = true;
       }
-      if (pLibraryTreeItem->getOMSConnector()) {
+      if (pLibraryTreeItem->getOMSModelConnector()) {
         omsConnector = true;
       }
     }
@@ -8796,7 +8770,7 @@ void ModelWidgetContainer::addBus()
     for (int i = 0 ; i < selectedItems.size() ; i++) {
       // check the selected components.
       Element *pComponent = dynamic_cast<Element*>(selectedItems.at(i));
-      if (pComponent && pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getOMSConnector()) {
+      if (pComponent && pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getOMSModelConnector()) {
         components.append(pComponent);
       }
     }
