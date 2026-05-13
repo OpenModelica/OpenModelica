@@ -297,6 +297,9 @@ private:
   Label *mpComponentClassCommentTextBox;
   Label *mpModifiersLabel;
   QLineEdit *mpModifiersTextBox;
+  QVector<QString> mHandledModifiersVector;
+  QVector<Label*> mModifierLabelsVector;
+  QVector<QLineEdit*> mModifierTextBoxesVector;
   QMap<QString, int> mTabsMap;
   QList<Parameter*> mParametersList;
   QPushButton *mpOkButton;
