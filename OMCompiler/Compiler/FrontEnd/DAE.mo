@@ -1106,10 +1106,10 @@ partial function EvaluateSingletonTypeFunction
   output Type ty;
 end EvaluateSingletonTypeFunction;
 
-public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN = FUNCTION_ATTRIBUTES(NO_INLINE(),Purity.PURE,false,FUNCTION_BUILTIN(NONE(), false),FP_NON_PARALLEL());
-public constant FunctionAttributes FUNCTION_ATTRIBUTES_DEFAULT = FUNCTION_ATTRIBUTES(DEFAULT_INLINE(),Purity.PURE,false,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL());
-public constant FunctionAttributes FUNCTION_ATTRIBUTES_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),Purity.IMPURE,false,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL());
-public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),Purity.IMPURE,false,FUNCTION_BUILTIN(NONE(), false),FP_NON_PARALLEL());
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN = FUNCTION_ATTRIBUTES(NO_INLINE(),false,Purity.PURE,false,FUNCTION_BUILTIN(NONE(), false),FP_NON_PARALLEL());
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_DEFAULT = FUNCTION_ATTRIBUTES(DEFAULT_INLINE(),false,Purity.PURE,false,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL());
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),false,Purity.IMPURE,false,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL());
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),false,Purity.IMPURE,false,FUNCTION_BUILTIN(NONE(), false),FP_NON_PARALLEL());
 
 public type Purity = enumeration(
   PURE,      // Function with pure prefix
@@ -1122,6 +1122,7 @@ public
 uniontype FunctionAttributes
   record FUNCTION_ATTRIBUTES
     InlineType inline;
+    Boolean generateEvents;
     Purity purity;
     Boolean isFunctionPointer "if the function is a local variable";
     FunctionBuiltin isBuiltin;

@@ -2581,6 +2581,7 @@ protected
         String name;
         list<String> in_params, out_params;
         DAE.InlineType inline_ty;
+        Boolean generateEvents;
         DAE.FunctionBuiltin builtin;
 
       // External builtin function.
@@ -2590,9 +2591,10 @@ protected
           out_params := list(InstNode.name(o) for o in outputs);
           name := SCodeUtil.isBuiltinFunction(def, in_params, out_params);
           inline_ty := InstUtil.commentIsInlineFunc(cmt);
+          generateEvents := InstUtil.commentGenerateEvents(cmt);
           has_unbox_args := hasUnboxArgsAnnotation(cmt);
         then
-          DAE.FUNCTION_ATTRIBUTES(inline_ty, purity, is_partial,
+          DAE.FUNCTION_ATTRIBUTES(inline_ty, generateEvents, purity, is_partial,
             DAE.FUNCTION_BUILTIN(SOME(name), has_unbox_args), DAE.FP_NON_PARALLEL());
 
       // Parallel function: there are some builtin functions.
@@ -2602,28 +2604,31 @@ protected
           out_params := list(InstNode.name(o) for o in outputs);
           name := SCodeUtil.isBuiltinFunction(def, in_params, out_params);
           inline_ty := InstUtil.commentIsInlineFunc(cmt);
+          generateEvents := InstUtil.commentGenerateEvents(cmt);
           has_unbox_args := hasUnboxArgsAnnotation(cmt);
         then
-          DAE.FUNCTION_ATTRIBUTES(inline_ty, purity, is_partial,
+          DAE.FUNCTION_ATTRIBUTES(inline_ty, generateEvents, purity, is_partial,
             DAE.FUNCTION_BUILTIN(SOME(name), has_unbox_args), DAE.FP_PARALLEL_FUNCTION());
 
       // Parallel function: non-builtin.
       case SCode.FunctionRestriction.FR_PARALLEL_FUNCTION()
         algorithm
           inline_ty := InstUtil.commentIsInlineFunc(cmt);
+          generateEvents := InstUtil.commentGenerateEvents(cmt);
         then
-          DAE.FUNCTION_ATTRIBUTES(inline_ty, purity, is_partial,
+          DAE.FUNCTION_ATTRIBUTES(inline_ty, generateEvents, purity, is_partial,
             getBuiltinPtr(cmt), DAE.FP_PARALLEL_FUNCTION());
 
       // Kernel functions: never builtin and never inlined.
       case SCode.FunctionRestriction.FR_KERNEL_FUNCTION()
-        then DAE.FUNCTION_ATTRIBUTES(DAE.NO_INLINE(), purity, is_partial,
+        then DAE.FUNCTION_ATTRIBUTES(DAE.NO_INLINE(), false, purity, is_partial,
           DAE.FUNCTION_NOT_BUILTIN(), DAE.FP_KERNEL_FUNCTION());
 
       // Normal function.
       else
         algorithm
           inline_ty := InstUtil.commentIsInlineFunc(cmt);
+          generateEvents := InstUtil.commentGenerateEvents(cmt);
 
           // Since Modelica 3.3, normal functions are pure by default and external functions are impure.
           if purity == DAE.Purity.UNDEFINED and Config.languageStandardAtLeast(Config.LanguageStandard._3_3) then
@@ -2634,7 +2639,7 @@ protected
             purity := DAE.Purity.PURE;
           end if;
         then
-          DAE.FUNCTION_ATTRIBUTES(inline_ty, purity, is_partial, getBuiltinPtr(cmt), DAE.FP_NON_PARALLEL());
+          DAE.FUNCTION_ATTRIBUTES(inline_ty, generateEvents, purity, is_partial, getBuiltinPtr(cmt), DAE.FP_NON_PARALLEL());
 
     end matchcontinue;
   end makeAttributes;

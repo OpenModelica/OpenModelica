@@ -377,6 +377,11 @@ public
             // replace body with possible nested functions
             res_exp := Expression.map(body_exp, function applyFuncExp(replacements = replacements, prev_replacements = prev_replacements, variables = variables));
 
+            // wrap all event triggering expressions in noEvent() if the function is not supposed to trigger events
+            if not fn.attributes.generateEvents then
+              res_exp := Expression.fakeMap(res_exp, wrapEvents);
+            end if;
+
             // add the new replacement to the map
             UnorderedMap.add(exp, res_exp, prev_replacements);
 
@@ -470,6 +475,52 @@ public
       then fail();
     end match;
   end getFunctionBody;
+
+  function wrapEvents
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      case Expression.IF() algorithm
+        // wrap the condition in noEvent() if it does not have a noEvent() yet
+        exp.condition := match exp.condition
+          case Expression.CALL() guard(Expression.isCallNamed(exp.condition, "noEvent")) then exp.condition;
+          else Expression.CALL(Call.makeTypedCall(
+            fn          = NFBuiltinFuncs.NO_EVENT,
+            args        = {exp.condition},
+            variability = Expression.variability(exp.condition),
+            purity      = NFPrefixes.Purity.PURE));
+        end match;
+        exp.trueBranch  := Expression.mapShallow(exp.trueBranch, wrapEvents);
+        exp.falseBranch := Expression.mapShallow(exp.falseBranch, wrapEvents);
+      then exp;
+
+      // wrap all relations in noEvent()
+      case Expression.RELATION() algorithm
+      then Expression.CALL(Call.makeTypedCall(
+        fn          = NFBuiltinFuncs.NO_EVENT,
+        args        = {exp},
+        variability = Expression.variability(exp),
+        purity      = NFPrefixes.Purity.PURE));
+
+      // wrap all logical binaries in noEvent()
+      case Expression.LBINARY() algorithm
+      then Expression.CALL(Call.makeTypedCall(
+        fn          = NFBuiltinFuncs.NO_EVENT,
+        args        = {exp},
+        variability = Expression.variability(exp),
+        purity      = NFPrefixes.Purity.PURE));
+
+      // wrap all logical unaries in noEvent()
+      case Expression.LUNARY() algorithm
+      then Expression.CALL(Call.makeTypedCall(
+        fn          = NFBuiltinFuncs.NO_EVENT,
+        args        = {exp},
+        variability = Expression.variability(exp),
+        purity      = NFPrefixes.Purity.PURE));
+
+      else Expression.mapShallow(exp, wrapEvents);
+    end match;
+  end wrapEvents;
 
   annotation(__OpenModelica_Interface="backend");
 end NBReplacements;

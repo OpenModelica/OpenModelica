@@ -4729,6 +4729,39 @@ algorithm
 
 end isInlineFunc2;
 
+public function commentGenerateEvents
+  input SCode.Comment cmt;
+  output Boolean generateEvents;
+protected
+  function commentGenerateEvents2
+    input list<SCode.SubMod> inSubModList;
+    output Boolean res;
+  protected
+    Boolean stop;
+  algorithm
+    res := false;
+
+    for tp in inSubModList loop
+      stop := match tp
+        case SCode.NAMEMOD("GenerateEvents",SCode.MOD(binding = SOME(Absyn.BOOL(res)))) then false;
+        else true;
+      end match;
+
+     if stop then break; end if;
+    end for;
+  end commentGenerateEvents2;
+algorithm
+  generateEvents := match(cmt)
+    local
+      list<SCode.SubMod> smlst;
+
+    case SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(SCode.MOD(subModLst = smlst))))
+      then commentGenerateEvents2(smlst);
+
+    else false;
+  end match;
+end commentGenerateEvents;
+
 public function stripFuncOutputsMod "strips the assignment modification of the component declared as output"
   input SCode.Element elem;
   output SCode.Element stripped_elem;
@@ -7188,7 +7221,7 @@ algorithm
         name := SCodeUtil.isBuiltinFunction(cl,List.map(inVars,Types.getVarName),List.map(outVars,Types.getVarName));
         inlineType := commentIsInlineFunc(inheritedComment);
         unboxArgs := SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment, "__OpenModelica_UnboxArguments");
-      then (DAE.FUNCTION_ATTRIBUTES(inlineType,daePurity,false,DAE.FUNCTION_BUILTIN(SOME(name), unboxArgs),DAE.FP_NON_PARALLEL()));
+      then (DAE.FUNCTION_ATTRIBUTES(inlineType,false,daePurity,false,DAE.FUNCTION_BUILTIN(SOME(name), unboxArgs),DAE.FP_NON_PARALLEL()));
 
     //parallel functions: There are some builtin functions.
     case SCode.FR_PARALLEL_FUNCTION()
@@ -7199,7 +7232,7 @@ algorithm
         inlineType := commentIsInlineFunc(inheritedComment);
         isOpenModelicaPure := not SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_Impure");
         unboxArgs := SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment, "__OpenModelica_UnboxArguments");
-      then (DAE.FUNCTION_ATTRIBUTES(inlineType,daePurity,false,DAE.FUNCTION_BUILTIN(SOME(name), unboxArgs),DAE.FP_PARALLEL_FUNCTION()));
+      then (DAE.FUNCTION_ATTRIBUTES(inlineType,false,daePurity,false,DAE.FUNCTION_BUILTIN(SOME(name), unboxArgs),DAE.FP_PARALLEL_FUNCTION()));
 
     //parallel functions: non-builtin
     case SCode.FR_PARALLEL_FUNCTION()
@@ -7207,11 +7240,11 @@ algorithm
         inlineType := commentIsInlineFunc(inheritedComment);
         isBuiltin := if SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_BuiltinPtr") then DAE.FUNCTION_BUILTIN_PTR() else DAE.FUNCTION_NOT_BUILTIN();
         isOpenModelicaPure := not SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_Impure");
-      then DAE.FUNCTION_ATTRIBUTES(inlineType,daePurity,false,isBuiltin,DAE.FP_PARALLEL_FUNCTION());
+      then DAE.FUNCTION_ATTRIBUTES(inlineType,false,daePurity,false,isBuiltin,DAE.FP_PARALLEL_FUNCTION());
 
     //kernel functions: never builtin and never inlined.
     case SCode.FR_KERNEL_FUNCTION()
-      then DAE.FUNCTION_ATTRIBUTES(DAE.NO_INLINE(), daePurity, false, DAE.FUNCTION_NOT_BUILTIN(),DAE.FP_KERNEL_FUNCTION());
+      then DAE.FUNCTION_ATTRIBUTES(DAE.NO_INLINE(),false,daePurity, false, DAE.FUNCTION_NOT_BUILTIN(),DAE.FP_KERNEL_FUNCTION());
 
     else
       algorithm
@@ -7225,7 +7258,7 @@ algorithm
           daePurity := DAE.Purity.IMPURE;
         end if;
       then
-        DAE.FUNCTION_ATTRIBUTES(inlineType,daePurity,false,isBuiltin,DAE.FP_NON_PARALLEL());
+        DAE.FUNCTION_ATTRIBUTES(inlineType,false,daePurity,false,isBuiltin,DAE.FP_NON_PARALLEL());
   end matchcontinue;
 end getFunctionAttributes;
 
