@@ -309,24 +309,32 @@ void initBidirectionalRecovery(JACOBIAN* fwd)
 
   /* Forward recoverMask: entry (i,j) is column-recoverable if j is the ONLY
    * column with its column color among all columns having a nonzero in row i. */
+  // iterate over all columns
   for (j = 0; j < nCols; j++) {
     unsigned int cj = fwdsp->colorCols[j];
+    // iterate over nonzeros (rows with nonzero) in this column via forward CSC pattern
     for (nz = fwdsp->leadindex[j]; nz < fwdsp->leadindex[j+1]; nz++) {
-      i = fwdsp->index[nz];
-      int unique = 1;
+      i = fwdsp->index[nz]; // row index of current nonzero
+      int unique = 1; // assume current column is unique for this nonzero until we find otherwise
+      // check all other columns with nonzero in the same row i via adjoint CSR pattern
       for (k = adjsp->leadindex[i]; k < adjsp->leadindex[i+1]; k++) {
-        j2 = adjsp->index[k];
+        j2 = adjsp->index[k]; // column index of nonzero in same row
+        // check its a different column and has the same color, if so current column is not unique for this nonzero
         if (j2 != j && fwdsp->colorCols[j2] == cj) {
           unique = 0;
           break;
         }
       }
+      // mark as unique (column-recoverable) or not
+      // if unique, this nonzero can be recovered from forward evaluation when column j is seeded, otherwise it cannot and must be recovered from adjoint evaluation
+      // if not unique, it gives a wrong value when recovered from forward evaluation and thus can not be written into result vector
       fwd->recoverMask[nz] = (unsigned char)unique;
     }
   }
 
   /* Adjoint recoverMask: entry (i,j) is row-recoverable if i is the ONLY
    * row with its row color among all rows having a nonzero in column j. */
+  // same logic as forward, but now iterate over rows and check uniqueness of row color among rows with nonzero in same column via forward pattern
   for (i = 0; i < nRows; i++) {
     unsigned int ri = adjsp->colorCols[i];
     for (nz = adjsp->leadindex[i]; nz < adjsp->leadindex[i+1]; nz++) {
@@ -343,12 +351,17 @@ void initBidirectionalRecovery(JACOBIAN* fwd)
     }
   }
 
-  /* CSR-to-CSC mapping: for each adjoint CSR position, find forward CSC position */
+  /* CSR-to-CSC mapping: for each adjoint CSR position (nonzero), find forward CSC position */
+  // iterate over all rows
   for (i = 0; i < nRows; i++) {
+    // iterate over all nonzeros in this row via adjoint CSR pattern
     for (nz = adjsp->leadindex[i]; nz < adjsp->leadindex[i+1]; nz++) {
-      j = adjsp->index[nz];
+      j = adjsp->index[nz]; // get column index of current nonzero
       adj->csrToCscMap[nz] = 0;
+      // iterate over all nonzeros in this column via forward CSC pattern, so the nonzero rows
       for (k = fwdsp->leadindex[j]; k < fwdsp->leadindex[j+1]; k++) {
+        // if row index matches, we found the same nonzero in forward pattern
+        // and can record its position k for later indexing into forward result vector when recovering this nonzero from adjoint evaluation
         if (fwdsp->index[k] == i) {
           adj->csrToCscMap[nz] = k;
           break;
@@ -433,7 +446,6 @@ void evalJacobianBidirectional(DATA* data, threadData_t *threadData,
               jac[column * nRows + row] = adj->resultVars[column];
             else
               jac[adj->csrToCscMap[nz]] = adj->resultVars[column];
-
           }
         }
         adj->seedVars[row] = 0.0;
