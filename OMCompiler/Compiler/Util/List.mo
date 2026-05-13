@@ -5228,7 +5228,7 @@ public function allCombinations<T>
   input SourceInfo info;
   output list<list<T>> out;
 algorithm
-  out := matchcontinue (lst,maxTotalSize,info)
+  out := match (lst,maxTotalSize,info)
     local
       Integer sz,maxSz;
     case (_,SOME(maxSz),_)
@@ -5243,7 +5243,7 @@ algorithm
         Error.addSourceMessage(Error.COMPILER_NOTIFICATION, {"List.allCombinations failed because the input was too large"}, info);
       then fail();
     */
-  end matchcontinue;
+  end match;
 end allCombinations;
 
 protected function allCombinations2<T>
