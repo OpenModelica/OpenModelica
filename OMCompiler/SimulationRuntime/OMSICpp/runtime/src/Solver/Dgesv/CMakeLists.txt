@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.5)
 
 project(${DgesvName})
 
-IF(DGESV_FOUND)
-  MESSAGE(STATUS "DGESV enabled")
+if(DGESV_FOUND)
+  message(STATUS "DGESV enabled")
   include_directories (${DGESV_INCLUDE_DIR})
 
   add_library(${DgesvName} STATIC ${DGESV_SRCS})
@@ -19,6 +19,6 @@ IF(DGESV_FOUND)
     ${CMAKE_SOURCE_DIR}/runtime/include/Solver/Dgesv/FactoryExport.h
     DESTINATION include/omc/omsicpp/Solver/Dgesv)
 
-ELSE()
-  MESSAGE(STATUS "DGESV disabled")
-ENDIF(DGESV_FOUND)
+else()
+  message(STATUS "DGESV disabled")
+endif(DGESV_FOUND)

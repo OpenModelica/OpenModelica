@@ -10,11 +10,11 @@ else(NOT BUILD_SHARED_LIBS)
   install(TARGETS ${OMCFactoryName} DESTINATION ${LIBINSTALLEXT})
 endif(NOT BUILD_SHARED_LIBS)
 
-IF(WIN32)
-target_link_libraries(${OMCFactoryName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} ${ExtensionUtilitiesName} wsock32 ws2_32)
-ELSE(WIN32)
-target_link_libraries(${OMCFactoryName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} ${ExtensionUtilitiesName} ${CPPTHREADS_LIBRARY})
-ENDIF(WIN32)
+if(WIN32)
+  target_link_libraries(${OMCFactoryName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} ${ExtensionUtilitiesName} wsock32 ws2_32)
+else(WIN32)
+  target_link_libraries(${OMCFactoryName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} ${ExtensionUtilitiesName} ${CPPTHREADS_LIBRARY})
+endif(WIN32)
 add_precompiled_header(${OMCFactoryName} runtime/include/Core/Modelica.h)
 
 
