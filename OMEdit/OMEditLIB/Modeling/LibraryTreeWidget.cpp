@@ -3311,7 +3311,7 @@ void LibraryTreeView::libraryTreeItemDoubleClicked(const QModelIndex &index)
         mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
       }
     } else if (pLibraryTreeItem->isSSP()) {
-      if ((pLibraryTreeItem->getOMSConnector() || pLibraryTreeItem->getOMSBusConnector())) {
+      if ((pLibraryTreeItem->getOMSModelConnector() || pLibraryTreeItem->getOMSBusConnector())) {
         return;
       } else {
         mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
@@ -3473,7 +3473,7 @@ void LibraryTreeView::showContextMenu(QPoint point)
           }
           break;
         case LibraryTreeItem::OMS:
-          if (pLibraryTreeItem->isTopLevel() || (!pLibraryTreeItem->getOMSConnector())) {
+          if (pLibraryTreeItem->isTopLevel() || (!pLibraryTreeItem->getOMSModelConnector())) {
             menu.addAction(mpOMSRenameAction);
           }
           if (pLibraryTreeItem->isTopLevel()) {
