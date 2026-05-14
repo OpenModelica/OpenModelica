@@ -1805,32 +1805,29 @@ protected
   Boolean allEq=true;
   DoubleEnded.MutableList<TI> delst;
   Integer n=0;
-  TI e1;
+  TI e1, savedElt;
 algorithm
   for e in inList loop
     e1 := inFunc(e);
     // Preserve reference equality without any allocation if nothing changed
     if not referenceEq(e, e1) then
-      allEq:=false;
-      break;
+      savedElt := e1;
+      delst := DoubleEnded.empty(e1);
+      for elt in inList loop
+        if n < 0 then
+          e1 := inFunc(elt);
+        else
+          e1 := if n == 0 then savedElt else elt;
+        end if;
+        DoubleEnded.push_back(delst, e1);
+        n := n-1;
+      end for;
+      outList := DoubleEnded.toListAndClear(delst);
+      return;
     end if;
     n := n + 1;
   end for;
-  if allEq then
-    outList := inList;
-    return;
-  end if;
-  delst := DoubleEnded.empty(listHead(inList));
-  for elt in inList loop
-    if n < 1 then
-      e1 := inFunc(elt);
-    else
-      e1 := elt;
-    end if;
-    DoubleEnded.push_back(delst, e1);
-    n := n-1;
-  end for;
-  outList := DoubleEnded.toListAndClear(delst);
+  outList := inList;
 end mapCheckReferenceEq;
 
 public function mapReverse<TI, TO>
@@ -3043,34 +3040,31 @@ public function map2FoldCheckReferenceEq<TIO, FT, ArgT1, ArgT2>
     output FT outArg;
   end FuncType;
 protected
-  TIO res;
-  Boolean allEq=true;
+  TIO res, savedElt;
   DoubleEnded.MutableList<TIO> delst;
   Integer n=0;
 algorithm
   for e in inList loop
     (res, outArg) := inFunc(e, inConstArg, inConstArg2, outArg);
-    if (if allEq then not referenceEq(e, res) else false) then
-      allEq:=false;
-      break;
+    // Preserve reference equality without any allocation if nothing changed
+    if not referenceEq(e, e1) then
+      savedElt := res;
+      delst := DoubleEnded.empty(e1);
+      for elt in inList loop
+        if n < 0 then
+          (res, outArg) := inFunc(elt, inConstArg, inConstArg2, outArg);
+        else
+          res := if n == 0 then savedElt else elt;
+        end if;
+        DoubleEnded.push_back(delst, res);
+        n := n-1;
+      end for;
+      outList := DoubleEnded.toListAndClear(delst);
+      return;
     end if;
     n := n + 1;
   end for;
-  if allEq then
-    outList := inList;
-    return;
-  end if;
-  delst := DoubleEnded.empty(listHead(inList));
-  for elt in inList loop
-    if n < 1 then
-      (res, outArg) := inFunc(elt, inConstArg, inConstArg2, outArg);
-    else
-      res := elt;
-    end if;
-    DoubleEnded.push_back(delst, res);
-    n := n-1;
-  end for;
-  outList := DoubleEnded.toListAndClear(delst);
+  outList := inList;
 end map2FoldCheckReferenceEq;
 
 public function map3Fold<TI, TO, FT, ArgT1, ArgT2, ArgT3>
