@@ -3047,9 +3047,9 @@ algorithm
   for e in inList loop
     (res, outArg) := inFunc(e, inConstArg, inConstArg2, outArg);
     // Preserve reference equality without any allocation if nothing changed
-    if not referenceEq(e, e1) then
+    if not referenceEq(e, res) then
       savedElt := res;
-      delst := DoubleEnded.empty(e1);
+      delst := DoubleEnded.empty(res);
       for elt in inList loop
         if n < 0 then
           (res, outArg) := inFunc(elt, inConstArg, inConstArg2, outArg);
