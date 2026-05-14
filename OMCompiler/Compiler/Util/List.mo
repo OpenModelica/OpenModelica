@@ -1812,22 +1812,25 @@ algorithm
     // Preserve reference equality without any allocation if nothing changed
     if (if allEq then not referenceEq(e, e1) else false) then
       allEq:=false;
-      delst := DoubleEnded.empty(e1);
-      for elt in inList loop
-        if n < 1 then
-          break;
-        end if;
-        DoubleEnded.push_back(delst, elt);
-        n := n-1;
-      end for;
+      break;
     end if;
-    if allEq then
-      n := n + 1;
-    else
-      DoubleEnded.push_back(delst, e1);
-    end if;
+    n := n + 1;
   end for;
-  outList := if allEq then inList else DoubleEnded.toListAndClear(delst);
+  if allEq then
+    outList := inList;
+    return;
+  end if;
+  delst := DoubleEnded.empty(listHead(inList));
+  for elt in inList loop
+    if n < 1 then
+      e1 := inFunc(elt);
+    else
+      e1 := elt;
+    end if;
+    DoubleEnded.push_back(delst, e1);
+    n := n-1;
+  end for;
+  outList := DoubleEnded.toListAndClear(delst);
 end mapCheckReferenceEq;
 
 public function mapReverse<TI, TO>
@@ -3049,22 +3052,25 @@ algorithm
     (res, outArg) := inFunc(e, inConstArg, inConstArg2, outArg);
     if (if allEq then not referenceEq(e, res) else false) then
       allEq:=false;
-      delst := DoubleEnded.empty(res);
-      for elt in inList loop
-        if n < 1 then
-          break;
-        end if;
-        DoubleEnded.push_back(delst, elt);
-        n := n-1;
-      end for;
+      break;
     end if;
-    if allEq then
-      n := n + 1;
-    else
-      DoubleEnded.push_back(delst, res);
-    end if;
+    n := n + 1;
   end for;
-  outList := if allEq then inList else DoubleEnded.toListAndClear(delst);
+  if allEq then
+    outList := inList;
+    return;
+  end if;
+  delst := DoubleEnded.empty(listHead(inList));
+  for elt in inList loop
+    if n < 1 then
+      (res, outArg) := inFunc(elt, inConstArg, inConstArg2, outArg);
+    else
+      res := elt;
+    end if;
+    DoubleEnded.push_back(delst, res);
+    n := n-1;
+  end for;
+  outList := DoubleEnded.toListAndClear(delst);
 end map2FoldCheckReferenceEq;
 
 public function map3Fold<TI, TO, FT, ArgT1, ArgT2, ArgT3>
