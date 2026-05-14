@@ -2990,21 +2990,35 @@ public
       output Pointer<Equation> eqn;
     protected
       EquationAttributes attr;
+      Boolean isAlgorithm;
+      Equation e;
+      Algorithm alg;
+      Integer size;
     algorithm
-      attr := match body.then_eqns
+      (attr, isAlgorithm) := match body.then_eqns
         local
           Pointer<Equation> then_eqn;
-        case {then_eqn} then if Equation.isDiscrete(then_eqn)
+        case {then_eqn} then (if Equation.isDiscrete(then_eqn)
           then EquationAttributes.default(EquationKind.DISCRETE, init)
-          else EquationAttributes.default(EquationKind.CONTINUOUS, init);
+          else EquationAttributes.default(EquationKind.CONTINUOUS, init), Equation.isAlgorithm(then_eqn));
         else algorithm
           if(Flags.isSet(Flags.FAILTRACE)) then
             Error.addMessage(Error.COMPILER_WARNING,{getInstanceName()
               + ": Creating if-equation with multiple body equations. Unsure of type:\n" + IfEquationBody.toString(body)});
           end if;
-        then EquationAttributes.default(EquationKind.CONTINUOUS, init);
+        then (EquationAttributes.default(EquationKind.CONTINUOUS, init), false);
       end match;
-      eqn := Pointer.create(Equation.IF_EQUATION(IfEquationBody.size(body), body, source, attr));
+
+      e := Equation.IF_EQUATION(IfEquationBody.size(body), body, source, attr);
+      // convert to algorithm if the body is an algorithm. mainly used for asserts in if-equations
+      if isAlgorithm then
+        alg   := Algorithm.ALGORITHM(Equation.toStatement(e), {}, {}, NONE(), InstNode.EMPTY_NODE(), source);
+        alg   := Algorithm.setInputsOutputs(alg);
+        size  := sum(ComponentRef.size(out, false) for out in alg.outputs);
+        eqn   := Pointer.create(Equation.ALGORITHM(size, alg, alg.source, DAE.EXPAND(), attr));
+      else
+        eqn   := Pointer.create(e);
+      end if;
     end toEquation;
 
     function makeIfEquation
