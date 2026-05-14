@@ -1810,7 +1810,7 @@ algorithm
   for e in inList loop
     e1 := inFunc(e);
     // Preserve reference equality without any allocation if nothing changed
-    if (if allEq then not referenceEq(e, e1) else false) then
+    if not referenceEq(e, e1) then
       allEq:=false;
       break;
     end if;
