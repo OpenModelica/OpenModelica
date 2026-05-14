@@ -233,11 +233,10 @@ public
      Does not change the capacity of the Vector."
     input Vector<T> v;
   protected
-    T null = null;
     array<T> data = Mutable.access(v.data);
     Integer sz = Mutable.access(v.size);
   algorithm
-    arrayUpdateNoBoundsChecking(data, sz, null);
+    arrayClearIndex(data, sz);
     Mutable.update(v.size, sz - 1);
   end pop;
 
@@ -246,11 +245,10 @@ public
      Does not change the capacity of the Vector."
     input Vector<T> v;
   protected
-    T null = null;
     array<T> data = Mutable.access(v.data);
   algorithm
     for i in 1:Mutable.access(v.size) loop
-      arrayUpdateNoBoundsChecking(data, i, null);
+      arrayClearIndex(data, i);
     end for;
 
     Mutable.update(v.size, 0);
@@ -264,13 +262,12 @@ public
     input Vector<T> v;
     input Integer newSize;
   protected
-    T null = null;
     array<T> data = Mutable.access(v.data);
     Integer sz = Mutable.access(v.size);
   algorithm
     if newSize < sz then
       for i in newSize:sz loop
-        arrayUpdateNoBoundsChecking(data, i, null);
+        arrayClearIndex(data, i);
       end for;
 
       Mutable.update(v.size, newSize);

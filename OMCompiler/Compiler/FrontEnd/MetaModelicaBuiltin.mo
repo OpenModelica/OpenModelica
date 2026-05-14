@@ -978,6 +978,13 @@ function arrayUpdateNoBoundsChecking<A> "O(1)"
 external "builtin";
 end arrayUpdateNoBoundsChecking;
 
+function arrayClearIndex<A> "O(1)"
+  input array<A> arr;
+  input Integer index;
+  output array<A> newArray;
+external "builtin";
+end arrayClearIndex;
+
 impure function arrayCreateNoInit<A>
   "Creates a new array where the elements are *not* initialized!. Any attempt to
    access an uninitialized elements may cause segmentation faults if you're
