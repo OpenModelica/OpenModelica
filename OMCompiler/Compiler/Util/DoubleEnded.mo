@@ -106,12 +106,12 @@ protected
 algorithm
   true := length>0;
   Mutable.update(delst.length, length-1);
+  elt::lst := Mutable.access(delst.front);
   if length==1 then
     Mutable.update(delst.front, {});
     Mutable.update(delst.back, {});
     return;
   end if;
-  elt::lst := Mutable.access(delst.front);
   Mutable.update(delst.front, lst);
 end pop_front;
 
