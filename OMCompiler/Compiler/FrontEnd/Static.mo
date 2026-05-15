@@ -370,7 +370,7 @@ algorithm
             DAE.PROP(DAE.T_INTEGER_DEFAULT, DAE.C_CONST()));
 
     case Absyn.REAL()
-      then (DAE.RCONST(System.stringReal(inExp.value)),
+      then (DAE.RCONST(stringReal(inExp.value)),
             DAE.PROP(DAE.T_REAL_DEFAULT, DAE.C_CONST()));
 
     case Absyn.STRING()
@@ -2215,7 +2215,7 @@ algorithm
 
     case (cache,_,Absyn.REAL(value = s),_,_,_)
       algorithm
-        r := System.stringReal(s);
+        r := stringReal(s);
       then
         (cache,DAE.RCONST(r),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_CONST()));
 

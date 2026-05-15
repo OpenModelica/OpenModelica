@@ -684,7 +684,7 @@ algorithm
       // + alone is not a valid flag.
       parseFlag(inArg, Flags.NO_FLAGS(), restArgs);
     else
-      restArgs := parseFlag(System.substring(inArg, 2, len), inFlags, restArgs, flagtype);
+      restArgs := parseFlag(substring(inArg, 2, len), inFlags, restArgs, flagtype);
     end if;
   // Flags beginning with - must have another - for long flags, i.e. -h or --help.
   elseif flagtype == "-" then
@@ -693,19 +693,19 @@ algorithm
       parseFlag(inArg, Flags.NO_FLAGS(), restArgs);
     elseif len == 2 then
       // Short flag without argument, i.e. -h.
-      restArgs := parseFlag(System.substring(inArg, 2, 2), inFlags, restArgs, flagtype);
+      restArgs := parseFlag(substring(inArg, 2, 2), inFlags, restArgs, flagtype);
     elseif stringGetStringChar(inArg, 2) == "-" then
       if len < 4 or stringGetStringChar(inArg, 4) == "=" then
         // Short flags may not be used with --, i.e. --h or --h=debug.
         parseFlag(inArg, Flags.NO_FLAGS(), restArgs);
       else
         // Long flag, i.e. --help or --help=debug.
-        restArgs := parseFlag(System.substring(inArg, 3, len), inFlags, restArgs, "--");
+        restArgs := parseFlag(substring(inArg, 3, len), inFlags, restArgs, "--");
       end if;
     else
       if stringGetStringChar(inArg, 3) == "=" then
         // Short flag with argument, i.e. -h=debug.
-        restArgs := parseFlag(System.substring(inArg, 2, len), inFlags, restArgs, flagtype);
+        restArgs := parseFlag(substring(inArg, 2, len), inFlags, restArgs, flagtype);
       else
         // Long flag used with -, i.e. -help, which is not allowed.
         parseFlag(inArg, Flags.NO_FLAGS(), restArgs);
@@ -1032,7 +1032,7 @@ algorithm
 
     // A real value.
     case (_, Flags.REAL_FLAG(), _, _)
-      then Flags.REAL_FLAG(System.stringReal(inValue));
+      then Flags.REAL_FLAG(stringReal(inValue));
 
     // A string value with valid options specified.
     case (_, Flags.STRING_FLAG(), SOME(options), _)
@@ -1122,7 +1122,7 @@ algorithm
         "the number " + intString(i);
     //case {s}
     //  equation
-    //    System.stringReal(s);
+    //    stringReal(s);
     //  then
     //    "the number " + intString(i);
     else "the string \"" + inType + "\"";

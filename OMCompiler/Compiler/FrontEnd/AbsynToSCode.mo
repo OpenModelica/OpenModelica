@@ -1070,7 +1070,7 @@ algorithm
 
     case (Absyn.NAMEDARG(name,Absyn.REAL(s))::_,arg) guard name == arg
       algorithm
-        r := System.stringReal(s);
+        r := stringReal(s);
       then SOME(r);
     case({},_) then NONE();
     case(_::args,arg) then translateDefineunitParam2(args,arg);

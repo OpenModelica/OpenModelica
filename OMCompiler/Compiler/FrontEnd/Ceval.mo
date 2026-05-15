@@ -1275,7 +1275,7 @@ algorithm
            Values.INTEGER(integer = stop)
           },_)
       algorithm
-        str := System.substring(str, start, stop);
+        str := substring(str, start, stop);
       then
         Values.STRING(str);
     case ("ModelicaStrings_length",{Values.STRING(str)},_)
@@ -1820,7 +1820,7 @@ algorithm
         (cache,Values.STRING(str)) := ceval(cache,env, str_exp, impl, msg,numIter+1);
         (cache,Values.INTEGER(start)) := ceval(cache,env, start_exp, impl, msg,numIter+1);
         (cache,Values.INTEGER(stop)) := ceval(cache,env, stop_exp, impl, msg,numIter+1);
-        str := System.substring(str, start, stop);
+        str := substring(str, start, stop);
       then
         (cache,Values.STRING(str));
   end match;
