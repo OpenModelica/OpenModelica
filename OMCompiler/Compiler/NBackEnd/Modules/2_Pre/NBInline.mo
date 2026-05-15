@@ -225,6 +225,102 @@ public
     end try;
   end inlineArrayConstructorSingle;
 
+  function checkInline
+    "checks if the function should be inlined. three properties are checked:
+    A. is the inline type in the list of current stages?
+    B. is it inlineable?
+    C. if its default inline type: heuristic to check if its reasonable to do so
+    Inline if (A and B and C). ordered for cheapest checks first"
+    input list<DAE.InlineType> inline_types;
+    input Function func;
+    output Boolean b;
+  protected
+    DAE.InlineType it = Function.inlineBuiltin(func);
+  algorithm
+    // A and B
+    b := List.contains(inline_types, it, DAEUtil.inlineTypeEqual) and functionInlineable(func);
+    // C: heuristic check for default
+    if b and DAEUtil.inlineTypeEqual(it, DAE.InlineType.DEFAULT_INLINE()) then
+      b := defaultHeuristic(func);
+    end if;
+  end checkInline;
+
+  constant Integer HEURISTIC_THRESHOLD = 5;
+
+  uniontype InlineRating
+    record INLINE_RATING
+      "factors for each input with an additional constant overhead"
+      array<Integer> input_rating;
+      Integer constant_rating;
+    end INLINE_RATING;
+
+    function resolve
+      "resolve the rating to a final single rational number"
+      input InlineRating ir;
+      output Real r = sum(v for v in ir.input_rating)/arrayLength(ir.input_rating) + intReal(ir.constant_rating);
+    end resolve;
+
+    function fromFunction
+      input Function func;
+      output InlineRating ir;
+    protected
+      Integer idx=1, num_inp = listLength(func.inputs);
+      InlineRating tmp;
+      UnorderedMap<ComponentRef, InlineRating> local_map = UnorderedMap.new<InlineRating>(ComponentRef.hash, ComponentRef.isEqual);
+    algorithm
+      ir := InlineRating.INLINE_RATING(arrayCreate(num_inp, 0), 0);
+      for inp in func.inputs loop
+        tmp := InlineRating.INLINE_RATING(arrayCreate(num_inp, 0), 0);
+        tmp.input_rating[idx] := 1;
+        idx := idx + 1;
+        UnorderedMap.add(ComponentRef.fromNode(inp, InstNode.getType(inp)), tmp, local_map);
+      end for;
+
+      for loc in func.locals loop
+
+      end for;
+    end fromFunction;
+
+    function fromExpression
+      input Expression exp;
+      input UnorderedMap<ComponentRef, InlineRating> local_map;
+      input output InlineRating ir;
+    algorithm
+      _ := match exp
+        case Expression.CREF() algorithm
+          _ := match UnorderedMap.get(exp.cref, local_map)
+            local
+              InlineRating cir;
+            case SOME(cir) algorithm
+            then ();
+          end match;
+        then ();
+      end match;
+
+    end fromExpression;
+
+    // fromFunc
+    // local mapping stuff
+    // update?
+  end InlineRating;
+
+  function defaultHeuristic
+    "heuristically determines if a function should be inlined.
+    only apply to functions with inline type default."
+    input Function func;
+    output Boolean b;
+  algorithm
+    b := false;
+  end defaultHeuristic;
+
+  function defaultHeuristicRate
+    "heuristcally determines a function rating for inlining"
+    input Function func;
+    output list<Integer> i;
+  algorithm
+    i := {1};
+  end defaultHeuristicRate;
+
 protected
   function inline extends Module.inlineInterface;
   protected
