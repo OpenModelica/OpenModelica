@@ -1032,7 +1032,7 @@ algorithm
 
     // A real value.
     case (_, Flags.REAL_FLAG(), _, _)
-      then Flags.REAL_FLAG(System.stringReal(inValue));
+      then Flags.REAL_FLAG(stringReal(inValue));
 
     // A string value with valid options specified.
     case (_, Flags.STRING_FLAG(), SOME(options), _)
@@ -1122,7 +1122,7 @@ algorithm
         "the number " + intString(i);
     //case {s}
     //  equation
-    //    System.stringReal(s);
+    //    stringReal(s);
     //  then
     //    "the number " + intString(i);
     else "the string \"" + inType + "\"";

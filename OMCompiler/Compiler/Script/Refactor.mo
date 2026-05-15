@@ -2207,10 +2207,10 @@ algorithm
       String realVal;
       Integer intVal;
     case(Absyn.REAL(value = realVal))
-    then System.stringReal(realVal);
+    then stringReal(realVal);
 
     case(Absyn.UNARY(exp = Absyn.REAL(value = realVal)))
-    then - System.stringReal(realVal);
+    then - stringReal(realVal);
 
     case(Absyn.INTEGER(value = intVal))
     then intReal(intVal);

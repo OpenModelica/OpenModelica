@@ -3020,10 +3020,10 @@ algorithm
   equal := match (exp1, exp2)
     // real vs. integer
     case (Absyn.INTEGER(), Absyn.REAL())
-      then realEq(intReal(exp1.value), System.stringReal(exp2.value));
+      then realEq(intReal(exp1.value), stringReal(exp2.value));
 
     case (Absyn.REAL(), Absyn.INTEGER())
-      then realEq(intReal(exp2.value), System.stringReal(exp1.value));
+      then realEq(intReal(exp2.value), stringReal(exp1.value));
 
     // anything else, exact match!
     else valueEq(exp1, exp2);

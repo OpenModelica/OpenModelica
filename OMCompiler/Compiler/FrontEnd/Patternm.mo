@@ -259,7 +259,7 @@ algorithm
     case (cache,_,Absyn.REAL(str),_,_,_)
       algorithm
         et := validPatternType(ty,DAE.T_REAL_DEFAULT,inLhs,info);
-        r := System.stringReal(str);
+        r := stringReal(str);
       then (cache,DAE.PAT_CONSTANT(et,DAE.RCONST(r)));
 
     case (cache,_,Absyn.UNARY(Absyn.UMINUS(),Absyn.INTEGER(i)),_,_,_)
@@ -271,7 +271,7 @@ algorithm
     case (cache,_,Absyn.UNARY(Absyn.UMINUS(),Absyn.REAL(str)),_,_,_)
       algorithm
         et := validPatternType(ty,DAE.T_REAL_DEFAULT,inLhs,info);
-        r := System.stringReal(str);
+        r := stringReal(str);
         r := realNeg(r);
       then (cache,DAE.PAT_CONSTANT(et,DAE.RCONST(r)));
 

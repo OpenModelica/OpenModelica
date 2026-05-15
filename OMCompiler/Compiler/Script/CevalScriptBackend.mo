@@ -493,7 +493,7 @@ algorithm
         DAE.RCONST(r);
 
     case (Absyn.INTEGER(i), DAE.T_INTEGER())  then DAE.ICONST(i);
-    case (Absyn.REAL(str),    DAE.T_REAL()) algorithm r := System.stringReal(str); then DAE.RCONST(r);
+    case (Absyn.REAL(str),    DAE.T_REAL()) algorithm r := stringReal(str); then DAE.RCONST(r);
     case (Absyn.INTEGER(i), DAE.T_REAL()) algorithm r := intReal(i); then DAE.RCONST(r);
 
     else

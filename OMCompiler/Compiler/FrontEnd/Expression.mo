@@ -11480,7 +11480,7 @@ algorithm
     case (Absyn.INTEGER(i)) then DAE.ICONST(i);
     case (Absyn.REAL(s))
       algorithm
-        r := System.stringReal(s);
+        r := stringReal(s);
       then DAE.RCONST(r);
     case (Absyn.BOOL(b)) then DAE.BCONST(b);
     case (Absyn.STRING(s)) then DAE.SCONST(s);
