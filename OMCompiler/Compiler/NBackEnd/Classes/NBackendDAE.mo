@@ -978,83 +978,26 @@ protected
   algorithm
     backend_equations := match frontend_equation
       local
-        list<Pointer<Equation>> result = {}, new_body = {};
-        Equation body_elem;
-        Expression lhs, rhs, range;
-        ComponentRef lhs_cref, rhs_cref;
-        list<FEquation> body;
+        Expression lhs, rhs;
         Type ty;
         DAE.ElementSource source;
-        ComponentRef iterator;
-        list<FEquation.Branch> branches;
         EquationAttributes attr;
-        Integer rec_size;
         Statement stmt;
         Algorithm alg;
-        list<IfEquationBody> bodies;
 
       case FEquation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source) algorithm
         attr := lowerEquationAttributes(ty, init);
-        result := match ty
+        backend_equations := match ty
           case Type.ARRAY()   then {Pointer.create(BEquation.ARRAY_EQUATION(ty, lhs, rhs, source, attr, Type.complexSize(ty)))};
           case Type.COMPLEX() then {Pointer.create(BEquation.RECORD_EQUATION(ty, lhs, rhs, source, attr, Type.recordFieldCount(ty)))};
           case Type.TUPLE()   then {Pointer.create(BEquation.RECORD_EQUATION(ty, lhs, rhs, source, attr, Type.tupleFieldCount(ty)))};
                               else {Pointer.create(BEquation.SCALAR_EQUATION(ty, lhs, rhs, source, attr))};
         end match;
-      then result;
+      then backend_equations;
 
-      case FEquation.FOR(range = SOME(range)) algorithm
-        if Expression.rangeSize(range) > 0 then
-          // Treat each body equation individually because they can have different equation attributes
-          // E.g.: DISCRETE, EvalStages
-          iterator := ComponentRef.fromNode(frontend_equation.iterator, Type.INTEGER(), {}, NFComponentRef.Origin.ITERATOR);
-          for eq in frontend_equation.body loop
-            for body_elem_ptr in lowerEquation(eq, init, true) loop
-              body_elem := Pointer.access(body_elem_ptr);
-              new_body := match body_elem
-                case Equation.IF_EQUATION() algorithm
-                  bodies := IfEquationBody.split(body_elem.body);
-                  for body in bodies loop
-                    new_body := Pointer.create(BEquation.IF_EQUATION(IfEquationBody.size(body), body, body_elem.source, body_elem.attr)) :: new_body;
-                  end for;
-                then new_body;
-                else body_elem_ptr :: new_body;
-              end match;
-            end for;
-          end for;
-          for body_elem_ptr in new_body loop
-            body_elem := Pointer.access(body_elem_ptr);
-            body_elem := BEquation.FOR_EQUATION(
-              size    = Expression.rangeSize(range) * Equation.size(body_elem_ptr),
-              iter    = Iterator.SINGLE(iterator, range, NONE()),
-              body    = {body_elem},
-              source  = frontend_equation.source,
-              attr    = Equation.getAttributes(body_elem)
-            );
-
-            // merge iterators of each for equation instead of having nested loops (for {i in 1:10, j in 1:3, k in 1:5})
-            body_elem := Equation.mergeIterators(body_elem);
-            // inline if size 1
-            body_elem := Equation.simplify(body_elem);
-
-            Pointer.update(body_elem_ptr, body_elem);
-            result := body_elem_ptr :: result;
-          end for;
-        else
-          if Flags.isSet(Flags.FAILTRACE) then
-            Error.addMessage(Error.COMPILER_WARNING,{getInstanceName()
-              + ": Empty for-equation got removed:\n" + FEquation.toString(frontend_equation)});
-          end if;
-        end if;
-      then result;
-
-      // if equation
-      case FEquation.IF() then lowerIfEquation(frontend_equation, init, in_for);
-
-      // when equation
+      case FEquation.FOR()    then lowerForEquation(frontend_equation, init);
+      case FEquation.IF()     then lowerIfEquation(frontend_equation, init, in_for);
       case FEquation.WHEN()   then lowerWhenEquation(frontend_equation, init);
-
-      // assert
       case FEquation.ASSERT() then lowerAssert(frontend_equation, init);
 
       // wrap no return call in algorithm
@@ -1078,6 +1021,82 @@ protected
       then fail();
     end match;
   end lowerEquation;
+
+  function lowerForEquation
+    input FEquation frontend_equation;
+    input Boolean init;
+    output list<Pointer<Equation>> backend_equations = {};
+  protected
+    Expression range;
+    list<Pointer<Equation>> new_body = {};
+    Equation body_elem;
+    list<FEquation> body;
+    list<IfEquationBody> bodies;
+    ComponentRef iterator;
+    Boolean isAlgorithm;
+    Algorithm alg;
+    Integer size;
+  algorithm
+    backend_equations := match frontend_equation
+       case FEquation.FOR(range = SOME(range)) algorithm
+        if Expression.rangeSize(range) > 0 then
+          // Treat each body equation individually because they can have different equation attributes
+          // E.g.: DISCRETE, EvalStages
+          iterator := ComponentRef.fromNode(frontend_equation.iterator, Type.INTEGER(), {}, NFComponentRef.Origin.ITERATOR);
+          for eq in frontend_equation.body loop
+            for body_elem_ptr in lowerEquation(eq, init, true) loop
+              body_elem := Pointer.access(body_elem_ptr);
+              new_body := match body_elem
+                case Equation.IF_EQUATION() algorithm
+                  bodies := IfEquationBody.split(body_elem.body);
+                  for body in bodies loop
+                    new_body := Pointer.create(BEquation.IF_EQUATION(IfEquationBody.size(body), body, body_elem.source, body_elem.attr)) :: new_body;
+                  end for;
+                then new_body;
+                else body_elem_ptr :: new_body;
+              end match;
+            end for;
+          end for;
+          for body_elem_ptr in new_body loop
+            body_elem   := Pointer.access(body_elem_ptr);
+            isAlgorithm := Equation.isAlgorithm(body_elem_ptr);
+            body_elem   := BEquation.FOR_EQUATION(
+              size    = Expression.rangeSize(range) * Equation.size(body_elem_ptr),
+              iter    = Iterator.SINGLE(iterator, range, NONE()),
+              body    = {body_elem},
+              source  = frontend_equation.source,
+              attr    = Equation.getAttributes(body_elem)
+            );
+
+            // merge iterators of each for equation instead of having nested loops (for {i in 1:10, j in 1:3, k in 1:5})
+            body_elem := Equation.mergeIterators(body_elem);
+            // inline if size 1
+            body_elem := Equation.simplify(body_elem);
+
+            // if the body was an algorithm (asserts) merge it back to an algorithm
+            if isAlgorithm then
+              alg       := Algorithm.ALGORITHM(Equation.toStatement(body_elem), {}, {}, NONE(), InstNode.EMPTY_NODE(), frontend_equation.source);
+              alg       := Algorithm.setInputsOutputs(alg);
+              size      := sum(ComponentRef.size(out, false) for out in alg.outputs);
+              body_elem := Equation.ALGORITHM(size, alg, alg.source, DAE.EXPAND(), Equation.getAttributes(body_elem));
+            end if;
+
+            Pointer.update(body_elem_ptr, body_elem);
+            backend_equations := body_elem_ptr :: backend_equations;
+          end for;
+        else
+          if Flags.isSet(Flags.FAILTRACE) then
+            Error.addMessage(Error.COMPILER_WARNING,{getInstanceName()
+              + ": Empty for-equation got removed:\n" + FEquation.toString(frontend_equation)});
+          end if;
+        end if;
+      then backend_equations;
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + FEquation.toString(frontend_equation)});
+      then fail();
+    end match;
+  end lowerForEquation;
 
   function lowerIfEquation
     input FEquation frontend_equation;
