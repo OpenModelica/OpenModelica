@@ -1738,7 +1738,7 @@ algorithm
     if Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN) == "symbolic" then
       // create symbolic jacobian (like nls systems!)
       (daeModeJac, daeModeSparsity, daeModeColoring, nonlinearPattern) := listGet(inBackendDAE.shared.symjacs, BackendDAE.SymbolicJacobianAIndex);
-      if Util.isSome(inBackendDAE.shared.dataReconciliationData) then
+      if isSome(inBackendDAE.shared.dataReconciliationData) then
         BackendDAE.DATA_RECON(_, _, _, _, jacH) := Util.getOption(inBackendDAE.shared.dataReconciliationData);
         if isSome(jacH) then
           matrixnames := {"B", "C", "D", "ADJ"};
@@ -1765,7 +1765,7 @@ algorithm
       FlagsUtil.set(Flags.NO_START_CALC, tmpB);
       crefToSimVarHT := SimCodeUtil.createCrefToSimVarHT(modelInfo);
 
-      if Util.isSome(inBackendDAE.shared.dataReconciliationData) then
+      if isSome(inBackendDAE.shared.dataReconciliationData) then
         BackendDAE.DATA_RECON(_, _, _, _, jacH) := Util.getOption(inBackendDAE.shared.dataReconciliationData);
         if isSome(jacH) then
           matrixnames := {"A", "B", "C", "D", "ADJ"};

@@ -1736,7 +1736,7 @@ algorithm
     case (_, Expression.RANGE()) algorithm
       exp.start := combineBinariesExp(exp.start);
       exp.stop := combineBinariesExp(exp.stop);
-      if Util.isSome(exp.step) then
+      if isSome(exp.step) then
         exp.step := SOME(combineBinariesExp(Util.getOption(exp.step)));
       end if;
     then addArgument(result, exp, inverse);
@@ -1756,7 +1756,7 @@ algorithm
 
     case (_, Expression.SIZE()) algorithm
       exp.exp := combineBinariesExp(exp.exp);
-      if Util.isSome(exp.dimIndex) then
+      if isSome(exp.dimIndex) then
         exp.dimIndex := SOME(combineBinariesExp(Util.getOption(exp.dimIndex)));
       end if;
     then addArgument(result, exp, inverse);

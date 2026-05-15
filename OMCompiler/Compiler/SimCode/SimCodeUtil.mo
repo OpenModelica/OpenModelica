@@ -576,11 +576,11 @@ algorithm
     SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
 
     // Generate jacobian code for DataReconciliation
-    if Util.isSome(shared.dataReconciliationData) then
+    if isSome(shared.dataReconciliationData) then
       BackendDAE.DATA_RECON(dataReconJac, setcVars, datareconinputvars, setBVars, dataReconJacH, numRelatedBoundaryConditions) := Util.getOption(shared.dataReconciliationData);
       (SOME(dataReconSimJac), uniqueEqIndex, tempvars) := createSymbolicSimulationJacobian(dataReconJac, uniqueEqIndex, tempvars);
       // check for jacobian H for state estimation, if exist generate Matrix H
-      if (Util.isSome(dataReconJacH)) then
+      if (isSome(dataReconJacH)) then
         (SOME(dataReconSimJacH), uniqueEqIndex, tempvars) := createSymbolicSimulationJacobian(Util.getOption(dataReconJacH), uniqueEqIndex, tempvars);
         (SymbolicJacsdatarecon, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfoSymJacs({dataReconSimJac, dataReconSimJacH}, modelInfo);
       else
@@ -689,7 +689,7 @@ algorithm
       modelInfo.varInfo := varInfo;
     end if;
     // Generates c code for setC-results which calculates c(x,y) for dataReconciliation
-    if Util.isSome(shared.dataReconciliationData) then
+    if isSome(shared.dataReconciliationData) then
         tmpSimVars := modelInfo.vars;
         //BackendDAE.DATA_RECON(dataReconJac,setcVars) := Util.getOption(shared.dataReconciliationData);
        ((tmpsetcVars, _)) :=  BackendVariable.traverseBackendDAEVars(setcVars, traversingdlowvarToSimvar, ({}, emptyVars));
@@ -704,7 +704,7 @@ algorithm
         modelInfo.vars := tmpSimVars;
 
         // set setBVars
-        if Util.isSome(setBVars) then
+        if isSome(setBVars) then
           ((tmpsetBVars, _)) :=  BackendVariable.traverseBackendDAEVars(Util.getOption(setBVars), traversingdlowvarToSimvar, ({}, emptyVars));
           tmpsetBVars := rewriteIndex(tmpsetBVars, 0);
           tmpSimVars.dataReconSetBVars := tmpsetBVars;
@@ -3817,7 +3817,7 @@ algorithm
        tempvars2 := tempvars;
 
        // Do if dynamic tearing is activated
-       if Util.isSome(casualTearingSet) then
+       if isSome(casualTearingSet) then
          SOME(BackendDAE.TEARINGSET(tearingvars=tearingVars, residualequations=residualEqns, innerEquations=innerEquations, jac=inJacobian)) := casualTearingSet;
          // get tearing vars
          tvars := List.map1r(tearingVars, BackendVariable.getVarAt, vars);
@@ -3871,7 +3871,7 @@ algorithm
        tempvars2 := tempvars;
 
        // Do if dynamic tearing is activated
-       if Util.isSome(casualTearingSet) then
+       if isSome(casualTearingSet) then
          SOME(BackendDAE.TEARINGSET(tearingvars=tearingVars, residualequations=residualEqns, innerEquations=innerEquations, jac=inJacobian)) := casualTearingSet;
          // get tearing vars
          tvars := List.map1r(tearingVars, BackendVariable.getVarAt, vars);
@@ -5040,7 +5040,7 @@ algorithm
         // For dataReconciliation F is set in earlier order which cause index problem for linearization matrix and hence identify if
         // dataReconciliation is involved and pass the matrix names
         // for stateEstimation problem two jacobinas are needed F and H
-        if Util.isSome(shared.dataReconciliationData) then
+        if isSome(shared.dataReconciliationData) then
           BackendDAE.DATA_RECON(_, _, _, _, jacH) := Util.getOption(shared.dataReconciliationData);
           if isSome(jacH) then // check for matrix H is present which means state estimation algorithm is choosed and jacobian F and H are generated earlier
             matrixnames := {"A", "B", "C", "D", "ADJ"};
@@ -8570,14 +8570,14 @@ algorithm
       Boolean b;
 
     case SimCode.SIM_BRANCH() algorithm
-      b := Util.isSome(branch.condition);
+      b := isSome(branch.condition);
       str := if b then "if " + ExpressionDump.printExpStr(Util.getOption(branch.condition)) + " then\n" else "else\n";
       str := str + List.toString(branch.body, simBranchBodyString, "  ", "  ", "\n", "");
       str := if b then str + "end if;" else str;
     then str;
 
     case SimCode.SIM_BRANCH_STMT() algorithm
-      b := Util.isSome(branch.condition);
+      b := isSome(branch.condition);
       str := if b then "if " + ExpressionDump.printExpStr(Util.getOption(branch.condition)) + " then\n" else "else\n";
       str := str + List.toString(branch.body, DAEDump.ppStatementStr, "  ", "  ", "\n", "");
       str := if b then str + "\nend if;" else str;
@@ -8924,9 +8924,9 @@ algorithm
   end match);
   s := s + (if inVar.isProtected then " protected " else "");
   s := s + (if Util.getOptionOrDefault(inVar.hideResult, false) then " hideResult " else "");
-  s := s + " initial: " + (if Util.isSome(inVar.initialValue) then ExpressionDump.printOptExpStr(inVar.initialValue) else "");
-  s := s + (if Util.isSome(inVar.arrayCref) then "\tarrCref:" + ComponentReference.printComponentRefStr(Util.getOption(inVar.arrayCref)) else "\tno arrCref");
-  s := s + " index:(" + (if Util.isSome(inVar.variable_index) then intString(Util.getOption(inVar.variable_index)) else "") + ")";
+  s := s + " initial: " + (if isSome(inVar.initialValue) then ExpressionDump.printOptExpStr(inVar.initialValue) else "");
+  s := s + (if isSome(inVar.arrayCref) then "\tarrCref:" + ComponentReference.printComponentRefStr(Util.getOption(inVar.arrayCref)) else "\tno arrCref");
+  s := s + " index:(" + (if isSome(inVar.variable_index) then intString(Util.getOption(inVar.variable_index)) else "") + ")";
   s := s + " [" + stringDelimitList(inVar.numArrayElement, ",") + "]";
 end simVarString;
 
@@ -9185,7 +9185,7 @@ algorithm
     // no dynamic tearing
     case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=idx, indexLinearSystem=idxLS, vars=vars, beqs=beqs, residual=residual, jacobianMatrix=jac), NONE()))
       algorithm
-        s := intString(idx) +": "+ " (LINEAR) index:"+intString(idxLS)+" jacobian: "+boolString(Util.isSome(jac))+"\n";
+        s := intString(idx) +": "+ " (LINEAR) index:"+intString(idxLS)+" jacobian: "+boolString(isSome(jac))+"\n";
         s := s+"\tvariables:\n"+stringDelimitList(List.map(vars,simVarString),"\n");
         s := s+"\n\tb-vector:\n"+stringDelimitList(List.map(beqs,ExpressionDump.printExpStr),"\n");
         s := s+ "\t";
@@ -9196,7 +9196,7 @@ algorithm
     // dynamic tearing
     case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index=idx, indexLinearSystem=idxLS, vars=vars, beqs=beqs, residual=residual, jacobianMatrix=jac), SOME(SimCode.LINEARSYSTEM())))
       algorithm
-        s := "strict set:\n"+intString(idx) +": "+ " (LINEAR) index:"+intString(idxLS)+" jacobian: "+boolString(Util.isSome(jac))+"\n";
+        s := "strict set:\n"+intString(idx) +": "+ " (LINEAR) index:"+intString(idxLS)+" jacobian: "+boolString(isSome(jac))+"\n";
         s := s+"\tvariables:\n\t"+stringDelimitList(List.map(vars,simVarString),"\t\n");
         s := s+"\n\tb-vector:\n"+stringDelimitList(List.map(beqs,ExpressionDump.printExpStr),"\t\n");
         s := s+ "\t";
@@ -9207,7 +9207,7 @@ algorithm
     // no dynamic tearing
     case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=idx,indexNonLinearSystem=idxNLS,jacobianMatrix=jac,eqs=eqs, crefs=crefs), NONE()))
       algorithm
-        s := intString(idx) +": "+ " (NONLINEAR) index:"+intString(idxNLS)+" jacobian: "+boolString(Util.isSome(jac))+"\n";
+        s := intString(idx) +": "+ " (NONLINEAR) index:"+intString(idxNLS)+" jacobian: "+boolString(isSome(jac))+"\n";
         s := s+"crefs: "+stringDelimitList(List.map(crefs,ComponentReference.printComponentRefStr)," , ")+"\n";
         s := s+"\t";
         s := s+stringDelimitList(List.map(eqs,simEqSystemString),"\n\t");
@@ -9217,7 +9217,7 @@ algorithm
     // dynamic tearing
     case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=idx,indexNonLinearSystem=idxNLS,jacobianMatrix=jac,eqs=eqs, crefs=crefs), SOME(SimCode.NONLINEARSYSTEM())))
       algorithm
-        s := "strict set:\n"+intString(idx) +": "+ " (NONLINEAR) index:"+intString(idxNLS)+" jacobian: "+boolString(Util.isSome(jac))+"\n";
+        s := "strict set:\n"+intString(idx) +": "+ " (NONLINEAR) index:"+intString(idxNLS)+" jacobian: "+boolString(isSome(jac))+"\n";
         s := s+"crefs: "+stringDelimitList(List.map(crefs,ComponentReference.printComponentRefStr)," , ")+"\n";
         s := s+"\t";
         s := s+stringDelimitList(List.map(eqs,simEqSystemString),"\n\t");
@@ -9345,7 +9345,7 @@ algorithm
         print("\n\tsimJac:\n");
         dumpSimJac(simJac);
         dumpJacobianMatrix(jac);
-        print("\ncasual set:\n" + intString(idx2) +": "+ " (LINEAR) index:"+intString(idxLS2)+" jacobian: "+boolString(Util.isSome(jac))+"\n");
+        print("\ncasual set:\n" + intString(idx2) +": "+ " (LINEAR) index:"+intString(idxLS2)+" jacobian: "+boolString(isSome(jac))+"\n");
         print("\t");
         dumpSimEqSystemLst(residual2,"\n\t");
         print("\n\tsimJac:\n");
@@ -9365,7 +9365,7 @@ algorithm
       algorithm
         print(simEqSystemString(eqSysIn));
         dumpJacobianMatrix(jac);
-        print("\ncasual set:\n" + intString(idx2) +": "+ " (NONLINEAR) index:"+intString(idxNLS2)+" jacobian: "+boolString(Util.isSome(jac2))+"\n");
+        print("\ncasual set:\n" + intString(idx2) +": "+ " (NONLINEAR) index:"+intString(idxNLS2)+" jacobian: "+boolString(isSome(jac2))+"\n");
         print("\t\tcrefs: "+stringDelimitList(List.map(crefs2,ComponentReference.printComponentRefStr)," , ")+"\n");
         print("\t");
         dumpSimEqSystemLst(eqs2,"\n\t");
@@ -10447,7 +10447,7 @@ protected function startValueIsConstOrDefault
   input DAE.Type type_;
   output Option<DAE.Exp> outstart_value;
 algorithm
-  if Util.isNone(start_value) then
+  if isNone(start_value) then
      outstart_value := NONE();
   elseif Expression.isConstValue(Util.getOption(start_value)) then
     outstart_value := start_value;

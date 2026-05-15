@@ -686,7 +686,7 @@ algorithm
                       externalDecl = extdecl)),_,info,_)
       algorithm
         /* elt_1 = noImportElements(elt); */
-        Error.assertionOrAddSourceMessage(Util.isNone(extdecl), Error.EXTENDS_EXTERNAL, {name}, info);
+        Error.assertionOrAddSourceMessage(isNone(extdecl), Error.EXTENDS_EXTERNAL, {name}, info);
       then
         (cache,env,ih,elt,eq,ieq,alg,ialg,inMod,{inClass.cmt});
 

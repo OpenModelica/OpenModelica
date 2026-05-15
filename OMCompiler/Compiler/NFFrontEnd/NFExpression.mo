@@ -1479,7 +1479,7 @@ public
         try
           start := getInteger(range.start, resize);
           stop  := getInteger(range.stop, resize);
-          if Util.isSome(range.step) then
+          if isSome(range.step) then
             step := getInteger(Util.getOption(range.step), resize);
           else
             step := if start > stop then -1 else 1;
@@ -6912,7 +6912,7 @@ public
       Option<Integer> idx_opt;
     algorithm
       idx_opt := UnorderedMap.get(exp, map);
-      if Util.isSome(idx_opt) then
+      if isSome(idx_opt) then
         // this literal already exists
         idx := Util.getOption(idx_opt);
       else

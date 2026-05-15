@@ -3977,7 +3977,7 @@ author: waurich TUD 2016-05"
 protected
   BackendDAE.AdjacencyMatrix m;
 algorithm
-  if Util.isSome(sys.m) then
+  if isSome(sys.m) then
     m := Util.getOption(sys.m);
   else
     (_,m,_) := BackendDAEUtil.getAdjacencyMatrix(sys,BackendDAE.NORMAL(),NONE(),false); //no shared available so dump regular system.
@@ -4085,7 +4085,7 @@ algorithm
   varAtts := List.threadMap(List.fill(false,listLength(varLst)),List.fill("",listLength(varLst)),Util.makeTuple);
   eqAtts := List.threadMap(List.fill(false,BackendEquation.equationArraySize(eqs)),List.fill("",BackendEquation.equationArraySize(eqs)),Util.makeTuple);
 
-  if Util.isSome(mO) then
+  if isSome(mO) then
       dumpBipartiteGraphStrongComponent2(vars,eqs,Util.getOption(mO),varAtts,eqAtts,"BipartiteGraph_"+fileName);
   else
     // build the adjacency matrix
@@ -4638,7 +4638,7 @@ protected
   array<Integer> eqIdx2Eq;
   Integer numEqs;
 algorithm
-  if Util.isSome(arg) then
+  if isSome(arg) then
     SOME((stateorder,constraints,eqs2EqIdxs,eqIdx2Eq,numEqs)) := arg;
     print(intString(numEqs)+"eqs before IR\n");
     dumpStateOrder(stateorder);

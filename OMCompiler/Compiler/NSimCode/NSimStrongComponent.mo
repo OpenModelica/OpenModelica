@@ -538,7 +538,7 @@ public
         (blcks, simCodeIndices)             := fromPartition(partition, simCodeIndices, simcode_map, equation_map);
         vars                                := SimVars.getPartitionVars(partition, simcode_map);
         (clock, baseClock_opt, holdEvents)  := Partition.Partition.getClocks(partition);
-        if Util.isSome(baseClock_opt) then
+        if isSome(baseClock_opt) then
           // it is a sub clock
           SOME(baseClock) := baseClock_opt;
           subClock        := clock;
@@ -759,7 +759,7 @@ public
           end for;
 
           // reactivate this once nonlinear loops actually work
-          if false and Util.isSome(strict.jac) then
+          if false and isSome(strict.jac) then
             (jacobian, simCodeIndices) := SimJacobian.create(Util.getOption(strict.jac), simCodeIndices, simcode_map);
           else
             jacobian := NONE();
@@ -957,7 +957,7 @@ public
     algorithm
       simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
       (conditions, when_stmts, else_when) := WhenEquationBody.getBodyAttributes(body);
-      if Util.isSome(else_when) then
+      if isSome(else_when) then
         (tmp, simCodeIndices) := createWhenBody(Util.getOption(else_when), source, attr, simCodeIndices);
         else_when_block := SOME(tmp);
       else
@@ -984,7 +984,7 @@ public
         blcks := blck :: blcks;
       end for;
       branches := (body.condition, blcks) :: branches;
-      if Util.isSome(body.else_if) then
+      if isSome(body.else_if) then
         (branches, simCodeIndices) := createIfBody(Util.getOption(body.else_if), branches, simCodeIndices, kind, simcode_map, equation_map);
       end if;
     end createIfBody;
@@ -1060,7 +1060,7 @@ public
             case LINEAR() then (blck :: linearLoops, nonlinearLoops);
             case NONLINEAR() algorithm
               jacobian := NonlinearSystem.getJacobian(blck.system);
-              if Util.isSome(jacobian) then
+              if isSome(jacobian) then
                 jacobians := Util.getOption(jacobian) :: jacobians;
               end if;
               blck.system := NonlinearSystem.setJacobian(blck.system, jacobian);
@@ -1255,7 +1255,7 @@ public
         case WHEN() algorithm
           blck.index := indices.equationIndex;
           indices.equationIndex := indices.equationIndex + 1;
-          if Util.isSome(blck.else_when) then
+          if isSome(blck.else_when) then
             (tmp, indices) := fixIndex(Util.getOption(blck.else_when), indices);
             blck.else_when := SOME(tmp);
           end if;
@@ -1303,7 +1303,7 @@ public
     algorithm
       str := "when " + List.toString(conditions, ComponentRef.toString) + "\n" +
              List.toString(when_stmts, function WhenStatement.toString(str = indent + "\t"), "", "", "\n", "") + "\n";
-      if Util.isSome(else_when) then
+      if isSome(else_when) then
         str := str + indent + "else" + toString(Util.getOption(else_when));
       else
         str := str + indent + "end when;\n";

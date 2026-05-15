@@ -756,7 +756,7 @@ public
       list<Subscript> new_subs;
     algorithm
       iter_crefs    := UnorderedMap.get(dims, dims_map);
-      if Util.isSome(iter_crefs) then
+      if isSome(iter_crefs) then
         // dimension configuration was found, map to subscripts and apply in reverse
         new_subs  := list(UnorderedMap.getSafe(iter_name, iter_map, sourceInfo()) for iter_name in Util.getOption(iter_crefs));
         cref      := mergeSubscripts(new_subs, cref, true, true, true);
@@ -1970,7 +1970,7 @@ public
       case CREF() algorithm
         complex_size := Type.complexSize(cref.ty);
         s_lst := list(Dimension.size(dim, resize) for dim in Type.arrayDims(cref.ty));
-        if withComplex and Util.isSome(complex_size) then
+        if withComplex and isSome(complex_size) then
           s_lst := Util.getOption(complex_size) :: s_lst;
         end if;
         s_lst := if listEmpty(s_lst) then {1} else s_lst;
@@ -1990,7 +1990,7 @@ public
       case CREF() algorithm
         complex_size := Type.complexSize(cref.ty);
         s_lst := list(Dimension.sizeExp(dim) for dim in Type.arrayDims(cref.ty));
-        if withComplex and Util.isSome(complex_size) then
+        if withComplex and isSome(complex_size) then
           s_lst := Expression.INTEGER(Util.getOption(complex_size)) :: s_lst;
         end if;
         s_lst := if listEmpty(s_lst) then {Expression.INTEGER(1)} else s_lst;

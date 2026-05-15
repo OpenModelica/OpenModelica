@@ -122,7 +122,7 @@ public
     algorithm
       str := str + "(" + intString(var.index) + ")" + VariableKind.toString(var.varKind)
         + " (" + intString(SimVar.size(var)) + ") " + Type.toString(var.type_) + " " + ComponentRef.toString(var.name);
-      if Util.isSome(var.start) then
+      if isSome(var.start) then
         str := str + " = " + Expression.toString(Util.getOption(var.start));
       end if;
     end toString;

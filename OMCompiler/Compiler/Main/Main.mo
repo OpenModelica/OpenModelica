@@ -217,13 +217,13 @@ algorithm
     // A non-parser error occured, display the error message.
     case (_, _)
       algorithm
-        true := Util.isSome(inStatements) or Util.isSome(inProgram);
+        true := isSome(inStatements) or Util.isSome(inProgram);
         result := Error.printMessagesStr(false);
       then result;
 
     else
       algorithm
-        true := Util.isSome(inStatements) or Util.isSome(inProgram);
+        true := isSome(inStatements) or Util.isSome(inProgram);
         Error.addMessage(Error.STACK_OVERFLOW, {inCommand});
       then "";
 

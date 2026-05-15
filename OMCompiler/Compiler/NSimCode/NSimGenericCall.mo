@@ -257,12 +257,12 @@ public
             size      := Expression.MULTARY({size}, {step}, mulOp);
             size      := Expression.MULTARY({size, Expression.INTEGER(1)}, {}, addOp);
             size      := SimplifyExp.simplify(size);
-            sub_iter  := if Util.isSome(map) then subIterators(Util.getOption(map)) else {};
+            sub_iter  := if isSome(map) then subIterators(Util.getOption(map)) else {};
           then SIM_ITERATOR_RANGE(name, range.start, step, range.stop, size, sub_iter) :: sim_iter;
 
           case Expression.ARRAY() guard(range.literal) algorithm
             lst       := list(Expression.integerValue(e) for e in range.elements);
-            sub_iter  := if Util.isSome(map) then subIterators(Util.getOption(map)) else {};
+            sub_iter  := if isSome(map) then subIterators(Util.getOption(map)) else {};
           then SIM_ITERATOR_LIST(name, lst, listLength(lst), sub_iter) :: sim_iter;
 
           else algorithm
@@ -376,7 +376,7 @@ public
         body := (Util.getOption(Equation.getLHS(Pointer.access(eqn))), Util.getOption(Equation.getRHS(Pointer.access(eqn)))) :: body;
       end for;
       branch := SIM_BRANCH(if_body.condition, body);
-      if Util.isSome(if_body.else_if) then
+      if isSome(if_body.else_if) then
         branches := branch :: fromIfBody(Util.getOption(if_body.else_if));
       else
         branches := {branch};
@@ -390,7 +390,7 @@ public
       SimBranch branch;
     algorithm
       branch := SIM_BRANCH_STMT(when_body.condition, list(WhenStatement.toStatement(stmt) for stmt in when_body.when_stmts));
-      if Util.isSome(when_body.else_when) then
+      if isSome(when_body.else_when) then
         branches := branch :: fromWhenBody(Util.getOption(when_body.else_when));
       else
         branches := {branch};

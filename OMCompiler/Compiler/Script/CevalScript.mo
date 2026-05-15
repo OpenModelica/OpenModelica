@@ -400,7 +400,7 @@ algorithm
           if not skip then
             optClassInfo := UnorderedMap.get(cl.name, classInfoMap);
 
-            if Util.isSome(optClassInfo) then
+            if isSome(optClassInfo) then
               // It is a duplicate named top level class. Print error and return.
               infos := {Util.getOption(optClassInfo), cl.info};
               Error.addMultiSourceMessage(Error.DOUBLE_DECLARATION_OF_ELEMENTS, {cl.name}, infos);
