@@ -240,7 +240,7 @@ algorithm
   elseif lastUsedIndex == 1 then
     listT := {Util.getOption(data[1])};
   else
-    listT :=  list(Util.getOption(data[i]) for i guard Util.isSome(data[i]) in 1:lastUsedIndex);
+    listT :=  list(Util.getOption(data[i]) for i guard isSome(data[i]) in 1:lastUsedIndex);
   end if;
 end toList;
 

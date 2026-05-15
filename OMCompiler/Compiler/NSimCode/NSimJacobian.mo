@@ -185,7 +185,7 @@ public
       list<BackendDAE> jacobians = {};
     algorithm
       for partition in partitions loop
-        if Util.isSome(partition.jacobian) then
+        if isSome(partition.jacobian) then
           jacobians := Util.getOption(partition.jacobian) :: jacobians;
         end if;
       end for;
@@ -383,11 +383,11 @@ public
       for partition in partitions loop
         // save jacobian if existent
         jacobian := Partition.Partition.getJacobian(partition);
-        if Util.isSome(jacobian) then
+        if isSome(jacobian) then
           jacobians := Util.getOption(jacobian) :: jacobians;
         end if;
         jacobianAdjoint := Partition.Partition.getJacobianAdjoint(partition);
-        if Util.isSome(jacobianAdjoint) then
+        if isSome(jacobianAdjoint) then
           jacobiansAdjoint := Util.getOption(jacobianAdjoint) :: jacobiansAdjoint;
         end if;
       end for;
@@ -399,7 +399,7 @@ public
       else
         simJacobian := Jacobian.combine(jacobians, "A");
         (simJac_opt, simCodeIndices) := SimJacobian.create(simJacobian, simCodeIndices, simcode_map);
-        if Util.isSome(simJac_opt) then
+        if isSome(simJac_opt) then
           simJac := Util.getOption(simJac_opt);
         else
           (simJac, simCodeIndices) := SimJacobian.empty("A", simCodeIndices);
@@ -412,7 +412,7 @@ public
       else
         simJacobianAdjoint := Jacobian.combine(jacobiansAdjoint, "ADJ");
         (simJacAdj_opt, simCodeIndices) := SimJacobian.create(simJacobianAdjoint, simCodeIndices, simcode_map);
-        if Util.isSome(simJacAdj_opt) then
+        if isSome(simJacAdj_opt) then
           simJacAdjoint := Util.getOption(simJacAdj_opt);
         else
           (simJacAdjoint, simCodeIndices) := SimJacobian.empty("ADJ", simCodeIndices);

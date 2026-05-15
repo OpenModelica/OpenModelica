@@ -1034,7 +1034,7 @@ algorithm
     case (_, SimCodeFunction.VARIABLE(name=name, value=v) :: _, currentIndex)
       algorithm
         true := ComponentReference.crefEqualNoStringCompare(cref, name);
-      then (currentIndex, Util.isSome(v));
+      then (currentIndex, isSome(v));
     case (_, _ :: restOutVars, currentIndex)
       algorithm
         currentIndex := currentIndex + 1;
@@ -1475,7 +1475,7 @@ algorithm
       case DAE.VAR() algorithm
         collectRecDeclsFromType(elem.ty, recDeclsMap);
 
-        if Util.isSome(elem.binding) and Config.acceptMetaModelicaGrammar() then
+        if isSome(elem.binding) and Config.acceptMetaModelicaGrammar() then
           (_, _) := Expression.traverseExpBottomUp(Util.getOption(elem.binding), collectRecDeclsFromMetaRecCallExp, recDeclsMap);
         end if;
       then ();
@@ -1623,7 +1623,7 @@ algorithm
 
         if is_default then
           // If it already exists check if we need to update it.
-          if Util.isSome(optRecDecl) then
+          if isSome(optRecDecl) then
             SOME(SimCodeFunction.RECORD_DECL_FULL(_, _, _, vars, bool1)) := optRecDecl;
 
             if usedExternally and not bool1 then
@@ -1642,7 +1642,7 @@ algorithm
         // It is not a default construtor
         else
           // Add it if does not exist. Otherwise do nothing.
-          if Util.isNone(optRecDecl) then
+          if isNone(optRecDecl) then
             vars := List.map(varlst, typesVar);
             recDecl := SimCodeFunction.RECORD_DECL_ADD_CONSTRCTOR(sname, name, vars);
             UnorderedMap.add(sname, recDecl, recDeclsMap);

@@ -319,7 +319,7 @@ author:Waurich"
   input tuple<Integer,Option<BackendDAE.Equation>,BackendDAE.Equation> tpl;
   output String s;
 algorithm
-  if Util.isSome(Util.tuple32(tpl)) then
+  if isSome(Util.tuple32(tpl)) then
     s := "";
   else
     s := BackendDump.equationString(Util.getOption(Util.tuple32(tpl)));
@@ -713,7 +713,7 @@ algorithm
   while not listEmpty(eqs) loop
     e::eqs := eqs;
       (eqTplOpt, oShared) := differentiateEqnsLst1(e,vars,eqns,oShared);
-      if Util.isSome(eqTplOpt) then
+      if isSome(eqTplOpt) then
          outEqnTpl := Util.getOption(eqTplOpt)::outEqnTpl;
       else
         outEqnTpl := {};
@@ -785,7 +785,7 @@ algorithm
   outChangedVars := inChangedVars;
   outOrgEqns := inOrgEqns;
   for eqTpl in inEqnTplLst loop
-    if Util.isSome(Util.tuple32(eqTpl)) then
+    if isSome(Util.tuple32(eqTpl)) then
       // replace der-calls with the derivatives
       (eqIdx, SOME(eqDiff), eqOrig) := eqTpl;
       (eqDiff, _) := BackendEquation.traverseExpsOfEquation(eqDiff, replaceStateOrderExp, outVars);

@@ -152,7 +152,7 @@ algorithm
       allPrimaryParameters := AvlSetCR.add(allPrimaryParameters, BackendVariable.varCref(v));
     end for;
     // check for datareconciliation and set the Flag, to set the Qualified Component names as TopLevel Input
-    if Util.isSome(inDAE.shared.dataReconciliationData) then
+    if isSome(inDAE.shared.dataReconciliationData) then
        datarecon := true;
     end if;
     ((vars, fixvars, eqns, _)) := BackendVariable.traverseBackendDAEVars(dae.shared.aliasVars, introducePreVarsForAliasVariables, (vars, fixvars, eqns, hs));

@@ -8556,7 +8556,7 @@ algorithm
     // look at overloaded functions with the wrong number of arguments (getting weird error-messages)
     numArgs := listLength(inPosArgs)+listLength(inNamedArgs);
     tys := list(ty for ty guard match ty case DAE.T_FUNCTION() then
-      ((numArgs <= listLength(ty.funcArg)) and numArgs >= sum(if Util.isNone(argument.defaultBinding) then 1 else 0 for argument in ty.funcArg));
+      ((numArgs <= listLength(ty.funcArg)) and numArgs >= sum(if isNone(argument.defaultBinding) then 1 else 0 for argument in ty.funcArg));
       end match in rest_tys);
     if not listEmpty(tys) then
       rest_tys := tys;
