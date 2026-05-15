@@ -7,11 +7,12 @@ mkdir("build/tmp");
 cd("build/tmp");
 if not checkInterfaceOfPackages(mainClass, {
 // Also update Compiler/.cmake/mm_check_interface.in.mos if you change this file.
-  {"backend", "frontend", "util", "susan", "nf_frontend"},
-  {"frontend", "util", "susan", "", ""},
-  {"nf_frontend", "util", "susan", "frontend", ""},
-  {"susan", "util", "", "", ""},
-  {"util", "", "", "", ""}
+  {"backend", "frontend", "util", "susan", "nf_frontend", "util_datatypes_basic"},
+  {"frontend", "util", "susan", "util_datatypes_basic", "", ""},
+  {"nf_frontend", "util", "susan", "frontend", "util_datatypes_basic", ""},
+  {"susan", "util", "util_datatypes_basic", "", "", ""},
+  {"util", "util_datatypes_basic", "", "", "", ""},
+  {"util_datatypes_basic", "", "", "", "", ""}
 }) then
   print(getErrorString());
   exit(1);

@@ -72,5 +72,5 @@ static inline void* mutableAccess(void *mutable)
 ");
 end access;
 
-annotation(__OpenModelica_Interface="util");
+annotation(__OpenModelica_Interface="util_datatypes_basic");
 end Mutable;

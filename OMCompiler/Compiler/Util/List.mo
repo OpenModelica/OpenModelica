@@ -5344,5 +5344,5 @@ algorithm
   end while;
 end trim;
 
-annotation(__OpenModelica_Interface="util");
+annotation(__OpenModelica_Interface="util_datatypes_basic");
 end List;
