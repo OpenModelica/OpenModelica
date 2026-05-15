@@ -756,7 +756,7 @@ algorithm
   if stringLength(content)==2 then
     content := "";
   else
-    content := System.unescapedString(System.substring(content,2,stringLength(content)-1));
+    content := System.unescapedString(substring(content,2,stringLength(content)-1));
   end if;
   value := STRING(content);
 end parse_string;
