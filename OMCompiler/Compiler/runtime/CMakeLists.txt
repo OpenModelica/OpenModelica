@@ -185,9 +185,9 @@ endif()
 
 set(host_short ${CMAKE_LIBRARY_ARCHITECTURE})
 
-set(RUNTIMECC ${CMAKE_C_COMPILER})
-set(CC ${CMAKE_C_COMPILER})
-set(CXX ${CMAKE_CXX_COMPILER})
+get_filename_component(RUNTIMECC ${CMAKE_C_COMPILER} NAME)
+get_filename_component(CC ${CMAKE_C_COMPILER} NAME)
+get_filename_component(CXX ${CMAKE_CXX_COMPILER} NAME)
 
 find_package(OpenMP)
 if(OpenMP_FOUND)
