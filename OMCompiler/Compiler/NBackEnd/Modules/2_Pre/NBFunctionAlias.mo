@@ -663,7 +663,7 @@ protected
   protected
     Function fn = Call.typedFunction(call);
   algorithm
-    b := forceReplacement(fn) or not (Function.isSpecialBuiltin(fn) or replaceException(fn));
+    b := forceReplacement(fn) or not (Function.isSpecialBuiltin(fn) or replaceException(fn) or Inline.functionInlineable(fn));
   end checkCallReplacement;
 
   function forceReplacement
