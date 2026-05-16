@@ -100,7 +100,7 @@ else()
   set(app_icon_macos "")
 endif()
 
-add_executable(OMNotebook WIN32 MACOSX_BUNDLE ${OMNOTEBOOKLIB_SOURCES} ${OMNOTEBOOKLIB_HEADERS} rc_omnotebook.rc ${app_icon_macos})
+add_executable(OMNotebook WIN32 ${OMNOTEBOOKLIB_SOURCES} ${OMNOTEBOOKLIB_HEADERS} rc_omnotebook.rc ${app_icon_macos})
 target_compile_definitions(OMNotebook PRIVATE OMNOTEBOOKLIB_MOC_INCLUDE)
 
 target_include_directories(OMNotebook PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -116,13 +116,12 @@ endif ()
 target_link_libraries(OMNotebook PUBLIC OMPlotLib)
 target_link_libraries(OMNotebook PUBLIC OpenModelicaCompiler)
 
+omc_install_gui_client(OMNotebook)
 if(APPLE)
   set_target_properties(OMNotebook PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist)
 endif()
 
 
-install(TARGETS OMNotebook
-        BUNDLE DESTINATION ${OM_MACOS_INSTALL_BUNDLEDIR})
 install(FILES stylesheet.xml
               commands.xml
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omnotebook/)

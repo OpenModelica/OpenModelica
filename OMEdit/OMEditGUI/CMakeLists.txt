@@ -11,7 +11,7 @@ else()
   set(app_icon_macos "")
 endif()
 
-add_executable(OMEdit WIN32 MACOSX_BUNDLE main.cpp rc_omedit.rc ${app_icon_macos})
+add_executable(OMEdit WIN32 main.cpp rc_omedit.rc ${app_icon_macos})
 target_link_libraries(OMEdit PRIVATE OMEditLib)
 
 if(APPLE)
@@ -69,7 +69,6 @@ if(OM_OMEDIT_INSTALL_RUNTIME_DLLS AND MINGW)
             DIRECTORIES ${MSYSTEM_PREFIX_ESCAPED}/bin ${RUNTIME_LIB_DIRS}
             PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-"
             POST_EXCLUDE_REGEXES ".*system32/.*\\.dll")
-else()
-  install(TARGETS OMEdit
-          BUNDLE DESTINATION ${OM_MACOS_INSTALL_BUNDLEDIR})
+else ()
+  omc_install_gui_client(OMEdit)
 endif()

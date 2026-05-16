@@ -27,17 +27,13 @@ else()
   set(app_icon_macos "")
 endif()
 
-add_executable(OMShell WIN32 MACOSX_BUNDLE ${OMSHELLL_SOURCES}
-                                           ${OMSHELLL_HEADERS}
-                                           ${app_icon_macos})
+add_executable(OMShell WIN32 ${OMSHELLL_SOURCES} ${OMSHELLL_HEADERS} ${app_icon_macos})
 
 target_link_libraries(OMShell PRIVATE OpenModelicaCompiler)
 target_link_libraries(OMShell PRIVATE Qt${OM_QT_MAJOR_VERSION}::Xml)
 target_link_libraries(OMShell PRIVATE Qt${OM_QT_MAJOR_VERSION}::Widgets)
 target_link_libraries(OMShell PRIVATE Qt${OM_QT_MAJOR_VERSION}::PrintSupport)
 
-
-install(TARGETS OMShell
-        BUNDLE DESTINATION ${OM_MACOS_INSTALL_BUNDLEDIR})
+omc_install_gui_client(OMShell)
 install(FILES commands.xml
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omshell)
