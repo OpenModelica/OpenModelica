@@ -205,7 +205,7 @@ double rt_tock(int ix) {
   } else {
     tock_tp.QuadPart = RDTSC();
   }
-  diff_tp = (rtclock_t)(tock_tp.QuadPart - tick_tp[ix].QuadPart);
+  diff_tp.QuadPart = tock_tp.QuadPart - tick_tp[ix].QuadPart;
   return rtclock_compensated_value(diff_tp);
 }
 
@@ -232,7 +232,7 @@ double rt_accumulate(int ix) {
   } else {
     tock_tp.QuadPart = RDTSC();
   }
-  diff_tp = (rtclock_t)(tock_tp.QuadPart - tick_tp[ix].QuadPart);
+  diff_tp.QuadPart = tock_tp.QuadPart - tick_tp[ix].QuadPart;
   acc_tp[ix].QuadPart += diff_tp.QuadPart;
   return rtclock_compensated_value(diff_tp);
 }
@@ -275,7 +275,7 @@ double rt_ext_tp_tock_realtime(rtclock_t* tick_tp) {
   rtclock_t diff_tp;
   rtclock_t tock_tp;
   QueryPerformanceCounter(&tock_tp);
-  diff_tp = (rtclock_t)(tock_tp.QuadPart - tick_tp->QuadPart);
+  diff_tp.QuadPart = tock_tp.QuadPart - tick_tp->QuadPart;
   return rtclock_compensated_value(diff_tp);
 }
 
@@ -286,7 +286,7 @@ double rt_ext_tp_tock(rtclock_t* tick_tp) {
     rtclock_t diff_tp;
     rtclock_t tock_tp;
     tock_tp.QuadPart = RDTSC();
-    diff_tp = (rtclock_t)(tock_tp.QuadPart - tick_tp->QuadPart);
+    diff_tp.QuadPart = tock_tp.QuadPart - tick_tp->QuadPart;
     return rtclock_compensated_value(diff_tp);
   }
 }
