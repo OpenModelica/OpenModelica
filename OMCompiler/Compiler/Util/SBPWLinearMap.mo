@@ -58,7 +58,7 @@ public
     output SBPWLinearMap map;
   protected
     Integer dim = 0;
-    Boolean same_dims;
+    Boolean same_dims = false;
   algorithm
     if arrayLength(dom) <> arrayLength(lmap) then
       // Warning: Domain size should be equal to map size.
