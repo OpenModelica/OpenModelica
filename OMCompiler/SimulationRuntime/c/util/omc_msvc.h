@@ -31,27 +31,15 @@
 extern "C" {
 #endif
 
+#ifndef _USE_MATH_DEFINES
+#define _USE_MATH_DEFINES
+#endif
 #include <math.h> /* Make sure we try to get INFINITY and NAN from the system. They are way cooler */
 /*For _MAX_PATH on MSVC */
 #include <stdlib.h>
 
 #ifndef NaN
 #define NaN NAN
-#endif
-
-union MSVC_FLOAT_HACK
-{
-   unsigned char Bytes[4];
-   float Value;
-};
-#ifndef INFINITY
-static union MSVC_FLOAT_HACK __INFINITY = {{0x00, 0x00, 0x80, 0x7F}};
-#define INFINITY (__INFINITY.Value)
-#endif
-
-#ifndef NAN
-static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
-#define NAN (__NAN.Value)
 #endif
 
 /* for non GNU compilers */
@@ -97,12 +85,6 @@ int vasprintf(char **strp, const char *fmt, va_list ap);
 unsigned int alarm (unsigned int seconds);
 
 #include <float.h>
-#if !defined(isinf)
-#define isinf(d) (!_finite(d) && !_isnan(d))
-#endif
-#if !defined(isnan)
-#define isnan _isnan
-#endif
 #define fpu_error(x) (isinf(x) || isnan(x))
 
 
