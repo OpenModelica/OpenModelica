@@ -103,6 +103,9 @@ public
 
     if compatible then
       map := PW_ATOMIC_LINEAR_MAP(SBAtomicSet.copy(dom), SBLinearMap.copy(lmap));
+    else
+      // Warning: Incompatible map.
+      map := newEmpty();
     end if;
   end new;
 
