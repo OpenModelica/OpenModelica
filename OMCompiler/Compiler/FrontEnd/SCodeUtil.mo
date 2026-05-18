@@ -334,11 +334,11 @@ function setElementName
   input output SCode.Element e;
   input String name;
 algorithm
-  e := match e
-    case SCode.CLASS()      algorithm e.name := name; then e;
-    case SCode.COMPONENT()  algorithm e.name := name; then e;
-    case SCode.DEFINEUNIT() algorithm e.name := name; then e;
-    else e;
+  () := match e
+    case SCode.CLASS()      algorithm e.name := name; then ();
+    case SCode.COMPONENT()  algorithm e.name := name; then ();
+    case SCode.DEFINEUNIT() algorithm e.name := name; then ();
+    else ();
   end match;
 end setElementName;
 
@@ -353,18 +353,13 @@ algorithm
 end elementName;
 
 function elementNameInfo
-  input SCode.Element inElement;
-  output String outName;
-  output SourceInfo outInfo;
+  input SCode.Element element;
+  output String name;
+  output SourceInfo info;
 algorithm
-  (outName, outInfo) := match(inElement)
-    local
-      String name;
-      SourceInfo info;
-
+  (name, info) := match element
     case SCode.COMPONENT(name = name, info = info) then (name, info);
     case SCode.CLASS(name = name, info = info) then (name, info);
-
   end match;
 end elementNameInfo;
 
@@ -390,30 +385,12 @@ algorithm
 end elementNamesWork;
 
 public function renameElement
-  input SCode.Element inElement;
-  input String inName;
-  output SCode.Element outElement;
+  input output SCode.Element element;
+  input String name;
 algorithm
-  outElement := match(inElement, inName)
-    local
-      SCode.Prefixes pf;
-      SCode.Encapsulated ep;
-      SCode.Partial pp;
-      SCode.Restriction res;
-      SCode.ClassDef cdef;
-      SourceInfo i;
-      SCode.Attributes attr;
-      Absyn.TypeSpec ty;
-      SCode.Mod mod;
-      SCode.Comment cmt;
-      Option<Absyn.Exp> cond;
-
-    case (SCode.CLASS(_, pf, ep, pp, res, cdef, cmt, i), _)
-      then SCode.CLASS(inName, pf, ep, pp, res, cdef, cmt, i);
-
-    case (SCode.COMPONENT(_, pf, attr, ty, mod, cmt, cond, i), _)
-      then SCode.COMPONENT(inName, pf, attr, ty, mod, cmt, cond, i);
-
+  () := match element
+    case SCode.CLASS()     algorithm element.name := name; then ();
+    case SCode.COMPONENT() algorithm element.name := name; then ();
   end match;
 end renameElement;
 
@@ -568,31 +545,16 @@ algorithm
 end className;
 
 public function classSetPartial
-"author: PA
-  Sets the partial attribute of a Class"
-  input SCode.Element inClass;
+  "Sets the partial attribute of a class element."
+  input output SCode.Element cls;
   input SCode.Partial inPartial;
-  output SCode.Element outClass;
 algorithm
-  outClass := match (inClass,inPartial)
-    local
-      String id;
-      SCode.Encapsulated enc;
-      SCode.Partial partialPrefix;
-      SCode.Restriction restr;
-      SCode.ClassDef def;
-      SourceInfo info;
-      SCode.Prefixes prefixes;
-      SCode.Comment cmt;
-
-    case (SCode.CLASS(name = id,
-                prefixes = prefixes,
-                encapsulatedPrefix = enc,
-                restriction = restr,
-                classDef = def,
-                cmt = cmt,
-                info = info),partialPrefix)
-      then SCode.CLASS(id,prefixes,enc,partialPrefix,restr,def,cmt,info);
+  () := match cls
+    case SCode.CLASS()
+      algorithm
+        cls.partialPrefix := inPartial;
+      then
+        ();
   end match;
 end classSetPartial;
 
@@ -604,61 +566,34 @@ public function elementEqual
    input SCode.Element element2;
    output Boolean equal;
  algorithm
-   equal := matchcontinue(element1,element2)
-     local
-      SCode.Ident name1,name2;
-      SCode.Prefixes prefixes1, prefixes2;
-      SCode.Encapsulated en1, en2;
-      SCode.Partial p1,p2;
-      SCode.Restriction restr1, restr2;
-      SCode.Attributes attr1,attr2;
-      SCode.Mod mod1,mod2;
-      Absyn.TypeSpec tp1,tp2;
-      Absyn.Import im1,im2;
-      Absyn.Path path1,path2;
-      Option<String> os1,os2;
-      Option<Real> or1,or2;
-      Option<Absyn.Exp> cond1, cond2;
-      SCode.ClassDef cd1,cd2;
+   equal := matchcontinue (element1, element2)
+    case (SCode.CLASS(), SCode.CLASS())
+       then stringEq(element1.name, element2.name) and
+            prefixesEqual(element1.prefixes, element2.prefixes) and
+            valueEq(element1.encapsulatedPrefix, element2.encapsulatedPrefix) and
+            valueEq(element1.partialPrefix, element2.partialPrefix) and
+            restrictionEqual(element1.restriction, element2.restriction) and
+            classDefEqual(element1.classDef, element2.classDef);
 
-    case (SCode.CLASS(name1,prefixes1,en1,p1,restr1,cd1,_,_),SCode.CLASS(name2,prefixes2,en2,p2,restr2,cd2,_,_))
-       algorithm
-         true := stringEq(name1,name2);
-         true := prefixesEqual(prefixes1,prefixes2);
-         true := valueEq(en1,en2);
-         true := valueEq(p1,p2);
-         true := restrictionEqual(restr1,restr2);
-         true := classDefEqual(cd1,cd2);
-       then
-         true;
+    case (SCode.COMPONENT(), SCode.COMPONENT())
+       then stringEq(element1.name, element2.name) and
+            prefixesEqual(element1.prefixes, element2.prefixes) and
+            attributesEqual(element1.attributes, element2.attributes) and
+            modEqual(element1.modifications, element2.modifications) and
+            AbsynUtil.typeSpecEqual(element1.typeSpec, element2.typeSpec) and
+            valueEq(element1.condition, element2.condition);
 
-    case (SCode.COMPONENT(name1,prefixes1,attr1,tp1,mod1,_,cond1,_),
-          SCode.COMPONENT(name2,prefixes2,attr2,tp2,mod2,_,cond2,_))
-       algorithm
-         true := valueEq(cond1, cond2);
-         true := stringEq(name1,name2);
-         true := prefixesEqual(prefixes1,prefixes2);
-         true := attributesEqual(attr1,attr2);
-         true := modEqual(mod1,mod2);
-         true := AbsynUtil.typeSpecEqual(tp1,tp2);
-       then
-         true;
+     case (SCode.EXTENDS(), SCode.EXTENDS())
+       then AbsynUtil.pathEqual(element1.baseClassPath, element2.baseClassPath) and
+            modEqual(element1.modifications, element2.modifications);
 
-     case (SCode.EXTENDS(path1,_,mod1,_,_), SCode.EXTENDS(path2,_,mod2,_,_))
-       algorithm
-         true := AbsynUtil.pathEqual(path1,path2);
-         true := modEqual(mod1,mod2);
-       then
-         true;
+    case (SCode.IMPORT(), SCode.IMPORT())
+      then AbsynUtil.importEqual(element1.imp, element2.imp);
 
-    case (SCode.IMPORT(imp = im1), SCode.IMPORT(imp = im2))
-       algorithm
-         true := AbsynUtil.importEqual(im1,im2);
-       then
-         true;
-
-     case (SCode.DEFINEUNIT(name1,_,os1,or1), SCode.DEFINEUNIT(name2,_,os2,or2))
-       then stringEq(name1,name2) and valueEq(os1, os2) and valueEq(or1, or2);
+     case (SCode.DEFINEUNIT(), SCode.DEFINEUNIT())
+       then stringEq(element1.name, element2.name) and
+            valueEq(element1.exp, element2.exp) and
+            valueEq(element1.weight, element2.weight);
 
      // otherwise false
      else false;
@@ -670,13 +605,7 @@ public function annotationEqual
 "returns true if 2 annotations are equal"
   input SCode.Annotation annotation1;
   input SCode.Annotation annotation2;
-  output Boolean equal;
-protected
-  SCode.Mod mod1, mod2;
-algorithm
-  SCode.ANNOTATION(modification = mod1) := annotation1;
-  SCode.ANNOTATION(modification = mod2) := annotation2;
-  equal := modEqual(mod1, mod2);
+  output Boolean equal = modEqual(annotation1.modification, annotation2.modification);
 end annotationEqual;
 
 public function restrictionEqual "Returns true if two Restriction's are equal."
@@ -734,99 +663,39 @@ end funcRestrictionEqual;
 function enumEqual
   input SCode.Enum e1;
   input SCode.Enum e2;
-  output Boolean isEqual;
-algorithm
-  isEqual := match(e1, e2)
-    local
-      String s1, s2;
-      Boolean b1;
-
-    case (SCode.ENUM(s1,_), SCode.ENUM(s2,_))
-      algorithm
-        b1 := stringEq(s1, s2);
-        // ignore comments here.
-      then b1;
-  end match;
+  output Boolean isEqual = e1.literal == e2.literal;
 end enumEqual;
 
 protected function classDefEqual
 "Returns true if Two ClassDef's are equal"
- input SCode.ClassDef cdef1;
- input SCode.ClassDef cdef2;
- output Boolean equal;
- algorithm
-   equal := match(cdef1,cdef2)
-     local
-       list<SCode.Element> elts1,elts2;
-       list<SCode.Equation> eqns1,eqns2;
-       list<SCode.Equation> ieqns1,ieqns2;
-       list<SCode.AlgorithmSection> algs1,algs2;
-       list<SCode.AlgorithmSection> ialgs1,ialgs2;
-       list<SCode.ConstraintSection> cons1,cons2;
-       SCode.Attributes attr1,attr2;
-       Absyn.TypeSpec tySpec1, tySpec2;
-       Absyn.Path p1, p2;
-       SCode.Mod mod1,mod2;
-       list<SCode.Enum> elst1,elst2;
-       list<SCode.Ident> ilst1,ilst2;
-       list<Absyn.NamedArg> clsttrs1,clsttrs2;
+  input SCode.ClassDef cdef1;
+  input SCode.ClassDef cdef2;
+  output Boolean equal;
+algorithm
+  equal := match(cdef1,cdef2)
+    case (SCode.PARTS(), SCode.PARTS())
+      then List.isEqualOnTrue(cdef1.elementLst, cdef2.elementLst, elementEqual) and
+           List.isEqualOnTrue(cdef1.normalEquationLst, cdef2.normalEquationLst, equationEqual) and
+           List.isEqualOnTrue(cdef1.initialEquationLst, cdef2.initialEquationLst, equationEqual) and
+           List.isEqualOnTrue(cdef1.normalAlgorithmLst, cdef2.normalAlgorithmLst, algorithmEqual) and
+           List.isEqualOnTrue(cdef1.initialAlgorithmLst, cdef2.initialAlgorithmLst, algorithmEqual);
 
-     case(SCode.PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,_,_,_),
-          SCode.PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,_,_,_))
-       algorithm
-         List.threadMapAllValue(elts1,elts2,elementEqual,true);
-         List.threadMapAllValue(eqns1,eqns2,equationEqual,true);
-         List.threadMapAllValue(ieqns1,ieqns2,equationEqual,true);
-         List.threadMapAllValue(algs1,algs2,algorithmEqual,true);
-         List.threadMapAllValue(ialgs1,ialgs2,algorithmEqual,true);
-       then true;
+    case (SCode.DERIVED(), SCode.DERIVED())
+      then AbsynUtil.typeSpecEqual(cdef1.typeSpec, cdef2.typeSpec) and
+           modEqual(cdef1.modifications, cdef2.modifications) and
+           attributesEqual(cdef1.attributes, cdef2.attributes);
 
-     case (SCode.DERIVED(tySpec1,mod1,attr1),
-           SCode.DERIVED(tySpec2,mod2,attr2))
-       algorithm
-         true := AbsynUtil.typeSpecEqual(tySpec1, tySpec2);
-         true := modEqual(mod1,mod2);
-         true := attributesEqual(attr1, attr2);
-       then
-         true;
+    case (SCode.ENUMERATION(), SCode.ENUMERATION())
+      then List.isEqualOnTrue(cdef1.enumLst, cdef2.enumLst, enumEqual);
 
-     case (SCode.ENUMERATION(elst1),SCode.ENUMERATION(elst2))
-       algorithm
-         List.threadMapAllValue(elst1,elst2,enumEqual,true);
-       then
-         true;
+    case (SCode.CLASS_EXTENDS(), SCode.CLASS_EXTENDS())
+      then modEqual(cdef1.modifications, cdef2.modifications) and
+           classDefEqual(cdef1.composition, cdef2.composition);
 
-     case (SCode.CLASS_EXTENDS(mod1,SCode.PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,_,_,_)),
-           SCode.CLASS_EXTENDS(mod2,SCode.PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,_,_,_)))
-       algorithm
-         List.threadMapAllValue(elts1,elts2,elementEqual,true);
-         List.threadMapAllValue(eqns1,eqns2,equationEqual,true);
-         List.threadMapAllValue(ieqns1,ieqns2,equationEqual,true);
-         List.threadMapAllValue(algs1,algs2,algorithmEqual,true);
-         List.threadMapAllValue(ialgs1,ialgs2,algorithmEqual,true);
-         true := modEqual(mod1,mod2);
-       then
-         true;
+    case (SCode.PDER(), SCode.PDER())
+      then List.isEqualOnTrue(cdef1.derivedVariables, cdef2.derivedVariables, stringEq);
 
-     case (SCode.PDER(_,ilst1),SCode.PDER(_,ilst2))
-       algorithm
-         List.threadMapAllValue(ilst1,ilst2,stringEq,true);
-       then
-         true;
-
-    /* adrpo: TODO! FIXME! are these below really needed??!!
-    // as far as I can tell we handle all the cases.
-    case(cdef1, cdef2)
-      algorithm
-        equality(cdef1=cdef2);
-      then true;
-
-    case(cdef1, cdef2)
-      algorithm
-        failure(equality(cdef1=cdef2));
-      then false;*/
-
-    else fail();
+    else false;
   end match;
 end classDefEqual;
 
@@ -836,19 +705,13 @@ protected function arraydimOptEqual
    input Option<Absyn.ArrayDim> adopt2;
    output Boolean equal;
  algorithm
-  equal := matchcontinue(adopt1,adopt2)
+  equal := match(adopt1,adopt2)
     local
       list<Absyn.Subscript> lst1,lst2;
-      list<Boolean> blst;
-    case(NONE(),NONE()) then true;
-    case(SOME(lst1),SOME(lst2))
-      algorithm
-        List.threadMapAllValue(lst1,lst2,subscriptEqual,true);
-      then
-        true;
-    // oth. false
-    case(SOME(_),SOME(_)) then false;
-  end matchcontinue;
+    case (NONE(), NONE()) then true;
+    case (SOME(lst1), SOME(lst2)) then List.isEqualOnTrue(lst1,lst2,subscriptEqual);
+    else false;
+  end match;
 end arraydimOptEqual;
 
 protected function subscriptEqual
@@ -874,22 +737,10 @@ protected function algorithmEqual
   input SCode.AlgorithmSection alg2;
   output Boolean equal;
 algorithm
-  equal := matchcontinue(alg1,alg2)
-    local
-      list<SCode.Statement> a1,a2;
-
-    case(SCode.ALGORITHM(a1),SCode.ALGORITHM(a2))
-      algorithm
-        List.threadMapAllValue(a1,a2,algorithmEqual2,true);
-      then
-        true;
-
-    // false otherwise!
-    else false;
-  end matchcontinue;
+  equal := List.isEqualOnTrue(alg1.statements, alg2.statements, statementEqual);
 end algorithmEqual;
 
-protected function algorithmEqual2
+protected function statementEqual
 "Returns true if two Absyn.Algorithm are equal."
   input SCode.Statement ai1;
   input SCode.Statement ai2;
@@ -931,7 +782,7 @@ algorithm
     //case (Absyn.ALG_NORETCALL(_,_),Absyn.ALG_NORETCALL(_,_)) then false; //TODO: SCode.ALG_NORETCALL
     else false;
   end matchcontinue;
-end algorithmEqual2;
+end statementEqual;
 
 protected function equationEqual
   "Returns true if two equations are equal."
@@ -952,8 +803,8 @@ algorithm
     case (SCode.EQ_IF(condition = ifcond1, thenBranch = tb1, elseBranch = fb1),SCode.EQ_IF(condition = ifcond2, thenBranch = tb2, elseBranch = fb2))
       algorithm
         true := equationEqual2(tb1,tb2);
-        List.threadMapAllValue(fb1,fb2,equationEqual,true);
-        List.threadMapAllValue(ifcond1,ifcond2,AbsynUtil.expEqual,true);
+        true := List.isEqualOnTrue(fb1,fb2,equationEqual);
+        true := List.isEqualOnTrue(ifcond1,ifcond2,AbsynUtil.expEqual);
       then
         true;
 
@@ -981,7 +832,7 @@ algorithm
 
     case (SCode.EQ_FOR(index = id1, range = SOME(exp1), eEquationLst = eql1),SCode.EQ_FOR(index = id2, range = SOME(exp2), eEquationLst = eql2))
       algorithm
-        List.threadMapAllValue(eql1,eql2,equationEqual,true);
+        true := List.isEqualOnTrue(eql1,eql2,equationEqual);
         true := AbsynUtil.expEqual(exp1,exp2);
         true := stringEq(id1,id2);
       then
@@ -989,14 +840,14 @@ algorithm
 
     case (SCode.EQ_FOR(index = id1, range = NONE(), eEquationLst = eql1),SCode.EQ_FOR(index = id2, range = NONE(), eEquationLst = eql2))
       algorithm
-        List.threadMapAllValue(eql1,eql2,equationEqual,true);
+        true := List.isEqualOnTrue(eql1,eql2,equationEqual);
         true := stringEq(id1,id2);
       then
         true;
 
     case (SCode.EQ_WHEN(condition = cond1, eEquationLst = elst1),SCode.EQ_WHEN(condition = cond2, eEquationLst = elst2)) // TODO: elsewhen not checked yet.
       algorithm
-        List.threadMapAllValue(elst1,elst2,equationEqual,true);
+        true := List.isEqualOnTrue(elst1,elst2,equationEqual);
         true := AbsynUtil.expEqual(cond1,cond2);
       then
         true;
@@ -1043,7 +894,7 @@ algorithm
     case({},_) then false;
     case(tb_1::tb1,tb_2::tb2)
       algorithm
-        List.threadMapAllValue(tb_1,tb_2,equationEqual,true);
+        true := List.isEqualOnTrue(tb_1,tb_2,equationEqual);
         true := equationEqual2(tb1,tb2);
       then
         true;
@@ -1163,28 +1014,12 @@ public function attributesEqual
    input SCode.Attributes attr2;
    output Boolean equal;
 algorithm
-  equal:= matchcontinue(attr1,attr2)
-    local
-      SCode.Parallelism prl1,prl2;
-      SCode.Variability var1,var2;
-      SCode.ConnectorType ct1, ct2;
-      Absyn.ArrayDim ad1,ad2;
-      Absyn.Direction dir1,dir2;
-      Absyn.IsField if1,if2;
-
-    case(SCode.ATTR(ad1,ct1,prl1,var1,dir1,if1),SCode.ATTR(ad2,ct2,prl2,var2,dir2,if2))
-      algorithm
-        true := arrayDimEqual(ad1,ad2);
-        true := valueEq(ct1, ct2);
-        true := parallelismEqual(prl1,prl2);
-        true := variabilityEqual(var1,var2);
-        true := AbsynUtil.directionEqual(dir1,dir2);
-        true := AbsynUtil.isFieldEqual(if1,if2);
-      then
-        true;
-
-    else false;
-  end matchcontinue;
+  equal := arrayDimEqual(attr1.arrayDims, attr2.arrayDims) and
+           valueEq(attr1.connectorType, attr2.connectorType) and
+           parallelismEqual(attr1.parallelism, attr2.parallelism) and
+           variabilityEqual(attr1.variability, attr2.variability) and
+           AbsynUtil.directionEqual(attr1.direction, attr2.direction) and
+           AbsynUtil.isFieldEqual(attr1.isField, attr2.isField);
 end attributesEqual;
 
 public function parallelismEqual
@@ -1248,59 +1083,30 @@ end arrayDimEqual;
 
 public function setClassRestriction "Sets the restriction of a SCode Class"
   input SCode.Restriction r;
-  input SCode.Element cl;
-  output SCode.Element outCl;
+  input output SCode.Element cl;
 algorithm
-  outCl := matchcontinue(r, cl)
-    local
-      SCode.ClassDef parts;
-      SCode.Partial p;
-      SCode.Encapsulated e;
-      SCode.Ident id;
-      SourceInfo info;
-      SCode.Prefixes prefixes;
-      SCode.Restriction oldR;
-      SCode.Comment cmt;
-
-    // check if restrictions are equal, so you can return the same thing!
-    case(_, SCode.CLASS(restriction = oldR))
+  () := match cl
+    case SCode.CLASS()
       algorithm
-        true := restrictionEqual(r, oldR);
-      then cl;
-
-    // not equal, change
-    case(_, SCode.CLASS(id,prefixes,e,p,_,parts,cmt,info))
-      then SCode.CLASS(id,prefixes,e,p,r,parts,cmt,info);
-  end matchcontinue;
+        cl.restriction := r;
+      then
+        ();
+  end match;
 end setClassRestriction;
 
 public function setClassName "Sets the name of a SCode Class"
   input SCode.Ident name;
-  input SCode.Element cl;
-  output SCode.Element outCl;
+  input output SCode.Element cl;
 algorithm
-  outCl := matchcontinue(name, cl)
-    local
-      SCode.ClassDef parts;
-      SCode.Partial p;
-      SCode.Encapsulated e;
-      SourceInfo info;
-      SCode.Prefixes prefixes;
-      SCode.Restriction r;
-      SCode.Ident id;
-      SCode.Comment cmt;
-
-    // check if restrictions are equal, so you can return the same thing!
-    case(_, SCode.CLASS(name = id))
+  () := match cl
+    case SCode.CLASS()
       algorithm
-        true := stringEqual(name, id);
+        if name <> cl.name then
+          cl.name := name;
+        end if;
       then
-        cl;
-
-    // not equal, change
-    case(_, SCode.CLASS(_,prefixes,e,p,r,parts,cmt,info))
-      then SCode.CLASS(name,prefixes,e,p,r,parts,cmt,info);
-  end matchcontinue;
+        ();
+  end match;
 end setClassName;
 
 public function makeClassPartial
@@ -1320,31 +1126,17 @@ end makeClassPartial;
 
 public function setClassPartialPrefix "Sets the partial prefix of a SCode Class"
   input SCode.Partial partialPrefix;
-  input SCode.Element cl;
-  output SCode.Element outCl;
+  input output SCode.Element cl;
 algorithm
-  outCl := matchcontinue(partialPrefix, cl)
-    local
-      SCode.ClassDef parts;
-      SCode.Encapsulated e;
-      SCode.Ident id;
-      SourceInfo info;
-      SCode.Restriction restriction;
-      SCode.Prefixes prefixes;
-      SCode.Partial oldPartialPrefix;
-      SCode.Comment cmt;
-
-    // check if partial prefix are equal, so you can return the same thing!
-    case(_,SCode.CLASS(partialPrefix = oldPartialPrefix))
+  () := match cl
+    case SCode.CLASS()
       algorithm
-        true := valueEq(partialPrefix, oldPartialPrefix);
+        if not valueEq(partialPrefix, cl.partialPrefix) then
+          cl.partialPrefix := partialPrefix;
+        end if;
       then
-        cl;
-
-    // not the same, change
-    case(_,SCode.CLASS(id,prefixes,e,_,restriction,parts,cmt,info))
-      then SCode.CLASS(id,prefixes,e,partialPrefix,restriction,parts,cmt,info);
-  end matchcontinue;
+        ();
+  end match;
 end setClassPartialPrefix;
 
 public function findIteratorIndexedCrefsInEquations
@@ -1638,6 +1430,16 @@ algorithm
     else false;
   end match;
 end isClass;
+
+public function isImport
+  input SCode.Element element;
+  output Boolean isImport;
+algorithm
+  isImport := match element
+    case SCode.IMPORT() then true;
+    else false;
+  end match;
+end isImport;
 
 public function foldEquations<ArgT>
   "Calls the given function on the equation and all its subequations, and
@@ -2623,42 +2425,22 @@ protected
 algorithm
   SCode.CLASS(classDef = cdef) := inClassDef;
   cdef := addElementToCompositeClassDef(inElement, cdef);
-  outClassDef := setElementClassDefinition(cdef, inClassDef);
+  outClassDef := setClassDef(cdef, inClassDef);
 end addElementToClass;
 
 public function addElementToCompositeClassDef
   "Adds a given element to a PARTS class definition."
-  input SCode.Element inElement;
-  input SCode.ClassDef inClassDef;
-  output SCode.ClassDef outClassDef;
-protected
-  list<SCode.Element> el;
-  list<SCode.Equation> nel, iel;
-  list<SCode.AlgorithmSection> nal, ial;
-  list<SCode.ConstraintSection> nco;
-  Option<SCode.ExternalDecl> ed;
-  list<Absyn.NamedArg> clsattrs;
+  input SCode.Element element;
+  input output SCode.ClassDef classDef;
 algorithm
-  SCode.PARTS(el, nel, iel, nal, ial, nco, clsattrs, ed) := inClassDef;
-  outClassDef := SCode.PARTS(inElement :: el, nel, iel, nal, ial, nco, clsattrs, ed);
+  () := match classDef
+    case SCode.PARTS()
+      algorithm
+        classDef.elementLst := element :: classDef.elementLst;
+      then
+        ();
+  end match;
 end addElementToCompositeClassDef;
-
-public function setElementClassDefinition
-  input SCode.ClassDef inClassDef;
-  input SCode.Element inElement;
-  output SCode.Element outElement;
-protected
-  SCode.Ident n;
-  SCode.Prefixes pf;
-  SCode.Partial pp;
-  SCode.Encapsulated ep;
-  SCode.Restriction r;
-  SourceInfo i;
-  SCode.Comment cmt;
-algorithm
-  SCode.CLASS(n, pf, ep, pp, r, _, cmt, i) := inElement;
-  outElement := SCode.CLASS(n, pf, ep, pp, r, inClassDef, cmt, i);
-end setElementClassDefinition;
 
 public function visibilityBool
   "returns true for PUBLIC and false for PROTECTED"
@@ -2722,31 +2504,17 @@ algorithm
 end prefixesRedeclare;
 
 public function prefixesSetRedeclare
-  input SCode.Prefixes inPrefixes;
+  input output SCode.Prefixes prefixes;
   input SCode.Redeclare inRedeclare;
-  output SCode.Prefixes outPrefixes;
-protected
-  SCode.Visibility v;
-  SCode.Final f;
-  Absyn.InnerOuter io;
-  SCode.Replaceable rp;
 algorithm
-  SCode.PREFIXES(v, _, f, io, rp) := inPrefixes;
-  outPrefixes := SCode.PREFIXES(v, inRedeclare, f, io, rp);
+  prefixes.redeclarePrefix := inRedeclare;
 end prefixesSetRedeclare;
 
 public function prefixesSetReplaceable
-  input SCode.Prefixes inPrefixes;
+  input output SCode.Prefixes prefixes;
   input SCode.Replaceable inReplaceable;
-  output SCode.Prefixes outPrefixes;
-protected
-  SCode.Visibility v;
-  SCode.Final f;
-  Absyn.InnerOuter io;
-  SCode.Redeclare rd;
 algorithm
-  SCode.PREFIXES(v, rd, f, io, _) := inPrefixes;
-  outPrefixes := SCode.PREFIXES(v, rd, f, io, inReplaceable);
+  prefixes.replaceablePrefix := inReplaceable;
 end prefixesSetReplaceable;
 
 public function redeclareBool
@@ -3001,17 +2769,10 @@ algorithm
 end prefixesVisibility;
 
 public function prefixesSetVisibility
-  input SCode.Prefixes inPrefixes;
+  input output SCode.Prefixes prefixes;
   input SCode.Visibility inVisibility;
-  output SCode.Prefixes outPrefixes;
-protected
-  SCode.Redeclare rd;
-  SCode.Final f;
-  Absyn.InnerOuter io;
-  SCode.Replaceable rp;
 algorithm
-  SCode.PREFIXES(_, rd, f, io, rp) := inPrefixes;
-  outPrefixes := SCode.PREFIXES(inVisibility, rd, f, io, rp);
+  prefixes.visibility := inVisibility;
 end prefixesSetVisibility;
 
 public function eachEqual "Returns true if two each attributes are equal"
@@ -3058,22 +2819,11 @@ public function prefixesEqual "Returns true if two prefixes are equal"
   input SCode.Prefixes prefixes2;
   output Boolean equal;
 algorithm
-  equal := matchcontinue(prefixes1,prefixes2)
-    local
-      SCode.Visibility v1,v2;
-      SCode.Redeclare rd1,rd2;
-      SCode.Final f1,f2;
-      Absyn.InnerOuter io1,io2;
-      SCode.Replaceable rpl1,rpl2;
-    case(SCode.PREFIXES(v1,rd1,f1,io1,rpl1),SCode.PREFIXES(v2,rd2,f2,io2,rpl2))
-      guard valueEq(v1, v2) and valueEq(rd1, rd2)
-                            and valueEq(f1, f2)
-                            and AbsynUtil.innerOuterEqual(io1, io2)
-                            and replaceableEqual(rpl1, rpl2)
-      then
-        true;
-    else false;
-  end matchcontinue;
+  equal := valueEq(prefixes1.visibility, prefixes2.visibility) and
+           valueEq(prefixes1.redeclarePrefix, prefixes2.redeclarePrefix) and
+           valueEq(prefixes1.finalPrefix, prefixes2.finalPrefix) and
+           AbsynUtil.innerOuterEqual(prefixes1.innerOuter, prefixes2.innerOuter) and
+           replaceableEqual(prefixes1.replaceablePrefix, prefixes2.replaceablePrefix);
 end prefixesEqual;
 
 public function prefixesReplaceable "Returns the replaceable part"
@@ -3088,11 +2838,8 @@ public function elementPrefixes
   output SCode.Prefixes outPrefixes;
 algorithm
   outPrefixes := match(inElement)
-    local
-      SCode.Prefixes pf;
-
-    case SCode.CLASS(prefixes = pf) then pf;
-    case SCode.COMPONENT(prefixes = pf) then pf;
+    case SCode.CLASS() then inElement.prefixes;
+    case SCode.COMPONENT() then inElement.prefixes;
   end match;
 end elementPrefixes;
 
@@ -3141,17 +2888,9 @@ algorithm
 end prefixesSetInnerOuter;
 
 public function removeAttributeDimensions
-  input SCode.Attributes inAttributes;
-  output SCode.Attributes outAttributes;
-protected
-  SCode.ConnectorType ct;
-  SCode.Variability v;
-  SCode.Parallelism p;
-  Absyn.Direction d;
-  Absyn.IsField isf;
+  input output SCode.Attributes attributes;
 algorithm
-  SCode.ATTR(_, ct, p, v, d, isf) := inAttributes;
-  outAttributes := SCode.ATTR({}, ct, p, v, d, isf);
+  attributes.arrayDims := {};
 end removeAttributeDimensions;
 
 public function setAttributesDirection
@@ -3586,19 +3325,15 @@ algorithm
 end getComponentCondition;
 
 public function removeComponentCondition
-  input SCode.Element inElement;
-  output SCode.Element outElement;
-protected
-  SCode.Ident name;
-  SCode.Prefixes pf;
-  SCode.Attributes attr;
-  Absyn.TypeSpec ty;
-  SCode.Mod mod;
-  SCode.Comment cmt;
-  SourceInfo info;
+  input output SCode.Element element;
 algorithm
-  SCode.COMPONENT(name, pf, attr, ty, mod, cmt, _, info) := inElement;
-  outElement := SCode.COMPONENT(name, pf, attr, ty, mod, cmt, NONE(), info);
+  () := match element
+    case SCode.COMPONENT()
+      algorithm
+        element.condition := NONE();
+      then
+        ();
+  end match;
 end removeComponentCondition;
 
 public function isInnerComponent
@@ -3620,40 +3355,25 @@ algorithm
 end isInnerComponent;
 
 public function makeElementProtected
-  input SCode.Element inElement;
-  output SCode.Element outElement;
+  input output SCode.Element element;
+protected
+  SCode.Prefixes prefixes;
 algorithm
-  outElement := match(inElement)
-    local
-      SCode.Ident name;
-      SCode.Attributes attr;
-      Absyn.TypeSpec ty;
-      SCode.Mod mod;
-      SCode.Comment cmt;
-      Option<Absyn.Exp> cnd;
-      SourceInfo info;
-      SCode.Redeclare rdp;
-      SCode.Final fp;
-      Absyn.InnerOuter io;
-      SCode.Replaceable rpp;
-      SCode.Path bc;
-      Option<SCode.Annotation> ann;
+  () := match element
+    case SCode.COMPONENT(prefixes = prefixes as SCode.PREFIXES(visibility = SCode.PUBLIC()))
+      algorithm
+        prefixes.visibility := SCode.PROTECTED();
+        element.prefixes := prefixes;
+      then
+        ();
 
-    case SCode.COMPONENT(prefixes = SCode.PREFIXES(visibility = SCode.PROTECTED()))
-      then inElement;
+    case SCode.EXTENDS(visibility = SCode.PUBLIC())
+      algorithm
+        element.visibility := SCode.PROTECTED();
+      then
+        ();
 
-    case SCode.COMPONENT(name, SCode.PREFIXES(_, rdp, fp, io, rpp), attr, ty, mod, cmt, cnd, info)
-      then SCode.COMPONENT(name, SCode.PREFIXES(SCode.PROTECTED(), rdp, fp, io, rpp),
-        attr, ty, mod, cmt, cnd, info);
-
-    case SCode.EXTENDS(visibility = SCode.PROTECTED())
-      then inElement;
-
-    case SCode.EXTENDS(bc, _, mod, ann, info)
-      then SCode.EXTENDS(bc, SCode.PROTECTED(), mod, ann, info);
-
-    else inElement;
-
+    else ();
   end match;
 end makeElementProtected;
 
@@ -3681,95 +3401,6 @@ algorithm
   end match;
 end isElementEncapsulated;
 
-public function replaceOrAddElementInProgram
-"replace the element in program at the specified path (includes the element name).
- if the element does not exist at that location then it fails.
- this function will fail if any of the path prefixes
- to the element are not found in the given program"
-  input SCode.Program inProgram;
-  input SCode.Element inElement;
-  input Absyn.Path inClassPath;
-  output SCode.Program outProgram;
-algorithm
-  outProgram := match(inProgram, inElement, inClassPath)
-    local
-      SCode.Program sp;
-      SCode.Element c, e;
-      Absyn.Path p;
-      Absyn.Ident i;
-
-    case (_, _, Absyn.QUALIFIED(i, p))
-      algorithm
-        e := getElementWithId(inProgram, i);
-        sp := getElementsFromElement(inProgram, e);
-        sp := replaceOrAddElementInProgram(sp, inElement, p);
-        e := replaceElementsInElement(inProgram, e, sp);
-        sp := replaceOrAddElementWithId(inProgram, e, i);
-      then
-        sp;
-
-    case (_, _, Absyn.IDENT(i))
-      algorithm
-        sp := replaceOrAddElementWithId(inProgram, inElement, i);
-      then
-        sp;
-
-    case (_, _, Absyn.FULLYQUALIFIED(p))
-      algorithm
-        sp := replaceOrAddElementInProgram(inProgram, inElement, p);
-      then
-        sp;
-  end match;
-end replaceOrAddElementInProgram;
-
-public function replaceOrAddElementWithId
-"replace the class in program at the specified id.
- if the class does not exist at that location then is is added"
-  input SCode.Program inProgram;
-  input SCode.Element inElement;
-  input SCode.Ident inId;
-  output SCode.Program outProgram;
-algorithm
-  outProgram := matchcontinue(inProgram, inElement, inId)
-    local
-      SCode.Program sp, rest;
-      SCode.Element c, e;
-      Absyn.Path p;
-      Absyn.Ident i, n;
-
-    case (SCode.CLASS(name = n)::rest, _, i)
-      algorithm
-        true := stringEq(n, i);
-      then
-        inElement::rest;
-
-    case (SCode.COMPONENT(name = n)::rest, _, i)
-      algorithm
-        true := stringEq(n, i);
-      then
-        inElement::rest;
-
-    case (SCode.EXTENDS(baseClassPath = p)::rest, _, i)
-      algorithm
-        true := stringEq(AbsynUtil.pathString(p), i);
-      then
-        inElement::rest;
-
-    case (e::rest, _, i)
-      algorithm
-        sp := replaceOrAddElementWithId(rest, inElement, i);
-      then
-        e::sp;
-
-    // not found, add it
-    case ({}, _, _)
-      algorithm
-        sp := {inElement};
-      then
-        sp;
-  end matchcontinue;
-end replaceOrAddElementWithId;
-
 public function getElementsFromElement
   input SCode.Program inProgram;
   input SCode.Element inElement;
@@ -3795,89 +3426,6 @@ algorithm
         els;
   end match;
 end getElementsFromElement;
-
-public function replaceElementsInElement
-"replaces elements in element, it will search for elements pointed by derived"
-  input SCode.Program inProgram;
-  input SCode.Element inElement;
-  input SCode.Program inElements;
-  output SCode.Element outElement;
-algorithm
-  outElement := matchcontinue(inProgram, inElement, inElements)
-    local
-      SCode.Program els;
-      SCode.Element e;
-      Absyn.Path p;
-      Absyn.Ident i;
-      SCode.Ident name "the name of the class";
-      SCode.Prefixes prefixes "the common class or component prefixes";
-      SCode.Encapsulated encapsulatedPrefix "the encapsulated prefix";
-      SCode.Partial partialPrefix "the partial prefix";
-      SCode.Restriction restriction "the restriction of the class";
-      SCode.ClassDef classDef "the class specification";
-      SourceInfo info "the class information";
-      SCode.Comment cmt;
-
-    // a class with parts, non derived
-    case (_, SCode.CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef, cmt, info), _)
-      algorithm
-        (classDef, NONE()) := replaceElementsInClassDef(inProgram, classDef, inElements);
-      then
-        SCode.CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef, cmt, info);
-
-    // a class derived
-    case (_, SCode.CLASS(classDef = classDef), _)
-      algorithm
-        (classDef, SOME(e)) := replaceElementsInClassDef(inProgram, classDef, inElements);
-      then
-        e;
-
-  end matchcontinue;
-end replaceElementsInElement;
-
-public function replaceElementsInClassDef
-"replaces the elements in class definition.
- if derived a SOME(element) is returned,
- otherwise the modified class def and NONE()"
-  input SCode.Program inProgram;
-  input output SCode.ClassDef classDef;
-  input SCode.Program inElements;
-        output Option<SCode.Element> outElementOpt;
-algorithm
-  outElementOpt := match classDef
-    local
-      SCode.Element e;
-      Absyn.Path p;
-      SCode.ClassDef composition;
-
-    // a derived class
-    case SCode.DERIVED(typeSpec = Absyn.TPATH(path = p))
-      algorithm
-        e := getElementWithPath(inProgram, p);
-        e := replaceElementsInElement(inProgram, e, inElements);
-      then
-        SOME(e);
-
-    // a parts
-    case SCode.PARTS()
-      algorithm
-        classDef.elementLst := inElements;
-      then
-        NONE();
-
-    // a class extends
-    case SCode.CLASS_EXTENDS(composition = composition)
-      algorithm
-        (composition, outElementOpt) := replaceElementsInClassDef(inProgram, composition, inElements);
-
-        if isNone(outElementOpt) then
-          classDef.composition := composition;
-        end if;
-      then
-        outElementOpt;
-
-  end match;
-end replaceElementsInClassDef;
 
 protected function getElementWithId
 "returns the element from the program having the name as the id.
@@ -3972,18 +3520,16 @@ end getElementTypePath;
 public function setBaseClassPath
 "@auhtor: adrpo
  set the base class path in extends"
-  input SCode.Element inE;
+  input output SCode.Element element;
   input Absyn.Path inBcPath;
-  output SCode.Element outE;
-protected
-  SCode.Path bc;
-  SCode.Visibility v;
-  SCode.Mod m;
-  Option<SCode.Annotation> a;
-  SourceInfo i;
 algorithm
-  SCode.EXTENDS(bc, v, m, a, i) := inE;
-  outE := SCode.EXTENDS(inBcPath, v, m, a, i);
+  () := match element
+    case SCode.EXTENDS()
+      algorithm
+        element.baseClassPath := inBcPath;
+      then
+        ();
+  end match;
 end setBaseClassPath;
 
 public function getBaseClassPath
@@ -3991,37 +3537,22 @@ public function getBaseClassPath
  return the base class path in extends"
   input SCode.Element inE;
   output Absyn.Path outBcPath;
-protected
-  SCode.Path bc;
-  SCode.Visibility v;
-  SCode.Mod m;
-  Option<SCode.Annotation> a;
-  SourceInfo i;
 algorithm
   SCode.EXTENDS(baseClassPath = outBcPath) := inE;
 end getBaseClassPath;
 
 public function setComponentTypeSpec
-"@auhtor: adrpo
- set the typespec path in component"
-  input SCode.Element inE;
-  input Absyn.TypeSpec inTypeSpec;
-  output SCode.Element outE;
-protected
-  SCode.Ident n;
-  SCode.Prefixes pr;
-  SCode.Attributes atr;
-  Absyn.TypeSpec ts;
-  SCode.Comment cmt;
-  Option<Absyn.Exp> cnd;
-  SCode.Path bc;
-  SCode.Visibility v;
-  SCode.Mod m;
-  Option<SCode.Annotation> a;
-  SourceInfo i;
+  "Sets the typespec of a component element."
+  input output SCode.Element element;
+  input Absyn.TypeSpec typeSpec;
 algorithm
-  SCode.COMPONENT(n, pr, atr, ts, m, cmt, cnd, i) := inE;
-  outE := SCode.COMPONENT(n, pr, atr, inTypeSpec, m, cmt, cnd, i);
+  () := match element
+    case SCode.COMPONENT()
+      algorithm
+        element.typeSpec := typeSpec;
+      then
+        ();
+  end match;
 end setComponentTypeSpec;
 
 public function getComponentTypeSpec
@@ -4035,26 +3566,17 @@ algorithm
 end getComponentTypeSpec;
 
 public function setComponentMod
-"@auhtor: adrpo
- set the modification in component"
-  input SCode.Element inE;
-  input SCode.Mod inMod;
-  output SCode.Element outE;
-protected
-  SCode.Ident n;
-  SCode.Prefixes pr;
-  SCode.Attributes atr;
-  Absyn.TypeSpec ts;
-  SCode.Comment cmt;
-  Option<Absyn.Exp> cnd;
-  SCode.Path bc;
-  SCode.Visibility v;
-  SCode.Mod m;
-  Option<SCode.Annotation> a;
-  SourceInfo i;
+  "Sets the modification in a component element."
+  input output SCode.Element element;
+  input SCode.Mod mod;
 algorithm
-  SCode.COMPONENT(n, pr, atr, ts, m, cmt, cnd, i) := inE;
-  outE := SCode.COMPONENT(n, pr, atr, ts, inMod, cmt, cnd, i);
+  () := match element
+    case SCode.COMPONENT()
+      algorithm
+        element.modifications := mod;
+      then
+        ();
+  end match;
 end setComponentMod;
 
 public function getComponentMod
@@ -4086,32 +3608,6 @@ algorithm
   end match;
 end isClassExtends;
 
-public function setDerivedTypeSpec
-"@auhtor: adrpo
- set the base class path in extends"
-  input SCode.Element inE;
-  input Absyn.TypeSpec inTypeSpec;
-  output SCode.Element outE;
-protected
-  SCode.Ident n;
-  SCode.Prefixes pr;
-  SCode.Attributes atr;
-  SCode.Encapsulated ep;
-  SCode.Partial pp;
-  SCode.Restriction res;
-  SCode.ClassDef cd;
-  SourceInfo i;
-  Absyn.TypeSpec ts;
-  Option<SCode.Annotation> ann;
-  SCode.Comment cmt;
-  SCode.Mod m;
-algorithm
-  SCode.CLASS(n, pr, ep, pp, res, cd, cmt, i) := inE;
-  SCode.DERIVED(ts, m, atr) := cd;
-  cd := SCode.DERIVED(inTypeSpec, m, atr);
-  outE := SCode.CLASS(n, pr, ep, pp, res, cd, cmt, i);
-end setDerivedTypeSpec;
-
 public function getDerivedTypeSpec
 "@auhtor: adrpo
  set the base class path in extends"
@@ -4133,24 +3629,15 @@ algorithm
 end getDerivedMod;
 
 public function setClassPrefixes
-  input SCode.Prefixes inPrefixes;
-  input SCode.Element cl;
-  output SCode.Element outCl;
+  input SCode.Prefixes prefixes;
+  input output SCode.Element cl;
 algorithm
-  outCl := match(inPrefixes, cl)
-    local
-      SCode.ClassDef parts;
-      SCode.Encapsulated e;
-      SCode.Ident id;
-      SourceInfo info;
-      SCode.Restriction restriction;
-      SCode.Prefixes prefixes;
-      SCode.Partial pp;
-      SCode.Comment cmt;
-
-    // not the same, change
-    case(_,SCode.CLASS(id,_,e,pp,restriction,parts,cmt,info))
-      then SCode.CLASS(id,inPrefixes,e,pp,restriction,parts,cmt,info);
+  () := match cl
+    case SCode.CLASS()
+      algorithm
+        cl.prefixes := prefixes;
+      then
+        ();
   end match;
 end setClassPrefixes;
 
@@ -4400,58 +3887,24 @@ end elementMod;
 public function setElementMod
   "Sets the modifier of an element, or fails if the element is not capable of
    having a modifier."
-  input SCode.Element inElement;
-  input SCode.Mod inMod;
-  output SCode.Element outElement;
+  input output SCode.Element element;
+  input SCode.Mod mod;
 algorithm
-  outElement := match(inElement, inMod)
-    local
-      SCode.Ident n;
-      SCode.Prefixes pf;
-      SCode.Attributes attr;
-      Absyn.TypeSpec ty;
-      SCode.Comment cmt;
-      Option<Absyn.Exp> cnd;
-      SourceInfo i;
-      SCode.Encapsulated ep;
-      SCode.Partial pp;
-      SCode.Restriction res;
-      SCode.ClassDef cdef;
-      Absyn.Path bc;
-      SCode.Visibility vis;
-      Option<SCode.Annotation> ann;
-
-    case (SCode.COMPONENT(n, pf, attr, ty, _, cmt, cnd, i), _)
-      then SCode.COMPONENT(n, pf, attr, ty, inMod, cmt, cnd, i);
-
-    case (SCode.CLASS(n, pf, ep, pp, res, cdef, cmt, i), _)
-      algorithm
-        cdef := setClassDefMod(cdef, inMod);
-      then
-        SCode.CLASS(n, pf, ep, pp, res, cdef, cmt, i);
-
-    case (SCode.EXTENDS(bc, vis, _, ann, i), _)
-      then SCode.EXTENDS(bc, vis, inMod, ann, i);
-
+  () := match element
+    case SCode.COMPONENT() algorithm element.modifications := mod; then ();
+    case SCode.CLASS()     algorithm element.classDef := setClassDefMod(element.classDef, mod); then ();
+    case SCode.EXTENDS()   algorithm element.modifications := mod; then ();
   end match;
 end setElementMod;
 
 protected function setClassDefMod
-  input SCode.ClassDef inClassDef;
+  input output SCode.ClassDef classDef;
   input SCode.Mod inMod;
-  output SCode.ClassDef outClassDef;
 algorithm
-  outClassDef := match(inClassDef, inMod)
-    local
-      SCode.Ident bc;
-      SCode.ClassDef cdef;
-      Absyn.TypeSpec ty;
-      SCode.Attributes attr;
-
-    case (SCode.DERIVED(ty, _, attr), _) then SCode.DERIVED(ty, inMod, attr);
-    case (SCode.CLASS_EXTENDS(_, cdef), _) then SCode.CLASS_EXTENDS(inMod, cdef);
-    else inClassDef;
-
+  () := match classDef
+    case SCode.DERIVED()       algorithm classDef.modifications := inMod; then ();
+    case SCode.CLASS_EXTENDS() algorithm classDef.modifications := inMod; then ();
+    else ();
   end match;
 end setClassDefMod;
 
@@ -4470,79 +3923,6 @@ algorithm
     else false;
   end match;
 end isBuiltinElement;
-
-public function partitionElements
-  input list<SCode.Element> inElements;
-  output list<SCode.Element> outComponents;
-  output list<SCode.Element> outClasses;
-  output list<SCode.Element> outExtends;
-  output list<SCode.Element> outImports;
-  output list<SCode.Element> outDefineUnits;
-algorithm
-  (outComponents, outClasses, outExtends, outImports, outDefineUnits) :=
-    partitionElements2(inElements, {}, {}, {}, {}, {});
-end partitionElements;
-
-protected function partitionElements2
-  input list<SCode.Element> inElements;
-  input list<SCode.Element> inComponents;
-  input list<SCode.Element> inClasses;
-  input list<SCode.Element> inExtends;
-  input list<SCode.Element> inImports;
-  input list<SCode.Element> inDefineUnits;
-  output list<SCode.Element> outComponents;
-  output list<SCode.Element> outClasses;
-  output list<SCode.Element> outExtends;
-  output list<SCode.Element> outImports;
-  output list<SCode.Element> outDefineUnits;
-algorithm
-  (outComponents, outClasses, outExtends, outImports, outDefineUnits) :=
-  match(inElements, inComponents, inClasses, inExtends, inImports, inDefineUnits)
-    local
-      SCode.Element el;
-      list<SCode.Element> rest_el, comp, cls, ext, imp, def;
-
-    case ((el as SCode.COMPONENT()) :: rest_el, comp, cls, ext, imp, def)
-      algorithm
-        (comp, cls, ext, imp, def) :=
-          partitionElements2(rest_el, el :: comp, cls, ext, imp, def);
-      then
-        (comp, cls, ext, imp, def);
-
-    case ((el as SCode.CLASS()) :: rest_el, comp, cls, ext, imp, def)
-      algorithm
-        (comp, cls, ext, imp, def) :=
-          partitionElements2(rest_el, comp, el :: cls, ext, imp, def);
-      then
-        (comp, cls, ext, imp, def);
-
-    case ((el as SCode.EXTENDS()) :: rest_el, comp, cls, ext, imp, def)
-      algorithm
-        (comp, cls, ext, imp, def) :=
-          partitionElements2(rest_el, comp, cls, el :: ext, imp, def);
-      then
-        (comp, cls, ext, imp, def);
-
-    case ((el as SCode.IMPORT()) :: rest_el, comp, cls, ext, imp, def)
-      algorithm
-        (comp, cls, ext, imp, def) :=
-          partitionElements2(rest_el, comp, cls, ext, el :: imp, def);
-      then
-        (comp, cls, ext, imp, def);
-
-    case ((el as SCode.DEFINEUNIT()) :: rest_el, comp, cls, ext, imp, def)
-      algorithm
-        (comp, cls, ext, imp, def) :=
-          partitionElements2(rest_el, comp, cls, ext, imp, el :: def);
-      then
-        (comp, cls, ext, imp, def);
-
-    case ({}, comp, cls, ext, imp, def)
-      then (listReverse(comp), listReverse(cls), listReverse(ext),
-            listReverse(imp), listReverse(def));
-
-  end match;
-end partitionElements2;
 
 public function isExternalFunctionRestriction
   input SCode.FunctionRestriction inRestr;
@@ -4615,55 +3995,6 @@ algorithm
     case SCode.Element.DEFINEUNIT() then element.visibility;
   end match;
 end elementVisibility;
-
-public function setElementVisibility
-  input SCode.Element inElement;
-  input SCode.Visibility inVisibility;
-  output SCode.Element outElement;
-algorithm
-  outElement := match(inElement, inVisibility)
-    local
-      SCode.Ident name;
-      SCode.Prefixes prefs;
-      SCode.Attributes attr;
-      Absyn.TypeSpec ty;
-      SCode.Mod mod;
-      SCode.Comment cmt;
-      Option<Absyn.Exp> cond;
-      SourceInfo info;
-      SCode.Encapsulated ep;
-      SCode.Partial pp;
-      SCode.Restriction res;
-      SCode.ClassDef cdef;
-      Absyn.Path bc;
-      Option<SCode.Annotation> ann;
-      Absyn.Import imp;
-      Option<String> unit;
-      Option<Real> weight;
-
-    case (SCode.COMPONENT(name, prefs, attr, ty, mod, cmt, cond, info), _)
-      algorithm
-        prefs := prefixesSetVisibility(prefs, inVisibility);
-      then
-        SCode.COMPONENT(name, prefs, attr, ty, mod, cmt, cond, info);
-
-    case (SCode.CLASS(name, prefs, ep, pp, res, cdef, cmt, info), _)
-      algorithm
-        prefs := prefixesSetVisibility(prefs, inVisibility);
-      then
-        SCode.CLASS(name, prefs, ep, pp, res, cdef, cmt, info);
-
-    case (SCode.EXTENDS(bc, _, mod, ann, info), _)
-      then SCode.EXTENDS(bc, inVisibility, mod, ann, info);
-
-    case (SCode.IMPORT(imp, _, info), _)
-      then SCode.IMPORT(imp, inVisibility, info);
-
-    case (SCode.DEFINEUNIT(name, _, unit, weight, info), _)
-      then SCode.DEFINEUNIT(name, inVisibility, unit, weight, info);
-
-  end match;
-end setElementVisibility;
 
 public function isClassNamed
   "Returns true if the given element is a class with the given name, otherwise false."
@@ -4745,50 +4076,33 @@ public function mergeWithOriginal
  - prefixes and attributes are merged
  same with components
  TODO! how about non-short class definitions with constrained by with modifications?"
-  input SCode.Element inNew;
-  input SCode.Element inOld;
-  output SCode.Element outNew;
+  input output SCode.Element newClass;
+  input SCode.Element oldClass;
 algorithm
-  outNew := matchcontinue(inNew, inOld)
+  () := matchcontinue(newClass, oldClass)
     local
-      SCode.Element n, o;
-      SCode.Ident name1,name2;
       SCode.Prefixes prefixes1, prefixes2;
-      SCode.Encapsulated en1, en2;
-      SCode.Partial p1,p2;
-      SCode.Restriction restr1, restr2;
-      SCode.Attributes attr1,attr2;
-      SCode.Mod mod1,mod2;
-      Absyn.TypeSpec tp1,tp2;
-      Absyn.Import im1,im2;
-      Absyn.Path path1,path2;
-      Option<String> os1,os2;
-      Option<Real> or1,or2;
-      Option<Absyn.Exp> cond1, cond2;
       SCode.ClassDef cd1,cd2;
-      SCode.Comment cm;
-      SourceInfo i;
       SCode.Mod mCCNew, mCCOld;
 
     // for functions return the new one!
     case (_, _)
       algorithm
-        true := isFunction(inNew);
+        true := isFunction(newClass);
       then
-        inNew;
+        ();
 
-    case (SCode.CLASS(name1,prefixes1,en1,p1,restr1,cd1,cm,i),SCode.CLASS(_,prefixes2,_,_,_,cd2,_,_))
+    case (SCode.CLASS(prefixes = prefixes1, classDef = cd1),
+          SCode.CLASS(prefixes = prefixes2, classDef = cd2))
       algorithm
         mCCNew := getConstrainedByModifiers(prefixes1);
         mCCOld := getConstrainedByModifiers(prefixes2);
-        cd1 := mergeClassDef(cd1, cd2, mCCNew, mCCOld);
-        prefixes1 := propagatePrefixes(prefixes2, prefixes1);
-        n := SCode.CLASS(name1,prefixes1,en1,p1,restr1,cd1,cm,i);
+        newClass.classDef := mergeClassDef(cd1, cd2, mCCNew, mCCOld);
+        newClass.prefixes := propagatePrefixes(prefixes1, prefixes2);
       then
-        n;
+        ();
 
-    else inNew;
-
+    else ();
   end matchcontinue;
 end mergeWithOriginal;
 
@@ -4856,7 +4170,7 @@ algorithm
     case (SCode.MOD(f1, e1, sl1, b1, cmt, i1),
           SCode.MOD(f2, e2, sl2, b2, _))
       algorithm
-        b := mergeBindings(b1, b2);
+        b := if isSome(b1) then b1 else b2;
         sl := mergeSubMods(sl1, sl2);
         if referenceEq(b, b1) and referenceEq(sl, sl1) then
           m := inNewMod;
@@ -4872,17 +4186,6 @@ algorithm
 
   end matchcontinue;
 end mergeModifiers;
-
-protected function mergeBindings
-  input Option<Absyn.Exp> inNew;
-  input Option<Absyn.Exp> inOld;
-  output Option<Absyn.Exp> outBnd;
-algorithm
-  outBnd := match(inNew, inOld)
-    case (SOME(_), _) then inNew;
-    case (NONE(), _) then inOld;
-  end match;
-end mergeBindings;
 
 protected function mergeSubMods
   input list<SCode.SubMod> inNew;
@@ -4936,30 +4239,15 @@ algorithm
 end removeSub;
 
 public function mergeComponentModifiers
-  input SCode.Element inNewComp;
-  input SCode.Element inOldComp;
-  output SCode.Element outComp;
+  input output SCode.Element newComp;
+  input SCode.Element oldComp;
 algorithm
-  outComp := match(inNewComp, inOldComp)
-    local
-      SCode.Ident n1,n2;
-      SCode.Prefixes p1,p2;
-      SCode.Attributes a1,a2;
-      Absyn.TypeSpec t1,t2;
-      SCode.Mod m1,m2,m;
-      SCode.Comment c1,c2;
-      Option<Absyn.Exp> cnd1,cnd2;
-      SourceInfo i1,i2;
-      SCode.Element c;
-
-    case (SCode.COMPONENT(n1, p1, a1, t1, m1, c1, cnd1, i1),
-          SCode.COMPONENT(_, _, _, _, m2, _, _, _))
+  () := match (newComp, oldComp)
+    case (SCode.COMPONENT(), SCode.COMPONENT())
       algorithm
-        m := mergeModifiers(m1, m2);
-        c := SCode.COMPONENT(n1, p1, a1, t1, m, c1, cnd1, i1);
+        newComp.modifications := mergeModifiers(newComp.modifications, oldComp.modifications);
       then
-        c;
-
+        ();
   end match;
 end mergeComponentModifiers;
 
@@ -5011,8 +4299,8 @@ public function propagateConnectorType
   input SCode.ConnectorType inNewConnectorType;
   output SCode.ConnectorType outNewConnectorType;
 algorithm
-  outNewConnectorType := match(inOriginalConnectorType, inNewConnectorType)
-    case (_, SCode.POTENTIAL()) then inOriginalConnectorType;
+  outNewConnectorType := match inNewConnectorType
+    case SCode.POTENTIAL() then inOriginalConnectorType;
     else inNewConnectorType;
   end match;
 end propagateConnectorType;
@@ -5022,8 +4310,8 @@ public function propagateParallelism
   input SCode.Parallelism inNewParallelism;
   output SCode.Parallelism outNewParallelism;
 algorithm
-  outNewParallelism := match(inOriginalParallelism, inNewParallelism)
-    case (_, SCode.NON_PARALLEL()) then inOriginalParallelism;
+  outNewParallelism := match inNewParallelism
+    case SCode.NON_PARALLEL() then inOriginalParallelism;
     else inNewParallelism;
   end match;
 end propagateParallelism;
@@ -5033,8 +4321,8 @@ public function propagateVariability
   input SCode.Variability inNewVariability;
   output SCode.Variability outNewVariability;
 algorithm
-  outNewVariability := match(inOriginalVariability, inNewVariability)
-    case (_, SCode.VAR()) then inOriginalVariability;
+  outNewVariability := match inNewVariability
+    case SCode.VAR() then inOriginalVariability;
     else inNewVariability;
   end match;
 end propagateVariability;
@@ -5044,8 +4332,8 @@ public function propagateDirection
   input Absyn.Direction inNewDirection;
   output Absyn.Direction outNewDirection;
 algorithm
-  outNewDirection := match(inOriginalDirection, inNewDirection)
-    case (_, Absyn.BIDIR()) then inOriginalDirection;
+  outNewDirection := match inNewDirection
+    case Absyn.BIDIR() then inOriginalDirection;
     else inNewDirection;
   end match;
 end propagateDirection;
@@ -5055,70 +4343,51 @@ public function propagateIsField
   input Absyn.IsField inNewIsField;
   output Absyn.IsField outNewIsField;
 algorithm
-  outNewIsField := match (inOriginalIsField, inNewIsField)
-    case (_, Absyn.NONFIELD()) then inOriginalIsField;
+  outNewIsField := match inNewIsField
+    case Absyn.NONFIELD() then inOriginalIsField;
     else inNewIsField;
   end match;
 end propagateIsField;
 
-
 public function propagateAttributesVar
-  input SCode.Element inOriginalVar;
-  input SCode.Element inNewVar;
-  input Boolean inNewTypeIsArray;
-  output SCode.Element outNewVar;
-protected
-  SCode.Ident name;
-  SCode.Prefixes pref1, pref2;
-  SCode.Attributes attr1, attr2;
-  Absyn.TypeSpec ty;
-  SCode.Mod mod;
-  SCode.Comment cmt;
-  Option<Absyn.Exp> cond;
-  SourceInfo info;
+  input SCode.Element originalVar;
+  input output SCode.Element newVar;
+  input Boolean isNewTypeArray;
 algorithm
-  SCode.COMPONENT(prefixes = pref1, attributes = attr1) := inOriginalVar;
-  SCode.COMPONENT(name, pref2, attr2, ty, mod, cmt, cond, info) := inNewVar;
-  pref2 := propagatePrefixes(pref1, pref2);
-  attr2 := propagateAttributes(attr1, attr2, inNewTypeIsArray);
-  outNewVar := SCode.COMPONENT(name, pref2, attr2, ty, mod, cmt, cond, info);
+  () := match (originalVar, newVar)
+    case (SCode.COMPONENT(), SCode.COMPONENT())
+      algorithm
+        newVar.prefixes := propagatePrefixes(originalVar.prefixes, newVar.prefixes);
+        newVar.attributes := propagateAttributes(originalVar.attributes, newVar.attributes, isNewTypeArray);
+      then
+        ();
+  end match;
 end propagateAttributesVar;
 
 public function propagateAttributesClass
-  input SCode.Element inOriginalClass;
-  input SCode.Element inNewClass;
-  output SCode.Element outNewClass;
-protected
-  SCode.Ident name;
-  SCode.Prefixes pref1, pref2;
-  SCode.Encapsulated ep;
-  SCode.Partial pp;
-  SCode.Restriction res;
-  SCode.ClassDef cdef;
-  SCode.Comment cmt;
-  SourceInfo info;
+  input SCode.Element originalClass;
+  input output SCode.Element newClass;
 algorithm
-  SCode.CLASS(prefixes = pref1) := inOriginalClass;
-  SCode.CLASS(name, pref2, ep, pp, res, cdef, cmt, info) := inNewClass;
-  pref2 := propagatePrefixes(pref1, pref2);
-  outNewClass := SCode.CLASS(name, pref2, ep, pp, res, cdef, cmt, info);
+  () := match (originalClass, newClass)
+    case (SCode.CLASS(), SCode.CLASS())
+      algorithm
+        newClass.prefixes := propagatePrefixes(originalClass.prefixes, newClass.prefixes);
+      then
+        ();
+  end match;
 end propagateAttributesClass;
 
 public function propagatePrefixes
-  input SCode.Prefixes inOriginalPrefixes;
-  input SCode.Prefixes inNewPrefixes;
-  output SCode.Prefixes outNewPrefixes;
-protected
-  SCode.Visibility vis1, vis2;
-  Absyn.InnerOuter io1, io2;
-  SCode.Redeclare rdp;
-  SCode.Final fp;
-  SCode.Replaceable rpp;
+  input SCode.Prefixes originalPrefixes;
+  input output SCode.Prefixes newPrefixes;
 algorithm
-  SCode.PREFIXES(visibility = vis1, innerOuter = io1) := inOriginalPrefixes;
-  SCode.PREFIXES(vis2, rdp, fp, io2, rpp) := inNewPrefixes;
-  io2 := propagatePrefixInnerOuter(io1, io2);
-  outNewPrefixes := SCode.PREFIXES(vis2, rdp, fp, io2, rpp);
+  () := match (originalPrefixes, newPrefixes)
+    case (SCode.PREFIXES(), SCode.PREFIXES())
+      algorithm
+        newPrefixes.innerOuter := propagatePrefixInnerOuter(originalPrefixes.innerOuter, newPrefixes.innerOuter);
+      then
+        ();
+  end match;
 end propagatePrefixes;
 
 public function propagatePrefixInnerOuter
@@ -5126,8 +4395,8 @@ public function propagatePrefixInnerOuter
   input Absyn.InnerOuter inIO;
   output Absyn.InnerOuter outIO;
 algorithm
-  outIO := match(inOriginalIO, inIO)
-    case (_, Absyn.NOT_INNER_OUTER()) then inOriginalIO;
+  outIO := match inIO
+    case Absyn.NOT_INNER_OUTER() then inOriginalIO;
     else inIO;
   end match;
 end propagatePrefixInnerOuter;
@@ -5310,26 +4579,17 @@ algorithm
 end checkSameRestriction;
 
 public function setComponentName
-"@auhtor: adrpo
- set the name of the component"
-  input SCode.Element inE;
-  input SCode.Ident inName;
-  output SCode.Element outE;
-protected
-  SCode.Ident n;
-  SCode.Prefixes pr;
-  SCode.Attributes atr;
-  Absyn.TypeSpec ts;
-  SCode.Comment cmt;
-  Option<Absyn.Exp> cnd;
-  SCode.Path bc;
-  SCode.Visibility v;
-  SCode.Mod m;
-  Option<SCode.Annotation> a;
-  SourceInfo i;
+  "Sets the name of a component element."
+  input output SCode.Element element;
+  input SCode.Ident name;
 algorithm
-  SCode.COMPONENT(n, pr, atr, ts, m, cmt, cnd, i) := inE;
-  outE := SCode.COMPONENT(inName, pr, atr, ts, m, cmt, cnd, i);
+  () := match element
+    case SCode.COMPONENT()
+      algorithm
+        element.name := name;
+      then
+        ();
+  end match;
 end setComponentName;
 
 public function isArrayComponent

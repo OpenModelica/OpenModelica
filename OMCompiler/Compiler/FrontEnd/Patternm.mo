@@ -2254,7 +2254,7 @@ algorithm
     case (_,b,DAE.TUPLE(elabCrs2),_)
       algorithm
         (DAE.STMT_TUPLE_ASSIGN(expExpLst=elabCrs1,exp=e,source=DAE.SOURCE(info=i)),b) := List.splitLast(b);
-        List.threadMapAllValue(elabCrs1, elabCrs2, Expression.expEqual, true);
+        true := List.isEqualOnTrue(elabCrs1, elabCrs2, Expression.expEqual);
         (b,e,i) := elabResultExp2(false,b,e,i);
       then (b,e,i);
     else (body,elabExp,info);

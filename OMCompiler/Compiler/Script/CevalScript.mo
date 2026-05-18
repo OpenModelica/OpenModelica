@@ -2602,8 +2602,8 @@ algorithm
     case (_,_)
       algorithm
         SCode.CLASS(classDef=SCode.PARTS(elementLst=elts)) := List.getMemberOnTrue(name, sp, SCodeUtil.isClassNamed);
-        (_,_,_,elts,_) := SCodeUtil.partitionElements(elts);
-      then List.map(elts, importDepenency);
+        elts := list(e for e guard SCodeUtil.isImport(e) in elts);
+      then List.map(elts, importDependency);
   end match;
 end buildDependencyGraph;
 
@@ -2619,7 +2619,7 @@ algorithm
       algorithm
         SCode.CLASS(classDef=SCode.PARTS(elementLst=elts)) := List.getMemberOnTrue(name, sp, SCodeUtil.isClassNamed);
         elts := List.select(elts,SCodeUtil.elementIsPublicImport);
-      then List.map(elts, importDepenency);
+      then List.map(elts, importDependency);
   end match;
 end buildDependencyGraphPublicImports;
 
@@ -2640,7 +2640,7 @@ algorithm
   end matchcontinue;
 end buildTransitiveDependencyGraph;
 
-protected function importDepenency
+protected function importDependency
   input SCode.Element simp;
   output String name;
 algorithm
@@ -2657,11 +2657,11 @@ algorithm
     case SCode.IMPORT(imp=Absyn.GROUP_IMPORT(prefix=path)) then AbsynUtil.pathFirstIdent(path);
     case SCode.IMPORT(imp=imp,info=info)
       algorithm
-        str := "CevalScript.importDepenency could not handle:" + Dump.unparseImportStr(imp);
+        str := "CevalScript.importDependency could not handle:" + Dump.unparseImportStr(imp);
         Error.addSourceMessage(Error.INTERNAL_ERROR,{str},info);
       then fail();
   end match;
-end importDepenency;
+end importDependency;
 
 protected function compareNumberOfDependencies
   input tuple<String,list<String>> node1;
@@ -2808,7 +2808,7 @@ algorithm
       SourceInfo info;
     case (SCode.CLASS(name=name, classDef=SCode.PARTS(elementLst=elts), info = SOURCEINFO()),_,_,_)
       algorithm
-        protectedDepends := List.map(List.select(elts,SCodeUtil.elementIsProtectedImport),importDepenency);
+        protectedDepends := List.map(List.select(elts,SCodeUtil.elementIsProtectedImport),importDependency);
         protectedDepends := List.select(protectedDepends, isNotBuiltinImport);
         _::allDepends := Graph.allReachableNodes((name::protectedDepends,{}),deps,stringEq);
         allDepends := List.map1r(allDepends, stringAppend, prefix);
@@ -2817,7 +2817,7 @@ algorithm
       then str;
     case (SCode.CLASS(name=name, classDef=SCode.PARTS(elementLst=elts), info=info),_,_,_)
       algorithm
-        protectedDepends := List.map(List.select(elts,SCodeUtil.elementIsProtectedImport),importDepenency);
+        protectedDepends := List.map(List.select(elts,SCodeUtil.elementIsProtectedImport),importDependency);
         protectedDepends := List.select(protectedDepends, isNotBuiltinImport);
         allDepends := list(Util.tuple21(e) for e in deps);
         for d in protectedDepends loop
