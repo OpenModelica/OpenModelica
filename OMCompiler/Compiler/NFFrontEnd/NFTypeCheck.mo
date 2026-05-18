@@ -1443,15 +1443,16 @@ function checkLogicalUnaryOperation
 protected
   Expression e1, e2;
   MatchKind mk;
+  Type arr_ty = Type.arrayElementType(type1);
 algorithm
-  if Type.isComplex(Type.arrayElementType(type1)) then
+  if Type.isComplex(arr_ty) then
     (outExp,resultType) := checkOverloadedUnaryOperator(exp1, type1, var1, operator, context, info);
     return;
   end if;
 
   outExp := Expression.LUNARY(Operator.setType(type1, operator), exp1);
 
-  if not Type.isBoolean(Type.arrayElementType(type1)) then
+  if not (Type.isBoolean(arr_ty) or Type.isUnknown(arr_ty)) then
     printUnresolvableTypeError(outExp, {type1}, info);
   end if;
 end checkLogicalUnaryOperation;
