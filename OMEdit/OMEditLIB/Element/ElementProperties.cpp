@@ -184,20 +184,6 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
   } else if (mGroup.isEmpty() && !mShowStartAndFixed && (mpModelInstanceElement->isParameter() || mpModelInstanceElement->getAnnotation()->hasDialogAnnotation()
                                   || mpModelInstanceElement->getReplaceable())) {
     mGroup = Parameters;
-  } else if (!mShowStartAndFixed && !(mpModelInstanceElement->isParameter() || mpModelInstanceElement->getAnnotation()->hasDialogAnnotation()
-                                  || mpModelInstanceElement->getReplaceable())) {
-    // List only the modifiers of the element
-    ModelInstance::Modifier *pModelInstanceModifier = mpElementParameters->hasElement() ? mpElementParameters->getElement()->getModifier() : nullptr;
-    if (pModelInstanceModifier) {
-      foreach (auto *pModifier, pModelInstanceModifier->getModifiers()) {
-        if (pModifier->getName() == mpModelInstanceElement->getName()) {
-          if (!mTabDefined) {
-            mTab = Modifiers;
-          }
-          mGroup = Modifiers;
-        }
-      }
-    }
   }
 
   mpNameLabel = new Label;
@@ -1641,49 +1627,6 @@ void ElementParameters::setUpDialog()
   }
   pParametersScrollArea->getLayout()->addWidget(mpComponentClassGroupBox);
   mTabsMap.insert(General, mpParametersTabWidget->addTab(pParametersScrollArea, General));
-  // create Modifiers tab
-  ParametersScrollArea *pModifiersParametersScrollArea = new ParametersScrollArea;
-  GroupBox *pGroupBox = new GroupBox(AddNewModifiers);
-  pModifiersParametersScrollArea->addGroupBox(pGroupBox);
-  mpModifiersLabel = new Label("Add new modifiers, e.g., phi(start = 1), x(nominal = 3), x(max = 2) = y, system1(component3(p = 3))");
-  mpModifiersTextBox = new QLineEdit;
-  /* Do not add Modifiers tab when we are modifying top level parameters.
-   * We don't know yet how to set the modifiers in the top level parameter editing.
-   * For now simply hide the Modifiers tab in that case.
-   */
-  if (hasElement()) {
-    /* We hide the groupbox when we create it. Show the groupbox now since it has a parameter. */
-    pGroupBox->show();
-    QGridLayout *pGroupBoxGridLayout = pGroupBox->getGridLayout();
-    int rowIndex = pGroupBoxGridLayout->rowCount();
-    int columnIndex = 0;
-    // we match the layout same as defined for parameters layout below.
-    // label
-    pGroupBoxGridLayout->addWidget(mpModifiersLabel, rowIndex, columnIndex++);
-    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
-    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
-    pGroupBoxGridLayout->addWidget(mpModifiersTextBox, rowIndex, columnIndex++);
-    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
-    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
-    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
-    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
-    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
-    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
-    // text field
-    rowIndex++;
-    columnIndex = 0;
-    pGroupBoxGridLayout->addWidget(mpModifiersTextBox, rowIndex, columnIndex++);
-    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
-    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
-    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
-    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
-    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
-    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
-    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
-    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
-    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
-  }
-  mTabsMap.insert(Modifiers, mpParametersTabWidget->addTab(pModifiersParametersScrollArea, Modifiers));
   // create parameters tabs and groupboxes
   createTabsGroupBoxesAndParameters(getModel(), hasElement());
   fetchElementExtendsModifiers(getModel(), hasElement());
@@ -1717,6 +1660,7 @@ void ElementParameters::setUpDialog()
           QGridLayout *pGroupBoxGridLayout = pGroupBox->getGridLayout();
           int rowIndex = pGroupBoxGridLayout->rowCount();
           int columnIndex = 0;
+          mHandledModifiersVector.append(pParameter->getModelInstanceElement()->getName());
           pParameter->updateNameLabel();
           pGroupBoxGridLayout->addWidget(pParameter->getNameLabel(), rowIndex, columnIndex++, Qt::AlignRight);
           if (pParameter->isShowStartAndFixed()) {
@@ -1759,8 +1703,8 @@ void ElementParameters::setUpDialog()
       }
     }
   }
-  // Issue #7494. Hide any empty tab. We start the loop from 2 since we don't want to remove General and Modifiers tabs.
-  for (int i = 2; i < mpParametersTabWidget->count(); ++i) {
+  // Issue #7494. Hide any empty tab. We start the loop from 1 since we don't want to remove General tab.
+  for (int i = 1; i < mpParametersTabWidget->count(); ++i) {
     ParametersScrollArea *pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(i));
     if (pParametersScrollArea) {
       bool tabIsEmpty = true;
@@ -1779,17 +1723,59 @@ void ElementParameters::setUpDialog()
       }
     }
   }
-  // update modifiers tab name
-  GroupBox *pModifiersGroupBox = pModifiersParametersScrollArea->getGroupBox(Modifiers);
-  if (pModifiersGroupBox) {
-    int count = pModifiersGroupBox->getGridLayout()->rowCount() - 1;
-    if (count > 0) {
-      mpParametersTabWidget->setTabText(1, QString("Modifiers (%1)").arg(count));
+
+  mpModifiersLabel = new Label("Add new modifiers, e.g., phi(start = 1), x(nominal = 3), x(max = 2) = y, system1(component3(p = 3))");
+  mpModifiersTextBox = new QLineEdit;
+  /* Do not add "Add New Modifiers" group when we are modifying top level parameters.
+   * We don't know yet how to set the modifiers in the top level parameter editing.
+   * For now simply hide the Modifiers tab in that case.
+   */
+  if (hasElement()) {
+    // create Modifiers tab
+    ParametersScrollArea *pModifiersParametersScrollArea = new ParametersScrollArea;
+    GroupBox *pGroupBox = new GroupBox(AddNewModifiers);
+    pModifiersParametersScrollArea->addGroupBox(pGroupBox);
+    // We hide the groupbox when we create it. Show the groupbox now.
+    pGroupBox->show();
+    QGridLayout *pGroupBoxGridLayout = pGroupBox->getGridLayout();
+    // we match the layout same as defined for parameters layout below.
+    // label
+    pGroupBoxGridLayout->addWidget(mpModifiersLabel, 0, 0);
+    // text field
+    pGroupBoxGridLayout->addWidget(mpModifiersTextBox, 1, 0);
+    // Modifiers group box
+    GroupBox *pModifiersGroupBox = new GroupBox(Modifiers);
+    QGridLayout *pModifiersGroupBoxGridLayout = pModifiersGroupBox->getGridLayout();
+    pModifiersParametersScrollArea->addGroupBox(pModifiersGroupBox);
+    // We hide the groupbox when we create it. Show the groupbox now.
+    ModelInstance::Modifier *pModifier = mNested ? mpElementModifier : mpElement->getModifier();
+    int modifiersCount = 0;
+    if (pModifier) {
+      foreach (auto *pModifier, pModifier->getModifiers()) {
+        if (mHandledModifiersVector.contains(pModifier->getName())) {
+          continue;
+        }
+        Label *pModifierLabel = new Label(pModifier->getName());
+        mModifierLabelsVector.append(pModifierLabel);
+        QString modifierValue = pModifier->toString(true, true, false, true);
+        if (!modifierValue.startsWith("(")) {
+          modifierValue = QLatin1String("=") % modifierValue;
+        }
+        QLineEdit *pModifierValueTextBox = new QLineEdit(modifierValue);
+        mModifierTextBoxesVector.append(pModifierValueTextBox);
+        pModifiersGroupBoxGridLayout->addWidget(pModifierLabel, modifiersCount, 0, Qt::AlignRight);
+        pModifiersGroupBoxGridLayout->addWidget(pModifierValueTextBox, modifiersCount, 1);
+        modifiersCount++;
+      }
+    }
+    if (modifiersCount > 0) {
+      // We hide the groupbox when we create it. Show the groupbox now.
+      pModifiersGroupBox->show();
+      mpParametersTabWidget->addTab(pModifiersParametersScrollArea, QString("Modifiers (%1)").arg(modifiersCount));
+    } else {
+      mpParametersTabWidget->addTab(pModifiersParametersScrollArea, Modifiers);
     }
   }
-  // move Modifiers tab to the end
-  int lastIndex = mpParametersTabWidget->count() - 1;
-  mpParametersTabWidget->tabBar()->moveTab(1, lastIndex);
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
@@ -2224,6 +2210,16 @@ void ElementParameters::updateElementParameters()
       elementModifiersList.append(elementModifier);
     }
   }
+
+  // check if any modifier is modified in the modifiers tab
+   for (int i = 0; i < mModifierTextBoxesVector.size(); i++) {
+     QLineEdit *pModifierTextBox = mModifierTextBoxesVector.at(i);
+     if (pModifierTextBox->isModified()) {
+       valueChanged = true;
+       break;
+     }
+   }
+
   // if valueChanged is true then put the change in the undo stack.
   if (valueChanged || !mpModifiersTextBox->text().isEmpty()) {
     // apply the new Component modifiers if any
@@ -2268,6 +2264,27 @@ void ElementParameters::updateElementParameters()
         modifiersList.append(modifier);
       }
     }
+
+    if (hasElement()) {
+      // add custom modifiers added by user. See issue #5105
+      if (!mpModifiersTextBox->text().isEmpty()) {
+        Modifier modifier;
+        modifier.mValue = mpModifiersTextBox->text();
+        modifiersList.append(modifier);
+      }
+      // add modifiers from the Modifiers tab
+      for (int i = 0; i < mModifierTextBoxesVector.size(); i++) {
+        // only add if value is modified
+        QLineEdit *pModifierTextBox = mModifierTextBoxesVector.at(i);
+        if (pModifierTextBox->isModified()) {
+          Modifier modifier;
+          modifier.mName = mModifierLabelsVector.at(i)->text();
+          modifier.mValue = modifier.mName % pModifierTextBox->text();
+          modifiersList.append(modifier);
+        }
+      }
+    }
+
     if (mNested) {
       if (modifiersList.isEmpty()) {
         mModification.clear();
@@ -2276,12 +2293,6 @@ void ElementParameters::updateElementParameters()
       }
     } else {
       if (hasElement()) {
-        // add custom modifiers added by user. See issue #5105
-        if (!mpModifiersTextBox->text().isEmpty()) {
-          Modifier modifier;
-          modifier.mValue = mpModifiersTextBox->text();
-          modifiersList.append(modifier);
-        }
         QString modifiers = modifiersJoin(modifiersList, ", ");
         if (!modifiers.isEmpty()) {
           // if the element is inherited then add the modifier value into the extends.
