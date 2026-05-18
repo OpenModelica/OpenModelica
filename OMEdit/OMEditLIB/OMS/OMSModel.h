@@ -71,6 +71,8 @@ public:
   void deserialize(const QJsonObject &jsonObject);
   double getX() const {return x;}
   double getY() const {return y;}
+  void setX(double value) {x = value;}
+  void setY(double value) {y = value;}
 private:
   double x = 0.5;
   double y = 0.5;
@@ -80,17 +82,32 @@ class ElementGeometry
 {
 public:
   void deserialize(const QJsonObject &jsonObject);
-  ssd_element_geometry_t toSsdElementGeometry() const;
+  double getX1() const {return x1;}
+  double getY1() const {return y1;}
+  double getX2() const {return x2;}
+  double getY2() const {return y2;}
+  double getRotation() const {return rotation;}
+  QString getIconSource() const {return iconSource;}
+  double getIconRotation() const {return iconRotation;}
+  bool getIconFlip() const {return iconFlip;}
+  bool getIconFixedAspectRatio() const {return iconFixedAspectRatio;}
+  void setX1(double value) {x1 = value;}
+  void setY1(double value) {y1 = value;}
+  void setX2(double value) {x2 = value;}
+  void setY2(double value) {y2 = value;}
+  void setRotation(double value) {rotation = value;}
+  //ssd_element_geometry_t toSsdElementGeometry() const;
+
 private:
-  double mX1 = -10.0;
-  double mY1 = -10.0;
-  double mX2 = 10.0;
-  double mY2 = 10.0;
-  double mRotation = 0.0;
-  QString mIconSource;
-  double mIconRotation = 0.0;
-  bool mIconFlip = false;
-  bool mIconFixedAspectRatio = false;
+  double x1 = -10.0;
+  double y1 = -10.0;
+  double x2 = 10.0;
+  double y2 = 10.0;
+  double rotation = 0.0;
+  QString iconSource;
+  double iconRotation = 0.0;
+  bool iconFlip = false;
+  bool iconFixedAspectRatio = false;
 };
 
 class Connector
@@ -105,6 +122,7 @@ public:
   static SignalType signalTypeFromString(const QString &value);
   QString getCausalityString() const;
   QString getSignalTypeString() const;
+  void setGeometry(const ConnectorGeometry &geometry) {mGeometry = geometry;}
   bool isInput() const {return mCausality == Causality::oms_causality_input;}
   bool isOutput() const {return mCausality == Causality::oms_causality_output;}
   bool isParameter() const {return mCausality == Causality::oms_causality_parameter;}
@@ -128,6 +146,7 @@ public:
   const QVector<Connector*>& getConnectors() const {return mConnectors;}
   bool isSystem() const;
   bool isComponent() const;
+  void setGeometry(const ElementGeometry &geometry) {mGeometry = geometry;}
 private:
   QString mName;
   QString mType;

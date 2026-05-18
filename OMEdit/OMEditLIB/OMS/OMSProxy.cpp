@@ -495,7 +495,45 @@ bool OMSProxy::addConnector(QString cref, oms_causality_enu_t causality, oms_sig
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms_addConnector(cref.toUtf8().constData(), causality, type);
   logResponse(command, status, &commandTime);
+  //return statusToBool(status);
+
+  QStringList parts = cref.split(".");
+
+  // Save connector name before removing
+  QString connectorName = parts.last();
+
+  parts.removeFirst(); // remove "test"
+  parts.removeLast();  // remove "arun"
+
+  QJsonObject obj, args_;
+  obj["method"] = "addConnector";
+
+  args_["cref"] = QJsonArray::fromStringList(parts);
+  args_["name"] = connectorName;     // "arun"
+  args_["causality"] = "input";
+  args_["type"] = "real";
+
+  obj["args"] = args_;
+
+  qDebug() << QJsonDocument(obj).toJson(QJsonDocument::Compact);
+
+  QJsonObject reply;
+  //emit sendGuiCommand(obj);
+  mpGuiRequestSocket->sendCommand(obj, reply);
+
+
+  qDebug() << "inside add Connector completed";
+
+  QString method = reply["method"].toString();
+  QString status_ = reply["status"].toString();
+
+  QString msg = tr("%1 : %2").arg(method).arg(status_);
+
+  MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::notificationLevel));
+
+
   return statusToBool(status);
+  // return true;
 }
 
 /*!
@@ -1424,6 +1462,34 @@ bool OMSProxy::setConnectorGeometry(QString cref, const ssd_connector_geometry_t
   // return true;
 }
 
+bool OMSProxy::setConnectorGeometry(QString cref, const OMSModel::ConnectorGeometry &geometry)
+{
+  qDebug() << "setConnectorGeometry:" << cref
+           << "x:" << geometry.getX()
+           << "y:" << geometry.getY();
+
+  QStringList parts = cref.split(".");
+  parts.removeFirst(); // remove model name, e.g. "test"
+
+  QJsonObject geometryObject;
+  geometryObject["x"] = geometry.getX();
+  geometryObject["y"] = geometry.getY();
+
+  QJsonObject args;
+  args["cref"] = QJsonArray::fromStringList(parts);
+  args["geometry"] = geometryObject;
+
+  QJsonObject obj;
+  obj["method"] = "setConnectorGeometry";
+  obj["args"] = args;
+
+  QJsonObject reply;
+  mpGuiRequestSocket->sendCommand(obj, reply);
+
+  //return reply["status"].toString() == "ok";
+  return true;
+}
+
 /*!
  * \brief OMSProxy::setElementGeometry
  * Sets the element geometry
@@ -1433,37 +1499,40 @@ bool OMSProxy::setConnectorGeometry(QString cref, const ssd_connector_geometry_t
  */
 bool OMSProxy::setElementGeometry(QString cref, const ssd_element_geometry_t* pGeometry)
 {
-  // QString command = "oms_setElementGeometry";
-  // QStringList args;
-  // args << "\"" + cref + "\"";
-  // LOG_COMMAND(command, args);
-  // oms_status_enu_t status = oms_setElementGeometry(cref.toUtf8().constData(), pGeometry);
-  // logResponse(command, status, &commandTime);
-  //return statusToBool(status);
+  QString command = "oms_setElementGeometry";
+  QStringList args;
+  args << "\"" + cref + "\"";
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms_setElementGeometry(cref.toUtf8().constData(), pGeometry);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
 
+bool OMSProxy::setElementGeometry(QString cref, const OMSModel::ElementGeometry &geometry)
+{
+  qDebug() << "setElementGeometry:" << cref;
 
-  // Todo set geometry position via zmq
   QStringList parts = cref.split(".");
-  parts.removeFirst(); // remove model name, e.g. "test"
+  parts.removeFirst();
 
-  QJsonObject geometry;
-  geometry["x1"] = pGeometry->x1;
-  geometry["y1"] = pGeometry->y1;
-  geometry["x2"] = pGeometry->x2;
-  geometry["y2"] = pGeometry->y2;
-  geometry["rotation"] = pGeometry->rotation;
-  geometry["iconSource"] = pGeometry->iconSource ? QString(pGeometry->iconSource) : QString();
-  geometry["iconRotation"] = pGeometry->iconRotation;
-  geometry["iconFlip"] = pGeometry->iconFlip;
-  geometry["iconFixedAspectRatio"] = pGeometry->iconFixedAspectRatio;
+  QJsonObject geometryObject;
+  geometryObject["x1"] = geometry.getX1();
+  geometryObject["y1"] = geometry.getY1();
+  geometryObject["x2"] = geometry.getX2();
+  geometryObject["y2"] = geometry.getY2();
+  geometryObject["rotation"] = geometry.getRotation();
+  geometryObject["iconSource"] = geometry.getIconSource();
+  geometryObject["iconRotation"] = geometry.getIconRotation();
+  geometryObject["iconFlip"] = geometry.getIconFlip();
+  geometryObject["iconFixedAspectRatio"] = geometry.getIconFixedAspectRatio();
 
-  QJsonObject args_;
-  args_["cref"] = QJsonArray::fromStringList(parts);
-  args_["geometry"] = geometry;
+  QJsonObject args;
+  args["cref"] = QJsonArray::fromStringList(parts);
+  args["geometry"] = geometryObject;
 
   QJsonObject obj;
   obj["method"] = "setElementGeometry";
-  obj["args"] = args_;
+  obj["args"] = args;
 
   QJsonObject reply;
   mpGuiRequestSocket->sendCommand(obj, reply);

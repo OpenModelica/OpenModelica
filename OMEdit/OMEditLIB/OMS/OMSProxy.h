@@ -42,7 +42,7 @@
 
 #include "OMSimulator/OMSimulator.h"
 #include "Modeling/MessagesWidget.h"
-
+#include "OMS/OMSModel.h"
 #include <QObject>
 #include <QElapsedTimer>
 
@@ -151,7 +151,9 @@ public:
   bool setCommandLineOption(QString cmd);
   bool setConnectionGeometry(QString crefA, QString crefB, const ssd_connection_geometry_t *pGeometry);
   bool setConnectorGeometry(QString cref, const ssd_connector_geometry_t* pGeometry);
+  bool setConnectorGeometry(QString cref, const OMSModel::ConnectorGeometry &geometry);
   bool setElementGeometry(QString cref, const ssd_element_geometry_t* pGeometry);
+  bool setElementGeometry(QString cref, const OMSModel::ElementGeometry &geometry);
   bool setFixedStepSize(QString cref, double stepSize);
   void setLogFile(QString filename);
   void setLoggingCallback();
