@@ -1355,7 +1355,7 @@ algorithm
       then
         (exp, exp.ty, Variability.CONSTANT, Purity.PURE);
 
-    case Expression.ARRAY()  then typeArray(exp.elements, exp.literal, context, info);
+    case Expression.ARRAY()  then typeArray(exp.elements, exp.literal, exp.ty, context, info);
     case Expression.MATRIX() then typeMatrix(exp.elements, context, info);
     case Expression.RANGE()  then typeRange(exp, context, info);
     case Expression.TUPLE()  then typeTuple(exp.elements, context, info);
@@ -2229,6 +2229,7 @@ end checkSubscriptType;
 function typeArray
   input array<Expression> elements;
   input Boolean isLiteral;
+  input Type ty;
   input InstContext.Type context;
   input SourceInfo info;
   output Expression arrayExp;
@@ -2272,6 +2273,11 @@ algorithm
       expl := exp :: expl;
       tys := ty2 :: tys;
     end for;
+  else
+    // If the array is empty it probably already has a type, since empty arrays
+    // can't be created in Modelica without evaluating some expression. So use
+    // that type instead of an unknown type so we don't lose it.
+    ty1 := Type.arrayElementType(ty);
   end if;
 
   // Give the actual error-messages here after we got the super-type of the array
