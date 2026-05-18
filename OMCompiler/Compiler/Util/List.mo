@@ -5191,7 +5191,7 @@ public function allCombinations<T>
   input SourceInfo info;
   output list<list<T>> out;
 algorithm
-  out := matchcontinue (lst,maxTotalSize,info)
+  out := match (lst,maxTotalSize,info)
     local
       Integer sz,maxSz;
     case (_,SOME(maxSz),_)
@@ -5206,7 +5206,7 @@ algorithm
         Error.addSourceMessage(Error.COMPILER_NOTIFICATION, {"List.allCombinations failed because the input was too large"}, info);
       then fail();
     */
-  end matchcontinue;
+  end match;
 end allCombinations;
 
 protected function allCombinations2<T>
@@ -5225,8 +5225,7 @@ algorithm
     case (x::lst)
       algorithm
         lst := allCombinations2(lst);
-        lst := allCombinations3(x, lst, {});
-      then lst;
+      then allCombinations3(x, lst, {});
   end match;
 end allCombinations2;
 
@@ -5236,38 +5235,34 @@ protected function allCombinations3<T>
   input list<list<T>> iacc;
   output list<list<T>> out;
 algorithm
-  out := match (ilst1,ilst2,iacc)
+  out := match ilst1
     local
       T x;
       list<T> lst1;
       list<list<T>> lst2;
       list<list<T>> acc;
-    case ({},_,acc) then listReverse(acc);
-    case (x::lst1,lst2,acc)
+    case {} then listReverse(iacc);
+    case x::lst1
       algorithm
-        acc := allCombinations4(x, lst2, acc);
-        acc := allCombinations3(lst1, lst2, acc);
-      then acc;
+        acc := allCombinations4(x, lst2, iacc);
+      then allCombinations3(lst1, lst2, acc);
   end match;
 end allCombinations3;
 
 protected function allCombinations4<T>
   input T x;
   input list<list<T>> ilst;
-  input list<list<T>> iacc;
+  input list<list<T>> acc;
   output list<list<T>> out;
 algorithm
-  out := match (x,ilst,iacc)
+  out := match ilst
     local
       list<T> l;
       list<list<T>> lst;
-      list<list<T>> acc;
-    case (_,{},acc) then {x}::acc;
-    case (_,{l},acc) then (x::l)::acc;
-    case (_,l::lst,acc)
-      algorithm
-        acc := allCombinations4(x, lst, (x::l)::acc);
-      then acc;
+    case {} then {x}::acc;
+    case {l} then (x::l)::acc;
+    case l::lst
+      then allCombinations4(x, lst, (x::l)::acc);
   end match;
 end allCombinations4;
 
