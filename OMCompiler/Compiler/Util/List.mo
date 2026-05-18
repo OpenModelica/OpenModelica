@@ -5239,13 +5239,12 @@ algorithm
     local
       T x;
       list<T> lst1;
-      list<list<T>> lst2;
       list<list<T>> acc;
     case {} then listReverse(iacc);
     case x::lst1
       algorithm
-        acc := allCombinations4(x, lst2, iacc);
-      then allCombinations3(lst1, lst2, acc);
+        acc := allCombinations4(x, ilst2, iacc);
+      then allCombinations3(lst1, ilst2, acc);
   end match;
 end allCombinations3;
 
