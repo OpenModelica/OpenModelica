@@ -3361,43 +3361,6 @@ algorithm
   outList2 := listReverseInPlace(outList2);
 end threadMapList_2;
 
-public function threadMapAllValue<T1, T2, VT>
-  "Takes two lists and a function and threads (interleaves) and maps the
-   elements of two lists, and checks if the result is the same as the given
-   value.
-     Example: threadMapAllValue({true, true}, {false, true}, boolAnd, true) =>
-              fail"
-  input list<T1> inList1;
-  input list<T2> inList2;
-  input MapFunc inMapFunc;
-  input VT inValue;
-
-  partial function MapFunc
-    input T1 inElement1;
-    input T2 inElement2;
-    output VT outElement;
-  end MapFunc;
-algorithm
-  _ := match(inList1, inList2)
-    local
-      T1 e1;
-      list<T1> rest1;
-      T2 e2;
-      list<T2> rest2;
-      VT res;
-
-    case (e1 :: rest1, e2 :: rest2)
-      algorithm
-        res := inMapFunc(e1, e2);
-        true := valueEq(res, inValue);
-        threadMapAllValue(rest1, rest2, inMapFunc, inValue);
-      then
-        ();
-
-    case ({}, {}) then ();
-  end match;
-end threadMapAllValue;
-
 public function threadMap1<T1, T2, TO, ArgT1>
   "Takes two lists and a function and threads (interleaves) and maps the
    elements of two lists, creating a new list. This function also takes an

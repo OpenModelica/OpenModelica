@@ -2807,7 +2807,7 @@ algorithm
       algorithm
         sl1:=List.map(enumLst,SCodeUtil.enumName);
         sl2:=List.map(elementLst,SCodeUtil.elementName);
-        List.threadMapAllValue(sl1,sl2,stringEq,true);
+        true := List.isEqualOnTrue(sl1,sl2,stringEq);
       then
         ();
 
@@ -2815,7 +2815,7 @@ algorithm
       algorithm
         sl1:=List.map(enumLst,SCodeUtil.enumName);
         sl2:=List.map(elementLst,SCodeUtil.elementName);
-        List.threadMapAllValue(sl1,sl2,stringEq,true);
+        true := List.isEqualOnTrue(sl1,sl2,stringEq);
       then
         ();
 

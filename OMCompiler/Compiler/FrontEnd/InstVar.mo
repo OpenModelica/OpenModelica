@@ -1131,7 +1131,7 @@ algorithm
             TODO: Keep records?
           */
           if implicitInstantiation then
-            classWithElementsRemoved := SCodeUtil.setElementClassDefinition(SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()), inClass);
+            classWithElementsRemoved := SCodeUtil.setClassDef(SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()), inClass);
             (_, env_1, ih, store, dae1, csets, ty,_, opt_attr, graph) :=
             Inst.instClass(cache, env, ih, store, inMod, pre, classWithElementsRemoved, inInstDims,
                            inImpl, InstTypes.INNER_CALL(), inGraph, inSets);

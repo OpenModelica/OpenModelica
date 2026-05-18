@@ -96,7 +96,7 @@ algorithm
         env := NFSCodeEnv.enterFrame(cls_env, inEnv);
 
         (cdef, cls_env :: env) := flattenClassDef(cdef, env, info);
-        cls := SCodeUtil.setElementClassDefinition(cdef, inClass);
+        cls := SCodeUtil.setClassDef(cdef, inClass);
         item := NFSCodeEnv.newClassItem(cls, {cls_env}, cls_ty);
         env := NFSCodeEnv.updateItemInEnv(item, env, name);
       then
