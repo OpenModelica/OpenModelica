@@ -7252,34 +7252,17 @@ void ModelWidget::drawOMSModelDiagramElements()
   if (mpLibraryTreeItem->isTopLevel() || mpLibraryTreeItem->isSystemElement()) {
     for (int i = 0 ; i < mpLibraryTreeItem->childrenSize() ; i++) {
       LibraryTreeItem *pChildLibraryTreeItem = mpLibraryTreeItem->childAt(i);
-      /* We only draw the elements here
-       * Connectors are already drawn as part of ModelWidget::drawOMSModelIconElements();
-       */
-      ssd_element_geometry_t elementGeometry = pChildLibraryTreeItem->getOMSElementGeometry();
 
-      //if (pChildLibraryTreeItem->getOMSElement() && pChildLibraryTreeItem->getOMSElement()->geometry) {
-      //if (pChildLibraryTreeItem->getOMSElementJson().contains("geometry")) {
-        //QJsonObject geometry = pChildLibraryTreeItem->getOMSElementJson()["geometry"].toObject();
-      //check if we have zero width and height
-        double x1, y1, x2, y2, rotation;
-        // x1 = pChildLibraryTreeItem->getOMSElement()->geometry->x1;
-        // y1 = pChildLibraryTreeItem->getOMSElement()->geometry->y1;
-        // x2 = pChildLibraryTreeItem->getOMSElement()->geometry->x2;
-        // y2 = pChildLibraryTreeItem->getOMSElement()->geometry->y2;
-        // x1 = geometry["x1"].toDouble(-10.0);
-        // y1 = geometry["y1"].toDouble(-10.0);
-        // x2 = geometry["x2"].toDouble(10.0);
-        // y2 = geometry["y2"].toDouble(10.0);
-        // rotation = geometry["rotation"].toDouble(0.0);
-        //elementGeometry.iconRotation = geometry["iconRotation"].toDouble(0.0);
-
-        x1 = elementGeometry.x1;
-        y1 = elementGeometry.y1;
-        x2 = elementGeometry.x2;
-        y2 = elementGeometry.y2;
+      if (pChildLibraryTreeItem->getOMSModelElement()) {
+        const OMSModel::ElementGeometry &elementGeometry = pChildLibraryTreeItem->getOMSModelElement()->getGeometry();
+        double x1 = elementGeometry.getX1();
+        double y1 = elementGeometry.getY1();
+        double x2 = elementGeometry.getX2();
+        double y2 = elementGeometry.getY2();
 
         double width = x2 - x1;
         double height = y2 - y1;
+
         // check zero width
         if (qFuzzyCompare(width, 0.0)) {
           x1 = -10.0;
@@ -7299,21 +7282,21 @@ void ModelWidget::drawOMSModelDiagramElements()
         // vertical position
         y1 = y1 - origY;
         y2 = y2 - origY;
-        // Load the ModelWidget if not loaded already
+
         if (!pChildLibraryTreeItem->getModelWidget()) {
           MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pChildLibraryTreeItem, false);
         }
 
         QString annotation = QString("Placement(true,%1,%2,%3,%4,%5,%6,%7,-,-,-,-,-,-,)")
-                             .arg(origX).arg(origY)
-                             .arg(x1).arg(y1)
-                             .arg(x2).arg(y2)
-                             .arg(elementGeometry.rotation);
+            .arg(origX).arg(origY)
+            .arg(x1).arg(y1)
+            .arg(x2).arg(y2)
+            .arg(elementGeometry.getRotation());
 
         if (pChildLibraryTreeItem->isSystemElement() || pChildLibraryTreeItem->isComponentElement()) {
           drawOMSElement(pChildLibraryTreeItem, annotation);
         }
-      //}
+      }
     }
   }
 }

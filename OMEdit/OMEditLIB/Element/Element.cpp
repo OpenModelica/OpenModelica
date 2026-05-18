@@ -1783,8 +1783,9 @@ void Element::updatePlacementAnnotation()
   // Add component annotation.
   LibraryTreeItem *pLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
   if (pLibraryTreeItem->isSSP()) {
-    if (mpLibraryTreeItem && mpLibraryTreeItem->getOMSElement() || mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
-      ssd_element_geometry_t elementGeometry = mpLibraryTreeItem->getOMSElementGeometry();
+    if (mpLibraryTreeItem && mpLibraryTreeItem->getOMSModelElement() || (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement())) {
+      //ssd_element_geometry_t elementGeometry = mpLibraryTreeItem->getOMSElementGeometry();
+      OMSModel::ElementGeometry elementGeometry = mpLibraryTreeItem->getOMSModelElement()->getGeometry();
       ExtentAnnotation extent = mTransformation.getExtent();
       QPointF extent1 = extent.at(0);
       QPointF extent2 = extent.at(1);
@@ -1792,22 +1793,24 @@ void Element::updatePlacementAnnotation()
       extent1.setY(extent1.y() + mTransformation.getOrigin().y());
       extent2.setX(extent2.x() + mTransformation.getOrigin().x());
       extent2.setY(extent2.y() + mTransformation.getOrigin().y());
-      elementGeometry.x1 = extent1.x();
-      elementGeometry.y1 = extent1.y();
-      elementGeometry.x2 = extent2.x();
-      elementGeometry.y2 = extent2.y();
-      elementGeometry.rotation = mTransformation.getRotateAngle();
-      OMSProxy::instance()->setElementGeometry(mpLibraryTreeItem->getNameStructure(), &elementGeometry);
-    } else if (mpLibraryTreeItem && (mpLibraryTreeItem->getOMSConnector()
+      elementGeometry.setX1(extent1.x());
+      elementGeometry.setY1(extent1.y());
+      elementGeometry.setX2(extent2.x());
+      elementGeometry.setY2(extent2.y());
+      elementGeometry.setRotation(mTransformation.getRotateAngle());
+      OMSProxy::instance()->setElementGeometry(mpLibraryTreeItem->getNameStructure(), elementGeometry);
+      mpLibraryTreeItem->getOMSModelElement()->setGeometry(elementGeometry);
+    } else if (mpLibraryTreeItem && (mpLibraryTreeItem->getOMSModelConnector()
                                      || mpLibraryTreeItem->getOMSBusConnector())) {
-      //OMSModel::ConnectorGeometry connectorGeometry;
-      ssd_connector_geometry_t connectorGeometry;
-      connectorGeometry.x = Utilities::mapToCoordinateSystem(mTransformation.getOrigin().x(), -100, 100, 0, 1);
-      connectorGeometry.y = Utilities::mapToCoordinateSystem(mTransformation.getOrigin().y(), -100, 100, 0, 1);
+      OMSModel::ConnectorGeometry connectorGeometry;
+      //ssd_connector_geometry_t connectorGeometry;
+      connectorGeometry.setX(Utilities::mapToCoordinateSystem(mTransformation.getOrigin().x(), -100, 100, 0, 1));
+      connectorGeometry.setY(Utilities::mapToCoordinateSystem(mTransformation.getOrigin().y(), -100, 100, 0, 1));
       if (mpLibraryTreeItem->getOMSModelConnector()) {
-        OMSProxy::instance()->setConnectorGeometry(mpLibraryTreeItem->getNameStructure(), &connectorGeometry);
+        OMSProxy::instance()->setConnectorGeometry(mpLibraryTreeItem->getNameStructure(), connectorGeometry);
+        mpLibraryTreeItem->getOMSModelConnector()->setGeometry(connectorGeometry);
       } else if (mpLibraryTreeItem->getOMSBusConnector()) {
-        OMSProxy::instance()->setBusGeometry(mpLibraryTreeItem->getNameStructure(), &connectorGeometry);
+        //OMSProxy::instance()->setBusGeometry(mpLibraryTreeItem->getNameStructure(), &connectorGeometry);
       }
       /* We have connector both on icon and diagram layer.
        * If one connector is updated then update the other connector automatically.

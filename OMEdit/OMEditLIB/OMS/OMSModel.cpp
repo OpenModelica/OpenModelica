@@ -14,39 +14,39 @@ void ConnectorGeometry::deserialize(const QJsonObject &jsonObject)
 
 void ElementGeometry::deserialize(const QJsonObject &jsonObject)
 {
-  mX1 = jsonObject.value("x1").toDouble(-10.0);
-  mY1 = jsonObject.value("y1").toDouble(-10.0);
-  mX2 = jsonObject.value("x2").toDouble(10.0);
-  mY2 = jsonObject.value("y2").toDouble(10.0);
-  mRotation = jsonObject.value("rotation").toDouble(0.0);
-  mIconSource = jsonObject.value("iconSource").toString();
-  mIconRotation = jsonObject.value("iconRotation").toDouble(0.0);
-  mIconFlip = jsonObject.value("iconFlip").toBool(false);
-  mIconFixedAspectRatio = jsonObject.value("iconFixedAspectRatio").toBool(false);
+  x1 = jsonObject.value("x1").toDouble(-10.0);
+  y1 = jsonObject.value("y1").toDouble(-10.0);
+  x2 = jsonObject.value("x2").toDouble(10.0);
+  y2 = jsonObject.value("y2").toDouble(10.0);
+  rotation = jsonObject.value("rotation").toDouble(0.0);
+  iconSource = jsonObject.value("iconSource").toString();
+  iconRotation = jsonObject.value("iconRotation").toDouble(0.0);
+  iconFlip = jsonObject.value("iconFlip").toBool(false);
+  iconFixedAspectRatio = jsonObject.value("iconFixedAspectRatio").toBool(false);
 }
 
-ssd_element_geometry_t ElementGeometry::toSsdElementGeometry() const
-{
-    ssd_element_geometry_t geometry;
-    geometry.x1 = mX1;
-    geometry.y1 = mY1;
-    geometry.x2 = mX2;
-    geometry.y2 = mY2;
-    geometry.rotation = mRotation;
-    geometry.iconRotation = mIconRotation;
-    geometry.iconFlip = mIconFlip;
-    geometry.iconFixedAspectRatio = mIconFixedAspectRatio;
+// ssd_element_geometry_t ElementGeometry::toSsdElementGeometry() const
+// {
+//     ssd_element_geometry_t geometry;
+//     geometry.x1 = mX1;
+//     geometry.y1 = mY1;
+//     geometry.x2 = mX2;
+//     geometry.y2 = mY2;
+//     geometry.rotation = mRotation;
+//     geometry.iconRotation = mIconRotation;
+//     geometry.iconFlip = mIconFlip;
+//     geometry.iconFixedAspectRatio = mIconFixedAspectRatio;
 
-    if (mIconSource.isEmpty()) {
-        geometry.iconSource = NULL;
-    } else {
-        QByteArray iconSourceBytes = mIconSource.toUtf8();
-        geometry.iconSource = new char[iconSourceBytes.size() + 1];
-        strcpy(geometry.iconSource, iconSourceBytes.constData());
-    }
+//     if (mIconSource.isEmpty()) {
+//         geometry.iconSource = NULL;
+//     } else {
+//         QByteArray iconSourceBytes = mIconSource.toUtf8();
+//         geometry.iconSource = new char[iconSourceBytes.size() + 1];
+//         strcpy(geometry.iconSource, iconSourceBytes.constData());
+//     }
 
-    return geometry;
-}
+//     return geometry;
+// }
 
 void Connector::deserialize(const QJsonObject &jsonObject)
 {
