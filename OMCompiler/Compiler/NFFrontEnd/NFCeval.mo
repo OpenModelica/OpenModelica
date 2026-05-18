@@ -2630,6 +2630,7 @@ algorithm
   end match;
 end evalBuiltinMax;
 
+public
 function evalBuiltinMax2
   input Expression exp1;
   input Expression exp2;
@@ -2650,6 +2651,7 @@ algorithm
   end match;
 end evalBuiltinMax2;
 
+protected
 function evalPositiveMax
   input Expression flow_exp;
   input Expression eps;
@@ -2687,6 +2689,7 @@ algorithm
   end match;
 end evalBuiltinMin;
 
+public
 function evalBuiltinMin2
   input Expression exp1;
   input Expression exp2;
@@ -2707,6 +2710,7 @@ algorithm
   end match;
 end evalBuiltinMin2;
 
+protected
 function evalBuiltinMod
   input list<Expression> args;
   input EvalTarget target;

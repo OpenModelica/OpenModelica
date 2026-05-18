@@ -2501,7 +2501,7 @@ algorithm
   flatModel.equations := listAppend(conn_eql, flatModel.equations);
 
   if not listEmpty(unhandled_stream_sets) then
-    flatModel := StreamFlowAlias.removeAliases(flatModel);
+    flatModel := StreamFlowAlias.eliminateAliases(flatModel);
   end if;
 
   // add top-level IOs for unconnected local IOs

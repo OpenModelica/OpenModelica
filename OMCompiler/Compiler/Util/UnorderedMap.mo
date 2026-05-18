@@ -442,6 +442,16 @@ public
     outKey := if index > 0 then SOME(Vector.getNoBounds(map.keys, index)) else NONE();
   end getKey;
 
+  function updateKey
+    "Updates an existing key by replacing it with a new value.
+     This can be used to update properties of the key that does not affect its
+     hash or equivalence relation. Will fail if the key doesn't exist in the map."
+    input K key;
+    input UnorderedMap<K, V> map;
+  algorithm
+    Vector.update(map.keys, find(key, map), key);
+  end updateKey;
+
   function contains
     "Returns whether the given key exists in the map or not."
     input K key;

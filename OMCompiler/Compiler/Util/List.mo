@@ -4408,7 +4408,7 @@ public function deleteMemberOnTrue<T, VT>
   occurence of the value in the list for which the function returns true. It
   returns the new list and the deleted element, or only the original list if
   no element was removed.
-    Example: deleteMemberOnTrue({1,2,3,2},2,intEq) => {1,3,2}"
+    Example: deleteMemberOnTrue(2,{1,2,3,2},intEq) => ({1,3,2}, SOME(2))"
   input VT inValue;
   input list<T> inList;
   input CompareFunc inCompareFunc;

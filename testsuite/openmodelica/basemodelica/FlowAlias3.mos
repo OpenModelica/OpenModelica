@@ -1,0 +1,56 @@
+// name: FlowAlias3
+// status: correct
+
+loadFile("TestAliasStream.mo"); getErrorString();
+setCommandLineOptions("-f -d=flowAliasElimination"); getErrorString();
+instantiateModel(TestAliasStream.Test3); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "//! base 0.1.0
+// package 'Test3'
+//   function '$OMC$PositiveMax'
+//     input Real 'flowValue';
+//     input Real 'eps';
+//     output Real 'positiveMax';
+//   algorithm
+//     'positiveMax' := max('flowValue', 'eps');
+//   end '$OMC$PositiveMax';
+//
+//   model 'Test3'
+//     Real 'source1.outlet.p';
+//     Real 'source1.outlet.h';
+//     parameter Real 'source1.T' = 30.0;
+//     Real 'source2.outlet.p';
+//     Real 'source2.outlet.h';
+//     parameter Real 'source2.T' = 30.0;
+//     Real 'tank.port.p';
+//     Real 'tank.port.w';
+//     Real 'tank.port.h';
+//     parameter Real 'tank.A' = 0.001;
+//     Real 'tank.y'(fixed = true, start = 1.0);
+//     Real 'tank.T'(fixed = true, start = 20.0);
+//     Real 'source1.outlet.w';
+//     parameter Real 'source1.w' = 'source1.outlet.w' \"Alias variable\" annotation(Evaluate = true);
+//     Real 'source2.outlet.w';
+//     parameter Real 'source2.w' = 'source2.outlet.w' \"Alias variable\" annotation(Evaluate = true);
+//   equation
+//     'source2.outlet.p' = 'tank.port.p';
+//     'source2.outlet.p' = 'source1.outlet.p';
+//     'tank.port.w' + 'source2.outlet.w' + 'source1.outlet.w' = 0.0;
+//     'source1.outlet.h' = 4200.0 * 'source1.T';
+//     'source2.outlet.h' = 4200.0 * 'source2.T';
+//     1000.0 * 'tank.A' * der('tank.y') = 'tank.port.w';
+//     1000.0 * 'tank.A' * 4200.0 * der('tank.y' * 'tank.T') = smooth(0, 'tank.port.w' * (if 'tank.port.w' > 0.0 then ('$OMC$PositiveMax'(-'source1.outlet.w', 1e-7) * 'source1.outlet.h' + '$OMC$PositiveMax'(-'source2.outlet.w', 1e-7) * 'source2.outlet.h') / ('$OMC$PositiveMax'(-'source1.outlet.w', 1e-7) + '$OMC$PositiveMax'(-'source2.outlet.w', 1e-7)) else 'tank.port.h'));
+//     'tank.port.h' = 4200.0 * 'tank.T';
+//     'tank.port.p' = 1e5 + 9810.0 * 'tank.y';
+//     -'source1.outlet.w' = 1.0;
+//     -'source2.outlet.w' = 0.0;
+//   end 'Test3';
+// end 'Test3';
+// "
+// ""
+// endResult
