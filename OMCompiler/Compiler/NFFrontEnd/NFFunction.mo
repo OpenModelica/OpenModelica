@@ -2162,6 +2162,28 @@ uniontype Function
     outType := DAE.T_FUNCTION(params, Type.toDAE(ty), fn.attributes, fn.path);
   end makeDAEType;
 
+  function getSingleBodyExp
+    "returns the rhs of the function body if its a single assignment, fails otherwise"
+    input Function fn;
+    output Expression exp;
+  protected
+    list<Statement> body;
+  algorithm
+    body := getBody(fn);
+    exp := match body
+      local
+        Statement stmt;
+
+      case {stmt as Statement.ASSIGNMENT()} then stmt.rhs;
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
+          + " failed because the body of the function is not a single assignment:\n"
+          + List.toString(body, function Statement.toString(indent = "\t"), "", "", "\n", "")});
+      then fail();
+    end match;
+  end getSingleBodyExp;
+
   function getBody
     input Function fn;
     output list<Statement> body = getBody2(fn.node);
