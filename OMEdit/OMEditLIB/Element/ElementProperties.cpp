@@ -1720,6 +1720,7 @@ void ElementParameters::setUpDialog()
       if (tabIsEmpty) {
         mpParametersTabWidget->removeTab(i);
         --i;
+        pParametersScrollArea->deleteLater();
       }
     }
   }
