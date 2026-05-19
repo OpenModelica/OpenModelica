@@ -5237,12 +5237,6 @@ algorithm
         true := (sz <= maxSz);
       then allCombinations2(lst);
     case (_,NONE(),_) then allCombinations2(lst);
-    /*
-    case (_,SOME(_),_)
-      algorithm
-        Error.addSourceMessage(Error.COMPILER_NOTIFICATION, {"List.allCombinations failed because the input was too large"}, info);
-      then fail();
-    */
   end match;
 end allCombinations;
 
