@@ -48,6 +48,7 @@ protected
   import NFBackendExtension.{BackendInfo, VariableAttributes, VariableKind};
   import Binding = NFBinding;
   import ComponentRef = NFComponentRef;
+  import Dimension = NFDimension;
   import Expression = NFExpression;
   import NFInstNode.InstNode;
   import Operator = NFOperator;
@@ -104,7 +105,7 @@ public
       Option<Causality> causality;
       Option<Integer> variable_index "valueReference";
       Option<Integer> fmi_index "index of variable in modelDescription.xml";
-      list<String> numArrayElement;
+      list<Expression> numArrayElement;
       Boolean isValueChangeable;
       Boolean isProtected;
       Boolean hideResult;
@@ -190,7 +191,7 @@ public
             causality           = SOME(causality),
             variable_index      = SOME(uniqueIndex),
             fmi_index           = SOME(typeIndex),
-            numArrayElement     = {},
+            numArrayElement     = list(Dimension.sizeExp(dim) for dim in Type.arrayDims(var.ty)),
             isValueChangeable   = isValueChangeable,
             isProtected         = isProtected,
             hideResult          = var.backendinfo.annotations.hideResult,
@@ -333,7 +334,7 @@ public
         causality           = NONE(),  //ToDo update this!
         variable_index      = simVar.variable_index,
         fmi_index           = simVar.fmi_index,
-        numArrayElement     = simVar.numArrayElement,
+        numArrayElement     = list(Expression.toString(e) for e in simVar.numArrayElement),
         isValueChangeable   = simVar.isValueChangeable,
         isProtected         = simVar.isProtected,
         hideResult          = SOME(simVar.hideResult),

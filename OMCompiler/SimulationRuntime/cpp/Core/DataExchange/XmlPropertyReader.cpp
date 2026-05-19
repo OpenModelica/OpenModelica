@@ -74,7 +74,7 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
       LOGGER_WRITE_BEGIN("Initialize start values:", LC_INIT, LL_DEBUG);
       FOREACH(ptree::value_type const& vars, modelDescription.get_child("ModelVariables"))
       {
-        if (vars.first == "ScalarVariable")
+        if (vars.first == "ScalarVariable" || vars.first == "ArrayVariable")
         {
           refIdxOpt = vars.second.get_optional<int>("<xmlattr>.valueReference");
 
@@ -114,7 +114,7 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
 
           FOREACH(ptree::value_type const& var, vars.second.get_child(""))
           {
-             if ((var.first == "Real") /* Todo: this is needed for reduce dae method but breaks tests*/ /*&& (name.substr(0, 3) != "der")*/)
+            if ((var.first == "Real") /* Todo: this is needed for reduce dae method but breaks tests*/ /*&& (name.substr(0, 3) != "der")*/)
             {
                //If a start value is given for the alias and the referred variable, skip the alias declaration
               if (!(isAlias || isNegatedAlias))
@@ -211,7 +211,7 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
     {
       std::stringstream sstream;
       sstream << "Could not read start values. Current variable reference is " << refIdx;
-      throw ModelicaSimulationError(UTILITY,sstream.str());
+      throw ModelicaSimulationError(UTILITY, sstream.str());
     }
     _isInitialized = true;
     file.close();

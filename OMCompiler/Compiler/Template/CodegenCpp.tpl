@@ -8170,8 +8170,16 @@ template memberVariableDefine2(SimVar simVar, HashTableCrIListArray.HashTable va
           else
             '<%variableType(type_)%> <%cref(name,useFlatArrayNotation)%>;'
 
-    case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num)
-    case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
+    /* newInst with arrays */
+    case v as SIMVAR(type_ = T_ARRAY()) then
+      let& dims = buffer "" /*BUFD*/
+      let varName = arraycref2(name, dims)
+      let typeString = expTypeShort(type_)
+      <<
+      StatArrayDim<%listLength(v.numArrayElement)%><<%typeString%>, <%v.numArrayElement;separator=","%>, <%createRefVar%>> <%varName%>;
+      >>
+    case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_))
+    case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_)) then
       let &dims = buffer "" /*BUFD*/
       let arrayName = arraycref2(name,dims)
       let typeString = variableType(type_)
@@ -8200,14 +8208,6 @@ template memberVariableDefine2(SimVar simVar, HashTableCrIListArray.HashTable va
           <<
           RefArrayDim<%dims%><<%typeString%>, <%array_dimensions%>> <%arrayName%>;
           >>
-    /* newInst with arrays */
-    case v as SIMVAR(type_ = T_ARRAY()) then
-      let& dims = buffer "" /*BUFD*/
-      let varName = arraycref2(name, dims)
-      let typeString = expTypeShort(type_)
-      <<
-      StatArrayDim<%listLength(v.numArrayElement)%><<%typeString%>, <%List.lastN(v.numArrayElement, listLength(v.numArrayElement));separator=","%>, <%createRefVar%>> <%varName%>;
-      >>
    /*special case for variables that marked as array but are not arrays */
     case SIMVAR(numArrayElement=_::_) then
       let& dims = buffer "" /*BUFD*/
