@@ -106,7 +106,7 @@ algorithm
   setGlobalRoot(rewriteRulesIndex,  NONE());
   setGlobalRoot(stackoverFlowIndex, NONE());
   setGlobalRoot(inlineHashTable, NONE());
-  setGlobalRoot(currentInstVar, NONE());
+  setGlobalRoot(currentInstVar, ("",NONE(),NONE()));
   setGlobalRoot(interactiveCache, NONE());
   setGlobalRoot(instNFInstCacheIndex, {});
   setGlobalRoot(instNFNodeCacheIndex, {});
