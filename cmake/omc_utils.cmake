@@ -22,9 +22,6 @@ macro(omc_option var help_text value)
   omc_add_to_report(${var})
 endmacro(omc_option)
 
-omc_option(OM_MACOS_APP_BUNDLE "Build GUI clients as application bundles on macOS" ON)
-mark_as_advanced(OM_MACOS_APP_BUNDLE)
-
 macro(omc_install_gui_client target)
   # On macOS we want BUNDLEs (.app) to go to an 'Applications/' directory instead of a 'bin/' directory
   if(APPLE AND OM_MACOS_APP_BUNDLE)
