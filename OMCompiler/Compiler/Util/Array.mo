@@ -911,7 +911,7 @@ algorithm
       arrayUpdateNoBoundsChecking(outArr, i, arrayGetNoBoundsChecking(arr, i));
     end for;
 
-    for i in index+1:len-1 loop
+    for i in index+1:len loop
       arrayUpdateNoBoundsChecking(outArr, i - 1, arrayGetNoBoundsChecking(arr, i));
     end for;
   end if;
