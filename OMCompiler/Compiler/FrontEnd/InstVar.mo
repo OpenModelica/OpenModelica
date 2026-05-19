@@ -576,7 +576,7 @@ protected
   DAE.ElementSource source;
 algorithm
   try
-    Error.updateCurrentComponent(inPrefix, inName, inInfo, PrefixUtil.identAndPrefixToPath);
+    Error.updateCurrentComponent(inName, inInfo, function PrefixUtil.identAndPrefixToPath(inPrefix=inPrefix));
 
     (outCache, dims, cls, type_mods) :=
       InstUtil.getUsertypeDimensions(inCache, inEnv, inIH, inPrefix, inClass, inInstDims, inImpl);
