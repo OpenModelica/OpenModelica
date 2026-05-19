@@ -36,12 +36,7 @@ equals(QT_MAJOR_VERSION, 6) {
   greaterThan(QT_MINOR_VERSION, 4) {
     QT += httpserver
   }
-  win32 {
-    # disable documentation since we don't have webkit on qt6 and webengine is not yet supported.
-    QMAKE_CXXFLAGS += -DOM_DISABLE_DOCUMENTATION
-  } else {
-    QT += webenginewidgets
-  }
+  QT += webenginewidgets
 } else {
   QT += webkit webkitwidgets
 }
@@ -70,6 +65,7 @@ win32 {
   equals(_OM_ENABLE_ENCRYPTION, yes) {
     QMAKE_CXXFLAGS += -DOM_ENABLE_ENCRYPTION
   }
+  QMAKE_CXXFLAGS += -DOM_OMEDIT_ENABLE_QTWEBENGINE
 }
 
 UI_DIR = generatedfiles/ui

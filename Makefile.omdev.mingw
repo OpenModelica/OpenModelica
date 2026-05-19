@@ -5,7 +5,7 @@ OLD_OMDEV := $(shell expr "$(GCC_VERSION)" "==" "$(PREVIOUS_GCC_VERSION)")
 
 ifeq ($(OM_QT_MAJOR_VERSION),6)
 	OM_OMEDIT_ENABLE_QTWEBENGINE = ON
-	QT5_EXTRA_DLLS =
+	QT5_EXTRA_DLLS = Qt6WebEngineCore.dll Qt6WebEngineWidgets.dll Qt6Positioning.dll Qt6Qml.dll Qt6Quick.dll Qt6QmlMeta.dll Qt6QmlWorkerScript.dll Qt6QmlModels.dll Qt6WebChannel.dll Qt6QuickWidgets.dll Qt6Widgets.dll Qt6Xml.dll libharfbuzz-subset-0.dll liblcms2-2.dll libminizip-1.dll libopenjp2-7.dll libopus-0.dll libsnappy.dll libdeflate.dll libjbig-0.dll libLerc.dll libwebpdemux-2.dll libwebpmux-3.dll libngtcp2-16.dll libngtcp2_crypto_ossl-0.dll libtiff*.dll
 else
 	OM_QT_MAJOR_VERSION = 5
 	OM_OMEDIT_ENABLE_QTWEBENGINE = OFF
