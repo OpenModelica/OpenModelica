@@ -668,7 +668,15 @@ void DocumentationWidget::updateDocumentationHistory(LibraryTreeItem *pLibraryTr
       if (mDocumentationHistoryPos > -1) {
         cancelDocumentation();
         LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-        pLibraryTreeModel->showModelWidget(mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem);
+        LibraryTreeItem *pCurrentLibraryTreeItem = mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem;
+        /* if we are in the process of unloading a package then check if the class still exists before showing the documentation.
+         * If the class does not exist then remove it from the documentation history.
+         */
+        if (MainWindow::instance()->getOMCProxy()->existClass(pCurrentLibraryTreeItem->getNameStructure())) {
+          pLibraryTreeModel->showModelWidget(pCurrentLibraryTreeItem);
+        } else {
+          updateDocumentationHistory(pCurrentLibraryTreeItem);
+        }
       } else {
         mpEditInfoAction->setDisabled(true);
         mpEditRevisionsAction->setDisabled(true);
