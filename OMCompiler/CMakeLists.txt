@@ -68,13 +68,15 @@ target_include_directories(omc_config INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 omc_add_subdirectory(3rdParty)
 
 
-# We want to make sure include directories are handled properly by disabling implicit function
-# declaration so that we can be consistent and correct with our inclusions.
-# We do this after 3rdParty is added!! because some libs in FMILib use implicit function declaration
-# because of missing #defines due to bad configuration for now.
+# These flags are set after 3rdParty is added so they do not affect 3rdParty libraries.
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+  # Disallow implicit function declarations: ensures include directories are handled properly.
+  # Excluded from 3rdParty because FMILib uses implicit function declarations due to missing
+  # #defines from bad configuration.
   add_compile_options($<$<COMPILE_LANGUAGE:C>:-Werror=implicit-function-declaration>)
   add_compile_options($<$<COMPILE_LANGUAGE:C>:-Werror=incompatible-pointer-types>)
+  # VLAs are a C99/GCC extension not supported by MSVC; catching them prevents portability issues.
+  add_compile_options($<$<COMPILE_LANGUAGE:C>:-Werror=vla>)
 endif()
 
 omc_add_subdirectory(SimulationRuntime)

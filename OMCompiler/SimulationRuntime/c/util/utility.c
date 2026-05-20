@@ -34,6 +34,7 @@
 #include "../simulation/options.h"
 #include <string.h>
 #include <errno.h>
+#include <limits.h>
 
 modelica_real real_int_pow(threadData_t *threadData, modelica_real base, modelica_integer n)
 {
@@ -68,20 +69,14 @@ extern int OpenModelica_regexImpl(const char* str, const char* re, const int max
   regex_t myregex;
   int nmatch=0,i,rc,res;
   int flags = (extended ? REG_EXTENDED : 0) | (ignoreCase ? REG_ICASE : 0) | (maxn ? 0 : REG_NOSUB);
-#if !defined(_MSC_VER)
-  regmatch_t matches[maxn < 1 ? 1 : maxn];
-#else
-  /* Stupid compiler */
   regmatch_t *matches;
   matches = (regmatch_t*)malloc(maxn*sizeof(regmatch_t));
   assert(matches != NULL);
-#endif
+
   memset(&myregex, 1, sizeof(regex_t));
   rc = regcomp(&myregex, re, flags);
   if (rc && maxn == 0) {
-#if defined(_MSC_VER)
     free(matches);
-#endif
     return 0;
   }
   if (rc) {
@@ -95,9 +90,8 @@ extern int OpenModelica_regexImpl(const char* str, const char* re, const int max
       for (i=1; i<maxn; i++)
         outMatches[i] = mystrdup("");
     }
-#if defined(_MSC_VER)
+
     free(matches);
-#endif
     return 0;
   }
   res = regexec(&myregex, str, maxn, matches, 0);
@@ -119,9 +113,8 @@ extern int OpenModelica_regexImpl(const char* str, const char* re, const int max
   }
 
   regfree(&myregex);
-#if defined(_MSC_VER)
   free(matches);
-#endif
+
   return nmatch;
 }
 
@@ -403,4 +396,3 @@ extern void uriToFilename(threadData_t *threadData)
 {
   abort();
 }
-
