@@ -902,6 +902,7 @@ function remove<T>
 protected
   Integer len = arrayLength(arr);
 algorithm
+  true := index <= len and index >= 1;
   if len <= 1 then
     outArr := listArray({});
   else
