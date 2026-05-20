@@ -31,6 +31,7 @@ files := {
   "../../../OMCompiler/Compiler/Util/Testsuite.mo",
   "../../../OMCompiler/Compiler/Util/Corba.mo",
   "../../../OMCompiler/Compiler/Util/File.mo",
+  "../../../OMCompiler/Compiler/Util/Mutable.mo",
   "../../../OMCompiler/Compiler/Util/Util.mo",
   "../../../OMCompiler/Compiler/Util/System.mo",
   "../../../OMCompiler/Compiler/SimCode/SimCodeUtil.mo",
