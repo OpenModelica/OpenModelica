@@ -284,7 +284,7 @@ static void gbInternal_evalJacobianMR(DATA* data,
   const SPARSE_PATTERN* fullSp  = fullJac->sparsePattern;
   const SPARSE_PATTERN* smallSp = nls->odePatternMR;
 
-  unsigned int* fast_idx = gbData->fastStatesIdx;
+  int* fast_idx = gbData->fastStatesIdx;
   unsigned int  size_fast = gbData->nFastStates;
 
   fullJac->evalSelection = NULL; // TODO: set evalSelection for Jacobian gbData->gbfData->jacobian->evalSelection;
@@ -337,7 +337,7 @@ static void gbInternal_evalNumericalJacobian(DATA *data,
 
   const SPARSE_PATTERN *sparsity;
   EVAL_SELECTION *selection = NULL;
-  unsigned int *state_map = NULL;
+  int *state_map = NULL;
 
   int size;
   unsigned int max_colors;
