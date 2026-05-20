@@ -170,6 +170,10 @@ int main(int argc, char *argv[])
       return 0;
     }
   }
+#if defined(__MINGW32__)
+  // currently the sandbox does not work with qt6-webengine
+  qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " --no-sandbox");
+#endif
   Q_INIT_RESOURCE(resource_omedit);
 #if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
   QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);

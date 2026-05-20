@@ -131,6 +131,11 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
     quit();
     exit(1);
   }
+#if defined(_MSC_VER) || defined(__MINGW32__)
+  // make QtWebEngineProcess find the Qt dlls!
+  QString p = QString(installationDirectoryPath).replace("/", "\\");
+  qputenv("PATH", QByteArray(p.toUtf8()) + "\\bin;" + qgetenv("PATH"));
+#endif
   QSettings *pSettings = Utilities::getApplicationSettings();
   QLocale settingsLocale = QLocale(pSettings->value("language").toString());
   QString locale = settingsLocale.name() == "C" ? QLocale::system().name() : settingsLocale.name();
