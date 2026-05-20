@@ -6232,8 +6232,8 @@ ShapeAnnotation* ModelWidget::drawOMSModelElement()
         pInfoTextAnnotation->setTextString(OMSProxy::getSystemTypeShortString(mpLibraryTreeItem->getSystemType()));
       } else {
         qDebug() << "drawing fmu type";
-        pInfoTextAnnotation->setTextString(QString("%1 %2").arg(OMSProxy::getFMUKindString(mpLibraryTreeItem->getFMUInfo()->fmiKind))
-                                            .arg(QString(mpLibraryTreeItem->getFMUInfo()->fmiVersion)));
+        pInfoTextAnnotation->setTextString(QString("%1 %2").arg(mpLibraryTreeItem->getFMUInfo().getFMIKind())
+                                            .arg(mpLibraryTreeItem->getFMUInfo().getFMIVersion()));
         qDebug() << "drawing fmu type completed";
       }
       pInfoTextAnnotation->drawCornerItems();

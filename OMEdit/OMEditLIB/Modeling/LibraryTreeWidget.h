@@ -172,8 +172,8 @@ public:
   oms_connector_t* getOMSConnector() const {return mpOMSConnector;}
   void setOMSBusConnector(oms_busconnector_t *pOMSBusConnector) {mpOMSBusConnector = pOMSBusConnector;}
   oms_busconnector_t* getOMSBusConnector() const {return mpOMSBusConnector;}
-  void setFMUInfo(const oms_fmu_info_t *pFMUInfo) {mpFMUInfo = pFMUInfo;}
-  const oms_fmu_info_t* getFMUInfo() const {return mpFMUInfo;}
+  void setFMUInfo(const OMSModel::FMUInfo &pFMUInfo) {mpFMUInfo = pFMUInfo;}
+  const OMSModel::FMUInfo& getFMUInfo() const {return mpFMUInfo;}
   void setSubModelPath(QString subModelPath) {mSubModelPath = subModelPath;}
   QString getSubModelPath() const {return mSubModelPath;}
   QString getTooltip() const;
@@ -238,9 +238,9 @@ private:
   oms_component_enu_t mComponentType = oms_component_none;
   oms_connector_t *mpOMSConnector = 0;
   oms_busconnector_t *mpOMSBusConnector = 0;
-  const oms_fmu_info_t *mpFMUInfo = 0;
   QString mSubModelPath;
   // new oms3 JSON format
+  OMSModel::FMUInfo mpFMUInfo;
   OMSModel::Model * mpOMSModel = 0;
   OMSModel::Element *mpOMSModelElement = 0;
   OMSModel::Connector *mpOMSModelConnector = 0;

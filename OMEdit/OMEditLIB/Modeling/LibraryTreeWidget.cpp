@@ -422,12 +422,16 @@ QString LibraryTreeItem::getTooltip() const {
                 .arg(Helper::type).arg(OMSProxy::getSystemTypeString(mSystemType))
                 .arg(Helper::fileLocation).arg(mFileName);
     } else if (isFMUComponent()) {
+      //const OMSModel::FMUInfo &pfmuInfo = mpOMSModelElement->getFMUInfo();
+      // qDebug() << "FMUinfo description " <<fmuInfo.getDescription();
+      // qDebug() << "FMUinfo kind " <<fmuInfo.getFMIKind();
+
       tooltip = QString("%1 %2<br />%3: %4<br />%5: %6<br />%7: %8<br />%9: %10")
-                .arg(Helper::name).arg(mName)
-                .arg(Helper::description).arg(QString(mpFMUInfo->description))
-                .arg(QObject::tr("FMU Kind")).arg(OMSProxy::getFMUKindString(mpFMUInfo->fmiKind))
-                .arg(QObject::tr("FMI Version")).arg(QString(mpFMUInfo->fmiVersion))
-                .arg(Helper::fileLocation).arg(mSubModelPath);
+                  .arg(Helper::name).arg(mName)
+                  .arg(Helper::description).arg(mpFMUInfo.getDescription())
+                  .arg(QObject::tr("FMU Kind")).arg(mpFMUInfo.getFMIKind())
+                  .arg(QObject::tr("FMI Version")).arg(mpFMUInfo.getFMIVersion())
+                  .arg(Helper::fileLocation).arg(mSubModelPath);
     } else if (isTableComponent()) {
       tooltip = QString("%1 %2<br />%3: %4")
                 .arg(Helper::name).arg(mName)
@@ -2673,7 +2677,7 @@ LibraryTreeItem* LibraryTreeModel::createOMSLibraryTreeItemImpl(QString name, QS
 
   if (pOMSElement) {
     QString type = pOMSElement->getType();
-    qDebug() << "set OMS element Json:" << type;
+    qDebug() << "set OMS element Json:" << type << pOMSElement->hasFMUInfo();
   }
 
   qDebug() << "JSON node type:" << name << " => " <<pLibraryTreeItem->isSystemElement() << "=>" << pLibraryTreeItem->isComponentElement();
@@ -2683,45 +2687,15 @@ LibraryTreeItem* LibraryTreeModel::createOMSLibraryTreeItemImpl(QString name, QS
   // if (type == "system") {
   //   pLibraryTreeItem->setSystemType(oms_system_sc);
   // }
-  QString type = "component";
-  if (type == "component") {
+
+  if (pLibraryTreeItem && pLibraryTreeItem->isComponentElement()) {
     pLibraryTreeItem->setComponentType(oms_component_fmu);
-    // const oms_fmu_info_t *pFMUInfo;
-    // if (OMSProxy::instance()->getFMUInfo(pLibraryTreeItem->getNameStructure(), &pFMUInfo)) {
-    //   pLibraryTreeItem->setFMUInfo(pFMUInfo);
-    //  pLibraryTreeItem->setSubModelPath(QString("C:/Arun"));
-    //}
-    oms_fmu_info_t *pFMUInfo = new oms_fmu_info_t();
-
-    // String fields
-    pFMUInfo->author = strdup("Arunkumar");
-    pFMUInfo->copyright = strdup("© OpenModelica Test");
-    pFMUInfo->description = strdup("Dummy FMU for testing");
-    pFMUInfo->fmiVersion = strdup("2.0");
-    pFMUInfo->generationDateAndTime = strdup("2026-04-30T10:00:00Z");
-    pFMUInfo->generationTool = strdup("OpenModelica");
-    pFMUInfo->guid = strdup("1234-5678-ABCD-EFGH");
-    pFMUInfo->license = strdup("BSD-3-Clause");
-    pFMUInfo->modelName = strdup("Dummy.Model");
-    pFMUInfo->path = strdup("C:/Temp/Dummy.fmu");
-    pFMUInfo->version = strdup("1.0");
-
-    // Enum field (example)
-    pFMUInfo->fmiKind = oms_fmi_kind_cs;   // or oms_fmi_kind_me
-
-    // Bool fields
-    pFMUInfo->canBeInstantiatedOnlyOncePerProcess = false;
-    pFMUInfo->canGetAndSetFMUstate = true;
-    pFMUInfo->canNotUseMemoryManagementFunctions = false;
-    pFMUInfo->canSerializeFMUstate = true;
-    pFMUInfo->completedIntegratorStepNotNeeded = false;
-    pFMUInfo->needsExecutionTool = false;
-    pFMUInfo->providesDirectionalDerivative = true;
-    pFMUInfo->canInterpolateInputs = true;
-
-    // Integer field
-    pFMUInfo->maxOutputDerivativeOrder = 2;
-    pLibraryTreeItem->setFMUInfo(pFMUInfo);
+    if (pLibraryTreeItem && pLibraryTreeItem->getOMSModelElement()->hasFMUInfo()) {
+      const OMSModel::FMUInfo &pFMUInfo = pLibraryTreeItem->getOMSModelElement()->getFMUInfo();
+      pLibraryTreeItem->setFMUInfo(pFMUInfo);
+      pLibraryTreeItem->setSubModelPath(pFMUInfo.getPath());
+    }
+    //TODO set component table
   }
 
   return pLibraryTreeItem;
