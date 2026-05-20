@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of OpenModelica.
  *
  * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
@@ -37,9 +37,9 @@
 
 using namespace OpenModelica;
 
-extern record_description NFModifier_Modifier_MODIFIER__desc;
-extern record_description NFModifier_Modifier_REDECLARE__desc;
-extern record_description NFModifier_Modifier_NOMOD__desc;
+extern "C" record_description NFModifier_Modifier_MODIFIER__desc;
+extern "C" record_description NFModifier_Modifier_REDECLARE__desc;
+extern "C" record_description NFModifier_Modifier_NOMOD__desc;
 
 constexpr int MODIFIER = 0;
 constexpr int REDECLARE = 1;

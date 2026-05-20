@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of OpenModelica.
  *
  * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
@@ -43,7 +43,7 @@
 
 using namespace OpenModelica;
 
-extern record_description NFInstNode_InstNode_EMPTY__NODE__desc;
+extern "C" record_description NFInstNode_InstNode_EMPTY__NODE__desc;
 
 MMCache<InstNode> InstNode::_cache;
 

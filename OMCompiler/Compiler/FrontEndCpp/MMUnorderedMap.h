@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of OpenModelica.
  *
  * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
@@ -38,7 +38,7 @@
 
 #include "MMVector.h"
 
-extern record_description UnorderedMap_UNORDERED__MAP__desc;
+extern "C" record_description UnorderedMap_UNORDERED__MAP__desc;
 
 namespace OpenModelica
 {

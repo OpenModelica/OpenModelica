@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of OpenModelica.
  *
  * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
@@ -50,12 +50,12 @@ constexpr int GROUP_IMPORT = 3;
 
 constexpr int GROUP_IMPORT_NAME = 0;
 
-extern record_description Absyn_Import_NAMED__IMPORT__desc;
-extern record_description Absyn_Import_QUAL__IMPORT__desc;
-extern record_description Absyn_Import_UNQUAL__IMPORT__desc;
-extern record_description Absyn_Import_GROUP__IMPORT__desc;
+extern "C" record_description Absyn_Import_NAMED__IMPORT__desc;
+extern "C" record_description Absyn_Import_QUAL__IMPORT__desc;
+extern "C" record_description Absyn_Import_UNQUAL__IMPORT__desc;
+extern "C" record_description Absyn_Import_GROUP__IMPORT__desc;
 
-extern record_description Absyn_GroupImport_GROUP__IMPORT__NAME__desc;
+extern "C" record_description Absyn_GroupImport_GROUP__IMPORT__NAME__desc;
 
 std::pair<std::optional<Path>, std::vector<std::string>> splitPath(MetaModelica::Value value)
 {

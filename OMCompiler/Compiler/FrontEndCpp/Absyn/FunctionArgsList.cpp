@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of OpenModelica.
  *
  * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
@@ -42,9 +42,9 @@
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;
 
-extern record_description Absyn_FunctionArgs_FUNCTIONARGS__desc;
+extern "C" record_description Absyn_FunctionArgs_FUNCTIONARGS__desc;
 
-extern record_description Absyn_NamedArg_NAMEDARG__desc;
+extern "C" record_description Absyn_NamedArg_NAMEDARG__desc;
 
 FunctionArgsList::FunctionArgsList(MetaModelica::Record value)
   : _args{value[0].mapVector<Expression>()},

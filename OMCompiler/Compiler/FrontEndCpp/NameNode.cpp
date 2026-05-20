@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of OpenModelica.
  *
  * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
@@ -39,7 +39,7 @@ using namespace OpenModelica;
 
 constexpr int NAME_INDEX = 0;
 
-extern record_description NFInstNode_InstNode_NAME__NODE__desc;
+extern "C" record_description NFInstNode_InstNode_NAME__NODE__desc;
 
 NameNode::NameNode(MetaModelica::Record value)
   : _name{value[NAME_INDEX].toString()}

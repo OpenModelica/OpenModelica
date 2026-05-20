@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of OpenModelica.
  *
  * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
@@ -92,16 +92,16 @@ constexpr int TYPED_DERIVED_RESTRICTION = 2;
 constexpr int DAE_TYPE_TY = 0;
 
 
-extern record_description NFClass_PARTIAL__CLASS__desc;
-extern record_description NFClass_PARTIAL__BUILTIN__desc;
-extern record_description NFClass_EXPANDED__CLASS__desc;
-extern record_description NFClass_EXPANDED__DERIVED__desc;
-extern record_description NFClass_INSTANCED__CLASS__desc;
-extern record_description NFClass_INSTANCED__BUILTIN__desc;
-extern record_description NFClass_TYPED__DERIVED__desc;
-extern record_description NFClass_DAE__TYPE__desc;
+extern "C" record_description NFClass_PARTIAL__CLASS__desc;
+extern "C" record_description NFClass_PARTIAL__BUILTIN__desc;
+extern "C" record_description NFClass_EXPANDED__CLASS__desc;
+extern "C" record_description NFClass_EXPANDED__DERIVED__desc;
+extern "C" record_description NFClass_INSTANCED__CLASS__desc;
+extern "C" record_description NFClass_INSTANCED__BUILTIN__desc;
+extern "C" record_description NFClass_TYPED__DERIVED__desc;
+extern "C" record_description NFClass_DAE__TYPE__desc;
 
-extern record_description NFClass_Prefixes_PREFIXES__desc;
+extern "C" record_description NFClass_Prefixes_PREFIXES__desc;
 
 Class::Prefixes::Prefixes(MetaModelica::Record value)
   : encapsulated{value[0]},

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of OpenModelica.
  *
  * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
@@ -40,96 +40,96 @@
 
 using namespace OpenModelica;
 
-extern record_description SCode_Visibility_PUBLIC__desc;
-extern record_description SCode_Visibility_PROTECTED__desc;
+extern "C" record_description SCode_Visibility_PUBLIC__desc;
+extern "C" record_description SCode_Visibility_PROTECTED__desc;
 
 constexpr int VAR = 0;
 constexpr int DISCRETE = 1;
 constexpr int PARAM = 2;
 constexpr int CONST = 3;
 
-extern record_description SCode_Variability_VAR__desc;
-extern record_description SCode_Variability_DISCRETE__desc;
-extern record_description SCode_Variability_PARAM__desc;
-extern record_description SCode_Variability_CONST__desc;
+extern "C" record_description SCode_Variability_VAR__desc;
+extern "C" record_description SCode_Variability_DISCRETE__desc;
+extern "C" record_description SCode_Variability_PARAM__desc;
+extern "C" record_description SCode_Variability_CONST__desc;
 
 constexpr int FINAL = 0;
 constexpr int NOT_FINAL = 1;
 
-extern record_description SCode_Final_FINAL__desc;
-extern record_description SCode_Final_NOT__FINAL__desc;
+extern "C" record_description SCode_Final_FINAL__desc;
+extern "C" record_description SCode_Final_NOT__FINAL__desc;
 
 constexpr int EACH = 0;
 constexpr int NOT_EACH = 1;
 
-extern record_description SCode_Each_EACH__desc;
-extern record_description SCode_Each_NOT__EACH__desc;
+extern "C" record_description SCode_Each_EACH__desc;
+extern "C" record_description SCode_Each_NOT__EACH__desc;
 
 constexpr int INNER = 0;
 constexpr int OUTER = 1;
 constexpr int INNER_OUTER = 2;
 constexpr int NOT_INNER_OUTER = 3;
 
-extern record_description Absyn_InnerOuter_INNER__desc;
-extern record_description Absyn_InnerOuter_OUTER__desc;
-extern record_description Absyn_InnerOuter_INNER__OUTER__desc;
-extern record_description Absyn_InnerOuter_NOT__INNER__OUTER__desc;
+extern "C" record_description Absyn_InnerOuter_INNER__desc;
+extern "C" record_description Absyn_InnerOuter_OUTER__desc;
+extern "C" record_description Absyn_InnerOuter_INNER__OUTER__desc;
+extern "C" record_description Absyn_InnerOuter_NOT__INNER__OUTER__desc;
 
 constexpr int REDECLARE = 0;
 constexpr int NOT_REDECLARE = 1;
 
-extern record_description SCode_Redeclare_REDECLARE__desc;
-extern record_description SCode_Redeclare_NOT__REDECLARE__desc;
+extern "C" record_description SCode_Redeclare_REDECLARE__desc;
+extern "C" record_description SCode_Redeclare_NOT__REDECLARE__desc;
 
 constexpr int ENCAPSULATED = 0;
 constexpr int NOT_ENCAPSULATED = 1;
 
-extern record_description SCode_Encapsulated_ENCAPSULATED__desc;
-extern record_description SCode_Encapsulated_NOT__ENCAPSULATED__desc;
+extern "C" record_description SCode_Encapsulated_ENCAPSULATED__desc;
+extern "C" record_description SCode_Encapsulated_NOT__ENCAPSULATED__desc;
 
 constexpr int PARTIAL = 0;
 constexpr int NOT_PARTIAL = 1;
 
-extern record_description SCode_Partial_PARTIAL__desc;
-extern record_description SCode_Partial_NOT__PARTIAL__desc;
+extern "C" record_description SCode_Partial_PARTIAL__desc;
+extern "C" record_description SCode_Partial_NOT__PARTIAL__desc;
 
 constexpr int PURE = 0;
 constexpr int IMPURE = 1;
 constexpr int NO_PURITY = 2;
 
-extern record_description Absyn_FunctionPurity_PURE__desc;
-extern record_description Absyn_FunctionPurity_IMPURE__desc;
-extern record_description Absyn_FunctionPurity_NO__PURITY__desc;
+extern "C" record_description Absyn_FunctionPurity_PURE__desc;
+extern "C" record_description Absyn_FunctionPurity_IMPURE__desc;
+extern "C" record_description Absyn_FunctionPurity_NO__PURITY__desc;
 
 constexpr int POTENTIAL = 0;
 constexpr int FLOW = 1;
 constexpr int STREAM = 2;
 
-extern record_description SCode_ConnectorType_POTENTIAL__desc;
-extern record_description SCode_ConnectorType_FLOW__desc;
-extern record_description SCode_ConnectorType_STREAM__desc;
+extern "C" record_description SCode_ConnectorType_POTENTIAL__desc;
+extern "C" record_description SCode_ConnectorType_FLOW__desc;
+extern "C" record_description SCode_ConnectorType_STREAM__desc;
 
 constexpr int PARGLOBAL = 0;
 constexpr int PARLOCAL = 1;
 constexpr int NON_PARALLEL = 2;
 
-extern record_description SCode_Parallelism_PARGLOBAL__desc;
-extern record_description SCode_Parallelism_PARLOCAL__desc;
-extern record_description SCode_Parallelism_NON__PARALLEL__desc;
+extern "C" record_description SCode_Parallelism_PARGLOBAL__desc;
+extern "C" record_description SCode_Parallelism_PARLOCAL__desc;
+extern "C" record_description SCode_Parallelism_NON__PARALLEL__desc;
 
 constexpr int INPUT = 0;
 constexpr int OUTPUT = 1;
 constexpr int BIDIR = 2;
 
-extern record_description Absyn_Direction_INPUT__desc;
-extern record_description Absyn_Direction_OUTPUT__desc;
-extern record_description Absyn_Direction_BIDIR__desc;
+extern "C" record_description Absyn_Direction_INPUT__desc;
+extern "C" record_description Absyn_Direction_OUTPUT__desc;
+extern "C" record_description Absyn_Direction_BIDIR__desc;
 
 constexpr int NONFIELD = 0;
 constexpr int FIELD = 1;
 
-extern record_description Absyn_IsField_NONFIELD__desc;
-extern record_description Absyn_IsField_FIELD__desc;
+extern "C" record_description Absyn_IsField_NONFIELD__desc;
+extern "C" record_description Absyn_IsField_FIELD__desc;
 
 Visibility::Visibility(MetaModelica::Value value) noexcept
   : _value{value.isRecord() ? value.toRecord().index() == 0 ? Value::Public : Value::Protected :

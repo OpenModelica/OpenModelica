@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of OpenModelica.
  *
  * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
@@ -59,14 +59,14 @@ constexpr int PARTS_CONSTRAINT_LST = 5;
 constexpr int PARTS_CLS_ATTRS = 6;
 constexpr int PARTS_EXTERNAL_DECL = 7;
 
-extern record_description SCode_ClassDef_PARTS__desc;
-extern record_description SCode_ClassDef_CLASS__EXTENDS__desc;
-extern record_description SCode_ClassDef_DERIVED__desc;
-extern record_description SCode_ClassDef_ENUMERATION__desc;
-extern record_description SCode_ClassDef_OVERLOAD__desc;
-extern record_description SCode_ClassDef_PDER__desc;
+extern "C" record_description SCode_ClassDef_PARTS__desc;
+extern "C" record_description SCode_ClassDef_CLASS__EXTENDS__desc;
+extern "C" record_description SCode_ClassDef_DERIVED__desc;
+extern "C" record_description SCode_ClassDef_ENUMERATION__desc;
+extern "C" record_description SCode_ClassDef_OVERLOAD__desc;
+extern "C" record_description SCode_ClassDef_PDER__desc;
 
-extern record_description SCode_Enum_ENUM__desc;
+extern "C" record_description SCode_Enum_ENUM__desc;
 
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of OpenModelica.
  *
  * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
@@ -64,23 +64,23 @@ constexpr int ANY = 15;
 constexpr int CONDITIONAL_ARRAY = 16;
 constexpr int UNTYPED = 17;
 
-extern record_description NFType_INTEGER__desc;
-extern record_description NFType_REAL__desc;
-extern record_description NFType_STRING__desc;
-extern record_description NFType_BOOLEAN__desc;
-extern record_description NFType_CLOCK__desc;
-extern record_description NFType_ENUMERATION__desc;
-extern record_description NFType_ARRAY__desc;
-extern record_description NFType_TUPLE__desc;
-extern record_description NFType_NORETCALL__desc;
-extern record_description NFType_UNKNOWN__desc;
-extern record_description NFType_COMPLEX__desc;
-extern record_description NFType_FUNCTION__desc;
-extern record_description NFType_METABOXED__desc;
-extern record_description NFType_POLYMORPHIC__desc;
-extern record_description NFType_ANY__desc;
-extern record_description NFType_CONDITIONAL__ARRAY__desc;
-extern record_description NFType_UNTYPED__desc;
+extern "C" record_description NFType_INTEGER__desc;
+extern "C" record_description NFType_REAL__desc;
+extern "C" record_description NFType_STRING__desc;
+extern "C" record_description NFType_BOOLEAN__desc;
+extern "C" record_description NFType_CLOCK__desc;
+extern "C" record_description NFType_ENUMERATION__desc;
+extern "C" record_description NFType_ARRAY__desc;
+extern "C" record_description NFType_TUPLE__desc;
+extern "C" record_description NFType_NORETCALL__desc;
+extern "C" record_description NFType_UNKNOWN__desc;
+extern "C" record_description NFType_COMPLEX__desc;
+extern "C" record_description NFType_FUNCTION__desc;
+extern "C" record_description NFType_METABOXED__desc;
+extern "C" record_description NFType_POLYMORPHIC__desc;
+extern "C" record_description NFType_ANY__desc;
+extern "C" record_description NFType_CONDITIONAL__ARRAY__desc;
+extern "C" record_description NFType_UNTYPED__desc;
 
 const Type Type::UnknownType = Type::Unknown;
 

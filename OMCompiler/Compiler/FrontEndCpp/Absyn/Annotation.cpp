@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of OpenModelica.
  *
  * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
@@ -40,7 +40,7 @@
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;
 
-extern record_description SCode_Annotation_ANNOTATION__desc;
+extern "C" record_description SCode_Annotation_ANNOTATION__desc;
 
 Annotation::Annotation(MetaModelica::Record value)
   : _modifier{value[0]}

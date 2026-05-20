@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of OpenModelica.
  *
  * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
@@ -41,7 +41,7 @@
 
 using namespace OpenModelica;
 
-extern record_description NFInstNode_InstNode_COMPONENT__NODE__desc;
+extern "C" record_description NFInstNode_InstNode_COMPONENT__NODE__desc;
 
 constexpr int NAME_INDEX = 0;
 constexpr int DEFINITION_INDEX = 1;

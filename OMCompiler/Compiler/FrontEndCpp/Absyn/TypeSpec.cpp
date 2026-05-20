@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of OpenModelica.
  *
  * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
@@ -43,8 +43,8 @@ using namespace OpenModelica::Absyn;
 constexpr int TPATH = 0;
 constexpr int TCOMPLEX = 1;
 
-extern record_description Absyn_TypeSpec_TPATH__desc;
-extern record_description Absyn_TypeSpec_TCOMPLEX__desc;
+extern "C" record_description Absyn_TypeSpec_TPATH__desc;
+extern "C" record_description Absyn_TypeSpec_TCOMPLEX__desc;
 
 TypeSpec::TypeSpec(MetaModelica::Record value)
   : _path{value[0]}

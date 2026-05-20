@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of OpenModelica.
  *
  * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
@@ -53,16 +53,16 @@ constexpr int EQ_TERMINATE = 7;
 constexpr int EQ_REINIT = 8;
 constexpr int EQ_NORETCALL = 9;
 
-extern record_description SCode_Equation_EQ__IF__desc;
-extern record_description SCode_Equation_EQ__EQUALS__desc;
-extern record_description SCode_Equation_EQ__PDE__desc;
-extern record_description SCode_Equation_EQ__CONNECT__desc;
-extern record_description SCode_Equation_EQ__FOR__desc;
-extern record_description SCode_Equation_EQ__WHEN__desc;
-extern record_description SCode_Equation_EQ__ASSERT__desc;
-extern record_description SCode_Equation_EQ__TERMINATE__desc;
-extern record_description SCode_Equation_EQ__REINIT__desc;
-extern record_description SCode_Equation_EQ__NORETCALL__desc;
+extern "C" record_description SCode_Equation_EQ__IF__desc;
+extern "C" record_description SCode_Equation_EQ__EQUALS__desc;
+extern "C" record_description SCode_Equation_EQ__PDE__desc;
+extern "C" record_description SCode_Equation_EQ__CONNECT__desc;
+extern "C" record_description SCode_Equation_EQ__FOR__desc;
+extern "C" record_description SCode_Equation_EQ__WHEN__desc;
+extern "C" record_description SCode_Equation_EQ__ASSERT__desc;
+extern "C" record_description SCode_Equation_EQ__TERMINATE__desc;
+extern "C" record_description SCode_Equation_EQ__REINIT__desc;
+extern "C" record_description SCode_Equation_EQ__NORETCALL__desc;
 
 Equation::Base::Base(Comment comment, SourceInfo info)
   : _comment{std::move(comment)}, _info{std::move(info)}

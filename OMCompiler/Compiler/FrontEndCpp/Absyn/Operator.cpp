@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of OpenModelica.
  *
  * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
@@ -51,29 +51,29 @@ constexpr auto spacedSymbols = std::array{
   " + ", " - ", " * ", " / ", " ^ ", "+", "-", " .+ ", " .- ", " .* ", " ./ ", " .^ ",
   "+", "-", " and ", " or ", "not ", " < ", " <= ", " > ", " >= ", " == ", " <> "};
 
-extern record_description Absyn_Operator_ADD__desc;
-extern record_description Absyn_Operator_SUB__desc;
-extern record_description Absyn_Operator_MUL__desc;
-extern record_description Absyn_Operator_DIV__desc;
-extern record_description Absyn_Operator_POW__desc;
-extern record_description Absyn_Operator_UPLUS__desc;
-extern record_description Absyn_Operator_UMINUS__desc;
-extern record_description Absyn_Operator_ADD__EW__desc;
-extern record_description Absyn_Operator_SUB__EW__desc;
-extern record_description Absyn_Operator_MUL__EW__desc;
-extern record_description Absyn_Operator_DIV__EW__desc;
-extern record_description Absyn_Operator_POW__EW__desc;
-extern record_description Absyn_Operator_UPLUS__EW__desc;
-extern record_description Absyn_Operator_UMINUS__EW__desc;
-extern record_description Absyn_Operator_AND__desc;
-extern record_description Absyn_Operator_OR__desc;
-extern record_description Absyn_Operator_NOT__desc;
-extern record_description Absyn_Operator_LESS__desc;
-extern record_description Absyn_Operator_LESSEQ__desc;
-extern record_description Absyn_Operator_GREATER__desc;
-extern record_description Absyn_Operator_GREATEREQ__desc;
-extern record_description Absyn_Operator_EQUAL__desc;
-extern record_description Absyn_Operator_NEQUAL__desc;
+extern "C" record_description Absyn_Operator_ADD__desc;
+extern "C" record_description Absyn_Operator_SUB__desc;
+extern "C" record_description Absyn_Operator_MUL__desc;
+extern "C" record_description Absyn_Operator_DIV__desc;
+extern "C" record_description Absyn_Operator_POW__desc;
+extern "C" record_description Absyn_Operator_UPLUS__desc;
+extern "C" record_description Absyn_Operator_UMINUS__desc;
+extern "C" record_description Absyn_Operator_ADD__EW__desc;
+extern "C" record_description Absyn_Operator_SUB__EW__desc;
+extern "C" record_description Absyn_Operator_MUL__EW__desc;
+extern "C" record_description Absyn_Operator_DIV__EW__desc;
+extern "C" record_description Absyn_Operator_POW__EW__desc;
+extern "C" record_description Absyn_Operator_UPLUS__EW__desc;
+extern "C" record_description Absyn_Operator_UMINUS__EW__desc;
+extern "C" record_description Absyn_Operator_AND__desc;
+extern "C" record_description Absyn_Operator_OR__desc;
+extern "C" record_description Absyn_Operator_NOT__desc;
+extern "C" record_description Absyn_Operator_LESS__desc;
+extern "C" record_description Absyn_Operator_LESSEQ__desc;
+extern "C" record_description Absyn_Operator_GREATER__desc;
+extern "C" record_description Absyn_Operator_GREATEREQ__desc;
+extern "C" record_description Absyn_Operator_EQUAL__desc;
+extern "C" record_description Absyn_Operator_NEQUAL__desc;
 
 constexpr auto descs = std::array{
   &Absyn_Operator_ADD__desc,

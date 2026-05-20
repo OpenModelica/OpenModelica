@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of OpenModelica.
  *
  * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
@@ -50,16 +50,16 @@ constexpr int WHOLE_INDEX = 5;
 constexpr int SPLIT_PROXY_INDEX = 6;
 constexpr int SPLIT_INDEX_INDEX = 7;
 
-extern record_description NFSubscript_RAW__SUBSCRIPT__desc;
-extern record_description NFSubscript_UNTYPED__desc;
-extern record_description NFSubscript_INDEX__desc;
-extern record_description NFSubscript_SLICE__desc;
-extern record_description NFSubscript_EXPANDED__SLICE__desc;
-extern record_description NFSubscript_WHOLE__desc;
-extern record_description NFSubscript_SPLIT__PROXY__desc;
-extern record_description NFSubscript_SPLIT__INDEX__desc;
+extern "C" record_description NFSubscript_RAW__SUBSCRIPT__desc;
+extern "C" record_description NFSubscript_UNTYPED__desc;
+extern "C" record_description NFSubscript_INDEX__desc;
+extern "C" record_description NFSubscript_SLICE__desc;
+extern "C" record_description NFSubscript_EXPANDED__SLICE__desc;
+extern "C" record_description NFSubscript_WHOLE__desc;
+extern "C" record_description NFSubscript_SPLIT__PROXY__desc;
+extern "C" record_description NFSubscript_SPLIT__INDEX__desc;
 
-extern record_description NFExpression_INTEGER__desc;
+extern "C" record_description NFExpression_INTEGER__desc;
 
 Subscript::Subscript(MetaModelica::Record value)
 {

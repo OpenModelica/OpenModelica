@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of OpenModelica.
  *
  * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
@@ -45,17 +45,17 @@ extern "C" {
 
 using namespace OpenModelica;
 
-extern record_description NFInstNode_InstNodeType_NORMAL__CLASS__desc;
-extern record_description NFInstNode_InstNodeType_BASE__CLASS__desc;
-extern record_description NFInstNode_InstNodeType_DERIVED__CLASS__desc;
-extern record_description NFInstNode_InstNodeType_BUILTIN__CLASS__desc;
-extern record_description NFInstNode_InstNodeType_TOP__SCOPE__desc;
-extern record_description NFInstNode_InstNodeType_ROOT__CLASS__desc;
-extern record_description NFInstNode_InstNodeType_NORMAL__COMP__desc;
-extern record_description NFInstNode_InstNodeType_REDECLARED__COMP__desc;
-extern record_description NFInstNode_InstNodeType_REDECLARED__CLASS__desc;
-extern record_description NFInstNode_InstNodeType_GENERATED__INNER__desc;
-extern record_description NFInstNode_InstNodeType_IMPLICIT__SCOPE__desc;
+extern "C" record_description NFInstNode_InstNodeType_NORMAL__CLASS__desc;
+extern "C" record_description NFInstNode_InstNodeType_BASE__CLASS__desc;
+extern "C" record_description NFInstNode_InstNodeType_DERIVED__CLASS__desc;
+extern "C" record_description NFInstNode_InstNodeType_BUILTIN__CLASS__desc;
+extern "C" record_description NFInstNode_InstNodeType_TOP__SCOPE__desc;
+extern "C" record_description NFInstNode_InstNodeType_ROOT__CLASS__desc;
+extern "C" record_description NFInstNode_InstNodeType_NORMAL__COMP__desc;
+extern "C" record_description NFInstNode_InstNodeType_REDECLARED__COMP__desc;
+extern "C" record_description NFInstNode_InstNodeType_REDECLARED__CLASS__desc;
+extern "C" record_description NFInstNode_InstNodeType_GENERATED__INNER__desc;
+extern "C" record_description NFInstNode_InstNodeType_IMPLICIT__SCOPE__desc;
 
 constexpr int NORMAL_CLASS = 0;
 constexpr int BASE_CLASS = 1;
@@ -69,7 +69,7 @@ constexpr int REDECLARED_CLASS = 8;
 constexpr int GENERATED_INNER = 9;
 constexpr int IMPLICIT_SCOPE = 10;
 
-extern record_description UnorderedMap_UNORDERED__MAP__desc;
+extern "C" record_description UnorderedMap_UNORDERED__MAP__desc;
 
 //std::unique_ptr<InstNodeType> InstNodeType::fromAbsyn(Absyn::Element *element, InstNode *parent)
 //{

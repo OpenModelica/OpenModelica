@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of OpenModelica.
  *
  * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
@@ -65,28 +65,28 @@ constexpr int EXPRESSIONCOMMENT = 24;
 constexpr int SUBSCRIPTED_EXP = 25;
 constexpr int BREAK = 26;
 
-extern record_description Absyn_Exp_INTEGER__desc;
-extern record_description Absyn_Exp_REAL__desc;
-extern record_description Absyn_Exp_CREF__desc;
-extern record_description Absyn_Exp_STRING__desc;
-extern record_description Absyn_Exp_BOOL__desc;
-extern record_description Absyn_Exp_BINARY__desc;
-extern record_description Absyn_Exp_UNARY__desc;
-extern record_description Absyn_Exp_LBINARY__desc;
-extern record_description Absyn_Exp_LUNARY__desc;
-extern record_description Absyn_Exp_RELATION__desc;
-extern record_description Absyn_Exp_IFEXP__desc;
-extern record_description Absyn_Exp_CALL__desc;
-extern record_description Absyn_Exp_PARTEVALFUNCTION__desc;
-extern record_description Absyn_Exp_ARRAY__desc;
-extern record_description Absyn_Exp_MATRIX__desc;
-extern record_description Absyn_Exp_RANGE__desc;
-extern record_description Absyn_Exp_TUPLE__desc;
-extern record_description Absyn_Exp_END__desc;
-extern record_description Absyn_Exp_CODE__desc;
-extern record_description Absyn_Exp_EXPRESSIONCOMMENT__desc;
-extern record_description Absyn_Exp_SUBSCRIPTED__EXP__desc;
-extern record_description Absyn_Exp_BREAK__desc;
+extern "C" record_description Absyn_Exp_INTEGER__desc;
+extern "C" record_description Absyn_Exp_REAL__desc;
+extern "C" record_description Absyn_Exp_CREF__desc;
+extern "C" record_description Absyn_Exp_STRING__desc;
+extern "C" record_description Absyn_Exp_BOOL__desc;
+extern "C" record_description Absyn_Exp_BINARY__desc;
+extern "C" record_description Absyn_Exp_UNARY__desc;
+extern "C" record_description Absyn_Exp_LBINARY__desc;
+extern "C" record_description Absyn_Exp_LUNARY__desc;
+extern "C" record_description Absyn_Exp_RELATION__desc;
+extern "C" record_description Absyn_Exp_IFEXP__desc;
+extern "C" record_description Absyn_Exp_CALL__desc;
+extern "C" record_description Absyn_Exp_PARTEVALFUNCTION__desc;
+extern "C" record_description Absyn_Exp_ARRAY__desc;
+extern "C" record_description Absyn_Exp_MATRIX__desc;
+extern "C" record_description Absyn_Exp_RANGE__desc;
+extern "C" record_description Absyn_Exp_TUPLE__desc;
+extern "C" record_description Absyn_Exp_END__desc;
+extern "C" record_description Absyn_Exp_CODE__desc;
+extern "C" record_description Absyn_Exp_EXPRESSIONCOMMENT__desc;
+extern "C" record_description Absyn_Exp_SUBSCRIPTED__EXP__desc;
+extern "C" record_description Absyn_Exp_BREAK__desc;
 
 std::unique_ptr<Expression::Base> exp_from_mm(MetaModelica::Record value)
 {

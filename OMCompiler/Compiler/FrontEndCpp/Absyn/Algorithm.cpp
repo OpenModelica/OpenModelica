@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of OpenModelica.
  *
  * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
@@ -39,7 +39,7 @@
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;
 
-extern record_description SCode_AlgorithmSection_ALGORITHM__desc;
+extern "C" record_description SCode_AlgorithmSection_ALGORITHM__desc;
 
 Algorithm::Algorithm(MetaModelica::Record value)
   : _statements{value[0].mapVector<Statement>()}
