@@ -902,6 +902,7 @@ function remove<T>
 protected
   Integer len = arrayLength(arr);
 algorithm
+  true := index <= len and index >= 1;
   if len <= 1 then
     outArr := listArray({});
   else
@@ -911,7 +912,7 @@ algorithm
       arrayUpdateNoBoundsChecking(outArr, i, arrayGetNoBoundsChecking(arr, i));
     end for;
 
-    for i in index+1:len-1 loop
+    for i in index+1:len loop
       arrayUpdateNoBoundsChecking(outArr, i - 1, arrayGetNoBoundsChecking(arr, i));
     end for;
   end if;
