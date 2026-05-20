@@ -65,6 +65,59 @@ enum class SignalType
   oms_signal_type_enum,
 };
 
+enum class FMIKind
+{
+  ModelExchange,
+  CoSimulation,
+  ModelExchangeAndCoSimulation,
+  Unknown
+};
+
+class FMUInfo
+{
+public:
+  void deserialize(const QJsonObject &jsonObject);
+  QString getDescription() const {return mDescription;}
+  QString getFMIKind() const {return mFMIKind;}
+  QString getFMIKindString() const;
+  QString getFMIKindShortString() const;
+  QString getFMIVersion() const {return mFMIVersion;}
+  QString getGenerationTool() const {return mGenerationTool;}
+  QString getGuid() const {return mGuid;}
+  QString getGenerationDateAndTime() const {return mGenerationDateAndTime;}
+  QString getModelName() const {return mModelName;}
+  QString getPath() const {return mPath;}
+  QString getVersion() const {return mVersion;}
+  bool getCanBeInstantiatedOnlyOncePerProcess() const {return mCanBeInstantiatedOnlyOncePerProcess;}
+  bool getCanGetAndSetFMUstate() const {return mCanGetAndSetFMUstate;}
+  bool getCanNotUseMemoryManagementFunctions() const {return mCanNotUseMemoryManagementFunctions;}
+  bool getCanSerializeFMUstate() const {return mCanSerializeFMUstate;}
+  bool getCompletedIntegratorStepNotNeeded() const {return mCompletedIntegratorStepNotNeeded;}
+  bool getNeedsExecutionTool() const {return mNeedsExecutionTool;}
+  bool getProvidesDirectionalDerivative() const {return mProvidesDirectionalDerivative;}
+  bool getCanInterpolateInputs() const {return mCanInterpolateInputs;}
+  int getMaxOutputDerivativeOrder() const {return mMaxOutputDerivativeOrder;}
+private:
+  QString mDescription;
+  QString mFMIKind;
+  QString mFMIVersion;
+  QString mGenerationTool;
+  QString mGuid;
+  QString mGenerationDateAndTime;
+  QString mModelName;
+  QString mPath;
+  QString mVersion;
+  bool mCanBeInstantiatedOnlyOncePerProcess = false;
+  bool mCanGetAndSetFMUstate = false;
+  bool mCanNotUseMemoryManagementFunctions = false;
+  bool mCanSerializeFMUstate = false;
+  bool mCompletedIntegratorStepNotNeeded = false;
+  bool mNeedsExecutionTool = false;
+  bool mProvidesDirectionalDerivative = false;
+  bool mCanInterpolateInputs = false;
+  int mMaxOutputDerivativeOrder = 0;
+};
+
 class ConnectorGeometry
 {
 public:
@@ -147,12 +200,16 @@ public:
   bool isSystem() const;
   bool isComponent() const;
   void setGeometry(const ElementGeometry &geometry) {mGeometry = geometry;}
+  bool hasFMUInfo() const {return mHasFMUInfo;}
+  const FMUInfo& getFMUInfo() const {return mFMUInfo;}
 private:
   QString mName;
   QString mType;
   ElementGeometry mGeometry;
   QVector<Element*> mElements;
   QVector<Connector*> mConnectors;
+  bool mHasFMUInfo = false;
+  FMUInfo mFMUInfo;
 };
 
 class Model

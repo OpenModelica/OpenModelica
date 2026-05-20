@@ -40,6 +40,7 @@
 #include "ElementPropertiesDialog.h"
 #include "Modeling/Commands.h"
 #include "Element/ElementProperties.h"
+#include "OMS/OMSModel.h"
 
 #include <QMessageBox>
 
@@ -70,24 +71,24 @@ ElementPropertiesDialog::ElementPropertiesDialog(Element *pComponent, QWidget *p
   // tab widget
   mpTabWidget = new QTabWidget;
   // info tab
-  if (mpComponent->getLibraryTreeItem()->getFMUInfo()) {
-    const oms_fmu_info_t *pFMUInfo = mpComponent->getLibraryTreeItem()->getFMUInfo();
+  if (mpComponent->getLibraryTreeItem()->getOMSModelElement()->hasFMUInfo()) {
+    const OMSModel::FMUInfo &pFMUInfo = mpComponent->getLibraryTreeItem()->getFMUInfo();
     mpGeneralGroupBox = new QGroupBox(Helper::general);
     mpDescriptionLabel = new Label(QString("%1:").arg(Helper::description));
-    mpDescriptionValueLabel = new Label(QString(pFMUInfo->description));
+    mpDescriptionValueLabel = new Label(QString(pFMUInfo.getDescription()));
     mpDescriptionValueLabel->setElideMode(Qt::ElideMiddle);
     mpFMUKindLabel = new Label(tr("FMU Kind:"));
-    mpFMUKindValueLabel = new Label(OMSProxy::getFMUKindString(pFMUInfo->fmiKind));
+    mpFMUKindValueLabel = new Label(pFMUInfo.getFMIKind());
     mpFMIVersionLabel = new Label(tr("FMI Version:"));
-    mpFMIVersionValueLabel = new Label(QString(pFMUInfo->fmiVersion));
+    mpFMIVersionValueLabel = new Label(QString(pFMUInfo.getFMIVersion()));
     mpGenerationToolLabel = new Label(tr("Generation Tool:"));
-    mpGenerationToolValueLabel = new Label(QString(pFMUInfo->generationTool));
+    mpGenerationToolValueLabel = new Label(QString(pFMUInfo.getGenerationTool()));
     mpGuidLabel = new Label(tr("Guid:"));
-    mpGuidValueLabel = new Label(QString(pFMUInfo->guid));
+    mpGuidValueLabel = new Label(QString(pFMUInfo.getGuid()));
     mpGenerationTimeLabel = new Label(tr("Generation Time:"));
-    mpGenerationTimeValueLabel = new Label(QString(pFMUInfo->generationDateAndTime));
+    mpGenerationTimeValueLabel = new Label(QString(pFMUInfo.getGenerationDateAndTime()));
     mpModelNameLabel = new Label(tr("Model Name:"));
-    mpModelNameValueLabel = new Label(QString(pFMUInfo->modelName));
+    mpModelNameValueLabel = new Label(QString(pFMUInfo.getModelName()));
     QGridLayout *pGeneralLayout = new QGridLayout;
     pGeneralLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     pGeneralLayout->addWidget(mpDescriptionLabel, 0, 0);
@@ -108,23 +109,23 @@ ElementPropertiesDialog::ElementPropertiesDialog(Element *pComponent, QWidget *p
     // FMU capabilities
     mpCapabilitiesGroupBox = new QGroupBox(tr("Capabilities"));
     mpCanBeInstantiatedOnlyOncePerProcessLabel = new Label("canBeInstantiatedOnlyOncePerProcess:");
-    mpCanBeInstantiatedOnlyOncePerProcessValueLabel = new Label(pFMUInfo->canBeInstantiatedOnlyOncePerProcess ? "true" : "false");
+    mpCanBeInstantiatedOnlyOncePerProcessValueLabel = new Label(pFMUInfo.getCanBeInstantiatedOnlyOncePerProcess() ? "true" : "false");
     mpCanGetAndSetFMUStateLabel = new Label("canGetAndSetFMUstate:");
-    mpCanGetAndSetFMUStateValueLabel = new Label(pFMUInfo->canGetAndSetFMUstate ? "true" : "false");
+    mpCanGetAndSetFMUStateValueLabel = new Label(pFMUInfo.getCanGetAndSetFMUstate() ? "true" : "false");
     mpCanNotUseMemoryManagementFunctionsLabel = new Label("canNotUseMemoryManagementFunctions:");
-    mpCanNotUseMemoryManagementFunctionsValueLabel = new Label(pFMUInfo->canNotUseMemoryManagementFunctions ? "true" : "false");
+    mpCanNotUseMemoryManagementFunctionsValueLabel = new Label(pFMUInfo.getCanNotUseMemoryManagementFunctions() ? "true" : "false");
     mpCanSerializeFMUStateLabel = new Label("canSerializeFMUstate:");
-    mpCanSerializeFMUStateValueLabel = new Label(pFMUInfo->canSerializeFMUstate ? "true" : "false");
+    mpCanSerializeFMUStateValueLabel = new Label(pFMUInfo.getCanSerializeFMUstate() ? "true" : "false");
     mpCompletedIntegratorStepNotNeededLabel = new Label("completedIntegratorStepNotNeeded:");
-    mpCompletedIntegratorStepNotNeededValueLabel = new Label(pFMUInfo->completedIntegratorStepNotNeeded ? "true" : "false");
+    mpCompletedIntegratorStepNotNeededValueLabel = new Label(pFMUInfo.getCompletedIntegratorStepNotNeeded() ? "true" : "false");
     mpNeedsExecutionToolLabel = new Label("needsExecutionTool:");
-    mpNeedsExecutionToolValueLabel = new Label(pFMUInfo->needsExecutionTool ? "true" : "false");
+    mpNeedsExecutionToolValueLabel = new Label(pFMUInfo.getNeedsExecutionTool() ? "true" : "false");
     mpProvidesDirectionalDerivativeLabel = new Label("providesDirectionalDerivative:");
-    mpProvidesDirectionalDerivativeValueLabel = new Label(pFMUInfo->providesDirectionalDerivative ? "true" : "false");
+    mpProvidesDirectionalDerivativeValueLabel = new Label(pFMUInfo.getProvidesDirectionalDerivative() ? "true" : "false");
     mpCanInterpolateInputsLabel = new Label("canInterpolateInputs:");
-    mpCanInterpolateInputsValueLabel = new Label(pFMUInfo->canInterpolateInputs ? "true" : "false");
+    mpCanInterpolateInputsValueLabel = new Label(pFMUInfo.getCanInterpolateInputs() ? "true" : "false");
     mpMaxOutputDerivativeOrderLabel = new Label("maxOutputDerivativeOrder:");
-    mpMaxOutputDerivativeOrderValueLabel = new Label(QString::number(pFMUInfo->maxOutputDerivativeOrder));
+    mpMaxOutputDerivativeOrderValueLabel = new Label(QString::number(pFMUInfo.getMaxOutputDerivativeOrder()));
     QGridLayout *pCapabilitiesGridLayout = new QGridLayout;
     pCapabilitiesGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     pCapabilitiesGridLayout->addWidget(mpCanBeInstantiatedOnlyOncePerProcessLabel, 0, 0);
@@ -311,7 +312,7 @@ ElementPropertiesDialog::ElementPropertiesDialog(Element *pComponent, QWidget *p
       pMainLayout->addWidget(mpStartScriptLabel, 3, 0);
       pMainLayout->addWidget(mpStartScriptTextBox, 3, 1);
   }
-  if (mpComponent->getLibraryTreeItem()->getFMUInfo() || hasParameter || hasInput) {
+  if (mpComponent->getLibraryTreeItem()->getOMSModelElement()->hasFMUInfo() || hasParameter || hasInput) {
       pMainLayout->addWidget(mpTabWidget, 4, 0, 1, 2);
   }
   pMainLayout->addWidget(mpButtonBox, 5, 0, 1, 2, Qt::AlignRight);

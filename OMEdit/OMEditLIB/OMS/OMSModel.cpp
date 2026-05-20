@@ -130,10 +130,48 @@ QString Connector::getSignalTypeString() const
   }
 }
 
+void FMUInfo::deserialize(const QJsonObject &jsonObject)
+{
+  mDescription = jsonObject.value("description").toString();
+  mFMIVersion = jsonObject.value("fmiVersion").toString();
+  mGenerationTool = jsonObject.value("generationTool").toString();
+  mGuid = jsonObject.value("guid").toString();
+  mGenerationDateAndTime = jsonObject.value("generationDateAndTime").toString();
+  mModelName = jsonObject.value("modelName").toString();
+  mPath = jsonObject.value("path").toString();
+  mVersion = jsonObject.value("version").toString();
+  mFMIKind = jsonObject.value("fmiKind").toString();
+
+  mCanBeInstantiatedOnlyOncePerProcess = jsonObject.value("canBeInstantiatedOnlyOncePerProcess").toBool();
+  mCanGetAndSetFMUstate = jsonObject.value("canGetAndSetFMUstate").toBool();
+  mCanNotUseMemoryManagementFunctions = jsonObject.value("canNotUseMemoryManagementFunctions").toBool();
+  mCanSerializeFMUstate = jsonObject.value("canSerializeFMUstate").toBool();
+  mCompletedIntegratorStepNotNeeded = jsonObject.value("completedIntegratorStepNotNeeded").toBool();
+  mNeedsExecutionTool = jsonObject.value("needsExecutionTool").toBool();
+  mProvidesDirectionalDerivative = jsonObject.value("providesDirectionalDerivative").toBool();
+  mCanInterpolateInputs = jsonObject.value("canInterpolateInputs").toBool();
+  mMaxOutputDerivativeOrder = jsonObject.value("maxOutputDerivativeOrder").toInt();
+}
+
+// QString FMUInfo::getFMIKindString() const
+// {
+//   switch (mFMIKind) {
+//     case FMIKind::ModelExchange:
+//       return "me";
+//     case FMIKind::CoSimulation:
+//       return "cs";
+//     case FMIKind::ModelExchangeAndCoSimulation:
+//       return "me_cs";
+//     case FMIKind::Unknown:
+//     default:
+//       return "Unknown";
+//   }
+// }
+
 Element::~Element()
 {
-    qDeleteAll(mElements);
-    qDeleteAll(mConnectors);
+  qDeleteAll(mElements);
+  qDeleteAll(mConnectors);
 }
 
 void Element::deserialize(const QJsonObject &jsonObject)
@@ -154,6 +192,11 @@ void Element::deserialize(const QJsonObject &jsonObject)
         Connector *pConnector = new Connector;
         pConnector->deserialize(connectorValue.toObject());
         mConnectors.append(pConnector);
+    }
+
+    if (jsonObject.value("fmuInfo").isObject()) {
+      mFMUInfo.deserialize(jsonObject.value("fmuInfo").toObject());
+      mHasFMUInfo = true;
     }
 
     const QJsonArray elements = jsonObject.value("elements").toArray();
