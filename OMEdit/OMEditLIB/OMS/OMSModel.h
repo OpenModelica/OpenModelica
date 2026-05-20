@@ -52,7 +52,7 @@ enum class Causality
   oms_causality_output,              ///< output
   oms_causality_parameter,           ///< parameter
   oms_causality_calculatedParameter, ///< calculated parameter
-  oms_causality_bidir,               ///< bidirecitonal
+  oms_causality_bidir,               ///< bidirectional
   oms_causality_undefined
 };
 
@@ -173,6 +173,8 @@ public:
   const ConnectorGeometry& getGeometry() const {return mGeometry;}
   static Causality causalityFromString(const QString &value);
   static SignalType signalTypeFromString(const QString &value);
+  static QString signalTypeToString(SignalType signalType);
+  static QString causalityToString(Causality causality);
   QString getCausalityString() const;
   QString getSignalTypeString() const;
   void setGeometry(const ConnectorGeometry &geometry) {mGeometry = geometry;}

@@ -743,14 +743,14 @@ void AddConnectorDialog::addConnector()
   }
   // add the connector
   QString nameStructure = QString("%1.%2").arg(pParentLibraryTreeItem->getNameStructure()).arg(mpNameTextBox->text());
-  oms_causality_enu_t causality = (oms_causality_enu_t)mpCausalityComboBox->itemData(mpCausalityComboBox->currentIndex()).toInt();
-  oms_signal_type_enu_t signalType = (oms_signal_type_enu_t)mpTypeComboBox->itemData(mpTypeComboBox->currentIndex()).toInt();
+  OMSModel::Causality causality = static_cast<OMSModel::Causality>(mpCausalityComboBox->itemData(mpCausalityComboBox->currentIndex()).toInt());
+  OMSModel::SignalType signalType = static_cast<OMSModel::SignalType>(mpTypeComboBox->itemData(mpTypeComboBox->currentIndex()).toInt());
   if (OMSProxy::instance()->addConnector(nameStructure, causality, signalType)) {
     if (mpGraphicsView->mContextMenuStartPositionValid) {
-      ssd_connector_geometry_t connectorGeometry;
-      connectorGeometry.x = Utilities::mapToCoordinateSystem(mpGraphicsView->mContextMenuStartPosition.x(), -100, 100, 0, 1);
-      connectorGeometry.y = Utilities::mapToCoordinateSystem(mpGraphicsView->mContextMenuStartPosition.y(), -100, 100, 0, 1);
-      OMSProxy::instance()->setConnectorGeometry(nameStructure, &connectorGeometry);
+      OMSModel::ConnectorGeometry connectorGeometry;
+      connectorGeometry.setX(Utilities::mapToCoordinateSystem(mpGraphicsView->mContextMenuStartPosition.x(), -100, 100, 0, 1));
+      connectorGeometry.setY(Utilities::mapToCoordinateSystem(mpGraphicsView->mContextMenuStartPosition.y(), -100, 100, 0, 1));
+      OMSProxy::instance()->setConnectorGeometry(nameStructure, connectorGeometry);
     }
     mpGraphicsView->getModelWidget()->createOMSimulatorUndoCommand(QString("Add connector %1").arg(nameStructure));
     mpGraphicsView->getModelWidget()->updateModelText();
