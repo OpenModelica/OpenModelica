@@ -34,7 +34,7 @@ macro(omc_add_template_target)
         WORKING_DIRECTORY ${source_dir}
 
         DEPENDS ${template_file} ${depends_on}
-        COMMAND ${OMC_EXE} -d=failtrace ${template_file} > ${output_log_file} || (cat ${output_log_file} && false)
+        COMMAND ${OMC_EXE} -d=failtrace ${template_file} > ${output_log_file} 2>&1 || (${CMAKE_COMMAND} -E cat ${output_log_file} && ${CMAKE_COMMAND} -E false)
 
         OUTPUT ${output_mo_file}
         COMMENT "Generating ${output_mo_file} from ${template_file}"
@@ -280,5 +280,3 @@ omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/VisualXMLTpl
 
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/susan_codegen/TplCodegen.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/susan_codegen/TplCodegenTV.mo)
-
-

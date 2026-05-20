@@ -300,31 +300,39 @@ endif()
 # They are part of "compiler" installation component. This means that you can
 # install just the files in this component by specifying its name.
 if(WIN32)
-  # Escape the environment variable path
-  if(NOT DEFINED ENV{OMDEV})
-    message(FATAL_ERROR "Environment variable \"OMDEV\" is not set.")
-  endif()
-  if(NOT DEFINED ENV{MSYSTEM_PREFIX})
-    message(FATAL_ERROR "Environment variable \"MSYSTEM_PREFIX\" is not set.")
-  endif()
+  if(NOT MSVC)
+    # MinGW/MSYS2 build: runtime DLLs come from the MSYS2 installation.
+    if(NOT DEFINED ENV{OMDEV})
+      message(FATAL_ERROR "Environment variable \"OMDEV\" is not set.")
+    endif()
+    if(NOT DEFINED ENV{MSYSTEM_PREFIX})
+      message(FATAL_ERROR "Environment variable \"MSYSTEM_PREFIX\" is not set.")
+    endif()
 
-  if (CMAKE_GENERATOR STREQUAL "MinGW Makefiles" AND "$ENV{VisualStudioVersion}" STREQUAL "")
-    string(REPLACE "\\" "/" MSYSTEM_PREFIX_ESCAPED "$ENV{OMDEV}\\tools\\msys\\$ENV{MSYSTEM_PREFIX}")
+    if(CMAKE_GENERATOR STREQUAL "MinGW Makefiles" AND "$ENV{VisualStudioVersion}" STREQUAL "")
+      string(REPLACE "\\" "/" MSYSTEM_PREFIX_ESCAPED "$ENV{OMDEV}\\tools\\msys\\$ENV{MSYSTEM_PREFIX}")
+    else()
+      string(REPLACE "\\" "/" MSYSTEM_PREFIX_ESCAPED "$ENV{MSYSTEM_PREFIX}")
+    endif()
+    set(RUNTIME_SEARCH_DIRS "${MSYSTEM_PREFIX_ESCAPED}/bin")
+
+    set(OMCOMPILER_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/Compiler/bin)
+    set(SIMULATION_RUNTIME_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/SimulationRuntime/c)
+    set(GC_RUNTIME_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/3rdParty/gc)
+    set(RUNTIME_LIB_DIRS ${OMPLOT_LIB_DIR} ${OMSIMULATOR_LIB_DIR} ${OMCOMPILER_LIB_DIR} ${SIMULATION_RUNTIME_LIB_DIR} ${GC_RUNTIME_LIB_DIR})
+
+    message(STATUS "Looking for runtime dependencies of OpenModelicaCompiler in ${RUNTIME_SEARCH_DIRS} ${RUNTIME_LIB_DIRS}")
+    install(TARGETS OpenModelicaCompiler
+            RUNTIME_DEPENDENCIES
+              DIRECTORIES ${RUNTIME_SEARCH_DIRS} ${RUNTIME_LIB_DIRS}
+              PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-"
+              POST_EXCLUDE_REGEXES ".*system32/.*\\.dll")
   else()
-    string(REPLACE "\\" "/" MSYSTEM_PREFIX_ESCAPED "$ENV{MSYSTEM_PREFIX}")
+    # MSVC + vcpkg build: X_VCPKG_APPLOCAL_DEPS_INSTALL handles DLL deployment via applocal.ps1.
+    # Using install(TARGETS ... RUNTIME_DEPENDENCIES ...) here would conflict with vcpkg's
+    # overridden install() which does not understand the RUNTIME_DEPENDENCIES keyword.
+    install(TARGETS OpenModelicaCompiler)
   endif()
-
-  set(OMCOMPILER_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/Compiler/bin)
-  set(SIMULATION_RUNTIME_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/SimulationRuntime/c)
-  set(GC_RUNTIME_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/3rdParty/gc)
-  set(RUNTIME_LIB_DIRS ${OMPLOT_LIB_DIR} ${OMSIMULATOR_LIB_DIR} ${OMCOMPILER_LIB_DIR} ${SIMULATION_RUNTIME_LIB_DIR} ${GC_RUNTIME_LIB_DIR})
-
-  message(STATUS "Looking for runtime dependencies of OpenModelicaCompiler in ${MSYSTEM_PREFIX_ESCAPED}/bin ${RUNTIME_LIB_DIRS}")
-  install(TARGETS OpenModelicaCompiler
-          RUNTIME_DEPENDENCIES
-            DIRECTORIES ${MSYSTEM_PREFIX_ESCAPED}/bin ${RUNTIME_LIB_DIRS}
-            PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-"
-            POST_EXCLUDE_REGEXES ".*system32/.*\\.dll")
   install(TARGETS omc
           COMPONENT omc)
 else(WIN32)

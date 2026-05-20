@@ -198,9 +198,9 @@ struct variableCount count_name_description_signals(const MODEL_DATA *mData,
                                                     modelica_boolean cpuTime)
 {
   struct variableCount count = {
-    .maxLengthName = strlen(timeName) + 1,
-    .maxLengthDesc = strlen(timeDesc) + 1,
-    .nSignals = 1};
+    strlen(timeName) + 1,
+    strlen(timeDesc) + 1,
+    1};
 
   /* CPU-time */
   if (cpuTime)

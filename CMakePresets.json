@@ -1,0 +1,64 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "installDir": "${sourceDir}/build/${presetName}/install_cmake",
+      "warnings": {
+        "dev": true
+      }
+    },
+    {
+      "name": "msys2-ucrt64",
+      "displayName": "MSYS2 UCRT64",
+      "description": "MSYS2 UCRT64 toolchain (GCC or Clang). In VS Code, select a UCRT64 kit to set compilers and PATH. On the command line, run from inside an MSYS2 UCRT64 shell.",
+      "inherits": "base",
+      "generator": "MinGW Makefiles",
+      "cacheVariables": {
+        "OM_USE_CCACHE": "ON"
+      }
+    },
+    {
+      "name": "msvc-ninja",
+      "displayName": "MSVC + Ninja",
+      "description": "MSVC compiler with Ninja generator. Requires vcpkg cloned at <root>/vcpkg. Run cmake from a Developer PowerShell for Visual Studio, or let VS Code CMake Tools activate the MSVC environment via kit selection.",
+      "inherits": "base",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "cl.exe",
+        "CMAKE_CXX_COMPILER": "cl.exe",
+        "OM_ENABLE_GUI_CLIENTS": "OFF",
+        "OM_OMC_ENABLE_FORTRAN": "OFF",
+        "OM_OMC_ENABLE_MOO": "OFF",
+        "OM_OMC_ENABLE_OPTIMIZATION": "OFF",
+        "OM_OMEDIT_ENABLE_QTWEBENGINE": "ON",
+        "OM_QT_MAJOR_VERSION": "6",
+        "OM_USE_CCACHE": "OFF",
+        "OM_USE_SYSTEM_LIBFFI": "ON",
+        "OM_WITH_VCPKG": "ON",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-release"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "msys2-ucrt64",
+      "displayName": "MSYS2 UCRT64",
+      "configurePreset": "msys2-ucrt64",
+      "targets": ["install"]
+    },
+    {
+      "name": "msvc-ninja",
+      "displayName": "MSVC + Ninja",
+      "configurePreset": "msvc-ninja",
+      "targets": ["install"]
+    }
+  ]
+}

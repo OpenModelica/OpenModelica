@@ -634,9 +634,9 @@ void SystemDefaultImplementation::storeTime(double time)
 {
     // delete up to last value < time - _delay_max
     buffer_type::iterator first = _time_buffer.begin();
+    double _threshold = time - _delay_max;
     buffer_type::iterator pos = find_if(first, _time_buffer.end(),
-                                        bind2nd(std::greater_equal<double>(),
-                                                time - _delay_max));
+                                        [_threshold](double v){ return v >= _threshold; });
     if (pos != first && --pos != first)
     {
         difference_type n = std::distance(first, pos);
@@ -694,7 +694,7 @@ double SystemDefaultImplementation::delay(unsigned int expr_id, double expr_valu
             {
                 //find posion in value buffer for queried time
                 buffer_type::iterator pos = find_if(_time_buffer.begin(), _time_buffer.end(),
-                                                    bind2nd(std::greater_equal<double>(), ts));
+                                                    [ts](double v){ return v >= ts; });
 
                 if (pos != _time_buffer.end())
                 {
