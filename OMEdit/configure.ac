@@ -127,10 +127,6 @@ else
   AC_MSG_RESULT("OSG is enabled")
 fi
 
-if test "$WITH_QT6" = "yes"; then
-  CPPFLAGS="$CPPFLAGS -DOM_OMEDIT_ENABLE_QTWEBENGINE"
-fi
-
 AC_MSG_CHECKING([check if -lboost_regex is needed for OMSimulator])
 AC_RUN_IFELSE( [AC_LANG_PROGRAM([[
 #include <regex>
