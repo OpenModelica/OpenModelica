@@ -81,7 +81,7 @@ Bool evalfG(ipindex n, double * vopt, Bool new_x, int m, ipnumber *g, void * use
   modelica_real ***v;
   long double a[5][5];
   long double *sdt;
-  double * vv[np+1];
+  double **vv = (double**)malloc((np+1) * sizeof(double*));
   int i, j, k, shift;
 
 
@@ -150,6 +150,7 @@ Bool evalfG(ipindex n, double * vopt, Bool new_x, int m, ipnumber *g, void * use
     const int nJ = optData->dim.nJ;
     printMaxError(g, m, nx, nJ, optData->time.t, np ,nsi ,optData->data, optData);
   }
+  free(vv);
   return TRUE;
 }
 

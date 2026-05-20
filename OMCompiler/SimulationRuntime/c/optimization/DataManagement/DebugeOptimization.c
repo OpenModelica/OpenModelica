@@ -109,17 +109,20 @@ void debugeJac(OptData * optData, ipnumber* vopt){
   const int NRes = optData->dim.NRes;
   const int nReal = optData->dim.nReal;
   const int NV = optData->dim.NV;
-  ipnumber vopt_shift[NV];
-  long double h[nv][nsi][np];
+  ipnumber *vopt_shift = (ipnumber*)malloc(NV * sizeof(ipnumber));
+  long double *h = (long double*)malloc(nv * nsi * np * sizeof(long double));
+  #define H(k,i,j) h[(k)*nsi*np + (i)*np + (j)]
   long double hh;
   const modelica_real * const vmax = optData->bounds.vmax;
   const modelica_real * const vmin = optData->bounds.vmin;
   const modelica_real * vnom = optData->bounds.vnom;
-  modelica_real vv[nsi][np][nReal];
+  modelica_real *vv = (modelica_real*)malloc(nsi * np * nReal * sizeof(modelica_real));
+  #define VV(i,j,r) vv[(i)*np*nReal + (j)*nReal + (r)]
   FILE *pFile;
   char buffer[4096];
   long double *sdt;
-  modelica_real JJ[nsi][np][nv][nx];
+  modelica_real *JJ = (modelica_real*)malloc(nsi * np * nv * nx * sizeof(modelica_real));
+  #define JJM(a,b,c,d) JJ[(a)*np*nv*nx + (b)*nv*nx + (c)*nx + (d)]
   modelica_boolean **sJ;
   modelica_real tmpJ;
 
@@ -167,8 +170,8 @@ void debugeJac(OptData * optData, ipnumber* vopt){
          }
         }
         vopt_shift[jj] += hh;
-        h[k][i][j] = hh;
-        memcpy(vv[i][j] , optData->v[i][j], nReal*sizeof(modelica_real));
+        H(k,i,j) = hh;
+        memcpy(&VV(i,j,0), optData->v[i][j], nReal*sizeof(modelica_real));
       }
      }
 
@@ -179,10 +182,10 @@ void debugeJac(OptData * optData, ipnumber* vopt){
       sdt = optData->bounds.scaldt[i];
       for(j = 0; j < np; ++j){
         for(kk = 0, ii = nx; kk<nx;++kk, ++ii){
-           hh = h[k][i][j];
-           JJ[i][j][kk][k] = (optData->v[i][j][ii] - vv[i][j][ii])*sdt[kk]/hh;
+           hh = H(k,i,j);
+           JJM(i,j,kk,k) = (optData->v[i][j][ii] - VV(i,j,ii))*sdt[kk]/hh;
         }
-        memcpy(optData->v[i][j] , vv[i][j], nReal*sizeof(modelica_real));
+        memcpy(optData->v[i][j], &VV(i,j,0), nReal*sizeof(modelica_real));
       }
      }
    }
@@ -204,7 +207,7 @@ void debugeJac(OptData * optData, ipnumber* vopt){
       for(k = 0; k < nx; ++k){
         fprintf(pFile,"%s;%f;",optData->data->modelData->realVarsData[k].info.name,(float)optData->time.t[i][j]);
         for(jj = 0; jj < nv; ++jj){
-          tmpJ = (sJ[k][jj]) ? (JJ[i][j][k][jj]) : 0.0;
+          tmpJ = (sJ[k][jj]) ? (JJM(i,j,k,jj)) : 0.0;
           fprintf(pFile,"%lf;",tmpJ);
         }
         fprintf(pFile,"\n");
@@ -340,6 +343,9 @@ void debugeJac(OptData * optData, ipnumber* vopt){
 
     fclose(pFile);
   }
+
+  free(vopt_shift);
+  free(h);
+  free(vv);
+  free(JJ);
 }
-
-

@@ -181,8 +181,8 @@ static inline void pickUpTime(OptDataTime * time, OptDataDim * dim, DATA* data, 
   const int nsi = dim->nsi;
   const int np = dim->np;
   const int np1 = np - 1;
-  long double c[np];
-  long double dc[np];
+  long double *c = (long double*)malloc(np * sizeof(long double));
+  long double *dc = (long double*)malloc(np * sizeof(long double));
   int i, k;
   double t;
   char * cflags = NULL;
@@ -238,6 +238,9 @@ static inline void pickUpTime(OptDataTime * time, OptDataDim * dim, DATA* data, 
     overwriteTimeGridFile(time, cflags, c, np, nsi);
   if(time->model_grid)
     overwriteTimeGridModel(time, c, np, nsi);
+
+  free(c);
+  free(dc);
 }
 
 static int getNsi(char*filename, const int nsi, modelica_boolean * exTimeGrid){
@@ -268,7 +271,7 @@ static int getNsi(char*filename, const int nsi, modelica_boolean * exTimeGrid){
 
 static inline void overwriteTimeGridFile(OptDataTime * time, char* filename, long double c[], const int np, const int nsi){
   int i,k;
-  long double dc[np];
+  long double *dc = (long double*)malloc(np * sizeof(long double));
   const int np1 = np - 1;
   double t;
   FILE * pFile = NULL;
@@ -312,6 +315,7 @@ static inline void overwriteTimeGridFile(OptDataTime * time, char* filename, lon
   }
   time->tf = time->t[nsi-1][np1];
   fclose(pFile);
+  free(dc);
 }
 
 int cmp_modelica_real(const void *v1, const void *v2) {
@@ -335,7 +339,6 @@ static inline void overwriteTimeGridModel(OptDataTime * time, long double c[], c
   }
 
   free(time->tt);
-
 }
 
 /* pick up information(startTime, stopTime, dt) from model data to optimizer struct
@@ -600,7 +603,7 @@ void res2file(OptData *optData, SOLVER_INFO* solverInfo, double *vopt){
   const int nInteger = optData->data->modelData->nVariablesInteger;
   const int nRelations =  optData->data->modelData->nRelations;
   const int nvnp = nv*np;
-  long double a[np];
+  long double *a = (long double*)malloc(np * sizeof(long double));
   modelica_real *** v = optData->v;
   float tmp_u;
 
@@ -673,6 +676,7 @@ void res2file(OptData *optData, SOLVER_INFO* solverInfo, double *vopt){
     }
   }
   fclose(pFile);
+  free(a);
 }
 
 

@@ -56,7 +56,7 @@ Bool evalfF(ipindex n, ipnumber * vopt, Bool new_x, ipnumber *objValue, void * u
     const long double * const dt = optData->time.dt;
 
     modelica_real *** v = optData->v;
-    long double erg[np];
+    long double *erg = (long double*)malloc(np * sizeof(long double));
     int i,j;
 
     for(j = 0; j< np; ++j){
@@ -71,6 +71,7 @@ Bool evalfF(ipindex n, ipnumber * vopt, Bool new_x, ipnumber *objValue, void * u
 
     for(j = 0; j< np; ++j)
       lagrange += b[j]*erg[j];
+    free(erg);
   }
 
   if(ma){
