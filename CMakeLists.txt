@@ -76,6 +76,12 @@ set(CXX_STANDARD_REQUIRED ON)
 ## Make sure we do not start relying on extensions down the road.
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+## Error on variable-length arrays (VLAs) with GCC/Clang. VLAs are a C99/GCC extension
+## not supported by MSVC, so catching them on Linux prevents silent portability issues.
+if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+  add_compile_options(-Werror=vla)
+endif()
+
 
 ### Build type configurations ###############################################################################
 # Default build type is Debug.
