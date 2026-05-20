@@ -61,11 +61,9 @@
 #include <QStatusBar>
 #include <QListWidget>
 #include <QMdiArea>
-#ifndef OM_DISABLE_DOCUMENTATION
-#ifndef OM_OMEDIT_ENABLE_QTWEBENGINE
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 #include <QtWebKit>
-#endif // #ifndef OM_OMEDIT_ENABLE_QTWEBENGINE
-#endif // #ifndef OM_DISABLE_DOCUMENTATION
+#endif // #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 #include <QSplitter>
 #include <QUndoStack>
 #include <QUndoView>
