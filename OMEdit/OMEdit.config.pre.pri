@@ -32,11 +32,10 @@
 
 QT += network core gui xml svg opengl printsupport widgets concurrent
 equals(QT_MAJOR_VERSION, 6) {
-  QT += core5compat openglwidgets
+  QT += core5compat openglwidgets webenginewidgets
   greaterThan(QT_MINOR_VERSION, 4) {
     QT += httpserver
   }
-  QT += webenginewidgets
 } else {
   QT += webkit webkitwidgets
 }
@@ -65,7 +64,6 @@ win32 {
   equals(_OM_ENABLE_ENCRYPTION, yes) {
     QMAKE_CXXFLAGS += -DOM_ENABLE_ENCRYPTION
   }
-  QMAKE_CXXFLAGS += -DOM_OMEDIT_ENABLE_QTWEBENGINE
 }
 
 UI_DIR = generatedfiles/ui

@@ -38,14 +38,12 @@
 TraceabilityGraphViewWidget::TraceabilityGraphViewWidget(QWidget *pParent)
   : QWidget(pParent)
 {
-#ifndef OM_DISABLE_DOCUMENTATION
-#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   mpTraceabilityGraphWebView = new QWebEngineView;
-#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+#else // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   mpTraceabilityGraphWebView = new QWebView;
-#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+#endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   mpTraceabilityGraphWebView->load(QUrl("http://localhost:7474/browser/"));
-#endif // #ifndef OM_DISABLE_DOCUMENTATION
   mpTraceabilityGraphViewLabel = new QLabel(tr("Traceability Graph View"));
   QFont font;
   font.setPointSize(15);
@@ -55,10 +53,6 @@ TraceabilityGraphViewWidget::TraceabilityGraphViewWidget(QWidget *pParent)
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
   pMainLayout->addWidget(mpTraceabilityGraphViewLabel, 0, 0);
-#ifndef OM_DISABLE_DOCUMENTATION
   pMainLayout->addWidget(mpTraceabilityGraphWebView, 1, 0);
-#else // #ifndef OM_DISABLE_DOCUMENTATION
-  qDebug() << "Traceability graph view is not supported due to missing webkit and webengine.";
-#endif // #ifndef OM_DISABLE_DOCUMENTATION
   setLayout(pMainLayout);
 }

@@ -180,7 +180,6 @@ omc_add_subdirectory(OMCompiler)
 if(OM_ENABLE_GUI_CLIENTS)
   # select qt version 5/6
   if (MINGW)
-    # qtwebengine is not available for mingw yet
     set (OM_QT_MAJOR_VERSION 5 CACHE STRING "Qt version")
   else ()
     set (OM_QT_MAJOR_VERSION 6 CACHE STRING "Qt version")
