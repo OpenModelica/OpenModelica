@@ -25,29 +25,6 @@ void ElementGeometry::deserialize(const QJsonObject &jsonObject)
   iconFixedAspectRatio = jsonObject.value("iconFixedAspectRatio").toBool(false);
 }
 
-// ssd_element_geometry_t ElementGeometry::toSsdElementGeometry() const
-// {
-//     ssd_element_geometry_t geometry;
-//     geometry.x1 = mX1;
-//     geometry.y1 = mY1;
-//     geometry.x2 = mX2;
-//     geometry.y2 = mY2;
-//     geometry.rotation = mRotation;
-//     geometry.iconRotation = mIconRotation;
-//     geometry.iconFlip = mIconFlip;
-//     geometry.iconFixedAspectRatio = mIconFixedAspectRatio;
-
-//     if (mIconSource.isEmpty()) {
-//         geometry.iconSource = NULL;
-//     } else {
-//         QByteArray iconSourceBytes = mIconSource.toUtf8();
-//         geometry.iconSource = new char[iconSourceBytes.size() + 1];
-//         strcpy(geometry.iconSource, iconSourceBytes.constData());
-//     }
-
-//     return geometry;
-// }
-
 void Connector::deserialize(const QJsonObject &jsonObject)
 {
   mName = jsonObject.value("name").toString();
@@ -130,6 +107,42 @@ QString Connector::getSignalTypeString() const
   }
 }
 
+QString Connector::causalityToString(Causality causality)
+{
+  switch (causality) {
+    case Causality::oms_causality_input:
+      return "input";
+    case Causality::oms_causality_output:
+      return "output";
+    case Causality::oms_causality_parameter:
+      return "parameter";
+    case Causality::oms_causality_calculatedParameter:
+      return "calculatedParameter";
+    case Causality::oms_causality_bidir:
+      return "bidir";
+    case Causality::oms_causality_undefined:
+    default:
+      return "undefined";
+  }
+}
+
+QString Connector::signalTypeToString(SignalType signalType)
+{
+  switch (signalType) {
+    case SignalType::oms_signal_type_real:
+      return "real";
+    case SignalType::oms_signal_type_integer:
+      return "integer";
+    case SignalType::oms_signal_type_boolean:
+      return "boolean";
+    case SignalType::oms_signal_type_string:
+      return "string";
+    case SignalType::oms_signal_type_enum:
+      return "enum";
+    default:
+      return "real";
+  }
+}
 void FMUInfo::deserialize(const QJsonObject &jsonObject)
 {
   mDescription = jsonObject.value("description").toString();

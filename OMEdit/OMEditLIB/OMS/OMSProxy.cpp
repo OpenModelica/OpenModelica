@@ -495,8 +495,11 @@ bool OMSProxy::addConnector(QString cref, oms_causality_enu_t causality, oms_sig
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms_addConnector(cref.toUtf8().constData(), causality, type);
   logResponse(command, status, &commandTime);
-  //return statusToBool(status);
+  return statusToBool(status);
+}
 
+bool OMSProxy::addConnector(QString cref, OMSModel::Causality causality, OMSModel::SignalType type)
+{
   QStringList parts = cref.split(".");
 
   // Save connector name before removing
@@ -509,9 +512,9 @@ bool OMSProxy::addConnector(QString cref, oms_causality_enu_t causality, oms_sig
   obj["method"] = "addConnector";
 
   args_["cref"] = QJsonArray::fromStringList(parts);
-  args_["name"] = connectorName;     // "arun"
-  args_["causality"] = "input";
-  args_["type"] = "real";
+  args_["name"] = connectorName;
+  args_["causality"] = OMSModel::Connector::causalityToString(causality);
+  args_["type"] = OMSModel::Connector::signalTypeToString(type);
 
   obj["args"] = args_;
 
@@ -531,11 +534,8 @@ bool OMSProxy::addConnector(QString cref, oms_causality_enu_t causality, oms_sig
 
   MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::notificationLevel));
 
-
-  return statusToBool(status);
-  // return true;
+  return true;
 }
-
 /*!
  * \brief OMSProxy::addConnectorToBus
  * Adds a connector to a bus.
