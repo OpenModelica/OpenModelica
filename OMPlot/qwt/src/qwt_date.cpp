@@ -14,6 +14,7 @@
 #include <qlocale.h>
 
 #include <limits>
+#include <QTimeZone>
 
 #if QT_VERSION >= 0x050000
 
@@ -132,7 +133,8 @@ static inline void qwtFloorTime(
     const Qt::TimeSpec timeSpec = dt.timeSpec();
 
     if ( timeSpec == Qt::LocalTime )
-        dt = dt.toTimeSpec( Qt::UTC );
+        dt = dt.toUTC();
+
 
     const QTime t = dt.time();
     switch( intervalType )
@@ -157,7 +159,7 @@ static inline void qwtFloorTime(
     }
 
     if ( timeSpec == Qt::LocalTime )
-        dt = dt.toTimeSpec( Qt::LocalTime );
+        dt = dt.toLocalTime();
 }
 
 static inline QDateTime qwtToTimeSpec(
@@ -175,11 +177,11 @@ static inline QDateTime qwtToTimeSpec(
         // for those dates
 
         QDateTime dt2 = dt;
-        dt2.setTimeSpec( spec );
+        dt2.setTimeZone( spec == Qt::LocalTime ? QTimeZone::systemTimeZone() : QTimeZone::utc() );
         return dt2;
     }
 
-    return dt.toTimeSpec( spec );
+    return spec == Qt::LocalTime ? dt.toLocalTime() : dt.toUTC();
 }
 
 #if 0
@@ -277,7 +279,7 @@ QDateTime QwtDate::toDateTime( double value, Qt::TimeSpec timeSpec )
 
     static const QTime timeNull( 0, 0, 0, 0 );
 
-    QDateTime dt( d, timeNull.addMSecs( msecs ), Qt::UTC );
+    QDateTime dt( d, timeNull.addMSecs( msecs ), QTimeZone::utc() );
 
     if ( timeSpec == Qt::LocalTime )
         dt = qwtToTimeSpec( dt, timeSpec );
@@ -653,7 +655,7 @@ int QwtDate::utcOffset( const QDateTime& dateTime )
         }
         default:
         {
-            const QDateTime dt1( dateTime.date(), dateTime.time(), Qt::UTC );
+            const QDateTime dt1( dateTime.date(), dateTime.time(), QTimeZone::utc() );
             seconds = dateTime.secsTo( dt1 );
         }
     }
