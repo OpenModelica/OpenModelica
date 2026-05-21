@@ -1020,11 +1020,27 @@ protected
       input output InlineRating dst;
       input InlineRating src;
     algorithm
-      for i in 1:arrayLength(dst.input_rating) loop
-        dst.input_rating[i] := dst.input_rating[i] + src.input_rating[i];
-      end for;
-      dst.constant_rating := dst.constant_rating + src.constant_rating;
+      if arrayLength(dst.input_rating) == arrayLength(src.input_rating) then
+        for i in 1:arrayLength(dst.input_rating) loop
+          dst.input_rating[i] := dst.input_rating[i] + src.input_rating[i];
+        end for;
+        dst.constant_rating := dst.constant_rating + src.constant_rating;
+      else
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed because dst and src input arrays are of different length.\n"
+          + "dst: " + toString(dst) + "\nsrc: " + toString(src)});
+        fail();
+      end if;
     end add;
+
+    function multiply
+      input output InlineRating ir;
+      input Integer i;
+    algorithm
+      for i in 1:arrayLength(ir.input_rating) loop
+        ir.input_rating[i] := i * ir.input_rating[i];
+      end for;
+      ir.constant_rating := i * ir.constant_rating;
+    end multiply;
 
     function addConst
       "bumps the constant cost"
@@ -1032,6 +1048,49 @@ protected
     algorithm
       ir.constant_rating := ir.constant_rating + 1;
     end addConst;
+
+    function addMapped
+      "adds the rating of src to dst mapping the interfaces correctly."
+      input output InlineRating dst;
+      input InlineRating src;
+      input array<Expression> args;
+      input UnorderedMap<ComponentRef, InlineRating> local_map;
+    protected
+      Pointer<InlineRating> irp = Pointer.create(InlineRating.INLINE_RATING(arrayCreate(arrayLength(dst.input_rating), 0), src.constant_rating));
+    algorithm
+      if arrayLength(src.input_rating) == arrayLength(args) then
+        for i in 1:arrayLength(src.input_rating) loop
+          if src.input_rating[i] <> 0 then
+            Expression.map(args[i], function addMappedExp(i = src.input_rating[i], irp = irp, local_map = local_map));
+          end if;
+        end for;
+        dst := add(dst, Pointer.access(irp));
+      else
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed because src input array and arguments are of different length.\n"
+          + "src: " + toString(src) + "\nargs: " + Array.toString(args, Expression.toString)});
+        fail();
+      end if;
+    end addMapped;
+
+    function addMappedExp
+      "checks if a cref has a rating already and multiplies it by the local bloating"
+      input output Expression exp;
+      input Integer i;
+      input Pointer<InlineRating> irp;
+      input UnorderedMap<ComponentRef, InlineRating> local_map;
+    algorithm
+      _ := match exp
+        local
+          Option<InlineRating> iro;
+        case Expression.CREF() algorithm
+          iro := UnorderedMap.get(exp.cref, local_map);
+          if Util.isSome(iro) then
+            Pointer.update(irp, add(Pointer.access(irp), multiply(Util.getOption(iro), i)));
+          end if;
+        then ();
+        else ();
+      end match;
+    end addMappedExp;
 
     function fromFunction
       "rates a function by analyzing the body and the local variables.
@@ -1087,47 +1146,51 @@ protected
       input UnorderedMap<ComponentRef, InlineRating> local_map;
       input Pointer<InlineRating> irp;
     protected
-      Option<InlineRating> lir;
+      Boolean cont;
     algorithm
       if Expression.isLiteral(exp) then
         // just count literals as constants
         Pointer.update(irp, addConst(Pointer.access(irp)));
       else
-        lir := match exp
+        cont := match exp
           local
             Function fn;
+            Option<InlineRating> lir;
 
           // check if the call already has a rating. if not only rate inline type default functions
           // no-inline has no bloating (traverse the args so just put NONE())
           // if inlined assumed to not scale as well (traverse the args so just put NONE())
           case Expression.CALL() guard(functionInlineable(Call.typedFunction(exp.call))) algorithm
-            fn := Call.typedFunction(exp.call);
-          then match UnorderedMap.get(fn, func_map)
-            case lir as SOME(_) then lir;
-            else algorithm
-
-            if DAEUtil.inlineTypeEqual(Function.inlineBuiltin(fn), DAE.InlineType.DEFAULT_INLINE()) then
-              lir := SOME(fromFunction(fn, func_map));
+            fn  := Call.typedFunction(exp.call);
+            lir := UnorderedMap.get(fn, func_map);
+            if Util.isSome(lir) then
+              // add the found rating to the overall rating
+              Pointer.update(irp, addMapped(Pointer.access(irp), Util.getOption(lir), listArray(Call.arguments(exp.call)), local_map));
+              cont := false;
+            elseif DAEUtil.inlineTypeEqual(Function.inlineBuiltin(fn), DAE.InlineType.DEFAULT_INLINE()) then
+              // determine rating and add it to the overall rating
+              Pointer.update(irp, addMapped(Pointer.access(irp), fromFunction(fn, func_map), listArray(Call.arguments(exp.call)), local_map));
+              cont := false;
             else
-              lir := NONE();
+              cont := true;
             end if;
-            then lir;
-          end match;
+          then cont;
 
           // check if the cref has a rating, otherwise count as constant
           case Expression.CREF() then match UnorderedMap.get(ComponentRef.stripSubscriptsAll(exp.cref), local_map)
-            case lir as SOME(_) then lir;
-            else algorithm Pointer.update(irp, addConst(Pointer.access(irp))); then NONE();
+            case lir as SOME(_) algorithm
+              Pointer.update(irp, add(Pointer.access(irp), Util.getOption(lir)));
+            then false;
+            else algorithm
+              Pointer.update(irp, addConst(Pointer.access(irp)));
+            then false;
           end match;
 
           // no relevant case, traverse deeper later
-          else NONE();
+          else true;
         end match;
 
-        if Util.isSome(lir) then
-          // add the found rating to the overall rating
-          Pointer.update(irp, add(Pointer.access(irp), Util.getOption(lir)));
-        else
+        if cont then
           // traverse deeper if no rating was found here
           exp := Expression.mapShallow(exp, function rateExpression(func_map = func_map, local_map = local_map, irp = irp));
         end if;
