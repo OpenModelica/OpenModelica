@@ -41,17 +41,18 @@ encapsulated package DAEUtil
 
   This module exports some helper functions to the DAE AST."
 
-public import Absyn;
-public import AbsynUtil;
-public import ClassInf;
-public import DAE;
-public import FCore;
-public import SCode;
-public import Values;
-public import ValuesUtil;
-public import HashTable;
-public import AvlSetCR;
-public import HashTable2;
+import Absyn;
+import AbsynUtil;
+import ClassInf;
+import DAE;
+import DAEDumpTypes;
+import FCore;
+import SCode;
+import Values;
+import ValuesUtil;
+import HashTable;
+import AvlSetCR;
+import HashTable2;
 
 protected
 import Algorithm;
@@ -5286,10 +5287,10 @@ public function splitElements
   output list<DAE.Element> classAttributes = {};
   output list<DAE.Element> constraints = {};
   output list<DAE.Element> externalObjects = {};
-  output list<DAEDump.compWithSplitElements> stateMachineComps = {};
+  output list<DAEDumpTypes.compWithSplitElements> stateMachineComps = {};
   output list<SCode.Comment> comments = {};
 protected
-  DAEDump.compWithSplitElements split_comp;
+  DAEDumpTypes.compWithSplitElements split_comp;
 algorithm
   for e in elements loop
     _ := match e
@@ -5392,20 +5393,20 @@ end splitElements;
 public function splitComponent
   "Transforms a DAE.COMP to a DAEDump.COMP_WITH_SPLIT."
   input DAE.Element component;
-  output DAEDump.compWithSplitElements splitComponent;
+  output DAEDumpTypes.compWithSplitElements splitComponent;
 protected
   list<DAE.Element> v, ie, ia, e, a, co, o, ca;
-  list<DAEDump.compWithSplitElements> sm;
+  list<DAEDumpTypes.compWithSplitElements> sm;
 protected
-  DAEDump.splitElements split_el;
+  DAEDumpTypes.splitElements split_el;
 algorithm
   splitComponent := match component
     case DAE.COMP()
       algorithm
         (v, ie, ia, e, a, co, o, ca, sm) := splitElements(component.dAElist);
-        split_el := DAEDump.SPLIT_ELEMENTS(v, ie, ia, e, a, co, o, ca, sm);
+        split_el := DAEDumpTypes.SPLIT_ELEMENTS(v, ie, ia, e, a, co, o, ca, sm);
       then
-        DAEDump.COMP_WITH_SPLIT(component.ident, split_el, component.comment);
+        DAEDumpTypes.COMP_WITH_SPLIT(component.ident, split_el, component.comment);
   end match;
 end splitComponent;
 

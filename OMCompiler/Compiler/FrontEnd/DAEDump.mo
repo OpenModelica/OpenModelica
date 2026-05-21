@@ -51,6 +51,7 @@ public import SCode;
 protected import ComponentReference;
 protected import Config;
 protected import DAEUtil;
+protected import DAEDumpTypes.*;
 protected import ElementSource;
 protected import Error;
 protected import Print;
@@ -71,35 +72,6 @@ protected import Flags;
 protected import DAEDumpTpl;
 protected import Tpl;
 protected import System;
-
-
-public uniontype splitElements
-  record SPLIT_ELEMENTS
-    list<DAE.Element> v;
-    list<DAE.Element> ie;
-    list<DAE.Element> ia;
-    list<DAE.Element> e;
-    list<DAE.Element> a;
-    list<DAE.Element> co;
-    list<DAE.Element> o;
-    list<DAE.Element> ca;
-    list<compWithSplitElements> sm;
-  end SPLIT_ELEMENTS;
-end splitElements;
-
-public uniontype compWithSplitElements
-  record COMP_WITH_SPLIT
-    String name;
-    splitElements spltElems;
-    Option<SCode.Comment> comment;
-  end COMP_WITH_SPLIT;
-end compWithSplitElements;
-
-public uniontype functionList
-  record FUNCTION_LIST
-    list<DAE.Function> funcs;
-  end FUNCTION_LIST;
-end functionList;
 
 public function dump "This function prints the DAE in the standard output format to the Print buffer.
   For printing to the stdout use print(dumpStr(dae)) instead."
@@ -709,106 +681,6 @@ algorithm
     case DAE.PARLOCAL() then "parlocal ";
   end match;
 end dumpVarParallelismStr;
-
-public function dumpCommentStr
-  "Dumps a comment to a string."
-  input Option<SCode.Comment> inComment;
-  output String outString;
-algorithm
-  outString := match(inComment)
-    local
-      String cmt;
-
-    case SOME(SCode.COMMENT(comment = SOME(cmt)))
-      algorithm
-        cmt := System.escapedString(cmt,false);
-      then stringAppendList({" \"", cmt, "\""});
-
-    else "";
-
-  end match;
-end dumpCommentStr;
-
-public function dumpClassAnnotationStr
-  input Option<SCode.Comment> inComment;
-  output String outString;
-algorithm
-  outString := dumpAnnotationStr(inComment, "  ", ";\n");
-end dumpClassAnnotationStr;
-
-public function dumpCompAnnotationStr
-  input Option<SCode.Comment> inComment;
-  output String outString;
-algorithm
-  outString := dumpAnnotationStr(inComment, " ", "");
-end dumpCompAnnotationStr;
-
-protected function dumpAnnotationStr
-  input Option<SCode.Comment> inComment;
-  input String inPrefix;
-  input String inSuffix;
-  output String outString;
-algorithm
-  outString := matchcontinue(inComment, inPrefix, inSuffix)
-    local
-      String ann;
-      SCode.Mod ann_mod;
-
-    case (SOME(SCode.COMMENT(annotation_ = SOME(SCode.ANNOTATION(ann_mod)))), _, _)
-      algorithm
-        if Config.showAnnotations() then
-          ann := inPrefix + "annotation" + SCodeDump.printModStr(ann_mod, SCodeDump.defaultOptions) + inSuffix;
-        elseif Config.showStructuralAnnotations() then
-          ann_mod := filterStructuralMods(ann_mod);
-
-          if not SCodeUtil.isEmptyMod(ann_mod) then
-            ann := inPrefix + "annotation" + SCodeDump.printModStr(ann_mod, SCodeDump.defaultOptions) + inSuffix;
-          else
-            ann := "";
-          end if;
-        else
-          ann := "";
-        end if;
-      then
-        ann;
-
-    else "";
-
-  end matchcontinue;
-end dumpAnnotationStr;
-
-public function filterStructuralMods
-  input output SCode.Mod mod;
-algorithm
-  mod := SCodeUtil.filterSubMods(mod, filterStructuralMod);
-end filterStructuralMods;
-
-public function filterStructuralMod
-  input SCode.SubMod mod;
-  output Boolean keep;
-algorithm
-  keep := match mod.ident
-    case "Evaluate" then true;
-    case "Inline" then true;
-    case "LateInline" then true;
-    case "derivative" then true;
-    case "inverse" then true;
-    case "smoothOrder" then true;
-    case "InlineAfterIndexReduction" then true;
-    case "GenerateEvents" then true;
-    else false;
-  end match;
-end filterStructuralMod;
-
-public function dumpCommentAnnotationStr
-  input Option<SCode.Comment> inComment;
-  output String outString;
-algorithm
-  outString := match(inComment)
-    case NONE() then "";
-    else dumpCommentStr(inComment) + dumpCompAnnotationStr(inComment);
-  end match;
-end dumpCommentAnnotationStr;
 
 protected function dumpCommentOption "Dump Comment option."
   input Option<SCode.Comment> comment;
@@ -2623,7 +2495,7 @@ public function dumpStr "This function prints the DAE to a string."
 protected
   list<DAE.Element> daelist;
   functionList funList;
-  list<compWithSplitElements> fixedDae;
+  list<DAEDumpTypes.compWithSplitElements> fixedDae;
 algorithm
   DAE.DAE(elementLst = daelist) := inDAElist;
   funList := dumpFunctionList(functionTree);
@@ -2810,7 +2682,7 @@ algorithm
     local
       IOStream.IOStream str;
       list<DAE.Element> v,o,ie,ia,e,a,ca,co;
-      list<compWithSplitElements> sm;
+      list<DAEDumpTypes.compWithSplitElements> sm;
       list<SCode.Comment> comments;
       Option<SCode.Annotation> ann;
 
@@ -2848,7 +2720,7 @@ algorithm
 end dumpElementsStream;
 
 public function dumpCompWithSplitElementsStream "Dump components with split elements (e.g., state machines) to a stream."
-  input list<compWithSplitElements> inCompLst;
+  input list<DAEDumpTypes.compWithSplitElements> inCompLst;
   input IOStream.IOStream inStream;
   output IOStream.IOStream outStream;
 algorithm
@@ -2859,9 +2731,9 @@ algorithm
       Option<SCode.Comment> comment;
       String cstr;
       IOStream.IOStream str;
-      list<compWithSplitElements> xs;
+      list<DAEDumpTypes.compWithSplitElements> xs;
       list<DAE.Element> v,o,ie,ia,e,a,ca,co;
-      list<compWithSplitElements> sm;
+      list<DAEDumpTypes.compWithSplitElements> sm;
 
     case ({}, str) then str;
 

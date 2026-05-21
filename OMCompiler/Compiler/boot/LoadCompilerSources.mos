@@ -21,6 +21,7 @@ if true then /* Suppress output */
     "../FrontEnd/ConnectionGraph.mo",
     "../FrontEnd/ConnectUtil.mo",
     "../FrontEnd/DAEDump.mo",
+    "../FrontEnd/DAEDumpTypes.mo",
     "../FrontEnd/DAE.mo",
     "../FrontEnd/DAEUtil.mo",
     "../FrontEnd/Dump.mo",

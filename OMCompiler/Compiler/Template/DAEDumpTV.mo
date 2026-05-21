@@ -231,7 +231,7 @@ package SCode
 end SCode;
 
 
-package DAEDump
+package DAEDumpTypes
 
 uniontype compWithSplitElements
   record COMP_WITH_SPLIT
@@ -266,9 +266,7 @@ function filterStructuralMods
   output SCode.Mod outMod;
 end filterStructuralMods;
 
-end DAEDump;
-
-
+end DAEDumpTypes;
 
 package DAE
 

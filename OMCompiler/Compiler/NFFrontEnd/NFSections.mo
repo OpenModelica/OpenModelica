@@ -44,7 +44,7 @@ encapsulated uniontype NFSections
 
 protected
   import Absyn;
-  import DAEDump;
+  import DAEDumpTypes;
   import Sections = NFSections;
   import SCodeUtil;
   import IOStream;
@@ -431,7 +431,7 @@ public
           end if;
 
           if isSome(sections.ann) then
-            s := IOStream.append(s, DAEDump.dumpCompAnnotationStr(SOME(SCode.Comment.COMMENT(sections.ann, NONE()))));
+            s := IOStream.append(s, DAEDumpTypes.dumpCompAnnotationStr(SOME(SCode.Comment.COMMENT(sections.ann, NONE()))));
           end if;
 
           s := IOStream.append(s, ";\n");

@@ -52,7 +52,7 @@ import BackendDump;
 import BackendEquation;
 import BackendVariable;
 import ComponentReference;
-import DAEDump;
+import DAEDumpTypes;
 import Error;
 import ExpandableArray;
 import Expression;
@@ -5996,7 +5996,7 @@ algorithm
         annot := BackendVariable.getAnnotationComment(var);
         annotString := arrayGet(annotInfoIn,taskIdx);
         cr := BackendVariable.varCref(var);
-        annotString := annotString + "("+ComponentReference.printComponentRefStr(cr)+": "+DAEDump.dumpCommentAnnotationStr(annot)+") ";
+        annotString := annotString + "("+ComponentReference.printComponentRefStr(cr)+": "+DAEDumpTypes.dumpCommentAnnotationStr(annot)+") ";
         arrayUpdate(annotInfoIn,taskIdx,annotString);
       then
         annotInfoIn;

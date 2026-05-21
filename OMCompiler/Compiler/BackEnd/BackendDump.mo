@@ -65,6 +65,7 @@ import BackendVariable;
 import BaseHashSet;
 import ComponentReference;
 import DAEDump;
+import DAEDumpTypes;
 import DAEUtil;
 import Debug;
 import DoubleEnded;
@@ -2534,7 +2535,7 @@ algorithm
   outStr := DAEDump.dumpDirectionStr(inVar.varDirection) + ComponentReference.printComponentRefStr(inVar.varName)
             + (if isSome(inVar.tplExp) then " in " + ExpressionDump.printExpStr(Util.getOption(inVar.tplExp)) else "") + ":"
             + kindString(inVar.varKind) + "(" + connectorTypeString(inVar.connectorType) + attributesString(inVar.values)
-            + ") " + optExpressionString(inVar.bindExp, "") + DAEDump.dumpCommentAnnotationStr(inVar.comment)
+            + ") " + optExpressionString(inVar.bindExp, "") + DAEDumpTypes.dumpCommentAnnotationStr(inVar.comment)
             + stringDelimitList(paths_lst, ", ") + " type: " + DAEDump.daeTypeStr(inVar.varType) + dimensions + unreplaceableStr;
 end varString;
 

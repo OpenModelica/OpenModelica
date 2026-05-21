@@ -94,6 +94,7 @@ protected import BackendDAETransform;
 protected import BackendEquation;
 protected import ComponentReference;
 protected import Config;
+protected import DAEDumpTypes;
 protected import DAEUtil;
 protected import Debug;
 protected import ElementSource;
@@ -3290,7 +3291,7 @@ algorithm
       algorithm
         dumpVariable(intString(varno),ComponentReference.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),
                         getIndex(kind),getDerName(kind),boolString(BackendVariable.varFixed(v)),dumpFlowStr(ct),dumpStreamStr(ct),
-                        DAEDump.dumpCommentAnnotationStr(comment));
+                        DAEDumpTypes.dumpCommentAnnotationStr(comment));
         dumpBindExpression(e,addMMLCode);
         //The command below adds information to the XML about the dimension of the
         //containing vector, in the casse the variable is an element of a vector.

@@ -80,7 +80,6 @@ import DAE;
 import NFClassTree.ClassTree;
 import Subscript = NFSubscript;
 import TypeCheck = NFTypeCheck;
-import Types;
 import NFSections.Sections;
 import List;
 import MetaModelica.Dangerous.listReverseInPlace;

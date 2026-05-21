@@ -16,6 +16,7 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ConnectionGraph.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ConnectUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/DAEDump.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/DAEDumpTypes.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/DAE.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/DAEUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/Dump.mo
