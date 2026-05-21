@@ -811,7 +811,7 @@ void setLocalVars(OptData * optData, DATA * data, const double * const vopt,
     data->simulationInfo->inputVars[k-nx] = (modelica_real) vopt[shift + k]*vnom[k];
   }
 
-};
+}
 
 
 /*

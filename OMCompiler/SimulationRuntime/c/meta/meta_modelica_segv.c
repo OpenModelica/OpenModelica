@@ -162,7 +162,8 @@ static void handler(int signo, siginfo_t *si, void *ptr)
 {
   int unused __attribute__((unused)), isStackOverflow;
   threadData_t *threadData = (threadData_t*)pthread_getspecific(mmc_thread_data_key);
-  isStackOverflow = si->si_addr < threadData->stackBottom && si->si_addr > threadData->stackBottom-LIMIT_FOR_STACK_OVERFLOW;
+  isStackOverflow = si->si_addr < threadData->stackBottom
+                 && (char*)si->si_addr > (char*)threadData->stackBottom - LIMIT_FOR_STACK_OVERFLOW;
   if (isStackOverflow) {
     mmc_setStacktraceMessages(1,0);
     sigprocmask(SIG_UNBLOCK, &segvset, NULL);
@@ -225,7 +226,7 @@ static void* getStackBase() {
   }
 #endif
   assert(size > 128*1024);
-  return stackBottom + 64*1024;
+  return (char*)stackBottom + 64*1024;
 }
 
 void init_metamodelica_segv_handler()
