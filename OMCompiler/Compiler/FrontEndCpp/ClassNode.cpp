@@ -39,9 +39,9 @@
 
 using namespace OpenModelica;
 
-extern record_description NFInstNode_InstNode_CLASS__NODE__desc;
+extern "C" record_description NFInstNode_InstNode_CLASS__NODE__desc;
 
-extern record_description NFClass_NOT__INSTANTIATED__desc;
+extern "C" record_description NFClass_NOT__INSTANTIATED__desc;
 
 constexpr int NAME_INDEX = 0;
 constexpr int DEFINITION_INDEX = 1;
@@ -51,7 +51,7 @@ constexpr int CACHES_INDEX = 4;
 constexpr int PARENT_SCOPE_INDEX = 5;
 constexpr int NODE_TYPE_INDEX = 6;
 
-extern record_description NFInstNode_CachedData_NO__CACHE__desc;
+extern "C" record_description NFInstNode_CachedData_NO__CACHE__desc;
 
 MMSharedCache<Class> ClassNode::_cache;
 

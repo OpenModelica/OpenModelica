@@ -40,7 +40,7 @@
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;
 
-extern record_description Absyn_ForIterator_ITERATOR__desc;
+extern "C" record_description Absyn_ForIterator_ITERATOR__desc;
 
 Iterator::Iterator(MetaModelica::Record value)
   : _name{value[0].toString()},

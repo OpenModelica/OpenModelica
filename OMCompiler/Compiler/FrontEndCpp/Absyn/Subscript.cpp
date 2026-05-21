@@ -45,8 +45,8 @@ using namespace OpenModelica::Absyn;
 constexpr int NOSUB = 0;
 constexpr int SUBSCRIPT = 1;
 
-extern record_description Absyn_Subscript_NOSUB__desc;
-extern record_description Absyn_Subscript_SUBSCRIPT__desc;
+extern "C" record_description Absyn_Subscript_NOSUB__desc;
+extern "C" record_description Absyn_Subscript_SUBSCRIPT__desc;
 
 Subscript::Subscript(MetaModelica::Record value)
   : _subscript{value.index() == SUBSCRIPT ? std::make_optional<Expression>(value[0]) : std::nullopt}

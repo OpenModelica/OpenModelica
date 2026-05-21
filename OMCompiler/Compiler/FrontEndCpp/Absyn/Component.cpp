@@ -42,7 +42,7 @@
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;
 
-extern record_description SCode_Element_COMPONENT__desc;
+extern "C" record_description SCode_Element_COMPONENT__desc;
 
 Component::Component(MetaModelica::Record value)
   : Element(SourceInfo{value[7]}),

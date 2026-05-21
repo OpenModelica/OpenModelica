@@ -54,9 +54,9 @@ constexpr int TY_INDEX = 2;
 constexpr int ORIGIN_INDEX = 3;
 constexpr int REST_CREF_INDEX = 4;
 
-extern record_description NFComponentRef_CREF__desc;
-extern record_description NFComponentRef_EMPTY__desc;
-extern record_description NFComponentRef_WILD__desc;
+extern "C" record_description NFComponentRef_CREF__desc;
+extern "C" record_description NFComponentRef_EMPTY__desc;
+extern "C" record_description NFComponentRef_WILD__desc;
 
 ComponentRef::Part::Part(MetaModelica::Record value)
   : node{InstNode::getReference(value[NODE_INDEX])},

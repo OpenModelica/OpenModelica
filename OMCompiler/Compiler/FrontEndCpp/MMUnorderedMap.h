@@ -38,7 +38,7 @@
 
 #include "MMVector.h"
 
-extern record_description UnorderedMap_UNORDERED__MAP__desc;
+extern "C" record_description UnorderedMap_UNORDERED__MAP__desc;
 
 namespace OpenModelica
 {

@@ -40,7 +40,7 @@
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;
 
-extern record_description SCode_Annotation_ANNOTATION__desc;
+extern "C" record_description SCode_Annotation_ANNOTATION__desc;
 
 Annotation::Annotation(MetaModelica::Record value)
   : _modifier{value[0]}

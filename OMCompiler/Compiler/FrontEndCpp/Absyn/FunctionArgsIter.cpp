@@ -40,9 +40,9 @@
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;
 
-extern record_description Absyn_FunctionArgs_FOR__ITER__FARG__desc;
+extern "C" record_description Absyn_FunctionArgs_FOR__ITER__FARG__desc;
 
-extern record_description Absyn_ReductionIterType_COMBINE__desc;
+extern "C" record_description Absyn_ReductionIterType_COMBINE__desc;
 
 FunctionArgsIter::FunctionArgsIter(MetaModelica::Record value)
   : _exp{value[0]},

@@ -43,11 +43,11 @@
 
 using namespace OpenModelica;
 
-extern record_description NFClassTree_ClassTree_PARTIAL__TREE__desc;
-extern record_description NFClassTree_ClassTree_EXPANDED__TREE__desc;
-extern record_description NFClassTree_ClassTree_INSTANTIATED__TREE__desc;
-extern record_description NFClassTree_ClassTree_FLAT__TREE__desc;
-extern record_description NFClassTree_ClassTree_EMPTY__TREE__desc;
+extern "C" record_description NFClassTree_ClassTree_PARTIAL__TREE__desc;
+extern "C" record_description NFClassTree_ClassTree_EXPANDED__TREE__desc;
+extern "C" record_description NFClassTree_ClassTree_INSTANTIATED__TREE__desc;
+extern "C" record_description NFClassTree_ClassTree_FLAT__TREE__desc;
+extern "C" record_description NFClassTree_ClassTree_EMPTY__TREE__desc;
 
 constexpr int PARTIAL_TREE = 0;
 constexpr int EXPANDED_TREE = 1;
@@ -55,9 +55,9 @@ constexpr int INSTANTIATED_TREE = 2;
 constexpr int FLAT_TREE = 3;
 constexpr int EMPTY_TREE = 4;
 
-extern record_description NFLookupTree_Entry_CLASS__desc;
-extern record_description NFLookupTree_Entry_COMPONENT__desc;
-extern record_description NFLookupTree_Entry_IMPORT__desc;
+extern "C" record_description NFLookupTree_Entry_CLASS__desc;
+extern "C" record_description NFLookupTree_Entry_COMPONENT__desc;
+extern "C" record_description NFLookupTree_Entry_IMPORT__desc;
 
 constexpr int CLASS_ENTRY = 0;
 constexpr int COMPONENT_ENTRY = 1;

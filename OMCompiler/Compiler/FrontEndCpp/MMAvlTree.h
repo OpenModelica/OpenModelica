@@ -43,9 +43,9 @@
 #include "MetaModelica.h"
 
 #define DEFINE_MM_AVL_TREE_TYPE(name, mm_type, comp_func) \
-  extern record_description mm_type##_NODE__desc; \
-  extern record_description mm_type##_LEAF__desc; \
-  extern record_description mm_type##_EMPTY__desc; \
+  extern "C" record_description mm_type##_NODE__desc; \
+  extern "C" record_description mm_type##_LEAF__desc; \
+  extern "C" record_description mm_type##_EMPTY__desc; \
   using name = OpenModelica::MetaModelica::AvlTree<mm_type##_NODE__desc, mm_type##_LEAF__desc, mm_type##_EMPTY__desc, comp_func>;
 
 namespace OpenModelica

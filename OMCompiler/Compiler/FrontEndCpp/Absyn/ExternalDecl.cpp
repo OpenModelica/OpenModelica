@@ -43,7 +43,7 @@
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;
 
-extern record_description SCode_ExternalDecl_EXTERNALDECL__desc;
+extern "C" record_description SCode_ExternalDecl_EXTERNALDECL__desc;
 
 ExternalDecl::ExternalDecl(MetaModelica::Record value)
   : _functionName{value[0].toOptional<std::string>().value_or("")},

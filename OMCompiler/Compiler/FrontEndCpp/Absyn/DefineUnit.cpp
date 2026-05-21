@@ -41,7 +41,7 @@
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;
 
-extern record_description SCode_Element_DEFINEUNIT__desc;
+extern "C" record_description SCode_Element_DEFINEUNIT__desc;
 
 DefineUnit::DefineUnit(MetaModelica::Record value)
   : Element(SourceInfo(value[4])),

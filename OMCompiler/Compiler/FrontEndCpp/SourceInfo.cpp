@@ -39,7 +39,7 @@
 
 using namespace OpenModelica;
 
-extern record_description SourceInfo_SOURCEINFO__desc;
+extern "C" record_description SourceInfo_SOURCEINFO__desc;
 
 SourceInfo::SourceInfo() noexcept
   : _isReadOnly{false}, _lineNumberStart{0}, _columnNumberStart{0},

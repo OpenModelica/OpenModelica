@@ -44,11 +44,11 @@ constexpr int EXPANDABLE_CONNECTOR = 3;
 constexpr int RECORD = 4;
 constexpr int EXTERNAL_OBJECT = 5;
 
-extern record_description NFComplexType_EXTENDS__TYPE__desc;
-extern record_description NFComplexType_CONNECTOR__desc;
-extern record_description NFComplexType_EXPANDABLE__CONNECTOR__desc;
-extern record_description NFComplexType_RECORD__desc;
-extern record_description NFComplexType_EXTERNAL__OBJECT__desc;
+extern "C" record_description NFComplexType_EXTENDS__TYPE__desc;
+extern "C" record_description NFComplexType_CONNECTOR__desc;
+extern "C" record_description NFComplexType_EXPANDABLE__CONNECTOR__desc;
+extern "C" record_description NFComplexType_RECORD__desc;
+extern "C" record_description NFComplexType_EXTERNAL__OBJECT__desc;
 
 std::unique_ptr<ComplexType> ComplexType::fromNF(MetaModelica::Record value)
 {

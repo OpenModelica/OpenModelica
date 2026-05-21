@@ -41,7 +41,7 @@
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;
 
-extern record_description SCode_Element_IMPORT__desc;
+extern "C" record_description SCode_Element_IMPORT__desc;
 
 Import::Import(MetaModelica::Record value)
   : Element(SourceInfo(value[2])),
