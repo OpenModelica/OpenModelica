@@ -2026,5 +2026,5 @@ public constant Sets emptySet = SETS(SET_TRIE_NODE("", WILD(), {}, 0), 0, {}, {}
 
 end Connect;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_types");
 end DAE;

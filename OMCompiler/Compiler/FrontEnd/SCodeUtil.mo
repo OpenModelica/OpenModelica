@@ -5748,5 +5748,5 @@ algorithm
   end match;
 end setAnnotationValue;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_types");
 end SCodeUtil;

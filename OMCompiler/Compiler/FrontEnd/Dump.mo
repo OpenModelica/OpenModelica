@@ -3049,5 +3049,5 @@ algorithm
   end while;
 end writePath;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_types");
 end Dump;

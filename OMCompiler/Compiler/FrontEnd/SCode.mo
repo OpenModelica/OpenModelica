@@ -652,5 +652,5 @@ public constant Attributes defaultInputAttr =
 public constant Attributes defaultOutputAttr =
   ATTR({}, POTENTIAL(), NON_PARALLEL(), VAR(), Absyn.OUTPUT(), Absyn.NONFIELD());
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_types");
 end SCode;

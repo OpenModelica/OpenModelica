@@ -785,5 +785,5 @@ algorithm
   end match;
 end isMetaRecord;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_types");
 end ClassInf;

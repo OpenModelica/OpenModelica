@@ -520,5 +520,5 @@ algorithm
   end match;
 end filterElement;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_types");
 end SCodeDump;
