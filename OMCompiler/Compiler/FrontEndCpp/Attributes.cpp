@@ -49,7 +49,7 @@ constexpr int ATTRIBUTES_IS_REDECLARE = 6;
 constexpr int ATTRIBUTES_REPLACEABLE = 7;
 constexpr int ATTRIBUTES_IS_RESIZABLE = 8;
 
-extern record_description NFAttributes_ATTRIBUTES__desc;
+extern "C" record_description NFAttributes_ATTRIBUTES__desc;
 
 Attributes::Attributes(MetaModelica::Record value)
   : connectorType{value[ATTRIBUTES_CONNECTOR_TYPE]},

@@ -49,10 +49,10 @@ constexpr int CREF_IDENT = 2;
 constexpr int WILD = 3;
 constexpr int ALLWILD = 4;
 
-extern record_description Absyn_ComponentRef_CREF__FULLYQUALIFIED__desc;
-extern record_description Absyn_ComponentRef_CREF__QUAL__desc;
-extern record_description Absyn_ComponentRef_CREF__IDENT__desc;
-extern record_description Absyn_ComponentRef_WILD__desc;
+extern "C" record_description Absyn_ComponentRef_CREF__FULLYQUALIFIED__desc;
+extern "C" record_description Absyn_ComponentRef_CREF__QUAL__desc;
+extern "C" record_description Absyn_ComponentRef_CREF__IDENT__desc;
+extern "C" record_description Absyn_ComponentRef_WILD__desc;
 
 ComponentRef::ComponentRef(std::vector<Part> parts, bool fullyQualified)
   : _parts{std::move(parts)}, _fullyQualified{fullyQualified}
@@ -127,5 +127,3 @@ namespace OpenModelica::Absyn
     return os;
   }
 }
-
-

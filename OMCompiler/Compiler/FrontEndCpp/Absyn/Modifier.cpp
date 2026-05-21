@@ -47,11 +47,11 @@ constexpr int MOD = 0;
 constexpr int REDECL = 1;
 constexpr int NOMOD = 2;
 
-extern record_description SCode_Mod_MOD__desc;
-extern record_description SCode_Mod_REDECL__desc;
-extern record_description SCode_Mod_NOMOD__desc;
+extern "C" record_description SCode_Mod_MOD__desc;
+extern "C" record_description SCode_Mod_REDECL__desc;
+extern "C" record_description SCode_Mod_NOMOD__desc;
 
-extern record_description SCode_SubMod_NAMEMOD__desc;
+extern "C" record_description SCode_SubMod_NAMEMOD__desc;
 
 std::unique_ptr<Modifier::Base> fromMM(OpenModelica::MetaModelica::Record value)
 {

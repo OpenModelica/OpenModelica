@@ -39,7 +39,7 @@ using namespace OpenModelica;
 
 constexpr int NAME_INDEX = 0;
 
-extern record_description NFInstNode_InstNode_NAME__NODE__desc;
+extern "C" record_description NFInstNode_InstNode_NAME__NODE__desc;
 
 NameNode::NameNode(MetaModelica::Record value)
   : _name{value[NAME_INDEX].toString()}
@@ -71,4 +71,3 @@ MetaModelica::Value NameNode::toNF() const
     MetaModelica::Value{_name}
   }};
 }
-

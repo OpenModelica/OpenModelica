@@ -43,11 +43,11 @@
 
 #include "MetaModelica.h"
 
-extern record_description SCode_Replaceable_REPLACEABLE__desc;
-extern record_description SCode_Replaceable_NOT__REPLACEABLE__desc;
+extern "C" record_description SCode_Replaceable_REPLACEABLE__desc;
+extern "C" record_description SCode_Replaceable_NOT__REPLACEABLE__desc;
 
-extern record_description NFPrefixes_Replaceable_REPLACEABLE__desc;
-extern record_description NFPrefixes_Replaceable_NOT__REPLACEABLE__desc;
+extern "C" record_description NFPrefixes_Replaceable_REPLACEABLE__desc;
+extern "C" record_description NFPrefixes_Replaceable_NOT__REPLACEABLE__desc;
 
 namespace OpenModelica
 {

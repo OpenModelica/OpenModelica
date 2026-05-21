@@ -51,14 +51,14 @@ constexpr int EXP = 5;
 constexpr int RESIZABLE = 6;
 constexpr int UNKNOWN = 7;
 
-extern record_description NFDimension_RAW__DIM__desc;
-extern record_description NFDimension_UNTYPED__desc;
-extern record_description NFDimension_INTEGER__desc;
-extern record_description NFDimension_BOOLEAN__desc;
-extern record_description NFDimension_ENUM__desc;
-extern record_description NFDimension_EXP__desc;
-extern record_description NFDimension_RESIZABLE__desc;
-extern record_description NFDimension_UNKNOWN__desc;
+extern "C" record_description NFDimension_RAW__DIM__desc;
+extern "C" record_description NFDimension_UNTYPED__desc;
+extern "C" record_description NFDimension_INTEGER__desc;
+extern "C" record_description NFDimension_BOOLEAN__desc;
+extern "C" record_description NFDimension_ENUM__desc;
+extern "C" record_description NFDimension_EXP__desc;
+extern "C" record_description NFDimension_RESIZABLE__desc;
+extern "C" record_description NFDimension_UNKNOWN__desc;
 
 std::unique_ptr<int> dimension_from_mm(MetaModelica::Record value)
 {

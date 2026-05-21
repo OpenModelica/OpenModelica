@@ -37,14 +37,14 @@
 
 using namespace OpenModelica;
 
-extern record_description NFBinding_UNBOUND__desc;
-extern record_description NFBinding_RAW_BINDING__desc;
-extern record_description NFBinding_UNTYPED_BINDING__desc;
-extern record_description NFBinding_TYPED_BINDING__desc;
-extern record_description NFBinding_FLAT_BINDING__desc;
-extern record_description NFBinding_CEVAL_BINDING__desc;
-extern record_description NFBinding_INVALID_BINDING__desc;
-extern record_description NFBinding_WILD__desc;
+extern "C" record_description NFBinding_UNBOUND__desc;
+extern "C" record_description NFBinding_RAW_BINDING__desc;
+extern "C" record_description NFBinding_UNTYPED_BINDING__desc;
+extern "C" record_description NFBinding_TYPED_BINDING__desc;
+extern "C" record_description NFBinding_FLAT_BINDING__desc;
+extern "C" record_description NFBinding_CEVAL_BINDING__desc;
+extern "C" record_description NFBinding_INVALID_BINDING__desc;
+extern "C" record_description NFBinding_WILD__desc;
 
 constexpr int UNBOUND = 0;
 constexpr int RAW_BINDING = 1;

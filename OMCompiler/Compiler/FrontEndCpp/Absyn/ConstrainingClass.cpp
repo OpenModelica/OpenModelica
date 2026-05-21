@@ -40,7 +40,7 @@
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;
 
-extern record_description SCode_ConstrainClass_CONSTRAINCLASS__desc;
+extern "C" record_description SCode_ConstrainClass_CONSTRAINCLASS__desc;
 
 ConstrainingClass::ConstrainingClass(MetaModelica::Record value)
   : _path{value[0]},

@@ -41,9 +41,9 @@
 
 using namespace OpenModelica;
 
-extern record_description NFImport_UNRESOLVED__IMPORT__desc;
-extern record_description NFImport_RESOLVED__IMPORT__desc;
-extern record_description NFImport_CONFLICTING__IMPORT__desc;
+extern "C" record_description NFImport_UNRESOLVED__IMPORT__desc;
+extern "C" record_description NFImport_RESOLVED__IMPORT__desc;
+extern "C" record_description NFImport_CONFLICTING__IMPORT__desc;
 
 constexpr int UNRESOLVED_IMPORT = 0;
 constexpr int RESOLVED_IMPORT = 1;

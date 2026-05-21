@@ -55,18 +55,18 @@ constexpr int ALG_NORETCALL = 9;
 constexpr int ALG_RETURN = 10;
 constexpr int ALG_BREAK = 11;
 
-extern record_description SCode_Statement_ALG__ASSIGN__desc;
-extern record_description SCode_Statement_ALG__IF__desc;
-extern record_description SCode_Statement_ALG__FOR__desc;
-extern record_description SCode_Statement_ALG__PARFOR__desc;
-extern record_description SCode_Statement_ALG__WHILE__desc;
-extern record_description SCode_Statement_ALG__WHEN__A__desc;
-extern record_description SCode_Statement_ALG__ASSERT__desc;
-extern record_description SCode_Statement_ALG__TERMINATE__desc;
-extern record_description SCode_Statement_ALG__REINIT__desc;
-extern record_description SCode_Statement_ALG__NORETCALL__desc;
-extern record_description SCode_Statement_ALG__RETURN__desc;
-extern record_description SCode_Statement_ALG__BREAK__desc;
+extern "C" record_description SCode_Statement_ALG__ASSIGN__desc;
+extern "C" record_description SCode_Statement_ALG__IF__desc;
+extern "C" record_description SCode_Statement_ALG__FOR__desc;
+extern "C" record_description SCode_Statement_ALG__PARFOR__desc;
+extern "C" record_description SCode_Statement_ALG__WHILE__desc;
+extern "C" record_description SCode_Statement_ALG__WHEN__A__desc;
+extern "C" record_description SCode_Statement_ALG__ASSERT__desc;
+extern "C" record_description SCode_Statement_ALG__TERMINATE__desc;
+extern "C" record_description SCode_Statement_ALG__REINIT__desc;
+extern "C" record_description SCode_Statement_ALG__NORETCALL__desc;
+extern "C" record_description SCode_Statement_ALG__RETURN__desc;
+extern "C" record_description SCode_Statement_ALG__BREAK__desc;
 
 Statement::Base::Base(Comment comment, SourceInfo info)
   : _comment{std::move(comment)}, _info{std::move(info)}

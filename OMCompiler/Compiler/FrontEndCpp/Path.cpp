@@ -46,9 +46,9 @@ constexpr int FULLYQUALIFIED = 2;
 constexpr int QUALIFIED = 0;
 constexpr int IDENT = 1;
 
-extern record_description Absyn_Path_FULLYQUALIFIED__desc;
-extern record_description Absyn_Path_QUALIFIED__desc;
-extern record_description Absyn_Path_IDENT__desc;
+extern "C" record_description Absyn_Path_FULLYQUALIFIED__desc;
+extern "C" record_description Absyn_Path_QUALIFIED__desc;
+extern "C" record_description Absyn_Path_IDENT__desc;
 
 Path::Path(std::vector<std::string> path, bool fullyQualified)
   : _names{std::move(path)}, _fullyQualified{fullyQualified}

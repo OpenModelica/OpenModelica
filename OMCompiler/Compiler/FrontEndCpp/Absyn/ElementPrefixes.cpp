@@ -40,7 +40,7 @@
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;
 
-extern record_description SCode_Prefixes_PREFIXES__desc;
+extern "C" record_description SCode_Prefixes_PREFIXES__desc;
 
 ElementPrefixes::ElementPrefixes(MetaModelica::Record value)
   : _visibility{value[0]},

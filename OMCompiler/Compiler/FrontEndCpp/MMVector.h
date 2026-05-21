@@ -38,7 +38,7 @@
 
 #include "MetaModelica.h"
 
-extern record_description Vector_VECTOR__desc;
+extern "C" record_description Vector_VECTOR__desc;
 
 namespace OpenModelica
 {

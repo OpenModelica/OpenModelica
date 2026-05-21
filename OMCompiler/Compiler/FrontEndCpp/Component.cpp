@@ -39,13 +39,13 @@
 
 using namespace OpenModelica;
 
-extern record_description NFComponent_COMPONENT__DEF__desc;
-extern record_description NFComponent_COMPONENT__desc;
-extern record_description NFComponent_ITERATOR__desc;
-extern record_description NFComponent_ENUM__LITERAL__desc;
-extern record_description NFComponent_TYPE__ATTRIBUTE__desc;
-extern record_description NFComponent_INVALID_COMPONENT__desc;
-extern record_description NFComponent_WILD__desc;
+extern "C" record_description NFComponent_COMPONENT__DEF__desc;
+extern "C" record_description NFComponent_COMPONENT__desc;
+extern "C" record_description NFComponent_ITERATOR__desc;
+extern "C" record_description NFComponent_ENUM__LITERAL__desc;
+extern "C" record_description NFComponent_TYPE__ATTRIBUTE__desc;
+extern "C" record_description NFComponent_INVALID_COMPONENT__desc;
+extern "C" record_description NFComponent_WILD__desc;
 
 constexpr int COMPONENT_DEF = 0;
 constexpr int COMPONENT = 1;
@@ -67,7 +67,7 @@ constexpr int COMPONENT_COMMENT = 5;
 constexpr int COMPONENT_STATE = 6;
 constexpr int COMPONENT_INFO = 7;
 
-extern record_description NFModifier_Modifier_NOMOD__desc;
+extern "C" record_description NFModifier_Modifier_NOMOD__desc;
 
 Component::Component(Absyn::Component *definition)
   : _definition{definition}

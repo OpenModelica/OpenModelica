@@ -42,9 +42,9 @@
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;
 
-extern record_description Absyn_FunctionArgs_FUNCTIONARGS__desc;
+extern "C" record_description Absyn_FunctionArgs_FUNCTIONARGS__desc;
 
-extern record_description Absyn_NamedArg_NAMEDARG__desc;
+extern "C" record_description Absyn_NamedArg_NAMEDARG__desc;
 
 FunctionArgsList::FunctionArgsList(MetaModelica::Record value)
   : _args{value[0].mapVector<Expression>()},
@@ -87,4 +87,3 @@ void FunctionArgsList::print(std::ostream &os) const noexcept
   if (!_args.empty() && !_namedArgs.empty()) os << ", ";
   os << Util::printList(_namedArgs);
 }
-

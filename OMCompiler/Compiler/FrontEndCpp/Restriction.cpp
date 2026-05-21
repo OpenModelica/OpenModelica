@@ -52,17 +52,17 @@ constexpr int R_PACKAGE = 8;
 constexpr int R_FUNCTION = 9;
 constexpr int R_ENUMERATION = 10;
 
-extern record_description SCode_Restriction_R__CLASS__desc;
-extern record_description SCode_Restriction_R__OPTIMIZATION__desc;
-extern record_description SCode_Restriction_R__MODEL__desc;
-extern record_description SCode_Restriction_R__RECORD__desc;
-extern record_description SCode_Restriction_R__BLOCK__desc;
-extern record_description SCode_Restriction_R__CONNECTOR__desc;
-extern record_description SCode_Restriction_R__OPERATOR__desc;
-extern record_description SCode_Restriction_R__TYPE__desc;
-extern record_description SCode_Restriction_R__PACKAGE__desc;
-extern record_description SCode_Restriction_R__FUNCTION__desc;
-extern record_description SCode_Restriction_R__ENUMERATION__desc;
+extern "C" record_description SCode_Restriction_R__CLASS__desc;
+extern "C" record_description SCode_Restriction_R__OPTIMIZATION__desc;
+extern "C" record_description SCode_Restriction_R__MODEL__desc;
+extern "C" record_description SCode_Restriction_R__RECORD__desc;
+extern "C" record_description SCode_Restriction_R__BLOCK__desc;
+extern "C" record_description SCode_Restriction_R__CONNECTOR__desc;
+extern "C" record_description SCode_Restriction_R__OPERATOR__desc;
+extern "C" record_description SCode_Restriction_R__TYPE__desc;
+extern "C" record_description SCode_Restriction_R__PACKAGE__desc;
+extern "C" record_description SCode_Restriction_R__FUNCTION__desc;
+extern "C" record_description SCode_Restriction_R__ENUMERATION__desc;
 
 constexpr int FR_NORMAL_FUNCTION = 0;
 constexpr int FR_EXTERNAL_FUNCTION = 1;
@@ -71,12 +71,12 @@ constexpr int FR_RECORD_CONSTRUCTOR = 3;
 constexpr int FR_PARALLEL_FUNCTION = 4;
 constexpr int FR_KERNEL_FUNCTION = 5;
 
-extern record_description SCode_FunctionRestriction_FR__NORMAL__FUNCTION__desc;
-extern record_description SCode_FunctionRestriction_FR__EXTERNAL__FUNCTION__desc;
-extern record_description SCode_FunctionRestriction_FR__OPERATOR__FUNCTION__desc;
-extern record_description SCode_FunctionRestriction_FR__RECORD__CONSTRUCTOR__desc;
-extern record_description SCode_FunctionRestriction_FR__PARALLEL__FUNCTION__desc;
-extern record_description SCode_FunctionRestriction_FR__KERNEL__FUNCTION__desc;
+extern "C" record_description SCode_FunctionRestriction_FR__NORMAL__FUNCTION__desc;
+extern "C" record_description SCode_FunctionRestriction_FR__EXTERNAL__FUNCTION__desc;
+extern "C" record_description SCode_FunctionRestriction_FR__OPERATOR__FUNCTION__desc;
+extern "C" record_description SCode_FunctionRestriction_FR__RECORD__CONSTRUCTOR__desc;
+extern "C" record_description SCode_FunctionRestriction_FR__PARALLEL__FUNCTION__desc;
+extern "C" record_description SCode_FunctionRestriction_FR__KERNEL__FUNCTION__desc;
 
 constexpr int BLOCK = 0;
 constexpr int CLASS = 1;
@@ -93,20 +93,20 @@ constexpr int RECORD_CONSTRUCTOR = 11;
 constexpr int TYPE = 12;
 constexpr int UNKNOWN = 13;
 
-extern record_description NFRestriction_BLOCK__desc;
-extern record_description NFRestriction_CLASS__desc;
-extern record_description NFRestriction_CLOCK__desc;
-extern record_description NFRestriction_CONNECTOR__desc;
-extern record_description NFRestriction_ENUMERATION__desc;
-extern record_description NFRestriction_EXTERNAL__OBJECT__desc;
-extern record_description NFRestriction_FUNCTION__desc;
-extern record_description NFRestriction_MODEL__desc;
-extern record_description NFRestriction_PACKAGE__desc;
-extern record_description NFRestriction_OPERATOR__desc;
-extern record_description NFRestriction_RECORD__desc;
-extern record_description NFRestriction_RECORD__CONSTRUCTOR__desc;
-extern record_description NFRestriction_TYPE__desc;
-extern record_description NFRestriction_UNKNOWN__desc;
+extern "C" record_description NFRestriction_BLOCK__desc;
+extern "C" record_description NFRestriction_CLASS__desc;
+extern "C" record_description NFRestriction_CLOCK__desc;
+extern "C" record_description NFRestriction_CONNECTOR__desc;
+extern "C" record_description NFRestriction_ENUMERATION__desc;
+extern "C" record_description NFRestriction_EXTERNAL__OBJECT__desc;
+extern "C" record_description NFRestriction_FUNCTION__desc;
+extern "C" record_description NFRestriction_MODEL__desc;
+extern "C" record_description NFRestriction_PACKAGE__desc;
+extern "C" record_description NFRestriction_OPERATOR__desc;
+extern "C" record_description NFRestriction_RECORD__desc;
+extern "C" record_description NFRestriction_RECORD__CONSTRUCTOR__desc;
+extern "C" record_description NFRestriction_TYPE__desc;
+extern "C" record_description NFRestriction_UNKNOWN__desc;
 
 int to_value(Restriction::Prefix prefix, Restriction::Kind kind) noexcept
 {
