@@ -67,9 +67,9 @@ omc_option(OM_USE_CCACHE "Use ccache to speedup compilations." ON)
 
 
 ### Standards ###############################################################################################
-## Set the C standard to use. Unfortunately, we can not enforce c90.
-## Our sources contain a lot of c99 and gnu extension code.
-# set(CMAKE_C_STANDARD 90)
+## Set the C standard to use. Unfortunately, we can not enforce C17.
+## Our sources contain a lot of gnu extension code / C23 features.
+# set(CMAKE_C_STANDARD 17)
 
 ## Set the C++ standard to use. We use C++17 for everything in OpenModelica now.
 ## Note that 3rdParty libraries might set their own standards.

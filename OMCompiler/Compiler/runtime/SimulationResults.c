@@ -45,6 +45,7 @@
 #include <gc.h>
 #include "util/omc_file.h"
 #include "util/omc_msvc.h" /* For INFINITY and NAN */
+#include "util/omc_strdup.h"
 #include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -146,7 +147,7 @@ static PlotFormat SimulationResultsImpl__openFile(const char *filename, Simulati
   }
 
   simresglob->curFormat = format;
-  simresglob->curFileName = strdup(filename);
+  simresglob->curFileName = omc_strdup(filename);
 #if !defined(__MINGW32__) && !defined(_MSC_VER)
   omc_stat(filename, &buf);
   simresglob->mtime = buf.st_mtime;

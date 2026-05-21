@@ -66,6 +66,7 @@ set(OMC_SIMRT_UTIL_HEADERS
   "omc_msvc.h"
   "omc_numbers.h"
   "omc_spinlock.h"
+  "omc_strdup.h"
   "parallel_helper.h"
   "rational.h"
   "read_csv.h"

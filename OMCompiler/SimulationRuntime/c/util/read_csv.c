@@ -33,6 +33,7 @@
 #include "libcsv.h"
 #include "omc_file.h"
 #include "omc_numbers.h"
+#include "omc_strdup.h"
 
 struct cell_row_count
 {
@@ -79,7 +80,7 @@ static void add_variable(void *data, size_t len, void *t)
     head->buffer_size = head->buffer_size ? 2*head->buffer_size : 512;
     head->variables = (char**) realloc(head->variables, sizeof(char*)*head->buffer_size);
   }
-  head->variables[head->size++] = strdup(data ? (char*) data : "");
+  head->variables[head->size++] = omc_strdup(data ? (char*) data : "");
 }
 
 static void row_count(int c, void *t)

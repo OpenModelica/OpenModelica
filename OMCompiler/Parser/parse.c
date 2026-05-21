@@ -51,6 +51,7 @@
 #include "errorext.h"
 #include "systemimpl.h"
 #include "util/omc_file.h"
+#include "util/omc_strdup.h"
 
 pthread_once_t parser_once_create_key = PTHREAD_ONCE_INIT;
 pthread_key_t modelicaParserKey;
@@ -160,8 +161,8 @@ static void handleLexerError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 *
   pANTLR3_LEXER lexer = (pANTLR3_LEXER)(recognizer->super);
   int isEOF = lexer->input->istream->_LA(lexer->input->istream, 1) == -1;
   char* chars[] = {
-    isEOF ? strdup("<EOF>") : strdup((const char*)(lexer->input->substr(lexer->input, lexer->getCharIndex(lexer), lexer->getCharIndex(lexer)+10)->chars)),
-    strdup((const char*)lexer->getText(lexer)->chars)
+    isEOF ? omc_strdup("<EOF>") : omc_strdup((const char*)(lexer->input->substr(lexer->input, lexer->getCharIndex(lexer), lexer->getCharIndex(lexer)+10)->chars)),
+    omc_strdup((const char*)lexer->getText(lexer)->chars)
   };
   int line = 0;
   int offset = 0;
@@ -279,7 +280,7 @@ static void* parseStream(pANTLR3_INPUT_STREAM input, int langStd, int strict, in
   oldfilename = (char*) ModelicaParser_filename_C;
   ModelicaParser_filename_C = SystemImpl__iconv(ModelicaParser_filename_C,"UTF-8","UTF-8",1);
   if (!*ModelicaParser_filename_C) return NULL;
-  ModelicaParser_filename_C = strdup(ModelicaParser_filename_C);
+  ModelicaParser_filename_C = omc_strdup(ModelicaParser_filename_C);
   ModelicaParser_filename_OMC = mmc_mk_scon(ModelicaParser_filename_C);
   ModelicaParser_langStd = langStd;
   ModelicaParser_strict = strict;

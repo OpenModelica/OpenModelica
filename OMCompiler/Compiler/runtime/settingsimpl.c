@@ -38,6 +38,7 @@
 #include <string.h>
 #include <assert.h>
 #include "omc_config.h"
+#include "util/omc_strdup.h"
 
 #define ADD_METARECORD_DEFINITIONS static
 #if defined(OMC_BOOTSTRAPPING)
@@ -150,7 +151,7 @@ const char* SettingsImpl__getInstallationDirectoryPath(void) {
   if (omc_installationPath == NULL) {
     char filename[MAX_PATH];
     if (0 != GetModuleFileName(GetModuleHandle("libOpenModelicaCompiler.dll"), filename, MAX_PATH)) {
-      omc_installationPath = strdup(filename); /* duplicate the path */
+      omc_installationPath = omc_strdup(filename); /* duplicate the path */
       *strrchr(omc_installationPath, '\\') = '\0';
       *strrchr(omc_installationPath, '\\') = '\0';
     }
@@ -233,7 +234,7 @@ char* SettingsImpl__getModelicaPath(int runningTestsuite) {
     const char *path = getenv("OPENMODELICALIBRARY");
     if (path != NULL)
     {
-      omc_modelicaPath = strdup(path);
+      omc_modelicaPath = omc_strdup(path);
     }
     else if (runningTestsuite) {
       fprintf(stderr, "When using --running-testsuite, OPENMODELICALIBRARY must be set\n");
@@ -286,7 +287,7 @@ extern void SettingsImpl__setInstallationDirectoryPath(const char *value)
     omc_installationPath = NULL;
     return;
   }
-  omc_installationPath = strdup(value);
+  omc_installationPath = omc_strdup(value);
   omc_installationPath = covertToForwardSlashesInPlace(omc_installationPath);
   commonSetEnvVar("OPENMODELICAHOME", omc_installationPath);
 }
@@ -298,7 +299,7 @@ extern void SettingsImpl__setModelicaPath(const char *value)
     omc_modelicaPath = NULL;
     return;
   }
-  omc_modelicaPath = strdup(value);
+  omc_modelicaPath = omc_strdup(value);
   omc_modelicaPath = covertToForwardSlashesInPlace(omc_modelicaPath);
   commonSetEnvVar("OPENMODELICALIBRARY", omc_modelicaPath);
 }
@@ -307,7 +308,7 @@ extern void SettingsImpl__setTempDirectoryPath(const char *path)
 {
   if (tempDirectoryPath)
     free(tempDirectoryPath);
-  tempDirectoryPath = strdup(path);
+  tempDirectoryPath = omc_strdup(path);
 }
 
 extern const char* SettingsImpl__getTempDirectoryPath(void)
@@ -324,15 +325,15 @@ extern const char* SettingsImpl__getTempDirectoryPath(void)
       fprintf(stderr, "Error setting temppath in Kernel\n");
       exit(1);
     } else {
-      tempDirectoryPath = strdup(tempDirectory);
+      tempDirectoryPath = omc_strdup(tempDirectory);
       tempDirectoryPath = covertToForwardSlashesInPlace(tempDirectoryPath);
     }
   #else
     const char* str = getenv("TMPDIR");
     if (str == NULL) {
-      tempDirectoryPath = strdup("/tmp");
+      tempDirectoryPath = omc_strdup("/tmp");
     } else {
-      tempDirectoryPath = strdup(str);
+      tempDirectoryPath = omc_strdup(str);
     }
   #endif
   }

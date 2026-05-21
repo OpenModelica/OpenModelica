@@ -64,6 +64,7 @@ void FMIImpl__releaseFMIImport(void *ptr1, void *ptr2, void *ptr3, const char* f
 #include "systemimpl.h"
 #include "errorext.h"
 #include "util/modelica_string.h"
+#include "util/omc_strdup.h"
 
 #define FMILIB_BUILDING_LIBRARY
 #include "fmilib.h"
@@ -255,7 +256,7 @@ const char* getFMI2ModelVariableBaseType(fmi2_import_variable_t* variable)
  * free'd.
  */
 char* makeStringFMISafe(const char* str) {
-  char* res = strdup(str);
+  char* res = omc_strdup(str);
   int length = strlen(res);
 
   charReplace(res, length, '.', '_');

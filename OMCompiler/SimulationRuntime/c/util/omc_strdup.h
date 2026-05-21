@@ -25,39 +25,38 @@
  *
  */
 
+#ifndef OMC_STRDUP_H
+#define OMC_STRDUP_H
 
-#include "omc_simulation_util.h"
-#include "../simulation_data.h"
-#include "../util/utility.h"
-#include "../util/omc_strdup.h"
+/* TODO: Remove omc_strdup when C23 is required and replace call sites with strdup(). */
 
-extern modelica_string OpenModelica_fmuLoadResource(threadData_t *threadData, modelica_string path)
-{
-  DATA *data = (DATA*) threadData->localRoots[LOCAL_ROOT_SIMULATION_DATA];
-  const char *resourcesDir=data->modelData->resourcesDir;
-  return OpenModelica_uriToFilename_impl(threadData, path, resourcesDir);
-}
-
-extern const char* OpenModelica_parseFmuResourcePath(const char *path)
-{
-  if (0==strncmp(path, "file:", 5)) {
-    path+=5;
-    /* Ignore all / except the first one */
-    while (path[0]=='/' && path[1]=='/') {
-      path++;
-    }
-#if defined(__MINGW32__) || defined(_MSC_VER)
-    if (strchr(path,':')) {
-      while (path[0]=='/') {
-        path++;
-      }
-    }
+#ifdef __cplusplus
+extern "C" {
 #endif
-    {
-      char *res = omc_strdup(path);
-      OpenModelica_decode_uri_inplace(res);
-      return res;
-    }
+
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
+  /* C23: strdup is standardized. */
+  #define omc_strdup strdup
+#elif defined(_POSIX_VERSION)
+  /* POSIX: strdup is available. */
+  #define omc_strdup strdup
+#elif defined(_MSC_VER)
+  /* MSVC: _strdup is the spelling. */
+  #define omc_strdup _strdup
+#else
+  #include <stdlib.h>
+  #include <string.h>
+  static inline char* omc_strdup(const char *src)
+  {
+    size_t len = strlen(src) + 1;
+    char *s = (char *)malloc(len);
+    if (s) memcpy(s, src, len);
+    return s;
   }
-  return NULL;
+#endif
+
+#ifdef __cplusplus
 }
+#endif
+
+#endif
