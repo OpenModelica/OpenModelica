@@ -43,7 +43,8 @@
         "OM_USE_CCACHE": "OFF",
         "OM_USE_SYSTEM_LIBFFI": "ON",
         "OM_WITH_VCPKG": "ON",
-        "VCPKG_TARGET_TRIPLET": "x64-windows-release"
+        "VCPKG_TARGET_TRIPLET": "x64-windows-release",
+        "CMAKE_BUILD_TYPE": "Release"
       }
     }
   ],
