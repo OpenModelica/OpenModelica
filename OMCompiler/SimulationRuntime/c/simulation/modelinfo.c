@@ -32,6 +32,7 @@
 #include "simulation_info_json.h"
 #include "simulation_runtime.h"
 #include "../util/omc_mmap.h"
+#include "../util/omc_strdup.h"
 #include "solver/model_help.h"
 
 
@@ -513,7 +514,7 @@ int printModelInfo(DATA *data, threadData_t *threadData, const char *outputPath,
 #if defined(__MINGW32__) || defined(_MSC_VER)
       char *xsltproc;
       sprintf(buf, "%s/lib/omc/libexec/xsltproc/xsltproc.exe", omhome);
-      xsltproc = strdup(buf);
+      xsltproc = omc_strdup(buf);
 #else
       const char *xsltproc = "xsltproc";
 #endif

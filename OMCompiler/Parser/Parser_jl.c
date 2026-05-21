@@ -57,6 +57,8 @@
 #include "MetaModelicaJuliaLayer.h"
 #include "OpenModelicaJuliaHeader.h"
 
+#include "util/omc_strdup.h"
+
 pthread_once_t parser_once_create_key = PTHREAD_ONCE_INIT;
 pthread_key_t modelicaParserKey;
 
@@ -165,8 +167,8 @@ static void handleLexerError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 *
   pANTLR3_LEXER lexer = (pANTLR3_LEXER)(recognizer->super);
   int isEOF = lexer->input->istream->_LA(lexer->input->istream, 1) == -1;
   char* chars[] = {
-    isEOF ? strdup("<EOF>") : strdup((const char*)(lexer->input->substr(lexer->input, lexer->getCharIndex(lexer), lexer->getCharIndex(lexer)+10)->chars)),
-    strdup((const char*)lexer->getText(lexer)->chars)
+    isEOF ? omc_strdup("<EOF>") : omc_strdup((const char*)(lexer->input->substr(lexer->input, lexer->getCharIndex(lexer), lexer->getCharIndex(lexer)+10)->chars)),
+    omc_strdup((const char*)lexer->getText(lexer)->chars)
   };
   int line = 0;
   int offset = 0;

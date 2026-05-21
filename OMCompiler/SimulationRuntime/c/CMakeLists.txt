@@ -2,6 +2,12 @@ cmake_minimum_required(VERSION 3.14)
 
 project(OpenModelicaSimulationRuntimeC LANGUAGES C CXX)
 
+### Standards ###############################################################################################
+## Set the C standard to use.
+set(C_STANDARD C17)
+set(C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS OFF)
+
 # ######################################################################################################################
 # INTERFACE target
 # Other targets can link to this interface to get the include path transitively.

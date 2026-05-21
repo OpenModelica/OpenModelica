@@ -43,6 +43,7 @@
 #include "events.h"
 #include "util/parallel_helper.h"
 #include "util/varinfo.h"
+#include "util/omc_strdup.h"
 #include "model_help.h"
 #include "meta/meta_modelica.h"
 #include "simulation/solver/epsilon.h"
@@ -469,7 +470,7 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
   /* we have output variables in the command line -output a,b,c */
   if(outputVariablesAtEnd)
   {
-    writeOutputVars(strdup(outputVariablesAtEnd), data);
+    writeOutputVars(omc_strdup(outputVariablesAtEnd), data);
   }
 
   if(OMC_ACTIVE_STREAM(OMC_LOG_STATS))

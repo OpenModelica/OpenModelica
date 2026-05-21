@@ -64,6 +64,7 @@
 #include "util/omc_error.h"
 #include "util/omc_file.h"
 #include "util/omc_numbers.h"
+#include "util/omc_strdup.h"
 #include "simulation_data.h"
 #include "openmodelica_func.h"
 #include "meta/meta_modelica.h"
@@ -714,7 +715,7 @@ int initializeResultData(DATA* simData, threadData_t *threadData, int cpuTime)
   int resultFormatHasCheapAliasesAndParameters = 0;
   int retVal = 0;
   mmc_sint_t maxSteps = 4 * simData->simulationInfo->numSteps;
-  sim_result.filename = strdup(simData->modelData->resultFileName);
+  sim_result.filename = omc_strdup(simData->modelData->resultFileName);
   sim_result.numpoints = maxSteps;
   sim_result.cpuTime = cpuTime;
   if (sim_noemit || 0 == strcmp("empty", simData->simulationInfo->outputFormat)) {

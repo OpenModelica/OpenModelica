@@ -45,6 +45,7 @@
 #include "openmodelica.h"
 #include "meta/meta_modelica.h"
 #include "util/omc_error.h"
+#include "util/omc_strdup.h"
 #include "util/ModelicaUtilitiesExtra.h"
 
 using namespace std;
@@ -386,7 +387,7 @@ extern char* ErrorImpl__rollBackAndPrint(threadData_t *threadData,const char* id
     abort();
   }
   // fprintf(stderr, "Returning %s\n", res.c_str());
-  return strdup(res.c_str());
+  return omc_strdup(res.c_str());
 }
 
 /*

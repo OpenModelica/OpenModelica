@@ -35,6 +35,7 @@
 #include <pthread.h>
 #endif
 #include "../util/omc_error.h"
+#include "../util/omc_strdup.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -229,7 +230,7 @@ omc_alloc_interface_t omc_alloc_interface_pooled = {
   pool_malloc,
   pool_malloc,
   (char*(*)(size_t)) malloc,
-  strdup,
+  omc_strdup,
   pool_collect_a_little, /* No OP. Does not do anything. The pool requires explicit state save and restore. */
   malloc_zero,
   free,
@@ -296,7 +297,7 @@ omc_alloc_interface_t omc_alloc_interface = {
   pool_malloc,
   pool_malloc,
   (char*(*)(size_t)) malloc,
-  strdup,
+  omc_strdup,
   pool_collect_a_little, /* No OP. Does not do anything. The pool requires explicit state save and restore. */
   malloc_zero /* calloc, but with malloc interface */,
   free,
