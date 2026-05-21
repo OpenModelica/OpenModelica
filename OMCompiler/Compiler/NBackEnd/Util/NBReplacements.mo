@@ -362,7 +362,7 @@ public
             end for;
 
             // get the expression from function body (fails if its not a single replacable assignment)
-            body_exp := getFunctionBody(fn);
+            body_exp := Function.getSingleBodyExp(fn);
             // replace input withs arguments in expression
             body_exp := Expression.map(body_exp, function applySimpleExp(replacements = local_replacements));
             // if any of the inputs had an undetermined size, retype the new body
@@ -453,28 +453,6 @@ public
       end if;
     end if;
   end addInputArgTpl;
-
-  function getFunctionBody
-    "returns the rhs of the function body if its a single assignment, fails otherwise"
-    input Function fn;
-    output Expression exp;
-  protected
-    list<Statement> body;
-  algorithm
-    body := Function.getBody(fn);
-    exp := match body
-      local
-        Statement stmt;
-
-      case {stmt as Statement.ASSIGNMENT()} then stmt.rhs;
-
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
-          + " failed because the body of the function is not a single assignment:\n"
-          + List.toString(body, function Statement.toString(indent = "\t"), "", "", "\n", "")});
-      then fail();
-    end match;
-  end getFunctionBody;
 
   function wrapEvents
     input output Expression exp;
