@@ -153,7 +153,7 @@ protected
   list<DAE.ClassAttributes> clsAttrs;
   FCore.Cache cache;
   FCore.Graph env;
-  DAE.FunctionTree functionTree;
+  AvlTreePathFunction.Tree functionTree;
   BackendDAE.EventInfo eventInfo;
   BackendDAE.ExternalObjectClasses extObjClasses;
   BackendDAE.BackendDAEType backendDAEType;

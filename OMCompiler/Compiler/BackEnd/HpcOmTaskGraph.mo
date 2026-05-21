@@ -153,7 +153,7 @@ protected
   BackendDAE.StrongComponents comps;
   BackendDAE.Variables vars;
   BackendDAE.EquationArray orderedEqs;
-  DAE.FunctionTree sharedFuncs;
+  AvlTreePathFunction.Tree sharedFuncs;
   TaskGraphMeta iGraphData;
   TaskGraphMeta tmpGraphData;
   TaskGraph iGraph;

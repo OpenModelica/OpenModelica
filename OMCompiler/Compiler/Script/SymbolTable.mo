@@ -41,8 +41,8 @@ encapsulated uniontype SymbolTable
 "
 
 import Absyn;
-import GlobalScript;
 import FCore;
+import InteractiveTypes;
 import SCode;
 import Values;
 import Vector;
@@ -66,7 +66,7 @@ public
 record SYMBOLTABLE
   Absyn.Program ast "ast ; The ast" ;
   Option<SCode.Program> explodedAst "the explodedAst is invalidated every time the program is updated";
-  list<GlobalScript.Variable> vars "List of variables with values" ;
+  list<InteractiveTypes.Variable> vars "List of variables with values" ;
   Vector<Absyn.Program> cachedAsts;
   Integer cacheIndex;
 end SYMBOLTABLE;
@@ -269,7 +269,7 @@ end clearProgram;
 
 public function getVars
   "Adds a list of variables to the interactive symboltable."
-  output list<GlobalScript.Variable> vars;
+  output list<InteractiveTypes.Variable> vars;
 protected
   SymbolTable table;
 algorithm
@@ -279,7 +279,7 @@ end getVars;
 
 public function setVars
   "Adds a list of variables to the interactive symboltable."
-  input list<GlobalScript.Variable> vars;
+  input list<InteractiveTypes.Variable> vars;
 protected
   SymbolTable table;
 algorithm
@@ -314,7 +314,7 @@ public function addVar
   input Values.Value inValue;
   input FCore.Graph inEnv;
 protected
-  list<GlobalScript.Variable> vars;
+  list<InteractiveTypes.Variable> vars;
   SymbolTable table;
 algorithm
   table := get();
@@ -336,7 +336,7 @@ protected
   SymbolTable table;
 algorithm
   table := get();
-  table.vars := GlobalScript.IVAR(inIdent, inValue, inType) :: table.vars;
+  table.vars := InteractiveTypes.IVAR(inIdent, inValue, inType) :: table.vars;
   update(table);
 end appendVar;
 
@@ -396,7 +396,7 @@ protected
 
 function isVarNamed
   input Absyn.Ident id;
-  input GlobalScript.Variable v;
+  input InteractiveTypes.Variable v;
   output Boolean b;
 algorithm
   b := v.varIdent == id;
@@ -407,8 +407,8 @@ function addVarToVarList
   input DAE.ComponentRef inCref;
   input Values.Value inValue;
   input FCore.Graph inEnv;
-  input list<GlobalScript.Variable> inVariables;
-  output list<GlobalScript.Variable> outVariables;
+  input list<InteractiveTypes.Variable> inVariables;
+  output list<InteractiveTypes.Variable> outVariables;
 protected
   Boolean found;
 algorithm
@@ -418,16 +418,16 @@ algorithm
 end addVarToVarList;
 
 protected function addVarToVarList2
-  input GlobalScript.Variable inOldVariable;
+  input InteractiveTypes.Variable inOldVariable;
   input DAE.ComponentRef inCref;
   input Values.Value inValue;
   input FCore.Graph inEnv;
-  output GlobalScript.Variable outVariable;
+  output InteractiveTypes.Variable outVariable;
   output Boolean outFound;
 protected
   Absyn.Ident id1, id2;
 algorithm
-  GlobalScript.IVAR(varIdent = id1) := inOldVariable;
+  InteractiveTypes.IVAR(varIdent = id1) := inOldVariable;
   DAE.CREF_IDENT(ident = id2) := inCref;
   outFound := stringEq(id1, id2);
   outVariable := addVarToVarList3(outFound, inOldVariable, inCref, inValue, inEnv);
@@ -435,11 +435,11 @@ end addVarToVarList2;
 
 protected function addVarToVarList3
   input Boolean inFound;
-  input GlobalScript.Variable inOldVariable;
+  input InteractiveTypes.Variable inOldVariable;
   input DAE.ComponentRef inCref;
   input Values.Value inValue;
   input FCore.Graph inEnv;
-  output GlobalScript.Variable outVariable;
+  output InteractiveTypes.Variable outVariable;
 algorithm
   outVariable := match(inFound, inOldVariable, inCref, inValue, inEnv)
     local
@@ -448,18 +448,18 @@ algorithm
       DAE.Type ty;
       list<DAE.Subscript> subs;
 
-    // GlobalScript.Variable is not a match, keep the old one.
+    // InteractiveTypes.Variable is not a match, keep the old one.
     case (false, _, _, _, _) then inOldVariable;
 
     // Assigning whole variable => return new variable.
-    case (true, _, DAE.CREF_IDENT(id, ty, {}), _, _) then GlobalScript.IVAR(id, inValue, ty);
+    case (true, _, DAE.CREF_IDENT(id, ty, {}), _, _) then InteractiveTypes.IVAR(id, inValue, ty);
 
     // Assigning array slice => update the old variable's value.
-    case (true, GlobalScript.IVAR(id, val, ty), DAE.CREF_IDENT(subscriptLst = subs), _, _)
+    case (true, InteractiveTypes.IVAR(id, val, ty), DAE.CREF_IDENT(subscriptLst = subs), _, _)
       algorithm
         (_, val) := CevalFunction.assignVector(inValue, val, subs, FCore.emptyCache(), inEnv);
       then
-        GlobalScript.IVAR(id, val, ty);
+        InteractiveTypes.IVAR(id, val, ty);
 
   end match;
 end addVarToVarList3;
@@ -468,20 +468,20 @@ protected function addVarToVarList4
   input Boolean inFound;
   input DAE.ComponentRef inCref;
   input Values.Value inValue;
-  input list<GlobalScript.Variable> inVariables;
-  output list<GlobalScript.Variable> outVariables;
+  input list<InteractiveTypes.Variable> inVariables;
+  output list<InteractiveTypes.Variable> outVariables;
 algorithm
   outVariables := match(inFound, inCref, inValue, inVariables)
     local
       Absyn.Ident id;
       DAE.Type ty;
 
-    // GlobalScript.Variable was already updated in addVarToVar, do nothing.
+    // InteractiveTypes.Variable was already updated in addVarToVar, do nothing.
     case (true, _, _, _) then inVariables;
 
-    // GlobalScript.Variable is new, add it to the list of variables.
+    // InteractiveTypes.Variable is new, add it to the list of variables.
     case (false, DAE.CREF_IDENT(id, ty, {}), _, _)
-      then GlobalScript.IVAR(id, inValue, ty) :: inVariables;
+      then InteractiveTypes.IVAR(id, inValue, ty) :: inVariables;
 
     // Assigning to an array slice is only allowed for variables that have
     // already been defined, i.e. that have a size. Print an error otherwise.
@@ -510,7 +510,7 @@ end buildEnv;
 
 protected function addVarsToEnv
 "Helper function to buildEnvFromSymboltable."
-  input list<GlobalScript.Variable> inVariableLst;
+  input list<InteractiveTypes.Variable> inVariableLst;
   input FCore.Graph inEnv;
   output FCore.Graph outEnv;
 algorithm
@@ -518,7 +518,7 @@ algorithm
 end addVarsToEnv;
 
 protected function addVarToEnv
-  input GlobalScript.Variable inVariable;
+  input InteractiveTypes.Variable inVariable;
   input FCore.Graph inEnv;
   output FCore.Graph outEnv;
 algorithm
@@ -530,7 +530,7 @@ algorithm
       DAE.Type tp;
       DAE.ComponentRef cref;
 
-    case (GlobalScript.IVAR(varIdent = id, value = v, type_ = tp), env)
+    case (InteractiveTypes.IVAR(varIdent = id, value = v, type_ = tp), env)
       algorithm
         cref := ComponentReference.makeCrefIdent(id, DAE.T_UNKNOWN_DEFAULT, {});
         empty_env := FGraph.empty();
@@ -549,7 +549,7 @@ algorithm
       then
         env;
 
-    case (GlobalScript.IVAR(varIdent = id, value = v, type_ = tp), env)
+    case (InteractiveTypes.IVAR(varIdent = id, value = v, type_ = tp), env)
       algorithm
         empty_env := FGraph.empty();
         env := FGraph.mkComponentNode(
@@ -560,7 +560,7 @@ algorithm
                     SCode.defaultPrefixes,
                     SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR(), Absyn.NONFIELD()),
                     Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
-                    SCode.noComment, NONE(), AbsynUtil.dummyInfo),
+                    SCode.noComment, NONE(), Absyn.dummyInfo),
                   DAE.NOMOD(),
                  FCore.VAR_UNTYPED(),
                  empty_env);

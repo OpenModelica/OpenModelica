@@ -251,7 +251,7 @@ algorithm
 
         //System.startTimer();
         //print("\nLookupClass");
-        (cache,(cdef as SCode.CLASS(name = n)),env) := Lookup.lookupClass(cache, env, path, SOME(AbsynUtil.dummyInfo));
+        (cache,(cdef as SCode.CLASS(name = n)),env) := Lookup.lookupClass(cache, env, path, SOME(Absyn.dummyInfo));
 
         // Check if we are trying to instantiate a function or pacakage when we should not.
         checkInstanceRestriction(cdef, path, relaxedFrontEnd);
@@ -390,7 +390,7 @@ algorithm
       InstanceHierarchy ih;
       DAE.ElementSource source "the origin of the element";
       list<DAE.Element> daeElts;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       Option<SCode.Comment> cmt;
 
     case (_,_,{},_)
@@ -413,7 +413,7 @@ algorithm
       algorithm
         (cache,env) := Builtin.initialGraph(cache);
         env_1 := FGraphBuildEnv.mkProgramGraph(cdecls, FCore.USERDEFINED(), env);
-        (cache,(cdef as SCode.CLASS(name = n)),env_2) := Lookup.lookupClass(cache,env_1, path, SOME(AbsynUtil.dummyInfo));
+        (cache,(cdef as SCode.CLASS(name = n)),env_2) := Lookup.lookupClass(cache,env_1, path, SOME(Absyn.dummyInfo));
 
         cdef := SCodeUtil.classSetPartial(cdef, SCode.NOT_PARTIAL());
 
@@ -2799,7 +2799,7 @@ algorithm
                           tSpec,SCode.NOMOD(),
                           SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR(), Absyn.NONFIELD())),
                         SCode.noComment,
-                        AbsynUtil.dummyInfo);
+                        Absyn.dummyInfo);
         (cache,_,ih,_,_,csets,ty,_,oDA,_):=instClass(cache,env,ih,UnitAbsyn.noStore,DAE.NOMOD(),pre,c,dims,impl,InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, inSets);
         localAccTypes := ty::localAccTypes;
         (cache,env,ih,localAccTypes,csets,_) :=
@@ -5025,7 +5025,7 @@ algorithm
       algorithm
         (cache,env) := Builtin.initialGraph(cache);
         env_1 := FGraphBuildEnv.mkProgramGraph(cdecls, FCore.USERDEFINED(), env);
-        (cache,(cdef as SCode.CLASS()),env_2) := Lookup.lookupClass(cache,env_1, path, SOME(AbsynUtil.dummyInfo));
+        (cache,(cdef as SCode.CLASS()),env_2) := Lookup.lookupClass(cache,env_1, path, SOME(Absyn.dummyInfo));
 
         (cache,env_2,ih,_,dae,_,_,_,_,_) :=
           instClass(cache,env_2,ih,UnitAbsyn.noStore, DAE.NOMOD(), DAE.NOPRE(),

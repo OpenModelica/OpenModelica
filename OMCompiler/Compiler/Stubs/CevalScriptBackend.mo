@@ -84,14 +84,14 @@ function getDrModelicaSimulationResultType = getSimulationResultType;
 function buildSimulationOptionsFromModelExperimentAnnotation
   input Absyn.Path inModelPath;
   input String inFileNamePrefix;
-  input Option<GlobalScript.SimulationOptions> defaultOption;
-  output GlobalScript.SimulationOptions outSimOpt;
+  input Option<InteractiveTypes.SimulationOptions> defaultOption;
+  output InteractiveTypes.SimulationOptions outSimOpt;
 algorithm
   assert(false, getInstanceName());
 end buildSimulationOptionsFromModelExperimentAnnotation;
 
 function getSimulationOption
-  input GlobalScript.SimulationOptions inSimOpt;
+  input InteractiveTypes.SimulationOptions inSimOpt;
   input String optionName;
   output DAE.Exp outOptionValue;
 algorithm

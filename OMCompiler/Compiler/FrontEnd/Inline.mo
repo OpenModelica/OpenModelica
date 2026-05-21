@@ -53,7 +53,7 @@ import HashTableCG;
 import SCode;
 import Util;
 
-type Functiontuple = tuple<Option<DAE.FunctionTree>,list<DAE.InlineType>>;
+type Functiontuple = tuple<Option<AvlTreePathFunction.Tree>,list<DAE.InlineType>>;
 
 protected
 
@@ -700,7 +700,7 @@ algorithm
       DAE.Exp e,e_1,e_2;
       DAE.ElementSource source;
       list<DAE.Statement> assrtLst;
-      DAE.FunctionTree functionTree;
+      AvlTreePathFunction.Tree functionTree;
       Boolean b;
     case (e,(SOME(functionTree),_),source)
       guard
@@ -1438,11 +1438,11 @@ algorithm
   (outfn,oComment) := matchcontinue(p,fns)
     local
       list<DAE.Element> body;
-      DAE.FunctionTree ftree;
+      AvlTreePathFunction.Tree ftree;
       Option<SCode.Comment> comment;
     case(_,(SOME(ftree),_))
       algorithm
-        SOME(DAE.FUNCTION( functions = DAE.FUNCTION_DEF(body = body)::_,comment=comment)) := DAE.AvlTreePathFunction.get(ftree,p);
+        SOME(DAE.FUNCTION( functions = DAE.FUNCTION_DEF(body = body)::_,comment=comment)) := AvlTreePathFunction.get(ftree,p);
       then (body,comment);
     else
       algorithm
@@ -1463,10 +1463,10 @@ public function getFunction
 algorithm
   func := matchcontinue(p,fns)
     local
-      DAE.FunctionTree ftree;
+      AvlTreePathFunction.Tree ftree;
     case(_,(SOME(ftree),_))
       algorithm
-        SOME(func) := DAE.AvlTreePathFunction.get(ftree,p);
+        SOME(func) := AvlTreePathFunction.get(ftree,p);
       then func;
     else
       algorithm
@@ -1750,7 +1750,7 @@ public function inlineEquationExp "
     output DAE.Exp outExp;
     output list<DAE.Statement> outTuple;
   end Func;
-  type Functiontuple = tuple<Option<DAE.FunctionTree>,list<DAE.InlineType>>;
+  type Functiontuple = tuple<Option<AvlTreePathFunction.Tree>,list<DAE.InlineType>>;
 algorithm
   (outExp,source) := match inExp
     local

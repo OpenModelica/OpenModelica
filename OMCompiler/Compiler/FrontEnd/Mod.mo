@@ -2997,7 +2997,7 @@ algorithm
 
     case DAE.MOD() then inMod.info;
     case DAE.REDECL() then SCodeUtil.elementInfo(inMod.element);
-    else AbsynUtil.dummyInfo;
+    else Absyn.dummyInfo;
   end match;
 end getModInfo;
 

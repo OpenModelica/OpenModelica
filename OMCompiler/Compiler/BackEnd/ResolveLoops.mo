@@ -2354,7 +2354,7 @@ protected
   BackendDAE.EqSystem subSys;
   BackendDAE.AdjacencyMatrixEnhanced me, me2, meT;
   BackendDAE.AdjacencyMatrix m;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   list<BackendDAE.Equation> eqLst,eqsInLst;
   list<BackendDAE.Var> varLst;
 algorithm
@@ -2727,7 +2727,7 @@ algorithm
       Integer linInfo;
       list<DAE.ComponentRef> names;
       BackendDAE.Matching matching;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       BackendDAE.Shared shared;
       BackendDAE.EqSystem syst;
       Integer n;

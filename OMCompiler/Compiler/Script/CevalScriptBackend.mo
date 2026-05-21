@@ -48,8 +48,8 @@ import BackendDAE;
 import Ceval;
 import DAE;
 import FCore;
-import GlobalScript;
 import Interactive;
+import InteractiveTypes;
 import Interactive.Access;
 import InteractiveUtil;
 import Values;
@@ -100,6 +100,7 @@ import FMI;
 import FMIExt;
 import FunctionTree = NFFlatten.FunctionTree;
 import GCExt;
+import GlobalScript;
 import Graph;
 import InnerOuter;
 import Inst;
@@ -197,8 +198,8 @@ protected constant DAE.Exp defaultVariableFilter    = DAE.SCONST(".*")    "defau
 protected constant DAE.Exp defaultCflags            = DAE.SCONST("")      "default compiler flags";
 protected constant DAE.Exp defaultSimflags          = DAE.SCONST("")      "default simulation flags";
 
-protected constant GlobalScript.SimulationOptions defaultSimulationOptions =
-  GlobalScript.SIMULATION_OPTIONS(
+protected constant InteractiveTypes.SimulationOptions defaultSimulationOptions =
+  InteractiveTypes.SIMULATION_OPTIONS(
     defaultStartTime,
     defaultStopTime,
     defaultNumberOfIntervals,
@@ -301,7 +302,7 @@ algorithm
 end cevalCurrentSimulationResultExp;
 
 public function convertSimulationOptionsToSimCode "converts SimulationOptions to SimCode.SimulationSettings"
-  input GlobalScript.SimulationOptions opts;
+  input InteractiveTypes.SimulationOptions opts;
   output SimCode.SimulationSettings settings;
 algorithm
   settings := match(opts)
@@ -310,7 +311,7 @@ algorithm
     Integer nIntervals;
     String method,format,varFilter,cflags,options,simflags;
 
-    case(GlobalScript.SIMULATION_OPTIONS(
+    case(InteractiveTypes.SIMULATION_OPTIONS(
       DAE.RCONST(startTime),
       DAE.RCONST(stopTime),
       DAE.ICONST(nIntervals),
@@ -344,10 +345,10 @@ public function buildSimulationOptions
   input DAE.Exp variableFilter;
   input DAE.Exp cflags;
   input DAE.Exp simflags;
-  output GlobalScript.SimulationOptions outSimulationOptions;
+  output InteractiveTypes.SimulationOptions outSimulationOptions;
 algorithm
   outSimulationOptions :=
-    GlobalScript.SIMULATION_OPTIONS(
+    InteractiveTypes.SIMULATION_OPTIONS(
     startTime,
     stopTime,
     numberOfIntervals,
@@ -366,7 +367,7 @@ end buildSimulationOptions;
 public function getSimulationOption
 "@author: adrpo
   get the value from simulation option"
-  input GlobalScript.SimulationOptions inSimOpt;
+  input InteractiveTypes.SimulationOptions inSimOpt;
   input String optionName;
   output DAE.Exp outOptionValue;
 algorithm
@@ -375,18 +376,18 @@ algorithm
       DAE.Exp e;
       String name, msg;
 
-    case (GlobalScript.SIMULATION_OPTIONS(startTime = e),         "startTime")         then e;
-    case (GlobalScript.SIMULATION_OPTIONS(stopTime = e),          "stopTime")          then e;
-    case (GlobalScript.SIMULATION_OPTIONS(numberOfIntervals = e), "numberOfIntervals") then e;
-    case (GlobalScript.SIMULATION_OPTIONS(stepSize = e),          "stepSize")          then e;
-    case (GlobalScript.SIMULATION_OPTIONS(tolerance = e),         "tolerance")         then e;
-    case (GlobalScript.SIMULATION_OPTIONS(method = e),            "method")            then e;
-    case (GlobalScript.SIMULATION_OPTIONS(fileNamePrefix = e),    "fileNamePrefix")    then e;
-    case (GlobalScript.SIMULATION_OPTIONS(options = e),           "options")           then e;
-    case (GlobalScript.SIMULATION_OPTIONS(outputFormat = e),      "outputFormat")      then e;
-    case (GlobalScript.SIMULATION_OPTIONS(variableFilter = e),    "variableFilter")    then e;
-    case (GlobalScript.SIMULATION_OPTIONS(cflags = e),            "cflags")            then e;
-    case (GlobalScript.SIMULATION_OPTIONS(simflags = e),          "simflags")          then e;
+    case (InteractiveTypes.SIMULATION_OPTIONS(startTime = e),         "startTime")         then e;
+    case (InteractiveTypes.SIMULATION_OPTIONS(stopTime = e),          "stopTime")          then e;
+    case (InteractiveTypes.SIMULATION_OPTIONS(numberOfIntervals = e), "numberOfIntervals") then e;
+    case (InteractiveTypes.SIMULATION_OPTIONS(stepSize = e),          "stepSize")          then e;
+    case (InteractiveTypes.SIMULATION_OPTIONS(tolerance = e),         "tolerance")         then e;
+    case (InteractiveTypes.SIMULATION_OPTIONS(method = e),            "method")            then e;
+    case (InteractiveTypes.SIMULATION_OPTIONS(fileNamePrefix = e),    "fileNamePrefix")    then e;
+    case (InteractiveTypes.SIMULATION_OPTIONS(options = e),           "options")           then e;
+    case (InteractiveTypes.SIMULATION_OPTIONS(outputFormat = e),      "outputFormat")      then e;
+    case (InteractiveTypes.SIMULATION_OPTIONS(variableFilter = e),    "variableFilter")    then e;
+    case (InteractiveTypes.SIMULATION_OPTIONS(cflags = e),            "cflags")            then e;
+    case (InteractiveTypes.SIMULATION_OPTIONS(simflags = e),          "simflags")          then e;
     case (_,                                         name)
       algorithm
         msg := "Unknown simulation option: " + name;
@@ -401,12 +402,12 @@ public function buildSimulationOptionsFromModelExperimentAnnotation
   retrieve annotation(experiment(....)) values and build a SimulationOptions object to return"
   input Absyn.Path inModelPath;
   input String inFileNamePrefix;
-  input Option<GlobalScript.SimulationOptions> defaultOption;
-  output GlobalScript.SimulationOptions outSimOpt;
+  input Option<InteractiveTypes.SimulationOptions> defaultOption;
+  output InteractiveTypes.SimulationOptions outSimOpt;
 algorithm
   outSimOpt := matchcontinue (inModelPath, inFileNamePrefix, defaultOption)
     local
-      GlobalScript.SimulationOptions defaults, simOpt;
+      InteractiveTypes.SimulationOptions defaults, simOpt;
       String experimentAnnotationStr;
       list<Absyn.NamedArg> named;
       Option<Absyn.Modification> experiment_ann;
@@ -446,22 +447,22 @@ algorithm
 end buildSimulationOptionsFromModelExperimentAnnotation;
 
 protected function setFileNamePrefixInSimulationOptions
-  input  GlobalScript.SimulationOptions inSimOpt;
+  input  InteractiveTypes.SimulationOptions inSimOpt;
   input  String inFileNamePrefix;
-  output GlobalScript.SimulationOptions outSimOpt;
+  output InteractiveTypes.SimulationOptions outSimOpt;
 protected
   DAE.Exp startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, options, outputFormat, variableFilter, cflags, simflags;
   Boolean UseOtimica;
 algorithm
   UseOtimica := Config.acceptOptimicaGrammar() or Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM);
-  GlobalScript.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, _, options, outputFormat, variableFilter, cflags, simflags) := inSimOpt;
+  InteractiveTypes.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, _, options, outputFormat, variableFilter, cflags, simflags) := inSimOpt;
   if UseOtimica then
     method := DAE.SCONST("optimization");
   elseif  Flags.getConfigBool(Flags.DAE_MODE) then
     method := DAE.SCONST("ida");
   end if;
   numberOfIntervals := if UseOtimica then DAE.ICONST(50) else numberOfIntervals;
-  outSimOpt := GlobalScript.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, DAE.SCONST(inFileNamePrefix), options, outputFormat, variableFilter, cflags, simflags);
+  outSimOpt := InteractiveTypes.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, DAE.SCONST(inFileNamePrefix), options, outputFormat, variableFilter, cflags, simflags);
 end setFileNamePrefixInSimulationOptions;
 
 protected function getConst
@@ -506,7 +507,7 @@ algorithm
 end getConst;
 
 protected function populateSimulationOptions
-  input output GlobalScript.SimulationOptions options;
+  input output InteractiveTypes.SimulationOptions options;
   input list<Absyn.NamedArg> args;
 protected
   String name;
@@ -545,7 +546,7 @@ algorithm
 end populateSimulationOptions;
 
 function setSimulationOptionsInterval
-  input output GlobalScript.SimulationOptions options;
+  input output InteractiveTypes.SimulationOptions options;
   input Real interval;
 protected
   Real start_time, stop_time;
@@ -1783,7 +1784,7 @@ algorithm
       Absyn.Path path,classpath,baseClassPath;
       Interactive.GraphicEnvCache genv;
       Absyn.Program p,newp;
-      GlobalScript.SimulationOptions simOpt;
+      InteractiveTypes.SimulationOptions simOpt;
       Real startTime,stopTime,tolerance,reltol,reltolDiffMinMax,rangeDelta;
       DAE.Exp startTimeExp,stopTimeExp,toleranceExp,intervalExp;
       DAE.Type tp;
@@ -2114,7 +2115,7 @@ algorithm
 
     case ("getBuiltinType",{Values.CODE(Absyn.C_TYPENAME(classpath))})
       algorithm
-        (_, tp, _) := Lookup.lookupType(outCache, inEnv, classpath, SOME(AbsynUtil.dummyInfo));
+        (_, tp, _) := Lookup.lookupType(outCache, inEnv, classpath, SOME(Absyn.dummyInfo));
         str := Types.unparseType(tp);
       then
         Values.STRING(str);
@@ -2163,9 +2164,9 @@ algorithm
         cr := AbsynUtil.pathToCref(classpath);
         // ignore the name of the model
         ErrorExt.setCheckpoint("getSimulationOptions");
-        simOpt := GlobalScript.SIMULATION_OPTIONS(DAE.RCONST(startTime),DAE.RCONST(stopTime),DAE.ICONST(numberOfIntervals),DAE.RCONST(0.0),DAE.RCONST(tolerance),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""));
+        simOpt := InteractiveTypes.SIMULATION_OPTIONS(DAE.RCONST(startTime),DAE.RCONST(stopTime),DAE.ICONST(numberOfIntervals),DAE.RCONST(0.0),DAE.RCONST(tolerance),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""));
         ErrorExt.rollBack("getSimulationOptions");
-        (_, _::startTimeExp::stopTimeExp::intervalExp::toleranceExp::_) := StaticScript.getSimulationArguments(FCore.emptyCache(), FGraph.empty(), {Absyn.CREF(cr)},{},false,DAE.NOPRE(), "getSimulationOptions", AbsynUtil.dummyInfo,SOME(simOpt));
+        (_, _::startTimeExp::stopTimeExp::intervalExp::toleranceExp::_) := StaticScript.getSimulationArguments(FCore.emptyCache(), FGraph.empty(), {Absyn.CREF(cr)},{},false,DAE.NOPRE(), "getSimulationOptions", Absyn.dummyInfo,SOME(simOpt));
         startTime := ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,startTimeExp,Values.REAL(startTime)));
         stopTime := ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,stopTimeExp,Values.REAL(stopTime)));
         tolerance := ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,toleranceExp,Values.REAL(tolerance)));
@@ -2589,7 +2590,7 @@ algorithm
         Values.CODE(Absyn.C_TYPENAME(path)), Values.CODE(Absyn.C_EXPRESSION(aexp))})
       algorithm
         (p, b) := InteractiveUtil.setElementModifier(classpath, path,
-          Absyn.Modification.CLASSMOD({}, Absyn.EqMod.EQMOD(aexp, AbsynUtil.dummyInfo)), SymbolTable.getAbsyn());
+          Absyn.Modification.CLASSMOD({}, Absyn.EqMod.EQMOD(aexp, Absyn.dummyInfo)), SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(p);
       then
         ValuesUtil.makeBoolean(b);
@@ -3567,7 +3568,7 @@ protected
   String lib_name;
   SCode.Program scodeP;
   Absyn.Program p;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   Boolean b;
 algorithm
   p := SymbolTable.getAbsyn();
@@ -3578,7 +3579,7 @@ algorithm
     success := true;
   else
     (p,b) := CevalScript.loadModel({(Absyn.IDENT(lib_name),"the given model name to instantiate",{"default"},false)},Settings.getModelicaPath(Testsuite.isRunning()),p,true,true,true,false);
-    Error.assertionOrAddSourceMessage(not b,Error.NOTIFY_IMPLICIT_LOAD,{lib_name,"default"},AbsynUtil.dummyInfo);
+    Error.assertionOrAddSourceMessage(not b,Error.NOTIFY_IMPLICIT_LOAD,{lib_name,"default"},Absyn.dummyInfo);
     System.loadModelCallBack(lib_name);
     SymbolTable.setAbsyn(p);
     // Always update the SCode structure; otherwise the cache plays tricks on us
@@ -3598,7 +3599,7 @@ protected
   Integer numError = Error.getNumErrorMessages();
   Boolean graph_inst, nf_inst, nf_inst_actual;
   SCode.Program scodeP;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   NFFlatModel flat_model;
   NFFlatten.FunctionTree nf_funcs;
 algorithm
@@ -3729,7 +3730,7 @@ public function translateModel
   output list<tuple<String,Values.Value>> resultValues;
 protected
   Flags.Flag flags;
-  GlobalScript.SimulationOptions defaultSimOpt;
+  InteractiveTypes.SimulationOptions defaultSimOpt;
   Option<SimCode.SimulationSettings> simSettings;
 algorithm
   if isSome(simSettingsOpt)  then
@@ -4240,7 +4241,7 @@ protected function callTranslateModelFMU
   output Values.Value outValue;
 protected
   String filenameprefix, fmuTargetName;
-  GlobalScript.SimulationOptions defaultSimOpt;
+  InteractiveTypes.SimulationOptions defaultSimOpt;
   SimCode.SimulationSettings simSettings;
   list<String> libs;
   String FMUType = inFMUType;
@@ -4351,7 +4352,7 @@ protected
   Boolean staticSourceCodeFMU, success;
   String filenameprefix, fmutmp, logfile, configureLogFile, dir, cmd;
   String fmuTargetName;
-  GlobalScript.SimulationOptions defaultSimOpt;
+  InteractiveTypes.SimulationOptions defaultSimOpt;
   SimCode.SimulationSettings simSettings;
   list<String> libs;
   Boolean isWindows;
@@ -5991,7 +5992,7 @@ algorithm
     // failure
     else
       algorithm
-        Error.assertion(listLength(inValues) == 12, "buildModel failure, length = " + intString(listLength(inValues)), AbsynUtil.dummyInfo);
+        Error.assertion(listLength(inValues) == 12, "buildModel failure, length = " + intString(listLength(inValues)), Absyn.dummyInfo);
       then fail();
   end matchcontinue;
 end buildModel;
@@ -6406,7 +6407,7 @@ algorithm
       BackendDAE.BackendDAEType btp;
       list<BackendDAE.EqSystem> systs;
       BackendDAE.SymbolicJacobians symjacs;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       BackendDAE.EventInfo eventInfo;
       BackendDAE.ExtraInfo extraInfo;
       FCore.Cache cache;
@@ -7817,7 +7818,7 @@ algorithm
   loadProgram(cls_path);
   scodeP := SymbolTable.getSCode();
   (scodeP, env) := NFSCodeFlatten.flattenClassInProgram(cls_path, scodeP);
-  (NFSCodeEnv.CLASS(cls=SCode.CLASS(cmt=cmt)),_,_) := NFSCodeLookup.lookupClassName(cls_path, env, AbsynUtil.dummyInfo);
+  (NFSCodeEnv.CLASS(cls=SCode.CLASS(cmt=cmt)),_,_) := NFSCodeLookup.lookupClassName(cls_path, env, Absyn.dummyInfo);
   scodeP := SCodeUtil.removeBuiltinsFromTopScope(scodeP);
 
   if stripAnnotations or stripComments then
@@ -8406,7 +8407,7 @@ algorithm
         cdef := InteractiveUtil.getPathedClassInProgram(modelpath, p);
         cmt := SOME(Absyn.COMMENT(SOME(ann), NONE()));
         newcdef := InteractiveUtil.addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("initialState", {}),
-                                Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(state_, {}))}, {})), cmt, AbsynUtil.dummyInfo));
+                                Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(state_, {}))}, {})), cmt, Absyn.dummyInfo));
         if AbsynUtil.pathIsIdent(AbsynUtil.makeNotFullyQualified(modelpath)) then
           newp := InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef},p.within_), p);
         else

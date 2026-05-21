@@ -325,7 +325,7 @@ algorithm
     case(SCode.CLASS(info = i)) then i;
     case(SCode.EXTENDS(info = i)) then i;
     case(SCode.IMPORT(info = i)) then i;
-    else AbsynUtil.dummyInfo;
+    else Absyn.dummyInfo;
 
   end match;
 end elementInfo;
@@ -2397,7 +2397,7 @@ algorithm
     else
       algorithm
         Error.addInternalError("SCodeUtil.getStatementInfo failed", sourceInfo());
-      then AbsynUtil.dummyInfo;
+      then Absyn.dummyInfo;
   end match;
 end getStatementInfo;
 
@@ -3290,7 +3290,7 @@ algorithm
     case SCode.REDECL(element = el) then elementInfo(el);
     case SCode.BREAK_COMPONENT() then inMod.info;
     case SCode.BREAK_CONNECT() then inMod.info;
-    else AbsynUtil.dummyInfo;
+    else Absyn.dummyInfo;
   end match;
 end getModifierInfo;
 
@@ -5646,7 +5646,7 @@ public function makeMod
   input list<SCode.SubMod> subMods = {};
   input Option<Absyn.Exp> binding = NONE();
   input Option<String> comment = NONE();
-  input SourceInfo info = AbsynUtil.dummyInfo;
+  input SourceInfo info = Absyn.dummyInfo;
   output SCode.Mod mod;
 algorithm
   mod := SCode.Mod.MOD(
@@ -5677,13 +5677,13 @@ algorithm
           {},
           SOME(value),
           NONE(),
-          AbsynUtil.dummyInfo
+          Absyn.dummyInfo
         )
       )
     },
     NONE(),
     NONE(),
-    AbsynUtil.dummyInfo
+    Absyn.dummyInfo
   ));
 end makeSingleAnnotation;
 

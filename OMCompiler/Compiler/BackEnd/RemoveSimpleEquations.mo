@@ -1438,7 +1438,7 @@ algorithm
         b2 := DAEUtil.expTypeArray(ty);
         false := b1 or b2;
         //  print("Add Equation:\n" + BackendDump.equationStr(BackendDAE.EQUATION(lhs, rhs, source)) + "\n");
-        //Error.assertionOrAddSourceMessage(not b1, Error.INTERNAL_ERROR, {str}, AbsynUtil.dummyInfo);
+        //Error.assertionOrAddSourceMessage(not b1, Error.INTERNAL_ERROR, {str}, Absyn.dummyInfo);
       then
         ((v, s, BackendDAE.EQUATION(lhs, rhs, source, eqAttr)::eqns, seqns, index, mT, b));
     else
@@ -1904,7 +1904,7 @@ algorithm
       DAE.Exp cre, es;
       BackendDAE.Var v;
       Integer i, size;
-      DAE.FunctionTree functionTree;
+      AvlTreePathFunction.Tree functionTree;
       DAE.ElementSource source;
       Boolean diffed;
       BackendDAE.EquationAttributes eqAttr;
@@ -2010,7 +2010,7 @@ algorithm
       list<Integer> ilst2;
       Boolean b, negated;
       list<Integer> colum;
-      DAE.FunctionTree functions;
+      AvlTreePathFunction.Tree functions;
       DAE.Exp exp2;
     // alias a
     case (_, _, _, _, _, (vars, shared, eqns, seqns, index, mT, _))
@@ -4652,7 +4652,7 @@ algorithm
       list<DAE.ClassAttributes> clsAttrsLst;
       FCore.Cache cache;
       FCore.Graph graph;
-      DAE.FunctionTree funcTree;
+      AvlTreePathFunction.Tree funcTree;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.SymbolicJacobians symjacs;
       BackendDAE.EqSystems systs, systs1;

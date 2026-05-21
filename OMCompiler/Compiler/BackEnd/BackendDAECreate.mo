@@ -116,7 +116,7 @@ protected
   BackendDAE.SymbolicJacobians symjacs;
   BackendDAE.EventInfo einfo;
   list<DAE.Element> elems, aliaseqns;
-  DAE.FunctionTree functionTree;
+  AvlTreePathFunction.Tree functionTree;
   list<BackendDAE.TimeEvent> timeEvents;
   String neqStr, nvarStr;
   Integer varSize, eqnSize, numCheckpoints;
@@ -189,7 +189,7 @@ algorithm
       Error.addSourceMessage(Error.BACKENDDAEINFO_LOWER,{
       String(BackendEquation.equationArraySize(syst.orderedEqs)),
       String(BackendVariable.varsSize(syst.orderedVars))},
-      AbsynUtil.dummyInfo);
+      Absyn.dummyInfo);
     end if;
     execStat("Generate backend data structure");
     return;
@@ -203,7 +203,7 @@ algorithm
   fail();
 end lower;
 
-protected type Functiontuple = tuple<Option<DAE.FunctionTree>,list<DAE.InlineType>>;
+protected type Functiontuple = tuple<Option<AvlTreePathFunction.Tree>,list<DAE.InlineType>>;
 
 protected type ArrayBindingList = list<tuple<list<Integer>,DAE.Exp>>;
 
@@ -752,7 +752,7 @@ end getExternalObjectAlias2;
 
 protected function lower2
   input list<DAE.Element> inElements;
-  input DAE.FunctionTree inFunctions;
+  input AvlTreePathFunction.Tree inFunctions;
   input HashTableExpToExp.HashTable inInlineHT "Workaround to speed up inlining of array parameters.";
   input list<BackendDAE.Var> inVars = {};
   input list<BackendDAE.Var> inGlobalKnownVars = {};
@@ -1027,9 +1027,9 @@ end lower2;
 protected function processBuiltinExpressions "author: lochel
   Assign some builtin calls with a unique id argument."
   input DAE.DAElist inDAE;
-  input DAE.FunctionTree functionTree;
+  input AvlTreePathFunction.Tree functionTree;
   output DAE.DAElist outDAE;
-  output DAE.FunctionTree outTree;
+  output AvlTreePathFunction.Tree outTree;
   output list<BackendDAE.TimeEvent> outTimeEvents;
 protected
   HashTableExpToIndex.HashTable ht;
@@ -1095,7 +1095,7 @@ end transformBuiltinExpression;
 
 public function lowerVars
   input list<DAE.Element> inElements;
-  input DAE.FunctionTree functionTree;
+  input AvlTreePathFunction.Tree functionTree;
   input list<BackendDAE.Var> inVars = {} "The time depend Variables";
   input list<BackendDAE.Var> inGlobalKnownVars = {} "The time independend Variables";
   input list<BackendDAE.Var> inExVars = {} "The external Variables";
@@ -1130,7 +1130,7 @@ end lowerVars;
 
 protected function lowerVar
   input DAE.Element inElement;
-  input DAE.FunctionTree inFunctions;
+  input AvlTreePathFunction.Tree inFunctions;
   input list<BackendDAE.Var> inVars;
   input list<BackendDAE.Var> inGlobalKnownVars;
   input list<BackendDAE.Var> inExVars;
@@ -1239,7 +1239,7 @@ protected function lowerDynamicVar
   inputs: DAE.Element
   outputs: Var"
   input DAE.Element inElement;
-  input DAE.FunctionTree functionTree;
+  input AvlTreePathFunction.Tree functionTree;
   output BackendDAE.Var outVar;
 algorithm
   (outVar) := match (inElement)
@@ -1296,7 +1296,7 @@ end lowerDynamicVar;
 protected function lowerKnownVar
 "Helper function to lower2"
   input DAE.Element inElement;
-  input DAE.FunctionTree functionTree;
+  input AvlTreePathFunction.Tree functionTree;
   input HashTableExpToExp.HashTable iInlineHT "workaround to speed up inlining of array parameters";
   input list<BackendDAE.Equation> assrtEqIn;
   output BackendDAE.Var outVar;
@@ -1756,7 +1756,7 @@ protected function lowerExtObjVar
 " Helper function to lower2
   Fails for all variables except external object instances."
   input DAE.Element inElement;
-  input DAE.FunctionTree functionTree;
+  input AvlTreePathFunction.Tree functionTree;
   output BackendDAE.Var outVar;
 algorithm
   outVar:=
@@ -1822,7 +1822,7 @@ protected function lowerEqn
 "Helper function to lower2.
   Transforms a DAE.Element to Equation."
   input DAE.Element inElement;
-  input DAE.FunctionTree functionTree;
+  input AvlTreePathFunction.Tree functionTree;
   input list<BackendDAE.Equation> inEquations;
   input list<BackendDAE.Equation> inREquations;
   input list<BackendDAE.Equation> inIEquations;
@@ -2097,7 +2097,7 @@ protected function lowerIfEquation
   input list<DAE.Exp> conditions1;
   input list<list<DAE.Element>> theneqns1;
   input DAE.ElementSource inSource;
-  input DAE.FunctionTree functionTree;
+  input AvlTreePathFunction.Tree functionTree;
   input list<BackendDAE.Equation> inEquations;
   output list<BackendDAE.Equation> outEquations;
 algorithm
@@ -2147,7 +2147,7 @@ protected function lowerIfEquation1
   input list<DAE.Exp> conditions1;
   input list<list<DAE.Element>> theneqns1;
   input DAE.ElementSource source;
-  input DAE.FunctionTree functionTree;
+  input AvlTreePathFunction.Tree functionTree;
   input list<BackendDAE.Equation> inEqns;
   output list<BackendDAE.Equation> outEqns;
 algorithm
@@ -2188,7 +2188,7 @@ end lowerIfEquation1;
 
 protected function lowerEqns "author: Frenkel TUD 2012-06"
   input list<DAE.Element> inElements;
-  input DAE.FunctionTree functionTree;
+  input AvlTreePathFunction.Tree functionTree;
   input list<BackendDAE.Equation> inEquations;
   input list<BackendDAE.Equation> inREquations;
   input list<BackendDAE.Equation> inIEquations;
@@ -2214,7 +2214,7 @@ end lowerEqns;
 
 protected function lowerEqnsLst "author: Frenkel TUD 2012-06"
   input list<list<DAE.Element>> inElements;
-  input DAE.FunctionTree functionTree;
+  input AvlTreePathFunction.Tree functionTree;
   input list<list<BackendDAE.Equation>> inEquations;
   input Boolean inInitialization;
   output list<list<BackendDAE.Equation>> outEquations;
@@ -2346,7 +2346,7 @@ protected function lowerExtendedRecordEqns "author: Frenkel TUD 2012-06"
   input list<DAE.Exp> explst2;
   input DAE.ElementSource source;
   input BackendDAE.EquationAttributes inEqAttributes;
-  input DAE.FunctionTree functionTree;
+  input AvlTreePathFunction.Tree functionTree;
   input list<BackendDAE.Equation> inEqns;
   output list<BackendDAE.Equation> outEqns;
 algorithm
@@ -2369,7 +2369,7 @@ protected function lowerExtendedRecordEqn "author: Frenkel TUD 2012-06"
   input DAE.Exp inExp2;
   input DAE.ElementSource source;
   input BackendDAE.EquationAttributes inEqAttributes;
-  input DAE.FunctionTree functionTree;
+  input AvlTreePathFunction.Tree functionTree;
   input list<BackendDAE.Equation> inEqns;
   output list<BackendDAE.Equation> outEqns;
 algorithm
@@ -2425,7 +2425,7 @@ algorithm
         b2 := DAEUtil.expTypeArray(tp);
         b3 := Types.isTuple(tp);
         false := b1 or b2 or b3;
-        //Error.assertionOrAddSourceMessage(not b1, Error.INTERNAL_ERROR, {str}, AbsynUtil.dummyInfo);
+        //Error.assertionOrAddSourceMessage(not b1, Error.INTERNAL_ERROR, {str}, Absyn.dummyInfo);
       then
         BackendDAE.EQUATION(inExp1, inExp2, source, inEqAttributes)::inEqns;
     else
@@ -2519,7 +2519,7 @@ end createWhenClock;
 protected function lowerWhenEqn
 "This function lowers a when eqn."
   input DAE.Element inElement;
-  input DAE.FunctionTree functionTree;
+  input AvlTreePathFunction.Tree functionTree;
   input list<BackendDAE.Equation> inEquationLst;
   input list<BackendDAE.Equation> inREquationLst;
   input list<BackendDAE.Var> inVars;
@@ -2575,7 +2575,7 @@ protected function lowerWhenEqn2
 "Helper function to lowerWhenEqn. Lowers the equations inside a when clause"
   input list<DAE.Element> inDAEElementLst "The List of equations inside a when clause";
   input DAE.Exp inCond;
-  input DAE.FunctionTree functionTree;
+  input AvlTreePathFunction.Tree functionTree;
   input list<BackendDAE.Equation> iEquationLst;
   input list<BackendDAE.Equation> iREquationLst;
   input list<BackendDAE.Var> inVar_lst;
@@ -2856,7 +2856,7 @@ protected function lowerWhenIfEqns
   helper for lowerWhen"
   input list<DAE.Exp> conditions;
   input list<list<DAE.Element>> theneqns;
-  input DAE.FunctionTree functionTree;
+  input AvlTreePathFunction.Tree functionTree;
   input HashTableCrToExpSourceTpl.HashTable iHt;
   output HashTableCrToExpSourceTpl.HashTable oHt;
 algorithm
@@ -2883,7 +2883,7 @@ protected function lowerWhenIfEqns1
   helper for lowerWhenIfEqns"
   input DAE.Exp condition;
   input list<DAE.Element> brancheqns;
-  input DAE.FunctionTree functionTree;
+  input AvlTreePathFunction.Tree functionTree;
   input HashTableCrToExpSourceTpl.HashTable iHt;
   output HashTableCrToExpSourceTpl.HashTable oHt;
 algorithm
@@ -2993,7 +2993,7 @@ protected function lowerWhenIfEqnsElse
 "author: Frenkel TUD 2012-11
   helper for lowerWhenIfEqns"
   input list<DAE.Element> elseenqs;
-  input DAE.FunctionTree functionTree;
+  input AvlTreePathFunction.Tree functionTree;
   input HashTableCrToExpSourceTpl.HashTable iHt;
   output HashTableCrToExpSourceTpl.HashTable oHt;
 algorithm
@@ -3178,7 +3178,7 @@ protected function lowerTupleAssignment
   input list<DAE.Exp> target_expl;
   input list<DAE.Exp> source_expl;
   input DAE.ElementSource inEq_source;
-  input DAE.FunctionTree funcs;
+  input AvlTreePathFunction.Tree funcs;
   input list<BackendDAE.Equation> iEqns;
   output list<BackendDAE.Equation> oEqns;
 algorithm
@@ -3215,7 +3215,7 @@ NOTE: inCrefExpansionStrategy is needed if we translate equations to algorithms 
       we should not expand array crefs to full dimensions in that case because that
       is wrong. Expansion of array crefs to full dimensions SHOULD HAPPEN ONLY IN REAL FULL ALGORITHMS!"
   input DAE.Element inElement;
-  input DAE.FunctionTree functionTree;
+  input AvlTreePathFunction.Tree functionTree;
   input list<BackendDAE.Equation> inEquations;
   input list<BackendDAE.Equation> inREquations;
   input list<BackendDAE.Equation> inIEquations;
@@ -4092,16 +4092,16 @@ algorithm
 end detectImplicitDiscreteAlgsStatemensFor;
 
 function lowerFunctions
-  input output DAE.FunctionTree funcTree;
+  input output AvlTreePathFunction.Tree funcTree;
 protected
-  list<tuple<DAE.AvlTreePathFunction.Key,DAE.AvlTreePathFunction.Value>> funcList;
+  list<tuple<AvlTreePathFunction.Key,AvlTreePathFunction.Value>> funcList;
 algorithm
-  funcTree := DAE.AvlTreePathFunction.map(funcTree, deriveFunction);
+  funcTree := AvlTreePathFunction.map(funcTree, deriveFunction);
 end lowerFunctions;
 
 function deriveFunction
-  input DAE.AvlTreePathFunction.Key key;
-  input output DAE.AvlTreePathFunction.Value value;
+  input AvlTreePathFunction.Key key;
+  input output AvlTreePathFunction.Value value;
 algorithm
   value := match value
     local
@@ -4120,19 +4120,19 @@ end deriveFunction;
 protected function renameFunctionParameter"renames the parameters in function calls. the function path is prepended to the parameter cref.
 This is used for the Cpp runtime for initializing parameters in function calls. The names have to be unique in case there are equally named parameters in different functions.
 author:Waurich TUD 2014-10"
-  input DAE.FunctionTree fTreeIn;
-  output DAE.FunctionTree fTreeOut;
+  input AvlTreePathFunction.Tree fTreeIn;
+  output AvlTreePathFunction.Tree fTreeOut;
 algorithm
   fTreeOut := matchcontinue(fTreeIn)
     local
-      list<tuple<DAE.AvlTreePathFunction.Key,DAE.AvlTreePathFunction.Value>> funcLst;
-      DAE.FunctionTree funcs;
+      list<tuple<AvlTreePathFunction.Key,AvlTreePathFunction.Value>> funcLst;
+      AvlTreePathFunction.Tree funcs;
   case(_)
     algorithm
       true := (stringEq(Flags.getConfigString(Flags.SIMCODE_TARGET),"Cpp"));
-      funcLst := DAE.AvlTreePathFunction.toList(fTreeIn);
+      funcLst := AvlTreePathFunction.toList(fTreeIn);
       funcLst := List.map(funcLst,renameFunctionParameter1);
-      funcs := DAE.AvlTreePathFunction.addList(DAE.AvlTreePathFunction.new(), funcLst);
+      funcs := AvlTreePathFunction.addList(AvlTreePathFunction.new(), funcLst);
     then funcs;
   else
     then fTreeIn;
@@ -4140,11 +4140,11 @@ algorithm
 end renameFunctionParameter;
 
 protected function renameFunctionParameter1
-  input tuple<DAE.AvlTreePathFunction.Key, DAE.AvlTreePathFunction.Value> funcIn;
-  output tuple<DAE.AvlTreePathFunction.Key, DAE.AvlTreePathFunction.Value> funcOut;
+  input tuple<AvlTreePathFunction.Key, AvlTreePathFunction.Value> funcIn;
+  output tuple<AvlTreePathFunction.Key, AvlTreePathFunction.Value> funcOut;
 protected
-  DAE.AvlTreePathFunction.Key key;
-  DAE.AvlTreePathFunction.Value value;
+  AvlTreePathFunction.Key key;
+  AvlTreePathFunction.Value value;
   String pathName;
   DAE.Function fn;
 algorithm

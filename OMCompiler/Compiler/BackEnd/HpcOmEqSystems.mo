@@ -421,7 +421,7 @@ protected
   BackendDAE.StrongComponents comps, compsNew, oComps, compsEqSys;
   BackendDAE.Variables vars, diffVars, ovars, dVars;
   BackendVarTransform.VariableReplacements derRepl;
-  DAE.FunctionTree functree;
+  AvlTreePathFunction.Tree functree;
   list<BackendDAE.Equation> eqLst,reqns, otherEqnsLst,otherEqnsLstReplaced, eqNew, hs, hs1, hLst, hsLst, hs_0, addEqLst;
   list<BackendDAE.EquationArray> gEqs, hEqs, hsEqs;
   list<BackendDAE.Var> varLst, tvars, tvarsReplaced, ovarsLst, xa0, a_0, varNew, addVarLst;

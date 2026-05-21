@@ -44,6 +44,7 @@ encapsulated package FUnitCheck
 public
 import Absyn;
 import AbsynUtil;
+import AvlTreePathFunction;
 import DAE;
 import Unit = FUnit;
 import System;
@@ -77,7 +78,7 @@ end Functionargs;
 
 public function checkUnits
   input DAE.DAElist inDAE;
-  input DAE.FunctionTree func;
+  input AvlTreePathFunction.Tree func;
   output DAE.DAElist outDAE = inDAE;
 protected
   DAE.DAElist elts1, elts2;

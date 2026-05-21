@@ -236,10 +236,10 @@ protected
   Integer nOfHits = 0;
   DAE.ComponentRef componentRef;
   list<DAE.Element> dAElist1, dAElist2;
-  DAE.FunctionTree emptyTree;
+  AvlTreePathFunction.Tree emptyTree;
 algorithm
   DAE.SM_COMP(componentRef, dAElist1) := inSmComp;
-  emptyTree := DAE.AvlTreePathFunction.Tree.EMPTY();
+  emptyTree := AvlTreePathFunction.Tree.EMPTY();
   (DAE.DAE(dAElist2), _, (_,(_, nOfHits))) := DAEUtil.traverseDAE(DAE.DAE(dAElist1), emptyTree, Expression.traverseSubexpressionsHelper, (traversingSubsTicksInState, (componentRef, 0)));
   outSmComp := DAE.SM_COMP(componentRef, dAElist2);
 end elabXInStateOps_CT;

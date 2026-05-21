@@ -45,7 +45,7 @@ import DAE;
 
 public function checkUnits
   input DAE.DAElist inDAE;
-  input DAE.FunctionTree func;
+  input AvlTreePathFunction.Tree func;
   output DAE.DAElist outDAE = inDAE;
 algorithm
   return;

@@ -1,0 +1,120 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
+encapsulated package InteractiveTypes
+" file:        InteractiveTypes.mo
+  package:     InteractiveTypes
+  description: Types and constants for interactive scripting modules
+
+"
+
+public import Absyn;
+public import DAE;
+public import Values;
+
+public
+uniontype SimulationOptions "these are the simulation/buildModel* options"
+  record SIMULATION_OPTIONS "simulation/buildModel* options"
+    DAE.Exp startTime "start time, default 0.0";
+    DAE.Exp stopTime "stop time, default 1.0";
+    DAE.Exp numberOfIntervals "number of intervals, default 500";
+    DAE.Exp stepSize "stepSize, default (stopTime-startTime)/numberOfIntervals";
+    DAE.Exp tolerance "tolerance, default 1e-6";
+    DAE.Exp method "method, default 'dassl'";
+    DAE.Exp fileNamePrefix "file name prefix, default ''";
+    DAE.Exp options "options, default ''";
+    DAE.Exp outputFormat "output format, default 'plt'";
+    DAE.Exp variableFilter "variable filter, regex does whole string matching, i.e. it becomes ^.*$ in the runtime";
+    DAE.Exp cflags "Compiler flags, in addition to MODELICAUSERCFLAGS";
+    DAE.Exp simflags "Flags sent to the simulation executable (doesn't do anything for buildModel)";
+  end SIMULATION_OPTIONS;
+end SimulationOptions;
+
+public
+uniontype Variable "- InteractiveTypes.Variable"
+  record IVAR
+    Absyn.Ident varIdent "The variable identifier" ;
+    Values.Value value "The value" ;
+    DAE.Type type_ "The type of the expression" ;
+  end IVAR;
+
+end Variable;
+
+public
+uniontype Component "- a component in a class
+  this is used in extracting all the components in all the classes"
+  record COMPONENTITEM
+    Absyn.Path the1 "the class where the component is" ;
+    Absyn.Path the2 "the type of the component" ;
+    Absyn.ComponentRef the3 "the name of the component" ;
+  end COMPONENTITEM;
+
+  record EXTENDSITEM
+    Absyn.Path the1 "the class which is extended" ;
+    Absyn.Path the2 "the class which is the extension" ;
+  end EXTENDSITEM;
+
+end Component;
+
+public
+uniontype Components
+  record COMPONENTS
+    list<Component> componentLst;
+    Integer the "the number of components in list. used to optimize the get_dependency_on_class" ;
+  end COMPONENTS;
+
+end Components;
+
+public
+uniontype ComponentReplacement
+  record COMPONENTREPLACEMENT
+    Absyn.Path which1 "which class contain the old cref" ;
+    Absyn.ComponentRef the2 "the old cref" ;
+    Absyn.ComponentRef the3 "the new cref" ;
+  end COMPONENTREPLACEMENT;
+
+end ComponentReplacement;
+
+public
+uniontype ComponentReplacementRules
+  record COMPONENTREPLACEMENTRULES
+    list<ComponentReplacement> componentReplacementLst;
+    Integer the "the number of rules" ;
+  end COMPONENTREPLACEMENTRULES;
+
+end ComponentReplacementRules;
+
+annotation(__OpenModelica_Interface="frontend");
+end InteractiveTypes;

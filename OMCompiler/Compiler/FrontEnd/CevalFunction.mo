@@ -1487,7 +1487,7 @@ protected function cevalExp
   output FCore.Cache outCache;
   output Values.Value outValue;
 algorithm
-  (outCache, outValue) := Ceval.ceval(inCache, inEnv, inExp, true, Absyn.MSG(AbsynUtil.dummyInfo), 0);
+  (outCache, outValue) := Ceval.ceval(inCache, inEnv, inExp, true, Absyn.MSG(Absyn.dummyInfo), 0);
   false := valueEq(Values.META_FAIL(), outValue);
 end cevalExp;
 
@@ -1499,7 +1499,7 @@ protected function cevalExpList
   output FCore.Cache outCache;
   output list<Values.Value> outValue;
 algorithm
-  (outCache, outValue) := Ceval.cevalList(inCache, inEnv, inExpLst, true, Absyn.MSG(AbsynUtil.dummyInfo), 0);
+  (outCache, outValue) := Ceval.cevalList(inCache, inEnv, inExpLst, true, Absyn.MSG(Absyn.dummyInfo), 0);
 end cevalExpList;
 
 // [EENV]  Environment extension functions (add variables).
@@ -1684,7 +1684,7 @@ algorithm
                   SCode.defaultPrefixes,
                   SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR(),Absyn.NONFIELD()),
                   Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
-                  SCode.noComment, NONE(), AbsynUtil.dummyInfo),
+                  SCode.noComment, NONE(), Absyn.dummyInfo),
                 DAE.NOMOD(),
                 FCore.VAR_TYPED(),
                 record_env);
@@ -1706,7 +1706,7 @@ algorithm
                   SCode.defaultPrefixes,
                   SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR(),Absyn.NONFIELD()),
                   Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
-                  SCode.noComment, NONE(), AbsynUtil.dummyInfo),
+                  SCode.noComment, NONE(), Absyn.dummyInfo),
                 DAE.NOMOD(),
                 FCore.VAR_TYPED(),
                 FGraph.empty());

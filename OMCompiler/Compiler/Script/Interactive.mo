@@ -45,7 +45,7 @@ encapsulated package Interactive
   in the interactive environment.
   The module defines a symboltable used in the interactive environment containing:
   - Modelica models (described using Absyn AST)
-  - GlobalScript.Variable bindings
+  - InteractiveTypes.Variable bindings
   - Compiled functions (so they do not need to be recompiled)
   - Instantiated classes (that can be reused, not impl. yet)
   - Modelica models in SCode form (to speed up instantiation. not impl. yet)"
@@ -662,7 +662,7 @@ algorithm
       Absyn.Exp exp;
       Absyn.Program p;
       FCore.Cache cache;
-      list<GlobalScript.Variable> vars;
+      list<InteractiveTypes.Variable> vars;
       Absyn.ComponentRef cr;
 
     // Special case to lookup fields of records.
@@ -691,8 +691,8 @@ protected
   DAE.Properties prop;
 algorithm
   env := SymbolTable.buildEnv();
-  (_, sexp, prop) := StaticScript.elabExp(FCore.emptyCache(), env, exp, true, true, DAE.NOPRE(), AbsynUtil.dummyInfo);
-  (_, sexp, prop) := Ceval.cevalIfConstant(FCore.emptyCache(), env, sexp, prop, true, AbsynUtil.dummyInfo);
+  (_, sexp, prop) := StaticScript.elabExp(FCore.emptyCache(), env, exp, true, true, DAE.NOPRE(), Absyn.dummyInfo);
+  (_, sexp, prop) := Ceval.cevalIfConstant(FCore.emptyCache(), env, sexp, prop, true, Absyn.dummyInfo);
   estr := ExpressionDump.printExpStr(sexp);
 end stringRepresOfExpr;
 
@@ -761,14 +761,14 @@ public function getTypeOfVariable
 "Return the type of an interactive variable,
   given a list of variables and a variable identifier."
   input Absyn.Ident inIdent;
-  input list<GlobalScript.Variable> inVariableLst;
+  input list<InteractiveTypes.Variable> inVariableLst;
   output DAE.Type outType;
 protected
   String id;
   DAE.Type tp;
 algorithm
   for var in inVariableLst loop
-    GlobalScript.IVAR(varIdent = id,type_ = tp) := var;
+    InteractiveTypes.IVAR(varIdent = id,type_ = tp) := var;
     if stringEq(inIdent, id) then
       outType := tp;
       return;
@@ -787,10 +787,10 @@ protected function extractAllComponentreplacements
   input Absyn.Path classPath;
   input Absyn.ComponentRef oldName;
   input Absyn.ComponentRef newName;
-  output GlobalScript.ComponentReplacementRules comp_reps;
+  output InteractiveTypes.ComponentReplacementRules comp_reps;
 protected
-  GlobalScript.Components comps;
-  GlobalScript.ComponentReplacementRules comp_repsrules;
+  InteractiveTypes.Components comps;
+  InteractiveTypes.ComponentReplacementRules comp_repsrules;
 algorithm
   try
     ErrorExt.setCheckpoint("Interactive.extractAllComponentreplacements");
@@ -798,7 +798,7 @@ algorithm
     // rollback errors if we succeed
     ErrorExt.rollBack("Interactive.extractAllComponentreplacements");
     false := isClassReadOnly(InteractiveUtil.getPathedClassInProgram(classPath,p));
-    comp_repsrules := GlobalScript.COMPONENTREPLACEMENTRULES({GlobalScript.COMPONENTREPLACEMENT(classPath,oldName,newName)},1);
+    comp_repsrules := InteractiveTypes.COMPONENTREPLACEMENTRULES({InteractiveTypes.COMPONENTREPLACEMENT(classPath,oldName,newName)},1);
     comp_reps := getComponentreplacementsrules(comps, comp_repsrules, 0);
   else
     // keep errors if we fail!
@@ -825,7 +825,7 @@ public function renameComponent
   input output Absyn.Program program;
         output Values.Value result;
 protected
-  GlobalScript.ComponentReplacementRules comp_reps;
+  InteractiveTypes.ComponentReplacementRules comp_reps;
   list<Absyn.Path> paths;
 algorithm
   try
@@ -872,7 +872,7 @@ end renameComponentOnlyInClass;
 
 protected function extractRenamedClassesAsStringList
   "Returns the list of classes changed by the given component replacement rules."
-  input GlobalScript.ComponentReplacementRules rules;
+  input InteractiveTypes.ComponentReplacementRules rules;
   output list<Absyn.Path> outPaths = {};
 algorithm
   outPaths := list(rule.which1 for rule in rules.componentReplacementLst);
@@ -881,7 +881,7 @@ end extractRenamedClassesAsStringList;
 
 protected function renameComponentFromComponentreplacements
   input output Absyn.Program program;
-  input GlobalScript.ComponentReplacementRules rules;
+  input InteractiveTypes.ComponentReplacementRules rules;
 algorithm
   for rule in rules.componentReplacementLst loop
     ((program, _, _)) := AbsynUtil.traverseClasses(program, NONE(), renameComponentVisitor, rule, true);
@@ -891,8 +891,8 @@ end renameComponentFromComponentreplacements;
 protected function renameComponentVisitor
 "author: x02lucpo
   this is a visitor for traverse class in rename components"
-  input tuple<Absyn.Class, Option<Absyn.Path>, GlobalScript.ComponentReplacement> inTplAbsynClassAbsynPathOptionComponentReplacement;
-  output tuple<Absyn.Class, Option<Absyn.Path>, GlobalScript.ComponentReplacement> outTplAbsynClassAbsynPathOptionComponentReplacement;
+  input tuple<Absyn.Class, Option<Absyn.Path>, InteractiveTypes.ComponentReplacement> inTplAbsynClassAbsynPathOptionComponentReplacement;
+  output tuple<Absyn.Class, Option<Absyn.Path>, InteractiveTypes.ComponentReplacement> outTplAbsynClassAbsynPathOptionComponentReplacement;
 algorithm
   outTplAbsynClassAbsynPathOptionComponentReplacement:=
   matchcontinue (inTplAbsynClassAbsynPathOptionComponentReplacement)
@@ -905,24 +905,24 @@ algorithm
       Absyn.ClassDef e;
       SourceInfo file_info;
       Absyn.ComponentRef old_comp,new_comp;
-      GlobalScript.ComponentReplacement args;
+      InteractiveTypes.ComponentReplacement args;
       Option<Absyn.Path> opath;
-    case (((class_ as Absyn.CLASS(name = id)),SOME(pa),GlobalScript.COMPONENTREPLACEMENT(which1 = class_id,the2 = old_comp,the3 = new_comp)))
+    case (((class_ as Absyn.CLASS(name = id)),SOME(pa),InteractiveTypes.COMPONENTREPLACEMENT(which1 = class_id,the2 = old_comp,the3 = new_comp)))
       algorithm
         path_1 := AbsynUtil.joinPaths(pa, Absyn.IDENT(id));
         true := AbsynUtil.pathEqual(class_id, path_1);
         class_1 := renameComponentInClass(class_, old_comp, new_comp);
       then
         ((class_1,SOME(pa),
-          GlobalScript.COMPONENTREPLACEMENT(class_id,old_comp,new_comp)));
-    case (((class_ as Absyn.CLASS(name = id)),NONE(),GlobalScript.COMPONENTREPLACEMENT(which1 = class_id,the2 = old_comp,the3 = new_comp)))
+          InteractiveTypes.COMPONENTREPLACEMENT(class_id,old_comp,new_comp)));
+    case (((class_ as Absyn.CLASS(name = id)),NONE(),InteractiveTypes.COMPONENTREPLACEMENT(which1 = class_id,the2 = old_comp,the3 = new_comp)))
       algorithm
         path_1 := Absyn.IDENT(id);
         true := AbsynUtil.pathEqual(class_id, path_1);
         class_1 := renameComponentInClass(class_, old_comp, new_comp);
       then
         ((class_1,NONE(),
-          GlobalScript.COMPONENTREPLACEMENT(class_id,old_comp,new_comp)));
+          InteractiveTypes.COMPONENTREPLACEMENT(class_id,old_comp,new_comp)));
     case ((class_,opath,args)) then ((class_,opath,args));
   end matchcontinue;
 end renameComponentVisitor;
@@ -1911,16 +1911,16 @@ protected function getComponentreplacementsrules
   this extracts all the componentreplacementrules by
   searching for new rules until the list-size does not
   grow any more"
-  input GlobalScript.Components inComponents;
-  input GlobalScript.ComponentReplacementRules inComponentReplacementRules;
+  input InteractiveTypes.Components inComponents;
+  input InteractiveTypes.ComponentReplacementRules inComponentReplacementRules;
   input Integer inInteger;
-  output GlobalScript.ComponentReplacementRules outComponentReplacementRules;
+  output InteractiveTypes.ComponentReplacementRules outComponentReplacementRules;
 algorithm
   outComponentReplacementRules := matchcontinue (inComponents,inComponentReplacementRules,inInteger)
     local
       Integer len,old_len;
-      GlobalScript.Components comps;
-      GlobalScript.ComponentReplacementRules comp_reps,comp_reps_1,comp_reps_2,comp_reps_res;
+      InteractiveTypes.Components comps;
+      InteractiveTypes.ComponentReplacementRules comp_reps,comp_reps_1,comp_reps_2,comp_reps_res;
     case (_,comp_reps,old_len)
       algorithm
         len := lengthComponentReplacementRules(comp_reps);
@@ -1948,15 +1948,15 @@ protected function getNewComponentreplacementsrulesForEachRule
  extracts the replacement rules from the components:
  {COMP(path_1,path_2,cr1),COMP(path_3,path_2,cr2)},{REP_RULE(path_2,cr_1a,cr_1b)}
            => {REP_RULE(path_1,cr1.cr_1a,cr1.cr_1b),REP_RULE(path_3,cr2.cr_1a,cr2.cr_1b)}"
-  input GlobalScript.Components inComponents;
-  input GlobalScript.ComponentReplacementRules inComponentReplacementRules;
-  output GlobalScript.ComponentReplacementRules outComponentReplacementRules;
+  input InteractiveTypes.Components inComponents;
+  input InteractiveTypes.ComponentReplacementRules inComponentReplacementRules;
+  output InteractiveTypes.ComponentReplacementRules outComponentReplacementRules;
 algorithm
   outComponentReplacementRules:=
   matchcontinue (inComponents,inComponentReplacementRules)
     local
-      GlobalScript.Components comps,comps_1;
-      GlobalScript.ComponentReplacementRules comp_reps,comp_reps_1,res,comp_reps_2,comp_reps_3;
+      InteractiveTypes.Components comps,comps_1;
+      InteractiveTypes.ComponentReplacementRules comp_reps,comp_reps_1,res,comp_reps_2,comp_reps_3;
       Absyn.Path path;
       Absyn.ComponentRef cr1,cr2;
     case (_,comp_reps)
@@ -1966,7 +1966,7 @@ algorithm
         comp_reps;
     case (comps,comp_reps)
       algorithm
-        GlobalScript.COMPONENTREPLACEMENT(path,cr1,cr2) := firstComponentReplacement(comp_reps);
+        InteractiveTypes.COMPONENTREPLACEMENT(path,cr1,cr2) := firstComponentReplacement(comp_reps);
         comps_1 := getComponentsWithType(comps, path);
         comp_reps_1 := makeComponentsReplacementRulesFromComponents(comps_1, cr1, cr2);
         res := restComponentReplacementRules(comp_reps);
@@ -1989,42 +1989,42 @@ protected function makeComponentsReplacementRulesFromComponents
   this makes the replacementrules from each component in the first parameter:
   {COMP(path_1,path_2,cr1),COMP(path_3,path_2,cr2)},cr_1a,cr_1b
             => {REP_RULE(path_1,cr1.cr_1a,cr1.cr_1b),REP_RULE(path_3,cr2.cr_1a,cr2.cr_1b)}"
-  input GlobalScript.Components inComponents1;
+  input InteractiveTypes.Components inComponents1;
   input Absyn.ComponentRef inComponentRef2;
   input Absyn.ComponentRef inComponentRef3;
-  output GlobalScript.ComponentReplacementRules outComponentReplacementRules;
+  output InteractiveTypes.ComponentReplacementRules outComponentReplacementRules;
 algorithm
   outComponentReplacementRules:=
   matchcontinue (inComponents1,inComponentRef2,inComponentRef3)
     local
-      GlobalScript.Components comps,res;
+      InteractiveTypes.Components comps,res;
       Absyn.ComponentRef cr_from,cr_to,cr,cr_from_1,cr_to_1;
       Absyn.Path path_class,path_type;
-      GlobalScript.ComponentReplacement comp_rep;
-      GlobalScript.ComponentReplacementRules comps_1,comp_reps_res;
+      InteractiveTypes.ComponentReplacement comp_rep;
+      InteractiveTypes.ComponentReplacementRules comps_1,comp_reps_res;
     case (comps,_,_)
       algorithm
         true := emptyComponents(comps);
       then
-        GlobalScript.COMPONENTREPLACEMENTRULES({},0);
+        InteractiveTypes.COMPONENTREPLACEMENTRULES({},0);
     case (comps,cr_from,cr_to)
       algorithm
-        GlobalScript.COMPONENTITEM(path_class,_,cr) := firstComponent(comps);
+        InteractiveTypes.COMPONENTITEM(path_class,_,cr) := firstComponent(comps);
         cr_from_1 := AbsynUtil.joinCrefs(cr, cr_from);
         cr_to_1 := AbsynUtil.joinCrefs(cr, cr_to);
-        comp_rep := GlobalScript.COMPONENTREPLACEMENT(path_class,cr_from_1,cr_to_1);
+        comp_rep := InteractiveTypes.COMPONENTREPLACEMENT(path_class,cr_from_1,cr_to_1);
         res := restComponents(comps);
         comps_1 := makeComponentsReplacementRulesFromComponents(res, cr_from, cr_to);
-        comp_reps_res := joinComponentReplacementRules(comps_1, GlobalScript.COMPONENTREPLACEMENTRULES({comp_rep},1));
+        comp_reps_res := joinComponentReplacementRules(comps_1, InteractiveTypes.COMPONENTREPLACEMENTRULES({comp_rep},1));
       then
         comp_reps_res;
     case (comps,cr_from,cr_to)
       algorithm
-        GlobalScript.EXTENDSITEM(path_class,_) := firstComponent(comps);
-        comp_rep := GlobalScript.COMPONENTREPLACEMENT(path_class,cr_from,cr_to);
+        InteractiveTypes.EXTENDSITEM(path_class,_) := firstComponent(comps);
+        comp_rep := InteractiveTypes.COMPONENTREPLACEMENT(path_class,cr_from,cr_to);
         res := restComponents(comps);
         comps_1 := makeComponentsReplacementRulesFromComponents(res, cr_from, cr_to);
-        comp_reps_res := joinComponentReplacementRules(comps_1, GlobalScript.COMPONENTREPLACEMENTRULES({comp_rep},1));
+        comp_reps_res := joinComponentReplacementRules(comps_1, InteractiveTypes.COMPONENTREPLACEMENTRULES({comp_rep},1));
       then
         comp_reps_res;
     else
@@ -2038,12 +2038,12 @@ end makeComponentsReplacementRulesFromComponents;
 protected function emptyComponentReplacementRules
 "author: x02lucpo
   returns true if the componentReplacementRules are empty"
-  input GlobalScript.ComponentReplacementRules inComponentReplacementRules;
+  input InteractiveTypes.ComponentReplacementRules inComponentReplacementRules;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
   match (inComponentReplacementRules)
-    case (GlobalScript.COMPONENTREPLACEMENTRULES(componentReplacementLst = {})) then true;
+    case (InteractiveTypes.COMPONENTREPLACEMENTRULES(componentReplacementLst = {})) then true;
     else false;
   end match;
 end emptyComponentReplacementRules;
@@ -2051,34 +2051,34 @@ end emptyComponentReplacementRules;
 protected function joinComponentReplacementRules
 " author: x02lucpo
  joins two componentReplacementRules lists by union"
-  input GlobalScript.ComponentReplacementRules inComponentReplacementRules1;
-  input GlobalScript.ComponentReplacementRules inComponentReplacementRules2;
-  output GlobalScript.ComponentReplacementRules outComponentReplacementRules;
+  input InteractiveTypes.ComponentReplacementRules inComponentReplacementRules1;
+  input InteractiveTypes.ComponentReplacementRules inComponentReplacementRules2;
+  output InteractiveTypes.ComponentReplacementRules outComponentReplacementRules;
 algorithm
   outComponentReplacementRules:=
   match (inComponentReplacementRules1,inComponentReplacementRules2)
     local
-      list<GlobalScript.ComponentReplacement> comps,comps1,comps2;
+      list<InteractiveTypes.ComponentReplacement> comps,comps1,comps2;
       Integer len,len1,len2;
-    case (GlobalScript.COMPONENTREPLACEMENTRULES(componentReplacementLst = comps1),GlobalScript.COMPONENTREPLACEMENTRULES(componentReplacementLst = comps2))
+    case (InteractiveTypes.COMPONENTREPLACEMENTRULES(componentReplacementLst = comps1),InteractiveTypes.COMPONENTREPLACEMENTRULES(componentReplacementLst = comps2))
       algorithm
         comps := List.union(comps1, comps2);
         len := listLength(comps);
       then
-        GlobalScript.COMPONENTREPLACEMENTRULES(comps,len);
+        InteractiveTypes.COMPONENTREPLACEMENTRULES(comps,len);
   end match;
 end joinComponentReplacementRules;
 
 protected function lengthComponentReplacementRules
 "author: x02lucpo
   return the number of the componentReplacementRules"
-  input GlobalScript.ComponentReplacementRules inComponentReplacementRules;
+  input InteractiveTypes.ComponentReplacementRules inComponentReplacementRules;
   output Integer outInteger;
 algorithm
   outInteger:=
   match (inComponentReplacementRules)
     local Integer len;
-    case (GlobalScript.COMPONENTREPLACEMENTRULES(the = len)) then len;
+    case (InteractiveTypes.COMPONENTREPLACEMENTRULES(the = len)) then len;
   end match;
 end lengthComponentReplacementRules;
 
@@ -2086,65 +2086,65 @@ protected function firstComponentReplacement
 "author: x02lucpo
  extract the first componentReplacement in
  the componentReplacementReplacementRules"
-  input GlobalScript.ComponentReplacementRules inComponentReplacementRules;
-  output GlobalScript.ComponentReplacement outComponentReplacement;
+  input InteractiveTypes.ComponentReplacementRules inComponentReplacementRules;
+  output InteractiveTypes.ComponentReplacement outComponentReplacement;
 algorithm
   outComponentReplacement:=
   match (inComponentReplacementRules)
     local
-      GlobalScript.ComponentReplacement comp;
-      list<GlobalScript.ComponentReplacement> res;
-    case (GlobalScript.COMPONENTREPLACEMENTRULES(componentReplacementLst = {}))
+      InteractiveTypes.ComponentReplacement comp;
+      list<InteractiveTypes.ComponentReplacement> res;
+    case (InteractiveTypes.COMPONENTREPLACEMENTRULES(componentReplacementLst = {}))
       algorithm
         print("-first_componentReplacement failed: no componentReplacementReplacementRules\n");
       then
         fail();
-    case (GlobalScript.COMPONENTREPLACEMENTRULES(componentReplacementLst = (comp :: _))) then comp;
+    case (InteractiveTypes.COMPONENTREPLACEMENTRULES(componentReplacementLst = (comp :: _))) then comp;
   end match;
 end firstComponentReplacement;
 
 protected function restComponentReplacementRules
 "author: x02lucpo
  extract the rest componentReplacementRules from the components"
-  input GlobalScript.ComponentReplacementRules inComponentReplacementRules;
-  output GlobalScript.ComponentReplacementRules outComponentReplacementRules;
+  input InteractiveTypes.ComponentReplacementRules inComponentReplacementRules;
+  output InteractiveTypes.ComponentReplacementRules outComponentReplacementRules;
 algorithm
   outComponentReplacementRules:=
   match (inComponentReplacementRules)
     local
       Integer len_1,len;
-      GlobalScript.ComponentReplacement comp;
-      list<GlobalScript.ComponentReplacement> res;
-    case (GlobalScript.COMPONENTREPLACEMENTRULES(componentReplacementLst = {})) then GlobalScript.COMPONENTREPLACEMENTRULES({},0);
-    case (GlobalScript.COMPONENTREPLACEMENTRULES(componentReplacementLst = (_ :: res),the = len))
+      InteractiveTypes.ComponentReplacement comp;
+      list<InteractiveTypes.ComponentReplacement> res;
+    case (InteractiveTypes.COMPONENTREPLACEMENTRULES(componentReplacementLst = {})) then InteractiveTypes.COMPONENTREPLACEMENTRULES({},0);
+    case (InteractiveTypes.COMPONENTREPLACEMENTRULES(componentReplacementLst = (_ :: res),the = len))
       algorithm
         len_1 := len - 1;
       then
-        GlobalScript.COMPONENTREPLACEMENTRULES(res,len_1);
+        InteractiveTypes.COMPONENTREPLACEMENTRULES(res,len_1);
   end match;
 end restComponentReplacementRules;
 
 protected function getComponentsWithType
 "author: x02lucpo
  extracts all the components that have the type"
-  input GlobalScript.Components inComponents;
+  input InteractiveTypes.Components inComponents;
   input Absyn.Path inPath;
-  output GlobalScript.Components outComponents;
+  output InteractiveTypes.Components outComponents;
 algorithm
   outComponents:=
   matchcontinue (inComponents,inPath)
     local
-      GlobalScript.Components comps,res,comps_1,comps_2;
-      GlobalScript.Component comp;
+      InteractiveTypes.Components comps,res,comps_1,comps_2;
+      InteractiveTypes.Component comp;
       Absyn.Path comp_path,path;
     case (comps,_) /* rule  Absyn.path_string(path) => comp_path & print \"extracting comps for: \" & print comp_path & print \"\\n\" & int_eq(1,2) => true --------------------------- get_components_with_type(comps,path) => comps */
       algorithm
         true := emptyComponents(comps);
       then
-        GlobalScript.COMPONENTS({},0);
+        InteractiveTypes.COMPONENTS({},0);
     case (comps,path)
       algorithm
-        ((comp as GlobalScript.COMPONENTITEM(_,comp_path,_))) := firstComponent(comps);
+        ((comp as InteractiveTypes.COMPONENTITEM(_,comp_path,_))) := firstComponent(comps);
         true := AbsynUtil.pathEqual(comp_path, path);
         res := restComponents(comps);
         comps_1 := getComponentsWithType(res, path);
@@ -2153,7 +2153,7 @@ algorithm
         comps_2;
     case (comps,path)
       algorithm
-        ((comp as GlobalScript.EXTENDSITEM(_,comp_path))) := firstComponent(comps);
+        ((comp as InteractiveTypes.EXTENDSITEM(_,comp_path))) := firstComponent(comps);
         true := AbsynUtil.pathEqual(comp_path, path);
         res := restComponents(comps);
         comps_1 := getComponentsWithType(res, path);
@@ -2170,7 +2170,7 @@ algorithm
       algorithm
         print("-get_components_with_type failed\n");
       then
-        GlobalScript.COMPONENTS({},0);
+        InteractiveTypes.COMPONENTS({},0);
   end matchcontinue;
 end getComponentsWithType;
 
@@ -2180,7 +2180,7 @@ protected function extractAllComponents
  extracts all the components and \"extends\""
   input Absyn.Program p;
   input Absyn.Path path;
-  output GlobalScript.Components comps;
+  output InteractiveTypes.Components comps;
 algorithm
   comps := match(p, path)
     local
@@ -2192,7 +2192,7 @@ algorithm
       algorithm
         p_1 := AbsynToSCode.translateAbsyn2SCode(p);
         (_,env) := Inst.makeEnvFromProgram(p_1);
-        ((_,_,(comps,_,_))) := AbsynUtil.traverseClasses(p, NONE(), extractAllComponentsVisitor,(GlobalScript.COMPONENTS({},0),p,env), true) "traverse protected";
+        ((_,_,(comps,_,_))) := AbsynUtil.traverseClasses(p, NONE(), extractAllComponentsVisitor,(InteractiveTypes.COMPONENTS({},0),p,env), true) "traverse protected";
       then
         comps;
   end match;
@@ -2202,8 +2202,8 @@ protected function extractAllComponentsVisitor
 "author: x02lucpo
   the visitor for traverse-classes that extracts all
   the components and extends from all classes"
-  input tuple<Absyn.Class, Option<Absyn.Path>, tuple<GlobalScript.Components, Absyn.Program, FCore.Graph>> inTplAbsynClassAbsynPathOptionTplComponentsAbsynProgramEnvEnv;
-  output tuple<Absyn.Class, Option<Absyn.Path>, tuple<GlobalScript.Components, Absyn.Program, FCore.Graph>> outTplAbsynClassAbsynPathOptionTplComponentsAbsynProgramEnvEnv;
+  input tuple<Absyn.Class, Option<Absyn.Path>, tuple<InteractiveTypes.Components, Absyn.Program, FCore.Graph>> inTplAbsynClassAbsynPathOptionTplComponentsAbsynProgramEnvEnv;
+  output tuple<Absyn.Class, Option<Absyn.Path>, tuple<InteractiveTypes.Components, Absyn.Program, FCore.Graph>> outTplAbsynClassAbsynPathOptionTplComponentsAbsynProgramEnvEnv;
 algorithm
   outTplAbsynClassAbsynPathOptionTplComponentsAbsynProgramEnvEnv:=
   matchcontinue (inTplAbsynClassAbsynPathOptionTplComponentsAbsynProgramEnvEnv)
@@ -2211,7 +2211,7 @@ algorithm
       Absyn.Path path_1,pa_1,pa;
       Option<Absyn.Path> paOpt;
       FCore.Graph cenv,env;
-      GlobalScript.Components comps_1,comps;
+      InteractiveTypes.Components comps_1,comps;
       Absyn.Class class_;
       String id;
       Boolean a,b,c;
@@ -2256,14 +2256,14 @@ protected function extractComponentsFromClass
   help function to extractAllComponentsVisitor"
   input Absyn.Class inClass;
   input Absyn.Path inPath;
-  input GlobalScript.Components inComponents;
+  input InteractiveTypes.Components inComponents;
   input FCore.Graph inEnv;
-  output GlobalScript.Components outComponents;
+  output InteractiveTypes.Components outComponents;
 algorithm
   outComponents:=
   matchcontinue (inClass,inPath,inComponents,inEnv)
     local
-      GlobalScript.Components comps_1,comps;
+      InteractiveTypes.Components comps_1,comps;
       String id;
       Absyn.ClassDef classdef;
       SourceInfo info;
@@ -2287,13 +2287,13 @@ protected function extractComponentsFromClassdef
   help function to extractAllComponentsVisitor"
   input Absyn.Path inPath;
   input Absyn.ClassDef inClassDef;
-  input GlobalScript.Components inComponents;
+  input InteractiveTypes.Components inComponents;
   input FCore.Graph inEnv;
-  output GlobalScript.Components outComponents;
+  output InteractiveTypes.Components outComponents;
 algorithm
   outComponents:= matchcontinue (inPath,inClassDef,inComponents,inEnv)
     local
-      GlobalScript.Components comps_1,comps;
+      InteractiveTypes.Components comps_1,comps;
       Absyn.Path pa,path;
       list<Absyn.ClassPart> parts;
       FCore.Graph env;
@@ -2324,13 +2324,13 @@ protected function extractComponentsFromClassparts
   help function to extractAllComponentsVisitor"
   input Absyn.Path inPath;
   input list<Absyn.ClassPart> inAbsynClassPartLst;
-  input GlobalScript.Components inComponents;
+  input InteractiveTypes.Components inComponents;
   input FCore.Graph inEnv;
-  output GlobalScript.Components outComponents;
+  output InteractiveTypes.Components outComponents;
 algorithm
   outComponents:= matchcontinue (inPath,inAbsynClassPartLst,inComponents,inEnv)
     local
-      GlobalScript.Components comps,comps_1,comps_2;
+      InteractiveTypes.Components comps,comps_1,comps_2;
       FCore.Graph env;
       Absyn.Path pa;
       list<Absyn.ElementItem> elements;
@@ -2362,14 +2362,14 @@ protected function extractComponentsFromElements
   help function to extractAllComponentsVisitor"
   input Absyn.Path inPath;
   input list<Absyn.ElementItem> inAbsynElementItemLst;
-  input GlobalScript.Components inComponents;
+  input InteractiveTypes.Components inComponents;
   input FCore.Graph inEnv;
-  output GlobalScript.Components outComponents;
+  output InteractiveTypes.Components outComponents;
 algorithm
   outComponents:=
   matchcontinue (inPath,inAbsynElementItemLst,inComponents,inEnv)
     local
-      GlobalScript.Components comps,comps_1,comps_2;
+      InteractiveTypes.Components comps,comps_1,comps_2;
       FCore.Graph env;
       Absyn.Path pa;
       Absyn.ElementSpec elementspec;
@@ -2395,9 +2395,9 @@ protected function extractComponentsFromElementspec
   help function to extractAllComponentsVisitor"
   input Absyn.Path inPath;
   input Absyn.ElementSpec inElementSpec;
-  input GlobalScript.Components inComponents;
+  input InteractiveTypes.Components inComponents;
   input FCore.Graph inEnv;
-  output GlobalScript.Components outComponents;
+  output InteractiveTypes.Components outComponents;
 algorithm
   outComponents:=
   matchcontinue (inPath,inElementSpec,inComponents,inEnv)
@@ -2405,9 +2405,9 @@ algorithm
       String id;
       FCore.Graph cenv,env;
       Absyn.Path path_1,path,pa;
-      GlobalScript.Components comps_1,comps,comps_2;
+      InteractiveTypes.Components comps_1,comps,comps_2;
       list<Absyn.ComponentItem> comp_items;
-      GlobalScript.Component comp;
+      InteractiveTypes.Component comp;
       list<Absyn.ElementArg> elementargs;
       FCore.Cache cache;
 
@@ -2424,7 +2424,7 @@ algorithm
         (cache,_,cenv) := Lookup.lookupClass(FCore.emptyCache(),env, path_1)
         "print \"extract_components_from_elementspec Absyn.EXTENDS(path,_) not implemented yet\"" ;
         (_,path) := Inst.makeFullyQualified(cache,cenv, path_1);
-        comp := GlobalScript.EXTENDSITEM(pa,path);
+        comp := InteractiveTypes.EXTENDSITEM(pa,path);
         comps_1 := addComponentToComponents(comp, comps);
         comps_2 := extractComponentsFromElementargs(pa, elementargs, comps_1, env);
       then
@@ -2442,14 +2442,14 @@ protected function extractComponentsFromComponentitems
   input Absyn.Path inPath1;
   input Absyn.Path inPath2;
   input list<Absyn.ComponentItem> inAbsynComponentItemLst3;
-  input GlobalScript.Components inComponents4;
+  input InteractiveTypes.Components inComponents4;
   input FCore.Graph inEnv5;
-  output GlobalScript.Components outComponents;
+  output InteractiveTypes.Components outComponents;
 algorithm
   outComponents:=
   matchcontinue (inPath1,inPath2,inAbsynComponentItemLst3,inComponents4,inEnv5)
     local
-      GlobalScript.Components comps,comps_1,comps_2,comps_3;
+      InteractiveTypes.Components comps,comps_1,comps_2,comps_3;
       FCore.Graph env;
       Absyn.ComponentRef comp;
       Absyn.Path pa,path;
@@ -2461,7 +2461,7 @@ algorithm
       algorithm
         comps_1 := extractComponentsFromComponentitems(pa, path, res, comps, env);
         comp := Absyn.CREF_IDENT(id,{});
-        comps_2 := addComponentToComponents(GlobalScript.COMPONENTITEM(pa,path,comp), comps_1);
+        comps_2 := addComponentToComponents(InteractiveTypes.COMPONENTITEM(pa,path,comp), comps_1);
         comps_3 := extractComponentsFromModificationOption(pa, mod_opt, comps_2, env);
       then
         comps_3;
@@ -2476,15 +2476,15 @@ end extractComponentsFromComponentitems;
 protected function extractComponentsFromElementargs
   input Absyn.Path inPath;
   input list<Absyn.ElementArg> inAbsynElementArgLst;
-  input GlobalScript.Components inComponents;
+  input InteractiveTypes.Components inComponents;
   input FCore.Graph inEnv;
-  output GlobalScript.Components outComponents;
+  output InteractiveTypes.Components outComponents;
 algorithm
   outComponents:=
   matchcontinue (inPath,inAbsynElementArgLst,inComponents,inEnv)
     local
       Absyn.Path pa;
-      GlobalScript.Components comps,comps_1,comps_2,comps_3;
+      InteractiveTypes.Components comps,comps_1,comps_2,comps_3;
       FCore.Graph env;
       Absyn.ElementSpec elementspec,elementspec2;
       list<Absyn.ElementArg> res;
@@ -2522,15 +2522,15 @@ end extractComponentsFromElementargs;
 protected function extractComponentsFromModificationOption
   input Absyn.Path inPath;
   input Option<Absyn.Modification> inAbsynModificationOption;
-  input GlobalScript.Components inComponents;
+  input InteractiveTypes.Components inComponents;
   input FCore.Graph inEnv;
-  output GlobalScript.Components outComponents;
+  output InteractiveTypes.Components outComponents;
 algorithm
   outComponents:=
   match (inPath,inAbsynModificationOption,inComponents,inEnv)
     local
       Absyn.Path pa;
-      GlobalScript.Components comps,comps_1;
+      InteractiveTypes.Components comps,comps_1;
       FCore.Graph env;
       list<Absyn.ElementArg> elementargs;
     case (_,NONE(),comps,_) then comps;  /* the QUALIFIED path for the class */
@@ -2545,12 +2545,12 @@ end extractComponentsFromModificationOption;
 protected function emptyComponents
 "author: x02lucpo
   returns true if the components are empty"
-  input GlobalScript.Components inComponents;
+  input InteractiveTypes.Components inComponents;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
   match (inComponents)
-    case (GlobalScript.COMPONENTS(componentLst = {})) then true;
+    case (InteractiveTypes.COMPONENTS(componentLst = {})) then true;
     else false;
   end match;
 end emptyComponents;
@@ -2558,62 +2558,62 @@ end emptyComponents;
 protected function firstComponent
 "author: x02lucpo
  extract the first component in the components"
-  input GlobalScript.Components inComponents;
-  output GlobalScript.Component outComponent;
+  input InteractiveTypes.Components inComponents;
+  output InteractiveTypes.Component outComponent;
 algorithm
   outComponent:=
   match (inComponents)
     local
-      GlobalScript.Component comp;
-      list<GlobalScript.Component> res;
-    case (GlobalScript.COMPONENTS(componentLst = {}))
+      InteractiveTypes.Component comp;
+      list<InteractiveTypes.Component> res;
+    case (InteractiveTypes.COMPONENTS(componentLst = {}))
       algorithm
         print("-first_component failed: no components\n");
       then
         fail();
-    case (GlobalScript.COMPONENTS(componentLst = (comp :: _))) then comp;
+    case (InteractiveTypes.COMPONENTS(componentLst = (comp :: _))) then comp;
   end match;
 end firstComponent;
 
 protected function restComponents
 "author: x02lucpo
  extract the rest components from the compoents"
-  input GlobalScript.Components inComponents;
-  output GlobalScript.Components outComponents;
+  input InteractiveTypes.Components inComponents;
+  output InteractiveTypes.Components outComponents;
 algorithm
   outComponents:=
   match (inComponents)
     local
       Integer len_1,len;
-      GlobalScript.Component comp;
-      list<GlobalScript.Component> res;
-    case (GlobalScript.COMPONENTS(componentLst = {})) then GlobalScript.COMPONENTS({},0);
-    case (GlobalScript.COMPONENTS(componentLst = (_ :: res),the = len))
+      InteractiveTypes.Component comp;
+      list<InteractiveTypes.Component> res;
+    case (InteractiveTypes.COMPONENTS(componentLst = {})) then InteractiveTypes.COMPONENTS({},0);
+    case (InteractiveTypes.COMPONENTS(componentLst = (_ :: res),the = len))
       algorithm
         len_1 := len - 1;
       then
-        GlobalScript.COMPONENTS(res,len_1);
+        InteractiveTypes.COMPONENTS(res,len_1);
   end match;
 end restComponents;
 
 protected function addComponentToComponents
 "author: x02lucpo
   add a component to components"
-  input GlobalScript.Component inComponent;
-  input GlobalScript.Components inComponents;
-  output GlobalScript.Components outComponents;
+  input InteractiveTypes.Component inComponent;
+  input InteractiveTypes.Components inComponents;
+  output InteractiveTypes.Components outComponents;
 algorithm
   outComponents:=
   match (inComponent,inComponents)
     local
       Integer len_1,len;
-      GlobalScript.Component comp;
-      list<GlobalScript.Component> comps;
-    case (comp,GlobalScript.COMPONENTS(componentLst = comps,the = len))
+      InteractiveTypes.Component comp;
+      list<InteractiveTypes.Component> comps;
+    case (comp,InteractiveTypes.COMPONENTS(componentLst = comps,the = len))
       algorithm
         len_1 := len + 1;
       then
-        GlobalScript.COMPONENTS((comp :: comps),len_1);
+        InteractiveTypes.COMPONENTS((comp :: comps),len_1);
   end match;
 end addComponentToComponents;
 
@@ -4316,8 +4316,8 @@ algorithm
   end if;
 
   outProgram := InteractiveUtil.updateProgram(Absyn.PROGRAM({
-    Absyn.CLASS(name, false, false, false, Absyn.R_MODEL(), AbsynUtil.dummyParts,
-        {}, {}, {}, AbsynUtil.dummyInfo)}, w), inProgram);
+    Absyn.CLASS(name, false, false, false, Absyn.R_MODEL(), Absyn.dummyParts,
+        {}, {}, {}, Absyn.dummyInfo)}, w), inProgram);
 end createModel;
 
 public function newModel
@@ -5063,7 +5063,7 @@ public function addScope
    and IMPORT_DEFINITION so an empty class definition can be
    inserted at the correct place."
   input Absyn.Program inProgram;
-  input list<GlobalScript.Variable> inVariableLst;
+  input list<InteractiveTypes.Variable> inVariableLst;
   output Absyn.Program outProgram;
 algorithm
   outProgram:=
@@ -5071,7 +5071,7 @@ algorithm
     local
       Absyn.Path path,newpath,path2;
       list<Absyn.Class> cls;
-      list<GlobalScript.Variable> vars;
+      list<InteractiveTypes.Variable> vars;
       Absyn.Within w;
       Absyn.Program p;
 
@@ -5098,24 +5098,24 @@ end addScope;
 
 protected function getVariableValue
 "Return the value of an interactive variable
-  from a list of GlobalScript.Variable."
+  from a list of InteractiveTypes.Variable."
   input Absyn.Ident inIdent;
-  input list<GlobalScript.Variable> inVariableLst;
+  input list<InteractiveTypes.Variable> inVariableLst;
   output Values.Value outValue;
 algorithm
   outValue := matchcontinue (inIdent,inVariableLst)
     local
       String id1,id2;
       Values.Value v;
-      list<GlobalScript.Variable> rest;
+      list<InteractiveTypes.Variable> rest;
 
-    case (id1,(GlobalScript.IVAR(varIdent = id2,value = v) :: _))
+    case (id1,(InteractiveTypes.IVAR(varIdent = id2,value = v) :: _))
       algorithm
         true := stringEq(id1, id2);
       then
         v;
 
-    case (id1,(GlobalScript.IVAR(varIdent = id2) :: rest))
+    case (id1,(InteractiveTypes.IVAR(varIdent = id2) :: rest))
       algorithm
         false := stringEq(id1, id2);
         v := getVariableValue(id1, rest);
@@ -5126,9 +5126,9 @@ end getVariableValue;
 
 protected function getVariableValueLst
 "Return the value of an interactive variable
-  from a list of GlobalScript.Variable."
+  from a list of InteractiveTypes.Variable."
   input list<String> ids;
-  input list<GlobalScript.Variable> vars;
+  input list<InteractiveTypes.Variable> vars;
   output Values.Value val;
 algorithm
   val := matchcontinue (ids,vars)
@@ -5136,28 +5136,28 @@ algorithm
       Integer ix;
       String id1,id2,id3;
       Values.Value v;
-      list<GlobalScript.Variable> rest;
+      list<InteractiveTypes.Variable> rest;
       list<String> comp,srest;
       list<Values.Value> vals;
       DAE.Type t;
 
-    case (id1::_, (GlobalScript.IVAR(varIdent = id2) :: rest))
+    case (id1::_, (InteractiveTypes.IVAR(varIdent = id2) :: rest))
       algorithm
         false := stringEq(id1, id2);
         v := getVariableValueLst(ids, rest);
       then
         v;
 
-    case (id1::id2::srest, (GlobalScript.IVAR(varIdent = id3,value = Values.RECORD(orderd = vals, comp = comp)) :: _))
+    case (id1::id2::srest, (InteractiveTypes.IVAR(varIdent = id3,value = Values.RECORD(orderd = vals, comp = comp)) :: _))
       algorithm
         true := stringEq(id1, id3);
         ix := List.position1OnTrue(comp, stringEq, id2);
         v := listGet(vals, ix);
-        v := getVariableValueLst(id2::srest, {GlobalScript.IVAR(id2,v,DAE.T_UNKNOWN_DEFAULT)});
+        v := getVariableValueLst(id2::srest, {InteractiveTypes.IVAR(id2,v,DAE.T_UNKNOWN_DEFAULT)});
       then
         v;
 
-    case ({id1}, (GlobalScript.IVAR(varIdent = id2,value = v) :: _))
+    case ({id1}, (InteractiveTypes.IVAR(varIdent = id2,value = v) :: _))
       algorithm
         true := stringEq(id1, id2);
       then
@@ -5210,22 +5210,22 @@ algorithm
         (cdef,path);
 
     case (Absyn.IDENT(name = "Real"),_,_) then (Absyn.CLASS("Real",false,false,false,Absyn.R_PREDEFINED_REAL(),
-          AbsynUtil.dummyParts,{},{},{},AbsynUtil.dummyInfo),Absyn.IDENT("Real"));
+          Absyn.dummyParts,{},{},{},Absyn.dummyInfo),Absyn.IDENT("Real"));
 
     case (Absyn.IDENT(name = "Integer"),_,_) then (Absyn.CLASS("Integer",false,false,false,Absyn.R_PREDEFINED_INTEGER(),
-          AbsynUtil.dummyParts,{},{},{},AbsynUtil.dummyInfo),Absyn.IDENT("Integer"));
+          Absyn.dummyParts,{},{},{},Absyn.dummyInfo),Absyn.IDENT("Integer"));
 
     case (Absyn.IDENT(name = "String"),_,_) then (Absyn.CLASS("String",false,false,false,Absyn.R_PREDEFINED_STRING(),
-          AbsynUtil.dummyParts,{},{},{},AbsynUtil.dummyInfo),Absyn.IDENT("String"));
+          Absyn.dummyParts,{},{},{},Absyn.dummyInfo),Absyn.IDENT("String"));
 
     case (Absyn.IDENT(name = "Boolean"),_,_) then (Absyn.CLASS("Boolean",false,false,false,Absyn.R_PREDEFINED_BOOLEAN(),
-          AbsynUtil.dummyParts,{},{},{},AbsynUtil.dummyInfo),Absyn.IDENT("Boolean"));
+          Absyn.dummyParts,{},{},{},Absyn.dummyInfo),Absyn.IDENT("Boolean"));
     // BTH
     case (Absyn.IDENT(name = "Clock"),_,_)
       algorithm
         true := Config.synchronousFeaturesAllowed();
       then (Absyn.CLASS("Clock",false,false,false,Absyn.R_PREDEFINED_CLOCK(),
-          AbsynUtil.dummyParts,{},{},{},AbsynUtil.dummyInfo),Absyn.IDENT("Clock"));
+          Absyn.dummyParts,{},{},{},Absyn.dummyInfo),Absyn.IDENT("Clock"));
 
     case (path,inmodel,_)
       algorithm
@@ -5618,7 +5618,7 @@ algorithm
     Absyn.ELEMENT(_,_,_,Absyn.COMPONENTS(_,Absyn.TPATH(_,_),items),_,_) := getElementContainsName(Absyn.CREF_IDENT(componentName,{}), listAppend(publst, protlst));
     Absyn.COMPONENTITEM(Absyn.COMPONENT(_,arrayDimensions,mod),cond,ann) := getCompitemNamed(Absyn.CREF_IDENT(componentName,{}), items);
     annotation_ := InteractiveUtil.makeCommentFromArgs(commentExp, annotationExp, ann);
-    modification := InteractiveUtil.makeModifierFromArgs(bindingExp, modifier, AbsynUtil.dummyInfo, mod);
+    modification := InteractiveUtil.makeModifierFromArgs(bindingExp, modifier, Absyn.dummyInfo, mod);
     program := deleteOrUpdateComponent(componentName, classPath, program, SOME((typeName, Absyn.COMPONENTITEM(Absyn.COMPONENT(componentName,arrayDimensions,modification),cond,annotation_))));
   else
     success := false;
@@ -6510,7 +6510,7 @@ algorithm
   try
     cmt := InteractiveUtil.makeCommentFromArgs(commentExp, annotationExp);
     eq := Absyn.EquationItem.EQUATIONITEM(Absyn.Equation.EQ_CONNECT(connector1, connector2),
-      cmt, AbsynUtil.dummyInfo);
+      cmt, Absyn.dummyInfo);
     program := transformPathedClassInProgram(classPath, program,
       function InteractiveUtil.addToEquation(eq = eq));
     success := true;
@@ -6593,7 +6593,7 @@ algorithm
         loopRes := deleteEquationInEqlist(forEqList, c1, c2);
 
         if not listEmpty(loopRes) then
-          loopRes := { Absyn.EQUATIONITEM(Absyn.EQ_FOR(forIterator, loopRes), NONE(), AbsynUtil.dummyInfo) };
+          loopRes := { Absyn.EQUATIONITEM(Absyn.EQ_FOR(forIterator, loopRes), NONE(), Absyn.dummyInfo) };
         end if;
       then
         listAppend(loopRes, res);
@@ -6662,7 +6662,7 @@ algorithm
                                 Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(from_, {})), Absyn.CREF(Absyn.CREF_IDENT(to_, {})),
                                 conditionExp}, {Absyn.NAMEDARG("immediate", Absyn.BOOL(immediate_)),
                                 Absyn.NAMEDARG("reset", Absyn.BOOL(reset_)), Absyn.NAMEDARG("synchronize", Absyn.BOOL(synchronize_)),
-                                Absyn.NAMEDARG("priority", Absyn.INTEGER(priority_))})), cmt, AbsynUtil.dummyInfo));
+                                Absyn.NAMEDARG("priority", Absyn.INTEGER(priority_))})), cmt, Absyn.dummyInfo));
         newp := InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef},p.within_), p);
       then
         (true, newp);
@@ -6678,7 +6678,7 @@ algorithm
                                 Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(from_, {})), Absyn.CREF(Absyn.CREF_IDENT(to_, {})),
                                 conditionExp}, {Absyn.NAMEDARG("immediate", Absyn.BOOL(immediate_)),
                                 Absyn.NAMEDARG("reset", Absyn.BOOL(reset_)), Absyn.NAMEDARG("synchronize", Absyn.BOOL(synchronize_)),
-                                Absyn.NAMEDARG("priority", Absyn.INTEGER(priority_))})), cmt, AbsynUtil.dummyInfo));
+                                Absyn.NAMEDARG("priority", Absyn.INTEGER(priority_))})), cmt, Absyn.dummyInfo));
         newp := InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(package_)), p);
       then
         (true, newp);
@@ -7441,7 +7441,7 @@ algorithm
     case SOME(Absyn.Modification.CLASSMOD())
       algorithm
         arg := Absyn.ElementArg.MODIFICATION(false, Absyn.Each.NON_EACH(),
-          Absyn.Path.IDENT(name), mod, NONE(), AbsynUtil.dummyInfo);
+          Absyn.Path.IDENT(name), mod, NONE(), Absyn.dummyInfo);
         str := getAnnotationString(Absyn.ANNOTATION({arg}), cls, program, classPath);
       then
         InteractiveUtil.makeAnnotationArrayValue({str});
@@ -8295,7 +8295,7 @@ algorithm
     case (Absyn.MODIFICATION(path = Absyn.IDENT(name = "info"),
           modification=SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=exp))))::_)
       algorithm
-        (_,dexp,_) := StaticScript.elabGraphicsExp(FCore.emptyCache(), FGraph.empty(), exp, true, DAE.NOPRE(), AbsynUtil.dummyInfo);
+        (_,dexp,_) := StaticScript.elabGraphicsExp(FCore.emptyCache(), FGraph.empty(), exp, true, DAE.NOPRE(), Absyn.dummyInfo);
         (DAE.SCONST(s),_) := ExpressionSimplify.simplify(dexp);
         // ss = getDocumentationAnnotationInfo(xs);
       then s;
@@ -8322,7 +8322,7 @@ algorithm
     case (Absyn.MODIFICATION(path = Absyn.IDENT(name = "revisions"),
           modification=SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=exp))))::_)
       algorithm
-        (_,dexp,_) := StaticScript.elabGraphicsExp(FCore.emptyCache(), FGraph.empty(), exp, true, DAE.NOPRE(), AbsynUtil.dummyInfo);
+        (_,dexp,_) := StaticScript.elabGraphicsExp(FCore.emptyCache(), FGraph.empty(), exp, true, DAE.NOPRE(), Absyn.dummyInfo);
         (DAE.SCONST(s),_) := ExpressionSimplify.simplify(dexp);
       then s;
     case (_::xs)
@@ -8348,7 +8348,7 @@ algorithm
     case (Absyn.MODIFICATION(path = Absyn.IDENT(name = "__OpenModelica_infoHeader"),
           modification=SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=exp))))::_)
       algorithm
-        (_,dexp,_) := StaticScript.elabGraphicsExp(FCore.emptyCache(), FGraph.empty(), exp, true, DAE.NOPRE(), AbsynUtil.dummyInfo);
+        (_,dexp,_) := StaticScript.elabGraphicsExp(FCore.emptyCache(), FGraph.empty(), exp, true, DAE.NOPRE(), Absyn.dummyInfo);
         (DAE.SCONST(s),_) := ExpressionSimplify.simplify(dexp);
       then s;
     case (_::xs)

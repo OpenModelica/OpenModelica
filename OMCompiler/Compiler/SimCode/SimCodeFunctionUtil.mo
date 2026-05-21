@@ -2442,7 +2442,7 @@ protected function getCalledFunctionsInFunctions "Goes through the given DAE, fi
   the names of the functions called from within those functions"
   input list<Absyn.Path> paths;
   input HashTableStringToPath.HashTable inHt;
-  input DAE.FunctionTree funcs;
+  input AvlTreePathFunction.Tree funcs;
   output HashTableStringToPath.HashTable outHt;
 algorithm
   outHt := match (paths, inHt, funcs)
@@ -2465,7 +2465,7 @@ public function getCalledFunctionsInFunction2 "Goes through the given DAE, finds
   input Absyn.Path inPath;
   input String pathstr;
   input HashTableStringToPath.HashTable inHt "paths to not add";
-  input DAE.FunctionTree funcs;
+  input AvlTreePathFunction.Tree funcs;
   output HashTableStringToPath.HashTable outHt "paths to not add";
 algorithm
   outHt := matchcontinue (inPath, pathstr, inHt, funcs)

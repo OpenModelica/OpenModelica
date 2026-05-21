@@ -437,7 +437,7 @@ algorithm
     case (cache, env, _, _, ht, acc)
       algorithm
         ht := BaseHashTable.add((str,path),ht);
-        (cache, ty, _) := lookupType(cache, env, path, SOME(AbsynUtil.dummyInfo));
+        (cache, ty, _) := lookupType(cache, env, path, SOME(Absyn.dummyInfo));
         acc := ty::acc;
         uniontypeTypes := Types.getAllInnerTypesOfType(ty, Types.uniontypeFilter);
         uniontypePaths := List.flatten(List.map(uniontypeTypes, Types.getUniontypePaths));

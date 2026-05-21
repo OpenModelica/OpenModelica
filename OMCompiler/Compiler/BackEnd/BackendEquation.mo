@@ -1407,7 +1407,7 @@ public function equationToScalarResidualForm "author: Frenkel TUD 2012-06
   This function transforms an equation to its scalar residual form.
   For instance, a=b is transformed to a-b=0, and the instance {a[1], a[2]}=b to a[1]=b[1] and a[2]=b[2]"
   input BackendDAE.Equation inEquation;
-  input DAE.FunctionTree funcTree;
+  input AvlTreePathFunction.Tree funcTree;
   output list<BackendDAE.Equation> outEquations;
 algorithm
 
@@ -1650,15 +1650,15 @@ end equationToResidualForm;
 public function traverseEquationToScalarResidualForm
 "author: Frenkel TUD 2010-11"
   input BackendDAE.Equation inEq;
-  input tuple<DAE.FunctionTree, list<BackendDAE.Equation>> inEqs;
+  input tuple<AvlTreePathFunction.Tree, list<BackendDAE.Equation>> inEqs;
   output BackendDAE.Equation outEq;
-  output tuple<DAE.FunctionTree, list<BackendDAE.Equation>> outEqs;
+  output tuple<AvlTreePathFunction.Tree, list<BackendDAE.Equation>> outEqs;
 algorithm
   (outEq,outEqs) := match(inEq,inEqs)
     local
       list<BackendDAE.Equation> eqns,reqn;
       BackendDAE.Equation eqn;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
 
     case (eqn, (funcs, eqns))
       algorithm
@@ -2479,7 +2479,7 @@ public function solveEquation "author: wbraun
   Algorithm, when and if-equation are left as they are."
   input BackendDAE.Equation eqn;
   input DAE.Exp crefExp;
-  input Option<DAE.FunctionTree> functions;
+  input Option<AvlTreePathFunction.Tree> functions;
   output BackendDAE.Equation outEqn;
 algorithm
   // kabdelhak: Why does every kind of equation produce a regular equation?
@@ -3248,7 +3248,7 @@ public function scalarComplexEquations
   Used after some equations have been differentiated.
 "
   input BackendDAE.Equation inEquation;
-  input DAE.FunctionTree funcTree;
+  input AvlTreePathFunction.Tree funcTree;
   output list<BackendDAE.Equation> outEquations;
 algorithm
 

@@ -103,7 +103,7 @@ public function ceval "
   input FCore.Graph inEnv;
   input DAE.Exp inExp;
   input Boolean inBoolean "impl";
-  input Absyn.Msg inMsg = Absyn.MSG(AbsynUtil.dummyInfo);
+  input Absyn.Msg inMsg = Absyn.MSG(Absyn.dummyInfo);
   input Integer numIter = 0 "Maximum recursion depth";
   output FCore.Cache outCache;
   output Values.Value outValue;
@@ -221,7 +221,7 @@ algorithm
 
     case (cache,env,DAE.CODE(code = Absyn.C_EXPRESSION(exp = exp)),impl,msg,_)
       algorithm
-        (cache, exp_1) := cevalAstExp(cache, env, exp, impl, msg, AbsynUtil.dummyInfo);
+        (cache, exp_1) := cevalAstExp(cache, env, exp, impl, msg, Absyn.dummyInfo);
       then
         (cache,Values.CODE(Absyn.C_EXPRESSION(exp_1)));
 
@@ -1390,7 +1390,7 @@ algorithm
 
     case (cache,env,DAE.CREF(componentRef = cr),dimExp,(impl as false),msg,_)
       algorithm
-        (cache,dims) := InstUtil.elabComponentArraydimFromEnv(cache,env,cr,AbsynUtil.dummyInfo)
+        (cache,dims) := InstUtil.elabComponentArraydimFromEnv(cache,env,cr,Absyn.dummyInfo)
         "If component not instantiated yet, recursive definition.
          For example,
            Real x[:](min=fill(1.0,size(x,1))) = {1.0}
@@ -5067,24 +5067,24 @@ public function cevalSimple
   input DAE.Exp exp;
   output Values.Value val;
 algorithm
-  (_,val) := ceval(FCore.emptyCache(),FGraph.empty(),exp,false,Absyn.MSG(AbsynUtil.dummyInfo),0);
+  (_,val) := ceval(FCore.emptyCache(),FGraph.empty(),exp,false,Absyn.MSG(Absyn.dummyInfo),0);
 end cevalSimple;
 
 public function cevalSimpleWithFunctionTreeReturnExp
   "A simple expression does not need cache, etc"
   input DAE.Exp exp;
-  input DAE.FunctionTree functions;
+  input AvlTreePathFunction.Tree functions;
   output DAE.Exp oexp;
 protected
   Values.Value val;
   FCore.Cache cache;
   FCore.StructuralParameters structuralParameters;
-  Mutable<DAE.FunctionTree> functionTree;
+  Mutable<AvlTreePathFunction.Tree> functionTree;
 algorithm
   structuralParameters := (AvlSetCR.EMPTY(),{});
   functionTree := Mutable.create(functions);
   cache := FCore.CACHE(NONE(), functionTree, structuralParameters, Absyn.IDENT(""));
-  (_,val) := ceval(cache, FGraph.empty(), exp, false, Absyn.MSG(AbsynUtil.dummyInfo),0);
+  (_,val) := ceval(cache, FGraph.empty(), exp, false, Absyn.MSG(Absyn.dummyInfo),0);
   oexp := ValuesUtil.valueExp(val, SOME(exp));
 end cevalSimpleWithFunctionTreeReturnExp;
 
@@ -5571,7 +5571,7 @@ protected function makeReductionAllCombinations
   output list<list<Values.Value>> valMatrix;
 algorithm
   valMatrix := match (inValMatrix,rtype)
-    case (_,Absyn.COMBINE()) then listReverse(List.allCombinations(inValMatrix,SOME(100000),AbsynUtil.dummyInfo));
+    case (_,Absyn.COMBINE()) then listReverse(List.allCombinations(inValMatrix,SOME(100000),Absyn.dummyInfo));
     case (_,Absyn.THREAD()) then listReverse(List.transposeList(inValMatrix));
   end match;
 end makeReductionAllCombinations;

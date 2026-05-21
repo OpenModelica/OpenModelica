@@ -353,7 +353,7 @@ protected
   algorithm
     info := match stmt
       case GlobalScript.Statement.IEXP() then stmt.info;
-      else AbsynUtil.dummyInfo;
+      else Absyn.dummyInfo;
     end match;
   end statementInfo;
 

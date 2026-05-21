@@ -7,12 +7,14 @@ mkdir("build/tmp");
 cd("build/tmp");
 if not checkInterfaceOfPackages(mainClass, {
 // Also update Compiler/.cmake/mm_check_interface.in.mos if you change this file.
-  {"backend", "frontend", "util", "susan", "nf_frontend", "util_datatypes_basic"},
-  {"frontend", "util", "susan", "util_datatypes_basic", "", ""},
-  {"nf_frontend", "util", "susan", "frontend", "util_datatypes_basic", ""},
-  {"susan", "util", "util_datatypes_basic", "", "", ""},
-  {"util", "util_datatypes_basic", "", "", "", ""},
-  {"util_datatypes_basic", "", "", "", "", ""}
+  {"parser", "", "", "", "", "", "", ""},
+  {"backend", "frontend", "util", "susan", "nf_frontend", "util_datatypes_basic", "parser", "frontend_types"},
+  {"frontend", "util", "susan", "util_datatypes_basic", "parser", "frontend_types", "", ""},
+  {"frontend_types", "util", "susan", "util_datatypes_basic", "parser", "", "", ""},
+  {"nf_frontend", "util", "susan", "frontend_types", "util_datatypes_basic", "parser", "frontend", ""},
+  {"susan", "util", "util_datatypes_basic", "parser", "", "", "", ""},
+  {"util", "util_datatypes_basic", "", "", "", "", "", ""},
+  {"util_datatypes_basic", "", "", "", "", "", "", ""}
 }) then
   print(getErrorString());
   exit(1);

@@ -2067,6 +2067,7 @@ package Absyn
     end THREAD;
   end ReductionIterType;
 
+  constant builtin.SourceInfo dummyInfo;
 end Absyn;
 
 package AbsynUtil
@@ -2082,8 +2083,6 @@ package AbsynUtil
     input Absyn.Path inPath;
     output String str;
   end pathLastIdent;
-
-  constant builtin.SourceInfo dummyInfo;
 end AbsynUtil;
 
 package MMath

@@ -674,5 +674,5 @@ template dumpConstraints(list<DAE.Constraint> cons)
   ;separator=", ")
 end dumpConstraints;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_types");
 end ExpressionDumpTpl;

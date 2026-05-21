@@ -79,7 +79,7 @@ protected import Util;
 public uniontype FuncInfo "store informations when traversing the statements and evaluate the function calls"
   record FUNCINFO
     BackendVarTransform.VariableReplacements repl;
-    DAE.FunctionTree funcTree;
+    AvlTreePathFunction.Tree funcTree;
     Integer idx;
   end FUNCINFO;
 end FuncInfo;
@@ -371,7 +371,7 @@ algorithm
       BackendDAE.EquationAttributes attr;
       DAE.Exp exp1,exp2,lhsExp,rhsExp;
       DAE.ElementSource source;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       list<BackendDAE.Equation> addEqs1, addEqs2;
       list<DAE.Exp> lhs;
     case(BackendDAE.EQUATION(exp=exp1, scalar=exp2,source=source,attr=attr))
@@ -444,7 +444,7 @@ end evalFunctions_findFuncs;
 public function evaluateConstantFunctionCallExp"checks if the expression is a call and can be evaluated to a constant value.
 the output is either a constant expression or the input exp. no partial evaluation is performed in here."
   input DAE.Exp expIn;
-  input DAE.FunctionTree funcsIn;
+  input AvlTreePathFunction.Tree funcsIn;
   input Boolean evalConstArgsOnly;
   input Integer recursionLimit;
   output DAE.Exp expOut;
@@ -458,7 +458,7 @@ algorithm
       DAE.CallAttributes attr1;
       DAE.Exp exp;
       DAE.Function func;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       list<DAE.ComponentRef> allInputCrefs, outputCrefs, allOutputCrefs, constInputCrefs, constCrefs, varScalarCrefsInFunc,constComplexCrefs,varComplexCrefs,varScalarCrefs,constScalarCrefs;
       list<list<DAE.ComponentRef>> scalarInputs, scalarOutputs;
       list<DAE.Element> elements, protectVars, algs, allInputs, allOutputs;
@@ -477,7 +477,7 @@ algorithm
         end if;
 
         // get the elements of the function and the algorithms
-        SOME(func) := DAE.AvlTreePathFunction.get(funcsIn,path);
+        SOME(func) := AvlTreePathFunction.get(funcsIn,path);
         // fail if is an external function!
         false := DAEUtil.isExtFunction(func);
         elements := DAEUtil.getFunctionElements(func);
@@ -657,14 +657,14 @@ If its partially constant, the constant assignments are added as additional equa
 author: Waurich TUD 2014-04"
   input DAE.Exp rhsExpIn;
   input DAE.Exp lhsExpIn;
-  input DAE.FunctionTree funcsIn;
+  input AvlTreePathFunction.Tree funcsIn;
   input Integer eqIdx;
   input list<CallSignature> callSignLstIn;
   input Integer recursionLimit;
   output DAE.Exp rhsExpOut;
   output DAE.Exp lhsExpOut;
   output list<BackendDAE.Equation> addedEquations;
-  output DAE.FunctionTree funcsOut;
+  output AvlTreePathFunction.Tree funcsOut;
   output Integer eqIdxOut;
   output Boolean changed;
   output list<CallSignature> callSignLstOut;
@@ -680,7 +680,7 @@ protected
   DAE.ComponentRef constCref, lhsCref;
   DAE.Exp exp, exp2, constExp, outputExp;
   DAE.Function func;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   DAE.Type ty, singleOutputType;
   list<BackendDAE.Equation> constEqs;
   list<DAE.ComponentRef> inputCrefs, outputCrefs, allInputCrefs, allOutputCrefs, constInputCrefs, constCrefs, varScalarCrefsInFunc, constScalarCrefsLhs,constComplexCrefs,varComplexCrefs,varScalarCrefs,constScalarCrefs;
@@ -725,7 +725,7 @@ algorithm
         //------------------------------------------------
 
         // get the elements of the function and the algorithms
-        SOME(func) := DAE.AvlTreePathFunction.get(funcsIn,path);
+        SOME(func) := AvlTreePathFunction.get(funcsIn,path);
 
         false := doNotInline(func);
 
@@ -950,7 +950,7 @@ protected function expandComplexExpressions "gets the complex contents or if its
 it would be possible to evaluate the exp before.
 author:Waurich TUD 2014-05"
   input DAE.Exp e;
-  input DAE.FunctionTree funcs;
+  input AvlTreePathFunction.Tree funcs;
   output list<DAE.Exp> eLst;
 algorithm
   eLst := matchcontinue(e,funcs)
@@ -961,14 +961,14 @@ algorithm
       list<DAE.Element> elements, allOutputs;
     case(DAE.CALL(path=path, expLst=lst),_)
       algorithm
-        SOME(func) := DAE.AvlTreePathFunction.get(funcs,path);
+        SOME(func) := AvlTreePathFunction.get(funcs,path);
         elements := DAEUtil.getFunctionElements(func);
         if listEmpty(elements) then
         // its a record
           //eLst = lst;
         else
        // its a call, get the scalar outputs
-        SOME(func) := DAE.AvlTreePathFunction.get(funcs,path);
+        SOME(func) := AvlTreePathFunction.get(funcs,path);
         elements := DAEUtil.getFunctionElements(func);
         allOutputs := List.filterOnTrue(elements,DAEUtil.isOutputVar);
         lst := List.map(List.flatten(List.map(allOutputs,getScalarsForComplexVar)),Expression.crefExp);
@@ -1080,7 +1080,7 @@ algorithm
       DAE.ComponentRef cref;
       DAE.Exp exp1;
       list<DAE.Exp> expLst;
-      DAE.FunctionTree funcTree;
+      AvlTreePathFunction.Tree funcTree;
       DAE.Type ty;
       BackendVarTransform.VariableReplacements repl;
     case(DAE.CALL(expLst=expLst,attr=DAE.CALL_ATTR(ty=ty)))
@@ -1884,7 +1884,7 @@ end addReplacementRuleForAssignment;
 protected function evaluateFunctions_updateAlgElements "gets the statements from an algorithm in order to traverse them and tries to evaluate the binding expressions from protected vars.
 author:Waurich TUD 2014-03"
   input output DAE.Element element;
-  input output DAE.FunctionTree funcTree;
+  input output AvlTreePathFunction.Tree funcTree;
   input output BackendVarTransform.VariableReplacements repl;
   input output Integer idx;
   input Integer recursionLimit;
@@ -1944,7 +1944,7 @@ protected function evaluateFunctions_updateStatement "replaces the statements wi
 if there are constant assignments add this replacement rule
 author:Waurich TUD 2014-03"
   input output list<DAE.Statement> stmts;
-  input output DAE.FunctionTree funcTree;
+  input output AvlTreePathFunction.Tree funcTree;
   input output BackendVarTransform.VariableReplacements repl;
   input output Integer idx;
   input list<DAE.Statement> lstIn;
@@ -2253,12 +2253,12 @@ end evaluateFunctions_updateStatement;
 
 protected function evaluateForStatement"evaluates a for statement. nested for loops wont work"
   input DAE.Statement stmtIn;
-  input DAE.FunctionTree funcTreeIn;
+  input AvlTreePathFunction.Tree funcTreeIn;
   input BackendVarTransform.VariableReplacements replIn;
   input Integer idxIn;
   input Integer recursionLimit;
   output list<DAE.Statement> stmtsOut;
-  output DAE.FunctionTree funcTreeOut;
+  output AvlTreePathFunction.Tree funcTreeOut;
   output BackendVarTransform.VariableReplacements repl;
   output Integer idxOut;
 protected
@@ -2347,7 +2347,7 @@ algorithm
       BackendVarTransform.VariableReplacements repl, replIn;
       DAE.Else else_;
       DAE.Exp expIf,exp1;
-      DAE.FunctionTree funcTree;
+      AvlTreePathFunction.Tree funcTree;
       list<DAE.Statement> stmtsIf,stmts1,stmtsElse;
     case(DAE.STMT_IF(exp=expIf, statementLst=stmtsIf, else_=else_),FUNCINFO(repl=replIn, funcTree=funcTree, idx=idx))
       algorithm
@@ -2418,7 +2418,7 @@ algorithm
       BackendVarTransform.VariableReplacements replIn;
       DAE.Exp expIf,exp1;
       DAE.Else else_;
-      DAE.FunctionTree funcTree;
+      AvlTreePathFunction.Tree funcTree;
       list<DAE.Statement> stmts;
     case(DAE.ELSEIF(exp=expIf,statementLst=stmts,else_=else_),FUNCINFO(repl=replIn, funcTree=funcTree, idx=idx))
       algorithm
@@ -2606,7 +2606,7 @@ protected function getStatementLHSScalar "fold function to get the assigned scal
 TODO: move to getStatementLHS
 author:Waurich TUD 2014-04"
   input DAE.Statement stmt;
-  input DAE.FunctionTree funcTree;
+  input AvlTreePathFunction.Tree funcTree;
   input list<DAE.Exp> expsIn;
   output list<DAE.Exp> lhs;
 algorithm
@@ -2624,7 +2624,7 @@ algorithm
     list<list<DAE.Statement>> stmtLstLst;
   case(DAE.STMT_ASSIGN(exp1=exp,exp=DAE.CALL(path=path)),_,_)
     algorithm
-      SOME(func) := DAE.AvlTreePathFunction.get(funcTree,path);
+      SOME(func) := AvlTreePathFunction.get(funcTree,path);
       elements := DAEUtil.getFunctionElements(func);
       algs := List.filterOnTrue(elements,DAEUtil.isAlgorithm);
       stmtLstLst := List.map(algs,DAEUtil.getStatement);
@@ -2658,7 +2658,7 @@ end getStatementLHSScalar;
 
 function getStatementsOutputs
   input list<DAE.Statement> statements;
-  input DAE.FunctionTree funcTree;
+  input AvlTreePathFunction.Tree funcTree;
   output list<DAE.ComponentRef> outputs;
 protected
   list<DAE.Exp> lhs_expl;
@@ -2703,12 +2703,12 @@ end getDAEelseStatemntLsts;
 protected function evaluateConstantFunctionCall
   input DAE.Exp exp;
   input DAE.Exp lhs;
-  input DAE.FunctionTree funcs;
+  input AvlTreePathFunction.Tree funcs;
   input Integer eqIdx;
   input Integer recursionLimit;
   output DAE.Exp outExp;
   output DAE.Exp outLhs;
-  output DAE.FunctionTree outFuncs;
+  output AvlTreePathFunction.Tree outFuncs;
   output Integer outEqIdx;
   output list<DAE.Statement> addedStmts;
 algorithm
@@ -2718,20 +2718,20 @@ end evaluateConstantFunctionCall;
 
 protected function evaluateConstantFunction_traverser
   input DAE.Exp inExp;
-  input tuple<DAE.Exp, DAE.FunctionTree,Integer,list<DAE.Statement>> inTpl;
+  input tuple<DAE.Exp, AvlTreePathFunction.Tree,Integer,list<DAE.Statement>> inTpl;
   input Integer recursionLimit;
   output DAE.Exp outExp;
   output Boolean cont;
-  output tuple<DAE.Exp,DAE.FunctionTree,Integer,list<DAE.Statement>> outTpl;
+  output tuple<DAE.Exp,AvlTreePathFunction.Tree,Integer,list<DAE.Statement>> outTpl;
 algorithm
   (outExp,cont,outTpl) := matchcontinue(inExp,inTpl)
     local
       Integer idx;
       DAE.Exp rhs, lhs;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       list<BackendDAE.Equation> addEqs;
       list<DAE.Statement> stmts,stmtsIn;
-      tuple<DAE.Exp, DAE.FunctionTree,Integer,list<DAE.Statement>> tpl;
+      tuple<DAE.Exp, AvlTreePathFunction.Tree,Integer,list<DAE.Statement>> tpl;
   case (DAE.CALL(),(lhs,funcs,idx,stmtsIn))
     algorithm
       (rhs,lhs,addEqs,funcs,idx) := evaluateConstantFunction(inExp,lhs,funcs,idx,{},recursionLimit);
@@ -3068,11 +3068,11 @@ end getScalarVarSize;
 protected function evaluateFunctions_updateStatementEmptyRepl "replace and update the statements but start with an empty replacement.
 author:Waurich TUD 2014-03"
   input list<DAE.Statement> algsIn;
-  input DAE.FunctionTree inFuncTree;
+  input AvlTreePathFunction.Tree inFuncTree;
   input Integer inIndex;
   input Integer recursionLimit;
   output tuple<list<DAE.Statement>,BackendVarTransform.VariableReplacements> mapTplOut;
-  output DAE.FunctionTree outFuncTree;
+  output AvlTreePathFunction.Tree outFuncTree;
   output Integer outIndex;
 protected
   BackendVarTransform.VariableReplacements repl;
@@ -3091,7 +3091,7 @@ author: ptaeuber"
   input list<list<DAE.Statement>> elseStmtsLstIn;
   input BackendVarTransform.VariableReplacements replIn;
   output list<list<DAE.Statement>> stmtsLstOut;
-  input output DAE.FunctionTree funcTree;
+  input output AvlTreePathFunction.Tree funcTree;
   input output Integer idx;
   input Integer recursionLimit;
 protected
@@ -3134,7 +3134,7 @@ algorithm
       DAE.Else else_;
       DAE.Exp exp1;
       DAE.ElementSource source;
-      DAE.FunctionTree funcTree;
+      AvlTreePathFunction.Tree funcTree;
       DAE.Statement stmtNew;
       list<DAE.ComponentRef> crefs,varCrefs, scalars;
       list<list<DAE.ComponentRef>> scalarLst;

@@ -1474,7 +1474,7 @@ protected function subClockPartitioning
   output DAE.ClockKind outBaseClock;
   output list<BackendDAE.SubClock> outSubClocks;
 protected
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   BackendDAE.EquationArray eqs, remEqs, clockEqs;
   BackendDAE.Variables vars, clockVars;
   BackendDAE.EqSystem clockSyst,outSys;
@@ -2475,7 +2475,7 @@ protected function baseClockPartitioning
 protected
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqs;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   BackendDAE.AdjacencyMatrix m, mT, rm, rmT;
   BackendDAE.EqSystem syst;
   BackendDAE.EqSystems systs;
@@ -2981,7 +2981,7 @@ public function partitionIndependentBlocksSplitBlocks
   input BackendDAE.AdjacencyMatrix mT;
   input BackendDAE.AdjacencyMatrix rmT;
   input Boolean throwNoError;
-  input DAE.FunctionTree funcs;
+  input AvlTreePathFunction.Tree funcs;
   input Boolean isInitial;
   output list<BackendDAE.EqSystem> systs = {};
   output list<BackendDAE.Equation> unpartRemovedEqs;
@@ -3003,7 +3003,7 @@ algorithm
   i2 := BackendVariable.varsSize(inSyst.orderedVars);
 
   if i1 <> i2 and not throwNoError then
-    Error.addSourceMessage(if i1 > i2 then Error.OVERDET_EQN_SYSTEM else Error.UNDERDET_EQN_SYSTEM, {String(i1), String(i2)}, AbsynUtil.dummyInfo);
+    Error.addSourceMessage(if i1 > i2 then Error.OVERDET_EQN_SYSTEM else Error.UNDERDET_EQN_SYSTEM, {String(i1), String(i2)}, Absyn.dummyInfo);
     BackendDAEUtil.checkAdjacencyMatrixSolvability(inSyst, funcs, isInitial);
     fail();
   end if;
@@ -3078,7 +3078,7 @@ algorithm
     crs := List.mapMap(vl, BackendVariable.varCref, ComponentReference.printComponentRefStr);
     s3 := stringDelimitList(crs, "\n");
     s4 := BackendDump.dumpEqnsStr(el);
-    Error.addSourceMessage(Error.IMBALANCED_EQUATIONS, {s1, s2, s3, s4}, AbsynUtil.dummyInfo);
+    Error.addSourceMessage(Error.IMBALANCED_EQUATIONS, {s1, s2, s3, s4}, Absyn.dummyInfo);
     fail();
   end if;
 

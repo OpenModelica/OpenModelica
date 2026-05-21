@@ -1417,7 +1417,7 @@ public function getPrefixInfo
 algorithm
   outInfo := match inPrefix
     case DAE.PREFIX(compPre = DAE.PRE(info = outInfo)) then outInfo;
-    else AbsynUtil.dummyInfo;
+    else Absyn.dummyInfo;
   end match;
 end getPrefixInfo;
 

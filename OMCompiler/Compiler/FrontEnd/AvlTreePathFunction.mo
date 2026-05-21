@@ -33,41 +33,42 @@
  *
  */
 
-encapsulated package GlobalScript
-" file:        InteractiveTypes.mo
-  package:     GlobalScript
-  description: Types part of the AST for interactive scripting
+encapsulated package AvlTreePathFunction
+" file:        AvlTreePathFunction.mo
+  package:     AvlTreePathFunction
+  description: AVL tree for managing paths to functions"
 
-"
+import Absyn;
+import BaseAvlTree;
+import DAE;
 
-public import Absyn;
-
+protected import AbsynUtil;
 public
-uniontype Statement
-"An Statement given in the interactive environment can either be
- an Algorithm statement or an expression.
- - GlobalScript.Statement"
-  record IALG
-    Absyn.AlgorithmItem algItem;
-  end IALG;
 
-  record IEXP
-    Absyn.Exp exp;
-    SourceInfo info;
-  end IEXP;
+extends BaseAvlTree;
+redeclare type Key = Absyn.Path;
+redeclare type Value = Option<DAE.Function>;
+redeclare function extends keyStr
+algorithm
+  outString := AbsynUtil.pathString(inKey);
+end keyStr;
+redeclare function extends valueStr
+algorithm
+  outString := match inValue
+    local
+      Absyn.Path path;
+    case SOME(DAE.FUNCTION(path=path)) then AbsynUtil.pathString(path);
+    case SOME(DAE.RECORD_CONSTRUCTOR(path=path)) then AbsynUtil.pathString(path);
+    case SOME(DAE.RECORD_CONSTRUCTOR(path=path)) then "<SOME_FUNCTION>";
+    else "<NO_FUNCTION>";
+  end match;
+end valueStr;
+redeclare function extends keyCompare
+algorithm
+  outResult := AbsynUtil.pathCompareNoQual(inKey1,inKey2);
+end keyCompare;
 
-end Statement;
+redeclare function addConflictDefault = addConflictReplace;
 
-public
-uniontype Statements
-  "Several interactive statements are used in Modelica scripts.
-  - GlobalScript.Statements"
-  record ISTMTS
-    list<Statement> interactiveStmtLst "interactiveStmtLst" ;
-    Boolean semicolon "semicolon; true = statement ending with a semicolon. The result will not be shown in the interactive environment." ;
-  end ISTMTS;
-
-end Statements;
-
-annotation(__OpenModelica_Interface="parser");
-end GlobalScript;
+annotation(__OpenModelica_Interface="frontend");
+end AvlTreePathFunction;

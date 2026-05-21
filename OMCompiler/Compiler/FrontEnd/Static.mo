@@ -7404,7 +7404,7 @@ protected
   DAE.TupleConst tyconst;
   DAE.Dimensions vect_dims;
   list<Slot> slots,slots2;
-  DAE.FunctionTree functionTree;
+  AvlTreePathFunction.Tree functionTree;
   Util.Status status;
   FCore.Cache cache;
   Boolean didInline;
@@ -8699,7 +8699,7 @@ algorithm
   // Use a dummy SCode.Element, because we're only interested in the DAE.Vars.
   dummy_var := SCode.COMPONENT("dummy", SCode.defaultPrefixes,
     SCode.defaultVarAttr, Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
-    SCode.noComment, NONE(), AbsynUtil.dummyInfo);
+    SCode.noComment, NONE(), Absyn.dummyInfo);
 
   // Create a new implicit scope with the needed parameters on top of the
   // current env so we can find the bindings if needed. We need an implicit

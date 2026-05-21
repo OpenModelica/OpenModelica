@@ -524,7 +524,7 @@ public function getCalledFunctionsInFunction
 "Goes through the given DAE, finds the given function and collects
   the names of the functions called from within those functions"
   input Absyn.Path path;
-  input DAE.FunctionTree funcs;
+  input AvlTreePathFunction.Tree funcs;
   output list<Absyn.Path> outPaths;
 protected
   HashTableStringToPath.HashTable ht;

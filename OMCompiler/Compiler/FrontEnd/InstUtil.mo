@@ -1374,7 +1374,7 @@ algorithm
       algorithm
         name2 := Dump.printComponentRefStr(dep);
         true := stringEq(name2,name1);
-        cmod := DAE.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{DAE.NAMEMOD(name2,cmod)},NONE(), AbsynUtil.dummyInfo);
+        cmod := DAE.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{DAE.NAMEMOD(name2,cmod)},NONE(), Absyn.dummyInfo);
       then
         cmod;
     case(dep,_::elems)
@@ -2995,7 +2995,7 @@ algorithm
   DAE.DAE(elementLst = eqs) := inEquations;
   DAE.DAE(elementLst = vars) := inVariables;
     Error.assertion(intEq(listLength(eqs), listLength(vars)),
-        "- InstUtil.moveBindings: Mismatched number of equations and variables.", AbsynUtil.dummyInfo);
+        "- InstUtil.moveBindings: Mismatched number of equations and variables.", Absyn.dummyInfo);
   vars := List.threadMap(eqs, vars, moveBindings2);
   outVariables := DAE.DAE(vars);
 end moveBindings;
@@ -7682,7 +7682,7 @@ algorithm
   ocache := match cache
     local
       Option<FCore.Graph> ie;
-      Mutable<DAE.FunctionTree> f;
+      Mutable<AvlTreePathFunction.Tree> f;
       AvlSetCR.Tree ht;
       list<list<DAE.ComponentRef>> crs;
       Absyn.Path p;
@@ -7700,7 +7700,7 @@ algorithm
   ocache := match (cache,pre)
     local
       Option<FCore.Graph> ie;
-      Mutable<DAE.FunctionTree> f;
+      Mutable<AvlTreePathFunction.Tree> f;
       AvlSetCR.Tree ht;
       list<DAE.ComponentRef> crs;
       list<list<DAE.ComponentRef>> crss;

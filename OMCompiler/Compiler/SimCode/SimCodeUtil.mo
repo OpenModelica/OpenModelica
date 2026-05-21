@@ -848,7 +848,7 @@ end createSimCode;
 
 public function createFunctions
   input Absyn.Program inProgram;
-  input DAE.FunctionTree functionTree;
+  input AvlTreePathFunction.Tree functionTree;
   output list<String> outLibs;
   output list<String> outLibPaths;
   output list<String> outIncludes;
@@ -922,7 +922,7 @@ protected
   SimCode.SubPartition simSubPartition;
   Boolean holdEvents;
   array<Integer> ass1, stateeqnsmark, zceqnsmarks;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   BackendDAE.StrongComponents comps;
   Integer sccOffset = iSccOffset;
   list<Integer> varIxs;
@@ -1610,7 +1610,7 @@ algorithm
       array<Integer> ass1, stateeqnsmark, zceqnsmarks;
       BackendDAE.Variables vars;
       list<SimCodeVar.SimVar> tempvars;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       list<tuple<Integer,Integer>> eqSccMapping, eqBackendSimCodeMapping;
       SimCode.BackendMapping backendMapping;
       list<BackendDAE.ZeroCrossing> zeroCrossings;
@@ -2348,7 +2348,7 @@ algorithm
       Boolean initialCall;
       DAE.Expand crefExpand;
       Boolean homotopySupport;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       list<BackendDAE.Equation> solveEqns;
       list<SimCode.SimEqSystem> eqSystlst, eqs;
       list<BackendDAE.WhenOperator> whenStmtLst;
@@ -3127,7 +3127,7 @@ public function createNonlinearResidualEquations
   output list<SimCode.SimEqSystem> eqSystems = {};
   input output tuple<Integer, Integer> idx_tpl;
   input output list<SimCodeVar.SimVar> tempvars;
-  input DAE.FunctionTree funcTree;
+  input AvlTreePathFunction.Tree funcTree;
 protected
   Integer eq_idx, res_idx;
 algorithm
@@ -3512,7 +3512,7 @@ algorithm
       list<DAE.ClassAttributes> clsAttrs;
       FCore.Cache cache;
       FCore.Graph graph;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       BackendDAE.EventInfo ev;
       list<Integer> ieqns, ivars, disc_eqns, disc_vars, eqIdcs;
       BackendDAE.ExternalObjectClasses eoc;
@@ -3596,7 +3596,7 @@ protected function createOdeSystem2
   input BackendDAE.EquationArray inEquationArray;
   input BackendDAE.Jacobian inJacobian;
   input BackendDAE.JacobianType inJacobianType;
-  input DAE.FunctionTree inFuncs;
+  input AvlTreePathFunction.Tree inFuncs;
   input BackendDAE.Variables inAllVars;
   input Integer iuniqueEqIndex;
   input BackendDAE.ExtraInfo iei;
@@ -3924,7 +3924,7 @@ algorithm
       list<DAE.Exp> explst1, explst2;
       BackendDAE.Equation eqn;
       list<list<DAE.Subscript>> subslst;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
 
     case ({}, _, _, _, _) then inRepl;
     case (BackendDAE.INNEREQUATION(eqn=e, vars={v})::rest, _, _, _, _)
@@ -4003,7 +4003,7 @@ algorithm
       BackendDAE.Var var;
       list<BackendDAE.Var> otherVars, rest;
       list<DAE.Exp> explst1, explst2;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
     case ({}, _, _, _, _, _) then inRepl;
     case (e1::explst1, e2::explst2, (var as BackendDAE.VAR(varName=cr))::rest, _, _, _)
       algorithm
@@ -4421,7 +4421,7 @@ function generateSingleEquation
   "generates single equation from BackendDAE equations"
   input BackendDAE.Equation eqn;
   input BackendDAE.Var var;
-  input DAE.FunctionTree funcTree;
+  input AvlTreePathFunction.Tree funcTree;
   input Option<DAE.Exp> timeInterval "from experiment annotation Interval, used for derivative nominal";
   output list<SimCode.SimEqSystem> equations = {};
   output list<SimCodeVar.SimVar> inputVars = {};
@@ -4705,7 +4705,7 @@ algorithm
   (oEquations, ouniqueEqIndex, otempvars, oNumStateSets) :=
   matchcontinue(iStateSets, iVars, iEqns, comps, iEquations, iuniqueEqIndex, itempvars, iNumStateSets)
     local
-      DAE.FunctionTree functree;
+      AvlTreePathFunction.Tree functree;
       BackendDAE.StateSets sets;
       Integer rang, numStateSets, nCandidates;
       list<DAE.ComponentRef> crset;
@@ -4808,7 +4808,7 @@ algorithm
 
     String errorMessage;
 
-    DAE.FunctionTree funcs;
+    AvlTreePathFunction.Tree funcs;
 
     HashTableCrefSimVar.HashTable crefToSimVarHTJacobian;
 
@@ -5684,7 +5684,7 @@ algorithm
 
     String errorMessage;
 
-    DAE.FunctionTree funcs;
+    AvlTreePathFunction.Tree funcs;
 
     SimCode.HashTableCrefToSimVar crefSimVarHT;
     HashTableCrefSimVar.HashTable hashTable;
@@ -6472,7 +6472,7 @@ protected function createSingleComplexEqnCode
   input list<SimCodeVar.SimVar> itempvars;
   input BackendDAE.ExtraInfo iextra;
   input Boolean genDiscrete;
-  input DAE.FunctionTree funcTree;
+  input AvlTreePathFunction.Tree funcTree;
   input Option<Integer> clockIndex;
   output list<SimCode.SimEqSystem> equations_;
   output Integer ouniqueEqIndex;
@@ -6907,7 +6907,7 @@ algorithm
       list<BackendDAE.Var> vars;
       DAE.ComponentRef cr, cr_1, left;
       BackendDAE.Variables evars, vars1;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       DAE.ElementSource source;
       SimCode.SimEqSystem equation_;
       list<SimCode.SimEqSystem> eqSystlst;

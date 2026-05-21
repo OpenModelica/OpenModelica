@@ -1436,7 +1436,7 @@ public
     output Expression rangeExp;
   algorithm
     rangeExp := RANGE(
-      TypeCheck.getRangeType(start, step, stop, typeOf(start), AbsynUtil.dummyInfo),
+      TypeCheck.getRangeType(start, step, stop, typeOf(start), Absyn.dummyInfo),
       start, step, stop
     );
   end makeRange;
@@ -6116,7 +6116,7 @@ public
       case RANGE()
         algorithm
           exp.ty := TypeCheck.getRangeType(exp.start, exp.step, exp.stop,
-            typeOf(exp.start), AbsynUtil.dummyInfo);
+            typeOf(exp.start), Absyn.dummyInfo);
         then
           ();
 

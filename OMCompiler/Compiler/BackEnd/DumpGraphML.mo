@@ -78,7 +78,7 @@ algorithm
       array<Integer> vec1,vec2,vec3,mapIncRowEqn;
       array<Boolean> eqnsflag;
       BackendDAE.EqSystem syst;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       BackendDAE.StrongComponents comps;
     case (BackendDAE.EQSYSTEM(matching=BackendDAE.NO_MATCHING()),_,NONE(),_,_)
       algorithm

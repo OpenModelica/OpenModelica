@@ -4098,7 +4098,7 @@ public function dumpBipartiteGraphStrongComponent"dumps a bipartite graph of an 
 waurich: TUD 2014-09"
   input BackendDAE.StrongComponent inComp;
   input BackendDAE.EqSystem eqSys;
-  input Option<DAE.FunctionTree> funcs;
+  input Option<AvlTreePathFunction.Tree> funcs;
   input String name;
 protected
   BackendDAE.EquationArray eqs;
@@ -4116,7 +4116,7 @@ public function dumpBipartiteGraphStrongComponent1"helper function for dumpBipar
   input BackendDAE.StrongComponent inComp;
   input list<BackendDAE.Equation> eqsIn;
   input list<BackendDAE.Var> varsIn;
-  input Option<DAE.FunctionTree> funcs;
+  input Option<AvlTreePathFunction.Tree> funcs;
   input String graphName;
 algorithm
   () := matchcontinue(inComp,eqsIn,varsIn,funcs,graphName)

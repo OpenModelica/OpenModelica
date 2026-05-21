@@ -85,8 +85,6 @@ public function applyReplacementsDAE "Apply a set of replacement rules on a DAE 
 algorithm
   outDae := match(dae,repl,condExpFunc)
   local list<DAE.Element> elts;
-    DAE.FunctionTree funcs;
-    list<tuple<DAE.AvlTreePathFunction.Key,DAE.AvlTreePathFunction.Value>> funcLst;
     case(DAE.DAE(elementLst=elts),_,_)
       algorithm
         elts := applyReplacementsDAEElts(elts,repl,condExpFunc);

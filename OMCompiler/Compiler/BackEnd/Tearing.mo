@@ -502,7 +502,7 @@ protected
   BackendDAE.AdjacencyMatrixTEnhanced meT;
   array<list<Integer>> mapEqnIncRow;
   array<Integer> mapIncRowEqn;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   list<Integer> asslst1, asslst2;
   list<Integer> tSel_always, tSel_prefer, tSel_avoid, tSel_never;
   String DAEtypeStr;
@@ -4252,7 +4252,7 @@ protected function recursiveTearingMain
 protected
   list<BackendDAE.EqSystem> systlst_new = {};
   BackendDAE.Shared shared;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   BackendDAE.Variables vars, globalKnownVars;
   BackendDAE.StrongComponents comps;
   BackendDAE.EquationArray eqns;

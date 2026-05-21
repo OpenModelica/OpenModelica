@@ -46,7 +46,6 @@ encapsulated package DAE
 
 // public imports
 import Absyn;
-import AbsynUtil;
 import BaseAvlTree;
 import ClassInf;
 import SCode;
@@ -121,7 +120,7 @@ uniontype ElementSource "gives information about the origin of the element"
   end SOURCE;
 end ElementSource;
 
-public constant ElementSource emptyElementSource = SOURCE(AbsynUtil.dummyInfo,{},NOCOMPPRE(),{},{},{},{});
+public constant ElementSource emptyElementSource = SOURCE(Absyn.dummyInfo,{},NOCOMPPRE(),{},{},{},{});
 
 public uniontype SymbolicOperation
   record FLATTEN "From one equation/statement to an element"
@@ -628,36 +627,6 @@ public uniontype DAElist "A DAElist is a list of Elements. Variables, equations,
     list<Element> elementLst;
   end DAE;
 end DAElist;
-
-/* AVLTree for functions */
-public type FunctionTree = AvlTreePathFunction.Tree;
-
-package AvlTreePathFunction "AvlTree for Path to Function"
-  extends BaseAvlTree;
-  redeclare type Key = Absyn.Path;
-  redeclare type Value = Option<Function>;
-  redeclare function extends keyStr
-  algorithm
-    outString := AbsynUtil.pathString(inKey);
-  end keyStr;
-  redeclare function extends valueStr
-  algorithm
-    outString := match inValue
-      local
-        Absyn.Path path;
-      case SOME(FUNCTION(path=path)) then AbsynUtil.pathString(path);
-      case SOME(RECORD_CONSTRUCTOR(path=path)) then AbsynUtil.pathString(path);
-      case SOME(RECORD_CONSTRUCTOR(path=path)) then "<SOME_FUNCTION>";
-      else "<NO_FUNCTION>";
-    end match;
-  end valueStr;
-  redeclare function extends keyCompare
-  algorithm
-    outResult := AbsynUtil.pathCompareNoQual(inKey1,inKey2);
-  end keyCompare;
-
-  redeclare function addConflictDefault = addConflictReplace;
-end AvlTreePathFunction;
 
 /* -- Algorithm.mo -- */
 public

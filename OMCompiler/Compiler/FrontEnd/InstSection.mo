@@ -186,7 +186,7 @@ algorithm
         (outCache, outEnv, outIH, outDae, outSets, outState, outGraph) :=
           instEquationCommonWork(inCache, inEnv, inIH, inPrefix, inSets, state,
             inEquation, inInitial, inImpl, inGraph, DAE.FLATTEN(inEquation,NONE()));
-        outDae := DAEUtil.traverseDAE(outDae, DAE.AvlTreePathFunction.Tree.EMPTY(),
+        outDae := DAEUtil.traverseDAE(outDae, AvlTreePathFunction.Tree.EMPTY(),
           Expression.traverseSubexpressionsHelper,
           (ExpressionSimplify.simplifyWork, ExpressionSimplifyTypes.optionSimplifyOnly));
       then
@@ -1258,7 +1258,7 @@ public function instEqEquation "author: LS, ELN
   input DAE.ElementSource source "the origin of the element";
   input SCode.Initial inInitial5;
   input Boolean inImplicit;
-  input SourceInfo extraInfo=AbsynUtil.dummyInfo "We have 2 sources?";
+  input SourceInfo extraInfo=Absyn.dummyInfo "We have 2 sources?";
   output DAE.DAElist outDae;
 algorithm
   outDae := matchcontinue (inExp1,inProperties2,inExp3,inProperties4,source,inInitial5,inImplicit)
@@ -2013,7 +2013,7 @@ algorithm
       algorithm
         // set the source of this element
         ci_state := ClassInf.trans(ci_state,ClassInf.FOUND_ALGORITHM());
-        source := ElementSource.createElementSource(AbsynUtil.dummyInfo, FGraph.getScopePath(env), pre);
+        source := ElementSource.createElementSource(Absyn.dummyInfo, FGraph.getScopePath(env), pre);
 
         (cache,statements_1) := instStatements(cache, env, ih, pre, ci_state, statements, source, SCode.NON_INITIAL(), impl, unrollForLoops);
         (statements_1,_) := DAEUtil.traverseDAEEquationsStmts(statements_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,ExpressionSimplifyTypes.optionSimplifyOnly));
@@ -2080,7 +2080,7 @@ algorithm
     case (cache,env,ih,pre,csets,ci_state,SCode.ALGORITHM(statements = statements),impl,_,graph)
       algorithm
         // set the source of this element
-        source := ElementSource.createElementSource(AbsynUtil.dummyInfo, FGraph.getScopePath(env), pre);
+        source := ElementSource.createElementSource(Absyn.dummyInfo, FGraph.getScopePath(env), pre);
 
         (cache,statements_1) := instStatements(cache, env, ih, pre, ci_state, statements, source, SCode.INITIAL(), impl, unrollForLoops);
         (statements_1,_) := DAEUtil.traverseDAEEquationsStmts(statements_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,ExpressionSimplifyTypes.optionSimplifyOnly));
@@ -2128,9 +2128,9 @@ algorithm
       algorithm
         // set the source of this element
         ci_state := ClassInf.trans(ci_state,ClassInf.FOUND_ALGORITHM());
-        source := ElementSource.createElementSource(AbsynUtil.dummyInfo, FGraph.getScopePath(env), pre);
+        source := ElementSource.createElementSource(Absyn.dummyInfo, FGraph.getScopePath(env), pre);
 
-        (cache,constraints_1,_) := Static.elabExpList(cache, env, constraints, impl, true /*vect*/, pre, AbsynUtil.dummyInfo);
+        (cache,constraints_1,_) := Static.elabExpList(cache, env, constraints, impl, true /*vect*/, pre, Absyn.dummyInfo);
         // (constraints_1,_) = DAEUtil.traverseDAEquationsStmts(constraints_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,false));
 
         dae := DAE.DAE({DAE.CONSTRAINT(DAE.CONSTRAINT_EXPS(constraints_1),source)});
@@ -3364,7 +3364,7 @@ algorithm
                             SCode.defaultPrefixes,
                             SCode.ATTR(arrDims, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR(),Absyn.NONFIELD()),
                             Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
-                            SCode.noComment, NONE(), AbsynUtil.dummyInfo),
+                            SCode.noComment, NONE(), Absyn.dummyInfo),
                           DAE.NOMOD(),
                           FCore.VAR_TYPED(),
           // add empty here to connect individual components!
@@ -3451,7 +3451,7 @@ algorithm
                             SCode.defaultPrefixes,
                             SCode.ATTR(arrDims, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR(), Absyn.NONFIELD()),
                             Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
-                            SCode.noComment, NONE(), AbsynUtil.dummyInfo),
+                            SCode.noComment, NONE(), Absyn.dummyInfo),
                           DAE.NOMOD(),
                           FCore.VAR_TYPED(),
                           envComponentEmpty);
@@ -3509,7 +3509,7 @@ algorithm
           source);
 
         dae := DAEUtil.joinDaes(dae, daeExpandable);
-        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "<<<< connect(expandable, existing)(" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + ", " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + ")"); // \nDAE:" + DAEDump.dumpStr(daeExpandable, DAE.AvlTreePathFunction.Tree.EMPTY()));
+        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "<<<< connect(expandable, existing)(" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + ", " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + ")"); // \nDAE:" + DAEDump.dumpStr(daeExpandable, AvlTreePathFunction.Tree.EMPTY()));
       then
         (cache,env,ih,sets,dae,graph);
 

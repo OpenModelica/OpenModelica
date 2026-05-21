@@ -349,7 +349,7 @@ public
     info := match modifier
       case MODIFIER() then modifier.info;
       case REDECLARE() then InstNode.info(modifier.element);
-      else AbsynUtil.dummyInfo;
+      else Absyn.dummyInfo;
     end match;
   end info;
 

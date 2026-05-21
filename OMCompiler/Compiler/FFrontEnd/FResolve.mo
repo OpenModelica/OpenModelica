@@ -526,7 +526,7 @@ algorithm
       algorithm
         true := FNode.isRefCref(r);
         FCore.CR(r = cr) := FNode.refData(r);
-        (g, rr) := FLookup.cr(g, r, cr, FLookup.ignoreNothing, FLookup.dummyLookupOption); // SOME(AbsynUtil.dummyInfo));
+        (g, rr) := FLookup.cr(g, r, cr, FLookup.ignoreNothing, FLookup.dummyLookupOption); // SOME(Absyn.dummyInfo));
         g := FGraphBuild.mkRefNode(FNode.refNodeName, {rr}, r, g);
       then
         g;
@@ -605,7 +605,7 @@ algorithm
                (not FNode.isRefModHolder(r)) and
                (not ClassInf.isBasicTypeComponentName(FNode.refName(r)));
         cr := AbsynUtil.pathToCref(AbsynUtil.stringListPath(FNode.namesUpToParentName(r, FNode.modNodeName)));
-        (g, rr) := FLookup.cr(g, FNode.getModifierTarget(r), cr, FLookup.ignoreNothing, FLookup.dummyLookupOption); // SOME(AbsynUtil.dummyInfo));
+        (g, rr) := FLookup.cr(g, FNode.getModifierTarget(r), cr, FLookup.ignoreNothing, FLookup.dummyLookupOption); // SOME(Absyn.dummyInfo));
         g := FGraphBuild.mkRefNode(FNode.refNodeName, {rr}, r, g);
       then
         g;

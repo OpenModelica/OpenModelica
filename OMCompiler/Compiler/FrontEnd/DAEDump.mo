@@ -104,7 +104,7 @@ end functionList;
 public function dump "This function prints the DAE in the standard output format to the Print buffer.
   For printing to the stdout use print(dumpStr(dae)) instead."
   input DAE.DAElist dae;
-  input DAE.FunctionTree functionTree;
+  input AvlTreePathFunction.Tree functionTree;
 algorithm
   _ := match (dae,functionTree)
     local
@@ -121,7 +121,7 @@ algorithm
 end dump;
 
 public function dumpFunctionNamesStr "return all function names in a string  (comma separated)"
-  input DAE.FunctionTree funcs;
+  input AvlTreePathFunction.Tree funcs;
   output String str;
 algorithm
   str := stringDelimitList(List.map(sortFunctions(DAEUtil.getFunctionList(funcs)),functionNameStr),",");
@@ -2618,7 +2618,7 @@ end unparseDimensions;
 
 public function dumpStr "This function prints the DAE to a string."
   input DAE.DAElist inDAElist;
-  input DAE.FunctionTree functionTree;
+  input AvlTreePathFunction.Tree functionTree;
   output String outString;
 protected
   list<DAE.Element> daelist;
@@ -2696,7 +2696,7 @@ end dumpConstraintsStr;
 
 public function dumpStream "This function prints the DAE to a stream."
   input DAE.DAElist dae;
-  input DAE.FunctionTree functionTree;
+  input AvlTreePathFunction.Tree functionTree;
   input IOStream.IOStream inStream;
   output IOStream.IOStream outStream;
 algorithm
@@ -2720,7 +2720,7 @@ end dumpStream;
 
 public function dumpFunctionList " returns sorted functions and record constructors in alphabetical order
   (mainly important for template based DAE unparser)."
-  input DAE.FunctionTree functionTree;
+  input AvlTreePathFunction.Tree functionTree;
   output functionList funList;
 algorithm
   (funList) := match (functionTree)
@@ -3539,7 +3539,7 @@ algorithm
 end ppStatementStream;
 
 public function dumpFunctionTree
-  input DAE.FunctionTree inFunctionTree;
+  input AvlTreePathFunction.Tree inFunctionTree;
   input String inHeading;
 algorithm
   print("\n" + inHeading + "\n========================================\n");

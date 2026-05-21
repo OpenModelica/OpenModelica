@@ -172,7 +172,7 @@ public function solve
   input DAE.Exp inExp1 "lhs";
   input DAE.Exp inExp2 "rhs";
   input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
-  input Option<DAE.FunctionTree> functions = NONE() "need for solve modelica functions";
+  input Option<AvlTreePathFunction.Tree> functions = NONE() "need for solve modelica functions";
   output DAE.Exp outExp;
   output list<DAE.Statement> outAsserts;
 protected
@@ -205,7 +205,7 @@ public function solve2
   input DAE.Exp inExp1 "lhs";
   input DAE.Exp inExp2 "rhs";
   input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
-  input Option<DAE.FunctionTree> functions "need for solve modelica functions";
+  input Option<AvlTreePathFunction.Tree> functions "need for solve modelica functions";
   input Option<Integer> uniqueEqIndex "offset for tmp vars";
   input Boolean doInline = true;
   input Boolean isContinuousIntegration = false;
@@ -236,7 +236,7 @@ protected function solveWork
   input DAE.Exp inExp2 "rhs";
   input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
   input Option<DAE.Exp> optCond "condition from an if expression";
-  input Option<DAE.FunctionTree> functions;
+  input Option<AvlTreePathFunction.Tree> functions;
   input Option<Integer> uniqueEqIndex "offset for tmp vars";
   input Integer idepth;
   input Boolean doInline;
@@ -396,7 +396,7 @@ public function preprocessingSolve
   input output DAE.Exp y "rhs";
   input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
   input Option<DAE.Exp> optCond "condition from an if expression";
-  input Option<DAE.FunctionTree> functions;
+  input Option<AvlTreePathFunction.Tree> functions;
   input Option<Integer> uniqueEqIndex "offset for tmp vars";
   input Integer idepth;
   input Boolean doInline;
@@ -1019,7 +1019,7 @@ protected function solveFunCalls
 "
   input DAE.Exp inExp1 "lhs";
   input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
-  input Option<DAE.FunctionTree> functions;
+  input Option<AvlTreePathFunction.Tree> functions;
   output DAE.Exp x;
   output Boolean con;
 algorithm
@@ -1153,16 +1153,16 @@ DAE.Exp inExp2 DAE.CREF or 'der(DAE.CREF())'
 author: vitalij
 "
   input DAE.Exp inExp;
-  input tuple<DAE.Exp, Option<DAE.FunctionTree>> iT;
+  input tuple<DAE.Exp, Option<AvlTreePathFunction.Tree>> iT;
   output DAE.Exp outExp;
   output Boolean cont;
-  output tuple<DAE.Exp, Option<DAE.FunctionTree>> oT;
+  output tuple<DAE.Exp, Option<AvlTreePathFunction.Tree>> oT;
  algorithm
    (outExp,cont,oT) := matchcontinue(inExp, iT)
    local
      DAE.Exp e, X;
      DAE.ComponentRef cr;
-     Option<DAE.FunctionTree> functions;
+     Option<AvlTreePathFunction.Tree> functions;
      Boolean b;
 
    case(DAE.CALL(),(X, functions))
@@ -1653,7 +1653,7 @@ protected function solveIfExp
   input DAE.Exp inExp2;
   input DAE.Exp inExp3;
   input Option<DAE.Exp> inCond;
-  input Option<DAE.FunctionTree> functions;
+  input Option<AvlTreePathFunction.Tree> functions;
   input Option<Integer> uniqueEqIndex "offset for tmp vars";
   input Integer idepth;
   input Boolean doInline;
@@ -1710,7 +1710,7 @@ protected function solveLinearSystem
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
   input DAE.Exp inExp3;
-  input Option<DAE.FunctionTree> functions;
+  input Option<AvlTreePathFunction.Tree> functions;
   input Integer idepth;
   output DAE.Exp outExp;
   output list<DAE.Statement> outAsserts;

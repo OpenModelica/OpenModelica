@@ -86,37 +86,37 @@ encapsulated package Elements
   constant SCode.Element REAL = SCode.CLASS("Real",
     SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
     SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-    SCode.noComment, AbsynUtil.dummyInfo);
+    SCode.noComment, Absyn.dummyInfo);
 
   constant SCode.Element INTEGER = SCode.CLASS("Integer",
     SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
     SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-    SCode.noComment, AbsynUtil.dummyInfo);
+    SCode.noComment, Absyn.dummyInfo);
 
   constant SCode.Element BOOLEAN = SCode.CLASS("Boolean",
     SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
     SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-    SCode.noComment, AbsynUtil.dummyInfo);
+    SCode.noComment, Absyn.dummyInfo);
 
   constant SCode.Element STRING = SCode.CLASS("String",
     SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
     SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-    SCode.noComment, AbsynUtil.dummyInfo);
+    SCode.noComment, Absyn.dummyInfo);
 
   constant SCode.Element ENUMERATION = SCode.CLASS("enumeration",
     SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
     SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-    SCode.noComment, AbsynUtil.dummyInfo);
+    SCode.noComment, Absyn.dummyInfo);
 
   constant SCode.Element ANY = SCode.CLASS("polymorphic",
     SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
     SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-    SCode.noComment, AbsynUtil.dummyInfo);
+    SCode.noComment, Absyn.dummyInfo);
 
   constant SCode.Element CLOCK = SCode.CLASS("Clock",
     SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_PREDEFINED_CLOCK(),
     SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
-    SCode.noComment, AbsynUtil.dummyInfo) "the Clock type";
+    SCode.noComment, Absyn.dummyInfo) "the Clock type";
 
 end Elements;
 
@@ -421,7 +421,7 @@ constant InstNode TIME =
       NFAttributes.INPUT_ATTR,
       SCode.noComment,
       ComponentState.TypeChecked,
-      AbsynUtil.dummyInfo)),
+      Absyn.dummyInfo)),
     InstNode.EMPTY_NODE(),
     InstNodeType.NORMAL_COMP());
 
@@ -437,7 +437,7 @@ constant InstNode SUBST_NODE =
       NFAttributes.DEFAULT_ATTR,
       SCode.noComment,
       ComponentState.TypeChecked,
-      AbsynUtil.dummyInfo)),
+      Absyn.dummyInfo)),
     InstNode.EMPTY_NODE(),
     InstNodeType.NORMAL_COMP());
 

@@ -615,7 +615,7 @@ algorithm
       DAE.Exp e1, e2, varexp;
       BackendDAE.Var v;
       DAE.ComponentRef cr;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       BackendDAE.JacobianType jacType;
       BackendDAE.EqSystem syst;
       Boolean linear;
@@ -764,7 +764,7 @@ protected
   BackendDAE.EquationArray eqns;
   BackendDAE.BaseClockPartitionKind partitionKind;
   BackendDAE.StateSets stateSets;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   Option<DAE.Exp> oMax_con, oMin_con;
   DAE.Exp max_con, min_con, zero, con2, z, der_e;
   Boolean b1,b2,b, b3, b4;

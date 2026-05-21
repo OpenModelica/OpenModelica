@@ -5928,7 +5928,7 @@ protected
   list<Integer> varIdxs, row;
   BackendDAE.EquationArray eqs;
   BackendDAE.Variables vars;
-  DAE.FunctionTree functionTree;
+  AvlTreePathFunction.Tree functionTree;
   list<DAE.ComponentRef> noDerInputs;
 algorithm
   vars := sys.orderedVars;

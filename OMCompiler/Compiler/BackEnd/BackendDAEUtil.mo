@@ -177,7 +177,7 @@ algorithm
       BackendDAE.Variables vars;
       BackendDAE.EquationArray orderedEqs;
       BackendDAE.EqSystem syst;
-      DAE.FunctionTree functionTree;
+      AvlTreePathFunction.Tree functionTree;
 
     case BackendDAE.DAE(eqs=(BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=orderedEqs))::{}, shared=BackendDAE.SHARED()) algorithm
       //true = Flags.isSet(Flags.CHECK_BACKEND_DAE);
@@ -1729,7 +1729,7 @@ public function getFunctions
 "author: Frenkel TUD 2011-11
   This function returns the Functions of a BackendDAE."
   input BackendDAE.Shared shared;
-  output DAE.FunctionTree functionTree;
+  output AvlTreePathFunction.Tree functionTree;
 algorithm
   BackendDAE.SHARED(functionTree=functionTree) := shared;
 end getFunctions;
@@ -1819,7 +1819,7 @@ protected
   list<BackendDAE.Equation> el;
   list<BackendDAE.Var> vl;
 
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   BackendDAE.AdjacencyMatrix m;
 algorithm
   oSyst := match iSyst
@@ -2134,7 +2134,7 @@ end removediscreteAssingmentsElse;
 public function collateAlgorithm "
 Author: Frenkel TUD 2010-07"
   input DAE.Algorithm inAlg;
-  input Option<DAE.FunctionTree> infuncs;
+  input Option<AvlTreePathFunction.Tree> infuncs;
   output DAE.Algorithm outAlg;
 algorithm
   outAlg := matchcontinue(inAlg,infuncs)
@@ -2154,9 +2154,9 @@ protected function collateArrExpStmt "author: Frenkel TUD 2010-07
   we can't collate the expression of a when condition."
   input DAE.Exp inExp;
   input DAE.Statement inStmt;
-  input Option<DAE.FunctionTree> funcs;
+  input Option<AvlTreePathFunction.Tree> funcs;
   output DAE.Exp outExp = inExp;
-  output Option<DAE.FunctionTree> oarg = funcs;
+  output Option<AvlTreePathFunction.Tree> oarg = funcs;
 algorithm
   try
     outExp := Expression.traverseExpBottomUp(outExp, traversingcollateArrExpStmt, (inStmt, funcs));
@@ -2168,13 +2168,13 @@ protected function traversingcollateArrExpStmt "wbraun: added as workaround for 
   As long as we don't support fully array helpVars,
   we can't collate the expression of a when condition."
   input DAE.Exp inExp;
-  input tuple<DAE.Statement, Option<DAE.FunctionTree>> inTpl;
+  input tuple<DAE.Statement, Option<AvlTreePathFunction.Tree>> inTpl;
   output DAE.Exp outExp;
-  output tuple<DAE.Statement, Option<DAE.FunctionTree>> outTpl;
+  output tuple<DAE.Statement, Option<AvlTreePathFunction.Tree>> outTpl;
 algorithm
   (outExp,outTpl) := matchcontinue (inExp,inTpl)
     local
-      Option<DAE.FunctionTree> funcs;
+      Option<AvlTreePathFunction.Tree> funcs;
       DAE.ComponentRef cr;
       DAE.Type ty;
       Integer i;
@@ -2223,7 +2223,7 @@ public function collateArrExpList
 " author Frenkel TUD:
   replace {a[1],a[2],a[3]} for Real a[3] with a"
   input list<DAE.Exp> iexpl;
-  input Option<DAE.FunctionTree> optfunc;
+  input Option<AvlTreePathFunction.Tree> optfunc;
   output list<DAE.Exp> outexpl;
 algorithm
   outexpl := match(iexpl,optfunc)
@@ -2244,18 +2244,18 @@ end collateArrExpList;
 public function collateArrExp "
 Author: Frenkel TUD 2010-07"
   input DAE.Exp inExp;
-  input Option<DAE.FunctionTree> inFuncs;
+  input Option<AvlTreePathFunction.Tree> inFuncs;
   output DAE.Exp outExp;
-  output Option<DAE.FunctionTree> outFuncs;
+  output Option<AvlTreePathFunction.Tree> outFuncs;
 algorithm
   (outExp,outFuncs) := Expression.traverseExpBottomUp(inExp, traversingcollateArrExp, inFuncs);
 end collateArrExp;
 
 protected function traversingcollateArrExp
   input DAE.Exp inExp;
-  input Option<DAE.FunctionTree> inFuncs;
+  input Option<AvlTreePathFunction.Tree> inFuncs;
   output DAE.Exp outExp;
-  output Option<DAE.FunctionTree> funcs;
+  output Option<AvlTreePathFunction.Tree> funcs;
 algorithm
   (outExp,funcs) := matchcontinue (inExp,inFuncs)
     local
@@ -2341,7 +2341,7 @@ public function adjacencyMatrix
     wbraun: beware dim(AdjacencyMatrix) != dim(AdjacencyMatrixT) due to array equations. "
   input BackendDAE.EqSystem inEqSystem;
   input BackendDAE.IndexType inIndexType;
-  input Option<DAE.FunctionTree> functionTree;
+  input Option<AvlTreePathFunction.Tree> functionTree;
   input Boolean isInitial;
   output BackendDAE.AdjacencyMatrix outAdjacencyMatrix;
   output BackendDAE.AdjacencyMatrixT outAdjacencyMatrixT;
@@ -2363,7 +2363,7 @@ public function adjacencyMatrixMasked
   input BackendDAE.EqSystem inEqSystem;
   input BackendDAE.IndexType inIndexType;
   input array<Boolean> inMask;
-  input Option<DAE.FunctionTree> functionTree;
+  input Option<AvlTreePathFunction.Tree> functionTree;
   input Boolean isInitial;
   output BackendDAE.AdjacencyMatrix outAdjacencyMatrix;
   output BackendDAE.AdjacencyMatrixT outAdjacencyMatrixT;
@@ -2387,7 +2387,7 @@ public function adjacencyMatrixScalar
   You can ask for absolute indexes or normal (negative for der) via the IndexType"
   input BackendDAE.EqSystem syst;
   input BackendDAE.IndexType inIndexType;
-  input Option<DAE.FunctionTree> functionTree;
+  input Option<AvlTreePathFunction.Tree> functionTree;
   input Boolean isInitial;
   output BackendDAE.AdjacencyMatrix outAdjacencyMatrix;
   output BackendDAE.AdjacencyMatrixT outAdjacencyMatrixT;
@@ -2495,7 +2495,7 @@ public function adjacencyMatrixDispatch
   input BackendDAE.Variables inVars;
   input BackendDAE.EquationArray inEqns;
   input BackendDAE.IndexType inIndexType;
-  input Option<DAE.FunctionTree> functionTree = NONE();
+  input Option<AvlTreePathFunction.Tree> functionTree = NONE();
   input Boolean isInitial;
   output BackendDAE.AdjacencyMatrix outAdjacencyArray;
   output BackendDAE.AdjacencyMatrixT outAdjacencyArrayT;
@@ -2527,7 +2527,7 @@ public function adjacencyMatrixDispatchMasked
   input BackendDAE.EquationArray inEqns;
   input BackendDAE.IndexType inIndexType;
   input array<Boolean> inMask;
-  input Option<DAE.FunctionTree> functionTree = NONE();
+  input Option<AvlTreePathFunction.Tree> functionTree = NONE();
   input Boolean isInitial;
   output BackendDAE.AdjacencyMatrix outAdjacencyArray;
   output BackendDAE.AdjacencyMatrixT outAdjacencyArrayT;
@@ -2562,7 +2562,7 @@ protected function adjacencyMatrixDispatchScalar
   input BackendDAE.Variables inVars;
   input BackendDAE.EquationArray inEqns;
   input BackendDAE.IndexType inIndexType;
-  input Option<DAE.FunctionTree> functionTree;
+  input Option<AvlTreePathFunction.Tree> functionTree;
   input Boolean isInitial;
   output BackendDAE.AdjacencyMatrix outAdjacencyArray;
   output BackendDAE.AdjacencyMatrixT outAdjacencyArrayT = outAdjacencyArrayT;
@@ -2634,7 +2634,7 @@ public function adjacencyRow
   input BackendDAE.Equation inEquation;
   input BackendDAE.Variables vars;
   input BackendDAE.IndexType inIndexType;
-  input Option<DAE.FunctionTree> functionTree;
+  input Option<AvlTreePathFunction.Tree> functionTree;
   input AvlSetInt.Tree iRow;
   input Boolean isInitial;
   output AvlSetInt.Tree outIntegerLst;
@@ -2859,7 +2859,7 @@ protected function adjacencyRowLst
   input list<BackendDAE.Equation> inEquation;
   input BackendDAE.Variables inVariables;
   input BackendDAE.IndexType inIndexType;
-  input Option<DAE.FunctionTree> functionTree;
+  input Option<AvlTreePathFunction.Tree> functionTree;
   input AvlSetInt.Tree inIntegerLst;
   input Boolean isInitial;
   output AvlSetInt.Tree outIntegerLst = inIntegerLst;
@@ -2881,7 +2881,7 @@ protected function adjacencyRowLstLst
   input list<list<BackendDAE.Equation>> inEquation;
   input BackendDAE.Variables inVariables;
   input BackendDAE.IndexType inIndexType;
-  input Option<DAE.FunctionTree> functionTree;
+  input Option<AvlTreePathFunction.Tree> functionTree;
   input AvlSetInt.Tree inIntegerLst;
   input Boolean isInitial;
   output AvlSetInt.Tree outIntegerLst = inIntegerLst;
@@ -2902,7 +2902,7 @@ protected function adjacencyRowWhen
   input BackendDAE.WhenEquation inEquation;
   input BackendDAE.Variables inVariables;
   input BackendDAE.IndexType inIndexType;
-  input Option<DAE.FunctionTree> functionTree;
+  input Option<AvlTreePathFunction.Tree> functionTree;
   input AvlSetInt.Tree inRow;
   input Boolean isInitial;
   output AvlSetInt.Tree outRow;
@@ -2935,7 +2935,7 @@ protected function adjacencyRowWhenOps
   input list<BackendDAE.WhenOperator>  inWhenOps;
   input BackendDAE.Variables inVariables;
   input BackendDAE.IndexType inIndexType;
-  input Option<DAE.FunctionTree> functionTree;
+  input Option<AvlTreePathFunction.Tree> functionTree;
   input AvlSetInt.Tree inRow;
   input Boolean isInitial;
   output AvlSetInt.Tree outRow;
@@ -2991,7 +2991,7 @@ protected function adjacencyRowAlgorithm
   input DAE.Exp exp;
   input output AvlSetInt.Tree row;
   input BackendDAE.Variables inVariables;
-  input Option<DAE.FunctionTree> functionTree;
+  input Option<AvlTreePathFunction.Tree> functionTree;
   input BackendDAE.IndexType inIndexType;
   input Boolean isInitial;
 algorithm
@@ -3047,7 +3047,7 @@ public function adjacencyRowExp "author: PA
   input DAE.Exp inExp;
   input BackendDAE.Variables inVariables;
   input AvlSetInt.Tree inIntegerLst;
-  input Option<DAE.FunctionTree> functionTree;
+  input Option<AvlTreePathFunction.Tree> functionTree;
   input BackendDAE.IndexType inIndexType;
   input Boolean isInitial;
   output AvlSetInt.Tree outIntegerLst;
@@ -3082,10 +3082,10 @@ end adjacencyRowExp;
 
 public function traversingadjacencyRowExpSolvableFinder "Helper for statesAndVarsExp"
   input DAE.Exp inExp;
-  input tuple<BackendDAE.Variables, AvlSetInt.Tree, AvlSetPath.Tree, Boolean, Option<DAE.FunctionTree>> inTpl;
+  input tuple<BackendDAE.Variables, AvlSetInt.Tree, AvlSetPath.Tree, Boolean, Option<AvlTreePathFunction.Tree>> inTpl;
   output DAE.Exp outExp;
   output Boolean cont;
-  output tuple<BackendDAE.Variables, AvlSetInt.Tree, AvlSetPath.Tree, Boolean, Option<DAE.FunctionTree>> outTpl;
+  output tuple<BackendDAE.Variables, AvlSetInt.Tree, AvlSetPath.Tree, Boolean, Option<AvlTreePathFunction.Tree>> outTpl;
 algorithm
   (outExp, cont, outTpl) := matchcontinue (inExp, inTpl)
     local
@@ -3100,9 +3100,9 @@ algorithm
       Option<DAE.Exp> stepvalueopt;
       Integer i;
       list<DAE.ComponentRef> crlst;
-      Option<DAE.FunctionTree> ofunctionTree;
-      DAE.FunctionTree functionTree;
-      tuple<BackendDAE.Variables, AvlSetInt.Tree, AvlSetPath.Tree, Boolean, Option<DAE.FunctionTree>> tpl;
+      Option<AvlTreePathFunction.Tree> ofunctionTree;
+      AvlTreePathFunction.Tree functionTree;
+      tuple<BackendDAE.Variables, AvlSetInt.Tree, AvlSetPath.Tree, Boolean, Option<AvlTreePathFunction.Tree>> tpl;
       Integer diffindx;
       list<DAE.Subscript> subs;
       AvlSetPath.Tree visitedPaths;
@@ -3217,7 +3217,7 @@ protected function traversingadjacencyRowIfExpSolvableFinder
       ToDo: inside more complex expression? IF_EQUATION?"
   input output DAE.Exp e;
   output Boolean cont = false; // always false, just for convenience
-  input output tuple<BackendDAE.Variables, AvlSetInt.Tree, AvlSetPath.Tree, Boolean, Option<DAE.FunctionTree>> tpl;
+  input output tuple<BackendDAE.Variables, AvlSetInt.Tree, AvlSetPath.Tree, Boolean, Option<AvlTreePathFunction.Tree>> tpl;
 algorithm
   tpl := matchcontinue e
     local
@@ -3841,7 +3841,7 @@ public function updateAdjacencyMatrix
   outputs: (AdjacencyMatrix, AdjacencyMatrixT)"
   input BackendDAE.EqSystem syst;
   input BackendDAE.IndexType inIndxType;
-  input Option<DAE.FunctionTree> functionTree;
+  input Option<AvlTreePathFunction.Tree> functionTree;
   input list<Integer> inIntegerLst;
   input Boolean isInitial;
   output BackendDAE.EqSystem osyst;
@@ -3873,7 +3873,7 @@ protected function updateAdjacencyMatrix1
   input BackendDAE.Variables vars;
   input BackendDAE.EquationArray daeeqns;
   input BackendDAE.IndexType inIndxType;
-  input Option<DAE.FunctionTree> functionTree;
+  input Option<AvlTreePathFunction.Tree> functionTree;
   input BackendDAE.AdjacencyMatrix m;
   input BackendDAE.AdjacencyMatrixT mt;
   input list<Integer> inIntegerLst;
@@ -3925,7 +3925,7 @@ public function updateAdjacencyMatrixScalar
   outputs: (AdjacencyMatrix, AdjacencyMatrixT)"
   input BackendDAE.EqSystem syst;
   input BackendDAE.IndexType inIndxType;
-  input Option<DAE.FunctionTree> functionTree;
+  input Option<AvlTreePathFunction.Tree> functionTree;
   input list<Integer> inIntegerLst "numbers of equations in BackendDAE.EquationArray";
   input array<list<Integer>> iMapEqnIncRow;
   input array<Integer> iMapIncRowEqn;
@@ -3992,7 +3992,7 @@ protected function updateAdjacencyMatrixScalar1
   input array<list<Integer>> iMapEqnIncRow;
   input array<Integer> iMapIncRowEqn;
   input BackendDAE.IndexType inIndxType;
-  input Option<DAE.FunctionTree> functionTree;
+  input Option<AvlTreePathFunction.Tree> functionTree;
   input Boolean isInitial;
   output BackendDAE.AdjacencyMatrix outAdjacencyMatrix;
   output BackendDAE.AdjacencyMatrixT outAdjacencyMatrixT;
@@ -4061,7 +4061,7 @@ protected function updateAdjacencyMatrixScalar2
   input array<list<Integer>> iMapEqnIncRow;
   input array<Integer> iMapIncRowEqn;
   input BackendDAE.IndexType inIndxType;
-  input Option<DAE.FunctionTree> functionTree;
+  input Option<AvlTreePathFunction.Tree> functionTree;
   input Boolean isInitial;
   output BackendDAE.AdjacencyMatrix outAdjacencyMatrix;
   output BackendDAE.AdjacencyMatrixT outAdjacencyMatrixT;
@@ -4212,7 +4212,7 @@ public function getAdjacencyMatrixfromOptionForMapEqSystem "function getAdjacenc
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
 protected
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
 algorithm
   funcs := getFunctions(shared);
   (osyst,_,_) := getAdjacencyMatrixfromOption(syst, inIndxType,SOME(funcs), BackendDAEUtil.isInitializationDAE(shared));
@@ -4222,7 +4222,7 @@ end getAdjacencyMatrixfromOptionForMapEqSystem;
 public function getAdjacencyMatrixfromOption
   input BackendDAE.EqSystem inSyst;
   input BackendDAE.IndexType inIndxType;
-  input Option<DAE.FunctionTree> inFunctionTree;
+  input Option<AvlTreePathFunction.Tree> inFunctionTree;
   input Boolean isInitial;
   output BackendDAE.EqSystem outSyst;
   output BackendDAE.AdjacencyMatrix outM;
@@ -4279,7 +4279,7 @@ public function getAdjacencyMatrix "this function returns the adjacency matrix,
   if the system contains multidimensional equations and the scalar one is needed use getAdjacencyMatrixScalar"
   input BackendDAE.EqSystem inEqSystem;
   input BackendDAE.IndexType inIndxType;
-  input Option<DAE.FunctionTree> functionTree;
+  input Option<AvlTreePathFunction.Tree> functionTree;
   input Boolean isInitial;
   output BackendDAE.EqSystem outEqSystem;
   output BackendDAE.AdjacencyMatrix outM;
@@ -4295,7 +4295,7 @@ end getAdjacencyMatrix;
 public function getAdjacencyMatrixScalar "function getAdjacencyMatrixScalar"
   input BackendDAE.EqSystem syst;
   input BackendDAE.IndexType inIndxType;
-  input Option<DAE.FunctionTree> functionTree;
+  input Option<AvlTreePathFunction.Tree> functionTree;
   input Boolean isInitial;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.AdjacencyMatrix outM;
@@ -4310,7 +4310,7 @@ end getAdjacencyMatrixScalar;
 public function removedAdjacencyMatrix
   input BackendDAE.EqSystem inSyst;
   input BackendDAE.IndexType inIndxType;
-  input Option<DAE.FunctionTree> inFunctionTree;
+  input Option<AvlTreePathFunction.Tree> inFunctionTree;
   input Boolean isInitial;
   output BackendDAE.AdjacencyMatrix outM;
   output BackendDAE.AdjacencyMatrix outMT;
@@ -4322,7 +4322,7 @@ public function removedAdjacencyMatrixMasked
   input BackendDAE.EqSystem inSyst;
   input BackendDAE.IndexType inIndxType;
   input array<Boolean> inMask;
-  input Option<DAE.FunctionTree> inFunctionTree;
+  input Option<AvlTreePathFunction.Tree> inFunctionTree;
   input Boolean isInitial;
   output BackendDAE.AdjacencyMatrix outM;
   output BackendDAE.AdjacencyMatrix outMT;
@@ -5578,7 +5578,7 @@ protected function tryToSolveOrDerive
   input DAE.Exp e;
   input DAE.ComponentRef cr "x";
   input BackendDAE.Variables vars;
-  input Option<DAE.FunctionTree> functions;
+  input Option<AvlTreePathFunction.Tree> functions;
   input Boolean trytosolve1 "if true, try to solve the expression for the variable, even if flag 'allowImpossibleAssignments' is not set";
   output DAE.Exp f;
   output Boolean solved=false "true if equation is solved for the variable with ExpressionSolve.solve2, false if equation is differentiated";
@@ -6571,7 +6571,7 @@ public function getEqnSysRhs "author: Frenkel TUD 2013-02
 "
   input BackendDAE.EquationArray inEqns;
   input BackendDAE.Variables inVariables;
-  input Option<DAE.FunctionTree> funcs;
+  input Option<AvlTreePathFunction.Tree> funcs;
   output list<DAE.Exp> outRhsExps;
   output list<DAE.ElementSource> outSources;
 protected
@@ -6583,9 +6583,9 @@ end getEqnSysRhs;
 
 protected function equationToExp
   input BackendDAE.Equation inEq;
-  input tuple<BackendDAE.Variables,list<DAE.Exp>,list<DAE.ElementSource>,Option<DAE.FunctionTree>,BackendVarTransform.VariableReplacements> inTpl;
+  input tuple<BackendDAE.Variables,list<DAE.Exp>,list<DAE.ElementSource>,Option<AvlTreePathFunction.Tree>,BackendVarTransform.VariableReplacements> inTpl;
   output BackendDAE.Equation outEq;
-  output tuple<BackendDAE.Variables,list<DAE.Exp>,list<DAE.ElementSource>,Option<DAE.FunctionTree>,BackendVarTransform.VariableReplacements> outTpl;
+  output tuple<BackendDAE.Variables,list<DAE.Exp>,list<DAE.ElementSource>,Option<AvlTreePathFunction.Tree>,BackendVarTransform.VariableReplacements> outTpl;
 algorithm
   (outEq,outTpl) := matchcontinue (inEq,inTpl)
     local
@@ -6600,7 +6600,7 @@ algorithm
       DAE.ElementSource source;
       String str;
       list<list<DAE.Subscript>> subslst;
-      Option<DAE.FunctionTree> funcs;
+      Option<AvlTreePathFunction.Tree> funcs;
       BackendVarTransform.VariableReplacements repl;
       DAE.ComponentRef componentRef;
 
@@ -6668,7 +6668,7 @@ public function getEqnsysRhsExp "author: PA
 "
   input DAE.Exp inExp;
   input BackendDAE.Variables inVariables;
-  input Option<DAE.FunctionTree> funcs;
+  input Option<AvlTreePathFunction.Tree> funcs;
   input Option<BackendVarTransform.VariableReplacements> oRepl;
   output DAE.Exp outExp;
 algorithm
@@ -6693,10 +6693,10 @@ end getEqnsysRhsExp;
 
 protected function getEqnsysRhsExp1
   input DAE.Exp inExp;
-  input tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,Option<DAE.FunctionTree>,Boolean> inTpl;
+  input tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,Option<AvlTreePathFunction.Tree>,Boolean> inTpl;
   output DAE.Exp outExp;
   output Boolean cont;
-  output tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,Option<DAE.FunctionTree>,Boolean> outTpl;
+  output tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,Option<AvlTreePathFunction.Tree>,Boolean> outTpl;
 algorithm
   (outExp,cont,outTpl) := match (inExp,inTpl)
     local
@@ -6707,8 +6707,8 @@ algorithm
       Boolean b,b1;
       Absyn.Path path;
       list<DAE.Exp> expLst;
-      Option<DAE.FunctionTree> funcs;
-      tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,Option<DAE.FunctionTree>,Boolean> tpl;
+      Option<AvlTreePathFunction.Tree> funcs;
+      tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,Option<AvlTreePathFunction.Tree>,Boolean> tpl;
     case (e as DAE.CREF(),(repl,_,_,_))
       algorithm
         (e1,b1) := BackendVarTransform.replaceExp(e, repl, NONE());
@@ -6757,13 +6757,13 @@ end getEqnsysRhsExp1;
 protected function getEqnsysRhsExp3
   input Boolean b;
   input DAE.Exp inExp;
-  input tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,Option<DAE.FunctionTree>,Boolean> iTpl;
+  input tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,Option<AvlTreePathFunction.Tree>,Boolean> iTpl;
   output DAE.Exp oExp;
   output Boolean notfound;
 algorithm
   (oExp,notfound) := matchcontinue(b,inExp,iTpl)
   local
-    Option<DAE.FunctionTree> funcs;
+    Option<AvlTreePathFunction.Tree> funcs;
     DAE.Exp e;
   case (false,_,(_,_,funcs,_))
     algorithm
@@ -7678,7 +7678,7 @@ protected
   BackendDAE.InlineData inlineData;
   BackendDAE.Variables globalKnownVars;
   Integer numCheckpoints, oldSize;
-  DAE.FunctionTree funcTree;
+  AvlTreePathFunction.Tree funcTree;
 algorithm
   numCheckpoints:=ErrorExt.getNumCheckpoints();
   try
@@ -7955,7 +7955,7 @@ algorithm
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAEFunc.matchingAlgorithmFunc matchingAlgorithmfunc;
       BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       Integer nvars,neqns;
       String str,mAmethodstr,str1;
 
@@ -8022,7 +8022,7 @@ protected
   BackendDAE.EqSystem syst;
   array<list<Integer>> mapEqnIncRow;
   array<Integer> mapIncRowEqn;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
 algorithm
   try
     // sorting algorithm
@@ -9337,7 +9337,7 @@ algorithm
                               {},
                               cache,
                               graph,
-                              DAE.AvlTreePathFunction.new(),
+                              AvlTreePathFunction.new(),
                               emptyEventInfo(),
                               {},
                               backendDAEType,
@@ -9440,7 +9440,7 @@ end setDAEGlobalKnownVars;
 
 public function setFunctionTree "author: lochel"
   input BackendDAE.BackendDAE inDAE;
-  input DAE.FunctionTree inFunctionTree;
+  input AvlTreePathFunction.Tree inFunctionTree;
   output BackendDAE.BackendDAE outDAE;
 protected
   BackendDAE.EqSystems systs;
@@ -9599,7 +9599,7 @@ end getSharedSymJacs;
 
 public function setSharedFunctionTree
   input BackendDAE.Shared inShared;
-  input DAE.FunctionTree inFunctionTree;
+  input AvlTreePathFunction.Tree inFunctionTree;
   output BackendDAE.Shared outShared;
 algorithm
   outShared := match inShared
@@ -9949,7 +9949,7 @@ public function isFuncCallWithNoDerAnnotation"checks if the equation is a functi
 Outputs the noDerivative binding crefs as well.
 author: waurich TUD 10-2015"
   input BackendDAE.Equation eq;
-  input DAE.FunctionTree functionTree;
+  input AvlTreePathFunction.Tree functionTree;
   output Boolean isFuncCallWithNoDerAnno;
   output list<DAE.ComponentRef> noDerivativeInputs;
 algorithm
@@ -9961,10 +9961,10 @@ public function isFuncCallWithNoDerAnnotation1 "checks if the exp is a function 
 Collects all crefs which dont need a derivative.
 author: waurich TUD 10-2015"
   input DAE.Exp expIn;
-  input tuple<DAE.FunctionTree, list<DAE.ComponentRef>> tplIn; // <functionTree, foldList to collect noDer-input-vars>
+  input tuple<AvlTreePathFunction.Tree, list<DAE.ComponentRef>> tplIn; // <functionTree, foldList to collect noDer-input-vars>
   output DAE.Exp expOut;
   output Boolean cont;
-  output tuple<DAE.FunctionTree, list<DAE.ComponentRef>> tplOut;
+  output tuple<AvlTreePathFunction.Tree, list<DAE.ComponentRef>> tplOut;
 algorithm
   (expOut, cont, tplOut) := matchcontinue(expIn, tplIn)
     local
@@ -9972,7 +9972,7 @@ algorithm
       Absyn.Path path;
       DAE.derivativeCond cond;
       DAE.FunctionDefinition mapper;
-      DAE.FunctionTree functionTree;
+      AvlTreePathFunction.Tree functionTree;
       list<DAE.ComponentRef> crefsIn, noDerivativeInputs;
       list<DAE.Exp> expLst;
       list<tuple<Integer,DAE.derivativeCond>> conditionRefs;
@@ -9995,7 +9995,7 @@ public function isNotFunctionCall
 "Returns true if the given expression is something different than a function call.
 author: waurich TUD 10-2015"
   input DAE.Exp inExp;
-  input DAE.FunctionTree funcsIn;
+  input AvlTreePathFunction.Tree funcsIn;
   output Boolean outIsNoCall;
 algorithm
   outIsNoCall := matchcontinue(inExp,funcsIn)
@@ -10004,7 +10004,7 @@ algorithm
       DAE.Function func;
     case (DAE.CALL(path=path),_)
       algorithm
-        SOME(func) := DAE.AvlTreePathFunction.get(funcsIn,path);
+        SOME(func) := AvlTreePathFunction.get(funcsIn,path);
          then listEmpty(DAEUtil.getFunctionElements(func));
     else true;
   end matchcontinue;
@@ -10027,7 +10027,7 @@ end getNoDerivativeInputPosition;
 
 public function checkAdjacencyMatrixSolvability "Performs a limited matching algorithm to sometimes figure out which equations are superfluous or which variables are never solved for."
   input BackendDAE.EqSystem syst;
-  input DAE.FunctionTree functionTree;
+  input AvlTreePathFunction.Tree functionTree;
   input Boolean isInitial;
 protected
   Integer varSize, eqnSize, v, eq, count;

@@ -966,7 +966,7 @@ algorithm
       BackendDAE.BackendDAEType btp;
       list<BackendDAE.EqSystem> systs;
       BackendDAE.SymbolicJacobians symjacs;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
 
       list<tuple<list<BackendDAE.Equation>, list<BackendDAE.Var>>> eqnsVarsinOrderLst;
       BackendDAE.EventInfo eventInfo;
@@ -2251,7 +2251,7 @@ protected function dumpAdjacencyMatrixWork
   output Integer outOffset;
 protected
  BackendDAE.AdjacencyMatrix m;
- DAE.FunctionTree funcs;
+ AvlTreePathFunction.Tree funcs;
 algorithm
   funcs := BackendDAEUtil.getFunctions(shared);
   (_,m,_) := BackendDAEUtil.getAdjacencyMatrixfromOption(syst, BackendDAE.NORMAL(), SOME(funcs), BackendDAEUtil.isInitializationDAE(shared));

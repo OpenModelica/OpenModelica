@@ -384,7 +384,7 @@ protected function analyzeConstantJacobian
 protected
   BackendDAE.EquationArray eqns;
   BackendDAE.Variables vars;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   Integer info;
   String infoStr, syst, varnames, varname, rhsStr, jacStr, eqnstr;
   list<DAE.Exp> beqs;

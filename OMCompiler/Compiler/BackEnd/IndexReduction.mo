@@ -602,7 +602,7 @@ protected
   BackendDAE.AdjacencyMatrix m;
   BackendDAE.AdjacencyMatrix mt;
   BackendDAE.Variables v, v1;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   Integer numEqs, numEqs1;
   list<Integer> changedVars, eqnslst, eqnslst1, assEqs;
 algorithm
@@ -976,7 +976,7 @@ algorithm
       array<list<Integer>> mapEqnIncRow;
       list<BackendDAE.Var> varlst;
       BackendDAE.Var var;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
     // 1th try to replace final parameter
     case (_,_,_,_,_,syst as BackendDAE.EQSYSTEM(m=SOME(_), mT=SOME(_)))
       algorithm
@@ -1319,7 +1319,7 @@ protected
   array<list<Integer>> mapEqnIncRow;
   array<Integer> mapIncRowEqn;
   BackendDAE.Variables vars;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   Integer numFreeStates,numNeverStates,numOrgEqs;
 algorithm
   (so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,_) := inArg;
@@ -1747,7 +1747,7 @@ algorithm
       list<BackendDAE.Equation> eqnslst;
       HashTableCrIntToExp.HashTable ht;
       BackendDAE.EqSystem syst;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       BackendDAE.AdjacencyMatrix m;
       array<Integer> ass1,ass2;
       Integer ne,nv,setIndex;
@@ -1844,7 +1844,7 @@ algorithm
       array<Integer> mapIncRowEqn,ass1,ass2;
       Integer nfreeStates,neqns,setIndex,ne,ne1,nv,nv1;
       StateSets stateSets;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       BackendDAE.Variables vars;
       BackendDAE.AdjacencyMatrix m;
       BackendDAE.ConstraintEquations orgEqnsLst;
@@ -2048,7 +2048,7 @@ algorithm
       list<list<Integer>> comps;
       list<BackendDAE.Equation> eqnslst1;
       list<tuple<DAE.ComponentRef, Integer>> states,dstates;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
 
     // number of free states equal to number of differentiated equations -> no state selection necessary, all dummy states
     case _
@@ -2508,7 +2508,7 @@ protected function getAdjacencyMatrixLevelEquations
   input array<list<Integer>> mapEqnIncRow "input/output";
   input array<Integer> mapIncRowEqn "input/output";
   input array<Integer> stateindexs;
-  input DAE.FunctionTree functionTree;
+  input AvlTreePathFunction.Tree functionTree;
   input Boolean isInitial;
 algorithm
   _ := match (iEqns)
@@ -2758,9 +2758,9 @@ end processComps4New;
 
 protected function forceInlinEqn
   input DAE.Exp inExp;
-  input DAE.FunctionTree inFuncs;
+  input AvlTreePathFunction.Tree inFuncs;
   output DAE.Exp e;
-  output DAE.FunctionTree funcs;
+  output AvlTreePathFunction.Tree funcs;
 algorithm
   funcs := inFuncs;
   (e,_,_) := Inline.forceInlineExp(inExp,(SOME(funcs),{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource);

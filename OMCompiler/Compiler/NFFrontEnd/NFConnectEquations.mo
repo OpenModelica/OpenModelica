@@ -709,7 +709,7 @@ algorithm
   if Flags.getConfigBool(Flags.BASE_MODELICA) then
     fn_node := Class.lookupElement("$OMC$PositiveMax",
       InstNode.getClass(InstNode.topScope(ComponentRef.node(flow_name))));
-    fn_node := Function.instFunctionNode(fn_node, NFInstContext.NO_CONTEXT, AbsynUtil.dummyInfo);
+    fn_node := Function.instFunctionNode(fn_node, NFInstContext.NO_CONTEXT, Absyn.dummyInfo);
     {fn} := Function.typeNodeCache(fn_node);
     positiveMaxCall := Expression.CALL(Call.makeTypedCall(fn,
       {flowExp, flow_threshold}, Connector.variability(element), Purity.PURE));

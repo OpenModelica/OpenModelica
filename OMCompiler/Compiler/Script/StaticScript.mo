@@ -68,7 +68,7 @@ protected function calculateSimulationTimes
   input Boolean inImplInst;
   input DAE.Prefix inPrefix;
   input SourceInfo inInfo;
-  input GlobalScript.SimulationOptions inSimOpt;
+  input InteractiveTypes.SimulationOptions inSimOpt;
   output FCore.Cache outCache;
   output DAE.Exp startTime "start time, default 0.0";
   output DAE.Exp stopTime "stop time, default 1.0";
@@ -150,7 +150,7 @@ public function getSimulationArguments
   input DAE.Prefix inPrefix;
   input String callName;
   input SourceInfo inInfo;
-  input Option<GlobalScript.SimulationOptions> defaultOption;
+  input Option<InteractiveTypes.SimulationOptions> defaultOption;
   output FCore.Cache outCache;
   output list<DAE.Exp> outSimulationArguments;
 algorithm
@@ -166,7 +166,7 @@ algorithm
       Absyn.Path className;
       DAE.Exp exp,startTime,stopTime,numberOfIntervals,tolerance,method,cflags,simflags;
       DAE.Exp fileNamePrefix,options,outputFormat,variableFilter;
-      GlobalScript.SimulationOptions defaulSimOpt;
+      InteractiveTypes.SimulationOptions defaulSimOpt;
       FCore.Cache cache;
       FCore.Graph env;
       Values.Value v;

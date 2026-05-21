@@ -402,7 +402,7 @@ public
       case RAW_BINDING() then binding.info;
       case UNTYPED_BINDING() then binding.info;
       case TYPED_BINDING() then binding.info;
-      else AbsynUtil.dummyInfo;
+      else Absyn.dummyInfo;
     end match;
   end getInfo;
 

@@ -225,34 +225,34 @@ algorithm
      String exp; Real weight;
      case({})
      algorithm registerDefineunits2({
-       Absyn.DEFINEUNIT("m",{}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("kg",{}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("s",{}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("A",{}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("k",{}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("mol",{}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("cd",{}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("rad",{Absyn.NAMEDARG("exp",Absyn.STRING("m/m"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("sr",{Absyn.NAMEDARG("exp",Absyn.STRING("m2/m2"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("Hz",{Absyn.NAMEDARG("exp",Absyn.STRING("s-1")),Absyn.NAMEDARG("weight",Absyn.REAL("0.8"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("N",{Absyn.NAMEDARG("exp",Absyn.STRING("m.kg.s-2"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("Pa",{Absyn.NAMEDARG("exp",Absyn.STRING("N/m2"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("W",{Absyn.NAMEDARG("exp",Absyn.STRING("J/s"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("J",{Absyn.NAMEDARG("exp",Absyn.STRING("N.m"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("C",{Absyn.NAMEDARG("exp",Absyn.STRING("s.A"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("V",{Absyn.NAMEDARG("exp",Absyn.STRING("W/A"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("F",{Absyn.NAMEDARG("exp",Absyn.STRING("C/V"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("Ohm",{Absyn.NAMEDARG("exp",Absyn.STRING("V/A"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("S",{Absyn.NAMEDARG("exp",Absyn.STRING("A/V"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("Wb",{Absyn.NAMEDARG("exp",Absyn.STRING("V.s"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("T",{Absyn.NAMEDARG("exp",Absyn.STRING("Wb/m2"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("H",{Absyn.NAMEDARG("exp",Absyn.STRING("Wb/A"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("lm",{Absyn.NAMEDARG("exp",Absyn.STRING("cd.sr"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("lx",{Absyn.NAMEDARG("exp",Absyn.STRING("lm/m2"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("Bq",{Absyn.NAMEDARG("exp",Absyn.STRING("s-1")),Absyn.NAMEDARG("weight",Absyn.REAL("0.8"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("Gy",{Absyn.NAMEDARG("exp",Absyn.STRING("J/kg"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("Sv",{Absyn.NAMEDARG("exp",Absyn.STRING("cd.sr"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("kat",{Absyn.NAMEDARG("exp",Absyn.STRING("s-1.mol"))}, AbsynUtil.dummyInfo)
+       Absyn.DEFINEUNIT("m",{}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("kg",{}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("s",{}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("A",{}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("k",{}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("mol",{}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("cd",{}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("rad",{Absyn.NAMEDARG("exp",Absyn.STRING("m/m"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("sr",{Absyn.NAMEDARG("exp",Absyn.STRING("m2/m2"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("Hz",{Absyn.NAMEDARG("exp",Absyn.STRING("s-1")),Absyn.NAMEDARG("weight",Absyn.REAL("0.8"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("N",{Absyn.NAMEDARG("exp",Absyn.STRING("m.kg.s-2"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("Pa",{Absyn.NAMEDARG("exp",Absyn.STRING("N/m2"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("W",{Absyn.NAMEDARG("exp",Absyn.STRING("J/s"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("J",{Absyn.NAMEDARG("exp",Absyn.STRING("N.m"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("C",{Absyn.NAMEDARG("exp",Absyn.STRING("s.A"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("V",{Absyn.NAMEDARG("exp",Absyn.STRING("W/A"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("F",{Absyn.NAMEDARG("exp",Absyn.STRING("C/V"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("Ohm",{Absyn.NAMEDARG("exp",Absyn.STRING("V/A"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("S",{Absyn.NAMEDARG("exp",Absyn.STRING("A/V"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("Wb",{Absyn.NAMEDARG("exp",Absyn.STRING("V.s"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("T",{Absyn.NAMEDARG("exp",Absyn.STRING("Wb/m2"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("H",{Absyn.NAMEDARG("exp",Absyn.STRING("Wb/A"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("lm",{Absyn.NAMEDARG("exp",Absyn.STRING("cd.sr"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("lx",{Absyn.NAMEDARG("exp",Absyn.STRING("lm/m2"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("Bq",{Absyn.NAMEDARG("exp",Absyn.STRING("s-1")),Absyn.NAMEDARG("weight",Absyn.REAL("0.8"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("Gy",{Absyn.NAMEDARG("exp",Absyn.STRING("J/kg"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("Sv",{Absyn.NAMEDARG("exp",Absyn.STRING("cd.sr"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("kat",{Absyn.NAMEDARG("exp",Absyn.STRING("s-1.mol"))}, Absyn.dummyInfo)
        });
      then ();
 
@@ -1379,7 +1379,6 @@ algorithm
       list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> typeParams;
       UnitAbsyn.Unit unit;
       DAE.Exp e1,e2;
-      DAE.FunctionTree funcs;
       list<DAE.Element> elts;
       UnitAbsyn.Store store;
       HashTable.HashTable ht;
@@ -1421,7 +1420,6 @@ algorithm
     list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> typeParams;
     UnitAbsyn.Unit unit;
     DAE.Exp e1,e2;
-    DAE.FunctionTree funcs;
     list<DAE.Element> elts;
     UnitAbsyn.Store store;
     HashTable.HashTable ht;

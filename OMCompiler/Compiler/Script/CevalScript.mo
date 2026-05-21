@@ -1624,18 +1624,18 @@ algorithm
 end evalCodeTypeName;
 
 protected function getVariableNames
-  input list<GlobalScript.Variable> vars;
+  input list<InteractiveTypes.Variable> vars;
   input list<Values.Value> acc;
   output list<Values.Value> ovars;
 algorithm
   ovars := match (vars,acc)
     local
-      list<GlobalScript.Variable> vs;
+      list<InteractiveTypes.Variable> vs;
       String p;
     case ({},_) then listReverse(acc);
-    case (GlobalScript.IVAR(varIdent = "$echo") :: vs,_)
+    case (InteractiveTypes.IVAR(varIdent = "$echo") :: vs,_)
       then getVariableNames(vs,acc);
-    case (GlobalScript.IVAR(varIdent = p) :: vs,_)
+    case (InteractiveTypes.IVAR(varIdent = p) :: vs,_)
       then getVariableNames(vs,Values.CODE(Absyn.C_VARIABLENAME(Absyn.CREF_IDENT(p,{})))::acc);
   end match;
 end getVariableNames;
@@ -1780,7 +1780,7 @@ public function getFunctionDependencies
   input Absyn.Path functionName;
   output DAE.Function mainFunction "the main function";
   output list<Absyn.Path> dependencies "the dependencies as paths";
-  output DAE.FunctionTree funcs "the function tree";
+  output AvlTreePathFunction.Tree funcs "the function tree";
 algorithm
   funcs := FCore.getFunctionTree(cache);
   // First check if the main function exists... If it does not it might be an interactive function...
@@ -1799,7 +1799,7 @@ public function collectDependencies
   output list<DAE.Type> metarecordTypes;
 protected
   list<Absyn.Path> uniontypePaths,paths;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
 algorithm
   (mainFunction, paths, funcs) := getFunctionDependencies(inCache, functionName);
   // The list of functions is not ordered, so we need to filter out the main function...
@@ -1827,7 +1827,7 @@ algorithm
       DAE.Function mainFunction;
       list<DAE.Function> dependencies;
       list<DAE.Type> metarecordTypes;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
     // template based translation
     case (cache, env, _, path) guard Flags.isSet(Flags.GEN) and (not Flags.isSet(Flags.GENERATE_CODE_CHEAT))
       algorithm
@@ -1933,7 +1933,7 @@ algorithm
       list<String> names,dependencies;
       list<Absyn.Path> paths;
       list<SCode.Element> elementLst;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       list<DAE.Function> d;
       list<tuple<String,list<String>>> acc;
       list<SCode.Element> sp;
@@ -1981,7 +1981,7 @@ algorithm
     local
       list<String> names,dependencies,strs;
       list<Absyn.Path> paths, pathsMetarecord;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       list<DAE.Function> d;
       list<tuple<String,list<String>>> acc;
       String file,nameHeader,str;
@@ -2303,7 +2303,7 @@ algorithm
       String fNew,fOld;
       Real buildTime, edit, build;
       Option<list<SCode.Element>> a;
-      list<GlobalScript.Variable> c;
+      list<InteractiveTypes.Variable> c;
       String funcstr,f,fileName;
       String name;
       Boolean ppref, fpref, epref;
@@ -2420,7 +2420,7 @@ algorithm
     case (_, _, _, Absyn.NO_MSG())
       algorithm
         (funcpath2, Absyn.IDENT("constructor")) := AbsynUtil.splitQualAndIdentPath(funcpath);
-        info := if valueEq(msg, Absyn.NO_MSG()) then NONE() else SOME(AbsynUtil.dummyInfo);
+        info := if valueEq(msg, Absyn.NO_MSG()) then NONE() else SOME(Absyn.dummyInfo);
         (_, tp, _) := Lookup.lookupType(cache, env, funcpath2, info);
         Types.externalObjectConstructorType(tp);
       then

@@ -730,13 +730,13 @@ protected
 algorithm
   if AbsynUtil.pathIsIdent(inComponentName) then
     outSubMod := Absyn.MODIFICATION(false, Absyn.NON_EACH(), inComponentName,
-      SOME(inMod), NONE(), AbsynUtil.dummyInfo);
+      SOME(inMod), NONE(), Absyn.dummyInfo);
   else
     outSubMod := createNestedSubMod(AbsynUtil.pathRest(inComponentName), inMod);
     outSubMod := Absyn.MODIFICATION(false, Absyn.NON_EACH(),
                    AbsynUtil.pathFirstPath(inComponentName),
                    SOME(Absyn.CLASSMOD({outSubMod}, Absyn.NOMOD())), NONE(),
-                   AbsynUtil.dummyInfo);
+                   Absyn.dummyInfo);
   end if;
 end createNestedSubMod;
 
@@ -1755,7 +1755,7 @@ algorithm
             smod := AbsynToSCode.translateMod(SOME(Absyn.CLASSMOD(mod,
               Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), NONE(), info);
             (cache, dmod) := Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, DAE.NOPRE(),
-              smod, false, Mod.COMPONENT(ann_name), AbsynUtil.dummyInfo);
+              smod, false, Mod.COMPONENT(ann_name), Absyn.dummyInfo);
 
             c := SCodeUtil.classSetPartial(c, SCode.NOT_PARTIAL());
             (_, _, _, _, dae) := Inst.instClass(cache, env2, InnerOuter.emptyInstHierarchy,
@@ -1919,7 +1919,7 @@ algorithm
 
     // Class already fully instantiated, return cached data.
     case Interactive.GRAPHIC_ENV_FULL_CACHE()
-      then (inCache.cache, inCache.env, AbsynUtil.dummyProgram, inCache);
+      then (inCache.cache, inCache.env, Absyn.dummyProgram, inCache);
 
     // Partial cache, instantiate class to make full cache if needed.
     case Interactive.GRAPHIC_ENV_PARTIAL_CACHE()
@@ -3429,7 +3429,7 @@ algorithm
         eltarglst := List.map(nargs, namedargToModification);
         emod := recordConstructorToModification(e);
         p := AbsynUtil.crefToPath(cr);
-        res := Absyn.MODIFICATION(false,Absyn.NON_EACH(),p,SOME(Absyn.CLASSMOD((emod :: eltarglst),Absyn.NOMOD())),NONE(),AbsynUtil.dummyInfo);
+        res := Absyn.MODIFICATION(false,Absyn.NON_EACH(),p,SOME(Absyn.CLASSMOD((emod :: eltarglst),Absyn.NOMOD())),NONE(),Absyn.dummyInfo);
       then
         res;
     /* Covers the case annotate=Diagram(x=1,y=2) */
@@ -3437,14 +3437,14 @@ algorithm
       algorithm
         eltarglst := List.map(nargs, namedargToModification);
         p := AbsynUtil.crefToPath(cr);
-        res := Absyn.MODIFICATION(false,Absyn.NON_EACH(),p,SOME(Absyn.CLASSMOD(eltarglst,Absyn.NOMOD())),NONE(),AbsynUtil.dummyInfo);
+        res := Absyn.MODIFICATION(false,Absyn.NON_EACH(),p,SOME(Absyn.CLASSMOD(eltarglst,Absyn.NOMOD())),NONE(),Absyn.dummyInfo);
       then
         res;
     /* Covers the case annotate=Diagram(1) */
     case (Absyn.CALL(function_ = cr,functionArgs = Absyn.FUNCTIONARGS(args = {e}, argNames = {})))
       algorithm
         p := AbsynUtil.crefToPath(cr);
-        res := Absyn.MODIFICATION(false,Absyn.NON_EACH(),p,SOME(Absyn.CLASSMOD({},Absyn.EQMOD(e,AbsynUtil.dummyInfo))),NONE(),AbsynUtil.dummyInfo);
+        res := Absyn.MODIFICATION(false,Absyn.NON_EACH(),p,SOME(Absyn.CLASSMOD({},Absyn.EQMOD(e,Absyn.dummyInfo))),NONE(),Absyn.dummyInfo);
       then
         res;
     else
@@ -3474,12 +3474,12 @@ algorithm
     case (Absyn.NAMEDARG(argName = id,argValue = (c as Absyn.CALL(functionArgs = Absyn.FUNCTIONARGS(args = {})))))
       algorithm
         Absyn.MODIFICATION(modification = SOME(Absyn.CLASSMOD(elts,_)), comment = NONE()) := recordConstructorToModification(c);
-        res := Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT(id),SOME(Absyn.CLASSMOD(elts,Absyn.NOMOD())),NONE(),AbsynUtil.dummyInfo);
+        res := Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT(id),SOME(Absyn.CLASSMOD(elts,Absyn.NOMOD())),NONE(),Absyn.dummyInfo);
       then
         res;
     case (Absyn.NAMEDARG(argName = id,argValue = e))
       algorithm
-        res := Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT(id),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(e,AbsynUtil.dummyInfo /*Bad*/))),NONE(),AbsynUtil.dummyInfo);
+        res := Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT(id),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(e,Absyn.dummyInfo /*Bad*/))),NONE(),Absyn.dummyInfo);
       then
         res;
     else
@@ -6272,7 +6272,7 @@ algorithm
             then
               eq_mod;
 
-          else Absyn.EqMod.EQMOD(makeOrigin(x, y), AbsynUtil.dummyInfo);
+          else Absyn.EqMod.EQMOD(makeOrigin(x, y), Absyn.dummyInfo);
         end match;
 
         arg.modification := SOME(mod);

@@ -251,11 +251,11 @@ end Prefixes;
 
 public constant Prefixes DEFAULT_PROTECTED_PREFIXES = PREFIXES(
   SCode.PROTECTED(), SCode.VAR(), SCode.NOT_FINAL(), Absyn.NOT_INNER_OUTER(),
-  (Absyn.BIDIR(), AbsynUtil.dummyInfo), (SCode.POTENTIAL(), Absyn.dummyInfo), NO_VARARG());
+  (Absyn.BIDIR(), Absyn.dummyInfo), (SCode.POTENTIAL(), Absyn.dummyInfo), NO_VARARG());
 
 public constant Prefixes DEFAULT_INPUT_PREFIXES = PREFIXES(
   SCode.PUBLIC(), SCode.VAR(), SCode.NOT_FINAL(), Absyn.NOT_INNER_OUTER(),
-  (Absyn.INPUT(), AbsynUtil.dummyInfo), (SCode.POTENTIAL(), Absyn.dummyInfo), NO_VARARG());
+  (Absyn.INPUT(), Absyn.dummyInfo), (SCode.POTENTIAL(), Absyn.dummyInfo), NO_VARARG());
 
 public uniontype VarArgs
   record NO_VARARG end NO_VARARG;

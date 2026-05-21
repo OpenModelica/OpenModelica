@@ -2805,7 +2805,7 @@ algorithm
       algorithm
          path := AbsynUtil.stripLast(name);
          ty := DAE.T_METARECORD(name,path,typeVars,index,fields,knownSingleton);
-         env := FGraph.mkComponentNode(env, DAE.TYPES_VAR(id,attr,ty,DAE.UNBOUND(),false,NONE()), SCode.COMPONENT(id,SCode.defaultPrefixes,SCode.defaultVarAttr,Absyn.TPATH(name,NONE()),SCode.NOMOD(),SCode.noComment,NONE(),AbsynUtil.dummyInfo), DAE.NOMOD(), FCore.VAR_DAE(), FGraph.empty());
+         env := FGraph.mkComponentNode(env, DAE.TYPES_VAR(id,attr,ty,DAE.UNBOUND(),false,NONE()), SCode.COMPONENT(id,SCode.defaultPrefixes,SCode.defaultVarAttr,Absyn.TPATH(name,NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo), DAE.NOMOD(), FCore.VAR_DAE(), FGraph.empty());
       then env;
     else env;
   end match;

@@ -107,7 +107,7 @@ protected
   BackendDAE.Equation eqn;
   BackendDAE.Variables knvars;
   DAE.ElementSource source;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
 algorithm
   try
     if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
@@ -141,7 +141,7 @@ public function differentiateExpTime
   output BackendDAE.Shared outShared;
 protected
   DAE.Exp dexp;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   BackendDAE.DifferentiateInputData diffData;
   BackendDAE.Variables knvars;
 algorithm
@@ -177,21 +177,21 @@ public function differentiateExpSolve
   "Differentiates an expression with respect to inCref."
   input DAE.Exp inExp;
   input DAE.ComponentRef inCref;
-  input Option<DAE.FunctionTree> functions;
+  input Option<AvlTreePathFunction.Tree> functions;
   output DAE.Exp outExp;
 protected
   list<DAE.Exp> fac = Expression.factors(inExp);
   DAE.Exp dexp;
-  DAE.FunctionTree fun;
+  AvlTreePathFunction.Tree fun;
 algorithm
   ({}, _) := List.split1OnTrue(fac, Expression.expHasCrefInIf, inCref); // check if differentiateExpSolve is allowed
 
   try
     fun := match(functions)
       local
-        DAE.FunctionTree fun_;
+        AvlTreePathFunction.Tree fun_;
       case SOME(fun_) then fun_;
-      else DAE.AvlTreePathFunction.Tree.EMPTY();
+      else AvlTreePathFunction.Tree.EMPTY();
     end match;
 
     if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
@@ -221,7 +221,7 @@ public function differentiateExpCrefFullJacobian
   output BackendDAE.Shared outShared;
 protected
   DAE.Exp dexp;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   BackendDAE.DifferentiateInputData diffData;
   BackendDAE.Variables knvars;
 algorithm
@@ -262,9 +262,9 @@ public function differentiateEquation
   input DAE.ComponentRef inDiffwrtCref;
   input BackendDAE.DifferentiateInputData inInputData;
   input BackendDAE.DifferentiationType inDiffType;
-  input DAE.FunctionTree inFunctionTree;
+  input AvlTreePathFunction.Tree inFunctionTree;
   output BackendDAE.Equation outEquation;
-  output DAE.FunctionTree outFunctionTree;
+  output AvlTreePathFunction.Tree outFunctionTree;
 algorithm
   try
     (outEquation, outFunctionTree) := differentiateEquationFragile(inEquation, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
@@ -281,9 +281,9 @@ public function differentiateEquationFragile
   input DAE.ComponentRef inDiffwrtCref;
   input BackendDAE.DifferentiateInputData inInputData;
   input BackendDAE.DifferentiationType inDiffType;
-  input DAE.FunctionTree inFunctionTree;
+  input AvlTreePathFunction.Tree inFunctionTree;
   output BackendDAE.Equation outEquation;
-  output DAE.FunctionTree outFunctionTree;
+  output AvlTreePathFunction.Tree outFunctionTree;
 algorithm
   // Debug dump
   if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
@@ -301,7 +301,7 @@ algorithm
       list<Integer> dimSize;
       String se1, dse1, se2, dse2;
       DAE.SymbolicOperation op1, op2;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       DAE.Algorithm alg;
       list<BackendDAE.Equation> eqns;
       list<list<BackendDAE.Equation>> eqnslst;
@@ -436,13 +436,13 @@ protected function differentiateEquations
   input BackendDAE.DifferentiateInputData inInputData;
   input BackendDAE.DifferentiationType inDiffType;
   input list<BackendDAE.Equation> inEquationsAccum;
-  input DAE.FunctionTree inFunctionTree;
+  input AvlTreePathFunction.Tree inFunctionTree;
   output list<BackendDAE.Equation> outEquations;
-  output DAE.FunctionTree outFunctionTree;
+  output AvlTreePathFunction.Tree outFunctionTree;
 algorithm
   (outEquations,outFunctionTree) := matchcontinue (inEquations)
     local
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       list<BackendDAE.Equation> rest, eqns;
       BackendDAE.Equation eqn;
 
@@ -472,13 +472,13 @@ protected function differentiateEquationsLst
   input BackendDAE.DifferentiateInputData inInputData;
   input BackendDAE.DifferentiationType inDiffType;
   input list<list<BackendDAE.Equation>> inEquationsLstAccum;
-  input DAE.FunctionTree inFunctionTree;
+  input AvlTreePathFunction.Tree inFunctionTree;
   output list<list<BackendDAE.Equation>> outEquationsLst;
-  output DAE.FunctionTree outFunctionTree;
+  output AvlTreePathFunction.Tree outFunctionTree;
 algorithm
   (outEquationsLst, outFunctionTree) := matchcontinue inEquationsLst
     local
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       list<list<BackendDAE.Equation>> rest, eqnsLst;
       list<BackendDAE.Equation> eqns;
       String msg;
@@ -508,14 +508,14 @@ protected function differentiateWhenEquations
   input DAE.ComponentRef inDiffwrtCref;
   input BackendDAE.DifferentiateInputData inInputData;
   input BackendDAE.DifferentiationType inDiffType;
-  input DAE.FunctionTree inFunctionTree;
+  input AvlTreePathFunction.Tree inFunctionTree;
   output BackendDAE.WhenEquation outWhenEquations;
-  output DAE.FunctionTree outFunctionTree;
+  output AvlTreePathFunction.Tree outFunctionTree;
 protected
   BackendDAE.WhenEquation elsewhenPart, delsewhenPart;
   Option<BackendDAE.WhenEquation> oelsepart;
   list<BackendDAE.WhenOperator> whenStmtLst, stmtLst;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   DAE.Exp condition;
 algorithm
   BackendDAE.WHEN_STMTS(condition = condition, whenStmtLst = whenStmtLst, elsewhenPart = oelsepart) := inWhenEquations;
@@ -561,10 +561,10 @@ protected function differentiateExp
   input DAE.ComponentRef inDiffwrtCref;
   input BackendDAE.DifferentiateInputData inInputData;
   input BackendDAE.DifferentiationType inDiffType;
-  input DAE.FunctionTree inFunctionTree;
+  input AvlTreePathFunction.Tree inFunctionTree;
   input Integer maxIter;
   output DAE.Exp outDiffedExp;
-  output DAE.FunctionTree outFunctionTree;
+  output AvlTreePathFunction.Tree outFunctionTree;
 protected
   constant Boolean debug = false;
 algorithm
@@ -585,7 +585,7 @@ algorithm
       DAE.CallAttributes attr;
       DAE.Exp e1, e2, e3, actual, simplified, lambda;
       DAE.Exp res, res1, res2;
-      DAE.FunctionTree functionTree;
+      AvlTreePathFunction.Tree functionTree;
       DAE.Operator op;
       DAE.Type tp;
       Integer i;
@@ -778,17 +778,17 @@ protected function differentiateStatements
   input BackendDAE.DifferentiateInputData inInputData;
   input BackendDAE.DifferentiationType inDiffType;
   input list<DAE.Statement> inStmtsAccum;
-  input DAE.FunctionTree inFunctionTree;
+  input AvlTreePathFunction.Tree inFunctionTree;
   input Integer maxIter;
   output list<DAE.Statement> outDiffedStmts;
-  output DAE.FunctionTree outFunctionTree;
+  output AvlTreePathFunction.Tree outFunctionTree;
 algorithm
   (outDiffedStmts, outFunctionTree) := matchcontinue inStmts
     local
       DAE.ComponentRef cref;
       DAE.ElementSource source;
       DAE.Exp lhs, rhs, derivedLHS, derivedRHS;
-      DAE.FunctionTree functions;
+      AvlTreePathFunction.Tree functions;
       DAE.Statement currStatement, stmt, dstmt;
       DAE.Type type_;
       BackendDAE.DifferentiateInputData inputData;
@@ -988,7 +988,7 @@ protected function makeAssignmentfromTuple
 "Help function for differentiateStatements"
   input tuple<DAE.Exp, DAE.Exp> inTpl;
   input DAE.ElementSource source;
-  input DAE.FunctionTree inFunctionTree;
+  input AvlTreePathFunction.Tree inFunctionTree;
   output Option<DAE.Statement> outStmt;
 algorithm
   outStmt := match(inTpl)
@@ -1025,10 +1025,10 @@ protected function differentiateCrefs
   input DAE.ComponentRef inDiffwrtCref;
   input BackendDAE.DifferentiateInputData inInputData;
   input BackendDAE.DifferentiationType inDiffType;
-  input DAE.FunctionTree inFunctionTree;
+  input AvlTreePathFunction.Tree inFunctionTree;
   input Integer maxIter;
   output DAE.Exp outDiffedExp;
-  output DAE.FunctionTree outFunctionTree;
+  output AvlTreePathFunction.Tree outFunctionTree;
 protected
   constant Boolean debug = false;
 algorithm
@@ -1349,10 +1349,10 @@ function: differentiateCalls
   input DAE.ComponentRef inDiffwrtCref;
   input BackendDAE.DifferentiateInputData inInputData;
   input BackendDAE.DifferentiationType inDiffType;
-  input DAE.FunctionTree inFunctionTree;
+  input AvlTreePathFunction.Tree inFunctionTree;
   input Integer maxIter;
   output DAE.Exp outDiffedExp;
-  output DAE.FunctionTree outFunctionTree;
+  output AvlTreePathFunction.Tree outFunctionTree;
 protected
   constant Boolean debug = false;
 algorithm
@@ -1374,7 +1374,7 @@ algorithm
       DAE.Exp e, e1, e2, zero;
       DAE.Exp res, res1, actual, simplified;
       DAE.Type tp;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
 
       Integer i;
 
@@ -1512,15 +1512,15 @@ protected function differentiateCallExp1Arg
   input DAE.ComponentRef inDiffwrtCref;
   input BackendDAE.DifferentiateInputData inInputData;
   input BackendDAE.DifferentiationType inDiffType;
-  input DAE.FunctionTree inFuncs;
+  input AvlTreePathFunction.Tree inFuncs;
   input Integer maxIter;
   output DAE.Exp outDiffedExp;
-  output DAE.FunctionTree outFunctionTree;
+  output AvlTreePathFunction.Tree outFunctionTree;
 algorithm
   (outDiffedExp,outFunctionTree) := match (name, exp)
     local
       DAE.Exp exp_1,exp_2;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       DAE.Type tp;
       list<DAE.Exp> expl;
 
@@ -1747,10 +1747,10 @@ protected function differentiateCallExpNArg "
   input DAE.ComponentRef inDiffwrtCref;
   input BackendDAE.DifferentiateInputData inInputData;
   input BackendDAE.DifferentiationType inDiffType;
-  input DAE.FunctionTree inFunctionTree;
+  input AvlTreePathFunction.Tree inFunctionTree;
   input Integer maxIter;
   output DAE.Exp outDiffedExp;
-  output DAE.FunctionTree outFunctionTree;
+  output AvlTreePathFunction.Tree outFunctionTree;
 algorithm
   (outDiffedExp,outFunctionTree) := match(name,inExpl,inAttr)
     local
@@ -1758,7 +1758,7 @@ algorithm
       DAE.Exp res, res1, res2;
       list<DAE.Exp> expl, dexpl;
       DAE.Type tp;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       String e_str;
       Integer i;
       list<DAE.ComponentRef> seeds;
@@ -1906,10 +1906,10 @@ protected function differentiateBinary
   input DAE.ComponentRef inDiffwrtCref;
   input BackendDAE.DifferentiateInputData inInputData;
   input BackendDAE.DifferentiationType inDiffType;
-  input DAE.FunctionTree inFunctionTree;
+  input AvlTreePathFunction.Tree inFunctionTree;
   input Integer maxIter;
   output DAE.Exp outDiffedExp;
-  output DAE.FunctionTree outFunctionTree;
+  output AvlTreePathFunction.Tree outFunctionTree;
 algorithm
   (outDiffedExp, outFunctionTree) := match inExp
     local
@@ -1924,7 +1924,7 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Exp e, e0, e1, e2, zero, etmp;
       DAE.Exp de1, de2;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       DAE.Operator op;
       DAE.Type tp, tp1;
 
@@ -2180,10 +2180,10 @@ Author: Frenkel TUD, wbraun
   input DAE.ComponentRef inDiffwrtCref;
   input BackendDAE.DifferentiateInputData inInputData;
   input BackendDAE.DifferentiationType inDiffType;
-  input DAE.FunctionTree inFunctionTree;
+  input AvlTreePathFunction.Tree inFunctionTree;
   input Integer maxIter;
   output DAE.Exp outDiffedExp;
-  output DAE.FunctionTree outFunctionTree;
+  output AvlTreePathFunction.Tree outFunctionTree;
 algorithm
   (outDiffedExp, outFunctionTree) :=
     matchcontinue(inExp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree)
@@ -2198,7 +2198,7 @@ algorithm
       Boolean b,c,isImpure;
       DAE.InlineType dinl;
       DAE.Type ty;
-      DAE.FunctionTree functions;
+      AvlTreePathFunction.Tree functions;
       DAE.FunctionDefinition mapper;
       DAE.Type tp, dtp;
       list<Boolean> blst;
@@ -2233,7 +2233,7 @@ algorithm
         //print("Search for function mapper\n");
         (mapper, tp) := getFunctionMapper(path, inFunctionTree);
         (dpath, blst) := differentiateFunction1(path,mapper, tp, expl, (inDiffwrtCref, inInputData, inDiffType, inFunctionTree));
-        SOME(DAE.FUNCTION(type_=dtp,inlineType=dinl)) := DAE.AvlTreePathFunction.get(inFunctionTree, dpath);
+        SOME(DAE.FUNCTION(type_=dtp,inlineType=dinl)) := AvlTreePathFunction.get(inFunctionTree, dpath);
         // check if derivativ function has all expected inputs
         (true,_) := checkDerivativeFunctionInputs(blst, tp, dtp);
         (expl1,_) := List.splitOnBoolList(expl, blst);
@@ -2248,7 +2248,7 @@ algorithm
         //print("Search for function mapper2\n");
         (mapper, tp) := getFunctionMapper(path, inFunctionTree);
         (dpath, blst) := differentiateFunction1(path, mapper, tp, expl, (inDiffwrtCref, inInputData, inDiffType, inFunctionTree));
-        SOME(DAE.FUNCTION(type_ = dtp)) := DAE.AvlTreePathFunction.get(inFunctionTree, dpath);
+        SOME(DAE.FUNCTION(type_ = dtp)) := AvlTreePathFunction.get(inFunctionTree, dpath);
         // check if derivativ function has all expected inputs
         (false, tlst) := checkDerivativeFunctionInputs(blst, tp, dtp);
         // add Warning
@@ -2327,10 +2327,10 @@ Author: Frenkel TUD, wbraun
   input DAE.ComponentRef inDiffwrtCref;
   input BackendDAE.DifferentiateInputData inInputData;
   input BackendDAE.DifferentiationType inDiffType;
-  input DAE.FunctionTree inFunctionTree;
+  input AvlTreePathFunction.Tree inFunctionTree;
   input Integer maxIter;
   output DAE.Exp outDiffedExp;
-  output DAE.FunctionTree outFunctionTree;
+  output AvlTreePathFunction.Tree outFunctionTree;
 algorithm
   (outDiffedExp, outFunctionTree) :=
     matchcontinue(inExp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree)
@@ -2345,7 +2345,7 @@ algorithm
       Boolean b,c,isImpure;
       DAE.InlineType dinl;
       DAE.Type ty, dtp;
-      DAE.FunctionTree functions;
+      AvlTreePathFunction.Tree functions;
       DAE.FunctionDefinition mapper;
       DAE.Type tp, dtp;
       list<Boolean> blst;
@@ -2375,7 +2375,7 @@ algorithm
         //print("Search for function mapper\n");
         (mapper, tp) := getFunctionMapper(path, inFunctionTree);
         (dpath, blst) := differentiateFunction1(path,mapper, tp, expl, (inDiffwrtCref, inInputData, inDiffType, inFunctionTree));
-        SOME(DAE.FUNCTION(type_=dtp,inlineType=dinl)) := DAE.AvlTreePathFunction.get(inFunctionTree, dpath);
+        SOME(DAE.FUNCTION(type_=dtp,inlineType=dinl)) := AvlTreePathFunction.get(inFunctionTree, dpath);
         // check if derivative function has all expected inputs
         (true,_) := checkDerivativeFunctionInputs(blst, tp, dtp);
         (expl1,_) := List.splitOnBoolList(expl, blst);
@@ -2401,7 +2401,7 @@ algorithm
         //print("Search for function mapper2\n");
         (mapper, tp) := getFunctionMapper(path, inFunctionTree);
         (dpath, blst) := differentiateFunction1(path, mapper, tp, expl, (inDiffwrtCref, inInputData, inDiffType, inFunctionTree));
-        SOME(DAE.FUNCTION(type_=dtp)) := DAE.AvlTreePathFunction.get(inFunctionTree, dpath);
+        SOME(DAE.FUNCTION(type_=dtp)) := AvlTreePathFunction.get(inFunctionTree, dpath);
         // check if derivativ function has all expected inputs
         (false, tlst) := checkDerivativeFunctionInputs(blst, tp, dtp);
         // add Warning
@@ -2422,7 +2422,7 @@ algorithm
         failure(BackendDAE.DIFF_FULL_JACOBIAN() := inDiffType);
 
         // get algorithm of the function
-        SOME(func) := DAE.AvlTreePathFunction.get(inFunctionTree,path);
+        SOME(func) := AvlTreePathFunction.get(inFunctionTree,path);
 
         //catch recursive functions call
         if not AvlSetPath.hasKey(inInputData.diffedFunctions, path) then
@@ -2444,7 +2444,7 @@ algorithm
           functions := DAEUtil.addDaeFunction({dfunc}, functions);
           // add differentiated function as function mapper
           func := DAEUtil.addFunctionDefinition(func, DAE.FUNCTION_DER_MAPPER(path, dpath, 1, {}, NONE(), {}));
-          functions := DAE.AvlTreePathFunction.add(functions, path, SOME(func));
+          functions := AvlTreePathFunction.add(functions, path, SOME(func));
         else
           (functions, inputVarsDer, _, outputVarsDer, _, blst) := getFunctionInOutVars(func, inFunctionTree, inDiffwrtCref, maxIter);
           (dpath, dtp) := getDiffedTypeandName(func, inputVarsDer, outputVarsDer, blst);
@@ -2537,7 +2537,7 @@ end addFunctionConstantsAndParameters;
 
 function tryZeroDiff
   input output list<DAE.Exp> explist;
-  input output DAE.FunctionTree functions;
+  input output AvlTreePathFunction.Tree functions;
   input Integer maxIter;
   output Boolean success;
 algorithm
@@ -2756,10 +2756,10 @@ protected function differentiatePartialFunction "Author: wbraun"
   input DAE.ComponentRef inDiffwrtCref;
   input BackendDAE.DifferentiateInputData inInputData;
   input BackendDAE.DifferentiationType inDiffType;
-  input DAE.FunctionTree inFunctionTree;
+  input AvlTreePathFunction.Tree inFunctionTree;
   input Integer maxIter;
   output DAE.Function outDerFunction;
-  output DAE.FunctionTree outFunctionTree;
+  output AvlTreePathFunction.Tree outFunctionTree;
   output list<Boolean> outBooleanlst;
 algorithm
   (outDerFunction, outFunctionTree, outBooleanlst) := matchcontinue(inFunction, inDiffwrtCref, inInputData, inDiffType, inFunctionTree)
@@ -2770,7 +2770,7 @@ algorithm
       Option<Absyn.Path> dpathOption;
       Boolean isImpure;
       DAE.InlineType dinl;
-      DAE.FunctionTree functions;
+      AvlTreePathFunction.Tree functions;
       DAE.Type dtp, outdtp;
       String  str;
 
@@ -2878,10 +2878,10 @@ end getDiffedTypeandName;
 
 protected function getFunctionInOutVars
   input DAE.Function inFunction;
-  input DAE.FunctionTree inFunctionTree;
+  input AvlTreePathFunction.Tree inFunctionTree;
   input DAE.ComponentRef inDiffwrtCref;
   input Integer maxIter;
-  output DAE.FunctionTree functions = inFunctionTree;
+  output AvlTreePathFunction.Tree functions = inFunctionTree;
   output list<DAE.Element> inputVarsDer;
   output list<DAE.Element> inputVarsNoDer;
   output list<DAE.Element> outputVarsDer;
@@ -2905,14 +2905,14 @@ protected function differentiateElementVars
   input DAE.ComponentRef inDiffwrtCref;
   input BackendDAE.DifferentiateInputData inInputData;
   input BackendDAE.DifferentiationType inDiffType;
-  input DAE.FunctionTree inFunctionTree;
+  input AvlTreePathFunction.Tree inFunctionTree;
   input list<DAE.Element>  inElementsDer;
   input list<DAE.Element>  inElementsNoDer;
   input list<Boolean>  inBooleanLst;
   input Integer maxIter;
   input Boolean elementListInputs; // filter discrete variables out for inputs
   output list<DAE.Element>  outElements;
-  output DAE.FunctionTree outFunctionTree;
+  output AvlTreePathFunction.Tree outFunctionTree;
   output list<DAE.Element>  outElementsNoDer;
   output list<Boolean>  outBooleanLst;
 algorithm
@@ -2924,7 +2924,7 @@ algorithm
     DAE.ComponentRef cref, dcref;
     list<DAE.ComponentRef> crefLst;
     DAE.Exp e;
-    DAE.FunctionTree functions;
+    AvlTreePathFunction.Tree functions;
     DAE.Type tp;
     list<DAE.Type> tpLst;
     DAE.Exp binding, dbinding;
@@ -3017,7 +3017,7 @@ algorithm
   (outFuncName,blst) := matchcontinue (inFuncName,inMapper,inTp,expl,inDiffArgs)
     local
       BackendDAE.Variables timevars;
-      DAE.FunctionTree functions;
+      AvlTreePathFunction.Tree functions;
       Absyn.Path default,fname,da,inDFuncName;
       list<tuple<Integer,DAE.derivativeCond>> cr;
       Integer derivativeOrder;
@@ -3110,7 +3110,7 @@ protected
   DAE.ComponentRef diffwrtCref;
   BackendDAE.DifferentiateInputData inputData;
   BackendDAE.DifferentiationType diffType;
-  DAE.FunctionTree functionTree;
+  AvlTreePathFunction.Tree functionTree;
 algorithm
   (diffwrtCref, inputData, diffType, functionTree) := inDiffArgs;
 
@@ -3157,7 +3157,7 @@ end checkDerFunctionConds;
 
 protected function getlowerOrderDerivative "Author: Frenkel TUD"
   input Absyn.Path fname;
-  input DAE.FunctionTree functions;
+  input AvlTreePathFunction.Tree functions;
   output Absyn.Path outFName;
 algorithm
   outFName := match(fname,functions)
@@ -3167,7 +3167,7 @@ algorithm
       Absyn.Path name;
     case(_,_)
       algorithm
-          SOME(DAE.FUNCTION(functions=flst)) := DAE.AvlTreePathFunction.get(functions,fname);
+          SOME(DAE.FUNCTION(functions=flst)) := AvlTreePathFunction.get(functions,fname);
           DAE.FUNCTION_DER_MAPPER(lowerOrderDerivatives=lowerOrderDerivatives) := getFunctionMapper1(flst);
           name := List.last(lowerOrderDerivatives);
       then name;
@@ -3176,7 +3176,7 @@ end getlowerOrderDerivative;
 
 public function getFunctionMapper "Author: Frenkel TUD"
   input Absyn.Path fname;
-  input DAE.FunctionTree functions;
+  input AvlTreePathFunction.Tree functions;
   output DAE.FunctionDefinition mapper;
   output DAE.Type tp;
 algorithm
@@ -3188,7 +3188,7 @@ algorithm
       String s;
     case(_,_)
       algorithm
-        SOME(DAE.FUNCTION(functions=flst,type_=t)) := DAE.AvlTreePathFunction.get(functions,fname);
+        SOME(DAE.FUNCTION(functions=flst,type_=t)) := AvlTreePathFunction.get(functions,fname);
         m := getFunctionMapper1(flst);
       then (m,t);
     case (_,_)
@@ -3283,7 +3283,7 @@ end addGlobalVars;
 
 protected function lowerVarsElementVars
   input list<DAE.Element> inElementLstVars;
-  input DAE.FunctionTree functions;
+  input AvlTreePathFunction.Tree functions;
   output list< BackendDAE.Var> varsLst;
   output list< BackendDAE.Equation> eqnsLst;
   output list< BackendDAE.Equation> reqnsLst;
@@ -3302,7 +3302,7 @@ end lowerVarsElementVars;
 
 protected function addElementVars2Dep
   input list<DAE.Element> inElementLstVars;
-  input DAE.FunctionTree inFunctions;
+  input AvlTreePathFunction.Tree inFunctions;
   input BackendDAE.DifferentiateInputData inDiffData;
   output BackendDAE.DifferentiateInputData outDiffData;
   output list< BackendDAE.Equation> outEqnsLst;

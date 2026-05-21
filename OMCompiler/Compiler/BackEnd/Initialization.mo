@@ -1305,7 +1305,7 @@ protected function balanceInitialSystem "author: kabdelhak
 protected
   Boolean debug = false;
   list<BackendDAE.Equation> eqn_lst, init_eqns, sim_eqns;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   BackendDAE.AdjacencyMatrix m, mT;
   BackendDAE.AdjacencyMatrixEnhanced me;
   Integer nVars, nEqns;
@@ -1449,7 +1449,7 @@ protected
   BackendDAE.AdjacencyMatrix m "adjacency matrix of modified system";
   BackendDAE.AdjacencyMatrix m_ "adjacency matrix of original system (TODO: fix this one)";
   BackendDAE.EqSystem syst;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   BackendDAE.AdjacencyMatrixEnhanced me;
   array<Integer> mapIncRowEqn;
   Boolean perfectMatching;
@@ -2051,7 +2051,7 @@ algorithm
       list<String> listParameter;
       BackendDAE.AdjacencyMatrix m;
       BackendDAE.EqSystem system;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       list<BackendDAE.Equation> list_inEqns;
       Boolean anyStartValue;
 

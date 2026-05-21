@@ -5,6 +5,7 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AbsynToSCode.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AbsynUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/Algorithm.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AvlTreePathFunction.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/BackendInterface.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/Builtin.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/CevalFunction.mo
@@ -98,6 +99,7 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/GlobalScriptDump.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/GlobalScriptUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/Interactive.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Script/InteractiveTypes.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/StaticScript.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/SymbolTable.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/InteractiveUtil.mo

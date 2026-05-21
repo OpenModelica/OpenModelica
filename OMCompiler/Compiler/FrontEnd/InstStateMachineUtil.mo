@@ -43,6 +43,7 @@ encapsulated package InstStateMachineUtil
 public import DAE;
 
 protected import Absyn;
+protected import AvlTreePathFunction;
 protected import Config;
 protected import Flags;
 protected import List;
@@ -208,7 +209,7 @@ protected
   List<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> innerCrefToOuterOutputCrefs_nonDer = {} "The non-der(..) rest";
   List<DAE.ComponentRef> uniqueHashValues, crefs, derCrefsAcc = {}, outerOutputCrefs;
   HashSet.HashSet derCrefsSet;
-  DAE.FunctionTree emptyTree;
+  AvlTreePathFunction.Tree emptyTree;
   list<DAE.Element> dAElistNew, mergeEqns, mergeEqns_der, aliasEqns_der;
   Integer nOfHits;
   Boolean hasDer;
@@ -234,7 +235,7 @@ algorithm
   // print("InstStateMachineUtil.mergeVariableDefinitions: innerCrefToOuterOutputCrefs:\n"); BaseHashTable.dumpHashTable(innerCrefToOuterOutputCrefs);
 
   // Substitute occurrences of previous(outerCref) by previous(innerCref)
-  emptyTree := DAE.AvlTreePathFunction.Tree.EMPTY();
+  emptyTree := AvlTreePathFunction.Tree.EMPTY();
   (DAE.DAE(dAElist), _, _) := DAEUtil.traverseDAE(DAE.DAE(dAElist), emptyTree, traverserHelperSubsOuterByInnerExp, outerOutputCrefToInnerCref);
 
   if Flags.getConfigBool(Flags.CT_STATE_MACHINES) then

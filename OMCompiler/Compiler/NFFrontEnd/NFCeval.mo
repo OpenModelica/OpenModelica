@@ -101,7 +101,7 @@ uniontype EvalTarget
   end getInfo;
 end EvalTarget;
 
-constant EvalTarget noTarget = EvalTarget.EVAL_TARGET(AbsynUtil.dummyInfo, NFInstContext.NO_CONTEXT, NONE());
+constant EvalTarget noTarget = EvalTarget.EVAL_TARGET(Absyn.dummyInfo, NFInstContext.NO_CONTEXT, NONE());
 
 uniontype EvalTargetData
   record DIMENSION_DATA

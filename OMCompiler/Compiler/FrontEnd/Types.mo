@@ -3223,7 +3223,7 @@ algorithm
   if not isPublicVar(inVar) then
     if isNone(getBindingExpOptional(inVar)) then
       // TYPES_VAR has no info. For now this suffices.
-      Error.addSourceMessage(Error.MISSING_BINDING_PROTECTED_RECORD_VAR, {getVarName(inVar)}, AbsynUtil.dummyInfo);
+      Error.addSourceMessage(Error.MISSING_BINDING_PROTECTED_RECORD_VAR, {getVarName(inVar)}, Absyn.dummyInfo);
     end if;
 
     b := false;
@@ -4653,7 +4653,7 @@ algorithm
         true := Config.acceptMetaModelicaGrammar();
         elist := Patternm.resultExps(cases);
         (elist_1,_) := matchTypeList(elist, actual, expected, printFailtrace);
-        cases:=Patternm.fixCaseReturnTypes2(cases,elist_1,AbsynUtil.dummyInfo);
+        cases:=Patternm.fixCaseReturnTypes2(cases,elist_1,Absyn.dummyInfo);
         et:=simplifyType(expected);
       then
         (DAE.MATCHEXPRESSION(matchTy,inputs,aliases,localDecls,cases,et),expected);

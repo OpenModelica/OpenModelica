@@ -57,7 +57,7 @@ protected
 import Algorithm;
 import BaseHashTable;
 import Ceval;
-import DAE.AvlTreePathFunction;
+import AvlTreePathFunction;
 import ComponentReference;
 import Config;
 import DAE.Connect;
@@ -2853,14 +2853,14 @@ end toModelicaFormExp;
 
 public function getNamedFunction "Return the FUNCTION with the given name. Fails if not found."
   input Absyn.Path path;
-  input DAE.FunctionTree functions;
+  input AvlTreePathFunction.Tree functions;
   output DAE.Function outElement;
 algorithm
   outElement := matchcontinue (path,functions)
     local
       String msg;
 
-    case (_,_) then Util.getOption(DAE.AvlTreePathFunction.get(functions, path));
+    case (_,_) then Util.getOption(AvlTreePathFunction.get(functions, path));
     else
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
@@ -2875,7 +2875,7 @@ end getNamedFunction;
 
 public function getNamedFunctionWithError "Return the FUNCTION with the given name. Fails if not found."
   input Absyn.Path path;
-  input DAE.FunctionTree functions;
+  input AvlTreePathFunction.Tree functions;
   input SourceInfo info;
   output DAE.Function outElement;
 algorithm
@@ -2883,7 +2883,7 @@ algorithm
     local
       String msg;
 
-    case (_,_,_) then Util.getOption(DAE.AvlTreePathFunction.get(functions, path));
+    case (_,_,_) then Util.getOption(AvlTreePathFunction.get(functions, path));
     else
       algorithm
         msg := stringDelimitList(List.mapMap(getFunctionList(functions), functionName, AbsynUtil.pathStringDefault), "\n  ");
@@ -3790,7 +3790,7 @@ public function renameUniqueOuterVars "author: BZ, 2008-12
   input DAE.DAElist dae;
   output DAE.DAElist odae;
 algorithm
-  (odae,_,_) := traverseDAE(dae, DAE.AvlTreePathFunction.Tree.EMPTY(), Expression.traverseSubexpressionsHelper, (removeUniqieIdentifierFromCref, {}));
+  (odae,_,_) := traverseDAE(dae, AvlTreePathFunction.Tree.EMPTY(), Expression.traverseSubexpressionsHelper, (removeUniqieIdentifierFromCref, {}));
 end renameUniqueOuterVars;
 
 protected function removeUniqieIdentifierFromCref "Function for Expression.traverseExpBottomUp, removes the constant 'UNIQUEIO' from any cref it might visit."
@@ -3823,7 +3823,7 @@ public function nameUniqueOuterVars "author: BZ, 2008-12
   input DAE.DAElist dae;
   output DAE.DAElist odae;
 algorithm
-  (odae,_,_) := traverseDAE(dae, DAE.AvlTreePathFunction.Tree.EMPTY(), Expression.traverseSubexpressionsHelper, (addUniqueIdentifierToCref, {}));
+  (odae,_,_) := traverseDAE(dae, AvlTreePathFunction.Tree.EMPTY(), Expression.traverseSubexpressionsHelper, (addUniqueIdentifierToCref, {}));
 end nameUniqueOuterVars;
 
 protected function addUniqueIdentifierToCref "author: BZ, 2008-12
@@ -3947,17 +3947,17 @@ algorithm
 end traverseDAEList;
 
 public function getFunctionList
-  input DAE.FunctionTree ft;
+  input AvlTreePathFunction.Tree ft;
   input Boolean failOnError=false;
   output list<DAE.Function> fns;
 protected
-  list<tuple<DAE.AvlTreePathFunction.Key,DAE.AvlTreePathFunction.Value>> lst, lstInvalid;
+  list<tuple<AvlTreePathFunction.Key,AvlTreePathFunction.Value>> lst, lstInvalid;
   String str;
 algorithm
   try
-    fns := List.map(DAE.AvlTreePathFunction.listValues(ft), Util.getOption);
+    fns := List.map(AvlTreePathFunction.listValues(ft), Util.getOption);
   else
-    lst := DAE.AvlTreePathFunction.toList(ft);
+    lst := AvlTreePathFunction.toList(ft);
     lstInvalid := List.select(lst, isInvalidFunctionEntry);
     str := stringDelimitList(list(AbsynUtil.pathString(p) for p in List.map(lstInvalid, Util.tuple21)), "\n ");
     str := "\n " + str + "\n";
@@ -3970,14 +3970,14 @@ algorithm
 end getFunctionList;
 
 public function getFunctionNames
-  input DAE.FunctionTree ft;
+  input AvlTreePathFunction.Tree ft;
   output list<String> strs;
 algorithm
   strs := List.mapMap(getFunctionList(ft), functionName, AbsynUtil.pathStringDefault);
 end getFunctionNames;
 
 protected function isInvalidFunctionEntry
-  input tuple<DAE.AvlTreePathFunction.Key,DAE.AvlTreePathFunction.Value> tpl;
+  input tuple<AvlTreePathFunction.Key,AvlTreePathFunction.Value> tpl;
   output Boolean b;
 algorithm
   b := match tpl
@@ -3987,7 +3987,7 @@ algorithm
 end isInvalidFunctionEntry;
 
 protected function isValidFunctionEntry
-  input tuple<DAE.AvlTreePathFunction.Key,DAE.AvlTreePathFunction.Value> tpl;
+  input tuple<AvlTreePathFunction.Key,AvlTreePathFunction.Value> tpl;
   output Boolean b;
 algorithm
   b := not isInvalidFunctionEntry(tpl);
@@ -3997,7 +3997,7 @@ public function traverseDAE<ArgT>
   "This function traverses all dae exps.
    NOTE, it also traverses DAE.VAR(componenname) as an expression."
   input output DAE.DAElist dae;
-  input output DAE.FunctionTree functionTree;
+  input output AvlTreePathFunction.Tree functionTree;
   input FuncExpType func;
   input output ArgT arg;
 
@@ -4010,14 +4010,14 @@ protected
 algorithm
   (el, arg) := traverseDAEElementList(dae.elementLst, func, arg);
   dae.elementLst := el;
-  (functionTree, arg) := DAE.AvlTreePathFunction.mapFold(functionTree,
+  (functionTree, arg) := AvlTreePathFunction.mapFold(functionTree,
     function traverseDAEFuncHelper(func = func), arg);
 end traverseDAE;
 
 protected function traverseDAEFuncHelper<ArgT>
   "Helper function to traverseDae. Traverses the functions."
-  input DAE.AvlTreePathFunction.Key key;
-  input output DAE.AvlTreePathFunction.Value value;
+  input AvlTreePathFunction.Key key;
+  input output AvlTreePathFunction.Value value;
   input FuncExpType func;
   input output ArgT arg;
 
@@ -5372,7 +5372,7 @@ algorithm
 
       else
         algorithm
-          Error.addInternalError("DAEUtil.splitElements got unknown element.", AbsynUtil.dummyInfo);
+          Error.addInternalError("DAEUtil.splitElements got unknown element.", Absyn.dummyInfo);
         then
           fail();
     end match;
@@ -5535,7 +5535,7 @@ end getDAEDeclsFromValueblocks;
 //     case _
 //       equation
 //         ht = HashTable.emptyHashTable();
-//         (d,_,ht) = traverseDAE(dae,DAE.AvlTreePathFunction.Tree.EMPTY(),simpleInlineDerEuler,ht);
+//         (d,_,ht) = traverseDAE(dae,AvlTreePathFunction.Tree.EMPTY(),simpleInlineDerEuler,ht);
 //       then d;
 //   end matchcontinue;
 // end transformDerInline;
@@ -5734,10 +5734,10 @@ end collectFunctionRefVarPaths;
 
 public function addDaeFunction "add functions present in the element list to the function tree"
   input list<DAE.Function> functions;
-  input output DAE.FunctionTree functionTree;
+  input output AvlTreePathFunction.Tree functionTree;
 algorithm
   for f in functions loop
-    functionTree := DAE.AvlTreePathFunction.add(functionTree, functionName(f), SOME(f));
+    functionTree := AvlTreePathFunction.add(functionTree, functionName(f), SOME(f));
   end for;
 end addDaeFunction;
 
@@ -5763,14 +5763,14 @@ public function addDaeExtFunction "
   Note: normal functions are skipped.
   See also addDaeFunction"
   input list<DAE.Function> ifuncs;
-  input DAE.FunctionTree itree;
-  output DAE.FunctionTree outTree;
+  input AvlTreePathFunction.Tree itree;
+  output AvlTreePathFunction.Tree outTree;
 algorithm
   outTree := matchcontinue(ifuncs,itree)
     local
       DAE.Function func;
       list<DAE.Function> funcs;
-      DAE.FunctionTree tree;
+      AvlTreePathFunction.Tree tree;
       String msg;
 
     case ({},tree)
@@ -5782,7 +5782,7 @@ algorithm
       algorithm
         true := isExtFunction(func);
         // print("Add ext to cache: " + AbsynUtil.pathString(functionName(func)) + "\n");
-        tree := DAE.AvlTreePathFunction.add(tree,functionName(func),SOME(func));
+        tree := AvlTreePathFunction.add(tree,functionName(func),SOME(func));
       then addDaeExtFunction(funcs,tree);
 
     case (_::funcs,tree) then addDaeExtFunction(funcs,tree);
@@ -5791,16 +5791,16 @@ algorithm
 end addDaeExtFunction;
 
 public function getFunctionsInfo
-  input DAE.FunctionTree ft;
+  input AvlTreePathFunction.Tree ft;
   output list<String> strs;
 algorithm
   strs := match ft
     local
-      list<tuple<DAE.AvlTreePathFunction.Key,DAE.AvlTreePathFunction.Value>> lst;
+      list<tuple<AvlTreePathFunction.Key,AvlTreePathFunction.Value>> lst;
 
     case _
       algorithm
-        lst := DAE.AvlTreePathFunction.toList(ft);
+        lst := AvlTreePathFunction.toList(ft);
         strs := List.map(lst, getInfo);
         strs := List.sort(strs, Util.strcmpBool);
       then
@@ -5810,7 +5810,7 @@ end getFunctionsInfo;
 
 
 public function getInfo
-  input tuple<DAE.AvlTreePathFunction.Key,DAE.AvlTreePathFunction.Value> tpl;
+  input tuple<AvlTreePathFunction.Key,AvlTreePathFunction.Value> tpl;
   output String str;
 algorithm
   str := match tpl
@@ -5830,7 +5830,7 @@ algorithm
 end getInfo;
 
 protected function showCacheFuncs
-  input DAE.FunctionTree tree;
+  input AvlTreePathFunction.Tree tree;
 algorithm
   _ := match(tree)
     local

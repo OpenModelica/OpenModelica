@@ -44,10 +44,6 @@ import System;
 import Util;
 import MetaModelica.Dangerous.listReverseInPlace;
 
-public constant Absyn.ClassDef dummyParts = Absyn.PARTS({},{},{},{},NONE());
-public constant Absyn.Info dummyInfo = SOURCEINFO("",false,0,0,0,0,0.0);
-public constant Absyn.Program dummyProgram = Absyn.PROGRAM({},Absyn.TOP());
-
 public function traverseExp<Arg>
 " Traverses all subexpressions of an Absyn.Exp expression.
   Takes a function and an extra argument passed through the traversal.
@@ -4662,7 +4658,7 @@ algorithm
 
   if not found then
     if insert then
-      arg := Absyn.ElementArg.MODIFICATION(false, Absyn.Each.NON_EACH(), Absyn.IDENT(name), NONE(), NONE(), dummyInfo);
+      arg := Absyn.ElementArg.MODIFICATION(false, Absyn.Each.NON_EACH(), Absyn.IDENT(name), NONE(), NONE(), Absyn.dummyInfo);
       arg := apply_fn(arg, path, fn, insert);
       args := arg :: args;
     else

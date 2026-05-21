@@ -349,7 +349,7 @@ algorithm
       BackendDAE.ExtraInfo einfo;
       Option<BackendDAE.SymbolicJacobian> outJacobian;
       BackendDAE.Jacobian simcodejacobian;
-      DAE.FunctionTree outFunctionTree;
+      AvlTreePathFunction.Tree outFunctionTree;
       BackendDAE.SparsePattern outSparsePattern;
       BackendDAE.SparseColoring outSparseColoring;
       SimCode.JacobianMatrix jacmatrix;

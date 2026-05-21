@@ -121,7 +121,7 @@ protected
   Integer index;
 
   BackendDAE.Shared shared;
-  DAE.FunctionTree functionTree;
+  AvlTreePathFunction.Tree functionTree;
   BackendDAE.EquationArray orderedEqs, orderedEqs_new;
   BackendDAE.Variables orderedVars, globalKnownVars;
   list<BackendDAE.EqSystem> eqSystems = {};
@@ -265,9 +265,9 @@ end VarToGlobalKnownVarHT;
 protected function findCallsInGlobalKnownVars
 "This function traverses the globalKnownVars and looks for function calls. The calls are stored in the HT/expArray"
   input BackendDAE.Var inVar;
-  input tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, DAE.FunctionTree> inTuple;
+  input tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, AvlTreePathFunction.Tree> inTuple;
   output BackendDAE.Var outVar = inVar;
-  output tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, DAE.FunctionTree> outTuple = inTuple;
+  output tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, AvlTreePathFunction.Tree> outTuple = inTuple;
 protected
   DAE.Exp exp;
   BackendDAE.Equation eq;
@@ -707,11 +707,11 @@ end addConstantCseVarsToGlobalKnownVarHT;
 protected function wrapFunctionCalls_analysis
 "First phase of the WFC algorithm: The equation system is traversed and all occuring function calls are stored in the HT and the expandable array."
   input BackendDAE.Equation inEq;
-  input tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, DAE.FunctionTree> inTuple;
+  input tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, AvlTreePathFunction.Tree> inTuple;
   output BackendDAE.Equation outEq = inEq;
-  output tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, DAE.FunctionTree> outTuple;
+  output tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, AvlTreePathFunction.Tree> outTuple;
 protected
-  DAE.FunctionTree functionTree;
+  AvlTreePathFunction.Tree functionTree;
   HashTableExpToIndex.HashTable HT;
   ExpandableArray<CSE_Equation> exarray;
 
@@ -846,9 +846,9 @@ end createCrefForTsub;
 
 protected function wrapFunctionCalls_analysis2
   input DAE.Exp inExp;
-  input tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, DAE.FunctionTree> inTuple;
+  input tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, AvlTreePathFunction.Tree> inTuple;
   output DAE.Exp outExp = inExp;
-  output tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, DAE.FunctionTree> outTuple;
+  output tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, AvlTreePathFunction.Tree> outTuple;
 algorithm
   (_, outTuple) := Expression.traverseExpTopDown(inExp, wrapFunctionCalls_analysis3, inTuple);
 end wrapFunctionCalls_analysis2;
@@ -856,12 +856,12 @@ end wrapFunctionCalls_analysis2;
 
 protected function wrapFunctionCalls_analysis3
   input DAE.Exp inExp;
-  input tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, DAE.FunctionTree> inTuple;
+  input tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, AvlTreePathFunction.Tree> inTuple;
   output DAE.Exp outExp = inExp;
   output Boolean cont;
-  output tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, DAE.FunctionTree> outTuple;
+  output tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, AvlTreePathFunction.Tree> outTuple;
 protected
-  DAE.FunctionTree functionTree;
+  AvlTreePathFunction.Tree functionTree;
   HashTableExpToIndex.HashTable HT;
   ExpandableArray<CSE_Equation> exarray;
   Integer cseIndex, index;
@@ -1297,7 +1297,7 @@ protected function isSkipCase "outline all skip cases
     * MLS 3.3 rev1, section 3.7.3
       Event-Related Operators with Function Syntax"
   input DAE.Exp inCall;
-  input DAE.FunctionTree functionTree;
+  input AvlTreePathFunction.Tree functionTree;
   output Boolean outB;
 algorithm
   outB := match(inCall)
@@ -1382,7 +1382,7 @@ end isSkipCase_advanced;
 protected function isCallRecordConstructor
 //DAEUtil.funcIsRecord(DAEUtil.getNamedFunction(path, functionTree))
   input DAE.Exp inExp;
-  input DAE.FunctionTree funcsIn;
+  input AvlTreePathFunction.Tree funcsIn;
   output Boolean outIsCall;
 algorithm
   outIsCall := matchcontinue(inExp)
@@ -1391,7 +1391,7 @@ algorithm
       DAE.Function func;
 
     case DAE.CALL(path=path) algorithm
-      SOME(func) := DAE.AvlTreePathFunction.get(funcsIn,path);
+      SOME(func) := AvlTreePathFunction.get(funcsIn,path);
       then listEmpty(DAEUtil.getFunctionElements(func));
     else false;
   end matchcontinue;
@@ -1989,7 +1989,7 @@ protected function commonSubExpression
 algorithm
   (sysOut, sharedOut) := matchcontinue(sysIn, sharedIn)
     local
-    DAE.FunctionTree functionTree;
+    AvlTreePathFunction.Tree functionTree;
     BackendDAE.Variables vars;
     BackendDAE.EquationArray eqs;
     BackendDAE.Shared shared;

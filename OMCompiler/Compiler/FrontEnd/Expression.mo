@@ -489,14 +489,14 @@ algorithm
 
     case(DAE.CODE(Absyn.C_VARIABLENAME(cref),_))
       algorithm
-        (_,e_cref) := Static.elabUntypedCref(FCore.emptyCache(),FGraph.empty(),cref,false,DAE.NOPRE(),AbsynUtil.dummyInfo);
+        (_,e_cref) := Static.elabUntypedCref(FCore.emptyCache(),FGraph.empty(),cref,false,DAE.NOPRE(),Absyn.dummyInfo);
         e := crefExp(e_cref);
       then
         e;
 
     case(DAE.CODE(Absyn.C_EXPRESSION(Absyn.CALL(function_ = Absyn.CREF_IDENT("der",{}), functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cref)},{}))),_))
       algorithm
-        (_,e_cref) := Static.elabUntypedCref(FCore.emptyCache(),FGraph.empty(),cref,false,DAE.NOPRE(),AbsynUtil.dummyInfo);
+        (_,e_cref) := Static.elabUntypedCref(FCore.emptyCache(),FGraph.empty(),cref,false,DAE.NOPRE(),Absyn.dummyInfo);
         e := crefExp(e_cref);
       then
         DAE.CALL(Absyn.IDENT("der"),{e},DAE.callAttrBuiltinReal);
@@ -9127,7 +9127,7 @@ public function isRecordCall
   "Returns true if the given expression is a record call,i.e. a function call without elements
    otherwise false."
   input DAE.Exp inExp;
-  input DAE.FunctionTree funcsIn;
+  input AvlTreePathFunction.Tree funcsIn;
   output Boolean outIsCall;
 algorithm
   outIsCall := match(inExp,funcsIn)
@@ -9136,7 +9136,7 @@ algorithm
       DAE.Function func;
     case (DAE.CALL(path=path),_)
       algorithm
-        SOME(func) := DAE.AvlTreePathFunction.get(funcsIn,path);
+        SOME(func) := AvlTreePathFunction.get(funcsIn,path);
          then listEmpty(DAEUtil.getFunctionElements(func));
     else false;
   end match;
@@ -12096,7 +12096,7 @@ public function rangesToSubscripts
   input list<list<DAE.Subscript>> inRangelist;
   output list<list<DAE.Subscript>> outSubslst;
 algorithm
-  outSubslst := List.allCombinations(inRangelist, NONE(), AbsynUtil.dummyInfo);
+  outSubslst := List.allCombinations(inRangelist, NONE(), Absyn.dummyInfo);
 end rangesToSubscripts;
 
 public function expandSubscript

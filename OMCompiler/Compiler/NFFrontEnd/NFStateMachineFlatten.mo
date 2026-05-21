@@ -1840,7 +1840,7 @@ algorithm
       mergeRhs, ty);
   end for;
 
-  src := ElementSource.createElementSource(AbsynUtil.dummyInfo);
+  src := ElementSource.createElementSource(Absyn.dummyInfo);
   accEqs := Equation.EQUALITY(outerVarExp, mergeRhs, ty, InstNode.EMPTY_NODE(), src, ScalarizeMode.NO_PREFERENCE) :: accEqs;
 end generateMergeEquation;
 
@@ -1888,7 +1888,7 @@ algorithm
   attr := NFAttributes.DEFAULT_ATTR;
   attr.variability := var;
   v := Variable.VARIABLE(name, ty, NFBinding.EMPTY_BINDING, Visibility.PUBLIC,
-    attr, {}, {}, SCode.COMMENT(NONE(), NONE()), AbsynUtil.dummyInfo,
+    attr, {}, {}, SCode.COMMENT(NONE(), NONE()), Absyn.dummyInfo,
     NFBackendExtension.DUMMY_BACKEND_INFO);
 end makeVar;
 

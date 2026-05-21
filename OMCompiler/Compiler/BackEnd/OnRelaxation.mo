@@ -129,7 +129,7 @@ algorithm
       list<DAE.Exp> crefexplst;
       array<list<Integer>> vorphansarray1, mapEqnIncRow, ass22, vec1;
       list<BackendDAE.Equation> neweqns;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
 
     case (_, _, {})
       then (isyst, ishared, false);

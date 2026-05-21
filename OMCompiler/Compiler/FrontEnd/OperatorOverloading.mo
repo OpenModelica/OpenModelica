@@ -102,7 +102,7 @@ algorithm
          Absyn.Exp  absexp1, absexp2;
          Boolean lastRound;
          DAE.Dimension n,m1,m2,p;
-         DAE.FunctionTree functionTree;
+         AvlTreePathFunction.Tree functionTree;
          Boolean didInline;
 
      // handle tuple op non_tuple

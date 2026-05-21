@@ -140,7 +140,7 @@ algorithm
     case (e,ExpressionSimplifyTypes.DO_EVAL())
       algorithm
         (eNew,_) := simplify1WithOptions(e,options); // Basic local simplifications
-        Error.assertionOrAddSourceMessage(Expression.isConstValue(eNew), Error.INTERNAL_ERROR, {"eval exp failed"}, AbsynUtil.dummyInfo);
+        Error.assertionOrAddSourceMessage(Expression.isConstValue(eNew), Error.INTERNAL_ERROR, {"eval exp failed"}, Absyn.dummyInfo);
         b := not Expression.expEqual(e,eNew);
       then (eNew,b);
     case (e,_)
@@ -303,7 +303,7 @@ algorithm
         true = Expression.isConst(e);
         false = Expression.isConstValue(e);
         str = ExpressionDump.printExpStr(e);
-        Error.addSourceMessage(Error.SIMPLIFY_CONSTANT_ERROR, {str}, AbsynUtil.dummyInfo);
+        Error.addSourceMessage(Error.SIMPLIFY_CONSTANT_ERROR, {str}, Absyn.dummyInfo);
       then fail(); */
 
     // anything else
@@ -1280,7 +1280,7 @@ algorithm
     case (DAE.CALL(path = Absyn.IDENT("fill"), expLst = e::expl))
       algorithm
         valueLst := List.map(expl, ValuesUtil.expValue);
-        (_,outExp,_) := Static.elabBuiltinFill2(FCore.noCache(), FGraph.empty(), e, Expression.typeof(e), valueLst, DAE.C_CONST(), DAE.NOPRE(), {}, AbsynUtil.dummyInfo);
+        (_,outExp,_) := Static.elabBuiltinFill2(FCore.noCache(), FGraph.empty(), e, Expression.typeof(e), valueLst, DAE.C_CONST(), DAE.NOPRE(), {}, Absyn.dummyInfo);
       then
         outExp;
 

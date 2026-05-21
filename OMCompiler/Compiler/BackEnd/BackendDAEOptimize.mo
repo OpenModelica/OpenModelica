@@ -885,7 +885,7 @@ algorithm
       list<Integer> changed;
       Boolean b, isInitial;
       BackendDAE.EqSystem syst;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
 
     case syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns)
       algorithm
@@ -1320,24 +1320,24 @@ end checkUnusedVariablesExp;
 //
 // =============================================================================
 public function removeUnusedFunctions "author: Frenkel TUD 2012-03
-  This function remove unused functions from DAE.FunctionTree to get speed up
+  This function remove unused functions from AvlTreePathFunction.Tree to get speed up
   for compilation of target code."
   input BackendDAE.EqSystems inEqs;
   input BackendDAE.Shared inShared;
   input list<BackendDAE.Equation> inEquationLst;
-  input DAE.FunctionTree inFunctionTree;
-  input DAE.FunctionTree inusedFunctions;
-  output DAE.FunctionTree outFunctionTree;
+  input AvlTreePathFunction.Tree inFunctionTree;
+  input AvlTreePathFunction.Tree inusedFunctions;
+  output AvlTreePathFunction.Tree outFunctionTree;
 protected
   partial function FuncType
     input DAE.Exp inExp;
-    input DAE.FunctionTree inUnsedFunctions;
+    input AvlTreePathFunction.Tree inUnsedFunctions;
     output DAE.Exp outExp;
-    output DAE.FunctionTree outUsedFunctions;
+    output AvlTreePathFunction.Tree outUsedFunctions;
   end FuncType;
 
   FuncType func;
-  DAE.FunctionTree funcs, usedfuncs;
+  AvlTreePathFunction.Tree funcs, usedfuncs;
 algorithm
   funcs := inFunctionTree;
   usedfuncs := inusedFunctions;
@@ -1362,12 +1362,12 @@ algorithm
 end removeUnusedFunctions;
 
 public function copyRecordConstructorAndExternalObjConstructorDestructor
-  input DAE.FunctionTree inAllFunctionTree;
-  output DAE.FunctionTree outUsedFunctionTree;
+  input AvlTreePathFunction.Tree inAllFunctionTree;
+  output AvlTreePathFunction.Tree outUsedFunctionTree;
 protected
   list<DAE.Function> allfuncs_list;
 algorithm
-  outUsedFunctionTree := DAE.AvlTreePathFunction.Tree.EMPTY();
+  outUsedFunctionTree := AvlTreePathFunction.Tree.EMPTY();
   allfuncs_list := DAEUtil.getFunctionList(inAllFunctionTree);
 
   for func in allfuncs_list loop
@@ -1380,7 +1380,7 @@ algorithm
 
       case (DAE.RECORD_CONSTRUCTOR(path=path)) algorithm
         // Add the constructor function.
-        outUsedFunctionTree := DAE.AvlTreePathFunction.add(outUsedFunctionTree, path, SOME(func));
+        outUsedFunctionTree := AvlTreePathFunction.add(outUsedFunctionTree, path, SOME(func));
 
         // Now we traverse the bindings of the record members and look for function calls.
         try
@@ -1407,7 +1407,7 @@ algorithm
       case DAE.FUNCTION(path = path) algorithm
         if stringEq(AbsynUtil.pathLastIdent(path), "constructor") or
            stringEq(AbsynUtil.pathLastIdent(path), "destructor") then
-          outUsedFunctionTree := DAE.AvlTreePathFunction.add(outUsedFunctionTree, path, SOME(func));
+          outUsedFunctionTree := AvlTreePathFunction.add(outUsedFunctionTree, path, SOME(func));
         end if;
       then
         ();
@@ -1420,12 +1420,12 @@ end copyRecordConstructorAndExternalObjConstructorDestructor;
 
 protected function removeUnusedFunctionsSymJacs
   input BackendDAE.Shared inShared;
-  input DAE.FunctionTree inFunctions;
-  input DAE.FunctionTree inUsedFunctions;
-  output DAE.FunctionTree outUsedFunctions = inUsedFunctions;
+  input AvlTreePathFunction.Tree inFunctions;
+  input AvlTreePathFunction.Tree inUsedFunctions;
+  output AvlTreePathFunction.Tree outUsedFunctions = inUsedFunctions;
 protected
   BackendDAE.BackendDAE bdae;
-  DAE.FunctionTree usedfuncs;
+  AvlTreePathFunction.Tree usedfuncs;
   BackendDAE.Shared shared;
 algorithm
   for sjac in inShared.symjacs loop
@@ -1435,7 +1435,7 @@ algorithm
           bdae := BackendDAEUtil.setFunctionTree(bdae, inFunctions);
           shared := bdae.shared;
           usedfuncs := removeUnusedFunctions(bdae.eqs, shared, {}, shared.functionTree, inUsedFunctions);
-          outUsedFunctions := DAE.AvlTreePathFunction.join(outUsedFunctions, usedfuncs);
+          outUsedFunctions := AvlTreePathFunction.join(outUsedFunctions, usedfuncs);
         then
           ();
 
@@ -1453,7 +1453,7 @@ algorithm
         bdae := BackendDAEUtil.setFunctionTree(bdae, inFunctions);
         shared := bdae.shared;
         usedfuncs := removeUnusedFunctions(bdae.eqs, shared, {}, shared.functionTree, inUsedFunctions);
-        outUsedFunctions := DAE.AvlTreePathFunction.join(outUsedFunctions, usedfuncs);
+        outUsedFunctions := AvlTreePathFunction.join(outUsedFunctions, usedfuncs);
       then ();
 
     // If data isSome and we have non generic jacobian what do we do?
@@ -1466,10 +1466,10 @@ end removeUnusedFunctionsSymJacs;
 
 protected function checkUnusedFunctions
   input DAE.Exp inExp;
-  input DAE.FunctionTree inFunctions;
-  input DAE.FunctionTree inUsedFunctions;
+  input AvlTreePathFunction.Tree inFunctions;
+  input AvlTreePathFunction.Tree inUsedFunctions;
   output DAE.Exp outExp;
-  output DAE.FunctionTree outUsedFunctions;
+  output AvlTreePathFunction.Tree outUsedFunctions;
 algorithm
   (outExp, outUsedFunctions) := Expression.traverseExpBottomUp(inExp,
     function checkUnusedFunctionsExp(inFunctions = inFunctions), inUsedFunctions);
@@ -1477,16 +1477,16 @@ end checkUnusedFunctions;
 
 protected function checkUnusedFunctionsExp
   input DAE.Exp inExp;
-  input DAE.FunctionTree inFunctions;
-  input DAE.FunctionTree inUsedFunctions;
+  input AvlTreePathFunction.Tree inFunctions;
+  input AvlTreePathFunction.Tree inUsedFunctions;
   output DAE.Exp outExp = inExp;
-  output DAE.FunctionTree outUsedFunctions;
+  output AvlTreePathFunction.Tree outUsedFunctions;
 algorithm
   outUsedFunctions := match(inExp)
     local
       Absyn.Path path;
       DAE.ComponentRef cr;
-      DAE.FunctionTree usedfuncs;
+      AvlTreePathFunction.Tree usedfuncs;
 
     // If the expression is some kind of function call, add it to the used functions.
     case DAE.CALL(path = path)
@@ -1514,20 +1514,20 @@ end checkUnusedFunctionsExp;
 
 protected function addUnusedFunction
   input Absyn.Path inPath;
-  input DAE.FunctionTree inFunctions;
-  input DAE.FunctionTree inUsedFunctions;
-  output DAE.FunctionTree outUsedFunctions = inUsedFunctions;
+  input AvlTreePathFunction.Tree inFunctions;
+  input AvlTreePathFunction.Tree inUsedFunctions;
+  output AvlTreePathFunction.Tree outUsedFunctions = inUsedFunctions;
 protected
   Option<DAE.Function> f;
   list<DAE.Element> body;
 algorithm
   try // Check if the function has already been added.
-    _ := DAE.AvlTreePathFunction.get(inUsedFunctions, inPath);
+    _ := AvlTreePathFunction.get(inUsedFunctions, inPath);
   else // Otherwise, try to add it.
     (f, body) := getFunctionAndBody(inPath, inFunctions);
 
     if isSome(f) then
-      outUsedFunctions := DAE.AvlTreePathFunction.add(outUsedFunctions, inPath, f);
+      outUsedFunctions := AvlTreePathFunction.add(outUsedFunctions, inPath, f);
       (_, outUsedFunctions) := DAEUtil.traverseDAEElementList(body,
         function checkUnusedFunctions(inFunctions = inFunctions), outUsedFunctions);
     end if;
@@ -1537,14 +1537,14 @@ end addUnusedFunction;
 protected function getFunctionAndBody
 "returns the body of a function"
   input Absyn.Path inPath;
-  input DAE.FunctionTree fns;
+  input AvlTreePathFunction.Tree fns;
   output Option<DAE.Function> outFn;
   output list<DAE.Element> outFnBody;
 protected
   DAE.Function fn;
 algorithm
   try
-    outFn as SOME(fn) := DAE.AvlTreePathFunction.get(fns, inPath);
+    outFn as SOME(fn) := AvlTreePathFunction.get(fns, inPath);
     outFnBody := DAEUtil.getFunctionElements(fn);
   else
     outFn := NONE();
@@ -1632,7 +1632,7 @@ algorithm
       Integer i;
       BackendDAE.Shared shared;
       BackendDAE.EqSystem syst;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
     case (syst,shared,_,_)
       algorithm
         isInitial := BackendDAEUtil.isInitializationDAE(ishared);
@@ -1659,7 +1659,7 @@ algorithm
       then (systs,shared);
     else
       algorithm
-        Error.assertion(not (numErrorMessages==Error.getNumErrorMessages()),"BackendDAEOptimize.partitionIndependentBlocks failed without good error message",AbsynUtil.dummyInfo);
+        Error.assertion(not (numErrorMessages==Error.getNumErrorMessages()),"BackendDAEOptimize.partitionIndependentBlocks failed without good error message",Absyn.dummyInfo);
       then fail();
   end matchcontinue;
 end partitionIndependentBlocksHelper;
@@ -1770,7 +1770,7 @@ algorithm
       BackendDAE.CompInfo compInfo, allOps, torn,other;
       list<BackendDAE.Equation> eqnlst;
       BackendDAE.Jacobian jac;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       list<BackendDAE.Var> varlst;
       list<DAE.Exp> explst;
       BackendDAE.InnerEquations innerEquations;
@@ -3843,8 +3843,8 @@ protected function traverserexpandDerEquation "
   input Mutable<BackendDAE.Shared> shared;
 protected
    BackendDAE.Equation e, e1;
-   tuple<BackendDAE.Variables, DAE.FunctionTree> ext_arg, ext_art1;
-   DAE.FunctionTree funcs;
+   tuple<BackendDAE.Variables, AvlTreePathFunction.Tree> ext_arg, ext_art1;
+   AvlTreePathFunction.Tree funcs;
    Boolean b;
    list<DAE.SymbolicOperation> ops;
 algorithm
@@ -3862,7 +3862,7 @@ protected
   tuple<BackendDAE.Variables, BackendDAE.Shared, Boolean> ext_arg;
   BackendDAE.Variables vars1, vars2;
   list<DAE.SymbolicOperation> ops;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   Boolean b;
 algorithm
   (vars1, ops) := tpl;
@@ -3890,7 +3890,7 @@ algorithm
       list<BackendDAE.Var> varlst;
       BackendDAE.Var v;
       Boolean b;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       BackendDAE.Shared shared;
     case DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=cr)})})
       algorithm
@@ -4164,7 +4164,7 @@ protected
   BackendDAE.AdjacencyMatrixT mT;
   Integer ne,nv;
   array<Integer> w_vars, w_eqns;
-  DAE.FunctionTree functionTree;
+  AvlTreePathFunction.Tree functionTree;
   list<tuple<Integer,Integer>> tplIndexWeight;
   list<Integer> indexs;
   list<BackendDAE.Var> var_lst;
@@ -4656,7 +4656,7 @@ protected function inlineFunctionInLoopsMain
   output BackendDAE.BackendDAE outDAE;
 protected
   BackendDAE.Shared shared;
-  DAE.FunctionTree functionTree;
+  AvlTreePathFunction.Tree functionTree;
   BackendDAE.EqSystems eqs;
   BackendDAE.EqSystem _syst;
 algorithm
@@ -4672,7 +4672,7 @@ end inlineFunctionInLoopsMain;
 
 protected function inlineFunctionInLoopsWork
   input output BackendDAE.EqSystem syst;
-  input DAE.FunctionTree functionTree;
+  input AvlTreePathFunction.Tree functionTree;
   input output BackendDAE.Shared shared;
 protected
   BackendDAE.Variables vars;
@@ -4752,7 +4752,7 @@ protected
   BackendDAE.StateSets stateSets;
   BackendDAE.StrongComponents comps;
   BackendDAE.Matching matching;
-  DAE.FunctionTree functionTree;
+  AvlTreePathFunction.Tree functionTree;
   Boolean update;
   Integer index = 1, ii;
   BackendDAE.EqSystem nSyst;
@@ -4818,7 +4818,7 @@ TODO: check me!
   input list<Integer> ass2_;
   input Integer nEqns;
   input Integer nVars;
-  input DAE.FunctionTree functionTree;
+  input AvlTreePathFunction.Tree functionTree;
   input list<Integer> compOrders;
   output BackendDAE.EqSystem outSyst = inSyst;
 
@@ -5297,7 +5297,7 @@ protected
   tuple<BackendDAE.Variables, list<BackendDAE.Equation>, BackendDAE.Shared, Boolean, Boolean> ext_arg;
   BackendDAE.Variables vars;
   list<DAE.SymbolicOperation> ops;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   Boolean b, addVars;
   BackendDAE.Shared shared;
   list<BackendDAE.Equation> eqnLst;
@@ -5328,7 +5328,7 @@ algorithm
       list<BackendDAE.Var> varlst;
       BackendDAE.Var v, v1;
       Boolean b, addVar;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       list<BackendDAE.Equation> eqnLst;
       Integer numVars;
       list<DAE.Exp> expLst;
@@ -5779,7 +5779,7 @@ protected
   BackendDAE.Matching matching;
   BackendDAE.Shared shared;
   BackendDAE.Variables vars;
-  DAE.FunctionTree funcTree;
+  AvlTreePathFunction.Tree funcTree;
   list<BackendDAE.Equation> eqLst, eqLstNew;
   list<BackendDAE.Var> varLst, varLstNew, states;
   list<DAE.ComponentRef> crefs;

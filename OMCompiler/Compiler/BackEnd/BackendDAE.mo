@@ -40,6 +40,7 @@ encapsulated package BackendDAE
 "
 import Absyn;
 import AvlSetPath;
+import AvlTreePathFunction;
 import DAE;
 import DoubleEnded;
 import ExpandableArray;
@@ -130,7 +131,7 @@ uniontype Shared "Data shared for all equation-systems"
     list< .DAE.ClassAttributes> classAttrs  "class attributes (Optimica extension)";
     FCore.Cache cache;
     FCore.Graph graph;
-    .DAE.FunctionTree functionTree          "functions for Backend";
+    .AvlTreePathFunction.Tree functionTree          "functions for Backend";
     EventInfo eventInfo                     "eventInfo";
     ExternalObjectClasses extObjClasses     "classes of external objects, contains constructor & destructor";
     BackendDAEType backendDAEType           "indicate for what the BackendDAE is used";
@@ -862,7 +863,7 @@ end DifferentiateInputData;
 public constant DifferentiateInputData emptyInputData = DIFFINPUTDATA(NONE(),NONE(),NONE(),NONE(),{},{},NONE(),AvlSetPath.EMPTY());
 
 public
-type DifferentiateInputArguments = tuple< .DAE.ComponentRef, DifferentiateInputData, DifferentiationType, .DAE.FunctionTree>;
+type DifferentiateInputArguments = tuple< .DAE.ComponentRef, DifferentiateInputData, DifferentiationType, .AvlTreePathFunction.Tree>;
 
 public
 uniontype DifferentiationType "Define the behaviour of differentiation method for (e.g. index reduction, ...)"
