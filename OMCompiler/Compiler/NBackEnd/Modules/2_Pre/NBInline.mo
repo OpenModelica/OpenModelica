@@ -233,6 +233,7 @@ protected
     VariablePointers variables = VarData.getVariables(varData);
     Absyn.Path key;
     Function value;
+    // this map should probably be saved somewhere so its not done again for the initial system
     UnorderedMap<Function, InlineRating> func_map = UnorderedMap.new<InlineRating>(Function.nameHash, Function.nameEqual);
   algorithm
     // collect functions
@@ -245,6 +246,11 @@ protected
         UnorderedMap.add(key, value, replacements);
       end if;
     end for;
+
+    if Flags.isSet(Flags.DUMPBACKENDINLINE_VERBOSE) and List.contains(inline_types, DAE.InlineType.DEFAULT_INLINE(), DAEUtil.inlineTypeEqual) and not init then
+      print(StringUtil.headline_2("Heuristic results for Inline=default functions. Threshold = " + intString(HEURISTIC_THRESHOLD)));
+      print(UnorderedMap.toString(func_map, function Function.signatureString(printTypes = false), InlineRating.toString) + "\n\n");
+    end if;
 
     // apply replacements
     eqData  := Replacements.replaceFunctions(eqData, variables, replacements);
@@ -975,7 +981,7 @@ protected
     end if;
   end checkInline;
 
-  constant Integer HEURISTIC_THRESHOLD = 5;
+  constant Integer HEURISTIC_THRESHOLD = 10;
 
   function defaultHeuristic
     "heuristically determines if a function should be inlined.
@@ -1000,7 +1006,7 @@ protected
       input InlineRating ir;
       output String str;
     algorithm
-      str := "{i: " + Array.toString(ir.input_rating, intString) + " c: " + intString(ir.constant_rating) + "}";
+      str := "{resolved: " + realString(resolve(ir)) + " | input: " + Array.toString(ir.input_rating, intString) + " | constant: " + intString(ir.constant_rating) + "}";
     end toString;
 
     function resolve
@@ -1040,8 +1046,6 @@ protected
       InlineRating tmp;
       UnorderedMap<ComponentRef, InlineRating> local_map = UnorderedMap.new<InlineRating>(ComponentRef.hash, ComponentRef.isEqual);
     algorithm
-      print("rating func: " + Function.signatureString(fn) + "\n");
-
       // add the trivial input mappings as ratings
       for inp in fn.inputs loop
         tmp := InlineRating.INLINE_RATING(arrayCreate(num_inp, 0), 0);
@@ -1052,7 +1056,6 @@ protected
 
       // add the local variable ratings
       for loc in fn.locals loop
-        print("DOING " + InstNode.toString(loc) + "\n");
         irp := Pointer.create(InlineRating.INLINE_RATING(arrayCreate(num_inp, 0), 0));
         lir := match InstNode.getBindingExpOpt(loc)
           local
@@ -1063,20 +1066,16 @@ protected
           else Pointer.access(irp);
         end match;
         UnorderedMap.add(ComponentRef.fromNode(loc, InstNode.getType(loc)), lir, local_map);
-        print("DONE\n");
       end for;
 
       // apply rating mapping to body
       irp := Pointer.create(InlineRating.INLINE_RATING(arrayCreate(num_inp, 0), 0));
+
       Expression.fakeMap(Function.getSingleBodyExp(fn), function rateExpression(func_map = func_map, local_map = local_map, irp = irp));
       ir := Pointer.access(irp);
 
       // also add rating to the map so it will not be rated again
       UnorderedMap.add(fn, ir, func_map);
-
-      print("result: " + realString(resolve(ir)) + " " + toString(ir) + "\n");
-      print("sub_map:\n" + UnorderedMap.toString(local_map, ComponentRef.toString, toString) + "\n");
-      print("func_map:\n" + UnorderedMap.toString(func_map, function Function.signatureString(printTypes = false), toString) + "\n");
     end fromFunction;
 
     function rateExpression
@@ -1092,7 +1091,6 @@ protected
     algorithm
       if Expression.isLiteral(exp) then
         // just count literals as constants
-        print("adding const for exp " + Expression.toString(exp) + "\n");
         Pointer.update(irp, addConst(Pointer.access(irp)));
       else
         lir := match exp
@@ -1103,19 +1101,14 @@ protected
           // no-inline has no bloating (traverse the args so just put NONE())
           // if inlined assumed to not scale as well (traverse the args so just put NONE())
           case Expression.CALL() guard(functionInlineable(Call.typedFunction(exp.call))) algorithm
-            print(Expression.toString(exp) + " considered inlineable\n");
             fn := Call.typedFunction(exp.call);
           then match UnorderedMap.get(fn, func_map)
-            case lir as SOME(_) algorithm
-              print("pre saved\n");
-            then lir;
+            case lir as SOME(_) then lir;
             else algorithm
 
             if DAEUtil.inlineTypeEqual(Function.inlineBuiltin(fn), DAE.InlineType.DEFAULT_INLINE()) then
-              print("is inlined now\n");
               lir := SOME(fromFunction(fn, func_map));
             else
-              print("is not inlined now\n");
               lir := NONE();
             end if;
             then lir;
@@ -1124,8 +1117,7 @@ protected
           // check if the cref has a rating, otherwise count as constant
           case Expression.CREF() then match UnorderedMap.get(ComponentRef.stripSubscriptsAll(exp.cref), local_map)
             case lir as SOME(_) then lir;
-            else algorithm           print("adding const for exp " + Expression.toString(exp) + "\n");
- Pointer.update(irp, addConst(Pointer.access(irp))); then NONE();
+            else algorithm Pointer.update(irp, addConst(Pointer.access(irp))); then NONE();
           end match;
 
           // no relevant case, traverse deeper later
@@ -1134,7 +1126,6 @@ protected
 
         if Util.isSome(lir) then
           // add the found rating to the overall rating
-          print("adding rating " + toString(Util.getOption(lir)) + " for exp " + Expression.toString(exp) + "\n");
           Pointer.update(irp, add(Pointer.access(irp), Util.getOption(lir)));
         else
           // traverse deeper if no rating was found here
