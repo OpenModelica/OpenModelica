@@ -1405,13 +1405,14 @@ protected
   end solveUniqueCreateSubstCall;
 
   function solveUniqueExpressionNoCref
+    "checks if the expression does not contain the cref"
     input Expression exp;
     input ComponentRef cref;
     output Boolean b;
   protected
     Pointer<Boolean> res = Pointer.create(false);
     function solveUniqueExpressionNoCrefTraverse
-      "checks if the expression does not contain the cref"
+      "traversal helper"
       input output Expression exp;
       input ComponentRef cref;
       input Pointer<Boolean> res;
