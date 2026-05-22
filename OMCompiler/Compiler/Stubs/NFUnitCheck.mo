@@ -42,6 +42,7 @@ encapsulated package NFUnitCheck
                authors: Jan Hagemann and Lennart Ochel (FH Bielefeld, Germany)"
 
 import DAE;
+import AvlTreePathFunction;
 
 public function checkUnits
   input DAE.DAElist inDAE;
