@@ -99,6 +99,7 @@ import Global;
 import Graph;
 import HashSetString;
 import Inst;
+import InstHashTable;
 import InstFunction;
 import InteractiveUtil;
 import List;
@@ -2019,6 +2020,10 @@ algorithm
         end for;
 
         cache := instantiateDaeFunctions(cache, env, paths);
+        // The inst cache is normally released by Inst.instantiateClass, but
+        // since findFunctionToCompile might need to call it many times we want
+        // to keep the cache for performance and release it here instead.
+        InstHashTable.release();
         funcs := FCore.getFunctionTree(cache);
         d := List.map2(paths, DAEUtil.getNamedFunctionWithError, funcs, info);
         (_,(_,dependencies)) := DAEUtil.traverseDAEFunctions(d,Expression.traverseSubexpressionsHelper,(matchQualifiedCalls,{}));
@@ -2085,7 +2090,7 @@ algorithm
   if not skip then
   try
     ErrorExt.setCheckpoint("getNonPartialElementsForInstantiatedClass");
-    (, env) := Inst.instantiateClass(FCore.emptyCache(), InnerOuter.emptyInstHierarchy, sp, AbsynUtil.makeNotFullyQualified(p), doSCodeDep=false);
+    (, env) := Inst.instantiateClass(FCore.emptyCache(), InnerOuter.emptyInstHierarchy, sp, AbsynUtil.makeNotFullyQualified(p), doSCodeDep=false, clearCache = false);
     elts := FCore.RefTree.fold(FNode.children(FNode.fromRef(FGraph.lastScopeRef(env))),
       addNonPartialClassRef, {});
     ErrorExt.rollBack("getNonPartialElementsForInstantiatedClass");

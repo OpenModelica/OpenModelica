@@ -175,6 +175,7 @@ protected function instantiateClass_dispatch
   input SCode.Path inPath;
   input Boolean doSCodeDep "Do SCode dependency (if the debug flag is also enabled)";
   input Boolean relaxedFrontEnd=true "Do not check for illegal simulation models, so we allow instantation of packages, etc";
+  input Boolean clearCache = true "Clear the inst cache when done";
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
@@ -220,7 +221,9 @@ algorithm
         //Debug.fcall2(Flags.CHECK_MODEL_BALANCE, checkModelBalancing, SOME(path), dae2);
 
         // let the GC collect these as they are used only by Inst!
-        InstHashTable.release();
+        if clearCache then
+          InstHashTable.release();
+        end if;
       then
         (cache,env,ih,dae2);
 
@@ -290,7 +293,9 @@ algorithm
         //print("\nSetSource+DAE: " + realString(System.getTimerIntervalTime()));
 
         // let the GC collect these as they are used only by Inst!
-        InstHashTable.release();
+        if clearCache then
+          InstHashTable.release();
+        end if;
       then
         (cache, env, ih, dae);
 
@@ -311,6 +316,7 @@ public function instantiateClass
   input SCode.Path inPath;
   input Boolean doSCodeDep=true "Do SCode dependency (if the debug flag is also enabled)";
   input Boolean relaxedFrontEnd=true "Do not check for illegal simulation models, so we allow instantation of packages, etc";
+  input Boolean clearCache=true "Clear the inst cache when done";
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
@@ -334,7 +340,7 @@ algorithm
     // instantiate a class
     case (cache,ih,cdecls as _::_,path)
       algorithm
-        (outCache,outEnv,outIH,outDAElist) := instantiateClass_dispatch(cache,ih,cdecls,path,doSCodeDep,relaxedFrontEnd);
+        (outCache,outEnv,outIH,outDAElist) := instantiateClass_dispatch(cache,ih,cdecls,path,doSCodeDep,relaxedFrontEnd,clearCache);
         outDAElist := UnitCheck.checkUnits(outDAElist,FCore.getFunctionTree(outCache));
       then
         (outCache,outEnv,outIH,outDAElist);
