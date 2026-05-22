@@ -1164,7 +1164,6 @@ public
 
           // try to get a fitting function from derivatives -> if none is found, differentiate
           der_func_opt := Function.getDerivative(func, interface_map);
-
           if Util.isSome(der_func_opt) then
             SOME(der_func) := der_func_opt;
             der_func := addDiffInfo(func, der_func, diffArguments);
@@ -2153,7 +2152,7 @@ public
               derivativeFn          = der_func.node,
               derivedFn             = dummy_func.node,
               order                 = Expression.INTEGER(1),
-              conditions            = {}, // possibly needs updating
+              conditions            = FunctionDerivative.conditionsFromMap(interface_map),
               lowerOrderDerivatives = {}  // possibly needs updating
             );
 
@@ -2198,7 +2197,7 @@ public
           derivativeFn          = der_func.node,
           derivedFn             = func.node,
           order                 = Expression.INTEGER(1),
-          conditions            = {}, // possibly needs updating
+          conditions            = FunctionDerivative.conditionsFromMap(interface_map),
           lowerOrderDerivatives = {}  // possibly needs updating
         );
         func.derivatives := List.appendElt(funcDer, func.derivatives);
