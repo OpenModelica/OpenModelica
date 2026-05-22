@@ -259,19 +259,19 @@ public uniontype SimExtArg
         tmp := tmp + ", outputIndex: " + intString(simExtArg.outputIndex);
         tmp := if simExtArg.isArray then tmp + ", isArray: true" else tmp + ", isArray: false";
         tmp := if simExtArg.hasBinding then tmp + ", hasBinding: true" else tmp + ", hasBinding: false";
-        tmp := tmp + ", type: " + Types.unparseType(simExtArg.type_);
+        tmp := tmp + ", type: " + TypesDump.unparseType(simExtArg.type_);
       then "SIMEXTARG(" + tmp + ")";
 
       case SIMEXTARGEXP() algorithm
         tmp := tmp + "exp: " + ExpressionDump.printExpStr(simExtArg.exp);
-        tmp := tmp + ", type: " + Types.unparseType(simExtArg.type_);
+        tmp := tmp + ", type: " + TypesDump.unparseType(simExtArg.type_);
       then "SIMEXTARGEXP(" + tmp + ")";
 
       case SIMEXTARGSIZE() algorithm
         tmp := tmp + "cref: " + ComponentReference.printComponentRefStr(simExtArg.cref);
         tmp := if simExtArg.isInput then tmp + ", isInput: true" else tmp + ", isInput: false";
         tmp := tmp + ", outputIndex: " + intString(simExtArg.outputIndex);
-        tmp := tmp + ", type: " + Types.unparseType(simExtArg.type_);
+        tmp := tmp + ", type: " + TypesDump.unparseType(simExtArg.type_);
         tmp := tmp + ", exp: " + ExpressionDump.printExpStr(simExtArg.exp);
       then "SIMEXTARGSIZE(" + tmp + ")";
 
@@ -313,7 +313,7 @@ public uniontype Variable
         String tmp = "";
       case VARIABLE() algorithm
         tmp := tmp + "name: " + ComponentReference.printComponentRefStr(variable.name);
-        tmp := tmp + ", type: " + Types.unparseType(variable.ty);
+        tmp := tmp + ", type: " + TypesDump.unparseType(variable.ty);
       then "VARIABLE(" + tmp + ")";
       case FUNCTION_PTR() algorithm
         tmp := tmp + "name: " + variable.name;

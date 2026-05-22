@@ -294,5 +294,379 @@ algorithm
   end match;
 end priorityLBinop;
 
+public function evalCat<Exp>
+  input Integer dim;
+  input list<Exp> exps;
+  input GetArrayContents getArrayContents;
+  input ToString toString;
+  output list<Exp> outExps;
+  output list<Integer> outDims;
+  partial function GetArrayContents
+    input Exp e;
+    output list<Exp> es;
+  end GetArrayContents;
+  partial function MakeArrayFromList
+    input list<Exp> es;
+    output Exp e;
+  end MakeArrayFromList;
+  partial function ToString
+    input Exp e;
+    output String s;
+  end ToString;
+protected
+  list<Exp> arr;
+  list<list<Exp>> arrs={};
+  list<Integer> dims, firstDims={}, lastDims, reverseDims;
+  list<list<Integer>> dimsLst={};
+  Integer j, k, l, thisDim, lastDim;
+  array<Exp> expArr;
+algorithm
+  true := dim >= 1;
+  false := listEmpty(exps);
+  if 1 == dim then
+    outExps := listAppend(getArrayContents(e) for e in listReverse(exps));
+    outDims := {listLength(outExps)};
+    return;
+  end if;
+  for e in listReverse(exps) loop
+    // Here we get a linear representation of all expressions in the array
+    // and the dimensions necessary to build up the array again
+    (arr,dims) := evalCatGetFlatArray(e, dim, getArrayContents=getArrayContents, toString=toString);
+    arrs := arr::arrs;
+    dimsLst := dims::dimsLst;
+  end for;
+  for i in 1:(dim-1) loop
+    j := min(listHead(d) for d in dimsLst);
+
+    if j <> max(listHead(d) for d in dimsLst) then
+      Error.assertion(false, getInstanceName() + ": cat got uneven dimensions for dim=" + String(i) + " " + stringDelimitList(list(toString(e) for e in exps), ", "), sourceInfo());
+    end if;
+
+    firstDims := j :: firstDims;
+    dimsLst := list(listRest(d) for d in dimsLst);
+  end for;
+  reverseDims := firstDims;
+  firstDims := listReverse(firstDims);
+  lastDims := list(listHead(d) for d in dimsLst);
+  lastDim := sum(d for d in lastDims);
+  reverseDims := lastDim::reverseDims;
+  // Fill in the elements of the new array in the new order; this uses
+  // an array structure for random access
+  expArr := Dangerous.arrayCreateNoInit(lastDim*product(d for d in firstDims), listHead(exps));
+  k := 1;
+  for exps in arrs loop
+    thisDim :: lastDims := lastDims;
+    l := 0;
+    for e in exps loop
+      arrayUpdate(expArr, k+mod(l, thisDim)+(lastDim*div(l, thisDim)), e);
+      l := l+1;
+    end for;
+    k := k + thisDim;
+  end for;
+  // Convert the flat array structure to a tree array structure with the
+  // correct dimensions
+  outExps := arrayList(expArr);
+  outDims := listReverse(reverseDims);
+end evalCat;
+
+protected function evalCatGetFlatArray<Exp>
+  input Exp e;
+  input Integer dim;
+  input GetArrayContents getArrayContents;
+  input ToString toString;
+  output list<Exp> outExps={};
+  output list<Integer> outDims={};
+  partial function GetArrayContents
+    input Exp e;
+    output list<Exp> es;
+  end GetArrayContents;
+  partial function ToString
+    input Exp e;
+    output String s;
+  end ToString;
+protected
+  list<Exp> arr;
+  list<Integer> dims;
+  Integer i;
+algorithm
+  if dim == 1 then
+    outExps := getArrayContents(e);
+    outDims := {listLength(outExps)};
+    return;
+  end if;
+  i := 0;
+  for exp in listReverse(getArrayContents(e)) loop
+    (arr, dims) := evalCatGetFlatArray(exp, dim-1, getArrayContents=getArrayContents, toString=toString);
+    if listEmpty(outDims) then
+      outDims := dims;
+    elseif not valueEq(dims, outDims) then
+      Error.assertion(false, getInstanceName() + ": Got unbalanced array from " + toString(e), sourceInfo());
+    end if;
+    outExps := listAppend(arr, outExps);
+    i := i+1;
+  end for;
+  outDims := i :: outDims;
+end evalCatGetFlatArray;
+
+public function expEqual
+  "Returns true if the two expressions are equal, otherwise false."
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
+  output Boolean outEqual;
+algorithm
+  outEqual := 0==compare(inExp1, inExp2);
+end expEqual;
+
+function compare
+  input DAE.Exp inExp1, inExp2;
+  output Integer comp;
+algorithm
+  // Return true if the references are the same.
+  if referenceEq(inExp1, inExp2) then
+    comp := 0;
+    return;
+  end if;
+
+  comp := Util.intCompare(valueConstructor(inExp1), valueConstructor(inExp2));
+  // Return false if the expressions are not of the same type.
+  if comp <> 0 then
+    return;
+  end if;
+
+  // Otherwise, check if the expressions are equal or not.
+  // Since the expressions have already been verified to be of the same type
+  // above we can match on only one of them to allow the pattern matching to
+  // optimize this to jump directly to the correct case.
+  comp := match(inExp1)
+    local
+      Integer i;
+      Real r;
+      String s;
+      Boolean b;
+      Absyn.Path p;
+      DAE.Exp e, e1, e2;
+      Option<DAE.Exp> oe;
+      list<DAE.Exp> expl;
+      list<list<DAE.Exp>> mexpl;
+      DAE.Operator op;
+      DAE.ComponentRef cr;
+      DAE.Type ty;
+      list<DAE.Subscript> subs;
+
+    case DAE.ICONST()
+      algorithm
+        DAE.ICONST(integer = i) := inExp2;
+      then
+        Util.intCompare(inExp1.integer, i);
+
+    case DAE.RCONST()
+      algorithm
+        DAE.RCONST(real = r) := inExp2;
+      then Util.realCompare(inExp1.real, r);
+
+    case DAE.SCONST()
+      algorithm
+        DAE.SCONST(string = s) := inExp2;
+      then stringCompare(inExp1.string, s);
+
+    case DAE.BCONST()
+      algorithm
+        DAE.BCONST(bool = b) := inExp2;
+      then Util.boolCompare(inExp1.bool, b);
+
+    case DAE.ENUM_LITERAL()
+      algorithm
+        DAE.ENUM_LITERAL(name = p) := inExp2;
+      then AbsynUtil.pathCompare(inExp1.name, p);
+
+    case DAE.CREF()
+      algorithm
+        DAE.CREF(componentRef = cr) := inExp2;
+      then ComponentReference.crefCompareGeneric(inExp1.componentRef, cr);
+
+    case DAE.ARRAY()
+      algorithm
+        DAE.ARRAY(ty = ty, array = expl) := inExp2;
+        comp := valueCompare(inExp1.ty, ty);
+      then if 0==comp then compareList(inExp1.array, expl) else comp;
+
+    case DAE.MATRIX()
+      algorithm
+        DAE.MATRIX(ty = ty, matrix = mexpl) := inExp2;
+        comp := valueCompare(inExp1.ty, ty);
+      then if 0==comp then compareListList(inExp1.matrix, mexpl) else comp;
+
+    case DAE.BINARY()
+      algorithm
+        DAE.BINARY(exp1 = e1, operator = op, exp2 = e2) := inExp2;
+        comp := operatorCompare(inExp1.operator, op);
+        comp := if 0==comp then compare(inExp1.exp1, e1) else comp;
+      then if 0==comp then compare(inExp1.exp2, e2) else comp;
+
+    case DAE.LBINARY()
+      algorithm
+        DAE.LBINARY(exp1 = e1, operator = op, exp2 = e2) := inExp2;
+        comp := operatorCompare(inExp1.operator, op);
+        comp := if 0==comp then compare(inExp1.exp1, e1) else comp;
+      then if 0==comp then compare(inExp1.exp2, e2) else comp;
+
+    case DAE.UNARY()
+      algorithm
+        DAE.UNARY(exp = e, operator = op) := inExp2;
+        comp := operatorCompare(inExp1.operator, op);
+      then if 0==comp then compare(inExp1.exp, e) else comp;
+
+    case DAE.LUNARY()
+      algorithm
+        DAE.LUNARY(exp = e, operator = op) := inExp2;
+        comp := operatorCompare(inExp1.operator, op);
+      then if 0==comp then compare(inExp1.exp, e) else comp;
+
+    case DAE.RELATION()
+      algorithm
+        DAE.RELATION(exp1 = e1, operator = op, exp2 = e2) := inExp2;
+        comp := operatorCompare(inExp1.operator, op);
+        comp := if 0==comp then compare(inExp1.exp1, e1) else comp;
+      then if 0==comp then compare(inExp1.exp2, e2) else comp;
+
+    case DAE.IFEXP()
+      algorithm
+        DAE.IFEXP(expCond = e, expThen = e1, expElse = e2) := inExp2;
+        comp := compare(inExp1.expCond, e);
+        comp := if 0==comp then compare(inExp1.expThen, e1) else comp;
+      then if 0==comp then compare(inExp1.expElse, e2) else comp;
+
+    case DAE.CALL()
+      algorithm
+        DAE.CALL(path = p, expLst = expl) := inExp2;
+        comp := AbsynUtil.pathCompare(inExp1.path, p);
+      then if 0==comp then compareList(inExp1.expLst, expl) else comp;
+
+    case DAE.RECORD()
+      algorithm
+        DAE.RECORD(path = p, exps = expl) := inExp2;
+        comp := AbsynUtil.pathCompare(inExp1.path, p);
+      then if 0==comp then compareList(inExp1.exps, expl) else comp;
+
+    case DAE.PARTEVALFUNCTION()
+      algorithm
+        DAE.PARTEVALFUNCTION(path = p, expList = expl) := inExp2;
+        comp := AbsynUtil.pathCompare(inExp1.path, p);
+      then if 0==comp then compareList(inExp1.expList, expl) else comp;
+
+    case DAE.RANGE()
+      algorithm
+        DAE.RANGE(start = e1, step = oe, stop = e2) := inExp2;
+        comp := compare(inExp1.start, e1);
+        comp := if 0==comp then compare(inExp1.stop, e2) else comp;
+      then if 0==comp then compareOpt(inExp1.step, oe) else comp;
+
+    case DAE.TUPLE()
+      algorithm
+        DAE.TUPLE(PR = expl) := inExp2;
+      then compareList(inExp1.PR, expl);
+
+    case DAE.CAST()
+      algorithm
+        DAE.CAST(ty = ty, exp = e) := inExp2;
+        comp := valueCompare(inExp1.ty, ty);
+      then if 0==comp then compare(inExp1.exp, e) else comp;
+
+    case DAE.ASUB()
+      algorithm
+        DAE.ASUB(exp = e, sub = subs) := inExp2;
+        comp := compare(inExp1.exp, e);
+      then if comp==0 then compareSubscriptList(inExp1.sub, subs) else comp;
+
+    case DAE.RSUB()
+      algorithm
+        DAE.RSUB(exp = e, ix=i, fieldName=s, ty=ty) := inExp2;
+        comp := Util.intCompare(inExp1.ix, i);
+        comp := if comp==0 then valueCompare(inExp1.ty, ty) else comp;
+        comp := if comp==0 then stringCompare(inExp1.fieldName, s) else comp;
+      then if comp==0 then compare(inExp1.exp, e) else comp;
+
+    case DAE.TSUB()
+      algorithm
+        DAE.TSUB(exp = e, ix=i, ty = ty) := inExp2;
+        comp := Util.intCompare(inExp1.ix, i);
+        comp := if 0==comp then valueCompare(inExp1.ty, ty) else comp;
+      then if 0==comp then compare(inExp1.exp, e) else comp;
+
+    case DAE.SIZE()
+      algorithm
+        DAE.SIZE(exp = e, sz = oe) := inExp2;
+        comp := compare(inExp1.exp, e);
+      then if comp==0 then compareOpt(inExp1.sz, oe) else comp;
+
+    case DAE.REDUCTION()
+      // Reductions contain too much information to compare in a sane manner.
+      then valueCompare(inExp1, inExp2);
+
+    case DAE.LIST()
+      algorithm
+        DAE.LIST(valList = expl) := inExp2;
+      then
+        compareList(inExp1.valList, expl);
+
+    case DAE.CONS()
+      algorithm
+        DAE.CONS(car = e1, cdr = e2) := inExp2;
+        comp := compare(inExp1.car, e1);
+      then if 0==comp then compare(inExp1.cdr, e2) else comp;
+
+    case DAE.META_TUPLE()
+      algorithm
+        DAE.META_TUPLE(listExp = expl) := inExp2;
+      then
+        compareList(inExp1.listExp, expl);
+
+    case DAE.META_OPTION()
+      algorithm
+        DAE.META_OPTION(exp = oe) := inExp2;
+      then
+        compareOpt(inExp1.exp, oe);
+
+    case DAE.METARECORDCALL()
+      algorithm
+        DAE.METARECORDCALL(path = p, args = expl) := inExp2;
+        comp := AbsynUtil.pathCompare(inExp1.path, p);
+      then if comp==0 then compareList(inExp1.args, expl) else comp;
+
+    case DAE.MATCHEXPRESSION()
+      then valueCompare(inExp1, inExp2);
+
+    case DAE.BOX()
+      algorithm
+        DAE.BOX(exp = e) := inExp2;
+      then
+        compare(inExp1.exp, e);
+
+    case DAE.UNBOX()
+      algorithm
+        DAE.UNBOX(exp = e) := inExp2;
+      then
+        compare(inExp1.exp, e);
+
+    case DAE.SHARED_LITERAL()
+      algorithm
+        DAE.SHARED_LITERAL(index = i) := inExp2;
+      then Util.intCompare(inExp1.index, i);
+
+    case DAE.EMPTY()
+      algorithm
+        DAE.EMPTY(name=cr) := inExp2;
+      then ComponentReference.crefCompareGeneric(inExp1.name, cr);
+
+    case DAE.CODE()
+      then valueCompare(inExp1, inExp2);
+
+    else
+      algorithm
+        Error.addInternalError("Expression.compare failed: ctor:" + String(valueConstructor(inExp1)) + " " + printExpStr(inExp1) + " " + printExpStr(inExp2), sourceInfo());
+      then fail();
+  end match;
+end compare;
+
 annotation(__OpenModelica_Interface="frontend_dump");
 end ExpressionBasics;

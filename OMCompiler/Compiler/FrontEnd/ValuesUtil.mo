@@ -46,6 +46,8 @@ public import Absyn;
 public import AbsynUtil;
 public import DAE;
 public import Values;
+public import ValuesDump;
+public import ValuesMake;
 
 protected import Debug;
 protected import Dump;
@@ -59,7 +61,6 @@ protected import Print;
 protected import System;
 protected import ClassInf;
 protected import Types;
-protected import ValuesDump.*;
 
 public function typeConvert "Apply type conversion on a list of Values"
   input DAE.Type inType1;
@@ -136,7 +137,7 @@ algorithm
 
     case _
       algorithm
-        print("valueExpType on "+valString(inValue) + " not implemented yet\n");
+        print("valueExpType on "+ValuesDump.valString(inValue) + " not implemented yet\n");
       then fail();
   end matchcontinue;
 end valueExpType;
@@ -164,16 +165,6 @@ algorithm
     else false;
   end match;
 end isZero;
-
-public function makeZero "Returns a zero value based on a DAE.Type"
-  input DAE.Type ty;
-  output Values.Value zero;
-algorithm
-  zero := match ty
-    case DAE.T_REAL() then Values.REAL(0.0);
-    case DAE.T_INTEGER() then Values.INTEGER(0);
-  end match;
-end makeZero;
 
 public function isArray "Return true if Value is an array."
   input Values.Value inValue;
@@ -409,7 +400,7 @@ public function writeToFileAsArgs "
 protected
   String str;
 algorithm
-  str := unparseValues(vallst);
+  str := ValuesDump.unparseValues(vallst);
   System.writeFile(filename, str);
 end writeToFileAsArgs;
 
@@ -614,8 +605,8 @@ algorithm
     case Absyn.Exp.CREF() then Values.Value.CODE(Absyn.CodeNode.C_VARIABLENAME(exp.componentRef));
     case Absyn.Exp.STRING() then Values.Value.STRING(exp.value);
     case Absyn.Exp.BOOL() then Values.Value.BOOL(exp.value);
-    case Absyn.Exp.ARRAY() then makeArray(list(absynExpValue(e) for e in exp.arrayExp));
-    case Absyn.Exp.TUPLE() then makeTuple(list(absynExpValue(e) for e in exp.expressions));
+    case Absyn.Exp.ARRAY() then ValuesMake.makeArray(list(absynExpValue(e) for e in exp.arrayExp));
+    case Absyn.Exp.TUPLE() then ValuesMake.makeTuple(list(absynExpValue(e) for e in exp.expressions));
     case Absyn.Exp.CODE() then Values.Value.CODE(exp.code);
     else Values.Value.CODE(Absyn.CodeNode.C_EXPRESSION(exp));
   end match;
@@ -769,7 +760,7 @@ algorithm
 
     case (v)
       algorithm
-        s := "ValuesUtil.valueExp failed for " + valString(v);
+        s := "ValuesUtil.valueExp failed for " + ValuesDump.valString(v);
         Error.addMessage(Error.INTERNAL_ERROR, {s});
       then
         fail();
@@ -1259,7 +1250,7 @@ algorithm
         dim := dim+1;
       then
         Values.ARRAY(sres :: vres, dim::dims);
-    case ({},(Values.INTEGER() :: _)) then makeArray({});
+    case ({},(Values.INTEGER() :: _)) then ValuesMake.makeArray({});
     case ((Values.ARRAY(valueLst = v2lst) :: rest),(vlst as (Values.REAL() :: _)))
       algorithm
         sres := multScalarProduct(v2lst, vlst);
@@ -1267,7 +1258,7 @@ algorithm
         dim := dim+1;
       then
         Values.ARRAY(sres :: vres,dim::dims);
-    case ({},(Values.REAL() :: _)) then makeArray({});
+    case ({},(Values.REAL() :: _)) then ValuesMake.makeArray({});
     case ((vlst as (Values.INTEGER() :: _)),(mat as (Values.ARRAY(valueLst = (_ :: (_ :: _))) :: _)))
       algorithm
         (Values.ARRAY(valueLst = col),mat_1) := matrixStripFirstColumn(mat);
@@ -1280,7 +1271,7 @@ algorithm
         (Values.ARRAY(valueLst = col),_) := matrixStripFirstColumn(mat);
         Values.INTEGER(i1) := multScalarProduct(vlst, col);
       then
-        makeArray({Values.INTEGER(i1)});
+        ValuesMake.makeArray({Values.INTEGER(i1)});
     case ((vlst as (Values.REAL() :: _)),(mat as (Values.ARRAY(valueLst = (_ :: (_ :: _))) :: _)))
       algorithm
         (Values.ARRAY(valueLst = col),mat_1) := matrixStripFirstColumn(mat);
@@ -1294,7 +1285,7 @@ algorithm
         (Values.ARRAY(valueLst = col),_) := matrixStripFirstColumn(mat);
         Values.REAL(r1) := multScalarProduct(vlst, col);
       then
-        makeArray({Values.REAL(r1)});
+        ValuesMake.makeArray({Values.REAL(r1)});
     else
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
@@ -1323,7 +1314,7 @@ algorithm
         z2 := realSub(realMul(x3,y1),realMul(x1,y3));
         z3 := realSub(realMul(x1,y2),realMul(x2,y1));
       then
-        makeArray({Values.REAL(z1),Values.REAL(z2),Values.REAL(z3)});
+        ValuesMake.makeArray({Values.REAL(z1),Values.REAL(z2),Values.REAL(z3)});
     case ({Values.INTEGER(ix1),Values.INTEGER(ix2),Values.INTEGER(ix3)},
           {Values.INTEGER(iy1),Values.INTEGER(iy2),Values.INTEGER(iy3)})
       algorithm
@@ -1331,7 +1322,7 @@ algorithm
         iz2 := intSub(intMul(ix3,iy1),intMul(ix1,iy3));
         iz3 := intSub(intMul(ix1,iy2),intMul(ix2,iy1));
       then
-        makeArray({Values.INTEGER(iz1),Values.INTEGER(iz2),Values.INTEGER(iz3)});
+        ValuesMake.makeArray({Values.INTEGER(iz1),Values.INTEGER(iz2),Values.INTEGER(iz3)});
     else
       algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {"ValuesUtil.crossProduct failed"});
@@ -1432,107 +1423,6 @@ algorithm
   Values.ARRAY(valueLst = {outValue}) := inValue;
 end arrayScalar;
 
-public function makeBoolean
-  input Boolean b;
-  output Values.Value v;
-algorithm
-  v := Values.BOOL(b);
-end makeBoolean;
-
-public function makeReal "Creates a real value "
-  input Real r;
-  output Values.Value v;
-algorithm
-  v := Values.REAL(r);
-end makeReal;
-
-public function makeInteger "Creates an integer value "
-  input Integer i;
-  output Values.Value v;
-algorithm
-  v := Values.INTEGER(i);
-end makeInteger;
-
-public function makeString "Creates a string value "
-  input String s;
-  output Values.Value v;
-algorithm
-  v := Values.STRING(s);
-end makeString;
-
-public function makeTuple "Construct a tuple of a list of Values."
-  input list<Values.Value> inValueLst;
-  output Values.Value outValue;
-algorithm
-  outValue := Values.TUPLE(inValueLst);
-end makeTuple;
-
-public function makeList "Construct a list from a list of Values."
-  input list<Values.Value> inValueLst;
-  output Values.Value outValue;
-algorithm
-  outValue := Values.LIST(inValueLst);
-end makeList;
-
-public function makeArray "
-  Construct an array of a list of Values.
-"
-  input list<Values.Value> inValueLst;
-  output Values.Value outValue;
-algorithm
-  outValue:=
-  matchcontinue (inValueLst)
-    local
-      Integer i1;
-      list<Integer> il;
-      list<Values.Value> vlst;
-    case (vlst as (Values.ARRAY(dimLst = il)::_))
-      algorithm
-        i1 := listLength(vlst);
-      then Values.ARRAY(vlst,i1::il);
-    case (vlst)
-      algorithm
-        i1 := listLength(vlst);
-      then Values.ARRAY(vlst,{i1});
-  end matchcontinue;
-end makeArray;
-
-function makeEmptyArray
-  output Values.Value outValue = Values.Value.ARRAY({}, {0});
-end makeEmptyArray;
-
-public function makeStringArray
-  "Creates a Values.ARRAY from a list of Strings."
-  input list<String> inReals;
-  output Values.Value outArray;
-algorithm
-  outArray := makeArray(List.map(inReals, makeString));
-end makeStringArray;
-
-public function makeIntArray
-  "Creates a Value.ARRAY from a list of integers."
-  input list<Integer> inInts;
-  output Values.Value outArray;
-algorithm
-  outArray := makeArray(List.map(inInts, makeInteger));
-end makeIntArray;
-
-public function makeRealArray
-  "Creates a Values.ARRAY from a list of reals."
-  input list<Real> inReals;
-  output Values.Value outArray;
-algorithm
-  outArray := makeArray(List.map(inReals, makeReal));
-end makeRealArray;
-
-public function makeRealMatrix
-  "Creates a matrix (ARRAY of ARRAY) from a list of list of reals."
-  input list<list<Real>> inReals;
-  output Values.Value outArray;
-algorithm
-  outArray := makeArray(List.map(inReals, makeRealArray));
-end makeRealMatrix;
-
 public function writePtolemyplotDataset "
   This function writes a data set in the pltolemy plot format to a file.
   The first column of the dataset matrix should be the time variable.
@@ -1616,9 +1506,9 @@ algorithm
     //        TODO! FIXME! see why the dimension list is wrong!
     case (Values.ARRAY(valueLst = (v1 :: v1s)),Values.ARRAY(valueLst = (v2 :: v2s)))
       algorithm
-        valString2(v1);
+        ValuesDump.valString2(v1);
         Print.printBuf(",");
-        valString2(v2);
+        ValuesDump.valString2(v2);
         Print.printBuf("\n");
         unparsePtolemySet2(Values.ARRAY(v1s,{}), Values.ARRAY(v2s,{}));
       then
@@ -1627,7 +1517,7 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- ValuesUtil.unparsePtolemySet2 failed on v1: " +
-          printValStr(v1) + " and v2: " + printValStr(v1));
+          ValuesDump.printValStr(v1) + " and v2: " + ValuesDump.printValStr(v1));
       then
         fail();
   end matchcontinue;
@@ -1723,27 +1613,6 @@ public function extractValueString
 algorithm
   Values.STRING(str) := val;
 end extractValueString;
-
-public function makeCodeTypeName
-  input Absyn.Path path;
-  output Values.Value val;
-algorithm
-  val := Values.CODE(Absyn.C_TYPENAME(path));
-end makeCodeTypeName;
-
-public function makeCodeTypeNameStr
-  input String str;
-  output Values.Value val;
-algorithm
-  val := Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(str)));
-end makeCodeTypeNameStr;
-
-public function makeCodeTypeNameArray
-  input list<Absyn.Path> paths;
-  output Values.Value val;
-algorithm
-  val := makeArray(list(makeCodeTypeName(p) for p in paths));
-end makeCodeTypeNameArray;
 
 public function getCode
   input Values.Value val;
@@ -1846,7 +1715,7 @@ public function liftValueList
   output Values.Value outValue = inValue;
 algorithm
   for dim in listReverse(inDimensions) loop
-    outValue := makeArray(List.fill(outValue, Expression.dimensionSize(dim)));
+    outValue := ValuesMake.makeArray(List.fill(outValue, Expression.dimensionSize(dim)));
   end for;
 end liftValueList;
 

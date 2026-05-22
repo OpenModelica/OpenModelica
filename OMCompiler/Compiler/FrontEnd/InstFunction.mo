@@ -759,7 +759,7 @@ algorithm
       then (DAE.EXTARG(DAEUtil.varCref(List.find(elements, DAEUtil.isOutputVar)), Absyn.OUTPUT(), ty), true);
     else
       algorithm
-        Error.addInternalError("instExtMakeDefaultExternalCall failed for " + Types.unparseType(funcType), info);
+        Error.addInternalError("instExtMakeDefaultExternalCall failed for " + TypesDump.unparseType(funcType), info);
       then fail();
   end match;
   for elt in elements loop

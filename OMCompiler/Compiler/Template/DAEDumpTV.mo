@@ -47,6 +47,13 @@ package ExpressionDumpTpl
   end dumpExp;
 end ExpressionDumpTpl;
 
+package ClassInfUtil
+  function getStateName
+    input ClassInf.State inState;
+    output Absyn.Path outPath;
+  end getStateName;
+end ClassInfUtil;
+
 package ClassInf
   function getStateName
     input State inState;

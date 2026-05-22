@@ -2619,7 +2619,7 @@ algorithm
       DAE.ComponentRef name;
       DAE.Type ty;
     case SimCodeFunction.VARIABLE(name=name, ty=ty)
-      then Types.unparseType(ty) + " " + ComponentReference.printComponentRefStr(name);
+      then TypesDump.unparseType(ty) + " " + ComponentReference.printComponentRefStr(name);
     case SimCodeFunction.FUNCTION_PTR(name=str)
       then "modelica_fnptr " + str;
   end match;
@@ -2736,7 +2736,7 @@ protected
   Integer nrdims;
   list<String> idxstrlst;
 algorithm
-  dims := ComponentReference.crefDims(cr);
+  dims := ComponentReferenceBasics.crefDims(cr);
   nrdims := listLength(dims);
   idxstrlst := List.map(List.intRange(nrdims),intString);
   outdef := stringDelimitList(List.threadMap(List.fill("i_", nrdims), idxstrlst, stringAppend), ",");

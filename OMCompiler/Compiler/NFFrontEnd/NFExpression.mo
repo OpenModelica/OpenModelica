@@ -59,7 +59,7 @@ protected
   import SimplifyExp = NFSimplifyExp;
   import TypeCheck = NFTypeCheck;
   import UnorderedSet;
-  import ValuesUtil;
+  import ValuesMake;
   import Variable = NFVariable;
 
 public
@@ -2835,7 +2835,7 @@ public
       case BOOLEAN() then Values.BOOL(exp.value);
       case ENUM_LITERAL(ty = ty as Type.ENUMERATION())
         then Values.ENUM_LITERAL(AbsynUtil.suffixPath(ty.typePath, exp.name), exp.index);
-      case ARRAY() then ValuesUtil.makeArray(list(toDAEValue(e) for e in exp.elements));
+      case ARRAY() then ValuesMake.makeArray(list(toDAEValue(e) for e in exp.elements));
       case RECORD() then toDAEValueRecord(exp.ty, exp.path, exp.elements);
       case FILENAME() then Values.STRING(exp.filename);
 

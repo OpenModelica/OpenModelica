@@ -245,8 +245,8 @@ algorithm
         false := Types.equivtypes(lt, rt);
         lhs_str := ExpressionDump.printExpStr(lhs);
         rhs_str := ExpressionDump.printExpStr(rhs);
-        lt_str := Types.unparseTypeNoAttr(lt);
-        rt_str := Types.unparseTypeNoAttr(rt);
+        lt_str := TypesDump.unparseTypeNoAttr(lt);
+        rt_str := TypesDump.unparseTypeNoAttr(rt);
         info := ElementSource.getElementSourceFileInfo(source);
         Types.typeErrorSanityCheck(lt_str, rt_str, info);
         Error.addSourceMessage(Error.ASSIGN_TYPE_MISMATCH_ERROR,
@@ -546,7 +546,7 @@ algorithm
     case (e, DAE.PROP(type_ = t), _, _, _, _)
       algorithm
         e_str := ExpressionDump.printExpStr(e);
-        t_str := Types.unparseTypeNoAttr(t);
+        t_str := TypesDump.unparseTypeNoAttr(t);
         Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR, {e_str, t_str}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
@@ -659,7 +659,7 @@ algorithm
     case (((e, DAE.PROP(type_ = t), _) :: _), _, _)
       algorithm
         e_str := ExpressionDump.printExpStr(e);
-        t_str := Types.unparseTypeNoAttr(t);
+        t_str := TypesDump.unparseTypeNoAttr(t);
         info := ElementSource.getElementSourceFileInfo(inSource);
         Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR, {e_str, t_str}, info);
       then
@@ -704,7 +704,7 @@ algorithm
     case (_, e, DAE.PROP(type_ = t), _, _)
       algorithm
         e_str := ExpressionDump.printExpStr(e);
-        t_str := Types.unparseTypeNoAttr(t);
+        t_str := TypesDump.unparseTypeNoAttr(t);
         Error.addSourceMessage(Error.FOR_EXPRESSION_TYPE_ERROR, {e_str, t_str}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
@@ -741,7 +741,7 @@ algorithm
     case (_, e, DAE.PROP(type_ = t), _, _, _)
       algorithm
         e_str := ExpressionDump.printExpStr(e);
-        t_str := Types.unparseTypeNoAttr(t);
+        t_str := TypesDump.unparseTypeNoAttr(t);
         Error.addSourceMessage(Error.FOR_EXPRESSION_TYPE_ERROR, {e_str, t_str}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
@@ -767,7 +767,7 @@ algorithm
     case (e, DAE.PROP(type_ = t), _, _)
       algorithm
         e_str := ExpressionDump.printExpStr(e);
-        t_str := Types.unparseTypeNoAttr(t);
+        t_str := TypesDump.unparseTypeNoAttr(t);
         Error.addSourceMessage(Error.WHILE_CONDITION_TYPE_ERROR, {e_str, t_str}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
@@ -796,7 +796,7 @@ algorithm
     case (e, DAE.PROP(type_ = t), _, _, _)
       algorithm
         e_str := ExpressionDump.printExpStr(e);
-        t_str := Types.unparseTypeNoAttr(t);
+        t_str := TypesDump.unparseTypeNoAttr(t);
         Error.addSourceMessage(Error.WHEN_CONDITION_TYPE_ERROR, {e_str, t_str}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
@@ -859,14 +859,14 @@ algorithm
       algorithm
         info := ElementSource.getElementSourceFileInfo(source);
         strExp := ExpressionDump.printExpStr(cond);
-        strTy := Types.unparseType(t1);
+        strTy := TypesDump.unparseType(t1);
         Error.assertionOrAddSourceMessage(Types.isBooleanOrSubTypeBoolean(t1), Error.EXP_TYPE_MISMATCH, {strExp, "Boolean", strTy}, info);
         strExp := ExpressionDump.printExpStr(msg);
-        strTy := Types.unparseType(t2);
+        strTy := TypesDump.unparseType(t2);
         Error.assertionOrAddSourceMessage(Types.isString(t2), Error.EXP_TYPE_MISMATCH, {strExp, "String", strTy}, info);
         failure(DAE.T_ENUMERATION(path=Absyn.IDENT("AssertionLevel")) := t3);
         strExp := ExpressionDump.printExpStr(level);
-        strTy := Types.unparseType(t3);
+        strTy := TypesDump.unparseType(t3);
         Error.assertionOrAddSourceMessage(Types.isString(t3), Error.EXP_TYPE_MISMATCH, {strExp, "AssertionLevel", strTy}, info);
       then fail();
   end matchcontinue;
@@ -950,13 +950,6 @@ algorithm
       then fail();
   end match;
 end getStatementSource;
-
-public function getAssertCond
-  input DAE.Statement stmt;
-  output DAE.Exp cond;
-algorithm
-  DAE.STMT_ASSERT(cond=cond) := stmt;
-end getAssertCond;
 
 public function isNotDummyStatement
   input DAE.Statement stmt;

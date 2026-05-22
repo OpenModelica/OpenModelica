@@ -1637,8 +1637,8 @@ algorithm
     case(_,_,_,_,_,expectedTp,DAE.PROP(bindTp,_))
       algorithm
         failure((_,_) := Types.matchType(bind,bindTp,expectedTp,true));
-        s1 := "builtin attribute " + id + " of type "+Types.unparseType(bindTp);
-        s2 := Types.unparseType(expectedTp);
+        s1 := "builtin attribute " + id + " of type "+TypesDump.unparseType(bindTp);
+        s2 := TypesDump.unparseType(expectedTp);
         Error.addMessage(Error.TYPE_ERROR,{s1,s2});
       then fail();
 
@@ -2345,7 +2345,7 @@ algorithm
         _ := match oty
           case SOME(ty as DAE.T_METAUNIONTYPE(typeVars=_::_))
             algorithm
-              Error.addSourceMessage(Error.UNIONTYPE_MISSING_TYPEVARS, {Types.unparseType(ty)}, info);
+              Error.addSourceMessage(Error.UNIONTYPE_MISSING_TYPEVARS, {TypesDump.unparseType(ty)}, info);
             then fail();
           else ();
         end match;

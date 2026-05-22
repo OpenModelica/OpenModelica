@@ -1472,7 +1472,7 @@ algorithm
         true := dim_size1 <> dim_size2;
         // If the dimensions are not equal, print an error message.
         exp_str := ExpressionDump.printExpStr(exp);
-        exp_ty_str := Types.unparseType(ty);
+        exp_ty_str := TypesDump.unparseType(ty);
         // We don't know the complete expected type, so lets assume that the
         // rest of the expression's type is correct (will be caught later anyway).
         _ :: ty_dims := Types.getDimensions(ty);

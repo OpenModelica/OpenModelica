@@ -6,6 +6,7 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AbsynUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/Algorithm.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AvlTreePathFunction.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/BackendCevalInterface.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/BackendInterface.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/Builtin.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/CevalFunction.mo
@@ -14,6 +15,7 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ClassInfUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ClassLoader.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ComponentReference.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ComponentReferenceBasics.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ConnectionGraph.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ConnectUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/DAEDump.mo
@@ -33,6 +35,7 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/InnerOuter.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/Inst.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/InstVar.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/InstBasics.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/InstDAE.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/InstBinding.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/InstFunction.mo

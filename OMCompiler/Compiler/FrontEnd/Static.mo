@@ -571,7 +571,7 @@ algorithm
           case DAE.T_TUPLE(names=SOME(names))
             algorithm
               if not listMember(s, names) then
-                Error.addSourceMessage(Error.COMPILER_ERROR, {"Dot operator could not find " + s + " in " + Types.unparseType(ty)}, inInfo);
+                Error.addSourceMessage(Error.COMPILER_ERROR, {"Dot operator could not find " + s + " in " + TypesDump.unparseType(ty)}, inInfo);
                 fail();
               end if;
               i := List.position(s, names);
@@ -580,7 +580,7 @@ algorithm
             then ();
           else
             algorithm
-              Error.addSourceMessage(Error.COMPILER_ERROR, {"Dot operator is only allowed when the expression returns a named tuple. Got expression: " + ExpressionDump.printExpStr(outExp) + " with type " + Types.unparseType(ty)}, inInfo);
+              Error.addSourceMessage(Error.COMPILER_ERROR, {"Dot operator is only allowed when the expression returns a named tuple. Got expression: " + ExpressionDump.printExpStr(outExp) + " with type " + TypesDump.unparseType(ty)}, inInfo);
             then fail();
         end match;
       then (outExp, outProperties);
@@ -878,8 +878,8 @@ algorithm
     outProperties := DAE.PROP(ty, Types.constAnd(c1, c2));
   else
     exp_str := Dump.printExpStr(inExp);
-    ty1_str := Types.unparseType(Types.getPropType(prop1));
-    ty2_str := Types.unparseType(ty2);
+    ty1_str := TypesDump.unparseType(Types.getPropType(prop1));
+    ty2_str := TypesDump.unparseType(ty2);
     Error.addSourceMessage(Error.META_CONS_TYPE_MATCH, {exp_str, ty1_str, ty2_str}, inInfo);
     fail();
   end try;
@@ -1771,7 +1771,7 @@ algorithm
     else
       algorithm
         cr := AbsynUtil.pathToCref(path);
-        // print("makeReductionFoldExp => " + AbsynUtil.pathString(path) + Types.unparseType(expty) + "\n");
+        // print("makeReductionFoldExp => " + AbsynUtil.pathString(path) + TypesDump.unparseType(expty) + "\n");
         env := FGraph.addForIterator(inEnv, foldId, expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
         env := FGraph.addForIterator(env, resultId, resultTy, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
         cr1 := Absyn.CREF_IDENT(foldId, {});
@@ -2036,7 +2036,7 @@ algorithm
 
     else
       algorithm
-        str1 := stringDelimitList(List.map(fnTypes, Types.unparseType), ",");
+        str1 := stringDelimitList(List.map(fnTypes, TypesDump.unparseType), ",");
         Error.addSourceMessage(Error.UNSUPPORTED_REDUCTION_TYPE, {str1}, info);
       then
         fail();
@@ -2067,24 +2067,24 @@ algorithm
 
     case (_, false)
       algorithm
-        str1 := Types.unparseType(typeB);
-        str2 := Types.unparseType(typeC);
+        str1 := TypesDump.unparseType(typeB);
+        str2 := TypesDump.unparseType(typeC);
         Error.addSourceMessage(Error.REDUCTION_TYPE_ERROR,{"second argument", "result-type", "identical", str1, str2},info);
       then
         fail();
 
     case (false,true)
       algorithm
-        str1 := Types.unparseType(typeA);
-        str2 := Types.unparseType(typeB);
+        str1 := TypesDump.unparseType(typeA);
+        str2 := TypesDump.unparseType(typeB);
         Error.addSourceMessage(Error.REDUCTION_TYPE_ERROR,{"first", "second arguments", "identical", str1, str2},info);
       then
         fail();
 
     case (true,true)
       algorithm
-        str1 := Types.unparseType(expType);
-        str2 := Types.unparseType(typeA);
+        str1 := TypesDump.unparseType(expType);
+        str2 := TypesDump.unparseType(typeA);
         Error.addSourceMessage(Error.REDUCTION_TYPE_ERROR,{"reduction expression", "first argument", "compatible", str1, str2},info);
       then
         fail();
@@ -2423,8 +2423,8 @@ algorithm
           // Print an error if the enumerations are different for start and stop.
           e1_str := ExpressionDump.printExpStr(inStartExp);
           e2_str := ExpressionDump.printExpStr(inStopExp);
-          t1_str := Types.unparseTypeNoAttr(inStartType);
-          _ := Types.unparseTypeNoAttr(inStopType);
+          t1_str := TypesDump.unparseTypeNoAttr(inStartType);
+          _ := TypesDump.unparseTypeNoAttr(inStopType);
           Error.addSourceMessageAndFail(Error.UNRESOLVABLE_TYPE,
             {e1_str + ":" + e2_str, t1_str + ", " + t1_str, ""}, inInfo);
         end if;
@@ -2783,8 +2783,8 @@ algorithm
       try
         (exp2, outType) := Types.matchType(exp2, outType, ty2, false);
       else
-        ty1_str := Types.unparseTypeNoAttr(outType);
-        ty2_str := Types.unparseTypeNoAttr(ty2);
+        ty1_str := TypesDump.unparseTypeNoAttr(outType);
+        ty2_str := TypesDump.unparseTypeNoAttr(ty2);
         Types.typeErrorSanityCheck(ty1_str, ty2_str, inInfo);
         pre_str := PrefixUtil.printPrefixStr(inPrefix);
         exp_str := ExpressionDump.printExpStr(exp2);
@@ -3956,7 +3956,7 @@ algorithm
         b := Types.isArray(t);
         b := b and Types.isSimpleType(tp);
         estr := Dump.printExpStr(arrexp);
-        tstr := Types.unparseType(t);
+        tstr := TypesDump.unparseType(t);
         Error.assertionOrAddSourceMessage(b,Error.SUM_EXPECTED_ARRAY,{estr,tstr},info);
         exp_2 := Expression.makePureBuiltinCall("sum", {exp_1}, etp);
       then
@@ -5581,7 +5581,7 @@ algorithm
   // Make sure the argument's type is a subtype of Real.
   if not Types.isRealOrSubTypeReal(Types.arrayElementType(ty)) then
     exp_str := Dump.printExpStr(listHead(inPosArgs));
-    ty_str := Types.unparseTypeNoAttr(ty);
+    ty_str := TypesDump.unparseTypeNoAttr(ty);
     Error.addSourceMessageAndFail(Error.DERIVATIVE_NON_REAL,
       {exp_str, ty_str}, inInfo);
   end if;
@@ -5997,7 +5997,7 @@ algorithm
   // Check that any known dimensions have size 1.
   for dim in dims loop
     if Expression.dimensionKnown(dim) and Expression.dimensionSize(dim) <> 1 then
-      ty_str := Types.unparseTypeNoAttr(ty);
+      ty_str := TypesDump.unparseTypeNoAttr(ty);
       Error.addSourceMessageAndFail(Error.INVALID_ARRAY_DIM_IN_CONVERSION_OP,
         {ty_str}, inInfo);
     end if;
@@ -7292,8 +7292,8 @@ algorithm
           elabTypes(cache, env, args, nargs, {}, typelist, true, false/* Do not check types*/,impl,pre,info);
         argStr := ExpressionDump.printExpListStr(args_1);
         pre_str := PrefixUtil.printPrefixStr3(pre);
-        fn_str := AbsynUtil.pathString(fn) + "(" + argStr + ")\nof type\n  " + Types.unparseType(functype);
-        types_str := "\n  " + Types.unparseType(tp1);
+        fn_str := AbsynUtil.pathString(fn) + "(" + argStr + ")\nof type\n  " + TypesDump.unparseType(functype);
+        types_str := "\n  " + TypesDump.unparseType(tp1);
         Error.assertionOrAddSourceMessage(Error.getNumErrorMessages()<>numErrors,Error.NO_MATCHING_FUNCTION_FOUND, {fn_str,pre_str,types_str}, info);
 
         ErrorExt.delCheckpoint("elabCallArgs2FunctionLookup");
@@ -7315,7 +7315,7 @@ algorithm
     case (cache,env,fn,_,_,_,pre) /* no matching type found, with candidates */
       algorithm
         (cache,typelist as _::_::_) := Lookup.lookupFunctionsInEnv(cache,env, fn, info);
-        t_lst := List.map(typelist, Types.unparseType);
+        t_lst := List.map(typelist, TypesDump.unparseType);
         fn_str := AbsynUtil.pathString(fn);
         pre_str := PrefixUtil.printPrefixStr3(pre);
         types_str := stringDelimitList(t_lst, "\n -");
@@ -7740,7 +7740,7 @@ algorithm
     case DAE.T_METARECORD()
       algorithm
         false := listLength(inType.fields) == listLength(inPosArgs) + listLength(inNamedArgs);
-        fn_str := Types.unparseType(inType);
+        fn_str := TypesDump.unparseType(inType);
         Error.addSourceMessage(Error.WRONG_NO_OF_ARGS, {fn_str}, inInfo);
       then
         (inCache, NONE());
@@ -7776,9 +7776,9 @@ algorithm
           Absyn.TUPLE(inPosArgs), false, false, inPrefix, inInfo);
         tys := list(Types.getVarType(var) for var in inType.fields);
         str := "Failed to match types:\n    actual:   " +
-          Types.unparseType(Types.getPropType(prop)) +
+          TypesDump.unparseType(Types.getPropType(prop)) +
           "\n    expected: " +
-          Types.unparseType(DAE.T_TUPLE(tys, NONE()));
+          TypesDump.unparseType(DAE.T_TUPLE(tys, NONE()));
         fn_str := AbsynUtil.pathString(fq_path);
         Error.addSourceMessage(Error.META_RECORD_FOUND_FAILURE, {fn_str, str}, inInfo);
       then
@@ -8569,7 +8569,7 @@ algorithm
     DAE.T_FUNCTION(funcArg = params, funcResultType = res_ty,
       functionAttributes = func_attr, path = path) := func_ty;
     if debug then
-      print("elabTypes, try: " + Types.unparseType(func_ty) + "\n");
+      print("elabTypes, try: " + TypesDump.unparseType(func_ty) + "\n");
     end if;
     try
       slots := makeEmptySlots(params);
@@ -8602,7 +8602,7 @@ algorithm
       outFunctionType := createActualFunctype(outFunctionType, outSlots, inCheckTypes);
       success := true;
     if debug then
-      print("elabTypes success for " + Types.unparseType(func_ty) + ": "+Types.unparseType(outFunctionType)+"=>"+Types.unparseType(outResultType)+"\n");
+      print("elabTypes success for " + TypesDump.unparseType(func_ty) + ": "+Types.unparseType(outFunctionType)+"=>"+Types.unparseType(outResultType)+"\n");
     end if;
     else
       // The type didn't match, try next function type.
@@ -9235,7 +9235,7 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Static.getProperties failed: ");
-        tystr := Types.unparseType(ty);
+        tystr := TypesDump.unparseType(ty);
         conststr := Types.printTupleConstStr(const);
         Debug.trace(tystr);
         Debug.trace(", ");
@@ -9814,8 +9814,8 @@ algorithm
         s1 := intString(position);
         s2 := AbsynUtil.pathStringNoQual(path);
         s3 := ExpressionDump.printExpStr(e_1);
-        s4 := Types.unparseTypeNoAttr(Types.getPropType(prop));
-        s5 := Types.unparseTypeNoAttr(vt);
+        s4 := TypesDump.unparseTypeNoAttr(Types.getPropType(prop));
+        s5 := TypesDump.unparseTypeNoAttr(vt);
         Error.addSourceMessage(Error.ARG_TYPE_MISMATCH, {s1,s2,id,s3,s4,s5}, info);
       then fail();
 
@@ -9985,8 +9985,8 @@ algorithm
         (cache,e_1,prop) := elabExpInExpression(cache, env, e, impl, true,pre,info);
         s1 := AbsynUtil.pathStringNoQual(path);
         s2 := ExpressionDump.printExpStr(e_1);
-        s3 := Types.unparseTypeNoAttr(Types.getPropType(prop));
-        s4 := Types.unparseTypeNoAttr(vt);
+        s3 := TypesDump.unparseTypeNoAttr(Types.getPropType(prop));
+        s4 := TypesDump.unparseTypeNoAttr(vt);
         Error.addSourceMessage(Error.NAMED_ARG_TYPE_MISMATCH, {s1,id,s2,s3,s4}, info);
       then fail();
   end matchcontinue;
@@ -11914,7 +11914,7 @@ algorithm
     else
       algorithm
         e_str := Dump.printExpStr(inAbsynExp);
-        t_str := Types.unparseType(inType);
+        t_str := TypesDump.unparseType(inType);
         Error.addSourceMessage(Error.WRONG_DIMENSION_TYPE, {e_str, t_str}, inInfo);
       then
         fail();
@@ -12047,7 +12047,7 @@ algorithm
   // Print an error message and fail if the condition is not a boolean expression.
   if not ty_match then
     cond_str := ExpressionDump.printExpStr(inCondition);
-    cond_ty_str := Types.unparseTypeNoAttr(cond_ty);
+    cond_ty_str := TypesDump.unparseTypeNoAttr(cond_ty);
     Error.addSourceMessageAndFail(Error.IF_CONDITION_TYPE_ERROR,
       {cond_str, cond_ty_str}, inInfo);
   end if;
@@ -12075,8 +12075,8 @@ algorithm
   if (not ty_match) and not Config.getGraphicsExpMode() then
     e1_str := ExpressionDump.printExpStr(inTrueBranch);
     e2_str := ExpressionDump.printExpStr(inFalseBranch);
-    ty1_str := Types.unparseTypeNoAttr(true_ty);
-    ty2_str := Types.unparseTypeNoAttr(false_ty);
+    ty1_str := TypesDump.unparseTypeNoAttr(true_ty);
+    ty2_str := TypesDump.unparseTypeNoAttr(false_ty);
     pre_str := PrefixUtil.printPrefixStr3(inPrefix);
     Error.addSourceMessageAndFail(Error.TYPE_MISMATCH_IF_EXP,
       {pre_str, e1_str, ty1_str, e2_str, ty2_str}, inInfo);
@@ -12379,7 +12379,7 @@ algorithm
         DAE.T_CODE(ty=ct2) := Types.getPropType(prop);
         true := valueEq(ct,ct2);
         ErrorExt.delCheckpoint("elabCodeExp_dispatch1");
-        // print(ExpressionDump.printExpStr(dexp) + " " + Types.unparseType(ty) + "\n");
+        // print(ExpressionDump.printExpStr(dexp) + " " + TypesDump.unparseType(ty) + "\n");
       then dexp;
 
     case Absyn.CREF()
@@ -12395,7 +12395,7 @@ algorithm
         DAE.T_CODE(ty=ct2) := Types.getPropType(prop);
         true := valueEq(ct,ct2);
         ErrorExt.delCheckpoint("elabCodeExp_dispatch");
-        // print(ExpressionDump.printExpStr(dexp) + " " + Types.unparseType(ty) + "\n");
+        // print(ExpressionDump.printExpStr(dexp) + " " + TypesDump.unparseType(ty) + "\n");
       then dexp;
 
     else
@@ -12644,7 +12644,7 @@ algorithm
     case (_, _, _, _, DAE.PROP(ty, _), _)
       algorithm
         e_str := ExpressionDump.printExpStr(inExp);
-        t_str := Types.unparseType(ty);
+        t_str := TypesDump.unparseType(ty);
         Types.typeErrorSanityCheck(t_str, "Integer", inInfo);
         Error.addSourceMessage(Error.ARRAY_DIMENSION_INTEGER,
           {e_str, t_str}, inInfo);

@@ -87,6 +87,7 @@ import Ceval;
 import Dump;
 import Config;
 import Inst;
+import InstBasics;
 import InstFunction;
 import System;
 import ErrorExt;
@@ -4136,7 +4137,7 @@ algorithm
         dim2 := elabArraydimType(t, ad, e, path, pre, cref, info,inst_dims);
         failure(_ := List.threadMap(dim1, dim2, compatibleArraydim));
         e_str := ExpressionDump.printExpStr(e);
-        t_str := Types.unparseType(t);
+        t_str := TypesDump.unparseType(t);
         dim_str := ExpressionDump.dimensionsString(dim1);
         Error.addMultiSourceMessage(Error.ARRAY_DIMENSION_MISMATCH, {e_str,t_str,dim_str}, info2::info::{});
       then
@@ -4212,7 +4213,7 @@ algorithm
     outDimensions := elabArraydimType2(inType, inArrayDim, flat_id);
   else
     ad_str := AbsynUtil.pathString(inPath) + Dump.printArraydimStr(inArrayDim);
-    ty_str := Types.unparseTypeNoAttr(inType);
+    ty_str := TypesDump.unparseTypeNoAttr(inType);
     exp_str := ExpressionDump.printExpStr(inExp);
     name_str := PrefixUtil.printPrefixStrIgnoreNoPre(inPrefix) +
       Dump.printComponentRefStr(inCref);
@@ -4659,20 +4660,7 @@ algorithm
   end match;
 end classIsInlineFunc;
 
-public function commentIsInlineFunc
-  input SCode.Comment cmt;
-  output DAE.InlineType outInlineType;
-algorithm
-  outInlineType := matchcontinue(cmt)
-    local
-      list<SCode.SubMod> smlst;
-
-    case SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(SCode.MOD(subModLst = smlst))))
-      then isInlineFunc2(smlst);
-
-    else DAE.DEFAULT_INLINE();
-  end matchcontinue;
-end commentIsInlineFunc;
+public function commentIsInlineFunc = InstBasics.commentIsInlineFunc;
 
 protected function isInlineFunc2
   input list<SCode.SubMod> inSubModList;
@@ -4731,38 +4719,7 @@ algorithm
 
 end isInlineFunc2;
 
-public function commentGenerateEvents
-  input SCode.Comment cmt;
-  output Boolean generateEvents;
-protected
-  function commentGenerateEvents2
-    input list<SCode.SubMod> inSubModList;
-    output Boolean res;
-  protected
-    Boolean stop;
-  algorithm
-    res := false;
-
-    for tp in inSubModList loop
-      stop := match tp
-        case SCode.NAMEMOD("GenerateEvents",SCode.MOD(binding = SOME(Absyn.BOOL(res)))) then false;
-        else true;
-      end match;
-
-     if stop then break; end if;
-    end for;
-  end commentGenerateEvents2;
-algorithm
-  generateEvents := match(cmt)
-    local
-      list<SCode.SubMod> smlst;
-
-    case SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(SCode.MOD(subModLst = smlst))))
-      then commentGenerateEvents2(smlst);
-
-    else false;
-  end match;
-end commentGenerateEvents;
+public function commentGenerateEvents = InstBasics.commentGenerateEvents;
 
 public function stripFuncOutputsMod "strips the assignment modification of the component declared as output"
   input SCode.Element elem;
@@ -5397,7 +5354,7 @@ algorithm
     case (SOME("builtin"),_,_,_,_) then ();
     case (_,_,DAE.T_ARRAY(),_,_)
       algorithm
-        str := Types.unparseType(ty);
+        str := TypesDump.unparseType(ty);
         Error.addSourceMessage(Error.EXTERNAL_FUNCTION_RESULT_ARRAY_TYPE,{str},info);
       then fail();
     case (_,DAE.EXTARG(),_,DAE.C_VAR(),_) then ();
@@ -6776,7 +6733,7 @@ algorithm
   // The expression must be of boolean type.
   if not Types.isBoolean(t) then
     Error.addSourceMessageAndFail(Error.IF_CONDITION_TYPE_ERROR,
-      {Dump.printExpStr(inCondition), Types.unparseTypeNoAttr(t)}, inInfo);
+      {Dump.printExpStr(inCondition), TypesDump.unparseTypeNoAttr(t)}, inInfo);
   end if;
 
   // The expression must be a parameter expression that can be evaluated at compile-time.
@@ -7264,27 +7221,7 @@ algorithm
   end matchcontinue;
 end getFunctionAttributes;
 
-public function getFunctionRestrictionPurity
-  input Absyn.FunctionPurity purity;
-  input SCode.Comment cmt;
-  input Boolean newFrontend;
-  output DAE.Purity outPurity;
-algorithm
-  outPurity := match purity
-    case Absyn.FunctionPurity.PURE() then DAE.Purity.PURE;
-    case Absyn.FunctionPurity.IMPURE() then DAE.Purity.IMPURE;
-    else DAE.Purity.UNDEFINED;
-  end match;
-
-  if outPurity == DAE.Purity.UNDEFINED then
-    if SCodeUtil.commentHasBooleanNamedAnnotation(cmt, "__ModelicaAssociation_Impure") then
-      outPurity := DAE.Purity.IMPURE;
-    elseif not newFrontend and SCodeUtil.commentHasBooleanNamedAnnotation(cmt, "__OpenModelica_Impure") then
-      // __OpenModelica_Impure is only used for MetaModelica, which the NF doesn't care about.
-      outPurity := DAE.Purity.OM_IMPURE;
-    end if;
-  end if;
-end getFunctionRestrictionPurity;
+public function getFunctionRestrictionPurity = InstBasics.getFunctionRestrictionPurity;
 
 public function checkFunctionElement
 "Verifies that an element of a function is correct, i.e.

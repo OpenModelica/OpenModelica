@@ -2252,7 +2252,7 @@ algorithm
         // check if derivativ function has all expected inputs
         (false, tlst) := checkDerivativeFunctionInputs(blst, tp, dtp);
         // add Warning
-        typlststring := List.map(tlst, Types.unparseType);
+        typlststring := List.map(tlst, TypesDump.unparseType);
         typstring := "\n" + stringDelimitList(typlststring,";\n");
         dastring := AbsynUtil.pathString(dpath);
         print("Input warnings for function mapper2\n");
@@ -2405,7 +2405,7 @@ algorithm
         // check if derivativ function has all expected inputs
         (false, tlst) := checkDerivativeFunctionInputs(blst, tp, dtp);
         // add Warning
-        typlststring := List.map(tlst, Types.unparseType);
+        typlststring := List.map(tlst, TypesDump.unparseType);
         typstring := "\n" + stringDelimitList(typlststring,";\n");
         dastring := AbsynUtil.pathString(dpath);
         print("Input warnings for function mapper2\n");

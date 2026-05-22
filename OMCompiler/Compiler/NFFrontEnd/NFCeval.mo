@@ -47,7 +47,7 @@ import Typing = NFTyping;
 import Call = NFCall;
 import Dimension = NFDimension;
 import Type = NFType;
-import ExpressionSimplify;
+import ExpressionBasics;
 import NFPrefixes.{Variability, Purity};
 import NFClassTree.ClassTree;
 import ComplexType = NFComplexType;
@@ -2300,7 +2300,7 @@ algorithm
   elseif sz == 1 then
     result := listHead(es);
   else
-    (es,dims) := ExpressionSimplify.evalCat(n, es, getArrayContents=Expression.arrayElementList, toString=Expression.toString);
+    (es,dims) := ExpressionBasics.evalCat(n, es, getArrayContents=Expression.arrayElementList, toString=Expression.toString);
     result := Expression.arrayFromList(es, Expression.typeOf(listHead(es)), list(Dimension.fromInteger(d) for d in dims));
   end if;
 end evalBuiltinCat;

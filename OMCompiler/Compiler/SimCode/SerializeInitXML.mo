@@ -476,7 +476,7 @@ algorithm
     then ();
   else
     algorithm
-      Error.addInternalError(getInstanceName() + ": " + Types.unparseType(v.type_), sourceInfo());
+      Error.addInternalError(getInstanceName() + ": " + TypesDump.unparseType(v.type_), sourceInfo());
     then fail();
   end match;
 end scalarVariableType;

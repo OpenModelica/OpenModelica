@@ -86,6 +86,7 @@ import CheckModel;
 import ClassInf;
 import CommonSubExpression.isCSECref;
 import ComponentReference;
+import ComponentReferenceBasics;
 import Config;
 import DAEDump;
 import DAEUtil;
@@ -122,6 +123,7 @@ import Static;
 import StringUtil;
 import SymbolicJacobian;
 import System;
+import TypesDump;
 import Util;
 import ValuesUtil;
 import VisualXML;
@@ -3048,7 +3050,7 @@ algorithm
 
     case(DAE.CREF(cr, ty)::rest) algorithm
       arrayCref := ComponentReference.getArrayCref(cr);
-      inst_dims := ComponentReference.crefDims(cr);
+      inst_dims := ComponentReferenceBasics.crefDims(cr);
       numArrayElement := List.map(inst_dims, ExpressionDump.dimensionString);
       if FMI.isFMIVersion20() then
         var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, arrayCref, SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false);
@@ -3096,7 +3098,7 @@ algorithm
           detects first elements of arrays to generate VARNAME_indexed(..) macros for accessing the array
           with variable indexes.*/
         arraycref := ComponentReference.crefStripSubs(cr);
-        numArrayElement := List.map(ComponentReference.crefDims(cr), ExpressionDump.dimensionString);
+        numArrayElement := List.map(ComponentReferenceBasics.crefDims(cr), ExpressionDump.dimensionString);
         ty := ComponentReference.crefTypeFull(cr);
         if FMI.isFMIVersion20() then
           var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(arraycref), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false);
@@ -8977,7 +8979,7 @@ algorithm
     case(SimCodeFunction.VARIABLE(name=cref,ty=ty,kind=kind)::rest,_)
       algorithm
         (s1,_) := DAEDump.printTypeStr(ty);
-        s1 := Types.printTypeStr(ty);
+        s1 := TypesDump.printTypeStr(ty);
         s2 := DAEDump.dumpKindStr(kind);
         print(ComponentReference.printComponentRefStr(cref)+" ("+s1+", "+s2+") "+delimiter);
         dumpVariablesString(rest,delimiter);

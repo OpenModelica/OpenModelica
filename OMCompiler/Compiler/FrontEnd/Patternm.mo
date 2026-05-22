@@ -415,7 +415,7 @@ algorithm
     case (_,_,lhs,_,_,_)
       algorithm
         true := numError == Error.getNumErrorMessages();
-        str := Dump.printExpStr(lhs) + " of type " + Types.unparseType(ty);
+        str := Dump.printExpStr(lhs) + " of type " + TypesDump.unparseType(ty);
         Error.addSourceMessage(Error.META_INVALID_PATTERN, {str}, info);
       then fail();
 
@@ -651,8 +651,8 @@ algorithm
     case (ty1,ty2,_,_)
       algorithm
         s := Dump.printExpStr(lhs);
-        s1 := Types.unparseType(ty1);
-        s2 := Types.unparseType(ty2);
+        s1 := TypesDump.unparseType(ty1);
+        s2 := TypesDump.unparseType(ty2);
         Error.addSourceMessage(Error.META_TYPE_MISMATCH_PATTERN, {s,s1,s2}, info);
       then fail();
   end matchcontinue;
@@ -728,7 +728,7 @@ algorithm
     case DAE.PAT_CONS(head,tail) then patternStr(head) + "::" + patternStr(tail);
 
     case DAE.PAT_CONSTANT(exp=exp) then ExpressionDump.printExpStr(exp);
-    // case DAE.PAT_CONSTANT(SOME(et),exp) then "(" + Types.unparseType(et) + ")" + ExpressionDump.printExpStr(exp);
+    // case DAE.PAT_CONSTANT(SOME(et),exp) then "(" + TypesDump.unparseType(et) + ")" + ExpressionDump.printExpStr(exp);
     case DAE.PAT_AS(id=id,pat=pat) then id + " as " + patternStr(pat);
     case DAE.PAT_AS_FUNC_PTR(id, pat) then id + " as " + patternStr(pat);
     else
@@ -860,7 +860,7 @@ algorithm
         (optPatternMatrix,numNonEmptyColumns) := removeWildPatternColumnsFromMatrix(patternMatrix,{},0);
         tpl := findPatternToConvertToSwitch(optPatternMatrix,1,numNonEmptyColumns,info);
         (_,ty,_) := tpl;
-        str := Types.unparseType(ty);
+        str := TypesDump.unparseType(ty);
         Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.MATCH_TO_SWITCH_OPTIMIZATION, {str}, info);
         outType := DAE.MATCH(SOME(tpl));
         outCases := optimizeSwitchedMatchCases(outType, cases);
@@ -2209,7 +2209,7 @@ algorithm
     case (cache,env,SOME(exp),_,_,_,info)
       algorithm
         (_,_,prop) := Static.elabExp(cache,env,exp,impl,performVectorization,pre,info);
-        str := Types.unparseType(Types.getPropType(prop));
+        str := TypesDump.unparseType(Types.getPropType(prop));
         Error.addSourceMessage(Error.GUARD_EXPRESSION_TYPE_MISMATCH, {str}, info);
       then fail();
 
@@ -2304,7 +2304,7 @@ algorithm
     else
       algorithm
         tys := List.unionOnTrue(itys, {}, Types.equivtypes);
-        str := stringAppendList(List.map1r(List.map(tys, Types.unparseType), stringAppend, "\n  "));
+        str := stringAppendList(List.map1r(List.map(tys, TypesDump.unparseType), stringAppend, "\n  "));
         Error.addSourceMessage(Error.META_MATCHEXP_RESULT_TYPES, {str}, info);
       then fail();
 

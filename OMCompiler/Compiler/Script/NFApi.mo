@@ -102,6 +102,7 @@ import SymbolTable;
 import Typing = NFTyping;
 import UnitCheck = NFUnitCheck;
 import Util;
+import ValuesMake;
 import Variable = NFVariable;
 import VerifyModel = NFVerifyModel;
 import SCodeUtil;
@@ -794,14 +795,14 @@ protected
   array<InstNode> exts;
 algorithm
   if not Flags.isSet(Flags.SCODE_INST) then
-    result := ValuesUtil.makeBoolean(false);
+    result := ValuesMake.makeBoolean(false);
     return;
   end if;
 
   (_, _, cls_node) := frontEndLookup(program, classPath);
 
   if not InstNode.isClass(cls_node) then
-    result := ValuesUtil.makeBoolean(false);
+    result := ValuesMake.makeBoolean(false);
     return;
   end if;
 
@@ -813,11 +814,11 @@ algorithm
   end matchcontinue;
 
   if index < 1 or index > arrayLength(exts) then
-    result := ValuesUtil.makeBoolean(false);
+    result := ValuesMake.makeBoolean(false);
     return;
   end if;
 
-  result := ValuesUtil.makeCodeTypeName(InstNode.fullPath(exts[index], true));
+  result := ValuesMake.makeCodeTypeName(InstNode.fullPath(exts[index], true));
 end getNthInheritedClass;
 
 uniontype InstanceTree

@@ -734,10 +734,10 @@ algorithm
         paths := list(Absyn.Path.IDENT(AbsynUtil.className(c)) for c in classes);
         paths := List.map1r(paths,AbsynUtil.joinWithinPath,within_);
       then
-        ValuesUtil.makeCodeTypeNameArray(paths);
+        ValuesMake.makeCodeTypeNameArray(paths);
 
     case ("parseString",_)
-      then ValuesUtil.makeArray({});
+      then ValuesMake.makeArray({});
 
     case ("parseFile",{Values.STRING(str1),Values.STRING(encoding)})
       algorithm
@@ -746,7 +746,7 @@ algorithm
         Print.clearErrorBuf() "Clear error buffer";
         paths := Interactive.parseFile(str1, encoding);
       then
-        ValuesUtil.makeCodeTypeNameArray(paths);
+        ValuesMake.makeCodeTypeNameArray(paths);
 
     case ("loadFileInteractiveQualified",{Values.STRING(str1),Values.STRING(encoding)})
       algorithm
@@ -755,15 +755,15 @@ algorithm
         Print.clearErrorBuf() "Clear error buffer";
         paths := Interactive.parseFile(str1, encoding, updateProgram=true);
       then
-        ValuesUtil.makeCodeTypeNameArray(paths);
+        ValuesMake.makeCodeTypeNameArray(paths);
 
     case ("loadFileInteractive",{Values.STRING(str1),Values.STRING(encoding),Values.BOOL(b),Values.BOOL(b1),Values.BOOL(requireExactVersion)})
       algorithm
         newp := loadFile(str1, encoding, SymbolTable.getAbsyn(), b, b1, requireExactVersion) "System.regularFileExists(name) => 0 &    Parser.parse(name) => p1 &" ;
-        vals := List.map(Interactive.getTopClassnames(newp),ValuesUtil.makeCodeTypeName);
+        vals := List.map(Interactive.getTopClassnames(newp),ValuesMake.makeCodeTypeName);
         SymbolTable.setAbsyn(newp);
       then
-        ValuesUtil.makeArray(vals);
+        ValuesMake.makeArray(vals);
 
     case ("getSourceFile",{Values.CODE(Absyn.C_TYPENAME(path))})
       algorithm
@@ -797,7 +797,7 @@ algorithm
       algorithm
         ty := Interactive.getTypeOfVariable(name, SymbolTable.getVars());
       then
-        Values.STRING(Types.unparseType(ty));
+        Values.STRING(TypesDump.unparseType(ty));
 
     case ("GC_gcollect_and_unmap",{})
       algorithm
@@ -873,10 +873,10 @@ algorithm
         strs := List.map(vals, ValuesUtil.extractValueString);
         strs := List.sort(strs, Util.strcmpBool);
       then
-        ValuesUtil.makeArray(List.map(strs,ValuesUtil.makeString));
+        ValuesMake.makeArray(List.map(strs,ValuesMake.makeString));
 
     case ("listVariables",{})
-      then ValuesUtil.makeArray(getVariableNames(SymbolTable.getVars(),{}));
+      then ValuesMake.makeArray(getVariableNames(SymbolTable.getVars(),{}));
 
     case ("setTempDirectoryPath",{Values.STRING(cmd)})
       algorithm
@@ -998,7 +998,7 @@ algorithm
       then Values.BOOL(false);
 
     case ("getCommandLineOptions", {})
-      then ValuesUtil.makeStringArray(FlagsUtil.unparseFlags());
+      then ValuesMake.makeStringArray(FlagsUtil.unparseFlags());
 
     case ("getCommandLineOptions", _)
       then Values.META_FAIL();
@@ -1054,17 +1054,17 @@ algorithm
         (strs1, str, strs2) := FlagsUtil.getValidOptionsAndDescription(str);
       then
         Values.TUPLE({
-          ValuesUtil.makeStringArray(strs1),
+          ValuesMake.makeStringArray(strs1),
           Values.STRING(str),
-          ValuesUtil.makeStringArray(strs2)
+          ValuesMake.makeStringArray(strs2)
         });
 
     case ("getConfigFlagValidOptions",{Values.STRING(_)})
       then
         Values.TUPLE({
-          ValuesUtil.makeArray({}),
+          ValuesMake.makeArray({}),
           Values.STRING(""),
-          ValuesUtil.makeArray({})
+          ValuesMake.makeArray({})
         });
 
     case ("cd",{Values.STRING("")})
@@ -1114,7 +1114,7 @@ algorithm
       algorithm
         strs := List.map(vals, ValuesUtil.extractValueString);
       then
-        ValuesUtil.makeIntArray(System.systemCallParallel(strs,i));
+        ValuesMake.makeIntArray(System.systemCallParallel(strs,i));
 
     case ("timerClear",{Values.INTEGER(i)})
       algorithm
@@ -1195,10 +1195,10 @@ algorithm
       algorithm
         messages := List.unique(Error.getMessages());
       then
-        ValuesUtil.makeArray(List.map(messages, errorToValue));
+        ValuesMake.makeArray(List.map(messages, errorToValue));
 
     case ("getMessagesStringInternal",{Values.BOOL(false)})
-      then ValuesUtil.makeArray(List.map(Error.getMessages(), errorToValue));
+      then ValuesMake.makeArray(List.map(Error.getMessages(), errorToValue));
 
     case ("stringTypeName",{Values.STRING(str)})
       then Values.CODE(Absyn.C_TYPENAME(Parser.stringPath(str)));
@@ -1210,7 +1210,7 @@ algorithm
       then Values.STRING(AbsynUtil.pathString(path));
 
     case ("typeNameStrings",{Values.CODE(A=Absyn.C_TYPENAME(path=path))})
-      then ValuesUtil.makeArray(List.map(AbsynUtil.pathToStringList(path),ValuesUtil.makeString));
+      then ValuesMake.makeArray(List.map(AbsynUtil.pathToStringList(path),ValuesMake.makeString));
 
     case ("generateHeader",{Values.STRING(filename)})
       algorithm
@@ -1309,22 +1309,22 @@ algorithm
     case ("getImportedNames",{Values.CODE(Absyn.C_TYPENAME(path))})
       algorithm
         (vals, cvars) := getImportedNames(InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn()));
-        v := Values.TUPLE({ValuesUtil.makeArray(vals),ValuesUtil.makeArray(cvars)});
+        v := Values.TUPLE({ValuesMake.makeArray(vals),ValuesMake.makeArray(cvars)});
       then
         v;
 
     case ("getImportedNames",_)
-      then (Values.TUPLE({ValuesUtil.makeArray({}),ValuesUtil.makeArray({})}));
+      then (Values.TUPLE({ValuesMake.makeArray({}),ValuesMake.makeArray({})}));
 
     case ("getMMfileTotalDependencies",{Values.STRING(str1), Values.STRING(str2)})
       algorithm
         strs := getMMfileTotalDependencies(str1, str2);
         vals := list(Values.STRING(s) for s in strs);
       then
-        ValuesUtil.makeArray(vals);
+        ValuesMake.makeArray(vals);
 
     case ("getMMfileTotalDependencies",_)
-      then ValuesUtil.makeArray({});
+      then ValuesMake.makeArray({});
 
     case ("loadModel",{Values.CODE(Absyn.C_TYPENAME(path)),Values.ARRAY(valueLst=cvars),Values.BOOL(b),Values.STRING(str),Values.BOOL(requireExactVersion)})
       algorithm
@@ -1406,18 +1406,18 @@ algorithm
             Print.clearErrorBuf() "Clear error buffer";
             filename := Testsuite.friendlyPath(filename);
             (paths) := Interactive.parseFile(filename, "UTF-8");
-            vals := List.map(paths,ValuesUtil.makeCodeTypeName);
+            vals := List.map(paths,ValuesMake.makeCodeTypeName);
           end if;
         else
           b := false;
         end try;
         0 := System.cd(str);
       then
-        ValuesUtil.makeArray(vals);
+        ValuesMake.makeArray(vals);
 
     case ("parseEncryptedPackage",_)
       then
-        ValuesUtil.makeArray({});
+        ValuesMake.makeArray({});
 
     case ("loadEncryptedPackage",Values.STRING(filename)::Values.STRING(workdir)::Values.BOOL(bval)::Values.BOOL(b)::Values.BOOL(b1)::Values.BOOL(requireExactVersion)::_)
       algorithm
@@ -1530,13 +1530,13 @@ algorithm
       algorithm
         strs := System.strtok(str, token);
       then
-        ValuesUtil.makeStringArray(strs);
+        ValuesMake.makeStringArray(strs);
 
     case ("stringSplit",{Values.STRING(str),Values.STRING(token)})
       algorithm
         strs := Util.stringSplitAtChar(str, token);
       then
-        ValuesUtil.makeStringArray(strs);
+        ValuesMake.makeStringArray(strs);
 
     case ("stringReplace",{Values.STRING(str1),Values.STRING(str2),Values.STRING(str3)})
       algorithm
@@ -1585,7 +1585,7 @@ algorithm
       algorithm
         paths := InteractiveUtil.getAllSubtypeOf(path, parentClass, SymbolTable.getAbsyn(), includePartial, sort);
       then
-        ValuesUtil.makeCodeTypeNameArray(paths);
+        ValuesMake.makeCodeTypeNameArray(paths);
 
     case ("getReplaceableChoices", {
           Values.CODE(Absyn.C_TYPENAME(path)),
@@ -3241,7 +3241,7 @@ algorithm
     paths := List.sort(paths, AbsynUtil.pathGe);
   end if;
 
-  res := ValuesUtil.makeCodeTypeNameArray(paths);
+  res := ValuesMake.makeCodeTypeNameArray(paths);
 end getClassNames;
 
 function checkSettings
@@ -3382,7 +3382,7 @@ algorithm
     // print("Files to recompile (" + intString(listLength(depschanged)) + "): " + stringDelimitList(names, ",") + "\n");
     fileNames := List.map1(names, stringAppend, suffix);
     _ := List.map(fileNames, System.removeFile);
-    res := ValuesUtil.makeArray(List.map(names,ValuesUtil.makeString));
+    res := ValuesMake.makeArray(List.map(names,ValuesMake.makeString));
   else
     res := Values.META_FAIL();
   end try;

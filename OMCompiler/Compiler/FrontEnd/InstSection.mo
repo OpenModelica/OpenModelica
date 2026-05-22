@@ -590,7 +590,7 @@ algorithm
 
           if not Types.isScalarBoolean(ty) then
             exp_str := Dump.printExpStr(cond);
-            ty_str := Types.unparseTypeNoAttr(ty);
+            ty_str := TypesDump.unparseTypeNoAttr(ty);
             Error.addSourceMessageAndFail(Error.IF_CONDITION_TYPE_ERROR,
               {exp_str, ty_str}, inInfo);
           end if;
@@ -650,8 +650,8 @@ algorithm
   if not Types.subtype(ty, inExpectedType) then
     Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
       {intString(inArgIndex), inOperatorName, inArgName,
-       Dump.printExpStr(inArg), Types.unparseTypeNoAttr(ty),
-       Types.unparseType(inExpectedType)}, inInfo);
+       Dump.printExpStr(inArg), TypesDump.unparseTypeNoAttr(ty),
+       TypesDump.unparseType(inExpectedType)}, inInfo);
   end if;
 
   (outCache, outArg) :=
@@ -930,7 +930,7 @@ algorithm
         ty := Types.arrayElementType(inType);
         false := Types.isReal(ty);
         cref_str := ComponentReference.printComponentRefStr(inCref);
-        ty_str := Types.unparseType(ty);
+        ty_str := TypesDump.unparseType(ty);
         Error.addSourceMessage(Error.REINIT_MUST_BE_REAL,
           {cref_str, ty_str}, inInfo);
       then
@@ -1361,9 +1361,9 @@ algorithm
     case (e1,DAE.PROP(type_ = t1),e2,DAE.PROP(type_ = t2),_,_,_)
       algorithm
         e1_str := ExpressionDump.printExpStr(e1);
-        t1_str := Types.unparseTypeNoAttr(t1);
+        t1_str := TypesDump.unparseTypeNoAttr(t1);
         e2_str := ExpressionDump.printExpStr(e2);
-        t2_str := Types.unparseTypeNoAttr(t2);
+        t2_str := TypesDump.unparseTypeNoAttr(t2);
         s1 := stringAppendList({e1_str,"=",e2_str});
         s2 := stringAppendList({t1_str,"=",t2_str});
         info := ElementSource.getElementSourceFileInfo(source);
@@ -2913,7 +2913,7 @@ algorithm
     end if;
     exp := Types.matchType(exp, tyEl, DAE.T_BOOL_DEFAULT);
   else
-    Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR,{Dump.printExpStr(aexp),Types.unparseType(ty)},info);
+    Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR,{Dump.printExpStr(aexp),TypesDump.unparseType(ty)},info);
     fail();
   end try;
   if Config.languageStandardAtLeast(Config.LanguageStandard._3_2) then
@@ -4237,10 +4237,10 @@ algorithm
         (cache,_) = PrefixUtil.prefixCref(cache,env,ih,pre,c2);
         c1_str = Types.connectorTypeStr(ct) + ComponentReference.printComponentRefStr(c1);
         (t1, _) = Types.stripTypeVars(t1);
-        t1_str = Types.unparseType(t1);
+        t1_str = TypesDump.unparseType(t1);
         c2_str = Types.connectorTypeStr(ct) + ComponentReference.printComponentRefStr(c2);
         (t2, _) = Types.stripTypeVars(t2);
-        t2_str = Types.unparseType(t2);
+        t2_str = TypesDump.unparseType(t2);
         c1_str = stringAppendList({c1_str," type: ",t1_str});
         c2_str = stringAppendList({c2_str," type: ",t2_str});
         Error.addSourceMessage(Error.CONNECT_ARRAY_SIZE_ZERO, {c1_str,c2_str},info);
@@ -4443,9 +4443,9 @@ algorithm
         (cache,_) := PrefixUtil.prefixCref(cache,env,ih,pre, c1);
         (cache,_) := PrefixUtil.prefixCref(cache,env,ih,pre, c2);
         c1_str := ComponentReference.printComponentRefStr(c1);
-        t1_str := Types.unparseType(t1);
+        t1_str := TypesDump.unparseType(t1);
         c2_str := ComponentReference.printComponentRefStr(c2);
-        t2_str := Types.unparseType(t2);
+        t2_str := TypesDump.unparseType(t2);
         c1_str := stringAppendList({"\n",c1_str," type:\n",t1_str});
         c2_str := stringAppendList({"\n",c2_str," type:\n",t2_str});
         Error.addSourceMessage(Error.INVALID_CONNECTOR_VARIABLE, {c1_str,c2_str},info);
@@ -5168,8 +5168,8 @@ algorithm
         false := Types.subtype(lt, rt);
         lhs_str := ExpressionDump.printExpStr(e_1);
         rhs_str := Dump.printExpStr(inRhs);
-        lt_str := Types.unparseTypeNoAttr(lt);
-        rt_str := Types.unparseTypeNoAttr(rt);
+        lt_str := TypesDump.unparseTypeNoAttr(lt);
+        rt_str := TypesDump.unparseTypeNoAttr(rt);
         Types.typeErrorSanityCheck(lt_str, rt_str, info);
         Error.addSourceMessage(Error.ASSIGN_TYPE_MISMATCH_ERROR,{lhs_str,rhs_str,lt_str,rt_str}, info);
       then
@@ -5225,7 +5225,7 @@ algorithm
       String str;
     case DAE.T_ARRAY(ty = DAE.T_ARRAY())
       algorithm
-        str := Types.unparseType(ty);
+        str := TypesDump.unparseType(ty);
         Error.addSourceMessage(Error.ITERATOR_NON_ARRAY,{id,str},info);
       then fail();
     case DAE.T_ARRAY(ty = oty) then oty;
@@ -5234,7 +5234,7 @@ algorithm
     case DAE.T_METATYPE(ty = oty) then getIteratorType(ty.ty, id, info);
     else
       algorithm
-        str := Types.unparseType(ty);
+        str := TypesDump.unparseType(ty);
         Error.addSourceMessage(Error.ITERATOR_NON_ARRAY,{id,str},info);
       then fail();
   end match;

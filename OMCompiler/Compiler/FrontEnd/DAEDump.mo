@@ -1133,7 +1133,7 @@ algorithm
         false := Flags.isSet(Flags.DISABLE_RECORD_CONSTRUCTOR_OUTPUT);
 
         if Flags.isSet(Flags.PRINT_RECORD_TYPES) then
-          Print.printBuf(Types.unparseType(t));
+          Print.printBuf(TypesDump.unparseType(t));
           Print.printBuf("\n");
         else
           Print.printBuf("function ");
@@ -1464,7 +1464,7 @@ algorithm
         Print.printBuf("/* ");
         Print.printBuf(name);
         Print.printBuf(" := array_alloc(");
-        Print.printBuf(Types.unparseType(ty));
+        Print.printBuf(TypesDump.unparseType(ty));
         Print.printBuf(") */;\n");
       then
         ();
@@ -2429,7 +2429,7 @@ algorithm
   end match;
 end buildGrElement;
 
-protected function unparseType "wrapper function for Types.unparseType, so records and enumerations can be output properly"
+protected function unparseType "wrapper function for TypesDump.unparseType, so records and enumerations can be output properly"
   input DAE.Type tp;
   output String str;
 algorithm
@@ -2460,8 +2460,8 @@ algorithm
     case DAE.T_SUBTYPE_BASIC(complexType = ty as DAE.T_SUBTYPE_BASIC())
       then unparseType(ty);
 
-    case DAE.T_SUBTYPE_BASIC(complexType = bc_tp) then Types.unparseType(bc_tp);
-    else Types.unparseType(tp);
+    case DAE.T_SUBTYPE_BASIC(complexType = bc_tp) then TypesDump.unparseType(bc_tp);
+    else TypesDump.unparseType(tp);
   end matchcontinue;
 end unparseType;
 
@@ -3529,7 +3529,7 @@ algorithm
         false := Flags.isSet(Flags.DISABLE_RECORD_CONSTRUCTOR_OUTPUT);
 
         if Flags.isSet(Flags.PRINT_RECORD_TYPES) then
-          str := IOStream.append(str, Types.unparseType(tp));
+          str := IOStream.append(str, TypesDump.unparseType(tp));
           str := IOStream.append(str, "\n");
         else
           fstr := AbsynUtil.pathStringNoQual(fpath);

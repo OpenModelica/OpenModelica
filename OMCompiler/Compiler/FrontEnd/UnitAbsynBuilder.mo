@@ -1252,7 +1252,7 @@ algorithm
       (store,indxs) := buildFuncTypeStores2(args,funcInstId,store);
     then (store,indxs);
     case(tp,_,_) algorithm
-      print("buildFuncTypeStores failed, tp"+Types.unparseType(tp)+"\n");
+      print("buildFuncTypeStores failed, tp"+TypesDump.unparseType(tp)+"\n");
     then fail();
   end matchcontinue;
 end buildFuncTypeStores;
@@ -1306,7 +1306,7 @@ algorithm
       then "";
     case(DAE.T_INTEGER()) then "";
     case(DAE.T_ARRAY(ty=tp)) then getUnitStr(tp);
-    case(tp) algorithm print("getUnitStr for type "+Types.unparseType(tp)+" failed\n"); then fail();
+    case(tp) algorithm print("getUnitStr for type "+TypesDump.unparseType(tp)+" failed\n"); then fail();
   end matchcontinue;
 end getUnitStr;
 

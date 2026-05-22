@@ -1863,5 +1863,5 @@ algorithm
   end match;
 end checkTypeSpec;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_dump");
 end AbsynToSCode;

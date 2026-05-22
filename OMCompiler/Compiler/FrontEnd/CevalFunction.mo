@@ -606,13 +606,13 @@ algorithm
         (LWORK, cache) := evaluateExtIntArg(arg_LWORK, cache, env);
         (A, WR, WI, VL, VR, WORK, INFO) :=
           Lapack.dgeev(JOBVL, JOBVR, N, A, LDA, LDVL, LDVR, WORK, LWORK);
-        val_A := ValuesUtil.makeRealMatrix(A);
-        val_WR := ValuesUtil.makeRealArray(WR);
-        val_WI := ValuesUtil.makeRealArray(WI);
-        val_VL := ValuesUtil.makeRealMatrix(VL);
-        val_VR := ValuesUtil.makeRealMatrix(VR);
-        val_WORK := ValuesUtil.makeRealArray(WORK);
-        val_INFO := ValuesUtil.makeInteger(INFO);
+        val_A := ValuesMake.makeRealMatrix(A);
+        val_WR := ValuesMake.makeRealArray(WR);
+        val_WI := ValuesMake.makeRealArray(WI);
+        val_VL := ValuesMake.makeRealMatrix(VL);
+        val_VR := ValuesMake.makeRealMatrix(VR);
+        val_WORK := ValuesMake.makeRealArray(WORK);
+        val_INFO := ValuesMake.makeInteger(INFO);
         arg_out := {arg_A, arg_WR, arg_WI, arg_VL, arg_VR, arg_WORK, arg_INFO};
         val_out := {val_A, val_WR, val_WI, val_VL, val_VR, val_WORK, val_INFO};
         (cache, env) := assignExtOutputs(arg_out, val_out, cache, env);
@@ -637,13 +637,13 @@ algorithm
         (LWORK, cache) := evaluateExtIntArg(arg_LWORK, cache, env);
         (ALPHAR, ALPHAI, BETA, VL, VR, WORK, INFO) :=
           Lapack.dgegv(JOBVL, JOBVR, N, A, LDA, B, LDB, LDVL, LDVR, WORK, LWORK);
-        val_ALPHAR := ValuesUtil.makeRealArray(ALPHAR);
-        val_ALPHAI := ValuesUtil.makeRealArray(ALPHAI);
-        val_BETA := ValuesUtil.makeRealArray(BETA);
-        val_VL := ValuesUtil.makeRealMatrix(VL);
-        val_VR := ValuesUtil.makeRealMatrix(VR);
-        val_WORK := ValuesUtil.makeRealArray(WORK);
-        val_INFO := ValuesUtil.makeInteger(INFO);
+        val_ALPHAR := ValuesMake.makeRealArray(ALPHAR);
+        val_ALPHAI := ValuesMake.makeRealArray(ALPHAI);
+        val_BETA := ValuesMake.makeRealArray(BETA);
+        val_VL := ValuesMake.makeRealMatrix(VL);
+        val_VR := ValuesMake.makeRealMatrix(VR);
+        val_WORK := ValuesMake.makeRealArray(WORK);
+        val_INFO := ValuesMake.makeInteger(INFO);
         arg_out := {arg_ALPHAR, arg_ALPHAI, arg_BETA, arg_VL, arg_VR, arg_WORK, arg_INFO};
         val_out := {val_ALPHAR, val_ALPHAI, val_BETA, val_VL, val_VR, val_WORK, val_INFO};
         (cache, env) := assignExtOutputs(arg_out, val_out, cache, env);
@@ -666,10 +666,10 @@ algorithm
         (LWORK, cache) := evaluateExtIntArg(arg_LWORK, cache, env);
         (A, B, WORK, INFO) :=
           Lapack.dgels(TRANS, M, N, NRHS, A, LDA, B, LDB, WORK, LWORK);
-        val_A := ValuesUtil.makeRealMatrix(A);
-        val_B := ValuesUtil.makeRealMatrix(B);
-        val_WORK := ValuesUtil.makeRealArray(WORK);
-        val_INFO := ValuesUtil.makeInteger(INFO);
+        val_A := ValuesMake.makeRealMatrix(A);
+        val_B := ValuesMake.makeRealMatrix(B);
+        val_WORK := ValuesMake.makeRealArray(WORK);
+        val_INFO := ValuesMake.makeInteger(INFO);
         arg_out := {arg_A, arg_B, arg_WORK, arg_INFO};
         val_out := {val_A, val_B, val_WORK, val_INFO};
         (cache, env) := assignExtOutputs(arg_out, val_out, cache, env);
@@ -692,11 +692,11 @@ algorithm
         (WORK, cache) := evaluateExtRealArrayArg(arg_WORK, cache, env);
         (A, B, JPVT, RANK, INFO) :=
           Lapack.dgelsx(M, N, NRHS, A, LDA, B, LDB, JPVT, RCOND, WORK);
-        val_A := ValuesUtil.makeRealMatrix(A);
-        val_B := ValuesUtil.makeRealMatrix(B);
-        val_JPVT := ValuesUtil.makeIntArray(JPVT);
-        val_RANK := ValuesUtil.makeInteger(RANK);
-        val_INFO := ValuesUtil.makeInteger(INFO);
+        val_A := ValuesMake.makeRealMatrix(A);
+        val_B := ValuesMake.makeRealMatrix(B);
+        val_JPVT := ValuesMake.makeIntArray(JPVT);
+        val_RANK := ValuesMake.makeInteger(RANK);
+        val_INFO := ValuesMake.makeInteger(INFO);
         arg_out := {arg_A, arg_B, arg_JPVT, arg_RANK, arg_INFO};
         val_out := {val_A, val_B, val_JPVT, val_RANK, val_INFO};
         (cache, env) := assignExtOutputs(arg_out, val_out, cache, env);
@@ -719,11 +719,11 @@ algorithm
         (WORK, cache) := evaluateExtRealArrayArg(arg_WORK, cache, env);
         (A, B, JPVT, RANK, INFO) :=
           Lapack.dgelsx(M, N, NRHS, A, LDA, B, LDB, JPVT, RCOND, WORK);
-        val_A := ValuesUtil.makeRealMatrix(A);
-        val_B := ValuesUtil.makeRealMatrix(B);
-        val_JPVT := ValuesUtil.makeIntArray(JPVT);
-        val_RANK := ValuesUtil.makeInteger(RANK);
-        val_INFO := ValuesUtil.makeInteger(INFO);
+        val_A := ValuesMake.makeRealMatrix(A);
+        val_B := ValuesMake.makeRealMatrix(B);
+        val_JPVT := ValuesMake.makeIntArray(JPVT);
+        val_RANK := ValuesMake.makeInteger(RANK);
+        val_INFO := ValuesMake.makeInteger(INFO);
         arg_out := {arg_A, arg_B, arg_JPVT, arg_RANK, arg_INFO};
         val_out := {val_A, val_B, val_JPVT, val_RANK, val_INFO};
         (cache, env) := assignExtOutputs(arg_out, val_out, cache, env);
@@ -747,12 +747,12 @@ algorithm
         (LWORK, cache) := evaluateExtIntArg(arg_LWORK, cache, env);
         (A, B, JPVT, RANK, WORK, INFO) :=
           Lapack.dgelsy(M, N, NRHS, A, LDA, B, LDB, JPVT, RCOND, WORK, LWORK);
-        val_A := ValuesUtil.makeRealMatrix(A);
-        val_B := ValuesUtil.makeRealMatrix(B);
-        val_JPVT := ValuesUtil.makeIntArray(JPVT);
-        val_RANK := ValuesUtil.makeInteger(RANK);
-        val_WORK := ValuesUtil.makeRealArray(WORK);
-        val_INFO := ValuesUtil.makeInteger(INFO);
+        val_A := ValuesMake.makeRealMatrix(A);
+        val_B := ValuesMake.makeRealMatrix(B);
+        val_JPVT := ValuesMake.makeIntArray(JPVT);
+        val_RANK := ValuesMake.makeInteger(RANK);
+        val_WORK := ValuesMake.makeRealArray(WORK);
+        val_INFO := ValuesMake.makeInteger(INFO);
         arg_out := {arg_A, arg_B, arg_JPVT, arg_RANK, arg_WORK, arg_INFO};
         val_out := {val_A, val_B, val_JPVT, val_RANK, val_WORK, val_INFO};
         (cache, env) := assignExtOutputs(arg_out, val_out, cache, env);
@@ -771,10 +771,10 @@ algorithm
         (LDB, cache) := evaluateExtIntArg(arg_LDB, cache, env);
         (A, IPIV, B, INFO) :=
           Lapack.dgesv(N, NRHS, A, LDA, B, LDB);
-        val_A := ValuesUtil.makeRealMatrix(A);
-        val_IPIV := ValuesUtil.makeIntArray(IPIV);
-        val_B := ValuesUtil.makeRealMatrix(B);
-        val_INFO := ValuesUtil.makeInteger(INFO);
+        val_A := ValuesMake.makeRealMatrix(A);
+        val_IPIV := ValuesMake.makeIntArray(IPIV);
+        val_B := ValuesMake.makeRealMatrix(B);
+        val_INFO := ValuesMake.makeInteger(INFO);
         arg_out := {arg_A, arg_IPIV, arg_B, arg_INFO};
         val_out := {val_A, val_IPIV, val_B, val_INFO};
         (cache, env) := assignExtOutputs(arg_out, val_out, cache, env);
@@ -798,13 +798,13 @@ algorithm
         (LWORK, cache) := evaluateExtIntArg(arg_LWORK, cache, env);
         (A, B, C, D, X, WORK, INFO) :=
           Lapack.dgglse(M, N, P, A, LDA, B, LDB, C, D, WORK, LWORK);
-        val_A := ValuesUtil.makeRealMatrix(A);
-        val_B := ValuesUtil.makeRealMatrix(B);
-        val_C := ValuesUtil.makeRealArray(C);
-        val_D := ValuesUtil.makeRealArray(D);
-        val_X := ValuesUtil.makeRealArray(X);
-        val_WORK := ValuesUtil.makeRealArray(WORK);
-        val_INFO := ValuesUtil.makeInteger(INFO);
+        val_A := ValuesMake.makeRealMatrix(A);
+        val_B := ValuesMake.makeRealMatrix(B);
+        val_C := ValuesMake.makeRealArray(C);
+        val_D := ValuesMake.makeRealArray(D);
+        val_X := ValuesMake.makeRealArray(X);
+        val_WORK := ValuesMake.makeRealArray(WORK);
+        val_INFO := ValuesMake.makeInteger(INFO);
         arg_out := {arg_A, arg_B, arg_C, arg_D, arg_X, arg_WORK, arg_INFO};
         val_out := {val_A, val_B, val_C, val_D, val_X, val_WORK, val_INFO};
         (cache, env) := assignExtOutputs(arg_out, val_out, cache, env);
@@ -824,11 +824,11 @@ algorithm
         (LDB, cache) := evaluateExtIntArg(arg_LDB, cache, env);
         (DL, D, DU, B, INFO) :=
           Lapack.dgtsv(N, NRHS, DL, D, DU, B, LDB);
-        val_DL := ValuesUtil.makeRealArray(DL);
-        val_D := ValuesUtil.makeRealArray(D);
-        val_DU := ValuesUtil.makeRealArray(DU);
-        val_B := ValuesUtil.makeRealMatrix(B);
-        val_INFO := ValuesUtil.makeInteger(INFO);
+        val_DL := ValuesMake.makeRealArray(DL);
+        val_D := ValuesMake.makeRealArray(D);
+        val_DU := ValuesMake.makeRealArray(DU);
+        val_B := ValuesMake.makeRealMatrix(B);
+        val_INFO := ValuesMake.makeInteger(INFO);
         arg_out := {arg_DL, arg_D, arg_DU, arg_B, arg_INFO};
         val_out := {val_DL, val_D, val_DU, val_B, val_INFO};
         (cache, env) := assignExtOutputs(arg_out, val_out, cache, env);
@@ -849,10 +849,10 @@ algorithm
         (LDB, cache) := evaluateExtIntArg(arg_LDB, cache, env);
         (AB, IPIV, B, INFO) :=
           Lapack.dgbsv(N, KL, KU, NRHS, AB, LDAB, B, LDB);
-        val_AB := ValuesUtil.makeRealMatrix(AB);
-        val_IPIV := ValuesUtil.makeIntArray(IPIV);
-        val_B := ValuesUtil.makeRealMatrix(B);
-        val_INFO := ValuesUtil.makeInteger(INFO);
+        val_AB := ValuesMake.makeRealMatrix(AB);
+        val_IPIV := ValuesMake.makeIntArray(IPIV);
+        val_B := ValuesMake.makeRealMatrix(B);
+        val_INFO := ValuesMake.makeInteger(INFO);
         arg_out := {arg_AB, arg_IPIV, arg_B, arg_INFO};
         val_out := {val_AB, val_IPIV, val_B, val_INFO};
         (cache, env) := assignExtOutputs(arg_out, val_out, cache, env);
@@ -875,12 +875,12 @@ algorithm
         (LWORK, cache) := evaluateExtIntArg(arg_LWORK, cache, env);
         (A, S, U, VT, WORK, INFO) :=
           Lapack.dgesvd(JOBU, JOBVT, M, N, A, LDA, LDU, LDVT, WORK, LWORK);
-        val_A := ValuesUtil.makeRealMatrix(A);
-        val_S := ValuesUtil.makeRealArray(S);
-        val_U := ValuesUtil.makeRealMatrix(U);
-        val_VT := ValuesUtil.makeRealMatrix(VT);
-        val_WORK := ValuesUtil.makeRealArray(WORK);
-        val_INFO := ValuesUtil.makeInteger(INFO);
+        val_A := ValuesMake.makeRealMatrix(A);
+        val_S := ValuesMake.makeRealArray(S);
+        val_U := ValuesMake.makeRealMatrix(U);
+        val_VT := ValuesMake.makeRealMatrix(VT);
+        val_WORK := ValuesMake.makeRealArray(WORK);
+        val_INFO := ValuesMake.makeInteger(INFO);
         arg_out := {arg_A, arg_S, arg_U, arg_VT, arg_WORK, arg_INFO};
         val_out := {val_A, val_S, val_U, val_VT, val_WORK, val_INFO};
         (cache, env) := assignExtOutputs(arg_out, val_out, cache, env);
@@ -896,9 +896,9 @@ algorithm
         (LDA, cache) := evaluateExtIntArg(arg_LDA, cache, env);
         (A, IPIV, INFO) :=
           Lapack.dgetrf(M, N, A, LDA);
-        val_A := ValuesUtil.makeRealMatrix(A);
-        val_IPIV := ValuesUtil.makeIntArray(IPIV);
-        val_INFO := ValuesUtil.makeInteger(INFO);
+        val_A := ValuesMake.makeRealMatrix(A);
+        val_IPIV := ValuesMake.makeIntArray(IPIV);
+        val_INFO := ValuesMake.makeInteger(INFO);
         arg_out := {arg_A, arg_IPIV, arg_INFO};
         val_out := {val_A, val_IPIV, val_INFO};
         (cache, env) := assignExtOutputs(arg_out, val_out, cache, env);
@@ -919,8 +919,8 @@ algorithm
         (LDB, cache) := evaluateExtIntArg(arg_LDB, cache, env);
         (B, INFO) :=
           Lapack.dgetrs(TRANS, N, NRHS, A, LDA, IPIV, B, LDB);
-        val_B := ValuesUtil.makeRealMatrix(B);
-        val_INFO := ValuesUtil.makeInteger(INFO);
+        val_B := ValuesMake.makeRealMatrix(B);
+        val_INFO := ValuesMake.makeInteger(INFO);
         arg_out := {arg_B, arg_INFO};
         val_out := {val_B, val_INFO};
         (cache, env) := assignExtOutputs(arg_out, val_out, cache, env);
@@ -938,9 +938,9 @@ algorithm
         (LWORK, cache) := evaluateExtIntArg(arg_LWORK, cache, env);
         (A, WORK, INFO) :=
           Lapack.dgetri(N, A, LDA, IPIV, WORK, LWORK);
-        val_A := ValuesUtil.makeRealMatrix(A);
-        val_WORK := ValuesUtil.makeRealArray(WORK);
-        val_INFO := ValuesUtil.makeInteger(INFO);
+        val_A := ValuesMake.makeRealMatrix(A);
+        val_WORK := ValuesMake.makeRealArray(WORK);
+        val_INFO := ValuesMake.makeInteger(INFO);
         arg_out := {arg_A, arg_WORK, arg_INFO};
         val_out := {val_A, val_WORK, val_INFO};
         (cache, env) := assignExtOutputs(arg_out, val_out, cache, env);
@@ -959,10 +959,10 @@ algorithm
         (WORK, cache) := evaluateExtRealArrayArg(arg_WORK, cache, env);
         (A, JPVT, TAU, INFO) :=
           Lapack.dgeqpf(M, N, A, LDA, JPVT, WORK);
-        val_A := ValuesUtil.makeRealMatrix(A);
-        val_JPVT := ValuesUtil.makeIntArray(JPVT);
-        val_TAU := ValuesUtil.makeRealArray(TAU);
-        val_INFO := ValuesUtil.makeInteger(INFO);
+        val_A := ValuesMake.makeRealMatrix(A);
+        val_JPVT := ValuesMake.makeIntArray(JPVT);
+        val_TAU := ValuesMake.makeRealArray(TAU);
+        val_INFO := ValuesMake.makeInteger(INFO);
         arg_out := {arg_A, arg_JPVT, arg_TAU, arg_INFO};
         val_out := {val_A, val_JPVT, val_TAU, val_INFO};
         (cache, env) := assignExtOutputs(arg_out, val_out, cache, env);
@@ -983,9 +983,9 @@ algorithm
         (LWORK, cache) := evaluateExtIntArg(arg_LWORK, cache, env);
         (A, WORK, INFO) :=
           Lapack.dorgqr(M, N, K, A, LDA, TAU, WORK, LWORK);
-        val_A := ValuesUtil.makeRealMatrix(A);
-        val_WORK := ValuesUtil.makeRealArray(WORK);
-        val_INFO := ValuesUtil.makeInteger(INFO);
+        val_A := ValuesMake.makeRealMatrix(A);
+        val_WORK := ValuesMake.makeRealArray(WORK);
+        val_INFO := ValuesMake.makeInteger(INFO);
         arg_out := {arg_A, arg_WORK, arg_INFO};
         val_out := {val_A, val_WORK, val_INFO};
         (cache, env) := assignExtOutputs(arg_out, val_out, cache, env);

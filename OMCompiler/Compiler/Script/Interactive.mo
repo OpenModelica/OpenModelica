@@ -557,7 +557,7 @@ algorithm
       algorithm
         estr := stringRepresOfExpr(exp);
         vtype := Types.typeOfValue(value);
-        tstr := Types.unparseTypeNoAttr(vtype);
+        tstr := TypesDump.unparseTypeNoAttr(vtype);
         Error.addSourceMessage(Error.WHILE_CONDITION_TYPE_ERROR, {estr,tstr}, info);
       then fail();
 
@@ -600,7 +600,7 @@ algorithm
       algorithm
         estr := stringRepresOfExpr(exp);
         vtype := Types.typeOfValue(value);
-        tstr := Types.unparseTypeNoAttr(vtype);
+        tstr := TypesDump.unparseTypeNoAttr(vtype);
         Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR, {estr,tstr}, info);
       then fail();
 
@@ -831,16 +831,16 @@ protected
 algorithm
   try
     if isClassReadOnly(InteractiveUtil.getPathedClassInProgram(classPath, program)) then
-      result := ValuesUtil.makeCodeTypeNameStr("Error: class: " + AbsynUtil.pathString(classPath) + " is in a read only file!");
+      result := ValuesMake.makeCodeTypeNameStr("Error: class: " + AbsynUtil.pathString(classPath) + " is in a read only file!");
       return;
     end if;
 
     comp_reps := extractAllComponentreplacements(program, classPath, oldName, newName);
     program := renameComponentFromComponentreplacements(program, comp_reps);
     paths := extractRenamedClassesAsStringList(comp_reps);
-    result := ValuesUtil.makeCodeTypeNameArray(paths);
+    result := ValuesMake.makeCodeTypeNameArray(paths);
   else
-    result := ValuesUtil.makeBoolean(false);
+    result := ValuesMake.makeBoolean(false);
   end try;
 end renameComponent;
 
@@ -857,7 +857,7 @@ protected
 algorithm
   try
     if isClassReadOnly(InteractiveUtil.getPathedClassInProgram(classPath, program)) then
-      result := ValuesUtil.makeCodeTypeNameStr("Error: class: " + AbsynUtil.pathString(classPath) + " is in a read only file!");
+      result := ValuesMake.makeCodeTypeNameStr("Error: class: " + AbsynUtil.pathString(classPath) + " is in a read only file!");
       return;
     end if;
 
@@ -865,9 +865,9 @@ algorithm
     cl := renameComponentInClass(cl, oldName, newName);
     w := InteractiveUtil.buildWithin(AbsynUtil.makeFullyQualified(classPath));
     program := InteractiveUtil.updateProgram(Absyn.PROGRAM({cl}, w), program);
-    result := ValuesUtil.makeCodeTypeNameArray({classPath});
+    result := ValuesMake.makeCodeTypeNameArray({classPath});
   else
-    result := ValuesUtil.makeBoolean(false);
+    result := ValuesMake.makeBoolean(false);
   end try;
 end renameComponentOnlyInClass;
 
@@ -2829,9 +2829,9 @@ algorithm
 
     program := transformPathedClassInProgram(classPath, program,
       function setComponentPropertiesInClass(component = component, properties = props));
-    result := ValuesUtil.makeBoolean(true);
+    result := ValuesMake.makeBoolean(true);
   else
-    result := ValuesUtil.makeBoolean(false);
+    result := ValuesMake.makeBoolean(false);
   end try;
 end setComponentProperties;
 
@@ -3058,16 +3058,16 @@ algorithm
   try
     cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
     info := cls.info;
-    result := ValuesUtil.makeArray({
-      ValuesUtil.makeCodeTypeNameStr(Testsuite.friendly(info.fileName)),
-      ValuesUtil.makeCodeTypeNameStr(if info.isReadOnly then "readonly" else "writable"),
-      ValuesUtil.makeInteger(info.lineNumberStart),
-      ValuesUtil.makeInteger(info.columnNumberStart),
-      ValuesUtil.makeInteger(info.lineNumberEnd),
-      ValuesUtil.makeInteger(info.columnNumberEnd)
+    result := ValuesMake.makeArray({
+      ValuesMake.makeCodeTypeNameStr(Testsuite.friendly(info.fileName)),
+      ValuesMake.makeCodeTypeNameStr(if info.isReadOnly then "readonly" else "writable"),
+      ValuesMake.makeInteger(info.lineNumberStart),
+      ValuesMake.makeInteger(info.columnNumberStart),
+      ValuesMake.makeInteger(info.lineNumberEnd),
+      ValuesMake.makeInteger(info.columnNumberEnd)
     });
   else
-    result := ValuesUtil.makeBoolean(false);
+    result := ValuesMake.makeBoolean(false);
   end try;
 end getCrefInfo;
 
@@ -3295,7 +3295,7 @@ algorithm
   end try;
 
   // getElementsInfo uses a format that can't be represented as a Value, fake it with a CodeType.
-  result := ValuesUtil.makeCodeTypeNameStr(result_str);
+  result := ValuesMake.makeCodeTypeNameStr(result_str);
 end getElementsInfo;
 
 public function getSourceFile
@@ -3575,9 +3575,9 @@ algorithm
   try
     SOME(Absyn.EXTENDS(elementArg = ext_mod)) :=
       InteractiveUtil.getPathedExtendsInProgram(classPath, extendsPath, program);
-    result := ValuesUtil.makeCodeTypeNameStr(Dump.printExpStr(getModificationValue(ext_mod, modifierPath)));
+    result := ValuesMake.makeCodeTypeNameStr(Dump.printExpStr(getModificationValue(ext_mod, modifierPath)));
   else
-    result := ValuesUtil.makeCodeTypeNameStr("");
+    result := ValuesMake.makeCodeTypeNameStr("");
   end try;
 end getExtendsModifierValue;
 
@@ -3596,9 +3596,9 @@ algorithm
   try
     SOME(Absyn.EXTENDS(elementArg = ext_mod)) :=
       InteractiveUtil.getPathedExtendsInProgram(classPath, extendsPath, program);
-    result := ValuesUtil.makeBoolean(isModifierfinal(ext_mod, modifierPath));
+    result := ValuesMake.makeBoolean(isModifierfinal(ext_mod, modifierPath));
   else
-    result := ValuesUtil.makeBoolean(false);
+    result := ValuesMake.makeBoolean(false);
   end try;
 end isExtendsModifierFinal;
 
@@ -3946,7 +3946,7 @@ protected
   list<Absyn.Path> paths;
 algorithm
   if AbsynUtil.pathIsQual(newName) then
-    result := ValuesUtil.makeBoolean(false);
+    result := ValuesMake.makeBoolean(false);
   end if;
 
   if AbsynUtil.pathIsQual(oldName) then
@@ -3960,7 +3960,7 @@ algorithm
   (_, env) := Inst.makeEnvFromProgram(SymbolTable.getSCode());
   ((program, _, (_, _, _, paths, _))) :=
     AbsynUtil.traverseClasses(program, NONE(), renameClassVisitor, (oldName, new_name, program, {}, env), true);
-  result := ValuesUtil.makeCodeTypeNameArray(paths);
+  result := ValuesMake.makeCodeTypeNameArray(paths);
 end renameClass;
 
 protected function renameClassVisitor
@@ -4232,7 +4232,7 @@ protected
     p := InteractiveUtil.updateProgram(Absyn.PROGRAM({cls}, Absyn.TOP()), program);
     SymbolTable.setAbsyn(p);
     str := Dump.unparseStr(Absyn.PROGRAM({cls}, Absyn.TOP()), false);
-    result := ValuesUtil.makeString(str);
+    result := ValuesMake.makeString(str);
   end impl;
 algorithm
   result := InteractiveUtil.accessClass(classPath, program, impl,
@@ -4475,17 +4475,17 @@ algorithm
   try
     Absyn.CLASS(body = Absyn.DERIVED(typeSpec = ty, attributes = attr as Absyn.ATTR())) :=
       InteractiveUtil.getPathedClassInProgram(classPath, program);
-    vals := ValuesUtil.makeArray(InteractiveUtil.dimensionListValues(AbsynUtil.typeSpecDimensions(ty))) :: vals;
-    vals := ValuesUtil.makeString(InteractiveUtil.attrDirectionStr(attr)) :: vals;
-    vals := ValuesUtil.makeString(InteractiveUtil.attrVariabilityStr(attr)) :: vals;
-    vals := ValuesUtil.makeString(if attr.streamPrefix then "stream" else "") :: vals;
-    vals := ValuesUtil.makeString(if attr.flowPrefix then "flow" else "") :: vals;
-    vals := ValuesUtil.makeCodeTypeName(AbsynUtil.typeSpecPath(ty)) :: vals;
+    vals := ValuesMake.makeArray(InteractiveUtil.dimensionListValues(AbsynUtil.typeSpecDimensions(ty))) :: vals;
+    vals := ValuesMake.makeString(InteractiveUtil.attrDirectionStr(attr)) :: vals;
+    vals := ValuesMake.makeString(InteractiveUtil.attrVariabilityStr(attr)) :: vals;
+    vals := ValuesMake.makeString(if attr.streamPrefix then "stream" else "") :: vals;
+    vals := ValuesMake.makeString(if attr.flowPrefix then "flow" else "") :: vals;
+    vals := ValuesMake.makeCodeTypeName(AbsynUtil.typeSpecPath(ty)) :: vals;
   else
     vals := {};
   end try;
 
-  result := ValuesUtil.makeArray(vals);
+  result := ValuesMake.makeArray(vals);
 end getShortDefinitionBaseClassInformation;
 
 public function getExternalFunctionSpecification
@@ -4502,17 +4502,17 @@ algorithm
     cls := InteractiveUtil.getPathedClassInProgram(functionName, program);
     Absyn.EXTERNAL(ext_decl, ann) := AbsynUtil.getExternalDecl(cls);
 
-    vals := ValuesUtil.makeString(Dump.unparseAnnotationOption(ann)) :: vals;
-    vals := ValuesUtil.makeString(Dump.unparseAnnotationOption(ext_decl.annotation_)) :: vals;
-    vals := ValuesUtil.makeString(Dump.printExpLstStr(ext_decl.args)) :: vals;
-    vals := ValuesUtil.makeString(Util.getOptionOrDefault(ext_decl.funcName, "")) :: vals;
-    vals := ValuesUtil.makeString(Util.applyOptionOrDefault(ext_decl.output_, Dump.printComponentRefStr, "")) :: vals;
-    vals := ValuesUtil.makeString(Util.getOptionOrDefault(ext_decl.lang, "")) :: vals;
+    vals := ValuesMake.makeString(Dump.unparseAnnotationOption(ann)) :: vals;
+    vals := ValuesMake.makeString(Dump.unparseAnnotationOption(ext_decl.annotation_)) :: vals;
+    vals := ValuesMake.makeString(Dump.printExpLstStr(ext_decl.args)) :: vals;
+    vals := ValuesMake.makeString(Util.getOptionOrDefault(ext_decl.funcName, "")) :: vals;
+    vals := ValuesMake.makeString(Util.applyOptionOrDefault(ext_decl.output_, Dump.printComponentRefStr, "")) :: vals;
+    vals := ValuesMake.makeString(Util.getOptionOrDefault(ext_decl.lang, "")) :: vals;
   else
     vals := {};
   end try;
 
-  result := ValuesUtil.makeArray(vals);
+  result := ValuesMake.makeArray(vals);
 end getExternalFunctionSpecification;
 
 protected function getClassDimensions
@@ -4868,7 +4868,7 @@ algorithm
     names := {};
   end try;
 
-  result := ValuesUtil.makeStringArray(names);
+  result := ValuesMake.makeStringArray(names);
 end getEnumerationLiterals;
 
 public function getDerivedClassModifierNames
@@ -5834,9 +5834,9 @@ protected
 algorithm
   try
     cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
-    result := ValuesUtil.makeInteger(countBaseClasses(cls));
+    result := ValuesMake.makeInteger(countBaseClasses(cls));
   else
-    result := ValuesUtil.makeInteger(0);
+    result := ValuesMake.makeInteger(0);
   end try;
 end getInheritanceCount;
 
@@ -6152,7 +6152,7 @@ algorithm
     cdef := InteractiveUtil.getPathedClassInProgram(classPath, program);
     result := getNthComponent2(cdef, n, genv);
   else
-    result := ValuesUtil.makeBoolean(false);
+    result := ValuesMake.makeBoolean(false);
   end try;
 end getNthComponent;
 
@@ -6171,9 +6171,9 @@ algorithm
   (comp_name, ty, cmt) := getComponentInfoOld(comp, genv);
 
   result := Values.ARRAY({
-    ValuesUtil.makeCodeTypeName(ty),
+    ValuesMake.makeCodeTypeName(ty),
     Values.CODE(Absyn.CodeNode.C_VARIABLENAME(Absyn.ComponentRef.CREF_IDENT(comp_name, {}))),
-    ValuesUtil.makeString(cmt)
+    ValuesMake.makeString(cmt)
   }, {3});
 end getNthComponent2;
 
@@ -6242,7 +6242,7 @@ algorithm
 
     if access < Access.icon then // Access.icon
       Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
-      result := ValuesUtil.makeArray({});
+      result := ValuesMake.makeArray({});
       return;
     end if;
 
@@ -6262,9 +6262,9 @@ algorithm
     elems := InteractiveUtil.getPublicElementsInClass(cls);
     infos := InteractiveUtil.getElementsInfo(elems, true, useQuotes, onlyComponents, env, infos);
 
-    result := ValuesUtil.makeArray(infos);
+    result := ValuesMake.makeArray(infos);
   else
-    result := ValuesUtil.makeArray({});
+    result := ValuesMake.makeArray({});
   end try;
 
   if silent then
@@ -6385,7 +6385,7 @@ algorithm
     comp := InteractiveUtil.getNthComponentInClass(cls, n);
     result := getComponentModification(comp);
   else
-    result := ValuesUtil.makeBoolean(false);
+    result := ValuesMake.makeBoolean(false);
   end try;
 end getNthComponentModification;
 
@@ -6405,9 +6405,9 @@ algorithm
     comp := InteractiveUtil.getNthComponentInClass(cls, n);
     str := getComponentCondition(comp);
     str := System.trim(str, " ");
-    result := ValuesUtil.makeString(str);
+    result := ValuesMake.makeString(str);
   else
-    result := ValuesUtil.makeBoolean(false);
+    result := ValuesMake.makeBoolean(false);
   end try;
 end getNthComponentCondition;
 
@@ -6959,7 +6959,7 @@ algorithm
   comps := AbsynUtil.getComponentItemsFromElement(elem);
   comp := List.find(comps, function AbsynUtil.isComponentItemNamed(name = comp_name));
   cmt := InteractiveUtil.getClassCommentInCommentOpt(comp.comment);
-  comment := ValuesUtil.makeString(cmt);
+  comment := ValuesMake.makeString(cmt);
 end getComponentComment;
 
 public function setComponentComment
@@ -7177,9 +7177,9 @@ algorithm
     //the "connector" restricted class keyword. We also look in
     //base classes (recursively).
     cdef := InteractiveUtil.getPathedClassInProgram(classPath, program);
-    result := ValuesUtil.makeInteger(countPublicConnectors(classPath, program, cdef));
+    result := ValuesMake.makeInteger(countPublicConnectors(classPath, program, cdef));
   else
-    result := ValuesUtil.makeBoolean(false);
+    result := ValuesMake.makeBoolean(false);
   end try;
 end getConnectorCount;
 
@@ -7197,9 +7197,9 @@ algorithm
   try
     cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
     (SOME((name, ty)), _) := getNthPublicConnectorStr(classPath, cls, program, n);
-    result := ValuesUtil.makeCodeTypeNameArray({Absyn.Path.IDENT(name), ty});
+    result := ValuesMake.makeCodeTypeNameArray({Absyn.Path.IDENT(name), ty});
   else
-    result := ValuesUtil.makeBoolean(false);
+    result := ValuesMake.makeBoolean(false);
   end try;
 end getNthConnector;
 
@@ -7333,7 +7333,7 @@ protected
     String str;
   algorithm
     str := getNamedAnnotationExp(classPath, program, annotationPath, SOME("{}"), getAnnotationValue);
-    result := ValuesUtil.makeCodeTypeNameStr(str);
+    result := ValuesMake.makeCodeTypeNameStr(str);
   end impl;
 algorithm
   result := InteractiveUtil.accessClass(classPath, program,
@@ -7447,7 +7447,7 @@ algorithm
       then
         InteractiveUtil.makeAnnotationArrayValue({str});
 
-    else ValuesUtil.makeEmptyArray();
+    else ValuesMake.makeEmptyArray();
   end match;
 end getNamedAnnotationValueInClass;
 
@@ -8160,7 +8160,7 @@ protected
   String str;
 algorithm
   str := getStringNamedAnnotation(classPath, program, Absyn.IDENT("defaultComponentName"));
-  result := ValuesUtil.makeString(str);
+  result := ValuesMake.makeString(str);
 end getDefaultComponentName;
 
 public function getDefaultComponentPrefixes
@@ -8171,7 +8171,7 @@ protected
   String str;
 algorithm
   str := getStringNamedAnnotation(classPath, program, Absyn.IDENT("defaultComponentPrefixes"));
-  result := ValuesUtil.makeString(str);
+  result := ValuesMake.makeString(str);
 end getDefaultComponentPrefixes;
 
 protected function getAnnotationValue
@@ -8734,9 +8734,9 @@ algorithm
 
         vals := Dangerous.listReverseInPlace(vals);
       then
-        ValuesUtil.makeArray(vals);
+        ValuesMake.makeArray(vals);
 
-    else ValuesUtil.makeEmptyArray();
+    else ValuesMake.makeEmptyArray();
   end match;
 end getComponentModification;
 
@@ -9844,7 +9844,7 @@ algorithm
   cl := InteractiveUtil.getPathedClassInProgram(Absyn.IDENT("SourceInfo"), ast);
   Print.printBuf(getDefinitionsClass(cl, false));
   Print.printBuf("\n\n)");
-  res := ValuesUtil.makeString(Print.getString());
+  res := ValuesMake.makeString(Print.getString());
   Print.restoreBuf(handle);
 end getDefinitions;
 

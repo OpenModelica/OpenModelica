@@ -2021,7 +2021,7 @@ algorithm
       then ();
     case (DAE.CAST(ty = tp,exp = e))
       algorithm
-        str := Types.unparseType(tp);
+        str := TypesDump.unparseType(tp);
         dumpStrOpenTag(MathMLApply);
         dumpStrOpenTag(MathMLOperator);
         Print.printBuf("(");

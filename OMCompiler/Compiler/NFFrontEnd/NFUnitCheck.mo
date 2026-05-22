@@ -54,7 +54,7 @@ import Ceval = NFCeval;
 import ElementSource;
 import Equation = NFEquation;
 import ExecStat.execStat;
-import ExpressionDump;
+import ExpressionBasics;
 import Expression = NFExpression;
 import Binding = NFBinding;
 import Call = NFCall;
@@ -338,7 +338,8 @@ algorithm
         temp := Expression.BINARY(eq.rhs, Operator.makeSub(Type.REAL()), eq.lhs);
 
         if dumpEqInitStruct then
-          ExpressionDump.dumpExp(Expression.toDAE(temp));
+          print(Expression.toString(temp));
+          print("--------------------\n");
         end if;
 
         (_, inconsistentUnits) := insertUnitInEquation(temp, Unit.MASTER({}), htCr2U, htS2U, htU2S, fnCache);

@@ -49,7 +49,6 @@ import CardinalityTable = NFCardinalityTable;
 import Variable = NFVariable;
 
 protected
-import ComponentReference;
 import ComponentRef = NFComponentRef;
 import Config;
 import ElementSource;

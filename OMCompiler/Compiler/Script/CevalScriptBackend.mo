@@ -146,6 +146,7 @@ import UnitAbsynBuilder;
 import UnitParserExt;
 import Util;
 import ValuesDump;
+import ValuesMake;
 import ValuesUtil;
 import XMLDump;
 
@@ -500,7 +501,7 @@ algorithm
 
     else
       algorithm
-        str := "CevalScript.getConst: experiment annotation contains unsupported expression: " + Dump.printExpStr(inAbsynExp) + " of type " + Types.unparseType(inExpType) + "\n";
+        str := "CevalScript.getConst: experiment annotation contains unsupported expression: " + Dump.printExpStr(inAbsynExp) + " of type " + TypesDump.unparseType(inExpType) + "\n";
         Error.addCompilerError(str);
       then
         fail();
@@ -668,7 +669,7 @@ algorithm
          */
         forkedSymbolTable := SymbolTable.get();
         blst := System.launchParallelTasks(i, List.map1(strs, Util.makeTuple, forkedSymbolTable), Interactive.evaluateFork);
-        v := ValuesUtil.makeArray(List.map(blst, ValuesUtil.makeBoolean));
+        v := ValuesMake.makeArray(List.map(blst, ValuesMake.makeBoolean));
         SymbolTable.update(forkedSymbolTable);
       then
         v;
@@ -679,10 +680,10 @@ algorithm
         strs := List.map1r(strs, stringAppend, stringAppend(Settings.getInstallationDirectoryPath(),"/bin/omc "));
         is := System.systemCallParallel(strs,i);
       then
-        ValuesUtil.makeArray(List.map(List.map1(is,intEq,0), ValuesUtil.makeBoolean));
+        ValuesMake.makeArray(List.map(List.map1(is,intEq,0), ValuesMake.makeBoolean));
 
     case ("runScriptParallel",{Values.ARRAY(valueLst=vals),_,_})
-      then ValuesUtil.makeArray(List.fill(Values.BOOL(false), listLength(vals)));
+      then ValuesMake.makeArray(List.fill(Values.BOOL(false), listLength(vals)));
 
     case ("setClassComment",{Values.CODE(Absyn.C_TYPENAME(path)),Values.STRING(str)})
       algorithm
@@ -705,10 +706,10 @@ algorithm
         paths := Interactive.getSCodeClassNamesRecursive(sp);
         // paths = bcallret2(sort, List.sort, paths, AbsynUtil.pathGe, paths);
       then
-        ValuesUtil.makeCodeTypeNameArray(paths);
+        ValuesMake.makeCodeTypeNameArray(paths);
 
     case ("getUsedClassNames",_)
-      then ValuesUtil.makeArray({});
+      then ValuesMake.makeArray({});
 
     case ("getClassComment",{Values.CODE(Absyn.C_TYPENAME(path))})
       algorithm
@@ -725,13 +726,13 @@ algorithm
       algorithm
         paths := Interactive.getTopPackages(SymbolTable.getAbsyn());
       then
-        ValuesUtil.makeCodeTypeNameArray(paths);
+        ValuesMake.makeCodeTypeNameArray(paths);
 
     case ("getPackages",{Values.CODE(Absyn.C_TYPENAME(path))})
       algorithm
         paths := Interactive.getPackagesInPath(path, SymbolTable.getAbsyn());
       then
-        ValuesUtil.makeCodeTypeNameArray(paths);
+        ValuesMake.makeCodeTypeNameArray(paths);
 
     case ("convertUnits",{Values.STRING(str1),Values.STRING(str2)})
       algorithm
@@ -759,10 +760,10 @@ algorithm
         u1 := UnitAbsynBuilder.str2unit(str1, NONE());
         strs := UnitAbsynBuilder.getDerivedUnits(u1, str1);
       then
-        ValuesUtil.makeArray(List.map(strs, ValuesUtil.makeString));
+        ValuesMake.makeArray(List.map(strs, ValuesMake.makeString));
 
     case ("getDerivedUnits",{Values.STRING(_)})
-      then ValuesUtil.makeArray({});
+      then ValuesMake.makeArray({});
 
     case ("getClassInformation",{Values.CODE(Absyn.C_TYPENAME(className))})
       then getClassInformation(className, SymbolTable.getAbsyn());
@@ -777,13 +778,13 @@ algorithm
         false := Interactive.existClass(className, SymbolTable.getAbsyn());
         str := AbsynUtil.pathString(className);
         Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
-      then ValuesUtil.makeArray({});
+      then ValuesMake.makeArray({});
 
     case ("getTransitions",{Values.CODE(Absyn.C_TYPENAME(className))})
       then getTransitions(className, SymbolTable.getAbsyn());
 
     case ("getTransitions",_)
-      then ValuesUtil.makeArray({});
+      then ValuesMake.makeArray({});
 
     case ("addTransition",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(_), Values.STRING(_), Values.STRING(_),
                            Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.INTEGER(_), Values.CODE(Absyn.C_EXPRESSION(_))})
@@ -897,13 +898,13 @@ algorithm
         str := AbsynUtil.pathString(className);
         Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
       then
-        ValuesUtil.makeArray({});
+        ValuesMake.makeArray({});
 
     case ("getInitialStates",{Values.CODE(Absyn.C_TYPENAME(className))})
       then getInitialStates(className, SymbolTable.getAbsyn());
 
     case ("getInitialStates",_)
-      then ValuesUtil.makeArray({});
+      then ValuesMake.makeArray({});
 
     case ("addInitialState",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(_), Values.CODE(Absyn.C_EXPRESSION(_))})
       algorithm
@@ -1253,7 +1254,7 @@ algorithm
       algorithm
         p := SymbolTable.getAbsyn();
       then
-        ValuesUtil.makeArray(List.fold(p.classes,makeLoadLibrariesEntryAbsyn,{}));
+        ValuesMake.makeArray(List.fold(p.classes,makeLoadLibrariesEntryAbsyn,{}));
 
     case ("OpenModelica_uriToFilename",{Values.STRING(s1)})
       algorithm
@@ -1335,10 +1336,10 @@ algorithm
         end if;
         executable := if not Testsuite.isRunning() then compileDir + executable else executable;
       then
-        ValuesUtil.makeArray(if b then {Values.STRING(executable),Values.STRING(initfilename)} else {Values.STRING(""),Values.STRING("")});
+        ValuesMake.makeArray(if b then {Values.STRING(executable),Values.STRING(initfilename)} else {Values.STRING(""),Values.STRING("")});
 
     case ("buildModel",_) /* failing build_model */
-      then ValuesUtil.makeArray({Values.STRING(""),Values.STRING("")});
+      then ValuesMake.makeArray({Values.STRING(""),Values.STRING("")});
 
     case ("buildLabel",vals)
       algorithm
@@ -1348,7 +1349,7 @@ algorithm
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
         (b,outCache,_,executable,_,_,initfilename,_,_,vals,_) := buildModel(outCache,inEnv, vals, msg);
       then
-        ValuesUtil.makeArray(if b then {Values.STRING(executable),Values.STRING(initfilename)} else {Values.STRING(""),Values.STRING("")});
+        ValuesMake.makeArray(if b then {Values.STRING(executable),Values.STRING(initfilename)} else {Values.STRING(""),Values.STRING("")});
 
      case ("reduceTerms",vals)
       algorithm
@@ -1368,7 +1369,7 @@ algorithm
 
         (b,outCache,_,executable,_,_,initfilename,_,_,_) := buildModel(outCache,inEnv, vals, msg);
       then
-        ValuesUtil.makeArray(if b then {Values.STRING(executable),Values.STRING(initfilename)} else {Values.STRING(""),Values.STRING("")});
+        ValuesMake.makeArray(if b then {Values.STRING(executable),Values.STRING(initfilename)} else {Values.STRING(""),Values.STRING("")});
 
     case ("simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
       algorithm
@@ -1748,8 +1749,8 @@ algorithm
     case ("getAvailableIndexReductionMethods",_)
       algorithm
         (strs1,strs2) := FlagsUtil.getConfigOptionsStringList(Flags.INDEX_REDUCTION_METHOD);
-        v1 := ValuesUtil.makeArray(List.map(strs1, ValuesUtil.makeString));
-        v2 := ValuesUtil.makeArray(List.map(strs2, ValuesUtil.makeString));
+        v1 := ValuesMake.makeArray(List.map(strs1, ValuesMake.makeString));
+        v2 := ValuesMake.makeArray(List.map(strs2, ValuesMake.makeString));
       then
         Values.TUPLE({v1,v2});
 
@@ -1816,8 +1817,8 @@ algorithm
     case ("getAvailableIndexReductionMethods",_)
       algorithm
         (strs1,strs2) := FlagsUtil.getConfigOptionsStringList(Flags.INDEX_REDUCTION_METHOD);
-        v1 := ValuesUtil.makeArray(List.map(strs1, ValuesUtil.makeString));
-        v2 := ValuesUtil.makeArray(List.map(strs2, ValuesUtil.makeString));
+        v1 := ValuesMake.makeArray(List.map(strs1, ValuesMake.makeString));
+        v2 := ValuesMake.makeArray(List.map(strs2, ValuesMake.makeString));
       then
         Values.TUPLE({v1,v2});
 
@@ -1827,8 +1828,8 @@ algorithm
     case ("getAvailableMatchingAlgorithms",_)
       algorithm
         (strs1,strs2) := FlagsUtil.getConfigOptionsStringList(Flags.MATCHING_ALGORITHM);
-        v1 := ValuesUtil.makeArray(List.map(strs1, ValuesUtil.makeString));
-        v2 := ValuesUtil.makeArray(List.map(strs2, ValuesUtil.makeString));
+        v1 := ValuesMake.makeArray(List.map(strs1, ValuesMake.makeString));
+        v2 := ValuesMake.makeArray(List.map(strs2, ValuesMake.makeString));
       then
         Values.TUPLE({v1,v2});
 
@@ -1838,8 +1839,8 @@ algorithm
     case ("getAvailableTearingMethods",_)
       algorithm
         (strs1,strs2) := FlagsUtil.getConfigOptionsStringList(Flags.TEARING_METHOD);
-        v1 := ValuesUtil.makeArray(List.map(strs1, ValuesUtil.makeString));
-        v2 := ValuesUtil.makeArray(List.map(strs2, ValuesUtil.makeString));
+        v1 := ValuesMake.makeArray(List.map(strs1, ValuesMake.makeString));
+        v2 := ValuesMake.makeArray(List.map(strs2, ValuesMake.makeString));
       then
         Values.TUPLE({v1,v2});
 
@@ -1958,7 +1959,7 @@ algorithm
           ((str1,str2,str3)) := ("", "", "");
         end if;
       then
-        ValuesUtil.makeArray({Values.STRING(str1),Values.STRING(str2),Values.STRING(str3)});
+        ValuesMake.makeArray({Values.STRING(str1),Values.STRING(str2),Values.STRING(str3)});
 
     case ("addClassAnnotation",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.CODE(Absyn.C_EXPRESSION(aexp))})
       algorithm
@@ -2117,7 +2118,7 @@ algorithm
     case ("getBuiltinType",{Values.CODE(Absyn.C_TYPENAME(classpath))})
       algorithm
         (_, tp, _) := Lookup.lookupType(outCache, inEnv, classpath, SOME(Absyn.dummyInfo));
-        str := Types.unparseType(tp);
+        str := TypesDump.unparseType(tp);
       then
         Values.STRING(str);
 
@@ -2144,10 +2145,10 @@ algorithm
       algorithm
         paths := Interactive.getInheritedClasses(classpath);
       then
-        ValuesUtil.makeCodeTypeNameArray(paths);
+        ValuesMake.makeCodeTypeNameArray(paths);
 
     case ("getInheritedClasses",_)
-      then ValuesUtil.makeArray({});
+      then ValuesMake.makeArray({});
 
     case ("getComponentsTest",{Values.CODE(Absyn.C_TYPENAME(classpath))})
       algorithm
@@ -2155,10 +2156,10 @@ algorithm
         genv := Interactive.getClassEnv(SymbolTable.getAbsyn(), classpath);
         valsLst := list(getComponentInfo(c, genv, isProtected=false) for c in InteractiveUtil.getPublicComponentsInClass(absynClass));
         valsLst := listAppend(list(getComponentInfo(c, genv, isProtected=true) for c in InteractiveUtil.getProtectedComponentsInClass(absynClass)), valsLst);
-      then ValuesUtil.makeArray(List.flatten(valsLst));
+      then ValuesMake.makeArray(List.flatten(valsLst));
 
     case ("getComponentsTest",{Values.CODE(Absyn.C_TYPENAME(_))})
-      then ValuesUtil.makeArray({});
+      then ValuesMake.makeArray({});
 
     case ("getSimulationOptions",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.REAL(startTime),Values.REAL(stopTime),Values.REAL(tolerance),Values.INTEGER(numberOfIntervals),Values.REAL(interval)})
       algorithm
@@ -2190,24 +2191,24 @@ algorithm
       algorithm
         (_,paths) := InteractiveUtil.getClassNamesRecursive(NONE(),SymbolTable.getAbsyn(),false,false,{});
         paths := listReverse(paths);
-        vals := List.map(paths,ValuesUtil.makeCodeTypeName);
+        vals := List.map(paths,ValuesMake.makeCodeTypeName);
         vals := searchClassNames(vals, str, b, SymbolTable.getAbsyn());
       then
-        ValuesUtil.makeArray(vals);
+        ValuesMake.makeArray(vals);
 
     case ("getAvailableLibraries",{})
       algorithm
         PackageManagement.installCachedPackages();
         files := PackageManagement.AvailableLibraries.listKeys(PackageManagement.getInstalledLibraries());
       then
-        ValuesUtil.makeArray(List.map(files, ValuesUtil.makeString));
+        ValuesMake.makeArray(List.map(files, ValuesMake.makeString));
 
     case ("getAvailableLibraryVersions",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(str1)))})
       algorithm
         PackageManagement.installCachedPackages();
         files := PackageManagement.getInstalledLibraryVersions(str1);
       then
-        ValuesUtil.makeArray(List.map(files, ValuesUtil.makeString));
+        ValuesMake.makeArray(List.map(files, ValuesMake.makeString));
 
     case ("installPackage",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(str1))), Values.STRING(str2), Values.BOOL(b)})
       then Values.BOOL(PackageManagement.installPackage(str1, str2, b));
@@ -2228,44 +2229,44 @@ algorithm
       then Values.BOOL(PackageManagement.upgradeInstalledPackages(b));
 
     case ("getAvailablePackageVersions",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(str1))), Values.STRING(str2)})
-      then ValuesUtil.makeArray(list(ValuesUtil.makeString(s) for s in PackageManagement.versionsThatProvideTheWanted(str1, str2, true)));
+      then ValuesMake.makeArray(list(ValuesMake.makeString(s) for s in PackageManagement.versionsThatProvideTheWanted(str1, str2, true)));
 
     case ("getAvailablePackageVersions",_)
-      then ValuesUtil.makeArray({});
+      then ValuesMake.makeArray({});
 
     case ("getAvailablePackageConversionsFrom",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(str1))), Values.STRING(str2)})
-      then ValuesUtil.makeStringArray(PackageManagement.versionsThatConvertFromTheWanted(str1, str2, true));
+      then ValuesMake.makeStringArray(PackageManagement.versionsThatConvertFromTheWanted(str1, str2, true));
 
     case ("getAvailablePackageConversionsFrom",_)
-      then ValuesUtil.makeArray({});
+      then ValuesMake.makeArray({});
 
     case ("getAvailablePackageConversionsTo",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(str1))), Values.STRING(str2)})
-      then ValuesUtil.makeStringArray(PackageManagement.versionsThatConvertToTheWanted(str1, str2, true));
+      then ValuesMake.makeStringArray(PackageManagement.versionsThatConvertToTheWanted(str1, str2, true));
 
     case ("getAvailablePackageConversionsTo",_)
-      then ValuesUtil.makeArray({});
+      then ValuesMake.makeArray({});
 
     case ("getUses",{Values.CODE(Absyn.C_TYPENAME(classpath))})
       algorithm
         (absynClass as Absyn.CLASS()) := InteractiveUtil.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
         uses := Interactive.getUsesAnnotation(Absyn.PROGRAM({absynClass},Absyn.TOP()));
       then
-        ValuesUtil.makeArray(List.map(uses,makeUsesArray));
+        ValuesMake.makeArray(List.map(uses,makeUsesArray));
 
     case ("getConversionsFromVersions",{Values.CODE(Absyn.C_TYPENAME(classpath))})
       algorithm
         (absynClass as Absyn.CLASS()) := InteractiveUtil.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
         (withoutConversion,withConversion) := Interactive.getConversionAnnotation(absynClass);
       then
-        Values.TUPLE({ValuesUtil.makeArray(List.map(withoutConversion,ValuesUtil.makeString)), ValuesUtil.makeArray(List.map(withConversion,ValuesUtil.makeString))});
+        Values.TUPLE({ValuesMake.makeArray(List.map(withoutConversion,ValuesMake.makeString)), ValuesMake.makeArray(List.map(withConversion,ValuesMake.makeString))});
 
     case ("getDerivedClassModifierNames",{Values.CODE(Absyn.C_TYPENAME(classpath))})
       algorithm
         absynClass := InteractiveUtil.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
         args := Interactive.getDerivedClassModifierNames(absynClass);
-        vals := List.map(args, ValuesUtil.makeString);
+        vals := List.map(args, ValuesMake.makeString);
       then
-        ValuesUtil.makeArray(vals);
+        ValuesMake.makeArray(vals);
 
     case ("getDerivedClassModifierValue",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path))})
       algorithm
@@ -2323,9 +2324,9 @@ algorithm
       algorithm
         filename := Util.absoluteOrRelative(filename);
         args := SimulationResults.readVariables(filename, b1, b2);
-        vals := List.map(args, ValuesUtil.makeString);
+        vals := List.map(args, ValuesMake.makeString);
       then
-        ValuesUtil.makeArray(vals);
+        ValuesMake.makeArray(vals);
 
     case ("compareSimulationResults",{Values.STRING(filename),Values.STRING(filename_1),Values.STRING(filename2),Values.REAL(x1),Values.REAL(x2),Values.ARRAY(valueLst=cvars)})
       algorithm
@@ -2336,9 +2337,9 @@ algorithm
         filename2 := Util.absoluteOrRelative(filename2);
         vars_1 := List.map(cvars, ValuesUtil.extractValueString);
         strings := SimulationResults.cmpSimulationResults(Testsuite.isRunning(),filename,filename_1,filename2,x1,x2,vars_1);
-        cvars := List.map(strings,ValuesUtil.makeString);
+        cvars := List.map(strings,ValuesMake.makeString);
       then
-        ValuesUtil.makeArray(cvars);
+        ValuesMake.makeArray(cvars);
 
     case ("compareSimulationResults",_)
       then Values.STRING("Error in compareSimulationResults");
@@ -2374,14 +2375,14 @@ algorithm
         filename2 := Util.absoluteOrRelative(filename2);
         vars_1 := List.map(cvars, ValuesUtil.extractValueString);
         (b,strings) := SimulationResults.diffSimulationResults(Testsuite.isRunning(),filename,filename_1,filename2,reltol,reltolDiffMinMax,rangeDelta,vars_1,b);
-        cvars := List.map(strings,ValuesUtil.makeString);
-        v1 := ValuesUtil.makeArray(cvars);
+        cvars := List.map(strings,ValuesMake.makeString);
+        v1 := ValuesMake.makeArray(cvars);
       then
         Values.TUPLE({Values.BOOL(b),v1});
 
     case ("diffSimulationResults",_)
       algorithm
-        v := ValuesUtil.makeArray({});
+        v := ValuesMake.makeArray({});
       then
         Values.TUPLE({Values.BOOL(false),v});
 
@@ -2404,9 +2405,9 @@ algorithm
         filename := if StringUtil.startsWith(filename, "/") then filename else stringAppendList({pwd,pd,filename});
         filename_1 := if StringUtil.startsWith(filename_1, "/") then filename_1 else stringAppendList({pwd,pd,filename_1});
         strings := TaskGraphResults.checkTaskGraph(filename, filename_1);
-        cvars := List.map(strings,ValuesUtil.makeString);
+        cvars := List.map(strings,ValuesMake.makeString);
       then
-        ValuesUtil.makeArray(cvars);
+        ValuesMake.makeArray(cvars);
 
     case ("checkTaskGraph",_)
       then Values.STRING("Error in checkTaskGraph");
@@ -2418,9 +2419,9 @@ algorithm
         filename := if StringUtil.startsWith(filename, "/") then filename else stringAppendList({pwd,pd,filename});
         filename_1 := if StringUtil.startsWith(filename_1, "/") then filename_1 else stringAppendList({pwd,pd,filename_1});
         strings := TaskGraphResults.checkCodeGraph(filename, filename_1);
-        cvars := List.map(strings,ValuesUtil.makeString);
+        cvars := List.map(strings,ValuesMake.makeString);
       then
-        ValuesUtil.makeArray(cvars);
+        ValuesMake.makeArray(cvars);
 
     case ("checkCodeGraph",_)
       then Values.STRING("Error in checkCodeGraph");
@@ -2577,9 +2578,9 @@ algorithm
     case ("getParameterNames",{Values.CODE(Absyn.C_TYPENAME(path))})
       algorithm
         strings := Interactive.getParameterNames(path, SymbolTable.getAbsyn());
-        vals := List.map(strings, ValuesUtil.makeString);
+        vals := List.map(strings, ValuesMake.makeString);
       then
-        ValuesUtil.makeArray(vals);
+        ValuesMake.makeArray(vals);
 
     case ("getParameterValue",{Values.CODE(Absyn.C_TYPENAME(path)),Values.STRING(str1)})
       algorithm
@@ -2594,14 +2595,14 @@ algorithm
           Absyn.Modification.CLASSMOD({}, Absyn.EqMod.EQMOD(aexp, Absyn.dummyInfo)), SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(p);
       then
-        ValuesUtil.makeBoolean(b);
+        ValuesMake.makeBoolean(b);
 
     case ("getComponentModifierNames",{Values.CODE(Absyn.C_TYPENAME(path)),Values.STRING(str1)})
       algorithm
         strings := Interactive.getComponentModifierNames(path, str1, SymbolTable.getAbsyn());
-        vals := List.map(strings, ValuesUtil.makeString);
+        vals := List.map(strings, ValuesMake.makeString);
       then
-        ValuesUtil.makeArray(vals);
+        ValuesMake.makeArray(vals);
 
     case ("getComponentModifierValue",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.CODE(Absyn.C_TYPENAME(path))})
       algorithm
@@ -2687,9 +2688,9 @@ algorithm
     case ("getElementModifierNames",{Values.CODE(Absyn.C_TYPENAME(path)),Values.STRING(str1)})
       algorithm
         strings := InteractiveUtil.getElementModifierNames(path, str1, SymbolTable.getAbsyn());
-        vals := List.map(strings, ValuesUtil.makeString);
+        vals := List.map(strings, ValuesMake.makeString);
       then
-        ValuesUtil.makeArray(vals);
+        ValuesMake.makeArray(vals);
 
     case ("getElementModifierValue",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.CODE(Absyn.C_TYPENAME(path))})
       algorithm
@@ -2743,15 +2744,15 @@ algorithm
       algorithm
         (outCache,_,odae) := runFrontEnd(outCache,inEnv,classpath,true);
         strings := Interactive.getInstantiatedParametersAndValues(odae);
-        vals := List.map(strings, ValuesUtil.makeString);
+        vals := List.map(strings, ValuesMake.makeString);
       then
-        ValuesUtil.makeArray(vals);
+        ValuesMake.makeArray(vals);
 
     case ("getInstantiatedParametersAndValues",_)
       algorithm
         Error.addCompilerWarning("getInstantiatedParametersAndValues failed to instantiate the model.");
       then
-        ValuesUtil.makeArray({});
+        ValuesMake.makeArray({});
 
     case ("updateConnection",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(str1), Values.STRING(str2),Values.CODE(Absyn.C_EXPRESSION(aexp))})
       algorithm
@@ -2824,9 +2825,9 @@ algorithm
           vals := {};
         end if;
       then
-        ValuesUtil.makeArray(vals);
+        ValuesMake.makeArray(vals);
 
-    case ("getNthConnection",_) then ValuesUtil.makeArray({});
+    case ("getNthConnection",_) then ValuesMake.makeArray({});
 
     case ("getConnectionList", {Values.CODE(Absyn.C_TYPENAME(path))})
       then getConnectionList(path);
@@ -3007,9 +3008,9 @@ algorithm
         absynClass := InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn());
         vals := getNthImport(absynClass, n);
       then
-        ValuesUtil.makeArray(vals);
+        ValuesMake.makeArray(vals);
 
-    case ("getNthImport",_) then ValuesUtil.makeArray({});
+    case ("getNthImport",_) then ValuesMake.makeArray({});
 
     // plotParametric
     case ("plotParametric",
@@ -3081,16 +3082,16 @@ algorithm
       algorithm
         (outCache,xml_filename) := dumpXMLDAE(outCache,inEnv,vals, msg);
       then
-        ValuesUtil.makeTuple({Values.BOOL(true),Values.STRING(xml_filename)});
+        ValuesMake.makeTuple({Values.BOOL(true),Values.STRING(xml_filename)});
 
     case ("dumpXMLDAE",_)
       then
-        ValuesUtil.makeTuple({Values.BOOL(false),Values.STRING("")});
+        ValuesMake.makeTuple({Values.BOOL(false),Values.STRING("")});
 
     case ("solveLinearSystem",{Values.ARRAY(valueLst=vals),v})
       algorithm
         (realVals,i) := System.dgesv(List.map(vals,ValuesUtil.arrayValueReals),ValuesUtil.arrayValueReals(v));
-        v := ValuesUtil.makeArray(List.map(realVals,ValuesUtil.makeReal));
+        v := ValuesMake.makeArray(List.map(realVals,ValuesMake.makeReal));
       then
         Values.TUPLE({v,Values.INTEGER(i)});
 
@@ -3147,7 +3148,7 @@ algorithm
       then Values.BOOL(SymbolTable.restoreAST(n));
 
     case ("qualifyPath", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path))})
-      then ValuesUtil.makeCodeTypeName(NFApi.mkFullyQual(SymbolTable.getAbsyn(), classpath, path));
+      then ValuesMake.makeCodeTypeName(NFApi.mkFullyQual(SymbolTable.getAbsyn(), classpath, path));
 
     case ("getElementAnnotation", {Values.CODE(Absyn.C_TYPENAME(path))})
       then Values.STRING(InteractiveUtil.getElementAnnotation(path, SymbolTable.getAbsyn()));
@@ -3181,16 +3182,16 @@ algorithm
       then InteractiveUtil.getExtendsModifierNames(classpath, path, b, SymbolTable.getAbsyn());
 
     case ("isPrimitive", {Values.CODE(Absyn.C_TYPENAME(classpath))})
-      then ValuesUtil.makeBoolean(Interactive.isPrimitive(classpath, SymbolTable.getAbsyn()));
+      then ValuesMake.makeBoolean(Interactive.isPrimitive(classpath, SymbolTable.getAbsyn()));
 
     case ("isParameter", {Values.CODE(Absyn.C_TYPENAME(path)), Values.CODE(Absyn.C_TYPENAME(classpath))})
-      then ValuesUtil.makeBoolean(Interactive.isParameter(path, classpath, SymbolTable.getAbsyn()));
+      then ValuesMake.makeBoolean(Interactive.isParameter(path, classpath, SymbolTable.getAbsyn()));
 
     case ("isConstant", {Values.CODE(Absyn.C_TYPENAME(path)), Values.CODE(Absyn.C_TYPENAME(classpath))})
-      then ValuesUtil.makeBoolean(Interactive.isConstant(path, classpath, SymbolTable.getAbsyn()));
+      then ValuesMake.makeBoolean(Interactive.isConstant(path, classpath, SymbolTable.getAbsyn()));
 
     case ("isProtected", {Values.CODE(Absyn.C_TYPENAME(path)), Values.CODE(Absyn.C_TYPENAME(classpath))})
-      then ValuesUtil.makeBoolean(Interactive.isProtected(path, classpath, SymbolTable.getAbsyn()));
+      then ValuesMake.makeBoolean(Interactive.isProtected(path, classpath, SymbolTable.getAbsyn()));
 
     case ("setComponentDimensions", {Values.CODE(Absyn.C_TYPENAME(classpath)),
         Values.CODE(Absyn.C_TYPENAME(path)), Values.CODE(Absyn.C_EXPRESSION(aexp as Absyn.Exp.ARRAY()))})
@@ -3198,7 +3199,7 @@ algorithm
         (p, b) := Interactive.setComponentDimensions(classpath, path, aexp.arrayExp, SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(p);
       then
-        ValuesUtil.makeBoolean(b);
+        ValuesMake.makeBoolean(b);
 
     case ("setComponentProperties", {Values.CODE(Absyn.C_TYPENAME(classpath)),
         Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(name))),
@@ -3218,21 +3219,21 @@ algorithm
         p := Interactive.createModel(classpath, SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(p);
       then
-        ValuesUtil.makeBoolean(true);
+        ValuesMake.makeBoolean(true);
 
     case ("newModel", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path))})
       algorithm
         p := Interactive.newModel(classpath, path, SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(p);
       then
-        ValuesUtil.makeBoolean(true);
+        ValuesMake.makeBoolean(true);
 
     case ("deleteClass", {Values.CODE(Absyn.C_TYPENAME(classpath))})
       algorithm
         (b, p) := Interactive.deleteClass(classpath, SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(p);
       then
-        ValuesUtil.makeBoolean(b);
+        ValuesMake.makeBoolean(b);
 
     case ("addComponent", {Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(name))),
         Values.CODE(Absyn.C_TYPENAME(path)), Values.CODE(Absyn.C_TYPENAME(classpath)),
@@ -3242,7 +3243,7 @@ algorithm
         (p, b) := Interactive.addComponent(name, path, classpath, aexp, mod, aexp2, aexp3, SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(p);
       then
-        ValuesUtil.makeBoolean(b);
+        ValuesMake.makeBoolean(b);
 
     case ("updateComponent", {Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(name))),
         Values.CODE(Absyn.C_TYPENAME(path)), Values.CODE(Absyn.C_TYPENAME(classpath)),
@@ -3252,17 +3253,17 @@ algorithm
         (p, b) := Interactive.updateComponent(name, path, classpath, aexp, mod, aexp2, aexp3, SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(p);
       then
-        ValuesUtil.makeBoolean(b);
+        ValuesMake.makeBoolean(b);
 
     case ("deleteComponent", {Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(name))), Values.CODE(Absyn.C_TYPENAME(classpath))})
       algorithm
         (p, b) := Interactive.deleteComponent(name, classpath, SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(p);
       then
-        ValuesUtil.makeBoolean(b);
+        ValuesMake.makeBoolean(b);
 
     case ("getComponentCount", {Values.CODE(Absyn.C_TYPENAME(classpath))})
-      then ValuesUtil.makeInteger(Interactive.getComponentCount(classpath, SymbolTable.getAbsyn()));
+      then ValuesMake.makeInteger(Interactive.getComponentCount(classpath, SymbolTable.getAbsyn()));
 
     case ("getNthComponent", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.INTEGER(n)})
       then Interactive.getNthComponent(classpath, SymbolTable.getAbsyn(), n);
@@ -3303,7 +3304,7 @@ algorithm
         (p, b) := Interactive.setConnectionComment(classpath, cr, cr2, str, SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(p);
       then
-        ValuesUtil.makeBoolean(b);
+        ValuesMake.makeBoolean(b);
 
     case ("addConnection", {Values.CODE(Absyn.C_VARIABLENAME(cr)), Values.CODE(Absyn.C_VARIABLENAME(cr2)),
                             Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_EXPRESSION(aexp)),
@@ -3312,7 +3313,7 @@ algorithm
         (p, b) := Interactive.addConnection(classpath, cr, cr2, aexp, aexp2, SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(p);
       then
-        ValuesUtil.makeBoolean(b);
+        ValuesMake.makeBoolean(b);
 
     case ("deleteConnection", {Values.CODE(Absyn.C_VARIABLENAME(cr)), Values.CODE(Absyn.C_VARIABLENAME(cr2)),
                                Values.CODE(Absyn.C_TYPENAME(classpath))})
@@ -3320,7 +3321,7 @@ algorithm
         (p, b) := Interactive.deleteConnection(classpath, cr, cr2, SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(p);
       then
-        ValuesUtil.makeBoolean(b);
+        ValuesMake.makeBoolean(b);
 
     case ("getNthConnectionAnnotation", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.INTEGER(n)})
       then Interactive.getNthConnectionAnnotation(classpath, n, SymbolTable.getAbsyn());
@@ -3369,7 +3370,7 @@ algorithm
       then Interactive.getEnumerationLiterals(classpath, SymbolTable.getAbsyn());
 
     case ("existClass", {Values.CODE(Absyn.C_TYPENAME(classpath))})
-      then ValuesUtil.makeBoolean(Interactive.existClass(classpath, SymbolTable.getAbsyn()));
+      then ValuesMake.makeBoolean(Interactive.existClass(classpath, SymbolTable.getAbsyn()));
 
     case ("getComponentComment", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path))})
       then Interactive.getComponentComment(classpath, path, SymbolTable.getAbsyn());
@@ -3379,7 +3380,7 @@ algorithm
         (p, b) := Interactive.setComponentComment(classpath, path, str, SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(p);
       then
-        ValuesUtil.makeBoolean(b);
+        ValuesMake.makeBoolean(b);
 
     case ("renameClass", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path))})
       algorithm
@@ -3417,19 +3418,19 @@ algorithm
       then Interactive.getDefinitions(SymbolTable.getAbsyn(), b);
 
     case ("getDefaultOpenCLDevice", {})
-      then ValuesUtil.makeInteger(Config.getDefaultOpenCLDevice());
+      then ValuesMake.makeInteger(Config.getDefaultOpenCLDevice());
 
     case ("reverseLookup", {Values.CODE(Absyn.C_TYPENAME(path)), Values.CODE(Absyn.C_TYPENAME(classpath)), Values.BOOL(b1), Values.BOOL(b2)})
-      then ValuesUtil.makeString(ReverseLookup.lookup(path, classpath, SymbolTable.getAbsyn(), b1, b2));
+      then ValuesMake.makeString(ReverseLookup.lookup(path, classpath, SymbolTable.getAbsyn(), b1, b2));
 
     case ("translateResidualsDAE", {Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(s1)})
-      then ValuesUtil.makeBoolean(NFApi.translateResidualsDAE(path, s1));
+      then ValuesMake.makeBoolean(NFApi.translateResidualsDAE(path, s1));
 
     case ("addEquation", {Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(s1), Values.BOOL(b1)})
-      then ValuesUtil.makeBoolean(Interactive.addEquation(path, s1, b1));
+      then ValuesMake.makeBoolean(Interactive.addEquation(path, s1, b1));
 
     case ("updateEquation", {Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(s1), Values.STRING(s2), Values.BOOL(b), Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(b3)})
-      then ValuesUtil.makeBoolean(Interactive.updateEquation(path, s1, s2, b, b1, b2, b3));
+      then ValuesMake.makeBoolean(Interactive.updateEquation(path, s1, s2, b, b1, b2, b3));
 
  end matchcontinue;
 end cevalInteractiveFunctions4;
@@ -7778,7 +7779,7 @@ algorithm
     case ((p,_,{ver},_))
       algorithm
         pstr := AbsynUtil.pathString(p);
-      then ValuesUtil.makeArray({Values.STRING(pstr),Values.STRING(ver)});
+      then ValuesMake.makeArray({Values.STRING(pstr),Values.STRING(ver)});
     else
       algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{"makeUsesArray failed"});
@@ -7993,8 +7994,8 @@ algorithm
     local
       Absyn.ArrayDim ad;
     case(Absyn.DERIVED(typeSpec=Absyn.TPATH(arrayDim=SOME(ad))))
-      then ValuesUtil.makeArray(list(Values.STRING(Dump.printSubscriptStr(d)) for d in ad));
-    else ValuesUtil.makeArray({});
+      then ValuesMake.makeArray(list(Values.STRING(Dump.printSubscriptStr(d)) for d in ad));
+    else ValuesMake.makeArray({});
   end match;
 end getClassDimensions;
 
@@ -8122,7 +8123,7 @@ protected
 algorithm
   cdef := InteractiveUtil.getPathedClassInProgram(path, p);
   transitions := listReverse(getTransitionsInClass(cdef));
-  res := ValuesUtil.makeArray(List.map(transitions, ValuesUtil.makeStringArray));
+  res := ValuesMake.makeArray(List.map(transitions, ValuesMake.makeStringArray));
 end getTransitions;
 
 protected function getTransitionsInClass
@@ -8255,7 +8256,7 @@ protected
 algorithm
   cdef := InteractiveUtil.getPathedClassInProgram(path, p);
   initialStates := listReverse(getInitialStatesInClass(cdef));
-  res := ValuesUtil.makeArray(List.map(initialStates, ValuesUtil.makeStringArray));
+  res := ValuesMake.makeArray(List.map(initialStates, ValuesMake.makeStringArray));
 end getInitialStates;
 
 protected function getInitialStatesInClass
@@ -8632,7 +8633,7 @@ algorithm
       Values.STRING(variability),
       Values.STRING(innerOuter),
       Values.STRING(inputOutput),
-      ValuesUtil.makeArray(list(Values.STRING(s) for s in dimensions))
+      ValuesMake.makeArray(list(Values.STRING(s) for s in dimensions))
     },
     {"className","name","comment","isProtected","isFinal","isFlow","isStream","isReplaceable","variability","innerOuter","inputOutput","dimensions"},
     -1
@@ -8714,7 +8715,7 @@ protected
 algorithm
   cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
   SOME(names) := AbsynUtil.getNamedAnnotationInClass(cls, Absyn.Path.IDENT(annotationName), get_names);
-  result := ValuesUtil.makeStringArray(names);
+  result := ValuesMake.makeStringArray(names);
 end getAnnotationNamedModifiers;
 
 function getOptModifierValue
@@ -8759,7 +8760,7 @@ algorithm
       algorithm
         dir := System.dirname(fileName);
         fileName := System.basename(fileName);
-        v := ValuesUtil.makeArray({Values.STRING(name),Values.STRING(dir)});
+        v := ValuesMake.makeArray({Values.STRING(name),Values.STRING(dir)});
         b := stringEq(fileName,"ModelicaBuiltin.mo") or stringEq(fileName,"MetaModelicaBuiltin.mo") or stringEq(dir,".");
       then List.consOnTrue(not b,v,acc);
   end match;
@@ -8897,7 +8898,7 @@ protected function getConnectionList
     (_, sp) := FBuiltin.getInitialFunctions();
     sp := listAppend(SymbolTable.getSCode(), sp);
     connList := NFInst.instClassForConnection(className, sp, annotation_sp);
-    valList := ValuesUtil.makeArray(list(ValuesUtil.makeArray(List.map(conn, ValuesUtil.makeString)) for conn in connList));
+    valList := ValuesMake.makeArray(list(ValuesMake.makeArray(List.map(conn, ValuesMake.makeString)) for conn in connList));
 end getConnectionList;
 
 protected function runConversionScript

@@ -2038,7 +2038,7 @@ algorithm
         end match;
         (cache,SCode.CLASS(classDef=SCode.OVERLOAD(pathLst=names),info=info),env_1) := lookupClass(cache,env,id);
         (cache,res) := lookupFunctionsListInEnv(cache,env_1,names,info,{});
-        // print(stringDelimitList(List.map(res,Types.unparseType),"\n###\n"));
+        // print(stringDelimitList(List.map(res,TypesDump.unparseType),"\n###\n"));
       then (cache,res);
 
     case (cache,_,_,_) then (cache,{});
@@ -3547,10 +3547,10 @@ algorithm
     ClassInf.META_RECORD(Absyn.IDENT("")), List.map1(els,Util.makeTuple,DAE.NOMOD()),
     {}, false, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet, true);
   varlst := Types.boxVarLst(varlst);
-  // for v in varlst loop print(Types.unparseType(v.ty)+"\n"); end for;
+  // for v in varlst loop print(TypesDump.unparseType(v.ty)+"\n"); end for;
   typeVarsType := list(DAE.T_METAPOLYMORPHIC(tv) for tv in typeVars);
   ftype := DAE.T_METARECORD(path,utPath,typeVarsType,index,varlst,singleton);
-  // print("buildMetaRecordType " + id + " in scope " + FGraph.printGraphPathStr(env) + " OK " + Types.unparseType(ftype) +"\n");
+  // print("buildMetaRecordType " + id + " in scope " + FGraph.printGraphPathStr(env) + " OK " + TypesDump.unparseType(ftype) +"\n");
 end buildMetaRecordType;
 
 public function isIterator

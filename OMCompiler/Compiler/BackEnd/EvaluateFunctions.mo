@@ -1593,11 +1593,11 @@ algorithm
       list<String> outNames;
   case(ty as DAE.T_FUNCTION(),_,_)
     algorithm
-      //print("the out types1: "+Types.unparseType(outType)+"\n");
+      //print("the out types1: "+TypesDump.unparseType(outType)+"\n");
       outTypeLst := list(DAEUtil.getVariableType(o) for o in outputs);
       outNames := list(DAEUtil.varName(o) for o in outputs);
       ty.funcResultType := if intEq(listLength(outTypeLst),1) then listHead(outTypeLst) else DAE.T_TUPLE(outTypeLst,SOME(outNames));
-      //print("the out types2: "+Types.unparseType(outType)+"\n");
+      //print("the out types2: "+TypesDump.unparseType(outType)+"\n");
     then ty;
   else
     then typIn;

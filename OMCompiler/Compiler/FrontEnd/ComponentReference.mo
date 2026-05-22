@@ -456,6 +456,20 @@ algorithm
    end match;
 end printComponentRefOptStr;
 
+public function printComponentRefStrFixDollarDer
+  "Like printComponentRefStr but also fixes the special dollar-sign variables"
+  input DAE.ComponentRef inComponentRef;
+  output String outString;
+algorithm
+  outString := match (inComponentRef)
+    local
+      DAE.ComponentRef cr;
+    case (DAE.CREF_QUAL(ident = DAE.derivativeNamePrefix, subscriptLst = {}, componentRef = cr))
+      then "der(" + printComponentRefStr(cr) + ")";
+    else printComponentRefStr(inComponentRef);
+  end match;
+end printComponentRefStrFixDollarDer;
+
 public function printComponentRefStr
 "Print a ComponentRef.
   LS: print functions that return a string instead of printing
@@ -504,20 +518,6 @@ algorithm
     case DAE.WILD() then "_";
   end match;
 end printComponentRefStr;
-
-public function printComponentRefStrFixDollarDer
-  "Like printComponentRefStr but also fixes the special dollar-sign variables"
-  input DAE.ComponentRef inComponentRef;
-  output String outString;
-algorithm
-  outString := match (inComponentRef)
-    local
-      DAE.ComponentRef cr;
-    case (DAE.CREF_QUAL(ident = DAE.derivativeNamePrefix, subscriptLst = {}, componentRef = cr))
-      then "der(" + printComponentRefStr(cr) + ")";
-    else printComponentRefStr(inComponentRef);
-  end match;
-end printComponentRefStrFixDollarDer;
 
 public function printComponentRef2Str
 "Helper function to printComponentRefStr."
@@ -568,7 +568,7 @@ algorithm
       algorithm
         str_1 := ExpressionDump.printListStr(subs, ExpressionDump.debugPrintSubscriptStr, ", ");
         str := s + (if stringLength(str_1) > 0 then "["+ str_1 + "]" else "");
-        str2 := Types.unparseType(ty);
+        str2 := TypesDump.unparseType(ty);
         str := stringAppendList({str," [",str2,"]"});
       then
         str;
@@ -579,13 +579,13 @@ algorithm
         if (Config.modelicaOutput())
         then
           str := printComponentRef2Str(s, subs);
-          str2 := Types.unparseType(ty);
+          str2 := TypesDump.unparseType(ty);
           strrest := debugPrintComponentRefTypeStr(cr);
           str := stringAppendList({str," [",str2,"] ", "__", strrest});
         else
           str_1 := ExpressionDump.printListStr(subs, ExpressionDump.debugPrintSubscriptStr, ", ");
           str := s + (if stringLength(str_1) > 0 then "["+ str_1 + "]" else "");
-          str2 := Types.unparseType(ty);
+          str2 := TypesDump.unparseType(ty);
           strrest := debugPrintComponentRefTypeStr(cr);
           str := stringAppendList({str," [",str2,"] ", ".", strrest});
         end if;
@@ -1885,29 +1885,7 @@ algorithm
   end match;
 end crefLastType;
 
-public function crefDims "
-function: crefDims
-  Return the all dimension (contained in the types) of a ComponentRef"
-  input DAE.ComponentRef inComponentRef;
-  output list<DAE.Dimension> outDimensionLst;
-algorithm
-  outDimensionLst := match (inComponentRef)
-    local
-      list<DAE.Dimension> dims,res;
-      DAE.Type idType;
-      DAE.ComponentRef cr;
-
-    case (DAE.CREF_IDENT(identType = idType)) then Types.getDimensions(idType);
-
-    case (DAE.CREF_QUAL(componentRef = cr, identType = idType))
-      algorithm
-        dims := Types.getDimensions(idType);
-        res := crefDims(cr);
-        res := listAppend(dims,res);
-      then
-        res;
-  end match;
-end crefDims;
+public function crefDims = ComponentReferenceBasics.crefDims;
 
 public function crefSubs "
 function: crefSubs

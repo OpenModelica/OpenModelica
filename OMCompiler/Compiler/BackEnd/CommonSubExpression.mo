@@ -1526,7 +1526,7 @@ algorithm
          with variable indexes.*/
       outVarLst := inAccumVarLst;
       for cr_ in crefs loop
-        arrayDim := ComponentReference.crefDims(cr_);
+        arrayDim := ComponentReferenceBasics.crefDims(cr_);
         outVarLst := BackendVariable.createCSEArrayVar(cr_, ComponentReference.crefTypeFull(cr_), arrayDim)::outVarLst;
       end for;
     then outVarLst;
@@ -1538,7 +1538,7 @@ algorithm
       outVarLst := inAccumVarLst;
       ty := DAEUtil.expTypeElementType(Expression.typeof(inExp));
       for cr_ in crefs loop
-        arrayDim := ComponentReference.crefDims(cr_);
+        arrayDim := ComponentReferenceBasics.crefDims(cr_);
         //expLst := DAE.CREF(cr_, ComponentReference.crefType(cr_))::expLst;
         outVarLst := BackendVariable.createCSEArrayVar(cr_, ty, arrayDim)::outVarLst;
       end for;
@@ -1602,7 +1602,7 @@ algorithm
          with variable indexes.*/
       outVarLst := inAccumVarLst;
       for cr_ in crefs loop
-        arrayDim := ComponentReference.crefDims(cr_);
+        arrayDim := ComponentReferenceBasics.crefDims(cr_);
         outVarLst := BackendVariable.createCSEArrayVar(cr_, ComponentReference.crefTypeFull(cr_), arrayDim)::outVarLst;
       end for;
     then outVarLst;
@@ -1614,7 +1614,7 @@ algorithm
       outVarLst := inAccumVarLst;
       ty := DAEUtil.expTypeElementType(Expression.typeof(inExp));
       for cr_ in crefs loop
-        arrayDim := ComponentReference.crefDims(cr_);
+        arrayDim := ComponentReferenceBasics.crefDims(cr_);
         //expLst := DAE.CREF(cr_, ComponentReference.crefType(cr_))::expLst;
         outVarLst := BackendVariable.createCSEArrayVar(cr_, ty, arrayDim)::outVarLst;
       end for;

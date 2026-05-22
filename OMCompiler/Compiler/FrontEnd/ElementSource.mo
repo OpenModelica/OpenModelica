@@ -40,9 +40,8 @@ import DAE;
 protected
 
 import Absyn;
-import Algorithm;
 import Error;
-import Expression;
+import ExpressionBasics;
 import Flags;
 import List;
 import SCode;
@@ -219,7 +218,7 @@ algorithm
     case (DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, DAE.SUBSTITUTION(es1 as (h1::_),t1)::operations,comment),DAE.SUBSTITUTION(es2,t2))
       guard
         // The tail of the new substitution chain is the same as the head of the old one...
-        Expression.expEqual(t2,h1)
+        ExpressionBasics.expEqual(t2,h1)
       algorithm
         // Reference equality would be fine as otherwise it is not really a chain... But replaceExp is stupid :(
         // true = referenceEq(t2,h1);
@@ -383,11 +382,18 @@ algorithm
   if not (add and Flags.isSet(Flags.INFO_XML_OPERATIONS)) then
     return;
   end if;
-  op1 := DAE.SOLVE(cr,exp1,exp2,exp,list(Algorithm.getAssertCond(ass) for ass in asserts));
+  op1 := DAE.SOLVE(cr,exp1,exp2,exp,list(getAssertCond(ass) for ass in asserts));
   op2 := DAE.SOLVED(cr,exp2) "If it was already on solved form";
-  op := if Expression.expEqual(exp2,exp) then op2 else op1;
+  op := if ExpressionBasics.expEqual(exp2,exp) then op2 else op1;
   source := addSymbolicTransformation(source,op);
 end addSymbolicTransformationSolve;
+
+function getAssertCond
+  input DAE.Statement stmt;
+  output DAE.Exp cond;
+algorithm
+  DAE.STMT_ASSERT(cond=cond) := stmt;
+end getAssertCond;
 
 function getSymbolicTransformations
   input DAE.ElementSource source;
@@ -601,5 +607,5 @@ algorithm
   end match;
 end addElementSourceInstanceOpt;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_dump");
 end ElementSource;

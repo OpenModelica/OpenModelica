@@ -50,7 +50,7 @@ import Algorithm = NFAlgorithm;
 import Attributes = NFAttributes;
 import AvlTreePathFunction;
 import Call = NFCall;
-import ComponentReference;
+import ComponentReferenceBasics;
 import ComponentRef = NFComponentRef;
 import Dimension = NFDimension;
 import ElementSource;
@@ -192,7 +192,7 @@ algorithm
           Prefixes.visibilityToDAE(vis),
           dty,
           binding,
-          ComponentReference.crefDims(dcref),
+          ComponentReferenceBasics.crefDims(dcref),
           ConnectorType.toDAE(attr.connectorType),
           source,
           vattr,

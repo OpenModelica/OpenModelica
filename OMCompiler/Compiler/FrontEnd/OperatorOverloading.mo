@@ -603,7 +603,7 @@ algorithm
           types := {};
         else
           opStr := "'" + Dump.opSymbolCompact(op) + "'";
-          // print("Try overloading for " + opStr + " " + Types.unparseType(inType1) + "," + Types.unparseType(inType2) + "\n");
+          // print("Try overloading for " + opStr + " " + TypesDump.unparseType(inType1) + "," + Types.unparseType(inType2) + "\n");
           (cache,types1) := getOperatorFuncsOrEmpty(cache,env,{type1},opStr,info,{});
           (cache,types2) := getOperatorFuncsOrEmpty(cache,env,{type2},opStr,info,{});
           // Spec: [...] function f in the union of A.op and B.op [...]
@@ -1336,7 +1336,7 @@ package AvlTreePathOperatorTypes "AvlTree Path -> list<Type>"
   end keyStr;
   redeclare function extends valueStr
   algorithm
-    outString := Types.unparseType(DAE.T_METATUPLE(inValue));
+    outString := TypesDump.unparseType(DAE.T_METATUPLE(inValue));
   end valueStr;
   redeclare function extends keyCompare
   algorithm
@@ -1459,8 +1459,8 @@ algorithm
     case (true,_,_,_) then ();
     else
       algorithm
-        str1 := Types.unparseType(opType);
-        str2 := Types.unparseType(ty);
+        str1 := TypesDump.unparseType(opType);
+        str2 := TypesDump.unparseType(ty);
         Error.addSourceMessage(Error.OP_OVERLOAD_OPERATOR_NOT_INPUT,{str1,str2},info);
       then fail();
   end match;
@@ -1478,7 +1478,7 @@ algorithm
     case (DAE.T_FUNCTION(funcResultType=actual),_,_)
       algorithm
         isOK := Types.equivtypesOrRecordSubtypeOf(actual,expected);
-        // Error.assertionOrAddSourceMessage(isOK, Error.COMPILER_WARNING, {"TODO: Better warning for: " + Types.unparseType(actual) + ", expected: " + Types.unparseType(actual)}, info);
+        // Error.assertionOrAddSourceMessage(isOK, Error.COMPILER_WARNING, {"TODO: Better warning for: " + TypesDump.unparseType(actual) + ", expected: " + Types.unparseType(actual)}, info);
       then isOK;
     else false;
   end match;
@@ -1496,11 +1496,11 @@ algorithm
     case (DAE.T_FUNCTION(funcArg=DAE.FUNCARG(defaultBinding=NONE())::DAE.FUNCARG(defaultBinding=NONE())::rest),_)
       algorithm
         isBinaryFunc := List.mapMapBoolAnd(rest, Types.funcArgDefaultBinding, isSome);
-        // Error.assertionOrAddSourceMessage(isBinaryFunc, Error.COMPILER_WARNING, {"TODO: Better warning for: " + Types.unparseType(ty) + ", expected arguments 3..n to have default values"}, info);
+        // Error.assertionOrAddSourceMessage(isBinaryFunc, Error.COMPILER_WARNING, {"TODO: Better warning for: " + TypesDump.unparseType(ty) + ", expected arguments 3..n to have default values"}, info);
       then isBinaryFunc; // Unary functions are legal even if we are not interested in them
     else
       algorithm
-        // Error.addSourceMessage(Error.COMPILER_WARNING, {"TODO: Better warning for: " + Types.unparseType(ty) + ", expected arguments 1&2 to not have default values"}, info);
+        // Error.addSourceMessage(Error.COMPILER_WARNING, {"TODO: Better warning for: " + TypesDump.unparseType(ty) + ", expected arguments 1&2 to not have default values"}, info);
       then false;
   end match;
 end isOperatorBinaryFunctionOrWarn;
@@ -1617,7 +1617,7 @@ algorithm
         tps := List.map(args, Util.tuple22);
         exps_str := List.map(exps, ExpressionDump.printExpStr);
         _ := stringDelimitList(exps_str, ", ");
-        tps_str := List.map(tps, Types.unparseType);
+        tps_str := List.map(tps, TypesDump.unparseType);
         tpsstr := stringDelimitList(tps_str, ", ");
         pre_str := PrefixUtil.printPrefixStr3(pre);
         Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s,tpsstr,pre_str}, info);
@@ -1656,8 +1656,8 @@ algorithm
 
     case (DAE.ADD_ARR(),{typ1,typ2},_,pre, _)
       algorithm
-        t1_str := Types.unparseType(typ1);
-        t2_str := Types.unparseType(typ2);
+        t1_str := TypesDump.unparseType(typ1);
+        t2_str := TypesDump.unparseType(typ2);
         pre_str := PrefixUtil.printPrefixStr3(pre);
         Error.addSourceMessage(Error.INCOMPATIBLE_TYPES,
           {"vector addition", pre_str, t1_str, t2_str}, inInfo);
@@ -1678,8 +1678,8 @@ algorithm
 
     case (DAE.SUB_ARR(),{typ1,typ2},_,pre, _)
       algorithm
-        t1_str := Types.unparseType(typ1);
-        t2_str := Types.unparseType(typ2);
+        t1_str := TypesDump.unparseType(typ1);
+        t2_str := TypesDump.unparseType(typ2);
         pre_str := PrefixUtil.printPrefixStr3(pre);
         Error.addSourceMessage(Error.INCOMPATIBLE_TYPES,
           {"vector subtraction", pre_str, t1_str, t2_str}, inInfo);
@@ -1700,8 +1700,8 @@ algorithm
 
     case (DAE.MUL_ARR(),{typ1,typ2},_,pre, _)
       algorithm
-        t1_str := Types.unparseType(typ1);
-        t2_str := Types.unparseType(typ2);
+        t1_str := TypesDump.unparseType(typ1);
+        t2_str := TypesDump.unparseType(typ2);
         pre_str := PrefixUtil.printPrefixStr3(pre);
         Error.addSourceMessage(Error.INCOMPATIBLE_TYPES,
           {"vector elementwise multiplication", pre_str, t1_str, t2_str}, inInfo);
@@ -1722,8 +1722,8 @@ algorithm
 
     case (DAE.DIV_ARR(),{typ1,typ2},_,pre, _)
       algorithm
-        t1_str := Types.unparseType(typ1);
-        t2_str := Types.unparseType(typ2);
+        t1_str := TypesDump.unparseType(typ1);
+        t2_str := TypesDump.unparseType(typ2);
         pre_str := PrefixUtil.printPrefixStr3(pre);
         Error.addSourceMessage(Error.INCOMPATIBLE_TYPES,
           {"vector elementwise division", pre_str, t1_str, t2_str}, inInfo);
@@ -1754,8 +1754,8 @@ algorithm
 
     case (DAE.POW_ARR2(),{typ1,typ2},_,pre, _)
       algorithm
-        t1_str := Types.unparseType(typ1);
-        t2_str := Types.unparseType(typ2);
+        t1_str := TypesDump.unparseType(typ1);
+        t2_str := TypesDump.unparseType(typ2);
         pre_str := PrefixUtil.printPrefixStr3(pre);
         Error.addSourceMessage(Error.INCOMPATIBLE_TYPES,
           {"elementwise vector^vector", pre_str, t1_str, t2_str}, inInfo);
@@ -1776,8 +1776,8 @@ algorithm
 
     case (DAE.MUL_SCALAR_PRODUCT(),{typ1,typ2},_,pre, _)
       algorithm
-        t1_str := Types.unparseType(typ1);
-        t2_str := Types.unparseType(typ2);
+        t1_str := TypesDump.unparseType(typ1);
+        t2_str := TypesDump.unparseType(typ2);
         pre_str := PrefixUtil.printPrefixStr3(pre);
         Error.addSourceMessage(Error.INCOMPATIBLE_TYPES,
           {"scalar product", pre_str, t1_str, t2_str}, inInfo);
@@ -1835,8 +1835,8 @@ algorithm
 
     case (DAE.MUL_MATRIX_PRODUCT(),{typ1,typ2},_,pre, _)
       algorithm
-        t1_str := Types.unparseType(typ1);
-        t2_str := Types.unparseType(typ2);
+        t1_str := TypesDump.unparseType(typ1);
+        t2_str := TypesDump.unparseType(typ2);
         pre_str := PrefixUtil.printPrefixStr3(pre);
         Error.addSourceMessage(Error.INCOMPATIBLE_TYPES,
           {"matrix multiplication", pre_str, t1_str, t2_str}, inInfo);
@@ -1879,8 +1879,8 @@ algorithm
 
     case (DAE.AND(), {typ1, typ2}, _, pre, _)
       algorithm
-        t1_str := Types.unparseType(typ1);
-        t2_str := Types.unparseType(typ2);
+        t1_str := TypesDump.unparseType(typ1);
+        t2_str := TypesDump.unparseType(typ2);
         pre_str := PrefixUtil.printPrefixStr3(pre);
         Error.addSourceMessage(Error.INCOMPATIBLE_TYPES,
           {"and", pre_str, t1_str, t2_str}, inInfo);
@@ -1895,8 +1895,8 @@ algorithm
 
     case (DAE.OR(), {typ1, typ2}, _, pre, _)
       algorithm
-        t1_str := Types.unparseType(typ1);
-        t2_str := Types.unparseType(typ2);
+        t1_str := TypesDump.unparseType(typ1);
+        t2_str := TypesDump.unparseType(typ2);
         pre_str := PrefixUtil.printPrefixStr3(pre);
         Error.addSourceMessage(Error.INCOMPATIBLE_TYPES,
           {"or", pre_str, t1_str, t2_str}, inInfo);

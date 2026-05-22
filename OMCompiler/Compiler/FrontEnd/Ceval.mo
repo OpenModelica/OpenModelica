@@ -246,7 +246,7 @@ algorithm
             then v;
           else
             algorithm
-              v := ValuesUtil.makeArray(es_1);
+              v := ValuesMake.makeArray(es_1);
             then
               v;
         end matchcontinue;
@@ -267,7 +267,7 @@ algorithm
             then v;
           else
             algorithm
-              v := ValuesUtil.makeArray(es_1);
+              v := ValuesMake.makeArray(es_1);
             then
               v;
         end matchcontinue;
@@ -577,7 +577,7 @@ algorithm
         true := ValuesUtil.isArray(elt2);
         vallst := ValuesUtil.multMatrix(lhvals, rhvals);
       then
-        (cache,ValuesUtil.makeArray(vallst));
+        (cache,ValuesMake.makeArray(vallst));
 
     //POW (integer or real)
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.POW(),exp2 = rh),impl,msg,_)
@@ -804,7 +804,7 @@ algorithm
       algorithm
         ty := Expression.typeof(inExp);
         v := Types.typeToValue(ty);
-      then (inCache, Values.EMPTY("#graphicsExp#", ExpressionDump.printExpStr(inExp), v, Types.unparseType(ty)));
+      then (inCache, Values.EMPTY("#graphicsExp#", ExpressionDump.printExpStr(inExp), v, TypesDump.unparseType(ty)));
 
     // ceval can fail and that is ok, caught by other rules...
     case (_,env,e,_,_,_) // Absyn.MSG())
@@ -1291,7 +1291,7 @@ algorithm
     case ("OpenModelica_regex",{Values.STRING(str),Values.STRING(re),Values.INTEGER(i),Values.BOOL(extended),Values.BOOL(insensitive)},_)
       algorithm
         (n,strs) := System.regex(str,re,i,extended,insensitive);
-        vals := List.map(strs,ValuesUtil.makeString);
+        vals := List.map(strs,ValuesMake.makeString);
         v := Values.ARRAY(vals,{i});
       then Values.TUPLE({Values.INTEGER(n),v});
 
@@ -1317,7 +1317,7 @@ protected
 algorithm
   for expl in inMatrix loop
     (outCache,vl) := cevalList(outCache,inEnv,expl,inBoolean,inMsg,numIter);
-    v := ValuesUtil.makeArray(vl);
+    v := ValuesMake.makeArray(vl);
     outValues := v::outValues;
   end for;
   outValues := listReverseInPlace(outValues);
@@ -2605,7 +2605,7 @@ algorithm
       algorithm
         dir := System.dirname(fileName);
         fileName := System.basename(fileName);
-        v := ValuesUtil.makeArray({Values.STRING(name),Values.STRING(dir)});
+        v := ValuesMake.makeArray({Values.STRING(name),Values.STRING(dir)});
         b := stringEq(fileName,"ModelicaBuiltin.mo") or stringEq(fileName,"MetaModelicaBuiltin.mo") or stringEq(dir,".");
       then List.consOnTrue(not b,v,acc);
   end match;
@@ -2656,7 +2656,7 @@ protected
   list<Values.Value> v_lst_1;
 algorithm
   v_lst_1 := catDimension(v_lst, dim);
-  outValue := ValuesUtil.makeArray(v_lst_1);
+  outValue := ValuesMake.makeArray(v_lst_1);
 end cevalCat;
 
 protected function catDimension "Helper function to cevalCat, concatenates a list
@@ -2683,7 +2683,7 @@ algorithm
         v_lst_lst := List.map(vlst, ValuesUtil.arrayValues);
         dim_1 := dim - 1;
         v_lst_lst_1 := catDimension2(v_lst_lst, dim_1);
-        v_lst_1 := List.map(v_lst_lst_1, ValuesUtil.makeArray);
+        v_lst_1 := List.map(v_lst_lst_1, ValuesMake.makeArray);
         (Values.ARRAY(dimLst = i2::il) :: _) := v_lst_1;
         i1 := listLength(v_lst_1);
         v_lst_1 := cevalBuiltinTranspose2(v_lst_1, 1, i2::i1::il);
@@ -3752,7 +3752,7 @@ algorithm
       algorithm
         DAE.T_ARRAY(ty=ty) := Expression.typeof(exp);
         (cache,Values.ARRAY(vals,{dimension})) := ceval(cache,env,exp,impl,msg,numIter+1);
-        zero := ValuesUtil.makeZero(ty);
+        zero := ValuesMake.makeZero(ty);
         res := Values.ARRAY(list(Values.ARRAY(list(if i==j then listGet(vals,i) else zero for i in 1:dimension),{dimension}) for j in 1:dimension), {dimension,dimension});
       then
         (cache,res);
@@ -4109,7 +4109,7 @@ algorithm
 
   arr := match (vstart, vstop)
     case (Values.BOOL(), Values.BOOL())
-      then list(ValuesUtil.makeBoolean(b) for b in
+      then list(ValuesMake.makeBoolean(b) for b in
                 ExpressionSimplify.simplifyRangeBool(vstart.boolean, vstop.boolean));
 
     case (Values.INTEGER(), Values.INTEGER())
@@ -4120,7 +4120,7 @@ algorithm
           istep := 1;
         end if;
       then
-        list(ValuesUtil.makeInteger(i) for i in
+        list(ValuesMake.makeInteger(i) for i in
              ExpressionSimplify.simplifyRange(vstart.integer, istep, vstop.integer));
 
     case (Values.ENUM_LITERAL(), Values.ENUM_LITERAL())
@@ -4134,12 +4134,12 @@ algorithm
           rstep := 1.0;
         end if;
       then
-        list(ValuesUtil.makeReal(r) for r in
+        list(ValuesMake.makeReal(r) for r in
              ExpressionSimplify.simplifyRangeReal(vstart.real, rstep, vstop.real));
 
   end match;
 
-  outValue := ValuesUtil.makeArray(arr);
+  outValue := ValuesMake.makeArray(arr);
 end cevalRange;
 
 public function cevalRangeEnum
@@ -4514,7 +4514,7 @@ algorithm
         slice := List.map(sliceLst, ValuesUtil.valueInteger);
         subvals := List.map1r(slice, listGet, lst);
         (cache,lst) := cevalSubscriptValueList(cache,env, subs, subvals, impl,msg,numIter);
-        res := ValuesUtil.makeArray(lst);
+        res := ValuesMake.makeArray(lst);
       then
         (cache,res);
 
@@ -4526,7 +4526,7 @@ algorithm
           res := subval;
         else
           (cache,lst) := cevalSubscriptValueList(cache, env, subs, subval.valueLst, impl, msg, numIter+1);
-          res := ValuesUtil.makeArray(lst);
+          res := ValuesMake.makeArray(lst);
         end if;
       then
         (cache, res);
@@ -5012,17 +5012,17 @@ algorithm
     case (_,_,value,{_}) then value;
     case (Absyn.IDENT("array"),Absyn.COMBINE(),Values.ARRAY(valueLst=vals),_)
       algorithm
-        value := backpatchArrayReduction3(vals,listReverse(dims),ValuesUtil.makeArray);
+        value := backpatchArrayReduction3(vals,listReverse(dims),ValuesMake.makeArray);
         // print(ValuesDump.valString(value));print("\n");
       then value;
     case (Absyn.IDENT("list"),Absyn.COMBINE(),Values.LIST(vals),_)
       algorithm
-        value := backpatchArrayReduction3(vals,listReverse(dims),ValuesUtil.makeList);
+        value := backpatchArrayReduction3(vals,listReverse(dims),ValuesMake.makeList);
         // print(ValuesDump.valString(value));print("\n");
       then value;
     case (Absyn.IDENT("listReverse"),Absyn.COMBINE(),Values.LIST(vals),_)
       algorithm
-        value := backpatchArrayReduction3(vals,listReverse(dims),ValuesUtil.makeList);
+        value := backpatchArrayReduction3(vals,listReverse(dims),ValuesMake.makeList);
         // print(ValuesDump.valString(value));print("\n");
       then value;
     else inValue;

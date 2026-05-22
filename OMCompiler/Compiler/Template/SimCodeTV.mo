@@ -3731,6 +3731,13 @@ package List
   end partition;
 end List;
 
+package ComponentReferenceBasics
+  function crefDims
+    input DAE.ComponentRef cref;
+    output list<DAE.Dimension> dims;
+  end crefDims;
+end ComponentReferenceBasics;
+
 package ComponentReference
 
   function crefAppendedSubs
@@ -3742,11 +3749,6 @@ package ComponentReference
     input String ident;
     output DAE.ComponentRef outCrefIdent;
   end makeUntypedCrefIdent;
-
-  function crefDims
-    input DAE.ComponentRef cref;
-    output list<DAE.Dimension> dims;
-  end crefDims;
 
   function crefStripLastSubs
     input DAE.ComponentRef inComponentRef;
@@ -4288,6 +4290,13 @@ package DAEUtil
   end typeExp;
 end DAEUtil;
 
+package TypesDump
+  function unparseType
+    input DAE.Type inType;
+    output String str;
+  end unparseType;
+end TypesDump;
+
 package Types
   function arrayElementType
     input DAE.Type inType;
@@ -4297,10 +4306,6 @@ package Types
     input DAE.Type inType;
     output list<Integer> outIntegerLst;
   end getDimensionSizes;
-  function unparseType
-    input DAE.Type inType;
-    output String str;
-  end unparseType;
   function dimensionsKnown
     input DAE.Type inType;
     output Boolean outRes;

@@ -296,7 +296,7 @@ algorithm
     case (DAE.T_CODE(ty = codeType)) then printCodeTypeStr(codeType);
     case (DAE.T_FUNCTION_REFERENCE_VAR(functionType=ty)) then "#FUNCTION_REFERENCE_VAR#" + unparseType(ty);
     case (DAE.T_FUNCTION_REFERENCE_FUNC(functionType=ty)) then "#FUNCTION_REFERENCE_FUNC#" + unparseType(ty);
-    else "Internal error Types.unparseType: not implemented yet\n";
+    else "Internal error TypesDump.unparseType: not implemented yet\n";
   end match;
 end unparseType;
 

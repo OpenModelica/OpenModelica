@@ -1019,9 +1019,9 @@ algorithm
       res := Interactive.insertQuotesToList(res);
     end if;
 
-    result := ValuesUtil.makeArray(list(ValuesUtil.makeCodeTypeName(AbsynUtil.makeIdentPathFromString(s)) for s in res));
+    result := ValuesMake.makeArray(list(ValuesMake.makeCodeTypeName(AbsynUtil.makeIdentPathFromString(s)) for s in res));
   else
-    result := ValuesUtil.makeString("Error");
+    result := ValuesMake.makeString("Error");
   end try;
 
   if silent then
@@ -1650,7 +1650,7 @@ algorithm
           (res, cache) := getElementitemsAnnotationsFromElArgs(annotations,
             getAnnotationsFromConstraintClass(cc), inEnv, inClass, cache);
         then
-          ValuesUtil.makeArray(res) :: accum;
+          ValuesMake.makeArray(res) :: accum;
 
       case Absyn.ELEMENT(specification = Absyn.COMPONENTS())
         then Values.Value.ARRAY({}, {0}) :: accum;
@@ -1662,7 +1662,7 @@ algorithm
     end matchcontinue;
   end for;
 
-  result := ValuesUtil.makeArray(accum);
+  result := ValuesMake.makeArray(accum);
 end getElementitemsAnnotations;
 
 protected function getElementitemsAnnotationsFromElArgs
@@ -1680,7 +1680,7 @@ protected
 algorithm
   annotations := listAppend(inAnnotations, ccAnnotations);
   (strl, outCache) := getElementitemsAnnotationsElArgs(annotations, inEnv, inClass, outCache);
-  result := list(ValuesUtil.makeCodeTypeNameStr(s) for s in strl);
+  result := list(ValuesMake.makeCodeTypeNameStr(s) for s in strl);
 end getElementitemsAnnotationsFromElArgs;
 
 protected function getAnnotationsFromConstraintClass
@@ -2190,7 +2190,7 @@ public function dimensionListValues
   input list<Absyn.Subscript> dims;
   output list<Values.Value> vals;
 algorithm
-  vals := list(ValuesUtil.makeCodeTypeNameStr(Dump.printSubscriptStr(d)) for d in dims);
+  vals := list(ValuesMake.makeCodeTypeNameStr(Dump.printSubscriptStr(d)) for d in dims);
 end dimensionListValues;
 
 protected function getElementInfo
@@ -2233,9 +2233,9 @@ algorithm
           cc_path := getConstrainClassPath(env, opt_cc);
 
           if quoteNames then
-            common_info := ValuesUtil.makeString(AbsynUtil.pathString(cc_path)) :: common_info;
+            common_info := ValuesMake.makeString(AbsynUtil.pathString(cc_path)) :: common_info;
           else
-            common_info := ValuesUtil.makeCodeTypeName(getConstrainClassPath(env, opt_cc)) :: common_info;
+            common_info := ValuesMake.makeCodeTypeName(getConstrainClassPath(env, opt_cc)) :: common_info;
           end if;
         end if;
 
@@ -2245,28 +2245,28 @@ algorithm
           name := comp.component.name;
           cmt := getComponentComment(comp, element);
           dims := dimensionListValues(comp.component.arrayDim);
-          dims_val := ValuesUtil.makeArray(listAppend(dims, common_dims));
+          dims_val := ValuesMake.makeArray(listAppend(dims, common_dims));
 
           if quoteNames then
-            dims_val := ValuesUtil.makeString(ValuesDump.printValStr(dims_val));
+            dims_val := ValuesMake.makeString(ValuesDump.printValStr(dims_val));
           end if;
 
           info := List.appendElt(dims_val, common_info);
-          info := ValuesUtil.makeString(cmt) :: info;
+          info := ValuesMake.makeString(cmt) :: info;
 
           if quoteNames then
-            info := ValuesUtil.makeString(name) :: info;
-            info := ValuesUtil.makeString(AbsynUtil.pathString(ty)) :: info;
+            info := ValuesMake.makeString(name) :: info;
+            info := ValuesMake.makeString(AbsynUtil.pathString(ty)) :: info;
           else
-            info := ValuesUtil.makeCodeTypeNameStr(name) :: info;
-            info := ValuesUtil.makeCodeTypeName(ty) :: info;
+            info := ValuesMake.makeCodeTypeNameStr(name) :: info;
+            info := ValuesMake.makeCodeTypeName(ty) :: info;
           end if;
 
           if not onlyComponents then
-            info := ValuesUtil.makeString("co") :: ValuesUtil.makeString("-") :: info;
+            info := ValuesMake.makeString("co") :: ValuesMake.makeString("-") :: info;
           end if;
 
-          infos := ValuesUtil.makeArray(info) :: infos;
+          infos := ValuesMake.makeArray(info) :: infos;
         end for;
       then
         infos;
@@ -2287,22 +2287,22 @@ algorithm
 
         dims := if isSome(opt_adim) then dimensionListValues(Util.getOption(opt_adim)) else {};
         dims := listAppend(dimensionListValues(attr.arrayDim), dims);
-        dims_val := ValuesUtil.makeArray(dims);
+        dims_val := ValuesMake.makeArray(dims);
 
         if quoteNames then
-          dims_val := ValuesUtil.makeString(ValuesDump.printValStr(dims_val));
+          dims_val := ValuesMake.makeString(ValuesDump.printValStr(dims_val));
         end if;
 
         info := {dims_val};
-        info := ValuesUtil.makeCodeTypeName(getConstrainClassPath(env, opt_cc)) :: info;
+        info := ValuesMake.makeCodeTypeName(getConstrainClassPath(env, opt_cc)) :: info;
         info := getElementAttributeValues(element, isPublic, quoteNames, info);
-        info := ValuesUtil.makeString(cmt) :: info;
-        info := ValuesUtil.makeCodeTypeNameStr(name) :: info;
-        info := ValuesUtil.makeCodeTypeName(ty) :: info;
-        info := ValuesUtil.makeString(Dump.unparseRestrictionStr(restriction)) :: info;
-        info := ValuesUtil.makeString("cl") :: info;
+        info := ValuesMake.makeString(cmt) :: info;
+        info := ValuesMake.makeCodeTypeNameStr(name) :: info;
+        info := ValuesMake.makeCodeTypeName(ty) :: info;
+        info := ValuesMake.makeString(Dump.unparseRestrictionStr(restriction)) :: info;
+        info := ValuesMake.makeString("cl") :: info;
 
-        infos := ValuesUtil.makeArray(info) :: infos;
+        infos := ValuesMake.makeArray(info) :: infos;
       then
         infos;
 
@@ -2327,26 +2327,26 @@ algorithm
           case Absyn.ElementSpec.COMPONENTS(attributes = attr) then attr;
         end match;
 
-        attrValues := ValuesUtil.makeString(attrVariabilityStr(attr)) ::
-                      ValuesUtil.makeString(innerOuterStr(element.innerOuter)) ::
-                      ValuesUtil.makeString(attrDirectionStr(attr)) ::
+        attrValues := ValuesMake.makeString(attrVariabilityStr(attr)) ::
+                      ValuesMake.makeString(innerOuterStr(element.innerOuter)) ::
+                      ValuesMake.makeString(attrDirectionStr(attr)) ::
                       attrValues;
 
         if quoteNames then
-          attrValues := ValuesUtil.makeString(String(element.finalPrefix)) ::
-                        ValuesUtil.makeString(String(attr.flowPrefix)) ::
-                        ValuesUtil.makeString(String(attr.streamPrefix)) ::
-                        ValuesUtil.makeString(String(AbsynUtil.isElementReplaceable(element))) ::
+          attrValues := ValuesMake.makeString(String(element.finalPrefix)) ::
+                        ValuesMake.makeString(String(attr.flowPrefix)) ::
+                        ValuesMake.makeString(String(attr.streamPrefix)) ::
+                        ValuesMake.makeString(String(AbsynUtil.isElementReplaceable(element))) ::
                         attrValues;
         else
-          attrValues := ValuesUtil.makeBoolean(element.finalPrefix) ::
-                        ValuesUtil.makeBoolean(attr.flowPrefix) ::
-                        ValuesUtil.makeBoolean(attr.streamPrefix) ::
-                        ValuesUtil.makeBoolean(AbsynUtil.isElementReplaceable(element)) ::
+          attrValues := ValuesMake.makeBoolean(element.finalPrefix) ::
+                        ValuesMake.makeBoolean(attr.flowPrefix) ::
+                        ValuesMake.makeBoolean(attr.streamPrefix) ::
+                        ValuesMake.makeBoolean(AbsynUtil.isElementReplaceable(element)) ::
                         attrValues;
         end if;
 
-        attrValues := ValuesUtil.makeString(if isPublic then "public" else "protected") :: attrValues;
+        attrValues := ValuesMake.makeString(if isPublic then "public" else "protected") :: attrValues;
       then
         attrValues;
   end match;
@@ -3846,12 +3846,12 @@ algorithm
   classes := getAllSubtypeOf2(baseClass, parentClass, program, includePartial, sort);
 
   for entry in classes loop
-    name_val := ValuesUtil.makeString(AbsynUtil.pathString(entry.path));
-    cmt_val := ValuesUtil.makeString(AbsynUtil.classDefStringComment(entry.cls.body));
-    vals := ValuesUtil.makeArray({name_val, cmt_val}) :: vals;
+    name_val := ValuesMake.makeString(AbsynUtil.pathString(entry.path));
+    cmt_val := ValuesMake.makeString(AbsynUtil.classDefStringComment(entry.cls.body));
+    vals := ValuesMake.makeArray({name_val, cmt_val}) :: vals;
   end for;
 
-  res := ValuesUtil.makeArray(Dangerous.listReverseInPlace(vals));
+  res := ValuesMake.makeArray(Dangerous.listReverseInPlace(vals));
 end getReplaceableChoices;
 
 protected function getAllSubtypeOfCandidates
@@ -6022,7 +6022,7 @@ algorithm
 
     if access < accessLevel then
       Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
-      result := ValuesUtil.makeBoolean(false);
+      result := ValuesMake.makeBoolean(false);
       return;
     end if;
 
@@ -6035,7 +6035,7 @@ algorithm
     Config.setGraphicsExpMode(graphicsExpMode);
     result := fn(classPath, program, access);
   else
-    result := ValuesUtil.makeBoolean(false);
+    result := ValuesMake.makeBoolean(false);
   end try;
 
   if silent then
@@ -6056,7 +6056,7 @@ function makeAnnotationArrayValue
   input list<String> annotations;
   output Values.Value arr;
 algorithm
-  arr := ValuesUtil.makeArray(list(ValuesUtil.makeCodeTypeNameStr(s) for s in annotations));
+  arr := ValuesMake.makeArray(list(ValuesMake.makeCodeTypeNameStr(s) for s in annotations));
 end makeAnnotationArrayValue;
 
 function parseWithinPath

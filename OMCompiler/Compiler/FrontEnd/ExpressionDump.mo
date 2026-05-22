@@ -176,28 +176,28 @@ algorithm
 
     case (DAE.ADD(ty = t))
       algorithm
-        ts := Types.unparseType(t);
+        ts := TypesDump.unparseType(t);
         s := stringAppendList({" +<", ts, "> "});
       then
         s;
 
     case (DAE.SUB(ty = t))
       algorithm
-        ts := Types.unparseType(t);
+        ts := TypesDump.unparseType(t);
         s := stringAppendList({" -<", ts, "> "});
       then
         s;
 
     case (DAE.MUL(ty = t))
       algorithm
-        ts := Types.unparseType(t);
+        ts := TypesDump.unparseType(t);
         s := stringAppendList({" *<", ts, "> "});
       then
         s;
 
     case (DAE.DIV(ty = t))
       algorithm
-        ts := Types.unparseType(t);
+        ts := TypesDump.unparseType(t);
         s := stringAppendList({" /<", ts, "> "});
       then
         s;
@@ -205,20 +205,20 @@ algorithm
     case (DAE.POW()) then " ^ ";
     case (DAE.ADD_ARR(ty = t))
       algorithm
-        ts := Types.unparseType(t);
+        ts := TypesDump.unparseType(t);
         s := stringAppendList({" +<ADD_ARR><", ts, "> "});
       then
         s;
     case (DAE.SUB_ARR(ty = t))
       algorithm
-        ts := Types.unparseType(t);
+        ts := TypesDump.unparseType(t);
         s := stringAppendList({" -<SUB_ARR><", ts, "> "});
       then
         s;
     case (DAE.MUL_ARR()) then " *<MUL_ARRAY> ";
     case (DAE.DIV_ARR(ty = t))
       algorithm
-        ts := Types.unparseType(t);
+        ts := TypesDump.unparseType(t);
         s := stringAppendList({" /<DIV_ARR><", ts, "> "});
       then
         s;
@@ -635,7 +635,7 @@ algorithm
 
     case (DAE.ARRAY(array = es), _, _, _)
       algorithm
-        // s3 = Types.unparseType(tp); // adrpo: not used!
+        // s3 = TypesDump.unparseType(tp); // adrpo: not used!
         s := stringDelimitList(
           List.map3(es, printExp2Str, stringDelimiter, opcreffunc, opcallfunc), ",");
         s := stringAppendList({"{", s, "}"});
@@ -652,7 +652,7 @@ algorithm
 
     case (DAE.MATRIX(matrix = lstes), _, _, _)
       algorithm
-        // s3 = Types.unparseType(tp); // adrpo: not used!
+        // s3 = TypesDump.unparseType(tp); // adrpo: not used!
         s := stringDelimitList(List.map1(lstes, printRowStr, stringDelimiter), "},{");
         s := stringAppendList({"{{",s,"}}"});
       then
@@ -689,7 +689,7 @@ algorithm
 
     case (DAE.CAST(ty = tp,exp = e), _, _, _)
       algorithm
-        str := Types.unparseType(tp);
+        str := TypesDump.unparseType(tp);
         s := printExp2Str(e, stringDelimiter, opcreffunc, opcallfunc);
         res := stringAppendList({"DAE.CAST(",str,", ",s,")"});
       then
@@ -1135,7 +1135,7 @@ algorithm
 
     case (DAE.CAST(ty = ty,exp = e))
       algorithm
-        tystr := Types.unparseType(ty);
+        tystr := TypesDump.unparseType(ty);
         ct := dumpExpGraphviz(e);
       then
         Graphviz.LNODE("CAST",{tystr},{},{ct});
@@ -1172,6 +1172,7 @@ algorithm
     case (_) then Graphviz.NODE("#UNKNOWN EXPRESSION# ----eeestr ",{},{});
   end matchcontinue;
 end dumpExpGraphviz;
+
 
 public function dumpExpStr
 "Dumps expression to a string."
@@ -1254,8 +1255,8 @@ algorithm
     case (DAE.CREF(componentRef = c,ty=ty),level)
       algorithm
         gen_str := genStringNTime("   |", level);
-        s := /*ComponentReference.printComponentRefStr*/ComponentReference.debugPrintComponentRefTypeStr(c);
-        tpStr:= Types.unparseType(ty);
+        s := ComponentReference.printComponentRefStr/*ComponentReference.debugPrintComponentRefTypeStr*/(c);
+        tpStr:= TypesDump.unparseType(ty);
         res_str := stringAppendList({gen_str,"CREF ",s," CREFTYPE:",tpStr,"\n"});
       then
         res_str;
@@ -1267,7 +1268,7 @@ algorithm
         new_level2 := level + 1;
         sym := debugBinopSymbol(op);
         tp := Expression.typeof(exp);
-        str := Types.unparseType(tp);
+        str := TypesDump.unparseType(tp);
         lt := dumpExpStr(e1, new_level1);
         rt := dumpExpStr(e2, new_level2);
         res_str := stringAppendList({gen_str,"BINARY ",sym," ",str,"\n",lt,rt,""});
@@ -1280,7 +1281,7 @@ algorithm
         new_level1 := level + 1;
         sym := unaryopSymbol(op);
         ct := dumpExpStr(e, new_level1);
-        str := "expType:"+Types.unparseType(Expression.typeof(e))+" optype:"+Types.unparseType(Expression.typeofOp(op));
+        str := "expType:"+TypesDump.unparseType(Expression.typeof(e))+" optype:"+Types.unparseType(Expression.typeofOp(op));
         res_str := stringAppendList({gen_str,"UNARY ",sym," ",str,"\n",ct,""});
       then
         res_str;
@@ -1361,7 +1362,7 @@ algorithm
         nodes := List.map1(es, dumpExpStr, new_level1);
         nodes_1 := stringAppendList(nodes);
         s := boolString(b);
-        tpStr := Types.unparseType(tp);
+        tpStr := TypesDump.unparseType(tp);
         res_str := stringAppendList({gen_str,"ARRAY scalar:",s," tp: ",tpStr,"\n",nodes_1});
       then
         res_str;
@@ -1487,7 +1488,7 @@ algorithm
         ct := dumpExpStr(e, new_level1);
         istr := intString(i);
         s := stringAppendList({"[",istr,"]"});
-        tpStr := Types.unparseType(tp);
+        tpStr := TypesDump.unparseType(tp);
         res_str := stringAppendList({gen_str,"RSUB ",s," fieldName: ",fs," tp: ",tpStr,"\n",ct,""});
       then
         res_str;
@@ -1543,6 +1544,15 @@ algorithm
   end matchcontinue;
 end genStringNTime;
 
+public function dumpExp
+  input DAE.Exp exp;
+  protected String str;
+algorithm
+  str := dumpExpStr(exp,0);
+  print(str);
+  print("--------------------\n");
+end dumpExp;
+
 protected function printExpIfDiff ""
   input DAE.Exp e1,e2;
   output String s;
@@ -1586,7 +1596,7 @@ protected
   DAE.Type ty;
 algorithm
   ty := Expression.typeof(inExp);
-  str := Types.unparseType(ty);
+  str := TypesDump.unparseType(ty);
 end typeOfString;
 
 public function debugPrintComponentRefExp "
@@ -1647,15 +1657,6 @@ algorithm
   print(str);
   print("\n");
 end dumpExpWithTitle;
-
-public function dumpExp
-  input DAE.Exp exp;
-  protected String str;
-algorithm
-  str := dumpExpStr(exp,0);
-  print(str);
-  print("--------------------\n");
-end dumpExp;
 
 public function printSubscript
 "Print a Subscript."
