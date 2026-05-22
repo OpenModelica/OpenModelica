@@ -635,7 +635,7 @@ algorithm
 
     case (DAE.T_METABOXED(ty = ty1),ty2,_,_)
       algorithm
-        cr := ComponentReference.makeCrefIdent("#DUMMY#",DAE.T_UNKNOWN_DEFAULT,{});
+        cr := ComponentReferenceBasics.makeCrefIdent("#DUMMY#",DAE.T_UNKNOWN_DEFAULT,{});
         crefExp := Expression.crefExp(cr);
         (_,ty1) := Types.matchType(crefExp,ty1,ty2,true);
         et := Types.simplifyType(ty1);
@@ -643,7 +643,7 @@ algorithm
 
     case (ty1,ty2,_,_)
       algorithm
-        cr := ComponentReference.makeCrefIdent("#DUMMY#",DAE.T_UNKNOWN_DEFAULT,{});
+        cr := ComponentReferenceBasics.makeCrefIdent("#DUMMY#",DAE.T_UNKNOWN_DEFAULT,{});
         crefExp := Expression.crefExp(cr);
         (_,_) := Types.matchType(crefExp,ty1,ty2,true);
       then NONE();

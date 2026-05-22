@@ -757,8 +757,8 @@ case(eq::rest,_)
       //filter array-vars that appear in every equation
       crefs2 := BackendEquation.equationCrefs(listGet(similarEqs,1));
       (crefs2,crefs,_) := List.intersection1OnTrue(crefs,crefs2,ComponentReferenceBasics.crefEqual);
-        //print("varCrefs: "+stringDelimitList(List.map(crefs,ComponentReference.printComponentRefStr),",")+"\n");
-        //print("consCrefs: "+stringDelimitList(List.map(crefs2,ComponentReference.printComponentRefStr),",")+"\n");
+        //print("varCrefs: "+stringDelimitList(List.map(crefs,ComponentReferenceBasics.printComponentRefStr),",")+"\n");
+        //print("consCrefs: "+stringDelimitList(List.map(crefs2,ComponentReferenceBasics.printComponentRefStr),",")+"\n");
       numCrefs := listLength(crefs);
       // all crefs and their minimum as well as their max iterator
       crefMinMax := List.thread3Map(listReverse(crefs),List.fill(999999999,numCrefs),List.fill(0,numCrefs),Util.make3Tuple);

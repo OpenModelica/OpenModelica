@@ -454,7 +454,7 @@ algorithm
       list<DAE.Subscript> subs;
 
     case (DAE.EMPTY(scope = scope, name = name, tyStr = tyStr), _, _, _)
-      then "<EMPTY(scope: " + scope + ", name: " + ComponentReference.printComponentRefStr(name) + ", ty: " + tyStr + ")>";
+      then "<EMPTY(scope: " + scope + ", name: " + ComponentReferenceBasics.printComponentRefStr(name) + ", ty: " + tyStr + ")>";
 
     case (DAE.ICONST(integer = i), _, _, _)
       algorithm
@@ -485,7 +485,7 @@ algorithm
 
     case (DAE.CREF(componentRef = c), _, _, _)
       algorithm
-        s := ComponentReference.printComponentRefStr(c);
+        s := ComponentReferenceBasics.printComponentRefStr(c);
         if listMember("dataReconciliation", Flags.getConfigStringList(Flags.PRE_OPT_MODULES_ADD)) or listMember("dataReconciliationStateEstimation", Flags.getConfigStringList(Flags.PRE_OPT_MODULES_ADD)) or listMember("dataReconciliationBoundaryConditions", Flags.getConfigStringList(Flags.PRE_OPT_MODULES_ADD)) then
           s := System.stringReplace(s, ".", "_"); // replace cref's to modelica output format for dumping to reconciled_dataReconciliation.mo
         end if;
@@ -1004,7 +1004,7 @@ algorithm
 
     case (DAE.CREF(componentRef = c))
       algorithm
-        s := ComponentReference.printComponentRefStr(c);
+        s := ComponentReferenceBasics.printComponentRefStr(c);
       then
         Graphviz.LNODE("CREF",{s},{},{});
 
@@ -1224,7 +1224,7 @@ algorithm
     case (DAE.CREF(componentRef = c,ty=ty),level)
       algorithm
         gen_str := genStringNTime("   |", level);
-        s := ComponentReference.printComponentRefStr/*ComponentReference.debugPrintComponentRefTypeStr*/(c);
+        s := ComponentReferenceBasics.printComponentRefStr/*ComponentReference.debugPrintComponentRefTypeStr*/(c);
         tpStr:= TypesDump.unparseType(ty);
         res_str := stringAppendList({gen_str,"CREF ",s," CREFTYPE:",tpStr,"\n"});
       then

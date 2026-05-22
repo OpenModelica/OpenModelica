@@ -500,7 +500,7 @@ protected
   BackendDAE.Var v;
 algorithm
   v := BackendVariable.getVarAt(vars, id);
-  print(ComponentReference.printComponentRefStr(BackendVariable.varCref(v)));
+  print(ComponentReferenceBasics.printComponentRefStr(BackendVariable.varCref(v)));
   print("\n");
 end dumpVar;
 
@@ -1815,7 +1815,7 @@ algorithm
       algorithm
       sa := intString(a);
       sb := intString(b);
-      cr := ComponentReference.makeCrefIdent(stringAppendList({"$tmp", sa, "_", sb}), DAE.T_REAL_DEFAULT, {});
+      cr := ComponentReferenceBasics.makeCrefIdent(stringAppendList({"$tmp", sa, "_", sb}), DAE.T_REAL_DEFAULT, {});
       cexp := Expression.crefExp(cr);
       eqns := BackendEquation.add(BackendDAE.EQUATION(cexp, e, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN), inEqns);
       v := BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false, false);
@@ -2136,7 +2136,7 @@ algorithm
       print(";... % ");
       print(intString(row));
       print(" ");
-      print(ComponentReference.printComponentRefStr(cr)); print("\n");
+      print(ComponentReferenceBasics.printComponentRefStr(cr)); print("\n");
       dumpJacMatrix(jac, row+1, 1, size, vars);
     then ();
 
@@ -3022,18 +3022,18 @@ algorithm
       then set;
     case (DAE.CREF_QUAL(ident=ident, identType=ty, subscriptLst=subscriptLst, componentRef=subcr), _, NONE())
       algorithm
-        idcr := ComponentReference.makeCrefIdent(ident, ty, {});
+        idcr := ComponentReferenceBasics.makeCrefIdent(ident, ty, {});
         set := BaseHashSet.add(idcr, ihs);
-        idcr := ComponentReference.makeCrefIdent(ident, ty, subscriptLst);
+        idcr := ComponentReferenceBasics.makeCrefIdent(ident, ty, subscriptLst);
         set := BaseHashSet.add(idcr, set);
       then
         addCrefandParentsToSet(subcr, set, SOME(idcr));
     case (DAE.CREF_QUAL(ident=ident, identType=ty, subscriptLst=subscriptLst, componentRef=subcr), _, SOME(precr))
       algorithm
-        idcr := ComponentReference.makeCrefIdent(ident, ty, {});
+        idcr := ComponentReferenceBasics.makeCrefIdent(ident, ty, {});
         idcr := ComponentReference.joinCrefs(precr, idcr);
         set := BaseHashSet.add(idcr, ihs);
-        idcr := ComponentReference.makeCrefIdent(ident, ty, subscriptLst);
+        idcr := ComponentReferenceBasics.makeCrefIdent(ident, ty, subscriptLst);
         precr := ComponentReference.joinCrefs(precr, idcr);
         set := BaseHashSet.add(precr, ihs);
       then
@@ -3308,7 +3308,7 @@ algorithm
         true := List.all(crlst1, function ComponentReferenceBasics.crefEqualWithoutLastSubs(cr2 = cr));
         // check if crefs no on other side
         set := HashSet.emptyHashSet();
-        crnosubs := ComponentReference.crefStripLastSubs(cr);
+        crnosubs := ComponentReferenceBasics.crefStripLastSubs(cr);
         set := addCrefandParentsToSet(crnosubs, set, NONE());
         set := List.fold(crlst, BaseHashSet.add, set);
         (_, (_, false)) := Expression.traverseExpTopDown(e2, expHasCreftraverser, (set, false));
@@ -3331,7 +3331,7 @@ algorithm
         true := List.all(crlst1, function ComponentReferenceBasics.crefEqualWithoutLastSubs(cr2 = cr));
         // check if crefs no on other side
         set := HashSet.emptyHashSet();
-        crnosubs := ComponentReference.crefStripLastSubs(cr);
+        crnosubs := ComponentReferenceBasics.crefStripLastSubs(cr);
         set := addCrefandParentsToSet(crnosubs, set, NONE());
         set := List.fold(crlst, BaseHashSet.add, set);
         (_, (_, false)) := Expression.traverseExpTopDown(e1, expHasCreftraverser, (set, false));

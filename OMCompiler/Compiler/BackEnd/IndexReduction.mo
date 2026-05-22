@@ -4329,10 +4329,10 @@ protected
   DAE.ComponentRef set;
   DAE.Type tp;
 algorithm
-//  set := ComponentReference.makeCrefIdent("$STATESET",DAE.T_COMPLEX_DEFAULT,{DAE.INDEX(DAE.ICONST(index))});
-  set := ComponentReference.makeCrefIdent("$STATESET" + intString(index),DAE.T_COMPLEX_DEFAULT,{});
+//  set := ComponentReferenceBasics.makeCrefIdent("$STATESET",DAE.T_COMPLEX_DEFAULT,{DAE.INDEX(DAE.ICONST(index))});
+  set := ComponentReferenceBasics.makeCrefIdent("$STATESET" + intString(index),DAE.T_COMPLEX_DEFAULT,{});
   tp := if intGt(setsize,1) then DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(setsize)}) else DAE.T_REAL_DEFAULT;
-  crstates := ComponentReference.joinCrefs(set,ComponentReference.makeCrefIdent("x",tp,{}));
+  crstates := ComponentReference.joinCrefs(set,ComponentReferenceBasics.makeCrefIdent("x",tp,{}));
   oSetVars := BackendVariable.generateArrayVar(crstates,BackendDAE.STATE(1,NONE(),false),tp,NONE());
   oSetVars := List.map1(oSetVars,BackendVariable.setVarFixed,false);
   crset := List.map(oSetVars,BackendVariable.varCref);
@@ -4340,14 +4340,14 @@ algorithm
                             else DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(nCandidates)});
   realtp := if intGt(setsize,1) then DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(setsize),DAE.DIM_INTEGER(nCandidates)})
                                 else DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nCandidates)});
-  ocrA := ComponentReference.joinCrefs(set,ComponentReference.makeCrefIdent("A",tp,{}));
+  ocrA := ComponentReference.joinCrefs(set,ComponentReferenceBasics.makeCrefIdent("A",tp,{}));
   oAVars := BackendVariable.generateArrayVar(ocrA,BackendDAE.VARIABLE(),tp,NONE());
   oAVars := List.map1(oAVars,BackendVariable.setVarFixed,true);
   // add start value A[i,j] = if i==j then 1 else 0 via initial equations
   oAVars := List.map1(oAVars,BackendVariable.setVarStartValue,DAE.ICONST(0));
   oAVars := setSetAStart(oAVars,1,1,nCandidates,{});
   tp := if intGt(nCEqns,1) then DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nCEqns)}) else DAE.T_REAL_DEFAULT;
-  ocrJ := ComponentReference.joinCrefs(set,ComponentReference.makeCrefIdent("J",tp,{}));
+  ocrJ := ComponentReference.joinCrefs(set,ComponentReferenceBasics.makeCrefIdent("J",tp,{}));
   oJVars := BackendVariable.generateArrayVar(ocrJ,BackendDAE.VARIABLE(),tp,NONE());
   oJVars := List.map1(oJVars,BackendVariable.setVarFixed,false);
 end getSetVars;
@@ -4469,7 +4469,7 @@ protected function dumpStates
   input tuple<DAE.ComponentRef,Integer> state;
   output String outStr;
 algorithm
-  outStr := intString(Util.tuple22(state)) + " " + ComponentReference.printComponentRefStr(Util.tuple21(state));
+  outStr := intString(Util.tuple22(state)) + " " + ComponentReferenceBasics.printComponentRefStr(Util.tuple21(state));
 end dumpStates;
 
 /******************************************

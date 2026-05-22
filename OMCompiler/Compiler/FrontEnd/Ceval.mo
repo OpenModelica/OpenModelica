@@ -344,14 +344,14 @@ algorithm
     case (cache,env,DAE.CREF(componentRef = cr),(false),msg,_)
       algorithm
         (cache,v) := cevalCref(cache, env, cr, false, msg, numIter+1) "When in interactive mode, always evaluate crefs, i.e non-implicit mode.." ;
-        //Debug.traceln("cevalCref cr: " + ComponentReference.printComponentRefStr(c) + " in s: " + FGraph.printGraphPathStr(env) + " v:" + ValuesDump.valString(v));
+        //Debug.traceln("cevalCref cr: " + ComponentReferenceBasics.printComponentRefStr(c) + " in s: " + FGraph.printGraphPathStr(env) + " v:" + ValuesDump.valString(v));
       then
         (cache,v);
 
     case (cache,env,DAE.CREF(componentRef = cr),impl,msg,_)
       algorithm
         (cache,v) := cevalCref(cache,env, cr, impl,msg,numIter+1);
-        //Debug.traceln("cevalCref cr: " + ComponentReference.printComponentRefStr(c) + " in s: " + FGraph.printGraphPathStr(env) + " v:" + ValuesDump.valString(v));
+        //Debug.traceln("cevalCref cr: " + ComponentReferenceBasics.printComponentRefStr(c) + " in s: " + FGraph.printGraphPathStr(env) + " v:" + ValuesDump.valString(v));
       then
         (cache,v);
 
@@ -795,7 +795,7 @@ algorithm
 
     case (_, _, DAE.EMPTY(), _, _, _)
       algorithm
-        s := ComponentReference.printComponentRefStr(inExp.name);
+        s := ComponentReferenceBasics.printComponentRefStr(inExp.name);
         v := Types.typeToValue(inExp.ty);
       then
         (inCache, Values.EMPTY(inExp.scope, s, v, inExp.tyStr));
@@ -1409,7 +1409,7 @@ algorithm
         (_,_,tp,binding,_,_,_,_,_) := Lookup.lookupVar(cache, env, cr) "If dimensions not known and impl=false, error message";
         if not Types.dimensionsKnown(tp)
         then
-          cr_str := ComponentReference.printComponentRefStr(cr);
+          cr_str := ComponentReferenceBasics.printComponentRefStr(cr);
           dim_str := ExpressionBasics.printExpStr(dimExp);
           size_str := stringAppendList({"size(",cr_str,", ",dim_str,")"});
           Error.addSourceMessage(Error.DIMENSION_NOT_KNOWN, {size_str}, info);
@@ -4239,7 +4239,7 @@ algorithm
       algorithm
         failure((_,_,_,_,_,_,_,_,_) := Lookup.lookupVar(cache,env, c));
         scope_str := FGraph.printGraphPathStr(env);
-        str := ComponentReference.printComponentRefStr(c);
+        str := ComponentReferenceBasics.printComponentRefStr(c);
         Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR, {str,scope_str}, info);
       then
         fail();
@@ -4287,7 +4287,7 @@ algorithm
     // and we can only check that at the DAE level!
     case (_, _, _, _, _, DAE.UNBOUND(), NONE(), _, _, _, _, false, Absyn.MSG(), _)
       algorithm
-        str := ComponentReference.printComponentRefStr(inCref);
+        str := ComponentReferenceBasics.printComponentRefStr(inCref);
         scope_str := FGraph.printGraphPathStr(inEnv);
         // Error.addSourceMessage(Error.NO_CONSTANT_BINDING, {str, scope_str}, info);
         if Flags.isSet(Flags.CEVAL) then
@@ -4295,7 +4295,7 @@ algorithm
         end if;
         // build a default binding for it!
         s1 := FGraph.printGraphPathStr(inEnv);
-        s2 := ComponentReference.printComponentRefStr(inCref);
+        s2 := ComponentReferenceBasics.printComponentRefStr(inCref);
         s3 := TypesDump.printTypeStr(inType);
         v := Types.typeToValue(inType);
         v := Values.EMPTY(s1, s2, v, s3);
@@ -4314,8 +4314,8 @@ algorithm
         true := SCodeUtil.isParameterOrConst(variability) or inImpl or FGraph.inForLoopScope(inEnv);
         false := crefEqualValue(inCref, inBinding);
         (cache, v) := cevalCrefBinding(inCache, inEnv, inCref, inBinding, inImpl, inMsg, numIter);
-        // print("Eval cref: " + ComponentReference.printComponentRefStr(inCref) + "\n  in scope " + FGraph.printGraphPathStr(inEnv) + "\n");
-        cache := FCore.addEvaluatedCref(cache,variability,ComponentReference.crefStripLastSubs(inCref));
+        // print("Eval cref: " + ComponentReferenceBasics.printComponentRefStr(inCref) + "\n  in scope " + FGraph.printGraphPathStr(inEnv) + "\n");
+        cache := FCore.addEvaluatedCref(cache,variability,ComponentReferenceBasics.crefStripLastSubs(inCref));
       then
         (cache, v);
   end match;
@@ -4355,7 +4355,7 @@ algorithm
     case (cache,env,cr,_,impl,msg)
       algorithm
         print("Ceval: " +
-          ComponentReference.printComponentRefStr(cr) + " | " +
+          ComponentReferenceBasics.printComponentRefStr(cr) + " | " +
           FGraph.printGraphPathStr(env) + " | " +
           DAEUtil.printBindingExpStr(inBinding) +
           "\n");
@@ -4443,7 +4443,7 @@ algorithm
     case (_,env,e1,_,_,_,_)
       algorithm
         true := Flags.isSet(Flags.CEVAL);
-        s1 := ComponentReference.printComponentRefStr(e1);
+        s1 := ComponentReferenceBasics.printComponentRefStr(e1);
         s2 := TypesDump.printBindingStr(inBinding);
         str := FGraph.printGraphPathStr(env);
         str := stringAppendList({"- Ceval.cevalCrefBinding: ",

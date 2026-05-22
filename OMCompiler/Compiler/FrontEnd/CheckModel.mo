@@ -439,7 +439,7 @@ algorithm
     case(DAE.STMT_FOR(type_=tp, iter = iteratorName, range = e, statementLst = stmts), _, _)
       algorithm
         // replace the iterator variable with the range expression
-        cr := ComponentReference.makeCrefIdent(iteratorName, tp, {});
+        cr := ComponentReferenceBasics.makeCrefIdent(iteratorName, tp, {});
         (stmts, _) := DAEUtil.traverseDAEEquationsStmts(stmts, Expression.traverseSubexpressionsHelper, (Expression.replaceCref, (cr, e)));
         ht := List.fold1(stmts, statementOutputs, DAE.EXPAND(), iht);
       then ht;
@@ -447,7 +447,7 @@ algorithm
     case(DAE.STMT_PARFOR(type_=tp, iter = iteratorName, range = e, statementLst = stmts), _, _)
       algorithm
         // replace the iterator variable with the range expression
-        cr := ComponentReference.makeCrefIdent(iteratorName, tp, {});
+        cr := ComponentReferenceBasics.makeCrefIdent(iteratorName, tp, {});
         (stmts, _) := DAEUtil.traverseDAEEquationsStmts(stmts, Expression.traverseSubexpressionsHelper, (Expression.replaceCref, (cr, e)));
         ht := List.fold1(stmts, statementOutputs, DAE.EXPAND(), iht);
       then ht;

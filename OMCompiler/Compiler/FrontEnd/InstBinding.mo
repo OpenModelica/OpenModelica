@@ -577,7 +577,7 @@ algorithm
         Debug.trace("- InstBinding.instModEquation failed\n type: ");
         Debug.trace(TypesDump.printTypeStr(inType));
         Debug.trace("\n  cref: ");
-        Debug.trace(ComponentReference.printComponentRefStr(inComponentRef));
+        Debug.trace(ComponentReferenceBasics.printComponentRefStr(inComponentRef));
         Debug.trace("\n mod:");
         Debug.traceln(Mod.printModStr(inMod));
       then

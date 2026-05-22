@@ -570,12 +570,12 @@ protected
   constant Boolean debug = false;
 algorithm
   if debug then print("\nDifferentiate Exp: "+ExpressionBasics.printExpStr(inExp)+
-                      " w.r.t. "+ComponentReference.printComponentRefStr(inDiffwrtCref)+"\n"); end if;
+                      " w.r.t. "+ComponentReferenceBasics.printComponentRefStr(inDiffwrtCref)+"\n"); end if;
 
 /*
   // This check does not seem to be necessary since looking through the stack of expression seems to stop iteration in most cases, and you get a spam of messages from this check.
   if maxIter < 1 then
-    Error.addInternalError("Differentiation reached maximum number of iterations ("+String(defaultMaxIter)+"). Current expression is: " + ExpressionBasics.printExpStr(inExp) + " w.r.t. " + ComponentReference.printComponentRefStr(inDiffwrtCref), sourceInfo());
+    Error.addInternalError("Differentiation reached maximum number of iterations ("+String(defaultMaxIter)+"). Current expression is: " + ExpressionBasics.printExpStr(inExp) + " w.r.t. " + ComponentReferenceBasics.printComponentRefStr(inDiffwrtCref), sourceInfo());
     fail();
   end if;
 */
@@ -644,7 +644,7 @@ algorithm
 
     // differentiate homotopy
     case DAE.CALL(path=p as Absyn.IDENT(name="homotopy"), expLst={actual, simplified}, attr=attr) algorithm
-      lambda := Expression.crefExp(ComponentReference.makeCrefIdent(BackendDAE.homotopyLambda, DAE.T_REAL_DEFAULT, {}));
+      lambda := Expression.crefExp(ComponentReferenceBasics.makeCrefIdent(BackendDAE.homotopyLambda, DAE.T_REAL_DEFAULT, {}));
       (e1, functionTree) := differentiateExp(actual, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
       (e2, functionTree) := differentiateExp(simplified, inDiffwrtCref, inInputData, inDiffType, functionTree, maxIter);
       e3 := DAE.BINARY(
@@ -765,7 +765,7 @@ algorithm
     else algorithm
       true := Flags.isSet(Flags.FAILTRACE);
       s1 := ExpressionBasics.printExpStr(inExp);
-      s2 := ComponentReference.printComponentRefStr(inDiffwrtCref);
+      s2 := ComponentReferenceBasics.printComponentRefStr(inDiffwrtCref);
       stp := TypesDump.printTypeStr(Expression.typeof(inExp));
       Debug.trace("- differentiateExp " + s1 + " type: " + stp + " w.r.t " + s2 + " failed\n");
     then fail();
@@ -858,7 +858,7 @@ algorithm
 
     case DAE.STMT_FOR(type_=type_, iterIsArray=iterIsArray, iter=ident, range=exp, statementLst=statementLst, source=source)::restStatements
       algorithm
-        cref := ComponentReference.makeCrefIdent(ident, DAE.T_INTEGER_DEFAULT, {});
+        cref := ComponentReferenceBasics.makeCrefIdent(ident, DAE.T_INTEGER_DEFAULT, {});
         controlVar := BackendDAE.VAR(cref, BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false, false);
         inputData := addGlobalVars({controlVar}, inInputData);
         (derivedStatements1, functions) := differentiateStatements(statementLst, inDiffwrtCref, inputData, inDiffType, {}, inFunctionTree, maxIter);
@@ -960,7 +960,7 @@ algorithm
         if Flags.isSet(Flags.FAILTRACE) then
           (currStatement::_) := inStmts;
           s1 := DAEDump.ppStatementStr(currStatement);
-          s2 := ComponentReference.printComponentRefStr(inDiffwrtCref);
+          s2 := ComponentReferenceBasics.printComponentRefStr(inDiffwrtCref);
           Debug.trace("- differentiateStatements " + s1 + " w.r.t: " + s2 + " failed\n");
         end if;
       then fail();
@@ -1034,7 +1034,7 @@ protected
   constant Boolean debug = false;
 algorithm
   if debug then print("\nDifferentiate Exp-Cref: "+ExpressionBasics.printExpStr(inExp)+
-                      " w.r.t. "+ComponentReference.printComponentRefStr(inDiffwrtCref)+"\n"); end if;
+                      " w.r.t. "+ComponentReferenceBasics.printComponentRefStr(inDiffwrtCref)+"\n"); end if;
   (outDiffedExp, outFunctionTree) :=
     matchcontinue(inExp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree)
     local
@@ -1145,7 +1145,7 @@ algorithm
     case ((DAE.CREF(componentRef = cr,ty = tp)), _, BackendDAE.DIFFINPUTDATA(allVars=SOME(timevars)), BackendDAE.DIFFERENTIATION_TIME(), _)
       algorithm
         (BackendDAE.VAR(varKind = kind),_) := BackendVariable.getVarSingle(cr, timevars);
-        //print("\nExp-Cref\n known vars: " + ComponentReference.printComponentRefStr(cr));
+        //print("\nExp-Cref\n known vars: " + ComponentReferenceBasics.printComponentRefStr(cr));
         true := listMember(kind,{BackendDAE.DISCRETE()}) or not Types.isReal(tp);
         (zero,_) := Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then
@@ -1179,7 +1179,7 @@ algorithm
     // dependenent variable cref without subscript
     case ((DAE.CREF(componentRef = cr,ty=tp)), _, BackendDAE.DIFFINPUTDATA(dependenentVars=SOME(timevars)), BackendDAE.DIFFERENTIATION_FUNCTION(), _)
       algorithm
-        cr1 := ComponentReference.crefStripLastSubs(cr);
+        cr1 := ComponentReferenceBasics.crefStripLastSubs(cr);
         (_,_) := BackendVariable.getVar(cr1, timevars);
         (zero, _) := Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then
@@ -1284,7 +1284,7 @@ algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         s1 := ExpressionBasics.printExpStr(inExp);
         se1 := TypesDump.printTypeStr(Expression.typeof(inExp));
-        s2 := ComponentReference.printComponentRefStr(inDiffwrtCref);
+        s2 := ComponentReferenceBasics.printComponentRefStr(inDiffwrtCref);
         serr := stringAppendList({"\n- differentiateCrefs ",s1," type:", se1 ," w.r.t: ",s2," failed\n"});
         Debug.trace(serr);
       then
@@ -1302,7 +1302,7 @@ protected
 algorithm
   subs := ComponentReference.crefLastSubs(inCref);
 
-  outCref := ComponentReference.crefStripLastSubs(inCref);
+  outCref := ComponentReferenceBasics.crefStripLastSubs(inCref);
 
   outCref := ComponentReference.prependStringCref(BackendDAE.functionDerivativeNamePrefix, outCref);
   outCref := ComponentReference.prependStringCref(inMatrixName, outCref);
@@ -1318,16 +1318,16 @@ protected
   list<DAE.Subscript> subs;
   constant Boolean debug = false;
 algorithm
-  if debug then print("inCref: " + ComponentReference.printComponentRefStr(inCref) +"\n"); end if;
+  if debug then print("inCref: " + ComponentReferenceBasics.printComponentRefStr(inCref) +"\n"); end if;
   if debug then print("after full type  " + TypesDump.printTypeStr(ComponentReference.crefTypeConsiderSubs(inCref)) + "\n"); end if;
   subs := ComponentReference.crefLastSubs(inCref);
-  outCref := ComponentReference.crefStripLastSubs(inCref);
+  outCref := ComponentReferenceBasics.crefStripLastSubs(inCref);
   outCref := ComponentReference.crefSetLastType(outCref, DAE.T_UNKNOWN_DEFAULT);
-  outCref := ComponentReference.joinCrefs(outCref, ComponentReference.makeCrefIdent("Seed" + inMatrixName, DAE.T_UNKNOWN_DEFAULT, {}));
+  outCref := ComponentReference.joinCrefs(outCref, ComponentReferenceBasics.makeCrefIdent("Seed" + inMatrixName, DAE.T_UNKNOWN_DEFAULT, {}));
   if debug then print("after join: " + ComponentReference.printComponentRefListStr(ComponentReference.expandCref(outCref, true)) + "\n"); end if;
   outCref := ComponentReference.crefSetLastSubs(outCref, subs);
   outCref := ComponentReference.crefSetLastType(outCref, ComponentReference.crefLastType(inCref));
-  if debug then print("outCref: " + ComponentReference.printComponentRefStr(outCref) +"\n"); end if;
+  if debug then print("outCref: " + ComponentReferenceBasics.printComponentRefStr(outCref) +"\n"); end if;
 end createSeedCrefName;
 
 public function isSeedCref
@@ -1358,7 +1358,7 @@ protected
   constant Boolean debug = false;
 algorithm
   if debug then print("\nDifferentiate Exp-Call: "+ExpressionBasics.printExpStr(inExp)+
-                      " w.r.t. "+ComponentReference.printComponentRefStr(inDiffwrtCref)+"\n"); end if;
+                      " w.r.t. "+ComponentReferenceBasics.printComponentRefStr(inDiffwrtCref)+"\n"); end if;
 
   (outDiffedExp, outFunctionTree) :=
     match(inExp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree)
@@ -1400,7 +1400,7 @@ algorithm
            _, BackendDAE.DIFFINPUTDATA(independenentVars=SOME(timevars),matrixName=SOME(matrixName)),
           BackendDAE.GENERIC_GRADIENT(), _) algorithm
 
-      cr := ComponentReference.makeCrefQual(DAE.previousNamePrefix, tp, {}, cr);
+      cr := ComponentReferenceBasics.makeCrefQual(DAE.previousNamePrefix, tp, {}, cr);
       (_::_, _) := BackendVariable.getVar(cr, timevars);
       cr := createSeedCrefName(cr, matrixName);
 
@@ -1488,7 +1488,7 @@ algorithm
 /*
     case (e as DAE.CALL(expLst = _), _, _, _, _)
       algorithm
-        Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {ExpressionBasics.printExpStr(e), ComponentReference.printComponentRefStr(inDiffwrtCref)});
+        Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {ExpressionBasics.printExpStr(e), ComponentReferenceBasics.printComponentRefStr(inDiffwrtCref)});
       then
         fail();
 */
@@ -1496,7 +1496,7 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         s1 := ExpressionBasics.printExpStr(inExp);
-        s2 := ComponentReference.printComponentRefStr(inDiffwrtCref);
+        s2 := ComponentReferenceBasics.printComponentRefStr(inDiffwrtCref);
         serr := stringAppendList({"\n- Function differentiateCalls failed. differentiateExp ",s1," w.r.t: ",s2," failed\n"});
         Debug.trace(serr);
       then
@@ -2160,7 +2160,7 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         s1 := ExpressionBasics.printExpStr(inExp);
-        s2 := ComponentReference.printComponentRefStr(inDiffwrtCref);
+        s2 := ComponentReferenceBasics.printComponentRefStr(inDiffwrtCref);
         serr := stringAppendList({"\n- Function differentiateBinary failed. differentiateExp ",s1," w.r.t: ",s2," failed\n"});
         Debug.trace(serr);
       then

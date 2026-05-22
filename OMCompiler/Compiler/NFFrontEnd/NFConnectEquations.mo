@@ -365,7 +365,7 @@ end makeEqualityAssert;
 //      DAE.ComponentRef lhs;
 //
 //    case DAE.SOURCE(connectEquationOptLst = (lhs, _) :: _)
-//      then not ComponentReference.crefPrefixOf(lhs, lhsCref);
+//      then not ComponentReferenceBasics.crefPrefixOf(lhs, lhsCref);
 //
 //    else false;
 //  end match;

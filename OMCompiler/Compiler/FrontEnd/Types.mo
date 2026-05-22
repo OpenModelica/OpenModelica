@@ -5430,7 +5430,7 @@ algorithm
     case _::rest
       algorithm
         (restExp,restType) := makeDummyExpAndTypeLists(rest);
-        cref_  := ComponentReference.makeCrefIdent("#DummyExp#",DAE.T_UNKNOWN_DEFAULT,{});
+        cref_  := ComponentReferenceBasics.makeCrefIdent("#DummyExp#",DAE.T_UNKNOWN_DEFAULT,{});
         crefExp := Expression.crefExp(cref_);
       then (crefExp::restExp,DAE.T_METABOXED(DAE.T_UNKNOWN_DEFAULT)::restType);
   end match;

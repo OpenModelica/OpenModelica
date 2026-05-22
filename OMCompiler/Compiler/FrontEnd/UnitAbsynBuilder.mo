@@ -862,13 +862,13 @@ algorithm
     case({},ht,nextElt) then ({},ht,nextElt);
 
     case((r,UnitAbsyn.TYPEPARAMETER(name,0))::params,ht,nextElt) algorithm
-      cref_ := ComponentReference.makeCrefIdent(name,DAE.T_UNKNOWN_DEFAULT,{});
+      cref_ := ComponentReferenceBasics.makeCrefIdent(name,DAE.T_UNKNOWN_DEFAULT,{});
       indx := BaseHashTable.get(cref_,ht);
       (params,ht,nextElt) := createTypeParameterLocations4(params,ht,nextElt);
     then ((r,UnitAbsyn.TYPEPARAMETER(name,indx))::params,ht,nextElt);
 
     case((r,UnitAbsyn.TYPEPARAMETER(name,0))::params,ht,nextElt) algorithm
-        cref_ := ComponentReference.makeCrefIdent(name,DAE.T_UNKNOWN_DEFAULT,{});
+        cref_ := ComponentReferenceBasics.makeCrefIdent(name,DAE.T_UNKNOWN_DEFAULT,{});
         ht := BaseHashTable.add((cref_,nextElt),ht);
        (params,ht,nextElt) := createTypeParameterLocations4(params,ht,nextElt);
     then((r,UnitAbsyn.TYPEPARAMETER(name,nextElt))::params,ht,nextElt+1);
@@ -984,14 +984,14 @@ algorithm
 
     /*case(env,e as DAE.RCONST(r),ht,store) equation
       s1 = realString(r);
-      indx = BaseHashTable.get(ComponentReference.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{}),ht);
+      indx = BaseHashTable.get(ComponentReferenceBasics.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{}),ht);
     then (UnitAbsyn.LOC(indx,e),{},store);*/
 
     case(_,e as DAE.ICONST(i),divOrMul,ht,store) algorithm
       s1 := "$"+intString(tick())+"_"+intString(i);
       u := if divOrMul then str2unit("1",NONE()) else UnitAbsyn.UNSPECIFIED();
       (store,indx) := add(u,store);
-       ht := BaseHashTable.add((ComponentReference.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{}),indx),ht);
+       ht := BaseHashTable.add((ComponentReferenceBasics.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{}),indx),ht);
     then (UnitAbsyn.LOC(indx,e),{},store);
 
     /* for each constant, add new unspecified unit*/
@@ -999,7 +999,7 @@ algorithm
       s1 := "$"+intString(tick())+"_"+realString(r);
       u := if divOrMul then str2unit("1",NONE()) else UnitAbsyn.UNSPECIFIED();
       (store,indx) := add(u,store);
-       ht := BaseHashTable.add((ComponentReference.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{}),indx),ht);
+       ht := BaseHashTable.add((ComponentReferenceBasics.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{}),indx),ht);
     then (UnitAbsyn.LOC(indx,e),{},store);
 
     case(_,DAE.CAST(_,e1),divOrMul,ht,store) algorithm
@@ -1455,7 +1455,7 @@ algorithm
       unit := selectConstantUnit(parentOp);
       (store,indx) := add(unit,store);
       s1 := realString(r);
-      cref_ := ComponentReference.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{});
+      cref_ := ComponentReferenceBasics.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{});
       ht := BaseHashTable.add((cref_,indx),ht);
     then (store,ht);
 
@@ -1463,7 +1463,7 @@ algorithm
       unit := selectConstantUnit(parentOp);
       (store,indx) := add(unit,store);
       s1 := intString(i);
-      cref_ := ComponentReference.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{});
+      cref_ := ComponentReferenceBasics.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{});
       ht := BaseHashTable.add((cref_,indx),ht);
     then (store,ht);
 

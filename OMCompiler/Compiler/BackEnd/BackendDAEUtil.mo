@@ -406,7 +406,7 @@ protected
   DAE.ComponentRef cr;
 algorithm
   name := Expression.reductionIterName(iter);
-  cr := ComponentReference.makeCrefIdent(name,DAE.T_INTEGER_DEFAULT,{});
+  cr := ComponentReferenceBasics.makeCrefIdent(name,DAE.T_INTEGER_DEFAULT,{});
   backendVar := BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_INTEGER_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false, false);
 end makeIterVariable;
 
@@ -885,7 +885,7 @@ algorithm
 
     case (DAE.ASUB(exp = DAE.ARRAY(array = (DAE.CREF(componentRef = cr)::_)), sub = subs))
       algorithm
-        cr := ComponentReference.crefStripLastSubs(cr);
+        cr := ComponentReferenceBasics.crefStripLastSubs(cr);
         e := Expression.crefExp(cr);
       then
         // adrpo: TODO! FIXME! check if this is TYPE correct!
@@ -894,7 +894,7 @@ algorithm
 
     case (DAE.ASUB(exp = DAE.MATRIX(matrix = (((DAE.CREF(componentRef = cr))::_)::_)), sub = subs))
       algorithm
-        cr := ComponentReference.crefStripLastSubs(cr);
+        cr := ComponentReferenceBasics.crefStripLastSubs(cr);
         e := Expression.crefExp(cr);
       then
         // adrpo: TODO! FIXME! check if this is TYPE correct!
@@ -1107,7 +1107,7 @@ algorithm
     case (DAE.CREF(DAE.CREF_IDENT(varIdent, arrayType, subscripts), varType))
       algorithm
         subscripts := List.map(subscripts, simplifySubscript);
-        cref_ := ComponentReference.makeCrefIdent(varIdent, arrayType, subscripts);
+        cref_ := ComponentReferenceBasics.makeCrefIdent(varIdent, arrayType, subscripts);
         newCrefExp := Expression.makeCrefExp(cref_, varType);
       then
         newCrefExp;
@@ -1123,7 +1123,7 @@ algorithm
         // they reference the same element.
         subExprsSimplified := ExpressionSimplify.simplifyList(subExprs);
         subscripts := List.map(subExprsSimplified, Expression.makeIndexSubscript);
-        cref_ := ComponentReference.makeCrefIdent(varIdent, arrayType, subscripts);
+        cref_ := ComponentReferenceBasics.makeCrefIdent(varIdent, arrayType, subscripts);
         newCrefExp := Expression.makeCrefExp(cref_, varType);
       then
         newCrefExp;
@@ -3696,7 +3696,7 @@ algorithm
     // inner variable
     case (DAE.CREF(componentRef = cr),(vars,pa,isInitial))
       algorithm
-        cr := ComponentReference.makeCrefQual(BackendDAE.partialDerivativeNamePrefix, DAE.T_REAL_DEFAULT, {}, cr);
+        cr := ComponentReferenceBasics.makeCrefQual(BackendDAE.partialDerivativeNamePrefix, DAE.T_REAL_DEFAULT, {}, cr);
         (varslst,p) := BackendVariable.getVar(cr, vars);
         res := adjacencyRowExp1withInput(varslst,p,pa,0);
       then (inExp,false,(vars,res,isInitial));
@@ -3736,7 +3736,7 @@ algorithm
     // CLOCKED state
     case (DAE.CALL(path = Absyn.IDENT(name = "previous"),expLst = {DAE.CREF(componentRef = cr)}),(vars,pa,isInitial))
       algorithm
-        cr := ComponentReference.makeCrefQual(DAE.previousNamePrefix, DAE.T_REAL_DEFAULT, {}, cr);
+        cr := ComponentReferenceBasics.makeCrefQual(DAE.previousNamePrefix, DAE.T_REAL_DEFAULT, {}, cr);
         (varslst,p) := BackendVariable.getVar(cr, vars);
         res := adjacencyRowExp1withInput(varslst,p,pa,1);
       then (inExp,false,(vars,res,isInitial));
@@ -4396,7 +4396,7 @@ algorithm
       case DAE.STMT_FOR(type_=tp,iter=id1,range=e,statementLst=stmts)
         algorithm
           extraArg := func(e, extraArg);
-          cr := ComponentReference.makeCrefIdent(id1, tp, {});
+          cr := ComponentReferenceBasics.makeCrefIdent(id1, tp, {});
           (stmts,_) := DAEUtil.traverseDAEEquationsStmts(stmts,Expression.traverseSubexpressionsHelper,(Expression.replaceCref,(cr,e)));
           extraArg := traverseStmts(stmts,func,extraArg);
         then
@@ -4405,7 +4405,7 @@ algorithm
       case DAE.STMT_PARFOR(type_=tp,iter=id1,range=e,statementLst=stmts)
         algorithm
           extraArg := func(e, extraArg);
-          cr := ComponentReference.makeCrefIdent(id1, tp, {});
+          cr := ComponentReferenceBasics.makeCrefIdent(id1, tp, {});
           (stmts,_) := DAEUtil.traverseDAEEquationsStmts(stmts,Expression.traverseSubexpressionsHelper,(Expression.replaceCref,(cr,e)));
           extraArg := traverseStmts(stmts,func,extraArg);
         then
@@ -5297,7 +5297,7 @@ algorithm
         false := intEq(rowmark[rabs],-mark);
         // solved?
         BackendDAE.VAR(varName=cr1) := BackendVariable.getVarAt(vars, rabs);
-        crarr := ComponentReference.crefStripLastSubs(cr1);
+        crarr := ComponentReferenceBasics.crefStripLastSubs(cr1);
         true := ComponentReferenceBasics.crefEqualNoStringCompare(cr, crarr);
         false := Expression.expHasCrefNoPreorDer(e2,cr);
       then
@@ -5331,7 +5331,7 @@ algorithm
         false := intEq(rowmark[rabs],-mark);
         // solved?
         BackendDAE.VAR(varName=cr1) := BackendVariable.getVarAt(vars, rabs);
-        crarr := ComponentReference.crefStripLastSubs(cr1);
+        crarr := ComponentReferenceBasics.crefStripLastSubs(cr1);
         true := ComponentReferenceBasics.crefEqualNoStringCompare(cr, crarr);
         false := Expression.expHasCrefNoPreorDer(e2,cr);
       then
@@ -5354,7 +5354,7 @@ algorithm
         false := intEq(rowmark[rabs],-mark);
         // solved?
         BackendDAE.VAR(varName=cr1) := BackendVariable.getVarAt(vars, rabs);
-        crarr := ComponentReference.crefStripLastSubs(cr1);
+        crarr := ComponentReferenceBasics.crefStripLastSubs(cr1);
         true := ComponentReferenceBasics.crefEqualNoStringCompare(cr, crarr);
         false := Expression.expHasCrefNoPreorDer(e1,cr);
       then
@@ -5388,7 +5388,7 @@ algorithm
         false := intEq(rowmark[rabs],-mark);
         // solved?
         BackendDAE.VAR(varName=cr1) := BackendVariable.getVarAt(vars, rabs);
-        crarr := ComponentReference.crefStripLastSubs(cr1);
+        crarr := ComponentReferenceBasics.crefStripLastSubs(cr1);
         true := ComponentReferenceBasics.crefEqualNoStringCompare(cr, crarr);
         false := Expression.expHasCrefNoPreorDer(e1,cr);
       then
@@ -5400,7 +5400,7 @@ algorithm
         false := intEq(rowmark[rabs],-mark);
         // solved?
         BackendDAE.VAR(varName=cr1) := BackendVariable.getVarAt(vars, rabs);
-        true := ComponentReference.crefPrefixOf(cr, cr1);
+        true := ComponentReferenceBasics.crefPrefixOf(cr, cr1);
         false := Expression.expHasCrefNoPreorDer(e2,cr);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
@@ -5411,7 +5411,7 @@ algorithm
         false := intEq(rowmark[rabs],-mark);
         // solved?
         BackendDAE.VAR(varName=cr1) := BackendVariable.getVarAt(vars, rabs);
-        true := ComponentReference.crefPrefixOf(cr, cr1);
+        true := ComponentReferenceBasics.crefPrefixOf(cr, cr1);
         false := Expression.expHasCrefNoPreorDer(e1,cr);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
@@ -10072,7 +10072,7 @@ algorithm
     eqSize := BackendEquation.equationSize(_equation);
     count := listLength(arrayGet(m, i));
     if eqSize > count then
-      str := stringDelimitList(list(ComponentReference.printComponentRefStr(BackendVariable.varCref(BackendVariable.getVarAt(varsArray, j))) for j in arrayGet(m, i)), ", ");
+      str := stringDelimitList(list(ComponentReferenceBasics.printComponentRefStr(BackendVariable.varCref(BackendVariable.getVarAt(varsArray, j))) for j in arrayGet(m, i)), ", ");
       Error.addSourceMessage(Error.EQUATION_NOT_SOLVABLE_DIFFERENT_COUNT, {BackendDump.equationString(_equation), String(eqSize), String(count), str}, info);
       fail();
     end if;
@@ -10135,8 +10135,8 @@ algorithm
       info := var.source.info;
       if listEmpty(eqs) then
         Error.addSourceMessage(Error.VAR_NO_REMAINING_EQN, {
-          ComponentReference.printComponentRefStr(var.varName),
-          stringAppendList(list("\n  Equation " + String(eq) + ": " + BackendDump.equationString(BackendEquation.get(eqsArray, eq)) + ", which needs to solve for " + stringDelimitList(list(ComponentReference.printComponentRefStr(Util.tuple21(tpl)) for tpl in arrayGet(solvedEqs, eq)), ", ") for eq in arrayGet(mTOrig, i)))
+          ComponentReferenceBasics.printComponentRefStr(var.varName),
+          stringAppendList(list("\n  Equation " + String(eq) + ": " + BackendDump.equationString(BackendEquation.get(eqsArray, eq)) + ", which needs to solve for " + stringDelimitList(list(ComponentReferenceBasics.printComponentRefStr(Util.tuple21(tpl)) for tpl in arrayGet(solvedEqs, eq)), ", ") for eq in arrayGet(mTOrig, i)))
           }, info);
         arrayUpdate(solvedVars, i, -1);
       elseif listLength(eqs) == 1 then
@@ -10175,7 +10175,7 @@ algorithm
     for i in 1:arrayLength(mT) /* = varSize */ loop
       var := BackendVariable.getVarAt(varsArray, i);
       if 0 == arrayGet(solvedVars, i) then
-        print("Remaining unsolved variable:" + ComponentReference.printComponentRefStr(var.varName) + "\n");
+        print("Remaining unsolved variable:" + ComponentReferenceBasics.printComponentRefStr(var.varName) + "\n");
       end if;
     end for;
     for i in 1:arrayLength(m) /* = varSize */ loop
@@ -10186,7 +10186,7 @@ algorithm
         vars := arrayGet(m, i);
         print("Remaining vars: " + stringDelimitList(list(String(j) for j in vars), ", ") + "\n");
         if count > 0 then
-          str := stringDelimitList(list(ComponentReference.printComponentRefStr(Util.tuple21(e)) for e in arrayGet(solvedEqs, i)), ", ");
+          str := stringDelimitList(list(ComponentReferenceBasics.printComponentRefStr(Util.tuple21(e)) for e in arrayGet(solvedEqs, i)), ", ");
           print("Remaining equation (already solved "+str+"): " + BackendDump.equationString(_equation) + "\n");
         else
           print("Remaining equation: " + BackendDump.equationString(_equation) + "\n");
@@ -10236,7 +10236,7 @@ algorithm
   if listEmpty(vars) then
     names := "";
   else
-    names := " " + stringDelimitList(list(ComponentReference.printComponentRefStr(BackendVariable.varCref(BackendVariable.getVarAt(varsArray, v))) for v in vars), ", ");
+    names := " " + stringDelimitList(list(ComponentReferenceBasics.printComponentRefStr(BackendVariable.varCref(BackendVariable.getVarAt(varsArray, v))) for v in vars), ", ");
   end if;
 end getVariableNamesForErrorMessage;
 

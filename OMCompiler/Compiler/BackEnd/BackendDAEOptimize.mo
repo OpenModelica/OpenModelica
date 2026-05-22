@@ -3995,7 +3995,7 @@ algorithm
     oExp := iExp;
   else
     /* Might be part of a different equation-system...
-    str = "BackendDAECreate.updateStatesVars failed for: " + ComponentReference.printComponentRefStr(cr);
+    str = "BackendDAECreate.updateStatesVars failed for: " + ComponentReferenceBasics.printComponentRefStr(cr);
     Error.addMessage(Error.INTERNAL_ERROR, {str});
     */
   end if;
@@ -4028,7 +4028,7 @@ algorithm
     case(_, _::newStates, _)
       algorithm
         /* Might be part of a different equation-system...
-        str = "BackendDAECreate.updateStatesVars failed for: " + ComponentReference.printComponentRefStr(cr);
+        str = "BackendDAECreate.updateStatesVars failed for: " + ComponentReferenceBasics.printComponentRefStr(cr);
         Error.addMessage(Error.INTERNAL_ERROR, {str});
         */
         vars := updateStatesVars(inVars, newStates, noStateFound);
@@ -4389,7 +4389,7 @@ algorithm
               DAE.CREF(componentRef = cr) := e1;
               if Expression.expHasCrefNoPreOrStart(right, cr) then
                 update := true;
-                cr  := ComponentReference.makeCrefIdent(tmpVarPrefix + intString(idx), Expression.typeof(e1) , {});
+                cr  := ComponentReferenceBasics.makeCrefIdent(tmpVarPrefix + intString(idx), Expression.typeof(e1) , {});
                 idx := idx + 1;
                 e := Expression.crefExp(cr);
                 tmpvar := BackendVariable.makeVar(cr);
@@ -4403,7 +4403,7 @@ algorithm
               end if;
             elseif Expression.isUnaryCref(e1) then
               update := true;
-              cr  := ComponentReference.makeCrefIdent(tmpVarPrefix + intString(idx), Expression.typeof(e1) , {});
+              cr  := ComponentReferenceBasics.makeCrefIdent(tmpVarPrefix + intString(idx), Expression.typeof(e1) , {});
               idx := idx + 1;
               e := Expression.crefExp(cr);
               tmpvar := BackendVariable.makeVar(cr);
@@ -4416,7 +4416,7 @@ algorithm
               update := true;
               DAE.ARRAY(array=arrayLst, scalar=sc) := e1;
               m := listLength(arrayLst);
-              cr  := ComponentReference.makeCrefIdent(tmpVarPrefix + intString(idx), Expression.typeof(e1) , {});
+              cr  := ComponentReferenceBasics.makeCrefIdent(tmpVarPrefix + intString(idx), Expression.typeof(e1) , {});
               idx := idx + 1;
               e := Expression.crefExp(cr);
               tmpvar := BackendVariable.makeVar(cr);
@@ -4430,7 +4430,7 @@ algorithm
                 eqn1 := BackendDAE.EQUATION(e2, e3, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
                 //print(BackendDump.equationString(eqn1) + "--new--\n");
                 eqns := BackendEquation.add(eqn1, eqns);
-                cr  := ComponentReference.makeCrefIdent(tmpVarPrefix + intString(idx-1), Expression.typeof(e1) , {DAE.INDEX(DAE.ICONST(j))});
+                cr  := ComponentReferenceBasics.makeCrefIdent(tmpVarPrefix + intString(idx-1), Expression.typeof(e1) , {DAE.INDEX(DAE.ICONST(j))});
                 j := j + 1;
                 tmpvar.varName := cr;
                 vars := BackendVariable.addVar(tmpvar, vars);
@@ -4960,7 +4960,7 @@ algorithm
     BackendDAE.VAR(varName = cr) := BackendVariable.getVarAt(outVars, i);
     var_lst := cr :: var_lst;
     if Flags.isSet(Flags.DUMP_SIMPLIFY_LOOPS) then
-        print(ComponentReference.printComponentRefStr(cr) +"\n");
+        print(ComponentReferenceBasics.printComponentRefStr(cr) +"\n");
     end if;
   end for;
 
@@ -6014,7 +6014,7 @@ algorithm
 
     case DAE.CALL(path=Absyn.IDENT("homotopy"), expLst={actual,simplified})
       algorithm
-        lambda := Expression.crefExp(ComponentReference.makeCrefIdent(BackendDAE.homotopyLambda, DAE.T_REAL_DEFAULT, {}));
+        lambda := Expression.crefExp(ComponentReferenceBasics.makeCrefIdent(BackendDAE.homotopyLambda, DAE.T_REAL_DEFAULT, {}));
         outExp := DAE.BINARY(DAE.BINARY(simplified, DAE.MUL(DAE.T_REAL_DEFAULT), DAE.BINARY(DAE.RCONST(1.0), DAE.SUB(DAE.T_REAL_DEFAULT), lambda)), DAE.ADD(DAE.T_REAL_DEFAULT), DAE.BINARY(actual, DAE.MUL(DAE.T_REAL_DEFAULT), lambda));
      then true;
 
@@ -6194,7 +6194,7 @@ algorithm
 
   if homotopyLoopBeginning > 0 then
     // Add homotopy lambda to system
-    lambda := BackendDAE.VAR(ComponentReference.makeCrefIdent(BackendDAE.homotopyLambda, DAE.T_REAL_DEFAULT, {}), BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true, false, false);
+    lambda := BackendDAE.VAR(ComponentReferenceBasics.makeCrefIdent(BackendDAE.homotopyLambda, DAE.T_REAL_DEFAULT, {}), BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true, false, false);
     system.orderedVars := BackendVariable.addVar(lambda, system.orderedVars);
     lambdaIdx := BackendVariable.varsSize(system.orderedVars);
 
@@ -6380,7 +6380,7 @@ algorithm
 
   if hasAnyHomotopy then
     // Add homotopy lambda to system
-    lambda := BackendDAE.VAR(ComponentReference.makeCrefIdent(BackendDAE.homotopyLambda, DAE.T_REAL_DEFAULT, {}), BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true, false, false);
+    lambda := BackendDAE.VAR(ComponentReferenceBasics.makeCrefIdent(BackendDAE.homotopyLambda, DAE.T_REAL_DEFAULT, {}), BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true, false, false);
     system.orderedVars := BackendVariable.addVar(lambda, system.orderedVars);
   end if;
   comps := listReverse(newComps);

@@ -330,7 +330,7 @@ algorithm
       false := BackendVariable.hasContinuousVar(var_lst);
       msg := getInstanceName() + " failed (Purely discrete algebraic loops cannot be solved by iterative processes. Try to break them open using the delay() operator.)\n";
       crlst := List.map(var_lst, BackendVariable.varCref);
-      slst := List.map(crlst, ComponentReference.printComponentRefStr);
+      slst := List.map(crlst, ComponentReferenceBasics.printComponentRefStr);
       msg := msg + stringDelimitList(slst, "\n");
       slst := List.map(eqn_lst, BackendDump.equationString);
       msg := msg + "\n" + stringDelimitList(slst, "\n");
@@ -340,7 +340,7 @@ algorithm
     case (_, eqn_lst, var_lst, _) algorithm
       msg := getInstanceName() + " failed\nvariables:\n  ";
       crlst := List.map(var_lst, BackendVariable.varCref);
-      slst := List.map(crlst, ComponentReference.printComponentRefStr);
+      slst := List.map(crlst, ComponentReferenceBasics.printComponentRefStr);
       msg := msg + stringDelimitList(slst, "\n  ");
       slst := List.map(eqn_lst, BackendDump.equationString);
       msg := msg + "\nequations:\n  " + stringDelimitList(slst, "\n  ");
@@ -399,7 +399,7 @@ algorithm
   if info < 0 then
     // info < 0:  if INFO = -i, the i-th argument had an illegal value
     // this case should never happen
-    varnames := stringDelimitList(List.mapMap(inVars, BackendVariable.varCref, ComponentReference.printComponentRefStr), " ;\n  ");
+    varnames := stringDelimitList(List.mapMap(inVars, BackendVariable.varCref, ComponentReferenceBasics.printComponentRefStr), " ;\n  ");
     eqns := BackendEquation.listEquation(inEqns);
     vars := BackendVariable.listVar1(inVars);
     funcs := BackendDAEUtil.getFunctions(inShared);
@@ -415,9 +415,9 @@ algorithm
     // info > 0:  if INFO = i, U(i,i) is exactly zero. The factorization
     //            has been completed, but the factor U is exactly
     //            singular, so the solution could not be computed.
-    varname := ComponentReference.printComponentRefStr(BackendVariable.varCref(listGet(inVars, info)));
+    varname := ComponentReferenceBasics.printComponentRefStr(BackendVariable.varCref(listGet(inVars, info)));
     infoStr := intString(info);
-    varnames := stringDelimitList(List.mapMap(inVars, BackendVariable.varCref, ComponentReference.printComponentRefStr), " ;\n  ");
+    varnames := stringDelimitList(List.mapMap(inVars, BackendVariable.varCref, ComponentReferenceBasics.printComponentRefStr), " ;\n  ");
     eqns := BackendEquation.listEquation(inEqns);
     vars := BackendVariable.listVar1(inVars);
     funcs := BackendDAEUtil.getFunctions(inShared);
@@ -923,7 +923,7 @@ algorithm
     cr1 := cr2;
   end for;
   // All of the crefs are in ascending order; the first one starts at 1,1; the length is the full array... So it is the complete cref!
-  e := Expression.makeCrefExp(ComponentReference.crefStripLastSubs(cr1), ty);
+  e := Expression.makeCrefExp(ComponentReferenceBasics.crefStripLastSubs(cr1), ty);
 end collapseArrayCrefExpWork2;
 
 annotation(__OpenModelica_Interface="backend");

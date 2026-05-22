@@ -734,7 +734,7 @@ protected
 algorithm
   for i in 1:size loop
     ident := "$sys"+intString(sysIdx)+"_"+intString(compIdx)+"_b"+intString(i);
-    cref := ComponentReference.makeCrefIdent(ident,typ,{});
+    cref := ComponentReferenceBasics.makeCrefIdent(ident,typ,{});
     var := BackendVariable.makeVar(cref);
     varLst := var::varLst;
     beq := BackendDAE.EQUATION(listGet(bExps,i),Expression.crefExp(cref),DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
@@ -1169,9 +1169,9 @@ algorithm
     case (_,_,_,_,_)
       algorithm
         true := info > 0;
-        varname := ComponentReference.printComponentRefStr(listGet(vars,info));
+        varname := ComponentReferenceBasics.printComponentRefStr(listGet(vars,info));
         infoStr := intString(info);
-        varnames := stringDelimitList(List.map(vars,ComponentReference.printComponentRefStr)," ;\n  ");
+        varnames := stringDelimitList(List.map(vars,ComponentReferenceBasics.printComponentRefStr)," ;\n  ");
         rhsStr := stringDelimitList(List.map(rhs, realString)," ;\n  ");
         jacStr := stringDelimitList(List.map1(List.mapList(jac,realString),stringDelimitList," , ")," ;\n  ");
         eqnstr := BackendDump.dumpEqnsStr(eqnlst);
@@ -1181,7 +1181,7 @@ algorithm
     case (_,_,_,_,_)
       algorithm
         true := info < 0;
-        varnames := stringDelimitList(List.map(vars,ComponentReference.printComponentRefStr)," ;\n  ");
+        varnames := stringDelimitList(List.map(vars,ComponentReferenceBasics.printComponentRefStr)," ;\n  ");
         rhsStr := stringDelimitList(List.map(rhs, realString)," ; ");
         jacStr := stringDelimitList(List.map1(List.mapList(jac,realString),stringDelimitList," , ")," ; ");
         eqnstr := BackendDump.dumpEqnsStr(eqnlst);
@@ -1876,7 +1876,7 @@ try
   for var in depVars loop
     protectedCrefs := var.varName :: protectedCrefs;
     if BackendVariable.isParam(var) and not BackendVariable.varHasConstantBindExp(var) then
-      //print("\n PARAM_CHECK: " + ComponentReference.printComponentRefStr(var.varName));
+      //print("\n PARAM_CHECK: " + ComponentReferenceBasics.printComponentRefStr(var.varName));
       lhs := BackendVariable.varExp(var);
       rhs := BackendVariable.varBindExpStartValueNoFail(var) "bindings are optional";
       eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);

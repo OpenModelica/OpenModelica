@@ -6935,7 +6935,7 @@ algorithm
       algorithm
         (outCache, subs) := elabSubscripts(inCache, inEnv, inCref.subscripts, inImplicit, inPrefix, inInfo);
       then
-        ComponentReference.makeCrefIdent(inCref.name, DAE.T_UNKNOWN_DEFAULT, subs);
+        ComponentReferenceBasics.makeCrefIdent(inCref.name, DAE.T_UNKNOWN_DEFAULT, subs);
 
     case Absyn.CREF_QUAL()
       algorithm
@@ -6944,7 +6944,7 @@ algorithm
         (outCache, cr) := elabUntypedCref(outCache, inEnv, inCref.componentRef,
           inImplicit, inPrefix, inInfo);
       then
-        ComponentReference.makeCrefQual(inCref.name, DAE.T_UNKNOWN_DEFAULT, subs, cr);
+        ComponentReferenceBasics.makeCrefQual(inCref.name, DAE.T_UNKNOWN_DEFAULT, subs, cr);
 
   end match;
 end elabUntypedCref;
@@ -7092,7 +7092,7 @@ algorithm
     // only interested in filled slots that have a optional expression
     case SLOT(defaultArg = DAE.FUNCARG(name=id), slotFilled = true, arg = SOME(e)) :: rest
       algorithm
-        o := VarTransform.addReplacement(inVarsRepl, ComponentReference.makeCrefIdent(id, DAE.T_UNKNOWN_DEFAULT, {}), e);
+        o := VarTransform.addReplacement(inVarsRepl, ComponentReferenceBasics.makeCrefIdent(id, DAE.T_UNKNOWN_DEFAULT, {}), e);
       then
         createInputVariableReplacements(rest, o);
 
@@ -8820,7 +8820,7 @@ algorithm
     // constant evaluate it.
     case SLOT(defaultArg = DAE.FUNCARG(name=name), arg = SOME(exp))
       algorithm
-        false := Expression.expHasCref(exp,ComponentReference.makeCrefIdent(name,DAE.T_UNKNOWN_DEFAULT,{}));
+        false := Expression.expHasCref(exp,ComponentReferenceBasics.makeCrefIdent(name,DAE.T_UNKNOWN_DEFAULT,{}));
         ty := Expression.typeof(exp);
         true := Types.dimensionsKnown(ty);
         binding := DAE.EQBOUND(exp, NONE(), DAE.C_CONST(), DAE.BINDING_FROM_DEFAULT_VALUE());
@@ -10576,7 +10576,7 @@ algorithm
       algorithm
         subs_1 := fillSubscripts(subs, t);
       then
-        ComponentReference.makeCrefIdent(id,ty2,subs_1);
+        ComponentReferenceBasics.makeCrefIdent(id,ty2,subs_1);
     // qualified ident with non-empty subscrips
     case ((DAE.CREF_QUAL(ident = id,subscriptLst = subs,componentRef = cref,identType = ty2 )),t)
       algorithm
@@ -10584,7 +10584,7 @@ algorithm
         t := stripPrefixType(t, ty2);
         cref_1 := fillCrefSubscripts(cref, t);
       then
-        ComponentReference.makeCrefQual(id,ty2,subs,cref_1);
+        ComponentReferenceBasics.makeCrefQual(id,ty2,subs,cref_1);
   end matchcontinue;
 end fillCrefSubscripts;
 
@@ -10682,7 +10682,7 @@ algorithm
     case (SCode.PARAM(), _, DAE.EQBOUND(source = DAE.BINDING_FROM_START_VALUE()), _)
       algorithm
         true := Types.getFixedVarAttributeParameterOrConstant(inType);
-        // s := ComponentReference.printComponentRefStr(inCref);
+        // s := ComponentReferenceBasics.printComponentRefStr(inCref);
         // pre_str := PrefixUtil.printPrefixStr2(inPrefix);
         // s := pre_str + s;
         // str := DAEUtil.printBindingExpStr(inBinding);
@@ -10710,7 +10710,7 @@ algorithm
     // a constant with variable subscript
     case (SCode.CONST(), _, _, InstTypes.SPLICEDEXPDATA()) guard(Types.isVar(constSubs))
       algorithm
-        cr := ComponentReference.crefStripLastSubs(inCref);
+        cr := ComponentReferenceBasics.crefStripLastSubs(inCref);
         subsc := ComponentReference.crefLastSubs(inCref);
         (outCache, v) := Ceval.cevalCref(outCache, inEnv, cr, false, Absyn.MSG(info), 0);
         e := ValuesUtil.valueExp(v);
@@ -10798,7 +10798,7 @@ algorithm
     case (SCode.CONST(), _, DAE.UNBOUND(), _) guard(isNone(inIteratorConst))
       algorithm
         if Flags.isSet(Flags.STATIC) then
-          s := ComponentReference.printComponentRefStr(inCref);
+          s := ComponentReferenceBasics.printComponentRefStr(inCref);
           scope := FGraph.printGraphPathStr(inEnv);
           pre_str := PrefixUtil.printPrefixStr2(inPrefix);
           s := pre_str + s;
@@ -10830,7 +10830,7 @@ algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         pre_str := PrefixUtil.printPrefixStr2(inPrefix);
         Debug.traceln("- Static.elabCref2 failed for: " + pre_str +
-          ComponentReference.printComponentRefStr(inCref) +
+          ComponentReferenceBasics.printComponentRefStr(inCref) +
           "\n env:" + FGraph.printGraphStr(inEnv));
       then
         fail();
@@ -11052,7 +11052,7 @@ algorithm
     // a component reference
     case(DAE.CREF(cref, ety),DAE.CREF(DAE.CREF_IDENT(id,ty2, ssl),_))
       algorithm
-        cref_2 := ComponentReference.makeCrefQual(id,ty2, ssl,cref);
+        cref_2 := ComponentReferenceBasics.makeCrefQual(id,ty2, ssl,cref);
       then Expression.makeCrefExp(cref_2,ety);
     // an array
     case(exp1 as DAE.ARRAY(ety, _, expl1), exp2 as DAE.CREF(DAE.CREF_IDENT(_,_, _),_))
@@ -11081,7 +11081,7 @@ algorithm
     // empty list
     case({},id,ety)
       algorithm
-        cref_ := ComponentReference.makeCrefIdent(id,ety,{});
+        cref_ := ComponentReferenceBasics.makeCrefIdent(id,ety,{});
         exp1 := Expression.makeCrefExp(cref_,ety);
       then
         exp1;
@@ -11244,7 +11244,7 @@ algorithm
       algorithm
         true := Expression.isValidSubscript(exp1);
         crty := Expression.unliftArray(ety) "only subscripting one dimension, unlifting once ";
-        cref_ := ComponentReference.makeCrefIdent(id,ety,{DAE.INDEX(exp1)});
+        cref_ := ComponentReferenceBasics.makeCrefIdent(id,ety,{DAE.INDEX(exp1)});
       then Expression.makeCrefExp(cref_,crty);
 
     case(exp1, exp2, _ ,ety)
@@ -11276,7 +11276,7 @@ algorithm
     case(exp1, DAE.CREF(DAE.CREF_IDENT(id,ty2,subs),_ ),_ )
       algorithm
         crty := Expression.unliftArrayTypeWithSubs(DAE.INDEX(exp1)::subs,ty2);
-        cref_ := ComponentReference.makeCrefIdent(id,ty2,(DAE.INDEX(exp1)::subs));
+        cref_ := ComponentReferenceBasics.makeCrefIdent(id,ty2,(DAE.INDEX(exp1)::subs));
         exp2 := Expression.makeCrefExp(cref_,crty);
       then exp2;
 
@@ -11313,7 +11313,7 @@ algorithm
     case(DAE.CREF(DAE.CREF_IDENT(id,ty2,subs),_), exp1, _ )
       algorithm
         crty := Expression.unliftArrayTypeWithSubs(DAE.INDEX(exp1)::subs,ty2);
-        cref_ := ComponentReference.makeCrefIdent(id,ty2,(DAE.INDEX(exp1)::subs));
+        cref_ := ComponentReferenceBasics.makeCrefIdent(id,ty2,(DAE.INDEX(exp1)::subs));
         exp2 := Expression.makeCrefExp(cref_,crty);
       then exp2;
 
@@ -11397,7 +11397,7 @@ algorithm
     case (cr,indx,ds,et,t,crefIdType)
       algorithm
         (DAE.INDEX(e_1) :: ss) = ComponentReference.crefLastSubs(cr);
-        cr_1 = ComponentReference.crefStripLastSubs(cr);
+        cr_1 = ComponentReferenceBasics.crefStripLastSubs(cr);
         cr_1 = ComponentReference.subscriptCref(cr_1,ss);
         DAE.ARRAY(_,_,expl) = createCrefArray(cr_1, indx, ds, et, t,crefIdType);
         expl = List.map1(expl,Expression.prependSubscriptExp,DAE.INDEX(e_1));
@@ -11429,7 +11429,7 @@ algorithm
     case (cr,_,_,_,_,_)
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("createCrefArray failed on:" + ComponentReference.printComponentRefStr(cr));
+        Debug.trace("createCrefArray failed on:" + ComponentReferenceBasics.printComponentRefStr(cr));
       then
         fail();
   end matchcontinue;
@@ -11473,7 +11473,7 @@ algorithm
     case (cr,_,_,_,_,_,_)
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Static.createCrefArray2d failed on: " + ComponentReference.printComponentRefStr(cr));
+        Debug.traceln("- Static.createCrefArray2d failed on: " + ComponentReferenceBasics.printComponentRefStr(cr));
       then
         fail();
   end matchcontinue;
@@ -11492,14 +11492,14 @@ algorithm
 
     case Absyn.CREF_IDENT(name = i,subscripts = {})
       algorithm
-        cref := ComponentReference.makeCrefIdent(i, DAE.T_UNKNOWN_DEFAULT, {});
+        cref := ComponentReferenceBasics.makeCrefIdent(i, DAE.T_UNKNOWN_DEFAULT, {});
       then
         cref;
 
     case Absyn.CREF_QUAL(name = i,subscripts = {},componentRef = c)
       algorithm
         cref := absynCrefToComponentReference(c);
-        cref := ComponentReference.makeCrefQual(i, DAE.T_UNKNOWN_DEFAULT, {}, cref);
+        cref := ComponentReferenceBasics.makeCrefQual(i, DAE.T_UNKNOWN_DEFAULT, {}, cref);
       then
         cref;
 
@@ -11553,7 +11553,7 @@ algorithm
       algorithm
         // Debug.traceln("Try elabSucscriptsDims " + id);
         (cache,cr) := PrefixUtil.prefixCref(cache,crefEnv,InnerOuter.emptyInstHierarchy,crefPrefix,
-                                           ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{}));
+                                           ComponentReferenceBasics.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{}));
         (cache,_,_,_,_,InstTypes.SPLICEDEXPDATA(identType = id_ty),_,_,_) := Lookup.lookupVar(cache, crefEnv, cr);
         // false = Types.isUnknownType(t);
         // print("elabCrefSubs type of: " + id + " is " + TypesDump.printTypeStr(t) + "\n");
@@ -11565,13 +11565,13 @@ algorithm
         // Constant evaluate subscripts on form x[1,p,q] where p,q are constants or parameters
         (cache,ss_1,const) := elabSubscriptsDims(cache, crefSubs, ss, sl, impl, topPrefix, inComponentRef, info);
       then
-        (cache,ComponentReference.makeCrefIdent(id,id_ty,ss_1),const,hasZeroSizeDim);
+        (cache,ComponentReferenceBasics.makeCrefIdent(id,id_ty,ss_1),const,hasZeroSizeDim);
 
     // QUAL,with no subscripts => looking for var in the top env!
     case (cache,crefEnv,crefSubs,Absyn.CREF_QUAL(name = id,subscripts = {},componentRef = restCref),topPrefix,crefPrefix,impl,hasZeroSizeDim,_)
       algorithm
         (cache,cr) := PrefixUtil.prefixCref(cache,crefEnv,InnerOuter.emptyInstHierarchy,crefPrefix,
-                                           ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{}));
+                                           ComponentReferenceBasics.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{}));
         //print("env:");print(FGraph.printGraphStr(env));print("\n");
         (cache,_,t,_,_,_,_,_,_) := Lookup.lookupVar(cache, crefEnv, cr);
         ty := Types.simplifyType(t);
@@ -11579,7 +11579,7 @@ algorithm
         crefPrefix := PrefixUtil.prefixAdd(id,sl,{},crefPrefix,SCode.VAR(),ClassInf.UNKNOWN(Absyn.IDENT("")),info); // variability doesn't matter
         (cache,cr,const,hasZeroSizeDim) := elabCrefSubs(cache, crefEnv, crefSubs, restCref, topPrefix, crefPrefix, impl, hasZeroSizeDim, info);
       then
-        (cache,ComponentReference.makeCrefQual(id,ty,{},cr),const,hasZeroSizeDim);
+        (cache,ComponentReferenceBasics.makeCrefQual(id,ty,{},cr),const,hasZeroSizeDim);
 
     // QUAL,with no subscripts second case => look for class
     case (cache,crefEnv,crefSubs,Absyn.CREF_QUAL(name = id,subscripts = {},componentRef = restCref),topPrefix,crefPrefix,impl,hasZeroSizeDim,_)
@@ -11587,13 +11587,13 @@ algorithm
         crefPrefix := PrefixUtil.prefixAdd(id,{},{},crefPrefix,SCode.VAR(),ClassInf.UNKNOWN(Absyn.IDENT("")),info); // variability doesn't matter
         (cache,cr,const,hasZeroSizeDim) := elabCrefSubs(cache, crefEnv, crefSubs, restCref, topPrefix, crefPrefix, impl, hasZeroSizeDim, info);
       then
-        (cache,ComponentReference.makeCrefQual(id,DAE.T_COMPLEX_DEFAULT,{},cr),const,hasZeroSizeDim);
+        (cache,ComponentReferenceBasics.makeCrefQual(id,DAE.T_COMPLEX_DEFAULT,{},cr),const,hasZeroSizeDim);
 
     // QUAL,with constant subscripts
     case (cache,crefEnv,crefSubs,Absyn.CREF_QUAL(name = id,subscripts = ss as _::_,componentRef = restCref),topPrefix,crefPrefix,impl,hasZeroSizeDim,_)
       algorithm
         (cache,cr) := PrefixUtil.prefixCref(cache,crefEnv,InnerOuter.emptyInstHierarchy,crefPrefix,
-                                           ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{}));
+                                           ComponentReferenceBasics.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{}));
         (cache,DAE.ATTR(variability = vt),t,_,_,InstTypes.SPLICEDEXPDATA(identType = id_ty),_,_,_) := Lookup.lookupVar(cache, crefEnv, cr);
         ty := Types.simplifyType(t);
         id_ty := Types.simplifyType(id_ty);
@@ -11603,7 +11603,7 @@ algorithm
         (cache,cr,const2,hasZeroSizeDim) := elabCrefSubs(cache, crefEnv, crefSubs, restCref, topPrefix, crefPrefix, impl, hasZeroSizeDim, info);
         const := Types.constAnd(const1, const2);
       then
-        (cache,ComponentReference.makeCrefQual(id,ty,ss_1,cr),const,hasZeroSizeDim);
+        (cache,ComponentReferenceBasics.makeCrefQual(id,ty,ss_1,cr),const,hasZeroSizeDim);
 
     case (cache, crefEnv, crefSubs, Absyn.CREF_FULLYQUALIFIED(componentRef = absynCr), topPrefix, crefPrefix, impl, hasZeroSizeDim, _)
       algorithm
@@ -12140,7 +12140,7 @@ algorithm
         sl := Types.getDimensionSizes(t);
         (cache,ss_1) := Ceval.cevalSubscripts(cache,env, ss, sl, impl, Absyn.NO_MSG(),0);
       then
-        (cache,ComponentReference.makeCrefIdent(n,ty2,ss_1));
+        (cache,ComponentReferenceBasics.makeCrefIdent(n,ty2,ss_1));
   end match;
 end canonCref2;
 
@@ -12181,7 +12181,7 @@ algorithm
         (cache,ss_1) := Ceval.cevalSubscripts(cache, env, ss, sl, impl, Absyn.NO_MSG(),0);
         ty2 := Types.simplifyType(t);
       then
-        (cache,ComponentReference.makeCrefIdent(n,ty2,ss_1));
+        (cache,ComponentReferenceBasics.makeCrefIdent(n,ty2,ss_1));
 
     // a qualified component reference
     case (cache,env,DAE.CREF_QUAL(ident = n,subscriptLst = ss,componentRef = c),impl)
@@ -12190,17 +12190,17 @@ algorithm
         ty2 := Types.simplifyType(t);
         sl := Types.getDimensionSizes(t);
         (cache,ss_1) := Ceval.cevalSubscripts(cache, env, ss, sl, impl, Absyn.NO_MSG(),0);
-       //(cache,c_1) = canonCref2(cache, env, c, ComponentReference.makeCrefIdent(n,ty2,ss), impl);
+       //(cache,c_1) = canonCref2(cache, env, c, ComponentReferenceBasics.makeCrefIdent(n,ty2,ss), impl);
        (cache, c_1) := canonCref(cache, componentEnv, c, impl);
       then
-        (cache,ComponentReference.makeCrefQual(n,ty2, ss_1,c_1));
+        (cache,ComponentReferenceBasics.makeCrefQual(n,ty2, ss_1,c_1));
 
     // failtrace
     case (_,_,cr,_)
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Static.canonCref failed, cr: ");
-        Debug.traceln(ComponentReference.printComponentRefStr(cr));
+        Debug.traceln(ComponentReferenceBasics.printComponentRefStr(cr));
       then
         fail();
   end matchcontinue;

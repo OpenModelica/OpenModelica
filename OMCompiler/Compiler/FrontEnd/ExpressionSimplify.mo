@@ -324,7 +324,7 @@ algorithm
       DAE.Type ty;
       list<DAE.Var> vars;
     case (DAE.RSUB(exp=DAE.CREF(componentRef=cr), ix=-1))
-      then DAE.CREF(ComponentReference.joinCrefs(cr, ComponentReference.makeCrefIdent(e.fieldName, e.ty, {})), e.ty);
+      then DAE.CREF(ComponentReference.joinCrefs(cr, ComponentReferenceBasics.makeCrefIdent(e.fieldName, e.ty, {})), e.ty);
     case (DAE.RSUB(exp=DAE.CALL(path=p1, expLst=exps, attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path=p2), varLst=vars))), ix=-1))
       guard AbsynUtil.pathEqual(p1,p2)
       then listGet(exps, List.position1OnTrue(list(v.name for v in vars), stringEq, e.fieldName));
@@ -1131,8 +1131,8 @@ protected function reductionExpression
 protected
   DAE.Exp foldNameExp, resultNameExp;
 algorithm
-  foldNameExp := Expression.makeCrefExp(ComponentReference.makeCrefIdent(foldName,ty,{}), ty);
-  resultNameExp := Expression.makeCrefExp(ComponentReference.makeCrefIdent(resultName,ty,{}), ty);
+  foldNameExp := Expression.makeCrefExp(ComponentReferenceBasics.makeCrefIdent(foldName,ty,{}), ty);
+  resultNameExp := Expression.makeCrefExp(ComponentReferenceBasics.makeCrefIdent(resultName,ty,{}), ty);
 
   foldExp := match name
     case "min" then Expression.makeBuiltinCall("min",{foldNameExp, resultNameExp}, ty, false);
@@ -1952,7 +1952,7 @@ algorithm
 
     case DAE.CREF_IDENT(idn,t2,(ssl as ((DAE.SLICE(DAE.ARRAY(_,_,_))) :: _)))
       algorithm
-        cr := ComponentReference.makeCrefIdent(idn,t2,{});
+        cr := ComponentReferenceBasics.makeCrefIdent(idn,t2,{});
         expCref := Expression.makeCrefExp(cr, inType);
         exp := simplifyCref2(expCref,ssl);
       then exp;
@@ -3381,7 +3381,7 @@ algorithm
       algorithm
         /* TODO: Make sure that the IDENT has enough dimensions? */
         s_1 := Expression.subscriptsAppend(s, sub);
-        c_1 := ComponentReference.makeCrefIdent(idn,t2,s_1);
+        c_1 := ComponentReferenceBasics.makeCrefIdent(idn,t2,s_1);
       then
         c_1;
 
@@ -3390,7 +3390,7 @@ algorithm
       algorithm
         true := listLength(dims) > listLength(s);
         s_1 := Expression.subscriptsAppend(s, sub);
-        c_1 := ComponentReference.makeCrefQual(idn,t2,s_1,c);
+        c_1 := ComponentReferenceBasics.makeCrefQual(idn,t2,s_1,c);
       then
         c_1;
 
@@ -3398,12 +3398,12 @@ algorithm
       algorithm
         s := Expression.subscriptsReplaceSlice(s, DAE.INDEX(sub));
       then
-        ComponentReference.makeCrefQual(idn, t2, s, c);
+        ComponentReferenceBasics.makeCrefQual(idn, t2, s, c);
 
     case (DAE.CREF_QUAL(idn,t2,s,c),_)
       algorithm
         c_1 := simplifyAsubCref(c,sub);
-        c_1 := ComponentReference.makeCrefQual(idn,t2,s,c_1);
+        c_1 := ComponentReferenceBasics.makeCrefQual(idn,t2,s,c_1);
       then
         c_1;
 

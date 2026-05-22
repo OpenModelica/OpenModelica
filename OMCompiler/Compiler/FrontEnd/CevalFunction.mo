@@ -1848,7 +1848,7 @@ algorithm
   outIterType := Types.expTypetoTypesType(inIterType);
   outEnv := FGraph.addForIterator(inEnv, inIterName, outIterType,
     DAE.UNBOUND(), SCode.CONST(), SOME(DAE.C_CONST()));
-  outIterCref := ComponentReference.makeCrefIdent(inIterName, inIterType, {});
+  outIterCref := ComponentReferenceBasics.makeCrefIdent(inIterName, inIterType, {});
 end extendEnvWithForScope;
 
 protected function appendDimensions
@@ -2107,7 +2107,7 @@ algorithm
 
     case (DAE.TYPES_VAR(name = name, ty = ty) :: rest_vars, val :: rest_vals, _ , _)
       algorithm
-        cr := ComponentReference.makeCrefIdent(name, ty, {});
+        cr := ComponentReferenceBasics.makeCrefIdent(name, ty, {});
         (cache, env) := assignVariable(cr, val, inCache, inEnv);
         (cache, env) := assignRecordComponents(rest_vars, rest_vals, cache, env);
       then
@@ -2849,7 +2849,7 @@ algorithm
         elements := List.mapList(cycles, Util.tuple21);
         crefs := List.mapList(elements, DAEUtil.varCref);
         names := List.mapList(crefs,
-          ComponentReference.printComponentRefStr);
+          ComponentReferenceBasics.printComponentRefStr);
         cycles_strs := List.map1(names, stringDelimitList, ",");
         cycles_str := stringDelimitList(cycles_strs, "}, {");
         cycles_str := "{" + cycles_str + "}";

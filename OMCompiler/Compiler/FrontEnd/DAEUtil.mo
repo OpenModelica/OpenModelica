@@ -732,8 +732,8 @@ This function strips the 'unique identifer' from the cref and compares.
 protected
   String s1,s2,s3;
 algorithm
-  s1 := ComponentReference.printComponentRefStr(cr1);
-  s2 := ComponentReference.printComponentRefStr(cr2);
+  s1 := ComponentReferenceBasics.printComponentRefStr(cr1);
+  s2 := ComponentReferenceBasics.printComponentRefStr(cr2);
   s1 := System.stringReplace(s1, DAE.UNIQUEIO, "");
   s2 := System.stringReplace(s2, DAE.UNIQUEIO, "");
   equal := stringEq(s1,s2);
@@ -754,12 +754,12 @@ algorithm outCr := match(inCr)
     algorithm
       id := DAE.UNIQUEIO + id;
     then
-      ComponentReference.makeCrefIdent(id,idt,subs);
+      ComponentReferenceBasics.makeCrefIdent(id,idt,subs);
   case(DAE.CREF_QUAL(id,idt,subs,child))
     algorithm
       newChild := nameInnerouterUniqueCref(child);
     then
-      ComponentReference.makeCrefQual(id,idt,subs,newChild);
+      ComponentReferenceBasics.makeCrefQual(id,idt,subs,newChild);
   end match;
 end nameInnerouterUniqueCref;
 
@@ -780,18 +780,18 @@ algorithm ocr := matchcontinue(cr,removalString)
     algorithm
       str2 := System.stringReplace(str, removalString, "");
       then
-        ComponentReference.makeCrefIdent(str2,ty,subs);
+        ComponentReferenceBasics.makeCrefIdent(str2,ty,subs);
   case(DAE.CREF_QUAL(str,ty,subs,child),_)
     algorithm
       child_2 := unNameInnerouterUniqueCref(child,removalString);
       str2 := System.stringReplace(str, removalString, "");
     then
-      ComponentReference.makeCrefQual(str2,ty,subs,child_2);
+      ComponentReferenceBasics.makeCrefQual(str2,ty,subs,child_2);
   case(DAE.WILD(),_) then DAE.WILD();
   case(child,_)
     algorithm
       print(" failure unNameInnerouterUniqueCref: ");
-      print(ComponentReference.printComponentRefStr(child) + "\n");
+      print(ComponentReferenceBasics.printComponentRefStr(child) + "\n");
       then fail();
   end matchcontinue;
 end unNameInnerouterUniqueCref;
@@ -2179,7 +2179,7 @@ algorithm
       algorithm
         path := ClassInfUtil.getStateName(inState);
         str1 := "\n" +
-        "- DAEUtil.toDaeParallelism: parglobal component '" + ComponentReference.printComponentRefStr(inCref)
+        "- DAEUtil.toDaeParallelism: parglobal component '" + ComponentReferenceBasics.printComponentRefStr(inCref)
         + "' in non-function class: " + ClassInfUtil.printStateStr(inState) + " " + AbsynUtil.pathString(path);
 
         Error.addSourceMessage(Error.PARMODELICA_WARNING,
@@ -2190,7 +2190,7 @@ algorithm
       algorithm
         path := ClassInfUtil.getStateName(inState);
         str1 := "\n" +
-        "- DAEUtil.toDaeParallelism: parlocal component '" + ComponentReference.printComponentRefStr(inCref)
+        "- DAEUtil.toDaeParallelism: parlocal component '" + ComponentReferenceBasics.printComponentRefStr(inCref)
         + "' in non-function class: " + ClassInfUtil.printStateStr(inState) + " " + AbsynUtil.pathString(path);
 
         Error.addSourceMessage(Error.PARMODELICA_WARNING,
@@ -2274,7 +2274,7 @@ algorithm
     case ((cr::xs),id)
       algorithm
         res := getFlowVariables2(xs, id);
-        cr_1 := ComponentReference.makeCrefQual(id,DAE.T_UNKNOWN_DEFAULT,{}, cr);
+        cr_1 := ComponentReferenceBasics.makeCrefQual(id,DAE.T_UNKNOWN_DEFAULT,{}, cr);
       then
         (cr_1::res);
   end match;
@@ -2330,7 +2330,7 @@ algorithm
     case ((cr::xs),id)
       algorithm
         res := getStreamVariables2(xs, id);
-        cr_1 := ComponentReference.makeCrefQual(id,DAE.T_UNKNOWN_DEFAULT,{}, cr);
+        cr_1 := ComponentReferenceBasics.makeCrefQual(id,DAE.T_UNKNOWN_DEFAULT,{}, cr);
       then
         (cr_1::res);
   end match;
@@ -2374,7 +2374,7 @@ algorithm
         info := ElementSource.getElementSourceFileInfo(source);
         (cache, value) := Ceval.ceval(cache, env, rhs, impl, Absyn.MSG(info),0);
         (cache, Values.RECORD(cname,vals,names,ix)) := daeToRecordValue(cache, env, cname, rest, impl);
-        cr_str := ComponentReference.printComponentRefStr(cr);
+        cr_str := ComponentReferenceBasics.printComponentRefStr(cr);
       then
         (cache,Values.RECORD(cname,(value::vals),(cr_str::names),ix));
     case (_,_,_,el::_,_)
@@ -2455,12 +2455,12 @@ algorithm
                innerOuter=io,
                encrypted=encrypted)::elts))
       algorithm
-        str := ComponentReference.printComponentRefStr(cr);
+        str := ComponentReferenceBasics.printComponentRefStr(cr);
         str_1 := Util.stringReplaceChar(str, ".", "_");
         elts_1 := toModelicaFormElts(elts);
         d_1 := toModelicaFormExpOpt(d);
         ty := ComponentReference.crefLastType(cr);
-        cref_ := ComponentReference.makeCrefIdent(str_1,ty,{});
+        cref_ := ComponentReferenceBasics.makeCrefIdent(str_1,ty,{});
       then
         (DAE.VAR(cref_,a,b,prl,prot,t,d_1,instDim,ct,source,dae_var_attr,comment,io,encrypted)::elts_1);
 
@@ -2728,10 +2728,10 @@ protected
   String str,str_1;
   DAE.Type ty;
 algorithm
-  str := ComponentReference.printComponentRefStr(cr);
+  str := ComponentReferenceBasics.printComponentRefStr(cr);
   ty := ComponentReference.crefLastType(cr);
   str_1 := Util.stringReplaceChar(str, ".", "_");
-  outComponentRef := ComponentReference.makeCrefIdent(str_1,ty,{});
+  outComponentRef := ComponentReferenceBasics.makeCrefIdent(str_1,ty,{});
 end toModelicaFormCref;
 
 protected function toModelicaFormExp "Helper function to toModelicaFormElts."
@@ -5532,8 +5532,8 @@ end getDAEDeclsFromValueblocks;
 //
 //     case ((DAE.CALL(path=Absyn.IDENT("der"),expLst={exp as DAE.CREF(componentRef = cr, ty = DAE.T_REAL(varLst = _))}),crs0))
 //       equation
-//         cref_1 = ComponentReference.makeCrefQual("$old",DAE.T_REAL_DEFAULT,{},cr);
-//         cref_2 = ComponentReference.makeCrefIdent("$current_step_size",DAE.T_REAL_DEFAULT,{});
+//         cref_1 = ComponentReferenceBasics.makeCrefQual("$old",DAE.T_REAL_DEFAULT,{},cr);
+//         cref_2 = ComponentReferenceBasics.makeCrefIdent("$current_step_size",DAE.T_REAL_DEFAULT,{});
 //         e1 = Expression.makeCrefExp(cref_1,DAE.T_REAL_DEFAULT);
 //         e2 = Expression.makeCrefExp(cref_2,DAE.T_REAL_DEFAULT);
 //         exp = DAE.BINARY(
@@ -5592,7 +5592,7 @@ protected
 algorithm
   crs := AvlSetCR.listKeys(ht);
   if not listEmpty(crs) then
-    strs := List.map(crs, ComponentReference.printComponentRefStr);
+    strs := List.map(crs, ComponentReferenceBasics.printComponentRefStr);
     str := stringDelimitList(strs, ", ");
     Error.addMessage(Error.NOTIFY_FRONTEND_STRUCTURAL_PARAMETERS, {str});
   end if;
@@ -6559,7 +6559,7 @@ algorithm
     case DAE.STREAM(NONE()) then "stream()";
     case DAE.STREAM(SOME(cref))
       algorithm
-        cref_str := ComponentReference.printComponentRefStr(cref);
+        cref_str := ComponentReferenceBasics.printComponentRefStr(cref);
       then
         "stream(" + cref_str + ")";
     else "non connector";

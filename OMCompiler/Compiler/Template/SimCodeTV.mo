@@ -3741,6 +3741,11 @@ package ComponentReferenceBasics
     input DAE.ComponentRef cref;
     output list<DAE.Subscript> subs;
   end crefSubs;
+
+  function crefStripLastSubs
+    input DAE.ComponentRef inComponentRef;
+    output DAE.ComponentRef outComponentRef;
+  end crefStripLastSubs;
 end ComponentReferenceBasics;
 
 package ComponentReference
@@ -3754,11 +3759,6 @@ package ComponentReference
     input String ident;
     output DAE.ComponentRef outCrefIdent;
   end makeUntypedCrefIdent;
-
-  function crefStripLastSubs
-    input DAE.ComponentRef inComponentRef;
-    output DAE.ComponentRef outComponentRef;
-  end crefStripLastSubs;
 
   function crefStripSubs
     input DAE.ComponentRef inComponentRef;

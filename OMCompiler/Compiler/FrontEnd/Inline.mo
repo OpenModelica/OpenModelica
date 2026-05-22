@@ -959,7 +959,7 @@ protected
   DAE.Exp exp;
 algorithm
   (cr,exp) := inTpl;
-  print(ComponentReference.printComponentRefStr(cr) + " -> " + ExpressionBasics.printExpStr(exp) + "\n");
+  print(ComponentReferenceBasics.printComponentRefStr(cr) + " -> " + ExpressionBasics.printExpStr(exp) + "\n");
 end dumpArgmap;
 
 public function forceInlineCall
@@ -1662,7 +1662,7 @@ algorithm
   end for;
 
   if  Flags.isSet(Flags.FAILTRACE) then
-    Debug.traceln("Inline.getExpFromArgMap failed with empty argmap and cref: " + ComponentReference.printComponentRefStr(inComponentRef));
+    Debug.traceln("Inline.getExpFromArgMap failed with empty argmap and cref: " + ComponentReferenceBasics.printComponentRefStr(inComponentRef));
   end if;
   fail();
 

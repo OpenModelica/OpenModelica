@@ -337,7 +337,7 @@ algorithm
       algorithm
         failure(SimCodeFunction.FUNCTION_CONTEXT():=context); // only in the function context
         { DAE.INDEX(DAE.ICONST(1)) } := ComponentReference.crefLastSubs(cr);
-        cr := ComponentReference.crefStripLastSubs(cr);
+        cr := ComponentReferenceBasics.crefStripLastSubs(cr);
         true := isArrayExpansion(aRest, cr, 2);
         crefExp := Expression.makeCrefExp(cr, aty);
       then
@@ -365,7 +365,7 @@ algorithm
       algorithm
         { DAE.INDEX(DAE.ICONST(i)) } := ComponentReference.crefLastSubs(cr);
         true := (i == index);
-        cr := ComponentReference.crefStripLastSubs(cr);
+        cr := ComponentReferenceBasics.crefStripLastSubs(cr);
         true := ComponentReferenceBasics.crefEqualNoStringCompare(inCref, cr);
       then isArrayExpansion(aRest, inCref, index+1);
     else false;
@@ -393,7 +393,7 @@ algorithm
       algorithm
         failure(SimCodeFunction.FUNCTION_CONTEXT():=context);
         { DAE.INDEX(DAE.ICONST(1)), DAE.INDEX(DAE.ICONST(1)) } := ComponentReference.crefLastSubs(cr);
-        cr := ComponentReference.crefStripLastSubs(cr);
+        cr := ComponentReferenceBasics.crefStripLastSubs(cr);
         true := isMatrixExpansion(rows, cr, 1, 1);
         crefExp := Expression.makeCrefExp(cr, aty);
       then
@@ -424,7 +424,7 @@ algorithm
       algorithm
         { DAE.INDEX(DAE.ICONST(r)), DAE.INDEX(DAE.ICONST(c)) } := ComponentReference.crefLastSubs(cr);
         true := (r == rowIndex) and (c == colIndex);
-        cr := ComponentReference.crefStripLastSubs(cr);
+        cr := ComponentReferenceBasics.crefStripLastSubs(cr);
         true := ComponentReferenceBasics.crefEqualNoStringCompare(inCref, cr);
       then isMatrixExpansion(restElems :: restRows, inCref, rowIndex, colIndex+1);
     else false;
@@ -876,7 +876,7 @@ algorithm
     case (DAE.FUNCARG(name=name, ty=tty, par=prl, const=const), _)
       algorithm
         tty := Types.simplifyType(tty);
-        cref_  := ComponentReference.makeCrefIdent(name, tty, {});
+        cref_  := ComponentReferenceBasics.makeCrefIdent(name, tty, {});
         kind := DAEUtil.const2VarKind(const);
       then
         SimCodeFunction.VARIABLE(cref_, tty, binding, {}, prl, kind, false);
@@ -1684,7 +1684,7 @@ algorithm
     case (DAE.TYPES_VAR(name=name, attributes = attr, ty=ty))
       algorithm
         ty := Types.simplifyType(ty);
-        cref_ := ComponentReference.makeCrefIdent(name, ty, {});
+        cref_ := ComponentReferenceBasics.makeCrefIdent(name, ty, {});
         DAE.ATTR(parallelism = scPrl) := attr;
         prl := scodeParallelismToDAEParallelism(scPrl);
       then SimCodeFunction.VARIABLE(cref_, ty, NONE(), {}, prl,DAE.VARIABLE(), false);
@@ -1708,7 +1708,7 @@ algorithm
     case (DAE.TYPES_VAR(name=name, attributes = attr, ty=ty))
       algorithm
         ty := Types.simplifyType(ty);
-        cref_ := ComponentReference.makeCrefIdent(name, ty, {});
+        cref_ := ComponentReferenceBasics.makeCrefIdent(name, ty, {});
         DAE.ATTR(parallelism = scPrl) := attr;
         prl := scodeParallelismToDAEParallelism(scPrl);
         bindExp := checkSourceAndGetBindingExp(inTypesVar.binding);
@@ -2620,7 +2620,7 @@ algorithm
       DAE.ComponentRef name;
       DAE.Type ty;
     case SimCodeFunction.VARIABLE(name=name, ty=ty)
-      then TypesDump.unparseType(ty) + " " + ComponentReference.printComponentRefStr(name);
+      then TypesDump.unparseType(ty) + " " + ComponentReferenceBasics.printComponentRefStr(name);
     case SimCodeFunction.FUNCTION_PTR(name=str)
       then "modelica_fnptr " + str;
   end match;

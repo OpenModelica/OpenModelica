@@ -3520,7 +3520,7 @@ algorithm
         m := InstUtil.traverseModAddDims(cache, env, pre, m, inst_dims);
         comp := if referenceEq(oldmod,m) then comp else SCode.COMPONENT(name, prefixes, attr, ts, m, comment, cond, info);
         ci_state := ClassInfUtil.trans(ci_state, ClassInf.FOUND_COMPONENT(name));
-        cref := ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {});
+        cref := ComponentReferenceBasics.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {});
         (cache,_) := PrefixUtil.prefixCref(cache, env, ih, pre, cref); /*mahge: todo: remove me*/
 
         // The class definition is fetched from the environment. Then the set of
@@ -3723,7 +3723,7 @@ algorithm
         // Fails if multiple decls not identical
         already_declared := InstUtil.checkMultiplyDeclared(cache, env, mods, pre,
           ci_state, (comp, cmod), inst_dims, impl);
-        cref := ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {});
+        cref := ComponentReferenceBasics.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {});
         (cache,_) := PrefixUtil.prefixCref(cache, env, ih, pre, cref);
 
 

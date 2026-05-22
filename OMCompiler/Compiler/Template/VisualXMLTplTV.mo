@@ -578,12 +578,12 @@ interface package VisualXMLTplTV
     end ComponentRef;
   end DAE;
 
-  package ComponentReference
+  package ComponentReferenceBasics
     function printComponentRefStr
       input DAE.ComponentRef inComponentRef;
       output String outString;
     end printComponentRefStr;
-  end ComponentReference;
+  end ComponentReferenceBasics;
 
   package AbsynUtil
     function pathString

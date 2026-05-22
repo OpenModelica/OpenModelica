@@ -3305,7 +3305,7 @@ algorithm
 
     case(((DAE.CREF(c1,_))::expl1),dubRef,ht)
       algorithm
-        c2 := ComponentReference.crefStripLastSubs(c1);
+        c2 := ComponentReferenceBasics.crefStripLastSubs(c1);
         if BaseHashTable.hasKey(c2,dubRef) then
           if BaseHashTable.hasKey(c2,ht) then
             // if we have one occurrence, most likely it will be more.
@@ -3881,7 +3881,7 @@ algorithm
         //dumpAliasSets(sets);
         set_solutions:=List.map2(sets,solveAliasSet,vars,globalKnownVars);
         //print("Solutions for sets:\n");
-        //print(stringDelimitList(List.map(set_solutions,ComponentReference.printComponentRefStr),"\n"));
+        //print(stringDelimitList(List.map(set_solutions,ComponentReferenceBasics.printComponentRefStr),"\n"));
         //print("\n");
         (repl,simple_eqns,removed_vars):=createReplacementsAndEquations(set_solutions,sets,vars,globalKnownVars,repl,{},{});
         //BackendVarTransform.dumpReplacements(repl);
@@ -4533,7 +4533,7 @@ algorithm
     case(cr::cr_t,i::i_t)
       algorithm
         s := if i>0 then "+" else "-";
-        print(s+ComponentReference.printComponentRefStr(cr)+", ");
+        print(s+ComponentReferenceBasics.printComponentRefStr(cr)+", ");
         dumpAliasSets2(cr_t,i_t);
       then ();
   end match;

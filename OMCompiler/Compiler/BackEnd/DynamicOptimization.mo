@@ -243,7 +243,7 @@ protected function makeVar "author: Vitalij Ruge"
   output BackendDAE.Var v;
 
 algorithm
-  cr := ComponentReference.makeCrefIdent(name, DAE.T_REAL_DEFAULT, {});
+  cr := ComponentReferenceBasics.makeCrefIdent(name, DAE.T_REAL_DEFAULT, {});
   v :=  BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), SOME(BackendDAE.AVOID()), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false, false);
 end makeVar;
 
@@ -268,7 +268,7 @@ algorithm
 
  for elem in constraintLst loop
    try
-     conCrefName := prefConCrefName + ComponentReference.printComponentRefStr(Expression.expCref(elem));
+     conCrefName := prefConCrefName + ComponentReferenceBasics.printComponentRefStr(Expression.expCref(elem));
    else
      conCrefName := prefConCrefName + intString(i);
      i := i + 1;
@@ -704,7 +704,7 @@ algorithm
     eqn :: eqn_lst := eqn_lst;
     ind_e :: ind_lst_e := ind_lst_e;
     ind_v :: ind_lst_v := ind_lst_v;
-    cr  := ComponentReference.makeCrefIdent("$EqCon$" +  ComponentReference.crefModelicaStr(cr_var) , DAE.T_REAL_DEFAULT , {});
+    cr  := ComponentReferenceBasics.makeCrefIdent("$EqCon$" +  ComponentReference.crefModelicaStr(cr_var) , DAE.T_REAL_DEFAULT , {});
     e := Expression.crefExp(cr);
 
     var := BackendVariable.makeVar(cr);
@@ -970,7 +970,7 @@ public function checkObjectIsSet
 protected
   DAE.ComponentRef leftcref;
 algorithm
-  leftcref := ComponentReference.makeCrefIdent(CrefName, DAE.T_REAL_DEFAULT, {});
+  leftcref := ComponentReferenceBasics.makeCrefIdent(CrefName, DAE.T_REAL_DEFAULT, {});
 
   try
     outVars := BackendVariable.getVar(leftcref, inVars);

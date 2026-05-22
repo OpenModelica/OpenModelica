@@ -5807,7 +5807,7 @@ algorithm
         if Flags.isSet(Flags.BLT_DUMP) then
           print("### The Equation ### \n" + BackendDump.equationString(eqn) +
                 "\n\n--- could not be differentiated for artificial variable ---\n " +
-                 ComponentReference.printComponentRefStr(var.varName) + ".\n\n");
+                 ComponentReferenceBasics.printComponentRefStr(var.varName) + ".\n\n");
         end if;
         // revert the varKind from STATE to VARIABLE
         if not unique_flag then

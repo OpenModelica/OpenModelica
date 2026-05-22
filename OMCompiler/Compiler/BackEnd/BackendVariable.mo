@@ -1774,7 +1774,7 @@ protected
   DAE.ComponentRef cr;
 algorithm
   cr := varCref(inVar);
-  cr := ComponentReference.makeCrefQual(BackendDAE.partialDerivativeNamePrefix, DAE.T_REAL_DEFAULT, {}, cr);
+  cr := ComponentReferenceBasics.makeCrefQual(BackendDAE.partialDerivativeNamePrefix, DAE.T_REAL_DEFAULT, {}, cr);
   outVar := copyVarNewName(cr,inVar);
   outVar := setVarKind(outVar,BackendDAE.JAC_TMP_VAR());
 end createpDerVar;
@@ -1786,7 +1786,7 @@ public function createClockedState
 protected
   DAE.ComponentRef cr;
 algorithm
-  cr := ComponentReference.makeCrefQual(DAE.previousNamePrefix, DAE.T_REAL_DEFAULT, {}, inVar.varName);
+  cr := ComponentReferenceBasics.makeCrefQual(DAE.previousNamePrefix, DAE.T_REAL_DEFAULT, {}, inVar.varName);
   outVar := copyVarNewName(cr,inVar);
   outVar := setVarKind(outVar,BackendDAE.JAC_TMP_VAR());
 end createClockedState;
@@ -2140,7 +2140,7 @@ algorithm
       cond := getMinMaxAsserts1(min, max, e, tp);
       (cond, _) := ExpressionSimplify.simplify(cond);
       false := Expression.isConstTrue(cond);
-      str := getMinMaxAsserts1Str(min, max, ComponentReference.printComponentRefStr(name));
+      str := getMinMaxAsserts1Str(min, max, ComponentReferenceBasics.printComponentRefStr(name));
 
       if Flags.isSet(Flags.WARNING_MINMAX_ATTRIBUTES) then
         level := DAE.ASSERTIONLEVEL_WARNING;
@@ -3243,7 +3243,7 @@ algorithm
     /* failure
     case (_,_)
       algorithm
-        fprintln(Flags.DAE_LOW, "- getVar failed on component reference: " + ComponentReference.printComponentRefStr(cr));
+        fprintln(Flags.DAE_LOW, "- getVar failed on component reference: " + ComponentReferenceBasics.printComponentRefStr(cr));
       then
         fail();
      */
@@ -3303,7 +3303,7 @@ algorithm
     /* failure
     case (_,_)
       algorithm
-        fprintln(Flags.DAE_LOW, "- getVar failed on component reference: " + ComponentReference.printComponentRefStr(cr));
+        fprintln(Flags.DAE_LOW, "- getVar failed on component reference: " + ComponentReferenceBasics.printComponentRefStr(cr));
       then
         fail();
      */
@@ -4164,9 +4164,9 @@ algorithm
     // alias var has more dots in the name
     case (false,_,_,_,_,_,_,_,_)
       algorithm
-        s1 := ComponentReference.printComponentRefStr(cr);
+        s1 := ComponentReferenceBasics.printComponentRefStr(cr);
         s2 := if negate then " = -" else " = ";
-        s3 := ComponentReference.printComponentRefStr(cra);
+        s3 := ComponentReferenceBasics.printComponentRefStr(cra);
         s5 := ExpressionBasics.printExpStr(sv);
         s6 := ExpressionBasics.printExpStr(sva);
         s := stringAppendList({"Alias variables ",s1,s2,s3,s4,s5," != ",s6,". Use value from ",s1,"."});
@@ -4175,9 +4175,9 @@ algorithm
         inVar;
     case (true,_,_,_,_,_,_,_,_)
       algorithm
-        s1 := ComponentReference.printComponentRefStr(cr);
+        s1 := ComponentReferenceBasics.printComponentRefStr(cr);
         s2 := if negate then " = -" else " = ";
-        s3 := ComponentReference.printComponentRefStr(cra);
+        s3 := ComponentReferenceBasics.printComponentRefStr(cra);
         s5 := ExpressionBasics.printExpStr(sv);
         s6 := ExpressionBasics.printExpStr(sva);
         s := stringAppendList({"Alias variables ",s1,s2,s3,s4,s5," != ",s6,". Use value from ",s3,"."});
@@ -4387,9 +4387,9 @@ algorithm
       rmin := Expression.toReal(min);
       rmax := Expression.toReal(max);
       true := realGt(rmin, rmax);
-      s1 := ComponentReference.printComponentRefStr(cr1);
+      s1 := ComponentReferenceBasics.printComponentRefStr(cr1);
       s2 := if negate then " = -" else " = ";
-      s3 := ComponentReference.printComponentRefStr(cr2);
+      s3 := ComponentReferenceBasics.printComponentRefStr(cr2);
       s4 := ExpressionBasics.printExpStr(min);
       s5 := ExpressionBasics.printExpStr(max);
       s := stringAppendList({"Alias variables ", s1, s2, s3, " with invalid limits min ", s4, " > max ", s5});

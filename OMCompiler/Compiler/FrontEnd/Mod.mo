@@ -2507,7 +2507,7 @@ protected
 algorithm
   DAE.REDECL(element = el) := inRedeclare;
   id := SCodeUtil.elementName(el);
-  cref := ComponentReference.makeCrefIdent(id, DAE.T_UNKNOWN_DEFAULT, {});
+  cref := ComponentReferenceBasics.makeCrefIdent(id, DAE.T_UNKNOWN_DEFAULT, {});
   cref := ComponentReference.joinCrefs(inTopCref, cref);
   outFullMod := MOD(cref, inRedeclare);
 end getFullModFromModRedeclare;
@@ -2542,7 +2542,7 @@ algorithm
       algorithm
         cref := ComponentReference.joinCrefs(
                  inTopCref,
-                 ComponentReference.makeCrefIdent(
+                 ComponentReferenceBasics.makeCrefIdent(
                    id, DAE.T_UNKNOWN_DEFAULT, {}));
         fullMods1 := getFullModsFromMod(cref, mod);
         fullMods2 := getFullModsFromSubMods(inTopCref, rest);
@@ -2589,13 +2589,13 @@ algorithm
 
     case (MOD(cr, mod),        _)
       algorithm
-        str := ComponentReference.printComponentRefStr(cr) + ": " + prettyPrintMod(mod, inDepth);
+        str := ComponentReferenceBasics.printComponentRefStr(cr) + ": " + prettyPrintMod(mod, inDepth);
       then
         str;
 
     case (SUB_MOD(cr, subMod), _)
       algorithm
-        str := ComponentReference.printComponentRefStr(cr) + ": " + prettyPrintSubmod(subMod);
+        str := ComponentReferenceBasics.printComponentRefStr(cr) + ": " + prettyPrintSubmod(subMod);
       then
         str;
 

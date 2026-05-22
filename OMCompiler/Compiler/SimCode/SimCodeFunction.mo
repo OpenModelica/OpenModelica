@@ -254,7 +254,7 @@ public uniontype SimExtArg
       local
         String tmp = "";
       case SIMEXTARG() algorithm
-        tmp := tmp + "cref: " + ComponentReference.printComponentRefStr(simExtArg.cref);
+        tmp := tmp + "cref: " + ComponentReferenceBasics.printComponentRefStr(simExtArg.cref);
         tmp := if simExtArg.isInput then tmp + ", isInput: true" else tmp + ", isInput: false";
         tmp := tmp + ", outputIndex: " + intString(simExtArg.outputIndex);
         tmp := if simExtArg.isArray then tmp + ", isArray: true" else tmp + ", isArray: false";
@@ -268,7 +268,7 @@ public uniontype SimExtArg
       then "SIMEXTARGEXP(" + tmp + ")";
 
       case SIMEXTARGSIZE() algorithm
-        tmp := tmp + "cref: " + ComponentReference.printComponentRefStr(simExtArg.cref);
+        tmp := tmp + "cref: " + ComponentReferenceBasics.printComponentRefStr(simExtArg.cref);
         tmp := if simExtArg.isInput then tmp + ", isInput: true" else tmp + ", isInput: false";
         tmp := tmp + ", outputIndex: " + intString(simExtArg.outputIndex);
         tmp := tmp + ", type: " + TypesDump.unparseType(simExtArg.type_);
@@ -312,7 +312,7 @@ public uniontype Variable
       local
         String tmp = "";
       case VARIABLE() algorithm
-        tmp := tmp + "name: " + ComponentReference.printComponentRefStr(variable.name);
+        tmp := tmp + "name: " + ComponentReferenceBasics.printComponentRefStr(variable.name);
         tmp := tmp + ", type: " + TypesDump.unparseType(variable.ty);
       then "VARIABLE(" + tmp + ")";
       case FUNCTION_PTR() algorithm

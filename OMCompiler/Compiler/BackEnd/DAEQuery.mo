@@ -135,7 +135,7 @@ algorithm
 
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2))
       algorithm
-        s1 := ComponentReference.printComponentRefStr(cr);
+        s1 := ComponentReferenceBasics.printComponentRefStr(cr);
         s2 := ExpressionBasics.printExpStr(e2);
         res := stringAppendList({"'",s1," = ",s2,";'"});
       then
@@ -290,7 +290,7 @@ algorithm
     case ({},_) then "";
     case (((BackendDAE.VAR(varName = cr)) :: {}),_)
       algorithm
-        str1 := ComponentReference.printComponentRefStr(cr);
+        str1 := ComponentReferenceBasics.printComponentRefStr(cr);
         /*
         paths_lst = List.map(paths, AbsynUtil.pathString);
         path_str = stringDelimitList(paths_lst, ", ");
@@ -315,7 +315,7 @@ algorithm
 
       case (((BackendDAE.VAR(varName = cr)) :: xs),varno)
       algorithm
-        str1 := ComponentReference.printComponentRefStr(cr);
+        str1 := ComponentReferenceBasics.printComponentRefStr(cr);
         /*
         paths_lst = List.map(paths, AbsynUtil.pathString);
         path_str = stringDelimitList(paths_lst, ", ");

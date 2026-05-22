@@ -1621,7 +1621,7 @@ algorithm
 
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,true)
       algorithm
-        s1 := ComponentReference.printComponentRefStr(cr);
+        s1 := ComponentReferenceBasics.printComponentRefStr(cr);
         s2 := printExpStr(e2);
         res := stringAppendList({s1," := ",s2});
         dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);
@@ -1640,7 +1640,7 @@ algorithm
 
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,false)
       algorithm
-        s1 := ComponentReference.printComponentRefStr(cr);
+        s1 := ComponentReferenceBasics.printComponentRefStr(cr);
         s2 := printExpStr(e2);
         res := stringAppendList({s1," := ",s2});
         dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);
@@ -1795,7 +1795,7 @@ algorithm
       then ();
     case (DAE.CREF(componentRef = c))
       algorithm
-        s := ComponentReference.printComponentRefStr(c);
+        s := ComponentReferenceBasics.printComponentRefStr(c);
         dumpStrMathMLVariable(s);
       then ();
     case (DAE.BINARY(e1,op,e2))
@@ -3164,7 +3164,7 @@ algorithm
     local String dn; DAE.ComponentRef cr;
     case (BackendDAE.STATE(derName=SOME(cr)))
       algorithm
-        dn := ComponentReference.printComponentRefStr(cr);
+        dn := ComponentReferenceBasics.printComponentRefStr(cr);
       then dn;
     else "";
   end match;
@@ -3227,7 +3227,7 @@ algorithm
                             comment = comment,
                             connectorType = ct)) :: xs),varno,addMMLCode)
       algorithm
-        dumpVariable(intString(varno),ComponentReference.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),
+        dumpVariable(intString(varno),ComponentReferenceBasics.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),
                      getIndex(kind),getDerName(kind),boolString(BackendVariable.varFixed(v)),dumpFlowStr(ct),
                      dumpStreamStr(ct),unparseCommentOptionNoAnnotation(comment));
         dumpBindExpression(e,addMMLCode);
@@ -3289,7 +3289,7 @@ algorithm
                             comment = comment,
                             connectorType = ct)) :: xs),_,varno,_)
       algorithm
-        dumpVariable(intString(varno),ComponentReference.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),
+        dumpVariable(intString(varno),ComponentReferenceBasics.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),
                         getIndex(kind),getDerName(kind),boolString(BackendVariable.varFixed(v)),dumpFlowStr(ct),dumpStreamStr(ct),
                         DAEDumpTypes.dumpCommentAnnotationStr(comment));
         dumpBindExpression(e,addMMLCode);
@@ -3856,7 +3856,7 @@ algorithm
 
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,true)
       algorithm
-        s1 := ComponentReference.printComponentRefStr(cr);
+        s1 := ComponentReferenceBasics.printComponentRefStr(cr);
         s2 := printExpStr(e2);
         res := stringAppendList({s1," - ( ",s2," ) := 0"});
         dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);
@@ -3879,7 +3879,7 @@ algorithm
 
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,false)
       algorithm
-        s1 := ComponentReference.printComponentRefStr(cr);
+        s1 := ComponentReferenceBasics.printComponentRefStr(cr);
         s2 := printExpStr(e2);
         res := stringAppendList({s1," - (",s2,") := 0"});
         dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);

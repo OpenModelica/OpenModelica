@@ -79,7 +79,7 @@ template dumpVisualization(VisualXML.Visualization vis)
           let colorDump = dumpVecExp(arrayList(color))
             <<
               <shape>
-                  <ident><%ComponentReference.printComponentRefStr(ident)%></ident>
+                  <ident><%ComponentReferenceBasics.printComponentRefStr(ident)%></ident>
                   <type><%svalue%></type>
                   <T>
                       <%TDump%>
@@ -116,7 +116,7 @@ template dumpVisualization(VisualXML.Visualization vis)
           let colorDump = dumpVecExp(arrayList(color))
             <<
               <vector>
-                  <ident><%ComponentReference.printComponentRefStr(ident)%></ident>
+                  <ident><%ComponentReferenceBasics.printComponentRefStr(ident)%></ident>
                   <T>
                       <%TDump%>
                   </T>
@@ -144,7 +144,7 @@ template dumpVisualization(VisualXML.Visualization vis)
           let colorDump = dumpVecExp(arrayList(color))
             <<
               <surface>
-                  <ident><%ComponentReference.printComponentRefStr(ident)%></ident>
+                  <ident><%ComponentReferenceBasics.printComponentRefStr(ident)%></ident>
                   <T>
                       <%TDump%>
                   </T>

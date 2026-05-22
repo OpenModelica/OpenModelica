@@ -259,9 +259,9 @@ algorithm
 
   if (debug) then
     print("patchRecordBindings arrayMap:\n");
-    print(UnorderedMap.toString(arrayMap, ComponentReference.printComponentRefStr, printArrayBindingList) + "\n");
+    print(UnorderedMap.toString(arrayMap, ComponentReferenceBasics.printComponentRefStr, printArrayBindingList) + "\n");
     print("\npatchRecordBindings map\n");
-    print(UnorderedMap.toString(map, ComponentReference.printComponentRefStr, TypesDump.printTypeStr) + "\n\n");
+    print(UnorderedMap.toString(map, ComponentReferenceBasics.printComponentRefStr, TypesDump.printTypeStr) + "\n\n");
   end if;
 
   // 3. Replace the types in equations and globalKnownVars
@@ -4000,7 +4000,7 @@ algorithm
     case (v, globalKnownVars, (DAE.STMT_FOR(type_= tp, iter = iteratorName, range = e, statementLst = statementLst)::xs), true)
       algorithm
         /* use the range for the componentreferences */
-        cr := ComponentReference.makeCrefIdent(iteratorName, tp, {});
+        cr := ComponentReferenceBasics.makeCrefIdent(iteratorName, tp, {});
         iteratorExp := Expression.crefExp(cr);
         iteratorexps := BackendDAEUtil.extendRange(e, globalKnownVars);
         v_1 := detectImplicitDiscreteAlgsStatemensFor(iteratorExp, iteratorexps, v, globalKnownVars, statementLst, true);
@@ -4011,7 +4011,7 @@ algorithm
 /*
     case (v, globalKnownVars, (DAE.STMT_PARFOR(type_= tp, iter = iteratorName, range = e, statementLst = statementLst, loopPrlVars=loopPrlVars)::xs), true)
       algorithm
-        cr = ComponentReference.makeCrefIdent(iteratorName, tp, {});
+        cr = ComponentReferenceBasics.makeCrefIdent(iteratorName, tp, {});
         iteratorExp = Expression.crefExp(cr);
         iteratorexps = BackendDAEUtil.extendRange(e, globalKnownVars);
         v_1 = detectImplicitDiscreteAlgsStatemensFor(iteratorExp, iteratorexps, v, globalKnownVars, statementLst, true);

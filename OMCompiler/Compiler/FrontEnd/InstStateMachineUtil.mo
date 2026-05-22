@@ -138,7 +138,7 @@ algorithm
 
     if DEBUG_SMDUMP then print("***** Initial States: ***** \n"); end if;
     initialStates := extractInitialStates(smNodeTable);
-    if DEBUG_SMDUMP then print( stringDelimitList(List.map(initialStates, ComponentReference.printComponentRefStr), ", ") + "\n"); end if;
+    if DEBUG_SMDUMP then print( stringDelimitList(List.map(initialStates, ComponentReferenceBasics.printComponentRefStr), ", ") + "\n"); end if;
 
     if DEBUG_SMDUMP then print("***** Flat State Machine Groups: ***** \n"); end if;
     flatSMGroup := extractFlatSMGroup(initialStates, transClosure, nStates);
@@ -620,7 +620,7 @@ protected
   list<DAE.Element> smElemsInFlatSM;
 algorithm
   smElemsInFlatSM := List.filter2OnTrue(smElemsLst, isInFlatSM, smInitialCref, smNodeToFlatSMGroup);
-  flatSM := DAE.FLAT_SM(ComponentReference.printComponentRefStr(smInitialCref), smElemsInFlatSM);
+  flatSM := DAE.FLAT_SM(ComponentReferenceBasics.printComponentRefStr(smInitialCref), smElemsInFlatSM);
 end createFlatSM;
 
 protected function isInFlatSM "
@@ -755,9 +755,9 @@ protected
   array<DAE.ComponentRef> states;
 algorithm
   FLAT_SM_GROUP(initState=initState, states=states) := flatA;
-  initialStateStr := ComponentReference.printComponentRefStr(initState);
+  initialStateStr := ComponentReferenceBasics.printComponentRefStr(initState);
   crefs := arrayList(states);
-  statesStrs := List.map(crefs, ComponentReference.printComponentRefStr);
+  statesStrs := List.map(crefs, ComponentReferenceBasics.printComponentRefStr);
   statesStr := stringDelimitList(statesStrs, ", ");
 
   flatStr := initialStateStr+"( states("+statesStr+"))";
@@ -891,7 +891,7 @@ algorithm
   entries := List.sort(entries, crefIndexCmp);
   for entry in entries loop
     (cref, i) := entry;
-    print( ComponentReference.printComponentRefStr(cref) + ": " + intString(i) + "\n" );
+    print( ComponentReferenceBasics.printComponentRefStr(cref) + ": " + intString(i) + "\n" );
   end for;
 
   pads := " ";

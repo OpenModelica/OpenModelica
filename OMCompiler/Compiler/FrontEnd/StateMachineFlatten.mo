@@ -378,8 +378,8 @@ algorithm
   cref := qCref("cImmediate", tArrayBool, {DAE.INDEX(DAE.ICONST(i))}, preRef);
   DAE.EQUATION(lhsExp, rhsExp, elemSource) := inSmeqs;
   DAE.CREF(lhsRef, ty) := lhsExp;
-  // print("StateMachineFlatten.smeqsSubsXInState: cref: " + ComponentReference.printComponentRefStr(cref) + "\n");
-  // print("StateMachineFlatten.smeqsSubsXInState: lhsRef: " + ComponentReference.printComponentRefStr(lhsRef) + "\n");
+  // print("StateMachineFlatten.smeqsSubsXInState: cref: " + ComponentReferenceBasics.printComponentRefStr(cref) + "\n");
+  // print("StateMachineFlatten.smeqsSubsXInState: lhsRef: " + ComponentReferenceBasics.printComponentRefStr(lhsRef) + "\n");
   if ComponentReferenceBasics.crefEqual(cref, lhsRef) then
     // print("StateMachineFlatten.smeqsSubsXInState: rhsExp: " + ExpressionBasics.printExpStr(rhsExp) + "\n");
     (rhsExp2, _) :=  Expression.traverseExpTopDown(rhsExp, traversingSubsXInState, (xInState, substExp, false));

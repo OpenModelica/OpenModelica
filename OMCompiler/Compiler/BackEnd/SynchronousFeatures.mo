@@ -510,7 +510,7 @@ algorithm
   end for;
 
   if not Flags.isSet(Flags.NF_SCALARIZE) then
-    prevVars := list(ComponentReference.crefStripLastSubs(cr) for cr in prevVars);
+    prevVars := list(ComponentReferenceBasics.crefStripLastSubs(cr) for cr in prevVars);
   end if;
 
   for cr in prevVars loop
@@ -2783,7 +2783,7 @@ algorithm
   (msg, tokens) := match inComp
     local DAE.ComponentRef cr;
     case SOME(cr) then ( Error.CONT_CLOCKED_PARTITION_CONFLICT_VAR,
-                         {ComponentReference.printComponentRefStr(cr)} );
+                         {ComponentReferenceBasics.printComponentRefStr(cr)} );
     else (Error.CONT_CLOCKED_PARTITION_CONFLICT_EQ, {});
   end match;
 end getPartitionConflictError;
@@ -3075,7 +3075,7 @@ algorithm
   if i1 <> i2 and not throwNoError then
     s1 := intString(i1);
     s2 := intString(i2);
-    crs := List.mapMap(vl, BackendVariable.varCref, ComponentReference.printComponentRefStr);
+    crs := List.mapMap(vl, BackendVariable.varCref, ComponentReferenceBasics.printComponentRefStr);
     s3 := stringDelimitList(crs, "\n");
     s4 := BackendDump.dumpEqnsStr(el);
     Error.addSourceMessage(Error.IMBALANCED_EQUATIONS, {s1, s2, s3, s4}, Absyn.dummyInfo);

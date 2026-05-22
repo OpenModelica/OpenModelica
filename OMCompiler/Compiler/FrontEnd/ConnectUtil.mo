@@ -106,7 +106,7 @@ algorithm
 
   try
     cr := PrefixUtil.prefixFirstCref(prefix);
-    pstr := ComponentReference.printComponentRefStr(cr);
+    pstr := ComponentReferenceBasics.printComponentRefStr(cr);
   else
     cr := DAE.WILD();
     pstr := "";
@@ -917,7 +917,7 @@ algorithm
     // A simple identifier, just create a new leaf.
     case DAE.CREF_IDENT()
       algorithm
-        id := ComponentReference.printComponentRefStr(cref);
+        id := ComponentReferenceBasics.printComponentRefStr(cref);
       then
         setTrieNewLeaf(id, setElementName(element, cref));
 
@@ -926,7 +926,7 @@ algorithm
     case DAE.CREF_QUAL()
       algorithm
         cr := ComponentReferenceBasics.crefFirstCref(cref);
-        id := ComponentReference.printComponentRefStr(cr);
+        id := ComponentReferenceBasics.printComponentRefStr(cr);
         node := setTrieNewNode(cref.componentRef, element);
       then
         SetTrieNode.SET_TRIE_NODE(id, cr, {node}, 0);
@@ -1200,7 +1200,7 @@ algorithm
 
     case DAE.CREF_IDENT()
       algorithm
-        id := ComponentReference.printComponentRefStr(cref);
+        id := ComponentReferenceBasics.printComponentRefStr(cref);
         node := SetTrieNode.SET_TRIE_LEAF(id, NONE(), NONE(), NONE(), 0);
         node := updateFunc(arg, node);
       then
@@ -1209,7 +1209,7 @@ algorithm
     case DAE.CREF_QUAL()
       algorithm
         cr := ComponentReferenceBasics.crefFirstCref(cref);
-        id := ComponentReference.printComponentRefStr(cr);
+        id := ComponentReferenceBasics.printComponentRefStr(cr);
         child_nodes := setTrieUpdateNode2(cref.componentRef, arg, updateFunc, {});
       then
         SetTrieNode.SET_TRIE_NODE(id, cr, child_nodes, 0) :: nodes;
@@ -1915,7 +1915,7 @@ algorithm
       DAE.ComponentRef lhs;
 
     case DAE.SOURCE(connectEquationOptLst = (lhs, _) :: _)
-      then not ComponentReference.crefPrefixOf(lhs, lhsCref);
+      then not ComponentReferenceBasics.crefPrefixOf(lhs, lhsCref);
 
     else false;
   end match;
@@ -2724,7 +2724,7 @@ algorithm
       algorithm
        (_, _, DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)),_,_,_,_,_,_)
          := Lookup.lookupVar(FCore.emptyCache(), env,
-           ComponentReference.makeCrefIdent(id, DAE.T_UNKNOWN_DEFAULT,{}));
+           ComponentReferenceBasics.makeCrefIdent(id, DAE.T_UNKNOWN_DEFAULT,{}));
       then Face.OUTSIDE();
 
     // is a qualified cref and is NOT a connector => INSIDE
@@ -2974,7 +2974,7 @@ public function isReferenceInConnects
   output Boolean isThere = false;
 algorithm
   for ce in connects loop
-    if ComponentReference.crefPrefixOf(cref, ce.name) then
+    if ComponentReferenceBasics.crefPrefixOf(cref, ce.name) then
       isThere := true;
       return;
     end if;
@@ -2998,7 +2998,7 @@ protected function removeReferenceFromConnects2
   input ConnectorElement element;
   output Boolean matches;
 algorithm
-  matches := ComponentReference.crefPrefixOf(cref, element.name);
+  matches := ComponentReferenceBasics.crefPrefixOf(cref, element.name);
 end removeReferenceFromConnects2;
 
 public function printSetsStr
@@ -3071,7 +3071,7 @@ public function printElementStr
   input ConnectorElement element;
   output String string;
 algorithm
-  string := ComponentReference.printComponentRefStr(element.name) + " ";
+  string := ComponentReferenceBasics.printComponentRefStr(element.name) + " ";
   string := string + printFaceStr(element.face) + " ";
   string := string + printConnectorTypeStr(element.ty) + " [" + String(element.set) + "]";
 end printElementStr;
@@ -3113,7 +3113,7 @@ algorithm
       then "";
 
     case SOME(cr)
-      then " associated flow: " + ComponentReference.printComponentRefStr(cr);
+      then " associated flow: " + ComponentReferenceBasics.printComponentRefStr(cr);
 
   end match;
 end printOptFlowAssociation;
@@ -3197,13 +3197,13 @@ algorithm
 
   // 1 - get all expandable crefs
   expandableVars := getExpandableVariablesWithNoBinding(elems);
-  // print("All expandable (1):\n  " + stringDelimitList(List.map(expandableVars, ComponentReference.printComponentRefStr), "\n  ") + "\n");
+  // print("All expandable (1):\n  " + stringDelimitList(List.map(expandableVars, ComponentReferenceBasics.printComponentRefStr), "\n  ") + "\n");
 
   // 2 - remove all expandable without binding from the dae
   dae := DAEUtil.removeVariables(DAE, expandableVars);
   // 2 - get all expandable crefs used in the dae (without the expandable vars)
   usedInDAE := DAEUtil.getAllExpandableCrefsFromDAE(dae);
-  // print("Used in the DAE (2):\n  " + stringDelimitList(List.map(usedInDAE, ComponentReference.printComponentRefStr), "\n  ") + "\n");
+  // print("Used in the DAE (2):\n  " + stringDelimitList(List.map(usedInDAE, ComponentReferenceBasics.printComponentRefStr), "\n  ") + "\n");
 
   // 3 - get all expandable crefs that are connected ONLY with expandable
   setsAsCrefs := getExpandableEquSetsAsCrefs(sets);
@@ -3211,11 +3211,11 @@ algorithm
   // TODO! FIXME! maybe we should do fixpoint here??
   setsAsCrefs := mergeEquSetsAsCrefs(setsAsCrefs);
   onlyExpandableConnected := getOnlyExpandableConnectedCrefs(setsAsCrefs);
-  // print("All expandable - expandable connected (3):\n  " + stringDelimitList(List.map(onlyExpandableConnected, ComponentReference.printComponentRefStr), "\n  ") + "\n");
+  // print("All expandable - expandable connected (3):\n  " + stringDelimitList(List.map(onlyExpandableConnected, ComponentReferenceBasics.printComponentRefStr), "\n  ") + "\n");
 
   // 4 - subtract (2) from (3)
   unnecessary := List.setDifferenceOnTrue(onlyExpandableConnected, usedInDAE, ComponentReferenceBasics.crefEqualWithoutSubs);
-  // print("REMOVE: (3)-(2):\n  " + stringDelimitList(List.map(unnecessary, ComponentReference.printComponentRefStr), "\n  ") + "\n");
+  // print("REMOVE: (3)-(2):\n  " + stringDelimitList(List.map(unnecessary, ComponentReferenceBasics.printComponentRefStr), "\n  ") + "\n");
 
   // 5 - remove unnecessary variables form the DAE
   DAE := DAEUtil.removeVariables(DAE, unnecessary);
@@ -3223,11 +3223,11 @@ algorithm
   sets := removeCrefsFromSets(sets, unnecessary);
 
   equVars := getAllEquCrefs(sets);
-  // print("(6):\n  " + stringDelimitList(List.map(equVars, ComponentReference.printComponentRefStr), "\n  ") + "\n");
+  // print("(6):\n  " + stringDelimitList(List.map(equVars, ComponentReferenceBasics.printComponentRefStr), "\n  ") + "\n");
   expandableVars := List.setDifferenceOnTrue(expandableVars, usedInDAE, ComponentReferenceBasics.crefEqualWithoutSubs);
-  // print("(1)-(2)=(7):\n  " + stringDelimitList(List.map(equVars, ComponentReference.printComponentRefStr), "\n  ") + "\n");
+  // print("(1)-(2)=(7):\n  " + stringDelimitList(List.map(equVars, ComponentReferenceBasics.printComponentRefStr), "\n  ") + "\n");
   unnecessary := List.setDifferenceOnTrue(expandableVars, equVars, ComponentReferenceBasics.crefEqualWithoutSubs);
-  // print("REMOVE: (7)-(6):\n  " + stringDelimitList(List.map(unnecessary, ComponentReference.printComponentRefStr), "\n  ") + "\n");
+  // print("REMOVE: (7)-(6):\n  " + stringDelimitList(List.map(unnecessary, ComponentReferenceBasics.printComponentRefStr), "\n  ") + "\n");
   DAE := DAEUtil.removeVariables(DAE, unnecessary);
 end removeUnusedExpandableVariablesAndConnections;
 

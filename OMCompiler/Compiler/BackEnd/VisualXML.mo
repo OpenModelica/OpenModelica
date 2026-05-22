@@ -148,7 +148,7 @@ algorithm
   (globalKnownVarLst,allVisuals) := List.fold(globalKnownVarLst,isVisualizationVarFold,({},{}));
   (allVarLst,allVisuals) := List.fold(allVarLst,isVisualizationVarFold,({},allVisuals));
   (aliasVarLst,allVisuals) := List.fold(aliasVarLst,isVisualizationVarFold,({},allVisuals));
-    //print("ALL VISUALS "+stringDelimitList(List.map(allVisuals,ComponentReference.printComponentRefStr)," |")+"\n");
+    //print("ALL VISUALS "+stringDelimitList(List.map(allVisuals,ComponentReferenceBasics.printComponentRefStr)," |")+"\n");
 
   //fill theses visualization objects with information
   allVarLst := listAppend(globalKnownVarLst,listAppend(allVarLst,aliasVarLst));
@@ -333,7 +333,7 @@ algorithm
     //name := stringCharListString(nameChars);
     //name := Util.stringReplaceChar(name,"$",".");
     //true := stringEqual(stringCharListString(prefix),"Shape$");
-    //name := ComponentReference.printComponentRefStr(crefIn);
+    //name := ComponentReferenceBasics.printComponentRefStr(crefIn);
     (cref, vis_name) := visVar;
     vis := newVisualizer(cref, vis_name);
     (_, visOut) := List.fold2(allVarsIn,fillVisualizationObjects1,true,programIn,({},vis));
@@ -408,7 +408,7 @@ protected
   list<DAE.ComponentRef> crefs;
 algorithm
   sLst := Util.stringSplitAtChar(s,".");
-  crefs := List.map2(sLst,ComponentReference.makeCrefIdent,DAE.T_REAL_DEFAULT,{});
+  crefs := List.map2(sLst,ComponentReferenceBasics.makeCrefIdent,DAE.T_REAL_DEFAULT,{});
   cref::crefs := crefs;
   crefOut := List.foldr(crefs,ComponentReference.joinCrefs,cref);
 end makeCrefQualFromString;
@@ -821,7 +821,7 @@ algorithm
       array<DAE.Exp> color, r, widthDir, lengthDir;
       array<list<DAE.Exp>> T;
   case(SHAPE(ident=ident, shapeType=shapeType, color=color, r=r, lengthDir=lengthDir, widthDir=widthDir, T=T, length=length, width=width, height=height, extra=extra))
-  then ("SHAPE "+ComponentReference.printComponentRefStr(ident)+" '"+ExpressionBasics.printExpStr(shapeType) + "'\n r{"+stringDelimitList(list(ExpressionDump.dumpExpStr(e, 0) for e in r),",")+"}" +
+  then ("SHAPE "+ComponentReferenceBasics.printComponentRefStr(ident)+" '"+ExpressionBasics.printExpStr(shapeType) + "'\n r{"+stringDelimitList(list(ExpressionDump.dumpExpStr(e, 0) for e in r),",")+"}" +
         "\nlD{"+stringDelimitList(List.mapArray(lengthDir, ExpressionBasics.printExpStr),",")+"}"+" wD{"+stringDelimitList(List.mapArray(widthDir, ExpressionBasics.printExpStr),",")+"}"+
         "\ncolor("+stringDelimitList(List.mapArray(color, ExpressionBasics.printExpStr),",")+")"+" w: "+ExpressionBasics.printExpStr(width)+" h: "+ExpressionBasics.printExpStr(height)+" l: "+ExpressionBasics.printExpStr(length) +
         "\nT {"+ stringDelimitList(List.map(List.flatten(arrayList(T)),ExpressionBasics.printExpStr),", ")+"}"+"\nextra{"+ExpressionBasics.printExpStr(extra)+"}");
@@ -877,11 +877,11 @@ algorithm
     case (BackendDAE.VAR(varName=varName, source=source), (varLst,crefs))
       algorithm
         paths := ElementSource.getElementSourceTypes(source);
-        //print("Component " + ComponentReference.printComponentRefStr(varName) + ":\n");
+        //print("Component " + ComponentReferenceBasics.printComponentRefStr(varName) + ":\n");
         //print(List.toString(paths, AbsynUtil.pathStringDefault, "", "  ", "\n  ", "", false) + "\n");
         (obj, idx) := hasVisPath(paths, 1);
         true := Util.stringNotEqual(obj, "");
-        //print("ComponentRef "+ComponentReference.printComponentRefStr(varName)+" path: "+obj+ " idx: "+intString(idx)+"\n");
+        //print("ComponentRef "+ComponentReferenceBasics.printComponentRefStr(varName)+" path: "+obj+ " idx: "+intString(idx)+"\n");
         cref := ComponentReference.firstNCrefs(varName, idx-1);
         crefs := List.unique((cref, obj)::crefs);
       then

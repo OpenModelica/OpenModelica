@@ -69,13 +69,6 @@ protected import Util;
 // do not make this public. instead use the function below.
 protected constant DAE.ComponentRef dummyCref = DAE.CREF_IDENT("dummy", DAE.T_UNKNOWN_DEFAULT, {});
 
-public function printComponentRefStr = ComponentReferenceBasics.printComponentRefStr;
-public function crefStripLastSubs = ComponentReferenceBasics.crefStripLastSubs;
-public function makeCrefIdent = ComponentReferenceBasics.makeCrefIdent;
-public function makeCrefQual = ComponentReferenceBasics.makeCrefQual;
-public function crefLexicalGreaterSubsAtEnd = ComponentReferenceBasics.crefLexicalGreaterSubsAtEnd;
-public function crefPrefixOf = ComponentReferenceBasics.crefPrefixOf;
-
 public function hashComponentRef "new hashing that properly deals with subscripts so [1,2] and [2,1] hash to different values"
   input DAE.ComponentRef cr;
   output Integer hash;
@@ -234,7 +227,7 @@ algorithm
       DAE.ComponentRef c;
       Absyn.Path p;
 
-    case Absyn.IDENT(name = i) then makeCrefIdent(i,DAE.T_UNKNOWN_DEFAULT,{});
+    case Absyn.IDENT(name = i) then ComponentReferenceBasics.makeCrefIdent(i,DAE.T_UNKNOWN_DEFAULT,{});
 
     case (Absyn.FULLYQUALIFIED(p)) then pathToCref(p);
 
@@ -242,7 +235,7 @@ algorithm
       algorithm
         c := pathToCref(p);
       then
-        makeCrefQual(i,DAE.T_UNKNOWN_DEFAULT,{},c);
+        ComponentReferenceBasics.makeCrefQual(i,DAE.T_UNKNOWN_DEFAULT,{},c);
   end match;
 end pathToCref;
 
@@ -259,7 +252,7 @@ algorithm
 
     case DAE.TYPES_VAR(name=name,ty=ty)
       then
-        makeCrefIdent(name,ty,{});
+        ComponentReferenceBasics.makeCrefIdent(name,ty,{});
   end match;
 end creffromVar;
 
@@ -294,7 +287,7 @@ algorithm
     case _
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
-        print("ComponentReference.unelabCref failed on: " + printComponentRefStr(inComponentRef) + "\n");
+        print("ComponentReference.unelabCref failed on: " + ComponentReferenceBasics.printComponentRefStr(inComponentRef) + "\n");
       then
         fail();
 
@@ -353,11 +346,11 @@ algorithm
     local
 
     case Absyn.CREF_IDENT()
-      then makeCrefIdent(absynCref.name, DAE.T_UNKNOWN_DEFAULT,
+      then ComponentReferenceBasics.makeCrefIdent(absynCref.name, DAE.T_UNKNOWN_DEFAULT,
         toExpCrefSubs(absynCref.subscripts));
 
     case Absyn.CREF_QUAL()
-      then makeCrefQual(absynCref.name, DAE.T_UNKNOWN_DEFAULT,
+      then ComponentReferenceBasics.makeCrefQual(absynCref.name, DAE.T_UNKNOWN_DEFAULT,
         toExpCrefSubs(absynCref.subscripts), toExpCref(absynCref.componentRef));
 
     case Absyn.CREF_FULLYQUALIFIED()
@@ -426,7 +419,7 @@ algorithm
      // some
      case SOME(cref)
        algorithm
-         str := printComponentRefStr(cref);
+         str := ComponentReferenceBasics.printComponentRefStr(cref);
          str := "SOME(" + str + ")";
        then
          str;
@@ -442,8 +435,8 @@ algorithm
     local
       DAE.ComponentRef cr;
     case (DAE.CREF_QUAL(ident = DAE.derivativeNamePrefix, subscriptLst = {}, componentRef = cr))
-      then "der(" + printComponentRefStr(cr) + ")";
-    else printComponentRefStr(inComponentRef);
+      then "der(" + ComponentReferenceBasics.printComponentRefStr(cr) + ")";
+    else ComponentReferenceBasics.printComponentRefStr(inComponentRef);
   end match;
 end printComponentRefStrFixDollarDer;
 
@@ -1057,7 +1050,7 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("ComponentReference.crefTypeFull2 failed on cref: ");
-        Debug.traceln(printComponentRefStr(inCref));
+        Debug.traceln(ComponentReferenceBasics.printComponentRefStr(inCref));
       then
         fail();
   end match;
@@ -1114,7 +1107,7 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("ComponentReference.crefType failed on cref: ");
-        Debug.traceln(printComponentRefStr(inCref));
+        Debug.traceln(ComponentReferenceBasics.printComponentRefStr(inCref));
       then
         fail();
 
@@ -1211,7 +1204,7 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("-ComponentReference.crefType failed on Cref:");
-        s := printComponentRefStr(inRef);
+        s := ComponentReferenceBasics.printComponentRefStr(inRef);
         Debug.traceln(s);
       then
         fail();
@@ -1229,7 +1222,7 @@ algorithm
     case (_) algorithm
       true := crefIsFirstArrayElt(name);
       if (stringEqual(Config.simCodeTarget(), "Cpp")) then
-        arrayCrefInner := crefStripLastSubs(name);
+        arrayCrefInner := ComponentReferenceBasics.crefStripLastSubs(name);
       else
         arrayCrefInner := crefStripSubs(name);
       end if;
@@ -1290,13 +1283,13 @@ algorithm
 
     case(DAE.CREF_IDENT(id1,tp1,subs1),_,_,_)
       then
-        makeCrefQual(id1,tp1,subs1,makeCrefIdent(ident,tp,subs));
+        ComponentReferenceBasics.makeCrefQual(id1,tp1,subs1,ComponentReferenceBasics.makeCrefIdent(ident,tp,subs));
 
     case(DAE.CREF_QUAL(id1,tp1,subs1,cr),_,_,_)
       algorithm
         cr := crefPrependIdent(cr,ident,subs,tp);
       then
-        makeCrefQual(id1,tp1,subs1,cr);
+        ComponentReferenceBasics.makeCrefQual(id1,tp1,subs1,cr);
   end match;
 end crefPrependIdent;
 
@@ -1305,7 +1298,7 @@ public function crefPrefixDer "public function crefPrefixDer
   input DAE.ComponentRef inCref;
   output DAE.ComponentRef outCref;
 algorithm
-  outCref := makeCrefQual(DAE.derivativeNamePrefix, DAE.T_REAL_DEFAULT, {}, inCref);
+  outCref := ComponentReferenceBasics.makeCrefQual(DAE.derivativeNamePrefix, DAE.T_REAL_DEFAULT, {}, inCref);
 end crefPrefixDer;
 
 public function crefPrefixPre "public function crefPrefixPre
@@ -1313,7 +1306,7 @@ public function crefPrefixPre "public function crefPrefixPre
   input DAE.ComponentRef inCref;
   output DAE.ComponentRef outCref;
 algorithm
-  outCref := makeCrefQual(DAE.preNamePrefix, DAE.T_UNKNOWN_DEFAULT, {}, inCref);
+  outCref := ComponentReferenceBasics.makeCrefQual(DAE.preNamePrefix, DAE.T_UNKNOWN_DEFAULT, {}, inCref);
 end crefPrefixPre;
 
 public function getConcealedCref "public function getConcealedCref
@@ -1323,7 +1316,7 @@ protected
   String ident;
 algorithm
   ident := "$concealed" + intString(System.tmpTick()+1);
-  outCref := makeCrefIdent(ident, DAE.T_UNKNOWN_DEFAULT, {});
+  outCref := ComponentReferenceBasics.makeCrefIdent(ident, DAE.T_UNKNOWN_DEFAULT, {});
 end getConcealedCref;
 
 public function crefPrefixPrevious "public function crefPrefixPrevious
@@ -1331,7 +1324,7 @@ public function crefPrefixPrevious "public function crefPrefixPrevious
   input DAE.ComponentRef inCref;
   output DAE.ComponentRef outCref;
 algorithm
-  outCref := makeCrefQual(DAE.previousNamePrefix, DAE.T_UNKNOWN_DEFAULT, {}, inCref);
+  outCref := ComponentReferenceBasics.makeCrefQual(DAE.previousNamePrefix, DAE.T_UNKNOWN_DEFAULT, {}, inCref);
 end crefPrefixPrevious;
 
 public function crefPrefixAux "public function crefPrefixAux
@@ -1339,7 +1332,7 @@ public function crefPrefixAux "public function crefPrefixAux
   input DAE.ComponentRef inCref;
   output DAE.ComponentRef outCref;
 algorithm
-  outCref := makeCrefQual(DAE.auxNamePrefix, DAE.T_REAL_DEFAULT, {}, inCref);
+  outCref := ComponentReferenceBasics.makeCrefQual(DAE.auxNamePrefix, DAE.T_REAL_DEFAULT, {}, inCref);
 end crefPrefixAux;
 
 public function crefRemovePrePrefix
@@ -1356,7 +1349,7 @@ public function crefPrefixStart "public function crefPrefixStart
   input DAE.ComponentRef inCref;
   output DAE.ComponentRef outCref;
 algorithm
-  outCref := makeCrefQual(DAE.startNamePrefix, DAE.T_UNKNOWN_DEFAULT, {}, inCref);
+  outCref := ComponentReferenceBasics.makeCrefQual(DAE.startNamePrefix, DAE.T_UNKNOWN_DEFAULT, {}, inCref);
 end crefPrefixStart;
 
 public function crefPrefixString
@@ -1366,7 +1359,7 @@ public function crefPrefixString
   input DAE.ComponentRef inCref;
   output DAE.ComponentRef outCref;
 algorithm
-  outCref := makeCrefQual(inString, DAE.T_UNKNOWN_DEFAULT, {}, inCref);
+  outCref := ComponentReferenceBasics.makeCrefQual(inString, DAE.T_UNKNOWN_DEFAULT, {}, inCref);
 end crefPrefixString;
 
 public function crefPrefixStringList
@@ -1439,13 +1432,13 @@ algorithm
       algorithm
         i_1 := stringAppend(p, i);
       then
-        makeCrefQual(i_1,t2,s,c);
+        ComponentReferenceBasics.makeCrefQual(i_1,t2,s,c);
 
     case (p,DAE.CREF_IDENT(ident = i, identType = t2, subscriptLst = s))
       algorithm
         i_1 := stringAppend(p, i);
       then
-        makeCrefIdent(i_1,t2,s);
+        ComponentReferenceBasics.makeCrefIdent(i_1,t2,s);
   end match;
 end prependStringCref;
 
@@ -1530,13 +1523,13 @@ algorithm
 
     case (DAE.CREF_IDENT(ident = id, identType = t2, subscriptLst = sub),cr2)
       then
-        makeCrefQual(id,t2,sub,cr2);
+        ComponentReferenceBasics.makeCrefQual(id,t2,sub,cr2);
 
     case (DAE.CREF_QUAL(ident = id, identType = t2, subscriptLst = sub,componentRef = cr),cr2)
       algorithm
         cr_1 := joinCrefs(cr, cr2);
       then
-        makeCrefQual(id,t2,sub,cr_1);
+        ComponentReferenceBasics.makeCrefQual(id,t2,sub,cr_1);
   end match;
 end joinCrefs;
 
@@ -1555,13 +1548,13 @@ algorithm
 
     case (cr2,DAE.CREF_IDENT(ident = id, identType = t2, subscriptLst = sub))
       then
-        makeCrefQual(id,t2,sub,cr2);
+        ComponentReferenceBasics.makeCrefQual(id,t2,sub,cr2);
 
     case (cr2,DAE.CREF_QUAL(ident = id, identType = t2, subscriptLst = sub,componentRef = cr))
       algorithm
         cr_1 := joinCrefs(cr, cr2);
       then
-        makeCrefQual(id,t2,sub,cr_1);
+        ComponentReferenceBasics.makeCrefQual(id,t2,sub,cr_1);
   end match;
 end joinCrefsR;
 
@@ -1602,13 +1595,13 @@ algorithm
       algorithm
         newsub_1 := listAppend(sub, newsub);
       then
-        makeCrefIdent(id, t2, newsub_1);
+        ComponentReferenceBasics.makeCrefIdent(id, t2, newsub_1);
 
     case (DAE.CREF_QUAL(ident = id,subscriptLst = sub,componentRef = cref, identType = t2),newsub)
       algorithm
         cref_1 := subscriptCref(cref, newsub);
       then
-        makeCrefQual(id, t2, sub,cref_1);
+        ComponentReferenceBasics.makeCrefQual(id, t2, sub,cref_1);
   end match;
 end subscriptCref;
 
@@ -1635,14 +1628,14 @@ algorithm
         subs := List.appendElt(new_sub, subs);
         ty := Expression.unliftArray(ty);
       then
-        makeCrefIdent(id, ty, subs);
+        ComponentReferenceBasics.makeCrefIdent(id, ty, subs);
 
     case (DAE.CREF_QUAL(ident = id, subscriptLst = subs,
           componentRef = rest_cref, identType = ty), _)
       algorithm
         rest_cref := subscriptCrefWithInt(rest_cref, inSubscript);
       then
-        makeCrefQual(id, ty, subs, rest_cref);
+        ComponentReferenceBasics.makeCrefQual(id, ty, subs, rest_cref);
 
   end match;
 end subscriptCrefWithInt;
@@ -1660,11 +1653,11 @@ algorithm
       DAE.ComponentRef cr;
 
     case (DAE.CREF_IDENT(ident=id, identType=tp), _)
-    then makeCrefIdent(id, tp, inSubs);
+    then ComponentReferenceBasics.makeCrefIdent(id, tp, inSubs);
 
     case (DAE.CREF_QUAL(ident=id, identType=tp, subscriptLst=subs, componentRef=cr) ,_) algorithm
       cr := crefSetLastSubs(cr, inSubs);
-    then makeCrefQual(id, tp, subs, cr);
+    then ComponentReferenceBasics.makeCrefQual(id, tp, subs, cr);
   end match;
 end crefSetLastSubs;
 
@@ -1688,11 +1681,11 @@ algorithm
         if listLength(subs) + listLength(inSubs) > listLength(dims) then
           Error.addInternalError("ComponentReference.crefApplySubs ["
             + ExpressionBasics.printListStr(inSubs, ExpressionBasics.printSubscriptStr, ",") + "] to ident "
-            + printComponentRefStr(inComponentRef) + " with " + intString(listLength(dims)) + " dimensions\n", sourceInfo());
+            + ComponentReferenceBasics.printComponentRefStr(inComponentRef) + " with " + intString(listLength(dims)) + " dimensions\n", sourceInfo());
           fail();
         end if;
       then
-        makeCrefIdent(id, tp, listAppend(subs, inSubs));
+        ComponentReferenceBasics.makeCrefIdent(id, tp, listAppend(subs, inSubs));
 
     case DAE.CREF_QUAL(ident = id, identType = tp as DAE.T_ARRAY(dims = dims), subscriptLst = subs, componentRef = cr)
       algorithm
@@ -1705,21 +1698,21 @@ algorithm
         if listLength(subs) + listLength(subs1) > listLength(dims) then
           Error.addInternalError("ComponentReference.crefApplySubs ["
             + ExpressionBasics.printListStr(inSubs, ExpressionBasics.printSubscriptStr, ",") + "] to qual "
-            + printComponentRefStr(inComponentRef) + " with " + intString(listLength(dims)) + " dimensions\n", sourceInfo());
+            + ComponentReferenceBasics.printComponentRefStr(inComponentRef) + " with " + intString(listLength(dims)) + " dimensions\n", sourceInfo());
           fail();
         end if;
       then
-        makeCrefQual(id, tp, listAppend(subs, subs1), cr);
+        ComponentReferenceBasics.makeCrefQual(id, tp, listAppend(subs, subs1), cr);
 
     case DAE.CREF_QUAL(ident = id, identType = tp, subscriptLst = subs, componentRef = cr)
       algorithm
         cr := crefApplySubs(cr, inSubs);
       then
-        makeCrefQual(id, tp, subs, cr);
+        ComponentReferenceBasics.makeCrefQual(id, tp, subs, cr);
 
     else
       algorithm
-        Error.addInternalError("ComponentReference.crefApplySubs to non array " + printComponentRefStr(inComponentRef) + "\n", sourceInfo());
+        Error.addInternalError("ComponentReference.crefApplySubs to non array " + ComponentReferenceBasics.printComponentRefStr(inComponentRef) + "\n", sourceInfo());
       then
         fail();
   end match;
@@ -1760,13 +1753,13 @@ algorithm
       Integer idx;
 
     case DAE.CREF_IDENT(id,_,subs)
-      then makeCrefIdent(id,newType,subs);
+      then ComponentReferenceBasics.makeCrefIdent(id,newType,subs);
 
     case DAE.CREF_QUAL(id,ty,subs,child)
       algorithm
         child := crefSetLastType(child,newType);
       then
-        makeCrefQual(id,ty,subs,child);
+        ComponentReferenceBasics.makeCrefQual(id,ty,subs,child);
 
   end match;
 end crefSetLastType;
@@ -1788,7 +1781,7 @@ algorithm
     // debugging case, uncomment for enabling
     // case(child,newSub)
     //  equation
-    //    str1 = printComponentRefStr(child);
+    //    str1 = ComponentReferenceBasics.printComponentRefStr(child);
     //    str2 = stringDelimitList(List.map(newSub, printSubscriptStr), ", ");
     //    str  = "replaceCrefSliceSub(" + str1 + " subs: [" + str2 + "]\n";
     //    print(str);
@@ -1800,7 +1793,7 @@ algorithm
       algorithm
         subs := replaceSliceSub(subs, newSub);
       then
-        makeCrefIdent(name,identType,subs);
+        ComponentReferenceBasics.makeCrefIdent(name,identType,subs);
 
     // case where there is not existant Expression.DAE.SLICE() as subscript
     case (DAE.CREF_IDENT(identType  = t2, subscriptLst = subs),_)
@@ -1825,21 +1818,21 @@ algorithm
       algorithm
         subs := replaceSliceSub(subs, newSub);
       then
-        makeCrefQual(name,identType,subs,child);
+        ComponentReferenceBasics.makeCrefQual(name,identType,subs,child);
 
     // case where there is not existant Expression.DAE.SLICE() as subscript in CREF_QUAL
     case(DAE.CREF_QUAL(name,identType,subs,child),_)
       algorithm
         true := (listLength(Expression.arrayTypeDimensions(identType)) >= (listLength(subs)+1));
       then
-        makeCrefQual(name, identType, listAppend(subs, newSub), child);
+        ComponentReferenceBasics.makeCrefQual(name, identType, listAppend(subs, newSub), child);
 
     // DAE.CREF_QUAL without DAE.SLICE, search child
     case(DAE.CREF_QUAL(name,identType,subs,child),_)
       algorithm
         child := replaceCrefSliceSub(child,newSub);
       then
-        makeCrefQual(name,identType,subs,child);
+        ComponentReferenceBasics.makeCrefQual(name,identType,subs,child);
 
     else
       algorithm
@@ -1905,13 +1898,13 @@ algorithm
       algorithm
         subs := removeSliceSubs(subs);
       then
-        makeCrefIdent(id,ty,subs);
+        ComponentReferenceBasics.makeCrefIdent(id,ty,subs);
 
     case (DAE.CREF_QUAL(componentRef = cr, identType=ty, subscriptLst=subs, ident=id))
       algorithm
         outCref := stripCrefIdentSliceSubs(cr);
       then
-        makeCrefQual(id,ty,subs,outCref);
+        ComponentReferenceBasics.makeCrefQual(id,ty,subs,outCref);
   end match;
 end stripCrefIdentSliceSubs;
 
@@ -1932,20 +1925,20 @@ algorithm
       algorithm
         // the complete cref is an array
       then
-        (makeCrefIdent(id,ty,{}),idx,NONE());
+        (ComponentReferenceBasics.makeCrefIdent(id,ty,{}),idx,NONE());
 
     case (DAE.CREF_QUAL(componentRef = cr, identType=ty, subscriptLst={DAE.INDEX(DAE.ICONST(idx))}, ident=id))
       algorithm
         // strip the cref here
       then
-        (makeCrefIdent(id,ty,{}),idx,SOME(cr));
+        (ComponentReferenceBasics.makeCrefIdent(id,ty,{}),idx,SOME(cr));
 
     case (DAE.CREF_QUAL(componentRef = cr, identType=ty, ident=id))
       algorithm
         // continue
         outCref := stripCrefIdentSliceSubs(cr);
       then
-        (makeCrefQual(id,ty,{},outCref),-1,NONE());
+        (ComponentReferenceBasics.makeCrefQual(id,ty,{},outCref),-1,NONE());
   end match;
 end stripArrayCref;
 
@@ -1975,13 +1968,13 @@ algorithm
       DAE.Type ty;
 
     case (DAE.CREF_IDENT(ident = id,identType = ty))
-      then makeCrefIdent(id,ty,{});
+      then ComponentReferenceBasics.makeCrefIdent(id,ty,{});
 
     case (DAE.CREF_QUAL(componentRef = cr, identType=ty, ident=id))
       algorithm
         outCref := crefStripSubs(cr);
       then
-        makeCrefQual(id,ty,{},outCref);
+        ComponentReferenceBasics.makeCrefQual(id,ty,{},outCref);
   end match;
 end crefStripSubs;
 
@@ -2026,13 +2019,13 @@ algorithm
         cref;
 
     case (DAE.CREF_IDENT(ident = id, identType = ty))
-      then makeCrefIdent(id,ty,{});
+      then ComponentReferenceBasics.makeCrefIdent(id,ty,{});
 
     case (DAE.CREF_QUAL(componentRef = cr, identType = ty, ident = id))
       algorithm
         outCref := crefStripSubsExceptModelSubs(cr);
       then
-        makeCrefQual(id,ty,{},outCref);
+        ComponentReferenceBasics.makeCrefQual(id,ty,{},outCref);
 
     else inCref;
   end match;
@@ -2078,13 +2071,13 @@ algorithm
 
     case( DAE.CREF_QUAL(id,t2,subs,DAE.CREF_IDENT(_,_,_)))
       then
-        makeCrefIdent(id,t2,subs);
+        ComponentReferenceBasics.makeCrefIdent(id,t2,subs);
 
     case(DAE.CREF_QUAL(id,t2,subs,cr))
       algorithm
         cr1 := crefStripLastIdent(cr);
       then
-        makeCrefQual(id,t2,subs,cr1);
+        ComponentReferenceBasics.makeCrefQual(id,t2,subs,cr1);
   end matchcontinue;
 end crefStripLastIdent;
 
@@ -2106,7 +2099,7 @@ algorithm
     case DAE.CREF_IDENT(ident = ident, identType = ty,
       subscriptLst = subs as {DAE.INDEX(exp = DAE.CREF(componentRef = DAE.CREF_IDENT(ident = index)))})
       then
-        makeCrefIdent(ident, ty, if ("" == iter) or (index == iter) then {} else subs);
+        ComponentReferenceBasics.makeCrefIdent(ident, ty, if ("" == iter) or (index == iter) then {} else subs);
     case DAE.CREF_QUAL(ident = ident, identType = ty, componentRef = cref,
       subscriptLst = subs as {DAE.INDEX(exp = DAE.CREF(componentRef = DAE.CREF_IDENT(ident = index)))})
       algorithm
@@ -2116,11 +2109,11 @@ algorithm
           cref := crefStripIterSub(cref, iter);
         end if;
       then
-        makeCrefQual(ident, ty, subs, cref);
+        ComponentReferenceBasics.makeCrefQual(ident, ty, subs, cref);
     case DAE.CREF_QUAL(ident = ident, identType = ty, componentRef = cref,
       subscriptLst = subs)
       then
-        makeCrefQual(ident, ty, subs, crefStripIterSub(cref, iter));
+        ComponentReferenceBasics.makeCrefQual(ident, ty, subs, crefStripIterSub(cref, iter));
     else
       inComponentRef;
   end match;
@@ -2160,7 +2153,7 @@ algorithm
         lst_1 := List.stripLast(lst);
         id_1 := stringDelimitList(lst_1, "[");
       then
-        makeCrefIdent(id_1,t2,{});
+        ComponentReferenceBasics.makeCrefIdent(id_1,t2,{});
 
     case (cr) then cr;
 
@@ -2183,10 +2176,10 @@ protected
   DAE.Type ty;
 algorithm
   subs := crefLastSubs(cr);
-  cr_1 := crefStripLastSubs(cr);
-  crs := printComponentRefStr(cr_1);
+  cr_1 := ComponentReferenceBasics.crefStripLastSubs(cr);
+  crs := ComponentReferenceBasics.printComponentRefStr(cr_1);
   ty := crefLastType(cr) "The type of the stringified cr is taken from the last identifier";
-  outComponentRef := makeCrefIdent(crs,ty,subs);
+  outComponentRef := ComponentReferenceBasics.makeCrefIdent(crs,ty,subs);
 end stringifyComponentRef;
 
 /***************************************************/
@@ -2272,7 +2265,7 @@ public function printComponentRefListStr
   input list<DAE.ComponentRef> crs;
   output String res;
 algorithm
-  res := "{" + stringDelimitList(List.map(crs, printComponentRefStr), ",") + "}";
+  res := "{" + stringDelimitList(List.map(crs, ComponentReferenceBasics.printComponentRefStr), ",") + "}";
 end printComponentRefListStr;
 
 public function printComponentRefList
@@ -2280,7 +2273,7 @@ public function printComponentRefList
 protected
   String buffer;
 algorithm
-  buffer := "{" + stringDelimitList(List.map(crs, printComponentRefStr), ", ") + "}\n";
+  buffer := "{" + stringDelimitList(List.map(crs, ComponentReferenceBasics.printComponentRefStr), ", ") + "}\n";
   print(buffer);
 end printComponentRefList;
 
@@ -2488,7 +2481,7 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- ComponentReference.expandCref failed on " +
-          printComponentRefStr(inCref));
+          ComponentReferenceBasics.printComponentRefStr(inCref));
       then
         fail();
 
@@ -2604,7 +2597,7 @@ algorithm
         // Expand the rest of the cref.
         crefs := expandCref_impl(cref,expandRecord);
         // Append the head of this cref to all of the generated crefs.
-        crefs := list(makeCrefQual(id, ty, subs, c) for c in crefs);
+        crefs := list(ComponentReferenceBasics.makeCrefQual(id, ty, subs, c) for c in crefs);
       then
         crefs;
 
@@ -2665,7 +2658,7 @@ algorithm
 
   subslst := List.combination(subslst);
   for subs in subslst loop
-    outCrefs := makeCrefIdent(inId,inType,subs)::outCrefs;
+    outCrefs := ComponentReferenceBasics.makeCrefIdent(inId,inType,subs)::outCrefs;
   end for;
   outCrefs := listReverse(outCrefs);
 end expandCref2;
@@ -3103,7 +3096,7 @@ algorithm
   sub_str := ExpressionBasics.printExpStr(inSubscriptExp);
   dim_str := ExpressionBasics.dimensionString(inDimension);
   idx_str := intString(inIndex);
-  cref_str := printComponentRefStr(inCref);
+  cref_str := ComponentReferenceBasics.printComponentRefStr(inCref);
   Error.addSourceMessage(Error.ARRAY_INDEX_OUT_OF_BOUNDS,
     {sub_str, idx_str, dim_str, cref_str}, inInfo);
 end printSubscriptBoundsError;
@@ -3234,26 +3227,26 @@ protected
   list<DAE.Subscript> subs;
   constant Boolean debug = false;
 algorithm
-  if debug then print("inCref: " + printComponentRefStr(inCref) + "\n"); end if;
+  if debug then print("inCref: " + ComponentReferenceBasics.printComponentRefStr(inCref) + "\n"); end if;
 
   // move subs and and type to lastCref, to move type replace by last type
   // and move last cref type to the last cref.
   subs := crefLastSubs(inCref);
-  outCref := crefStripLastSubs(inCref);
+  outCref := ComponentReferenceBasics.crefStripLastSubs(inCref);
   outCref := replaceSubsWithString(outCref);
   if debug then print("after full type: " + TypesDump.printTypeStr(crefTypeFull(crefStripIterSub(outCref))) + "\n"); end if;
   outCref := crefSetLastType(outCref, DAE.T_UNKNOWN_DEFAULT);
   if debug then print("after strip: " + printComponentRefListStr(expandCref(outCref, true)) + "\n"); end if;
 
   // join crefs
-  outCref := joinCrefs(outCref, makeCrefIdent(DAE.partialDerivativeNamePrefix + inMatrixName, DAE.T_UNKNOWN_DEFAULT, {}));
+  outCref := joinCrefs(outCref, ComponentReferenceBasics.makeCrefIdent(DAE.partialDerivativeNamePrefix + inMatrixName, DAE.T_UNKNOWN_DEFAULT, {}));
   outCref := joinCrefs(outCref, inX);
   if debug then print("after join: " + printComponentRefListStr(expandCref(outCref, true)) + "\n"); end if;
 
   // fix subs and type of the last cref
   outCref := crefSetLastSubs(outCref, subs);
   outCref := crefSetLastType(outCref, crefLastType(inCref));
-  if debug then print("outCref: " + printComponentRefStr(outCref) + "\n"); end if;
+  if debug then print("outCref: " + ComponentReferenceBasics.printComponentRefStr(outCref) + "\n"); end if;
 end createDifferentiatedCrefName;
 
 public function isTime

@@ -44,7 +44,7 @@ encapsulated package AvlTreeCRToInt "AvlTree for String to Integer. New implemen
   redeclare type Value = Integer;
   redeclare function extends keyStr
   algorithm
-    outString := ComponentReference.printComponentRefStr(inKey);
+    outString := ComponentReferenceBasics.printComponentRefStr(inKey);
   end keyStr;
   redeclare function extends valueStr
   algorithm

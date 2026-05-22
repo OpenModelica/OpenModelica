@@ -257,7 +257,7 @@ algorithm
         repl:=meanValueReplacements2(repl,restVar,restVal);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-        Debug.trace("Add replacement for " + ComponentReference.printComponentRefStr(name) + " by " + value + "\n" );
+        Debug.trace("Add replacement for " + ComponentReferenceBasics.printComponentRefStr(name) + " by " + value + "\n" );
     end if;
 
       then repl;
@@ -269,7 +269,7 @@ algorithm
         repl:=meanValueReplacements2(repl,restVar,restVal);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-        Debug.trace("Add replacement for " + ComponentReference.printComponentRefStr(name) + " by " + value + "\n" );
+        Debug.trace("Add replacement for " + ComponentReferenceBasics.printComponentRefStr(name) + " by " + value + "\n" );
     end if;
       then repl;
     //replacements for negative reals
@@ -279,10 +279,10 @@ algorithm
         repl:=meanValueReplacements2(repl,restVar,restVal);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-        Debug.trace("Add replacement for " + ComponentReference.printComponentRefStr(name) + " by -" + value + "\n" );
+        Debug.trace("Add replacement for " + ComponentReferenceBasics.printComponentRefStr(name) + " by -" + value + "\n" );
     end if;
 
-        //Debug.fcall(Flags.CPP,print,"Add replacement for " + ComponentReference.printComponentRefStr(name) + " by -" + realString(value) + "\n" );
+        //Debug.fcall(Flags.CPP,print,"Add replacement for " + ComponentReferenceBasics.printComponentRefStr(name) + " by -" + realString(value) + "\n" );
 
       then repl;
     //replacements for negative integers
@@ -293,7 +293,7 @@ algorithm
         repl:=meanValueReplacements2(repl,restVar,restVal);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-        Debug.trace("Add replacement for " + ComponentReference.printComponentRefStr(name) + " by -" + value + "\n" );
+        Debug.trace("Add replacement for " + ComponentReferenceBasics.printComponentRefStr(name) + " by -" + value + "\n" );
     end if;
       then repl;
     case(repl,var::restVar,meanValue::restVal)
@@ -1722,7 +1722,7 @@ algorithm
         //first summand
         ((e,_)):=Expression.replaceExp(e1,e2,replExp);
         //make a variable for derivation
-        tmp:=ComponentReference.makeCrefIdent("linVar",DAE.T_UNKNOWN_DEFAULT,{});
+        tmp:=ComponentReferenceBasics.makeCrefIdent("linVar",DAE.T_UNKNOWN_DEFAULT,{});
         tmpExp:=Expression.crefExp(tmp);
         //second summand
         ((e3,_)):=Expression.replaceExp(e1,e2,tmpExp);

@@ -157,7 +157,7 @@ algorithm
     UnorderedMap.add(inSrc, NONE(), repl.hashTable);
     removeReplacementInv(repl.invHashTable, Util.getOption(dst_opt));
   else
-    Error.addInternalError("-BackendVarTransform.removeReplacement failed for " + ComponentReference.printComponentRefStr(inSrc) +"\n", sourceInfo());
+    Error.addInternalError("-BackendVarTransform.removeReplacement failed for " + ComponentReferenceBasics.printComponentRefStr(inSrc) +"\n", sourceInfo());
   end try;
 end removeReplacement;
 
@@ -227,9 +227,9 @@ algorithm
     case (_,src,dst,_)
       algorithm
         (REPLACEMENTS(ht,invHt,eht,iv,derConst),src,dst) := makeTransitive(repl, src, dst, inFuncTypeExpExpToBooleanOption);
-        /*s1 = ComponentReference.printComponentRefStr(src);
+        /*s1 = ComponentReferenceBasics.printComponentRefStr(src);
         s2 = ExpressionBasics.printExpStr(dst);
-        s3 = ComponentReference.printComponentRefStr(src_1);
+        s3 = ComponentReferenceBasics.printComponentRefStr(src_1);
         s4 = ExpressionBasics.printExpStr(dst_1);
         s = stringAppendList(
           {"add_replacement(",s1,", ",s2,") -> add_replacement(",s3,
@@ -244,7 +244,7 @@ algorithm
         REPLACEMENTS(ht,invHt,eht,iv,derConst);
     case (_,_,_,_)
       algorithm
-        s := ComponentReference.printComponentRefStr(inSrc);
+        s := ComponentReferenceBasics.printComponentRefStr(inSrc);
         print("-BackendVarTransform.addReplacement failed for " + s);
       then
         fail();
@@ -296,7 +296,7 @@ algorithm
         REPLACEMENTS(ht,invHt,eht,iv,derConst);
     else
       algorithm
-        print("-add_replacement failed for " + ComponentReference.printComponentRefStr(inSrc) + " = " + ExpressionBasics.printExpStr(inDst) + "\n");
+        print("-add_replacement failed for " + ComponentReferenceBasics.printComponentRefStr(inSrc) + " = " + ExpressionBasics.printExpStr(inDst) + "\n");
       then
         fail();
   end matchcontinue;
@@ -506,20 +506,20 @@ algorithm
       String s;
     case (_,DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_ARRAY()),NONE())
       algorithm
-        precr := ComponentReference.makeCrefIdent(ident,ty,{});
+        precr := ComponentReferenceBasics.makeCrefIdent(ident,ty,{});
         // update Replacements
         UnorderedSet.addUnique(precr, extendrepl);
       then extendrepl;
     case (_,DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_ARRAY()),SOME(pcr))
       algorithm
-        precr := ComponentReference.makeCrefIdent(ident,ty,{});
+        precr := ComponentReferenceBasics.makeCrefIdent(ident,ty,{});
         precr1 := ComponentReference.joinCrefs(pcr,precr);
         // update Replacements
         UnorderedSet.addUnique(precr1, extendrepl);
       then extendrepl;
     case (_,DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=varLst)),NONE())
       algorithm
-        precr := ComponentReference.makeCrefIdent(ident,ty,{});
+        precr := ComponentReferenceBasics.makeCrefIdent(ident,ty,{});
         // update Replacements
         UnorderedSet.addUnique(precr, extendrepl);
         // Create a list of crefs from names
@@ -528,7 +528,7 @@ algorithm
       then erepl;
     case (_,DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=varLst)),SOME(pcr))
       algorithm
-        _ := ComponentReference.makeCrefIdent(ident,ty,{});
+        _ := ComponentReferenceBasics.makeCrefIdent(ident,ty,{});
         precr1 := ComponentReference.joinCrefs(pcr,cr);
         // update Replacements
         UnorderedSet.addUnique(precr1, extendrepl);
@@ -538,13 +538,13 @@ algorithm
       then erepl;
     case (_,DAE.CREF_IDENT(ident=ident,identType=ty,subscriptLst=_::_),NONE())
       algorithm
-        precr := ComponentReference.makeCrefIdent(ident,ty,{});
+        precr := ComponentReferenceBasics.makeCrefIdent(ident,ty,{});
         // update Replacements
         UnorderedSet.addUnique(precr, extendrepl);
       then extendrepl;
     case (_,DAE.CREF_IDENT(ident=ident,identType=ty,subscriptLst=_::_),SOME(pcr))
       algorithm
-        precr := ComponentReference.makeCrefIdent(ident,ty,{});
+        precr := ComponentReferenceBasics.makeCrefIdent(ident,ty,{});
         precr1 := ComponentReference.joinCrefs(pcr,precr);
         // update Replacements
         UnorderedSet.addUnique(precr1, extendrepl);
@@ -554,38 +554,38 @@ algorithm
         extendrepl;
     case (_,DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),NONE())
       algorithm
-        precr := ComponentReference.makeCrefIdent(ident,ty,{});
+        precr := ComponentReferenceBasics.makeCrefIdent(ident,ty,{});
         // update Replacements
         UnorderedSet.addUnique(precr, extendrepl);
-        precrn := ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
+        precrn := ComponentReferenceBasics.makeCrefIdent(ident,ty,subscriptLst);
         erepl := addExtendReplacement(extendrepl,subcr,SOME(precrn));
       then erepl;
     case (_,DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),SOME(pcr))
       algorithm
-        precr := ComponentReference.makeCrefIdent(ident,ty,{});
+        precr := ComponentReferenceBasics.makeCrefIdent(ident,ty,{});
         precr1 := ComponentReference.joinCrefs(pcr,precr);
         // update Replacements
         UnorderedSet.addUnique(precr1, extendrepl);
-        precrn := ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
+        precrn := ComponentReferenceBasics.makeCrefIdent(ident,ty,subscriptLst);
         precrn1 := ComponentReference.joinCrefs(pcr,precrn);
         erepl := addExtendReplacement(extendrepl,subcr,SOME(precrn1));
       then erepl;
     // all other
     case (_,DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),NONE())
       algorithm
-        precrn := ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
+        precrn := ComponentReferenceBasics.makeCrefIdent(ident,ty,subscriptLst);
         erepl := addExtendReplacement(extendrepl,subcr,SOME(precrn));
       then erepl;
     case (_,DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),SOME(pcr))
       algorithm
-        precrn := ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
+        precrn := ComponentReferenceBasics.makeCrefIdent(ident,ty,subscriptLst);
         precrn1 := ComponentReference.joinCrefs(pcr,precrn);
         erepl := addExtendReplacement(extendrepl,subcr,SOME(precrn1));
       then erepl;
     case (_,_,_)
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
-        s := ComponentReference.printComponentRefStr(cr);
+        s := ComponentReferenceBasics.printComponentRefStr(cr);
         Debug.trace("- BackendVarTransform.addExtendReplacement failed for " + s);
       then extendrepl;
   end matchcontinue;
@@ -700,7 +700,7 @@ public function hasExtendReplacement "
   input DAE.ComponentRef src;
   output Boolean exists;
 algorithm
-  exists := UnorderedSet.contains(ComponentReference.crefStripLastSubs(src), repl.extendhashTable);
+  exists := UnorderedSet.contains(ComponentReferenceBasics.crefStripLastSubs(src), repl.extendhashTable);
 end hasExtendReplacement;
 
 protected function avoidDoubleHashLookup "
@@ -1602,7 +1602,7 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         msg := "BackendVarTransform: failed to replace left hand side of when equation " +
-              ComponentReference.printComponentRefStr(oldCr) + " with " + ExpressionBasics.printExpStr(inLhs) + "\n";
+              ComponentReferenceBasics.printComponentRefStr(oldCr) + " with " + ExpressionBasics.printExpStr(inLhs) + "\n";
         // print(msg + "\n");
         Debug.trace(msg);
       then
@@ -2051,7 +2051,7 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         msg := "BackendVarTransform: failed to replace left hand side of array assign statement " +
-              ComponentReference.printComponentRefStr(oldCr) + " with " + ExpressionBasics.printExpStr(lhs) + "\n";
+              ComponentReferenceBasics.printComponentRefStr(oldCr) + " with " + ExpressionBasics.printExpStr(lhs) + "\n";
         // print(msg + "\n");
         Debug.trace(msg);
       then
@@ -2462,7 +2462,7 @@ algorithm
   print(String(listLength(crefs)));
   print(")\n");
   print("========================================\n");
-  print(stringDelimitList(list(ComponentReference.printComponentRefStr(c) for c in crefs), "\n"));
+  print(stringDelimitList(list(ComponentReferenceBasics.printComponentRefStr(c) for c in crefs), "\n"));
   print("\n");
 end dumpExtendReplacements;
 
@@ -2493,7 +2493,7 @@ algorithm
   // optional exteded type debugging
   //str := ComponentReference.debugPrintComponentRefTypeStr(Util.tuple21(tpl)) + " -> " + ExpressionDump.debugPrintComponentRefExp(Util.tuple22(tpl));
   // Normal debugging, without type&dimension information on crefs.
-  str := ComponentReference.printComponentRefStr(Util.tuple21(tpl)) + " -> " + ExpressionBasics.printExpStr(Util.tuple22(tpl));
+  str := ComponentReferenceBasics.printComponentRefStr(Util.tuple21(tpl)) + " -> " + ExpressionBasics.printExpStr(Util.tuple22(tpl));
 end printReplacementTupleStr;
 
 public function getConstantReplacements"gets a clean replacement set containing only constant replacement rules"

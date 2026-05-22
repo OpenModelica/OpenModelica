@@ -280,7 +280,7 @@ protected function buildCurrentSimulationResultExp
 protected
   DAE.ComponentRef cref;
 algorithm
-  cref := ComponentReference.makeCrefIdent("currentSimulationResult",DAE.T_UNKNOWN_DEFAULT,{});
+  cref := ComponentReferenceBasics.makeCrefIdent("currentSimulationResult",DAE.T_UNKNOWN_DEFAULT,{});
   outExp := Expression.makeCrefExp(cref,DAE.T_UNKNOWN_DEFAULT);
 end buildCurrentSimulationResultExp;
 

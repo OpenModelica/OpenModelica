@@ -312,7 +312,7 @@ algorithm
     case (vn,DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()}),_,_,_,_,_,_,_,_,_,_,_,_,_)
       algorithm
         true := Config.splitArrays();
-        s := ComponentReference.printComponentRefStr(vn);
+        s := ComponentReferenceBasics.printComponentRefStr(vn);
         info := ElementSource.getElementSourceFileInfo(source);
         Error.addSourceMessage(Error.DIMENSION_NOT_KNOWN, {s}, info);
       then

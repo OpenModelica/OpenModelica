@@ -369,7 +369,7 @@ algorithm
         s1 := AbsynUtil.pathString(p1);
         sn := AbsynUtil.pathString(pn);
         _ := ExpressionBasics.printExpStr(iExp);
-        crstr := ComponentReference.printComponentRefStr(cr);
+        crstr := ComponentReferenceBasics.printComponentRefStr(cr);
         estr := "Expression for " + crstr + " out of min(" + s1 + ")/max(" + sn + ") = ";
         // iExp >= e1 and iExp <= en
         e := DAE.LBINARY(DAE.RELATION(iExp,DAE.GREATEREQ(DAE.T_INTEGER_DEFAULT),e1,-1,NONE()),DAE.AND(DAE.T_BOOL_DEFAULT),
@@ -1000,7 +1000,7 @@ protected function unifyFunCallsWork
      guard expHasCref(e1, X)
      algorithm
       tp := Expression.typeof(e1);
-      e2 := Expression.crefExp(ComponentReference.makeCrefIdent(BackendDAE.symSolverDT, DAE.T_REAL_DEFAULT, {}));
+      e2 := Expression.crefExp(ComponentReferenceBasics.makeCrefIdent(BackendDAE.symSolverDT, DAE.T_REAL_DEFAULT, {}));
       e3 := Expression.makePureBuiltinCall("pre", {e1}, tp);
       e3 := Expression.expSub(e1,e3);
       e := Expression.expDiv(e3,e2);
@@ -1491,7 +1491,7 @@ algorithm
 
     // $_DF$DER(x) = y  ->  (x - pre(x))/dt = y  ->  x = y*dt + pre(x)
     case "$_DF$DER" algorithm
-      e1 := Expression.crefExp(ComponentReference.makeCrefIdent(BackendDAE.symSolverDT, DAE.T_REAL_DEFAULT, {})); // dt
+      e1 := Expression.crefExp(ComponentReferenceBasics.makeCrefIdent(BackendDAE.symSolverDT, DAE.T_REAL_DEFAULT, {})); // dt
       exP := Expression.makePureBuiltinCall("pre", {arg}, Expression.typeof(arg)); // pre(x)
       e1 := Expression.expAdd(Expression.expMul(rhs, e1), exP); // y*dt + pre(x)
     then(e1, true, {}, {}, idepth + 1);
@@ -1913,7 +1913,7 @@ protected
 algorithm
   (oExp,_) := ExpressionSimplify.simplify1(iExp);
   if need or not (Expression.isCref(oExp) or Expression.isConst(oExp)) then
-    cr := ComponentReference.makeCrefIdent("$TMP$VAR$" + intString(index1) + "$" + intString(index2) + name, tp , {});
+    cr := ComponentReferenceBasics.makeCrefIdent("$TMP$VAR$" + intString(index1) + "$" + intString(index2) + name, tp , {});
     eqn := BackendDAE.SOLVED_EQUATION(cr, oExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
     oExp := Expression.crefExp(cr);
     oeqnForNewVars := eqn :: ieqnForNewVars;

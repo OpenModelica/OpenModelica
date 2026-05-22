@@ -640,7 +640,7 @@ algorithm
                                                              (collectPreVariablesTraverseExp, outHS) );
   //print("collectPreVariables:\n");
   //crefs := BaseHashSet.hashSetList(outHS);
-  //BackendDump.debuglst(crefs, ComponentReference.printComponentRefStr, "\n", "\n");
+  //BackendDump.debuglst(crefs, ComponentReferenceBasics.printComponentRefStr, "\n", "\n");
 end collectPreVariables;
 
 public function collectPreVariablesEqSystem
@@ -2516,7 +2516,7 @@ algorithm
       true := BackendVariable.varFixed(var);
       startExp := BackendVariable.varStartValueType(var);
 
-      s := ComponentReference.printComponentRefStr(cr);
+      s := ComponentReferenceBasics.printComponentRefStr(cr);
       str := ExpressionBasics.printExpStr(startExp);
 
       // e = Expression.crefExp(cr);
@@ -2540,7 +2540,7 @@ algorithm
       var := BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
       var := BackendVariable.setBindExp(var, NONE());
 
-      s := ComponentReference.printComponentRefStr(cr);
+      s := ComponentReferenceBasics.printComponentRefStr(cr);
       str := ExpressionBasics.printExpStr(bindExp);
       info := ElementSource.getElementSourceFileInfo(BackendVariable.getVarSource(var));
       Error.addSourceMessage(Error.UNFIXED_PARAMETER_WITH_BINDING, {s, s, str}, info);
@@ -2562,7 +2562,7 @@ algorithm
       NONE() := BackendVariable.varStartValueOption(var);
       var := BackendVariable.setVarStartValue(var, bindExp);
 
-      s := ComponentReference.printComponentRefStr(cr);
+      s := ComponentReferenceBasics.printComponentRefStr(cr);
       str := ExpressionBasics.printExpStr(bindExp);
       info := ElementSource.getElementSourceFileInfo(BackendVariable.getVarSource(var));
       Error.addSourceMessage(Error.UNFIXED_PARAMETER_WITH_BINDING_31, {s, s, str}, info);
@@ -2580,7 +2580,7 @@ algorithm
       var := BackendVariable.setBindExp(var, NONE());
       SOME(startExp) := BackendVariable.varStartValueOption(var);
 
-      s := ComponentReference.printComponentRefStr(cr);
+      s := ComponentReferenceBasics.printComponentRefStr(cr);
       str := ExpressionBasics.printExpStr(bindExp);
       sv := ExpressionBasics.printExpStr(startExp);
       info := ElementSource.getElementSourceFileInfo(BackendVariable.getVarSource(var));

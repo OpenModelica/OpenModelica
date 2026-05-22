@@ -1283,7 +1283,7 @@ algorithm
     /*/ debugging
     case (cache,env,cref)
       algorithm
-        print("CO: " + ComponentReference.printComponentRefStr(cref) + " env: " + FGraph.printGraphPathStr(env) + "\n");
+        print("CO: " + ComponentReferenceBasics.printComponentRefStr(cref) + " env: " + FGraph.printGraphPathStr(env) + "\n");
       then
         fail();*/
 
@@ -1309,7 +1309,7 @@ algorithm
     case (_,env,cref)
       algorithm
         fprintln(Flags.FAILTRACE,  "- Lookup.lookupVar failed:\n" +
-          ComponentReference.printComponentRefStr(cref) + " in:\n" +
+          ComponentReferenceBasics.printComponentRefStr(cref) + " in:\n" +
           FGraph.printGraphPathStr(env));
       then fail();*/
   end matchcontinue;
@@ -1353,7 +1353,7 @@ algorithm
     case (cache,env)
       algorithm
         // TODO: Skip makeCrefIdent by rewriting lookupVarInPackages
-        cref := ComponentReference.makeCrefIdent(ident, DAE.T_UNKNOWN_DEFAULT, ss);
+        cref := ComponentReferenceBasics.makeCrefIdent(ident, DAE.T_UNKNOWN_DEFAULT, ss);
         (cache,classEnv,attr,ty,binding,cnstForRange,splicedExpData,componentEnv,name) := lookupVarInPackages(cache,env,cref,{},Mutable.create(false));
         checkPackageVariableConstant(env,classEnv,componentEnv,attr,ty,cref);
         // optional Expression.exp to return
@@ -1386,14 +1386,14 @@ algorithm
       algorithm
         FCore.CL(e = cl) = FNode.refData(FGraph.lastScopeRef(classEnv));
         false = SCodeUtil.isPackage(cl);
-        // print("cref:  " + ComponentReference.printComponentRefStr(cref) + "\nprenv: " + FGraph.getGraphNameStr(parentEnv) + "\nclenv: " + FGraph.getGraphNameStr(classEnv) + "\ncoenv: " + FGraph.getGraphNameStr(componentEnv) + "\n");
+        // print("cref:  " + ComponentReferenceBasics.printComponentRefStr(cref) + "\nprenv: " + FGraph.getGraphNameStr(parentEnv) + "\nclenv: " + FGraph.getGraphNameStr(classEnv) + "\ncoenv: " + FGraph.getGraphNameStr(componentEnv) + "\n");
       then
         ();*/
 
     // fail if is not a constant
     else
       algorithm
-        s1 := ComponentReference.printComponentRefStr(cref);
+        s1 := ComponentReferenceBasics.printComponentRefStr(cref);
         s2 := FGraph.printGraphPathStr(classEnv);
         Error.addMessage(Error.PACKAGE_VARIABLE_NOT_CONSTANT,{s1,s2});
         true := Flags.isSet(Flags.FAILTRACE);
@@ -1621,7 +1621,7 @@ algorithm
               else // not an instance, instantiate it - lookup of constants on form A.B in packages. instantiate package and look inside.
                 env3 := FGraph.openScope(env2, encflag, n, FGraph.restrictionToScopeType(r));
                 ci_state := ClassInfUtil.start(r, FGraph.getGraphName(env3));
-                // fprintln(Flags.INST_TRACE, "LOOKUP VAR IN PACKAGES ICD: " + FGraph.printGraphPathStr(env3) + " var: " + ComponentReference.printComponentRefStr(cref));
+                // fprintln(Flags.INST_TRACE, "LOOKUP VAR IN PACKAGES ICD: " + FGraph.printGraphPathStr(env3) + " var: " + ComponentReferenceBasics.printComponentRefStr(cref));
                 mod := Mod.getClassModifier(env2, n);
                 (cache,env5,_,_,_,_,_,_,_,_,_,_) :=
                   Inst.instClassIn(cache,env3,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
@@ -1665,7 +1665,7 @@ algorithm
     else
       algorithm
         //true = Flags.isSet(Flags.FAILTRACE);
-        //Debug.traceln("- Lookup.lookupVarInPackages failed on exp:" + ComponentReference.printComponentRefStr(cr) + " in scope: " + FGraph.printGraphPathStr(env));
+        //Debug.traceln("- Lookup.lookupVarInPackages failed on exp:" + ComponentReferenceBasics.printComponentRefStr(cr) + " in scope: " + FGraph.printGraphPathStr(env));
       then
         fail();
   end matchcontinue;
@@ -1783,7 +1783,7 @@ algorithm
     else
       algorithm
         //true = Flags.isSet(Flags.FAILTRACE);
-        //Debug.traceln("- Lookup.lookupVarInPackages failed on exp:" + ComponentReference.printComponentRefStr(cr) + " in scope: " + FGraph.printGraphPathStr(env));
+        //Debug.traceln("- Lookup.lookupVarInPackages failed on exp:" + ComponentReferenceBasics.printComponentRefStr(cr) + " in scope: " + FGraph.printGraphPathStr(env));
       then
         fail();
   end matchcontinue;
@@ -3174,7 +3174,7 @@ algorithm
                     ty := sliceDimensionType(ty1,tyChild);
                     ty2_2 := Types.simplifyType(tyParent);
                     ss := addArrayDimensions(ty2_2,ss);
-                    xCref := ComponentReference.makeCrefQual(id,ty2_2,ss,tCref);
+                    xCref := ComponentReferenceBasics.makeCrefQual(id,ty2_2,ss,tCref);
                     eType := Types.simplifyType(ty);
                     splicedExp := Expression.makeCrefExp(xCref,eType);
                   then SOME(splicedExp);
@@ -3219,7 +3219,7 @@ algorithm
   ty_1 := checkSubscripts(ty, ss);
   tty := Types.simplifyType(ty);
   ss_1 := addArrayDimensions(tty,ss);
-  splicedExpData := InstTypes.SPLICEDEXPDATA(SOME(Expression.makeCrefExp(ComponentReference.makeCrefIdent(ident,tty,ss_1),tty)),ty);
+  splicedExpData := InstTypes.SPLICEDEXPDATA(SOME(Expression.makeCrefExp(ComponentReferenceBasics.makeCrefIdent(ident,tty,ss_1),tty)),ty);
 end lookupVarFIdent;
 
 
@@ -3298,14 +3298,14 @@ algorithm
         tyElement := Types.arrayElementType(inParentType);
         true := Types.isRecord(tyElement);
 
-        // print("CREF EB: " + ComponentReference.printComponentRefStr(inCref) + "\nTyParent: " + TypesDump.printTypeStr(inParentType) + "\nParent:\n" + TypesDump.printBindingStr(inParentBinding) + "\nChild:\n" + TypesDump.printBindingStr(inChildBinding) + "\n");
+        // print("CREF EB: " + ComponentReferenceBasics.printComponentRefStr(inCref) + "\nTyParent: " + TypesDump.printTypeStr(inParentType) + "\nParent:\n" + TypesDump.printBindingStr(inParentBinding) + "\nChild:\n" + TypesDump.printBindingStr(inChildBinding) + "\n");
 
         DAE.RECORD(_, exps, comp, _) := Expression.applyExpSubscripts(e, ss);
 
         e := listGet(exps, List.position(cId, comp));
         b := DAE.EQBOUND(e, NONE(), c, s);
 
-        // print("CREF EB RESULT: " + ComponentReference.printComponentRefStr(inCref) + "\nBinding:\n" + TypesDump.printBindingStr(b) + "\n");
+        // print("CREF EB RESULT: " + ComponentReferenceBasics.printComponentRefStr(inCref) + "\nBinding:\n" + TypesDump.printBindingStr(b) + "\n");
       then
         b;
 
@@ -3325,14 +3325,14 @@ algorithm
         true := Types.isArray(inParentType);
         tyElement := Types.arrayElementType(inParentType);
         true := Types.isRecord(tyElement);
-        // print("CREF VB: " + ComponentReference.printComponentRefStr(inCref) + "\nTyParent: " + TypesDump.printTypeStr(inParentType) + "\nParent:\n" + TypesDump.printBindingStr(inParentBinding) + "\nChild:\n" + TypesDump.printBindingStr(inChildBinding) + "\n");
+        // print("CREF VB: " + ComponentReferenceBasics.printComponentRefStr(inCref) + "\nTyParent: " + TypesDump.printTypeStr(inParentType) + "\nParent:\n" + TypesDump.printBindingStr(inParentBinding) + "\nChild:\n" + TypesDump.printBindingStr(inChildBinding) + "\n");
         e := ValuesUtil.valueExp(v);
         DAE.RECORD(_, exps, comp, _) := Expression.applyExpSubscripts(e, ss);
 
         e := listGet(exps, List.position(cId, comp));
 
         b := DAE.EQBOUND(e, NONE(), DAE.C_CONST(), s);
-        // print("CREF VB RESULT: " + ComponentReference.printComponentRefStr(inCref) + "\nBinding:\n" + TypesDump.printBindingStr(b) + "\n");
+        // print("CREF VB RESULT: " + ComponentReferenceBasics.printComponentRefStr(inCref) + "\nBinding:\n" + TypesDump.printBindingStr(b) + "\n");
       then
         b;
 

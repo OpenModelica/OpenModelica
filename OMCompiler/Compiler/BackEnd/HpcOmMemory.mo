@@ -1046,7 +1046,7 @@ import Util;
       end if;
       //  print("addVarsToThreadCL: adding variable '" + intString(listLength(cacheVariables)) + "'\n");
       SOME(cacheVariable as SimCodeVar.SIMVAR(name=cacheVarName)) := arrayGet(allSCVarsMapping, varIdx);
-      //print("addVarsToThreadCL: Variable " + ComponentReference.printComponentRefStr(cacheVarName) + " has type " + intString(varDataType) + "\n");
+      //print("addVarsToThreadCL: Variable " + ComponentReferenceBasics.printComponentRefStr(cacheVarName) + " has type " + intString(varDataType) + "\n");
 
       //print("addVarsToThreadCL: adding variable '" + intString(listLength(cacheVariables)) + "' [" + dumpSimCodeVar(cacheVariable) + "] to cache line map '" + intString(lastCLidx) + "'\n");
       //print("\t\t\t\taddVarsToThreadCL: cacheVariable found.\n");
@@ -1610,7 +1610,7 @@ import Util;
     filledCacheLines := iFilledCacheLines;
     for var in iVariables loop
       SimCodeVar.SIMVAR(name=name) := var;
-      nameStr := ComponentReference.printComponentRefStr(name);
+      nameStr := ComponentReferenceBasics.printComponentRefStr(name);
       if(boolAnd(intLt(currentScVarIdx, arrayLength(iSimCodeVarTypes)), intLt(currentScVarIdx, arrayLength(iScVarCLMapping)))) then
         ((varDataType, varSize, _)) := arrayGet(iSimCodeVarTypes, currentScVarIdx + iRealScVarIdxStart);
 
@@ -2538,7 +2538,7 @@ import Util;
           varInfo := BaseHashTable.get(componentRef, iHashTable);
           varIdx := listHead(varInfo) + List.second(varInfo);
           //print("createMemoryMapTraverse0 " + intString(varIdx) + "\n");
-          //print("HpcOmSimCode.createMemoryMapTraverse: Found ref " + ComponentReference.printComponentRefStr(componentRef) + " with Index: " + intString(varIdx) + "\n");
+          //print("HpcOmSimCode.createMemoryMapTraverse: Found ref " + ComponentReferenceBasics.printComponentRefStr(componentRef) + " with Index: " + intString(varIdx) + "\n");
           //ExpressionDump.dumpExp(iExp);
           oVarList := varIdx :: iVarList;
         then (iExp,(iHashTable,oVarList));
@@ -2593,7 +2593,7 @@ import Util;
           BackendDAE.VAR(varName=varName) := var;
           varName := getModifiedVarName(var);
           scVarValues := BaseHashTable.get(varName,iVarNameSCVarIdxMapping);
-          varNameString := ComponentReference.printComponentRefStr(varName);
+          varNameString := ComponentReferenceBasics.printComponentRefStr(varName);
           //print("getSimCodeVarNodeMapping0: SCC-Idx: " + intString(compIdx) + " name: " + varNameString + "\n");
           scVarIdx := listHead(scVarValues);
           scVarOffset := List.second(scVarValues);
@@ -2602,7 +2602,7 @@ import Util;
           //oldVal = arrayGet(iClTaskMapping,clIdx);
           //print("getCacheLineTaskMadumpComponentReferencepping0 scVarIdx: " + intString(scVarIdx) + "\n");
           iScVarTaskMapping := arrayUpdate(iScVarTaskMapping,scVarIdx,nodeIdx);
-          //print("Variable " + intString(varIdx) + " (" + ComponentReference.printComponentRefStr(varName) + ") [SC-Var " + intString(scVarIdx) + "]: Node " + intString(nodeIdx) + "\n---------------------\n");
+          //print("Variable " + intString(varIdx) + " (" + ComponentReferenceBasics.printComponentRefStr(varName) + ") [SC-Var " + intString(scVarIdx) + "]: Node " + intString(nodeIdx) + "\n---------------------\n");
           //print("Part of CL " + intString(clIdx) + " solved by node " + intString(nodeIdx) + "\n\n");
         then ((iScVarTaskMapping,varIdx+1));
       case(_,_,_,_,(iScVarTaskMapping,varIdx))
@@ -2763,7 +2763,7 @@ import Util;
           iClTaskMapping := arrayUpdate(iClTaskMapping,clIdx,nodeIdx::oldVal);
           //print("getCacheLineTaskMapping0 scVarIdx: " + intString(scVarIdx) + "\n");
           iScVarTaskMapping := arrayUpdate(iScVarTaskMapping,scVarIdx,nodeIdx);
-          //print("Variable " + intString(varIdx) + " (" + ComponentReference.printComponentRefStr(varName) + ") [SC-Var " + intString(scVarIdx) + "]\n---------------------\n");
+          //print("Variable " + intString(varIdx) + " (" + ComponentReferenceBasics.printComponentRefStr(varName) + ") [SC-Var " + intString(scVarIdx) + "]\n---------------------\n");
           //print("Part of CL " + intString(clIdx) + " solved by node " + intString(nodeIdx) + "\n\n");
         then ((iClTaskMapping,iScVarTaskMapping,varIdx+1));
       case(_,_,_,_,(iClTaskMapping,iScVarTaskMapping,varIdx))
@@ -2932,7 +2932,7 @@ import Util;
       if(isSome(simVarOpt)) then
         simVar := Util.getOption(simVarOpt);
         varCompRef := simVar.name;
-        description :=  ComponentReference.printComponentRefStr(varCompRef);
+        description :=  ComponentReferenceBasics.printComponentRefStr(varCompRef);
         isValidVar := BaseHashTable.hasKey(varCompRef, iVarNameSCVarIdxMapping);
 
         if(BaseHashTable.hasKey(varCompRef, iVarNameSCVarIdxMapping)) then
@@ -3062,13 +3062,13 @@ import Util;
     if(intGe(arrayLength(iCacheVariables) - scVarIdx + 1, 1)) then
       iVar := arrayGet(iCacheVariables, arrayLength(iCacheVariables) - scVarIdx + 1);
       SimCodeVar.SIMVAR(name=name) := iVar;
-      //print("Var with name " + ComponentReference.printComponentRefStr(name) + " found. ScVar-Idx: " + intString(scVarIdx) + "\n");
+      //print("Var with name " + ComponentReferenceBasics.printComponentRefStr(name) + " found. ScVar-Idx: " + intString(scVarIdx) + "\n");
       if(BaseHashTable.hasKey(name, iVarNameSCVarIdxMapping)) then
         realScVarIdxOffset := BaseHashTable.get(name, iVarNameSCVarIdxMapping);
         realScVarIdx := listGet(realScVarIdxOffset,1);
         realScVarOffset := listGet(realScVarIdxOffset,2);
         realScVarIdx := realScVarIdx + realScVarOffset;
-        varString := ComponentReference.printComponentRefStr(name);
+        varString := ComponentReferenceBasics.printComponentRefStr(name);
         taskIdx := arrayGet(iScVarTaskMapping,realScVarIdx);
         //print("HpcOmSimCode.appendCacheLineNodesToGraphTraverse SCVarNode: " + intString(realScVarIdx) + " [" + varString + "] sccIdx: " + intString(taskIdx) + "\n");
         //print("HpcOmSimCode.appendCacheLineNodesToGraphTraverse ThreadOwner: " + intString(threadOwner) + "\n");
@@ -3231,7 +3231,7 @@ import Util;
     DAE.ComponentRef name;
   algorithm
     SimCodeVar.SIMVAR(name=name) := iVar;
-    oString := ComponentReference.printComponentRefStr(name);
+    oString := ComponentReferenceBasics.printComponentRefStr(name);
   end dumpSimCodeVar;
 
   protected function printNodeSimCodeVarMapping
@@ -3378,7 +3378,7 @@ import Util;
     //print("============================================\n");
     tmpCrefs := expandCref(iCref, iNumArrayElems);
     //for cref in tmpCrefs loop
-    //  print(ComponentReference.printComponentRefStr(cref) + "\n");
+    //  print(ComponentReferenceBasics.printComponentRefStr(cref) + "\n");
     //end for;
     oSubscriptList := List.map(tmpCrefs, ComponentReference.crefLastSubs);
   end getSubscriptListOfArrayCref;
@@ -3393,15 +3393,15 @@ import Util;
     DAE.ComponentRef cref;
   algorithm
     cref := removeSubscripts(iCref);
-    //print("expandCref: " + ComponentReference.printComponentRefStr(cref) + "\n");
+    //print("expandCref: " + ComponentReferenceBasics.printComponentRefStr(cref) + "\n");
     dims := getCrefDims(iCref);
     //print("expandCref: iNumArrayElems=" + stringDelimitList(iNumArrayElems, ",") + "\n");
     dimElemCount := getDimElemCount(listReverse(iNumArrayElems),dims);
     //print("expandCref: numArrayElems " + intString(getNumArrayElems(iNumArrayElems, getCrefDims(iCref))) + "\n");
     elems := List.reduce(dimElemCount, intMul);
-    //print("expandCref: " + ComponentReference.printComponentRefStr(iCref) + " dims: " + intString(dims) + " elems: " + intString(elems) + "\n");
+    //print("expandCref: " + ComponentReferenceBasics.printComponentRefStr(iCref) + " dims: " + intString(dims) + " elems: " + intString(elems) + "\n");
     dims := listLength(iNumArrayElems);
-    //print("expandCref: " + ComponentReference.printComponentRefStr(iCref) + " dims: " + intString(dims) + "[" + intString(getCrefDims(iCref)) + "] elems: " + intString(elems) + "\n");
+    //print("expandCref: " + ComponentReferenceBasics.printComponentRefStr(iCref) + " dims: " + intString(dims) + "[" + intString(getCrefDims(iCref)) + "] elems: " + intString(elems) + "\n");
     oCrefs := expandCref1(cref, elems, dimElemCount);
   end expandCref;
 
@@ -3514,7 +3514,7 @@ import Util;
         then tmpCrefs;
       else
         algorithm
-          //print("expandCref1: " + ComponentReference.printComponentRefStr(iCref) + " elems: " + intString(iElems) + " dims: " + intString(listLength(iDimElemCount)) + "\n");
+          //print("expandCref1: " + ComponentReferenceBasics.printComponentRefStr(iCref) + " elems: " + intString(iElems) + " dims: " + intString(listLength(iDimElemCount)) + "\n");
           idxList := List.intRange(List.reduce(iDimElemCount, intMul));
           //print("expandCref1 idxList-count: " + intString(listLength(idxList)) + "\n");
           //ComponentReference.printComponentRefList(List.map2(idxList, createArrayIndexCref, iDimElemCount, iCref));
@@ -3549,21 +3549,21 @@ import Util;
       case(_,_,(DAE.CREF_QUAL(ident,identType,subscriptLst,componentRef),1)) //the first dimension represents the last c-array-index
         algorithm
           true := intLe(1, listLength(iDimElemCount));
-          //print("createArrayIndexCref_impl case1 " + ComponentReference.printComponentRefStr(Util.tuple21(iRefCurrentDim)) + " currentDim " + intString(1) + "\n");
+          //print("createArrayIndexCref_impl case1 " + ComponentReferenceBasics.printComponentRefStr(Util.tuple21(iRefCurrentDim)) + " currentDim " + intString(1) + "\n");
           ((componentRef,_)) := createArrayIndexCref_impl(iIdx, iDimElemCount, (componentRef,1));
         then ((DAE.CREF_QUAL(ident,identType,subscriptLst,componentRef),2));
 
       case(_,_,(DAE.CREF_QUAL(ident,identType,subscriptLst,componentRef),currentDim))
         algorithm
           true := intLe(currentDim, listLength(iDimElemCount));
-          //print("createArrayIndexCref_impl case2 " + ComponentReference.printComponentRefStr(Util.tuple21(iRefCurrentDim)) + " currentDim " + intString(currentDim) + "\n");
+          //print("createArrayIndexCref_impl case2 " + ComponentReferenceBasics.printComponentRefStr(Util.tuple21(iRefCurrentDim)) + " currentDim " + intString(currentDim) + "\n");
           ((componentRef,_)) := createArrayIndexCref_impl(iIdx, iDimElemCount, (componentRef,currentDim));
         then ((DAE.CREF_QUAL(ident,identType,subscriptLst,componentRef),currentDim+1));
 
       case(_,_,(DAE.CREF_IDENT(ident,identType,subscriptLst),1))
         algorithm
           true := intLe(1, listLength(iDimElemCount));
-          //print("createArrayIndexCref_impl case3 | len(subscriptList)= " + intString(listLength(subscriptLst)) + " " + ComponentReference.printComponentRefStr(Util.tuple21(iRefCurrentDim)) + " currentDim " + intString(1) + "\n");
+          //print("createArrayIndexCref_impl case3 | len(subscriptList)= " + intString(listLength(subscriptLst)) + " " + ComponentReferenceBasics.printComponentRefStr(Util.tuple21(iRefCurrentDim)) + " currentDim " + intString(1) + "\n");
           idxValue := intMod(iIdx-1,listHead(iDimElemCount)) + 1;
           subscriptLst := DAE.INDEX(DAE.ICONST(idxValue))::subscriptLst;
         then createArrayIndexCref_impl(iIdx, iDimElemCount, (DAE.CREF_IDENT(ident,identType,subscriptLst),2));
@@ -3574,7 +3574,7 @@ import Util;
           //dimElemsPre = List.reduce(List.sublist(iDimElemCount, listLength(iDimElemCount) - currentDim + 2, currentDim - 1), intMul);
           //print("createArrayIndexCref_impl case4: listLen=" + intString(listLength(iDimElemCount)) + " currentDim= " + intString(currentDim) + "\n");
           dimElemsPre := List.reduce(List.sublist(iDimElemCount, 1, listLength(iDimElemCount) - currentDim + 1), intMul);
-          //print("createArrayIndexCref_impl case4 | len(subscriptList)= " + intString(listLength(subscriptLst)) + " " + ComponentReference.printComponentRefStr(Util.tuple21(iRefCurrentDim)) + " currentDim " + intString(currentDim) + " dimElemsPre: " + intString(dimElemsPre) + "\n");
+          //print("createArrayIndexCref_impl case4 | len(subscriptList)= " + intString(listLength(subscriptLst)) + " " + ComponentReferenceBasics.printComponentRefStr(Util.tuple21(iRefCurrentDim)) + " currentDim " + intString(currentDim) + " dimElemsPre: " + intString(dimElemsPre) + "\n");
           dimElems := listGet(iDimElemCount, currentDim);
           idxValue := intMod(intDiv(iIdx - 1, dimElemsPre),dimElems) + 1;
           //print("createArrayIndexCref_impl case4 idxValue=" + intString(idxValue) + "\n");

@@ -41,7 +41,7 @@ encapsulated package AvlSetCR
   redeclare type Key = DAE.ComponentRef;
   redeclare function extends keyStr
   algorithm
-    outString := ComponentReference.printComponentRefStr(inKey);
+    outString := ComponentReferenceBasics.printComponentRefStr(inKey);
   end keyStr;
   redeclare function extends keyCompare
   algorithm

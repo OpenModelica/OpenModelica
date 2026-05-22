@@ -849,7 +849,7 @@ algorithm
     case (DAE.CREF(componentRef=cr))
       algorithm
         ty := ComponentReference.crefLastType(cr);
-        cr_1 := ComponentReference.crefStripLastSubs(cr);
+        cr_1 := ComponentReferenceBasics.crefStripLastSubs(cr);
         e := makeCrefExp(cr_1, ty);
       then
         e;
@@ -914,7 +914,7 @@ algorithm
 
     case (DAE.CREF(cr,t),_)
       algorithm
-        cr1 := ComponentReference.crefStripLastSubs(cr);
+        cr1 := ComponentReferenceBasics.crefStripLastSubs(cr);
         subs := ComponentReference.crefLastSubs(cr);
         cr2 := ComponentReference.subscriptCref(cr1,subscr::subs);
         e := makeCrefExp(cr2, t);
@@ -3326,7 +3326,7 @@ algorithm
           tExisting := ComponentReference.crefLastType(cref);
           if not valueEq(tGiven, tExisting)
           then // type not the same
-            Debug.traceln("Warning: Expression.makeCrefExp: cref " + ComponentReference.printComponentRefStr(cref) + " was given type DAE.CREF.ty: " +
+            Debug.traceln("Warning: Expression.makeCrefExp: cref " + ComponentReferenceBasics.printComponentRefStr(cref) + " was given type DAE.CREF.ty: " +
                       TypesDump.unparseType(tGiven) +
                       " is different from existing DAE.CREF.componentRef.ty: " +
                       TypesDump.unparseType(tExisting));
@@ -6470,7 +6470,7 @@ algorithm
 
     case (DAE.CALL(path= Absyn.IDENT("der"),expLst={DAE.CREF(componentRef = cr1)}), (cr,false))
       algorithm
-        b := ComponentReference.crefPrefixOf(cr,cr1);
+        b := ComponentReferenceBasics.crefPrefixOf(cr,cr1);
       then (inExp,not b,if b then (cr,b) else inTpl);
 
     case (_,(_,b)) then (inExp,not b,inTpl);
@@ -6604,7 +6604,7 @@ algorithm
 /* Not reachable...
     case (DAE.CREF(componentRef = cr1), (cr,false))
       algorithm
-        b = ComponentReference.crefPrefixOf(cr1,cr);
+        b = ComponentReferenceBasics.crefPrefixOf(cr1,cr);
       then (inExp,not b,(cr,b));
 */
     case (_,(_,b)) then (inExp,not b,inTpl);

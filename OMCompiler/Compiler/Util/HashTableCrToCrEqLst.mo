@@ -100,7 +100,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReference.hashComponentRef,ComponentReferenceBasics.crefEqual,ComponentReference.printComponentRefStr,printTupleComponentRefEqListStr));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReference.hashComponentRef,ComponentReferenceBasics.crefEqual,ComponentReferenceBasics.printComponentRefStr,printTupleComponentRefEqListStr));
 end emptyHashTableSized;
 
 public function printTupleComponentRefEqListStr
@@ -118,7 +118,7 @@ protected
   BackendDAE.Equation eq;
 algorithm
   (cr, eq) := cr_eq;
-  res := "{" + ComponentReference.printComponentRefStr(cr) + "," + BackendDump.equationString(eq)  + "}";
+  res := "{" + ComponentReferenceBasics.printComponentRefStr(cr) + "," + BackendDump.equationString(eq)  + "}";
 end printTupleComponentRefEqStr;
 
 annotation(__OpenModelica_Interface="backend");

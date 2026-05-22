@@ -1737,7 +1737,7 @@ algorithm
       algorithm
         crefPrefix := PrefixUtil.prefixAdd(inSourceName,{},{},inPrefix,SCode.CONST(),ClassInf.UNKNOWN(Absyn.IDENT("")), Absyn.dummyInfo); // variability doesn't matter
 
-        // name = inTargetClassName + "$" + ComponentReference.printComponentRefStr(PrefixUtil.prefixToCref(crefPrefix));
+        // name = inTargetClassName + "$" + ComponentReferenceBasics.printComponentRefStr(PrefixUtil.prefixToCref(crefPrefix));
         name := inTargetClassName + "$" + AbsynUtil.pathString(AbsynUtil.stringListPath(listReverse(AbsynUtil.pathToStringList(PrefixUtil.prefixToPath(crefPrefix)))), "$", usefq=false)
                ; // + "$" + AbsynUtil.pathString2NoLeadingDot(getGraphName(inSourceEnv), "$");
         // name = "'$" + inTargetClassName + "@" + AbsynUtil.pathString(AbsynUtil.stringListPath(listReverse(AbsynUtil.pathToStringList(PrefixUtil.prefixToPath(crefPrefix))))) + "'";

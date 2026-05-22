@@ -115,7 +115,7 @@ algorithm
   i := tick();
   is := intString(i);
   s := stringAppend("__TMP__", is);
-  outComponentRef := ComponentReference.makeCrefIdent(s,DAE.T_UNKNOWN_DEFAULT,{});
+  outComponentRef := ComponentReferenceBasics.makeCrefIdent(s,DAE.T_UNKNOWN_DEFAULT,{});
 end newIdent;
 
 protected function isNotFunction
@@ -525,13 +525,13 @@ algorithm
         fail();
 
     case(DAE.CREF_QUAL(name,(ty as DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_))),subs,_))
-      then ComponentReference.makeCrefIdent(name,ty,subs);
+      then ComponentReferenceBasics.makeCrefIdent(name,ty,subs);
 
     case(DAE.CREF_QUAL(name,ty,subs,child))
       algorithm
         child := extractConnectorPrefix(child);
       then
-        ComponentReference.makeCrefQual(name,ty,subs,child);
+        ComponentReferenceBasics.makeCrefQual(name,ty,subs,child);
 
   end matchcontinue;
 end extractConnectorPrefix;
@@ -551,17 +551,17 @@ algorithm outCref := matchcontinue(cr1,cr2)
     algorithm
       true := stringEq(name,name2);
     then
-      ComponentReference.makeCrefQual(name,ty,subs,child2);
+      ComponentReferenceBasics.makeCrefQual(name,ty,subs,child2);
 
   case (DAE.CREF_QUAL(name,ty,subs,child),DAE.CREF_QUAL(name2,_,_,child2))
     algorithm
       true := stringEq(name,name2);
       outCref := updateCrefTypesWithConnectorPrefix(child,child2);
     then
-      ComponentReference.makeCrefQual(name,ty,subs,outCref);
+      ComponentReferenceBasics.makeCrefQual(name,ty,subs,outCref);
   else
     algorithm
-      print(" ***** FAILURE with " + ComponentReference.printComponentRefStr(cr1) + " _and_ " + ComponentReference.printComponentRefStr(cr2) + "\n");
+      print(" ***** FAILURE with " + ComponentReferenceBasics.printComponentRefStr(cr1) + " _and_ " + ComponentReferenceBasics.printComponentRefStr(cr2) + "\n");
     then fail();
   end matchcontinue;
 end updateCrefTypesWithConnectorPrefix;
@@ -1029,7 +1029,7 @@ algorithm
     case(_, SOME(cr), _, _, _, _, _, _)
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- InstUtil.extractConstantPlusDeps failure to find " + ComponentReference.printComponentRefStr(cr) + ", returning \n");
+        Debug.trace("- InstUtil.extractConstantPlusDeps failure to find " + ComponentReferenceBasics.printComponentRefStr(cr) + ", returning \n");
         Debug.trace("- InstUtil.extractConstantPlusDeps elements to instantiate:" + intString(listLength(inComps)) + "\n");
       then fail(); // TODO: This used to return the input only if failtrace was set; should it always succeed?
   end matchcontinue;
@@ -1079,7 +1079,7 @@ algorithm
     case(_, SOME(cr), _, _)
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- InstUtil.extractConstantPlusDeps failure to find " + ComponentReference.printComponentRefStr(cr) + ", returning \n");
+        Debug.trace("- InstUtil.extractConstantPlusDeps failure to find " + ComponentReferenceBasics.printComponentRefStr(cr) + ", returning \n");
         Debug.trace("- InstUtil.extractConstantPlusDeps elements to instantiate:" + intString(listLength(inComps)) + "\n");
       then fail(); // TODO: This used to return the input only if failtrace was set; should it always succeed?
   end matchcontinue;
@@ -1111,7 +1111,7 @@ algorithm
 
     case({},SOME(_),_,_,_)
       algorithm
-        //print(" failure to find: " + ComponentReference.printComponentRefStr(cr) + " in scope: " + className + "\n");
+        //print(" failure to find: " + ComponentReferenceBasics.printComponentRefStr(cr) + " in scope: " + className + "\n");
       then {};
     case({},_,_,_,_) then fail();
     case (_,NONE(),_,_,_) then inComps;
@@ -1216,7 +1216,7 @@ algorithm outComps := matchcontinue(inAcrefs,remainingComps,className,inExisting
       extractConstantPlusDeps3(acrefs,remainingComps,className,existing);
   case(Absyn.CREF_IDENT(s1,_)::acrefs,_,_,existing)
     algorithm
-      cref_ := ComponentReference.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{});
+      cref_ := ComponentReferenceBasics.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{});
       localComps := extractConstantPlusDeps2(remainingComps,SOME(cref_),{},className,existing);
       names := SCodeUtil.componentNamesFromElts(localComps);
       existing := listAppend(names,existing);
@@ -3035,7 +3035,7 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- InstUtil.moveBindings failed on " +
-            ComponentReference.printComponentRefStr(cref));
+            ComponentReferenceBasics.printComponentRefStr(cref));
       then
         fail();
 
@@ -3725,7 +3725,7 @@ algorithm
     else
       algorithm
         s1 := Dump.directionSymbol(inDirection);
-        s2 := ComponentReference.printComponentRefStr(inCref);
+        s2 := ComponentReferenceBasics.printComponentRefStr(inCref);
         s3 := DAEDump.dumpDirectionStr(inVarDirection);
         Error.addSourceMessage(Error.COMPONENT_INPUT_OUTPUT_MISMATCH,
           {s1, s2, s3}, inInfo);
@@ -3772,7 +3772,7 @@ algorithm
         daeprl2 := DAEUtil.scodePrlToDaePrl(inParallelism);
 
         s1 := DAEDump.dumpVarParallelismStr(daeprl2);
-        s2 := ComponentReference.printComponentRefStr(inCref);
+        s2 := ComponentReferenceBasics.printComponentRefStr(inCref);
         s3 := DAEDump.dumpVarParallelismStr(inVarParallelism);
 
         s4 := "\n" +
@@ -3878,7 +3878,7 @@ algorithm
     else
       algorithm
         s1 := SCodeDump.connectorTypeStr(inConnectorType);
-        s2 := ComponentReference.printComponentRefStr(inCref);
+        s2 := ComponentReferenceBasics.printComponentRefStr(inCref);
         s3 := DAEDump.dumpConnectorType(inVarConnectorType);
         Error.addSourceMessage(Error.INVALID_TYPE_PREFIX,
           {s1, "variable", s2, s3}, inInfo);
@@ -3964,7 +3964,7 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- InstUtil.elabComponentArraydimFromEnv failed: " +
-          ComponentReference.printComponentRefStr(cref));
+          ComponentReferenceBasics.printComponentRefStr(cref));
       then
         fail();
 
@@ -4743,7 +4743,7 @@ protected
   String str;
 algorithm
   DAE.VAR(componentRef=cr,source=source) := v;
-  str := ComponentReference.printComponentRefStr(cr);
+  str := ComponentReferenceBasics.printComponentRefStr(cr);
   Error.addSourceMessage(Error.FUNCTION_UNUSED_INPUT,{str,name},ElementSource.getElementSourceFileInfo(source));
 end warnUnusedFunctionVar;
 
@@ -4853,7 +4853,7 @@ algorithm
         // Some weird functions pass the same output twice so we cannot check for exactly 1 occurance
         // Interfacing with LAPACK routines is fun, fun, fun :)
         if not (List.isMemberOnTrue(v,arg::args,extArgCrefEq) or isSome(binding)) then
-          str := ComponentReference.printComponentRefStr(cr);
+          str := ComponentReferenceBasics.printComponentRefStr(cr);
           Error.addSourceMessage(Error.EXTERNAL_NOT_SINGLE_RESULT,{str,name},ElementSource.getElementSourceFileInfo(source));
           fail();
         end if;
@@ -5200,7 +5200,7 @@ algorithm
     case (cache,env,_,DAE.CREF(componentRef = cref),DAE.PROP(),_,_)
       algorithm
         failure((_,_,_,_,_,_,_,_,_) := Lookup.lookupVarLocal(cache,env,cref));
-        crefstr := ComponentReference.printComponentRefStr(cref);
+        crefstr := ComponentReferenceBasics.printComponentRefStr(cref);
         scope := FGraph.printGraphPathStr(env);
         Error.addMessage(Error.LOOKUP_VARIABLE_ERROR, {crefstr,scope});
       then
@@ -5592,7 +5592,7 @@ algorithm
     case (_,DAE.MOD(_, _, {}, NONE()),_,_) then ();
     case (SCode.PROTECTED(),_,cref,_)
       algorithm
-        str1 := ComponentReference.printComponentRefStr(cref);
+        str1 := ComponentReferenceBasics.printComponentRefStr(cref);
         str2 := Mod.prettyPrintMod(inMod, 0);
         Error.addSourceMessage(Error.MODIFY_PROTECTED, {str1, str2}, info);
       then
@@ -6953,15 +6953,15 @@ algorithm
       case DAE.INITIAL_COMPLEX_EQUATION(lhs=DAE.CREF(componentRef=cr))
         algorithm
           vars1 := list(match v
-            case DAE.VAR(binding=SOME(_)) guard ComponentReference.crefPrefixOf(cr, v.componentRef)
+            case DAE.VAR(binding=SOME(_)) guard ComponentReferenceBasics.crefPrefixOf(cr, v.componentRef)
               algorithm
                 is := i::is;
               then v;
             // Moving parameter bindings into initial equation section means we need to force fixed=false...
-            case DAE.VAR(binding=NONE()) guard ComponentReference.crefPrefixOf(cr, v.componentRef)
+            case DAE.VAR(binding=NONE()) guard ComponentReferenceBasics.crefPrefixOf(cr, v.componentRef)
               algorithm
                 v.variableAttributesOption := DAEUtil.setFixedAttr(v.variableAttributesOption, SOME(DAE.BCONST(false)));
-                Error.addSourceMessage(Error.MOVING_PARAMETER_BINDING_TO_INITIAL_EQ_SECTION, {ComponentReference.printComponentRefStr(v.componentRef)}, eq.source.info);
+                Error.addSourceMessage(Error.MOVING_PARAMETER_BINDING_TO_INITIAL_EQ_SECTION, {ComponentReferenceBasics.printComponentRefStr(v.componentRef)}, eq.source.info);
               then v;
             else v;
             end match for v in vars1);

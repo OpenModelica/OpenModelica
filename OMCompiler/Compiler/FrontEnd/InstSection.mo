@@ -929,7 +929,7 @@ algorithm
       algorithm
         ty := Types.arrayElementType(inType);
         false := Types.isReal(ty);
-        cref_str := ComponentReference.printComponentRefStr(inCref);
+        cref_str := ComponentReferenceBasics.printComponentRefStr(inCref);
         ty_str := TypesDump.unparseType(ty);
         Error.addSourceMessage(Error.REINIT_MUST_BE_REAL,
           {cref_str, ty_str}, inInfo);
@@ -940,7 +940,7 @@ algorithm
       algorithm
         false := Types.isVar(cnst);
         cnst_str := TypesDump.unparseConst(cnst);
-        cref_str := ComponentReference.printComponentRefStr(inCref);
+        cref_str := ComponentReferenceBasics.printComponentRefStr(inCref);
         Error.addSourceMessage(Error.REINIT_MUST_BE_VAR,
           {cref_str, cnst_str}, inInfo);
       then
@@ -3331,7 +3331,7 @@ algorithm
         // make sure is expandable!
         true := Types.isExpandableConnector(ty1);
         // strip last subs to get the full type!
-        c1_2 := ComponentReference.crefStripLastSubs(c1_2);
+        c1_2 := ComponentReferenceBasics.crefStripLastSubs(c1_2);
         (_,attr,ty,binding,cnstForRange,_,_,envExpandable,_) := Lookup.lookupVar(cache, env, c1_2);
         (_,_,_,_,_,_,_,envComponent,_) := Lookup.lookupVar(cache, env, c2_2);
 
@@ -3340,7 +3340,7 @@ algorithm
         variablesUnion := FGraph.getVariablesFromGraphScope(envComponent);
         // more than 1 variables
         true := listLength(variablesUnion) > 1;
-        // print("VARS MULTIPLE: [" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "/" + ComponentReference.printComponentRefStr(c2_2) + "] " + stringDelimitList(variablesUnion, ", ") + "\n");
+        // print("VARS MULTIPLE: [" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "/" + ComponentReferenceBasics.printComponentRefStr(c2_2) + "] " + stringDelimitList(variablesUnion, ", ") + "\n");
 
         // fprintln(Flags.SHOW_EXPANDABLE_INFO, "2 connect(expandable, existing[MULTIPLE])(" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + ", " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + ")");
 
@@ -3418,7 +3418,7 @@ algorithm
         // make sure is expandable!
         true := Types.isExpandableConnector(ty1);
         // strip last subs to get the full type!
-        c1_2 := ComponentReference.crefStripLastSubs(c1_2);
+        c1_2 := ComponentReferenceBasics.crefStripLastSubs(c1_2);
         (_,attr,ty,binding,cnstForRange,_,_,envExpandable,_) := Lookup.lookupVar(cache, env, c1_2);
         (_,_,_,_,_,_,_,envComponent,_) := Lookup.lookupVar(cache, env, c2_2);
 
@@ -3427,7 +3427,7 @@ algorithm
         variablesUnion := FGraph.getVariablesFromGraphScope(envComponent);
         // max 1 variable, should check for empty!
         false := listLength(variablesUnion) > 1;
-        // print("VARS SINGLE: [" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "/" + ComponentReference.printComponentRefStr(c2_2) + "] " + stringDelimitList(variablesUnion, ", ") + "\n");
+        // print("VARS SINGLE: [" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "/" + ComponentReferenceBasics.printComponentRefStr(c2_2) + "] " + stringDelimitList(variablesUnion, ", ") + "\n");
 
         // fprintln(Flags.SHOW_EXPANDABLE_INFO, "2 connect(expandable, existing[SINGLE])(" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + ", " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + ")");
 
@@ -3591,7 +3591,7 @@ algorithm
            io, SCode.NOT_FINAL(), source, true);
         else // not empty list
           crefs := ComponentReference.expandCref(cref, false);
-          // print(" crefs: " + stringDelimitList(List.map(crefs, ComponentReference.printComponentRefStr),", ") + "\n");
+          // print(" crefs: " + stringDelimitList(List.map(crefs, ComponentReferenceBasics.printComponentRefStr),", ") + "\n");
           daeExpandable := daeDeclareList(inCache, inParentEnv, inClassEnv, listReverse(crefs), state, ty, attrs, vis, io, source, DAE.emptyDae);
         end if;
       then
@@ -3698,7 +3698,7 @@ algorithm
         // strip the last one
         qualCref := ComponentReference.crefStripLastIdent(veCref);
         // strip the last subs
-        qualCref := ComponentReference.crefStripLastSubs(qualCref);
+        qualCref := ComponentReferenceBasics.crefStripLastSubs(qualCref);
         // find the correct environment to update
         (_,currentAttr,currentTy,currentBinding,currentCnstForRange,_,_,currentEnv,_) := Lookup.lookupVar(cache, topEnv, qualCref);
 
@@ -3893,7 +3893,7 @@ algorithm
 
     else
       algorithm
-        str := ComponentReference.printComponentRefStr(inCref);
+        str := ComponentReferenceBasics.printComponentRefStr(inCref);
         Error.addSourceMessage(Error.INVALID_CONNECTOR_TYPE, {str}, inInfo);
       then
         fail();
@@ -3956,8 +3956,8 @@ algorithm
         false := Types.equivtypesOrRecordSubtypeOf(t1, t2);
         (_, cs1) := TypesDump.printConnectorTypeStr(t1);
         (_, cs2) := TypesDump.printConnectorTypeStr(t2);
-        cref_str1 := ComponentReference.printComponentRefStr(inLhsCref);
-        cref_str2 := ComponentReference.printComponentRefStr(inRhsCref);
+        cref_str1 := ComponentReferenceBasics.printComponentRefStr(inLhsCref);
+        cref_str2 := ComponentReferenceBasics.printComponentRefStr(inRhsCref);
         Error.addSourceMessage(Error.CONNECT_INCOMPATIBLE_TYPES,
           {cref_str1, cref_str2, cref_str1, cs1, cref_str2, cs2}, inInfo);
       then
@@ -3970,8 +3970,8 @@ algorithm
         dims2 := TypesDump.getDimensions(inRhsType);
         false := List.isEqualOnTrue(dims1, dims2, Expression.dimensionsEqual);
         false := (listEmpty(dims1) and listEmpty(dims2));
-        cref_str1 := ComponentReference.printComponentRefStr(inLhsCref);
-        cref_str2 := ComponentReference.printComponentRefStr(inRhsCref);
+        cref_str1 := ComponentReferenceBasics.printComponentRefStr(inLhsCref);
+        cref_str2 := ComponentReferenceBasics.printComponentRefStr(inRhsCref);
         str1 := "[" + ExpressionBasics.dimensionsString(dims1) + "]";
         str2 := "[" + ExpressionBasics.dimensionsString(dims2) + "]";
         Error.addSourceMessage(Error.CONNECTOR_ARRAY_DIFFERENT,
@@ -4003,8 +4003,8 @@ algorithm
 
     else
       algorithm
-        cref_str1 := ComponentReference.printComponentRefStr(inLhsCref);
-        cref_str2 := ComponentReference.printComponentRefStr(inRhsCref);
+        cref_str1 := ComponentReferenceBasics.printComponentRefStr(inLhsCref);
+        cref_str2 := ComponentReferenceBasics.printComponentRefStr(inRhsCref);
         pre_str1 := DAEUtil.connectorTypeStr(inLhsConnectorType);
         pre_str2 := DAEUtil.connectorTypeStr(inRhsConnectorType);
         err_strl := if DAEUtil.potentialBool(inLhsConnectorType)
@@ -4044,8 +4044,8 @@ algorithm
 
     else
       algorithm
-        cref_str1 := ComponentReference.printComponentRefStr(inLhsCref);
-        cref_str2 := ComponentReference.printComponentRefStr(inRhsCref);
+        cref_str1 := ComponentReferenceBasics.printComponentRefStr(inLhsCref);
+        cref_str2 := ComponentReferenceBasics.printComponentRefStr(inRhsCref);
         Error.addSourceMessage(Error.CONNECT_TWO_SOURCES,
           {cref_str1, cref_str2}, inInfo);
       then
@@ -4080,8 +4080,8 @@ algorithm
 
     case (Absyn.OUTER(), Absyn.OUTER(), _, _, _)
       algorithm
-        cref_str1 := ComponentReference.printComponentRefStr(inLhsCref);
-        cref_str2 := ComponentReference.printComponentRefStr(inRhsCref);
+        cref_str1 := ComponentReferenceBasics.printComponentRefStr(inLhsCref);
+        cref_str2 := ComponentReferenceBasics.printComponentRefStr(inRhsCref);
         Error.addSourceMessage(Error.CONNECT_OUTER_OUTER,
           {cref_str1, cref_str2}, inInfo);
       then
@@ -4157,8 +4157,8 @@ algorithm
       algorithm
         false := DAEUtil.streamBool(ct);
         // print("Connecting components: " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "/" +
-        //    ComponentReference.printComponentRefStr(c1) + "[" + Dump.unparseInnerouterStr(io1) + "]" + " = " +
-        //    ComponentReference.printComponentRefStr(c2) + "[" + Dump.unparseInnerouterStr(io2) + "]\n");
+        //    ComponentReferenceBasics.printComponentRefStr(c1) + "[" + Dump.unparseInnerouterStr(io1) + "]" + " = " +
+        //    ComponentReferenceBasics.printComponentRefStr(c2) + "[" + Dump.unparseInnerouterStr(io2) + "]\n");
         true := InnerOuter.outerConnection(io1,io2);
 
 
@@ -4172,8 +4172,8 @@ algorithm
         source := ElementSource.createElementSource(info, FGraph.getScopePath(env), pre, (c1_1,c2_1));
 
         // print("CONNECT: " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "/" +
-        //    ComponentReference.printComponentRefStr(c1_1) + "[" + Dump.unparseInnerouterStr(io1) + "]" + " = " +
-        //    ComponentReference.printComponentRefStr(c2_1) + "[" + Dump.unparseInnerouterStr(io2) + "]\n");
+        //    ComponentReferenceBasics.printComponentRefStr(c1_1) + "[" + Dump.unparseInnerouterStr(io1) + "]" + " = " +
+        //    ComponentReferenceBasics.printComponentRefStr(c2_1) + "[" + Dump.unparseInnerouterStr(io2) + "]\n");
 
         sets := ConnectUtil.addOuterConnection(pre,sets,c1_1,c2_1,io1,io2,f1,f2,source);
       then
@@ -4235,10 +4235,10 @@ algorithm
         0 = Expression.dimensionSize(dim2);
         (cache,_) = PrefixUtil.prefixCref(cache,env,ih,pre,c1);
         (cache,_) = PrefixUtil.prefixCref(cache,env,ih,pre,c2);
-        c1_str = Types.connectorTypeStr(ct) + ComponentReference.printComponentRefStr(c1);
+        c1_str = Types.connectorTypeStr(ct) + ComponentReferenceBasics.printComponentRefStr(c1);
         (t1, _) = Types.stripTypeVars(t1);
         t1_str = TypesDump.unparseType(t1);
-        c2_str = Types.connectorTypeStr(ct) + ComponentReference.printComponentRefStr(c2);
+        c2_str = Types.connectorTypeStr(ct) + ComponentReferenceBasics.printComponentRefStr(c2);
         (t2, _) = Types.stripTypeVars(t2);
         t2_str = TypesDump.unparseType(t2);
         c1_str = stringAppendList({c1_str," type: ",t1_str});
@@ -4386,7 +4386,7 @@ algorithm
                                    false, false, false, false, inlineType1, DAE.NO_TAIL())), // use the inline type
                         source // set the origin of the element
                         )};
-        graph := ConnectionGraph.addConnection(graph, ComponentReference.crefStripLastSubs(c1_1), ComponentReference.crefStripLastSubs(c2_1), breakDAEElements);
+        graph := ConnectionGraph.addConnection(graph, ComponentReferenceBasics.crefStripLastSubs(c1_1), ComponentReferenceBasics.crefStripLastSubs(c2_1), breakDAEElements);
 
         // deal with equalityConstraint function!
         // instantiate and add the equalityConstraint function to the dae function tree!
@@ -4442,9 +4442,9 @@ algorithm
       algorithm
         (cache,_) := PrefixUtil.prefixCref(cache,env,ih,pre, c1);
         (cache,_) := PrefixUtil.prefixCref(cache,env,ih,pre, c2);
-        c1_str := ComponentReference.printComponentRefStr(c1);
+        c1_str := ComponentReferenceBasics.printComponentRefStr(c1);
         t1_str := TypesDump.unparseType(t1);
-        c2_str := ComponentReference.printComponentRefStr(c2);
+        c2_str := ComponentReferenceBasics.printComponentRefStr(c2);
         t2_str := TypesDump.unparseType(t2);
         c1_str := stringAppendList({"\n",c1_str," type:\n",t1_str});
         c2_str := stringAppendList({"\n",c2_str," type:\n",t2_str});
@@ -4720,7 +4720,7 @@ algorithm
 
      case (DAE.ARRAY(_,_,DAE.CREF(cr,t)::_))
        algorithm
-         cr := ComponentReference.crefStripLastSubs(cr);
+         cr := ComponentReferenceBasics.crefStripLastSubs(cr);
          crefExp := Expression.makeCrefExp(cr, t);
        then crefExp;
    end match;

@@ -99,7 +99,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReference.hashComponentRef,ComponentReferenceBasics.crefEqual,ComponentReference.printComponentRefStr,ComponentReference.printComponentRefStr));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReference.hashComponentRef,ComponentReferenceBasics.crefEqual,ComponentReferenceBasics.printComponentRefStr,ComponentReferenceBasics.printComponentRefStr));
 end emptyHashTableSized;
 
 annotation(__OpenModelica_Interface="frontend");

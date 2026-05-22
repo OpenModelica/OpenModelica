@@ -120,7 +120,7 @@ protected
   String keystr;
   Integer keyhash;
 algorithm
-  keystr := ComponentReference.printComponentRefStr(key);
+  keystr := ComponentReferenceBasics.printComponentRefStr(key);
   keyhash := stringHashDjb2Mod(keystr,BaseHashTable.hugeBucketSize);
   v := treeGet3(bt, keystr, keyhash, treeGet2(bt, keystr, keyhash));
 end treeGet;
@@ -208,7 +208,7 @@ public function treeAdd "author: PA
 protected
   String str;
 algorithm
-  str := ComponentReference.printComponentRefStr(inKey);
+  str := ComponentReferenceBasics.printComponentRefStr(inKey);
   // We use modulo hashes in order to avoid problems with boxing/unboxing of integers in bootstrapped OMC
   outBinTree := treeAdd2(inBinTree,inKey,stringHashDjb2Mod(str,BaseHashTable.hugeBucketSize),str,inValue);
 end treeAdd;

@@ -305,7 +305,7 @@ algorithm
     case DAE.NOEXTARG() then "";
     case DAE.EXTARG(componentRef = cr)
       algorithm
-        crstr := ComponentReference.printComponentRefStr(cr);
+        crstr := ComponentReferenceBasics.printComponentRefStr(cr);
       then
         crstr;
     case DAE.EXTARGEXP(exp = exp)
@@ -315,7 +315,7 @@ algorithm
         crstr;
     case DAE.EXTARGSIZE(componentRef = cr,exp = dim)
       algorithm
-        crstr := ComponentReference.printComponentRefStr(cr);
+        crstr := ComponentReferenceBasics.printComponentRefStr(cr);
         dimstr := ExpressionBasics.printExpStr(dim);
         str := stringAppendList({"size(",crstr,", ",dimstr,")"});
       then
@@ -925,8 +925,8 @@ algorithm
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
-        s1 := ComponentReference.printComponentRefStr(cr1);
-        s2 := ComponentReference.printComponentRefStr(cr2);
+        s1 := ComponentReferenceBasics.printComponentRefStr(cr1);
+        s2 := ComponentReferenceBasics.printComponentRefStr(cr2);
         str := stringAppendList({"  ", s1, " = ", s2, sourceStr, ";\n"});
       then
         str;
@@ -955,7 +955,7 @@ algorithm
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
-        s1 := ComponentReference.printComponentRefStr(c);
+        s1 := ComponentReferenceBasics.printComponentRefStr(c);
         s2 := stringAppend("  ", s1);
         s3 := stringAppend(" ::= ", s2);
         s4 := ExpressionBasics.printExpStr(e);
@@ -2319,12 +2319,12 @@ algorithm
       DAE.Exp exp;
     case DAE.VAR(componentRef = cr,binding = NONE())
       algorithm
-        str := ComponentReference.printComponentRefStr(cr);
+        str := ComponentReferenceBasics.printComponentRefStr(cr);
       then
         str;
     case DAE.VAR(componentRef = cr,binding = SOME(exp))
       algorithm
-        str := ComponentReference.printComponentRefStr(cr);
+        str := ComponentReferenceBasics.printComponentRefStr(cr);
         expstr := printExpStrSpecial(exp);
         str_1 := stringAppend(str, " = ");
         str_2 := stringAppend(str_1, expstr);
@@ -2375,13 +2375,13 @@ algorithm
       list<DAE.Element> elts;
     case DAE.VAR(componentRef = cr,kind = vk,binding = NONE())
       algorithm
-        crstr := ComponentReference.printComponentRefStr(cr);
+        crstr := ComponentReferenceBasics.printComponentRefStr(cr);
         vkstr := dumpKindStr(vk);
       then
         Graphviz.LNODE("VAR",{crstr,vkstr},{},{});
     case DAE.VAR(componentRef = cr,kind = vk,binding = SOME(exp))
       algorithm
-        crstr := ComponentReference.printComponentRefStr(cr);
+        crstr := ComponentReferenceBasics.printComponentRefStr(cr);
         vkstr := dumpKindStr(vk);
         expstr := printExpStrSpecial(exp);
         expstr_1 := stringAppend("= ", expstr);
@@ -2389,7 +2389,7 @@ algorithm
         Graphviz.LNODE("VAR",{crstr,vkstr,expstr_1},{},{});
     case DAE.DEFINE(componentRef = cr,exp = exp)
       algorithm
-        crstr := ComponentReference.printComponentRefStr(cr);
+        crstr := ComponentReferenceBasics.printComponentRefStr(cr);
         expstr := printExpStrSpecial(exp);
         expstr_1 := stringAppend("= ", expstr);
       then
@@ -2409,7 +2409,7 @@ algorithm
     case DAE.ALGORITHM() then Graphviz.NODE("ALGORITHM",{},{});
     case DAE.INITIALDEFINE(componentRef = cr,exp = exp)
       algorithm
-        crstr := ComponentReference.printComponentRefStr(cr);
+        crstr := ComponentReferenceBasics.printComponentRefStr(cr);
         expstr := printExpStrSpecial(exp);
         expstr_1 := stringAppend("= ", expstr);
       then
@@ -2861,9 +2861,9 @@ algorithm
       algorithm
         sourceStr := getSourceInformationStr(src);
         str := IOStream.append(str, "  " +
-          ComponentReference.printComponentRefStr(cr1) +
+          ComponentReferenceBasics.printComponentRefStr(cr1) +
           " = " +
-          ComponentReference.printComponentRefStr(cr2) +
+          ComponentReferenceBasics.printComponentRefStr(cr2) +
           sourceStr +
           ";\n");
         str := dumpEquationsStream(xs, str);
@@ -2895,7 +2895,7 @@ algorithm
     case ((DAE.DEFINE(componentRef = c, exp = e, source = src) :: xs), str)
       algorithm
         sourceStr := getSourceInformationStr(src);
-        s1 := ComponentReference.printComponentRefStr(c);
+        s1 := ComponentReferenceBasics.printComponentRefStr(c);
         s2 := ExpressionBasics.printExpStr(e);
         str := IOStream.appendList(str, {"  ", s1, " = ", s2, sourceStr, ";\n"});
         str := dumpEquationsStream(xs, str);
@@ -2992,7 +2992,7 @@ algorithm
     case ((DAE.REINIT(componentRef = cr, exp = e, source = src) :: xs), str)
       algorithm
         sourceStr := getSourceInformationStr(src);
-        s := ComponentReference.printComponentRefStr(cr);
+        s := ComponentReferenceBasics.printComponentRefStr(cr);
         s1 := ExpressionBasics.printExpStr(e);
         str := IOStream.appendList(str, {"  reinit(",s,",",s1,")",sourceStr,";\n"});
         str := dumpEquationsStream(xs, str);
@@ -3092,7 +3092,7 @@ algorithm
 
     case ((DAE.INITIALDEFINE(componentRef = c,exp = e) :: xs), str)
       algorithm
-        s1 := ComponentReference.printComponentRefStr(c);
+        s1 := ComponentReferenceBasics.printComponentRefStr(c);
         s2 := ExpressionBasics.printExpStr(e);
         str := IOStream.appendList(str, {"  ", s1, " = ", s2, ";\n"});
         str := dumpInitialEquationsStream(xs, str);
@@ -3337,7 +3337,7 @@ algorithm
         dir_str := dumpDirectionStr(dir);
         (ty_str, ty_vars_str) := printTypeStr(ty);
         dim_str := unparseDimensions(dims, printTypeDimension);
-        name_str := ComponentReference.printComponentRefStr(id);
+        name_str := ComponentReferenceBasics.printComponentRefStr(id);
         vis_str := dumpVarVisibilityStr(vis);
         par_str := dumpVarParallelismStr(prl);
         cmt_str := dumpCommentAnnotationStr(cmt);
@@ -3641,16 +3641,16 @@ algorithm
 
     case ({(c1,c2)})
       algorithm
-        str := ComponentReference.printComponentRefStr(c1) + "," +
-              ComponentReference.printComponentRefStr(c2);
+        str := ComponentReferenceBasics.printComponentRefStr(c1) + "," +
+              ComponentReferenceBasics.printComponentRefStr(c2);
         str :=  "connect(" + str + ")";
       then
         {str};
 
     case ((c1,c2)::rest)
       algorithm
-        str := ComponentReference.printComponentRefStr(c1) + "," +
-              ComponentReference.printComponentRefStr(c2);
+        str := ComponentReferenceBasics.printComponentRefStr(c1) + "," +
+              ComponentReferenceBasics.printComponentRefStr(c2);
         str :=  "connect(" + str + ")";
         slst := connectsStr(rest);
       then
@@ -3740,7 +3740,7 @@ algorithm
 
     case (DAE.VAR(componentRef = c))
       algorithm
-        s1 := ComponentReference.printComponentRefStr(c);
+        s1 := ComponentReferenceBasics.printComponentRefStr(c);
         str := stringAppendList({"VAR:  ", s1,";\n"});
       then
         str;
@@ -3749,7 +3749,7 @@ algorithm
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
-        s1 := ComponentReference.printComponentRefStr(c);
+        s1 := ComponentReferenceBasics.printComponentRefStr(c);
         str := stringAppend(s1, sourceStr + ";\n");
       then
         str;
@@ -3758,7 +3758,7 @@ algorithm
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
-        s1 := ComponentReference.printComponentRefStr(c);
+        s1 := ComponentReferenceBasics.printComponentRefStr(c);
         str := stringAppend(s1, sourceStr + ";\n");
       then
         str;
@@ -3777,8 +3777,8 @@ algorithm
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
-        s1 := ComponentReference.printComponentRefStr(cr1);
-        s2 := ComponentReference.printComponentRefStr(cr2);
+        s1 := ComponentReferenceBasics.printComponentRefStr(cr1);
+        s2 := ComponentReferenceBasics.printComponentRefStr(cr2);
         str := stringAppendList({"EQUEQUATION  ", s1, " = ", s2, sourceStr, ";\n"});
       then
         str;

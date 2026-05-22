@@ -1803,14 +1803,14 @@ algorithm
       then (DAE.STMT_IF(e_1, stmts2, algElse, source), extraArg);
 
       case (DAE.STMT_FOR(type_=tp, iterIsArray=b1, iter=id1, range=e, statementLst=stmts, source=source)) algorithm
-        cr := ComponentReference.makeCrefIdent(id1, tp, {});
+        cr := ComponentReferenceBasics.makeCrefIdent(id1, tp, {});
         iteratorExp := Expression.crefExp(cr);
         iteratorexps := BackendDAEUtil.extendRange(e, inKnvars);
         (stmts2, extraArg) := traverseStmtsForExps(iteratorExp, iteratorexps, e, stmts, inKnvars, extraArg);
       then (DAE.STMT_FOR(tp, b1, id1, e, stmts2, source), extraArg);
 
       case (DAE.STMT_PARFOR(type_=tp, iterIsArray=b1, iter=id1, range=e, statementLst=stmts, loopPrlVars= loopPrlVars, source=source)) algorithm
-        cr := ComponentReference.makeCrefIdent(id1, tp, {});
+        cr := ComponentReferenceBasics.makeCrefIdent(id1, tp, {});
         iteratorExp := Expression.crefExp(cr);
         iteratorexps := BackendDAEUtil.extendRange(e, inKnvars);
         (stmts2, extraArg) := traverseStmtsForExps(iteratorExp, iteratorexps, e, stmts, inKnvars, extraArg);

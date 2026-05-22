@@ -532,7 +532,7 @@ algorithm
 
     case (InteractiveTypes.IVAR(varIdent = id, value = v, type_ = tp), env)
       algorithm
-        cref := ComponentReference.makeCrefIdent(id, DAE.T_UNKNOWN_DEFAULT, {});
+        cref := ComponentReferenceBasics.makeCrefIdent(id, DAE.T_UNKNOWN_DEFAULT, {});
         empty_env := FGraph.empty();
         (_,_,_,_,_,_,_,_,_) := Lookup.lookupVar(FCore.emptyCache(), env, cref);
         env := FGraph.updateComp(
