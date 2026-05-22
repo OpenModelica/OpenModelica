@@ -163,6 +163,37 @@ private:
   bool iconFixedAspectRatio = false;
 };
 
+class ConnectionGeometry
+{
+public:
+  void deserialize(const QJsonObject &jsonObject);
+  const QVector<double>& getPointsX() const {return mPointsX;}
+  const QVector<double>& getPointsY() const {return mPointsY;}
+  void setPoints(const QVector<double> &pointsX, const QVector<double> &pointsY)
+  {
+    mPointsX = pointsX;
+    mPointsY = pointsY;
+  }
+  int getPointsSize() const {return qMin(mPointsX.size(), mPointsY.size());}
+private:
+    QVector<double> mPointsX;
+    QVector<double> mPointsY;
+};
+
+class Connection
+{
+public:
+  void deserialize(const QJsonObject &jsonObject);
+  QString getConnectorA() const {return mConA;}
+  QString getConnectorB() const {return mConB;}
+  const ConnectionGeometry& getGeometry() const {return mGeometry;}
+  ConnectionGeometry& getGeometry() {return mGeometry;}
+private:
+  QString mConA;
+  QString mConB;
+  ConnectionGeometry mGeometry;
+};
+
 class Connector
 {
 public:
@@ -199,6 +230,7 @@ public:
   const ElementGeometry& getGeometry() const {return mGeometry;}
   const QVector<Element*>& getElements() const {return mElements;}
   const QVector<Connector*>& getConnectors() const {return mConnectors;}
+  const QVector<Connection*>& getConnections() const {return mConnections;}
   bool isSystem() const;
   bool isComponent() const;
   void setGeometry(const ElementGeometry &geometry) {mGeometry = geometry;}
@@ -210,6 +242,7 @@ private:
   ElementGeometry mGeometry;
   QVector<Element*> mElements;
   QVector<Connector*> mConnectors;
+  QVector<Connection*> mConnections;
   bool mHasFMUInfo = false;
   FMUInfo mFMUInfo;
 };
