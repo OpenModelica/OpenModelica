@@ -20,7 +20,9 @@ if (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
   find_package(Qt6 COMPONENTS OpenGLWidgets Core5Compat REQUIRED)
 endif ()
 
-find_package(Qt6 COMPONENTS HttpServer)
+if (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6 AND Qt6_VERSION_MINOR GREATER 4)
+  find_package(Qt6 OPTIONAL_COMPONENTS HttpServer)
+endif ()
 
 find_package(OpenSceneGraph COMPONENTS osg osgViewer osgUtil osgDB osgGA REQUIRED)
 find_package(OpenGL REQUIRED)
