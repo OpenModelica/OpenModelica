@@ -181,7 +181,7 @@ static int omc_lastStream = OMC_LOG_UNKNOWN;
 int omc_showAllWarnings = 0;
 static int streamsActive = 1;              /* 1 if info streams from omc_useStream are active, 0 if deactivated */
 
-void initDumpSystem()
+void initDumpSystem(void)
 {
   int i;
 
@@ -198,7 +198,7 @@ void initDumpSystem()
 }
 
 /* Deactivates streams for logging except for stdout, assert and success. */
-void deactivateLogging()
+void deactivateLogging(void)
 {
   int i;
 
@@ -230,7 +230,7 @@ void deactivateLogging()
 }
 
 /* Resets streams to backup after deactivateLogging() was used. */
-void reactivateLogging()
+void reactivateLogging(void)
 {
   int i;
 
@@ -559,7 +559,7 @@ static inline jmp_buf* getBestJumpBuffer(threadData_t *threadData)
     if (threadData->simulationJumpBuffer) {
       return threadData->simulationJumpBuffer;
     }
-    fprintf(stderr, "getBestJumpBuffer got simulationJumpBuffer=%p\n", threadData->simulationJumpBuffer);
+    fprintf(stderr, "getBestJumpBuffer got simulationJumpBuffer=%p\n", (void*)threadData->simulationJumpBuffer);
     abort();
 #endif
   case ERROR_EVENTHANDLING:
@@ -570,7 +570,7 @@ static inline jmp_buf* getBestJumpBuffer(threadData_t *threadData)
     if (threadData->mmc_jumper) {
       return threadData->mmc_jumper;
     }
-    fprintf(stderr, "getBestJumpBuffer got mmc_jumper=%p, globalJumpBuffer=%p\n", threadData->globalJumpBuffer, threadData->mmc_jumper);
+    fprintf(stderr, "getBestJumpBuffer got mmc_jumper=%p, globalJumpBuffer=%p\n", (void*)threadData->globalJumpBuffer, (void*)threadData->mmc_jumper);
     abort();
   }
 }

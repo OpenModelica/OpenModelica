@@ -78,7 +78,7 @@ static int trace_size;
 static int trace_size_skip=0; /* First index we should use; that is skip handler, etc */
 static struct sigaction default_segv_action;
 
-void printStacktraceMessages() {
+void printStacktraceMessages(void) {
   int i,j=-1,k;
   char **messages = backtrace_symbols(trace, trace_size);
   fprintf(stderr,"[bt] Execution path:\n");
@@ -180,7 +180,7 @@ static void handler(int signo, siginfo_t *si, void *ptr)
 #include <sys/sysctl.h>
 #endif
 
-static void* getStackBase() {
+static void* getStackBase(void) {
   /* Warning: These functions are highly non-portable and are recommended to not be used.
    * We only tested them on Linux and OSX.
    * On OSX we get the top of the stack and the size
@@ -229,7 +229,7 @@ static void* getStackBase() {
   return (char*)stackBottom + 64*1024;
 }
 
-void init_metamodelica_segv_handler()
+void init_metamodelica_segv_handler(void)
 {
   char *stack = (char*)malloc(SIGSTKSZ);
   stack_t ss = {
@@ -262,7 +262,7 @@ void printStacktraceMessages()
 {
 }
 
-void init_metamodelica_segv_handler()
+void init_metamodelica_segv_handler(void)
 {
 }
 

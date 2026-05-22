@@ -37,9 +37,6 @@ extern "C" {
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
   /* C23: strdup is standardized. */
   #define omc_strdup strdup
-#elif defined(_POSIX_VERSION)
-  /* POSIX: strdup is available. */
-  #define omc_strdup strdup
 #elif defined(_MSC_VER)
   /* MSVC: _strdup is the spelling. */
   #define omc_strdup _strdup

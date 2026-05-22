@@ -180,7 +180,7 @@ int rt_set_clock(enum omc_rt_clock_t newClock) {
   return 0;
 }
 
-enum omc_rt_clock_t rt_get_clock() {
+enum omc_rt_clock_t rt_get_clock(void) {
   return selectedClock;
 }
 
@@ -411,7 +411,7 @@ int rt_set_clock(enum omc_rt_clock_t newClock) {
   return 0;
 }
 
-enum omc_rt_clock_t rt_get_clock() {
+enum omc_rt_clock_t rt_get_clock(void) {
   return omc_clock==OMC_CLOCK_MONOTONIC ? OMC_CLOCK_REALTIME : OMC_CLOCK_CPUTIME;
 }
 

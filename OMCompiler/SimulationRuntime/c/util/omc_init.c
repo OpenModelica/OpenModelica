@@ -36,7 +36,7 @@ pthread_once_t mmc_init_once = PTHREAD_ONCE_INIT;
 threadData_t *OMC_MAIN_THREADDATA_NAME = 0;
 #endif
 
-void mmc_init_nogc()
+void mmc_init_nogc(void)
 {
 #if defined(OM_HAVE_PTHREADS)
   pthread_key_create(&mmc_thread_data_key,NULL);
@@ -49,14 +49,14 @@ void mmc_init_nogc()
 }
 
 #if defined(OMC_MINIMAL_RUNTIME)
-void mmc_init()
+void mmc_init(void)
 {
   fprintf(stderr, "Error: called mmc_init (requesting garbage collection) when OMC was compiled with a minimal runtime system.");
   exit(1);
 }
 #else
 #include "../gc/omc_gc.h"
-void mmc_init()
+void mmc_init(void)
 {
   mmc_init_nogc();
   mmc_GC_init();

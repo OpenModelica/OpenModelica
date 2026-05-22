@@ -136,18 +136,18 @@ static void* pool_malloc(size_t requested_size)
   return res;
 }
 
-static int pool_collect_a_little()
+static int pool_collect_a_little(void)
 {
   return 0;
 }
 
 static void print_mem_pool(OMCMemPoolBlock* chunk) {
   printf("----------------------------\n");
-  printf("%p, %zu, %zu, %p\n", chunk->memory, chunk->used, chunk->size, chunk->previous);
+  printf("%p, %zu, %zu, %p\n", chunk->memory, chunk->used, chunk->size, (void*)chunk->previous);
   printf("----------------------------\n");
 }
 
-MemPoolState omc_util_get_pool_state() {
+MemPoolState omc_util_get_pool_state(void) {
   MemPoolState state;
   /// If we forgot to explicitly initialize the pool, initialize it now.
   pool_init();
@@ -188,7 +188,7 @@ void omc_util_restore_pool_state(MemPoolState in_state) {
   // print_mem_pool(memory_pools);
 }
 
-void free_memory_pool()
+void free_memory_pool(void)
 {
   OMCMemPoolBlock* currentBlock = memory_pools;
 

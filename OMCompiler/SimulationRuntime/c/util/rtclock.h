@@ -106,7 +106,7 @@ typedef union rtclock_t {
 #endif
 
 int rt_set_clock(enum omc_rt_clock_t clockType); /* non-zero on failure */
-enum omc_rt_clock_t rt_get_clock(); /* non-zero on failure */
+enum omc_rt_clock_t rt_get_clock(void); /* non-zero on failure */
 void rt_init(int numTimer);
 
 void rt_tick(int ix);

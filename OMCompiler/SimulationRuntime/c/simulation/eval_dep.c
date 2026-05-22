@@ -220,7 +220,7 @@ static void addVarToHashTable(const char *name, size_t index)
   }
 }
 
-static void clearHashTable()
+static void clearHashTable(void)
 {
   hash_varName_eqIndex *s, *tmp;
 

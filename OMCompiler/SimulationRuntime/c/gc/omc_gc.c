@@ -98,7 +98,7 @@ void mmc_set_current_pos(const char *pos)
   curPos = pos;
 }
 #endif
-void mmc_do_out_of_memory()
+void mmc_do_out_of_memory(void)
 {
   threadData_t *threadData = (threadData_t*)pthread_getspecific(mmc_thread_data_key);
 #if (defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME))
@@ -118,7 +118,7 @@ void omc_GC_set_max_heap_size(size_t sz)
   max_heap_size = sz;
   GC_set_max_heap_size(sz);
 }
-size_t omc_GC_get_max_heap_size()
+size_t omc_GC_get_max_heap_size(void)
 {
   return max_heap_size;
 }

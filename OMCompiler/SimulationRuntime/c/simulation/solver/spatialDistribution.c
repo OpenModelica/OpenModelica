@@ -927,7 +927,7 @@ int pruneSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int
   /* Step 3
    * Remove all nodes that have a distance to edge > 1.
    */
-  infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "Removing nodes %s node %p", isPositiveVelocity?"after":"before", prevVisitedNode);
+  infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "Removing nodes %s node %p", isPositiveVelocity?"after":"before", (void*)prevVisitedNode);
   if (isPositiveVelocity) {
     clearAfterNodeDoubleEndedList(transportedQuantityList, prevVisitedNode);
   } else {

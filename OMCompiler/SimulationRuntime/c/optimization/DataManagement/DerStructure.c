@@ -41,7 +41,7 @@ static inline void copy_JacVars(OptData *optData);
 
 /* pick up jac struct
  */
-inline void allocate_der_struct(OptDataStructure *s, OptDataDim * dim, DATA* data, OptData *optData){
+void allocate_der_struct(OptDataStructure *s, OptDataDim * dim, DATA* data, OptData *optData){
   threadData_t *threadData = optData->threadData;
   const int nv = dim->nv;
   const int nsi = dim->nsi;
