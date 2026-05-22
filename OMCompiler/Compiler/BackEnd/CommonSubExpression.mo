@@ -93,7 +93,7 @@ protected function printCSEEquation
 protected
   Boolean first = true;
 algorithm
-  str := ExpressionDump.printExpStr(cseEquation.cse) + " - " + ExpressionDump.printExpStr(cseEquation.call) + " - {";
+  str := ExpressionBasics.printExpStr(cseEquation.cse) + " - " + ExpressionBasics.printExpStr(cseEquation.call) + " - {";
 
   for i in cseEquation.dependencies loop
     if first then
@@ -405,7 +405,7 @@ algorithm
     call := substituteExp(call, inCall, inCSE);
 
     //ExpandableArray.toString(exarray, "substituteDependencies", printCSEEquation);
-    //print("Exp: " + ExpressionDump.printExpStr(call) + "\n");
+    //print("Exp: " + ExpressionBasics.printExpStr(call) + "\n");
 
     if not BaseHashTable.hasKey(call, ht) then
       ht := BaseHashTable.add((call, id), ht);
@@ -420,8 +420,8 @@ algorithm
 
       //print("substituteDependencies: not handled yet\n");
       //print("id: " + intString(id) + "\n");
-      //print("inCall: " + ExpressionDump.printExpStr(inCall) + "\n");
-      //print("inCSE: " + ExpressionDump.printExpStr(inCSE) + "\n");
+      //print("inCall: " + ExpressionBasics.printExpStr(inCall) + "\n");
+      //print("inCSE: " + ExpressionBasics.printExpStr(inCSE) + "\n");
       //BaseHashTable.dumpHashTable(ht);
       //ExpandableArray.toString(exarray, "substituteDependencies", printCSEEquation);
     end if;
@@ -450,12 +450,12 @@ protected
 algorithm
   (key, value) := inTuple;
 
-  if Expression.expEqual(inExp, key) then
+  if ExpressionBasics.expEqual(inExp, key) then
     outExp := value;
     cont := false;
   elseif Expression.isTSUB(inExp) then
     DAE.TSUB(exp=tmp, ix=ix) := inExp;
-    if Expression.expEqual(tmp, key) then
+    if ExpressionBasics.expEqual(tmp, key) then
       DAE.TUPLE(expList) := value;
       outExp := listGet(expList, ix);
       cont := false;
@@ -506,7 +506,7 @@ algorithm
     add := true;
     CSE_EQUATION(cse=cse, call=call) := ExpandableArray.get(i, exarray);
     if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
-      print("\n--> cse-equation: " + ExpressionDump.printExpStr(cse) + " = " + ExpressionDump.printExpStr(call) + "\n");
+      print("\n--> cse-equation: " + ExpressionBasics.printExpStr(cse) + " = " + ExpressionBasics.printExpStr(call) + "\n");
     end if;
 
     eq := BackendEquation.generateEquation(cse, call);
@@ -531,7 +531,7 @@ algorithm
               orderedEqs := BackendEquation.add(eq, orderedEqs);
               add := false;
             end if;
-            if debug then print("\ndebug 6 - Is this cref a CSE cref?: " + ExpressionDump.printExpStr(Expression.crefExp(cr)) + "\n"); end if;
+            if debug then print("\ndebug 6 - Is this cref a CSE cref?: " + ExpressionBasics.printExpStr(Expression.crefExp(cr)) + "\n"); end if;
             if isCSECref(cr) then
               if debug then print("\ndebug 7 - yes it is a CSE cref. Add to orderedVars!\n"); end if;
               orderedVars := BackendVariable.addVar(var, orderedVars);
@@ -976,7 +976,7 @@ algorithm
       list<DAE.Exp> lhs, rhs;
 
     case BackendDAE.EQUATION(exp=exp1, scalar=exp2)
-    then Expression.expEqual(exp1, exp2);
+    then ExpressionBasics.expEqual(exp1, exp2);
 
     case BackendDAE.EQUATION(exp=DAE.TUPLE(lhs), scalar=DAE.TUPLE(rhs)) guard (listLength(lhs) == listLength(rhs)) algorithm
       print("This should never appear\n");
@@ -986,7 +986,7 @@ algorithm
     then isEquationRedundant2(lhs, rhs);
 
     case BackendDAE.COMPLEX_EQUATION(left = exp1 as DAE.CREF(ty = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_))), right = exp2 as DAE.CREF(ty = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_))))
-    then Expression.expEqual(exp1, exp2);
+    then ExpressionBasics.expEqual(exp1, exp2);
 
     else false;
   end match;
@@ -1008,8 +1008,8 @@ algorithm
   r::rr := rhs;
 
   if not isWildCref(l) and not isWildCref(r) then
-    //print(ExpressionDump.printExpStr(l) + " ?= " + ExpressionDump.printExpStr(r) + "\n");
-    if not Expression.expEqual(l, r) then
+    //print(ExpressionBasics.printExpStr(l) + " ?= " + ExpressionBasics.printExpStr(r) + "\n");
+    if not ExpressionBasics.expEqual(l, r) then
       result := false;
       return;
     end if;
@@ -1038,7 +1038,7 @@ algorithm
     // a = b
     case BackendDAE.EQUATION(exp=exp1, scalar=exp2)
       algorithm
-        isRedundant := Expression.expEqual(exp1, exp2);
+        isRedundant := ExpressionBasics.expEqual(exp1, exp2);
         if not isRedundant then
           isGlobalKnown := allArgsInGlobalKnownVars({exp2}, globalKnownVarHT);
           if isGlobalKnown then
@@ -1056,7 +1056,7 @@ algorithm
   // (a,b) = c
   case BackendDAE.COMPLEX_EQUATION(_, exp1 as DAE.TUPLE(lhs), exp2, _, _)
     algorithm
-      isRedundant := Expression.expEqual(exp1, exp2);
+      isRedundant := ExpressionBasics.expEqual(exp1, exp2);
       if not isRedundant then
         isGlobalKnown := allArgsInGlobalKnownVars({exp2}, globalKnownVarHT);
         if isGlobalKnown then
@@ -1077,7 +1077,7 @@ algorithm
 
     case BackendDAE.COMPLEX_EQUATION(left=exp1, right=exp2)
       algorithm
-        isRedundant := Expression.expEqual(exp1, exp2);
+        isRedundant := ExpressionBasics.expEqual(exp1, exp2);
         if not isRedundant then
           isGlobalKnown := allArgsInGlobalKnownVars({exp2}, globalKnownVarHT);
           if isGlobalKnown then
@@ -1110,8 +1110,8 @@ algorithm
   r::rr := rhs;
 
   if not isWildCref(l) and not isWildCref(r) then
-    //print(ExpressionDump.printExpStr(l) + " ?= " + ExpressionDump.printExpStr(r) + "\n");
-    if not Expression.expEqual(l, r) then
+    //print(ExpressionBasics.printExpStr(l) + " ?= " + ExpressionBasics.printExpStr(r) + "\n");
+    if not ExpressionBasics.expEqual(l, r) then
       // Left variable in globalKnownVarHT?
       if BaseHashSet.has(Expression.expCref(r), globalKnownVarHT) then
         // create variable with bind exp
@@ -1800,7 +1800,7 @@ algorithm
       true := intGt(counter, 1);
 
       if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
-        print("  - substitute cse binary: " + ExpressionDump.printExpStr(inExp) + " (counter: " + intString(counter) + ", id: " + ExpressionDump.printExpStr(value) + ")\n");
+        print("  - substitute cse binary: " + ExpressionBasics.printExpStr(inExp) + " (counter: " + intString(counter) + ", id: " + ExpressionBasics.printExpStr(value) + ")\n");
       end if;
 
       if not BaseHashTable.hasKey(value, HT3) then
@@ -1896,7 +1896,7 @@ algorithm
         end if;
 
         if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
-          print("  - cse binary expression: " + ExpressionDump.printExpStr(inExp) + " (counter: " + intString(counter) + ", id: " + ExpressionDump.printExpStr(value) + ")\n");
+          print("  - cse binary expression: " + ExpressionBasics.printExpStr(inExp) + " (counter: " + intString(counter) + ", id: " + ExpressionBasics.printExpStr(value) + ")\n");
         end if;
       end if;
     then (inExp, true, (HT, HT2, i));
@@ -2221,9 +2221,9 @@ algorithm
       (rhs1, _) := ExpressionSolve.solve(lhs, rhs1, varExp1);
       BackendDAE.EQUATION(exp=lhs, scalar=rhs2) := eq2;
       (rhs2, _) := ExpressionSolve.solve(lhs, rhs2, varExp2);
-      true := Expression.expEqual(rhs1, rhs2);
-         //print("rhs1 " +ExpressionDump.printExpStr(rhs1)+"\n");
-         //print("rhs2 " +ExpressionDump.printExpStr(rhs2)+"\n");
+      true := ExpressionBasics.expEqual(rhs1, rhs2);
+         //print("rhs1 " +ExpressionBasics.printExpStr(rhs1)+"\n");
+         //print("rhs2 " +ExpressionBasics.printExpStr(rhs2)+"\n");
          //print("is equal\n");
       // build CSE
       sharedVarIdcs := List.map1(sharedVarIdcs, List.getIndexFirst, varMap);
@@ -2286,9 +2286,9 @@ algorithm
           (rhs1, _) := ExpressionSolve.solve(lhs, rhs1, varExp1);
           BackendDAE.EQUATION(exp=lhs, scalar=rhs2) := eq2;
           (rhs2, _) := ExpressionSolve.solve(lhs, rhs2, varExp2);
-          if Expression.expEqual(rhs1, rhs2) then
-               //print("rhs1 " +ExpressionDump.printExpStr(rhs1)+"\n");
-               //print("rhs2 " +ExpressionDump.printExpStr(rhs2)+"\n");
+          if ExpressionBasics.expEqual(rhs1, rhs2) then
+               //print("rhs1 " +ExpressionBasics.printExpStr(rhs1)+"\n");
+               //print("rhs2 " +ExpressionBasics.printExpStr(rhs2)+"\n");
                //print("is equal\n");
             // build CSE
             eqMapArr := listArray(eqMap);
@@ -2462,7 +2462,7 @@ algorithm
   topLevelFactors2 := getTopLevelFactors(e2In,{});
     //print("topLevelFactors2 "+ExpressionDump.printExpListStr(topLevelFactors2)+"\n");
   if not listEmpty(topLevelFactors1) and not listEmpty(topLevelFactors1) then
-    topLevelFactors1 := List.intersectionOnTrue(topLevelFactors1,topLevelFactors2,Expression.expEqual);
+    topLevelFactors1 := List.intersectionOnTrue(topLevelFactors1,topLevelFactors2,ExpressionBasics.expEqual);
     if listLength(topLevelFactors1) == 1 then
       e1Out := Expression.expDiv(e1In,listHead(topLevelFactors1));
       e1Out := ExpressionSimplify.simplify(e1Out);

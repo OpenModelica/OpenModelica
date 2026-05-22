@@ -928,7 +928,7 @@ protected
 algorithm
   DAE.STMT_ASSERT(cond=cond, msg=msg, level=level, source=source) := assrtIn;
   (cond,(_,_,true)) := Expression.traverseExpBottomUp(cond,replaceArgs,(argmap,checkcr,true));
-  //print("ASSERT inlined: "+ExpressionDump.printExpStr(cond)+"\n");
+  //print("ASSERT inlined: "+ExpressionBasics.printExpStr(cond)+"\n");
   (msg,(_,_,true)) := Expression.traverseExpBottomUp(msg,replaceArgs,(argmap,checkcr,true));
   // These clear checkcr/repl and need to be performed last
   // (cond,_,_,_) := inlineExp(cond,fns,source);
@@ -959,7 +959,7 @@ protected
   DAE.Exp exp;
 algorithm
   (cr,exp) := inTpl;
-  print(ComponentReference.printComponentRefStr(cr) + " -> " + ExpressionDump.printExpStr(exp) + "\n");
+  print(ComponentReference.printComponentRefStr(cr) + " -> " + ExpressionBasics.printExpStr(exp) + "\n");
 end dumpArgmap;
 
 public function forceInlineCall
@@ -1538,11 +1538,11 @@ algorithm
     case (DAE.CREF(componentRef = cref),(argmap,checkcr,true))
       algorithm
         firstCref := ComponentReferenceBasics.crefFirstCref(cref);
-        {} := ComponentReference.crefSubs(firstCref);
+        {} := ComponentReferenceBasics.crefSubs(firstCref);
         e := getExpFromArgMap(argmap,firstCref);
         while not ComponentReference.crefIsIdent(cref) loop
           cref := ComponentReference.crefRest(cref);
-          {} := ComponentReference.crefSubs(cref);
+          {} := ComponentReferenceBasics.crefSubs(cref);
           e := DAE.RSUB(e, -1, ComponentReferenceBasics.crefFirstIdent(cref), ComponentReference.crefType(cref));
         end while;
       then (e,inTuple);
@@ -1646,7 +1646,7 @@ protected
   DAE.ComponentRef key,cref;
   DAE.Exp exp;
 algorithm
-  subs := ComponentReference.crefSubs(inComponentRef);
+  subs := ComponentReferenceBasics.crefSubs(inComponentRef);
   key := ComponentReference.crefStripSubs(inComponentRef);
 
   for arg in inArgMap loop

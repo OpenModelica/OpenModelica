@@ -181,11 +181,11 @@ template dumpExp (DAE.Exp expIn)
             >>
         case expIn as BCONST(__) then
             <<
-            <bconst><%ExpressionDump.printExpStr(expIn)%></bconst>
+            <bconst><%ExpressionBasics.printExpStr(expIn)%></bconst>
             >>
         case expIn as CREF(__) then
             <<
-            <cref><%ExpressionDump.printExpStr(expIn)%></cref>
+            <cref><%ExpressionBasics.printExpStr(expIn)%></cref>
             >>
         case expIn as BINARY(__) then
             <<<binary>
@@ -236,7 +236,7 @@ template dumpExp (DAE.Exp expIn)
             >>
         else
             <<
-            <exp><%ExpressionDump.printExpStr(expIn)%></exp>
+            <exp><%ExpressionBasics.printExpStr(expIn)%></exp>
             >>
     end match
 end dumpExp;

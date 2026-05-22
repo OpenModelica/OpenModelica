@@ -1911,9 +1911,9 @@ algorithm
       matrixAT := transposeMatrix(matrixA);
           //dumpMatrix(matrixAT);
       detA := determinant(matrixA);
-          //print("detA "+ExpressionDump.printExpStr(detA)+"\n");
+          //print("detA "+ExpressionBasics.printExpStr(detA)+"\n");
       detLst := List.map2(List.intRange(dim),CramerRule1,system,matrixAT);
-          //print("detLst \n"+stringDelimitList(List.map(detLst,ExpressionDump.printExpStr),"\n")+"\n");
+          //print("detLst \n"+stringDelimitList(List.map(detLst,ExpressionBasics.printExpStr),"\n")+"\n");
       varExp := List.mapArray(vectorX, BackendVariable.varExp);
       detLst := List.map1(detLst,function Expression.makeBinaryExp(inOp = DAE.DIV(ty=DAE.T_ANYTYPE_DEFAULT)),detA);
       (detLst,_) := List.map_2(detLst,ExpressionSimplify.simplify);
@@ -1927,9 +1927,9 @@ algorithm
       matrixAT := transposeMatrix(matrixA);
           //dumpMatrix(matrixAT);
       detA := determinant(matrixA);
-          //print("detA "+ExpressionDump.printExpStr(detA)+"\n");
+          //print("detA "+ExpressionBasics.printExpStr(detA)+"\n");
       detLst := List.map2(List.intRange(dim),CramerRule1,system,matrixAT);
-          //print("detLst \n"+stringDelimitList(List.map(detLst,ExpressionDump.printExpStr),"\n")+"\n");
+          //print("detLst \n"+stringDelimitList(List.map(detLst,ExpressionBasics.printExpStr),"\n")+"\n");
       varExp := List.mapArray(vectorX, BackendVariable.varExp);
       detLst := List.map1(detLst,function Expression.makeBinaryExp(inOp = DAE.DIV(ty=DAE.T_ANYTYPE_DEFAULT)),detA);
       (detLst,_) := List.map_2(detLst,ExpressionSimplify.simplify);
@@ -2102,9 +2102,9 @@ protected function EqSysRowString
 protected
   String s1,s2,s3;
 algorithm
-  s1 := "{ "+stringDelimitList(List.map(Arow,ExpressionDump.printExpStr),"  \t  ") + "} ";
+  s1 := "{ "+stringDelimitList(List.map(Arow,ExpressionBasics.printExpStr),"  \t  ") + "} ";
   s2 := "{ " +ComponentReference.printComponentRefStr(BackendVariable.varCref(x))+" } ";
-  s3 := " = { "+ExpressionDump.printExpStr(b)+" }";
+  s3 := " = { "+ExpressionBasics.printExpStr(b)+" }";
   s:=s1+" * "+s2+s3;
 end EqSysRowString;
 

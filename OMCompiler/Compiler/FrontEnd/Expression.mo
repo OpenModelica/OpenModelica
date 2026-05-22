@@ -75,7 +75,7 @@ protected import FCore;
 protected import FGraph;
 protected import Error;
 protected import ExpressionDump;
-protected import ExpressionDump.printExpStr;
+protected import ExpressionBasics.printExpStr;
 protected import ExpressionSimplify;
 protected import Dump;
 protected import Flags;
@@ -291,7 +291,7 @@ algorithm
     else
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
-        print("Expression.unelabExp failed on: " + ExpressionDump.printExpStr(inExp) + "\n");
+        print("Expression.unelabExp failed on: " + ExpressionBasics.printExpStr(inExp) + "\n");
       then
         fail();
   end matchcontinue;
@@ -943,7 +943,7 @@ algorithm
     exp := applyExpSubscripts2(exp, inSubs);
   else
     str := "Expression.applyExpSubscripts failed applying subs: [" + ExpressionDump.printSubscriptLstStr(inSubs)
-    + "] on expression:" + ExpressionDump.printExpStr(exp) + "\n";
+    + "] on expression:" + ExpressionBasics.printExpStr(exp) + "\n";
     Error.addMessage(Error.INTERNAL_ERROR, {str});
   end try;
 
@@ -1743,7 +1743,7 @@ algorithm
         expLst := arrayElements(e);
         noArr := listLength(expLst)==1;
         exp := listHead(expLst);
-        noArr := noArr  and expEqual(exp,e);
+        noArr := noArr  and ExpressionBasics.expEqual(exp,e);
         expLst := if noArr then {} else expLst;
       then
         expLst;
@@ -2294,7 +2294,7 @@ algorithm
 
     case e
       algorithm
-        msg := "- Expression.typeof failed for " + ExpressionDump.printExpStr(e);
+        msg := "- Expression.typeof failed for " + ExpressionBasics.printExpStr(e);
         Error.addMessage(Error.INTERNAL_ERROR, {msg});
       then fail();
   end matchcontinue;
@@ -3000,7 +3000,7 @@ public function expandFactors
 algorithm
   // TODO: Remove this listReverse as it is pointless.
   // It transforms a*b to b*a, but the testsuite expects this :(
-  // issue with expEqual(a*b,b*a) return false
+  // issue with ExpressionBasics.expEqual(a*b,b*a) return false
   outExpLst := listReverse(expandFactorsWork(inExp,{},false));
 end expandFactors;
 
@@ -3123,7 +3123,7 @@ algorithm
                   acc;
             case _
               //equation
-              //  print("\ninExp*: ");print(ExpressionDump.printExpStr(inExp));
+              //  print("\ninExp*: ");print(ExpressionBasics.printExpStr(inExp));
               then inExp :: acc;
          end matchcontinue;
 
@@ -3418,9 +3418,9 @@ algorithm
             case (DAE.CREF())
               algorithm
                 Debug.traceln("Warning: makeASUB: given expression: " +
-                        ExpressionDump.printExpStr(inExp) +
+                        ExpressionBasics.printExpStr(inExp) +
                         " contains a component reference!\n" +
-                        " Subscripts exps: [" + stringDelimitList(List.map(inSubs, ExpressionDump.printExpStr), ",")+ "]\n" +
+                        " Subscripts exps: [" + stringDelimitList(List.map(inSubs, ExpressionBasics.printExpStr), ",")+ "]\n" +
                         "DAE.ASUB should not be used for component references, instead the subscripts should be added directly to the component reference!");
               then ();
             else (); // check the DAE.ASUB -> was not a cref
@@ -3539,7 +3539,7 @@ algorithm
       then negate(generateCrefsExpFromExp(e, inCrefPrefix)); /*ToDo: check*/
     else
       algorithm
-        print("Expression.generateCrefsExpFromExp: fail for" + ExpressionDump.printExpStr(inExp) + "\n");
+        print("Expression.generateCrefsExpFromExp: fail for" + ExpressionBasics.printExpStr(inExp) + "\n");
       then fail();
   end match;
 end generateCrefsExpFromExp;
@@ -3597,7 +3597,7 @@ algorithm
 
     else
       algorithm
-        print("Expression.generateCrefsExpLstFromExp: fail for " + ExpressionDump.printExpStr(inExp) + "\n");
+        print("Expression.generateCrefsExpLstFromExp: fail for " + ExpressionBasics.printExpStr(inExp) + "\n");
       then fail();
 
   end match;
@@ -3937,7 +3937,7 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("-Expression.makeSum failed, DAE.Exp lst:");
-        explst := List.map(lst, ExpressionDump.printExpStr);
+        explst := List.map(lst, ExpressionBasics.printExpStr);
         str := stringDelimitList(explst, ", ");
         Debug.traceln(str);
       then
@@ -4296,7 +4296,7 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("-Expression.makeProductLst failed, DAE.Exp lst:");
-        explst := List.map(lst, ExpressionDump.printExpStr);
+        explst := List.map(lst, ExpressionBasics.printExpStr);
         str := stringDelimitList(explst, ", ");
         Debug.traceln(str);
       then
@@ -4840,7 +4840,7 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Type ty;
     case (_,(source,target,c))
-      guard expEqual(inExp, source)
+      guard ExpressionBasics.expEqual(inExp, source)
       then (target,false,(source,target,c+1));
 
     else (inExp,true,inTpl);
@@ -5217,7 +5217,7 @@ algorithm
     case DAE.CODE() then (inExp, inExtArg);
 
     else algorithm
-      str := ExpressionDump.printExpStr(inExp);
+      str := ExpressionBasics.printExpStr(inExp);
       str := "Expression.traverseExpBottomUp or one of the user-defined functions using it is not implemented correctly: " + str;
       Error.addInternalError(str, sourceInfo());
     then fail();
@@ -5783,7 +5783,7 @@ algorithm
 
     else
       algorithm
-        str := ExpressionDump.printExpStr(inExp);
+        str := ExpressionBasics.printExpStr(inExp);
         str := getInstanceName() + " or " + System.dladdr(func) + "not implemented correctly: " + str;
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
@@ -6131,7 +6131,7 @@ algorithm
     then (inExp, false, crefs);
 
     case (DAE.CALL(path = Absyn.IDENT(name="start"), expLst={DAE.CREF(componentRef=cr)}),_) algorithm
-      Error.addInternalError(getInstanceName() + " - Found a start call expression " + ExpressionDump.printExpStr(inExp), sourceInfo());
+      Error.addInternalError(getInstanceName() + " - Found a start call expression " + ExpressionBasics.printExpStr(inExp), sourceInfo());
       cr := ComponentReference.crefPrefixStart(cr);
       crefs := List.unionEltOnTrue(cr,inCrefs,ComponentReferenceBasics.crefEqual);
     then (inExp, false, crefs);
@@ -7204,7 +7204,7 @@ algorithm
 
     else
       algorithm
-        Error.addInternalError(getInstanceName() + " - Unknown expression " + ExpressionDump.printExpStr(inExp) + ". Called using: " + System.dladdr(inEnterFunc) + " " + System.dladdr(inExitFunc), sourceInfo());
+        Error.addInternalError(getInstanceName() + " - Unknown expression " + ExpressionBasics.printExpStr(inExp) + ". Called using: " + System.dladdr(inEnterFunc) + " " + System.dladdr(inExitFunc), sourceInfo());
       then
         fail();
 
@@ -7696,7 +7696,7 @@ algorithm
     /* e1 * e2 , -e1 * -e2, e ^ 2.0 */
     case DAE.BINARY(e1, DAE.MUL(), e2)
       then (isPositiveOrZero(e1) and isPositiveOrZero(e2)) or
-        (isNegativeOrZero(e1) and isNegativeOrZero(e2)) or expEqual(e1, e2);
+        (isNegativeOrZero(e1) and isNegativeOrZero(e2)) or ExpressionBasics.expEqual(e1, e2);
 
     /* e1 / e2, -e1 / -e2 */
     case DAE.BINARY(e1, DAE.DIV(), e2)
@@ -9238,9 +9238,6 @@ algorithm
   end match;
 end isIntegerOrReal;
 
-public function expEqual = ExpressionBasics.expEqual;
-public function compare = ExpressionBasics.compare;
-
 public function expStructuralEqual
 "Returns true if the two expressions are structural equal. This means
   only the componentreference can be different"
@@ -9584,7 +9581,7 @@ algorithm
     case (DAE.CREF(componentRef=cr1), DAE.CREF(componentRef=cr2)) algorithm
       res := ComponentReferenceBasics.crefEqual(cr1, cr2);
       if not res then
-        expLst := List.map(ComponentReference.crefSubs(cr1), getSubscriptExp);
+        expLst := List.map(ComponentReferenceBasics.crefSubs(cr1), getSubscriptExp);
         res := expContainsList(expLst, inExp2);
       end if;
     then res;
@@ -9631,8 +9628,8 @@ algorithm
     else algorithm
       true := Flags.isSet(Flags.FAILTRACE);
       Debug.trace("- Expression.expContains failed\n");
-      s1 := ExpressionDump.printExpStr(inExp1);
-      s2 := ExpressionDump.printExpStr(inExp2);
+      s1 := ExpressionBasics.printExpStr(inExp1);
+      s2 := ExpressionBasics.printExpStr(inExp2);
       str := stringAppendList({"exp = ", s1," subexp = ", s2});
       Debug.traceln(str);
     then fail();
@@ -9880,7 +9877,7 @@ algorithm
   res := match (dim1,dim2)
     case (DAE.DIM_UNKNOWN(),_) then false; // dimensionSizeExp fails on DIM_UNKNOWN...
     case (_,DAE.DIM_UNKNOWN()) then false;
-    else expEqual(dimensionSizeExp(dim1), dimensionSizeExp(dim2));
+    else ExpressionBasics.expEqual(dimensionSizeExp(dim1), dimensionSizeExp(dim2));
   end match;
 end dimensionsKnownAndEqual;
 
@@ -10469,7 +10466,7 @@ algorithm
     case DAE.PATTERN() then 0;
     else
       algorithm
-        str := "Expression.complexityWork failed: " + ExpressionDump.printExpStr(exp);
+        str := "Expression.complexityWork failed: " + ExpressionBasics.printExpStr(exp);
         Error.addMessage(Error.INTERNAL_ERROR,{str});
       then fail();
   end match;
@@ -10588,10 +10585,6 @@ algorithm
   newIndex := index + 1;
 end makeEnumLiteral;
 
-public function shouldParenthesize = ExpressionBasics.shouldParenthesize;
-
-public function priority = ExpressionBasics.priority;
-
 public function isWild
   input DAE.Exp exp;
   output Boolean b;
@@ -10697,9 +10690,9 @@ algorithm
   b := match (exp1,exp2)
     local
       DAE.Exp e1,e2,e3,e4;
-    case (DAE.PARTIAL_EQUATION(e1),DAE.PARTIAL_EQUATION(e2)) then expEqual(e1,e2);
-    case (DAE.RESIDUAL_EXP(e1),DAE.RESIDUAL_EXP(e2)) then expEqual(e1,e2);
-    case (DAE.EQUALITY_EXPS(e1,e2),DAE.EQUALITY_EXPS(e3,e4)) then expEqual(e1,e3) and expEqual(e2,e4);
+    case (DAE.PARTIAL_EQUATION(e1),DAE.PARTIAL_EQUATION(e2)) then ExpressionBasics.expEqual(e1,e2);
+    case (DAE.RESIDUAL_EXP(e1),DAE.RESIDUAL_EXP(e2)) then ExpressionBasics.expEqual(e1,e2);
+    case (DAE.EQUALITY_EXPS(e1,e2),DAE.EQUALITY_EXPS(e3,e4)) then ExpressionBasics.expEqual(e1,e3) and ExpressionBasics.expEqual(e2,e4);
     else false;
   end match;
 end equationExpEqual;
@@ -10909,7 +10902,7 @@ algorithm
  // case(DAE.EMPTY(scope=_))                        then 21; // TODO: implement hashing of EMTPY (needed ?)
  case(DAE.REDUCTION(info,e1,iters))                 then 22 + hashReductionInfo(info)+hashExp(e1)+List.reduce(List.map(iters,hashReductionIter),intAdd);
  // TODO: hashing of all MetaModelica extensions
- else stringHashDjb2(ExpressionDump.printExpStr(e));
+ else stringHashDjb2(ExpressionBasics.printExpStr(e));
  end matchcontinue;
 end hashExp;
 
@@ -11622,7 +11615,7 @@ algorithm
 
     else
      algorithm
-        msg := "- Expression.expandExpression failed for " + ExpressionDump.printExpStr(inExp);
+        msg := "- Expression.expandExpression failed for " + ExpressionBasics.printExpStr(inExp);
         Error.addMessage(Error.INTERNAL_ERROR, {msg});
       then
         fail();
@@ -11899,9 +11892,9 @@ algorithm
         end if;
 
         (res, _) := ExpressionSimplify.simplify(res);
-        //print("\n\niExp1:\n");print(ExpressionDump.printExpStr(iExp1));
-        //print("\niExp2:\n");print(ExpressionDump.printExpStr(iExp2));
-        //print("\nres:\n");print(ExpressionDump.printExpStr(res));
+        //print("\n\niExp1:\n");print(ExpressionBasics.printExpStr(iExp1));
+        //print("\niExp2:\n");print(ExpressionBasics.printExpStr(iExp2));
+        //print("\nres:\n");print(ExpressionBasics.printExpStr(res));
       then
         res;
     case(_, _)
@@ -12086,10 +12079,10 @@ while con and ii < 15 loop
      con := con or con1;
      ii := ii + 3;
   // else
-  //   print("\niExp1");print(ExpressionDump.printExpStr(iExp1));
-  //    print("\te1");print(ExpressionDump.printExpStr(oExp2));
-  //   print("\niExp2");print(ExpressionDump.printExpStr(iExp2));
-  //    print("\te2");print(ExpressionDump.printExpStr(oExp2));
+  //   print("\niExp1");print(ExpressionBasics.printExpStr(iExp1));
+  //    print("\te1");print(ExpressionBasics.printExpStr(oExp2));
+  //   print("\niExp2");print(ExpressionBasics.printExpStr(iExp2));
+  //    print("\te2");print(ExpressionBasics.printExpStr(oExp2));
    end if;
 
 end while;

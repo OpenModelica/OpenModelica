@@ -200,12 +200,12 @@ algorithm
     pos := List.position1OnTrue(minmaxTermsIn,minmaxTermEqual,termIn);
     if intEq(pos,-1) then
       // not yet collected array cref term
-      {DAE.INDEX(DAE.ICONST(idx))} := ComponentReference.crefSubs(cref);
+      {DAE.INDEX(DAE.ICONST(idx))} := ComponentReferenceBasics.crefSubs(cref);
       minmaxTermsOut := (termIn,idx,idx)::minmaxTermsIn;
     else
     // an already collected array cref term
     (term,min,max) := listGet(minmaxTermsIn,pos);
-    {DAE.INDEX(DAE.ICONST(idx))} := ComponentReference.crefSubs(cref);
+    {DAE.INDEX(DAE.ICONST(idx))} := ComponentReferenceBasics.crefSubs(cref);
     minmaxTermsOut := List.replaceAt((term,intMin(idx,min),intMax(idx,max)),pos,minmaxTermsIn);
     end if;
   else
@@ -357,8 +357,8 @@ algorithm
           terms1 := listAppend(Expression.allTerms(e11),Expression.allTerms(e12));
           terms2 := listAppend(Expression.allTerms(e21),Expression.allTerms(e22));
             //print("We have to check the terms:\n");
-            //print("terms1: "+stringDelimitList(List.map(terms1,ExpressionDump.printExpStr),"| ")+"\n");
-            //print("terms2: "+stringDelimitList(List.map(terms2,ExpressionDump.printExpStr),"| ")+"\n");
+            //print("terms1: "+stringDelimitList(List.map(terms1,ExpressionBasics.printExpStr),"| ")+"\n");
+            //print("terms2: "+stringDelimitList(List.map(terms2,ExpressionBasics.printExpStr),"| ")+"\n");
           (_,terms1,terms2) := List.intersection1OnTrue(terms1,terms2,expEqualNoCrefSubs);
           res :=  listEmpty(terms1) and listEmpty(terms2);
             //print("is it the same: "+boolString(res)+"\n");
@@ -800,7 +800,7 @@ algorithm
       //traverse all crefs of the equation
       eqCrefs := List.filter1OnTrue(eqCrefs,ComponentReferenceBasics.crefNotInLst,constCrefs);
       for cref in eqCrefs loop
-        {DAE.INDEX(DAE.ICONST(sub))} := ComponentReference.crefSubs(cref);
+        {DAE.INDEX(DAE.ICONST(sub))} := ComponentReferenceBasics.crefSubs(cref);
         pos := 1;
         for refCrefMinMax in crefMinMax loop
           (refCref,min,max) := refCrefMinMax;
@@ -1058,8 +1058,8 @@ algorithm
       DAE.Operator op;
   case(DAE.CREF(componentRef=cref),_)
     algorithm
-      b := intLe(getIndexSubScript(listHead(ComponentReference.crefSubs(cref))),maxSub);
-        //print("crerfsub: "+intString(getIndexSubScript(listHead(ComponentReference.crefSubs(cref))))+" <> "+intString(maxSub)+"\n");
+      b := intLe(getIndexSubScript(listHead(ComponentReferenceBasics.crefSubs(cref))),maxSub);
+        //print("crerfsub: "+intString(getIndexSubScript(listHead(ComponentReferenceBasics.crefSubs(cref))))+" <> "+intString(maxSub)+"\n");
         //print("reduce cref: "+ComponentReference.crefStr(cref)+" is higher sub: "+boolString(b)+"\n");
   then (expIn,b);
 
@@ -1067,7 +1067,7 @@ algorithm
     algorithm
       (exp1,b1) := reduceLoopExpressions(exp1,maxSub);
       (exp2,b2) := reduceLoopExpressions(exp2,maxSub);
-        //print("exp: "+ExpressionDump.printExpStr(expIn)+" b1: "+boolString(b1)+" b2: "+boolString(b2)+"\n");
+        //print("exp: "+ExpressionBasics.printExpStr(expIn)+" b1: "+boolString(b1)+" b2: "+boolString(b2)+"\n");
       if b1 and not b2 then
         exp := exp1;
       elseif b2 and not b1 then
@@ -1075,7 +1075,7 @@ algorithm
       else
         exp := DAE.BINARY(exp1,op,exp2);
       end if;
-        //print("expOut: "+ExpressionDump.printExpStr(exp)+"\n");
+        //print("expOut: "+ExpressionBasics.printExpStr(exp)+"\n");
   then (exp,boolOr(b1,b2));
 
   case(DAE.UNARY(exp=exp),_)

@@ -952,9 +952,9 @@ algorithm
   lhs := BackendVariable.varExp(var);
 
   if BackendVariable.isParam(var) and not BackendVariable.varHasBindExp(var) and BackendVariable.varFixed(var) then
-    s := ExpressionDump.printExpStr(lhs);
+    s := ExpressionBasics.printExpStr(lhs);
     startValue := BackendVariable.varStartValue(var);
-    str := ExpressionDump.printExpStr(startValue);
+    str := ExpressionBasics.printExpStr(startValue);
     v := BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
     v := BackendVariable.setBindExp(v, SOME(startValue));
     v := BackendVariable.setVarFixed(v, true);
@@ -2517,7 +2517,7 @@ algorithm
       startExp := BackendVariable.varStartValueType(var);
 
       s := ComponentReference.printComponentRefStr(cr);
-      str := ExpressionDump.printExpStr(startExp);
+      str := ExpressionBasics.printExpStr(startExp);
 
       // e = Expression.crefExp(cr);
       // ty = Expression.typeof(e);
@@ -2541,7 +2541,7 @@ algorithm
       var := BackendVariable.setBindExp(var, NONE());
 
       s := ComponentReference.printComponentRefStr(cr);
-      str := ExpressionDump.printExpStr(bindExp);
+      str := ExpressionBasics.printExpStr(bindExp);
       info := ElementSource.getElementSourceFileInfo(BackendVariable.getVarSource(var));
       Error.addSourceMessage(Error.UNFIXED_PARAMETER_WITH_BINDING, {s, s, str}, info);
 
@@ -2563,7 +2563,7 @@ algorithm
       var := BackendVariable.setVarStartValue(var, bindExp);
 
       s := ComponentReference.printComponentRefStr(cr);
-      str := ExpressionDump.printExpStr(bindExp);
+      str := ExpressionBasics.printExpStr(bindExp);
       info := ElementSource.getElementSourceFileInfo(BackendVariable.getVarSource(var));
       Error.addSourceMessage(Error.UNFIXED_PARAMETER_WITH_BINDING_31, {s, s, str}, info);
 
@@ -2581,8 +2581,8 @@ algorithm
       SOME(startExp) := BackendVariable.varStartValueOption(var);
 
       s := ComponentReference.printComponentRefStr(cr);
-      str := ExpressionDump.printExpStr(bindExp);
-      sv := ExpressionDump.printExpStr(startExp);
+      str := ExpressionBasics.printExpStr(bindExp);
+      sv := ExpressionBasics.printExpStr(startExp);
       info := ElementSource.getElementSourceFileInfo(BackendVariable.getVarSource(var));
       Error.addSourceMessage(Error.UNFIXED_PARAMETER_WITH_BINDING_AND_START_VALUE_31, {s, sv, s, str}, info);
 

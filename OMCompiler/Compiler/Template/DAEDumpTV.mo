@@ -1277,7 +1277,7 @@ package DAE
       * Expression.traverseExp
       * Expression.traverseExpTopDown
       * Expression.traverseExpBiDir
-      * ExpressionDump.printExpStr
+      * ExpressionBasics.printExpStr
       "
     record ICONST
       Integer integer "Integer constants" ;

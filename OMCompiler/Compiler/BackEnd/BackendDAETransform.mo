@@ -364,11 +364,11 @@ algorithm
       list<DAE.Exp> expLst;
 
     case BackendDAE.ARRAY_EQUATION(left=DAE.ARRAY(array=expLst)) algorithm
-      (_, _, expLst) := List.intersection1OnTrue(expLst, crefLst, Expression.expEqual);
+      (_, _, expLst) := List.intersection1OnTrue(expLst, crefLst, ExpressionBasics.expEqual);
     then listEmpty(expLst);
 
     case BackendDAE.ARRAY_EQUATION(right=DAE.ARRAY(array=expLst)) algorithm
-      (_, _, expLst) := List.intersection1OnTrue(expLst, crefLst, Expression.expEqual);
+      (_, _, expLst) := List.intersection1OnTrue(expLst, crefLst, ExpressionBasics.expEqual);
     then listEmpty(expLst);
 
     else false;
@@ -405,7 +405,7 @@ algorithm
     funcs := BackendDAEUtil.getFunctions(inShared);
     (beqs, _) := BackendDAEUtil.getEqnSysRhs(eqns, vars, SOME(funcs));
     beqs := listReverse(beqs);
-    rhsStr := stringDelimitList(List.map(beqs, ExpressionDump.printExpStr), " ;\n  ");
+    rhsStr := stringDelimitList(List.map(beqs, ExpressionBasics.printExpStr), " ;\n  ");
     jacStr := stringDelimitList(List.map1(List.mapList(jacVals, realString), stringDelimitList, " , "), " ;\n  ");
     eqnstr := BackendDump.dumpEqnsStr(inEqns);
     syst := eqnstr + "\n[" + jacStr + "] * [" + varnames + "] = [" + rhsStr + "]";
@@ -423,7 +423,7 @@ algorithm
     funcs := BackendDAEUtil.getFunctions(inShared);
     (beqs, _) := BackendDAEUtil.getEqnSysRhs(eqns, vars, SOME(funcs));
     beqs := listReverse(beqs);
-    rhsStr := stringDelimitList(List.map(beqs, ExpressionDump.printExpStr), " ;\n  ");
+    rhsStr := stringDelimitList(List.map(beqs, ExpressionBasics.printExpStr), " ;\n  ");
     jacStr := stringDelimitList(List.map1(List.mapList(jacVals, realString), stringDelimitList, " , "), " ;\n  ");
     eqnstr := BackendDump.dumpEqnsStr(inEqns);
     syst := "\n" + eqnstr + "\n[\n  " + jacStr + "\n]\n  *\n[\n  " + varnames + "\n]\n  =\n[\n  " + rhsStr + "\n]";
@@ -850,8 +850,8 @@ protected
 algorithm
   (ops,t) := inTpl;
   (outExp,t) := Expression.traverseExpTopDown(inExp, collapseArrayCrefExpWork, t);
-  if not Expression.expEqual(inExp,outExp) then
-    // print("collapseArrayCrefExp: " + ExpressionDump.printExpStr(inExp) + " -> " + ExpressionDump.printExpStr(outExp) + "\n");
+  if not ExpressionBasics.expEqual(inExp,outExp) then
+    // print("collapseArrayCrefExp: " + ExpressionBasics.printExpStr(inExp) + " -> " + ExpressionBasics.printExpStr(outExp) + "\n");
     outTpl := (DAE.SIMPLIFY(DAE.PARTIAL_EQUATION(inExp),DAE.PARTIAL_EQUATION(outExp))::ops,t);
   else
     outTpl := inTpl;
@@ -902,7 +902,7 @@ algorithm
   // Check that the first element starts at index [1,...,1]
   subs := ComponentReference.crefLastSubs(cr1);
   true := ndim==listLength(subs);
-  true := listLength(subs) == listLength(ComponentReference.crefSubs(cr1)) "Code generation fails for things like x[7].y when x[7] contains more things than y, and y is an array...";
+  true := listLength(subs) == listLength(ComponentReferenceBasics.crefSubs(cr1)) "Code generation fails for things like x[7].y when x[7] contains more things than y, and y is an array...";
   for sub in subs loop
     DAE.INDEX(DAE.ICONST(1)) := sub;
   end for;

@@ -567,7 +567,7 @@ algorithm
     case DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,
                         binding = SOME(DAE.TYPED(modifierAsValue = SOME(v))), info = info)
       algorithm
-        //es = ExpressionDump.printExpStr(e);
+        //es = ExpressionBasics.printExpStr(e);
         subs_1 := unelabSubmods(subs);
         e_1 := Expression.unelabExp(ValuesUtil.valueExp(v));
       then
@@ -577,7 +577,7 @@ algorithm
     case ((DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,
                         binding = SOME(DAE.TYPED(modifierAsExp = dexp, info = info)))))
       algorithm
-        //es = ExpressionDump.printExpStr(e);
+        //es = ExpressionBasics.printExpStr(e);
         subs_1 = unelabSubmods(subs);
         e_1 = Expression.unelabExp(dexp);
       then
@@ -586,7 +586,7 @@ algorithm
     case DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,
                         binding = SOME(DAE.TYPED(_,_,_,absynExp)),info = info)
       algorithm
-        //es = ExpressionDump.printExpStr(e);
+        //es = ExpressionBasics.printExpStr(e);
         subs_1 := unelabSubmods(subs);
         e_1 := absynExp; //Expression.unelabExp(e);
       then
@@ -1450,7 +1450,7 @@ algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Mod.lookupIdxModification(");
         Debug.trace(printModStr(inMod));
-        Debug.traceln(", " + ExpressionDump.printExpStr(inIndex) + ") failed");
+        Debug.traceln(", " + ExpressionBasics.printExpStr(inIndex) + ") failed");
       then
         fail();
 
@@ -1551,7 +1551,7 @@ algorithm
             // though (e.g. the DoublePendulum example), and therefore relying
             // on this behaviour, so just print a warning here.
             Error.addSourceMessage(Error.MODIFIER_NON_ARRAY_TYPE_WARNING,
-              {ExpressionDump.printExpStr(exp)}, inInfo);
+              {ExpressionBasics.printExpStr(exp)}, inInfo);
             return;
           end if;
 
@@ -2098,7 +2098,7 @@ algorithm
     case (NONE(), NONE(), _) then equal;
     case (SOME(v1), SOME(v2), false)
       algorithm
-        bEq := Expression.expEqual(
+        bEq := ExpressionBasics.expEqual(
                   ValuesUtil.valueExp(v1),
                   ValuesUtil.valueExp(v2));
       then
@@ -2124,7 +2124,7 @@ algorithm
     case(SOME(DAE.TYPED(modifierAsExp = exp1, modifierAsValue = v1)),
          SOME(DAE.TYPED(modifierAsExp = exp2, modifierAsValue = v2)))
       algorithm
-        equal := Expression.expEqual(exp1,exp2);
+        equal := ExpressionBasics.expEqual(exp1,exp2);
         // check the values as crefs might have been replaced!
         true := valEqual(v1, v2, equal);
       then
@@ -2360,7 +2360,7 @@ algorithm
 
     case SOME(DAE.TYPED(e,SOME(e_val),prop,_))
       algorithm
-        str := ExpressionDump.printExpStr(e);
+        str := ExpressionBasics.printExpStr(e);
         str2 := Types.printPropStr(prop);
         e_val_str := ValuesDump.valString(e_val);
         res := stringAppendList({" = (typed)",str," ",str2,", value: ",e_val_str});
@@ -2369,7 +2369,7 @@ algorithm
 
     case SOME(DAE.TYPED(e,NONE(),prop,_))
       algorithm
-        str := ExpressionDump.printExpStr(e);
+        str := ExpressionBasics.printExpStr(e);
         str2 := Types.printPropStr(prop);
         res := stringAppendList({" = (typed)",str, ", type:\n", str2});
       then

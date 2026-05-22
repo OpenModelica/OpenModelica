@@ -109,7 +109,7 @@ algorithm
   outStr := match expOpt
     local
       DAE.Exp exp;
-    case SOME(exp) then "SOME("+ExpressionDump.printExpStr(exp)+")";
+    case SOME(exp) then "SOME("+ExpressionBasics.printExpStr(exp)+")";
     else "NONE()";
   end match;
 end printExpOtionStr;

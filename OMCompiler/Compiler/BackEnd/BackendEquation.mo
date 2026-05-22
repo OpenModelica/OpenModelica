@@ -1334,33 +1334,33 @@ algorithm
       list<DAE.Exp> explst1, explst2;
 
     case (BackendDAE.EQUATION(exp=e11, scalar=e12), BackendDAE.EQUATION(exp=e21, scalar=e22)) algorithm
-      res := boolAnd(Expression.expEqual(e11, e21), Expression.expEqual(e12, e22));
+      res := boolAnd(ExpressionBasics.expEqual(e11, e21), ExpressionBasics.expEqual(e12, e22));
     then res;
 
     case (BackendDAE.ARRAY_EQUATION(left=e11, right=e12), BackendDAE.ARRAY_EQUATION(left=e21, right=e22)) algorithm
-      res := boolAnd(Expression.expEqual(e11, e21), Expression.expEqual(e12, e22));
+      res := boolAnd(ExpressionBasics.expEqual(e11, e21), ExpressionBasics.expEqual(e12, e22));
     then res;
 
     case (BackendDAE.COMPLEX_EQUATION(left=e11, right=e12), BackendDAE.COMPLEX_EQUATION(left=e21, right=e22)) algorithm
-      res := boolAnd(Expression.expEqual(e11, e21), Expression.expEqual(e12, e22));
+      res := boolAnd(ExpressionBasics.expEqual(e11, e21), ExpressionBasics.expEqual(e12, e22));
     then res;
 
     case (BackendDAE.SOLVED_EQUATION(componentRef=cr1, exp=exp1), BackendDAE.SOLVED_EQUATION(componentRef=cr2, exp=exp2)) algorithm
-      res := boolAnd(ComponentReferenceBasics.crefEqualNoStringCompare(cr1, cr2), Expression.expEqual(exp1, exp2));
+      res := boolAnd(ComponentReferenceBasics.crefEqualNoStringCompare(cr1, cr2), ExpressionBasics.expEqual(exp1, exp2));
     then res;
 
     case (BackendDAE.RESIDUAL_EQUATION(exp=exp1), BackendDAE.RESIDUAL_EQUATION(exp=exp2)) algorithm
-      res := Expression.expEqual(exp1, exp2);
+      res := ExpressionBasics.expEqual(exp1, exp2);
     then res;
 
     case (BackendDAE.ALGORITHM(alg=alg1), BackendDAE.ALGORITHM(alg=alg2)) algorithm
       explst1 := Algorithm.getAllExps(alg1);
       explst2 := Algorithm.getAllExps(alg2);
-      res := List.isEqualOnTrue(explst1, explst2, Expression.expEqual);
+      res := List.isEqualOnTrue(explst1, explst2, ExpressionBasics.expEqual);
     then res;
 
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(whenStmtLst={BackendDAE.ASSIGN(left=e11, right=e12)})), BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(whenStmtLst={BackendDAE.ASSIGN(left=e21, right=e22)}))) algorithm
-      res := boolAnd(Expression.expEqual(e11, e21), Expression.expEqual(e12, e22));
+      res := boolAnd(ExpressionBasics.expEqual(e11, e21), ExpressionBasics.expEqual(e12, e22));
     then res;
 
     else false;
@@ -1586,7 +1586,7 @@ algorithm
     then ((i+1, eqs));
 
     case (_, _, _, _, (i, _)) algorithm
-      str := "BackendEquation.equationTupleToScalarResidualForm failed: " + intString(i) + ": " + ExpressionDump.printExpStr(cr);
+      str := "BackendEquation.equationTupleToScalarResidualForm failed: " + intString(i) + ": " + ExpressionBasics.printExpStr(cr);
       Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, ElementSource.getElementSourceFileInfo(inSource));
     then fail();
   end match;
@@ -2096,7 +2096,7 @@ algorithm
     else algorithm
       // show only on failtrace!
       true := Flags.isSet(Flags.FAILTRACE);
-      Debug.traceln("- BackendEquation.generateEquation failed on: " + ExpressionDump.printExpStr(lhs) + " = " + ExpressionDump.printExpStr(rhs) + "\n");
+      Debug.traceln("- BackendEquation.generateEquation failed on: " + ExpressionBasics.printExpStr(lhs) + " = " + ExpressionBasics.printExpStr(rhs) + "\n");
     then fail();
   end match;
 end generateEquation;
@@ -2528,7 +2528,7 @@ algorithm
     BackendDAE.IF_EQUATION
 */
     else algorithm
-      BackendDump.dumpBackendDAEEqnList({eqn}, "function BackendEquation.solveEquation failed w.r.t " + ExpressionDump.printExpStr(crefExp), true);
+      BackendDump.dumpBackendDAEEqnList({eqn}, "function BackendEquation.solveEquation failed w.r.t " + ExpressionBasics.printExpStr(crefExp), true);
       Error.addInternalError("function solveEquation failed", sourceInfo());
     then fail();
   end matchcontinue;

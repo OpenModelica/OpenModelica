@@ -1630,7 +1630,7 @@ algorithm
     case(_,_,_,_,_,_,DAE.PROP(_,c))
       algorithm
         true := valueEq(c,DAE.C_VAR());
-        s := ExpressionDump.printExpStr(bind);
+        s := ExpressionBasics.printExpStr(bind);
         Error.addMessage(Error.HIGHER_VARIABILITY_BINDING,{id,"PARAM",s,"VAR"});
       then fail();
 
@@ -1646,7 +1646,7 @@ algorithm
       true := Flags.isSet(Flags.FAILTRACE);
       Debug.traceln("instBuiltinAttribute failed for: " + id +
                                   " value binding: " + ValuesDump.printValStr(v) +
-                                  " binding: " + ExpressionDump.printExpStr(bind) +
+                                  " binding: " + ExpressionBasics.printExpStr(bind) +
                                   " expected type: " + TypesDump.printTypeStr(expectedTp) +
                                   " type props: " + Types.printPropStr(bindProp));
     then fail();
@@ -1654,7 +1654,7 @@ algorithm
       true := Flags.isSet(Flags.FAILTRACE);
       Debug.traceln("instBuiltinAttribute failed for: " + id +
                                   " value binding: NONE()" +
-                                  " binding: " + ExpressionDump.printExpStr(bind) +
+                                  " binding: " + ExpressionBasics.printExpStr(bind) +
                                   " expected type: " + TypesDump.printTypeStr(expectedTp) +
                                   " type props: " + Types.printPropStr(bindProp));
     then fail();

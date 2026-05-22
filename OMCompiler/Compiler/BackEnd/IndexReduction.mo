@@ -4056,7 +4056,7 @@ algorithm
       then (e,ht);
     case (e as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst=_::_::_),ht)
       algorithm
-        msg := "IndexReduction.replaceDummyDerivativesExp failed for " + ExpressionDump.printExpStr(e) + "!";
+        msg := "IndexReduction.replaceDummyDerivativesExp failed for " + ExpressionBasics.printExpStr(e) + "!";
         Error.addMessage(Error.COMPILER_WARNING, {msg});
       then (e,ht);
     else (inExp,iht);

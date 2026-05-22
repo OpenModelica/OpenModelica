@@ -228,9 +228,9 @@ algorithm
       algorithm
         (REPLACEMENTS(ht,invHt,eht,iv,derConst),src,dst) := makeTransitive(repl, src, dst, inFuncTypeExpExpToBooleanOption);
         /*s1 = ComponentReference.printComponentRefStr(src);
-        s2 = ExpressionDump.printExpStr(dst);
+        s2 = ExpressionBasics.printExpStr(dst);
         s3 = ComponentReference.printComponentRefStr(src_1);
-        s4 = ExpressionDump.printExpStr(dst_1);
+        s4 = ExpressionBasics.printExpStr(dst_1);
         s = stringAppendList(
           {"add_replacement(",s1,", ",s2,") -> add_replacement(",s3,
           ", ",s4,")\n"});
@@ -296,7 +296,7 @@ algorithm
         REPLACEMENTS(ht,invHt,eht,iv,derConst);
     else
       algorithm
-        print("-add_replacement failed for " + ComponentReference.printComponentRefStr(inSrc) + " = " + ExpressionDump.printExpStr(inDst) + "\n");
+        print("-add_replacement failed for " + ComponentReference.printComponentRefStr(inSrc) + " = " + ExpressionBasics.printExpStr(inDst) + "\n");
       then
         fail();
   end matchcontinue;
@@ -1602,7 +1602,7 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         msg := "BackendVarTransform: failed to replace left hand side of when equation " +
-              ComponentReference.printComponentRefStr(oldCr) + " with " + ExpressionDump.printExpStr(inLhs) + "\n";
+              ComponentReference.printComponentRefStr(oldCr) + " with " + ExpressionBasics.printExpStr(inLhs) + "\n";
         // print(msg + "\n");
         Debug.trace(msg);
       then
@@ -2051,7 +2051,7 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         msg := "BackendVarTransform: failed to replace left hand side of array assign statement " +
-              ComponentReference.printComponentRefStr(oldCr) + " with " + ExpressionDump.printExpStr(lhs) + "\n";
+              ComponentReference.printComponentRefStr(oldCr) + " with " + ExpressionBasics.printExpStr(lhs) + "\n";
         // print(msg + "\n");
         Debug.trace(msg);
       then
@@ -2493,7 +2493,7 @@ algorithm
   // optional exteded type debugging
   //str := ComponentReference.debugPrintComponentRefTypeStr(Util.tuple21(tpl)) + " -> " + ExpressionDump.debugPrintComponentRefExp(Util.tuple22(tpl));
   // Normal debugging, without type&dimension information on crefs.
-  str := ComponentReference.printComponentRefStr(Util.tuple21(tpl)) + " -> " + ExpressionDump.printExpStr(Util.tuple22(tpl));
+  str := ComponentReference.printComponentRefStr(Util.tuple21(tpl)) + " -> " + ExpressionBasics.printExpStr(Util.tuple22(tpl));
 end printReplacementTupleStr;
 
 public function getConstantReplacements"gets a clean replacement set containing only constant replacement rules"

@@ -1444,7 +1444,7 @@ algorithm
           DAE.T_ARRAY(dims = {DAE.DIM_EXP()}, ty = t2))
       algorithm
         /* HUGE TODO: FIXME: After MSL is updated? */
-        // true = Expression.expEqual(e1,e2);
+        // true = ExpressionBasics.expEqual(e1,e2);
         true := subtype(t1, t2, requireRecordNamesEqual);
       then
         true;
@@ -3287,7 +3287,7 @@ algorithm
       algorithm
         // activate on -d=types flag
         true := Flags.isSet(Flags.TYPES);
-        Debug.traceln("- Types.matchProp failed on exp: " + ExpressionDump.printExpStr(e));
+        Debug.traceln("- Types.matchProp failed on exp: " + ExpressionBasics.printExpStr(e));
         Debug.traceln(printPropStr(inActualType) + " != ");
         Debug.traceln(printPropStr(inExpectedType));
       then fail();
@@ -3366,7 +3366,7 @@ algorithm
         // We cannot use matchType here because it does not cast tuple calls properly
         true := subtype(t1, t2);
         /* (oe,_) = matchType(e, t1, t2, true);
-        true = Expression.expEqual(e,oe); */
+        true = ExpressionBasics.expEqual(e,oe); */
         matchTypeTupleCall(e, ts1, ts2);
       then ();
     case (_,(_ :: _),(_ :: _))
@@ -3938,7 +3938,7 @@ algorithm
           DAE.T_METABOXED(),_)
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- Not yet implemented: Converting record into boxed records: "+ExpressionDump.printExpStr(e)+"\n");
+        Debug.trace("- Not yet implemented: Converting record into boxed records: "+ExpressionBasics.printExpStr(e)+"\n");
       then
         fail();
 
@@ -4788,7 +4788,7 @@ algorithm
     case (e::_,_,_,_)
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
-        str := ExpressionDump.printExpStr(e);
+        str := ExpressionBasics.printExpStr(e);
         Debug.traceln("- Types.listMatchSuperType2 failed: " + str);
       then fail();
   end matchcontinue;
@@ -4907,11 +4907,11 @@ algorithm
   if /*(if not Config.acceptMetaModelicaGrammar() then true else*/ listEmpty(getAllInnerTypesOfType(expected, isPolymorphic)) then
     (exp,actual) := matchType(exp,actual,expected,printFailtrace);
   else
-    if debug then print("match type: " + ExpressionDump.printExpStr(exp) + " of " + TypesDump.unparseType(actual) + " with " + TypesDump.unparseType(expected) + "\n"); end if;
+    if debug then print("match type: " + ExpressionBasics.printExpStr(exp) + " of " + TypesDump.unparseType(actual) + " with " + TypesDump.unparseType(expected) + "\n"); end if;
     (exp,actual) := matchType(exp,actual,DAE.T_METABOXED(DAE.T_UNKNOWN_DEFAULT), printFailtrace);
-    if debug then print("matched type: " + ExpressionDump.printExpStr(exp) + " of " + TypesDump.unparseType(actual) + " with " + TypesDump.unparseType(expected) + " (boxed)\n"); end if;
+    if debug then print("matched type: " + ExpressionBasics.printExpStr(exp) + " of " + TypesDump.unparseType(actual) + " with " + TypesDump.unparseType(expected) + " (boxed)\n"); end if;
     polymorphicBindings := subtypePolymorphic(getUniontypeIfMetarecordReplaceAllSubtypes(actual), getUniontypeIfMetarecordReplaceAllSubtypes(expected), envPath, polymorphicBindings);
-    if debug then print("match type: " + ExpressionDump.printExpStr(exp) + " of " + TypesDump.unparseType(actual) + " with " + TypesDump.unparseType(expected) + " and bindings " + polymorphicBindingsStr(polymorphicBindings) + " (OK)\n"); end if;
+    if debug then print("match type: " + ExpressionBasics.printExpStr(exp) + " of " + TypesDump.unparseType(actual) + " with " + TypesDump.unparseType(expected) + " and bindings " + polymorphicBindingsStr(polymorphicBindings) + " (OK)\n"); end if;
   end if;
 end matchTypePolymorphic;
 
@@ -4941,7 +4941,7 @@ algorithm
       then (exp,actual,polymorphicBindings);
     else
       algorithm
-        str1 := ExpressionDump.printExpStr(iexp);
+        str1 := ExpressionBasics.printExpStr(iexp);
         str2 := TypesDump.unparseType(iactual);
         str3 := TypesDump.unparseType(iexpected);
         Error.addSourceMessage(Error.EXP_TYPE_MISMATCH, {str1,str3,str2}, info);
@@ -5068,7 +5068,7 @@ algorithm
 
     else
       algorithm
-        str := "- Types.matchTypes failed for " + ExpressionDump.printExpStr(inExp)
+        str := "- Types.matchTypes failed for " + ExpressionBasics.printExpStr(inExp)
            + " from " + TypesDump.unparseType(inType) + " to " + TypesDump.unparseType(inExpected) + "\n";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
@@ -5089,7 +5089,7 @@ protected function printFailure
   input DAE.Type expected_type;
 algorithm
   if Flags.isSet(flag) then
-    Debug.traceln("- Types." + source + " failed on:" + ExpressionDump.printExpStr(e));
+    Debug.traceln("- Types." + source + " failed on:" + ExpressionBasics.printExpStr(e));
     Debug.traceln("  type:" + TypesDump.unparseType(e_type) + " differs from expected\n  type:" + TypesDump.unparseType(expected_type));
   end if;
 end printFailure;

@@ -45,10 +45,11 @@ import SimCodeVar;
 protected
 import BackendDAE.VarKind;
 import CR=ComponentReference;
+import Config;
 import DAE.{Exp,Type};
 import Dump;
 import Expression;
-import ExpressionDump.printExpStr;
+import ExpressionBasics.printExpStr;
 import File.Escape.XML;
 import Settings;
 import SimCode.{SimulationSettings,VarInfo};

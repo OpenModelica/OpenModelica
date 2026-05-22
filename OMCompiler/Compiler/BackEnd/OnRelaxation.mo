@@ -1660,7 +1660,7 @@ protected
 algorithm
   (c, e) := inTpl;
   cs := intString(c);
-  es := ExpressionDump.printExpStr(e);
+  es := ExpressionBasics.printExpStr(e);
   s := stringAppendList({cs, ":", es});
 end dumpMatrix1;
 
@@ -1860,7 +1860,7 @@ algorithm
         (vars, eqns, cexp, tpl) := makeDummyVar(inTpl, e1, inVars, inEqns);
         elst := matrix[col];
         elst := List.map1(elst, mulRow, cexp);
-        //  print("mulRow " + intString(col) + " with " + ExpressionDump.printExpStr(e1) + "\n");
+        //  print("mulRow " + intString(col) + " with " + ExpressionBasics.printExpStr(e1) + "\n");
         //  BackendDump.debuglst((elst, dumpMatrix1, ", ", "\n"));
         (elst, vars, eqns, tpl) := addRows(matrix[row], elst, col, vars, eqns, tpl, {});
         //  print("addRow\n");
@@ -2148,7 +2148,7 @@ algorithm
     case ((r, c, BackendDAE.RESIDUAL_EQUATION(exp = e))::rest, _, _, _, _) algorithm
       true := intEq(r, row);
       true := intEq(c, col);
-      estr := ExpressionDump.printExpStr(e);
+      estr := ExpressionBasics.printExpStr(e);
       print(estr); print(", ");
       dumpJacMatrix(rest, row, col+1, size, vars);
     then ();

@@ -162,8 +162,8 @@ protected function printTryToSolve
   input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
 algorithm
   print(instanceName + " tries to solve: " +
-    ExpressionDump.printExpStr(inExp1) + " = " + ExpressionDump.printExpStr(inExp2) +
-    "\nwith respect to: " + ExpressionDump.printExpStr(inExp3) + "\n");
+    ExpressionBasics.printExpStr(inExp1) + " = " + ExpressionBasics.printExpStr(inExp2) +
+    "\nwith respect to: " + ExpressionBasics.printExpStr(inExp3) + "\n");
 end printTryToSolve;
 
 public function solve
@@ -189,7 +189,7 @@ algorithm
     case _ then solveWork(inExp1, inExp2, inExp3, NONE(), functions, NONE(), 0, false, false);
     else algorithm
       if Flags.isSet(Flags.FAILTRACE) then
-        Error.addInternalError("Failed to solve \"" + ExpressionDump.printExpStr(inExp1) + " = " + ExpressionDump.printExpStr(inExp2) + "\" w.r.t. \"" + ExpressionDump.printExpStr(inExp3) + "\"", sourceInfo());
+        Error.addInternalError("Failed to solve \"" + ExpressionBasics.printExpStr(inExp1) + " = " + ExpressionBasics.printExpStr(inExp2) + "\" w.r.t. \"" + ExpressionBasics.printExpStr(inExp3) + "\"", sourceInfo());
       end if;
     then fail();
   end matchcontinue;
@@ -225,7 +225,7 @@ algorithm
     case _ then solveWork(inExp1, inExp2, inExp3, NONE(), functions, uniqueEqIndex, 0, doInline, isContinuousIntegration);
     else algorithm
       if Flags.isSet(Flags.FAILTRACE) then
-        Error.addInternalError("Failed to solve \"" + ExpressionDump.printExpStr(inExp1) + " = " + ExpressionDump.printExpStr(inExp2) + "\" w.r.t. \"" + ExpressionDump.printExpStr(inExp3) + "\"", sourceInfo());
+        Error.addInternalError("Failed to solve \"" + ExpressionBasics.printExpStr(inExp1) + " = " + ExpressionBasics.printExpStr(inExp2) + "\" w.r.t. \"" + ExpressionBasics.printExpStr(inExp3) + "\"", sourceInfo());
       end if;
     then fail();
   end matchcontinue;
@@ -258,8 +258,8 @@ algorithm
       algorithm
         if Flags.isSet(Flags.FAILTRACE) then
           Debug.trace("\n-ExpressionSolve.preprocessingSolve failed:\n");
-          Debug.trace(ExpressionDump.printExpStr(inExp1) + " = " + ExpressionDump.printExpStr(inExp2));
-          Debug.trace(" with respect to: " + ExpressionDump.printExpStr(inExp3));
+          Debug.trace(ExpressionBasics.printExpStr(inExp1) + " = " + ExpressionBasics.printExpStr(inExp2));
+          Debug.trace(" with respect to: " + ExpressionBasics.printExpStr(inExp3));
         end if;
       then (inExp1,inExp2,{},{}, idepth);
   end matchcontinue;
@@ -368,7 +368,7 @@ algorithm
         en := DAE.ENUM_LITERAL(p1,n);
         s1 := AbsynUtil.pathString(p1);
         sn := AbsynUtil.pathString(pn);
-        _ := ExpressionDump.printExpStr(iExp);
+        _ := ExpressionBasics.printExpStr(iExp);
         crstr := ComponentReference.printComponentRefStr(cr);
         estr := "Expression for " + crstr + " out of min(" + s1 + ")/max(" + sn + ") = ";
         // iExp >= e1 and iExp <= en
@@ -455,7 +455,7 @@ algorithm
        // Z/N = rhs -> Z = rhs*N
        (x,N) := Expression.makeFraction(x);
        if not Expression.isOne(N) then
-         //print("\nx ");print(ExpressionDump.printExpStr(x));print("\nN ");print(ExpressionDump.printExpStr(N));
+         //print("\nx ");print(ExpressionBasics.printExpStr(x));print("\nN ");print(ExpressionBasics.printExpStr(N));
          new_x := true;
          y := Expression.expMul(y,N);
        end if;
@@ -480,7 +480,7 @@ algorithm
      end if;
 
      iter := iter + 1;
-     //print("\nx ");print(ExpressionDump.printExpStr(x));print("\ny ");print(ExpressionDump.printExpStr(y));
+     //print("\nx ");print(ExpressionBasics.printExpStr(x));print("\ny ");print(ExpressionBasics.printExpStr(y));
    end while;
 
    y := ExpressionSimplify.simplify1(y);
@@ -719,26 +719,26 @@ algorithm
           // sinh(f(x)) - cosh(g(x)) = 0
           case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT("sinh"), expLst={e1}), DAE.SUB(_),
                           DAE.CALL(path = Absyn.IDENT("cosh"), expLst={e2})),DAE.RCONST(0.0),_)
-          guard Expression.expEqual(e1,e2)
+          guard ExpressionBasics.expEqual(e1,e2)
           then (e1, inExp2, true);
 
           case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT("cosh"), expLst={e1}), DAE.SUB(_),
                           DAE.CALL(path = Absyn.IDENT("sinh"), expLst={e2})),DAE.RCONST(0.0),_)
-          guard Expression.expEqual(e1,e2)
+          guard ExpressionBasics.expEqual(e1,e2)
           then (e1, inExp2, true);
 
 
          // y*sinh(x) - z*cosh(x) = 0
           case(DAE.BINARY(DAE.BINARY(e3,DAE.MUL(),DAE.CALL(path = Absyn.IDENT("sinh"), expLst={e1})), DAE.SUB(tp),
                           DAE.BINARY(e4,DAE.MUL(),DAE.CALL(path = Absyn.IDENT("cosh"), expLst={e2}))),DAE.RCONST(0.0),_)
-          guard Expression.expEqual(e1,e2)
+          guard ExpressionBasics.expEqual(e1,e2)
           algorithm
           e := Expression.makePureBuiltinCall("tanh",{e1},tp);
           then (Expression.expMul(e3,e), e4, true);
 
           case(DAE.BINARY(DAE.BINARY(e4,DAE.MUL(),DAE.CALL(path = Absyn.IDENT("cosh"), expLst={e2})), DAE.SUB(tp),
                           DAE.BINARY(e3,DAE.MUL(),DAE.CALL(path = Absyn.IDENT("sinh"), expLst={e1}))),DAE.RCONST(0.0),_)
-          guard Expression.expEqual(e1,e2)
+          guard ExpressionBasics.expEqual(e1,e2)
           algorithm
           e := Expression.makePureBuiltinCall("tanh",{e1},tp);
           then (Expression.expMul(e3,e), e4, true);
@@ -754,7 +754,7 @@ algorithm
 
           // f(x)^n - g(x)^n = 0 -> (f(x)/g(x))^n = 1
           case(DAE.BINARY(DAE.BINARY(e1, DAE.POW(), e2), DAE.SUB(tp), DAE.BINARY(e3, DAE.POW(), e4)), DAE.RCONST(0.0),_)
-            guard Expression.expEqual(e2,e4) and expHasCref(e1,inExp3) and expHasCref(e3,inExp3)
+            guard ExpressionBasics.expEqual(e2,e4) and expHasCref(e1,inExp3) and expHasCref(e3,inExp3)
           algorithm
             e := Expression.expPow(Expression.makeDiv(e1,e3),e2);
             (e_1, e_2, _) := preprocessingSolve3(e, Expression.makeConstOne(tp), inExp3);
@@ -854,7 +854,7 @@ algorithm
   //print("\nf1 =");print(ExpressionDump.printExpListStr(f1));
   //print("\nf2 =");print(ExpressionDump.printExpListStr(f2));
 
-  if Expression.expEqual(pWithX2,pWithX1) then
+  if ExpressionBasics.expEqual(pWithX2,pWithX1) then
     // e0 + a*x + b*x -> e0 + (a+b)*x
     if not neg then
       ores := Expression.expAdd(pWithoutX1, pWithoutX2);
@@ -863,7 +863,7 @@ algorithm
       ores := Expression.expSub(pWithoutX2, pWithoutX1);
     end if;
     ores := Expression.expMul(ores, pWithX2);
-  elseif Expression.expEqual(pWithX2, Expression.negate(pWithX1)) then
+  elseif ExpressionBasics.expEqual(pWithX2, Expression.negate(pWithX1)) then
     // e0 + a*(-x) + b*x -> e0 + (b-a)*x
     if not neg then
       ores := Expression.expSub(pWithoutX2, pWithoutX1);
@@ -965,7 +965,7 @@ e.g.
   output Boolean newX;
 algorithm
  (oExp,_) := Expression.traverseExpTopDown(inExp1, unifyFunCallsWork, (inExp3));
- newX := Expression.expEqual(oExp, inExp1);
+ newX := ExpressionBasics.expEqual(oExp, inExp1);
 end unifyFunCalls;
 
 protected function unifyFunCallsWork
@@ -1029,7 +1029,7 @@ algorithm
                   case(_,_)
                   algorithm
                     (funX,_) := Expression.traverseExpTopDown(inExp1, inlineCallX, (inExp3, functions));
-                    b := not Expression.expEqual(funX, inExp1);
+                    b := not ExpressionBasics.expEqual(funX, inExp1);
                   then (funX, b);
                   else (inExp1, false);
                   end matchcontinue;
@@ -1169,9 +1169,9 @@ author: vitalij
    case(DAE.CALL(),(X, functions))
      guard expHasCref(inExp, X)
      algorithm
-       //print("\nfIn: ");print(ExpressionDump.printExpStr(inExp));
+       //print("\nfIn: ");print(ExpressionBasics.printExpStr(inExp));
        (e,_,b) := Inline.forceInlineExp(inExp,(functions,{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource);
-       //print("\nfOut: ");print(ExpressionDump.printExpStr(e));
+       //print("\nfOut: ");print(ExpressionBasics.printExpStr(e));
      then (e, not b, iT);
    else (inExp, true, iT);
    end matchcontinue;
@@ -1523,7 +1523,7 @@ algorithm
       then ((e1,coeff));
 
     case (DAE.BINARY(exp1 = e1,operator = DAE.MUL(),exp2 = e2))
-    guard(Expression.expEqual(e1, e2))
+    guard(ExpressionBasics.expEqual(e1, e2))
       then
         ((e1, DAE.RCONST(2.0)));
 
@@ -1569,9 +1569,9 @@ protected
   Boolean b1, b3;
 algorithm
     false := Expression.isZero(e1) and Expression.isZero(e2);
-    true := Expression.expEqual(e2,e5);
-    b1 := Expression.expEqual(e3, Expression.expMul(DAE.RCONST(2.0),e6));
-    b3 := Expression.expEqual(e6, Expression.expMul(DAE.RCONST(2.0),e3));
+    true := ExpressionBasics.expEqual(e2,e5);
+    b1 := ExpressionBasics.expEqual(e3, Expression.expMul(DAE.RCONST(2.0),e6));
+    b3 := ExpressionBasics.expEqual(e6, Expression.expMul(DAE.RCONST(2.0),e3));
 
     true := b1 or b3;
     false := expHasCref(e1, inExp3);
@@ -1735,9 +1735,9 @@ algorithm
         false := hasOnlyFactors(inExp1,inExp2);
         e := Expression.expSub(inExp1,inExp2);
         (e,_) := ExpressionSimplify.simplify1(e);
-        //print("\ne: ");print(ExpressionDump.printExpStr(e));
+        //print("\ne: ");print(ExpressionBasics.printExpStr(e));
         dere := Differentiate.differentiateExpSolve(e, cr, functions);
-        //print("\nder(e): ");print(ExpressionDump.printExpStr(dere));
+        //print("\nder(e): ");print(ExpressionBasics.printExpStr(dere));
         (dere,_) := ExpressionSimplify.simplify(dere);
         false := Expression.isZero(dere);
         false := Expression.expHasCrefNoPreOrStart(dere, cr);
@@ -1815,7 +1815,7 @@ algorithm
            algorithm
             if Flags.isSet(Flags.FAILTRACE) then
               print("\n-ExpressionSolve.solve failed:");
-              print(" with respect to: ");print(ExpressionDump.printExpStr(inExp3));
+              print(" with respect to: ");print(ExpressionBasics.printExpStr(inExp3));
               print(" not support!");
               print("\n");
             end if;
@@ -1945,7 +1945,7 @@ algorithm
     // range [l, u]
     case (SOME((lower, true)), SOME((upper, true))) algorithm
       str := "Model error: Result of " + name + " outside the range "
-        + realString(lower) + " <= " + ExpressionDump.printExpStr(rhs)
+        + realString(lower) + " <= " + ExpressionBasics.printExpStr(rhs)
         + " <= " + realString(upper) + ". Unable to invert.";
       l := DAE.RELATION(DAE.RCONST(lower), DAE.LESSEQ(tp), rhs, -1, NONE());
       u:= DAE.RELATION(rhs, DAE.LESSEQ(tp), DAE.RCONST(upper), -1, NONE());
@@ -1954,7 +1954,7 @@ algorithm
     // range [l, u)
     case (SOME((lower, true)), SOME((upper, false))) algorithm
       str := "Model error: Result of " + name + " outside the range "
-        + realString(lower) + " <= " + ExpressionDump.printExpStr(rhs)
+        + realString(lower) + " <= " + ExpressionBasics.printExpStr(rhs)
         + " < " + realString(upper) + ". Unable to invert.";
       l:= DAE.RELATION(DAE.RCONST(lower), DAE.LESSEQ(tp), rhs, -1, NONE());
       u:= DAE.RELATION(rhs, DAE.LESS(tp), DAE.RCONST(upper), -1, NONE());
@@ -1963,7 +1963,7 @@ algorithm
     // range (l, u]
     case (SOME((lower, false)), SOME((upper, true))) algorithm
       str := "Model error: Result of " + name + " outside the range "
-        + realString(lower) + " < " + ExpressionDump.printExpStr(rhs)
+        + realString(lower) + " < " + ExpressionBasics.printExpStr(rhs)
         + " <= " + realString(upper) + ". Unable to invert.";
       l:= DAE.RELATION(DAE.RCONST(lower), DAE.LESS(tp), rhs, -1, NONE());
       u:= DAE.RELATION(rhs, DAE.LESSEQ(tp), DAE.RCONST(upper), -1, NONE());
@@ -1972,7 +1972,7 @@ algorithm
     // range (l, u)
     case (SOME((lower, false)), SOME((upper, false))) algorithm
       str := "Model error: Result of " + name + " outside the range "
-        + realString(lower) + " < " + ExpressionDump.printExpStr(rhs)
+        + realString(lower) + " < " + ExpressionBasics.printExpStr(rhs)
         + " < " + realString(upper) + ". Unable to invert.";
       l:= DAE.RELATION(DAE.RCONST(lower), DAE.LESS(tp), rhs, -1, NONE());
       u:= DAE.RELATION(rhs, DAE.LESS(tp), DAE.RCONST(upper), -1, NONE());
@@ -1981,7 +1981,7 @@ algorithm
     // range [l, inf)
     case (SOME((lower, true)), NONE()) algorithm
       str := "Model error: Result of " + name + " should be "
-        + ExpressionDump.printExpStr(rhs) + " >= " + realString(lower)
+        + ExpressionBasics.printExpStr(rhs) + " >= " + realString(lower)
         + ". Unable to invert.";
       l:= DAE.RELATION(DAE.RCONST(lower), DAE.LESSEQ(tp), rhs, -1, NONE());
     then (str, l);
@@ -1989,7 +1989,7 @@ algorithm
     // range (l, inf)
     case (SOME((lower, true)), NONE()) algorithm
       str := "Model error: Result of " + name + " should be "
-        + ExpressionDump.printExpStr(rhs) + " > " + realString(lower)
+        + ExpressionBasics.printExpStr(rhs) + " > " + realString(lower)
         + ". Unable to invert.";
       l:= DAE.RELATION(DAE.RCONST(lower), DAE.LESS(tp), rhs, -1, NONE());
     then (str, l);
@@ -1997,7 +1997,7 @@ algorithm
     // range (-inf, u]
     case (NONE(), SOME((upper, true))) algorithm
       str := "Model error: Result of " + name + " should be "
-        + ExpressionDump.printExpStr(rhs) + " <= " + realString(upper)
+        + ExpressionBasics.printExpStr(rhs) + " <= " + realString(upper)
         + ". Unable to invert.";
       u:= DAE.RELATION(rhs, DAE.LESSEQ(tp), DAE.RCONST(upper), -1, NONE());
     then (str, u);
@@ -2005,7 +2005,7 @@ algorithm
     // range (-inf, u)
     case (NONE(), SOME((upper, false))) algorithm
       str := "Model error: Result of " + name + " should be "
-        + ExpressionDump.printExpStr(rhs) + " < " + realString(upper)
+        + ExpressionBasics.printExpStr(rhs) + " < " + realString(upper)
         + ". Unable to invert.";
       u:= DAE.RELATION(rhs, DAE.LESS(tp), DAE.RCONST(upper), -1, NONE());
     then (str, u);

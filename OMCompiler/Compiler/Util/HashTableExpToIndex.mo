@@ -100,7 +100,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(Expression.hashExp,Expression.expEqual,ExpressionDump.printExpStr,intString));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(Expression.hashExp,ExpressionBasics.expEqual,ExpressionBasics.printExpStr,intString));
 end emptyHashTableSized;
 
 annotation(__OpenModelica_Interface="frontend");

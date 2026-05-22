@@ -455,31 +455,31 @@ algorithm
     Integer i,i1,i2;
     DAE.Exp e;
     case(UnitAbsyn.ADD(_,_,e)) algorithm
-      s1 := ExpressionDump.printExpStr(e);
+      s1 := ExpressionBasics.printExpStr(e);
     then s1;
 
     case(UnitAbsyn.SUB(_,_,e)) algorithm
-      s1 := ExpressionDump.printExpStr(e);
+      s1 := ExpressionBasics.printExpStr(e);
     then s1;
 
     case(UnitAbsyn.MUL(_,_,e)) algorithm
-      s1 := ExpressionDump.printExpStr(e);
+      s1 := ExpressionBasics.printExpStr(e);
     then s1;
 
     case(UnitAbsyn.DIV(_,_,e)) algorithm
-      s1 := ExpressionDump.printExpStr(e);
+      s1 := ExpressionBasics.printExpStr(e);
     then s1;
 
     case(UnitAbsyn.EQN(_,_,e)) algorithm
-      s1 := ExpressionDump.printExpStr(e);
+      s1 := ExpressionBasics.printExpStr(e);
     then s1;
 
     case(UnitAbsyn.LOC(_,e)) algorithm
-    s1 := ExpressionDump.printExpStr(e);
+    s1 := ExpressionBasics.printExpStr(e);
     then s1;
 
     case(UnitAbsyn.POW(_,MMath.RATIONAL(_,_),e)) algorithm
-      s1 := ExpressionDump.printExpStr(e);
+      s1 := ExpressionBasics.printExpStr(e);
     then s1;
 
   end match;
@@ -1072,7 +1072,7 @@ algorithm
     can not be declared in Modelica, since modifiers on arrays must affect the whole array */
     case(_,e as DAE.ARRAY(_,_,expl),_,ht,store)
       algorithm
-        print("vector ="+ExpressionDump.printExpStr(e)+"\n");
+        print("vector ="+ExpressionBasics.printExpStr(e)+"\n");
       (uts,terms,store) := buildTermExpList(env,expl,ht,store);
       ut::uts := buildArrayElementTerms(uts,expl);
       uts := listAppend(terms,uts);
@@ -1080,7 +1080,7 @@ algorithm
 
     case(_,e as DAE.MATRIX(matrix=mexpl),_,ht,store)
       algorithm
-        print("Matrix ="+ExpressionDump.printExpStr(e)+"\n");
+        print("Matrix ="+ExpressionBasics.printExpStr(e)+"\n");
         expl := List.flatten(mexpl);
         (uts,terms,store) := buildTermExpList(env,expl,ht,store);
         ut::uts := buildArrayElementTerms(uts,expl);
@@ -1088,7 +1088,7 @@ algorithm
       then (ut,uts,store);
 
     case(_,e as DAE.CALL(),_,_,_) algorithm
-      print("buildTermDAE.CALL failed exp: "+ExpressionDump.printExpStr(e)+"\n");
+      print("buildTermDAE.CALL failed exp: "+ExpressionBasics.printExpStr(e)+"\n");
     then fail();
   end matchcontinue;
 end buildTermExp;
@@ -1233,7 +1233,7 @@ algorithm
       extraTerms := listAppend(eterms1,eterms2);
     then (ut::terms,extraTerms,store);
     case(_,e::_,_,_) algorithm
-      print("buildTermExpList failed for exp"+ExpressionDump.printExpStr(e)+"\n");
+      print("buildTermExpList failed for exp"+ExpressionBasics.printExpStr(e)+"\n");
     then fail();
   end matchcontinue;
 end buildTermExpList;

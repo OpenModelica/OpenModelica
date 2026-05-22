@@ -120,7 +120,7 @@ protected
   DAE.Exp e;
 algorithm
   (e,_) := v;
-  res := ExpressionDump.printExpStr(e);
+  res := ExpressionBasics.printExpStr(e);
 end printExpSourceTplStr;
 
 annotation(__OpenModelica_Interface="frontend");

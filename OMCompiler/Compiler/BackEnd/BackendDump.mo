@@ -922,9 +922,9 @@ algorithm
 
     case (BackendDAE.EQUATION(exp=e1, scalar=e2, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res, _) algorithm /*done*/
       str := "EQUATION: ";
-      str := str + ExpressionDump.printExpStr(e1);
+      str := str + ExpressionBasics.printExpStr(e1);
       str := str + " = ";
-      str := str + ExpressionDump.printExpStr(e2);
+      str := str + ExpressionBasics.printExpStr(e2);
       str := str + " (" + equationKindString(eqKind) + ")\n";
       print(str);
 
@@ -941,9 +941,9 @@ algorithm
 
     case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res, _) algorithm /*done*/
       str := "COMPLEX_EQUATION: ";
-      str := str + ExpressionDump.printExpStr(e1);
+      str := str + ExpressionBasics.printExpStr(e1);
       str := str + " = ";
-      str := str + ExpressionDump.printExpStr(e2);
+      str := str + ExpressionBasics.printExpStr(e2);
       str := str + " (" + equationKindString(eqKind) + ")\n";
       print(str);
 
@@ -960,7 +960,7 @@ algorithm
 
     case (BackendDAE.SOLVED_EQUATION(exp=e, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res,_) algorithm
       print("SOLVED_EQUATION: ");
-      str := ExpressionDump.printExpStr(e);
+      str := ExpressionBasics.printExpStr(e);
       print(str);
       print(" (" + equationKindString(eqKind) + ")\n");
       str := ExpressionDump.dumpExpStr(e,0);
@@ -972,7 +972,7 @@ algorithm
 
     case (BackendDAE.RESIDUAL_EQUATION(exp=e, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res, _) algorithm /*done*/
       str := "RESIDUAL_EQUATION: ";
-      str := str + ExpressionDump.printExpStr(e);
+      str := str + ExpressionBasics.printExpStr(e);
       str := str + " (" + equationKindString(eqKind) + ")\n";
       print(str);
 
@@ -986,7 +986,7 @@ algorithm
 
     case (BackendDAE.ARRAY_EQUATION(left=e1, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res,_) algorithm
       print("ARRAY_EQUATION: ");
-      str := ExpressionDump.printExpStr(e1);
+      str := ExpressionBasics.printExpStr(e1);
       print(str);
       str := str + " (" + equationKindString(eqKind) + ")\n";
       str := ExpressionDump.dumpExpStr(e1,0);
@@ -1664,7 +1664,7 @@ protected
   list<BackendDAE.WhenOperator> whenStmtLst;
 algorithm
   BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst=whenStmtLst, elsewhenPart=oweqn) := inWhenEqn;
-  conditionStr := ExpressionDump.printExpStr(cond);
+  conditionStr := ExpressionBasics.printExpStr(cond);
   whenStmtStr := stringDelimitList(List.map(whenStmtLst, dumpWhenOperatorStr), ";\n  ") + ";\n";
   if isSome(oweqn) then
     SOME(weqn) := oweqn;
@@ -1700,29 +1700,29 @@ algorithm
       list<BackendDAE.WhenOperator> whenStmtLst;
     case (BackendDAE.EQUATION(exp = e1,scalar = e2))
       algorithm
-        s1 := ExpressionDump.printExpStr(e1);
-        s2 := ExpressionDump.printExpStr(e2);
+        s1 := ExpressionBasics.printExpStr(e1);
+        s2 := ExpressionBasics.printExpStr(e2);
         res := stringAppendList({s1," = ",s2});
       then
         res;
     case (BackendDAE.COMPLEX_EQUATION(left = e1,right = e2))
       algorithm
-        s1 := ExpressionDump.printExpStr(e1);
-        s2 := ExpressionDump.printExpStr(e2);
+        s1 := ExpressionBasics.printExpStr(e1);
+        s2 := ExpressionBasics.printExpStr(e2);
         res := stringAppendList({s1," = ",s2});
       then
         res;
     case (BackendDAE.ARRAY_EQUATION(left = e1,right = e2))
       algorithm
-        s1 := ExpressionDump.printExpStr(e1);
-        s2 := ExpressionDump.printExpStr(e2);
+        s1 := ExpressionBasics.printExpStr(e1);
+        s2 := ExpressionBasics.printExpStr(e2);
         res := stringAppendList({s1," = ",s2});
       then
         res;
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2))
       algorithm
         s1 := ComponentReference.printComponentRefStr(cr);
-        s2 := ExpressionDump.printExpStr(e2);
+        s2 := ExpressionBasics.printExpStr(e2);
         res := stringAppendList({s1," := ",s2});
       then
         res;
@@ -1733,7 +1733,7 @@ algorithm
         res;
     case (BackendDAE.RESIDUAL_EQUATION(exp = e))
       algorithm
-        s1 := ExpressionDump.printExpStr(e);
+        s1 := ExpressionBasics.printExpStr(e);
         res := stringAppendList({s1,"= 0"});
       then
         res;
@@ -1744,7 +1744,7 @@ algorithm
         res;
     case (BackendDAE.IF_EQUATION(conditions=e1::expl, eqnstrue=eqns::eqnstrue, eqnsfalse=eqnsfalse))
       algorithm
-        s1 := ExpressionDump.printExpStr(e1);
+        s1 := ExpressionBasics.printExpStr(e1);
         s2 := stringDelimitList(List.map(eqns,equationString),"\n  ");
         s3 := stringAppendList({"if ",s1," then\n  ",s2});
         res := ifequationString(expl,eqnstrue,eqnsfalse,s3);
@@ -1752,7 +1752,7 @@ algorithm
         res;
     case BackendDAE.FOR_EQUATION(iter = iter, start = start, stop = stop, body = eqn)
       algorithm
-        s1 := ExpressionDump.printExpStr(iter) + " in " + ExpressionDump.printExpStr(start) + " : " + ExpressionDump.printExpStr(stop);
+        s1 := ExpressionBasics.printExpStr(iter) + " in " + ExpressionBasics.printExpStr(start) + " : " + ExpressionBasics.printExpStr(stop);
         s2 := equationString(eqn);
         res := stringAppendList({"for ", s1, " loop\n    ", s2, "; end for; "});
       then
@@ -1775,7 +1775,7 @@ algorithm
     case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.RELATION(index=index_),occurEquLst = eq) algorithm
       eq_s_list := List.map(eq, intString);
       eq_s := stringDelimitList(eq_s_list, ",");
-      str := ExpressionDump.printExpStr(e);
+      str := ExpressionBasics.printExpStr(e);
       str_index:=intString(index_);
       str2 := stringAppendList({str," with index = ",str_index," in equations [",eq_s,"]"});
     then str2;
@@ -1783,21 +1783,21 @@ algorithm
     case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.LBINARY(),occurEquLst = eq) algorithm
       eq_s_list := List.map(eq, intString);
       eq_s := stringDelimitList(eq_s_list, ",");
-      str := ExpressionDump.printExpStr(e);
+      str := ExpressionBasics.printExpStr(e);
       str2 := stringAppendList({str," in equations [",eq_s,"]"});
     then str2;
 
     case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.LUNARY(),occurEquLst = eq) algorithm
       eq_s_list := List.map(eq, intString);
       eq_s := stringDelimitList(eq_s_list, ",");
-      str := ExpressionDump.printExpStr(e);
+      str := ExpressionBasics.printExpStr(e);
       str2 := stringAppendList({str," in equations [",eq_s,"]"});
     then str2;
 
     case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.CALL(path = Absyn.IDENT()),occurEquLst = eq) algorithm
       eq_s_list := List.map(eq, intString);
       eq_s := stringDelimitList(eq_s_list, ",");
-      str := ExpressionDump.printExpStr(e);
+      str := ExpressionBasics.printExpStr(e);
       str2 := stringAppendList({str," in equations [",eq_s,"]"});
     then str2;
 
@@ -1814,7 +1814,7 @@ algorithm
     then "SIMPLE_TIME_EVENT";
 
     case BackendDAE.SAMPLE_TIME_EVENT()
-    then intString(inTimeEvent.index) + ": sample(" + ExpressionDump.printExpStr(inTimeEvent.startExp) + ", " + ExpressionDump.printExpStr(inTimeEvent.intervalExp) + ")";
+    then intString(inTimeEvent.index) + ": sample(" + ExpressionBasics.printExpStr(inTimeEvent.startExp) + ", " + ExpressionBasics.printExpStr(inTimeEvent.intervalExp) + ")";
 
     else "unknown time event";
   end match;
@@ -1825,7 +1825,7 @@ public function simIteratorString
   output String str;
 algorithm
   str := match iter
-    case BackendDAE.SIM_ITERATOR_RANGE()  then ComponentReference.printComponentRefStr(iter.name) + " in " + ExpressionDump.printExpStr(iter.start) + ":" + ExpressionDump.printExpStr(iter.step) + ":" + ExpressionDump.printExpStr(iter.stop);
+    case BackendDAE.SIM_ITERATOR_RANGE()  then ComponentReference.printComponentRefStr(iter.name) + " in " + ExpressionBasics.printExpStr(iter.start) + ":" + ExpressionBasics.printExpStr(iter.step) + ":" + ExpressionBasics.printExpStr(iter.stop);
     case BackendDAE.SIM_ITERATOR_LIST()   then ComponentReference.printComponentRefStr(iter.name) + " in " + List.toString(iter.lst, intString, "", "{", ", ", "}", true, 10);
   end match;
 end simIteratorString;
@@ -1933,7 +1933,7 @@ public function debugStrCrefStrExpStr
   input DAE.Exp d;
   input String e;
 algorithm
-  print(a + ComponentReference.printComponentRefStr(b) + c + ExpressionDump.printExpStr(d) + e);
+  print(a + ComponentReference.printComponentRefStr(b) + c + ExpressionBasics.printExpStr(d) + e);
 end debugStrCrefStrExpStr;
 
 public function debugStrCrefStrCrefStr
@@ -1950,7 +1950,7 @@ public function debugExpStr
   input DAE.Exp a;
   input String b;
 algorithm
-  print(ExpressionDump.printExpStr(a) + b);
+  print(ExpressionBasics.printExpStr(a) + b);
 end debugExpStr;
 
 public function debugStrExpStr
@@ -1958,7 +1958,7 @@ public function debugStrExpStr
   input DAE.Exp b;
   input String c;
 algorithm
-  print(a + ExpressionDump.printExpStr(b) + c);
+  print(a + ExpressionBasics.printExpStr(b) + c);
 end debugStrExpStr;
 
 public function debugStrExpLstStr
@@ -1967,7 +1967,7 @@ public function debugStrExpLstStr
   input String c, d;
 algorithm
   print(a);
-  debuglst(b,ExpressionDump.printExpStr,c,d);
+  debuglst(b,ExpressionBasics.printExpStr,c,d);
 end debugStrExpLstStr;
 
 public function debugStrExpStrCrefStr
@@ -1977,7 +1977,7 @@ public function debugStrExpStrCrefStr
   input DAE.ComponentRef d;
   input String e;
 algorithm
-  print(a + ExpressionDump.printExpStr(b) + c + ComponentReference.printComponentRefStr(d) + e);
+  print(a + ExpressionBasics.printExpStr(b) + c + ComponentReference.printComponentRefStr(d) + e);
 end debugStrExpStrCrefStr;
 
 public function debugStrExpStrExpStr
@@ -1987,7 +1987,7 @@ public function debugStrExpStrExpStr
   input DAE.Exp d;
   input String e;
 algorithm
-  print(a + ExpressionDump.printExpStr(b) + c + ExpressionDump.printExpStr(d) + e);
+  print(a + ExpressionBasics.printExpStr(b) + c + ExpressionBasics.printExpStr(d) + e);
 end debugStrExpStrExpStr;
 
 public function debugExpStrExpStrExpStr
@@ -1998,7 +1998,7 @@ public function debugExpStrExpStrExpStr
   input DAE.Exp e;
   input String f;
 algorithm
-  print(ExpressionDump.printExpStr(a) + b + ExpressionDump.printExpStr(c) + d + ExpressionDump.printExpStr(e) + f);
+  print(ExpressionBasics.printExpStr(a) + b + ExpressionBasics.printExpStr(c) + d + ExpressionBasics.printExpStr(e) + f);
 end debugExpStrExpStrExpStr;
 
 public function debugStrExpStrExpStrExpStr
@@ -2010,7 +2010,7 @@ public function debugStrExpStrExpStrExpStr
   input DAE.Exp f;
   input String g;
 algorithm
-  print(a + ExpressionDump.printExpStr(b) + c + ExpressionDump.printExpStr(d) + e + ExpressionDump.printExpStr(f) + g);
+  print(a + ExpressionBasics.printExpStr(b) + c + ExpressionBasics.printExpStr(d) + e + ExpressionBasics.printExpStr(f) + g);
 end debugStrExpStrExpStrExpStr;
 
 public function debugStrEqnStr
@@ -2172,34 +2172,34 @@ algorithm
       list<DAE.Exp> functionArgs;
     case BackendDAE.ASSIGN(left=e1, right=e)
      algorithm
-      scr := ExpressionDump.printExpStr(e1);
-      se := ExpressionDump.printExpStr(e);
+      scr := ExpressionBasics.printExpStr(e1);
+      se := ExpressionBasics.printExpStr(e);
       str := stringAppendList({scr," := ",se});
      then
       str;
     case BackendDAE.REINIT(stateVar=cr,value=e)
      algorithm
       scr := ComponentReference.printComponentRefStr(cr);
-      se := ExpressionDump.printExpStr(e);
+      se := ExpressionBasics.printExpStr(e);
       str := stringAppendList({"reinit(",scr,",",se,")"});
      then
       str;
     case BackendDAE.ASSERT(condition=e,message=e1)
      algorithm
-      se := ExpressionDump.printExpStr(e);
-      se1 := ExpressionDump.printExpStr(e1);
+      se := ExpressionBasics.printExpStr(e);
+      se1 := ExpressionBasics.printExpStr(e1);
       str := stringAppendList({"assert(",se,",",se1,")"});
      then
       str;
     case BackendDAE.TERMINATE(message=e)
      algorithm
-      se := ExpressionDump.printExpStr(e);
+      se := ExpressionBasics.printExpStr(e);
       str := stringAppendList({"terminate(",se,")"});
      then
       str;
     case BackendDAE.NORETCALL(exp=e)
       then
-        ExpressionDump.printExpStr(e);
+        ExpressionBasics.printExpStr(e);
   end match;
 end dumpWhenOperatorStr;
 
@@ -2350,7 +2350,7 @@ algorithm
     case ({}) then {};
     case (((row,col,BackendDAE.RESIDUAL_EQUATION(exp = e)) :: eqns))
       algorithm
-        estr := ExpressionDump.printExpStr(e);
+        estr := ExpressionBasics.printExpStr(e);
         rowstr := intString(row);
         colstr := intString(col);
         str := stringAppendList({"{",rowstr,",",colstr,"}:",estr});
@@ -2510,7 +2510,7 @@ algorithm
         s;
     case(e::elst,eqns::eqnslst,_,_)
       algorithm
-        se := ExpressionDump.printExpStr(e);
+        se := ExpressionBasics.printExpStr(e);
         seqns := stringDelimitList(List.map(eqns,equationString),"\n  ");
         s := stringAppendList({iString,"\nelseif ",se," then\n  ",seqns});
       then
@@ -2530,10 +2530,10 @@ algorithm
   paths := ElementSource.getElementSourceTypes(inVar.source);
   paths_lst := list(AbsynUtil.pathString(p) for p in paths);
   unreplaceableStr := if inVar.unreplaceable then " unreplaceable" else "";
-  dimensions := ExpressionDump.dimensionsString(inVar.arryDim);
+  dimensions := ExpressionBasics.dimensionsString(inVar.arryDim);
   dimensions := if dimensions <> "" then " [" + dimensions + "]" else "";
   outStr := DAEDump.dumpDirectionStr(inVar.varDirection) + ComponentReference.printComponentRefStr(inVar.varName)
-            + (if isSome(inVar.tplExp) then " in " + ExpressionDump.printExpStr(Util.getOption(inVar.tplExp)) else "") + ":"
+            + (if isSome(inVar.tplExp) then " in " + ExpressionBasics.printExpStr(Util.getOption(inVar.tplExp)) else "") + ":"
             + kindString(inVar.varKind) + "(" + connectorTypeString(inVar.connectorType) + attributesString(inVar.values)
             + ") " + optExpressionString(inVar.bindExp, "") + DAEDumpTypes.dumpCommentAnnotationStr(inVar.comment)
             + stringDelimitList(paths_lst, ", ") + " type: " + DAEDump.daeTypeStr(inVar.varType) + dimensions + unreplaceableStr;
@@ -2691,9 +2691,9 @@ algorithm
 
     case(NONE()) then ();
     case(SOME(DAE.DISTRIBUTION(e1,e2,e3))) algorithm
-      print("distribution = Distribution("+ExpressionDump.printExpStr(e1)+", "
-      +ExpressionDump.printExpStr(e2)+", "
-      +ExpressionDump.printExpStr(e3)+")");
+      print("distribution = Distribution("+ExpressionBasics.printExpStr(e1)+", "
+      +ExpressionBasics.printExpStr(e2)+", "
+      +ExpressionBasics.printExpStr(e3)+")");
     then ();
   end match;
 end dumpOptDistribution;
@@ -2727,7 +2727,7 @@ algorithm
        String s,se,str;
     case (SOME(e),s)
       algorithm
-         se := ExpressionDump.printExpStr(e);
+         se := ExpressionBasics.printExpStr(e);
          str := stringAppendList({s," = ",se," "});
          print(str);
      then ();
@@ -2818,9 +2818,9 @@ algorithm
     case(NONE()) then "";
     case(SOME(DAE.DISTRIBUTION(e1,e2,e3)))
       algorithm
-        str :=  "distribution = Distribution(" + ExpressionDump.printExpStr(e1) + ", "
-             + ExpressionDump.printExpStr(e2) + ", "
-             + ExpressionDump.printExpStr(e3) + ")";
+        str :=  "distribution = Distribution(" + ExpressionBasics.printExpStr(e1) + ", "
+             + ExpressionBasics.printExpStr(e2) + ", "
+             + ExpressionBasics.printExpStr(e3) + ")";
     then str;
   end match;
 end optDistributionString;
@@ -2928,7 +2928,7 @@ algorithm
        String se,str;
     case (SOME(e),_)
       algorithm
-         se := ExpressionDump.printExpStr(e);
+         se := ExpressionBasics.printExpStr(e);
          str := inString + " = " + se + " ";
      then str;
     else "";
@@ -3439,7 +3439,7 @@ end intListStr;
 //         e = BackendVariable.varBindExp(v);
 //         //print("### dump var : " +  ComponentReference.printComponentRefStr(cr) + "\n");
 //         scr = ComponentReference.printComponentRefStr(cr);
-//         se = ExpressionDump.printExpStr(e);
+//         se = ExpressionBasics.printExpStr(e);
 //         s = stringAppendList({scr," = ",se,"\n"});
 //         print(s);
 //       then ((v,{}));

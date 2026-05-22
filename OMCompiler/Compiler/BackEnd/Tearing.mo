@@ -4354,7 +4354,7 @@ algorithm
           lhs := BackendEquation.getEquationLHS(eqn);
           (cr,isDer) := Expression.expOrDerCref(lhs);
 
-          //print("*****" + ExpressionDump.printExpStr(lhs) + "= " +  ExpressionDump.printExpStr(rhs) + "*******\n");
+          //print("*****" + ExpressionBasics.printExpStr(lhs) + "= " +  ExpressionBasics.printExpStr(rhs) + "*******\n");
           for j in (i+1):n loop
             if listMember(arrayGet(indx_var,i) , arrayGet(mm, arrayGet(indx_eq,j))) then
               SOME(eqn1) := arrayGet(optarr, j);
@@ -4422,7 +4422,7 @@ algorithm
         if Flags.isSet(Flags.DUMP_RTEARING) then
           print("****************\n");
           for i in 1:m loop
-            print("TearVar: " + ExpressionDump.printExpStr(arrayGet(tear_exp, i)) +  "[" + intString(i-1) + "]\n");
+            print("TearVar: " + ExpressionBasics.printExpStr(arrayGet(tear_exp, i)) +  "[" + intString(i-1) + "]\n");
           end for;
           print("****************\n");
         end if;

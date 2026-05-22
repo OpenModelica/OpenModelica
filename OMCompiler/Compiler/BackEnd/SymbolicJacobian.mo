@@ -484,7 +484,7 @@ algorithm
       String s;
     case BackendDAE.EQSYSTEM(orderedEqs=orderedEqs) algorithm
       ((_, explst as _::_)) := BackendDAEUtil.traverseBackendDAEExpsEqns(orderedEqs, traverserinputDerivativesUsed, (BackendVariable.daeGlobalKnownVars(inShared), {}));
-      s := stringDelimitList(List.map(explst, ExpressionDump.printExpStr), "\n");
+      s := stringDelimitList(List.map(explst, ExpressionBasics.printExpStr), "\n");
       Error.addMessage(Error.DERIVATIVE_INPUT, {s});
       hasFailed := true;
     then (BackendDAEUtil.setEqSystEqs(isyst, orderedEqs), true);
@@ -3231,7 +3231,7 @@ algorithm
   (outExp, (expList, cont, _)) := Expression.traverseExpTopDown(inExp, hasEqnNonDiffParts, inTpl);
   if Flags.isSet(Flags.DUMP_EXCLUDED_EXP) and not cont then
     print("Traverser for catching functions, that should not be differentiated\n");
-    print(stringDelimitList(List.map(expList, ExpressionDump.printExpStr), "\n"));
+    print(stringDelimitList(List.map(expList, ExpressionBasics.printExpStr), "\n"));
     print("\n\n");
   end if;
 end traverserhasEqnNonDiffParts;
@@ -3899,7 +3899,7 @@ algorithm
     end for;
   else
     if Flags.isSet(Flags.FAILTRACE) then
-      str := ExpressionDump.printExpStr(inExp);
+      str := ExpressionBasics.printExpStr(inExp);
       Debug.traceln("- BackendDAE.calculateJacobianRow2 failed on " + str);
     end if;
     fail();
@@ -4541,7 +4541,7 @@ uniontype LinearJacobian
         str := str + "[" + intString(index) + "|" + realString(value) + "] ";
       end for;
     end if;
-    str := str + "    || RHS: " + ExpressionDump.printExpStr(ExpressionSimplify.simplify(rhs)) + "\n";
+    str := str + "    || RHS: " + ExpressionBasics.printExpStr(ExpressionSimplify.simplify(rhs)) + "\n";
   end rowToString;
 
   public function generate

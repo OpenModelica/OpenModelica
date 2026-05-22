@@ -381,9 +381,9 @@ algorithm
   // print("StateMachineFlatten.smeqsSubsXInState: cref: " + ComponentReference.printComponentRefStr(cref) + "\n");
   // print("StateMachineFlatten.smeqsSubsXInState: lhsRef: " + ComponentReference.printComponentRefStr(lhsRef) + "\n");
   if ComponentReferenceBasics.crefEqual(cref, lhsRef) then
-    // print("StateMachineFlatten.smeqsSubsXInState: rhsExp: " + ExpressionDump.printExpStr(rhsExp) + "\n");
+    // print("StateMachineFlatten.smeqsSubsXInState: rhsExp: " + ExpressionBasics.printExpStr(rhsExp) + "\n");
     (rhsExp2, _) :=  Expression.traverseExpTopDown(rhsExp, traversingSubsXInState, (xInState, substExp, false));
-    // print("StateMachineFlatten.smeqsSubsXInState: rhsExp2: " + ExpressionDump.printExpStr(rhsExp2) + "\n");
+    // print("StateMachineFlatten.smeqsSubsXInState: rhsExp2: " + ExpressionBasics.printExpStr(rhsExp2) + "\n");
   else
     rhsExp2 := rhsExp;
   end if;
@@ -1405,7 +1405,7 @@ algorithm
 
   (t, cExps) := createTandC(q, inTransitions);
   // print("StateMachineFlatten.basicFlatSmSemantics: transitions:\n\t" + stringDelimitList(List.map(t, dumpTransitionStr), "\n\t") + "\n");
-  // print("StateMachineFlatten.basicFlatSmSemantics: conditions\n\t" + stringDelimitList(List.map(cExps, ExpressionDump.printExpStr), "\n\t") + "\n");
+  // print("StateMachineFlatten.basicFlatSmSemantics: conditions\n\t" + stringDelimitList(List.map(cExps, ExpressionBasics.printExpStr), "\n\t") + "\n");
 
   defaultIntVar := createVarWithDefaults(ComponentReference.makeDummyCref(), DAE.DISCRETE(), DAE.T_INTEGER_DEFAULT, {});
   defaultBoolVar := createVarWithDefaults(ComponentReference.makeDummyCref(), DAE.DISCRETE(), DAE.T_BOOL_DEFAULT, {});
@@ -1577,7 +1577,7 @@ algorithm
     exp1 := DAE.CREF(arrayGet(cRefs,i), DAE.T_BOOL_DEFAULT);
     DAE.VAR(binding=bindExp) := arrayGet(tImmediateVars,i);
     // Check whether it is an immediate or an delayed transition
-    rhs := if Util.applyOptionOrDefault(bindExp, function Expression.expEqual(inExp1=DAE.BCONST(true)), false) then
+    rhs := if Util.applyOptionOrDefault(bindExp, function ExpressionBasics.expEqual(inExp1=DAE.BCONST(true)), false) then
       // immediate transition
       exp else
       // delayed transition
@@ -1988,7 +1988,7 @@ protected
 algorithm
   TRANSITION(from, to, condition, immediate, reset, synchronize, priority) := transition;
   transitionStr := "TRANSITION(from="+intString(from)+", to="+intString(to)+
-    ", condition="+ExpressionDump.printExpStr(condition)+
+    ", condition="+ExpressionBasics.printExpStr(condition)+
     ", immediate="+boolString(immediate)+", reset="+boolString(reset)+
     ", synchronize="+boolString(synchronize)+", priority="+intString(priority)+")";
 end dumpTransitionStr;

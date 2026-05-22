@@ -3736,6 +3736,11 @@ package ComponentReferenceBasics
     input DAE.ComponentRef cref;
     output list<DAE.Dimension> dims;
   end crefDims;
+
+  function crefSubs
+    input DAE.ComponentRef cref;
+    output list<DAE.Subscript> subs;
+  end crefSubs;
 end ComponentReferenceBasics;
 
 package ComponentReference
@@ -3759,11 +3764,6 @@ package ComponentReference
     input DAE.ComponentRef inComponentRef;
     output DAE.ComponentRef outComponentRef;
   end crefStripSubs;
-
-  function crefSubs
-    input DAE.ComponentRef cref;
-    output list<DAE.Subscript> subs;
-  end crefSubs;
 
   function crefTypeFull
     input DAE.ComponentRef inRef;
@@ -4040,12 +4040,14 @@ package ExpressionDump
     input DAE.Operator inOperator;
     output String outString;
   end binopSymbol;
+end ExpressionDump;
 
+package ExpressionBasics
   function printExpStr
     input DAE.Exp exp;
     output String outString;
   end printExpStr;
-end ExpressionDump;
+end ExpressionBasics;
 
 package Config
   function acceptMetaModelicaGrammar

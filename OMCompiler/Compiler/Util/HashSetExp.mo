@@ -91,7 +91,7 @@ public function emptyHashSetSized
   input Integer size;
   output HashSet hashSet;
 algorithm
-  hashSet := BaseHashSet.emptyHashSetWork(size,(Expression.hashExp,Expression.expEqual,ExpressionDump.printExpStr));
+  hashSet := BaseHashSet.emptyHashSetWork(size,(Expression.hashExp,ExpressionBasics.expEqual,ExpressionBasics.printExpStr));
 end emptyHashSetSized;
 
 annotation(__OpenModelica_Interface="frontend");

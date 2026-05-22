@@ -1383,7 +1383,7 @@ algorithm
     case DAE.DIM_INTEGER()
       algorithm
         if inDim.integer < 0 then
-          dim_str := ExpressionDump.dimensionString(inDim);
+          dim_str := ExpressionBasics.dimensionString(inDim);
           cr := DAE.CREF_IDENT(inIdent, DAE.T_REAL_DEFAULT, {});
           cr_str := ComponentReference.printComponentRefStr(
             PrefixUtil.prefixCrefNoContext(inPrefix, cr));
@@ -1471,12 +1471,12 @@ algorithm
         dim_size2 := Expression.dimensionSize(ty_dim);
         true := dim_size1 <> dim_size2;
         // If the dimensions are not equal, print an error message.
-        exp_str := ExpressionDump.printExpStr(exp);
+        exp_str := ExpressionBasics.printExpStr(exp);
         exp_ty_str := TypesDump.unparseType(ty);
         // We don't know the complete expected type, so lets assume that the
         // rest of the expression's type is correct (will be caught later anyway).
         _ :: ty_dims := TypesDump.getDimensions(ty);
-        dims_str := ExpressionDump.dimensionsString(inDimension :: ty_dims);
+        dims_str := ExpressionBasics.dimensionsString(inDimension :: ty_dims);
         Error.addMultiSourceMessage(Error.ARRAY_DIMENSION_MISMATCH,
           {exp_str, exp_ty_str, dims_str}, info::inInfo::{});
       then
@@ -1647,7 +1647,7 @@ algorithm
       algorithm
         failure(_ := Mod.lookupIdxModification(mod, DAE.ICONST(i)));
         str1 := PrefixUtil.printPrefixStrIgnoreNoPre(PrefixUtil.prefixAdd(n, {}, {}, pre, SCode.VAR(), ci_state, info));
-        str2 := "[" + stringDelimitList(List.map(idxs, ExpressionDump.printSubscriptStr), ", ") + "]";
+        str2 := "[" + stringDelimitList(List.map(idxs, ExpressionBasics.printSubscriptStr), ", ") + "]";
         str3 := Mod.prettyPrintMod(mod, 1);
         str4 := PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "(" + n + str2 + "=" + str3 + ")";
         str2 := str1 + str2;

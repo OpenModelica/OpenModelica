@@ -219,7 +219,7 @@ algorithm
         */
       else
         algorithm
-          Error.addCompilerWarning("The binding expression "+ExpressionDump.printExpStr(e)+" of the visualization type component " +ComponentReference.crefStr(cr)+ "  cannot be evaluated. Please specify a visualization type (CAD files are specified as modelica://packagename/filename.stl)");
+          Error.addCompilerWarning("The binding expression "+ExpressionBasics.printExpStr(e)+" of the visualization type component " +ComponentReference.crefStr(cr)+ "  cannot be evaluated. Please specify a visualization type (CAD files are specified as modelica://packagename/filename.stl)");
         then e;
     end matchcontinue;
   else
@@ -821,10 +821,10 @@ algorithm
       array<DAE.Exp> color, r, widthDir, lengthDir;
       array<list<DAE.Exp>> T;
   case(SHAPE(ident=ident, shapeType=shapeType, color=color, r=r, lengthDir=lengthDir, widthDir=widthDir, T=T, length=length, width=width, height=height, extra=extra))
-  then ("SHAPE "+ComponentReference.printComponentRefStr(ident)+" '"+ExpressionDump.printExpStr(shapeType) + "'\n r{"+stringDelimitList(list(ExpressionDump.dumpExpStr(e, 0) for e in r),",")+"}" +
-        "\nlD{"+stringDelimitList(List.mapArray(lengthDir, ExpressionDump.printExpStr),",")+"}"+" wD{"+stringDelimitList(List.mapArray(widthDir, ExpressionDump.printExpStr),",")+"}"+
-        "\ncolor("+stringDelimitList(List.mapArray(color, ExpressionDump.printExpStr),",")+")"+" w: "+ExpressionDump.printExpStr(width)+" h: "+ExpressionDump.printExpStr(height)+" l: "+ExpressionDump.printExpStr(length) +
-        "\nT {"+ stringDelimitList(List.map(List.flatten(arrayList(T)),ExpressionDump.printExpStr),", ")+"}"+"\nextra{"+ExpressionDump.printExpStr(extra)+"}");
+  then ("SHAPE "+ComponentReference.printComponentRefStr(ident)+" '"+ExpressionBasics.printExpStr(shapeType) + "'\n r{"+stringDelimitList(list(ExpressionDump.dumpExpStr(e, 0) for e in r),",")+"}" +
+        "\nlD{"+stringDelimitList(List.mapArray(lengthDir, ExpressionBasics.printExpStr),",")+"}"+" wD{"+stringDelimitList(List.mapArray(widthDir, ExpressionBasics.printExpStr),",")+"}"+
+        "\ncolor("+stringDelimitList(List.mapArray(color, ExpressionBasics.printExpStr),",")+")"+" w: "+ExpressionBasics.printExpStr(width)+" h: "+ExpressionBasics.printExpStr(height)+" l: "+ExpressionBasics.printExpStr(length) +
+        "\nT {"+ stringDelimitList(List.map(List.flatten(arrayList(T)),ExpressionBasics.printExpStr),", ")+"}"+"\nextra{"+ExpressionBasics.printExpStr(extra)+"}");
   else
     then "-";
   end match;

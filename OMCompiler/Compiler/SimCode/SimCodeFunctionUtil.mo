@@ -88,7 +88,7 @@ public function crefSubIsScalar
 protected
   list<DAE.Subscript> subs;
 algorithm
-  subs := ComponentReference.crefSubs(cref);
+  subs := ComponentReferenceBasics.crefSubs(cref);
   isScalar := subsToScalar(subs);
 end crefSubIsScalar;
 
@@ -1316,7 +1316,7 @@ algorithm
       then (exp, t);
     case (exp, _)
       algorithm
-        msg := "function replaceLiteralExp failed. Falling back to not replacing "+ExpressionDump.printExpStr(exp)+".";
+        msg := "function replaceLiteralExp failed. Falling back to not replacing "+ExpressionBasics.printExpStr(exp)+".";
         Error.addInternalError(msg, sourceInfo());
       then (inExp,inTpl);
   end matchcontinue;

@@ -1615,7 +1615,7 @@ algorithm
         s := Dump.printExpStr(aexp);
         exps := List.map(args, Util.tuple21);
         tps := List.map(args, Util.tuple22);
-        exps_str := List.map(exps, ExpressionDump.printExpStr);
+        exps_str := List.map(exps, ExpressionBasics.printExpStr);
         _ := stringDelimitList(exps_str, ", ");
         tps_str := List.map(tps, TypesDump.unparseType);
         tpsstr := stringDelimitList(tps_str, ", ");
@@ -2061,7 +2061,7 @@ algorithm
         true := boolOr(b1,b2);
         verifyOp(op);
         opString := ExpressionDump.relopSymbol(op);
-        stmtString := ExpressionDump.printExpStr(e1) + opString + ExpressionDump.printExpStr(e2);
+        stmtString := ExpressionBasics.printExpStr(e1) + opString + ExpressionBasics.printExpStr(e2);
         Error.addSourceMessage(Error.WARNING_RELATION_ON_REAL, {stmtString,opString}, inInfo);
       then
         ();
@@ -2086,7 +2086,7 @@ protected
   String str1,str2;
 algorithm
   str1 := intString(listLength(exps));
-  str2 := stringDelimitList(List.map(exps,ExpressionDump.printExpStr), ",");
+  str2 := stringDelimitList(List.map(exps,ExpressionBasics.printExpStr), ",");
   Error.addSourceMessage(Error.OP_OVERLOAD_MULTIPLE_VALID, {str1,str2}, info);
 end errorMultipleValid;
 

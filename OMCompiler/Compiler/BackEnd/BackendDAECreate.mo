@@ -297,7 +297,7 @@ algorithm
         arrayCref := ComponentReference.crefStripSubsExceptModelSubs(var.varName);
         arrayBindingExpList := UnorderedMap.getOrDefault(arrayCref, arrayMap, {});
 
-        subscriptLst := ComponentReference.crefSubs(var.varName);
+        subscriptLst := ComponentReferenceBasics.crefSubs(var.varName);
         intSubLst := list(match subscript
           local
             Integer i;
@@ -1546,25 +1546,25 @@ algorithm
     case (DAE.CALL(),_,_,_)
       algorithm
         e1 := BaseHashTable.get(iExp,iInlineHT);
-        // print("use chache Inline\n" + ExpressionDump.printExpStr(iExp) + "\n");
+        // print("use chache Inline\n" + ExpressionBasics.printExpStr(iExp) + "\n");
         source := ElementSource.addSymbolicTransformation(iSource,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(iExp),DAE.PARTIAL_EQUATION(e1)));
       then (e1,source,iInlineHT,{});
     case (DAE.CALL(),_,_,_)
       algorithm
-        // print("add chache Inline\n" + ExpressionDump.printExpStr(iExp) + "\n");
+        // print("add chache Inline\n" + ExpressionBasics.printExpStr(iExp) + "\n");
         (e1, source, inlined,_) := Inline.inlineExp(iExp, fnstpl, iSource);
         inlineHT := if inlined then BaseHashTable.add((iExp,e1), iInlineHT) else iInlineHT;
       then (e1,source,inlineHT,{});
     case (DAE.ASUB(e,elst),_,_,_)
       algorithm
         e1 := BaseHashTable.get(e,iInlineHT);
-        // print("use chache Inline\n" + ExpressionDump.printExpStr(iExp) + "\n");
+        // print("use chache Inline\n" + ExpressionBasics.printExpStr(iExp) + "\n");
         source := ElementSource.addSymbolicTransformation(iSource,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e1)));
         (e, source, _,_) := Inline.inlineExp(DAE.ASUB(e1,elst), fnstpl, source);
       then (e,source,iInlineHT,{});
     case (DAE.ASUB(e,elst),_,_,_)
       algorithm
-        // print("add chache Inline(1)\n" + ExpressionDump.printExpStr(iExp) + "\n");
+        // print("add chache Inline(1)\n" + ExpressionBasics.printExpStr(iExp) + "\n");
         (e1, _, inlined,assrtLst1) := Inline.inlineExp(e, fnstpl, iSource);
         inlineHT := if inlined then BaseHashTable.add((e,e1), iInlineHT) else iInlineHT;
         (e, source, _,assrtLst2) := Inline.inlineExp(DAE.ASUB(e1,elst), fnstpl, iSource);
@@ -1572,7 +1572,7 @@ algorithm
       then (e,source,inlineHT,assrtLst);
     case (_,_,_,_)
       algorithm
-        // print("no chache Inline\n" + ExpressionDump.printExpStr(iExp) + "\n");
+        // print("no chache Inline\n" + ExpressionBasics.printExpStr(iExp) + "\n");
         (e, source, _,_) := Inline.inlineExp(iExp, fnstpl, iSource);
       then (e,source,iInlineHT,{});
   end matchcontinue;
@@ -2432,7 +2432,7 @@ algorithm
       algorithm
         // show only on failtrace!
         true := Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- BackendDAECreate.lowerExtendedRecordEqn failed on: " + ExpressionDump.printExpStr(inExp1) + " = " + ExpressionDump.printExpStr(inExp2) + "\n");
+        Debug.traceln("- BackendDAECreate.lowerExtendedRecordEqn failed on: " + ExpressionBasics.printExpStr(inExp1) + " = " + ExpressionBasics.printExpStr(inExp2) + "\n");
       then
         fail();
   end matchcontinue;
@@ -3111,7 +3111,7 @@ algorithm
                         local
                           DAE.Exp eleft2;
                         case BackendDAE.ASSIGN(left=eleft2) algorithm
-                          true := Expression.expEqual(eleft, eleft2);
+                          true := ExpressionBasics.expEqual(eleft, eleft2);
                           //print(" added when else case: \n" + BackendDump.whenEquationString(eq, true) + "\n");
                           whenEqRes := BackendEquation.setWhenElsePart(whenEq, eq);
                           res := BackendDAE.WHEN_EQUATION(size, whenEqRes, source, attr);

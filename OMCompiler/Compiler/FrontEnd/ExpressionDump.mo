@@ -358,14 +358,12 @@ algorithm
   end match;
 end debugPrintSubscriptStr;
 
-public function printSubscriptStr = ExpressionBasics.printSubscriptStr;
-
 public function printSubscriptLstStr
   "Print a list of Subscripts into a String."
   input list<DAE.Subscript> inSubscriptLst;
   output String outString;
 algorithm
-  outString := stringDelimitList(List.map(inSubscriptLst,printSubscriptStr)," , ");
+  outString := stringDelimitList(List.map(inSubscriptLst,ExpressionBasics.printSubscriptStr)," , ");
 end printSubscriptLstStr;
 
 public function printExpListStr
@@ -373,7 +371,7 @@ public function printExpListStr
   input list<DAE.Exp> expl;
   output String res;
 algorithm
-  res := stringDelimitList(List.map(expl,printExpStr),", ");
+  res := stringDelimitList(List.map(expl,ExpressionBasics.printExpStr),", ");
 end printExpListStr;
 
 // stefan
@@ -382,7 +380,7 @@ public function printExpListStrNoSpace
   input list<DAE.Exp> expl;
   output String res;
 algorithm
-  res := stringAppendList(List.map(expl,printExpStr));
+  res := stringAppendList(List.map(expl,ExpressionBasics.printExpStr));
 end printExpListStrNoSpace;
 
 public function printOptExpStr "
@@ -392,12 +390,10 @@ Returns a string if SOME otherwise ''"
 algorithm
   str := match(oexp)
     local DAE.Exp e;
-    case(SOME(e)) then printExpStr(e);
+    case(SOME(e)) then ExpressionBasics.printExpStr(e);
     else "";
   end match;
 end printOptExpStr;
-
-public function printExpStr = ExpressionBasics.printExpStr;
 
 public function printCrefsFromExpStr
   input DAE.Exp e;
@@ -838,11 +834,11 @@ algorithm
       DAE.Exp exp,gexp;
     case (DAE.REDUCTIONITER(id=id,exp=exp,guardExp=NONE()))
       algorithm
-        str := id + " in " + printExpStr(exp);
+        str := id + " in " + ExpressionBasics.printExpStr(exp);
       then str;
     case (DAE.REDUCTIONITER(id=id,exp=exp,guardExp=SOME(gexp)))
       algorithm
-        str := id + " guard " + printExpStr(gexp) + " in " + printExpStr(exp);
+        str := id + " guard " + ExpressionBasics.printExpStr(gexp) + " in " + ExpressionBasics.printExpStr(exp);
       then str;
   end match;
 end reductionIteratorStr;
@@ -872,7 +868,7 @@ algorithm
     case DAE.CASE(patterns=patterns, body={}, result=SOME(result))
       algorithm
         patternsStr := Patternm.patternStr(DAE.PAT_META_TUPLE(patterns));
-        resultStr := printExpStr(result);
+        resultStr := ExpressionBasics.printExpStr(result);
       then stringAppendList({"    case ",patternsStr," then ",resultStr,";\n"});
     case DAE.CASE(patterns=patterns, body={}, result=NONE())
       algorithm
@@ -881,7 +877,7 @@ algorithm
     case DAE.CASE(patterns=patterns, body=body, result=SOME(result))
       algorithm
         patternsStr := Patternm.patternStr(DAE.PAT_META_TUPLE(patterns));
-        resultStr := printExpStr(result);
+        resultStr := ExpressionBasics.printExpStr(result);
         bodyStr := stringAppendList(List.map1(body, DAEDump.ppStmtStr, 8));
       then stringAppendList({"    case ",patternsStr,"\n      algorithm\n",bodyStr,"      then ",resultStr,";\n"});
     case DAE.CASE(patterns=patterns, body=body, result=NONE())
@@ -1530,9 +1526,9 @@ protected function printExpIfDiff ""
   input DAE.Exp e1,e2;
   output String s;
 algorithm
-  s := if Expression.expEqual(e1,e2)
+  s := if ExpressionBasics.expEqual(e1,e2)
        then ""
-       else printExpStr(e1) + " =!= " + printExpStr(e2) + "\n";
+       else ExpressionBasics.printExpStr(e1) + " =!= " + ExpressionBasics.printExpStr(e2) + "\n";
 end printExpIfDiff;
 
 public function printArraySizes "Function: printArraySizes"
@@ -1590,12 +1586,9 @@ algorithm str := matchcontinue(inExp)
       s1 := "{" + stringAppendList(List.map(expl,debugPrintComponentRefExp)) + "}";
     then
       s1;
-  else printExpStr(inExp); // when not cref, print expression anyways since it is used for some debugging.
+  else ExpressionBasics.printExpStr(inExp); // when not cref, print expression anyways since it is used for some debugging.
 end matchcontinue;
 end debugPrintComponentRefExp;
-
-public function dimensionString = ExpressionBasics.dimensionString;
-public function dimensionsString = ExpressionBasics.dimensionsString;
 
 public function dimensionIntString
   "Returns a integer string representation of an array dimension."
@@ -1615,7 +1608,7 @@ algorithm
       then intString(x);
     case DAE.DIM_EXP(exp = e)
       algorithm
-        s := printExpStr(e);
+        s := ExpressionBasics.printExpStr(e);
       then s;
   end match;
 end dimensionIntString;
@@ -1738,7 +1731,7 @@ protected
   Boolean localCon;
 algorithm
   DAE.CONSTRAINT_DT(constraint = c, localCon = localCon) := con;
-  str := printExpStr(c);
+  str := ExpressionBasics.printExpStr(c);
   str := if localCon then str + " (local)" else str + " (global)";
 end constraintDTtoString;
 

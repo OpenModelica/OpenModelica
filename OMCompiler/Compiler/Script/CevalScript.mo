@@ -2224,7 +2224,7 @@ algorithm
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
         true = isCompleteFunction(cache, env, funcpath);
         true = Types.hasMetaArray(ty);
-        str = ExpressionDump.printExpStr(inExp);
+        str = ExpressionBasics.printExpStr(inExp);
         Error.addSourceMessage(Error.FUNCTION_RETURNS_META_ARRAY, {str}, info);
       then fail();
 */
@@ -2261,7 +2261,7 @@ algorithm
     else
       setGlobalRoot(Global.stackoverFlowIndex, NONE());
       ErrorExt.rollbackNumCheckpoints(ErrorExt.getNumCheckpoints()-numCheckpoints);
-      Error.addInternalError("Stack overflow when evaluating function call: "+ExpressionDump.printExpStr(inExp)+"...\n"+stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), match inMsg local SourceInfo info; case Absyn.MSG(info) then info; else sourceInfo(); end match);
+      Error.addInternalError("Stack overflow when evaluating function call: "+ExpressionBasics.printExpStr(inExp)+"...\n"+stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), match inMsg local SourceInfo info; case Absyn.MSG(info) then info; else sourceInfo(); end match);
       /* Do not fail or we can loop too much */
       StackOverflow.clearStacktraceMessages();
       outCache := inCache;

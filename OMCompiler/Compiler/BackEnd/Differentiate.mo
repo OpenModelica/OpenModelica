@@ -168,7 +168,7 @@ algorithm
     //Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, ElementSource.getElementSourceFileInfo(DAE.emptyElementSource));
 
     if Flags.isSet(Flags.FAILTRACE) then
-      Error.addSourceMessage(Error.NON_EXISTING_DERIVATIVE, {ExpressionDump.printExpStr(inExp), "time"}, sourceInfo());
+      Error.addSourceMessage(Error.NON_EXISTING_DERIVATIVE, {ExpressionBasics.printExpStr(inExp), "time"}, sourceInfo());
     end if;
     fail();
   end try;
@@ -205,7 +205,7 @@ algorithm
     end if;
   else
     if Flags.isSet(Flags.FAILTRACE) then
-      Error.addSourceMessage(Error.NON_EXISTING_DERIVATIVE, {ExpressionDump.printExpStr(inExp), ComponentReference.crefStr(inCref)}, sourceInfo());
+      Error.addSourceMessage(Error.NON_EXISTING_DERIVATIVE, {ExpressionBasics.printExpStr(inExp), ComponentReference.crefStr(inCref)}, sourceInfo());
     end if;
     fail();
   end try;
@@ -242,7 +242,7 @@ algorithm
     //Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, ElementSource.getElementSourceFileInfo(DAE.emptyElementSource));
 
     if Flags.isSet(Flags.FAILTRACE) then
-      Error.addSourceMessage(Error.NON_EXISTING_DERIVATIVE, {ExpressionDump.printExpStr(inExp), ComponentReference.crefStr(inCref)}, sourceInfo());
+      Error.addSourceMessage(Error.NON_EXISTING_DERIVATIVE, {ExpressionBasics.printExpStr(inExp), ComponentReference.crefStr(inCref)}, sourceInfo());
     end if;
     fail();
   end try;
@@ -569,13 +569,13 @@ protected function differentiateExp
 protected
   constant Boolean debug = false;
 algorithm
-  if debug then print("\nDifferentiate Exp: "+ExpressionDump.printExpStr(inExp)+
+  if debug then print("\nDifferentiate Exp: "+ExpressionBasics.printExpStr(inExp)+
                       " w.r.t. "+ComponentReference.printComponentRefStr(inDiffwrtCref)+"\n"); end if;
 
 /*
   // This check does not seem to be necessary since looking through the stack of expression seems to stop iteration in most cases, and you get a spam of messages from this check.
   if maxIter < 1 then
-    Error.addInternalError("Differentiation reached maximum number of iterations ("+String(defaultMaxIter)+"). Current expression is: " + ExpressionDump.printExpStr(inExp) + " w.r.t. " + ComponentReference.printComponentRefStr(inDiffwrtCref), sourceInfo());
+    Error.addInternalError("Differentiation reached maximum number of iterations ("+String(defaultMaxIter)+"). Current expression is: " + ExpressionBasics.printExpStr(inExp) + " w.r.t. " + ComponentReference.printComponentRefStr(inDiffwrtCref), sourceInfo());
     fail();
   end if;
 */
@@ -764,13 +764,13 @@ algorithm
 
     else algorithm
       true := Flags.isSet(Flags.FAILTRACE);
-      s1 := ExpressionDump.printExpStr(inExp);
+      s1 := ExpressionBasics.printExpStr(inExp);
       s2 := ComponentReference.printComponentRefStr(inDiffwrtCref);
       stp := TypesDump.printTypeStr(Expression.typeof(inExp));
       Debug.trace("- differentiateExp " + s1 + " type: " + stp + " w.r.t " + s2 + " failed\n");
     then fail();
   end match;
-  if debug then print("Differentiate-Exp-result: " + ExpressionDump.printExpStr(outDiffedExp) + "\n"); end if;
+  if debug then print("Differentiate-Exp-result: " + ExpressionBasics.printExpStr(outDiffedExp) + "\n"); end if;
 end differentiateExp;
 
 protected function differentiateStatements
@@ -1033,7 +1033,7 @@ protected function differentiateCrefs
 protected
   constant Boolean debug = false;
 algorithm
-  if debug then print("\nDifferentiate Exp-Cref: "+ExpressionDump.printExpStr(inExp)+
+  if debug then print("\nDifferentiate Exp-Cref: "+ExpressionBasics.printExpStr(inExp)+
                       " w.r.t. "+ComponentReference.printComponentRefStr(inDiffwrtCref)+"\n"); end if;
   (outDiffedExp, outFunctionTree) :=
     matchcontinue(inExp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree)
@@ -1134,7 +1134,7 @@ algorithm
     // Constants, known variables, parameters and discrete variables have a 0-derivative, not the inputs
     case ((DAE.CREF(componentRef = cr, ty = tp)), _, BackendDAE.DIFFINPUTDATA(knownVars=SOME(knvars)), _, _)
       algorithm
-        //print("\nExp-Cref\n known vars: " + ExpressionDump.printExpStr(e));
+        //print("\nExp-Cref\n known vars: " + ExpressionBasics.printExpStr(e));
         (var,_) := BackendVariable.getVarSingle(cr, knvars);
         false := BackendVariable.isVarOnTopLevelAndInput(var);
         (zero,_) := Expression.makeZeroExpression(Expression.arrayDimension(tp));
@@ -1282,7 +1282,7 @@ algorithm
    else
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
-        s1 := ExpressionDump.printExpStr(inExp);
+        s1 := ExpressionBasics.printExpStr(inExp);
         se1 := TypesDump.printTypeStr(Expression.typeof(inExp));
         s2 := ComponentReference.printComponentRefStr(inDiffwrtCref);
         serr := stringAppendList({"\n- differentiateCrefs ",s1," type:", se1 ," w.r.t: ",s2," failed\n"});
@@ -1290,7 +1290,7 @@ algorithm
       then
         fail();
   end matchcontinue;
-  if debug then print("Differentiate-ExpCref-result: " + ExpressionDump.printExpStr(outDiffedExp) + "\n"); end if;
+  if debug then print("Differentiate-ExpCref-result: " + ExpressionBasics.printExpStr(outDiffedExp) + "\n"); end if;
 end differentiateCrefs;
 
 public function createDiffedCrefName
@@ -1357,7 +1357,7 @@ function: differentiateCalls
 protected
   constant Boolean debug = false;
 algorithm
-  if debug then print("\nDifferentiate Exp-Call: "+ExpressionDump.printExpStr(inExp)+
+  if debug then print("\nDifferentiate Exp-Call: "+ExpressionBasics.printExpStr(inExp)+
                       " w.r.t. "+ComponentReference.printComponentRefStr(inDiffwrtCref)+"\n"); end if;
 
   (outDiffedExp, outFunctionTree) :=
@@ -1488,21 +1488,21 @@ algorithm
 /*
     case (e as DAE.CALL(expLst = _), _, _, _, _)
       algorithm
-        Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {ExpressionDump.printExpStr(e), ComponentReference.printComponentRefStr(inDiffwrtCref)});
+        Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {ExpressionBasics.printExpStr(e), ComponentReference.printComponentRefStr(inDiffwrtCref)});
       then
         fail();
 */
     else
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
-        s1 := ExpressionDump.printExpStr(inExp);
+        s1 := ExpressionBasics.printExpStr(inExp);
         s2 := ComponentReference.printComponentRefStr(inDiffwrtCref);
         serr := stringAppendList({"\n- Function differentiateCalls failed. differentiateExp ",s1," w.r.t: ",s2," failed\n"});
         Debug.trace(serr);
       then
         fail();
   end match;
-  if debug then print("Differentiate-ExpCall-result: " + ExpressionDump.printExpStr(outDiffedExp) + "\n"); end if;
+  if debug then print("Differentiate-ExpCall-result: " + ExpressionBasics.printExpStr(outDiffedExp) + "\n"); end if;
 end differentiateCalls;
 
 protected function differentiateCallExp1Arg
@@ -2159,7 +2159,7 @@ algorithm
    else
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
-        s1 := ExpressionDump.printExpStr(inExp);
+        s1 := ExpressionBasics.printExpStr(inExp);
         s2 := ComponentReference.printComponentRefStr(inDiffwrtCref);
         serr := stringAppendList({"\n- Function differentiateBinary failed. differentiateExp ",s1," w.r.t: ",s2," failed\n"});
         Debug.trace(serr);
@@ -2315,7 +2315,7 @@ algorithm
       else
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
-        Debug.trace(getInstanceName() + " failed for " + ExpressionDump.printExpStr(inExp) + "\n");
+        Debug.trace(getInstanceName() + " failed for " + ExpressionBasics.printExpStr(inExp) + "\n");
       then fail();
   end matchcontinue;
 end differentiateFunctionCall;
@@ -2389,7 +2389,7 @@ algorithm
         if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
           print("### differentiated argument list:\n");
           print("Diffed ExpList: \n");
-          print(stringDelimitList(List.map(dexpl, ExpressionDump.printExpStr), ", ") + "\n");
+          print(stringDelimitList(List.map(dexpl, ExpressionBasics.printExpStr), ", ") + "\n");
         end if;
         e := DAE.CALL(dpath,expl1,DAE.CALL_ATTR(ty,b,c,isImpure,false,dinl,tc));
         e := createPartialArguments(ty, dexpl, dexplZero, expl, e);
@@ -2456,7 +2456,7 @@ algorithm
         // differentiate expl
         if Flags.isSet(Flags.DEBUG_DIFFERENTIATION_VERBOSE) then
           print("### Detailed arguments list: \n");
-          print(stringDelimitList(List.map(expl, ExpressionDump.printExpStr), ", ") + "\n");
+          print(stringDelimitList(List.map(expl, ExpressionBasics.printExpStr), ", ") + "\n");
           print("### and argument types: \n");
           print(stringDelimitList(List.mapMap(expl, Expression.typeof, TypesDump.printTypeStr), " | ") + "\n");
           print("### and output type: \n"  + TypesDump.printTypeStr(dtp) + "\n");
@@ -2468,13 +2468,13 @@ algorithm
         expl1 := List.map(expBoolLst, Util.tuple21);
         if Flags.isSet(Flags.DEBUG_DIFFERENTIATION_VERBOSE) then
           print("### Selected Arguments: \n");
-          print(stringDelimitList(List.map(expl1, ExpressionDump.printExpStr), ", ") + "\n");
+          print(stringDelimitList(List.map(expl1, ExpressionBasics.printExpStr), ", ") + "\n");
         end if;
 
         (dexpl, functions) := List.map3Fold(expl1, function differentiateExp(maxIter=maxIter), inDiffwrtCref, inInputData, inDiffType, functions);
         if Flags.isSet(Flags.DEBUG_DIFFERENTIATION_VERBOSE) then
           print("### Diffed ExpList: \n");
-          print(stringDelimitList(List.map(dexpl, ExpressionDump.printExpStr), ", ") + "\n");
+          print(stringDelimitList(List.map(dexpl, ExpressionBasics.printExpStr), ", ") + "\n");
         end if;
 
         // try to create zero expression to fill up the arguments, if it fails use the total differentiation
@@ -2488,7 +2488,7 @@ algorithm
 
         if Flags.isSet(Flags.DEBUG_DIFFERENTIATION_VERBOSE) then
           print("### differentiated result CALL :\n");
-          print(ExpressionDump.printExpStr(exp) + "\n");
+          print(ExpressionBasics.printExpStr(exp) + "\n");
         end if;
       then
         (exp, functions);
@@ -2496,7 +2496,7 @@ algorithm
       else
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
-        str := "Differentiate.differentiateFunctionCallPartial failed for " + ExpressionDump.printExpStr(inExp) + "\n";
+        str := "Differentiate.differentiateFunctionCallPartial failed for " + ExpressionBasics.printExpStr(inExp) + "\n";
         Debug.trace(str);
       then fail();
   end matchcontinue;

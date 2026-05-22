@@ -1380,7 +1380,7 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- evaluateForStatement not implemented for:");
-        Debug.traceln(ExpressionDump.printExpStr(range));
+        Debug.traceln(ExpressionBasics.printExpStr(range));
       then
         fail();
   end matchcontinue;
@@ -1473,7 +1473,7 @@ algorithm
     else
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- CevalFunction.extractLhsComponentRef failed on " + ExpressionDump.printExpStr(inExp));
+        Debug.traceln("- CevalFunction.extractLhsComponentRef failed on " + ExpressionBasics.printExpStr(inExp));
       then
         fail();
   end match;
@@ -2187,7 +2187,7 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         print("- CevalFunction.assignVector failed on: ");
-        print(ExpressionDump.printSubscriptStr(sub) + "\n");
+        print(ExpressionBasics.printSubscriptStr(sub) + "\n");
       then
         fail();
   end matchcontinue;

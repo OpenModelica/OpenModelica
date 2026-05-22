@@ -263,7 +263,7 @@ public uniontype SimExtArg
       then "SIMEXTARG(" + tmp + ")";
 
       case SIMEXTARGEXP() algorithm
-        tmp := tmp + "exp: " + ExpressionDump.printExpStr(simExtArg.exp);
+        tmp := tmp + "exp: " + ExpressionBasics.printExpStr(simExtArg.exp);
         tmp := tmp + ", type: " + TypesDump.unparseType(simExtArg.type_);
       then "SIMEXTARGEXP(" + tmp + ")";
 
@@ -272,7 +272,7 @@ public uniontype SimExtArg
         tmp := if simExtArg.isInput then tmp + ", isInput: true" else tmp + ", isInput: false";
         tmp := tmp + ", outputIndex: " + intString(simExtArg.outputIndex);
         tmp := tmp + ", type: " + TypesDump.unparseType(simExtArg.type_);
-        tmp := tmp + ", exp: " + ExpressionDump.printExpStr(simExtArg.exp);
+        tmp := tmp + ", exp: " + ExpressionBasics.printExpStr(simExtArg.exp);
       then "SIMEXTARGSIZE(" + tmp + ")";
 
       case SIMNOEXTARG()

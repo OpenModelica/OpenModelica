@@ -666,7 +666,7 @@ algorithm
 
     else
       algorithm
-        Error.addInternalError("Expression.compare failed: ctor:" + String(valueConstructor(inExp1)) + " " + printExpStr(inExp1) + " " + printExpStr(inExp2), sourceInfo());
+        Error.addInternalError("ExpressionBasics.compare failed: ctor:" + String(valueConstructor(inExp1)) + " " + printExpStr(inExp1) + " " + printExpStr(inExp2), sourceInfo());
       then fail();
   end match;
 end compare;

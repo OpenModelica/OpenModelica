@@ -727,8 +727,8 @@ algorithm
 
     case DAE.PAT_CONS(head,tail) then patternStr(head) + "::" + patternStr(tail);
 
-    case DAE.PAT_CONSTANT(exp=exp) then ExpressionDump.printExpStr(exp);
-    // case DAE.PAT_CONSTANT(SOME(et),exp) then "(" + TypesDump.unparseType(et) + ")" + ExpressionDump.printExpStr(exp);
+    case DAE.PAT_CONSTANT(exp=exp) then ExpressionBasics.printExpStr(exp);
+    // case DAE.PAT_CONSTANT(SOME(et),exp) then "(" + TypesDump.unparseType(et) + ")" + ExpressionBasics.printExpStr(exp);
     case DAE.PAT_AS(id=id,pat=pat) then id + " as " + patternStr(pat);
     case DAE.PAT_AS_FUNC_PTR(id, pat) then id + " as " + patternStr(pat);
     else
@@ -821,7 +821,7 @@ protected function checkConstantMatchInputs
 algorithm
   for i in inputs loop
     if Expression.isConstValue(i) then
-      Error.addSourceMessage(Error.META_MATCH_CONSTANT, {ExpressionDump.printExpStr(i)}, info);
+      Error.addSourceMessage(Error.META_MATCH_CONSTANT, {ExpressionBasics.printExpStr(i)}, info);
     end if;
   end for;
 end checkConstantMatchInputs;
@@ -1984,7 +1984,7 @@ algorithm
 
     // Constant patterns...
     case (DAE.PAT_CONSTANT(exp=e1),DAE.PAT_CONSTANT(exp=e2))
-      then not Expression.expEqual(e1, e2);
+      then not ExpressionBasics.expEqual(e1, e2);
     case (DAE.PAT_CONSTANT(),_) then true;
     case (_,DAE.PAT_CONSTANT()) then true;
 
@@ -2248,13 +2248,13 @@ algorithm
     case (_,b,elabCr2 as DAE.CREF(),_)
       algorithm
         (DAE.STMT_ASSIGN(exp1=elabCr1,exp=e,source=DAE.SOURCE(info=i)),b) := List.splitLast(b);
-        true := Expression.expEqual(elabCr1,elabCr2);
+        true := ExpressionBasics.expEqual(elabCr1,elabCr2);
         (b,e,i) := elabResultExp2(false,b,e,i);
       then (b,e,i);
     case (_,b,DAE.TUPLE(elabCrs2),_)
       algorithm
         (DAE.STMT_TUPLE_ASSIGN(expExpLst=elabCrs1,exp=e,source=DAE.SOURCE(info=i)),b) := List.splitLast(b);
-        true := List.isEqualOnTrue(elabCrs1, elabCrs2, Expression.expEqual);
+        true := List.isEqualOnTrue(elabCrs1, elabCrs2, ExpressionBasics.expEqual);
         (b,e,i) := elabResultExp2(false,b,e,i);
       then (b,e,i);
     else (body,elabExp,info);

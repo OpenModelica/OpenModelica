@@ -636,7 +636,7 @@ algorithm
         if (stringEqual(Config.simCodeTarget(), "Cpp"))then
           ((subs as (_ :: _))) := crefLastSubs(cr);
         else
-          ((subs as (_ :: _))) := crefSubs(cr);
+          ((subs as (_ :: _))) := ComponentReferenceBasics.crefSubs(cr);
         end if;
         // fails if any mapped functions returns false
       then List.all(subs, Expression.subscriptIsFirst);
@@ -719,12 +719,12 @@ algorithm
       list<DAE.ComponentRef> tempcrefs;
       Integer ndim, nsub;
 
-    case _ algorithm {} := crefSubs(inCref); then true;
+    case _ algorithm {} := ComponentReferenceBasics.crefSubs(inCref); then true;
 
     case _
       algorithm
-        (subs as (_::_)):= crefSubs(inCref);
-        dims := crefDims(inCref);
+        (subs as (_::_)):= ComponentReferenceBasics.crefSubs(inCref);
+        dims := ComponentReferenceBasics.crefDims(inCref);
         // Dimensions may be removed when a component is instantiated if it has
         // constant subscripts though, so it may have more subscripts than
         // dimensions.
@@ -754,8 +754,8 @@ algorithm
 
     case _
       algorithm
-        (subs as (_::_)):= crefSubs(inCref);
-        dims := crefDims(inCref);
+        (subs as (_::_)):= ComponentReferenceBasics.crefSubs(inCref);
+        dims := ComponentReferenceBasics.crefDims(inCref);
         // Dimensions may be removed when a component is instantiated if it has
         // constant subscripts though, so it may have more subscripts than
         // dimensions.
@@ -1145,9 +1145,6 @@ algorithm
   end match;
 end crefLastType;
 
-public function crefDims = ComponentReferenceBasics.crefDims;
-public function crefSubs = ComponentReferenceBasics.crefSubs;
-
 public function crefFirstSubs
   input DAE.ComponentRef inCref;
   output list<DAE.Subscript> outSubscripts;
@@ -1252,7 +1249,7 @@ algorithm
       list<DAE.Subscript> arrayCrefSubs;
 
     case (_) algorithm
-      arrayCrefSubs := crefSubs(name);
+      arrayCrefSubs := ComponentReferenceBasics.crefSubs(name);
     then arrayCrefSubs;
 
     else
@@ -1690,7 +1687,7 @@ algorithm
       algorithm
         if listLength(subs) + listLength(inSubs) > listLength(dims) then
           Error.addInternalError("ComponentReference.crefApplySubs ["
-            + ExpressionBasics.printListStr(inSubs, ExpressionDump.printSubscriptStr, ",") + "] to ident "
+            + ExpressionBasics.printListStr(inSubs, ExpressionBasics.printSubscriptStr, ",") + "] to ident "
             + printComponentRefStr(inComponentRef) + " with " + intString(listLength(dims)) + " dimensions\n", sourceInfo());
           fail();
         end if;
@@ -1707,7 +1704,7 @@ algorithm
         end if;
         if listLength(subs) + listLength(subs1) > listLength(dims) then
           Error.addInternalError("ComponentReference.crefApplySubs ["
-            + ExpressionBasics.printListStr(inSubs, ExpressionDump.printSubscriptStr, ",") + "] to qual "
+            + ExpressionBasics.printListStr(inSubs, ExpressionBasics.printSubscriptStr, ",") + "] to qual "
             + printComponentRefStr(inComponentRef) + " with " + intString(listLength(dims)) + " dimensions\n", sourceInfo());
           fail();
         end if;
@@ -2731,7 +2728,7 @@ algorithm
 
       // all other should probably fails or evaluated before
       else algorithm
-        str := ExpressionDump.printSubscriptStr(subScript);
+        str := ExpressionBasics.printSubscriptStr(subScript);
         Error.addInternalError("function ComponentReference.makeCrefsFromSubScriptLst for:" + str + "\n", sourceInfo());
       then
         fail();
@@ -2752,7 +2749,7 @@ algorithm
       Absyn.Path enum_lit;
 
     case DAE.ICONST() algorithm
-      str := ExpressionDump.printExpStr(inExp);
+      str := ExpressionBasics.printExpStr(inExp);
     then
       DAE.CREF_IDENT(str,DAE.T_UNKNOWN_DEFAULT,{});
 
@@ -3103,8 +3100,8 @@ protected function printSubscriptBoundsError
 protected
   String sub_str, dim_str, idx_str, cref_str;
 algorithm
-  sub_str := ExpressionDump.printExpStr(inSubscriptExp);
-  dim_str := ExpressionDump.dimensionString(inDimension);
+  sub_str := ExpressionBasics.printExpStr(inSubscriptExp);
+  dim_str := ExpressionBasics.dimensionString(inDimension);
   idx_str := intString(inIndex);
   cref_str := printComponentRefStr(inCref);
   Error.addSourceMessage(Error.ARRAY_INDEX_OUT_OF_BOUNDS,
@@ -3118,7 +3115,7 @@ protected
   String s1,s2;
 algorithm
   s1 := stringDelimitList(toStringList(cref), "_P");
-  s2 := stringDelimitList(List.mapMap(crefSubs(cref),Expression.getSubscriptExp,ExpressionDump.printExpStr),",");
+  s2 := stringDelimitList(List.mapMap(ComponentReferenceBasics.crefSubs(cref),Expression.getSubscriptExp,ExpressionBasics.printExpStr),",");
   s := s1+"["+s2+"]";
 end crefAppendedSubs;
 
@@ -3190,11 +3187,11 @@ algorithm
       case DAE.WHOLE_NONEXP(DAE.ICONST(i))
         algorithm File.writeInt(file, i); then ();
       case DAE.SLICE(exp)
-        algorithm File.write(file, ExpressionDump.printExpStr(exp)); then ();
+        algorithm File.write(file, ExpressionBasics.printExpStr(exp)); then ();
       case DAE.INDEX(exp)
-        algorithm File.write(file, ExpressionDump.printExpStr(exp)); then ();
+        algorithm File.write(file, ExpressionBasics.printExpStr(exp)); then ();
       case DAE.WHOLE_NONEXP(exp)
-        algorithm File.write(file, ExpressionDump.printExpStr(exp)); then ();
+        algorithm File.write(file, ExpressionBasics.printExpStr(exp)); then ();
     end match;
   end for;
   File.write(file, "]");

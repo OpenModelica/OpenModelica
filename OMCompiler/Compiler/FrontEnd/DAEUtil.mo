@@ -1425,12 +1425,12 @@ algorithm
     case (NONE()) then "";
     case (SOME(DAE.VAR_ATTR_REAL(start = SOME(r))))
       algorithm
-        s := ExpressionDump.printExpStr(r);
+        s := ExpressionBasics.printExpStr(r);
       then
         s;
     case (SOME(DAE.VAR_ATTR_INT(start = SOME(r))))
       algorithm
-        s := ExpressionDump.printExpStr(r);
+        s := ExpressionBasics.printExpStr(r);
       then
         s;
     else "";
@@ -2080,7 +2080,7 @@ algorithm
       list<DAE.Element> lst;
     case (((DAE.VAR(binding = SOME(e)))::(lst as (_::_))))
       algorithm
-        expstr := ExpressionDump.printExpStr(e);
+        expstr := ExpressionBasics.printExpStr(e);
         s3 := stringAppend(expstr, ",");
         s4 := getBindingsStr(lst);
         str := stringAppend(s3, s4);
@@ -2095,7 +2095,7 @@ algorithm
         str;
     case ({(DAE.VAR(binding = SOME(e)))})
       algorithm
-        str := ExpressionDump.printExpStr(e);
+        str := ExpressionBasics.printExpStr(e);
       then
         str;
     case ({(DAE.VAR(binding = NONE()))}) then "";
@@ -3357,7 +3357,7 @@ algorithm
     case DAE.TUPLE(exps) then collectWhenCrefs(exps, source, inCrefs);
     else
       algorithm
-        msg := ExpressionDump.printExpStr(inExp);
+        msg := ExpressionBasics.printExpStr(inExp);
         info := ElementSource.getElementSourceFileInfo(source);
         Error.addSourceMessage(Error.WHEN_EQ_LHS, {msg}, info);
       then fail();
@@ -5655,7 +5655,7 @@ algorithm
     case(DAE.UNBOUND()) then "";
     case(DAE.EQBOUND(exp=e))
       algorithm
-        str := ExpressionDump.printExpStr(e);
+        str := ExpressionBasics.printExpStr(e);
       then
         str;
     case(DAE.VALBOUND(valBound=v))
@@ -6723,7 +6723,7 @@ algorithm
   i := match exp
     case DAE.ICONST(integer = i) then i;
     else algorithm
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because expression is not an ICONST: " + ExpressionDump.printExpStr(exp) + ".\n"});
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because expression is not an ICONST: " + ExpressionBasics.printExpStr(exp) + ".\n"});
     then fail();
   end match;
 end getInteger;
@@ -7188,7 +7188,7 @@ protected function optMRFACheckExtend
   input list<String> writtenFields;
   output Boolean ok;
 algorithm
-  ok := Expression.expEqual(newBase, baseExp)
+  ok := ExpressionBasics.expEqual(newBase, baseExp)
         and not listMember(newField, writtenFields)
         and optMRFARhsSafe(newRhs, baseExp, writtenFields);
 end optMRFACheckExtend;
@@ -7231,7 +7231,7 @@ algorithm
     // in the group, merging would change semantics. Mark unsafe and skip
     // descent so the wrapped CREF is not re-interpreted as a wholesale read.
     case DAE.RSUB(exp = innerExp, fieldName = fname)
-      guard Expression.expEqual(innerExp, baseExp)
+      guard ExpressionBasics.expEqual(innerExp, baseExp)
       then (not listMember(fname, writtenFields), true);
     case DAE.CREF()
       then (optMRFACheckCrefRead(inExp, baseExp, writtenFields), false);

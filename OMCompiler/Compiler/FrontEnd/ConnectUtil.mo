@@ -1309,7 +1309,7 @@ algorithm
 
   id_nosubs := ComponentReferenceBasics.crefFirstIdent(cref);
   subs_str := List.toString(ComponentReference.crefFirstSubs(cref),
-    ExpressionDump.printSubscriptStr, "", "[", ",", "]", false);
+    ExpressionBasics.printSubscriptStr, "", "[", ",", "]", false);
   id_subs := id_nosubs + subs_str;
 
   try

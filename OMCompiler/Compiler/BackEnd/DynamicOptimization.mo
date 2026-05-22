@@ -790,7 +790,7 @@ algorithm
          if b3 then
            try
              (eqn_ as BackendDAE.EQUATION(exp=e1, scalar=e2)):= BackendEquation.get(eqns, eindex);
-             true := Expression.expEqual(e1, BackendVariable.varExp(var_con));
+             true := ExpressionBasics.expEqual(e1, BackendVariable.varExp(var_con));
            else
              b3 := false;
            end try;
@@ -818,10 +818,10 @@ algorithm
               (z,_) := Expression.makeZeroExpression(Expression.arrayDimension(tp));
               ((c,_)) := Expression.replaceExp(e2, e, z);
               (c,_) := ExpressionSimplify.simplify(c);
-              //print("\nde = " + ExpressionDump.printExpStr(der_e));
-              //print("\nc = " + ExpressionDump.printExpStr(c));
-              //print("\ne = " + ExpressionDump.printExpStr(e));
-              //print("\ne2 = " + ExpressionDump.printExpStr(e2));
+              //print("\nde = " + ExpressionBasics.printExpStr(der_e));
+              //print("\nc = " + ExpressionBasics.printExpStr(c));
+              //print("\ne = " + ExpressionBasics.printExpStr(e));
+              //print("\ne2 = " + ExpressionBasics.printExpStr(e2));
 
               var_lst := BackendEquation.expressionVars(der_e, globalKnownVars);
               if b3 then

@@ -596,10 +596,10 @@ algorithm
         (binds as _::_) := matchesBackEnd(inExp, from, {});
         outExp := rewriteExpBackEnd(to, binds);
         b := boolNot(referenceEq(inExp, outExp));
-        print("BackEnd Exp:     " + ExpressionDump.printExpStr(inExp) + "\n" +
-              "BackEnd From:    " + ExpressionDump.printExpStr(from) + "\n" +
-              "BackEnd To:      " + ExpressionDump.printExpStr(to) + "\n" +
-              "BackEnd Rewrite: " + ExpressionDump.printExpStr(outExp) + "\n---------\n");
+        print("BackEnd Exp:     " + ExpressionBasics.printExpStr(inExp) + "\n" +
+              "BackEnd From:    " + ExpressionBasics.printExpStr(from) + "\n" +
+              "BackEnd To:      " + ExpressionBasics.printExpStr(to) + "\n" +
+              "BackEnd Rewrite: " + ExpressionBasics.printExpStr(outExp) + "\n---------\n");
       then
         (outExp, b);
 
@@ -940,7 +940,7 @@ algorithm
         true;
 
     // all others forward to expEqual
-    else Expression.expEqual(e1, e2);
+    else ExpressionBasics.expEqual(e1, e2);
 
   end matchcontinue;
 end expEqual;

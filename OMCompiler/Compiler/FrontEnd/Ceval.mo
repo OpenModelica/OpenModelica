@@ -134,7 +134,7 @@ algorithm
     case (_,_,_,_,Absyn.MSG(info=info),_,true)
       algorithm
         str1 := intString(Global.recursionDepthLimit);
-        str2 := ExpressionDump.printExpStr(inExp);
+        str2 := ExpressionBasics.printExpStr(inExp);
         Error.addSourceMessage(Error.RECURSION_DEPTH_WARNING, {str1,str2,FGraph.printGraphPathStr(inEnv)}, info);
       then fail();
   end match;
@@ -206,7 +206,7 @@ algorithm
 
     // uncomment for debugging
     // case (cache,env,inExp,_,_,_)
-    //   equation print("Ceval.ceval: " + ExpressionDump.printExpStr(inExp) + " in env: " + FGraph.printGraphPathStr(env) + "\n");
+    //   equation print("Ceval.ceval: " + ExpressionBasics.printExpStr(inExp) + " in env: " + FGraph.printGraphPathStr(env) + "\n");
     //   then fail();
 
     case (cache,_,DAE.ICONST(integer = i),_,_,_) then (cache,Values.INTEGER(i));
@@ -400,7 +400,7 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Ceval.ceval DAE.CALL failed: ");
-        str := ExpressionDump.printExpStr(e);
+        str := ExpressionBasics.printExpStr(e);
         Debug.traceln(str);
       then
         fail();
@@ -612,8 +612,8 @@ algorithm
       algorithm
         (_,lhvVal) := ceval(cache,env, rh, impl, msg,numIter);
         true := ValuesUtil.isZero(lhvVal);
-        lhvStr := ExpressionDump.printExpStr(lh);
-        rhvStr := ExpressionDump.printExpStr(rh);
+        lhvStr := ExpressionBasics.printExpStr(lh);
+        rhvStr := ExpressionBasics.printExpStr(rh);
         Error.addSourceMessage(Error.DIVISION_BY_ZERO, {lhvStr,rhvStr}, info);
       then
         fail();
@@ -787,7 +787,7 @@ algorithm
         // print("Before:\n");print(stringDelimitList(List.map1(List.mapList(valMatrix, ValuesDump.valString), stringDelimitList, ","), "\n") + "\n");
         valMatrix := makeReductionAllCombinations(valMatrix,iterType);
         // print("After:\n");print(stringDelimitList(List.map1(List.mapList(valMatrix, ValuesDump.valString), stringDelimitList, ","), "\n") + "\n");
-        // print("Start cevalReduction: " + AbsynUtil.pathString(path) + " " + ExpressionDump.printExpStr(daeExp) + "\n");
+        // print("Start cevalReduction: " + AbsynUtil.pathString(path) + " " + ExpressionBasics.printExpStr(daeExp) + "\n");
         (cache, ov) := cevalReduction(cache, env, path, ov, daeExp, ty, foldName, resultName, foldExp, names, listReverse(valMatrix), tys, impl, msg,numIter+1);
         value := Util.getOptionOrDefault(ov, Values.META_FAIL());
         value := backpatchArrayReduction(path, iterType, value, dims);
@@ -804,13 +804,13 @@ algorithm
       algorithm
         ty := Expression.typeof(inExp);
         v := Types.typeToValue(ty);
-      then (inCache, Values.EMPTY("#graphicsExp#", ExpressionDump.printExpStr(inExp), v, TypesDump.unparseType(ty)));
+      then (inCache, Values.EMPTY("#graphicsExp#", ExpressionBasics.printExpStr(inExp), v, TypesDump.unparseType(ty)));
 
     // ceval can fail and that is ok, caught by other rules...
     case (_,env,e,_,_,_) // Absyn.MSG())
       algorithm
         true := Flags.isSet(Flags.CEVAL);
-        Debug.traceln("- Ceval.ceval failed: " + ExpressionDump.printExpStr(e));
+        Debug.traceln("- Ceval.ceval failed: " + ExpressionBasics.printExpStr(e));
         Debug.traceln("  Scope: " + FGraph.printGraphPathStr(env));
         // Debug.traceln("  Env:" + FGraph.printGraphStr(env));
       then
@@ -1410,14 +1410,14 @@ algorithm
         if not Types.dimensionsKnown(tp)
         then
           cr_str := ComponentReference.printComponentRefStr(cr);
-          dim_str := ExpressionDump.printExpStr(dimExp);
+          dim_str := ExpressionBasics.printExpStr(dimExp);
           size_str := stringAppendList({"size(",cr_str,", ",dim_str,")"});
           Error.addSourceMessage(Error.DIMENSION_NOT_KNOWN, {size_str}, info);
         else
           _ := match(binding)
                case DAE.UNBOUND()
                  algorithm
-                   expstr := ExpressionDump.printExpStr(inExp2);
+                   expstr := ExpressionBasics.printExpStr(inExp2);
                    Error.addSourceMessage(Error.UNBOUND_VALUE, {expstr}, info);
                  then
                    fail();
@@ -1464,7 +1464,7 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Print.printErrorBuf("#-- Ceval.cevalBuiltinSize failed: ");
-        expstr := ExpressionDump.printExpStr(exp);
+        expstr := ExpressionBasics.printExpStr(exp);
         Print.printErrorBuf(expstr);
         Print.printErrorBuf("\n");
       then
@@ -3248,8 +3248,8 @@ algorithm
       algorithm
         (_,Values.REAL(rv2)) := ceval(cache,env, exp2, impl, inMsg,numIter+1);
         true := (rv2 == 0.0);
-        exp1_str := ExpressionDump.printExpStr(exp1);
-        exp2_str := ExpressionDump.printExpStr(exp2);
+        exp1_str := ExpressionBasics.printExpStr(exp1);
+        exp2_str := ExpressionBasics.printExpStr(exp2);
         Error.addSourceMessage(Error.DIVISION_BY_ZERO, {exp1_str,exp2_str}, info);
       then
         fail();
@@ -3263,8 +3263,8 @@ algorithm
       algorithm
         (_,Values.INTEGER(ri2)) := ceval(cache,env, exp2, impl,  inMsg,numIter+1);
         true := (ri2 == 0);
-        lh_str := ExpressionDump.printExpStr(exp1);
-        rh_str := ExpressionDump.printExpStr(exp2);
+        lh_str := ExpressionBasics.printExpStr(exp1);
+        rh_str := ExpressionBasics.printExpStr(exp2);
         Error.addSourceMessage(Error.DIVISION_BY_ZERO, {lh_str,rh_str}, info);
       then
         fail();
@@ -3312,14 +3312,14 @@ algorithm
     case (_,Values.REAL(rv2),Absyn.MSG(info = info))
       guard rv2 == 0.0
       algorithm
-        lhs_str := ExpressionDump.printExpStr(exp1);
-        rhs_str := ExpressionDump.printExpStr(exp2);
+        lhs_str := ExpressionBasics.printExpStr(exp1);
+        rhs_str := ExpressionBasics.printExpStr(exp2);
         Error.addSourceMessage(Error.MODULO_BY_ZERO, {lhs_str,rhs_str}, info);
       then fail();
     case (_,Values.INTEGER(0),Absyn.MSG(info = info))
       algorithm
-        lhs_str := ExpressionDump.printExpStr(exp1);
-        rhs_str := ExpressionDump.printExpStr(exp2);
+        lhs_str := ExpressionBasics.printExpStr(exp1);
+        rhs_str := ExpressionBasics.printExpStr(exp2);
         Error.addSourceMessage(Error.MODULO_BY_ZERO, {lhs_str,rhs_str}, info);
       then
         fail();
@@ -3578,8 +3578,8 @@ algorithm
       algorithm
         (_,Values.REAL(rv2)) := ceval(cache,env,exp2,impl,inMsg,numIter+1);
         true := (rv2 == 0.0);
-        exp1_str := ExpressionDump.printExpStr(exp1);
-        exp2_str := ExpressionDump.printExpStr(exp2);
+        exp1_str := ExpressionBasics.printExpStr(exp1);
+        exp2_str := ExpressionBasics.printExpStr(exp2);
         Error.addSourceMessage(Error.REM_ARG_ZERO, {exp1_str,exp2_str}, info);
       then
         fail();
@@ -3587,8 +3587,8 @@ algorithm
       algorithm
         (_,Values.INTEGER(ri2)) := ceval(cache,env, exp2, impl, inMsg,numIter+1);
         true := (ri2 == 0);
-        exp1_str := ExpressionDump.printExpStr(exp1);
-        exp2_str := ExpressionDump.printExpStr(exp2);
+        exp1_str := ExpressionBasics.printExpStr(exp1);
+        exp2_str := ExpressionBasics.printExpStr(exp2);
         Error.addSourceMessage(Error.REM_ARG_ZERO, {exp1_str,exp2_str}, info);
       then
         fail();
@@ -3798,7 +3798,7 @@ algorithm
         (cache,res);
     case (_,_,_,_,Absyn.MSG(info = info),_)
       algorithm
-        str := "cross" + ExpressionDump.printExpStr(DAE.TUPLE(inExpExpLst));
+        str := "cross" + ExpressionBasics.printExpStr(DAE.TUPLE(inExpExpLst));
         Error.addSourceMessage(Error.FAILED_TO_EVALUATE_EXPRESSION, {str}, info);
       then
         fail();
@@ -4434,7 +4434,7 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.CEVAL);
         Debug.trace("#- Ceval.cevalCrefBinding failed (nonconstant EQBOUND(");
-        expstr := ExpressionDump.printExpStr(exp);
+        expstr := ExpressionBasics.printExpStr(exp);
         Debug.trace(expstr);
         Debug.traceln("))");
       then
@@ -4540,7 +4540,7 @@ algorithm
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Ceval.cevalSubscriptValue failed on:" +
           "\n env: " + FGraph.printGraphPathStr(env) +
-          "\n subs: " + stringDelimitList(List.map(subs, ExpressionDump.printSubscriptStr), ", ") +
+          "\n subs: " + stringDelimitList(List.map(subs, ExpressionBasics.printSubscriptStr), ", ") +
           "\n value: " + ValuesDump.printValStr(inValue) +
           "\n dim sizes: " + stringDelimitList(List.map(dims, intString), ", ")
         );
@@ -4811,7 +4811,7 @@ algorithm
     case (cache,env,_,curValue,_,_,_,_,_,_,_,_)
       algorithm
         (cache, value) := ceval(cache, env, exp, impl, msg,numIter+1);
-        // print("cevalReductionEval: " + ExpressionDump.printExpStr(exp) + " => " + ValuesDump.valString(value) + "\n");
+        // print("cevalReductionEval: " + ExpressionBasics.printExpStr(exp) + " => " + ValuesDump.valString(value) + "\n");
         (cache, result) := cevalReductionFold(cache, env, opPath, curValue, value, foldName, resultName, foldExp, exprType, impl, msg,numIter);
         // print("cevalReductionEval => " + Util.applyOptionOrDefault(result, ValuesDump.valString, "") + "\n");
       then (cache, result);
@@ -4858,7 +4858,7 @@ algorithm
 
     case (cache,_,SOME(value),SOME(exp))
       algorithm
-        // print("cevalReductionFold " + ExpressionDump.printExpStr(exp) + ", " + ValuesDump.valString(inValue) + ", " + ValuesUtil.valString(value) + "\n");
+        // print("cevalReductionFold " + ExpressionBasics.printExpStr(exp) + ", " + ValuesDump.valString(inValue) + ", " + ValuesUtil.valString(value) + "\n");
         /* TODO: Store the actual types somewhere... */
         env := FGraph.addForIterator(inEnv, foldName, exprType, DAE.VALBOUND(inValue, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
         env := FGraph.addForIterator(env, resultName, exprType, DAE.VALBOUND(value, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));

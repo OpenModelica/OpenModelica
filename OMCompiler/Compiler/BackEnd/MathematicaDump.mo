@@ -458,7 +458,7 @@ algorithm
     then str;
 
     case (e,_,_) algorithm
-      str := "Missing[\"UnknownExpression\",\""+ExpressionDump.printExpStr(e)+"\"]";
+      str := "Missing[\"UnknownExpression\",\""+ExpressionBasics.printExpStr(e)+"\"]";
     then str;
   end matchcontinue;
 end printExp2MmaStr;

@@ -717,7 +717,7 @@ algorithm
         failure((_,_) := Types.matchType(e, e_tp, tp, false));
         e_tp_str := TypesDump.unparseTypeNoAttr(e_tp);
         tp_str := TypesDump.unparseTypeNoAttr(tp);
-        e_str := ExpressionDump.printExpStr(e);
+        e_str := ExpressionBasics.printExpStr(e);
         e_str_1 := stringAppend("=", e_str);
         str := PrefixUtil.printPrefixStrIgnoreNoPre(inPrefix) + "." + componentName;
         Types.typeErrorSanityCheck(e_tp_str, tp_str, info);
@@ -858,7 +858,7 @@ algorithm
     case (SOME(DAE.NAMEMOD(ident = ident, mod = DAE.MOD(binding =
         SOME(DAE.TYPED(modifierAsExp = exp, properties = DAE.PROP(type_ = ty)))))))
       algorithm
-        binding_str := ExpressionDump.printExpStr(exp);
+        binding_str := ExpressionBasics.printExpStr(exp);
         expected_type_str := TypesDump.unparseTypeNoAttr(inType);
         given_type_str := TypesDump.unparseTypeNoAttr(ty);
         Types.typeErrorSanityCheck(given_type_str, expected_type_str, inInfo);
@@ -909,7 +909,7 @@ algorithm
         Types.matchProp(e, p, DAE.PROP(inType, inConst), true);
     else
       // The types of the variable and binding are incompatible, print an error.
-      e_str := ExpressionDump.printExpStr(e);
+      e_str := ExpressionBasics.printExpStr(e);
       et_str := TypesDump.unparseTypeNoAttr(inType);
       bt_str := TypesDump.unparseTypeNoAttr(Types.getPropType(p));
       Types.typeErrorSanityCheck(et_str, bt_str, info);

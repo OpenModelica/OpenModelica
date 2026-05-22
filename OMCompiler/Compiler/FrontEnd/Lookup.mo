@@ -3079,7 +3079,7 @@ algorithm
         Debug.trace("- Lookup.checkSubscripts failed (tp: ");
         Debug.trace(TypesDump.printTypeStr(t));
         Debug.trace(" subs:");
-        Debug.trace(stringDelimitList(List.map(s,ExpressionDump.printSubscriptStr),","));
+        Debug.trace(stringDelimitList(List.map(s,ExpressionBasics.printSubscriptStr),","));
         Debug.trace(")\n");
       then
         fail();

@@ -223,12 +223,12 @@ interface package VisualXMLTplTV
     end Visualization;
   end VisualXML;
 
-  package ExpressionDump
+  package ExpressionBasics
     function printExpStr
       input DAE.Exp e;
       output String s;
     end printExpStr;
-  end ExpressionDump;
+  end ExpressionBasics;
 
   package DAE
     uniontype Exp

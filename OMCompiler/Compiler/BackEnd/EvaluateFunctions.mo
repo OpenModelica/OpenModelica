@@ -186,7 +186,7 @@ algorithm
     vari := List.map(expLst,getVariabilityForExp);
     signatureOut := SIGNATURE(path,vari,true);
   else
-    print("evalFunc.getCallSignatureForCall failed for :\n"+ExpressionDump.printExpStr(callExpIn)+"\n");
+    print("evalFunc.getCallSignatureForCall failed for :\n"+ExpressionBasics.printExpStr(callExpIn)+"\n");
     fail();
   end try;
 end getCallSignatureForCall;
@@ -470,7 +470,7 @@ algorithm
   case(DAE.CALL(path=path, expLst=exps0),_)
     algorithm
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-          print("\nStart constant evaluation of expression: "+ExpressionDump.printExpStr(expIn)+"\n\n");
+          print("\nStart constant evaluation of expression: "+ExpressionBasics.printExpStr(expIn)+"\n\n");
         end if;
 
         if evalConstArgsOnly then
@@ -487,7 +487,7 @@ algorithm
         exps := list(evaluateConstantFunctionCallExp(e, funcsIn, evalConstArgsOnly, recursionLimit) for e in exps0);
         scalarExp := List.map1(exps, expandComplexExpressions, funcsIn);
         allInputExps := List.flatten(scalarExp);
-          //print("allInputExps\n"+stringDelimitList(List.map(allInputExps,ExpressionDump.printExpStr),"\n")+"\n");
+          //print("allInputExps\n"+stringDelimitList(List.map(allInputExps,ExpressionBasics.printExpStr),"\n")+"\n");
 
         if listEmpty(elements) and DAEUtil.funcIsRecord(func) then  // its a record
         //-----------------------its a record-----------------------
@@ -516,10 +516,10 @@ algorithm
         //print("\nscalarOutputs\n"+stringDelimitList(List.map(List.flatten(scalarOutputs),ComponentReference.printComponentRefStr),"\n")+"\n");
 
         // get the constant inputs
-            //print("\nallInputExps\n"+stringDelimitList(List.map(allInputExps,ExpressionDump.printExpStr),"\n")+"\n");
+            //print("\nallInputExps\n"+stringDelimitList(List.map(allInputExps,ExpressionBasics.printExpStr),"\n")+"\n");
             //print("\nall algs "+intString(listLength(algs))+"\n"+DAEDump.dumpElementsStr(algs)+"\n");
         (constInputExps,constInputCrefs) := List.filterOnTrueSync(allInputExps,Expression.isConst,allInputCrefs);
-          //print("\nconstInputExps\n"+stringDelimitList(List.map(constInputExps,ExpressionDump.printExpStr),"\n")+"\n");
+          //print("\nconstInputExps\n"+stringDelimitList(List.map(constInputExps,ExpressionBasics.printExpStr),"\n")+"\n");
           //print("\nconstInputCrefs\n"+stringDelimitList(List.map(constInputCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
           //print("\nall algs "+intString(listLength(algs))+"\n"+DAEDump.dumpElementsStr(algs)+"\n");
 
@@ -573,7 +573,7 @@ algorithm
       end if;
 
       if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-       print("\nevaluated to: "+ExpressionDump.printExpStr(expOut)+"\n\n");
+       print("\nevaluated to: "+ExpressionBasics.printExpStr(expOut)+"\n\n");
       end if;
 
       then expOut;
@@ -707,7 +707,7 @@ algorithm
       algorithm
 
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-          print("\nStart function evaluation of:\n"+ExpressionDump.printExpStr(lhsExpIn)+" := "+ExpressionDump.printExpStr(rhsExpIn)+"\n\n");
+          print("\nStart function evaluation of:\n"+ExpressionBasics.printExpStr(lhsExpIn)+" := "+ExpressionBasics.printExpStr(rhsExpIn)+"\n\n");
         end if;
 
         //------------------------------------------------
@@ -752,7 +752,7 @@ algorithm
         exps := list(evaluateConstantFunctionCallExp(e, funcsIn, false, recursionLimit-1) for e in expsIn);
         scalarExp := List.map1(exps,expandComplexExpressions,funcsIn);//these exps are evaluated as well
         allInputExps := List.flatten(scalarExp);
-          //print("allInputExps\n"+stringDelimitList(List.map(allInputExps,ExpressionDump.printExpStr),"\n")+"\n");
+          //print("allInputExps\n"+stringDelimitList(List.map(allInputExps,ExpressionBasics.printExpStr),"\n")+"\n");
 
         // get all input crefs (from function body) (scalar and one dimensioanl)
         allInputs := List.filterOnTrue(elements,DAEUtil.isInputVar);
@@ -770,8 +770,8 @@ algorithm
 
         // get the constant inputs
         (constInputExps,constInputCrefs) := List.filterOnTrueSync(allInputExps,Expression.isConst,allInputCrefs);
-          //print("\nallInputExps\n"+stringDelimitList(List.map(allInputExps,ExpressionDump.printExpStr),"\n")+"\n");
-          //print("\nconstInputExps\n"+stringDelimitList(List.map(constInputExps,ExpressionDump.printExpStr),"\n")+"\n");
+          //print("\nallInputExps\n"+stringDelimitList(List.map(allInputExps,ExpressionBasics.printExpStr),"\n")+"\n");
+          //print("\nconstInputExps\n"+stringDelimitList(List.map(constInputExps,ExpressionBasics.printExpStr),"\n")+"\n");
           //print("\nconstInputCrefs\n"+stringDelimitList(List.map(constInputCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
           //print("\nall algs "+intString(listLength(algs))+"\n"+DAEDump.dumpElementsStr(algs)+"\n");
 
@@ -852,8 +852,8 @@ algorithm
         // build the new lhs, the new statements for the function, the constant parts...
         (updatedVarOutputs,outputExp,varScalarCrefsInFunc) := buildVariableFunctionParts(scalarOutputs,constComplexCrefs,varComplexCrefs,constScalarCrefs,varScalarCrefs,allOutputs,lhsExpIn);
         (constScalarCrefsLhs,constComplexCrefs) := buildConstFunctionCrefs(constScalarCrefs,constComplexCrefs,allOutputCrefs,lhsExpIn);
-          //print("constScalarExps\n"+stringDelimitList(List.map(constScalarExps,ExpressionDump.printExpStr),"\n")+"\n");
-          //print("constComplexExps\n"+stringDelimitList(List.map(constComplexExps,ExpressionDump.printExpStr),"\n")+"\n");
+          //print("constScalarExps\n"+stringDelimitList(List.map(constScalarExps,ExpressionBasics.printExpStr),"\n")+"\n");
+          //print("constComplexExps\n"+stringDelimitList(List.map(constComplexExps,ExpressionBasics.printExpStr),"\n")+"\n");
 
         if not funcIsConst then
           (algs,constEqs) := buildPartialFunction((varScalarCrefsInFunc,algs),(constScalarCrefs,constScalarExps,constComplexCrefs,constComplexExps,constScalarCrefsLhs),repl);
@@ -904,7 +904,7 @@ algorithm
           //print("RHS EXP:\n");
           //ExpressionDump.dumpExp(exp);
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-          print("Finish evaluation of:\n"+ExpressionDump.printExpStr(lhsExpIn)+" := "+ExpressionDump.printExpStr(rhsExpIn)+"\nto:\n"+ExpressionDump.printExpStr(outputExp)+" := "+ExpressionDump.printExpStr(exp)+"\n");
+          print("Finish evaluation of:\n"+ExpressionBasics.printExpStr(lhsExpIn)+" := "+ExpressionBasics.printExpStr(rhsExpIn)+"\nto:\n"+ExpressionBasics.printExpStr(outputExp)+" := "+ExpressionBasics.printExpStr(exp)+"\n");
           if not listEmpty(constEqs) then
             BackendDump.dumpEquationList(constEqs,"including the additional equations:\n");
           end if;
@@ -2204,11 +2204,11 @@ algorithm
           (msg,_) := BackendVarTransform.replaceExp(msg,repl,NONE());
           (msg) := evaluateConstantFunctionCallExp(msg,funcTree, false, recursionLimit);
           (msg,_) := ExpressionSimplify.simplify(msg);
-          if Expression.expEqual(cond,DAE.BCONST(false)) and Expression.sconstEnumNameString(lvl)=="AssertionLevel.error" then
-            if Flags.isSet(Flags.EVAL_FUNC_DUMP) then print("ERROR: "+ExpressionDump.printExpStr(msg)+"\n"); end if;
+          if ExpressionBasics.expEqual(cond,DAE.BCONST(false)) and Expression.sconstEnumNameString(lvl)=="AssertionLevel.error" then
+            if Flags.isSet(Flags.EVAL_FUNC_DUMP) then print("ERROR: "+ExpressionBasics.printExpStr(msg)+"\n"); end if;
             fail();
-          elseif Expression.expEqual(cond,DAE.BCONST(false)) and Expression.sconstEnumNameString(lvl)=="AssertionLevel.warning" then
-            if Flags.isSet(Flags.EVAL_FUNC_DUMP) then print("WARNING: "+ExpressionDump.printExpStr(msg)+"\n"); end if;
+          elseif ExpressionBasics.expEqual(cond,DAE.BCONST(false)) and Expression.sconstEnumNameString(lvl)=="AssertionLevel.warning" then
+            if Flags.isSet(Flags.EVAL_FUNC_DUMP) then print("WARNING: "+ExpressionBasics.printExpStr(msg)+"\n"); end if;
             fail();
           end if;
 
@@ -2326,7 +2326,7 @@ algorithm
     then (i1,i2,i3);
   else
   algorithm
-    //print("getRangeBounds failed!"+ExpressionDump.printExpStr(range)+"\n");
+    //print("getRangeBounds failed!"+ExpressionBasics.printExpStr(range)+"\n");
     then fail();
   end match;
 end getRangeBounds;
@@ -2465,7 +2465,7 @@ algorithm
         tplLHS := DAEUtil.getTupleExps(e2);
         crefs := List.map(tplLHS,Expression.expCref);
         repl := BackendVarTransform.addReplacements(replIn,crefs,tplRHS,NONE());
-        //print("add the tpl  replacements: "+stringDelimitList(List.map(crefs,ComponentReference.printComponentRefStr),",")+stringDelimitList(List.map(tplRHS,ExpressionDump.printExpStr),",")+"\n");
+        //print("add the tpl  replacements: "+stringDelimitList(List.map(crefs,ComponentReference.printComponentRefStr),",")+stringDelimitList(List.map(tplRHS,ExpressionBasics.printExpStr),",")+"\n");
       then
         repl;
    else
@@ -2781,7 +2781,7 @@ algorithm
         t;
     else
       algorithm
-      print("expType failed for: "+ExpressionDump.printExpStr(eIn)+"\n");
+      print("expType failed for: "+ExpressionBasics.printExpStr(eIn)+"\n");
       then
         fail();
   end matchcontinue;
@@ -3175,7 +3175,7 @@ algorithm
          expLst := List.fold(List.flatten(stmtsLst),getStatementLHS,{});
          expLst := List.unique(expLst);
          allLHS := listReverse(expLst);
-         // print("the outputs: "+stringDelimitList(List.map(allLHS,ExpressionDump.printExpStr),"\n")+"\n");
+         // print("the outputs: "+stringDelimitList(List.map(allLHS,ExpressionBasics.printExpStr),"\n")+"\n");
          expLstLst := List.map1(replLst,replaceExps,allLHS);
          // print("the outputs replaced: \n"+stringDelimitList(List.map(expLstLst,ExpressionDump.printExpListStr),"\n")+"\n\n");
 
@@ -3185,10 +3185,10 @@ algorithm
          _ := List.map(outExps,Expression.expCref);
          // print("constantOutputs: "+stringDelimitList(List.map(constantOutputs,intString),",")+"\n");
          expLst := List.map1(constantOutputs,List.getIndexFirst,listHead(expLstLst));
-         // print("the constant shared outputs: "+stringDelimitList(List.map(expLst,ExpressionDump.printExpStr),"\n")+"\n");
-         // print("the constant shared output crefs: "+stringDelimitList(List.map(outExps,ExpressionDump.printExpStr),"\n")+"\n");
+         // print("the constant shared outputs: "+stringDelimitList(List.map(expLst,ExpressionBasics.printExpStr),"\n")+"\n");
+         // print("the constant shared output crefs: "+stringDelimitList(List.map(outExps,ExpressionBasics.printExpStr),"\n")+"\n");
          if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-           print("--> the predicted const outputs:\n"+stringDelimitList(List.map(outExps,ExpressionDump.printExpStr),"\n"));
+           print("--> the predicted const outputs:\n"+stringDelimitList(List.map(outExps,ExpressionBasics.printExpStr),"\n"));
          end if;
 
          //_ = (not listEmpty(constOutExps)) and listEmpty(varOutExps);
@@ -3361,7 +3361,7 @@ algorithm
   b1 := List.all(expLst, Expression.isConst);
   if b1 then
     firstExp::rest := expLst;
-    b2 := List.all(rest, function Expression.expEqual(inExp2 = firstExp));
+    b2 := List.all(rest, function ExpressionBasics.expEqual(inExp2 = firstExp));
     if b2 then
       pos := idx::pos;
     end if;

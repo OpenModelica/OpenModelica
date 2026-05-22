@@ -969,7 +969,7 @@ algorithm
     //NO UNIT IN EQUATION
     // all unhandled expressions, e.g. DAE.CAST, DAE.TUPLE, ...
     else
-      //Error.addInternalError("./Compiler/FrontEnd/FUnitCheck.mo: function insertUnitInEquation failed for " + ExpressionDump.printExpStr(inEq), sourceInfo());
+      //Error.addInternalError("./Compiler/FrontEnd/FUnitCheck.mo: function insertUnitInEquation failed for " + ExpressionBasics.printExpStr(inEq), sourceInfo());
     then (Unit.MASTER({}), inTpl, {});
   end matchcontinue;
 end insertUnitInEquation;
@@ -1150,13 +1150,13 @@ algorithm
       String s, s1, s2;
 
     case ((exp, ut)::{}, _) algorithm
-      s := ExpressionDump.printExpStr(exp);
+      s := ExpressionBasics.printExpStr(exp);
       s1 := Unit.unitString(ut, inHtU2S);
       s := "- sub-expression \"" + s + "\" has unit \"" + s1 + "\"";
     then s;
 
     case ((exp, ut)::expList, _) algorithm
-      s := ExpressionDump.printExpStr(exp);
+      s := ExpressionBasics.printExpStr(exp);
       s1 := Unit.unitString(ut, inHtU2S);
       s2 := Errorfunction2(expList, inHtU2S);
       s := "- sub-expression \"" + s + "\" has unit \"" + s1 + "\"\n" + s2;

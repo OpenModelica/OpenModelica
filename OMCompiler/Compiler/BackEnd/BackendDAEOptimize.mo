@@ -152,7 +152,7 @@ algorithm
   // so in case max(x,eps)*y/max(x,eps) => x*y/x
   // now x can be equal 0, so we need simplify x*y/x = y
   // it's seem no other models silplyfied it
-  if not Expression.expEqual(outExp, inExp) then
+  if not ExpressionBasics.expEqual(outExp, inExp) then
     outExp := ExpressionSimplify.simplify(outExp);
   end if;
 end simplifyInStreamWork;
@@ -3986,7 +3986,7 @@ algorithm
   if BackendVariable.isVarNonDifferentiable(var) then
     DAE.CALL(expLst = {arg}) := iExp;
     Error.addSourceMessageAndFail(Error.DER_OF_NONDIFFERENTIABLE_EXP,
-      {ExpressionDump.printExpStr(arg)}, var.source.info);
+      {ExpressionBasics.printExpStr(arg)}, var.source.info);
   elseif BackendVariable.isVarDiscrete(var) then
     oExp := DAE.RCONST(0.0);
   elseif not BackendVariable.isStateVar(var) or BackendVariable.varStateSelectForced(var) then
@@ -4330,7 +4330,7 @@ algorithm
           indRemove := i :: indRemove;
           for e1 in left_lst loop
             e2 :: right_lst := right_lst;
-            //print("=>" +  ExpressionDump.printExpStr(e2) + " = " +  ExpressionDump.printExpStr(e1) + "\n");
+            //print("=>" +  ExpressionBasics.printExpStr(e2) + " = " +  ExpressionBasics.printExpStr(e1) + "\n");
             if not Expression.isWild(e1) then
               if Expression.isScalar(e2) then
                 eqn1 := BackendEquation.generateEquation(e1, e2, source, attr);
@@ -4358,7 +4358,7 @@ algorithm
             indRemove := i :: indRemove;
             for e1 in left_lst loop
             e2 :: right_lst := right_lst;
-            //print("=>" +  ExpressionDump.printExpStr(e2) + " = " +  ExpressionDump.printExpStr(e1) + "\n");
+            //print("=>" +  ExpressionBasics.printExpStr(e2) + " = " +  ExpressionBasics.printExpStr(e1) + "\n");
             if not Expression.isWild(e1) then
               if Expression.isScalar(e2) then
               eqn1 := BackendEquation.generateEquation(e1, e2, source, attr);
@@ -5131,7 +5131,7 @@ algorithm
         if Expression.isBinary(res) then
           DAE.BINARY(operator=op) := res;
           if Expression.isAddOrSub(op) or Expression.isMulOrDiv(op) or Expression.isPow(op) then
-            if not Expression.expEqual(res, inExp) then
+            if not ExpressionBasics.expEqual(res, inExp) then
               if Expression.isDiv(op) or Expression.isPow(op) then
                 DAE.BINARY(e1,op,e2) := res;
                 (outIndx, outVars, outEqns, outShared, update, e1, ass1, ass2, outCompOrder) := simplifyLoopExp(outIndx, outVars, outEqns, outShared, var_lst, e1, ass1, ass2, simDAE, useTmpVars, ii, outCompOrder);
@@ -5349,7 +5349,7 @@ algorithm
     then (outExp, (vars, eqnLst, shared, addVar, true));
 
     case (DAE.CALL(path=Absyn.IDENT(name="der")), (_, _, _, _, _)) algorithm
-      str := "BackendDAEOptimize.introduceDerAlias failed for: " + ExpressionDump.printExpStr(inExp) + "\n";
+      str := "BackendDAEOptimize.introduceDerAlias failed for: " + ExpressionBasics.printExpStr(inExp) + "\n";
       Error.addMessage(Error.INTERNAL_ERROR, {str});
     then fail();
 
@@ -5444,7 +5444,7 @@ algorithm
     then (outExp, true);
 
     case (DAE.CALL(path=Absyn.IDENT(name="der")), _) algorithm
-      Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed for: " + ExpressionDump.printExpStr(inExp) + "\n"});
+      Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed for: " + ExpressionBasics.printExpStr(inExp) + "\n"});
     then fail();
 
     else (inExp, itpl);

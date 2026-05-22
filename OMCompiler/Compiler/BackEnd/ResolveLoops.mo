@@ -1825,7 +1825,7 @@ algorithm
       (false,false);
   else
     algorithm
-      print("add a case to expIsCref:"+ExpressionDump.printExpStr(expIn)+"\n");
+      print("add a case to expIsCref:"+ExpressionBasics.printExpStr(expIn)+"\n");
     then
       (false,false);
   end match;
@@ -3143,7 +3143,7 @@ algorithm
   for i in 1:n loop
      print("\n");
      for j in 1:m loop
-       print(s + "(" + intString(i) + "," + intString(j) + ") = " + ExpressionDump.printExpStr(arrayGet(A, (i-1)*m + j)) + "\t");
+       print(s + "(" + intString(i) + "," + intString(j) + ") = " + ExpressionBasics.printExpStr(arrayGet(A, (i-1)*m + j)) + "\t");
      end for;
   end for;
      print("\n");

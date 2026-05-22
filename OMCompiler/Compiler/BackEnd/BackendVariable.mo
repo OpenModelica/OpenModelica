@@ -2189,13 +2189,13 @@ algorithm
       DAE.Exp min, max;
 
     case (SOME(min),SOME(max))
-    then "Variable violating min/max constraint: " + ExpressionDump.printExpStr(min) + " <= " + varStr + " <= " + ExpressionDump.printExpStr(max) + ", has value: ";
+    then "Variable violating min/max constraint: " + ExpressionBasics.printExpStr(min) + " <= " + varStr + " <= " + ExpressionBasics.printExpStr(max) + ", has value: ";
 
     case (SOME(min),NONE())
-    then "Variable violating min constraint: " + ExpressionDump.printExpStr(min) + " <= " + varStr + ", has value: ";
+    then "Variable violating min constraint: " + ExpressionBasics.printExpStr(min) + " <= " + varStr + ", has value: ";
 
     case (NONE(),SOME(max))
-    then "Variable violating max constraint: " + varStr + " <= " + ExpressionDump.printExpStr(max) + ", has value: ";
+    then "Variable violating max constraint: " + varStr + " <= " + ExpressionBasics.printExpStr(max) + ", has value: ";
   end match;
 end getMinMaxAsserts1Str;
 
@@ -4167,8 +4167,8 @@ algorithm
         s1 := ComponentReference.printComponentRefStr(cr);
         s2 := if negate then " = -" else " = ";
         s3 := ComponentReference.printComponentRefStr(cra);
-        s5 := ExpressionDump.printExpStr(sv);
-        s6 := ExpressionDump.printExpStr(sva);
+        s5 := ExpressionBasics.printExpStr(sv);
+        s6 := ExpressionBasics.printExpStr(sva);
         s := stringAppendList({"Alias variables ",s1,s2,s3,s4,s5," != ",s6,". Use value from ",s1,"."});
         Error.addMessage(Error.COMPILER_WARNING,{s});
       then
@@ -4178,8 +4178,8 @@ algorithm
         s1 := ComponentReference.printComponentRefStr(cr);
         s2 := if negate then " = -" else " = ";
         s3 := ComponentReference.printComponentRefStr(cra);
-        s5 := ExpressionDump.printExpStr(sv);
-        s6 := ExpressionDump.printExpStr(sva);
+        s5 := ExpressionBasics.printExpStr(sv);
+        s6 := ExpressionBasics.printExpStr(sva);
         s := stringAppendList({"Alias variables ",s1,s2,s3,s4,s5," != ",s6,". Use value from ",s3,"."});
         Error.addMessage(Error.COMPILER_WARNING,{s});
         v := setVarStartValue(inVar,sva);
@@ -4237,7 +4237,7 @@ algorithm
       Option<DAE.Exp> origin;
     case (_,_,_,_,_,_)
       algorithm
-        true := Expression.expEqual(exp1,exp2);
+        true := ExpressionBasics.expEqual(exp1,exp2);
         // use highest origin
         i := startOriginToValue(so);
         ia := startOriginToValue(sao);
@@ -4259,7 +4259,7 @@ algorithm
         (exp2_1, (_,b2,_)) := Expression.traverseExpBottomUp(exp2, replaceCrefWithBindExp, (globalKnownVars,false,HashSet.emptyHashSet()));
         (exp1_1,_) := ExpressionSimplify.condsimplify(b1,exp1_1);
         (exp2_1,_) := ExpressionSimplify.condsimplify(b2,exp2_1);
-        true := Expression.expEqual(exp1_1, exp2_1);
+        true := ExpressionBasics.expEqual(exp1_1, exp2_1);
         exp1_1 := if b1 then exp1 else exp2;
         // use highest origin
         i := startOriginToValue(so);
@@ -4390,8 +4390,8 @@ algorithm
       s1 := ComponentReference.printComponentRefStr(cr1);
       s2 := if negate then " = -" else " = ";
       s3 := ComponentReference.printComponentRefStr(cr2);
-      s4 := ExpressionDump.printExpStr(min);
-      s5 := ExpressionDump.printExpStr(max);
+      s4 := ExpressionBasics.printExpStr(min);
+      s5 := ExpressionBasics.printExpStr(max);
       s := stringAppendList({"Alias variables ", s1, s2, s3, " with invalid limits min ", s4, " > max ", s5});
       Error.addMessage(Error.COMPILER_WARNING, {s});
     then ();

@@ -2073,7 +2073,7 @@ algorithm
       then ();
     case (_)
       algorithm
-        dumpComment("UNKNOWN EXPRESSION: " + ExpressionDump.printExpStr(inExp));
+        dumpComment("UNKNOWN EXPRESSION: " + ExpressionBasics.printExpStr(inExp));
       then ();
   end matchcontinue;
 end dumpExp2;
@@ -2392,7 +2392,7 @@ protected function printExpStr
   input DAE.Exp e;
   output String s;
 algorithm
-  s := Util.xmlEscape(ExpressionDump.printExpStr(e));
+  s := Util.xmlEscape(ExpressionBasics.printExpStr(e));
 end printExpStr;
 
 protected function dumpLstInt "
@@ -2521,7 +2521,7 @@ end dumpMatching2;
 protected function dumpOptExp "
 This function print to a new line the content of
 a Optional<DAE.Exp> in a XML element like:
-<Content =ExpressionDump.printExpStr(e)/>. It also print
+<Content =ExpressionBasics.printExpStr(e)/>. It also print
 the content of the expression as MathML like:
 <MathML><MATH xmlns=...>DAE.Exp</MATH></MathML>.
 See dumpExp function for more details.
@@ -2910,7 +2910,7 @@ end dumpStrVoidTag;
 
 protected function dumpDimension "
 This function print an DAE.Dimension eventually
-using the ExpressionDump.printExpStr function.
+using the ExpressionBasics.printExpStr function.
 "
   input DAE.Dimension inDimension;
 algorithm

@@ -698,7 +698,7 @@ algorithm
   try
     (cache, exp) := prefixExpWork(cache, env, ih, exp, pre);
   else
-    Error.addInternalError(getInstanceName() + " failed on exp: " + ExpressionDump.printExpStr(exp) + " " + makePrefixString(pre), sourceInfo());
+    Error.addInternalError(getInstanceName() + " failed on exp: " + ExpressionBasics.printExpStr(exp) + " " + makePrefixString(pre), sourceInfo());
     fail();
   end try;
 end prefixExp;
@@ -966,7 +966,7 @@ algorithm
 
     else
       algorithm
-        Error.addInternalError(getInstanceName() + " failed on exp: " + ExpressionDump.printExpStr(inExp) + " " + makePrefixString(pre), sourceInfo());
+        Error.addInternalError(getInstanceName() + " failed on exp: " + ExpressionBasics.printExpStr(inExp) + " " + makePrefixString(pre), sourceInfo());
       then fail();
   end match;
 end prefixExpWork;

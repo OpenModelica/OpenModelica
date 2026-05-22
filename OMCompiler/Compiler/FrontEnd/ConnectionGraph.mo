@@ -253,7 +253,7 @@ algorithm
                 DAE.CREF(root, _), _)
       algorithm
         if Flags.isSet(Flags.CGRAPH) then
-          Debug.traceln("- ConnectionGraph.addUniqueRoots(" + ComponentReference.printComponentRefStr(root) + ", " + ExpressionDump.printExpStr(inMessage) + ")");
+          Debug.traceln("- ConnectionGraph.addUniqueRoots(" + ComponentReference.printComponentRefStr(root) + ", " + ExpressionBasics.printExpStr(inMessage) + ")");
         end if;
       then
         GRAPH(updateGraph,definiteRoots,potentialRoots,(root,inMessage)::uniqueRoots,branches,connections);
@@ -269,7 +269,7 @@ algorithm
                 DAE.ARRAY(ty, scalar, DAE.CREF(root, _)::rest), _)
       algorithm
         if Flags.isSet(Flags.CGRAPH) then
-          Debug.traceln("- ConnectionGraph.addUniqueRoots(" + ComponentReference.printComponentRefStr(root) + ", " + ExpressionDump.printExpStr(inMessage) + ")");
+          Debug.traceln("- ConnectionGraph.addUniqueRoots(" + ComponentReference.printComponentRefStr(root) + ", " + ExpressionBasics.printExpStr(inMessage) + ")");
         end if;
         graph := GRAPH(updateGraph,definiteRoots,potentialRoots,(root,inMessage)::uniqueRoots,branches,connections);
         graph := addUniqueRoots(graph, DAE.ARRAY(ty, scalar, rest), inMessage);
@@ -1011,7 +1011,7 @@ algorithm
     case (DAE.CALL(path=Absyn.IDENT("rooted"), expLst={DAE.ARRAY(array = {})}), (rooted,roots,graph))
       algorithm
         if Flags.isSet(Flags.CGRAPH) then
-          Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: " + ExpressionDump.printExpStr(inExp) + " = false");
+          Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: " + ExpressionBasics.printExpStr(inExp) + " = false");
         end if;
       then
         (DAE.BCONST(false), (rooted,roots,graph));
@@ -1032,7 +1032,7 @@ algorithm
         //print("- ConnectionGraph.evalRootedAndIsRootHelper: " +
         //   ComponentReference.printComponentRefStr(cref) + " is " + boolString(result) + " rooted\n");
         if Flags.isSet(Flags.CGRAPH) then
-          Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: " + ExpressionDump.printExpStr(inExp) + " = " + boolString(result));
+          Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: " + ExpressionBasics.printExpStr(inExp) + " = " + boolString(result));
         end if;
       then (DAE.BCONST(result), (rooted,roots,graph));
 
@@ -1043,7 +1043,7 @@ algorithm
     case (DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), expLst={DAE.ARRAY(array = {})}), (rooted,roots,graph))
       algorithm
         if Flags.isSet(Flags.CGRAPH) then
-          Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: " + ExpressionDump.printExpStr(inExp) + " = false");
+          Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: " + ExpressionBasics.printExpStr(inExp) + " = false");
         end if;
       then
         (DAE.BCONST(false), (rooted,roots,graph));
@@ -1052,7 +1052,7 @@ algorithm
     case (DAE.LUNARY(DAE.NOT(_), DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), expLst={DAE.ARRAY(array = {})})), (rooted,roots,graph))
       algorithm
         if Flags.isSet(Flags.CGRAPH) then
-          Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: " + ExpressionDump.printExpStr(inExp) + " = false");
+          Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: " + ExpressionBasics.printExpStr(inExp) + " = false");
         end if;
       then
         (DAE.BCONST(false), (rooted,roots,graph));
@@ -1062,7 +1062,7 @@ algorithm
       algorithm
         result := List.isMemberOnTrue(cref, roots, ComponentReferenceBasics.crefEqualNoStringCompare);
         if Flags.isSet(Flags.CGRAPH) then
-          Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: " + ExpressionDump.printExpStr(inExp) + " = " + boolString(result));
+          Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: " + ExpressionBasics.printExpStr(inExp) + " = " + boolString(result));
         end if;
       then (DAE.BCONST(result), (rooted,roots,graph));
 
@@ -1072,7 +1072,7 @@ algorithm
         result := List.isMemberOnTrue(cref, roots, ComponentReferenceBasics.crefEqualNoStringCompare);
         result := boolNot(result);
         if Flags.isSet(Flags.CGRAPH) then
-          Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: " + ExpressionDump.printExpStr(inExp) + " = " + boolString(result));
+          Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: " + ExpressionBasics.printExpStr(inExp) + " = " + boolString(result));
         end if;
       then (DAE.BCONST(result), (rooted,roots,graph));
 
@@ -1082,9 +1082,9 @@ algorithm
       algorithm
         if Flags.isSet(Flags.CGRAPH) then
           Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: Connections.uniqueRootsIndicies(" +
-            ExpressionDump.printExpStr(uroots) + "," +
-            ExpressionDump.printExpStr(nodes) + "," +
-            ExpressionDump.printExpStr(message) + ")");
+            ExpressionBasics.printExpStr(uroots) + "," +
+            ExpressionBasics.printExpStr(nodes) + "," +
+            ExpressionBasics.printExpStr(message) + ")");
         end if;
         lst := List.fill(DAE.ICONST(1), listLength(lst)); // TODO! FIXME! actually implement this correctly
       then
@@ -1092,7 +1092,7 @@ algorithm
 
     // no replacement needed
     else (inExp, inRoots);
-    // fprintln(Flags.CGRAPH, ExpressionDump.printExpStr(exp) + " not found in roots!");
+    // fprintln(Flags.CGRAPH, ExpressionBasics.printExpStr(exp) + " not found in roots!");
   end matchcontinue;
 end evalConnectionsOperatorsHelper;
 

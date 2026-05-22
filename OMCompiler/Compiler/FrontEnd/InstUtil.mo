@@ -219,7 +219,7 @@ algorithm
 
     case (_,DAE.INITIAL_IF_EQUATION(condition1 = conds, equations2=tbs, equations3=fb),cache,_)
       algorithm
-        //print(" (Initial if)To ceval: " + stringDelimitList(List.map(conds,ExpressionDump.printExpStr),", ") + "\n");
+        //print(" (Initial if)To ceval: " + stringDelimitList(List.map(conds,ExpressionBasics.printExpStr),", ") + "\n");
         (_,valList) := Ceval.cevalList(cache,env, conds, true, Absyn.NO_MSG(),0);
         //print(" Ceval res: ("+stringDelimitList(List.map(valList,ValuesDump.printValStr),",")+")\n");
 
@@ -3225,7 +3225,7 @@ algorithm
       sn := PrefixUtil.printPrefixStr2(pre)+n;
       sc := DAEUtil.constStr(c);
       sc1 := DAEUtil.constStr(c1);
-      se := ExpressionDump.printExpStr(e);
+      se := ExpressionBasics.printExpStr(e);
       Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING,{sn,sc,se,sc1}, info);
     then
       fail();
@@ -3573,7 +3573,7 @@ algorithm
     case (DAE.DIM_UNKNOWN(), DAE.MOD(binding =
             SOME(DAE.TYPED(modifierAsExp = exp))), _, _)
       algorithm
-        exp_str := ExpressionDump.printExpStr(exp);
+        exp_str := ExpressionBasics.printExpStr(exp);
         Error.addSourceMessage(Error.FAILURE_TO_DEDUCE_DIMS_FROM_MOD,
           {inVarName, exp_str}, inInfo);
       then
@@ -4111,7 +4111,7 @@ algorithm
         t := Types.getPropType(prop);
         (cache,dim1) := Static.elabArrayDims(cache,env, cref, ad, impl,doVect,pre,info);
         dim2 := elabArraydimType(t, ad, e, path, pre, cref, info,inst_dims);
-        //Debug.traceln("TYPED: " + ExpressionDump.printExpStr(e) + " s: " + FGraph.printGraphPathStr(env));
+        //Debug.traceln("TYPED: " + ExpressionBasics.printExpStr(e) + " s: " + FGraph.printGraphPathStr(env));
         dim3 := List.threadMap(dim1, dim2, compatibleArraydim);
       then
         (cache,dim3);
@@ -4136,9 +4136,9 @@ algorithm
         (_,dim1) := Static.elabArrayDims(cache, env, cref, ad, impl, doVect,pre,info);
         dim2 := elabArraydimType(t, ad, e, path, pre, cref, info,inst_dims);
         failure(_ := List.threadMap(dim1, dim2, compatibleArraydim));
-        e_str := ExpressionDump.printExpStr(e);
+        e_str := ExpressionBasics.printExpStr(e);
         t_str := TypesDump.unparseType(t);
-        dim_str := ExpressionDump.dimensionsString(dim1);
+        dim_str := ExpressionBasics.dimensionsString(dim1);
         Error.addMultiSourceMessage(Error.ARRAY_DIMENSION_MISMATCH, {e_str,t_str,dim_str}, info2::info::{});
       then
         fail();
@@ -4214,7 +4214,7 @@ algorithm
   else
     ad_str := AbsynUtil.pathString(inPath) + Dump.printArraydimStr(inArrayDim);
     ty_str := TypesDump.unparseTypeNoAttr(inType);
-    exp_str := ExpressionDump.printExpStr(inExp);
+    exp_str := ExpressionBasics.printExpStr(inExp);
     name_str := PrefixUtil.printPrefixStrIgnoreNoPre(inPrefix) +
       Dump.printComponentRefStr(inCref);
     Error.addSourceMessageAndFail(Error.MODIFIER_DECLARATION_TYPE_MISMATCH_ERROR,
@@ -5231,7 +5231,7 @@ algorithm
 
     case (cache,_,_,exp,DAE.PROP(),_,_)
       algorithm
-        str := ExpressionDump.printExpStr(exp);
+        str := ExpressionBasics.printExpStr(exp);
         Error.addSourceMessage(Error.EXTERNAL_ARG_WRONG_EXP,{str},info);
       then
         (cache, NONE());
@@ -7495,7 +7495,7 @@ algorithm
     case (path1,call as DAE.CALL(path=path2,attr=attr as DAE.CALL_ATTR(tailCall=DAE.NO_TAIL())),_,_)
       algorithm
         true := AbsynUtil.pathEqual(path1,path2);
-        str := "Tail recursion of: " + ExpressionDump.printExpStr(rhs) + " with input vars: " + stringDelimitList(vars,",");
+        str := "Tail recursion of: " + ExpressionBasics.printExpStr(rhs) + " with input vars: " + stringDelimitList(vars,",");
         if Flags.isSet(Flags.TAIL) then
           Error.addSourceMessage(Error.COMPILER_NOTIFICATION,{str},ElementSource.getElementSourceFileInfo(source));
         end if;

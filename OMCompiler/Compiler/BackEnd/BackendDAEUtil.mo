@@ -226,7 +226,7 @@ algorithm
       algorithm
         strcrefs := List.map(crefs,ComponentReference.crefStr);
         crefstring := stringDelimitList(strcrefs,", ");
-        expstr := ExpressionDump.printExpStr(e);
+        expstr := ExpressionBasics.printExpStr(e);
         scopestr := stringAppendList({crefstring," from Expression: ",expstr});
         Error.addMessage(Error.LOOKUP_VARIABLE_ERROR, {scopestr,"BackendDAE object"});
         printcheckBackendDAEWithErrorMsg(res,wrongEqns);
@@ -468,7 +468,7 @@ algorithm
     case(_,_,_,_)
       algorithm
         true := Expression.isConstFalse(cond);
-        messageStr := ExpressionDump.printExpStr(message);
+        messageStr := ExpressionBasics.printExpStr(message);
         Error.addSourceMessage(Error.ASSERT_CONSTANT_FALSE_ERROR,{messageStr},info);
       then fail();
   end matchcontinue;
@@ -841,7 +841,7 @@ algorithm
       DAE.ComponentRef cr;
     case (DAE.CREF(componentRef = cr), _)
       algorithm
-        subscripts := ComponentReference.crefSubs(cr);
+        subscripts := ComponentReferenceBasics.crefSubs(cr);
         subscript_exprs := List.map(subscripts, ExpressionBasics.subscriptIndexExp);
         true := isLoopDependentHelper(subscript_exprs, iteratorExp);
       then true;
@@ -2196,25 +2196,25 @@ algorithm
       algorithm
         e1_1 := Expression.expStripLastSubs(e1);
         (e1_2,true) := Expression.extendArrExp(e1_1,false);
-        true := Expression.expEqual(e,e1_2);
+        true := ExpressionBasics.expEqual(e,e1_2);
       then (e1_1,inTpl);
     case (e as DAE.MATRIX(matrix=(((e1 as DAE.UNARY(exp = DAE.CREF())))::_)::_), _)
       algorithm
         e1_1 := Expression.expStripLastSubs(e1);
         (e1_2,true) := Expression.extendArrExp(e1_1,false);
-        true := Expression.expEqual(e,e1_2);
+        true := ExpressionBasics.expEqual(e,e1_2);
       then (e1_1,inTpl);
     case (e as DAE.ARRAY(array=(e1 as DAE.CREF())::_), _)
       algorithm
         e1_1 := Expression.expStripLastSubs(e1);
         (e1_2,true) := Expression.extendArrExp(e1_1,false);
-        true := Expression.expEqual(e,e1_2);
+        true := ExpressionBasics.expEqual(e,e1_2);
       then (e1_1,inTpl);
     case (e as DAE.ARRAY(array=(e1 as DAE.UNARY(exp = DAE.CREF()))::_), _)
       algorithm
         e1_1 := Expression.expStripLastSubs(e1);
         (e1_2,true) := Expression.extendArrExp(e1_1,false);
-        true := Expression.expEqual(e,e1_2);
+        true := ExpressionBasics.expEqual(e,e1_2);
       then (e1_1,inTpl);
     else (inExp,inTpl);
   end matchcontinue;
@@ -2269,28 +2269,28 @@ algorithm
       algorithm
         e1_1 := Expression.expStripLastSubs(e1);
         (e1_2,true) := Expression.extendArrExp(e1_1,false);
-        true := Expression.expEqual(e,e1_2);
+        true := ExpressionBasics.expEqual(e,e1_2);
       then (e1_1,funcs);
 
     case (e as DAE.MATRIX(matrix=(((e1 as DAE.UNARY(exp = DAE.CREF())))::_)::_),funcs)
       algorithm
         e1_1 := Expression.expStripLastSubs(e1);
         (e1_2,true) := Expression.extendArrExp(e1_1,false);
-        true := Expression.expEqual(e,e1_2);
+        true := ExpressionBasics.expEqual(e,e1_2);
       then (e1_1,funcs);
 
     case (e as DAE.ARRAY(array=(e1 as DAE.CREF())::_),funcs)
       algorithm
         e1_1 := Expression.expStripLastSubs(e1);
         (e1_2,true) := Expression.extendArrExp(e1_1,false);
-        true := Expression.expEqual(e,e1_2);
+        true := ExpressionBasics.expEqual(e,e1_2);
       then (e1_1,funcs);
 
     case (e as DAE.ARRAY(array=(e1 as DAE.UNARY(exp = DAE.CREF()))::_),funcs)
       algorithm
         e1_1 := Expression.expStripLastSubs(e1);
         (e1_2,true) := Expression.extendArrExp(e1_1,false);
-        true := Expression.expEqual(e,e1_2);
+        true := ExpressionBasics.expEqual(e,e1_2);
       then (e1_1,funcs);
 
     else (inExp,inFuncs);
@@ -3178,7 +3178,7 @@ algorithm
 
     /* delay(...) can be used to break algebraic loops given some solver options */
     case (DAE.CALL(path=Absyn.IDENT(name="delay"), expLst = {_, _, e1, e2}), tpl) algorithm
-      b := Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1, e2);
+      b := Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and ExpressionBasics.expEqual(e1, e2);
     then (inExp, not b, tpl);
 
     // homotopy operator for simulation system
@@ -3573,7 +3573,7 @@ algorithm
     /* delay(e) can be used to break algebraic loops given some solver options */
     case (DAE.CALL(path = Absyn.IDENT(name = "delay"),expLst = {_,_,e1,e2}),_)
       algorithm
-        b := Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1,e2);
+        b := Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and ExpressionBasics.expEqual(e1,e2);
       then (inExp,not b,inTpl);
 
     // homotopy operator for simulation system
@@ -5567,7 +5567,7 @@ algorithm
 
     case (DAE.CALL(path=Absyn.IDENT(name="der")))
       algorithm
-        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed for: " + ExpressionDump.printExpStr(inExp) + "\n"});
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed for: " + ExpressionBasics.printExpStr(inExp) + "\n"});
       then fail();
 
     else (inExp);
@@ -5602,9 +5602,9 @@ algorithm
       (solvedExp,_,eqnForNewVars,newVarsCrefs) := ExpressionSolve.solve2(e, Expression.makeConstZero(tp),Expression.crefExp(cr), functions, SOME(1));
 
       if debug then
-        print("Solve expression:\n" + ExpressionDump.printExpStr(e) + "\n");
-        print("for variable: " + ExpressionDump.printExpStr(Expression.crefExp(cr)) + "\n");
-        print("Solved expression:\n" + ExpressionDump.printExpStr(solvedExp) + "\n");
+        print("Solve expression:\n" + ExpressionBasics.printExpStr(e) + "\n");
+        print("for variable: " + ExpressionBasics.printExpStr(Expression.crefExp(cr)) + "\n");
+        print("Solved expression:\n" + ExpressionBasics.printExpStr(solvedExp) + "\n");
         ComponentReference.printComponentRefList(newVarsCrefs);
         BackendDump.dumpEquationList(eqnForNewVars, "eqnForNewVars");
         ExpressionDump.dumpExp(solvedExp);
@@ -5632,7 +5632,7 @@ algorithm
 
         if debug then
           print("Constraints before substitution: " + ExpressionDump.constraintDTlistToString(constraints, "\n") + "\n\n");
-          print("Substituted expression:\n" + ExpressionDump.printExpStr(solvedExp) + "\n");
+          print("Substituted expression:\n" + ExpressionBasics.printExpStr(solvedExp) + "\n");
           print("Constraints:" + ExpressionDump.constraintDTlistToString(outCons, "\n") + "\n\n");
         end if;
       end if;
@@ -5667,7 +5667,7 @@ algorithm
      else
        print("[?BROKEN?] ");
      end if;
-     print("tryToSolveOrDerive " + ExpressionDump.printExpStr(e) + " -> " +  ExpressionDump.printExpStr(f) + " == " + ExpressionDump.printExpStr(Expression.crefExp(cr)) + "\n");
+     print("tryToSolveOrDerive " + ExpressionBasics.printExpStr(e) + " -> " +  ExpressionBasics.printExpStr(f) + " == " + ExpressionBasics.printExpStr(Expression.crefExp(cr)) + "\n");
    end if;
 end tryToSolveOrDerive;
 
@@ -6093,7 +6093,7 @@ algorithm
 
     // delay(e) can be used to break algebraic loops given some solver options
     case (DAE.CALL(path=Absyn.IDENT(name="delay"), expLst={_, _, e1, e2}),  _) algorithm
-      b := Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1, e2);
+      b := Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and ExpressionBasics.expEqual(e1, e2);
     then (inExp, not b, inTpl);
 
     // homotopy operator for simulation system
@@ -6248,7 +6248,7 @@ algorithm
     // delay(e) can be used to break algebraic loops given some solver options
     case (e as DAE.CALL(path = Absyn.IDENT(name = "delay"),expLst = {_,_,e1,e2}),bt)
       algorithm
-        b := Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1,e2);
+        b := Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and ExpressionBasics.expEqual(e1,e2);
       then (e,not b,bt);
 
     case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), _) algorithm
@@ -9129,7 +9129,7 @@ algorithm
     then (conditionVarList, initialCall);
 
     case exp::_ algorithm
-      Error.addInternalError("function getConditionList1 failed for " + ExpressionDump.printExpStr(exp), sourceInfo());
+      Error.addInternalError("function getConditionList1 failed for " + ExpressionBasics.printExpStr(exp), sourceInfo());
     then fail();
   end match;
 end getConditionList1;

@@ -1360,9 +1360,9 @@ algorithm
 
     case (e1,DAE.PROP(type_ = t1),e2,DAE.PROP(type_ = t2),_,_,_)
       algorithm
-        e1_str := ExpressionDump.printExpStr(e1);
+        e1_str := ExpressionBasics.printExpStr(e1);
         t1_str := TypesDump.unparseTypeNoAttr(t1);
-        e2_str := ExpressionDump.printExpStr(e2);
+        e2_str := ExpressionBasics.printExpStr(e2);
         t2_str := TypesDump.unparseTypeNoAttr(t2);
         s1 := stringAppendList({e1_str,"=",e2_str});
         s2 := stringAppendList({t1_str,"=",t2_str});
@@ -1720,8 +1720,8 @@ algorithm
         true := Config.splitArrays();
         // It's ok with array equation of unknown size if checkModel is used.
         false := Flags.getConfigBool(Flags.CHECK_MODEL);
-        lhs_str := ExpressionDump.printExpStr(lhs);
-        rhs_str := ExpressionDump.printExpStr(rhs);
+        lhs_str := ExpressionBasics.printExpStr(lhs);
+        rhs_str := ExpressionBasics.printExpStr(rhs);
         eq_str := stringAppendList({lhs_str, "=", rhs_str});
         Error.addSourceMessage(Error.INST_ARRAY_EQ_UNKNOWN_SIZE, {eq_str}, ElementSource.getElementSourceFileInfo(inSource));
       then
@@ -1944,7 +1944,7 @@ algorithm
     else
       algorithm
         false := Types.isRecord(tp);
-        s := ExpressionDump.printExpStr(lhs) + " = " + ExpressionDump.printExpStr(rhs);
+        s := ExpressionBasics.printExpStr(lhs) + " = " + ExpressionBasics.printExpStr(rhs);
         info := ElementSource.getElementSourceFileInfo(source);
         Error.addSourceMessage(Error.ILLEGAL_EQUATION_TYPE, {s}, info);
       then fail();
@@ -3972,8 +3972,8 @@ algorithm
         false := (listEmpty(dims1) and listEmpty(dims2));
         cref_str1 := ComponentReference.printComponentRefStr(inLhsCref);
         cref_str2 := ComponentReference.printComponentRefStr(inRhsCref);
-        str1 := "[" + ExpressionDump.dimensionsString(dims1) + "]";
-        str2 := "[" + ExpressionDump.dimensionsString(dims2) + "]";
+        str1 := "[" + ExpressionBasics.dimensionsString(dims1) + "]";
+        str2 := "[" + ExpressionBasics.dimensionsString(dims2) + "]";
         Error.addSourceMessage(Error.CONNECTOR_ARRAY_DIFFERENT,
           {cref_str1, cref_str2, str1, str2}, inInfo);
       then
@@ -5166,7 +5166,7 @@ algorithm
         lt := Types.getPropType(prop1);
         rt := Types.getPropType(prop2);
         false := Types.subtype(lt, rt);
-        lhs_str := ExpressionDump.printExpStr(e_1);
+        lhs_str := ExpressionBasics.printExpStr(e_1);
         rhs_str := Dump.printExpStr(inRhs);
         lt_str := TypesDump.unparseTypeNoAttr(lt);
         rt_str := TypesDump.unparseTypeNoAttr(rt);
@@ -5180,7 +5180,7 @@ algorithm
       algorithm
         true := List.all(expl, AbsynUtil.isCref);
         failure(Absyn.CALL() := inRhsNoComment);
-        s := ExpressionDump.printExpStr(e_1);
+        s := ExpressionBasics.printExpStr(e_1);
         Error.addSourceMessage(Error.TUPLE_ASSIGN_FUNCALL_ONLY, {s}, info);
       then
         fail();
@@ -5189,7 +5189,7 @@ algorithm
       algorithm
         true := numError == Error.getNumErrorMessages();
         s1 := Dump.printExpStr(var);
-        s2 := ExpressionDump.printExpStr(value);
+        s2 := ExpressionBasics.printExpStr(value);
         Error.addSourceMessage(Error.ASSIGN_UNKNOWN_ERROR, {s1,s2}, info);
       then
         fail();
@@ -5208,7 +5208,7 @@ algorithm
     if Expression.isWild(exp) then
       continue;
     elseif listMember(exp, exps) then
-      Error.addSourceMessage(Error.DUPLICATE_DEFINITION, {ExpressionDump.printExpStr(exp)}, info);
+      Error.addSourceMessage(Error.DUPLICATE_DEFINITION, {ExpressionBasics.printExpStr(exp)}, info);
       fail();
     end if;
   end while;
@@ -5689,7 +5689,7 @@ algorithm
     case (DAE.TUPLE({}),_) then ();
     else
       algorithm
-        str := ExpressionDump.printExpStr(exp);
+        str := ExpressionBasics.printExpStr(exp);
         Error.addSourceMessage(Error.NORETCALL_INVALID_EXP,{str},info);
       then fail();
   end match;

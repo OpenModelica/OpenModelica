@@ -581,7 +581,7 @@ algorithm
             then ();
           else
             algorithm
-              Error.addSourceMessage(Error.COMPILER_ERROR, {"Dot operator is only allowed when the expression returns a named tuple. Got expression: " + ExpressionDump.printExpStr(outExp) + " with type " + TypesDump.unparseType(ty)}, inInfo);
+              Error.addSourceMessage(Error.COMPILER_ERROR, {"Dot operator is only allowed when the expression returns a named tuple. Got expression: " + ExpressionBasics.printExpStr(outExp) + " with type " + TypesDump.unparseType(ty)}, inInfo);
             then fail();
         end match;
       then (outExp, outProperties);
@@ -1545,7 +1545,7 @@ algorithm
   idx := 2;
 
   for r in ranges loop
-    if not Expression.expEqual(r, outRange) then
+    if not ExpressionBasics.expEqual(r, outRange) then
       (acref, i1) := listHead(inCrefs);
       cr_str1 := Dump.printComponentRefStr(acref);
       (acref, i2) := listGet(inCrefs, idx);
@@ -2422,8 +2422,8 @@ algorithm
           et := Types.simplifyType(inStartType);
         else
           // Print an error if the enumerations are different for start and stop.
-          e1_str := ExpressionDump.printExpStr(inStartExp);
-          e2_str := ExpressionDump.printExpStr(inStopExp);
+          e1_str := ExpressionBasics.printExpStr(inStartExp);
+          e2_str := ExpressionBasics.printExpStr(inStopExp);
           t1_str := TypesDump.unparseTypeNoAttr(inStartType);
           _ := TypesDump.unparseTypeNoAttr(inStopType);
           Error.addSourceMessageAndFail(Error.UNRESOLVABLE_TYPE,
@@ -2788,8 +2788,8 @@ algorithm
         ty2_str := TypesDump.unparseTypeNoAttr(ty2);
         Types.typeErrorSanityCheck(ty1_str, ty2_str, inInfo);
         pre_str := PrefixUtil.printPrefixStr(inPrefix);
-        exp_str := ExpressionDump.printExpStr(exp2);
-        expl_str := List.toString(inExpl, ExpressionDump.printExpStr, "", "[", ",", "]", true);
+        exp_str := ExpressionBasics.printExpStr(exp2);
+        expl_str := List.toString(inExpl, ExpressionBasics.printExpStr, "", "[", ",", "]", true);
         Error.addSourceMessageAndFail(Error.TYPE_MISMATCH_ARRAY_EXP,
           {pre_str, exp_str, ty1_str, expl_str, ty2_str}, inInfo);
       end try;
@@ -2869,7 +2869,7 @@ algorithm
       accum_expl := exp :: accum_expl;
       dim1 :: dim2 :: _ := TypesDump.getDimensions(ty);
       if not Expression.dimensionsEqual(dim1, outDim1) then
-        Error.addSourceMessageAndFail(Error.COMMA_OPERATOR_DIFFERENT_SIZES, {ExpressionDump.printExpStr(listHead(inExpl)), ExpressionDump.dimensionString(outDim1), ExpressionDump.printExpStr(exp), ExpressionDump.dimensionString(dim1)}, inInfo);
+        Error.addSourceMessageAndFail(Error.COMMA_OPERATOR_DIFFERENT_SIZES, {ExpressionBasics.printExpStr(listHead(inExpl)), ExpressionBasics.dimensionString(outDim1), ExpressionBasics.printExpStr(exp), ExpressionBasics.dimensionString(dim1)}, inInfo);
       end if;
       // Comma between matrices => concatenation along second dimension.
       outDim2 := Expression.dimensionsAdd(dim2, outDim2);
@@ -3060,10 +3060,10 @@ algorithm
 
     // Check that all rows have the same size, otherwise print an error and fail.
     if not Expression.dimensionsEqual(dim2, outDim2) then
-      dim1_str := ExpressionDump.dimensionString(dim1);
-      dim2_str := ExpressionDump.dimensionString(dim2);
+      dim1_str := ExpressionBasics.dimensionString(dim1);
+      dim2_str := ExpressionBasics.dimensionString(dim2);
       pre_str := PrefixUtil.printPrefixStr3(inPrefix);
-      el_str := List.toString(expl, ExpressionDump.printExpStr, "", "{", ", ", "}", true);
+      el_str := List.toString(expl, ExpressionBasics.printExpStr, "", "{", ", ", "}", true);
       Error.addSourceMessageAndFail(Error.MATRIX_EXP_ROW_SIZE,
         {pre_str, el_str, dim1_str, dim2_str}, inInfo);
     end if;
@@ -3076,7 +3076,7 @@ algorithm
       ty2_str := TypesDump.unparsePropTypeNoAttr(prop);
       Types.typeErrorSanityCheck(ty1_str, ty2_str, inInfo);
       pre_str := PrefixUtil.printPrefixStr3(inPrefix);
-      el_str := List.toString(expl, ExpressionDump.printExpStr, "", "{", ", ", "}", true);
+      el_str := List.toString(expl, ExpressionBasics.printExpStr, "", "{", ", ", "}", true);
       Error.addSourceMessageAndFail(Error.TYPE_MISMATCH_MATRIX_EXP,
         {pre_str, el_str, ty1_str, ty2_str}, inInfo);
     end try;
@@ -3307,7 +3307,7 @@ algorithm
         // the size expression is part of a modifier, in which case we can't
         // determine if it's a scalar or array.
         false := Types.isUnknownType(inArrayExpType);
-        exp_str := ExpressionDump.printExpStr(inArrayExp);
+        exp_str := ExpressionBasics.printExpStr(inArrayExp);
         size_str := "size(" + exp_str + ")";
         Error.addSourceMessage(Error.INVALID_ARGUMENT_TYPE_FIRST_ARRAY, {size_str}, inInfo);
       then
@@ -3368,8 +3368,8 @@ algorithm
         // the size expression is part of a modifier, in which case we can't
         // determine if it's a scalar or array.
         false := Types.isUnknownType(inArrayType);
-        exp_str := ExpressionDump.printExpStr(inArrayExp);
-        index_str := ExpressionDump.printExpStr(inIndexExp);
+        exp_str := ExpressionBasics.printExpStr(inArrayExp);
+        index_str := ExpressionBasics.printExpStr(inIndexExp);
         size_str := "size(" + exp_str + ", " + index_str + ")";
         Error.addSourceMessage(Error.INVALID_ARGUMENT_TYPE_FIRST_ARRAY, {size_str}, inInfo);
       then
@@ -3396,7 +3396,7 @@ algorithm
         dim_count := listLength(inDimensions);
         true := (dim_int <= 0 or dim_int > dim_count);
         index_str := intString(dim_int);
-        exp_str := ExpressionDump.printExpStr(inArrayExp);
+        exp_str := ExpressionBasics.printExpStr(inArrayExp);
         dim_str := intString(dim_count);
         Error.addSourceMessage(Error.INVALID_SIZE_INDEX,
           {index_str, exp_str, dim_str}, inInfo);
@@ -4091,7 +4091,7 @@ algorithm
     if Types.basicType(ty) then
       outExp := Expression.makePureBuiltinCall("pre", {exp}, Types.simplifyType(ty));
     else
-      exp_str := ExpressionDump.printExpStr(exp);
+      exp_str := ExpressionBasics.printExpStr(exp);
       pre_str := PrefixUtil.printPrefixStr3(inPrefix);
       Error.addSourceMessageAndFail(Error.OPERAND_BUILTIN_TYPE,
         {"pre", pre_str, exp_str}, inInfo);
@@ -4242,7 +4242,7 @@ algorithm
     // Operand is not a stream variable, error!
     else
       algorithm
-        op_str := ExpressionDump.printExpStr(inOperand);
+        op_str := ExpressionBasics.printExpStr(inOperand);
         Error.addSourceMessage(Error.NON_STREAM_OPERAND_IN_STREAM_OPERATOR,
           {op_str, inOperator}, inInfo);
       then
@@ -5538,7 +5538,7 @@ algorithm
 
   // Print an error if the argument is not a Boolean.
   if not Types.isScalarBoolean(ty) then
-    msg := "edge(" + ExpressionDump.printExpStr(outExp) + ")";
+    msg := "edge(" + ExpressionBasics.printExpStr(outExp) + ")";
     Error.addSourceMessageAndFail(Error.TYPE_ERROR, {msg}, inInfo);
   end if;
 
@@ -5826,7 +5826,7 @@ algorithm
 
     case DAE.ARRAY(array = {})
       algorithm
-        s := ExpressionDump.printExpStr(inFExp);
+        s := ExpressionBasics.printExpStr(inFExp);
         Error.addSourceMessage(Error.OVERCONSTRAINED_OPERATOR_SIZE_ZERO_RETURN_FALSE, {s}, inInfo);
       then
         ();
@@ -8326,7 +8326,7 @@ algorithm
     /* Scalar expression, non-constant but known dimensions */
     case (DAE.CALL(),(DAE.DIM_EXP() :: _),DAE.PROP())
       algorithm
-        str := "Cannot vectorize call with dimensions [" + ExpressionDump.dimensionsString(inDims) + "]";
+        str := "Cannot vectorize call with dimensions [" + ExpressionBasics.dimensionsString(inDims) + "]";
         Error.addSourceMessage(Error.INTERNAL_ERROR,{str},info);
       then
         fail();
@@ -8334,7 +8334,7 @@ algorithm
     else
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
-        str := ExpressionDump.dimensionString(listHead(inDims));
+        str := ExpressionBasics.dimensionString(listHead(inDims));
         Debug.traceln("- Static.vectorizeCall failed: " + str);
       then
         fail();
@@ -9189,7 +9189,7 @@ algorithm
 
     case (DAE.DIM_EXP(e1) :: ads1, DAE.DIM_EXP(e2) :: ads2)
       algorithm
-        true := Expression.expEqual(e1,e2);
+        true := ExpressionBasics.expEqual(e1,e2);
         sameArraydimLst(ads1, name1, exp1, ads2, name2, exp2, info);
       then
         ();
@@ -9198,10 +9198,10 @@ algorithm
 
     case (ad1 :: _, ad2 :: _)
       algorithm
-        str1 := ExpressionDump.printExpStr(exp1);
-        str2 := ExpressionDump.printExpStr(exp2);
-        str3 := ExpressionDump.dimensionString(ad1);
-        str4 := ExpressionDump.dimensionString(ad2);
+        str1 := ExpressionBasics.printExpStr(exp1);
+        str2 := ExpressionBasics.printExpStr(exp2);
+        str3 := ExpressionBasics.dimensionString(ad1);
+        str4 := ExpressionBasics.dimensionString(ad2);
         Error.addSourceMessage(Error.VECTORIZE_CALL_DIM_MISMATCH, {name1,str1,name2,str2,str3,str4}, info);
       then
         fail();
@@ -9547,8 +9547,8 @@ algorithm
       algorithm
         farg_str := TypesDump.printFargStr(farg);
         filledStr := if filled then "filled" else "not filled";
-        str := Util.applyOptionOrDefault(exp, ExpressionDump.printExpStr, "");
-        str_lst := List.map(ds, ExpressionDump.dimensionString);
+        str := Util.applyOptionOrDefault(exp, ExpressionBasics.printExpStr, "");
+        str_lst := List.map(ds, ExpressionBasics.dimensionString);
         s := stringDelimitList(str_lst, ", ");
         s1 := stringAppendList({"SLOT(",farg_str,", ",filledStr,", ",str,", [",s,"])\n"});
         s2 := printSlotsStr(xs);
@@ -9814,7 +9814,7 @@ algorithm
         (cache,e_1,prop) := elabExpInExpression(cache, env, e, impl, true,pre,info);
         s1 := intString(position);
         s2 := AbsynUtil.pathStringNoQual(path);
-        s3 := ExpressionDump.printExpStr(e_1);
+        s3 := ExpressionBasics.printExpStr(e_1);
         s4 := TypesDump.unparseTypeNoAttr(Types.getPropType(prop));
         s5 := TypesDump.unparseTypeNoAttr(vt);
         Error.addSourceMessage(Error.ARG_TYPE_MISMATCH, {s1,s2,id,s3,s4,s5}, info);
@@ -9985,7 +9985,7 @@ algorithm
         vt := findNamedArgType(id, farg);
         (cache,e_1,prop) := elabExpInExpression(cache, env, e, impl, true,pre,info);
         s1 := AbsynUtil.pathStringNoQual(path);
-        s2 := ExpressionDump.printExpStr(e_1);
+        s2 := ExpressionBasics.printExpStr(e_1);
         s3 := TypesDump.unparseTypeNoAttr(Types.getPropType(prop));
         s4 := TypesDump.unparseTypeNoAttr(vt);
         Error.addSourceMessage(Error.NAMED_ARG_TYPE_MISMATCH, {s1,id,s2,s3,s4}, info);
@@ -10077,7 +10077,7 @@ algorithm
 
       // Fail if the variability is wrong.
       if not Types.constEqualOrHigher(c1, c2) then
-        exp_str := ExpressionDump.printExpStr(inExp);
+        exp_str := ExpressionBasics.printExpStr(inExp);
         c_str := TypesDump.unparseConst(c2);
         Error.addSourceMessageAndFail(Error.FUNCTION_SLOT_VARIABILITY,
           {fa1, exp_str, AbsynUtil.pathStringNoQual(fn), TypesDump.unparseConst(c1), c_str}, inInfo);
@@ -11200,7 +11200,7 @@ algorithm
     case(exp1) then exp1;
     case(exp1)
       algorithm
-        print("- Static.removeDoubleEmptyArrays failure for: " + ExpressionDump.printExpStr(exp1) + "\n");
+        print("- Static.removeDoubleEmptyArrays failure for: " + ExpressionBasics.printExpStr(exp1) + "\n");
       then
         fail();
   end matchcontinue;
@@ -11824,8 +11824,8 @@ algorithm
 
     else
       algorithm
-        sub_str := ExpressionDump.printSubscriptStr(inSubscript);
-        dim_str := ExpressionDump.dimensionString(inDimension);
+        sub_str := ExpressionBasics.printSubscriptStr(inSubscript);
+        dim_str := ExpressionBasics.dimensionString(inDimension);
         cref_str := Dump.printComponentRefStr(inCref);
         Error.addSourceMessage(Error.ILLEGAL_SUBSCRIPT, {sub_str, dim_str, cref_str}, inInfo);
       then
@@ -12047,7 +12047,7 @@ algorithm
 
   // Print an error message and fail if the condition is not a boolean expression.
   if not ty_match then
-    cond_str := ExpressionDump.printExpStr(inCondition);
+    cond_str := ExpressionBasics.printExpStr(inCondition);
     cond_ty_str := TypesDump.unparseTypeNoAttr(cond_ty);
     Error.addSourceMessageAndFail(Error.IF_CONDITION_TYPE_ERROR,
       {cond_str, cond_ty_str}, inInfo);
@@ -12074,8 +12074,8 @@ algorithm
 
   // If the types are not matching, print an error and fail.
   if (not ty_match) and not Config.getGraphicsExpMode() then
-    e1_str := ExpressionDump.printExpStr(inTrueBranch);
-    e2_str := ExpressionDump.printExpStr(inFalseBranch);
+    e1_str := ExpressionBasics.printExpStr(inTrueBranch);
+    e2_str := ExpressionBasics.printExpStr(inFalseBranch);
     ty1_str := TypesDump.unparseTypeNoAttr(true_ty);
     ty2_str := TypesDump.unparseTypeNoAttr(false_ty);
     pre_str := PrefixUtil.printPrefixStr3(inPrefix);
@@ -12380,7 +12380,7 @@ algorithm
         DAE.T_CODE(ty=ct2) := Types.getPropType(prop);
         true := valueEq(ct,ct2);
         ErrorExt.delCheckpoint("elabCodeExp_dispatch1");
-        // print(ExpressionDump.printExpStr(dexp) + " " + TypesDump.unparseType(ty) + "\n");
+        // print(ExpressionBasics.printExpStr(dexp) + " " + TypesDump.unparseType(ty) + "\n");
       then dexp;
 
     case Absyn.CREF()
@@ -12396,7 +12396,7 @@ algorithm
         DAE.T_CODE(ty=ct2) := Types.getPropType(prop);
         true := valueEq(ct,ct2);
         ErrorExt.delCheckpoint("elabCodeExp_dispatch");
-        // print(ExpressionDump.printExpStr(dexp) + " " + TypesDump.unparseType(ty) + "\n");
+        // print(ExpressionBasics.printExpStr(dexp) + " " + TypesDump.unparseType(ty) + "\n");
       then dexp;
 
     else
@@ -12605,7 +12605,7 @@ algorithm
     // When not implicit instantiation, array dimension must be constant.
     case (_, _, _, _, DAE.PROP(DAE.T_INTEGER(), DAE.C_VAR()), false)
       algorithm
-        e_str := ExpressionDump.printExpStr(inExp);
+        e_str := ExpressionBasics.printExpStr(inExp);
         Error.addSourceMessage(Error.DIMENSION_NOT_KNOWN, {e_str}, inInfo);
       then
         (inCache, NONE());
@@ -12635,7 +12635,7 @@ algorithm
     case (_, _, _, _, DAE.PROP(DAE.T_INTEGER(), cnst), _)
       algorithm
         true := Types.isParameterOrConstant(cnst);
-        e_str := ExpressionDump.printExpStr(inExp);
+        e_str := ExpressionBasics.printExpStr(inExp);
         a_str := Dump.printComponentRefStr(inCref) + "[" + e_str + "]";
         Error.addSourceMessage(Error.STRUCTURAL_PARAMETER_OR_CONSTANT_WITH_NO_BINDING, {e_str, a_str}, inInfo);
         //(_, _) = elabArrayDim2(inCache, inEnv, inCref, inExp, inProperties, inImpl, inDoVect, inPrefix, inInfo);
@@ -12644,7 +12644,7 @@ algorithm
 
     case (_, _, _, _, DAE.PROP(ty, _), _)
       algorithm
-        e_str := ExpressionDump.printExpStr(inExp);
+        e_str := ExpressionBasics.printExpStr(inExp);
         t_str := TypesDump.unparseType(ty);
         Types.typeErrorSanityCheck(t_str, "Integer", inInfo);
         Error.addSourceMessage(Error.ARRAY_DIMENSION_INTEGER,
