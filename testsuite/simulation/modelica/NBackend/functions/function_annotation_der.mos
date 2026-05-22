@@ -79,7 +79,7 @@ simulate(function_annotation_der); getErrorString();
 //   output Real 'y';
 // algorithm
 //   'y' := 'k' * 'x' ^ 2.0 + 'm';
-//   annotation(derivative(order = 1, zeroDerivative = 'k') = 'df', derivative(order = 1) = '$fDER1.f', Inline = false);
+//   annotation(derivative(order = 1, zeroDerivative = 'k') = 'df', derivative(order = 1, zeroDerivative = 'n') = '$fDER1.f', Inline = false);
 // end 'f'
 //
 // [AFTER ] function '$fDER1.f'
