@@ -661,32 +661,30 @@ public
     // if the equation does not have a simple structure try to solve with other strategies
     if status == Status.UNPROCESSED then
       residual := Equation.getResidualExp(eqn);
-      diffArgs := Differentiate.DifferentiationArguments.simpleCref(fixed_cref, funcMap);
-      (derivative, diffArgs) := Differentiate.differentiateExpressionDump(residual, diffArgs, getInstanceName());
-      derivative := SimplifyExp.simplifyDump(derivative, true, getInstanceName());
-
-      if Expression.isZero(derivative) then
-        invertRelation := RelationInversion.FALSE;
-        status := Status.UNSOLVABLE;
-      elseif not Expression.containsCref(derivative, fixed_cref) then
-        // If eqn is linear in cref:
-        eqn := solveLinear(eqn, residual, derivative, diffArgs, fixed_cref);
-        // If the derivative is negative, invert possible inequality sign
-        invertRelation := if Expression.isPositive(derivative) then RelationInversion.FALSE else if Expression.isNegative(derivative) then RelationInversion.TRUE else RelationInversion.UNKNOWN;
-        status := Status.EXPLICIT;
+      // call general solving routine, can solve an equation, if a cref is contained once in the equation
+      (eqn, status) := solveUnique(eqn, residual, fixed_cref);
+      if status == Status.EXPLICIT then
+        invertRelation := RelationInversion.UNKNOWN; // TODO: make me depend on the derivative
       else
-        // call general solving routine, can solve an equation, if a cref is contained once in the equation
-        (eqn, status) := solveUnique(eqn, residual, fixed_cref);
+        diffArgs := Differentiate.DifferentiationArguments.simpleCref(fixed_cref, funcMap);
+        (derivative, diffArgs) := Differentiate.differentiateExpressionDump(residual, diffArgs, getInstanceName());
+        derivative := SimplifyExp.simplifyDump(derivative, true, getInstanceName());
 
-        if status == Status.EXPLICIT then
-          invertRelation := RelationInversion.UNKNOWN; // TODO: make me depend on the derivative
+        if Expression.isZero(derivative) then
+          invertRelation := RelationInversion.FALSE;
+          status := Status.UNSOLVABLE;
+        elseif not Expression.containsCref(derivative, fixed_cref) then
+          // If eqn is linear in cref:
+          eqn := solveLinear(eqn, residual, derivative, diffArgs, fixed_cref);
+          // If the derivative is negative, invert possible inequality sign
+          invertRelation := if Expression.isPositive(derivative) then RelationInversion.FALSE else if Expression.isNegative(derivative) then RelationInversion.TRUE else RelationInversion.UNKNOWN;
+          status := Status.EXPLICIT;
         else
           invertRelation := RelationInversion.FALSE;
-        end if;
-
-        if Flags.isSet(Flags.FAILTRACE) and status <> Status.EXPLICIT then
-          Error.addCompilerWarning(getInstanceName() + " cref: " + ComponentRef.toString(fixed_cref)
-            + " has to be solved implicitely in equation:\n" + Equation.toString(eqn));
+          if Flags.isSet(Flags.FAILTRACE) and status <> Status.EXPLICIT then
+            Error.addCompilerWarning(getInstanceName() + " cref: " + ComponentRef.toString(fixed_cref)
+              + " has to be solved implicitely in equation:\n" + Equation.toString(eqn));
+          end if;
         end if;
       end if;
     end if;
@@ -1024,13 +1022,22 @@ protected
             then ();
         end match;
         then ();
+
+      // cases where the cref does not appear
+      case (Expression.CALL(call = call as Call.TYPED_CALL()))              guard(List.none(Call.arguments(exp.call), function solveUniqueExpressionNoCref(cref = cref))) then ();
+      case (Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR())) guard(List.none(Call.arguments(exp.call), function solveUniqueExpressionNoCref(cref = cref))) then ();
+      case (Expression.CALL(call = call as Call.TYPED_REDUCTION()))         guard(List.none(Call.arguments(exp.call), function solveUniqueExpressionNoCref(cref = cref))) then ();
+
+      // check if invertable if occurs
       case (Expression.CALL(call = call as Call.TYPED_CALL())) guard(List.hasOneElement(Call.arguments(exp.call))) algorithm
         (crefFound, inverseInstructions, status) := solveUniqueFindInstructionsCallOneArg(ty, substExp, exp, cref, crefFound, inverseInstructions);
         then ();
       case (Expression.CALL(call = call as Call.TYPED_CALL())) guard(listLength(Call.arguments(exp.call)) == 2) algorithm
         (crefFound, inverseInstructions, status) := solveUniqueFindInstructionsCallTwoArgs(ty, substExp, exp, cref, crefFound, inverseInstructions);
         then ();
-      else algorithm // fallback -> set implicit
+
+      // fallback -> set implicit
+      else algorithm
         if Flags.isSet(Flags.DUMP_SOLVE) then
           solveUniquePrintImplicitFallback(exp);
         end if;
@@ -1396,6 +1403,33 @@ protected
                                            purity      = NFPrefixes.Purity.PURE
                                            )) :: inverseInstructions;
   end solveUniqueCreateSubstCall;
+
+  function solveUniqueExpressionNoCref
+    input Expression exp;
+    input ComponentRef cref;
+    output Boolean b;
+  protected
+    Pointer<Boolean> res = Pointer.create(false);
+    function solveUniqueExpressionNoCrefTraverse
+      "checks if the expression does not contain the cref"
+      input output Expression exp;
+      input ComponentRef cref;
+      input Pointer<Boolean> res;
+    algorithm
+      // check if cref was already found for early abort
+      if not Pointer.access(res) then
+        exp := match exp
+          case Expression.CREF() algorithm
+          Pointer.update(res, ComponentRef.isEqual(exp.cref, cref));
+          then exp;
+          else Expression.mapShallow(exp, function solveUniqueExpressionNoCrefTraverse(cref = cref, res = res));
+        end match;
+      end if;
+    end solveUniqueExpressionNoCrefTraverse;
+  algorithm
+    Expression.fakeMap(exp, function solveUniqueExpressionNoCrefTraverse(cref = cref, res = res));
+    b := Pointer.access(res);
+  end solveUniqueExpressionNoCref;
 
   function solvePrintInput
     input Equation eqn;
