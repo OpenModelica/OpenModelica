@@ -114,7 +114,10 @@ typedef struct SVD_DATA {
     int least_one_percent;          // index for first singular value < 1% of largest
 } SVD_DATA;
 
-static inline modelica_real _svd_max2(modelica_real a, modelica_real b) { return (a > b ? a : b); };
+static inline modelica_real _svd_max2(modelica_real a, modelica_real b)
+{
+    return (a > b ? a : b);
+}
 
 // entry point for svd analysis
 int svd_compute(DATA *data, NONLINEAR_SYSTEM_DATA *nls_data, modelica_real *values, modelica_boolean scaled, SolverCaller caller);

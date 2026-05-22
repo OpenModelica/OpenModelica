@@ -123,8 +123,8 @@ typedef struct DATA_GBODEF{
 
   /* statistics */
   SOLVERSTATS stats;
-  int fastStateUpdateCount;                         /* number of fast state updates */
-  int additionalFullODEEvaluations;                 /* number of overhead fODE evaluations without selection in fast steps */
+  unsigned int fastStateUpdateCount;                /* number of fast state updates */
+  unsigned int additionalFullODEEvaluations;        /* number of overhead fODE evaluations without selection in fast steps */
 } DATA_GBODEF;
 
 typedef struct DATA_GBODE{
