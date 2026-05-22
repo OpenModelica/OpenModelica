@@ -2432,8 +2432,8 @@ algorithm
 
       if isFixed then
         // Special case for initial state selection
-        if StringUtil.startsWith(ComponentReference.crefFirstIdent(cr), "$STATESET") and Flags.getConfigBool(Flags.INITIAL_STATE_SELECTION) then
-          stateSetSplit := Util.stringSplitAtChar(ComponentReference.crefFirstIdent(cr),".");
+        if StringUtil.startsWith(ComponentReferenceBasics.crefFirstIdent(cr), "$STATESET") and Flags.getConfigBool(Flags.INITIAL_STATE_SELECTION) then
+          stateSetSplit := Util.stringSplitAtChar(ComponentReferenceBasics.crefFirstIdent(cr),".");
           stateSetIdxString::stateSetSplit := stateSetSplit;
           stateSetIdxString := substring(stateSetIdxString,10,stringLength(stateSetIdxString));
           stateSetIdx := stringInt(stateSetIdxString);

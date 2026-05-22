@@ -555,7 +555,7 @@ algorithm
     // All the other ones we don't handle
     else
       algorithm
-        str := "Types.printTypeStr failed";
+        str := "TypesDump.printTypeStr failed";
       then
         str;
 
@@ -1013,9 +1013,23 @@ algorithm
     case DAE.C_TYPENAME() then "OpenModelica.Code.TypeName";
     case DAE.C_VARIABLENAME() then "OpenModelica.Code.VariableName";
     case DAE.C_VARIABLENAMES() then "OpenModelica.Code.VariableNames";
-    else "Types.printCodeTypeStr failed";
+    else "TypesDump.printCodeTypeStr failed";
   end match;
 end printCodeTypeStr;
+
+public function getDimensions
+"Returns the dimensions of a Type."
+  input DAE.Type inType;
+  output DAE.Dimensions outDimensions;
+algorithm
+  outDimensions := match inType
+    case DAE.T_ARRAY() then listAppend(inType.dims, getDimensions(inType.ty));
+    case DAE.T_METAARRAY() then DAE.DIM_UNKNOWN() :: getDimensions(inType.ty);
+    case DAE.T_SUBTYPE_BASIC() then getDimensions(inType.complexType);
+    case DAE.T_METATYPE() then getDimensions(inType.ty);
+    else {};
+  end match;
+end getDimensions;
 
 annotation(__OpenModelica_Interface="frontend_dump");
 end TypesDump;

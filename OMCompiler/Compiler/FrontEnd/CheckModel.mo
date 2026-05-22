@@ -923,7 +923,7 @@ algorithm
     case ({}, _, _) then iAcc;
     case(cr::rest, _, _) guard BaseHashSet.has(cr, hs)
       algorithm
-        crlst := List.unionEltOnTrue(cr, iAcc, ComponentReference.crefEqual);
+        crlst := List.unionEltOnTrue(cr, iAcc, ComponentReferenceBasics.crefEqual);
       then
         getcr(rest, hs, crlst);
     case(_::rest, _, _)

@@ -955,7 +955,7 @@ algorithm
 
      //"time"
     case (DAE.CREF(componentRef=cr), (HtCr2U, HtS2U, HtU2S), _) algorithm
-      true := ComponentReference.crefEqual(cr, DAE.crefTime);
+      true := ComponentReferenceBasics.crefEqual(cr, DAE.crefTime);
       ut := Unit.UNIT(1e0, 0, 0, 0, 1, 0, 0, 0);
       HtS2U := addUnit2HtS2U(("time", ut), HtS2U);
       HtU2S := addUnit2HtU2S(("time", ut), HtU2S);

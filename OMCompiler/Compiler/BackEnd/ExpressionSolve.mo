@@ -62,6 +62,7 @@ protected import BackendDAE;
 protected import BackendDAEUtil;
 protected import BackendEquation;
 protected import BackendVariable;
+protected import Types;
 
 // =============================================================================
 // section for postOptModule >>solveSimpleEquations<<
@@ -302,41 +303,41 @@ algorithm
 
     // special case when already solved, cr1 = rhs, otherwise division by zero when dividing with derivative
     case (DAE.CREF(componentRef = cr1),_,DAE.CREF(componentRef = cr))
-      guard ComponentReference.crefEqual(cr, cr1) and (not Expression.expHasCrefNoPreOrStart(inExp2, cr))
+      guard ComponentReferenceBasics.crefEqual(cr, cr1) and (not Expression.expHasCrefNoPreOrStart(inExp2, cr))
       then
         (inExp2,{});
     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr1)}),_,DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}))
-      guard  ComponentReference.crefEqual(cr, cr1) and (not Expression.expHasDerCref(inExp2, cr))
+      guard  ComponentReferenceBasics.crefEqual(cr, cr1) and (not Expression.expHasDerCref(inExp2, cr))
       then
         (inExp2,{});
 
     // -cr = exp
     case (DAE.UNARY(operator = DAE.UMINUS(), exp = DAE.CREF(componentRef = cr1)),_,DAE.CREF(componentRef = cr))
-      guard ComponentReference.crefEqual(cr1,cr) and (not Expression.expHasCrefNoPreOrStart(inExp2,cr))
+      guard ComponentReferenceBasics.crefEqual(cr1,cr) and (not Expression.expHasCrefNoPreOrStart(inExp2,cr))
       then
         (Expression.negate(inExp2),{});
     case (DAE.UNARY(operator = DAE.UMINUS_ARR(), exp = DAE.CREF(componentRef = cr1)),_,DAE.CREF(componentRef = cr))
-      guard ComponentReference.crefEqual(cr1,cr) and (not Expression.expHasCrefNoPreOrStart(inExp2,cr)) // cr not in e2
+      guard ComponentReferenceBasics.crefEqual(cr1,cr) and (not Expression.expHasCrefNoPreOrStart(inExp2,cr)) // cr not in e2
       then
         (Expression.negate(inExp2),{});
     case (DAE.UNARY(operator = DAE.UMINUS(), exp = DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr1)})),_,DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}))
-      guard ComponentReference.crefEqual(cr1,cr) and (not  Expression.expHasDerCref(inExp2,cr)) // cr not in e2
+      guard ComponentReferenceBasics.crefEqual(cr1,cr) and (not  Expression.expHasDerCref(inExp2,cr)) // cr not in e2
       then
         (Expression.negate(inExp2),{});
     case (DAE.UNARY(operator = DAE.UMINUS_ARR(), exp = DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr1)})),_,DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}))
-      guard ComponentReference.crefEqual(cr1,cr) and (not Expression.expHasDerCref(inExp2,cr))
+      guard ComponentReferenceBasics.crefEqual(cr1,cr) and (not Expression.expHasDerCref(inExp2,cr))
       then
         (Expression.negate(inExp2),{});
 
     // !cr = exp
     case (DAE.LUNARY(operator = DAE.NOT(), exp = DAE.CREF(componentRef = cr1)),_,DAE.CREF(componentRef = cr))
-      guard ComponentReference.crefEqual(cr1,cr) and (not Expression.expHasCrefNoPreOrStart(inExp2,cr))
+      guard ComponentReferenceBasics.crefEqual(cr1,cr) and (not Expression.expHasCrefNoPreOrStart(inExp2,cr))
       then
         (Expression.negate(inExp2),{});
 
     // Integer(enumcr) = ...
     case (DAE.CALL(path = Absyn.IDENT(name = "Integer"),expLst={DAE.CREF(componentRef = cr1)}),_,DAE.CREF(componentRef = cr,ty=tp))
-      guard ComponentReference.crefEqual(cr, cr1) and (not  Expression.expHasCrefNoPreorDer(inExp2,cr))
+      guard ComponentReferenceBasics.crefEqual(cr, cr1) and (not  Expression.expHasCrefNoPreorDer(inExp2,cr))
       algorithm
         asserts := generateAssertType(tp,cr,inExp3,{});
       then (DAE.CAST(tp,inExp2),asserts);
@@ -2042,7 +2043,7 @@ algorithm
       DAE.Exp e;
 
     case (DAE.CREF(componentRef=cr1), (DAE.CREF(componentRef=cr2), fun, tp, _))
-      guard(ComponentReference.crefEqual(cr1, cr2)) algorithm
+      guard(ComponentReferenceBasics.crefEqual(cr1, cr2)) algorithm
       e := Expression.makePureBuiltinCall(fun, {iExp}, tp);
     then e;
 

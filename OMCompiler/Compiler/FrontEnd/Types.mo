@@ -993,20 +993,6 @@ algorithm
   end match;
 end getDimensionProduct;
 
-public function getDimensions
-"Returns the dimensions of a Type."
-  input DAE.Type inType;
-  output DAE.Dimensions outDimensions;
-algorithm
-  outDimensions := match inType
-    case DAE.T_ARRAY() then listAppend(inType.dims, getDimensions(inType.ty));
-    case DAE.T_METAARRAY() then DAE.DIM_UNKNOWN() :: getDimensions(inType.ty);
-    case DAE.T_SUBTYPE_BASIC() then getDimensions(inType.complexType);
-    case DAE.T_METATYPE() then getDimensions(inType.ty);
-    else {};
-  end match;
-end getDimensions;
-
 public function getDimensionNth
   input DAE.Type inType;
   input Integer inDim;
@@ -1588,8 +1574,8 @@ algorithm
     else
       algorithm
         /* Uncomment for debugging
-        l1 = unparseType(t1);
-        l2 = unparseType(t2);
+        l1 = TypesDump.unparseType(t1);
+        l2 = TypesDump.unparseType(t2);
         l1 = stringAppendList({"- Types.subtype failed:\n  t1=",l1,"\n  t2=",l2});
         print(l1);
         */
@@ -1983,7 +1969,7 @@ algorithm
 
     case(DAE.T_SUBTYPE_BASIC(ci,varlst,ty,ec),d)
       algorithm
-        false := listEmpty(getDimensions(ty));
+        false := listEmpty(TypesDump.getDimensions(ty));
         ty_1 := liftArrayRight(ty,d);
       then DAE.T_SUBTYPE_BASIC(ci,varlst,ty_1,ec);
 
@@ -2034,7 +2020,7 @@ algorithm
     case DAE.T_ARRAY() then arrayElementType(inType.ty);
 
     case DAE.T_SUBTYPE_BASIC()
-      then if listEmpty(getDimensions(inType.complexType)) then
+      then if listEmpty(TypesDump.getDimensions(inType.complexType)) then
           inType else arrayElementType(inType.complexType);
 
     case DAE.T_FUNCTION() then arrayElementType(inType.funcResultType);
@@ -2196,7 +2182,7 @@ algorithm
     case (_, DAE.T_ENUMERATION(index = NONE(), path = p, names = names, literalVarLst = vars, attributeLst = attrs))
       algorithm
         vars := makeEnumerationType1(p, vars, names, 1);
-        attr_names := List.map(vars, getVarName);
+        attr_names := List.map(vars, TypesDump.getVarName);
         attrs := makeEnumerationType1(p, attrs, attr_names, 1);
       then (DAE.T_ENUMERATION(NONE(), p, names, vars, attrs));
 
@@ -2206,7 +2192,7 @@ algorithm
     else
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Types.makeEnumerationType failed on " + printTypeStr(inType));
+        Debug.traceln("- Types.makeEnumerationType failed on " + TypesDump.printTypeStr(inType));
       then
         fail();
   end matchcontinue;
@@ -2441,7 +2427,7 @@ algorithm
   if not isPublicVar(inVar) then
     if isNone(getBindingExpOptional(inVar)) then
       // TYPES_VAR has no info. For now this suffices.
-      Error.addSourceMessage(Error.MISSING_BINDING_PROTECTED_RECORD_VAR, {getVarName(inVar)}, Absyn.dummyInfo);
+      Error.addSourceMessage(Error.MISSING_BINDING_PROTECTED_RECORD_VAR, {TypesDump.getVarName(inVar)}, Absyn.dummyInfo);
     end if;
 
     b := false;
@@ -2547,7 +2533,7 @@ algorithm
 
     case (DAE.VAR(componentRef=cref), _)
       algorithm
-        name := ComponentReference.crefLastIdent(cref);
+        name := ComponentReferenceBasics.crefLastIdent(cref);
       then setFuncArgName(inFarg, name);
   end match;
 end makeElementFarg;
@@ -2577,7 +2563,7 @@ algorithm
     case vl
       then DAE.T_TUPLE(
         list(makeReturnTypeSingle(v) for v in vl),
-        SOME(list(getVarName(v) for v in vl)));
+        SOME(list(TypesDump.getVarName(v) for v in vl)));
   end matchcontinue;
 end makeReturnType;
 
@@ -2772,7 +2758,7 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- prop_tuple_any_const failed: ");
-        str := printTupleConstStr(const);
+        str := TypesDump.printTupleConstStr(const);
         Debug.traceln(str);
       then
         fail();
@@ -2816,7 +2802,7 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- prop_tuple_all_const failed: ");
-        str := printTupleConstStr(const);
+        str := TypesDump.printTupleConstStr(const);
         Debug.traceln(str);
       then
         fail();
@@ -3039,14 +3025,14 @@ algorithm
       algorithm
         /*
         print(" untyped ");
-        print(unparseType(inType));
+        print(TypesDump.unparseType(inType));
         print("\n");
         */
       then DAE.T_UNKNOWN_DEFAULT;
 
     else
       algorithm
-        str := "Types.simplifyType failed for: " + unparseType(inType);
+        str := "Types.simplifyType failed for: " + TypesDump.unparseType(inType);
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end matchcontinue;
@@ -3357,7 +3343,7 @@ algorithm
     case (_,(t1 :: _),(t2 :: _),true)
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- Types.matchTypeTuple failed:"+TypesDump.unparseType(t1)+" "+Types.unparseType(t2)+"\n");
+        Debug.trace("- Types.matchTypeTuple failed:"+TypesDump.TypesDump.unparseType(t1)+" "+Types.TypesDump.unparseType(t2)+"\n");
       then
         fail();
   end matchcontinue;
@@ -3907,7 +3893,7 @@ algorithm
         true := subtype(t1,t2);
         true := AbsynUtil.pathEqual(path1, path2);
         t2 := DAE.T_METABOXED(t1);
-        l := List.map(v, getVarName);
+        l := List.map(v, TypesDump.getVarName);
         tys1 := List.map(v, getVarType);
         tys2 := List.map(tys1, boxIfUnboxedType);
         (elist,_) := matchTypeTuple(elist, tys1, tys2, printFailtrace);
@@ -3922,7 +3908,7 @@ algorithm
         true := subtype(t1,t2);
         true := AbsynUtil.pathEqual(path1, path2);
         t2 := DAE.T_METABOXED(t1);
-        l := List.map(v, getVarName);
+        l := List.map(v, TypesDump.getVarName);
         tys1 := List.map(v, getVarType);
         tys2 := List.map(tys1, boxIfUnboxedType);
         (elist,_) := matchTypeTuple(elist, tys1, tys2, printFailtrace);
@@ -3935,7 +3921,7 @@ algorithm
       algorithm
         true := subtype(t1,t2);
         t2 := DAE.T_METABOXED(t1);
-        l := List.map(v, getVarName);
+        l := List.map(v, TypesDump.getVarName);
         tys1 := List.map(v, getVarType);
         tys2 := List.map(tys1, boxIfUnboxedType);
         expTypes := List.map(tys1, simplifyType);
@@ -4416,15 +4402,15 @@ algorithm
       DAE.TupleConst tconst;
     case DAE.PROP(type_ = ty,constFlag = const)
       algorithm
-        ty_str := unparseType(ty);
-        const_str := printConstStr(const);
+        ty_str := TypesDump.unparseType(ty);
+        const_str := TypesDump.printConstStr(const);
         res := stringAppendList({"DAE.PROP(",ty_str,", ",const_str,")"});
       then
         res;
     case DAE.PROP_TUPLE(type_ = ty,tupleConst = tconst)
       algorithm
-        ty_str := unparseType(ty);
-        const_str := printTupleConstStr(tconst);
+        ty_str := TypesDump.unparseType(ty);
+        const_str := TypesDump.printTupleConstStr(tconst);
         res := stringAppendList({"DAE.PROP_TUPLE(",ty_str,", ",const_str,")"});
       then
         res;
@@ -4591,7 +4577,7 @@ algorithm
     case tty
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
-        str := unparseType(tty);
+        str := TypesDump.unparseType(tty);
         Debug.traceln("-- Types.getAllExpsTt failed " + str);
       then
         fail();
@@ -4921,11 +4907,11 @@ algorithm
   if /*(if not Config.acceptMetaModelicaGrammar() then true else*/ listEmpty(getAllInnerTypesOfType(expected, isPolymorphic)) then
     (exp,actual) := matchType(exp,actual,expected,printFailtrace);
   else
-    if debug then print("match type: " + ExpressionDump.printExpStr(exp) + " of " + unparseType(actual) + " with " + unparseType(expected) + "\n"); end if;
+    if debug then print("match type: " + ExpressionDump.printExpStr(exp) + " of " + TypesDump.unparseType(actual) + " with " + TypesDump.unparseType(expected) + "\n"); end if;
     (exp,actual) := matchType(exp,actual,DAE.T_METABOXED(DAE.T_UNKNOWN_DEFAULT), printFailtrace);
-    if debug then print("matched type: " + ExpressionDump.printExpStr(exp) + " of " + unparseType(actual) + " with " + unparseType(expected) + " (boxed)\n"); end if;
+    if debug then print("matched type: " + ExpressionDump.printExpStr(exp) + " of " + TypesDump.unparseType(actual) + " with " + TypesDump.unparseType(expected) + " (boxed)\n"); end if;
     polymorphicBindings := subtypePolymorphic(getUniontypeIfMetarecordReplaceAllSubtypes(actual), getUniontypeIfMetarecordReplaceAllSubtypes(expected), envPath, polymorphicBindings);
-    if debug then print("match type: " + ExpressionDump.printExpStr(exp) + " of " + unparseType(actual) + " with " + unparseType(expected) + " and bindings " + polymorphicBindingsStr(polymorphicBindings) + " (OK)\n"); end if;
+    if debug then print("match type: " + ExpressionDump.printExpStr(exp) + " of " + TypesDump.unparseType(actual) + " with " + TypesDump.unparseType(expected) + " and bindings " + polymorphicBindingsStr(polymorphicBindings) + " (OK)\n"); end if;
   end if;
 end matchTypePolymorphic;
 
@@ -4956,8 +4942,8 @@ algorithm
     else
       algorithm
         str1 := ExpressionDump.printExpStr(iexp);
-        str2 := unparseType(iactual);
-        str3 := unparseType(iexpected);
+        str2 := TypesDump.unparseType(iactual);
+        str3 := TypesDump.unparseType(iexpected);
         Error.addSourceMessage(Error.EXP_TYPE_MISMATCH, {str1,str3,str2}, info);
       then fail();
   end matchcontinue;
@@ -5083,7 +5069,7 @@ algorithm
     else
       algorithm
         str := "- Types.matchTypes failed for " + ExpressionDump.printExpStr(inExp)
-           + " from " + unparseType(inType) + " to " + unparseType(inExpected) + "\n";
+           + " from " + TypesDump.unparseType(inType) + " to " + TypesDump.unparseType(inExpected) + "\n";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();
@@ -5104,7 +5090,7 @@ protected function printFailure
 algorithm
   if Flags.isSet(flag) then
     Debug.traceln("- Types." + source + " failed on:" + ExpressionDump.printExpStr(e));
-    Debug.traceln("  type:" + unparseType(e_type) + " differs from expected\n  type:" + unparseType(expected_type));
+    Debug.traceln("  type:" + TypesDump.unparseType(e_type) + " differs from expected\n  type:" + TypesDump.unparseType(expected_type));
   end if;
 end printFailure;
 
@@ -5116,7 +5102,7 @@ protected
 algorithm
   (str,tys) := binding;
   // Don't bother doing this fast; it's just for error messages
-  str := "    " + str + ":\n" + stringDelimitList(List.map1r(List.map(tys, unparseType), stringAppend, "      "), "\n");
+  str := "    " + str + ":\n" + stringDelimitList(List.map1r(List.map(tys, TypesDump.unparseType), stringAppend, "      "), "\n");
 end polymorphicBindingStr;
 
 public function polymorphicBindingsStr
@@ -5133,9 +5119,9 @@ public function fixPolymorphicRestype
   input SourceInfo info;
   output DAE.Type resType;
 algorithm
-  //print("Trying to fix restype: " + unparseType(ty) + "\n");
+  //print("Trying to fix restype: " + TypesDump.unparseType(ty) + "\n");
   resType := fixPolymorphicRestype2(ty,"$",bindings,info);
-  //print("OK: " + unparseType(resType) + "\n");
+  //print("OK: " + TypesDump.unparseType(resType) + "\n");
 end fixPolymorphicRestype;
 
 protected function fixPolymorphicRestype2
@@ -5227,7 +5213,7 @@ algorithm
 
     else
       algorithm
-        tstr := unparseType(ty);
+        tstr := TypesDump.unparseType(ty);
         bstr := polymorphicBindingsStr(bindings);
         id := "Types.fixPolymorphicRestype failed for type: " + tstr + " using bindings: " + bstr;
         Error.addSourceMessage(Error.INTERNAL_ERROR, {id}, info);
@@ -5879,7 +5865,7 @@ algorithm
         if stringGet(id,1)<>stringCharInt("$") then
           // We allow things like inner type variables of function pointers,
           // but not things like accepting T1 can be tuple<T2,T3>.
-          // print("Not adding METAPOLYMORPHIC $$"+id+"="+unparseType(expected)+"\n");
+          // print("Not adding METAPOLYMORPHIC $$"+id+"="+TypesDump.unparseType(expected)+"\n");
           fail();
         end if;
       then addPolymorphicBinding("$$" + id,expected,inBindings);
@@ -5965,7 +5951,7 @@ algorithm
 
     else
       algorithm
-        // print("subtypePolymorphic failed: " + unparseType(actual) + " and " + unparseType(expected) + "\n");
+        // print("subtypePolymorphic failed: " + TypesDump.unparseType(actual) + " and " + TypesDump.unparseType(expected) + "\n");
       then fail();
 
   end matchcontinue;
@@ -6262,7 +6248,7 @@ algorithm
 
     else
       algorithm
-        str := "Types.traverseType not implemented correctly: " + unparseType(ty);
+        str := "Types.traverseType not implemented correctly: " + TypesDump.unparseType(ty);
         Error.addMessage(Error.INTERNAL_ERROR,{str});
       then
         fail();
@@ -6510,7 +6496,7 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Types.typeToValue failed on unhandled Type ");
-        s1 := printTypeStr(inType);
+        s1 := TypesDump.printTypeStr(inType);
         Debug.traceln(s1);
       then
         fail();
@@ -6603,8 +6589,8 @@ algorithm
       then ty1;
     case (ty1,_,ty2)
       algorithm
-        str1 := unparseType(ty1);
-        str2 := unparseType(ty2);
+        str1 := TypesDump.unparseType(ty1);
+        str2 := TypesDump.unparseType(ty2);
         typeErrorSanityCheck(str1, str2, info);
         Error.addSourceMessage(Error.ARRAY_TYPE_MISMATCH,{str1,str2},info);
       then fail();
@@ -6745,7 +6731,7 @@ public function printExpTypeStr
   input DAE.Type iet;
   output String str;
 algorithm
-  str := printTypeStr(expTypetoTypesType(iet));
+  str := TypesDump.printTypeStr(expTypetoTypesType(iet));
 end printExpTypeStr;
 
 public function isUnknownType
@@ -6951,7 +6937,7 @@ algorithm
   b := match ty
     case DAE.T_ARRAY() then max(
         match d case DAE.DIM_UNKNOWN() then true; else false; end match
-      for d in getDimensions(ty));
+      for d in TypesDump.getDimensions(ty));
     else false;
   end match;
 end isArrayWithUnknownDimension;
@@ -7286,7 +7272,7 @@ algorithm
   outRecordVars := list(match v case DAE.TYPES_VAR()
     algorithm
       if not allowedInRecord(v.ty) then
-        Error.addSourceMessage(Error.ILLEGAL_RECORD_COMPONENT, {unparseVar(v)}, inInfo);
+        Error.addSourceMessage(Error.ILLEGAL_RECORD_COMPONENT, {TypesDump.unparseVar(v)}, inInfo);
         fail();
       end if;
     then v;
@@ -7426,8 +7412,8 @@ algorithm
 
         // If the element types are compatible, check the dimensions too.
         if outCompatible then
-          dims1 := getDimensions(inType1);
-          dims2 := getDimensions(inType2);
+          dims1 := TypesDump.getDimensions(inType1);
+          dims2 := TypesDump.getDimensions(inType2);
 
           // The arrays must have the same number of dimensions.
           if listLength(dims1) == listLength(dims2) then
@@ -7728,7 +7714,7 @@ public function lookupAttributeValue
   output Option<Values.Value> outValue = NONE();
 algorithm
   for attr in inAttributes loop
-    if inName == getVarName(attr) then
+    if inName == TypesDump.getVarName(attr) then
       outValue := DAEUtil.bindingValue(varBinding(attr));
       break;
     end if;
@@ -7741,7 +7727,7 @@ public function lookupAttributeExp
   output Option<DAE.Exp> outExp = NONE();
 algorithm
   for attr in inAttributes loop
-    if inName == getVarName(attr) then
+    if inName == TypesDump.getVarName(attr) then
       outExp := DAEUtil.bindingExp(varBinding(attr));
       break;
     end if;
@@ -7765,7 +7751,7 @@ algorithm
     case DAE.T_METARECORD(fields=fields) then fields;
     case DAE.T_METAUNIONTYPE(knownSingleton=false)
       algorithm
-        Error.addInternalError(getInstanceName() + " called on a non-singleton uniontype: " + unparseType(ty), sourceInfo());
+        Error.addInternalError(getInstanceName() + " called on a non-singleton uniontype: " + TypesDump.unparseType(ty), sourceInfo());
       then fail();
     case DAE.T_METAUNIONTYPE(singletonType=DAE.EVAL_SINGLETON_KNOWN_TYPE(ty=DAE.T_METARECORD(fields=fields))) then fields;
     case DAE.T_METAUNIONTYPE(singletonType=DAE.EVAL_SINGLETON_TYPE_FUNCTION(fun=fun))
@@ -7774,7 +7760,7 @@ algorithm
       then fields;
     else
       algorithm
-        Error.addInternalError(getInstanceName() + " called on a non-singleton uniontype: " + unparseType(ty), sourceInfo());
+        Error.addInternalError(getInstanceName() + " called on a non-singleton uniontype: " + TypesDump.unparseType(ty), sourceInfo());
       then fail();
   end match;
 end getMetaRecordFields;

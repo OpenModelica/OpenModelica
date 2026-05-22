@@ -3493,7 +3493,7 @@ protected function replaceCrefWithBindExp
   output Boolean replaced;
 protected
   UnorderedSet<DAE.ComponentRef> replaced_crefs =
-    UnorderedSet.new(ComponentReference.hashComponentRef, ComponentReference.crefEqual);
+    UnorderedSet.new(ComponentReference.hashComponentRef, ComponentReferenceBasics.crefEqual);
 algorithm
   (outExp, replaced) := Expression.traverseExpBottomUp(exp,
     function replaceCrefWithBindExp_traverser(vars = vars, replacedCrefs = replaced_crefs), false);
@@ -3657,7 +3657,7 @@ algorithm
       end if;
       true := intEq(i, is);
       crVar := BackendVariable.varCref(inVar);
-      favorit := if ComponentReference.crefEqual(crVar, crs) then
+      favorit := if ComponentReferenceBasics.crefEqual(crVar, crs) then
        (es, crs, is) :: (e, cr, i) :: rest else (e, cr, i) :: (es, crs, is) :: rest;
     then selectFreeValue1(zerofreevalues, favorit, s, iAttributeName, inFunc, inVar, globalKnownVars);
 
@@ -4990,10 +4990,10 @@ algorithm
       BackendDAE.VarKind kind;
       BackendDAE.Variables vars;
     case(_,(_,vars,count,_,_)) guard(count<0) then(inE1, false, ({},vars,-1,-1,false));
-    case (DAE.CREF(componentRef=cr),(cr_lst,vars,count,paramCount,true)) guard(count < 2 and not (ComponentReference.crefEqual(cr,DAE.crefTime))) algorithm
+    case (DAE.CREF(componentRef=cr),(cr_lst,vars,count,paramCount,true)) guard(count < 2 and not (ComponentReferenceBasics.crefEqual(cr,DAE.crefTime))) algorithm
       (_,_) := BackendVariable.getVar(cr, vars);
     then (inE1, true, (cr::cr_lst,vars,count+1,paramCount,true));
-    case (DAE.CREF(componentRef=cr),(cr_lst,vars,count,paramCount,true)) guard(count < 2 and not (ComponentReference.crefEqual(cr,DAE.crefTime)))
+    case (DAE.CREF(componentRef=cr),(cr_lst,vars,count,paramCount,true)) guard(count < 2 and not (ComponentReferenceBasics.crefEqual(cr,DAE.crefTime)))
     then (inE1, true, (cr_lst,vars,count,paramCount+1,true));
     case (DAE.CREF(),(_,vars,_,_,true))
     then (inE1, false, ({},vars,-1,-1,false));

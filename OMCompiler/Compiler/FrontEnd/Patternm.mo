@@ -501,7 +501,7 @@ algorithm
         validUniontype(utPath1,utPath2,info,lhs);
 
         fieldTypeList := List.map(fieldVarList, Types.getVarType);
-        fieldNameList := List.map(fieldVarList, Types.getVarName);
+        fieldNameList := List.map(fieldVarList, TypesDump.getVarName);
 
         if Flags.isSet(Flags.PATTERNM_ALL_INFO) then
           for namedArg in namedArgList loop
@@ -548,7 +548,7 @@ algorithm
         true := AbsynUtil.pathEqual(fqPath,utPath2);
 
         fieldTypeList := List.map(fieldVarList, Types.getVarType);
-        fieldNameList := List.map(fieldVarList, Types.getVarName);
+        fieldNameList := List.map(fieldVarList, TypesDump.getVarName);
 
         (funcArgs,namedArgList) := checkForAllWildCall(funcArgs,namedArgList,listLength(fieldNameList));
 
@@ -1295,7 +1295,7 @@ algorithm
       tuple<AvlSetString.Tree,AvlSetString.Tree,SourceInfo> extra;
     case (DAE.CREF(componentRef=cr,ty=ty),extra as (localsTree,useTree,info))
       algorithm
-        name := ComponentReference.crefFirstIdent(cr);
+        name := ComponentReferenceBasics.crefFirstIdent(cr);
         if AvlSetString.hasKey(localsTree,name) and not AvlSetString.hasKey(useTree,name) then
           Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_UNUSED_ASSIGNMENT,{name},info);
           outExp := DAE.CREF(DAE.WILD(),ty);

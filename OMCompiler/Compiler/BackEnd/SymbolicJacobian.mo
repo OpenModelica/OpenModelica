@@ -1906,7 +1906,7 @@ try
         elseif Expression.isExpCref(rhs) and not listMember(cr, protectedCrefs) then
           rhsCr := Expression.expCref(rhs);
           // remove equation of form a = $START.a as it does not contribute to the jacobian and create a variable a with constant binding which is not wanted
-          if ComponentReference.isStartCref(rhsCr) and ComponentReference.crefEqual(ComponentReference.popCref(rhsCr), cr) then
+          if ComponentReference.isStartCref(rhsCr) and ComponentReferenceBasics.crefEqual(ComponentReference.popCref(rhsCr), cr) then
             crefsVarsToRemove := cr :: crefsVarsToRemove;
           else
             BackendEquation.add(eq, newOrderedEquationArray);
@@ -3104,7 +3104,7 @@ algorithm
       // Search for non-linear variables without start value
       for varCref in dependentVarsCref loop
         for var in diffVars loop
-          if ComponentReference.crefEqual(varCref, var.varName) then
+          if ComponentReferenceBasics.crefEqual(varCref, var.varName) then
             if (not BackendVariable.varHasStartValue(var)) then
               exist:= true;
               break;
@@ -3145,7 +3145,7 @@ algorithm
           // Get non-linear variables without start value
           for varCref in dependentVarsCref loop
             for var in diffVars loop
-              if ComponentReference.crefEqual(varCref, var.varName) then
+              if ComponentReferenceBasics.crefEqual(varCref, var.varName) then
                 if (not BackendVariable.varHasStartValue(var)) then
                   nonLin := var::nonLin;
                 else
@@ -3202,7 +3202,7 @@ algorithm
           // nonlinear variables are those appearing in the jacobian
           for varCref in dependentVarsCref loop
             for var in diffVars loop
-              if ComponentReference.crefEqual(varCref, var.varName) then
+              if ComponentReferenceBasics.crefEqual(varCref, var.varName) then
                 var.initNonlinear := true;
                 nonLin := var::nonLin;
                 break;
@@ -4397,7 +4397,7 @@ algorithm
     seedVar := Differentiate.createSeedCrefName(BackendVariable.varCref(state),matrixName);
     diffExp := Differentiate.differentiateExpSolve(exp,seedVar,NONE());
     for var in diffVars loop
-      if not ComponentReference.crefEqual(var.varName, state.varName) and Expression.expContains(diffExp,Expression.crefExp(var.varName)) then
+      if not ComponentReferenceBasics.crefEqual(var.varName, state.varName) and Expression.expContains(diffExp,Expression.crefExp(var.varName)) then
         // Heuristic to punish vars with a value of zero
         if Expression.isZero(BackendVariable.varStartValue(var)) then
           nonlinearCount := nonlinearCount + 2;

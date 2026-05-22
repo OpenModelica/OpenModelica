@@ -83,7 +83,7 @@ public function varEqual "author: PA
   Returns true if two vars are equal."
   input BackendDAE.Var inVar1;
   input BackendDAE.Var inVar2;
-  output Boolean outBoolean = ComponentReference.crefEqualNoStringCompare(inVar1.varName, inVar2.varName) "a BackendDAE.Var is identified by its component reference";
+  output Boolean outBoolean = ComponentReferenceBasics.crefEqualNoStringCompare(inVar1.varName, inVar2.varName) "a BackendDAE.Var is identified by its component reference";
 end varEqual;
 
 public function setVarFixed "author: PA
@@ -2204,7 +2204,7 @@ public function varSortFunc "A sorting function (greatherThan) for Variables bas
   input BackendDAE.Var v2;
   output Boolean greaterThan;
 algorithm
-  greaterThan := ComponentReference.crefSortFunc(varCref(v1), varCref(v2));
+  greaterThan := ComponentReferenceBasics.crefSortFunc(varCref(v1), varCref(v2));
 end varSortFunc;
 
 public function sortInitialVars
@@ -2409,7 +2409,7 @@ public function isCrefInVarList "O(n)"
   output Boolean isInList = false;
 algorithm
   for v in inVars loop
-    if ComponentReference.crefEqual(BackendVariable.varCref(v), inCref) then
+    if ComponentReferenceBasics.crefEqual(BackendVariable.varCref(v), inCref) then
       isInList := true;
       return;
     end if;
@@ -3491,7 +3491,7 @@ algorithm
   BackendDAE.CREFINDEX(index=outIndex) := List.getMemberOnTrue(inCref, cr_indices, crefIndexEqualCref);
   outIndex := outIndex + 1;
   outVar as BackendDAE.VAR(varName = cr) := vararrayNth(arr, outIndex);
-  true := ComponentReference.crefEqualNoStringCompare(cr, inCref);
+  true := ComponentReferenceBasics.crefEqualNoStringCompare(cr, inCref);
 end getVar2;
 
 protected function crefIndexEqualCref
@@ -3502,7 +3502,7 @@ protected
   DAE.ComponentRef cr;
 algorithm
   BackendDAE.CREFINDEX(cref = cr) := inIndex;
-  outMatch := ComponentReference.crefEqualNoStringCompare(cr, inCref);
+  outMatch := ComponentReferenceBasics.crefEqualNoStringCompare(cr, inCref);
 end crefIndexEqualCref;
 
 public function getVarIndexFromVars

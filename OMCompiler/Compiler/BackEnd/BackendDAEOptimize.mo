@@ -5916,7 +5916,7 @@ algorithm
     end if;
 
     // make unneeded state derivatives and add them to unneeded vars
-    der_replacement := UnorderedMap.new<DAE.Exp>(ComponentReference.hashComponentRef, ComponentReference.crefEqual);
+    der_replacement := UnorderedMap.new<DAE.Exp>(ComponentReference.hashComponentRef, ComponentReferenceBasics.crefEqual);
     for state in BackendVariable.varList(vars) loop
       if BackendVariable.isStateVar(state) then
         derVar := BackendVariable.makeVar(ComponentReference.prependStringCref("$DER_REM_", state.varName));

@@ -912,14 +912,14 @@ algorithm
   true := exp_count == len;
 
   // Check that the number of expressions matches the size of the array the cref represents.
-  dims := Types.getDimensions(ComponentReference.crefLastType(cr1));
+  dims := TypesDump.getDimensions(ComponentReference.crefLastType(cr1));
   true := exp_count == product(i for i in Expression.dimensionsSizes(dims));
 
   for exp in exps loop
     DAE.CREF(componentRef=cr2) := exp;
     true := ndim==listLength(ComponentReference.crefLastSubs(cr2));
-    true := ComponentReference.crefEqualWithoutSubs(cr1,cr2);
-    true := 1==ComponentReference.crefCompareIntSubscript(cr2,cr1); // cr2 > cr1
+    true := ComponentReferenceBasics.crefEqualWithoutSubs(cr1,cr2);
+    true := 1==ComponentReferenceBasics.crefCompareIntSubscript(cr2,cr1); // cr2 > cr1
     cr1 := cr2;
   end for;
   // All of the crefs are in ascending order; the first one starts at 1,1; the length is the full array... So it is the complete cref!

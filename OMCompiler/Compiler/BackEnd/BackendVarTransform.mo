@@ -99,30 +99,30 @@ partial function FuncTypeExp_ExpToBoolean
 end FuncTypeExp_ExpToBoolean;
 
 function newCrefExpTable
-  output CrefExpTable table = UnorderedMap.new<ExpOpt>(ComponentReference.hashComponentRef, ComponentReference.crefEqual);
+  output CrefExpTable table = UnorderedMap.new<ExpOpt>(ComponentReference.hashComponentRef, ComponentReferenceBasics.crefEqual);
 end newCrefExpTable;
 
 function newCrefExpTableSized
   input Integer size;
-  output CrefExpTable table = UnorderedMap.new<ExpOpt>(ComponentReference.hashComponentRef, ComponentReference.crefEqual, size);
+  output CrefExpTable table = UnorderedMap.new<ExpOpt>(ComponentReference.hashComponentRef, ComponentReferenceBasics.crefEqual, size);
 end newCrefExpTableSized;
 
 function newCrefCrefListTable
-  output CrefCrefListTable table = UnorderedMap.new<CrefListOpt>(ComponentReference.hashComponentRef, ComponentReference.crefEqual);
+  output CrefCrefListTable table = UnorderedMap.new<CrefListOpt>(ComponentReference.hashComponentRef, ComponentReferenceBasics.crefEqual);
 end newCrefCrefListTable;
 
 function newCrefCrefListTableSized
   input Integer size;
-  output CrefCrefListTable table = UnorderedMap.new<CrefListOpt>(ComponentReference.hashComponentRef, ComponentReference.crefEqual, size);
+  output CrefCrefListTable table = UnorderedMap.new<CrefListOpt>(ComponentReference.hashComponentRef, ComponentReferenceBasics.crefEqual, size);
 end newCrefCrefListTableSized;
 
 function newCrefSet
-  output CrefSet set = UnorderedSet.new(ComponentReference.hashComponentRef, ComponentReference.crefEqual);
+  output CrefSet set = UnorderedSet.new(ComponentReference.hashComponentRef, ComponentReferenceBasics.crefEqual);
 end newCrefSet;
 
 function newCrefSetSized
   input Integer size;
-  output CrefSet set = UnorderedSet.new(ComponentReference.hashComponentRef, ComponentReference.crefEqual, size);
+  output CrefSet set = UnorderedSet.new(ComponentReference.hashComponentRef, ComponentReferenceBasics.crefEqual, size);
 end newCrefSetSized;
 
 public function emptyReplacements "
@@ -1043,7 +1043,7 @@ protected
 algorithm
   for e in expl loop
     _ := match e
-      case DAE.CREF() guard(ComponentReference.crefLastIdent(e.componentRef) == name)
+      case DAE.CREF() guard(ComponentReferenceBasics.crefLastIdent(e.componentRef) == name)
         algorithm
           cref := e.componentRef;
           return;

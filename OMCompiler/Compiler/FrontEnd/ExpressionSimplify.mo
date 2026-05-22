@@ -5041,13 +5041,13 @@ algorithm
     // relation: cr1 == cr2, where cr1 and cr2 are the same
     case (_,DAE.EQUAL(_),DAE.CREF(cr1,_),DAE.CREF(cr2,_))
       algorithm
-        true := ComponentReference.crefEqual(cr1,cr2);
+        true := ComponentReferenceBasics.crefEqual(cr1,cr2);
       then DAE.BCONST(true);
 
     // relation: cr1 <> cr2 . where cr1 and cr2 are the same
     case (_,DAE.NEQUAL(_),DAE.CREF(cr1,_),DAE.CREF(cr2,_))
       algorithm
-        true := ComponentReference.crefEqual(cr1,cr2);
+        true := ComponentReferenceBasics.crefEqual(cr1,cr2);
       then DAE.BCONST(false);
 
     // a >= b

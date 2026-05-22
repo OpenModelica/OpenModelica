@@ -603,7 +603,7 @@ algorithm
           types := {};
         else
           opStr := "'" + Dump.opSymbolCompact(op) + "'";
-          // print("Try overloading for " + opStr + " " + TypesDump.unparseType(inType1) + "," + Types.unparseType(inType2) + "\n");
+          // print("Try overloading for " + opStr + " " + TypesDump.unparseType(inType1) + "," + TypesDump.unparseType(inType2) + "\n");
           (cache,types1) := getOperatorFuncsOrEmpty(cache,env,{type1},opStr,info,{});
           (cache,types2) := getOperatorFuncsOrEmpty(cache,env,{type2},opStr,info,{});
           // Spec: [...] function f in the union of A.op and B.op [...]
@@ -1478,7 +1478,7 @@ algorithm
     case (DAE.T_FUNCTION(funcResultType=actual),_,_)
       algorithm
         isOK := Types.equivtypesOrRecordSubtypeOf(actual,expected);
-        // Error.assertionOrAddSourceMessage(isOK, Error.COMPILER_WARNING, {"TODO: Better warning for: " + TypesDump.unparseType(actual) + ", expected: " + Types.unparseType(actual)}, info);
+        // Error.assertionOrAddSourceMessage(isOK, Error.COMPILER_WARNING, {"TODO: Better warning for: " + TypesDump.unparseType(actual) + ", expected: " + TypesDump.unparseType(actual)}, info);
       then isOK;
     else false;
   end match;
@@ -1592,7 +1592,7 @@ algorithm
 
     case (((op,params,rtype) :: _),args,_,pre,_)
       algorithm
-        //Debug.fprint(Flags.DOVL, stringDelimitList(List.map(params, Types.printTypeStr),"\n"));
+        //Debug.fprint(Flags.DOVL, stringDelimitList(List.map(params, TypesDump.printTypeStr),"\n"));
         //Debug.fprint(Flags.DOVL, "\n===\n");
         (args_1,types_1) := elabArglist(params, args);
         rtype_1 := computeReturnType(op, types_1, rtype,pre,info);

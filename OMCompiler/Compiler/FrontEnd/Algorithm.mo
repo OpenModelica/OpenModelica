@@ -889,7 +889,7 @@ public function getCrefFromAlg "Returns all crefs from an algorithm"
   input DAE.Algorithm alg;
   output list<DAE.ComponentRef> crs;
 algorithm
-  crs := List.unionOnTrueList(List.map(getAllExps(alg), Expression.extractCrefsFromExp), ComponentReference.crefEqual);
+  crs := List.unionOnTrueList(List.map(getAllExps(alg), Expression.extractCrefsFromExp), ComponentReferenceBasics.crefEqual);
 end getCrefFromAlg;
 
 

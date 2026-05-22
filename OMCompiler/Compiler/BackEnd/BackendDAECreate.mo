@@ -242,14 +242,14 @@ algorithm
   // 1. Collect all possible record types from equations and globalKnownVars
   // (the frontend does not keep correct types at the variables so they have to be grabbed from eqns beforehand
   // I don't like it but thats how it is).
-  map := UnorderedMap.new<DAE.Type>(ComponentReference.hashComponentRef, ComponentReference.crefEqual);
+  map := UnorderedMap.new<DAE.Type>(ComponentReference.hashComponentRef, ComponentReferenceBasics.crefEqual);
   collectRecordTypesVarLst(map, globalKnownVarLst);
   eqns  := List.map(eqns, function collectRecordTypesEqn(map = map));
   reqns := List.map(reqns, function collectRecordTypesEqn(map = map));
   ieqns := List.map(ieqns, function collectRecordTypesEqn(map = map));
 
   // 2. Collect bindings from variables and update in types
-  arrayMap := UnorderedMap.new<ArrayBindingList>(ComponentReference.hashComponentRef, ComponentReference.crefEqual);
+  arrayMap := UnorderedMap.new<ArrayBindingList>(ComponentReference.hashComponentRef, ComponentReferenceBasics.crefEqual);
 
   _ := List.map(varlst, function collectRecordElementBindings(map = map, arrayMap = arrayMap));
   _ := List.map(globalKnownVarLst, function collectRecordElementBindings(map = map, arrayMap = arrayMap));
@@ -261,7 +261,7 @@ algorithm
     print("patchRecordBindings arrayMap:\n");
     print(UnorderedMap.toString(arrayMap, ComponentReference.printComponentRefStr, printArrayBindingList) + "\n");
     print("\npatchRecordBindings map\n");
-    print(UnorderedMap.toString(map, ComponentReference.printComponentRefStr, Types.printTypeStr) + "\n\n");
+    print(UnorderedMap.toString(map, ComponentReference.printComponentRefStr, TypesDump.printTypeStr) + "\n\n");
   end if;
 
   // 3. Replace the types in equations and globalKnownVars
@@ -311,7 +311,7 @@ algorithm
 
         ty := match UnorderedMap.getSafe(rec_cref, map, sourceInfo())
           case ty as DAE.T_COMPLEX() algorithm
-            ty.varLst := list(updateConstantRecordElementBinding(v, binding, ComponentReference.crefLastIdent(var.varName)) for v in ty.varLst);
+            ty.varLst := list(updateConstantRecordElementBinding(v, binding, ComponentReferenceBasics.crefLastIdent(var.varName)) for v in ty.varLst);
           then ty;
           else algorithm
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the type is not T_COMPLEX."});
@@ -472,7 +472,7 @@ algorithm
         list<list<DAE.Exp>> matLst;
       case 1 then DAE.ARRAY(ComponentReference.crefTypeFull(cref), true, expLst);
       case 2 algorithm
-        dims := Types.getDimensions(ComponentReference.crefLastType(cref));
+        dims := TypesDump.getDimensions(ComponentReference.crefLastType(cref));
         firstDim := match listHead(dims)
           case DAE.DIM_INTEGER(firstDim) then firstDim;
         end match;
@@ -492,7 +492,7 @@ algorithm
     (rec_cref, true) := ComponentReference.crefGetFirstRec(cref);
     ty := match UnorderedMap.getSafe(rec_cref, map, sourceInfo())
       case ty as DAE.T_COMPLEX() algorithm
-        ty.varLst := list(updateConstantRecordElementBinding(v, binding, ComponentReference.crefLastIdent(cref)) for v in ty.varLst);
+        ty.varLst := list(updateConstantRecordElementBinding(v, binding, ComponentReferenceBasics.crefLastIdent(cref)) for v in ty.varLst);
       then ty;
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the type is not T_COMPLEX."});
@@ -713,13 +713,13 @@ algorithm
       DAE.Type ty1, ty2;
   case(BackendDAE.COMPLEX_EQUATION(left = DAE.CREF(componentRef=cr1), right = DAE.CREF(componentRef=cr2)),_,(noAliasEqs,aliasEqs))
     algorithm
-      true := List.exist1(extCrefs,ComponentReference.crefEqual,cr1) and List.exist1(extCrefs,ComponentReference.crefEqual,cr2);
+      true := List.exist1(extCrefs,ComponentReferenceBasics.crefEqual,cr1) and List.exist1(extCrefs,ComponentReferenceBasics.crefEqual,cr2);
      then (noAliasEqs,eqIn::aliasEqs);
 
   case(BackendDAE.EQUATION(exp = DAE.CREF(componentRef = cr1, ty = DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ())),
                            scalar = DAE.CREF(componentRef = cr2, ty = DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ()))),_,(noAliasEqs,aliasEqs))
     algorithm
-      true := List.exist1(extCrefs,ComponentReference.crefEqual,cr1) and List.exist1(extCrefs,ComponentReference.crefEqual,cr2);
+      true := List.exist1(extCrefs,ComponentReferenceBasics.crefEqual,cr1) and List.exist1(extCrefs,ComponentReferenceBasics.crefEqual,cr2);
      then (noAliasEqs,eqIn::aliasEqs);
 
   // Cases for array equations (cref = arr), (cref = cref), (arr = cref)
@@ -1748,7 +1748,7 @@ algorithm
     case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD()) then inType;
     case DAE.T_ARRAY() then inType;
     case DAE.T_FUNCTION() then inType;
-    else algorithm print("lowerType: " + Types.printTypeStr(inType) + " failed\n"); then fail();
+    else algorithm print("lowerType: " + TypesDump.printTypeStr(inType) + " failed\n"); then fail();
   end matchcontinue;
 end lowerType;
 
@@ -3130,7 +3130,7 @@ algorithm
                         local
                           DAE.ComponentRef crleft2;
                         case BackendDAE.REINIT(stateVar=crleft2) algorithm
-                          true := ComponentReference.crefEqualNoStringCompare(crleft, crleft2);
+                          true := ComponentReferenceBasics.crefEqualNoStringCompare(crleft, crleft2);
                           //print(" added when else case: \n" + BackendDump.whenEquationString(eq, true) + "\n");
                           whenEqRes := BackendEquation.setWhenElsePart(whenEq, eq);
                           res := BackendDAE.WHEN_EQUATION(size, whenEqRes, source, attr);

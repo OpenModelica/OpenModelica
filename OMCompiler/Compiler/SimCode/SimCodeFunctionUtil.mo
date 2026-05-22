@@ -49,6 +49,7 @@ import Autoconf;
 import BaseHashTable;
 import CevalScript;
 import ComponentReference;
+import ComponentReferenceBasics;
 import DAEDump;
 import DAEUtil;
 import ElementSource;
@@ -365,7 +366,7 @@ algorithm
         { DAE.INDEX(DAE.ICONST(i)) } := ComponentReference.crefLastSubs(cr);
         true := (i == index);
         cr := ComponentReference.crefStripLastSubs(cr);
-        true := ComponentReference.crefEqualNoStringCompare(inCref, cr);
+        true := ComponentReferenceBasics.crefEqualNoStringCompare(inCref, cr);
       then isArrayExpansion(aRest, inCref, index+1);
     else false;
   end matchcontinue;
@@ -424,7 +425,7 @@ algorithm
         { DAE.INDEX(DAE.ICONST(r)), DAE.INDEX(DAE.ICONST(c)) } := ComponentReference.crefLastSubs(cr);
         true := (r == rowIndex) and (c == colIndex);
         cr := ComponentReference.crefStripLastSubs(cr);
-        true := ComponentReference.crefEqualNoStringCompare(inCref, cr);
+        true := ComponentReferenceBasics.crefEqualNoStringCompare(inCref, cr);
       then isMatrixExpansion(restElems :: restRows, inCref, rowIndex, colIndex+1);
     else false;
   end matchcontinue;
@@ -998,7 +999,7 @@ algorithm
     case (SimCodeFunction.SIMEXTARG(cref, isInput, outputIndex, isArray, _, type_), _)
       algorithm
         true := outputIndex == -1;
-        fcref := ComponentReference.crefFirstCref(cref);
+        fcref := ComponentReferenceBasics.crefFirstCref(cref);
         (newOutputIndex, hasBinding) := findIndexInList(fcref, outVars, 1);
       then
         SimCodeFunction.SIMEXTARG(cref, isInput, newOutputIndex, isArray, hasBinding, type_);
@@ -1033,7 +1034,7 @@ algorithm
     case (_, {}, _) then (-1, false);
     case (_, SimCodeFunction.VARIABLE(name=name, value=v) :: _, currentIndex)
       algorithm
-        true := ComponentReference.crefEqualNoStringCompare(cref, name);
+        true := ComponentReferenceBasics.crefEqualNoStringCompare(cref, name);
       then (currentIndex, isSome(v));
     case (_, _ :: restOutVars, currentIndex)
       algorithm

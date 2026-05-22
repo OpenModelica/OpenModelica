@@ -65,6 +65,7 @@ protected import Dump;
 protected import Debug;
 protected import Error;
 protected import Expression;
+protected import ExpressionBasics;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
@@ -1563,7 +1564,7 @@ algorithm
           SOME(val) := oval;
 
           for i in inIndices loop
-            val := ValuesUtil.nthArrayelt(val, Expression.expArrayIndex(i));
+            val := ValuesUtil.nthArrayelt(val, ExpressionBasics.expArrayIndex(i));
           end for;
 
           oval := SOME(val);
@@ -1575,7 +1576,7 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Mod.indexEqmod failed for mod:\n " +
-          Types.unparseEqMod(eq) + "\n indices: " +
+          TypesDump.unparseEqMod(eq) + "\n indices: " +
           ExpressionDump.printExpListStr(inIndices));
       then
         fail();
@@ -2224,7 +2225,7 @@ algorithm
       then prettyPrintSubs(subs,depth);
 
     case(DAE.MOD(finalPrefix = fp, binding=SOME(eq)),_)
-      then (if SCodeUtil.finalBool(fp) then "final " else "") + " = " + Types.unparseEqMod(eq);
+      then (if SCodeUtil.finalBool(fp) then "final " else "") + " = " + TypesDump.unparseEqMod(eq);
 
     case(DAE.REDECL(),_)
       then SCodeDump.unparseElementStr(m.element);
@@ -2565,10 +2566,10 @@ protected function fullModCrefsEqual
 algorithm
   isEqual := match(inFullMod1, inFullMod2)
     local DAE.ComponentRef cr1, cr2;
-    case (MOD(cr1, _), MOD(cr2, _)) then ComponentReference.crefEqualNoStringCompare(cr1, cr2);
-    case (SUB_MOD(cr1, _), SUB_MOD(cr2, _)) then ComponentReference.crefEqualNoStringCompare(cr1, cr2);
-    case (MOD(cr1, _), SUB_MOD(cr2, _)) then ComponentReference.crefEqualNoStringCompare(cr1, cr2);
-    case (SUB_MOD(cr1, _), MOD(cr2, _)) then ComponentReference.crefEqualNoStringCompare(cr1, cr2);
+    case (MOD(cr1, _), MOD(cr2, _)) then ComponentReferenceBasics.crefEqualNoStringCompare(cr1, cr2);
+    case (SUB_MOD(cr1, _), SUB_MOD(cr2, _)) then ComponentReferenceBasics.crefEqualNoStringCompare(cr1, cr2);
+    case (MOD(cr1, _), SUB_MOD(cr2, _)) then ComponentReferenceBasics.crefEqualNoStringCompare(cr1, cr2);
+    case (SUB_MOD(cr1, _), MOD(cr2, _)) then ComponentReferenceBasics.crefEqualNoStringCompare(cr1, cr2);
   end match;
 end fullModCrefsEqual;
 

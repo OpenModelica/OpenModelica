@@ -103,7 +103,7 @@ algorithm
     case ((cr1,i1),(cr2,i2))
       algorithm
         true := intEq(i1,i2) "int compare is less expensive";
-      then ComponentReference.crefEqual(cr1,cr2);
+      then ComponentReferenceBasics.crefEqual(cr1,cr2);
     else false;
   end matchcontinue;
 end keyEqual;

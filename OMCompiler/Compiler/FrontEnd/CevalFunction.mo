@@ -2025,7 +2025,7 @@ algorithm
         (_, var, _, _, inst_status, env) :=
           Lookup.lookupIdentLocal(inCache, inEnv, id);
         (cache, env) := assignVariable(cr_rest, inNewValue, inCache, env);
-        comp_id := ComponentReference.crefFirstIdent(cr_rest);
+        comp_id := ComponentReferenceBasics.crefFirstIdent(cr_rest);
         var := updateRecordComponentBinding(var, comp_id, inNewValue);
         env := FGraph.updateComp(inEnv, var, inst_status, env);
       then
@@ -2533,7 +2533,7 @@ algorithm
         (_, _, _, _, _, env) :=
           Lookup.lookupIdentLocal(FCore.emptyCache(), inEnv, id);
         vals := List.map1(vars, getRecordComponentValue, env);
-        var_names := List.map(vars, Types.getVarName);
+        var_names := List.map(vars, TypesDump.getVarName);
       then
         Values.RECORD(p, vals, var_names, -1);
   end match;
@@ -2808,7 +2808,7 @@ protected
   DAE.ComponentRef name;
 algorithm
   (DAE.VAR(componentRef = name), _) := inElement;
-  isNamed := ComponentReference.crefEqualWithoutSubs(name, inName);
+  isNamed := ComponentReferenceBasics.crefEqualWithoutSubs(name, inName);
 end isElementNamed;
 
 protected function isElementEqual
@@ -2821,7 +2821,7 @@ protected
 algorithm
   (DAE.VAR(componentRef = cr1), _) := inElement1;
   (DAE.VAR(componentRef = cr2), _) := inElement2;
-  isEqual := ComponentReference.crefEqualWithoutSubs(cr1, cr2);
+  isEqual := ComponentReferenceBasics.crefEqualWithoutSubs(cr1, cr2);
 end isElementEqual;
 
 protected function checkCyclicalComponents

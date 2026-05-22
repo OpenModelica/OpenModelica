@@ -152,7 +152,7 @@ protected
   DAE.ComponentRef cref;
 algorithm
   cref := BackendVariable.varCref(varIn);
-  b := ComponentReference.crefEqualWithoutSubs(cref,crefIn);
+  b := ComponentReferenceBasics.crefEqualWithoutSubs(cref,crefIn);
 end varIsEqualCrefWithoutSubs;
 
 protected function buildAccumExpInEquations"if there is an accumulation of array variables in an equation, check whether we can summarize these to an accumulated expression"
@@ -351,7 +351,7 @@ algorithm
         // at least the crefs should be equal
         crefs1 := BackendEquation.equationCrefs(e1);
         crefs2 := BackendEquation.equationCrefs(e2);
-        commCrefs := List.intersectionOnTrue(crefs1,crefs2,ComponentReference.crefEqualWithoutSubs);
+        commCrefs := List.intersectionOnTrue(crefs1,crefs2,ComponentReferenceBasics.crefEqualWithoutSubs);
         if intEq(listLength(crefs1),listLength(commCrefs)) and intEq(listLength(crefs2),listLength(commCrefs)) then
           //compare terms
           terms1 := listAppend(Expression.allTerms(e11),Expression.allTerms(e12));
@@ -374,7 +374,7 @@ algorithm
       res := boolAnd(expEqualNoCrefSubs(e11, e21), expEqualNoCrefSubs(e12, e22));
     then res;
     case (BackendDAE.SOLVED_EQUATION(componentRef=cr1, exp=exp1), BackendDAE.SOLVED_EQUATION(componentRef=cr2, exp=exp2)) algorithm
-      res := boolAnd(ComponentReference.crefEqualWithoutSubs(cr1, cr2), expEqualNoCrefSubs(exp1, exp2));
+      res := boolAnd(ComponentReferenceBasics.crefEqualWithoutSubs(cr1, cr2), expEqualNoCrefSubs(exp1, exp2));
     then res;
     case (BackendDAE.RESIDUAL_EQUATION(exp=exp1), BackendDAE.RESIDUAL_EQUATION(exp=exp2)) algorithm
       res := expEqualNoCrefSubs(exp1, exp2);
@@ -461,7 +461,7 @@ algorithm
       algorithm
         DAE.CREF(componentRef = cr) := inExp2;
       then
-        ComponentReference.crefEqualWithoutSubs(inExp1.componentRef, cr);
+        ComponentReferenceBasics.crefEqualWithoutSubs(inExp1.componentRef, cr);
 
     case DAE.ARRAY()
       algorithm
@@ -730,7 +730,7 @@ case(eq::rest,_)
     algorithm
       //special case for a[i] = a[x]
       BackendDAE.EQUATION(exp=lhs,scalar=rhs,source=source,attr=attr) := eq;
-      true := ComponentReference.crefEqualWithoutSubs(Expression.expCref(lhs),Expression.expCref(rhs));
+      true := ComponentReferenceBasics.crefEqualWithoutSubs(Expression.expCref(lhs),Expression.expCref(rhs));
             //print("found constant array-var\n");
       //get similar equations
       (similarEqs,rest) := List.separate1OnTrue(classEqs,equationEqualNoCrefSubs,eq);
@@ -756,7 +756,7 @@ case(eq::rest,_)
       crefs := BackendEquation.equationCrefs(eq);
       //filter array-vars that appear in every equation
       crefs2 := BackendEquation.equationCrefs(listGet(similarEqs,1));
-      (crefs2,crefs,_) := List.intersection1OnTrue(crefs,crefs2,ComponentReference.crefEqual);
+      (crefs2,crefs,_) := List.intersection1OnTrue(crefs,crefs2,ComponentReferenceBasics.crefEqual);
         //print("varCrefs: "+stringDelimitList(List.map(crefs,ComponentReference.printComponentRefStr),",")+"\n");
         //print("consCrefs: "+stringDelimitList(List.map(crefs2,ComponentReference.printComponentRefStr),",")+"\n");
       numCrefs := listLength(crefs);
@@ -798,14 +798,14 @@ algorithm
     algorithm
       eqCrefs := BackendEquation.equationCrefs(eq);
       //traverse all crefs of the equation
-      eqCrefs := List.filter1OnTrue(eqCrefs,ComponentReference.crefNotInLst,constCrefs);
+      eqCrefs := List.filter1OnTrue(eqCrefs,ComponentReferenceBasics.crefNotInLst,constCrefs);
       for cref in eqCrefs loop
         {DAE.INDEX(DAE.ICONST(sub))} := ComponentReference.crefSubs(cref);
         pos := 1;
         for refCrefMinMax in crefMinMax loop
           (refCref,min,max) := refCrefMinMax;
           // if the cref fits the refCref, update min max
-          if ComponentReference.crefEqualWithoutSubs(refCref,cref) then
+          if ComponentReferenceBasics.crefEqualWithoutSubs(refCref,cref) then
             max := intMax(max,sub);
             min := intMin(min,sub);
             crefMinMax := List.replaceAt((refCref,min,max),pos,crefMinMax);
@@ -842,12 +842,12 @@ algorithm
 
   case(DAE.CREF(componentRef=cref,ty=ty),(crefMinMax0,iterator,constCrefs))
     algorithm
-      true := not List.exist1(constCrefs,ComponentReference.crefEqual,cref);//dont substitute array-vars which are constant in the for-equations
+      true := not List.exist1(constCrefs,ComponentReferenceBasics.crefEqual,cref);//dont substitute array-vars which are constant in the for-equations
       crefMinMax1 := {};
       for refCrefMinMax in crefMinMax0 loop
         (refCref,min,_) := refCrefMinMax;
          // if the cref fits the refCref, update the iterator
-        if ComponentReference.crefEqualWithoutSubs(refCref,cref) then
+        if ComponentReferenceBasics.crefEqualWithoutSubs(refCref,cref) then
           iterator1 := ExpressionSimplify.simplify(DAE.BINARY(iterator,DAE.ADD(DAE.T_INTEGER_DEFAULT),DAE.ICONST(min-1)));
           cref := replaceFirstSubsInCref(cref,{DAE.INDEX(iterator1)});
         else
@@ -934,7 +934,7 @@ algorithm
   case((cref0,idx0,tailCrefs0)::rest,_,(cref1,idx1,{crefTailRef}),_,_)
     algorithm
     // this cref already exist, update idx, append tailCrefs if necessary
-    true := ComponentReference.crefEqual(cref0,cref1);
+    true := ComponentReferenceBasics.crefEqual(cref0,cref1);
     if List.notMember(crefTailRef,tailCrefs0) then
       tailCrefs0 := crefTailRef::tailCrefs0;
       //append var with new tail
@@ -949,7 +949,7 @@ algorithm
   case((cref0,idx0,tailCrefs0)::rest,_,(cref1,_,_),_,_)
     algorithm
       // this cref is not the same, continue
-    false := ComponentReference.crefEqual(cref0,cref1);
+    false := ComponentReferenceBasics.crefEqual(cref0,cref1);
     (tplLst,varLst) := addToArrayCrefLst(rest,varIn,tplRef,(cref0,idx0,tailCrefs0)::tplLstFoldIn,varLstIn);
   then (tplLst,varLst);
 

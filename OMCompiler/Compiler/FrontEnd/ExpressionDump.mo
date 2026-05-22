@@ -327,22 +327,6 @@ algorithm
   printList(es_1, printExp, ",");
 end printRow;
 
-public function printListStr
-"Same as printList, except it returns
-  a string instead of printing."
-  input list<Type_a> inTypeALst;
-  input FuncTypeType_aToString inFuncTypeTypeAToString;
-  input String inString;
-  output String outString;
-  replaceable type Type_a subtypeof Any;
-  partial function FuncTypeType_aToString
-    input Type_a inTypeA;
-    output String outString;
-  end FuncTypeType_aToString;
-algorithm
-  outString := stringDelimitList(List.map(inTypeALst,inFuncTypeTypeAToString),inString);
-end printListStr;
-
 public function debugPrintSubscriptStr "
   Print a Subscript into a String."
   input DAE.Subscript inSubscript;
@@ -374,18 +358,7 @@ algorithm
   end match;
 end debugPrintSubscriptStr;
 
-public function printSubscriptStr "
-  Print a Subscript into a String."
-  input DAE.Subscript sub;
-  output String outString;
-algorithm
-  outString := match sub
-    case DAE.WHOLEDIM() then ":";
-    case DAE.INDEX() then printExpStr(sub.exp);
-    case DAE.SLICE() then printExpStr(sub.exp);
-    case DAE.WHOLE_NONEXP() then "1:" + printExpStr(sub.exp);
-  end match;
-end printSubscriptStr;
+public function printSubscriptStr = ExpressionBasics.printSubscriptStr;
 
 public function printSubscriptLstStr
   "Print a list of Subscripts into a String."
@@ -1281,7 +1254,7 @@ algorithm
         new_level1 := level + 1;
         sym := unaryopSymbol(op);
         ct := dumpExpStr(e, new_level1);
-        str := "expType:"+TypesDump.unparseType(Expression.typeof(e))+" optype:"+Types.unparseType(Expression.typeofOp(op));
+        str := "expType:"+TypesDump.unparseType(Expression.typeof(e))+" optype:"+TypesDump.unparseType(Expression.typeofOp(op));
         res_str := stringAppendList({gen_str,"UNARY ",sym," ",str,"\n",ct,""});
       then
         res_str;

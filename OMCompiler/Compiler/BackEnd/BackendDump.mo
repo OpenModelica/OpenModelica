@@ -373,7 +373,7 @@ end printStateSets;
 protected function printStateSet "author: lochel"
   input BackendDAE.StateSet inStateSet;
 algorithm
-  print("StateSet \"" + ComponentReference.printComponentRefStr(ComponentReference.crefFirstCref(inStateSet.crA)) + "\" (rang " + intString(inStateSet.rang) + ")\n");
+  print("StateSet \"" + ComponentReference.printComponentRefStr(ComponentReferenceBasics.crefFirstCref(inStateSet.crA)) + "\" (rang " + intString(inStateSet.rang) + ")\n");
 
   dumpVarList(inStateSet.statescandidates, "state candidates");
   dumpEquationList(inStateSet.eqns, "eqns");

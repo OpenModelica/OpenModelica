@@ -389,7 +389,7 @@ algorithm
 
    else
     algorithm
-      Error.addCompilerError("FGraph.updateInstance failed for node: " + FNode.toPathStr(FNode.fromRef(inRef)) + " variable:" + Types.printVarStr(inVar));
+      Error.addCompilerError("FGraph.updateInstance failed for node: " + FNode.toPathStr(FNode.fromRef(inRef)) + " variable:" + TypesDump.printVarStr(inVar));
     then
       fail();
 

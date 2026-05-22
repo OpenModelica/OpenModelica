@@ -94,6 +94,7 @@ import EvaluateParameter;
 import ExecStat.execStat;
 import ExpandableArray;
 import Expression;
+import ExpressionBasics;
 import ExpressionDump;
 import ExpressionSimplify;
 import ExpressionSolve;
@@ -691,7 +692,7 @@ algorithm
       DAE.ComponentRef cr, cr_orign;
     case (DAE.CREF(cr, _), (vars, cr_orign))
       guard
-        not ComponentReference.crefEqualNoStringCompare(cr, cr_orign)
+        not ComponentReferenceBasics.crefEqualNoStringCompare(cr, cr_orign)
       algorithm
         ({BackendDAE.VAR(bindExp = SOME(e))}, _) := BackendVariable.getVar(cr, vars);
         (e, _) := Expression.traverseExpBottomUp(e, replaceCrefsWithValues, (vars, cr_orign));
@@ -841,7 +842,7 @@ algorithm
     case (DAE.CREF(componentRef = cr), _)
       algorithm
         subscripts := ComponentReference.crefSubs(cr);
-        subscript_exprs := List.map(subscripts, Expression.subscriptIndexExp);
+        subscript_exprs := List.map(subscripts, ExpressionBasics.subscriptIndexExp);
         true := isLoopDependentHelper(subscript_exprs, iteratorExp);
       then true;
     case (DAE.ASUB(sub = subscripts), _)
@@ -5263,7 +5264,7 @@ algorithm
         false := intEq(rowmark[r],-mark);
         // solved?
         BackendDAE.VAR(varName=cr1,varKind=BackendDAE.STATE()) := BackendVariable.getVarAt(vars, r);
-        true := ComponentReference.crefEqualNoStringCompare(cr, cr1);
+        true := ComponentReferenceBasics.crefEqualNoStringCompare(cr, cr1);
         false := Expression.expHasDerCref(e2,cr);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
@@ -5274,7 +5275,7 @@ algorithm
         false := intEq(rowmark[rabs],-mark);
         // solved?
         BackendDAE.VAR(varName=cr1,varKind=BackendDAE.STATE()) := BackendVariable.getVarAt(vars, rabs);
-        true := ComponentReference.crefEqualNoStringCompare(cr, cr1);
+        true := ComponentReferenceBasics.crefEqualNoStringCompare(cr, cr1);
         false := Expression.expHasDerCref(e1,cr);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
@@ -5285,7 +5286,7 @@ algorithm
         false := intEq(rowmark[rabs],-mark);
         // solved?
         BackendDAE.VAR(varName=cr1) := BackendVariable.getVarAt(vars, rabs);
-        true := ComponentReference.crefEqualNoStringCompare(cr, cr1);
+        true := ComponentReferenceBasics.crefEqualNoStringCompare(cr, cr1);
         false := Expression.expHasCrefNoPreorDer(e2,cr);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
@@ -5297,7 +5298,7 @@ algorithm
         // solved?
         BackendDAE.VAR(varName=cr1) := BackendVariable.getVarAt(vars, rabs);
         crarr := ComponentReference.crefStripLastSubs(cr1);
-        true := ComponentReference.crefEqualNoStringCompare(cr, crarr);
+        true := ComponentReferenceBasics.crefEqualNoStringCompare(cr, crarr);
         false := Expression.expHasCrefNoPreorDer(e2,cr);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
@@ -5308,7 +5309,7 @@ algorithm
         false := intEq(rowmark[rabs],-mark);
         // solved?
         BackendDAE.VAR(varName=cr1) := BackendVariable.getVarAt(vars, rabs);
-        true := ComponentReference.crefEqualNoStringCompare(cr, cr1);
+        true := ComponentReferenceBasics.crefEqualNoStringCompare(cr, cr1);
         false := Expression.expHasCrefNoPreorDer(e2,cr);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
@@ -5319,7 +5320,7 @@ algorithm
         false := intEq(rowmark[rabs],-mark);
         // solved?
         BackendDAE.VAR(varName=cr1) := BackendVariable.getVarAt(vars, rabs);
-        true := ComponentReference.crefEqualNoStringCompare(cr, cr1);
+        true := ComponentReferenceBasics.crefEqualNoStringCompare(cr, cr1);
         false := Expression.expHasCrefNoPreorDer(e2,cr);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
@@ -5331,7 +5332,7 @@ algorithm
         // solved?
         BackendDAE.VAR(varName=cr1) := BackendVariable.getVarAt(vars, rabs);
         crarr := ComponentReference.crefStripLastSubs(cr1);
-        true := ComponentReference.crefEqualNoStringCompare(cr, crarr);
+        true := ComponentReferenceBasics.crefEqualNoStringCompare(cr, crarr);
         false := Expression.expHasCrefNoPreorDer(e2,cr);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
@@ -5342,7 +5343,7 @@ algorithm
         false := intEq(rowmark[rabs],-mark);
         // solved?
         BackendDAE.VAR(varName=cr1) := BackendVariable.getVarAt(vars, rabs);
-        true := ComponentReference.crefEqualNoStringCompare(cr, cr1);
+        true := ComponentReferenceBasics.crefEqualNoStringCompare(cr, cr1);
         false := Expression.expHasCrefNoPreorDer(e1,cr);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
@@ -5354,7 +5355,7 @@ algorithm
         // solved?
         BackendDAE.VAR(varName=cr1) := BackendVariable.getVarAt(vars, rabs);
         crarr := ComponentReference.crefStripLastSubs(cr1);
-        true := ComponentReference.crefEqualNoStringCompare(cr, crarr);
+        true := ComponentReferenceBasics.crefEqualNoStringCompare(cr, crarr);
         false := Expression.expHasCrefNoPreorDer(e1,cr);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
@@ -5365,7 +5366,7 @@ algorithm
         false := intEq(rowmark[rabs],-mark);
         // solved?
         BackendDAE.VAR(varName=cr1) := BackendVariable.getVarAt(vars, rabs);
-        true := ComponentReference.crefEqualNoStringCompare(cr, cr1);
+        true := ComponentReferenceBasics.crefEqualNoStringCompare(cr, cr1);
         false := Expression.expHasCrefNoPreorDer(e1,cr);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
@@ -5376,7 +5377,7 @@ algorithm
         false := intEq(rowmark[rabs],-mark);
         // solved?
         BackendDAE.VAR(varName=cr1) := BackendVariable.getVarAt(vars, rabs);
-        true := ComponentReference.crefEqualNoStringCompare(cr, cr1);
+        true := ComponentReferenceBasics.crefEqualNoStringCompare(cr, cr1);
         false := Expression.expHasCrefNoPreorDer(e1,cr);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
@@ -5388,7 +5389,7 @@ algorithm
         // solved?
         BackendDAE.VAR(varName=cr1) := BackendVariable.getVarAt(vars, rabs);
         crarr := ComponentReference.crefStripLastSubs(cr1);
-        true := ComponentReference.crefEqualNoStringCompare(cr, crarr);
+        true := ComponentReferenceBasics.crefEqualNoStringCompare(cr, crarr);
         false := Expression.expHasCrefNoPreorDer(e1,cr);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
@@ -5840,7 +5841,7 @@ algorithm
     case ({},_) then false;
     case (DAE.CREF(componentRef=cr)::rest,_)
       algorithm
-        b := ComponentReference.crefEqualNoStringCompare(cr,inCr);
+        b := ComponentReferenceBasics.crefEqualNoStringCompare(cr,inCr);
         b := if not b then expCrefLstHasCref(rest, inCr) else b;
       then
         b;
@@ -5870,7 +5871,7 @@ algorithm
         b2 := Expression.isConstOne(e) or Expression.isConstMinusOne(e);
       then
         if b2 then BackendDAE.SOLVABILITY_CONSTONE() else BackendDAE.SOLVABILITY_CONST(not b1);
-    case(_,_,_,_,_) guard List.isMemberOnTrue(cr,crlst,ComponentReference.crefEqualNoStringCompare)
+    case(_,_,_,_,_) guard List.isMemberOnTrue(cr,crlst,ComponentReferenceBasics.crefEqualNoStringCompare)
       then
         BackendDAE.SOLVABILITY_NONLINEAR();
     case(_,_,_,_,_)
@@ -10355,7 +10356,7 @@ algorithm
   syst := match syst
     local
       BackendDAE.StrongComponents comps;
-      UnorderedSet<DAE.ComponentRef> set = UnorderedSet.new(ComponentReference.hashComponentRef, ComponentReference.crefEqual);
+      UnorderedSet<DAE.ComponentRef> set = UnorderedSet.new(ComponentReference.hashComponentRef, ComponentReferenceBasics.crefEqual);
     case BackendDAE.EQSYSTEM(matching = BackendDAE.MATCHING(comps = comps)) algorithm
       for comp in comps loop
         markNonlinearIterationVariablesStrongComponent(comp, set);

@@ -408,7 +408,7 @@ algorithm
       algorithm
         canon1 := canonical(partition,ref1);
         canon2 := canonical(partition,ref2);
-        true := ComponentReference.crefEqualNoStringCompare(canon1, canon2);
+        true := ComponentReferenceBasics.crefEqualNoStringCompare(canon1, canon2);
       then true;
     else false;
   end matchcontinue;
@@ -511,7 +511,7 @@ algorithm
     // they are the same
     case(partition,ref1,ref2)
       algorithm
-        true := ComponentReference.crefEqualNoStringCompare(ref1, ref2);
+        true := ComponentReferenceBasics.crefEqualNoStringCompare(ref1, ref2);
       then (partition, false);
 
     // not the same, add it
@@ -1060,7 +1060,7 @@ algorithm
     // deal with Connections.isRoot
     case (DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), expLst={DAE.CREF(componentRef = cref)}), (rooted,roots,graph))
       algorithm
-        result := List.isMemberOnTrue(cref, roots, ComponentReference.crefEqualNoStringCompare);
+        result := List.isMemberOnTrue(cref, roots, ComponentReferenceBasics.crefEqualNoStringCompare);
         if Flags.isSet(Flags.CGRAPH) then
           Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: " + ExpressionDump.printExpStr(inExp) + " = " + boolString(result));
         end if;
@@ -1069,7 +1069,7 @@ algorithm
     // deal with NOT Connections.isRoot
     case (DAE.LUNARY(DAE.NOT(_), DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), expLst={DAE.CREF(componentRef = cref)})), (rooted,roots,graph))
       algorithm
-        result := List.isMemberOnTrue(cref, roots, ComponentReference.crefEqualNoStringCompare);
+        result := List.isMemberOnTrue(cref, roots, ComponentReferenceBasics.crefEqualNoStringCompare);
         result := boolNot(result);
         if Flags.isSet(Flags.CGRAPH) then
           Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: " + ExpressionDump.printExpStr(inExp) + " = " + boolString(result));
@@ -1149,12 +1149,12 @@ algorithm
   ocr := matchcontinue(cr,cref1,cref2)
     case(_,_,_)
       algorithm
-        true := ComponentReference.crefEqualNoStringCompare(cr,cref1);
+        true := ComponentReferenceBasics.crefEqualNoStringCompare(cr,cref1);
       then
         cref2;
     else
       algorithm
-        true := ComponentReference.crefEqualNoStringCompare(cr,cref2);
+        true := ComponentReferenceBasics.crefEqualNoStringCompare(cr,cref2);
       then
         cref1;
   end matchcontinue;
@@ -1636,7 +1636,7 @@ algorithm
           csets := {inConnects};
         else
           toKeep := filterFromSet(inConnects, inConnected, {}, "allowed");
-          intersect := List.intersectionOnTrue(toRemove, toKeep, ComponentReference.crefEqualNoStringCompare);
+          intersect := List.intersectionOnTrue(toRemove, toKeep, ComponentReferenceBasics.crefEqualNoStringCompare);
 
           if Flags.isSet(Flags.CGRAPH)
           then

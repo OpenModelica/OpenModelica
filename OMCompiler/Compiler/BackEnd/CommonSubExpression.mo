@@ -54,6 +54,7 @@ import BackendVarTransform;
 import BackendVariable;
 import BaseHashTable;
 import ComponentReference;
+import ComponentReferenceBasics;
 import DAEUtil;
 import ExpandableArray;
 import Expression;
@@ -70,6 +71,7 @@ import List;
 import ResolveLoops;
 import StringUtil;
 import Types;
+import TypesDump;
 import UnorderedSet;
 
 uniontype CSE_Equation
@@ -1488,7 +1490,7 @@ algorithm
     then (value, inIndex + 1);
 
     else algorithm
-      Error.addInternalError("  - createReturnExp failed for " + Types.printTypeStr(inType) + "\n", sourceInfo());
+      Error.addInternalError("  - createReturnExp failed for " + TypesDump.printTypeStr(inType) + "\n", sourceInfo());
     then fail();
   end match;
 end createReturnExp;

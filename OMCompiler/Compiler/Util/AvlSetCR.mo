@@ -45,7 +45,7 @@ encapsulated package AvlSetCR
   end keyStr;
   redeclare function extends keyCompare
   algorithm
-    outResult := ComponentReference.crefCompareGenericNotAlphabetic(inKey1, inKey2);
+    outResult := ComponentReferenceBasics.crefCompareGenericNotAlphabetic(inKey1, inKey2);
   end keyCompare;
 annotation(__OpenModelica_Interface="frontend");
 end AvlSetCR;

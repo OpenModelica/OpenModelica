@@ -50,7 +50,6 @@ public import Absyn;
 public import BackendDAE;
 public import DAE;
 public import DAEUtil;
-public import Types;
 
 // protected imports
 protected import AbsynUtil;
@@ -78,6 +77,8 @@ protected import Inline;
 protected import List;
 protected import SCode;
 protected import StringUtil;
+protected import TypesDump;
+protected import Types;
 protected import Util;
 protected import SymbolicJacobian.DAE_CJ;
 
@@ -765,7 +766,7 @@ algorithm
       true := Flags.isSet(Flags.FAILTRACE);
       s1 := ExpressionDump.printExpStr(inExp);
       s2 := ComponentReference.printComponentRefStr(inDiffwrtCref);
-      stp := Types.printTypeStr(Expression.typeof(inExp));
+      stp := TypesDump.printTypeStr(Expression.typeof(inExp));
       Debug.trace("- differentiateExp " + s1 + " type: " + stp + " w.r.t " + s2 + " failed\n");
     then fail();
   end match;
@@ -1110,7 +1111,7 @@ algorithm
     // D(x)/dx => 1
     case (DAE.CREF(componentRef = cr, ty = tp), _, _, _, _)
       algorithm
-        true := ComponentReference.crefEqual(cr, inDiffwrtCref);
+        true := ComponentReferenceBasics.crefEqual(cr, inDiffwrtCref);
         (one,_) := Expression.makeOneExpression(Expression.arrayDimension(tp));
       then
         (one, inFunctionTree);
@@ -1213,7 +1214,7 @@ algorithm
     // d(x)/d(x) => generate seed variables
     case ((DAE.CREF(componentRef = cr,ty = tp)), _, BackendDAE.DIFFINPUTDATA(independenentVars=SOME(timevars),matrixName=SOME(matrixName)), BackendDAE.GENERIC_GRADIENT(), _)
       algorithm
-        //true = List.isMemberOnTrue(cr, diffCref, ComponentReference.crefEqual);
+        //true = List.isMemberOnTrue(cr, diffCref, ComponentReferenceBasics.crefEqual);
         (scalarLst, _) := BackendVariable.getVar(cr, timevars);
         // fix for ticket #7550
         // if not all elements (but some of them) are iteration variables
@@ -1227,7 +1228,7 @@ algorithm
             (res1, outFunctionTree) := differentiateCrefs(Expression.crefExp(cref), inDiffwrtCref, inInputData, inDiffType, outFunctionTree, maxIter);
             diffed_exps := res1 :: diffed_exps;
           end for;
-          res := Expression.listToArray(listReverse(diffed_exps), Types.getDimensions(arrayType));
+          res := Expression.listToArray(listReverse(diffed_exps), TypesDump.getDimensions(arrayType));
         else
           cr := createSeedCrefName(cr, matrixName);
           res := DAE.CREF(cr, tp);
@@ -1282,7 +1283,7 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         s1 := ExpressionDump.printExpStr(inExp);
-        se1 := Types.printTypeStr(Expression.typeof(inExp));
+        se1 := TypesDump.printTypeStr(Expression.typeof(inExp));
         s2 := ComponentReference.printComponentRefStr(inDiffwrtCref);
         serr := stringAppendList({"\n- differentiateCrefs ",s1," type:", se1 ," w.r.t: ",s2," failed\n"});
         Debug.trace(serr);
@@ -1318,7 +1319,7 @@ protected
   constant Boolean debug = false;
 algorithm
   if debug then print("inCref: " + ComponentReference.printComponentRefStr(inCref) +"\n"); end if;
-  if debug then print("after full type  " + Types.printTypeStr(ComponentReference.crefTypeConsiderSubs(inCref)) + "\n"); end if;
+  if debug then print("after full type  " + TypesDump.printTypeStr(ComponentReference.crefTypeConsiderSubs(inCref)) + "\n"); end if;
   subs := ComponentReference.crefLastSubs(inCref);
   outCref := ComponentReference.crefStripLastSubs(inCref);
   outCref := ComponentReference.crefSetLastType(outCref, DAE.T_UNKNOWN_DEFAULT);
@@ -1438,7 +1439,7 @@ algorithm
         cr := ComponentReference.createDifferentiatedCrefName(cr, inDiffwrtCref, matrixName);
         res := Expression.makeCrefExp(cr, tp);
 
-        if ComponentReference.crefEqual(DAE.CREF_IDENT("$",DAE.T_REAL_DEFAULT,{}), inDiffwrtCref) then
+        if ComponentReferenceBasics.crefEqual(DAE.CREF_IDENT("$",DAE.T_REAL_DEFAULT,{}), inDiffwrtCref) then
           (res,_) := Expression.makeZeroExpression(Expression.arrayDimension(tp));
         end if;
       then
@@ -2457,8 +2458,8 @@ algorithm
           print("### Detailed arguments list: \n");
           print(stringDelimitList(List.map(expl, ExpressionDump.printExpStr), ", ") + "\n");
           print("### and argument types: \n");
-          print(stringDelimitList(List.mapMap(expl, Expression.typeof, Types.printTypeStr), " | ") + "\n");
-          print("### and output type: \n"  + Types.printTypeStr(dtp) + "\n");
+          print(stringDelimitList(List.mapMap(expl, Expression.typeof, TypesDump.printTypeStr), " | ") + "\n");
+          print("### and output type: \n"  + TypesDump.printTypeStr(dtp) + "\n");
         end if;
 
         // create differentiated call arguments

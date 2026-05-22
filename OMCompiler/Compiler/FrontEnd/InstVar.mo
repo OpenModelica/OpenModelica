@@ -729,7 +729,7 @@ algorithm
         ty := Types.simplifyType(inType);
         false := Types.isExternalObject(Types.arrayElementType(ty));
         false := Types.isComplexType(Types.arrayElementType(ty));
-        (dims as _::_) := Types.getDimensions(ty);
+        (dims as _::_) := TypesDump.getDimensions(ty);
         SOME(exp) := InstBinding.makeVariableBinding(ty, mod, const, pre, n);
         cr := ComponentReference.makeCrefIdent(n,ty,{});
         (cache,cr) := PrefixUtil.prefixCref(inCache,inEnv,inIH,pre,cr);
@@ -1352,7 +1352,7 @@ algorithm
     case (DAE.VAR(componentRef = var_cr),
           DAE.EQUATION(exp = DAE.CREF(componentRef = eq_cr)) :: rest_eqs)
       guard
-        ComponentReference.crefEqual(var_cr, eq_cr)
+        ComponentReferenceBasics.crefEqual(var_cr, eq_cr)
         // The first equation assigns the variable. Remove the variable's
         // binding and discard the equation.
       then
@@ -1475,7 +1475,7 @@ algorithm
         exp_ty_str := TypesDump.unparseType(ty);
         // We don't know the complete expected type, so lets assume that the
         // rest of the expression's type is correct (will be caught later anyway).
-        _ :: ty_dims := Types.getDimensions(ty);
+        _ :: ty_dims := TypesDump.getDimensions(ty);
         dims_str := ExpressionDump.dimensionsString(inDimension :: ty_dims);
         Error.addMultiSourceMessage(Error.ARRAY_DIMENSION_MISMATCH,
           {exp_str, exp_ty_str, dims_str}, info::inInfo::{});

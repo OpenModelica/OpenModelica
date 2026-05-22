@@ -46,8 +46,8 @@ encapsulated package ComponentReferenceBasics
 public import DAE;
 
 // protected imports
-protected import Expression;
-protected import ExpressionDump;
+protected import Config;
+protected import ExpressionBasics;
 protected import List;
 protected import System;
 protected import TypesDump;
@@ -64,17 +64,40 @@ algorithm
       DAE.Type idType;
       DAE.ComponentRef cr;
 
-    case (DAE.CREF_IDENT(identType = idType)) then Types.getDimensions(idType);
+    case (DAE.CREF_IDENT(identType = idType)) then TypesDump.getDimensions(idType);
 
     case (DAE.CREF_QUAL(componentRef = cr, identType = idType))
       algorithm
-        dims := Types.getDimensions(idType);
+        dims := TypesDump.getDimensions(idType);
         res := crefDims(cr);
         res := listAppend(dims,res);
       then
         res;
   end match;
 end crefDims;
+
+public function crefSubs "
+function: crefSubs
+  Return all subscripts of a ComponentRef"
+  input DAE.ComponentRef inComponentRef;
+  output list<DAE.Subscript> outSubscriptLst;
+algorithm
+  outSubscriptLst := match (inComponentRef)
+    local
+      DAE.Ident id;
+      list<DAE.Subscript> subs,res;
+      DAE.ComponentRef cr;
+
+    case (DAE.CREF_IDENT(subscriptLst = subs)) then subs;
+
+    case (DAE.CREF_QUAL(componentRef = cr,subscriptLst=subs))
+      algorithm
+        res := crefSubs(cr);
+        res := listAppend(subs,res);
+      then
+        res;
+  end match;
+end crefSubs;
 
 /***************************************************/
 /* Compare  */
@@ -122,6 +145,64 @@ algorithm
   equal := crefEqual(pcr1,pcr2);
 end crefFirstCrefLastCrefEqual;
 
+public function crefFirstCref
+"Returns the first part of a component reference, i.e the identifier"
+  input DAE.ComponentRef inCr;
+  output DAE.ComponentRef outCr;
+algorithm
+  outCr := match(inCr)
+    local
+      DAE.Ident id;
+      list<DAE.Subscript> subs;
+      DAE.ComponentRef cr;
+      DAE.Type t2;
+
+    case( DAE.CREF_QUAL(id,t2,subs,_)) then makeCrefIdent(id,t2,subs);
+    case( DAE.CREF_IDENT(_,_,_)) then inCr;
+  end match;
+end crefFirstCref;
+
+public function crefLastIdent
+"author: PA
+  Returns the last identfifier of a ComponentRef."
+  input DAE.ComponentRef inComponentRef;
+  output DAE.Ident outIdent;
+algorithm
+  outIdent := match (inComponentRef)
+    local
+      DAE.Ident id,res;
+      DAE.ComponentRef cr;
+
+    case (DAE.CREF_IDENT(ident = id)) then id;
+
+    case (DAE.CREF_QUAL(componentRef = cr))
+      algorithm
+        res := crefLastIdent(cr);
+      then
+        res;
+  end match;
+end crefLastIdent;
+
+public function crefLastCref "
+  Return the last ComponentRef"
+  input DAE.ComponentRef inComponentRef;
+  output DAE.ComponentRef outComponentRef;
+algorithm
+  outComponentRef := match (inComponentRef)
+    local
+      DAE.Ident id;
+      DAE.ComponentRef res,cr;
+
+    case (DAE.CREF_IDENT()) then inComponentRef;
+
+    case (DAE.CREF_QUAL(componentRef = cr))
+      algorithm
+        res := crefLastCref(cr);
+      then
+        res;
+  end match;
+end crefLastCref;
+
 public function crefFirstIdentEqual
   "Returns true if the first identifier in both crefs are the same, otherwise false."
   input DAE.ComponentRef inCref1;
@@ -134,6 +215,20 @@ algorithm
   id2 := crefFirstIdent(inCref2);
   outEqual := stringEq(id1, id2);
 end crefFirstIdentEqual;
+
+public function crefFirstIdent
+  "Returns the first identifier of a component reference."
+  input DAE.ComponentRef inComponentRef;
+  output DAE.Ident outIdent;
+algorithm
+  outIdent := match(inComponentRef)
+    local
+      DAE.Ident id;
+
+    case DAE.CREF_IDENT(ident = id) then id;
+    case DAE.CREF_QUAL(ident = id) then id;
+  end match;
+end crefFirstIdent;
 
 protected
 
@@ -210,12 +305,12 @@ package CompareWithGenericSubscript "Package that can be modified to do differen
       end if;
       s2::ss := ss;
       if compareSubscript == CompareWithSubsType.WithGenericSubscript then
-        res := stringCompare(ExpressionDump.printSubscriptStr(s1), ExpressionDump.printSubscriptStr(s2));
+        res := stringCompare(ExpressionBasics.printSubscriptStr(s1), ExpressionBasics.printSubscriptStr(s2));
       elseif compareSubscript == CompareWithSubsType.WithGenericSubscriptNotAlphabetic then
-        res := Expression.compareSubscripts(s1, s2);
+        res := ExpressionBasics.compareSubscripts(s1, s2);
       else
-        i1 := Expression.subscriptInt(s1);
-        i2 := Expression.subscriptInt(s2);
+        i1 := ExpressionBasics.subscriptInt(s1);
+        i2 := ExpressionBasics.subscriptInt(s2);
         res := if i1 < i2 then -1 elseif i1 > i2 then 1 else 0;
       end if;
       if res <> 0 then
@@ -300,8 +395,8 @@ algorithm
   if res <> 0 then
     return;
   end if;
-  subs1 := Expression.subscriptsInt(crefSubs(cr1));
-  subs2 := Expression.subscriptsInt(crefSubs(cr2));
+  subs1 := ExpressionBasics.subscriptsInt(crefSubs(cr1));
+  subs2 := ExpressionBasics.subscriptsInt(crefSubs(cr2));
   res := crefLexicalCompareSubsAtEnd2(subs1, subs2);
 end crefLexicalCompareSubsAtEnd;
 
@@ -376,7 +471,7 @@ algorithm
     // both are qualified, dive into
     case (DAE.CREF_QUAL(), DAE.CREF_QUAL())
       then prefixCref.ident == fullCref.ident and
-           Expression.subscriptEqual(prefixCref.subscriptLst, fullCref.subscriptLst) and
+           ExpressionBasics.subscriptEqual(prefixCref.subscriptLst, fullCref.subscriptLst) and
            crefPrefixOf(prefixCref.componentRef, fullCref.componentRef);
 
     // adrpo: 2010-10-07: first is an ID, second is qualified, see if one is prefix of the other
@@ -387,7 +482,7 @@ algorithm
     // first is an ID, second is qualified, see if one is prefix of the other
     case (DAE.CREF_IDENT(), DAE.CREF_QUAL())
       then prefixCref.ident == fullCref.ident and
-           Expression.subscriptEqual(prefixCref.subscriptLst, fullCref.subscriptLst);
+           ExpressionBasics.subscriptEqual(prefixCref.subscriptLst, fullCref.subscriptLst);
 
     // adrpo: 2010-10-07: first is an ID, second is an ID, see if one is prefix of the other
     //                    even if the first one DOESN'T HAVE SUBSCRIPTS!
@@ -396,7 +491,7 @@ algorithm
 
     case (DAE.CREF_IDENT(), DAE.CREF_IDENT())
       then prefixCref.ident == fullCref.ident and
-           Expression.subscriptEqual(prefixCref.subscriptLst, fullCref.subscriptLst);
+           ExpressionBasics.subscriptEqual(prefixCref.subscriptLst, fullCref.subscriptLst);
 
     // they are not a prefix of one-another
     else false;
@@ -497,7 +592,7 @@ algorithm
     case (DAE.CREF_IDENT(ident = n1,subscriptLst = (idx1 as _::_)),DAE.CREF_IDENT(ident = n2,subscriptLst = (idx2 as _::_)))
       algorithm
         true := stringEq(n1, n2);
-        true := Expression.subscriptEqual(idx1, idx2);
+        true := ExpressionBasics.subscriptEqual(idx1, idx2);
       then
         true;
         // BZ 2009-12
@@ -509,14 +604,14 @@ algorithm
     case (DAE.CREF_IDENT(ident = n1,subscriptLst = {}),DAE.CREF_IDENT(ident = n2,subscriptLst = (idx2 as _::_)))
       algorithm
         0 := System.stringFind(n1, n2); // n2 should be first in n1!
-        s1 := n2 + "[" + ExpressionDump.printListStr(idx2, ExpressionDump.printSubscriptStr, ",") + "]";
+        s1 := n2 + "[" + ExpressionBasics.printListStr(idx2, ExpressionBasics.printSubscriptStr, ",") + "]";
         true := stringEq(s1,n1);
       then
         true;
     case (DAE.CREF_IDENT(ident = n1,subscriptLst = (idx2 as _::_)),DAE.CREF_IDENT(ident = n2,subscriptLst = {}))
       algorithm
         0 := System.stringFind(n2, n1); // n1 should be first in n2!
-        s1 := n1 + "[" + ExpressionDump.printListStr(idx2, ExpressionDump.printSubscriptStr, ",") + "]";
+        s1 := n1 + "[" + ExpressionBasics.printListStr(idx2, ExpressionBasics.printSubscriptStr, ",") + "]";
         true := stringEq(s1,n2);
       then
         true;
@@ -525,7 +620,7 @@ algorithm
       algorithm
         true := stringEq(n1, n2);
         true := crefEqualVerySlowStringCompareDoNotUse(cr1, cr2);
-        true := Expression.subscriptEqual(idx1, idx2);
+        true := ExpressionBasics.subscriptEqual(idx1, idx2);
       then
         true;
     // this is a VERY expensive case! Do we NEED IT??!!
@@ -589,12 +684,12 @@ algorithm
   outEqual := match(inCref1, inCref2)
     case (DAE.CREF_IDENT(), DAE.CREF_IDENT())
       then inCref1.ident == inCref2.ident and
-           Expression.subscriptEqual(inCref1.subscriptLst, inCref2.subscriptLst);
+           ExpressionBasics.subscriptEqual(inCref1.subscriptLst, inCref2.subscriptLst);
 
     case (DAE.CREF_QUAL(), DAE.CREF_QUAL())
       then inCref1.ident == inCref2.ident and
            crefEqualNoStringCompare(inCref1.componentRef, inCref2.componentRef) and
-           Expression.subscriptEqual(inCref1.subscriptLst, inCref2.subscriptLst);
+           ExpressionBasics.subscriptEqual(inCref1.subscriptLst, inCref2.subscriptLst);
 
     else false;
   end match;
@@ -658,6 +753,137 @@ algorithm
     else false;
   end match;
 end crefEqualWithoutSubs2;
+
+public function crefStripLastSubs
+"Strips the last subscripts of a ComponentRef"
+  input DAE.ComponentRef inComponentRef;
+  output DAE.ComponentRef outComponentRef;
+algorithm
+  outComponentRef := match (inComponentRef)
+    local
+      DAE.Ident id;
+      list<DAE.Subscript> subs,s;
+      DAE.ComponentRef cr_1,cr;
+      DAE.Type t2;
+
+    case (DAE.CREF_IDENT(ident = id,identType = t2))
+      then
+        makeCrefIdent(id,t2,{});
+
+    case (DAE.CREF_QUAL(ident = id,identType = t2,subscriptLst = s,componentRef = cr))
+      algorithm
+        cr_1 := crefStripLastSubs(cr);
+      then
+        makeCrefQual(id,t2,s,cr_1);
+  end match;
+end crefStripLastSubs;
+
+public function makeCrefIdent
+"@author: adrpo
+  This function creates a DAE.CREF_IDENT(ident, identType, subscriptLst)"
+  input DAE.Ident ident;
+  input DAE.Type identType "type of the identifier, without considering the subscripts";
+  input list<DAE.Subscript> subscriptLst;
+  output DAE.ComponentRef outCrefIdent;
+  annotation(__OpenModelica_EarlyInline = true);
+algorithm
+  outCrefIdent := DAE.CREF_IDENT(ident, identType, subscriptLst);
+end makeCrefIdent;
+
+public function makeCrefQual
+"@author: adrpo
+  This function creates a DAE.CREF_QUAL(ident, identType, subscriptLst, componentRef)"
+  input DAE.Ident ident;
+  input DAE.Type identType "type of the identifier, without considering the subscripts";
+  input list<DAE.Subscript> subscriptLst;
+  input DAE.ComponentRef componentRef;
+  output DAE.ComponentRef outCrefQual;
+  annotation(__OpenModelica_EarlyInline = true);
+protected
+  DAE.ComponentRef subCref;
+algorithm
+  // subCref := shareCref(componentRef);
+  // outCrefQual := shareCref(DAE.CREF_QUAL(ident, identType, subscriptLst, subCref));
+  outCrefQual := DAE.CREF_QUAL(ident, identType, subscriptLst, componentRef);
+end makeCrefQual;
+
+public function printComponentRefStr
+"Print a ComponentRef.
+  LS: print functions that return a string instead of printing
+      Had to duplicate the huge printExp2 and modify.
+      An alternative would be to implement sprint somehow
+  which would need internal state, with reset and
+      getString methods.
+      Once these are tested and ok, the printExp above can
+      be replaced by a call to these _str functions and
+      printing the result."
+  input DAE.ComponentRef inComponentRef;
+  output String outString;
+algorithm
+  outString := match (inComponentRef)
+    local
+      DAE.Ident s,str,strrest,strseb;
+      list<DAE.Subscript> subs;
+      DAE.ComponentRef cr;
+      Boolean b;
+      Integer ix;
+
+    // Optimize -- a function call less
+    case (DAE.CREF_IDENT(ident = s,subscriptLst = {}))
+      then s;
+
+    // idents with subscripts
+    case DAE.CREF_IDENT(ident = s,subscriptLst = subs)
+      algorithm
+        str := printComponentRef2Str(s, subs);
+      then
+        str;
+
+    // Qualified - Modelica output - does not handle names with underscores
+    // Qualified - non Modelica output
+    case DAE.CREF_QUAL(ident = s,subscriptLst = subs,componentRef = cr)
+      algorithm
+        b := Config.modelicaOutput();
+        str := printComponentRef2Str(s, subs);
+        strrest := printComponentRefStr(cr);
+        strseb := if b then "__" else ".";
+        str := stringAppendList({str, strseb, strrest});
+      then
+        str;
+
+    // Wild
+    case DAE.WILD() then "_";
+  end match;
+end printComponentRefStr;
+
+public function printComponentRef2Str
+"Helper function to printComponentRefStr."
+  input DAE.Ident inIdent;
+  input list<DAE.Subscript> inSubscriptLst;
+  output String outString;
+algorithm
+  outString := match (inIdent,inSubscriptLst)
+    local
+      DAE.Ident s,str,strseba,strsebb;
+      list<DAE.Subscript> l;
+      Boolean b;
+
+    // no subscripts
+    case (s,{}) then s;
+
+    // some subscripts, Modelica output
+    // some subscripts, non Modelica output
+    case (s,l)
+      algorithm
+        b := Config.modelicaOutput();
+        str := ExpressionBasics.printListStr(l, ExpressionBasics.printSubscriptStr, ",");
+        ((strseba,strsebb)) := if b then ("_L","_R") else ("[","]");
+        str := stringAppendList({s, strseba, str, strsebb});
+      then
+        str;
+
+  end match;
+end printComponentRef2Str;
 
 annotation(__OpenModelica_Interface="frontend_dump");
 end ComponentReferenceBasics;

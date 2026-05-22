@@ -53,11 +53,11 @@ public import AbsynUtil;
 public import SCode;
 
 protected
+import BackendInterface;
 import Config;
 import Debug;
 import Error;
 import Flags;
-import InstHashTable;
 import List;
 import MetaUtil;
 import SCodeUtil;
@@ -87,7 +87,7 @@ algorithm
 
     case _
       algorithm
-        InstHashTable.init();
+        BackendInterface.initInstHashTable();
         // adrpo: TODO! FIXME! disable function caching for now as some tests fail.
         // setGlobalRoot(Ceval.cevalHashIndex, Ceval.emptyCevalHashTable());
         Absyn.PROGRAM(classes=inClasses) := MetaUtil.createMetaClassesInProgram(inProgram);

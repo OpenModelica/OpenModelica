@@ -575,7 +575,7 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- InstBinding.instModEquation failed\n type: ");
-        Debug.trace(Types.printTypeStr(inType));
+        Debug.trace(TypesDump.printTypeStr(inType));
         Debug.trace("\n  cref: ");
         Debug.trace(ComponentReference.printComponentRefStr(inComponentRef));
         Debug.trace("\n mod:");
@@ -770,7 +770,7 @@ protected
   DAE.Exp exp;
   Values.Value val;
 algorithm
-  dims := Types.getDimensions(inRecordType);
+  dims := TypesDump.getDimensions(inRecordType);
 
   try
     for var in inRecordVars loop
@@ -791,7 +791,7 @@ algorithm
         ety := Types.simplifyType(ty);
         ty := Types.liftArrayListDims(ty, dims);
         scope := FGraph.printGraphPathStr(inEnv);
-        ty_str := Types.printTypeStr(ty);
+        ty_str := TypesDump.printTypeStr(ty);
         exp := DAE.EMPTY(scope, DAE.CREF_IDENT(name, ety, {}), ety, ty_str);
         val := Values.EMPTY(scope, name, Types.typeToValue(ty), ty_str);
       end if;

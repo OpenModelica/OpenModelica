@@ -1633,7 +1633,7 @@ algorithm
         end match;
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name) := lookupVarInPackages(cache,env5,cref,prevFrames,inState);
          // Add the class name to the spliced exp so that the name is correct.
-         splicedExpData := prefixSplicedExp(ComponentReference.crefFirstCref(inComponentRef), splicedExpData);
+         splicedExpData := prefixSplicedExp(ComponentReferenceBasics.crefFirstCref(inComponentRef), splicedExpData);
       then
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name);
 
@@ -1753,7 +1753,7 @@ algorithm
               cr := lookupQualifiedImportedVarInFrame(qimports, id);
               Mutable.update(inState,true);
         // if the first name of the import A.B is equal with the scope we are in, skip it!
-        cr := if FNode.name(FNode.fromRef(FGraph.lastScopeRef(env))) == ComponentReference.crefFirstIdent(cr)
+        cr := if FNode.name(FNode.fromRef(FGraph.lastScopeRef(env))) == ComponentReferenceBasics.crefFirstIdent(cr)
              then ComponentReference.crefStripFirstIdent(cr)
            else cr;
               f::prevFrames := listReverse(FGraph.currentScope(env));
@@ -3077,7 +3077,7 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Lookup.checkSubscripts failed (tp: ");
-        Debug.trace(Types.printTypeStr(t));
+        Debug.trace(TypesDump.printTypeStr(t));
         Debug.trace(" subs:");
         Debug.trace(stringDelimitList(List.map(s,ExpressionDump.printSubscriptStr),","));
         Debug.trace(")\n");
@@ -3151,7 +3151,7 @@ algorithm
         (attr,ty,binding,cnstForRange,componentEnv,name) := match tyParent
           case DAE.T_METAARRAY()
             algorithm
-              true := listLength(Types.getDimensions(tyParent)) == listLength(ss);
+              true := listLength(TypesDump.getDimensions(tyParent)) == listLength(ss);
               (cache,attr,ty,binding,cnstForRange,name) := lookupVarFMetaModelica(cache, componentEnv, ids, Types.metaArrayElementType(tyParent));
               splicedExpData := InstTypes.SPLICEDEXPDATA(NONE(),ty);
             then (attr,ty,binding,cnstForRange,componentEnv,name);
@@ -3298,14 +3298,14 @@ algorithm
         tyElement := Types.arrayElementType(inParentType);
         true := Types.isRecord(tyElement);
 
-        // print("CREF EB: " + ComponentReference.printComponentRefStr(inCref) + "\nTyParent: " + Types.printTypeStr(inParentType) + "\nParent:\n" + Types.printBindingStr(inParentBinding) + "\nChild:\n" + Types.printBindingStr(inChildBinding) + "\n");
+        // print("CREF EB: " + ComponentReference.printComponentRefStr(inCref) + "\nTyParent: " + TypesDump.printTypeStr(inParentType) + "\nParent:\n" + TypesDump.printBindingStr(inParentBinding) + "\nChild:\n" + TypesDump.printBindingStr(inChildBinding) + "\n");
 
         DAE.RECORD(_, exps, comp, _) := Expression.applyExpSubscripts(e, ss);
 
         e := listGet(exps, List.position(cId, comp));
         b := DAE.EQBOUND(e, NONE(), c, s);
 
-        // print("CREF EB RESULT: " + ComponentReference.printComponentRefStr(inCref) + "\nBinding:\n" + Types.printBindingStr(b) + "\n");
+        // print("CREF EB RESULT: " + ComponentReference.printComponentRefStr(inCref) + "\nBinding:\n" + TypesDump.printBindingStr(b) + "\n");
       then
         b;
 
@@ -3325,14 +3325,14 @@ algorithm
         true := Types.isArray(inParentType);
         tyElement := Types.arrayElementType(inParentType);
         true := Types.isRecord(tyElement);
-        // print("CREF VB: " + ComponentReference.printComponentRefStr(inCref) + "\nTyParent: " + Types.printTypeStr(inParentType) + "\nParent:\n" + Types.printBindingStr(inParentBinding) + "\nChild:\n" + Types.printBindingStr(inChildBinding) + "\n");
+        // print("CREF VB: " + ComponentReference.printComponentRefStr(inCref) + "\nTyParent: " + TypesDump.printTypeStr(inParentType) + "\nParent:\n" + TypesDump.printBindingStr(inParentBinding) + "\nChild:\n" + TypesDump.printBindingStr(inChildBinding) + "\n");
         e := ValuesUtil.valueExp(v);
         DAE.RECORD(_, exps, comp, _) := Expression.applyExpSubscripts(e, ss);
 
         e := listGet(exps, List.position(cId, comp));
 
         b := DAE.EQBOUND(e, NONE(), DAE.C_CONST(), s);
-        // print("CREF VB RESULT: " + ComponentReference.printComponentRefStr(inCref) + "\nBinding:\n" + Types.printBindingStr(b) + "\n");
+        // print("CREF VB RESULT: " + ComponentReference.printComponentRefStr(inCref) + "\nBinding:\n" + TypesDump.printBindingStr(b) + "\n");
       then
         b;
 
@@ -3385,7 +3385,7 @@ algorithm
     case(_, _)
       algorithm
         true := Types.isArray(tySub);
-        dims := Types.getDimensions(tySub);
+        dims := TypesDump.getDimensions(tySub);
         subs := List.map(dims, makeDimensionSubscript);
         subs := expandWholeDimSubScript(ss,subs);
       then subs;
@@ -3580,7 +3580,7 @@ algorithm
         ht := FNode.children(FNode.fromRef(ref));
         // Only look up the first part of the cref, we're only interested in if
         // it exists and if it's an iterator or not.
-        id := ComponentReference.crefFirstIdent(inCref);
+        id := ComponentReferenceBasics.crefFirstIdent(inCref);
         (DAE.TYPES_VAR(constOfForIteratorRange = ic),_,_,_,_) := lookupVar2(ht, id, inEnv);
         b := isSome(ic);
       then

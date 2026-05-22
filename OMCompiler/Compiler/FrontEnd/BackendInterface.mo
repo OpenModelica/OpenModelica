@@ -50,6 +50,7 @@ uniontype BackendInterfaceFunctions
     partialNoRewriteRulesFrontEnd noRewriteRulesFrontEnd;
     partialRewriteFrontEnd rewriteFrontEnd;
     partialAppendLibrary appendLibrary;
+    partialInitInstHashTable initInstHashTable;
   end BACKEND_INTERFACE_FUNCTIONS;
 end BackendInterfaceFunctions;
 
@@ -97,6 +98,16 @@ algorithm
   (program, success) := func(modelName, modelicaPath);
 end appendLibrary;
 
+function initInstHashTable
+protected
+  BackendInterfaceFunctions functions;
+  partialInitInstHashTable func;
+algorithm
+  functions := getGlobalRoot(Global.backendInterface);
+  func := functions.initInstHashTable;
+  func();
+end initInstHashTable;
+
 partial function partialNoRewriteRulesFrontEnd
   output Boolean noRules;
 end partialNoRewriteRulesFrontEnd;
@@ -113,6 +124,9 @@ partial function partialAppendLibrary
   output Absyn.Program program;
   output Boolean success;
 end partialAppendLibrary;
+
+partial function partialInitInstHashTable
+end partialInitInstHashTable;
 
 annotation(__OpenModelica_Interface="frontend_dump");
 end BackendInterface;

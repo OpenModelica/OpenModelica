@@ -380,7 +380,7 @@ algorithm
   DAE.CREF(lhsRef, ty) := lhsExp;
   // print("StateMachineFlatten.smeqsSubsXInState: cref: " + ComponentReference.printComponentRefStr(cref) + "\n");
   // print("StateMachineFlatten.smeqsSubsXInState: lhsRef: " + ComponentReference.printComponentRefStr(lhsRef) + "\n");
-  if ComponentReference.crefEqual(cref, lhsRef) then
+  if ComponentReferenceBasics.crefEqual(cref, lhsRef) then
     // print("StateMachineFlatten.smeqsSubsXInState: rhsExp: " + ExpressionDump.printExpStr(rhsExp) + "\n");
     (rhsExp2, _) :=  Expression.traverseExpTopDown(rhsExp, traversingSubsXInState, (xInState, substExp, false));
     // print("StateMachineFlatten.smeqsSubsXInState: rhsExp2: " + ExpressionDump.printExpStr(rhsExp2) + "\n");
@@ -556,7 +556,7 @@ algorithm
     eqn := DAE.EQUATION(exp, scalarNew, source);
 
     // If it is an assigning state equation, transform equation 'a.x = e' to 'a.x = if a.active then e else a.x_previous'
-    if List.any(stateVarCrefs, function ComponentReference.crefEqual(inComponentRef1=crefLHS)) then
+    if List.any(stateVarCrefs, function ComponentReferenceBasics.crefEqual(inComponentRef1=crefLHS)) then
       // Transform equation 'a.x = e' to 'a.x = if a.active then e else a.x_previous'
       eqn1 := wrapInStateActivationConditional(eqn, enclosingStateRef, true);
 
@@ -647,7 +647,7 @@ algorithm
         try
           // Handle case with LHS component reference
           DAE.CREF(componentRef=crefLHS, ty=tyLHS) := exp;
-          res := ComponentReference.crefEqual(crefLHS, cref);
+          res := ComponentReferenceBasics.crefEqual(crefLHS, cref);
         else
           res := false;
         end try;
@@ -715,7 +715,7 @@ algorithm
   (outExp, outCrefHit) := match (inExp, inCrefHit)
     local
       DAE.ComponentRef cr, cref;
-    case (DAE.CALL(Absyn.IDENT("previous"), {DAE.CREF(cr, _)}, _), (cref, _)) guard ComponentReference.crefEqual(cr, cref)
+    case (DAE.CALL(Absyn.IDENT("previous"), {DAE.CREF(cr, _)}, _), (cref, _)) guard ComponentReferenceBasics.crefEqual(cr, cref)
       then (inExp, (cref, true));
     else (inExp, inCrefHit);
   end match;
@@ -825,7 +825,7 @@ algorithm
   result := match (inElement)
     local
       DAE.ComponentRef cref;
-    case DAE.VAR(componentRef=cref) guard ComponentReference.crefEqual(cref, inCref) then true;
+    case DAE.VAR(componentRef=cref) guard ComponentReferenceBasics.crefEqual(cref, inCref) then true;
     else then false;
   end match;
 end isCrefInVar;
@@ -1010,7 +1010,7 @@ algorithm
       DAE.CallAttributes attr;
       DAE.Type ty;
     case (DAE.CALL(Absyn.IDENT("previous"), {DAE.CREF(cr, ty)}, _),
-      (cref, _)) guard ComponentReference.crefEqual(cr, cref)
+      (cref, _)) guard ComponentReferenceBasics.crefEqual(cr, cref)
       algorithm
         print("StateMachineFlatten.traversingSubsPreviousCref: cr: "+ComponentReference.crefStr(cr)+", cref: "+ComponentReference.crefStr(cref)+"\n");
         substituteRef := ComponentReference.appendStringLastIdent("_previous", cref);
@@ -1039,7 +1039,7 @@ algorithm
       DAE.CallAttributes attr;
       DAE.Type ty;
     case (DAE.CALL(Absyn.IDENT("previous"), {DAE.CREF(cr, ty)}, _), (crefs, _))
-      guard List.any(crefs, function ComponentReference.crefEqual(inComponentRef1=cr))
+      guard List.any(crefs, function ComponentReferenceBasics.crefEqual(inComponentRef1=cr))
       algorithm
         // print("StateMachineFlatten.traversingSubsPreviousCrefs: cr: "+ComponentReference.crefStr(cr)+", crefs: " + stringDelimitList(List.map(crefs, ComponentReference.crefStr), ",")+"\n");
         substituteRef := ComponentReference.appendStringLastIdent("_previous", cr);
@@ -1967,7 +1967,7 @@ algorithm
   result := match (inElement)
     local
       DAE.ComponentRef cref;
-    case DAE.SM_COMP(cref) guard ComponentReference.crefEqual(cref, inCref) then true;
+    case DAE.SM_COMP(cref) guard ComponentReferenceBasics.crefEqual(cref, inCref) then true;
     else false;
   end match;
 end sMCompEqualsRef;
@@ -2050,9 +2050,9 @@ algorithm
     case DAE.EQUATION(exp=exp)
       algorithm
         DAE.CREF(componentRef=cref) := exp;
-        firstIdent := ComponentReference.crefFirstIdent(cref);
+        firstIdent := ComponentReferenceBasics.crefFirstIdent(cref);
         true := firstIdent == "smOf";
-        lastIdent := ComponentReference.crefLastIdent(cref);
+        lastIdent := ComponentReferenceBasics.crefLastIdent(cref);
         true := lastIdent == inLastIdent;
       then exp;
   end match;

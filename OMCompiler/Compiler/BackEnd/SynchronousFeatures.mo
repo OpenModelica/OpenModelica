@@ -374,7 +374,7 @@ algorithm
           then ();
           else ();
         end match;
-        if not ComponentReference.crefInLst(x, derVars) then
+        if not ComponentReferenceBasics.crefInLst(x, derVars) then
           derVars := x :: derVars;
         end if;
         outDerVars := (derVars, optForIter);
@@ -409,7 +409,7 @@ algorithm
       DAE.Exp exp;
     // introduce previous()
     case DAE.CREF(componentRef = x)
-      guard ComponentReference.crefInLst(x, inDerVars)
+      guard ComponentReferenceBasics.crefInLst(x, inDerVars)
       algorithm
         exp := DAE.CALL(Absyn.IDENT(name = "previous"), {inExp}, DAE.callAttrBuiltinImpureReal);
       then exp;

@@ -1085,7 +1085,7 @@ algorithm
     case DAE.FUNCTION(path = fpath, functions = (DAE.FUNCTION_DEF(body = daeElts)::_),
                       type_ = t,isImpure = isImpure,comment = c)
       algorithm
-        typeStr := Types.printTypeStr(t);
+        typeStr := TypesDump.printTypeStr(t);
         Print.printBuf(typeStr);
         parallelism_str := dumpParallelismStr(t);
         Print.printBuf(parallelism_str);
@@ -2450,7 +2450,7 @@ algorithm
       algorithm
         DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path)) :=
           Types.arrayElementType(ty);
-        dims := Types.getDimensions(tp);
+        dims := TypesDump.getDimensions(tp);
         name := AbsynUtil.pathStringNoQual(path);
         dim_str := List.toString(dims, ExpressionDump.dimensionString, "", "[",
             ", ", "]", false);
@@ -3257,7 +3257,7 @@ protected
 algorithm
   (ty, ty_vars) := Types.stripTypeVars(inType);
   outTypeStr := unparseType(ty);
-  outTypeAttrStr := List.toString(ty_vars, Types.unparseVarAttr, "", "(", ", ", ")", false);
+  outTypeAttrStr := List.toString(ty_vars, TypesDump.unparseVarAttr, "", "(", ", ", ")", false);
 end printTypeStr;
 
 public function dumpCallAttr

@@ -384,7 +384,7 @@ algorithm
       list<DAE.Exp> expLst;
       DAE.CallAttributes attr;
     case DAE.CALL(path=Absyn.IDENT("der"), expLst={DAE.CREF(componentRef=componentRef)})
-      guard ComponentReference.crefEqual(componentRef, cref)
+      guard ComponentReferenceBasics.crefEqual(componentRef, cref)
         then (inExp, (cref, hitCount + 1));
     else (inExp,inCref_HitCount);
   end match;
@@ -475,7 +475,7 @@ protected
   DAE.ComponentRef tuple22;
 algorithm
   tuple22 := Util.tuple22(inHashEntry);
-  isEqual := ComponentReference.crefEqual(tuple22, inCref);
+  isEqual := ComponentReferenceBasics.crefEqual(tuple22, inCref);
   if (not isEqual) then fail(); end if;
   outCref := Util.tuple21(inHashEntry);
 end crefEqualTuple22;
@@ -525,7 +525,7 @@ Helper function to mergeVariableDefinitions
 protected
   DAE.ComponentRef crefIdent, crefFound, strippedCref1, strippedCref2;
 algorithm
-  crefIdent := ComponentReference.crefLastCref(inOuterCref);
+  crefIdent := ComponentReferenceBasics.crefLastCref(inOuterCref);
 
   // inOuterCref is supposed to be "outer" or "inner outer" and we want to move one level up the instance hierachy for starting the search for the corresponding inner
   strippedCref1 := ComponentReference.crefStripLastIdent(inOuterCref);
@@ -654,7 +654,7 @@ algorithm
       then fail();
   end match;
 
-  outResult := ComponentReference.crefEqual(crefCorrespondingFlatSMGroup, smInitialCref);
+  outResult := ComponentReferenceBasics.crefEqual(crefCorrespondingFlatSMGroup, smInitialCref);
 end isInFlatSM;
 
 protected function isSMComp "

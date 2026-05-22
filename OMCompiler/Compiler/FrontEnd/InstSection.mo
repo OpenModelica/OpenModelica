@@ -939,7 +939,7 @@ algorithm
     case DAE.PROP(constFlag = cnst)
       algorithm
         false := Types.isVar(cnst);
-        cnst_str := Types.unparseConst(cnst);
+        cnst_str := TypesDump.unparseConst(cnst);
         cref_str := ComponentReference.printComponentRefStr(inCref);
         Error.addSourceMessage(Error.REINIT_MUST_BE_VAR,
           {cref_str, cnst_str}, inInfo);
@@ -1611,7 +1611,7 @@ algorithm
         b1 := Expression.containVectorFunctioncall(lhs);
         b2 := Expression.containVectorFunctioncall(rhs);
         true := boolOr(b1, b2);
-        ds := Types.getDimensions(tp);
+        ds := TypesDump.getDimensions(tp);
         elt := DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source);
         source := ElementSource.addSymbolicTransformationFlattenedEqs(source, elt);
       then
@@ -1623,7 +1623,7 @@ algorithm
         b1 := Expression.containVectorFunctioncall(lhs);
         b2 := Expression.containVectorFunctioncall(rhs);
         true := boolOr(b1, b2);
-        ds := Types.getDimensions(tp);
+        ds := TypesDump.getDimensions(tp);
         elt := DAE.ARRAY_EQUATION(ds, lhs, rhs, source);
         source := ElementSource.addSymbolicTransformationFlattenedEqs(source, elt);
       then
@@ -1663,7 +1663,7 @@ algorithm
         true := Config.splitArrays();
         true := Expression.dimensionKnown(dim);
         true := Expression.isRange(lhs) or Expression.isRange(rhs) or Expression.isReduction(lhs) or Expression.isReduction(rhs);
-        ds := Types.getDimensions(tp);
+        ds := TypesDump.getDimensions(tp);
         b := SCodeUtil.isInitial(initial_);
         elt := if b then DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source) else DAE.ARRAY_EQUATION(ds, lhs, rhs, source);
         source := ElementSource.addSymbolicTransformationFlattenedEqs(source, elt);
@@ -3350,7 +3350,7 @@ algorithm
         envComponentEmpty := FGraph.removeComponentsFromScope(envComponent);
 
         // get the dimensions from the type!
-        daeDims := Types.getDimensions(ty2);
+        daeDims := TypesDump.getDimensions(ty2);
         arrDims := List.map(daeDims,Expression.unelabDimension);
         // add to the environment of the expandable
         // connector the new virtual variable.
@@ -3437,7 +3437,7 @@ algorithm
         envComponentEmpty := FGraph.removeComponentsFromScope(envComponent);
 
         // get the dimensions from the type!
-        daeDims := Types.getDimensions(ty2);
+        daeDims := TypesDump.getDimensions(ty2);
         arrDims := List.map(daeDims,Expression.unelabDimension);
         // add to the environment of the expandable
         // connector the new virtual variable.
@@ -3498,7 +3498,7 @@ algorithm
         (cache,c1_2) := PrefixUtil.prefixCref(cache, env, ih, pre, c1_2);
 
         // get the dimensions from the ty1 type!
-        daeDims := Types.getDimensions(ty1);
+        daeDims := TypesDump.getDimensions(ty1);
         arrDims := List.map(daeDims,Expression.unelabDimension);
         daeExpandable := generateExpandableDAE(cache,env,envExpandable,
           c1_2,
@@ -3580,7 +3580,7 @@ algorithm
     case (_, _, _, _, _, _, _, _, _, _)
       algorithm
         // get the dimensions from the type!
-        daeDims := Types.getDimensions(ty);
+        daeDims := TypesDump.getDimensions(ty);
         _ := List.map(daeDims,Expression.unelabDimension);
         if listEmpty(daeDims)
         then // empty dimensions
@@ -3694,7 +3694,7 @@ algorithm
     case (cache, topEnv, veCref as DAE.CREF_QUAL(), veAttr, veTy, veBinding, veCnstForRange, veEnv)
       algorithm
         // get the last one
-        currentName := ComponentReference.crefLastIdent(veCref);
+        currentName := ComponentReferenceBasics.crefLastIdent(veCref);
         // strip the last one
         qualCref := ComponentReference.crefStripLastIdent(veCref);
         // strip the last subs
@@ -3954,8 +3954,8 @@ algorithm
         t1 := Types.arrayElementType(inLhsType);
         t2 := Types.arrayElementType(inRhsType);
         false := Types.equivtypesOrRecordSubtypeOf(t1, t2);
-        (_, cs1) := Types.printConnectorTypeStr(t1);
-        (_, cs2) := Types.printConnectorTypeStr(t2);
+        (_, cs1) := TypesDump.printConnectorTypeStr(t1);
+        (_, cs2) := TypesDump.printConnectorTypeStr(t2);
         cref_str1 := ComponentReference.printComponentRefStr(inLhsCref);
         cref_str2 := ComponentReference.printComponentRefStr(inRhsCref);
         Error.addSourceMessage(Error.CONNECT_INCOMPATIBLE_TYPES,
@@ -3966,8 +3966,8 @@ algorithm
     // Different dimensionality.
     case (_, _, _, _, _)
       algorithm
-        dims1 := Types.getDimensions(inLhsType);
-        dims2 := Types.getDimensions(inRhsType);
+        dims1 := TypesDump.getDimensions(inLhsType);
+        dims2 := TypesDump.getDimensions(inRhsType);
         false := List.isEqualOnTrue(dims1, dims2, Expression.dimensionsEqual);
         false := (listEmpty(dims1) and listEmpty(dims2));
         cref_str1 := ComponentReference.printComponentRefStr(inLhsCref);
@@ -4293,8 +4293,8 @@ algorithm
         c2, f2, t2 as DAE.T_ARRAY(), _,
         ct,_,_,graph,_)
       algorithm
-        dims := Types.getDimensions(t1);
-        dims2 := Types.getDimensions(t2);
+        dims := TypesDump.getDimensions(t1);
+        dims2 := TypesDump.getDimensions(t2);
         true := List.isEqualOnTrue(dims, dims2, Expression.dimensionsKnownAndEqual);
 
         // set the source of this element
@@ -5418,7 +5418,7 @@ algorithm
   local
     DAE.ComponentRef cref1;
 
-    case(_,(cref1,_)) then ComponentReference.crefEqualWithoutSubs(cref1,inFoundCref);
+    case(_,(cref1,_)) then ComponentReferenceBasics.crefEqualWithoutSubs(cref1,inFoundCref);
   end match;
 end crefInfoListCrefsEqual;
 

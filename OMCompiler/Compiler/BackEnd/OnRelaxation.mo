@@ -2212,7 +2212,7 @@ algorithm
         elst := Expression.flattenArrayExpToList(e1);
         // check if all elements crefs
         crlst := List.map(elst, Expression.expCrefNegCref);
-        //crlst = List.uniqueOnTrue(crlst, ComponentReference.crefEqualNoStringCompare);
+        //crlst = List.uniqueOnTrue(crlst, ComponentReferenceBasics.crefEqualNoStringCompare);
         vlst := sortVarsforOrder1(crlst, 1, inVarLst, vindxs, arrayCreate(listLength(vindxs), NONE()), vars);
       then
         vlst;
@@ -2222,7 +2222,7 @@ algorithm
         elst := Expression.flattenArrayExpToList(e1);
         // check if all elements crefs
         crlst := List.map(elst, Expression.expCrefNegCref);
-        //crlst = List.uniqueOnTrue(crlst, ComponentReference.crefEqualNoStringCompare);
+        //crlst = List.uniqueOnTrue(crlst, ComponentReferenceBasics.crefEqualNoStringCompare);
         vlst := sortVarsforOrder1(crlst, 1, inVarLst, vindxs, arrayCreate(listLength(vindxs), NONE()), vars);
       then
         vlst;
@@ -3302,10 +3302,10 @@ algorithm
         elst := Expression.flattenArrayExpToList(e1);
         // check if all elements crefs
         crlst := List.map(elst, Expression.expCrefNegCref);
-        crlst := List.uniqueOnTrue(crlst, ComponentReference.crefEqualNoStringCompare);
+        crlst := List.uniqueOnTrue(crlst, ComponentReferenceBasics.crefEqualNoStringCompare);
         true := intEq(size, listLength(crlst));
         cr::crlst1 := crlst;
-        true := List.all(crlst1, function ComponentReference.crefEqualWithoutLastSubs(cr2 = cr));
+        true := List.all(crlst1, function ComponentReferenceBasics.crefEqualWithoutLastSubs(cr2 = cr));
         // check if crefs no on other side
         set := HashSet.emptyHashSet();
         crnosubs := ComponentReference.crefStripLastSubs(cr);
@@ -3325,10 +3325,10 @@ algorithm
         elst := Expression.flattenArrayExpToList(e2);
         // check if all elements crefs
         crlst := List.map(elst, Expression.expCrefNegCref);
-        crlst := List.uniqueOnTrue(crlst, ComponentReference.crefEqualNoStringCompare);
+        crlst := List.uniqueOnTrue(crlst, ComponentReferenceBasics.crefEqualNoStringCompare);
         true := intEq(size, listLength(crlst));
         cr::crlst1 := crlst;
-        true := List.all(crlst1, function ComponentReference.crefEqualWithoutLastSubs(cr2 = cr));
+        true := List.all(crlst1, function ComponentReferenceBasics.crefEqualWithoutLastSubs(cr2 = cr));
         // check if crefs no on other side
         set := HashSet.emptyHashSet();
         crnosubs := ComponentReference.crefStripLastSubs(cr);

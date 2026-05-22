@@ -4133,7 +4133,7 @@ algorithm
       then (repl_acc,eqns_acc,removed_vars_acc);
     case(_,h::t,_,_,_,_,_,_)
       algorithm // ignore if the current cref is the solution
-        true:=ComponentReference.crefEqual(solution,h);
+        true:=ComponentReferenceBasics.crefEqual(solution,h);
         (new_repl,new_eqns,new_removed_vars):=createReplacementsAndEquationsForSet(solution,t,set,vars,globalKnownVars,repl_acc,eqns_acc,removed_vars_acc);
       then (new_repl,new_eqns,new_removed_vars);
     case(_,h::t,_,_,_,_,_,_)

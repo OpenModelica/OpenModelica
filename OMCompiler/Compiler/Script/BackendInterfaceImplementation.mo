@@ -45,20 +45,24 @@ public import Values;
 
 protected
 import BackendInterface;
+import BackendCevalInterface;
 import CevalScript;
 import RewriteRules;
 import StaticScript;
 import SymbolTable;
+import InstHashTable;
 
 public function initializeBackendInterface
 algorithm
   BackendInterface.initializeBackendInterface(BackendInterface.BACKEND_INTERFACE_FUNCTIONS(
-    cevalInteractiveFunctions,
-    cevalCallFunction,
-    elabCallInteractive,
     noRewriteRulesFrontEnd,
     rewriteFrontEnd,
-    appendLibrary));
+    appendLibrary,
+    InstHashTable.init));
+  BackendCevalInterface.initializeBackendInterface(BackendCevalInterface.BACKEND_INTERFACE_FUNCTIONS(
+    cevalInteractiveFunctions,
+    cevalCallFunction,
+    elabCallInteractive));
 end initializeBackendInterface;
 
 protected

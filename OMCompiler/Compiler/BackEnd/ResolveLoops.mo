@@ -1768,7 +1768,7 @@ algorithm
   case(DAE.CREF(componentRef=cref),_)
     algorithm
       // just a cref
-      sameCref := ComponentReference.crefEqualNoStringCompare(crefIn,cref);
+      sameCref := ComponentReferenceBasics.crefEqualNoStringCompare(crefIn,cref);
     then
       (sameCref,true);
   case(DAE.BINARY(exp1=exp1, operator = DAE.SUB(), exp2=exp2),_)

@@ -120,44 +120,6 @@ algorithm
   (outCache, outExp, outProperties) := func(inCache, inEnv, inCref, inExps, inNamedArgs, inImplInst, inPrefix, inInfo);
 end elabCallInteractive;
 
-function noRewriteRulesFrontEnd
-  output Boolean noRules;
-protected
-  BackendInterfaceFunctions functions;
-  partialNoRewriteRulesFrontEnd func;
-algorithm
-  functions := getGlobalRoot(Global.backendInterface);
-  func := functions.noRewriteRulesFrontEnd;
-  noRules := func();
-end noRewriteRulesFrontEnd;
-
-function rewriteFrontEnd
-  input Absyn.Exp inExp;
-  output Absyn.Exp outExp;
-  output Boolean isChanged;
-protected
-  BackendInterfaceFunctions functions;
-  partialRewriteFrontEnd func;
-algorithm
-  functions := getGlobalRoot(Global.backendInterface);
-  func := functions.rewriteFrontEnd;
-  (outExp,isChanged) := func(inExp);
-end rewriteFrontEnd;
-
-function appendLibrary
-  input Absyn.Path modelName;
-  input String modelicaPath;
-  output Absyn.Program program;
-  output Boolean success;
-protected
-  BackendInterfaceFunctions functions;
-  partialAppendLibrary func;
-algorithm
-  functions := getGlobalRoot(Global.backendInterface);
-  func := functions.appendLibrary;
-  (program, success) := func(modelName, modelicaPath);
-end appendLibrary;
-
 partial function partialCevalInteractiveFunctions
   input FCore.Cache inCache;
   input FCore.Graph inEnv;

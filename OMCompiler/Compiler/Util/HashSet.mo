@@ -90,7 +90,7 @@ public function emptyHashSetSized
   input Integer size;
   output HashSet hashSet;
 algorithm
-  hashSet := BaseHashSet.emptyHashSetWork(size,(ComponentReference.hashComponentRef,ComponentReference.crefEqual,ComponentReference.printComponentRefStr));
+  hashSet := BaseHashSet.emptyHashSetWork(size,(ComponentReference.hashComponentRef,ComponentReferenceBasics.crefEqual,ComponentReference.printComponentRefStr));
 end emptyHashSetSized;
 
 annotation(__OpenModelica_Interface="frontend");

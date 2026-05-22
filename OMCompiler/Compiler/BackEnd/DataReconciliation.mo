@@ -2169,7 +2169,7 @@ algorithm
     elseif BackendVariable.isParam(var) then
       outstring := outstring + "\n  parameter "  + DAEDump.daeTypeStr(var.varType) + " " + System.stringReplace(ComponentReference.crefStr(cr), ".", "_") + " = " + ExpressionDump.printOptExpStr(var.bindExp) +";";
     elseif isRec and not listMember(ComponentReference.crefStr(cr1), recordvarlist) then
-      creflast := ComponentReference.crefLastCref(cr1);
+      creflast := ComponentReferenceBasics.crefLastCref(cr1);
       path := Types.getRecordPath(ComponentReference.crefType(creflast));
       recordvarlist := ComponentReference.crefStr(cr1) :: recordvarlist;
       outstring := outstring + "\n  "  + AbsynUtil.pathString(path) + " " + System.stringReplace(ComponentReference.crefStr(cr1), ".", "_") + ";";

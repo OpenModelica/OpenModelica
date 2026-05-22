@@ -390,7 +390,7 @@ algorithm
         array<list<MidCode.Stmt>> assignBlock;
       case DAE.STMT_ASSIGN(_, exp1 as DAE.CREF(__), exp, _)
       algorithm
-        cref := ComponentReference.crefLastCref(exp1.componentRef); //gå runt CREF_QUAL tills vidare
+        cref := ComponentReferenceBasics.crefLastCref(exp1.componentRef); //gå runt CREF_QUAL tills vidare
         varCref := CrefToMidVar(cref,state);
 
         stateAddStmt(MidCode.ASSIGN(varCref, ExpToMid(exp, state)), state);

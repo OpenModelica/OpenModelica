@@ -62,6 +62,63 @@ algorithm
   end matchcontinue;
 end commentIsInlineFunc;
 
+protected function isInlineFunc2
+  input list<SCode.SubMod> inSubModList;
+  output DAE.InlineType res;
+protected
+  Boolean stop = false;
+algorithm
+
+  res := DAE.DEFAULT_INLINE();
+
+  for tp in inSubModList loop
+    stop := match tp
+
+       case SCode.NAMEMOD("Inline",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
+         algorithm
+           res := DAE.NORM_INLINE();
+         then false;
+
+       case SCode.NAMEMOD("Inline",SCode.MOD(binding = SOME(Absyn.BOOL(false))))
+         algorithm
+           res := DAE.NO_INLINE();
+         then false;
+
+       case SCode.NAMEMOD("LateInline",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
+         algorithm
+          res := DAE.AFTER_INDEX_RED_INLINE();
+         then true;
+
+       case SCode.NAMEMOD("__MathCore_InlineAfterIndexReduction",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
+         algorithm
+          res := DAE.AFTER_INDEX_RED_INLINE();
+         then true;
+
+       case SCode.NAMEMOD("__Dymola_InlineAfterIndexReduction",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
+         algorithm
+          res := DAE.AFTER_INDEX_RED_INLINE();
+         then true;
+
+       case SCode.NAMEMOD("InlineAfterIndexReduction",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
+         algorithm
+          res := DAE.AFTER_INDEX_RED_INLINE();
+         then true;
+
+       case SCode.NAMEMOD("__OpenModelica_EarlyInline",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
+         algorithm
+          res := DAE.EARLY_INLINE();
+         then true;
+       else false;
+       end match;
+
+     if stop then
+       break;
+     end if;
+
+  end for;
+
+end isInlineFunc2;
+
 public function commentGenerateEvents
   input SCode.Comment cmt;
   output Boolean generateEvents;

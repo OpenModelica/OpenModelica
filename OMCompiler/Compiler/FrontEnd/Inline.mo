@@ -1068,7 +1068,7 @@ algorithm
     case (DAE.STMT_IF(exp = exp,
            statementLst = {DAE.STMT_ASSIGN(exp1 = DAE.CREF(componentRef = cr1), exp = exp1)},
            else_=DAE.ELSE(statementLst={DAE.STMT_ASSIGN(exp1 = DAE.CREF(componentRef = cr2), exp = exp2)}))::stmts,_,_)
-      guard ComponentReference.crefEqual(cr1, cr2)
+      guard ComponentReferenceBasics.crefEqual(cr1, cr2)
       algorithm
         (exp,_) := VarTransform.replaceExp(exp,iRepl,NONE());
         (exp1,_) := VarTransform.replaceExp(exp1,iRepl,NONE());
@@ -1080,7 +1080,7 @@ algorithm
     case (DAE.STMT_IF(exp = exp,
            statementLst = {DAE.STMT_ASSIGN_ARR(lhs = DAE.CREF(componentRef = cr1), exp = exp1)},
            else_=DAE.ELSE(statementLst={DAE.STMT_ASSIGN_ARR(lhs = DAE.CREF(componentRef = cr2), exp = exp2)}))::stmts,_,_)
-      guard ComponentReference.crefEqual(cr1, cr2)
+      guard ComponentReferenceBasics.crefEqual(cr1, cr2)
       algorithm
         (exp,_) := VarTransform.replaceExp(exp,iRepl,NONE());
         (exp1,_) := VarTransform.replaceExp(exp1,iRepl,NONE());
@@ -1532,24 +1532,24 @@ algorithm
 
     case (DAE.CREF(componentRef = cref),(argmap,checkcr,true))
       guard
-        BaseHashTable.hasKey(ComponentReference.crefFirstCref(cref),checkcr)
+        BaseHashTable.hasKey(ComponentReferenceBasics.crefFirstCref(cref),checkcr)
       then (inExp,(argmap,checkcr,false));
 
     case (DAE.CREF(componentRef = cref),(argmap,checkcr,true))
       algorithm
-        firstCref := ComponentReference.crefFirstCref(cref);
+        firstCref := ComponentReferenceBasics.crefFirstCref(cref);
         {} := ComponentReference.crefSubs(firstCref);
         e := getExpFromArgMap(argmap,firstCref);
         while not ComponentReference.crefIsIdent(cref) loop
           cref := ComponentReference.crefRest(cref);
           {} := ComponentReference.crefSubs(cref);
-          e := DAE.RSUB(e, -1, ComponentReference.crefFirstIdent(cref), ComponentReference.crefType(cref));
+          e := DAE.RSUB(e, -1, ComponentReferenceBasics.crefFirstIdent(cref), ComponentReference.crefType(cref));
         end while;
       then (e,inTuple);
 
     case (DAE.CREF(componentRef = cref),(argmap,checkcr,true))
       algorithm
-        getExpFromArgMap(argmap,ComponentReference.crefStripSubs(ComponentReference.crefFirstCref(cref)));
+        getExpFromArgMap(argmap,ComponentReference.crefStripSubs(ComponentReferenceBasics.crefFirstCref(cref)));
         // We have something like v[i].re and v is in the inputs... So we fail to inline.
       then (inExp,(argmap,checkcr,false));
 
@@ -1651,7 +1651,7 @@ algorithm
 
   for arg in inArgMap loop
     (cref, exp) := arg;
-    if ComponentReference.crefEqual(cref,key) then
+    if ComponentReferenceBasics.crefEqual(cref,key) then
       try
         outExp := Expression.applyExpSubscripts(exp,subs);
       else
@@ -1807,7 +1807,7 @@ algorithm
     case (_,_,_) then VarTransform.getReplacement(repl,cr);
     case (_,_,DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path),varLst=vars))
       algorithm
-        crs := List.map1(List.map(vars,Types.getVarName),ComponentReference.appendStringCref,cr);
+        crs := List.map1(List.map(vars,TypesDump.getVarName),ComponentReference.appendStringCref,cr);
         exps := List.map1r(crs, VarTransform.getReplacement, repl);
       then DAE.CALL(path,exps,DAE.CALL_ATTR(ty,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
   end matchcontinue;

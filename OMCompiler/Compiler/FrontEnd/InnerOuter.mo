@@ -210,7 +210,7 @@ algorithm
         ncr1 := PrefixUtil.prefixToCref(scope);
         // fprintln(Flags.IOS, "changeInnerOuterInOuterConnect: changing left: " +
         //   ComponentReference.printComponentRefStr(cr1) + " to inner");
-        false := ComponentReference.crefFirstCrefLastCrefEqual(ncr1,cr1);
+        false := ComponentReferenceBasics.crefFirstCrefLastCrefEqual(ncr1,cr1);
       then
         Connect.OUTERCONNECT(scope,cr1,Absyn.INNER(),f1,cr2,io2,f2,source);
 
@@ -221,7 +221,7 @@ algorithm
         ncr2 := PrefixUtil.prefixToCref(scope);
         // fprintln(Flags.IOS, "changeInnerOuterInOuterConnect: changing right: " +
         //   ComponentReference.printComponentRefStr(cr2) + " to inner");
-        false := ComponentReference.crefFirstCrefLastCrefEqual(ncr2,cr2);
+        false := ComponentReferenceBasics.crefFirstCrefLastCrefEqual(ncr2,cr2);
       then
         Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,Absyn.INNER(),f2,source);
 
@@ -1149,13 +1149,13 @@ algorithm
         (eocp, esuffix) := List.split(eifull, ComponentReference.identifierCount(ocp));
 
         // Extract the common prefix of the outer and inner prefix.
-        (epre, erest) := List.splitEqualPrefix(eocp, eicp, ComponentReference.crefFirstIdentEqual);
+        (epre, erest) := List.splitEqualPrefix(eocp, eicp, ComponentReferenceBasics.crefFirstIdentEqual);
 
         // remove the common prefix from the inner!
-        (_, eicp) := List.splitEqualPrefix(eicp, epre, ComponentReference.crefFirstIdentEqual);
+        (_, eicp) := List.splitEqualPrefix(eicp, epre, ComponentReferenceBasics.crefFirstIdentEqual);
 
         // Extract the common suffix of the outer and inner prefix.
-        (erest, _) := List.splitEqualPrefix(listReverse(erest), listReverse(eicp), ComponentReference.crefFirstIdentEqual);
+        (erest, _) := List.splitEqualPrefix(listReverse(erest), listReverse(eicp), ComponentReferenceBasics.crefFirstIdentEqual);
 
         // Combine the parts into a new cref.
         erest := List.append_reverse(erest, esuffix);
@@ -1183,12 +1183,12 @@ algorithm
   // print("L:" + intString(listLength(outerPrefixes)) + "\n");
   for op in outerPrefixes loop
     OUTER(outerComponentRef = outerCrefPrefix) := op;
-    b1 := ComponentReference.crefPrefixOfIgnoreSubscripts(outerCrefPrefix, fullCref);
+    b1 := ComponentReferenceBasics.crefPrefixOfIgnoreSubscripts(outerCrefPrefix, fullCref);
     if not b1
     then
       cr := ComponentReference.crefStripLastIdent(outerCrefPrefix);
-      b2 := ComponentReference.crefLastIdent(outerCrefPrefix) == ComponentReference.crefFirstIdent(inOuterCref)
-            and ComponentReference.crefPrefixOfIgnoreSubscripts(cr, fullCref);
+      b2 := ComponentReferenceBasics.crefLastIdent(outerCrefPrefix) == ComponentReferenceBasics.crefFirstIdent(inOuterCref)
+            and ComponentReferenceBasics.crefPrefixOfIgnoreSubscripts(cr, fullCref);
     end if;
 
     if b1 or b2
@@ -1219,7 +1219,7 @@ algorithm
 
     case(INST_INNER(_, _, _, fullName, typePath, scope, _, outers, _))
       algorithm
-        outers := List.uniqueOnTrue(outers, ComponentReference.crefEqualNoStringCompare);
+        outers := List.uniqueOnTrue(outers, ComponentReferenceBasics.crefEqualNoStringCompare);
         strOuters := if listEmpty(outers)
                       then ""
                       else (" Referenced by 'outer' components: {" +
@@ -1298,7 +1298,7 @@ protected function keyEqual
   input Key key2;
   output Boolean res;
 algorithm
-     res := ComponentReference.crefEqualNoStringCompare(key1,key2);
+     res := ComponentReferenceBasics.crefEqualNoStringCompare(key1,key2);
 end keyEqual;
 
 protected function dumpInstHierarchyHashTable ""

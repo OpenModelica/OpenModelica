@@ -1346,7 +1346,7 @@ algorithm
     then res;
 
     case (BackendDAE.SOLVED_EQUATION(componentRef=cr1, exp=exp1), BackendDAE.SOLVED_EQUATION(componentRef=cr2, exp=exp2)) algorithm
-      res := boolAnd(ComponentReference.crefEqualNoStringCompare(cr1, cr2), Expression.expEqual(exp1, exp2));
+      res := boolAnd(ComponentReferenceBasics.crefEqualNoStringCompare(cr1, cr2), Expression.expEqual(exp1, exp2));
     then res;
 
     case (BackendDAE.RESIDUAL_EQUATION(exp=exp1), BackendDAE.RESIDUAL_EQUATION(exp=exp2)) algorithm
@@ -2503,13 +2503,13 @@ algorithm
 
     case BackendDAE.SOLVED_EQUATION(componentRef=cref, exp=e2, source=source, attr=eqAttr) algorithm
       cr := Expression.expCref(crefExp);
-      true := ComponentReference.crefEqual(cref, cr);
+      true := ComponentReferenceBasics.crefEqual(cref, cr);
     then (BackendDAE.EQUATION(crefExp, e2, source, eqAttr));
 
     case BackendDAE.SOLVED_EQUATION(componentRef=cref, exp=e2, source=source, attr=eqAttr)  algorithm
       // already checked in rule above:
       //cr = Expression.expCref(crefExp);
-      //false = ComponentReference.crefEqual(cref, cr);
+      //false = ComponentReferenceBasics.crefEqual(cref, cr);
       e1 := Expression.crefExp(cref);
       (res, _, {}, {}) := ExpressionSolve.solve2(e1, e2, crefExp, functions, NONE());
     then (BackendDAE.EQUATION(crefExp, res, source, eqAttr));

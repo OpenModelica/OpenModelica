@@ -1647,7 +1647,7 @@ algorithm
       Debug.traceln("instBuiltinAttribute failed for: " + id +
                                   " value binding: " + ValuesDump.printValStr(v) +
                                   " binding: " + ExpressionDump.printExpStr(bind) +
-                                  " expected type: " + Types.printTypeStr(expectedTp) +
+                                  " expected type: " + TypesDump.printTypeStr(expectedTp) +
                                   " type props: " + Types.printPropStr(bindProp));
     then fail();
     case(_,_,_,_,_,expectedTp,_) algorithm
@@ -1655,7 +1655,7 @@ algorithm
       Debug.traceln("instBuiltinAttribute failed for: " + id +
                                   " value binding: NONE()" +
                                   " binding: " + ExpressionDump.printExpStr(bind) +
-                                  " expected type: " + Types.printTypeStr(expectedTp) +
+                                  " expected type: " + TypesDump.printTypeStr(expectedTp) +
                                   " type props: " + Types.printPropStr(bindProp));
     then fail();
   end matchcontinue;
@@ -3663,14 +3663,14 @@ algorithm
           //dae = DAE.DAE({DAE.COMP(ComponentReference.crefStr(cref), elems, DAE.emptyElementSource, NONE())});
         end if;
 
-        // print("instElement -> component: " + name + " ty: " + Types.printTypeStr(ty) + "\n");
+        // print("instElement -> component: " + name + " ty: " + TypesDump.printTypeStr(ty) + "\n");
         //The environment is extended (updated) with the new variable binding.
         (cache, binding) := InstBinding.makeBinding(cache, env2, attr, mod, ty, pre, name, info);
 
         /*// uncomment this for debugging of bindings from mods
         print("Created binding for var: " +
            PrefixUtil.printPrefixStr(pre) + "." + name + "\n\t" +
-           " binding: " + Types.printBindingStr(binding) + "\n\t" +
+           " binding: " + TypesDump.printBindingStr(binding) + "\n\t" +
            " m: " + SCodeDump.printModStr(m) + "\n\t" +
            " class_mod: " + Mod.printModStr(class_mod) + "\n\t" +
            " mm: " + Mod.printModStr(mm) + "\n\t" +
@@ -3752,7 +3752,7 @@ algorithm
           InstVar.instVar(cache, env, ih, store,ci_state, m_1, pre, name, cls, attr,
             prefixes, dims, {}, inst_dims, impl, comment, info, graph, csets, env);
 
-        // print("instElement -> component: " + n + " ty: " + Types.printTypeStr(ty) + "\n");
+        // print("instElement -> component: " + n + " ty: " + TypesDump.printTypeStr(ty) + "\n");
 
         // The environment is extended (updated) with the new variable binding.
         (cache, binding) := InstBinding.makeBinding(cache, env, attr, m_1, ty, pre, name, info);
@@ -5203,7 +5203,7 @@ algorithm
           InstVar.instVar(cache, cenv, ih, store, state, m, pre, n, c, attr,
             inPrefixes, dims, {}, inst_dims, true, SCode.noComment, info, ConnectionGraph.EMPTY, Connect.emptySet, env);
 
-        // print("component: " + n + " ty: " + Types.printTypeStr(ty) + "\n");
+        // print("component: " + n + " ty: " + TypesDump.printTypeStr(ty) + "\n");
 
         io := SCodeUtil.prefixesInnerOuter(inPrefixes);
         vis := SCodeUtil.prefixesVisibility(inPrefixes);
@@ -5241,7 +5241,7 @@ algorithm
           InstVar.instVar(cache, cenv, ih, store, state, m, pre, n, c, attr,
             inPrefixes, dims, {}, inst_dims, true, SCode.noComment, info, ConnectionGraph.EMPTY, Connect.emptySet, env);
 
-        // print("component: " + n + " ty: " + Types.printTypeStr(ty) + "\n");
+        // print("component: " + n + " ty: " + TypesDump.printTypeStr(ty) + "\n");
 
         io := SCodeUtil.prefixesInnerOuter(inPrefixes);
         vis := SCodeUtil.prefixesVisibility(inPrefixes);
@@ -5279,7 +5279,7 @@ algorithm
           InstVar.instVar(cache, cenv, ih, store, state, m, pre, n, c, attr,
             inPrefixes, dims, {}, inst_dims, true, SCode.noComment, info, ConnectionGraph.EMPTY, Connect.emptySet, env);
 
-        // print("component: " + n + " ty: " + Types.printTypeStr(ty) + "\n");
+        // print("component: " + n + " ty: " + TypesDump.printTypeStr(ty) + "\n");
 
         io := SCodeUtil.prefixesInnerOuter(inPrefixes);
         vis := SCodeUtil.prefixesVisibility(inPrefixes);
@@ -5318,7 +5318,7 @@ algorithm
           InstVar.instVar(cache, cenv, ih, store, state, m, pre, n, c, attr,
             inPrefixes, dims, {}, inst_dims, true, SCode.noComment, info, ConnectionGraph.EMPTY, Connect.emptySet, env);
 
-        // print("component: " + n + " ty: " + Types.printTypeStr(ty) + "\n");
+        // print("component: " + n + " ty: " + TypesDump.printTypeStr(ty) + "\n");
 
         io := SCodeUtil.prefixesInnerOuter(inPrefixes);
         vis := SCodeUtil.prefixesVisibility(inPrefixes);
@@ -5358,7 +5358,7 @@ algorithm
           InstVar.instVar(cache, cenv, ih, store, state, dM, pre, n, c, attr,
             inPrefixes, dims, {}, inst_dims, true, NONE(), info, ConnectionGraph.EMPTY, Connect.emptySet, env);
 
-        // print("component: " + n + " ty: " + Types.printTypeStr(ty) + "\n");
+        // print("component: " + n + " ty: " + TypesDump.printTypeStr(ty) + "\n");
 
         io = SCodeUtil.prefixesInnerOuter(inPrefixes);
         vis = SCodeUtil.prefixesVisibility(inPrefixes);

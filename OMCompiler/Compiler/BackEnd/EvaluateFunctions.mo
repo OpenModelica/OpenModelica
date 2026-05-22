@@ -542,7 +542,7 @@ algorithm
 
         //get all replacements in order to check for constant outputs
         (constCrefs,constExps) := BackendVarTransform.getAllReplacements(repl);
-        (constCrefs,constExps) := List.filter1OnTrueSync(constCrefs,ComponentReference.crefInLst,allOutputCrefs,constExps); // extract outputs
+        (constCrefs,constExps) := List.filter1OnTrueSync(constCrefs,ComponentReferenceBasics.crefInLst,allOutputCrefs,constExps); // extract outputs
         (constExps,constCrefs) := List.filterOnTrueSync(constExps,Expression.isConst,constCrefs); // extract constant outputs
 
           //print("all constant crefs \n"+stringDelimitList(List.map(constCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
@@ -552,8 +552,8 @@ algorithm
         (constComplexCrefs,_,constScalarCrefs,varScalarCrefs) := checkIfOutputIsEvaluatedConstant(allOutputs,constCrefs,{},{},{},{});
         constScalarExps := List.map1r(constScalarCrefs,BackendVarTransform.getReplacement,repl);
         constComplexExps := List.map1r(constComplexCrefs,BackendVarTransform.getReplacement,repl);
-        (constScalarCrefs,constScalarExps) := List.filter1OnTrueSync(constCrefs,ComponentReference.crefInLst,constScalarCrefs,constExps);
-        (constComplexCrefs,constComplexExps) := List.filter1OnTrueSync(constCrefs,ComponentReference.crefInLst,constComplexCrefs,constExps);
+        (constScalarCrefs,constScalarExps) := List.filter1OnTrueSync(constCrefs,ComponentReferenceBasics.crefInLst,constScalarCrefs,constExps);
+        (constComplexCrefs,constComplexExps) := List.filter1OnTrueSync(constCrefs,ComponentReferenceBasics.crefInLst,constComplexCrefs,constExps);
 
         //print("constComplexCrefs\n"+stringDelimitList(List.map(constComplexCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
         //print("varComplexCrefs\n"+stringDelimitList(List.map(varComplexCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
@@ -798,7 +798,7 @@ algorithm
 
         //get all replacements in order to check for constant outputs
         (constCrefs,constExps) := BackendVarTransform.getAllReplacements(repl);
-        (constCrefs,constExps) := List.filter1OnTrueSync(constCrefs,ComponentReference.crefInLst,allOutputCrefs,constExps); // extract outputs
+        (constCrefs,constExps) := List.filter1OnTrueSync(constCrefs,ComponentReferenceBasics.crefInLst,allOutputCrefs,constExps); // extract outputs
         (constExps,constCrefs) := List.filterOnTrueSync(constExps,Expression.isConst,constCrefs); // extract constant outputs
 
         //print("all constant crefs \n"+stringDelimitList(List.map(constCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
@@ -806,8 +806,8 @@ algorithm
 
         // get the completely constant complex outputs, the constant parts of complex outputs and the variable parts of complex outputs and the expressions
         (constComplexCrefs,varComplexCrefs,constScalarCrefs,varScalarCrefs) := checkIfOutputIsEvaluatedConstant(allOutputs,constCrefs,{},{},{},{});
-        (constScalarCrefs,constScalarExps) := List.filter1OnTrueSync(constCrefs,ComponentReference.crefInLst,constScalarCrefs,constExps);
-        (constComplexCrefs,constComplexExps) := List.filter1OnTrueSync(constCrefs,ComponentReference.crefInLst,constComplexCrefs,constExps);
+        (constScalarCrefs,constScalarExps) := List.filter1OnTrueSync(constCrefs,ComponentReferenceBasics.crefInLst,constScalarCrefs,constExps);
+        (constComplexCrefs,constComplexExps) := List.filter1OnTrueSync(constCrefs,ComponentReferenceBasics.crefInLst,constComplexCrefs,constExps);
 
         //print("constComplexCrefs\n"+stringDelimitList(List.map(constComplexCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
         //print("varComplexCrefs\n"+stringDelimitList(List.map(varComplexCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
@@ -1178,7 +1178,7 @@ protected function partiallyConstantArrayNeedsExpansion
 algorithm
   for cref in allOutputCrefsIn loop
     if Types.isArray(ComponentReference.crefType(cref)) then
-      if List.isMemberOnTrue(cref, constScalarCrefs, ComponentReference.crefEqualWithoutSubs) then
+      if List.isMemberOnTrue(cref, constScalarCrefs, ComponentReferenceBasics.crefEqualWithoutSubs) then
         bOut := true;
       end if;
     end if;
@@ -1212,7 +1212,7 @@ algorithm
         // only 1d or complex outputs in a tuple exp
         varScalarCrefsInFunc := {};
         allOutputCrefs := List.map(allOutputs,DAEUtil.varCref);
-        (protCrefs,_,outputCrefs) := List.intersection1OnTrue(constComplexCrefs,allOutputCrefs,ComponentReference.crefEqual);
+        (protCrefs,_,outputCrefs) := List.intersection1OnTrue(constComplexCrefs,allOutputCrefs,ComponentReferenceBasics.crefEqual);
         pos := List.map1(outputCrefs,List.position,allOutputCrefs);
         varScalarExps := List.map1(pos,List.getIndexFirst,expLst);
         outputExp := if List.hasOneElement(varScalarExps) then listHead(varScalarExps) else DAE.TUPLE(varScalarExps);
@@ -1231,7 +1231,7 @@ algorithm
 
         //1d records are replaced by their scalar value
         allOutputCrefs2 := List.map(allOutputCrefs,scalarRecCrefsForOneDimRec);
-        (_,_,varScalarCrefsInFunc) := List.intersection1OnTrue(allOutputCrefs,allOutputCrefs2,ComponentReference.crefEqual);
+        (_,_,varScalarCrefsInFunc) := List.intersection1OnTrue(allOutputCrefs,allOutputCrefs2,ComponentReferenceBasics.crefEqual);
         allOutputCrefs := allOutputCrefs2;
         //print("\n allOutputCrefs \n"+stringDelimitList(List.map(allOutputCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
         //print("\n varScalarCrefsInFunc \n"+stringDelimitList(List.map(varScalarCrefsInFunc,ComponentReference.printComponentRefStr),"\n")+"\n");
@@ -1241,7 +1241,7 @@ algorithm
           fail();
         end if;
 
-        (protCrefs,_,outputCrefs) := List.intersection1OnTrue(listAppend(constComplexCrefs,constScalarCrefs),allOutputCrefs,ComponentReference.crefEqual);
+        (protCrefs,_,outputCrefs) := List.intersection1OnTrue(listAppend(constComplexCrefs,constScalarCrefs),allOutputCrefs,ComponentReferenceBasics.crefEqual);
         funcOutputs := List.map2(outputCrefs,generateOutputElements,allOutputs,lhsExpIn);
         funcProts := List.map2(protCrefs,generateProtectedElements,allOutputs,lhsExpIn);
         varOutputs := listAppend(funcOutputs,funcProts);
@@ -1258,7 +1258,7 @@ algorithm
         true := not listEmpty(constScalarCrefs);
         varScalarCrefsInFunc := {};
         allOutputCrefs := List.map(allOutputs,DAEUtil.varCref);
-        (protCrefs,_,outputCrefs) := List.intersection1OnTrue(constScalarCrefs,allOutputCrefs,ComponentReference.crefEqual);
+        (protCrefs,_,outputCrefs) := List.intersection1OnTrue(constScalarCrefs,allOutputCrefs,ComponentReferenceBasics.crefEqual);
         pos := List.map1(outputCrefs,List.position,allOutputCrefs);
         varScalarExps := List.map1(pos,List.getIndexFirst,expLst);
         outputExp := if List.hasOneElement(varScalarExps) then listHead(varScalarExps) else DAE.TUPLE(varScalarExps);
@@ -1332,7 +1332,7 @@ algorithm
        // tuple equation with only 1d or completely complex outputs
        pos := {};
        for lhsCref in constComplCrefs loop
-         pos := List.position1OnTrue(allOutputCrefs, ComponentReference.crefEqual,lhsCref)::pos;
+         pos := List.position1OnTrue(allOutputCrefs, ComponentReferenceBasics.crefEqual,lhsCref)::pos;
        end for;
        pos := listReverse(pos);
        constExps := List.map1(pos,List.getIndexFirst,expLst);
@@ -1371,7 +1371,7 @@ algorithm
         algorithm
           cref := DAEUtil.varCref(elem);
           //print("the cref\n"+stringDelimitList(List.map({DAEUtil.varCref(elem)},ComponentReference.printComponentRefStr),"\n")+"\n");
-          (constVars,varVars,constCrefs1) := List.intersection1OnTrue({cref},constCrefs,ComponentReference.crefEqual);
+          (constVars,varVars,constCrefs1) := List.intersection1OnTrue({cref},constCrefs,ComponentReferenceBasics.crefEqual);
           //print("constVars\n"+stringDelimitList(List.map(constVars,ComponentReference.printComponentRefStr),"\n")+"\n");
           if listEmpty(constVars) then
             //try again with the scalars
@@ -1381,7 +1381,7 @@ algorithm
               (constCompl,varCompl,constScalar,varScalar) := (constComplexLstIn,listAppend(varVars,varComplexLstIn),constScalarLstIn,varScalarLstIn);
             else
             // has scalars, some are variables some are constant
-              (constVars,varVars,constCrefs1) := List.intersection1OnTrue(scalars,constCrefs,ComponentReference.crefEqual);
+              (constVars,varVars,constCrefs1) := List.intersection1OnTrue(scalars,constCrefs,ComponentReferenceBasics.crefEqual);
               (constCompl,varCompl,constScalar,varScalar) := (constComplexLstIn,varComplexLstIn,listAppend(constVars,constScalarLstIn),listAppend(varVars,varScalarLstIn));
             end if;
           else
@@ -1398,12 +1398,12 @@ algorithm
         //print("scalars to check\n"+stringDelimitList(List.map(scalars,ComponentReference.printComponentRefStr),"\n")+"\n");
 
         false := listEmpty(scalars);
-        constVars := List.intersectionOnTrue(scalars,constCrefs,ComponentReference.crefEqual);
+        constVars := List.intersectionOnTrue(scalars,constCrefs,ComponentReferenceBasics.crefEqual);
         //print("constVars\n"+stringDelimitList(List.map(constVars,ComponentReference.printComponentRefStr),"\n")+"\n");
 
         const := intEq(listLength(scalars),listLength(constVars));
-        constScalarCrefs := List.filter1OnTrue(constCrefs,ComponentReference.crefInLst,constVars);
-        (_,varCrefs,_) := List.intersection1OnTrue(scalars,constScalarCrefs,ComponentReference.crefEqual);
+        constScalarCrefs := List.filter1OnTrue(constCrefs,ComponentReferenceBasics.crefInLst,constVars);
+        (_,varCrefs,_) := List.intersection1OnTrue(scalars,constScalarCrefs,ComponentReferenceBasics.crefEqual);
         //constCompl = if_(const,cref::constComplexLstIn,constComplexLstIn);
         constCompl := if false then cref::constComplexLstIn else constComplexLstIn;
         //varCompl = if_(not const,cref::varComplexLstIn,varComplexLstIn);
@@ -1464,8 +1464,8 @@ algorithm
         cref1 := if intEq(listLength(crefs),1) then listHead(crefs) else cref1;
 
         // its not possible to use qualified output crefs
-        i1 := ComponentReference.crefFirstIdent(cref);
-        i2 := ComponentReference.crefLastIdent(cref);
+        i1 := ComponentReferenceBasics.crefFirstIdent(cref);
+        i2 := ComponentReferenceBasics.crefLastIdent(cref);
         //print("the idents_ "+i1+"  and  "+i2+"\n");
         i1 := i1+"_"+i2;
         cref1 := ComponentReference.makeCrefIdent(i1,typ,sl);
@@ -1473,7 +1473,7 @@ algorithm
         //print("the inFuncOutputs \n"+DAEDump.dumpElementsStr(inFuncOutputs)+"\n");
         //vars = List.map(inFuncOutputs,DAEUtil.varCref);
         //print("all the crefs of the oldoutputs\n"+stringDelimitList(List.map(vars,ComponentReference.printComponentRefStr),",")+"\n");
-        //(vars,oldOutputs2) = List.filter1OnTrueSync(vars,ComponentReference.crefEqual,cref1,inFuncOutputs);
+        //(vars,oldOutputs2) = List.filter1OnTrueSync(vars,ComponentReferenceBasics.crefEqual,cref1,inFuncOutputs);
         //var = listHead(oldOutputs2);
         var := listHead(inFuncOutputs);
         var := DAEUtil.replaceCrefandTypeInVar(cref1,typ,var);
@@ -1513,8 +1513,8 @@ algorithm
       algorithm
         typ := ComponentReference.crefLastType(cref);
         _ := Expression.crefExp(cref);
-        i1 := ComponentReference.crefFirstIdent(cref);
-        i2 := ComponentReference.crefLastIdent(cref);
+        i1 := ComponentReferenceBasics.crefFirstIdent(cref);
+        i2 := ComponentReferenceBasics.crefLastIdent(cref);
         i1 := i1+"_"+i2;
         cref1 := ComponentReference.makeCrefIdent(i1,typ,sl);
         var := listHead(inFuncOutputs);
@@ -1759,8 +1759,8 @@ algorithm
       list<DAE.Subscript> sl;
     case(cref1 as DAE.CREF_QUAL(ident=i1,componentRef=cref2),_)
       algorithm
-        true := List.isMemberOnTrue(cref1,changeTheseCrefs,ComponentReference.crefEqual);
-        i2 := ComponentReference.crefFirstIdent(cref2);
+        true := List.isMemberOnTrue(cref1,changeTheseCrefs,ComponentReferenceBasics.crefEqual);
+        i2 := ComponentReferenceBasics.crefFirstIdent(cref2);
         i1 := i1+"_"+i2;
         cref2 := replaceCrefIdent(cref2,i1);
         cref2 := makeIdentCref2(cref2,changeTheseCrefs);
@@ -3460,7 +3460,7 @@ algorithm
       list<DAE.ComponentRef> derVars;
     case (varOld as BackendDAE.VAR(varName=cr1,varKind=BackendDAE.STATE()),derVars)
       algorithm
-        isState := List.isMemberOnTrue(cr1,derVars,ComponentReference.crefEqual);
+        isState := List.isMemberOnTrue(cr1,derVars,ComponentReferenceBasics.crefEqual);
         varNew := if not isState then BackendVariable.setVarKind(varOld,BackendDAE.VARIABLE()) else varOld;
       then (varNew,derVars);
     else (inVar,inCrefs);

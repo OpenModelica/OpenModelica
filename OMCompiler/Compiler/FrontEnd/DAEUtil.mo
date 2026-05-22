@@ -602,7 +602,7 @@ algorithm
       case (v as DAE.VAR(componentRef = cr))
         algorithm
           // variable is in the list! jump over it
-          if listEmpty(List.select1(variableNames, ComponentReference.crefEqual, cr)) then
+          if listEmpty(List.select1(variableNames, ComponentReferenceBasics.crefEqual, cr)) then
             outElements := v::outElements;
           end if;
           then ();
@@ -641,7 +641,7 @@ algorithm
 
     case(_,DAE.DAE((DAE.VAR(componentRef = cr))::elist))
       algorithm
-        true := ComponentReference.crefEqualNoStringCompare(var,cr);
+        true := ComponentReferenceBasics.crefEqualNoStringCompare(var,cr);
       then DAE.DAE(elist);
 
     case(_,DAE.DAE(DAE.COMP(id,elist,source,cmt)::elist2))
@@ -703,7 +703,7 @@ algorithm
 
     case(_,DAE.DAE(DAE.VAR(cr,kind,dir,prl,prot,tp,bind,dim,ct,source,attr,cmt,io,ie)::elist))
       guard
-        ComponentReference.crefEqualNoStringCompare(var,cr)
+        ComponentReferenceBasics.crefEqualNoStringCompare(var,cr)
       algorithm
         io2 := removeInnerAttribute(io);
       then
@@ -3190,7 +3190,7 @@ algorithm
       Error.addSourceMessageAndFail(Error.CLOCKED_WHEN_BRANCH, {}, info);
     end if;
     crefs2 := verifyBoolWhenEquationBranch(cond, eqs);
-    crefs2 := List.unionOnTrue(crefs1, crefs2, ComponentReference.crefEqual);
+    crefs2 := List.unionOnTrue(crefs1, crefs2, ComponentReferenceBasics.crefEqual);
     if listLength(crefs2) <> listLength(crefs1) then
       info := ElementSource.getElementSourceFileInfo(source);
       Error.addSourceMessageAndFail(Error.DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN, {}, info);
@@ -3389,7 +3389,7 @@ algorithm (outrefs,matching) := match(inCrefs)
       then
         // this case will allways have revRefs >=1 unless we are supposed to have 0
         b1 := (0 == intMod(listLength(crefs),i));
-        crefs := List.unionOnTrueList({recRefs,crefs},ComponentReference.crefEqual);
+        crefs := List.unionOnTrueList({recRefs,crefs},ComponentReferenceBasics.crefEqual);
         b2 := intEq(listLength(crefs),i);
         b1 := boolAnd(b1,boolAnd(b2,b3));
       else
@@ -6142,7 +6142,7 @@ algorithm
 
     case ((x as DAE.VAR(componentRef = cr))::lst, _, accNamed, accRest)
       algorithm
-        equal := stringEq(ComponentReference.crefFirstIdent(cr), inName);
+        equal := stringEq(ComponentReferenceBasics.crefFirstIdent(cr), inName);
         accNamed := List.consOnTrue(equal, x, accNamed);
         accRest := List.consOnTrue(boolNot(equal), x, accRest);
         (accNamed, accRest) := splitVariableNamed(lst, inName, accNamed, accRest);
@@ -6381,7 +6381,7 @@ algorithm
     obnd := match i
       case DAE.VAR(componentRef = cr, binding = obnd)
         algorithm
-          if ComponentReference.crefEqualNoStringCompare(icr, cr) then
+          if ComponentReferenceBasics.crefEqualNoStringCompare(icr, cr) then
             return;
           end if;
         then
@@ -6390,7 +6390,7 @@ algorithm
       case DAE.DEFINE(componentRef = cr, exp = e)
         algorithm
           obnd := SOME(e);
-          if ComponentReference.crefEqualNoStringCompare(icr, cr) then
+          if ComponentReferenceBasics.crefEqualNoStringCompare(icr, cr) then
             return;
           end if;
         then
@@ -6399,7 +6399,7 @@ algorithm
       case DAE.INITIALDEFINE(componentRef = cr, exp = e)
         algorithm
           obnd := SOME(e);
-          if ComponentReference.crefEqualNoStringCompare(icr, cr) then
+          if ComponentReferenceBasics.crefEqualNoStringCompare(icr, cr) then
             return;
           end if;
         then
@@ -6408,7 +6408,7 @@ algorithm
       case DAE.EQUATION(exp = DAE.CREF(componentRef = cr), scalar = e)
         algorithm
           obnd := SOME(e);
-          if ComponentReference.crefEqualNoStringCompare(icr, cr) then
+          if ComponentReferenceBasics.crefEqualNoStringCompare(icr, cr) then
             return;
           end if;
         then
@@ -6417,7 +6417,7 @@ algorithm
       case DAE.EQUATION(exp = e, scalar = DAE.CREF(componentRef = cr))
         algorithm
           obnd := SOME(e);
-          if ComponentReference.crefEqualNoStringCompare(icr, cr) then
+          if ComponentReferenceBasics.crefEqualNoStringCompare(icr, cr) then
             return;
           end if;
         then
@@ -6426,7 +6426,7 @@ algorithm
       case DAE.INITIALEQUATION(exp1 = DAE.CREF(componentRef = cr), exp2 = e)
         algorithm
           obnd := SOME(e);
-          if ComponentReference.crefEqualNoStringCompare(icr, cr) then
+          if ComponentReferenceBasics.crefEqualNoStringCompare(icr, cr) then
             return;
           end if;
         then
@@ -6435,7 +6435,7 @@ algorithm
       case DAE.INITIALEQUATION(exp1 = e, exp2 = DAE.CREF(componentRef = cr))
         algorithm
           obnd := SOME(e);
-          if ComponentReference.crefEqualNoStringCompare(icr, cr) then
+          if ComponentReferenceBasics.crefEqualNoStringCompare(icr, cr) then
             return;
           end if;
         then

@@ -428,28 +428,28 @@ algorithm
     case(DAE.CREF_QUAL(componentRef=crefIn1),DAE.CREF_QUAL())
       algorithm
         // the crefs are not equal, check the next cref in crefIn
-        true := not ComponentReference.crefFirstCrefEqual(crefIn,crefCut);
+        true := not ComponentReferenceBasics.crefFirstCrefEqual(crefIn,crefCut);
       then
         splitCrefAfter(crefIn1,crefCut);
 */
     case(DAE.CREF_QUAL(componentRef=crefIn1),DAE.CREF_QUAL(componentRef=crefCut1))
       algorithm
         // the crefs are equal, continue checking
-        true := ComponentReference.crefFirstCrefEqual(crefIn,crefCut);
+        true := ComponentReferenceBasics.crefFirstCrefEqual(crefIn,crefCut);
       then
         splitCrefAfter(crefIn1,crefCut1);
 
     case(DAE.CREF_QUAL(componentRef=crefIn1),DAE.CREF_IDENT(_))
       algorithm
         // the cref has to be cut after this step
-        true := ComponentReference.crefFirstCrefEqual(crefIn,crefCut);
+        true := ComponentReferenceBasics.crefFirstCrefEqual(crefIn,crefCut);
       then
         (crefIn1, true);
 
     case(DAE.CREF_QUAL(componentRef=crefIn1),DAE.CREF_IDENT(_))
       algorithm
         // there is no identical cref
-        true := not ComponentReference.crefFirstCrefEqual(crefIn,crefCut);
+        true := not ComponentReferenceBasics.crefFirstCrefEqual(crefIn,crefCut);
       then
         (crefIn1, false);
 

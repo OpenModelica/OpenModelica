@@ -46,8 +46,11 @@ encapsulated package ExpressionBasics
 import DAE;
 protected
 import AbsynUtil;
+import ComponentReferenceBasics;
+import Error;
 import ExpressionDumpTpl;
 import List;
+import MetaModelica.Dangerous;
 import Tpl;
 import Util;
 
@@ -482,7 +485,7 @@ algorithm
     case DAE.CREF()
       algorithm
         DAE.CREF(componentRef = cr) := inExp2;
-      then ComponentReference.crefCompareGeneric(inExp1.componentRef, cr);
+      then ComponentReferenceBasics.crefCompareGeneric(inExp1.componentRef, cr);
 
     case DAE.ARRAY()
       algorithm
@@ -656,7 +659,7 @@ algorithm
     case DAE.EMPTY()
       algorithm
         DAE.EMPTY(name=cr) := inExp2;
-      then ComponentReference.crefCompareGeneric(inExp1.name, cr);
+      then ComponentReferenceBasics.crefCompareGeneric(inExp1.name, cr);
 
     case DAE.CODE()
       then valueCompare(inExp1, inExp2);
@@ -667,6 +670,244 @@ algorithm
       then fail();
   end match;
 end compare;
+
+protected function compareList
+  input list<DAE.Exp> inExpl1;
+  input list<DAE.Exp> inExpl2;
+  output Integer comp;
+protected
+  Integer len1, len2;
+  DAE.Exp e2;
+  list<DAE.Exp> rest_expl2 = inExpl2;
+algorithm
+  // Check that the lists have the same length, otherwise they can't be equal.
+  len1 := listLength(inExpl1);
+  len2 := listLength(inExpl2);
+  comp := Util.intCompare(len1, len2);
+  if comp <> 0 then
+    return;
+  end if;
+
+  for e1 in inExpl1 loop
+    e2 :: rest_expl2 := rest_expl2;
+
+    // Return false if the expressions are not equal.
+    comp := compare(e1, e2);
+    if 0 <> comp then
+      return;
+    end if;
+  end for;
+
+  comp := 0;
+end compareList;
+
+protected function compareListList
+  input list<list<DAE.Exp>> inExpl1;
+  input list<list<DAE.Exp>> inExpl2;
+  output Integer comp;
+protected
+  list<DAE.Exp> expl2;
+  list<list<DAE.Exp>> rest_expl2 = inExpl2;
+  Integer len1, len2;
+algorithm
+  // Check that the lists have the same length, otherwise they can't be equal.
+  len1 := listLength(inExpl1);
+  len2 := listLength(inExpl2);
+  comp := Util.intCompare(len1, len2);
+  if comp <> 0 then
+    return;
+  end if;
+
+  for expl1 in inExpl1 loop
+    expl2 :: rest_expl2 := rest_expl2;
+
+    // Return false if the expression lists are not equal.
+    comp := compareList(expl1, expl2);
+    if 0 <> comp then
+      return;
+    end if;
+  end for;
+
+  comp := 0;
+end compareListList;
+
+protected function compareOpt
+  input Option<DAE.Exp> inExp1;
+  input Option<DAE.Exp> inExp2;
+  output Integer comp;
+protected
+  DAE.Exp e1, e2;
+algorithm
+  comp := match(inExp1, inExp2)
+    case (NONE(), NONE()) then 0;
+    case (NONE(), _) then -1;
+    case (_, NONE()) then 1;
+    case (SOME(e1), SOME(e2)) then compare(e1, e2);
+  end match;
+end compareOpt;
+
+public function operatorCompare
+"Helper function to expEqual."
+  input DAE.Operator inOperator1;
+  input DAE.Operator inOperator2;
+  output Integer comp;
+algorithm
+  comp := match (inOperator1,inOperator2)
+    local
+      Absyn.Path p1,p2;
+
+    case (DAE.USERDEFINED(fqName = p1),DAE.USERDEFINED(fqName = p2))
+      then AbsynUtil.pathCompare(p1, p2);
+    else Util.intCompare(valueConstructor(inOperator1), valueConstructor(inOperator2));
+  end match;
+end operatorCompare;
+
+function compareSubscripts
+  input DAE.Subscript sub1;
+  input DAE.Subscript sub2;
+  output Integer res;
+algorithm
+  if referenceEq(sub1, sub2) then
+    res := 0;
+  else
+    res := match (sub1, sub2)
+      case (DAE.Subscript.WHOLEDIM(), DAE.Subscript.WHOLEDIM()) then 0;
+      case (DAE.Subscript.SLICE(), DAE.Subscript.SLICE()) then compare(sub1.exp, sub2.exp);
+      case (DAE.Subscript.INDEX(), DAE.Subscript.INDEX()) then compare(sub1.exp, sub2.exp);
+      case (DAE.Subscript.WHOLE_NONEXP(), DAE.Subscript.WHOLE_NONEXP()) then compare(sub1.exp, sub2.exp);
+      else Util.intCompare(valueConstructor(sub1), valueConstructor(sub2));
+    end match;
+  end if;
+end compareSubscripts;
+
+protected function compareSubscriptList
+  input list<DAE.Subscript> subs1;
+  input list<DAE.Subscript> subs2;
+  output Integer comp;
+protected
+  Integer len1, len2;
+  DAE.Subscript s2;
+  list<DAE.Subscript> rest_subs2 = subs2;
+algorithm
+  // Check that the lists have the same length, otherwise they can't be equal.
+  len1 := listLength(subs1);
+  len2 := listLength(subs2);
+  comp := Util.intCompare(len1, len2);
+  if comp <> 0 then
+    return;
+  end if;
+
+  for s1 in subs1 loop
+    s2 :: rest_subs2 := rest_subs2;
+
+    // Return false if the expressions are not equal.
+    comp := compareSubscripts(s1, s2);
+    if 0 <> comp then
+      return;
+    end if;
+  end for;
+
+  comp := 0;
+end compareSubscriptList;
+
+
+public function subscriptInt
+  "Tries to convert a subscript to an integer index."
+  input DAE.Subscript inSubscript;
+  output Integer outInteger = expArrayIndex(subscriptIndexExp(inSubscript));
+end subscriptInt;
+
+public function subscriptsInt
+  "Tries to convert a list of subscripts to integer indices."
+  input list<DAE.Subscript> inSubscripts;
+  output list<Integer> outIntegers;
+algorithm
+  outIntegers := List.map(inSubscripts, subscriptInt);
+end subscriptsInt;
+
+public function expArrayIndex
+  "Returns the array index that an expression represents as an integer."
+  input DAE.Exp inExp;
+  output Integer outIndex;
+algorithm
+  outIndex := match inExp
+    case DAE.ICONST() then inExp.integer;
+    case DAE.ENUM_LITERAL() then inExp.index;
+    case DAE.BCONST() then if inExp.bool then 2 else 1;
+  end match;
+end expArrayIndex;
+
+public function subscriptIndexExp
+  "Returns the expression in a subscript index.
+  If the subscript is not an index the function fails."
+  input DAE.Subscript inSubscript;
+  output DAE.Exp outExp;
+algorithm
+  DAE.INDEX(exp = outExp) := inSubscript;
+end subscriptIndexExp;
+
+public function subscriptEqual
+"Returns true if two subscript lists are equal."
+  input list<DAE.Subscript> inSubscriptLst1;
+  input list<DAE.Subscript> inSubscriptLst2;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inSubscriptLst1,inSubscriptLst2)
+    local
+      list<DAE.Subscript> xs1,xs2;
+      DAE.Exp e1,e2;
+
+    // both lists are empty
+    case ({},{}) then true;
+
+    // wholedims as list heads, compare the rest
+    case ((DAE.WHOLEDIM() :: xs1),(DAE.WHOLEDIM() :: xs2))
+      then subscriptEqual(xs1, xs2);
+
+    // slices as heads, compare the slice exps and then compare the rest
+    case ((DAE.SLICE(exp = e1) :: xs1),(DAE.SLICE(exp = e2) :: xs2))
+      then if expEqual(e1, e2) then subscriptEqual(xs1, xs2) else false;
+
+    // indexes as heads, compare the index exps and then compare the rest
+    case ((DAE.INDEX(exp = e1) :: xs1),(DAE.INDEX(exp = e2) :: xs2))
+      then if expEqual(e1, e2) then subscriptEqual(xs1, xs2) else false;
+
+    case ((DAE.WHOLE_NONEXP(exp = e1) :: xs1),(DAE.WHOLE_NONEXP(exp = e2) :: xs2))
+      then if expEqual(e1, e2) then subscriptEqual(xs1, xs2) else false;
+
+    // subscripts are not equal, return false
+    else false;
+  end match;
+end subscriptEqual;
+
+public function printListStr
+"Same as printList, except it returns
+  a string instead of printing."
+  input list<Type_a> inTypeALst;
+  input FuncTypeType_aToString inFuncTypeTypeAToString;
+  input String inString;
+  output String outString;
+  replaceable type Type_a subtypeof Any;
+  partial function FuncTypeType_aToString
+    input Type_a inTypeA;
+    output String outString;
+  end FuncTypeType_aToString;
+algorithm
+  outString := stringDelimitList(List.map(inTypeALst,inFuncTypeTypeAToString),inString);
+end printListStr;
+
+public function printSubscriptStr "
+  Print a Subscript into a String."
+  input DAE.Subscript sub;
+  output String outString;
+algorithm
+  outString := match sub
+    case DAE.WHOLEDIM() then ":";
+    case DAE.INDEX() then printExpStr(sub.exp);
+    case DAE.SLICE() then printExpStr(sub.exp);
+    case DAE.WHOLE_NONEXP() then "1:" + printExpStr(sub.exp);
+  end match;
+end printSubscriptStr;
 
 annotation(__OpenModelica_Interface="frontend_dump");
 end ExpressionBasics;

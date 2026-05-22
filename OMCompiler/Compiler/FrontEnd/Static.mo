@@ -105,6 +105,7 @@ constant Option<tuple<DAE.Exp, DAE.Properties, DAE.Attributes>> BUILTIN_TIME =
 
 import Array;
 import BackendInterface;
+import BackendCevalInterface;
 import Ceval;
 import ClassInf;
 import ComponentReference;
@@ -1519,7 +1520,7 @@ algorithm
     end try;
 
     // Get the cref's dimensions.
-    dims := Types.getDimensions(ty);
+    dims := TypesDump.getDimensions(ty);
 
     // Check that the indexed dimension actually exists.
     if idx <= listLength(dims) then
@@ -2858,7 +2859,7 @@ algorithm
 
     (exp, outProperties as DAE.PROP(type_ = ty)) := promoteExp(exp, prop, inDims);
     accum_expl := exp :: accum_expl;
-    outDim1 :: outDim2 :: _ := Types.getDimensions(ty);
+    outDim1 :: outDim2 :: _ := TypesDump.getDimensions(ty);
 
     while not listEmpty(rest_expl) loop
       exp :: rest_expl := rest_expl;
@@ -2866,7 +2867,7 @@ algorithm
 
       (exp, prop as DAE.PROP(type_ = ty)) := promoteExp(exp, prop, inDims);
       accum_expl := exp :: accum_expl;
-      dim1 :: dim2 :: _ := Types.getDimensions(ty);
+      dim1 :: dim2 :: _ := TypesDump.getDimensions(ty);
       if not Expression.dimensionsEqual(dim1, outDim1) then
         Error.addSourceMessageAndFail(Error.COMMA_OPERATOR_DIFFERENT_SIZES, {ExpressionDump.printExpStr(listHead(inExpl)), ExpressionDump.dimensionString(outDim1), ExpressionDump.printExpStr(exp), ExpressionDump.dimensionString(dim1)}, inInfo);
       end if;
@@ -3071,8 +3072,8 @@ algorithm
     try
       outProperties := Types.matchWithPromote(outProperties, prop, inHaveReal);
     else
-      ty1_str := Types.unparsePropTypeNoAttr(outProperties);
-      ty2_str := Types.unparsePropTypeNoAttr(prop);
+      ty1_str := TypesDump.unparsePropTypeNoAttr(outProperties);
+      ty2_str := TypesDump.unparsePropTypeNoAttr(prop);
       Types.typeErrorSanityCheck(ty1_str, ty2_str, inInfo);
       pre_str := PrefixUtil.printPrefixStr3(inPrefix);
       el_str := List.toString(expl, ExpressionDump.printExpStr, "", "{", ", ", "}", true);
@@ -3145,7 +3146,7 @@ algorithm
   (outCache, outExp, outProperties) := elabExpInExpression(inCache, inEnv, e,
     inImplicit, true, inPrefix, inInfo);
   DAE.PROP(type_ = ty) := outProperties;
-  ty := Types.liftArrayListDims(DAE.T_INTEGER_DEFAULT, Types.getDimensions(ty));
+  ty := Types.liftArrayListDims(DAE.T_INTEGER_DEFAULT, TypesDump.getDimensions(ty));
   outExp := Expression.makePureBuiltinCall("cardinality", {outExp}, ty);
   outProperties := DAE.PROP(ty, DAE.C_CONST());
 end elabBuiltinCardinality;
@@ -4384,7 +4385,7 @@ protected
   list<DAE.Dimensions> dims;
 algorithm
   types := List.map(inProps, Types.getPropType);
-  dims := List.map(types, Types.getDimensions);
+  dims := List.map(types, TypesDump.getDimensions);
   res := sameDimensions2(dims);
 end sameDimensions;
 
@@ -4399,7 +4400,7 @@ protected
   list<DAE.Dimensions> dims;
 algorithm
   types := List.map(inProps, Types.getPropType);
-  dims := List.map(types, Types.getDimensions);
+  dims := List.map(types, TypesDump.getDimensions);
   dims := List.map1(dims, listDelete, dimException);
   res := sameDimensions2(dims);
 end sameDimensionsExceptionDimX;
@@ -5598,7 +5599,7 @@ algorithm
     end if;
   else
     // der(constant) = 0.
-    dims := Types.getDimensions(ty);
+    dims := TypesDump.getDimensions(ty);
     (outExp, ty) := Expression.makeZeroExpression(dims);
     outProperties := DAE.PROP(ty, DAE.C_CONST());
   end if;
@@ -6751,7 +6752,7 @@ algorithm
     case ()
       /* Handle the scripting interface */
       algorithm
-        (cache,e,prop) := BackendInterface.elabCallInteractive(cache, env, fn, args, nargs, impl, pre, info) "Elaborate interactive function calls, such as simulate(), plot() etc." ;
+        (cache,e,prop) := BackendCevalInterface.elabCallInteractive(cache, env, fn, args, nargs, impl, pre, info) "Elaborate interactive function calls, such as simulate(), plot() etc." ;
       then (cache,e,prop);
 
   end matchcontinue;
@@ -7747,7 +7748,7 @@ algorithm
 
     case DAE.T_METARECORD(path = fq_path)
       algorithm
-        field_names := list(Types.getVarName(var) for var in inType.fields);
+        field_names := list(TypesDump.getVarName(var) for var in inType.fields);
         tys := list(Types.getVarType(var) for var in inType.fields);
         fargs := list(Types.makeDefaultFuncArg(n, t) threaded for n in field_names, t in tys);
         slots := makeEmptySlots(fargs);
@@ -8602,7 +8603,7 @@ algorithm
       outFunctionType := createActualFunctype(outFunctionType, outSlots, inCheckTypes);
       success := true;
     if debug then
-      print("elabTypes success for " + TypesDump.unparseType(func_ty) + ": "+Types.unparseType(outFunctionType)+"=>"+Types.unparseType(outResultType)+"\n");
+      print("elabTypes success for " + TypesDump.unparseType(func_ty) + ": "+TypesDump.unparseType(outFunctionType)+"=>"+TypesDump.unparseType(outResultType)+"\n");
     end if;
     else
       // The type didn't match, try next function type.
@@ -8685,7 +8686,7 @@ algorithm
   // Extract all dimensions from the parameters.
   tys := list(Types.funcArgType(param) for param in inParameters);
   dims := getAllOutputDimensions(inResultType);
-  dims := listAppend(List.mapFlat(tys, Types.getDimensions), dims);
+  dims := listAppend(List.mapFlat(tys, TypesDump.getDimensions), dims);
 
   // Use the dimensions to figure out which parameters are referenced by other
   // parameters' dimensions. This is done to minimize the things we need to
@@ -8726,9 +8727,9 @@ algorithm
 
     // A tuple, get the dimensions of all the types.
     case DAE.T_TUPLE(types = tys)
-      then List.mapFlat(tys, Types.getDimensions);
+      then List.mapFlat(tys, TypesDump.getDimensions);
 
-    else Types.getDimensions(inOutputType);
+    else TypesDump.getDimensions(inOutputType);
   end match;
 end getAllOutputDimensions;
 
@@ -8912,7 +8913,7 @@ algorithm
       algorithm
         tys := list(Types.funcArgType(arg) for arg in funcArg);
         dims := getAllOutputDimensions(funcResultType);
-        dims := listAppend(List.mapFlat(tys, Types.getDimensions), dims);
+        dims := listAppend(List.mapFlat(tys, TypesDump.getDimensions), dims);
         // Use the dimensions to figure out which parameters are referenced by
         // other parameters' dimensions. This is done to minimize the things we
         // need to constant evaluate, a.k.a. 'things that go wrong'.
@@ -8978,10 +8979,10 @@ algorithm
         // evaluate the dimesions
         pty := evaluateFuncArgTypeDims(pty, inEnv, inCache);
         // append the vectorization dim if argument is vectorized.
-        dims1 := Types.getDimensions(pty);
+        dims1 := TypesDump.getDimensions(pty);
         dims1 := listAppend(vdims,dims1);
 
-        dims2 := Types.getDimensions(sty);
+        dims2 := TypesDump.getDimensions(sty);
         true := Expression.dimsEqual(dims1, dims2);
 
         outParam := Types.setFuncArgType(inParam, pty);
@@ -8994,9 +8995,9 @@ algorithm
         // evaluate the dimesions
         pty := evaluateFuncArgTypeDims(pty, inEnv, inCache);
         // append the vectorization dim if argument is vectorized.
-        dims1 := Types.getDimensions(pty);
+        dims1 := TypesDump.getDimensions(pty);
         vdims := listAppend(dims1,vdims);
-        dims2 := Types.getDimensions(sty);
+        dims2 := TypesDump.getDimensions(sty);
         true := Expression.dimsEqual(vdims, dims2);
 
         outParam := Types.setFuncArgType(inParam, pty);
@@ -9236,7 +9237,7 @@ algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Static.getProperties failed: ");
         tystr := TypesDump.unparseType(ty);
-        conststr := Types.printTupleConstStr(const);
+        conststr := TypesDump.printTupleConstStr(const);
         Debug.trace(tystr);
         Debug.trace(", ");
         Debug.traceln(conststr);
@@ -9544,7 +9545,7 @@ algorithm
 
     case SLOT(defaultArg = farg,slotFilled = filled,arg = exp,dims = ds) :: xs
       algorithm
-        farg_str := Types.printFargStr(farg);
+        farg_str := TypesDump.printFargStr(farg);
         filledStr := if filled then "filled" else "not filled";
         str := Util.applyOptionOrDefault(exp, ExpressionDump.printExpStr, "");
         str_lst := List.map(ds, ExpressionDump.dimensionString);
@@ -10077,9 +10078,9 @@ algorithm
       // Fail if the variability is wrong.
       if not Types.constEqualOrHigher(c1, c2) then
         exp_str := ExpressionDump.printExpStr(inExp);
-        c_str := Types.unparseConst(c2);
+        c_str := TypesDump.unparseConst(c2);
         Error.addSourceMessageAndFail(Error.FUNCTION_SLOT_VARIABILITY,
-          {fa1, exp_str, AbsynUtil.pathStringNoQual(fn), Types.unparseConst(c1), c_str}, inInfo);
+          {fa1, exp_str, AbsynUtil.pathStringNoQual(fn), TypesDump.unparseConst(c1), c_str}, inInfo);
       end if;
 
       // Found a valid slot, fill it and reconstruct the slot list.
@@ -10615,7 +10616,7 @@ algorithm
     // an array
     case (_, DAE.T_ARRAY())
       algorithm
-        subs := List.fill(DAE.WHOLEDIM(), listLength(Types.getDimensions(inType)));
+        subs := List.fill(DAE.WHOLEDIM(), listLength(TypesDump.getDimensions(inType)));
         subs := List.stripN(subs, listLength(inExpSubscriptLst));
         subs := listAppend(inExpSubscriptLst, subs);
       then
@@ -10786,7 +10787,7 @@ algorithm
       algorithm
         {DAE.INDEX(DAE.CREF(componentRef = subCr2)), DAE.SLICE(exp = e)} := ComponentReference.crefLastSubs(cr);
         {DAE.INDEX(index as DAE.CREF(componentRef = subCr1))} := ComponentReference.crefLastSubs(inCref);
-        true := ComponentReference.crefEqual(subCr1, subCr2);
+        true := ComponentReferenceBasics.crefEqual(subCr1, subCr2);
         true := Expression.isArray(e) or Expression.isRange(e);
         e := ValuesUtil.valueExp(v, SOME(e));
         e := DAE.ASUB(e, {DAE.INDEX(index)});
@@ -11555,12 +11556,12 @@ algorithm
                                            ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{}));
         (cache,_,_,_,_,InstTypes.SPLICEDEXPDATA(identType = id_ty),_,_,_) := Lookup.lookupVar(cache, crefEnv, cr);
         // false = Types.isUnknownType(t);
-        // print("elabCrefSubs type of: " + id + " is " + Types.printTypeStr(t) + "\n");
+        // print("elabCrefSubs type of: " + id + " is " + TypesDump.printTypeStr(t) + "\n");
         // Debug.traceln("    elabSucscriptsDims " + id + " got var");
         // _ = Types.simplifyType(t);
         id_ty := Types.simplifyType(id_ty);
         hasZeroSizeDim := Types.isZeroLengthArray(id_ty);
-        sl := Types.getDimensions(id_ty);
+        sl := TypesDump.getDimensions(id_ty);
         // Constant evaluate subscripts on form x[1,p,q] where p,q are constants or parameters
         (cache,ss_1,const) := elabSubscriptsDims(cache, crefSubs, ss, sl, impl, topPrefix, inComponentRef, info);
       then
@@ -11574,7 +11575,7 @@ algorithm
         //print("env:");print(FGraph.printGraphStr(env));print("\n");
         (cache,_,t,_,_,_,_,_,_) := Lookup.lookupVar(cache, crefEnv, cr);
         ty := Types.simplifyType(t);
-        sl := Types.getDimensions(ty);
+        sl := TypesDump.getDimensions(ty);
         crefPrefix := PrefixUtil.prefixAdd(id,sl,{},crefPrefix,SCode.VAR(),ClassInf.UNKNOWN(Absyn.IDENT("")),info); // variability doesn't matter
         (cache,cr,const,hasZeroSizeDim) := elabCrefSubs(cache, crefEnv, crefSubs, restCref, topPrefix, crefPrefix, impl, hasZeroSizeDim, info);
       then
@@ -11596,7 +11597,7 @@ algorithm
         (cache,DAE.ATTR(variability = vt),t,_,_,InstTypes.SPLICEDEXPDATA(identType = id_ty),_,_,_) := Lookup.lookupVar(cache, crefEnv, cr);
         ty := Types.simplifyType(t);
         id_ty := Types.simplifyType(id_ty);
-        sl := Types.getDimensions(id_ty);
+        sl := TypesDump.getDimensions(id_ty);
         (cache,ss_1,const1) := elabSubscriptsDims(cache, crefSubs, ss, sl, impl, topPrefix, inComponentRef, info);
         crefPrefix := PrefixUtil.prefixAdd(id, sl, ss_1, crefPrefix, vt, ClassInf.UNKNOWN(Absyn.IDENT("")),info);
         (cache,cr,const2,hasZeroSizeDim) := elabCrefSubs(cache, crefEnv, crefSubs, restCref, topPrefix, crefPrefix, impl, hasZeroSizeDim, info);
@@ -12011,7 +12012,7 @@ algorithm
     case (t,_)
       algorithm
         Print.printBuf("- subscript_type failed (");
-        Print.printBuf(Types.printTypeStr(t));
+        Print.printBuf(TypesDump.printTypeStr(t));
         Print.printBuf(" , [...])\n");
       then
         fail();
@@ -12321,7 +12322,7 @@ algorithm
       algorithm
         failure(DAE.C_VARIABLENAMES() := ct);
         s1 := Dump.printExpStr(exp);
-        s2 := Types.printCodeTypeStr(ct);
+        s2 := TypesDump.printCodeTypeStr(ct);
         Error.addSourceMessage(Error.ELAB_CODE_EXP_FAILED, {s1,s2}, info);
       then fail();
   end matchcontinue;
