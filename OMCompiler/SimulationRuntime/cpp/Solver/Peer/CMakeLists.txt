@@ -26,7 +26,9 @@ set_target_properties(${PeerName} PROPERTIES COMPILE_FLAGS "${OpenMP_CXX_FLAGS}"
 
 add_precompiled_header(${PeerName} Core/Modelica.h)
 
+if(MSVC)
 install(FILES $<TARGET_PDB_FILE:${PeerName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+endif()
 
 install(TARGETS ${PeerName} DESTINATION ${LIBINSTALLEXT})
 install(FILES

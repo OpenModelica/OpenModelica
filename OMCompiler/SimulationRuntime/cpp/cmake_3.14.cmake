@@ -26,7 +26,6 @@ endif()
 
 find_package(Threads REQUIRED)
 
-
 # An interface library for providing common include directories and other settings
 # for all the CPP-runtime libraries.
 add_library(OMCppConfig INTERFACE)
@@ -41,6 +40,52 @@ target_include_directories(OMCppConfig INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/Inc
 # Make boost headers transitively available to all CPP-runtime libraries
 # (note that they all link to 'OMCppConfig' a.k.a 'omc::simrt::cpp::config')
 target_link_libraries(OMCppConfig INTERFACE Boost::boost)
+
+function(get_linker_flag_from_library_target TARGET OUT_VAR)
+    # Get the actual library file path
+    get_target_property(lib_location ${TARGET} IMPORTED_LOCATION)
+
+    if(NOT lib_location)
+        # Try debug/release specific
+        get_target_property(lib_location ${TARGET} IMPORTED_LOCATION_RELEASE)
+        if(NOT lib_location)
+            get_target_property(lib_location ${TARGET} IMPORTED_LOCATION_DEBUG)
+        endif()
+    endif()
+
+    if(lib_location)
+        # Get just the filename
+        get_filename_component(lib_name ${lib_location} NAME)
+
+        # Strip off prefix and suffix to get the library name
+        # Handle Unix libraries (libfoo.so, libfoo.a)
+        if(lib_name MATCHES "^lib(.+)\\.(a|so\\.?[0-9.]*|dylib\\.?[0-9.]*|dll|lib)$")
+            set(lib_base ${CMAKE_MATCH_1})
+        # Handle Windows libraries (foo.lib)
+        elseif(lib_name MATCHES "^(.+)\\.lib$")
+            set(lib_base ${CMAKE_MATCH_1})
+        else()
+            set(lib_base ${lib_name})
+        endif()
+
+        set(${OUT_VAR} "-l${lib_base}" PARENT_SCOPE)
+    else()
+        message(WARNING "Could not find library location for ${TARGET}")
+        set(${OUT_VAR} "" PARENT_SCOPE)
+    endif()
+endfunction()
+
+if (Boost_FOUND)
+get_linker_flag_from_library_target(Boost::program_options LINK_FLAG)
+set(Boost_LIBRARIES_  ${LINK_FLAG})
+get_linker_flag_from_library_target(Boost::filesystem LINK_FLAG)
+set(Boost_LIBRARIES_ "${Boost_LIBRARIES_} ${LINK_FLAG}")
+
+message(STATUS "using boost include for OMCompiler/SimulationRuntime/cpp runtime: ${Boost_INCLUDE_DIR}")
+message(STATUS "Boost Libraries for OMCompiler/SimulationRuntime/cpp runtime implict/explicit: ${Boost_LIBRARIES} / ${Boost_LIBRARIES_}")
+else()
+message(FATAL_ERROR "Boost Libraries WERE NOT FOUND!")
+endif()
 
 # This should be defined for all CPP-runtime library compilations.
 # Signifies that we are building the source code (instead of consuming, say the headers ...).

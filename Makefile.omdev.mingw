@@ -3,12 +3,9 @@ PREVIOUS_GCC_VERSION = "5.3.0"
 GCC_VERSION := "`gcc -dumpversion`"
 OLD_OMDEV := $(shell expr "$(GCC_VERSION)" "==" "$(PREVIOUS_GCC_VERSION)")
 
-ifeq ($(OM_QT_MAJOR_VERSION),6)
-	QT5_EXTRA_DLLS = Qt6WebEngineCore.dll Qt6WebEngineWidgets.dll Qt6Positioning.dll Qt6Qml.dll Qt6Quick.dll Qt6QmlMeta.dll Qt6QmlWorkerScript.dll Qt6QmlModels.dll Qt6WebChannel.dll Qt6QuickWidgets.dll Qt6Widgets.dll Qt6Xml.dll libharfbuzz-subset-0.dll liblcms2-2.dll libminizip-1.dll libopenjp2-7.dll libopus-0.dll libsnappy.dll libdeflate.dll libjbig-0.dll libLerc.dll libwebpdemux-2.dll libwebpmux-3.dll libngtcp2-16.dll libngtcp2_crypto_ossl-0.dll libtiff*.dll
-else
-	OM_QT_MAJOR_VERSION = 5
-	QT5_EXTRA_DLLS = Qt5QmlModels.dll
-endif
+# make qt6 the default on Windows
+OM_QT_MAJOR_VERSION=6
+QT_EXTRA_DLLS =
 
 ifeq "$(OLD_OMDEV)" "1"
 	IS_NEW_OMDEV = false
@@ -19,8 +16,7 @@ else # new OMDev, use clang
 	IS_NEW_OMDEV = true
 	CC = clang
 	CXX = clang++
-	QT_EXTRA_DLLS=libdouble-conversion.dll libzstd.dll libwoff2dec.dll libwoff2common.dll $(QT5_EXTRA_DLLS) libnghttp2-14.dll \
-	              libgraphite2.dll libbrotlidec.dll libbrotlicommon.dll libfontconfig-1.dll
+	QT_EXTRA_DLLS=libdouble-conversion.dll libzstd.dll libwoff2dec.dll libwoff2common.dll Qt6WebEngineCore.dll Qt6WebEngineWidgets.dll Qt6Positioning.dll Qt6Qml.dll Qt6Quick.dll Qt6QmlMeta.dll Qt6QmlWorkerScript.dll Qt6QmlModels.dll Qt6WebChannel.dll Qt6QuickWidgets.dll Qt6Widgets.dll Qt6Xml.dll libharfbuzz-subset-0.dll liblcms2-2.dll libminizip-1.dll libopenjp2-7.dll libopus-0.dll libsnappy.dll libdeflate.dll libjbig-0.dll libLerc.dll libwebpdemux-2.dll libwebpmux-3.dll libngtcp2-16.dll libngtcp2_crypto_ossl-0.dll libtiff*.dll libnghttp2-14.dll libgraphite2.dll libbrotlidec.dll libbrotlicommon.dll libfontconfig-1.dll
 endif
 
 # CFLAGS=-g -O2
@@ -49,7 +45,6 @@ builddir_lib=$(OMBUILDDIR)/lib/omc
 builddir_inc=$(OMBUILDDIR)/include/omc
 builddir_bin_share_qt5_translations=$(OMBUILDDIR)/bin/share/qt5/translations
 builddir_bin_share_qt6_translations=$(OMBUILDDIR)/bin/share/qt6/translations
-builddir_share_qt6_resources=$(OMBUILDDIR)/share/qt6/resources
 builddir_bin_share_qt6_resources=$(OMBUILDDIR)/bin/share/qt6/resources
 builddir_bin_share_qt6_bin=$(OMBUILDDIR)/bin/share/qt6/bin
 
@@ -196,8 +191,6 @@ ifeq ($(OM_QT_MAJOR_VERSION),6)
 	cp -pufr $(OM_MSYS_ENV_DIR)/share/qt6/translations/* $(builddir_bin_share_qt6_translations)/
 	mkdir -p $(builddir_bin_share_qt6_bin)/
 	cp -pufr $(OM_MSYS_ENV_DIR)/share/qt6/bin/* $(builddir_bin_share_qt6_bin)/
-	mkdir -p $(builddir_share_qt6_resources)/
-	cp -pufr $(OM_MSYS_ENV_DIR)/share/qt6/resources/* $(builddir_share_qt6_resources)/
 	mkdir -p $(builddir_bin_share_qt6_resources)/
 	cp -pufr $(OM_MSYS_ENV_DIR)/share/qt6/resources/* $(builddir_bin_share_qt6_resources)/
 else

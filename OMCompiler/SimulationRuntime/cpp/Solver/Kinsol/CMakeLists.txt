@@ -11,8 +11,9 @@ endif(NOT BUILD_SHARED_LIBS)
 add_precompiled_header(${KinsolName} Core/Modelica.h)
 target_link_libraries(${KinsolName}  ${SolverName}  ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${SUNDIALS_LIBRARIES} ${LAPACK_LIBRARIES}  ${ModelicaName} )
 
-
+if(MSVC)
 install(FILES $<TARGET_PDB_FILE:${KinsolName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+endif()
 
 install(TARGETS ${KinsolName} DESTINATION ${LIBINSTALLEXT})
 install(FILES

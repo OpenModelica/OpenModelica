@@ -262,7 +262,14 @@ const char* omc_dlerror()
 
 void *omc_dlsym(void *handle, const char *symbol)
 {
+#if defined(__MINGW32__) // error: ISO C forbids conversion of function pointer to object pointer type
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#endif
   return (void*) GetProcAddress(handle, symbol);
+#if defined(__MINGW32__)
+#pragma GCC diagnostic pop
+#endif
 }
 
 int omc_dlclose(void *handle)

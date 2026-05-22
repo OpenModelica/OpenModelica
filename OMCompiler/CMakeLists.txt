@@ -75,8 +75,10 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clan
   # #defines from bad configuration.
   add_compile_options($<$<COMPILE_LANGUAGE:C>:-Werror=implicit-function-declaration>)
   add_compile_options($<$<COMPILE_LANGUAGE:C>:-Werror=incompatible-pointer-types>)
+if (NOT WIN32) # this doesn't seem to work with msys2/ucrt64 clang 22.1.4, it fails to compile systemimpl.c
   # VLAs are a C99/GCC extension not supported by MSVC; catching them prevents portability issues.
   add_compile_options($<$<COMPILE_LANGUAGE:C>:-Werror=vla>)
+endif()
 endif()
 
 omc_add_subdirectory(SimulationRuntime)

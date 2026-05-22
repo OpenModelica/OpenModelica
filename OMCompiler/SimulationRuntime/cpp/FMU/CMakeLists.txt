@@ -15,7 +15,9 @@ endif(NOT BUILD_SHARED_LIBS)
 target_link_libraries(${FMUName} ${ExtensionUtilitiesName}  ${ModelicaName})
 add_precompiled_header(${FMUName} Core/Modelica.h)
 
+if(MSVC)
 install(FILES $<TARGET_PDB_FILE:${FMUName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+endif()
 
 install(TARGETS ${FMUName} DESTINATION ${LIBINSTALLEXT})
 install(FILES

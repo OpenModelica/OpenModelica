@@ -13,7 +13,9 @@ endif(NOT BUILD_SHARED_LIBS)
 target_link_libraries(${DASSLName} ${SolverName} ${ExtensionUtilitiesName} ${ModelicaName})
 add_precompiled_header(${DASSLName} Core/Modelica.h)
 
+if(MSVC)
 install(FILES $<TARGET_PDB_FILE:${DASSLName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+endif()
 
 install(TARGETS ${DASSLName} DESTINATION ${LIBINSTALLEXT})
 install(FILES

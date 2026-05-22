@@ -89,6 +89,45 @@ QFont getWindowsUIFont()
 }
 #endif
 
+void dumpQtPaths()
+{
+  QString fname = QDir::tempPath() + QDir::separator() + QString("qt-paths.txt");
+  FILE *fout = fopen(fname.toUtf8(), "w");
+  fprintf(fout, "Qt location/paths:\n");
+  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::PrefixPath) = \n\t%s\n",
+    qPrintable(QLibraryInfo::path(QLibraryInfo::PrefixPath)));
+  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::DocumentationPath) = \n\t%s\n",
+    qPrintable(QLibraryInfo::path(QLibraryInfo::DocumentationPath)));
+  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::HeadersPath) = \n\t%s\n",
+    qPrintable(QLibraryInfo::path(QLibraryInfo::HeadersPath)));
+  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::LibrariesPath) = \n\t%s\n",
+    qPrintable(QLibraryInfo::path(QLibraryInfo::LibrariesPath)));
+  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::LibraryExecutablesPath) =\n\t%s\n",
+    qPrintable(QLibraryInfo::path(QLibraryInfo::LibraryExecutablesPath)));
+  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::BinariesPath) =\n\t%s\n",
+    qPrintable(QLibraryInfo::path(QLibraryInfo::BinariesPath)));
+  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::PluginsPath) =\n\t%s\n",
+    qPrintable(QLibraryInfo::path(QLibraryInfo::PluginsPath)));
+  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::PluginsPath) =\n\t%s\n",
+    qPrintable(QLibraryInfo::path(QLibraryInfo::PluginsPath)));
+  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::QmlImportsPath) =\n\t%s\n",
+    qPrintable(QLibraryInfo::path(QLibraryInfo::QmlImportsPath)));
+  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::ArchDataPath) =\n\t%s\n",
+    qPrintable(QLibraryInfo::path(QLibraryInfo::ArchDataPath)));
+  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::DataPath) =\n\t%s\n",
+    qPrintable(QLibraryInfo::path(QLibraryInfo::DataPath)));
+  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::TranslationsPath) =\n\t%s\n",
+    qPrintable(QLibraryInfo::path(QLibraryInfo::TranslationsPath)));
+  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::ExamplesPath) =\n\t%s\n",
+    qPrintable(QLibraryInfo::path(QLibraryInfo::ExamplesPath)));
+  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::TestsPath) =\n\t%s\n",
+    qPrintable(QLibraryInfo::path(QLibraryInfo::TestsPath)));
+  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::SettingsPath) =\n\t%s\n",
+    qPrintable(QLibraryInfo::path(QLibraryInfo::SettingsPath)));
+  fflush(NULL);
+  fclose(fout);
+}
+
 /*!
  * \class OMEditApplication
  * \brief It is a subclass for QApplication so that we can handle QFileOpenEvent sent by OSX at startup.
@@ -131,11 +170,6 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
     quit();
     exit(1);
   }
-#if defined(_MSC_VER) || defined(__MINGW32__)
-  // make QtWebEngineProcess find the Qt dlls!
-  QString p = QString(installationDirectoryPath).replace("/", "\\");
-  qputenv("PATH", QByteArray(p.toUtf8()) + "\\bin;" + qgetenv("PATH"));
-#endif
   QSettings *pSettings = Utilities::getApplicationSettings();
   QLocale settingsLocale = QLocale(pSettings->value("language").toString());
   QString locale = settingsLocale.name() == "C" ? QLocale::system().name() : settingsLocale.name();
@@ -199,6 +233,8 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
         if (0 == strcmp("true", napiProfilingArg.toUtf8().constData())) {
           newApiProfiling = true;
         }
+      } else if (strncmp(arguments().at(i).toUtf8().constData(), "--paths",7) == 0) {
+        dumpQtPaths();
       } else {
         fileName = arguments().at(i);
         if (!fileName.isEmpty()) {
