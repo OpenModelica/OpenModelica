@@ -40,9 +40,6 @@ target_link_libraries(omcfrontendcpp PUBLIC omc::simrt::runtime)
 
 target_include_directories(omcfrontendcpp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-get_filename_component(CC ${CMAKE_C_COMPILER} NAME)
-get_filename_component(CXX ${CMAKE_CXX_COMPILER} NAME)
-
 if (MSVC)
 
 else()
