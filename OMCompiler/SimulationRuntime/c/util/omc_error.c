@@ -570,7 +570,7 @@ static inline jmp_buf* getBestJumpBuffer(threadData_t *threadData)
     if (threadData->mmc_jumper) {
       return threadData->mmc_jumper;
     }
-    fprintf(stderr, "getBestJumpBuffer got mmc_jumper=%p, globalJumpBuffer=%p\n", (void*)threadData->globalJumpBuffer, (void*)threadData->mmc_jumper);
+    fprintf(stderr, "getBestJumpBuffer got mmc_jumper=%p, globalJumpBuffer=%p\n", (void*)threadData->mmc_jumper, (void*)threadData->globalJumpBuffer);
     abort();
   }
 }
