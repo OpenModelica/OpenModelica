@@ -108,11 +108,14 @@ void* embedded_server_load_functions(const char *server_name)
     errorStreamPrint(OMC_LOG_DEBUG, 0, "Failed to load function omc_embedded_server_update: %s\n", dlerror());
     MMC_THROW();
   }
-  embedded_server_init = funcInit;
-  wait_for_step = funcWaitForStep;
-  embedded_server_deinit = funcDeinit;
-  embedded_server_update = funcUpdate;
-  infoStreamPrint(OMC_LOG_DEBUG, 0, "Loaded embedded server");
+
+  // ISO C forbids assignment between function pointer and ‘void *’ [-Wpedantic]
+  // dlsym with -pedantic is tricky, the following workaround is from the dlsym man page but still a hack
+  *(void**)(&embedded_server_init) = funcInit;
+  *(void**)(&wait_for_step) = funcWaitForStep;
+  *(void**)(&embedded_server_deinit) = funcDeinit;
+  *(void**)(&embedded_server_update) = funcUpdate;
+
   return dll;
 }
 

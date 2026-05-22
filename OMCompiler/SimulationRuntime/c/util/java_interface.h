@@ -108,7 +108,7 @@ const char* __CheckForJavaException(JNIEnv* env);
 #define CHECK_FOR_JAVA_EXCEPTION(env) do { \
   const char* msg = __CheckForJavaException(env); \
   if(msg != NULL) { \
-    fprintf(stderr, "Error: External Java Exception Thrown but can't assert in C-mode\nLocation: %s (%s:%d)\nThe exception message was:\n%s\n", __FUNCTION__, __FILE__, __LINE__, msg); \
+    fprintf(stderr, "Error: External Java Exception Thrown but can't assert in C-mode\nLocation: %s (%s:%d)\nThe exception message was:\n%s\n", __func__, __FILE__, __LINE__, msg); \
     EXIT(EXIT_CODE_JAVA_ERROR); \
   } \
 } while(0)
