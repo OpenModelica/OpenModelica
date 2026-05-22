@@ -214,6 +214,22 @@ public
     end for;
   end perfectFit;
 
+  function conditionsFromMap
+    input UnorderedMap<String, Boolean> interface_map;
+    output list<tuple<Integer, String, Condition>> conditions = {};
+  protected
+    String name;
+    Boolean isZeroDer;
+  algorithm
+    for tpl in UnorderedMap.toList(interface_map) loop
+      (name, isZeroDer) := tpl;
+      if isZeroDer then
+        // ToDo: what siginificance does the integer have?
+        conditions := (0, name, Condition.ZERO_DERIVATIVE) :: conditions;
+      end if;
+    end for;
+  end conditionsFromMap;
+
 protected
 
   function conditionToString
