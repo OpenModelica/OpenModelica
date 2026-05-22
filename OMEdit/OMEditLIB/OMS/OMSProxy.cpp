@@ -469,13 +469,47 @@ bool OMSProxy::addBus(QString cref)
  */
 bool OMSProxy::addConnection(QString crefA, QString crefB, bool suppressUnitConversion)
 {
-  QString command = "oms_addConnection";
-  QStringList args;
-  args << "\"" + crefA + "\"" << "\"" + crefB + "\"" << (suppressUnitConversion ? "true" : "false");
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_addConnection(crefA.toUtf8().constData(), crefB.toUtf8().constData(), suppressUnitConversion);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
+  // QString command = "oms_addConnection";
+  // qDebug() << "addConnection :" << crefA << "=>" << crefB;
+  // QStringList args;
+  // args << "\"" + crefA + "\"" << "\"" + crefB + "\"" << (suppressUnitConversion ? "true" : "false");
+  // LOG_COMMAND(command, args);
+  // oms_status_enu_t status = oms_addConnection(crefA.toUtf8().constData(), crefB.toUtf8().constData(), suppressUnitConversion);
+  // logResponse(command, status, &commandTime);
+  // return statusToBool(status);
+
+    QStringList startConnector = crefA.split(".");
+    QStringList endConnector = crefB.split(".");
+
+    startConnector.removeFirst(); // remove "test"
+    endConnector.removeFirst();  // remove "arun"
+
+    QJsonObject obj, args_;
+    obj["method"] = "addConnection";
+
+    args_["crefA"] = QJsonArray::fromStringList(startConnector);
+    args_["crefB"] = QJsonArray::fromStringList(endConnector);
+    args_["suppressUnitConversion"] = suppressUnitConversion;
+    obj["args"] = args_;
+
+    qDebug() <<"addConnection json : " << QJsonDocument(obj).toJson(QJsonDocument::Compact);
+
+    QJsonObject reply;
+    //emit sendGuiCommand(obj);
+    mpGuiRequestSocket->sendCommand(obj, reply);
+
+
+    qDebug() << "inside add Connection completed";
+
+    QString method = reply["method"].toString();
+    QString status_ = reply["status"].toString();
+
+    QString msg = tr("%1 : %2").arg(method).arg(status_);
+
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::notificationLevel));
+
+    return true;
+
 }
 
 /*!
@@ -1414,6 +1448,7 @@ bool OMSProxy::setCommandLineOption(QString cmd)
  */
 bool OMSProxy::setConnectionGeometry(QString crefA, QString crefB, const ssd_connection_geometry_t *pGeometry)
 {
+  qDebug() << "setConnectionGeometry :" << crefA << crefB;
   QString command = "oms_setConnectionGeometry";
   QStringList args;
   args << "\"" + crefA + "\"" << "\"" + crefB + "\"";
@@ -1421,6 +1456,59 @@ bool OMSProxy::setConnectionGeometry(QString crefA, QString crefB, const ssd_con
   oms_status_enu_t status = oms_setConnectionGeometry(crefA.toUtf8().constData(), crefB.toUtf8().constData(), pGeometry);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
+}
+
+bool OMSProxy::setConnectionGeometry(QString crefA, QString crefB, const OMSModel::ConnectionGeometry &geometry)
+{
+  qDebug() << "setConnectionGeometry omsModel:" << crefA << crefB;
+
+  QStringList conA = crefA.split(".");
+  conA.removeFirst();
+
+  QStringList conB = crefB.split(".");
+  conB.removeFirst();
+
+  // QJsonArray points;
+  // for (const QPointF &point : geometry.getPoints()) {
+  //   QJsonObject pointObject;
+  //   pointObject["x"] = point.x();
+  //   pointObject["y"] = point.y();
+  //   points.append(pointObject);
+  // }
+
+  QJsonArray pointsX;
+  QJsonArray pointsY;
+
+  //const OMSModel::ConnectionGeometry &connectionGeometry = geometry;
+
+  for (double x : geometry.getPointsX()) {
+    pointsX.append(x);
+  }
+
+  for (double y : geometry.getPointsY()) {
+    pointsY.append(y);
+  }
+
+  QJsonObject geometryObject;
+  geometryObject["pointsX"] = pointsX;
+  geometryObject["pointsY"] = pointsY;
+
+  QJsonObject args;
+  args["crefA"] = QJsonArray::fromStringList(conA);
+  args["crefB"] = QJsonArray::fromStringList(conB);
+  args["geometry"] = geometryObject;
+
+  QJsonObject obj;
+  obj["method"] = "setConnectionGeometry";
+  obj["args"] = args;
+
+  qDebug() << "setConnection Geometry args : " <<QJsonDocument(obj).toJson(QJsonDocument::Compact);
+
+  QJsonObject reply;
+  mpGuiRequestSocket->sendCommand(obj, reply);
+
+  //return reply["status"].toString() == "ok";
+  return true;
 }
 
 /*!
@@ -1440,26 +1528,6 @@ bool OMSProxy::setConnectorGeometry(QString cref, const ssd_connector_geometry_t
   oms_status_enu_t status = oms_setConnectorGeometry(cref.toUtf8().constData(), pGeometry);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
-
-  // QStringList parts = cref.split(".");
-  // parts.removeFirst(); // remove model name, e.g. "test"
-
-  // QJsonObject geometry;
-  // geometry["x"] = pGeometry->x;
-  // geometry["y"] = pGeometry->y;
-  // QJsonObject args_;
-  // args_["cref"] = QJsonArray::fromStringList(parts);
-  // args_["geometry"] = geometry;
-
-  // QJsonObject obj;
-  // obj["method"] = "setConnectorGeometry";
-  // obj["args"] = args_;
-
-  // QJsonObject reply;
-  // mpGuiRequestSocket->sendCommand(obj, reply);
-
-  // //return reply["status"].toString() == "ok";
-  // return true;
 }
 
 bool OMSProxy::setConnectorGeometry(QString cref, const OMSModel::ConnectorGeometry &geometry)

@@ -151,6 +151,7 @@ public:
   bool setBusGeometry(QString cref, const ssd_connector_geometry_t* pGeometry);
   bool setCommandLineOption(QString cmd);
   bool setConnectionGeometry(QString crefA, QString crefB, const ssd_connection_geometry_t *pGeometry);
+  bool setConnectionGeometry(QString crefA, QString crefB, const OMSModel::ConnectionGeometry &geometry);
   bool setConnectorGeometry(QString cref, const ssd_connector_geometry_t* pGeometry);
   bool setConnectorGeometry(QString cref, const OMSModel::ConnectorGeometry &geometry);
   bool setElementGeometry(QString cref, const ssd_element_geometry_t* pGeometry);

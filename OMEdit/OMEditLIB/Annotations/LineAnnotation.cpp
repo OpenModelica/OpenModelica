@@ -42,6 +42,7 @@
 #include "Modeling/ItemDelegate.h"
 #include "Modeling/Commands.h"
 #include "OMS/BusDialog.h"
+#include "OMS/OMSModel.h";
 #include "Util/ResourceCache.h"
 
 #include <QMessageBox>
@@ -1322,29 +1323,53 @@ void LineAnnotation::setAligned(bool aligned)
  * \brief LineAnnotation::updateOMSConnection
  * Updates the OMSimulator model connection
  */
+// void LineAnnotation::updateOMSConnection()
+// {
+//   // connection geometry
+//   //ssd_connection_geometry_t connectionGeometry;
+//   OMSModel::ConnectionGeometry connectionGeometry;
+//   QVector<QPointF> points = mPoints;
+//   if (points.size() >= 2) {
+//     points.removeFirst();
+//     points.removeLast();
+//   }
+//   // connectionGeometry.n = points.size();
+//   // if (points.size() == 0) {
+//   //   connectionGeometry.pointsX = NULL;
+//   //   connectionGeometry.pointsY = NULL;
+//   // } else {
+//   //   connectionGeometry.pointsX = new double[points.size()];
+//   //   connectionGeometry.pointsY = new double[points.size()];
+//   // }
+//   // for (int i = 0 ; i < points.size() ; i++) {
+//   //   connectionGeometry.pointsX[i] = points.at(i).x();
+//   //   connectionGeometry.pointsY[i] = points.at(i).y();
+//   // }
+//   connectionGeometry.setPoints(mPoints);
+
+//   OMSProxy::instance()->setConnectionGeometry(mpStartElement->getLibraryTreeItem()->getNameStructure(), mpEndElement->getLibraryTreeItem()->getNameStructure(), connectionGeometry);
+// }
+
 void LineAnnotation::updateOMSConnection()
 {
-  // connection geometry
-  ssd_connection_geometry_t connectionGeometry;
   QVector<QPointF> points = mPoints;
   if (points.size() >= 2) {
     points.removeFirst();
     points.removeLast();
   }
-  connectionGeometry.n = points.size();
-  if (points.size() == 0) {
-    connectionGeometry.pointsX = NULL;
-    connectionGeometry.pointsY = NULL;
-  } else {
-    connectionGeometry.pointsX = new double[points.size()];
-    connectionGeometry.pointsY = new double[points.size()];
-  }
-  for (int i = 0 ; i < points.size() ; i++) {
-    connectionGeometry.pointsX[i] = points.at(i).x();
-    connectionGeometry.pointsY[i] = points.at(i).y();
+
+  QVector<double> pointsX;
+  QVector<double> pointsY;
+
+  for (const QPointF &point : points) {
+    pointsX.append(point.x());
+    pointsY.append(point.y());
   }
 
-  OMSProxy::instance()->setConnectionGeometry(mpStartElement->getLibraryTreeItem()->getNameStructure(), mpEndElement->getLibraryTreeItem()->getNameStructure(), &connectionGeometry);
+  OMSModel::ConnectionGeometry connectionGeometry;
+  connectionGeometry.setPoints(pointsX, pointsY);
+
+  OMSProxy::instance()->setConnectionGeometry(mpStartElement->getLibraryTreeItem()->getNameStructure(), mpEndElement->getLibraryTreeItem()->getNameStructure(), connectionGeometry);
 }
 
 void LineAnnotation::updateToolTip()

@@ -1,7 +1,7 @@
 #include "OMSModel.h"
 
 #include <cstring>
-
+#include <QPointF>
 namespace OMSModel
 {
 
@@ -143,6 +143,48 @@ QString Connector::signalTypeToString(SignalType signalType)
       return "real";
   }
 }
+
+// void ConnectionGeometry::deserialize(const QJsonObject &jsonObject)
+// {
+//   const QJsonArray points = jsonObject.value("points").toArray();
+
+//   for (const QJsonValue &pointValue : points) {
+//     if (!pointValue.isObject()) {
+//       continue;
+//     }
+
+//     const QJsonObject point = pointValue.toObject();
+//     mPoints.append(QPointF(point.value("x").toDouble(), point.value("y").toDouble()));
+//   }
+// }
+
+void ConnectionGeometry::deserialize(const QJsonObject &jsonObject)
+{
+  mPointsX.clear();
+  mPointsY.clear();
+
+  const QJsonArray pointsX = jsonObject.value("pointsX").toArray();
+  const QJsonArray pointsY = jsonObject.value("pointsY").toArray();
+
+  for (const QJsonValue &point : pointsX) {
+    mPointsX.append(point.toDouble());
+  }
+
+  for (const QJsonValue &point : pointsY) {
+    mPointsY.append(point.toDouble());
+  }
+}
+
+void Connection::deserialize(const QJsonObject &jsonObject)
+{
+  mConA = jsonObject.value("conA").toString();
+  mConB = jsonObject.value("conB").toString();
+
+  if (jsonObject.value("geometry").isObject()) {
+    mGeometry.deserialize(jsonObject.value("geometry").toObject());
+  }
+}
+
 void FMUInfo::deserialize(const QJsonObject &jsonObject)
 {
   mDescription = jsonObject.value("description").toString();
@@ -166,25 +208,11 @@ void FMUInfo::deserialize(const QJsonObject &jsonObject)
   mMaxOutputDerivativeOrder = jsonObject.value("maxOutputDerivativeOrder").toInt();
 }
 
-// QString FMUInfo::getFMIKindString() const
-// {
-//   switch (mFMIKind) {
-//     case FMIKind::ModelExchange:
-//       return "me";
-//     case FMIKind::CoSimulation:
-//       return "cs";
-//     case FMIKind::ModelExchangeAndCoSimulation:
-//       return "me_cs";
-//     case FMIKind::Unknown:
-//     default:
-//       return "Unknown";
-//   }
-// }
-
 Element::~Element()
 {
   qDeleteAll(mElements);
   qDeleteAll(mConnectors);
+  qDeleteAll(mConnections);
 }
 
 void Element::deserialize(const QJsonObject &jsonObject)
@@ -210,6 +238,17 @@ void Element::deserialize(const QJsonObject &jsonObject)
     if (jsonObject.value("fmuInfo").isObject()) {
       mFMUInfo.deserialize(jsonObject.value("fmuInfo").toObject());
       mHasFMUInfo = true;
+    }
+
+    const QJsonArray connections = jsonObject.value("connections").toArray();
+    for (const QJsonValue &connectionValue : connections) {
+        if (!connectionValue.isObject()) {
+            continue;
+        }
+
+        Connection *pConnection = new Connection;
+        pConnection->deserialize(connectionValue.toObject());
+        mConnections.append(pConnection);
     }
 
     const QJsonArray elements = jsonObject.value("elements").toArray();

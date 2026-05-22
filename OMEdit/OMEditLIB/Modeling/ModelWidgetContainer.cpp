@@ -7328,106 +7328,238 @@ void ModelWidget::drawOMSElement(LibraryTreeItem *pLibraryTreeItem, const QStrin
  * \brief ModelWidget::drawOMSModelConnections
  * Gets the OMSimulator model connections and draws them.
  */
+// void ModelWidget::drawOMSModelConnections()
+// {
+//   if (mpLibraryTreeItem->isSystemElement()) {
+//     MessagesWidget *pMessagesWidget = MessagesWidget::instance();
+//     oms_connection_t** pConnections = NULL;
+//     qDebug() << "drawing oms connnection :" << mpLibraryTreeItem->getOMSModelElement()->getType();
+//     const QVector<OMSModel::Connection*> &connections = mpLibraryTreeItem->getOMSModelElement()->getConnections();
+//     for (const OMSModel::Connection *pConnection : connections) {
+//       qDebug() << "connection amma : " << pConnection->getStart() << "==>" << pConnection->getEnd();
+//     }
+
+//     if (OMSProxy::instance()->getConnections(mpLibraryTreeItem->getNameStructure(), &pConnections)) {
+//       for (int i = 0 ; pConnections[i] ; i++) {
+//         // get start component
+//         QStringList startConnectionList = StringHandler::makeVariableParts(QString(pConnections[i]->conA));
+//         if (startConnectionList.size() < 1) {
+//           continue;
+//         }
+//         Element *pStartComponent = mpDiagramGraphicsView->getElementObject(startConnectionList.at(0));
+//         if (!pStartComponent) {
+//           pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
+//                                                      .arg(startConnectionList.at(0), pConnections[i]->conA), Helper::scriptingKind, Helper::errorLevel));
+//           continue;
+//         }
+//         Element *pStartConnectorComponent = 0;
+//         if (startConnectionList.size() > 1) {
+//           // get start connector component
+//           QString startConnectorName = StringHandler::removeFirstWordBeforeDot(QString(pConnections[i]->conA));
+//           pStartConnectorComponent = getConnectorElement(pStartComponent, startConnectorName);
+//           if (!pStartConnectorComponent) {
+//             pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
+//                                                        .arg(startConnectorName, pConnections[i]->conA), Helper::scriptingKind, Helper::errorLevel));
+//             continue;
+//           }
+//         } else {
+//           pStartConnectorComponent = pStartComponent;
+//         }
+
+//         // get end component
+//         QStringList endConnectionList = StringHandler::makeVariableParts(QString(pConnections[i]->conB));
+//         if (endConnectionList.size() < 1) {
+//           continue;
+//         }
+//         Element *pEndComponent = mpDiagramGraphicsView->getElementObject(endConnectionList.at(0));
+//         if (!pEndComponent) {
+//           pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
+//                                                      .arg(endConnectionList.at(0), pConnections[i]->conB), Helper::scriptingKind, Helper::errorLevel));
+//           continue;
+//         }
+//         Element *pEndConnectorComponent = 0;
+//         if (endConnectionList.size() > 1) {
+//           // get end connector component
+//           QString endConnectorName = StringHandler::removeFirstWordBeforeDot(QString(pConnections[i]->conB));
+//           pEndConnectorComponent = getConnectorElement(pEndComponent, endConnectorName);
+//           if (!pEndConnectorComponent) {
+//             pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
+//                                                        .arg(endConnectorName, pConnections[i]->conB), Helper::scriptingKind, Helper::errorLevel));
+//             continue;
+//           }
+//         } else {
+//           pEndConnectorComponent = pEndComponent;
+//         }
+
+//         // default connection annotation
+//         QString annotation = QString("{Line(true,{0.0,0.0},0,%1,{0,0,0},LinePattern.Solid,0.25,{Arrow.None,Arrow.None},3,Smooth.None)}");
+//         QStringList shapesList;
+//         QString point = QString("{%1,%2}");
+//         QStringList points;
+//         if (pConnections[i]->geometry && pConnections[i]->geometry->n > 0) {
+//           for (unsigned int j = 0 ; j < pConnections[i]->geometry->n ; j++) {
+//             points.append(point.arg(pConnections[i]->geometry->pointsX[j]).arg(pConnections[i]->geometry->pointsY[j]));
+//           }
+//         }
+//         QPointF startPoint = mpDiagramGraphicsView->roundPoint(pStartConnectorComponent->mapToScene(pStartConnectorComponent->boundingRect().center()));
+//         points.prepend(point.arg(startPoint.x()).arg(startPoint.y()));
+//         QPointF endPoint = mpDiagramGraphicsView->roundPoint(pEndConnectorComponent->mapToScene(pEndConnectorComponent->boundingRect().center()));
+//         points.append(point.arg(endPoint.x()).arg(endPoint.y()));
+//         QString pointsString = QString("{%1}").arg(points.join(","));
+//         shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(QString(annotation).arg(pointsString)));
+//         // Now parse the shapes available in list
+//         QString lineShape = "";
+//         foreach (QString shape, shapesList) {
+//           if (shape.startsWith("Line")) {
+//             lineShape = shape.mid(QString("Line").length());
+//             lineShape = StringHandler::removeFirstLastParentheses(lineShape);
+//             break;  // break the loop once we have got the line annotation.
+//           }
+//         }
+
+//         LineAnnotation *pConnectionLineAnnotation = new LineAnnotation(lineShape, pStartConnectorComponent, pEndConnectorComponent, mpDiagramGraphicsView);
+//         pConnectionLineAnnotation->setStartElementName(pStartConnectorComponent->getLibraryTreeItem() ? pStartConnectorComponent->getLibraryTreeItem()->getNameStructure() : "");
+//         pConnectionLineAnnotation->setEndElementName(pEndConnectorComponent->getLibraryTreeItem() ? pEndConnectorComponent->getLibraryTreeItem()->getNameStructure() : "");
+//         pConnectionLineAnnotation->setOMSConnectionType(pConnections[i]->type);
+//         mpDiagramGraphicsView->addConnectionToView(pConnectionLineAnnotation, false);
+//         // Check if the connectors of the connection belongs to a bus
+//         if (pStartConnectorComponent->isInBus() && pEndConnectorComponent->isInBus()) {
+//           pConnectionLineAnnotation->setVisible(false);
+//         }
+//         // Check if bus connection
+//         if (pConnections[i]->type == oms_connection_bus) {
+//           pConnectionLineAnnotation->setLineThickness(0.5);
+//         }
+//       }
+//     }
+//     mpDiagramGraphicsView->handleCollidingConnections();
+//   }
+// }
+
+
 void ModelWidget::drawOMSModelConnections()
 {
-  if (mpLibraryTreeItem->isSystemElement()) {
-    MessagesWidget *pMessagesWidget = MessagesWidget::instance();
-    oms_connection_t** pConnections = NULL;
-    if (OMSProxy::instance()->getConnections(mpLibraryTreeItem->getNameStructure(), &pConnections)) {
-      for (int i = 0 ; pConnections[i] ; i++) {
-        // get start component
-        QStringList startConnectionList = StringHandler::makeVariableParts(QString(pConnections[i]->conA));
-        if (startConnectionList.size() < 1) {
-          continue;
-        }
-        Element *pStartComponent = mpDiagramGraphicsView->getElementObject(startConnectionList.at(0));
-        if (!pStartComponent) {
-          pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
-                                                     .arg(startConnectionList.at(0), pConnections[i]->conA), Helper::scriptingKind, Helper::errorLevel));
-          continue;
-        }
-        Element *pStartConnectorComponent = 0;
-        if (startConnectionList.size() > 1) {
-          // get start connector component
-          QString startConnectorName = StringHandler::removeFirstWordBeforeDot(QString(pConnections[i]->conA));
-          pStartConnectorComponent = getConnectorElement(pStartComponent, startConnectorName);
-          if (!pStartConnectorComponent) {
-            pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
-                                                       .arg(startConnectorName, pConnections[i]->conA), Helper::scriptingKind, Helper::errorLevel));
-            continue;
-          }
-        } else {
-          pStartConnectorComponent = pStartComponent;
-        }
+  if (!mpLibraryTreeItem->isSystemElement() || !mpLibraryTreeItem->getOMSModelElement()) {
+    return;
+  }
 
-        // get end component
-        QStringList endConnectionList = StringHandler::makeVariableParts(QString(pConnections[i]->conB));
-        if (endConnectionList.size() < 1) {
-          continue;
-        }
-        Element *pEndComponent = mpDiagramGraphicsView->getElementObject(endConnectionList.at(0));
-        if (!pEndComponent) {
-          pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
-                                                     .arg(endConnectionList.at(0), pConnections[i]->conB), Helper::scriptingKind, Helper::errorLevel));
-          continue;
-        }
-        Element *pEndConnectorComponent = 0;
-        if (endConnectionList.size() > 1) {
-          // get end connector component
-          QString endConnectorName = StringHandler::removeFirstWordBeforeDot(QString(pConnections[i]->conB));
-          pEndConnectorComponent = getConnectorElement(pEndComponent, endConnectorName);
-          if (!pEndConnectorComponent) {
-            pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
-                                                       .arg(endConnectorName, pConnections[i]->conB), Helper::scriptingKind, Helper::errorLevel));
-            continue;
-          }
-        } else {
-          pEndConnectorComponent = pEndComponent;
-        }
+  MessagesWidget *pMessagesWidget = MessagesWidget::instance();
+  const QVector<OMSModel::Connection*> &connections = mpLibraryTreeItem->getOMSModelElement()->getConnections();
 
-        // default connection annotation
-        QString annotation = QString("{Line(true,{0.0,0.0},0,%1,{0,0,0},LinePattern.Solid,0.25,{Arrow.None,Arrow.None},3,Smooth.None)}");
-        QStringList shapesList;
-        QString point = QString("{%1,%2}");
-        QStringList points;
-        if (pConnections[i]->geometry && pConnections[i]->geometry->n > 0) {
-          for (unsigned int j = 0 ; j < pConnections[i]->geometry->n ; j++) {
-            points.append(point.arg(pConnections[i]->geometry->pointsX[j]).arg(pConnections[i]->geometry->pointsY[j]));
-          }
-        }
-        QPointF startPoint = mpDiagramGraphicsView->roundPoint(pStartConnectorComponent->mapToScene(pStartConnectorComponent->boundingRect().center()));
-        points.prepend(point.arg(startPoint.x()).arg(startPoint.y()));
-        QPointF endPoint = mpDiagramGraphicsView->roundPoint(pEndConnectorComponent->mapToScene(pEndConnectorComponent->boundingRect().center()));
-        points.append(point.arg(endPoint.x()).arg(endPoint.y()));
-        QString pointsString = QString("{%1}").arg(points.join(","));
-        shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(QString(annotation).arg(pointsString)));
-        // Now parse the shapes available in list
-        QString lineShape = "";
-        foreach (QString shape, shapesList) {
-          if (shape.startsWith("Line")) {
-            lineShape = shape.mid(QString("Line").length());
-            lineShape = StringHandler::removeFirstLastParentheses(lineShape);
-            break;  // break the loop once we have got the line annotation.
-          }
-        }
+  for (const OMSModel::Connection *pConnection : connections) {
+    if (!pConnection) {
+      continue;
+    }
 
-        LineAnnotation *pConnectionLineAnnotation = new LineAnnotation(lineShape, pStartConnectorComponent, pEndConnectorComponent, mpDiagramGraphicsView);
-        pConnectionLineAnnotation->setStartElementName(pStartConnectorComponent->getLibraryTreeItem() ? pStartConnectorComponent->getLibraryTreeItem()->getNameStructure() : "");
-        pConnectionLineAnnotation->setEndElementName(pEndConnectorComponent->getLibraryTreeItem() ? pEndConnectorComponent->getLibraryTreeItem()->getNameStructure() : "");
-        pConnectionLineAnnotation->setOMSConnectionType(pConnections[i]->type);
-        mpDiagramGraphicsView->addConnectionToView(pConnectionLineAnnotation, false);
-        // Check if the connectors of the connection belongs to a bus
-        if (pStartConnectorComponent->isInBus() && pEndConnectorComponent->isInBus()) {
-          pConnectionLineAnnotation->setVisible(false);
-        }
-        // Check if bus connection
-        if (pConnections[i]->type == oms_connection_bus) {
-          pConnectionLineAnnotation->setLineThickness(0.5);
-        }
+    // get start component
+    QStringList startConnectionList = StringHandler::makeVariableParts(pConnection->getConnectorA());
+    if (startConnectionList.size() < 1) {
+      continue;
+    }
+
+    Element *pStartComponent = mpDiagramGraphicsView->getElementObject(startConnectionList.at(0));
+    if (!pStartComponent) {
+      pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                 GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
+                                                 .arg(startConnectionList.at(0), pConnection->getConnectorA()),
+                                                 Helper::scriptingKind, Helper::errorLevel));
+      continue;
+    }
+
+    Element *pStartConnectorComponent = 0;
+    if (startConnectionList.size() > 1) {
+      QString startConnectorName = StringHandler::removeFirstWordBeforeDot(pConnection->getConnectorA());
+      pStartConnectorComponent = getConnectorElement(pStartComponent, startConnectorName);
+      if (!pStartConnectorComponent) {
+        pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                   GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
+                                                   .arg(startConnectorName, pConnection->getConnectorA()),
+                                                   Helper::scriptingKind, Helper::errorLevel));
+        continue;
+      }
+    } else {
+      pStartConnectorComponent = pStartComponent;
+    }
+
+    // get end component
+    QStringList endConnectionList = StringHandler::makeVariableParts(pConnection->getConnectorB());
+    if (endConnectionList.size() < 1) {
+      continue;
+    }
+
+    Element *pEndComponent = mpDiagramGraphicsView->getElementObject(endConnectionList.at(0));
+    if (!pEndComponent) {
+      pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                 GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
+                                                 .arg(endConnectionList.at(0), pConnection->getConnectorB()),
+                                                 Helper::scriptingKind, Helper::errorLevel));
+      continue;
+    }
+
+    Element *pEndConnectorComponent = 0;
+    if (endConnectionList.size() > 1) {
+      QString endConnectorName = StringHandler::removeFirstWordBeforeDot(pConnection->getConnectorB());
+      pEndConnectorComponent = getConnectorElement(pEndComponent, endConnectorName);
+      if (!pEndConnectorComponent) {
+        pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                   GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
+                                                   .arg(endConnectorName, pConnection->getConnectorB()),
+                                                   Helper::scriptingKind, Helper::errorLevel));
+        continue;
+      }
+    } else {
+      pEndConnectorComponent = pEndComponent;
+    }
+
+    // default connection annotation
+    QString annotation = QString("{Line(true,{0.0,0.0},0,%1,{0,0,0},LinePattern.Solid,0.25,{Arrow.None,Arrow.None},3,Smooth.None)}");
+    QString point = QString("{%1,%2}");
+    QStringList points;
+
+    const OMSModel::ConnectionGeometry &geometry = pConnection->getGeometry();
+
+    for (int i = 0; i < geometry.getPointsSize(); ++i) {
+      points.append(point.arg(geometry.getPointsX().at(i)).arg(geometry.getPointsY().at(i)));
+    }
+
+    QPointF startPoint = mpDiagramGraphicsView->roundPoint(
+        pStartConnectorComponent->mapToScene(pStartConnectorComponent->boundingRect().center()));
+    points.prepend(point.arg(startPoint.x()).arg(startPoint.y()));
+
+    QPointF endPoint = mpDiagramGraphicsView->roundPoint(
+        pEndConnectorComponent->mapToScene(pEndConnectorComponent->boundingRect().center()));
+    points.append(point.arg(endPoint.x()).arg(endPoint.y()));
+
+    QString pointsString = QString("{%1}").arg(points.join(","));
+    QStringList shapesList = StringHandler::getStrings(
+        StringHandler::removeFirstLastCurlBrackets(QString(annotation).arg(pointsString)));
+
+    QString lineShape = "";
+    foreach (QString shape, shapesList) {
+      if (shape.startsWith("Line")) {
+        lineShape = shape.mid(QString("Line").length());
+        lineShape = StringHandler::removeFirstLastParentheses(lineShape);
+        break;
       }
     }
-    mpDiagramGraphicsView->handleCollidingConnections();
+
+    LineAnnotation *pConnectionLineAnnotation =
+        new LineAnnotation(lineShape, pStartConnectorComponent, pEndConnectorComponent, mpDiagramGraphicsView);
+
+    pConnectionLineAnnotation->setStartElementName(
+        pStartConnectorComponent->getLibraryTreeItem()
+          ? pStartConnectorComponent->getLibraryTreeItem()->getNameStructure()
+          : "");
+
+    pConnectionLineAnnotation->setEndElementName(
+        pEndConnectorComponent->getLibraryTreeItem()
+          ? pEndConnectorComponent->getLibraryTreeItem()->getNameStructure()
+          : "");
+
+    mpDiagramGraphicsView->addConnectionToView(pConnectionLineAnnotation, false);
   }
+
+  mpDiagramGraphicsView->handleCollidingConnections();
 }
 
 /*!
