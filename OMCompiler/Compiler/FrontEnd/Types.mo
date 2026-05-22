@@ -54,6 +54,7 @@ public import Absyn;
 public import AbsynUtil;
 public import DAE;
 public import InstTypes;
+public import TypesDump;
 public import Values;
 public import SCode;
 
@@ -81,6 +82,7 @@ protected import Patternm;
 protected import Print;
 protected import Util;
 protected import System;
+protected import ValuesDump;
 protected import ValuesUtil;
 protected import DAEUtil;
 protected import SCodeDump;
@@ -1230,7 +1232,7 @@ algorithm
 
     case (v)
       algorithm
-        str := "- Types.typeOfValue failed: " + ValuesUtil.valString(v);
+        str := "- Types.typeOfValue failed: " + ValuesDump.valString(v);
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();
@@ -2196,8 +2198,8 @@ algorithm
 
     case (DAE.T_SUBTYPE_BASIC(complexClassType = ci_state, complexType = bc_tp))
       algorithm
-        st_str := AbsynUtil.pathString(ClassInf.getStateName(ci_state));
-        res := ClassInf.printStateStr(ci_state);
+        st_str := AbsynUtil.pathString(ClassInfUtil.getStateName(ci_state));
+        res := ClassInfUtil.printStateStr(ci_state);
         bc_tp_str := unparseType(bc_tp);
         res := stringAppendList({"(",res," ",st_str," bc:",bc_tp_str,")"});
       then
@@ -2205,8 +2207,8 @@ algorithm
 
     case (DAE.T_COMPLEX(complexClassType = ci_state))
       algorithm
-        st_str := AbsynUtil.pathString(ClassInf.getStateName(ci_state));
-        res := ClassInf.printStateStr(ci_state);
+        st_str := AbsynUtil.pathString(ClassInfUtil.getStateName(ci_state));
+        res := ClassInfUtil.printStateStr(ci_state);
         res := stringAppendList({res," ",st_str});
       then
         res;
@@ -2429,7 +2431,7 @@ algorithm
     case (DAE.T_SUBTYPE_BASIC(complexClassType = st, complexType = t, varLst = vars))
       algorithm
         compType := printTypeStr(t);
-        s1 := ClassInf.printStateStr(st);
+        s1 := ClassInfUtil.printStateStr(st);
         s2 := stringDelimitList(List.map(vars, printVarStr),", ");
         str := stringAppendList({"composite(",s1,"{",s2,"}, derived from ", compType, ")"});
       then
@@ -2437,7 +2439,7 @@ algorithm
 
     case (DAE.T_COMPLEX(complexClassType = st,varLst = vars))
       algorithm
-        s1 := ClassInf.printStateStr(st);
+        s1 := ClassInfUtil.printStateStr(st);
         s2 := stringDelimitList(List.map(vars, printVarStr),", ");
         str := stringAppendList({"composite(",s1,"{",s2,"})"});
       then
@@ -2529,7 +2531,7 @@ algorithm
     // AnyType of some
     case (DAE.T_ANYTYPE(anyClassType = SOME(st)))
       algorithm
-        s1 := ClassInf.printStateStr(st);
+        s1 := ClassInfUtil.printStateStr(st);
         str := "ANYTYPE(" + s1 + ")";
       then
         str;
@@ -2662,7 +2664,7 @@ algorithm
         res;
     case DAE.TYPES_VAR(name = n, binding = DAE.VALBOUND(valBound=value))
       algorithm
-        valStr := ValuesUtil.valString(value);
+        valStr := ValuesDump.valString(value);
         res := stringAppendList({n," = ",valStr});
       then
         res;
@@ -2719,17 +2721,17 @@ algorithm
     case DAE.FUNCARG(id,ty,c,p,NONE())
       algorithm
         tstr := unparseType(ty);
-        cstr := DAEUtil.constStrFriendly(c);
-        pstr := DAEUtil.dumpVarParallelismStr(p);
+        cstr := TypesDump.constStrFriendly(c);
+        pstr := TypesDump.dumpVarParallelismStr(p);
         res := stringAppendList({tstr," ",cstr,pstr,id});
       then
         res;
     case DAE.FUNCARG(id,ty,c,p,SOME(exp))
       algorithm
         tstr := unparseType(ty);
-        cstr := DAEUtil.constStrFriendly(c);
+        cstr := TypesDump.constStrFriendly(c);
         estr := ExpressionDump.printExpStr(exp);
-        pstr := DAEUtil.dumpVarParallelismStr(p);
+        pstr := TypesDump.dumpVarParallelismStr(p);
         res := stringAppendList({tstr," ",cstr,pstr,id," := ",estr});
       then
         res;
@@ -2779,7 +2781,7 @@ algorithm
       algorithm
         str := ExpressionDump.printExpStr(inBinding.exp);
         str2 := printConstStr(inBinding.constant_);
-        str3 := DAEUtil.printBindingSourceStr(inBinding.source);
+        str3 := TypesDump.printBindingSourceStr(inBinding.source);
         res := stringAppendList({"DAE.EQBOUND(",str,", NONE(), ",str2,", ",str3,")"});
       then
         res;
@@ -2787,15 +2789,15 @@ algorithm
       algorithm
         str := ExpressionDump.printExpStr(inBinding.exp);
         str2 := printConstStr(inBinding.constant_);
-        v_str := ValuesUtil.valString(v);
-        str3 := DAEUtil.printBindingSourceStr(inBinding.source);
+        v_str := ValuesDump.valString(v);
+        str3 := TypesDump.printBindingSourceStr(inBinding.source);
         res := stringAppendList({"DAE.EQBOUND(",str,", SOME(",v_str,"), ",str2,", ",str3,")"});
       then
         res;
     case DAE.VALBOUND(valBound = v)
       algorithm
-        s := ValuesUtil.unparseValues({v});
-        str3 := DAEUtil.printBindingSourceStr(inBinding.source);
+        s := ValuesDump.unparseValues({v});
+        str3 := TypesDump.printBindingSourceStr(inBinding.source);
         res := stringAppendList({"DAE.VALBOUND(",s,", ",str3,")"});
       then
         res;
@@ -3020,7 +3022,7 @@ algorithm
     case DAE.FUNCARG(n,ty,c,_,_)
       algorithm
         s := unparseType(ty);
-        cs := DAEUtil.constStrFriendly(c);
+        cs := TypesDump.constStrFriendly(c);
         // res = stringAppendList({ps,cs,s," ",n});
         res := stringAppendList({cs,s," ",n});
       then
@@ -3453,38 +3455,7 @@ algorithm
   outHasReal := false;
 end containReal;
 
-public function flattenArrayType
-  "Returns the element type of a Type and the dimensions of the type."
-  input DAE.Type inType;
-  output DAE.Type outType;
-  output DAE.Dimensions outDimensions;
-algorithm
-  (outType, outDimensions) := match inType
-    local
-      Type ty;
-      DAE.Dimensions dims;
-      DAE.Dimension dim;
-
-    // Array type
-    case DAE.T_ARRAY()
-      algorithm
-        (ty, dims) := flattenArrayType(inType.ty);
-        dims := listAppend(inType.dims, dims);
-      then
-        (ty, dims);
-
-    // Complex type extending basetype with equality constraint
-    case DAE.T_SUBTYPE_BASIC(equalityConstraint = SOME(_))
-      then (inType, {});
-
-    // Complex type extending basetype.
-    case DAE.T_SUBTYPE_BASIC()
-      then flattenArrayType(inType.complexType);
-
-    // Element type
-    else (inType, {});
-  end match;
-end flattenArrayType;
+public function flattenArrayType = TypesDump.flattenArrayType;
 
 public function getTypeName "Return the type name of a Type."
   input DAE.Type inType;
@@ -3505,12 +3476,12 @@ algorithm
     case (DAE.T_CLOCK()) then "Clock";
     case (DAE.T_COMPLEX(complexClassType = st))
       algorithm
-        n := AbsynUtil.pathString(ClassInf.getStateName(st));
+        n := AbsynUtil.pathString(ClassInfUtil.getStateName(st));
       then
         n;
     case (DAE.T_SUBTYPE_BASIC(complexClassType = st))
       algorithm
-        n := AbsynUtil.pathString(ClassInf.getStateName(st));
+        n := AbsynUtil.pathString(ClassInfUtil.getStateName(st));
       then
         n;
     case (arrayty as DAE.T_ARRAY())
@@ -4026,8 +3997,8 @@ algorithm
     case (DAE.T_COMPLEX(complexClassType = cty1, varLst = vars1),
           DAE.T_COMPLEX(complexClassType = cty2, varLst = vars2))
       algorithm
-        true := AbsynUtil.pathEqual(ClassInf.getStateName(cty1),
-                               ClassInf.getStateName(cty2));
+        true := AbsynUtil.pathEqual(ClassInfUtil.getStateName(cty1),
+                               ClassInfUtil.getStateName(cty2));
         true := List.isEqualOnTrue(vars1, vars2,
           varsElabEquivalent);
       then
@@ -7353,7 +7324,7 @@ algorithm
     case (DAE.T_COMPLEX(complexClassType = st,varLst = vars))
       algorithm
         (ordered, comp) := varsToValues(vars);
-        path := ClassInf.getStateName(st);
+        path := ClassInfUtil.getStateName(st);
       then
         Values.RECORD(path, ordered, comp, -1);
 
@@ -7646,7 +7617,7 @@ algorithm
       ClassInf.State cct;
 
     case DAE.T_COMPLEX(complexClassType = cct, equalityConstraint = SOME(_))
-      then ClassInf.isTypeOrRecord(cct);
+      then ClassInfUtil.isTypeOrRecord(cct);
 
     case DAE.T_SUBTYPE_BASIC(equalityConstraint = SOME(_)) then true;
   end match;

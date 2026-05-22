@@ -46,7 +46,6 @@ encapsulated package DAE
 
 // public imports
 import Absyn;
-import BaseAvlTree;
 import ClassInf;
 import SCode;
 import Values;

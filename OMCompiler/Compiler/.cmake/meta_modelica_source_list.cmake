@@ -11,6 +11,7 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/CevalFunction.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/Ceval.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ClassInf.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ClassInfUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ClassLoader.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ComponentReference.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ConnectionGraph.mo
@@ -24,6 +25,7 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ExpressionDump.mo
   # Remember: Only files needed for compiling MetaModelica
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/Expression.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ExpressionBasics.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ExpressionSimplify.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ExpressionSimplifyTypes.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/Graphviz.mo
@@ -58,9 +60,11 @@ set(OMC_MM_ALWAYS_SOURCES
     #${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/SCodeSimplify.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/StateMachineFlatten.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/Types.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/TypesDump.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/UnitAbsyn.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/UnitParserExt.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/Values.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ValuesDump.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ValuesUtil.mo
 
   # Only files needed for compiling MetaModelica

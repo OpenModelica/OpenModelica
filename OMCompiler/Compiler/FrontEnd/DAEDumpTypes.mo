@@ -182,5 +182,5 @@ algorithm
   end match;
 end filterStructuralMod;
 
-annotation(__OpenModelica_Interface="frontend_types");
+annotation(__OpenModelica_Interface="frontend_dump");
 end DAEDumpTypes;

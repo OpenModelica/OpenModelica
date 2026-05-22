@@ -80,6 +80,7 @@ import FNode;
 import InstMeta;
 import MetaUtil;
 import Util;
+import ValuesDump;
 
 
 constant Integer SLOT_NOT_EVALUATED = 0;
@@ -4615,7 +4616,7 @@ algorithm
         // evaluate and check if resolution >= 1 (rfranke)
         (cache, val) := Ceval.ceval(cache, env, resolution, false, Absyn.MSG(info), 0);
         Error.assertionOrAddSourceMessage(ValuesUtil.valueInteger(val) >= 1,
-          Error.WRONG_VALUE_OF_ARG, {"Clock", "resolution", ValuesUtil.valString(val), ">= 1"}, info);
+          Error.WRONG_VALUE_OF_ARG, {"Clock", "resolution", ValuesDump.valString(val), ">= 1"}, info);
         resolution := ValuesUtil.valueExp(val, SOME(resolution));
         call := DAE.CLKCONST(DAE.RATIONAL_CLOCK(intervalCounter, resolution));
       then (cache, call, prop);
@@ -4845,7 +4846,7 @@ algorithm
         // evaluate and check if shiftCounter >= 0 (rfranke)
         (cache, val) := Ceval.ceval(cache, env, shiftCounter, false, Absyn.MSG(info), 0);
         Error.assertionOrAddSourceMessage(ValuesUtil.valueInteger(val) >= 0,
-          Error.WRONG_VALUE_OF_ARG, {"shiftSample", "shiftCounter", ValuesUtil.valString(val), ">= 0"}, info);
+          Error.WRONG_VALUE_OF_ARG, {"shiftSample", "shiftCounter", ValuesDump.valString(val), ">= 0"}, info);
         ashiftCounter := Absyn.INTEGER(ValuesUtil.valueInteger(val));
         aresolution := Absyn.INTEGER(1);
         ty1 := Types.arrayElementType(Types.getPropType(prop1));
@@ -4868,14 +4869,14 @@ algorithm
         // evaluate and check if shiftCounter >= 0 (rfranke)
         (cache, val) := Ceval.ceval(cache, env, shiftCounter, false, Absyn.MSG(info), 0);
         Error.assertionOrAddSourceMessage(ValuesUtil.valueInteger(val) >= 0,
-          Error.WRONG_VALUE_OF_ARG, {"shiftSample", "shiftCounter", ValuesUtil.valString(val), ">= 0"}, info);
+          Error.WRONG_VALUE_OF_ARG, {"shiftSample", "shiftCounter", ValuesDump.valString(val), ">= 0"}, info);
         ashiftCounter := Absyn.INTEGER(ValuesUtil.valueInteger(val));
         (cache, resolution, prop3) := elabExpInExpression(cache,env,aresolution,impl,true,pre,info);
         (resolution,_) := Types.matchType(resolution,Types.getPropType(prop3),DAE.T_INTEGER_DEFAULT,true);
         // evaluate and check if resolution >= 1 (rfranke)
         (cache, rval) := Ceval.ceval(cache, env, resolution, false, Absyn.MSG(info), 0);
         Error.assertionOrAddSourceMessage(ValuesUtil.valueInteger(rval) >= 1,
-          Error.WRONG_VALUE_OF_ARG, {"shiftSample", "resolution", ValuesUtil.valString(rval), ">= 1"}, info);
+          Error.WRONG_VALUE_OF_ARG, {"shiftSample", "resolution", ValuesDump.valString(rval), ">= 1"}, info);
         aresolution := Absyn.INTEGER(ValuesUtil.valueInteger(rval));
         ty1 := Types.arrayElementType(Types.getPropType(prop1));
         ty :=  DAE.T_FUNCTION(
@@ -4924,7 +4925,7 @@ algorithm
         // evaluate and check if backCounter >= 0 (rfranke)
         (cache, val) := Ceval.ceval(cache, env, backCounter, false, Absyn.MSG(info), 0);
         Error.assertionOrAddSourceMessage(ValuesUtil.valueInteger(val) >= 0,
-          Error.WRONG_VALUE_OF_ARG, {"backSample", "backCounter", ValuesUtil.valString(val), ">= 0"}, info);
+          Error.WRONG_VALUE_OF_ARG, {"backSample", "backCounter", ValuesDump.valString(val), ">= 0"}, info);
         abackCounter := Absyn.INTEGER(ValuesUtil.valueInteger(val));
         aresolution := Absyn.INTEGER(1);
         ty1 := Types.arrayElementType(Types.getPropType(prop1));
@@ -4947,14 +4948,14 @@ algorithm
         // evaluate and check if backCounter >= 0 (rfranke)
         (cache, val) := Ceval.ceval(cache, env, backCounter, false, Absyn.MSG(info), 0);
         Error.assertionOrAddSourceMessage(ValuesUtil.valueInteger(val) >= 0,
-          Error.WRONG_VALUE_OF_ARG, {"backSample", "backCounter", ValuesUtil.valString(val), ">= 0"}, info);
+          Error.WRONG_VALUE_OF_ARG, {"backSample", "backCounter", ValuesDump.valString(val), ">= 0"}, info);
         abackCounter := Absyn.INTEGER(ValuesUtil.valueInteger(val));
         (cache, resolution, prop3) := elabExpInExpression(cache,env,aresolution,impl,true,pre,info);
         (resolution,_) := Types.matchType(resolution,Types.getPropType(prop3),DAE.T_INTEGER_DEFAULT,true);
         // evaluate and check if resolution >= 1 (rfranke)
         (cache, rval) := Ceval.ceval(cache, env, resolution, false, Absyn.MSG(info), 0);
         Error.assertionOrAddSourceMessage(ValuesUtil.valueInteger(rval) >= 1,
-          Error.WRONG_VALUE_OF_ARG, {"backSample", "resolution", ValuesUtil.valString(rval), ">= 1"}, info);
+          Error.WRONG_VALUE_OF_ARG, {"backSample", "resolution", ValuesDump.valString(rval), ">= 1"}, info);
         aresolution := Absyn.INTEGER(ValuesUtil.valueInteger(rval));
         ty1 := Types.arrayElementType(Types.getPropType(prop1));
         ty :=  DAE.T_FUNCTION(

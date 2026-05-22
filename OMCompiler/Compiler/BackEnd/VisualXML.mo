@@ -56,6 +56,7 @@ import ComponentReference;
 import DAE;
 import DAEUtil;
 import ElementSource;
+import Expression;
 import ExpressionDump;
 import ExpressionSolve;
 import List;

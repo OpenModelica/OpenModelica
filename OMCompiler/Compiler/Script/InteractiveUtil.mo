@@ -91,6 +91,7 @@ import UnitAbsyn;
 import UnorderedSet;
 import UnorderedMap;
 import Util;
+import ValuesDump;
 
 import MetaModelica.Dangerous;
 
@@ -1426,7 +1427,7 @@ algorithm
     (cache,env) := Inst.makeEnvFromProgram(s);
     (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) := Lookup.lookupClass(cache, env, modelPath);
     env2 := FGraph.openScope(env_1, encflag, id, FGraph.restrictionToScopeType(restr));
-    ci_state := ClassInf.start(restr, FGraph.getGraphName(env2));
+    ci_state := ClassInfUtil.start(restr, FGraph.getGraphName(env2));
     permissive := Flags.getConfigBool(Flags.PERMISSIVE);
     FlagsUtil.setConfigBool(Flags.PERMISSIVE, true);
     try
@@ -2247,7 +2248,7 @@ algorithm
           dims_val := ValuesUtil.makeArray(listAppend(dims, common_dims));
 
           if quoteNames then
-            dims_val := ValuesUtil.makeString(ValuesUtil.printValStr(dims_val));
+            dims_val := ValuesUtil.makeString(ValuesDump.printValStr(dims_val));
           end if;
 
           info := List.appendElt(dims_val, common_info);
@@ -2289,7 +2290,7 @@ algorithm
         dims_val := ValuesUtil.makeArray(dims);
 
         if quoteNames then
-          dims_val := ValuesUtil.makeString(ValuesUtil.printValStr(dims_val));
+          dims_val := ValuesUtil.makeString(ValuesDump.printValStr(dims_val));
         end if;
 
         info := {dims_val};

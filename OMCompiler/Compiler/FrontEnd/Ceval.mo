@@ -86,6 +86,7 @@ protected import Static;
 protected import System;
 protected import Types;
 protected import Util;
+protected import ValuesDump;
 protected import ValuesUtil;
 protected import ClassInf;
 protected import Global;
@@ -343,14 +344,14 @@ algorithm
     case (cache,env,DAE.CREF(componentRef = cr),(false),msg,_)
       algorithm
         (cache,v) := cevalCref(cache, env, cr, false, msg, numIter+1) "When in interactive mode, always evaluate crefs, i.e non-implicit mode.." ;
-        //Debug.traceln("cevalCref cr: " + ComponentReference.printComponentRefStr(c) + " in s: " + FGraph.printGraphPathStr(env) + " v:" + ValuesUtil.valString(v));
+        //Debug.traceln("cevalCref cr: " + ComponentReference.printComponentRefStr(c) + " in s: " + FGraph.printGraphPathStr(env) + " v:" + ValuesDump.valString(v));
       then
         (cache,v);
 
     case (cache,env,DAE.CREF(componentRef = cr),impl,msg,_)
       algorithm
         (cache,v) := cevalCref(cache,env, cr, impl,msg,numIter+1);
-        //Debug.traceln("cevalCref cr: " + ComponentReference.printComponentRefStr(c) + " in s: " + FGraph.printGraphPathStr(env) + " v:" + ValuesUtil.valString(v));
+        //Debug.traceln("cevalCref cr: " + ComponentReference.printComponentRefStr(c) + " in s: " + FGraph.printGraphPathStr(env) + " v:" + ValuesDump.valString(v));
       then
         (cache,v);
 
@@ -783,9 +784,9 @@ algorithm
       algorithm
         env := FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), FCore.forScopeName, NONE());
         (cache, valMatrix, names, dims, tys) := cevalReductionIterators(cache, env, iterators, impl, msg,numIter+1);
-        // print("Before:\n");print(stringDelimitList(List.map1(List.mapList(valMatrix, ValuesUtil.valString), stringDelimitList, ","), "\n") + "\n");
+        // print("Before:\n");print(stringDelimitList(List.map1(List.mapList(valMatrix, ValuesDump.valString), stringDelimitList, ","), "\n") + "\n");
         valMatrix := makeReductionAllCombinations(valMatrix,iterType);
-        // print("After:\n");print(stringDelimitList(List.map1(List.mapList(valMatrix, ValuesUtil.valString), stringDelimitList, ","), "\n") + "\n");
+        // print("After:\n");print(stringDelimitList(List.map1(List.mapList(valMatrix, ValuesDump.valString), stringDelimitList, ","), "\n") + "\n");
         // print("Start cevalReduction: " + AbsynUtil.pathString(path) + " " + ExpressionDump.printExpStr(daeExp) + "\n");
         (cache, ov) := cevalReduction(cache, env, path, ov, daeExp, ty, foldName, resultName, foldExp, names, listReverse(valMatrix), tys, impl, msg,numIter+1);
         value := Util.getOptionOrDefault(ov, Values.META_FAIL());
@@ -2450,7 +2451,7 @@ algorithm
     case (cache,env,{exp1},impl,msg,_)
       algorithm
         (cache,v) := ceval(cache,env, exp1, impl, msg,numIter+1);
-        s := ValuesUtil.valString(v);
+        s := ValuesDump.valString(v);
       then
         (cache,Values.STRING(s));
   end match;
@@ -3421,8 +3422,8 @@ algorithm
     else
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
-        s1 := ValuesUtil.valString(v1);
-        s2 := ValuesUtil.valString(v2);
+        s1 := ValuesDump.valString(v1);
+        s2 := ValuesDump.valString(v2);
         Debug.traceln("- Ceval.cevalBuiltinMin2 failed: min(" + s1 + ", " + s2 + ")");
       then
         fail();
@@ -3496,8 +3497,8 @@ algorithm
     else
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
-        s1 := ValuesUtil.valString(v1);
-        s2 := ValuesUtil.valString(v2);
+        s1 := ValuesDump.valString(v1);
+        s2 := ValuesDump.valString(v2);
         Debug.traceln("- Ceval.cevalBuiltinMin2 failed: min(" + s1 + ", " + s2 + ")");
       then
         fail();
@@ -3978,9 +3979,9 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Ceval.cevalRelation failed on: " +
-          ValuesUtil.printValStr(inValue1) +
+          ValuesDump.printValStr(inValue1) +
           ExpressionDump.relopSymbol(inOperator) +
-          ValuesUtil.printValStr(inValue2));
+          ValuesDump.printValStr(inValue2));
       then
         fail();
   end matchcontinue;
@@ -4540,7 +4541,7 @@ algorithm
         Debug.traceln("- Ceval.cevalSubscriptValue failed on:" +
           "\n env: " + FGraph.printGraphPathStr(env) +
           "\n subs: " + stringDelimitList(List.map(subs, ExpressionDump.printSubscriptStr), ", ") +
-          "\n value: " + ValuesUtil.printValStr(inValue) +
+          "\n value: " + ValuesDump.printValStr(inValue) +
           "\n dim sizes: " + stringDelimitList(List.map(dims, intString), ", ")
         );
       then
@@ -4774,7 +4775,7 @@ algorithm
     case (cache, env, _, curValue, _, _, _, _, _, _, vals :: valueMatrix, _, _, _, _)
       algorithm
         // Bind the iterator
-        // print("iterators: " + stringDelimitList(list(ValuesUtil.valString(v) for v in vals), ",") + "\n");
+        // print("iterators: " + stringDelimitList(list(ValuesDump.valString(v) for v in vals), ",") + "\n");
         new_env := extendFrameForIterators(env, iteratorNames, vals, iterTypes);
         // Calculate var1 of the folding function
         (cache, curValue) := cevalReductionEvalAndFold(cache, new_env, opPath, curValue, exp, exprType, foldName, resultName, foldExp, impl, msg,numIter+1);
@@ -4810,9 +4811,9 @@ algorithm
     case (cache,env,_,curValue,_,_,_,_,_,_,_,_)
       algorithm
         (cache, value) := ceval(cache, env, exp, impl, msg,numIter+1);
-        // print("cevalReductionEval: " + ExpressionDump.printExpStr(exp) + " => " + ValuesUtil.valString(value) + "\n");
+        // print("cevalReductionEval: " + ExpressionDump.printExpStr(exp) + " => " + ValuesDump.valString(value) + "\n");
         (cache, result) := cevalReductionFold(cache, env, opPath, curValue, value, foldName, resultName, foldExp, exprType, impl, msg,numIter);
-        // print("cevalReductionEval => " + Util.applyOptionOrDefault(result, ValuesUtil.valString, "") + "\n");
+        // print("cevalReductionEval => " + Util.applyOptionOrDefault(result, ValuesDump.valString, "") + "\n");
       then (cache, result);
   end match;
 end cevalReductionEvalAndFold;
@@ -4857,7 +4858,7 @@ algorithm
 
     case (cache,_,SOME(value),SOME(exp))
       algorithm
-        // print("cevalReductionFold " + ExpressionDump.printExpStr(exp) + ", " + ValuesUtil.valString(inValue) + ", " + ValuesUtil.valString(value) + "\n");
+        // print("cevalReductionFold " + ExpressionDump.printExpStr(exp) + ", " + ValuesDump.valString(inValue) + ", " + ValuesUtil.valString(value) + "\n");
         /* TODO: Store the actual types somewhere... */
         env := FGraph.addForIterator(inEnv, foldName, exprType, DAE.VALBOUND(inValue, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
         env := FGraph.addForIterator(env, resultName, exprType, DAE.VALBOUND(value, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
@@ -5012,17 +5013,17 @@ algorithm
     case (Absyn.IDENT("array"),Absyn.COMBINE(),Values.ARRAY(valueLst=vals),_)
       algorithm
         value := backpatchArrayReduction3(vals,listReverse(dims),ValuesUtil.makeArray);
-        // print(ValuesUtil.valString(value));print("\n");
+        // print(ValuesDump.valString(value));print("\n");
       then value;
     case (Absyn.IDENT("list"),Absyn.COMBINE(),Values.LIST(vals),_)
       algorithm
         value := backpatchArrayReduction3(vals,listReverse(dims),ValuesUtil.makeList);
-        // print(ValuesUtil.valString(value));print("\n");
+        // print(ValuesDump.valString(value));print("\n");
       then value;
     case (Absyn.IDENT("listReverse"),Absyn.COMBINE(),Values.LIST(vals),_)
       algorithm
         value := backpatchArrayReduction3(vals,listReverse(dims),ValuesUtil.makeList);
-        // print(ValuesUtil.valString(value));print("\n");
+        // print(ValuesDump.valString(value));print("\n");
       then value;
     else inValue;
   end match;

@@ -1212,7 +1212,7 @@ algorithm
         end for;
 
       then
-        SOME(DAE.Exp.RECORD(ClassInf.getStateName(ty.complexClassType), expl, strl, ty));
+        SOME(DAE.Exp.RECORD(ClassInfUtil.getStateName(ty.complexClassType), expl, strl, ty));
 
     else binding;
   end match;

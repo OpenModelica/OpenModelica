@@ -157,6 +157,7 @@ import Types;
 import UnitParserExt;
 import Util;
 import Values;
+import ValuesDump;
 import ValuesUtil;
 import System;
 import SCodeDump;
@@ -617,7 +618,7 @@ algorithm
 
         env_1 := FGraph.openScope(env, encflag, n, FGraph.restrictionToScopeType(r));
 
-        ci_state := ClassInf.start(r,FGraph.getGraphName(env_1));
+        ci_state := ClassInfUtil.start(r,FGraph.getGraphName(env_1));
         csets := ConnectUtil.newSet(pre, inSets);
         (cache,env_3,ih,store,dae1,csets,ci_state_1,tys,bc_ty,oDA,equalityConstraint, graph)
           := instClassIn(cache, env_1, ih, store, mod, pre, ci_state, c, SCode.PUBLIC(), inst_dims, impl, callscope, graph, csets, NONE());
@@ -727,7 +728,7 @@ algorithm
     case (cache,env,ih,store,mod,pre,(c as SCode.CLASS(name = n,encapsulatedPrefix = encflag,restriction = r)),inst_dims,impl,_,_) /* impl */
       algorithm
         env_1 := FGraph.openScope(env, encflag, n, FGraph.restrictionToScopeType(r));
-        ci_state := ClassInf.start(r, FGraph.getGraphName(env_1));
+        ci_state := ClassInfUtil.start(r, FGraph.getGraphName(env_1));
         c_1 := SCodeUtil.classSetPartial(c, SCode.NOT_PARTIAL());
         (cache,env_3,ih,store,dae1,csets,ci_state_1,tys,bc_ty,_,_,_)
         := instClassIn(cache, env_1, ih, store, mod, pre, ci_state, c_1, SCode.PUBLIC(), inst_dims, impl, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, inSets, NONE());
@@ -825,7 +826,7 @@ algorithm
         (env, _) := FGraph.stripLastScopeRef(inEnv);
 
         env := FGraph.openScope(env, encflag, n, FGraph.restrictionToScopeType(r));
-        ci_state := ClassInf.start(r,FGraph.getGraphName(env));
+        ci_state := ClassInfUtil.start(r,FGraph.getGraphName(env));
 
         // lookup in IH
         InnerOuter.INST_INNER(innerElement = SOME(c)) :=
@@ -1241,7 +1242,7 @@ algorithm
           "\nmods: " + Mod.printModStr(mods) +
           "\ninst_dims: [" + stringDelimitList(List.map1(inst_dims, DAEDump.unparseDimensions, true), ", ") + "]" + "\n");
         */
-        ci_state_1 := ClassInf.trans(ci_state, ClassInf.NEWDEF());
+        ci_state_1 := ClassInfUtil.trans(ci_state, ClassInf.NEWDEF());
         comp := InstUtil.addNomod(els);
         (cache,env_1,ih) := InstUtil.addComponentsToEnv(cache,env,ih, mods, pre, ci_state_1, comp, impl);
 
@@ -1644,7 +1645,7 @@ algorithm
     case(_,_,_,SOME(v),_,expectedTp,_) algorithm
       true := Flags.isSet(Flags.FAILTRACE);
       Debug.traceln("instBuiltinAttribute failed for: " + id +
-                                  " value binding: " + ValuesUtil.printValStr(v) +
+                                  " value binding: " + ValuesDump.printValStr(v) +
                                   " binding: " + ExpressionDump.printExpStr(bind) +
                                   " expected type: " + Types.printTypeStr(expectedTp) +
                                   " type props: " + Types.printPropStr(bindProp));
@@ -2166,7 +2167,7 @@ algorithm
         end if;
         */
         //Debug.traceln(" Instclassdef for: " + PrefixUtil.printPrefixStr(pre) + "." +  className + " mods: " + Mod.printModStr(mods));
-        ci_state1 := ClassInf.trans(ci_state, ClassInf.NEWDEF());
+        ci_state1 := ClassInfUtil.trans(ci_state, ClassInf.NEWDEF());
         els := InstUtil.extractConstantPlusDeps(els,instSingleCref,{},className);
 
         // split elements
@@ -2339,7 +2340,7 @@ algorithm
 
         // Search for equalityConstraint
         eqConstraint := InstUtil.equalityConstraint(env5, els, info);
-        ci_state6 := if isSome(ed) then ClassInf.assertTrans(ci_state6,ClassInf.FOUND_EXT_DECL(),info) else ci_state6;
+        ci_state6 := if isSome(ed) then ClassInfUtil.assertTrans(ci_state6,ClassInf.FOUND_EXT_DECL(),info) else ci_state6;
         (cache,oty) := InstMeta.fixUniontype(cache, env5, ci_state6, inClassDef6);
         _ := match oty
           case SOME(ty as DAE.T_METAUNIONTYPE(typeVars=_::_))
@@ -2363,8 +2364,8 @@ algorithm
 
         // keep the old behaviour
         env3 := FGraph.openScope(cenv, enc2, cn2, SOME(FCore.CLASS_SCOPE()));
-        ci_state2 := ClassInf.start(r, FGraph.getGraphName(env3));
-        new_ci_state := ClassInf.start(r, FGraph.getGraphName(env3));
+        ci_state2 := ClassInfUtil.start(r, FGraph.getGraphName(env3));
+        new_ci_state := ClassInfUtil.start(r, FGraph.getGraphName(env3));
 
         // print("Enum Env: " + FGraph.printGraphPathStr(env3) + "\n");
         (cache,cenv_2,_,_,_,_,_,_,_,_,_,_) :=
@@ -2383,7 +2384,7 @@ algorithm
 
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph) := instClassIn(cache, cenv_2, ih, store, mods_1, pre, new_ci_state, c, vis,
           inst_dims_1, impl, callscope, graph, inSets, instSingleCref) "instantiate class in opened scope.";
-        ClassInf.assertValid(ci_state_1, re, info) "Check for restriction violations";
+        ClassInfUtil.assertValid(ci_state_1, re, info) "Check for restriction violations";
         oDA := SCodeUtil.mergeAttributes(DA,oDA);
       then
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph);
@@ -2406,7 +2407,7 @@ algorithm
         true := valid_connector;
 
         cenv_2 := FGraph.openScope(cenv, enc2, cn2, FGraph.classInfToScopeType(ci_state));
-        new_ci_state := ClassInf.start(r, FGraph.getGraphName(cenv_2));
+        new_ci_state := ClassInfUtil.start(r, FGraph.getGraphName(cenv_2));
 
         // chain the redeclares
         mod := InstUtil.chainRedeclares(mods, mod);
@@ -2425,7 +2426,7 @@ algorithm
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph) := instClassIn(cache, cenv_2, ih, store, mods_1, pre, new_ci_state, c, vis,
           inst_dims_1, impl, callscope, graph, inSets, instSingleCref) "instantiate class in opened scope. " ;
 
-        ClassInf.assertValid(ci_state_1, re, info) "Check for restriction violations" ;
+        ClassInfUtil.assertValid(ci_state_1, re, info) "Check for restriction violations" ;
         oDA := SCodeUtil.mergeAttributes(DA,oDA);
       then
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph);
@@ -2508,7 +2509,7 @@ algorithm
         false := InstUtil.checkDerivedRestriction(re, r, cn2);
 
         cenv_2 := FGraph.openScope(cenv, enc2, className, FGraph.classInfToScopeType(ci_state));
-        new_ci_state := ClassInf.start(r, FGraph.getGraphName(cenv_2));
+        new_ci_state := ClassInfUtil.start(r, FGraph.getGraphName(cenv_2));
 
         c := SCodeUtil.setClassName(className, c);
         // chain the redeclares
@@ -2521,7 +2522,7 @@ algorithm
         (cache,dims) := InstUtil.elabArraydimOpt(cache, parentEnv, Absyn.CREF_IDENT("",{}), cn, ad, eq, impl, true, pre, info, inst_dims) "owncref not valid here" ;
         inst_dims_1 := List.appendLastList(inst_dims, dims);
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph) := instClassIn(cache, cenv_2, ih, store, mods_1, pre, new_ci_state, c, vis, inst_dims_1, impl, callscope, graph, inSets, instSingleCref) "instantiate class in opened scope. " ;
-        ClassInf.assertValid(ci_state_1, re, info) "Check for restriction violations" ;
+        ClassInfUtil.assertValid(ci_state_1, re, info) "Check for restriction violations" ;
         oDA := SCodeUtil.mergeAttributes(DA,oDA);
       then
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph);
@@ -3015,7 +3016,7 @@ algorithm
         partial_prefix := SCodeUtil.getClassPartialPrefix(inClass);
         partial_prefix := InstUtil.isPartial(partial_prefix, inMod);
         class_name := SCodeUtil.elementName(inClass);
-        outState := ClassInf.trans(inState, ClassInf.NEWDEF());
+        outState := ClassInfUtil.trans(inState, ClassInf.NEWDEF());
 
         (cdef_els, class_ext_els, extends_els) := InstUtil.splitElts(inClassDef.elementLst);
         extends_els := SCodeInstUtil.addRedeclareAsElementsToExtends(extends_els,
@@ -3100,7 +3101,7 @@ algorithm
           scope_ty := if is_basic_type then FGraph.restrictionToScopeType(der_re) else
                                             FGraph.classInfToScopeType(inState);
           cenv := FGraph.openScope(cenv, enc, class_name, scope_ty);
-          outState := ClassInf.start(der_re, FGraph.getGraphName(cenv));
+          outState := ClassInfUtil.start(der_re, FGraph.getGraphName(cenv));
           (outCache, outEnv, outIH, outState, outVars) :=
             partialInstClassIn(outCache, cenv, inIH, mod, inPrefix, outState, cls,
               inVisibility, inst_dims, numIter);
@@ -3170,7 +3171,7 @@ algorithm
   el := InstUtil.sortInnerFirstTplLstElementMod(el);
 
   // For non-functions, don't reorder the elements.
-  if not ClassInf.isFunction(inState) then
+  if not ClassInfUtil.isFunction(inState) then
     // Figure out the ordering of the sorted elements, see getSortedElementOrdering.
     element_order := getSortedElementOrdering(inElements, el);
 
@@ -3518,7 +3519,7 @@ algorithm
         m := SCodeInstUtil.expandEnumerationMod(m);
         m := InstUtil.traverseModAddDims(cache, env, pre, m, inst_dims);
         comp := if referenceEq(oldmod,m) then comp else SCode.COMPONENT(name, prefixes, attr, ts, m, comment, cond, info);
-        ci_state := ClassInf.trans(ci_state, ClassInf.FOUND_COMPONENT(name));
+        ci_state := ClassInfUtil.trans(ci_state, ClassInf.FOUND_COMPONENT(name));
         cref := ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {});
         (cache,_) := PrefixUtil.prefixCref(cache, env, ih, pre, cref); /*mahge: todo: remove me*/
 
@@ -3569,7 +3570,7 @@ algorithm
         // print("Inst.instElement: after elabMod " + PrefixUtil.printPrefixStr(pre) + "." + name + " component mod: " + Mod.printModStr(m_1) + " in env: " + FGraph.printGraphPathStr(env2) + "\n");
 
         mod := Mod.merge(mm, class_mod, name);
-        mod := Mod.merge(mod, m_1, name, not ClassInf.isRecord(ci_state));
+        mod := Mod.merge(mod, m_1, name, not ClassInfUtil.isRecord(ci_state));
         mod := Mod.merge(cmod, mod, name);
 
         /* (BZ part:2/2) here we merge the redeclared class modifier.
@@ -5596,7 +5597,7 @@ protected
   Option<String> comment=NONE();
   SCode.Mod mod=SCode.NOMOD(), mod2;
 algorithm
-  if not ClassInf.isFunction(state) then
+  if not ClassInfUtil.isFunction(state) then
     return;
   end if;
 

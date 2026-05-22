@@ -61,6 +61,7 @@ protected import ExpressionDump;
 protected import Absyn;
 protected import AbsynUtil;
 protected import Dump;
+protected import ValuesDump;
 protected import ValuesUtil;
 protected import Values;
 protected import Types;
@@ -1260,7 +1261,7 @@ algorithm
       str := " = "+ExpressionDump.printExpStr(e);
     then str;
     case(DAE.VALBOUND(valBound=v, source=DAE.BINDING_FROM_DEFAULT_VALUE())) algorithm
-      str := " = " + ValuesUtil.valString(v);
+      str := " = " + ValuesDump.valString(v);
     then str;
   end match;
 end printRecordConstructorBinding;

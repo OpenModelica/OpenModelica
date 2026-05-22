@@ -79,6 +79,7 @@ protected import Static;
 protected import Types;
 protected import Util;
 protected import Values;
+protected import ValuesDump;
 protected import ValuesUtil;
 protected import System;
 protected import SCodeDump;
@@ -333,7 +334,7 @@ algorithm
     case {} then ();
     case SCode.NAMEMOD(ident = ident)::subs
       algorithm
-        true := ClassInf.isBasicTypeComponentName(ident);
+        true := ClassInfUtil.isBasicTypeComponentName(ident);
         checkIfSubmodsAreBasicTypeMods(subs);
       then ();
   end match;
@@ -2360,7 +2361,7 @@ algorithm
       algorithm
         str := ExpressionDump.printExpStr(e);
         str2 := Types.printPropStr(prop);
-        e_val_str := ValuesUtil.valString(e_val);
+        e_val_str := ValuesDump.valString(e_val);
         res := stringAppendList({" = (typed)",str," ",str2,", value: ",e_val_str});
       then
         res;

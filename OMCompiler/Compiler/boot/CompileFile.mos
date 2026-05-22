@@ -7,14 +7,15 @@ mkdir("build/tmp");
 cd("build/tmp");
 if not checkInterfaceOfPackages(mainClass, {
 // Also update Compiler/.cmake/mm_check_interface.in.mos if you change this file.
-  {"parser", "", "", "", "", "", "", ""},
-  {"backend", "frontend", "util", "susan", "nf_frontend", "util_datatypes_basic", "parser", "frontend_types"},
-  {"frontend", "util", "susan", "util_datatypes_basic", "parser", "frontend_types", "", ""},
-  {"frontend_types", "util", "susan", "util_datatypes_basic", "parser", "", "", ""},
-  {"nf_frontend", "util", "susan", "frontend_types", "util_datatypes_basic", "parser", "frontend", ""},
-  {"susan", "util", "util_datatypes_basic", "parser", "", "", "", ""},
-  {"util", "util_datatypes_basic", "", "", "", "", "", ""},
-  {"util_datatypes_basic", "", "", "", "", "", "", ""}
+  {"parser", "", "", "", "", "", "", "", ""},
+  {"backend", "frontend", "util", "susan", "nf_frontend", "util_datatypes_basic", "parser", "frontend_types", "frontend_dump"},
+  {"frontend", "util", "susan", "util_datatypes_basic", "parser", "frontend_types", "frontend_dump", "", ""},
+  {"frontend_types", "", "", "util_datatypes_basic", "parser", "", "", "", ""},
+  {"frontend_dump", "util", "susan", "util_datatypes_basic", "parser", "frontend_types", "", "", ""},
+  {"nf_frontend", "util", "susan", "frontend_types", "util_datatypes_basic", "parser", "frontend", "frontend_dump", ""},
+  {"susan", "util", "util_datatypes_basic", "parser", "", "", "", "", ""},
+  {"util", "util_datatypes_basic", "", "", "", "", "", "", ""},
+  {"util_datatypes_basic", "", "", "", "", "", "", "", ""}
 }) then
   print(getErrorString());
   exit(1);
@@ -25,7 +26,8 @@ status:=OpenModelica.Scripting.generateSeparateCode(mainClass);
 messageFile := "../" + typeNameString(mainClass) + ".log";
 if numMessages > 0 or not status then
   status := false;
-  messages := getErrorString(warningsAsErrors=true);
+  messages := OpenModelica.Scripting.getErrorString(warningsAsErrors=true);
+  print(messages);
   print(intString(numErrors+numWarnings) + " errors out of " + intString(numMessages) + " messages:\n" + messages);
   writeFile(messageFile, messages);
   if numErrors+numWarnings > 0 then

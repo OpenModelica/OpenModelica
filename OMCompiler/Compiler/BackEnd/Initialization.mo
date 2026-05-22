@@ -80,6 +80,7 @@ import Sorting;
 import SymbolicJacobian;
 import SynchronousFeatures;
 import System;
+import Types;
 
 // =============================================================================
 // section for all public functions

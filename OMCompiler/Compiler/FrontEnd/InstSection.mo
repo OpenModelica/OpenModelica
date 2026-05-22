@@ -83,6 +83,7 @@ protected import Types;
 protected import Util;
 protected import Values;
 protected import ValuesUtil;
+protected import ValuesDump;
 protected import System;
 protected import ErrorExt;
 protected import SCodeDump;
@@ -182,7 +183,7 @@ algorithm
 
     case ()
       algorithm
-        state := ClassInf.trans(inState,ClassInf.FOUND_EQUATION());
+        state := ClassInfUtil.trans(inState,ClassInf.FOUND_EQUATION());
         (outCache, outEnv, outIH, outDae, outSets, outState, outGraph) :=
           instEquationCommonWork(inCache, inEnv, inIH, inPrefix, inSets, state,
             inEquation, inInitial, inImpl, inGraph, DAE.FLATTEN(inEquation,NONE()));
@@ -194,8 +195,8 @@ algorithm
 
     case ()
       algorithm
-        failure(_ := ClassInf.trans(inState,ClassInf.FOUND_EQUATION()));
-        s := ClassInf.printStateStr(inState);
+        failure(_ := ClassInfUtil.trans(inState,ClassInf.FOUND_EQUATION()));
+        s := ClassInfUtil.printStateStr(inState);
         Error.addSourceMessage(Error.EQUATION_TRANSITION_FAILURE, {s}, SCodeUtil.getEquationInfo(inEquation));
       then
         fail();
@@ -1158,7 +1159,7 @@ protected function instEquationCommonCiTrans
 algorithm
   outState := match inInitial
     case SCode.NON_INITIAL()
-      then ClassInf.trans(inState, ClassInf.FOUND_EQUATION());
+      then ClassInfUtil.trans(inState, ClassInf.FOUND_EQUATION());
 
     else inState;
   end match;
@@ -1211,7 +1212,7 @@ algorithm
     outDae := List.fold(daes, DAEUtil.joinDaes, DAE.emptyDae);
   else
     true := Flags.isSet(Flags.FAILTRACE);
-    Debug.traceln("- InstSection.unroll failed: " + ValuesUtil.valString(inValue));
+    Debug.traceln("- InstSection.unroll failed: " + ValuesDump.valString(inValue));
     fail();
   end try;
 end unroll;
@@ -2012,7 +2013,7 @@ algorithm
     case (cache,env,ih,pre,csets,ci_state,SCode.ALGORITHM(statements = statements),impl,_,graph) /* impl */
       algorithm
         // set the source of this element
-        ci_state := ClassInf.trans(ci_state,ClassInf.FOUND_ALGORITHM());
+        ci_state := ClassInfUtil.trans(ci_state,ClassInf.FOUND_ALGORITHM());
         source := ElementSource.createElementSource(Absyn.dummyInfo, FGraph.getScopePath(env), pre);
 
         (cache,statements_1) := instStatements(cache, env, ih, pre, ci_state, statements, source, SCode.NON_INITIAL(), impl, unrollForLoops);
@@ -2024,8 +2025,8 @@ algorithm
 
     case (_,_,_,_,_,ci_state,SCode.ALGORITHM(statements = stmt::_),_,_,_)
       algorithm
-        failure(_ := ClassInf.trans(ci_state,ClassInf.FOUND_ALGORITHM()));
-        s := ClassInf.printStateStr(ci_state);
+        failure(_ := ClassInfUtil.trans(ci_state,ClassInf.FOUND_ALGORITHM()));
+        s := ClassInfUtil.printStateStr(ci_state);
         info := SCodeUtil.getStatementInfo(stmt);
         Error.addSourceMessage(Error.ALGORITHM_TRANSITION_FAILURE, {s}, info);
       then fail();
@@ -2127,7 +2128,7 @@ algorithm
     case (cache,env,pre,ci_state,SCode.CONSTRAINTS(constraints = constraints),impl)
       algorithm
         // set the source of this element
-        ci_state := ClassInf.trans(ci_state,ClassInf.FOUND_ALGORITHM());
+        ci_state := ClassInfUtil.trans(ci_state,ClassInf.FOUND_ALGORITHM());
         source := ElementSource.createElementSource(Absyn.dummyInfo, FGraph.getScopePath(env), pre);
 
         (cache,constraints_1,_) := Static.elabExpList(cache, env, constraints, impl, true /*vect*/, pre, Absyn.dummyInfo);
@@ -2139,8 +2140,8 @@ algorithm
 /*
     case (_,_,_,_,_,_,ci_state,SCode.ALGORITHM(constraints = exp::_),_,_,_)
       algorithm
-        failure(_ = ClassInf.trans(ci_state,ClassInf.FOUND_ALGORITHM()));
-        s = ClassInf.printStateStr(ci_state);
+        failure(_ = ClassInfUtil.trans(ci_state,ClassInf.FOUND_ALGORITHM()));
+        s = ClassInfUtil.printStateStr(ci_state);
         Error.addMessage(Error.ALGORITHM_TRANSITION_FAILURE,{s});
       then fail();
 */
@@ -2297,7 +2298,7 @@ algorithm
     case SCode.ALG_WHEN_A(info = info)
       algorithm
         // When may not be used in a function.
-        if ClassInf.isFunction(inState) then
+        if ClassInfUtil.isFunction(inState) then
           Error.addSourceMessageAndFail(Error.FUNCTION_ELEMENT_WRONG_KIND, {"when"}, info);
         end if;
 
@@ -2374,7 +2375,7 @@ algorithm
 
     case SCode.ALG_RETURN(info = info)
       algorithm
-        if not ClassInf.isFunction(inState) then
+        if not ClassInfUtil.isFunction(inState) then
           Error.addSourceMessageAndFail(Error.RETURN_OUTSIDE_FUNCTION, {}, info);
         end if;
         source := ElementSource.addElementSourceFileInfo(inSource, info);
@@ -2583,7 +2584,7 @@ algorithm
     case (_,_,_,_,_,_,v,_,_,_,_,_)
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- InstSection.loopOverRange failed to loop over range: " + ValuesUtil.valString(v));
+        Debug.traceln("- InstSection.loopOverRange failed to loop over range: " + ValuesDump.valString(v));
       then
         fail();
   end matchcontinue;
@@ -3853,27 +3854,27 @@ algorithm
 
     case (DAE.T_COMPLEX(complexClassType = state), _, _)
       algorithm
-        ClassInf.valid(state, SCode.R_CONNECTOR(false));
+        ClassInfUtil.valid(state, SCode.R_CONNECTOR(false));
       then
         ();
 
     case (DAE.T_COMPLEX(complexClassType = state), _, _)
       algorithm
-        ClassInf.valid(state, SCode.R_CONNECTOR(true));
+        ClassInfUtil.valid(state, SCode.R_CONNECTOR(true));
       then
         ();
 
     // TODO, check if subtype is needed here
     case (DAE.T_SUBTYPE_BASIC(complexClassType = state), _, _)
       algorithm
-        ClassInf.valid(state, SCode.R_CONNECTOR(false));
+        ClassInfUtil.valid(state, SCode.R_CONNECTOR(false));
       then
         ();
 
     // TODO, check if subtype is needed here
     case (DAE.T_SUBTYPE_BASIC(complexClassType = state), _, _)
       algorithm
-        ClassInf.valid(state, SCode.R_CONNECTOR(true));
+        ClassInfUtil.valid(state, SCode.R_CONNECTOR(true));
       then
         ();
 

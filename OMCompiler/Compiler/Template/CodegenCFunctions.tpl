@@ -2203,7 +2203,7 @@ template writeOutVarRecordMembers(Type type, String prefix)
 ::=
 match type
 case T_COMPLEX(varLst=vl, complexClassType=n) then
-  let basename = underscorePath(ClassInf.getStateName(n))
+  let basename = underscorePath(ClassInfUtil.getStateName(n))
   let args = (vl |> subvar as TYPES_VAR(__) =>
       match ty case T_COMPLEX(__) then
         let newPrefix = '<%prefix%>._<%subvar.name%>'
@@ -2356,7 +2356,7 @@ case var as VARIABLE(__) then
   case SOME(arr as ARRAY(ty = T_ARRAY(ty = T_COMPLEX(complexClassType = record_state)))) then
     let &varInits += allocNoDefault
     let varName = contextCrefNoPrevExp(var.name, context, &auxFunction)
-    let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
+    let rec_name = '<%underscorePath(ClassInfUtil.getStateName(record_state))%>'
     let &preExp = buffer ""
     let params = (arr.array |> e hasindex i1 fromindex 1 =>
       let prefix = if arr.scalar then '(<%expTypeFromExpModelica(e)%>)' else '&'
@@ -4223,7 +4223,7 @@ template expTypeShort(DAE.Type type)
   case T_SUBTYPE_BASIC(__) then expTypeShort(complexType)
   case T_ARRAY(__)         then expTypeShort(ty)
   case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__)) then "complex"
-  case T_COMPLEX(__)       then '<%underscorePath(ClassInf.getStateName(complexClassType))%>'
+  case T_COMPLEX(__)       then '<%underscorePath(ClassInfUtil.getStateName(complexClassType))%>'
   case T_METAUNIONTYPE(__)
   case T_METAARRAY(__)
   case T_METALIST(__)
@@ -4334,7 +4334,7 @@ template expTypeFlag(DAE.Type ty, Integer flag)
     match ty case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__)) then
       'modelica_<%expTypeShort(ty)%>'
     else match ty case T_COMPLEX(__) then
-      '<%underscorePath(ClassInf.getStateName(complexClassType))%>'
+      '<%underscorePath(ClassInfUtil.getStateName(complexClassType))%>'
     else match ty case T_ARRAY(ty = t as T_COMPLEX(__)) then
       expTypeShort(t)
     else
@@ -4832,7 +4832,7 @@ template contextCrefOld(ComponentRef cr, Context context, Text &auxFunction, Int
     case CREF_QUAL(identType = T_ARRAY(ty = T_COMPLEX(complexClassType = record_state))) then
       let &preExp = buffer ""
       let &varDecls = buffer ""
-      let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
+      let rec_name = '<%underscorePath(ClassInfUtil.getStateName(record_state))%>'
       let recPtr = tempDecl(rec_name + "*", &varDecls)
       let dimsLenStr = listLength(crefSubs(cr))
       let dimsValuesStr = (crefSubs(cr) |> INDEX(__) => daeSubscriptExp(exp, context, &preExp, &varDecls, &auxFunction) ; separator=", ")
@@ -5001,7 +5001,7 @@ template crefTypeNameOMSIC(DAE.Type type)
   case T_SUBTYPE_BASIC(__) then crefTypeNameOMSIC(complexType)
   case T_ARRAY(__)         then crefTypeNameOMSIC(ty)
   case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__)) then "complex"
-  case T_COMPLEX(__)       then '<%CodegenUtil.underscorePath(ClassInf.getStateName(complexClassType))%>'
+  case T_COMPLEX(__)       then '<%CodegenUtil.underscorePath(ClassInfUtil.getStateName(complexClassType))%>'
   else CodegenUtil.error(sourceInfo(),'crefTypeNameOMSIC: <%unparseType(type)%>')
 end crefTypeNameOMSIC;
 
@@ -5477,7 +5477,7 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
 
   case ecr as CREF(componentRef = cr, ty = t as T_COMPLEX(complexClassType = record_state, varLst = var_lst)) then
     let vars = var_lst |> v => (", " + constVarOrDaeExp(v, cr, context, &preExp, &varDecls, &auxFunction))
-    let record_type_name = underscorePath(ClassInf.getStateName(record_state))
+    let record_type_name = underscorePath(ClassInfUtil.getStateName(record_state))
     let tmpRec = tempDecl(record_type_name, &varDecls)
     let &preExp += '<%record_type_name%>_wrap_vars(threadData,<%tmpRec%><%vars%>);<%\n%>'
     '<%tmpRec%>'
@@ -7401,7 +7401,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
     case IDENT(name="array") then
       match typeof(r.expr)
         case T_COMPLEX(complexClassType = record_state) then
-          let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
+          let rec_name = '<%underscorePath(ClassInfUtil.getStateName(record_state))%>'
           '<%rec_name%>_array_get(<%res%>, 1, <%arrIndex%>++) = <%reductionBodyExpr%>;'
         case T_ARRAY(__) then
           let tmp = tempDecl("index_spec_t", &varDecls)
@@ -7526,7 +7526,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
         else /* Not a range; allocate a big array... */
           let addr = match iter.ty
             case T_ARRAY(ty=T_COMPLEX(complexClassType = record_state)) then
-              let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
+              let rec_name = '<%underscorePath(ClassInfUtil.getStateName(record_state))%>'
               '<%rec_name%>_array_get(<%loopVar%>, 1, <%firstIndex%>++)'
             else
               '<%arrayType%>_get1(<%loopVar%>, 1, <%firstIndex%>++)'
@@ -7560,7 +7560,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
        <%arrIndex%> = 1;
        <% match typeof(r.expr)
         case T_COMPLEX(complexClassType = record_state) then
-          let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
+          let rec_name = '<%underscorePath(ClassInfUtil.getStateName(record_state))%>'
           'alloc_generic_array(&<%res%>, sizeof(<%rec_name%>), 1, (_index_t)<%length%>);'
         case T_ARRAY(__) then
           let dimSizes = dims |> dim => match dim

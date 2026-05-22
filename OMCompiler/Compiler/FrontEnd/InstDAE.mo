@@ -51,6 +51,7 @@ public import FGraph;
 public import InnerOuter;
 public import SCode;
 
+protected import ClassInfUtil;
 protected import ComponentReference;
 protected import Config;
 protected import DAEUtil;
@@ -171,7 +172,7 @@ algorithm
     case (_, _, _, _, _)
       algorithm
         els := DAEUtil.daeElements(inDAE);
-        sstr := ClassInf.printStateStr(inState);
+        sstr := ClassInfUtil.printStateStr(inState);
         sstr := "'" + sstr + "'";
         comp := DAE.COMP(sstr, els, DAE.emptyElementSource, NONE());
         dae := DAE.DAE({comp});
@@ -185,7 +186,7 @@ algorithm
     case (_, _, _, _, _)
       algorithm
         str := if System.getPartialInstantiation() then " partial" else " full";
-        print("DAE: " + ClassInf.printStateStr(inState) + str + " - could not print\n");
+        print("DAE: " + ClassInfUtil.printStateStr(inState) + str + " - could not print\n");
       then ();
 
     else ();

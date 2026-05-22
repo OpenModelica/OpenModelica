@@ -145,6 +145,7 @@ import Uncertainties;
 import UnitAbsynBuilder;
 import UnitParserExt;
 import Util;
+import ValuesDump;
 import ValuesUtil;
 import XMLDump;
 
@@ -571,7 +572,7 @@ algorithm
     case _::lst
       algorithm
         // build a list with the values
-        simOptsValues := List.map(lst, ValuesUtil.valString);
+        simOptsValues := List.map(lst, ValuesDump.valString);
         // trim " from strings!
         simOptsValues := List.map2(simOptsValues, System.stringReplace, "\"", "\'");
 
@@ -583,7 +584,7 @@ algorithm
     case (_::lst)
       algorithm
         // build a list with the values
-        simOptsValues := List.map(lst, ValuesUtil.valString);
+        simOptsValues := List.map(lst, ValuesDump.valString);
         // trim " from strings!
         simOptsValues := List.map2(simOptsValues, System.stringReplace, "\"", "\'");
 
@@ -4644,7 +4645,7 @@ algorithm
         (cache, outSimSettings);
     else
       algorithm
-        Error.addMessage(Error.INTERNAL_ERROR, {"CevalScript.calculateSimulationSettings failed: " + ValuesUtil.valString(Values.TUPLE(vals))});
+        Error.addMessage(Error.INTERNAL_ERROR, {"CevalScript.calculateSimulationSettings failed: " + ValuesDump.valString(Values.TUPLE(vals))});
       then
         fail();
   end match;
@@ -7751,7 +7752,7 @@ algorithm
         val::valsList;
     case ((val as Values.CODE(_)) :: xs, str1, b, p)
       algorithm
-        str := ValuesUtil.valString(val);
+        str := ValuesDump.valString(val);
         position := System.stringFind(System.tolower(str), System.tolower(str1));
         true := (position > -1);
         valsList := searchClassNames(xs, str1, b, p);

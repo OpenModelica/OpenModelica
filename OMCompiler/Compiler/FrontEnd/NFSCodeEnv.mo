@@ -45,6 +45,7 @@ encapsulated package NFSCodeEnv
 
 import Absyn;
 import AbsynUtil;
+import BaseAvlTree;
 import Mutable;
 import SCode;
 import Util;

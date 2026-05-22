@@ -58,6 +58,7 @@ import HashTable5;
 
 protected
 import AvlSetCR;
+import ClassInfUtil;
 import DoubleEnded;
 import List;
 import BaseHashTable;
@@ -79,6 +80,7 @@ import FNode;
 import SCodeDump;
 import SCodeUtil;
 import Lookup;
+import ValuesDump;
 import ValuesUtil;
 import Static;
 import Ceval;
@@ -218,7 +220,7 @@ algorithm
       algorithm
         //print(" (Initial if)To ceval: " + stringDelimitList(List.map(conds,ExpressionDump.printExpStr),", ") + "\n");
         (_,valList) := Ceval.cevalList(cache,env, conds, true, Absyn.NO_MSG(),0);
-        //print(" Ceval res: ("+stringDelimitList(List.map(valList,ValuesUtil.printValStr),",")+")\n");
+        //print(" Ceval res: ("+stringDelimitList(List.map(valList,ValuesDump.printValStr),",")+")\n");
 
         blist := List.map(valList,ValuesUtil.valueBool);
         selectedBranch := List.findBoolList(blist, tbs, fb);
@@ -3496,7 +3498,7 @@ algorithm
         id := FNode.refName(FGraph.lastScopeRef(inNewEnv));
         (rest, _) := FGraph.stripLastScopeRef(inNewEnv);
         (_, cls, _) := Lookup.lookupClassIdent(inCache, rest, id);
-        ci_state := ClassInf.start(SCodeUtil.getClassRestriction(cls), FGraph.getGraphName(inNewEnv));
+        ci_state := ClassInfUtil.start(SCodeUtil.getClassRestriction(cls), FGraph.getGraphName(inNewEnv));
       then
         ci_state;
 
@@ -5606,7 +5608,7 @@ algorithm
     case (_,ci,_,SOME(tp),_)
       algorithm
         true := Types.isArray(tp);
-        failure(ClassInf.isConnector(ci));
+        failure(ClassInfUtil.isConnector(ci));
       then
         tp;
 
@@ -6798,7 +6800,7 @@ algorithm
       then true; // Randomly pick a default for graphics mode...
     else
       algorithm
-        Error.addInternalError("InstUtil.instConditionalDeclaration got unexpected value " + ValuesUtil.valString(val), sourceInfo());
+        Error.addInternalError("InstUtil.instConditionalDeclaration got unexpected value " + ValuesDump.valString(val), sourceInfo());
       then
         fail();
   end match;

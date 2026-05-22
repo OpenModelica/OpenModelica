@@ -63,6 +63,7 @@ protected
  import Debug;
  import DoubleEnded;
  import ExpandableArray;
+ import Expression;
  import ExpressionDump;
  import Flags;
  import HashTableCG;

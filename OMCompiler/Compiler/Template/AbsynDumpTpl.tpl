@@ -1128,5 +1128,5 @@ let() = Tpl.addTemplateError(errMessage)
 >>
 end errorMsg;
 
-annotation(__OpenModelica_Interface="frontend_types");
+annotation(__OpenModelica_Interface="frontend_dump");
 end AbsynDumpTpl;

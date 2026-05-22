@@ -56,6 +56,7 @@ public import SCode;
 // protected imports
 protected import AvlSetString;
 protected import Config;
+protected import ClassInfUtil;
 protected import Debug;
 protected import Dump;
 protected import Error;
@@ -167,7 +168,7 @@ algorithm
           // Check if the extends is referencing the class we're instantiating.
           base_first_id := AbsynUtil.pathFirstIdent(el.baseClassPath);
           eq_name := stringEq(inClassName, base_first_id) and AbsynUtil.pathEqual(
-            ClassInf.getStateName(inState),
+            ClassInfUtil.getStateName(inState),
             AbsynUtil.joinPaths(FGraph.getGraphName(outEnv),
                             AbsynUtil.makeIdentPathFromString(base_first_id)));
 

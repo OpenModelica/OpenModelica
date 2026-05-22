@@ -47,6 +47,7 @@ import BackendDAE.VarKind;
 import CR=ComponentReference;
 import DAE.{Exp,Type};
 import Dump;
+import Expression;
 import ExpressionDump.printExpStr;
 import File.Escape.XML;
 import Settings;

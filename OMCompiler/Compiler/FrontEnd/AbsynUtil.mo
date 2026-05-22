@@ -7303,5 +7303,5 @@ algorithm
   end match;
 end equationEqual;
 
-annotation(__OpenModelica_Interface="frontend_types");
+annotation(__OpenModelica_Interface="frontend_dump");
 end AbsynUtil;

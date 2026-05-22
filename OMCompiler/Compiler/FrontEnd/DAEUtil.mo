@@ -79,6 +79,7 @@ import Types;
 import Util;
 import StateMachineFlatten;
 import VarTransform;
+import ValuesDump;
 import MetaModelica.Dangerous.listReverseInPlace;
 
 public function constStr "return the DAE.Const as a string. (VAR|PARAM|CONST)
@@ -94,18 +95,6 @@ algorithm
   end match;
 end constStr;
 
-public function constStrFriendly "return the DAE.Const as a friendly string. Used for debugging."
-  input DAE.Const const;
-  output String str;
-algorithm
-  str := match(const)
-    case(DAE.C_VAR()) then "";
-    case(DAE.C_PARAM()) then "parameter ";
-    case(DAE.C_CONST()) then "constant ";
-
-  end match;
-end constStrFriendly;
-
 public function const2VarKind
   input DAE.Const const;
   output DAE.VarKind kind;
@@ -116,17 +105,6 @@ algorithm
     case(DAE.C_CONST()) then DAE.CONST();
   end match;
 end const2VarKind;
-
-public function dumpVarParallelismStr "Dump VarParallelism to a string"
-  input DAE.VarParallelism inVarParallelism;
-  output String outString;
-algorithm
-  outString := match (inVarParallelism)
-    case DAE.NON_PARALLEL() then "";
-    case DAE.PARGLOBAL() then "parglobal ";
-    case DAE.PARLOCAL() then "parlocal ";
-  end match;
-end dumpVarParallelismStr;
 
 public function topLevelInput "author: PA
   if variable is input declared at the top level of the model,
@@ -2199,10 +2177,10 @@ algorithm
     // In other classes print warning
     case (_, SCode.PARGLOBAL(), _, _)
       algorithm
-        path := ClassInf.getStateName(inState);
+        path := ClassInfUtil.getStateName(inState);
         str1 := "\n" +
         "- DAEUtil.toDaeParallelism: parglobal component '" + ComponentReference.printComponentRefStr(inCref)
-        + "' in non-function class: " + ClassInf.printStateStr(inState) + " " + AbsynUtil.pathString(path);
+        + "' in non-function class: " + ClassInfUtil.printStateStr(inState) + " " + AbsynUtil.pathString(path);
 
         Error.addSourceMessage(Error.PARMODELICA_WARNING,
           {str1}, inInfo);
@@ -2210,10 +2188,10 @@ algorithm
 
     case (_, SCode.PARLOCAL(), _, _)
       algorithm
-        path := ClassInf.getStateName(inState);
+        path := ClassInfUtil.getStateName(inState);
         str1 := "\n" +
         "- DAEUtil.toDaeParallelism: parlocal component '" + ComponentReference.printComponentRefStr(inCref)
-        + "' in non-function class: " + ClassInf.printStateStr(inState) + " " + AbsynUtil.pathString(path);
+        + "' in non-function class: " + ClassInfUtil.printStateStr(inState) + " " + AbsynUtil.pathString(path);
 
         Error.addSourceMessage(Error.PARMODELICA_WARNING,
           {str1}, inInfo);
@@ -5682,23 +5660,11 @@ algorithm
         str;
     case(DAE.VALBOUND(valBound=v))
       algorithm
-        str := " = " + ValuesUtil.valString(v);
+        str := " = " + ValuesDump.valString(v);
       then
         str;
   end match;
 end printBindingExpStr;
-
-public function printBindingSourceStr "prints a binding source as a string"
-  input DAE.BindingSource bindingSource;
-  output String str;
-algorithm
-  str := match(bindingSource)
-    case(DAE.BINDING_FROM_DEFAULT_VALUE())       then "[DEFAULT VALUE]";
-    case(DAE.BINDING_FROM_START_VALUE())         then "[START VALUE]";
-    case(DAE.BINDING_FROM_RECORD_SUBMODS())      then "[RECORD SUBMODS]";
-    case(DAE.BINDING_FROM_DERIVED_RECORD_DECL()) then "[DERIVED RECORD]";
-  end match;
-end printBindingSourceStr;
 
 public function collectValueblockFunctionRefVars
 "Collect the function names of variables in valueblock local sections"

@@ -46,6 +46,7 @@ encapsulated package ExpressionDump
 public import Absyn;
 public import AbsynUtil;
 public import DAE;
+public import ExpressionBasics;
 public import Graphviz;
 
 // protected imports
@@ -423,13 +424,7 @@ algorithm
   end match;
 end printOptExpStr;
 
-public function printExpStr
-"This function prints a complete expression."
-  input DAE.Exp e;
-  output String s;
-algorithm
-  s := Tpl.tplString2(ExpressionDumpTpl.dumpExp, e, "\"");
-end printExpStr;
+public function printExpStr = ExpressionBasics.printExpStr;
 
 public function printCrefsFromExpStr
   input DAE.Exp e;
@@ -1616,49 +1611,8 @@ algorithm str := matchcontinue(inExp)
 end matchcontinue;
 end debugPrintComponentRefExp;
 
-public function dimensionString
-  "Returns a string representation of an array dimension."
-  input DAE.Dimension dim;
-  output String str;
-algorithm
-  str := match(dim)
-    local
-      String s;
-      Integer x;
-      Absyn.Path p;
-      DAE.Exp e;
-      Integer size;
-    case DAE.DIM_UNKNOWN() then ":";
-
-    case DAE.DIM_ENUM(enumTypeName = p)
-      algorithm
-        s := AbsynUtil.pathString(p);
-      then
-        s;
-
-    case DAE.DIM_BOOLEAN() then "Boolean";
-
-    case DAE.DIM_INTEGER(integer = x)
-      algorithm
-        s := intString(x);
-      then
-        s;
-
-    case DAE.DIM_EXP(exp = e)
-      algorithm
-        s := printExpStr(e);
-      then
-        s;
-  end match;
-end dimensionString;
-
-public function dimensionsString
-  "Returns a string representation of an array dimension."
-  input DAE.Dimensions dims;
-  output String str;
-algorithm
-  str := stringDelimitList(List.map(dims,dimensionString),",");
-end dimensionsString;
+public function dimensionString = ExpressionBasics.dimensionString;
+public function dimensionsString = ExpressionBasics.dimensionsString;
 
 public function dimensionIntString
   "Returns a integer string representation of an array dimension."

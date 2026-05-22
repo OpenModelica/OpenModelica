@@ -64,6 +64,7 @@ protected import ExpressionSimplify;
 protected import Flags;
 protected import HashSet;
 protected import List;
+protected import Types;
 protected import Util;
 protected import MetaModelica.Dangerous.listReverseInPlace;
 

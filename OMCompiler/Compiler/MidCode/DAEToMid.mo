@@ -62,6 +62,7 @@ import BaseHashTable;
 import HashTableMidVar;
 import List;
 import Error;
+import Types;
 
 uniontype State
   record STATE

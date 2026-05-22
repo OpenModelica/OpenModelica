@@ -42,7 +42,9 @@ encapsulated package MathematicaDump
   import BackendVariable;
   import ComponentReference;
   import DAE;
+protected
   import DAEDump;
+  import Expression;
   import ExpressionDump;
   import IOStream;
   import List;

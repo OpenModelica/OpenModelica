@@ -3043,12 +3043,14 @@ package ClassInf
     end EXTERNAL_OBJ;
   end State;
 
+end ClassInf;
+
+package ClassInfUtil
   function getStateName
-    input State inState;
+    input ClassInf.State inState;
     output Absyn.Path outPath;
   end getStateName;
-
-end ClassInf;
+end ClassInfUtil;
 
 package SCode
 

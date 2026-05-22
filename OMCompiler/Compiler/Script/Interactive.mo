@@ -109,6 +109,7 @@ import Testsuite;
 import Types;
 import UnitAbsyn;
 import Util;
+import ValuesDump;
 import ValuesUtil;
 
 import MetaModelica.Dangerous;
@@ -399,7 +400,7 @@ algorithm
                           value = Absyn.CREF(cr))
       algorithm
         value := getVariableValueLst(AbsynUtil.pathToStringList(AbsynUtil.crefToPath(cr)), SymbolTable.getVars());
-        str := ValuesUtil.valString(value);
+        str := ValuesDump.valString(value);
         ty := Types.typeOfValue(value);
         SymbolTable.addVar(DAE.CREF_IDENT(ident, ty, {}), value, FGraph.empty());
       then
@@ -413,7 +414,7 @@ algorithm
         (_, dsubs, _) := Static.elabSubscripts(cache, env, subs, true, DAE.NOPRE(), info);
 
         ty := Types.typeOfValue(value) "This type can be more specific than the elaborated type; if the dimensions are unknown...";
-        str := ValuesUtil.valString(value);
+        str := ValuesDump.valString(value);
         SymbolTable.addVar(DAE.CREF_IDENT(ident, ty, dsubs), value, env);
       then
         str;
@@ -708,7 +709,7 @@ protected function evaluateExprToStr
   output String outString;
 algorithm
   try
-    outString := ValuesUtil.valString(evaluateExpr(inExp, info));
+    outString := ValuesDump.valString(evaluateExpr(inExp, info));
   else
     outString := "";
   end try;
@@ -2768,7 +2769,7 @@ algorithm
     case (SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr))
       algorithm
         env2 := FGraph.openScope(env_1, encflag, id, FGraph.restrictionToScopeType(restr));
-        ci_state := ClassInf.start(restr, FGraph.getGraphName(env2));
+        ci_state := ClassInfUtil.start(restr, FGraph.getGraphName(env2));
         (cache,env_2,_,_,_) :=
           Inst.partialInstClassIn(cache,env2,InnerOuter.emptyInstHierarchy,
             DAE.NOMOD(), DAE.NOPRE(), ci_state, cl, SCode.PUBLIC(), {}, 0);
@@ -5740,7 +5741,7 @@ algorithm
         else
           // for non-derived classes search from self
           env2 := FGraph.openScope(env, encflag, id, FGraph.restrictionToScopeType(restr));
-          ci_state := ClassInf.start(restr, FGraph.getGraphName(env2));
+          ci_state := ClassInfUtil.start(restr, FGraph.getGraphName(env2));
           (_,env_2,_,_,_) :=
             Inst.partialInstClassIn(FCore.emptyCache(),env2,InnerOuter.emptyInstHierarchy,
             DAE.NOMOD(), DAE.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
@@ -10238,7 +10239,7 @@ algorithm
   (cache, (cl as SCode.CLASS(name = id, encapsulatedPrefix = encflag, restriction = restr)), env) :=
     Lookup.lookupClass(FCore.emptyCache(), inEnv, inClassPath);
   env := FGraph.openScope(env, encflag, id, FGraph.restrictionToScopeType(restr));
-  ci_state := ClassInf.start(restr, FGraph.getGraphName(env));
+  ci_state := ClassInfUtil.start(restr, FGraph.getGraphName(env));
 
   // First try partial instantiation
   try

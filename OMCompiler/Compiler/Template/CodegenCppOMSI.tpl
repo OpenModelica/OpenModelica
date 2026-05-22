@@ -4651,7 +4651,7 @@ template writeOutVarRecordMembers(Type type, Integer index, String prefix)
 ::=
 match type
 case T_COMPLEX(varLst=vl, complexClassType = n) then
-  let basename = underscorePath(ClassInf.getStateName(n))
+  let basename = underscorePath(ClassInfUtil.getStateName(n))
   let args = (vl |> subvar as TYPES_VAR(__) =>
       match ty case T_COMPLEX(__) then
         let newPrefix = '<%prefix%>.<%subvar.name%>'

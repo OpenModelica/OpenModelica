@@ -725,7 +725,7 @@ algorithm
 
     case (DAE.DAE(dae), DAE.C_VAR())
       algorithm
-        false := ClassInf.isFunctionOrRecord(inState);
+        false := ClassInfUtil.isFunctionOrRecord(inState);
         ty := Types.simplifyType(inType);
         false := Types.isExternalObject(Types.arrayElementType(ty));
         false := Types.isComplexType(Types.arrayElementType(ty));
@@ -734,7 +734,7 @@ algorithm
         cr := ComponentReference.makeCrefIdent(n,ty,{});
         (cache,cr) := PrefixUtil.prefixCref(inCache,inEnv,inIH,pre,cr);
         eq := DAE.ARRAY_EQUATION(dims, DAE.CREF(cr,ty), exp, source);
-        // print("Creating array equation for " + PrefixUtil.printPrefixStr(pre) + "." + n + " of const " + DAEUtil.constStr(const) + " in classinf " + ClassInf.printStateStr(inState) + "\n");
+        // print("Creating array equation for " + PrefixUtil.printPrefixStr(pre) + "." + n + " of const " + DAEUtil.constStr(const) + " in classinf " + ClassInfUtil.printStateStr(inState) + "\n");
       then (cache,DAE.DAE(eq::dae));
 
     else (inCache,inDae);
@@ -833,7 +833,7 @@ algorithm
         // see testsuit/mofiles/RecordBindings.mo.
      case (cache,env,ih,store,ci_state,mod as DAE.MOD(binding = NONE()),pre,n,cl as SCode.CLASS(restriction = SCode.R_RECORD(_)),attr,pf,dims,_,inst_dims,impl,comment,info,graph,csets)
       algorithm
-        true := ClassInf.isFunction(ci_state);
+        true := ClassInfUtil.isFunction(ci_state);
         InstUtil.checkFunctionVar(n, attr, pf, info);
 
 
@@ -871,7 +871,7 @@ algorithm
     // FIXHERE: They might have subMods too (variable attributes). see testsuite/mofiles/Sequence.mo
     case (cache,env,ih,store,ci_state,mod as DAE.MOD(binding = SOME(_)),pre,n,cl,attr,pf,dims,_,inst_dims,impl,comment,info,graph,csets)
       algorithm
-        true := ClassInf.isFunction(ci_state);
+        true := ClassInfUtil.isFunction(ci_state);
         InstUtil.checkFunctionVar(n, attr, pf, info);
 
         //get the equation modification
@@ -910,7 +910,7 @@ algorithm
     // Function variables without binding
     case (cache,env,ih,store,ci_state,mod,pre,n,(cl as SCode.CLASS()),attr,pf,dims,_,inst_dims,impl,comment,info,graph,csets)
        algorithm
-        true := ClassInf.isFunction(ci_state);
+        true := ClassInfUtil.isFunction(ci_state);
         InstUtil.checkFunctionVar(n, attr, pf, info);
 
          //Instantiate type of the component, skip dae/not flattening
@@ -934,7 +934,7 @@ algorithm
     // Scalar variables.
     case (_, _, _, _, _, _, _, _, _, _, _, {}, _, _, _, _, _, _, _)
       algorithm
-        false := ClassInf.isFunction(inState);
+        false := ClassInfUtil.isFunction(inState);
         // print("InstVar.instVar2: Scalar variables case: inClass: " + SCodeDump.unparseElementStr(inClass) + "\n");
         (cache, env, ih, store, dae, csets, ty, graph) := instScalar(
             inCache, inEnv, inIH, inStore, inState, inMod, inPrefix,
@@ -948,7 +948,7 @@ algorithm
         ((dim as DAE.DIM_UNKNOWN()) :: dims),idxs,inst_dims,impl,comment,info,graph, csets)
       algorithm
         true := Config.splitArrays();
-        false := ClassInf.isFunction(ci_state);
+        false := ClassInfUtil.isFunction(ci_state);
 
         // Try to deduce the dimension from the modifier.
         dim2 := InstUtil.instWholeDimFromMod(dim, mod, n, info);
@@ -965,7 +965,7 @@ algorithm
       ((dim as DAE.DIM_UNKNOWN()) :: dims),idxs,inst_dims,impl,comment,info,graph, csets)
       algorithm
         false := Config.splitArrays();
-        false := ClassInf.isFunction(ci_state);
+        false := ClassInfUtil.isFunction(ci_state);
         // Try to deduce the dimension from the modifier.
         /*TODO : mahge: remove this*/
         /*
@@ -988,7 +988,7 @@ algorithm
     case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,(dim :: dims),idxs,inst_dims,impl,comment,info,graph,csets)
       algorithm
         true := Config.splitArrays();
-        false := ClassInf.isFunction(ci_state);
+        false := ClassInfUtil.isFunction(ci_state);
 
         // dim = InstUtil.evalEnumAndBoolDim(dim);
         inst_dims_1 := List.appendLastList(inst_dims, {dim});
@@ -1003,7 +1003,7 @@ algorithm
     case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,(dim :: dims),idxs,inst_dims,impl,comment,info,graph,csets)
       algorithm
         false := Config.splitArrays();
-        false := ClassInf.isFunction(ci_state);
+        false := ClassInfUtil.isFunction(ci_state);
         /*TODO : mahge: remove this*/
         /*
         dime = InstUtil.instDimExpNonSplit(dim, impl);
@@ -1114,11 +1114,11 @@ algorithm
       algorithm
         // Instantiate the components class.
         idxs := listReverse(idxs);
-        ci_state := ClassInf.start(res, Absyn.IDENT(cls_name));
+        ci_state := ClassInfUtil.start(res, Absyn.IDENT(cls_name));
         predims := List.lastListOrEmpty(inInstDims);
         pre := PrefixUtil.prefixAdd(inName, predims, idxs, inPrefix, vt, ci_state, inInfo);
         if Config.acceptMetaModelicaGrammar() then
-          stateName := AbsynUtil.pathString(ClassInf.getStateName(inState), delimiter = "");
+          stateName := AbsynUtil.pathString(ClassInfUtil.getStateName(inState), delimiter = "");
           inStateAndClassNameIsEqual := stringEqual(stateName, cls_name);
           implicitInstantiation := SCodeUtil.isUniontype(inClass)
                                 and SCodeUtil.isConstant(inAttributes.variability)
@@ -1163,7 +1163,7 @@ algorithm
         // Set the source of this element.
         source := ElementSource.createElementSource(inInfo, FGraph.getScopePath(env_1), inPrefix);
         // Instantiate the components binding.
-        mod := if not listEmpty(inSubscripts) and not SCodeUtil.isParameterOrConst(vt) and not ClassInf.isFunctionOrRecord(inState) and not Types.isComplexType(Types.arrayElementType(ty)) and not Types.isExternalObject(Types.arrayElementType(ty)) and not Config.scalarizeBindings()
+        mod := if not listEmpty(inSubscripts) and not SCodeUtil.isParameterOrConst(vt) and not ClassInfUtil.isFunctionOrRecord(inState) and not Types.isComplexType(Types.arrayElementType(ty)) and not Types.isExternalObject(Types.arrayElementType(ty)) and not Config.scalarizeBindings()
                  then DAE.NOMOD()
                  else inMod;
         opt_binding := InstBinding.makeVariableBinding(ty, mod, Types.variabilityToConst(vt), inPrefix, inName);

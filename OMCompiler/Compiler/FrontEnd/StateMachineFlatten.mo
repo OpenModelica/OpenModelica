@@ -50,6 +50,7 @@ public import FCore;
 
 protected import List;
 protected import ComponentReference;
+protected import Expression;
 protected import ExpressionDump;
 protected import DAEUtil;
 protected import Util;
@@ -58,6 +59,7 @@ protected import Error;
 protected import HashTableCrToExpOption;
 protected import Flags;
 protected import SCode;
+protected import Types;
 
 protected
 uniontype Transition "

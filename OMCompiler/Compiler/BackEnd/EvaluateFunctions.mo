@@ -60,6 +60,7 @@ protected import ExpressionSimplify;
 protected import Flags;
 protected import List;
 protected import RemoveSimpleEquations;
+protected import Types;
 protected import Util;
 
 

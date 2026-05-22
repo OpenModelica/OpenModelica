@@ -68,6 +68,7 @@ protected
   import Sorting;
   import SymbolicJacobian;
   import System;
+  import Types;
   import Util;
 
 // =============================================================================

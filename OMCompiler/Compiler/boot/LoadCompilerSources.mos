@@ -16,6 +16,7 @@ if true then /* Suppress output */
     "../FrontEnd/CevalFunction.mo",
     "../FrontEnd/Ceval.mo",
     "../FrontEnd/ClassInf.mo",
+    "../FrontEnd/ClassInfUtil.mo",
     "../FrontEnd/ClassLoader.mo",
     "../FrontEnd/ComponentReference.mo",
     "../FrontEnd/ConnectionGraph.mo",
@@ -29,6 +30,7 @@ if true then /* Suppress output */
     "../FrontEnd/ExpressionDump.mo",
   // Remember: Only files needed for compiling MetaModelica
     "../FrontEnd/Expression.mo",
+    "../FrontEnd/ExpressionBasics.mo",
     "../FrontEnd/ExpressionSimplify.mo",
     "../FrontEnd/ExpressionSimplifyTypes.mo",
     "../FrontEnd/Graphviz.mo",
@@ -63,9 +65,11 @@ if true then /* Suppress output */
     //"../FrontEnd/SCodeSimplify.mo",
     "../FrontEnd/StateMachineFlatten.mo",
     "../FrontEnd/Types.mo",
+    "../FrontEnd/TypesDump.mo",
     "../FrontEnd/UnitAbsyn.mo",
     "../FrontEnd/UnitParserExt.mo",
     "../FrontEnd/Values.mo",
+    "../FrontEnd/ValuesDump.mo",
     "../FrontEnd/ValuesUtil.mo",
 
   // Only files needed for compiling MetaModelica

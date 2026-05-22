@@ -366,7 +366,7 @@ template dumpType(Type ty, Text &attributes)
       'enumeration(<%lit_str%>)'
     case T_ARRAY(__) then dumpArrayType(ty, dumpDimensions(dims), &attributes)
     case T_COMPLEX(complexClassType=RECORD(path=rname)) then AbsynDumpTpl.dumpPathNoQual(rname)
-    case T_COMPLEX(__) then AbsynDumpTpl.dumpPath(ClassInf.getStateName(complexClassType))
+    case T_COMPLEX(__) then AbsynDumpTpl.dumpPath(ClassInfUtil.getStateName(complexClassType))
     case T_SUBTYPE_BASIC(__) then dumpType(complexType, &attributes)
     case T_FUNCTION(__) then dumpFunctionType(ty)
     case T_TUPLE(__) then dumpTupleType(types, "(", ")")
@@ -432,7 +432,7 @@ template dumpRecordType(Type ty)
 ::=
 match ty
   case T_COMPLEX(__) then
-    let name = AbsynDumpTpl.dumpPath(ClassInf.getStateName(complexClassType))
+    let name = AbsynDumpTpl.dumpPath(ClassInfUtil.getStateName(complexClassType))
     let vars = dumpRecordVars(varLst)
     <<
     record <%name%>
@@ -1178,5 +1178,5 @@ let() = Tpl.addTemplateError(errMessage)
 >>
 end errorMsg;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_dump");
 end DAEDumpTpl;

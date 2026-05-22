@@ -281,7 +281,7 @@ algorithm
     case (cache,env_1,c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=r as SCode.R_ENUMERATION()))
       algorithm
         env_2 := FGraph.openScope(env_1, encflag, id, SOME(FCore.CLASS_SCOPE()));
-        ci_state := ClassInf.start(r, FGraph.getGraphName(env_2));
+        ci_state := ClassInfUtil.start(r, FGraph.getGraphName(env_2));
         // fprintln(Flags.INST_TRACE, "LOOKUP TYPE ICD: " + FGraph.printGraphPathStr(env_1) + " path:" + AbsynUtil.pathString(path));
         mod := Mod.getClassModifier(env_1, id);
         (cache,env_3,_,_,_,_,_,types,_,_,_,_) :=
@@ -687,7 +687,7 @@ algorithm
     case (cache,env,_,SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr),NONE(),_)
       algorithm
         env := FGraph.openScope(env, encflag, id, FGraph.restrictionToScopeType(restr));
-        ci_state := ClassInf.start(restr, FGraph.getGraphName(env));
+        ci_state := ClassInfUtil.start(restr, FGraph.getGraphName(env));
         // fprintln(Flags.INST_TRACE, "LOOKUP CLASS QUALIFIED PARTIALICD: " + FGraph.printGraphPathStr(env) + " path: " + AbsynUtil.pathString(path) + " class: " + SCodeDump.shortElementStr(c));
         mod := Mod.getClassModifier(inEnv, id);
         (cache,env,_,_,_) :=
@@ -1028,7 +1028,7 @@ algorithm
         env := FGraph.topScope(env);
         (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) := lookupClass(cache, env, path);
         env2 := FGraph.openScope(env_1, encflag, id, FGraph.restrictionToScopeType(restr));
-        ci_state := ClassInf.start(restr, FGraph.getGraphName(env2));
+        ci_state := ClassInfUtil.start(restr, FGraph.getGraphName(env2));
         // fprintln(Flags.INST_TRACE, "LOOKUP MORE UNQUALIFIED IMPORTED ICD: " + FGraph.printGraphPathStr(env) + "." + ident);
         mod := Mod.getClassModifier(env_1, id);
         (cache, env, _,_,_) := Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy, mod, DAE.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
@@ -1090,7 +1090,7 @@ algorithm
                 SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1,prevFrames)
         := lookupClass2(cache,env3,path,prevFrames,Mutable.create(false),inInfo);
         env2 := FGraph.openScope(env_1, encflag, id, FGraph.restrictionToScopeType(restr));
-        ci_state := ClassInf.start(restr, FGraph.getGraphName(env2));
+        ci_state := ClassInfUtil.start(restr, FGraph.getGraphName(env2));
         // fprintln(Flags.INST_TRACE, "LOOKUP UNQUALIFIED IMPORTED ICD: " + FGraph.printGraphPathStr(env) + "." + ident);
         mod := Mod.getClassModifier(env_1, id);
         (cache,env2,_,_,_) :=
@@ -1620,7 +1620,7 @@ algorithm
                 (cache, env5) := Inst.getCachedInstance(cache, env2, id, rr);
               else // not an instance, instantiate it - lookup of constants on form A.B in packages. instantiate package and look inside.
                 env3 := FGraph.openScope(env2, encflag, n, FGraph.restrictionToScopeType(r));
-                ci_state := ClassInf.start(r, FGraph.getGraphName(env3));
+                ci_state := ClassInfUtil.start(r, FGraph.getGraphName(env3));
                 // fprintln(Flags.INST_TRACE, "LOOKUP VAR IN PACKAGES ICD: " + FGraph.printGraphPathStr(env3) + " var: " + ComponentReference.printComponentRefStr(cref));
                 mod := Mod.getClassModifier(env2, n);
                 (cache,env5,_,_,_,_,_,_,_,_,_,_) :=
@@ -2154,7 +2154,7 @@ algorithm
           (cache, env2) := Inst.getCachedInstance(cache, env_1, str, r);
         else
           env2 := FGraph.openScope(env_1, encflag, str, FGraph.restrictionToScopeType(restr));
-          ci_state := ClassInf.start(restr, FGraph.getGraphName(env2));
+          ci_state := ClassInfUtil.start(restr, FGraph.getGraphName(env2));
           // fprintln(Flags.INST_TRACE, "LOOKUP FUNCTIONS IN ENV QUAL ICD: " + FGraph.printGraphPathStr(env2) + "." + str);
           mod := Mod.getClassModifier(env_1, str);
           (cache,env2,_,_,_) :=
