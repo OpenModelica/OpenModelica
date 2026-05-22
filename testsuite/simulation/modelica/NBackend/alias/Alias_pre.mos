@@ -45,11 +45,11 @@ simulate(Alias_pre); getErrorString();
 // 	$FUN_1	 ==> 	y
 // [dumprepl] Nontrivial Alias Replacements:
 // *******************************************
-// 	x	 ==> 	-(3.0 - y)
+// 	x	 ==> 	(-3.0) + y
 //
 // [dumprepl] Found But Illegal Alias Replacements (added as equations):
 // ***********************************************************************
-// 	[SCAL] (1) b = -(3.0 - y) ($RES_SIM_6)
+// 	[SCAL] (1) b = (-3.0) + y ($RES_SIM_6)
 //
 // ==================================
 //   [dumprepl] Clocked Alias Sets:

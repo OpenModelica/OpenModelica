@@ -1420,7 +1420,7 @@ protected
       if not Pointer.access(res) then
         exp := match exp
           case Expression.CREF() algorithm
-          Pointer.update(res, ComponentRef.isEqual(exp.cref, cref));
+            Pointer.update(res, ComponentRef.isEqual(exp.cref, cref));
           then exp;
           else Expression.mapShallow(exp, function solveUniqueExpressionNoCrefTraverse(cref = cref, res = res));
         end match;
