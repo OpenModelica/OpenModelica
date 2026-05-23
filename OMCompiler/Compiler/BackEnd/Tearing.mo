@@ -60,7 +60,7 @@ import DumpGraphML;
 import Error;
 import ExecStat.execStat;
 import Expression;
-import ExpressionDump;
+import ExpressionBasics;
 import ExpressionSimplify;
 import ExpressionSolve;
 import Flags;
@@ -72,6 +72,7 @@ import MetaModelica.Dangerous;
 import Mutable;
 import Util;
 import Sorting;
+import System;
 import ElementSource;
 
 // =============================================================================

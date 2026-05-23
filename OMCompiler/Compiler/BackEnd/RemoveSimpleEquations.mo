@@ -70,7 +70,6 @@ import ElementSource;
 import Error;
 import EvaluateFunctions;
 import Expression;
-import ExpressionDump;
 import ExpressionSimplify;
 import ExpressionSolve;
 import Flags;

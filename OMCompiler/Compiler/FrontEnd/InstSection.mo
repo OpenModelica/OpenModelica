@@ -64,7 +64,6 @@ protected import Dump;
 protected import ElementSource;
 protected import Error;
 protected import Expression;
-protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import ExpressionSimplifyTypes;
 protected import Flags;
@@ -88,6 +87,8 @@ protected import System;
 protected import ErrorExt;
 protected import SCodeDump;
 protected import DAEDump;
+protected import ExpressionBasics;
+protected import ClassInfUtil;
 
 protected type Ident = DAE.Ident "an identifier";
 protected type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";

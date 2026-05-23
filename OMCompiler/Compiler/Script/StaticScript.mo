@@ -38,7 +38,6 @@ encapsulated package StaticScript
 public import Absyn;
 public import DAE;
 public import FCore;
-public import GlobalScript;
 
 protected type Ident = String;
 

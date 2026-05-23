@@ -66,7 +66,6 @@ import DAE.Connect;
 import DAEUtil;
 import ElementSource;
 import Expression;
-import ExpressionDump;
 import Error;
 import ErrorExt;
 import Flags;
@@ -84,6 +83,7 @@ import Static;
 import System;
 import Util;
 import SCodeDump;
+import ExpressionBasics;
 
 protected function generatePositionalArgs "author: KS
   This function is used in the following cases:

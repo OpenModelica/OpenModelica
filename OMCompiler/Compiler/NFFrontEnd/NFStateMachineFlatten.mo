@@ -51,7 +51,6 @@ import Subscript = NFSubscript;
 import Operator = NFOperator;
 
 protected
-import AbsynUtil;
 import Call = NFCall;
 import DAE;
 import ElementSource;
@@ -64,7 +63,6 @@ import NFInstNode.InstNode;
 import NFPrefixes.{Variability, Purity, Visibility};
 import SCode;
 import UnorderedMap;
-import Util;
 import NFEquation.ScalarizeMode;
 
 

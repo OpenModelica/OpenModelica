@@ -43,7 +43,6 @@ encapsulated package NFTypeCheck
 "
 
 import Absyn;
-import DAE;
 import Dimension = NFDimension;
 import Expression = NFExpression;
 import NFInstNode.InstNode;

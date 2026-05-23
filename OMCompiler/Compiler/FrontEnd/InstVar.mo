@@ -77,13 +77,14 @@ protected import ComponentReference;
 protected import UnitAbsynBuilder;
 protected import Flags;
 protected import Expression;
-protected import ExpressionDump;
 protected import Error;
 protected import ErrorExt;
 protected import Lookup;
 protected import SCodeDump;
 protected import BaseHashSet;
 protected import HashSet;
+protected import ExpressionBasics;
+protected import ClassInfUtil;
 
 protected type Ident = DAE.Ident "an identifier";
 protected type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";

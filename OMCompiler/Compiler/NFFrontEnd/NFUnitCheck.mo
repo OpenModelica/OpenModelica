@@ -54,7 +54,6 @@ import Ceval = NFCeval;
 import ElementSource;
 import Equation = NFEquation;
 import ExecStat.execStat;
-import ExpressionBasics;
 import Expression = NFExpression;
 import Binding = NFBinding;
 import Call = NFCall;

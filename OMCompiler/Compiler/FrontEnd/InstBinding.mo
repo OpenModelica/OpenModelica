@@ -62,7 +62,6 @@ protected import ComponentReference;
 protected import ElementSource;
 protected import Error;
 protected import Expression;
-protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import InstUtil;
 protected import List;
@@ -74,6 +73,7 @@ import SCodeUtil;
 protected import Types;
 protected import InstSection;
 protected import ValuesUtil;
+protected import ExpressionBasics;
 
 public constant DAE.Type stateSelectType =
           DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},

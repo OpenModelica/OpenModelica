@@ -43,7 +43,6 @@ encapsulated package ValuesDump
   expression values."
 
 import Absyn;
-import DAE;
 import Values;
 protected
 import AbsynUtil;

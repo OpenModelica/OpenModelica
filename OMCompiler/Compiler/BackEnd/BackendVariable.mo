@@ -46,7 +46,6 @@ import Values;
 protected
 
 import Absyn;
-import AbsynUtil;
 import Array;
 import BackendDAEUtil;
 import BaseHashSet;
@@ -58,7 +57,6 @@ import Debug;
 import ElementSource;
 import Error;
 import Expression;
-import ExpressionDump;
 import ExpressionSimplify;
 import Flags;
 import Global;
@@ -71,6 +69,8 @@ import StringUtil;
 import System;
 import Types;
 import Util;
+import ExpressionBasics;
+import Dump;
 
 /* =======================================================
  *

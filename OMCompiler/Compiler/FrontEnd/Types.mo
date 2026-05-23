@@ -74,7 +74,6 @@ protected import Dump;
 protected import Debug;
 protected import Error;
 protected import Expression;
-protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
 protected import List;
@@ -85,8 +84,9 @@ protected import System;
 protected import ValuesDump;
 protected import ValuesUtil;
 protected import DAEUtil;
-protected import SCodeDump;
 protected import MetaModelica.Dangerous.listReverseInPlace;
+protected import ClassInfUtil;
+protected import ExpressionBasics;
 
 public function discreteType "Succeeds for all the discrete types, Integer, String, Boolean and enumeration."
   input DAE.Type inType;

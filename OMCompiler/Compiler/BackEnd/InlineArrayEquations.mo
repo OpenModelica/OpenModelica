@@ -49,7 +49,7 @@ protected import DAEUtil;
 protected import Debug;
 protected import ElementSource;
 protected import Expression;
-protected import ExpressionDump;
+protected import ExpressionBasics;
 protected import ExpressionSimplify;
 protected import Flags;
 protected import List;

@@ -67,7 +67,6 @@ protected import ConnectionGraph;
 protected import Debug;
 protected import Error;
 protected import Expression;
-protected import ExpressionDump;
 protected import Flags;
 protected import FGraph;
 protected import FNode;
@@ -87,6 +86,8 @@ protected import SCodeDump;
 protected import ErrorExt;
 protected import ValuesUtil;
 protected import Values;
+protected import ExpressionBasics;
+protected import ClassInfUtil;
 
 /*   - Lookup functions
 

@@ -57,7 +57,6 @@ import DAEDump;
 import DAEUtil;
 import Error;
 import Expression;
-import ExpressionDump;
 import ExpressionSimplify;
 import Flags;
 import HashTableExpToIndex;
@@ -68,6 +67,8 @@ import SynchronousFeatures;
 import Util;
 import ZeroCrossings;
 import MetaModelica.Dangerous.listReverseInPlace;
+import ExpressionBasics;
+import Config;
 
 type ZCArgType  = tuple<tuple<BackendDAE.ZeroCrossingSet, DoubleEnded.MutableList<BackendDAE.ZeroCrossing>, BackendDAE.ZeroCrossingSet, Integer>, tuple<Integer, BackendDAE.Variables, BackendDAE.Variables>, Option<list<BackendDAE.SimIterator>>>;
 type ForArgType = tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<BackendDAE.ZeroCrossingSet, DoubleEnded.MutableList<BackendDAE.ZeroCrossing>, BackendDAE.ZeroCrossingSet, Integer>, tuple<Integer, BackendDAE.Variables, BackendDAE.Variables>>;

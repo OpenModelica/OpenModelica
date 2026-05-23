@@ -60,7 +60,6 @@ protected
   import ElementSource;
   import Error;
   import Expression;
-  import ExpressionDump;
   import Flags;
   import GCExt;
   import List;
@@ -70,6 +69,7 @@ protected
   import System;
   import Types;
   import Util;
+  import ExpressionBasics;
 
 // =============================================================================
 // strongComponents and stuff

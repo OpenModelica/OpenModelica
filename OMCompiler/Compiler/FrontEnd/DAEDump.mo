@@ -63,7 +63,6 @@ protected import Absyn;
 protected import AbsynUtil;
 protected import Dump;
 protected import ValuesDump;
-protected import ValuesUtil;
 protected import Values;
 protected import Types;
 protected import ClassInf;
@@ -73,7 +72,6 @@ protected import List;
 protected import Flags;
 protected import DAEDumpTpl;
 protected import Tpl;
-protected import System;
 
 public function dump "This function prints the DAE in the standard output format to the Print buffer.
   For printing to the stdout use print(dumpStr(dae)) instead."

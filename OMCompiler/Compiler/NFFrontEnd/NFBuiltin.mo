@@ -45,7 +45,6 @@ encapsulated package NFBuiltin
 
 public
 import Absyn;
-import AbsynUtil;
 import Attributes = NFAttributes;
 import SCode;
 import NFBinding;
@@ -76,7 +75,6 @@ public
 encapsulated package Elements
   import SCode;
   import Absyn;
-  import AbsynUtil;
 
   // Default parts of the declarations for builtin elements and types:
   public constant Absyn.TypeSpec ENUMTYPE_SPEC =

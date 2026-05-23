@@ -61,13 +61,13 @@ protected import Debug;
 protected import ElementSource;
 protected import Error;
 protected import Expression;
-protected import ExpressionDump;
 protected import Flags;
 protected import List;
 import SCodeUtil;
 protected import SCodeDump;
 protected import Types;
 protected import Util;
+protected import ExpressionBasics;
 
 public function algorithmEmpty "Returns true if algorithm is empty, i.e. no statements"
   input DAE.Algorithm alg;

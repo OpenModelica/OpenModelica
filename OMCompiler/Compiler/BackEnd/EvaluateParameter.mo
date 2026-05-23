@@ -76,7 +76,6 @@ protected import ComponentReference;
 protected import ElementSource;
 protected import Error;
 protected import Expression;
-protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
 protected import HashSet;
@@ -85,6 +84,7 @@ protected import Sorting;
 protected import Util;
 protected import Values;
 protected import ValuesUtil;
+protected import ExpressionBasics;
 
 
 protected constant String BORDER    = "********************************************************************************";

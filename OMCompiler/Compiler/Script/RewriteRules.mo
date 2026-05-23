@@ -83,7 +83,7 @@ public type Binds = list<Bind>;
 protected import Dump;
 protected import Error;
 protected import Expression;
-protected import ExpressionDump;
+protected import ExpressionBasics;
 protected import Flags;
 protected import GlobalScript;
 protected import GlobalScriptDump;

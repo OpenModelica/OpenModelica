@@ -51,7 +51,6 @@ protected import CodegenMidToC;
 protected import ComponentReference;
 protected import DAEToMid;
 protected import Error;
-protected import ExpressionDump;
 protected import Global;
 protected import List;
 protected import MidCode;

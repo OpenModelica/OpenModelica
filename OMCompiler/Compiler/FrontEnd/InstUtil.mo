@@ -73,7 +73,6 @@ import Types;
 import Debug;
 import PrefixUtil;
 import ElementSource;
-import ExpressionDump;
 import Flags;
 import FGraph;
 import FNode;
@@ -99,6 +98,7 @@ import NFSCodeFlatten;
 import HashSet;
 import BaseHashSet;
 import MetaModelica.Dangerous.listReverseInPlace;
+import ExpressionBasics;
 
 protected type Ident = DAE.Ident "an identifier";
 protected type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";

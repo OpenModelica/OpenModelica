@@ -129,7 +129,6 @@ import Error;
 import ErrorExt;
 import ExecStat;
 import Expression;
-import ExpressionDump;
 import Flags;
 import FGraph;
 import FGraphBuildEnv;
@@ -166,6 +165,8 @@ import InstStateMachineUtil;
 import UnitCheck = FUnitCheck;
 
 import DAEDump; // BTH
+import ClassInfUtil;
+import ExpressionBasics;
 
 protected function instantiateClass_dispatch
 " instantiate a class.

@@ -51,7 +51,6 @@ import NFComponent.ComponentState;
 import Type = NFType;
 import Expression = NFExpression;
 import Absyn;
-import AbsynUtil;
 import Absyn.{Path, TypeSpec};
 import SCode;
 import SCode.{Mod, Comment};

@@ -49,7 +49,7 @@ import BackendDAEUtil;
 protected
 import DoubleEnded;
 import Expression;
-import ExpressionDump;
+import ExpressionBasics;
 
 public
 type Tree = ZeroCrossingTree.Tree;

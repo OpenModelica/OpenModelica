@@ -63,7 +63,7 @@ import ElementSource;
 import Error;
 import ErrorExt;
 import Expression;
-import ExpressionDump;
+import ExpressionBasics;
 import ExpressionSimplify;
 import Flags;
 import HashTable2;
@@ -78,6 +78,7 @@ import SCode;
 import Sorting;
 import System;
 import Util;
+import Config;
 
 
 // =============================================================================

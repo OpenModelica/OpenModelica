@@ -67,7 +67,6 @@ import DoubleEnded;
 import Dump;
 import Error;
 import ErrorExt;
-import ExpressionDump;
 import ExpressionSimplify;
 import FBuiltin;
 import FGraph;
@@ -94,6 +93,7 @@ import Util;
 import ValuesDump;
 
 import MetaModelica.Dangerous;
+import ClassInfUtil;
 
 public
 type GraphicEnvCache = Interactive.GraphicEnvCache;

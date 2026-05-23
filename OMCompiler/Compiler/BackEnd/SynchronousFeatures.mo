@@ -47,7 +47,6 @@ public import DAE;
 
 protected
 
-import AbsynUtil;
 import BackendDAEOptimize;
 import BackendDAEUtil;
 import BackendDump;

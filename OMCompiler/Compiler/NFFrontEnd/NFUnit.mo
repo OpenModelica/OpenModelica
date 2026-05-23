@@ -44,7 +44,6 @@ encapsulated package NFUnit
 public
 import ComponentRef = NFComponentRef;
 import Absyn;
-import AbsynUtil;
 import NFInstNode.InstNode;
 import Type = NFType;
 import UnorderedMap;

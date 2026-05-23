@@ -45,7 +45,6 @@ public import BackendDAE;
 public import BackendDAEOptimize;
 
 protected import BackendDump;
-protected import ExpressionDump;
 
 protected import BackendEquation;
 protected import BackendDAEUtil;
@@ -63,6 +62,7 @@ protected import ExpressionSimplify;
 protected import Flags;
 protected import FlagsUtil;
 protected import List;
+protected import ExpressionBasics;
 
 
 public function createDynamicOptimization

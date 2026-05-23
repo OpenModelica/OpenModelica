@@ -38,7 +38,6 @@ encapsulated package CevalScriptBackend
 import Absyn;
 import DAE;
 import FCore;
-import GlobalScript;
 import InteractiveTypes;
 import SimCode;
 import Values;

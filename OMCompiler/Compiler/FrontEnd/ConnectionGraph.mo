@@ -350,13 +350,13 @@ protected import BaseHashTable;
 protected import ComponentReference;
 protected import ConnectUtil;
 protected import Debug;
-protected import ExpressionDump;
 protected import Flags;
 protected import List;
 protected import Util;
 protected import System;
 protected import IOStream;
 protected import Settings;
+protected import ExpressionBasics;
 
 protected function canonical
 "Returns the canonical element of the component where input element belongs to.

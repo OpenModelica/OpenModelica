@@ -48,7 +48,7 @@ protected import BaseHashTable;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import Expression;
-protected import ExpressionDump;
+protected import ExpressionBasics;
 protected import Flags;
 protected import FNode;
 protected import FGraph;

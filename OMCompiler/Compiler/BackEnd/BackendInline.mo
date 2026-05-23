@@ -64,11 +64,11 @@ protected
  import DoubleEnded;
  import ExpandableArray;
  import Expression;
- import ExpressionDump;
  import Flags;
  import HashTableCG;
  import InlineArrayEquations;
  import List;
+ import ExpressionBasics;
 
 // =============================================================================
 // late inline functions stuff

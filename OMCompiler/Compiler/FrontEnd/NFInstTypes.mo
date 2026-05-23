@@ -43,7 +43,6 @@ encapsulated package NFInstTypes
 "
 
 public import Absyn;
-public import AbsynUtil;
 //public import NFConnect2;
 public import DAE;
 public import NFInstPrefix;

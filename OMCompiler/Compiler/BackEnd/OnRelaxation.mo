@@ -56,7 +56,7 @@ import ComponentReference;
 import Differentiate;
 import DumpGraphML;
 import Expression;
-import ExpressionDump;
+import ExpressionBasics;
 import ExpressionSimplify;
 import HashSet;
 import List;

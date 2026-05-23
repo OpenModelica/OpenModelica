@@ -41,7 +41,6 @@ encapsulated package BlockCallRewrite
 "
 
 public import Absyn;
-public import AbsynUtil;
 
 protected import Dump;
 

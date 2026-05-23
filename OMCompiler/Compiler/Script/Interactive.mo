@@ -78,7 +78,6 @@ import DAEUtil;
 import Dump;
 import Error;
 import ErrorExt;
-import ExpressionDump;
 import ExpressionSimplify;
 import FGraph;
 import Flags;
@@ -113,6 +112,7 @@ import ValuesDump;
 import ValuesUtil;
 
 import MetaModelica.Dangerous;
+import ClassInfUtil;
 
 public uniontype AnnotationType
   record ICON_ANNOTATION end ICON_ANNOTATION;

@@ -46,7 +46,7 @@ keyEqual   - A comparison function between two keys, returns true if equal.
 public import BaseHashSet;
 public import DAE;
 protected import Expression;
-protected import ExpressionDump;
+protected import ExpressionBasics;
 
 public type Key = DAE.Exp;
 

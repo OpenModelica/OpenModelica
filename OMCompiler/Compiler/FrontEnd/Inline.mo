@@ -66,7 +66,6 @@ import Debug;
 import ElementSource;
 import Error;
 import Expression;
-import ExpressionDump;
 import ExpressionSimplify;
 import Flags;
 import Global;
@@ -76,6 +75,8 @@ import List;
 import SCodeUtil;
 import Types;
 import VarTransform;
+import ClassInfUtil;
+import ExpressionBasics;
 
 public function inlineStartAttribute
   input Option<DAE.VariableAttributes> inVariableAttributesOption;

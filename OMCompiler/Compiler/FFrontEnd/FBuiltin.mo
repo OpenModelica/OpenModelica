@@ -44,7 +44,6 @@ encapsulated package FBuiltin
   There are several builtin attributes defined in the builtin types, such as unit, start, etc."
 
 public import Absyn;
-public import AbsynUtil;
 public import DAE;
 public import Error;
 public import SCode;

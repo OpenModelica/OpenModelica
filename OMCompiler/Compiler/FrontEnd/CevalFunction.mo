@@ -73,7 +73,6 @@ protected import Debug;
 protected import ElementSource;
 protected import Error;
 protected import Expression;
-protected import ExpressionDump;
 protected import Flags;
 protected import Graph;
 protected import Lapack;
@@ -84,6 +83,7 @@ protected import Util;
 protected import ValuesUtil;
 protected import FGraph;
 protected import FNode;
+protected import ExpressionBasics;
 
 // [TYPE]  Types
 protected type FunctionVar = tuple<DAE.Element, Option<Values.Value>>;
