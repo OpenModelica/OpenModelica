@@ -75,7 +75,7 @@ protected
   BackendInterfaceFunctions functions;
   partialCevalInteractiveFunctions func;
 algorithm
-  functions := getGlobalRoot(Global.backendInterface);
+  functions := getGlobalRoot(Global.backendCevalInterface);
   func := functions.cevalInteractiveFunctions;
   (outCache,outValue) := func(inCache, inEnv, inExp, inMsg, inNumIter);
 end cevalInteractiveFunctions;
@@ -94,7 +94,7 @@ protected
   BackendInterfaceFunctions functions;
   partialCevalCallFunction func;
 algorithm
-  functions := getGlobalRoot(Global.backendInterface);
+  functions := getGlobalRoot(Global.backendCevalInterface);
   func := functions.cevalCallFunction;
   (outCache,outValue) := func(inCache, inEnv, inExp, inValues, inImplInst, inMsg, inNumIter);
 end cevalCallFunction;
@@ -115,7 +115,7 @@ protected
   BackendInterfaceFunctions functions;
   partialElabCallInteractive func;
 algorithm
-  functions := getGlobalRoot(Global.backendInterface);
+  functions := getGlobalRoot(Global.backendCevalInterface);
   func := functions.elabCallInteractive;
   (outCache, outExp, outProperties) := func(inCache, inEnv, inCref, inExps, inNamedArgs, inImplInst, inPrefix, inInfo);
 end elabCallInteractive;
