@@ -50,8 +50,9 @@ encapsulated package ClassInfUtil
   can be checked agains a restriction with the `valid\' function. "
 
 
-public import Absyn;
-public import ClassInf;
+import Absyn;
+import ClassInf;
+import SCode;
 
 protected import Config;
 protected import Debug;

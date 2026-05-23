@@ -51,6 +51,7 @@ public import SCode;
 protected import ComponentReference;
 protected import Config;
 protected import DAEUtil;
+protected import DAEDumpTypes;
 protected import DAEDumpTypes.*;
 protected import ElementSource;
 protected import Error;
