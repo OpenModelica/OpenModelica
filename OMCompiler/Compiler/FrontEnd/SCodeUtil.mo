@@ -1777,9 +1777,9 @@ public function mapFoldEquationListExps<ArgT>
   it encounters."
   input list<SCode.Equation> inEquations;
   input TraverseFunc traverser;
-  input Argument inArg;
+  input ArgT inArg;
   output list<SCode.Equation> outEquations;
-  output Argument outArg;
+  output ArgT outArg;
 
   partial function TraverseFunc
     input output Absyn.Exp exp;
@@ -2135,12 +2135,12 @@ public function mapFoldStatementListExps<ArgT>
   expression found."
   input list<SCode.Statement> inStatements;
   input TraverseFunc inFunc;
-  input Argument inArg;
+  input ArgT inArg;
   output list<SCode.Statement> outStatements;
-  output Argument outArg;
+  output ArgT outArg;
 
   partial function TraverseFunc
-    input output SCode.Statement stmt;
+    input output Absyn.Exp exp;
     input output ArgT arg;
   end TraverseFunc;
 algorithm
@@ -2166,7 +2166,7 @@ algorithm
     local
       TraverseFunc traverser;
       ArgT arg;
-      tuple<TraverseFunc, Argument> tup;
+      tuple<TraverseFunc, ArgT> tup;
       String iterator;
       Absyn.Exp e1, e2, e3;
       list<SCode.Statement> stmts1, stmts2;
