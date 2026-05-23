@@ -365,6 +365,7 @@ public
       case Op.ADD_EW            then DAE.ADD_ARR(ty);
       case Op.SUB_EW            then DAE.SUB_ARR(ty);
       case Op.MUL_EW            then DAE.MUL_ARR(ty);
+      case Op.DIV_EW            then DAE.DIV_ARR(ty);
       case Op.MATRIX_PRODUCT    then DAE.MUL_MATRIX_PRODUCT(ty);
       case Op.DIV_SCALAR_ARRAY  then DAE.DIV_SCALAR_ARRAY(ty);
       case Op.DIV_ARRAY_SCALAR  then DAE.DIV_ARRAY_SCALAR(ty);
