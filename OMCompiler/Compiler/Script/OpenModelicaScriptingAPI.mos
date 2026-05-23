@@ -3,6 +3,8 @@ echo(false);
 if bool then
   writeFile("OpenModelicaScriptingAPI.tmp.mo","encapsulated package OpenModelicaScriptingAPI\n\n" + a + "annotation(__OpenModelica_Interface=\"backend\");\nend OpenModelicaScriptingAPI;\n");getErrorString();
   setCommandLineOptions("-g=MetaModelica");
+  // Workaround until next bootstrapping update
+  system("sed -i.bak -e s/ValuesUtil.makeArray/ValuesMake.makeArray/g -e s/ValuesUtil.valString/ValuesDump.valString/g OpenModelicaScriptingAPI.tmp.mo");
   bool := loadFile("OpenModelicaScriptingAPI.tmp.mo");
   if bool then
     bool := OpenModelica.Scripting.compareFilesAndMove("OpenModelicaScriptingAPI.tmp.mo", "OpenModelicaScriptingAPI.mo");
