@@ -56,6 +56,10 @@ if(BUILD_SHARED_LIBS)
     endif()
     string(REPLACE "\\" "/" MSYSTEM_PREFIX_ESCAPED "$ENV{MSYSTEM_PREFIX}")
 
+    if(NOT ${CMAKE_VERSION} VERSION_LESS "4.3")
+      cmake_policy(SET CMP0207 NEW)
+    endif()
+
     install(TARGETS ${OSUSimName}
             RUNTIME_DEPENDENCIES
               DIRECTORIES ${MSYSTEM_PREFIX_ESCAPED}/bin

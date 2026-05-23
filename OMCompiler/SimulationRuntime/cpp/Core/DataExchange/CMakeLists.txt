@@ -14,7 +14,9 @@ endif(NOT BOOST_STATIC_LINKING)
 
 add_precompiled_header(${DataExchangeName} Core/Modelica.h)
 
+if(MSVC)
 install(FILES $<TARGET_PDB_FILE:${DataExchangeName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+endif()
 
 install(TARGETS ${DataExchangeName} DESTINATION ${LIBINSTALLEXT})
 install(FILES

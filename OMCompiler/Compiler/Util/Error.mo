@@ -1339,8 +1339,22 @@ which the current variable the compiler is working with."
     // input DAE.ComponentPrefix t; // Bound in the closure
     output String ostr;
   end prefixToStr;
+protected
+  Option<tuple<array<String>, array<SourceInfo>, array<prefixToStr>>> tpl;
+  array<String> astr;
+  array<SourceInfo> ainfo;
+  array<prefixToStr> afunc;
 algorithm
-  setGlobalRoot(Global.currentInstVar, (component, info, func));
+  tpl := getGlobalRoot(Global.currentInstVar);
+  _ := match tpl
+    case NONE() algorithm setGlobalRoot(Global.currentInstVar, SOME((arrayCreate(1,component),arrayCreate(1,info),arrayCreate(1,func)))); then ();
+    case SOME((astr,ainfo,afunc))
+      algorithm
+        arrayUpdate(astr, 1, component);
+        arrayUpdate(ainfo, 1, info);
+        arrayUpdate(afunc, 1, func);
+      then ();
+  end match;
 end updateCurrentComponent;
 
 public function getCurrentComponent "Gets the current component as a string."
@@ -1349,7 +1363,10 @@ public function getCurrentComponent "Gets the current component as a string."
   output Boolean read_only=false;
   output String filename="";
 protected
-  tuple<String, SourceInfo, prefixToStr> tpl;
+  Option<tuple<array<String>, array<SourceInfo>, array<prefixToStr>>> tpl;
+  array<String> astr;
+  array<SourceInfo> ainfo;
+  array<prefixToStr> afunc;
   SourceInfo info;
   prefixToStr func;
   partial function prefixToStr
@@ -1359,16 +1376,24 @@ protected
   end prefixToStr;
 algorithm
   tpl := getGlobalRoot(Global.currentInstVar);
-  (str,info,func) := tpl;
-  if str <> "" then
-    str := "Variable " + func(str) + ": ";
-    sline := info.lineNumberStart;
-    scol := info.columnNumberStart;
-    eline := info.lineNumberEnd;
-    ecol := info.columnNumberEnd;
-    read_only := info.isReadOnly;
-    filename := info.fileName;
-  end if;
+  str := match tpl
+    case NONE() then "";
+    case SOME((astr,ainfo,afunc))
+      algorithm
+        str := arrayGet(astr, 1);
+        if str <> "" then
+          func := arrayGet(afunc, 1);
+          str := "Variable " + func(str) + ": ";
+          info := arrayGet(ainfo, 1);
+          sline := info.lineNumberStart;
+          scol := info.columnNumberStart;
+          eline := info.lineNumberEnd;
+          ecol := info.columnNumberEnd;
+          read_only := info.isReadOnly;
+          filename := info.fileName;
+        end if;
+      then str;
+  end match;
 end getCurrentComponent;
 
 public function addMessage "Implementation of Relations

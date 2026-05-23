@@ -11,7 +11,9 @@ endif(NOT BUILD_SHARED_LIBS)
 add_precompiled_header(${LinearSolverName} Core/Modelica.h)
 target_link_libraries(${LinearSolverName}  ${SolverName}   ${KLU_LIBRARIES} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${SUNDIALS_LIBRARIES} ${LAPACK_LIBRARIES}  ${ModelicaName})
 
+if(MSVC)
 install(FILES $<TARGET_PDB_FILE:${LinearSolverName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+endif()
 
 install(TARGETS ${LinearSolverName} DESTINATION ${LIBINSTALLEXT})
 install(FILES

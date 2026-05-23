@@ -11,8 +11,9 @@ endif(NOT BUILD_SHARED_LIBS)
 target_link_libraries(${BroydenName} ${SolverName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES}  ${ModelicaName})
 add_precompiled_header(${BroydenName} Core/Modelica.h)
 
+if(MSVC)
 install(FILES $<TARGET_PDB_FILE:${BroydenName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
-
+endif()
 
 install(TARGETS ${BroydenName} DESTINATION ${LIBINSTALLEXT})
 install(FILES

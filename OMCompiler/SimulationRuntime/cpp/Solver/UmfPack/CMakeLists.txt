@@ -13,7 +13,9 @@ endif(NOT BUILD_SHARED_LIBS)
 
 target_link_libraries(${UmfPackName}  ${SolverName}  ${MathName} ${SUITESPARSE_LIBRARIES} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${UMFPACK_LIB})
 
+if(MSVC)
 install(FILES $<TARGET_PDB_FILE:${UmfPackName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+endif()
 
 install(TARGETS ${UmfPackName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
