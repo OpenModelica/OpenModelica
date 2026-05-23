@@ -3561,6 +3561,12 @@ algorithm
   packages := in_package_name::packages;
 
   dep_public_imports_file := public_imports_dir + "/" + in_package_name + ".public.imports";
+  if not System.regularFileExists(dep_public_imports_file) then
+    Error.addInternalError("getMMfileTotalDependencies: missing dependency file " + dep_public_imports_file
+      + " — the module " + in_package_name + " is imported (transitively) but is not part of the build. "
+      + "Add its source file to the build configuration.", sourceInfo());
+    fail();
+  end if;
   pub_imports_total := System.readFile(dep_public_imports_file);
 
   for pub_imp in System.strtok(pub_imports_total, ";") loop

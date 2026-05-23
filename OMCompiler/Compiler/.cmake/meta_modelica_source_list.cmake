@@ -68,6 +68,7 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/UnitParserExt.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/Values.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ValuesDump.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ValuesMake.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ValuesUtil.mo
 
   # Only files needed for compiling MetaModelica
