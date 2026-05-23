@@ -78,6 +78,7 @@ import DAEUtil;
 import Dump;
 import Error;
 import ErrorExt;
+import ExpressionBasics;
 import ExpressionSimplify;
 import FGraph;
 import Flags;
