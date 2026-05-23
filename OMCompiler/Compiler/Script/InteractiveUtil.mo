@@ -67,6 +67,7 @@ import DoubleEnded;
 import Dump;
 import Error;
 import ErrorExt;
+import ExpressionBasics;
 import ExpressionSimplify;
 import FBuiltin;
 import FGraph;
