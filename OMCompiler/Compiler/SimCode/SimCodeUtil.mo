@@ -6947,7 +6947,7 @@ algorithm
       expLst := Expression.flattenArrayExpToList(e1);
       // create the lhs tmp var
       ty := Expression.typeof(e1);
-      (basety,dims) := Types.flattenArrayType(ty);
+      (basety,dims) := TypesDump.flattenArrayType(ty);
       ty := DAE.T_ARRAY(basety, dims);
       left := ComponentReferenceBasics.makeCrefIdent("$TMP_" + intString(iuniqueEqIndex), ty, {});
 

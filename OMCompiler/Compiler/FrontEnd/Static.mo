@@ -3258,7 +3258,7 @@ algorithm
           elabExpInExpression(cache, env, arraycr, impl, false, pre, info);
         ety := Expression.typeof(arraycrefe);
         dims1 := Expression.arrayDimension(ety);
-        (,dims2) := Types.flattenArrayType(Types.getPropType(prop));
+        (,dims2) := TypesDump.flattenArrayType(Types.getPropType(prop));
         dims := if listLength(dims1) >= listLength(dims2) then dims1 else dims2 "In case there is a zero-size array somewhere...";
         // sent in the props of the arraycrefe as if the array is constant then the size(x, 1) is constant!
         // see Modelica.Media.Incompressible.Examples.Glycol47 and Modelica.Media.Incompressible.TableBased (hasDensity)
@@ -5993,7 +5993,7 @@ algorithm
   (outCache, outExp, DAE.PROP(ty, c)) := elabExpInExpression(inCache, inEnv,
     listHead(inPosArgs), inImplicit, true, inPrefix, inInfo);
 
-  (scalar_ty, dims) := Types.flattenArrayType(ty);
+  (scalar_ty, dims) := TypesDump.flattenArrayType(ty);
 
   // Check that any known dimensions have size 1.
   for dim in dims loop

@@ -787,7 +787,7 @@ algorithm
         guard replaceExpCond(cond, e)
       algorithm
         // only expand cref if dimensions are fixed
-        (_, dims) := Types.flattenArrayType(t);
+        (_, dims) := TypesDump.flattenArrayType(t);
         true := List.none(list(Types.dimNotFixed(dim) for dim in dims), Util.id);
 
         (cr,_) := replaceCrefSubs(cr,repl,cond);

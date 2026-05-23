@@ -4655,14 +4655,10 @@ public function classIsInlineFunc
   output DAE.InlineType outInlineType;
 algorithm
   outInlineType := match elt
-    case SCode.CLASS() then commentIsInlineFunc(elt.cmt);
+    case SCode.CLASS() then InstBasics.commentIsInlineFunc(elt.cmt);
     else DAE.DEFAULT_INLINE();
   end match;
 end classIsInlineFunc;
-
-public function commentIsInlineFunc = InstBasics.commentIsInlineFunc;
-
-public function commentGenerateEvents = InstBasics.commentGenerateEvents;
 
 public function stripFuncOutputsMod "strips the assignment modification of the component declared as output"
   input SCode.Element elem;
@@ -7112,7 +7108,7 @@ protected
 algorithm
   restriction := SCodeUtil.getClassRestriction(cl);
   SCode.Restriction.R_FUNCTION(functionRestriction = fres) := restriction;
-  daePurity := getFunctionRestrictionPurity(SCodeUtil.getFunctionRestrictionPurity(fres), inheritedComment, newFrontend = false);
+  daePurity := InstBasics.getFunctionRestrictionPurity(SCodeUtil.getFunctionRestrictionPurity(fres), inheritedComment, newFrontend = false);
 
   attr := matchcontinue fres
     case SCode.FR_EXTERNAL_FUNCTION(purity)
@@ -7121,7 +7117,7 @@ algorithm
         inVars := List.select(vl,Types.isInputVar);
         outVars := List.select(vl,Types.isOutputVar);
         name := SCodeUtil.isBuiltinFunction(cl,List.map(inVars,TypesDump.getVarName),List.map(outVars,TypesDump.getVarName));
-        inlineType := commentIsInlineFunc(inheritedComment);
+        inlineType := InstBasics.commentIsInlineFunc(inheritedComment);
         unboxArgs := SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment, "__OpenModelica_UnboxArguments");
       then (DAE.FUNCTION_ATTRIBUTES(inlineType,false,daePurity,false,DAE.FUNCTION_BUILTIN(SOME(name), unboxArgs),DAE.FP_NON_PARALLEL()));
 
@@ -7131,7 +7127,7 @@ algorithm
         inVars := List.select(vl,Types.isInputVar);
         outVars := List.select(vl,Types.isOutputVar);
         name := SCodeUtil.isBuiltinFunction(cl,List.map(inVars,TypesDump.getVarName),List.map(outVars,TypesDump.getVarName));
-        inlineType := commentIsInlineFunc(inheritedComment);
+        inlineType := InstBasics.commentIsInlineFunc(inheritedComment);
         isOpenModelicaPure := not SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_Impure");
         unboxArgs := SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment, "__OpenModelica_UnboxArguments");
       then (DAE.FUNCTION_ATTRIBUTES(inlineType,false,daePurity,false,DAE.FUNCTION_BUILTIN(SOME(name), unboxArgs),DAE.FP_PARALLEL_FUNCTION()));
@@ -7139,7 +7135,7 @@ algorithm
     //parallel functions: non-builtin
     case SCode.FR_PARALLEL_FUNCTION()
       algorithm
-        inlineType := commentIsInlineFunc(inheritedComment);
+        inlineType := InstBasics.commentIsInlineFunc(inheritedComment);
         isBuiltin := if SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_BuiltinPtr") then DAE.FUNCTION_BUILTIN_PTR() else DAE.FUNCTION_NOT_BUILTIN();
         isOpenModelicaPure := not SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_Impure");
       then DAE.FUNCTION_ATTRIBUTES(inlineType,false,daePurity,false,isBuiltin,DAE.FP_PARALLEL_FUNCTION());
@@ -7150,7 +7146,7 @@ algorithm
 
     else
       algorithm
-        inlineType := commentIsInlineFunc(inheritedComment);
+        inlineType := InstBasics.commentIsInlineFunc(inheritedComment);
         hasOutVars := List.any(vl,Types.isOutputVar);
         isBuiltin := if SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_BuiltinPtr") then DAE.FUNCTION_BUILTIN_PTR() else DAE.FUNCTION_NOT_BUILTIN();
 
@@ -7163,8 +7159,6 @@ algorithm
         DAE.FUNCTION_ATTRIBUTES(inlineType,false,daePurity,false,isBuiltin,DAE.FP_NON_PARALLEL());
   end matchcontinue;
 end getFunctionAttributes;
-
-public function getFunctionRestrictionPurity = InstBasics.getFunctionRestrictionPurity;
 
 public function checkFunctionElement
 "Verifies that an element of a function is correct, i.e.

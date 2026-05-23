@@ -2875,7 +2875,7 @@ algorithm
         sourceStr := getSourceInformationStr(src);
         s1 := ExpressionBasics.printExpStr(e1);
         s2 := ExpressionBasics.printExpStr(e2);
-        s3 := if Config.typeinfo() then Types.printDimensionsStr(dims) else "";
+        s3 := if Config.typeinfo() then TypesDump.printDimensionsStr(dims) else "";
         s3 := if Config.typeinfo() then " /* array equation [" + s3 + "] */" else "";
         str := IOStream.appendList(str, {"  ", s1, " = ", s2, s3, sourceStr, ";\n"});
         str := dumpEquationsStream(xs, str);
@@ -3255,7 +3255,7 @@ protected
   DAE.Type ty;
   list<DAE.Var> ty_vars;
 algorithm
-  (ty, ty_vars) := Types.stripTypeVars(inType);
+  (ty, ty_vars) := TypesDump.stripTypeVars(inType);
   outTypeStr := unparseType(ty);
   outTypeAttrStr := List.toString(ty_vars, TypesDump.unparseVarAttr, "", "(", ", ", ")", false);
 end printTypeStr;

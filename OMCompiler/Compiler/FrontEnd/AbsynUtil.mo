@@ -6508,7 +6508,7 @@ protected
    // the surrounding `if not listEmpty(choiceArray)` guarantees the loop took
    // a bound arm at runtime, but Rust's flow analysis can't see this. Default
    // the bindings so codegen produces compilable Rust.
-   Absyn.Info info1, info2 = AbsynUtil.dummyInfo;
+   Absyn.Info info1, info2 = Absyn.dummyInfo;
    Option<String> cmt1, cmt2 = NONE();
    Boolean fp1, fp2 = false;
    Absyn.Each ep1, ep2 = Absyn.NON_EACH();

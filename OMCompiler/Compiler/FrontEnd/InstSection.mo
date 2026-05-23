@@ -4236,10 +4236,10 @@ algorithm
         (cache,_) = PrefixUtil.prefixCref(cache,env,ih,pre,c1);
         (cache,_) = PrefixUtil.prefixCref(cache,env,ih,pre,c2);
         c1_str = Types.connectorTypeStr(ct) + ComponentReferenceBasics.printComponentRefStr(c1);
-        (t1, _) = Types.stripTypeVars(t1);
+        (t1, _) = TypesDump.stripTypeVars(t1);
         t1_str = TypesDump.unparseType(t1);
         c2_str = Types.connectorTypeStr(ct) + ComponentReferenceBasics.printComponentRefStr(c2);
-        (t2, _) = Types.stripTypeVars(t2);
+        (t2, _) = TypesDump.stripTypeVars(t2);
         t2_str = TypesDump.unparseType(t2);
         c1_str = stringAppendList({c1_str," type: ",t1_str});
         c2_str = stringAppendList({c2_str," type: ",t2_str});

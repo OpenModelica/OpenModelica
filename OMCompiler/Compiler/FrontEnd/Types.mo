@@ -1049,8 +1049,6 @@ algorithm
   end match;
 end setDimensionNth;
 
-public function printDimensionsStr = TypesDump.printDimensionsStr ;
-
 public function valuesToVars "Translates a list of Values.Value to a Var list, using a list
   of identifiers as component names.
   Used e.g. when retrieving the type of a record value."
@@ -1330,8 +1328,8 @@ protected
   list<DAE.Dimension> dims1, dims2;
 algorithm
   if arrayType(inType1) and arrayType(inType2) then
-    (ty1, dims1) := flattenArrayType(inType1);
-    (ty2, dims2) := flattenArrayType(inType2);
+    (ty1, dims1) := TypesDump.flattenArrayType(inType1);
+    (ty2, dims2) := TypesDump.flattenArrayType(inType2);
     outEquiv := equivtypes(inType1, inType2) and listLength(dims1) == listLength(dims2);
   elseif not arrayType(inType1) and not arrayType(inType2) then
     outEquiv := equivtypes(inType1, inType2);
@@ -2657,8 +2655,6 @@ algorithm
   outHasReal := false;
 end containReal;
 
-public function flattenArrayType = TypesDump.flattenArrayType;
-
 public function propAllConst "author: LS
   If PROP_TUPLE, returns true if all of the flags are constant."
   input DAE.Properties inProperties;
@@ -2972,7 +2968,7 @@ algorithm
 
     case (t as DAE.T_ARRAY())
       algorithm
-        (t,dims) := flattenArrayType(t);
+        (t,dims) := TypesDump.flattenArrayType(t);
         t_1 := simplifyType(t);
       then
         DAE.T_ARRAY(t_1,dims);
@@ -3063,7 +3059,7 @@ algorithm
 
     case DAE.T_ARRAY(dims = _ :: _)
       algorithm
-        (ty, dims) := flattenArrayType(outType);
+        (ty, dims) := TypesDump.flattenArrayType(outType);
       then
         liftArrayListDims(ty, dims);
 
@@ -6941,8 +6937,6 @@ algorithm
     else false;
   end match;
 end isArrayWithUnknownDimension;
-
-public function stripTypeVars = TypesDump.stripTypeVars;
 
 public function setTypeVars
   input output DAE.Type ty;

@@ -218,7 +218,7 @@ algorithm
 
     case (DAE.ARRAY(array = {}, ty = ty))
       algorithm
-        (ty, dims) := Types.flattenArrayType(ty);
+        (ty, dims) := TypesDump.flattenArrayType(ty);
         ae1 := unleabZeroExpFromType(ty);
         expl_1 := List.map(dims, unelabDimensionToFillExp);
       then

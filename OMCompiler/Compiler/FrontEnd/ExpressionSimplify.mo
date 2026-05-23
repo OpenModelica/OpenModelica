@@ -1569,11 +1569,11 @@ algorithm
       then Expression.makePureBuiltinCall("scalar", {exp}, tp);
     case (DAE.SIZE(exp=exp,sz=NONE()),_)
       algorithm
-        (_,{_}) := Types.flattenArrayType(Expression.typeof(inExp));
+        (_,{_}) := TypesDump.flattenArrayType(Expression.typeof(inExp));
       then DAE.SIZE(exp,SOME(DAE.ICONST(1)));
     else
       algorithm
-        (_,{}) := Types.flattenArrayType(Expression.typeof(inExp));
+        (_,{}) := TypesDump.flattenArrayType(Expression.typeof(inExp));
       then inExp;
   end match;
 end simplifyScalar;
