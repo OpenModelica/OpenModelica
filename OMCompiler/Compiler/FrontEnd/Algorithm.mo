@@ -66,6 +66,7 @@ protected import List;
 import SCodeUtil;
 protected import SCodeDump;
 protected import Types;
+protected import TypesDump;
 protected import Util;
 protected import ExpressionBasics;
 
