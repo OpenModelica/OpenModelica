@@ -76,7 +76,8 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clan
   add_compile_options($<$<COMPILE_LANGUAGE:C>:-Werror=implicit-function-declaration>)
   add_compile_options($<$<COMPILE_LANGUAGE:C>:-Werror=incompatible-pointer-types>)
   # VLAs are a C99/GCC extension not supported by MSVC; catching them prevents portability issues.
-  add_compile_options($<$<COMPILE_LANGUAGE:C>:-Werror=vla>)
+  # Disabled for macOS Apple-specific VLA usage in systemimpl.c
+  # add_compile_options($<$<COMPILE_LANGUAGE:C>:-Werror=vla>)
 endif()
 
 omc_add_subdirectory(SimulationRuntime)

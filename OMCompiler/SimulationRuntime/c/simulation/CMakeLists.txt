@@ -171,7 +171,7 @@ target_link_libraries(OpenModelicaRuntimeCSimulation
     omc::3rd::sundials::idas
     omc::3rd::sundials::kinsol
     omc::3rd::sundials::sunlinsolklu
-    omc::3rd::sundials::sunlinsollapackdense
+    $<$<BOOL:${SUNDIALS_LAPACK_ENABLE}>:omc::3rd::sundials::sunlinsollapackdense>
     omc::3rd::suitesparse::klu
     omc::3rd::suitesparse::amd
     omc::3rd::suitesparse::btf
