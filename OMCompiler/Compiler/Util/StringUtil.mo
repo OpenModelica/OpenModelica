@@ -334,6 +334,10 @@ algorithm
       b := false;
       for j2 in j:stringLength(s2) loop
         if MetaModelica.Dangerous.stringGetNoBoundsChecking(s2, j2) <> stringCharInt(" ") then
+          if MetaModelica.Dangerous.stringGetNoBoundsChecking(s2, j2) <>
+             MetaModelica.Dangerous.stringGetNoBoundsChecking(s1, i) then
+            return;
+          end if;
           j := j2+1;
           b := true;
           break;
@@ -420,10 +424,10 @@ algorithm
     return;
   end if;
   if stringGet(s,1) == 239 and
-     stringGet(s,2) == 187 and
-     stringGet(s,3) == 191 then
-    s := substring(s, 4, stringLength(s));
+    stringGet(s,2) == 187 and
+    stringGet(s,3) == 191 then
     bom := substring(s, 1, 3);
+    s := substring(s, 4, stringLength(s));
   end if;
 end stripBOM;
 
