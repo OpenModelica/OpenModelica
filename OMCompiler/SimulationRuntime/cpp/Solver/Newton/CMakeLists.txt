@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 
 project(${NewtonName})
 
+if(LAPACK_FOUND)
 add_library(${NewtonName}
   Newton.cpp
   NewtonSettings.cpp
@@ -22,6 +23,7 @@ add_precompiled_header(${NewtonName} Core/Modelica.h)
 install(FILES $<TARGET_PDB_FILE:${NewtonName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
 
 install(TARGETS ${NewtonName} DESTINATION ${LIBINSTALLEXT})
+endif()
 install(FILES
   ${CMAKE_SOURCE_DIR}/Solver/Newton/Newton.h
   ${CMAKE_SOURCE_DIR}/Solver/Newton/NewtonSettings.h
