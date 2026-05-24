@@ -1,4 +1,4 @@
-// name: SimplifyOperator
+// name: ExpressionTest
 // status: correct
 // cflags: -d=-newInst
 
