@@ -308,9 +308,9 @@ void buildOMC_CMake(cmake_args, cmake_exe='cmake') {
 }
 
 def getQtMajorVersion(qtVersion) {
-  def OM_QT_MAJOR_VERSION = 'OM_QT_MAJOR_VERSION=5'
-  if (qtVersion.equals('qt6')) {
-    OM_QT_MAJOR_VERSION = 'OM_QT_MAJOR_VERSION=6'
+  def OM_QT_MAJOR_VERSION = 'OM_QT_MAJOR_VERSION=6'
+  if (qtVersion.equals('qt5')) {
+    OM_QT_MAJOR_VERSION = 'OM_QT_MAJOR_VERSION=5'
   }
   return OM_QT_MAJOR_VERSION
 }

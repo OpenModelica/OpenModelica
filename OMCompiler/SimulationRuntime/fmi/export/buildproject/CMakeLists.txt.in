@@ -31,6 +31,10 @@ set(CVODE_DIRECTORY
     CACHE STRING
     "IF CVODE is needed provide a directory where to find it.")
 
+if(NOT ${CMAKE_VERSION} VERSION_LESS "4.3")
+  cmake_policy(SET CMP0207 NEW)
+endif()
+
 # Test if RUNTIME_DEPENDENCIES is needed and available
 if(${CMAKE_VERSION} VERSION_LESS "3.21" AND NOT ${RUNTIME_DEPENDENCIES_LEVEL} STREQUAL "none")
   message(FATAL_ERROR

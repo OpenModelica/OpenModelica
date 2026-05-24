@@ -19,7 +19,9 @@ set(Boost_INCLUDE_ ".")
 # This is supposwed to signify the directory where the boost libraries can be found (for -L ...)
 set(Boost_LIBS_ ".")
 # The actual boost libraries needed to be linked.
-set(Boost_LIBRARIES_ "-lboost_program_options -lboost_filesystem")
+if (NOT Boost_LIBRARIES_)
+set(Boost_LIBRARIES_ ${Boost_LIBRARIES})
+endif()
 
 # Lapack libs are also expected to be in the system directories.
 set(LAPACK_LIBS_ ".")
@@ -35,6 +37,10 @@ set(CPPTHREADS_LIBRARY_FLAG ${CMAKE_THREAD_LIBS_INIT})
 # by the old system. It is always defined for some reason. USE_THREAD means use the C++ standard
 # library's thread library (instead of something like boost threads).
 set(SYSTEM_CFLAGS ${SYSTEM_CFLAGS} "-DOMC_BUILD -DUSE_THREAD -fPIC")
+
+message(STATUS "configuring ModelicaConfig_gcc.inc in OMCompiler/SimulationRuntime/cpp with:")
+message(STATUS "boost include: ${Boost_INCLUDE_DIR}")
+message(STATUS "boost libraries implict / explicit: ${Boost_LIBRARIES} / ${Boost_LIBRARIES_}")
 
 # Configure the files.
 configure_file(Modelica/ModelicaLibraryConfig_gcc.inc.in ${CMAKE_CURRENT_BINARY_DIR}/ModelicaLibraryConfig_gcc.inc)

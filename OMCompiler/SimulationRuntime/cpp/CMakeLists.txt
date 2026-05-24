@@ -34,7 +34,7 @@
 # The used defines are stored in the SYSTEM_CFLAGS variable, which is passed to the ModelicaConfig.inc and written in the PrecompiledHeader.cmake
 
 if(OPENMODELICA_NEW_CMAKE_BUILD)
-  include(cmake_3.14.cmake)
+include(cmake_3.14.cmake)
 else(OPENMODELICA_NEW_CMAKE_BUILD)
 
 cmake_minimum_required(VERSION 3.5)
@@ -475,9 +475,17 @@ ELSEIF(NOT FMU_TARGET)
 ENDIF(NOT(COMPILER_SUPPORTS_CXX11))
 
 IF(NOT FMU_TARGET)
+if(CMAKE_VERSION VERSION_LESS "3.30.0")
   FIND_PACKAGE(Boost REQUIRED COMPONENTS filesystem serialization program_options)
+else()
+  FIND_PACKAGE(Boost CONFIG COMPONENTS filesystem serialization program_options REQUIRED)
+endif()
 ELSE(NOT FMU_TARGET)
+if(CMAKE_VERSION VERSION_LESS "3.30.0")
   FIND_PACKAGE(Boost COMPONENTS filesystem serialization program_options)
+else()
+  FIND_PACKAGE(Boost CONFIG COMPONENTS filesystem serialization program_options)
+endif()
 ENDIF(NOT FMU_TARGET)
 
 # Use old C++ ABI for cross compilation of FMUs

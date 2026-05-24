@@ -120,7 +120,13 @@ set(BasiLibName             ${LIBPREFIX}Base)
 
 # ── Boost ─────────────────────────────────────────────────────────────────────
 set(Boost_USE_MULTITHREADED ON)
-find_package(Boost REQUIRED COMPONENTS filesystem serialization program_options)
+
+if(CMAKE_VERSION VERSION_LESS "3.30.0")
+  FIND_PACKAGE(Boost REQUIRED COMPONENTS filesystem serialization program_options)
+else()
+  FIND_PACKAGE(Boost CONFIG COMPONENTS filesystem serialization program_options REQUIRED)
+endif()
+
 find_package(Threads REQUIRED)
 if(WIN32)
   set(CPPTHREADS_LIBRARY)

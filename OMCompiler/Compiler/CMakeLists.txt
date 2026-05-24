@@ -319,6 +319,10 @@ if(WIN32)
   set(GC_RUNTIME_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/3rdParty/gc)
   set(RUNTIME_LIB_DIRS ${OMPLOT_LIB_DIR} ${OMSIMULATOR_LIB_DIR} ${OMCOMPILER_LIB_DIR} ${SIMULATION_RUNTIME_LIB_DIR} ${GC_RUNTIME_LIB_DIR})
 
+  if(NOT ${CMAKE_VERSION} VERSION_LESS "4.3")
+    cmake_policy(SET CMP0207 NEW)
+  endif()
+
   message(STATUS "Looking for runtime dependencies of OpenModelicaCompiler in ${MSYSTEM_PREFIX_ESCAPED}/bin ${RUNTIME_LIB_DIRS}")
   install(TARGETS OpenModelicaCompiler
           RUNTIME_DEPENDENCIES

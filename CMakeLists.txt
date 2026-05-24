@@ -40,6 +40,10 @@ include(cmake/omc_git_revision.cmake)
 # well as linux. See the file for more info.
 include(cmake/OMCPThreads.cmake)
 
+if (MINGW)
+SET(IS_MINGW64 ON)
+endif(MINGW)
+
 omc_add_to_report(CMAKE_VERSION)
 # Add the compiler ids to the report for convenience.
 omc_add_to_report(CMAKE_C_COMPILER_ID)
@@ -179,11 +183,7 @@ omc_add_subdirectory(OMCompiler)
 
 if(OM_ENABLE_GUI_CLIENTS)
   # select qt version 5/6
-  if (MINGW)
-    set (OM_QT_MAJOR_VERSION 5 CACHE STRING "Qt version")
-  else ()
-    set (OM_QT_MAJOR_VERSION 6 CACHE STRING "Qt version")
-  endif ()
+  set (OM_QT_MAJOR_VERSION 6 CACHE STRING "Qt version")
 
   omc_add_subdirectory(OMParser)
   omc_add_subdirectory(OMPlot)
