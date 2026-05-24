@@ -593,6 +593,47 @@ algorithm
   end matchcontinue;
 end simOptionsAsString;
 
+protected function diffSanityCheckEqual
+  "Sanity check for the Modelica source diff/merge: returns true when s1 and
+   s2 represent the same Modelica program. Code tokens are compared strictly
+   (ignoring whitespace), while comments are compared as a multiset so the
+   merge step is free to relocate them."
+  input String s1;
+  input String s2;
+  output Boolean b;
+protected
+  import LexerModelicaDiff.{Token,tokenContent,scanString,isLineComment,isBlockComment,blockCommentCanonical,modelicaDiffTokenWhitespace};
+  list<Token> ts1, ts2;
+  list<String> comments1, comments2;
+algorithm
+  (ts1, _) := scanString(s1);
+  (ts2, _) := scanString(s2);
+  if stringAppendList(list(tokenContent(t) for t guard not modelicaDiffTokenWhitespace(t) in ts1)) <>
+     stringAppendList(list(tokenContent(t) for t guard not modelicaDiffTokenWhitespace(t) in ts2)) then
+    b := false;
+    return;
+  end if;
+  comments1 := List.sort(list(diffSanityCheckCommentStr(t)
+                              for t guard isLineComment(t) or isBlockComment(t) in ts1),
+                         Util.strcmpBool);
+  comments2 := List.sort(list(diffSanityCheckCommentStr(t)
+                              for t guard isLineComment(t) or isBlockComment(t) in ts2),
+                         Util.strcmpBool);
+  b := List.isEqualOnTrue(comments1, comments2, stringEq);
+end diffSanityCheckEqual;
+
+protected function diffSanityCheckCommentStr
+  "Canonical string form of a comment token. Block comments are normalised by
+   trimming each line, so that re-indented block comments compare equal."
+  input LexerModelicaDiff.Token t;
+  output String s;
+protected
+  import LexerModelicaDiff.{tokenContent,isBlockComment,blockCommentCanonical};
+algorithm
+  s := if isBlockComment(t) then stringDelimitList(blockCommentCanonical(t), "\n")
+                            else tokenContent(t);
+end diffSanityCheckCommentStr;
+
 public function cevalInteractiveFunctions3
 "defined in the interactive environment."
   input FCore.Cache inCache;
@@ -1057,7 +1098,7 @@ algorithm
             Error.addInternalError("Failed to parse merged string (see generated file SanityCheckFail.mo)\n", sourceInfo());
             fail();
           end try;
-          if not StringUtil.equalIgnoreSpace(s3, s4) then
+          if not diffSanityCheckEqual(s3, s4) then
             System.writeFile("SanityCheckFailBefore.mo", s3);
             System.writeFile("SanityCheckFailAfter.mo", s4);
             if b then
