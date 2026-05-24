@@ -22,6 +22,7 @@ if true then /* Suppress output */
     prefixPath + "FrontEnd/ConnectUtil.mo",
     prefixPath + "FrontEnd/DAE.mo",
     prefixPath + "FrontEnd/DAEDump.mo",
+    prefixPath + "FrontEnd/DAEDumpTypes.mo",
     prefixPath + "FrontEnd/DAEUtil.mo",
     prefixPath + "FrontEnd/Dump.mo",
     prefixPath + "FrontEnd/DumpGraphviz.mo",
