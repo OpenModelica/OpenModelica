@@ -534,7 +534,7 @@ match ty
 case T_COMPLEX(complexClassType = record_state, varLst = var_lst) then
   let vars = var_lst |> v => daeExp(makeCrefRecordExp(cr,v), context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
              ;separator=", "
-  let record_type_name = underscorePath(ClassInf.getStateName(record_state))
+  let record_type_name = underscorePath(ClassInfUtil.getStateName(record_state))
   let ret_type = '<%record_type_name%>RetType'
   let ret_var = tempDecl(ret_type, &varDecls)
   let &preExp += '<%contextFunName(record_type_name, context)%>(<%vars%>,<%ret_var%>);<%\n%>'
@@ -714,7 +714,7 @@ template expTypeShort(DAE.Type type)
   case T_SUBTYPE_BASIC(__) then expTypeShort(complexType)
   case T_ARRAY(__)       then expTypeShort(ty)
   case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__)) then "void*"
-  case T_COMPLEX(__)     then '<%underscorePath(ClassInf.getStateName(complexClassType))%>Type'
+  case T_COMPLEX(__)     then '<%underscorePath(ClassInfUtil.getStateName(complexClassType))%>Type'
   case T_METATYPE(__)
   case T_METABOXED(__)   then "metatype"
   case T_FUNCTION(__)
@@ -737,7 +737,7 @@ template expTypeFlag(DAE.Type ty, Integer flag)
     else match ty case T_COMPLEX(complexClassType=RECORD(path=rname)) then
       '<%underscorePath(rname)%>Type'
     else match ty case T_COMPLEX(__) then
-      '<%underscorePath(ClassInf.getStateName(complexClassType))%>'
+      '<%underscorePath(ClassInfUtil.getStateName(complexClassType))%>'
      else
       '<%expTypeShort(ty)%>'
   case 3 then
@@ -790,7 +790,7 @@ template expTypeFlag(DAE.Type ty, Integer flag)
     else match ty case T_COMPLEX(complexClassType=RECORD(path=rname)) then
       'const <%underscorePath(rname)%>Type&'
     else match ty case T_COMPLEX(__) then
-      'const <%underscorePath(ClassInf.getStateName(complexClassType))%>&'
+      'const <%underscorePath(ClassInfUtil.getStateName(complexClassType))%>&'
     else
       '<%expTypeShort(ty)%>'
 
@@ -838,7 +838,7 @@ template expTypeShortSPS(DAE.Type type)
   case T_ARRAY(__)       then expTypeShortSPS(ty)
   case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
                       then "type not supported"
-  case T_COMPLEX(__)     then '<%underscorePath(ClassInf.getStateName(complexClassType))%>Type'
+  case T_COMPLEX(__)     then '<%underscorePath(ClassInfUtil.getStateName(complexClassType))%>Type'
   case T_METATYPE(__) case T_METABOXED(__)    then "type not supported"
   case T_FUNCTION(__)
   case T_FUNCTION_REFERENCE_FUNC(__)
@@ -860,7 +860,7 @@ template expTypeShortMLPI(DAE.Type type)
   case T_ARRAY(__)       then expTypeShortSPS(ty)
   case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
                       then "type not supported"
-  case T_COMPLEX(__)     then '<%underscorePath(ClassInf.getStateName(complexClassType))%>Type'
+  case T_COMPLEX(__)     then '<%underscorePath(ClassInfUtil.getStateName(complexClassType))%>Type'
   case T_METATYPE(__) case T_METABOXED(__)    then "type not supported"
   case T_FUNCTION(__)
   case T_FUNCTION_REFERENCE_FUNC(__)
@@ -1155,7 +1155,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
       >>
       let addr = match iter.ty
         case T_ARRAY(ty=T_COMPLEX(complexClassType = record_state)) then
-          let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
+          let rec_name = '<%underscorePath(ClassInfUtil.getStateName(record_state))%>'
           '<%rec_name%>_array_get(<%loopVar%>, 1, <%firstIndex%>++)'
         else
           '<%loopVar%>( <%firstIndex%>++)'

@@ -56,7 +56,7 @@ import ComponentReference;
 import Differentiate;
 import DumpGraphML;
 import Expression;
-import ExpressionDump;
+import ExpressionBasics;
 import ExpressionSimplify;
 import HashSet;
 import List;
@@ -129,7 +129,7 @@ algorithm
       list<DAE.Exp> crefexplst;
       array<list<Integer>> vorphansarray1, mapEqnIncRow, ass22, vec1;
       list<BackendDAE.Equation> neweqns;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
 
     case (_, _, {})
       then (isyst, ishared, false);
@@ -500,7 +500,7 @@ protected
   BackendDAE.Var v;
 algorithm
   v := BackendVariable.getVarAt(vars, id);
-  print(ComponentReference.printComponentRefStr(BackendVariable.varCref(v)));
+  print(ComponentReferenceBasics.printComponentRefStr(BackendVariable.varCref(v)));
   print("\n");
 end dumpVar;
 
@@ -1660,7 +1660,7 @@ protected
 algorithm
   (c, e) := inTpl;
   cs := intString(c);
-  es := ExpressionDump.printExpStr(e);
+  es := ExpressionBasics.printExpStr(e);
   s := stringAppendList({cs, ":", es});
 end dumpMatrix1;
 
@@ -1815,7 +1815,7 @@ algorithm
       algorithm
       sa := intString(a);
       sb := intString(b);
-      cr := ComponentReference.makeCrefIdent(stringAppendList({"$tmp", sa, "_", sb}), DAE.T_REAL_DEFAULT, {});
+      cr := ComponentReferenceBasics.makeCrefIdent(stringAppendList({"$tmp", sa, "_", sb}), DAE.T_REAL_DEFAULT, {});
       cexp := Expression.crefExp(cr);
       eqns := BackendEquation.add(BackendDAE.EQUATION(cexp, e, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN), inEqns);
       v := BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false, false);
@@ -1860,7 +1860,7 @@ algorithm
         (vars, eqns, cexp, tpl) := makeDummyVar(inTpl, e1, inVars, inEqns);
         elst := matrix[col];
         elst := List.map1(elst, mulRow, cexp);
-        //  print("mulRow " + intString(col) + " with " + ExpressionDump.printExpStr(e1) + "\n");
+        //  print("mulRow " + intString(col) + " with " + ExpressionBasics.printExpStr(e1) + "\n");
         //  BackendDump.debuglst((elst, dumpMatrix1, ", ", "\n"));
         (elst, vars, eqns, tpl) := addRows(matrix[row], elst, col, vars, eqns, tpl, {});
         //  print("addRow\n");
@@ -2136,7 +2136,7 @@ algorithm
       print(";... % ");
       print(intString(row));
       print(" ");
-      print(ComponentReference.printComponentRefStr(cr)); print("\n");
+      print(ComponentReferenceBasics.printComponentRefStr(cr)); print("\n");
       dumpJacMatrix(jac, row+1, 1, size, vars);
     then ();
 
@@ -2148,7 +2148,7 @@ algorithm
     case ((r, c, BackendDAE.RESIDUAL_EQUATION(exp = e))::rest, _, _, _, _) algorithm
       true := intEq(r, row);
       true := intEq(c, col);
-      estr := ExpressionDump.printExpStr(e);
+      estr := ExpressionBasics.printExpStr(e);
       print(estr); print(", ");
       dumpJacMatrix(rest, row, col+1, size, vars);
     then ();
@@ -2212,7 +2212,7 @@ algorithm
         elst := Expression.flattenArrayExpToList(e1);
         // check if all elements crefs
         crlst := List.map(elst, Expression.expCrefNegCref);
-        //crlst = List.uniqueOnTrue(crlst, ComponentReference.crefEqualNoStringCompare);
+        //crlst = List.uniqueOnTrue(crlst, ComponentReferenceBasics.crefEqualNoStringCompare);
         vlst := sortVarsforOrder1(crlst, 1, inVarLst, vindxs, arrayCreate(listLength(vindxs), NONE()), vars);
       then
         vlst;
@@ -2222,7 +2222,7 @@ algorithm
         elst := Expression.flattenArrayExpToList(e1);
         // check if all elements crefs
         crlst := List.map(elst, Expression.expCrefNegCref);
-        //crlst = List.uniqueOnTrue(crlst, ComponentReference.crefEqualNoStringCompare);
+        //crlst = List.uniqueOnTrue(crlst, ComponentReferenceBasics.crefEqualNoStringCompare);
         vlst := sortVarsforOrder1(crlst, 1, inVarLst, vindxs, arrayCreate(listLength(vindxs), NONE()), vars);
       then
         vlst;
@@ -3022,18 +3022,18 @@ algorithm
       then set;
     case (DAE.CREF_QUAL(ident=ident, identType=ty, subscriptLst=subscriptLst, componentRef=subcr), _, NONE())
       algorithm
-        idcr := ComponentReference.makeCrefIdent(ident, ty, {});
+        idcr := ComponentReferenceBasics.makeCrefIdent(ident, ty, {});
         set := BaseHashSet.add(idcr, ihs);
-        idcr := ComponentReference.makeCrefIdent(ident, ty, subscriptLst);
+        idcr := ComponentReferenceBasics.makeCrefIdent(ident, ty, subscriptLst);
         set := BaseHashSet.add(idcr, set);
       then
         addCrefandParentsToSet(subcr, set, SOME(idcr));
     case (DAE.CREF_QUAL(ident=ident, identType=ty, subscriptLst=subscriptLst, componentRef=subcr), _, SOME(precr))
       algorithm
-        idcr := ComponentReference.makeCrefIdent(ident, ty, {});
+        idcr := ComponentReferenceBasics.makeCrefIdent(ident, ty, {});
         idcr := ComponentReference.joinCrefs(precr, idcr);
         set := BaseHashSet.add(idcr, ihs);
-        idcr := ComponentReference.makeCrefIdent(ident, ty, subscriptLst);
+        idcr := ComponentReferenceBasics.makeCrefIdent(ident, ty, subscriptLst);
         precr := ComponentReference.joinCrefs(precr, idcr);
         set := BaseHashSet.add(precr, ihs);
       then
@@ -3302,13 +3302,13 @@ algorithm
         elst := Expression.flattenArrayExpToList(e1);
         // check if all elements crefs
         crlst := List.map(elst, Expression.expCrefNegCref);
-        crlst := List.uniqueOnTrue(crlst, ComponentReference.crefEqualNoStringCompare);
+        crlst := List.uniqueOnTrue(crlst, ComponentReferenceBasics.crefEqualNoStringCompare);
         true := intEq(size, listLength(crlst));
         cr::crlst1 := crlst;
-        true := List.all(crlst1, function ComponentReference.crefEqualWithoutLastSubs(cr2 = cr));
+        true := List.all(crlst1, function ComponentReferenceBasics.crefEqualWithoutLastSubs(cr2 = cr));
         // check if crefs no on other side
         set := HashSet.emptyHashSet();
-        crnosubs := ComponentReference.crefStripLastSubs(cr);
+        crnosubs := ComponentReferenceBasics.crefStripLastSubs(cr);
         set := addCrefandParentsToSet(crnosubs, set, NONE());
         set := List.fold(crlst, BaseHashSet.add, set);
         (_, (_, false)) := Expression.traverseExpTopDown(e2, expHasCreftraverser, (set, false));
@@ -3325,13 +3325,13 @@ algorithm
         elst := Expression.flattenArrayExpToList(e2);
         // check if all elements crefs
         crlst := List.map(elst, Expression.expCrefNegCref);
-        crlst := List.uniqueOnTrue(crlst, ComponentReference.crefEqualNoStringCompare);
+        crlst := List.uniqueOnTrue(crlst, ComponentReferenceBasics.crefEqualNoStringCompare);
         true := intEq(size, listLength(crlst));
         cr::crlst1 := crlst;
-        true := List.all(crlst1, function ComponentReference.crefEqualWithoutLastSubs(cr2 = cr));
+        true := List.all(crlst1, function ComponentReferenceBasics.crefEqualWithoutLastSubs(cr2 = cr));
         // check if crefs no on other side
         set := HashSet.emptyHashSet();
-        crnosubs := ComponentReference.crefStripLastSubs(cr);
+        crnosubs := ComponentReferenceBasics.crefStripLastSubs(cr);
         set := addCrefandParentsToSet(crnosubs, set, NONE());
         set := List.fold(crlst, BaseHashSet.add, set);
         (_, (_, false)) := Expression.traverseExpTopDown(e1, expHasCreftraverser, (set, false));

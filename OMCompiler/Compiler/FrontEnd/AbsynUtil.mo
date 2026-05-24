@@ -44,10 +44,6 @@ import System;
 import Util;
 import MetaModelica.Dangerous.listReverseInPlace;
 
-public constant Absyn.ClassDef dummyParts = Absyn.PARTS({},{},{},{},NONE());
-public constant Absyn.Info dummyInfo = SOURCEINFO("",false,0,0,0,0,0.0);
-public constant Absyn.Program dummyProgram = Absyn.PROGRAM({},Absyn.TOP());
-
 public function traverseExp<Arg>
 " Traverses all subexpressions of an Absyn.Exp expression.
   Takes a function and an extra argument passed through the traversal.
@@ -4662,7 +4658,7 @@ algorithm
 
   if not found then
     if insert then
-      arg := Absyn.ElementArg.MODIFICATION(false, Absyn.Each.NON_EACH(), Absyn.IDENT(name), NONE(), NONE(), dummyInfo);
+      arg := Absyn.ElementArg.MODIFICATION(false, Absyn.Each.NON_EACH(), Absyn.IDENT(name), NONE(), NONE(), Absyn.dummyInfo);
       arg := apply_fn(arg, path, fn, insert);
       args := arg :: args;
     else
@@ -6508,10 +6504,14 @@ protected
    Absyn.ElementArg choices;
    list<Absyn.ElementArg> choice, acc_choice = {}, acc = {}, args;
    Absyn.ElementArg c, el;
-   Absyn.Info info1, info2;
-   Option<String> cmt1, cmt2;
-   Boolean fp1, fp2;
-   Absyn.Each ep1, ep2;
+   // info2/cmt2/fp2/ep2 are assigned inside a match arm nested in a for loop;
+   // the surrounding `if not listEmpty(choiceArray)` guarantees the loop took
+   // a bound arm at runtime, but Rust's flow analysis can't see this. Default
+   // the bindings so codegen produces compilable Rust.
+   Absyn.Info info1, info2 = Absyn.dummyInfo;
+   Option<String> cmt1, cmt2 = NONE();
+   Boolean fp1, fp2 = false;
+   Absyn.Each ep1, ep2 = Absyn.NON_EACH();
    list<String> choiceArray = {};
    String s;
    Absyn.Exp e;
@@ -7307,5 +7307,5 @@ algorithm
   end match;
 end equationEqual;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_dump");
 end AbsynUtil;

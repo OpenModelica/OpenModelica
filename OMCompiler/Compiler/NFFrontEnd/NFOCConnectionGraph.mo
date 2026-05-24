@@ -323,12 +323,12 @@ algorithm
   context := intBitOr(NFInstContext.EQUATION, NFInstContext.CONNECT);
 
   fcref_rhs := Function.lookupFunctionSimple("equalityConstraint", InstNode.classScope(ComponentRef.node(lhs)), context);
-  (fcref_rhs, fn_node_rhs) := Function.instFunctionRef(fcref_rhs, context, AbsynUtil.dummyInfo);
+  (fcref_rhs, fn_node_rhs) := Function.instFunctionRef(fcref_rhs, context, Absyn.dummyInfo);
   exp_rhs := Expression.CALL(Call.UNTYPED_CALL(fcref_rhs, {Expression.fromCref(lhs), Expression.fromCref(rhs)}, {}, fn_node_rhs));
   (exp_rhs, ty) := Typing.typeExp(exp_rhs, context, info);
 
   fcref_lhs := Function.lookupFunctionSimple("fill", InstNode.topScope(ComponentRef.node(lhs)), context);
-  (fcref_lhs, fn_node_lhs) := Function.instFunctionRef(fcref_lhs, context, AbsynUtil.dummyInfo);
+  (fcref_lhs, fn_node_lhs) := Function.instFunctionRef(fcref_lhs, context, Absyn.dummyInfo);
   exp_lhs := Expression.CALL(Call.UNTYPED_CALL(fcref_lhs, Expression.REAL(0.0)::list(Dimension.sizeExp(d) for d in Type.arrayDims(ty)), {}, fn_node_lhs));
   (exp_lhs, ty) := Typing.typeExp(exp_lhs, context, info);
 

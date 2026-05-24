@@ -130,7 +130,7 @@ public
           Error.addSourceMessage(Error.BACKENDDAEINFO_LOWER,{
             intString(EqData.scalarSize(eqData)) + " (" + intString(EqData.size(eqData)) + ")",
             intString(VarData.scalarSize(varData)) + " (" + intString(VarData.size(varData)) + ")"},
-            AbsynUtil.dummyInfo);
+            Absyn.dummyInfo);
         end if;
 
         if Flags.isSet(Flags.DUMP_BINDINGS) then

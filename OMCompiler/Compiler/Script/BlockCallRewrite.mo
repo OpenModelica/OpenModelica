@@ -41,7 +41,6 @@ encapsulated package BlockCallRewrite
 "
 
 public import Absyn;
-public import AbsynUtil;
 
 protected import Dump;
 
@@ -490,7 +489,7 @@ algorithm
         //print("Parsed function call " + id + "\n");
         // create element, instert modifiers here
         elem := Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE(), Absyn.NOT_INNER_OUTER(), Absyn.COMPONENTS(Absyn.ATTR(false, false, Absyn.NON_PARALLEL(), Absyn.VAR(), Absyn.BIDIR(), Absyn.NONFIELD(), {}),
-                      Absyn.TPATH(Absyn.IDENT(id), NONE()), {Absyn.COMPONENTITEM(Absyn.COMPONENT(elName,{}, SOME(Absyn.CLASSMOD(mods, Absyn.NOMOD()))), NONE(), NONE())}), AbsynUtil.dummyInfo, NONE()));
+                      Absyn.TPATH(Absyn.IDENT(id), NONE()), {Absyn.COMPONENTITEM(Absyn.COMPONENT(elName,{}, SOME(Absyn.CLASSMOD(mods, Absyn.NOMOD()))), NONE(), NONE())}), Absyn.dummyInfo, NONE()));
       then (Absyn.CREF(Absyn.CREF_QUAL(elName, {}, Absyn.CREF_IDENT("out", {}))),  eqs, elem::oldElems, count);
 
     case Absyn.CALL() then (in_eq, oldEqs, {}, instNo);
@@ -770,8 +769,8 @@ algorithm
     case(_, {}) then (oldModif, args);
     case(Absyn.COMPONENTITEM(Absyn.COMPONENT(cName,_,_), _, _) :: r_comps, arg::r_args)
       algorithm
-        modif := Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.IDENT(cName), SOME(Absyn.CLASSMOD({}, Absyn.EQMOD(arg, AbsynUtil.dummyInfo))),
-          NONE(), AbsynUtil.dummyInfo);
+        modif := Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.IDENT(cName), SOME(Absyn.CLASSMOD({}, Absyn.EQMOD(arg, Absyn.dummyInfo))),
+          NONE(), Absyn.dummyInfo);
       then
         matchParamArgs(r_args, r_comps, modif::oldModif);
 
@@ -799,7 +798,7 @@ algorithm
     case({}, _) then (oldEqs, args);
     case(Absyn.COMPONENTITEM(Absyn.COMPONENT(cName,_,_), _, _) :: r_comps, arg::r_args)
       algorithm
-        eq := Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(Absyn.CREF(Absyn.CREF_QUAL(elemId, {}, Absyn.CREF_IDENT(cName, {}))), arg), NONE(), AbsynUtil.dummyInfo);
+        eq := Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(Absyn.CREF(Absyn.CREF_QUAL(elemId, {}, Absyn.CREF_IDENT(cName, {}))), arg), NONE(), Absyn.dummyInfo);
       then
         matchVarArgs(elemId, r_args, r_comps, eq::oldEqs);
 
@@ -931,8 +930,8 @@ algorithm
     case({}) then (oldModif, false);
     case(Absyn.COMPONENTITEM(Absyn.COMPONENT(cName,_,_), _, _) :: _) guard cName == argName
       algorithm
-        modif := Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.IDENT(cName), SOME(Absyn.CLASSMOD({}, Absyn.EQMOD(argValue, AbsynUtil.dummyInfo))),
-          NONE(), AbsynUtil.dummyInfo);
+        modif := Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.IDENT(cName), SOME(Absyn.CLASSMOD({}, Absyn.EQMOD(argValue, Absyn.dummyInfo))),
+          NONE(), Absyn.dummyInfo);
       then
         (modif::oldModif, true);
        case(_ :: r_comps)
@@ -965,7 +964,7 @@ algorithm
     case({}) then (oldEqs, false);
     case(Absyn.COMPONENTITEM(Absyn.COMPONENT(cName,_,_), _, _) :: _) guard cName == argName
       algorithm
-        eq := Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(Absyn.CREF(Absyn.CREF_QUAL(elemId, {}, Absyn.CREF_IDENT(cName, {}))), argValue), NONE(), AbsynUtil.dummyInfo);
+        eq := Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(Absyn.CREF(Absyn.CREF_QUAL(elemId, {}, Absyn.CREF_IDENT(cName, {}))), argValue), NONE(), Absyn.dummyInfo);
       then
         (eq::oldEqs, true);
        case(_ :: r_comps)

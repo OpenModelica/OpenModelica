@@ -325,7 +325,7 @@ algorithm
     case(SCode.CLASS(info = i)) then i;
     case(SCode.EXTENDS(info = i)) then i;
     case(SCode.IMPORT(info = i)) then i;
-    else AbsynUtil.dummyInfo;
+    else Absyn.dummyInfo;
 
   end match;
 end elementInfo;
@@ -1777,9 +1777,9 @@ public function mapFoldEquationListExps<ArgT>
   it encounters."
   input list<SCode.Equation> inEquations;
   input TraverseFunc traverser;
-  input Argument inArg;
+  input ArgT inArg;
   output list<SCode.Equation> outEquations;
-  output Argument outArg;
+  output ArgT outArg;
 
   partial function TraverseFunc
     input output Absyn.Exp exp;
@@ -2135,12 +2135,12 @@ public function mapFoldStatementListExps<ArgT>
   expression found."
   input list<SCode.Statement> inStatements;
   input TraverseFunc inFunc;
-  input Argument inArg;
+  input ArgT inArg;
   output list<SCode.Statement> outStatements;
-  output Argument outArg;
+  output ArgT outArg;
 
   partial function TraverseFunc
-    input output SCode.Statement stmt;
+    input output Absyn.Exp exp;
     input output ArgT arg;
   end TraverseFunc;
 algorithm
@@ -2166,7 +2166,7 @@ algorithm
     local
       TraverseFunc traverser;
       ArgT arg;
-      tuple<TraverseFunc, Argument> tup;
+      tuple<TraverseFunc, ArgT> tup;
       String iterator;
       Absyn.Exp e1, e2, e3;
       list<SCode.Statement> stmts1, stmts2;
@@ -2397,7 +2397,7 @@ algorithm
     else
       algorithm
         Error.addInternalError("SCodeUtil.getStatementInfo failed", sourceInfo());
-      then AbsynUtil.dummyInfo;
+      then Absyn.dummyInfo;
   end match;
 end getStatementInfo;
 
@@ -3290,7 +3290,7 @@ algorithm
     case SCode.REDECL(element = el) then elementInfo(el);
     case SCode.BREAK_COMPONENT() then inMod.info;
     case SCode.BREAK_CONNECT() then inMod.info;
-    else AbsynUtil.dummyInfo;
+    else Absyn.dummyInfo;
   end match;
 end getModifierInfo;
 
@@ -5646,7 +5646,7 @@ public function makeMod
   input list<SCode.SubMod> subMods = {};
   input Option<Absyn.Exp> binding = NONE();
   input Option<String> comment = NONE();
-  input SourceInfo info = AbsynUtil.dummyInfo;
+  input SourceInfo info = Absyn.dummyInfo;
   output SCode.Mod mod;
 algorithm
   mod := SCode.Mod.MOD(
@@ -5677,13 +5677,13 @@ algorithm
           {},
           SOME(value),
           NONE(),
-          AbsynUtil.dummyInfo
+          Absyn.dummyInfo
         )
       )
     },
     NONE(),
     NONE(),
-    AbsynUtil.dummyInfo
+    Absyn.dummyInfo
   ));
 end makeSingleAnnotation;
 
@@ -5748,5 +5748,5 @@ algorithm
   end match;
 end setAnnotationValue;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_dump");
 end SCodeUtil;

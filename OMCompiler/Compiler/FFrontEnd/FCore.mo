@@ -47,6 +47,7 @@ public
 import Absyn;
 import AbsynUtil;
 import AvlSetCR;
+import AvlTreePathFunction;
 import DAE;
 import Mutable;
 import SCode;
@@ -413,7 +414,7 @@ public type StructuralParameters = tuple<AvlSetCR.Tree,list<list<DAE.ComponentRe
 public uniontype Cache
   record CACHE
     Option<Graph> initialGraph "and the initial environment";
-    Mutable<DAE.FunctionTree> functions "set of Option<DAE.Function>; NONE() means instantiation started; SOME() means it's finished";
+    Mutable<AvlTreePathFunction.Tree> functions "set of Option<DAE.Function>; NONE() means instantiation started; SOME() means it's finished";
     StructuralParameters evaluatedParams "ht of prefixed crefs and a stack of evaluated but not yet prefix crefs";
     Absyn.Path modelName "name of the model being instantiated";
   end CACHE;
@@ -441,10 +442,10 @@ public function emptyCache
 "returns an empty cache"
   output Cache cache;
 protected
-  Mutable<DAE.FunctionTree> instFuncs;
+  Mutable<AvlTreePathFunction.Tree> instFuncs;
   StructuralParameters ht;
 algorithm
-  instFuncs := Mutable.create(DAE.AvlTreePathFunction.Tree.EMPTY());
+  instFuncs := Mutable.create(AvlTreePathFunction.Tree.EMPTY());
   ht := (AvlSetCR.EMPTY(),{});
   cache := CACHE(NONE(),instFuncs,ht,Absyn.IDENT("##UNDEFINED##"));
 end emptyCache;
@@ -465,7 +466,7 @@ algorithm
   ocache := match (cache,var,cr)
     local
       Option<Graph> initialGraph;
-      Mutable<DAE.FunctionTree> functions;
+      Mutable<AvlTreePathFunction.Tree> functions;
       AvlSetCR.Tree ht;
       list<list<DAE.ComponentRef>> st;
       list<DAE.ComponentRef> crs;
@@ -505,7 +506,7 @@ public function setCacheClassName
 algorithm
   outCache := match(inCache,p)
     local
-      Mutable<DAE.FunctionTree> ef;
+      Mutable<AvlTreePathFunction.Tree> ef;
       StructuralParameters ht;
       Option<Graph> igraph;
 
@@ -539,10 +540,10 @@ public function getCachedInstFunc
 algorithm
   func := match(inCache,path)
     local
-      Mutable<DAE.FunctionTree> ef;
+      Mutable<AvlTreePathFunction.Tree> ef;
     case(CACHE(functions=ef),_)
       algorithm
-        SOME(func) := DAE.AvlTreePathFunction.get(Mutable.access(ef),path);
+        SOME(func) := AvlTreePathFunction.get(Mutable.access(ef),path);
       then func;
   end match;
 end getCachedInstFunc;
@@ -554,9 +555,9 @@ public function checkCachedInstFuncGuard
 algorithm
   _ := match(inCache,path)
     local
-      Mutable<DAE.FunctionTree> ef;
+      Mutable<AvlTreePathFunction.Tree> ef;
     case(CACHE(functions=ef),_) algorithm
-      DAE.AvlTreePathFunction.get(Mutable.access(ef),path);
+      AvlTreePathFunction.get(Mutable.access(ef),path);
     then ();
   end match;
 end checkCachedInstFuncGuard;
@@ -564,13 +565,13 @@ end checkCachedInstFuncGuard;
 public function getFunctionTree
 "Selector function"
   input Cache cache;
-  output DAE.FunctionTree ft;
+  output AvlTreePathFunction.Tree ft;
 algorithm
   ft := match cache
     local
-      Mutable<DAE.FunctionTree> ef;
+      Mutable<AvlTreePathFunction.Tree> ef;
     case CACHE(functions = ef) then Mutable.access(ef);
-    else DAE.AvlTreePathFunction.Tree.EMPTY();
+    else AvlTreePathFunction.Tree.EMPTY();
   end match;
 end getFunctionTree;
 
@@ -583,7 +584,7 @@ This guards against recursive functions."
 algorithm
   outCache := matchcontinue(cache,func)
     local
-      Mutable<DAE.FunctionTree> ef;
+      Mutable<AvlTreePathFunction.Tree> ef;
       Option<Graph> igraph;
       StructuralParameters ht;
       Absyn.Path p;
@@ -597,7 +598,7 @@ algorithm
 
     case (CACHE(functions=ef),Absyn.FULLYQUALIFIED(_))
       algorithm
-        Mutable.update(ef,DAE.AvlTreePathFunction.add(Mutable.access(ef),func,NONE()));
+        Mutable.update(ef,AvlTreePathFunction.add(Mutable.access(ef),func,NONE()));
         // print("Func quard [new]: " + AbsynUtil.pathString(func) + "\n");
       then cache;
 
@@ -618,7 +619,7 @@ public function addDaeFunction
 algorithm
   outCache := match(inCache,funcs)
     local
-      Mutable<DAE.FunctionTree> ef;
+      Mutable<AvlTreePathFunction.Tree> ef;
       Option<Graph> igraph;
       StructuralParameters ht;
       Absyn.Path p;
@@ -640,7 +641,7 @@ public function addDaeExtFunction
 algorithm
   outCache := match(inCache,funcs)
     local
-      Mutable<DAE.FunctionTree> ef;
+      Mutable<AvlTreePathFunction.Tree> ef;
       Option<Graph> igraph;
       StructuralParameters ht;
       Absyn.Path p;
@@ -656,7 +657,7 @@ end addDaeExtFunction;
 
 public function setCachedFunctionTree
   input Cache inCache;
-  input DAE.FunctionTree inFunctions;
+  input AvlTreePathFunction.Tree inFunctions;
 algorithm
   _ := match inCache
     case CACHE()

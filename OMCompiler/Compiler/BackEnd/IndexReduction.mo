@@ -63,7 +63,7 @@ import ElementSource;
 import Error;
 import ErrorExt;
 import Expression;
-import ExpressionDump;
+import ExpressionBasics;
 import ExpressionSimplify;
 import Flags;
 import HashTable2;
@@ -78,6 +78,7 @@ import SCode;
 import Sorting;
 import System;
 import Util;
+import Config;
 
 
 // =============================================================================
@@ -602,7 +603,7 @@ protected
   BackendDAE.AdjacencyMatrix m;
   BackendDAE.AdjacencyMatrix mt;
   BackendDAE.Variables v, v1;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   Integer numEqs, numEqs1;
   list<Integer> changedVars, eqnslst, eqnslst1, assEqs;
 algorithm
@@ -976,7 +977,7 @@ algorithm
       array<list<Integer>> mapEqnIncRow;
       list<BackendDAE.Var> varlst;
       BackendDAE.Var var;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
     // 1th try to replace final parameter
     case (_,_,_,_,_,syst as BackendDAE.EQSYSTEM(m=SOME(_), mT=SOME(_)))
       algorithm
@@ -1319,7 +1320,7 @@ protected
   array<list<Integer>> mapEqnIncRow;
   array<Integer> mapIncRowEqn;
   BackendDAE.Variables vars;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   Integer numFreeStates,numNeverStates,numOrgEqs;
 algorithm
   (so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,_) := inArg;
@@ -1747,7 +1748,7 @@ algorithm
       list<BackendDAE.Equation> eqnslst;
       HashTableCrIntToExp.HashTable ht;
       BackendDAE.EqSystem syst;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       BackendDAE.AdjacencyMatrix m;
       array<Integer> ass1,ass2;
       Integer ne,nv,setIndex;
@@ -1844,7 +1845,7 @@ algorithm
       array<Integer> mapIncRowEqn,ass1,ass2;
       Integer nfreeStates,neqns,setIndex,ne,ne1,nv,nv1;
       StateSets stateSets;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       BackendDAE.Variables vars;
       BackendDAE.AdjacencyMatrix m;
       BackendDAE.ConstraintEquations orgEqnsLst;
@@ -1939,7 +1940,7 @@ algorithm
        DAE.Exp exp;
     // dummy derivatives from states with higher derivatives and no known derivative variable
     case BackendDAE.VAR(varName=dcr as DAE.CREF_QUAL(ident=DAE.derivativeNamePrefix,componentRef=cr),varKind=BackendDAE.STATE(index=1))
-    guard not intEq(System.strncmp(ComponentReference.crefFirstIdent(cr),DAE.derivativeNamePrefix,4),0)
+    guard not intEq(System.strncmp(ComponentReferenceBasics.crefFirstIdent(cr),DAE.derivativeNamePrefix,4),0)
       algorithm
         exp := Expression.crefExp(cr);
         exp := Expression.makePureBuiltinCall("der", {exp}, Expression.typeof(exp));
@@ -2048,7 +2049,7 @@ algorithm
       list<list<Integer>> comps;
       list<BackendDAE.Equation> eqnslst1;
       list<tuple<DAE.ComponentRef, Integer>> states,dstates;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
 
     // number of free states equal to number of differentiated equations -> no state selection necessary, all dummy states
     case _
@@ -2508,7 +2509,7 @@ protected function getAdjacencyMatrixLevelEquations
   input array<list<Integer>> mapEqnIncRow "input/output";
   input array<Integer> mapIncRowEqn "input/output";
   input array<Integer> stateindexs;
-  input DAE.FunctionTree functionTree;
+  input AvlTreePathFunction.Tree functionTree;
   input Boolean isInitial;
 algorithm
   _ := match (iEqns)
@@ -2758,9 +2759,9 @@ end processComps4New;
 
 protected function forceInlinEqn
   input DAE.Exp inExp;
-  input DAE.FunctionTree inFuncs;
+  input AvlTreePathFunction.Tree inFuncs;
   output DAE.Exp e;
-  output DAE.FunctionTree funcs;
+  output AvlTreePathFunction.Tree funcs;
 algorithm
   funcs := inFuncs;
   (e,_,_) := Inline.forceInlineExp(inExp,(SOME(funcs),{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource);
@@ -3224,7 +3225,7 @@ algorithm
     local
       DAE.ComponentRef cr;
     case(BackendDAE.VAR(varName=cr))
-      guard stringEq( ComponentReference.crefFirstIdent(cr),DAE.derivativeNamePrefix)
+      guard stringEq( ComponentReferenceBasics.crefFirstIdent(cr),DAE.derivativeNamePrefix)
       then -5.0;
     else 0.0;
   end matchcontinue;
@@ -4056,7 +4057,7 @@ algorithm
       then (e,ht);
     case (e as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst=_::_::_),ht)
       algorithm
-        msg := "IndexReduction.replaceDummyDerivativesExp failed for " + ExpressionDump.printExpStr(e) + "!";
+        msg := "IndexReduction.replaceDummyDerivativesExp failed for " + ExpressionBasics.printExpStr(e) + "!";
         Error.addMessage(Error.COMPILER_WARNING, {msg});
       then (e,ht);
     else (inExp,iht);
@@ -4329,10 +4330,10 @@ protected
   DAE.ComponentRef set;
   DAE.Type tp;
 algorithm
-//  set := ComponentReference.makeCrefIdent("$STATESET",DAE.T_COMPLEX_DEFAULT,{DAE.INDEX(DAE.ICONST(index))});
-  set := ComponentReference.makeCrefIdent("$STATESET" + intString(index),DAE.T_COMPLEX_DEFAULT,{});
+//  set := ComponentReferenceBasics.makeCrefIdent("$STATESET",DAE.T_COMPLEX_DEFAULT,{DAE.INDEX(DAE.ICONST(index))});
+  set := ComponentReferenceBasics.makeCrefIdent("$STATESET" + intString(index),DAE.T_COMPLEX_DEFAULT,{});
   tp := if intGt(setsize,1) then DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(setsize)}) else DAE.T_REAL_DEFAULT;
-  crstates := ComponentReference.joinCrefs(set,ComponentReference.makeCrefIdent("x",tp,{}));
+  crstates := ComponentReference.joinCrefs(set,ComponentReferenceBasics.makeCrefIdent("x",tp,{}));
   oSetVars := BackendVariable.generateArrayVar(crstates,BackendDAE.STATE(1,NONE(),false),tp,NONE());
   oSetVars := List.map1(oSetVars,BackendVariable.setVarFixed,false);
   crset := List.map(oSetVars,BackendVariable.varCref);
@@ -4340,14 +4341,14 @@ algorithm
                             else DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(nCandidates)});
   realtp := if intGt(setsize,1) then DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(setsize),DAE.DIM_INTEGER(nCandidates)})
                                 else DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nCandidates)});
-  ocrA := ComponentReference.joinCrefs(set,ComponentReference.makeCrefIdent("A",tp,{}));
+  ocrA := ComponentReference.joinCrefs(set,ComponentReferenceBasics.makeCrefIdent("A",tp,{}));
   oAVars := BackendVariable.generateArrayVar(ocrA,BackendDAE.VARIABLE(),tp,NONE());
   oAVars := List.map1(oAVars,BackendVariable.setVarFixed,true);
   // add start value A[i,j] = if i==j then 1 else 0 via initial equations
   oAVars := List.map1(oAVars,BackendVariable.setVarStartValue,DAE.ICONST(0));
   oAVars := setSetAStart(oAVars,1,1,nCandidates,{});
   tp := if intGt(nCEqns,1) then DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nCEqns)}) else DAE.T_REAL_DEFAULT;
-  ocrJ := ComponentReference.joinCrefs(set,ComponentReference.makeCrefIdent("J",tp,{}));
+  ocrJ := ComponentReference.joinCrefs(set,ComponentReferenceBasics.makeCrefIdent("J",tp,{}));
   oJVars := BackendVariable.generateArrayVar(ocrJ,BackendDAE.VARIABLE(),tp,NONE());
   oJVars := List.map1(oJVars,BackendVariable.setVarFixed,false);
 end getSetVars;
@@ -4469,7 +4470,7 @@ protected function dumpStates
   input tuple<DAE.ComponentRef,Integer> state;
   output String outStr;
 algorithm
-  outStr := intString(Util.tuple22(state)) + " " + ComponentReference.printComponentRefStr(Util.tuple21(state));
+  outStr := intString(Util.tuple22(state)) + " " + ComponentReferenceBasics.printComponentRefStr(Util.tuple21(state));
 end dumpStates;
 
 /******************************************

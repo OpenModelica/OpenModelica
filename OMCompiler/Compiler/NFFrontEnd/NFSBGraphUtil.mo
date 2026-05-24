@@ -173,7 +173,7 @@ public
       output Expression outExp;
     algorithm
       if Expression.isCref(e) then
-        outExp := Ceval.evalExp(e, Ceval.EvalTarget.new(AbsynUtil.dummyInfo, NFInstContext.ITERATION_RANGE));
+        outExp := Ceval.evalExp(e, Ceval.EvalTarget.new(Absyn.dummyInfo, NFInstContext.ITERATION_RANGE));
       else
         outExp := e;
       end if;

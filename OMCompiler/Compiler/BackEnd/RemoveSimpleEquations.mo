@@ -70,7 +70,6 @@ import ElementSource;
 import Error;
 import EvaluateFunctions;
 import Expression;
-import ExpressionDump;
 import ExpressionSimplify;
 import ExpressionSolve;
 import Flags;
@@ -1315,7 +1314,7 @@ algorithm
     // Note: We *should* be looking for the derivative annotation here, but it's not available directly
     //       and better would be if sorting+matching could expand/split equations when necessary
     if false and not (expandLhs and expandRhs) then
-      print(getInstanceName() + " not expanding " + ExpressionDump.printExpStr(lhs) + " = " + ExpressionDump.printExpStr(rhs) + "\n");
+      print(getInstanceName() + " not expanding " + ExpressionBasics.printExpStr(lhs) + " = " + ExpressionBasics.printExpStr(rhs) + "\n");
     end if;
     true := expandLhs and expandRhs "Do not expand equation if it doesn't help with anything... Like x=f(...); => x[1]=f()[1], ..., x[n]=f()[n]";
   else
@@ -1438,14 +1437,14 @@ algorithm
         b2 := DAEUtil.expTypeArray(ty);
         false := b1 or b2;
         //  print("Add Equation:\n" + BackendDump.equationStr(BackendDAE.EQUATION(lhs, rhs, source)) + "\n");
-        //Error.assertionOrAddSourceMessage(not b1, Error.INTERNAL_ERROR, {str}, AbsynUtil.dummyInfo);
+        //Error.assertionOrAddSourceMessage(not b1, Error.INTERNAL_ERROR, {str}, Absyn.dummyInfo);
       then
         ((v, s, BackendDAE.EQUATION(lhs, rhs, source, eqAttr)::eqns, seqns, index, mT, b));
     else
       algorithm
         // show only on failtrace!
         true := Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- BackendDAEOptimize.generateEquation failed on: " + ExpressionDump.printExpStr(lhs) + " = " + ExpressionDump.printExpStr(rhs) + "\n");
+        Debug.traceln("- BackendDAEOptimize.generateEquation failed on: " + ExpressionBasics.printExpStr(lhs) + " = " + ExpressionBasics.printExpStr(rhs) + "\n");
       then
         fail();
   end matchcontinue;
@@ -1719,8 +1718,8 @@ algorithm
         crexp2 := Expression.crefExp(cr2);
         crexp1 := negateExpression(negatedCr1, crexp1, crexp1, " generateSimpleContainter ");
         crexp2 := negateExpression(negatedCr2, crexp2, crexp2, " generateSimpleContainter ");
-        lhs := ExpressionDump.printExpStr(crexp1);
-        rhs := ExpressionDump.printExpStr(crexp2);
+        lhs := ExpressionBasics.printExpStr(crexp1);
+        rhs := ExpressionBasics.printExpStr(crexp2);
         Error.addSourceMessage(Error.EQ_WITHOUT_TIME_DEP_VARS, {lhs, rhs}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
@@ -1754,7 +1753,7 @@ algorithm
         crexp2 := Expression.crefExp(cr2);
         crexp1 := negateExpression(negatedCr1, crexp1, crexp1, " checkEqualAlias ");
         crexp2 := negateExpression(negatedCr2, crexp2, crexp2, " checkEqualAlias ");
-        eqn_str := ExpressionDump.printExpStr(crexp1) + " = " + ExpressionDump.printExpStr(crexp2) + "\n";
+        eqn_str := ExpressionBasics.printExpStr(crexp1) + " = " + ExpressionBasics.printExpStr(crexp2) + "\n";
         info := ElementSource.getElementSourceFileInfo(source);
         Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str, var_str}, info);
       then
@@ -1904,7 +1903,7 @@ algorithm
       DAE.Exp cre, es;
       BackendDAE.Var v;
       Integer i, size;
-      DAE.FunctionTree functionTree;
+      AvlTreePathFunction.Tree functionTree;
       DAE.ElementSource source;
       Boolean diffed;
       BackendDAE.EquationAttributes eqAttr;
@@ -1946,8 +1945,8 @@ algorithm
     case (_, _, _, _, _, _)
       algorithm
         cr::crlst := List.map(vlst, BackendVariable.varCref);
-        cr := ComponentReference.crefStripLastSubs(cr);
-        true := List.all(crlst, function ComponentReference.crefPrefixOf(prefixCref = cr));
+        cr := ComponentReferenceBasics.crefStripLastSubs(cr);
+        true := List.all(crlst, function ComponentReferenceBasics.crefPrefixOf(prefixCref = cr));
         // try to solve the equation
         cre := Expression.crefExp(cr);
         (es, {}) := ExpressionSolve.solve(lhs, rhs, cre);
@@ -2010,7 +2009,7 @@ algorithm
       list<Integer> ilst2;
       Boolean b, negated;
       list<Integer> colum;
-      DAE.FunctionTree functions;
+      AvlTreePathFunction.Tree functions;
       DAE.Exp exp2;
     // alias a
     case (_, _, _, _, _, (vars, shared, eqns, seqns, index, mT, _))
@@ -2266,7 +2265,7 @@ algorithm
     end if;
 
     for n in getVarsNames(simpleeqnsarr[r]) loop
-      oMsg := ComponentReference.printComponentRefStr(n) :: oMsg;
+      oMsg := ComponentReferenceBasics.printComponentRefStr(n) :: oMsg;
     end for;
     oMsg := "----------------------------------" :: oMsg;
   end for;
@@ -2504,7 +2503,7 @@ algorithm
       false := BackendVariable.isVarOnTopLevelAndOutput(var);
       false := BackendVariable.isVarOnTopLevelAndInput(var);
       false := BackendVariable.varHasUncertainValueRefine(var);
-      cr := ComponentReference.crefStripLastSubs(cr);
+      cr := ComponentReferenceBasics.crefStripLastSubs(cr);
       b := not BaseHashSet.has(cr, unReplaceable);
     then (true, b);
 
@@ -2964,8 +2963,8 @@ algorithm
         negated := boolOr(negatedCr1, negatedCr2);
         crexp := Expression.crefExp(cr);
         crexp := negateExpression(negated, crexp, crexp, " PARAMETERLAIAS ");
-        lhs := ExpressionDump.printExpStr(exp);
-        rhs := ExpressionDump.printExpStr(crexp);
+        lhs := ExpressionBasics.printExpStr(exp);
+        rhs := ExpressionBasics.printExpStr(crexp);
         Error.addSourceMessage(Error.EQ_WITHOUT_TIME_DEP_VARS, {lhs, rhs}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
@@ -2973,7 +2972,7 @@ algorithm
     case (TIMEALIAS(eqnAttributes=(source,_)), _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
       algorithm
         // report error
-        rhs := ExpressionDump.printExpStr(exp);
+        rhs := ExpressionBasics.printExpStr(exp);
         Error.addSourceMessage(Error.EQ_WITHOUT_TIME_DEP_VARS, {"time", rhs}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
@@ -2981,8 +2980,8 @@ algorithm
     case (TIMEINDEPENTVAR(exp=exp1, eqnAttributes=(source,_)), _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
       algorithm
         // report error
-        lhs := ExpressionDump.printExpStr(exp);
-        rhs := ExpressionDump.printExpStr(exp1);
+        lhs := ExpressionBasics.printExpStr(exp);
+        rhs := ExpressionBasics.printExpStr(exp1);
         Error.addSourceMessage(Error.EQ_WITHOUT_TIME_DEP_VARS, {lhs, rhs}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
@@ -3159,7 +3158,7 @@ algorithm
           if hardcoded then
             i := i + 5;
           end if;
-          str := str + " * Candidate: " + ComponentReference.printComponentRefStr(cr) + "(start = " + ExpressionDump.printExpStr(startExp) + ", confidence number = " + intString(i) + ")\n";
+          str := str + " * Candidate: " + ComponentReferenceBasics.printComponentRefStr(cr) + "(start = " + ExpressionBasics.printExpStr(startExp) + ", confidence number = " + intString(i) + ")\n";
         end for;
         Error.addCompilerError(str);
       end if;
@@ -3219,7 +3218,7 @@ algorithm
     case (_, _)
       algorithm
         allExp := List.map(nominalList, Util.tuple21);
-        {e} := List.uniqueOnTrue(allExp, Expression.expEqual);
+        {e} := List.uniqueOnTrue(allExp, ExpressionBasics.expEqual);
       then BackendVariable.setVarNominalValue(inVar, e);
 
     else
@@ -3340,8 +3339,8 @@ algorithm
         rmin := Expression.toReal(min);
         rmax := Expression.toReal(max);
         true := realGt(rmin, rmax);
-        s4 := ExpressionDump.printExpStr(min);
-        s5 := ExpressionDump.printExpStr(max);
+        s4 := ExpressionBasics.printExpStr(min);
+        s5 := ExpressionBasics.printExpStr(max);
         s := stringAppendList({"Alias variables with invalid limits min ", s4, " > max ", s5});
         Error.addMessage(Error.COMPILER_WARNING, {s});
       then ();
@@ -3446,7 +3445,7 @@ algorithm
       algorithm
         (e1, b) := replaceCrefWithBindExp(e, globalKnownVars);
         (e1, _) := ExpressionSimplify.condsimplify(b, e1);
-        true := Expression.expEqual(e1, e2);
+        true := ExpressionBasics.expEqual(e1, e2);
       then
         equalNonFreeStartValues(values, globalKnownVars, iValue);
   end match;
@@ -3480,7 +3479,7 @@ algorithm
       algorithm
         (e1, b) := replaceCrefWithBindExp(e, globalKnownVars);
         (e1, _) := ExpressionSimplify.condsimplify(b, e1);
-        true := Expression.expEqual(e1, e2);
+        true := ExpressionBasics.expEqual(e1, e2);
       then
         equalFreeStartValues(values, globalKnownVars, iValue);
   end match;
@@ -3493,7 +3492,7 @@ protected function replaceCrefWithBindExp
   output Boolean replaced;
 protected
   UnorderedSet<DAE.ComponentRef> replaced_crefs =
-    UnorderedSet.new(ComponentReference.hashComponentRef, ComponentReference.crefEqual);
+    UnorderedSet.new(ComponentReference.hashComponentRef, ComponentReferenceBasics.crefEqual);
 algorithm
   (outExp, replaced) := Expression.traverseExpBottomUp(exp,
     function replaceCrefWithBindExp_traverser(vars = vars, replacedCrefs = replaced_crefs), false);
@@ -3622,8 +3621,8 @@ algorithm
       if Flags.isSet(Flags.ALIAS_CONFLICTS) then
         (e1, b) := replaceCrefWithBindExp(e, globalKnownVars);
         (e1, _) := ExpressionSimplify.condsimplify(b, e1);
-        s2 := if b then " = " + ExpressionDump.printExpStr(e1) else "";
-        s := iStr + "=> Select value from " +  ComponentReference.printComponentRefStr(cr) +  "(" + iAttributeName + " = " + ExpressionDump.printExpStr(e) + s2 + ") for variable: " +  ComponentReference.printComponentRefStr(crVar) + "\n";
+        s2 := if b then " = " + ExpressionBasics.printExpStr(e1) else "";
+        s := iStr + "=> Select value from " +  ComponentReferenceBasics.printComponentRefStr(cr) +  "(" + iAttributeName + " = " + ExpressionBasics.printExpStr(e) + s2 + ") for variable: " +  ComponentReferenceBasics.printComponentRefStr(crVar) + "\n";
         Error.addMessage(Error.COMPILER_WARNING, {s});
       end if;
       v := inFunc(inVar, e);
@@ -3638,8 +3637,8 @@ algorithm
       if Flags.isSet(Flags.ALIAS_CONFLICTS) then
         (e1, b) := replaceCrefWithBindExp(e, globalKnownVars);
         (e1, _) := ExpressionSimplify.condsimplify(b, e1);
-        s2 := if b then " = " + ExpressionDump.printExpStr(e1) else "";
-        s := iStr + " * Candidate: " + ComponentReference.printComponentRefStr(cr) + "(" + iAttributeName + " = " + ExpressionDump.printExpStr(e) + s2 + ", confidence number = " + intString(i) + ")\n";
+        s2 := if b then " = " + ExpressionBasics.printExpStr(e1) else "";
+        s := iStr + " * Candidate: " + ComponentReferenceBasics.printComponentRefStr(cr) + "(" + iAttributeName + " = " + ExpressionBasics.printExpStr(e) + s2 + ", confidence number = " + intString(i) + ")\n";
       end if;
     then selectFreeValue1(zerofreevalues, {(e, cr, i)}, s, iAttributeName, inFunc, inVar, globalKnownVars);
 
@@ -3652,12 +3651,12 @@ algorithm
       if Flags.isSet(Flags.ALIAS_CONFLICTS) then
         (e1, b) := replaceCrefWithBindExp(e, globalKnownVars);
         (e1, _) := ExpressionSimplify.condsimplify(b, e1);
-        s2 := if b then " = " + ExpressionDump.printExpStr(e1) else "";
-        s := iStr + " * Candidate: " + ComponentReference.printComponentRefStr(cr) + "(" + iAttributeName + " = " + ExpressionDump.printExpStr(e) + s2 + ", confidence number = " + intString(i) + ")\n";
+        s2 := if b then " = " + ExpressionBasics.printExpStr(e1) else "";
+        s := iStr + " * Candidate: " + ComponentReferenceBasics.printComponentRefStr(cr) + "(" + iAttributeName + " = " + ExpressionBasics.printExpStr(e) + s2 + ", confidence number = " + intString(i) + ")\n";
       end if;
       true := intEq(i, is);
       crVar := BackendVariable.varCref(inVar);
-      favorit := if ComponentReference.crefEqual(crVar, crs) then
+      favorit := if ComponentReferenceBasics.crefEqual(crVar, crs) then
        (es, crs, is) :: (e, cr, i) :: rest else (e, cr, i) :: (es, crs, is) :: rest;
     then selectFreeValue1(zerofreevalues, favorit, s, iAttributeName, inFunc, inVar, globalKnownVars);
 
@@ -3670,8 +3669,8 @@ algorithm
       if Flags.isSet(Flags.ALIAS_CONFLICTS) then
         (e1, b) := replaceCrefWithBindExp(e, globalKnownVars);
         (e1, _) := ExpressionSimplify.condsimplify(b, e1);
-        s2 := if b then " = " + ExpressionDump.printExpStr(e1) else "";
-        s := iStr + " * Candidate: " + ComponentReference.printComponentRefStr(cr) + "(" + iAttributeName + " = " + ExpressionDump.printExpStr(e) + s2 + ", confidence number = " + intString(i) + ")\n";
+        s2 := if b then " = " + ExpressionBasics.printExpStr(e1) else "";
+        s := iStr + " * Candidate: " + ComponentReferenceBasics.printComponentRefStr(cr) + "(" + iAttributeName + " = " + ExpressionBasics.printExpStr(e) + s2 + ", confidence number = " + intString(i) + ")\n";
       end if;
       favorit := if intLt(i, is) then {(e, cr, i)} else iFavorit;
     then selectFreeValue1(zerofreevalues, favorit, s, iAttributeName, inFunc, inVar, globalKnownVars);
@@ -4009,17 +4008,17 @@ algorithm
       Boolean b;
     case (BackendDAE.EQUATION(exp=lhs, scalar=rhs), _)
       algorithm
-        b := Expression.expEqual(lhs, rhs);
+        b := ExpressionBasics.expEqual(lhs, rhs);
       then
         List.consOnTrue(not b, iEqn, iEqns);
     case (BackendDAE.ARRAY_EQUATION(left=lhs, right=rhs), _)
       algorithm
-        b := Expression.expEqual(lhs, rhs);
+        b := ExpressionBasics.expEqual(lhs, rhs);
       then
         List.consOnTrue(not b, iEqn, iEqns);
     case (BackendDAE.COMPLEX_EQUATION(left=lhs, right=rhs), _)
       algorithm
-        b := Expression.expEqual(lhs, rhs);
+        b := ExpressionBasics.expEqual(lhs, rhs);
       then
         List.consOnTrue(not b, iEqn, iEqns);
     else iEqn::iEqns;
@@ -4296,7 +4295,7 @@ protected
 algorithm
   BackendDAE.STATESET(statescandidates=statevars) := iStateSet;
   crlst := List.map(statevars, BackendVariable.varCref);
-  crlst := List.map(crlst, ComponentReference.crefStripLastSubs);
+  crlst := List.map(crlst, ComponentReferenceBasics.crefStripLastSubs);
   outUnreplaceable := List.fold(crlst, BaseHashSet.add, inUnreplaceable);
 end addUnreplaceableFromStateSet;
 
@@ -4328,7 +4327,7 @@ algorithm
 
     case (DAE.CREF(componentRef=cr), _)
       algorithm
-        cr := ComponentReference.crefStripLastSubs(cr);
+        cr := ComponentReferenceBasics.crefStripLastSubs(cr);
         ohs := BaseHashSet.add(cr, hs);
       then (e,ohs);
     // let WILD pass
@@ -4394,7 +4393,7 @@ algorithm
 
     // add also lhs of array assign stmts because these are not replaceable with array(...)
     case (DAE.STMT_ASSIGN_ARR(lhs=DAE.CREF(componentRef=cr)), _) algorithm
-      cr := ComponentReference.crefStripLastSubs(cr);
+      cr := ComponentReferenceBasics.crefStripLastSubs(cr);
       hs := BaseHashSet.add(cr, inHS);
     then hs;
 
@@ -4404,7 +4403,7 @@ algorithm
       // DAE.T_ARRAY(ty=_) = ComponentReference.crefLastType(cr);
       // failure({} = ComponentReference.crefLastSubs(cr));
       // true = ComponentReference.isArrayElement(cr);
-      cr := ComponentReference.crefStripLastSubs(cr);
+      cr := ComponentReferenceBasics.crefStripLastSubs(cr);
       hs := BaseHashSet.add(cr, inHS);
     then hs;
 
@@ -4426,18 +4425,18 @@ algorithm
       list<DAE.ComponentRef> crlst;
 
     case (DAE.STMT_ASSIGN(exp1=DAE.CREF(componentRef=cr)), _) algorithm
-      cr := ComponentReference.crefStripLastSubs(cr);
+      cr := ComponentReferenceBasics.crefStripLastSubs(cr);
       hs := BaseHashSet.add(cr, inHS);
     then hs;
 
     case (DAE.STMT_TUPLE_ASSIGN(expExpLst=expExpLst), _) algorithm
       crlst := List.flatten(List.map(expExpLst, Expression.extractCrefsFromExp));
-      crlst := List.map(crlst, ComponentReference.crefStripLastSubs);
+      crlst := List.map(crlst, ComponentReferenceBasics.crefStripLastSubs);
       hs := List.fold(crlst, BaseHashSet.add, inHS);
     then hs;
 
     case (DAE.STMT_ASSIGN_ARR(lhs=DAE.CREF(componentRef=cr)), _) algorithm
-      cr := ComponentReference.crefStripLastSubs(cr);
+      cr := ComponentReferenceBasics.crefStripLastSubs(cr);
       hs := BaseHashSet.add(cr, inHS);
     then hs;
 
@@ -4486,7 +4485,7 @@ algorithm
 
     case BackendDAE.ASSIGN(left = DAE.CREF(componentRef = left))::rest
       algorithm
-        left := ComponentReference.crefStripLastSubs(left);
+        left := ComponentReferenceBasics.crefStripLastSubs(left);
         hs := BaseHashSet.add(left, iHs);
       then addUnreplaceableFromWhenOps(rest, hs);
     case BackendDAE.ASSIGN(left = e)::rest
@@ -4494,7 +4493,7 @@ algorithm
         crefLst := Expression.getAllCrefs(e);
         hs := iHs;
         for left in crefLst loop
-          left := ComponentReference.crefStripLastSubs(left);
+          left := ComponentReferenceBasics.crefStripLastSubs(left);
           hs := BaseHashSet.add(left, hs);
         end for;
       then addUnreplaceableFromWhenOps(rest, hs);
@@ -4521,7 +4520,7 @@ algorithm
      case (DAE.CALL(path=Absyn.IDENT(name = "pre"), expLst=explst), _)
       algorithm
         crlst := List.flatten(List.map(explst, Expression.extractCrefsFromExp));
-        crlst := List.map(crlst, ComponentReference.crefStripLastSubs);
+        crlst := List.map(crlst, ComponentReferenceBasics.crefStripLastSubs);
         outHt := List.fold(crlst, BaseHashSet.add, unReplaceable);
       then (e, outHt);
     else (e,unReplaceable);
@@ -4652,7 +4651,7 @@ algorithm
       list<DAE.ClassAttributes> clsAttrsLst;
       FCore.Cache cache;
       FCore.Graph graph;
-      DAE.FunctionTree funcTree;
+      AvlTreePathFunction.Tree funcTree;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.SymbolicJacobians symjacs;
       BackendDAE.EqSystems systs, systs1;
@@ -4990,10 +4989,10 @@ algorithm
       BackendDAE.VarKind kind;
       BackendDAE.Variables vars;
     case(_,(_,vars,count,_,_)) guard(count<0) then(inE1, false, ({},vars,-1,-1,false));
-    case (DAE.CREF(componentRef=cr),(cr_lst,vars,count,paramCount,true)) guard(count < 2 and not (ComponentReference.crefEqual(cr,DAE.crefTime))) algorithm
+    case (DAE.CREF(componentRef=cr),(cr_lst,vars,count,paramCount,true)) guard(count < 2 and not (ComponentReferenceBasics.crefEqual(cr,DAE.crefTime))) algorithm
       (_,_) := BackendVariable.getVar(cr, vars);
     then (inE1, true, (cr::cr_lst,vars,count+1,paramCount,true));
-    case (DAE.CREF(componentRef=cr),(cr_lst,vars,count,paramCount,true)) guard(count < 2 and not (ComponentReference.crefEqual(cr,DAE.crefTime)))
+    case (DAE.CREF(componentRef=cr),(cr_lst,vars,count,paramCount,true)) guard(count < 2 and not (ComponentReferenceBasics.crefEqual(cr,DAE.crefTime)))
     then (inE1, true, (cr_lst,vars,count,paramCount+1,true));
     case (DAE.CREF(),(_,vars,_,_,true))
     then (inE1, false, ({},vars,-1,-1,false));
@@ -5059,7 +5058,7 @@ algorithm
       BackendDAE.EQUATION(scalar=value) := BackendEquation.solveEquation(eq, Expression.crefExp(cr),NONE());
       outHTCrToExp := BaseHashTable.add((cr, value), inHTCrToExp);
       // if Flags.isSet(Flags.DEBUG_ALIAS) then
-          // print("ADD: " + ComponentReference.debugPrintComponentRefTypeStr(cr) + " = " + ExpressionDump.printExpStr(value) + "\n");
+          // print("ADD: " + ComponentReference.debugPrintComponentRefTypeStr(cr) + " = " + ExpressionBasics.printExpStr(value) + "\n");
           // BaseHashTable.dumpHashTable(outHTCrToExp);
           // print("LOOKUP HASH TABLE: \n");
           // BaseHashTable.dumpHashTable(inHTCrToCrEqLst);
@@ -5212,7 +5211,7 @@ start module for detecting simple equation/expressions
   input DAE.Exp inExp;
   output Boolean outIsSimple;
 algorithm
-   //print("Traverse "  + ExpressionDump.printExpStr(inExp) + "\n");
+   //print("Traverse "  + ExpressionBasics.printExpStr(inExp) + "\n");
   (_,outIsSimple) := Expression.traverseExpTopDown(inExp, checkOperator, true);
   //print("Simple: " +  boolString(outIsSimple) + "\n");
 end isSimple;
@@ -5386,7 +5385,7 @@ algorithm
       j := j*ComponentReference.crefDepth(cr1);
       HTStartExpToInt := BaseHashTable.add((e, j), HTStartExpToInt);
       if Flags.isSet(Flags.DEBUG_ALIAS) then
-        print("START: " + ComponentReference.printComponentRefStr(cr1) + " = " + ExpressionDump.printExpStr(e) + "\n");
+        print("START: " + ComponentReferenceBasics.printComponentRefStr(cr1) + " = " + ExpressionBasics.printExpStr(e) + "\n");
       end if;
     end if;
     if BackendVariable.varHasNominalValue(v) then
@@ -5396,7 +5395,7 @@ algorithm
       j := j*ComponentReference.crefDepth(cr1);
       HTNominalExpToInt := BaseHashTable.add((e, j), HTNominalExpToInt);
       if Flags.isSet(Flags.DEBUG_ALIAS) then
-        print("NOMINAL: " + ComponentReference.printComponentRefStr(cr1) + " = " + ExpressionDump.printExpStr(e) + "\n");
+        print("NOMINAL: " + ComponentReferenceBasics.printComponentRefStr(cr1) + " = " + ExpressionBasics.printExpStr(e) + "\n");
       end if;
     end if;
     (HTStartExpToInt,HTNominalExpToInt) := getThisAttributes(cr1,cr_eq_lst,inAliasVars,HTStartExpToInt,HTNominalExpToInt);
@@ -5405,7 +5404,7 @@ algorithm
       e := getDominantAttributeValue(tplExpIndList);
       v := BackendVariable.setVarStartValue(v,e);
       if Flags.isSet(Flags.DEBUG_ALIAS) then
-        print("START: " + ComponentReference.printComponentRefStr(cr1) + " = " + ExpressionDump.printExpStr(e) + "\n");
+        print("START: " + ComponentReferenceBasics.printComponentRefStr(cr1) + " = " + ExpressionBasics.printExpStr(e) + "\n");
         BaseHashTable.dumpHashTable(HTStartExpToInt);
       end if;
     end if;
@@ -5414,7 +5413,7 @@ algorithm
       e := getDominantAttributeValue(tplExpIndList);
       v := BackendVariable.setVarNominalValue(v,e);
       if Flags.isSet(Flags.DEBUG_ALIAS) then
-        print("NOMINAL: " + ComponentReference.printComponentRefStr(cr1) + " = " + ExpressionDump.printExpStr(e) + "\n");
+        print("NOMINAL: " + ComponentReferenceBasics.printComponentRefStr(cr1) + " = " + ExpressionBasics.printExpStr(e) + "\n");
         BaseHashTable.dumpHashTable(HTNominalExpToInt);
       end if;
     end if;
@@ -5473,7 +5472,7 @@ algorithm
         end if;
         outHTStartExpToInt := BaseHashTable.add((e2, j), outHTStartExpToInt);
         if Flags.isSet(Flags.DEBUG_ALIAS) then
-          print("START: " + ComponentReference.printComponentRefStr(cr) + " = " + ExpressionDump.printExpStr(e1) + " = " + ExpressionDump.printExpStr(e2) + "\n");
+          print("START: " + ComponentReferenceBasics.printComponentRefStr(cr) + " = " + ExpressionBasics.printExpStr(e1) + " = " + ExpressionBasics.printExpStr(e2) + "\n");
         end if;
       end if;
       if BackendVariable.varHasNominalValue(v) then
@@ -5489,7 +5488,7 @@ algorithm
         end if;
         outHTNominalExpToInt := BaseHashTable.add((e2, j), outHTNominalExpToInt);
         if Flags.isSet(Flags.DEBUG_ALIAS) then
-          print("NOMINAL: " + ComponentReference.printComponentRefStr(cr) + " = " + ExpressionDump.printExpStr(e1) + " = " + ExpressionDump.printExpStr(e2) + "\n");
+          print("NOMINAL: " + ComponentReferenceBasics.printComponentRefStr(cr) + " = " + ExpressionBasics.printExpStr(e1) + " = " + ExpressionBasics.printExpStr(e2) + "\n");
         end if;
       end if;
       (outHTStartExpToInt,outHTNominalExpToInt) := getThisAttributes(cr, cr_eq_rest, inAliasVars, outHTStartExpToInt, outHTNominalExpToInt);
@@ -5536,26 +5535,26 @@ algorithm
     algorithm
       s1 := if n1 then "(-)" else "" ;
       s2 := if n2 then "(-)" else "" ;
-      s1 := s1 +ComponentReference.printComponentRefStr(cr1);
-      s2:= s2 +ComponentReference.printComponentRefStr(cr2);
+      s1 := s1 +ComponentReferenceBasics.printComponentRefStr(cr1);
+      s2:= s2 +ComponentReferenceBasics.printComponentRefStr(cr2);
     then "ALIASE: \t\t"+s1 + " = " +s2+"  ("+intString(i1)+", "+intString(i2)+")";
   case(PARAMETERALIAS(cr1,n1,i1,cr2,n2,i2,_,_))
     algorithm
       s1 := if n1 then "(-)" else "" ;
       s2 := if n2 then "(-)" else "" ;
-      s1 := s1 +ComponentReference.printComponentRefStr(cr1);
-      s2:= s2 +ComponentReference.printComponentRefStr(cr2);
+      s1 := s1 +ComponentReferenceBasics.printComponentRefStr(cr1);
+      s2:= s2 +ComponentReferenceBasics.printComponentRefStr(cr2);
     then "PARAMETERALIASE: \t"+s1 + " = " +s2+"  ("+intString(i1)+", "+intString(i2)+")";
   case(TIMEALIAS(cr1,n1,i1,cr2,n2,i2,_,_))
     algorithm
       s1 := if n1 then "(-)" else "" ;
       s2 := if n2 then "(-)" else "" ;
-      s1 := s1 +ComponentReference.printComponentRefStr(cr1);
-      s2:= s2 +ComponentReference.printComponentRefStr(cr2);
+      s1 := s1 +ComponentReferenceBasics.printComponentRefStr(cr1);
+      s2:= s2 +ComponentReferenceBasics.printComponentRefStr(cr2);
     then "TIMEALIASE: \t"+s1 + " = " +s2+"  ("+intString(i1)+", "+intString(i2)+")";
   case(TIMEINDEPENTVAR(cr1,_,e,_,_))
     algorithm
-    then "TIMEINDEPENT: \t"+ComponentReference.printComponentRefStr(cr1) + " = " +ExpressionDump.printExpStr(e);
+    then "TIMEINDEPENT: \t"+ComponentReferenceBasics.printComponentRefStr(cr1) + " = " +ExpressionBasics.printExpStr(e);
   else
     then "----------";
   end matchcontinue;

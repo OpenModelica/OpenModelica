@@ -41,23 +41,24 @@ encapsulated package DAEUtil
 
   This module exports some helper functions to the DAE AST."
 
-public import Absyn;
-public import AbsynUtil;
-public import ClassInf;
-public import DAE;
-public import FCore;
-public import SCode;
-public import Values;
-public import ValuesUtil;
-public import HashTable;
-public import AvlSetCR;
-public import HashTable2;
+import Absyn;
+import AbsynUtil;
+import ClassInf;
+import DAE;
+import DAEDumpTypes;
+import FCore;
+import SCode;
+import Values;
+import ValuesUtil;
+import HashTable;
+import AvlSetCR;
+import HashTable2;
 
 protected
 import Algorithm;
 import BaseHashTable;
 import Ceval;
-import DAE.AvlTreePathFunction;
+import AvlTreePathFunction;
 import ComponentReference;
 import Config;
 import DAE.Connect;
@@ -78,6 +79,7 @@ import Types;
 import Util;
 import StateMachineFlatten;
 import VarTransform;
+import ValuesDump;
 import MetaModelica.Dangerous.listReverseInPlace;
 
 public function constStr "return the DAE.Const as a string. (VAR|PARAM|CONST)
@@ -93,18 +95,6 @@ algorithm
   end match;
 end constStr;
 
-public function constStrFriendly "return the DAE.Const as a friendly string. Used for debugging."
-  input DAE.Const const;
-  output String str;
-algorithm
-  str := match(const)
-    case(DAE.C_VAR()) then "";
-    case(DAE.C_PARAM()) then "parameter ";
-    case(DAE.C_CONST()) then "constant ";
-
-  end match;
-end constStrFriendly;
-
 public function const2VarKind
   input DAE.Const const;
   output DAE.VarKind kind;
@@ -115,17 +105,6 @@ algorithm
     case(DAE.C_CONST()) then DAE.CONST();
   end match;
 end const2VarKind;
-
-public function dumpVarParallelismStr "Dump VarParallelism to a string"
-  input DAE.VarParallelism inVarParallelism;
-  output String outString;
-algorithm
-  outString := match (inVarParallelism)
-    case DAE.NON_PARALLEL() then "";
-    case DAE.PARGLOBAL() then "parglobal ";
-    case DAE.PARLOCAL() then "parlocal ";
-  end match;
-end dumpVarParallelismStr;
 
 public function topLevelInput "author: PA
   if variable is input declared at the top level of the model,
@@ -623,7 +602,7 @@ algorithm
       case (v as DAE.VAR(componentRef = cr))
         algorithm
           // variable is in the list! jump over it
-          if listEmpty(List.select1(variableNames, ComponentReference.crefEqual, cr)) then
+          if listEmpty(List.select1(variableNames, ComponentReferenceBasics.crefEqual, cr)) then
             outElements := v::outElements;
           end if;
           then ();
@@ -662,7 +641,7 @@ algorithm
 
     case(_,DAE.DAE((DAE.VAR(componentRef = cr))::elist))
       algorithm
-        true := ComponentReference.crefEqualNoStringCompare(var,cr);
+        true := ComponentReferenceBasics.crefEqualNoStringCompare(var,cr);
       then DAE.DAE(elist);
 
     case(_,DAE.DAE(DAE.COMP(id,elist,source,cmt)::elist2))
@@ -724,7 +703,7 @@ algorithm
 
     case(_,DAE.DAE(DAE.VAR(cr,kind,dir,prl,prot,tp,bind,dim,ct,source,attr,cmt,io,ie)::elist))
       guard
-        ComponentReference.crefEqualNoStringCompare(var,cr)
+        ComponentReferenceBasics.crefEqualNoStringCompare(var,cr)
       algorithm
         io2 := removeInnerAttribute(io);
       then
@@ -753,8 +732,8 @@ This function strips the 'unique identifer' from the cref and compares.
 protected
   String s1,s2,s3;
 algorithm
-  s1 := ComponentReference.printComponentRefStr(cr1);
-  s2 := ComponentReference.printComponentRefStr(cr2);
+  s1 := ComponentReferenceBasics.printComponentRefStr(cr1);
+  s2 := ComponentReferenceBasics.printComponentRefStr(cr2);
   s1 := System.stringReplace(s1, DAE.UNIQUEIO, "");
   s2 := System.stringReplace(s2, DAE.UNIQUEIO, "");
   equal := stringEq(s1,s2);
@@ -775,12 +754,12 @@ algorithm outCr := match(inCr)
     algorithm
       id := DAE.UNIQUEIO + id;
     then
-      ComponentReference.makeCrefIdent(id,idt,subs);
+      ComponentReferenceBasics.makeCrefIdent(id,idt,subs);
   case(DAE.CREF_QUAL(id,idt,subs,child))
     algorithm
       newChild := nameInnerouterUniqueCref(child);
     then
-      ComponentReference.makeCrefQual(id,idt,subs,newChild);
+      ComponentReferenceBasics.makeCrefQual(id,idt,subs,newChild);
   end match;
 end nameInnerouterUniqueCref;
 
@@ -801,18 +780,18 @@ algorithm ocr := matchcontinue(cr,removalString)
     algorithm
       str2 := System.stringReplace(str, removalString, "");
       then
-        ComponentReference.makeCrefIdent(str2,ty,subs);
+        ComponentReferenceBasics.makeCrefIdent(str2,ty,subs);
   case(DAE.CREF_QUAL(str,ty,subs,child),_)
     algorithm
       child_2 := unNameInnerouterUniqueCref(child,removalString);
       str2 := System.stringReplace(str, removalString, "");
     then
-      ComponentReference.makeCrefQual(str2,ty,subs,child_2);
+      ComponentReferenceBasics.makeCrefQual(str2,ty,subs,child_2);
   case(DAE.WILD(),_) then DAE.WILD();
   case(child,_)
     algorithm
       print(" failure unNameInnerouterUniqueCref: ");
-      print(ComponentReference.printComponentRefStr(child) + "\n");
+      print(ComponentReferenceBasics.printComponentRefStr(child) + "\n");
       then fail();
   end matchcontinue;
 end unNameInnerouterUniqueCref;
@@ -1446,12 +1425,12 @@ algorithm
     case (NONE()) then "";
     case (SOME(DAE.VAR_ATTR_REAL(start = SOME(r))))
       algorithm
-        s := ExpressionDump.printExpStr(r);
+        s := ExpressionBasics.printExpStr(r);
       then
         s;
     case (SOME(DAE.VAR_ATTR_INT(start = SOME(r))))
       algorithm
-        s := ExpressionDump.printExpStr(r);
+        s := ExpressionBasics.printExpStr(r);
       then
         s;
     else "";
@@ -2101,7 +2080,7 @@ algorithm
       list<DAE.Element> lst;
     case (((DAE.VAR(binding = SOME(e)))::(lst as (_::_))))
       algorithm
-        expstr := ExpressionDump.printExpStr(e);
+        expstr := ExpressionBasics.printExpStr(e);
         s3 := stringAppend(expstr, ",");
         s4 := getBindingsStr(lst);
         str := stringAppend(s3, s4);
@@ -2116,7 +2095,7 @@ algorithm
         str;
     case ({(DAE.VAR(binding = SOME(e)))})
       algorithm
-        str := ExpressionDump.printExpStr(e);
+        str := ExpressionBasics.printExpStr(e);
       then
         str;
     case ({(DAE.VAR(binding = NONE()))}) then "";
@@ -2198,10 +2177,10 @@ algorithm
     // In other classes print warning
     case (_, SCode.PARGLOBAL(), _, _)
       algorithm
-        path := ClassInf.getStateName(inState);
+        path := ClassInfUtil.getStateName(inState);
         str1 := "\n" +
-        "- DAEUtil.toDaeParallelism: parglobal component '" + ComponentReference.printComponentRefStr(inCref)
-        + "' in non-function class: " + ClassInf.printStateStr(inState) + " " + AbsynUtil.pathString(path);
+        "- DAEUtil.toDaeParallelism: parglobal component '" + ComponentReferenceBasics.printComponentRefStr(inCref)
+        + "' in non-function class: " + ClassInfUtil.printStateStr(inState) + " " + AbsynUtil.pathString(path);
 
         Error.addSourceMessage(Error.PARMODELICA_WARNING,
           {str1}, inInfo);
@@ -2209,10 +2188,10 @@ algorithm
 
     case (_, SCode.PARLOCAL(), _, _)
       algorithm
-        path := ClassInf.getStateName(inState);
+        path := ClassInfUtil.getStateName(inState);
         str1 := "\n" +
-        "- DAEUtil.toDaeParallelism: parlocal component '" + ComponentReference.printComponentRefStr(inCref)
-        + "' in non-function class: " + ClassInf.printStateStr(inState) + " " + AbsynUtil.pathString(path);
+        "- DAEUtil.toDaeParallelism: parlocal component '" + ComponentReferenceBasics.printComponentRefStr(inCref)
+        + "' in non-function class: " + ClassInfUtil.printStateStr(inState) + " " + AbsynUtil.pathString(path);
 
         Error.addSourceMessage(Error.PARMODELICA_WARNING,
           {str1}, inInfo);
@@ -2295,7 +2274,7 @@ algorithm
     case ((cr::xs),id)
       algorithm
         res := getFlowVariables2(xs, id);
-        cr_1 := ComponentReference.makeCrefQual(id,DAE.T_UNKNOWN_DEFAULT,{}, cr);
+        cr_1 := ComponentReferenceBasics.makeCrefQual(id,DAE.T_UNKNOWN_DEFAULT,{}, cr);
       then
         (cr_1::res);
   end match;
@@ -2351,7 +2330,7 @@ algorithm
     case ((cr::xs),id)
       algorithm
         res := getStreamVariables2(xs, id);
-        cr_1 := ComponentReference.makeCrefQual(id,DAE.T_UNKNOWN_DEFAULT,{}, cr);
+        cr_1 := ComponentReferenceBasics.makeCrefQual(id,DAE.T_UNKNOWN_DEFAULT,{}, cr);
       then
         (cr_1::res);
   end match;
@@ -2395,7 +2374,7 @@ algorithm
         info := ElementSource.getElementSourceFileInfo(source);
         (cache, value) := Ceval.ceval(cache, env, rhs, impl, Absyn.MSG(info),0);
         (cache, Values.RECORD(cname,vals,names,ix)) := daeToRecordValue(cache, env, cname, rest, impl);
-        cr_str := ComponentReference.printComponentRefStr(cr);
+        cr_str := ComponentReferenceBasics.printComponentRefStr(cr);
       then
         (cache,Values.RECORD(cname,(value::vals),(cr_str::names),ix));
     case (_,_,_,el::_,_)
@@ -2476,12 +2455,12 @@ algorithm
                innerOuter=io,
                encrypted=encrypted)::elts))
       algorithm
-        str := ComponentReference.printComponentRefStr(cr);
+        str := ComponentReferenceBasics.printComponentRefStr(cr);
         str_1 := Util.stringReplaceChar(str, ".", "_");
         elts_1 := toModelicaFormElts(elts);
         d_1 := toModelicaFormExpOpt(d);
         ty := ComponentReference.crefLastType(cr);
-        cref_ := ComponentReference.makeCrefIdent(str_1,ty,{});
+        cref_ := ComponentReferenceBasics.makeCrefIdent(str_1,ty,{});
       then
         (DAE.VAR(cref_,a,b,prl,prot,t,d_1,instDim,ct,source,dae_var_attr,comment,io,encrypted)::elts_1);
 
@@ -2749,10 +2728,10 @@ protected
   String str,str_1;
   DAE.Type ty;
 algorithm
-  str := ComponentReference.printComponentRefStr(cr);
+  str := ComponentReferenceBasics.printComponentRefStr(cr);
   ty := ComponentReference.crefLastType(cr);
   str_1 := Util.stringReplaceChar(str, ".", "_");
-  outComponentRef := ComponentReference.makeCrefIdent(str_1,ty,{});
+  outComponentRef := ComponentReferenceBasics.makeCrefIdent(str_1,ty,{});
 end toModelicaFormCref;
 
 protected function toModelicaFormExp "Helper function to toModelicaFormElts."
@@ -2853,14 +2832,14 @@ end toModelicaFormExp;
 
 public function getNamedFunction "Return the FUNCTION with the given name. Fails if not found."
   input Absyn.Path path;
-  input DAE.FunctionTree functions;
+  input AvlTreePathFunction.Tree functions;
   output DAE.Function outElement;
 algorithm
   outElement := matchcontinue (path,functions)
     local
       String msg;
 
-    case (_,_) then Util.getOption(DAE.AvlTreePathFunction.get(functions, path));
+    case (_,_) then Util.getOption(AvlTreePathFunction.get(functions, path));
     else
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
@@ -2875,7 +2854,7 @@ end getNamedFunction;
 
 public function getNamedFunctionWithError "Return the FUNCTION with the given name. Fails if not found."
   input Absyn.Path path;
-  input DAE.FunctionTree functions;
+  input AvlTreePathFunction.Tree functions;
   input SourceInfo info;
   output DAE.Function outElement;
 algorithm
@@ -2883,7 +2862,7 @@ algorithm
     local
       String msg;
 
-    case (_,_,_) then Util.getOption(DAE.AvlTreePathFunction.get(functions, path));
+    case (_,_,_) then Util.getOption(AvlTreePathFunction.get(functions, path));
     else
       algorithm
         msg := stringDelimitList(List.mapMap(getFunctionList(functions), functionName, AbsynUtil.pathStringDefault), "\n  ");
@@ -3211,7 +3190,7 @@ algorithm
       Error.addSourceMessageAndFail(Error.CLOCKED_WHEN_BRANCH, {}, info);
     end if;
     crefs2 := verifyBoolWhenEquationBranch(cond, eqs);
-    crefs2 := List.unionOnTrue(crefs1, crefs2, ComponentReference.crefEqual);
+    crefs2 := List.unionOnTrue(crefs1, crefs2, ComponentReferenceBasics.crefEqual);
     if listLength(crefs2) <> listLength(crefs1) then
       info := ElementSource.getElementSourceFileInfo(source);
       Error.addSourceMessageAndFail(Error.DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN, {}, info);
@@ -3378,7 +3357,7 @@ algorithm
     case DAE.TUPLE(exps) then collectWhenCrefs(exps, source, inCrefs);
     else
       algorithm
-        msg := ExpressionDump.printExpStr(inExp);
+        msg := ExpressionBasics.printExpStr(inExp);
         info := ElementSource.getElementSourceFileInfo(source);
         Error.addSourceMessage(Error.WHEN_EQ_LHS, {msg}, info);
       then fail();
@@ -3410,7 +3389,7 @@ algorithm (outrefs,matching) := match(inCrefs)
       then
         // this case will allways have revRefs >=1 unless we are supposed to have 0
         b1 := (0 == intMod(listLength(crefs),i));
-        crefs := List.unionOnTrueList({recRefs,crefs},ComponentReference.crefEqual);
+        crefs := List.unionOnTrueList({recRefs,crefs},ComponentReferenceBasics.crefEqual);
         b2 := intEq(listLength(crefs),i);
         b1 := boolAnd(b1,boolAnd(b2,b3));
       else
@@ -3790,7 +3769,7 @@ public function renameUniqueOuterVars "author: BZ, 2008-12
   input DAE.DAElist dae;
   output DAE.DAElist odae;
 algorithm
-  (odae,_,_) := traverseDAE(dae, DAE.AvlTreePathFunction.Tree.EMPTY(), Expression.traverseSubexpressionsHelper, (removeUniqieIdentifierFromCref, {}));
+  (odae,_,_) := traverseDAE(dae, AvlTreePathFunction.Tree.EMPTY(), Expression.traverseSubexpressionsHelper, (removeUniqieIdentifierFromCref, {}));
 end renameUniqueOuterVars;
 
 protected function removeUniqieIdentifierFromCref "Function for Expression.traverseExpBottomUp, removes the constant 'UNIQUEIO' from any cref it might visit."
@@ -3823,7 +3802,7 @@ public function nameUniqueOuterVars "author: BZ, 2008-12
   input DAE.DAElist dae;
   output DAE.DAElist odae;
 algorithm
-  (odae,_,_) := traverseDAE(dae, DAE.AvlTreePathFunction.Tree.EMPTY(), Expression.traverseSubexpressionsHelper, (addUniqueIdentifierToCref, {}));
+  (odae,_,_) := traverseDAE(dae, AvlTreePathFunction.Tree.EMPTY(), Expression.traverseSubexpressionsHelper, (addUniqueIdentifierToCref, {}));
 end nameUniqueOuterVars;
 
 protected function addUniqueIdentifierToCref "author: BZ, 2008-12
@@ -3947,17 +3926,17 @@ algorithm
 end traverseDAEList;
 
 public function getFunctionList
-  input DAE.FunctionTree ft;
+  input AvlTreePathFunction.Tree ft;
   input Boolean failOnError=false;
   output list<DAE.Function> fns;
 protected
-  list<tuple<DAE.AvlTreePathFunction.Key,DAE.AvlTreePathFunction.Value>> lst, lstInvalid;
+  list<tuple<AvlTreePathFunction.Key,AvlTreePathFunction.Value>> lst, lstInvalid;
   String str;
 algorithm
   try
-    fns := List.map(DAE.AvlTreePathFunction.listValues(ft), Util.getOption);
+    fns := List.map(AvlTreePathFunction.listValues(ft), Util.getOption);
   else
-    lst := DAE.AvlTreePathFunction.toList(ft);
+    lst := AvlTreePathFunction.toList(ft);
     lstInvalid := List.select(lst, isInvalidFunctionEntry);
     str := stringDelimitList(list(AbsynUtil.pathString(p) for p in List.map(lstInvalid, Util.tuple21)), "\n ");
     str := "\n " + str + "\n";
@@ -3970,14 +3949,14 @@ algorithm
 end getFunctionList;
 
 public function getFunctionNames
-  input DAE.FunctionTree ft;
+  input AvlTreePathFunction.Tree ft;
   output list<String> strs;
 algorithm
   strs := List.mapMap(getFunctionList(ft), functionName, AbsynUtil.pathStringDefault);
 end getFunctionNames;
 
 protected function isInvalidFunctionEntry
-  input tuple<DAE.AvlTreePathFunction.Key,DAE.AvlTreePathFunction.Value> tpl;
+  input tuple<AvlTreePathFunction.Key,AvlTreePathFunction.Value> tpl;
   output Boolean b;
 algorithm
   b := match tpl
@@ -3987,7 +3966,7 @@ algorithm
 end isInvalidFunctionEntry;
 
 protected function isValidFunctionEntry
-  input tuple<DAE.AvlTreePathFunction.Key,DAE.AvlTreePathFunction.Value> tpl;
+  input tuple<AvlTreePathFunction.Key,AvlTreePathFunction.Value> tpl;
   output Boolean b;
 algorithm
   b := not isInvalidFunctionEntry(tpl);
@@ -3997,7 +3976,7 @@ public function traverseDAE<ArgT>
   "This function traverses all dae exps.
    NOTE, it also traverses DAE.VAR(componenname) as an expression."
   input output DAE.DAElist dae;
-  input output DAE.FunctionTree functionTree;
+  input output AvlTreePathFunction.Tree functionTree;
   input FuncExpType func;
   input output ArgT arg;
 
@@ -4010,14 +3989,14 @@ protected
 algorithm
   (el, arg) := traverseDAEElementList(dae.elementLst, func, arg);
   dae.elementLst := el;
-  (functionTree, arg) := DAE.AvlTreePathFunction.mapFold(functionTree,
+  (functionTree, arg) := AvlTreePathFunction.mapFold(functionTree,
     function traverseDAEFuncHelper(func = func), arg);
 end traverseDAE;
 
 protected function traverseDAEFuncHelper<ArgT>
   "Helper function to traverseDae. Traverses the functions."
-  input DAE.AvlTreePathFunction.Key key;
-  input output DAE.AvlTreePathFunction.Value value;
+  input AvlTreePathFunction.Key key;
+  input output AvlTreePathFunction.Value value;
   input FuncExpType func;
   input output ArgT arg;
 
@@ -5286,10 +5265,10 @@ public function splitElements
   output list<DAE.Element> classAttributes = {};
   output list<DAE.Element> constraints = {};
   output list<DAE.Element> externalObjects = {};
-  output list<DAEDump.compWithSplitElements> stateMachineComps = {};
+  output list<DAEDumpTypes.compWithSplitElements> stateMachineComps = {};
   output list<SCode.Comment> comments = {};
 protected
-  DAEDump.compWithSplitElements split_comp;
+  DAEDumpTypes.compWithSplitElements split_comp;
 algorithm
   for e in elements loop
     _ := match e
@@ -5372,7 +5351,7 @@ algorithm
 
       else
         algorithm
-          Error.addInternalError("DAEUtil.splitElements got unknown element.", AbsynUtil.dummyInfo);
+          Error.addInternalError("DAEUtil.splitElements got unknown element.", Absyn.dummyInfo);
         then
           fail();
     end match;
@@ -5392,20 +5371,20 @@ end splitElements;
 public function splitComponent
   "Transforms a DAE.COMP to a DAEDump.COMP_WITH_SPLIT."
   input DAE.Element component;
-  output DAEDump.compWithSplitElements splitComponent;
+  output DAEDumpTypes.compWithSplitElements splitComponent;
 protected
   list<DAE.Element> v, ie, ia, e, a, co, o, ca;
-  list<DAEDump.compWithSplitElements> sm;
+  list<DAEDumpTypes.compWithSplitElements> sm;
 protected
-  DAEDump.splitElements split_el;
+  DAEDumpTypes.splitElements split_el;
 algorithm
   splitComponent := match component
     case DAE.COMP()
       algorithm
         (v, ie, ia, e, a, co, o, ca, sm) := splitElements(component.dAElist);
-        split_el := DAEDump.SPLIT_ELEMENTS(v, ie, ia, e, a, co, o, ca, sm);
+        split_el := DAEDumpTypes.SPLIT_ELEMENTS(v, ie, ia, e, a, co, o, ca, sm);
       then
-        DAEDump.COMP_WITH_SPLIT(component.ident, split_el, component.comment);
+        DAEDumpTypes.COMP_WITH_SPLIT(component.ident, split_el, component.comment);
   end match;
 end splitComponent;
 
@@ -5535,7 +5514,7 @@ end getDAEDeclsFromValueblocks;
 //     case _
 //       equation
 //         ht = HashTable.emptyHashTable();
-//         (d,_,ht) = traverseDAE(dae,DAE.AvlTreePathFunction.Tree.EMPTY(),simpleInlineDerEuler,ht);
+//         (d,_,ht) = traverseDAE(dae,AvlTreePathFunction.Tree.EMPTY(),simpleInlineDerEuler,ht);
 //       then d;
 //   end matchcontinue;
 // end transformDerInline;
@@ -5553,8 +5532,8 @@ end getDAEDeclsFromValueblocks;
 //
 //     case ((DAE.CALL(path=Absyn.IDENT("der"),expLst={exp as DAE.CREF(componentRef = cr, ty = DAE.T_REAL(varLst = _))}),crs0))
 //       equation
-//         cref_1 = ComponentReference.makeCrefQual("$old",DAE.T_REAL_DEFAULT,{},cr);
-//         cref_2 = ComponentReference.makeCrefIdent("$current_step_size",DAE.T_REAL_DEFAULT,{});
+//         cref_1 = ComponentReferenceBasics.makeCrefQual("$old",DAE.T_REAL_DEFAULT,{},cr);
+//         cref_2 = ComponentReferenceBasics.makeCrefIdent("$current_step_size",DAE.T_REAL_DEFAULT,{});
 //         e1 = Expression.makeCrefExp(cref_1,DAE.T_REAL_DEFAULT);
 //         e2 = Expression.makeCrefExp(cref_2,DAE.T_REAL_DEFAULT);
 //         exp = DAE.BINARY(
@@ -5613,7 +5592,7 @@ protected
 algorithm
   crs := AvlSetCR.listKeys(ht);
   if not listEmpty(crs) then
-    strs := List.map(crs, ComponentReference.printComponentRefStr);
+    strs := List.map(crs, ComponentReferenceBasics.printComponentRefStr);
     str := stringDelimitList(strs, ", ");
     Error.addMessage(Error.NOTIFY_FRONTEND_STRUCTURAL_PARAMETERS, {str});
   end if;
@@ -5676,28 +5655,16 @@ algorithm
     case(DAE.UNBOUND()) then "";
     case(DAE.EQBOUND(exp=e))
       algorithm
-        str := ExpressionDump.printExpStr(e);
+        str := ExpressionBasics.printExpStr(e);
       then
         str;
     case(DAE.VALBOUND(valBound=v))
       algorithm
-        str := " = " + ValuesUtil.valString(v);
+        str := " = " + ValuesDump.valString(v);
       then
         str;
   end match;
 end printBindingExpStr;
-
-public function printBindingSourceStr "prints a binding source as a string"
-  input DAE.BindingSource bindingSource;
-  output String str;
-algorithm
-  str := match(bindingSource)
-    case(DAE.BINDING_FROM_DEFAULT_VALUE())       then "[DEFAULT VALUE]";
-    case(DAE.BINDING_FROM_START_VALUE())         then "[START VALUE]";
-    case(DAE.BINDING_FROM_RECORD_SUBMODS())      then "[RECORD SUBMODS]";
-    case(DAE.BINDING_FROM_DERIVED_RECORD_DECL()) then "[DERIVED RECORD]";
-  end match;
-end printBindingSourceStr;
 
 public function collectValueblockFunctionRefVars
 "Collect the function names of variables in valueblock local sections"
@@ -5734,10 +5701,10 @@ end collectFunctionRefVarPaths;
 
 public function addDaeFunction "add functions present in the element list to the function tree"
   input list<DAE.Function> functions;
-  input output DAE.FunctionTree functionTree;
+  input output AvlTreePathFunction.Tree functionTree;
 algorithm
   for f in functions loop
-    functionTree := DAE.AvlTreePathFunction.add(functionTree, functionName(f), SOME(f));
+    functionTree := AvlTreePathFunction.add(functionTree, functionName(f), SOME(f));
   end for;
 end addDaeFunction;
 
@@ -5763,14 +5730,14 @@ public function addDaeExtFunction "
   Note: normal functions are skipped.
   See also addDaeFunction"
   input list<DAE.Function> ifuncs;
-  input DAE.FunctionTree itree;
-  output DAE.FunctionTree outTree;
+  input AvlTreePathFunction.Tree itree;
+  output AvlTreePathFunction.Tree outTree;
 algorithm
   outTree := matchcontinue(ifuncs,itree)
     local
       DAE.Function func;
       list<DAE.Function> funcs;
-      DAE.FunctionTree tree;
+      AvlTreePathFunction.Tree tree;
       String msg;
 
     case ({},tree)
@@ -5782,7 +5749,7 @@ algorithm
       algorithm
         true := isExtFunction(func);
         // print("Add ext to cache: " + AbsynUtil.pathString(functionName(func)) + "\n");
-        tree := DAE.AvlTreePathFunction.add(tree,functionName(func),SOME(func));
+        tree := AvlTreePathFunction.add(tree,functionName(func),SOME(func));
       then addDaeExtFunction(funcs,tree);
 
     case (_::funcs,tree) then addDaeExtFunction(funcs,tree);
@@ -5791,16 +5758,16 @@ algorithm
 end addDaeExtFunction;
 
 public function getFunctionsInfo
-  input DAE.FunctionTree ft;
+  input AvlTreePathFunction.Tree ft;
   output list<String> strs;
 algorithm
   strs := match ft
     local
-      list<tuple<DAE.AvlTreePathFunction.Key,DAE.AvlTreePathFunction.Value>> lst;
+      list<tuple<AvlTreePathFunction.Key,AvlTreePathFunction.Value>> lst;
 
     case _
       algorithm
-        lst := DAE.AvlTreePathFunction.toList(ft);
+        lst := AvlTreePathFunction.toList(ft);
         strs := List.map(lst, getInfo);
         strs := List.sort(strs, Util.strcmpBool);
       then
@@ -5810,7 +5777,7 @@ end getFunctionsInfo;
 
 
 public function getInfo
-  input tuple<DAE.AvlTreePathFunction.Key,DAE.AvlTreePathFunction.Value> tpl;
+  input tuple<AvlTreePathFunction.Key,AvlTreePathFunction.Value> tpl;
   output String str;
 algorithm
   str := match tpl
@@ -5830,7 +5797,7 @@ algorithm
 end getInfo;
 
 protected function showCacheFuncs
-  input DAE.FunctionTree tree;
+  input AvlTreePathFunction.Tree tree;
 algorithm
   _ := match(tree)
     local
@@ -6175,7 +6142,7 @@ algorithm
 
     case ((x as DAE.VAR(componentRef = cr))::lst, _, accNamed, accRest)
       algorithm
-        equal := stringEq(ComponentReference.crefFirstIdent(cr), inName);
+        equal := stringEq(ComponentReferenceBasics.crefFirstIdent(cr), inName);
         accNamed := List.consOnTrue(equal, x, accNamed);
         accRest := List.consOnTrue(boolNot(equal), x, accRest);
         (accNamed, accRest) := splitVariableNamed(lst, inName, accNamed, accRest);
@@ -6414,7 +6381,7 @@ algorithm
     obnd := match i
       case DAE.VAR(componentRef = cr, binding = obnd)
         algorithm
-          if ComponentReference.crefEqualNoStringCompare(icr, cr) then
+          if ComponentReferenceBasics.crefEqualNoStringCompare(icr, cr) then
             return;
           end if;
         then
@@ -6423,7 +6390,7 @@ algorithm
       case DAE.DEFINE(componentRef = cr, exp = e)
         algorithm
           obnd := SOME(e);
-          if ComponentReference.crefEqualNoStringCompare(icr, cr) then
+          if ComponentReferenceBasics.crefEqualNoStringCompare(icr, cr) then
             return;
           end if;
         then
@@ -6432,7 +6399,7 @@ algorithm
       case DAE.INITIALDEFINE(componentRef = cr, exp = e)
         algorithm
           obnd := SOME(e);
-          if ComponentReference.crefEqualNoStringCompare(icr, cr) then
+          if ComponentReferenceBasics.crefEqualNoStringCompare(icr, cr) then
             return;
           end if;
         then
@@ -6441,7 +6408,7 @@ algorithm
       case DAE.EQUATION(exp = DAE.CREF(componentRef = cr), scalar = e)
         algorithm
           obnd := SOME(e);
-          if ComponentReference.crefEqualNoStringCompare(icr, cr) then
+          if ComponentReferenceBasics.crefEqualNoStringCompare(icr, cr) then
             return;
           end if;
         then
@@ -6450,7 +6417,7 @@ algorithm
       case DAE.EQUATION(exp = e, scalar = DAE.CREF(componentRef = cr))
         algorithm
           obnd := SOME(e);
-          if ComponentReference.crefEqualNoStringCompare(icr, cr) then
+          if ComponentReferenceBasics.crefEqualNoStringCompare(icr, cr) then
             return;
           end if;
         then
@@ -6459,7 +6426,7 @@ algorithm
       case DAE.INITIALEQUATION(exp1 = DAE.CREF(componentRef = cr), exp2 = e)
         algorithm
           obnd := SOME(e);
-          if ComponentReference.crefEqualNoStringCompare(icr, cr) then
+          if ComponentReferenceBasics.crefEqualNoStringCompare(icr, cr) then
             return;
           end if;
         then
@@ -6468,7 +6435,7 @@ algorithm
       case DAE.INITIALEQUATION(exp1 = e, exp2 = DAE.CREF(componentRef = cr))
         algorithm
           obnd := SOME(e);
-          if ComponentReference.crefEqualNoStringCompare(icr, cr) then
+          if ComponentReferenceBasics.crefEqualNoStringCompare(icr, cr) then
             return;
           end if;
         then
@@ -6592,7 +6559,7 @@ algorithm
     case DAE.STREAM(NONE()) then "stream()";
     case DAE.STREAM(SOME(cref))
       algorithm
-        cref_str := ComponentReference.printComponentRefStr(cref);
+        cref_str := ComponentReferenceBasics.printComponentRefStr(cref);
       then
         "stream(" + cref_str + ")";
     else "non connector";
@@ -6756,7 +6723,7 @@ algorithm
   i := match exp
     case DAE.ICONST(integer = i) then i;
     else algorithm
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because expression is not an ICONST: " + ExpressionDump.printExpStr(exp) + ".\n"});
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because expression is not an ICONST: " + ExpressionBasics.printExpStr(exp) + ".\n"});
     then fail();
   end match;
 end getInteger;
@@ -7221,7 +7188,7 @@ protected function optMRFACheckExtend
   input list<String> writtenFields;
   output Boolean ok;
 algorithm
-  ok := Expression.expEqual(newBase, baseExp)
+  ok := ExpressionBasics.expEqual(newBase, baseExp)
         and not listMember(newField, writtenFields)
         and optMRFARhsSafe(newRhs, baseExp, writtenFields);
 end optMRFACheckExtend;
@@ -7264,7 +7231,7 @@ algorithm
     // in the group, merging would change semantics. Mark unsafe and skip
     // descent so the wrapped CREF is not re-interpreted as a wholesale read.
     case DAE.RSUB(exp = innerExp, fieldName = fname)
-      guard Expression.expEqual(innerExp, baseExp)
+      guard ExpressionBasics.expEqual(innerExp, baseExp)
       then (not listMember(fname, writtenFields), true);
     case DAE.CREF()
       then (optMRFACheckCrefRead(inExp, baseExp, writtenFields), false);

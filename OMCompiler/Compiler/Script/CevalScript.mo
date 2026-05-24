@@ -60,7 +60,6 @@ import CevalScriptOMSimulator;
 import DAE;
 import ErrorTypes;
 import FCore;
-import GlobalScript;
 import Interactive;
 import Interactive.Access;
 import SimCode;
@@ -87,7 +86,6 @@ import Error;
 import ErrorExt;
 import ExecStat.{execStat,execStatReset};
 import Expression;
-import ExpressionDump;
 import FBuiltin;
 import FGraph;
 import Flags;
@@ -734,10 +732,10 @@ algorithm
         paths := list(Absyn.Path.IDENT(AbsynUtil.className(c)) for c in classes);
         paths := List.map1r(paths,AbsynUtil.joinWithinPath,within_);
       then
-        ValuesUtil.makeCodeTypeNameArray(paths);
+        ValuesMake.makeCodeTypeNameArray(paths);
 
     case ("parseString",_)
-      then ValuesUtil.makeArray({});
+      then ValuesMake.makeArray({});
 
     case ("parseFile",{Values.STRING(str1),Values.STRING(encoding)})
       algorithm
@@ -746,7 +744,7 @@ algorithm
         Print.clearErrorBuf() "Clear error buffer";
         paths := Interactive.parseFile(str1, encoding);
       then
-        ValuesUtil.makeCodeTypeNameArray(paths);
+        ValuesMake.makeCodeTypeNameArray(paths);
 
     case ("loadFileInteractiveQualified",{Values.STRING(str1),Values.STRING(encoding)})
       algorithm
@@ -755,15 +753,15 @@ algorithm
         Print.clearErrorBuf() "Clear error buffer";
         paths := Interactive.parseFile(str1, encoding, updateProgram=true);
       then
-        ValuesUtil.makeCodeTypeNameArray(paths);
+        ValuesMake.makeCodeTypeNameArray(paths);
 
     case ("loadFileInteractive",{Values.STRING(str1),Values.STRING(encoding),Values.BOOL(b),Values.BOOL(b1),Values.BOOL(requireExactVersion)})
       algorithm
         newp := loadFile(str1, encoding, SymbolTable.getAbsyn(), b, b1, requireExactVersion) "System.regularFileExists(name) => 0 &    Parser.parse(name) => p1 &" ;
-        vals := List.map(Interactive.getTopClassnames(newp),ValuesUtil.makeCodeTypeName);
+        vals := List.map(Interactive.getTopClassnames(newp),ValuesMake.makeCodeTypeName);
         SymbolTable.setAbsyn(newp);
       then
-        ValuesUtil.makeArray(vals);
+        ValuesMake.makeArray(vals);
 
     case ("getSourceFile",{Values.CODE(Absyn.C_TYPENAME(path))})
       algorithm
@@ -797,7 +795,7 @@ algorithm
       algorithm
         ty := Interactive.getTypeOfVariable(name, SymbolTable.getVars());
       then
-        Values.STRING(Types.unparseType(ty));
+        Values.STRING(TypesDump.unparseType(ty));
 
     case ("GC_gcollect_and_unmap",{})
       algorithm
@@ -873,10 +871,10 @@ algorithm
         strs := List.map(vals, ValuesUtil.extractValueString);
         strs := List.sort(strs, Util.strcmpBool);
       then
-        ValuesUtil.makeArray(List.map(strs,ValuesUtil.makeString));
+        ValuesMake.makeArray(List.map(strs,ValuesMake.makeString));
 
     case ("listVariables",{})
-      then ValuesUtil.makeArray(getVariableNames(SymbolTable.getVars(),{}));
+      then ValuesMake.makeArray(getVariableNames(SymbolTable.getVars(),{}));
 
     case ("setTempDirectoryPath",{Values.STRING(cmd)})
       algorithm
@@ -998,7 +996,7 @@ algorithm
       then Values.BOOL(false);
 
     case ("getCommandLineOptions", {})
-      then ValuesUtil.makeStringArray(FlagsUtil.unparseFlags());
+      then ValuesMake.makeStringArray(FlagsUtil.unparseFlags());
 
     case ("getCommandLineOptions", _)
       then Values.META_FAIL();
@@ -1054,17 +1052,17 @@ algorithm
         (strs1, str, strs2) := FlagsUtil.getValidOptionsAndDescription(str);
       then
         Values.TUPLE({
-          ValuesUtil.makeStringArray(strs1),
+          ValuesMake.makeStringArray(strs1),
           Values.STRING(str),
-          ValuesUtil.makeStringArray(strs2)
+          ValuesMake.makeStringArray(strs2)
         });
 
     case ("getConfigFlagValidOptions",{Values.STRING(_)})
       then
         Values.TUPLE({
-          ValuesUtil.makeArray({}),
+          ValuesMake.makeArray({}),
           Values.STRING(""),
-          ValuesUtil.makeArray({})
+          ValuesMake.makeArray({})
         });
 
     case ("cd",{Values.STRING("")})
@@ -1114,7 +1112,7 @@ algorithm
       algorithm
         strs := List.map(vals, ValuesUtil.extractValueString);
       then
-        ValuesUtil.makeIntArray(System.systemCallParallel(strs,i));
+        ValuesMake.makeIntArray(System.systemCallParallel(strs,i));
 
     case ("timerClear",{Values.INTEGER(i)})
       algorithm
@@ -1195,10 +1193,10 @@ algorithm
       algorithm
         messages := List.unique(Error.getMessages());
       then
-        ValuesUtil.makeArray(List.map(messages, errorToValue));
+        ValuesMake.makeArray(List.map(messages, errorToValue));
 
     case ("getMessagesStringInternal",{Values.BOOL(false)})
-      then ValuesUtil.makeArray(List.map(Error.getMessages(), errorToValue));
+      then ValuesMake.makeArray(List.map(Error.getMessages(), errorToValue));
 
     case ("stringTypeName",{Values.STRING(str)})
       then Values.CODE(Absyn.C_TYPENAME(Parser.stringPath(str)));
@@ -1210,7 +1208,7 @@ algorithm
       then Values.STRING(AbsynUtil.pathString(path));
 
     case ("typeNameStrings",{Values.CODE(A=Absyn.C_TYPENAME(path=path))})
-      then ValuesUtil.makeArray(List.map(AbsynUtil.pathToStringList(path),ValuesUtil.makeString));
+      then ValuesMake.makeArray(List.map(AbsynUtil.pathToStringList(path),ValuesMake.makeString));
 
     case ("generateHeader",{Values.STRING(filename)})
       algorithm
@@ -1309,22 +1307,22 @@ algorithm
     case ("getImportedNames",{Values.CODE(Absyn.C_TYPENAME(path))})
       algorithm
         (vals, cvars) := getImportedNames(InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn()));
-        v := Values.TUPLE({ValuesUtil.makeArray(vals),ValuesUtil.makeArray(cvars)});
+        v := Values.TUPLE({ValuesMake.makeArray(vals),ValuesMake.makeArray(cvars)});
       then
         v;
 
     case ("getImportedNames",_)
-      then (Values.TUPLE({ValuesUtil.makeArray({}),ValuesUtil.makeArray({})}));
+      then (Values.TUPLE({ValuesMake.makeArray({}),ValuesMake.makeArray({})}));
 
     case ("getMMfileTotalDependencies",{Values.STRING(str1), Values.STRING(str2)})
       algorithm
         strs := getMMfileTotalDependencies(str1, str2);
         vals := list(Values.STRING(s) for s in strs);
       then
-        ValuesUtil.makeArray(vals);
+        ValuesMake.makeArray(vals);
 
     case ("getMMfileTotalDependencies",_)
-      then ValuesUtil.makeArray({});
+      then ValuesMake.makeArray({});
 
     case ("loadModel",{Values.CODE(Absyn.C_TYPENAME(path)),Values.ARRAY(valueLst=cvars),Values.BOOL(b),Values.STRING(str),Values.BOOL(requireExactVersion)})
       algorithm
@@ -1406,18 +1404,18 @@ algorithm
             Print.clearErrorBuf() "Clear error buffer";
             filename := Testsuite.friendlyPath(filename);
             (paths) := Interactive.parseFile(filename, "UTF-8");
-            vals := List.map(paths,ValuesUtil.makeCodeTypeName);
+            vals := List.map(paths,ValuesMake.makeCodeTypeName);
           end if;
         else
           b := false;
         end try;
         0 := System.cd(str);
       then
-        ValuesUtil.makeArray(vals);
+        ValuesMake.makeArray(vals);
 
     case ("parseEncryptedPackage",_)
       then
-        ValuesUtil.makeArray({});
+        ValuesMake.makeArray({});
 
     case ("loadEncryptedPackage",Values.STRING(filename)::Values.STRING(workdir)::Values.BOOL(bval)::Values.BOOL(b)::Values.BOOL(b1)::Values.BOOL(requireExactVersion)::_)
       algorithm
@@ -1530,13 +1528,13 @@ algorithm
       algorithm
         strs := System.strtok(str, token);
       then
-        ValuesUtil.makeStringArray(strs);
+        ValuesMake.makeStringArray(strs);
 
     case ("stringSplit",{Values.STRING(str),Values.STRING(token)})
       algorithm
         strs := Util.stringSplitAtChar(str, token);
       then
-        ValuesUtil.makeStringArray(strs);
+        ValuesMake.makeStringArray(strs);
 
     case ("stringReplace",{Values.STRING(str1),Values.STRING(str2),Values.STRING(str3)})
       algorithm
@@ -1585,7 +1583,7 @@ algorithm
       algorithm
         paths := InteractiveUtil.getAllSubtypeOf(path, parentClass, SymbolTable.getAbsyn(), includePartial, sort);
       then
-        ValuesUtil.makeCodeTypeNameArray(paths);
+        ValuesMake.makeCodeTypeNameArray(paths);
 
     case ("getReplaceableChoices", {
           Values.CODE(Absyn.C_TYPENAME(path)),
@@ -1624,18 +1622,18 @@ algorithm
 end evalCodeTypeName;
 
 protected function getVariableNames
-  input list<GlobalScript.Variable> vars;
+  input list<InteractiveTypes.Variable> vars;
   input list<Values.Value> acc;
   output list<Values.Value> ovars;
 algorithm
   ovars := match (vars,acc)
     local
-      list<GlobalScript.Variable> vs;
+      list<InteractiveTypes.Variable> vs;
       String p;
     case ({},_) then listReverse(acc);
-    case (GlobalScript.IVAR(varIdent = "$echo") :: vs,_)
+    case (InteractiveTypes.IVAR(varIdent = "$echo") :: vs,_)
       then getVariableNames(vs,acc);
-    case (GlobalScript.IVAR(varIdent = p) :: vs,_)
+    case (InteractiveTypes.IVAR(varIdent = p) :: vs,_)
       then getVariableNames(vs,Values.CODE(Absyn.C_VARIABLENAME(Absyn.CREF_IDENT(p,{})))::acc);
   end match;
 end getVariableNames;
@@ -1780,7 +1778,7 @@ public function getFunctionDependencies
   input Absyn.Path functionName;
   output DAE.Function mainFunction "the main function";
   output list<Absyn.Path> dependencies "the dependencies as paths";
-  output DAE.FunctionTree funcs "the function tree";
+  output AvlTreePathFunction.Tree funcs "the function tree";
 algorithm
   funcs := FCore.getFunctionTree(cache);
   // First check if the main function exists... If it does not it might be an interactive function...
@@ -1799,7 +1797,7 @@ public function collectDependencies
   output list<DAE.Type> metarecordTypes;
 protected
   list<Absyn.Path> uniontypePaths,paths;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
 algorithm
   (mainFunction, paths, funcs) := getFunctionDependencies(inCache, functionName);
   // The list of functions is not ordered, so we need to filter out the main function...
@@ -1827,7 +1825,7 @@ algorithm
       DAE.Function mainFunction;
       list<DAE.Function> dependencies;
       list<DAE.Type> metarecordTypes;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
     // template based translation
     case (cache, env, _, path) guard Flags.isSet(Flags.GEN) and (not Flags.isSet(Flags.GENERATE_CODE_CHEAT))
       algorithm
@@ -1933,7 +1931,7 @@ algorithm
       list<String> names,dependencies;
       list<Absyn.Path> paths;
       list<SCode.Element> elementLst;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       list<DAE.Function> d;
       list<tuple<String,list<String>>> acc;
       list<SCode.Element> sp;
@@ -1981,7 +1979,7 @@ algorithm
     local
       list<String> names,dependencies,strs;
       list<Absyn.Path> paths, pathsMetarecord;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       list<DAE.Function> d;
       list<tuple<String,list<String>>> acc;
       String file,nameHeader,str;
@@ -2224,7 +2222,7 @@ algorithm
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
         true = isCompleteFunction(cache, env, funcpath);
         true = Types.hasMetaArray(ty);
-        str = ExpressionDump.printExpStr(inExp);
+        str = ExpressionBasics.printExpStr(inExp);
         Error.addSourceMessage(Error.FUNCTION_RETURNS_META_ARRAY, {str}, info);
       then fail();
 */
@@ -2261,7 +2259,7 @@ algorithm
     else
       setGlobalRoot(Global.stackoverFlowIndex, NONE());
       ErrorExt.rollbackNumCheckpoints(ErrorExt.getNumCheckpoints()-numCheckpoints);
-      Error.addInternalError("Stack overflow when evaluating function call: "+ExpressionDump.printExpStr(inExp)+"...\n"+stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), match inMsg local SourceInfo info; case Absyn.MSG(info) then info; else sourceInfo(); end match);
+      Error.addInternalError("Stack overflow when evaluating function call: "+ExpressionBasics.printExpStr(inExp)+"...\n"+stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), match inMsg local SourceInfo info; case Absyn.MSG(info) then info; else sourceInfo(); end match);
       /* Do not fail or we can loop too much */
       StackOverflow.clearStacktraceMessages();
       outCache := inCache;
@@ -2303,7 +2301,7 @@ algorithm
       String fNew,fOld;
       Real buildTime, edit, build;
       Option<list<SCode.Element>> a;
-      list<GlobalScript.Variable> c;
+      list<InteractiveTypes.Variable> c;
       String funcstr,f,fileName;
       String name;
       Boolean ppref, fpref, epref;
@@ -2420,7 +2418,7 @@ algorithm
     case (_, _, _, Absyn.NO_MSG())
       algorithm
         (funcpath2, Absyn.IDENT("constructor")) := AbsynUtil.splitQualAndIdentPath(funcpath);
-        info := if valueEq(msg, Absyn.NO_MSG()) then NONE() else SOME(AbsynUtil.dummyInfo);
+        info := if valueEq(msg, Absyn.NO_MSG()) then NONE() else SOME(Absyn.dummyInfo);
         (_, tp, _) := Lookup.lookupType(cache, env, funcpath2, info);
         Types.externalObjectConstructorType(tp);
       then
@@ -3241,7 +3239,7 @@ algorithm
     paths := List.sort(paths, AbsynUtil.pathGe);
   end if;
 
-  res := ValuesUtil.makeCodeTypeNameArray(paths);
+  res := ValuesMake.makeCodeTypeNameArray(paths);
 end getClassNames;
 
 function checkSettings
@@ -3382,7 +3380,7 @@ algorithm
     // print("Files to recompile (" + intString(listLength(depschanged)) + "): " + stringDelimitList(names, ",") + "\n");
     fileNames := List.map1(names, stringAppend, suffix);
     _ := List.map(fileNames, System.removeFile);
-    res := ValuesUtil.makeArray(List.map(names,ValuesUtil.makeString));
+    res := ValuesMake.makeArray(List.map(names,ValuesMake.makeString));
   else
     res := Values.META_FAIL();
   end try;
@@ -3563,6 +3561,12 @@ algorithm
   packages := in_package_name::packages;
 
   dep_public_imports_file := public_imports_dir + "/" + in_package_name + ".public.imports";
+  if not System.regularFileExists(dep_public_imports_file) then
+    Error.addInternalError("getMMfileTotalDependencies: missing dependency file " + dep_public_imports_file
+      + " — the module " + in_package_name + " is imported (transitively) but is not part of the build. "
+      + "Add its source file to the build configuration.", sourceInfo());
+    fail();
+  end if;
   pub_imports_total := System.readFile(dep_public_imports_file);
 
   for pub_imp in System.strtok(pub_imports_total, ";") loop

@@ -71,12 +71,14 @@ package Absyn
 
 end Absyn;
 
-package ClassInf
+package ClassInfUtil
   function getStateName
-    input State inState;
+    input ClassInf.State inState;
     output Absyn.Path outPath;
   end getStateName;
+end ClassInfUtil;
 
+package ClassInf
   uniontype State
     record UNKNOWN
       Absyn.Path path;
@@ -854,14 +856,14 @@ package Dump
   end printCodeStr;
 end Dump;
 
-package Expression
+package ExpressionBasics
   function shouldParenthesize
     input DAE.Exp inOperand;
     input DAE.Exp inOperator;
     input Boolean inLhs;
     output Boolean outShouldParenthesize;
   end shouldParenthesize;
-end Expression;
+end ExpressionBasics;
 
 package System
   function escapedString
@@ -877,12 +879,12 @@ package Config
   end typeinfo;
 end Config;
 
-package Types
+package TypesDump
   function unparseType
     input DAE.Type ty;
     output String str;
   end unparseType;
-end Types;
+end TypesDump;
 
 package Flags
   uniontype ConfigFlag end ConfigFlag;

@@ -217,7 +217,7 @@ interface package GraphvizDumpTV
         list<DAE.ClassAttributes> classAttrs "class attributes (Optimica extension)";
         FCore.Cache cache;
         FCore.Graph env;
-        DAE.FunctionTree functionTree        "functions for Backend";
+        AvlTreePathFunction.Tree functionTree        "functions for Backend";
         EventInfo eventInfo                  "eventInfo" ;
         ExternalObjectClasses extObjClasses  "classes of external objects, contains constructor & destructor";
         BackendDAEType backendDAEType        "indicate for what the BackendDAE is used";

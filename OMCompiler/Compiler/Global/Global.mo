@@ -76,6 +76,7 @@ constant Integer MMToJLListIndex = 28;
 constant Integer packageIndexCacheIndex = 29;
 constant Integer sharedLibraryCacheIndex = 30;
 constant Integer backendInterface = 31;
+constant Integer backendCevalInterface = 32;
 
 // indexes in System.tick
 // ----------------------

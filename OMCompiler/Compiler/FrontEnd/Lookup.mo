@@ -67,7 +67,6 @@ protected import ConnectionGraph;
 protected import Debug;
 protected import Error;
 protected import Expression;
-protected import ExpressionDump;
 protected import Flags;
 protected import FGraph;
 protected import FNode;
@@ -87,6 +86,8 @@ protected import SCodeDump;
 protected import ErrorExt;
 protected import ValuesUtil;
 protected import Values;
+protected import ExpressionBasics;
+protected import ClassInfUtil;
 
 /*   - Lookup functions
 
@@ -281,7 +282,7 @@ algorithm
     case (cache,env_1,c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=r as SCode.R_ENUMERATION()))
       algorithm
         env_2 := FGraph.openScope(env_1, encflag, id, SOME(FCore.CLASS_SCOPE()));
-        ci_state := ClassInf.start(r, FGraph.getGraphName(env_2));
+        ci_state := ClassInfUtil.start(r, FGraph.getGraphName(env_2));
         // fprintln(Flags.INST_TRACE, "LOOKUP TYPE ICD: " + FGraph.printGraphPathStr(env_1) + " path:" + AbsynUtil.pathString(path));
         mod := Mod.getClassModifier(env_1, id);
         (cache,env_3,_,_,_,_,_,types,_,_,_,_) :=
@@ -437,7 +438,7 @@ algorithm
     case (cache, env, _, _, ht, acc)
       algorithm
         ht := BaseHashTable.add((str,path),ht);
-        (cache, ty, _) := lookupType(cache, env, path, SOME(AbsynUtil.dummyInfo));
+        (cache, ty, _) := lookupType(cache, env, path, SOME(Absyn.dummyInfo));
         acc := ty::acc;
         uniontypeTypes := Types.getAllInnerTypesOfType(ty, Types.uniontypeFilter);
         uniontypePaths := List.flatten(List.map(uniontypeTypes, Types.getUniontypePaths));
@@ -687,7 +688,7 @@ algorithm
     case (cache,env,_,SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr),NONE(),_)
       algorithm
         env := FGraph.openScope(env, encflag, id, FGraph.restrictionToScopeType(restr));
-        ci_state := ClassInf.start(restr, FGraph.getGraphName(env));
+        ci_state := ClassInfUtil.start(restr, FGraph.getGraphName(env));
         // fprintln(Flags.INST_TRACE, "LOOKUP CLASS QUALIFIED PARTIALICD: " + FGraph.printGraphPathStr(env) + " path: " + AbsynUtil.pathString(path) + " class: " + SCodeDump.shortElementStr(c));
         mod := Mod.getClassModifier(inEnv, id);
         (cache,env,_,_,_) :=
@@ -1028,7 +1029,7 @@ algorithm
         env := FGraph.topScope(env);
         (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) := lookupClass(cache, env, path);
         env2 := FGraph.openScope(env_1, encflag, id, FGraph.restrictionToScopeType(restr));
-        ci_state := ClassInf.start(restr, FGraph.getGraphName(env2));
+        ci_state := ClassInfUtil.start(restr, FGraph.getGraphName(env2));
         // fprintln(Flags.INST_TRACE, "LOOKUP MORE UNQUALIFIED IMPORTED ICD: " + FGraph.printGraphPathStr(env) + "." + ident);
         mod := Mod.getClassModifier(env_1, id);
         (cache, env, _,_,_) := Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy, mod, DAE.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
@@ -1090,7 +1091,7 @@ algorithm
                 SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1,prevFrames)
         := lookupClass2(cache,env3,path,prevFrames,Mutable.create(false),inInfo);
         env2 := FGraph.openScope(env_1, encflag, id, FGraph.restrictionToScopeType(restr));
-        ci_state := ClassInf.start(restr, FGraph.getGraphName(env2));
+        ci_state := ClassInfUtil.start(restr, FGraph.getGraphName(env2));
         // fprintln(Flags.INST_TRACE, "LOOKUP UNQUALIFIED IMPORTED ICD: " + FGraph.printGraphPathStr(env) + "." + ident);
         mod := Mod.getClassModifier(env_1, id);
         (cache,env2,_,_,_) :=
@@ -1283,7 +1284,7 @@ algorithm
     /*/ debugging
     case (cache,env,cref)
       algorithm
-        print("CO: " + ComponentReference.printComponentRefStr(cref) + " env: " + FGraph.printGraphPathStr(env) + "\n");
+        print("CO: " + ComponentReferenceBasics.printComponentRefStr(cref) + " env: " + FGraph.printGraphPathStr(env) + "\n");
       then
         fail();*/
 
@@ -1309,7 +1310,7 @@ algorithm
     case (_,env,cref)
       algorithm
         fprintln(Flags.FAILTRACE,  "- Lookup.lookupVar failed:\n" +
-          ComponentReference.printComponentRefStr(cref) + " in:\n" +
+          ComponentReferenceBasics.printComponentRefStr(cref) + " in:\n" +
           FGraph.printGraphPathStr(env));
       then fail();*/
   end matchcontinue;
@@ -1353,7 +1354,7 @@ algorithm
     case (cache,env)
       algorithm
         // TODO: Skip makeCrefIdent by rewriting lookupVarInPackages
-        cref := ComponentReference.makeCrefIdent(ident, DAE.T_UNKNOWN_DEFAULT, ss);
+        cref := ComponentReferenceBasics.makeCrefIdent(ident, DAE.T_UNKNOWN_DEFAULT, ss);
         (cache,classEnv,attr,ty,binding,cnstForRange,splicedExpData,componentEnv,name) := lookupVarInPackages(cache,env,cref,{},Mutable.create(false));
         checkPackageVariableConstant(env,classEnv,componentEnv,attr,ty,cref);
         // optional Expression.exp to return
@@ -1386,14 +1387,14 @@ algorithm
       algorithm
         FCore.CL(e = cl) = FNode.refData(FGraph.lastScopeRef(classEnv));
         false = SCodeUtil.isPackage(cl);
-        // print("cref:  " + ComponentReference.printComponentRefStr(cref) + "\nprenv: " + FGraph.getGraphNameStr(parentEnv) + "\nclenv: " + FGraph.getGraphNameStr(classEnv) + "\ncoenv: " + FGraph.getGraphNameStr(componentEnv) + "\n");
+        // print("cref:  " + ComponentReferenceBasics.printComponentRefStr(cref) + "\nprenv: " + FGraph.getGraphNameStr(parentEnv) + "\nclenv: " + FGraph.getGraphNameStr(classEnv) + "\ncoenv: " + FGraph.getGraphNameStr(componentEnv) + "\n");
       then
         ();*/
 
     // fail if is not a constant
     else
       algorithm
-        s1 := ComponentReference.printComponentRefStr(cref);
+        s1 := ComponentReferenceBasics.printComponentRefStr(cref);
         s2 := FGraph.printGraphPathStr(classEnv);
         Error.addMessage(Error.PACKAGE_VARIABLE_NOT_CONSTANT,{s1,s2});
         true := Flags.isSet(Flags.FAILTRACE);
@@ -1620,8 +1621,8 @@ algorithm
                 (cache, env5) := Inst.getCachedInstance(cache, env2, id, rr);
               else // not an instance, instantiate it - lookup of constants on form A.B in packages. instantiate package and look inside.
                 env3 := FGraph.openScope(env2, encflag, n, FGraph.restrictionToScopeType(r));
-                ci_state := ClassInf.start(r, FGraph.getGraphName(env3));
-                // fprintln(Flags.INST_TRACE, "LOOKUP VAR IN PACKAGES ICD: " + FGraph.printGraphPathStr(env3) + " var: " + ComponentReference.printComponentRefStr(cref));
+                ci_state := ClassInfUtil.start(r, FGraph.getGraphName(env3));
+                // fprintln(Flags.INST_TRACE, "LOOKUP VAR IN PACKAGES ICD: " + FGraph.printGraphPathStr(env3) + " var: " + ComponentReferenceBasics.printComponentRefStr(cref));
                 mod := Mod.getClassModifier(env2, n);
                 (cache,env5,_,_,_,_,_,_,_,_,_,_) :=
                   Inst.instClassIn(cache,env3,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
@@ -1633,7 +1634,7 @@ algorithm
         end match;
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name) := lookupVarInPackages(cache,env5,cref,prevFrames,inState);
          // Add the class name to the spliced exp so that the name is correct.
-         splicedExpData := prefixSplicedExp(ComponentReference.crefFirstCref(inComponentRef), splicedExpData);
+         splicedExpData := prefixSplicedExp(ComponentReferenceBasics.crefFirstCref(inComponentRef), splicedExpData);
       then
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name);
 
@@ -1665,7 +1666,7 @@ algorithm
     else
       algorithm
         //true = Flags.isSet(Flags.FAILTRACE);
-        //Debug.traceln("- Lookup.lookupVarInPackages failed on exp:" + ComponentReference.printComponentRefStr(cr) + " in scope: " + FGraph.printGraphPathStr(env));
+        //Debug.traceln("- Lookup.lookupVarInPackages failed on exp:" + ComponentReferenceBasics.printComponentRefStr(cr) + " in scope: " + FGraph.printGraphPathStr(env));
       then
         fail();
   end matchcontinue;
@@ -1753,7 +1754,7 @@ algorithm
               cr := lookupQualifiedImportedVarInFrame(qimports, id);
               Mutable.update(inState,true);
         // if the first name of the import A.B is equal with the scope we are in, skip it!
-        cr := if FNode.name(FNode.fromRef(FGraph.lastScopeRef(env))) == ComponentReference.crefFirstIdent(cr)
+        cr := if FNode.name(FNode.fromRef(FGraph.lastScopeRef(env))) == ComponentReferenceBasics.crefFirstIdent(cr)
              then ComponentReference.crefStripFirstIdent(cr)
            else cr;
               f::prevFrames := listReverse(FGraph.currentScope(env));
@@ -1783,7 +1784,7 @@ algorithm
     else
       algorithm
         //true = Flags.isSet(Flags.FAILTRACE);
-        //Debug.traceln("- Lookup.lookupVarInPackages failed on exp:" + ComponentReference.printComponentRefStr(cr) + " in scope: " + FGraph.printGraphPathStr(env));
+        //Debug.traceln("- Lookup.lookupVarInPackages failed on exp:" + ComponentReferenceBasics.printComponentRefStr(cr) + " in scope: " + FGraph.printGraphPathStr(env));
       then
         fail();
   end matchcontinue;
@@ -2038,7 +2039,7 @@ algorithm
         end match;
         (cache,SCode.CLASS(classDef=SCode.OVERLOAD(pathLst=names),info=info),env_1) := lookupClass(cache,env,id);
         (cache,res) := lookupFunctionsListInEnv(cache,env_1,names,info,{});
-        // print(stringDelimitList(List.map(res,Types.unparseType),"\n###\n"));
+        // print(stringDelimitList(List.map(res,TypesDump.unparseType),"\n###\n"));
       then (cache,res);
 
     case (cache,_,_,_) then (cache,{});
@@ -2154,7 +2155,7 @@ algorithm
           (cache, env2) := Inst.getCachedInstance(cache, env_1, str, r);
         else
           env2 := FGraph.openScope(env_1, encflag, str, FGraph.restrictionToScopeType(restr));
-          ci_state := ClassInf.start(restr, FGraph.getGraphName(env2));
+          ci_state := ClassInfUtil.start(restr, FGraph.getGraphName(env2));
           // fprintln(Flags.INST_TRACE, "LOOKUP FUNCTIONS IN ENV QUAL ICD: " + FGraph.printGraphPathStr(env2) + "." + str);
           mod := Mod.getClassModifier(env_1, str);
           (cache,env2,_,_,_) :=
@@ -3077,9 +3078,9 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Lookup.checkSubscripts failed (tp: ");
-        Debug.trace(Types.printTypeStr(t));
+        Debug.trace(TypesDump.printTypeStr(t));
         Debug.trace(" subs:");
-        Debug.trace(stringDelimitList(List.map(s,ExpressionDump.printSubscriptStr),","));
+        Debug.trace(stringDelimitList(List.map(s,ExpressionBasics.printSubscriptStr),","));
         Debug.trace(")\n");
       then
         fail();
@@ -3151,7 +3152,7 @@ algorithm
         (attr,ty,binding,cnstForRange,componentEnv,name) := match tyParent
           case DAE.T_METAARRAY()
             algorithm
-              true := listLength(Types.getDimensions(tyParent)) == listLength(ss);
+              true := listLength(TypesDump.getDimensions(tyParent)) == listLength(ss);
               (cache,attr,ty,binding,cnstForRange,name) := lookupVarFMetaModelica(cache, componentEnv, ids, Types.metaArrayElementType(tyParent));
               splicedExpData := InstTypes.SPLICEDEXPDATA(NONE(),ty);
             then (attr,ty,binding,cnstForRange,componentEnv,name);
@@ -3174,7 +3175,7 @@ algorithm
                     ty := sliceDimensionType(ty1,tyChild);
                     ty2_2 := Types.simplifyType(tyParent);
                     ss := addArrayDimensions(ty2_2,ss);
-                    xCref := ComponentReference.makeCrefQual(id,ty2_2,ss,tCref);
+                    xCref := ComponentReferenceBasics.makeCrefQual(id,ty2_2,ss,tCref);
                     eType := Types.simplifyType(ty);
                     splicedExp := Expression.makeCrefExp(xCref,eType);
                   then SOME(splicedExp);
@@ -3219,7 +3220,7 @@ algorithm
   ty_1 := checkSubscripts(ty, ss);
   tty := Types.simplifyType(ty);
   ss_1 := addArrayDimensions(tty,ss);
-  splicedExpData := InstTypes.SPLICEDEXPDATA(SOME(Expression.makeCrefExp(ComponentReference.makeCrefIdent(ident,tty,ss_1),tty)),ty);
+  splicedExpData := InstTypes.SPLICEDEXPDATA(SOME(Expression.makeCrefExp(ComponentReferenceBasics.makeCrefIdent(ident,tty,ss_1),tty)),ty);
 end lookupVarFIdent;
 
 
@@ -3298,14 +3299,14 @@ algorithm
         tyElement := Types.arrayElementType(inParentType);
         true := Types.isRecord(tyElement);
 
-        // print("CREF EB: " + ComponentReference.printComponentRefStr(inCref) + "\nTyParent: " + Types.printTypeStr(inParentType) + "\nParent:\n" + Types.printBindingStr(inParentBinding) + "\nChild:\n" + Types.printBindingStr(inChildBinding) + "\n");
+        // print("CREF EB: " + ComponentReferenceBasics.printComponentRefStr(inCref) + "\nTyParent: " + TypesDump.printTypeStr(inParentType) + "\nParent:\n" + TypesDump.printBindingStr(inParentBinding) + "\nChild:\n" + TypesDump.printBindingStr(inChildBinding) + "\n");
 
         DAE.RECORD(_, exps, comp, _) := Expression.applyExpSubscripts(e, ss);
 
         e := listGet(exps, List.position(cId, comp));
         b := DAE.EQBOUND(e, NONE(), c, s);
 
-        // print("CREF EB RESULT: " + ComponentReference.printComponentRefStr(inCref) + "\nBinding:\n" + Types.printBindingStr(b) + "\n");
+        // print("CREF EB RESULT: " + ComponentReferenceBasics.printComponentRefStr(inCref) + "\nBinding:\n" + TypesDump.printBindingStr(b) + "\n");
       then
         b;
 
@@ -3325,14 +3326,14 @@ algorithm
         true := Types.isArray(inParentType);
         tyElement := Types.arrayElementType(inParentType);
         true := Types.isRecord(tyElement);
-        // print("CREF VB: " + ComponentReference.printComponentRefStr(inCref) + "\nTyParent: " + Types.printTypeStr(inParentType) + "\nParent:\n" + Types.printBindingStr(inParentBinding) + "\nChild:\n" + Types.printBindingStr(inChildBinding) + "\n");
+        // print("CREF VB: " + ComponentReferenceBasics.printComponentRefStr(inCref) + "\nTyParent: " + TypesDump.printTypeStr(inParentType) + "\nParent:\n" + TypesDump.printBindingStr(inParentBinding) + "\nChild:\n" + TypesDump.printBindingStr(inChildBinding) + "\n");
         e := ValuesUtil.valueExp(v);
         DAE.RECORD(_, exps, comp, _) := Expression.applyExpSubscripts(e, ss);
 
         e := listGet(exps, List.position(cId, comp));
 
         b := DAE.EQBOUND(e, NONE(), DAE.C_CONST(), s);
-        // print("CREF VB RESULT: " + ComponentReference.printComponentRefStr(inCref) + "\nBinding:\n" + Types.printBindingStr(b) + "\n");
+        // print("CREF VB RESULT: " + ComponentReferenceBasics.printComponentRefStr(inCref) + "\nBinding:\n" + TypesDump.printBindingStr(b) + "\n");
       then
         b;
 
@@ -3385,7 +3386,7 @@ algorithm
     case(_, _)
       algorithm
         true := Types.isArray(tySub);
-        dims := Types.getDimensions(tySub);
+        dims := TypesDump.getDimensions(tySub);
         subs := List.map(dims, makeDimensionSubscript);
         subs := expandWholeDimSubScript(ss,subs);
       then subs;
@@ -3547,10 +3548,10 @@ algorithm
     ClassInf.META_RECORD(Absyn.IDENT("")), List.map1(els,Util.makeTuple,DAE.NOMOD()),
     {}, false, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet, true);
   varlst := Types.boxVarLst(varlst);
-  // for v in varlst loop print(Types.unparseType(v.ty)+"\n"); end for;
+  // for v in varlst loop print(TypesDump.unparseType(v.ty)+"\n"); end for;
   typeVarsType := list(DAE.T_METAPOLYMORPHIC(tv) for tv in typeVars);
   ftype := DAE.T_METARECORD(path,utPath,typeVarsType,index,varlst,singleton);
-  // print("buildMetaRecordType " + id + " in scope " + FGraph.printGraphPathStr(env) + " OK " + Types.unparseType(ftype) +"\n");
+  // print("buildMetaRecordType " + id + " in scope " + FGraph.printGraphPathStr(env) + " OK " + TypesDump.unparseType(ftype) +"\n");
 end buildMetaRecordType;
 
 public function isIterator
@@ -3580,7 +3581,7 @@ algorithm
         ht := FNode.children(FNode.fromRef(ref));
         // Only look up the first part of the cref, we're only interested in if
         // it exists and if it's an iterator or not.
-        id := ComponentReference.crefFirstIdent(inCref);
+        id := ComponentReferenceBasics.crefFirstIdent(inCref);
         (DAE.TYPES_VAR(constOfForIteratorRange = ic),_,_,_,_) := lookupVar2(ht, id, inEnv);
         b := isSome(ic);
       then

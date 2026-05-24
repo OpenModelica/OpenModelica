@@ -47,6 +47,13 @@ package ExpressionDumpTpl
   end dumpExp;
 end ExpressionDumpTpl;
 
+package ClassInfUtil
+  function getStateName
+    input ClassInf.State inState;
+    output Absyn.Path outPath;
+  end getStateName;
+end ClassInfUtil;
+
 package ClassInf
   function getStateName
     input State inState;
@@ -231,7 +238,7 @@ package SCode
 end SCode;
 
 
-package DAEDump
+package DAEDumpTypes
 
 uniontype compWithSplitElements
   record COMP_WITH_SPLIT
@@ -266,9 +273,7 @@ function filterStructuralMods
   output SCode.Mod outMod;
 end filterStructuralMods;
 
-end DAEDump;
-
-
+end DAEDumpTypes;
 
 package DAE
 
@@ -1272,7 +1277,7 @@ package DAE
       * Expression.traverseExp
       * Expression.traverseExpTopDown
       * Expression.traverseExpBiDir
-      * ExpressionDump.printExpStr
+      * ExpressionBasics.printExpStr
       "
     record ICONST
       Integer integer "Integer constants" ;

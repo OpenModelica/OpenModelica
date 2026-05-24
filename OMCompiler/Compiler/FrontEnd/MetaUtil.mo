@@ -295,5 +295,5 @@ algorithm
   end match for e in inList);
 end transformArrayNodesToListNodes;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_dump");
 end MetaUtil;

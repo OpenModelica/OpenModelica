@@ -53,9 +53,9 @@ import BackendVarTransform;
 import BackendDump;
 import ComponentReference;
 import Expression;
+import ExpressionBasics;
 import ExpressionSimplify;
 import ExpressionSolve;
-import ExpressionDump;
 import Flags;
 import HpcOmTaskGraph;
 import List;
@@ -1768,7 +1768,7 @@ algorithm
   case(DAE.CREF(componentRef=cref),_)
     algorithm
       // just a cref
-      sameCref := ComponentReference.crefEqualNoStringCompare(crefIn,cref);
+      sameCref := ComponentReferenceBasics.crefEqualNoStringCompare(crefIn,cref);
     then
       (sameCref,true);
   case(DAE.BINARY(exp1=exp1, operator = DAE.SUB(), exp2=exp2),_)
@@ -1825,7 +1825,7 @@ algorithm
       (false,false);
   else
     algorithm
-      print("add a case to expIsCref:"+ExpressionDump.printExpStr(expIn)+"\n");
+      print("add a case to expIsCref:"+ExpressionBasics.printExpStr(expIn)+"\n");
     then
       (false,false);
   end match;
@@ -2354,7 +2354,7 @@ protected
   BackendDAE.EqSystem subSys;
   BackendDAE.AdjacencyMatrixEnhanced me, me2, meT;
   BackendDAE.AdjacencyMatrix m;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   list<BackendDAE.Equation> eqLst,eqsInLst;
   list<BackendDAE.Var> varLst;
 algorithm
@@ -2727,7 +2727,7 @@ algorithm
       Integer linInfo;
       list<DAE.ComponentRef> names;
       BackendDAE.Matching matching;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       BackendDAE.Shared shared;
       BackendDAE.EqSystem syst;
       Integer n;
@@ -3143,7 +3143,7 @@ algorithm
   for i in 1:n loop
      print("\n");
      for j in 1:m loop
-       print(s + "(" + intString(i) + "," + intString(j) + ") = " + ExpressionDump.printExpStr(arrayGet(A, (i-1)*m + j)) + "\t");
+       print(s + "(" + intString(i) + "," + intString(j) + ") = " + ExpressionBasics.printExpStr(arrayGet(A, (i-1)*m + j)) + "\t");
      end for;
   end for;
      print("\n");

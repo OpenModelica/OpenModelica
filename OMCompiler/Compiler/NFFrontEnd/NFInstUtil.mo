@@ -659,7 +659,7 @@ public
       mod,
       SCode.noComment,
       NONE(),
-      AbsynUtil.dummyInfo
+      Absyn.dummyInfo
     );
 
     // Add a mapping from old name to new name for each of the merged components.
@@ -1075,7 +1075,7 @@ public
   algorithm
     output_binding := SCodeUtil.makeMod(binding = SOME(Absyn.Exp.INTEGER(0)));
     output_param := SCode.Element.COMPONENT("dummy", SCode.defaultPrefixes, SCode.defaultOutputAttr,
-      REAL_TYPE_SPEC, output_binding, SCode.noComment, NONE(), AbsynUtil.dummyInfo);
+      REAL_TYPE_SPEC, output_binding, SCode.noComment, NONE(), Absyn.dummyInfo);
     params := listAppend(list(createExtractorModelDummyFnInput(c) for c in connectors), {output_param});
 
     cdef := SCode.ClassDef.PARTS(
@@ -1100,11 +1100,11 @@ public
       SCode.Restriction.R_FUNCTION(SCode.FunctionRestriction.FR_NORMAL_FUNCTION(Absyn.FunctionPurity.PURE())),
       cdef,
       cmt,
-      AbsynUtil.dummyInfo
+      Absyn.dummyInfo
     );
 
     fn_node := InstNode.new(elem, InstNode.EMPTY_NODE());
-    fn_node := Function.instFunctionNode(fn_node, NFInstContext.FUNCTION, AbsynUtil.dummyInfo);
+    fn_node := Function.instFunctionNode(fn_node, NFInstContext.FUNCTION, Absyn.dummyInfo);
     fn :: _ := Function.typeNodeCache(fn_node);
   end createExtractorModelDummyFn;
 
@@ -1120,7 +1120,7 @@ public
       SCode.Mod.NOMOD(),
       SCode.noComment,
       NONE(),
-      AbsynUtil.dummyInfo
+      Absyn.dummyInfo
     );
   end createExtractorModelDummyFnInput;
 

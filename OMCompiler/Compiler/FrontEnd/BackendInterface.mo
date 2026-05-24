@@ -39,9 +39,6 @@ encapsulated package BackendInterface
   description: Interface functions used to separate frontend and backend."
 
 public import Absyn;
-public import DAE;
-public import FCore;
-public import Values;
 
 protected
 import Global;
@@ -50,12 +47,10 @@ public
 
 uniontype BackendInterfaceFunctions
   record BACKEND_INTERFACE_FUNCTIONS
-    partialCevalInteractiveFunctions cevalInteractiveFunctions;
-    partialCevalCallFunction cevalCallFunction;
-    partialElabCallInteractive elabCallInteractive;
     partialNoRewriteRulesFrontEnd noRewriteRulesFrontEnd;
     partialRewriteFrontEnd rewriteFrontEnd;
     partialAppendLibrary appendLibrary;
+    partialInitInstHashTable initInstHashTable;
   end BACKEND_INTERFACE_FUNCTIONS;
 end BackendInterfaceFunctions;
 
@@ -64,63 +59,6 @@ public function initializeBackendInterface
 algorithm
   setGlobalRoot(Global.backendInterface, inFunctions);
 end initializeBackendInterface;
-
-function cevalInteractiveFunctions
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input DAE.Exp inExp;
-  input Absyn.Msg inMsg;
-  input Integer inNumIter;
-  output FCore.Cache outCache;
-  output Values.Value outValue;
-protected
-  BackendInterfaceFunctions functions;
-  partialCevalInteractiveFunctions func;
-algorithm
-  functions := getGlobalRoot(Global.backendInterface);
-  func := functions.cevalInteractiveFunctions;
-  (outCache,outValue) := func(inCache, inEnv, inExp, inMsg, inNumIter);
-end cevalInteractiveFunctions;
-
-function cevalCallFunction
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input DAE.Exp inExp;
-  input list<Values.Value> inValues;
-  input Boolean inImplInst;
-  input Absyn.Msg inMsg;
-  input Integer inNumIter = 1;
-  output FCore.Cache outCache;
-  output Values.Value outValue;
-protected
-  BackendInterfaceFunctions functions;
-  partialCevalCallFunction func;
-algorithm
-  functions := getGlobalRoot(Global.backendInterface);
-  func := functions.cevalCallFunction;
-  (outCache,outValue) := func(inCache, inEnv, inExp, inValues, inImplInst, inMsg, inNumIter);
-end cevalCallFunction;
-
-function elabCallInteractive "Note: elabCall_InteractiveFunction is set in the error buffer; the called function should pop it"
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input Absyn.ComponentRef inCref;
-  input list<Absyn.Exp> inExps;
-  input list<Absyn.NamedArg> inNamedArgs;
-  input Boolean inImplInst;
-  input DAE.Prefix inPrefix;
-  input SourceInfo inInfo;
-  output FCore.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-protected
-  BackendInterfaceFunctions functions;
-  partialElabCallInteractive func;
-algorithm
-  functions := getGlobalRoot(Global.backendInterface);
-  func := functions.elabCallInteractive;
-  (outCache, outExp, outProperties) := func(inCache, inEnv, inCref, inExps, inNamedArgs, inImplInst, inPrefix, inInfo);
-end elabCallInteractive;
 
 function noRewriteRulesFrontEnd
   output Boolean noRules;
@@ -160,41 +98,15 @@ algorithm
   (program, success) := func(modelName, modelicaPath);
 end appendLibrary;
 
-partial function partialCevalInteractiveFunctions
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input DAE.Exp inExp;
-  input Absyn.Msg inMsg;
-  input Integer inNumIter;
-  output FCore.Cache outCache;
-  output Values.Value outValue;
-end partialCevalInteractiveFunctions;
-
-partial function partialCevalCallFunction
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input DAE.Exp inExp;
-  input list<Values.Value> inValues;
-  input Boolean inImplInst;
-  input Absyn.Msg inMsg;
-  input Integer inNumIter = 1;
-  output FCore.Cache outCache;
-  output Values.Value outValue;
-end partialCevalCallFunction;
-
-partial function partialElabCallInteractive "Note: elabCall_InteractiveFunction is set in the error buffer; the called function should pop it"
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input Absyn.ComponentRef inCref;
-  input list<Absyn.Exp> inExps;
-  input list<Absyn.NamedArg> inNamedArgs;
-  input Boolean inImplInst;
-  input DAE.Prefix inPrefix;
-  input SourceInfo inInfo;
-  output FCore.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-end partialElabCallInteractive;
+function initInstHashTable
+protected
+  BackendInterfaceFunctions functions;
+  partialInitInstHashTable func;
+algorithm
+  functions := getGlobalRoot(Global.backendInterface);
+  func := functions.initInstHashTable;
+  func();
+end initInstHashTable;
 
 partial function partialNoRewriteRulesFrontEnd
   output Boolean noRules;
@@ -213,5 +125,8 @@ partial function partialAppendLibrary
   output Boolean success;
 end partialAppendLibrary;
 
-annotation(__OpenModelica_Interface="frontend");
+partial function partialInitInstHashTable
+end partialInitInstHashTable;
+
+annotation(__OpenModelica_Interface="frontend_dump");
 end BackendInterface;

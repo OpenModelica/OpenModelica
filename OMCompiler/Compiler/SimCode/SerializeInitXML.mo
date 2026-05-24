@@ -45,9 +45,11 @@ import SimCodeVar;
 protected
 import BackendDAE.VarKind;
 import CR=ComponentReference;
+import Config;
 import DAE.{Exp,Type};
 import Dump;
-import ExpressionDump.printExpStr;
+import Expression;
+import ExpressionBasics.printExpStr;
 import File.Escape.XML;
 import Settings;
 import SimCode.{SimulationSettings,VarInfo};
@@ -475,7 +477,7 @@ algorithm
     then ();
   else
     algorithm
-      Error.addInternalError(getInstanceName() + ": " + Types.unparseType(v.type_), sourceInfo());
+      Error.addInternalError(getInstanceName() + ": " + TypesDump.unparseType(v.type_), sourceInfo());
     then fail();
   end match;
 end scalarVariableType;

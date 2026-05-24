@@ -44,7 +44,7 @@ encapsulated package AvlTreeCRToInt "AvlTree for String to Integer. New implemen
   redeclare type Value = Integer;
   redeclare function extends keyStr
   algorithm
-    outString := ComponentReference.printComponentRefStr(inKey);
+    outString := ComponentReferenceBasics.printComponentRefStr(inKey);
   end keyStr;
   redeclare function extends valueStr
   algorithm
@@ -52,7 +52,7 @@ encapsulated package AvlTreeCRToInt "AvlTree for String to Integer. New implemen
   end valueStr;
   redeclare function extends keyCompare
   algorithm
-    outResult := ComponentReference.crefCompareIntSubscript(inKey1, inKey2);
+    outResult := ComponentReferenceBasics.crefCompareIntSubscript(inKey1, inKey2);
   end keyCompare;
 annotation(__OpenModelica_Interface="backend");
 end AvlTreeCRToInt;

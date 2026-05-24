@@ -419,7 +419,7 @@ algorithm
     case (cache,env,_,DAE.PREFIX(DAE.PRE(prefix = i,dimensions=ds,subscripts = s,next = xs,ci_state=ci_state),cp),NONE())
       algorithm
         ident_ty := Expression.liftArrayLeftList(DAE.T_COMPLEX(ci_state, {}, NONE(), false), ds);
-        cref_ := ComponentReference.makeCrefIdent(i,ident_ty,s);
+        cref_ := ComponentReferenceBasics.makeCrefIdent(i,ident_ty,s);
         (cache,cref_1) := prefixToCref2(cache,env,inIH,DAE.PREFIX(xs,cp), SOME(cref_));
       then
         (cache,cref_1);
@@ -427,7 +427,7 @@ algorithm
       algorithm
         (cache,cref) := prefixSubscriptsInCref(cache,env,inIH,inPrefix,cref);
         ident_ty := Expression.liftArrayLeftList(DAE.T_COMPLEX(ci_state, {}, NONE(), false), ds);
-        cref_2 := ComponentReference.makeCrefQual(i,ident_ty,s,cref);
+        cref_2 := ComponentReferenceBasics.makeCrefQual(i,ident_ty,s,cref);
         (cache,cref_1) := prefixToCref2(cache,env,inIH,DAE.PREFIX(xs,cp), SOME(cref_2));
       then
         (cache,cref_1);
@@ -461,13 +461,13 @@ algorithm
     case (DAE.PREFIX(DAE.NOCOMPPRE(),_),SOME(cref)) then SOME(cref);
     case (DAE.PREFIX(DAE.PRE(prefix = i,subscripts = s,next = xs),cp),NONE())
       algorithm
-        cref_ := ComponentReference.makeCrefIdent(i,DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("")), {}, NONE(), false),s);
+        cref_ := ComponentReferenceBasics.makeCrefIdent(i,DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("")), {}, NONE(), false),s);
         cref_1 := prefixToCrefOpt2(DAE.PREFIX(xs,cp), SOME(cref_));
       then
         cref_1;
     case (DAE.PREFIX(DAE.PRE(prefix = i,subscripts = s,next = xs),cp),SOME(cref))
       algorithm
-        cref_ := ComponentReference.makeCrefQual(i,DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("")), {}, NONE(), false),s,cref);
+        cref_ := ComponentReferenceBasics.makeCrefQual(i,DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("")), {}, NONE(), false),s,cref);
         cref_1 := prefixToCrefOpt2(DAE.PREFIX(xs,cp), SOME(cref_));
       then
         cref_1;
@@ -487,13 +487,13 @@ algorithm
 
     case(DAE.NOPRE())
       algorithm
-        c := ComponentReference.makeCrefIdent("", DAE.T_UNKNOWN_DEFAULT, {});
+        c := ComponentReferenceBasics.makeCrefIdent("", DAE.T_UNKNOWN_DEFAULT, {});
       then
         c;
 
     case(DAE.PREFIX(DAE.NOCOMPPRE(), _))
       algorithm
-        c := ComponentReference.makeCrefIdent("", DAE.T_UNKNOWN_DEFAULT, {});
+        c := ComponentReferenceBasics.makeCrefIdent("", DAE.T_UNKNOWN_DEFAULT, {});
       then
         c;
 
@@ -538,12 +538,12 @@ algorithm
     case(cache,env,_,_,DAE.CREF_IDENT(id,tp,subs),_)
       algorithm
         (cache,subs) := prefixSubscripts(cache,env,inIH,pre,subs);
-        cr := ComponentReference.makeCrefIdent(id,tp,subs);
+        cr := ComponentReferenceBasics.makeCrefIdent(id,tp,subs);
       then (cache,ComponentReference.implode_reverse(cr::acc));
     case(cache,env,_,_,DAE.CREF_QUAL(id,tp,subs,cr),_)
       algorithm
         (cache,subs) := prefixSubscripts(cache,env,inIH,pre,subs);
-        crid := ComponentReference.makeCrefIdent(id,tp,subs);
+        crid := ComponentReferenceBasics.makeCrefIdent(id,tp,subs);
         (cache,cr) := prefixSubscriptsInCrefWork(cache,env,inIH,pre,cr,crid::acc);
       then (cache,cr);
     case(cache,_,_,_,DAE.WILD(),_) then (cache,DAE.WILD());
@@ -641,14 +641,14 @@ algorithm
     case (cache,env,ih,cref,pre)
       algorithm
         (cache,DAE.ATTR(innerOuter = io),_,_,_,_) = Lookup.lookupVarLocal(cache, env, cref);
-        // fprintln(Flags.INNER_OUTER, printPrefixStr(inPrefix) + "/" + ComponentReference.printComponentRefStr(cref) +
+        // fprintln(Flags.INNER_OUTER, printPrefixStr(inPrefix) + "/" + ComponentReferenceBasics.printComponentRefStr(cref) +
         //   if_(AbsynUtil.isOuter(io), " [outer] ", " ") +
         //   if_(AbsynUtil.isInner(io), " [inner] ", " "));
         true = AbsynUtil.isInner(io);
         false = AbsynUtil.isOuter(io);
         // prefix normally
         newCref = prefixCref(pre, cref);
-        // fprintln(Flags.INNER_OUTER, "INNER normally prefixed: " + ComponentReference.printComponentRefStr(newCref));
+        // fprintln(Flags.INNER_OUTER, "INNER normally prefixed: " + ComponentReferenceBasics.printComponentRefStr(newCref));
       then
         (cache,newCref);
 
@@ -656,11 +656,11 @@ algorithm
     case (cache,env,ih,cref as DAE.CREF_IDENT(ident=_),pre)
       algorithm
         (cache,DAE.ATTR(innerOuter = io),_,_,_,_) = Lookup.lookupVarLocal(cache, env, cref);
-        // fprintln(Flags.INNER_OUTER, printPrefixStr(inPrefix) + "/" + ComponentReference.printComponentRefStr(cref) +
+        // fprintln(Flags.INNER_OUTER, printPrefixStr(inPrefix) + "/" + ComponentReferenceBasics.printComponentRefStr(cref) +
         //   if_(AbsynUtil.isOuter(io), " [outer] ", " ") +
         //   if_(AbsynUtil.isInner(io), " [inner] ", " "));
         true = AbsynUtil.isOuter(io);
-        n = ComponentReference.crefLastIdent(cref);
+        n = ComponentReferenceBasics.crefLastIdent(cref);
         lastCref = Expression.crefIdent(cref);
         // search in the instance hierarchy for the *CORRECT* prefix for this outer variable!
         InnerOuter.INST_INNER(innerPrefix=innerPrefix, instResult=SOME(_)) =
@@ -669,7 +669,7 @@ algorithm
 
         newCref = prefixCref(innerPrefix, lastCref);
 
-        // fprintln(Flags.INNER_OUTER, "OUTER IDENT prefixed INNER : " + ComponentReference.printComponentRefStr(newCref));
+        // fprintln(Flags.INNER_OUTER, "OUTER IDENT prefixed INNER : " + ComponentReferenceBasics.printComponentRefStr(newCref));
       then
         (cache,newCref);
 
@@ -681,7 +681,7 @@ algorithm
         true = AbsynUtil.isOuter(io);
         (cache,innerPrefix) = searchForInnerPrefix(cache,env,ih,cref,pre,io);
         newCref = prefixCref(innerPrefix, cref);
-        // fprintln(Flags.INNER_OUTER, "OUTER QUAL prefixed INNER: " + ComponentReference.printComponentRefStr(newCref));
+        // fprintln(Flags.INNER_OUTER, "OUTER QUAL prefixed INNER: " + ComponentReferenceBasics.printComponentRefStr(newCref));
       then
         (cache,newCref);
     */
@@ -698,7 +698,7 @@ algorithm
   try
     (cache, exp) := prefixExpWork(cache, env, ih, exp, pre);
   else
-    Error.addInternalError(getInstanceName() + " failed on exp: " + ExpressionDump.printExpStr(exp) + " " + makePrefixString(pre), sourceInfo());
+    Error.addInternalError(getInstanceName() + " failed on exp: " + ExpressionBasics.printExpStr(exp) + " " + makePrefixString(pre), sourceInfo());
     fail();
   end try;
 end prefixExp;
@@ -966,7 +966,7 @@ algorithm
 
     else
       algorithm
-        Error.addInternalError(getInstanceName() + " failed on exp: " + ExpressionDump.printExpStr(inExp) + " " + makePrefixString(pre), sourceInfo());
+        Error.addInternalError(getInstanceName() + " failed on exp: " + ExpressionBasics.printExpStr(inExp) + " " + makePrefixString(pre), sourceInfo());
       then fail();
   end match;
 end prefixExpWork;
@@ -1417,7 +1417,7 @@ public function getPrefixInfo
 algorithm
   outInfo := match inPrefix
     case DAE.PREFIX(compPre = DAE.PRE(info = outInfo)) then outInfo;
-    else AbsynUtil.dummyInfo;
+    else Absyn.dummyInfo;
   end match;
 end getPrefixInfo;
 

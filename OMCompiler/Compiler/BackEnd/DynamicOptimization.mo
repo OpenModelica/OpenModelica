@@ -45,7 +45,6 @@ public import BackendDAE;
 public import BackendDAEOptimize;
 
 protected import BackendDump;
-protected import ExpressionDump;
 
 protected import BackendEquation;
 protected import BackendDAEUtil;
@@ -63,6 +62,7 @@ protected import ExpressionSimplify;
 protected import Flags;
 protected import FlagsUtil;
 protected import List;
+protected import ExpressionBasics;
 
 
 public function createDynamicOptimization
@@ -243,7 +243,7 @@ protected function makeVar "author: Vitalij Ruge"
   output BackendDAE.Var v;
 
 algorithm
-  cr := ComponentReference.makeCrefIdent(name, DAE.T_REAL_DEFAULT, {});
+  cr := ComponentReferenceBasics.makeCrefIdent(name, DAE.T_REAL_DEFAULT, {});
   v :=  BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), SOME(BackendDAE.AVOID()), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false, false);
 end makeVar;
 
@@ -268,7 +268,7 @@ algorithm
 
  for elem in constraintLst loop
    try
-     conCrefName := prefConCrefName + ComponentReference.printComponentRefStr(Expression.expCref(elem));
+     conCrefName := prefConCrefName + ComponentReferenceBasics.printComponentRefStr(Expression.expCref(elem));
    else
      conCrefName := prefConCrefName + intString(i);
      i := i + 1;
@@ -615,7 +615,7 @@ algorithm
       DAE.Exp e1, e2, varexp;
       BackendDAE.Var v;
       DAE.ComponentRef cr;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       BackendDAE.JacobianType jacType;
       BackendDAE.EqSystem syst;
       Boolean linear;
@@ -704,7 +704,7 @@ algorithm
     eqn :: eqn_lst := eqn_lst;
     ind_e :: ind_lst_e := ind_lst_e;
     ind_v :: ind_lst_v := ind_lst_v;
-    cr  := ComponentReference.makeCrefIdent("$EqCon$" +  ComponentReference.crefModelicaStr(cr_var) , DAE.T_REAL_DEFAULT , {});
+    cr  := ComponentReferenceBasics.makeCrefIdent("$EqCon$" +  ComponentReference.crefModelicaStr(cr_var) , DAE.T_REAL_DEFAULT , {});
     e := Expression.crefExp(cr);
 
     var := BackendVariable.makeVar(cr);
@@ -764,7 +764,7 @@ protected
   BackendDAE.EquationArray eqns;
   BackendDAE.BaseClockPartitionKind partitionKind;
   BackendDAE.StateSets stateSets;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   Option<DAE.Exp> oMax_con, oMin_con;
   DAE.Exp max_con, min_con, zero, con2, z, der_e;
   Boolean b1,b2,b, b3, b4;
@@ -790,7 +790,7 @@ algorithm
          if b3 then
            try
              (eqn_ as BackendDAE.EQUATION(exp=e1, scalar=e2)):= BackendEquation.get(eqns, eindex);
-             true := Expression.expEqual(e1, BackendVariable.varExp(var_con));
+             true := ExpressionBasics.expEqual(e1, BackendVariable.varExp(var_con));
            else
              b3 := false;
            end try;
@@ -818,10 +818,10 @@ algorithm
               (z,_) := Expression.makeZeroExpression(Expression.arrayDimension(tp));
               ((c,_)) := Expression.replaceExp(e2, e, z);
               (c,_) := ExpressionSimplify.simplify(c);
-              //print("\nde = " + ExpressionDump.printExpStr(der_e));
-              //print("\nc = " + ExpressionDump.printExpStr(c));
-              //print("\ne = " + ExpressionDump.printExpStr(e));
-              //print("\ne2 = " + ExpressionDump.printExpStr(e2));
+              //print("\nde = " + ExpressionBasics.printExpStr(der_e));
+              //print("\nc = " + ExpressionBasics.printExpStr(c));
+              //print("\ne = " + ExpressionBasics.printExpStr(e));
+              //print("\ne2 = " + ExpressionBasics.printExpStr(e2));
 
               var_lst := BackendEquation.expressionVars(der_e, globalKnownVars);
               if b3 then
@@ -970,7 +970,7 @@ public function checkObjectIsSet
 protected
   DAE.ComponentRef leftcref;
 algorithm
-  leftcref := ComponentReference.makeCrefIdent(CrefName, DAE.T_REAL_DEFAULT, {});
+  leftcref := ComponentReferenceBasics.makeCrefIdent(CrefName, DAE.T_REAL_DEFAULT, {});
 
   try
     outVars := BackendVariable.getVar(leftcref, inVars);

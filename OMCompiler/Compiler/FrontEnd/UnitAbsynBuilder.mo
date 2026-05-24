@@ -48,7 +48,7 @@ protected import BaseHashTable;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import Expression;
-protected import ExpressionDump;
+protected import ExpressionBasics;
 protected import Flags;
 protected import FNode;
 protected import FGraph;
@@ -225,34 +225,34 @@ algorithm
      String exp; Real weight;
      case({})
      algorithm registerDefineunits2({
-       Absyn.DEFINEUNIT("m",{}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("kg",{}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("s",{}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("A",{}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("k",{}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("mol",{}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("cd",{}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("rad",{Absyn.NAMEDARG("exp",Absyn.STRING("m/m"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("sr",{Absyn.NAMEDARG("exp",Absyn.STRING("m2/m2"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("Hz",{Absyn.NAMEDARG("exp",Absyn.STRING("s-1")),Absyn.NAMEDARG("weight",Absyn.REAL("0.8"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("N",{Absyn.NAMEDARG("exp",Absyn.STRING("m.kg.s-2"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("Pa",{Absyn.NAMEDARG("exp",Absyn.STRING("N/m2"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("W",{Absyn.NAMEDARG("exp",Absyn.STRING("J/s"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("J",{Absyn.NAMEDARG("exp",Absyn.STRING("N.m"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("C",{Absyn.NAMEDARG("exp",Absyn.STRING("s.A"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("V",{Absyn.NAMEDARG("exp",Absyn.STRING("W/A"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("F",{Absyn.NAMEDARG("exp",Absyn.STRING("C/V"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("Ohm",{Absyn.NAMEDARG("exp",Absyn.STRING("V/A"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("S",{Absyn.NAMEDARG("exp",Absyn.STRING("A/V"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("Wb",{Absyn.NAMEDARG("exp",Absyn.STRING("V.s"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("T",{Absyn.NAMEDARG("exp",Absyn.STRING("Wb/m2"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("H",{Absyn.NAMEDARG("exp",Absyn.STRING("Wb/A"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("lm",{Absyn.NAMEDARG("exp",Absyn.STRING("cd.sr"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("lx",{Absyn.NAMEDARG("exp",Absyn.STRING("lm/m2"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("Bq",{Absyn.NAMEDARG("exp",Absyn.STRING("s-1")),Absyn.NAMEDARG("weight",Absyn.REAL("0.8"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("Gy",{Absyn.NAMEDARG("exp",Absyn.STRING("J/kg"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("Sv",{Absyn.NAMEDARG("exp",Absyn.STRING("cd.sr"))}, AbsynUtil.dummyInfo),
-       Absyn.DEFINEUNIT("kat",{Absyn.NAMEDARG("exp",Absyn.STRING("s-1.mol"))}, AbsynUtil.dummyInfo)
+       Absyn.DEFINEUNIT("m",{}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("kg",{}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("s",{}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("A",{}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("k",{}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("mol",{}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("cd",{}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("rad",{Absyn.NAMEDARG("exp",Absyn.STRING("m/m"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("sr",{Absyn.NAMEDARG("exp",Absyn.STRING("m2/m2"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("Hz",{Absyn.NAMEDARG("exp",Absyn.STRING("s-1")),Absyn.NAMEDARG("weight",Absyn.REAL("0.8"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("N",{Absyn.NAMEDARG("exp",Absyn.STRING("m.kg.s-2"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("Pa",{Absyn.NAMEDARG("exp",Absyn.STRING("N/m2"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("W",{Absyn.NAMEDARG("exp",Absyn.STRING("J/s"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("J",{Absyn.NAMEDARG("exp",Absyn.STRING("N.m"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("C",{Absyn.NAMEDARG("exp",Absyn.STRING("s.A"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("V",{Absyn.NAMEDARG("exp",Absyn.STRING("W/A"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("F",{Absyn.NAMEDARG("exp",Absyn.STRING("C/V"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("Ohm",{Absyn.NAMEDARG("exp",Absyn.STRING("V/A"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("S",{Absyn.NAMEDARG("exp",Absyn.STRING("A/V"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("Wb",{Absyn.NAMEDARG("exp",Absyn.STRING("V.s"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("T",{Absyn.NAMEDARG("exp",Absyn.STRING("Wb/m2"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("H",{Absyn.NAMEDARG("exp",Absyn.STRING("Wb/A"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("lm",{Absyn.NAMEDARG("exp",Absyn.STRING("cd.sr"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("lx",{Absyn.NAMEDARG("exp",Absyn.STRING("lm/m2"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("Bq",{Absyn.NAMEDARG("exp",Absyn.STRING("s-1")),Absyn.NAMEDARG("weight",Absyn.REAL("0.8"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("Gy",{Absyn.NAMEDARG("exp",Absyn.STRING("J/kg"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("Sv",{Absyn.NAMEDARG("exp",Absyn.STRING("cd.sr"))}, Absyn.dummyInfo),
+       Absyn.DEFINEUNIT("kat",{Absyn.NAMEDARG("exp",Absyn.STRING("s-1.mol"))}, Absyn.dummyInfo)
        });
      then ();
 
@@ -455,31 +455,31 @@ algorithm
     Integer i,i1,i2;
     DAE.Exp e;
     case(UnitAbsyn.ADD(_,_,e)) algorithm
-      s1 := ExpressionDump.printExpStr(e);
+      s1 := ExpressionBasics.printExpStr(e);
     then s1;
 
     case(UnitAbsyn.SUB(_,_,e)) algorithm
-      s1 := ExpressionDump.printExpStr(e);
+      s1 := ExpressionBasics.printExpStr(e);
     then s1;
 
     case(UnitAbsyn.MUL(_,_,e)) algorithm
-      s1 := ExpressionDump.printExpStr(e);
+      s1 := ExpressionBasics.printExpStr(e);
     then s1;
 
     case(UnitAbsyn.DIV(_,_,e)) algorithm
-      s1 := ExpressionDump.printExpStr(e);
+      s1 := ExpressionBasics.printExpStr(e);
     then s1;
 
     case(UnitAbsyn.EQN(_,_,e)) algorithm
-      s1 := ExpressionDump.printExpStr(e);
+      s1 := ExpressionBasics.printExpStr(e);
     then s1;
 
     case(UnitAbsyn.LOC(_,e)) algorithm
-    s1 := ExpressionDump.printExpStr(e);
+    s1 := ExpressionBasics.printExpStr(e);
     then s1;
 
     case(UnitAbsyn.POW(_,MMath.RATIONAL(_,_),e)) algorithm
-      s1 := ExpressionDump.printExpStr(e);
+      s1 := ExpressionBasics.printExpStr(e);
     then s1;
 
   end match;
@@ -862,13 +862,13 @@ algorithm
     case({},ht,nextElt) then ({},ht,nextElt);
 
     case((r,UnitAbsyn.TYPEPARAMETER(name,0))::params,ht,nextElt) algorithm
-      cref_ := ComponentReference.makeCrefIdent(name,DAE.T_UNKNOWN_DEFAULT,{});
+      cref_ := ComponentReferenceBasics.makeCrefIdent(name,DAE.T_UNKNOWN_DEFAULT,{});
       indx := BaseHashTable.get(cref_,ht);
       (params,ht,nextElt) := createTypeParameterLocations4(params,ht,nextElt);
     then ((r,UnitAbsyn.TYPEPARAMETER(name,indx))::params,ht,nextElt);
 
     case((r,UnitAbsyn.TYPEPARAMETER(name,0))::params,ht,nextElt) algorithm
-        cref_ := ComponentReference.makeCrefIdent(name,DAE.T_UNKNOWN_DEFAULT,{});
+        cref_ := ComponentReferenceBasics.makeCrefIdent(name,DAE.T_UNKNOWN_DEFAULT,{});
         ht := BaseHashTable.add((cref_,nextElt),ht);
        (params,ht,nextElt) := createTypeParameterLocations4(params,ht,nextElt);
     then((r,UnitAbsyn.TYPEPARAMETER(name,nextElt))::params,ht,nextElt+1);
@@ -984,14 +984,14 @@ algorithm
 
     /*case(env,e as DAE.RCONST(r),ht,store) equation
       s1 = realString(r);
-      indx = BaseHashTable.get(ComponentReference.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{}),ht);
+      indx = BaseHashTable.get(ComponentReferenceBasics.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{}),ht);
     then (UnitAbsyn.LOC(indx,e),{},store);*/
 
     case(_,e as DAE.ICONST(i),divOrMul,ht,store) algorithm
       s1 := "$"+intString(tick())+"_"+intString(i);
       u := if divOrMul then str2unit("1",NONE()) else UnitAbsyn.UNSPECIFIED();
       (store,indx) := add(u,store);
-       ht := BaseHashTable.add((ComponentReference.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{}),indx),ht);
+       ht := BaseHashTable.add((ComponentReferenceBasics.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{}),indx),ht);
     then (UnitAbsyn.LOC(indx,e),{},store);
 
     /* for each constant, add new unspecified unit*/
@@ -999,7 +999,7 @@ algorithm
       s1 := "$"+intString(tick())+"_"+realString(r);
       u := if divOrMul then str2unit("1",NONE()) else UnitAbsyn.UNSPECIFIED();
       (store,indx) := add(u,store);
-       ht := BaseHashTable.add((ComponentReference.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{}),indx),ht);
+       ht := BaseHashTable.add((ComponentReferenceBasics.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{}),indx),ht);
     then (UnitAbsyn.LOC(indx,e),{},store);
 
     case(_,DAE.CAST(_,e1),divOrMul,ht,store) algorithm
@@ -1072,7 +1072,7 @@ algorithm
     can not be declared in Modelica, since modifiers on arrays must affect the whole array */
     case(_,e as DAE.ARRAY(_,_,expl),_,ht,store)
       algorithm
-        print("vector ="+ExpressionDump.printExpStr(e)+"\n");
+        print("vector ="+ExpressionBasics.printExpStr(e)+"\n");
       (uts,terms,store) := buildTermExpList(env,expl,ht,store);
       ut::uts := buildArrayElementTerms(uts,expl);
       uts := listAppend(terms,uts);
@@ -1080,7 +1080,7 @@ algorithm
 
     case(_,e as DAE.MATRIX(matrix=mexpl),_,ht,store)
       algorithm
-        print("Matrix ="+ExpressionDump.printExpStr(e)+"\n");
+        print("Matrix ="+ExpressionBasics.printExpStr(e)+"\n");
         expl := List.flatten(mexpl);
         (uts,terms,store) := buildTermExpList(env,expl,ht,store);
         ut::uts := buildArrayElementTerms(uts,expl);
@@ -1088,7 +1088,7 @@ algorithm
       then (ut,uts,store);
 
     case(_,e as DAE.CALL(),_,_,_) algorithm
-      print("buildTermDAE.CALL failed exp: "+ExpressionDump.printExpStr(e)+"\n");
+      print("buildTermDAE.CALL failed exp: "+ExpressionBasics.printExpStr(e)+"\n");
     then fail();
   end matchcontinue;
 end buildTermExp;
@@ -1233,7 +1233,7 @@ algorithm
       extraTerms := listAppend(eterms1,eterms2);
     then (ut::terms,extraTerms,store);
     case(_,e::_,_,_) algorithm
-      print("buildTermExpList failed for exp"+ExpressionDump.printExpStr(e)+"\n");
+      print("buildTermExpList failed for exp"+ExpressionBasics.printExpStr(e)+"\n");
     then fail();
   end matchcontinue;
 end buildTermExpList;
@@ -1252,7 +1252,7 @@ algorithm
       (store,indxs) := buildFuncTypeStores2(args,funcInstId,store);
     then (store,indxs);
     case(tp,_,_) algorithm
-      print("buildFuncTypeStores failed, tp"+Types.unparseType(tp)+"\n");
+      print("buildFuncTypeStores failed, tp"+TypesDump.unparseType(tp)+"\n");
     then fail();
   end matchcontinue;
 end buildFuncTypeStores;
@@ -1306,7 +1306,7 @@ algorithm
       then "";
     case(DAE.T_INTEGER()) then "";
     case(DAE.T_ARRAY(ty=tp)) then getUnitStr(tp);
-    case(tp) algorithm print("getUnitStr for type "+Types.unparseType(tp)+" failed\n"); then fail();
+    case(tp) algorithm print("getUnitStr for type "+TypesDump.unparseType(tp)+" failed\n"); then fail();
   end matchcontinue;
 end getUnitStr;
 
@@ -1379,7 +1379,6 @@ algorithm
       list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> typeParams;
       UnitAbsyn.Unit unit;
       DAE.Exp e1,e2;
-      DAE.FunctionTree funcs;
       list<DAE.Element> elts;
       UnitAbsyn.Store store;
       HashTable.HashTable ht;
@@ -1421,7 +1420,6 @@ algorithm
     list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> typeParams;
     UnitAbsyn.Unit unit;
     DAE.Exp e1,e2;
-    DAE.FunctionTree funcs;
     list<DAE.Element> elts;
     UnitAbsyn.Store store;
     HashTable.HashTable ht;
@@ -1457,7 +1455,7 @@ algorithm
       unit := selectConstantUnit(parentOp);
       (store,indx) := add(unit,store);
       s1 := realString(r);
-      cref_ := ComponentReference.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{});
+      cref_ := ComponentReferenceBasics.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{});
       ht := BaseHashTable.add((cref_,indx),ht);
     then (store,ht);
 
@@ -1465,7 +1463,7 @@ algorithm
       unit := selectConstantUnit(parentOp);
       (store,indx) := add(unit,store);
       s1 := intString(i);
-      cref_ := ComponentReference.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{});
+      cref_ := ComponentReferenceBasics.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{});
       ht := BaseHashTable.add((cref_,indx),ht);
     then (store,ht);
 

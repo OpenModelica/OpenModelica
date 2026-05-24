@@ -52,7 +52,7 @@ import BackendDump;
 import BackendEquation;
 import BackendVariable;
 import ComponentReference;
-import DAEDump;
+import DAEDumpTypes;
 import Error;
 import ExpandableArray;
 import Expression;
@@ -153,7 +153,7 @@ protected
   BackendDAE.StrongComponents comps;
   BackendDAE.Variables vars;
   BackendDAE.EquationArray orderedEqs;
-  DAE.FunctionTree sharedFuncs;
+  AvlTreePathFunction.Tree sharedFuncs;
   TaskGraphMeta iGraphData;
   TaskGraphMeta tmpGraphData;
   TaskGraph iGraph;
@@ -5996,7 +5996,7 @@ algorithm
         annot := BackendVariable.getAnnotationComment(var);
         annotString := arrayGet(annotInfoIn,taskIdx);
         cr := BackendVariable.varCref(var);
-        annotString := annotString + "("+ComponentReference.printComponentRefStr(cr)+": "+DAEDump.dumpCommentAnnotationStr(annot)+") ";
+        annotString := annotString + "("+ComponentReferenceBasics.printComponentRefStr(cr)+": "+DAEDumpTypes.dumpCommentAnnotationStr(annot)+") ";
         arrayUpdate(annotInfoIn,taskIdx,annotString);
       then
         annotInfoIn;
@@ -6236,7 +6236,7 @@ algorithm
       list<BackendDAE.Var> varLst;
    case(BackendDAE.EQSYSTEM(orderedVars = vars)::_,_,_)
       algorithm
-        //print("check cref: "+ComponentReference.printComponentRefStr(cref)+"\n");
+        //print("check cref: "+ComponentReferenceBasics.printComponentRefStr(cref)+"\n");
         (varLst,lst) := BackendVariable.getVar(cref,vars);
         if intNe(listLength(lst),1) then
           print("Check if there is a assert or something that is dependent of arrayEquations");

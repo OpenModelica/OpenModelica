@@ -48,6 +48,7 @@ import GlobalScript;
 import HashTableStringToProgram;
 
 protected
+import AbsynUtil;
 import Config;
 import ErrorExt;
 import Flags;

@@ -53,7 +53,7 @@ import HashTableCG;
 import SCode;
 import Util;
 
-type Functiontuple = tuple<Option<DAE.FunctionTree>,list<DAE.InlineType>>;
+type Functiontuple = tuple<Option<AvlTreePathFunction.Tree>,list<DAE.InlineType>>;
 
 protected
 
@@ -66,7 +66,6 @@ import Debug;
 import ElementSource;
 import Error;
 import Expression;
-import ExpressionDump;
 import ExpressionSimplify;
 import Flags;
 import Global;
@@ -76,6 +75,8 @@ import List;
 import SCodeUtil;
 import Types;
 import VarTransform;
+import ClassInfUtil;
+import ExpressionBasics;
 
 public function inlineStartAttribute
   input Option<DAE.VariableAttributes> inVariableAttributesOption;
@@ -700,7 +701,7 @@ algorithm
       DAE.Exp e,e_1,e_2;
       DAE.ElementSource source;
       list<DAE.Statement> assrtLst;
-      DAE.FunctionTree functionTree;
+      AvlTreePathFunction.Tree functionTree;
       Boolean b;
     case (e,(SOME(functionTree),_),source)
       guard
@@ -928,7 +929,7 @@ protected
 algorithm
   DAE.STMT_ASSERT(cond=cond, msg=msg, level=level, source=source) := assrtIn;
   (cond,(_,_,true)) := Expression.traverseExpBottomUp(cond,replaceArgs,(argmap,checkcr,true));
-  //print("ASSERT inlined: "+ExpressionDump.printExpStr(cond)+"\n");
+  //print("ASSERT inlined: "+ExpressionBasics.printExpStr(cond)+"\n");
   (msg,(_,_,true)) := Expression.traverseExpBottomUp(msg,replaceArgs,(argmap,checkcr,true));
   // These clear checkcr/repl and need to be performed last
   // (cond,_,_,_) := inlineExp(cond,fns,source);
@@ -959,7 +960,7 @@ protected
   DAE.Exp exp;
 algorithm
   (cr,exp) := inTpl;
-  print(ComponentReference.printComponentRefStr(cr) + " -> " + ExpressionDump.printExpStr(exp) + "\n");
+  print(ComponentReferenceBasics.printComponentRefStr(cr) + " -> " + ExpressionBasics.printExpStr(exp) + "\n");
 end dumpArgmap;
 
 public function forceInlineCall
@@ -1068,7 +1069,7 @@ algorithm
     case (DAE.STMT_IF(exp = exp,
            statementLst = {DAE.STMT_ASSIGN(exp1 = DAE.CREF(componentRef = cr1), exp = exp1)},
            else_=DAE.ELSE(statementLst={DAE.STMT_ASSIGN(exp1 = DAE.CREF(componentRef = cr2), exp = exp2)}))::stmts,_,_)
-      guard ComponentReference.crefEqual(cr1, cr2)
+      guard ComponentReferenceBasics.crefEqual(cr1, cr2)
       algorithm
         (exp,_) := VarTransform.replaceExp(exp,iRepl,NONE());
         (exp1,_) := VarTransform.replaceExp(exp1,iRepl,NONE());
@@ -1080,7 +1081,7 @@ algorithm
     case (DAE.STMT_IF(exp = exp,
            statementLst = {DAE.STMT_ASSIGN_ARR(lhs = DAE.CREF(componentRef = cr1), exp = exp1)},
            else_=DAE.ELSE(statementLst={DAE.STMT_ASSIGN_ARR(lhs = DAE.CREF(componentRef = cr2), exp = exp2)}))::stmts,_,_)
-      guard ComponentReference.crefEqual(cr1, cr2)
+      guard ComponentReferenceBasics.crefEqual(cr1, cr2)
       algorithm
         (exp,_) := VarTransform.replaceExp(exp,iRepl,NONE());
         (exp1,_) := VarTransform.replaceExp(exp1,iRepl,NONE());
@@ -1212,7 +1213,7 @@ algorithm
         end for;
 
       then
-        SOME(DAE.Exp.RECORD(ClassInf.getStateName(ty.complexClassType), expl, strl, ty));
+        SOME(DAE.Exp.RECORD(ClassInfUtil.getStateName(ty.complexClassType), expl, strl, ty));
 
     else binding;
   end match;
@@ -1438,11 +1439,11 @@ algorithm
   (outfn,oComment) := matchcontinue(p,fns)
     local
       list<DAE.Element> body;
-      DAE.FunctionTree ftree;
+      AvlTreePathFunction.Tree ftree;
       Option<SCode.Comment> comment;
     case(_,(SOME(ftree),_))
       algorithm
-        SOME(DAE.FUNCTION( functions = DAE.FUNCTION_DEF(body = body)::_,comment=comment)) := DAE.AvlTreePathFunction.get(ftree,p);
+        SOME(DAE.FUNCTION( functions = DAE.FUNCTION_DEF(body = body)::_,comment=comment)) := AvlTreePathFunction.get(ftree,p);
       then (body,comment);
     else
       algorithm
@@ -1463,10 +1464,10 @@ public function getFunction
 algorithm
   func := matchcontinue(p,fns)
     local
-      DAE.FunctionTree ftree;
+      AvlTreePathFunction.Tree ftree;
     case(_,(SOME(ftree),_))
       algorithm
-        SOME(func) := DAE.AvlTreePathFunction.get(ftree,p);
+        SOME(func) := AvlTreePathFunction.get(ftree,p);
       then func;
     else
       algorithm
@@ -1532,24 +1533,24 @@ algorithm
 
     case (DAE.CREF(componentRef = cref),(argmap,checkcr,true))
       guard
-        BaseHashTable.hasKey(ComponentReference.crefFirstCref(cref),checkcr)
+        BaseHashTable.hasKey(ComponentReferenceBasics.crefFirstCref(cref),checkcr)
       then (inExp,(argmap,checkcr,false));
 
     case (DAE.CREF(componentRef = cref),(argmap,checkcr,true))
       algorithm
-        firstCref := ComponentReference.crefFirstCref(cref);
-        {} := ComponentReference.crefSubs(firstCref);
+        firstCref := ComponentReferenceBasics.crefFirstCref(cref);
+        {} := ComponentReferenceBasics.crefSubs(firstCref);
         e := getExpFromArgMap(argmap,firstCref);
         while not ComponentReference.crefIsIdent(cref) loop
           cref := ComponentReference.crefRest(cref);
-          {} := ComponentReference.crefSubs(cref);
-          e := DAE.RSUB(e, -1, ComponentReference.crefFirstIdent(cref), ComponentReference.crefType(cref));
+          {} := ComponentReferenceBasics.crefSubs(cref);
+          e := DAE.RSUB(e, -1, ComponentReferenceBasics.crefFirstIdent(cref), ComponentReference.crefType(cref));
         end while;
       then (e,inTuple);
 
     case (DAE.CREF(componentRef = cref),(argmap,checkcr,true))
       algorithm
-        getExpFromArgMap(argmap,ComponentReference.crefStripSubs(ComponentReference.crefFirstCref(cref)));
+        getExpFromArgMap(argmap,ComponentReference.crefStripSubs(ComponentReferenceBasics.crefFirstCref(cref)));
         // We have something like v[i].re and v is in the inputs... So we fail to inline.
       then (inExp,(argmap,checkcr,false));
 
@@ -1646,12 +1647,12 @@ protected
   DAE.ComponentRef key,cref;
   DAE.Exp exp;
 algorithm
-  subs := ComponentReference.crefSubs(inComponentRef);
+  subs := ComponentReferenceBasics.crefSubs(inComponentRef);
   key := ComponentReference.crefStripSubs(inComponentRef);
 
   for arg in inArgMap loop
     (cref, exp) := arg;
-    if ComponentReference.crefEqual(cref,key) then
+    if ComponentReferenceBasics.crefEqual(cref,key) then
       try
         outExp := Expression.applyExpSubscripts(exp,subs);
       else
@@ -1662,7 +1663,7 @@ algorithm
   end for;
 
   if  Flags.isSet(Flags.FAILTRACE) then
-    Debug.traceln("Inline.getExpFromArgMap failed with empty argmap and cref: " + ComponentReference.printComponentRefStr(inComponentRef));
+    Debug.traceln("Inline.getExpFromArgMap failed with empty argmap and cref: " + ComponentReferenceBasics.printComponentRefStr(inComponentRef));
   end if;
   fail();
 
@@ -1750,7 +1751,7 @@ public function inlineEquationExp "
     output DAE.Exp outExp;
     output list<DAE.Statement> outTuple;
   end Func;
-  type Functiontuple = tuple<Option<DAE.FunctionTree>,list<DAE.InlineType>>;
+  type Functiontuple = tuple<Option<AvlTreePathFunction.Tree>,list<DAE.InlineType>>;
 algorithm
   (outExp,source) := match inExp
     local
@@ -1807,7 +1808,7 @@ algorithm
     case (_,_,_) then VarTransform.getReplacement(repl,cr);
     case (_,_,DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path),varLst=vars))
       algorithm
-        crs := List.map1(List.map(vars,Types.getVarName),ComponentReference.appendStringCref,cr);
+        crs := List.map1(List.map(vars,TypesDump.getVarName),ComponentReference.appendStringCref,cr);
         exps := List.map1r(crs, VarTransform.getReplacement, repl);
       then DAE.CALL(path,exps,DAE.CALL_ATTR(ty,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
   end matchcontinue;

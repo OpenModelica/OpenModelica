@@ -62,7 +62,6 @@ protected import ComponentReference;
 protected import ElementSource;
 protected import Error;
 protected import Expression;
-protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import InstUtil;
 protected import List;
@@ -74,6 +73,7 @@ import SCodeUtil;
 protected import Types;
 protected import InstSection;
 protected import ValuesUtil;
+protected import ExpressionBasics;
 
 public constant DAE.Type stateSelectType =
           DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},
@@ -575,9 +575,9 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- InstBinding.instModEquation failed\n type: ");
-        Debug.trace(Types.printTypeStr(inType));
+        Debug.trace(TypesDump.printTypeStr(inType));
         Debug.trace("\n  cref: ");
-        Debug.trace(ComponentReference.printComponentRefStr(inComponentRef));
+        Debug.trace(ComponentReferenceBasics.printComponentRefStr(inComponentRef));
         Debug.trace("\n mod:");
         Debug.traceln(Mod.printModStr(inMod));
       then
@@ -715,9 +715,9 @@ algorithm
         e_tp := Types.getPropType(prop);
         _ := Types.propAllConst(prop);
         failure((_,_) := Types.matchType(e, e_tp, tp, false));
-        e_tp_str := Types.unparseTypeNoAttr(e_tp);
-        tp_str := Types.unparseTypeNoAttr(tp);
-        e_str := ExpressionDump.printExpStr(e);
+        e_tp_str := TypesDump.unparseTypeNoAttr(e_tp);
+        tp_str := TypesDump.unparseTypeNoAttr(tp);
+        e_str := ExpressionBasics.printExpStr(e);
         e_str_1 := stringAppend("=", e_str);
         str := PrefixUtil.printPrefixStrIgnoreNoPre(inPrefix) + "." + componentName;
         Types.typeErrorSanityCheck(e_tp_str, tp_str, info);
@@ -770,7 +770,7 @@ protected
   DAE.Exp exp;
   Values.Value val;
 algorithm
-  dims := Types.getDimensions(inRecordType);
+  dims := TypesDump.getDimensions(inRecordType);
 
   try
     for var in inRecordVars loop
@@ -791,7 +791,7 @@ algorithm
         ety := Types.simplifyType(ty);
         ty := Types.liftArrayListDims(ty, dims);
         scope := FGraph.printGraphPathStr(inEnv);
-        ty_str := Types.printTypeStr(ty);
+        ty_str := TypesDump.printTypeStr(ty);
         exp := DAE.EMPTY(scope, DAE.CREF_IDENT(name, ety, {}), ety, ty_str);
         val := Values.EMPTY(scope, name, Types.typeToValue(ty), ty_str);
       end if;
@@ -858,9 +858,9 @@ algorithm
     case (SOME(DAE.NAMEMOD(ident = ident, mod = DAE.MOD(binding =
         SOME(DAE.TYPED(modifierAsExp = exp, properties = DAE.PROP(type_ = ty)))))))
       algorithm
-        binding_str := ExpressionDump.printExpStr(exp);
-        expected_type_str := Types.unparseTypeNoAttr(inType);
-        given_type_str := Types.unparseTypeNoAttr(ty);
+        binding_str := ExpressionBasics.printExpStr(exp);
+        expected_type_str := TypesDump.unparseTypeNoAttr(inType);
+        given_type_str := TypesDump.unparseTypeNoAttr(ty);
         Types.typeErrorSanityCheck(given_type_str, expected_type_str, inInfo);
         Error.addSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH,
         {ident, binding_str, expected_type_str, given_type_str}, inInfo);
@@ -909,9 +909,9 @@ algorithm
         Types.matchProp(e, p, DAE.PROP(inType, inConst), true);
     else
       // The types of the variable and binding are incompatible, print an error.
-      e_str := ExpressionDump.printExpStr(e);
-      et_str := Types.unparseTypeNoAttr(inType);
-      bt_str := Types.unparseTypeNoAttr(Types.getPropType(p));
+      e_str := ExpressionBasics.printExpStr(e);
+      et_str := TypesDump.unparseTypeNoAttr(inType);
+      bt_str := TypesDump.unparseTypeNoAttr(Types.getPropType(p));
       Types.typeErrorSanityCheck(et_str, bt_str, info);
       Error.addSourceMessageAndFail(Error.VARIABLE_BINDING_TYPE_MISMATCH,
         {inName, e_str, et_str, bt_str}, info);

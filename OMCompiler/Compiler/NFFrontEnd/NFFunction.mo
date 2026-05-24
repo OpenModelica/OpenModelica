@@ -55,8 +55,9 @@ import NFInst.InstSettings;
 import Binding = NFBinding;
 import Config;
 import DAE;
+import DAEDumpTypes;
 import Error;
-import InstUtil;
+import InstBasics;
 import Class = NFClass;
 import Component = NFComponent;
 import Attributes = NFAttributes;
@@ -910,7 +911,7 @@ uniontype Function
       s := IOStream.append(s, AbsynUtil.pathString(getDerivedFunctionName(fn)));
       s := IOStream.append(s, ", ");
       s := IOStream.append(s, stringDelimitList(getDerivedInputNames(fn), ", "));
-      s := IOStream.append(s, DAEDump.dumpCommentAnnotationStr(cmt));
+      s := IOStream.append(s, DAEDumpTypes.dumpCommentAnnotationStr(cmt));
       s := IOStream.append(s, ")");
     else
       fn_name := AbsynUtil.pathString(fn.path);
@@ -923,7 +924,7 @@ uniontype Function
 
       s := IOStream.append(s, "function ");
       s := IOStream.append(s, fn_name);
-      s := IOStream.append(s, DAEDump.dumpCommentStr(cmt));
+      s := IOStream.append(s, DAEDumpTypes.dumpCommentStr(cmt));
       s := IOStream.append(s, "\n");
 
       for i in fn.inputs loop
@@ -950,7 +951,7 @@ uniontype Function
       end if;
 
       s := Sections.toStream(InstNode.getSections(fn.node), indent, s);
-      s := IOStream.append(s, DAEDump.dumpClassAnnotationStr(cmt));
+      s := IOStream.append(s, DAEDumpTypes.dumpClassAnnotationStr(cmt));
       s := IOStream.append(s, indent);
       s := IOStream.append(s, "end ");
       s := IOStream.append(s, fn_name);
@@ -2595,7 +2596,7 @@ protected
     is_partial := InstNode.isPartial(node);
 
     cmt := mergeFunctionAnnotations(comments);
-    purity := InstUtil.getFunctionRestrictionPurity(SCodeUtil.getFunctionRestrictionPurity(fres), cmt, newFrontend = true);
+    purity := InstBasics.getFunctionRestrictionPurity(SCodeUtil.getFunctionRestrictionPurity(fres), cmt, newFrontend = true);
 
     attr := matchcontinue fres
       local
@@ -2612,8 +2613,8 @@ protected
           in_params := list(InstNode.name(i) for i in inputs);
           out_params := list(InstNode.name(o) for o in outputs);
           name := SCodeUtil.isBuiltinFunction(def, in_params, out_params);
-          inline_ty := InstUtil.commentIsInlineFunc(cmt);
-          generateEvents := InstUtil.commentGenerateEvents(cmt);
+          inline_ty := InstBasics.commentIsInlineFunc(cmt);
+          generateEvents := InstBasics.commentGenerateEvents(cmt);
           has_unbox_args := hasUnboxArgsAnnotation(cmt);
         then
           DAE.FUNCTION_ATTRIBUTES(inline_ty, generateEvents, purity, is_partial,
@@ -2625,8 +2626,8 @@ protected
           in_params := list(InstNode.name(i) for i in inputs);
           out_params := list(InstNode.name(o) for o in outputs);
           name := SCodeUtil.isBuiltinFunction(def, in_params, out_params);
-          inline_ty := InstUtil.commentIsInlineFunc(cmt);
-          generateEvents := InstUtil.commentGenerateEvents(cmt);
+          inline_ty := InstBasics.commentIsInlineFunc(cmt);
+          generateEvents := InstBasics.commentGenerateEvents(cmt);
           has_unbox_args := hasUnboxArgsAnnotation(cmt);
         then
           DAE.FUNCTION_ATTRIBUTES(inline_ty, generateEvents, purity, is_partial,
@@ -2635,8 +2636,8 @@ protected
       // Parallel function: non-builtin.
       case SCode.FunctionRestriction.FR_PARALLEL_FUNCTION()
         algorithm
-          inline_ty := InstUtil.commentIsInlineFunc(cmt);
-          generateEvents := InstUtil.commentGenerateEvents(cmt);
+          inline_ty := InstBasics.commentIsInlineFunc(cmt);
+          generateEvents := InstBasics.commentGenerateEvents(cmt);
         then
           DAE.FUNCTION_ATTRIBUTES(inline_ty, generateEvents, purity, is_partial,
             getBuiltinPtr(cmt), DAE.FP_PARALLEL_FUNCTION());
@@ -2649,8 +2650,8 @@ protected
       // Normal function.
       else
         algorithm
-          inline_ty := InstUtil.commentIsInlineFunc(cmt);
-          generateEvents := InstUtil.commentGenerateEvents(cmt);
+          inline_ty := InstBasics.commentIsInlineFunc(cmt);
+          generateEvents := InstBasics.commentGenerateEvents(cmt);
 
           // Since Modelica 3.3, normal functions are pure by default and external functions are impure.
           if purity == DAE.Purity.UNDEFINED and Config.languageStandardAtLeast(Config.LanguageStandard._3_3) then

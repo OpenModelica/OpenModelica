@@ -44,6 +44,7 @@ encapsulated package FUnitCheck
 public
 import Absyn;
 import AbsynUtil;
+import AvlTreePathFunction;
 import DAE;
 import Unit = FUnit;
 import System;
@@ -77,7 +78,7 @@ end Functionargs;
 
 public function checkUnits
   input DAE.DAElist inDAE;
-  input DAE.FunctionTree func;
+  input AvlTreePathFunction.Tree func;
   output DAE.DAElist outDAE = inDAE;
 protected
   DAE.DAElist elts1, elts2;
@@ -954,7 +955,7 @@ algorithm
 
      //"time"
     case (DAE.CREF(componentRef=cr), (HtCr2U, HtS2U, HtU2S), _) algorithm
-      true := ComponentReference.crefEqual(cr, DAE.crefTime);
+      true := ComponentReferenceBasics.crefEqual(cr, DAE.crefTime);
       ut := Unit.UNIT(1e0, 0, 0, 0, 1, 0, 0, 0);
       HtS2U := addUnit2HtS2U(("time", ut), HtS2U);
       HtU2S := addUnit2HtU2S(("time", ut), HtU2S);
@@ -968,7 +969,7 @@ algorithm
     //NO UNIT IN EQUATION
     // all unhandled expressions, e.g. DAE.CAST, DAE.TUPLE, ...
     else
-      //Error.addInternalError("./Compiler/FrontEnd/FUnitCheck.mo: function insertUnitInEquation failed for " + ExpressionDump.printExpStr(inEq), sourceInfo());
+      //Error.addInternalError("./Compiler/FrontEnd/FUnitCheck.mo: function insertUnitInEquation failed for " + ExpressionBasics.printExpStr(inEq), sourceInfo());
     then (Unit.MASTER({}), inTpl, {});
   end matchcontinue;
 end insertUnitInEquation;
@@ -1149,13 +1150,13 @@ algorithm
       String s, s1, s2;
 
     case ((exp, ut)::{}, _) algorithm
-      s := ExpressionDump.printExpStr(exp);
+      s := ExpressionBasics.printExpStr(exp);
       s1 := Unit.unitString(ut, inHtU2S);
       s := "- sub-expression \"" + s + "\" has unit \"" + s1 + "\"";
     then s;
 
     case ((exp, ut)::expList, _) algorithm
-      s := ExpressionDump.printExpStr(exp);
+      s := ExpressionBasics.printExpStr(exp);
       s1 := Unit.unitString(ut, inHtU2S);
       s2 := Errorfunction2(expList, inHtU2S);
       s := "- sub-expression \"" + s + "\" has unit \"" + s1 + "\"\n" + s2;

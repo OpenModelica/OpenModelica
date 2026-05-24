@@ -60,7 +60,6 @@ protected
   import ElementSource;
   import Error;
   import Expression;
-  import ExpressionDump;
   import Flags;
   import GCExt;
   import List;
@@ -68,7 +67,9 @@ protected
   import Sorting;
   import SymbolicJacobian;
   import System;
+  import Types;
   import Util;
+  import ExpressionBasics;
 
 // =============================================================================
 // strongComponents and stuff
@@ -329,7 +330,7 @@ algorithm
       false := BackendVariable.hasContinuousVar(var_lst);
       msg := getInstanceName() + " failed (Purely discrete algebraic loops cannot be solved by iterative processes. Try to break them open using the delay() operator.)\n";
       crlst := List.map(var_lst, BackendVariable.varCref);
-      slst := List.map(crlst, ComponentReference.printComponentRefStr);
+      slst := List.map(crlst, ComponentReferenceBasics.printComponentRefStr);
       msg := msg + stringDelimitList(slst, "\n");
       slst := List.map(eqn_lst, BackendDump.equationString);
       msg := msg + "\n" + stringDelimitList(slst, "\n");
@@ -339,7 +340,7 @@ algorithm
     case (_, eqn_lst, var_lst, _) algorithm
       msg := getInstanceName() + " failed\nvariables:\n  ";
       crlst := List.map(var_lst, BackendVariable.varCref);
-      slst := List.map(crlst, ComponentReference.printComponentRefStr);
+      slst := List.map(crlst, ComponentReferenceBasics.printComponentRefStr);
       msg := msg + stringDelimitList(slst, "\n  ");
       slst := List.map(eqn_lst, BackendDump.equationString);
       msg := msg + "\nequations:\n  " + stringDelimitList(slst, "\n  ");
@@ -363,11 +364,11 @@ algorithm
       list<DAE.Exp> expLst;
 
     case BackendDAE.ARRAY_EQUATION(left=DAE.ARRAY(array=expLst)) algorithm
-      (_, _, expLst) := List.intersection1OnTrue(expLst, crefLst, Expression.expEqual);
+      (_, _, expLst) := List.intersection1OnTrue(expLst, crefLst, ExpressionBasics.expEqual);
     then listEmpty(expLst);
 
     case BackendDAE.ARRAY_EQUATION(right=DAE.ARRAY(array=expLst)) algorithm
-      (_, _, expLst) := List.intersection1OnTrue(expLst, crefLst, Expression.expEqual);
+      (_, _, expLst) := List.intersection1OnTrue(expLst, crefLst, ExpressionBasics.expEqual);
     then listEmpty(expLst);
 
     else false;
@@ -384,7 +385,7 @@ protected function analyzeConstantJacobian
 protected
   BackendDAE.EquationArray eqns;
   BackendDAE.Variables vars;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   Integer info;
   String infoStr, syst, varnames, varname, rhsStr, jacStr, eqnstr;
   list<DAE.Exp> beqs;
@@ -398,13 +399,13 @@ algorithm
   if info < 0 then
     // info < 0:  if INFO = -i, the i-th argument had an illegal value
     // this case should never happen
-    varnames := stringDelimitList(List.mapMap(inVars, BackendVariable.varCref, ComponentReference.printComponentRefStr), " ;\n  ");
+    varnames := stringDelimitList(List.mapMap(inVars, BackendVariable.varCref, ComponentReferenceBasics.printComponentRefStr), " ;\n  ");
     eqns := BackendEquation.listEquation(inEqns);
     vars := BackendVariable.listVar1(inVars);
     funcs := BackendDAEUtil.getFunctions(inShared);
     (beqs, _) := BackendDAEUtil.getEqnSysRhs(eqns, vars, SOME(funcs));
     beqs := listReverse(beqs);
-    rhsStr := stringDelimitList(List.map(beqs, ExpressionDump.printExpStr), " ;\n  ");
+    rhsStr := stringDelimitList(List.map(beqs, ExpressionBasics.printExpStr), " ;\n  ");
     jacStr := stringDelimitList(List.map1(List.mapList(jacVals, realString), stringDelimitList, " , "), " ;\n  ");
     eqnstr := BackendDump.dumpEqnsStr(inEqns);
     syst := eqnstr + "\n[" + jacStr + "] * [" + varnames + "] = [" + rhsStr + "]";
@@ -414,15 +415,15 @@ algorithm
     // info > 0:  if INFO = i, U(i,i) is exactly zero. The factorization
     //            has been completed, but the factor U is exactly
     //            singular, so the solution could not be computed.
-    varname := ComponentReference.printComponentRefStr(BackendVariable.varCref(listGet(inVars, info)));
+    varname := ComponentReferenceBasics.printComponentRefStr(BackendVariable.varCref(listGet(inVars, info)));
     infoStr := intString(info);
-    varnames := stringDelimitList(List.mapMap(inVars, BackendVariable.varCref, ComponentReference.printComponentRefStr), " ;\n  ");
+    varnames := stringDelimitList(List.mapMap(inVars, BackendVariable.varCref, ComponentReferenceBasics.printComponentRefStr), " ;\n  ");
     eqns := BackendEquation.listEquation(inEqns);
     vars := BackendVariable.listVar1(inVars);
     funcs := BackendDAEUtil.getFunctions(inShared);
     (beqs, _) := BackendDAEUtil.getEqnSysRhs(eqns, vars, SOME(funcs));
     beqs := listReverse(beqs);
-    rhsStr := stringDelimitList(List.map(beqs, ExpressionDump.printExpStr), " ;\n  ");
+    rhsStr := stringDelimitList(List.map(beqs, ExpressionBasics.printExpStr), " ;\n  ");
     jacStr := stringDelimitList(List.map1(List.mapList(jacVals, realString), stringDelimitList, " , "), " ;\n  ");
     eqnstr := BackendDump.dumpEqnsStr(inEqns);
     syst := "\n" + eqnstr + "\n[\n  " + jacStr + "\n]\n  *\n[\n  " + varnames + "\n]\n  =\n[\n  " + rhsStr + "\n]";
@@ -849,8 +850,8 @@ protected
 algorithm
   (ops,t) := inTpl;
   (outExp,t) := Expression.traverseExpTopDown(inExp, collapseArrayCrefExpWork, t);
-  if not Expression.expEqual(inExp,outExp) then
-    // print("collapseArrayCrefExp: " + ExpressionDump.printExpStr(inExp) + " -> " + ExpressionDump.printExpStr(outExp) + "\n");
+  if not ExpressionBasics.expEqual(inExp,outExp) then
+    // print("collapseArrayCrefExp: " + ExpressionBasics.printExpStr(inExp) + " -> " + ExpressionBasics.printExpStr(outExp) + "\n");
     outTpl := (DAE.SIMPLIFY(DAE.PARTIAL_EQUATION(inExp),DAE.PARTIAL_EQUATION(outExp))::ops,t);
   else
     outTpl := inTpl;
@@ -901,7 +902,7 @@ algorithm
   // Check that the first element starts at index [1,...,1]
   subs := ComponentReference.crefLastSubs(cr1);
   true := ndim==listLength(subs);
-  true := listLength(subs) == listLength(ComponentReference.crefSubs(cr1)) "Code generation fails for things like x[7].y when x[7] contains more things than y, and y is an array...";
+  true := listLength(subs) == listLength(ComponentReferenceBasics.crefSubs(cr1)) "Code generation fails for things like x[7].y when x[7] contains more things than y, and y is an array...";
   for sub in subs loop
     DAE.INDEX(DAE.ICONST(1)) := sub;
   end for;
@@ -911,18 +912,18 @@ algorithm
   true := exp_count == len;
 
   // Check that the number of expressions matches the size of the array the cref represents.
-  dims := Types.getDimensions(ComponentReference.crefLastType(cr1));
+  dims := TypesDump.getDimensions(ComponentReference.crefLastType(cr1));
   true := exp_count == product(i for i in Expression.dimensionsSizes(dims));
 
   for exp in exps loop
     DAE.CREF(componentRef=cr2) := exp;
     true := ndim==listLength(ComponentReference.crefLastSubs(cr2));
-    true := ComponentReference.crefEqualWithoutSubs(cr1,cr2);
-    true := 1==ComponentReference.crefCompareIntSubscript(cr2,cr1); // cr2 > cr1
+    true := ComponentReferenceBasics.crefEqualWithoutSubs(cr1,cr2);
+    true := 1==ComponentReferenceBasics.crefCompareIntSubscript(cr2,cr1); // cr2 > cr1
     cr1 := cr2;
   end for;
   // All of the crefs are in ascending order; the first one starts at 1,1; the length is the full array... So it is the complete cref!
-  e := Expression.makeCrefExp(ComponentReference.crefStripLastSubs(cr1), ty);
+  e := Expression.makeCrefExp(ComponentReferenceBasics.crefStripLastSubs(cr1), ty);
 end collapseArrayCrefExpWork2;
 
 annotation(__OpenModelica_Interface="backend");

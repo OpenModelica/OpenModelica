@@ -58,6 +58,7 @@ import HashTable5;
 
 protected
 import AvlSetCR;
+import ClassInfUtil;
 import DoubleEnded;
 import List;
 import BaseHashTable;
@@ -72,19 +73,20 @@ import Types;
 import Debug;
 import PrefixUtil;
 import ElementSource;
-import ExpressionDump;
 import Flags;
 import FGraph;
 import FNode;
 import SCodeDump;
 import SCodeUtil;
 import Lookup;
+import ValuesDump;
 import ValuesUtil;
 import Static;
 import Ceval;
 import Dump;
 import Config;
 import Inst;
+import InstBasics;
 import InstFunction;
 import System;
 import ErrorExt;
@@ -96,6 +98,7 @@ import NFSCodeFlatten;
 import HashSet;
 import BaseHashSet;
 import MetaModelica.Dangerous.listReverseInPlace;
+import ExpressionBasics;
 
 protected type Ident = DAE.Ident "an identifier";
 protected type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
@@ -112,7 +115,7 @@ algorithm
   i := tick();
   is := intString(i);
   s := stringAppend("__TMP__", is);
-  outComponentRef := ComponentReference.makeCrefIdent(s,DAE.T_UNKNOWN_DEFAULT,{});
+  outComponentRef := ComponentReferenceBasics.makeCrefIdent(s,DAE.T_UNKNOWN_DEFAULT,{});
 end newIdent;
 
 protected function isNotFunction
@@ -216,9 +219,9 @@ algorithm
 
     case (_,DAE.INITIAL_IF_EQUATION(condition1 = conds, equations2=tbs, equations3=fb),cache,_)
       algorithm
-        //print(" (Initial if)To ceval: " + stringDelimitList(List.map(conds,ExpressionDump.printExpStr),", ") + "\n");
+        //print(" (Initial if)To ceval: " + stringDelimitList(List.map(conds,ExpressionBasics.printExpStr),", ") + "\n");
         (_,valList) := Ceval.cevalList(cache,env, conds, true, Absyn.NO_MSG(),0);
-        //print(" Ceval res: ("+stringDelimitList(List.map(valList,ValuesUtil.printValStr),",")+")\n");
+        //print(" Ceval res: ("+stringDelimitList(List.map(valList,ValuesDump.printValStr),",")+")\n");
 
         blist := List.map(valList,ValuesUtil.valueBool);
         selectedBranch := List.findBoolList(blist, tbs, fb);
@@ -410,7 +413,7 @@ algorithm
         // get Var
         (cache,var, _,_,_,compenv) :=
           Lookup.lookupIdentLocal(cache, env, nn);
-        // print("updateEnumerationEnvironment1 -> component: " + name + " ty: " + Types.printTypeStr(ty) + "\n");
+        // print("updateEnumerationEnvironment1 -> component: " + name + " ty: " + TypesDump.printTypeStr(ty) + "\n");
         // change type
         var.ty := ty;
         // update
@@ -522,13 +525,13 @@ algorithm
         fail();
 
     case(DAE.CREF_QUAL(name,(ty as DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_))),subs,_))
-      then ComponentReference.makeCrefIdent(name,ty,subs);
+      then ComponentReferenceBasics.makeCrefIdent(name,ty,subs);
 
     case(DAE.CREF_QUAL(name,ty,subs,child))
       algorithm
         child := extractConnectorPrefix(child);
       then
-        ComponentReference.makeCrefQual(name,ty,subs,child);
+        ComponentReferenceBasics.makeCrefQual(name,ty,subs,child);
 
   end matchcontinue;
 end extractConnectorPrefix;
@@ -548,17 +551,17 @@ algorithm outCref := matchcontinue(cr1,cr2)
     algorithm
       true := stringEq(name,name2);
     then
-      ComponentReference.makeCrefQual(name,ty,subs,child2);
+      ComponentReferenceBasics.makeCrefQual(name,ty,subs,child2);
 
   case (DAE.CREF_QUAL(name,ty,subs,child),DAE.CREF_QUAL(name2,_,_,child2))
     algorithm
       true := stringEq(name,name2);
       outCref := updateCrefTypesWithConnectorPrefix(child,child2);
     then
-      ComponentReference.makeCrefQual(name,ty,subs,outCref);
+      ComponentReferenceBasics.makeCrefQual(name,ty,subs,outCref);
   else
     algorithm
-      print(" ***** FAILURE with " + ComponentReference.printComponentRefStr(cr1) + " _and_ " + ComponentReference.printComponentRefStr(cr2) + "\n");
+      print(" ***** FAILURE with " + ComponentReferenceBasics.printComponentRefStr(cr1) + " _and_ " + ComponentReferenceBasics.printComponentRefStr(cr2) + "\n");
     then fail();
   end matchcontinue;
 end updateCrefTypesWithConnectorPrefix;
@@ -1026,7 +1029,7 @@ algorithm
     case(_, SOME(cr), _, _, _, _, _, _)
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- InstUtil.extractConstantPlusDeps failure to find " + ComponentReference.printComponentRefStr(cr) + ", returning \n");
+        Debug.trace("- InstUtil.extractConstantPlusDeps failure to find " + ComponentReferenceBasics.printComponentRefStr(cr) + ", returning \n");
         Debug.trace("- InstUtil.extractConstantPlusDeps elements to instantiate:" + intString(listLength(inComps)) + "\n");
       then fail(); // TODO: This used to return the input only if failtrace was set; should it always succeed?
   end matchcontinue;
@@ -1076,7 +1079,7 @@ algorithm
     case(_, SOME(cr), _, _)
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- InstUtil.extractConstantPlusDeps failure to find " + ComponentReference.printComponentRefStr(cr) + ", returning \n");
+        Debug.trace("- InstUtil.extractConstantPlusDeps failure to find " + ComponentReferenceBasics.printComponentRefStr(cr) + ", returning \n");
         Debug.trace("- InstUtil.extractConstantPlusDeps elements to instantiate:" + intString(listLength(inComps)) + "\n");
       then fail(); // TODO: This used to return the input only if failtrace was set; should it always succeed?
   end matchcontinue;
@@ -1108,7 +1111,7 @@ algorithm
 
     case({},SOME(_),_,_,_)
       algorithm
-        //print(" failure to find: " + ComponentReference.printComponentRefStr(cr) + " in scope: " + className + "\n");
+        //print(" failure to find: " + ComponentReferenceBasics.printComponentRefStr(cr) + " in scope: " + className + "\n");
       then {};
     case({},_,_,_,_) then fail();
     case (_,NONE(),_,_,_) then inComps;
@@ -1213,7 +1216,7 @@ algorithm outComps := matchcontinue(inAcrefs,remainingComps,className,inExisting
       extractConstantPlusDeps3(acrefs,remainingComps,className,existing);
   case(Absyn.CREF_IDENT(s1,_)::acrefs,_,_,existing)
     algorithm
-      cref_ := ComponentReference.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{});
+      cref_ := ComponentReferenceBasics.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{});
       localComps := extractConstantPlusDeps2(remainingComps,SOME(cref_),{},className,existing);
       names := SCodeUtil.componentNamesFromElts(localComps);
       existing := listAppend(names,existing);
@@ -1374,7 +1377,7 @@ algorithm
       algorithm
         name2 := Dump.printComponentRefStr(dep);
         true := stringEq(name2,name1);
-        cmod := DAE.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{DAE.NAMEMOD(name2,cmod)},NONE(), AbsynUtil.dummyInfo);
+        cmod := DAE.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{DAE.NAMEMOD(name2,cmod)},NONE(), Absyn.dummyInfo);
       then
         cmod;
     case(dep,_::elems)
@@ -2995,7 +2998,7 @@ algorithm
   DAE.DAE(elementLst = eqs) := inEquations;
   DAE.DAE(elementLst = vars) := inVariables;
     Error.assertion(intEq(listLength(eqs), listLength(vars)),
-        "- InstUtil.moveBindings: Mismatched number of equations and variables.", AbsynUtil.dummyInfo);
+        "- InstUtil.moveBindings: Mismatched number of equations and variables.", Absyn.dummyInfo);
   vars := List.threadMap(eqs, vars, moveBindings2);
   outVariables := DAE.DAE(vars);
 end moveBindings;
@@ -3032,7 +3035,7 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- InstUtil.moveBindings failed on " +
-            ComponentReference.printComponentRefStr(cref));
+            ComponentReferenceBasics.printComponentRefStr(cref));
       then
         fail();
 
@@ -3159,7 +3162,7 @@ algorithm
 
     else
       algorithm
-        ty_str := Types.getTypeName(inType);
+        ty_str := TypesDump.getTypeName(inType);
         Error.addSourceMessage(Error.INVALID_FUNCTION_VAR_TYPE,
           {ty_str, inVarName}, inInfo);
       then
@@ -3182,7 +3185,7 @@ algorithm
     local DAE.Type ty;
     case (DAE.T_SUBTYPE_BASIC(complexType = ty),_)
       algorithm
-        false := listEmpty(Types.getDimensions(ty));
+        false := listEmpty(TypesDump.getDimensions(ty));
       then
         tp;
     else Types.liftArray(tp, dimt);
@@ -3222,7 +3225,7 @@ algorithm
       sn := PrefixUtil.printPrefixStr2(pre)+n;
       sc := DAEUtil.constStr(c);
       sc1 := DAEUtil.constStr(c1);
-      se := ExpressionDump.printExpStr(e);
+      se := ExpressionBasics.printExpStr(e);
       Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING,{sn,sc,se,sc1}, info);
     then
       fail();
@@ -3496,7 +3499,7 @@ algorithm
         id := FNode.refName(FGraph.lastScopeRef(inNewEnv));
         (rest, _) := FGraph.stripLastScopeRef(inNewEnv);
         (_, cls, _) := Lookup.lookupClassIdent(inCache, rest, id);
-        ci_state := ClassInf.start(SCodeUtil.getClassRestriction(cls), FGraph.getGraphName(inNewEnv));
+        ci_state := ClassInfUtil.start(SCodeUtil.getClassRestriction(cls), FGraph.getGraphName(inNewEnv));
       then
         ci_state;
 
@@ -3570,7 +3573,7 @@ algorithm
     case (DAE.DIM_UNKNOWN(), DAE.MOD(binding =
             SOME(DAE.TYPED(modifierAsExp = exp))), _, _)
       algorithm
-        exp_str := ExpressionDump.printExpStr(exp);
+        exp_str := ExpressionBasics.printExpStr(exp);
         Error.addSourceMessage(Error.FAILURE_TO_DEDUCE_DIMS_FROM_MOD,
           {inVarName, exp_str}, inInfo);
       then
@@ -3722,7 +3725,7 @@ algorithm
     else
       algorithm
         s1 := Dump.directionSymbol(inDirection);
-        s2 := ComponentReference.printComponentRefStr(inCref);
+        s2 := ComponentReferenceBasics.printComponentRefStr(inCref);
         s3 := DAEDump.dumpDirectionStr(inVarDirection);
         Error.addSourceMessage(Error.COMPONENT_INPUT_OUTPUT_MISMATCH,
           {s1, s2, s3}, inInfo);
@@ -3769,7 +3772,7 @@ algorithm
         daeprl2 := DAEUtil.scodePrlToDaePrl(inParallelism);
 
         s1 := DAEDump.dumpVarParallelismStr(daeprl2);
-        s2 := ComponentReference.printComponentRefStr(inCref);
+        s2 := ComponentReferenceBasics.printComponentRefStr(inCref);
         s3 := DAEDump.dumpVarParallelismStr(inVarParallelism);
 
         s4 := "\n" +
@@ -3875,7 +3878,7 @@ algorithm
     else
       algorithm
         s1 := SCodeDump.connectorTypeStr(inConnectorType);
-        s2 := ComponentReference.printComponentRefStr(inCref);
+        s2 := ComponentReferenceBasics.printComponentRefStr(inCref);
         s3 := DAEDump.dumpConnectorType(inVarConnectorType);
         Error.addSourceMessage(Error.INVALID_TYPE_PREFIX,
           {s1, "variable", s2, s3}, inInfo);
@@ -3961,7 +3964,7 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- InstUtil.elabComponentArraydimFromEnv failed: " +
-          ComponentReference.printComponentRefStr(cref));
+          ComponentReferenceBasics.printComponentRefStr(cref));
       then
         fail();
 
@@ -4108,7 +4111,7 @@ algorithm
         t := Types.getPropType(prop);
         (cache,dim1) := Static.elabArrayDims(cache,env, cref, ad, impl,doVect,pre,info);
         dim2 := elabArraydimType(t, ad, e, path, pre, cref, info,inst_dims);
-        //Debug.traceln("TYPED: " + ExpressionDump.printExpStr(e) + " s: " + FGraph.printGraphPathStr(env));
+        //Debug.traceln("TYPED: " + ExpressionBasics.printExpStr(e) + " s: " + FGraph.printGraphPathStr(env));
         dim3 := List.threadMap(dim1, dim2, compatibleArraydim);
       then
         (cache,dim3);
@@ -4133,9 +4136,9 @@ algorithm
         (_,dim1) := Static.elabArrayDims(cache, env, cref, ad, impl, doVect,pre,info);
         dim2 := elabArraydimType(t, ad, e, path, pre, cref, info,inst_dims);
         failure(_ := List.threadMap(dim1, dim2, compatibleArraydim));
-        e_str := ExpressionDump.printExpStr(e);
-        t_str := Types.unparseType(t);
-        dim_str := ExpressionDump.dimensionsString(dim1);
+        e_str := ExpressionBasics.printExpStr(e);
+        t_str := TypesDump.unparseType(t);
+        dim_str := ExpressionBasics.dimensionsString(dim1);
         Error.addMultiSourceMessage(Error.ARRAY_DIMENSION_MISMATCH, {e_str,t_str,dim_str}, info2::info::{});
       then
         fail();
@@ -4147,7 +4150,7 @@ algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- InstUtil.elabArraydim failed on: \n\tcref:");
         Debug.trace(AbsynUtil.pathString(path) + " " + Dump.printComponentRefStr(cref));
-        Debug.traceln(Dump.printArraydimStr(ad) + " = " + Types.unparseOptionEqMod(eq));
+        Debug.traceln(Dump.printArraydimStr(ad) + " = " + TypesDump.unparseOptionEqMod(eq));
       then
         fail();
   end matchcontinue;
@@ -4210,8 +4213,8 @@ algorithm
     outDimensions := elabArraydimType2(inType, inArrayDim, flat_id);
   else
     ad_str := AbsynUtil.pathString(inPath) + Dump.printArraydimStr(inArrayDim);
-    ty_str := Types.unparseTypeNoAttr(inType);
-    exp_str := ExpressionDump.printExpStr(inExp);
+    ty_str := TypesDump.unparseTypeNoAttr(inType);
+    exp_str := ExpressionBasics.printExpStr(inExp);
     name_str := PrefixUtil.printPrefixStrIgnoreNoPre(inPrefix) +
       Dump.printComponentRefStr(inCref);
     Error.addSourceMessageAndFail(Error.MODIFIER_DECLARATION_TYPE_MISMATCH_ERROR,
@@ -4237,7 +4240,7 @@ algorithm
   // I am not sure if any of it is really needed though.
 
   outDimensions := {};
-  tyDims := Types.getDimensions(inType);
+  tyDims := TypesDump.getDimensions(inType);
 
   try
     for fl_dim in inDims loop
@@ -4252,7 +4255,7 @@ algorithm
   else
     if Flags.isSet(Flags.FAILTRACE) then
       Debug.trace("Undefined! The type detected: ");
-      Debug.traceln(Types.printTypeStr(inType));
+      Debug.traceln(TypesDump.printTypeStr(inType));
     end if;
 
     fail();
@@ -4281,7 +4284,7 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("Undefined! The type detected: ");
-        Debug.traceln(Types.printTypeStr(inType));
+        Debug.traceln(TypesDump.printTypeStr(inType));
       then
         fail();
   end matchcontinue;
@@ -4652,115 +4655,10 @@ public function classIsInlineFunc
   output DAE.InlineType outInlineType;
 algorithm
   outInlineType := match elt
-    case SCode.CLASS() then commentIsInlineFunc(elt.cmt);
+    case SCode.CLASS() then InstBasics.commentIsInlineFunc(elt.cmt);
     else DAE.DEFAULT_INLINE();
   end match;
 end classIsInlineFunc;
-
-public function commentIsInlineFunc
-  input SCode.Comment cmt;
-  output DAE.InlineType outInlineType;
-algorithm
-  outInlineType := matchcontinue(cmt)
-    local
-      list<SCode.SubMod> smlst;
-
-    case SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(SCode.MOD(subModLst = smlst))))
-      then isInlineFunc2(smlst);
-
-    else DAE.DEFAULT_INLINE();
-  end matchcontinue;
-end commentIsInlineFunc;
-
-protected function isInlineFunc2
-  input list<SCode.SubMod> inSubModList;
-  output DAE.InlineType res;
-protected
-  Boolean stop = false;
-algorithm
-
-  res := DAE.DEFAULT_INLINE();
-
-  for tp in inSubModList loop
-    stop := match tp
-
-       case SCode.NAMEMOD("Inline",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
-         algorithm
-           res := DAE.NORM_INLINE();
-         then false;
-
-       case SCode.NAMEMOD("Inline",SCode.MOD(binding = SOME(Absyn.BOOL(false))))
-         algorithm
-           res := DAE.NO_INLINE();
-         then false;
-
-       case SCode.NAMEMOD("LateInline",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
-         algorithm
-          res := DAE.AFTER_INDEX_RED_INLINE();
-         then true;
-
-       case SCode.NAMEMOD("__MathCore_InlineAfterIndexReduction",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
-         algorithm
-          res := DAE.AFTER_INDEX_RED_INLINE();
-         then true;
-
-       case SCode.NAMEMOD("__Dymola_InlineAfterIndexReduction",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
-         algorithm
-          res := DAE.AFTER_INDEX_RED_INLINE();
-         then true;
-
-       case SCode.NAMEMOD("InlineAfterIndexReduction",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
-         algorithm
-          res := DAE.AFTER_INDEX_RED_INLINE();
-         then true;
-
-       case SCode.NAMEMOD("__OpenModelica_EarlyInline",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
-         algorithm
-          res := DAE.EARLY_INLINE();
-         then true;
-       else false;
-       end match;
-
-     if stop then
-       break;
-     end if;
-
-  end for;
-
-end isInlineFunc2;
-
-public function commentGenerateEvents
-  input SCode.Comment cmt;
-  output Boolean generateEvents;
-protected
-  function commentGenerateEvents2
-    input list<SCode.SubMod> inSubModList;
-    output Boolean res;
-  protected
-    Boolean stop;
-  algorithm
-    res := false;
-
-    for tp in inSubModList loop
-      stop := match tp
-        case SCode.NAMEMOD("GenerateEvents",SCode.MOD(binding = SOME(Absyn.BOOL(res)))) then false;
-        else true;
-      end match;
-
-     if stop then break; end if;
-    end for;
-  end commentGenerateEvents2;
-algorithm
-  generateEvents := match(cmt)
-    local
-      list<SCode.SubMod> smlst;
-
-    case SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(SCode.MOD(subModLst = smlst))))
-      then commentGenerateEvents2(smlst);
-
-    else false;
-  end match;
-end commentGenerateEvents;
 
 public function stripFuncOutputsMod "strips the assignment modification of the component declared as output"
   input SCode.Element elem;
@@ -4841,7 +4739,7 @@ protected
   String str;
 algorithm
   DAE.VAR(componentRef=cr,source=source) := v;
-  str := ComponentReference.printComponentRefStr(cr);
+  str := ComponentReferenceBasics.printComponentRefStr(cr);
   Error.addSourceMessage(Error.FUNCTION_UNUSED_INPUT,{str,name},ElementSource.getElementSourceFileInfo(source));
 end warnUnusedFunctionVar;
 
@@ -4896,7 +4794,7 @@ protected
   DAE.ComponentRef cr1;
 algorithm
   DAE.VAR(componentRef=cr1) := el;
-  noteq := not ComponentReference.crefEqualNoStringCompare(cr1,cr2);
+  noteq := not ComponentReferenceBasics.crefEqualNoStringCompare(cr1,cr2);
 end checkExpInputUsed3;
 
 protected function checkVarBindingsInputUsed
@@ -4951,7 +4849,7 @@ algorithm
         // Some weird functions pass the same output twice so we cannot check for exactly 1 occurance
         // Interfacing with LAPACK routines is fun, fun, fun :)
         if not (List.isMemberOnTrue(v,arg::args,extArgCrefEq) or isSome(binding)) then
-          str := ComponentReference.printComponentRefStr(cr);
+          str := ComponentReferenceBasics.printComponentRefStr(cr);
           Error.addSourceMessage(Error.EXTERNAL_NOT_SINGLE_RESULT,{str,name},ElementSource.getElementSourceFileInfo(source));
           fail();
         end if;
@@ -4975,17 +4873,17 @@ algorithm
       algorithm
         // If the external argument refers to a record member, i.e. a qualified
         // cref, consider the whole record to be used.
-        cr2 := ComponentReference.crefFirstCref(cr2);
+        cr2 := ComponentReferenceBasics.crefFirstCref(cr2);
       then
-        ComponentReference.crefEqualNoStringCompare(cr1,cr2);
+        ComponentReferenceBasics.crefEqualNoStringCompare(cr1,cr2);
 
     case (DAE.VAR(direction=DAE.OUTPUT()), _) then false;
 
     case (DAE.VAR(componentRef=cr1), DAE.EXTARGSIZE(componentRef=cr2))
       algorithm
-        cr2 := ComponentReference.crefFirstCref(cr2);
+        cr2 := ComponentReferenceBasics.crefFirstCref(cr2);
       then
-        ComponentReference.crefEqualNoStringCompare(cr1,cr2);
+        ComponentReferenceBasics.crefEqualNoStringCompare(cr1,cr2);
 
     case (DAE.VAR(componentRef=cr1), DAE.EXTARGEXP(exp=exp))
       then Expression.expHasCref(exp,cr1);
@@ -5283,7 +5181,7 @@ algorithm
         // For qualified crefs, copy input/output from the first part of the
         // cref. This is done so that the correct code can be generated when
         // using qualified crefs in external function definitions.
-        fcr := ComponentReference.crefFirstCref(cref);
+        fcr := ComponentReferenceBasics.crefFirstCref(cref);
         (cache, fattr, _, _, _, _, _, _, _) := Lookup.lookupVarLocal(cache, inEnv, fcr);
       then
         (cache, SOME(DAE.EXTARG(cref, DAEUtil.getAttrDirection(fattr), ty)));
@@ -5298,7 +5196,7 @@ algorithm
     case (cache,env,_,DAE.CREF(componentRef = cref),DAE.PROP(),_,_)
       algorithm
         failure((_,_,_,_,_,_,_,_,_) := Lookup.lookupVarLocal(cache,env,cref));
-        crefstr := ComponentReference.printComponentRefStr(cref);
+        crefstr := ComponentReferenceBasics.printComponentRefStr(cref);
         scope := FGraph.printGraphPathStr(env);
         Error.addMessage(Error.LOOKUP_VARIABLE_ERROR, {crefstr,scope});
       then
@@ -5329,7 +5227,7 @@ algorithm
 
     case (cache,_,_,exp,DAE.PROP(),_,_)
       algorithm
-        str := ExpressionDump.printExpStr(exp);
+        str := ExpressionBasics.printExpStr(exp);
         Error.addSourceMessage(Error.EXTERNAL_ARG_WRONG_EXP,{str},info);
       then
         (cache, NONE());
@@ -5395,7 +5293,7 @@ algorithm
     case (SOME("builtin"),_,_,_,_) then ();
     case (_,_,DAE.T_ARRAY(),_,_)
       algorithm
-        str := Types.unparseType(ty);
+        str := TypesDump.unparseType(ty);
         Error.addSourceMessage(Error.EXTERNAL_FUNCTION_RESULT_ARRAY_TYPE,{str},info);
       then fail();
     case (_,DAE.EXTARG(),_,DAE.C_VAR(),_) then ();
@@ -5606,7 +5504,7 @@ algorithm
     case (_,ci,_,SOME(tp),_)
       algorithm
         true := Types.isArray(tp);
-        failure(ClassInf.isConnector(ci));
+        failure(ClassInfUtil.isConnector(ci));
       then
         tp;
 
@@ -5690,7 +5588,7 @@ algorithm
     case (_,DAE.MOD(_, _, {}, NONE()),_,_) then ();
     case (SCode.PROTECTED(),_,cref,_)
       algorithm
-        str1 := ComponentReference.printComponentRefStr(cref);
+        str1 := ComponentReferenceBasics.printComponentRefStr(cref);
         str2 := Mod.prettyPrintMod(inMod, 0);
         Error.addSourceMessage(Error.MODIFY_PROTECTED, {str1, str2}, info);
       then
@@ -6774,7 +6672,7 @@ algorithm
   // The expression must be of boolean type.
   if not Types.isBoolean(t) then
     Error.addSourceMessageAndFail(Error.IF_CONDITION_TYPE_ERROR,
-      {Dump.printExpStr(inCondition), Types.unparseTypeNoAttr(t)}, inInfo);
+      {Dump.printExpStr(inCondition), TypesDump.unparseTypeNoAttr(t)}, inInfo);
   end if;
 
   // The expression must be a parameter expression that can be evaluated at compile-time.
@@ -6798,7 +6696,7 @@ algorithm
       then true; // Randomly pick a default for graphics mode...
     else
       algorithm
-        Error.addInternalError("InstUtil.instConditionalDeclaration got unexpected value " + ValuesUtil.valString(val), sourceInfo());
+        Error.addInternalError("InstUtil.instConditionalDeclaration got unexpected value " + ValuesDump.valString(val), sourceInfo());
       then
         fail();
   end match;
@@ -6931,7 +6829,7 @@ algorithm
     case (DAE.T_SUBTYPE_BASIC(complexType = ty), _)
       algorithm
         // check if it has any dimensions
-        false := listEmpty(Types.getDimensions(ty));
+        false := listEmpty(TypesDump.getDimensions(ty));
       then
         ty;
 
@@ -7051,15 +6949,15 @@ algorithm
       case DAE.INITIAL_COMPLEX_EQUATION(lhs=DAE.CREF(componentRef=cr))
         algorithm
           vars1 := list(match v
-            case DAE.VAR(binding=SOME(_)) guard ComponentReference.crefPrefixOf(cr, v.componentRef)
+            case DAE.VAR(binding=SOME(_)) guard ComponentReferenceBasics.crefPrefixOf(cr, v.componentRef)
               algorithm
                 is := i::is;
               then v;
             // Moving parameter bindings into initial equation section means we need to force fixed=false...
-            case DAE.VAR(binding=NONE()) guard ComponentReference.crefPrefixOf(cr, v.componentRef)
+            case DAE.VAR(binding=NONE()) guard ComponentReferenceBasics.crefPrefixOf(cr, v.componentRef)
               algorithm
                 v.variableAttributesOption := DAEUtil.setFixedAttr(v.variableAttributesOption, SOME(DAE.BCONST(false)));
-                Error.addSourceMessage(Error.MOVING_PARAMETER_BINDING_TO_INITIAL_EQ_SECTION, {ComponentReference.printComponentRefStr(v.componentRef)}, eq.source.info);
+                Error.addSourceMessage(Error.MOVING_PARAMETER_BINDING_TO_INITIAL_EQ_SECTION, {ComponentReferenceBasics.printComponentRefStr(v.componentRef)}, eq.source.info);
               then v;
             else v;
             end match for v in vars1);
@@ -7086,19 +6984,19 @@ algorithm
       list<DAE.Element> equations;
 
     case (cref, DAE.DEFINE(componentRef=cref2, exp=e)::_)
-      guard ComponentReference.crefEqual(cref,cref2)
+      guard ComponentReferenceBasics.crefEqual(cref,cref2)
       then e;
 
     case (cref, DAE.EQUATION(exp=DAE.CREF(cref2,_),scalar=e)::_)
-      guard ComponentReference.crefEqual(cref,cref2)
+      guard ComponentReferenceBasics.crefEqual(cref,cref2)
       then e;
 
     case (cref, DAE.EQUEQUATION(cr1=cref2,cr2=cref3)::_)
-      guard ComponentReference.crefEqual(cref,cref2)
+      guard ComponentReferenceBasics.crefEqual(cref,cref2)
       then Expression.crefExp(cref3);
 
     case (cref, DAE.COMPLEX_EQUATION(lhs=DAE.CREF(cref2,_),rhs=e)::_)
-      guard ComponentReference.crefEqual(cref,cref2)
+      guard ComponentReferenceBasics.crefEqual(cref,cref2)
       then e;
 
     case (cref, _::equations)
@@ -7210,7 +7108,7 @@ protected
 algorithm
   restriction := SCodeUtil.getClassRestriction(cl);
   SCode.Restriction.R_FUNCTION(functionRestriction = fres) := restriction;
-  daePurity := getFunctionRestrictionPurity(SCodeUtil.getFunctionRestrictionPurity(fres), inheritedComment, newFrontend = false);
+  daePurity := InstBasics.getFunctionRestrictionPurity(SCodeUtil.getFunctionRestrictionPurity(fres), inheritedComment, newFrontend = false);
 
   attr := matchcontinue fres
     case SCode.FR_EXTERNAL_FUNCTION(purity)
@@ -7218,8 +7116,8 @@ algorithm
         isImpure := AbsynUtil.isImpure(purity);
         inVars := List.select(vl,Types.isInputVar);
         outVars := List.select(vl,Types.isOutputVar);
-        name := SCodeUtil.isBuiltinFunction(cl,List.map(inVars,Types.getVarName),List.map(outVars,Types.getVarName));
-        inlineType := commentIsInlineFunc(inheritedComment);
+        name := SCodeUtil.isBuiltinFunction(cl,List.map(inVars,TypesDump.getVarName),List.map(outVars,TypesDump.getVarName));
+        inlineType := InstBasics.commentIsInlineFunc(inheritedComment);
         unboxArgs := SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment, "__OpenModelica_UnboxArguments");
       then (DAE.FUNCTION_ATTRIBUTES(inlineType,false,daePurity,false,DAE.FUNCTION_BUILTIN(SOME(name), unboxArgs),DAE.FP_NON_PARALLEL()));
 
@@ -7228,8 +7126,8 @@ algorithm
       algorithm
         inVars := List.select(vl,Types.isInputVar);
         outVars := List.select(vl,Types.isOutputVar);
-        name := SCodeUtil.isBuiltinFunction(cl,List.map(inVars,Types.getVarName),List.map(outVars,Types.getVarName));
-        inlineType := commentIsInlineFunc(inheritedComment);
+        name := SCodeUtil.isBuiltinFunction(cl,List.map(inVars,TypesDump.getVarName),List.map(outVars,TypesDump.getVarName));
+        inlineType := InstBasics.commentIsInlineFunc(inheritedComment);
         isOpenModelicaPure := not SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_Impure");
         unboxArgs := SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment, "__OpenModelica_UnboxArguments");
       then (DAE.FUNCTION_ATTRIBUTES(inlineType,false,daePurity,false,DAE.FUNCTION_BUILTIN(SOME(name), unboxArgs),DAE.FP_PARALLEL_FUNCTION()));
@@ -7237,7 +7135,7 @@ algorithm
     //parallel functions: non-builtin
     case SCode.FR_PARALLEL_FUNCTION()
       algorithm
-        inlineType := commentIsInlineFunc(inheritedComment);
+        inlineType := InstBasics.commentIsInlineFunc(inheritedComment);
         isBuiltin := if SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_BuiltinPtr") then DAE.FUNCTION_BUILTIN_PTR() else DAE.FUNCTION_NOT_BUILTIN();
         isOpenModelicaPure := not SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_Impure");
       then DAE.FUNCTION_ATTRIBUTES(inlineType,false,daePurity,false,isBuiltin,DAE.FP_PARALLEL_FUNCTION());
@@ -7248,7 +7146,7 @@ algorithm
 
     else
       algorithm
-        inlineType := commentIsInlineFunc(inheritedComment);
+        inlineType := InstBasics.commentIsInlineFunc(inheritedComment);
         hasOutVars := List.any(vl,Types.isOutputVar);
         isBuiltin := if SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_BuiltinPtr") then DAE.FUNCTION_BUILTIN_PTR() else DAE.FUNCTION_NOT_BUILTIN();
 
@@ -7261,28 +7159,6 @@ algorithm
         DAE.FUNCTION_ATTRIBUTES(inlineType,false,daePurity,false,isBuiltin,DAE.FP_NON_PARALLEL());
   end matchcontinue;
 end getFunctionAttributes;
-
-public function getFunctionRestrictionPurity
-  input Absyn.FunctionPurity purity;
-  input SCode.Comment cmt;
-  input Boolean newFrontend;
-  output DAE.Purity outPurity;
-algorithm
-  outPurity := match purity
-    case Absyn.FunctionPurity.PURE() then DAE.Purity.PURE;
-    case Absyn.FunctionPurity.IMPURE() then DAE.Purity.IMPURE;
-    else DAE.Purity.UNDEFINED;
-  end match;
-
-  if outPurity == DAE.Purity.UNDEFINED then
-    if SCodeUtil.commentHasBooleanNamedAnnotation(cmt, "__ModelicaAssociation_Impure") then
-      outPurity := DAE.Purity.IMPURE;
-    elseif not newFrontend and SCodeUtil.commentHasBooleanNamedAnnotation(cmt, "__OpenModelica_Impure") then
-      // __OpenModelica_Impure is only used for MetaModelica, which the NF doesn't care about.
-      outPurity := DAE.Purity.OM_IMPURE;
-    end if;
-  end if;
-end getFunctionRestrictionPurity;
 
 public function checkFunctionElement
 "Verifies that an element of a function is correct, i.e.
@@ -7613,7 +7489,7 @@ algorithm
     case (path1,call as DAE.CALL(path=path2,attr=attr as DAE.CALL_ATTR(tailCall=DAE.NO_TAIL())),_,_)
       algorithm
         true := AbsynUtil.pathEqual(path1,path2);
-        str := "Tail recursion of: " + ExpressionDump.printExpStr(rhs) + " with input vars: " + stringDelimitList(vars,",");
+        str := "Tail recursion of: " + ExpressionBasics.printExpStr(rhs) + " with input vars: " + stringDelimitList(vars,",");
         if Flags.isSet(Flags.TAIL) then
           Error.addSourceMessage(Error.COMPILER_NOTIFICATION,{str},ElementSource.getElementSourceFileInfo(source));
         end if;
@@ -7682,7 +7558,7 @@ algorithm
   ocache := match cache
     local
       Option<FCore.Graph> ie;
-      Mutable<DAE.FunctionTree> f;
+      Mutable<AvlTreePathFunction.Tree> f;
       AvlSetCR.Tree ht;
       list<list<DAE.ComponentRef>> crs;
       Absyn.Path p;
@@ -7700,7 +7576,7 @@ algorithm
   ocache := match (cache,pre)
     local
       Option<FCore.Graph> ie;
-      Mutable<DAE.FunctionTree> f;
+      Mutable<AvlTreePathFunction.Tree> f;
       AvlSetCR.Tree ht;
       list<DAE.ComponentRef> crs;
       list<list<DAE.ComponentRef>> crss;
@@ -7792,7 +7668,7 @@ algorithm
       algorithm
         vars := List.filterOnTrue(vars, Types.varIsVariable);
         // TODO: We filter out parameters at the moment. I'm unsure if this is correct. Might be that this is an automatic error...
-        names := List.map1r(List.map(vars, Types.getVarName), stringAppend, name + ".");
+        names := List.map1r(List.map(vars, TypesDump.getVarName), stringAppend, name + ".");
         // print("for record: " + stringDelimitList(names,",") + "\n");
         // Arrays with unknown bounds (size(cr,1), etc) are treated as initialized because they may have 0 dimensions checked for in the code
         outNames := if DAEUtil.varDirectionEqual(dir,DAE.OUTPUT()) then names else {};
@@ -8010,7 +7886,7 @@ algorithm
       then unbound;
     case (DAE.CREF(componentRef=cr),unbound)
       algorithm
-        unbound := List.filter1OnTrue(unbound,Util.stringNotEqual,ComponentReference.crefFirstIdent(cr));
+        unbound := List.filter1OnTrue(unbound,Util.stringNotEqual,ComponentReferenceBasics.crefFirstIdent(cr));
       then unbound;
     case (DAE.ASUB(exp=exp),unbound) then crefFiltering(exp,unbound);
     case (DAE.PATTERN(pattern=pattern),unbound)
@@ -8085,8 +7961,8 @@ algorithm
       then (inExp, true, inTpl);
     case (exp as DAE.CREF(componentRef=cr),(unbound,info))
       algorithm
-        b := listMember(ComponentReference.crefFirstIdent(cr),unbound);
-        str := ComponentReference.crefFirstIdent(cr);
+        b := listMember(ComponentReferenceBasics.crefFirstIdent(cr),unbound);
+        str := ComponentReferenceBasics.crefFirstIdent(cr);
         Error.assertionOrAddSourceMessage(not b, Error.WARNING_DEF_USE, {str}, info);
         unbound := List.filter1OnTrue(unbound,Util.stringNotEqual,str);
       then (exp,true,(unbound,info));
@@ -8559,7 +8435,7 @@ algorithm
     List<Absyn.ComponentRef> fieldCrLst;
   case ((domainCr,fieldCrLst),false)
     algorithm
-      true := ComponentReference.crefEqual(domainCr,domainCrToAdd);
+      true := ComponentReferenceBasics.crefEqual(domainCr,domainCrToAdd);
     then
       ((domainCr,fieldCrToAdd::fieldCrLst),true);
     else

@@ -74,7 +74,7 @@ end transformBackendDAE;
 function getAdjacencyMatrixfromOption
   input BackendDAE.EqSystem inSyst;
   input BackendDAE.IndexType inIndxType;
-  input Option<DAE.FunctionTree> inFunctionTree;
+  input Option<AvlTreePathFunction.Tree> inFunctionTree;
   output BackendDAE.EqSystem outSyst;
   output BackendDAE.AdjacencyMatrix outM;
   output BackendDAE.AdjacencyMatrix outMT;

@@ -389,7 +389,7 @@ algorithm
 
    else
     algorithm
-      Error.addCompilerError("FGraph.updateInstance failed for node: " + FNode.toPathStr(FNode.fromRef(inRef)) + " variable:" + Types.printVarStr(inVar));
+      Error.addCompilerError("FGraph.updateInstance failed for node: " + FNode.toPathStr(FNode.fromRef(inRef)) + " variable:" + TypesDump.printVarStr(inVar));
     then
       fail();
 
@@ -555,7 +555,7 @@ algorithm
               SCode.defaultPrefixes,
               SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR(), Absyn.NONFIELD()),
               Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
-              SCode.noComment, NONE(), AbsynUtil.dummyInfo);
+              SCode.noComment, NONE(), Absyn.dummyInfo);
         v := DAE.TYPES_VAR(
               name,
               DAE.ATTR(DAE.NON_CONNECTOR(), SCode.NON_PARALLEL(), variability, Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
@@ -1735,9 +1735,9 @@ algorithm
 
     case (_, _, _, _, _, _)
       algorithm
-        crefPrefix := PrefixUtil.prefixAdd(inSourceName,{},{},inPrefix,SCode.CONST(),ClassInf.UNKNOWN(Absyn.IDENT("")), AbsynUtil.dummyInfo); // variability doesn't matter
+        crefPrefix := PrefixUtil.prefixAdd(inSourceName,{},{},inPrefix,SCode.CONST(),ClassInf.UNKNOWN(Absyn.IDENT("")), Absyn.dummyInfo); // variability doesn't matter
 
-        // name = inTargetClassName + "$" + ComponentReference.printComponentRefStr(PrefixUtil.prefixToCref(crefPrefix));
+        // name = inTargetClassName + "$" + ComponentReferenceBasics.printComponentRefStr(PrefixUtil.prefixToCref(crefPrefix));
         name := inTargetClassName + "$" + AbsynUtil.pathString(AbsynUtil.stringListPath(listReverse(AbsynUtil.pathToStringList(PrefixUtil.prefixToPath(crefPrefix)))), "$", usefq=false)
                ; // + "$" + AbsynUtil.pathString2NoLeadingDot(getGraphName(inSourceEnv), "$");
         // name = "'$" + inTargetClassName + "@" + AbsynUtil.pathString(AbsynUtil.stringListPath(listReverse(AbsynUtil.pathToStringList(PrefixUtil.prefixToPath(crefPrefix))))) + "'";

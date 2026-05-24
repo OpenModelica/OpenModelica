@@ -58,7 +58,7 @@ import Expression;
 import File;
 import File.Escape.JSON;
 import writeCref = ComponentReference.writeCref;
-import expStr = ExpressionDump.printExpStr;
+import expStr = ExpressionBasics.printExpStr;
 import List;
 import PrefixUtil;
 import SimCodeFunction;
@@ -1179,7 +1179,7 @@ function getWhenUses
   output list<DAE.ComponentRef> uses;
 algorithm
   uses := listAppend(conditions, Expression.extractCrefsFromExpDerPreStart(value));
-  uses := UnorderedSet.unique_list(uses, ComponentReference.hashComponentRef, ComponentReference.crefEqual);
+  uses := UnorderedSet.unique_list(uses, ComponentReference.hashComponentRef, ComponentReferenceBasics.crefEqual);
 end getWhenUses;
 
 function serializeStatement

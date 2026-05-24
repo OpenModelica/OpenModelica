@@ -1284,11 +1284,11 @@ public
         algorithm
           iter :: iters := iters;
           outCall := makeTypedReduction(call.fn, call.ty, call.var, call.purity,
-            call.exp, {iter}, AbsynUtil.dummyInfo);
+            call.exp, {iter}, Absyn.dummyInfo);
 
           for i in iters loop
             outCall := makeTypedReduction(call.fn, call.ty, call.var, call.purity,
-              Expression.CALL(outCall), {i}, AbsynUtil.dummyInfo);
+              Expression.CALL(outCall), {i}, Absyn.dummyInfo);
           end for;
         then
           outCall;

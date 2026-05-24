@@ -51,7 +51,6 @@ protected import CodegenMidToC;
 protected import ComponentReference;
 protected import DAEToMid;
 protected import Error;
-protected import ExpressionDump;
 protected import Global;
 protected import List;
 protected import MidCode;
@@ -254,25 +253,25 @@ public uniontype SimExtArg
       local
         String tmp = "";
       case SIMEXTARG() algorithm
-        tmp := tmp + "cref: " + ComponentReference.printComponentRefStr(simExtArg.cref);
+        tmp := tmp + "cref: " + ComponentReferenceBasics.printComponentRefStr(simExtArg.cref);
         tmp := if simExtArg.isInput then tmp + ", isInput: true" else tmp + ", isInput: false";
         tmp := tmp + ", outputIndex: " + intString(simExtArg.outputIndex);
         tmp := if simExtArg.isArray then tmp + ", isArray: true" else tmp + ", isArray: false";
         tmp := if simExtArg.hasBinding then tmp + ", hasBinding: true" else tmp + ", hasBinding: false";
-        tmp := tmp + ", type: " + Types.unparseType(simExtArg.type_);
+        tmp := tmp + ", type: " + TypesDump.unparseType(simExtArg.type_);
       then "SIMEXTARG(" + tmp + ")";
 
       case SIMEXTARGEXP() algorithm
-        tmp := tmp + "exp: " + ExpressionDump.printExpStr(simExtArg.exp);
-        tmp := tmp + ", type: " + Types.unparseType(simExtArg.type_);
+        tmp := tmp + "exp: " + ExpressionBasics.printExpStr(simExtArg.exp);
+        tmp := tmp + ", type: " + TypesDump.unparseType(simExtArg.type_);
       then "SIMEXTARGEXP(" + tmp + ")";
 
       case SIMEXTARGSIZE() algorithm
-        tmp := tmp + "cref: " + ComponentReference.printComponentRefStr(simExtArg.cref);
+        tmp := tmp + "cref: " + ComponentReferenceBasics.printComponentRefStr(simExtArg.cref);
         tmp := if simExtArg.isInput then tmp + ", isInput: true" else tmp + ", isInput: false";
         tmp := tmp + ", outputIndex: " + intString(simExtArg.outputIndex);
-        tmp := tmp + ", type: " + Types.unparseType(simExtArg.type_);
-        tmp := tmp + ", exp: " + ExpressionDump.printExpStr(simExtArg.exp);
+        tmp := tmp + ", type: " + TypesDump.unparseType(simExtArg.type_);
+        tmp := tmp + ", exp: " + ExpressionBasics.printExpStr(simExtArg.exp);
       then "SIMEXTARGSIZE(" + tmp + ")";
 
       case SIMNOEXTARG()
@@ -312,8 +311,8 @@ public uniontype Variable
       local
         String tmp = "";
       case VARIABLE() algorithm
-        tmp := tmp + "name: " + ComponentReference.printComponentRefStr(variable.name);
-        tmp := tmp + ", type: " + Types.unparseType(variable.ty);
+        tmp := tmp + "name: " + ComponentReferenceBasics.printComponentRefStr(variable.name);
+        tmp := tmp + ", type: " + TypesDump.unparseType(variable.ty);
       then "VARIABLE(" + tmp + ")";
       case FUNCTION_PTR() algorithm
         tmp := tmp + "name: " + variable.name;
@@ -524,7 +523,7 @@ public function getCalledFunctionsInFunction
 "Goes through the given DAE, finds the given function and collects
   the names of the functions called from within those functions"
   input Absyn.Path path;
-  input DAE.FunctionTree funcs;
+  input AvlTreePathFunction.Tree funcs;
   output list<Absyn.Path> outPaths;
 protected
   HashTableStringToPath.HashTable ht;

@@ -403,7 +403,7 @@ function generateModelCodeNewBackend
   output String fileDir;
   output Real timeSimCode = 0.0;
   output Real timeTemplates = 0.0;
-  output DAE.FunctionTree oldFunctionTree;
+  output AvlTreePathFunction.Tree oldFunctionTree;
 protected
   Integer numCheckpoints;
   NSimCode.SimCode simCode;
@@ -1165,7 +1165,7 @@ protected
   DAE.DAElist dae;
   FCore.Graph env;
   Option<DAE.DAElist> odae;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   list<Option<Integer>> allRoots;
   FlatModel flatModel;
   FunctionTree funcTree;
@@ -1281,7 +1281,7 @@ public function translateModelCallBackend
 protected
   UnorderedMap<Absyn.Path, NFFunction.Function> func_map;
   DAE.DAElist dae;
-  DAE.FunctionTree dae_funcs;
+  AvlTreePathFunction.Tree dae_funcs;
   FCore.Graph env;
   FCore.Cache cache;
   String file_name_prefix;
@@ -1336,7 +1336,7 @@ algorithm
       Option<list<String>> strPreOptModules;
       Boolean isFMI2;
       BackendDAE.SymbolicJacobians fmiDer;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
 
     // old backend
     case (graph) algorithm
@@ -1539,7 +1539,7 @@ protected function translateModelCallBackendNB
   output list<String> outLibs;
   output String outFileDir;
   output list<tuple<String, Values.Value>> resultValues;
-  output DAE.FunctionTree oldFunctionTree;
+  output AvlTreePathFunction.Tree oldFunctionTree;
 protected
   Real timeSimCode=0.0, timeTemplates=0.0, timeBackend=0.0;
   NBackendDAE bdae;

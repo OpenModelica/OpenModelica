@@ -63,12 +63,13 @@ import BackendVarTransform;
 import BaseHashSet;
 import CheckModel;
 import ComponentReference;
+import Config;
 import DoubleEnded;
 import ElementSource;
 import Error;
 import ExecStat.execStat;
 import Expression;
-import ExpressionDump;
+import ExpressionBasics;
 import ExpressionSimplify;
 import Flags;
 import GCExt;
@@ -80,6 +81,7 @@ import Sorting;
 import SymbolicJacobian;
 import SynchronousFeatures;
 import System;
+import Types;
 
 // =============================================================================
 // section for all public functions
@@ -639,7 +641,7 @@ algorithm
                                                              (collectPreVariablesTraverseExp, outHS) );
   //print("collectPreVariables:\n");
   //crefs := BaseHashSet.hashSetList(outHS);
-  //BackendDump.debuglst(crefs, ComponentReference.printComponentRefStr, "\n", "\n");
+  //BackendDump.debuglst(crefs, ComponentReferenceBasics.printComponentRefStr, "\n", "\n");
 end collectPreVariables;
 
 public function collectPreVariablesEqSystem
@@ -951,9 +953,9 @@ algorithm
   lhs := BackendVariable.varExp(var);
 
   if BackendVariable.isParam(var) and not BackendVariable.varHasBindExp(var) and BackendVariable.varFixed(var) then
-    s := ExpressionDump.printExpStr(lhs);
+    s := ExpressionBasics.printExpStr(lhs);
     startValue := BackendVariable.varStartValue(var);
-    str := ExpressionDump.printExpStr(startValue);
+    str := ExpressionBasics.printExpStr(startValue);
     v := BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
     v := BackendVariable.setBindExp(v, SOME(startValue));
     v := BackendVariable.setVarFixed(v, true);
@@ -1305,7 +1307,7 @@ protected function balanceInitialSystem "author: kabdelhak
 protected
   Boolean debug = false;
   list<BackendDAE.Equation> eqn_lst, init_eqns, sim_eqns;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   BackendDAE.AdjacencyMatrix m, mT;
   BackendDAE.AdjacencyMatrixEnhanced me;
   Integer nVars, nEqns;
@@ -1449,7 +1451,7 @@ protected
   BackendDAE.AdjacencyMatrix m "adjacency matrix of modified system";
   BackendDAE.AdjacencyMatrix m_ "adjacency matrix of original system (TODO: fix this one)";
   BackendDAE.EqSystem syst;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   BackendDAE.AdjacencyMatrixEnhanced me;
   array<Integer> mapIncRowEqn;
   Boolean perfectMatching;
@@ -2051,7 +2053,7 @@ algorithm
       list<String> listParameter;
       BackendDAE.AdjacencyMatrix m;
       BackendDAE.EqSystem system;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       list<BackendDAE.Equation> list_inEqns;
       Boolean anyStartValue;
 
@@ -2431,8 +2433,8 @@ algorithm
 
       if isFixed then
         // Special case for initial state selection
-        if StringUtil.startsWith(ComponentReference.crefFirstIdent(cr), "$STATESET") and Flags.getConfigBool(Flags.INITIAL_STATE_SELECTION) then
-          stateSetSplit := Util.stringSplitAtChar(ComponentReference.crefFirstIdent(cr),".");
+        if StringUtil.startsWith(ComponentReferenceBasics.crefFirstIdent(cr), "$STATESET") and Flags.getConfigBool(Flags.INITIAL_STATE_SELECTION) then
+          stateSetSplit := Util.stringSplitAtChar(ComponentReferenceBasics.crefFirstIdent(cr),".");
           stateSetIdxString::stateSetSplit := stateSetSplit;
           stateSetIdxString := substring(stateSetIdxString,10,stringLength(stateSetIdxString));
           stateSetIdx := stringInt(stateSetIdxString);
@@ -2515,8 +2517,8 @@ algorithm
       true := BackendVariable.varFixed(var);
       startExp := BackendVariable.varStartValueType(var);
 
-      s := ComponentReference.printComponentRefStr(cr);
-      str := ExpressionDump.printExpStr(startExp);
+      s := ComponentReferenceBasics.printComponentRefStr(cr);
+      str := ExpressionBasics.printExpStr(startExp);
 
       // e = Expression.crefExp(cr);
       // ty = Expression.typeof(e);
@@ -2539,8 +2541,8 @@ algorithm
       var := BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
       var := BackendVariable.setBindExp(var, NONE());
 
-      s := ComponentReference.printComponentRefStr(cr);
-      str := ExpressionDump.printExpStr(bindExp);
+      s := ComponentReferenceBasics.printComponentRefStr(cr);
+      str := ExpressionBasics.printExpStr(bindExp);
       info := ElementSource.getElementSourceFileInfo(BackendVariable.getVarSource(var));
       Error.addSourceMessage(Error.UNFIXED_PARAMETER_WITH_BINDING, {s, s, str}, info);
 
@@ -2561,8 +2563,8 @@ algorithm
       NONE() := BackendVariable.varStartValueOption(var);
       var := BackendVariable.setVarStartValue(var, bindExp);
 
-      s := ComponentReference.printComponentRefStr(cr);
-      str := ExpressionDump.printExpStr(bindExp);
+      s := ComponentReferenceBasics.printComponentRefStr(cr);
+      str := ExpressionBasics.printExpStr(bindExp);
       info := ElementSource.getElementSourceFileInfo(BackendVariable.getVarSource(var));
       Error.addSourceMessage(Error.UNFIXED_PARAMETER_WITH_BINDING_31, {s, s, str}, info);
 
@@ -2579,9 +2581,9 @@ algorithm
       var := BackendVariable.setBindExp(var, NONE());
       SOME(startExp) := BackendVariable.varStartValueOption(var);
 
-      s := ComponentReference.printComponentRefStr(cr);
-      str := ExpressionDump.printExpStr(bindExp);
-      sv := ExpressionDump.printExpStr(startExp);
+      s := ComponentReferenceBasics.printComponentRefStr(cr);
+      str := ExpressionBasics.printExpStr(bindExp);
+      sv := ExpressionBasics.printExpStr(startExp);
       info := ElementSource.getElementSourceFileInfo(BackendVariable.getVarSource(var));
       Error.addSourceMessage(Error.UNFIXED_PARAMETER_WITH_BINDING_AND_START_VALUE_31, {s, sv, s, str}, info);
 

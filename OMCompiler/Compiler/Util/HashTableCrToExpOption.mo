@@ -47,7 +47,7 @@ keyEqual   - A comparison function between two keys, returns true if equal.
 public import BaseHashTable;
 public import DAE;
 protected import ComponentReference;
-protected import ExpressionDump;
+protected import ExpressionBasics;
 
 public type Key = DAE.ComponentRef;
 public type Value = Option<DAE.Exp>;
@@ -99,7 +99,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReference.hashComponentRef,ComponentReference.crefEqual,ComponentReference.printComponentRefStr,printExpOtionStr));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReference.hashComponentRef,ComponentReferenceBasics.crefEqual,ComponentReferenceBasics.printComponentRefStr,printExpOtionStr));
 end emptyHashTableSized;
 
 protected function printExpOtionStr
@@ -109,7 +109,7 @@ algorithm
   outStr := match expOpt
     local
       DAE.Exp exp;
-    case SOME(exp) then "SOME("+ExpressionDump.printExpStr(exp)+")";
+    case SOME(exp) then "SOME("+ExpressionBasics.printExpStr(exp)+")";
     else "NONE()";
   end match;
 end printExpOtionStr;

@@ -1334,33 +1334,33 @@ algorithm
       list<DAE.Exp> explst1, explst2;
 
     case (BackendDAE.EQUATION(exp=e11, scalar=e12), BackendDAE.EQUATION(exp=e21, scalar=e22)) algorithm
-      res := boolAnd(Expression.expEqual(e11, e21), Expression.expEqual(e12, e22));
+      res := boolAnd(ExpressionBasics.expEqual(e11, e21), ExpressionBasics.expEqual(e12, e22));
     then res;
 
     case (BackendDAE.ARRAY_EQUATION(left=e11, right=e12), BackendDAE.ARRAY_EQUATION(left=e21, right=e22)) algorithm
-      res := boolAnd(Expression.expEqual(e11, e21), Expression.expEqual(e12, e22));
+      res := boolAnd(ExpressionBasics.expEqual(e11, e21), ExpressionBasics.expEqual(e12, e22));
     then res;
 
     case (BackendDAE.COMPLEX_EQUATION(left=e11, right=e12), BackendDAE.COMPLEX_EQUATION(left=e21, right=e22)) algorithm
-      res := boolAnd(Expression.expEqual(e11, e21), Expression.expEqual(e12, e22));
+      res := boolAnd(ExpressionBasics.expEqual(e11, e21), ExpressionBasics.expEqual(e12, e22));
     then res;
 
     case (BackendDAE.SOLVED_EQUATION(componentRef=cr1, exp=exp1), BackendDAE.SOLVED_EQUATION(componentRef=cr2, exp=exp2)) algorithm
-      res := boolAnd(ComponentReference.crefEqualNoStringCompare(cr1, cr2), Expression.expEqual(exp1, exp2));
+      res := boolAnd(ComponentReferenceBasics.crefEqualNoStringCompare(cr1, cr2), ExpressionBasics.expEqual(exp1, exp2));
     then res;
 
     case (BackendDAE.RESIDUAL_EQUATION(exp=exp1), BackendDAE.RESIDUAL_EQUATION(exp=exp2)) algorithm
-      res := Expression.expEqual(exp1, exp2);
+      res := ExpressionBasics.expEqual(exp1, exp2);
     then res;
 
     case (BackendDAE.ALGORITHM(alg=alg1), BackendDAE.ALGORITHM(alg=alg2)) algorithm
       explst1 := Algorithm.getAllExps(alg1);
       explst2 := Algorithm.getAllExps(alg2);
-      res := List.isEqualOnTrue(explst1, explst2, Expression.expEqual);
+      res := List.isEqualOnTrue(explst1, explst2, ExpressionBasics.expEqual);
     then res;
 
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(whenStmtLst={BackendDAE.ASSIGN(left=e11, right=e12)})), BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(whenStmtLst={BackendDAE.ASSIGN(left=e21, right=e22)}))) algorithm
-      res := boolAnd(Expression.expEqual(e11, e21), Expression.expEqual(e12, e22));
+      res := boolAnd(ExpressionBasics.expEqual(e11, e21), ExpressionBasics.expEqual(e12, e22));
     then res;
 
     else false;
@@ -1407,7 +1407,7 @@ public function equationToScalarResidualForm "author: Frenkel TUD 2012-06
   This function transforms an equation to its scalar residual form.
   For instance, a=b is transformed to a-b=0, and the instance {a[1], a[2]}=b to a[1]=b[1] and a[2]=b[2]"
   input BackendDAE.Equation inEquation;
-  input DAE.FunctionTree funcTree;
+  input AvlTreePathFunction.Tree funcTree;
   output list<BackendDAE.Equation> outEquations;
 algorithm
 
@@ -1586,7 +1586,7 @@ algorithm
     then ((i+1, eqs));
 
     case (_, _, _, _, (i, _)) algorithm
-      str := "BackendEquation.equationTupleToScalarResidualForm failed: " + intString(i) + ": " + ExpressionDump.printExpStr(cr);
+      str := "BackendEquation.equationTupleToScalarResidualForm failed: " + intString(i) + ": " + ExpressionBasics.printExpStr(cr);
       Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, ElementSource.getElementSourceFileInfo(inSource));
     then fail();
   end match;
@@ -1650,15 +1650,15 @@ end equationToResidualForm;
 public function traverseEquationToScalarResidualForm
 "author: Frenkel TUD 2010-11"
   input BackendDAE.Equation inEq;
-  input tuple<DAE.FunctionTree, list<BackendDAE.Equation>> inEqs;
+  input tuple<AvlTreePathFunction.Tree, list<BackendDAE.Equation>> inEqs;
   output BackendDAE.Equation outEq;
-  output tuple<DAE.FunctionTree, list<BackendDAE.Equation>> outEqs;
+  output tuple<AvlTreePathFunction.Tree, list<BackendDAE.Equation>> outEqs;
 algorithm
   (outEq,outEqs) := match(inEq,inEqs)
     local
       list<BackendDAE.Equation> eqns,reqn;
       BackendDAE.Equation eqn;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
 
     case (eqn, (funcs, eqns))
       algorithm
@@ -2096,7 +2096,7 @@ algorithm
     else algorithm
       // show only on failtrace!
       true := Flags.isSet(Flags.FAILTRACE);
-      Debug.traceln("- BackendEquation.generateEquation failed on: " + ExpressionDump.printExpStr(lhs) + " = " + ExpressionDump.printExpStr(rhs) + "\n");
+      Debug.traceln("- BackendEquation.generateEquation failed on: " + ExpressionBasics.printExpStr(lhs) + " = " + ExpressionBasics.printExpStr(rhs) + "\n");
     then fail();
   end match;
 end generateEquation;
@@ -2285,7 +2285,7 @@ algorithm
       BackendDAE.Equation eqn;
 
     case (_, DAE.RELATION(e1, DAE.LESS(_), e2, _, _)) algorithm
-      lhs := ComponentReference.makeCrefIdent(conCrefName, DAE.T_REAL_DEFAULT, {});
+      lhs := ComponentReferenceBasics.makeCrefIdent(conCrefName, DAE.T_REAL_DEFAULT, {});
       dummyVar := BackendDAE.VAR(lhs, conKind, DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false, false);
       rhs := Expression.expSub(e1,e2);
       (rhs, _) := ExpressionSimplify.simplify1(rhs);
@@ -2295,7 +2295,7 @@ algorithm
     then ({BackendDAE.SOLVED_EQUATION(lhs, rhs, Source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)}, dummyVar);
 
     case (_, DAE.RELATION(e1, DAE.LESSEQ(_), e2, _, _)) algorithm
-      lhs := ComponentReference.makeCrefIdent(conCrefName, DAE.T_REAL_DEFAULT, {});
+      lhs := ComponentReferenceBasics.makeCrefIdent(conCrefName, DAE.T_REAL_DEFAULT, {});
       dummyVar := BackendDAE.VAR(lhs, conKind, DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false, false);
       rhs := Expression.expSub(e1,e2);
       (rhs, _) := ExpressionSimplify.simplify1(rhs);
@@ -2305,7 +2305,7 @@ algorithm
     then ({BackendDAE.SOLVED_EQUATION(lhs, rhs, Source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)}, dummyVar);
 
     case (_, DAE.RELATION(e1, DAE.GREATER(_), e2, _, _)) algorithm
-      lhs := ComponentReference.makeCrefIdent(conCrefName, DAE.T_REAL_DEFAULT, {});
+      lhs := ComponentReferenceBasics.makeCrefIdent(conCrefName, DAE.T_REAL_DEFAULT, {});
       dummyVar := BackendDAE.VAR(lhs, conKind, DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false, false);
       rhs :=  Expression.expSub(e2,e1);
       (rhs, _) := ExpressionSimplify.simplify1(rhs);
@@ -2315,7 +2315,7 @@ algorithm
     then ({BackendDAE.SOLVED_EQUATION(lhs, rhs, Source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)}, dummyVar);
 
     case (_, DAE.RELATION(e1, DAE.GREATEREQ(_), e2, _, _)) algorithm
-      lhs := ComponentReference.makeCrefIdent(conCrefName, DAE.T_REAL_DEFAULT, {});
+      lhs := ComponentReferenceBasics.makeCrefIdent(conCrefName, DAE.T_REAL_DEFAULT, {});
       dummyVar := BackendDAE.VAR(lhs, conKind, DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false, false);
       rhs :=  Expression.expSub(e2,e1);
       (rhs, _) := ExpressionSimplify.simplify(rhs);
@@ -2325,7 +2325,7 @@ algorithm
     then ({BackendDAE.SOLVED_EQUATION(lhs, rhs, Source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)}, dummyVar);
 
     case (_, DAE.RELATION(e1, DAE.EQUAL(_), e2, _, _)) algorithm
-      lhs := ComponentReference.makeCrefIdent(conCrefName, DAE.T_REAL_DEFAULT, {});
+      lhs := ComponentReferenceBasics.makeCrefIdent(conCrefName, DAE.T_REAL_DEFAULT, {});
       dummyVar := BackendDAE.VAR(lhs, conKind, DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false, false);
       rhs :=  Expression.expSub(e2,e1);
       (rhs, _) := ExpressionSimplify.simplify(rhs);
@@ -2340,7 +2340,7 @@ algorithm
         (v, _) := BackendVariable.getVarSingle(cr, knvars);
       end try;
 
-      lhs := ComponentReference.makeCrefIdent(conCrefName, DAE.T_REAL_DEFAULT, {});
+      lhs := ComponentReferenceBasics.makeCrefIdent(conCrefName, DAE.T_REAL_DEFAULT, {});
       dummyVar := BackendDAE.VAR(lhs, conKind, DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false, false);
       dummyVar := BackendVariable.mergeAliasVars(dummyVar, v, false, knvars);
       eqn := BackendDAE.SOLVED_EQUATION(lhs, e1, Source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
@@ -2385,7 +2385,7 @@ algorithm
   if makeTmpEqnForExp_rule(y) then
     update := true;
 
-    cr  := ComponentReference.makeCrefIdent(name_, DAE.T_REAL_DEFAULT , {});
+    cr  := ComponentReferenceBasics.makeCrefIdent(name_, DAE.T_REAL_DEFAULT , {});
     oExp := Expression.crefExp(cr);
 
     tmpvar := BackendVariable.makeVar(cr);
@@ -2479,7 +2479,7 @@ public function solveEquation "author: wbraun
   Algorithm, when and if-equation are left as they are."
   input BackendDAE.Equation eqn;
   input DAE.Exp crefExp;
-  input Option<DAE.FunctionTree> functions;
+  input Option<AvlTreePathFunction.Tree> functions;
   output BackendDAE.Equation outEqn;
 algorithm
   // kabdelhak: Why does every kind of equation produce a regular equation?
@@ -2503,13 +2503,13 @@ algorithm
 
     case BackendDAE.SOLVED_EQUATION(componentRef=cref, exp=e2, source=source, attr=eqAttr) algorithm
       cr := Expression.expCref(crefExp);
-      true := ComponentReference.crefEqual(cref, cr);
+      true := ComponentReferenceBasics.crefEqual(cref, cr);
     then (BackendDAE.EQUATION(crefExp, e2, source, eqAttr));
 
     case BackendDAE.SOLVED_EQUATION(componentRef=cref, exp=e2, source=source, attr=eqAttr)  algorithm
       // already checked in rule above:
       //cr = Expression.expCref(crefExp);
-      //false = ComponentReference.crefEqual(cref, cr);
+      //false = ComponentReferenceBasics.crefEqual(cref, cr);
       e1 := Expression.crefExp(cref);
       (res, _, {}, {}) := ExpressionSolve.solve2(e1, e2, crefExp, functions, NONE());
     then (BackendDAE.EQUATION(crefExp, res, source, eqAttr));
@@ -2528,7 +2528,7 @@ algorithm
     BackendDAE.IF_EQUATION
 */
     else algorithm
-      BackendDump.dumpBackendDAEEqnList({eqn}, "function BackendEquation.solveEquation failed w.r.t " + ExpressionDump.printExpStr(crefExp), true);
+      BackendDump.dumpBackendDAEEqnList({eqn}, "function BackendEquation.solveEquation failed w.r.t " + ExpressionBasics.printExpStr(crefExp), true);
       Error.addInternalError("function solveEquation failed", sourceInfo());
     then fail();
   end matchcontinue;
@@ -3248,7 +3248,7 @@ public function scalarComplexEquations
   Used after some equations have been differentiated.
 "
   input BackendDAE.Equation inEquation;
-  input DAE.FunctionTree funcTree;
+  input AvlTreePathFunction.Tree funcTree;
   output list<BackendDAE.Equation> outEquations;
 algorithm
 

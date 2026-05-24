@@ -48,8 +48,9 @@ protected
 
 import Algorithm = NFAlgorithm;
 import Attributes = NFAttributes;
+import AvlTreePathFunction;
 import Call = NFCall;
-import ComponentReference;
+import ComponentReferenceBasics;
 import ComponentRef = NFComponentRef;
 import Dimension = NFDimension;
 import ElementSource;
@@ -79,7 +80,7 @@ function convert
   input FlatModel flatModel;
   input FunctionTree functions;
   output DAE.DAElist dae;
-  output DAE.FunctionTree daeFunctions;
+  output AvlTreePathFunction.Tree daeFunctions;
 protected
   list<DAE.Element> elems;
   DAE.Element class_elem;
@@ -191,7 +192,7 @@ algorithm
           Prefixes.visibilityToDAE(vis),
           dty,
           binding,
-          ComponentReference.crefDims(dcref),
+          ComponentReferenceBasics.crefDims(dcref),
           ConnectorType.toDAE(attr.connectorType),
           source,
           vattr,
@@ -1039,11 +1040,11 @@ end convertInitialAlgorithm;
 
 public function convertFunctionTree
   input FunctionTree funcs;
-  output DAE.FunctionTree dfuncs;
+  output AvlTreePathFunction.Tree dfuncs;
 algorithm
   dfuncs := match funcs
     local
-      DAE.FunctionTree left, right;
+      AvlTreePathFunction.Tree left, right;
       DAE.Function fn;
 
     case FunctionTree.NODE()
@@ -1052,16 +1053,16 @@ algorithm
         left := convertFunctionTree(funcs.left);
         right := convertFunctionTree(funcs.right);
       then
-        DAE.FunctionTree.NODE(funcs.key, SOME(fn), funcs.height, left, right);
+        AvlTreePathFunction.Tree.NODE(funcs.key, SOME(fn), funcs.height, left, right);
 
     case FunctionTree.LEAF()
       algorithm
         fn := convertFunction(funcs.value);
       then
-        DAE.FunctionTree.LEAF(funcs.key, SOME(fn));
+        AvlTreePathFunction.Tree.LEAF(funcs.key, SOME(fn));
 
     case FunctionTree.EMPTY()
-      then DAE.FunctionTree.EMPTY();
+      then AvlTreePathFunction.Tree.EMPTY();
 
   end match;
 end convertFunctionTree;

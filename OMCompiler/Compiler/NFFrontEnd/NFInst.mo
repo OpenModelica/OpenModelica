@@ -371,7 +371,7 @@ algorithm
 
   ErrorExt.setCheckpoint(getInstanceName());
   try
-    clsNode := Lookup.lookupClassName(path, topScope, next_context, AbsynUtil.dummyInfo, checkAccessViolations = false);
+    clsNode := Lookup.lookupClassName(path, topScope, next_context, Absyn.dummyInfo, checkAccessViolations = false);
     ErrorExt.delCheckpoint(getInstanceName());
   else
     // Allow lookup of structor functions in ExternalObject:s (to allow e.g.
@@ -479,7 +479,7 @@ algorithm
   cls_elem := SCode.CLASS("<top>", SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(),
     SCode.NOT_PARTIAL(), SCode.R_PACKAGE(),
     SCode.PARTS(top_classes, {}, {}, {}, {}, {}, {}, NONE()),
-    SCode.COMMENT(NONE(), NONE()), AbsynUtil.dummyInfo);
+    SCode.COMMENT(NONE(), NONE()), Absyn.dummyInfo);
 
   // Make an InstNode for the top scope, to use as the parent of the top level elements.
   generated_inners := UnorderedMap.new<InstNode>(System.stringHashDjb2, stringEq);
@@ -492,7 +492,7 @@ algorithm
   ann_package := SCode.CLASS("<annotations>", SCode.defaultPrefixes, SCode.ENCAPSULATED(),
     SCode.NOT_PARTIAL(), SCode.R_PACKAGE(),
     SCode.PARTS(annotationClasses, {}, {}, {}, {}, {}, {}, NONE()),
-    SCode.COMMENT(NONE(), NONE()), AbsynUtil.dummyInfo);
+    SCode.COMMENT(NONE(), NONE()), Absyn.dummyInfo);
 
   ann_node := InstNode.newClass(ann_package, topNode, InstNodeType.IMPLICIT_SCOPE());
   expand(ann_node, NFInstContext.NO_CONTEXT);

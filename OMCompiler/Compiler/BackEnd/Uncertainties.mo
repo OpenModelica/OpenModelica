@@ -349,7 +349,7 @@ algorithm
       BackendDAE.ExtraInfo einfo;
       Option<BackendDAE.SymbolicJacobian> outJacobian;
       BackendDAE.Jacobian simcodejacobian;
-      DAE.FunctionTree outFunctionTree;
+      AvlTreePathFunction.Tree outFunctionTree;
       BackendDAE.SparsePattern outSparsePattern;
       BackendDAE.SparseColoring outSparseColoring;
       SimCode.JacobianMatrix jacmatrix;
@@ -3305,7 +3305,7 @@ algorithm
 
     case(((DAE.CREF(c1,_))::expl1),dubRef,ht)
       algorithm
-        c2 := ComponentReference.crefStripLastSubs(c1);
+        c2 := ComponentReferenceBasics.crefStripLastSubs(c1);
         if BaseHashTable.hasKey(c2,dubRef) then
           if BaseHashTable.hasKey(c2,ht) then
             // if we have one occurrence, most likely it will be more.
@@ -3881,7 +3881,7 @@ algorithm
         //dumpAliasSets(sets);
         set_solutions:=List.map2(sets,solveAliasSet,vars,globalKnownVars);
         //print("Solutions for sets:\n");
-        //print(stringDelimitList(List.map(set_solutions,ComponentReference.printComponentRefStr),"\n"));
+        //print(stringDelimitList(List.map(set_solutions,ComponentReferenceBasics.printComponentRefStr),"\n"));
         //print("\n");
         (repl,simple_eqns,removed_vars):=createReplacementsAndEquations(set_solutions,sets,vars,globalKnownVars,repl,{},{});
         //BackendVarTransform.dumpReplacements(repl);
@@ -4133,7 +4133,7 @@ algorithm
       then (repl_acc,eqns_acc,removed_vars_acc);
     case(_,h::t,_,_,_,_,_,_)
       algorithm // ignore if the current cref is the solution
-        true:=ComponentReference.crefEqual(solution,h);
+        true:=ComponentReferenceBasics.crefEqual(solution,h);
         (new_repl,new_eqns,new_removed_vars):=createReplacementsAndEquationsForSet(solution,t,set,vars,globalKnownVars,repl_acc,eqns_acc,removed_vars_acc);
       then (new_repl,new_eqns,new_removed_vars);
     case(_,h::t,_,_,_,_,_,_)
@@ -4533,7 +4533,7 @@ algorithm
     case(cr::cr_t,i::i_t)
       algorithm
         s := if i>0 then "+" else "-";
-        print(s+ComponentReference.printComponentRefStr(cr)+", ");
+        print(s+ComponentReferenceBasics.printComponentRefStr(cr)+", ");
         dumpAliasSets2(cr_t,i_t);
       then ();
   end match;

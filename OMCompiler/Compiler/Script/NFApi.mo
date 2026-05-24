@@ -102,6 +102,7 @@ import SymbolTable;
 import Typing = NFTyping;
 import UnitCheck = NFUnitCheck;
 import Util;
+import ValuesMake;
 import Variable = NFVariable;
 import VerifyModel = NFVerifyModel;
 import SCodeUtil;
@@ -151,7 +152,7 @@ protected
   FlatModel flat_model;
   FunctionTree funcs;
   SCode.Program program;
-  DAE.FunctionTree daeFuncs;
+  AvlTreePathFunction.Tree daeFuncs;
   Absyn.Path fullClassPath;
   list<Absyn.ElementArg> el = {};
   list<String> stringLst = {};
@@ -215,7 +216,7 @@ algorithm
           (stripped_mod, graphics_mod) := AbsynUtil.stripGraphicsAndInteractionModification(mod);
 
           smod := AbsynToSCode.translateMod(SOME(Absyn.CLASSMOD(stripped_mod, Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), NONE(), info);
-          anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, ANNOTATION_CONTEXT, AbsynUtil.dummyInfo, checkAccessViolations = false);
+          anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, ANNOTATION_CONTEXT, Absyn.dummyInfo, checkAccessViolations = false);
           inst_anncls := NFInst.expand(anncls, ANNOTATION_CONTEXT);
           inst_anncls := NFInst.instClass(inst_anncls, Modifier.create(smod, annName, ModifierScope.CLASS(annName), inst_cls), NFAttributes.DEFAULT_ATTR, true, 0, inst_cls, ANNOTATION_CONTEXT);
           // Instantiate expressions (i.e. anything that can contains crefs, like
@@ -256,7 +257,7 @@ algorithm
           (program, top) := mkTop(absynProgram, annName);
           inst_cls := top;
 
-          anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, ANNOTATION_CONTEXT, AbsynUtil.dummyInfo, checkAccessViolations = false);
+          anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, ANNOTATION_CONTEXT, Absyn.dummyInfo, checkAccessViolations = false);
 
           inst_anncls := NFInst.instantiate(anncls, context = ANNOTATION_CONTEXT);
           // Instantiate expressions (i.e. anything that can contains crefs, like
@@ -330,7 +331,7 @@ protected
   FlatModel flat_model;
   FunctionTree funcs;
   SCode.Program program;
-  DAE.FunctionTree daeFuncs;
+  AvlTreePathFunction.Tree daeFuncs;
   Absyn.Path fullClassPath;
   list<list<Absyn.ElementArg>> elArgs = {}, el = {};
   list<String> stringLst = {};
@@ -439,9 +440,9 @@ algorithm
 
     // if is derived qualify in the parent
     if InstNode.isDerivedClass(expanded_cls) then
-      cls := Lookup.lookupClassName(pathToQualify, InstNode.classParent(expanded_cls), context, AbsynUtil.dummyInfo, checkAccessViolations = false);
+      cls := Lookup.lookupClassName(pathToQualify, InstNode.classParent(expanded_cls), context, Absyn.dummyInfo, checkAccessViolations = false);
     else // qualify in the class
-      cls := Lookup.lookupClassName(pathToQualify, expanded_cls, context, AbsynUtil.dummyInfo, checkAccessViolations = false);
+      cls := Lookup.lookupClassName(pathToQualify, expanded_cls, context, Absyn.dummyInfo, checkAccessViolations = false);
     end if;
 
     qualPath := InstNode.fullPath(cls);
@@ -583,7 +584,7 @@ algorithm
   (program, top) := mkTop(absynProgram, name);
 
   // Look up the class to instantiate and mark it as the root class.
-  cls := Lookup.lookupClassName(classPath, top, NFInstContext.RELAXED, AbsynUtil.dummyInfo, checkAccessViolations = false);
+  cls := Lookup.lookupClassName(classPath, top, NFInstContext.RELAXED, Absyn.dummyInfo, checkAccessViolations = false);
   cls := InstNode.makeRootClass(cls);
 
   // Instantiate the class.
@@ -620,7 +621,7 @@ protected
   SCode.Program scode_builtin, program, graphicProgramSCode;
   SCode.Element scls, sAnnCls;
   Absyn.Program placementProgram;
-  DAE.FunctionTree daeFuncs;
+  AvlTreePathFunction.Tree daeFuncs;
   Absyn.Path fullClassPath;
   list<list<Absyn.ElementArg>> elArgs, el = {};
   list<String> stringLst = {};
@@ -794,14 +795,14 @@ protected
   array<InstNode> exts;
 algorithm
   if not Flags.isSet(Flags.SCODE_INST) then
-    result := ValuesUtil.makeBoolean(false);
+    result := ValuesMake.makeBoolean(false);
     return;
   end if;
 
   (_, _, cls_node) := frontEndLookup(program, classPath);
 
   if not InstNode.isClass(cls_node) then
-    result := ValuesUtil.makeBoolean(false);
+    result := ValuesMake.makeBoolean(false);
     return;
   end if;
 
@@ -813,11 +814,11 @@ algorithm
   end matchcontinue;
 
   if index < 1 or index > arrayLength(exts) then
-    result := ValuesUtil.makeBoolean(false);
+    result := ValuesMake.makeBoolean(false);
     return;
   end if;
 
-  result := ValuesUtil.makeCodeTypeName(InstNode.fullPath(exts[index], true));
+  result := ValuesMake.makeCodeTypeName(InstNode.fullPath(exts[index], true));
 end getNthInheritedClass;
 
 uniontype InstanceTree
@@ -947,7 +948,7 @@ algorithm
     // doesn't matter much which scope it is, it just needs some scope or the
     // instantiation will fail later).
     smod := AbsynToSCode.translateMod(SOME(amod),
-      SCode.Final.NOT_FINAL(), SCode.Each.NOT_EACH(), NONE(), AbsynUtil.dummyInfo);
+      SCode.Final.NOT_FINAL(), SCode.Each.NOT_EACH(), NONE(), Absyn.dummyInfo);
     outMod := Modifier.create(smod, "", NFModifier.ModifierScope.COMPONENT(""), scope);
   else
     outMod := Modifier.NOMOD();
@@ -1581,7 +1582,7 @@ algorithm
   if evaluate and not Expression.isLiteral(exp) then
     ErrorExt.setCheckpoint(getInstanceName());
     try
-      exp := Ceval.evalExp(exp, Ceval.EvalTarget.new(AbsynUtil.dummyInfo, NFInstContext.INSTANCE_API));
+      exp := Ceval.evalExp(exp, Ceval.EvalTarget.new(Absyn.dummyInfo, NFInstContext.INSTANCE_API));
       exp := Expression.map(exp, Expression.expandSplitIndices);
       json := JSON.addPair("value", Expression.toJSON(exp), json);
     else
@@ -2547,7 +2548,7 @@ algorithm
   Absyn.ElementArg.MODIFICATION(modification = SOME(amod)) :=
     Parser.stringMod("dummy" + modifier);
   smod := AbsynToSCode.translateMod(SOME(amod),
-    SCode.Final.NOT_FINAL(), SCode.Each.NOT_EACH(), NONE(), AbsynUtil.dummyInfo);
+    SCode.Final.NOT_FINAL(), SCode.Each.NOT_EACH(), NONE(), Absyn.dummyInfo);
   json := dumpJSONSCodeMod_impl(smod, InstNode.EMPTY_NODE());
   jsonString := Values.STRING(JSON.toString(json, prettyPrint));
 end modifierToJSON;

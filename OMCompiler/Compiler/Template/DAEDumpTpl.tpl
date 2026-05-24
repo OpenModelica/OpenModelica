@@ -42,7 +42,7 @@ import SCodeDumpTpl;
 /*****************************************************************************
  *     SECTION: MAIN TEMPLATE FUNCTION                                       *
  *****************************************************************************/
-template dumpDAE(list<DAEDump.compWithSplitElements> fixedDaeList, DAEDump.functionList funLists)
+template dumpDAE(list<DAEDumpTypes.compWithSplitElements> fixedDaeList, DAEDumpTypes.functionList funLists)
 ::=
  let comp_str =(fixedDaeList |> dae => dumpComp(dae) ;separator="\n")
  let fun_str = match funLists case FUNCTION_LIST(__) then dumpFunctions(funcs)
@@ -57,7 +57,7 @@ template dumpDAE(list<DAEDump.compWithSplitElements> fixedDaeList, DAEDump.funct
      >>
 end dumpDAE;
 
-template dumpComp(DAEDump.compWithSplitElements fixedDae)
+template dumpComp(DAEDumpTypes.compWithSplitElements fixedDae)
 ::=
   match fixedDae case COMP_WITH_SPLIT(__) then
     let cmt_str = dumpCommentOpt(comment)
@@ -71,7 +71,7 @@ template dumpComp(DAEDump.compWithSplitElements fixedDae)
     >>
 end dumpComp;
 
-template dumpCompStream(DAEDump.splitElements elems)
+template dumpCompStream(DAEDumpTypes.splitElements elems)
 ::=
   match elems
     case SPLIT_ELEMENTS(__) then
@@ -366,7 +366,7 @@ template dumpType(Type ty, Text &attributes)
       'enumeration(<%lit_str%>)'
     case T_ARRAY(__) then dumpArrayType(ty, dumpDimensions(dims), &attributes)
     case T_COMPLEX(complexClassType=RECORD(path=rname)) then AbsynDumpTpl.dumpPathNoQual(rname)
-    case T_COMPLEX(__) then AbsynDumpTpl.dumpPath(ClassInf.getStateName(complexClassType))
+    case T_COMPLEX(__) then AbsynDumpTpl.dumpPath(ClassInfUtil.getStateName(complexClassType))
     case T_SUBTYPE_BASIC(__) then dumpType(complexType, &attributes)
     case T_FUNCTION(__) then dumpFunctionType(ty)
     case T_TUPLE(__) then dumpTupleType(types, "(", ")")
@@ -432,7 +432,7 @@ template dumpRecordType(Type ty)
 ::=
 match ty
   case T_COMPLEX(__) then
-    let name = AbsynDumpTpl.dumpPath(ClassInf.getStateName(complexClassType))
+    let name = AbsynDumpTpl.dumpPath(ClassInfUtil.getStateName(complexClassType))
     let vars = dumpRecordVars(varLst)
     <<
     record <%name%>
@@ -926,7 +926,7 @@ match stmt
   case STMT_BREAK(__) then 'break;'
   case STMT_CONTINUE(__) then 'continue;'
   case STMT_FAILURE(__) then 'fail();'
-  else errorMsg("DAEDump.dumpStatement: Unknown statement.")
+  else errorMsg("DAEDumpTypes.dumpStatement: Unknown statement.")
 
 end dumpStatement;
 
@@ -1079,7 +1079,7 @@ end dumpReinitStatement;
 /*****************************************************************************
  *     SECTION: STATE MACHINES                                           *
  *****************************************************************************/
-template dumpStateMachineSection(DAEDump.compWithSplitElements fixedDae)
+template dumpStateMachineSection(DAEDumpTypes.compWithSplitElements fixedDae)
 ::=
 match fixedDae case COMP_WITH_SPLIT(__) then
   /* Whether we have a DAE.FLAT_SM (stateMachine) or DAE.STATE_SM (state) is encoded in the comment.
@@ -1150,7 +1150,7 @@ template dumpAnnotation(SCode.Annotation annotation)
       if Config.showAnnotations() then
         'annotation<%SCodeDumpTpl.dumpModifier(ann_mod, SCodeDump.defaultOptions)%>'
       else if Config.showStructuralAnnotations() then
-        let ann_str = SCodeDumpTpl.dumpModifier(DAEDump.filterStructuralMods(ann_mod), SCodeDump.defaultOptions)
+        let ann_str = SCodeDumpTpl.dumpModifier(DAEDumpTypes.filterStructuralMods(ann_mod), SCodeDump.defaultOptions)
         if ann_str then
           'annotation<%ann_str%>'
 end dumpAnnotation;
@@ -1178,5 +1178,5 @@ let() = Tpl.addTemplateError(errMessage)
 >>
 end errorMsg;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_dump");
 end DAEDumpTpl;

@@ -435,13 +435,13 @@ algorithm
   for var in BackendVariable.varList(inVariables) loop
     (valueStr, foundMeasurement) := checkVarExistenceInMeasurementData(var, measurementData);
     if not foundMeasurement then
-      Error.addMessage(Error.INTERNAL_ERROR, {": Entry for variable of interest " + ComponentReference.printComponentRefStr(var.varName) + " not found in the measurement csv file " + csvFileName});
+      Error.addMessage(Error.INTERNAL_ERROR, {": Entry for variable of interest " + ComponentReferenceBasics.printComponentRefStr(var.varName) + " not found in the measurement csv file " + csvFileName});
       fail();
     end if;
     try
       value := stringReal(valueStr);
     else
-      Error.addMessage(Error.INTERNAL_ERROR, {": Failed to convert the measurement value \"" + valueStr + "\" for variable of interest " + ComponentReference.printComponentRefStr(var.varName) + " from csv file " + csvFileName + " to a valid Real number for setting start value for data reconciliation initialization."});
+      Error.addMessage(Error.INTERNAL_ERROR, {": Failed to convert the measurement value \"" + valueStr + "\" for variable of interest " + ComponentReferenceBasics.printComponentRefStr(var.varName) + " from csv file " + csvFileName + " to a valid Real number for setting start value for data reconciliation initialization."});
       fail();
     end try;
     var := BackendVariable.setVarStartValue(var, DAE.RCONST(value));
@@ -1559,7 +1559,7 @@ algorithm
 
     // break the loop, when boundary condition detected only for D.1 when extracting setC and setS
     if listMember(varIndex, boundaryConditionVars) and extractSetCAndSetS then
-      print("\n"+ ComponentReference.printComponentRefStr(var.varName) + " is a boundary condition ---> exit procedure");
+      print("\n"+ ComponentReferenceBasics.printComponentRefStr(var.varName) + " is a boundary condition ---> exit procedure");
       status := false;
       boundaryConditionVarIndex := varIndex;
       break;
@@ -2080,7 +2080,7 @@ protected
 algorithm
   if falseBlock then
     print("\nVarIndex           : " + intString(varIndex));
-    print("\nVariable Name      : " + ComponentReference.printComponentRefStr(var.varName));
+    print("\nVariable Name      : " + ComponentReferenceBasics.printComponentRefStr(var.varName));
     print("\nEquation Not Exist : " + "NIL");
     print("\nRemainingVars      : " + dumplistInteger(rest) + "\n");
   else
@@ -2088,7 +2088,7 @@ algorithm
     tmpEq := BackendEquation.get(orderedEqs, mappedEq);
     //print("\n" + "   ("  + intString(mappedEq) + "/"  + intString(firstMatchedEquation)  + "): " + BackendDump.equationString(tmpEq) + "\n");
     print("\nVarIndex                     : " + intString(varIndex));
-    print("\nVariable Name                : " + ComponentReference.printComponentRefStr(var.varName));
+    print("\nVariable Name                : " + ComponentReferenceBasics.printComponentRefStr(var.varName));
     print("\nEquation Exist               : " + intString(firstMatchedEquation));
     print("\nmappedEquation               : " + intString(mappedEq));
     print("\nMatched Equation             : " + BackendDump.equationString(tmpEq));
@@ -2169,7 +2169,7 @@ algorithm
     elseif BackendVariable.isParam(var) then
       outstring := outstring + "\n  parameter "  + DAEDump.daeTypeStr(var.varType) + " " + System.stringReplace(ComponentReference.crefStr(cr), ".", "_") + " = " + ExpressionDump.printOptExpStr(var.bindExp) +";";
     elseif isRec and not listMember(ComponentReference.crefStr(cr1), recordvarlist) then
-      creflast := ComponentReference.crefLastCref(cr1);
+      creflast := ComponentReferenceBasics.crefLastCref(cr1);
       path := Types.getRecordPath(ComponentReference.crefType(creflast));
       recordvarlist := ComponentReference.crefStr(cr1) :: recordvarlist;
       outstring := outstring + "\n  "  + AbsynUtil.pathString(path) + " " + System.stringReplace(ComponentReference.crefStr(cr1), ".", "_") + ";";
@@ -2238,7 +2238,7 @@ algorithm
       var := BackendVariable.setBindExp(var, NONE());
       daeVarsLst := var :: daeVarsLst;
     elseif (BackendVariable.isIntParam(var) or BackendVariable.isBoolParam(var)) and BackendVariable.hasOpenModelicaBoundaryConditionAnnotation(var) then
-      Error.addMessage(Error.INTERNAL_ERROR, {": Boundary Condition cannot be set on Integer or Boolean parameters: " + ComponentReference.printComponentRefStr(var.varName)  + " must be Real, The extraction algorithm will fail"});
+      Error.addMessage(Error.INTERNAL_ERROR, {": Boundary Condition cannot be set on Integer or Boolean parameters: " + ComponentReferenceBasics.printComponentRefStr(var.varName)  + " must be Real, The extraction algorithm will fail"});
       fail();
     else
       updatedGlobalKnownVarsLst := var :: updatedGlobalKnownVarsLst;
@@ -2411,7 +2411,7 @@ algorithm
   var := BackendVariable.getVarAt(orderedVars, varNumber);
   mappedEq := mapIncRowEqn[eq];
   tmpEq := BackendEquation.get(orderedEqs, mappedEq);
-  print("\n" + heading + intString(varNumber) + ": "  + ComponentReference.printComponentRefStr(var.varName) + ": " + "("  + intString(mappedEq) + "/"  + intString(eq)  + "): " + "(" +  intString(BackendEquation.equationSize(tmpEq)) + "): " + BackendDump.equationString(tmpEq));
+  print("\n" + heading + intString(varNumber) + ": "  + ComponentReferenceBasics.printComponentRefStr(var.varName) + ": " + "("  + intString(mappedEq) + "/"  + intString(eq)  + "): " + "(" +  intString(BackendEquation.equationSize(tmpEq)) + "): " + BackendDump.equationString(tmpEq));
   count := count + 1;
 end dumpSetSTargetEquations;
 
@@ -2436,7 +2436,7 @@ algorithm
     var := BackendVariable.getVarAt(orderedVars, varNumber);
     mappedEq := mapIncRowEqn[eq];
     tmpEq := BackendEquation.get(orderedEqs, mappedEq);
-    print("\n" + intString(varNumber) + ": "  + ComponentReference.printComponentRefStr(var.varName) + ": " + "("  + intString(mappedEq) + "/"  + intString(eq)  + "): " + "(" +  intString(BackendEquation.equationSize(tmpEq)) + "): "  + BackendDump.equationString(tmpEq));
+    print("\n" + intString(varNumber) + ": "  + ComponentReferenceBasics.printComponentRefStr(var.varName) + ": " + "("  + intString(mappedEq) + "/"  + intString(eq)  + "): " + "(" +  intString(BackendEquation.equationSize(tmpEq)) + "): "  + BackendDump.equationString(tmpEq));
     count := count + 1;
   end for;
   print("\n\n");
@@ -2452,7 +2452,7 @@ protected
 algorithm
   print("\n" + heading + " (" + intString(BackendVariable.varsSize(setSVars)) + ")\n" + "========================================" + "\n");
   for var in BackendVariable.varList(setSVars) loop
-    print("\n" + intString(count) + ": "  + ComponentReference.printComponentRefStr(var.varName) + " type: " + DAEDump.daeTypeStr(var.varType));
+    print("\n" + intString(count) + ": "  + ComponentReferenceBasics.printComponentRefStr(var.varName) + " type: " + DAEDump.daeTypeStr(var.varType));
     count := count + 1;
   end for;
   print("\n\n");
@@ -2838,7 +2838,7 @@ protected
 algorithm
   for index in variableIndexList loop
     var := BackendVariable.getVarAt(allVariables, index);
-    //print("\n name :" +  ComponentReference.printComponentRefStr(var.varName) + " => " + anyString(var.comment));
+    //print("\n name :" +  ComponentReferenceBasics.printComponentRefStr(var.varName) + " => " + anyString(var.comment));
     if BackendVariable.varHasUncertainValueRefine(BackendVariable.getVarAt(allVariables, index)) then
       knowns := index :: knowns;
     elseif BackendVariable.hasOpenModelicaBoundaryConditionAnnotation(var) then
@@ -3790,7 +3790,7 @@ algorithm
         res;
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr, exp = e2))
       algorithm
-        s1 := ComponentReference.printComponentRefStr(cr);
+        s1 := ComponentReferenceBasics.printComponentRefStr(cr);
         s1 := System.stringReplace(s1, ".", "_");
         s1 := System.stringReplace(s1, "$", "");
         s2 := ExpressionDump.printExp2Str(e2, "", NONE(), NONE());

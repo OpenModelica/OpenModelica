@@ -283,7 +283,7 @@ public
       input String fileNamePrefix;
       input Option<OldSimCode.SimulationSettings> simSettingsOpt;
       output SimCode simCode;
-      output DAE.FunctionTree oldFunctionTree;
+      output AvlTreePathFunction.Tree oldFunctionTree;
     protected
       partial function mapExp
         input output Expression exp;

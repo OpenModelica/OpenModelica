@@ -63,11 +63,12 @@ protected
  import Debug;
  import DoubleEnded;
  import ExpandableArray;
- import ExpressionDump;
+ import Expression;
  import Flags;
  import HashTableCG;
  import InlineArrayEquations;
  import List;
+ import ExpressionBasics;
 
 // =============================================================================
 // late inline functions stuff
@@ -856,8 +857,8 @@ algorithm
         //(DAE.PARTIAL_EQUATION(e2),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(e1), source);
         // debug
         if Flags.isSet(Flags.DUMPBACKENDINLINE_VERBOSE) then
-          print("\ninExp: " + ExpressionDump.printExpStr(inExp));
-          print("\noutExp: " + ExpressionDump.printExpStr(e2));
+          print("\ninExp: " + ExpressionBasics.printExpStr(inExp));
+          print("\noutExp: " + ExpressionBasics.printExpStr(e2));
         end if;
       then
         (e2,source,outEqs,b);
@@ -909,14 +910,14 @@ algorithm
         funcname := BackendUtil.modelicaStringToCStr(AbsynUtil.pathString(p), false);
         if Flags.isSet(Flags.DUMPBACKENDINLINE_VERBOSE) then
           print("Inline Function " +funcname+" type: "+DAEDump.dumpInlineTypeStr(inlineType)+"\n");
-          print("in : " + ExpressionDump.printExpStr(inExp) + "\n");
+          print("in : " + ExpressionBasics.printExpStr(inExp) + "\n");
         end if;
 
         // get inputs, body and output
         (outputCrefs, newEqSys) := createEqnSysfromFunction(fn,args,funcname);
         newExp := Expression.makeTuple(list( Expression.crefExp(cr) for cr in outputCrefs));
         if Flags.isSet(Flags.DUMPBACKENDINLINE_VERBOSE) then
-          print("out: " + ExpressionDump.printExpStr(newExp) + "\n");
+          print("out: " + ExpressionBasics.printExpStr(newExp) + "\n");
         end if;
 
         // MSL 3.2.1 need GenerateEvents to disable this
@@ -936,8 +937,8 @@ algorithm
         if Flags.isSet(Flags.DUMPBACKENDINLINE_VERBOSE) then
           funcname := BackendUtil.modelicaStringToCStr(AbsynUtil.pathString(p), false);
           print("\nBackendInline fallback replace implementation: " +funcname+" type: " +DAEDump.dumpInlineTypeStr(inlineType)+"\n");
-          print("in : " + ExpressionDump.printExpStr(inExp) + "\n");
-          print("out: " + ExpressionDump.printExpStr(newExp) + "\n");
+          print("in : " + ExpressionBasics.printExpStr(inExp) + "\n");
+          print("out: " + ExpressionBasics.printExpStr(newExp) + "\n");
         end if;
       then (newExp,(fns,eqSys,b,insideIfExp));
 
@@ -992,7 +993,7 @@ algorithm
   // error handling
   if listLength(crefs) <> listLength(arrExp) then
     if Flags.isSet(Flags.FAILTRACE) then
-      Debug.traceln("BackendInline.createReplacementVariables failed with array handling "+ExpressionDump.printExpStr(eVar)+"\n");
+      Debug.traceln("BackendInline.createReplacementVariables failed with array handling "+ExpressionBasics.printExpStr(eVar)+"\n");
     end if;
     fail();
   end if;

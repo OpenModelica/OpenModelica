@@ -85,8 +85,6 @@ public function applyReplacementsDAE "Apply a set of replacement rules on a DAE 
 algorithm
   outDae := match(dae,repl,condExpFunc)
   local list<DAE.Element> elts;
-    DAE.FunctionTree funcs;
-    list<tuple<DAE.AvlTreePathFunction.Key,DAE.AvlTreePathFunction.Value>> funcLst;
     case(DAE.DAE(elementLst=elts),_,_)
       algorithm
         elts := applyReplacementsDAEElts(elts,repl,condExpFunc);
@@ -790,7 +788,7 @@ algorithm
   // optional exteded type debugging
   //str := ComponentReference.debugPrintComponentRefTypeStr(Util.tuple21(tpl)) + " -> " + ExpressionDump.debugPrintComponentRefExp(Util.tuple22(tpl));
   // Normal debugging, without type&dimension information on crefs.
-  str := ComponentReference.printComponentRefStr(Util.tuple21(tpl)) + " -> " + ExpressionDump.printExpStr(Util.tuple22(tpl));
+  str := ComponentReferenceBasics.printComponentRefStr(Util.tuple21(tpl)) + " -> " + ExpressionBasics.printExpStr(Util.tuple22(tpl));
 end printReplacementTupleStr;
 
 public function replacementSources "Returns all sources of the replacement rules"
@@ -876,10 +874,10 @@ algorithm
     case ((REPLACEMENTS()),src,dst)
       algorithm
         (REPLACEMENTS(ht,invHt),src_1,dst_1) := makeTransitive(repl, src, dst);
-        /*s1 = ComponentReference.printComponentRefStr(src);
-        s2 = ExpressionDump.printExpStr(dst);
-        s3 = ComponentReference.printComponentRefStr(src_1);
-        s4 = ExpressionDump.printExpStr(dst_1);
+        /*s1 = ComponentReferenceBasics.printComponentRefStr(src);
+        s2 = ExpressionBasics.printExpStr(dst);
+        s3 = ComponentReferenceBasics.printComponentRefStr(src_1);
+        s4 = ExpressionBasics.printExpStr(dst_1);
         s = stringAppendList(
           {"add_replacement(",s1,", ",s2,") -> add_replacement(",s3,
           ", ",s4,")\n"});
@@ -1220,7 +1218,7 @@ algorithm
     else
       algorithm
         (e1,b) := replaceExp(e,repl,func);
-        res := replaceExpRepeated2(e1,repl,func,maxIter,i+1,not b /*Expression.expEqual(e,e1)*/);
+        res := replaceExpRepeated2(e1,repl,func,maxIter,i+1,not b /*ExpressionBasics.expEqual(e,e1)*/);
       then res;
   end matchcontinue;
 end replaceExpRepeated2;

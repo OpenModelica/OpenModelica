@@ -51,7 +51,6 @@ import NFComponent.ComponentState;
 import Type = NFType;
 import Expression = NFExpression;
 import Absyn;
-import AbsynUtil;
 import Absyn.{Path, TypeSpec};
 import SCode;
 import SCode.{Mod, Comment};
@@ -79,13 +78,13 @@ constant SCode.Element DUMMY_ELEMENT = SCode.CLASS(
   SCode.Restriction.R_FUNCTION(SCode.FunctionRestriction.FR_NORMAL_FUNCTION(Absyn.FunctionPurity.NO_PURITY())),
   SCode.ClassDef.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
   SCode.Comment.COMMENT(NONE(), NONE()),
-  AbsynUtil.dummyInfo
+  Absyn.dummyInfo
 );
 
 // Default Integer parameter.
 constant Component INT_COMPONENT = Component.COMPONENT(NFInstNode.EMPTY_NODE(),
   Type.INTEGER(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
-  NFAttributes.DEFAULT_ATTR, SCode.noComment, ComponentState.TypeChecked, AbsynUtil.dummyInfo);
+  NFAttributes.DEFAULT_ATTR, SCode.noComment, ComponentState.TypeChecked, Absyn.dummyInfo);
 
 constant InstNode INT_PARAM = InstNode.COMPONENT_NODE("i",
   NONE(), Visibility.PUBLIC,
@@ -95,7 +94,7 @@ constant InstNode INT_PARAM = InstNode.COMPONENT_NODE("i",
 // Default Real parameter.
 constant Component REAL_COMPONENT = Component.COMPONENT(NFInstNode.EMPTY_NODE(),
   Type.REAL(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
-  NFAttributes.DEFAULT_ATTR, SCode.noComment, ComponentState.TypeChecked, AbsynUtil.dummyInfo);
+  NFAttributes.DEFAULT_ATTR, SCode.noComment, ComponentState.TypeChecked, Absyn.dummyInfo);
 
 constant InstNode REAL_PARAM = InstNode.COMPONENT_NODE("r",
   NONE(), Visibility.PUBLIC,
@@ -105,7 +104,7 @@ constant InstNode REAL_PARAM = InstNode.COMPONENT_NODE("r",
 // Default Boolean parameter.
 constant Component BOOL_COMPONENT = Component.COMPONENT(NFInstNode.EMPTY_NODE(),
   Type.BOOLEAN(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
-  NFAttributes.DEFAULT_ATTR, SCode.noComment, ComponentState.TypeChecked, AbsynUtil.dummyInfo);
+  NFAttributes.DEFAULT_ATTR, SCode.noComment, ComponentState.TypeChecked, Absyn.dummyInfo);
 
 constant InstNode BOOL_PARAM = InstNode.COMPONENT_NODE("b",
   NONE(), Visibility.PUBLIC,
@@ -115,7 +114,7 @@ constant InstNode BOOL_PARAM = InstNode.COMPONENT_NODE("b",
 // Default String parameter.
 constant Component STRING_COMPONENT = Component.COMPONENT(NFInstNode.EMPTY_NODE(),
   Type.STRING(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
-  NFAttributes.DEFAULT_ATTR, SCode.noComment, ComponentState.TypeChecked, AbsynUtil.dummyInfo);
+  NFAttributes.DEFAULT_ATTR, SCode.noComment, ComponentState.TypeChecked, Absyn.dummyInfo);
 
 constant InstNode STRING_PARAM = InstNode.COMPONENT_NODE("s",
   NONE(), Visibility.PUBLIC,
@@ -125,7 +124,7 @@ constant InstNode STRING_PARAM = InstNode.COMPONENT_NODE("s",
 // Default enumeration(:) parameter.
 constant Component ENUM_COMPONENT = Component.COMPONENT(NFInstNode.EMPTY_NODE(),
   Type.ENUMERATION(Absyn.Path.IDENT(":"), {}), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
-  NFAttributes.DEFAULT_ATTR, SCode.noComment, ComponentState.TypeChecked, AbsynUtil.dummyInfo);
+  NFAttributes.DEFAULT_ATTR, SCode.noComment, ComponentState.TypeChecked, Absyn.dummyInfo);
 
 constant InstNode ENUM_PARAM = InstNode.COMPONENT_NODE("e",
   NONE(), Visibility.PUBLIC,
@@ -480,7 +479,7 @@ constant Function TRANSPOSE = Function.FUNCTION(Path.IDENT("transpose"),
 
 constant Component CLOCK_COMPONENT = Component.COMPONENT(NFInstNode.EMPTY_NODE(),
   Type.CLOCK(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
-  NFAttributes.DEFAULT_ATTR, SCode.noComment, ComponentState.TypeChecked, AbsynUtil.dummyInfo);
+  NFAttributes.DEFAULT_ATTR, SCode.noComment, ComponentState.TypeChecked, Absyn.dummyInfo);
 
 constant InstNode CLOCK_PARAM = InstNode.COMPONENT_NODE("s",
   NONE(), Visibility.PUBLIC,
@@ -606,7 +605,7 @@ constant SCode.Element BASE_MODELICA_POSITIVE_MAX_SIMPLE = SCode.Element.CLASS(
         SCode.Mod.NOMOD(),
         SCode.noComment,
         NONE(),
-        AbsynUtil.dummyInfo
+        Absyn.dummyInfo
       ),
       // input Real eps;
       SCode.Element.COMPONENT(
@@ -617,7 +616,7 @@ constant SCode.Element BASE_MODELICA_POSITIVE_MAX_SIMPLE = SCode.Element.CLASS(
         SCode.Mod.NOMOD(),
         SCode.noComment,
         NONE(),
-        AbsynUtil.dummyInfo
+        Absyn.dummyInfo
       ),
       // output Real positiveMax;
       SCode.Element.COMPONENT(
@@ -628,7 +627,7 @@ constant SCode.Element BASE_MODELICA_POSITIVE_MAX_SIMPLE = SCode.Element.CLASS(
         SCode.Mod.NOMOD(),
         SCode.noComment,
         NONE(),
-        AbsynUtil.dummyInfo
+        Absyn.dummyInfo
       )
     },
     {}, {},
@@ -646,14 +645,14 @@ constant SCode.Element BASE_MODELICA_POSITIVE_MAX_SIMPLE = SCode.Element.CLASS(
             {}
           ),
           SCode.noComment,
-          AbsynUtil.dummyInfo
+          Absyn.dummyInfo
         )
       })
     },
     {}, {}, {}, NONE()
   ),
   SCode.noComment,
-  AbsynUtil.dummyInfo
+  Absyn.dummyInfo
 );
 
 annotation(__OpenModelica_Interface="nf_frontend");

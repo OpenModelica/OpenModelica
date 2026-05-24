@@ -18,11 +18,16 @@ if not loadFile(mm_src_file) then
 end if;
 
 if not checkInterfaceOfPackages(class_typename, {
-  {"backend", "frontend", "util", "susan", "nf_frontend"},
-  {"frontend", "util", "susan", "", ""},
-  {"nf_frontend", "util", "susan", "frontend", ""},
-  {"susan", "util", "", "", ""},
-  {"util", "", "", "", ""}
+// Also update Compiler/boot/CompileFile.mos if you change this file.
+  {"parser", "", "", "", "", "", "", "", ""},
+  {"backend", "frontend", "util", "susan", "nf_frontend", "util_datatypes_basic", "parser", "frontend_types", "frontend_dump"},
+  {"frontend", "util", "susan", "util_datatypes_basic", "parser", "frontend_types", "frontend_dump", "", ""},
+  {"frontend_types", "", "", "util_datatypes_basic", "parser", "", "", "", ""},
+  {"frontend_dump", "util", "susan", "util_datatypes_basic", "parser", "frontend_types", "", "", ""},
+  {"nf_frontend", "util", "susan", "frontend_types", "util_datatypes_basic", "parser", "frontend_dump", "", ""},
+  {"susan", "util", "util_datatypes_basic", "parser", "", "", "", "", ""},
+  {"util", "util_datatypes_basic", "", "", "", "", "", "", ""},
+  {"util_datatypes_basic", "", "", "", "", "", "", "", ""}
 }) then
   print(getErrorString());
   exit(1);

@@ -170,7 +170,7 @@ algorithm
   out_comp := Component.COMPONENT(ctor_node, Type.UNTYPED(node, listArray({})),
                 NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
                 NFAttributes.OUTPUT_ATTR, SCode.noComment,
-                ComponentState.FullyInstantiated, AbsynUtil.dummyInfo);
+                ComponentState.FullyInstantiated, Absyn.dummyInfo);
   out_rec := InstNode.fromComponent("$out" + InstNode.name(ctor_node), out_comp, ctor_node);
 
   // Make a record constructor class and create a node for the constructor.

@@ -46,6 +46,7 @@ encapsulated package ExpressionDump
 public import Absyn;
 public import AbsynUtil;
 public import DAE;
+public import ExpressionBasics;
 public import Graphviz;
 
 // protected imports
@@ -175,28 +176,28 @@ algorithm
 
     case (DAE.ADD(ty = t))
       algorithm
-        ts := Types.unparseType(t);
+        ts := TypesDump.unparseType(t);
         s := stringAppendList({" +<", ts, "> "});
       then
         s;
 
     case (DAE.SUB(ty = t))
       algorithm
-        ts := Types.unparseType(t);
+        ts := TypesDump.unparseType(t);
         s := stringAppendList({" -<", ts, "> "});
       then
         s;
 
     case (DAE.MUL(ty = t))
       algorithm
-        ts := Types.unparseType(t);
+        ts := TypesDump.unparseType(t);
         s := stringAppendList({" *<", ts, "> "});
       then
         s;
 
     case (DAE.DIV(ty = t))
       algorithm
-        ts := Types.unparseType(t);
+        ts := TypesDump.unparseType(t);
         s := stringAppendList({" /<", ts, "> "});
       then
         s;
@@ -204,20 +205,20 @@ algorithm
     case (DAE.POW()) then " ^ ";
     case (DAE.ADD_ARR(ty = t))
       algorithm
-        ts := Types.unparseType(t);
+        ts := TypesDump.unparseType(t);
         s := stringAppendList({" +<ADD_ARR><", ts, "> "});
       then
         s;
     case (DAE.SUB_ARR(ty = t))
       algorithm
-        ts := Types.unparseType(t);
+        ts := TypesDump.unparseType(t);
         s := stringAppendList({" -<SUB_ARR><", ts, "> "});
       then
         s;
     case (DAE.MUL_ARR()) then " *<MUL_ARRAY> ";
     case (DAE.DIV_ARR(ty = t))
       algorithm
-        ts := Types.unparseType(t);
+        ts := TypesDump.unparseType(t);
         s := stringAppendList({" /<DIV_ARR><", ts, "> "});
       then
         s;
@@ -326,22 +327,6 @@ algorithm
   printList(es_1, printExp, ",");
 end printRow;
 
-public function printListStr
-"Same as printList, except it returns
-  a string instead of printing."
-  input list<Type_a> inTypeALst;
-  input FuncTypeType_aToString inFuncTypeTypeAToString;
-  input String inString;
-  output String outString;
-  replaceable type Type_a subtypeof Any;
-  partial function FuncTypeType_aToString
-    input Type_a inTypeA;
-    output String outString;
-  end FuncTypeType_aToString;
-algorithm
-  outString := stringDelimitList(List.map(inTypeALst,inFuncTypeTypeAToString),inString);
-end printListStr;
-
 public function debugPrintSubscriptStr "
   Print a Subscript into a String."
   input DAE.Subscript inSubscript;
@@ -373,25 +358,12 @@ algorithm
   end match;
 end debugPrintSubscriptStr;
 
-public function printSubscriptStr "
-  Print a Subscript into a String."
-  input DAE.Subscript sub;
-  output String outString;
-algorithm
-  outString := match sub
-    case DAE.WHOLEDIM() then ":";
-    case DAE.INDEX() then printExpStr(sub.exp);
-    case DAE.SLICE() then printExpStr(sub.exp);
-    case DAE.WHOLE_NONEXP() then "1:" + printExpStr(sub.exp);
-  end match;
-end printSubscriptStr;
-
 public function printSubscriptLstStr
   "Print a list of Subscripts into a String."
   input list<DAE.Subscript> inSubscriptLst;
   output String outString;
 algorithm
-  outString := stringDelimitList(List.map(inSubscriptLst,printSubscriptStr)," , ");
+  outString := stringDelimitList(List.map(inSubscriptLst,ExpressionBasics.printSubscriptStr)," , ");
 end printSubscriptLstStr;
 
 public function printExpListStr
@@ -399,7 +371,7 @@ public function printExpListStr
   input list<DAE.Exp> expl;
   output String res;
 algorithm
-  res := stringDelimitList(List.map(expl,printExpStr),", ");
+  res := stringDelimitList(List.map(expl,ExpressionBasics.printExpStr),", ");
 end printExpListStr;
 
 // stefan
@@ -408,7 +380,7 @@ public function printExpListStrNoSpace
   input list<DAE.Exp> expl;
   output String res;
 algorithm
-  res := stringAppendList(List.map(expl,printExpStr));
+  res := stringAppendList(List.map(expl,ExpressionBasics.printExpStr));
 end printExpListStrNoSpace;
 
 public function printOptExpStr "
@@ -418,18 +390,10 @@ Returns a string if SOME otherwise ''"
 algorithm
   str := match(oexp)
     local DAE.Exp e;
-    case(SOME(e)) then printExpStr(e);
+    case(SOME(e)) then ExpressionBasics.printExpStr(e);
     else "";
   end match;
 end printOptExpStr;
-
-public function printExpStr
-"This function prints a complete expression."
-  input DAE.Exp e;
-  output String s;
-algorithm
-  s := Tpl.tplString2(ExpressionDumpTpl.dumpExp, e, "\"");
-end printExpStr;
 
 public function printCrefsFromExpStr
   input DAE.Exp e;
@@ -490,7 +454,7 @@ algorithm
       list<DAE.Subscript> subs;
 
     case (DAE.EMPTY(scope = scope, name = name, tyStr = tyStr), _, _, _)
-      then "<EMPTY(scope: " + scope + ", name: " + ComponentReference.printComponentRefStr(name) + ", ty: " + tyStr + ")>";
+      then "<EMPTY(scope: " + scope + ", name: " + ComponentReferenceBasics.printComponentRefStr(name) + ", ty: " + tyStr + ")>";
 
     case (DAE.ICONST(integer = i), _, _, _)
       algorithm
@@ -521,7 +485,7 @@ algorithm
 
     case (DAE.CREF(componentRef = c), _, _, _)
       algorithm
-        s := ComponentReference.printComponentRefStr(c);
+        s := ComponentReferenceBasics.printComponentRefStr(c);
         if listMember("dataReconciliation", Flags.getConfigStringList(Flags.PRE_OPT_MODULES_ADD)) or listMember("dataReconciliationStateEstimation", Flags.getConfigStringList(Flags.PRE_OPT_MODULES_ADD)) or listMember("dataReconciliationBoundaryConditions", Flags.getConfigStringList(Flags.PRE_OPT_MODULES_ADD)) then
           s := System.stringReplace(s, ".", "_"); // replace cref's to modelica output format for dumping to reconciled_dataReconciliation.mo
         end if;
@@ -640,7 +604,7 @@ algorithm
 
     case (DAE.ARRAY(array = es), _, _, _)
       algorithm
-        // s3 = Types.unparseType(tp); // adrpo: not used!
+        // s3 = TypesDump.unparseType(tp); // adrpo: not used!
         s := stringDelimitList(
           List.map3(es, printExp2Str, stringDelimiter, opcreffunc, opcallfunc), ",");
         s := stringAppendList({"{", s, "}"});
@@ -657,7 +621,7 @@ algorithm
 
     case (DAE.MATRIX(matrix = lstes), _, _, _)
       algorithm
-        // s3 = Types.unparseType(tp); // adrpo: not used!
+        // s3 = TypesDump.unparseType(tp); // adrpo: not used!
         s := stringDelimitList(List.map1(lstes, printRowStr, stringDelimiter), "},{");
         s := stringAppendList({"{{",s,"}}"});
       then
@@ -694,7 +658,7 @@ algorithm
 
     case (DAE.CAST(ty = tp,exp = e), _, _, _)
       algorithm
-        str := Types.unparseType(tp);
+        str := TypesDump.unparseType(tp);
         s := printExp2Str(e, stringDelimiter, opcreffunc, opcallfunc);
         res := stringAppendList({"DAE.CAST(",str,", ",s,")"});
       then
@@ -870,11 +834,11 @@ algorithm
       DAE.Exp exp,gexp;
     case (DAE.REDUCTIONITER(id=id,exp=exp,guardExp=NONE()))
       algorithm
-        str := id + " in " + printExpStr(exp);
+        str := id + " in " + ExpressionBasics.printExpStr(exp);
       then str;
     case (DAE.REDUCTIONITER(id=id,exp=exp,guardExp=SOME(gexp)))
       algorithm
-        str := id + " guard " + printExpStr(gexp) + " in " + printExpStr(exp);
+        str := id + " guard " + ExpressionBasics.printExpStr(gexp) + " in " + ExpressionBasics.printExpStr(exp);
       then str;
   end match;
 end reductionIteratorStr;
@@ -904,7 +868,7 @@ algorithm
     case DAE.CASE(patterns=patterns, body={}, result=SOME(result))
       algorithm
         patternsStr := Patternm.patternStr(DAE.PAT_META_TUPLE(patterns));
-        resultStr := printExpStr(result);
+        resultStr := ExpressionBasics.printExpStr(result);
       then stringAppendList({"    case ",patternsStr," then ",resultStr,";\n"});
     case DAE.CASE(patterns=patterns, body={}, result=NONE())
       algorithm
@@ -913,7 +877,7 @@ algorithm
     case DAE.CASE(patterns=patterns, body=body, result=SOME(result))
       algorithm
         patternsStr := Patternm.patternStr(DAE.PAT_META_TUPLE(patterns));
-        resultStr := printExpStr(result);
+        resultStr := ExpressionBasics.printExpStr(result);
         bodyStr := stringAppendList(List.map1(body, DAEDump.ppStmtStr, 8));
       then stringAppendList({"    case ",patternsStr,"\n      algorithm\n",bodyStr,"      then ",resultStr,";\n"});
     case DAE.CASE(patterns=patterns, body=body, result=NONE())
@@ -1040,7 +1004,7 @@ algorithm
 
     case (DAE.CREF(componentRef = c))
       algorithm
-        s := ComponentReference.printComponentRefStr(c);
+        s := ComponentReferenceBasics.printComponentRefStr(c);
       then
         Graphviz.LNODE("CREF",{s},{},{});
 
@@ -1140,7 +1104,7 @@ algorithm
 
     case (DAE.CAST(ty = ty,exp = e))
       algorithm
-        tystr := Types.unparseType(ty);
+        tystr := TypesDump.unparseType(ty);
         ct := dumpExpGraphviz(e);
       then
         Graphviz.LNODE("CAST",{tystr},{},{ct});
@@ -1177,6 +1141,7 @@ algorithm
     case (_) then Graphviz.NODE("#UNKNOWN EXPRESSION# ----eeestr ",{},{});
   end matchcontinue;
 end dumpExpGraphviz;
+
 
 public function dumpExpStr
 "Dumps expression to a string."
@@ -1259,8 +1224,8 @@ algorithm
     case (DAE.CREF(componentRef = c,ty=ty),level)
       algorithm
         gen_str := genStringNTime("   |", level);
-        s := /*ComponentReference.printComponentRefStr*/ComponentReference.debugPrintComponentRefTypeStr(c);
-        tpStr:= Types.unparseType(ty);
+        s := ComponentReferenceBasics.printComponentRefStr/*ComponentReference.debugPrintComponentRefTypeStr*/(c);
+        tpStr:= TypesDump.unparseType(ty);
         res_str := stringAppendList({gen_str,"CREF ",s," CREFTYPE:",tpStr,"\n"});
       then
         res_str;
@@ -1272,7 +1237,7 @@ algorithm
         new_level2 := level + 1;
         sym := debugBinopSymbol(op);
         tp := Expression.typeof(exp);
-        str := Types.unparseType(tp);
+        str := TypesDump.unparseType(tp);
         lt := dumpExpStr(e1, new_level1);
         rt := dumpExpStr(e2, new_level2);
         res_str := stringAppendList({gen_str,"BINARY ",sym," ",str,"\n",lt,rt,""});
@@ -1285,7 +1250,7 @@ algorithm
         new_level1 := level + 1;
         sym := unaryopSymbol(op);
         ct := dumpExpStr(e, new_level1);
-        str := "expType:"+Types.unparseType(Expression.typeof(e))+" optype:"+Types.unparseType(Expression.typeofOp(op));
+        str := "expType:"+TypesDump.unparseType(Expression.typeof(e))+" optype:"+TypesDump.unparseType(Expression.typeofOp(op));
         res_str := stringAppendList({gen_str,"UNARY ",sym," ",str,"\n",ct,""});
       then
         res_str;
@@ -1366,7 +1331,7 @@ algorithm
         nodes := List.map1(es, dumpExpStr, new_level1);
         nodes_1 := stringAppendList(nodes);
         s := boolString(b);
-        tpStr := Types.unparseType(tp);
+        tpStr := TypesDump.unparseType(tp);
         res_str := stringAppendList({gen_str,"ARRAY scalar:",s," tp: ",tpStr,"\n",nodes_1});
       then
         res_str;
@@ -1492,7 +1457,7 @@ algorithm
         ct := dumpExpStr(e, new_level1);
         istr := intString(i);
         s := stringAppendList({"[",istr,"]"});
-        tpStr := Types.unparseType(tp);
+        tpStr := TypesDump.unparseType(tp);
         res_str := stringAppendList({gen_str,"RSUB ",s," fieldName: ",fs," tp: ",tpStr,"\n",ct,""});
       then
         res_str;
@@ -1548,13 +1513,22 @@ algorithm
   end matchcontinue;
 end genStringNTime;
 
+public function dumpExp
+  input DAE.Exp exp;
+  protected String str;
+algorithm
+  str := dumpExpStr(exp,0);
+  print(str);
+  print("--------------------\n");
+end dumpExp;
+
 protected function printExpIfDiff ""
   input DAE.Exp e1,e2;
   output String s;
 algorithm
-  s := if Expression.expEqual(e1,e2)
+  s := if ExpressionBasics.expEqual(e1,e2)
        then ""
-       else printExpStr(e1) + " =!= " + printExpStr(e2) + "\n";
+       else ExpressionBasics.printExpStr(e1) + " =!= " + ExpressionBasics.printExpStr(e2) + "\n";
 end printExpIfDiff;
 
 public function printArraySizes "Function: printArraySizes"
@@ -1591,7 +1565,7 @@ protected
   DAE.Type ty;
 algorithm
   ty := Expression.typeof(inExp);
-  str := Types.unparseType(ty);
+  str := TypesDump.unparseType(ty);
 end typeOfString;
 
 public function debugPrintComponentRefExp "
@@ -1612,53 +1586,9 @@ algorithm str := matchcontinue(inExp)
       s1 := "{" + stringAppendList(List.map(expl,debugPrintComponentRefExp)) + "}";
     then
       s1;
-  else printExpStr(inExp); // when not cref, print expression anyways since it is used for some debugging.
+  else ExpressionBasics.printExpStr(inExp); // when not cref, print expression anyways since it is used for some debugging.
 end matchcontinue;
 end debugPrintComponentRefExp;
-
-public function dimensionString
-  "Returns a string representation of an array dimension."
-  input DAE.Dimension dim;
-  output String str;
-algorithm
-  str := match(dim)
-    local
-      String s;
-      Integer x;
-      Absyn.Path p;
-      DAE.Exp e;
-      Integer size;
-    case DAE.DIM_UNKNOWN() then ":";
-
-    case DAE.DIM_ENUM(enumTypeName = p)
-      algorithm
-        s := AbsynUtil.pathString(p);
-      then
-        s;
-
-    case DAE.DIM_BOOLEAN() then "Boolean";
-
-    case DAE.DIM_INTEGER(integer = x)
-      algorithm
-        s := intString(x);
-      then
-        s;
-
-    case DAE.DIM_EXP(exp = e)
-      algorithm
-        s := printExpStr(e);
-      then
-        s;
-  end match;
-end dimensionString;
-
-public function dimensionsString
-  "Returns a string representation of an array dimension."
-  input DAE.Dimensions dims;
-  output String str;
-algorithm
-  str := stringDelimitList(List.map(dims,dimensionString),",");
-end dimensionsString;
 
 public function dimensionIntString
   "Returns a integer string representation of an array dimension."
@@ -1678,7 +1608,7 @@ algorithm
       then intString(x);
     case DAE.DIM_EXP(exp = e)
       algorithm
-        s := printExpStr(e);
+        s := ExpressionBasics.printExpStr(e);
       then s;
   end match;
 end dimensionIntString;
@@ -1693,15 +1623,6 @@ algorithm
   print(str);
   print("\n");
 end dumpExpWithTitle;
-
-public function dumpExp
-  input DAE.Exp exp;
-  protected String str;
-algorithm
-  str := dumpExpStr(exp,0);
-  print(str);
-  print("--------------------\n");
-end dumpExp;
 
 public function printSubscript
 "Print a Subscript."
@@ -1810,7 +1731,7 @@ protected
   Boolean localCon;
 algorithm
   DAE.CONSTRAINT_DT(constraint = c, localCon = localCon) := con;
-  str := printExpStr(c);
+  str := ExpressionBasics.printExpStr(c);
   str := if localCon then str + " (local)" else str + " (global)";
 end constraintDTtoString;
 
