@@ -1783,7 +1783,7 @@ void Element::updatePlacementAnnotation()
   // Add component annotation.
   LibraryTreeItem *pLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
   if (pLibraryTreeItem->isSSP()) {
-    if (mpLibraryTreeItem && mpLibraryTreeItem->getOMSModelElement() || (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement())) {
+    if (mpLibraryTreeItem && (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement())) {
       //ssd_element_geometry_t elementGeometry = mpLibraryTreeItem->getOMSElementGeometry();
       OMSModel::ElementGeometry elementGeometry = mpLibraryTreeItem->getOMSModelElement()->getGeometry();
       ExtentAnnotation extent = mTransformation.getExtent();

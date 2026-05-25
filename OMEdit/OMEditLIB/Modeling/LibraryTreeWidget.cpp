@@ -419,13 +419,12 @@ QString LibraryTreeItem::getTooltip() const {
     } else if (isSystemElement()) {
       tooltip = QString("%1 %2<br />%3: %4<br />%5: %6")
                 .arg(Helper::name).arg(mName)
-                .arg(Helper::type).arg(OMSProxy::getSystemTypeString(mSystemType))
+                .arg(Helper::type).arg("System")
                 .arg(Helper::fileLocation).arg(mFileName);
     } else if (isFMUComponent()) {
       //const OMSModel::FMUInfo &pfmuInfo = mpOMSModelElement->getFMUInfo();
       // qDebug() << "FMUinfo description " <<fmuInfo.getDescription();
       // qDebug() << "FMUinfo kind " <<fmuInfo.getFMIKind();
-
       tooltip = QString("%1 %2<br />%3: %4<br />%5: %6<br />%7: %8<br />%9: %10")
                   .arg(Helper::name).arg(mName)
                   .arg(Helper::description).arg(mpFMUInfo.getDescription())
@@ -464,13 +463,9 @@ QIcon LibraryTreeItem::getLibraryTreeItemIcon() const
     if (isTopLevel()) {
       return ResourceCache::getIcon(":/Resources/icons/model-icon.svg");
     } else if (isSystemElement()) {
-      if (isWCSystem()) {
-        return ResourceCache::getIcon(":/Resources/icons/wc-system-icon.svg");
-      } else {
-        return ResourceCache::getIcon(":/Resources/icons/sc-system-icon.svg");
-      }
+        return ResourceCache::getIcon(":/Resources/icons/system-icon.svg");
     } else if (isFMUComponent()) {
-      return ResourceCache::getIcon(":/Resources/icons/fmu-icon.svg");
+        return ResourceCache::getIcon(":/Resources/icons/fmu-icon.svg");
     } else if (isTableComponent()) {
       if (mSubModelPath.endsWith(".csv")) {
         return ResourceCache::getIcon(":/Resources/icons/csv.svg");
