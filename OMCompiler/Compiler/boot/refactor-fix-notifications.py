@@ -140,12 +140,24 @@ def updateContents(moContents,startLine,endLine,startCol,endCol,s):
   del moContents[startLine:endLine] # Does not delete startLine-1, which is the one we will abuse
   moContents[startLine-1] = line
 
-def gitCheckpoint():
-  """Stage all current changes so that `git checkout -- <path>` restores this state."""
-  subprocess.check_call(['git', 'add', '-A'], cwd=COMPILER_DIR)
+def gitInitialCheckpoint():
+  """Capture the initial state of TRACKED, modified files into the index. We do
+  NOT use `git add -A` because that would also stage every untracked file in the
+  tree (debug scripts, generated dumps, etc.), which the user did not ask to
+  commit. Untracked files are left alone; subsequent agent fixes are only
+  responsible for files they actually modify."""
+  subprocess.check_call(['git', 'add', '-u'], cwd=COMPILER_DIR)
+
+def gitStage(paths):
+  """Stage the specific paths that the agent just produced and that compiled.
+  Only these `deemed working' files are added to the index; everything else
+  stays in whatever state the user left it in."""
+  if not paths:
+    return
+  subprocess.check_call(['git', 'add', '--'] + list(paths), cwd=COMPILER_DIR)
 
 def gitRevert(paths):
-  """Restore the given paths from the index (= the last checkpoint)."""
+  """Restore the given paths from the index (= the last verified state)."""
   if not paths:
     return
   subprocess.call(['git', 'checkout', '--'] + list(paths), cwd=COMPILER_DIR)
@@ -441,20 +453,25 @@ def processAgentFixes(stamp, moFile, logFile):
     if len(n) >= 2 and any(k in n[1] for k in AGENT_KEYS):
       notifs.append(n)
   notifs = [n for n in notifs if n[0]['fileName'] == moFile]
+  if not notifs:
+    return
   # Process bottom-up so earlier line numbers stay valid across edits within one batch.
   notifs.sort(key=lambda n: (n[0]['startLine'], n[0]['startCol']), reverse=True)
   moFileRel = relativeToCompiler(moFile)
+  # Establish a baseline ONCE per file: stage currently-modified tracked files so
+  # that any later agent edit shows up as `git diff --name-only`. We do NOT stage
+  # untracked files here (the user's debug scripts, generated dumps, etc.).
+  try:
+    gitInitialCheckpoint()
+  except (subprocess.CalledProcessError, FileNotFoundError) as e:
+    print("git checkpoint failed (%s); aborting agent fixes." % e)
+    return
   for n in notifs:
     prompt = agentPrompt(n, moFileRel)
     if prompt is None:
       continue
     info = n[0]
     print("%s Running agent for: %s" % (infoStr(info), list(n[1].keys())[0]))
-    try:
-      gitCheckpoint()
-    except (subprocess.CalledProcessError, FileNotFoundError) as e:
-      print("git checkpoint failed (%s); aborting agent fixes." % e)
-      return
     try:
       runAgent(prompt)
     except (subprocess.CalledProcessError, FileNotFoundError) as e:
@@ -464,12 +481,30 @@ def processAgentFixes(stamp, moFile, logFile):
     if not dirty:
       print("%s Agent made no changes." % infoStr(info))
       continue
+    unexpected = [p for p in dirty if p != moFileRel]
+    if unexpected:
+      # The prompt is scoped to a single .mo file; touching anything else is
+      # almost always a hallucination (e.g. editing a similarly-named function
+      # in a different module). Skip verification and revert immediately —
+      # running the build only to reject it would just waste time.
+      print("%s Agent touched unexpected files %s; reverting all %s without verifying." %
+            (infoStr(info), unexpected, dirty))
+      gitRevert(dirty)
+      continue
     try:
       runOMC(stamp)
-      print("%s Agent fix verified. Touched: %s" % (infoStr(info), dirty))
     except Exception:
       print("%s Agent fix broke the build; reverting %s" % (infoStr(info), dirty))
       gitRevert(dirty)
+      continue
+    # Compile succeeded: promote ONLY these verified files to the new baseline.
+    # Untracked files the agent may have created are deliberately left untracked
+    # so the user can decide whether to keep them.
+    try:
+      gitStage(dirty)
+      print("%s Agent fix verified. Staged: %s" % (infoStr(info), dirty))
+    except subprocess.CalledProcessError as e:
+      print("%s Agent fix verified but `git add` failed (%s)." % (infoStr(info), e))
 
 def fixFileIter(stamp,moFile,logFile):
   with open(moFile, 'r') as mo:
