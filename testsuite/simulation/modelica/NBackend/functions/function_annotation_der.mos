@@ -57,19 +57,11 @@ simulate(function_annotation_der); getErrorString();
 // true
 // ""
 // ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
-// [BEFORE] [SCAL] (1) a = sin(b) ($RES_AUX_6)
-// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.a = cos(b) * $SEED_ODE_JAC.b ($RES_AUX_6)
+// [BEFORE] [SCAL] (1) a = sin(b) ($RES_AUX_9)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.a = cos(b) * $SEED_ODE_JAC.b ($RES_AUX_9)
 //
 // ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
-// [BEFORE] [SCAL] (1) $DER.b = f(a, 0, k, k) ($RES_SIM_2)
-// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.b = df(a, 0, k, k, $pDER_ODE_JAC.a, 0.0) ($RES_SIM_2)
-//
-// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
-// [BEFORE] [SCAL] (1) $DER.c = f(a, 0, k, b) ($RES_SIM_1)
-// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.c = df(a, 0, k, b, $pDER_ODE_JAC.a, $SEED_ODE_JAC.b) ($RES_SIM_1)
-//
-// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
-// [BEFORE] [SCAL] (1) $DER.d = f(a, 0, b, b) ($RES_SIM_0)
+// [BEFORE] [SCAL] (1) $FUN_4 = f(a, 0, b, b) ($RES_AUX_6)
 //
 // [BEFORE] function 'f'
 //   input Real 'x';
@@ -98,7 +90,27 @@ simulate(function_annotation_der); getErrorString();
 //   annotation(Inline = false);
 // end '$fDER1.f'
 //
-// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.d = $fDER1.f(a, 0, b, b, $pDER_ODE_JAC.a, $SEED_ODE_JAC.b, $SEED_ODE_JAC.b) ($RES_SIM_0)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$FUN_4 = $fDER1.f(a, 0, b, b, $pDER_ODE_JAC.a, $SEED_ODE_JAC.b, $SEED_ODE_JAC.b) ($RES_AUX_6)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $FUN_3 = f(a, 0, k, b) ($RES_AUX_7)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$FUN_3 = df(a, 0, k, b, $pDER_ODE_JAC.a, $SEED_ODE_JAC.b) ($RES_AUX_7)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $FUN_2 = f(a, 0, k, k) ($RES_AUX_8)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$FUN_2 = df(a, 0, k, k, $pDER_ODE_JAC.a, 0.0) ($RES_AUX_8)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $DER.b = $FUN_2 ($RES_SIM_2)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.b = $pDER_ODE_JAC.$FUN_2 ($RES_SIM_2)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $DER.c = $FUN_3 ($RES_SIM_1)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.c = $pDER_ODE_JAC.$FUN_3 ($RES_SIM_1)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $DER.d = $FUN_4 ($RES_SIM_0)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.d = $pDER_ODE_JAC.$FUN_4 ($RES_SIM_0)
 //
 // record SimulationResult
 //     resultFile = "function_annotation_der_res.mat",

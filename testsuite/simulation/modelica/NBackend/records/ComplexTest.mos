@@ -146,7 +146,7 @@ simulate(ComplexTestNB.T10); getErrorString();
 //
 // Created Record Parameter Binding Equations (1):
 // *************************************************
-// 	[RECD] (2) z3 = Complex.'+'(z1, z2) ($RES_BND_6)
+// 	[RECD] (2) z3 = Complex.'+'(z1, z2) ($RES_BND_8)
 //
 // Created External Object Parameter Binding Equations (0):
 // **********************************************************
