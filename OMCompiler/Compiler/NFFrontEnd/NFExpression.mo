@@ -744,7 +744,7 @@ public
         algorithm
           STRING(value = s) := exp2;
         then
-          Util.stringCompare(exp1.value, s);
+          stringCompare(exp1.value, s);
 
       case BOOLEAN()
         algorithm
@@ -1001,7 +1001,7 @@ public
         algorithm
           FILENAME(filename = s) := exp2;
         then
-          Util.stringCompare(exp1.filename, s);
+          stringCompare(exp1.filename, s);
 
       case INSTANCE_NAME()
         algorithm
