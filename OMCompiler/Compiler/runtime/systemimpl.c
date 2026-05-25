@@ -691,9 +691,10 @@ int SystemImpl__systemCall(const char* str, const char* outFile)
       dup2(fd, 2);
 #if defined(__APPLE_CC__)
       /* OSX likes to not redirect the Segmentation Fault: messages unless the command is in a subshell */
-      char command[strlen(str)+3];
+      char * command = (char*) omc_alloc_interface.malloc_atomic(strlen(str)+3);
       sprintf(command, "(%s)", str);
       execl("/bin/sh", "/bin/sh", "-c", command, NULL);
+      free(command);
 #else
       execl("/bin/sh", "/bin/sh", "-c", str, NULL);
 #endif
