@@ -160,52 +160,204 @@ def runAgent(prompt):
   """Run claude-sandbox.sh in the Compiler directory with the given prompt."""
   subprocess.check_call(['claude-sandbox.sh', prompt], cwd=COMPILER_DIR)
 
+META_MODELICA_PRIMER = """\
+Quick MetaModelica primer (the dialect used in this file):
+
+* `match` and `matchcontinue` are EXPRESSIONS that pattern-match a value (or
+  a tuple of values) against one or more `case` clauses.
+  - `match` requires that the first case whose patterns syntactically match
+    must also succeed at runtime; if its body fails (e.g. a `fail()` call,
+    a failed nested pattern match, or a failed `:=` assignment), the whole
+    match fails — it does NOT try the next case.
+  - `matchcontinue` does try the next case on runtime failure. This is
+    strictly slower because it captures and restores state, so it should
+    only be used when later cases are intended to be tried after an earlier
+    case's body fails.
+* A case looks like:
+      case <pattern> [guard <expr>] [equation ...] [algorithm ...] then <expr>;
+  The `then <expr>;` part is the value the match expression evaluates to
+  when this case is selected. The optional `equation`/`algorithm` sections
+  are local bindings/statements used only inside this case.
+* Multiple inputs are matched as a tuple: `match (a, b, c) case (1, _, 3) ...`.
+* `_` is a wildcard pattern; `id as <pattern>` binds the matched value to
+  `id` in addition to recursing into `<pattern>`; the shorthand `id` is
+  equivalent to `id as _` only when the type is unambiguous.
+* `try ... else ... end try;` is a STATEMENT (not an expression) that runs
+  the `try` block and falls through to the `else` block on runtime failure.
+  Unlike `matchcontinue`, it does not destructure a value; you write any
+  failable statements (typically a destructuring `:=` assignment) inside it.
+* `end match;` / `end matchcontinue;` / `end try;` are required closing
+  tokens — do not forget them.
+"""
+
 def agentPrompt(notif, moFileRel):
   info = notif[0]
   data = notif[1] if len(notif) >= 2 else {}
   loc = "lines %d-%d (columns %d-%d)" % (info['startLine'], info['endLine'], info['startCol'], info['endCol'])
-  header = "In `%s` at %s:\n\n" % (moFileRel, loc)
-  footer = ("\n\nMake the change directly to the file. Do not commit. "
-            "Only modify code at the indicated location, plus any directly required follow-up "
-            "(e.g. updating all cases of the same match expression). "
-            "Preserve formatting and indentation. Do not touch unrelated functions or files.")
+  header = ("You are editing the MetaModelica file `%s`.\n"
+            "The compiler emitted a refactoring notification at %s.\n\n"
+            "%s\n" % (moFileRel, loc, META_MODELICA_PRIMER))
+  footer = ("\n\nProcedure:\n"
+            "1. Read the relevant region of `%s` (use the line numbers above plus a few\n"
+            "   lines of context above and below) to see the full match expression.\n"
+            "2. Make ONE focused edit that performs the refactor described below.\n"
+            "3. Do not touch any other function, file, or unrelated piece of code.\n"
+            "4. Do not commit. Do not run the compiler or tests.\n"
+            "5. Preserve the surrounding indentation, comments, and blank lines.\n"
+            "6. If, after reading the actual code, the described refactor is not\n"
+            "   applicable (e.g. the pattern variable IS used in a way the notification\n"
+            "   missed, the input has side effects, or the structure is different from\n"
+            "   what the notification implies), leave the file unchanged and stop.\n"
+            % moFileRel)
   if 'match_unused_input' in data:
     ident = data['match_unused_input'].strip('`')
     body = (
-      "The match expression that spans these lines has an input `%s` that is not used "
-      "by any case (every case has a wildcard `_` at that position). Refactor the match "
-      "expression so the input is removed from the input tuple, and the matching wildcard "
-      "position is removed from every case's pattern. The result type and arity of the "
-      "match must remain unchanged." % ident)
+      "Refactor: drop an unused input from a match expression.\n\n"
+      "Notification: input `%s` of this match expression is wildcard (`_`) in every\n"
+      "case, so the expression `%s` is computed but its value is never inspected.\n\n"
+      "What to change:\n"
+      "  - In the input tuple of the match expression (between `match` and the first\n"
+      "    `case`), delete the occurrence of `%s` and the comma that separates it from\n"
+      "    its neighbour. If `%s` is the only remaining input, the surrounding\n"
+      "    parentheses around the input tuple should also go (so it becomes\n"
+      "    `match <singleInput>` rather than `match (<singleInput>)`).\n"
+      "  - In every case (including any `else` case if it uses tuple patterns), delete\n"
+      "    the `_` at the SAME positional index from the case's pattern tuple, plus the\n"
+      "    adjacent comma. Keep all other pattern positions in place.\n"
+      "  - The number of pattern positions per case after the edit must equal the\n"
+      "    number of inputs after the edit.\n\n"
+      "Worked example. Before:\n"
+      "    y := match (a, b, c)\n"
+      "      case (1, _, 3) then 10;\n"
+      "      case (4, _, 6) then 20;\n"
+      "      else 0;\n"
+      "    end match;\n"
+      "After (dropping input `b`):\n"
+      "    y := match (a, c)\n"
+      "      case (1, 3) then 10;\n"
+      "      case (4, 6) then 20;\n"
+      "      else 0;\n"
+      "    end match;\n\n"
+      "Edge cases to handle:\n"
+      "  - An `else` case has no pattern tuple in source, so leave it alone.\n"
+      "  - Cases may have a `guard <expr>`, `equation`, or `algorithm` section between\n"
+      "    the pattern and `then` — only modify the pattern tuple, not those parts.\n"
+      "  - If `%s` appears as a free expression inside any case body, it is still in\n"
+      "    scope (it is a parameter/local of the enclosing function), so the body does\n"
+      "    NOT need to change.\n" %
+      (ident, ident, ident, ident, ident))
   elif 'infallible_pattern' in data:
     pat = data['infallible_pattern']
     body = (
-      "The pattern `%s` at this location is infallible and binds no variables. "
-      "Replace just that pattern with a wildcard `_`. Do not touch any other case." % pat)
+      "Refactor: replace an infallible no-binding pattern with a wildcard.\n\n"
+      "Notification: the pattern `%s` is guaranteed to match at runtime (no test can\n"
+      "fail) and binds no variable. It is equivalent to plain `_`, but more verbose\n"
+      "and harder to read.\n\n"
+      "What to change:\n"
+      "  - Locate the pattern `%s` inside the case at the indicated line range. It\n"
+      "    is either a tuple pattern containing only `_` (like `(_, _, _)`), a record\n"
+      "    constructor pattern of a uniontype with a single record (`SOMENAME(_, _)`),\n"
+      "    or a named-args pattern with no arguments (`SOMENAME()`).\n"
+      "  - Replace just that pattern with `_`. Do not change anything else in the case.\n\n"
+      "Worked example. Before:\n"
+      "    case SINGLE(_, _) then 1;\n"
+      "After:\n"
+      "    case _ then 1;\n\n"
+      "If the pattern appears nested inside a larger pattern (e.g. as one element of a\n"
+      "tuple or as an argument to another constructor), still replace just that\n"
+      "occurrence with `_`, e.g. `(1, SINGLE(_, _))` -> `(1, _)`.\n" %
+      (pat, pat))
   elif 'as_only' in data:
     ident = data['as_only'].strip('`')
     body = (
-      "The match expression that spans these lines has an input `%s` whose every case "
-      "either uses `_` or only renames the value via an as-binding (e.g. `name as _`). "
-      "Refactor: remove `%s` from the input tuple, drop the corresponding pattern position "
-      "in each case, and in each case body replace uses of the renamed local name with `%s`." %
-      (ident, ident, ident))
+      "Refactor: drop an input that is only renamed by the cases.\n\n"
+      "Notification: input `%s` of this match expression is, in every case, either a\n"
+      "plain wildcard `_` or only used to rename the value (e.g. `name as _`, or the\n"
+      "shorthand `name` when the type is unambiguous). No case actually inspects the\n"
+      "value, so the input is being dragged through the match for no reason.\n\n"
+      "What to change:\n"
+      "  - In the input tuple of the match expression (between `match`/`matchcontinue`\n"
+      "    and the first `case`), delete `%s` and its surrounding comma. If it was the\n"
+      "    only remaining input, drop the parentheses too.\n"
+      "  - In every case, find the pattern at the SAME positional index as `%s` was.\n"
+      "    It will be `_`, `someName`, or `someName as _`. Remove that whole pattern\n"
+      "    position (and its adjacent comma) from the case's pattern tuple.\n"
+      "  - For each case where the pattern was a binding (e.g. `someName as _` or just\n"
+      "    `someName`), find every reference to that bound name in the case's body /\n"
+      "    `then` expression / `guard` / `equation` / `algorithm` section and replace\n"
+      "    it with `%s`. Be careful to do textual identifier-boundary matching (do not\n"
+      "    replace inside other identifiers like `someName2` or `xsomeName`).\n"
+      "  - The number of pattern positions per case after the edit must equal the\n"
+      "    number of inputs after the edit.\n\n"
+      "Worked example. Before:\n"
+      "    y := match (a, b, c)\n"
+      "      case (1, x, 3) then x + 1;\n"
+      "      case (4, y, 6) then y * 2;\n"
+      "      else 0;\n"
+      "    end match;\n"
+      "After (dropping input `b`, body uses `b` directly):\n"
+      "    y := match (a, c)\n"
+      "      case (1, 3) then b + 1;\n"
+      "      case (4, 6) then b * 2;\n"
+      "      else 0;\n"
+      "    end match;\n\n"
+      "If any case binds a name that is ALSO declared as a local in the enclosing\n"
+      "function with a different meaning, leave the file unchanged and stop — the\n"
+      "rewrite would be unsafe.\n" %
+      (ident, ident, ident, ident))
   elif 'mc_to_try' in data:
     body = (
-      "This matchcontinue has exactly one case and an else. Rewrite it as a try/else.\n\n"
-      "Example:\n"
-      "  n := matchcontinue x\n"
-      "    case a::_ then a;\n"
-      "    else 3;\n"
-      "  end matchcontinue;\n"
-      "becomes:\n"
-      "  try\n"
-      "    n::_ := x;\n"
-      "  else\n"
-      "    n := 3;\n"
-      "  end try;\n\n"
-      "Preserve any local declarations and the result variable. The pattern from the case "
-      "becomes the LHS of a destructuring assignment; the case result becomes the RHS.")
+      "Refactor: rewrite a one-case-plus-else `matchcontinue` as `try ... else ... end try;`.\n\n"
+      "Notification: this `matchcontinue` has exactly one real case and an `else`.\n"
+      "It is therefore being used as an exception handler, not as multi-way dispatch.\n"
+      "`try ... else ... end try;` expresses that intent directly and avoids the\n"
+      "overhead of `matchcontinue`.\n\n"
+      "Important — `try`/`else` is a STATEMENT, not an expression:\n"
+      "  - `matchcontinue` returns a value; the surrounding code looks like\n"
+      "      <lhs> := matchcontinue <inputExpr> case <pat> then <expr>; else <expr2>; end matchcontinue;\n"
+      "  - `try` does not return a value; you must assign to <lhs> inside both branches.\n"
+      "    So the rewrite turns one assignment of a match expression into a `try`\n"
+      "    statement that contains two assignments (one in `try`, one in `else`).\n\n"
+      "What to change:\n"
+      "  - Identify <lhs> (everything to the left of `:=`), <inputExpr> (the value\n"
+      "    after `matchcontinue`), <pat> (the case's pattern), <expr> (the case's\n"
+      "    `then` value), and <expr2> (the else's `then` value).\n"
+      "  - Replace the whole `<lhs> := matchcontinue ... end matchcontinue;` with:\n"
+      "        try\n"
+      "          <pat> := <inputExpr>;\n"
+      "          <lhs> := <expr>;\n"
+      "        else\n"
+      "          <lhs> := <expr2>;\n"
+      "        end try;\n"
+      "    If <expr> is exactly the pattern variable bound in <pat> (e.g. the case is\n"
+      "    `case a::_ then a;`), you can collapse the two `try` assignments by binding\n"
+      "    <lhs> directly in the pattern, e.g. `<lhs>::_ := <inputExpr>;` — but only do\n"
+      "    this when it preserves the original semantics exactly.\n"
+      "  - If the case has a `guard`, an `equation` section, or an `algorithm` section,\n"
+      "    those statements must move into the `try` block too, BEFORE the assignment\n"
+      "    that produces <lhs>. If the structure is complicated enough that you are not\n"
+      "    sure the rewrite is semantically equivalent, leave the file unchanged.\n"
+      "  - Any `local` declarations attached to the case stay where they are (they are\n"
+      "    declared in the enclosing function/match block, not in the case itself in\n"
+      "    typical OMC style); do not duplicate or move them.\n\n"
+      "Worked example. Before:\n"
+      "    n := matchcontinue x\n"
+      "      case a::_ then a;\n"
+      "      else 3;\n"
+      "    end matchcontinue;\n"
+      "After (collapsed form):\n"
+      "    try\n"
+      "      n::_ := x;\n"
+      "    else\n"
+      "      n := 3;\n"
+      "    end try;\n"
+      "After (non-collapsed form, also valid):\n"
+      "    try\n"
+      "      a::_ := x;\n"
+      "      n := a;\n"
+      "    else\n"
+      "      n := 3;\n"
+      "    end try;\n")
   else:
     return None
   return header + body + footer
