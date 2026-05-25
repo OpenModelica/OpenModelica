@@ -59,7 +59,7 @@ algorithm
       Absyn.Path path;
     case SOME(DAE.FUNCTION(path=path)) then AbsynUtil.pathString(path);
     case SOME(DAE.RECORD_CONSTRUCTOR(path=path)) then AbsynUtil.pathString(path);
-    case SOME(DAE.RECORD_CONSTRUCTOR(path=path)) then "<SOME_FUNCTION>";
+    case SOME(DAE.RECORD_CONSTRUCTOR()) then "<SOME_FUNCTION>";
     else "<NO_FUNCTION>";
   end match;
 end valueStr;

@@ -2628,7 +2628,7 @@ algorithm
         rows := listAppend(List.select1r(rows,Matching.isUnAssigned, collmarkarr), iQueue);
       then
         partitionSystemstraverseRows(rest,rows,m,mT,rowmarkarr,collmarkarr,iNSystems);
-    case (r::rest,_)
+    case (_::rest,_)
       algorithm
         // if marked skipp it
       then
@@ -2978,7 +2978,6 @@ algorithm
       guard not intGt(ass2[r],0)
       algorithm
         // row is free
-        rc := ass2[r];
         // print("check Row " + intString(r) + "\n");
         // print("check Colum " + intString(rc) + "\n");
         // print("Found free eqn " + intString(rc) + "\n");

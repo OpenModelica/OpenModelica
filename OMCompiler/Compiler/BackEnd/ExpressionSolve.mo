@@ -513,13 +513,13 @@ algorithm
      DAE.Exp pWithX, pWithoutX;
 
     // -f(a) = b => f(a) = -b
-    case DAE.UNARY(op as DAE.UMINUS(), fa)
+    case DAE.UNARY(DAE.UMINUS(), fa)
       guard expHasCref(fa, inExp3) and not expHasCref(inExp2, inExp3)
       algorithm
         b := Expression.negate(inExp2);
       then (fa, b, true);
 
-    case DAE.UNARY(op as DAE.UMINUS_ARR(), fa)
+    case DAE.UNARY(DAE.UMINUS_ARR(), fa)
       guard expHasCref(fa, inExp3) and not expHasCref(inExp2, inExp3)
       algorithm
         b := Expression.negate(inExp2);

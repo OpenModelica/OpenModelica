@@ -1251,7 +1251,7 @@ protected
         list<list<Subscript>> subs;
 
       // 0 skips are full dependencies
-      case (Type.TUPLE(types = rest_ty), 0::rest) then (index, ty);
+      case (Type.TUPLE(), 0::_) then (index, ty);
 
       // skip to a tuple element
       case (Type.TUPLE(types = rest_ty), skip::rest) guard(skip <= listLength(rest_ty)) algorithm
@@ -1318,7 +1318,7 @@ protected
       then fail();
 
       // there is no skip but there is a tuple (no-skip array is fine)
-      case (Type.TUPLE(types = rest_ty), {}) algorithm
+      case (Type.TUPLE(), {}) algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because there is no skip for type "
           + Type.toString(ty)});
       then fail();
@@ -1778,7 +1778,7 @@ protected
         end for;
       then indices;
 
-      case (iterator, range, map) :: _ algorithm
+      case (iterator, range, _) :: _ algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because uniontype records are wrong: "
           + ComponentRef.toString(iterator) + " in " + Expression.toString(range)});
       then fail();

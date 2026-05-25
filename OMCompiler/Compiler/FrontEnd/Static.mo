@@ -10201,7 +10201,7 @@ algorithm
         (inCache, res);
 
     // qualified subscripted array
-    case (cache, env, Absyn.CREF_QUAL(name = id), impl, pre)
+    case (cache, env, Absyn.CREF_QUAL(), impl, pre)
       algorithm
         true := Config.acceptMetaModelicaGrammar();
         true := AbsynUtil.crefHasSubscripts(inComponentRef);

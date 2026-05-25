@@ -281,17 +281,17 @@ public
               ComponentRef name;
 
             // old sub clock and new base clock -> potentially update inferred base clock
-            case (SOME(new as BClock.BASE_CLOCK()), SOME((name, old as BClock.SUB_CLOCK()))) algorithm
+            case (SOME(BClock.BASE_CLOCK()), SOME((name, BClock.SUB_CLOCK()))) algorithm
               removeInferredClock(name, exp.cref, info, infer_del);
             then ();
 
             // old base clock getting updated to new sub clock
-            case (SOME(new as BClock.SUB_CLOCK()), SOME((_, old as BClock.BASE_CLOCK()))) algorithm
+            case (SOME(new as BClock.SUB_CLOCK()), SOME((_, BClock.BASE_CLOCK()))) algorithm
               Pointer.update(clock_ptr, SOME((exp.cref, new)));
             then ();
 
             // old base clock is inferred --> always take new clock
-            case (SOME(new), SOME((_, old as BClock.BASE_CLOCK(clock = ClockKind.INFERRED_CLOCK())))) algorithm
+            case (SOME(new), SOME((_, BClock.BASE_CLOCK(clock = ClockKind.INFERRED_CLOCK())))) algorithm
               Pointer.update(clock_ptr, SOME((exp.cref, new)));
             then ();
 

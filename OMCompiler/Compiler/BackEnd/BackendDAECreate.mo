@@ -724,21 +724,21 @@ algorithm
 
   // Cases for array equations (cref = arr), (cref = cref), (arr = cref)
   case(BackendDAE.ARRAY_EQUATION(_,
-                                 left as DAE.CREF(componentRef = cr1, ty = DAE.T_ARRAY(ty = ty1 as DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ()) )),
-                                 right as DAE.ARRAY()),
+                                 DAE.CREF(ty = DAE.T_ARRAY(ty = DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ()) )),
+                                 DAE.ARRAY()),
        _, (noAliasEqs,aliasEqs))
     then (noAliasEqs,eqIn::aliasEqs);
 
   case(BackendDAE.ARRAY_EQUATION(_,
-                                 left as DAE.CREF(componentRef = cr1, ty = DAE.T_ARRAY(ty = ty1 as DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ()) )),
-                                 right as DAE.CREF(componentRef = cr2, ty = DAE.T_ARRAY(ty = ty2 as DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ()) ))),
-       _, (noAliasEqs,aliasEqs))
+                                 DAE.CREF(ty = DAE.T_ARRAY(ty = DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ()) )),
+                                 DAE.CREF(ty = DAE.T_ARRAY(ty = DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ()) ))),
+       _, (_,_))
     then fail();
 
   case(BackendDAE.ARRAY_EQUATION(_,
-                                 left as DAE.ARRAY(),
-                                 right as DAE.CREF(componentRef = cr2, ty = DAE.T_ARRAY(ty = ty1 as DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ()) ))),
-       _, (noAliasEqs,aliasEqs))
+                                 DAE.ARRAY(),
+                                 DAE.CREF(ty = DAE.T_ARRAY(ty = DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ()) ))),
+       _, (_,_))
     then fail();
 
   // Case (arr = arr) ?
@@ -4108,7 +4108,7 @@ algorithm
       DAE.Function fn;
       DAE.FunctionDefinition fdef;
       list<DAE.FunctionDefinition> rest_defs;
-    case SOME(fn as DAE.FUNCTION(functions = (fdef as DAE.FUNCTION_PARTIAL_DERIVATIVE()) :: rest_defs)) algorithm
+    case SOME(fn as DAE.FUNCTION(functions = (DAE.FUNCTION_PARTIAL_DERIVATIVE()) :: _)) algorithm
       // TODO derive function-partial-derivatives
       Error.addSourceMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE,
           {"partial derivative of function", "use --newBackend flag."}, fn.source.info);

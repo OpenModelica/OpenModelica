@@ -307,12 +307,12 @@ algorithm
       Purely discrete algebraic loops are not solvable otherwise.
       Related to ticket #5659
     */
-    case (comp, eqn_lst, var_lst, varindxs)
+    case (comp, eqn_lst, var_lst, _)
       guard(BackendEquation.allAlgorithmsLst(eqn_lst))
       algorithm
         true := BackendVariable.hasDiscreteVar(var_lst);
         false := BackendVariable.hasContinuousVar(var_lst);
-        BackendDAE.MATCHING(ass1, ass2, _) := isyst.matching;
+        BackendDAE.MATCHING(_, ass2, _) := isyst.matching;
         algorithmComp := {};
         for c in comp loop
           indxdisc_var := {};

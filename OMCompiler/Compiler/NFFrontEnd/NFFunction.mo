@@ -449,7 +449,7 @@ uniontype Function
         then
           (fnNode, false);
 
-      case SCode.CLASS(restriction = SCode.R_OPERATOR(), classDef = cdef as SCode.PARTS())
+      case SCode.CLASS(restriction = SCode.R_OPERATOR(), classDef = SCode.PARTS())
         algorithm
           fnNode := instFunction3(fnNode, context, info);
           fnNode := OperatorOverloading.instOperatorFunctions(fnNode, context, info);

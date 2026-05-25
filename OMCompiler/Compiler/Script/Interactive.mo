@@ -3415,16 +3415,16 @@ algorithm
       list<Absyn.NamedArg> classAttrs;
       list<Absyn.Annotation> ann;
     /* a class with parts */
-    case (outClass as Absyn.CLASS(name = id,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann = ann,comment = cmt),info = file_info),
+    case (outClass as Absyn.CLASS(
+                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann = ann,comment = cmt)),
           inherit_name, env)
       algorithm
         parts_1 := removeExtendsModifiersInClassparts(parts, inherit_name, env, keepRedeclares);
         outClass.body := Absyn.PARTS(typeVars,classAttrs,parts_1,ann,cmt);
       then outClass;
     /* adrpo: handle also model extends M end M; */
-    case (outClass as Absyn.CLASS(name = id,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.CLASS_EXTENDS(baseClassName=bcname,parts = parts,modifications=modif,ann=ann,comment = cmt),info = file_info),
+    case (outClass as Absyn.CLASS(
+                      body = Absyn.CLASS_EXTENDS(baseClassName=bcname,parts = parts,modifications=modif,ann=ann,comment = cmt)),
           inherit_name, env)
       algorithm
         parts_1 := removeExtendsModifiersInClassparts(parts, inherit_name, env, keepRedeclares);
@@ -3984,7 +3984,7 @@ algorithm
       tuple<Absyn.Path, Absyn.Path, Absyn.Program, list<Absyn.Path>, FCore.Graph> args;
 
     // Skip readonly classes.
-    case ((class_ as Absyn.CLASS(info = file_info), _, _))
+    case ((Absyn.CLASS(info = file_info), _, _))
       guard isReadOnly(file_info)
       then tup;
 
@@ -5284,9 +5284,9 @@ algorithm
       list<Absyn.Annotation> ann;
 
      // Search in public list
-    case (name,outClass as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+    case (name,outClass as Absyn.CLASS(
                            body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann = ann,comment = cmt),
-                           info = file_info))
+                           info = _))
       algorithm
         publst := InteractiveUtil.getPublicList(parts);
         (publst2, success) := deleteOrUpdateComponentFromElementitems(name, publst, item);
@@ -5305,9 +5305,9 @@ algorithm
       then outClass;
 
      // adrpo search also in model extends X end X
-    case (name,outClass as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+    case (name,outClass as Absyn.CLASS(
                            body = Absyn.CLASS_EXTENDS(baseClassName=bcpath, modifications=mod, parts = parts,ann = ann,comment = cmt),
-                           info = file_info))
+                           info = _))
       algorithm
         publst := InteractiveUtil.getPublicList(parts);
         (publst2, success) := deleteOrUpdateComponentFromElementitems(name, publst, item);
@@ -6053,8 +6053,8 @@ algorithm
       Absyn.Class cdef;
 
     // a class with parts
-    case cdef as Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                     body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elt) :: lst),ann = ann,comment = cmt),info = file_info)
+    case cdef as Absyn.CLASS(
+                     body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elt) :: lst),ann = ann,comment = cmt))
       algorithm
         cdef.body := Absyn.PARTS({},{},lst,ann,cmt);
         c1 := countComponents(cdef);
@@ -6062,8 +6062,8 @@ algorithm
       then
         c1 + c2;
 
-    case cdef as Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                     body = Absyn.PARTS(classParts = (Absyn.PROTECTED(contents = elt) :: lst),ann = ann,comment = cmt),info = file_info)
+    case cdef as Absyn.CLASS(
+                     body = Absyn.PARTS(classParts = (Absyn.PROTECTED(contents = elt) :: lst),ann = ann,comment = cmt))
       algorithm
         cdef.body := Absyn.PARTS({},{},lst,ann,cmt);
         c1 := countComponents(cdef);
@@ -6071,8 +6071,8 @@ algorithm
       then
         c1 + c2;
 
-    case cdef as Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                     body = Absyn.PARTS(classParts = (_ :: lst),ann = ann,comment = cmt),info = file_info)
+    case cdef as Absyn.CLASS(
+                     body = Absyn.PARTS(classParts = (_ :: lst),ann = ann,comment = cmt))
       algorithm
         cdef.body := Absyn.PARTS({},{},lst,ann,cmt);
         res := countComponents(cdef);
@@ -6082,8 +6082,8 @@ algorithm
     case Absyn.CLASS(body = Absyn.PARTS(classParts = {})) then 0;
 
     // adrpo: handle also an extended class with parts: model extends M end M;
-    case cdef as Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                     body = Absyn.CLASS_EXTENDS(parts = (Absyn.PUBLIC(contents = elt) :: lst),ann = ann,comment = cmt),info = file_info)
+    case cdef as Absyn.CLASS(
+                     body = Absyn.CLASS_EXTENDS(parts = (Absyn.PUBLIC(contents = elt) :: lst),ann = ann,comment = cmt))
       algorithm
         cdef.body := Absyn.PARTS({},{},lst,ann,cmt);
         c1 := countComponents(cdef);
@@ -6091,8 +6091,8 @@ algorithm
       then
         c1 + c2;
 
-    case cdef as Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                     body = Absyn.CLASS_EXTENDS(parts = (Absyn.PROTECTED(contents = elt) :: lst),ann=ann,comment = cmt),info = file_info)
+    case cdef as Absyn.CLASS(
+                     body = Absyn.CLASS_EXTENDS(parts = (Absyn.PROTECTED(contents = elt) :: lst),ann=ann,comment = cmt))
       algorithm
         cdef.body := Absyn.PARTS({},{},lst,ann,cmt);
         c1 := countComponents(cdef);
@@ -6100,8 +6100,8 @@ algorithm
       then
         c1 + c2;
 
-    case cdef as Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                     body = Absyn.CLASS_EXTENDS(parts = (_ :: lst),ann = ann,comment = cmt),info = file_info)
+    case cdef as Absyn.CLASS(
+                     body = Absyn.CLASS_EXTENDS(parts = (_ :: lst),ann = ann,comment = cmt))
       algorithm
         cdef.body := Absyn.PARTS({},{},lst,ann,cmt);
         res := countComponents(cdef);
@@ -6762,9 +6762,9 @@ algorithm
       list<Absyn.NamedArg> classAttrs;
       list<Absyn.Annotation> ann;
     /* a class with parts */
-    case (outClass as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+    case (outClass as Absyn.CLASS(
                       body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann=ann,comment = cmt),
-                      info = file_info), from_, to_, condition_, immediate_, reset_, synchronize_, priority_)
+                      info = _), from_, to_, condition_, immediate_, reset_, synchronize_, priority_)
       algorithm
         eqlst := InteractiveUtil.getEquationList(parts);
         eqlst_1 := deleteTransitionInEqlist(eqlst, from_, to_, condition_, immediate_, reset_, synchronize_, priority_);
@@ -6773,9 +6773,9 @@ algorithm
       then
         outClass;
     /* an extended class with parts: model extends M end M;  */
-    case (outClass as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+    case (outClass as Absyn.CLASS(
                       body = Absyn.CLASS_EXTENDS(baseClassName = bcname,modifications=modif,parts = parts,ann = ann,comment = cmt)
-                      ,info = file_info), from_, to_, condition_, immediate_, reset_, synchronize_, priority_)
+                      ), from_, to_, condition_, immediate_, reset_, synchronize_, priority_)
       algorithm
         eqlst := InteractiveUtil.getEquationList(parts);
         eqlst_1 := deleteTransitionInEqlist(eqlst, from_, to_, condition_, immediate_, reset_, synchronize_, priority_);
@@ -9137,9 +9137,9 @@ algorithm
       list<Absyn.NamedArg> classAttrs;
       list<Absyn.Annotation> ann;
 
-    case (outClass as Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
+    case (outClass as Absyn.CLASS(
                       body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann = ann,comment = cmt),
-                      info = (file_info as SOURCEINFO(fileName = file))))
+                      info = (SOURCEINFO(fileName = file))))
       algorithm
         publst := InteractiveUtil.getPublicList(parts);
         publst2 := removeClassDiffFiledInElementitemlist(publst, file);
@@ -9149,13 +9149,13 @@ algorithm
         outClass;
 
     /* adrpo: handle also the case model extends X end X; */
-    case (outClass as Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
+    case (outClass as Absyn.CLASS(
                       body = Absyn.CLASS_EXTENDS(baseClassName=baseClassName,
                                                  modifications = modifications,
                                                  parts = parts,
                                                  ann = ann,
                                                  comment = cmt),
-                      info = (file_info as SOURCEINFO(fileName = file))))
+                      info = (SOURCEINFO(fileName = file))))
       algorithm
         publst := InteractiveUtil.getPublicList(parts);
         publst2 := removeClassDiffFiledInElementitemlist(publst, file);

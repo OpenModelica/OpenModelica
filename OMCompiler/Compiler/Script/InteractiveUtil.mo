@@ -2837,8 +2837,8 @@ algorithm
         outClass;
 
     // a class with parts - we can find the element in the protected list
-    case (c1,outClass as Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                         body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann=ann,comment = cmt),info = file_info))
+    case (c1,outClass as Absyn.CLASS(
+                         body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann=ann,comment = cmt)))
       algorithm
         prolst := getProtectedList(parts);
         (prolst2, true) := replaceClassInElementitemlist(prolst, c1, mergeAST);
@@ -2848,8 +2848,8 @@ algorithm
         outClass;
 
     // a class with parts - we cannot find the element in the public or protected list, add it to the public list
-    case (c1,outClass as Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                         body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann=ann,comment = cmt),info = file_info))
+    case (c1,outClass as Absyn.CLASS(
+                         body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann=ann,comment = cmt)))
       algorithm
         publst := getPublicList(parts);
         publst := addClassInElementitemlist(publst, c1);
@@ -3787,7 +3787,7 @@ algorithm
         filtered := excludeElementsFromFile(file, rest);
       then if not b then e::filtered else filtered;
     // lexer comments can only be from this file, exclude
-    case (file,(e as Absyn.LEXER_COMMENT(cmt))::rest)
+    case (file,(Absyn.LEXER_COMMENT(_))::rest)
       algorithm
         filtered := excludeElementsFromFile(file, rest);
       then filtered;
@@ -4396,8 +4396,8 @@ algorithm
       list<Absyn.Annotation> ann;
 
     // a class with parts - class found in public
-    case (c1,outClass as Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                         body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann = ann, comment = cmt),info = file_info))
+    case (c1,outClass as Absyn.CLASS(
+                         body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann = ann, comment = cmt)))
       algorithm
         publst := getPublicList(parts);
         publst2 := removeClassInElementitemlist(publst, c1);
@@ -4407,8 +4407,8 @@ algorithm
         outClass;
 
     // a class with parts - class found in protected
-    case (c1,outClass as Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                         body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann = ann, comment = cmt),info = file_info))
+    case (c1,outClass as Absyn.CLASS(
+                         body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann = ann, comment = cmt)))
       algorithm
         prolst := getProtectedList(parts);
         prolst2 := removeClassInElementitemlist(prolst, c1);
@@ -4418,8 +4418,8 @@ algorithm
         outClass;
 
     // an extended class with parts: model extends M end M; - class found in public
-    case (c1,outClass as Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                         body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,comment = cmt,ann = ann),info = file_info))
+    case (c1,outClass as Absyn.CLASS(
+                         body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,comment = cmt,ann = ann)))
       algorithm
         publst := getPublicList(parts);
         publst2 := removeClassInElementitemlist(publst, c1);
@@ -4429,8 +4429,8 @@ algorithm
         outClass;
 
     // an extended class with parts: model extends M end M; - class found in protected
-    case (c1,outClass as Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                         body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,comment = cmt,ann = ann),info = file_info))
+    case (c1,outClass as Absyn.CLASS(
+                         body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,comment = cmt,ann = ann)))
       algorithm
         prolst := getProtectedList(parts);
         prolst2 := removeClassInElementitemlist(prolst, c1);

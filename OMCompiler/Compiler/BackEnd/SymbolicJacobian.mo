@@ -2954,7 +2954,7 @@ algorithm
       case (comp as BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_CONSTANT()), _, _, _) then (comp, inShared);
 
       // Convert linear system to a torn system with symbolica jacobian, when flag is enabled
-      case (comp as BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_LINEAR(), eqns=residualequations, vars=iterationvarsInts, mixedSystem=mixedSystem), _, _, _)
+      case (BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_LINEAR(), eqns=residualequations, vars=iterationvarsInts, mixedSystem=mixedSystem), _, _, _)
         guard(Flags.isSet(Flags.LS_ANALYTIC_JACOBIAN))
         algorithm
           strictTearingset := BackendDAE.TEARINGSET(iterationvarsInts, residualequations, {}, BackendDAE.EMPTY_JACOBIAN());
@@ -3100,7 +3100,7 @@ algorithm
       BackendDAE.Var var;
       String name;
       Boolean exist=false;
-    case BackendDAE.GENERIC_JACOBIAN(SOME((_,name,diffVars,residualVars,allDiffedVars,dependentVarsCref))) algorithm
+    case BackendDAE.GENERIC_JACOBIAN(SOME((_,name,diffVars,_,_,dependentVarsCref))) algorithm
       // Search for non-linear variables without start value
       for varCref in dependentVarsCref loop
         for var in diffVars loop
@@ -3140,7 +3140,7 @@ algorithm
         DAE.ComponentRef varCref;
         BackendDAE.Var var;
         String name;
-      case BackendDAE.GENERIC_JACOBIAN(jacobian = SOME((BackendDAE.DAE({syst}, shared),name,diffVars,residualVars,allDiffedVars,dependentVarsCref)))
+      case BackendDAE.GENERIC_JACOBIAN(jacobian = SOME((BackendDAE.DAE({_}, _),name,diffVars,_,allDiffedVars,dependentVarsCref)))
         algorithm
           // Get non-linear variables without start value
           for varCref in dependentVarsCref loop
@@ -4334,7 +4334,7 @@ algorithm
     list<BackendDAE.Var> diffVars;
     String matrixName;
   case (BackendDAE.GENERIC_JACOBIAN(jacobian=SOME(sJac))) algorithm
-    ((dae,matrixName,diffVars, _, _,_)) := sJac;
+    ((dae,matrixName,_, _, _,_)) := sJac;
     for var in unfixedStates loop
       nonlinearCountLst := getNonlinearStateCount(var,unfixedStates,dae,matrixName)::nonlinearCountLst;
     end for;

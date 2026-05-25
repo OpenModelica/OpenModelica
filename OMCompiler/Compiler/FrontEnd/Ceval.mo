@@ -308,7 +308,7 @@ algorithm
         (cache,Values.LIST(v::vallst));
 
     // MetaModelica Partial Function
-    case (_,_,DAE.CREF(componentRef = cr, ty = DAE.T_FUNCTION_REFERENCE_VAR()),
+    case (_,_,DAE.CREF(ty = DAE.T_FUNCTION_REFERENCE_VAR()),
         _, _, _)
       then
         fail();

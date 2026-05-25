@@ -834,7 +834,7 @@ algorithm
       then (exp,assrtLst);
 
     // remove empty calls entirely if it is not impure
-    case (e1 as DAE.CALL(p,args,DAE.CALL_ATTR(ty=ty,inlineType=inlineType)))
+    case (DAE.CALL(p,_,DAE.CALL_ATTR(ty=ty)))
       algorithm
         // is impure?
         func := getFunction(p,fns);
@@ -1242,7 +1242,7 @@ algorithm
   oRepl := match(iCr,iExp,iRepl)
     local
       DAE.Type tp;
-    case (DAE.CREF_IDENT(identType=tp),_,_)
+    case (DAE.CREF_IDENT(),_,_)
       then VarTransform.addReplacement(iRepl, iCr, iExp);
     else fail();
   end match;
@@ -1525,7 +1525,7 @@ algorithm
       HashTableCG.HashTable checkcr;
       Boolean replacedfailed;
 
-    case (DAE.CREF(componentRef = cref),(argmap,checkcr,true))
+    case (DAE.CREF(componentRef = cref),(argmap,_,true))
       algorithm
         e := getExpFromArgMap(argmap,cref);
         (e,_) := ExpressionSimplify.simplify(e);
@@ -1536,7 +1536,7 @@ algorithm
         BaseHashTable.hasKey(ComponentReferenceBasics.crefFirstCref(cref),checkcr)
       then (inExp,(argmap,checkcr,false));
 
-    case (DAE.CREF(componentRef = cref),(argmap,checkcr,true))
+    case (DAE.CREF(componentRef = cref),(argmap,_,true))
       algorithm
         firstCref := ComponentReferenceBasics.crefFirstCref(cref);
         {} := ComponentReferenceBasics.crefSubs(firstCref);
@@ -1554,7 +1554,7 @@ algorithm
         // We have something like v[i].re and v is in the inputs... So we fail to inline.
       then (inExp,(argmap,checkcr,false));
 
-    case (DAE.UNBOX(DAE.CALL(path,expLst,DAE.CALL_ATTR(_,tuple_,false,isImpure,_,inlineType,tc)),ty),(argmap,checkcr,true))
+    case (DAE.UNBOX(DAE.CALL(path,expLst,DAE.CALL_ATTR(_,tuple_,false,isImpure,_,inlineType,tc)),ty),(argmap,_,true))
       algorithm
         cref := ComponentReference.pathToCref(path);
         (e as DAE.CREF(componentRef=cref,ty=ty2)) := getExpFromArgMap(argmap,cref);
@@ -1573,7 +1573,7 @@ algorithm
       then (e,(argmap,checkcr,false));
 
     // TODO: Use the inlineType of the function reference!
-    case (DAE.CALL(path,expLst,DAE.CALL_ATTR(DAE.T_METATYPE(),tuple_,false,isImpure,_,_,tc)),(argmap,checkcr,true))
+    case (DAE.CALL(path,expLst,DAE.CALL_ATTR(DAE.T_METATYPE(),tuple_,false,isImpure,_,_,tc)),(argmap,_,true))
       algorithm
         cref := ComponentReference.pathToCref(path);
         (e as DAE.CREF(componentRef=cref,ty=ty)) := getExpFromArgMap(argmap,cref);

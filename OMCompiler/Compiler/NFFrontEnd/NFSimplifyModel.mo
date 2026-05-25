@@ -153,7 +153,7 @@ algorithm
 
     case Equation.EQUALITY() then simplifyEqualityEquation(eq, equations);
 
-    case Equation.FOR(range = SOME(e))
+    case Equation.FOR(range = SOME(_))
       algorithm
         body := simplifyEquations(eq.body);
 

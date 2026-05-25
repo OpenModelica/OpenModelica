@@ -667,7 +667,7 @@ algorithm
        descLst := desc::iEqDesc;
      then
        descLst;
-  case(BackendDAE.EQUATIONSYSTEM(jac = BackendDAE.FULL_JACOBIAN(_)), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs),_)
+  case(BackendDAE.EQUATIONSYSTEM(jac = BackendDAE.FULL_JACOBIAN(_)), BackendDAE.EQSYSTEM(),_)
      algorithm
        desc := ("Equation System");
        descLst := desc::iEqDesc;
@@ -738,14 +738,14 @@ algorithm
       descLst := desc::iEqDesc;
     then
       descLst;
-  case(BackendDAE.TORNSYSTEM(linear=true), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs,  matching= BackendDAE.MATCHING()),_)
+  case(BackendDAE.TORNSYSTEM(linear=true), BackendDAE.EQSYSTEM(  matching= BackendDAE.MATCHING()),_)
      algorithm
       //get the equation string
        desc := ("Torn linear System");
        descLst := desc::iEqDesc;
     then
       descLst;
-  case(BackendDAE.TORNSYSTEM(linear=false), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs,  matching= BackendDAE.MATCHING()),_)
+  case(BackendDAE.TORNSYSTEM(linear=false), BackendDAE.EQSYSTEM(  matching= BackendDAE.MATCHING()),_)
      algorithm
       //get the equation string
        desc := ("Torn nonlinear System");
@@ -3357,7 +3357,7 @@ algorithm
         //print("singleNodes "+stringDelimitList(List.map(singleNodes,intString),"\n")+"\n");
         exeCosts := listReverse(exeCosts);
         // cluster these singleNodes
-        (cluster,_) := distributeToClusters(singleNodes,exeCosts,numProc);
+        (_,_) := distributeToClusters(singleNodes,exeCosts,numProc);
         //print("cluster "+stringDelimitList(List.mapArray(cluster, intLstString),"\n")+"\n");
         //update taskgraph and taskgraphMeta
         //(oTaskGraph,oTaskGraphMeta) = contractNodesInGraph(clusterLst,iTaskGraph,iTaskGraphMeta);

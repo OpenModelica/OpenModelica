@@ -1266,7 +1266,7 @@ public
         VariableKind varKind;
         Variable der_var;
 
-      case varKind as VariableKind.STATE(derivative = SOME(derivative)) algorithm
+      case VariableKind.STATE(derivative = SOME(derivative)) algorithm
         // also update the derivative to be a dummy derivative
         der_var := Pointer.access(derivative);
         der_var.backendinfo := BackendInfo.setVarKind(der_var.backendinfo, VariableKind.DUMMY_DER(varPointer));

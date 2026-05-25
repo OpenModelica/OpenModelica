@@ -749,9 +749,8 @@ public
 
           // transpose the matrix
           if UnorderedMap.isEmpty(vo) and UnorderedMap.isEmpty(vn) then
-            max_index_var := 0;
           else
-            max_index_var := intMax(max(i for i in UnorderedMap.valueList(vo)), max(i for i in UnorderedMap.valueList(vn)));
+            _ := intMax(max(i for i in UnorderedMap.valueList(vo)), max(i for i in UnorderedMap.valueList(vn)));
           end if;
           adj.mT := transposeScalar(adj.m, VariablePointers.scalarSize(vars, true));
         then adj;

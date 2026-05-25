@@ -890,7 +890,7 @@ public
 
       case RELATION()
         algorithm
-          RELATION(exp1 = e1, operator = op, exp2 = e2, index = i) := exp2;
+          RELATION(exp1 = e1, operator = op, exp2 = e2) := exp2;
           comp := Operator.compare(exp1.operator, op);
           if comp == 0 then
             comp := compare(exp1.exp1, e1);
@@ -1475,7 +1475,7 @@ public
       local
         Expression step_exp;
         Option<Expression> step_opt;
-      case RANGE(step = step_opt) algorithm
+      case RANGE() algorithm
         try
           start := getInteger(range.start, resize);
           stop  := getInteger(range.stop, resize);
@@ -2613,7 +2613,7 @@ public
       case REAL() then Absyn.Exp.REAL(String(exp.value));
       case STRING() then Absyn.Exp.STRING(exp.value);
       case BOOLEAN() then Absyn.Exp.BOOL(exp.value);
-      case ENUM_LITERAL(ty = ty as Type.ENUMERATION())
+      case ENUM_LITERAL(ty=Type.ENUMERATION())
         then Absyn.Exp.CREF(AbsynUtil.pathToCref(enumLiteralPath(exp)));
       case CLKCONST() then ClockKind.toAbsyn(exp.clk);
       case CREF() then Absyn.Exp.CREF(ComponentRef.toAbsyn(exp.cref));

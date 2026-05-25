@@ -175,7 +175,7 @@ algorithm
       then inArg;
 
     // array equations
-    case DAE.ARRAY_EQUATION(dimension=_)
+    case DAE.ARRAY_EQUATION()
       algorithm
         (varSize, eqnSize, eqns, hs) := inArg;
         size := Expression.sizeOf(Expression.typeof(element.exp));

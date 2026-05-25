@@ -3502,7 +3502,7 @@ algorithm
       Option<SimCode.JacobianMatrix> jacobianMatrix;
       SimCode.NonlinearSystem nlSystem;
       SimCode.LinearSystem lSystem;
-    case (simEqSys as SimCode.SES_NONLINEAR(nlSystem=nlSystem as SimCode.NONLINEARSYSTEM(index=oldIdx,eqs=eqs,crefs=crefs,jacobianMatrix=jacobianMatrix)),(newIdx,ass))
+    case (simEqSys as SimCode.SES_NONLINEAR(nlSystem=nlSystem as SimCode.NONLINEARSYSTEM(index=oldIdx,eqs=eqs,jacobianMatrix=jacobianMatrix)),(newIdx,ass))
       algorithm
         (eqs,(newIdx,ass)) := List.mapFold(eqs,TDS_replaceSimEqSysIndexWithUpdate,(newIdx,ass));
         (jacobianMatrix,(newIdx,ass)) := TDS_replaceSimEqSysIdxInJacobianMatrixWithUpdate(jacobianMatrix,(newIdx,ass));

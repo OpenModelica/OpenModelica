@@ -2064,7 +2064,7 @@ algorithm
 
     case ComponentRef.CREF(node = InstNode.NAME_NODE())
       algorithm
-        (subs, subs_var) := typeSubscripts(cref.subscripts, cref.ty,
+        (_, subs_var) := typeSubscripts(cref.subscripts, cref.ty,
           Expression.CREF(cref.ty, cref), context, info, checkSubscripts = false);
         (rest_cr, rest_var) := typeCref2(cref.restCref, context, info, false);
         cref.restCref := rest_cr;

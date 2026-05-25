@@ -295,7 +295,7 @@ public
             fn_context := NFInstContext.FUNCTION;
           end if;
 
-          fnl := Function.typeRefCache(call.ref, fn_context);
+          _ := Function.typeRefCache(call.ref, fn_context);
         then
           typeArgs(call, context, info);
 

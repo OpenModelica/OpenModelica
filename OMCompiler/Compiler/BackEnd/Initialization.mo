@@ -584,13 +584,13 @@ algorithm
     then (stmts, inLeftCrs);
 
     // inactive when equation during initialization
-    case DAE.STMT_WHEN(exp=_, statementLst=stmts, elseWhen=NONE()) algorithm
+    case DAE.STMT_WHEN(statementLst=stmts, elseWhen=NONE()) algorithm
       crefLst := CheckModel.algorithmStatementListOutputs(stmts, DAE.EXPAND()); // expand as we're in an algorithm
       leftCrs := List.fold(crefLst, BaseHashSet.add, inLeftCrs);
     then (inAcc, leftCrs);
 
     // inactive when equation during initialization with elsewhen part
-    case DAE.STMT_WHEN(exp=_, statementLst=stmts, elseWhen=SOME(stmt)) algorithm
+    case DAE.STMT_WHEN(statementLst=stmts, elseWhen=SOME(stmt)) algorithm
       crefLst := CheckModel.algorithmStatementListOutputs(stmts, DAE.EXPAND()); // expand as we're in an algorithm
       leftCrs := List.fold(crefLst, BaseHashSet.add, inLeftCrs);
       (stmts, leftCrs) := inlineWhenForInitializationWhenStmt(stmt, leftCrs, inAcc);
@@ -1752,7 +1752,7 @@ algorithm
     then ({}, {}, {});
 
     case currRedundantEqn::restRedundantEqns algorithm
-      nVars := BackendVariable.varsSize(inVars);
+      _ := BackendVariable.varsSize(inVars);
       nEqns := BackendEquation.equationArraySize(inEqns);
     //BackendDump.dumpMatchingVars(vecVarToEqs);
     //BackendDump.dumpMatchingEqns(vecEqsToVar);

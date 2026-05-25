@@ -1338,7 +1338,7 @@ algorithm
         removeEdge(eqIdx,varIdx,m,mT);
       then (clockEqsIn, eqIdx::subClockInterfaceEqIdxsIn, eq::subClockInterfaceEqsIn);
 
-    case(BackendDAE.EQUATION(scalar=_))
+    case(BackendDAE.EQUATION())
       algorithm
         //print("Thats also not a base clock "+BackendDump.equationString(eq)+"\n");
       then (clockEqsIn, subClockInterfaceEqIdxsIn, subClockInterfaceEqsIn);

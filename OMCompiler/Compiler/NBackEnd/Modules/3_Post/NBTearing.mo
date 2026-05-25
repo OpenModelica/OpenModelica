@@ -695,7 +695,7 @@ protected
       case Equation.RECORD_EQUATION(lhs = tpl as Expression.TUPLE()) algorithm
       then list(BVariable.getVarPointer(tpl_cr, sourceInfo()) for tpl_cr in UnorderedSet.toList(Expression.extractCrefs(tpl)));
 
-      case Equation.RECORD_EQUATION(lhs = cref as Expression.CREF()) algorithm
+      case Equation.RECORD_EQUATION(lhs = Expression.CREF()) algorithm
         // ToDo: if vars contains any child of cref add all children of cref
       then {};
 

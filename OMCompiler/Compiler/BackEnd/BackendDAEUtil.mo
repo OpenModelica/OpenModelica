@@ -3115,7 +3115,7 @@ algorithm
     case (DAE.RELATION(), tpl)
     then (inExp, false, tpl);
 
-    case (DAE.IFEXP(expThen = e1, expElse = e2), tpl)
+    case (DAE.IFEXP(), tpl)
     then traversingadjacencyRowIfExpSolvableFinder(inExp, tpl);
 
     case (DAE.RANGE(), tpl)
@@ -3182,7 +3182,7 @@ algorithm
     then (inExp, not b, tpl);
 
     // homotopy operator for simulation system
-    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), (_, _, _, false, _))
+    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, _}), (_, _, _, false, _))
     then traversingadjacencyRowExpSolvableFinder(e1, inTpl);
 
     // homotopy operator for initialization system
@@ -3577,7 +3577,7 @@ algorithm
       then (inExp,not b,inTpl);
 
     // homotopy operator for simulation system
-    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), (_, _, false))
+    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, _}), (_, _, false))
     then traversingadjacencyRowExpFinder(e1, inTpl);
 
     // homotopy operator for initialization system
@@ -3742,7 +3742,7 @@ algorithm
       then (inExp,false,(vars,res,isInitial));
 
     // homotopy operator for simulation system
-    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), (_, _, false))
+    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, _}), (_, _, false))
     then traversingadjacencyRowExpFinderwithInput(e1, inTpl);
 
     // homotopy operator for initialization system
@@ -5439,7 +5439,7 @@ algorithm
         false := Expression.expHasCrefNoPreorDer(e1,cr1);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
-    case(r::rest,DAE.RECORD(path=path,exps=explst),_,_,_,_,_,_)
+    case(r::rest,DAE.RECORD(exps=explst),_,_,_,_,_,_)
       algorithm
         rabs := intAbs(r);
         // if not negated rowmark then
@@ -5450,7 +5450,7 @@ algorithm
         false := Expression.expHasCrefNoPreorDer(e2,cr1);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
-    case(r::rest,_,DAE.RECORD(path=path,exps=explst),_,_,_,_,_)
+    case(r::rest,_,DAE.RECORD(exps=explst),_,_,_,_,_)
       algorithm
         rabs := intAbs(r);
         // if not negated rowmark then
@@ -6041,7 +6041,7 @@ algorithm
       (_, (vars, _, _, _, _, pa)) := Expression.traverseExpTopDown(e2, traversingAdjacencyRowExpSolvableEnhancedFinder, (vars, true, isInitial, it, at, pa));
     then (inExp, false, (vars, bs, isInitial, it, at, pa));
 
-    case (DAE.IFEXP(expCond=e3, expThen=e1, expElse=e2), (vars, bs, isInitial, it, at, pa))
+    case (DAE.IFEXP(), (vars, bs, isInitial, it, at, pa))
     then traversingAdjacencyRowIfExpEnhanced(inExp, (vars, bs, isInitial, it, at, pa), traversingAdjacencyRowExpSolvableEnhancedFinder);
     case (DAE.RANGE(start=e1, step=NONE(), stop=e2), (vars, bs, isInitial, it, at, pa)) algorithm
       (_, (vars, _, _, _, _, pa)) := Expression.traverseExpTopDown(e1, traversingAdjacencyRowExpSolvableEnhancedFinder, (vars, true, isInitial, it, at, pa));
@@ -6097,11 +6097,11 @@ algorithm
     then (inExp, not b, inTpl);
 
     // homotopy operator for simulation system
-    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), (_, _, false, _, _, _))
+    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, _}), (_, _, false, _, _, _))
     then traversingAdjacencyRowExpSolvableEnhancedFinder(e1, inTpl);
 
     // homotopy operator for initialization system
-    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), (vars, bs, true, it, at, pa))
+    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), (_, _, true, _, _, _))
       algorithm
         (_, b1, tpl) := traversingAdjacencyRowExpSolvableEnhancedFinder(e1, inTpl);
         (_, b2, tpl) := traversingAdjacencyRowExpSolvableEnhancedFinder(e2, tpl);
@@ -6251,7 +6251,7 @@ algorithm
         b := Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and ExpressionBasics.expEqual(e1,e2);
       then (e,not b,bt);
 
-    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), _) algorithm
+    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, _}), _) algorithm
     // phi: what about e2?
     then getIfExpBranchVarOccurency(e1, inBt);
 

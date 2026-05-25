@@ -1841,7 +1841,7 @@ algorithm
 
     // ignore wildcards
     // solves ticket #8381
-    case ((lhs as DAE.CREF(componentRef = DAE.WILD()))::lrest,rhs::rrest,_)
+    case ((DAE.CREF(componentRef = DAE.WILD()))::lrest,_::rrest,_)
       algorithm
         eqs := generateConstEqs(lrest,rrest,eqsIn);
     then
