@@ -1444,15 +1444,15 @@ protected function getInfoAnnotationOrDefault2
   input SourceInfo default;
   output SourceInfo info;
 algorithm
-  info := match (lst,default)
+  info := match (lst)
     local
       list<SCode.SubMod> rest;
       String fileName;
       Integer line;
-    case ({},_) then default;
-    case (SCode.NAMEMOD(ident="__OpenModelica_FileInfo",mod=SCode.MOD(binding=SOME(Absyn.TUPLE({Absyn.STRING(fileName),Absyn.INTEGER(line)}))))::_,_)
+    case ({}) then default;
+    case (SCode.NAMEMOD(ident="__OpenModelica_FileInfo",mod=SCode.MOD(binding=SOME(Absyn.TUPLE({Absyn.STRING(fileName),Absyn.INTEGER(line)}))))::_)
       then SOURCEINFO(fileName,false,line,0,line,0,0.0);
-    case (_::rest,_) then getInfoAnnotationOrDefault2(rest,default);
+    case (_::rest) then getInfoAnnotationOrDefault2(rest,default);
   end match;
 end getInfoAnnotationOrDefault2;
 
@@ -1482,20 +1482,20 @@ protected function translateCommentList
   input Option<String> inString;
   output SCode.Comment outComment;
 algorithm
-  outComment := match (inAnns,inString)
+  outComment := match inAnns
     local
       Absyn.Annotation absann;
       list<Absyn.Annotation> anns;
       Option<SCode.Annotation> ann;
       Option<String> ostr;
 
-    case ({},_) then SCode.COMMENT(NONE(),inString);
-    case ({absann},_)
+    case ({}) then SCode.COMMENT(NONE(),inString);
+    case ({absann})
       algorithm
         ann := translateAnnotation(absann);
         ostr := Util.applyOption(inString,System.unescapedString);
       then SCode.COMMENT(ann,ostr);
-    case (absann::anns,_)
+    case (absann::anns)
       algorithm
         absann := AbsynUtil.mergeAnnotationsList(absann, anns);
         ann := translateAnnotation(absann);
@@ -1662,7 +1662,7 @@ protected function translateElementAddinfo
   input SourceInfo nfo;
   output SCode.Element oelem;
 algorithm
-  oelem := match (elem,nfo)
+  oelem := match elem
     local
       SCode.Ident a1;
       Absyn.InnerOuter a2;
@@ -1675,7 +1675,7 @@ algorithm
       Option<Absyn.ConstrainClass> a13;
       SCode.Prefixes p;
 
-    case(SCode.COMPONENT(a1,p,a6,a7,a8,a10,a11,_), _)
+    case SCode.COMPONENT(a1,p,a6,a7,a8,a10,a11,_)
       then SCode.COMPONENT(a1,p,a6,a7,a8,a10,a11,nfo);
 
     else elem;
@@ -1778,7 +1778,7 @@ protected function translateSub
   input SourceInfo info;
   output SCode.SubMod outSubMod;
 algorithm
-  outSubMod := match (inPath,inMod,info)
+  outSubMod := match inPath
     local
       String i;
       Absyn.Path path;
@@ -1786,10 +1786,10 @@ algorithm
       SCode.SubMod sub;
 
     // Then the normal rules
-    case (Absyn.IDENT(name = i),mod,_) then SCode.NAMEMOD(i,mod);
-    case (Absyn.QUALIFIED(name = i,path = path),mod,_)
+    case Absyn.IDENT(name = i) then SCode.NAMEMOD(i,inMod);
+    case Absyn.QUALIFIED(name = i,path = path)
       algorithm
-        sub := translateSub(path, mod, info);
+        sub := translateSub(path, inMod, info);
         mod := SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{sub},NONE(),NONE(),info);
       then SCode.NAMEMOD(i,mod);
   end match;
@@ -1831,28 +1831,28 @@ protected function checkTypeSpec
   input Absyn.TypeSpec ts;
   input SourceInfo info;
 algorithm
-  _ := match (ts,info)
+  _ := match ts
     local
       list<Absyn.TypeSpec> tss;
       Absyn.TypeSpec ts2;
       String str;
-    case (Absyn.TPATH(),_) then ();
-    case (Absyn.TCOMPLEX(path=Absyn.IDENT("tuple"),typeSpecs={ts2}),_)
+    case (Absyn.TPATH()) then ();
+    case (Absyn.TCOMPLEX(path=Absyn.IDENT("tuple"),typeSpecs={ts2}))
       algorithm
         str := AbsynUtil.typeSpecString(ts);
         Error.addSourceMessage(Error.TCOMPLEX_TUPLE_ONE_NAME,{str},info);
         checkTypeSpec(ts2,info);
       then ();
       // It is okay for tuples to have multiple typespecs
-    case (Absyn.TCOMPLEX(path=Absyn.IDENT("tuple"),typeSpecs=tss as (_::_::_)),_)
+    case (Absyn.TCOMPLEX(path=Absyn.IDENT("tuple"),typeSpecs=tss as (_::_::_)))
       algorithm
         List.map1_0(tss, checkTypeSpec, info);
       then ();
-    case (Absyn.TCOMPLEX(typeSpecs={ts2}),_)
+    case (Absyn.TCOMPLEX(typeSpecs={ts2}))
       algorithm
         checkTypeSpec(ts2,info);
       then ();
-    case (Absyn.TCOMPLEX(typeSpecs=tss),_)
+    case (Absyn.TCOMPLEX(typeSpecs=tss))
       algorithm
         if listMember(ts.path, {Absyn.IDENT("list"),Absyn.IDENT("List"),Absyn.IDENT("array"),Absyn.IDENT("Array"),Absyn.IDENT("polymorphic"),Absyn.IDENT("Option")}) then
           str := AbsynUtil.typeSpecString(ts);

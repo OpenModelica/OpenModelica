@@ -36,16 +36,36 @@
 
 import argparse
 import copy
+import json
 import re
 import sys
 import os
 import os.path
+import urllib.request
+import urllib.error
 from pyparsing import Word, alphanums, nums, Suppress, Regex, Literal, StringEnd
 import subprocess
 
 parser = argparse.ArgumentParser()
 parser.add_argument('files', nargs='*')
-args = parser.parse_args().files
+parser.add_argument('--api-base', default=os.environ.get('OPENAI_API_BASE', 'http://mountain.sjoelund.se:8080/v1/'),
+                    help='OpenAI-compatible endpoint (default: %(default)s).')
+parser.add_argument('--api-key', default=os.environ.get('OPENAI_API_KEY', 'sk-no-key-required'),
+                    help='Bearer token for the endpoint.')
+parser.add_argument('--model', default=os.environ.get('AGENT_MODEL', 'Qwen3.6 35B-A3B (TQ)'),
+                    help='Model identifier (default: %(default)s).')
+parser.add_argument('--max-iterations', type=int, default=8,
+                    help='Maximum tool-call rounds per notification (default: %(default)s).')
+parser.add_argument('--max-tokens', type=int, default=8000,
+                    help='Max output tokens (including thinking) per iteration (default: %(default)s).')
+parser.add_argument('--thinking-budget', type=int, default=2000,
+                    help='Reasoning-token budget per iteration, forwarded as the '
+                         '`thinking_budget_tokens` request header for backends that honor '
+                         'it (default: %(default)s).')
+parser.add_argument('--request-timeout', type=int, default=1800,
+                    help='HTTP timeout per request, seconds (default: %(default)s).')
+_cli = parser.parse_args()
+args = _cli.files
 
 class bcolors:
     HEADER = '\033[95m'
@@ -140,39 +160,52 @@ def updateContents(moContents,startLine,endLine,startCol,endCol,s):
   del moContents[startLine:endLine] # Does not delete startLine-1, which is the one we will abuse
   moContents[startLine-1] = line
 
+# Two important flags on every git invocation below:
+#  * `-c diff.ignoreSubmodules=all` so submodule pointers that have drifted
+#    (e.g. OMOptim, OMSens_Qt at the OpenModelica top level) do not appear in
+#    our "dirty" set. We never want to touch them.
+#  * `--relative` on `git diff` so paths come back relative to COMPILER_DIR
+#    (cwd) instead of the repo root. That way `git add <path>` /
+#    `git checkout -- <path>` work directly with the same cwd. Without it we
+#    got paths like `OMCompiler/Compiler/FrontEnd/AbsynToSCode.mo` that git
+#    then could not resolve from the Compiler directory.
+GIT_GLOBAL_FLAGS = ['-c', 'diff.ignoreSubmodules=all']
+
 def gitInitialCheckpoint():
-  """Capture the initial state of TRACKED, modified files into the index. We do
-  NOT use `git add -A` because that would also stage every untracked file in the
-  tree (debug scripts, generated dumps, etc.), which the user did not ask to
-  commit. Untracked files are left alone; subsequent agent fixes are only
-  responsible for files they actually modify."""
-  subprocess.check_call(['git', 'add', '-u'], cwd=COMPILER_DIR)
+  """Capture the initial state of TRACKED, modified files into the index, but
+  only within COMPILER_DIR (the `.` pathspec) — we do not sweep up the rest of
+  the OpenModelica tree. We do NOT use `git add -A` because that would also
+  stage every untracked file (debug scripts, generated dumps, etc.), which the
+  user did not ask to commit."""
+  subprocess.check_call(['git'] + GIT_GLOBAL_FLAGS + ['add', '-u', '--', '.'],
+                        cwd=COMPILER_DIR)
 
 def gitStage(paths):
   """Stage the specific paths that the agent just produced and that compiled.
-  Only these `deemed working' files are added to the index; everything else
-  stays in whatever state the user left it in."""
+  `paths` must be relative to COMPILER_DIR (the cwd we use for git)."""
   if not paths:
     return
-  subprocess.check_call(['git', 'add', '--'] + list(paths), cwd=COMPILER_DIR)
+  subprocess.check_call(['git'] + GIT_GLOBAL_FLAGS + ['add', '--'] + list(paths),
+                        cwd=COMPILER_DIR)
 
 def gitRevert(paths):
-  """Restore the given paths from the index (= the last verified state)."""
+  """Restore the given paths (relative to COMPILER_DIR) from the index."""
   if not paths:
     return
-  subprocess.call(['git', 'checkout', '--'] + list(paths), cwd=COMPILER_DIR)
+  subprocess.call(['git'] + GIT_GLOBAL_FLAGS + ['checkout', '--'] + list(paths),
+                  cwd=COMPILER_DIR)
 
 def gitDirtyFiles():
-  """Return the paths (relative to COMPILER_DIR) of files that differ from the index."""
-  out = subprocess.check_output(['git', 'diff', '--name-only'], cwd=COMPILER_DIR).decode()
+  """Return paths (relative to COMPILER_DIR) of files that differ from the
+  index, ignoring submodules and anything outside COMPILER_DIR."""
+  out = subprocess.check_output(
+    ['git'] + GIT_GLOBAL_FLAGS + ['diff', '--name-only', '--relative', '--', '.'],
+    cwd=COMPILER_DIR,
+  ).decode()
   return [p for p in out.splitlines() if p.strip()]
 
 def relativeToCompiler(path):
   return os.path.relpath(os.path.realpath(path), COMPILER_DIR)
-
-def runAgent(prompt):
-  """Run claude-sandbox.sh in the Compiler directory with the given prompt."""
-  subprocess.check_call(['claude-sandbox.sh', prompt], cwd=COMPILER_DIR)
 
 META_MODELICA_PRIMER = """\
 Quick MetaModelica primer (the dialect used in this file):
@@ -203,6 +236,260 @@ Quick MetaModelica primer (the dialect used in this file):
 * `end match;` / `end matchcontinue;` / `end try;` are required closing
   tokens — do not forget them.
 """
+
+# ---------------------------------------------------------------------------
+# In-process agent loop.
+#
+# We talk OpenAI Chat Completions directly to the configured /v1/ endpoint and
+# expose a tiny tool surface (read, edit, grep). Claude Code's preamble varies
+# per invocation and defeats prefix caching on the backend; by keeping the
+# system prompt and tool definitions byte-identical across invocations we make
+# the long static prefix cacheable.
+# ---------------------------------------------------------------------------
+
+class AgentError(Exception):
+  """Raised when the agent loop cannot continue (malformed call, budget, etc.)."""
+
+def _http_post_json(url, payload, key, extra_headers, timeout):
+  data = json.dumps(payload).encode('utf-8')
+  req = urllib.request.Request(url, data=data, method='POST')
+  req.add_header('Content-Type', 'application/json')
+  if key:
+    req.add_header('Authorization', 'Bearer %s' % key)
+  for k, v in extra_headers.items():
+    req.add_header(k, str(v))
+  try:
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+      return json.loads(r.read().decode('utf-8'))
+  except urllib.error.HTTPError as e:
+    body = e.read().decode('utf-8', errors='replace') if hasattr(e, 'read') else ''
+    raise AgentError("HTTP %d from %s: %s" % (e.code, url, body[:500]))
+  except urllib.error.URLError as e:
+    raise AgentError("Network error calling %s: %s" % (url, e))
+
+AGENT_TOOLS = [
+  {
+    "type": "function",
+    "function": {
+      "name": "read",
+      "description": (
+        "Read a UTF-8 text file from the OpenModelica/OMCompiler/Compiler tree. "
+        "Returns the requested lines prefixed with 1-based line numbers. Use "
+        "this to look at the file you are about to edit and at the surrounding "
+        "context before proposing an edit."
+      ),
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "file_path": {"type": "string", "description": "Path relative to the Compiler directory, e.g. `FrontEnd/Patternm.mo`."},
+          "offset": {"type": "integer", "description": "1-based start line (default 1).", "default": 1},
+          "limit":  {"type": "integer", "description": "Number of lines to read (default 200, max 2000).", "default": 200},
+        },
+        "required": ["file_path"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "edit",
+      "description": (
+        "Perform an exact-string replacement in the target file. `old_string` "
+        "must appear EXACTLY ONCE in the file (including whitespace, indentation, "
+        "and newlines), and is replaced with `new_string`. You may only edit the "
+        "single file named in the user message; attempts to edit any other path "
+        "fail with an error. Make multiple edit calls if you need to change "
+        "multiple places."
+      ),
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "file_path":  {"type": "string", "description": "Same relative path as the user's notification."},
+          "old_string": {"type": "string", "description": "Exact text to replace (must be unique in the file)."},
+          "new_string": {"type": "string", "description": "Replacement text. Use the empty string to delete."},
+        },
+        "required": ["file_path", "old_string", "new_string"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "grep",
+      "description": (
+        "Search the Compiler tree for a regular expression (ripgrep syntax). "
+        "Use this to check whether an identifier is shadowed, where a "
+        "uniontype is defined, etc. Returns up to 100 matches with `path:line:text`."
+      ),
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "pattern": {"type": "string", "description": "Regex to search for."},
+          "path":    {"type": "string", "description": "Subdirectory to search under, relative to Compiler dir. Default: whole tree.", "default": "."},
+          "glob":    {"type": "string", "description": "Optional glob filter, e.g. `*.mo`.", "default": ""},
+        },
+        "required": ["pattern"]
+      }
+    }
+  },
+]
+
+AGENT_SYSTEM_PROMPT = (
+  "You are a refactoring assistant for the OpenModelica compiler, written in "
+  "MetaModelica (a dialect of Modelica with pattern matching). For each "
+  "user message you receive ONE refactoring task scoped to ONE file. Use the "
+  "tools to inspect the file and apply the change. When the refactor is "
+  "complete, respond with a brief plain-text confirmation and NO tool calls.\n"
+  "\n"
+  "Hard rules:\n"
+  "  * Only call `edit` on the file path named in the user message. Edits to "
+  "    any other path will be rejected.\n"
+  "  * Read the file (with enough context above and below the cited lines) "
+  "    before making an edit, so your `old_string` exactly matches what is "
+  "    on disk.\n"
+  "  * If after reading you decide the described refactor is not applicable "
+  "    (the pattern is used in a way the notification missed, the rewrite "
+  "    would change semantics, the structure is different from what the "
+  "    notification implies, etc.), make no edits and reply explaining why.\n"
+  "  * Do not invent files, do not commit, do not run the compiler.\n"
+  "  * Be terse. Do not narrate.\n"
+  "\n"
+  + META_MODELICA_PRIMER
+)
+
+def _tool_read(args, target_path):
+  fp = args.get('file_path')
+  if not fp:
+    raise AgentError("read: missing file_path")
+  abs_path = os.path.realpath(os.path.join(COMPILER_DIR, fp))
+  if not abs_path.startswith(COMPILER_DIR + os.sep) and abs_path != COMPILER_DIR:
+    raise AgentError("read: path %s escapes the Compiler directory" % fp)
+  offset = max(1, int(args.get('offset', 1)))
+  limit = max(1, min(2000, int(args.get('limit', 200))))
+  try:
+    with open(abs_path, 'r', encoding='utf-8', errors='replace') as f:
+      lines = f.readlines()
+  except OSError as e:
+    raise AgentError("read: %s" % e)
+  start = offset - 1
+  end = min(len(lines), start + limit)
+  return "".join("%6d\t%s" % (i + 1, lines[i]) for i in range(start, end))
+
+def _tool_edit(args, target_path):
+  fp = args.get('file_path')
+  if not fp:
+    raise AgentError("edit: missing file_path")
+  abs_path = os.path.realpath(os.path.join(COMPILER_DIR, fp))
+  if abs_path != target_path:
+    raise AgentError("edit: only `%s` may be edited in this task, got `%s`" %
+                     (os.path.relpath(target_path, COMPILER_DIR), fp))
+  old = args.get('old_string')
+  new = args.get('new_string')
+  if old is None or new is None:
+    raise AgentError("edit: old_string and new_string are required")
+  if old == new:
+    raise AgentError("edit: old_string and new_string are identical")
+  try:
+    with open(abs_path, 'r', encoding='utf-8') as f:
+      content = f.read()
+  except OSError as e:
+    raise AgentError("edit: %s" % e)
+  count = content.count(old)
+  if count == 0:
+    raise AgentError("edit: old_string not found. Re-read the file and copy the bytes exactly.")
+  if count > 1:
+    raise AgentError("edit: old_string matches %d places; include more surrounding context to make it unique" % count)
+  with open(abs_path, 'w', encoding='utf-8') as f:
+    f.write(content.replace(old, new, 1))
+  return "edited 1 occurrence in %s" % fp
+
+def _tool_grep(args, target_path):
+  pattern = args.get('pattern')
+  if not pattern:
+    raise AgentError("grep: missing pattern")
+  subpath = args.get('path') or '.'
+  glob = args.get('glob') or ''
+  cmd = ['rg', '--no-heading', '--with-filename', '-n', '--max-count', '50', '-S']
+  if glob:
+    cmd += ['-g', glob]
+  cmd += [pattern, subpath]
+  try:
+    out = subprocess.run(cmd, cwd=COMPILER_DIR, capture_output=True, text=True, timeout=60)
+  except FileNotFoundError:
+    # Fallback: GNU grep.
+    cmd = ['grep', '-rn']
+    if glob:
+      cmd += ['--include', glob]
+    cmd += ['-E', pattern, subpath]
+    out = subprocess.run(cmd, cwd=COMPILER_DIR, capture_output=True, text=True, timeout=60)
+  lines = (out.stdout or '').splitlines()
+  if not lines:
+    return "(no matches)"
+  return "\n".join(lines[:100]) + ("\n(... truncated, %d more)" % (len(lines) - 100) if len(lines) > 100 else "")
+
+TOOL_HANDLERS = {'read': _tool_read, 'edit': _tool_edit, 'grep': _tool_grep}
+
+def _execute_tool_call(call, target_path):
+  fn = call.get('function', {})
+  name = fn.get('name', '')
+  raw_args = fn.get('arguments', '{}')
+  if isinstance(raw_args, str):
+    try:
+      parsed = json.loads(raw_args)
+    except json.JSONDecodeError as e:
+      return "ERROR: malformed JSON arguments (%s). Resend with a valid JSON object." % e
+  else:
+    parsed = raw_args or {}
+  handler = TOOL_HANDLERS.get(name)
+  if handler is None:
+    return "ERROR: unknown tool `%s`. Available: %s" % (name, ", ".join(TOOL_HANDLERS))
+  try:
+    return handler(parsed, target_path)
+  except AgentError as e:
+    return "ERROR: %s" % e
+
+def runAgent(prompt, moFile):
+  """Drive an OpenAI tool-calling loop until the model stops calling tools or
+  the per-fix budget is exhausted. `moFile` is the absolute path the model is
+  allowed to edit; all other paths are read-only via the `read`/`grep` tools."""
+  target_path = os.path.realpath(moFile)
+  url = _cli.api_base.rstrip('/') + '/chat/completions'
+  headers = {}
+  if _cli.thinking_budget > 0:
+    # Both spellings appear in the wild on local/proxy servers; sending both is
+    # harmless because unrecognized headers are ignored.
+    headers['thinking_budget_tokens'] = _cli.thinking_budget
+    headers['x-thinking-budget-tokens'] = _cli.thinking_budget
+  messages = [
+    {"role": "system", "content": AGENT_SYSTEM_PROMPT},
+    {"role": "user",   "content": prompt},
+  ]
+  for it in range(_cli.max_iterations):
+    payload = {
+      "model": _cli.model,
+      "messages": messages,
+      "tools": AGENT_TOOLS,
+      "tool_choice": "auto",
+      "max_tokens": _cli.max_tokens,
+      "temperature": 0,
+    }
+    resp = _http_post_json(url, payload, _cli.api_key, headers, _cli.request_timeout)
+    try:
+      msg = resp['choices'][0]['message']
+    except (KeyError, IndexError):
+      raise AgentError("Unexpected response shape: %s" % json.dumps(resp)[:500])
+    messages.append({k: v for k, v in msg.items() if k in ('role', 'content', 'tool_calls')})
+    tool_calls = msg.get('tool_calls') or []
+    if not tool_calls:
+      return msg.get('content') or '(no content)'
+    for call in tool_calls:
+      result = _execute_tool_call(call, target_path)
+      messages.append({
+        "role": "tool",
+        "tool_call_id": call.get('id', ''),
+        "content": result,
+      })
+  raise AgentError("Exceeded --max-iterations (%d) without the model stopping" % _cli.max_iterations)
 
 def agentPrompt(notif, moFileRel):
   info = notif[0]
@@ -473,9 +760,10 @@ def processAgentFixes(stamp, moFile, logFile):
     info = n[0]
     print("%s Running agent for: %s" % (infoStr(info), list(n[1].keys())[0]))
     try:
-      runAgent(prompt)
-    except (subprocess.CalledProcessError, FileNotFoundError) as e:
-      print("Agent invocation failed (%s); skipping." % e)
+      runAgent(prompt, moFile)
+    except AgentError as e:
+      print("%s Agent invocation failed (%s); reverting any partial edits." % (infoStr(info), e))
+      gitRevert(gitDirtyFiles())
       continue
     dirty = gitDirtyFiles()
     if not dirty:
