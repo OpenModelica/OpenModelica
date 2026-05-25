@@ -4680,6 +4680,12 @@ public
     exp := CREF(ComponentRef.getSubscriptedType(cref, includeScope), cref);
   end fromCref;
 
+  function fromTypedCref
+    input ComponentRef cref;
+    input Type ty;
+    output Expression exp = CREF(ty, cref);
+  end fromTypedCref;
+
   function toCref
     input Expression exp;
     output ComponentRef cref;

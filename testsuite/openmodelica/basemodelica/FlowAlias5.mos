@@ -1,0 +1,65 @@
+// name: FlowAlias5
+// status: correct
+
+loadFile("TestAliasStream.mo"); getErrorString();
+setCommandLineOptions("-f -d=flowAliasElimination"); getErrorString();
+instantiateModel(TestAliasStream.Test5); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "//! base 0.1.0
+// package 'Test5'
+//   function '$OMC$PositiveMax'
+//     input Real 'flowValue';
+//     input Real 'eps';
+//     output Real 'positiveMax';
+//   algorithm
+//     'positiveMax' := max('flowValue', 'eps');
+//   end '$OMC$PositiveMax';
+//
+//   model 'Test5'
+//     Real 'pump.outlet.p';
+//     Real 'pump.outlet.h';
+//     parameter Real 'pump.T' = 20.0;
+//     Real 'pump.P';
+//     Real 'tank.port.p';
+//     Real 'tank.port.w';
+//     Real 'tank.port.h';
+//     parameter Real 'tank.A' = 0.001;
+//     Real 'tank.y'(fixed = true, start = 1.0);
+//     Real 'tank.T'(fixed = true, start = 20.0);
+//     Real 'wrapper.port.p';
+//     Real 'wrapper.port.h';
+//     Real 'wrapper.sensor.port.p';
+//     Real 'wrapper.sensor.port.h';
+//     Real 'wrapper.sensor.h';
+//     Real 'wrapper.sensor.T';
+//     Real 'wrapper.T' = 'wrapper.sensor.T';
+//     Real 'wrapper.sensor.port.w'(min = 0.0);
+//     Real 'wrapper.port.w' = 'wrapper.sensor.port.w' \"Alias variable\";
+//     Real 'pump.outlet.w';
+//     Real 'pump.w' = 'pump.outlet.w' \"Alias variable\";
+//   equation
+//     'wrapper.port.p' = 'wrapper.sensor.port.p';
+//     'wrapper.port.p' = 'tank.port.p';
+//     'wrapper.port.p' = 'pump.outlet.p';
+//     'wrapper.sensor.port.w' + 'tank.port.w' + 'pump.outlet.w' = 0.0;
+//     'pump.outlet.h' = 4200.0 * 'pump.T';
+//     'pump.P' = if (-'pump.outlet.w') > 0.0 then (-'pump.outlet.w') * ('pump.outlet.p' - 1e5) / 1000.0 else 0.0;
+//     1000.0 * 'tank.A' * der('tank.y') = 'tank.port.w';
+//     1000.0 * 'tank.A' * 4200.0 * der('tank.y' * 'tank.T') = smooth(0, 'tank.port.w' * (if 'tank.port.w' > 0.0 then ('$OMC$PositiveMax'(-'pump.outlet.w', 1e-7) * 'pump.outlet.h' + '$OMC$PositiveMax'(-'wrapper.port.w', 1e-7) * 'wrapper.port.h') / ('$OMC$PositiveMax'(-'pump.outlet.w', 1e-7) + '$OMC$PositiveMax'(-'wrapper.port.w', 1e-7)) else 'tank.port.h'));
+//     'tank.port.h' = 4200.0 * 'tank.T';
+//     'tank.port.p' = 1e5 + 9810.0 * 'tank.y';
+//     'wrapper.sensor.port.w' = 0.0;
+//     'wrapper.sensor.port.h' = 0.0;
+//     'wrapper.sensor.h' = ('$OMC$PositiveMax'(-'pump.outlet.w', 1e-7) * 'pump.outlet.h' + '$OMC$PositiveMax'(-'tank.port.w', 1e-7) * 'tank.port.h') / ('$OMC$PositiveMax'(-'pump.outlet.w', 1e-7) + '$OMC$PositiveMax'(-'tank.port.w', 1e-7));
+//     'wrapper.sensor.h' = 4200.0 * 'wrapper.sensor.T';
+//     -'pump.outlet.w' = sin(time);
+//   end 'Test5';
+// end 'Test5';
+// "
+// ""
+// endResult

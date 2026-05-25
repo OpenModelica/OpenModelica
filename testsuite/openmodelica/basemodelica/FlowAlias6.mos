@@ -1,0 +1,60 @@
+// name: FlowAlias6
+// status: correct
+
+loadFile("TestAliasStream.mo"); getErrorString();
+setCommandLineOptions("-f -d=flowAliasElimination"); getErrorString();
+instantiateModel(TestAliasStream.Test6); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "//! base 0.1.0
+// package 'Test6'
+//   function '$OMC$PositiveMax'
+//     input Real 'flowValue';
+//     input Real 'eps';
+//     output Real 'positiveMax';
+//   algorithm
+//     'positiveMax' := max('flowValue', 'eps');
+//   end '$OMC$PositiveMax';
+//
+//   model 'Test6'
+//     Real 'pump1.outlet.p';
+//     Real 'pump1.outlet.h';
+//     parameter Real 'pump1.T' = 20.0;
+//     Real 'pump1.P';
+//     Real 'pump2.outlet.p';
+//     Real 'pump2.outlet.h';
+//     parameter Real 'pump2.T' = 20.0;
+//     Real 'pump2.P';
+//     Real 'tank.port.p';
+//     Real 'tank.port.w';
+//     Real 'tank.port.h';
+//     parameter Real 'tank.A' = 0.001;
+//     Real 'tank.y'(fixed = true, start = 1.0);
+//     Real 'tank.T'(fixed = true, start = 20.0);
+//     Real 'pump1.outlet.w'(min = 0.0);
+//     Real 'pump1.w'(min = 0.0) = 'pump1.outlet.w' \"Alias variable\";
+//     Real 'pump2.outlet.w'(min = 0.0);
+//     Real 'pump2.w'(min = 0.0) = 'pump2.outlet.w' \"Alias variable\";
+//   equation
+//     'pump2.outlet.p' = 'tank.port.p';
+//     'pump2.outlet.p' = 'pump1.outlet.p';
+//     'tank.port.w' + 'pump2.outlet.w' + 'pump1.outlet.w' = 0.0;
+//     'pump1.outlet.h' = 4200.0 * 'pump1.T';
+//     'pump1.P' = if (-'pump1.outlet.w') > 0.0 then (-'pump1.outlet.w') * ('pump1.outlet.p' - 1e5) / 1000.0 else 0.0;
+//     'pump2.outlet.h' = 4200.0 * 'pump2.T';
+//     'pump2.P' = if (-'pump2.outlet.w') > 0.0 then (-'pump2.outlet.w') * ('pump2.outlet.p' - 1e5) / 1000.0 else 0.0;
+//     1000.0 * 'tank.A' * der('tank.y') = 'tank.port.w';
+//     1000.0 * 'tank.A' * 4200.0 * der('tank.y' * 'tank.T') = smooth(0, 'tank.port.w' * (if 'tank.port.w' > 0.0 then ('$OMC$PositiveMax'(-'pump1.outlet.w', 1e-7) * 'pump1.outlet.h' + '$OMC$PositiveMax'(-'pump2.outlet.w', 1e-7) * 'pump2.outlet.h') / ('$OMC$PositiveMax'(-'pump1.outlet.w', 1e-7) + '$OMC$PositiveMax'(-'pump2.outlet.w', 1e-7)) else 'tank.port.h'));
+//     'tank.port.h' = 4200.0 * 'tank.T';
+//     'tank.port.p' = 1e5 + 9810.0 * 'tank.y';
+//     -'pump1.outlet.w' = max(1.0 - time, 0.0);
+//     -'pump2.outlet.w' = max(1.0 - 2.0 * time, 0.0);
+//   end 'Test6';
+// end 'Test6';
+// "
+// ""
+// endResult

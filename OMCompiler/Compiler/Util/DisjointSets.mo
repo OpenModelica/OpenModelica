@@ -213,6 +213,14 @@ algorithm
   found := isSome(UnorderedMap.get(entry, sets.elements));
 end contains;
 
+function getEntry
+  input Entry entry;
+  input Sets sets;
+  output Option<Entry> outEntry;
+algorithm
+  outEntry := UnorderedMap.getKey(entry, sets.elements);
+end getEntry;
+
 function find
   "This function finds and returns the node associated with a given entry.
    If the entry does not a have a node in the forest, then a new node will be
