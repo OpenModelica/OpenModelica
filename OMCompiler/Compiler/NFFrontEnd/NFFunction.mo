@@ -1109,9 +1109,9 @@ uniontype Function
       // If we have too many positional arguments it can't possibly match.
       matching := false;
       return;
-    elseif pos_arg_count == slot_count and listEmpty(namedArgs) then
-      // If we have exactly as many positional arguments as slots and no named
-      // arguments we can just return the list of arguments as it is.
+    elseif pos_arg_count == slot_count and listEmpty(namedArgs) and List.all(slots, Slot.positional) then
+      // If we have exactly as many positional arguments as slots, no named arguments, and all slots
+      // accept positional arguments, then we can just return the list of arguments as it is.
       matching := true;
       return;
     end if;
