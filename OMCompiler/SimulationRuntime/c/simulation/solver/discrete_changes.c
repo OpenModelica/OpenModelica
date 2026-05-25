@@ -119,8 +119,8 @@ modelica_boolean checkForDiscreteChanges(DATA *data, threadData_t *threadData)
         needToIterate = TRUE;
         if (OMC_ACTIVE_STREAM(OMC_LOG_EVENTS_V))
         {
-          infoStreamPrint(OMC_LOG_EVENTS_V, 0, "discrete var changed: %s from %d to %d",
-                          modelData->booleanVarsData[i].info.name, v1, v2);
+          infoStreamPrint(OMC_LOG_EVENTS_V, 0, "discrete var changed: %s from %s to %s",
+                          modelData->booleanVarsData[i].info.name, v1 ? "true" : "false", v2 ? "true" : "false");
         }
         else
         {
