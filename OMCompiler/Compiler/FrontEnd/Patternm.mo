@@ -791,8 +791,13 @@ algorithm
         (cache,elabCases,resType) := elabMatchCases(cache,env,cases,tys,inputAliasesAndCrefs,declsTree,impl,performVectorization,pre,info);
         prop := DAE.PROP(resType,DAE.C_VAR());
         et := Types.simplifyType(resType);
-        checkInfallibleNoBindingPatterns(elabCases, info);
-        (elabExps,inputAliases,elabCases) := filterUnusedPatterns(elabExps,inputAliases,elabCases,info,true) "filterUnusedPatterns() First time to speed up the other optimizations.";
+        checkMatchSingleInfallibleCase(matchTy, elabCases, info);
+        checkInfallibleNoBindingPatterns(elabCases, matchTy, info);
+        // If the whole match is a single infallible case (covered by
+        // MATCH_SINGLE_INFALLIBLE_CASE), don't also emit per-input "unused
+        // input" notifications for the same match — the agent would otherwise
+        // see two conflicting recommendations for the same code.
+        (elabExps,inputAliases,elabCases) := filterUnusedPatterns(elabExps,inputAliases,elabCases,info,not isSingleInfallibleMatch(matchTy, elabCases)) "filterUnusedPatterns() First time to speed up the other optimizations.";
         elabCases := caseDeadCodeElimination(matchTy, elabCases, {}, {}, false);
         // Do DCE before converting mc to m
         matchTy := optimizeContinueToMatch(matchTy,elabCases,info);
@@ -2729,13 +2734,74 @@ algorithm
   end match;
 end isInfallibleNoBindingOrWild;
 
-protected function checkInfallibleNoBindingPatterns
-  "Walks the patterns of each case looking for sub-patterns that are infallible
-  and bind no variables. Such patterns can be replaced by a wildcard."
+protected function isInfalliblePattern
+  "Returns true if the pattern is guaranteed to match at runtime. Unlike
+  isInfallibleNoBinding, the pattern is allowed to bind variables (PAT_AS /
+  PAT_AS_FUNC_PTR), which is what makes it useful for the
+  match-single-infallible-case rewrite to a destructuring assignment."
+  input DAE.Pattern pat;
+  output Boolean b;
+algorithm
+  b := match pat
+    local
+      list<DAE.Pattern> pats;
+      list<tuple<DAE.Pattern,String,DAE.Type>> namedPats;
+      DAE.Pattern innerPat;
+    case DAE.PAT_WILD() then true;
+    case DAE.PAT_AS(pat=innerPat) then isInfalliblePattern(innerPat);
+    case DAE.PAT_AS_FUNC_PTR(pat=innerPat) then isInfalliblePattern(innerPat);
+    case DAE.PAT_META_TUPLE(patterns=pats) then List.all(pats, isInfalliblePattern);
+    case DAE.PAT_CALL_TUPLE(patterns=pats) then List.all(pats, isInfalliblePattern);
+    case DAE.PAT_CALL(knownSingleton=true, patterns=pats) then List.all(pats, isInfalliblePattern);
+    case DAE.PAT_CALL_NAMED(patterns=namedPats) then listEmpty(namedPats);
+    else false;
+  end match;
+end isInfalliblePattern;
+
+protected function isSingleInfallibleMatch
+  "True when a match (not matchcontinue) has exactly one case with no else and
+  every input's pattern in that case is infallible. Used both to emit the
+  MATCH_SINGLE_INFALLIBLE_CASE notification and to suppress weaker notifications
+  that the agent would otherwise see as duplicates."
+  input Absyn.MatchType matchType;
+  input list<DAE.MatchCase> cases;
+  output Boolean b;
+algorithm
+  b := match (matchType, cases)
+    local list<DAE.Pattern> pats;
+    case (Absyn.MATCH(), {DAE.CASE(patterns=pats)})
+      then List.all(pats, isInfalliblePattern);
+    else false;
+  end match;
+end isSingleInfallibleMatch;
+
+protected function checkMatchSingleInfallibleCase
+  "Emits a notification when isSingleInfallibleMatch holds. Such a match never
+  fails at runtime and is clearer as a destructuring assignment (or, if no
+  bindings, as a plain statement)."
+  input Absyn.MatchType matchType;
   input list<DAE.MatchCase> cases;
   input SourceInfo info;
 algorithm
+  if Flags.isSet(Flags.PATTERNM_ALL_INFO) and isSingleInfallibleMatch(matchType, cases) then
+    Error.addSourceMessage(Error.MATCH_SINGLE_INFALLIBLE_CASE, {}, info);
+  end if;
+end checkMatchSingleInfallibleCase;
+
+protected function checkInfallibleNoBindingPatterns
+  "Walks the patterns of each case looking for sub-patterns that are infallible
+  and bind no variables. Such patterns can be replaced by a wildcard. When the
+  whole match is a single infallible case (covered by the stronger
+  MATCH_SINGLE_INFALLIBLE_CASE notification), we skip per-pattern reporting for
+  that case so the user only sees the better recommendation."
+  input list<DAE.MatchCase> cases;
+  input Absyn.MatchType matchType;
+  input SourceInfo info;
+algorithm
   if not Flags.isSet(Flags.PATTERNM_ALL_INFO) then
+    return;
+  end if;
+  if isSingleInfallibleMatch(matchType, cases) then
     return;
   end if;
   for c in cases loop

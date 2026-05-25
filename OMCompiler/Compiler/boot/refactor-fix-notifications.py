@@ -92,11 +92,13 @@ AS_ONLY = Regex(r"Notification: Pattern only renames the match input (.+); the m
   lambda s,t: {'as_only': t[0].group(1)})
 MC_TO_TRY = Literal("Notification: This matchcontinue has a single case and an else and could be rewritten as a try/else.").set_parse_action(
   lambda s,s2: {'mc_to_try': True})
+MATCH_SINGLE_INFALLIBLE = Literal("Notification: This match expression has a single case with an infallible pattern; it could be rewritten as a destructuring assignment of the input(s).").set_parse_action(
+  lambda s,s2: {'match_single_infallible': True})
 UNKNOWN = Suppress("Notification:")
 
-NOTIFICATION = (Suppress("[") + FILEINFO + Suppress("]") + (UNUSED_LOCAL|UNUSED_AS|UNUSED_ASSIGN|DEAD_STATEMENT|USE_MATCH|EMPTY_CALL_NAMED_ARG|ALL_EMPTY|MATCH_UNUSED_INPUT|INFALLIBLE_PATTERN|AS_ONLY|MC_TO_TRY|UNKNOWN))
+NOTIFICATION = (Suppress("[") + FILEINFO + Suppress("]") + (UNUSED_LOCAL|UNUSED_AS|UNUSED_ASSIGN|DEAD_STATEMENT|USE_MATCH|EMPTY_CALL_NAMED_ARG|ALL_EMPTY|MATCH_UNUSED_INPUT|INFALLIBLE_PATTERN|AS_ONLY|MC_TO_TRY|MATCH_SINGLE_INFALLIBLE|UNKNOWN))
 
-AGENT_KEYS = ('match_unused_input', 'infallible_pattern', 'as_only', 'mc_to_try')
+AGENT_KEYS = ('match_unused_input', 'infallible_pattern', 'as_only', 'mc_to_try', 'match_single_infallible')
 
 COMPILER_DIR = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 
@@ -305,6 +307,66 @@ def agentPrompt(notif, moFileRel):
       "function with a different meaning, leave the file unchanged and stop — the\n"
       "rewrite would be unsafe.\n" %
       (ident, ident, ident, ident))
+  elif 'match_single_infallible' in data:
+    body = (
+      "Refactor: a `match` expression with exactly one case and an infallible\n"
+      "pattern is being used purely to destructure (or just to wrap) a value.\n"
+      "Rewrite it without the match — that is clearer and avoids the runtime\n"
+      "cost of building a match expression.\n\n"
+      "What to change. Pick the simpler form that preserves semantics:\n\n"
+      "(A) The pattern binds nothing (it is `_`, a tuple of `_`s, or an\n"
+      "    infallible record pattern with no bound variables).\n"
+      "    - If the surrounding context is `<lhs> := match <inputExpr> case <pat>\n"
+      "      then <expr>; end match;`, replace the whole thing with\n"
+      "      `<lhs> := <expr>;`.\n"
+      "    - If <inputExpr> may have side effects (a function call, etc.), keep\n"
+      "      its evaluation by prepending `_ := <inputExpr>;` before the\n"
+      "      assignment. If <inputExpr> is a plain variable reference, no such\n"
+      "      prefix is needed.\n"
+      "    - For multiple inputs `match (a, b) case (_, _) then ...`, treat\n"
+      "      each input the same way.\n\n"
+      "    Worked example. Before:\n"
+      "        y := match x case _ then 5; end match;\n"
+      "    After (x is a plain variable):\n"
+      "        y := 5;\n\n"
+      "(B) The pattern binds one or more variables (it is `id as <subpat>`, a\n"
+      "    tuple containing as-bindings, a record pattern with named-field\n"
+      "    bindings, etc.).\n"
+      "    - Rewrite the match as a destructuring assignment whose LHS is the\n"
+      "      pattern and whose RHS is the input expression, followed by the\n"
+      "      original case body assignment.\n"
+      "    - If the case's `then <expr>` is exactly one of the bound names and\n"
+      "      no other work is done in the case, you can collapse the two\n"
+      "      assignments into one — e.g. bind the destructured value directly\n"
+      "      to <lhs>.\n\n"
+      "    Worked example 1 (collapsible). Before:\n"
+      "        classes := match inProgram\n"
+      "          case p as Absyn.PROGRAM() then p.classes;\n"
+      "        end match;\n"
+      "    After:\n"
+      "        Absyn.PROGRAM(classes=classes) := inProgram;\n\n"
+      "    Worked example 2 (not collapsible). Before:\n"
+      "        n := match lst\n"
+      "          case a::rest then a + List.length(rest);\n"
+      "        end match;\n"
+      "    After:\n"
+      "        a::rest := lst;\n"
+      "        n := a + List.length(rest);\n"
+      "    (If `a` and `rest` are not already declared as locals of the\n"
+      "    enclosing function, add them to the `protected`/`local` section.)\n\n"
+      "Edge cases to handle:\n"
+      "  - The case may have a `guard` — if so, leave the file unchanged; a\n"
+      "    guard means the match CAN fail at runtime even when the pattern is\n"
+      "    structurally infallible, so this rewrite would change semantics.\n"
+      "  - The case may have an `equation` or `algorithm` section before\n"
+      "    `then`. Those statements must move out as well, in the same order,\n"
+      "    after the destructuring assignment and before the final result\n"
+      "    assignment.\n"
+      "  - If the function has no `protected`/`local` declarations for the\n"
+      "    pattern's bound names, add them. Use the types visible from the\n"
+      "    uniontype/record fields.\n"
+      "  - If the rewrite turns out to require restructuring that you are not\n"
+      "    confident is semantics-preserving, leave the file unchanged.\n")
   elif 'mc_to_try' in data:
     body = (
       "Refactor: rewrite a one-case-plus-else `matchcontinue` as `try ... else ... end try;`.\n\n"

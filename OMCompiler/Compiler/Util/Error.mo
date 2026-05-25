@@ -1262,6 +1262,8 @@ public constant ErrorTypes.Message META_PATTERN_AS_ONLY = ErrorTypes.MESSAGE(505
   Gettext.gettext("Pattern only renames the match input %s; the match expression could be rewritten without this input and the body could use %s directly."));
 public constant ErrorTypes.Message MATCHCONTINUE_TO_TRY_OPTIMIZATION = ErrorTypes.MESSAGE(5053, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),
   Gettext.gettext("This matchcontinue has a single case and an else and could be rewritten as a try/else."));
+public constant ErrorTypes.Message MATCH_SINGLE_INFALLIBLE_CASE = ErrorTypes.MESSAGE(5054, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),
+  Gettext.gettext("This match expression has a single case with an infallible pattern; it could be rewritten as a destructuring assignment of the input(s)."));
 
 public constant ErrorTypes.Message COMPILER_ERROR = ErrorTypes.MESSAGE(5999, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.notrans("%s"));
