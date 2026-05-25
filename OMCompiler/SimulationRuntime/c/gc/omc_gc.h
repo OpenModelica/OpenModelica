@@ -146,7 +146,7 @@ typedef struct threadData_s {
 typedef threadData_t OpenModelica_threadData_ThreadData;
 
 #include "../meta/meta_modelica_segv.h"
-void mmc_do_out_of_memory() __attribute__ ((noreturn));
+void mmc_do_out_of_memory(void) __attribute__ ((noreturn));
 #define GC_RETURN_REPORT_ALLOC_FAILED(X) { void *res = (X); \
   if (0==res) { \
     mmc_do_out_of_memory(); \
@@ -193,7 +193,7 @@ static inline void* mmc_check_out_of_memory(void *ptr)
 // #endif
 
 void omc_GC_set_max_heap_size(size_t);
-size_t omc_GC_get_max_heap_size();
+size_t omc_GC_get_max_heap_size(void);
 
 #endif /* #if (defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)) */
 

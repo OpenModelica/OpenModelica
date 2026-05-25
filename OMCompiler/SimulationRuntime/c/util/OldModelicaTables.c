@@ -663,7 +663,7 @@ typedef union {
   unsigned char c;
 } elem_t;
 
-inline static char getEndianness()
+inline static char getEndianness(void)
 {
   const int endian_test = 1;
   return ((*(char*)&endian_test) == 0);

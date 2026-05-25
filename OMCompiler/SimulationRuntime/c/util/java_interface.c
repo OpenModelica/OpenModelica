@@ -144,7 +144,7 @@ tryToLoadJavaHome(const char* java_home) {
   return libVM;
 }
 
-void loadJNI()
+void loadJNI(void)
 {
   HINSTANCE libVM = NULL;
   char java_home_registry[MAXPATHLEN];
@@ -208,7 +208,7 @@ tryToLoadJavaHome(const char* java_home) {
   return libVM;
 }
 
-void loadJNI()
+void loadJNI(void)
 {
   void *libVM = NULL;
   static int java_init = 0;
@@ -251,7 +251,7 @@ void loadJNI()
 
 
 /* Should work for multi-threaded applications */
-JNIEnv* getJavaEnv()
+JNIEnv* getJavaEnv(void)
 {
   jint res;
   JavaVM *jvm = NULL;

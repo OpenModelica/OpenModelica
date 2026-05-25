@@ -57,11 +57,11 @@ typedef struct {
 } MemPoolState;
 
 /// @brief Get the current state of the pool (the current block and used amount in that block)
-MemPoolState omc_util_get_pool_state();
+MemPoolState omc_util_get_pool_state(void);
 /// @brief Restors the memory pool to a given state (specifc block and used amount in that block).
 void omc_util_restore_pool_state(MemPoolState in_state_v);
 /// @brief Completely cleans up the memory pool by deleting all blocks.
-void free_memory_pool();
+void free_memory_pool(void);
 
 
 /* Allocation functions */

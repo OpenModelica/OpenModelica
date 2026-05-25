@@ -83,8 +83,8 @@ static inline double rt_tock(int ix) {return 0.0;}
 
 enum omc_rt_clock_t {
   OMC_CLOCK_REALTIME, /* CLOCK_MONOTONIC_RAW if available; else CLOCK_MONOTONIC */
-  OMC_CLOCK_CPUTIME, /* Per-process CPU-time */
-  OMC_CPU_CYCLES /* Number of CPU-Cycles */
+  OMC_CLOCK_CPUTIME,  /* Per-process CPU-time */
+  OMC_CPU_CYCLES      /* Number of CPU-Cycles */
 };
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
@@ -106,7 +106,7 @@ typedef union rtclock_t {
 #endif
 
 int rt_set_clock(enum omc_rt_clock_t clockType); /* non-zero on failure */
-enum omc_rt_clock_t rt_get_clock(); /* non-zero on failure */
+enum omc_rt_clock_t rt_get_clock(void);
 void rt_init(int numTimer);
 
 void rt_tick(int ix);

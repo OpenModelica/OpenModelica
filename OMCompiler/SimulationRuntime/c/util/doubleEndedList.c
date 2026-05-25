@@ -519,8 +519,8 @@ void doubleEndedListPrint(DOUBLE_ENDED_LIST *list, int stream, void (*printDataF
   if (omc_useStream[stream]) {
     infoStreamPrint(stream, 1, "Printing double ended list:");
     infoStreamPrint(stream, 0, "list length: %i, size of each item data: %i (bytes)", list->length, list->itemSize);
-    infoStreamPrint(stream, 0, "Pointer to first: %p", list->first);
-    infoStreamPrint(stream, 0, "Pointer to last: %p", list->last);
+    infoStreamPrint(stream, 0, "Pointer to first: %p", (void*) list->first);
+    infoStreamPrint(stream, 0, "Pointer to last: %p", (void*) list->last);
 
     tmpNode = list->first;
     while(tmpNode != NULL) {

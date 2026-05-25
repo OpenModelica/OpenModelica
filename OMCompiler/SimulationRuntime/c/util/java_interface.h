@@ -43,7 +43,7 @@
 #endif
 
 #define EXIT_CODE_JAVA_ERROR 17
-JNIEnv* getJavaEnv();
+JNIEnv* getJavaEnv(void);
 
 /* ModelicaArray<T> -> set firstDim and dims so the Java application can
  * create a ModelicaArray<Mode...> nested array using the unflatten method.

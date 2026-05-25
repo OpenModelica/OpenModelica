@@ -266,7 +266,7 @@ enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag)
  *
  * @return double   Percentage of fast states selection.
  */
-double getGBCtrlFilterValue()
+double getGBCtrlFilterValue(void)
 {
   double filter = 1.0;
 
@@ -289,7 +289,7 @@ double getGBCtrlFilterValue()
  *
  * @return double   Percentage of fast states selection.
  */
-double getGBRatio()
+double getGBRatio(void)
 {
   double percentage = 0.0;
 

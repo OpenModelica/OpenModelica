@@ -101,7 +101,7 @@ static inline const char* findHashStringString(hash_string_string *ht, const cha
     HASH_ITER(hh, ht, c, tmp) {
       fprintf(stderr, "HashMap contained: %s->%s\n", c->id, c->val);
     }
-    throwStreamPrint(NULL, "Failed to lookup %s in hashmap %p", key, ht);
+    throwStreamPrint(NULL, "Failed to lookup %s in hashmap %p", key, (void*)ht);
   }
   return res;
 }
@@ -151,7 +151,7 @@ static inline omc_ModelVariable** findHashLongVar(hash_long_var *ht, long key)
     HASH_ITER(hh, ht, c, tmp) {
       fprintf(stderr, "HashMap contained: %ld->*map*\n", c->id);
     }
-    throwStreamPrint(NULL, "Failed to lookup %ld in hashmap %p", key, ht);
+    throwStreamPrint(NULL, "Failed to lookup %ld in hashmap %p", key, (void*)ht);
   }
   return &res->val;
 }

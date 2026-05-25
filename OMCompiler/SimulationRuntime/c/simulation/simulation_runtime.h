@@ -67,7 +67,7 @@ extern const char* getNameInt(modelica_integer* ptr);
 extern const char* getNameBool(modelica_boolean* ptr);
 extern const char* getNameString(const char** ptr);
 
-extern double getSimulationStepSize();
+extern double getSimulationStepSize(void);
 extern void printSimulationStepSize(double in_stepSize, double time);
 
 extern void communicateStatus(const char *phase, double completionPercent, double currentTime, double currentStepSize);

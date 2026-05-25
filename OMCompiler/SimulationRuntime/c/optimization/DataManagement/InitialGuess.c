@@ -51,7 +51,7 @@ static inline void init_ipopt_data(OptData *optData, const short o);
  *  create initial guess
  *  author: Vitalij Ruge
  **/
-inline void initial_guess_optimizer(OptData *optData, SOLVER_INFO* solverInfo){
+void initial_guess_optimizer(OptData *optData, SOLVER_INFO* solverInfo){
 
   char *cflags;
   int opt = 1;

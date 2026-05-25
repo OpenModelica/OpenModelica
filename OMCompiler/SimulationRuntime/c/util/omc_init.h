@@ -49,7 +49,7 @@ static inline void* pthread_getspecific(int key)
 }
 #endif
 
-DLLDirection extern void mmc_init();
-DLLDirection extern void mmc_init_nogc();
+DLLDirection extern void mmc_init(void);
+DLLDirection extern void mmc_init_nogc(void);
 
 #endif
