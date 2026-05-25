@@ -2790,7 +2790,7 @@ public
 
       // Power (POW, POW_EW, ...) with base zero
       // (0^r)' = 0
-      case Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2)
+      case Expression.BINARY(exp1 = exp1, operator = operator)
         guard((Operator.getMathClassification(operator) == NFOperator.MathClassification.POWER) and
               Expression.isZero(exp1))
       then (Expression.makeZero(operator.ty), diffArguments);
@@ -2976,10 +2976,10 @@ public
         algorithm
           (_, sizeClass) := Operator.classify(operator);
           // Determine operators
-          addOp := Operator.fromClassification(
+          _ := Operator.fromClassification(
             (NFOperator.MathClassification.ADDITION, sizeClass),
             operator.ty);
-          mulOp := makeMulFromOperator(operator);
+          _ := makeMulFromOperator(operator);
 
           // Use element-wise mul for reverse local upstream assembly to avoid array*scalar miscodegen
           // when upstream and partial products are arrays.
@@ -2987,7 +2987,7 @@ public
           mulEWOp := Operator.fromClassification(
             (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.ELEMENT_WISE),
             operator.ty);
-          addEWOp := Operator.fromClassification(
+          _ := Operator.fromClassification(
             (NFOperator.MathClassification.ADDITION, NFOperator.SizeClassification.ELEMENT_WISE),
             operator.ty);
 
@@ -3020,17 +3020,15 @@ public
             (diff_arg, diffArguments) := differentiateExpression(f, diffArguments);
 
             // Forward term: f' * (exp / f)
-            term := Expression.MULTARY({diff_arg, e_over_f}, {}, mulEWOp);
             i := i + 1;
           end for;
 
-          sub_terms := {};
           // Differentiate denominator factors
           i := 1;
           powSizeClass := if Expression.hasArrayType(listHead(inv_arguments)) then NFOperator.SizeClassification.ARRAY_SCALAR else NFOperator.SizeClassification.SCALAR;
-          powOp := Operator.fromClassification((NFOperator.MathClassification.POWER, powSizeClass), Type.REAL());
+          _ := Operator.fromClassification((NFOperator.MathClassification.POWER, powSizeClass), Type.REAL());
           for g in inv_arguments loop
-            arg_rest := listDelete(inv_arguments, i);
+            _ := listDelete(inv_arguments, i);
             // exp / g : add one more g to denominator list
             e_over_g := Expression.MULTARY({numProd}, g :: inv_arguments, operator);
 
@@ -3046,7 +3044,7 @@ public
             (diff_arg, diffArguments) := differentiateExpression(g, diffArguments);
 
             // Forward term: - g' * (exp / g)
-            term := Expression.negate(Expression.MULTARY({diff_arg, e_over_g}, {}, mulEWOp));
+            _ := Expression.negate(Expression.MULTARY({diff_arg, e_over_g}, {}, mulEWOp));
             i := i + 1;
           end for;
           // Restore upstream gradient

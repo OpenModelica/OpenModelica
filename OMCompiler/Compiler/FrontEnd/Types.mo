@@ -1170,7 +1170,7 @@ algorithm
         ts := List.mapMap(vs, typeOfValue, boxIfUnboxedType);
       then DAE.T_METATUPLE(ts);
 
-    case Values.META_ARRAY(valueLst = (v :: vs))
+    case Values.META_ARRAY(valueLst = (v :: _))
       algorithm
         tp := boxIfUnboxedType(typeOfValue(v));
         tp := DAE.T_METAARRAY(tp);

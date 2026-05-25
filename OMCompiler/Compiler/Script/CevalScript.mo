@@ -1832,7 +1832,7 @@ algorithm
         (cache, mainFunction, dependencies, metarecordTypes) := collectDependencies(cache, env, path);
         pathstr  := generateFunctionName(path);
         fileName := generateFunctionFileName(path);
-        funcs := FCore.getFunctionTree(cache);
+        _ := FCore.getFunctionTree(cache);
         SimCodeFunction.translateFunctions(program, fileName, SOME(mainFunction), dependencies, metarecordTypes, {});
         compileModel(fileName, {});
       then

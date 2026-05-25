@@ -2054,7 +2054,7 @@ algorithm
         true := FGraph.inFunctionScope(inEnv);
       then ();
 
-    case(_, Absyn.RELATION(_, _, _), DAE.C_VAR(),_,_,_,_,_,pre,_)
+    case(_, Absyn.RELATION(_, _, _), DAE.C_VAR(),_,_,_,_,_,_,_)
       algorithm
         b1 := Types.isReal(t1);
         b2 := Types.isReal(t1);

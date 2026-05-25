@@ -3198,7 +3198,7 @@ algorithm
           (eqSystlst, idx_tpl, tempvars) := createNonlinearResidualEquationsComplex(e1, e2, source, eqAttr, idx_tpl, tempvars);
         then listAppend(eqSystlst, eqSystems);
 
-        case BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_STMTS(), attr=eqAttr) algorithm
+        case BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_STMTS()) algorithm
           // This following does not work. It does not take index or elseWhen into account.
           // The generated code for the when-equation also does not solve a linear system; it uses the variables directly.
           /*
@@ -4319,7 +4319,7 @@ algorithm
     case BackendDAE.EQUATIONSYSTEM(eqns = eqns,
                                    vars = variables,
                                    jac = jacobian,
-                                   jacType = jacobianType,
+
                                    mixedSystem = mixedSystem)
       algorithm
 
@@ -5209,7 +5209,7 @@ algorithm
 
     case (((SOME((BackendDAE.DAE(eqs=systs, shared=shared), name, _, diffedVars, alldiffedVars, _)),
            (sparsepattern, sparsepatternT, (diffCompRefs, diffedCompRefs), _), colsColors,
-           (nonlinearpattern, nonlinearpatternT, (_, _), nonlinear_count)))::rest,
+           (nonlinearpattern, nonlinearpatternT, (_, _), _)))::rest,
                   _, uniqueEqIndex, _::restnames)
       algorithm
         // create SimCodeVar.SimVars from jacobian vars
@@ -5367,7 +5367,7 @@ algorithm
 
     case ({}) then (listReverse(tmpVars), listReverse(resVars));
 
-    case((v as BackendDAE.VAR(varName=currVar, varKind=varkind, values = dae_var_attr))::restVar) algorithm
+    case((v as BackendDAE.VAR(varName=currVar, varKind=varkind))::restVar) algorithm
       try
         BackendVariable.getVarSingle(currVar, inAllVars);
         currVar := match (varkind)
@@ -7047,7 +7047,7 @@ algorithm
     then ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements, eqAttr)}, iuniqueEqIndex+1);
 
     // inverse Algorithm for single variable.
-    case (BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand, attr=eqAttr)::_, false) algorithm
+    case (BackendDAE.ALGORITHM(alg=alg, attr=eqAttr)::_, false) algorithm
       // We need to solve an inverse problem of an algorithm section.
       DAE.ALGORITHM_STMTS(algStatements) := BackendDAEUtil.collateAlgorithm(alg, NONE());
       algStatements := solveAlgorithmInverse(algStatements, vars);
@@ -7105,7 +7105,7 @@ algorithm
     then (result, ouniqueEqIndex);
 
     // Error message, inverse algorithms cannot be solved for discrete variables
-    case (BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand, attr=eqAttr)::_, _) algorithm
+    case (BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand)::_, _) algorithm
       solvedVars := List.map(vars, BackendVariable.varCref);
       false := CheckModel.isCrefListAlgorithmOutput(solvedVars, alg, source, crefExpand);
 
@@ -10223,7 +10223,7 @@ algorithm
 
     case ((BackendDAE.VAR(varName = cr,
       varKind = kind,
-      varDirection = dir,
+
       arryDim = inst_dims,
       values = dae_var_attr,
       hideResult = hideResultExp,
@@ -16100,7 +16100,7 @@ algorithm
     // a + b = (A*as) + (B*bs) = (A+B)*(A/(A+B)*as + B/(A+B)*bs)
     // FIXME if A = B and a and b have opposite signs then the nominal value of
     //   a+b may be arbitrarily small, but it's definitely smaller than A+B
-    case DAE.BINARY(operator = DAE.ADD(ty = t))
+    case DAE.BINARY(operator = DAE.ADD())
     then match (getExpNominal(expr.exp1), getExpNominal(expr.exp2))
       case (DAE.RCONST(r1), DAE.RCONST(r2)) then DAE.RCONST(r1 + r2);
       case (e1, e2) then DAE.BINARY(e1, expr.operator, e2);

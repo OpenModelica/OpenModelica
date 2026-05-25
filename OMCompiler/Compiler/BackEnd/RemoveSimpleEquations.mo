@@ -3144,11 +3144,11 @@ algorithm
       warnAliasConflicts := not Flags.isSet(Flags.ALIAS_CONFLICTS);
     then BackendVariable.setVarStartValueOption(v, start);
 
-    case (_, true, (_, values), BackendDAE.SHARED(globalKnownVars=globalKnownVars)) algorithm
+    case (_, true, (_, values), BackendDAE.SHARED()) algorithm
       if not Flags.isSet(Flags.ALIAS_CONFLICTS) then
         Error.addMessage(Error.CONFLICTING_ALIAS_SET, {});
       else
-        v := BackendVariable.setVarFixed(inVar, true);
+        _ := BackendVariable.setVarFixed(inVar, true);
         // get all nonzero values
         zerofreevalues := List.fold(values, getZeroFreeValues, {});
         str := "Conflicting start values for fixed states:\n";
@@ -3661,7 +3661,7 @@ algorithm
     then selectFreeValue1(zerofreevalues, favorit, s, iAttributeName, inFunc, inVar, globalKnownVars);
 
     // less than, remove all from list, return just this one
-    case ((e, cr)::zerofreevalues, (es, crs, is)::_, _, _, _, _) algorithm
+    case ((e, cr)::zerofreevalues, (_, _, is)::_, _, _, _, _) algorithm
       (_, (i, hardcoded)) := Expression.traverseExpTopDown(e, selectMinDepth, (ComponentReference.crefDepth(cr), true));
       if hardcoded then
         i := i + 5;
@@ -4559,7 +4559,7 @@ algorithm
       unReplaceable := if b then BaseHashSet.add(ComponentReference.crefPrependIdent(pcr, name, {}, ty), iUnreplaceable) else iUnreplaceable;
     then unReplaceable;
 
-    case (DAE.CREF_IDENT(ident=name, identType=ty, subscriptLst=subs), NONE()) algorithm
+    case (DAE.CREF_IDENT(ident=name, identType=ty), NONE()) algorithm
       (_, b) := Expression.traverseExpTopDownCrefHelper(inCref, Expression.traversingComponentRefPresent, false);
       unReplaceable := if b then BaseHashSet.add(DAE.CREF_IDENT(name, ty, {}), iUnreplaceable) else iUnreplaceable;
     then unReplaceable;

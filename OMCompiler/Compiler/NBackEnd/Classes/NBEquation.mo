@@ -364,10 +364,10 @@ public
               SINGLE(range = Expression.RANGE(start=Expression.INTEGER(start2), step=SOME(Expression.INTEGER(step2)), stop=Expression.INTEGER(stop2))))
               guard(step1 == step2 and intMod(start1, step1) == intMod(start2, step2))
           algorithm
-            start_min := intMin(start1, start2);
+            _ := intMin(start1, start2);
             start_max := intMax(start1, start2);
             stop_min := intMin(stop1, stop2);
-            stop_max := intMax(stop1, stop2);
+            _ := intMax(stop1, stop2);
 
             // create intersection
             if start_max >= stop_min then
@@ -2572,7 +2572,7 @@ public
         case qual as Binding.TYPED_BINDING()    then qual.bindingExp;
         case qual as Binding.UNTYPED_BINDING()  then qual.bindingExp;
         case qual as Binding.FLAT_BINDING()     then qual.bindingExp;
-        case qual as Binding.UNBOUND() algorithm
+        case Binding.UNBOUND() algorithm
           start := VariableAttributes.getStartAttribute(var.backendinfo.attributes);
         then match start
           local
@@ -4217,7 +4217,7 @@ public
       case (EquationKind.DISCRETE, NONE())    then OldBackendDAE.DISCRETE_EQUATION();
       case (EquationKind.EMPTY, NONE())       then OldBackendDAE.AUX_EQUATION();
       case (EquationKind.UNKNOWN, NONE())     then OldBackendDAE.UNKNOWN_EQUATION_KIND();
-      case (_, SOME(clk)) algorithm
+      case (_, SOME(_)) algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the non-clock equation kind "
           + equationKindString(eqKind, clock_idx, exclusively_initial) + " has a clock index."});
       then fail();
@@ -4630,7 +4630,7 @@ public
         case SOME(index) guard(index > 0)
         then getEqnAt(equations, index);
 
-        case SOME(index) algorithm
+        case SOME(_) algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the equation with the name " + ComponentRef.toString(name) + " has already been deleted."});
         then fail();
 

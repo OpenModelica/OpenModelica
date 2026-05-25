@@ -691,7 +691,7 @@ algorithm
         als_1 := (SCode.ALGORITHM(al_1) :: als);
       then
         als_1;
-    case (cp :: rest) /* ignore everthing other than algorithms */
+    case (_ :: rest) /* ignore everthing other than algorithms */
       algorithm
         als := translateClassdefAlgorithms(rest);
       then
@@ -722,7 +722,7 @@ algorithm
         cos_1 := (SCode.CONSTRAINTS(consts) :: cos);
       then
         cos_1;
-    case (cp :: rest) /* ignore everthing other than Constraints */
+    case (_ :: rest) /* ignore everthing other than Constraints */
       algorithm
         cos := translateClassdefConstraints(rest);
       then

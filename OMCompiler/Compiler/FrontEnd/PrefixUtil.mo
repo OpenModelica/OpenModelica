@@ -861,7 +861,7 @@ algorithm
       then
         (cache,DAE.RECORD(f,es,fieldNames,t));
 
-    case (DAE.ARRAY(ty = t,scalar = sc,array = {}),_)
+    case (DAE.ARRAY(array = {}),_)
       then (cache, inExp);
 
     case (DAE.ARRAY(ty = t,scalar = sc,array = es),_)
@@ -876,7 +876,7 @@ algorithm
       then
         (cache,DAE.TUPLE(es_1));
 
-    case (DAE.MATRIX(ty = t,integer = a,matrix = {}),_)
+    case (DAE.MATRIX(matrix = {}),_)
       then (cache,inExp);
 
     case (DAE.MATRIX(ty = t,integer = a,matrix = (x :: xs)),_)
@@ -1532,9 +1532,7 @@ algorithm
 
     case (cref as DAE.CREF_QUAL(_), pref as DAE.PRE(next=DAE.NOCOMPPRE())) algorithm
       if stringEqual(cref.ident, pref.prefix) then
-        cref2 := cref.componentRef;
       else
-        cref2 := cref;
       end if;
     then
       cref.componentRef;

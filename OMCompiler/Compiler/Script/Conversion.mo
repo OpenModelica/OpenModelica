@@ -1496,7 +1496,7 @@ protected
       case Absyn.ElementSpec.EXTENDS()
         algorithm
           (ty_path, import_path) := applyImportsToPath(spec.path, env.imports);
-          (ty_rule, local_rules, mod_rules) := lookupTypeRules(ty_path, rules, env);
+          (_, local_rules, mod_rules) := lookupTypeRules(ty_path, rules, env);
           ty_path := convertPath(ty_path, rules, env.imports, info);
           spec.path := stripImportPath(ty_path, import_path);
           spec.elementArg := convertModification2(mod_rules, spec.elementArg);

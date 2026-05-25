@@ -3573,7 +3573,7 @@ algorithm
       guard AbsynUtil.pathEqual(p1,p2) // is record constructor
       then List.flatten(List.map1(explst, generateCrefsExpLstFromExp, inCrefPrefix));
 
-    case (DAE.RECORD(path=p1,exps=explst),_)
+    case (DAE.RECORD(exps=explst),_)
       then List.flatten(List.map1(explst, generateCrefsExpLstFromExp, inCrefPrefix));
 
     case(DAE.CALL(path = Absyn.IDENT("der"),expLst = {DAE.CREF(componentRef = incref)}), _)
@@ -4500,7 +4500,6 @@ algorithm
 
     // record type
     case DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(path)) algorithm
-      cr := DAE.CREF_IDENT("$TMP", inType, {});
       typeLst := list(v.ty for v in varLst);
       expLst := List.map(typeLst, createZeroExpression);
       varNames := List.map(varLst, varName);

@@ -1233,7 +1233,7 @@ algorithm
 
     case ("translateModelFMU", Values.CODE(Absyn.C_TYPENAME(className))::Values.STRING(str1)::Values.STRING(str2)::Values.STRING(filenameprefix)::Values.ARRAY(valueLst=cvars)::_)
       algorithm
-        (b, outCache, ret_val) := translateModelFMU(outCache, inEnv, className, str1, str2, filenameprefix, true, list(ValuesUtil.extractValueString(vv) for vv in cvars));
+        (b, outCache,_) := translateModelFMU(outCache, inEnv, className, str1, str2, filenameprefix, true, list(ValuesUtil.extractValueString(vv) for vv in cvars));
       then
         Values.BOOL(b);
 
@@ -1430,11 +1430,10 @@ algorithm
 
           compileDir := System.pwd() + Autoconf.pathDelimiter;
           executable := filenameprefix;
-          initfilename := filenameprefix + "_init_xml";
           simflags:="";
           resultValues:={};
         elseif not Config.simCodeTarget() == "omsic" then
-          (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,dirs) := buildModel(outCache,inEnv,vals,msg);
+          (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,_) := buildModel(outCache,inEnv,vals,msg);
         else
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Can't simulate for SimCodeTarget=omsic!\n"});
           fail();
@@ -1550,7 +1549,7 @@ algorithm
           FlagsUtil.setConfigString(Flags.LINEARIZATION_DUMP_LANGUAGE, "modelica");
         end if;
 
-        (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,dirs) := buildModel(outCache,inEnv,vals,msg);
+        (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,_) := buildModel(outCache,inEnv,vals,msg);
         if b then
           Values.REAL(linearizeTime) := getListNthShowError(vals,"try to get stop time",0,2);
           executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
@@ -1610,7 +1609,7 @@ algorithm
         FlagsUtil.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
         FlagsUtil.setConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM,true);
 
-        (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,dirs) := buildModel(outCache,inEnv,vals,msg);
+        (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,_) := buildModel(outCache,inEnv,vals,msg);
         if b then
           exeDir:=compileDir;
           (outCache,simSettings) := calculateSimulationSettings(outCache, vals);
@@ -1660,7 +1659,7 @@ algorithm
         FlagsUtil.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
         FlagsUtil.setConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM,true);
 
-        (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,dirs) := buildModel(outCache,inEnv,vals,msg);
+        (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,_) := buildModel(outCache,inEnv,vals,msg);
         simflags := stringAppend(simflags, " -moo");
         if b then
           exeDir:=compileDir;
@@ -1941,10 +1940,8 @@ algorithm
         access := Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
         if access >= Access.all then
           s1 := getTotalModel(classpath, b1, b2, b3);
-          b := true;
         else
           Error.addMessage(Error.SAVE_ENCRYPTED_CLASS_ERROR, {});
-          b := false;
         end if;
       then
         Values.STRING(s1);
@@ -3196,7 +3193,7 @@ algorithm
           {Values.CODE(Absyn.C_TYPENAME(path)),
            Values.CODE(Absyn.C_MODIFICATION(modification = mod))})
       algorithm
-        (p, b) := InteractiveUtil.setElementAnnotation(path, mod, SymbolTable.getAbsyn());
+        (_, b) := InteractiveUtil.setElementAnnotation(path, mod, SymbolTable.getAbsyn());
       then
         Values.BOOL(b);
 
@@ -3212,7 +3209,7 @@ algorithm
           {Values.CODE(Absyn.C_TYPENAME(path)),
            Values.CODE(Absyn.C_VARIABLENAME(cr))})
       algorithm
-        (p, b) := InteractiveUtil.setElementType(path, cr, SymbolTable.getAbsyn());
+        (_, b) := InteractiveUtil.setElementType(path, cr, SymbolTable.getAbsyn());
       then
         Values.BOOL(b);
 
@@ -3931,7 +3928,7 @@ algorithm
         runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
 
         // Copy the external library files to the container
-        (locations, libraries) := SimCodeUtil.getDirectoriesForDLLsFromLinkLibs(externalLibLocations);
+        (locations,_) := SimCodeUtil.getDirectoriesForDLLsFromLinkLibs(externalLibLocations);
         for loc in locations loop
           if System.directoryExists(loc) then
             // Create path
@@ -5961,7 +5958,7 @@ algorithm
       Option<Absyn.Modification> simflags_mod;
 
     // compile the model
-    case (cache,env,vals,msg)
+    case (cache,env,vals,_)
       algorithm
         // buildModel expects these arguments:
         // className, startTime, stopTime, numberOfIntervals, tolerance, method, fileNamePrefix,
@@ -8514,9 +8511,9 @@ algorithm
       list<Absyn.NamedArg> classAttrs;
       list<Absyn.Annotation> ann;
     /* a class with parts */
-    case (outClass as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+    case (outClass as Absyn.CLASS(
                       body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann=ann,comment = cmt),
-                      info = file_info), state_)
+                      info = _), state_)
       algorithm
         eqlst := InteractiveUtil.getEquationList(parts);
         eqlst_1 := deleteInitialStateInEqlist(eqlst, state_);
@@ -8524,9 +8521,9 @@ algorithm
         outClass.body := Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt);
       then outClass;
     /* an extended class with parts: model extends M end M;  */
-    case (outClass as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+    case (outClass as Absyn.CLASS(
                       body = Absyn.CLASS_EXTENDS(baseClassName = bcname,modifications=modif,parts = parts,ann = ann,comment = cmt)
-                      ,info = file_info), state_)
+                      ), state_)
       algorithm
         eqlst := InteractiveUtil.getEquationList(parts);
         eqlst_1 := deleteInitialStateInEqlist(eqlst, state_);

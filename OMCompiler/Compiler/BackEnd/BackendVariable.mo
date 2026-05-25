@@ -454,7 +454,7 @@ algorithm
     local
       DAE.StateSelect stateselect;
 
-    case (BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_REAL(stateSelectOption=SOME(stateselect)))))
+    case (BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_REAL(stateSelectOption=SOME(_)))))
     then true;
 
     else false;

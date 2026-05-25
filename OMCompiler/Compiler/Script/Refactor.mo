@@ -107,7 +107,7 @@ algorithm
        //  debug_print("Refactoring Class:", n);
         cPath := AbsynUtil.joinPaths(cPath,Absyn.IDENT(n));
         env := Interactive.getClassEnv(p,cPath);
-        resultClassDef := refactorGraphAnnInClassDef(d,p,cPath,env);
+        _ := refactorGraphAnnInClassDef(d,p,cPath,env);
       then
         outClass;
 

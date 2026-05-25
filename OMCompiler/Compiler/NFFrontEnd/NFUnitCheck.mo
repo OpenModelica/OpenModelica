@@ -482,8 +482,8 @@ algorithm
     case Expression.BINARY(exp1, Operator.OPERATOR(op = Op.MUL), exp2)
       guard Unit.isMaster(unit)
       algorithm
-        (unit1 as Unit.MASTER(), icu1) := insertUnitInEquation(exp1, Unit.MASTER({}), htCr2U, htS2U, htU2S, fnCache);
-        (unit2 as Unit.UNIT(), icu2) := insertUnitInEquation(exp2, Unit.MASTER({}), htCr2U, htS2U, htU2S, fnCache);
+        (Unit.MASTER(), icu1) := insertUnitInEquation(exp1, Unit.MASTER({}), htCr2U, htS2U, htU2S, fnCache);
+        (Unit.UNIT(), icu2) := insertUnitInEquation(exp2, Unit.MASTER({}), htCr2U, htS2U, htU2S, fnCache);
       then
         (Unit.MASTER({}), List.append_reverse(icu1, icu2));
 

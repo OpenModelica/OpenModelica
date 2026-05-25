@@ -189,7 +189,7 @@ protected function resolveLoops_resolvePartitions "author:Waurich TUD 2014-02
   input array<Integer> nonLoopEqMark;
   output BackendDAE.EquationArray daeEqsOut;
 algorithm
-  daeEqsOut := matchcontinue(partitionsIn,mIn,mTIn,m_uncut,mT_uncut,eqMap,varMap,daeEqs,daeVars,nonLoopEqMark)
+  daeEqsOut := match(partitionsIn,mIn,mTIn,m_uncut,mT_uncut,eqMap,varMap,daeEqs,daeVars,nonLoopEqMark)
     local
       Option<tuple<list<Integer>,BackendDAE.AdjacencyMatrix,list<list<Integer>>>> optStructureMapping;
       list<Integer> partition, eqCrossLst, varCrossLst, mapIndices;
@@ -226,7 +226,7 @@ algorithm
       algorithm
       then
         daeEqs;
-  end matchcontinue;
+  end match;
 end resolveLoops_resolvePartitions;
 
 protected function resolveLoops_cutNodes "author: Waurich TUD 2014-01
@@ -634,7 +634,7 @@ protected function removeNode
   input list<list<Integer>> inPaths;
   input output list<list<Integer>> accPaths={};
 algorithm
-  accPaths:=matchcontinue inPaths
+  accPaths:=match inPaths
     local
       list<Integer> path;
       list<list<Integer>> rest, acc;
@@ -648,7 +648,7 @@ algorithm
       then removeNode(node,rest,acc);
     case {}
       then accPaths;
-  end matchcontinue;
+  end match;
 end removeNode;
 
 protected function pathContainsNode
@@ -663,7 +663,7 @@ algorithm
     local
       Integer n;
       list<Integer> rest;
-    case n::rest guard(intEq(n,node))
+    case n::_ guard(intEq(n,node))
       then true;
     case _::rest
       then pathContainsNode(node,rest);
@@ -857,7 +857,7 @@ protected function resolveLoops_resolveAndReplace "author:Waurich TUD 2014-01
   output BackendDAE.EquationArray daeEqsOut;
   output list<Integer> replEqsOut;
 algorithm
-  (daeEqsOut,replEqsOut) := matchcontinue(loopsIn,eqCrossLstIn,varCrossLstIn,mIn,mTIn,eqMap,varMap,daeEqsIn,daeVarsIn,replEqsIn)
+  (daeEqsOut,replEqsOut) := match(loopsIn,eqCrossLstIn,varCrossLstIn,mIn,mTIn,eqMap,varMap,daeEqsIn,daeVarsIn,replEqsIn)
     local
       Integer pos,crossEq,crossVar,eq1,eq2;
       list<Integer> loop1, eqs, vars, crossEqs, crossEqs2, removeCrossEqs, crossVars, replEqs, loopVars, adjVars, m_row;
@@ -1035,7 +1035,7 @@ algorithm
       (daeEqs,replEqs) := resolveLoops_resolveAndReplace(rest,eqCrossLstIn,varCrossLstIn,mIn,mTIn,eqMap,varMap,daeEqs,daeVarsIn,replEqs);
   then
       (daeEqs,replEqs);
-  end matchcontinue;
+  end match;
 end resolveLoops_resolveAndReplace;
 
 protected function eqIsConst"outputs true if the equation is a constant assignment.
@@ -1259,7 +1259,7 @@ algorithm
       BackendDAE.Equation eq2, eq3, resolvedEq;
       BackendVarTransform.VariableReplacements replacements;
     case {_} then (eq, m_row);
-    case eqIdx1::eqIdx2::restLoop algorithm
+    case _::eqIdx2::restLoop algorithm
       // the equation to add
       eq2 := BackendEquation.get(daeEqsIn, arrayGet(eqMap,eqIdx2));
 

@@ -2268,7 +2268,7 @@ algorithm
         Error.addCompilerNotification("X11 library is not needed under Windows. It is not linked from the external library resource directory.\n");
       then  ({},{});
 
-    case Absyn.STRING(str as "omcruntime")
+    case Absyn.STRING("omcruntime")
       algorithm
         if "Windows_NT" == Autoconf.os then
           // omcruntime on windows needs linking with mico2313 and wsock and then some :)

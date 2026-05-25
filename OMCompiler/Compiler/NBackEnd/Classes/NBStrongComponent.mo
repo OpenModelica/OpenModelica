@@ -796,7 +796,7 @@ public
           if Equation.isForEquation(eqn_ptr) then
             // if its a for equation get all dependencies corresponding to their residual.
             // we do not really care for order and assume full dependency anyway
-            eqn as Equation.FOR_EQUATION(iter = iter, body = {body}) := Pointer.access(eqn_ptr);
+            Equation.FOR_EQUATION(iter = iter, body = {body}) := Pointer.access(eqn_ptr);
             cref := Equation.getEqnName(eqn_ptr);
             scalarized_dependencies := Slice.getDependentCrefsPseudoForCausalized(
               cref, tmp, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping,
@@ -1097,7 +1097,6 @@ public
         var_arr_idx := mapping.var_StA[var_scal_idx];
         var := VariablePointers.getVarAt(vars, var_arr_idx);
         eqn := EquationPointers.getEqnAt(eqns, mapping.eqn_StA[i]);
-        (_, size) := mapping.var_AtS[var_arr_idx];
 
         if Equation.isForEquation(eqn) then
           // - case 1: sliced equation because of for-equation

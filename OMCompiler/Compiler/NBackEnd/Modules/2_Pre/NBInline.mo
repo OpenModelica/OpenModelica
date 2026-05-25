@@ -199,11 +199,11 @@ public
           Call call;
 
         // CREF = {... for i in []} array constructor equation
-        case Equation.ARRAY_EQUATION(lhs = lhs as Expression.CREF(), rhs = rhs as Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR())) algorithm
+        case Equation.ARRAY_EQUATION(lhs = lhs as Expression.CREF(), rhs=Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR())) algorithm
         then (inlineArrayConstructor(eqn, lhs.cref, call.exp, call.iters, eqn.attr, iter, variables, new_eqns, set, index), true);
 
         // {... for i in []} = CREF array constructor equation
-        case Equation.ARRAY_EQUATION(lhs = lhs as Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()), rhs = rhs as Expression.CREF()) algorithm
+        case Equation.ARRAY_EQUATION(lhs=Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()), rhs = rhs as Expression.CREF()) algorithm
         then (inlineArrayConstructor(eqn, rhs.cref, call.exp, call.iters, eqn.attr, iter, variables, new_eqns, set, index), true);
 
         // apply on for-equation. assumed to be split up
@@ -347,11 +347,11 @@ public
         then inlineArrayEquation(eqn, lhs.elements, listArray(elements), eqn.attr, iter, variables, new_eqns, set, index);
 
         // CREF = {... for i in []} array constructor equation
-        case Equation.ARRAY_EQUATION(lhs = lhs as Expression.CREF(), rhs = rhs as Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()))
+        case Equation.ARRAY_EQUATION(lhs = lhs as Expression.CREF(), rhs=Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()))
         then inlineArrayConstructor(eqn, lhs.cref, call.exp, call.iters, eqn.attr, iter, variables, new_eqns, set, index);
 
         // {... for i in []} = CREF array constructor equation
-        case Equation.ARRAY_EQUATION(lhs = lhs as Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()), rhs = rhs as Expression.CREF())
+        case Equation.ARRAY_EQUATION(lhs=Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()), rhs = rhs as Expression.CREF())
         then inlineArrayConstructor(eqn, rhs.cref, call.exp, call.iters, eqn.attr, iter, variables, new_eqns, set, index);
 
         // CREF = cat()

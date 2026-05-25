@@ -78,7 +78,7 @@ function modelicaStringToCStr " this replaces symbols that are illegal in C to l
   input Boolean changeDerCall "if true, first change 'DER(v)' to $derivativev";
   output String res_str;
 algorithm
-  res_str := matchcontinue(str,changeDerCall)
+  res_str := match(str,changeDerCall)
     local String s;
     case(_,false)
       algorithm
@@ -88,7 +88,7 @@ algorithm
     case(s,true) algorithm
       s := modelicaStringToCStr2(s);
     then s;
-  end matchcontinue;
+  end match;
 end modelicaStringToCStr;
 
 protected

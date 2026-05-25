@@ -2180,7 +2180,7 @@ algorithm
       Boolean b,b1,b2;
       case (DAE.BCONST(true),statementLst,_,_,repl,_,_,_)
         then replaceStatementLst(statementLst, repl, inFuncTypeExpExpToBooleanOption, inAcc, true);
-      case (DAE.BCONST(false),_,DAE.NOELSE(),_,repl,_,_,_)
+      case (DAE.BCONST(false),_,DAE.NOELSE(),_,_,_,_,_)
         then (inAcc, true);
       case (DAE.BCONST(false),_,DAE.ELSEIF(exp=exp_e,statementLst=statementLst_e,else_=else_e),source,repl,_,_,_)
         then replaceSTMT_IF(exp_e,statementLst_e,else_e,source,repl,inFuncTypeExpExpToBooleanOption,inAcc,true);
@@ -2193,7 +2193,7 @@ algorithm
           true := b1 or b2;
         then
           (DAE.STMT_IF(exp,statementLst_1,else_1,source) :: inAcc, true);
-      case (exp,statementLst,else_,source,repl,_,_,_)
+      case (exp,statementLst,else_,source,_,_,_,_)
         then (DAE.STMT_IF(exp,statementLst,else_,source) :: inAcc, inBAcc);
    end matchcontinue;
 end replaceSTMT_IF;

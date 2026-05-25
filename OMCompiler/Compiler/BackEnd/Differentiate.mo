@@ -642,7 +642,7 @@ algorithm
     then (res, functionTree);
 
     // differentiate homotopy
-    case DAE.CALL(path=p as Absyn.IDENT(name="homotopy"), expLst={actual, simplified}, attr=attr) algorithm
+    case DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst={actual, simplified}) algorithm
       lambda := Expression.crefExp(ComponentReferenceBasics.makeCrefIdent(BackendDAE.homotopyLambda, DAE.T_REAL_DEFAULT, {}));
       (e1, functionTree) := differentiateExp(actual, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
       (e2, functionTree) := differentiateExp(simplified, inDiffwrtCref, inInputData, inDiffType, functionTree, maxIter);
@@ -657,7 +657,7 @@ algorithm
       do not differentiate semiLinear, if the second or third expression contains the diff cref
       ticket: #5595
     */
-    case DAE.CALL(path=p as Absyn.IDENT(name="semiLinear"), expLst={e1, e2, e3}, attr=attr)
+    case DAE.CALL(path=Absyn.IDENT(name="semiLinear"), expLst={_, e2, e3})
       guard(Expression.expHasCref(e2, inDiffwrtCref) or Expression.expHasCref(e3, inDiffwrtCref))
     then fail();
 
@@ -1064,7 +1064,7 @@ algorithm
     //
 
     // case for records without expanding the record
-    case ((DAE.CREF(componentRef = cr,ty = tp as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(path)))), _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), BackendDAE.DIFFERENTIATION_FUNCTION(), _)
+    case ((DAE.CREF(componentRef = cr,ty = tp as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))), _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), BackendDAE.DIFFERENTIATION_FUNCTION(), _)
       algorithm
         cr := ComponentReference.prependStringCref(BackendDAE.functionDerivativeNamePrefix, cr);
         cr := ComponentReference.prependStringCref(matrixName, cr);
@@ -1204,7 +1204,7 @@ algorithm
     //
     // This part contains special rules for GENERIC_GRADIENT()
     //
-    case (DAE.CREF(componentRef = cr,ty=tp), DAE.CREF_IDENT(ident="$"), _, BackendDAE.GENERIC_GRADIENT(), _)
+    case (DAE.CREF(ty=tp), DAE.CREF_IDENT(ident="$"), _, BackendDAE.GENERIC_GRADIENT(), _)
       algorithm
           (res,_) := Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then
@@ -1388,14 +1388,13 @@ algorithm
       String s1, s2, serr, matrixName, name;
 
     // differentiate homotopy
-    case (DAE.CALL(path=path as Absyn.IDENT(name="homotopy"), expLst={actual, simplified}, attr=attr), _, _, _, _) algorithm
+    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst={actual, simplified}), _, _, _, _) algorithm
       (e1, funcs) := differentiateExp(actual, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
-      (e2, funcs) := differentiateExp(simplified, inDiffwrtCref, inInputData, inDiffType, funcs, maxIter);
-      res := DAE.CALL(path, {e1, e2}, attr);
+      (_, funcs) := differentiateExp(simplified, inDiffwrtCref, inInputData, inDiffType, funcs, maxIter);
     then (e1, funcs);
 
     /* with previous are the actaully states marked in synchronous */
-    case (e as DAE.CALL(path=Absyn.IDENT(name = "previous"), expLst = {DAE.CREF(componentRef=cr, ty=tp)}),
+    case (DAE.CALL(path=Absyn.IDENT(name = "previous"), expLst = {DAE.CREF(componentRef=cr, ty=tp)}),
            _, BackendDAE.DIFFINPUTDATA(independenentVars=SOME(timevars),matrixName=SOME(matrixName)),
           BackendDAE.GENERIC_GRADIENT(), _) algorithm
 
@@ -1419,7 +1418,7 @@ algorithm
     // special case for daeMode:
     // der(x) gets differentiated to $cj * x.Seed
     // (cj aka alpha, provided by the dae mode integrator)
-    case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {e},attr=attr), _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), BackendDAE.GENERIC_GRADIENT(true), _)
+    case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {e}), _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), BackendDAE.GENERIC_GRADIENT(true), _)
       algorithm
         cj := DAE.CREF_IDENT(SymbolicJacobian.DAE_CJ, DAE.T_REAL_DEFAULT, {});
         cr := Expression.expCref(e);
@@ -2569,7 +2568,7 @@ algorithm
       list<DAE.Var> varLst;
       list<String> varNames;
 
-    case (DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path=rPath),varLst=varLst), DAE.CALL(path=path, attr=attr))
+    case (DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path=rPath),varLst=varLst), DAE.CALL(path=path))
     algorithm
       tys := list(DAEUtil.varType(v) for v in varLst);
       varNames := list(DAEUtil.typeVarIdent(v) for v in varLst);

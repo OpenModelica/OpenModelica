@@ -808,7 +808,7 @@ algorithm
           local
             SimCode.FmiSimulationFlags fmiSimFlags;
             String pathToFlagsJson;
-          case SOME(fmiSimFlags as SimCode.FMI_SIMULATION_FLAGS_FILE(path=pathToFlagsJson))
+          case SOME(SimCode.FMI_SIMULATION_FLAGS_FILE(path=pathToFlagsJson))
             algorithm
             needSundials := true;
             if 0 <> System.systemCall("cp -rf \"" + pathToFlagsJson + "\" \"" + resourcesDir + simCode.fileNamePrefix+"_flags.json\"") then
@@ -1363,7 +1363,6 @@ algorithm
       dlow := BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description, inFileNamePrefix, inSimSettingsOpt));
 
       GCExt.free(dae);
-      dae := DAE.emptyDae;
 
       if Flags.isSet(Flags.SERIALIZED_SIZE) then
         serializeNotify(dlow, "BackendDAECreate.lower");
@@ -1486,7 +1485,6 @@ algorithm
       dlow := BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,inFileNamePrefix,inSimSettingsOpt));
 
       GCExt.free(dae);
-      dae := DAE.emptyDae;
 
       if Flags.isSet(Flags.SERIALIZED_SIZE) then
         serializeNotify(dlow, "dlow");
