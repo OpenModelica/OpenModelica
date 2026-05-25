@@ -237,11 +237,6 @@ QSize Label::minimumSizeHint() const
 #else // QT_VERSION_CHECK
   QSize size(fm.width("..."), fm.height()+5);
 #endif // QT_VERSION_CHECK
-  // use minimum size width 200 if mUseMinimumSize is true
-  // this is used in parameter dialogs
-  if (mUseMinimumSize && !mText.isEmpty()) {
-    size.setWidth(qMax(size.width(), 200));
-  }
   return size;
 }
 

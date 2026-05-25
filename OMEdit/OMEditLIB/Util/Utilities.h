@@ -180,11 +180,9 @@ public:
   virtual QSize minimumSizeHint() const override;
   virtual QSize sizeHint() const override;
   void setText(const QString &text);
-  void useMinimumSize(bool enable) {mUseMinimumSize = enable;}
 private:
   Qt::TextElideMode mElideMode;
   QString mText;
-  bool mUseMinimumSize = false;
 
   QString elidedText() const;
 protected:
