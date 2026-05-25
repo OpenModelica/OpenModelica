@@ -81,9 +81,24 @@ EMPTY_CALL_NAMED_ARG = (Literal("Notification: Removing empty call named pattern
   lambda s,s2: {'empty_call_named_arg':s2[1]})
 ALL_EMPTY = (Literal("Notification: All patterns in call were empty: ") + IDENT + "." + StringEnd() ).set_parse_action(
   lambda s,s2: {'all_empty':s2[1]})
+# Agent-fixable notifications (handled by claude-sandbox.sh, not by Python regex).
+# Use Regex(as_match=True) so the parse action can pull a capture group out of the
+# notification text without pyparsing having to backtrack across Suppress().
+MATCH_UNUSED_INPUT = Regex(r"Notification: Match input (.+) is not used by any case and could be removed\.", as_match=True).set_parse_action(
+  lambda s,t: {'match_unused_input': t[0].group(1)})
+INFALLIBLE_PATTERN = Regex(r"Notification: Pattern (.+) is infallible and binds no variables; it could be replaced with a wildcard\.", as_match=True).set_parse_action(
+  lambda s,t: {'infallible_pattern': t[0].group(1)})
+AS_ONLY = Regex(r"Notification: Pattern only renames the match input (.+); the match expression could be rewritten without this input and the body could use \1 directly\.", as_match=True).set_parse_action(
+  lambda s,t: {'as_only': t[0].group(1)})
+MC_TO_TRY = Literal("Notification: This matchcontinue has a single case and an else and could be rewritten as a try/else.").set_parse_action(
+  lambda s,s2: {'mc_to_try': True})
 UNKNOWN = Suppress("Notification:")
 
-NOTIFICATION = (Suppress("[") + FILEINFO + Suppress("]") + (UNUSED_LOCAL|UNUSED_AS|UNUSED_ASSIGN|DEAD_STATEMENT|USE_MATCH|EMPTY_CALL_NAMED_ARG|ALL_EMPTY|UNKNOWN))
+NOTIFICATION = (Suppress("[") + FILEINFO + Suppress("]") + (UNUSED_LOCAL|UNUSED_AS|UNUSED_ASSIGN|DEAD_STATEMENT|USE_MATCH|EMPTY_CALL_NAMED_ARG|ALL_EMPTY|MATCH_UNUSED_INPUT|INFALLIBLE_PATTERN|AS_ONLY|MC_TO_TRY|UNKNOWN))
+
+AGENT_KEYS = ('match_unused_input', 'infallible_pattern', 'as_only', 'mc_to_try')
+
+COMPILER_DIR = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 
 def runOMC(arg):
   try:
@@ -122,6 +137,125 @@ def updateContents(moContents,startLine,endLine,startCol,endCol,s):
   line = begin + s + end
   del moContents[startLine:endLine] # Does not delete startLine-1, which is the one we will abuse
   moContents[startLine-1] = line
+
+def gitCheckpoint():
+  """Stage all current changes so that `git checkout -- <path>` restores this state."""
+  subprocess.check_call(['git', 'add', '-A'], cwd=COMPILER_DIR)
+
+def gitRevert(paths):
+  """Restore the given paths from the index (= the last checkpoint)."""
+  if not paths:
+    return
+  subprocess.call(['git', 'checkout', '--'] + list(paths), cwd=COMPILER_DIR)
+
+def gitDirtyFiles():
+  """Return the paths (relative to COMPILER_DIR) of files that differ from the index."""
+  out = subprocess.check_output(['git', 'diff', '--name-only'], cwd=COMPILER_DIR).decode()
+  return [p for p in out.splitlines() if p.strip()]
+
+def relativeToCompiler(path):
+  return os.path.relpath(os.path.realpath(path), COMPILER_DIR)
+
+def runAgent(prompt):
+  """Run claude-sandbox.sh in the Compiler directory with the given prompt."""
+  subprocess.check_call(['claude-sandbox.sh', prompt], cwd=COMPILER_DIR)
+
+def agentPrompt(notif, moFileRel):
+  info = notif[0]
+  data = notif[1] if len(notif) >= 2 else {}
+  loc = "lines %d-%d (columns %d-%d)" % (info['startLine'], info['endLine'], info['startCol'], info['endCol'])
+  header = "In `%s` at %s:\n\n" % (moFileRel, loc)
+  footer = ("\n\nMake the change directly to the file. Do not commit. "
+            "Only modify code at the indicated location, plus any directly required follow-up "
+            "(e.g. updating all cases of the same match expression). "
+            "Preserve formatting and indentation. Do not touch unrelated functions or files.")
+  if 'match_unused_input' in data:
+    ident = data['match_unused_input'].strip('`')
+    body = (
+      "The match expression that spans these lines has an input `%s` that is not used "
+      "by any case (every case has a wildcard `_` at that position). Refactor the match "
+      "expression so the input is removed from the input tuple, and the matching wildcard "
+      "position is removed from every case's pattern. The result type and arity of the "
+      "match must remain unchanged." % ident)
+  elif 'infallible_pattern' in data:
+    pat = data['infallible_pattern']
+    body = (
+      "The pattern `%s` at this location is infallible and binds no variables. "
+      "Replace just that pattern with a wildcard `_`. Do not touch any other case." % pat)
+  elif 'as_only' in data:
+    ident = data['as_only'].strip('`')
+    body = (
+      "The match expression that spans these lines has an input `%s` whose every case "
+      "either uses `_` or only renames the value via an as-binding (e.g. `name as _`). "
+      "Refactor: remove `%s` from the input tuple, drop the corresponding pattern position "
+      "in each case, and in each case body replace uses of the renamed local name with `%s`." %
+      (ident, ident, ident))
+  elif 'mc_to_try' in data:
+    body = (
+      "This matchcontinue has exactly one case and an else. Rewrite it as a try/else.\n\n"
+      "Example:\n"
+      "  n := matchcontinue x\n"
+      "    case a::_ then a;\n"
+      "    else 3;\n"
+      "  end matchcontinue;\n"
+      "becomes:\n"
+      "  try\n"
+      "    n::_ := x;\n"
+      "  else\n"
+      "    n := 3;\n"
+      "  end try;\n\n"
+      "Preserve any local declarations and the result variable. The pattern from the case "
+      "becomes the LHS of a destructuring assignment; the case result becomes the RHS.")
+  else:
+    return None
+  return header + body + footer
+
+def processAgentFixes(stamp, moFile, logFile):
+  """For each agent-fixable notification in logFile, invoke the agent, then verify.
+  On failure, revert the touched files from the git index."""
+  try:
+    with open(logFile, 'r') as log:
+      allLines = log.readlines()
+  except OSError:
+    return
+  notifs = []
+  for line in allLines:
+    try:
+      n = NOTIFICATION.parse_string(line.strip())
+    except Exception:
+      continue
+    if len(n) >= 2 and any(k in n[1] for k in AGENT_KEYS):
+      notifs.append(n)
+  notifs = [n for n in notifs if n[0]['fileName'] == moFile]
+  # Process bottom-up so earlier line numbers stay valid across edits within one batch.
+  notifs.sort(key=lambda n: (n[0]['startLine'], n[0]['startCol']), reverse=True)
+  moFileRel = relativeToCompiler(moFile)
+  for n in notifs:
+    prompt = agentPrompt(n, moFileRel)
+    if prompt is None:
+      continue
+    info = n[0]
+    print("%s Running agent for: %s" % (infoStr(info), list(n[1].keys())[0]))
+    try:
+      gitCheckpoint()
+    except (subprocess.CalledProcessError, FileNotFoundError) as e:
+      print("git checkpoint failed (%s); aborting agent fixes." % e)
+      return
+    try:
+      runAgent(prompt)
+    except (subprocess.CalledProcessError, FileNotFoundError) as e:
+      print("Agent invocation failed (%s); skipping." % e)
+      continue
+    dirty = gitDirtyFiles()
+    if not dirty:
+      print("%s Agent made no changes." % infoStr(info))
+      continue
+    try:
+      runOMC(stamp)
+      print("%s Agent fix verified. Touched: %s" % (infoStr(info), dirty))
+    except Exception:
+      print("%s Agent fix broke the build; reverting %s" % (infoStr(info), dirty))
+      gitRevert(dirty)
 
 def fixFileIter(stamp,moFile,logFile):
   with open(moFile, 'r') as mo:
@@ -303,6 +437,9 @@ def fixFile(stamp,logFile,moFile):
   while iterate:
     print("Iterating %s" % stamp)
     iterate = fixFileIter(stamp,moFile,logFile)
+  # After all Python-driven fixes settle, hand the remaining notifications to the agent.
+  # logFile reflects the latest runOMC inside fixFileIter, so it is current.
+  processAgentFixes(stamp, moFile, logFile)
   return iterate
 
 def runStamp(arg):
