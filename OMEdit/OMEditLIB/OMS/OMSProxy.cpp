@@ -666,17 +666,25 @@ void OMSProxy::createElementGeometryUsingPosition(const QString &cref, QPointF p
   qreal x = position.x();
   qreal y = position.y();
 
-  ssd_element_geometry_t elementGeometry;
-  elementGeometry.x1 = x - 10.0;
-  elementGeometry.y1 = y - 10.0;
-  elementGeometry.x2 = x + 10.0;
-  elementGeometry.y2 = y + 10.0;
-  elementGeometry.rotation = 0.0;
-  elementGeometry.iconSource = NULL;
-  elementGeometry.iconRotation = 0.0;
-  elementGeometry.iconFlip = false;
-  elementGeometry.iconFixedAspectRatio = false;
-  setElementGeometry(cref, &elementGeometry);
+  OMSModel::ElementGeometry elementGeometry;
+
+  elementGeometry.setX1(x - 10.0);
+  elementGeometry.setY1(y - 10.0);
+  elementGeometry.setX2(x + 10.0);
+  elementGeometry.setY2(y + 10.0);
+  elementGeometry.setRotation(0.0);
+  setElementGeometry(cref, elementGeometry);
+  //ssd_element_geometry_t elementGeometry;
+  // elementGeometry.x1 = x - 10.0;
+  // elementGeometry.y1 = y - 10.0;
+  // elementGeometry.x2 = x + 10.0;
+  // elementGeometry.y2 = y + 10.0;
+  // elementGeometry.rotation = 0.0;
+  // elementGeometry.iconSource = NULL;
+  // elementGeometry.iconRotation = 0.0;
+  // elementGeometry.iconFlip = false;
+  // elementGeometry.iconFixedAspectRatio = false;
+  // setElementGeometry(cref, &elementGeometry);
 }
 
 /*!
@@ -686,15 +694,34 @@ void OMSProxy::createElementGeometryUsingPosition(const QString &cref, QPointF p
  * \param type
  * \return
  */
-bool OMSProxy::addSystem(QString cref, oms_system_enu_t type)
+bool OMSProxy::addSystem(QString cref)
 {
-  QString command = "oms_addSystem";
-  QStringList args;
-  args << "\"" + cref + "\"" << QString::number(type);
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_addSystem(cref.toUtf8().constData(), type);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
+    qDebug() << "adding System: " << cref;
+  // QString command = "oms_addSystem";
+  // QStringList args;
+  // args << "\"" + cref + "\"" << QString::number(type);
+  // LOG_COMMAND(command, args);
+  // oms_status_enu_t status = oms_addSystem(cref.toUtf8().constData(), type);
+  // logResponse(command, status, &commandTime);
+  // return statusToBool(status);
+  QStringList parts = cref.split(".");
+  parts.removeFirst(); // remove model name
+
+  QJsonObject args;
+  args["cref"] = QJsonArray::fromStringList(parts);
+  //args["name"] = systemName;
+
+  QJsonObject obj;
+  obj["method"] = "addSystem";
+  obj["args"] = args;
+
+  qDebug() <<"addSystem-json : " << QJsonDocument(obj).toJson(QJsonDocument::Compact);
+
+  QJsonObject reply;
+  mpGuiRequestSocket->sendCommand(obj, reply);
+
+  //return reply["status"].toString() == "ok";
+
   return true;
 }
 

@@ -6229,7 +6229,7 @@ ShapeAnnotation* ModelWidget::drawOMSModelElement()
       pInfoTextAnnotation->setExtents(extents);
       if (mpLibraryTreeItem->isSystemElement()) {
         pInfoTextAnnotation->setLineColor(QColor(128, 128, 0));
-        pInfoTextAnnotation->setTextString(OMSProxy::getSystemTypeShortString(mpLibraryTreeItem->getSystemType()));
+        pInfoTextAnnotation->setTextString("SYS");
       } else {
         qDebug() << "drawing fmu type";
         pInfoTextAnnotation->setTextString(QString("%1 %2").arg(mpLibraryTreeItem->getFMUInfo().getFMIKind())

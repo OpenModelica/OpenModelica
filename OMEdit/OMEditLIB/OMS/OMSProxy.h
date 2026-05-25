@@ -112,7 +112,7 @@ public:
   bool addSubModel(QString cref, QString fmuPath);
   bool replaceSubModel(QString cref, QString fmuPath, bool dryCount, int* count);
   void createElementGeometryUsingPosition(const QString &cref, QPointF position);
-  bool addSystem(QString cref, oms_system_enu_t type);
+  bool addSystem(QString cref);
   bool deleteConnection(QString crefA, QString crefB);
   bool deleteConnectorFromBus(QString busCref, QString connectorCref);
   bool deleteConnectorFromTLMBus(QString busCref, QString connectorCref);
