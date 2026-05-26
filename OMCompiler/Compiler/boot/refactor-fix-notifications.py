@@ -48,7 +48,7 @@ import subprocess
 
 parser = argparse.ArgumentParser()
 parser.add_argument('files', nargs='*')
-parser.add_argument('--api-base', default=os.environ.get('OPENAI_API_BASE', 'http://mountain.sjoelund.se:8080/v1/'),
+parser.add_argument('--api-base', default=os.environ.get('OPENAI_API_BASE', 'http://localhost:8080/v1/'),
                     help='OpenAI-compatible endpoint (default: %(default)s).')
 parser.add_argument('--api-key', default=os.environ.get('OPENAI_API_KEY', 'sk-no-key-required'),
                     help='Bearer token for the endpoint.')
