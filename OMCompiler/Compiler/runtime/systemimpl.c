@@ -1332,9 +1332,11 @@ static int file_select_moc(direntry entry)
 int setenv(const char* envname, const char* envvalue, int overwrite)
 {
   int res;
-  char *temp = (char*)omc_alloc_interface.malloc_atomic(strlen(envname)+strlen(envvalue)+2);
-  sprintf(temp,"%s=%s", envname, envvalue);
+  int len = strlen(envname)+strlen(envvalue)+2;
+  char *temp = (char*)malloc(len);
+  snprintf(temp, len, "%s=%s", envname, envvalue);
   res = _putenv(temp);
+  free(temp);
   return res;
 }
 #endif
@@ -2592,17 +2594,14 @@ void SystemImpl__gettextInit(const char *locale)
   int omlen;
 #if defined(__MINGW32__)
   if (*locale) {
-    char environment[strlen(locale)+9];
-    strcpy(environment, "LANGUAGE=");
-    putenv(strcat(environment, locale));
+    setenv("LANGUAGE", locale, 1);
   } else {
     LCID userLocaleId = GetUserDefaultLCID();
     int localeBufferSize = GetLocaleInfo(userLocaleId, LOCALE_SISO639LANGNAME, NULL, 0);
-    char userLocaleStr[localeBufferSize];
+    char *userLocaleStr = (char*)malloc(localeBufferSize);
     GetLocaleInfo(userLocaleId, LOCALE_SISO639LANGNAME, userLocaleStr, localeBufferSize);
-    char environment[localeBufferSize+9];
-    strcpy(environment, "LANGUAGE=");
-    putenv(strcat(environment, userLocaleStr));
+    setenv("LANGUAGE", userLocaleStr, 1);
+    free(userLocaleStr);
   }
 #else
   /* We might get sent sv_SE when only sv_SE.utf8 exists, etc */
