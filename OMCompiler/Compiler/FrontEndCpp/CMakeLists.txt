@@ -45,3 +45,13 @@ if (MSVC)
 else()
   target_compile_options(omcfrontendcpp PRIVATE -Wall -Wextra -Wpedantic)
 endif()
+
+# Include what you see
+# Ensures all C++ files include all used headers, no transient includes
+find_program(IWYU_PATH NAMES include-what-you-use iwyu)
+message(STATUS "IWYU: ${IWYU_PATH}")
+if(IWYU_PATH)
+  set(IWYU_COMMAND ${IWYU_PATH} -Xiwyu --no_fwd_decls)
+  set_property(TARGET omcfrontendcpp PROPERTY CXX_INCLUDE_WHAT_YOU_USE ${IWYU_PATH})
+  set_property(TARGET omcfrontendcppabsyn PROPERTY CXX_INCLUDE_WHAT_YOU_USE ${IWYU_PATH})
+endif()

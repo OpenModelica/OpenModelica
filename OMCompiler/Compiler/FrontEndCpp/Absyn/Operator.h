@@ -37,7 +37,7 @@
 #define ABSYN_OPERATOR_H
 
 #include <string_view>
-#include <iosfwd>
+#include <ostream>
 
 #include "MetaModelica.h"
 
