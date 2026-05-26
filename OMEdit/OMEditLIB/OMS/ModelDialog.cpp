@@ -140,102 +140,38 @@ CreateModelDialog::CreateModelDialog(QWidget *pParent)
  * \brief CreateModelDialog::createNewModel
  * Creates a new OMSimulator model.
  */
-// void CreateModelDialog::createNewModel()
-// {
-//   if (mpNameTextBox->text().isEmpty()) {
-//     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("Model")), QMessageBox::Ok);
-//     return;
-//   }
-
-//   if (mpSystemWidget->getNameTextBox()->text().isEmpty()) {
-//     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("System")), QMessageBox::Ok);
-//     return;
-//   }
-
-//   // create new model
-//   if (OMSProxy::instance()->newModel(mpNameTextBox->text())) {
-//     QString systemNameStructure = QString("%1.%2").arg(mpNameTextBox->text(), mpSystemWidget->getNameTextBox()->text());
-//     if (OMSProxy::instance()->addSystem(systemNameStructure, (oms_system_enu_t)mpSystemWidget->getTypeComboBox()->itemData(mpSystemWidget->getTypeComboBox()->currentIndex()).toInt())) {
-//       LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-//         qDebug() << "Adding System";
-//       LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text(), mpNameTextBox->text(), "", false, pLibraryTreeModel->getRootLibraryTreeItem());
-//         qDebug() << "Adding System completed";
-
-//       if (pLibraryTreeItem) {
-//             qDebug() << "D1";
-//         pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
-//             qDebug() << "D2";
-
-//         // expand the ssp model
-//         QModelIndex modelIndex = pLibraryTreeModel->libraryTreeItemIndex(pLibraryTreeItem);
-//             qDebug() << "D3";
-
-//         QModelIndex proxyIndex = MainWindow::instance()->getLibraryWidget()->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
-//             qDebug() << "D4";
-//         MainWindow::instance()->getLibraryWidget()->getLibraryTreeView()->expand(proxyIndex);
-//             qDebug() << "D5";
-
-//         // open the root system inside it
-//         if (pLibraryTreeItem->childrenSize() > 0) {
-//                 qDebug() << "D6";
-//           LibraryTreeItem *pRootSystemLibraryTreeItem  = pLibraryTreeItem->childAt(0);
-//                 qDebug() << "D7";
-
-//           if (pRootSystemLibraryTreeItem) {
-//                     qDebug() << "D8";
-
-//             pLibraryTreeModel->showModelWidget(pRootSystemLibraryTreeItem);
-//                     qDebug() << "D9";
-
-//           }
-//         }
-//       }
-//       accept();
-//     } else {
-//       // if creating the root system failed then delete the model created.
-//       OMSProxy::instance()->omsDelete(mpNameTextBox->text());
-//     }
-//   }
-// }
-
 void CreateModelDialog::createNewModel()
 {
-    if (mpNameTextBox->text().isEmpty()) {
-        QMessageBox::critical(this,
-                              QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                              GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("Model")),
-                              QMessageBox::Ok);
-        return;
-    }
+  if (mpNameTextBox->text().isEmpty()) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("Model")), QMessageBox::Ok);
+    return;
+  }
 
-    if (OMSProxy::instance()->newModel(mpNameTextBox->text())) {
-        LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+  if (mpSystemWidget->getNameTextBox()->text().isEmpty()) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("System")), QMessageBox::Ok);
+    return;
+  }
 
-        LibraryTreeItem *pLibraryTreeItem =
-            pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text(),
-                                                     mpNameTextBox->text(),
-                                                     "",
-                                                     false,
-                                                     pLibraryTreeModel->getRootLibraryTreeItem());
-
-        if (pLibraryTreeItem) {
-            pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
-
-            QModelIndex modelIndex = pLibraryTreeModel->libraryTreeItemIndex(pLibraryTreeItem);
-            QModelIndex proxyIndex = MainWindow::instance()->getLibraryWidget()->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
-            MainWindow::instance()->getLibraryWidget()->getLibraryTreeView()->expand(proxyIndex);
-
-            // open the default root system created by Python SSP()
-            if (pLibraryTreeItem->childrenSize() > 0) {
-                LibraryTreeItem *pRootSystemLibraryTreeItem = pLibraryTreeItem->childAt(0);
-                if (pRootSystemLibraryTreeItem) {
-                    pLibraryTreeModel->showModelWidget(pRootSystemLibraryTreeItem);
-                }
-            }
+  // create new model, also internally create a root system
+  if (OMSProxy::instance()->newModel(mpNameTextBox->text(), mpSystemWidget->getNameTextBox()->text())) {
+      LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+      LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text(), mpNameTextBox->text(), "", false, pLibraryTreeModel->getRootLibraryTreeItem());
+      if (pLibraryTreeItem) {
+        pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
+        // expand the ssp model
+        QModelIndex modelIndex = pLibraryTreeModel->libraryTreeItemIndex(pLibraryTreeItem);
+        QModelIndex proxyIndex = MainWindow::instance()->getLibraryWidget()->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
+        MainWindow::instance()->getLibraryWidget()->getLibraryTreeView()->expand(proxyIndex);
+        // open the root system inside it
+        if (pLibraryTreeItem->childrenSize() > 0) {
+          LibraryTreeItem *pRootSystemLibraryTreeItem  = pLibraryTreeItem->childAt(0);
+          if (pRootSystemLibraryTreeItem) {
+            pLibraryTreeModel->showModelWidget(pRootSystemLibraryTreeItem);
+          }
         }
-
-        accept();
-    }
+      }
+      accept();
+  }
 }
 
 /*!
@@ -311,14 +247,9 @@ void AddSystemDialog::addSystem()
   // add the system
   QString nameStructure = QString("%1.%2").arg(pParentLibraryTreeItem->getNameStructure()).arg(mpSystemWidget->getNameTextBox()->text());
   if (OMSProxy::instance()->addSystem(nameStructure)) {
-    qDebug() << "inside A1";
     if (mpGraphicsView->mContextMenuStartPositionValid) {
-      qDebug() << "inside T1";
       OMSProxy::instance()->createElementGeometryUsingPosition(nameStructure, mpGraphicsView->mContextMenuStartPosition);
-      qDebug() << "inside T2";
     }
-    qDebug() << "inside A2";
-
     mpGraphicsView->getModelWidget()->createOMSimulatorUndoCommand(QString("Add system %1").arg(nameStructure));
     mpGraphicsView->getModelWidget()->updateModelText();
     accept();

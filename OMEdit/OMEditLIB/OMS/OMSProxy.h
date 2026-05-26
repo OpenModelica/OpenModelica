@@ -53,7 +53,7 @@ public:
   ~GuiRequestSocket();
   QString endPoint() const { return mEndPoint; }
   bool isConnected() const { return mSocketConnected; }
-  void sendCommand(const QJsonObject &obj, QJsonObject &reply);
+  bool sendCommand(const QJsonObject &obj, QJsonObject &reply);
 private:
   void* mpContext;
   void* mpSocket;
@@ -86,12 +86,11 @@ private:
   void startGuiServer();
   bool mServerReady;
 private slots:
-  //void onReply(QJsonObject reply);
   void guiProcessStarted();
   void guiProcessError(QProcess::ProcessError error);
   void guiProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
-  void readSimulationStandardOutput();
-  void readSimulationStandardError();
+  void readGuiServerStandardOutput();
+  void readGuiServerStandardError();
 public:
   static OMSProxy* instance() {return mpInstance;}
 
@@ -103,6 +102,7 @@ public:
 
   bool statusToBool(oms_status_enu_t status);
   void emitLogGUIMessage(MessageItem messageItem) {emit logGUIMessage(messageItem);}
+  bool sendZmqCommand(const QJsonObject &obj, QJsonObject &reply);
 
   bool addBus(QString cref);
   bool addConnection(QString crefA, QString crefB, bool suppressUnitConversion = false);
@@ -143,7 +143,7 @@ public:
   bool exportSnapshot(QString cref, QString *pContents);
   bool loadModel(QString filename, QString* pModelName);
   bool importSnapshot(QString cref, QString snapshot, QString* pNewCref);
-  bool newModel(QString cref);
+  bool newModel(QString cref, QString systemName);
   bool rename(const QString &cref, const QString &newCref);
   bool omsDelete(QString cref);
   bool saveModel(QString cref, QString filename);
