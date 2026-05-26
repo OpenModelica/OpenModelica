@@ -250,7 +250,7 @@ void OMSProxy::startGuiServer()
 {
   // TODO FIX the path like SSP simulation
   QString pythonExe = "C:/ProgramData/anaconda3/python.exe"; // full path if needed
-  QString script = "C:/OPENMODELICAGIT/OpenModelica/OMSimulator/src/OMSimulatorServer/OMSimulatorCommand.py";
+  QString script = "C:/OPENMODELICAGIT/OpenModelica/OMSimulator/src/OMSimulatorServer/OMSimulatorGuiServer.py";
 
   mpGuiProcess = new QProcess(this);
 

@@ -1784,7 +1784,6 @@ void Element::updatePlacementAnnotation()
   LibraryTreeItem *pLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
   if (pLibraryTreeItem->isSSP()) {
     if (mpLibraryTreeItem && (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement())) {
-      //ssd_element_geometry_t elementGeometry = mpLibraryTreeItem->getOMSElementGeometry();
       OMSModel::ElementGeometry elementGeometry = mpLibraryTreeItem->getOMSModelElement()->getGeometry();
       ExtentAnnotation extent = mTransformation.getExtent();
       QPointF extent1 = extent.at(0);
