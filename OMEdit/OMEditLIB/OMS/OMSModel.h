@@ -45,222 +45,217 @@
 
 namespace OMSModel
 {
-
-enum class Causality
-{
-  oms_causality_input,               ///< input
-  oms_causality_output,              ///< output
-  oms_causality_parameter,           ///< parameter
-  oms_causality_calculatedParameter, ///< calculated parameter
-  oms_causality_bidir,               ///< bidirectional
-  oms_causality_undefined
-};
-
-enum class SignalType
-{
-  oms_signal_type_real,
-  oms_signal_type_integer,
-  oms_signal_type_boolean,
-  oms_signal_type_string,
-  oms_signal_type_enum,
-};
-
-enum class FMIKind
-{
-  ModelExchange,
-  CoSimulation,
-  ModelExchangeAndCoSimulation,
-  Unknown
-};
-
-class FMUInfo
-{
-public:
-  void deserialize(const QJsonObject &jsonObject);
-  QString getDescription() const {return mDescription;}
-  QString getFMIKind() const {return mFMIKind;}
-  QString getFMIKindString() const;
-  QString getFMIKindShortString() const;
-  QString getFMIVersion() const {return mFMIVersion;}
-  QString getGenerationTool() const {return mGenerationTool;}
-  QString getGuid() const {return mGuid;}
-  QString getGenerationDateAndTime() const {return mGenerationDateAndTime;}
-  QString getModelName() const {return mModelName;}
-  QString getPath() const {return mPath;}
-  QString getVersion() const {return mVersion;}
-  bool getCanBeInstantiatedOnlyOncePerProcess() const {return mCanBeInstantiatedOnlyOncePerProcess;}
-  bool getCanGetAndSetFMUstate() const {return mCanGetAndSetFMUstate;}
-  bool getCanNotUseMemoryManagementFunctions() const {return mCanNotUseMemoryManagementFunctions;}
-  bool getCanSerializeFMUstate() const {return mCanSerializeFMUstate;}
-  bool getCompletedIntegratorStepNotNeeded() const {return mCompletedIntegratorStepNotNeeded;}
-  bool getNeedsExecutionTool() const {return mNeedsExecutionTool;}
-  bool getProvidesDirectionalDerivative() const {return mProvidesDirectionalDerivative;}
-  bool getCanInterpolateInputs() const {return mCanInterpolateInputs;}
-  int getMaxOutputDerivativeOrder() const {return mMaxOutputDerivativeOrder;}
-private:
-  QString mDescription;
-  QString mFMIKind;
-  QString mFMIVersion;
-  QString mGenerationTool;
-  QString mGuid;
-  QString mGenerationDateAndTime;
-  QString mModelName;
-  QString mPath;
-  QString mVersion;
-  bool mCanBeInstantiatedOnlyOncePerProcess = false;
-  bool mCanGetAndSetFMUstate = false;
-  bool mCanNotUseMemoryManagementFunctions = false;
-  bool mCanSerializeFMUstate = false;
-  bool mCompletedIntegratorStepNotNeeded = false;
-  bool mNeedsExecutionTool = false;
-  bool mProvidesDirectionalDerivative = false;
-  bool mCanInterpolateInputs = false;
-  int mMaxOutputDerivativeOrder = 0;
-};
-
-class ConnectorGeometry
-{
-public:
-  void deserialize(const QJsonObject &jsonObject);
-  double getX() const {return x;}
-  double getY() const {return y;}
-  void setX(double value) {x = value;}
-  void setY(double value) {y = value;}
-private:
-  double x = 0.5;
-  double y = 0.5;
-};
-
-class ElementGeometry
-{
-public:
-  void deserialize(const QJsonObject &jsonObject);
-  double getX1() const {return x1;}
-  double getY1() const {return y1;}
-  double getX2() const {return x2;}
-  double getY2() const {return y2;}
-  double getRotation() const {return rotation;}
-  QString getIconSource() const {return iconSource;}
-  double getIconRotation() const {return iconRotation;}
-  bool getIconFlip() const {return iconFlip;}
-  bool getIconFixedAspectRatio() const {return iconFixedAspectRatio;}
-  void setX1(double value) {x1 = value;}
-  void setY1(double value) {y1 = value;}
-  void setX2(double value) {x2 = value;}
-  void setY2(double value) {y2 = value;}
-  void setRotation(double value) {rotation = value;}
-  //ssd_element_geometry_t toSsdElementGeometry() const;
-
-private:
-  double x1 = -10.0;
-  double y1 = -10.0;
-  double x2 = 10.0;
-  double y2 = 10.0;
-  double rotation = 0.0;
-  QString iconSource;
-  double iconRotation = 0.0;
-  bool iconFlip = false;
-  bool iconFixedAspectRatio = false;
-};
-
-class ConnectionGeometry
-{
-public:
-  void deserialize(const QJsonObject &jsonObject);
-  const QVector<double>& getPointsX() const {return mPointsX;}
-  const QVector<double>& getPointsY() const {return mPointsY;}
-  void setPoints(const QVector<double> &pointsX, const QVector<double> &pointsY)
+  enum class Causality
   {
-    mPointsX = pointsX;
-    mPointsY = pointsY;
-  }
-  int getPointsSize() const {return qMin(mPointsX.size(), mPointsY.size());}
-private:
-    QVector<double> mPointsX;
-    QVector<double> mPointsY;
-};
+    oms_causality_input,               ///< input
+    oms_causality_output,              ///< output
+    oms_causality_parameter,           ///< parameter
+    oms_causality_calculatedParameter, ///< calculated parameter
+    oms_causality_bidir,               ///< bidirectional
+    oms_causality_undefined
+  };
 
-class Connection
-{
-public:
-  void deserialize(const QJsonObject &jsonObject);
-  QString getConnectorA() const {return mConA;}
-  QString getConnectorB() const {return mConB;}
-  const ConnectionGeometry& getGeometry() const {return mGeometry;}
-  ConnectionGeometry& getGeometry() {return mGeometry;}
-private:
-  QString mConA;
-  QString mConB;
-  ConnectionGeometry mGeometry;
-};
+  enum class SignalType
+  {
+    oms_signal_type_real,
+    oms_signal_type_integer,
+    oms_signal_type_boolean,
+    oms_signal_type_string,
+    oms_signal_type_enum,
+  };
 
-class Connector
-{
-public:
-  void deserialize(const QJsonObject &jsonObject);
-  const QString& getName() const {return mName;}
-  const Causality& getCausality() const {return mCausality;}
-  const SignalType& getSignalType() const {return mSignalType;}
-  const ConnectorGeometry& getGeometry() const {return mGeometry;}
-  static Causality causalityFromString(const QString &value);
-  static SignalType signalTypeFromString(const QString &value);
-  static QString signalTypeToString(SignalType signalType);
-  static QString causalityToString(Causality causality);
-  QString getCausalityString() const;
-  QString getSignalTypeString() const;
-  void setGeometry(const ConnectorGeometry &geometry) {mGeometry = geometry;}
-  bool isInput() const {return mCausality == Causality::oms_causality_input;}
-  bool isOutput() const {return mCausality == Causality::oms_causality_output;}
-  bool isParameter() const {return mCausality == Causality::oms_causality_parameter;}
+  enum class FMIKind
+  {
+    ModelExchange,
+    CoSimulation,
+    ModelExchangeAndCoSimulation,
+    Unknown
+  };
 
-private:
-  QString mName;
-  Causality mCausality;
-  SignalType mSignalType;
-  ConnectorGeometry mGeometry;
-};
+  class FMUInfo
+  {
+  public:
+    void deserialize(const QJsonObject &jsonObject);
+    QString getDescription() const {return mDescription;}
+    QString getFMIKind() const {return mFMIKind;}
+    QString getFMIKindString() const;
+    QString getFMIKindShortString() const;
+    QString getFMIVersion() const {return mFMIVersion;}
+    QString getGenerationTool() const {return mGenerationTool;}
+    QString getGuid() const {return mGuid;}
+    QString getGenerationDateAndTime() const {return mGenerationDateAndTime;}
+    QString getModelName() const {return mModelName;}
+    QString getPath() const {return mPath;}
+    QString getVersion() const {return mVersion;}
+    bool getCanBeInstantiatedOnlyOncePerProcess() const {return mCanBeInstantiatedOnlyOncePerProcess;}
+    bool getCanGetAndSetFMUstate() const {return mCanGetAndSetFMUstate;}
+    bool getCanNotUseMemoryManagementFunctions() const {return mCanNotUseMemoryManagementFunctions;}
+    bool getCanSerializeFMUstate() const {return mCanSerializeFMUstate;}
+    bool getCompletedIntegratorStepNotNeeded() const {return mCompletedIntegratorStepNotNeeded;}
+    bool getNeedsExecutionTool() const {return mNeedsExecutionTool;}
+    bool getProvidesDirectionalDerivative() const {return mProvidesDirectionalDerivative;}
+    bool getCanInterpolateInputs() const {return mCanInterpolateInputs;}
+    int getMaxOutputDerivativeOrder() const {return mMaxOutputDerivativeOrder;}
+  private:
+    QString mDescription;
+    QString mFMIKind;
+    QString mFMIVersion;
+    QString mGenerationTool;
+    QString mGuid;
+    QString mGenerationDateAndTime;
+    QString mModelName;
+    QString mPath;
+    QString mVersion;
+    bool mCanBeInstantiatedOnlyOncePerProcess = false;
+    bool mCanGetAndSetFMUstate = false;
+    bool mCanNotUseMemoryManagementFunctions = false;
+    bool mCanSerializeFMUstate = false;
+    bool mCompletedIntegratorStepNotNeeded = false;
+    bool mNeedsExecutionTool = false;
+    bool mProvidesDirectionalDerivative = false;
+    bool mCanInterpolateInputs = false;
+    int mMaxOutputDerivativeOrder = 0;
+  };
 
-class Element
-{
-public:
-  ~Element();
-  void deserialize(const QJsonObject &jsonObject);
-  const QString& getName() const {return mName;}
-  const QString& getType() const {return mType;}
-  const ElementGeometry& getGeometry() const {return mGeometry;}
-  const QVector<Element*>& getElements() const {return mElements;}
-  const QVector<Connector*>& getConnectors() const {return mConnectors;}
-  const QVector<Connection*>& getConnections() const {return mConnections;}
-  bool isSystem() const;
-  bool isComponent() const;
-  void setGeometry(const ElementGeometry &geometry) {mGeometry = geometry;}
-  bool hasFMUInfo() const {return mHasFMUInfo;}
-  const FMUInfo& getFMUInfo() const {return mFMUInfo;}
-private:
-  QString mName;
-  QString mType;
-  ElementGeometry mGeometry;
-  QVector<Element*> mElements;
-  QVector<Connector*> mConnectors;
-  QVector<Connection*> mConnections;
-  bool mHasFMUInfo = false;
-  FMUInfo mFMUInfo;
-};
+  class ConnectorGeometry
+  {
+  public:
+    void deserialize(const QJsonObject &jsonObject);
+    double getX() const {return x;}
+    double getY() const {return y;}
+    void setX(double value) {x = value;}
+    void setY(double value) {y = value;}
+  private:
+    double x = 0.5;
+    double y = 0.5;
+  };
 
-class Model
-{
-public:
-  Model(const QJsonArray &elementsJson);
-  ~Model();
+  class ElementGeometry
+  {
+  public:
+    void deserialize(const QJsonObject &jsonObject);
+    double getX1() const {return x1;}
+    double getY1() const {return y1;}
+    double getX2() const {return x2;}
+    double getY2() const {return y2;}
+    double getRotation() const {return rotation;}
+    QString getIconSource() const {return iconSource;}
+    double getIconRotation() const {return iconRotation;}
+    bool getIconFlip() const {return iconFlip;}
+    bool getIconFixedAspectRatio() const {return iconFixedAspectRatio;}
+    void setX1(double value) {x1 = value;}
+    void setY1(double value) {y1 = value;}
+    void setX2(double value) {x2 = value;}
+    void setY2(double value) {y2 = value;}
+    void setRotation(double value) {rotation = value;}
+  private:
+    double x1 = -10.0;
+    double y1 = -10.0;
+    double x2 = 10.0;
+    double y2 = 10.0;
+    double rotation = 0.0;
+    QString iconSource;
+    double iconRotation = 0.0;
+    bool iconFlip = false;
+    bool iconFixedAspectRatio = false;
+  };
 
-  void deserialize();
-  void printElement(const OMSModel::Element *element, int indent = 0);
-  void debugPrint();
-  const QVector<Element*>& getRootElements() const {return mRootElements;}
-private:
-  QJsonArray mElementsJson;
-  QVector<Element*> mRootElements;
-};
+  class ConnectionGeometry
+  {
+  public:
+    void deserialize(const QJsonObject &jsonObject);
+    const QVector<double>& getPointsX() const {return mPointsX;}
+    const QVector<double>& getPointsY() const {return mPointsY;}
+    void setPoints(const QVector<double> &pointsX, const QVector<double> &pointsY)
+    {
+      mPointsX = pointsX;
+      mPointsY = pointsY;
+    }
+    int getPointsSize() const {return qMin(mPointsX.size(), mPointsY.size());}
+  private:
+      QVector<double> mPointsX;
+      QVector<double> mPointsY;
+  };
+
+  class Connection
+  {
+  public:
+    void deserialize(const QJsonObject &jsonObject);
+    QString getConnectorA() const {return mConA;}
+    QString getConnectorB() const {return mConB;}
+    const ConnectionGeometry& getGeometry() const {return mGeometry;}
+    ConnectionGeometry& getGeometry() {return mGeometry;}
+  private:
+    QString mConA;
+    QString mConB;
+    ConnectionGeometry mGeometry;
+  };
+
+  class Connector
+  {
+  public:
+    void deserialize(const QJsonObject &jsonObject);
+    const QString& getName() const {return mName;}
+    const Causality& getCausality() const {return mCausality;}
+    const SignalType& getSignalType() const {return mSignalType;}
+    const ConnectorGeometry& getGeometry() const {return mGeometry;}
+    static Causality causalityFromString(const QString &value);
+    static SignalType signalTypeFromString(const QString &value);
+    static QString signalTypeToString(SignalType signalType);
+    static QString causalityToString(Causality causality);
+    QString getCausalityString() const;
+    QString getSignalTypeString() const;
+    void setGeometry(const ConnectorGeometry &geometry) {mGeometry = geometry;}
+    bool isInput() const {return mCausality == Causality::oms_causality_input;}
+    bool isOutput() const {return mCausality == Causality::oms_causality_output;}
+    bool isParameter() const {return mCausality == Causality::oms_causality_parameter;}
+  private:
+    QString mName;
+    Causality mCausality;
+    SignalType mSignalType;
+    ConnectorGeometry mGeometry;
+  };
+
+  class Element
+  {
+  public:
+    ~Element();
+    void deserialize(const QJsonObject &jsonObject);
+    const QString& getName() const {return mName;}
+    const QString& getType() const {return mType;}
+    const ElementGeometry& getGeometry() const {return mGeometry;}
+    const QVector<Element*>& getElements() const {return mElements;}
+    const QVector<Connector*>& getConnectors() const {return mConnectors;}
+    const QVector<Connection*>& getConnections() const {return mConnections;}
+    bool isSystem() const;
+    bool isComponent() const;
+    void setGeometry(const ElementGeometry &geometry) {mGeometry = geometry;}
+    bool hasFMUInfo() const {return mHasFMUInfo;}
+    const FMUInfo& getFMUInfo() const {return mFMUInfo;}
+  private:
+    QString mName;
+    QString mType;
+    ElementGeometry mGeometry;
+    QVector<Element*> mElements;
+    QVector<Connector*> mConnectors;
+    QVector<Connection*> mConnections;
+    bool mHasFMUInfo = false;
+    FMUInfo mFMUInfo;
+  };
+
+  class Model
+  {
+  public:
+    Model(const QJsonArray &elementsJson);
+    ~Model();
+    void deserialize();
+    void printElement(const OMSModel::Element *element, int indent = 0);
+    void debugPrint();
+    const QVector<Element*>& getRootElements() const {return mRootElements;}
+  private:
+    QJsonArray mElementsJson;
+    QVector<Element*> mRootElements;
+  };
 }
 
 #endif // OMSMODEL_H
