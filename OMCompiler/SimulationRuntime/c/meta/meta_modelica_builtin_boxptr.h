@@ -35,6 +35,10 @@
 #if !defined(META_MODELICA_BUILTIN_BOXPTR__H) || defined(GEN_META_MODELICA_BUILTIN_BOXPTR)
 #define META_MODELICA_BUILTIN_BOXPTR__H
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 #ifdef GEN_META_MODELICA_BUILTIN_BOXPTR
 #define boxptr_unOp(name,box,unbox,op) modelica_metatype name(threadData_t *threadData, void* a) {return  (void*)box(op(unbox(a)));}
 #define boxptr_unOpThreadData(name,box,unbox,op) modelica_metatype name(threadData_t *threadData, void* a) {return  (void*)box(op(threadData,unbox(a)));}
@@ -139,5 +143,9 @@ boxptr_wrapper2Args(boxptr_cons,mmc_mk_cons)
 #undef boxptr_wrapper1Arg
 #undef boxptr_wrapper2Args
 #undef boxptr_fn2ArgsThreadData
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif

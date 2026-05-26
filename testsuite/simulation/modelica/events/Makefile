@@ -12,6 +12,7 @@ bug4419.mos \
 ChatteringEventsTest1.mos \
 ChatteringEventsTest2.mos \
 CheckEvents.mos \
+discreteRelations.mos \
 EventDelay.mos \
 EventIteration.mos \
 EventLoop.mos \
@@ -47,8 +48,9 @@ ZeroCrossingAlg.mos \
 DEPENDENCIES = \
 *.mo \
 *.mos \
+EventTests.mat \
 Makefile \
-EventTests.mat
+ReferenceFiles
 
 
 CLEAN = `ls | grep -w -v -f deps.tmp`

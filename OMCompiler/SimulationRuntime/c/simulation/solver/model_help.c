@@ -112,7 +112,7 @@ void updateDiscreteSystem(DATA *data, threadData_t *threadData)
 
   data->simulationInfo->callStatistics.updateDiscreteSystem++;
 
-  data->callback->function_updateRelations(data, threadData, 1);
+  data->callback->function_updateRelations(data, threadData, 0);
   updateRelationsPre(data);
   storeRelations(data);
 

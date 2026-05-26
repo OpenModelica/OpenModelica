@@ -36,6 +36,10 @@
 #include "../util/omc_init.h"
 #include "../util/base_array.h"
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 /*
  *
  * adrpo: define this to have mmk_mk_* function tracing
@@ -260,5 +264,9 @@ struct mmc_string {
 #define MMC_FALSE (mmc_mk_icon(0))
 #define MMC_TRUE (mmc_mk_icon(1))
 #define mmc_mk_bcon(X) ((X) != 0 ? MMC_TRUE : MMC_FALSE)
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif /* META_MODELICA_DATA_H_*/
