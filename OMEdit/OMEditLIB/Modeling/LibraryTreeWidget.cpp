@@ -423,8 +423,6 @@ QString LibraryTreeItem::getTooltip() const {
                 .arg(Helper::fileLocation).arg(mFileName);
     } else if (isFMUComponent()) {
       //const OMSModel::FMUInfo &pfmuInfo = mpOMSModelElement->getFMUInfo();
-      // qDebug() << "FMUinfo description " <<fmuInfo.getDescription();
-      // qDebug() << "FMUinfo kind " <<fmuInfo.getFMIKind();
       tooltip = QString("%1 %2<br />%3: %4<br />%5: %6<br />%7: %8<br />%9: %10")
                   .arg(Helper::name).arg(mName)
                   .arg(Helper::description).arg(mpFMUInfo.getDescription())
@@ -1376,34 +1374,12 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(LibraryTreeItem::Librar
  * \param pParentLibraryTreeItem
  * \param pOMSElement
  * \param pOMSConnector
- * \param pOMSBusConnector
- * \param pOMSTLMBusConnector
  * \param row
  * \return
  */
-// LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(QString name, QString nameStructure, QString path, bool isSaved, LibraryTreeItem *pParentLibraryTreeItem,
-//                                                          oms_element_t *pOMSElement, oms_connector_t *pOMSConnector, oms_busconnector_t *pOMSBusConnector, int row)
-// {
-//   qDebug() << "Arun";
-//   if (row == -1) {
-//     row = pParentLibraryTreeItem->childrenSize();
-//   }
-//   QModelIndex index = libraryTreeItemIndex(pParentLibraryTreeItem);
-//   beginInsertRows(index, row, row);
-//   LibraryTreeItem *pLibraryTreeItem = createOMSLibraryTreeItemImpl(name, nameStructure, path, isSaved, pParentLibraryTreeItem,
-//                                                                    pOMSElement, pOMSConnector, pOMSBusConnector);
-//   pParentLibraryTreeItem->insertChild(row, pLibraryTreeItem);
-//   endInsertRows();
-//   // create library tree items
-//   createLibraryTreeItems(pLibraryTreeItem);
-//   return pLibraryTreeItem;
-// }
-
-
 LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(QString name, QString nameStructure, QString path, bool isSaved, LibraryTreeItem *pParentLibraryTreeItem,
                                                          OMSModel::Element *pOMSElement, OMSModel::Connector *pOMSConnector, int row)
 {
-  qDebug() << "library tree Anand";
   if (row == -1) {
     row = pParentLibraryTreeItem->childrenSize();
   }
@@ -1680,9 +1656,7 @@ void LibraryTreeModel::showModelWidget(LibraryTreeItem *pLibraryTreeItem, bool s
     MainWindow::instance()->switchToModelingPerspectiveSlot();
   }
   if (!pLibraryTreeItem->getModelWidget()) {
-    qDebug() << "E1";
     ModelWidget *pModelWidget = new ModelWidget(pLibraryTreeItem, MainWindow::instance()->getModelWidgetContainer());
-    qDebug() << "E2";
     pLibraryTreeItem->setModelWidget(pModelWidget);
   }
   /* Ticket #3797
@@ -2393,13 +2367,11 @@ void LibraryTreeModel::createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
     }
   } else if (pLibraryTreeItem->isSSP()) {
     if (pLibraryTreeItem->isTopLevel()) {
-      qDebug() << "creating libraryTree ITems TopLevel:" ;
       QJsonArray pElementsJson;
       if (OMSProxy::instance()->getElementsJson(pLibraryTreeItem->getNameStructure(), pElementsJson)) {
         OMSModel::Model *pOMSModel = new OMSModel::Model(pElementsJson);
         pOMSModel->deserialize();
-        qDebug() << "MOLUS:";
-        pOMSModel->debugPrint();
+        //pOMSModel->debugPrint();
         pLibraryTreeItem->setOMSModel(pOMSModel);
         createLibraryTreeItemsFromOMSModel(pOMSModel->getRootElements(), pLibraryTreeItem);
       }
@@ -2672,11 +2644,7 @@ LibraryTreeItem* LibraryTreeModel::createOMSLibraryTreeItemImpl(QString name, QS
 
   if (pOMSElement) {
     QString type = pOMSElement->getType();
-    qDebug() << "set OMS element Json:" << type << pOMSElement->hasFMUInfo();
   }
-
-  qDebug() << "JSON node type:" << name << " => " <<pLibraryTreeItem->isSystemElement() << "=>" << pLibraryTreeItem->isComponentElement();
-
 
   // SYSTEM
   // if (type == "system") {

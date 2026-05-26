@@ -5705,7 +5705,6 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     mUpdateModelTimer.setInterval(500);
     connect(&mUpdateModelTimer, SIGNAL(timeout()), SLOT(updateModel()));
   } else if (mpLibraryTreeItem->isSSP()) {
-    qDebug() << "inside SSP" << mpLibraryTreeItem->isSystemElement();
     // icon graphics framework
     if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
       mpIconGraphicsScene = new GraphicsScene(StringHandler::Icon, this);
@@ -5723,9 +5722,7 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     mpDiagramGraphicsView->hide();
     mpLibraryTreeItem->getClassText(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel());
     createUndoStack();
-    qDebug() << "Icon1";
     drawOMSModelIconElements();
-    qDebug() << "Icon2";
   } else {
     // icon graphics framework
     mpIconGraphicsScene = 0;
@@ -6184,12 +6181,10 @@ ShapeAnnotation* ModelWidget::drawOMSModelElement()
   } else {
     // Rectangle shape as base
     RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation(mpIconGraphicsView);
-    qDebug() << "drawing oms element: " << mpLibraryTreeItem->isSystemElement() << "=>" << mpLibraryTreeItem->isComponentElement();
     if (mpLibraryTreeItem->isSystemElement()) {
       pRectangleAnnotation->setLineColor(QColor(128, 128, 0));
       pRectangleAnnotation->setFillColor(Qt::white);
     } else if (mpLibraryTreeItem->isFMUComponent()) {
-      qDebug() << "FMU component detected";
       pRectangleAnnotation->setFillColor(Qt::white);
     } else if (mpLibraryTreeItem->isTableComponent()) {
       pRectangleAnnotation->setLinePattern(StringHandler::LineNone);
@@ -6231,10 +6226,8 @@ ShapeAnnotation* ModelWidget::drawOMSModelElement()
         pInfoTextAnnotation->setLineColor(QColor(128, 128, 0));
         pInfoTextAnnotation->setTextString("SYS");
       } else {
-        qDebug() << "drawing fmu type";
         pInfoTextAnnotation->setTextString(QString("%1 %2").arg(mpLibraryTreeItem->getFMUInfo().getFMIKind())
                                             .arg(mpLibraryTreeItem->getFMUInfo().getFMIVersion()));
-        qDebug() << "drawing fmu type completed";
       }
       pInfoTextAnnotation->drawCornerItems();
       pInfoTextAnnotation->setCornerItemsActiveOrPassive();
@@ -7215,9 +7208,7 @@ void ModelWidget::drawOMSModelIconElements()
   if (mpLibraryTreeItem->isTopLevel()) {
     return;
   } else if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
-    qDebug() << "draw1";
     drawOMSModelElement();
-    qDebug() << "draw2";
     // draw connectors
     for (int i = 0 ; i < mpLibraryTreeItem->childrenSize() ; i++) {
       LibraryTreeItem *pChildLibraryTreeItem = mpLibraryTreeItem->childAt(i);

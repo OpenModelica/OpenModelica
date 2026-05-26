@@ -47,6 +47,7 @@
 #include <QJsonDocument>
 #include <QJsonArray>
 
+#include <QApplication>
 #include <QTime>
 
 #define LOG_COMMAND(command,args) \
@@ -60,9 +61,22 @@ GuiRequestSocket::GuiRequestSocket()
   mpContext = zmq_ctx_new();
   mpSocket = zmq_socket(mpContext, ZMQ_REQ);
 
+  // Prevent GUI from hanging indefinitely if the Python server crashes or hangs.
+  int timeout = 10000; // 10 s
+  zmq_setsockopt(mpSocket, ZMQ_RCVTIMEO, &timeout, sizeof(timeout));
+  zmq_setsockopt(mpSocket, ZMQ_SNDTIMEO, &timeout, sizeof(timeout));
+
+  // Allow sending a new request after a timeout without receiving the stale reply,
+  // so the REQ socket does not enter the EFSM error state on the next send.
+#ifndef ZMQ_REQ_RELAXED
+#define ZMQ_REQ_RELAXED 99
+#endif
+  int relaxed = 1;
+  zmq_setsockopt(mpSocket, ZMQ_REQ_RELAXED, &relaxed, sizeof(relaxed));
+
   int rc = zmq_bind(mpSocket, "tcp://127.0.0.1:*");
   if (rc == 0) {
-    char endPoint[30];
+    char endPoint[64];
     size_t endPointSize = sizeof(endPoint);
     zmq_getsockopt(mpSocket, ZMQ_LAST_ENDPOINT, endPoint, &endPointSize);
     mEndPoint = QString(endPoint);
@@ -80,31 +94,36 @@ GuiRequestSocket::~GuiRequestSocket()
   zmq_ctx_destroy(mpContext);
 }
 
-void GuiRequestSocket::sendCommand(const QJsonObject &command, QJsonObject &reply)
+bool GuiRequestSocket::sendCommand(const QJsonObject &command, QJsonObject &reply)
 {
   if (!mSocketConnected)
-      return;
+    return false;
 
   QByteArray data = QJsonDocument(command).toJson(QJsonDocument::Compact);
 
   zmq_msg_t msg;
   zmq_msg_init_size(&msg, data.size());
-
   memcpy(zmq_msg_data(&msg), data.constData(), data.size());
 
   int rc = zmq_msg_send(&msg, mpSocket, 0);
   zmq_msg_close(&msg);
 
-  if (rc == -1)
-      return;
+  if (rc == -1) {
+    qDebug() << "ZMQ send failed for" << command["method"].toString() << ":" << strerror(errno);
+    return false;
+  }
 
   zmq_msg_t rep;
   zmq_msg_init(&rep);
-
   rc = zmq_msg_recv(&rep, mpSocket, 0);
+
   if (rc == -1) {
-      zmq_msg_close(&rep);
-      return;
+    zmq_msg_close(&rep);
+    if (errno == EAGAIN)
+      qDebug() << "ZMQ recv timeout for" << command["method"].toString() << ": Python server did not reply within 10 s";
+    else
+      qDebug() << "ZMQ recv failed for" << command["method"].toString() << ":" << strerror(errno);
+    return false;
   }
 
   QByteArray response((char*)zmq_msg_data(&rep), zmq_msg_size(&rep));
@@ -112,10 +131,10 @@ void GuiRequestSocket::sendCommand(const QJsonObject &command, QJsonObject &repl
 
   QJsonDocument doc = QJsonDocument::fromJson(response);
   if (!doc.isObject())
-      return;
+    return false;
 
   reply = doc.object();
-  //emit replyReady(doc.object());
+  return true;
 }
 
 
@@ -199,6 +218,29 @@ OMSProxy::OMSProxy()
 
 OMSProxy::~OMSProxy()
 {
+  // send graceful shutdown so Python can clean up before we close the socket
+  // also check the process state directly — mServerReady can be stale if the process
+  // crashed right before the destructor runs and the finished() signal hasn't been processed yet
+  if (mServerReady && mpGuiRequestSocket && mpGuiProcess && mpGuiProcess->state() == QProcess::Running) {
+    QJsonObject obj;
+    obj["method"] = "shutdown";
+    QJsonObject reply;
+    mpGuiRequestSocket->sendCommand(obj, reply);
+  }
+
+  // wait for process to exit cleanly, then force-kill if it doesn't
+  if (mpGuiProcess && mpGuiProcess->state() != QProcess::NotRunning) {
+    mpGuiProcess->waitForFinished(3000);
+    if (mpGuiProcess->state() != QProcess::NotRunning) {
+      mpGuiProcess->kill();
+      mpGuiProcess->waitForFinished(1000);
+    }
+  }
+
+  // close ZMQ socket and destroy context
+  delete mpGuiRequestSocket;
+  mpGuiRequestSocket = nullptr;
+
   if (mpCommunicationLogFile) {
     fclose(mpCommunicationLogFile);
   }
@@ -216,12 +258,8 @@ void OMSProxy::startGuiServer()
   connect(mpGuiProcess, &QProcess::errorOccurred, this, &OMSProxy::guiProcessError);
   connect(mpGuiProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &OMSProxy::guiProcessFinished);
 
-  //connect(mpGuiProcess, SIGNAL(readyReadStandardOutput()), SLOT(readSimulationStandardOutput()));
-  //connect(mpGuiProcess, SIGNAL(readyReadStandardError()), SLOT(readSimulationStandardError()));
-
-  // VERY IMPORTANT: capture python output
-  connect(mpGuiProcess, &QProcess::readyReadStandardOutput, [=](){ qDebug().noquote() << mpGuiProcess->readAllStandardOutput();});
-  connect(mpGuiProcess, &QProcess::readyReadStandardError, [=](){ qDebug().noquote() << mpGuiProcess->readAllStandardError();});
+  connect(mpGuiProcess, &QProcess::readyReadStandardOutput, this, &OMSProxy::readGuiServerStandardOutput);
+  connect(mpGuiProcess, &QProcess::readyReadStandardError, this, &OMSProxy::readGuiServerStandardError);
   QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
   env.insert("PYTHONPATH", "C:/ProgramData/anaconda3/python.exe");
   mpGuiProcess->setProcessEnvironment(env);
@@ -233,40 +271,60 @@ void OMSProxy::startGuiServer()
 
 void OMSProxy::guiProcessStarted()
 {
-  qDebug() << "GUI server process started at" << mpGuiRequestSocket->endPoint();
   mServerReady = true;
+  MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+    tr("OMSimulator Python server started at %1.").arg(mpGuiRequestSocket->endPoint()),
+    Helper::scriptingKind, Helper::notificationLevel));
 }
 
 void OMSProxy::guiProcessError(QProcess::ProcessError error)
 {
-  qDebug() << "GUI server process error:" << error;
+  mServerReady = false;
+  QString msg;
+  switch (error) {
+    case QProcess::FailedToStart:
+      msg = tr("OMSimulator Python server failed to start. Check the Python executable and script paths.");
+      break;
+    case QProcess::Crashed:
+      msg = tr("OMSimulator Python server crashed.");
+      break;
+    case QProcess::Timedout:
+      msg = tr("OMSimulator Python server timed out.");
+      break;
+    default:
+      msg = tr("OMSimulator Python server process error (%1).").arg(error);
+      break;
+  }
+  MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg,
+    Helper::scriptingKind, Helper::errorLevel));
 }
 
 void OMSProxy::guiProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
-  qDebug() << "GUI server finished with code" << exitCode << "status" << exitStatus;
+  mServerReady = false;
+  if (exitStatus == QProcess::CrashExit || exitCode != 0) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+      tr("OMSimulator Python server exited unexpectedly (exit code %1).").arg(exitCode),
+      Helper::scriptingKind, Helper::errorLevel));
+  }
 }
 
-/*!
- * \brief OMSSimulationOutputWidget::readSimulationStandardOutput
- * Reads the simulation stdout.
- */
-void OMSProxy::readSimulationStandardOutput()
+void OMSProxy::readGuiServerStandardOutput()
 {
-  //writeSimulationOutput(QString(mpSimulationProcess->readAllStandardOutput()), StringHandler::Unknown);
-  QString output = mpGuiProcess->readAllStandardOutput();
-  qDebug() << "read output: " << output;
+  QString output = QString::fromUtf8(mpGuiProcess->readAllStandardOutput()).trimmed();
+  if (!output.isEmpty()) {
+    qDebug().noquote() << output;
+    emit logGUIMessage(MessageItem(MessageItem::Modelica, output, Helper::scriptingKind, Helper::notificationLevel));
+  }
 }
 
-/*!
- * \brief OMSSimulationOutputWidget::readSimulationStandardError
- * Reads the simulation stderr.
- */
-void OMSProxy::readSimulationStandardError()
+void OMSProxy::readGuiServerStandardError()
 {
-  //writeSimulationOutput(QString(mpSimulationProcess->readAllStandardError()), StringHandler::Error);
-  QString output = mpGuiProcess->readAllStandardError();
-  qDebug() << "error:" << output;
+  QString error = QString::fromUtf8(mpGuiProcess->readAllStandardError()).trimmed();
+  if (!error.isEmpty()) {
+    qDebug().noquote() << error;
+    emit logGUIMessage(MessageItem(MessageItem::Modelica, error, Helper::scriptingKind, Helper::errorLevel));
+  }
 }
 
 /*!
@@ -444,6 +502,72 @@ bool OMSProxy::statusToBool(oms_status_enu_t status)
 }
 
 /*!
+ * \brief OMSProxy::sendZmqCommand
+ * Centralized helper for all ZMQ JSON commands: logs the command and reply to the
+ * communication log file (same format as the old oms_* calls), checks for errors,
+ * and posts a message to the GUI message widget on failure.
+ * Returns true only when the Python server replies with status "ok".
+ */
+bool OMSProxy::sendZmqCommand(const QJsonObject &obj, QJsonObject &reply)
+{
+  QString method = obj["method"].toString();
+
+  if (!mServerReady) {
+    QString msg = tr("OMSimulator Python server is not running. Cannot execute '%1'.").arg(method);
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg,
+      Helper::scriptingKind, Helper::errorLevel));
+    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+    return false;
+  }
+
+  QElapsedTimer commandTime;
+  commandTime.start();
+
+  if (mpCommunicationLogFile) {
+    QString entry = QString("zmq(%1) %2\n")
+      .arg(QJsonDocument(obj).toJson(QJsonDocument::Compact),
+           QTime::currentTime().toString("hh:mm:ss:zzz"));
+    fputs(entry.toUtf8().constData(), mpCommunicationLogFile);
+  }
+
+  bool ok = mpGuiRequestSocket->sendCommand(obj, reply);
+  double elapsed = commandTime.elapsed() / 1000.0;
+
+  if (mpCommunicationLogFile) {
+    mTotalOMSCallsTime += elapsed;
+    QString status = ok ? reply["status"].toString() : "timeout";
+    fputs(QString("%1 %2\n").arg(status, QTime::currentTime().toString("hh:mm:ss:zzz")).toUtf8().constData(), mpCommunicationLogFile);
+    fputs(QString("#s#; %1; %2; '%3'\n\n")
+      .arg(QString::number(elapsed, 'f', 6),
+           QString::number(mTotalOMSCallsTime, 'f', 6),
+           method).toUtf8().constData(), mpCommunicationLogFile);
+  }
+
+  if (MainWindow::instance()->isDebug())
+    fflush(NULL);
+
+  if (!ok) {
+    QString msg = tr("OMSimulator server did not respond to '%1' (timeout or crash). Check the Messages window for Python errors.").arg(method);
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::errorLevel));
+    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+    return false;
+  }
+
+  QString status = reply["status"].toString();
+  if (status == "failed") {
+    QString error = reply["error"].toString();
+    QString msg = error.isEmpty()
+      ? tr("'%1' failed (no details from server).").arg(method)
+      : tr("'%1' failed: %2").arg(method, error);
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::errorLevel));
+    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+    return false;
+  }
+
+  return true;
+}
+
+/*!
  * \brief OMSProxy::addBus
  * Adds a bus.
  * \param cref
@@ -495,21 +619,7 @@ bool OMSProxy::addConnection(QString crefA, QString crefB, bool suppressUnitConv
     qDebug() <<"addConnection json : " << QJsonDocument(obj).toJson(QJsonDocument::Compact);
 
     QJsonObject reply;
-    //emit sendGuiCommand(obj);
-    mpGuiRequestSocket->sendCommand(obj, reply);
-
-
-    qDebug() << "inside add Connection completed";
-
-    QString method = reply["method"].toString();
-    QString status_ = reply["status"].toString();
-
-    QString msg = tr("%1 : %2").arg(method).arg(status_);
-
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::notificationLevel));
-
-    return true;
-
+    return sendZmqCommand(obj, reply);
 }
 
 /*!
@@ -552,23 +662,8 @@ bool OMSProxy::addConnector(QString cref, OMSModel::Causality causality, OMSMode
 
   obj["args"] = args_;
 
-  qDebug() << QJsonDocument(obj).toJson(QJsonDocument::Compact);
-
   QJsonObject reply;
-  //emit sendGuiCommand(obj);
-  mpGuiRequestSocket->sendCommand(obj, reply);
-
-
-  qDebug() << "inside add Connector completed";
-
-  QString method = reply["method"].toString();
-  QString status_ = reply["status"].toString();
-
-  QString msg = tr("%1 : %2").arg(method).arg(status_);
-
-  MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::notificationLevel));
-
-  return true;
+  return sendZmqCommand(obj, reply);
 }
 /*!
  * \brief OMSProxy::addConnectorToBus
@@ -599,12 +694,12 @@ bool OMSProxy::addConnectorToBus(QString busCref, QString connectorCref)
 bool OMSProxy::addSubModel(QString cref, QString fmuPath)
 {
     qDebug() << "addSubModel Arun: " << cref;
-  QString command = "oms_addSubModel";
-  QStringList args;
-  args << "\"" + cref + "\"" << fmuPath;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_addSubModel(cref.toUtf8().constData(), fmuPath.toUtf8().constData());
-  logResponse(command, status, &commandTime);
+  // QString command = "oms_addSubModel";
+  // QStringList args;
+  // args << "\"" + cref + "\"" << fmuPath;
+  // LOG_COMMAND(command, args);
+  // oms_status_enu_t status = oms_addSubModel(cref.toUtf8().constData(), fmuPath.toUtf8().constData());
+  // logResponse(command, status, &commandTime);
 
   QStringList parts = cref.split(".");
   parts.removeFirst();
@@ -615,24 +710,9 @@ bool OMSProxy::addSubModel(QString cref, QString fmuPath)
   args_["new_name"] = "resources/" + parts.last() + ".fmu";
   obj["args"] = args_;
 
-  qDebug() << QJsonDocument(obj).toJson(QJsonDocument::Compact);
   QJsonObject reply;
-  //emit sendGuiCommand(obj);
-  mpGuiRequestSocket->sendCommand(obj, reply);
-
-
-  qDebug() << "inside add submodel completed";
-
-  QString method = reply["method"].toString();
-  QString status_ = reply["status"].toString();
-
-  QString msg = tr("%1 : %2").arg(method).arg(status_);
-
-  MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::notificationLevel));
-
-
+  return sendZmqCommand(obj, reply);
   //return statusToBool(status);
-  return true;
 }
 
 /*!
@@ -715,14 +795,8 @@ bool OMSProxy::addSystem(QString cref)
   obj["method"] = "addSystem";
   obj["args"] = args;
 
-  qDebug() <<"addSystem-json : " << QJsonDocument(obj).toJson(QJsonDocument::Compact);
-
   QJsonObject reply;
-  mpGuiRequestSocket->sendCommand(obj, reply);
-
-  //return reply["status"].toString() == "ok";
-
-  return true;
+  return sendZmqCommand(obj, reply);
 }
 
 /*!
@@ -967,14 +1041,8 @@ bool OMSProxy::getElementsJson(QString cref, QJsonArray &elements)
   obj["args"] = args;
 
   QJsonObject reply;
-  mpGuiRequestSocket->sendCommand(obj, reply);
-
-  QString status = reply["status"].toString();
-
-  if (status != "ok") {
-    qDebug() << "getElements failed";
+  if (!sendZmqCommand(obj, reply))
     return false;
-  }
 
   elements = reply["elements"].toArray();
   //qDebug().noquote() << "getElements reply:" << QJsonDocument(reply).toJson(QJsonDocument::Indented);
@@ -1269,16 +1337,12 @@ bool OMSProxy::exportSnapshot(QString cref, QString *pContents)
   obj["method"] = "exportSnapshot";
   QJsonObject reply;
 
-  mpGuiRequestSocket->sendCommand(obj, reply);
-  qDebug() << "inside export snapshot completed";
+  if (!sendZmqCommand(obj, reply))
+    return false;
 
-  QString method = reply["method"].toString();
-  QString status = reply["status"].toString();
   QString xml = reply["xml"].toString();
-  if (!xml.isEmpty()) {
-      *pContents = xml;
-  }
-  //QString msg = tr("%1 : %2").arg(method).arg(status);
+  if (!xml.isEmpty())
+    *pContents = xml;
   return true;
 }
 
@@ -1331,33 +1395,23 @@ bool OMSProxy::importSnapshot(QString cref, QString snapshot, QString* pNewCref)
  * \param cref
  * \return
  */
-bool OMSProxy::newModel(QString cref)
+bool OMSProxy::newModel(QString cref, QString systemName)
 {
-  QString command = "oms_newModel";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_newModel(cref.toUtf8().constData());
-  logResponse(command, status, &commandTime);
+  // QString command = "oms_newModel";
+  // QStringList args;
+  // args << "\"" + cref + "\"";
+  // LOG_COMMAND(command, args);
+  // oms_status_enu_t status = oms_newModel(cref.toUtf8().constData());
+  // logResponse(command, status, &commandTime);
 
   QJsonObject obj, args_;
   obj["method"] = "newModel";
   args_["name"] = cref;
-  args_["system_name"] = "Root";
+  args_["system_name"] = systemName;
   obj["args"] = args_;
-  qDebug() << QJsonDocument(obj).toJson(QJsonDocument::Compact);
   QJsonObject reply;
-  mpGuiRequestSocket->sendCommand(obj, reply);
-
-  QString method = reply["method"].toString();
-  QString status_ = reply["status"].toString();
-
-  QString msg = tr("%1 : %2").arg(method).arg(status_);
-
-  MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::notificationLevel));
-
-  return true;
-
+  return sendZmqCommand(obj, reply);
+  //return statusToBool(status);
 }
 
 /*!
@@ -1529,13 +1583,8 @@ bool OMSProxy::setConnectionGeometry(QString crefA, QString crefB, const OMSMode
   obj["method"] = "setConnectionGeometry";
   obj["args"] = args;
 
-  qDebug() << "setConnection Geometry args : " <<QJsonDocument(obj).toJson(QJsonDocument::Compact);
-
   QJsonObject reply;
-  mpGuiRequestSocket->sendCommand(obj, reply);
-
-  //return reply["status"].toString() == "ok";
-  return true;
+  return sendZmqCommand(obj, reply);
 }
 
 /*!
@@ -1579,10 +1628,7 @@ bool OMSProxy::setConnectorGeometry(QString cref, const OMSModel::ConnectorGeome
   obj["args"] = args;
 
   QJsonObject reply;
-  mpGuiRequestSocket->sendCommand(obj, reply);
-
-  //return reply["status"].toString() == "ok";
-  return true;
+  return sendZmqCommand(obj, reply);
 }
 
 /*!
@@ -1630,10 +1676,7 @@ bool OMSProxy::setElementGeometry(QString cref, const OMSModel::ElementGeometry 
   obj["args"] = args;
 
   QJsonObject reply;
-  mpGuiRequestSocket->sendCommand(obj, reply);
-
-  //return reply["status"].toString() == "ok";
-  return true;
+  return sendZmqCommand(obj, reply);
 }
 
 /*!
