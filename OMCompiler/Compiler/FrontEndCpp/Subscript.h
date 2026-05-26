@@ -36,7 +36,11 @@
 #ifndef SUBSCRIPT_H
 #define SUBSCRIPT_H
 
+#include <cstddef>
 #include <iosfwd>
+#include <stdint.h>
+#include <string>
+#include <string_view>
 #include <vector>
 
 #include "MetaModelica.h"

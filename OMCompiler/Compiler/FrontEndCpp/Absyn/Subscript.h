@@ -37,27 +37,32 @@
 #define ABSYN_SUBSCRIPT_H
 
 #include <iosfwd>
-#include <vector>
 #include <memory>
+#include <vector>
 
 #include "MetaModelica.h"
-#include "Expression.h"
 
 namespace OpenModelica::Absyn
 {
+  class Expression;
+
   class Subscript
   {
     public:
       Subscript(MetaModelica::Record value);
+      Subscript(const Subscript &other);
+      Subscript(Subscript &&other) noexcept;
+      Subscript& operator=(const Subscript &other);
+      Subscript& operator=(Subscript &&other) noexcept;
       ~Subscript() noexcept;
 
       MetaModelica::Value toAbsyn() const noexcept;
       static MetaModelica::Value toAbsynList(const std::vector<Subscript> &subs) noexcept;
 
-      const std::optional<Expression>& expression() const noexcept;
+      const Expression* expression() const noexcept;
 
     private:
-      std::optional<Expression> _subscript;
+      std::unique_ptr<Expression> _subscript;
   };
 
   std::ostream& operator<< (std::ostream& os, const Subscript &subscript);

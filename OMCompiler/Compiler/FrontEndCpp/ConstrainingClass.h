@@ -38,8 +38,8 @@
 
 #include <memory>
 
-#include "MetaModelica.h"
 #include "InstNode.h"
+#include "MetaModelica.h"
 
 namespace OpenModelica
 {

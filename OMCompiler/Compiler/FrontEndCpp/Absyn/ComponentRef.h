@@ -36,17 +36,16 @@
 #ifndef ABSYN_COMPONENTREF_H
 #define ABSYN_COMPONENTREF_H
 
+#include <iosfwd>
 #include <string>
 #include <utility>
 #include <vector>
-#include <iosfwd>
 
 #include "MetaModelica.h"
+#include "Subscript.h"
 
 namespace OpenModelica::Absyn
 {
-  class Subscript;
-
   class ComponentRef
   {
     public:

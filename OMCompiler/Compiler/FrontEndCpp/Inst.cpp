@@ -33,18 +33,23 @@
  *
  */
 
-#include <string>
-#include <vector>
+#include <bits/chrono.h>
 #include <iostream>
-#include <chrono>
+#include <memory>
+#include <string>
 #include <utility>
+#include <vector>
 
-#include "MetaModelica.h"
-#include "Absyn/Element.h"
 #include "Absyn/Class.h"
+#include "Absyn/ClassDef.h"
+#include "Absyn/Element.h"
+#include "Absyn/ElementPrefixes.h"
 #include "ClassNode.h"
-#include "Class.h"
 #include "Inst.h"
+#include "InstNodeType.h"
+#include "MetaModelica.h"
+#include "Prefixes.h"
+#include "Restriction.h"
 
 using namespace OpenModelica;
 

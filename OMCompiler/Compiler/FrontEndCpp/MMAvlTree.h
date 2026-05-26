@@ -36,9 +36,9 @@
 #ifndef MMAVLTREE_H
 #define MMAVLTREE_H
 
+#include <algorithm>
 #include <ostream>
 #include <string>
-#include <algorithm>
 
 #include "MetaModelica.h"
 

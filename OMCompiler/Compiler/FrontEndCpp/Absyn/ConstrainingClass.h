@@ -38,10 +38,10 @@
 
 #include <iosfwd>
 
-#include "MetaModelica.h"
-#include "Path.h"
-#include "Modifier.h"
 #include "Comment.h"
+#include "MetaModelica.h"
+#include "Modifier.h"
+#include "Path.h"
 
 namespace OpenModelica::Absyn
 {

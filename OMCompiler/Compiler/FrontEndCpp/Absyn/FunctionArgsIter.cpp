@@ -33,9 +33,14 @@
  *
  */
 
-#include "Util.h"
-#include "Iterator.h"
+#include <ostream>
+
+#include "Absyn/Expression.h"
+#include "Absyn/FunctionArgs.h"
 #include "FunctionArgsIter.h"
+#include "Iterator.h"
+#include "Util.h"
+#include "meta_modelica.h"
 
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;

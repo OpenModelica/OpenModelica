@@ -36,6 +36,7 @@
 #ifndef ELEMENTVISITOR_H
 #define ELEMENTVISITOR_H
 
+#include "Absyn/Element.h"
 #include "Class.h"
 #include "Component.h"
 #include "DefineUnit.h"

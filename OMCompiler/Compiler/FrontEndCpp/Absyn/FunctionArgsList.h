@@ -36,13 +36,16 @@
 #ifndef ABSYN_FUNCTIONARGSLIST_H
 #define ABSYN_FUNCTIONARGSLIST_H
 
-#include <string>
-#include <vector>
-#include <memory>
-#include <utility>
 #include <iosfwd>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
+#include "Absyn/Expression.h"
 #include "FunctionArgs.h"
+#include "MetaModelica.h"
+#include "meta_modelica.h"
 
 namespace OpenModelica::Absyn
 {

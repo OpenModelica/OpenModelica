@@ -34,13 +34,34 @@
  */
 
 #include <ostream>
+#include <stdexcept>
+#include <string_view>
+#include <utility>
 
-#include "Util.h"
-#include "Subscript.h"
+#include "Absyn/ComponentRef.h"
+#include "Absyn/FunctionArgs.h"
+#include "Absyn/Operator.h"
 #include "Expression.h"
+#include "Subscript.h"
+#include "Util.h"
+#include "meta_modelica.h"
 
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;
+
+class SubscriptedExp : public Expression::Base
+{
+  public:
+    explicit SubscriptedExp(MetaModelica::Record value);
+
+    std::unique_ptr<Base> clone() const noexcept override;
+    MetaModelica::Value toAbsyn() const noexcept override;
+    void print(std::ostream &os) const noexcept override;
+
+  private:
+    Expression _exp;
+    std::vector<Subscript> _subscripts;
+};
 
 constexpr int INTEGER = 0;
 constexpr int REAL = 1;

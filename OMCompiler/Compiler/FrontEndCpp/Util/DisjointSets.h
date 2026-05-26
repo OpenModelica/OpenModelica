@@ -36,8 +36,8 @@
 #ifndef DISJOINTSETS_H
 #define DISJOINTSETS_H
 
-#include <vector>
 #include <unordered_map>
+#include <vector>
 
 namespace OpenModelica
 {

@@ -36,10 +36,15 @@
 #ifndef ABSYN_FUNCTIONARGSITER_H
 #define ABSYN_FUNCTIONARGSITER_H
 
+#include <iosfwd>
+#include <memory>
 #include <vector>
 
+#include "Absyn/Iterator.h"
 #include "Expression.h"
 #include "FunctionArgs.h"
+#include "MetaModelica.h"
+#include "meta_modelica.h"
 
 namespace OpenModelica::Absyn
 {

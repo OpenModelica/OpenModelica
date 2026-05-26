@@ -36,10 +36,16 @@
 #ifndef COMPONENTREF_H
 #define COMPONENTREF_H
 
+#include <algorithm>
+#include <cstddef>
 #include <iosfwd>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
+#include "InstNode.h"
 #include "MetaModelica.h"
-
 #include "Subscript.h"
 #include "Type.h"
 

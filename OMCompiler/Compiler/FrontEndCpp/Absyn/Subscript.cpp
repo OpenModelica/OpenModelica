@@ -35,9 +35,10 @@
 
 #include <ostream>
 
-#include "Util.h"
 #include "Expression.h"
 #include "Subscript.h"
+#include "Util.h"
+#include "meta_modelica.h"
 
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;
@@ -49,10 +50,26 @@ extern "C" record_description Absyn_Subscript_NOSUB__desc;
 extern "C" record_description Absyn_Subscript_SUBSCRIPT__desc;
 
 Subscript::Subscript(MetaModelica::Record value)
-  : _subscript{value.index() == SUBSCRIPT ? std::make_optional<Expression>(value[0]) : std::nullopt}
+  : _subscript{value.index() == SUBSCRIPT ? std::make_unique<Expression>(value[0]) : nullptr}
 {
 
 }
+
+Subscript::Subscript(const Subscript &other)
+  : _subscript{other._subscript ? std::make_unique<Expression>(*other._subscript) : nullptr}
+{
+
+}
+
+Subscript::Subscript(Subscript &&other) noexcept = default;
+
+Subscript& Subscript::operator=(const Subscript &other)
+{
+  _subscript = other._subscript ? std::make_unique<Expression>(*other._subscript) : nullptr;
+  return *this;
+}
+
+Subscript& Subscript::operator=(Subscript &&other) noexcept = default;
 
 Subscript::~Subscript() noexcept = default;
 
@@ -70,14 +87,14 @@ MetaModelica::Value Subscript::toAbsynList(const std::vector<Subscript> &subs) n
   return MetaModelica::List{subs, [](const auto &s) { return s.toAbsyn(); }};
 }
 
-const std::optional<Expression>& Subscript::expression() const noexcept
+const Expression* Subscript::expression() const noexcept
 {
-  return _subscript;
+  return _subscript.get();
 }
 
 std::ostream& OpenModelica::Absyn::operator<< (std::ostream& os, const Subscript &subscript)
 {
-  auto &e = subscript.expression();
+  const Expression *e = subscript.expression();
 
   if (e) {
     os << *e;

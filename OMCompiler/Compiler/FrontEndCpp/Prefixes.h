@@ -36,10 +36,13 @@
 #ifndef PREFIXES_H
 #define PREFIXES_H
 
-#include <string_view>
+#include <iosfwd>
 #include <memory>
 #include <optional>
-#include <iosfwd>
+#include <stdint.h>
+#include <string>
+#include <string_view>
+#include <vector>
 
 #include "MetaModelica.h"
 

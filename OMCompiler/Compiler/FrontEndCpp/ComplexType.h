@@ -39,6 +39,7 @@
 #include <memory>
 #include <vector>
 
+#include "InstNode.h"
 #include "MetaModelica.h"
 
 namespace OpenModelica

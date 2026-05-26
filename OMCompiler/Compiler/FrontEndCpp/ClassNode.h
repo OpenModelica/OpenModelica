@@ -36,9 +36,18 @@
 #ifndef CLASSNODE_H
 #define CLASSNODE_H
 
-#include "InstNode.h"
-
+#include <memory>
 #include <optional>
+#include <string>
+
+#include "Absyn/Class.h"
+#include "Absyn/Element.h"
+#include "Class.h"
+#include "InstNode.h"
+#include "InstNodeType.h"
+#include "MetaModelica.h"
+#include "Prefixes.h"
+#include "Util/MMCache.h"
 
 namespace OpenModelica
 {

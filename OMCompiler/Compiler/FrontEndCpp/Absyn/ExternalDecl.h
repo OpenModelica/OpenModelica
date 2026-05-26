@@ -36,15 +36,17 @@
 #ifndef ABSYN_EXTERNALDECL_H
 #define ABSYN_EXTERNALDECL_H
 
-#include <string>
-#include <optional>
-#include <vector>
-#include <memory>
 #include <iosfwd>
+#include <memory>
+#include <optional>
+#include <string>
+#include <vector>
 
-#include "MetaModelica.h"
+#include "Absyn/Expression.h"
 #include "Annotation.h"
 #include "ComponentRef.h"
+#include "MetaModelica.h"
+#include "meta_modelica.h"
 
 namespace OpenModelica::Absyn
 {

@@ -33,9 +33,11 @@
  *
  */
 
+#include <utility>
+
 #include "Absyn/Component.h"
-#include "InstNode.h"
 #include "Component.h"
+#include "InstNode.h"
 
 using namespace OpenModelica;
 

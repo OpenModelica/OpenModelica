@@ -36,13 +36,17 @@
 #ifndef ABSYN_EQUATION_H
 #define ABSYN_EQUATION_H
 
+#include <iosfwd>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
-#include <iosfwd>
+#include <utility>
+#include <vector>
 
-#include "Expression.h"
 #include "Comment.h"
+#include "Expression.h"
+#include "MetaModelica.h"
 #include "SourceInfo.h"
 
 namespace OpenModelica::Absyn

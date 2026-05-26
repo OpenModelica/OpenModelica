@@ -35,10 +35,9 @@
 
 #include <cassert>
 #include <sstream>
-#include <ostream>
 
-#include "Util.h"
 #include "Path.h"
+#include "Util.h"
 
 using namespace OpenModelica;
 

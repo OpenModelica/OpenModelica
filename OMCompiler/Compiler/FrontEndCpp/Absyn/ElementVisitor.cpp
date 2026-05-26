@@ -33,6 +33,11 @@
  *
  */
 
+#include "Absyn/Class.h"
+#include "Absyn/Component.h"
+#include "Absyn/DefineUnit.h"
+#include "Absyn/Extends.h"
+#include "Absyn/Import.h"
 #include "ElementVisitor.h"
 
 using namespace OpenModelica;

@@ -35,10 +35,12 @@
 
 #include <ostream>
 
-#include "Util.h"
+#include "Absyn/Annotation.h"
+#include "Absyn/ComponentRef.h"
 #include "Expression.h"
 #include "ExternalDecl.h"
-#include "Subscript.h"
+#include "Util.h"
+#include "meta_modelica.h"
 
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;

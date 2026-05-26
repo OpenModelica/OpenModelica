@@ -36,10 +36,10 @@
 #ifndef ABSYN_IMPORTPATH_H
 #define ABSYN_IMPORTPATH_H
 
-#include <optional>
-#include <vector>
-#include <string>
 #include <iosfwd>
+#include <optional>
+#include <string>
+#include <vector>
 
 #include "MetaModelica.h"
 #include "Path.h"

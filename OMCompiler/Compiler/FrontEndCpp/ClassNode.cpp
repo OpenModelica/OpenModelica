@@ -33,9 +33,14 @@
  *
  */
 
+#include <stdint.h>
+#include <utility>
+
 #include "Absyn/Class.h"
+#include "Absyn/ElementPrefixes.h"
 #include "Class.h"
 #include "ClassNode.h"
+#include "meta_modelica.h"
 
 using namespace OpenModelica;
 

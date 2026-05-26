@@ -39,10 +39,15 @@
 #include <memory>
 
 #include "Absyn/AbsynFwd.h"
+#include "Absyn/Comment.h"
+#include "Absyn/Component.h"
 #include "Attributes.h"
 #include "Binding.h"
+#include "InstNode.h"
+#include "MetaModelica.h"
 #include "Modifier.h"
 #include "Prefixes.h"
+#include "SourceInfo.h"
 #include "Type.h"
 
 namespace OpenModelica

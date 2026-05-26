@@ -36,10 +36,11 @@
 #ifndef ABSYN_OPERATOR_H
 #define ABSYN_OPERATOR_H
 
-#include <string_view>
 #include <ostream>
+#include <string_view>
 
 #include "MetaModelica.h"
+#include "meta_modelica.h"
 
 namespace OpenModelica::Absyn
 {

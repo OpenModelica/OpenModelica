@@ -33,9 +33,12 @@
  *
  */
 
+#include <stdexcept>
+#include <stdint.h>
 #include <utility>
 
 #include "Absyn/Component.h"
+#include "Absyn/ElementPrefixes.h"
 #include "Component.h"
 #include "ComponentNode.h"
 

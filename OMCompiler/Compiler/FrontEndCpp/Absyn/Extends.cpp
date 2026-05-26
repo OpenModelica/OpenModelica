@@ -34,9 +34,15 @@
  */
 
 #include <ostream>
+#include <string_view>
 
+#include "Absyn/Annotation.h"
+#include "Absyn/Element.h"
+#include "Absyn/Modifier.h"
 #include "ElementVisitor.h"
 #include "Extends.h"
+#include "SourceInfo.h"
+#include "meta_modelica.h"
 
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;

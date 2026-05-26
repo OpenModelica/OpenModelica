@@ -36,9 +36,9 @@
 #ifndef DIMENSION_H
 #define DIMENSION_H
 
+#include <iosfwd>
 #include <memory>
 #include <optional>
-#include <iosfwd>
 
 #include "MetaModelica.h"
 

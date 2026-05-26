@@ -34,8 +34,11 @@
  */
 
 #include <ostream>
+#include <string_view>
 
+#include "Absyn/ConstrainingClass.h"
 #include "ElementPrefixes.h"
+#include "meta_modelica.h"
 
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;

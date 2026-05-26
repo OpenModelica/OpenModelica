@@ -36,12 +36,12 @@
 #ifndef ABSYN_ELEMENT_H
 #define ABSYN_ELEMENT_H
 
-#include <memory>
 #include <iosfwd>
+#include <memory>
 
 #include "MetaModelica.h"
-#include "SourceInfo.h"
 #include "Prefixes.h"
+#include "SourceInfo.h"
 
 namespace OpenModelica::Absyn
 {

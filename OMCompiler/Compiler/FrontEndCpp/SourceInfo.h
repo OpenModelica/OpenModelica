@@ -36,9 +36,11 @@
 #ifndef SOURCEINFO_H
 #define SOURCEINFO_H
 
-#include "MetaModelica.h"
-#include <string>
 #include <iosfwd>
+#include <stdint.h>
+#include <string>
+
+#include "MetaModelica.h"
 
 namespace OpenModelica
 {

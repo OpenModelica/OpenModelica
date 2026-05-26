@@ -33,6 +33,8 @@
  *
  */
 
+#include <initializer_list>
+
 #include "Modifier.h"
 
 using namespace OpenModelica;

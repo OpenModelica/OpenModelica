@@ -33,6 +33,8 @@
  *
  */
 
+#include <utility>
+
 #include "NameNode.h"
 
 using namespace OpenModelica;

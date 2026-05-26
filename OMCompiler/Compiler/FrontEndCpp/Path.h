@@ -37,11 +37,11 @@
 #define PATH_H
 
 #include <cstddef>
-#include <string>
-#include <vector>
-#include <utility>
-#include <string_view>
 #include <iosfwd>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 #include "MetaModelica.h"
 

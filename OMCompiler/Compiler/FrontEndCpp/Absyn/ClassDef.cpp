@@ -34,14 +34,20 @@
  */
 
 #include <ostream>
+#include <stdexcept>
 
-#include "Util.h"
-#include "Class.h"
-#include "ExternalDecl.h"
-#include "Equation.h"
+#include "Absyn/Comment.h"
+#include "Absyn/ElementAttributes.h"
+#include "Absyn/Modifier.h"
+#include "Absyn/TypeSpec.h"
 #include "Algorithm.h"
-#include "Element.h"
+#include "Class.h"
 #include "ClassDef.h"
+#include "Element.h"
+#include "Equation.h"
+#include "ExternalDecl.h"
+#include "Util.h"
+#include "meta_modelica.h"
 
 constexpr int PARTS = 0;
 constexpr int CLASS_EXTENDS = 1;

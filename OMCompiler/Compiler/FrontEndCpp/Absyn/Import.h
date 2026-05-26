@@ -37,11 +37,12 @@
 #define ABSYN_IMPORT_H
 
 #include <iosfwd>
+#include <memory>
 
-#include "MetaModelica.h"
+#include "../Prefixes.h"
 #include "Element.h"
 #include "ImportPath.h"
-#include "../Prefixes.h"
+#include "MetaModelica.h"
 
 namespace OpenModelica::Absyn
 {

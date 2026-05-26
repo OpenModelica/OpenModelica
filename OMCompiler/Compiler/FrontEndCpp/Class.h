@@ -36,16 +36,24 @@
 #ifndef CLASS_H
 #define CLASS_H
 
+#include <memory>
 #include <optional>
+#include <vector>
 
 #include "Absyn/AbsynFwd.h"
+#include "Absyn/Class.h"
+#include "Absyn/ClassDef.h"
 #include "Absyn/ConstrainingClass.h"
-#include "Modifier.h"
 #include "Attributes.h"
+#include "ClassTree.h"
+#include "Dimension.h"
+#include "InstNode.h"
+#include "MetaModelica.h"
+#include "Modifier.h"
 #include "Prefixes.h"
 #include "Restriction.h"
 #include "Type.h"
-#include "ClassTree.h"
+#include "meta_modelica.h"
 
 namespace OpenModelica
 {

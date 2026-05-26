@@ -33,16 +33,16 @@
  *
  */
 
-#include <sstream>
-#include <algorithm>
-#include <utility>
-#include <stdexcept>
 #include <cassert>
+#include <initializer_list>
+#include <sstream>
+#include <stdexcept>
+#include <utility>
 
-#include "Util.h"
-#include "InstNode.h"
 #include "ComplexType.h"
+#include "InstNode.h"
 #include "Type.h"
+#include "Util.h"
 
 using namespace OpenModelica;
 

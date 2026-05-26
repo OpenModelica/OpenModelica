@@ -37,8 +37,11 @@
 #define INSTNODETYPE_H
 
 #include <memory>
+#include <string>
 #include <unordered_map>
+#include <utility>
 
+#include "Absyn/Element.h"
 #include "MetaModelica.h"
 
 namespace OpenModelica

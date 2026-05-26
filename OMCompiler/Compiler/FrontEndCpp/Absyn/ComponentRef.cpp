@@ -33,12 +33,13 @@
  *
  */
 
-#include <sstream>
 #include <ostream>
+#include <stdexcept>
 
-#include "Util.h"
-#include "Subscript.h"
 #include "ComponentRef.h"
+#include "Subscript.h"
+#include "Util.h"
+#include "meta_modelica.h"
 
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;

@@ -37,9 +37,9 @@
 #define MMCACHE_H
 
 #include <memory>
-#include <vector>
-#include <unordered_map>
 #include <stdexcept>
+#include <unordered_map>
+#include <vector>
 
 #include "MetaModelica.h"
 

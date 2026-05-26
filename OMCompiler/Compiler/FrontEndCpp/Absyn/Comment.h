@@ -36,11 +36,13 @@
 #ifndef ABSYN_COMMENT_H
 #define ABSYN_COMMENT_H
 
-#include <optional>
 #include <iosfwd>
+#include <optional>
+#include <string>
+#include <string_view>
 
-#include "MetaModelica.h"
 #include "Annotation.h"
+#include "MetaModelica.h"
 
 namespace OpenModelica::Absyn
 {

@@ -36,18 +36,18 @@
 #ifndef ABSYN_MODIFIER_H
 #define ABSYN_MODIFIER_H
 
-#include <vector>
-#include <utility>
-#include <string>
+#include <iosfwd>
 #include <memory>
 #include <optional>
+#include <string>
 #include <string_view>
-#include <iosfwd>
+#include <utility>
+#include <vector>
 
-#include "MetaModelica.h"
-#include "Prefixes.h"
 #include "Element.h"
 #include "Expression.h"
+#include "MetaModelica.h"
+#include "Prefixes.h"
 #include "SourceInfo.h"
 
 namespace OpenModelica::Absyn

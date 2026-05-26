@@ -34,10 +34,13 @@
  */
 
 #include <cassert>
+#include <string>
 
 #include "Absyn/Import.h"
-#include "InstNode.h"
+#include "Absyn/ImportPath.h"
 #include "Import.h"
+#include "InstNode.h"
+#include "SourceInfo.h"
 
 using namespace OpenModelica;
 

@@ -33,12 +33,13 @@
  *
  */
 
-#include <stdexcept>
 #include <ostream>
 
-#include "Util.h"
+#include "Absyn/Expression.h"
 #include "Element.h"
 #include "Modifier.h"
+#include "Util.h"
+#include "meta_modelica.h"
 
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;

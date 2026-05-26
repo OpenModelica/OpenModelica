@@ -38,6 +38,7 @@
 
 #include <bitset>
 #include <iosfwd>
+#include <ostream>
 #include <string>
 
 #include "MetaModelica.h"

@@ -36,24 +36,27 @@
 #ifndef ABSYN_CLASSDEF_H
 #define ABSYN_CLASSDEF_H
 
-#include <memory>
-#include <vector>
 #include <iosfwd>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
-#include "MetaModelica.h"
-#include "TypeSpec.h"
-#include "Element.h"
-#include "Modifier.h"
-#include "ElementAttributes.h"
+#include "Absyn/Algorithm.h"
+#include "Absyn/Equation.h"
 #include "Comment.h"
+#include "Element.h"
+#include "ElementAttributes.h"
+#include "MetaModelica.h"
+#include "Modifier.h"
+#include "Path.h"
+#include "TypeSpec.h"
 #include "Util/IndirectForwardIterator.h"
 
 namespace OpenModelica::Absyn
 {
   class Class;
   class ExternalDecl;
-  class Equation;
-  class Algorithm;
   struct ClassDefVisitor;
 
   class ClassDef

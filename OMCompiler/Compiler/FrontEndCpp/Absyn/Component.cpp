@@ -35,9 +35,17 @@
 
 #include <ostream>
 
+#include "Absyn/Comment.h"
+#include "Absyn/Element.h"
+#include "Absyn/ElementAttributes.h"
+#include "Absyn/ElementPrefixes.h"
+#include "Absyn/Subscript.h"
+#include "Absyn/TypeSpec.h"
+#include "Component.h"
 #include "ElementVisitor.h"
 #include "Expression.h"
-#include "Component.h"
+#include "SourceInfo.h"
+#include "meta_modelica.h"
 
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;

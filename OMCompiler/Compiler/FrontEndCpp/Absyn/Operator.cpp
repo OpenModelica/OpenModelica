@@ -34,11 +34,11 @@
  */
 
 #include <array>
-#include <string>
 #include <stdexcept>
-#include <ostream>
+#include <string>
 
 #include "Operator.h"
+#include "meta_modelica.h"
 
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;

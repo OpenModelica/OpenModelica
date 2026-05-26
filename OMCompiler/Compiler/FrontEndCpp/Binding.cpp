@@ -33,7 +33,10 @@
  *
  */
 
+#include <initializer_list>
+
 #include "Binding.h"
+#include "meta_modelica.h"
 
 using namespace OpenModelica;
 

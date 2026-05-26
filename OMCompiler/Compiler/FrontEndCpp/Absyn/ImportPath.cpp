@@ -33,12 +33,14 @@
  *
  */
 
-#include <utility>
-#include <stdexcept>
 #include <ostream>
+#include <stdexcept>
+#include <tuple>
+#include <utility>
 
-#include "Util.h"
 #include "ImportPath.h"
+#include "Util.h"
+#include "meta_modelica.h"
 
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;

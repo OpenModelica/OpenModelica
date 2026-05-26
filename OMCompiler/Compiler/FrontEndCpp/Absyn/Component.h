@@ -36,16 +36,20 @@
 #ifndef ABSYN_COMPONENT_H
 #define ABSYN_COMPONENT_H
 
-#include <string>
+#include <iosfwd>
+#include <memory>
 #include <optional>
+#include <string>
 
-#include "MetaModelica.h"
-#include "Element.h"
-#include "ElementPrefixes.h"
-#include "ElementAttributes.h"
-#include "TypeSpec.h"
+#include "Absyn/Modifier.h"
 #include "Comment.h"
+#include "Element.h"
+#include "ElementAttributes.h"
+#include "ElementPrefixes.h"
 #include "Expression.h"
+#include "MetaModelica.h"
+#include "Prefixes.h"
+#include "TypeSpec.h"
 
 namespace OpenModelica::Absyn
 {

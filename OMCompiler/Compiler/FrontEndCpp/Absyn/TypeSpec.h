@@ -37,6 +37,7 @@
 #define ABSYN_TYPESPEC_H
 
 #include <iosfwd>
+#include <vector>
 
 #include "MetaModelica.h"
 #include "Path.h"

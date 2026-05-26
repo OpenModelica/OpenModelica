@@ -36,16 +36,18 @@
 #ifndef TYPE_H
 #define TYPE_H
 
+#include <iosfwd>
+#include <memory>
+#include <optional>
+#include <stddef.h>
 #include <string>
 #include <string_view>
 #include <vector>
-#include <optional>
-#include <memory>
-#include <iosfwd>
 
-#include "MetaModelica.h"
-
+#include "ComplexType.h"
 #include "Dimension.h"
+#include "InstNodeType.h"
+#include "MetaModelica.h"
 #include "Path.h"
 
 namespace OpenModelica

@@ -36,17 +36,19 @@
 #ifndef ABSYN_STATEMENT_H
 #define ABSYN_STATEMENT_H
 
+#include <iosfwd>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
-#include <optional>
-#include <vector>
 #include <utility>
-#include <iosfwd>
+#include <vector>
 
 #include "Comment.h"
-#include "SourceInfo.h"
 #include "Expression.h"
+#include "MetaModelica.h"
+#include "SourceInfo.h"
+#include "meta_modelica.h"
 
 namespace OpenModelica::Absyn
 {

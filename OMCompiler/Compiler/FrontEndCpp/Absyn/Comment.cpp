@@ -34,8 +34,12 @@
  */
 
 #include <ostream>
+#include <utility>
 
+#include "Absyn/Annotation.h"
+#include "Absyn/Modifier.h"
 #include "Comment.h"
+#include "meta_modelica.h"
 
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;

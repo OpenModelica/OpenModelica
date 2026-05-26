@@ -35,9 +35,11 @@
 
 #include <ostream>
 
-#include "Util.h"
+#include "Absyn/FunctionArgs.h"
 #include "Expression.h"
 #include "FunctionArgsList.h"
+#include "Util.h"
+#include "meta_modelica.h"
 
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;

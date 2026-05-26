@@ -33,11 +33,9 @@
  *
  */
 
-#include <ostream>
-
-#include "FunctionArgsList.h"
-#include "FunctionArgsIter.h"
 #include "FunctionArgs.h"
+#include "FunctionArgsIter.h"
+#include "FunctionArgsList.h"
 
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;

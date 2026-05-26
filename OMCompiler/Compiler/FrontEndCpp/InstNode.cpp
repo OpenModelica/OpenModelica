@@ -36,10 +36,10 @@
 #include <stdexcept>
 #include <string>
 
-#include "ComponentNode.h"
 #include "ClassNode.h"
-#include "NameNode.h"
+#include "ComponentNode.h"
 #include "InstNode.h"
+#include "NameNode.h"
 
 using namespace OpenModelica;
 

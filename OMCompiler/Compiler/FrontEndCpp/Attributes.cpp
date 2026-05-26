@@ -36,6 +36,7 @@
 #include "Absyn/ElementAttributes.h"
 #include "Absyn/ElementPrefixes.h"
 #include "Attributes.h"
+#include "meta_modelica.h"
 
 using namespace OpenModelica;
 

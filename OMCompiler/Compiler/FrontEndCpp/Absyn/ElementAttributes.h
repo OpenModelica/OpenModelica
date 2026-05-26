@@ -36,8 +36,8 @@
 #ifndef ABSYN_ELEMENTATTRIBUTES_H
 #define ABSYN_ELEMENTATTRIBUTES_H
 
-#include <vector>
 #include <iosfwd>
+#include <vector>
 
 #include "MetaModelica.h"
 #include "Prefixes.h"

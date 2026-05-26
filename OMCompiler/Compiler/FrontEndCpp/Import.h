@@ -39,12 +39,12 @@
 #include <optional>
 
 #include "Absyn/AbsynFwd.h"
+#include "Absyn/Import.h"
+#include "InstNode.h"
 #include "MetaModelica.h"
 
 namespace OpenModelica
 {
-  class InstNode;
-
   class Import
   {
     public:

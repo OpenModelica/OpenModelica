@@ -35,7 +35,10 @@
 
 #include <ostream>
 
+#include "Absyn/Comment.h"
+#include "Absyn/Modifier.h"
 #include "ConstrainingClass.h"
+#include "meta_modelica.h"
 
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;

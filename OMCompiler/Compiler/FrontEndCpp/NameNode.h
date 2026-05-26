@@ -36,7 +36,11 @@
 #ifndef NAMENODE_H
 #define NAMENODE_H
 
+#include <memory>
+#include <string>
+
 #include "InstNode.h"
+#include "MetaModelica.h"
 
 namespace OpenModelica
 {

@@ -36,18 +36,20 @@
 #ifndef METAMODELICA_H
 #define METAMODELICA_H
 
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
+#include <functional>
+#include <initializer_list>
+#include <iosfwd>
+#include <iterator>
+#include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
-#include <iosfwd>
-#include <optional>
-#include <functional>
-#include <memory>
-#include <initializer_list>
-#include <iterator>
-#include <vector>
 #include <type_traits>
+#include <vector>
+
+#include "meta_modelica.h"
 
 struct record_description;
 

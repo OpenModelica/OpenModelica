@@ -34,14 +34,11 @@
  */
 
 #include <cassert>
-#include <stdexcept>
 #include <ostream>
-
-extern "C" {
-#include "meta/meta_modelica.h"
-}
+#include <stdexcept>
 
 #include "MetaModelica.h"
+#include "meta/meta_modelica.h"
 
 using namespace OpenModelica::MetaModelica;
 
@@ -1013,4 +1010,3 @@ template<> Tuple       Value::to() const { return toTuple(); }
 template<> Record      Value::to() const { return toRecord(); }
 template<> Pointer     Value::to() const { return toPointer(); }
 template<> Mutable     Value::to() const { return toMutable(); }
-

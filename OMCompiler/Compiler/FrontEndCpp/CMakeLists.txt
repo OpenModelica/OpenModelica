@@ -46,12 +46,27 @@ else()
   target_compile_options(omcfrontendcpp PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
-# Include what you see
+# Include-what-you-use
 # Ensures all C++ files include all used headers, no transient includes
 find_program(IWYU_PATH NAMES include-what-you-use iwyu)
+find_program(IWYU_FIX_PATH NAMES fix_include)
 message(STATUS "IWYU: ${IWYU_PATH}")
+message(STATUS "IWYU fix: ${IWYU_FIX_PATH}")
 if(IWYU_PATH)
   set(IWYU_COMMAND ${IWYU_PATH} -Xiwyu --no_fwd_decls)
-  set_property(TARGET omcfrontendcpp PROPERTY CXX_INCLUDE_WHAT_YOU_USE ${IWYU_PATH})
-  set_property(TARGET omcfrontendcppabsyn PROPERTY CXX_INCLUDE_WHAT_YOU_USE ${IWYU_PATH})
+  set_property(TARGET omcfrontendcpp PROPERTY CXX_INCLUDE_WHAT_YOU_USE ${IWYU_COMMAND})
+  set_property(TARGET omcfrontendcppabsyn PROPERTY CXX_INCLUDE_WHAT_YOU_USE ${IWYU_COMMAND})
+endif()
+if(IWYU_PATH AND IWYU_FIX_PATH)
+  add_custom_target(iwyu-fix
+    COMMAND iwyu_tool -p ${CMAKE_BINARY_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/Absyn
+      ${CMAKE_CURRENT_SOURCE_DIR}/Util
+      -- -Xiwyu --no_fwd_decls
+      | ${IWYU_FIX_PATH}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Running include-what-you-use and fixing includes"
+    VERBATIM
+  )
 endif()

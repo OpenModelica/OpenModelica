@@ -33,9 +33,6 @@
  *
  */
 
-#include <type_traits>
-#include <ostream>
-
 #include "Restriction.h"
 
 using namespace OpenModelica;

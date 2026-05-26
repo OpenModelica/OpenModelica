@@ -36,12 +36,24 @@
 #ifndef CLASSTREE_H
 #define CLASSTREE_H
 
+#include <memory>
+#include <optional>
+#include <stddef.h>
+#include <stdint.h>
 #include <string>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 
 #include "Absyn/AbsynFwd.h"
+#include "Absyn/Class.h"
+#include "Absyn/ClassDef.h"
+#include "Absyn/Component.h"
+#include "Absyn/Extends.h"
+#include "Absyn/Import.h"
+#include "Import.h"
+#include "InstNode.h"
 #include "MetaModelica.h"
+#include "meta_modelica.h"
 
 namespace OpenModelica
 {

@@ -35,10 +35,10 @@
 
 #include <ostream>
 #include <stdexcept>
-
-#include "Prefixes.h"
+#include <stdint.h>
 
 #include "Dimension.h"
+#include "Prefixes.h"
 
 using namespace OpenModelica;
 

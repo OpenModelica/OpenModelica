@@ -34,8 +34,11 @@
  */
 
 #include <ostream>
+#include <string_view>
 
+#include "Absyn/Subscript.h"
 #include "ElementAttributes.h"
+#include "meta_modelica.h"
 
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;

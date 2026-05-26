@@ -37,17 +37,20 @@
 #define INSTNODE_H
 
 #include <memory>
+#include <string>
+#include <vector>
 
 #include "Absyn/AbsynFwd.h"
-#include "Util/MMCache.h"
-#include "MetaModelica.h"
 #include "InstNodeType.h"
-#include "Type.h"
+#include "MetaModelica.h"
 #include "Path.h"
+#include "Type.h"
+#include "Util/MMCache.h"
 
 namespace OpenModelica
 {
   class Class;
+  class InstNode;
 
   std::unique_ptr<InstNode> node_from_mm(MetaModelica::Record value);
 

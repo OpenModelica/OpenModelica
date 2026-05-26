@@ -33,13 +33,20 @@
  *
  */
 
-#include "MMAvlTree.h"
+#include <algorithm>
+#include <stdexcept>
+#include <utility>
+
+#include "Absyn/Element.h"
 #include "Absyn/ElementVisitor.h"
-#include "Util.h"
-#include "ClassNode.h"
 #include "Class.h"
-#include "Import.h"
+#include "ClassNode.h"
 #include "ClassTree.h"
+#include "Import.h"
+#include "MMAvlTree.h"
+#include "Util.h"
+#include "Util/IndirectForwardIterator.h"
+#include "meta_modelica.h"
 
 using namespace OpenModelica;
 

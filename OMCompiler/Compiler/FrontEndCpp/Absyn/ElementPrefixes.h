@@ -38,9 +38,9 @@
 
 #include <iosfwd>
 
-#include "Prefixes.h"
 #include "ConstrainingClass.h"
 #include "MetaModelica.h"
+#include "Prefixes.h"
 
 namespace OpenModelica::Absyn
 {

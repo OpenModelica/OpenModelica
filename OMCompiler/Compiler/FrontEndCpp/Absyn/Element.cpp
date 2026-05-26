@@ -33,14 +33,15 @@
  *
  */
 
-#include <ostream>
+#include <stdexcept>
+#include <utility>
 
-#include "Import.h"
-#include "Extends.h"
 #include "Class.h"
 #include "Component.h"
 #include "DefineUnit.h"
 #include "Element.h"
+#include "Extends.h"
+#include "Import.h"
 
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;

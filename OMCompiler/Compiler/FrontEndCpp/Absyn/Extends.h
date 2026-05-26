@@ -36,12 +36,15 @@
 #ifndef ABSYN_EXTENDS_H
 #define ABSYN_EXTENDS_H
 
-#include "MetaModelica.h"
+#include <iosfwd>
+#include <memory>
+
+#include "Annotation.h"
 #include "Element.h"
+#include "MetaModelica.h"
+#include "Modifier.h"
 #include "Path.h"
 #include "Prefixes.h"
-#include "Modifier.h"
-#include "Annotation.h"
 
 namespace OpenModelica::Absyn
 {

@@ -36,11 +36,12 @@
 #ifndef ABSYN_ITERATOR_H
 #define ABSYN_ITERATOR_H
 
-#include <string>
+#include <iosfwd>
 #include <optional>
+#include <string>
 
-#include "MetaModelica.h"
 #include "Expression.h"
+#include "MetaModelica.h"
 
 namespace OpenModelica::Absyn
 {

@@ -33,15 +33,14 @@
  *
  */
 
-extern "C" {
-#include "meta/meta_modelica_builtin.h"
-}
+#include <initializer_list>
 
-#include "MMUnorderedMap.h"
 #include "Absyn/Element.h"
-#include "Absyn/ElementVisitor.h"
 #include "InstNode.h"
 #include "InstNodeType.h"
+#include "MMUnorderedMap.h"
+#include "meta_modelica.h"
+#include "meta_modelica_builtin_boxvar.h"
 
 using namespace OpenModelica;
 

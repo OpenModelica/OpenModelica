@@ -36,14 +36,18 @@
 #ifndef ABSYN_CLASS_H
 #define ABSYN_CLASS_H
 
+#include <iosfwd>
+#include <memory>
 #include <string>
 
-#include "MetaModelica.h"
-#include "Element.h"
-#include "ElementPrefixes.h"
-#include "Restriction.h"
 #include "ClassDef.h"
 #include "Comment.h"
+#include "Element.h"
+#include "ElementPrefixes.h"
+#include "MetaModelica.h"
+#include "Prefixes.h"
+#include "Restriction.h"
+#include "SourceInfo.h"
 
 namespace OpenModelica::Absyn
 {

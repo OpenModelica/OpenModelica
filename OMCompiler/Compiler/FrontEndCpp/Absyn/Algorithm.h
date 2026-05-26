@@ -36,6 +36,9 @@
 #ifndef ABSYN_ALGORITHM_H
 #define ABSYN_ALGORITHM_H
 
+#include <iosfwd>
+#include <vector>
+
 #include "MetaModelica.h"
 #include "Statement.h"
 

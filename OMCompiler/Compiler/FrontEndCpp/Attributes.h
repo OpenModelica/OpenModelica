@@ -36,9 +36,9 @@
 #ifndef ATTRIBUTES_H
 #define ATTRIBUTES_H
 
-#include "Absyn/AbsynFwd.h"
-#include "MetaModelica.h"
+#include "Absyn/ElementPrefixes.h"
 #include "ConstrainingClass.h"
+#include "MetaModelica.h"
 #include "Prefixes.h"
 
 namespace OpenModelica

@@ -36,10 +36,11 @@
 #ifndef ABSYN_FUNCTIONARGS_H
 #define ABSYN_FUNCTIONARGS_H
 
-#include <memory>
 #include <iosfwd>
+#include <memory>
 
 #include "MetaModelica.h"
+#include "meta_modelica.h"
 
 namespace OpenModelica::Absyn
 {

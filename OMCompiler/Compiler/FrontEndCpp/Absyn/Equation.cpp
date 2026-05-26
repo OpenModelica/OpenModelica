@@ -35,9 +35,13 @@
 
 #include <cassert>
 #include <ostream>
+#include <stdexcept>
 
-#include "Util.h"
+#include "Absyn/Comment.h"
+#include "Absyn/ComponentRef.h"
+#include "Absyn/Expression.h"
 #include "Equation.h"
+#include "meta_modelica.h"
 
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;

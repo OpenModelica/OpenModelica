@@ -36,17 +36,19 @@
 #ifndef ABSYN_EXPRESSION_H
 #define ABSYN_EXPRESSION_H
 
-#include <memory>
 #include <cstdint>
+#include <iosfwd>
+#include <memory>
+#include <optional>
 #include <string>
 #include <vector>
-#include <iosfwd>
 
-#include "MetaModelica.h"
 #include "ComponentRef.h"
+#include "FunctionArgs.h"
+#include "MetaModelica.h"
 #include "Operator.h"
 #include "Path.h"
-#include "FunctionArgs.h"
+#include "meta_modelica.h"
 
 namespace OpenModelica::Absyn
 {
@@ -356,20 +358,6 @@ namespace OpenModelica::Absyn
     private:
       //std::unique_ptr<CodeNode> _code;
       MetaModelica::Value _value;
-  };
-
-  class SubscriptedExp : public Expression::Base
-  {
-    public:
-      explicit SubscriptedExp(MetaModelica::Record value);
-
-      std::unique_ptr<Base> clone() const noexcept override;
-      MetaModelica::Value toAbsyn() const noexcept override;
-      void print(std::ostream &os) const noexcept override;
-
-    private:
-      Expression _exp;
-      std::vector<Subscript> _subscripts;
   };
 
   class Break : public Expression::Base

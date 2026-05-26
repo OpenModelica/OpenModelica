@@ -36,8 +36,8 @@
 #ifndef ABSYN_ANNOTATION_H
 #define ABSYN_ANNOTATION_H
 
-#include <string_view>
 #include <iosfwd>
+#include <string_view>
 
 #include "MetaModelica.h"
 #include "Modifier.h"

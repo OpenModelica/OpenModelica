@@ -36,9 +36,14 @@
 #ifndef ABSYN_DEFINEUNIT_H
 #define ABSYN_DEFINEUNIT_H
 
-#include "MetaModelica.h"
-#include "Element.h"
+#include <iosfwd>
+#include <memory>
+#include <optional>
+#include <string>
+
 #include "../Prefixes.h"
+#include "Element.h"
+#include "MetaModelica.h"
 
 namespace OpenModelica::Absyn
 {

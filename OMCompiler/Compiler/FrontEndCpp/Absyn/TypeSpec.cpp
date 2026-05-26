@@ -35,7 +35,9 @@
 
 #include <ostream>
 
+#include "Absyn/Subscript.h"
 #include "TypeSpec.h"
+#include "meta_modelica.h"
 
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;
