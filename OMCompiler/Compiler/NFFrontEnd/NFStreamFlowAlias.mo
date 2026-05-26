@@ -319,9 +319,14 @@ public
   algorithm
     aliases := match exp
       // a
-      case Expression.CREF() then FlowAlias.FLOW_ALIAS(exp.cref, false, NONE()) :: aliases;
+      case Expression.CREF()
+        guard ComponentRef.nodeVariability(exp.cref) > Variability.DISCRETE
+        then FlowAlias.FLOW_ALIAS(exp.cref, false, NONE()) :: aliases;
+
       // -a
-      case Expression.UNARY(exp = e as Expression.CREF()) then FlowAlias.FLOW_ALIAS(e.cref, true, NONE()) :: aliases;
+      case Expression.UNARY(exp = e as Expression.CREF())
+        guard ComponentRef.nodeVariability(e.cref) > Variability.DISCRETE
+        then FlowAlias.FLOW_ALIAS(e.cref, true, NONE()) :: aliases;
 
       // a + b = 0 => a = -b;
       case Expression.BINARY(operator = Operator.OPERATOR(op = NFOperator.Op.ADD))
