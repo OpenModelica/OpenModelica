@@ -54,9 +54,9 @@ parser.add_argument('--api-key', default=os.environ.get('OPENAI_API_KEY', 'sk-no
                     help='Bearer token for the endpoint.')
 parser.add_argument('--model', default=os.environ.get('AGENT_MODEL', 'Qwen3.6 35B-A3B (TQ)'),
                     help='Model identifier (default: %(default)s).')
-parser.add_argument('--max-iterations', type=int, default=8,
+parser.add_argument('--max-iterations', type=int, default=20,
                     help='Maximum tool-call rounds per notification (default: %(default)s).')
-parser.add_argument('--max-tokens', type=int, default=8000,
+parser.add_argument('--max-tokens', type=int, default=16000,
                     help='Max output tokens (including thinking) per iteration (default: %(default)s).')
 parser.add_argument('--thinking-budget', type=int, default=2000,
                     help='Reasoning-token budget per iteration, forwarded as the '
