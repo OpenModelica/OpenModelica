@@ -2592,17 +2592,18 @@ void SystemImpl__gettextInit(const char *locale)
   int omlen;
 #if defined(__MINGW32__)
   if (*locale) {
-    char environment[strlen(locale)+9];
+    char *environment = (char*)malloc(strlen(locale)+9);
     strcpy(environment, "LANGUAGE=");
-    putenv(strcat(environment, locale));
+    putenv(strcat(environment, locale)); // Takes ownership of environment
   } else {
     LCID userLocaleId = GetUserDefaultLCID();
     int localeBufferSize = GetLocaleInfo(userLocaleId, LOCALE_SISO639LANGNAME, NULL, 0);
-    char userLocaleStr[localeBufferSize];
+    char *userLocaleStr = (char*)malloc(localeBufferSize);
     GetLocaleInfo(userLocaleId, LOCALE_SISO639LANGNAME, userLocaleStr, localeBufferSize);
-    char environment[localeBufferSize+9];
+    char *environment = (char*)malloc(localeBufferSize+9);
     strcpy(environment, "LANGUAGE=");
-    putenv(strcat(environment, userLocaleStr));
+    putenv(strcat(environment, userLocaleStr));  // Takes ownership of environment
+    free(userLocaleStr);
   }
 #else
   /* We might get sent sv_SE when only sv_SE.utf8 exists, etc */
