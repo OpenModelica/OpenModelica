@@ -90,7 +90,7 @@ protected
     function newNode
       output ConversionRules node;
     algorithm
-      node := CONVERSION_RULES(UnorderedMap.new<ConversionRules>(System.stringHashDjb2, stringEq), {});
+      node := CONVERSION_RULES(UnorderedMap.new<ConversionRules>(stringHashDjb2, stringEq), {});
     end newNode;
   end ConversionRules;
 
@@ -706,13 +706,13 @@ protected
   function newRuleTable
     output RuleTable table;
   algorithm
-    table := UnorderedMap.new<RuleList>(System.stringHashDjb2, stringEq);
+    table := UnorderedMap.new<RuleList>(stringHashDjb2, stringEq);
   end newRuleTable;
 
   function newTypeTable
     output TypeTable table;
   algorithm
-    table := UnorderedMap.new<Absyn.Path>(System.stringHashDjb2, stringEq);
+    table := UnorderedMap.new<Absyn.Path>(stringHashDjb2, stringEq);
   end newTypeTable;
 
   function newEnv
@@ -1195,7 +1195,7 @@ protected
   protected
     type OptExp = Option<Absyn.Exp>;
   algorithm
-    placeholders := UnorderedMap.new<OptExp>(System.stringHashDjb2, stringEq);
+    placeholders := UnorderedMap.new<OptExp>(stringHashDjb2, stringEq);
 
     for arg in args loop
       UnorderedMap.add(AbsynUtil.pathString(AbsynUtil.elementArgName(arg)),

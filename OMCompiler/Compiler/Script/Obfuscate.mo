@@ -891,7 +891,7 @@ encapsulated package Obfuscate
       else Dump.printExpStr(message);
     end match;
 
-    msg_str := String(System.stringHashDjb2(msg_str));
+    msg_str := String(stringHashDjb2(msg_str));
     msg_str := fnName + " message " + msg_str;
     message := Absyn.Exp.STRING(msg_str);
   end obfuscateMessage;
