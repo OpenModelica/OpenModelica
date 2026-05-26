@@ -45,12 +45,9 @@
 #include "Absyn/Expression.h"
 #include "FunctionArgs.h"
 #include "MetaModelica.h"
-#include "meta_modelica.h"
 
 namespace OpenModelica::Absyn
 {
-  class Expression;
-
   class FunctionArgsList : public FunctionArgs::Base
   {
     public:

@@ -40,6 +40,7 @@
 #include "ComponentNode.h"
 #include "InstNode.h"
 #include "NameNode.h"
+#include "meta_modelica.h"
 
 using namespace OpenModelica;
 

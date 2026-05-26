@@ -46,11 +46,6 @@
 
 namespace OpenModelica
 {
-  namespace Absyn
-  {
-    class Element;
-  };
-
   class InstNode;
 
   class InstNodeType

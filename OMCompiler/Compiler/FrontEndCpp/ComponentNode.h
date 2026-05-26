@@ -40,7 +40,6 @@
 #include <optional>
 #include <string>
 
-#include "Absyn/AbsynFwd.h"
 #include "Absyn/Component.h"
 #include "Absyn/Element.h"
 #include "Component.h"
@@ -54,7 +53,6 @@
 
 namespace OpenModelica
 {
-  class Component;
 
   class ComponentNode : public InstNode
   {

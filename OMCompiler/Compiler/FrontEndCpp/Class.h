@@ -40,7 +40,6 @@
 #include <optional>
 #include <vector>
 
-#include "Absyn/AbsynFwd.h"
 #include "Absyn/Class.h"
 #include "Absyn/ClassDef.h"
 #include "Absyn/ConstrainingClass.h"
@@ -53,12 +52,9 @@
 #include "Prefixes.h"
 #include "Restriction.h"
 #include "Type.h"
-#include "meta_modelica.h"
 
 namespace OpenModelica
 {
-  class InstNode;
-
   class Class
   {
     public:

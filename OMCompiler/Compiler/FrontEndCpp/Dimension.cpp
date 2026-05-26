@@ -39,6 +39,7 @@
 
 #include "Dimension.h"
 #include "Prefixes.h"
+#include "meta_modelica.h"
 
 using namespace OpenModelica;
 

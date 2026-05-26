@@ -37,7 +37,6 @@
 #define ABSYN_EXTERNALDECL_H
 
 #include <iosfwd>
-#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
@@ -46,11 +45,9 @@
 #include "Annotation.h"
 #include "ComponentRef.h"
 #include "MetaModelica.h"
-#include "meta_modelica.h"
 
 namespace OpenModelica::Absyn
 {
-  class Expression;
 
   class ExternalDecl
   {

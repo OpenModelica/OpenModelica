@@ -41,6 +41,7 @@
 #include "Import.h"
 #include "InstNode.h"
 #include "SourceInfo.h"
+#include "meta_modelica.h"
 
 using namespace OpenModelica;
 

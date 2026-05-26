@@ -44,7 +44,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "Absyn/AbsynFwd.h"
 #include "Absyn/Class.h"
 #include "Absyn/ClassDef.h"
 #include "Absyn/Component.h"
@@ -53,12 +52,9 @@
 #include "Import.h"
 #include "InstNode.h"
 #include "MetaModelica.h"
-#include "meta_modelica.h"
 
 namespace OpenModelica
 {
-  class InstNode;
-  class Import;
 
   class ClassTree
   {

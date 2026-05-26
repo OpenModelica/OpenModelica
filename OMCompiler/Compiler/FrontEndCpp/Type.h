@@ -44,7 +44,6 @@
 #include <string_view>
 #include <vector>
 
-#include "ComplexType.h"
 #include "Dimension.h"
 #include "InstNodeType.h"
 #include "MetaModelica.h"
@@ -52,7 +51,6 @@
 
 namespace OpenModelica
 {
-  class InstNode;
   class ComplexType;
 
   class TypeData

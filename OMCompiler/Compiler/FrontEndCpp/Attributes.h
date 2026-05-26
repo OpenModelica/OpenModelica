@@ -36,6 +36,7 @@
 #ifndef ATTRIBUTES_H
 #define ATTRIBUTES_H
 
+#include "Absyn/ElementAttributes.h"
 #include "Absyn/ElementPrefixes.h"
 #include "ConstrainingClass.h"
 #include "MetaModelica.h"

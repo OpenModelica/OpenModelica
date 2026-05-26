@@ -36,6 +36,7 @@
 #include <ostream>
 
 #include "SourceInfo.h"
+#include "meta_modelica.h"
 
 using namespace OpenModelica;
 

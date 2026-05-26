@@ -37,6 +37,7 @@
 
 #include "ComplexType.h"
 #include "InstNode.h"
+#include "meta_modelica.h"
 
 using namespace OpenModelica;
 

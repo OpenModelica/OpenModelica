@@ -43,6 +43,7 @@
 #include "InstNode.h"
 #include "Type.h"
 #include "Util.h"
+#include "meta_modelica.h"
 
 using namespace OpenModelica;
 

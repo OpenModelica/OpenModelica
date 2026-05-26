@@ -40,7 +40,7 @@
 #include <string_view>
 
 #include "MetaModelica.h"
-#include "meta_modelica.h"
+#include "omc_inline.h"
 
 namespace OpenModelica::Absyn
 {

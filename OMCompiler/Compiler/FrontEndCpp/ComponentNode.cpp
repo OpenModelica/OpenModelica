@@ -41,6 +41,7 @@
 #include "Absyn/ElementPrefixes.h"
 #include "Component.h"
 #include "ComponentNode.h"
+#include "meta_modelica.h"
 
 using namespace OpenModelica;
 

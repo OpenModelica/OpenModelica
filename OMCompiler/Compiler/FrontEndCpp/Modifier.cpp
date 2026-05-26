@@ -36,6 +36,7 @@
 #include <initializer_list>
 
 #include "Modifier.h"
+#include "meta_modelica.h"
 
 using namespace OpenModelica;
 

@@ -38,6 +38,7 @@
 
 #include "Subscript.h"
 #include "Util.h"
+#include "meta_modelica.h"
 
 using namespace OpenModelica;
 

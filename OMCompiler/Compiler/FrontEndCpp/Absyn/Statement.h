@@ -48,11 +48,9 @@
 #include "Expression.h"
 #include "MetaModelica.h"
 #include "SourceInfo.h"
-#include "meta_modelica.h"
 
 namespace OpenModelica::Absyn
 {
-  class StatementConcept;
 
   class Statement
   {

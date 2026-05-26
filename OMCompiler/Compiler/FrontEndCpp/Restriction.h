@@ -36,13 +36,13 @@
 #ifndef RESTRICTION_H
 #define RESTRICTION_H
 
-#include <bitset>
 #include <iosfwd>
 #include <ostream>
 #include <string>
 
 #include "MetaModelica.h"
 #include "Prefixes.h"
+#include "omc_inline.h"
 
 namespace OpenModelica
 {

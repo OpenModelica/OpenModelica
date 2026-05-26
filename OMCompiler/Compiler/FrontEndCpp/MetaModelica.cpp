@@ -39,6 +39,12 @@
 
 #include "MetaModelica.h"
 #include "meta/meta_modelica.h"
+#include "meta_modelica_builtin.h"
+#include "meta_modelica_data.h"
+#include "meta_modelica_mk_box.h"
+#include "modelica_string.h"
+#include "omc_gc.h"
+#include "openmodelica_types.h"
 
 using namespace OpenModelica::MetaModelica;
 

@@ -51,8 +51,6 @@
 
 #include "meta_modelica.h"
 
-struct record_description;
-
 namespace OpenModelica
 {
   namespace MetaModelica

@@ -40,12 +40,9 @@
 #include <memory>
 
 #include "MetaModelica.h"
-#include "meta_modelica.h"
 
 namespace OpenModelica::Absyn
 {
-  class Expression;
-
   class FunctionArgs
   {
     public:

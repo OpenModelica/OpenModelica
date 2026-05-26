@@ -48,10 +48,10 @@
 #include "MetaModelica.h"
 #include "Subscript.h"
 #include "Type.h"
+#include "omc_inline.h"
 
 namespace OpenModelica
 {
-  class InstNode;
 
   class ComponentRef
   {

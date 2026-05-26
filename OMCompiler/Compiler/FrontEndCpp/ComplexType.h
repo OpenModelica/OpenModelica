@@ -44,7 +44,6 @@
 
 namespace OpenModelica
 {
-  class InstNode;
 
   class ComplexType
   {

@@ -36,6 +36,7 @@
 #include <utility>
 
 #include "NameNode.h"
+#include "meta_modelica.h"
 
 using namespace OpenModelica;
 

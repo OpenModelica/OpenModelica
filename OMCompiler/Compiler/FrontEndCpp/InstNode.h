@@ -40,7 +40,7 @@
 #include <string>
 #include <vector>
 
-#include "Absyn/AbsynFwd.h"
+#include "Absyn/Element.h"
 #include "InstNodeType.h"
 #include "MetaModelica.h"
 #include "Path.h"

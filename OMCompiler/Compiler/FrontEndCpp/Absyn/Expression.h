@@ -47,12 +47,9 @@
 #include "FunctionArgs.h"
 #include "MetaModelica.h"
 #include "Operator.h"
-#include "Path.h"
-#include "meta_modelica.h"
 
 namespace OpenModelica::Absyn
 {
-  class Subscript;
 
   class Expression
   {

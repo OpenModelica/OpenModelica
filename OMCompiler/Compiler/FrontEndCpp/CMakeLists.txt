@@ -53,7 +53,7 @@ find_program(IWYU_FIX_PATH NAMES fix_include)
 message(STATUS "IWYU: ${IWYU_PATH}")
 message(STATUS "IWYU fix: ${IWYU_FIX_PATH}")
 if(IWYU_PATH)
-  set(IWYU_COMMAND ${IWYU_PATH} -Xiwyu --no_fwd_decls)
+  set(IWYU_COMMAND ${IWYU_PATH} -Xiwyu --no_fwd_decls --nosafe_headers)
   set_property(TARGET omcfrontendcpp PROPERTY CXX_INCLUDE_WHAT_YOU_USE ${IWYU_COMMAND})
   set_property(TARGET omcfrontendcppabsyn PROPERTY CXX_INCLUDE_WHAT_YOU_USE ${IWYU_COMMAND})
 endif()
@@ -62,9 +62,8 @@ if(IWYU_PATH AND IWYU_FIX_PATH)
     COMMAND iwyu_tool -p ${CMAKE_BINARY_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/Absyn
-      ${CMAKE_CURRENT_SOURCE_DIR}/Util
-      -- -Xiwyu --no_fwd_decls
-      | ${IWYU_FIX_PATH}
+      -- -Xiwyu --no_fwd_decls --nosafe_headers
+      | ${IWYU_FIX_PATH} --nosafe_headers
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     COMMENT "Running include-what-you-use and fixing includes"
     VERBATIM

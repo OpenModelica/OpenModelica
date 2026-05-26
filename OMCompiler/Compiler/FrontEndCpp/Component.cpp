@@ -38,6 +38,7 @@
 #include "Absyn/Component.h"
 #include "Component.h"
 #include "InstNode.h"
+#include "meta_modelica.h"
 
 using namespace OpenModelica;
 
