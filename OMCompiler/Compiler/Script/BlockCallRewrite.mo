@@ -509,11 +509,7 @@ protected function getDefinition
   output Boolean found;
   output Integer newInstNo;
 algorithm
-  (newEqs, newModif, found, newInstNo)  := match(defs)
-    case Absyn.PROGRAM()
-    then
-      parseClassesDefs(id, instNo, defs.classes, fargs, oldEqs, oldModif);
-  end match;
+  (newEqs, newModif, found, newInstNo) := parseClassesDefs(id, instNo, defs.classes, fargs, oldEqs, oldModif);
 end getDefinition;
 
 

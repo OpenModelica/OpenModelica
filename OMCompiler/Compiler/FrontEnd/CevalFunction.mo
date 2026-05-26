@@ -2044,21 +2044,20 @@ protected function assignTuple
   output FCore.Graph outEnv;
 algorithm
   (outCache, outEnv) :=
-  match(inLhsCrefs, inRhsValues, inCache, inEnv)
+  match(inLhsCrefs, inRhsValues, inEnv)
     local
       DAE.ComponentRef cr;
       list<DAE.ComponentRef> rest_crefs;
       Values.Value value;
       list<Values.Value> rest_vals;
-      FCore.Cache cache;
       FCore.Graph env;
-    case ({}, _, cache, env) then (cache, env);
-    case (cr :: rest_crefs, value :: rest_vals, cache, env)
+    case ({}, _, env) then (inCache, env);
+    case (cr :: rest_crefs, value :: rest_vals, env)
       algorithm
-        (cache, env) := assignVariable(cr, value, cache, env);
-        (cache, env) := assignTuple(rest_crefs, rest_vals, cache, env);
+        (inCache, env) := assignVariable(cr, value, inCache, env);
+        (inCache, env) := assignTuple(rest_crefs, rest_vals, inCache, env);
       then
-        (cache, env);
+        (inCache, env);
   end match;
 end assignTuple;
 
@@ -2070,13 +2069,13 @@ protected function assignRecord
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
 algorithm
-  (outCache, outEnv) := match(inType, inValue, inCache, inEnv)
+  (outCache, outEnv) := match(inType, inValue)
     local
       list<Values.Value> values;
       list<DAE.Var> vars;
       FCore.Cache cache;
       FCore.Graph env;
-    case (DAE.T_COMPLEX(varLst = vars), Values.RECORD(orderd = values), _, _)
+    case (DAE.T_COMPLEX(varLst = vars), Values.RECORD(orderd = values))
       algorithm
         (cache, env) := assignRecordComponents(vars, values, inCache, inEnv);
       then
@@ -2092,7 +2091,7 @@ protected function assignRecordComponents
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
 algorithm
-  (outCache, outEnv) := match(inVars, inValues, inCache, inEnv)
+  (outCache, outEnv) := match(inVars, inValues)
     local
       list<DAE.Var> rest_vars;
       Values.Value val;
@@ -2103,9 +2102,9 @@ algorithm
       FCore.Cache cache;
       FCore.Graph env;
 
-    case ({}, {}, _, _) then (inCache, inEnv);
+    case ({}, _) then (inCache, inEnv);
 
-    case (DAE.TYPES_VAR(name = name, ty = ty) :: rest_vars, val :: rest_vals, _ , _)
+    case (DAE.TYPES_VAR(name = name, ty = ty) :: rest_vars, val :: rest_vals)
       algorithm
         cr := ComponentReferenceBasics.makeCrefIdent(name, ty, {});
         (cache, env) := assignVariable(cr, val, inCache, inEnv);
@@ -2127,7 +2126,7 @@ public function assignVector
   output Values.Value outResult;
 algorithm
   (outCache, outResult) :=
-  matchcontinue(inNewValue, inOldValue, inSubscripts, inCache, inEnv)
+  matchcontinue(inNewValue, inOldValue, inSubscripts)
     local
       DAE.Exp e;
       Values.Value index, val;
@@ -2141,11 +2140,11 @@ algorithm
 
     // No subscripts, we have either reached the end of the recursion or the
     // whole vector was assigned.
-    case (_, _, {}, _, _) then (inCache, inNewValue);
+    case (_, _, {}) then (inCache, inNewValue);
 
     // An index subscript. Extract the indicated vector element and update it
     // with assignVector, and then put it back in the list of old values.
-    case (_, Values.ARRAY(valueLst = values, dimLst = dims), DAE.INDEX(exp = e) :: rest_subs, _, _)
+    case (_, Values.ARRAY(valueLst = values, dimLst = dims), DAE.INDEX(exp = e) :: rest_subs)
       algorithm
         (cache, index) := cevalExp(e, inCache, inEnv);
         i := ValuesUtil.valueInteger(index);
@@ -2158,7 +2157,7 @@ algorithm
     // A slice.
     case (Values.ARRAY(valueLst = values),
           Values.ARRAY(valueLst = old_values, dimLst = dims),
-          DAE.SLICE(exp = e) :: rest_subs, _, _)
+          DAE.SLICE(exp = e) :: rest_subs)
       algorithm
         // Evaluate the slice range to a list of values.
         (cache, Values.ARRAY(valueLst = (indices as (Values.INTEGER(integer = i) :: _)))) :=
@@ -2176,14 +2175,14 @@ algorithm
     // A : (whole dimension).
     case (Values.ARRAY(valueLst = values),
           Values.ARRAY(valueLst = values2, dimLst = dims),
-          DAE.WHOLEDIM() :: rest_subs, _, _)
+          DAE.WHOLEDIM() :: rest_subs)
       algorithm
         (cache, values) :=
           assignWholeDim(values, values2, rest_subs, inCache, inEnv);
       then
         (cache, Values.ARRAY(values, dims));
 
-    case (_, _, sub :: _, _, _)
+    case (_, _, sub :: _)
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         print("- CevalFunction.assignVector failed on: ");
@@ -2207,17 +2206,16 @@ protected function assignSlice
   output list<Values.Value> outResult;
 algorithm
   (outCache, outResult) :=
-  matchcontinue(inNewValues, inOldValues, inIndices, inSubscripts, inIndex,
-  inCache, inEnv)
+  matchcontinue(inNewValues, inOldValues, inIndices)
     local
       Values.Value v1, v2, index;
       list<Values.Value> vl1, vl2, rest_indices;
       FCore.Cache cache;
 
-    case (_, _, {}, _, _, _, _) then (inCache, inOldValues);
+    case (_, _, {}) then (inCache, inOldValues);
 
     // Skip indices that are smaller than the next index in the slice.
-    case (vl1, v2 :: vl2, index :: _, _, _, _, _)
+    case (vl1, v2 :: vl2, index :: _)
       algorithm
         true := (inIndex < ValuesUtil.valueInteger(index));
         (cache, vl1) := assignSlice(vl1, vl2, inIndices, inSubscripts,
@@ -2225,7 +2223,7 @@ algorithm
       then
         (cache, v2 :: vl1);
 
-    case (v1 :: vl1, v2 :: vl2, _ :: rest_indices, _, _, _, _)
+    case (v1 :: vl1, v2 :: vl2, _ :: rest_indices)
       algorithm
         (cache, v1) := assignVector(v1, v2, inSubscripts, inCache, inEnv);
         (cache, vl1) := assignSlice(vl1, vl2, rest_indices, inSubscripts,
@@ -2246,13 +2244,13 @@ protected function assignWholeDim
   output list<Values.Value> outResult;
 algorithm
   (outCache, outResult) :=
-  match(inNewValues, inOldValues, inSubscripts, inCache, inEnv)
+  match(inNewValues, inOldValues)
     local
       Values.Value v1, v2;
       list<Values.Value> vl1, vl2;
       FCore.Cache cache;
-    case ({}, _, _, _, _) then (inCache, {});
-    case (v1 :: vl1, v2 :: vl2, _, _, _)
+    case ({}, _) then (inCache, {});
+    case (v1 :: vl1, v2 :: vl2)
       algorithm
         (cache, v1) := assignVector(v1, v2, inSubscripts, inCache, inEnv);
         (cache, vl1) := assignWholeDim(vl1, vl2, inSubscripts, inCache, inEnv);
@@ -2372,11 +2370,11 @@ protected function getBindingOrDefault
   input DAE.Type inType;
   output Values.Value outValue;
 algorithm
-  outValue := match(inBinding, inType)
+  outValue := match(inBinding)
     local
       Values.Value val;
-    case (DAE.VALBOUND(valBound = val), _) then val;
-    case (DAE.EQBOUND(evaluatedExp = SOME(val)), _) then val;
+    case (DAE.VALBOUND(valBound = val)) then val;
+    case (DAE.EQBOUND(evaluatedExp = SOME(val))) then val;
     else generateDefaultBinding(inType);
   end match;
 end getBindingOrDefault;
@@ -2466,12 +2464,12 @@ protected function getFunctionReturnValue
   input FCore.Graph inEnv;
   output Values.Value outValue;
 algorithm
-  outValue := match(inOutputVar, inEnv)
+  outValue := match(inOutputVar)
     local
       DAE.ComponentRef cr;
       DAE.Type ty;
       Values.Value val;
-    case (DAE.VAR(componentRef = cr, ty = ty), _)
+    case DAE.VAR(componentRef = cr, ty = ty)
       algorithm
         val := getVariableValue(cr, ty, inEnv);
       then
@@ -2487,14 +2485,14 @@ protected function getVariableValue
   input FCore.Graph inEnv;
   output Values.Value outValue;
 algorithm
-  outValue := matchcontinue(inCref, inType, inEnv)
+  outValue := matchcontinue(inType)
     local
       Values.Value val;
       Absyn.Path p;
 
     // A record doesn't have a value, but an environment with it's components.
     // So we need to assemble the records value.
-    case (_, DAE.T_COMPLEX(complexClassType = ClassInf.RECORD()), _)
+    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD()))
       algorithm
         p := ComponentReference.crefToPath(inCref);
         val := getRecordValue(p, inType, inEnv);
@@ -2518,7 +2516,7 @@ protected function getRecordValue
   input FCore.Graph inEnv;
   output Values.Value outValue;
 algorithm
-  outValue := match(inRecordName, inType, inEnv)
+  outValue := match(inRecordName, inType)
     local
       list<DAE.Var> vars;
       list<Values.Value> vals;
@@ -2528,7 +2526,7 @@ algorithm
       FCore.Graph env;
     case (Absyn.IDENT(name = id),
           DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = p),
-                        varLst = vars), _)
+                        varLst = vars))
       algorithm
         (_, _, _, _, _, env) :=
           Lookup.lookupIdentLocal(FCore.emptyCache(), inEnv, id);
@@ -2545,7 +2543,7 @@ protected function getRecordComponentValue
   input FCore.Graph inEnv;
   output Values.Value outValues;
 algorithm
-  outValues := match(inVars, inEnv)
+  outValues := match inVars
     local
       Values.Value val;
       Option<Values.Value> oval;
@@ -2554,16 +2552,16 @@ algorithm
       DAE.Binding binding, tvbinding;
 
     // The component is a record itself.
-    case (DAE.TYPES_VAR(
+    case DAE.TYPES_VAR(
         name = id,
-        ty = ty as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD())), _)
+        ty = ty as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD()))
       algorithm
         val := getRecordValue(Absyn.IDENT(id), ty, inEnv);
       then
         val;
 
     // A non-record variable.
-    case (DAE.TYPES_VAR(name = id, ty = ty, binding = tvbinding), _)
+    case DAE.TYPES_VAR(name = id, ty = ty, binding = tvbinding)
       algorithm
         (_, DAE.TYPES_VAR(binding = binding), _, _, _, _) :=
           Lookup.lookupIdentLocal(FCore.emptyCache(), inEnv, id);
@@ -2631,14 +2629,14 @@ protected function getElementDependencies
   output list<FunctionVar> outDependencies;
   type Arg = tuple<list<FunctionVar>, list<FunctionVar>, list<DAE.Ident>>;
 algorithm
-  outDependencies := matchcontinue(inElement, inAllElements)
+  outDependencies := matchcontinue(inElement)
     local
       DAE.Exp bind_exp;
       list<FunctionVar> deps;
       list<DAE.Dimension> dims;
       Arg arg;
 
-    case ((DAE.VAR(binding = SOME(bind_exp), dims = dims), _), _)
+    case (DAE.VAR(binding = SOME(bind_exp), dims = dims), _)
       algorithm
         (_, arg as (_, deps, _)) := Expression.traverseExpBidir(
           bind_exp,
@@ -2650,7 +2648,7 @@ algorithm
       then
         deps;
 
-    case ((DAE.VAR(dims = dims), _), _)
+    case (DAE.VAR(dims = dims), _)
       algorithm
         (_, (_, deps, _)) := List.mapFold(dims,
           getElementDependenciesFromDims, (inAllElements, {}, {}));
@@ -2670,12 +2668,12 @@ protected function getElementDependenciesFromDims
   output Arg outArg;
   type Arg = tuple<list<FunctionVar>, list<FunctionVar>, list<DAE.Ident>>;
 algorithm
-  (outDimension, outArg) := matchcontinue(inDimension, inArg)
+  (outDimension, outArg) := matchcontinue(inArg)
     local
       Arg arg;
       DAE.Exp dim_exp;
 
-    case (_, _)
+    case (_)
       algorithm
         dim_exp := Expression.dimensionSizeExp(inDimension);
         (_, arg) := Expression.traverseExpBidir(
@@ -2831,7 +2829,7 @@ protected function checkCyclicalComponents
   input list<tuple<FunctionVar, list<FunctionVar>>> inCycles;
   input DAE.ElementSource inSource;
 algorithm
-  _ := match(inCycles, inSource)
+  _ := match(inCycles)
     local
       list<list<FunctionVar>> cycles;
       list<list<DAE.Element>> elements;
@@ -2841,7 +2839,7 @@ algorithm
       String cycles_str, scope_str;
       SourceInfo info;
 
-    case ({}, _) then ();
+    case ({}) then ();
 
     else
       algorithm

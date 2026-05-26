@@ -2413,9 +2413,9 @@ protected
   DAE.Type tp;
   Option<SourceInfo> info;
 algorithm
-  _ := match(cache, funcpath, env, msg)
-    case (_, _, FCore.EG(_), Absyn.NO_MSG()) then fail();
-    case (_, _, _, Absyn.NO_MSG())
+  _ := match(funcpath, env, msg)
+    case (_, FCore.EG(_), Absyn.NO_MSG()) then fail();
+    case (_, _, Absyn.NO_MSG())
       algorithm
         (funcpath2, Absyn.IDENT("constructor")) := AbsynUtil.splitQualAndIdentPath(funcpath);
         info := if valueEq(msg, Absyn.NO_MSG()) then NONE() else SOME(Absyn.dummyInfo);
@@ -2431,13 +2431,13 @@ protected function checkLibraryUsage
   input Absyn.Exp inExp;
   output Boolean isUsed;
 algorithm
-  isUsed := match(inLibrary, inExp)
+  isUsed := match(inExp)
     local
       String s;
       list<Absyn.Exp> exps;
 
-    case (_, Absyn.STRING(s)) then stringEq(s, inLibrary);
-    case (_, Absyn.ARRAY(exps))
+    case (Absyn.STRING(s)) then stringEq(s, inLibrary);
+    case (Absyn.ARRAY(exps))
       then List.isMemberOnTrue(inLibrary, exps, checkLibraryUsage);
   end match;
 end checkLibraryUsage;
@@ -2555,13 +2555,13 @@ function getInterfaceType
   input list<tuple<String,list<String>>> assoc;
   output list<String> it;
 algorithm
-  it := matchcontinue (elt,assoc)
+  it := matchcontinue elt
     local
       String name;
       SCode.Annotation ann;
       String str;
       SourceInfo info;
-    case (SCode.CLASS(cmt=SCode.COMMENT(annotation_=SOME(ann))),_)
+    case SCode.CLASS(cmt=SCode.COMMENT(annotation_=SOME(ann)))
       algorithm
         SOME(Absyn.STRING(str)) := SCodeUtil.lookupAnnotationBinding(ann,"__OpenModelica_Interface");
         it := Util.assoc(str,assoc);
@@ -2578,16 +2578,16 @@ function getInterfaceTypeAssocElt
   input SourceInfo info;
   output tuple<String,list<String>> assoc;
 algorithm
-  assoc := match (val,info)
+  assoc := match val
     local
       String str;
       list<String> strs;
       list<Values.Value> vals;
-    case (Values.ARRAY(valueLst=Values.STRING("")::_),_)
+    case Values.ARRAY(valueLst=Values.STRING("")::_)
       algorithm
         Error.addSourceMessage(Error.MISSING_INTERFACE_TYPE,{},info);
       then fail();
-    case (Values.ARRAY(valueLst=Values.STRING(str)::vals),_)
+    case Values.ARRAY(valueLst=Values.STRING(str)::vals)
       algorithm
         strs := List.select(List.map(vals,ValuesUtil.extractValueString), Util.isNotEmptyString);
       then ((str,str::strs));
@@ -2631,10 +2631,10 @@ protected function buildTransitiveDependencyGraph
   input list<tuple<String,list<String>>> oldgraph;
   output list<String> edges;
 algorithm
-  edges := matchcontinue (name,oldgraph)
+  edges := matchcontinue oldgraph
     local
       String str;
-    case (_,_) then List.setDifference(Graph.allReachableNodes(({name},{}),oldgraph,stringEq),{name});
+    case _ then List.setDifference(Graph.allReachableNodes(({name},{}),oldgraph,stringEq),{name});
     else
       algorithm
         str := "CevalScript.buildTransitiveDependencyGraph failed: " + name;
@@ -2757,11 +2757,11 @@ protected function containsImport
   input SCode.Visibility visibility;
   output Boolean b;
 algorithm
-  b := match (elt,visibility)
+  b := match elt
     local
       list<SCode.Element> elts;
       String name;
-    case (SCode.CLASS(restriction=SCode.R_PACKAGE(), encapsulatedPrefix=SCode.ENCAPSULATED(), classDef=SCode.PARTS(elementLst=elts)),_)
+    case SCode.CLASS(restriction=SCode.R_PACKAGE(), encapsulatedPrefix=SCode.ENCAPSULATED(), classDef=SCode.PARTS(elementLst=elts))
       then List.exist1(elts, containsImport2, visibility);
     else
       algorithm
@@ -2803,13 +2803,13 @@ protected function writeModuleDepends
   input list<tuple<String,list<String>>> deps;
   output String str;
 algorithm
-  str := matchcontinue (cl,prefix,suffix,deps)
+  str := matchcontinue cl
     local
       String name,fileName,tmp1;
       list<String> allDepends,protectedDepends,tmp2;
       list<SCode.Element> elts;
       SourceInfo info;
-    case (SCode.CLASS(name=name, classDef=SCode.PARTS(elementLst=elts), info = SOURCEINFO()),_,_,_)
+    case (SCode.CLASS(name=name, classDef=SCode.PARTS(elementLst=elts), info = _))
       algorithm
         protectedDepends := List.map(List.select(elts,SCodeUtil.elementIsProtectedImport),importDependency);
         protectedDepends := List.select(protectedDepends, isNotBuiltinImport);
@@ -2818,7 +2818,7 @@ algorithm
         allDepends := List.map1(allDepends, stringAppend, ".interface.mo");
         str := prefix + name + suffix + ": $(RELPATH_" + name + ") " + stringDelimitList(allDepends," ");
       then str;
-    case (SCode.CLASS(name=name, classDef=SCode.PARTS(elementLst=elts), info=info),_,_,_)
+    case (SCode.CLASS(name=name, classDef=SCode.PARTS(elementLst=elts), info=info))
       algorithm
         protectedDepends := List.map(List.select(elts,SCodeUtil.elementIsProtectedImport),importDependency);
         protectedDepends := List.select(protectedDepends, isNotBuiltinImport);
@@ -2839,7 +2839,7 @@ algorithm
           end for;
         end for;
       then fail();
-    case (SCode.CLASS(name=name,info=info),_,_,_)
+    case (SCode.CLASS(name=name,info=info))
       algorithm
         Error.addSourceMessage(Error.GENERATE_SEPARATE_CODE_DEPENDENCIES_FAILED, {name}, info);
       then fail();
@@ -2863,14 +2863,14 @@ protected function getChangedClass
   input String suffix;
   output String name;
 algorithm
-  name := matchcontinue (elt,suffix)
+  name := matchcontinue elt
     local
       String fileName;
-    case (SCode.CLASS(name=name,info=SOURCEINFO()),_)
+    case SCode.CLASS(name=name,info=_)
       algorithm
         false := System.regularFileExists(name + suffix);
       then name;
-    case (SCode.CLASS(name=name,info=SOURCEINFO(fileName=fileName)),_)
+    case SCode.CLASS(name=name,info=SOURCEINFO(fileName=fileName))
       algorithm
         true := System.fileIsNewerThan(fileName, name + suffix);
       then name;
@@ -2921,19 +2921,19 @@ protected function getBasePathFromUri "Handle modelica:// URIs"
   input Boolean printError;
   output String basePath;
 algorithm
-  basePath := matchcontinue (scheme,iname,program,modelicaPath,printError)
+  basePath := matchcontinue (scheme,iname,modelicaPath,printError)
     local
       Boolean isDir;
       list<String> mps,names;
       String gd,mp,bp,str,name,version,fileName;
-    case ("modelica://",name,_,_,_)
+    case ("modelica://",name,_,_)
       algorithm
         (name::names) := System.strtok(name,".");
         Absyn.CLASS(info=SOURCEINFO(fileName=fileName)) := InteractiveUtil.getPathedClassInProgram(Absyn.IDENT(name),program);
         mp := System.dirname(fileName);
         bp := findModelicaPath2(mp,names,"",true);
       then bp;
-    case ("modelica://",name,_,mp,_)
+    case ("modelica://",name,mp,_)
       algorithm
         (name::names) := System.strtok(name,".");
         failure(_ := InteractiveUtil.getPathedClassInProgram(Absyn.IDENT(name),program));
@@ -2943,8 +2943,8 @@ algorithm
         mp := if isDir then mp + name else mp;
         bp := findModelicaPath2(mp,names,"",true);
       then bp;
-    case ("file://",_,_,_,_) then "";
-    case ("modelica://",name,_,mp,true)
+    case ("file://",_,_,_) then "";
+    case ("modelica://",name,mp,true)
       algorithm
         name::_ := System.strtok(name,".");
         str := "Could not resolve modelica://" + name + " with MODELICAPATH: " + mp;
@@ -2959,14 +2959,14 @@ protected function findModelicaPath "Handle modelica:// URIs"
   input String version;
   output String basePath;
 algorithm
-  basePath := matchcontinue (imps,names,version)
+  basePath := matchcontinue imps
     local
       String mp;
       list<String> mps;
 
-    case (mp::_,_,_)
+    case (mp::_)
       then findModelicaPath2(mp,names,version,false);
-    case (_::mps,_,_)
+    case (_::mps)
       then findModelicaPath(mps,names,version);
   end matchcontinue;
 end findModelicaPath;
@@ -2978,19 +2978,19 @@ protected function findModelicaPath2 "Handle modelica:// URIs"
   input Boolean b;
   output String basePath;
 algorithm
-  basePath := matchcontinue (mp,inames,version,b)
+  basePath := matchcontinue (inames,b)
     local
       list<String> names;
       String name,file;
 
-    case (_,name::names,_,_)
+    case (name::names,_)
       algorithm
         false := stringEq(version,"");
         file := mp + "/" + name + " " + version;
         true := System.directoryExists(file);
         // print("Found file 1: " + file + "\n");
       then findModelicaPath2(file,names,"",true);
-    case (_,name::_,_,_)
+    case (name::_,_)
       algorithm
         false := stringEq(version,"");
         file := mp + "/" + name + " " + version + ".mo";
@@ -2998,13 +2998,13 @@ algorithm
         // print("Found file 2: " + file + "\n");
       then mp;
 
-    case (_,name::names,_,_)
+    case (name::names,_)
       algorithm
         file := mp + "/" + name;
         true := System.directoryExists(file);
         // print("Found file 3: " + file + "\n");
       then findModelicaPath2(file,names,"",true);
-    case (_,name::_,_,_)
+    case (name::_,_)
       algorithm
         file := mp + "/" + name + ".mo";
         true := System.regularFileExists(file);
@@ -3012,7 +3012,7 @@ algorithm
       then mp;
 
       // This class is part of the current package.mo, or whatever...
-    case (_,_,_,true)
+    case (_,true)
       algorithm
         // print("Did not find file 5: " + mp + " - " + name + "\n");
       then mp;
@@ -3162,31 +3162,28 @@ protected
   Absyn.Class absynClass;
   Absyn.Restriction restriction;
 algorithm
-  str := matchcontinue args
-    case {Values.CODE(Absyn.C_TYPENAME(className)), Values.BOOL(nested)}
-      algorithm
-        path := match className
-          case Absyn.FULLYQUALIFIED() then className.path;
-          else className;
-        end match;
-        // handle encryption
-        access := Interactive.checkAccessAnnotationAndEncryption(path, SymbolTable.getAbsyn());
-        (absynClass as Absyn.CLASS(restriction=restriction, info=SOURCEINFO(fileName=str))) := InteractiveUtil.getPathedClassInProgram(className, SymbolTable.getAbsyn());
-        absynClass := if nested then absynClass else AbsynUtil.filterNestedClasses(absynClass);
-        /* If the class has Access.packageText annotation or higher
-         * If the class has Access.nonPackageText annotation or higher and class is not a package
-         */
-        if ((access >= Access.packageText) or ((access >= Access.nonPackageText) and not AbsynUtil.isPackageRestriction(restriction))) then
-          str := Dump.unparseStr(Absyn.PROGRAM({absynClass}, match path case Absyn.IDENT() then Absyn.TOP(); else Absyn.WITHIN(AbsynUtil.stripLast(path)); end match), options=Dump.DUMPOPTIONS(str));
-        else
-          Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
-          str := "";
-        end if;
-      then
-        str;
-
-    else "";
-  end matchcontinue;
+  try
+    {Values.CODE(Absyn.C_TYPENAME(className)), Values.BOOL(nested)} := args;
+    path := match className
+      case Absyn.FULLYQUALIFIED() then className.path;
+      else className;
+    end match;
+    // handle encryption
+    access := Interactive.checkAccessAnnotationAndEncryption(path, SymbolTable.getAbsyn());
+    (absynClass as Absyn.CLASS(restriction=restriction, info=SOURCEINFO(fileName=str))) := InteractiveUtil.getPathedClassInProgram(className, SymbolTable.getAbsyn());
+    absynClass := if nested then absynClass else AbsynUtil.filterNestedClasses(absynClass);
+    /* If the class has Access.packageText annotation or higher
+     * If the class has Access.nonPackageText annotation or higher and class is not a package
+     */
+    if ((access >= Access.packageText) or ((access >= Access.nonPackageText) and not AbsynUtil.isPackageRestriction(restriction))) then
+      str := Dump.unparseStr(Absyn.PROGRAM({absynClass}, match path case Absyn.IDENT() then Absyn.TOP(); else Absyn.WITHIN(AbsynUtil.stripLast(path)); end match), options=Dump.DUMPOPTIONS(str));
+    else
+      Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
+      str := "";
+    end if;
+  else
+    str := "";
+  end try;
 
   res := Values.STRING(str);
 end listFile;

@@ -187,7 +187,7 @@ public function inlineEq "
   output BackendDAE.Equation outEquation;
   output Boolean inlined;
 algorithm
-  (outEquation,inlined) := matchcontinue(inEquation,fns)
+  (outEquation,inlined) := matchcontinue(inEquation)
     local
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
       Integer size;
@@ -206,7 +206,7 @@ algorithm
       BackendDAE.EquationAttributes attr;
       BackendDAE.Equation eqn;
 
-    case(BackendDAE.EQUATION(e1,e2,source,attr),_)
+    case(BackendDAE.EQUATION(e1,e2,source,attr))
       algorithm
         (e1_1,source,b1,_) := Inline.inlineExp(e1,fns,source);
         (e2_1,source,b2,_) := Inline.inlineExp(e2,fns,source);
@@ -214,7 +214,7 @@ algorithm
       then
        (BackendDAE.EQUATION(e1_1,e2_1,source,attr),true);
 
-    case(BackendDAE.ARRAY_EQUATION(dimSize,e1,e2,source,attr,recordSize),_)
+    case(BackendDAE.ARRAY_EQUATION(dimSize,e1,e2,source,attr,recordSize))
       algorithm
         (e1_1,source,b1,_) := Inline.inlineExp(e1,fns,source);
         (e2_1,source,b2,_) := Inline.inlineExp(e2,fns,source);
@@ -227,38 +227,38 @@ algorithm
       then
         (eqn, true);
 
-    case(BackendDAE.FOR_EQUATION(e, e1, e2, eqn, source, attr), _)
+    case(BackendDAE.FOR_EQUATION(e, e1, e2, eqn, source, attr))
       algorithm
         (eqn, true) := inlineEq(eqn, fns);
       then
         (BackendDAE.FOR_EQUATION(e, e1, e2, eqn, source, attr), true);
 
-    case(BackendDAE.SOLVED_EQUATION(cref,e,source,attr),_)
+    case(BackendDAE.SOLVED_EQUATION(cref,e,source,attr))
       algorithm
         (e_1,source,true,_) := Inline.inlineExp(e,fns,source);
       then
         (BackendDAE.SOLVED_EQUATION(cref,e_1,source,attr),true);
 
-    case(BackendDAE.RESIDUAL_EQUATION(e,source,attr),_)
+    case(BackendDAE.RESIDUAL_EQUATION(e,source,attr))
       algorithm
         (e_1,source,true,_) := Inline.inlineExp(e,fns,source);
       then
         (BackendDAE.RESIDUAL_EQUATION(e_1,source,attr),true);
 
-    case(BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS(statementLst=stmts),source,crefExpand,attr),_)
+    case(BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS(statementLst=stmts),source,crefExpand,attr))
       algorithm
         (stmts1,true) := Inline.inlineStatements(stmts,fns,{},false);
         alg := DAE.ALGORITHM_STMTS(stmts1);
       then
         (BackendDAE.ALGORITHM(size,alg,source,crefExpand,attr),true);
 
-    case(BackendDAE.WHEN_EQUATION(size,weq,source,attr),_)
+    case(BackendDAE.WHEN_EQUATION(size,weq,source,attr))
       algorithm
         (weq_1,source,true) := inlineWhenEq(weq,fns,source);
       then
         (BackendDAE.WHEN_EQUATION(size,weq_1,source,attr),true);
 
-    case(BackendDAE.COMPLEX_EQUATION(size,e1,e2,source,attr),_)
+    case(BackendDAE.COMPLEX_EQUATION(size,e1,e2,source,attr))
       algorithm
         (e1_1,source,b1,_) := Inline.inlineExp(e1,fns,source);
         (e2_1,source,b2,_) := Inline.inlineExp(e2,fns,source);
@@ -266,7 +266,7 @@ algorithm
       then
         (BackendDAE.COMPLEX_EQUATION(size,e1_1,e2_1,source,attr),true);
 
-    case(BackendDAE.IF_EQUATION(explst,eqnslst,eqns,source,attr),_)
+    case(BackendDAE.IF_EQUATION(explst,eqnslst,eqns,source,attr))
       algorithm
         (explst,source,b1) := Inline.inlineExps(explst,fns,source);
         (eqnslst,b2) := inlineEqsLst(eqnslst,fns,{},false);
@@ -288,13 +288,13 @@ protected function inlineEqsLst
   output list<list<BackendDAE.Equation>> outEqnsList;
   output Boolean OInlined;
 algorithm
-  (outEqnsList,OInlined) := match(inEqnsList,inFunctions,iAcc,iInlined)
+  (outEqnsList,OInlined) := match(inEqnsList)
     local
       list<BackendDAE.Equation> eqn;
       list<list<BackendDAE.Equation>> rest,acc;
       Boolean inlined;
-    case ({},_,_,_) then (listReverse(iAcc),iInlined);
-    case (eqn::rest,_,_,_)
+    case ({}) then (listReverse(iAcc),iInlined);
+    case (eqn::rest)
       algorithm
         (eqn,inlined) := inlineEqs(eqn,inFunctions,{},false);
         (acc,inlined) := inlineEqsLst(rest,inFunctions,eqn::iAcc,inlined or iInlined);
@@ -311,13 +311,13 @@ public function inlineEqs
   output list<BackendDAE.Equation> outEqnsList;
   output Boolean OInlined;
 algorithm
-  (outEqnsList,OInlined) := match(inEqnsList,inFunctions,iAcc,iInlined)
+  (outEqnsList,OInlined) := match(inEqnsList)
     local
       BackendDAE.Equation eqn;
       list<BackendDAE.Equation> rest,acc;
       Boolean inlined;
-    case ({},_,_,_) then (listReverse(iAcc),iInlined);
-    case (eqn::rest,_,_,_)
+    case ({}) then (listReverse(iAcc),iInlined);
+    case (eqn::rest)
       algorithm
         (eqn,inlined) := inlineEq(eqn,inFunctions);
         (acc,inlined) := inlineEqs(rest,inFunctions,eqn::iAcc,inlined or iInlined);
@@ -428,15 +428,14 @@ protected function inlineVariables
   output BackendDAE.Variables outVariables;
   output Boolean inlined;
 algorithm
-  (outVariables,inlined) := matchcontinue(inVariables,inElementList)
+  (outVariables,inlined) := matchcontinue(inVariables)
     local
-      Inline.Functiontuple fns;
       array<list<BackendDAE.CrefIndex>> crefind;
       Integer i1,i2,i3;
       array<Option<BackendDAE.Var>> vararr;
-    case(BackendDAE.VARIABLES(crefind,BackendDAE.VARIABLE_ARRAY(i3,vararr),i1,i2),fns)
+    case(BackendDAE.VARIABLES(crefind,BackendDAE.VARIABLE_ARRAY(i3,vararr),i1,i2))
       algorithm
-        inlined := inlineVarOptArray(vararr,fns);
+        inlined := inlineVarOptArray(vararr,inElementList);
       then
         (BackendDAE.VARIABLES(crefind,BackendDAE.VARIABLE_ARRAY(i3,vararr),i1,i2),inlined);
     else
@@ -476,12 +475,12 @@ protected function inlineVarOpt
   output Option<BackendDAE.Var> outVarOption;
   output Boolean inlined;
 algorithm
-  (outVarOption,inlined) := match(inVarOption,fns)
+  (outVarOption,inlined) := match(inVarOption)
     local
       BackendDAE.Var var,var2;
       Boolean b;
-    case(NONE(),_) then (NONE(),false);
-    case(SOME(var),_)
+    case(NONE()) then (NONE(),false);
+    case(SOME(var))
       algorithm
         (var2,b) := inlineVar(var,fns);
       then
@@ -1150,7 +1149,7 @@ protected function addReplacement
   input BackendVarTransform.VariableReplacements iRepl;
   output BackendVarTransform.VariableReplacements oRepl;
 algorithm
-  oRepl := match(iCr,iExp,iRepl)
+  oRepl := match(iCr)
     local
       DAE.Type tp;
       BackendVarTransform.VariableReplacements repl;
@@ -1158,11 +1157,11 @@ algorithm
       list<DAE.Exp> arrExp;
       DAE.Exp e;
 
-    case (DAE.CREF_IDENT(identType=tp),_,_)
+    case (DAE.CREF_IDENT(identType=tp))
       guard not Expression.isRecordType(tp) and not Expression.isArrayType(tp)
     then BackendVarTransform.addReplacement(iRepl, iCr, iExp, NONE());
 
-    case (DAE.CREF_IDENT(identType=tp),_,_)
+    case (DAE.CREF_IDENT(identType=tp))
       guard Expression.isArrayType(tp)
       algorithm
         crefs := ComponentReference.expandCref(iCr, false);

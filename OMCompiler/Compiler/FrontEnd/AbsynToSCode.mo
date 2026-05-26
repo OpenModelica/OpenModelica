@@ -124,7 +124,7 @@ protected function translateClass2
   input Integer inNumMessages;
   output SCode.Element outClass;
 algorithm
-  outClass := matchcontinue (inClass, inNumMessages)
+  outClass := matchcontinue inClass
     local
       SCode.ClassDef d_1;
       SCode.Restriction r_1;
@@ -140,7 +140,7 @@ algorithm
       SCode.Partial sPar;
       SCode.Comment cmt;
 
-    case (c as Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = d,info = file_info), _)
+    case (c as Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = d,info = file_info))
       algorithm
         // fprint(Flags.TRANSLATE, "Translating class:" + n + "\n");
         r_1 := translateRestriction(c, r); // uniontype will not get translated!
@@ -166,7 +166,7 @@ algorithm
       then
         scodeClass;
 
-    case (Absyn.CLASS(name = n,info = file_info), _)
+    case (Absyn.CLASS(name = n,info = file_info))
       algorithm
         // Print out an internal error msg only if no other errors have already
         // been printed.
@@ -188,7 +188,7 @@ public function translateOperatorDef
   output SCode.ClassDef outOperDef;
   output SCode.Comment cmt;
 algorithm
-  (outOperDef,cmt) := match (inClassDef,operatorName,info)
+  (outOperDef,cmt) := match inClassDef
     local
       Option<String> cmtString;
       list<SCode.Element> els;
@@ -199,7 +199,7 @@ algorithm
       list<Absyn.Annotation> aann;
       Option<SCode.Annotation> ann;
 
-  case (Absyn.PARTS(classParts = parts,ann=aann, comment = cmtString),_,_)
+  case Absyn.PARTS(classParts = parts,ann=aann, comment = cmtString)
       algorithm
         els := translateClassdefElements(parts);
         cmt := translateCommentList(aann,cmtString);
@@ -400,7 +400,7 @@ protected function translateClassdef
   output SCode.ClassDef outClassDef;
   output SCode.Comment outComment;
 algorithm
-  (outClassDef,outComment) := match (inClassDef,info)
+  (outClassDef,outComment) := match inClassDef
     local
       SCode.Mod mod;
       Absyn.TypeSpec t;
@@ -426,7 +426,7 @@ algorithm
       list<Absyn.NamedArg> classAttrs;
       list<Absyn.Annotation> ann;
 
-    case (Absyn.DERIVED(typeSpec = t,attributes = attr,arguments = a,comment = cmt),_)
+    case (Absyn.DERIVED(typeSpec = t,attributes = attr,arguments = a,comment = cmt))
       algorithm
         checkTypeSpec(t, info);
         // fprintln(Flags.TRANSLATE, "translating derived class: " + Dump.unparseTypeSpec(t));
@@ -436,7 +436,7 @@ algorithm
       then
         (SCode.DERIVED(t,mod,scodeAttr), scodeCmt);
 
-    case (Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann=ann,comment = cmtString),_)
+    case (Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann=ann,comment = cmtString))
       algorithm
         // fprintln(Flags.TRANSLATE, "translating class parts");
         typeVars := match re
@@ -458,7 +458,7 @@ algorithm
       then
         (SCode.PARTS(els,eqs,initeqs,als,initals,cos,classAttrs,decl),scodeCmt);
 
-    case (Absyn.ENUMERATION(Absyn.ENUMLITERALS(enumLiterals = lst), cmt),_)
+    case (Absyn.ENUMERATION(Absyn.ENUMLITERALS(enumLiterals = lst), cmt))
       algorithm
         // fprintln(Flags.TRANSLATE, "translating enumerations");
         lst_1 := translateEnumlist(lst);
@@ -466,21 +466,21 @@ algorithm
       then
         (SCode.ENUMERATION(lst_1), scodeCmt);
 
-    case (Absyn.ENUMERATION(Absyn.ENUM_COLON(), cmt),_)
+    case (Absyn.ENUMERATION(Absyn.ENUM_COLON(), cmt))
       algorithm
         // fprintln(Flags.TRANSLATE, "translating enumeration of ':'");
         scodeCmt := translateComment(cmt);
       then
         (SCode.ENUMERATION({}),scodeCmt);
 
-    case (Absyn.OVERLOAD(pathLst,cmt),_)
+    case (Absyn.OVERLOAD(pathLst,cmt))
       algorithm
         // fprintln(Flags.TRANSLATE, "translating overloaded");
         scodeCmt := translateComment(cmt);
       then
         (SCode.OVERLOAD(pathLst),scodeCmt);
 
-    case (Absyn.CLASS_EXTENDS(modifications = cmod,ann=ann,comment = cmtString,parts = parts),_)
+    case (Absyn.CLASS_EXTENDS(modifications = cmod,ann=ann,comment = cmtString,parts = parts))
       algorithm
         // fprintln(Flags.TRANSLATE "translating model extends " + name + " ... end " + name + ";");
         els := translateClassdefElements(parts);
@@ -496,7 +496,7 @@ algorithm
       then
         (SCode.CLASS_EXTENDS(mod,SCode.PARTS(els,eqs,initeqs,als,initals,cos,{},decl)),scodeCmt);
 
-    case (Absyn.PDER(functionName = path,vars = vars, comment=cmt),_)
+    case (Absyn.PDER(functionName = path,vars = vars, comment=cmt))
       algorithm
         // fprintln(Flags.TRANSLATE, "translating pder( " + AbsynUtil.pathString(path) + ", vars)");
         scodeCmt := translateComment(cmt);
@@ -1062,18 +1062,18 @@ protected function translateDefineunitParam2 " help function to translateElement
   input String inArg;
   output Option<Real> weightOpt;
 algorithm
-  weightOpt := match (inArgs,inArg)
+  weightOpt := match (inArgs)
     local
       String name, arg, s;
       Real r;
       list<Absyn.NamedArg> args;
 
-    case (Absyn.NAMEDARG(name,Absyn.REAL(s))::_,arg) guard name == arg
+    case (Absyn.NAMEDARG(name,Absyn.REAL(s))::_) guard name == inArg
       algorithm
         r := stringReal(s);
       then SOME(r);
-    case({},_) then NONE();
-    case(_::args,arg) then translateDefineunitParam2(args,arg);
+    case ({}) then NONE();
+    case (_::args) then translateDefineunitParam2(args,inArg);
   end match;
 end translateDefineunitParam2;
 
@@ -1089,7 +1089,7 @@ protected function translateElementspec
   input SourceInfo inInfo;
   output list<SCode.Element> outElementLst;
 algorithm
-  outElementLst := match (cc,finalPrefix,io,inRedeclareKeywords,inVisibility,inElementSpec4,inInfo)
+  outElementLst := match (cc,inRedeclareKeywords,inElementSpec4,inInfo)
     local
       SCode.ClassDef de_1;
       SCode.Restriction re_1;
@@ -1127,13 +1127,12 @@ algorithm
       SCode.Replaceable sRep;
       SCode.Encapsulated sEnc;
       SCode.Partial sPar;
-      SCode.Visibility vis;
       SCode.ConnectorType ct;
       SCode.Prefixes prefixes;
       Option<SCode.ConstrainClass> scc;
 
 
-    case (_,_,_,repl,vis, Absyn.CLASSDEF(replaceable_ = rp, class_ = (Absyn.CLASS(name = n,partialPrefix = pa,encapsulatedPrefix = e,restriction = Absyn.R_OPERATOR(),body = de,info = i))),_)
+    case (_,repl, Absyn.CLASSDEF(replaceable_ = rp, class_ = (Absyn.CLASS(name = n,partialPrefix = pa,encapsulatedPrefix = e,restriction = Absyn.R_OPERATOR(),body = de,info = i))),_)
       algorithm
         (de_1,cmt) := translateOperatorDef(de,n,i);
         (_, redecl) := translateRedeclarekeywords(repl);
@@ -1145,13 +1144,13 @@ algorithm
         sPar := SCodeUtil.boolPartial(pa);
         cls := SCode.CLASS(
           n,
-          SCode.PREFIXES(vis,sRed,sFin,io,sRep),
+          SCode.PREFIXES(inVisibility,sRed,sFin,io,sRep),
           sEnc, sPar, SCode.R_OPERATOR(), de_1, cmt, i);
       then
         {cls};
 
 
-    case (_,_,_,repl,vis, Absyn.CLASSDEF(replaceable_ = rp, class_ = (cl as Absyn.CLASS(name = n,partialPrefix = pa,encapsulatedPrefix = e,restriction = re,body = de,info = i))),_)
+    case (_,repl, Absyn.CLASSDEF(replaceable_ = rp, class_ = (cl as Absyn.CLASS(name = n,partialPrefix = pa,encapsulatedPrefix = e,restriction = re,body = de,info = i))),_)
       algorithm
         // fprintln(Flags.TRANSLATE, "translating local class: " + n);
         re_1 := translateRestriction(cl, re); // uniontype will not get translated!
@@ -1165,29 +1164,29 @@ algorithm
         sPar := SCodeUtil.boolPartial(pa);
         cls := SCode.CLASS(
           n,
-          SCode.PREFIXES(vis,sRed,sFin,io,sRep),
+          SCode.PREFIXES(inVisibility,sRed,sFin,io,sRep),
           sEnc, sPar, re_1, de_1, cmt, i);
       then
         {cls};
 
-    case (_,_,_,_,vis,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = NONE()),info)
+    case (_,_,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = NONE()),info)
       algorithm
         // fprintln(Flags.TRANSLATE, "translating extends: " + AbsynUtil.pathString(n));
         mod := translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), NONE(), Absyn.dummyInfo);
       then
-        {SCode.EXTENDS(path,vis,mod,NONE(),info)};
+        {SCode.EXTENDS(path,inVisibility,mod,NONE(),info)};
 
-    case (_,_,_,_,vis,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = SOME(absann)),info)
+    case (_,_,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = SOME(absann)),info)
       algorithm
         // fprintln(Flags.TRANSLATE, "translating extends: " + AbsynUtil.pathString(n));
         mod := translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), NONE(), Absyn.dummyInfo);
         ann := translateAnnotation(absann);
       then
-        {SCode.EXTENDS(path,vis,mod,ann,info)};
+        {SCode.EXTENDS(path,inVisibility,mod,ann,info)};
 
-    case (_,_,_,_,_,Absyn.COMPONENTS(components = {}),_) then {};
+    case (_,_,Absyn.COMPONENTS(components = {}),_) then {};
 
-    case (_,_,_,repl,vis,Absyn.COMPONENTS(attributes =
+    case (_,repl,Absyn.COMPONENTS(attributes =
       (Absyn.ATTR(flowPrefix = fl,streamPrefix=st,parallelism=parallelism,variability = variability,direction = di,isField = isf,arrayDim = ad)), typeSpec = t),info)
       algorithm
         xs_1 := {};
@@ -1210,7 +1209,7 @@ algorithm
           scc := translateConstrainClass(cc);
           sRep := if repl_1 then SCode.REPLACEABLE(scc) else SCode.NOT_REPLACEABLE();
           ct := translateConnectorType(fl, st);
-          prefixes := SCode.PREFIXES(vis,sRed,sFin,io,sRep);
+          prefixes := SCode.PREFIXES(inVisibility,sRed,sFin,io,sRep);
           xs_1 := match di
             local
               SCode.Attributes attr1,attr2;
@@ -1228,10 +1227,10 @@ algorithm
         end for;
         xs_1 := Dangerous.listReverseInPlace(xs_1);
       then xs_1;
-    case (_,_,_,_,vis,Absyn.IMPORT(import_ = imp, info = info),_)
+    case (_,_,Absyn.IMPORT(import_ = imp, info = info),_)
       algorithm
         // fprintln(Flags.TRANSLATE, "translating import: " + Dump.unparseImportStr(imp));
-        xs_1 := translateImports(imp,vis,info);
+        xs_1 := translateImports(imp,inVisibility,info);
       then
         xs_1;
 
@@ -1248,21 +1247,21 @@ protected function translateImports "Used to handle group imports, i.e. A.B.C.{x
   input SourceInfo info;
   output list<SCode.Element> elts;
 algorithm
-  elts := match (imp,visibility,info)
+  elts := match imp
     local
       String name;
       Absyn.Path p;
       list<Absyn.GroupImport> groups;
 
       /* Maybe these should give warnings? I don't know. See https://trac.modelica.org/Modelica/ticket/955 */
-    case (Absyn.NAMED_IMPORT(name,Absyn.FULLYQUALIFIED(p)),_,_)
+    case Absyn.NAMED_IMPORT(name,Absyn.FULLYQUALIFIED(p))
       then translateImports(Absyn.NAMED_IMPORT(name,p),visibility,info);
-    case (Absyn.QUAL_IMPORT(Absyn.FULLYQUALIFIED(p)),_,_)
+    case Absyn.QUAL_IMPORT(Absyn.FULLYQUALIFIED(p))
       then translateImports(Absyn.QUAL_IMPORT(p),visibility,info);
-    case (Absyn.UNQUAL_IMPORT(Absyn.FULLYQUALIFIED(p)),_,_)
+    case Absyn.UNQUAL_IMPORT(Absyn.FULLYQUALIFIED(p))
       then translateImports(Absyn.UNQUAL_IMPORT(p),visibility,info);
 
-    case (Absyn.GROUP_IMPORT(prefix=p,groups=groups),_,_)
+    case Absyn.GROUP_IMPORT(prefix=p,groups=groups)
       then List.map3(groups, translateGroupImport, p, visibility, info);
     else {SCode.IMPORT(imp, visibility, info)};
   end match;
@@ -1275,20 +1274,19 @@ protected function translateGroupImport "Used to handle group imports, i.e. A.B.
   input SourceInfo info;
   output SCode.Element elt;
 algorithm
-  elt := match (gimp,prefix,visibility,info)
+  elt := match gimp
     local
       String name,rename;
       Absyn.Path path;
-      SCode.Visibility vis;
 
-    case (Absyn.GROUP_IMPORT_NAME(name=name),_,vis,_)
+    case Absyn.GROUP_IMPORT_NAME(name=name)
       algorithm
         path := AbsynUtil.joinPaths(prefix,Absyn.IDENT(name));
-      then SCode.IMPORT(Absyn.QUAL_IMPORT(path),vis,info);
-    case (Absyn.GROUP_IMPORT_RENAME(rename=rename,name=name),_,vis,_)
+      then SCode.IMPORT(Absyn.QUAL_IMPORT(path),visibility,info);
+    case Absyn.GROUP_IMPORT_RENAME(rename=rename,name=name)
       algorithm
         path := AbsynUtil.joinPaths(prefix,Absyn.IDENT(name));
-      then SCode.IMPORT(Absyn.NAMED_IMPORT(rename,path),vis,info);
+      then SCode.IMPORT(Absyn.NAMED_IMPORT(rename,path),visibility,info);
   end match;
 end translateGroupImport;
 
@@ -1430,10 +1428,10 @@ protected function getInfoAnnotationOrDefault "Replaces the file info if there i
   input SourceInfo default;
   output SourceInfo info;
 algorithm
-  info := match (comment,default)
+  info := match comment
     local
       list<SCode.SubMod> lst;
-    case (SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(modification=SCode.MOD(subModLst=lst)))),_)
+    case SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(modification=SCode.MOD(subModLst=lst))))
       then getInfoAnnotationOrDefault2(lst,default);
     else default;
   end match;

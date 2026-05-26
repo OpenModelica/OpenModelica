@@ -761,13 +761,13 @@ protected function traverseBackendDAEExpsEqnLstLstWithSymbolicOperation
     output tuple<list<DAE.SymbolicOperation>, Type_a> outTpl;
   end FuncExpType;
 algorithm
-  (outEqns, outTypeA) := match (inEqns, func, inTypeA, iAcc)
+  (outEqns, outTypeA) := match inEqns
     local
       list<BackendDAE.Equation> eqn;
       list<list<BackendDAE.Equation>> rest, eqnslst;
       Type_a arg;
-    case({}, _, _, _) then (listReverse(iAcc), inTypeA);
-    case(eqn::rest, _, _, _)
+    case({}) then (listReverse(iAcc), inTypeA);
+    case(eqn::rest)
       algorithm
         (eqn, arg) := traverseBackendDAEExpsEqnLstWithSymbolicOperation(eqn, func, inTypeA, {});
         (eqnslst, arg) := traverseBackendDAEExpsEqnLstLstWithSymbolicOperation(rest, func, arg, eqn::iAcc);

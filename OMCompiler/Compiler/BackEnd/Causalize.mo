@@ -86,21 +86,21 @@ public function singularSystemCheck
   input BackendDAE.Shared ishared;
   output BackendDAE.EqSystem outSyst;
 algorithm
-  outSyst := matchcontinue (nvars,neqns,isyst,inMatchingOptions,matchingAlgorithm,arg,ishared)
+  outSyst := matchcontinue (neqns,inMatchingOptions)
     local
       String esize_str,vsize_str;
 
-    case (_,_,_,(_,BackendDAE.ALLOW_UNDERCONSTRAINED()),_,_,_)
+    case (_,(_,BackendDAE.ALLOW_UNDERCONSTRAINED()))
       then
         singularSystemCheck1(nvars,neqns,isyst,BackendDAE.ALLOW_UNDERCONSTRAINED(),matchingAlgorithm,arg,ishared);
 
-    case (_,_,_,(_,BackendDAE.EXACT()),_,_,_)
+    case (_,(_,BackendDAE.EXACT()))
       algorithm
         true := intEq(nvars,neqns);
       then
         singularSystemCheck1(nvars,neqns,isyst,BackendDAE.EXACT(),matchingAlgorithm,arg,ishared);
 
-    case (_,_,_,(_,BackendDAE.EXACT()),_,_,_)
+    case (_,(_,BackendDAE.EXACT()))
       algorithm
         true := intGt(nvars,neqns);
         esize_str := intString(neqns);
@@ -110,7 +110,7 @@ algorithm
       then
         fail();
 
-    case (_,_,_,_,_,_,_)
+    case (_,_)
       algorithm
         true := intLt(nvars,neqns);
         esize_str := intString(neqns) ;

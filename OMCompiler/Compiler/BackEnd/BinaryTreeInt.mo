@@ -116,12 +116,12 @@ protected function treeGet2
   input Key ikey;
   output Integer compResult;
 algorithm
-  compResult := match (inBinTree,ikey)
+  compResult := match inBinTree
     local
       Key key;
 
     // found it
-    case (TREENODE(value = SOME(TREEVALUE(key=key))),_)
+    case TREENODE(value = SOME(TREEVALUE(key=key)))
       then keyCmp(key, ikey);
   end match;
 end treeGet2;
@@ -133,21 +133,21 @@ protected function treeGet3
   input Integer inCompResult;
   output Value outValue;
 algorithm
-  outValue := match (inBinTree,ikey,inCompResult)
+  outValue := match (inBinTree,inCompResult)
     local
       Value rval;
       BinTree right, left;
       Integer compResult;
 
     // found it
-    case (TREENODE(value = SOME(TREEVALUE(value=rval))),_,0) then rval;
+    case (TREENODE(value = SOME(TREEVALUE(value=rval))),0) then rval;
     // search right
-    case (TREENODE(rightSubTree = SOME(right)),_,1)
+    case (TREENODE(rightSubTree = SOME(right)),1)
       algorithm
         compResult := treeGet2(right, ikey);
       then treeGet3(right, ikey, compResult);
     // search left
-    case (TREENODE(leftSubTree = SOME(left)),_,-1)
+    case (TREENODE(leftSubTree = SOME(left)),-1)
       algorithm
         compResult := treeGet2(left, ikey);
       then treeGet3(left, ikey, compResult);
@@ -188,7 +188,7 @@ public function treeAdd "author: PA
   input Value inValue;
   output BinTree outBinTree;
 algorithm
-  outBinTree := matchcontinue (inBinTree,inKey,inValue)
+  outBinTree := matchcontinue inBinTree
     local
       Key rkey;
       Value rval;
@@ -196,38 +196,38 @@ algorithm
       BinTree t_1,t,right_1,left_1;
       Option<TreeValue> optVal;
 
-    case (TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE()),_,_)
+    case (TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE()))
       then
         TREENODE(SOME(TREEVALUE(inKey,inValue)),NONE(),NONE());
 
-    case (TREENODE(value = SOME(TREEVALUE(rkey,_)),leftSubTree = left,rightSubTree = right),_,_)
+    case (TREENODE(value = SOME(TREEVALUE(rkey,_)),leftSubTree = left,rightSubTree = right))
       algorithm
         0 := keyCmp(rkey,inKey);
       then
         TREENODE(SOME(TREEVALUE(rkey,inValue)),left,right);
 
-    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,_)),leftSubTree = left,rightSubTree = (SOME(t))),_,_)
+    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,_)),leftSubTree = left,rightSubTree = (SOME(t))))
       algorithm
         1 := keyCmp(rkey,inKey);
         t_1 := treeAdd(t, inKey, inValue);
       then
         TREENODE(optVal,left,SOME(t_1));
 
-    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,_)),leftSubTree = left,rightSubTree = (NONE())),_,_)
+    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,_)),leftSubTree = left,rightSubTree = (NONE())))
       algorithm
         1 := keyCmp(rkey,inKey);
         right_1 := treeAdd(TREENODE(NONE(),NONE(),NONE()), inKey, inValue);
       then
         TREENODE(optVal,left,SOME(right_1));
 
-    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,_)),leftSubTree = (SOME(t)),rightSubTree = right),_,_)
+    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,_)),leftSubTree = (SOME(t)),rightSubTree = right))
       algorithm
         -1 := keyCmp(rkey,inKey);
         t_1 := treeAdd(t, inKey, inValue);
       then
         TREENODE(optVal,SOME(t_1),right);
 
-    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,_)),leftSubTree = (NONE()),rightSubTree = right),_,_)
+    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,_)),leftSubTree = (NONE()),rightSubTree = right))
       algorithm
         -1 := keyCmp(rkey,inKey);
         left_1 := treeAdd(TREENODE(NONE(),NONE(),NONE()), inKey, inValue);

@@ -177,15 +177,15 @@ public function addReplacements
   input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
   output VariableReplacements outRepl;
 algorithm
-   outRepl := match(iRepl,inSrcs,inDsts,inFuncTypeExpExpToBooleanOption)
+   outRepl := match(inSrcs,inDsts,inFuncTypeExpExpToBooleanOption)
      local
        DAE.ComponentRef cr;
        list<DAE.ComponentRef> crlst;
        DAE.Exp exp;
        VariableReplacements repl;
        list<DAE.Exp> explst;
-     case (_,{},{},_) then iRepl;
-     case (_,cr::crlst,exp::explst,_)
+     case ({},{},_) then iRepl;
+     case (cr::crlst,exp::explst,_)
        algorithm
          repl := addReplacement(iRepl,cr,exp,inFuncTypeExpExpToBooleanOption);
        then
@@ -206,7 +206,7 @@ public function addReplacement "
   output VariableReplacements outRepl;
 algorithm
   outRepl:=
-  matchcontinue (repl,inSrc,inDst,inFuncTypeExpExpToBooleanOption)
+  matchcontinue (inSrc,inDst)
     local
       DAE.ComponentRef src;
       DAE.Exp dst;
@@ -224,7 +224,7 @@ algorithm
      // then
      //   fail();
 
-    case (_,src,dst,_)
+    case (src,dst)
       algorithm
         (REPLACEMENTS(ht,invHt,eht,iv,derConst),src,dst) := makeTransitive(repl, src, dst, inFuncTypeExpExpToBooleanOption);
         /*s1 = ComponentReferenceBasics.printComponentRefStr(src);
@@ -242,7 +242,7 @@ algorithm
         eht := addExtendReplacement(eht,src,NONE());
       then
         REPLACEMENTS(ht,invHt,eht,iv,derConst);
-    case (_,_,_,_)
+    case (_,_)
       algorithm
         s := ComponentReferenceBasics.printComponentRefStr(inSrc);
         print("-BackendVarTransform.addReplacement failed for " + s);
@@ -406,14 +406,14 @@ protected function makeTransitive1 "
   output DAE.Exp outDst;
 algorithm
   (outRepl,outSrc,outDst):=
-  matchcontinue (repl,src,dst,inFuncTypeExpExpToBooleanOption)
+  matchcontinue repl
     local
       list<DAE.ComponentRef> lst;
       VariableReplacements repl_1,singleRepl;
       CrefCrefListTable invHt;
       // old rule a->expr(b1,..,bn) must be updated to a->expr(c_exp,...,bn) when new rule b1->c_exp
       // is introduced
-    case ((REPLACEMENTS(invHashTable=invHt)),_,_,_)
+    case REPLACEMENTS(invHashTable=invHt)
       algorithm
         SOME(lst) := UnorderedMap.getOrFail(src, invHt);
         singleRepl := addReplacementNoTransitive(emptyReplacementsSized(53),src,dst);
@@ -470,17 +470,17 @@ protected function makeTransitive2 "
   output DAE.Exp outDst;
 algorithm
   (outRepl,outSrc,outDst):=
-  matchcontinue (repl,src,dst,inFuncTypeExpExpToBooleanOption)
+  matchcontinue inFuncTypeExpExpToBooleanOption
     local
       DAE.Exp dst_1;
       // for rule a->b1+..+bn, replace all b1 to bn's in the expression;
-    case (_,_,_,_)
+    case _
       algorithm
         (dst_1,_) := replaceExp(dst,repl,inFuncTypeExpExpToBooleanOption);
       then
         (repl,src,dst_1);
         // replace Exp failed, keep old rule.
-    case (_,_,_,_) then (repl,src,dst);  /* dst has no own replacement, return */
+    case _ then (repl,src,dst);  /* dst has no own replacement, return */
   end matchcontinue;
 end makeTransitive2;
 
@@ -494,7 +494,7 @@ protected function addExtendReplacement
   output CrefSet outExtendrepl;
 algorithm
   outExtendrepl:=
-  matchcontinue (extendrepl,cr,preCr)
+  matchcontinue (cr,preCr)
     local
       CrefSet erepl,erepl1;
       DAE.ComponentRef subcr,precr,precr1,pcr,precrn,precrn1;
@@ -504,20 +504,20 @@ algorithm
       list<DAE.Var> varLst;
       list<DAE.ComponentRef> crefs;
       String s;
-    case (_,DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_ARRAY()),NONE())
+    case (DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_ARRAY()),NONE())
       algorithm
         precr := ComponentReferenceBasics.makeCrefIdent(ident,ty,{});
         // update Replacements
         UnorderedSet.addUnique(precr, extendrepl);
       then extendrepl;
-    case (_,DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_ARRAY()),SOME(pcr))
+    case (DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_ARRAY()),SOME(pcr))
       algorithm
         precr := ComponentReferenceBasics.makeCrefIdent(ident,ty,{});
         precr1 := ComponentReference.joinCrefs(pcr,precr);
         // update Replacements
         UnorderedSet.addUnique(precr1, extendrepl);
       then extendrepl;
-    case (_,DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=varLst)),NONE())
+    case (DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=varLst)),NONE())
       algorithm
         precr := ComponentReferenceBasics.makeCrefIdent(ident,ty,{});
         // update Replacements
@@ -526,7 +526,7 @@ algorithm
         crefs :=  List.map(varLst,ComponentReference.creffromVar);
         erepl := List.fold1r(crefs,addExtendReplacement,SOME(precr), extendrepl);
       then erepl;
-    case (_,DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=varLst)),SOME(pcr))
+    case (DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=varLst)),SOME(pcr))
       algorithm
         _ := ComponentReferenceBasics.makeCrefIdent(ident,ty,{});
         precr1 := ComponentReference.joinCrefs(pcr,cr);
@@ -536,23 +536,23 @@ algorithm
         crefs :=  List.map(varLst,ComponentReference.creffromVar);
         erepl := List.fold1r(crefs,addExtendReplacement,SOME(precr1), extendrepl);
       then erepl;
-    case (_,DAE.CREF_IDENT(ident=ident,identType=ty,subscriptLst=_::_),NONE())
+    case (DAE.CREF_IDENT(ident=ident,identType=ty,subscriptLst=_::_),NONE())
       algorithm
         precr := ComponentReferenceBasics.makeCrefIdent(ident,ty,{});
         // update Replacements
         UnorderedSet.addUnique(precr, extendrepl);
       then extendrepl;
-    case (_,DAE.CREF_IDENT(ident=ident,identType=ty,subscriptLst=_::_),SOME(pcr))
+    case (DAE.CREF_IDENT(ident=ident,identType=ty,subscriptLst=_::_),SOME(pcr))
       algorithm
         precr := ComponentReferenceBasics.makeCrefIdent(ident,ty,{});
         precr1 := ComponentReference.joinCrefs(pcr,precr);
         // update Replacements
         UnorderedSet.addUnique(precr1, extendrepl);
       then extendrepl;
-    case (_,DAE.CREF_IDENT(),_)
+    case (DAE.CREF_IDENT(),_)
       then
         extendrepl;
-    case (_,DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),NONE())
+    case (DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),NONE())
       algorithm
         precr := ComponentReferenceBasics.makeCrefIdent(ident,ty,{});
         // update Replacements
@@ -560,7 +560,7 @@ algorithm
         precrn := ComponentReferenceBasics.makeCrefIdent(ident,ty,subscriptLst);
         erepl := addExtendReplacement(extendrepl,subcr,SOME(precrn));
       then erepl;
-    case (_,DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),SOME(pcr))
+    case (DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),SOME(pcr))
       algorithm
         precr := ComponentReferenceBasics.makeCrefIdent(ident,ty,{});
         precr1 := ComponentReference.joinCrefs(pcr,precr);
@@ -571,18 +571,18 @@ algorithm
         erepl := addExtendReplacement(extendrepl,subcr,SOME(precrn1));
       then erepl;
     // all other
-    case (_,DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),NONE())
+    case (DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),NONE())
       algorithm
         precrn := ComponentReferenceBasics.makeCrefIdent(ident,ty,subscriptLst);
         erepl := addExtendReplacement(extendrepl,subcr,SOME(precrn));
       then erepl;
-    case (_,DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),SOME(pcr))
+    case (DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),SOME(pcr))
       algorithm
         precrn := ComponentReferenceBasics.makeCrefIdent(ident,ty,subscriptLst);
         precrn1 := ComponentReference.joinCrefs(pcr,precrn);
         erepl := addExtendReplacement(extendrepl,subcr,SOME(precrn1));
       then erepl;
-    case (_,_,_)
+    case (_,_)
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         s := ComponentReferenceBasics.printComponentRefStr(cr);
@@ -612,15 +612,11 @@ protected function isIterationVar
   input VariableReplacements repl;
   input DAE.Ident inVar;
   output Boolean is;
+protected
+  list<DAE.Ident> iv;
 algorithm
-  is:=
-  match (repl,inVar)
-    local
-      list<DAE.Ident> iv;
-    case (REPLACEMENTS(iterationVars=iv),_)
-      then
-        listMember(inVar, iv);
-  end match;
+  (REPLACEMENTS(iterationVars=iv),_) := (repl, inVar);
+  is := listMember(inVar, iv);
 end isIterationVar;
 
 public function addDerConstRepl
@@ -713,9 +709,9 @@ TODO: find out why array residual functions containing arrays as xloc[] does not
   input DAE.Exp inExp;
   input DAE.Type inType;
   output DAE.Exp outExp;
-algorithm  outExp := matchcontinue(inExp,inType)
+algorithm  outExp := matchcontinue(inExp)
   local DAE.ComponentRef cr;
-  case(DAE.CREF(cr,DAE.T_UNKNOWN()),_) then Expression.makeCrefExp(cr,inType);
+  case(DAE.CREF(cr,DAE.T_UNKNOWN())) then Expression.makeCrefExp(cr,inType);
   else inExp;
   end matchcontinue;
 end avoidDoubleHashLookup;
@@ -1060,10 +1056,10 @@ author: Waurich TUD 2014-06"
   output DAE.Exp expOut;
   output Boolean changedOut;
 algorithm
-  (expOut,changedOut) := match(crefIn,replIn)
+  (expOut,changedOut) := match replIn
     local
       DAE.Exp exp;
-    case(_,_) guard hasReplacement(replIn,crefIn)
+    case _ guard hasReplacement(replIn,crefIn)
       algorithm
         expOut := getReplacement(replIn,crefIn);
       then (expOut,true);
@@ -1081,7 +1077,7 @@ protected function replaceCrefSubs
   output DAE.ComponentRef outCr;
   output Boolean replacementPerformed;
 algorithm
-  (outCr,replacementPerformed) := match (inCref,repl,cond)
+  (outCr,replacementPerformed) := match inCref
     local
       String name;
       DAE.ComponentRef cr,cr_1;
@@ -1089,7 +1085,7 @@ algorithm
       list<DAE.Subscript> subs,subs_1;
       Boolean c1,c2;
 
-    case (DAE.CREF_QUAL(ident = name, identType = ty, subscriptLst = subs, componentRef = cr), _, _)
+    case DAE.CREF_QUAL(ident = name, identType = ty, subscriptLst = subs, componentRef = cr)
       algorithm
         (subs_1, c1) := replaceCrefSubs2(subs, repl, cond);
         (cr_1, c2) := replaceCrefSubs(cr, repl, cond);
@@ -1099,7 +1095,7 @@ algorithm
       then
         (cr, c1 or c2);
 
-    case (DAE.CREF_IDENT(ident = name, identType = ty, subscriptLst = subs), _, _)
+    case DAE.CREF_IDENT(ident = name, identType = ty, subscriptLst = subs)
       algorithm
         (subs, c1) := replaceCrefSubs2(subs, repl, cond);
         cr := if c1 then DAE.CREF_IDENT(name, ty, subs) else inCref;
@@ -1331,10 +1327,10 @@ public function replaceEquationsArr
   output BackendDAE.EquationArray outEqns;
   output Boolean replacementPerformed;
 algorithm
-  (outEqns,replacementPerformed) := matchcontinue(inEqns,repl,inFuncTypeExpExpToBooleanOption)
+  (outEqns,replacementPerformed) := matchcontinue()
     local
       list<BackendDAE.Equation> eqns;
-    case(_,_,_)
+    case()
       algorithm
         // Do not do empty replacements; it just takes time ;)
         false := isReplacementEmpty(repl);
@@ -1397,13 +1393,13 @@ protected function replaceEquations2
   output Boolean replacementPerformed;
 algorithm
   (outBackendDAEEquationLst,replacementPerformed) :=
-  match (inBackendDAEEquationLst,inVariableReplacements,inFuncTypeExpExpToBooleanOption,inAcc,iReplacementPerformed)
+  match (inBackendDAEEquationLst,inVariableReplacements)
     local
       BackendDAE.Equation a;
       list<BackendDAE.Equation> es,acc;
       Boolean b;
-    case ({},_,_,_,_) then (listReverse(inAcc),iReplacementPerformed);
-    case (a::es,_,_,_,_)
+    case ({},_) then (listReverse(inAcc),iReplacementPerformed);
+    case (a::es,_)
       algorithm
         (acc,b) := replaceEquation(a,inVariableReplacements,inFuncTypeExpExpToBooleanOption,inAcc,iReplacementPerformed);
         (es,b) := replaceEquations2(es, inVariableReplacements,inFuncTypeExpExpToBooleanOption,acc,b);
@@ -1543,7 +1539,7 @@ protected function optimizeIfEquation
   input list<BackendDAE.Equation> inEqns;
   output list<BackendDAE.Equation> outEqns;
 algorithm
-  outEqns := matchcontinue(conditions,theneqns,elseenqs,conditions1,theneqns1,source,inEqAttr,inEqns)
+  outEqns := matchcontinue(conditions,theneqns,elseenqs,conditions1,theneqns1)
     local
       DAE.Exp e;
       list<DAE.Exp> explst;
@@ -1551,33 +1547,33 @@ algorithm
       list<BackendDAE.Equation> eqns;
 
     // no true case left with condition<>false
-    case ({},{},_,{},{},_,_,_)
+    case ({},{},_,{},{})
       then
         listAppend(elseenqs,inEqns);
     // true case left with condition<>false
-    case ({},{},_,_,_,_,_,_)
+    case ({},{},_,{},{})
       algorithm
         explst := listReverse(conditions1);
         eqnslst := listReverse(theneqns1);
       then
         BackendDAE.IF_EQUATION(explst,eqnslst,elseenqs,source,inEqAttr)::inEqns;
     // if true use it if it is the first one
-    case(DAE.BCONST(true)::_,eqns::_,_,{},{},_,_,_)
+    case(DAE.BCONST(true)::_,eqns::_,_,{},{})
       then
         listAppend(eqns,inEqns);
     // if true use it as new else if it is not the first one
-    case(DAE.BCONST(true)::_,eqns::_,_,{},{},_,_,_)
+    case(DAE.BCONST(true)::_,eqns::_,_,{},{})
       algorithm
         explst := listReverse(conditions1);
         eqnslst := listReverse(theneqns1);
       then
         BackendDAE.IF_EQUATION(explst,eqnslst,eqns,source,inEqAttr)::inEqns;
     // if false skip it
-    case(DAE.BCONST(false)::explst,_::eqnslst,_,_,_,_,_,_)
+    case(DAE.BCONST(false)::explst,_::eqnslst,_,_,_)
       then
         optimizeIfEquation(explst,eqnslst,elseenqs,conditions1,theneqns1,source,inEqAttr,inEqns);
     // all other cases
-    case(e::explst,eqns::eqnslst,_,_,_,_,_,_)
+    case(e::explst,eqns::eqnslst,_,_,_)
       then
         optimizeIfEquation(explst,eqnslst,elseenqs,e::conditions1,eqns::theneqns1,source,inEqAttr,inEqns);
   end matchcontinue;
@@ -1590,14 +1586,14 @@ protected function validWhenLeftHandSide
   output DAE.ComponentRef outCr;
   output DAE.Exp oRhs;
 algorithm
-  (outCr,oRhs) := match(inLhs,inRhs,oldCr)
+  (outCr,oRhs) := match(inLhs)
     local
       DAE.ComponentRef cr;
       DAE.Operator op;
       String msg;
-    case(DAE.CREF(componentRef=cr),_,_) then (cr,inRhs);
-    case(DAE.UNARY(operator=op,exp=DAE.CREF(componentRef=cr)),_,_) then (cr,DAE.UNARY(op,inRhs));
-    case(DAE.LUNARY(operator=op,exp=DAE.CREF(componentRef=cr)),_,_) then (cr,DAE.LUNARY(op,inRhs));
+    case(DAE.CREF(componentRef=cr)) then (cr,inRhs);
+    case(DAE.UNARY(operator=op,exp=DAE.CREF(componentRef=cr))) then (cr,DAE.UNARY(op,inRhs));
+    case(DAE.LUNARY(operator=op,exp=DAE.CREF(componentRef=cr))) then (cr,DAE.LUNARY(op,inRhs));
     else
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
@@ -1665,7 +1661,7 @@ protected function replaceWhenOperator
 
 algorithm
   (oReinitStmtLst,oReplacementPerformed) :=
-  match (inReinitStmtLst,repl,inFuncTypeExpExpToBooleanOption,replacementPerformed,iAcc)
+  match inReinitStmtLst
     local
       list<BackendDAE.WhenOperator> res,res1;
       BackendDAE.WhenOperator wop,wop1;
@@ -1677,9 +1673,9 @@ algorithm
       list<DAE.Exp> functionArgs,functionArgs1;
       list<Boolean> blst;
 
-    case ({},_,_,_,_) then (listReverse(iAcc),replacementPerformed);
+    case ({}) then (listReverse(iAcc),replacementPerformed);
 
-    case ((wop as BackendDAE.ASSIGN(left=cre as DAE.CREF(componentRef = cr),right=exp,source=source))::res,_,_,_,_)
+    case ((wop as BackendDAE.ASSIGN(left=cre as DAE.CREF(componentRef = cr),right=exp,source=source))::res)
       algorithm
         //cre = Expression.crefExp(cr);
         (cre1,b1) := replaceExp(cre,repl,inFuncTypeExpExpToBooleanOption);
@@ -1694,7 +1690,7 @@ algorithm
       then
         (res1,b);
 
-    case ((wop as BackendDAE.ASSIGN(left=cre, right=exp, source=source))::res,_,_,_,_)
+    case ((wop as BackendDAE.ASSIGN(left=cre, right=exp, source=source))::res)
       algorithm
         //cre = Expression.crefExp(cr);
         (cre1,b1) := replaceExp(cre,repl,inFuncTypeExpExpToBooleanOption);
@@ -1708,7 +1704,7 @@ algorithm
       then
         (res1,b);
 
-    case ((wop as BackendDAE.REINIT(stateVar=cr,value=cond,source=source))::res,_,_,_,_)
+    case ((wop as BackendDAE.REINIT(stateVar=cr,value=cond,source=source))::res)
       algorithm
         cre := Expression.crefExp(cr);
         (cre1,b1) := replaceExp(cre,repl,inFuncTypeExpExpToBooleanOption);
@@ -1722,7 +1718,7 @@ algorithm
         (res1,b) :=  replaceWhenOperator(res,repl,inFuncTypeExpExpToBooleanOption,replacementPerformed or b,wop1::iAcc);
       then
         (res1,b);
-    case ((wop as BackendDAE.ASSERT(condition=cond,message=exp,level=level,source=source))::res,_,_,_,_)
+    case ((wop as BackendDAE.ASSERT(condition=cond,message=exp,level=level,source=source))::res)
       algorithm
         (cond1,b1) := replaceExp(cond,repl,inFuncTypeExpExpToBooleanOption);
         (cond1,_) := ExpressionSimplify.condsimplify(b1,cond1);
@@ -1733,7 +1729,7 @@ algorithm
         (res1,b) :=  replaceWhenOperator(res,repl,inFuncTypeExpExpToBooleanOption,replacementPerformed or b,wop1::iAcc);
       then
         (res1,b);
-    case ((wop as BackendDAE.TERMINATE(message=exp,source=source))::res,_,_,_,_)
+    case ((wop as BackendDAE.TERMINATE(message=exp,source=source))::res)
       algorithm
         (exp1,b) := replaceExp(exp,repl,inFuncTypeExpExpToBooleanOption);
         source := ElementSource.addSymbolicTransformationSubstitution(b,source,exp,exp1);
@@ -1741,7 +1737,7 @@ algorithm
         (res1,b) :=  replaceWhenOperator(res,repl,inFuncTypeExpExpToBooleanOption,replacementPerformed or b,wop1::iAcc);
       then
         (res1,b);
-    case ((wop as BackendDAE.NORETCALL(exp=exp,source=source))::res,_,_,_,_)
+    case ((wop as BackendDAE.NORETCALL(exp=exp,source=source))::res)
       algorithm
         (exp1,b) := replaceExp(exp,repl,inFuncTypeExpExpToBooleanOption);
         (exp1,_) := ExpressionSimplify.condsimplify(b,exp1);
@@ -2022,7 +2018,7 @@ function: validLhsArrayAssignSTMT
   output list<DAE.Statement> outStatementLst;
 algorithm
   outStatementLst :=
-  matchcontinue (oldCr,lhs,rhs,type_,source,inStatementLst)
+  matchcontinue lhs
     local
       list<DAE.Statement> statementLst;
       DAE.ComponentRef cr;
@@ -2032,11 +2028,11 @@ algorithm
       list<Integer> ds;
       list<list<DAE.Subscript>> subslst;
       String msg;
-    case (_,crefexp,_,_,_,_) then DAE.STMT_ASSIGN_ARR(type_,crefexp,rhs,source)::inStatementLst;
-    case (_,DAE.UNARY(DAE.UMINUS(tp),crefexp),_,_,_,_) then DAE.STMT_ASSIGN_ARR(type_,crefexp,DAE.UNARY(DAE.UMINUS(tp),rhs),source)::inStatementLst;
-    case (_,DAE.UNARY(DAE.UMINUS_ARR(tp),crefexp),_,_,_,_) then DAE.STMT_ASSIGN_ARR(type_,crefexp,DAE.UNARY(DAE.UMINUS_ARR(tp),rhs),source)::inStatementLst;
-    case (_,DAE.LUNARY(DAE.NOT(tp),crefexp),_,_,_,_) then DAE.STMT_ASSIGN_ARR(type_,crefexp,DAE.LUNARY(DAE.NOT(tp),rhs),source)::inStatementLst;
-    case (_,DAE.ARRAY(array=elst),_,_,_,_)
+    case crefexp then DAE.STMT_ASSIGN_ARR(type_,crefexp,rhs,source)::inStatementLst;
+    case DAE.UNARY(DAE.UMINUS(tp),crefexp) then DAE.STMT_ASSIGN_ARR(type_,crefexp,DAE.UNARY(DAE.UMINUS(tp),rhs),source)::inStatementLst;
+    case DAE.UNARY(DAE.UMINUS_ARR(tp),crefexp) then DAE.STMT_ASSIGN_ARR(type_,crefexp,DAE.UNARY(DAE.UMINUS_ARR(tp),rhs),source)::inStatementLst;
+    case DAE.LUNARY(DAE.NOT(tp),crefexp) then DAE.STMT_ASSIGN_ARR(type_,crefexp,DAE.LUNARY(DAE.NOT(tp),rhs),source)::inStatementLst;
+    case DAE.ARRAY(array=elst)
       algorithm
         ds := Expression.dimensionsSizes(Expression.arrayDimension(type_));
         subslst := Expression.dimensionSizesSubscripts(ds);
@@ -2071,11 +2067,11 @@ function: validLhsAssignSTMT
   output list<DAE.Statement> outStatementLst;
 algorithm
   outStatementLst :=
-  match (lhs,rhs,type_,source,inStatementLst)
+  match lhs
     local DAE.Type tp;
-    case (DAE.CREF(),_,_,_,_) then DAE.STMT_ASSIGN(type_,lhs,rhs,source)::inStatementLst;
-    case (DAE.UNARY(DAE.UMINUS(tp),DAE.CREF()),_,_,_,_) then DAE.STMT_ASSIGN(type_,lhs,DAE.UNARY(DAE.UMINUS(tp),rhs),source)::inStatementLst;
-    case (DAE.LUNARY(DAE.NOT(tp),DAE.CREF()),_,_,_,_) then DAE.STMT_ASSIGN(type_,lhs,DAE.LUNARY(DAE.NOT(tp),rhs),source)::inStatementLst;
+    case (DAE.CREF()) then DAE.STMT_ASSIGN(type_,lhs,rhs,source)::inStatementLst;
+    case (DAE.UNARY(DAE.UMINUS(tp),DAE.CREF())) then DAE.STMT_ASSIGN(type_,lhs,DAE.UNARY(DAE.UMINUS(tp),rhs),source)::inStatementLst;
+    case (DAE.LUNARY(DAE.NOT(tp),DAE.CREF())) then DAE.STMT_ASSIGN(type_,lhs,DAE.LUNARY(DAE.NOT(tp),rhs),source)::inStatementLst;
   end match;
  end validLhsAssignSTMT;
 
@@ -2090,24 +2086,24 @@ protected function replaceElse "
   output Boolean replacementPerformed;
 
 algorithm
-  (outElse,replacementPerformed) := matchcontinue (inElse,inVariableReplacements,inFuncTypeExpExpToBooleanOption)
+  (outElse,replacementPerformed) := matchcontinue (inElse)
     local
       VariableReplacements repl;
       list<DAE.Statement> statementLst,statementLst_1;
       DAE.Exp e1,e1_1,e1_2;
       DAE.Else else_,else_1;
       Boolean b1,b2;
-    case (DAE.ELSEIF(exp=e1,statementLst=statementLst,else_=else_),repl,_)
+    case (DAE.ELSEIF(exp=e1,statementLst=statementLst,else_=else_))
       algorithm
-        (e1_1,b1) := replaceExp(e1, repl,inFuncTypeExpExpToBooleanOption);
+        (e1_1,b1) := replaceExp(e1, inVariableReplacements,inFuncTypeExpExpToBooleanOption);
         (e1_2,_) := ExpressionSimplify.condsimplify(b1,e1_1);
-        (else_1,b2) := replaceElse1(e1_2,statementLst,else_,repl,inFuncTypeExpExpToBooleanOption);
+        (else_1,b2) := replaceElse1(e1_2,statementLst,else_,inVariableReplacements,inFuncTypeExpExpToBooleanOption);
         true := b1 or b2;
       then
         (else_1,true);
-    case (DAE.ELSE(statementLst=statementLst),repl,_)
+    case (DAE.ELSE(statementLst=statementLst))
       algorithm
-        (statementLst_1,true) := replaceStatementLst(statementLst, repl,inFuncTypeExpExpToBooleanOption,{},false);
+        (statementLst_1,true) := replaceStatementLst(statementLst, inVariableReplacements,inFuncTypeExpExpToBooleanOption,{},false);
       then
         (DAE.ELSE(statementLst_1),true);
     else (inElse,false);
@@ -2126,31 +2122,31 @@ protected function replaceElse1 "
   output Boolean replacementPerformed;
 
 algorithm
-  (outElse,replacementPerformed) := matchcontinue (inExp,inStatementLst,inElse,inVariableReplacements,inFuncTypeExpExpToBooleanOption)
+  (outElse,replacementPerformed) := matchcontinue (inExp,inStatementLst,inElse,inVariableReplacements)
     local
       VariableReplacements repl;
       list<DAE.Statement> statementLst,statementLst_1;
       DAE.Exp e1;
       DAE.Else else_,else_1;
       Boolean b1,b2;
-    case (DAE.BCONST(true),statementLst,_,repl,_)
+    case (DAE.BCONST(true),statementLst,_,repl)
       algorithm
         (statementLst_1,_) := replaceStatementLst(statementLst, repl,inFuncTypeExpExpToBooleanOption,{},false);
       then
         (DAE.ELSE(statementLst_1),true);
-    case (DAE.BCONST(false),_,else_,repl,_)
+    case (DAE.BCONST(false),_,else_,repl)
       algorithm
         (else_1,_) := replaceElse(else_, repl,inFuncTypeExpExpToBooleanOption);
       then
         (else_1,true);
-    case (e1,statementLst,else_,repl,_)
+    case (e1,statementLst,else_,repl)
       algorithm
         (statementLst_1,b1) := replaceStatementLst(statementLst, repl,inFuncTypeExpExpToBooleanOption,{},false);
         (else_1,b2) := replaceElse(else_,repl,inFuncTypeExpExpToBooleanOption);
         true := b1 or b2;
       then
         (DAE.ELSEIF(e1,statementLst_1,else_1),true);
-    case (e1,statementLst,else_,_,_)
+    case (e1,statementLst,else_,_)
       then
         (DAE.ELSEIF(e1,statementLst,else_),false);
   end matchcontinue;
@@ -2170,7 +2166,7 @@ protected function replaceSTMT_IF
 
 algorithm
   (outStatementLst,replacementPerformed) :=
-  matchcontinue (inExp,inStatementLst,inElse,inSource,inVariableReplacements,inFuncTypeExpExpToBooleanOption,inAcc,inBAcc)
+  matchcontinue (inExp,inStatementLst,inElse,inSource,inVariableReplacements)
     local
       DAE.Exp exp,exp_e;
       list<DAE.Statement> statementLst,statementLst_e,statementLst_1,es,es_1;
@@ -2178,22 +2174,22 @@ algorithm
       DAE.ElementSource source;
       VariableReplacements repl;
       Boolean b,b1,b2;
-      case (DAE.BCONST(true),statementLst,_,_,repl,_,_,_)
+      case (DAE.BCONST(true),statementLst,_,_,repl)
         then replaceStatementLst(statementLst, repl, inFuncTypeExpExpToBooleanOption, inAcc, true);
-      case (DAE.BCONST(false),_,DAE.NOELSE(),_,_,_,_,_)
+      case (DAE.BCONST(false),_,DAE.NOELSE(),_,_)
         then (inAcc, true);
-      case (DAE.BCONST(false),_,DAE.ELSEIF(exp=exp_e,statementLst=statementLst_e,else_=else_e),source,repl,_,_,_)
+      case (DAE.BCONST(false),_,DAE.ELSEIF(exp=exp_e,statementLst=statementLst_e,else_=else_e),source,repl)
         then replaceSTMT_IF(exp_e,statementLst_e,else_e,source,repl,inFuncTypeExpExpToBooleanOption,inAcc,true);
-      case (DAE.BCONST(false),_,DAE.ELSE(statementLst=statementLst_e),_,repl,_,_,_)
+      case (DAE.BCONST(false),_,DAE.ELSE(statementLst=statementLst_e),_,repl)
         then replaceStatementLst(statementLst_e, repl, inFuncTypeExpExpToBooleanOption, inAcc, true);
-      case (exp,statementLst,else_,source,repl,_,_,_)
+      case (exp,statementLst,else_,source,repl)
         algorithm
           (statementLst_1,b1) := replaceStatementLst(statementLst, repl,inFuncTypeExpExpToBooleanOption,{},false);
           (else_1,b2) := replaceElse(else_,repl,inFuncTypeExpExpToBooleanOption);
           true := b1 or b2;
         then
           (DAE.STMT_IF(exp,statementLst_1,else_1,source) :: inAcc, true);
-      case (exp,statementLst,else_,source,_,_,_,_)
+      case (exp,statementLst,else_,source,_)
         then (DAE.STMT_IF(exp,statementLst,else_,source) :: inAcc, inBAcc);
    end matchcontinue;
 end replaceSTMT_IF;
@@ -2217,15 +2213,15 @@ public function replaceBindingExp
   input VariableReplacements repl;
   output BackendDAE.Var varOut;
 algorithm
-  varOut := match(varIn,repl)
+  varOut := match(varIn)
   local
     DAE.Exp exp;
-  case(BackendDAE.VAR(bindExp=SOME(exp)),_)
+  case(BackendDAE.VAR(bindExp=SOME(exp)))
     algorithm
     exp := replaceExp(exp,repl,NONE());
     (exp,_) := ExpressionSimplify.simplify(exp);
   then BackendVariable.setBindExp(varIn,SOME(exp));
-  case(BackendDAE.VAR(bindExp=NONE()),_)
+  case(BackendDAE.VAR(bindExp=NONE()))
     then varIn;
   end match;
 end replaceBindingExp;
@@ -2235,7 +2231,7 @@ public function replaceVariableAttributes
   input VariableReplacements repl;
   output DAE.VariableAttributes attrOut;
 algorithm
-  attrOut := match(attrIn,repl)
+  attrOut := match(attrIn)
   local
     Option<DAE.Exp> quantity "quantity";
     Option<DAE.Exp> unit "unit";
@@ -2253,7 +2249,7 @@ algorithm
     Option<Boolean> finalPrefix;
     Option<DAE.Exp> startOrigin;
   case(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,max,start,fixed,nominal,stateSelectOption,uncertainOption,distributionOption,
-    equationBound,isProtected,finalPrefix,startOrigin),_)
+    equationBound,isProtected,finalPrefix,startOrigin))
     algorithm
     quantity := replaceOptionExp(quantity,repl);
     unit := replaceOptionExp(unit,repl);
@@ -2269,7 +2265,7 @@ algorithm
     equationBound,isProtected,finalPrefix,startOrigin);
 
   case(DAE.VAR_ATTR_INT(quantity,min,max,start,fixed,uncertainOption,distributionOption,
-    equationBound,isProtected,finalPrefix,startOrigin),_)
+    equationBound,isProtected,finalPrefix,startOrigin))
     algorithm
     quantity := replaceOptionExp(quantity,repl);
     min := replaceOptionExp(min,repl);
@@ -2281,7 +2277,7 @@ algorithm
   then DAE.VAR_ATTR_INT(quantity,min,max,start,fixed,uncertainOption,distributionOption,
     equationBound,isProtected,finalPrefix,startOrigin);
 
-  case(DAE.VAR_ATTR_BOOL(quantity,start,fixed,equationBound,isProtected,finalPrefix,startOrigin),_)
+  case(DAE.VAR_ATTR_BOOL(quantity,start,fixed,equationBound,isProtected,finalPrefix,startOrigin))
     algorithm
     quantity := replaceOptionExp(quantity,repl);
     start := replaceOptionExp(start,repl);
@@ -2290,7 +2286,7 @@ algorithm
     startOrigin := replaceOptionExp(startOrigin,repl);
   then DAE.VAR_ATTR_BOOL(quantity,start,fixed,equationBound,isProtected,finalPrefix,startOrigin);
 
-  case(DAE.VAR_ATTR_STRING(quantity,start,fixed,equationBound,isProtected,finalPrefix,startOrigin),_)
+  case(DAE.VAR_ATTR_STRING(quantity,start,fixed,equationBound,isProtected,finalPrefix,startOrigin))
     algorithm
     quantity := replaceOptionExp(quantity,repl);
     start := replaceOptionExp(start,repl);
@@ -2299,7 +2295,7 @@ algorithm
     startOrigin := replaceOptionExp(startOrigin,repl);
   then DAE.VAR_ATTR_STRING(quantity,start,fixed,equationBound,isProtected,finalPrefix,startOrigin);
 
-  case(DAE.VAR_ATTR_ENUMERATION(quantity,min,max,start,fixed,equationBound,isProtected,finalPrefix,startOrigin),_)
+  case(DAE.VAR_ATTR_ENUMERATION(quantity,min,max,start,fixed,equationBound,isProtected,finalPrefix,startOrigin))
     algorithm
     quantity := replaceOptionExp(quantity,repl);
     min := replaceOptionExp(min,repl);
@@ -2336,10 +2332,10 @@ public function replaceVariableAttributesInVar
   input VariableReplacements repl;
   output BackendDAE.Var varOut;
 algorithm
-  varOut := match(varIn,repl)
+  varOut := match(varIn)
   local
     DAE.VariableAttributes values;
-  case(BackendDAE.VAR(values=SOME(values)),_)
+  case(BackendDAE.VAR(values=SOME(values)))
     algorithm
     values := replaceVariableAttributes(values,repl);
     then BackendVariable.setVarAttributes(varIn,SOME(values));
@@ -2396,11 +2392,11 @@ protected function replaceTimeEvents
   output BackendDAE.TimeEvent teOut;
 
 algorithm
-  teOut := matchcontinue(teIn,inVariableReplacements,inFuncTypeExpExpToBooleanOption)
+  teOut := matchcontinue(teIn)
     local
       Integer index;
       DAE.Exp startExp, intervalExp;
-  case(BackendDAE.SAMPLE_TIME_EVENT(index=index, startExp=startExp, intervalExp=intervalExp),_,_)
+  case(BackendDAE.SAMPLE_TIME_EVENT(index=index, startExp=startExp, intervalExp=intervalExp))
     algorithm
       (startExp,_) := replaceExp(startExp,inVariableReplacements,inFuncTypeExpExpToBooleanOption);
       (intervalExp,_) := replaceExp(intervalExp,inVariableReplacements,inFuncTypeExpExpToBooleanOption);
@@ -2417,10 +2413,10 @@ protected function replaceZeroCrossing"replaces the exp in the BackendDAE.ZeroCr
   output BackendDAE.ZeroCrossing zcOut;
 
 algorithm
-  zcOut := matchcontinue(zcIn,inVariableReplacements,inFuncTypeExpExpToBooleanOption)
+  zcOut := matchcontinue(zcIn)
     local
       DAE.Exp relation_;
-  case(BackendDAE.ZERO_CROSSING(relation_ = relation_),_,_)
+  case(BackendDAE.ZERO_CROSSING(relation_ = relation_))
     algorithm
       (relation_,_) := replaceExp(relation_,inVariableReplacements,inFuncTypeExpExpToBooleanOption);
     then BackendDAE.ZERO_CROSSING(zcIn.index, relation_, zcIn.occurEquLst, zcIn.iter);

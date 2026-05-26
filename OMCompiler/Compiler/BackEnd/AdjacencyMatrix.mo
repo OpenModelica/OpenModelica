@@ -195,20 +195,20 @@ public function getOtherEqSysAdjacencyMatrix
   input BackendDAE.AdjacencyMatrix mnew;
   output BackendDAE.AdjacencyMatrix outMNew;
 algorithm
-  outMNew := match (m)
+  outMNew := match m
     local
       list<Integer> row;
 
-    case (_) guard intGt(index, size)
+    case _ guard intGt(index, size)
     then mnew;
 
-    case (_) guard intGt(skip[index], 0)
+    case _ guard intGt(skip[index], 0)
       algorithm
       row := list(r for r guard intGt(r,0) and intGt(rowskip[r], 0) in m[index]);
       arrayUpdate(mnew, index, row);
     then getOtherEqSysAdjacencyMatrix(m, size, index+1, skip, rowskip, mnew);
 
-    case (_) algorithm
+    case _ algorithm
       arrayUpdate(mnew,index,{});
     then getOtherEqSysAdjacencyMatrix(m, size, index+1, skip, rowskip, mnew);
   end match;

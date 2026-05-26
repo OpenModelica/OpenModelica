@@ -562,19 +562,14 @@ function valueArraySet
   input Integer pos;
   input HashEntry entry;
   output ValueArray outValueArray;
+protected
+  array<Option<HashEntry>> arr;
+  Integer n, size;
 algorithm
-  outValueArray := match (valueArray, pos, entry)
-    local
-      array<Option<HashEntry>> arr;
-      Integer n, size;
-
-    case ((n, size, arr), _, _)
-      algorithm
-        true := pos <= size;
-        arr := arrayUpdate(arr, pos, SOME(entry));
-      then
-        ((n, size, arr));
-  end match;
+  (n, size, arr) := valueArray;
+  true := pos <= size;
+  arr := arrayUpdate(arr, pos, SOME(entry));
+  outValueArray := (n, size, arr);
 end valueArraySet;
 
 function valueArrayClear

@@ -489,14 +489,14 @@ protected function countSimpleEquationsFinder
  output tuple<BackendDAE.BackendDAE,Integer> outTpl;
 algorithm
   (outList,outTpl) :=
-  matchcontinue (elem,pos,inTpl)
+  matchcontinue inTpl
     local
       Integer l,i,n,n_1;
       BackendDAE.BackendDAE dae;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
 
-    case (_,_,(dae as BackendDAE.DAE({syst},shared),n))
+    case (dae as BackendDAE.DAE({syst},shared),n)
       algorithm
         // check number of vars in eqns
         l := listLength(elem);
@@ -517,7 +517,7 @@ protected function countsimpleEquation
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
 algorithm
-  _ := matchcontinue(elem,length,pos,syst,shared)
+  _ := matchcontinue(elem,shared)
     local
       DAE.ComponentRef cr;
       Integer i,j;
@@ -532,7 +532,7 @@ algorithm
     // wbraun:
     // speacial case for Jacobains, since there are all known variablen
     // time depending input variables
-    case ({i},_,_,_,BackendDAE.SHARED(backendDAEType = BackendDAE.JACOBIAN()))
+    case ({i},BackendDAE.SHARED(backendDAEType = BackendDAE.JACOBIAN()))
       algorithm
         vars := BackendVariable.daeVars(syst);
         var := BackendVariable.getVarAt(vars,intAbs(i));
@@ -551,7 +551,7 @@ algorithm
         (_,{}) := ExpressionSolve.solve(e1,e2,cre, NONE());
       then ();
     // a = const
-    case ({i},_,_,_,_)
+    case ({i},_)
       algorithm
         vars := BackendVariable.daeVars(syst);
         var := BackendVariable.getVarAt(vars,intAbs(i));
@@ -570,7 +570,7 @@ algorithm
         (_,{}) := ExpressionSolve.solve(e1,e2,cre, NONE());
       then ();
     // a = der(b)
-    case ({_,_},_,_,_,_)
+    case ({_,_},_)
       algorithm
         eqns := BackendEquation.getEqnsFromEqSystem(syst);
         eqn := BackendEquation.get(eqns,pos);
@@ -580,7 +580,7 @@ algorithm
         ((_::_),(_::_)) := BackendVariable.getVar(cr,vars);
       then ();
     // a = b
-    case ({_,_},_,_,_,_)
+    case ({_,_},_)
       algorithm
         eqns := BackendEquation.getEqnsFromEqSystem(syst);
         (eqn as BackendDAE.EQUATION()) := BackendEquation.get(eqns,pos);
@@ -745,8 +745,8 @@ protected function addConstExpReplacement
   input BackendVarTransform.VariableReplacements inRepl;
   output BackendVarTransform.VariableReplacements outRepl;
 algorithm
-  outRepl := matchcontinue(inExp,cr,inRepl)
-    case (_,_,_)
+  outRepl := matchcontinue inRepl
+    case _
       algorithm
         true := Expression.isConst(inExp);
       then
@@ -956,35 +956,35 @@ protected function functionCallEqn
   output DAE.Exp outECr;
   output DAE.Exp outExp;
 algorithm
-  (outECr,outExp) := match (ie1,ie2,inVars)
+  (outECr,outExp) := match (ie1,ie2)
       local
         DAE.ComponentRef cr;
         DAE.Exp e1,e2;
         DAE.Operator op;
 
-      case (DAE.CREF(),DAE.UNARY(operator=DAE.UMINUS(),exp=DAE.CREF()),_)
+      case (DAE.CREF(),DAE.UNARY(operator=DAE.UMINUS(),exp=DAE.CREF()))
         then fail();
-      case (DAE.CREF(),DAE.CREF(),_)
+      case (DAE.CREF(),DAE.CREF())
         then fail();
-      case (DAE.UNARY(operator=DAE.UMINUS(),exp=DAE.CREF()),DAE.CREF(),_)
+      case (DAE.UNARY(operator=DAE.UMINUS(),exp=DAE.CREF()),DAE.CREF())
         then fail();
       // a = -<exp>
-      case (e1 as DAE.CREF(componentRef = cr),DAE.UNARY(operator=op as DAE.UMINUS(),exp=e2),_)
+      case (e1 as DAE.CREF(componentRef = cr),DAE.UNARY(operator=op as DAE.UMINUS(),exp=e2))
         algorithm
           ((_::_),(_::_)) := BackendVariable.getVar(cr,inVars);
         then (DAE.UNARY(op,e1),e2);
       // a = <exp>;
-      case (e1 as DAE.CREF(componentRef = cr),e2,_)
+      case (e1 as DAE.CREF(componentRef = cr),e2)
         algorithm
           ((_::_),(_::_)) := BackendVariable.getVar(cr,inVars);
         then (e1,e2);
       // -<exp> = a
-      case (DAE.UNARY(operator=op as DAE.UMINUS(),exp=e1),e2 as DAE.CREF(componentRef = cr),_)
+      case (DAE.UNARY(operator=op as DAE.UMINUS(),exp=e1),e2 as DAE.CREF(componentRef = cr))
         algorithm
           ((_::_),(_::_)) := BackendVariable.getVar(cr,inVars);
         then (DAE.UNARY(op,e2),e1);
       // <exp> = a
-      case (e1,e2 as DAE.CREF(componentRef = cr),_)
+      case (e1,e2 as DAE.CREF(componentRef = cr))
         algorithm
           ((_::_),(_::_)) := BackendVariable.getVar(cr,inVars);
         then (e2,e1);
@@ -1035,14 +1035,14 @@ protected function removeEqualFunctionCall
   output list<Integer> outEqsLst;
 algorithm
   (outEqns,outEqsLst):=
-  matchcontinue (inEqsLst,inExp,inECr,inEqns,ichanged)
+  matchcontinue inEqsLst
     local
       BackendDAE.EquationArray eqns;
       BackendDAE.Equation eqn,eqn1;
       Integer pos,i;
       list<Integer> rest,changed;
-    case ({},_,_,_,_) then (inEqns,ichanged);
-    case (pos::rest,_,_,_,_)
+    case ({}) then (inEqns,ichanged);
+    case (pos::rest)
       algorithm
         eqn := BackendEquation.get(inEqns,pos);
         //BackendDump.printEquationList({eqn});
@@ -1055,7 +1055,7 @@ algorithm
         changed := List.consOnTrue(not listMember(pos,ichanged),pos,ichanged);
         (eqns,changed) := removeEqualFunctionCall(rest,inExp,inECr,eqns,changed);
       then (eqns,changed);
-    case (_::rest,_,_,_,_)
+    case (_::rest)
       algorithm
         (eqns,changed) := removeEqualFunctionCall(rest,inExp,inECr,inEqns,ichanged);
       then (eqns,changed);
@@ -1121,12 +1121,12 @@ protected function copyNonParamVariables
   output BackendDAE.Var outVar;
   output BackendDAE.Variables outVars;
 algorithm
-  (outVar,outVars) := match (inVar,inVars)
+  (outVar,outVars) := match inVar
     local
       BackendDAE.Var v;
       BackendDAE.Variables vars,vars1;
       DAE.ComponentRef cr;
-    case (v as BackendDAE.VAR(varKind = BackendDAE.PARAM()),_)
+    case v as BackendDAE.VAR(varKind = BackendDAE.PARAM())
       then (v,inVars);
     else
       algorithm
@@ -1248,11 +1248,11 @@ protected function checkUnusedVariables
   output DAE.Exp outExp;
   output tuple<BackendDAE.Variables,BackendDAE.Variables> outTpl;
 algorithm
-  (outExp,outTpl) := matchcontinue (inExp,inTpl)
+  (outExp,outTpl) := matchcontinue inExp
     local
       DAE.Exp exp;
       tuple<BackendDAE.Variables,BackendDAE.Variables> tpl;
-    case (exp,_)
+    case exp
       algorithm
          (_,tpl) := Expression.traverseExpBottomUp(exp,checkUnusedVariablesExp,inTpl);
        then (exp,tpl);
@@ -1623,7 +1623,7 @@ public function partitionIndependentBlocksHelper
   output list<BackendDAE.EqSystem> systs;
   output BackendDAE.Shared oshared;
 algorithm
-  (systs,oshared) := matchcontinue (isyst,ishared,numErrorMessages,throwNoError)
+  (systs,oshared) := matchcontinue isyst
     local
       BackendDAE.AdjacencyMatrix m, mT, rm, rmT;
       array<Integer> eqPartMap, varPartMap, rixs;
@@ -1633,7 +1633,7 @@ algorithm
       BackendDAE.Shared shared;
       BackendDAE.EqSystem syst;
       AvlTreePathFunction.Tree funcs;
-    case (syst,shared,_,_)
+    case syst
       algorithm
         isInitial := BackendDAEUtil.isInitializationDAE(ishared);
         funcs := BackendDAEUtil.getFunctions(ishared);
@@ -1648,7 +1648,7 @@ algorithm
         i := SynchronousFeatures.partitionIndependentBlocks0(m, mT, rm, rmT, eqPartMap, varPartMap, rixs, vars, rvars);
         // i2 = SynchronousFeatures.partitionIndependentBlocks0(mT,m,ixsT);
         b := i > 1;
-        // bcall2(b,BackendDump.dumpBackendDAE,BackendDAE.DAE({syst},shared), "partitionIndependentBlocksHelper");
+        // bcall2(b,BackendDump.dumpBackendDAE,BackendDAE.DAE({syst},ishared), "partitionIndependentBlocksHelper");
         // printPartition(b,ixs);
         systs := if b then SynchronousFeatures.partitionIndependentBlocksSplitBlocks(i, syst, eqPartMap, rixs, mT, rmT, throwNoError, funcs, isInitial) else {syst};
         // print("Number of partitioned systems: " + intString(listLength(systs)) + "\n");
@@ -1656,7 +1656,7 @@ algorithm
         GCExt.free(eqPartMap);
         GCExt.free(varPartMap);
         GCExt.free(rixs);
-      then (systs,shared);
+      then (systs,ishared);
     else
       algorithm
         Error.assertion(not (numErrorMessages==Error.getNumErrorMessages()),"BackendDAEOptimize.partitionIndependentBlocks failed without good error message",Absyn.dummyInfo);
@@ -1698,7 +1698,7 @@ protected function residualForm2
   output BackendDAE.Equation outEq;
   output Integer oi;
 algorithm
-  (outEq,oi) := matchcontinue (inEq,ii)
+  (outEq,oi) := matchcontinue (inEq)
     local
       tuple<BackendDAE.Equation,Integer> ntpl;
       DAE.Exp e1,e2,e;
@@ -1706,7 +1706,7 @@ algorithm
       Integer i;
       BackendDAE.EquationAttributes eqAttr;
 
-    case (BackendDAE.EQUATION(e1,e2,source,eqAttr),i)
+    case (BackendDAE.EQUATION(e1,e2,source,eqAttr))
       algorithm
         // This is ok, because EQUATION is not an array equation :D
         DAE.T_REAL() := Expression.typeof(e1);
@@ -1714,7 +1714,7 @@ algorithm
         e := DAE.BINARY(e1,DAE.SUB(DAE.T_REAL_DEFAULT),e2);
         (e,_) := ExpressionSimplify.simplify(e);
         source := ElementSource.addSymbolicTransformation(source, DAE.OP_RESIDUAL(e1,e2,e));
-      then (BackendDAE.EQUATION(DAE.RCONST(0.0),e,source,eqAttr),i);
+      then (BackendDAE.EQUATION(DAE.RCONST(0.0),e,source,eqAttr),ii);
     else (inEq,ii);
   end matchcontinue;
 end residualForm2;
@@ -1757,7 +1757,7 @@ public function countOperationstraverseComps "author: Frenkel TUD 2012-05"
   input list<BackendDAE.CompInfo> compInfosIn;
   output list<BackendDAE.CompInfo> compInfosOut;
 algorithm
-  compInfosOut :=  matchcontinue (inComps,isyst,ishared,compInfosIn)
+  compInfosOut :=  matchcontinue (inComps,ishared)
     local
       Integer eqIdx, numAdd,numMul,numDiv,numTrig,numRel,numOth, numFuncs, numLog, size, jacEntries;
       Real density;
@@ -1776,8 +1776,8 @@ algorithm
       BackendDAE.InnerEquations innerEquations;
       list<Integer> vlst;
       list<list<Integer>> vLstLst;
-    case ({},_,_,_) then compInfosIn;
-    case (BackendDAE.SINGLEEQUATION(eqn=eqIdx)::rest,_,_,_)
+    case ({},_) then compInfosIn;
+    case (BackendDAE.SINGLEEQUATION(eqn=eqIdx)::rest,_)
       algorithm
         eqns := BackendEquation.getEqnsFromEqSystem(isyst);
         eqn := BackendEquation.get(eqns, eqIdx);
@@ -1788,7 +1788,7 @@ algorithm
         if Flags.isSet(Flags.COUNT_OPERATIONS) then BackendDump.dumpCompInfo(compInfo); end if;
       then countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
 
-    case (BackendDAE.SINGLEWHENEQUATION(eqn=eqIdx)::rest,_,_,_)
+    case (BackendDAE.SINGLEWHENEQUATION(eqn=eqIdx)::rest,_)
       algorithm
          eqn := BackendEquation.get(BackendEquation.getEqnsFromEqSystem(isyst), eqIdx);
          //BackendDump.printEquation(eqn);
@@ -1797,7 +1797,7 @@ algorithm
         if Flags.isSet(Flags.COUNT_OPERATIONS) then BackendDump.dumpCompInfo(compInfo); end if;
       then countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
 
-    case ((comp as BackendDAE.EQUATIONSYSTEM(eqns=eqs,jac=jac,jacType=BackendDAE.JAC_LINEAR()))::rest,_,_,_)
+    case ((comp as BackendDAE.EQUATIONSYSTEM(eqns=eqs,jac=jac,jacType=BackendDAE.JAC_LINEAR()))::rest,_)
       algorithm
         (_,_,_) := BackendDAETransform.getEquationAndSolvedVar(comp, BackendEquation.getEqnsFromEqSystem(isyst), BackendVariable.daeVars(isyst));
         size := listLength(eqs);
@@ -1807,7 +1807,7 @@ algorithm
         compInfo := BackendDAE.SYSTEM(comp,allOps,size,density);
       then countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
 
-    case ((comp as BackendDAE.EQUATIONSYSTEM(jac=jac))::rest,_,_,_)
+    case ((comp as BackendDAE.EQUATIONSYSTEM(jac=jac))::rest,_)
       algorithm
         (eqnlst,_,_) := BackendDAETransform.getEquationAndSolvedVar(comp, BackendEquation.getEqnsFromEqSystem(isyst), BackendVariable.daeVars(isyst));
         size := listLength(eqnlst);
@@ -1820,7 +1820,7 @@ algorithm
       then
         countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
 
-    case ((comp as BackendDAE.SINGLEARRAY(eqn=eqIdx))::rest,_,_,_)
+    case ((comp as BackendDAE.SINGLEARRAY(eqn=eqIdx))::rest,_)
       algorithm
          eqn := BackendEquation.get(BackendEquation.getEqnsFromEqSystem(isyst), eqIdx);
          (_,(numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs)) := BackendEquation.traverseExpsOfEquation(eqn,function countOperationsExp(shared=ishared),(0,0,0,0,0,0,0,0));
@@ -1828,7 +1828,7 @@ algorithm
       then
          countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
 
-    case ((comp as BackendDAE.SINGLEIFEQUATION(eqn=eqIdx))::rest,_,_,_)
+    case ((comp as BackendDAE.SINGLEIFEQUATION(eqn=eqIdx))::rest,_)
       algorithm
          eqn := BackendEquation.get(BackendEquation.getEqnsFromEqSystem(isyst), eqIdx);
          (_,(numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs)) := BackendEquation.traverseExpsOfEquation(eqn,function countOperationsExp(shared=ishared),(0,0,0,0,0,0,0,0));
@@ -1836,7 +1836,7 @@ algorithm
       then
          countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
 
-    case ((comp as BackendDAE.SINGLEALGORITHM(eqn=eqIdx))::rest,_,_,_)
+    case ((comp as BackendDAE.SINGLEALGORITHM(eqn=eqIdx))::rest,_)
       algorithm
          eqn := BackendEquation.get(BackendEquation.getEqnsFromEqSystem(isyst), eqIdx);
          (_,(numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs)) := BackendEquation.traverseExpsOfEquation(eqn,function countOperationsExp(shared=ishared),(0,0,0,0,0,0,0,0));
@@ -1844,7 +1844,7 @@ algorithm
       then
          countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
 
-    case ((comp as BackendDAE.SINGLECOMPLEXEQUATION(eqn=eqIdx))::rest,_,_,_)
+    case ((comp as BackendDAE.SINGLECOMPLEXEQUATION(eqn=eqIdx))::rest,_)
       algorithm
          eqn := BackendEquation.get(BackendEquation.getEqnsFromEqSystem(isyst), eqIdx);
          (_,(numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs)) := BackendEquation.traverseExpsOfEquation(eqn,function countOperationsExp(shared=ishared),(0,0,0,0,0,0,0,0));
@@ -1852,7 +1852,7 @@ algorithm
       then
          countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
 
-    case (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=vlst, residualequations=tornEqs, innerEquations= innerEquations), linear = true)::rest,_,BackendDAE.SHARED(functionTree=funcs),_)
+    case (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=vlst, residualequations=tornEqs, innerEquations= innerEquations), linear = true)::rest,BackendDAE.SHARED(functionTree=funcs))
       algorithm
         comp := listHead(inComps);
         eqns := BackendEquation.getEqnsFromEqSystem(isyst);
@@ -1874,7 +1874,7 @@ algorithm
         compInfo := BackendDAE.TORN_ANALYSE(comp,torn,other,listLength(tornEqs));
       then
          countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
-    case (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(residualequations=tornEqs, innerEquations = innerEquations), linear = false)::rest,_,BackendDAE.SHARED(),_)
+    case (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(residualequations=tornEqs, innerEquations = innerEquations), linear = false)::rest,_)
       algorithm
         comp := listHead(inComps);
         eqns := BackendEquation.getEqnsFromEqSystem(isyst);
@@ -1893,7 +1893,7 @@ algorithm
         compInfo := BackendDAE.TORN_ANALYSE(comp,torn,other,listLength(tornEqs));
       then
          countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
-    case (comp::rest,_,_,_)
+    case (comp::rest,_)
       algorithm
         print("not supported component: "+BackendDump.strongComponentString(comp)+"\n");
       then
@@ -1937,18 +1937,18 @@ protected function countOperationsJac
   input BackendDAE.CompInfo compInfoIn;
   output BackendDAE.CompInfo compInfoOut;
 algorithm
-  compInfoOut := match(inJac,shared,compInfoIn)
+  compInfoOut := match(inJac,compInfoIn)
     local
       Integer numAdd,numMul,numDiv,numOth,numTrig,numRel,numLog, numFuncs;
       list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
       BackendDAE.StrongComponent comp;
-      case (BackendDAE.FULL_JACOBIAN(NONE()),_,_) then compInfoIn;
-      case (BackendDAE.FULL_JACOBIAN(SOME(jac)),_,BackendDAE.COUNTER(comp=comp,numAdds=numAdd,numMul=numMul,numDiv=numDiv,numTrig=numTrig,numRelations=numRel,numLog=numLog,numOth=numOth,funcCalls=numFuncs))
+      case (BackendDAE.FULL_JACOBIAN(NONE()),_) then compInfoIn;
+      case (BackendDAE.FULL_JACOBIAN(SOME(jac)),BackendDAE.COUNTER(comp=comp,numAdds=numAdd,numMul=numMul,numDiv=numDiv,numTrig=numTrig,numRelations=numRel,numLog=numLog,numOth=numOth,funcCalls=numFuncs))
         algorithm
           (numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs) := List.fold(jac,function countOperationsJac1(shared=shared),((numAdd,numMul,numDiv,numOth,numTrig,numRel,numLog,numFuncs)));
         then BackendDAE.COUNTER(comp,numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs);
       /* TODO: implement for GENERIC_JACOBIAN */
-      case (_,_,_) then compInfoIn;
+      case (_,_) then compInfoIn;
   end match;
 end countOperationsJac;
 
@@ -1978,7 +1978,7 @@ protected function traversecountOperationsExp
   output DAE.Exp outExp;
   output tuple<Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer> outTuple;
 algorithm
-  (outExp,outTuple) := matchcontinue (inExp,shared,inTuple)
+  (outExp,outTuple) := matchcontinue (inExp,inTuple)
     local
       Absyn.Path path;
       DAE.Exp e,cond,exp1,exp2;
@@ -1998,62 +1998,62 @@ algorithm
     //  i2_1 = i2+intAbs(iexp2)-1;
     //  then (e, (i1,i2_1,i3,i4,i5,i6));
 
-    case (e as DAE.BINARY(operator=op),_,_) algorithm
+    case (e as DAE.BINARY(operator=op),_) algorithm
       tpl := countOperator(op,inTuple);
       then (e, tpl);
 
-    case (e as DAE.UNARY(operator=op),_,_) algorithm
+    case (e as DAE.UNARY(operator=op),_) algorithm
       tpl := countOperator(op,inTuple);
       then (e, tpl);
 
-    case (e as DAE.LBINARY(operator=op),_,_) algorithm
+    case (e as DAE.LBINARY(operator=op),_) algorithm
       tpl := countOperator(op,inTuple);
       then (e, tpl);
 
-    case (e as DAE.LUNARY(operator=op),_,_) algorithm
+    case (e as DAE.LUNARY(operator=op),_) algorithm
       tpl := countOperator(op,inTuple);
       then (e, tpl);
 
-    case (e as DAE.RELATION(operator=op),_,_) algorithm
+    case (e as DAE.RELATION(operator=op),_) algorithm
       tpl := countOperator(op,inTuple);
       then (e, tpl);
 
-    case (e as DAE.IFEXP(expCond=cond,expThen=exp1,expElse=exp2),_,_) algorithm
+    case (e as DAE.IFEXP(expCond=cond,expThen=exp1,expElse=exp2),_) algorithm
       //count all branches, use the complete count for the condition and one additional logical count
       (_,tpl) := traversecountOperationsExp(exp1,shared,inTuple);
       (_,tpl) := traversecountOperationsExp(exp2,shared,tpl);
       (_,(i1,i2,i3,i4,i5,i6,i7,i8)) := traversecountOperationsExp(cond,shared,tpl);
       then (e, (i1,i2,i3,i4,i5,i6+1,i7,i8));
 
-    case (e as DAE.RECORD(exps=expLst),_,_) algorithm
+    case (e as DAE.RECORD(exps=expLst),_) algorithm
       (_,tpl) := Expression.traverseExpList(expLst,function countOperationsExp(shared=shared),inTuple);
       then (e, tpl);
 
-     case (e as DAE.ARRAY(array=expLst),_,_) algorithm
+     case (e as DAE.ARRAY(array=expLst),_) algorithm
       (_,tpl) := Expression.traverseExpList(expLst,function countOperationsExp(shared=shared),inTuple);
       then (e, tpl);
 
-     case (e as DAE.TUPLE(PR=expLst),_,_) algorithm
+     case (e as DAE.TUPLE(PR=expLst),_) algorithm
       (_,tpl) := Expression.traverseExpList(expLst,function countOperationsExp(shared=shared),inTuple);
       then (e, tpl);
 
-    case (e as DAE.CALL(path=Absyn.IDENT(name=opName)),_,(i1,i2,i3,i4,i5,i6,i7,i8))
+    case (e as DAE.CALL(path=Absyn.IDENT(name=opName)),(i1,i2,i3,i4,i5,i6,i7,i8))
       guard stringEq(opName,"sin") or stringEq(opName,"cos") or stringEq(opName,"tan")
       then (e, (i1,i2,i3,i4+1,i5,i6,i7,i8));
 
-    case (e as DAE.CALL(path=Absyn.IDENT(name="der")),_,(i1,i2,i3,i4,i5,i6,i7,i8))
+    case (e as DAE.CALL(path=Absyn.IDENT(name="der")),(i1,i2,i3,i4,i5,i6,i7,i8))
       then (e, (i1,i2,i3,i4,i5,i6,i7,i8));
 
-    case (e as DAE.CALL(path=Absyn.IDENT(name="exp")),_,(i1,i2,i3,i4,i5,i6,i7,i8))
+    case (e as DAE.CALL(path=Absyn.IDENT(name="exp")),(i1,i2,i3,i4,i5,i6,i7,i8))
       then (e, (i1,i2,i3,i4,i5,i6,i7+1,i8));
 
-    case (e as DAE.CALL(path=Absyn.IDENT(name="pre")),_,(i1,i2,i3,i4,i5,i6,i7,i8))
+    case (e as DAE.CALL(path=Absyn.IDENT(name="pre")),(i1,i2,i3,i4,i5,i6,i7,i8))
       then (e, (i1,i2,i3,i4,i5,i6,i7,i8+1));
 
-    case (e as DAE.CALL(path=Absyn.IDENT(name="previous")),_,(i1,i2,i3,i4,i5,i6,i7,i8))
+    case (e as DAE.CALL(path=Absyn.IDENT(name="previous")),(i1,i2,i3,i4,i5,i6,i7,i8))
       then (e, (i1,i2,i3,i4,i5,i6,i7,i8+1));
 
-    case (e as DAE.CALL(path=path),_,_) algorithm
+    case (e as DAE.CALL(path=path),_) algorithm
       func := DAEUtil.getNamedFunction(path,BackendDAEUtil.getFunctions(shared));
       elemLst := DAEUtil.getFunctionElements(func);
       //print(ExpressionDump.dumpExpStr(e,0)+"\n");
@@ -2073,31 +2073,31 @@ protected function countOperationsInFunction
   input tuple<Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer> inTpl;
   output tuple<Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer> outTpl;
 algorithm
-  outTpl := matchcontinue(elemLst,shared,inTpl)
+  outTpl := matchcontinue(elemLst)
     local
       tuple<Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer> tpl;
       DAE.Element elem;
       DAE.Exp exp1, exp2;
       list<DAE.Statement> stmts;
       list<DAE.Element> rest;
-     case({},_,_)
+     case({})
       algorithm
     then inTpl;
-    case(DAE.ALGORITHM(algorithm_=DAE.ALGORITHM_STMTS(statementLst=stmts))::rest,_,_)
+    case(DAE.ALGORITHM(algorithm_=DAE.ALGORITHM_STMTS(statementLst=stmts))::rest)
       algorithm
         (_,tpl) := DAEUtil.traverseDAEEquationsStmts(stmts,function traversecountOperationsExp(shared=shared),inTpl);
     then countOperationsInFunction(rest,shared,tpl);
-    case(DAE.EQUATION(exp=exp1, scalar=exp2)::rest,_,_)
+    case(DAE.EQUATION(exp=exp1, scalar=exp2)::rest)
       algorithm
         (_,tpl) := traversecountOperationsExp(exp1,shared,inTpl);
         (_,tpl) := traversecountOperationsExp(exp2,shared,tpl);
     then countOperationsInFunction(rest,shared,tpl);
-    case(DAE.COMPLEX_EQUATION(lhs=exp1, rhs=exp2)::rest,_,_)
+    case(DAE.COMPLEX_EQUATION(lhs=exp1, rhs=exp2)::rest)
       algorithm
         (_,tpl) := traversecountOperationsExp(exp1,shared,inTpl);
         (_,tpl) := traversecountOperationsExp(exp2,shared,tpl);
     then countOperationsInFunction(rest,shared,tpl);
-    case(_::rest,_,_)
+    case(_::rest)
       algorithm
     then countOperationsInFunction(rest,shared,inTpl);
   end matchcontinue;
@@ -2346,7 +2346,7 @@ protected function simplifyIfEquation
   output list<BackendDAE.Equation> outEqns;
   output list<BackendDAE.Equation> outAsserts;
 algorithm
-  (outEqns,outAsserts) := match(conditions,theneqns,elseenqs,conditions1,theneqns1,source,globalKnownVars,inEqns,inEqAttr)
+  (outEqns,outAsserts) := match(conditions,theneqns,conditions1,theneqns1)
     local
       DAE.Exp e;
       list<DAE.Exp> explst;
@@ -2354,14 +2354,14 @@ algorithm
       list<BackendDAE.Equation> eqns,elseenqs1,asserts;
 
     // no true case left with condition<>false
-    case ({},{},_,{},{},_,_,_,_)
+    case ({},{},{},{})
       algorithm
         // simplify nested if equations
         ((eqns,asserts,_)) := List.fold31(listReverse(elseenqs), simplifyIfEquationsFinder, globalKnownVars, {},{},false);
       then
         (listAppend(eqns,inEqns),asserts);
     // true case left with condition<>false
-    case ({},{},_,_,_,_,_,_,_)
+    case ({},{},{},{})
       algorithm
         explst := listReverse(conditions1);
         eqnslst := listReverse(theneqns1);
@@ -2373,14 +2373,14 @@ algorithm
       then
         (eqns,asserts);
     // if true and first use it
-    case(DAE.BCONST(true)::_,eqns::_,_,{},_,_,_,_,_)
+    case(DAE.BCONST(true)::_,eqns::_,{},_)
       algorithm
         // simplify nested if equations
         ((eqns,asserts,_)) := List.fold31(listReverse(eqns), simplifyIfEquationsFinder, globalKnownVars, {},{},false);
       then
         (listAppend(eqns,inEqns),asserts);
     // if true and not first use it as new else
-    case(DAE.BCONST(true)::_,eqns::_,_,_,_,_,_,_,_)
+    case(DAE.BCONST(true)::_,eqns::_,_,_)
       algorithm
         explst := listReverse(conditions1);
         eqnslst := listReverse(theneqns1);
@@ -2392,13 +2392,13 @@ algorithm
       then
         (eqns,asserts);
     // if false skip it
-    case(DAE.BCONST(false)::explst,_::eqnslst,_,_,_,_,_,_,_)
+    case(DAE.BCONST(false)::explst,_::eqnslst,_,_)
       algorithm
         (eqns,asserts) := simplifyIfEquation(explst,eqnslst,elseenqs,conditions1,theneqns1,source,globalKnownVars,inEqns,inEqAttr);
       then
         (eqns,asserts);
     // all other cases
-    case(e::explst,eqns::eqnslst,_,_,_,_,_,_,_)
+    case(e::explst,eqns::eqnslst,_,_)
       algorithm
         // simplify nested if equations
         ((eqns,asserts,_)) := List.fold31(listReverse(eqns), simplifyIfEquationsFinder, globalKnownVars, {},{},false);
@@ -2421,7 +2421,7 @@ protected function simplifyIfEquation1
   input BackendDAE.EquationAttributes inEqAttr;
   output list<BackendDAE.Equation> outEqns;
 algorithm
-  outEqns := matchcontinue(conditions,theneqns,elseenqs,source,globalKnownVars,inEqns,inEqAttr)
+  outEqns := matchcontinue(inEqAttr)
     local
       list<DAE.Exp> fbsExp;
       list<list<DAE.Exp>> tbsExp;
@@ -2430,7 +2430,7 @@ algorithm
       list<tuple<DAE.ComponentRef,DAE.Exp>> crexplst;
 
     // true case left with condition<>false
-    case (_,_,_,_,_,_,_)
+    case (_)
       algorithm
         _ := countEquationsInBranches(theneqns,elseenqs,source);
         // simplify if eqution
@@ -2445,7 +2445,7 @@ algorithm
         // ToDo: check if the same cref is not used more than once on the lhs, merge sources
       then
         eqns;
-    case (_,_,_,_,_,_,_)
+    case (_)
       algorithm
         _ := countEquationsInBranches(theneqns,elseenqs,source);
         fbsExp := makeEquationLstToResidualExpLst(elseenqs);
@@ -2464,16 +2464,16 @@ protected function simplifySolvedIfEqns2
   input BackendDAE.EquationAttributes inEqAttr;
   output list<BackendDAE.Equation> outEqns;
 algorithm
-  outEqns := match(crexplst, inEqns, inEqAttr)
+  outEqns := match(crexplst)
     local
       DAE.ComponentRef cr;
       DAE.Exp e,crexp;
       list<tuple<DAE.ComponentRef,DAE.Exp>> rest;
 
-    case ({}, _, _)
+    case ({})
     then inEqns;
 
-    case ((cr,e)::rest,_, _)
+    case ((cr,e)::rest)
       algorithm
         crexp := Expression.crefExp(cr);
       then
@@ -2489,17 +2489,17 @@ protected function simplifySolvedIfEqns
   input HashTable2.HashTable iHt;
   output HashTable2.HashTable oHt;
 algorithm
-  oHt := match(conditions,theneqns,iHt)
+  oHt := match(conditions,theneqns)
     local
       HashTable2.HashTable ht;
       DAE.Exp c;
       list<DAE.Exp> explst;
       list<BackendDAE.Equation> eqns;
       list<list<BackendDAE.Equation>> rest;
-    case ({},{},_)
+    case ({},{})
       then
         iHt;
-    case (c::explst,eqns::rest,_)
+    case (c::explst,eqns::rest)
       algorithm
         ht := simplifySolvedIfEqns1(c,eqns,iHt, HashSet.emptyHashSet());
       then
@@ -2524,7 +2524,7 @@ algorithm
   // to
   // a = if b then r2 else if b then r1 else r3; c = r4;
 
-  oHt := match(condition,brancheqns,iHt)
+  oHt := match(brancheqns,iHt)
     local
       DAE.ComponentRef cr;
       DAE.Exp e,exp;
@@ -2532,10 +2532,10 @@ algorithm
       HashTable2.HashTable ht;
       HashSet.HashSet hs;
       list<BackendDAE.Equation> rest;
-    case (_,{},_)
+    case ({},_)
       then
         iHt;
-    case (_,BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cr), scalar=e)::rest,_)
+    case (BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cr), scalar=e)::rest,_)
       algorithm
         false := Expression.expHasCref(e, cr);
         hs := BaseHashSet.addUnique(cr, iHs);
@@ -2544,7 +2544,7 @@ algorithm
         ht := BaseHashTable.add((cr,exp), iHt);
       then
         simplifySolvedIfEqns1(condition,rest,ht, hs);
-    case (_,BackendDAE.EQUATION(exp=DAE.UNARY(operator=DAE.UMINUS(), exp=DAE.CREF(componentRef=cr)), scalar=e)::rest,_)
+    case (BackendDAE.EQUATION(exp=DAE.UNARY(operator=DAE.UMINUS(), exp=DAE.CREF(componentRef=cr)), scalar=e)::rest,_)
       algorithm
         false := Expression.expHasCref(e, cr);
         hs := BaseHashSet.addUnique(cr, iHs);
@@ -2564,23 +2564,23 @@ protected function simplifySolvedIfEqnsElse
   input HashTable2.HashTable iHt;
   output HashTable2.HashTable oHt;
 algorithm
-  oHt := match(elseenqs,iHt)
+  oHt := match elseenqs
     local
       DAE.ComponentRef cr;
       DAE.Exp e;
       DAE.ElementSource source;
       HashTable2.HashTable ht;
       list<BackendDAE.Equation> rest;
-    case ({},_)
+    case ({})
       then
         iHt;
-    case (BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cr), scalar=e)::rest,_) guard not BaseHashTable.hasKey(cr, iHt)
+    case (BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cr), scalar=e)::rest) guard not BaseHashTable.hasKey(cr, iHt)
       algorithm
         false := Expression.expHasCref(e, cr);
         ht := BaseHashTable.add((cr,e), iHt);
       then
         simplifySolvedIfEqnsElse(rest,ht);
-    case (BackendDAE.EQUATION(exp=DAE.UNARY(operator=DAE.UMINUS(), exp=DAE.CREF(componentRef=cr)), scalar=e)::rest,_) guard not BaseHashTable.hasKey(cr, iHt)
+    case (BackendDAE.EQUATION(exp=DAE.UNARY(operator=DAE.UMINUS(), exp=DAE.CREF(componentRef=cr)), scalar=e)::rest) guard not BaseHashTable.hasKey(cr, iHt)
       algorithm
         false := Expression.expHasCref(e, cr);
         e := Expression.negate(e);
@@ -2603,19 +2603,19 @@ protected function simplifyIfEquationAsserts
   output list<BackendDAE.Equation> oelseenqs;
   output list<BackendDAE.Equation> outEqns;
 algorithm
-  (otheneqns,oelseenqs,outEqns) := match(conditions,theneqns,elseenqs,conditions1,theneqns1,inEqns)
+  (otheneqns,oelseenqs,outEqns) := match(conditions,theneqns)
     local
       DAE.Exp e;
       list<DAE.Exp> explst;
       list<BackendDAE.Equation> eqns,eqns1,beqns;
       list<list<BackendDAE.Equation>> eqnslst,eqnslst1;
 
-    case (_,{},_,_,_,_)
+    case (_,{})
       algorithm
         (beqns,eqns) := simplifyIfEquationAsserts1(elseenqs,NONE(),conditions1,{},inEqns);
       then
         (listReverse(theneqns1),beqns,eqns);
-    case (e::explst,eqns::eqnslst,_,_,_,_)
+    case (e::explst,eqns::eqnslst)
       algorithm
         (beqns,eqns) := simplifyIfEquationAsserts1(eqns,SOME(e),conditions1,{},inEqns);
         (eqnslst1,eqns1,eqns) := simplifyIfEquationAsserts(explst,eqnslst,elseenqs,e::conditions1,beqns::theneqns1,eqns);
@@ -2635,7 +2635,7 @@ protected function simplifyIfEquationAsserts1
   output list<BackendDAE.Equation> obrancheqns;
   output list<BackendDAE.Equation> outEqns;
 algorithm
-  (obrancheqns,outEqns) := match(brancheqns,condition,conditions,brancheqns1,inEqns)
+  (obrancheqns,outEqns) := match(brancheqns,condition)
     local
       DAE.Exp e,cond,msg,level;
       BackendDAE.Equation eqn;
@@ -2645,18 +2645,18 @@ algorithm
       DAE.Expand crefExpand;
       BackendDAE.EquationAttributes eqAttr;
 
-    case ({},_,_,_,_)
+    case ({},_)
       then
         (listReverse(brancheqns1),inEqns);
 
-    case (BackendDAE.ALGORITHM(size=size,alg=DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond=cond,msg=msg,level=level,source=source1)}),source=source,expand=crefExpand,attr=eqAttr)::eqns,NONE(),_,_,_)
+    case (BackendDAE.ALGORITHM(size=size,alg=DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond=cond,msg=msg,level=level,source=source1)}),source=source,expand=crefExpand,attr=eqAttr)::eqns,NONE())
       algorithm
         e := List.fold(conditions,makeIfExp,cond);
         (beqns,eqns) :=  simplifyIfEquationAsserts1(eqns,condition,conditions,brancheqns1,BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(e,msg,level,source1)}),source,crefExpand,eqAttr)::inEqns);
       then
         (beqns,eqns);
 
-    case (BackendDAE.ALGORITHM(size=size,alg=DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond=cond,msg=msg,level=level,source=source1)}),source=source,expand=crefExpand,attr=eqAttr)::eqns,SOME(e),_,_,_)
+    case (BackendDAE.ALGORITHM(size=size,alg=DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond=cond,msg=msg,level=level,source=source1)}),source=source,expand=crefExpand,attr=eqAttr)::eqns,SOME(e))
       algorithm
         e := DAE.IFEXP(e,cond,DAE.BCONST(true));
         e := List.fold(conditions,makeIfExp,e);
@@ -2664,21 +2664,21 @@ algorithm
       then
         (beqns,eqns);
 
-    case (BackendDAE.ALGORITHM(size=size,alg=DAE.ALGORITHM_STMTS({DAE.STMT_TERMINATE(msg=msg,source=source1)}),source=source,expand=crefExpand,attr=eqAttr)::eqns,NONE(),_,_,_)
+    case (BackendDAE.ALGORITHM(size=size,alg=DAE.ALGORITHM_STMTS({DAE.STMT_TERMINATE(msg=msg,source=source1)}),source=source,expand=crefExpand,attr=eqAttr)::eqns,NONE())
       algorithm
         e := List.fold(conditions,makeIfExp,DAE.BCONST(true));
         (beqns,eqns) :=  simplifyIfEquationAsserts1(eqns,condition,conditions,brancheqns1,BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS({DAE.STMT_IF(e,{DAE.STMT_TERMINATE(msg,source1)},DAE.NOELSE(),source1)}),source,crefExpand,eqAttr)::inEqns);
       then
         (beqns,eqns);
 
-    case (BackendDAE.ALGORITHM(size=size,alg=DAE.ALGORITHM_STMTS({DAE.STMT_TERMINATE(msg=msg,source=source1)}),source=source,expand=crefExpand,attr=eqAttr)::eqns,SOME(e),_,_,_)
+    case (BackendDAE.ALGORITHM(size=size,alg=DAE.ALGORITHM_STMTS({DAE.STMT_TERMINATE(msg=msg,source=source1)}),source=source,expand=crefExpand,attr=eqAttr)::eqns,SOME(e))
       algorithm
         e := List.fold(conditions,makeIfExp,e);
         (beqns,eqns) := simplifyIfEquationAsserts1(eqns,condition,conditions,brancheqns1,BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS({DAE.STMT_IF(e,{DAE.STMT_TERMINATE(msg,source1)},DAE.NOELSE(),source1)}),source,crefExpand,eqAttr)::inEqns);
       then
         (beqns,eqns);
 
-    case (eqn::eqns,_,_,_,_)
+    case (eqn::eqns,_)
       algorithm
         (beqns,eqns) := simplifyIfEquationAsserts1(eqns,condition,conditions,eqn::brancheqns1,inEqns);
       then
@@ -2702,14 +2702,14 @@ of an if-equation"
   input DAE.ElementSource source;
   output Integer nrOfEquations;
 algorithm
-  nrOfEquations := matchcontinue(trueBranches,falseBranch,source)
+  nrOfEquations := matchcontinue(falseBranch)
     local
       list<Boolean> b;
       list<String> strs;
       String str,eqstr;
       list<Integer> nrOfEquationsBranches;
 
-    case (_, _, _)
+    case (_)
       algorithm
         nrOfEquations := BackendEquation.equationLstSize(falseBranch);
         nrOfEquationsBranches := List.map(trueBranches, BackendEquation.equationLstSize);
@@ -2719,7 +2719,7 @@ algorithm
         nrOfEquations;
 
     // An if-equation with non-parameter conditions must have an else-clause.
-    case (_, {}, _)
+    case ({})
       algorithm
         Error.addSourceMessage(Error.IF_EQUATION_MISSING_ELSE, {},
           ElementSource.getElementSourceFileInfo(source));
@@ -2728,7 +2728,7 @@ algorithm
 
     // If if-equation with non-parameter conditions must have the same number of
     // equations in each branch.
-    case (_, _ :: _, _)
+    case (_ :: _)
       algorithm
         nrOfEquations := BackendEquation.equationLstSize(falseBranch);
         nrOfEquationsBranches := List.map(trueBranches, BackendEquation.equationLstSize);
@@ -2914,7 +2914,7 @@ protected function makeEquationsFromResiduals
   input BackendDAE.EquationAttributes inEqAttr;
   output list<BackendDAE.Equation> outExpLst;
 algorithm
-  outExpLst := match (inExp1, inExpLst2, inExpLst3, inSource, inEqAttr)
+  outExpLst := match inExpLst3
     local
       list<list<DAE.Exp>> tbsRest;
       list<DAE.Exp> tbsFirst, fbs;
@@ -2924,12 +2924,12 @@ algorithm
       DAE.Exp zeroExp;
       Integer size;
 
-    case (_, _, {}, _, _)
+    case ({})
       algorithm
         true := List.all(inExpLst2, listEmpty);
       then {};
 
-    case (_, _, fb::fbs, _, _)
+    case (fb::fbs)
       algorithm
         size := Expression.sizeOf(Expression.typeof(fb));
         tbsRest := List.map(inExpLst2, listRest);
@@ -3032,13 +3032,13 @@ protected function semiLinearOptimize
   input list<tuple<BackendDAE.Equation,Integer>> iAcc;
   output list<tuple<BackendDAE.Equation,Integer>> oAcc;
 algorithm
-  oAcc := matchcontinue(eqnslst,iAcc)
+  oAcc := matchcontinue eqnslst
     local
       HashTableExpToIndex.HashTable ht,ht1;
       array<tuple<BackendDAE.Equation,Integer>> eqnsarray;
       list<DAE.Exp> explst;
-    case (_::{},_) then iAcc;
-    case (_,_)
+    case (_::{}) then iAcc;
+    case (_)
       algorithm
         // get HashMab sa-> index
         ht := HashTableExpToIndex.emptyHashTable();
@@ -3050,7 +3050,7 @@ algorithm
         // optimize
       then
         semiLinearOptimize2(explst,ht,eqnsarray,iAcc);
-    case(_,_) then iAcc;
+    case(_) then iAcc;
   end matchcontinue;
 end semiLinearOptimize;
 
@@ -3063,7 +3063,7 @@ protected function semiLinearOptimize2
   input list<tuple<BackendDAE.Equation,Integer>> iAcc;
   output list<tuple<BackendDAE.Equation,Integer>> oAcc;
 algorithm
-  oAcc := matchcontinue(saLst,iHt,IEqnsarray,iAcc)
+  oAcc := matchcontinue(saLst)
     local
       DAE.Exp sa,sb,s1,y,x;
       list<DAE.Exp> rest;
@@ -3075,8 +3075,8 @@ algorithm
       DAE.CallAttributes attr;
       DAE.ElementSource source,source1;
       BackendDAE.EquationAttributes eqAttr;
-    case ({},_,_,_) then iAcc;
-    case (sa::rest,_,_,_)
+    case ({}) then iAcc;
+    case (sa::rest)
       algorithm
         i1 := BaseHashTable.get(sa,iHt);
         ((BackendDAE.EQUATION(exp=y,scalar=DAE.CALL(path=path,expLst = {x,_,s1},attr=attr),source=source,attr=eqAttr),index)) := IEqnsarray[i1];
@@ -3093,7 +3093,7 @@ algorithm
         acc := semiLinearOptimize4(explst,(eqn1,index1)::iAcc, eqAttr);
       then
         semiLinearOptimize2(rest,iHt,IEqnsarray,(eqn,index)::acc);
-    case (_::rest,_,_,_)
+    case (_::rest)
       then
         semiLinearOptimize2(rest,iHt,IEqnsarray,iAcc);
   end matchcontinue;
@@ -3107,16 +3107,16 @@ protected function semiLinearOptimize4
   input BackendDAE.EquationAttributes inEqAttr;
   output list<tuple<BackendDAE.Equation,Integer>> oAcc;
 algorithm
-  oAcc := match(explst, iAcc, inEqAttr)
+  oAcc := match(explst)
     local
       DAE.Exp s1,s2;
       list<tuple<DAE.Exp,Integer,DAE.ElementSource>> rest;
       Integer index;
       BackendDAE.Equation eqn;
       DAE.ElementSource source;
-    case ({}, _, _) then iAcc;
-    case (_::{}, _, _) then iAcc;
-    case((s2,index,source)::(rest as ((s1,_,_)::_)), _, _)
+    case ({}) then iAcc;
+    case (_::{}) then iAcc;
+    case((s2,index,source)::(rest as ((s1,_,_)::_)))
       algorithm
         eqn := BackendDAE.EQUATION(s2, s1, source, inEqAttr);
       then
@@ -3138,19 +3138,19 @@ protected function semiLinearOptimize3
   output Integer oIndex;
   output list<tuple<DAE.Exp,Integer,DAE.ElementSource>> oAcc;
 algorithm
-  (slast,osource,oIndex,oAcc) := matchcontinue(exp,isource,iIndex,iHt,IEqnsarray,iAcc)
+  (slast,osource,oIndex,oAcc) := matchcontinue()
     local
       DAE.Exp sb;
       Integer i,index;
       DAE.ElementSource source;
-    case(_,_,_,_,_,_)
+    case()
       algorithm
         i := BaseHashTable.get(exp,iHt);
         ((BackendDAE.EQUATION(scalar=DAE.CALL(expLst = {_,_,sb}),source=source),index)) := IEqnsarray[i];
         (sb,source,index,oAcc) := semiLinearOptimize3(sb,source,index,iHt,IEqnsarray,(exp,iIndex,source)::iAcc);
       then
         (sb,source,index,oAcc);
-    case(_,_,_,_,_,_)
+    case()
       then
         (exp,isource,iIndex,iAcc);
   end matchcontinue;
@@ -3177,14 +3177,14 @@ protected function semiLinearOptimize1
   output HashTableExpToIndex.HashTable oHt;
   output HashTableExpToIndex.HashTable oHt1;
 algorithm
-  (oHt,oHt1) := match(eqnslst,i,iHt,iHt1)
+  (oHt,oHt1) := match(eqnslst)
     local
      BackendDAE.Equation eqn;
       list<tuple<BackendDAE.Equation,Integer>> rest;
       HashTableExpToIndex.HashTable ht,ht1;
       DAE.Exp sa,sb;
-    case ({},_,_,_) then (iHt,iHt1);
-    case ((BackendDAE.EQUATION(scalar=DAE.CALL(expLst = {_,sa,sb})),_)::rest,_,_,_)
+    case ({}) then (iHt,iHt1);
+    case ((BackendDAE.EQUATION(scalar=DAE.CALL(expLst = {_,sa,sb})),_)::rest)
       algorithm
         ht := BaseHashTable.add((sa,i), iHt);
         ht1 := BaseHashTable.add((sb,i), iHt1);
@@ -3202,7 +3202,7 @@ protected function semiLinearSort "author: Frenkel TUD 2012-08
   input  array<list<tuple<BackendDAE.Equation,Integer>>> iEqnsarray;
   output  array<list<tuple<BackendDAE.Equation,Integer>>> oEqnsarray;
 algorithm
-  oEqnsarray := matchcontinue(eqnslst,iHt,size,iEqnsarray)
+  oEqnsarray := matchcontinue(eqnslst)
     local
      BackendDAE.Equation eqn;
      Integer index,i;
@@ -3210,15 +3210,15 @@ algorithm
      HashTableExpToIndex.HashTable ht;
      DAE.Exp y;
      array<list<tuple<BackendDAE.Equation,Integer>>> eqnsarray;
-    case ({},_,_,_) then iEqnsarray;
-    case ((eqn as BackendDAE.EQUATION(exp=y),index)::rest,_,_,_)
+    case ({}) then iEqnsarray;
+    case ((eqn as BackendDAE.EQUATION(exp=y),index)::rest)
       algorithm
         i := BaseHashTable.get(y,iHt);
         eqns := iEqnsarray[i];
         eqnsarray := arrayUpdate(iEqnsarray,i,(eqn,index)::eqns);
       then
         semiLinearSort(rest,iHt,size,eqnsarray);
-    case ((eqn as BackendDAE.EQUATION(exp=y),index)::rest,_,_,_)
+    case ((eqn as BackendDAE.EQUATION(exp=y),index)::rest)
       algorithm
         ht := BaseHashTable.add((y,size), iHt);
         // expand if necesarray
@@ -3237,7 +3237,7 @@ protected function semiLinearSort1
   input  array<list<tuple<BackendDAE.Equation,Integer>>> iEqnsarray;
   output  array<list<tuple<BackendDAE.Equation,Integer>>> oEqnsarray;
 algorithm
-  oEqnsarray := match(eqnslstlst,size,iEqnsarray)
+  oEqnsarray := match(eqnslstlst)
     local
      Integer size1;
      tuple<BackendDAE.Equation,Integer> tpl;
@@ -3245,15 +3245,15 @@ algorithm
      list<list<tuple<BackendDAE.Equation,Integer>>> rest;
      HashTableExpToIndex.HashTable ht;
      array<list<tuple<BackendDAE.Equation,Integer>>> eqnsarray;
-    case ({},_,_) then iEqnsarray;
-    case ((tpl::{})::rest,_,_)
+    case ({}) then iEqnsarray;
+    case ((tpl::{})::rest)
       algorithm
         // expand if necesarray
         eqnsarray := if intGt(size,arrayLength(iEqnsarray)) then Array.expand(5, iEqnsarray, {}) else iEqnsarray;
         eqnsarray := arrayUpdate(eqnsarray,size,{tpl});
       then
         semiLinearSort1(rest,size+1,eqnsarray);
-    case (eqns::rest,_,_)
+    case (eqns::rest)
       algorithm
         ht := HashTableExpToIndex.emptyHashTable();
         (size1,eqnsarray) := semiLinearSort2(eqns,ht,size,iEqnsarray);
@@ -3272,7 +3272,7 @@ protected function semiLinearSort2
   output  Integer osize;
   output  array<list<tuple<BackendDAE.Equation,Integer>>> oEqnsarray;
 algorithm
-  (osize,oEqnsarray) := matchcontinue(eqnslst,iHt,size,iEqnsarray)
+  (osize,oEqnsarray) := matchcontinue(eqnslst,iHt)
     local
      BackendDAE.Equation eqn;
      Integer index,i;
@@ -3280,8 +3280,8 @@ algorithm
      HashTableExpToIndex.HashTable ht;
      DAE.Exp x;
      array<list<tuple<BackendDAE.Equation,Integer>>> eqnsarray;
-    case ({},_,_,_) then (size,iEqnsarray);
-    case ((eqn as BackendDAE.EQUATION(scalar=DAE.CALL(expLst = x::_)),index)::rest,_,_,_)
+    case ({},_) then (size,iEqnsarray);
+    case ((eqn as BackendDAE.EQUATION(scalar=DAE.CALL(expLst = x::_)),index)::rest,_)
       algorithm
         i := BaseHashTable.get(x,iHt);
         eqns := iEqnsarray[i];
@@ -3289,7 +3289,7 @@ algorithm
         (i,eqnsarray) := semiLinearSort2(rest,iHt,size,eqnsarray);
       then
         (i,eqnsarray);
-    case ((eqn as BackendDAE.EQUATION(scalar=DAE.CALL(expLst = x::_)),index)::rest,_,_,_)
+    case ((eqn as BackendDAE.EQUATION(scalar=DAE.CALL(expLst = x::_)),index)::rest,_)
       algorithm
         ht := BaseHashTable.add((x,size), iHt);
         // expand if necesarray
@@ -3596,17 +3596,14 @@ end traverserExpreplaceEdgeChange;
 protected function replaceEdgeChangeShared "author: Frenkel TUD 2012-11"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
+protected
+  BackendDAE.EquationArray remeqns;
+  BackendDAE.EqSystems systs;
+  BackendDAE.Shared shared;
 algorithm
-  outDAE := match inDAE
-    local
-      BackendDAE.EquationArray remeqns;
-      BackendDAE.EqSystems systs;
-      BackendDAE.Shared shared;
-    case BackendDAE.DAE(systs, shared as BackendDAE.SHARED(removedEqs=remeqns))
-      algorithm
-        BackendDAEUtil.traverseBackendDAEExpsEqns(remeqns, traverserreplaceEdgeChange, false);
-      then BackendDAE.DAE(systs, shared);
-  end match;
+  BackendDAE.DAE(systs, shared as BackendDAE.SHARED(removedEqs=remeqns)) := inDAE;
+  BackendDAEUtil.traverseBackendDAEExpsEqns(remeqns, traverserreplaceEdgeChange, false);
+  outDAE := BackendDAE.DAE(systs, shared);
 end replaceEdgeChangeShared;
 
 
@@ -3767,7 +3764,7 @@ public function expandAlgorithmStmts "Helper function to eaddInitialStmtsToAlgor
   input Boolean isInitialEquation;
   output list<DAE.Statement> outAlg;
 algorithm
-  outAlg := match(inAlg, inOutputs, inVars)
+  outAlg := match(inAlg, inOutputs)
     local
       DAE.Exp out, initExp;
       list<DAE.Exp> rest;
@@ -3777,10 +3774,10 @@ algorithm
       DAE.Type type_;
       list<DAE.Statement> statements;
 
-    case(statements, {}, _)
+    case(statements, {})
     then statements;
 
-    case(statements, out::rest, _) algorithm
+    case(statements, out::rest) algorithm
       cref := Expression.expCref(out);
       (vars, _) := BackendVariable.getVar(cref, inVars);
       for v in vars loop
@@ -4008,7 +4005,7 @@ protected function updateStatesVars "
   input Boolean noStateFound;
   output BackendDAE.Variables outVars;
 algorithm
-  outVars := matchcontinue(inVars, inNewStates, noStateFound)
+  outVars := matchcontinue(inNewStates, noStateFound)
     local
       BackendDAE.Var var;
       list<BackendDAE.Var> newStates;
@@ -4016,8 +4013,8 @@ algorithm
       //DAE.ComponentRef cr;
       //String str;
 
-    case(_, {}, true) then inVars;
-    case(_, var::newStates, _)
+    case({}, true) then inVars;
+    case(var::newStates, _)
       algorithm
         false := BackendVariable.isVarDiscrete(var) "do not change discrete vars to states, because they have no derivative" ;
         false := BackendVariable.isStateVar(var);
@@ -4025,7 +4022,7 @@ algorithm
         vars := BackendVariable.addVar(var, inVars);
         vars := updateStatesVars(vars, newStates, true);
       then vars;
-    case(_, _::newStates, _)
+    case(_::newStates, _)
       algorithm
         /* Might be part of a different equation-system...
         str = "BackendDAECreate.updateStatesVars failed for: " + ComponentReferenceBasics.printComponentRefStr(cr);
@@ -4174,59 +4171,54 @@ algorithm
   BackendDAE.DAE(systlst, shared) := inDAE;
   BackendDAE.SHARED(functionTree=functionTree) := shared;
   for syst in systlst loop
-    syst := match syst
-      local
-        BackendDAE.EqSystem syst1;
-      case syst1 as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns)
-        algorithm
-          (_, m, mT) := BackendDAEUtil.getAdjacencyMatrix(syst, BackendDAE.ABSOLUTE(), SOME(functionTree), BackendDAEUtil.isInitializationDAE(shared));
-          //debug
-          if Flags.isSet(Flags.SORT_EQNS_AND_VARS) then
-            BackendDump.dumpAdjacencyMatrix(m);
-            BackendDump.dumpAdjacencyMatrixT(mT);
-          end if;
+    BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns) := syst;
+    (_, m, mT) := BackendDAEUtil.getAdjacencyMatrix(syst, BackendDAE.ABSOLUTE(), SOME(functionTree), BackendDAEUtil.isInitializationDAE(shared));
+    //debug
+    if Flags.isSet(Flags.SORT_EQNS_AND_VARS) then
+      BackendDump.dumpAdjacencyMatrix(m);
+      BackendDump.dumpAdjacencyMatrixT(mT);
+    end if;
 
-          BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(numberOfElements = nv)) := vars;
-          ne := ExpandableArray.getNumberOfElements(eqns);
-          //init weights
-          w_vars := arrayCreate(nv, -1);
-          w_eqns := arrayCreate(ne, -1);
-          //weights vars, TODO: improve me!
-          sortEqnsVarsWeights(w_vars, nv, mT);
-          //weights eqns, TODO: improve me!
-          sortEqnsVarsWeights(w_eqns, ne, m);
-          //sort vars
-          tplIndexWeight := list((i, w_vars[i]) for i in 1:nv);
-          //sorted vars
-          tplIndexWeight := List.sort(tplIndexWeight, Util.compareTuple2IntLt);
-          //new order vars indexs
-          indexs := sortEqnsVarsWorkTpl(tplIndexWeight);
-          var_lst := list(BackendVariable.getVarAt(vars, i) for i in indexs);
-          // new vars
-          vars := BackendVariable.listVar1(var_lst);
-          //sort eqns
-          tplIndexWeight := list((i, w_eqns[i]) for i in 1:ne);
-          //sorted eqns
-          tplIndexWeight := List.sort(tplIndexWeight, Util.compareTuple2IntGt);
-          //new order eqns indexs
-          indexs := sortEqnsVarsWorkTpl(tplIndexWeight);
-          eqn_lst := list(BackendEquation.get(eqns, i) for i in indexs);
-          //new eqns
-          eqns := BackendEquation.listEquation(eqn_lst);
-          syst1.orderedEqs := eqns;
-          syst1.orderedVars := vars;
+    BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(numberOfElements = nv)) := vars;
+    ne := ExpandableArray.getNumberOfElements(eqns);
+    //init weights
+    w_vars := arrayCreate(nv, -1);
+    w_eqns := arrayCreate(ne, -1);
+    //weights vars, TODO: improve me!
+    sortEqnsVarsWeights(w_vars, nv, mT);
+    //weights eqns, TODO: improve me!
+    sortEqnsVarsWeights(w_eqns, ne, m);
+    //sort vars
+    tplIndexWeight := list((i, w_vars[i]) for i in 1:nv);
+    //sorted vars
+    tplIndexWeight := List.sort(tplIndexWeight, Util.compareTuple2IntLt);
+    //new order vars indexs
+    indexs := sortEqnsVarsWorkTpl(tplIndexWeight);
+    var_lst := list(BackendVariable.getVarAt(vars, i) for i in indexs);
+    // new vars
+    vars := BackendVariable.listVar1(var_lst);
+    //sort eqns
+    tplIndexWeight := list((i, w_eqns[i]) for i in 1:ne);
+    //sorted eqns
+    tplIndexWeight := List.sort(tplIndexWeight, Util.compareTuple2IntGt);
+    //new order eqns indexs
+    indexs := sortEqnsVarsWorkTpl(tplIndexWeight);
+    eqn_lst := list(BackendEquation.get(eqns, i) for i in indexs);
+    //new eqns
+    eqns := BackendEquation.listEquation(eqn_lst);
+    syst.orderedEqs := eqns;
+    syst.orderedVars := vars;
 
-          //debug
-          if Flags.isSet(Flags.SORT_EQNS_AND_VARS) then
-            (_, m, mT) := BackendDAEUtil.getAdjacencyMatrix(syst1, BackendDAE.ABSOLUTE(), SOME(functionTree), BackendDAEUtil.isInitializationDAE(shared));
-            BackendDump.dumpAdjacencyMatrix(m);
-            BackendDump.dumpAdjacencyMatrixT(mT);
-          end if;
+    //debug
+    if Flags.isSet(Flags.SORT_EQNS_AND_VARS) then
+      (_, m, mT) := BackendDAEUtil.getAdjacencyMatrix(syst, BackendDAE.ABSOLUTE(), SOME(functionTree), BackendDAEUtil.isInitializationDAE(shared));
+      BackendDump.dumpAdjacencyMatrix(m);
+      BackendDump.dumpAdjacencyMatrixT(mT);
+    end if;
 
-          GCExt.free(w_vars);
-          GCExt.free(w_eqns);
-        then BackendDAEUtil.clearEqSyst(syst1);
-    end match;
+    GCExt.free(w_vars);
+    GCExt.free(w_eqns);
+    syst := BackendDAEUtil.clearEqSyst(syst);
     new_systlst := syst :: new_systlst;
   end for; //syst
 
@@ -5248,22 +5240,19 @@ protected function introduceDerAliasWork
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared = shared;
 protected
+  BackendDAE.EqSystem syst;
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
   list<BackendDAE.Equation> eqnsList;
 algorithm
-  osyst := match inSyst
-    local
-      BackendDAE.EqSystem syst;
-    case syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns)
-      algorithm
-        (eqns, (vars, eqnsList, _, _)) :=
-              BackendEquation.traverseEquationArray_WithUpdate( eqns, traverserintroduceDerAliasEquation,
-                                                                (vars, {}, shared, true) );
-        eqns := BackendEquation.addList(eqnsList, eqns);
-        syst.orderedEqs := eqns; syst.orderedVars := vars;
-      then syst;
-  end match;
+  syst := inSyst;
+  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns) := syst;
+  (eqns, (vars, eqnsList, _, _)) :=
+        BackendEquation.traverseEquationArray_WithUpdate( eqns, traverserintroduceDerAliasEquation,
+                                                          (vars, {}, shared, true) );
+  eqns := BackendEquation.addList(eqnsList, eqns);
+  syst.orderedEqs := eqns; syst.orderedVars := vars;
+  osyst := syst;
 end introduceDerAliasWork;
 
 protected function traverserintroduceDerAliasEquation "
@@ -5433,17 +5422,17 @@ protected function replaceDerCall "
   output DAE.Exp outExp;
   output Boolean tpl;
 algorithm
-  (outExp,tpl) := matchcontinue (inExp, itpl)
+  (outExp,tpl) := matchcontinue (inExp)
     local
       DAE.ComponentRef cr,cref;
       DAE.Type ty;
 
-    case (DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr, ty=ty)}), _) algorithm
+    case (DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr, ty=ty)})) algorithm
       cref := ComponentReference.crefPrefixDer(cr);
       outExp := DAE.CREF(cref,ty);
     then (outExp, true);
 
-    case (DAE.CALL(path=Absyn.IDENT(name="der")), _) algorithm
+    case (DAE.CALL(path=Absyn.IDENT(name="der"))) algorithm
       Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed for: " + ExpressionBasics.printExpStr(inExp) + "\n"});
     then fail();
 
@@ -5531,14 +5520,14 @@ protected function traverserExpapplyRewriteRulesBackend
   output DAE.Exp outExp;
   output Boolean outB;
 algorithm
-  (outExp,outB) := matchcontinue(inExp,inB)
+  (outExp,outB) := matchcontinue(inExp)
     local
       DAE.Exp e;
       FCore.Cache cache;
       FCore.Graph graph;
 
     // apply rewrite rule
-    case (e, _) algorithm
+    case e algorithm
       (e, true) := RewriteRules.rewriteBackEnd(e);
     then (e, true);
 

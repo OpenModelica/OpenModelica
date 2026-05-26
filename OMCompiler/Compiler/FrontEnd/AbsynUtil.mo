@@ -1599,21 +1599,21 @@ public function suffixPath
   input Absyn.Ident inSuffix;
   output Absyn.Path outPath;
 algorithm
-  outPath := match(inPath, inSuffix)
+  outPath := match(inPath)
     local
       Absyn.Ident name;
       Absyn.Path path;
 
-    case (Absyn.IDENT(name), _)
+    case Absyn.IDENT(name)
       then Absyn.QUALIFIED(name, Absyn.IDENT(inSuffix));
 
-    case (Absyn.QUALIFIED(name, path), _)
+    case Absyn.QUALIFIED(name, path)
       algorithm
         path := suffixPath(path, inSuffix);
       then
         Absyn.QUALIFIED(name, path);
 
-    case (Absyn.FULLYQUALIFIED(path), _)
+    case Absyn.FULLYQUALIFIED(path)
       algorithm
         path := suffixPath(path, inSuffix);
       then
@@ -1627,15 +1627,15 @@ public function pathSuffixOf "returns true if suffix_path is a suffix of path"
   input Absyn.Path path;
   output Boolean res;
 algorithm
-  res := matchcontinue(suffix_path,path)
+  res := matchcontinue(path)
   local Absyn.Path p;
-    case(_,_)
+    case(_)
       algorithm
       true := pathEqual(suffix_path,path);
       then true;
-    case(_,Absyn.FULLYQUALIFIED(path = p))
+    case(Absyn.FULLYQUALIFIED(path = p))
       then pathSuffixOf(suffix_path,p);
-    case(_,Absyn.QUALIFIED(path = p))
+    case(Absyn.QUALIFIED(path = p))
       then pathSuffixOf(suffix_path,p);
     else false;
   end matchcontinue;
@@ -1674,21 +1674,21 @@ public function addSubscriptsLast
   input list<Absyn.Subscript> i;
   output Absyn.ComponentRef ocr;
 algorithm
-  ocr := match(icr,i)
+  ocr := match icr
     local
       list<Absyn.Subscript> subs;
       String id;
       Absyn.ComponentRef cr;
 
-    case (Absyn.CREF_IDENT(id,subs),_)
+    case Absyn.CREF_IDENT(id,subs)
       then Absyn.CREF_IDENT(id, listAppend(subs, i));
 
-    case (Absyn.CREF_QUAL(id,subs,cr),_)
+    case Absyn.CREF_QUAL(id,subs,cr)
       algorithm
         cr := addSubscriptsLast(cr,i);
       then
         Absyn.CREF_QUAL(id,subs,cr);
-    case (Absyn.CREF_FULLYQUALIFIED(cr),_)
+    case Absyn.CREF_FULLYQUALIFIED(cr)
       algorithm
         cr := addSubscriptsLast(cr,i);
       then
@@ -1720,20 +1720,20 @@ public function crefReplaceFirstIdent "
   input Absyn.Path replPath;
   output Absyn.ComponentRef outCref;
 algorithm
-  outCref := match(icref,replPath)
+  outCref := match(icref)
     local
       list<Absyn.Subscript> subs;
       Absyn.ComponentRef cr,cref;
-    case (Absyn.CREF_FULLYQUALIFIED(componentRef = cr),_)
+    case (Absyn.CREF_FULLYQUALIFIED(componentRef = cr))
       algorithm
         cr := crefReplaceFirstIdent(cr,replPath);
       then crefMakeFullyQualified(cr);
-    case (Absyn.CREF_QUAL(componentRef = cr, subscripts = subs),_)
+    case (Absyn.CREF_QUAL(componentRef = cr, subscripts = subs))
       algorithm
         cref := pathToCref(replPath);
         cref := addSubscriptsLast(cref,subs);
       then joinCrefs(cref,cr);
-    case (Absyn.CREF_IDENT(subscripts = subs),_)
+    case (Absyn.CREF_IDENT(subscripts = subs))
       algorithm
         cref := pathToCref(replPath);
         cref := addSubscriptsLast(cref,subs);
@@ -1832,17 +1832,17 @@ public function getCrefsFromSubs
   input Boolean includeFunctions "note that if you say includeSubs = false then you won't get the functions from array subscripts";
   output list<Absyn.ComponentRef> crefs;
 algorithm
-  crefs := match(isubs,includeSubs,includeFunctions)
+  crefs := match isubs
     local
       list<Absyn.ComponentRef> crefs1;
       Absyn.Exp exp;
       list<Absyn.Subscript> subs;
 
-    case({},_,_) then {};
+    case({}) then {};
 
-    case(Absyn.NOSUB()::subs,_,_) then getCrefsFromSubs(subs,includeSubs,includeFunctions);
+    case(Absyn.NOSUB()::subs) then getCrefsFromSubs(subs,includeSubs,includeFunctions);
 
-    case(Absyn.SUBSCRIPT(exp)::subs,_,_)
+    case(Absyn.SUBSCRIPT(exp)::subs)
       algorithm
         crefs1 := getCrefsFromSubs(subs,includeSubs,includeFunctions);
         crefs := getCrefFromExp(exp,includeSubs,includeFunctions);
@@ -2034,7 +2034,7 @@ public function getCrefFromFarg "Returns the flattened list of all component ref
   input Boolean includeFunctions "note that if you say includeSubs = false then you won't get the functions from array subscripts";
   output list<Absyn.ComponentRef> outComponentRefLst;
 algorithm
-  outComponentRefLst := match (inFunctionArgs,includeSubs,includeFunctions)
+  outComponentRefLst := match (inFunctionArgs)
     local
       list<list<Absyn.ComponentRef>> l1,l2;
       list<Absyn.ComponentRef> fl1,fl2,fl3,res;
@@ -2043,7 +2043,7 @@ algorithm
       Absyn.ForIterators iterators;
       Absyn.Exp exp;
 
-    case (Absyn.FUNCTIONARGS(args = expl,argNames = nargl),_,_)
+    case (Absyn.FUNCTIONARGS(args = expl,argNames = nargl))
       algorithm
         l1 := List.map2(expl, getCrefFromExp, includeSubs, includeFunctions);
         fl1 := List.flatten(l1);
@@ -2053,7 +2053,7 @@ algorithm
       then
         res;
 
-    case (Absyn.FOR_ITER_FARG(exp,_,iterators),_,_)
+    case (Absyn.FOR_ITER_FARG(exp,_,iterators))
       algorithm
         l1 := List.map2Option(List.map(iterators,iteratorRange),getCrefFromExp,includeSubs,includeFunctions);
         l2 := List.map2Option(List.map(iterators,iteratorGuard),getCrefFromExp,includeSubs,includeFunctions);
@@ -2345,21 +2345,21 @@ public function pathToCrefWithSubs
   input list<Absyn.Subscript> inSubs;
   output Absyn.ComponentRef outComponentRef;
 algorithm
-  outComponentRef := match(inPath, inSubs)
+  outComponentRef := match(inPath)
     local
       Absyn.Ident i;
       Absyn.ComponentRef c;
       Absyn.Path p;
 
-    case (Absyn.IDENT(name = i), _) then Absyn.CREF_IDENT(i, inSubs);
+    case Absyn.IDENT(name = i) then Absyn.CREF_IDENT(i, inSubs);
 
-    case (Absyn.QUALIFIED(name = i, path = p), _)
+    case Absyn.QUALIFIED(name = i, path = p)
       algorithm
         c := pathToCrefWithSubs(p, inSubs);
       then
         Absyn.CREF_QUAL(i, {}, c);
 
-    case (Absyn.FULLYQUALIFIED(p), _)
+    case Absyn.FULLYQUALIFIED(p)
       algorithm
         c := pathToCrefWithSubs(p, inSubs);
       then
@@ -2512,21 +2512,21 @@ Author: BZ, 2009-09
   input Boolean includeFunctions "note that if you say includeSubs = false then you won't get the functions from array subscripts";
   output list<Absyn.Subscript> subscripts;
 algorithm
-  subscripts := match(cr,includeSubs,includeFunctions)
+  subscripts := match(cr)
     local
       list<Absyn.Subscript> subs2;
       Absyn.ComponentRef child;
 
-    case(Absyn.CREF_IDENT(_,subs2), _, _) then subs2;
+    case(Absyn.CREF_IDENT(_,subs2)) then subs2;
 
-    case(Absyn.CREF_QUAL(_,subs2,child), _, _)
+    case(Absyn.CREF_QUAL(_,subs2,child))
       algorithm
         subscripts := getSubsFromCref(child, includeSubs, includeFunctions);
         subscripts := List.unionOnTrue(subscripts,subs2, subscriptEqual);
       then
         subscripts;
 
-    case(Absyn.CREF_FULLYQUALIFIED(child), _, _)
+    case(Absyn.CREF_FULLYQUALIFIED(child))
       algorithm
         subscripts := getSubsFromCref(child, includeSubs, includeFunctions);
       then
@@ -2620,23 +2620,23 @@ public function joinCrefs "This function joins two ComponentRefs."
   output Absyn.ComponentRef outComponentRef;
 algorithm
   outComponentRef:=
-  match (inComponentRef1,inComponentRef2)
+  match (inComponentRef1)
     local
       Absyn.Ident id;
       list<Absyn.Subscript> sub;
       Absyn.ComponentRef cr2,cr_1,cr;
-    case (Absyn.CREF_IDENT(name = id,subscripts = sub),cr2)
+    case (Absyn.CREF_IDENT(name = id,subscripts = sub))
       algorithm
-        failure(Absyn.CREF_FULLYQUALIFIED() := cr2);
-      then Absyn.CREF_QUAL(id,sub,cr2);
-    case (Absyn.CREF_QUAL(name = id,subscripts = sub,componentRef = cr),cr2)
+        failure(Absyn.CREF_FULLYQUALIFIED() := inComponentRef2);
+      then Absyn.CREF_QUAL(id,sub,inComponentRef2);
+    case (Absyn.CREF_QUAL(name = id,subscripts = sub,componentRef = cr))
       algorithm
-        cr_1 := joinCrefs(cr, cr2);
+        cr_1 := joinCrefs(cr, inComponentRef2);
       then
         Absyn.CREF_QUAL(id,sub,cr_1);
-    case (Absyn.CREF_FULLYQUALIFIED(componentRef = cr),cr2)
+    case (Absyn.CREF_FULLYQUALIFIED(componentRef = cr))
       algorithm
-        cr_1 := joinCrefs(cr, cr2);
+        cr_1 := joinCrefs(cr, inComponentRef2);
       then
         crefMakeFullyQualified(cr_1);
   end match;
@@ -2810,13 +2810,7 @@ public function setClassName "author: BZ
   input String newName;
   output Absyn.Class outClass = inClass;
 algorithm
-  outClass := match outClass
-    case Absyn.CLASS()
-      algorithm
-        outClass.name := newName;
-      then
-        outClass;
-  end match;
+  outClass.name := newName;
 end setClassName;
 
 public function setClassBody
@@ -3818,7 +3812,7 @@ algorithm
   () := match cl
     case Absyn.CLASS(body=Absyn.PARTS()) then fail();
     case Absyn.CLASS(body=Absyn.CLASS_EXTENDS()) then fail();
-    case Absyn.CLASS()
+    case _
       algorithm
         cl.body := stripClassDefComment(cl.body);
       then
@@ -3864,13 +3858,13 @@ protected function getFunctionInterfaceParts
   input list<Absyn.ElementItem> elts;
   output list<Absyn.ElementItem> oelts;
 algorithm
-  oelts := match (part,elts)
+  oelts := match part
     local
-      list<Absyn.ElementItem> elts1,elts2;
-    case (Absyn.PUBLIC(elts1),elts2)
+      list<Absyn.ElementItem> elts1;
+    case Absyn.PUBLIC(elts1)
       algorithm
         elts1 := List.filterOnTrue(elts1,filterAnnotationItem);
-      then listAppend(elts1,elts2);
+      then listAppend(elts1,elts);
     else elts;
   end match;
 end getFunctionInterfaceParts;
@@ -3983,9 +3977,9 @@ public function expContainsInitial
   input Absyn.Exp inExp;
   output Boolean hasInitial;
 algorithm
-  hasInitial := matchcontinue(inExp)
+  hasInitial := matchcontinue()
     local Boolean b;
-    case (_)
+    case ()
       algorithm
         (_, b) := traverseExp(inExp, isInitialTraverseHelper, false);
       then
@@ -4002,13 +3996,13 @@ protected function isInitialTraverseHelper
   output Absyn.Exp outExp;
   output Boolean outBool;
 algorithm
-  (outExp,outBool) := match (inExp,inBool)
+  (outExp,outBool) := match inExp
     local Absyn.Exp e; Boolean b;
 
     // make sure we don't have not initial()
-    case (Absyn.UNARY(Absyn.NOT(), _) , _) then (inExp,inBool);
+    case Absyn.UNARY(Absyn.NOT(), _) then (inExp,inBool);
     // we have initial
-    case (e , _)
+    case e
       algorithm
         b := isInitial(e);
       then (e, b);
@@ -4554,7 +4548,7 @@ protected function getNamedAnnotationStr<T>
     output T docStr;
   end ModFunc;
 algorithm
-  outString := matchcontinue (inAbsynElementArgLst,id,f)
+  outString := matchcontinue (inAbsynElementArgLst,id)
     local
       T str;
       Absyn.ElementArg ann;
@@ -4563,19 +4557,19 @@ algorithm
       Absyn.Ident id1,id2;
       Absyn.Path rest;
 
-    case (((Absyn.MODIFICATION(path = Absyn.IDENT(name = id1),modification = mod)) :: _),Absyn.IDENT(id2),_)
+    case (((Absyn.MODIFICATION(path = Absyn.IDENT(name = id1),modification = mod)) :: _),Absyn.IDENT(id2))
       algorithm
         true := stringEq(id1, id2);
         str := f(mod);
       then
         SOME(str);
 
-    case (((Absyn.MODIFICATION(path = Absyn.IDENT(name = id1),modification = SOME(Absyn.CLASSMOD(elementArgLst=xs)))) :: _),Absyn.QUALIFIED(name=id2,path=rest),_)
+    case (((Absyn.MODIFICATION(path = Absyn.IDENT(name = id1),modification = SOME(Absyn.CLASSMOD(elementArgLst=xs)))) :: _),Absyn.QUALIFIED(name=id2,path=rest))
       algorithm
         true := stringEq(id1, id2);
       then getNamedAnnotationStr(xs,rest,f);
 
-    case ((_ :: xs),_,_) then getNamedAnnotationStr(xs,id,f);
+    case ((_ :: xs),_) then getNamedAnnotationStr(xs,id,f);
   end matchcontinue;
 end getNamedAnnotationStr;
 
@@ -4682,14 +4676,14 @@ public function mapCrefParts
     output Absyn.ComponentRef outCref;
   end MapFunc;
 algorithm
-  outCref := match(inCref, inMapFunc)
+  outCref := match(inCref)
     local
       Absyn.Ident name;
       list<Absyn.Subscript> subs;
       Absyn.ComponentRef rest_cref;
       Absyn.ComponentRef cref;
 
-    case (Absyn.CREF_QUAL(name, subs, rest_cref), _)
+    case Absyn.CREF_QUAL(name, subs, rest_cref)
       algorithm
         cref := Absyn.CREF_IDENT(name, subs);
         Absyn.CREF_IDENT(name, subs) := inMapFunc(cref);
@@ -4697,7 +4691,7 @@ algorithm
       then
         Absyn.CREF_QUAL(name, subs, rest_cref);
 
-    case (Absyn.CREF_FULLYQUALIFIED(cref), _)
+    case Absyn.CREF_FULLYQUALIFIED(cref)
       algorithm
         cref := mapCrefParts(cref, inMapFunc);
       then
@@ -5674,7 +5668,7 @@ protected function traverseClasses2<Arg>
     input output tuple<Absyn.Class, Option<Absyn.Path>, Arg> tpl;
   end FuncType;
 algorithm
-  outTpl := matchcontinue (inClasses, inPath, inFunc, inArg, inVisitProtected)
+  outTpl := matchcontinue (inClasses, inPath, inFunc, inArg)
     local
       Option<Absyn.Path> pa,pa_1,pa_2,pa_3;
       FuncType visitor;
@@ -5683,34 +5677,34 @@ algorithm
       list<Absyn.Class> classes_1,classes;
       Boolean traverse_prot;
 
-    case ({},pa,_,args,_) then (({},pa,args));
+    case ({},pa,_,args) then (({},pa,args));
 
-    case ((class_ :: classes),pa,visitor,args,traverse_prot)
+    case ((class_ :: classes),pa,visitor,args)
       algorithm
         ((class_1,_,args_1)) := visitor((class_,pa,args));
-        ((class_2,_,args_2)) := traverseInnerClass(class_1, pa, visitor, args_1, traverse_prot);
-        ((classes_1,pa_3,args_3)) := traverseClasses2(classes, pa, visitor, args_2, traverse_prot);
+        ((class_2,_,args_2)) := traverseInnerClass(class_1, pa, visitor, args_1, inVisitProtected);
+        ((classes_1,pa_3,args_3)) := traverseClasses2(classes, pa, visitor, args_2, inVisitProtected);
       then
         (((class_2 :: classes_1),pa_3,args_3));
 
     /* Visitor failed, but class contains inner classes after traversal, i.e. those inner classes didn't fail, and thus
     the class must be included also */
-    case ((class_ :: classes),pa,visitor,args,traverse_prot)
+    case ((class_ :: classes),pa,visitor,args)
       algorithm
-        ((class_2,_,args_2)) := traverseInnerClass(class_, pa, visitor, args, traverse_prot);
+        ((class_2,_,args_2)) := traverseInnerClass(class_, pa, visitor, args, inVisitProtected);
         true := classHasLocalClasses(class_2);
-        ((classes_1,pa_3,args_3)) := traverseClasses2(classes, pa, visitor, args_2, traverse_prot);
+        ((classes_1,pa_3,args_3)) := traverseClasses2(classes, pa, visitor, args_2, inVisitProtected);
       then
         (((class_2 :: classes_1),pa_3,args_3));
 
     /* Visitor failed, remove class */
-    case ((_ :: classes),pa,visitor,args,traverse_prot)
+    case ((_ :: classes),pa,visitor,args)
       algorithm
-        ((classes_1,pa_3,args_3)) := traverseClasses2(classes, pa, visitor, args, traverse_prot);
+        ((classes_1,pa_3,args_3)) := traverseClasses2(classes, pa, visitor, args, inVisitProtected);
       then
         ((classes_1,pa_3,args_3));
 
-    case ((class_ :: _),_,_,_,_)
+    case ((class_ :: _),_,_,_)
       algorithm
         print("-traverse_classes2 failed on class:");
         print(AbsynUtil.className(class_));
@@ -6209,7 +6203,7 @@ public function isClassOrComponentElementSpec
 algorithm
   yes := match (inElementSpec)
     case Absyn.CLASSDEF(class_ = Absyn.CLASS()) then true;
-    case Absyn.COMPONENTS(components = {Absyn.COMPONENTITEM()}) then true;
+    case Absyn.COMPONENTS(components = {_}) then true;
     else false;
   end match;
 end isClassOrComponentElementSpec;

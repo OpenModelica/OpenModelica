@@ -263,11 +263,11 @@ public function has
   input HashSet hashSet;
   output Boolean b;
 algorithm
-  b:= match(key,hashSet)
+  b:= match(hashSet)
     local
       Option<Key> oKey;
     // empty set containg nothing
-    case (_,(_,(0,_,_),_,_,_))
+    case (_,(0,_,_),_,_,_)
       then
         false;
     else
@@ -369,14 +369,11 @@ end dumpHashSet;
 public function hashSetList "returns the entries in the hashSet as a list of Key"
   input HashSet hashSet;
   output list<Key> lst;
+protected
+  ValueArray varr;
 algorithm
-  lst := match(hashSet)
-    local
-      ValueArray varr;
-    case((_,varr,_,_,_))
-      then
-      valueArrayList(varr);
-  end match;
+  (_, varr, _, _, _) := hashSet;
+  lst := valueArrayList(varr);
 end hashSetList;
 
 public function valueArrayList
