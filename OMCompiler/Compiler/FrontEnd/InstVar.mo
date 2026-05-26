@@ -77,13 +77,14 @@ protected import ComponentReference;
 protected import UnitAbsynBuilder;
 protected import Flags;
 protected import Expression;
-protected import ExpressionDump;
 protected import Error;
 protected import ErrorExt;
 protected import Lookup;
 protected import SCodeDump;
 protected import BaseHashSet;
 protected import HashSet;
+protected import ExpressionBasics;
+protected import ClassInfUtil;
 
 protected type Ident = DAE.Ident "an identifier";
 protected type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
@@ -199,8 +200,8 @@ algorithm
         (cache,innerCompEnv,ih,store,dae,csets,ty,graph) :=
           instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph,csets);
 
-        (cache,cref) := PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
-        fullName := ComponentReference.printComponentRefStr(cref);
+        (cache,cref) := PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReferenceBasics.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
+        fullName := ComponentReferenceBasics.printComponentRefStr(cref);
         (cache, typePath) := Inst.makeFullyQualifiedIdent(cache, env, typeName);
 
         // also all the components in the environment should be updated to be outer!
@@ -236,8 +237,8 @@ algorithm
 
         // we should have here any kind of modification!
         false := Mod.modEqual(mod, DAE.NOMOD());
-        (cache,cref) := PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
-        s1 := ComponentReference.printComponentRefStr(cref);
+        (cache,cref) := PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReferenceBasics.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
+        s1 := ComponentReferenceBasics.printComponentRefStr(cref);
         s2 := Mod.prettyPrintMod(mod, 0);
         s := s1 +  " " + s2;
         // add a warning!
@@ -306,8 +307,8 @@ algorithm
           InnerOuter.lookupInnerVar(cache, env, ih, pre, n, io);
 
         // add outer prefix + component name and its corresponding inner prefix to the IH
-        (cache,crefOuter) := PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
-        (cache,crefInner) := PrefixUtil.prefixCref(cache,env,ih,innerPrefix, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
+        (cache,crefOuter) := PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReferenceBasics.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
+        (cache,crefInner) := PrefixUtil.prefixCref(cache,env,ih,innerPrefix, ComponentReferenceBasics.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
         ih := InnerOuter.addOuterPrefixToIH(ih, crefOuter, crefInner);
         outers := List.unionElt(crefOuter, outers);
         // update the inner with the outer for easy reference
@@ -354,13 +355,13 @@ algorithm
         // fprintln(Flags.INNER_OUTER, "- InstVar.instVar failed to lookup inner: " + PrefixUtil.printPrefixStr(pre) + "/" + n + " in env: " + FGraph.printGraphPathStr(env));
 
         // display an error message!
-        (cache,crefOuter) := PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
+        (cache,crefOuter) := PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReferenceBasics.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
         typeName := SCodeUtil.className(cl);
         (cache, typePath) := Inst.makeFullyQualifiedIdent(cache, env, typeName);
         // adrpo: do NOT! display an error message if impl = true and prefix is DAE.NOPRE()
         // print(if_(impl, "impl crap\n", "no impl\n"));
         if not (impl and listMember(pre, {DAE.NOPRE()})) and not Config.getGraphicsExpMode() then
-          s1 := ComponentReference.printComponentRefStr(crefOuter);
+          s1 := ComponentReferenceBasics.printComponentRefStr(crefOuter);
           s2 := AbsynUtil.innerOuterStr(io);
           s3 := InnerOuter.getExistingInnerDeclarations(ih, componentDefinitionParentEnv);
           s1 := AbsynUtil.pathString(typePath) + " " + s1;
@@ -388,13 +389,13 @@ algorithm
         // fprintln(Flags.INNER_OUTER, "- InstVar.instVar failed to lookup inner: " + PrefixUtil.printPrefixStr(pre) + "/" + n + " in env: " + FGraph.printGraphPathStr(env));
 
         // display an error message!
-        (cache,crefOuter) := PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
+        (cache,crefOuter) := PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReferenceBasics.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
         typeName := SCodeUtil.className(cl);
         (cache, typePath) := Inst.makeFullyQualifiedIdent(cache, env, typeName);
         // print(if_(impl, "impl crap\n", "no impl\n"));
         // adrpo: do NOT! display an error message if impl = true and prefix is DAE.NOPRE()
         if not (impl and listMember(pre, {DAE.NOPRE()})) and not Config.getGraphicsExpMode() then
-          s1 := ComponentReference.printComponentRefStr(crefOuter);
+          s1 := ComponentReferenceBasics.printComponentRefStr(crefOuter);
           s2 := AbsynUtil.innerOuterStr(io);
           s3 := InnerOuter.getExistingInnerDeclarations(ih,componentDefinitionParentEnv);
           s1 := AbsynUtil.pathString(typePath) + " " + s1;
@@ -424,8 +425,8 @@ algorithm
            instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph, csets);
 
         // add it to the instance hierarchy
-        (cache,cref) := PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
-        fullName := ComponentReference.printComponentRefStr(cref);
+        (cache,cref) := PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReferenceBasics.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
+        fullName := ComponentReferenceBasics.printComponentRefStr(cref);
         (cache, typePath) := Inst.makeFullyQualifiedIdent(cache, env, typeName);
 
         // also all the components in the environment should be updated to be outer!
@@ -468,8 +469,8 @@ algorithm
            instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph, csets);
 
         // add it to the instance hierarchy
-        (cache,cref) := PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
-        fullName := ComponentReference.printComponentRefStr(cref);
+        (cache,cref) := PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReferenceBasics.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
+        fullName := ComponentReferenceBasics.printComponentRefStr(cref);
         (cache, typePath) := Inst.makeFullyQualifiedIdent(cache, env, typeName);
 
         // also all the components in the environment should be updated to be outer!
@@ -524,9 +525,9 @@ algorithm
     case (cache,env,ih,_,_,mod,pre,n,cl,_,_,_,_,_,_,_,_,_,_,_)
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
-        (cache,cref) := PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
+        (cache,cref) := PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReferenceBasics.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
         Debug.traceln("- InstVar.instVar failed while instatiating variable: " +
-          ComponentReference.printComponentRefStr(cref) + " " + Mod.prettyPrintMod(mod, 0) +
+          ComponentReferenceBasics.printComponentRefStr(cref) + " " + Mod.prettyPrintMod(mod, 0) +
           "\nin scope: " + FGraph.printGraphPathStr(env) + " class:\n" + SCodeDump.unparseElementStr(cl));
       then
         fail();
@@ -576,7 +577,7 @@ protected
   DAE.ElementSource source;
 algorithm
   try
-    Error.updateCurrentComponent(inPrefix, inName, inInfo, PrefixUtil.identAndPrefixToPath);
+    Error.updateCurrentComponent(inName, inInfo, function PrefixUtil.identAndPrefixToPath(inPrefix=inPrefix));
 
     (outCache, dims, cls, type_mods) :=
       InstUtil.getUsertypeDimensions(inCache, inEnv, inIH, inPrefix, inClass, inInstDims, inImpl);
@@ -725,16 +726,16 @@ algorithm
 
     case (DAE.DAE(dae), DAE.C_VAR())
       algorithm
-        false := ClassInf.isFunctionOrRecord(inState);
+        false := ClassInfUtil.isFunctionOrRecord(inState);
         ty := Types.simplifyType(inType);
         false := Types.isExternalObject(Types.arrayElementType(ty));
         false := Types.isComplexType(Types.arrayElementType(ty));
-        (dims as _::_) := Types.getDimensions(ty);
+        (dims as _::_) := TypesDump.getDimensions(ty);
         SOME(exp) := InstBinding.makeVariableBinding(ty, mod, const, pre, n);
-        cr := ComponentReference.makeCrefIdent(n,ty,{});
+        cr := ComponentReferenceBasics.makeCrefIdent(n,ty,{});
         (cache,cr) := PrefixUtil.prefixCref(inCache,inEnv,inIH,pre,cr);
         eq := DAE.ARRAY_EQUATION(dims, DAE.CREF(cr,ty), exp, source);
-        // print("Creating array equation for " + PrefixUtil.printPrefixStr(pre) + "." + n + " of const " + DAEUtil.constStr(const) + " in classinf " + ClassInf.printStateStr(inState) + "\n");
+        // print("Creating array equation for " + PrefixUtil.printPrefixStr(pre) + "." + n + " of const " + DAEUtil.constStr(const) + " in classinf " + ClassInfUtil.printStateStr(inState) + "\n");
       then (cache,DAE.DAE(eq::dae));
 
     else (inCache,inDae);
@@ -833,7 +834,7 @@ algorithm
         // see testsuit/mofiles/RecordBindings.mo.
      case (cache,env,ih,store,ci_state,mod as DAE.MOD(binding = NONE()),pre,n,cl as SCode.CLASS(restriction = SCode.R_RECORD(_)),attr,pf,dims,_,inst_dims,impl,comment,info,graph,csets)
       algorithm
-        true := ClassInf.isFunction(ci_state);
+        true := ClassInfUtil.isFunction(ci_state);
         InstUtil.checkFunctionVar(n, attr, pf, info);
 
 
@@ -852,7 +853,7 @@ algorithm
 
         //Generate variable with default binding
         ty_2 := Types.simplifyType(ty_1);
-        (cache,cr) := PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,ty_2,{}));
+        (cache,cr) := PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReferenceBasics.makeCrefIdent(n,ty_2,{}));
 
         //We should get a call exp from here
         (cache, DAE.EQBOUND(e,_,_,_)) := InstBinding.makeBinding(cache,env,attr,mod,ty_2,pre,n,info);
@@ -871,7 +872,7 @@ algorithm
     // FIXHERE: They might have subMods too (variable attributes). see testsuite/mofiles/Sequence.mo
     case (cache,env,ih,store,ci_state,mod as DAE.MOD(binding = SOME(_)),pre,n,cl,attr,pf,dims,_,inst_dims,impl,comment,info,graph,csets)
       algorithm
-        true := ClassInf.isFunction(ci_state);
+        true := ClassInfUtil.isFunction(ci_state);
         InstUtil.checkFunctionVar(n, attr, pf, info);
 
         //get the equation modification
@@ -894,7 +895,7 @@ algorithm
 
         //Generate variable with default binding
         ty_2 := Types.simplifyType(ty_1);
-        (cache,cr) := PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,ty_2,{}));
+        (cache,cr) := PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReferenceBasics.makeCrefIdent(n,ty_2,{}));
 
         // set the source of this element
         source := ElementSource.createElementSource(info, FGraph.getScopePath(env), pre);
@@ -910,7 +911,7 @@ algorithm
     // Function variables without binding
     case (cache,env,ih,store,ci_state,mod,pre,n,(cl as SCode.CLASS()),attr,pf,dims,_,inst_dims,impl,comment,info,graph,csets)
        algorithm
-        true := ClassInf.isFunction(ci_state);
+        true := ClassInfUtil.isFunction(ci_state);
         InstUtil.checkFunctionVar(n, attr, pf, info);
 
          //Instantiate type of the component, skip dae/not flattening
@@ -919,7 +920,7 @@ algorithm
 
         arrty := InstUtil.makeArrayType(dims, ty);
         InstUtil.checkFunctionVarType(arrty, ci_state, n, info);
-        (cache,cr) := PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,arrty,{}));
+        (cache,cr) := PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReferenceBasics.makeCrefIdent(n,arrty,{}));
         (cache,dae_var_attr) := InstBinding.instDaeVariableAttributes(cache,env, mod, ty, {});
 
         // set the source of this element
@@ -934,7 +935,7 @@ algorithm
     // Scalar variables.
     case (_, _, _, _, _, _, _, _, _, _, _, {}, _, _, _, _, _, _, _)
       algorithm
-        false := ClassInf.isFunction(inState);
+        false := ClassInfUtil.isFunction(inState);
         // print("InstVar.instVar2: Scalar variables case: inClass: " + SCodeDump.unparseElementStr(inClass) + "\n");
         (cache, env, ih, store, dae, csets, ty, graph) := instScalar(
             inCache, inEnv, inIH, inStore, inState, inMod, inPrefix,
@@ -948,7 +949,7 @@ algorithm
         ((dim as DAE.DIM_UNKNOWN()) :: dims),idxs,inst_dims,impl,comment,info,graph, csets)
       algorithm
         true := Config.splitArrays();
-        false := ClassInf.isFunction(ci_state);
+        false := ClassInfUtil.isFunction(ci_state);
 
         // Try to deduce the dimension from the modifier.
         dim2 := InstUtil.instWholeDimFromMod(dim, mod, n, info);
@@ -965,7 +966,7 @@ algorithm
       ((dim as DAE.DIM_UNKNOWN()) :: dims),idxs,inst_dims,impl,comment,info,graph, csets)
       algorithm
         false := Config.splitArrays();
-        false := ClassInf.isFunction(ci_state);
+        false := ClassInfUtil.isFunction(ci_state);
         // Try to deduce the dimension from the modifier.
         /*TODO : mahge: remove this*/
         /*
@@ -988,7 +989,7 @@ algorithm
     case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,(dim :: dims),idxs,inst_dims,impl,comment,info,graph,csets)
       algorithm
         true := Config.splitArrays();
-        false := ClassInf.isFunction(ci_state);
+        false := ClassInfUtil.isFunction(ci_state);
 
         // dim = InstUtil.evalEnumAndBoolDim(dim);
         inst_dims_1 := List.appendLastList(inst_dims, {dim});
@@ -1003,7 +1004,7 @@ algorithm
     case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,(dim :: dims),idxs,inst_dims,impl,comment,info,graph,csets)
       algorithm
         false := Config.splitArrays();
-        false := ClassInf.isFunction(ci_state);
+        false := ClassInfUtil.isFunction(ci_state);
         /*TODO : mahge: remove this*/
         /*
         dime = InstUtil.instDimExpNonSplit(dim, impl);
@@ -1114,11 +1115,11 @@ algorithm
       algorithm
         // Instantiate the components class.
         idxs := listReverse(idxs);
-        ci_state := ClassInf.start(res, Absyn.IDENT(cls_name));
+        ci_state := ClassInfUtil.start(res, Absyn.IDENT(cls_name));
         predims := List.lastListOrEmpty(inInstDims);
         pre := PrefixUtil.prefixAdd(inName, predims, idxs, inPrefix, vt, ci_state, inInfo);
         if Config.acceptMetaModelicaGrammar() then
-          stateName := AbsynUtil.pathString(ClassInf.getStateName(inState), delimiter = "");
+          stateName := AbsynUtil.pathString(ClassInfUtil.getStateName(inState), delimiter = "");
           inStateAndClassNameIsEqual := stringEqual(stateName, cls_name);
           implicitInstantiation := SCodeUtil.isUniontype(inClass)
                                 and SCodeUtil.isConstant(inAttributes.variability)
@@ -1151,7 +1152,7 @@ algorithm
         attr := SCodeUtil.removeAttributeDimensions(attr);
         // Make a component reference for the component.
         ident_ty := InstUtil.makeCrefBaseType(ty, inInstDims);
-        cr := ComponentReference.makeCrefIdent(inName, ident_ty, idxs);
+        cr := ComponentReferenceBasics.makeCrefIdent(inName, ident_ty, idxs);
         (cache, cr) := PrefixUtil.prefixCref(cache, env, ih, inPrefix, cr);
         // adrpo: we cannot check this here as:
         //        we might have modifications on inner that we copy here
@@ -1163,7 +1164,7 @@ algorithm
         // Set the source of this element.
         source := ElementSource.createElementSource(inInfo, FGraph.getScopePath(env_1), inPrefix);
         // Instantiate the components binding.
-        mod := if not listEmpty(inSubscripts) and not SCodeUtil.isParameterOrConst(vt) and not ClassInf.isFunctionOrRecord(inState) and not Types.isComplexType(Types.arrayElementType(ty)) and not Types.isExternalObject(Types.arrayElementType(ty)) and not Config.scalarizeBindings()
+        mod := if not listEmpty(inSubscripts) and not SCodeUtil.isParameterOrConst(vt) and not ClassInfUtil.isFunctionOrRecord(inState) and not Types.isComplexType(Types.arrayElementType(ty)) and not Types.isExternalObject(Types.arrayElementType(ty)) and not Config.scalarizeBindings()
                  then DAE.NOMOD()
                  else inMod;
         opt_binding := InstBinding.makeVariableBinding(ty, mod, Types.variabilityToConst(vt), inPrefix, inName);
@@ -1352,7 +1353,7 @@ algorithm
     case (DAE.VAR(componentRef = var_cr),
           DAE.EQUATION(exp = DAE.CREF(componentRef = eq_cr)) :: rest_eqs)
       guard
-        ComponentReference.crefEqual(var_cr, eq_cr)
+        ComponentReferenceBasics.crefEqual(var_cr, eq_cr)
         // The first equation assigns the variable. Remove the variable's
         // binding and discard the equation.
       then
@@ -1361,7 +1362,7 @@ algorithm
     case (DAE.VAR(componentRef = var_cr),
           DAE.COMPLEX_EQUATION(lhs = DAE.CREF(componentRef = eq_cr)) :: _)
       guard
-        ComponentReference.crefPrefixOf(eq_cr, var_cr)
+        ComponentReferenceBasics.crefPrefixOf(eq_cr, var_cr)
       then
         (DAEUtil.setElementVarBinding(inVar, NONE()), inEqs);
 
@@ -1383,9 +1384,9 @@ algorithm
     case DAE.DIM_INTEGER()
       algorithm
         if inDim.integer < 0 then
-          dim_str := ExpressionDump.dimensionString(inDim);
+          dim_str := ExpressionBasics.dimensionString(inDim);
           cr := DAE.CREF_IDENT(inIdent, DAE.T_REAL_DEFAULT, {});
-          cr_str := ComponentReference.printComponentRefStr(
+          cr_str := ComponentReferenceBasics.printComponentRefStr(
             PrefixUtil.prefixCrefNoContext(inPrefix, cr));
           Error.addSourceMessageAndFail(Error.NEGATIVE_DIMENSION_INDEX,
            {dim_str, cr_str}, info);
@@ -1471,12 +1472,12 @@ algorithm
         dim_size2 := Expression.dimensionSize(ty_dim);
         true := dim_size1 <> dim_size2;
         // If the dimensions are not equal, print an error message.
-        exp_str := ExpressionDump.printExpStr(exp);
-        exp_ty_str := Types.unparseType(ty);
+        exp_str := ExpressionBasics.printExpStr(exp);
+        exp_ty_str := TypesDump.unparseType(ty);
         // We don't know the complete expected type, so lets assume that the
         // rest of the expression's type is correct (will be caught later anyway).
-        _ :: ty_dims := Types.getDimensions(ty);
-        dims_str := ExpressionDump.dimensionsString(inDimension :: ty_dims);
+        _ :: ty_dims := TypesDump.getDimensions(ty);
+        dims_str := ExpressionBasics.dimensionsString(inDimension :: ty_dims);
         Error.addMultiSourceMessage(Error.ARRAY_DIMENSION_MISMATCH,
           {exp_str, exp_ty_str, dims_str}, info::inInfo::{});
       then
@@ -1568,7 +1569,7 @@ algorithm
         (cache,env_1,ih,store,_,_,ty,_,_,graph) :=
           Inst.instClass(cache,env,ih,store, mod, pre, cl, inst_dims, true, InstTypes.INNER_CALL(), graph, csets) "Which has an expression binding";
         ty_1 := Types.simplifyType(ty);
-        (cache,cr) := PrefixUtil.prefixCref(cache,env,ih,pre,ComponentReference.makeCrefIdent(n,ty_1,{})) "check their types";
+        (cache,cr) := PrefixUtil.prefixCref(cache,env,ih,pre,ComponentReferenceBasics.makeCrefIdent(n,ty_1,{})) "check their types";
         (rhs,_) := Types.matchProp(e,p,DAE.PROP(ty,DAE.C_VAR()),true);
 
         // set the source of this element
@@ -1647,7 +1648,7 @@ algorithm
       algorithm
         failure(_ := Mod.lookupIdxModification(mod, DAE.ICONST(i)));
         str1 := PrefixUtil.printPrefixStrIgnoreNoPre(PrefixUtil.prefixAdd(n, {}, {}, pre, SCode.VAR(), ci_state, info));
-        str2 := "[" + stringDelimitList(List.map(idxs, ExpressionDump.printSubscriptStr), ", ") + "]";
+        str2 := "[" + stringDelimitList(List.map(idxs, ExpressionBasics.printSubscriptStr), ", ") + "]";
         str3 := Mod.prettyPrintMod(mod, 1);
         str4 := PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "(" + n + str2 + "=" + str3 + ")";
         str2 := str1 + str2;

@@ -175,7 +175,7 @@ algorithm
       then inArg;
 
     // array equations
-    case DAE.ARRAY_EQUATION(dimension=_)
+    case DAE.ARRAY_EQUATION()
       algorithm
         (varSize, eqnSize, eqns, hs) := inArg;
         size := Expression.sizeOf(Expression.typeof(element.exp));
@@ -439,7 +439,7 @@ algorithm
     case(DAE.STMT_FOR(type_=tp, iter = iteratorName, range = e, statementLst = stmts), _, _)
       algorithm
         // replace the iterator variable with the range expression
-        cr := ComponentReference.makeCrefIdent(iteratorName, tp, {});
+        cr := ComponentReferenceBasics.makeCrefIdent(iteratorName, tp, {});
         (stmts, _) := DAEUtil.traverseDAEEquationsStmts(stmts, Expression.traverseSubexpressionsHelper, (Expression.replaceCref, (cr, e)));
         ht := List.fold1(stmts, statementOutputs, DAE.EXPAND(), iht);
       then ht;
@@ -447,7 +447,7 @@ algorithm
     case(DAE.STMT_PARFOR(type_=tp, iter = iteratorName, range = e, statementLst = stmts), _, _)
       algorithm
         // replace the iterator variable with the range expression
-        cr := ComponentReference.makeCrefIdent(iteratorName, tp, {});
+        cr := ComponentReferenceBasics.makeCrefIdent(iteratorName, tp, {});
         (stmts, _) := DAEUtil.traverseDAEEquationsStmts(stmts, Expression.traverseSubexpressionsHelper, (Expression.replaceCref, (cr, e)));
         ht := List.fold1(stmts, statementOutputs, DAE.EXPAND(), iht);
       then ht;
@@ -923,7 +923,7 @@ algorithm
     case ({}, _, _) then iAcc;
     case(cr::rest, _, _) guard BaseHashSet.has(cr, hs)
       algorithm
-        crlst := List.unionEltOnTrue(cr, iAcc, ComponentReference.crefEqual);
+        crlst := List.unionEltOnTrue(cr, iAcc, ComponentReferenceBasics.crefEqual);
       then
         getcr(rest, hs, crlst);
     case(_::rest, _, _)

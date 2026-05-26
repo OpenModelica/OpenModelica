@@ -47,6 +47,7 @@ encapsulated package ClassLoader
 import Absyn;
 
 protected
+import AbsynUtil;
 import Autoconf;
 import BaseHashTable;
 import Config;

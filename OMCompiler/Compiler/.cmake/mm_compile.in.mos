@@ -18,7 +18,11 @@ if not loadFile(mm_src_file) then
 end if;
 
 total_imported_names := OpenModelica.Scripting.getMMfileTotalDependencies(class_strname, mm_output_dir);
-getErrorString();
+err := getErrorString();
+if err <> "" then
+  print("getMMfileTotalDependencies reported errors for " + class_strname + ":\n" + err);
+  exit(1);
+end if;
 
 dep_interface_files := {mm_output_dir + "/" + pac + ".interface.mo" for pac guard not stringEqual(pac,class_strname) in total_imported_names};
 

@@ -64,10 +64,8 @@ else()
   set(app_icon_macos "")
 endif()
 
-add_executable(OMPlot WIN32 MACOSX_BUNDLE main.cpp rc_omplot.rc ${app_icon_macos})
+add_executable(OMPlot WIN32 main.cpp rc_omplot.rc ${app_icon_macos})
 target_link_libraries(OMPlot PRIVATE OMPlotLib)
 
-
 install(TARGETS OMPlotLib)
-install(TARGETS OMPlot
-        BUNDLE DESTINATION ${OM_MACOS_INSTALL_BUNDLEDIR})
+omc_install_gui_client(OMPlot)

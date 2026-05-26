@@ -100,7 +100,7 @@ SystemDefaultImplementation::SystemDefaultImplementation(shared_ptr<IGlobalSetti
       , _event_system(NULL)
       , _modelName(modelName)
       , _freeVariablesLock(false)
-     
+
 {
     _simObjects = shared_ptr<ISimObjects>(new SimObjects(globalSettings->getRuntimeLibrarypath(),
                                                          globalSettings->getRuntimeLibrarypath(), globalSettings));
@@ -145,7 +145,7 @@ SystemDefaultImplementation::SystemDefaultImplementation(shared_ptr<IGlobalSetti
       , _event_system(NULL)
       , _modelName(modelName)
       , _freeVariablesLock(false)
-     
+
 {
       __z = _simObjects->getSimVars(modelName)->getStateVector();
     __zDot = _simObjects->getSimVars(modelName)->getDerStateVector();
@@ -634,9 +634,9 @@ void SystemDefaultImplementation::storeTime(double time)
 {
     // delete up to last value < time - _delay_max
     buffer_type::iterator first = _time_buffer.begin();
-    double _threshold = time - _delay_max;
-    buffer_type::iterator pos = find_if(first, _time_buffer.end(),
-                                        [_threshold](double v){ return v >= _threshold; });
+    buffer_type::iterator pos = std::find_if(first, _time_buffer.end(),
+                                        [=](double t) { return t >= time - _delay_max; });
+
     if (pos != first && --pos != first)
     {
         difference_type n = std::distance(first, pos);
@@ -693,8 +693,8 @@ double SystemDefaultImplementation::delay(unsigned int expr_id, double expr_valu
             else
             {
                 //find posion in value buffer for queried time
-                buffer_type::iterator pos = find_if(_time_buffer.begin(), _time_buffer.end(),
-                                                    [ts](double v){ return v >= ts; });
+                buffer_type::iterator pos = std::find_if(_time_buffer.begin(), _time_buffer.end(),
+                                                    [=](double t) { return t >= ts; });
 
                 if (pos != _time_buffer.end())
                 {

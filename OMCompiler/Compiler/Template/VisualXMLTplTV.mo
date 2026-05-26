@@ -223,12 +223,12 @@ interface package VisualXMLTplTV
     end Visualization;
   end VisualXML;
 
-  package ExpressionDump
+  package ExpressionBasics
     function printExpStr
       input DAE.Exp e;
       output String s;
     end printExpStr;
-  end ExpressionDump;
+  end ExpressionBasics;
 
   package DAE
     uniontype Exp
@@ -578,12 +578,12 @@ interface package VisualXMLTplTV
     end ComponentRef;
   end DAE;
 
-  package ComponentReference
+  package ComponentReferenceBasics
     function printComponentRefStr
       input DAE.ComponentRef inComponentRef;
       output String outString;
     end printComponentRefStr;
-  end ComponentReference;
+  end ComponentReferenceBasics;
 
   package AbsynUtil
     function pathString

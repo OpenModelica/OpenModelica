@@ -54,7 +54,6 @@ import Ceval = NFCeval;
 import ElementSource;
 import Equation = NFEquation;
 import ExecStat.execStat;
-import ExpressionDump;
 import Expression = NFExpression;
 import Binding = NFBinding;
 import Call = NFCall;
@@ -338,7 +337,8 @@ algorithm
         temp := Expression.BINARY(eq.rhs, Operator.makeSub(Type.REAL()), eq.lhs);
 
         if dumpEqInitStruct then
-          ExpressionDump.dumpExp(Expression.toDAE(temp));
+          print(Expression.toString(temp));
+          print("--------------------\n");
         end if;
 
         (_, inconsistentUnits) := insertUnitInEquation(temp, Unit.MASTER({}), htCr2U, htS2U, htU2S, fnCache);
@@ -482,8 +482,8 @@ algorithm
     case Expression.BINARY(exp1, Operator.OPERATOR(op = Op.MUL), exp2)
       guard Unit.isMaster(unit)
       algorithm
-        (unit1 as Unit.MASTER(), icu1) := insertUnitInEquation(exp1, Unit.MASTER({}), htCr2U, htS2U, htU2S, fnCache);
-        (unit2 as Unit.UNIT(), icu2) := insertUnitInEquation(exp2, Unit.MASTER({}), htCr2U, htS2U, htU2S, fnCache);
+        (Unit.MASTER(), icu1) := insertUnitInEquation(exp1, Unit.MASTER({}), htCr2U, htS2U, htU2S, fnCache);
+        (Unit.UNIT(), icu2) := insertUnitInEquation(exp2, Unit.MASTER({}), htCr2U, htS2U, htU2S, fnCache);
       then
         (Unit.MASTER({}), List.append_reverse(icu1, icu2));
 

@@ -161,7 +161,7 @@ algorithm
   else
     if not Type.isResizable(ty) then
       ty := TypeCheck.getRangeType(start_exp2, step_exp2, stop_exp2,
-        Type.arrayElementType(ty), AbsynUtil.dummyInfo);
+        Type.arrayElementType(ty), Absyn.dummyInfo);
     else
       ty := ty2;
     end if;
@@ -498,7 +498,7 @@ algorithm
       algorithm
         Call.TYPED_CALL(fn = fn, ty = ty, var = var, purity = purity) := call;
       then
-        Expression.CALL(Call.makeTypedReduction(fn, ty, var, purity, arr_call.exp, arr_call.iters, AbsynUtil.dummyInfo));
+        Expression.CALL(Call.makeTypedReduction(fn, ty, var, purity, arr_call.exp, arr_call.iters, Absyn.dummyInfo));
 
     else Expression.CALL(call);
   end match;

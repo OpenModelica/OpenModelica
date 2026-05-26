@@ -57,7 +57,6 @@ import DAEDump;
 import DAEUtil;
 import Error;
 import Expression;
-import ExpressionDump;
 import ExpressionSimplify;
 import Flags;
 import HashTableExpToIndex;
@@ -68,6 +67,8 @@ import SynchronousFeatures;
 import Util;
 import ZeroCrossings;
 import MetaModelica.Dangerous.listReverseInPlace;
+import ExpressionBasics;
+import Config;
 
 type ZCArgType  = tuple<tuple<BackendDAE.ZeroCrossingSet, DoubleEnded.MutableList<BackendDAE.ZeroCrossing>, BackendDAE.ZeroCrossingSet, Integer>, tuple<Integer, BackendDAE.Variables, BackendDAE.Variables>, Option<list<BackendDAE.SimIterator>>>;
 type ForArgType = tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<BackendDAE.ZeroCrossingSet, DoubleEnded.MutableList<BackendDAE.ZeroCrossing>, BackendDAE.ZeroCrossingSet, Integer>, tuple<Integer, BackendDAE.Variables, BackendDAE.Variables>>;
@@ -335,7 +336,7 @@ algorithm
         ht := BaseHashTable.add((inCondition, inIndex), inHT);
         crStr := "$whenCondition" + intString(inIndex);
 
-        var := BackendDAE.VAR(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_BOOL_DEFAULT, NONE(), NONE(), {}, inSource, DAEUtil.setProtectedAttr(SOME(DAE.emptyVarAttrBool), true), NONE(), SOME(DAE.BCONST(true)), SOME(SCode.COMMENT(NONE(), SOME(ExpressionDump.printExpStr(inCondition)))), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true, false, false);
+        var := BackendDAE.VAR(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_BOOL_DEFAULT, NONE(), NONE(), {}, inSource, DAEUtil.setProtectedAttr(SOME(DAE.emptyVarAttrBool), true), NONE(), SOME(DAE.BCONST(true)), SOME(SCode.COMMENT(NONE(), SOME(ExpressionBasics.printExpStr(inCondition)))), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true, false, false);
         var := BackendVariable.setVarFixed(var, true);
         eqn := BackendDAE.EQUATION(DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT), inCondition, inSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
 
@@ -490,7 +491,7 @@ algorithm
     case (DAE.ARRAY(array={condition})) algorithm
       crStr := "$whenCondition" + intString(inIndex);
 
-      var := BackendDAE.VAR(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_BOOL_DEFAULT, NONE(), NONE(), {}, inSource, DAEUtil.setProtectedAttr(SOME(DAE.emptyVarAttrBool), true), NONE(), SOME(DAE.BCONST(true)), SOME(SCode.COMMENT(NONE(), SOME(ExpressionDump.printExpStr(inCondition)))), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true, false, false);
+      var := BackendDAE.VAR(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_BOOL_DEFAULT, NONE(), NONE(), {}, inSource, DAEUtil.setProtectedAttr(SOME(DAE.emptyVarAttrBool), true), NONE(), SOME(DAE.BCONST(true)), SOME(SCode.COMMENT(NONE(), SOME(ExpressionBasics.printExpStr(inCondition)))), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true, false, false);
       var := BackendVariable.setVarFixed(var, true);
       stmt := DAE.STMT_ASSIGN(DAE.T_BOOL_DEFAULT, DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT), condition, inSource);
 
@@ -506,7 +507,7 @@ algorithm
     case _ algorithm
       crStr := "$whenCondition" + intString(inIndex);
 
-      var := BackendDAE.VAR(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_BOOL_DEFAULT, NONE(), NONE(), {}, inSource, DAEUtil.setProtectedAttr(SOME(DAE.emptyVarAttrBool), true), NONE(), SOME(DAE.BCONST(true)), SOME(SCode.COMMENT(NONE(), SOME(ExpressionDump.printExpStr(inCondition)))), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true, false, false);
+      var := BackendDAE.VAR(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_BOOL_DEFAULT, NONE(), NONE(), {}, inSource, DAEUtil.setProtectedAttr(SOME(DAE.emptyVarAttrBool), true), NONE(), SOME(DAE.BCONST(true)), SOME(SCode.COMMENT(NONE(), SOME(ExpressionBasics.printExpStr(inCondition)))), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true, false, false);
       var := BackendVariable.setVarFixed(var, true);
       stmt := DAE.STMT_ASSIGN(DAE.T_BOOL_DEFAULT, DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT), inCondition, inSource);
 
@@ -1007,7 +1008,7 @@ algorithm
 
     case (outExp as DAE.REDUCTION(), ((zeroCrossings, relations, samples, numMathFunctions), tp1, _) ,_) algorithm
       if Flags.isSet(Flags.RELIDX) then
-        print("collectZC searching in: " + ExpressionDump.printExpStr(inExp) + "\n");
+        print("collectZC searching in: " + ExpressionBasics.printExpStr(inExp) + "\n");
       end if;
       iters := SOME(list(createIterator(iter) for iter in outExp.iterators));
       (e, ((zeroCrossings, relations, samples, numMathFunctions), tp1, _)) := Expression.traverseExpTopDown(outExp.expr, collectZC, ((zeroCrossings, relations, samples, numMathFunctions), tp1, iters));
@@ -1031,7 +1032,7 @@ algorithm
         (DAE.RELATION(index=itmp), zeroCrossings, _) := zcIndex(eres, zeroCrossings, DoubleEnded.length(relations), zc);
 
         if Flags.isSet(Flags.RELIDX) then
-          print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + " index: " + intString(itmp) + "\n");
+          print("collectZC result zc: " + ExpressionBasics.printExpStr(eres) + " index: " + intString(itmp) + "\n");
         end if;
 
     then (DAE.CALL(Absyn.IDENT(name="delay"), {index, e, delay, delayMax}, attr), true, ((zeroCrossings, relations, samples, numMathFunctions), tp1, iters));
@@ -1055,7 +1056,7 @@ algorithm
         (DAE.RELATION(index=itmp), zeroCrossings, _) := zcIndex(eres, zeroCrossings, DoubleEnded.length(relations), zc);
 
         if Flags.isSet(Flags.RELIDX) then
-          print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + " index: " + intString(itmp) + "\n");
+          print("collectZC result zc: " + ExpressionBasics.printExpStr(eres) + " index: " + intString(itmp) + "\n");
         end if;
 
     then (DAE.CALL(Absyn.IDENT(name="spatialDistribution"), {index, in0, in1, x, dir, initPnts, initVals}, attr), true, ((zeroCrossings, relations, samples, numMathFunctions), tp1, iters));
@@ -1135,7 +1136,7 @@ algorithm
       guard Flags.isSet(Flags.EVENTS)
       algorithm
       if Flags.isSet(Flags.RELIDX) then
-        print("start collectZC (2): " + ExpressionDump.printExpStr(inExp) + " numRelations: " +intString(DoubleEnded.length(relations)) + "\n");
+        print("start collectZC (2): " + ExpressionBasics.printExpStr(inExp) + " numRelations: " +intString(DoubleEnded.length(relations)) + "\n");
       end if;
       e_1 := DAE.RELATION(e1, op, e2, DoubleEnded.length(relations), NONE());
       zc := createZeroCrossing(e_1, {eq_count}, iters);
@@ -1143,7 +1144,7 @@ algorithm
       zc := createZeroCrossing(eres, {eq_count}, iters);
       (DAE.RELATION(index=itmp), zeroCrossings, _) := zcIndex(eres, zeroCrossings, DoubleEnded.length(relations), zc);
       if Flags.isSet(Flags.RELIDX) then
-        print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + " index: " + intString(itmp) + "\n");
+        print("collectZC result zc: " + ExpressionBasics.printExpStr(eres) + " index: " + intString(itmp) + "\n");
       end if;
     then (eres, true, ((zeroCrossings, relations, samples, numMathFunctions), tp1, iters));
 
@@ -1152,7 +1153,7 @@ algorithm
       guard Flags.isSet(Flags.EVENTS)
       algorithm
       if Flags.isSet(Flags.RELIDX) then
-        print("start collectZC: " + ExpressionDump.printExpStr(inExp) + " numMathFunctions: " +intString(numMathFunctions) + "\n");
+        print("start collectZC: " + ExpressionBasics.printExpStr(inExp) + " numMathFunctions: " +intString(numMathFunctions) + "\n");
       end if;
 
       e_1 := DAE.CALL(Absyn.IDENT("integer"), {e1, DAE.ICONST(numMathFunctions)}, attr);
@@ -1161,7 +1162,7 @@ algorithm
       (eres, zeroCrossings, numMathFunctions) := zcIndex(e_1, zeroCrossings, numMathFunctions, zc);
 
       if Flags.isSet(Flags.RELIDX) then
-        print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + "\n");
+        print("collectZC result zc: " + ExpressionBasics.printExpStr(eres) + "\n");
       end if;
     then (eres, true, ((zeroCrossings, relations, samples, numMathFunctions), tp1, iters));
 
@@ -1169,7 +1170,7 @@ algorithm
       guard Flags.isSet(Flags.EVENTS)
       algorithm
       if Flags.isSet(Flags.RELIDX) then
-        print("start collectZC: " + ExpressionDump.printExpStr(inExp) + " numMathFunctions: " +intString(numMathFunctions) + "\n");
+        print("start collectZC: " + ExpressionBasics.printExpStr(inExp) + " numMathFunctions: " +intString(numMathFunctions) + "\n");
       end if;
 
       e_1 := DAE.CALL(Absyn.IDENT("floor"), {e1, DAE.ICONST(numMathFunctions)}, attr);
@@ -1178,7 +1179,7 @@ algorithm
       (eres, zeroCrossings, numMathFunctions) := zcIndex(e_1, zeroCrossings, numMathFunctions, zc);
 
       if Flags.isSet(Flags.RELIDX) then
-        print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + "\n");
+        print("collectZC result zc: " + ExpressionBasics.printExpStr(eres) + "\n");
       end if;
     then (eres, true, ((zeroCrossings, relations, samples, numMathFunctions), tp1, iters));
 
@@ -1186,7 +1187,7 @@ algorithm
       guard Flags.isSet(Flags.EVENTS)
       algorithm
       if Flags.isSet(Flags.RELIDX) then
-        print("start collectZC: " + ExpressionDump.printExpStr(inExp) + " numMathFunctions: " +intString(numMathFunctions) + "\n");
+        print("start collectZC: " + ExpressionBasics.printExpStr(inExp) + " numMathFunctions: " +intString(numMathFunctions) + "\n");
       end if;
 
       e_1 := DAE.CALL(Absyn.IDENT("ceil"), {e1, DAE.ICONST(numMathFunctions)}, attr);
@@ -1195,7 +1196,7 @@ algorithm
       (eres, zeroCrossings, numMathFunctions) := zcIndex(e_1, zeroCrossings, numMathFunctions, zc);
 
       if Flags.isSet(Flags.RELIDX) then
-        print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + "\n");
+        print("collectZC result zc: " + ExpressionBasics.printExpStr(eres) + "\n");
       end if;
     then (eres, true, ((zeroCrossings, relations, samples, numMathFunctions), tp1, iters));
 
@@ -1203,7 +1204,7 @@ algorithm
       guard Flags.isSet(Flags.EVENTS)
       algorithm
       if Flags.isSet(Flags.RELIDX) then
-        print("start collectZC: " + ExpressionDump.printExpStr(inExp) + " numMathFunctions: " +intString(numMathFunctions) + "\n");
+        print("start collectZC: " + ExpressionBasics.printExpStr(inExp) + " numMathFunctions: " +intString(numMathFunctions) + "\n");
       end if;
 
       e_1 := DAE.CALL(Absyn.IDENT("div"), {e1, e2, DAE.ICONST(numMathFunctions)}, attr);
@@ -1212,7 +1213,7 @@ algorithm
       (eres, zeroCrossings, numMathFunctions) := zcIndex(e_1, zeroCrossings, numMathFunctions, zc);
 
       if Flags.isSet(Flags.RELIDX) then
-        print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + "\n");
+        print("collectZC result zc: " + ExpressionBasics.printExpStr(eres) + "\n");
       end if;
     then (eres, true, ((zeroCrossings, relations, samples, numMathFunctions), tp1, iters));
 
@@ -1220,7 +1221,7 @@ algorithm
       guard Flags.isSet(Flags.EVENTS)
       algorithm
       if Flags.isSet(Flags.RELIDX) then
-        print("start collectZC: " + ExpressionDump.printExpStr(inExp) + " numMathFunctions: " +intString(numMathFunctions) + "\n");
+        print("start collectZC: " + ExpressionBasics.printExpStr(inExp) + " numMathFunctions: " +intString(numMathFunctions) + "\n");
       end if;
 
       e_1 := DAE.CALL(Absyn.IDENT("mod"), {e1, e2, DAE.ICONST(numMathFunctions)}, attr);
@@ -1232,7 +1233,7 @@ algorithm
       numMathFunctions := numMathFunctions + 1;
 
       if Flags.isSet(Flags.RELIDX) then
-        print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + "\n");
+        print("collectZC result zc: " + ExpressionBasics.printExpStr(eres) + "\n");
       end if;
     then (eres, true, ((zeroCrossings, relations, samples, numMathFunctions), tp1, iters));
 
@@ -1241,7 +1242,7 @@ algorithm
       guard Flags.isSet(Flags.EVENTS)
       algorithm
       if Flags.isSet(Flags.RELIDX) then
-        print("start collectZC: " + ExpressionDump.printExpStr(inExp) + " numMathFunctions: " +intString(numMathFunctions) + "\n");
+        print("start collectZC: " + ExpressionBasics.printExpStr(inExp) + " numMathFunctions: " +intString(numMathFunctions) + "\n");
       end if;
 
       e_1 := DAE.CALL(Absyn.IDENT("div"), {e1, e2, DAE.ICONST(numMathFunctions)}, attr);
@@ -1251,7 +1252,7 @@ algorithm
       e_2 := DAE.BINARY(e1, DAE.SUB(ty), DAE.BINARY(eres, DAE.MUL(ty), e2));
 
       if Flags.isSet(Flags.RELIDX) then
-        print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + "\n");
+        print("collectZC result zc: " + ExpressionBasics.printExpStr(eres) + "\n");
       end if;
     then (e_2, true, ((zeroCrossings, relations, samples, numMathFunctions), tp1, iters));
 
@@ -1412,7 +1413,7 @@ algorithm
       end if;
       ZeroCrossings.add_list(zeroCrossings, zcLstNew);
       if Flags.isSet(Flags.RELIDX) then
-        print("collectZCAlgsFor result zc: " + ExpressionDump.printExpStr(eres)+ " index:" + intString(DoubleEnded.length(relations)) + "\n");
+        print("collectZCAlgsFor result zc: " + ExpressionBasics.printExpStr(eres)+ " index:" + intString(DoubleEnded.length(relations)) + "\n");
       end if;
     then (eres, true, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numMathFunctions), tp1));
 
@@ -1425,7 +1426,7 @@ algorithm
       DoubleEnded.push_back(relations, zc);
       ZeroCrossings.add(zeroCrossings, zc);
       if Flags.isSet(Flags.RELIDX) then
-        print("collectZCAlgsFor result zc: " + ExpressionDump.printExpStr(eres)+ " index:" + intString(DoubleEnded.length(relations)) + "\n");
+        print("collectZCAlgsFor result zc: " + ExpressionBasics.printExpStr(eres)+ " index:" + intString(DoubleEnded.length(relations)) + "\n");
       end if;
     then (eres, true, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numMathFunctions), tp1));
 
@@ -1434,7 +1435,7 @@ algorithm
       guard Flags.isSet(Flags.EVENTS)
       algorithm
       if Flags.isSet(Flags.RELIDX) then
-        print("start collectZC: " + ExpressionDump.printExpStr(inExp) + " numMathFunctions: " +intString(numMathFunctions) + "\n");
+        print("start collectZC: " + ExpressionBasics.printExpStr(inExp) + " numMathFunctions: " +intString(numMathFunctions) + "\n");
       end if;
 
       e_1 := DAE.CALL(Absyn.IDENT("integer"), {e1, DAE.ICONST(numMathFunctions)}, attr);
@@ -1443,7 +1444,7 @@ algorithm
       (eres, zeroCrossings, numMathFunctions) := zcIndex(e_1, zeroCrossings, numMathFunctions, zc);
 
       if Flags.isSet(Flags.RELIDX) then
-        print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + "\n");
+        print("collectZC result zc: " + ExpressionBasics.printExpStr(eres) + "\n");
       end if;
     then (eres, true, (iterator, le, range, (zeroCrossings, relations, samples, numMathFunctions), tp1));
 
@@ -1451,7 +1452,7 @@ algorithm
       guard Flags.isSet(Flags.EVENTS)
       algorithm
       if Flags.isSet(Flags.RELIDX) then
-        print("start collectZC: " + ExpressionDump.printExpStr(inExp) + " numMathFunctions: " +intString(numMathFunctions) + "\n");
+        print("start collectZC: " + ExpressionBasics.printExpStr(inExp) + " numMathFunctions: " +intString(numMathFunctions) + "\n");
       end if;
 
       e_1 := DAE.CALL(Absyn.IDENT("floor"), {e1, DAE.ICONST(numMathFunctions)}, attr);
@@ -1460,7 +1461,7 @@ algorithm
       (eres, zeroCrossings, numMathFunctions) := zcIndex(e_1, zeroCrossings, numMathFunctions, zc);
 
       if Flags.isSet(Flags.RELIDX) then
-        print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + "\n");
+        print("collectZC result zc: " + ExpressionBasics.printExpStr(eres) + "\n");
       end if;
     then (eres, true, (iterator, le, range, (zeroCrossings, relations, samples, numMathFunctions), tp1));
 
@@ -1468,7 +1469,7 @@ algorithm
       guard Flags.isSet(Flags.EVENTS)
       algorithm
       if Flags.isSet(Flags.RELIDX) then
-        print("start collectZC: " + ExpressionDump.printExpStr(inExp) + " numMathFunctions: " +intString(numMathFunctions) + "\n");
+        print("start collectZC: " + ExpressionBasics.printExpStr(inExp) + " numMathFunctions: " +intString(numMathFunctions) + "\n");
       end if;
 
       e_1 := DAE.CALL(Absyn.IDENT("ceil"), {e1, DAE.ICONST(numMathFunctions)}, attr);
@@ -1477,7 +1478,7 @@ algorithm
       (eres, zeroCrossings, numMathFunctions) := zcIndex(e_1, zeroCrossings, numMathFunctions, zc);
 
       if Flags.isSet(Flags.RELIDX) then
-        print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + "\n");
+        print("collectZC result zc: " + ExpressionBasics.printExpStr(eres) + "\n");
       end if;
     then (eres, true, (iterator, le, range, (zeroCrossings, relations, samples, numMathFunctions), tp1));
 
@@ -1485,7 +1486,7 @@ algorithm
       guard Flags.isSet(Flags.EVENTS)
       algorithm
       if Flags.isSet(Flags.RELIDX) then
-        print("start collectZC: " + ExpressionDump.printExpStr(inExp) + " numMathFunctions: " +intString(numMathFunctions) + "\n");
+        print("start collectZC: " + ExpressionBasics.printExpStr(inExp) + " numMathFunctions: " +intString(numMathFunctions) + "\n");
       end if;
 
       e_1 := DAE.CALL(Absyn.IDENT("div"), {e1, e2, DAE.ICONST(numMathFunctions)}, attr);
@@ -1494,7 +1495,7 @@ algorithm
       (eres, zeroCrossings, numMathFunctions) := zcIndex(e_1, zeroCrossings, numMathFunctions, zc);
 
       if Flags.isSet(Flags.RELIDX) then
-        print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + "\n");
+        print("collectZC result zc: " + ExpressionBasics.printExpStr(eres) + "\n");
       end if;
     then (eres, true, (iterator, le, range, (zeroCrossings, relations, samples, numMathFunctions), tp1));
 
@@ -1502,7 +1503,7 @@ algorithm
       guard Flags.isSet(Flags.EVENTS)
       algorithm
       if Flags.isSet(Flags.RELIDX) then
-        print("start collectZC: " + ExpressionDump.printExpStr(inExp) + " numMathFunctions: " +intString(numMathFunctions) + "\n");
+        print("start collectZC: " + ExpressionBasics.printExpStr(inExp) + " numMathFunctions: " +intString(numMathFunctions) + "\n");
       end if;
 
       e_1 := DAE.CALL(Absyn.IDENT("mod"), {e1, e2, DAE.ICONST(numMathFunctions)}, attr);
@@ -1511,7 +1512,7 @@ algorithm
       (eres, zeroCrossings, numMathFunctions) := zcIndex(e_1, zeroCrossings, numMathFunctions, zc);
 
       if Flags.isSet(Flags.RELIDX) then
-        print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + "\n");
+        print("collectZC result zc: " + ExpressionBasics.printExpStr(eres) + "\n");
       end if;
     then (eres, true, (iterator, le, range, (zeroCrossings, relations, samples, numMathFunctions), tp1));
 
@@ -1520,7 +1521,7 @@ algorithm
       guard Flags.isSet(Flags.EVENTS)
       algorithm
       if Flags.isSet(Flags.RELIDX) then
-        print("start collectZC: " + ExpressionDump.printExpStr(inExp) + " numMathFunctions: " +intString(numMathFunctions) + "\n");
+        print("start collectZC: " + ExpressionBasics.printExpStr(inExp) + " numMathFunctions: " +intString(numMathFunctions) + "\n");
       end if;
 
       e_1 := DAE.CALL(Absyn.IDENT("div"), {e1, e2, DAE.ICONST(numMathFunctions)}, attr);
@@ -1530,7 +1531,7 @@ algorithm
       e_2 := DAE.BINARY(e1, DAE.SUB(ty), DAE.BINARY(eres, DAE.MUL(ty), e2));
 
       if Flags.isSet(Flags.RELIDX) then
-        print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + "\n");
+        print("collectZC result zc: " + ExpressionBasics.printExpStr(eres) + "\n");
       end if;
     then (e_2, true, (iterator, le, range, (zeroCrossings, relations, samples, numMathFunctions), tp1));
 
@@ -1620,7 +1621,7 @@ algorithm
       then (relation, index+2);
 
     else algorithm
-      Error.addInternalError(getInstanceName() + " failed for: " + ExpressionDump.printExpStr(relation), sourceInfo());
+      Error.addInternalError(getInstanceName() + " failed for: " + ExpressionBasics.printExpStr(relation), sourceInfo());
     then fail();
   end match;
 end zcIndex;
@@ -1662,7 +1663,7 @@ algorithm
       then (rel, index);
 
     else algorithm
-      Error.addInternalError(getInstanceName() + " failed for: " + ExpressionDump.printExpStr(relation), sourceInfo());
+      Error.addInternalError(getInstanceName() + " failed for: " + ExpressionBasics.printExpStr(relation), sourceInfo());
     then fail();
   end match;
 end zcIndexRelation;
@@ -1742,7 +1743,7 @@ algorithm
     then inZCexp2;
 
     else algorithm
-      Error.addInternalError(getInstanceName() + " failed for {" + ExpressionDump.printExpStr(inZCexp1) + "} and {" + ExpressionDump.printExpStr(inZCexp2) + "}", sourceInfo());
+      Error.addInternalError(getInstanceName() + " failed for {" + ExpressionBasics.printExpStr(inZCexp1) + "} and {" + ExpressionBasics.printExpStr(inZCexp2) + "}", sourceInfo());
     then fail();
   end match;
 end getMinZeroCrossings;
@@ -1803,14 +1804,14 @@ algorithm
       then (DAE.STMT_IF(e_1, stmts2, algElse, source), extraArg);
 
       case (DAE.STMT_FOR(type_=tp, iterIsArray=b1, iter=id1, range=e, statementLst=stmts, source=source)) algorithm
-        cr := ComponentReference.makeCrefIdent(id1, tp, {});
+        cr := ComponentReferenceBasics.makeCrefIdent(id1, tp, {});
         iteratorExp := Expression.crefExp(cr);
         iteratorexps := BackendDAEUtil.extendRange(e, inKnvars);
         (stmts2, extraArg) := traverseStmtsForExps(iteratorExp, iteratorexps, e, stmts, inKnvars, extraArg);
       then (DAE.STMT_FOR(tp, b1, id1, e, stmts2, source), extraArg);
 
       case (DAE.STMT_PARFOR(type_=tp, iterIsArray=b1, iter=id1, range=e, statementLst=stmts, loopPrlVars= loopPrlVars, source=source)) algorithm
-        cr := ComponentReference.makeCrefIdent(id1, tp, {});
+        cr := ComponentReferenceBasics.makeCrefIdent(id1, tp, {});
         iteratorExp := Expression.crefExp(cr);
         iteratorexps := BackendDAEUtil.extendRange(e, inKnvars);
         (stmts2, extraArg) := traverseStmtsForExps(iteratorExp, iteratorexps, e, stmts, inKnvars, extraArg);
@@ -1978,7 +1979,7 @@ algorithm
     then BackendDAE.SIM_ITERATOR_LIST(DAE.CREF_IDENT(red_iter.id, DAE.T_INTEGER_DEFAULT, {}), list(DAEUtil.getInteger(e) for e in exp.array), listLength(exp.array), {});
 
     else algorithm
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for expression: " + ExpressionDump.printExpStr(red_iter.exp) + ".\n"});
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for expression: " + ExpressionBasics.printExpStr(red_iter.exp) + ".\n"});
     then fail();
   end match;
 end createIterator;

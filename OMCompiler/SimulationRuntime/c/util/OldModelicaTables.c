@@ -663,7 +663,7 @@ typedef union {
   unsigned char c;
 } elem_t;
 
-inline static char getEndianness()
+inline static char getEndianness(void)
 {
   const int endian_test = 1;
   return ((*(char*)&endian_test) == 0);
@@ -1864,7 +1864,7 @@ int ModelicaTables_CombiTimeTable_init(const char* tableName, const char* fileNa
 void ModelicaTables_CombiTimeTable_close(int tableID)
 {
    omcTableTimeIpoClose(tableID);
-};
+}
 
 double ModelicaTables_CombiTimeTable_interpolate(int tableID, int icol, double u)
 {
@@ -1891,7 +1891,7 @@ int ModelicaTables_CombiTable1D_init(const char* tableName, const char* fileName
 void ModelicaTables_CombiTable1D_close(int tableID)
 {
    omcTableTimeIpoClose(tableID);
-};
+}
 
 double ModelicaTables_CombiTable1D_interpolate(int tableID, int icol, double u) {
   return omcTableTimeIpo(tableID,icol,u);
@@ -1907,7 +1907,7 @@ int ModelicaTables_CombiTable2D_init(const char* tableName, const char* fileName
 void ModelicaTables_CombiTable2D_close(int tableID)
 {
    omcTable2DIpoClose(tableID);
-};
+}
 
 double ModelicaTables_CombiTable2D_interpolate(int tableID, double u1, double u2)
 {

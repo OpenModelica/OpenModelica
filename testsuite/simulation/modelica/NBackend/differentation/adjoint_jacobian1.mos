@@ -69,7 +69,7 @@ buildModel(scalarAdjointJacobian1); getErrorString();
 //   (6) V := $START.V
 //   (5) i_L := $START.i_L
 //   (4) i_R := V / R
-//   (3) i_C := -(i_R - i_L)
+//   (3) i_C := i_L - i_R
 //   (2) $DER.V := i_C / C
 //   (1) $DER.i_L := (Vb - V) / L
 //
@@ -195,7 +195,7 @@ buildModel(scalarAdjointJacobian1); getErrorString();
 // 6: V=$START.V [Real]
 // 5: i_L=$START.i_L [Real]
 // 4: i_R=V / R [Real]
-// 3: i_C=-(i_R - i_L) [Real]
+// 3: i_C=i_L - i_R [Real]
 // 2: $DER.V=i_C / C [Real]
 // 1: $DER.i_L=(Vb - V) / L [Real]
 // ========================================

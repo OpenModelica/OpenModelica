@@ -76,7 +76,6 @@ protected import ComponentReference;
 protected import ElementSource;
 protected import Error;
 protected import Expression;
-protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
 protected import HashSet;
@@ -85,6 +84,7 @@ protected import Sorting;
 protected import Util;
 protected import Values;
 protected import ValuesUtil;
+protected import ExpressionBasics;
 
 
 protected constant String BORDER    = "********************************************************************************";
@@ -588,7 +588,7 @@ algorithm
         // save replacement
         repl := BackendVarTransform.addReplacement(repl, cr, e1, NONE());
         replEvaluate := BackendVarTransform.addReplacement(replEvaluate, cr, e1, NONE());
-        //  print("Evaluate " + BackendDump.varString(var) + "\n->    " + ExpressionDump.printExpStr(e1) + "\n");
+        //  print("Evaluate " + BackendDump.varString(var) + "\n->    " + ExpressionBasics.printExpStr(e1) + "\n");
       then ();
 
     case BackendDAE.VAR(varName = cr,varKind=BackendDAE.PARAM(),values=attr)
@@ -608,7 +608,7 @@ algorithm
         // save replacement
         repl := BackendVarTransform.addReplacement(repl, cr, e1, NONE());
         replEvaluate := BackendVarTransform.addReplacement(replEvaluate, cr, e1, NONE());
-        //  print("Evaluate " + BackendDump.varString(var) + "\n->    " + ExpressionDump.printExpStr(e1) + "\n");
+        //  print("Evaluate " + BackendDump.varString(var) + "\n->    " + ExpressionBasics.printExpStr(e1) + "\n");
       then ();
 
   end match;
@@ -728,7 +728,7 @@ algorithm
   else
     info := ElementSource.getElementSourceFileInfo(source);
     (outExp, _) := Expression.traverseExpBottomUp(e1, replaceCrefWithBindStartExp, (globalKnownVars,false,HashSet.emptyHashSet()));
-    msg := ComponentReference.printComponentRefStr(cr) + " has unevaluateable fixed attribute value \"" + ExpressionDump.printExpStr(e) + "\" use values from start attribute(s) \"" + ExpressionDump.printExpStr(outExp) + "\"";
+    msg := ComponentReferenceBasics.printComponentRefStr(cr) + " has unevaluateable fixed attribute value \"" + ExpressionBasics.printExpStr(e) + "\" use values from start attribute(s) \"" + ExpressionBasics.printExpStr(outExp) + "\"";
     Error.addSourceMessage(Error.COMPILER_WARNING, {msg}, info);
   end if;
 end evaluateFixedAttributeReportWarning;

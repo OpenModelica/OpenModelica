@@ -55,6 +55,7 @@ import SCodeUtil;
 import FGraphBuild;
 import List;
 import ClassInf;
+import ClassInfUtil;
 
 public
 type Name = FCore.Name;
@@ -526,7 +527,7 @@ algorithm
       algorithm
         true := FNode.isRefCref(r);
         FCore.CR(r = cr) := FNode.refData(r);
-        (g, rr) := FLookup.cr(g, r, cr, FLookup.ignoreNothing, FLookup.dummyLookupOption); // SOME(AbsynUtil.dummyInfo));
+        (g, rr) := FLookup.cr(g, r, cr, FLookup.ignoreNothing, FLookup.dummyLookupOption); // SOME(Absyn.dummyInfo));
         g := FGraphBuild.mkRefNode(FNode.refNodeName, {rr}, r, g);
       then
         g;
@@ -592,7 +593,7 @@ algorithm
       algorithm
         true := FNode.isRefMod(r) and
                (not FNode.isRefModHolder(r)) and
-               (not ClassInf.isBasicTypeComponentName(FNode.refName(r)));
+               (not ClassInfUtil.isBasicTypeComponentName(FNode.refName(r)));
         // it does have a reference child already!
         true := FNode.isRefRefResolved(r);
       then
@@ -603,9 +604,9 @@ algorithm
       algorithm
         true := FNode.isRefMod(r) and
                (not FNode.isRefModHolder(r)) and
-               (not ClassInf.isBasicTypeComponentName(FNode.refName(r)));
+               (not ClassInfUtil.isBasicTypeComponentName(FNode.refName(r)));
         cr := AbsynUtil.pathToCref(AbsynUtil.stringListPath(FNode.namesUpToParentName(r, FNode.modNodeName)));
-        (g, rr) := FLookup.cr(g, FNode.getModifierTarget(r), cr, FLookup.ignoreNothing, FLookup.dummyLookupOption); // SOME(AbsynUtil.dummyInfo));
+        (g, rr) := FLookup.cr(g, FNode.getModifierTarget(r), cr, FLookup.ignoreNothing, FLookup.dummyLookupOption); // SOME(Absyn.dummyInfo));
         g := FGraphBuild.mkRefNode(FNode.refNodeName, {rr}, r, g);
       then
         g;
@@ -615,7 +616,7 @@ algorithm
       algorithm
         true := FNode.isRefMod(r) and
                (not FNode.isRefModHolder(r)) and
-               (not ClassInf.isBasicTypeComponentName(FNode.refName(r)));
+               (not ClassInfUtil.isBasicTypeComponentName(FNode.refName(r)));
         cr := AbsynUtil.pathToCref(AbsynUtil.stringListPath(FNode.namesUpToParentName(r, FNode.modNodeName)));
         failure((_, _) := FLookup.cr(g, FNode.getModifierTarget(r), cr, FLookup.ignoreNothing, FLookup.dummyLookupOption));
         print("FResolve.mod_one: modifier: " + AbsynUtil.crefString(cr) +

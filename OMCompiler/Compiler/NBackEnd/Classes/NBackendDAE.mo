@@ -1235,7 +1235,7 @@ protected
         Expression cond;
 
       case FEquation.ASSERT() algorithm
-        attr := EquationAttributes.default(EquationKind.EMPTY, init);
+        _ := EquationAttributes.default(EquationKind.EMPTY, init);
         cond := if Expression.isCall(frontend_eq.condition) then frontend_eq.condition else Expression.CALL(Call.makeTypedCall(
           fn          = NFBuiltinFuncs.NO_EVENT,
           args        = {frontend_eq.condition},
@@ -1622,7 +1622,7 @@ public
           String p_ode, p_alg, p_ode_e, p_alg_e, p_clk, p_ini, p_ini_0;
           String states, discretes, discrete_states, clocked_states, clocks, inputs;
 
-        case MAIN(varData = varData as VarData.VAR_DATA_SIM(), eqData = eqData as EqData.EQ_DATA_SIM()) algorithm
+        case MAIN(varData = varData as VarData.VAR_DATA_SIM(), eqData=EqData.EQ_DATA_SIM()) algorithm
           // collect partition size info
           p_ode   := intString(listLength(bdae.ode));
           p_alg   := intString(listLength(bdae.algebraic));

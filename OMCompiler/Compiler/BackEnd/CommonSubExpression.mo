@@ -54,6 +54,7 @@ import BackendVarTransform;
 import BackendVariable;
 import BaseHashTable;
 import ComponentReference;
+import ComponentReferenceBasics;
 import DAEUtil;
 import ExpandableArray;
 import Expression;
@@ -70,6 +71,7 @@ import List;
 import ResolveLoops;
 import StringUtil;
 import Types;
+import TypesDump;
 import UnorderedSet;
 
 uniontype CSE_Equation
@@ -91,7 +93,7 @@ protected function printCSEEquation
 protected
   Boolean first = true;
 algorithm
-  str := ExpressionDump.printExpStr(cseEquation.cse) + " - " + ExpressionDump.printExpStr(cseEquation.call) + " - {";
+  str := ExpressionBasics.printExpStr(cseEquation.cse) + " - " + ExpressionBasics.printExpStr(cseEquation.call) + " - {";
 
   for i in cseEquation.dependencies loop
     if first then
@@ -121,7 +123,7 @@ protected
   Integer index;
 
   BackendDAE.Shared shared;
-  DAE.FunctionTree functionTree;
+  AvlTreePathFunction.Tree functionTree;
   BackendDAE.EquationArray orderedEqs, orderedEqs_new;
   BackendDAE.Variables orderedVars, globalKnownVars;
   list<BackendDAE.EqSystem> eqSystems = {};
@@ -265,9 +267,9 @@ end VarToGlobalKnownVarHT;
 protected function findCallsInGlobalKnownVars
 "This function traverses the globalKnownVars and looks for function calls. The calls are stored in the HT/expArray"
   input BackendDAE.Var inVar;
-  input tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, DAE.FunctionTree> inTuple;
+  input tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, AvlTreePathFunction.Tree> inTuple;
   output BackendDAE.Var outVar = inVar;
-  output tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, DAE.FunctionTree> outTuple = inTuple;
+  output tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, AvlTreePathFunction.Tree> outTuple = inTuple;
 protected
   DAE.Exp exp;
   BackendDAE.Equation eq;
@@ -403,7 +405,7 @@ algorithm
     call := substituteExp(call, inCall, inCSE);
 
     //ExpandableArray.toString(exarray, "substituteDependencies", printCSEEquation);
-    //print("Exp: " + ExpressionDump.printExpStr(call) + "\n");
+    //print("Exp: " + ExpressionBasics.printExpStr(call) + "\n");
 
     if not BaseHashTable.hasKey(call, ht) then
       ht := BaseHashTable.add((call, id), ht);
@@ -418,8 +420,8 @@ algorithm
 
       //print("substituteDependencies: not handled yet\n");
       //print("id: " + intString(id) + "\n");
-      //print("inCall: " + ExpressionDump.printExpStr(inCall) + "\n");
-      //print("inCSE: " + ExpressionDump.printExpStr(inCSE) + "\n");
+      //print("inCall: " + ExpressionBasics.printExpStr(inCall) + "\n");
+      //print("inCSE: " + ExpressionBasics.printExpStr(inCSE) + "\n");
       //BaseHashTable.dumpHashTable(ht);
       //ExpandableArray.toString(exarray, "substituteDependencies", printCSEEquation);
     end if;
@@ -448,12 +450,12 @@ protected
 algorithm
   (key, value) := inTuple;
 
-  if Expression.expEqual(inExp, key) then
+  if ExpressionBasics.expEqual(inExp, key) then
     outExp := value;
     cont := false;
   elseif Expression.isTSUB(inExp) then
     DAE.TSUB(exp=tmp, ix=ix) := inExp;
-    if Expression.expEqual(tmp, key) then
+    if ExpressionBasics.expEqual(tmp, key) then
       DAE.TUPLE(expList) := value;
       outExp := listGet(expList, ix);
       cont := false;
@@ -504,7 +506,7 @@ algorithm
     add := true;
     CSE_EQUATION(cse=cse, call=call) := ExpandableArray.get(i, exarray);
     if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
-      print("\n--> cse-equation: " + ExpressionDump.printExpStr(cse) + " = " + ExpressionDump.printExpStr(call) + "\n");
+      print("\n--> cse-equation: " + ExpressionBasics.printExpStr(cse) + " = " + ExpressionBasics.printExpStr(call) + "\n");
     end if;
 
     eq := BackendEquation.generateEquation(cse, call);
@@ -529,7 +531,7 @@ algorithm
               orderedEqs := BackendEquation.add(eq, orderedEqs);
               add := false;
             end if;
-            if debug then print("\ndebug 6 - Is this cref a CSE cref?: " + ExpressionDump.printExpStr(Expression.crefExp(cr)) + "\n"); end if;
+            if debug then print("\ndebug 6 - Is this cref a CSE cref?: " + ExpressionBasics.printExpStr(Expression.crefExp(cr)) + "\n"); end if;
             if isCSECref(cr) then
               if debug then print("\ndebug 7 - yes it is a CSE cref. Add to orderedVars!\n"); end if;
               orderedVars := BackendVariable.addVar(var, orderedVars);
@@ -707,11 +709,11 @@ end addConstantCseVarsToGlobalKnownVarHT;
 protected function wrapFunctionCalls_analysis
 "First phase of the WFC algorithm: The equation system is traversed and all occuring function calls are stored in the HT and the expandable array."
   input BackendDAE.Equation inEq;
-  input tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, DAE.FunctionTree> inTuple;
+  input tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, AvlTreePathFunction.Tree> inTuple;
   output BackendDAE.Equation outEq = inEq;
-  output tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, DAE.FunctionTree> outTuple;
+  output tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, AvlTreePathFunction.Tree> outTuple;
 protected
-  DAE.FunctionTree functionTree;
+  AvlTreePathFunction.Tree functionTree;
   HashTableExpToIndex.HashTable HT;
   ExpandableArray<CSE_Equation> exarray;
 
@@ -846,9 +848,9 @@ end createCrefForTsub;
 
 protected function wrapFunctionCalls_analysis2
   input DAE.Exp inExp;
-  input tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, DAE.FunctionTree> inTuple;
+  input tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, AvlTreePathFunction.Tree> inTuple;
   output DAE.Exp outExp = inExp;
-  output tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, DAE.FunctionTree> outTuple;
+  output tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, AvlTreePathFunction.Tree> outTuple;
 algorithm
   (_, outTuple) := Expression.traverseExpTopDown(inExp, wrapFunctionCalls_analysis3, inTuple);
 end wrapFunctionCalls_analysis2;
@@ -856,12 +858,12 @@ end wrapFunctionCalls_analysis2;
 
 protected function wrapFunctionCalls_analysis3
   input DAE.Exp inExp;
-  input tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, DAE.FunctionTree> inTuple;
+  input tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, AvlTreePathFunction.Tree> inTuple;
   output DAE.Exp outExp = inExp;
   output Boolean cont;
-  output tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, DAE.FunctionTree> outTuple;
+  output tuple<HashTableExpToIndex.HashTable, ExpandableArray<CSE_Equation>, Integer, Integer, AvlTreePathFunction.Tree> outTuple;
 protected
-  DAE.FunctionTree functionTree;
+  AvlTreePathFunction.Tree functionTree;
   HashTableExpToIndex.HashTable HT;
   ExpandableArray<CSE_Equation> exarray;
   Integer cseIndex, index;
@@ -974,7 +976,7 @@ algorithm
       list<DAE.Exp> lhs, rhs;
 
     case BackendDAE.EQUATION(exp=exp1, scalar=exp2)
-    then Expression.expEqual(exp1, exp2);
+    then ExpressionBasics.expEqual(exp1, exp2);
 
     case BackendDAE.EQUATION(exp=DAE.TUPLE(lhs), scalar=DAE.TUPLE(rhs)) guard (listLength(lhs) == listLength(rhs)) algorithm
       print("This should never appear\n");
@@ -984,7 +986,7 @@ algorithm
     then isEquationRedundant2(lhs, rhs);
 
     case BackendDAE.COMPLEX_EQUATION(left = exp1 as DAE.CREF(ty = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_))), right = exp2 as DAE.CREF(ty = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_))))
-    then Expression.expEqual(exp1, exp2);
+    then ExpressionBasics.expEqual(exp1, exp2);
 
     else false;
   end match;
@@ -1006,8 +1008,8 @@ algorithm
   r::rr := rhs;
 
   if not isWildCref(l) and not isWildCref(r) then
-    //print(ExpressionDump.printExpStr(l) + " ?= " + ExpressionDump.printExpStr(r) + "\n");
-    if not Expression.expEqual(l, r) then
+    //print(ExpressionBasics.printExpStr(l) + " ?= " + ExpressionBasics.printExpStr(r) + "\n");
+    if not ExpressionBasics.expEqual(l, r) then
       result := false;
       return;
     end if;
@@ -1036,7 +1038,7 @@ algorithm
     // a = b
     case BackendDAE.EQUATION(exp=exp1, scalar=exp2)
       algorithm
-        isRedundant := Expression.expEqual(exp1, exp2);
+        isRedundant := ExpressionBasics.expEqual(exp1, exp2);
         if not isRedundant then
           isGlobalKnown := allArgsInGlobalKnownVars({exp2}, globalKnownVarHT);
           if isGlobalKnown then
@@ -1054,7 +1056,7 @@ algorithm
   // (a,b) = c
   case BackendDAE.COMPLEX_EQUATION(_, exp1 as DAE.TUPLE(lhs), exp2, _, _)
     algorithm
-      isRedundant := Expression.expEqual(exp1, exp2);
+      isRedundant := ExpressionBasics.expEqual(exp1, exp2);
       if not isRedundant then
         isGlobalKnown := allArgsInGlobalKnownVars({exp2}, globalKnownVarHT);
         if isGlobalKnown then
@@ -1075,7 +1077,7 @@ algorithm
 
     case BackendDAE.COMPLEX_EQUATION(left=exp1, right=exp2)
       algorithm
-        isRedundant := Expression.expEqual(exp1, exp2);
+        isRedundant := ExpressionBasics.expEqual(exp1, exp2);
         if not isRedundant then
           isGlobalKnown := allArgsInGlobalKnownVars({exp2}, globalKnownVarHT);
           if isGlobalKnown then
@@ -1108,8 +1110,8 @@ algorithm
   r::rr := rhs;
 
   if not isWildCref(l) and not isWildCref(r) then
-    //print(ExpressionDump.printExpStr(l) + " ?= " + ExpressionDump.printExpStr(r) + "\n");
-    if not Expression.expEqual(l, r) then
+    //print(ExpressionBasics.printExpStr(l) + " ?= " + ExpressionBasics.printExpStr(r) + "\n");
+    if not ExpressionBasics.expEqual(l, r) then
       // Left variable in globalKnownVarHT?
       if BaseHashSet.has(Expression.expCref(r), globalKnownVarHT) then
         // create variable with bind exp
@@ -1297,7 +1299,7 @@ protected function isSkipCase "outline all skip cases
     * MLS 3.3 rev1, section 3.7.3
       Event-Related Operators with Function Syntax"
   input DAE.Exp inCall;
-  input DAE.FunctionTree functionTree;
+  input AvlTreePathFunction.Tree functionTree;
   output Boolean outB;
 algorithm
   outB := match(inCall)
@@ -1382,7 +1384,7 @@ end isSkipCase_advanced;
 protected function isCallRecordConstructor
 //DAEUtil.funcIsRecord(DAEUtil.getNamedFunction(path, functionTree))
   input DAE.Exp inExp;
-  input DAE.FunctionTree funcsIn;
+  input AvlTreePathFunction.Tree funcsIn;
   output Boolean outIsCall;
 algorithm
   outIsCall := matchcontinue(inExp)
@@ -1391,7 +1393,7 @@ algorithm
       DAE.Function func;
 
     case DAE.CALL(path=path) algorithm
-      SOME(func) := DAE.AvlTreePathFunction.get(funcsIn,path);
+      SOME(func) := AvlTreePathFunction.get(funcsIn,path);
       then listEmpty(DAEUtil.getFunctionElements(func));
     else false;
   end matchcontinue;
@@ -1488,7 +1490,7 @@ algorithm
     then (value, inIndex + 1);
 
     else algorithm
-      Error.addInternalError("  - createReturnExp failed for " + Types.printTypeStr(inType) + "\n", sourceInfo());
+      Error.addInternalError("  - createReturnExp failed for " + TypesDump.printTypeStr(inType) + "\n", sourceInfo());
     then fail();
   end match;
 end createReturnExp;
@@ -1526,7 +1528,7 @@ algorithm
          with variable indexes.*/
       outVarLst := inAccumVarLst;
       for cr_ in crefs loop
-        arrayDim := ComponentReference.crefDims(cr_);
+        arrayDim := ComponentReferenceBasics.crefDims(cr_);
         outVarLst := BackendVariable.createCSEArrayVar(cr_, ComponentReference.crefTypeFull(cr_), arrayDim)::outVarLst;
       end for;
     then outVarLst;
@@ -1538,7 +1540,7 @@ algorithm
       outVarLst := inAccumVarLst;
       ty := DAEUtil.expTypeElementType(Expression.typeof(inExp));
       for cr_ in crefs loop
-        arrayDim := ComponentReference.crefDims(cr_);
+        arrayDim := ComponentReferenceBasics.crefDims(cr_);
         //expLst := DAE.CREF(cr_, ComponentReference.crefType(cr_))::expLst;
         outVarLst := BackendVariable.createCSEArrayVar(cr_, ty, arrayDim)::outVarLst;
       end for;
@@ -1602,7 +1604,7 @@ algorithm
          with variable indexes.*/
       outVarLst := inAccumVarLst;
       for cr_ in crefs loop
-        arrayDim := ComponentReference.crefDims(cr_);
+        arrayDim := ComponentReferenceBasics.crefDims(cr_);
         outVarLst := BackendVariable.createCSEArrayVar(cr_, ComponentReference.crefTypeFull(cr_), arrayDim)::outVarLst;
       end for;
     then outVarLst;
@@ -1614,7 +1616,7 @@ algorithm
       outVarLst := inAccumVarLst;
       ty := DAEUtil.expTypeElementType(Expression.typeof(inExp));
       for cr_ in crefs loop
-        arrayDim := ComponentReference.crefDims(cr_);
+        arrayDim := ComponentReferenceBasics.crefDims(cr_);
         //expLst := DAE.CREF(cr_, ComponentReference.crefType(cr_))::expLst;
         outVarLst := BackendVariable.createCSEArrayVar(cr_, ty, arrayDim)::outVarLst;
       end for;
@@ -1798,7 +1800,7 @@ algorithm
       true := intGt(counter, 1);
 
       if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
-        print("  - substitute cse binary: " + ExpressionDump.printExpStr(inExp) + " (counter: " + intString(counter) + ", id: " + ExpressionDump.printExpStr(value) + ")\n");
+        print("  - substitute cse binary: " + ExpressionBasics.printExpStr(inExp) + " (counter: " + intString(counter) + ", id: " + ExpressionBasics.printExpStr(value) + ")\n");
       end if;
 
       if not BaseHashTable.hasKey(value, HT3) then
@@ -1894,7 +1896,7 @@ algorithm
         end if;
 
         if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
-          print("  - cse binary expression: " + ExpressionDump.printExpStr(inExp) + " (counter: " + intString(counter) + ", id: " + ExpressionDump.printExpStr(value) + ")\n");
+          print("  - cse binary expression: " + ExpressionBasics.printExpStr(inExp) + " (counter: " + intString(counter) + ", id: " + ExpressionBasics.printExpStr(value) + ")\n");
         end if;
       end if;
     then (inExp, true, (HT, HT2, i));
@@ -1989,7 +1991,7 @@ protected function commonSubExpression
 algorithm
   (sysOut, sharedOut) := matchcontinue(sysIn, sharedIn)
     local
-    DAE.FunctionTree functionTree;
+    AvlTreePathFunction.Tree functionTree;
     BackendDAE.Variables vars;
     BackendDAE.EquationArray eqs;
     BackendDAE.Shared shared;
@@ -2219,9 +2221,9 @@ algorithm
       (rhs1, _) := ExpressionSolve.solve(lhs, rhs1, varExp1);
       BackendDAE.EQUATION(exp=lhs, scalar=rhs2) := eq2;
       (rhs2, _) := ExpressionSolve.solve(lhs, rhs2, varExp2);
-      true := Expression.expEqual(rhs1, rhs2);
-         //print("rhs1 " +ExpressionDump.printExpStr(rhs1)+"\n");
-         //print("rhs2 " +ExpressionDump.printExpStr(rhs2)+"\n");
+      true := ExpressionBasics.expEqual(rhs1, rhs2);
+         //print("rhs1 " +ExpressionBasics.printExpStr(rhs1)+"\n");
+         //print("rhs2 " +ExpressionBasics.printExpStr(rhs2)+"\n");
          //print("is equal\n");
       // build CSE
       sharedVarIdcs := List.map1(sharedVarIdcs, List.getIndexFirst, varMap);
@@ -2284,9 +2286,9 @@ algorithm
           (rhs1, _) := ExpressionSolve.solve(lhs, rhs1, varExp1);
           BackendDAE.EQUATION(exp=lhs, scalar=rhs2) := eq2;
           (rhs2, _) := ExpressionSolve.solve(lhs, rhs2, varExp2);
-          if Expression.expEqual(rhs1, rhs2) then
-               //print("rhs1 " +ExpressionDump.printExpStr(rhs1)+"\n");
-               //print("rhs2 " +ExpressionDump.printExpStr(rhs2)+"\n");
+          if ExpressionBasics.expEqual(rhs1, rhs2) then
+               //print("rhs1 " +ExpressionBasics.printExpStr(rhs1)+"\n");
+               //print("rhs2 " +ExpressionBasics.printExpStr(rhs2)+"\n");
                //print("is equal\n");
             // build CSE
             eqMapArr := listArray(eqMap);
@@ -2460,7 +2462,7 @@ algorithm
   topLevelFactors2 := getTopLevelFactors(e2In,{});
     //print("topLevelFactors2 "+ExpressionDump.printExpListStr(topLevelFactors2)+"\n");
   if not listEmpty(topLevelFactors1) and not listEmpty(topLevelFactors1) then
-    topLevelFactors1 := List.intersectionOnTrue(topLevelFactors1,topLevelFactors2,Expression.expEqual);
+    topLevelFactors1 := List.intersectionOnTrue(topLevelFactors1,topLevelFactors2,ExpressionBasics.expEqual);
     if listLength(topLevelFactors1) == 1 then
       e1Out := Expression.expDiv(e1In,listHead(topLevelFactors1));
       e1Out := ExpressionSimplify.simplify(e1Out);

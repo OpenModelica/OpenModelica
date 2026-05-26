@@ -49,7 +49,7 @@ protected import DAEUtil;
 protected import Debug;
 protected import ElementSource;
 protected import Expression;
-protected import ExpressionDump;
+protected import ExpressionBasics;
 protected import ExpressionSimplify;
 protected import Flags;
 protected import List;
@@ -240,7 +240,7 @@ algorithm
     else algorithm
       // show only on failtrace!
       true := Flags.isSet(Flags.FAILTRACE);
-      Debug.traceln("- InlineArrayEquations.generateScalarArrayEqns2 failed on: " + ExpressionDump.printExpStr(inExp1) + " = " + ExpressionDump.printExpStr(inExp2) + "\n");
+      Debug.traceln("- InlineArrayEquations.generateScalarArrayEqns2 failed on: " + ExpressionBasics.printExpStr(inExp1) + " = " + ExpressionBasics.printExpStr(inExp2) + "\n");
     then fail();
   end matchcontinue;
 end generateScalarArrayEqns2;

@@ -209,8 +209,8 @@ algorithm
         (_,true) := innerOuterBooleans(io1);
         ncr1 := PrefixUtil.prefixToCref(scope);
         // fprintln(Flags.IOS, "changeInnerOuterInOuterConnect: changing left: " +
-        //   ComponentReference.printComponentRefStr(cr1) + " to inner");
-        false := ComponentReference.crefFirstCrefLastCrefEqual(ncr1,cr1);
+        //   ComponentReferenceBasics.printComponentRefStr(cr1) + " to inner");
+        false := ComponentReferenceBasics.crefFirstCrefLastCrefEqual(ncr1,cr1);
       then
         Connect.OUTERCONNECT(scope,cr1,Absyn.INNER(),f1,cr2,io2,f2,source);
 
@@ -220,8 +220,8 @@ algorithm
         (_,true) := innerOuterBooleans(io2);
         ncr2 := PrefixUtil.prefixToCref(scope);
         // fprintln(Flags.IOS, "changeInnerOuterInOuterConnect: changing right: " +
-        //   ComponentReference.printComponentRefStr(cr2) + " to inner");
-        false := ComponentReference.crefFirstCrefLastCrefEqual(ncr2,cr2);
+        //   ComponentReferenceBasics.printComponentRefStr(cr2) + " to inner");
+        false := ComponentReferenceBasics.crefFirstCrefLastCrefEqual(ncr2,cr2);
       then
         Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,Absyn.INNER(),f2,source);
 
@@ -285,7 +285,7 @@ algorithm
       algorithm
         //true = Flags.isSet(Flags.FAILTRACE);
         //Debug.traceln("- InnerOuter.removeInnerPrefixFromCref failed on prefix: " + PrefixUtil.printPrefixStr(inPrefix) +
-        // " cref: " + ComponentReference.printComponentRefStr(inCref));
+        // " cref: " + ComponentReferenceBasics.printComponentRefStr(inCref));
       then
         inCref;
   end matchcontinue;
@@ -461,9 +461,9 @@ algorithm
     // This can fail, for innerouter, the inner part is not declared in env so instead the call to addOuterConnectIfEmptyNoEnv will succed.
     else
       algorithm
-        //print("Failed lookup: " + ComponentReference.printComponentRefStr(cr1) + "\n");
-        //print("Failed lookup: " + ComponentReference.printComponentRefStr(cr2) + "\n");
-        // print("#FAILURE# in: addOuterConnectIfEmpty:__ " + ComponentReference.printComponentRefStr(cr1) + " " + ComponentReference.printComponentRefStr(cr2) + "\n");
+        //print("Failed lookup: " + ComponentReferenceBasics.printComponentRefStr(cr1) + "\n");
+        //print("Failed lookup: " + ComponentReferenceBasics.printComponentRefStr(cr2) + "\n");
+        // print("#FAILURE# in: addOuterConnectIfEmpty:__ " + ComponentReferenceBasics.printComponentRefStr(cr1) + " " + ComponentReferenceBasics.printComponentRefStr(cr2) + "\n");
       then fail();
 
   end match;
@@ -609,7 +609,7 @@ algorithm
         // fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : stripping and looking for: " + PrefixUtil.printPrefixStr(prefix) + "/" + name);
 
         // put the name as the last prefix
-        (_,cref) := PrefixUtil.prefixCref(FCore.emptyCache(), FGraph.empty(), emptyInstHierarchy, prefix, ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {}));
+        (_,cref) := PrefixUtil.prefixCref(FCore.emptyCache(), FGraph.empty(), emptyInstHierarchy, prefix, ComponentReferenceBasics.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {}));
 
         // search in instance hierarchy
         instInner := get(cref, ht);
@@ -617,7 +617,7 @@ algorithm
         // isInner = AbsynUtil.isInner(io);
         // instInner = if_(isInner, instInner, emptyInstInner(inPrefix, name));
         // fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : Looking up: " +
-        //  ComponentReference.printComponentRefStr(cref) + " FOUND with innerPrefix: " +
+        //  ComponentReferenceBasics.printComponentRefStr(cref) + " FOUND with innerPrefix: " +
         //  PrefixUtil.printPrefixStr(innerPrefix));
       then
         instInner;
@@ -633,12 +633,12 @@ algorithm
         // fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : stripping and looking for: " + PrefixUtil.printPrefixStr(prefix) + "/" + name);
 
         // put the name as the last prefix
-        (_,cref) := PrefixUtil.prefixCref(FCore.emptyCache(), FGraph.empty(), emptyInstHierarchy, prefix, ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {}));
+        (_,cref) := PrefixUtil.prefixCref(FCore.emptyCache(), FGraph.empty(), emptyInstHierarchy, prefix, ComponentReferenceBasics.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {}));
 
         // search in instance hierarchy we had a failure
         failure(_ := get(cref, ht));
 
-        // fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : Couldn't find: " + ComponentReference.printComponentRefStr(cref) + " going deeper");
+        // fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : Couldn't find: " + ComponentReferenceBasics.printComponentRefStr(cref) + " going deeper");
 
         // call recursively to back one more step!
         instInner := lookupInnerInIH(inTIH, prefix, name);
@@ -676,7 +676,7 @@ algorithm
     // if we don't have the same modification on inner report error!
     case(_,_,_,_,_,_,DAE.MOD(),Absyn.OUTER(),_,_)
       algorithm
-        s1 := ComponentReference.printComponentRefStr(cr);
+        s1 := ComponentReferenceBasics.printComponentRefStr(cr);
         s2 := Mod.prettyPrintMod(inMod, 0);
         s := s1 +  " " + s2;
         Error.addSourceMessage(Error.OUTER_MODIFICATION, {s}, inInfo);
@@ -896,8 +896,8 @@ algorithm
       algorithm
         false = AbsynUtil.isInner(inInnerOuter);
         // prefix the name!
-        (_,cref) = PrefixUtil.prefixCref(FCore.emptyCache(),{},emptyInstHierarchy,inPrefix, ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {}));
-        // print ("InnerOuter.updateInstHierarchy jumping over non-inner: " + ComponentReference.printComponentRefStr(cref) + "\n");
+        (_,cref) = PrefixUtil.prefixCref(FCore.emptyCache(),{},emptyInstHierarchy,inPrefix, ComponentReferenceBasics.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {}));
+        // print ("InnerOuter.updateInstHierarchy jumping over non-inner: " + ComponentReferenceBasics.printComponentRefStr(cref) + "\n");
       then
         ih;*/
 
@@ -917,7 +917,7 @@ algorithm
          INST_INNER(name=name))
       algorithm
         // prefix the name!
-        cref_ := ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {});
+        cref_ := ComponentReferenceBasics.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {});
         (_,cref) := PrefixUtil.prefixCref(FCore.emptyCache(), FGraph.empty(), emptyInstHierarchy, inPrefix, cref_);
         // add to hashtable!
         // fprintln(Flags.FAILTRACE, "InnerOuter.updateInstHierarchy adding: " + PrefixUtil.printPrefixStr(inPrefix) + "/" + name + " to IH");
@@ -929,7 +929,7 @@ algorithm
     case(_,_,_,INST_INNER())
       algorithm
         // prefix the name!
-        //(_,cref) = PrefixUtil.prefixCref(FCore.emptyCache(),{},emptyInstHierarchy,inPrefix, ComponentReference.makeCrefIdent("UNKNOWN", DAE.T_UNKNOWN_DEFAULT, {}));
+        //(_,cref) = PrefixUtil.prefixCref(FCore.emptyCache(),{},emptyInstHierarchy,inPrefix, ComponentReferenceBasics.makeCrefIdent("UNKNOWN", DAE.T_UNKNOWN_DEFAULT, {}));
         // fprintln(Flags.INNER_OUTER, "InnerOuter.updateInstHierarchy failure for: " +
         //   PrefixUtil.printPrefixStr(inPrefix) + "/" + name);
       then
@@ -1059,8 +1059,8 @@ algorithm
     case((TOP_INSTANCE(pathOpt, ht, outerPrefixes, sm))::restIH, _, _)
       algorithm
         // fprintln(Flags.INNER_OUTER, "InnerOuter.addOuterPrefix adding: outer cref: " +
-        //   ComponentReference.printComponentRefStr(inOuterComponentRef) + " refers to inner cref: " +
-        //   ComponentReference.printComponentRefStr(inInnerComponentRef) + " to IH");
+        //   ComponentReferenceBasics.printComponentRefStr(inOuterComponentRef) + " refers to inner cref: " +
+        //   ComponentReferenceBasics.printComponentRefStr(inInnerComponentRef) + " to IH");
         outerPrefixes := List.unionElt(OUTER(ComponentReference.crefStripSubs(inOuterComponentRef), inInnerComponentRef), outerPrefixes);
       then
         TOP_INSTANCE(pathOpt, ht, outerPrefixes, sm)::restIH;
@@ -1070,8 +1070,8 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("InnerOuter.addOuterPrefix failed to add: outer cref: " +
-          ComponentReference.printComponentRefStr(inOuterComponentRef) + " refers to inner cref: " +
-          ComponentReference.printComponentRefStr(inInnerComponentRef) + " to IH");
+          ComponentReferenceBasics.printComponentRefStr(inOuterComponentRef) + " refers to inner cref: " +
+          ComponentReferenceBasics.printComponentRefStr(inInnerComponentRef) + " to IH");
       then
         fail();
   end matchcontinue;
@@ -1105,7 +1105,7 @@ algorithm
 
         innerCref := changeOuterReferenceToInnerReference(fullCref, outerCrefPrefix, innerCrefPrefix);
 
-        // fprintln(Flags.FAILTRACE, "- InnerOuter.prefixOuterCrefWithTheInnerPrefix replaced cref " + ComponentReference.printComponentRefStr(fullCref) + " with cref: " + ComponentReference.printComponentRefStr(innerCref));
+        // fprintln(Flags.FAILTRACE, "- InnerOuter.prefixOuterCrefWithTheInnerPrefix replaced cref " + ComponentReferenceBasics.printComponentRefStr(fullCref) + " with cref: " + ComponentReferenceBasics.printComponentRefStr(innerCref));
       then
         innerCref;
 
@@ -1113,7 +1113,7 @@ algorithm
     else
       algorithm
         // true = Flags.isSet(Flags.FAILTRACE);
-        // Debug.traceln("- InnerOuter.prefixOuterCrefWithTheInnerPrefix failed to find prefix of inner for outer: prefix/cref " + PrefixUtil.printPrefixStr(inPrefix) + "/" + ComponentReference.printComponentRefStr(inOuterComponentRef));
+        // Debug.traceln("- InnerOuter.prefixOuterCrefWithTheInnerPrefix failed to find prefix of inner for outer: prefix/cref " + PrefixUtil.printPrefixStr(inPrefix) + "/" + ComponentReferenceBasics.printComponentRefStr(inOuterComponentRef));
       then
         fail();
   end match;
@@ -1139,7 +1139,7 @@ algorithm
     // an inner prefix a.d.e, then we want a, d.e and f.g, resulting in a.d.e.f.g.
     case (ifull, ocp, icp)
       algorithm
-        // print("F:" + ComponentReference.printComponentRefStr(ifull) + "\n" + "I:" + ComponentReference.printComponentRefStr(icp) + "\n" + "O:" + ComponentReference.printComponentRefStr(ocp) + "\n");
+        // print("F:" + ComponentReferenceBasics.printComponentRefStr(ifull) + "\n" + "I:" + ComponentReferenceBasics.printComponentRefStr(icp) + "\n" + "O:" + ComponentReferenceBasics.printComponentRefStr(ocp) + "\n");
         // Explode the crefs to lists so that they are easier to work with.
         eifull := ComponentReference.explode(ifull);
         eicp := ComponentReference.explode(icp);
@@ -1149,19 +1149,19 @@ algorithm
         (eocp, esuffix) := List.split(eifull, ComponentReference.identifierCount(ocp));
 
         // Extract the common prefix of the outer and inner prefix.
-        (epre, erest) := List.splitEqualPrefix(eocp, eicp, ComponentReference.crefFirstIdentEqual);
+        (epre, erest) := List.splitEqualPrefix(eocp, eicp, ComponentReferenceBasics.crefFirstIdentEqual);
 
         // remove the common prefix from the inner!
-        (_, eicp) := List.splitEqualPrefix(eicp, epre, ComponentReference.crefFirstIdentEqual);
+        (_, eicp) := List.splitEqualPrefix(eicp, epre, ComponentReferenceBasics.crefFirstIdentEqual);
 
         // Extract the common suffix of the outer and inner prefix.
-        (erest, _) := List.splitEqualPrefix(listReverse(erest), listReverse(eicp), ComponentReference.crefFirstIdentEqual);
+        (erest, _) := List.splitEqualPrefix(listReverse(erest), listReverse(eicp), ComponentReferenceBasics.crefFirstIdentEqual);
 
         // Combine the parts into a new cref.
         erest := List.append_reverse(erest, esuffix);
         eifull := listAppend(epre, erest);
         ic := ComponentReference.implode(eifull);
-        // print("C:" + ComponentReference.printComponentRefStr(ic) + "\n");
+        // print("C:" + ComponentReferenceBasics.printComponentRefStr(ic) + "\n");
       then
         ic;
 
@@ -1183,12 +1183,12 @@ algorithm
   // print("L:" + intString(listLength(outerPrefixes)) + "\n");
   for op in outerPrefixes loop
     OUTER(outerComponentRef = outerCrefPrefix) := op;
-    b1 := ComponentReference.crefPrefixOfIgnoreSubscripts(outerCrefPrefix, fullCref);
+    b1 := ComponentReferenceBasics.crefPrefixOfIgnoreSubscripts(outerCrefPrefix, fullCref);
     if not b1
     then
       cr := ComponentReference.crefStripLastIdent(outerCrefPrefix);
-      b2 := ComponentReference.crefLastIdent(outerCrefPrefix) == ComponentReference.crefFirstIdent(inOuterCref)
-            and ComponentReference.crefPrefixOfIgnoreSubscripts(cr, fullCref);
+      b2 := ComponentReferenceBasics.crefLastIdent(outerCrefPrefix) == ComponentReferenceBasics.crefFirstIdent(inOuterCref)
+            and ComponentReferenceBasics.crefPrefixOfIgnoreSubscripts(cr, fullCref);
     end if;
 
     if b1 or b2
@@ -1219,11 +1219,11 @@ algorithm
 
     case(INST_INNER(_, _, _, fullName, typePath, scope, _, outers, _))
       algorithm
-        outers := List.uniqueOnTrue(outers, ComponentReference.crefEqualNoStringCompare);
+        outers := List.uniqueOnTrue(outers, ComponentReferenceBasics.crefEqualNoStringCompare);
         strOuters := if listEmpty(outers)
                       then ""
                       else (" Referenced by 'outer' components: {" +
-                        stringDelimitList(List.map(outers, ComponentReference.printComponentRefStr), ", ") + "}");
+                        stringDelimitList(List.map(outers, ComponentReferenceBasics.printComponentRefStr), ", ") + "}");
         str := AbsynUtil.pathString(typePath) + " " + fullName + "; defined in scope: " + scope + "." + strOuters;
       then
         str;
@@ -1290,7 +1290,7 @@ protected function hashFunc
   input Key k;
   output Integer res;
 algorithm
-  res := stringHashDjb2(ComponentReference.printComponentRefStr(k));
+  res := stringHashDjb2(ComponentReferenceBasics.printComponentRefStr(k));
 end hashFunc;
 
 protected function keyEqual
@@ -1298,7 +1298,7 @@ protected function keyEqual
   input Key key2;
   output Boolean res;
 algorithm
-     res := ComponentReference.crefEqualNoStringCompare(key1,key2);
+     res := ComponentReferenceBasics.crefEqualNoStringCompare(key1,key2);
 end keyEqual;
 
 protected function dumpInstHierarchyHashTable ""
@@ -1391,7 +1391,7 @@ algorithm
         indexes := hashvec[indx + 1];
         hashvec_1 := arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
         n_1 := valueArrayLength(varr_1);
-        // print("Added NEW to IH: key:" + ComponentReference.printComponentRefStr(key) + " value: " + printInnerDefStr(value) + "\n");
+        // print("Added NEW to IH: key:" + ComponentReferenceBasics.printComponentRefStr(key) + " value: " + printInnerDefStr(value) + "\n");
       then HASHTABLE(hashvec_1,varr_1,bsize,n_1);
 
       /* adding when already present => Updating value */
@@ -1400,7 +1400,7 @@ algorithm
         (_,indx) := get1(key, hashTable);
         //print("adding when present, indx =" );print(intString(indx));print("\n");
         varr_1 := valueArraySetnth(varr, indx, newv);
-        // print("Updated NEW to IH: key:" + ComponentReference.printComponentRefStr(key) + " value: " + printInnerDefStr(value) + "\n");
+        // print("Updated NEW to IH: key:" + ComponentReferenceBasics.printComponentRefStr(key) + " value: " + printInnerDefStr(value) + "\n");
       then HASHTABLE(hashvec,varr_1,bsize,n);
     else
       algorithm

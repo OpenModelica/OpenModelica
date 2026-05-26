@@ -40,9 +40,6 @@ target_link_libraries(omcfrontendcpp PUBLIC omc::simrt::runtime)
 
 target_include_directories(omcfrontendcpp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-set(CC ${CMAKE_C_COMPILER})
-set(CXX ${CMAKE_CXX_COMPILER})
-
 if (MSVC)
 
 else()

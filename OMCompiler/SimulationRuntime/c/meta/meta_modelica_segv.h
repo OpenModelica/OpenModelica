@@ -37,15 +37,15 @@
 #define MMC_CATCH_STACK() MMC_CATCH_INTERNAL(mmc_stack_overflow_jumper) } threadData->mmc_jumper = oldMMCJumper; }
 
 #if defined(OMC_MINIMAL_RUNTIME)
-static inline void printStacktraceMessages()
+static inline void printStacktraceMessages(void)
 {
 }
 #else
-void printStacktraceMessages();
+void printStacktraceMessages(void);
 #endif
 void mmc_setStacktraceMessages(int numSkip, int numFrames);
 void mmc_setStacktraceMessages_threadData(threadData_t *threadData, int numSkip, int numFrames);
-void init_metamodelica_segv_handler();
+void init_metamodelica_segv_handler(void);
 #if defined(OMC_MINIMAL_RUNTIME)
 static inline void mmc_init_stackoverflow(threadData_t *threadData)
 {

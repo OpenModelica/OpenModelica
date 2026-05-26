@@ -59,7 +59,7 @@ protected
   import SimplifyExp = NFSimplifyExp;
   import TypeCheck = NFTypeCheck;
   import UnorderedSet;
-  import ValuesUtil;
+  import ValuesMake;
   import Variable = NFVariable;
 
 public
@@ -744,7 +744,7 @@ public
         algorithm
           STRING(value = s) := exp2;
         then
-          Util.stringCompare(exp1.value, s);
+          stringCompare(exp1.value, s);
 
       case BOOLEAN()
         algorithm
@@ -890,7 +890,7 @@ public
 
       case RELATION()
         algorithm
-          RELATION(exp1 = e1, operator = op, exp2 = e2, index = i) := exp2;
+          RELATION(exp1 = e1, operator = op, exp2 = e2) := exp2;
           comp := Operator.compare(exp1.operator, op);
           if comp == 0 then
             comp := compare(exp1.exp1, e1);
@@ -1001,7 +1001,7 @@ public
         algorithm
           FILENAME(filename = s) := exp2;
         then
-          Util.stringCompare(exp1.filename, s);
+          stringCompare(exp1.filename, s);
 
       case INSTANCE_NAME()
         algorithm
@@ -1436,7 +1436,7 @@ public
     output Expression rangeExp;
   algorithm
     rangeExp := RANGE(
-      TypeCheck.getRangeType(start, step, stop, typeOf(start), AbsynUtil.dummyInfo),
+      TypeCheck.getRangeType(start, step, stop, typeOf(start), Absyn.dummyInfo),
       start, step, stop
     );
   end makeRange;
@@ -1475,7 +1475,7 @@ public
       local
         Expression step_exp;
         Option<Expression> step_opt;
-      case RANGE(step = step_opt) algorithm
+      case RANGE() algorithm
         try
           start := getInteger(range.start, resize);
           stop  := getInteger(range.stop, resize);
@@ -2613,7 +2613,7 @@ public
       case REAL() then Absyn.Exp.REAL(String(exp.value));
       case STRING() then Absyn.Exp.STRING(exp.value);
       case BOOLEAN() then Absyn.Exp.BOOL(exp.value);
-      case ENUM_LITERAL(ty = ty as Type.ENUMERATION())
+      case ENUM_LITERAL(ty=Type.ENUMERATION())
         then Absyn.Exp.CREF(AbsynUtil.pathToCref(enumLiteralPath(exp)));
       case CLKCONST() then ClockKind.toAbsyn(exp.clk);
       case CREF() then Absyn.Exp.CREF(ComponentRef.toAbsyn(exp.cref));
@@ -2835,7 +2835,7 @@ public
       case BOOLEAN() then Values.BOOL(exp.value);
       case ENUM_LITERAL(ty = ty as Type.ENUMERATION())
         then Values.ENUM_LITERAL(AbsynUtil.suffixPath(ty.typePath, exp.name), exp.index);
-      case ARRAY() then ValuesUtil.makeArray(list(toDAEValue(e) for e in exp.elements));
+      case ARRAY() then ValuesMake.makeArray(list(toDAEValue(e) for e in exp.elements));
       case RECORD() then toDAEValueRecord(exp.ty, exp.path, exp.elements);
       case FILENAME() then Values.STRING(exp.filename);
 
@@ -4680,6 +4680,12 @@ public
     exp := CREF(ComponentRef.getSubscriptedType(cref, includeScope), cref);
   end fromCref;
 
+  function fromTypedCref
+    input ComponentRef cref;
+    input Type ty;
+    output Expression exp = CREF(ty, cref);
+  end fromTypedCref;
+
   function toCref
     input Expression exp;
     output ComponentRef cref;
@@ -6116,7 +6122,7 @@ public
       case RANGE()
         algorithm
           exp.ty := TypeCheck.getRangeType(exp.start, exp.step, exp.stop,
-            typeOf(exp.start), AbsynUtil.dummyInfo);
+            typeOf(exp.start), Absyn.dummyInfo);
         then
           ();
 

@@ -12,7 +12,9 @@ if(NOT BUILD_SHARED_LIBS)
   set_target_properties(${ExtensionUtilitiesName} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
 endif(NOT BUILD_SHARED_LIBS)
 
+if(MSVC)
 install(FILES $<TARGET_PDB_FILE:${ExtensionUtilitiesName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+endif()
 
 install(TARGETS ${ExtensionUtilitiesName} DESTINATION ${LIBINSTALLEXT})
 install(FILES

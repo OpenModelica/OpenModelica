@@ -60,7 +60,7 @@ keyEqual   - A comparison function between two keys, returns true if equal.
 public import BaseHashTable;
 public import DAE;
 protected import Expression;
-protected import ExpressionDump;
+protected import ExpressionBasics;
 
 public type Key = DAE.Exp;
 public type Value = DAE.Exp;
@@ -112,7 +112,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(Expression.hashExp,Expression.expEqual,ExpressionDump.printExpStr,ExpressionDump.printExpStr));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(Expression.hashExp,ExpressionBasics.expEqual,ExpressionBasics.printExpStr,ExpressionBasics.printExpStr));
 end emptyHashTableSized;
 
 annotation(__OpenModelica_Interface="frontend");

@@ -9,7 +9,7 @@ setCommandLineOptions("-d=rml,noevalfunc,gen");
 echo(false);
 body:=Absyn.PARTS({},{},{},{},NONE());
 restr:=Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.PURE()));
-prog:=Absyn.PROGRAM({Absyn.CLASS("dummyClass",true,true,true,restr,body,{},{},{},AbsynUtil.dummyInfo)},Absyn.TOP());
+prog:=Absyn.PROGRAM({Absyn.CLASS("dummyClass",true,true,true,restr,body,{},{},{},Absyn.dummyInfo)},Absyn.TOP());
 echo(true);
 "DumpGraphviz.dump";
 DumpGraphviz.dump(prog);
@@ -23,8 +23,8 @@ getErrorString();
 
 exp:=DAE.ICONST(42);
 getErrorString();
-"ExpressionDump.printExpStr";
-ExpressionDump.printExpStr(exp);
+"ExpressionBasics.printExpStr";
+ExpressionBasics.printExpStr(exp);
 getErrorString();
 
 dae:=DAE.DAE({});
@@ -35,8 +35,8 @@ getErrorString();
 
 val:=Values.INTEGER(42);
 getErrorString();
-"ValuesUtil.valString";
-ValuesUtil.valString(val);
+"ValuesDump.valString";
+ValuesDump.valString(val);
 getErrorString();
 
 // Result:
@@ -67,7 +67,7 @@ getErrorString();
 //     integer = 42
 // end DAE.Exp.ICONST;
 // ""
-// "ExpressionDump.printExpStr"
+// "ExpressionBasics.printExpStr"
 // "42"
 // ""
 // record DAE.DAElist.DAE
@@ -81,7 +81,7 @@ getErrorString();
 //     integer = 42
 // end Values.Value.INTEGER;
 // ""
-// "ValuesUtil.valString"
+// "ValuesDump.valString"
 // "42"
 // ""
 // endResult

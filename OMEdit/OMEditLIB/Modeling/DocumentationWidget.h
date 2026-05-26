@@ -44,14 +44,12 @@
 #include <QToolButton>
 #include <QTabBar>
 #include <QFile>
-#ifndef OM_DISABLE_DOCUMENTATION
-#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include <QWebEngineView>
 #include <QWebEnginePage>
-#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+#else // #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 #include <QWebView>
-#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
-#endif // #ifndef OM_DISABLE_DOCUMENTATION
+#endif // #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 #include <QToolBar>
 #include <QComboBox>
 #include <QFontComboBox>
@@ -88,19 +86,16 @@ public:
     InfoHeader
   };
   DocumentationWidget(QWidget *pParent = 0);
-#ifndef OM_DISABLE_DOCUMENTATION
   ~DocumentationWidget();
   QAction* getPreviousAction() {return mpPreviousAction;}
   QAction* getNextAction() {return mpNextAction;}
   DocumentationViewer* getDocumentationViewer() {return mpDocumentationViewer;}
-#endif // #ifndef OM_DISABLE_DOCUMENTATION
   void showDocumentation(LibraryTreeItem *pLibraryTreeItem);
-#ifndef OM_DISABLE_DOCUMENTATION
   void execCommand(const QString &commandName);
   void execCommand(const QString &commandName, const QString &valueArgument);
-#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   QVariant runJavaScript(const QString &javaScript);
-#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+#endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   bool queryCommandState(const QString &commandName);
   QString queryCommandValue(const QString &commandName);
   void saveScrollPosition();
@@ -119,12 +114,8 @@ private:
   QAction *mpEditInfoHeaderAction;
   QAction *mpSaveAction;
   QAction *mpCancelAction;
-#else // #ifndef OM_DISABLE_DOCUMENTATION
-  bool isEditingDocumentation() const {return false;}
-#endif // #ifndef OM_DISABLE_DOCUMENTATION
   DocumentationViewer *mpDocumentationViewer;
   QFrame *mpDocumentationViewerFrame;
-#ifndef OM_DISABLE_DOCUMENTATION
   QWidget *mpEditorsWidget;
   QTabBar *mpTabBar;
   QWidget *mpHTMLEditorWidget;
@@ -197,11 +188,9 @@ public slots:
   void numberedList();
   void createLink();
   void removeLink();
-#endif // #ifndef OM_DISABLE_DOCUMENTATION
 };
 
-#ifndef OM_DISABLE_DOCUMENTATION
-#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 class DocumentationPage : public QWebEnginePage
 {
   Q_OBJECT
@@ -218,22 +207,18 @@ private slots:
 };
 
 class DocumentationViewer : public QWebEngineView
-#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+#else // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 class DocumentationViewer : public QWebView
-#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
-#else // #ifndef OM_DISABLE_DOCUMENTATION
-class DocumentationViewer : public QWidget
-#endif // #ifndef OM_DISABLE_DOCUMENTATION
+#endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 {
   Q_OBJECT
 private:
   DocumentationWidget *mpDocumentationWidget;
-#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   DocumentationPage *mpDocumentationPage;
-#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+#endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 public:
   DocumentationViewer(DocumentationWidget *pDocumentationWidget, bool isContentEditable = false);
-#ifndef OM_DISABLE_DOCUMENTATION
   void setFocusInternal();
 private:
   void createActions();
@@ -246,15 +231,14 @@ public slots:
   void showContextMenu(QPoint point);
   void pageLoaded(bool ok);
 protected:
-#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   virtual QWebEngineView* createWindow(QWebEnginePage::WebWindowType type) override;
-#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+#else // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   virtual QWebView* createWindow(QWebPage::WebWindowType type) override;
-#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+#endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   virtual void keyPressEvent(QKeyEvent *event) override;
   virtual void wheelEvent(QWheelEvent *event) override;
   virtual void mouseDoubleClickEvent(QMouseEvent *event) override;
-#endif // #ifndef OM_DISABLE_DOCUMENTATION
   bool mIsContentEditable;
 };
 

@@ -384,6 +384,17 @@ public
     end match;
   end variability;
 
+  function setVariability
+    input Variability var;
+    input output Binding binding;
+  algorithm
+    () := match binding
+      case TYPED_BINDING() algorithm binding.variability := var; then ();
+      case FLAT_BINDING()  algorithm binding.variability := var; then ();
+      else ();
+    end match;
+  end setVariability;
+
   function purity
     input Binding binding;
     output Purity purity;
@@ -402,7 +413,7 @@ public
       case RAW_BINDING() then binding.info;
       case UNTYPED_BINDING() then binding.info;
       case TYPED_BINDING() then binding.info;
-      else AbsynUtil.dummyInfo;
+      else Absyn.dummyInfo;
     end match;
   end getInfo;
 
@@ -881,6 +892,19 @@ public
       else Source.BINDING;
     end match;
   end source;
+
+  function setSource
+    input Source source;
+    input output Binding binding;
+  algorithm
+    () := match binding
+      case RAW_BINDING() algorithm binding.source := source; then ();
+      case UNTYPED_BINDING() algorithm binding.source := source; then ();
+      case TYPED_BINDING() algorithm binding.source := source; then ();
+      case FLAT_BINDING() algorithm binding.source := source; then ();
+      else ();
+    end match;
+  end setSource;
 
   function makeUntyped
     input Expression exp;

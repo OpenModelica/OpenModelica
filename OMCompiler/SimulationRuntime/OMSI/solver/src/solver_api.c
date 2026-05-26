@@ -713,15 +713,15 @@ void solver_print_data (solver_data*    solver,
         case solver_true:
             lin_callbacks = solver->solver_callbacks;
             length += snprintf(buffer+length, MAX_BUFFER_SIZE-length,
-                    "\t\t get_A_element set: \t %s \t ( Address: %p )\n", lin_callbacks->get_A_element?"yes":"no", (void*) lin_callbacks->get_A_element);
+                    "\t\t get_A_element set: \t %s \t ( Address: %p )\n", lin_callbacks->get_A_element?"yes":"no", lin_callbacks->get_A_element);
             length += snprintf(buffer+length, MAX_BUFFER_SIZE-length,
-                    "\t\t set_A_element set: \t %s \t ( Address: %p )\n", lin_callbacks->set_A_element?"yes":"no", (void*) lin_callbacks->set_A_element);
+                    "\t\t set_A_element set: \t %s \t ( Address: %p )\n", lin_callbacks->set_A_element?"yes":"no", lin_callbacks->set_A_element);
             length += snprintf(buffer+length, MAX_BUFFER_SIZE-length,
-                    "\t\t get_b_element set: \t %s \t ( Address: %p )\n", lin_callbacks->get_b_element?"yes":"no", (void*) lin_callbacks->get_b_element);
+                    "\t\t get_b_element set: \t %s \t ( Address: %p )\n", lin_callbacks->get_b_element?"yes":"no", lin_callbacks->get_b_element);
             length += snprintf(buffer+length, MAX_BUFFER_SIZE-length,
-                    "\t\t set_b_element set: \t %s \t ( Address: %p )\n", lin_callbacks->set_b_element?"yes":"no", (void*) lin_callbacks->set_b_element);
+                    "\t\t set_b_element set: \t %s \t ( Address: %p )\n", lin_callbacks->set_b_element?"yes":"no", lin_callbacks->set_b_element);
             length += snprintf(buffer+length, MAX_BUFFER_SIZE-length,
-                    "\t\t solve_eq_system set: \t %s \t ( Address: %p )\n", lin_callbacks->solve_eq_system?"yes":"no", (void*) lin_callbacks->solve_eq_system);
+                    "\t\t solve_eq_system set: \t %s \t ( Address: %p )\n", lin_callbacks->solve_eq_system?"yes":"no", lin_callbacks->solve_eq_system);
             break;
         default:
 

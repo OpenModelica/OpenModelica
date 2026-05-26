@@ -840,7 +840,7 @@ modelica_boolean checkFastStatesChange(DATA_GBODE* gbData)
  * @param stats             Pointer to stats struct.
  * @param fastStateUpdates  Number of fast state updates.
  */
-void logSolverStats(enum OMC_LOG_STREAM stream, const char* name, double timeValue, double integratorTime, double stepSize, SOLVERSTATS* stats, int *fastStateUpdates, int *additionalEvalsFODE)
+void logSolverStats(enum OMC_LOG_STREAM stream, const char* name, double timeValue, double integratorTime, double stepSize, SOLVERSTATS* stats, unsigned int *fastStateUpdates, unsigned int *additionalEvalsFODE)
 {
   if (OMC_ACTIVE_STREAM(stream)) {
     infoStreamPrint(stream, 1, "%s call statistics:", name);

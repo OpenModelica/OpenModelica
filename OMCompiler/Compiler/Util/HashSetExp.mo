@@ -46,7 +46,7 @@ keyEqual   - A comparison function between two keys, returns true if equal.
 public import BaseHashSet;
 public import DAE;
 protected import Expression;
-protected import ExpressionDump;
+protected import ExpressionBasics;
 
 public type Key = DAE.Exp;
 
@@ -91,7 +91,7 @@ public function emptyHashSetSized
   input Integer size;
   output HashSet hashSet;
 algorithm
-  hashSet := BaseHashSet.emptyHashSetWork(size,(Expression.hashExp,Expression.expEqual,ExpressionDump.printExpStr));
+  hashSet := BaseHashSet.emptyHashSetWork(size,(Expression.hashExp,ExpressionBasics.expEqual,ExpressionBasics.printExpStr));
 end emptyHashSetSized;
 
 annotation(__OpenModelica_Interface="frontend");

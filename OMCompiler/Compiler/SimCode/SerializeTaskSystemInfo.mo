@@ -48,7 +48,7 @@ import Expression;
 import File;
 import File.Escape.JSON;
 import writeCref = ComponentReference.writeCref;
-import expStr = ExpressionDump.printExpStr;
+import expStr = ExpressionBasics.printExpStr;
 import List;
 import SimCodeUtil;
 import SimCodeVar;

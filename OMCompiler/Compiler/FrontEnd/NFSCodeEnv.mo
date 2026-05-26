@@ -45,6 +45,7 @@ encapsulated package NFSCodeEnv
 
 import Absyn;
 import AbsynUtil;
+import BaseAvlTree;
 import Mutable;
 import SCode;
 import Util;
@@ -1157,7 +1158,7 @@ algorithm
   iter := SCode.COMPONENT(iter_name, SCode.defaultPrefixes,
     SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR(), Absyn.NONFIELD()),
     Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
-    SCode.noComment, NONE(), AbsynUtil.dummyInfo);
+    SCode.noComment, NONE(), Absyn.dummyInfo);
   outEnv := extendEnvWithElement(iter, inEnv);
 end extendEnvWithIterator;
 
@@ -1800,7 +1801,7 @@ protected
   SCode.Element cls;
 algorithm
   cls := SCode.CLASS(inName, SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_CLASS(),
-    SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()), SCode.noComment, AbsynUtil.dummyInfo);
+    SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()), SCode.noComment, Absyn.dummyInfo);
   outTree := EnvTree.add(inTree, inName, CLASS(cls, emptyEnv, BUILTIN()));
 end addDummyClassToTree;
 

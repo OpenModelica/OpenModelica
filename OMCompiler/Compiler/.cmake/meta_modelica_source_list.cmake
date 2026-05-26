@@ -5,16 +5,21 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AbsynToSCode.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AbsynUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/Algorithm.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AvlTreePathFunction.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/BackendCevalInterface.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/BackendInterface.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/Builtin.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/CevalFunction.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/Ceval.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ClassInf.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ClassInfUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ClassLoader.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ComponentReference.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ComponentReferenceBasics.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ConnectionGraph.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ConnectUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/DAEDump.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/DAEDumpTypes.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/DAE.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/DAEUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/Dump.mo
@@ -22,6 +27,7 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ExpressionDump.mo
   # Remember: Only files needed for compiling MetaModelica
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/Expression.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ExpressionBasics.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ExpressionSimplify.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ExpressionSimplifyTypes.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/Graphviz.mo
@@ -29,6 +35,7 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/InnerOuter.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/Inst.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/InstVar.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/InstBasics.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/InstDAE.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/InstBinding.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/InstFunction.mo
@@ -56,9 +63,12 @@ set(OMC_MM_ALWAYS_SOURCES
     #${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/SCodeSimplify.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/StateMachineFlatten.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/Types.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/TypesDump.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/UnitAbsyn.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/UnitParserExt.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/Values.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ValuesDump.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ValuesMake.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ValuesUtil.mo
 
   # Only files needed for compiling MetaModelica
@@ -98,6 +108,7 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/GlobalScriptDump.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/GlobalScriptUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/Interactive.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Script/InteractiveTypes.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/StaticScript.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/SymbolTable.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/InteractiveUtil.mo
@@ -478,7 +489,6 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/FMI.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/FMIExt.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/GraphML.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Util/JSONExt.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableCrToExp.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableExpToExp.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableCrIntToExp.mo

@@ -1215,7 +1215,7 @@ template funArgDefinitionXml(Variable var)
       <fun:Name>
         <exp:QualifiedNamePart name="<%contextCrefXml(name,contextFunction)%>"/>
       </fun:Name>
-    <%/*underscorePathXml(ClassInf.getStateName(complexClassType))*/%>
+    <%/*underscorePathXml(ClassInfUtil.getStateName(complexClassType))*/%>
     </fun:InputVariable>
     >>
   case FUNCTION_PTR(__) then 'modelica_fnptr <%name%>'
@@ -1230,7 +1230,7 @@ template funVarDeclarationsXml(Variable var)
     <fun:Name>
       <exp:QualifiedNamePart name="<%contextCrefXml(name,contextFunction)%>"/>
     </fun:Name>
-    <%/*underscorePathXml(ClassInf.getStateName(complexClassType))*/%>
+    <%/*underscorePathXml(ClassInfUtil.getStateName(complexClassType))*/%>
   </fun:ProtectedVariable>
   >>
   case FUNCTION_PTR(__) then 'modelica_fnptr <%name%>'
@@ -2510,7 +2510,7 @@ match ty
 case T_COMPLEX(complexClassType = record_state, varLst = var_lst) then
   let vars = var_lst |> v => daeExpXml(makeCrefRecordExp(cr,v), context, &afterExp, &varDecls)
              ;separator=", "
-  let record_type_name = underscorePathXml(ClassInf.getStateName(record_state))
+  let record_type_name = underscorePathXml(ClassInfUtil.getStateName(record_state))
   let ret_type = '<%record_type_name%>_rettype'
   let ret_var = tempDeclXml(ret_type, &varDecls)
   let &afterExp += '<%ret_var%> = _<%record_type_name%>(<%vars%>);<%\n%>'
@@ -3827,7 +3827,7 @@ template expTypeShortXml(DAE.Type type)
   case T_ARRAY(__)       then expTypeShortXml(ty)
   case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
                       then "Complex"
-  case T_COMPLEX(__)     then '<%underscorePathXml(ClassInf.getStateName(complexClassType))%>'
+  case T_COMPLEX(__)     then '<%underscorePathXml(ClassInfUtil.getStateName(complexClassType))%>'
   case T_METATYPE(__) case T_METABOXED(__)    then "MetaType"
   case T_FUNCTION_REFERENCE_VAR(__) then "fnptr"
   case T_UNKNOWN(__) then "Complex" /* TODO: Don't do this to me! */
@@ -3896,7 +3896,7 @@ template expTypeFlagXml(DAE.Type ty, Integer flag)
     // we want the "modelica type"
     match ty case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__)) then
       '<%expTypeShortXml(ty)%>'
-    else match ty case T_COMPLEX(__) then '<%underscorePathXml(ClassInf.getStateName(complexClassType))%>'
+    else match ty case T_COMPLEX(__) then '<%underscorePathXml(ClassInfUtil.getStateName(complexClassType))%>'
     else
       '<%expTypeShortXml(ty)%>'
   case 3 then

@@ -34,33 +34,13 @@
  */
 
 encapsulated package GlobalScript
-" file:        GlobalScript.mo
+" file:        InteractiveTypes.mo
   package:     GlobalScript
-  description: Types and constants for scripting modules
+  description: Types part of the AST for interactive scripting
 
 "
 
 public import Absyn;
-public import DAE;
-public import Values;
-
-public
-uniontype SimulationOptions "these are the simulation/buildModel* options"
-  record SIMULATION_OPTIONS "simulation/buildModel* options"
-    DAE.Exp startTime "start time, default 0.0";
-    DAE.Exp stopTime "stop time, default 1.0";
-    DAE.Exp numberOfIntervals "number of intervals, default 500";
-    DAE.Exp stepSize "stepSize, default (stopTime-startTime)/numberOfIntervals";
-    DAE.Exp tolerance "tolerance, default 1e-6";
-    DAE.Exp method "method, default 'dassl'";
-    DAE.Exp fileNamePrefix "file name prefix, default ''";
-    DAE.Exp options "options, default ''";
-    DAE.Exp outputFormat "output format, default 'plt'";
-    DAE.Exp variableFilter "variable filter, regex does whole string matching, i.e. it becomes ^.*$ in the runtime";
-    DAE.Exp cflags "Compiler flags, in addition to MODELICAUSERCFLAGS";
-    DAE.Exp simflags "Flags sent to the simulation executable (doesn't do anything for buildModel)";
-  end SIMULATION_OPTIONS;
-end SimulationOptions;
 
 public
 uniontype Statement
@@ -89,59 +69,5 @@ uniontype Statements
 
 end Statements;
 
-public
-uniontype Variable "- GlobalScript.Variable"
-  record IVAR
-    Absyn.Ident varIdent "The variable identifier" ;
-    Values.Value value "The value" ;
-    DAE.Type type_ "The type of the expression" ;
-  end IVAR;
-
-end Variable;
-
-public
-uniontype Component "- a component in a class
-  this is used in extracting all the components in all the classes"
-  record COMPONENTITEM
-    Absyn.Path the1 "the class where the component is" ;
-    Absyn.Path the2 "the type of the component" ;
-    Absyn.ComponentRef the3 "the name of the component" ;
-  end COMPONENTITEM;
-
-  record EXTENDSITEM
-    Absyn.Path the1 "the class which is extended" ;
-    Absyn.Path the2 "the class which is the extension" ;
-  end EXTENDSITEM;
-
-end Component;
-
-public
-uniontype Components
-  record COMPONENTS
-    list<Component> componentLst;
-    Integer the "the number of components in list. used to optimize the get_dependency_on_class" ;
-  end COMPONENTS;
-
-end Components;
-
-public
-uniontype ComponentReplacement
-  record COMPONENTREPLACEMENT
-    Absyn.Path which1 "which class contain the old cref" ;
-    Absyn.ComponentRef the2 "the old cref" ;
-    Absyn.ComponentRef the3 "the new cref" ;
-  end COMPONENTREPLACEMENT;
-
-end ComponentReplacement;
-
-public
-uniontype ComponentReplacementRules
-  record COMPONENTREPLACEMENTRULES
-    list<ComponentReplacement> componentReplacementLst;
-    Integer the "the number of rules" ;
-  end COMPONENTREPLACEMENTRULES;
-
-end ComponentReplacementRules;
-
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="parser");
 end GlobalScript;

@@ -47,7 +47,6 @@ public import DAE;
 
 protected
 
-import AbsynUtil;
 import BackendDAEOptimize;
 import BackendDAEUtil;
 import BackendDump;
@@ -374,7 +373,7 @@ algorithm
           then ();
           else ();
         end match;
-        if not ComponentReference.crefInLst(x, derVars) then
+        if not ComponentReferenceBasics.crefInLst(x, derVars) then
           derVars := x :: derVars;
         end if;
         outDerVars := (derVars, optForIter);
@@ -409,7 +408,7 @@ algorithm
       DAE.Exp exp;
     // introduce previous()
     case DAE.CREF(componentRef = x)
-      guard ComponentReference.crefInLst(x, inDerVars)
+      guard ComponentReferenceBasics.crefInLst(x, inDerVars)
       algorithm
         exp := DAE.CALL(Absyn.IDENT(name = "previous"), {inExp}, DAE.callAttrBuiltinImpureReal);
       then exp;
@@ -510,7 +509,7 @@ algorithm
   end for;
 
   if not Flags.isSet(Flags.NF_SCALARIZE) then
-    prevVars := list(ComponentReference.crefStripLastSubs(cr) for cr in prevVars);
+    prevVars := list(ComponentReferenceBasics.crefStripLastSubs(cr) for cr in prevVars);
   end if;
 
   for cr in prevVars loop
@@ -1339,7 +1338,7 @@ algorithm
         removeEdge(eqIdx,varIdx,m,mT);
       then (clockEqsIn, eqIdx::subClockInterfaceEqIdxsIn, eq::subClockInterfaceEqsIn);
 
-    case(BackendDAE.EQUATION(scalar=_))
+    case(BackendDAE.EQUATION())
       algorithm
         //print("Thats also not a base clock "+BackendDump.equationString(eq)+"\n");
       then (clockEqsIn, subClockInterfaceEqIdxsIn, subClockInterfaceEqsIn);
@@ -1474,7 +1473,7 @@ protected function subClockPartitioning
   output DAE.ClockKind outBaseClock;
   output list<BackendDAE.SubClock> outSubClocks;
 protected
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   BackendDAE.EquationArray eqs, remEqs, clockEqs;
   BackendDAE.Variables vars, clockVars;
   BackendDAE.EqSystem clockSyst,outSys;
@@ -2475,7 +2474,7 @@ protected function baseClockPartitioning
 protected
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqs;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   BackendDAE.AdjacencyMatrix m, mT, rm, rmT;
   BackendDAE.EqSystem syst;
   BackendDAE.EqSystems systs;
@@ -2783,7 +2782,7 @@ algorithm
   (msg, tokens) := match inComp
     local DAE.ComponentRef cr;
     case SOME(cr) then ( Error.CONT_CLOCKED_PARTITION_CONFLICT_VAR,
-                         {ComponentReference.printComponentRefStr(cr)} );
+                         {ComponentReferenceBasics.printComponentRefStr(cr)} );
     else (Error.CONT_CLOCKED_PARTITION_CONFLICT_EQ, {});
   end match;
 end getPartitionConflictError;
@@ -2981,7 +2980,7 @@ public function partitionIndependentBlocksSplitBlocks
   input BackendDAE.AdjacencyMatrix mT;
   input BackendDAE.AdjacencyMatrix rmT;
   input Boolean throwNoError;
-  input DAE.FunctionTree funcs;
+  input AvlTreePathFunction.Tree funcs;
   input Boolean isInitial;
   output list<BackendDAE.EqSystem> systs = {};
   output list<BackendDAE.Equation> unpartRemovedEqs;
@@ -3003,7 +3002,7 @@ algorithm
   i2 := BackendVariable.varsSize(inSyst.orderedVars);
 
   if i1 <> i2 and not throwNoError then
-    Error.addSourceMessage(if i1 > i2 then Error.OVERDET_EQN_SYSTEM else Error.UNDERDET_EQN_SYSTEM, {String(i1), String(i2)}, AbsynUtil.dummyInfo);
+    Error.addSourceMessage(if i1 > i2 then Error.OVERDET_EQN_SYSTEM else Error.UNDERDET_EQN_SYSTEM, {String(i1), String(i2)}, Absyn.dummyInfo);
     BackendDAEUtil.checkAdjacencyMatrixSolvability(inSyst, funcs, isInitial);
     fail();
   end if;
@@ -3075,10 +3074,10 @@ algorithm
   if i1 <> i2 and not throwNoError then
     s1 := intString(i1);
     s2 := intString(i2);
-    crs := List.mapMap(vl, BackendVariable.varCref, ComponentReference.printComponentRefStr);
+    crs := List.mapMap(vl, BackendVariable.varCref, ComponentReferenceBasics.printComponentRefStr);
     s3 := stringDelimitList(crs, "\n");
     s4 := BackendDump.dumpEqnsStr(el);
-    Error.addSourceMessage(Error.IMBALANCED_EQUATIONS, {s1, s2, s3, s4}, AbsynUtil.dummyInfo);
+    Error.addSourceMessage(Error.IMBALANCED_EQUATIONS, {s1, s2, s3, s4}, Absyn.dummyInfo);
     fail();
   end if;
 

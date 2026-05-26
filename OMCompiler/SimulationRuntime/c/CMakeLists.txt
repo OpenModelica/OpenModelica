@@ -2,6 +2,24 @@ cmake_minimum_required(VERSION 3.14)
 
 project(OpenModelicaSimulationRuntimeC LANGUAGES C CXX)
 
+### Standards ###############################################################################################
+## Set the C standard to use.
+set(C_STANDARD C17)
+set(C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS OFF)
+
+## Enforce standards as strictly as possible
+if(NOT MSVC)
+  add_compile_options(-Wpedantic -pedantic-errors)
+  # Clang puts designated-initializer warnings under -Werror=c23-extensions and
+  # -Wc++20-extensions / -Wc++23-extensions (warning-level, not
+  # extension-level), so -pedantic-errors alone does not promote them to errors.
+  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    add_compile_options(-Werror=c++20-extensions)
+    add_compile_options(-Werror=c23-extensions -Werror=c++23-extensions)
+  endif()
+endif()
+
 # ######################################################################################################################
 # INTERFACE target
 # Other targets can link to this interface to get the include path transitively.

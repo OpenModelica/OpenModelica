@@ -195,7 +195,7 @@ typedef int mmc_switch_type;
 #define mmc_mk_boolean mmc_mk_bcon
 #define mmc_mk_real mmc_mk_rcon
 
-void mmc_catch_dummy_fn();
+void mmc_catch_dummy_fn(void);
 
 #define MMC_INIT(X) pthread_once(&mmc_init_once,mmc_init)
 #define MMC_TRY_INTERNAL(X) { jmp_buf new_mmc_jumper, *old_jumper __attribute__((unused)) = threadData->X; threadData->X = &new_mmc_jumper; if (setjmp(new_mmc_jumper) == 0) {

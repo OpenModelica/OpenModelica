@@ -52,7 +52,7 @@ import BackendDump;
 import BackendEquation;
 import BackendVariable;
 import ComponentReference;
-import DAEDump;
+import DAEDumpTypes;
 import Error;
 import ExpandableArray;
 import Expression;
@@ -153,7 +153,7 @@ protected
   BackendDAE.StrongComponents comps;
   BackendDAE.Variables vars;
   BackendDAE.EquationArray orderedEqs;
-  DAE.FunctionTree sharedFuncs;
+  AvlTreePathFunction.Tree sharedFuncs;
   TaskGraphMeta iGraphData;
   TaskGraphMeta tmpGraphData;
   TaskGraph iGraph;
@@ -667,7 +667,7 @@ algorithm
        descLst := desc::iEqDesc;
      then
        descLst;
-  case(BackendDAE.EQUATIONSYSTEM(jac = BackendDAE.FULL_JACOBIAN(_)), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs),_)
+  case(BackendDAE.EQUATIONSYSTEM(jac = BackendDAE.FULL_JACOBIAN(_)), BackendDAE.EQSYSTEM(),_)
      algorithm
        desc := ("Equation System");
        descLst := desc::iEqDesc;
@@ -738,14 +738,14 @@ algorithm
       descLst := desc::iEqDesc;
     then
       descLst;
-  case(BackendDAE.TORNSYSTEM(linear=true), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs,  matching= BackendDAE.MATCHING()),_)
+  case(BackendDAE.TORNSYSTEM(linear=true), BackendDAE.EQSYSTEM(  matching= BackendDAE.MATCHING()),_)
      algorithm
       //get the equation string
        desc := ("Torn linear System");
        descLst := desc::iEqDesc;
     then
       descLst;
-  case(BackendDAE.TORNSYSTEM(linear=false), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs,  matching= BackendDAE.MATCHING()),_)
+  case(BackendDAE.TORNSYSTEM(linear=false), BackendDAE.EQSYSTEM(  matching= BackendDAE.MATCHING()),_)
      algorithm
       //get the equation string
        desc := ("Torn nonlinear System");
@@ -3357,7 +3357,7 @@ algorithm
         //print("singleNodes "+stringDelimitList(List.map(singleNodes,intString),"\n")+"\n");
         exeCosts := listReverse(exeCosts);
         // cluster these singleNodes
-        (cluster,_) := distributeToClusters(singleNodes,exeCosts,numProc);
+        (_,_) := distributeToClusters(singleNodes,exeCosts,numProc);
         //print("cluster "+stringDelimitList(List.mapArray(cluster, intLstString),"\n")+"\n");
         //update taskgraph and taskgraphMeta
         //(oTaskGraph,oTaskGraphMeta) = contractNodesInGraph(clusterLst,iTaskGraph,iTaskGraphMeta);
@@ -5996,7 +5996,7 @@ algorithm
         annot := BackendVariable.getAnnotationComment(var);
         annotString := arrayGet(annotInfoIn,taskIdx);
         cr := BackendVariable.varCref(var);
-        annotString := annotString + "("+ComponentReference.printComponentRefStr(cr)+": "+DAEDump.dumpCommentAnnotationStr(annot)+") ";
+        annotString := annotString + "("+ComponentReferenceBasics.printComponentRefStr(cr)+": "+DAEDumpTypes.dumpCommentAnnotationStr(annot)+") ";
         arrayUpdate(annotInfoIn,taskIdx,annotString);
       then
         annotInfoIn;
@@ -6236,7 +6236,7 @@ algorithm
       list<BackendDAE.Var> varLst;
    case(BackendDAE.EQSYSTEM(orderedVars = vars)::_,_,_)
       algorithm
-        //print("check cref: "+ComponentReference.printComponentRefStr(cref)+"\n");
+        //print("check cref: "+ComponentReferenceBasics.printComponentRefStr(cref)+"\n");
         (varLst,lst) := BackendVariable.getVar(cref,vars);
         if intNe(listLength(lst),1) then
           print("Check if there is a assert or something that is dependent of arrayEquations");

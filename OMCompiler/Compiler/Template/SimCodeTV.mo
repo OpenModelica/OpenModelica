@@ -2067,6 +2067,7 @@ package Absyn
     end THREAD;
   end ReductionIterType;
 
+  constant builtin.SourceInfo dummyInfo;
 end Absyn;
 
 package AbsynUtil
@@ -2082,8 +2083,6 @@ package AbsynUtil
     input Absyn.Path inPath;
     output String str;
   end pathLastIdent;
-
-  constant builtin.SourceInfo dummyInfo;
 end AbsynUtil;
 
 package MMath
@@ -3044,12 +3043,14 @@ package ClassInf
     end EXTERNAL_OBJ;
   end State;
 
+end ClassInf;
+
+package ClassInfUtil
   function getStateName
-    input State inState;
+    input ClassInf.State inState;
     output Absyn.Path outPath;
   end getStateName;
-
-end ClassInf;
+end ClassInfUtil;
 
 package SCode
 
@@ -3730,6 +3731,23 @@ package List
   end partition;
 end List;
 
+package ComponentReferenceBasics
+  function crefDims
+    input DAE.ComponentRef cref;
+    output list<DAE.Dimension> dims;
+  end crefDims;
+
+  function crefSubs
+    input DAE.ComponentRef cref;
+    output list<DAE.Subscript> subs;
+  end crefSubs;
+
+  function crefStripLastSubs
+    input DAE.ComponentRef inComponentRef;
+    output DAE.ComponentRef outComponentRef;
+  end crefStripLastSubs;
+end ComponentReferenceBasics;
+
 package ComponentReference
 
   function crefAppendedSubs
@@ -3742,25 +3760,10 @@ package ComponentReference
     output DAE.ComponentRef outCrefIdent;
   end makeUntypedCrefIdent;
 
-  function crefDims
-    input DAE.ComponentRef cref;
-    output list<DAE.Dimension> dims;
-  end crefDims;
-
-  function crefStripLastSubs
-    input DAE.ComponentRef inComponentRef;
-    output DAE.ComponentRef outComponentRef;
-  end crefStripLastSubs;
-
   function crefStripSubs
     input DAE.ComponentRef inComponentRef;
     output DAE.ComponentRef outComponentRef;
   end crefStripSubs;
-
-  function crefSubs
-    input DAE.ComponentRef cref;
-    output list<DAE.Subscript> subs;
-  end crefSubs;
 
   function crefTypeFull
     input DAE.ComponentRef inRef;
@@ -4037,12 +4040,14 @@ package ExpressionDump
     input DAE.Operator inOperator;
     output String outString;
   end binopSymbol;
+end ExpressionDump;
 
+package ExpressionBasics
   function printExpStr
     input DAE.Exp exp;
     output String outString;
   end printExpStr;
-end ExpressionDump;
+end ExpressionBasics;
 
 package Config
   function acceptMetaModelicaGrammar
@@ -4287,6 +4292,13 @@ package DAEUtil
   end typeExp;
 end DAEUtil;
 
+package TypesDump
+  function unparseType
+    input DAE.Type inType;
+    output String str;
+  end unparseType;
+end TypesDump;
+
 package Types
   function arrayElementType
     input DAE.Type inType;
@@ -4296,10 +4308,6 @@ package Types
     input DAE.Type inType;
     output list<Integer> outIntegerLst;
   end getDimensionSizes;
-  function unparseType
-    input DAE.Type inType;
-    output String str;
-  end unparseType;
   function dimensionsKnown
     input DAE.Type inType;
     output Boolean outRes;

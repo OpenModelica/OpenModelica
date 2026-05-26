@@ -43,6 +43,7 @@ encapsulated package InstStateMachineUtil
 public import DAE;
 
 protected import Absyn;
+protected import AvlTreePathFunction;
 protected import Config;
 protected import Flags;
 protected import List;
@@ -137,7 +138,7 @@ algorithm
 
     if DEBUG_SMDUMP then print("***** Initial States: ***** \n"); end if;
     initialStates := extractInitialStates(smNodeTable);
-    if DEBUG_SMDUMP then print( stringDelimitList(List.map(initialStates, ComponentReference.printComponentRefStr), ", ") + "\n"); end if;
+    if DEBUG_SMDUMP then print( stringDelimitList(List.map(initialStates, ComponentReferenceBasics.printComponentRefStr), ", ") + "\n"); end if;
 
     if DEBUG_SMDUMP then print("***** Flat State Machine Groups: ***** \n"); end if;
     flatSMGroup := extractFlatSMGroup(initialStates, transClosure, nStates);
@@ -208,7 +209,7 @@ protected
   List<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> innerCrefToOuterOutputCrefs_nonDer = {} "The non-der(..) rest";
   List<DAE.ComponentRef> uniqueHashValues, crefs, derCrefsAcc = {}, outerOutputCrefs;
   HashSet.HashSet derCrefsSet;
-  DAE.FunctionTree emptyTree;
+  AvlTreePathFunction.Tree emptyTree;
   list<DAE.Element> dAElistNew, mergeEqns, mergeEqns_der, aliasEqns_der;
   Integer nOfHits;
   Boolean hasDer;
@@ -234,7 +235,7 @@ algorithm
   // print("InstStateMachineUtil.mergeVariableDefinitions: innerCrefToOuterOutputCrefs:\n"); BaseHashTable.dumpHashTable(innerCrefToOuterOutputCrefs);
 
   // Substitute occurrences of previous(outerCref) by previous(innerCref)
-  emptyTree := DAE.AvlTreePathFunction.Tree.EMPTY();
+  emptyTree := AvlTreePathFunction.Tree.EMPTY();
   (DAE.DAE(dAElist), _, _) := DAEUtil.traverseDAE(DAE.DAE(dAElist), emptyTree, traverserHelperSubsOuterByInnerExp, outerOutputCrefToInnerCref);
 
   if Flags.getConfigBool(Flags.CT_STATE_MACHINES) then
@@ -383,7 +384,7 @@ algorithm
       list<DAE.Exp> expLst;
       DAE.CallAttributes attr;
     case DAE.CALL(path=Absyn.IDENT("der"), expLst={DAE.CREF(componentRef=componentRef)})
-      guard ComponentReference.crefEqual(componentRef, cref)
+      guard ComponentReferenceBasics.crefEqual(componentRef, cref)
         then (inExp, (cref, hitCount + 1));
     else (inExp,inCref_HitCount);
   end match;
@@ -474,7 +475,7 @@ protected
   DAE.ComponentRef tuple22;
 algorithm
   tuple22 := Util.tuple22(inHashEntry);
-  isEqual := ComponentReference.crefEqual(tuple22, inCref);
+  isEqual := ComponentReferenceBasics.crefEqual(tuple22, inCref);
   if (not isEqual) then fail(); end if;
   outCref := Util.tuple21(inHashEntry);
 end crefEqualTuple22;
@@ -524,7 +525,7 @@ Helper function to mergeVariableDefinitions
 protected
   DAE.ComponentRef crefIdent, crefFound, strippedCref1, strippedCref2;
 algorithm
-  crefIdent := ComponentReference.crefLastCref(inOuterCref);
+  crefIdent := ComponentReferenceBasics.crefLastCref(inOuterCref);
 
   // inOuterCref is supposed to be "outer" or "inner outer" and we want to move one level up the instance hierachy for starting the search for the corresponding inner
   strippedCref1 := ComponentReference.crefStripLastIdent(inOuterCref);
@@ -619,7 +620,7 @@ protected
   list<DAE.Element> smElemsInFlatSM;
 algorithm
   smElemsInFlatSM := List.filter2OnTrue(smElemsLst, isInFlatSM, smInitialCref, smNodeToFlatSMGroup);
-  flatSM := DAE.FLAT_SM(ComponentReference.printComponentRefStr(smInitialCref), smElemsInFlatSM);
+  flatSM := DAE.FLAT_SM(ComponentReferenceBasics.printComponentRefStr(smInitialCref), smElemsInFlatSM);
 end createFlatSM;
 
 protected function isInFlatSM "
@@ -653,7 +654,7 @@ algorithm
       then fail();
   end match;
 
-  outResult := ComponentReference.crefEqual(crefCorrespondingFlatSMGroup, smInitialCref);
+  outResult := ComponentReferenceBasics.crefEqual(crefCorrespondingFlatSMGroup, smInitialCref);
 end isInFlatSM;
 
 protected function isSMComp "
@@ -754,9 +755,9 @@ protected
   array<DAE.ComponentRef> states;
 algorithm
   FLAT_SM_GROUP(initState=initState, states=states) := flatA;
-  initialStateStr := ComponentReference.printComponentRefStr(initState);
+  initialStateStr := ComponentReferenceBasics.printComponentRefStr(initState);
   crefs := arrayList(states);
-  statesStrs := List.map(crefs, ComponentReference.printComponentRefStr);
+  statesStrs := List.map(crefs, ComponentReferenceBasics.printComponentRefStr);
   statesStr := stringDelimitList(statesStrs, ", ");
 
   flatStr := initialStateStr+"( states("+statesStr+"))";
@@ -890,7 +891,7 @@ algorithm
   entries := List.sort(entries, crefIndexCmp);
   for entry in entries loop
     (cref, i) := entry;
-    print( ComponentReference.printComponentRefStr(cref) + ": " + intString(i) + "\n" );
+    print( ComponentReferenceBasics.printComponentRefStr(cref) + ": " + intString(i) + "\n" );
   end for;
 
   pads := " ";

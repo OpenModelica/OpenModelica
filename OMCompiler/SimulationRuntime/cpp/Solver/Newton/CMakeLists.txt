@@ -19,7 +19,9 @@ target_link_libraries(${NewtonName}
   ${ModelicaName})
 add_precompiled_header(${NewtonName} Core/Modelica.h)
 
+if(MSVC)
 install(FILES $<TARGET_PDB_FILE:${NewtonName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+endif()
 
 install(TARGETS ${NewtonName} DESTINATION ${LIBINSTALLEXT})
 install(FILES

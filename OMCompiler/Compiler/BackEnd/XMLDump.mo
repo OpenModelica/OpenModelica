@@ -94,6 +94,7 @@ protected import BackendDAETransform;
 protected import BackendEquation;
 protected import ComponentReference;
 protected import Config;
+protected import DAEDumpTypes;
 protected import DAEUtil;
 protected import Debug;
 protected import ElementSource;
@@ -966,7 +967,7 @@ algorithm
       BackendDAE.BackendDAEType btp;
       list<BackendDAE.EqSystem> systs;
       BackendDAE.SymbolicJacobians symjacs;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
 
       list<tuple<list<BackendDAE.Equation>, list<BackendDAE.Var>>> eqnsVarsinOrderLst;
       BackendDAE.EventInfo eventInfo;
@@ -1620,7 +1621,7 @@ algorithm
 
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,true)
       algorithm
-        s1 := ComponentReference.printComponentRefStr(cr);
+        s1 := ComponentReferenceBasics.printComponentRefStr(cr);
         s2 := printExpStr(e2);
         res := stringAppendList({s1," := ",s2});
         dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);
@@ -1639,7 +1640,7 @@ algorithm
 
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,false)
       algorithm
-        s1 := ComponentReference.printComponentRefStr(cr);
+        s1 := ComponentReferenceBasics.printComponentRefStr(cr);
         s2 := printExpStr(e2);
         res := stringAppendList({s1," := ",s2});
         dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);
@@ -1794,7 +1795,7 @@ algorithm
       then ();
     case (DAE.CREF(componentRef = c))
       algorithm
-        s := ComponentReference.printComponentRefStr(c);
+        s := ComponentReferenceBasics.printComponentRefStr(c);
         dumpStrMathMLVariable(s);
       then ();
     case (DAE.BINARY(e1,op,e2))
@@ -2020,7 +2021,7 @@ algorithm
       then ();
     case (DAE.CAST(ty = tp,exp = e))
       algorithm
-        str := Types.unparseType(tp);
+        str := TypesDump.unparseType(tp);
         dumpStrOpenTag(MathMLApply);
         dumpStrOpenTag(MathMLOperator);
         Print.printBuf("(");
@@ -2072,7 +2073,7 @@ algorithm
       then ();
     case (_)
       algorithm
-        dumpComment("UNKNOWN EXPRESSION: " + ExpressionDump.printExpStr(inExp));
+        dumpComment("UNKNOWN EXPRESSION: " + ExpressionBasics.printExpStr(inExp));
       then ();
   end matchcontinue;
 end dumpExp2;
@@ -2251,7 +2252,7 @@ protected function dumpAdjacencyMatrixWork
   output Integer outOffset;
 protected
  BackendDAE.AdjacencyMatrix m;
- DAE.FunctionTree funcs;
+ AvlTreePathFunction.Tree funcs;
 algorithm
   funcs := BackendDAEUtil.getFunctions(shared);
   (_,m,_) := BackendDAEUtil.getAdjacencyMatrixfromOption(syst, BackendDAE.NORMAL(), SOME(funcs), BackendDAEUtil.isInitializationDAE(shared));
@@ -2391,7 +2392,7 @@ protected function printExpStr
   input DAE.Exp e;
   output String s;
 algorithm
-  s := Util.xmlEscape(ExpressionDump.printExpStr(e));
+  s := Util.xmlEscape(ExpressionBasics.printExpStr(e));
 end printExpStr;
 
 protected function dumpLstInt "
@@ -2520,7 +2521,7 @@ end dumpMatching2;
 protected function dumpOptExp "
 This function print to a new line the content of
 a Optional<DAE.Exp> in a XML element like:
-<Content =ExpressionDump.printExpStr(e)/>. It also print
+<Content =ExpressionBasics.printExpStr(e)/>. It also print
 the content of the expression as MathML like:
 <MathML><MATH xmlns=...>DAE.Exp</MATH></MathML>.
 See dumpExp function for more details.
@@ -2909,7 +2910,7 @@ end dumpStrVoidTag;
 
 protected function dumpDimension "
 This function print an DAE.Dimension eventually
-using the ExpressionDump.printExpStr function.
+using the ExpressionBasics.printExpStr function.
 "
   input DAE.Dimension inDimension;
 algorithm
@@ -3163,7 +3164,7 @@ algorithm
     local String dn; DAE.ComponentRef cr;
     case (BackendDAE.STATE(derName=SOME(cr)))
       algorithm
-        dn := ComponentReference.printComponentRefStr(cr);
+        dn := ComponentReferenceBasics.printComponentRefStr(cr);
       then dn;
     else "";
   end match;
@@ -3226,7 +3227,7 @@ algorithm
                             comment = comment,
                             connectorType = ct)) :: xs),varno,addMMLCode)
       algorithm
-        dumpVariable(intString(varno),ComponentReference.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),
+        dumpVariable(intString(varno),ComponentReferenceBasics.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),
                      getIndex(kind),getDerName(kind),boolString(BackendVariable.varFixed(v)),dumpFlowStr(ct),
                      dumpStreamStr(ct),unparseCommentOptionNoAnnotation(comment));
         dumpBindExpression(e,addMMLCode);
@@ -3288,9 +3289,9 @@ algorithm
                             comment = comment,
                             connectorType = ct)) :: xs),_,varno,_)
       algorithm
-        dumpVariable(intString(varno),ComponentReference.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),
+        dumpVariable(intString(varno),ComponentReferenceBasics.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),
                         getIndex(kind),getDerName(kind),boolString(BackendVariable.varFixed(v)),dumpFlowStr(ct),dumpStreamStr(ct),
-                        DAEDump.dumpCommentAnnotationStr(comment));
+                        DAEDumpTypes.dumpCommentAnnotationStr(comment));
         dumpBindExpression(e,addMMLCode);
         //The command below adds information to the XML about the dimension of the
         //containing vector, in the casse the variable is an element of a vector.
@@ -3855,7 +3856,7 @@ algorithm
 
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,true)
       algorithm
-        s1 := ComponentReference.printComponentRefStr(cr);
+        s1 := ComponentReferenceBasics.printComponentRefStr(cr);
         s2 := printExpStr(e2);
         res := stringAppendList({s1," - ( ",s2," ) := 0"});
         dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);
@@ -3878,7 +3879,7 @@ algorithm
 
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,false)
       algorithm
-        s1 := ComponentReference.printComponentRefStr(cr);
+        s1 := ComponentReferenceBasics.printComponentRefStr(cr);
         s2 := printExpStr(e2);
         res := stringAppendList({s1," - (",s2,") := 0"});
         dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);

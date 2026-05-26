@@ -2625,9 +2625,7 @@ void LibraryTreeModel::unloadClassChildren(LibraryTreeItem *pLibraryTreeItem, bo
 void LibraryTreeModel::unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, bool deleteFile)
 {
   MainWindow *pMainWindow = MainWindow::instance();
-#ifndef OM_DISABLE_DOCUMENTATION
   pMainWindow->getDocumentationWidget()->updateDocumentationHistory(pLibraryTreeItem);
-#endif // #ifndef OM_DISABLE_DOCUMENTATION
   /* close the ModelWidget of LibraryTreeItem. */
   if (pLibraryTreeItem->getModelWidget()) {
     // if ModelWidget is used by DiagramWindow

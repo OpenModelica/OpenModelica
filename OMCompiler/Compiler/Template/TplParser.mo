@@ -4572,10 +4572,10 @@ algorithm
       end if;
     end while;
   else
-    outChars := {};
-    outLineInfo := parseError({}, inLineInfo, "Not able to parse the text template expression from the point.", true);
-    outExpressionBase := TplAbsyn.ERROR_EXP();
   end try;
+  outChars := {};
+  outLineInfo := parseError({}, inLineInfo, "Not able to parse the text template expression from the point.", true);
+  outExpressionBase := TplAbsyn.ERROR_EXP();
 
 //   //<# #> or $# #$
 //   /*

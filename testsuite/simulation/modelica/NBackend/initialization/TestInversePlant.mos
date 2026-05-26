@@ -228,7 +228,7 @@ simulate(TestInversePlant.BackwardOffDesignHomotopy); getErrorString();
 //   --end for;
 //   (27) plant.TIT := plant.T[6]
 //   (26) $FUN_1 := sqrt(plant.TIT / plant.Tnom)
-//   (25) plant.p[6] := plant.w / ((plant.Kt * $FUN_1) / $FUN_1 ^ 2.0)
+//   (25) plant.p[6] := ($FUN_1 * plant.w) / plant.Kt
 //   (24) plant.TIP := plant.p[6]
 //   (23) plant.P := plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma))
 //   (22) plant.Ts := plant.Tfg[6]
@@ -409,7 +409,7 @@ simulate(TestInversePlant.BackwardOffDesignHomotopy); getErrorString();
 //
 // 27: plant.TIT=plant.T[6] [Real]
 // 26: $FUN_1=sqrt(plant.TIT / plant.Tnom) [Real]
-// 25: plant.p[6]=plant.w / (plant.Kt * $FUN_1 / $FUN_1 ^ 2.0) [Real]
+// 25: plant.p[6]=$FUN_1 * plant.w / plant.Kt [Real]
 // 24: plant.TIP=plant.p[6] [Real]
 // 23: plant.P=plant.TIT * plant.cp * plant.w * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) [Real]
 // 22: plant.Ts=plant.Tfg[6] [Real]

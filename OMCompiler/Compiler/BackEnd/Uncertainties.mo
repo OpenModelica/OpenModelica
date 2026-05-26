@@ -349,7 +349,7 @@ algorithm
       BackendDAE.ExtraInfo einfo;
       Option<BackendDAE.SymbolicJacobian> outJacobian;
       BackendDAE.Jacobian simcodejacobian;
-      DAE.FunctionTree outFunctionTree;
+      AvlTreePathFunction.Tree outFunctionTree;
       BackendDAE.SparsePattern outSparsePattern;
       BackendDAE.SparseColoring outSparseColoring;
       SimCode.JacobianMatrix jacmatrix;
@@ -371,7 +371,7 @@ algorithm
         BackendDump.dumpEquationArray(allEqs,"orderedEquation");
         BackendDump.dumpVariables(allVars,"orderedVariables");
         //BackendDump.dumpVariables(globalKnownVars,"parameters");
-        (match1,match2) := Matching.PerfectMatching(m);
+        (match1,_) := Matching.PerfectMatching(m);
         var:=dumpMatching(match1);
         BackendDump.dumpMatching(match1);
         bltblocks:=Sorting.Tarjan(m,match1);
@@ -389,13 +389,13 @@ algorithm
         unknowns := listAppend(directlyLinked,indirectlyLinked);
         outputvars := List.setDifference(List.intRange(BackendVariable.varsSize(allVars)),listAppend(unknowns,knowns));
         unknowns := listAppend(unknowns,outputvars) annotation(__OpenModelica_DisableListAppendWarning=true);
-        fullvars :=listAppend(unknowns,knowns);
+        _ :=listAppend(unknowns,knowns);
         initblocks:=setInitialBlocks(bltblocks);
         constantvars:=getConstantVariables(mExt);
         // Extract approximated equation
         approximatedEquations_one := getEquationsWithApproximatedAnnotation(dae);
         approximatedEquations := List.flatten(List.map1r(approximatedEquations_one,listGet,arrayList(mapEqnIncRow)));
-        approximated_eq_solvar := getRemovedEquationSolvedVariables(approximatedEquations,var);
+        _ := getRemovedEquationSolvedVariables(approximatedEquations,var);
         // Extraction Algorithm steps
         (blockstofind,blockstatus):=originalBlocks(bltblocks,knowns,unknowns,outputvars,var);
         blockranks:=List.toListWithPositions(blockstofind);
@@ -428,9 +428,9 @@ algorithm
 
         //tempsetS=List.setDifferenceOnTrue(tempsetS,approximatedEquations,intEq);
         //tempsetC = List.setDifferenceOnTrue(tempsetC,tempsetS,intEq);
-        (matchedknownssetc,matchedunknownssetc) := getVariableOccurence(tempsetC,mExt,knowns);
+        (_,_) := getVariableOccurence(tempsetC,mExt,knowns);
         extractedvars:=getVariablesAfterExtraction(tempsetC,tempsetS,mExt);
-        extractedsetsvars:=getVariablesAfterExtraction(tempsetS,{},mExt);
+        _ :=getVariablesAfterExtraction(tempsetS,{},mExt);
         finalvarlist:=getRemovedEquationSolvedVariables(listAppend(tempsetC,tempsetS),var);
         (finalvarlist,inputvarlist,_):=List.intersection1OnTrue(extractedvars,finalvarlist,intEq);
 
@@ -495,7 +495,7 @@ algorithm
         BackendDump.dumpEquationArray(outOtherEqns,"Jacobian_other_Equation");*/
         (simcodejacobian,shared):=SymbolicJacobian.getSymbolicJacobian(outDiffVars,outResidualEqns,outResidualVars,outOtherEqns,outOtherVars,shared,BackendVariable.listVar(List.map1r(extractedvars,BackendVariable.getVarAt,allVars)),"F",false);
         // put the jacobian also into shared object
-        setcVars:=BackendVariable.listVar(List.map1r(getRemovedEquationSolvedVariables(tempsetC,var),BackendVariable.getVarAt,allVars));
+        _ :=BackendVariable.listVar(List.map1r(getRemovedEquationSolvedVariables(tempsetC,var),BackendVariable.getVarAt,allVars));
         shared.dataReconciliationData := SOME(BackendDAE.DATA_RECON(symbolicJacobian=simcodejacobian,setcVars=outResidualVars,datareconinputs=outDiffVars,setBVars=NONE(), symbolicJacobianH=NONE(), relatedBoundaryConditions=0));
         //BackendDump.dumpVariables(setcVars,"SET_C_SOLVEDVARS");
 
@@ -853,8 +853,8 @@ algorithm
        Boolean found=false;
    case(tmpvars,tmpknowns,tmpExt,tmpsolveeqvar,tempsolvedvars,tempsolvedeqs,tmpconstantvars)
      algorithm
-     (t1,t2,t3):=List.intersection1OnTrue(tmpvars,tmpknowns,intEq);
-     (c1,c2,c3):=List.intersection1OnTrue(tmpvars,tmpconstantvars,intEq);
+     (t1,t2,_):=List.intersection1OnTrue(tmpvars,tmpknowns,intEq);
+     (c1,_,_):=List.intersection1OnTrue(tmpvars,tmpconstantvars,intEq);
      //print("\n tempvars:=>"+anyString(tmpvars)+"t1:=>"+anyString(t1) +"t2:=>"+ anyString(t2) +"c1:=>" + anyString(c1) + "c2:=>" + anyString (c2));
      if(not listEmpty(c1)) then
          //print("\n constant leaf found:=>" + anyString(c1));
@@ -877,7 +877,7 @@ algorithm
          //print("\n false loop-1" + anyString(tempsolvedeqs) +" "+ anyString(tempeqs));
          (tempvars1,tempvars2):=getVariableOccurence(tempeqs,mExt,knowns);
          allvars:=List.unique(listAppend(tempvars1,tempvars2));
-         (tmp1,tmp2,tmp3):=List.intersection1OnTrue(allvars,solvedvars,intEq);
+         (_,tmp2,_):=List.intersection1OnTrue(allvars,solvedvars,intEq);
          if(not listEmpty(tmp2)) then
             (tempsolvedvars,tempsolvedeqs):=BuildSquareSubSetHelper(tmp2,tmpknowns,tmpExt,tmpsolveeqvar,tempsolvedvars,tempsolvedeqs,tmpconstantvars);
          end if;
@@ -3305,7 +3305,7 @@ algorithm
 
     case(((DAE.CREF(c1,_))::expl1),dubRef,ht)
       algorithm
-        c2 := ComponentReference.crefStripLastSubs(c1);
+        c2 := ComponentReferenceBasics.crefStripLastSubs(c1);
         if BaseHashTable.hasKey(c2,dubRef) then
           if BaseHashTable.hasKey(c2,ht) then
             // if we have one occurrence, most likely it will be more.
@@ -3881,7 +3881,7 @@ algorithm
         //dumpAliasSets(sets);
         set_solutions:=List.map2(sets,solveAliasSet,vars,globalKnownVars);
         //print("Solutions for sets:\n");
-        //print(stringDelimitList(List.map(set_solutions,ComponentReference.printComponentRefStr),"\n"));
+        //print(stringDelimitList(List.map(set_solutions,ComponentReferenceBasics.printComponentRefStr),"\n"));
         //print("\n");
         (repl,simple_eqns,removed_vars):=createReplacementsAndEquations(set_solutions,sets,vars,globalKnownVars,repl,{},{});
         //BackendVarTransform.dumpReplacements(repl);
@@ -4133,7 +4133,7 @@ algorithm
       then (repl_acc,eqns_acc,removed_vars_acc);
     case(_,h::t,_,_,_,_,_,_)
       algorithm // ignore if the current cref is the solution
-        true:=ComponentReference.crefEqual(solution,h);
+        true:=ComponentReferenceBasics.crefEqual(solution,h);
         (new_repl,new_eqns,new_removed_vars):=createReplacementsAndEquationsForSet(solution,t,set,vars,globalKnownVars,repl_acc,eqns_acc,removed_vars_acc);
       then (new_repl,new_eqns,new_removed_vars);
     case(_,h::t,_,_,_,_,_,_)
@@ -4533,7 +4533,7 @@ algorithm
     case(cr::cr_t,i::i_t)
       algorithm
         s := if i>0 then "+" else "-";
-        print(s+ComponentReference.printComponentRefStr(cr)+", ");
+        print(s+ComponentReferenceBasics.printComponentRefStr(cr)+", ");
         dumpAliasSets2(cr_t,i_t);
       then ();
   end match;

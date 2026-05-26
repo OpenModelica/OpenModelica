@@ -56,6 +56,7 @@ import ComponentReference;
 import DAE;
 import DAEUtil;
 import ElementSource;
+import Expression;
 import ExpressionDump;
 import ExpressionSolve;
 import List;
@@ -147,7 +148,7 @@ algorithm
   (globalKnownVarLst,allVisuals) := List.fold(globalKnownVarLst,isVisualizationVarFold,({},{}));
   (allVarLst,allVisuals) := List.fold(allVarLst,isVisualizationVarFold,({},allVisuals));
   (aliasVarLst,allVisuals) := List.fold(aliasVarLst,isVisualizationVarFold,({},allVisuals));
-    //print("ALL VISUALS "+stringDelimitList(List.map(allVisuals,ComponentReference.printComponentRefStr)," |")+"\n");
+    //print("ALL VISUALS "+stringDelimitList(List.map(allVisuals,ComponentReferenceBasics.printComponentRefStr)," |")+"\n");
 
   //fill theses visualization objects with information
   allVarLst := listAppend(globalKnownVarLst,listAppend(allVarLst,aliasVarLst));
@@ -218,7 +219,7 @@ algorithm
         */
       else
         algorithm
-          Error.addCompilerWarning("The binding expression "+ExpressionDump.printExpStr(e)+" of the visualization type component " +ComponentReference.crefStr(cr)+ "  cannot be evaluated. Please specify a visualization type (CAD files are specified as modelica://packagename/filename.stl)");
+          Error.addCompilerWarning("The binding expression "+ExpressionBasics.printExpStr(e)+" of the visualization type component " +ComponentReference.crefStr(cr)+ "  cannot be evaluated. Please specify a visualization type (CAD files are specified as modelica://packagename/filename.stl)");
         then e;
     end matchcontinue;
   else
@@ -332,7 +333,7 @@ algorithm
     //name := stringCharListString(nameChars);
     //name := Util.stringReplaceChar(name,"$",".");
     //true := stringEqual(stringCharListString(prefix),"Shape$");
-    //name := ComponentReference.printComponentRefStr(crefIn);
+    //name := ComponentReferenceBasics.printComponentRefStr(crefIn);
     (cref, vis_name) := visVar;
     vis := newVisualizer(cref, vis_name);
     (_, visOut) := List.fold2(allVarsIn,fillVisualizationObjects1,true,programIn,({},vis));
@@ -407,7 +408,7 @@ protected
   list<DAE.ComponentRef> crefs;
 algorithm
   sLst := Util.stringSplitAtChar(s,".");
-  crefs := List.map2(sLst,ComponentReference.makeCrefIdent,DAE.T_REAL_DEFAULT,{});
+  crefs := List.map2(sLst,ComponentReferenceBasics.makeCrefIdent,DAE.T_REAL_DEFAULT,{});
   cref::crefs := crefs;
   crefOut := List.foldr(crefs,ComponentReference.joinCrefs,cref);
 end makeCrefQualFromString;
@@ -427,28 +428,28 @@ algorithm
     case(DAE.CREF_QUAL(componentRef=crefIn1),DAE.CREF_QUAL())
       algorithm
         // the crefs are not equal, check the next cref in crefIn
-        true := not ComponentReference.crefFirstCrefEqual(crefIn,crefCut);
+        true := not ComponentReferenceBasics.crefFirstCrefEqual(crefIn,crefCut);
       then
         splitCrefAfter(crefIn1,crefCut);
 */
     case(DAE.CREF_QUAL(componentRef=crefIn1),DAE.CREF_QUAL(componentRef=crefCut1))
       algorithm
         // the crefs are equal, continue checking
-        true := ComponentReference.crefFirstCrefEqual(crefIn,crefCut);
+        true := ComponentReferenceBasics.crefFirstCrefEqual(crefIn,crefCut);
       then
         splitCrefAfter(crefIn1,crefCut1);
 
     case(DAE.CREF_QUAL(componentRef=crefIn1),DAE.CREF_IDENT(_))
       algorithm
         // the cref has to be cut after this step
-        true := ComponentReference.crefFirstCrefEqual(crefIn,crefCut);
+        true := ComponentReferenceBasics.crefFirstCrefEqual(crefIn,crefCut);
       then
         (crefIn1, true);
 
     case(DAE.CREF_QUAL(componentRef=crefIn1),DAE.CREF_IDENT(_))
       algorithm
         // there is no identical cref
-        true := not ComponentReference.crefFirstCrefEqual(crefIn,crefCut);
+        true := not ComponentReferenceBasics.crefFirstCrefEqual(crefIn,crefCut);
       then
         (crefIn1, false);
 
@@ -820,10 +821,10 @@ algorithm
       array<DAE.Exp> color, r, widthDir, lengthDir;
       array<list<DAE.Exp>> T;
   case(SHAPE(ident=ident, shapeType=shapeType, color=color, r=r, lengthDir=lengthDir, widthDir=widthDir, T=T, length=length, width=width, height=height, extra=extra))
-  then ("SHAPE "+ComponentReference.printComponentRefStr(ident)+" '"+ExpressionDump.printExpStr(shapeType) + "'\n r{"+stringDelimitList(list(ExpressionDump.dumpExpStr(e, 0) for e in r),",")+"}" +
-        "\nlD{"+stringDelimitList(List.mapArray(lengthDir, ExpressionDump.printExpStr),",")+"}"+" wD{"+stringDelimitList(List.mapArray(widthDir, ExpressionDump.printExpStr),",")+"}"+
-        "\ncolor("+stringDelimitList(List.mapArray(color, ExpressionDump.printExpStr),",")+")"+" w: "+ExpressionDump.printExpStr(width)+" h: "+ExpressionDump.printExpStr(height)+" l: "+ExpressionDump.printExpStr(length) +
-        "\nT {"+ stringDelimitList(List.map(List.flatten(arrayList(T)),ExpressionDump.printExpStr),", ")+"}"+"\nextra{"+ExpressionDump.printExpStr(extra)+"}");
+  then ("SHAPE "+ComponentReferenceBasics.printComponentRefStr(ident)+" '"+ExpressionBasics.printExpStr(shapeType) + "'\n r{"+stringDelimitList(list(ExpressionDump.dumpExpStr(e, 0) for e in r),",")+"}" +
+        "\nlD{"+stringDelimitList(List.mapArray(lengthDir, ExpressionBasics.printExpStr),",")+"}"+" wD{"+stringDelimitList(List.mapArray(widthDir, ExpressionBasics.printExpStr),",")+"}"+
+        "\ncolor("+stringDelimitList(List.mapArray(color, ExpressionBasics.printExpStr),",")+")"+" w: "+ExpressionBasics.printExpStr(width)+" h: "+ExpressionBasics.printExpStr(height)+" l: "+ExpressionBasics.printExpStr(length) +
+        "\nT {"+ stringDelimitList(List.map(List.flatten(arrayList(T)),ExpressionBasics.printExpStr),", ")+"}"+"\nextra{"+ExpressionBasics.printExpStr(extra)+"}");
   else
     then "-";
   end match;
@@ -876,11 +877,11 @@ algorithm
     case (BackendDAE.VAR(varName=varName, source=source), (varLst,crefs))
       algorithm
         paths := ElementSource.getElementSourceTypes(source);
-        //print("Component " + ComponentReference.printComponentRefStr(varName) + ":\n");
+        //print("Component " + ComponentReferenceBasics.printComponentRefStr(varName) + ":\n");
         //print(List.toString(paths, AbsynUtil.pathStringDefault, "", "  ", "\n  ", "", false) + "\n");
         (obj, idx) := hasVisPath(paths, 1);
         true := Util.stringNotEqual(obj, "");
-        //print("ComponentRef "+ComponentReference.printComponentRefStr(varName)+" path: "+obj+ " idx: "+intString(idx)+"\n");
+        //print("ComponentRef "+ComponentReferenceBasics.printComponentRefStr(varName)+" path: "+obj+ " idx: "+intString(idx)+"\n");
         cref := ComponentReference.firstNCrefs(varName, idx-1);
         crefs := List.unique((cref, obj)::crefs);
       then

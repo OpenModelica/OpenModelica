@@ -28,12 +28,12 @@
 #     if the equation systems of a FMU should be solved with sundials solvers      -DFMU_SUNDIALS=ON [default: OFF]
 #     if the logger should be completely disabled or used                          -DUSE_LOGGER=OFF [default: ON]
 #     specify target platform for compilation                                      -DPLATFORM=<dynamic, static or platform triple> [default: "dynamic"]
-#     use Klu sparse liner solver                                                    -DUSE_KLU [default: OFF]
+#     use Klu sparse liner solver                                                  -DUSE_KLU [default: OFF]
 #     Example: "cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo" to create statically linked libraries
 #
 # The used defines are stored in the SYSTEM_CFLAGS variable, which is passed to the ModelicaConfig.inc and written in the PrecompiledHeader.cmake
 
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.5...4.3)
 
 # OMSICPP_SOURCE_DIR is used by sub-CMakeLists.txt to reference paths relative
 # to the OMSICpp directory. In standalone mode it equals CMAKE_SOURCE_DIR; in
@@ -492,11 +492,19 @@ elseif(NOT FMU_TARGET)
   message(STATUS "Boost thread disabled because of available C++11 support")
 endif(NOT(COMPILER_SUPPORTS_CXX11))
 
-if(NOT FMU_TARGET)
-  find_package(Boost REQUIRED COMPONENTS filesystem serialization program_options)
-else(NOT FMU_TARGET)
-  find_package(Boost COMPONENTS filesystem serialization program_options)
-endif(NOT FMU_TARGET)
+IF(NOT FMU_TARGET)
+if(CMAKE_VERSION VERSION_LESS "3.30.0")
+  FIND_PACKAGE(Boost REQUIRED COMPONENTS filesystem serialization program_options)
+else()
+  FIND_PACKAGE(Boost CONFIG COMPONENTS filesystem serialization program_options REQUIRED)
+endif()
+ELSE(NOT FMU_TARGET)
+if(CMAKE_VERSION VERSION_LESS "3.30.0")
+  FIND_PACKAGE(Boost COMPONENTS filesystem serialization program_options)
+else()
+  FIND_PACKAGE(Boost CONFIG COMPONENTS filesystem serialization program_options)
+endif()
+ENDIF(NOT FMU_TARGET)
 
 # Use old C++ ABI for cross compilation of FMUs
 # because libstdc++ might not be upgraded yet
@@ -517,7 +525,7 @@ endif(WIN32)
 
 set(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
 set(Boost_LIBRARIES ${Boost_LIBRARIES_TMP})
-message(STATUS "using boost include for omsicpp runtime:  ${Boost_INCLUDE_DIR}")
+message(STATUS "using boost include for omsicpp runtime: ${Boost_INCLUDE_DIR}")
 message(STATUS "Boost Libraries for omsicpp runtime")
 message(STATUS ${Boost_LIBRARIES})
 

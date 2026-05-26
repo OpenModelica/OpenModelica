@@ -66,7 +66,6 @@ import DAE.Connect;
 import DAEUtil;
 import ElementSource;
 import Expression;
-import ExpressionDump;
 import Error;
 import ErrorExt;
 import Flags;
@@ -84,6 +83,7 @@ import Static;
 import System;
 import Util;
 import SCodeDump;
+import ExpressionBasics;
 
 protected function generatePositionalArgs "author: KS
   This function is used in the following cases:
@@ -415,7 +415,7 @@ algorithm
     case (_,_,lhs,_,_,_)
       algorithm
         true := numError == Error.getNumErrorMessages();
-        str := Dump.printExpStr(lhs) + " of type " + Types.unparseType(ty);
+        str := Dump.printExpStr(lhs) + " of type " + TypesDump.unparseType(ty);
         Error.addSourceMessage(Error.META_INVALID_PATTERN, {str}, info);
       then fail();
 
@@ -501,7 +501,7 @@ algorithm
         validUniontype(utPath1,utPath2,info,lhs);
 
         fieldTypeList := List.map(fieldVarList, Types.getVarType);
-        fieldNameList := List.map(fieldVarList, Types.getVarName);
+        fieldNameList := List.map(fieldVarList, TypesDump.getVarName);
 
         if Flags.isSet(Flags.PATTERNM_ALL_INFO) then
           for namedArg in namedArgList loop
@@ -548,7 +548,7 @@ algorithm
         true := AbsynUtil.pathEqual(fqPath,utPath2);
 
         fieldTypeList := List.map(fieldVarList, Types.getVarType);
-        fieldNameList := List.map(fieldVarList, Types.getVarName);
+        fieldNameList := List.map(fieldVarList, TypesDump.getVarName);
 
         (funcArgs,namedArgList) := checkForAllWildCall(funcArgs,namedArgList,listLength(fieldNameList));
 
@@ -635,7 +635,7 @@ algorithm
 
     case (DAE.T_METABOXED(ty = ty1),ty2,_,_)
       algorithm
-        cr := ComponentReference.makeCrefIdent("#DUMMY#",DAE.T_UNKNOWN_DEFAULT,{});
+        cr := ComponentReferenceBasics.makeCrefIdent("#DUMMY#",DAE.T_UNKNOWN_DEFAULT,{});
         crefExp := Expression.crefExp(cr);
         (_,ty1) := Types.matchType(crefExp,ty1,ty2,true);
         et := Types.simplifyType(ty1);
@@ -643,7 +643,7 @@ algorithm
 
     case (ty1,ty2,_,_)
       algorithm
-        cr := ComponentReference.makeCrefIdent("#DUMMY#",DAE.T_UNKNOWN_DEFAULT,{});
+        cr := ComponentReferenceBasics.makeCrefIdent("#DUMMY#",DAE.T_UNKNOWN_DEFAULT,{});
         crefExp := Expression.crefExp(cr);
         (_,_) := Types.matchType(crefExp,ty1,ty2,true);
       then NONE();
@@ -651,8 +651,8 @@ algorithm
     case (ty1,ty2,_,_)
       algorithm
         s := Dump.printExpStr(lhs);
-        s1 := Types.unparseType(ty1);
-        s2 := Types.unparseType(ty2);
+        s1 := TypesDump.unparseType(ty1);
+        s2 := TypesDump.unparseType(ty2);
         Error.addSourceMessage(Error.META_TYPE_MISMATCH_PATTERN, {s,s1,s2}, info);
       then fail();
   end matchcontinue;
@@ -727,8 +727,8 @@ algorithm
 
     case DAE.PAT_CONS(head,tail) then patternStr(head) + "::" + patternStr(tail);
 
-    case DAE.PAT_CONSTANT(exp=exp) then ExpressionDump.printExpStr(exp);
-    // case DAE.PAT_CONSTANT(SOME(et),exp) then "(" + Types.unparseType(et) + ")" + ExpressionDump.printExpStr(exp);
+    case DAE.PAT_CONSTANT(exp=exp) then ExpressionBasics.printExpStr(exp);
+    // case DAE.PAT_CONSTANT(SOME(et),exp) then "(" + TypesDump.unparseType(et) + ")" + ExpressionBasics.printExpStr(exp);
     case DAE.PAT_AS(id=id,pat=pat) then id + " as " + patternStr(pat);
     case DAE.PAT_AS_FUNC_PTR(id, pat) then id + " as " + patternStr(pat);
     else
@@ -821,7 +821,7 @@ protected function checkConstantMatchInputs
 algorithm
   for i in inputs loop
     if Expression.isConstValue(i) then
-      Error.addSourceMessage(Error.META_MATCH_CONSTANT, {ExpressionDump.printExpStr(i)}, info);
+      Error.addSourceMessage(Error.META_MATCH_CONSTANT, {ExpressionBasics.printExpStr(i)}, info);
     end if;
   end for;
 end checkConstantMatchInputs;
@@ -860,7 +860,7 @@ algorithm
         (optPatternMatrix,numNonEmptyColumns) := removeWildPatternColumnsFromMatrix(patternMatrix,{},0);
         tpl := findPatternToConvertToSwitch(optPatternMatrix,1,numNonEmptyColumns,info);
         (_,ty,_) := tpl;
-        str := Types.unparseType(ty);
+        str := TypesDump.unparseType(ty);
         Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.MATCH_TO_SWITCH_OPTIMIZATION, {str}, info);
         outType := DAE.MATCH(SOME(tpl));
         outCases := optimizeSwitchedMatchCases(outType, cases);
@@ -1295,7 +1295,7 @@ algorithm
       tuple<AvlSetString.Tree,AvlSetString.Tree,SourceInfo> extra;
     case (DAE.CREF(componentRef=cr,ty=ty),extra as (localsTree,useTree,info))
       algorithm
-        name := ComponentReference.crefFirstIdent(cr);
+        name := ComponentReferenceBasics.crefFirstIdent(cr);
         if AvlSetString.hasKey(localsTree,name) and not AvlSetString.hasKey(useTree,name) then
           Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_UNUSED_ASSIGNMENT,{name},info);
           outExp := DAE.CREF(DAE.WILD(),ty);
@@ -1984,7 +1984,7 @@ algorithm
 
     // Constant patterns...
     case (DAE.PAT_CONSTANT(exp=e1),DAE.PAT_CONSTANT(exp=e2))
-      then not Expression.expEqual(e1, e2);
+      then not ExpressionBasics.expEqual(e1, e2);
     case (DAE.PAT_CONSTANT(),_) then true;
     case (_,DAE.PAT_CONSTANT()) then true;
 
@@ -2209,7 +2209,7 @@ algorithm
     case (cache,env,SOME(exp),_,_,_,info)
       algorithm
         (_,_,prop) := Static.elabExp(cache,env,exp,impl,performVectorization,pre,info);
-        str := Types.unparseType(Types.getPropType(prop));
+        str := TypesDump.unparseType(Types.getPropType(prop));
         Error.addSourceMessage(Error.GUARD_EXPRESSION_TYPE_MISMATCH, {str}, info);
       then fail();
 
@@ -2248,13 +2248,13 @@ algorithm
     case (_,b,elabCr2 as DAE.CREF(),_)
       algorithm
         (DAE.STMT_ASSIGN(exp1=elabCr1,exp=e,source=DAE.SOURCE(info=i)),b) := List.splitLast(b);
-        true := Expression.expEqual(elabCr1,elabCr2);
+        true := ExpressionBasics.expEqual(elabCr1,elabCr2);
         (b,e,i) := elabResultExp2(false,b,e,i);
       then (b,e,i);
     case (_,b,DAE.TUPLE(elabCrs2),_)
       algorithm
         (DAE.STMT_TUPLE_ASSIGN(expExpLst=elabCrs1,exp=e,source=DAE.SOURCE(info=i)),b) := List.splitLast(b);
-        true := List.isEqualOnTrue(elabCrs1, elabCrs2, Expression.expEqual);
+        true := List.isEqualOnTrue(elabCrs1, elabCrs2, ExpressionBasics.expEqual);
         (b,e,i) := elabResultExp2(false,b,e,i);
       then (b,e,i);
     else (body,elabExp,info);
@@ -2304,7 +2304,7 @@ algorithm
     else
       algorithm
         tys := List.unionOnTrue(itys, {}, Types.equivtypes);
-        str := stringAppendList(List.map1r(List.map(tys, Types.unparseType), stringAppend, "\n  "));
+        str := stringAppendList(List.map1r(List.map(tys, TypesDump.unparseType), stringAppend, "\n  "));
         Error.addSourceMessage(Error.META_MATCHEXP_RESULT_TYPES, {str}, info);
       then fail();
 
@@ -2805,7 +2805,7 @@ algorithm
       algorithm
          path := AbsynUtil.stripLast(name);
          ty := DAE.T_METARECORD(name,path,typeVars,index,fields,knownSingleton);
-         env := FGraph.mkComponentNode(env, DAE.TYPES_VAR(id,attr,ty,DAE.UNBOUND(),false,NONE()), SCode.COMPONENT(id,SCode.defaultPrefixes,SCode.defaultVarAttr,Absyn.TPATH(name,NONE()),SCode.NOMOD(),SCode.noComment,NONE(),AbsynUtil.dummyInfo), DAE.NOMOD(), FCore.VAR_DAE(), FGraph.empty());
+         env := FGraph.mkComponentNode(env, DAE.TYPES_VAR(id,attr,ty,DAE.UNBOUND(),false,NONE()), SCode.COMPONENT(id,SCode.defaultPrefixes,SCode.defaultVarAttr,Absyn.TPATH(name,NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo), DAE.NOMOD(), FCore.VAR_DAE(), FGraph.empty());
       then env;
     else env;
   end match;

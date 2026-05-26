@@ -48,7 +48,7 @@ keyEqual   - A comparison function between two keys, returns true if equal.
 public import BaseHashTable;
 public import DAE;
 protected import ComponentReference;
-protected import ExpressionDump;
+protected import ExpressionBasics;
 
 public type Key = DAE.ComponentRef;
 public type Value = DAE.Exp;
@@ -98,7 +98,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReference.hashComponentRef,ComponentReference.crefEqual,ComponentReference.printComponentRefStr,ExpressionDump.printExpStr));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReference.hashComponentRef,ComponentReferenceBasics.crefEqual,ComponentReferenceBasics.printComponentRefStr,ExpressionBasics.printExpStr));
 end emptyHashTableSized;
 
 annotation(__OpenModelica_Interface="frontend");

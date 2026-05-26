@@ -84,7 +84,7 @@ public function analyse
   output SCode.Program outProgram;
   output Env outEnv;
 algorithm
-  analyseClass(inClassName, inEnv, AbsynUtil.dummyInfo);
+  analyseClass(inClassName, inEnv, Absyn.dummyInfo);
   analyseClassExtends(inEnv);
   (outEnv, outProgram) :=
     collectUsedProgram(inEnv, inProgram, inClassName);
@@ -501,7 +501,7 @@ algorithm
 
     case (NFSCodeEnv.FRAME(name = SOME(name)), _)
       algorithm
-        analyseClass(Absyn.IDENT(name), inEnv, AbsynUtil.dummyInfo);
+        analyseClass(Absyn.IDENT(name), inEnv, Absyn.dummyInfo);
       then
         ();
   end match;

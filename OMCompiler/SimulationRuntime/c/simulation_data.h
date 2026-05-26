@@ -53,11 +53,7 @@
 #define OMC_LINEARIZE_DUMP_LANGUAGE_JULIA 2
 #define OMC_LINEARIZE_DUMP_LANGUAGE_PYTHON 3
 
-#if defined(_MSC_VER)
 #define set_struct(TYPE, x, info) { const TYPE tmp = info; x = tmp; }
-#else
-#define set_struct(TYPE, x, info) x = (TYPE)info
-#endif
 
 /* Forward declarations */
 typedef struct DATA DATA;

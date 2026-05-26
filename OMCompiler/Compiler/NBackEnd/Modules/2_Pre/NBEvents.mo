@@ -640,6 +640,9 @@ public
           Statement new_stmt;
           list<Statement> new_stmts;
 
+        // don't do anything for asserts, they don't cause events
+        case Statement.ASSERT() then stmt;
+
         case Statement.FOR(range = SOME(range)) algorithm
           new_stmts := {};
           name := ComponentRef.fromNode(stmt.iterator, Type.INTEGER());

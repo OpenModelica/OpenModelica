@@ -41,6 +41,7 @@
 #include "options.h"
 #include "../util/omc_error.h"
 #include "../util/omc_file.h"
+#include "../util/omc_strdup.h"
 #include "../meta/meta_modelica.h"
 #include "../util/modelica_string.h"
 #include "solver/model_help.h"
@@ -100,7 +101,7 @@ static inline const char* findHashStringString(hash_string_string *ht, const cha
     HASH_ITER(hh, ht, c, tmp) {
       fprintf(stderr, "HashMap contained: %s->%s\n", c->id, c->val);
     }
-    throwStreamPrint(NULL, "Failed to lookup %s in hashmap %p", key, ht);
+    throwStreamPrint(NULL, "Failed to lookup %s in hashmap %p", key, (void*)ht);
   }
   return res;
 }
@@ -108,8 +109,8 @@ static inline const char* findHashStringString(hash_string_string *ht, const cha
 static inline void addHashStringString(hash_string_string **ht, const char *key, const char *val)
 {
   hash_string_string *v = (hash_string_string*) calloc(1, sizeof(hash_string_string)); /* FIXME this isn't always freed correctly */
-  v->id=strdup(key);
-  v->val=strdup(val);
+  v->id=omc_strdup(key);
+  v->val=omc_strdup(val);
   HASH_ADD_KEYPTR( hh, *ht, v->id, strlen(v->id), v );
 }
 
@@ -135,7 +136,7 @@ static inline void addHashStringLong(hash_string_long **ht, const char *key, lon
     v2->val = val;
   } else {
     hash_string_long *v = (hash_string_long*) calloc(1, sizeof(hash_string_long));
-    v->id=strdup(key);
+    v->id=omc_strdup(key);
     v->val=val;
     HASH_ADD_KEYPTR( hh, *ht, v->id, strlen(v->id), v );
   }
@@ -150,7 +151,7 @@ static inline omc_ModelVariable** findHashLongVar(hash_long_var *ht, long key)
     HASH_ITER(hh, ht, c, tmp) {
       fprintf(stderr, "HashMap contained: %ld->*map*\n", c->id);
     }
-    throwStreamPrint(NULL, "Failed to lookup %ld in hashmap %p", key, ht);
+    throwStreamPrint(NULL, "Failed to lookup %ld in hashmap %p", key, (void*)ht);
   }
   return &res->val;
 }
@@ -394,12 +395,12 @@ static void XMLCALL endElement(void *userData, const char *name)
  */
 static void read_var_info(omc_ModelVariable *var, VAR_INFO *info)
 {
-  info->name = strdup(findHashStringString(var,"name"));
+  info->name = omc_strdup(findHashStringString(var,"name"));
   info->inputIndex = read_value_long(findHashStringStringNull(var,"inputIndex"), -1);
   info->id = read_value_int(findHashStringString(var,"valueReference"), -1);
   assertStreamPrint(NULL, info->id != -1, "read_var_info: Missing valueReference!");
-  info->comment = strdup(findHashStringStringEmpty(var,"description"));
-  info->info.filename = strdup(findHashStringString(var,"fileName"));
+  info->comment = omc_strdup(findHashStringStringEmpty(var,"description"));
+  info->info.filename = omc_strdup(findHashStringString(var,"fileName"));
   info->info.lineStart = read_value_long(findHashStringString(var,"startLine"), 0);
   info->info.colStart = read_value_long(findHashStringString(var,"startColumn"), 0);
   info->info.lineEnd = read_value_long(findHashStringString(var,"endLine"), 0);
@@ -488,7 +489,7 @@ size_t read_str(const char* str,  real_array* array, size_t num_elements) {
   const char* delimeter = " ";
   size_t count = 0;
 
-  char* copy = strdup(str);
+  char* copy = omc_strdup(str);
   assertStreamPrint(NULL, copy != NULL, "Out of memory!");
   char* rest = copy;
 
@@ -779,7 +780,7 @@ char* getXMLfileName(const char* modelFilePrefix, threadData_t* threadData) {
   char *filename;
 
   if (omc_flag[FLAG_F]) { // Read the filename from the command line
-    filename = strdup(omc_flagValue[FLAG_F]);
+    filename = omc_strdup(omc_flagValue[FLAG_F]);
     if(filename == NULL) {
       throwStreamPrint(threadData, "simulation_input_xml.c: Out of memory");
     }
@@ -999,7 +1000,7 @@ void read_alias_var(DATA_ALIAS* alias,
   {
     read_var_info(*findHashLongVar(aliasHashMap, i), &alias[i].info);
 
-    aliasTmp = strdup(findHashStringStringNull(*findHashLongVar(aliasHashMap, i),"alias"));
+    aliasTmp = omc_strdup(findHashStringStringNull(*findHashLongVar(aliasHashMap, i),"alias"));
     if (0 == strcmp(aliasTmp, "negatedAlias")) {
       alias[i].negate = 1;
     } else {
@@ -1012,7 +1013,7 @@ void read_alias_var(DATA_ALIAS* alias,
     free((char*)aliasTmp);
     aliasTmp = NULL;
 
-    aliasTmp = strdup(findHashStringStringNull(*findHashLongVar(aliasHashMap, i),"aliasVariable"));
+    aliasTmp = omc_strdup(findHashStringStringNull(*findHashLongVar(aliasHashMap, i),"aliasVariable"));
 
     it = findHashStringLongPtr(mapAlias, aliasTmp);
     itParam = findHashStringLongPtr(mapAliasParam, aliasTmp);
@@ -1241,7 +1242,7 @@ static inline modelica_string read_value_string(const char *s)
 {
   char* buffer;
   modelica_string* str;
-  buffer = strdup(s); /* memory is allocated here, must be freed by the caller */
+  buffer = omc_strdup(s); /* memory is allocated here, must be freed by the caller */
   str = mmc_mk_scon_persist(buffer);
   free(buffer);
   return str;
@@ -1335,7 +1336,7 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
   }
 
   if(override != NULL) {
-    overrideStr1 = strdup(override);
+    overrideStr1 = omc_strdup(override);
   }
 
   if(overrideFile != NULL) {

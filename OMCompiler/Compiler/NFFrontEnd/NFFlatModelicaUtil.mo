@@ -37,7 +37,7 @@ encapsulated package NFFlatModelicaUtil
   import Absyn;
   import AbsynUtil;
   import DAE;
-  import DAEDump;
+  import DAEDumpTypes;
   import Dump;
   import ElementSource;
   import IOStream;
@@ -146,7 +146,7 @@ encapsulated package NFFlatModelicaUtil
         algorithm
           mod := match elementType
             case ElementType.ROOT_CLASS then filterRootClassAnnotations(mod);
-            else DAEDump.filterStructuralMods(mod);
+            else DAEDumpTypes.filterStructuralMods(mod);
           end match;
 
           if not SCodeUtil.isEmptyMod(mod) then

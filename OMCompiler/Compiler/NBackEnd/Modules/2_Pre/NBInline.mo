@@ -199,11 +199,11 @@ public
           Call call;
 
         // CREF = {... for i in []} array constructor equation
-        case Equation.ARRAY_EQUATION(lhs = lhs as Expression.CREF(), rhs = rhs as Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR())) algorithm
+        case Equation.ARRAY_EQUATION(lhs = lhs as Expression.CREF(), rhs=Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR())) algorithm
         then (inlineArrayConstructor(eqn, lhs.cref, call.exp, call.iters, eqn.attr, iter, variables, new_eqns, set, index), true);
 
         // {... for i in []} = CREF array constructor equation
-        case Equation.ARRAY_EQUATION(lhs = lhs as Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()), rhs = rhs as Expression.CREF()) algorithm
+        case Equation.ARRAY_EQUATION(lhs=Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()), rhs = rhs as Expression.CREF()) algorithm
         then (inlineArrayConstructor(eqn, rhs.cref, call.exp, call.iters, eqn.attr, iter, variables, new_eqns, set, index), true);
 
         // apply on for-equation. assumed to be split up
@@ -233,16 +233,24 @@ protected
     VariablePointers variables = VarData.getVariables(varData);
     Absyn.Path key;
     Function value;
+    // this map should probably be saved somewhere so its not done again for the initial system
+    UnorderedMap<Function, InlineRating> func_map = UnorderedMap.new<InlineRating>(Function.nameHash, Function.nameEqual);
   algorithm
     // collect functions
     replacements := UnorderedMap.new<Function>(AbsynUtil.pathHash, AbsynUtil.pathEqual);
     for tpl in UnorderedMap.toList(funcMap) loop
       (key, value) := tpl;
       // only add to the map if the function has one of the inline types and is inlineable
-      if List.contains(inline_types, Function.inlineBuiltin(value), DAEUtil.inlineTypeEqual) and functionInlineable(value) then
+      // if its inline type = default check if its reasonable to inline
+      if checkInline(value, inline_types, func_map) then
         UnorderedMap.add(key, value, replacements);
       end if;
     end for;
+
+    if Flags.isSet(Flags.DUMPBACKENDINLINE_VERBOSE) and List.contains(inline_types, DAE.InlineType.DEFAULT_INLINE(), DAEUtil.inlineTypeEqual) and not init then
+      print(StringUtil.headline_2("Heuristic results for Inline=default functions. Threshold = " + intString(HEURISTIC_THRESHOLD)));
+      print(UnorderedMap.toString(func_map, function Function.signatureString(printTypes = false), InlineRating.toString) + "\n\n");
+    end if;
 
     // apply replacements
     eqData  := Replacements.replaceFunctions(eqData, variables, replacements);
@@ -339,11 +347,11 @@ public
         then inlineArrayEquation(eqn, lhs.elements, listArray(elements), eqn.attr, iter, variables, new_eqns, set, index);
 
         // CREF = {... for i in []} array constructor equation
-        case Equation.ARRAY_EQUATION(lhs = lhs as Expression.CREF(), rhs = rhs as Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()))
+        case Equation.ARRAY_EQUATION(lhs = lhs as Expression.CREF(), rhs=Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()))
         then inlineArrayConstructor(eqn, lhs.cref, call.exp, call.iters, eqn.attr, iter, variables, new_eqns, set, index);
 
         // {... for i in []} = CREF array constructor equation
-        case Equation.ARRAY_EQUATION(lhs = lhs as Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()), rhs = rhs as Expression.CREF())
+        case Equation.ARRAY_EQUATION(lhs=Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()), rhs = rhs as Expression.CREF())
         then inlineArrayConstructor(eqn, rhs.cref, call.exp, call.iters, eqn.attr, iter, variables, new_eqns, set, index);
 
         // CREF = cat()
@@ -951,6 +959,244 @@ protected
       else {};
     end match;
   end getElementList;
+
+  function checkInline
+    "checks if the function should be inlined. three properties are checked:
+    A. is the inline type in the list of current stages?
+    B. is it inlineable?
+    C. if its default inline type: heuristic to check if its reasonable to do so
+    Inline if (A and B and C). ordered for cheapest checks first"
+    input Function func;
+    input list<DAE.InlineType> inline_types;
+    input UnorderedMap<Function, InlineRating> func_map;
+    output Boolean b;
+  protected
+    DAE.InlineType it = Function.inlineBuiltin(func);
+  algorithm
+    // A and B
+    b := List.contains(inline_types, it, DAEUtil.inlineTypeEqual) and functionInlineable(func);
+    // C: heuristic check for default
+    if b and DAEUtil.inlineTypeEqual(it, DAE.InlineType.DEFAULT_INLINE()) then
+      b := defaultHeuristic(func, func_map);
+    end if;
+  end checkInline;
+
+  constant Integer HEURISTIC_THRESHOLD = 10;
+
+  function defaultHeuristic
+    "heuristically determines if a function should be inlined.
+    only apply to functions with inline type default."
+    input Function fn;
+    input UnorderedMap<Function, InlineRating> func_map;
+    output Boolean b;
+  algorithm
+    b := InlineRating.resolve(InlineRating.fromFunction(fn, func_map)) < HEURISTIC_THRESHOLD;
+  end defaultHeuristic;
+
+  uniontype InlineRating
+    "used to rate a function by how much it grows when inlining.
+    collects data about how often the inputs will occur and how much constant bloating inlining would cause."
+    record INLINE_RATING
+      "factors for each input with an additional constant overhead."
+      array<Integer> input_rating;
+      Integer constant_rating;
+    end INLINE_RATING;
+
+    function toString
+      input InlineRating ir;
+      output String str;
+    algorithm
+      str := "{resolved: " + realString(resolve(ir)) + " | input: " + Array.toString(ir.input_rating, intString) + " | constant: " + intString(ir.constant_rating) + "}";
+    end toString;
+
+    function resolve
+      "resolve the rating to a final single rational number"
+      input InlineRating ir;
+      output Real r = sum(v for v in ir.input_rating)/arrayLength(ir.input_rating) + intReal(ir.constant_rating);
+    end resolve;
+
+    function add
+      "adds the rating of src to dst"
+      input output InlineRating dst;
+      input InlineRating src;
+    algorithm
+      if arrayLength(dst.input_rating) == arrayLength(src.input_rating) then
+        for i in 1:arrayLength(dst.input_rating) loop
+          dst.input_rating[i] := dst.input_rating[i] + src.input_rating[i];
+        end for;
+        dst.constant_rating := dst.constant_rating + src.constant_rating;
+      else
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed because dst and src input arrays are of different length.\n"
+          + "dst: " + toString(dst) + "\nsrc: " + toString(src)});
+        fail();
+      end if;
+    end add;
+
+    function multiply
+      input output InlineRating ir;
+      input Integer i;
+    algorithm
+      for i in 1:arrayLength(ir.input_rating) loop
+        ir.input_rating[i] := i * ir.input_rating[i];
+      end for;
+      ir.constant_rating := i * ir.constant_rating;
+    end multiply;
+
+    function addConst
+      "bumps the constant cost"
+      input output InlineRating ir;
+    algorithm
+      ir.constant_rating := ir.constant_rating + 1;
+    end addConst;
+
+    function addMapped
+      "adds the rating of src to dst mapping the interfaces correctly."
+      input output InlineRating dst;
+      input InlineRating src;
+      input array<Expression> args;
+      input UnorderedMap<ComponentRef, InlineRating> local_map;
+    protected
+      Pointer<InlineRating> irp = Pointer.create(InlineRating.INLINE_RATING(arrayCreate(arrayLength(dst.input_rating), 0), src.constant_rating));
+    algorithm
+      if arrayLength(src.input_rating) == arrayLength(args) then
+        for i in 1:arrayLength(src.input_rating) loop
+          if src.input_rating[i] <> 0 then
+            Expression.map(args[i], function addMappedExp(i = src.input_rating[i], irp = irp, local_map = local_map));
+          end if;
+        end for;
+        dst := add(dst, Pointer.access(irp));
+      else
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed because src input array and arguments are of different length.\n"
+          + "src: " + toString(src) + "\nargs: " + Array.toString(args, Expression.toString)});
+        fail();
+      end if;
+    end addMapped;
+
+    function addMappedExp
+      "checks if a cref has a rating already and multiplies it by the local bloating"
+      input output Expression exp;
+      input Integer i;
+      input Pointer<InlineRating> irp;
+      input UnorderedMap<ComponentRef, InlineRating> local_map;
+    algorithm
+      _ := match exp
+        local
+          Option<InlineRating> iro;
+        case Expression.CREF() algorithm
+          iro := UnorderedMap.get(exp.cref, local_map);
+          if Util.isSome(iro) then
+            Pointer.update(irp, add(Pointer.access(irp), multiply(Util.getOption(iro), i)));
+          end if;
+        then ();
+        else ();
+      end match;
+    end addMappedExp;
+
+    function fromFunction
+      "rates a function by analyzing the body and the local variables.
+      also adds the rating to a map so each function is only rated once."
+      input Function fn;
+      input UnorderedMap<Function, InlineRating> func_map;
+      output InlineRating ir;
+    protected
+      Pointer<InlineRating> irp;
+      InlineRating lir;
+      Integer idx=1, num_inp = listLength(fn.inputs);
+      InlineRating tmp;
+      UnorderedMap<ComponentRef, InlineRating> local_map = UnorderedMap.new<InlineRating>(ComponentRef.hash, ComponentRef.isEqual);
+    algorithm
+      // add the trivial input mappings as ratings
+      for inp in fn.inputs loop
+        tmp := InlineRating.INLINE_RATING(arrayCreate(num_inp, 0), 0);
+        tmp.input_rating[idx] := 1;
+        idx := idx + 1;
+        UnorderedMap.add(ComponentRef.fromNode(inp, InstNode.getType(inp)), tmp, local_map);
+      end for;
+
+      // add the local variable ratings
+      for loc in fn.locals loop
+        irp := Pointer.create(InlineRating.INLINE_RATING(arrayCreate(num_inp, 0), 0));
+        lir := match InstNode.getBindingExpOpt(loc)
+          local
+            Expression bind;
+          case SOME(bind) algorithm
+            Expression.fakeMap(bind, function rateExpression(func_map = func_map, local_map = local_map, irp = irp));
+          then Pointer.access(irp);
+          else Pointer.access(irp);
+        end match;
+        UnorderedMap.add(ComponentRef.fromNode(loc, InstNode.getType(loc)), lir, local_map);
+      end for;
+
+      // apply rating mapping to body
+      irp := Pointer.create(InlineRating.INLINE_RATING(arrayCreate(num_inp, 0), 0));
+
+      Expression.fakeMap(Function.getSingleBodyExp(fn), function rateExpression(func_map = func_map, local_map = local_map, irp = irp));
+      ir := Pointer.access(irp);
+
+      // also add rating to the map so it will not be rated again
+      UnorderedMap.add(fn, ir, func_map);
+    end fromFunction;
+
+    function rateExpression
+      "rates an expression and updates the rating pointer.
+      functions are rated with the function map, component references with the local map.
+      Furthermore, constants are counted."
+      input output Expression exp;
+      input UnorderedMap<Function, InlineRating> func_map;
+      input UnorderedMap<ComponentRef, InlineRating> local_map;
+      input Pointer<InlineRating> irp;
+    protected
+      Boolean cont;
+    algorithm
+      if Expression.isLiteral(exp) then
+        // just count literals as constants
+        Pointer.update(irp, addConst(Pointer.access(irp)));
+      else
+        cont := match exp
+          local
+            Function fn;
+            Option<InlineRating> lir;
+
+          // check if the call already has a rating. if not only rate inline type default functions
+          // no-inline has no bloating (traverse the args so just put NONE())
+          // if inlined assumed to not scale as well (traverse the args so just put NONE())
+          case Expression.CALL() guard(functionInlineable(Call.typedFunction(exp.call))) algorithm
+            fn  := Call.typedFunction(exp.call);
+            lir := UnorderedMap.get(fn, func_map);
+            if Util.isSome(lir) then
+              // add the found rating to the overall rating
+              Pointer.update(irp, addMapped(Pointer.access(irp), Util.getOption(lir), listArray(Call.arguments(exp.call)), local_map));
+              cont := false;
+            elseif DAEUtil.inlineTypeEqual(Function.inlineBuiltin(fn), DAE.InlineType.DEFAULT_INLINE()) then
+              // determine rating and add it to the overall rating
+              Pointer.update(irp, addMapped(Pointer.access(irp), fromFunction(fn, func_map), listArray(Call.arguments(exp.call)), local_map));
+              cont := false;
+            else
+              cont := true;
+            end if;
+          then cont;
+
+          // check if the cref has a rating, otherwise count as constant
+          case Expression.CREF() then match UnorderedMap.get(ComponentRef.stripSubscriptsAll(exp.cref), local_map)
+            case lir as SOME(_) algorithm
+              Pointer.update(irp, add(Pointer.access(irp), Util.getOption(lir)));
+            then false;
+            else algorithm
+              Pointer.update(irp, addConst(Pointer.access(irp)));
+            then false;
+          end match;
+
+          // no relevant case, traverse deeper later
+          else true;
+        end match;
+
+        if cont then
+          // traverse deeper if no rating was found here
+          exp := Expression.mapShallow(exp, function rateExpression(func_map = func_map, local_map = local_map, irp = irp));
+        end if;
+      end if;
+    end rateExpression;
+  end InlineRating;
 
   annotation(__OpenModelica_Interface="backend");
 end NBInline;

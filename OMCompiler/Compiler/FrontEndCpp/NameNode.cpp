@@ -71,4 +71,3 @@ MetaModelica::Value NameNode::toNF() const
     MetaModelica::Value{_name}
   }};
 }
-

@@ -9,6 +9,9 @@ if(NOT BUILD_SHARED_LIBS)
 endif(NOT BUILD_SHARED_LIBS)
 
 target_link_libraries (${RTEulerName} ${SolverName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES})
+
+if(MSVC)
 install(FILES $<TARGET_PDB_FILE:${RTEulerName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+endif()
 
 install(TARGETS ${RTEulerName} DESTINATION ${LIBINSTALLEXT})

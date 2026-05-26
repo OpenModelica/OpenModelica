@@ -175,7 +175,7 @@ algorithm
       GlobalScript.Statements stmts;
       Absyn.Program prog, prog2, ast;
       String result;
-      list<GlobalScript.Variable> vars;
+      list<InteractiveTypes.Variable> vars;
       SymbolTable table;
 
     // Interactively evaluate an algorithm statement or expression.

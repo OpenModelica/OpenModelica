@@ -60,7 +60,7 @@ import DumpGraphML;
 import Error;
 import ExecStat.execStat;
 import Expression;
-import ExpressionDump;
+import ExpressionBasics;
 import ExpressionSimplify;
 import ExpressionSolve;
 import Flags;
@@ -72,6 +72,7 @@ import MetaModelica.Dangerous;
 import Mutable;
 import Util;
 import Sorting;
+import System;
 import ElementSource;
 
 // =============================================================================
@@ -502,7 +503,7 @@ protected
   BackendDAE.AdjacencyMatrixTEnhanced meT;
   array<list<Integer>> mapEqnIncRow;
   array<Integer> mapIncRowEqn;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   list<Integer> asslst1, asslst2;
   list<Integer> tSel_always, tSel_prefer, tSel_avoid, tSel_never;
   String DAEtypeStr;
@@ -4252,7 +4253,7 @@ protected function recursiveTearingMain
 protected
   list<BackendDAE.EqSystem> systlst_new = {};
   BackendDAE.Shared shared;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   BackendDAE.Variables vars, globalKnownVars;
   BackendDAE.StrongComponents comps;
   BackendDAE.EquationArray eqns;
@@ -4354,7 +4355,7 @@ algorithm
           lhs := BackendEquation.getEquationLHS(eqn);
           (cr,isDer) := Expression.expOrDerCref(lhs);
 
-          //print("*****" + ExpressionDump.printExpStr(lhs) + "= " +  ExpressionDump.printExpStr(rhs) + "*******\n");
+          //print("*****" + ExpressionBasics.printExpStr(lhs) + "= " +  ExpressionBasics.printExpStr(rhs) + "*******\n");
           for j in (i+1):n loop
             if listMember(arrayGet(indx_var,i) , arrayGet(mm, arrayGet(indx_eq,j))) then
               SOME(eqn1) := arrayGet(optarr, j);
@@ -4422,7 +4423,7 @@ algorithm
         if Flags.isSet(Flags.DUMP_RTEARING) then
           print("****************\n");
           for i in 1:m loop
-            print("TearVar: " + ExpressionDump.printExpStr(arrayGet(tear_exp, i)) +  "[" + intString(i-1) + "]\n");
+            print("TearVar: " + ExpressionBasics.printExpStr(arrayGet(tear_exp, i)) +  "[" + intString(i-1) + "]\n");
           end for;
           print("****************\n");
         end if;

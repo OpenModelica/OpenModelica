@@ -451,7 +451,7 @@ match dim
 end dumpDimension;
 
 template dumpClassState(ClassInf.State state)
-::= AbsynDumpTpl.dumpPath(ClassInf.getStateName(state))
+::= AbsynDumpTpl.dumpPath(ClassInfUtil.getStateName(state))
 end dumpClassState;
 
 template dumpMatchType(DAE.MatchType ty)
@@ -674,5 +674,5 @@ template dumpConstraints(list<DAE.Constraint> cons)
   ;separator=", ")
 end dumpConstraints;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_dump");
 end ExpressionDumpTpl;

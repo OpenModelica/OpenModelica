@@ -49,6 +49,7 @@ extern "C" {
 #include <stdio.h>
 #include "settingsimpl.h"
 #include "systemimpl.h"
+#include "util/omc_strdup.h"
 
 char* corbaObjectReferenceFilePath = 0;
 char* corbaSessionName = 0;
@@ -81,7 +82,7 @@ void CorbaImpl__setObjectReferenceFilePath(const char *path)
   if (corbaObjectReferenceFilePath) free(corbaObjectReferenceFilePath);
 
   if (*path) {
-    corbaObjectReferenceFilePath = strdup(path);
+    corbaObjectReferenceFilePath = omc_strdup(path);
   } else {
     corbaObjectReferenceFilePath = NULL;
   }
@@ -93,7 +94,7 @@ void CorbaImpl__setSessionName(const char *name)
   if (corbaSessionName) free(corbaSessionName);
 
   if (*name) {
-    corbaSessionName = strdup(name);
+    corbaSessionName = omc_strdup(name);
   } else {
     corbaSessionName = NULL;
   }
@@ -104,7 +105,7 @@ char** construct_dummy_args(int argc, const char* argv[])
   char** args = new char*[argc];
 
   for(int i = 0; i < argc; ++i) {
-    args[i] = strdup(argv[i]);
+    args[i] = omc_strdup(argv[i]);
   }
 
   return args;

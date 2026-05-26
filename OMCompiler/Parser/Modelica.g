@@ -121,7 +121,7 @@ goto rule ## func ## Ex; }}
   #define MMC_STRUCTHDR(x,y) 0
 #endif
 
-  #define NYI(void) fprintf(stderr, "NYI \%s \%s:\%d\n", __FUNCTION__, __FILE__, __LINE__); exit(1);
+  #define NYI(void) fprintf(stderr, "NYI \%s \%s:\%d\n", __func__, __FILE__, __LINE__); exit(1);
 
   #define PARSER_INFO(start) ((void*) SourceInfo__SOURCEINFO(ModelicaParser_filename_OMC, mmc_mk_bcon(ModelicaParser_readonly), mmc_mk_icon(start->line), mmc_mk_icon(start->line == 1 ? start->charPosition+2 : start->charPosition+1), mmc_mk_icon(LT(1)->line), mmc_mk_icon(LT(1)->charPosition+1), ModelicaParser_timeStamp))
   #if !defined(OMC_GENERATE_RELOCATABLE_CODE) || defined(OMC_BOOTSTRAPPING)

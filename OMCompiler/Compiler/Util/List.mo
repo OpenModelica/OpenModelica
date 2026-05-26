@@ -4408,7 +4408,7 @@ public function deleteMemberOnTrue<T, VT>
   occurence of the value in the list for which the function returns true. It
   returns the new list and the deleted element, or only the original list if
   no element was removed.
-    Example: deleteMemberOnTrue({1,2,3,2},2,intEq) => {1,3,2}"
+    Example: deleteMemberOnTrue(2,{1,2,3,2},intEq) => ({1,3,2}, SOME(2))"
   input VT inValue;
   input list<T> inList;
   input CompareFunc inCompareFunc;
@@ -5251,18 +5251,19 @@ end allCombinations3;
 protected function allCombinations4<T>
   input T x;
   input list<list<T>> ilst;
-  input list<list<T>> acc;
+  input list<list<T>> iacc;
   output list<list<T>> out;
+protected
+  list<list<T>> acc = iacc;
 algorithm
-  out := match ilst
-    local
-      list<T> l;
-      list<list<T>> lst;
-    case {} then {x}::acc;
-    case {l} then (x::l)::acc;
-    case l::lst
-      then allCombinations4(x, lst, (x::l)::acc);
-  end match;
+  if listEmpty(ilst) then
+    out := {x} :: acc;
+    return;
+  end if;
+  for l in ilst loop
+    acc := (x::l)::acc;
+  end for;
+  out := acc;
 end allCombinations4;
 
 public function contains<T>
@@ -5344,5 +5345,5 @@ algorithm
   end while;
 end trim;
 
-annotation(__OpenModelica_Interface="util");
+annotation(__OpenModelica_Interface="util_datatypes_basic");
 end List;

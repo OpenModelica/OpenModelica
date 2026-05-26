@@ -65,6 +65,7 @@ protected import Dump;
 protected import Debug;
 protected import Error;
 protected import Expression;
+protected import ExpressionBasics;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
@@ -79,6 +80,7 @@ protected import Static;
 protected import Types;
 protected import Util;
 protected import Values;
+protected import ValuesDump;
 protected import ValuesUtil;
 protected import System;
 protected import SCodeDump;
@@ -333,7 +335,7 @@ algorithm
     case {} then ();
     case SCode.NAMEMOD(ident = ident)::subs
       algorithm
-        true := ClassInf.isBasicTypeComponentName(ident);
+        true := ClassInfUtil.isBasicTypeComponentName(ident);
         checkIfSubmodsAreBasicTypeMods(subs);
       then ();
   end match;
@@ -565,7 +567,7 @@ algorithm
     case DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,
                         binding = SOME(DAE.TYPED(modifierAsValue = SOME(v))), info = info)
       algorithm
-        //es = ExpressionDump.printExpStr(e);
+        //es = ExpressionBasics.printExpStr(e);
         subs_1 := unelabSubmods(subs);
         e_1 := Expression.unelabExp(ValuesUtil.valueExp(v));
       then
@@ -575,7 +577,7 @@ algorithm
     case ((DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,
                         binding = SOME(DAE.TYPED(modifierAsExp = dexp, info = info)))))
       algorithm
-        //es = ExpressionDump.printExpStr(e);
+        //es = ExpressionBasics.printExpStr(e);
         subs_1 = unelabSubmods(subs);
         e_1 = Expression.unelabExp(dexp);
       then
@@ -584,7 +586,7 @@ algorithm
     case DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,
                         binding = SOME(DAE.TYPED(_,_,_,absynExp)),info = info)
       algorithm
-        //es = ExpressionDump.printExpStr(e);
+        //es = ExpressionBasics.printExpStr(e);
         subs_1 := unelabSubmods(subs);
         e_1 := absynExp; //Expression.unelabExp(e);
       then
@@ -1448,7 +1450,7 @@ algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Mod.lookupIdxModification(");
         Debug.trace(printModStr(inMod));
-        Debug.traceln(", " + ExpressionDump.printExpStr(inIndex) + ") failed");
+        Debug.traceln(", " + ExpressionBasics.printExpStr(inIndex) + ") failed");
       then
         fail();
 
@@ -1549,7 +1551,7 @@ algorithm
             // though (e.g. the DoublePendulum example), and therefore relying
             // on this behaviour, so just print a warning here.
             Error.addSourceMessage(Error.MODIFIER_NON_ARRAY_TYPE_WARNING,
-              {ExpressionDump.printExpStr(exp)}, inInfo);
+              {ExpressionBasics.printExpStr(exp)}, inInfo);
             return;
           end if;
 
@@ -1562,7 +1564,7 @@ algorithm
           SOME(val) := oval;
 
           for i in inIndices loop
-            val := ValuesUtil.nthArrayelt(val, Expression.expArrayIndex(i));
+            val := ValuesUtil.nthArrayelt(val, ExpressionBasics.expArrayIndex(i));
           end for;
 
           oval := SOME(val);
@@ -1574,7 +1576,7 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Mod.indexEqmod failed for mod:\n " +
-          Types.unparseEqMod(eq) + "\n indices: " +
+          TypesDump.unparseEqMod(eq) + "\n indices: " +
           ExpressionDump.printExpListStr(inIndices));
       then
         fail();
@@ -2096,7 +2098,7 @@ algorithm
     case (NONE(), NONE(), _) then equal;
     case (SOME(v1), SOME(v2), false)
       algorithm
-        bEq := Expression.expEqual(
+        bEq := ExpressionBasics.expEqual(
                   ValuesUtil.valueExp(v1),
                   ValuesUtil.valueExp(v2));
       then
@@ -2122,7 +2124,7 @@ algorithm
     case(SOME(DAE.TYPED(modifierAsExp = exp1, modifierAsValue = v1)),
          SOME(DAE.TYPED(modifierAsExp = exp2, modifierAsValue = v2)))
       algorithm
-        equal := Expression.expEqual(exp1,exp2);
+        equal := ExpressionBasics.expEqual(exp1,exp2);
         // check the values as crefs might have been replaced!
         true := valEqual(v1, v2, equal);
       then
@@ -2223,7 +2225,7 @@ algorithm
       then prettyPrintSubs(subs,depth);
 
     case(DAE.MOD(finalPrefix = fp, binding=SOME(eq)),_)
-      then (if SCodeUtil.finalBool(fp) then "final " else "") + " = " + Types.unparseEqMod(eq);
+      then (if SCodeUtil.finalBool(fp) then "final " else "") + " = " + TypesDump.unparseEqMod(eq);
 
     case(DAE.REDECL(),_)
       then SCodeDump.unparseElementStr(m.element);
@@ -2358,16 +2360,16 @@ algorithm
 
     case SOME(DAE.TYPED(e,SOME(e_val),prop,_))
       algorithm
-        str := ExpressionDump.printExpStr(e);
+        str := ExpressionBasics.printExpStr(e);
         str2 := Types.printPropStr(prop);
-        e_val_str := ValuesUtil.valString(e_val);
+        e_val_str := ValuesDump.valString(e_val);
         res := stringAppendList({" = (typed)",str," ",str2,", value: ",e_val_str});
       then
         res;
 
     case SOME(DAE.TYPED(e,NONE(),prop,_))
       algorithm
-        str := ExpressionDump.printExpStr(e);
+        str := ExpressionBasics.printExpStr(e);
         str2 := Types.printPropStr(prop);
         res := stringAppendList({" = (typed)",str, ", type:\n", str2});
       then
@@ -2505,7 +2507,7 @@ protected
 algorithm
   DAE.REDECL(element = el) := inRedeclare;
   id := SCodeUtil.elementName(el);
-  cref := ComponentReference.makeCrefIdent(id, DAE.T_UNKNOWN_DEFAULT, {});
+  cref := ComponentReferenceBasics.makeCrefIdent(id, DAE.T_UNKNOWN_DEFAULT, {});
   cref := ComponentReference.joinCrefs(inTopCref, cref);
   outFullMod := MOD(cref, inRedeclare);
 end getFullModFromModRedeclare;
@@ -2540,7 +2542,7 @@ algorithm
       algorithm
         cref := ComponentReference.joinCrefs(
                  inTopCref,
-                 ComponentReference.makeCrefIdent(
+                 ComponentReferenceBasics.makeCrefIdent(
                    id, DAE.T_UNKNOWN_DEFAULT, {}));
         fullMods1 := getFullModsFromMod(cref, mod);
         fullMods2 := getFullModsFromSubMods(inTopCref, rest);
@@ -2564,10 +2566,10 @@ protected function fullModCrefsEqual
 algorithm
   isEqual := match(inFullMod1, inFullMod2)
     local DAE.ComponentRef cr1, cr2;
-    case (MOD(cr1, _), MOD(cr2, _)) then ComponentReference.crefEqualNoStringCompare(cr1, cr2);
-    case (SUB_MOD(cr1, _), SUB_MOD(cr2, _)) then ComponentReference.crefEqualNoStringCompare(cr1, cr2);
-    case (MOD(cr1, _), SUB_MOD(cr2, _)) then ComponentReference.crefEqualNoStringCompare(cr1, cr2);
-    case (SUB_MOD(cr1, _), MOD(cr2, _)) then ComponentReference.crefEqualNoStringCompare(cr1, cr2);
+    case (MOD(cr1, _), MOD(cr2, _)) then ComponentReferenceBasics.crefEqualNoStringCompare(cr1, cr2);
+    case (SUB_MOD(cr1, _), SUB_MOD(cr2, _)) then ComponentReferenceBasics.crefEqualNoStringCompare(cr1, cr2);
+    case (MOD(cr1, _), SUB_MOD(cr2, _)) then ComponentReferenceBasics.crefEqualNoStringCompare(cr1, cr2);
+    case (SUB_MOD(cr1, _), MOD(cr2, _)) then ComponentReferenceBasics.crefEqualNoStringCompare(cr1, cr2);
   end match;
 end fullModCrefsEqual;
 
@@ -2587,13 +2589,13 @@ algorithm
 
     case (MOD(cr, mod),        _)
       algorithm
-        str := ComponentReference.printComponentRefStr(cr) + ": " + prettyPrintMod(mod, inDepth);
+        str := ComponentReferenceBasics.printComponentRefStr(cr) + ": " + prettyPrintMod(mod, inDepth);
       then
         str;
 
     case (SUB_MOD(cr, subMod), _)
       algorithm
-        str := ComponentReference.printComponentRefStr(cr) + ": " + prettyPrintSubmod(subMod);
+        str := ComponentReferenceBasics.printComponentRefStr(cr) + ": " + prettyPrintSubmod(subMod);
       then
         str;
 
@@ -2997,7 +2999,7 @@ algorithm
 
     case DAE.MOD() then inMod.info;
     case DAE.REDECL() then SCodeUtil.elementInfo(inMod.element);
-    else AbsynUtil.dummyInfo;
+    else Absyn.dummyInfo;
   end match;
 end getModInfo;
 

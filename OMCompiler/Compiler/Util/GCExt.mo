@@ -180,5 +180,5 @@ annotation(Documentation(info="<html>
 </html>"));
 end getProfStats;
 
-annotation(__OpenModelica_Interface="util");
+annotation(__OpenModelica_Interface="util_datatypes_basic");
 end GCExt;

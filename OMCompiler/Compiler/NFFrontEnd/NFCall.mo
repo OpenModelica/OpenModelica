@@ -295,7 +295,7 @@ public
             fn_context := NFInstContext.FUNCTION;
           end if;
 
-          fnl := Function.typeRefCache(call.ref, fn_context);
+          _ := Function.typeRefCache(call.ref, fn_context);
         then
           typeArgs(call, context, info);
 
@@ -1284,11 +1284,11 @@ public
         algorithm
           iter :: iters := iters;
           outCall := makeTypedReduction(call.fn, call.ty, call.var, call.purity,
-            call.exp, {iter}, AbsynUtil.dummyInfo);
+            call.exp, {iter}, Absyn.dummyInfo);
 
           for i in iters loop
             outCall := makeTypedReduction(call.fn, call.ty, call.var, call.purity,
-              Expression.CALL(outCall), {i}, AbsynUtil.dummyInfo);
+              Expression.CALL(outCall), {i}, Absyn.dummyInfo);
           end for;
         then
           outCall;

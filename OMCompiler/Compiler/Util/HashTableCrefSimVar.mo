@@ -104,7 +104,7 @@ function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReference.hashComponentRef,ComponentReference.crefEqual,ComponentReference.printComponentRefStr,opaqueStr));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReference.hashComponentRef,ComponentReferenceBasics.crefEqual,ComponentReferenceBasics.printComponentRefStr,opaqueStr));
 end emptyHashTableSized;
 
 protected
@@ -112,7 +112,7 @@ function opaqueStr
   input SimCodeVar.SimVar var;
   output String str;
 algorithm
-  str := "#SimVar(index="+String(var.index)+",name="+ComponentReference.printComponentRefStr(var.name)+")#";
+  str := "#SimVar(index="+String(var.index)+",name="+ComponentReferenceBasics.printComponentRefStr(var.name)+")#";
 end opaqueStr;
 
 
@@ -130,13 +130,13 @@ algorithm
 
     case (sv as SimCodeVar.SIMVAR(name = cr, arrayCref = NONE()), _)
       algorithm
-        //print("addSimVarToHashTable: handling variable '" + ComponentReference.printComponentRefStr(cr) + "'\n");
+        //print("addSimVarToHashTable: handling variable '" + ComponentReferenceBasics.printComponentRefStr(cr) + "'\n");
         outHT := BaseHashTable.add((cr, sv), inHT);
       then outHT;
         // add the whole array crefs to the hashtable, too
     case (sv as SimCodeVar.SIMVAR(name = cr, arrayCref = SOME(acr)), _)
       algorithm
-        //print("addSimVarToHashTable: handling array variable '" + ComponentReference.printComponentRefStr(cr) + "'\n");
+        //print("addSimVarToHashTable: handling array variable '" + ComponentReferenceBasics.printComponentRefStr(cr) + "'\n");
         outHT := BaseHashTable.add((acr, sv), inHT);
         outHT := BaseHashTable.add((cr, sv), outHT);
       then outHT;

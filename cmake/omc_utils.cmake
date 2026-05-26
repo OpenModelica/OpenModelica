@@ -21,3 +21,13 @@ macro(omc_option var help_text value)
   option(${var} ${help_text} ${value})
   omc_add_to_report(${var})
 endmacro(omc_option)
+
+macro(omc_install_gui_client target)
+  # On macOS we want BUNDLEs (.app) to go to an 'Applications/' directory instead of a 'bin/' directory
+  if(APPLE AND OM_MACOS_APP_BUNDLE)
+    set_target_properties(${target} PROPERTIES MACOSX_BUNDLE TRUE)
+  endif ()
+  set(OM_MACOS_INSTALL_BUNDLEDIR "Applications")
+  install(TARGETS ${target} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+                            BUNDLE DESTINATION ${OM_MACOS_INSTALL_BUNDLEDIR})
+endmacro()

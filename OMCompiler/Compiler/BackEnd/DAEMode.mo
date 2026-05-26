@@ -206,7 +206,7 @@ uniontype TraverseEqnAryFold
     BackendDAE.Variables newDAEVars;
     BackendDAE.EquationArray newDAEEquations;
     BackendDAE.Variables systemVars;
-    DAE.FunctionTree functionTree;
+    AvlTreePathFunction.Tree functionTree;
     Boolean recursiveStrongComponentRun;
     BackendDAE.Shared shared;
   end TRAVERSER_CREATE_DAE;
@@ -300,7 +300,7 @@ algorithm
       DAE.Exp exp, exp2;
       BackendDAE.BackendDAEModeData globalDAEData;
       DAE.ComponentRef cref, newCref;
-      DAE.FunctionTree funcsTree;
+      AvlTreePathFunction.Tree funcsTree;
       list<DAE.ComponentRef> crlst;
       Boolean b1, b2;
       list<BackendDAE.Equation> discEqns;
@@ -548,7 +548,7 @@ function getDiscAndContEqns
   input list<BackendDAE.Equation> inAllEqns;
   input list<BackendDAE.Var> inDiscVars;
   input list<BackendDAE.Var> inContVars;
-  input DAE.FunctionTree functionTree;
+  input AvlTreePathFunction.Tree functionTree;
   input Boolean isInitial;
   output list<BackendDAE.Equation> discEqns;
   output list<BackendDAE.Equation> contEqns;

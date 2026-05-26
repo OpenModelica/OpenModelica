@@ -49,7 +49,6 @@ import CardinalityTable = NFCardinalityTable;
 import Variable = NFVariable;
 
 protected
-import ComponentReference;
 import ComponentRef = NFComponentRef;
 import Config;
 import ElementSource;
@@ -366,7 +365,7 @@ end makeEqualityAssert;
 //      DAE.ComponentRef lhs;
 //
 //    case DAE.SOURCE(connectEquationOptLst = (lhs, _) :: _)
-//      then not ComponentReference.crefPrefixOf(lhs, lhsCref);
+//      then not ComponentReferenceBasics.crefPrefixOf(lhs, lhsCref);
 //
 //    else false;
 //  end match;
@@ -709,7 +708,7 @@ algorithm
   if Flags.getConfigBool(Flags.BASE_MODELICA) then
     fn_node := Class.lookupElement("$OMC$PositiveMax",
       InstNode.getClass(InstNode.topScope(ComponentRef.node(flow_name))));
-    fn_node := Function.instFunctionNode(fn_node, NFInstContext.NO_CONTEXT, AbsynUtil.dummyInfo);
+    fn_node := Function.instFunctionNode(fn_node, NFInstContext.NO_CONTEXT, Absyn.dummyInfo);
     {fn} := Function.typeNodeCache(fn_node);
     positiveMaxCall := Expression.CALL(Call.makeTypedCall(fn,
       {flowExp, flow_threshold}, Connector.variability(element), Purity.PURE));

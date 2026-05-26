@@ -428,4 +428,3 @@ MetaModelica::Value DAEType::toNF() const
     _ty
   }};
 }
-

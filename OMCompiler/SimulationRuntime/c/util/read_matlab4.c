@@ -33,6 +33,7 @@
 #include <ctype.h>
 #include "read_matlab4.h"
 #include "omc_file.h"
+#include "omc_strdup.h"
 
 extern const char *omc_mat_Aclass;
 
@@ -43,11 +44,6 @@ typedef struct {
   uint32_t imagf;
   uint32_t namelen;
 } MHeader_t;
-
-/* Make Visual Studio not complain about deprecated items */
-#ifdef _MSC_VER
-#define strdup _strdup
-#endif
 
 static const char *binTrans_char = "binTrans";
 static const char *binNormal_char = "binNormal";
@@ -343,7 +339,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
   reader->stopTime = NaN;
   reader->file = omc_fopen(filename, "rb");
   if(!reader->file) return strerror(errno);
-  reader->fileName = strdup(filename);
+  reader->fileName = omc_strdup(filename);
   reader->readAll = 0;
   reader->stopTime = NAN;
   for(i=0; i<nMatrix;i++) {

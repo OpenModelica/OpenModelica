@@ -63,6 +63,8 @@ static QString Parameters("Parameters");
 static QString Initialization("Initialization");
 static QString AddNewModifiers("Add New Modifiers");
 
+static int DefaultMinimumWidth = 300;
+
 /*!
  * \class FinalEachToolButton
  * \brief Creates a toolbutton with drop menu for final and each modifiers.
@@ -271,9 +273,15 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
   mpDisplayUnitFinalEachMenuButton = new FinalEachToolButton(false);
   // comment
   const QString comment = mpModelInstanceElement->getComment();
-  mpCommentLabel = new Label(comment);
-  mpCommentLabel->useMinimumSize(true);
-  mpCommentLabel->setElideMode(Qt::ElideMiddle);
+  mpCommentLabel = new Label(comment.simplified());
+  mpCommentLabel->setToolTip(comment); // set tooltip with original comment string that might have newline characters and extra spaces.
+  /* Set size policy to expanding and word wrap to true so that the comment label can take up multiple lines if the comment is long
+   * and also take up the remaining space in the layout.
+   * See issue #15596.
+   */
+  mpCommentLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  mpCommentLabel->setWordWrap(true);
+  mpCommentLabel->setMinimumWidth(DefaultMinimumWidth);
   // if comment is empty then hide the comment label so that it doesn't take up space in the layout.
   if (comment.isEmpty()) {
     mpCommentLabel->hide();
@@ -727,6 +735,7 @@ void Parameter::createValueWidget()
     case Parameter::Normal:
     default:
       mpValueTextBox = new QLineEdit;
+      mpValueTextBox->setMinimumWidth(DefaultMinimumWidth);
       mpValueTextBox->installEventFilter(this);
       break;
   }
@@ -739,9 +748,9 @@ void Parameter::createValueWidget()
 void Parameter::createValueComboBox()
 {
   mpValueComboBox = new ComboBox;
+  mpValueComboBox->setMinimumWidth(DefaultMinimumWidth);
   mpValueComboBox->setEditable(true);
   mpValueComboBox->setInsertPolicy(QComboBox::NoInsert);
-  mpValueComboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   mpValueComboBox->addItemWithToolTip("", "", "");
 }
 
@@ -1698,7 +1707,7 @@ void ElementParameters::setUpDialog()
             pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
             pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
           }
-          pGroupBoxGridLayout->addWidget(pParameter->getCommentLabel(), rowIndex, columnIndex++);
+          pGroupBoxGridLayout->addWidget(pParameter->getCommentLabel(), rowIndex, columnIndex);
         }
       }
     }
@@ -1725,7 +1734,7 @@ void ElementParameters::setUpDialog()
     }
   }
 
-  mpModifiersLabel = new Label("Add new modifiers, e.g., phi(start = 1), x(nominal = 3), x(max = 2) = y, system1(component3(p = 3))");
+  mpModifiersLabel = new Label("Add new modifiers, e.g., phi(start = 1), x(max = 2) = y, system1(component3(p = 3))");
   mpModifiersTextBox = new QLineEdit;
   /* Do not add "Add New Modifiers" group when we are modifying top level parameters.
    * We don't know yet how to set the modifiers in the top level parameter editing.

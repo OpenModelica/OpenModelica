@@ -421,7 +421,7 @@ protected
   BackendDAE.StrongComponents comps, compsNew, oComps, compsEqSys;
   BackendDAE.Variables vars, diffVars, ovars, dVars;
   BackendVarTransform.VariableReplacements derRepl;
-  DAE.FunctionTree functree;
+  AvlTreePathFunction.Tree functree;
   list<BackendDAE.Equation> eqLst,reqns, otherEqnsLst,otherEqnsLstReplaced, eqNew, hs, hs1, hLst, hsLst, hs_0, addEqLst;
   list<BackendDAE.EquationArray> gEqs, hEqs, hsEqs;
   list<BackendDAE.Var> varLst, tvars, tvarsReplaced, ovarsLst, xa0, a_0, varNew, addVarLst;
@@ -1161,7 +1161,7 @@ algorithm
         // build the coefficients (offset d=a_0) of the new residual equations (hs = A*xt+d)
         aName := "$a"+intString(tornSysIdx)+"_"+intString(resIdx)+"_"+intString(iIdx);
         ty := DAE.T_REAL_DEFAULT;
-        aCRef := ComponentReference.makeCrefIdent(aName,ty,{});
+        aCRef := ComponentReferenceBasics.makeCrefIdent(aName,ty,{});
         a_ii := BackendDAE.VAR(aCRef,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),ty,NONE(),NONE(),{},DAE.emptyElementSource,NONE(),NONE(),NONE(),NONE(),DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false, false);
         a_ii := BackendVariable.setVarStartValue(a_ii,DAE.RCONST(0.0));
 
@@ -1190,7 +1190,7 @@ algorithm
         // build the co-efficients (A-matrix-entries) of the new residual equations (hs = A*xt+d)
         aName := "$a"+intString(tornSysIdx)+"_"+intString(resIdx)+"_"+intString(iIdx);
         ty := DAE.T_REAL_DEFAULT;
-        aCRef := ComponentReference.makeCrefIdent(aName,ty,{});
+        aCRef := ComponentReferenceBasics.makeCrefIdent(aName,ty,{});
         a_ii := BackendDAE.VAR(aCRef,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),ty,NONE(),NONE(),{},DAE.emptyElementSource,NONE(),NONE(),NONE(),NONE(),DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false, false);
         a_ii := BackendVariable.setVarStartValue(a_ii,DAE.RCONST(0.0));
 
@@ -1470,7 +1470,7 @@ protected
 algorithm
   (replVarLstIn,replacementIn) := tplIn;
   oVarCRef := listGet(oVarCRefLstIn,indxIn);
-  cRef := ComponentReference.makeCrefQual(prefix,DAE.T_COMPLEX_DEFAULT,{},oVarCRef);
+  cRef := ComponentReferenceBasics.makeCrefQual(prefix,DAE.T_COMPLEX_DEFAULT,{},oVarCRef);
   cRef := ComponentReference.replaceSubsWithString(cRef);
   cRef := ComponentReference.crefSetLastType(cRef, DAE.T_REAL_DEFAULT);
   varExp := Expression.crefExp(cRef);
@@ -1770,7 +1770,7 @@ protected
   String name;
 algorithm
   name := "$det_"+ident+intString(iterIdx)+"__"+intString(row)+"_"+intString(col);
-  cr := ComponentReference.makeCrefIdent(name,ty,{});
+  cr := ComponentReferenceBasics.makeCrefIdent(name,ty,{});
   detExp := Expression.makeCrefExp(cr,ty);
 end makeDetExp;
 
@@ -1781,7 +1781,7 @@ protected function makeVarOfIdent
 protected
   DAE.ComponentRef cr;
 algorithm
-  cr := ComponentReference.makeCrefIdent(ident,ty,{});
+  cr := ComponentReferenceBasics.makeCrefIdent(ident,ty,{});
   var := BackendDAE.VAR(cr,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),ty,NONE(),NONE(),{},DAE.emptyElementSource,NONE(),NONE(),NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NOT_INNER_OUTER(),false,false,false);
 end makeVarOfIdent;
 
@@ -1835,7 +1835,7 @@ algorithm
   detExp := DAE.BINARY(DAE.BINARY(a11,DAE.MUL(ty = ty),arc),DAE.SUB(ty=ty),DAE.BINARY(ar1,DAE.MUL(ty = ty),a1c));
   (detExp,_) := ExpressionSimplify.simplify(detExp);
   detVarName := "$det_a"+intString(iter)+"__"+intString(row-1)+"_"+intString(col-1);
-  detCR := ComponentReference.makeCrefIdent(detVarName,ty,{});
+  detCR := ComponentReferenceBasics.makeCrefIdent(detVarName,ty,{});
   detAVar := BackendDAE.VAR(detCR,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),ty,NONE(),NONE(),{},DAE.emptyElementSource,NONE(),NONE(),NONE(), NONE(),DAE.NON_CONNECTOR(),DAE.NOT_INNER_OUTER(), false, false, false);
   detVarExp := Expression.crefExp(detCR);
   detAeq :=  BackendDAE.EQUATION(exp=detVarExp,scalar=detExp,source=DAE.emptyElementSource,attr=BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
@@ -1850,7 +1850,7 @@ algorithm
   detExp := DAE.BINARY(DAE.BINARY(a11,DAE.MUL(ty = ty),br),DAE.SUB(ty=ty),DAE.BINARY(ar1,DAE.MUL(ty = ty),b1));
   (detExp,_) := ExpressionSimplify.simplify(detExp);
   detVarName := "$det_b"+intString(iter)+"__"+intString(row-1)+"_"+intString(col-1);
-  detCR := ComponentReference.makeCrefIdent(detVarName,ty,{});
+  detCR := ComponentReferenceBasics.makeCrefIdent(detVarName,ty,{});
   detAiVar := BackendDAE.VAR(detCR,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),ty,NONE(),NONE(),{},DAE.emptyElementSource,NONE(),NONE(),NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NOT_INNER_OUTER(), false, false, false);
   detVarExp := Expression.crefExp(detCR);
   detAieq :=  BackendDAE.EQUATION(exp=detVarExp,scalar=detExp,source=DAE.emptyElementSource,attr=BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
@@ -1911,9 +1911,9 @@ algorithm
       matrixAT := transposeMatrix(matrixA);
           //dumpMatrix(matrixAT);
       detA := determinant(matrixA);
-          //print("detA "+ExpressionDump.printExpStr(detA)+"\n");
+          //print("detA "+ExpressionBasics.printExpStr(detA)+"\n");
       detLst := List.map2(List.intRange(dim),CramerRule1,system,matrixAT);
-          //print("detLst \n"+stringDelimitList(List.map(detLst,ExpressionDump.printExpStr),"\n")+"\n");
+          //print("detLst \n"+stringDelimitList(List.map(detLst,ExpressionBasics.printExpStr),"\n")+"\n");
       varExp := List.mapArray(vectorX, BackendVariable.varExp);
       detLst := List.map1(detLst,function Expression.makeBinaryExp(inOp = DAE.DIV(ty=DAE.T_ANYTYPE_DEFAULT)),detA);
       (detLst,_) := List.map_2(detLst,ExpressionSimplify.simplify);
@@ -1927,9 +1927,9 @@ algorithm
       matrixAT := transposeMatrix(matrixA);
           //dumpMatrix(matrixAT);
       detA := determinant(matrixA);
-          //print("detA "+ExpressionDump.printExpStr(detA)+"\n");
+          //print("detA "+ExpressionBasics.printExpStr(detA)+"\n");
       detLst := List.map2(List.intRange(dim),CramerRule1,system,matrixAT);
-          //print("detLst \n"+stringDelimitList(List.map(detLst,ExpressionDump.printExpStr),"\n")+"\n");
+          //print("detLst \n"+stringDelimitList(List.map(detLst,ExpressionBasics.printExpStr),"\n")+"\n");
       varExp := List.mapArray(vectorX, BackendVariable.varExp);
       detLst := List.map1(detLst,function Expression.makeBinaryExp(inOp = DAE.DIV(ty=DAE.T_ANYTYPE_DEFAULT)),detA);
       (detLst,_) := List.map_2(detLst,ExpressionSimplify.simplify);
@@ -2102,9 +2102,9 @@ protected function EqSysRowString
 protected
   String s1,s2,s3;
 algorithm
-  s1 := "{ "+stringDelimitList(List.map(Arow,ExpressionDump.printExpStr),"  \t  ") + "} ";
-  s2 := "{ " +ComponentReference.printComponentRefStr(BackendVariable.varCref(x))+" } ";
-  s3 := " = { "+ExpressionDump.printExpStr(b)+" }";
+  s1 := "{ "+stringDelimitList(List.map(Arow,ExpressionBasics.printExpStr),"  \t  ") + "} ";
+  s2 := "{ " +ComponentReferenceBasics.printComponentRefStr(BackendVariable.varCref(x))+" } ";
+  s3 := " = { "+ExpressionBasics.printExpStr(b)+" }";
   s:=s1+" * "+s2+s3;
 end EqSysRowString;
 

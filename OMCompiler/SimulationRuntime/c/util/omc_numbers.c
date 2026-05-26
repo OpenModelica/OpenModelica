@@ -37,7 +37,7 @@
 #include <locale.h>
 
 
-_locale_t getCLocale()
+_locale_t getCLocale(void)
 {
   static int init = 0;
   static _locale_t loc;
@@ -62,7 +62,7 @@ double om_strtod(const char *nptr, char **endptr)
 #include <locale.h>
 #endif
 
-locale_t getCLocale()
+locale_t getCLocale(void)
 {
   static int init = 0;
   static locale_t loc;

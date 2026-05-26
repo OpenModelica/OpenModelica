@@ -43,7 +43,6 @@ encapsulated package NFTypeCheck
 "
 
 import Absyn;
-import DAE;
 import Dimension = NFDimension;
 import Expression = NFExpression;
 import NFInstNode.InstNode;
@@ -52,11 +51,9 @@ import NFPrefixes.{Variability, Purity};
 import Subscript = NFSubscript;
 
 protected
-import DAEExpression = Expression;
 import Error;
 import Flags;
 import List;
-import Types;
 import Operator = NFOperator;
 import Type = NFType;
 import Class = NFClass;

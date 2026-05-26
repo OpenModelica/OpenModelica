@@ -341,15 +341,17 @@ end tuple62;
 public function stringContainsChar "Returns true if a string contains a specified character"
   input String str;
   input String char;
-  output Boolean res;
+  output Boolean res = false;
+protected
+  Integer ch;
 algorithm
-  res := matchcontinue()
-    case ()
-      algorithm
-        _::_::_ := stringSplitAtChar(str,char);
-      then true;
-    else false;
-  end matchcontinue;
+  ch := stringCharInt(char);
+  for i in 1:stringLength(str) loop
+    if MetaModelica.Dangerous.stringGetNoBoundsChecking(str, i) == ch then
+      res := true;
+      return;
+    end if;
+  end for;
 end stringContainsChar;
 
 public function stringDelimitListPrintBuf "
@@ -1388,11 +1390,11 @@ public function nextPowerOf2
   output Integer v;
 algorithm
   v := i - 1;
-  v := intBitOr(v, intBitLShift(v, 1));
-  v := intBitOr(v, intBitLShift(v, 2));
-  v := intBitOr(v, intBitLShift(v, 4));
-  v := intBitOr(v, intBitLShift(v, 8));
-  v := intBitOr(v, intBitLShift(v, 16));
+  v := intBitOr(v, intBitRShift(v, 1));
+  v := intBitOr(v, intBitRShift(v, 2));
+  v := intBitOr(v, intBitRShift(v, 4));
+  v := intBitOr(v, intBitRShift(v, 8));
+  v := intBitOr(v, intBitRShift(v, 16));
   v := v + 1;
 end nextPowerOf2;
 

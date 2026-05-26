@@ -38,7 +38,7 @@
 #include <Core/Utils/extension/logger.hpp>
 
 #include <boost/algorithm/string.hpp>
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/container/vector.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
@@ -46,6 +46,7 @@
 
 namespace fs = boost::filesystem;
 namespace po = boost::program_options;
+using namespace boost::placeholders;
 
 /**
  * Logger for XML messages through TCP port

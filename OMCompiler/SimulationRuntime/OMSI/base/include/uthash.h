@@ -441,16 +441,27 @@ do {                                                                            
   hashv += keylen;                                                               \
   switch ( _hj_k ) {                                                             \
      case 11: hashv += ( (unsigned)_hj_key[10] << 24 );                          \
+     /* fallthrough */                                                           \
      case 10: hashv += ( (unsigned)_hj_key[9] << 16 );                           \
+     /* fallthrough */                                                           \
      case 9:  hashv += ( (unsigned)_hj_key[8] << 8 );                            \
+     /* fallthrough */                                                           \
      case 8:  _hj_j += ( (unsigned)_hj_key[7] << 24 );                           \
+     /* fallthrough */                                                           \
      case 7:  _hj_j += ( (unsigned)_hj_key[6] << 16 );                           \
+     /* fallthrough */                                                           \
      case 6:  _hj_j += ( (unsigned)_hj_key[5] << 8 );                            \
+     /* fallthrough */                                                           \
      case 5:  _hj_j += _hj_key[4];                                               \
+     /* fallthrough */                                                           \
      case 4:  _hj_i += ( (unsigned)_hj_key[3] << 24 );                           \
+     /* fallthrough */                                                           \
      case 3:  _hj_i += ( (unsigned)_hj_key[2] << 16 );                           \
+     /* fallthrough */                                                           \
      case 2:  _hj_i += ( (unsigned)_hj_key[1] << 8 );                            \
+     /* fallthrough */                                                           \
      case 1:  _hj_i += _hj_key[0];                                               \
+     /* fallthrough */                                                           \
   }                                                                              \
   HASH_JEN_MIX(_hj_i, _hj_j, hashv);                                             \
   bkt = hashv & (num_bkts-1);                                                    \

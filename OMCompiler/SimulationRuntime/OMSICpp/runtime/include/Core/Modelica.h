@@ -49,7 +49,6 @@
 #include <boost/numeric/ublas/storage.hpp>
 
 #include <boost/container/vector.hpp>
-#include <boost/lambda/bind.hpp>
 #include <boost/lambda/lambda.hpp>
 /*Namespaces*/
 using std::abs;

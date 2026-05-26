@@ -742,10 +742,6 @@ type_description *add_modelica_record_member(type_description *desc,
   elem = desc->data.record.element + desc->data.record.elements;
   desc->data.record.name[desc->data.record.elements] = (char*)malloc(nlen + 1);
   memcpy(desc->data.record.name[desc->data.record.elements], name, nlen + 1);
-  /*
-   * strdup is not ansi!
-   * desc->data.record.name[desc->data.record.elements] = strdup(name);
-   */
   ++desc->data.record.elements;
   init_type_description(elem);
   return elem;
@@ -879,4 +875,3 @@ static type_description *add_tuple_item(type_description *desc)
 #if defined(__cplusplus)
 }
 #endif
-

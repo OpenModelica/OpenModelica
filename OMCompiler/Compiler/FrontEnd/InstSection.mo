@@ -64,7 +64,6 @@ protected import Dump;
 protected import ElementSource;
 protected import Error;
 protected import Expression;
-protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import ExpressionSimplifyTypes;
 protected import Flags;
@@ -83,10 +82,13 @@ protected import Types;
 protected import Util;
 protected import Values;
 protected import ValuesUtil;
+protected import ValuesDump;
 protected import System;
 protected import ErrorExt;
 protected import SCodeDump;
 protected import DAEDump;
+protected import ExpressionBasics;
+protected import ClassInfUtil;
 
 protected type Ident = DAE.Ident "an identifier";
 protected type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
@@ -182,11 +184,11 @@ algorithm
 
     case ()
       algorithm
-        state := ClassInf.trans(inState,ClassInf.FOUND_EQUATION());
+        state := ClassInfUtil.trans(inState,ClassInf.FOUND_EQUATION());
         (outCache, outEnv, outIH, outDae, outSets, outState, outGraph) :=
           instEquationCommonWork(inCache, inEnv, inIH, inPrefix, inSets, state,
             inEquation, inInitial, inImpl, inGraph, DAE.FLATTEN(inEquation,NONE()));
-        outDae := DAEUtil.traverseDAE(outDae, DAE.AvlTreePathFunction.Tree.EMPTY(),
+        outDae := DAEUtil.traverseDAE(outDae, AvlTreePathFunction.Tree.EMPTY(),
           Expression.traverseSubexpressionsHelper,
           (ExpressionSimplify.simplifyWork, ExpressionSimplifyTypes.optionSimplifyOnly));
       then
@@ -194,8 +196,8 @@ algorithm
 
     case ()
       algorithm
-        failure(_ := ClassInf.trans(inState,ClassInf.FOUND_EQUATION()));
-        s := ClassInf.printStateStr(inState);
+        failure(_ := ClassInfUtil.trans(inState,ClassInf.FOUND_EQUATION()));
+        s := ClassInfUtil.printStateStr(inState);
         Error.addSourceMessage(Error.EQUATION_TRANSITION_FAILURE, {s}, SCodeUtil.getEquationInfo(inEquation));
       then
         fail();
@@ -589,7 +591,7 @@ algorithm
 
           if not Types.isScalarBoolean(ty) then
             exp_str := Dump.printExpStr(cond);
-            ty_str := Types.unparseTypeNoAttr(ty);
+            ty_str := TypesDump.unparseTypeNoAttr(ty);
             Error.addSourceMessageAndFail(Error.IF_CONDITION_TYPE_ERROR,
               {exp_str, ty_str}, inInfo);
           end if;
@@ -649,8 +651,8 @@ algorithm
   if not Types.subtype(ty, inExpectedType) then
     Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
       {intString(inArgIndex), inOperatorName, inArgName,
-       Dump.printExpStr(inArg), Types.unparseTypeNoAttr(ty),
-       Types.unparseType(inExpectedType)}, inInfo);
+       Dump.printExpStr(inArg), TypesDump.unparseTypeNoAttr(ty),
+       TypesDump.unparseType(inExpectedType)}, inInfo);
   end if;
 
   (outCache, outArg) :=
@@ -928,8 +930,8 @@ algorithm
       algorithm
         ty := Types.arrayElementType(inType);
         false := Types.isReal(ty);
-        cref_str := ComponentReference.printComponentRefStr(inCref);
-        ty_str := Types.unparseType(ty);
+        cref_str := ComponentReferenceBasics.printComponentRefStr(inCref);
+        ty_str := TypesDump.unparseType(ty);
         Error.addSourceMessage(Error.REINIT_MUST_BE_REAL,
           {cref_str, ty_str}, inInfo);
       then
@@ -938,8 +940,8 @@ algorithm
     case DAE.PROP(constFlag = cnst)
       algorithm
         false := Types.isVar(cnst);
-        cnst_str := Types.unparseConst(cnst);
-        cref_str := ComponentReference.printComponentRefStr(inCref);
+        cnst_str := TypesDump.unparseConst(cnst);
+        cref_str := ComponentReferenceBasics.printComponentRefStr(inCref);
         Error.addSourceMessage(Error.REINIT_MUST_BE_VAR,
           {cref_str, cnst_str}, inInfo);
       then
@@ -1158,7 +1160,7 @@ protected function instEquationCommonCiTrans
 algorithm
   outState := match inInitial
     case SCode.NON_INITIAL()
-      then ClassInf.trans(inState, ClassInf.FOUND_EQUATION());
+      then ClassInfUtil.trans(inState, ClassInf.FOUND_EQUATION());
 
     else inState;
   end match;
@@ -1211,7 +1213,7 @@ algorithm
     outDae := List.fold(daes, DAEUtil.joinDaes, DAE.emptyDae);
   else
     true := Flags.isSet(Flags.FAILTRACE);
-    Debug.traceln("- InstSection.unroll failed: " + ValuesUtil.valString(inValue));
+    Debug.traceln("- InstSection.unroll failed: " + ValuesDump.valString(inValue));
     fail();
   end try;
 end unroll;
@@ -1258,7 +1260,7 @@ public function instEqEquation "author: LS, ELN
   input DAE.ElementSource source "the origin of the element";
   input SCode.Initial inInitial5;
   input Boolean inImplicit;
-  input SourceInfo extraInfo=AbsynUtil.dummyInfo "We have 2 sources?";
+  input SourceInfo extraInfo=Absyn.dummyInfo "We have 2 sources?";
   output DAE.DAElist outDae;
 algorithm
   outDae := matchcontinue (inExp1,inProperties2,inExp3,inProperties4,source,inInitial5,inImplicit)
@@ -1359,10 +1361,10 @@ algorithm
 
     case (e1,DAE.PROP(type_ = t1),e2,DAE.PROP(type_ = t2),_,_,_)
       algorithm
-        e1_str := ExpressionDump.printExpStr(e1);
-        t1_str := Types.unparseTypeNoAttr(t1);
-        e2_str := ExpressionDump.printExpStr(e2);
-        t2_str := Types.unparseTypeNoAttr(t2);
+        e1_str := ExpressionBasics.printExpStr(e1);
+        t1_str := TypesDump.unparseTypeNoAttr(t1);
+        e2_str := ExpressionBasics.printExpStr(e2);
+        t2_str := TypesDump.unparseTypeNoAttr(t2);
         s1 := stringAppendList({e1_str,"=",e2_str});
         s2 := stringAppendList({t1_str,"=",t2_str});
         info := ElementSource.getElementSourceFileInfo(source);
@@ -1610,7 +1612,7 @@ algorithm
         b1 := Expression.containVectorFunctioncall(lhs);
         b2 := Expression.containVectorFunctioncall(rhs);
         true := boolOr(b1, b2);
-        ds := Types.getDimensions(tp);
+        ds := TypesDump.getDimensions(tp);
         elt := DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source);
         source := ElementSource.addSymbolicTransformationFlattenedEqs(source, elt);
       then
@@ -1622,7 +1624,7 @@ algorithm
         b1 := Expression.containVectorFunctioncall(lhs);
         b2 := Expression.containVectorFunctioncall(rhs);
         true := boolOr(b1, b2);
-        ds := Types.getDimensions(tp);
+        ds := TypesDump.getDimensions(tp);
         elt := DAE.ARRAY_EQUATION(ds, lhs, rhs, source);
         source := ElementSource.addSymbolicTransformationFlattenedEqs(source, elt);
       then
@@ -1662,7 +1664,7 @@ algorithm
         true := Config.splitArrays();
         true := Expression.dimensionKnown(dim);
         true := Expression.isRange(lhs) or Expression.isRange(rhs) or Expression.isReduction(lhs) or Expression.isReduction(rhs);
-        ds := Types.getDimensions(tp);
+        ds := TypesDump.getDimensions(tp);
         b := SCodeUtil.isInitial(initial_);
         elt := if b then DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source) else DAE.ARRAY_EQUATION(ds, lhs, rhs, source);
         source := ElementSource.addSymbolicTransformationFlattenedEqs(source, elt);
@@ -1719,8 +1721,8 @@ algorithm
         true := Config.splitArrays();
         // It's ok with array equation of unknown size if checkModel is used.
         false := Flags.getConfigBool(Flags.CHECK_MODEL);
-        lhs_str := ExpressionDump.printExpStr(lhs);
-        rhs_str := ExpressionDump.printExpStr(rhs);
+        lhs_str := ExpressionBasics.printExpStr(lhs);
+        rhs_str := ExpressionBasics.printExpStr(rhs);
         eq_str := stringAppendList({lhs_str, "=", rhs_str});
         Error.addSourceMessage(Error.INST_ARRAY_EQ_UNKNOWN_SIZE, {eq_str}, ElementSource.getElementSourceFileInfo(inSource));
       then
@@ -1943,7 +1945,7 @@ algorithm
     else
       algorithm
         false := Types.isRecord(tp);
-        s := ExpressionDump.printExpStr(lhs) + " = " + ExpressionDump.printExpStr(rhs);
+        s := ExpressionBasics.printExpStr(lhs) + " = " + ExpressionBasics.printExpStr(rhs);
         info := ElementSource.getElementSourceFileInfo(source);
         Error.addSourceMessage(Error.ILLEGAL_EQUATION_TYPE, {s}, info);
       then fail();
@@ -2012,8 +2014,8 @@ algorithm
     case (cache,env,ih,pre,csets,ci_state,SCode.ALGORITHM(statements = statements),impl,_,graph) /* impl */
       algorithm
         // set the source of this element
-        ci_state := ClassInf.trans(ci_state,ClassInf.FOUND_ALGORITHM());
-        source := ElementSource.createElementSource(AbsynUtil.dummyInfo, FGraph.getScopePath(env), pre);
+        ci_state := ClassInfUtil.trans(ci_state,ClassInf.FOUND_ALGORITHM());
+        source := ElementSource.createElementSource(Absyn.dummyInfo, FGraph.getScopePath(env), pre);
 
         (cache,statements_1) := instStatements(cache, env, ih, pre, ci_state, statements, source, SCode.NON_INITIAL(), impl, unrollForLoops);
         (statements_1,_) := DAEUtil.traverseDAEEquationsStmts(statements_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,ExpressionSimplifyTypes.optionSimplifyOnly));
@@ -2024,8 +2026,8 @@ algorithm
 
     case (_,_,_,_,_,ci_state,SCode.ALGORITHM(statements = stmt::_),_,_,_)
       algorithm
-        failure(_ := ClassInf.trans(ci_state,ClassInf.FOUND_ALGORITHM()));
-        s := ClassInf.printStateStr(ci_state);
+        failure(_ := ClassInfUtil.trans(ci_state,ClassInf.FOUND_ALGORITHM()));
+        s := ClassInfUtil.printStateStr(ci_state);
         info := SCodeUtil.getStatementInfo(stmt);
         Error.addSourceMessage(Error.ALGORITHM_TRANSITION_FAILURE, {s}, info);
       then fail();
@@ -2080,7 +2082,7 @@ algorithm
     case (cache,env,ih,pre,csets,ci_state,SCode.ALGORITHM(statements = statements),impl,_,graph)
       algorithm
         // set the source of this element
-        source := ElementSource.createElementSource(AbsynUtil.dummyInfo, FGraph.getScopePath(env), pre);
+        source := ElementSource.createElementSource(Absyn.dummyInfo, FGraph.getScopePath(env), pre);
 
         (cache,statements_1) := instStatements(cache, env, ih, pre, ci_state, statements, source, SCode.INITIAL(), impl, unrollForLoops);
         (statements_1,_) := DAEUtil.traverseDAEEquationsStmts(statements_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,ExpressionSimplifyTypes.optionSimplifyOnly));
@@ -2127,10 +2129,10 @@ algorithm
     case (cache,env,pre,ci_state,SCode.CONSTRAINTS(constraints = constraints),impl)
       algorithm
         // set the source of this element
-        ci_state := ClassInf.trans(ci_state,ClassInf.FOUND_ALGORITHM());
-        source := ElementSource.createElementSource(AbsynUtil.dummyInfo, FGraph.getScopePath(env), pre);
+        ci_state := ClassInfUtil.trans(ci_state,ClassInf.FOUND_ALGORITHM());
+        source := ElementSource.createElementSource(Absyn.dummyInfo, FGraph.getScopePath(env), pre);
 
-        (cache,constraints_1,_) := Static.elabExpList(cache, env, constraints, impl, true /*vect*/, pre, AbsynUtil.dummyInfo);
+        (cache,constraints_1,_) := Static.elabExpList(cache, env, constraints, impl, true /*vect*/, pre, Absyn.dummyInfo);
         // (constraints_1,_) = DAEUtil.traverseDAEquationsStmts(constraints_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,false));
 
         dae := DAE.DAE({DAE.CONSTRAINT(DAE.CONSTRAINT_EXPS(constraints_1),source)});
@@ -2139,8 +2141,8 @@ algorithm
 /*
     case (_,_,_,_,_,_,ci_state,SCode.ALGORITHM(constraints = exp::_),_,_,_)
       algorithm
-        failure(_ = ClassInf.trans(ci_state,ClassInf.FOUND_ALGORITHM()));
-        s = ClassInf.printStateStr(ci_state);
+        failure(_ = ClassInfUtil.trans(ci_state,ClassInf.FOUND_ALGORITHM()));
+        s = ClassInfUtil.printStateStr(ci_state);
         Error.addMessage(Error.ALGORITHM_TRANSITION_FAILURE,{s});
       then fail();
 */
@@ -2297,7 +2299,7 @@ algorithm
     case SCode.ALG_WHEN_A(info = info)
       algorithm
         // When may not be used in a function.
-        if ClassInf.isFunction(inState) then
+        if ClassInfUtil.isFunction(inState) then
           Error.addSourceMessageAndFail(Error.FUNCTION_ELEMENT_WRONG_KIND, {"when"}, info);
         end if;
 
@@ -2374,7 +2376,7 @@ algorithm
 
     case SCode.ALG_RETURN(info = info)
       algorithm
-        if not ClassInf.isFunction(inState) then
+        if not ClassInfUtil.isFunction(inState) then
           Error.addSourceMessageAndFail(Error.RETURN_OUTSIDE_FUNCTION, {}, info);
         end if;
         source := ElementSource.addElementSourceFileInfo(inSource, info);
@@ -2583,7 +2585,7 @@ algorithm
     case (_,_,_,_,_,_,v,_,_,_,_,_)
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- InstSection.loopOverRange failed to loop over range: " + ValuesUtil.valString(v));
+        Debug.traceln("- InstSection.loopOverRange failed to loop over range: " + ValuesDump.valString(v));
       then
         fail();
   end matchcontinue;
@@ -2912,7 +2914,7 @@ algorithm
     end if;
     exp := Types.matchType(exp, tyEl, DAE.T_BOOL_DEFAULT);
   else
-    Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR,{Dump.printExpStr(aexp),Types.unparseType(ty)},info);
+    Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR,{Dump.printExpStr(aexp),TypesDump.unparseType(ty)},info);
     fail();
   end try;
   if Config.languageStandardAtLeast(Config.LanguageStandard._3_2) then
@@ -3330,7 +3332,7 @@ algorithm
         // make sure is expandable!
         true := Types.isExpandableConnector(ty1);
         // strip last subs to get the full type!
-        c1_2 := ComponentReference.crefStripLastSubs(c1_2);
+        c1_2 := ComponentReferenceBasics.crefStripLastSubs(c1_2);
         (_,attr,ty,binding,cnstForRange,_,_,envExpandable,_) := Lookup.lookupVar(cache, env, c1_2);
         (_,_,_,_,_,_,_,envComponent,_) := Lookup.lookupVar(cache, env, c2_2);
 
@@ -3339,7 +3341,7 @@ algorithm
         variablesUnion := FGraph.getVariablesFromGraphScope(envComponent);
         // more than 1 variables
         true := listLength(variablesUnion) > 1;
-        // print("VARS MULTIPLE: [" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "/" + ComponentReference.printComponentRefStr(c2_2) + "] " + stringDelimitList(variablesUnion, ", ") + "\n");
+        // print("VARS MULTIPLE: [" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "/" + ComponentReferenceBasics.printComponentRefStr(c2_2) + "] " + stringDelimitList(variablesUnion, ", ") + "\n");
 
         // fprintln(Flags.SHOW_EXPANDABLE_INFO, "2 connect(expandable, existing[MULTIPLE])(" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + ", " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + ")");
 
@@ -3349,7 +3351,7 @@ algorithm
         envComponentEmpty := FGraph.removeComponentsFromScope(envComponent);
 
         // get the dimensions from the type!
-        daeDims := Types.getDimensions(ty2);
+        daeDims := TypesDump.getDimensions(ty2);
         arrDims := List.map(daeDims,Expression.unelabDimension);
         // add to the environment of the expandable
         // connector the new virtual variable.
@@ -3364,7 +3366,7 @@ algorithm
                             SCode.defaultPrefixes,
                             SCode.ATTR(arrDims, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR(),Absyn.NONFIELD()),
                             Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
-                            SCode.noComment, NONE(), AbsynUtil.dummyInfo),
+                            SCode.noComment, NONE(), Absyn.dummyInfo),
                           DAE.NOMOD(),
                           FCore.VAR_TYPED(),
           // add empty here to connect individual components!
@@ -3417,7 +3419,7 @@ algorithm
         // make sure is expandable!
         true := Types.isExpandableConnector(ty1);
         // strip last subs to get the full type!
-        c1_2 := ComponentReference.crefStripLastSubs(c1_2);
+        c1_2 := ComponentReferenceBasics.crefStripLastSubs(c1_2);
         (_,attr,ty,binding,cnstForRange,_,_,envExpandable,_) := Lookup.lookupVar(cache, env, c1_2);
         (_,_,_,_,_,_,_,envComponent,_) := Lookup.lookupVar(cache, env, c2_2);
 
@@ -3426,7 +3428,7 @@ algorithm
         variablesUnion := FGraph.getVariablesFromGraphScope(envComponent);
         // max 1 variable, should check for empty!
         false := listLength(variablesUnion) > 1;
-        // print("VARS SINGLE: [" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "/" + ComponentReference.printComponentRefStr(c2_2) + "] " + stringDelimitList(variablesUnion, ", ") + "\n");
+        // print("VARS SINGLE: [" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "/" + ComponentReferenceBasics.printComponentRefStr(c2_2) + "] " + stringDelimitList(variablesUnion, ", ") + "\n");
 
         // fprintln(Flags.SHOW_EXPANDABLE_INFO, "2 connect(expandable, existing[SINGLE])(" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + ", " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + ")");
 
@@ -3436,7 +3438,7 @@ algorithm
         envComponentEmpty := FGraph.removeComponentsFromScope(envComponent);
 
         // get the dimensions from the type!
-        daeDims := Types.getDimensions(ty2);
+        daeDims := TypesDump.getDimensions(ty2);
         arrDims := List.map(daeDims,Expression.unelabDimension);
         // add to the environment of the expandable
         // connector the new virtual variable.
@@ -3451,7 +3453,7 @@ algorithm
                             SCode.defaultPrefixes,
                             SCode.ATTR(arrDims, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR(), Absyn.NONFIELD()),
                             Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
-                            SCode.noComment, NONE(), AbsynUtil.dummyInfo),
+                            SCode.noComment, NONE(), Absyn.dummyInfo),
                           DAE.NOMOD(),
                           FCore.VAR_TYPED(),
                           envComponentEmpty);
@@ -3497,7 +3499,7 @@ algorithm
         (cache,c1_2) := PrefixUtil.prefixCref(cache, env, ih, pre, c1_2);
 
         // get the dimensions from the ty1 type!
-        daeDims := Types.getDimensions(ty1);
+        daeDims := TypesDump.getDimensions(ty1);
         arrDims := List.map(daeDims,Expression.unelabDimension);
         daeExpandable := generateExpandableDAE(cache,env,envExpandable,
           c1_2,
@@ -3509,7 +3511,7 @@ algorithm
           source);
 
         dae := DAEUtil.joinDaes(dae, daeExpandable);
-        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "<<<< connect(expandable, existing)(" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + ", " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + ")"); // \nDAE:" + DAEDump.dumpStr(daeExpandable, DAE.AvlTreePathFunction.Tree.EMPTY()));
+        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "<<<< connect(expandable, existing)(" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + ", " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + ")"); // \nDAE:" + DAEDump.dumpStr(daeExpandable, AvlTreePathFunction.Tree.EMPTY()));
       then
         (cache,env,ih,sets,dae,graph);
 
@@ -3579,7 +3581,7 @@ algorithm
     case (_, _, _, _, _, _, _, _, _, _)
       algorithm
         // get the dimensions from the type!
-        daeDims := Types.getDimensions(ty);
+        daeDims := TypesDump.getDimensions(ty);
         _ := List.map(daeDims,Expression.unelabDimension);
         if listEmpty(daeDims)
         then // empty dimensions
@@ -3590,7 +3592,7 @@ algorithm
            io, SCode.NOT_FINAL(), source, true);
         else // not empty list
           crefs := ComponentReference.expandCref(cref, false);
-          // print(" crefs: " + stringDelimitList(List.map(crefs, ComponentReference.printComponentRefStr),", ") + "\n");
+          // print(" crefs: " + stringDelimitList(List.map(crefs, ComponentReferenceBasics.printComponentRefStr),", ") + "\n");
           daeExpandable := daeDeclareList(inCache, inParentEnv, inClassEnv, listReverse(crefs), state, ty, attrs, vis, io, source, DAE.emptyDae);
         end if;
       then
@@ -3693,11 +3695,11 @@ algorithm
     case (cache, topEnv, veCref as DAE.CREF_QUAL(), veAttr, veTy, veBinding, veCnstForRange, veEnv)
       algorithm
         // get the last one
-        currentName := ComponentReference.crefLastIdent(veCref);
+        currentName := ComponentReferenceBasics.crefLastIdent(veCref);
         // strip the last one
         qualCref := ComponentReference.crefStripLastIdent(veCref);
         // strip the last subs
-        qualCref := ComponentReference.crefStripLastSubs(qualCref);
+        qualCref := ComponentReferenceBasics.crefStripLastSubs(qualCref);
         // find the correct environment to update
         (_,currentAttr,currentTy,currentBinding,currentCnstForRange,_,_,currentEnv,_) := Lookup.lookupVar(cache, topEnv, qualCref);
 
@@ -3853,27 +3855,27 @@ algorithm
 
     case (DAE.T_COMPLEX(complexClassType = state), _, _)
       algorithm
-        ClassInf.valid(state, SCode.R_CONNECTOR(false));
+        ClassInfUtil.valid(state, SCode.R_CONNECTOR(false));
       then
         ();
 
     case (DAE.T_COMPLEX(complexClassType = state), _, _)
       algorithm
-        ClassInf.valid(state, SCode.R_CONNECTOR(true));
+        ClassInfUtil.valid(state, SCode.R_CONNECTOR(true));
       then
         ();
 
     // TODO, check if subtype is needed here
     case (DAE.T_SUBTYPE_BASIC(complexClassType = state), _, _)
       algorithm
-        ClassInf.valid(state, SCode.R_CONNECTOR(false));
+        ClassInfUtil.valid(state, SCode.R_CONNECTOR(false));
       then
         ();
 
     // TODO, check if subtype is needed here
     case (DAE.T_SUBTYPE_BASIC(complexClassType = state), _, _)
       algorithm
-        ClassInf.valid(state, SCode.R_CONNECTOR(true));
+        ClassInfUtil.valid(state, SCode.R_CONNECTOR(true));
       then
         ();
 
@@ -3892,7 +3894,7 @@ algorithm
 
     else
       algorithm
-        str := ComponentReference.printComponentRefStr(inCref);
+        str := ComponentReferenceBasics.printComponentRefStr(inCref);
         Error.addSourceMessage(Error.INVALID_CONNECTOR_TYPE, {str}, inInfo);
       then
         fail();
@@ -3953,10 +3955,10 @@ algorithm
         t1 := Types.arrayElementType(inLhsType);
         t2 := Types.arrayElementType(inRhsType);
         false := Types.equivtypesOrRecordSubtypeOf(t1, t2);
-        (_, cs1) := Types.printConnectorTypeStr(t1);
-        (_, cs2) := Types.printConnectorTypeStr(t2);
-        cref_str1 := ComponentReference.printComponentRefStr(inLhsCref);
-        cref_str2 := ComponentReference.printComponentRefStr(inRhsCref);
+        (_, cs1) := TypesDump.printConnectorTypeStr(t1);
+        (_, cs2) := TypesDump.printConnectorTypeStr(t2);
+        cref_str1 := ComponentReferenceBasics.printComponentRefStr(inLhsCref);
+        cref_str2 := ComponentReferenceBasics.printComponentRefStr(inRhsCref);
         Error.addSourceMessage(Error.CONNECT_INCOMPATIBLE_TYPES,
           {cref_str1, cref_str2, cref_str1, cs1, cref_str2, cs2}, inInfo);
       then
@@ -3965,14 +3967,14 @@ algorithm
     // Different dimensionality.
     case (_, _, _, _, _)
       algorithm
-        dims1 := Types.getDimensions(inLhsType);
-        dims2 := Types.getDimensions(inRhsType);
+        dims1 := TypesDump.getDimensions(inLhsType);
+        dims2 := TypesDump.getDimensions(inRhsType);
         false := List.isEqualOnTrue(dims1, dims2, Expression.dimensionsEqual);
         false := (listEmpty(dims1) and listEmpty(dims2));
-        cref_str1 := ComponentReference.printComponentRefStr(inLhsCref);
-        cref_str2 := ComponentReference.printComponentRefStr(inRhsCref);
-        str1 := "[" + ExpressionDump.dimensionsString(dims1) + "]";
-        str2 := "[" + ExpressionDump.dimensionsString(dims2) + "]";
+        cref_str1 := ComponentReferenceBasics.printComponentRefStr(inLhsCref);
+        cref_str2 := ComponentReferenceBasics.printComponentRefStr(inRhsCref);
+        str1 := "[" + ExpressionBasics.dimensionsString(dims1) + "]";
+        str2 := "[" + ExpressionBasics.dimensionsString(dims2) + "]";
         Error.addSourceMessage(Error.CONNECTOR_ARRAY_DIFFERENT,
           {cref_str1, cref_str2, str1, str2}, inInfo);
       then
@@ -4002,8 +4004,8 @@ algorithm
 
     else
       algorithm
-        cref_str1 := ComponentReference.printComponentRefStr(inLhsCref);
-        cref_str2 := ComponentReference.printComponentRefStr(inRhsCref);
+        cref_str1 := ComponentReferenceBasics.printComponentRefStr(inLhsCref);
+        cref_str2 := ComponentReferenceBasics.printComponentRefStr(inRhsCref);
         pre_str1 := DAEUtil.connectorTypeStr(inLhsConnectorType);
         pre_str2 := DAEUtil.connectorTypeStr(inRhsConnectorType);
         err_strl := if DAEUtil.potentialBool(inLhsConnectorType)
@@ -4043,8 +4045,8 @@ algorithm
 
     else
       algorithm
-        cref_str1 := ComponentReference.printComponentRefStr(inLhsCref);
-        cref_str2 := ComponentReference.printComponentRefStr(inRhsCref);
+        cref_str1 := ComponentReferenceBasics.printComponentRefStr(inLhsCref);
+        cref_str2 := ComponentReferenceBasics.printComponentRefStr(inRhsCref);
         Error.addSourceMessage(Error.CONNECT_TWO_SOURCES,
           {cref_str1, cref_str2}, inInfo);
       then
@@ -4079,8 +4081,8 @@ algorithm
 
     case (Absyn.OUTER(), Absyn.OUTER(), _, _, _)
       algorithm
-        cref_str1 := ComponentReference.printComponentRefStr(inLhsCref);
-        cref_str2 := ComponentReference.printComponentRefStr(inRhsCref);
+        cref_str1 := ComponentReferenceBasics.printComponentRefStr(inLhsCref);
+        cref_str2 := ComponentReferenceBasics.printComponentRefStr(inRhsCref);
         Error.addSourceMessage(Error.CONNECT_OUTER_OUTER,
           {cref_str1, cref_str2}, inInfo);
       then
@@ -4156,8 +4158,8 @@ algorithm
       algorithm
         false := DAEUtil.streamBool(ct);
         // print("Connecting components: " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "/" +
-        //    ComponentReference.printComponentRefStr(c1) + "[" + Dump.unparseInnerouterStr(io1) + "]" + " = " +
-        //    ComponentReference.printComponentRefStr(c2) + "[" + Dump.unparseInnerouterStr(io2) + "]\n");
+        //    ComponentReferenceBasics.printComponentRefStr(c1) + "[" + Dump.unparseInnerouterStr(io1) + "]" + " = " +
+        //    ComponentReferenceBasics.printComponentRefStr(c2) + "[" + Dump.unparseInnerouterStr(io2) + "]\n");
         true := InnerOuter.outerConnection(io1,io2);
 
 
@@ -4171,8 +4173,8 @@ algorithm
         source := ElementSource.createElementSource(info, FGraph.getScopePath(env), pre, (c1_1,c2_1));
 
         // print("CONNECT: " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "/" +
-        //    ComponentReference.printComponentRefStr(c1_1) + "[" + Dump.unparseInnerouterStr(io1) + "]" + " = " +
-        //    ComponentReference.printComponentRefStr(c2_1) + "[" + Dump.unparseInnerouterStr(io2) + "]\n");
+        //    ComponentReferenceBasics.printComponentRefStr(c1_1) + "[" + Dump.unparseInnerouterStr(io1) + "]" + " = " +
+        //    ComponentReferenceBasics.printComponentRefStr(c2_1) + "[" + Dump.unparseInnerouterStr(io2) + "]\n");
 
         sets := ConnectUtil.addOuterConnection(pre,sets,c1_1,c2_1,io1,io2,f1,f2,source);
       then
@@ -4234,12 +4236,12 @@ algorithm
         0 = Expression.dimensionSize(dim2);
         (cache,_) = PrefixUtil.prefixCref(cache,env,ih,pre,c1);
         (cache,_) = PrefixUtil.prefixCref(cache,env,ih,pre,c2);
-        c1_str = Types.connectorTypeStr(ct) + ComponentReference.printComponentRefStr(c1);
-        (t1, _) = Types.stripTypeVars(t1);
-        t1_str = Types.unparseType(t1);
-        c2_str = Types.connectorTypeStr(ct) + ComponentReference.printComponentRefStr(c2);
-        (t2, _) = Types.stripTypeVars(t2);
-        t2_str = Types.unparseType(t2);
+        c1_str = Types.connectorTypeStr(ct) + ComponentReferenceBasics.printComponentRefStr(c1);
+        (t1, _) = TypesDump.stripTypeVars(t1);
+        t1_str = TypesDump.unparseType(t1);
+        c2_str = Types.connectorTypeStr(ct) + ComponentReferenceBasics.printComponentRefStr(c2);
+        (t2, _) = TypesDump.stripTypeVars(t2);
+        t2_str = TypesDump.unparseType(t2);
         c1_str = stringAppendList({c1_str," type: ",t1_str});
         c2_str = stringAppendList({c2_str," type: ",t2_str});
         Error.addSourceMessage(Error.CONNECT_ARRAY_SIZE_ZERO, {c1_str,c2_str},info);
@@ -4292,8 +4294,8 @@ algorithm
         c2, f2, t2 as DAE.T_ARRAY(), _,
         ct,_,_,graph,_)
       algorithm
-        dims := Types.getDimensions(t1);
-        dims2 := Types.getDimensions(t2);
+        dims := TypesDump.getDimensions(t1);
+        dims2 := TypesDump.getDimensions(t2);
         true := List.isEqualOnTrue(dims, dims2, Expression.dimensionsKnownAndEqual);
 
         // set the source of this element
@@ -4385,7 +4387,7 @@ algorithm
                                    false, false, false, false, inlineType1, DAE.NO_TAIL())), // use the inline type
                         source // set the origin of the element
                         )};
-        graph := ConnectionGraph.addConnection(graph, ComponentReference.crefStripLastSubs(c1_1), ComponentReference.crefStripLastSubs(c2_1), breakDAEElements);
+        graph := ConnectionGraph.addConnection(graph, ComponentReferenceBasics.crefStripLastSubs(c1_1), ComponentReferenceBasics.crefStripLastSubs(c2_1), breakDAEElements);
 
         // deal with equalityConstraint function!
         // instantiate and add the equalityConstraint function to the dae function tree!
@@ -4441,10 +4443,10 @@ algorithm
       algorithm
         (cache,_) := PrefixUtil.prefixCref(cache,env,ih,pre, c1);
         (cache,_) := PrefixUtil.prefixCref(cache,env,ih,pre, c2);
-        c1_str := ComponentReference.printComponentRefStr(c1);
-        t1_str := Types.unparseType(t1);
-        c2_str := ComponentReference.printComponentRefStr(c2);
-        t2_str := Types.unparseType(t2);
+        c1_str := ComponentReferenceBasics.printComponentRefStr(c1);
+        t1_str := TypesDump.unparseType(t1);
+        c2_str := ComponentReferenceBasics.printComponentRefStr(c2);
+        t2_str := TypesDump.unparseType(t2);
         c1_str := stringAppendList({"\n",c1_str," type:\n",t1_str});
         c2_str := stringAppendList({"\n",c2_str," type:\n",t2_str});
         Error.addSourceMessage(Error.INVALID_CONNECTOR_VARIABLE, {c1_str,c2_str},info);
@@ -4719,7 +4721,7 @@ algorithm
 
      case (DAE.ARRAY(_,_,DAE.CREF(cr,t)::_))
        algorithm
-         cr := ComponentReference.crefStripLastSubs(cr);
+         cr := ComponentReferenceBasics.crefStripLastSubs(cr);
          crefExp := Expression.makeCrefExp(cr, t);
        then crefExp;
    end match;
@@ -5165,10 +5167,10 @@ algorithm
         lt := Types.getPropType(prop1);
         rt := Types.getPropType(prop2);
         false := Types.subtype(lt, rt);
-        lhs_str := ExpressionDump.printExpStr(e_1);
+        lhs_str := ExpressionBasics.printExpStr(e_1);
         rhs_str := Dump.printExpStr(inRhs);
-        lt_str := Types.unparseTypeNoAttr(lt);
-        rt_str := Types.unparseTypeNoAttr(rt);
+        lt_str := TypesDump.unparseTypeNoAttr(lt);
+        rt_str := TypesDump.unparseTypeNoAttr(rt);
         Types.typeErrorSanityCheck(lt_str, rt_str, info);
         Error.addSourceMessage(Error.ASSIGN_TYPE_MISMATCH_ERROR,{lhs_str,rhs_str,lt_str,rt_str}, info);
       then
@@ -5179,7 +5181,7 @@ algorithm
       algorithm
         true := List.all(expl, AbsynUtil.isCref);
         failure(Absyn.CALL() := inRhsNoComment);
-        s := ExpressionDump.printExpStr(e_1);
+        s := ExpressionBasics.printExpStr(e_1);
         Error.addSourceMessage(Error.TUPLE_ASSIGN_FUNCALL_ONLY, {s}, info);
       then
         fail();
@@ -5188,7 +5190,7 @@ algorithm
       algorithm
         true := numError == Error.getNumErrorMessages();
         s1 := Dump.printExpStr(var);
-        s2 := ExpressionDump.printExpStr(value);
+        s2 := ExpressionBasics.printExpStr(value);
         Error.addSourceMessage(Error.ASSIGN_UNKNOWN_ERROR, {s1,s2}, info);
       then
         fail();
@@ -5207,7 +5209,7 @@ algorithm
     if Expression.isWild(exp) then
       continue;
     elseif listMember(exp, exps) then
-      Error.addSourceMessage(Error.DUPLICATE_DEFINITION, {ExpressionDump.printExpStr(exp)}, info);
+      Error.addSourceMessage(Error.DUPLICATE_DEFINITION, {ExpressionBasics.printExpStr(exp)}, info);
       fail();
     end if;
   end while;
@@ -5224,7 +5226,7 @@ algorithm
       String str;
     case DAE.T_ARRAY(ty = DAE.T_ARRAY())
       algorithm
-        str := Types.unparseType(ty);
+        str := TypesDump.unparseType(ty);
         Error.addSourceMessage(Error.ITERATOR_NON_ARRAY,{id,str},info);
       then fail();
     case DAE.T_ARRAY(ty = oty) then oty;
@@ -5233,7 +5235,7 @@ algorithm
     case DAE.T_METATYPE(ty = oty) then getIteratorType(ty.ty, id, info);
     else
       algorithm
-        str := Types.unparseType(ty);
+        str := TypesDump.unparseType(ty);
         Error.addSourceMessage(Error.ITERATOR_NON_ARRAY,{id,str},info);
       then fail();
   end match;
@@ -5417,7 +5419,7 @@ algorithm
   local
     DAE.ComponentRef cref1;
 
-    case(_,(cref1,_)) then ComponentReference.crefEqualWithoutSubs(cref1,inFoundCref);
+    case(_,(cref1,_)) then ComponentReferenceBasics.crefEqualWithoutSubs(cref1,inFoundCref);
   end match;
 end crefInfoListCrefsEqual;
 
@@ -5688,7 +5690,7 @@ algorithm
     case (DAE.TUPLE({}),_) then ();
     else
       algorithm
-        str := ExpressionDump.printExpStr(exp);
+        str := ExpressionBasics.printExpStr(exp);
         Error.addSourceMessage(Error.NORETCALL_INVALID_EXP,{str},info);
       then fail();
   end match;

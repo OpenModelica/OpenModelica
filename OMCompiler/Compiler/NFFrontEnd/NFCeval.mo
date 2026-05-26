@@ -47,7 +47,7 @@ import Typing = NFTyping;
 import Call = NFCall;
 import Dimension = NFDimension;
 import Type = NFType;
-import ExpressionSimplify;
+import ExpressionBasics;
 import NFPrefixes.{Variability, Purity};
 import NFClassTree.ClassTree;
 import ComplexType = NFComplexType;
@@ -101,7 +101,7 @@ uniontype EvalTarget
   end getInfo;
 end EvalTarget;
 
-constant EvalTarget noTarget = EvalTarget.EVAL_TARGET(AbsynUtil.dummyInfo, NFInstContext.NO_CONTEXT, NONE());
+constant EvalTarget noTarget = EvalTarget.EVAL_TARGET(Absyn.dummyInfo, NFInstContext.NO_CONTEXT, NONE());
 
 uniontype EvalTargetData
   record DIMENSION_DATA
@@ -2300,7 +2300,7 @@ algorithm
   elseif sz == 1 then
     result := listHead(es);
   else
-    (es,dims) := ExpressionSimplify.evalCat(n, es, getArrayContents=Expression.arrayElementList, toString=Expression.toString);
+    (es,dims) := ExpressionBasics.evalCat(n, es, getArrayContents=Expression.arrayElementList, toString=Expression.toString);
     result := Expression.arrayFromList(es, Expression.typeOf(listHead(es)), list(Dimension.fromInteger(d) for d in dims));
   end if;
 end evalBuiltinCat;
@@ -2630,6 +2630,7 @@ algorithm
   end match;
 end evalBuiltinMax;
 
+public
 function evalBuiltinMax2
   input Expression exp1;
   input Expression exp2;
@@ -2650,6 +2651,7 @@ algorithm
   end match;
 end evalBuiltinMax2;
 
+protected
 function evalPositiveMax
   input Expression flow_exp;
   input Expression eps;
@@ -2687,6 +2689,7 @@ algorithm
   end match;
 end evalBuiltinMin;
 
+public
 function evalBuiltinMin2
   input Expression exp1;
   input Expression exp2;
@@ -2707,6 +2710,7 @@ algorithm
   end match;
 end evalBuiltinMin2;
 
+protected
 function evalBuiltinMod
   input list<Expression> args;
   input EvalTarget target;

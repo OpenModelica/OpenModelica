@@ -42,7 +42,9 @@ encapsulated package MathematicaDump
   import BackendVariable;
   import ComponentReference;
   import DAE;
+protected
   import DAEDump;
+  import Expression;
   import ExpressionDump;
   import IOStream;
   import List;
@@ -456,7 +458,7 @@ algorithm
     then str;
 
     case (e,_,_) algorithm
-      str := "Missing[\"UnknownExpression\",\""+ExpressionDump.printExpStr(e)+"\"]";
+      str := "Missing[\"UnknownExpression\",\""+ExpressionBasics.printExpStr(e)+"\"]";
     then str;
   end matchcontinue;
 end printExp2MmaStr;
@@ -479,7 +481,7 @@ algorithm
       // Variables
     case (_,_,_) algorithm
       (_,_):=BackendVariable.getVar(cr,vars);
-      nameStr := ComponentReference.printComponentRefStr(cr);
+      nameStr := ComponentReferenceBasics.printComponentRefStr(cr);
       // If already translated variables.
       nameStr := System.stringReplace(nameStr,"$p",".");
       nameStr := System.stringReplace(nameStr,"$lb","[");
@@ -506,7 +508,7 @@ algorithm
       isInput := BackendVariable.isInput(v);
       isOutput := BackendVariable.isOutputVar(v);
       true := boolOr(isInput,isOutput);
-      nameStr := ComponentReference.printComponentRefStr(cr);
+      nameStr := ComponentReferenceBasics.printComponentRefStr(cr);
 
       // If already translated variables.
       nameStr := System.stringReplace(nameStr,"$p",".");
@@ -525,7 +527,7 @@ algorithm
       // Parameters, etc.
     case (_,_,_) algorithm
       failure((_,_):=BackendVariable.getVar(cr,vars));
-      nameStr := ComponentReference.printComponentRefStr(cr);
+      nameStr := ComponentReferenceBasics.printComponentRefStr(cr);
       // If already translated variables.
       nameStr := System.stringReplace(nameStr,"$p",".");
       nameStr := System.stringReplace(nameStr,"$lb","[");

@@ -17,6 +17,15 @@ TESTFILES = \
 	Enum1.mo \
 	EnumArraySubscript1.mo \
 	Expression1.mo \
+	FlowAlias1.mos \
+	FlowAlias2.mos \
+	FlowAlias3.mos \
+	FlowAlias4.mos \
+	FlowAlias5.mos \
+	FlowAlias6.mos \
+	FlowAlias7.mos \
+	FlowAlias8.mos \
+	FlowAlias9.mos \
 	Functional1.mo \
 	If1.mo \
 	If2.mo \

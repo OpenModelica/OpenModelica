@@ -64,9 +64,9 @@ DLLExport extern void (*omc_throw)(threadData_t*) __attribute__ ((noreturn));
 DLLExport extern void (*omc_assert_withEquationIndexes)(threadData_t*,FILE_INFO, const int*, const char*, ...) __attribute__ ((noreturn));
 DLLExport extern void (*omc_assert_warning_withEquationIndexes)(FILE_INFO, const int*, const char*, ...);
 
-void initDumpSystem();
-void deactivateLogging();
-void reactivateLogging();
+void initDumpSystem(void);
+void deactivateLogging(void);
+void reactivateLogging(void);
 void omc_assert_function(threadData_t*,FILE_INFO info, const char *msg, ...) __attribute__ ((noreturn));
 void omc_assert_warning_function(FILE_INFO info,  const char *msg, ...);
 void omc_terminate_function(FILE_INFO info, const char *msg, ...);
@@ -206,17 +206,9 @@ static void OMC_INLINE assertStreamPrint(threadData_t *threadData, int cond, con
 }
 #endif
 
-#if defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L
-#define OMC_FUNCTION __func__
-#elif __STDC_VERSION__ < 199901L && __GNUC__ >= 2
-#define OMC_FUNCTION __FUNCTION__
-#else
-#define OMC_FUNCTION "(null)"
-#endif
-
 #define omc_assert_macro(expr) \
   if (!(expr)) {                \
-    throwStreamPrint(NULL, "%s:%d: %s: Assertion `%s` failed.\n",  __FILE__, __LINE__, OMC_FUNCTION, #expr); \
+    throwStreamPrint(NULL, "%s:%d: %s: Assertion `%s` failed.\n",  __FILE__, __LINE__, __func__, #expr); \
     exit(1); \
   }
 

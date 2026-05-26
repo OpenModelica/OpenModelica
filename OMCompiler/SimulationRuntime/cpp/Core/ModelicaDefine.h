@@ -93,6 +93,14 @@ typedef double coshRetType;
 #ifndef BOOST_THREAD_USE_DLL
   #define BOOST_THREAD_USE_DLL
 #endif
+
+// guard this better:
+#if defined(BOOST_ATOMIC_STATIC_LINK) || defined(BOOST_CHRONO_STATIC_LINK) || defined(BOOST_CONTAINER_STATIC_LINK) || defined(BOOST_DATE_TIME_STATIC_LINK) || defined(BOOST_FILESYSTEM_STATIC_LINK) || defined(BOOST_PROGRAM_OPTIONS_STATIC_LINK) || defined(BOOST_SERIALIZATION_STATIC_LINK) || defined(BOOST_THREAD_STATIC_LINK)
+#if !defined(BOOST_STATIC_LINKING)
+#define BOOST_STATIC_LINKING
+#endif
+#endif
+
 #ifndef BOOST_STATIC_LINKING
   #ifndef BOOST_ALL_DYN_LINK
     #define BOOST_ALL_DYN_LINK

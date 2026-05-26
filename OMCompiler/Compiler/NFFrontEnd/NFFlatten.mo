@@ -1049,7 +1049,7 @@ algorithm
         for i in arrayLength(comps):-1:1 loop
           ty := InstNode.getType(comps[i]);
           field_cr := ComponentRef.prefixCref(comps[i], ty, {}, cr);
-          field_cr := flattenCref(field_cr, Prefix.PREFIX(InstNode.EMPTY_NODE(), cr), AbsynUtil.dummyInfo);
+          field_cr := flattenCref(field_cr, Prefix.PREFIX(InstNode.EMPTY_NODE(), cr), Absyn.dummyInfo);
           fields := Expression.fromCref(field_cr) :: fields;
         end for;
       then
@@ -1182,7 +1182,7 @@ algorithm
   for d in dimensions loop
     index := index + 1;
     iter := ComponentRef.makeIterator(InstNode.newIterator(name + String(index),
-      Type.INTEGER(), AbsynUtil.dummyInfo));
+      Type.INTEGER(), Absyn.dummyInfo));
     subs := Subscript.makeIndex(Expression.fromCref(iter)) :: subs;
   end for;
 
@@ -2401,7 +2401,7 @@ algorithm
     {DAE.Subscript.INDEX(DAE.Exp.ICONST(-1))},
     DAE.ComponentPrefix.NOCOMPPRE(),
     ClassInf.State.UNKNOWN(Absyn.IDENT("?")),
-    AbsynUtil.dummyInfo
+    Absyn.dummyInfo
   );
 
   source := ElementSource.addElementSourceInstanceOpt(source, comp_pre);
@@ -2501,7 +2501,7 @@ algorithm
   flatModel.equations := listAppend(conn_eql, flatModel.equations);
 
   if not listEmpty(unhandled_stream_sets) then
-    flatModel := StreamFlowAlias.removeAliases(flatModel);
+    flatModel := StreamFlowAlias.eliminateAliases(flatModel);
   end if;
 
   // add top-level IOs for unconnected local IOs

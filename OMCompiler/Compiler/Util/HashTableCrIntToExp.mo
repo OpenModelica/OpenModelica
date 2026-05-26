@@ -48,7 +48,7 @@ keyEqual   - A comparison function between two keys, returns true if equal.
 public import BaseHashTable;
 public import DAE;
 protected import ComponentReference;
-protected import ExpressionDump;
+protected import ExpressionBasics;
 protected import Util;
 
 public type Key = tuple<DAE.ComponentRef,Integer>;
@@ -103,7 +103,7 @@ algorithm
     case ((cr1,i1),(cr2,i2))
       algorithm
         true := intEq(i1,i2) "int compare is less expensive";
-      then ComponentReference.crefEqual(cr1,cr2);
+      then ComponentReferenceBasics.crefEqual(cr1,cr2);
     else false;
   end matchcontinue;
 end keyEqual;
@@ -112,7 +112,7 @@ protected function printKey
   input Key tpl;
   output String res;
 algorithm
-  res := ComponentReference.printComponentRefStr(Util.tuple21(tpl)) + "," + intString(Util.tuple22(tpl));
+  res := ComponentReferenceBasics.printComponentRefStr(Util.tuple21(tpl)) + "," + intString(Util.tuple22(tpl));
 end printKey;
 
 public function emptyHashTable
@@ -133,7 +133,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(hashFunc,keyEqual,printKey,ExpressionDump.printExpStr));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(hashFunc,keyEqual,printKey,ExpressionBasics.printExpStr));
 end emptyHashTableSized;
 
 annotation(__OpenModelica_Interface="frontend");

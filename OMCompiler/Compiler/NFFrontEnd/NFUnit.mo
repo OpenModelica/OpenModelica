@@ -44,7 +44,6 @@ encapsulated package NFUnit
 public
 import ComponentRef = NFComponentRef;
 import Absyn;
-import AbsynUtil;
 import NFInstNode.InstNode;
 import Type = NFType;
 import UnorderedMap;
@@ -564,7 +563,7 @@ public function parseUnitString "author: lochel
   The second argument is optional."
   input String inUnitString;
   input StringToUnitTable inKnownUnits = getKnownUnits();
-  input SourceInfo info = AbsynUtil.dummyInfo;
+  input SourceInfo info = Absyn.dummyInfo;
   output Unit outUnit;
 protected
   list<String> charList;

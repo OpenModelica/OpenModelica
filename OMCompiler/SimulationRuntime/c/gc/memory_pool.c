@@ -35,6 +35,7 @@
 #include <pthread.h>
 #endif
 #include "../util/omc_error.h"
+#include "../util/omc_strdup.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -135,18 +136,18 @@ static void* pool_malloc(size_t requested_size)
   return res;
 }
 
-static int pool_collect_a_little()
+static int pool_collect_a_little(void)
 {
   return 0;
 }
 
 static void print_mem_pool(OMCMemPoolBlock* chunk) {
   printf("----------------------------\n");
-  printf("%p, %zu, %zu, %p\n", chunk->memory, chunk->used, chunk->size, chunk->previous);
+  printf("%p, %zu, %zu, %p\n", chunk->memory, chunk->used, chunk->size, (void*)chunk->previous);
   printf("----------------------------\n");
 }
 
-MemPoolState omc_util_get_pool_state() {
+MemPoolState omc_util_get_pool_state(void) {
   MemPoolState state;
   /// If we forgot to explicitly initialize the pool, initialize it now.
   pool_init();
@@ -187,7 +188,7 @@ void omc_util_restore_pool_state(MemPoolState in_state) {
   // print_mem_pool(memory_pools);
 }
 
-void free_memory_pool()
+void free_memory_pool(void)
 {
   OMCMemPoolBlock* currentBlock = memory_pools;
 
@@ -229,7 +230,7 @@ omc_alloc_interface_t omc_alloc_interface_pooled = {
   pool_malloc,
   pool_malloc,
   (char*(*)(size_t)) malloc,
-  strdup,
+  omc_strdup,
   pool_collect_a_little, /* No OP. Does not do anything. The pool requires explicit state save and restore. */
   malloc_zero,
   free,
@@ -296,7 +297,7 @@ omc_alloc_interface_t omc_alloc_interface = {
   pool_malloc,
   pool_malloc,
   (char*(*)(size_t)) malloc,
-  strdup,
+  omc_strdup,
   pool_collect_a_little, /* No OP. Does not do anything. The pool requires explicit state save and restore. */
   malloc_zero /* calloc, but with malloc interface */,
   free,

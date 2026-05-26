@@ -337,7 +337,7 @@ uniontype InstNode
   end newIterator;
 
   function newUniqueIterator
-    input SourceInfo info = AbsynUtil.dummyInfo;
+    input SourceInfo info = Absyn.dummyInfo;
     input Type ty = Type.INTEGER();
     output InstNode iterator;
   algorithm
@@ -347,7 +347,7 @@ uniontype InstNode
   function newIndexedIterator
     input Integer index;
     input String name = "i";
-    input SourceInfo info = AbsynUtil.dummyInfo;
+    input SourceInfo info = Absyn.dummyInfo;
     input Type ty = Type.INTEGER();
     output InstNode iterator;
   algorithm
@@ -1152,7 +1152,7 @@ uniontype InstNode
       case CLASS_NODE() then SCodeUtil.elementInfo(node.definition);
       case COMPONENT_NODE() then Component.info(Pointer.access(node.component));
       case COMPONENT_NODE() then info(node.parent);
-      else AbsynUtil.dummyInfo;
+      else Absyn.dummyInfo;
     end matchcontinue;
   end info;
 

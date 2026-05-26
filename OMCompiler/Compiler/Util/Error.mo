@@ -1322,37 +1322,34 @@ constant SourceInfo dummyInfo = SOURCEINFO("",false,0,0,0,0,0.0);
 public function clearCurrentComponent
 protected function dummy
   input output String str;
-  input Integer i;
 end dummy;
 algorithm
-  updateCurrentComponent(0, "", dummyInfo, dummy);
+  updateCurrentComponent("", dummyInfo, dummy);
 end clearCurrentComponent;
 
-public function updateCurrentComponent<T> "Function: updateCurrentComponent
+public function updateCurrentComponent "Function: updateCurrentComponent
 This function takes a String and set the global var to
 which the current variable the compiler is working with."
-  input T cpre; // Should be DAE.ComponentPrefix
+  // input T cpre; // Should be DAE.ComponentPrefix; bound in the closure
   input String component;
   input SourceInfo info;
   input prefixToStr func;
-  partial function prefixToStr<T>
+  partial function prefixToStr
     input String str;
-    input T t;
+    // input DAE.ComponentPrefix t; // Bound in the closure
     output String ostr;
   end prefixToStr;
 protected
-  Option<tuple<array<T>, array<String>, array<SourceInfo>, array<prefixToStr>>> tpl;
-  array<T> apre;
+  Option<tuple<array<String>, array<SourceInfo>, array<prefixToStr>>> tpl;
   array<String> astr;
   array<SourceInfo> ainfo;
   array<prefixToStr> afunc;
 algorithm
   tpl := getGlobalRoot(Global.currentInstVar);
   _ := match tpl
-    case NONE() algorithm setGlobalRoot(Global.currentInstVar, SOME((arrayCreate(1,cpre),arrayCreate(1,component),arrayCreate(1,info),arrayCreate(1,func)))); then ();
-    case SOME((apre,astr,ainfo,afunc))
+    case NONE() algorithm setGlobalRoot(Global.currentInstVar, SOME((arrayCreate(1,component),arrayCreate(1,info),arrayCreate(1,func)))); then ();
+    case SOME((astr,ainfo,afunc))
       algorithm
-        arrayUpdate(apre, 1, cpre);
         arrayUpdate(astr, 1, component);
         arrayUpdate(ainfo, 1, info);
         arrayUpdate(afunc, 1, func);
@@ -1360,34 +1357,33 @@ algorithm
   end match;
 end updateCurrentComponent;
 
-public function getCurrentComponent<T> "Gets the current component as a string."
+public function getCurrentComponent "Gets the current component as a string."
   output String str;
   output Integer sline=0, scol=0, eline=0, ecol=0;
   output Boolean read_only=false;
   output String filename="";
 protected
-  Option<tuple<array<T>, array<String>, array<SourceInfo>, array<prefixToStr>>> tpl;
-  array<T> apre;
+  Option<tuple<array<String>, array<SourceInfo>, array<prefixToStr>>> tpl;
   array<String> astr;
   array<SourceInfo> ainfo;
   array<prefixToStr> afunc;
   SourceInfo info;
   prefixToStr func;
-  partial function prefixToStr<T>
+  partial function prefixToStr
     input String str;
-    input T t;
+    // input DAE.ComponentRef t; // Is already bound in the closure
     output String ostr;
   end prefixToStr;
 algorithm
   tpl := getGlobalRoot(Global.currentInstVar);
   str := match tpl
     case NONE() then "";
-    case SOME((apre,astr,ainfo,afunc))
+    case SOME((astr,ainfo,afunc))
       algorithm
         str := arrayGet(astr, 1);
         if str <> "" then
           func := arrayGet(afunc, 1);
-          str := "Variable " + func(str,arrayGet(apre,1)) + ": ";
+          str := "Variable " + func(str) + ": ";
           info := arrayGet(ainfo, 1);
           sline := info.lineNumberStart;
           scol := info.columnNumberStart;

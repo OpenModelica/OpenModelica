@@ -111,48 +111,48 @@ algorithm
 
     case (BackendDAE.EQUATION(exp = e1,scalar = e2))
       algorithm
-        s1 := ExpressionDump.printExpStr(e1);
-        s2 := ExpressionDump.printExpStr(e2);
+        s1 := ExpressionBasics.printExpStr(e1);
+        s2 := ExpressionBasics.printExpStr(e2);
         res := stringAppendList({"'", s1," = ",s2, ";'"});
       then
         res;
 
     case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2))
       algorithm
-        s1 := ExpressionDump.printExpStr(e1);
-        s2 := ExpressionDump.printExpStr(e2);
+        s1 := ExpressionBasics.printExpStr(e1);
+        s2 := ExpressionBasics.printExpStr(e2);
         res := stringAppendList({"'", s1," = ",s2, ";'"});
       then
         res;
 
     case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2))
       algorithm
-        s1 := ExpressionDump.printExpStr(e1);
-        s2 := ExpressionDump.printExpStr(e2);
+        s1 := ExpressionBasics.printExpStr(e1);
+        s2 := ExpressionBasics.printExpStr(e2);
         res := stringAppendList({"'", s1," = ",s2, ";'"});
       then
         res;
 
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2))
       algorithm
-        s1 := ComponentReference.printComponentRefStr(cr);
-        s2 := ExpressionDump.printExpStr(e2);
+        s1 := ComponentReferenceBasics.printComponentRefStr(cr);
+        s2 := ExpressionBasics.printExpStr(e2);
         res := stringAppendList({"'",s1," = ",s2,";'"});
       then
         res;
 
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(condition=condition,whenStmtLst={BackendDAE.ASSIGN(left = e1,right = e2)})))
       algorithm
-        s1 := ExpressionDump.printExpStr(e1);
-        s2 := ExpressionDump.printExpStr(e2);
-        s3 := ExpressionDump.printExpStr(condition);
+        s1 := ExpressionBasics.printExpStr(e1);
+        s2 := ExpressionBasics.printExpStr(e2);
+        s3 := ExpressionBasics.printExpStr(condition);
         res := stringAppendList({"'when ", s3, " then " , s1," = ",s2,"; end when;'"});
       then
         res;
 
     case (BackendDAE.RESIDUAL_EQUATION(exp = e))
       algorithm
-        s1 := ExpressionDump.printExpStr(e);
+        s1 := ExpressionBasics.printExpStr(e);
         res := stringAppendList({"'", s1,"= 0", ";'"});
       then
         res;
@@ -290,13 +290,13 @@ algorithm
     case ({},_) then "";
     case (((BackendDAE.VAR(varName = cr)) :: {}),_)
       algorithm
-        str1 := ComponentReference.printComponentRefStr(cr);
+        str1 := ComponentReferenceBasics.printComponentRefStr(cr);
         /*
         paths_lst = List.map(paths, AbsynUtil.pathString);
         path_str = stringDelimitList(paths_lst, ", ");
         comment_str = Dump.unparseCommentOption(comment);
         print("= ");
-        s = ExpressionDump.printExpStr(e);
+        s = ExpressionBasics.printExpStr(e);
         print(s);
         print(" ");
         print(path_str);
@@ -315,13 +315,13 @@ algorithm
 
       case (((BackendDAE.VAR(varName = cr)) :: xs),varno)
       algorithm
-        str1 := ComponentReference.printComponentRefStr(cr);
+        str1 := ComponentReferenceBasics.printComponentRefStr(cr);
         /*
         paths_lst = List.map(paths, AbsynUtil.pathString);
         path_str = stringDelimitList(paths_lst, ", ");
         comment_str = Dump.unparseCommentOption(comment);
         print("= ");
-        s = ExpressionDump.printExpStr(e);
+        s = ExpressionBasics.printExpStr(e);
         print(s);
         print(" ");
         print(path_str);

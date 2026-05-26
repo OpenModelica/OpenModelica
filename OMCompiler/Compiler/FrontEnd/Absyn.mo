@@ -1149,5 +1149,9 @@ public uniontype Msg "Controls output of error-messages"
   record NO_MSG "Do not give error message" end NO_MSG;
 end Msg;
 
-annotation(__OpenModelica_Interface="frontend");
+constant ClassDef dummyParts = PARTS({},{},{},{},NONE());
+constant Info dummyInfo = SOURCEINFO("",false,0,0,0,0,0.0);
+constant Program dummyProgram = PROGRAM({},TOP());
+
+annotation(__OpenModelica_Interface="parser");
 end Absyn;

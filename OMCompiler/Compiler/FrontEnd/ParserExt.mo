@@ -163,5 +163,5 @@ public function stopLibraryVendorExecutable
   external "C" ParserExt_stopLibraryVendorExecutable(lveInstance) annotation(Library = {"omparse","omantlr3","omcruntime"});
 end stopLibraryVendorExecutable;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="parser");
 end ParserExt;

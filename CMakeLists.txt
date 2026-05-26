@@ -40,6 +40,10 @@ include(cmake/omc_git_revision.cmake)
 # well as linux. See the file for more info.
 include(cmake/OMCPThreads.cmake)
 
+if (MINGW)
+SET(IS_MINGW64 ON)
+endif(MINGW)
+
 omc_add_to_report(CMAKE_VERSION)
 # Add the compiler ids to the report for convenience.
 omc_add_to_report(CMAKE_C_COMPILER_ID)
@@ -50,6 +54,10 @@ omc_add_to_report(CMAKE_LIBRARY_ARCHITECTURE)
 
 ## OPTIONS #################################################################################################
 omc_option(OM_ENABLE_GUI_CLIENTS "Enable, build, and install the qt based GUI clients." ON)
+
+## On Conda-forge this should be disabled
+omc_option(OM_MACOS_APP_BUNDLE "Build GUI clients as application bundles on macOS" ON)
+mark_as_advanced(OM_MACOS_APP_BUNDLE)
 
 omc_option(OM_ENABLE_ENCRYPTION "Enable and build the OpenModelica Encryption support module. " OFF)
 
@@ -63,9 +71,9 @@ omc_option(OM_USE_CCACHE "Use ccache to speedup compilations." ON)
 
 
 ### Standards ###############################################################################################
-## Set the C standard to use. Unfortunately, we can not enforce c90.
-## Our sources contain a lot of c99 and gnu extension code.
-# set(CMAKE_C_STANDARD 90)
+## Set the C standard to use. Unfortunately, we can not enforce C17.
+## Our sources contain a lot of gnu extension code / C23 features.
+# set(CMAKE_C_STANDARD 17)
 
 ## Set the C++ standard to use. We use C++17 for everything in OpenModelica now.
 ## Note that 3rdParty libraries might set their own standards.
@@ -181,12 +189,7 @@ omc_add_subdirectory(OMCompiler)
 
 if(OM_ENABLE_GUI_CLIENTS)
   # select qt version 5/6
-  if (MINGW)
-    # qtwebengine is not available for mingw yet
-    set (OM_QT_MAJOR_VERSION 5 CACHE STRING "Qt version")
-  else ()
-    set (OM_QT_MAJOR_VERSION 6 CACHE STRING "Qt version")
-  endif ()
+  set (OM_QT_MAJOR_VERSION 6 CACHE STRING "Qt version")
 
   omc_add_subdirectory(OMParser)
   omc_add_subdirectory(OMPlot)

@@ -46,7 +46,7 @@ import Values;
 protected
 
 import List;
-import ValuesUtil;
+import ValuesMake;
 
 public function val
   input String filename;
@@ -84,9 +84,9 @@ protected
   end readDataset_work;
 algorithm
   rvals := readDataset_work(filename,vars,dimsize);
-  vals := List.mapListReverse(rvals, ValuesUtil.makeReal);
-  rows := List.mapReverse(vals, ValuesUtil.makeArray);
-  val := ValuesUtil.makeArray(rows);
+  vals := List.mapListReverse(rvals, ValuesMake.makeReal);
+  rows := List.mapReverse(vals, ValuesMake.makeArray);
+  val := ValuesMake.makeArray(rows);
 end readDataset;
 
 public function readSimulationResultSize

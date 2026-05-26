@@ -60,6 +60,8 @@ bool* AlgLoopSolverDefaultImplementation::getConditionsWorkArray()
         return _conditions0;
     else
         ModelicaSimulationError(ALGLOOP_SOLVER, "algloop working arrays are not initialized");
+
+    return nullptr;
 }
 
 bool* AlgLoopSolverDefaultImplementation::getConditions2WorkArray()
@@ -68,6 +70,8 @@ bool* AlgLoopSolverDefaultImplementation::getConditions2WorkArray()
         return _conditions1;
     else
         ModelicaSimulationError(ALGLOOP_SOLVER, "algloop working arrays are not initialized");
+
+    return nullptr;
 }
 
 
@@ -77,6 +81,8 @@ double* AlgLoopSolverDefaultImplementation::getVariableWorkArray()
         return _algloopVars;
     else
         ModelicaSimulationError(ALGLOOP_SOLVER, "algloop working arrays are not initialized");
+
+    return nullptr;
 }
 
 void AlgLoopSolverDefaultImplementation::initialize(int dimZeroFunc, int dimSys)

@@ -51,6 +51,7 @@ import Error;
 import File;
 import Flags;
 import List;
+import Mutable;
 import Print;
 import StackOverflow;
 import StringUtil;
@@ -70,9 +71,9 @@ uniontype Text
   end MEM_TEXT;
   record FILE_TEXT
     Option<Integer> opaqueFile;
-    array<Integer> nchars, aind;
-    array<Boolean> isstart;
-    array<list<BlockTypeFileText>> blocksStack;
+    Mutable<Integer> nchars, aind;
+    Mutable<Boolean> isstart;
+    Mutable<list<BlockTypeFileText>> blocksStack;
   end FILE_TEXT;
 end Text;
 
@@ -84,8 +85,8 @@ uniontype BlockTypeFileText
     BlockType bt "The block type";
     Integer nchars, aind;
     Boolean isstart;
-    array<Integer> tell "Usage depends on bt; stores the last file position to know if it is empty or not.";
-    array<Option<StringToken>> septok;
+    Mutable<Integer> tell "Usage depends on bt; stores the last file position to know if it is empty or not.";
+    Mutable<Option<StringToken>> septok;
   end BT_FILE_TEXT;
 end BlockTypeFileText;
 
@@ -135,7 +136,7 @@ uniontype BlockType
   record BT_ITER "Iteration items block, every token in the block is an item.
                 index0 is the active index during the build phase, then it is the last one + 1."
     IterOptions options;
-    array<Integer> index0;
+    Mutable<Integer> index0;
   end BT_ITER;
 end BlockType;
 
@@ -475,7 +476,7 @@ algorithm
       then isAtStartOfLineTok(tok);
 
     case FILE_TEXT()
-      then arrayGet(text.isstart,1);
+      then Mutable.access(text.isstart);
 
   end match;
 end isAtStartOfLine;
@@ -557,30 +558,30 @@ algorithm
 
     case FILE_TEXT()
       algorithm
-        nchars := arrayGet(txt.nchars,1);
-        aind := arrayGet(txt.aind,1);
-        isstart := arrayGet(txt.isstart,1);
-        arrayUpdate(txt.blocksStack, 1, BT_FILE_TEXT(inBlockType, nchars, aind, isstart, arrayCreate(1, textFileTell(txt)), arrayCreate(1, NONE()))::arrayGet(txt.blocksStack, 1));
+        nchars := Mutable.access(txt.nchars);
+        aind := Mutable.access(txt.aind);
+        isstart := Mutable.access(txt.isstart);
+        Mutable.update(txt.blocksStack, BT_FILE_TEXT(inBlockType, nchars, aind, isstart, Mutable.create(textFileTell(txt)), Mutable.create(NONE()))::Mutable.access(txt.blocksStack));
         _ := match inBlockType
           case BT_INDENT(width = w)
           algorithm
-            arrayUpdate(txt.nchars, 1, nchars+w);
-            arrayUpdate(txt.aind, 1, aind+w);
+            Mutable.update(txt.nchars, nchars+w);
+            Mutable.update(txt.aind, aind+w);
           then ();
           case BT_ABS_INDENT(width = w)
           algorithm
             if isstart then
-              arrayUpdate(txt.nchars, 1, 0);
+              Mutable.update(txt.nchars, 0);
             end if;
-            arrayUpdate(txt.aind, 1, w);
+            Mutable.update(txt.aind, w);
           then ();
           case BT_REL_INDENT(offset = w)
           algorithm
-            arrayUpdate(txt.aind, 1, aind + w);
+            Mutable.update(txt.aind, aind + w);
           then ();
           case BT_ANCHOR(offset = w)
           algorithm
-            arrayUpdate(txt.aind, 1, nchars + w);
+            Mutable.update(txt.aind, nchars + w);
           then ();
           else ();
         end match;
@@ -628,15 +629,15 @@ algorithm
 
     case FILE_TEXT()
       algorithm
-        blk::rest := arrayGet(txt.blocksStack, 1);
-        arrayUpdate(txt.blocksStack, 1, rest);
+        blk::rest := Mutable.access(txt.blocksStack);
+        Mutable.update(txt.blocksStack, rest);
         _ := match blk.bt
           case BT_INDENT()
             algorithm
-              if arrayGet(txt.isstart,1) then
-                arrayUpdate(txt.nchars, 1, blk.nchars);
+              if Mutable.access(txt.isstart) then
+                Mutable.update(txt.nchars, blk.nchars);
               end if;
-              arrayUpdate(txt.aind, 1, blk.aind);
+              Mutable.update(txt.aind, blk.aind);
             then ();
           case _ guard match blk.bt
             // All these have the same cases
@@ -645,24 +646,24 @@ algorithm
             case BT_ANCHOR() then true;
             end match
             algorithm
-              oldisstart := arrayGet(txt.isstart,1);
+              oldisstart := Mutable.access(txt.isstart);
               if oldisstart then
-                if textFileTell(txt)==arrayGet(blk.tell,1) then
+                if textFileTell(txt)==Mutable.access(blk.tell) then
                   // No update, restore nchars
-                  arrayUpdate(txt.nchars, 1, blk.nchars);
+                  Mutable.update(txt.nchars, blk.nchars);
                 else
                   // Update; restore depends on if we are at start of line
-                  if arrayGet(txt.isstart,1) then
-                    arrayUpdate(txt.nchars, 1, blk.aind);
+                  if Mutable.access(txt.isstart) then
+                    Mutable.update(txt.nchars, blk.aind);
                   end if;
                 end if;
               else
                 // Was not at start of line before
-                if arrayGet(txt.isstart,1) then
-                  arrayUpdate(txt.nchars, 1, blk.aind);
+                if Mutable.access(txt.isstart) then
+                  Mutable.update(txt.nchars, blk.aind);
                 end if;
               end if;
-              arrayUpdate(txt.aind, 1, blk.aind);
+              Mutable.update(txt.aind, blk.aind);
             then ();
           else ();
         end match;
@@ -699,7 +700,7 @@ algorithm
       then //let the existing tokens on stack in the text block and start iterating
         MEM_TEXT(
           {},
-          ({}, BT_ITER(iopts, arrayCreate(1,i0))) :: (toks, BT_TEXT()) :: blstack);
+          ({}, BT_ITER(iopts, Mutable.create(i0))) :: (toks, BT_TEXT()) :: blstack);
 
     case (FILE_TEXT(),
           iopts as ITER_OPTIONS(
@@ -712,7 +713,7 @@ algorithm
               Error.addInternalError("Tpl.mo FILE_TEXT does not support aligning or wrapping elements", sourceInfo());
             then fail();
         end match;
-        pushBlock(txt, BT_ITER(inIterOptions, arrayCreate(1,i0)));
+        pushBlock(txt, BT_ITER(inIterOptions, Mutable.create(i0)));
       then txt;
 
     //should not ever happen
@@ -753,7 +754,7 @@ algorithm
 
     case FILE_TEXT()
       algorithm
-        arrayUpdate(txt.blocksStack, 1, listRest(arrayGet(txt.blocksStack, 1)));
+        Mutable.update(txt.blocksStack, listRest(Mutable.access(txt.blocksStack)));
       then txt;
 
     //should not ever happen
@@ -776,12 +777,12 @@ algorithm
       StringToken tok, emptok;
       list<tuple<Tokens,BlockType>> blstack;
       IterOptions iopts;
-      array<Integer> i0, tell;
+      Mutable<Integer> i0, tell;
       BlockType bt;
       Integer tellpos, curIndex;
       Text txt2;
       Boolean haveToken;
-      array<Option<StringToken>> septok;
+      Mutable<Option<StringToken>> septok;
 
     //empty iteration segment and 'empty' option is NONE(), so do nothing
     case (txt as MEM_TEXT(
@@ -800,7 +801,7 @@ algorithm
                                        index0 = i0)) :: blstack
             ))
       algorithm
-        arrayUpdate(i0, 1, arrayGet(i0,1) + 1);
+        Mutable.update(i0, Mutable.access(i0) + 1);
       then
         MEM_TEXT(
           {},
@@ -814,7 +815,7 @@ algorithm
             blocksStack = (itertoks, bt as BT_ITER(index0 = i0)) :: blstack
             ))
       algorithm
-        arrayUpdate(i0, 1, arrayGet(i0,1) + 1);
+        Mutable.update(i0, Mutable.access(i0) + 1);
       then
         MEM_TEXT(
           {},
@@ -827,7 +828,7 @@ algorithm
             blocksStack = (itertoks, bt as BT_ITER(index0 = i0)) :: blstack
             ))
       algorithm
-        arrayUpdate(i0, 1, arrayGet(i0,1) + 1);
+        Mutable.update(i0, Mutable.access(i0) + 1);
       then
         MEM_TEXT(
           {},
@@ -836,14 +837,14 @@ algorithm
 
     case FILE_TEXT()
       algorithm
-        _ := match listGet(arrayGet(txt.blocksStack,1),1)
+        _ := match listGet(Mutable.access(txt.blocksStack),1)
         case BT_FILE_TEXT(bt=BT_ITER(options = iopts, index0=i0), tell=tell, septok=septok)
         algorithm
           // Either the iterator always increments, or the file position changed
           tellpos := textFileTell(txt);
-          if arrayGet(tell,1)<>tellpos then
+          if Mutable.access(tell)<>tellpos then
             // Update file position and increment i0. Else, we are at the same position and state as before.
-            arrayUpdate(tell, 1, tellpos);
+            Mutable.update(tell, tellpos);
             txt2 := txt;
             haveToken := true;
           else
@@ -855,16 +856,16 @@ algorithm
               then txt;
             case SOME(emptok)
               algorithm
-                arrayUpdate(i0, 1, arrayGet(i0,1) + 1);
+                Mutable.update(i0, Mutable.access(i0) + 1);
                 haveToken := true;
               then writeTok(txt, emptok);
             end match;
           end if;
           if haveToken then
             // Handle separator
-            curIndex := arrayGet(i0,1);
-            arrayUpdate(septok, 1, iopts.separator);
-            arrayUpdate(i0, 1, curIndex + 1);
+            curIndex := Mutable.access(i0);
+            Mutable.update(septok, iopts.separator);
+            Mutable.update(i0, curIndex + 1);
           end if;
         then ();
         end match;
@@ -886,16 +887,16 @@ public function getIteri_i0
 algorithm
   outI0 := match (inText)
     local
-      array<Integer> i0;
+      Mutable<Integer> i0;
 
     case (MEM_TEXT(
             blocksStack = (_, BT_ITER(index0 = i0)) :: _
             ))
       then
-        arrayGet(i0,1);
+        Mutable.access(i0);
 
     case FILE_TEXT()
-      then match listGet(arrayGet(inText.blocksStack,1),1) case BT_FILE_TEXT(bt=BT_ITER(index0=i0)) then arrayGet(i0,1); end match;
+      then match listGet(Mutable.access(inText.blocksStack),1) case BT_FILE_TEXT(bt=BT_ITER(index0=i0)) then Mutable.access(i0); end match;
 
     //should not ever happen
     case (_ )
@@ -1089,13 +1090,13 @@ algorithm
   _ := match inText
     case FILE_TEXT()
     algorithm
-      nchars := arrayGet(inText.nchars, 1);
-      aind := arrayGet(inText.aind, 1);
-      isstart := arrayGet(inText.isstart, 1);
+      nchars := Mutable.access(inText.nchars);
+      aind := Mutable.access(inText.aind);
+      isstart := Mutable.access(inText.isstart);
       (nchars, isstart, aind) := tokFile(file, inStringToken, nchars, isstart, aind);
-      arrayUpdate(inText.nchars, 1, nchars);
-      arrayUpdate(inText.aind, 1, aind);
-      arrayUpdate(inText.isstart, 1, isstart);
+      Mutable.update(inText.nchars, nchars);
+      Mutable.update(inText.aind, aind);
+      Mutable.update(inText.isstart, isstart);
     then ();
   end match;
 end tokFileText;
@@ -2464,7 +2465,7 @@ algorithm
     System.appendFile(Testsuite.getTempFilesFile(), fileName + "\n");
   end if;
   File.open(file, fileName, File.Mode.Write);
-  text := writeText(FILE_TEXT(File.getReference(file), arrayCreate(1, 0), arrayCreate(1, 0), arrayCreate(1, true), arrayCreate(1, {})), text);
+  text := writeText(FILE_TEXT(File.getReference(file), Mutable.create(0), Mutable.create(0), Mutable.create(true), Mutable.create({})), text);
 end redirectToFile;
 
 public function closeFile
@@ -2512,25 +2513,25 @@ algorithm
   case FILE_TEXT()
   algorithm
     handleTok(inText);
-    nchars := arrayGet(inText.nchars, 1);
+    nchars := Mutable.access(inText.nchars);
     if not line then
-      if arrayGet(inText.isstart,1) then
+      if Mutable.access(inText.isstart) then
         File.writeSpace(file, nchars);
         File.write(file, str);
-        arrayUpdate(inText.nchars, 1, nchars+stringLength(str));
-        arrayUpdate(inText.isstart, 1, false);
+        Mutable.update(inText.nchars, nchars+stringLength(str));
+        Mutable.update(inText.isstart, false);
       else
         File.write(file, str);
-        arrayUpdate(inText.nchars, 1, nchars+stringLength(str));
+        Mutable.update(inText.nchars, nchars+stringLength(str));
       end if;
     else
-      if arrayGet(inText.isstart,1) then
+      if Mutable.access(inText.isstart) then
         File.writeSpace(file, nchars);
       else
-        arrayUpdate(inText.isstart,1,true);
+        Mutable.update(inText.isstart, true);
       end if;
       File.write(file, str);
-      arrayUpdate(inText.nchars,1,arrayGet(inText.aind,1));
+      Mutable.update(inText.nchars, Mutable.access(inText.aind));
     end if;
   then ();
   end match;
@@ -2546,8 +2547,8 @@ algorithm
   case FILE_TEXT()
   algorithm
     File.write(file, "\n");
-    arrayUpdate(inText.nchars, 1, arrayGet(inText.aind, 1));
-    arrayUpdate(inText.isstart, 1, true);
+    Mutable.update(inText.nchars, Mutable.access(inText.aind));
+    Mutable.update(inText.isstart, true);
   then ();
   end match;
 end newlineFile;
@@ -2565,18 +2566,18 @@ protected function handleTok "Handle a new token, for example separators"
   input Text txt;
 protected
   StringToken septok;
-  array<Option<StringToken>> aseptok;
+  Mutable<Option<StringToken>> aseptok;
 algorithm
   _ := match txt
   case FILE_TEXT()
   algorithm
-    _ := match arrayGet(txt.blocksStack, 1)
+    _ := match Mutable.access(txt.blocksStack)
       case (BT_FILE_TEXT(bt=BT_ITER(), septok=aseptok)::_)
       algorithm
-        _ := match arrayGet(aseptok,1)
+        _ := match Mutable.access(aseptok)
         case SOME(septok)
         algorithm
-          arrayUpdate(aseptok,1,NONE());
+          Mutable.update(aseptok,NONE());
           tokFileText(txt, septok, doHandleTok=false);
         then ();
         else ();

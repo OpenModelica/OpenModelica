@@ -11,7 +11,7 @@ else()
   set(app_icon_macos "")
 endif()
 
-add_executable(OMEdit WIN32 MACOSX_BUNDLE main.cpp rc_omedit.rc ${app_icon_macos})
+add_executable(OMEdit WIN32 main.cpp rc_omedit.rc ${app_icon_macos})
 target_link_libraries(OMEdit PRIVATE OMEditLib)
 
 if(APPLE)
@@ -45,6 +45,14 @@ if(OM_OMEDIT_INSTALL_RUNTIME_DLLS AND MINGW)
   message(STATUS "Installing QT${OM_QT_MAJOR_VERSION} translation from ${MSYSTEM_PREFIX_ESCAPED}/share/qt${OM_QT_MAJOR_VERSION}/translations/")
   install(DIRECTORY ${MSYSTEM_PREFIX_ESCAPED}/share/qt${OM_QT_MAJOR_VERSION}/translations/    # Note the slash at the end!
           DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/share/qt${OM_QT_MAJOR_VERSION}/translations)
+  # Install the Qt5/Qt6 resources directories
+  message(STATUS "Installing QT${OM_QT_MAJOR_VERSION} translation from ${MSYSTEM_PREFIX_ESCAPED}/share/qt${OM_QT_MAJOR_VERSION}/resources/")
+  install(DIRECTORY ${MSYSTEM_PREFIX_ESCAPED}/share/qt${OM_QT_MAJOR_VERSION}/resources/    # Note the slash at the end!
+          DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/share/qt${OM_QT_MAJOR_VERSION}/resources)
+  # Install the Qt share/qtX/bin directory
+  message(STATUS "Installing QT${OM_QT_MAJOR_VERSION} translation from ${MSYSTEM_PREFIX_ESCAPED}/share/qt${OM_QT_MAJOR_VERSION}/bin/")
+  install(DIRECTORY ${MSYSTEM_PREFIX_ESCAPED}/share/qt${OM_QT_MAJOR_VERSION}/bin/    # Note the slash at the end!
+          DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/share/qt${OM_QT_MAJOR_VERSION}/bin)
 
   # TODO: This is stupid, but I can't get install with RUNTIME_DEPENDENCIES to run.
   # It needs to link to libs that are installed to ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR},
@@ -59,17 +67,19 @@ if(OM_OMEDIT_INSTALL_RUNTIME_DLLS AND MINGW)
 
   # TODO: OMPlot should add this? Or OMEdit needs to link to it directly?
   install(FILES
-          ${MSYSTEM_PREFIX_ESCAPED}/bin/Qt5OpenGL.dll
+          ${MSYSTEM_PREFIX_ESCAPED}/bin/Qt6OpenGL.dll
           TYPE BIN)
 
   message(STATUS "Looking for runtime dependencies of OMEdit in ${MSYSTEM_PREFIX_ESCAPED}/bin ${RUNTIME_LIB_DIRS}")
 
+  if(NOT ${CMAKE_VERSION} VERSION_LESS "4.3")
+    cmake_policy(SET CMP0207 NEW)
+  endif()
   install(TARGETS OMEdit
           RUNTIME_DEPENDENCIES
             DIRECTORIES ${MSYSTEM_PREFIX_ESCAPED}/bin ${RUNTIME_LIB_DIRS}
             PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-"
             POST_EXCLUDE_REGEXES ".*system32/.*\\.dll")
-else()
-  install(TARGETS OMEdit
-          BUNDLE DESTINATION ${OM_MACOS_INSTALL_BUNDLEDIR})
+else ()
+  omc_install_gui_client(OMEdit)
 endif()

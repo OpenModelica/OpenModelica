@@ -58,6 +58,7 @@ public import UnitAbsyn;
 
 protected import Lookup;
 protected import Inst;
+protected import InstBasics;
 protected import InstUtil;
 protected import UnitAbsynBuilder;
 protected import ElementSource;
@@ -378,7 +379,7 @@ algorithm
 
         // set the source of this element
         source := ElementSource.createElementSource(info, FGraph.getScopePath(env), pre);
-        inlineType := InstUtil.commentIsInlineFunc(cmt);
+        inlineType := InstBasics.commentIsInlineFunc(cmt);
         partialPrefixBool := SCodeUtil.partialBool(partialPrefix);
 
         daeElts := InstUtil.optimizeFunctionCheckForLocals(fpath,daeElts,NONE(),{},{},{});
@@ -759,7 +760,7 @@ algorithm
       then (DAE.EXTARG(DAEUtil.varCref(List.find(elements, DAEUtil.isOutputVar)), Absyn.OUTPUT(), ty), true);
     else
       algorithm
-        Error.addInternalError("instExtMakeDefaultExternalCall failed for " + Types.unparseType(funcType), info);
+        Error.addInternalError("instExtMakeDefaultExternalCall failed for " + TypesDump.unparseType(funcType), info);
       then fail();
   end match;
   for elt in elements loop

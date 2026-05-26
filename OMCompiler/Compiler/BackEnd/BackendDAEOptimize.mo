@@ -152,7 +152,7 @@ algorithm
   // so in case max(x,eps)*y/max(x,eps) => x*y/x
   // now x can be equal 0, so we need simplify x*y/x = y
   // it's seem no other models silplyfied it
-  if not Expression.expEqual(outExp, inExp) then
+  if not ExpressionBasics.expEqual(outExp, inExp) then
     outExp := ExpressionSimplify.simplify(outExp);
   end if;
 end simplifyInStreamWork;
@@ -885,7 +885,7 @@ algorithm
       list<Integer> changed;
       Boolean b, isInitial;
       BackendDAE.EqSystem syst;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
 
     case syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns)
       algorithm
@@ -1320,24 +1320,24 @@ end checkUnusedVariablesExp;
 //
 // =============================================================================
 public function removeUnusedFunctions "author: Frenkel TUD 2012-03
-  This function remove unused functions from DAE.FunctionTree to get speed up
+  This function remove unused functions from AvlTreePathFunction.Tree to get speed up
   for compilation of target code."
   input BackendDAE.EqSystems inEqs;
   input BackendDAE.Shared inShared;
   input list<BackendDAE.Equation> inEquationLst;
-  input DAE.FunctionTree inFunctionTree;
-  input DAE.FunctionTree inusedFunctions;
-  output DAE.FunctionTree outFunctionTree;
+  input AvlTreePathFunction.Tree inFunctionTree;
+  input AvlTreePathFunction.Tree inusedFunctions;
+  output AvlTreePathFunction.Tree outFunctionTree;
 protected
   partial function FuncType
     input DAE.Exp inExp;
-    input DAE.FunctionTree inUnsedFunctions;
+    input AvlTreePathFunction.Tree inUnsedFunctions;
     output DAE.Exp outExp;
-    output DAE.FunctionTree outUsedFunctions;
+    output AvlTreePathFunction.Tree outUsedFunctions;
   end FuncType;
 
   FuncType func;
-  DAE.FunctionTree funcs, usedfuncs;
+  AvlTreePathFunction.Tree funcs, usedfuncs;
 algorithm
   funcs := inFunctionTree;
   usedfuncs := inusedFunctions;
@@ -1362,12 +1362,12 @@ algorithm
 end removeUnusedFunctions;
 
 public function copyRecordConstructorAndExternalObjConstructorDestructor
-  input DAE.FunctionTree inAllFunctionTree;
-  output DAE.FunctionTree outUsedFunctionTree;
+  input AvlTreePathFunction.Tree inAllFunctionTree;
+  output AvlTreePathFunction.Tree outUsedFunctionTree;
 protected
   list<DAE.Function> allfuncs_list;
 algorithm
-  outUsedFunctionTree := DAE.AvlTreePathFunction.Tree.EMPTY();
+  outUsedFunctionTree := AvlTreePathFunction.Tree.EMPTY();
   allfuncs_list := DAEUtil.getFunctionList(inAllFunctionTree);
 
   for func in allfuncs_list loop
@@ -1380,7 +1380,7 @@ algorithm
 
       case (DAE.RECORD_CONSTRUCTOR(path=path)) algorithm
         // Add the constructor function.
-        outUsedFunctionTree := DAE.AvlTreePathFunction.add(outUsedFunctionTree, path, SOME(func));
+        outUsedFunctionTree := AvlTreePathFunction.add(outUsedFunctionTree, path, SOME(func));
 
         // Now we traverse the bindings of the record members and look for function calls.
         try
@@ -1407,7 +1407,7 @@ algorithm
       case DAE.FUNCTION(path = path) algorithm
         if stringEq(AbsynUtil.pathLastIdent(path), "constructor") or
            stringEq(AbsynUtil.pathLastIdent(path), "destructor") then
-          outUsedFunctionTree := DAE.AvlTreePathFunction.add(outUsedFunctionTree, path, SOME(func));
+          outUsedFunctionTree := AvlTreePathFunction.add(outUsedFunctionTree, path, SOME(func));
         end if;
       then
         ();
@@ -1420,12 +1420,12 @@ end copyRecordConstructorAndExternalObjConstructorDestructor;
 
 protected function removeUnusedFunctionsSymJacs
   input BackendDAE.Shared inShared;
-  input DAE.FunctionTree inFunctions;
-  input DAE.FunctionTree inUsedFunctions;
-  output DAE.FunctionTree outUsedFunctions = inUsedFunctions;
+  input AvlTreePathFunction.Tree inFunctions;
+  input AvlTreePathFunction.Tree inUsedFunctions;
+  output AvlTreePathFunction.Tree outUsedFunctions = inUsedFunctions;
 protected
   BackendDAE.BackendDAE bdae;
-  DAE.FunctionTree usedfuncs;
+  AvlTreePathFunction.Tree usedfuncs;
   BackendDAE.Shared shared;
 algorithm
   for sjac in inShared.symjacs loop
@@ -1435,7 +1435,7 @@ algorithm
           bdae := BackendDAEUtil.setFunctionTree(bdae, inFunctions);
           shared := bdae.shared;
           usedfuncs := removeUnusedFunctions(bdae.eqs, shared, {}, shared.functionTree, inUsedFunctions);
-          outUsedFunctions := DAE.AvlTreePathFunction.join(outUsedFunctions, usedfuncs);
+          outUsedFunctions := AvlTreePathFunction.join(outUsedFunctions, usedfuncs);
         then
           ();
 
@@ -1453,7 +1453,7 @@ algorithm
         bdae := BackendDAEUtil.setFunctionTree(bdae, inFunctions);
         shared := bdae.shared;
         usedfuncs := removeUnusedFunctions(bdae.eqs, shared, {}, shared.functionTree, inUsedFunctions);
-        outUsedFunctions := DAE.AvlTreePathFunction.join(outUsedFunctions, usedfuncs);
+        outUsedFunctions := AvlTreePathFunction.join(outUsedFunctions, usedfuncs);
       then ();
 
     // If data isSome and we have non generic jacobian what do we do?
@@ -1466,10 +1466,10 @@ end removeUnusedFunctionsSymJacs;
 
 protected function checkUnusedFunctions
   input DAE.Exp inExp;
-  input DAE.FunctionTree inFunctions;
-  input DAE.FunctionTree inUsedFunctions;
+  input AvlTreePathFunction.Tree inFunctions;
+  input AvlTreePathFunction.Tree inUsedFunctions;
   output DAE.Exp outExp;
-  output DAE.FunctionTree outUsedFunctions;
+  output AvlTreePathFunction.Tree outUsedFunctions;
 algorithm
   (outExp, outUsedFunctions) := Expression.traverseExpBottomUp(inExp,
     function checkUnusedFunctionsExp(inFunctions = inFunctions), inUsedFunctions);
@@ -1477,16 +1477,16 @@ end checkUnusedFunctions;
 
 protected function checkUnusedFunctionsExp
   input DAE.Exp inExp;
-  input DAE.FunctionTree inFunctions;
-  input DAE.FunctionTree inUsedFunctions;
+  input AvlTreePathFunction.Tree inFunctions;
+  input AvlTreePathFunction.Tree inUsedFunctions;
   output DAE.Exp outExp = inExp;
-  output DAE.FunctionTree outUsedFunctions;
+  output AvlTreePathFunction.Tree outUsedFunctions;
 algorithm
   outUsedFunctions := match(inExp)
     local
       Absyn.Path path;
       DAE.ComponentRef cr;
-      DAE.FunctionTree usedfuncs;
+      AvlTreePathFunction.Tree usedfuncs;
 
     // If the expression is some kind of function call, add it to the used functions.
     case DAE.CALL(path = path)
@@ -1514,20 +1514,20 @@ end checkUnusedFunctionsExp;
 
 protected function addUnusedFunction
   input Absyn.Path inPath;
-  input DAE.FunctionTree inFunctions;
-  input DAE.FunctionTree inUsedFunctions;
-  output DAE.FunctionTree outUsedFunctions = inUsedFunctions;
+  input AvlTreePathFunction.Tree inFunctions;
+  input AvlTreePathFunction.Tree inUsedFunctions;
+  output AvlTreePathFunction.Tree outUsedFunctions = inUsedFunctions;
 protected
   Option<DAE.Function> f;
   list<DAE.Element> body;
 algorithm
   try // Check if the function has already been added.
-    _ := DAE.AvlTreePathFunction.get(inUsedFunctions, inPath);
+    _ := AvlTreePathFunction.get(inUsedFunctions, inPath);
   else // Otherwise, try to add it.
     (f, body) := getFunctionAndBody(inPath, inFunctions);
 
     if isSome(f) then
-      outUsedFunctions := DAE.AvlTreePathFunction.add(outUsedFunctions, inPath, f);
+      outUsedFunctions := AvlTreePathFunction.add(outUsedFunctions, inPath, f);
       (_, outUsedFunctions) := DAEUtil.traverseDAEElementList(body,
         function checkUnusedFunctions(inFunctions = inFunctions), outUsedFunctions);
     end if;
@@ -1537,14 +1537,14 @@ end addUnusedFunction;
 protected function getFunctionAndBody
 "returns the body of a function"
   input Absyn.Path inPath;
-  input DAE.FunctionTree fns;
+  input AvlTreePathFunction.Tree fns;
   output Option<DAE.Function> outFn;
   output list<DAE.Element> outFnBody;
 protected
   DAE.Function fn;
 algorithm
   try
-    outFn as SOME(fn) := DAE.AvlTreePathFunction.get(fns, inPath);
+    outFn as SOME(fn) := AvlTreePathFunction.get(fns, inPath);
     outFnBody := DAEUtil.getFunctionElements(fn);
   else
     outFn := NONE();
@@ -1632,7 +1632,7 @@ algorithm
       Integer i;
       BackendDAE.Shared shared;
       BackendDAE.EqSystem syst;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
     case (syst,shared,_,_)
       algorithm
         isInitial := BackendDAEUtil.isInitializationDAE(ishared);
@@ -1659,7 +1659,7 @@ algorithm
       then (systs,shared);
     else
       algorithm
-        Error.assertion(not (numErrorMessages==Error.getNumErrorMessages()),"BackendDAEOptimize.partitionIndependentBlocks failed without good error message",AbsynUtil.dummyInfo);
+        Error.assertion(not (numErrorMessages==Error.getNumErrorMessages()),"BackendDAEOptimize.partitionIndependentBlocks failed without good error message",Absyn.dummyInfo);
       then fail();
   end matchcontinue;
 end partitionIndependentBlocksHelper;
@@ -1770,7 +1770,7 @@ algorithm
       BackendDAE.CompInfo compInfo, allOps, torn,other;
       list<BackendDAE.Equation> eqnlst;
       BackendDAE.Jacobian jac;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       list<BackendDAE.Var> varlst;
       list<DAE.Exp> explst;
       BackendDAE.InnerEquations innerEquations;
@@ -3843,8 +3843,8 @@ protected function traverserexpandDerEquation "
   input Mutable<BackendDAE.Shared> shared;
 protected
    BackendDAE.Equation e, e1;
-   tuple<BackendDAE.Variables, DAE.FunctionTree> ext_arg, ext_art1;
-   DAE.FunctionTree funcs;
+   tuple<BackendDAE.Variables, AvlTreePathFunction.Tree> ext_arg, ext_art1;
+   AvlTreePathFunction.Tree funcs;
    Boolean b;
    list<DAE.SymbolicOperation> ops;
 algorithm
@@ -3862,7 +3862,7 @@ protected
   tuple<BackendDAE.Variables, BackendDAE.Shared, Boolean> ext_arg;
   BackendDAE.Variables vars1, vars2;
   list<DAE.SymbolicOperation> ops;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   Boolean b;
 algorithm
   (vars1, ops) := tpl;
@@ -3890,7 +3890,7 @@ algorithm
       list<BackendDAE.Var> varlst;
       BackendDAE.Var v;
       Boolean b;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       BackendDAE.Shared shared;
     case DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=cr)})})
       algorithm
@@ -3986,7 +3986,7 @@ algorithm
   if BackendVariable.isVarNonDifferentiable(var) then
     DAE.CALL(expLst = {arg}) := iExp;
     Error.addSourceMessageAndFail(Error.DER_OF_NONDIFFERENTIABLE_EXP,
-      {ExpressionDump.printExpStr(arg)}, var.source.info);
+      {ExpressionBasics.printExpStr(arg)}, var.source.info);
   elseif BackendVariable.isVarDiscrete(var) then
     oExp := DAE.RCONST(0.0);
   elseif not BackendVariable.isStateVar(var) or BackendVariable.varStateSelectForced(var) then
@@ -3995,7 +3995,7 @@ algorithm
     oExp := iExp;
   else
     /* Might be part of a different equation-system...
-    str = "BackendDAECreate.updateStatesVars failed for: " + ComponentReference.printComponentRefStr(cr);
+    str = "BackendDAECreate.updateStatesVars failed for: " + ComponentReferenceBasics.printComponentRefStr(cr);
     Error.addMessage(Error.INTERNAL_ERROR, {str});
     */
   end if;
@@ -4028,7 +4028,7 @@ algorithm
     case(_, _::newStates, _)
       algorithm
         /* Might be part of a different equation-system...
-        str = "BackendDAECreate.updateStatesVars failed for: " + ComponentReference.printComponentRefStr(cr);
+        str = "BackendDAECreate.updateStatesVars failed for: " + ComponentReferenceBasics.printComponentRefStr(cr);
         Error.addMessage(Error.INTERNAL_ERROR, {str});
         */
         vars := updateStatesVars(inVars, newStates, noStateFound);
@@ -4164,7 +4164,7 @@ protected
   BackendDAE.AdjacencyMatrixT mT;
   Integer ne,nv;
   array<Integer> w_vars, w_eqns;
-  DAE.FunctionTree functionTree;
+  AvlTreePathFunction.Tree functionTree;
   list<tuple<Integer,Integer>> tplIndexWeight;
   list<Integer> indexs;
   list<BackendDAE.Var> var_lst;
@@ -4330,7 +4330,7 @@ algorithm
           indRemove := i :: indRemove;
           for e1 in left_lst loop
             e2 :: right_lst := right_lst;
-            //print("=>" +  ExpressionDump.printExpStr(e2) + " = " +  ExpressionDump.printExpStr(e1) + "\n");
+            //print("=>" +  ExpressionBasics.printExpStr(e2) + " = " +  ExpressionBasics.printExpStr(e1) + "\n");
             if not Expression.isWild(e1) then
               if Expression.isScalar(e2) then
                 eqn1 := BackendEquation.generateEquation(e1, e2, source, attr);
@@ -4358,7 +4358,7 @@ algorithm
             indRemove := i :: indRemove;
             for e1 in left_lst loop
             e2 :: right_lst := right_lst;
-            //print("=>" +  ExpressionDump.printExpStr(e2) + " = " +  ExpressionDump.printExpStr(e1) + "\n");
+            //print("=>" +  ExpressionBasics.printExpStr(e2) + " = " +  ExpressionBasics.printExpStr(e1) + "\n");
             if not Expression.isWild(e1) then
               if Expression.isScalar(e2) then
               eqn1 := BackendEquation.generateEquation(e1, e2, source, attr);
@@ -4389,7 +4389,7 @@ algorithm
               DAE.CREF(componentRef = cr) := e1;
               if Expression.expHasCrefNoPreOrStart(right, cr) then
                 update := true;
-                cr  := ComponentReference.makeCrefIdent(tmpVarPrefix + intString(idx), Expression.typeof(e1) , {});
+                cr  := ComponentReferenceBasics.makeCrefIdent(tmpVarPrefix + intString(idx), Expression.typeof(e1) , {});
                 idx := idx + 1;
                 e := Expression.crefExp(cr);
                 tmpvar := BackendVariable.makeVar(cr);
@@ -4403,7 +4403,7 @@ algorithm
               end if;
             elseif Expression.isUnaryCref(e1) then
               update := true;
-              cr  := ComponentReference.makeCrefIdent(tmpVarPrefix + intString(idx), Expression.typeof(e1) , {});
+              cr  := ComponentReferenceBasics.makeCrefIdent(tmpVarPrefix + intString(idx), Expression.typeof(e1) , {});
               idx := idx + 1;
               e := Expression.crefExp(cr);
               tmpvar := BackendVariable.makeVar(cr);
@@ -4416,7 +4416,7 @@ algorithm
               update := true;
               DAE.ARRAY(array=arrayLst, scalar=sc) := e1;
               m := listLength(arrayLst);
-              cr  := ComponentReference.makeCrefIdent(tmpVarPrefix + intString(idx), Expression.typeof(e1) , {});
+              cr  := ComponentReferenceBasics.makeCrefIdent(tmpVarPrefix + intString(idx), Expression.typeof(e1) , {});
               idx := idx + 1;
               e := Expression.crefExp(cr);
               tmpvar := BackendVariable.makeVar(cr);
@@ -4430,7 +4430,7 @@ algorithm
                 eqn1 := BackendDAE.EQUATION(e2, e3, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
                 //print(BackendDump.equationString(eqn1) + "--new--\n");
                 eqns := BackendEquation.add(eqn1, eqns);
-                cr  := ComponentReference.makeCrefIdent(tmpVarPrefix + intString(idx-1), Expression.typeof(e1) , {DAE.INDEX(DAE.ICONST(j))});
+                cr  := ComponentReferenceBasics.makeCrefIdent(tmpVarPrefix + intString(idx-1), Expression.typeof(e1) , {DAE.INDEX(DAE.ICONST(j))});
                 j := j + 1;
                 tmpvar.varName := cr;
                 vars := BackendVariable.addVar(tmpvar, vars);
@@ -4656,7 +4656,7 @@ protected function inlineFunctionInLoopsMain
   output BackendDAE.BackendDAE outDAE;
 protected
   BackendDAE.Shared shared;
-  DAE.FunctionTree functionTree;
+  AvlTreePathFunction.Tree functionTree;
   BackendDAE.EqSystems eqs;
   BackendDAE.EqSystem _syst;
 algorithm
@@ -4672,7 +4672,7 @@ end inlineFunctionInLoopsMain;
 
 protected function inlineFunctionInLoopsWork
   input output BackendDAE.EqSystem syst;
-  input DAE.FunctionTree functionTree;
+  input AvlTreePathFunction.Tree functionTree;
   input output BackendDAE.Shared shared;
 protected
   BackendDAE.Variables vars;
@@ -4752,7 +4752,7 @@ protected
   BackendDAE.StateSets stateSets;
   BackendDAE.StrongComponents comps;
   BackendDAE.Matching matching;
-  DAE.FunctionTree functionTree;
+  AvlTreePathFunction.Tree functionTree;
   Boolean update;
   Integer index = 1, ii;
   BackendDAE.EqSystem nSyst;
@@ -4818,7 +4818,7 @@ TODO: check me!
   input list<Integer> ass2_;
   input Integer nEqns;
   input Integer nVars;
-  input DAE.FunctionTree functionTree;
+  input AvlTreePathFunction.Tree functionTree;
   input list<Integer> compOrders;
   output BackendDAE.EqSystem outSyst = inSyst;
 
@@ -4960,7 +4960,7 @@ algorithm
     BackendDAE.VAR(varName = cr) := BackendVariable.getVarAt(outVars, i);
     var_lst := cr :: var_lst;
     if Flags.isSet(Flags.DUMP_SIMPLIFY_LOOPS) then
-        print(ComponentReference.printComponentRefStr(cr) +"\n");
+        print(ComponentReferenceBasics.printComponentRefStr(cr) +"\n");
     end if;
   end for;
 
@@ -5131,7 +5131,7 @@ algorithm
         if Expression.isBinary(res) then
           DAE.BINARY(operator=op) := res;
           if Expression.isAddOrSub(op) or Expression.isMulOrDiv(op) or Expression.isPow(op) then
-            if not Expression.expEqual(res, inExp) then
+            if not ExpressionBasics.expEqual(res, inExp) then
               if Expression.isDiv(op) or Expression.isPow(op) then
                 DAE.BINARY(e1,op,e2) := res;
                 (outIndx, outVars, outEqns, outShared, update, e1, ass1, ass2, outCompOrder) := simplifyLoopExp(outIndx, outVars, outEqns, outShared, var_lst, e1, ass1, ass2, simDAE, useTmpVars, ii, outCompOrder);
@@ -5297,7 +5297,7 @@ protected
   tuple<BackendDAE.Variables, list<BackendDAE.Equation>, BackendDAE.Shared, Boolean, Boolean> ext_arg;
   BackendDAE.Variables vars;
   list<DAE.SymbolicOperation> ops;
-  DAE.FunctionTree funcs;
+  AvlTreePathFunction.Tree funcs;
   Boolean b, addVars;
   BackendDAE.Shared shared;
   list<BackendDAE.Equation> eqnLst;
@@ -5328,7 +5328,7 @@ algorithm
       list<BackendDAE.Var> varlst;
       BackendDAE.Var v, v1;
       Boolean b, addVar;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       list<BackendDAE.Equation> eqnLst;
       Integer numVars;
       list<DAE.Exp> expLst;
@@ -5349,7 +5349,7 @@ algorithm
     then (outExp, (vars, eqnLst, shared, addVar, true));
 
     case (DAE.CALL(path=Absyn.IDENT(name="der")), (_, _, _, _, _)) algorithm
-      str := "BackendDAEOptimize.introduceDerAlias failed for: " + ExpressionDump.printExpStr(inExp) + "\n";
+      str := "BackendDAEOptimize.introduceDerAlias failed for: " + ExpressionBasics.printExpStr(inExp) + "\n";
       Error.addMessage(Error.INTERNAL_ERROR, {str});
     then fail();
 
@@ -5444,7 +5444,7 @@ algorithm
     then (outExp, true);
 
     case (DAE.CALL(path=Absyn.IDENT(name="der")), _) algorithm
-      Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed for: " + ExpressionDump.printExpStr(inExp) + "\n"});
+      Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed for: " + ExpressionBasics.printExpStr(inExp) + "\n"});
     then fail();
 
     else (inExp, itpl);
@@ -5779,7 +5779,7 @@ protected
   BackendDAE.Matching matching;
   BackendDAE.Shared shared;
   BackendDAE.Variables vars;
-  DAE.FunctionTree funcTree;
+  AvlTreePathFunction.Tree funcTree;
   list<BackendDAE.Equation> eqLst, eqLstNew;
   list<BackendDAE.Var> varLst, varLstNew, states;
   list<DAE.ComponentRef> crefs;
@@ -5916,7 +5916,7 @@ algorithm
     end if;
 
     // make unneeded state derivatives and add them to unneeded vars
-    der_replacement := UnorderedMap.new<DAE.Exp>(ComponentReference.hashComponentRef, ComponentReference.crefEqual);
+    der_replacement := UnorderedMap.new<DAE.Exp>(ComponentReference.hashComponentRef, ComponentReferenceBasics.crefEqual);
     for state in BackendVariable.varList(vars) loop
       if BackendVariable.isStateVar(state) then
         derVar := BackendVariable.makeVar(ComponentReference.prependStringCref("$DER_REM_", state.varName));
@@ -6014,7 +6014,7 @@ algorithm
 
     case DAE.CALL(path=Absyn.IDENT("homotopy"), expLst={actual,simplified})
       algorithm
-        lambda := Expression.crefExp(ComponentReference.makeCrefIdent(BackendDAE.homotopyLambda, DAE.T_REAL_DEFAULT, {}));
+        lambda := Expression.crefExp(ComponentReferenceBasics.makeCrefIdent(BackendDAE.homotopyLambda, DAE.T_REAL_DEFAULT, {}));
         outExp := DAE.BINARY(DAE.BINARY(simplified, DAE.MUL(DAE.T_REAL_DEFAULT), DAE.BINARY(DAE.RCONST(1.0), DAE.SUB(DAE.T_REAL_DEFAULT), lambda)), DAE.ADD(DAE.T_REAL_DEFAULT), DAE.BINARY(actual, DAE.MUL(DAE.T_REAL_DEFAULT), lambda));
      then true;
 
@@ -6194,7 +6194,7 @@ algorithm
 
   if homotopyLoopBeginning > 0 then
     // Add homotopy lambda to system
-    lambda := BackendDAE.VAR(ComponentReference.makeCrefIdent(BackendDAE.homotopyLambda, DAE.T_REAL_DEFAULT, {}), BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true, false, false);
+    lambda := BackendDAE.VAR(ComponentReferenceBasics.makeCrefIdent(BackendDAE.homotopyLambda, DAE.T_REAL_DEFAULT, {}), BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true, false, false);
     system.orderedVars := BackendVariable.addVar(lambda, system.orderedVars);
     lambdaIdx := BackendVariable.varsSize(system.orderedVars);
 
@@ -6380,7 +6380,7 @@ algorithm
 
   if hasAnyHomotopy then
     // Add homotopy lambda to system
-    lambda := BackendDAE.VAR(ComponentReference.makeCrefIdent(BackendDAE.homotopyLambda, DAE.T_REAL_DEFAULT, {}), BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true, false, false);
+    lambda := BackendDAE.VAR(ComponentReferenceBasics.makeCrefIdent(BackendDAE.homotopyLambda, DAE.T_REAL_DEFAULT, {}), BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true, false, false);
     system.orderedVars := BackendVariable.addVar(lambda, system.orderedVars);
   end if;
   comps := listReverse(newComps);

@@ -127,5 +127,3 @@ namespace OpenModelica::Absyn
     return os;
   }
 }
-
-

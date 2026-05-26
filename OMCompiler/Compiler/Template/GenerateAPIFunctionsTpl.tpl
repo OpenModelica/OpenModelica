@@ -50,6 +50,7 @@ template getCevalScriptInterface(list<DAE.Type> tys)
   protected
 
   import Values;
+  import ValuesMake;
   import ValuesUtil;
   constant Absyn.Msg dummyMsg = Absyn.MSG(SOURCEINFO("<interactive>",false,1,1,1,1,0.0));
 
@@ -78,7 +79,7 @@ template getInValue(Text name, DAE.Type ty)
     case T_INTEGER(__) then 'Values.INTEGER(<%name%>)'
     case T_BOOL(__) then 'Values.BOOL(<%name%>)'
     case T_REAL(__) then 'Values.REAL(<%name%>)'
-    case aty as T_ARRAY(__) then 'ValuesUtil.makeArray(list(<%getInValue('<%name%>_iter', aty.ty)%> for <%name%>_iter in <%name%>))'
+    case aty as T_ARRAY(__) then 'ValuesMake.makeArray(list(<%getInValue('<%name%>_iter', aty.ty)%> for <%name%>_iter in <%name%>))'
     case T_CODE(ty=C_TYPENAME(__)) then 'Values.CODE(Absyn.C_TYPENAME(Parser.stringPath(<%name%>)))'
     else error(sourceInfo(), 'getInValue failed for <%unparseType(ty)%>')
 end getInValue;

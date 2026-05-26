@@ -87,4 +87,3 @@ void FunctionArgsList::print(std::ostream &os) const noexcept
   if (!_args.empty() && !_namedArgs.empty()) os << ", ";
   os << Util::printList(_namedArgs);
 }
-

@@ -53,11 +53,11 @@ public import AbsynUtil;
 public import SCode;
 
 protected
+import BackendInterface;
 import Config;
 import Debug;
 import Error;
 import Flags;
-import InstHashTable;
 import List;
 import MetaUtil;
 import SCodeUtil;
@@ -87,7 +87,7 @@ algorithm
 
     case _
       algorithm
-        InstHashTable.init();
+        BackendInterface.initInstHashTable();
         // adrpo: TODO! FIXME! disable function caching for now as some tests fail.
         // setGlobalRoot(Ceval.cevalHashIndex, Ceval.emptyCevalHashTable());
         Absyn.PROGRAM(classes=inClasses) := MetaUtil.createMetaClassesInProgram(inProgram);
@@ -489,7 +489,7 @@ algorithm
         als := translateClassdefAlgorithms(parts);
         initals := translateClassdefInitialalgorithms(parts);
         cos := translateClassdefConstraints(parts);
-        mod := translateMod(SOME(Absyn.CLASSMOD(cmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), NONE(), AbsynUtil.dummyInfo);
+        mod := translateMod(SOME(Absyn.CLASSMOD(cmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), NONE(), Absyn.dummyInfo);
         scodeCmt := translateCommentList(ann, cmtString);
         decl := translateClassdefExternaldecls(parts);
         decl := translateAlternativeExternalAnnotation(decl, scodeCmt, info);
@@ -691,7 +691,7 @@ algorithm
         als_1 := (SCode.ALGORITHM(al_1) :: als);
       then
         als_1;
-    case (cp :: rest) /* ignore everthing other than algorithms */
+    case (_ :: rest) /* ignore everthing other than algorithms */
       algorithm
         als := translateClassdefAlgorithms(rest);
       then
@@ -722,7 +722,7 @@ algorithm
         cos_1 := (SCode.CONSTRAINTS(consts) :: cos);
       then
         cos_1;
-    case (cp :: rest) /* ignore everthing other than Constraints */
+    case (_ :: rest) /* ignore everthing other than Constraints */
       algorithm
         cos := translateClassdefConstraints(rest);
       then
@@ -982,7 +982,7 @@ algorithm
     case Absyn.ANNOTATION(elementArgs = args)
       algorithm
         // Keep empty modifiers since they might have meaning in annotations, e.g. annotation(Dialog()).
-        m := translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), NONE(), AbsynUtil.dummyInfo, keepEmpty = true);
+        m := translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), NONE(), Absyn.dummyInfo, keepEmpty = true);
 
       then
         if SCodeUtil.isEmptyMod(m) then NONE() else SOME(SCode.ANNOTATION(m));
@@ -1173,14 +1173,14 @@ algorithm
     case (_,_,_,_,vis,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = NONE()),info)
       algorithm
         // fprintln(Flags.TRANSLATE, "translating extends: " + AbsynUtil.pathString(n));
-        mod := translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), NONE(), AbsynUtil.dummyInfo);
+        mod := translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), NONE(), Absyn.dummyInfo);
       then
         {SCode.EXTENDS(path,vis,mod,NONE(),info)};
 
     case (_,_,_,_,vis,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = SOME(absann)),info)
       algorithm
         // fprintln(Flags.TRANSLATE, "translating extends: " + AbsynUtil.pathString(n));
-        mod := translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), NONE(), AbsynUtil.dummyInfo);
+        mod := translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), NONE(), Absyn.dummyInfo);
         ann := translateAnnotation(absann);
       then
         {SCode.EXTENDS(path,vis,mod,ann,info)};
@@ -1358,7 +1358,7 @@ algorithm
         Absyn.EXTENDS(path = cc_path, elementArg = eltargs), comment = cmt))
       algorithm
         mod := Absyn.CLASSMOD(eltargs, Absyn.NOMOD());
-        cc_mod := translateMod(SOME(mod), SCode.NOT_FINAL(), SCode.NOT_EACH(), NONE(), AbsynUtil.dummyInfo);
+        cc_mod := translateMod(SOME(mod), SCode.NOT_FINAL(), SCode.NOT_EACH(), NONE(), Absyn.dummyInfo);
         cc_cmt := translateComment(cmt);
       then
         SOME(SCode.CONSTRAINCLASS(cc_path, cc_mod, cc_cmt));
@@ -1863,5 +1863,5 @@ algorithm
   end match;
 end checkTypeSpec;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_dump");
 end AbsynToSCode;

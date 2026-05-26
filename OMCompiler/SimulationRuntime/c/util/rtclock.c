@@ -34,7 +34,9 @@
 #include "../gc/omc_gc.h"
 #include <errno.h>
 #include "omc_error.h"
+#ifndef NSEC_PER_SEC
 #define NSEC_PER_SEC 1000000000L
+#endif
 
 /* If min_time is set, subtract this amount from measured times to avoid
  * including the time of measuring in reported statistics */
@@ -180,7 +182,7 @@ int rt_set_clock(enum omc_rt_clock_t newClock) {
   return 0;
 }
 
-enum omc_rt_clock_t rt_get_clock() {
+enum omc_rt_clock_t rt_get_clock(void) {
   return selectedClock;
 }
 
@@ -388,7 +390,7 @@ double rt_ext_tp_tock_realtime(rtclock_t* tick_tp) {
 int64_t rt_ext_tp_sync_nanosec(rtclock_t* tick_tp, uint64_t nsec)
 {
   int64_t res = 0;
-  throwStreamPrint(NULL, "%s not implemented for OSX", __FUNCTION__);
+  throwStreamPrint(NULL, "%s not implemented for OSX", __func__);
   return res;
 }
 
@@ -411,7 +413,7 @@ int rt_set_clock(enum omc_rt_clock_t newClock) {
   return 0;
 }
 
-enum omc_rt_clock_t rt_get_clock() {
+enum omc_rt_clock_t rt_get_clock(void) {
   return omc_clock==OMC_CLOCK_MONOTONIC ? OMC_CLOCK_REALTIME : OMC_CLOCK_CPUTIME;
 }
 
@@ -452,7 +454,7 @@ double rt_tock(int ix) {
   rtclock_t diff_tp;
   if(omc_clock == OMC_CPU_CYCLES) {
     unsigned long long cycles = RDTSC();
-    diff_tp = (rtclock_t)(cycles - tick_tp[ix].cycles);
+    diff_tp = (rtclock_t){ .cycles = cycles - tick_tp[ix].cycles };
   } else {
     struct timespec tock_tp = {0,0};
     clock_gettime(omc_clock, &tock_tp);
@@ -549,7 +551,7 @@ double rt_accumulate(int ix) {
   rtclock_t diff_tp;
   if(omc_clock == OMC_CPU_CYCLES) {
     unsigned long long cycles = RDTSC();
-    diff_tp = (rtclock_t)(cycles - tick_tp[ix].cycles);
+    diff_tp = (rtclock_t){ .cycles = cycles - tick_tp[ix].cycles };
     acc_tp[ix].cycles += diff_tp.cycles;
   } else {
     struct timespec tock_tp = {0,0};
@@ -624,7 +626,7 @@ double rt_ext_tp_tock_realtime(rtclock_t* tick_tp) {
 double rt_ext_tp_tock(rtclock_t* tick_tp) {
   if(omc_clock == OMC_CPU_CYCLES) {
     unsigned long long cycles = RDTSC();
-    return rtclock_compensated_value((rtclock_t)(cycles - tick_tp->cycles));
+    return rtclock_compensated_value((rtclock_t){ .cycles = cycles - tick_tp->cycles });
   } else {
     return rt_ext_tp_tock_common(omc_clock, tick_tp);
   }

@@ -107,7 +107,7 @@ algorithm
   inlineData := BackendDAE.INLINE_DATA(localInline, knownVariables);
 
   // make dt
-  cref := ComponentReference.makeCrefIdent(BackendDAE.symSolverDT, DAE.T_REAL_DEFAULT, {});
+  cref := ComponentReferenceBasics.makeCrefIdent(BackendDAE.symSolverDT, DAE.T_REAL_DEFAULT, {});
   tmpv := BackendVariable.makeVar(cref);
   //tmpv := BackendVariable.setVarKind(tmpv, BackendDAE.PARAM());
   tmpv := BackendVariable.setBindExp(tmpv, SOME(DAE.RCONST(0.0)));
@@ -273,11 +273,11 @@ algorithm
     case (cr_lst, DAE.CALL(path=Absyn.IDENT(name="der"), expLst={e1 as DAE.CREF(ty=tp, componentRef = cr)}))
       algorithm
         e2 := Expression.crefExp(ComponentReference.appendStringLastIdent("$Old", cr));
-        e3 := Expression.crefExp(ComponentReference.makeCrefIdent(BackendDAE.symSolverDT, DAE.T_REAL_DEFAULT, {}));
+        e3 := Expression.crefExp(ComponentReferenceBasics.makeCrefIdent(BackendDAE.symSolverDT, DAE.T_REAL_DEFAULT, {}));
         cont := false;
     then (DAE.BINARY(DAE.BINARY(e1, DAE.SUB(tp), e2), DAE.DIV(tp), e3), (List.unionElt(cr,cr_lst), orderedVars));
 
-    case (cr_lst, DAE.CREF(ty=_, componentRef=cr))
+    case (cr_lst, DAE.CREF(componentRef=cr))
       algorithm
         (e, cr_lst) := symSolverAppendStringToStates(cr, cr_lst, orderedVars);
     then (e, (cr_lst, orderedVars));
@@ -317,7 +317,7 @@ algorithm
     case (cr_lst, DAE.CALL(path=Absyn.IDENT(name="der"), expLst={e1 as DAE.CREF(ty=tp, componentRef = cr)}))
       algorithm
         e2 := Expression.crefExp(ComponentReference.appendStringLastIdent("$Old", cr));
-        e3 := Expression.crefExp(ComponentReference.makeCrefIdent(BackendDAE.symSolverDT, DAE.T_REAL_DEFAULT, {}));
+        e3 := Expression.crefExp(ComponentReferenceBasics.makeCrefIdent(BackendDAE.symSolverDT, DAE.T_REAL_DEFAULT, {}));
     then (DAE.BINARY(DAE.BINARY(e1, DAE.SUB(tp), e2), DAE.DIV(tp), e3), List.unionElt(cr,cr_lst));
 
     else (inExp, inTpl);

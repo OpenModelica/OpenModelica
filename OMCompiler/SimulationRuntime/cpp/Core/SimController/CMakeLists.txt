@@ -20,7 +20,9 @@ target_link_libraries(${SimControllerName} ${OMCFactoryName} ${ExtensionUtilitie
 endif(REDUCE_DAE)
 add_precompiled_header(${SimControllerName} Core/Modelica.h)
 
+if(MSVC)
 install(FILES $<TARGET_PDB_FILE:${SimControllerName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+endif()
 
 install(TARGETS ${SimControllerName} DESTINATION ${LIBINSTALLEXT})
 install(FILES

@@ -300,6 +300,10 @@ endif()
 # They are part of "compiler" installation component. This means that you can
 # install just the files in this component by specifying its name.
 if(WIN32)
+  if(NOT ${CMAKE_VERSION} VERSION_LESS "4.3")
+    cmake_policy(SET CMP0207 NEW)
+  endif()
+
   if(NOT MSVC)
     # MinGW/MSYS2 build: runtime DLLs come from the MSYS2 installation.
     if(NOT DEFINED ENV{OMDEV})

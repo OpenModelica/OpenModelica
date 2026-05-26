@@ -90,7 +90,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReference.hashComponentRef,ComponentReference.crefEqual,ComponentReference.printComponentRefStr,modeStr));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReference.hashComponentRef,ComponentReferenceBasics.crefEqual,ComponentReferenceBasics.printComponentRefStr,modeStr));
 end emptyHashTableSized;
 
 public function modeStr
@@ -105,8 +105,8 @@ protected
 algorithm
   InstStateMachineUtil.SMNODE(componentRef=componentRef, isInitial=isInitial, edges=edges) := mode;
   crefs := BaseHashSet.hashSetList(edges);
-  paths := List.map(crefs, ComponentReference.printComponentRefStr);
-  s := "SMNODE(" + ComponentReference.printComponentRefStr(componentRef) + ", "+boolString(isInitial) + ","
+  paths := List.map(crefs, ComponentReferenceBasics.printComponentRefStr);
+  s := "SMNODE(" + ComponentReferenceBasics.printComponentRefStr(componentRef) + ", "+boolString(isInitial) + ","
      + "EDGES(" + stringDelimitList(paths, ", ") +"))\n";
 end modeStr;
 

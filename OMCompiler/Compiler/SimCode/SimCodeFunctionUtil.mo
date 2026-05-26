@@ -49,13 +49,14 @@ import Autoconf;
 import BaseHashTable;
 import CevalScript;
 import ComponentReference;
+import ComponentReferenceBasics;
 import DAEDump;
 import DAEUtil;
 import ElementSource;
 import Error;
 import Expression;
+import ExpressionBasics;
 import ExpressionSimplify;
-import ExpressionDump;
 import Flags;
 import Graph;
 import List;
@@ -65,6 +66,8 @@ import SCode;
 import SCodeUtil;
 import Testsuite;
 import UnorderedMap;
+import Config;
+import System;
 
 public
 
@@ -87,7 +90,7 @@ public function crefSubIsScalar
 protected
   list<DAE.Subscript> subs;
 algorithm
-  subs := ComponentReference.crefSubs(cref);
+  subs := ComponentReferenceBasics.crefSubs(cref);
   isScalar := subsToScalar(subs);
 end crefSubIsScalar;
 
@@ -336,7 +339,7 @@ algorithm
       algorithm
         failure(SimCodeFunction.FUNCTION_CONTEXT():=context); // only in the function context
         { DAE.INDEX(DAE.ICONST(1)) } := ComponentReference.crefLastSubs(cr);
-        cr := ComponentReference.crefStripLastSubs(cr);
+        cr := ComponentReferenceBasics.crefStripLastSubs(cr);
         true := isArrayExpansion(aRest, cr, 2);
         crefExp := Expression.makeCrefExp(cr, aty);
       then
@@ -364,8 +367,8 @@ algorithm
       algorithm
         { DAE.INDEX(DAE.ICONST(i)) } := ComponentReference.crefLastSubs(cr);
         true := (i == index);
-        cr := ComponentReference.crefStripLastSubs(cr);
-        true := ComponentReference.crefEqualNoStringCompare(inCref, cr);
+        cr := ComponentReferenceBasics.crefStripLastSubs(cr);
+        true := ComponentReferenceBasics.crefEqualNoStringCompare(inCref, cr);
       then isArrayExpansion(aRest, inCref, index+1);
     else false;
   end matchcontinue;
@@ -392,7 +395,7 @@ algorithm
       algorithm
         failure(SimCodeFunction.FUNCTION_CONTEXT():=context);
         { DAE.INDEX(DAE.ICONST(1)), DAE.INDEX(DAE.ICONST(1)) } := ComponentReference.crefLastSubs(cr);
-        cr := ComponentReference.crefStripLastSubs(cr);
+        cr := ComponentReferenceBasics.crefStripLastSubs(cr);
         true := isMatrixExpansion(rows, cr, 1, 1);
         crefExp := Expression.makeCrefExp(cr, aty);
       then
@@ -423,8 +426,8 @@ algorithm
       algorithm
         { DAE.INDEX(DAE.ICONST(r)), DAE.INDEX(DAE.ICONST(c)) } := ComponentReference.crefLastSubs(cr);
         true := (r == rowIndex) and (c == colIndex);
-        cr := ComponentReference.crefStripLastSubs(cr);
-        true := ComponentReference.crefEqualNoStringCompare(inCref, cr);
+        cr := ComponentReferenceBasics.crefStripLastSubs(cr);
+        true := ComponentReferenceBasics.crefEqualNoStringCompare(inCref, cr);
       then isMatrixExpansion(restElems :: restRows, inCref, rowIndex, colIndex+1);
     else false;
   end matchcontinue;
@@ -875,7 +878,7 @@ algorithm
     case (DAE.FUNCARG(name=name, ty=tty, par=prl, const=const), _)
       algorithm
         tty := Types.simplifyType(tty);
-        cref_  := ComponentReference.makeCrefIdent(name, tty, {});
+        cref_  := ComponentReferenceBasics.makeCrefIdent(name, tty, {});
         kind := DAEUtil.const2VarKind(const);
       then
         SimCodeFunction.VARIABLE(cref_, tty, binding, {}, prl, kind, false);
@@ -998,7 +1001,7 @@ algorithm
     case (SimCodeFunction.SIMEXTARG(cref, isInput, outputIndex, isArray, _, type_), _)
       algorithm
         true := outputIndex == -1;
-        fcref := ComponentReference.crefFirstCref(cref);
+        fcref := ComponentReferenceBasics.crefFirstCref(cref);
         (newOutputIndex, hasBinding) := findIndexInList(fcref, outVars, 1);
       then
         SimCodeFunction.SIMEXTARG(cref, isInput, newOutputIndex, isArray, hasBinding, type_);
@@ -1033,7 +1036,7 @@ algorithm
     case (_, {}, _) then (-1, false);
     case (_, SimCodeFunction.VARIABLE(name=name, value=v) :: _, currentIndex)
       algorithm
-        true := ComponentReference.crefEqualNoStringCompare(cref, name);
+        true := ComponentReferenceBasics.crefEqualNoStringCompare(cref, name);
       then (currentIndex, isSome(v));
     case (_, _ :: restOutVars, currentIndex)
       algorithm
@@ -1315,7 +1318,7 @@ algorithm
       then (exp, t);
     case (exp, _)
       algorithm
-        msg := "function replaceLiteralExp failed. Falling back to not replacing "+ExpressionDump.printExpStr(exp)+".";
+        msg := "function replaceLiteralExp failed. Falling back to not replacing "+ExpressionBasics.printExpStr(exp)+".";
         Error.addInternalError(msg, sourceInfo());
       then (inExp,inTpl);
   end matchcontinue;
@@ -1683,7 +1686,7 @@ algorithm
     case (DAE.TYPES_VAR(name=name, attributes = attr, ty=ty))
       algorithm
         ty := Types.simplifyType(ty);
-        cref_ := ComponentReference.makeCrefIdent(name, ty, {});
+        cref_ := ComponentReferenceBasics.makeCrefIdent(name, ty, {});
         DAE.ATTR(parallelism = scPrl) := attr;
         prl := scodeParallelismToDAEParallelism(scPrl);
       then SimCodeFunction.VARIABLE(cref_, ty, NONE(), {}, prl,DAE.VARIABLE(), false);
@@ -1707,7 +1710,7 @@ algorithm
     case (DAE.TYPES_VAR(name=name, attributes = attr, ty=ty))
       algorithm
         ty := Types.simplifyType(ty);
-        cref_ := ComponentReference.makeCrefIdent(name, ty, {});
+        cref_ := ComponentReferenceBasics.makeCrefIdent(name, ty, {});
         DAE.ATTR(parallelism = scPrl) := attr;
         prl := scodeParallelismToDAEParallelism(scPrl);
         bindExp := checkSourceAndGetBindingExp(inTypesVar.binding);
@@ -2442,7 +2445,7 @@ protected function getCalledFunctionsInFunctions "Goes through the given DAE, fi
   the names of the functions called from within those functions"
   input list<Absyn.Path> paths;
   input HashTableStringToPath.HashTable inHt;
-  input DAE.FunctionTree funcs;
+  input AvlTreePathFunction.Tree funcs;
   output HashTableStringToPath.HashTable outHt;
 algorithm
   outHt := match (paths, inHt, funcs)
@@ -2465,7 +2468,7 @@ public function getCalledFunctionsInFunction2 "Goes through the given DAE, finds
   input Absyn.Path inPath;
   input String pathstr;
   input HashTableStringToPath.HashTable inHt "paths to not add";
-  input DAE.FunctionTree funcs;
+  input AvlTreePathFunction.Tree funcs;
   output HashTableStringToPath.HashTable outHt "paths to not add";
 algorithm
   outHt := matchcontinue (inPath, pathstr, inHt, funcs)
@@ -2619,7 +2622,7 @@ algorithm
       DAE.ComponentRef name;
       DAE.Type ty;
     case SimCodeFunction.VARIABLE(name=name, ty=ty)
-      then Types.unparseType(ty) + " " + ComponentReference.printComponentRefStr(name);
+      then TypesDump.unparseType(ty) + " " + ComponentReferenceBasics.printComponentRefStr(name);
     case SimCodeFunction.FUNCTION_PTR(name=str)
       then "modelica_fnptr " + str;
   end match;
@@ -2736,7 +2739,7 @@ protected
   Integer nrdims;
   list<String> idxstrlst;
 algorithm
-  dims := ComponentReference.crefDims(cr);
+  dims := ComponentReferenceBasics.crefDims(cr);
   nrdims := listLength(dims);
   idxstrlst := List.map(List.intRange(nrdims),intString);
   outdef := stringDelimitList(List.threadMap(List.fill("i_", nrdims), idxstrlst, stringAppend), ",");

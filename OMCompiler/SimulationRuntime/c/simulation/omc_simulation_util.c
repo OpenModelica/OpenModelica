@@ -29,6 +29,7 @@
 #include "omc_simulation_util.h"
 #include "../simulation_data.h"
 #include "../util/utility.h"
+#include "../util/omc_strdup.h"
 
 extern modelica_string OpenModelica_fmuLoadResource(threadData_t *threadData, modelica_string path)
 {
@@ -53,7 +54,7 @@ extern const char* OpenModelica_parseFmuResourcePath(const char *path)
     }
 #endif
     {
-      char *res = strdup(path);
+      char *res = omc_strdup(path);
       OpenModelica_decode_uri_inplace(res);
       return res;
     }

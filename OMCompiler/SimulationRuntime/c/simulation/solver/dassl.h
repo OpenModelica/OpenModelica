@@ -75,7 +75,8 @@ typedef struct DASSL_DATA{
   int (*jacobianFunction)(double *t, double *y, double *yprime, double *deltaD,
                           double *pd, double *cj, double *h, double *wt,
                           double *rpar, int* ipar);
-  void* zeroCrossingFunction;
+  int (*zeroCrossingFunction)(int *neqm, double *t, double *y, double *yp,
+                              int *ng, double *gout, double *rpar, int* ipar);
 
 #ifdef USE_PARJAC
   JACOBIAN* jacColumns;         /* thread local analytic jacobians */

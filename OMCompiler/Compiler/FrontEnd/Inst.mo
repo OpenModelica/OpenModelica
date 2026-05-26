@@ -129,7 +129,6 @@ import Error;
 import ErrorExt;
 import ExecStat;
 import Expression;
-import ExpressionDump;
 import Flags;
 import FGraph;
 import FGraphBuildEnv;
@@ -157,6 +156,7 @@ import Types;
 import UnitParserExt;
 import Util;
 import Values;
+import ValuesDump;
 import ValuesUtil;
 import System;
 import SCodeDump;
@@ -165,6 +165,8 @@ import InstStateMachineUtil;
 import UnitCheck = FUnitCheck;
 
 import DAEDump; // BTH
+import ClassInfUtil;
+import ExpressionBasics;
 
 protected function instantiateClass_dispatch
 " instantiate a class.
@@ -175,6 +177,7 @@ protected function instantiateClass_dispatch
   input SCode.Path inPath;
   input Boolean doSCodeDep "Do SCode dependency (if the debug flag is also enabled)";
   input Boolean relaxedFrontEnd=true "Do not check for illegal simulation models, so we allow instantation of packages, etc";
+  input Boolean clearCache = true "Clear the inst cache when done";
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
@@ -220,7 +223,9 @@ algorithm
         //Debug.fcall2(Flags.CHECK_MODEL_BALANCE, checkModelBalancing, SOME(path), dae2);
 
         // let the GC collect these as they are used only by Inst!
-        InstHashTable.release();
+        if clearCache then
+          InstHashTable.release();
+        end if;
       then
         (cache,env,ih,dae2);
 
@@ -248,7 +253,7 @@ algorithm
 
         //System.startTimer();
         //print("\nLookupClass");
-        (cache,(cdef as SCode.CLASS(name = n)),env) := Lookup.lookupClass(cache, env, path, SOME(AbsynUtil.dummyInfo));
+        (cache,(cdef as SCode.CLASS(name = n)),env) := Lookup.lookupClass(cache, env, path, SOME(Absyn.dummyInfo));
 
         // Check if we are trying to instantiate a function or pacakage when we should not.
         checkInstanceRestriction(cdef, path, relaxedFrontEnd);
@@ -290,7 +295,9 @@ algorithm
         //print("\nSetSource+DAE: " + realString(System.getTimerIntervalTime()));
 
         // let the GC collect these as they are used only by Inst!
-        InstHashTable.release();
+        if clearCache then
+          InstHashTable.release();
+        end if;
       then
         (cache, env, ih, dae);
 
@@ -311,6 +318,7 @@ public function instantiateClass
   input SCode.Path inPath;
   input Boolean doSCodeDep=true "Do SCode dependency (if the debug flag is also enabled)";
   input Boolean relaxedFrontEnd=true "Do not check for illegal simulation models, so we allow instantation of packages, etc";
+  input Boolean clearCache=true "Clear the inst cache when done";
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
@@ -334,7 +342,7 @@ algorithm
     // instantiate a class
     case (cache,ih,cdecls as _::_,path)
       algorithm
-        (outCache,outEnv,outIH,outDAElist) := instantiateClass_dispatch(cache,ih,cdecls,path,doSCodeDep,relaxedFrontEnd);
+        (outCache,outEnv,outIH,outDAElist) := instantiateClass_dispatch(cache,ih,cdecls,path,doSCodeDep,relaxedFrontEnd,clearCache);
         outDAElist := UnitCheck.checkUnits(outDAElist,FCore.getFunctionTree(outCache));
       then
         (outCache,outEnv,outIH,outDAElist);
@@ -384,7 +392,7 @@ algorithm
       InstanceHierarchy ih;
       DAE.ElementSource source "the origin of the element";
       list<DAE.Element> daeElts;
-      DAE.FunctionTree funcs;
+      AvlTreePathFunction.Tree funcs;
       Option<SCode.Comment> cmt;
 
     case (_,_,{},_)
@@ -407,7 +415,7 @@ algorithm
       algorithm
         (cache,env) := Builtin.initialGraph(cache);
         env_1 := FGraphBuildEnv.mkProgramGraph(cdecls, FCore.USERDEFINED(), env);
-        (cache,(cdef as SCode.CLASS(name = n)),env_2) := Lookup.lookupClass(cache,env_1, path, SOME(AbsynUtil.dummyInfo));
+        (cache,(cdef as SCode.CLASS(name = n)),env_2) := Lookup.lookupClass(cache,env_1, path, SOME(Absyn.dummyInfo));
 
         cdef := SCodeUtil.classSetPartial(cdef, SCode.NOT_PARTIAL());
 
@@ -611,7 +619,7 @@ algorithm
 
         env_1 := FGraph.openScope(env, encflag, n, FGraph.restrictionToScopeType(r));
 
-        ci_state := ClassInf.start(r,FGraph.getGraphName(env_1));
+        ci_state := ClassInfUtil.start(r,FGraph.getGraphName(env_1));
         csets := ConnectUtil.newSet(pre, inSets);
         (cache,env_3,ih,store,dae1,csets,ci_state_1,tys,bc_ty,oDA,equalityConstraint, graph)
           := instClassIn(cache, env_1, ih, store, mod, pre, ci_state, c, SCode.PUBLIC(), inst_dims, impl, callscope, graph, csets, NONE());
@@ -721,7 +729,7 @@ algorithm
     case (cache,env,ih,store,mod,pre,(c as SCode.CLASS(name = n,encapsulatedPrefix = encflag,restriction = r)),inst_dims,impl,_,_) /* impl */
       algorithm
         env_1 := FGraph.openScope(env, encflag, n, FGraph.restrictionToScopeType(r));
-        ci_state := ClassInf.start(r, FGraph.getGraphName(env_1));
+        ci_state := ClassInfUtil.start(r, FGraph.getGraphName(env_1));
         c_1 := SCodeUtil.classSetPartial(c, SCode.NOT_PARTIAL());
         (cache,env_3,ih,store,dae1,csets,ci_state_1,tys,bc_ty,_,_,_)
         := instClassIn(cache, env_1, ih, store, mod, pre, ci_state, c_1, SCode.PUBLIC(), inst_dims, impl, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, inSets, NONE());
@@ -819,7 +827,7 @@ algorithm
         (env, _) := FGraph.stripLastScopeRef(inEnv);
 
         env := FGraph.openScope(env, encflag, n, FGraph.restrictionToScopeType(r));
-        ci_state := ClassInf.start(r,FGraph.getGraphName(env));
+        ci_state := ClassInfUtil.start(r,FGraph.getGraphName(env));
 
         // lookup in IH
         InnerOuter.INST_INNER(innerElement = SOME(c)) :=
@@ -1235,7 +1243,7 @@ algorithm
           "\nmods: " + Mod.printModStr(mods) +
           "\ninst_dims: [" + stringDelimitList(List.map1(inst_dims, DAEDump.unparseDimensions, true), ", ") + "]" + "\n");
         */
-        ci_state_1 := ClassInf.trans(ci_state, ClassInf.NEWDEF());
+        ci_state_1 := ClassInfUtil.trans(ci_state, ClassInf.NEWDEF());
         comp := InstUtil.addNomod(els);
         (cache,env_1,ih) := InstUtil.addComponentsToEnv(cache,env,ih, mods, pre, ci_state_1, comp, impl);
 
@@ -1623,32 +1631,32 @@ algorithm
     case(_,_,_,_,_,_,DAE.PROP(_,c))
       algorithm
         true := valueEq(c,DAE.C_VAR());
-        s := ExpressionDump.printExpStr(bind);
+        s := ExpressionBasics.printExpStr(bind);
         Error.addMessage(Error.HIGHER_VARIABILITY_BINDING,{id,"PARAM",s,"VAR"});
       then fail();
 
     case(_,_,_,_,_,expectedTp,DAE.PROP(bindTp,_))
       algorithm
         failure((_,_) := Types.matchType(bind,bindTp,expectedTp,true));
-        s1 := "builtin attribute " + id + " of type "+Types.unparseType(bindTp);
-        s2 := Types.unparseType(expectedTp);
+        s1 := "builtin attribute " + id + " of type "+TypesDump.unparseType(bindTp);
+        s2 := TypesDump.unparseType(expectedTp);
         Error.addMessage(Error.TYPE_ERROR,{s1,s2});
       then fail();
 
     case(_,_,_,SOME(v),_,expectedTp,_) algorithm
       true := Flags.isSet(Flags.FAILTRACE);
       Debug.traceln("instBuiltinAttribute failed for: " + id +
-                                  " value binding: " + ValuesUtil.printValStr(v) +
-                                  " binding: " + ExpressionDump.printExpStr(bind) +
-                                  " expected type: " + Types.printTypeStr(expectedTp) +
+                                  " value binding: " + ValuesDump.printValStr(v) +
+                                  " binding: " + ExpressionBasics.printExpStr(bind) +
+                                  " expected type: " + TypesDump.printTypeStr(expectedTp) +
                                   " type props: " + Types.printPropStr(bindProp));
     then fail();
     case(_,_,_,_,_,expectedTp,_) algorithm
       true := Flags.isSet(Flags.FAILTRACE);
       Debug.traceln("instBuiltinAttribute failed for: " + id +
                                   " value binding: NONE()" +
-                                  " binding: " + ExpressionDump.printExpStr(bind) +
-                                  " expected type: " + Types.printTypeStr(expectedTp) +
+                                  " binding: " + ExpressionBasics.printExpStr(bind) +
+                                  " expected type: " + TypesDump.printTypeStr(expectedTp) +
                                   " type props: " + Types.printPropStr(bindProp));
     then fail();
   end matchcontinue;
@@ -2160,7 +2168,7 @@ algorithm
         end if;
         */
         //Debug.traceln(" Instclassdef for: " + PrefixUtil.printPrefixStr(pre) + "." +  className + " mods: " + Mod.printModStr(mods));
-        ci_state1 := ClassInf.trans(ci_state, ClassInf.NEWDEF());
+        ci_state1 := ClassInfUtil.trans(ci_state, ClassInf.NEWDEF());
         els := InstUtil.extractConstantPlusDeps(els,instSingleCref,{},className);
 
         // split elements
@@ -2333,12 +2341,12 @@ algorithm
 
         // Search for equalityConstraint
         eqConstraint := InstUtil.equalityConstraint(env5, els, info);
-        ci_state6 := if isSome(ed) then ClassInf.assertTrans(ci_state6,ClassInf.FOUND_EXT_DECL(),info) else ci_state6;
+        ci_state6 := if isSome(ed) then ClassInfUtil.assertTrans(ci_state6,ClassInf.FOUND_EXT_DECL(),info) else ci_state6;
         (cache,oty) := InstMeta.fixUniontype(cache, env5, ci_state6, inClassDef6);
         _ := match oty
           case SOME(ty as DAE.T_METAUNIONTYPE(typeVars=_::_))
             algorithm
-              Error.addSourceMessage(Error.UNIONTYPE_MISSING_TYPEVARS, {Types.unparseType(ty)}, info);
+              Error.addSourceMessage(Error.UNIONTYPE_MISSING_TYPEVARS, {TypesDump.unparseType(ty)}, info);
             then fail();
           else ();
         end match;
@@ -2357,8 +2365,8 @@ algorithm
 
         // keep the old behaviour
         env3 := FGraph.openScope(cenv, enc2, cn2, SOME(FCore.CLASS_SCOPE()));
-        ci_state2 := ClassInf.start(r, FGraph.getGraphName(env3));
-        new_ci_state := ClassInf.start(r, FGraph.getGraphName(env3));
+        ci_state2 := ClassInfUtil.start(r, FGraph.getGraphName(env3));
+        new_ci_state := ClassInfUtil.start(r, FGraph.getGraphName(env3));
 
         // print("Enum Env: " + FGraph.printGraphPathStr(env3) + "\n");
         (cache,cenv_2,_,_,_,_,_,_,_,_,_,_) :=
@@ -2377,7 +2385,7 @@ algorithm
 
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph) := instClassIn(cache, cenv_2, ih, store, mods_1, pre, new_ci_state, c, vis,
           inst_dims_1, impl, callscope, graph, inSets, instSingleCref) "instantiate class in opened scope.";
-        ClassInf.assertValid(ci_state_1, re, info) "Check for restriction violations";
+        ClassInfUtil.assertValid(ci_state_1, re, info) "Check for restriction violations";
         oDA := SCodeUtil.mergeAttributes(DA,oDA);
       then
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph);
@@ -2400,7 +2408,7 @@ algorithm
         true := valid_connector;
 
         cenv_2 := FGraph.openScope(cenv, enc2, cn2, FGraph.classInfToScopeType(ci_state));
-        new_ci_state := ClassInf.start(r, FGraph.getGraphName(cenv_2));
+        new_ci_state := ClassInfUtil.start(r, FGraph.getGraphName(cenv_2));
 
         // chain the redeclares
         mod := InstUtil.chainRedeclares(mods, mod);
@@ -2419,7 +2427,7 @@ algorithm
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph) := instClassIn(cache, cenv_2, ih, store, mods_1, pre, new_ci_state, c, vis,
           inst_dims_1, impl, callscope, graph, inSets, instSingleCref) "instantiate class in opened scope. " ;
 
-        ClassInf.assertValid(ci_state_1, re, info) "Check for restriction violations" ;
+        ClassInfUtil.assertValid(ci_state_1, re, info) "Check for restriction violations" ;
         oDA := SCodeUtil.mergeAttributes(DA,oDA);
       then
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph);
@@ -2502,7 +2510,7 @@ algorithm
         false := InstUtil.checkDerivedRestriction(re, r, cn2);
 
         cenv_2 := FGraph.openScope(cenv, enc2, className, FGraph.classInfToScopeType(ci_state));
-        new_ci_state := ClassInf.start(r, FGraph.getGraphName(cenv_2));
+        new_ci_state := ClassInfUtil.start(r, FGraph.getGraphName(cenv_2));
 
         c := SCodeUtil.setClassName(className, c);
         // chain the redeclares
@@ -2515,7 +2523,7 @@ algorithm
         (cache,dims) := InstUtil.elabArraydimOpt(cache, parentEnv, Absyn.CREF_IDENT("",{}), cn, ad, eq, impl, true, pre, info, inst_dims) "owncref not valid here" ;
         inst_dims_1 := List.appendLastList(inst_dims, dims);
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph) := instClassIn(cache, cenv_2, ih, store, mods_1, pre, new_ci_state, c, vis, inst_dims_1, impl, callscope, graph, inSets, instSingleCref) "instantiate class in opened scope. " ;
-        ClassInf.assertValid(ci_state_1, re, info) "Check for restriction violations" ;
+        ClassInfUtil.assertValid(ci_state_1, re, info) "Check for restriction violations" ;
         oDA := SCodeUtil.mergeAttributes(DA,oDA);
       then
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph);
@@ -2793,7 +2801,7 @@ algorithm
                           tSpec,SCode.NOMOD(),
                           SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR(), Absyn.NONFIELD())),
                         SCode.noComment,
-                        AbsynUtil.dummyInfo);
+                        Absyn.dummyInfo);
         (cache,_,ih,_,_,csets,ty,_,oDA,_):=instClass(cache,env,ih,UnitAbsyn.noStore,DAE.NOMOD(),pre,c,dims,impl,InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, inSets);
         localAccTypes := ty::localAccTypes;
         (cache,env,ih,localAccTypes,csets,_) :=
@@ -3009,7 +3017,7 @@ algorithm
         partial_prefix := SCodeUtil.getClassPartialPrefix(inClass);
         partial_prefix := InstUtil.isPartial(partial_prefix, inMod);
         class_name := SCodeUtil.elementName(inClass);
-        outState := ClassInf.trans(inState, ClassInf.NEWDEF());
+        outState := ClassInfUtil.trans(inState, ClassInf.NEWDEF());
 
         (cdef_els, class_ext_els, extends_els) := InstUtil.splitElts(inClassDef.elementLst);
         extends_els := SCodeInstUtil.addRedeclareAsElementsToExtends(extends_els,
@@ -3094,7 +3102,7 @@ algorithm
           scope_ty := if is_basic_type then FGraph.restrictionToScopeType(der_re) else
                                             FGraph.classInfToScopeType(inState);
           cenv := FGraph.openScope(cenv, enc, class_name, scope_ty);
-          outState := ClassInf.start(der_re, FGraph.getGraphName(cenv));
+          outState := ClassInfUtil.start(der_re, FGraph.getGraphName(cenv));
           (outCache, outEnv, outIH, outState, outVars) :=
             partialInstClassIn(outCache, cenv, inIH, mod, inPrefix, outState, cls,
               inVisibility, inst_dims, numIter);
@@ -3164,7 +3172,7 @@ algorithm
   el := InstUtil.sortInnerFirstTplLstElementMod(el);
 
   // For non-functions, don't reorder the elements.
-  if not ClassInf.isFunction(inState) then
+  if not ClassInfUtil.isFunction(inState) then
     // Figure out the ordering of the sorted elements, see getSortedElementOrdering.
     element_order := getSortedElementOrdering(inElements, el);
 
@@ -3512,8 +3520,8 @@ algorithm
         m := SCodeInstUtil.expandEnumerationMod(m);
         m := InstUtil.traverseModAddDims(cache, env, pre, m, inst_dims);
         comp := if referenceEq(oldmod,m) then comp else SCode.COMPONENT(name, prefixes, attr, ts, m, comment, cond, info);
-        ci_state := ClassInf.trans(ci_state, ClassInf.FOUND_COMPONENT(name));
-        cref := ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {});
+        ci_state := ClassInfUtil.trans(ci_state, ClassInf.FOUND_COMPONENT(name));
+        cref := ComponentReferenceBasics.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {});
         (cache,_) := PrefixUtil.prefixCref(cache, env, ih, pre, cref); /*mahge: todo: remove me*/
 
         // The class definition is fetched from the environment. Then the set of
@@ -3563,7 +3571,7 @@ algorithm
         // print("Inst.instElement: after elabMod " + PrefixUtil.printPrefixStr(pre) + "." + name + " component mod: " + Mod.printModStr(m_1) + " in env: " + FGraph.printGraphPathStr(env2) + "\n");
 
         mod := Mod.merge(mm, class_mod, name);
-        mod := Mod.merge(mod, m_1, name, not ClassInf.isRecord(ci_state));
+        mod := Mod.merge(mod, m_1, name, not ClassInfUtil.isRecord(ci_state));
         mod := Mod.merge(cmod, mod, name);
 
         /* (BZ part:2/2) here we merge the redeclared class modifier.
@@ -3656,14 +3664,14 @@ algorithm
           //dae = DAE.DAE({DAE.COMP(ComponentReference.crefStr(cref), elems, DAE.emptyElementSource, NONE())});
         end if;
 
-        // print("instElement -> component: " + name + " ty: " + Types.printTypeStr(ty) + "\n");
+        // print("instElement -> component: " + name + " ty: " + TypesDump.printTypeStr(ty) + "\n");
         //The environment is extended (updated) with the new variable binding.
         (cache, binding) := InstBinding.makeBinding(cache, env2, attr, mod, ty, pre, name, info);
 
         /*// uncomment this for debugging of bindings from mods
         print("Created binding for var: " +
            PrefixUtil.printPrefixStr(pre) + "." + name + "\n\t" +
-           " binding: " + Types.printBindingStr(binding) + "\n\t" +
+           " binding: " + TypesDump.printBindingStr(binding) + "\n\t" +
            " m: " + SCodeDump.printModStr(m) + "\n\t" +
            " class_mod: " + Mod.printModStr(class_mod) + "\n\t" +
            " mm: " + Mod.printModStr(mm) + "\n\t" +
@@ -3716,7 +3724,7 @@ algorithm
         // Fails if multiple decls not identical
         already_declared := InstUtil.checkMultiplyDeclared(cache, env, mods, pre,
           ci_state, (comp, cmod), inst_dims, impl);
-        cref := ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {});
+        cref := ComponentReferenceBasics.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {});
         (cache,_) := PrefixUtil.prefixCref(cache, env, ih, pre, cref);
 
 
@@ -3745,7 +3753,7 @@ algorithm
           InstVar.instVar(cache, env, ih, store,ci_state, m_1, pre, name, cls, attr,
             prefixes, dims, {}, inst_dims, impl, comment, info, graph, csets, env);
 
-        // print("instElement -> component: " + n + " ty: " + Types.printTypeStr(ty) + "\n");
+        // print("instElement -> component: " + n + " ty: " + TypesDump.printTypeStr(ty) + "\n");
 
         // The environment is extended (updated) with the new variable binding.
         (cache, binding) := InstBinding.makeBinding(cache, env, attr, m_1, ty, pre, name, info);
@@ -5019,7 +5027,7 @@ algorithm
       algorithm
         (cache,env) := Builtin.initialGraph(cache);
         env_1 := FGraphBuildEnv.mkProgramGraph(cdecls, FCore.USERDEFINED(), env);
-        (cache,(cdef as SCode.CLASS()),env_2) := Lookup.lookupClass(cache,env_1, path, SOME(AbsynUtil.dummyInfo));
+        (cache,(cdef as SCode.CLASS()),env_2) := Lookup.lookupClass(cache,env_1, path, SOME(Absyn.dummyInfo));
 
         (cache,env_2,ih,_,dae,_,_,_,_,_) :=
           instClass(cache,env_2,ih,UnitAbsyn.noStore, DAE.NOMOD(), DAE.NOPRE(),
@@ -5196,7 +5204,7 @@ algorithm
           InstVar.instVar(cache, cenv, ih, store, state, m, pre, n, c, attr,
             inPrefixes, dims, {}, inst_dims, true, SCode.noComment, info, ConnectionGraph.EMPTY, Connect.emptySet, env);
 
-        // print("component: " + n + " ty: " + Types.printTypeStr(ty) + "\n");
+        // print("component: " + n + " ty: " + TypesDump.printTypeStr(ty) + "\n");
 
         io := SCodeUtil.prefixesInnerOuter(inPrefixes);
         vis := SCodeUtil.prefixesVisibility(inPrefixes);
@@ -5234,7 +5242,7 @@ algorithm
           InstVar.instVar(cache, cenv, ih, store, state, m, pre, n, c, attr,
             inPrefixes, dims, {}, inst_dims, true, SCode.noComment, info, ConnectionGraph.EMPTY, Connect.emptySet, env);
 
-        // print("component: " + n + " ty: " + Types.printTypeStr(ty) + "\n");
+        // print("component: " + n + " ty: " + TypesDump.printTypeStr(ty) + "\n");
 
         io := SCodeUtil.prefixesInnerOuter(inPrefixes);
         vis := SCodeUtil.prefixesVisibility(inPrefixes);
@@ -5272,7 +5280,7 @@ algorithm
           InstVar.instVar(cache, cenv, ih, store, state, m, pre, n, c, attr,
             inPrefixes, dims, {}, inst_dims, true, SCode.noComment, info, ConnectionGraph.EMPTY, Connect.emptySet, env);
 
-        // print("component: " + n + " ty: " + Types.printTypeStr(ty) + "\n");
+        // print("component: " + n + " ty: " + TypesDump.printTypeStr(ty) + "\n");
 
         io := SCodeUtil.prefixesInnerOuter(inPrefixes);
         vis := SCodeUtil.prefixesVisibility(inPrefixes);
@@ -5311,7 +5319,7 @@ algorithm
           InstVar.instVar(cache, cenv, ih, store, state, m, pre, n, c, attr,
             inPrefixes, dims, {}, inst_dims, true, SCode.noComment, info, ConnectionGraph.EMPTY, Connect.emptySet, env);
 
-        // print("component: " + n + " ty: " + Types.printTypeStr(ty) + "\n");
+        // print("component: " + n + " ty: " + TypesDump.printTypeStr(ty) + "\n");
 
         io := SCodeUtil.prefixesInnerOuter(inPrefixes);
         vis := SCodeUtil.prefixesVisibility(inPrefixes);
@@ -5351,7 +5359,7 @@ algorithm
           InstVar.instVar(cache, cenv, ih, store, state, dM, pre, n, c, attr,
             inPrefixes, dims, {}, inst_dims, true, NONE(), info, ConnectionGraph.EMPTY, Connect.emptySet, env);
 
-        // print("component: " + n + " ty: " + Types.printTypeStr(ty) + "\n");
+        // print("component: " + n + " ty: " + TypesDump.printTypeStr(ty) + "\n");
 
         io = SCodeUtil.prefixesInnerOuter(inPrefixes);
         vis = SCodeUtil.prefixesVisibility(inPrefixes);
@@ -5590,7 +5598,7 @@ protected
   Option<String> comment=NONE();
   SCode.Mod mod=SCode.NOMOD(), mod2;
 algorithm
-  if not ClassInf.isFunction(state) then
+  if not ClassInfUtil.isFunction(state) then
     return;
   end if;
 
