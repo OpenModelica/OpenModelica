@@ -2120,7 +2120,7 @@ algorithm
         beqns;
 
     // true case left with condition<>false
-    case ({}, {}, {}, {})
+    case ({}, {}, _, _)
       algorithm
         explst := listReverse(conditions1);
         beqnslst := lowerEqnsLst(theneqns1,functionTree,{},false);
@@ -3849,10 +3849,9 @@ protected function replaceableAlias
   check if the variable is a replaceable alias."
   input BackendDAE.Var var;
 algorithm
-  algorithm
-    false := BackendVariable.isVarOnTopLevelAndOutput(var);
-    false := BackendVariable.isVarOnTopLevelAndInput(var);
-    false := BackendVariable.varHasUncertainValueRefine(var);
+  false := BackendVariable.isVarOnTopLevelAndOutput(var);
+  false := BackendVariable.isVarOnTopLevelAndInput(var);
+  false := BackendVariable.varHasUncertainValueRefine(var);
 end replaceableAlias;
 
 /*

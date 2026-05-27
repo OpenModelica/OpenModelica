@@ -191,6 +191,7 @@ algorithm
     printcheckBackendDAEWithErrorMsg(expCrefs, wrongEqns);
   else
     Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEUtil.mo: function checkBackendDAEWithErrorMsg failed"});
+    fail();
   end try;
 end checkBackendDAEWithErrorMsg;
 
