@@ -1189,6 +1189,18 @@ static int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector r
   }
   else
   {
+    /* In sensitivity mode IDAS evaluates the residual on perturbed copies of the
+     * state vector (yy != idaData->y, which otherwise shares storage with realVars).
+     * Copy the perturbed states into realVars so functionODE sees them; otherwise the
+     * dF/dy term is lost from the sensitivity difference quotient. The base states are
+     * backed up and restored afterwards so idaData->y is not corrupted for the
+     * remaining sensitivity equations of the same difference-quotient sweep. */
+    const int perturbedStates = (idaData->idaSmode && data->localData[0]->realVars != states);
+    if (perturbedStates)
+    {
+      memcpy(idaData->ysave, data->localData[0]->realVars, sizeof(double)*data->modelData->nStates);
+      memcpy(data->localData[0]->realVars, states, sizeof(double)*data->modelData->nStates);
+    }
     /* eval function ODE */
     if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
     data->callback->functionODE(data, threadData);
@@ -1198,6 +1210,8 @@ static int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector r
       NV_Ith_S(rr, i) = data->localData[0]->realVars[data->modelData->nStates + i] - NV_Ith_S(yp, i);
       infoStreamPrint(OMC_LOG_SOLVER_V, 0, "%ld. residual = %e", i, NV_Ith_S(rr, i));
     }
+    if (perturbedStates)
+      memcpy(data->localData[0]->realVars, idaData->ysave, sizeof(double)*data->modelData->nStates);
   }
 
   /* scale ressidual rr */
