@@ -299,16 +299,16 @@ protected
     output UnorderedMap<ComponentRef, Expression> newReplacements = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
     output list<Pointer<Equation>> auxEquations = {};
   protected
-    UnorderedSet<ComponentRef> exceptionSet = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedMap<ComponentRef, ExceptionKind> exceptionMap = UnorderedMap.new<ExceptionKind>(ComponentRef.hash, ComponentRef.isEqual);
     ComponentRef cref;
     Expression exp;
     Pointer<Equation> eqPtr;
     EquationAttributes attr;
   algorithm
-    EqData.map(eqData, function filterExceptionsEquation(acc = exceptionSet));
+    EqData.map(eqData, function filterExceptionsEquation(acc = exceptionMap));
     for keyValueTpl in UnorderedMap.toList(replacements) loop
       (cref, exp) := keyValueTpl;
-      if isValidReplacement(cref, exp, exceptionSet) then
+      if isValidReplacement(cref, exp, exceptionMap) then
         // replacement is valid - add to newReplacements
         UnorderedMap.add(cref, exp, newReplacements);
       else
@@ -328,23 +328,31 @@ protected
     "Checks if a replacement (cref, exp) is valid"
     input ComponentRef cref;
     input Expression exp;
-    input UnorderedSet<ComponentRef> exceptionSet;
+    input UnorderedMap<ComponentRef, ExceptionKind> exceptionMap;
     output Boolean b = true;
   algorithm
-    // TODO: possibly match cref, exp here: add if needed
-    if UnorderedSet.contains(cref, exceptionSet) then
-      b := false;
-    end if;
+    b := match (UnorderedMap.get(cref, exceptionMap), exp)
+      // no exception for this cref
+      case (NONE(), _) then true;
+      // cref exception. only allow replacement by a cref
+      case (SOME(ExceptionKind.CREF_ALIAS), Expression.CREF()) then true;
+      // disallow other exceptions
+      else false;
+    end match;
   end isValidReplacement;
+
+  // different kinds of exceptions
+  type ExceptionKind = enumeration(NO_ALIAS, CREF_ALIAS);
 
   function filterExceptionsEquation
     input output Equation eqn;
-    input UnorderedSet<ComponentRef> acc;
+    input UnorderedMap<ComponentRef, ExceptionKind> acc;
   algorithm
     _ := match eqn
+      // algorithm outputs shall not be replaced
       case Equation.ALGORITHM() algorithm
         for cref in eqn.alg.outputs loop
-          UnorderedSet.add(cref, acc);
+          UnorderedMap.add(cref, ExceptionKind.NO_ALIAS, acc);
         end for;
       then ();
       else ();
@@ -355,20 +363,34 @@ protected
   function filterExceptions
     "Filter expression for all forbidden aliases (pre, dynamic optimization annotations, ...)"
     input output Expression exp;
-    input UnorderedSet<ComponentRef> acc;
+    input UnorderedMap<ComponentRef, ExceptionKind> acc;
   algorithm
     _ := match exp
       local
         Call call;
         ComponentRef cref;
 
+      // all variables in pre() call shall not be replaced
       case Expression.CALL(call = call as Call.TYPED_CALL(arguments = {Expression.CREF(cref = cref)}))
-        guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "pre") algorithm
-          UnorderedSet.add(cref, acc);
-        then ();
+      guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "pre") algorithm
+        UnorderedMap.add(cref, ExceptionKind.NO_ALIAS, acc);
+      then ();
+
       case Expression.CREF() algorithm
         // TODO: add guard here (dont do alias for optimization annotations)
         // UnorderedSet.add(cref, acc);
+      then ();
+
+      // tuple elements shall not be replaced by something that is not a cref
+      case Expression.TUPLE() algorithm
+        for elem in exp.elements loop
+          _ := match elem
+            case Expression.CREF() algorithm
+              UnorderedMap.add(elem.cref, ExceptionKind.CREF_ALIAS, acc);
+            then ();
+            else ();
+          end match;
+        end for;
       then ();
 
       else ();
