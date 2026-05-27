@@ -2502,7 +2502,7 @@ algorithm
         s := stringAppendList({iString,"\nend if"});
       then
         s;
-    case ({},_,{})
+    case ({},_,_)
       algorithm
         seqns := stringDelimitList(List.map(eqnsfalse,equationString),"\n  ");
         s := stringAppendList({iString,"\nelse\n  ",seqns,"\nend if"});

@@ -9571,10 +9571,9 @@ public function setSharedFunctionTree
   input BackendDAE.Shared inShared;
   input AvlTreePathFunction.Tree inFunctionTree;
   output BackendDAE.Shared outShared;
+protected
+  BackendDAE.Shared shared;
 algorithm
-  protected
-    BackendDAE.Shared shared;
-  algorithm
     shared := inShared;
     shared.functionTree := inFunctionTree;
     outShared := shared;
