@@ -102,7 +102,7 @@ public
   constant Variable TIME_VARIABLE = Variable.VARIABLE(NFBuiltin.TIME_CREF, Type.REAL(),
     NFBinding.EMPTY_BINDING, NFPrefixes.Visibility.PUBLIC, NFAttributes.DEFAULT_ATTR,
     {}, {}, SCode.noComment, SCodeUtil.dummyInfo, BackendInfo.BACKEND_INFO(
-    VariableKind.TIME(), NFBackendExtension.EMPTY_VAR_ATTR_REAL, NFBackendExtension.EMPTY_ANNOTATIONS, NONE(), NONE(), NONE(), NONE(), NONE()));
+    VariableKind.TIME(), NFBackendExtension.EMPTY_VAR_ATTR_REAL, NFBackendExtension.EMPTY_ANNOTATIONS, NONE(), NONE(), NONE(), NONE(), NONE(), NONE()));
 
   constant String DERIVATIVE_STR          = "$DER";
   constant String DUMMY_DERIVATIVE_STR    = "$dDER";
@@ -399,7 +399,7 @@ public
   end isTime;
 
   function isContinuous extends checkVar;
-    input Boolean init  "true if it's an initial system";
+    input Boolean staticAsContinuous  "true if it's an initial system / static variables (e.g. parameters) that are constant over time, are in a variable context";
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.DISCRETE_STATE()  then false; // like parameter?
@@ -408,28 +408,28 @@ public
       case VariableKind.CONSTANT()        then false;
       case VariableKind.ITERATOR()        then false;
       case VariableKind.EXTOBJ()          then false;
-      case VariableKind.PARAMETER()       then init and Type.isContinuous(var.ty);
-      case VariableKind.RECORD()          then List.all(getRecordChildren(var_ptr), function isContinuous(init = init));
+      case VariableKind.PARAMETER()       then staticAsContinuous and Type.isContinuous(var.ty);
+      case VariableKind.RECORD()          then List.all(getRecordChildren(var_ptr), function isContinuous(staticAsContinuous = staticAsContinuous));
       else true;
     end match;
   end isContinuous;
 
   function isDiscontinuous "only for function interface purposes" extends checkVar;
-    input Boolean init  "true if it's an initial system";
+    input Boolean staticAsContinuous  "true if it's an initial system / static variables (e.g. parameters) that are constant over time, are in a variable context";
   algorithm
-    b := not isContinuous(var_ptr, init);
+    b := not isContinuous(var_ptr, staticAsContinuous);
   end isDiscontinuous;
 
   function isContinuousRecordAware
     "acts like isContinous, but returns false if it is part of a record that has a discrete variable"
     extends checkVar;
-    input Boolean init  "true if it's an initial system";
+    input Boolean staticAsContinuous  "true if it's an initial system / static variables (e.g. parameters) that are constant over time, are in a variable context";
   algorithm
     b := match getParent(var_ptr)
       local
         Pointer<Variable> parent;
-      case SOME(parent) then isContinuousRecordAware(parent, init);
-      else isContinuous(var_ptr, init);
+      case SOME(parent) then isContinuousRecordAware(parent, staticAsContinuous);
+      else isContinuous(var_ptr, staticAsContinuous);
     end match;
   end isContinuousRecordAware;
 
@@ -568,9 +568,15 @@ public
   function getVarPDer
     "Gets the partial derivative of a residual or the other way around."
     extends getVarPartner;
+    input Boolean isTmp;
   algorithm
-    partnerName := "partial derivative";
-    partner := var.backendinfo.var_pder;
+    if isTmp then
+      partnerName := "partial derivative (temp)";
+      partner := var.backendinfo.var_pder_tmp;
+    else
+      partnerName := "partial derivative (result)";
+      partner := var.backendinfo.var_pder_res;
+    end if;
   end getVarPDer;
 
   function getVarDer
@@ -655,15 +661,18 @@ public
     b := not isPrevious(var_ptr) and Util.isSome(getVarPre(var_ptr));
   end hasPre;
 
-  function isJacobianResultVar
-    "only returns true if the variable itself is not a pre() or previous() and has a pre() pointer set"
+function isJacobianResultVar
+    "returns true if the variable has a (non-temp or temp) result partial derivative set"
     extends checkVar;
   algorithm
-    b := match getVarPDer(var_ptr)
+    b := match getVarPDer(var_ptr, false)
       local
         Pointer<Variable> der_var;
       case SOME(der_var) then isJacobianResultVarPDer(der_var);
-      else false;
+      else match getVarPDer(var_ptr, true)
+        case SOME(der_var) then isJacobianResultVarPDer(der_var);
+        else false;
+      end match;
     end match;
   end isJacobianResultVar;
 
@@ -769,6 +778,14 @@ public
       else false;
     end match;
   end isLagrangeOrPathConstraint;
+
+  function isLagrangeOrPathConstraintOrStateDerivative
+    extends checkVar;
+  protected
+    OptimizerExpression optExp;
+  algorithm
+    b := isLagrangeOrPathConstraint(var_ptr) or isStateDerivative(var_ptr);
+  end isLagrangeOrPathConstraintOrStateDerivative;
 
   function isMayerOrFinalConstraint
     extends checkVar;
@@ -1391,7 +1408,7 @@ public
       // regular case for jacobians
       case qual as InstNode.VAR_NODE() algorithm
         res_ptr := getVarPointer(cref, sourceInfo());
-        ovar := getVarPDer(res_ptr);
+        ovar := getVarPDer(res_ptr, isTmp);
         if isSome(ovar) then
           var_ptr := Util.getOption(ovar);
           cref := getVarName(var_ptr);
@@ -1413,7 +1430,7 @@ public
 
           // create the new variable pointer and safe it to the component reference
           (var_ptr, cref) := makeVarPtrCyclic(var, cref);
-          connectPartners(res_ptr, var_ptr, BackendInfo.setVarPDer);
+          connectPartners(res_ptr, var_ptr, function BackendInfo.setVarPDer(isTmp = isTmp));
         end if;
       then ();
 

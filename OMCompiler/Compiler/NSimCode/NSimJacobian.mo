@@ -237,7 +237,7 @@ public
           Pointer<list<SimVar>> tmpVars_ptr = Pointer.create({});
           list<SimVar> seedVars, resVars, tmpVars, loopVars;
           UnorderedMap<ComponentRef, SimVar> jac_map;
-          UnorderedMap<ComponentRef, Integer> idx_map;
+          UnorderedMap<ComponentRef, Integer> local_idx_map;
           ComponentRef cref;
           SparsityPattern sparsity, sparsityT;
           SparsityColoring coloring, rowColoring;
@@ -284,55 +284,41 @@ public
           SimCodeUtil.addListSimCodeMap(tmpVars, jac_map);
 
           try
-            idx_map := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, listLength(seedVars) + listLength(resVars));
-            if Jacobian.isDynamic(jacobian.jacType) then
+            local_idx_map := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, listLength(seedVars) + listLength(resVars));
+            // build mappings from seed and results vars to local indices in the Jacobian
+            for var in seedVars loop
+              cref := SimVar.getName(var);
               if jacobian.isAdjoint then
-                loopVars := resVars;
+                if BVariable.checkCref(cref, BVariable.isPDer, sourceInfo()) then
+                  // TODO: FIXME this should not happen, fix it when collecting pDers!
+                  cref := BVariable.getPartnerCref(cref, function BVariable.getVarPDer(isTmp = false));
+                end if;
               else
-                loopVars := seedVars;
+                if BVariable.checkCref(cref, BVariable.isSeed, sourceInfo()) then
+                  // TODO: FIXME this should not happen, fix it when collecting seedVars!
+                  cref := BVariable.getPartnerCref(cref, BVariable.getVarSeed);
+                end if;
               end if;
-              for var in loopVars loop
-                cref := SimVar.getName(var);
+              UnorderedMap.add(cref, var.index, local_idx_map);
+            end for;
+
+            for var in resVars loop
+              cref := SimVar.getName(var);
+              if jacobian.isAdjoint then
                 if BVariable.checkCref(cref, BVariable.isSeed, sourceInfo()) then
                   // FIXME this should not happen, fix it when collecting seedVars!
-                  // this case is for forward symbolic jacobians
                   cref := BVariable.getPartnerCref(cref, BVariable.getVarSeed);
-                elseif BVariable.checkCref(cref, BVariable.isPDer, sourceInfo()) then
-                  // this case is for adjoint symbolic jacobians
-                  cref := BVariable.getPartnerCref(cref, BVariable.getVarPDer);
                 end if;
-                UnorderedMap.add(cref, var.index, idx_map);
-                if BVariable.checkCref(cref, BVariable.isState, sourceInfo()) then
-                  cref := BVariable.getPartnerCref(cref, BVariable.getVarDer);
-                  UnorderedMap.add(cref, var.index, idx_map);
+              else
+                if BVariable.checkCref(cref, BVariable.isPDer, sourceInfo()) then
+                  // FIXME this should not happen, fix it when collecting pDers!
+                  cref := BVariable.getPartnerCref(cref, function BVariable.getVarPDer(isTmp = false));
                 end if;
-              end for;
-
-              // also add residuals if its DAE Mode
-              if jacobian.jacType == NBJacobian.JacobianType.DAE then
-                for var in resVars loop
-                  cref := SimVar.getName(var);
-                  UnorderedMap.add(cref, var.index, idx_map);
-                  //cref := BVariable.getPartnerCref(cref, BVariable.getVarPDer);
-                  //UnorderedMap.add(cref, var.index, idx_map);
-                end for;
               end if;
-            else
-              for var in seedVars loop
-                cref := SimVar.getName(var);
-                UnorderedMap.add(cref, var.index, idx_map);
-                cref := BVariable.getPartnerCref(cref, BVariable.getVarSeed);
-                UnorderedMap.add(cref, var.index, idx_map);
-              end for;
-              for var in resVars loop
-                cref := SimVar.getName(var);
-                UnorderedMap.add(cref, var.index, idx_map);
-                cref := BVariable.getPartnerCref(cref, BVariable.getVarPDer);
-                UnorderedMap.add(cref, var.index, idx_map);
-              end for;
-            end if;
+              UnorderedMap.add(cref, var.index, local_idx_map);
+            end for;
 
-            (sparsity, sparsityT, coloring, rowColoring) := createSparsity(jacobian, idx_map);
+            (sparsity, sparsityT, coloring, rowColoring) := createSparsity(jacobian, local_idx_map);
 
             jac := SIM_JAC(
               name                = jacobian.name,
@@ -477,7 +463,7 @@ public
 
     function createSparsity
       input BackendDAE jacobian;
-      input UnorderedMap<ComponentRef, Integer> idx_map;
+      input UnorderedMap<ComponentRef, Integer> local_idx_map;
       output SparsityPattern sparsity;
       output SparsityPattern sparsityT;
       output SparsityColoring coloring;
@@ -488,9 +474,9 @@ public
           Jacobian.SparsityPattern Bpattern;
 
         case BackendDAE.JACOBIAN(sparsityPattern = Bpattern) algorithm
-          sparsity  := createSparsityPattern(Bpattern.col_wise_pattern, idx_map);
-          sparsityT := createSparsityPattern(Bpattern.row_wise_pattern, idx_map);
-          (coloring, rowColoring) := createSparsityColoring(jacobian.sparsityColoring, idx_map);
+          sparsity  := createSparsityPattern(Bpattern.col_wise_pattern, local_idx_map);
+          sparsityT := createSparsityPattern(Bpattern.row_wise_pattern, local_idx_map);
+          (coloring, rowColoring) := createSparsityColoring(jacobian.sparsityColoring, local_idx_map);
         then (sparsity, sparsityT, coloring, rowColoring);
 
         else algorithm
@@ -500,8 +486,8 @@ public
     end createSparsity;
 
     function createSparsityPattern
-      input list<Jacobian.SparsityPatternCol> cols      "columns that need to be generated (can be used for rows too)";
-      input UnorderedMap<ComponentRef, Integer> idx_map "hash table cref --> index";
+      input list<Jacobian.SparsityPatternCol> cols            "columns that need to be generated (can be used for rows too)";
+      input UnorderedMap<ComponentRef, Integer> local_idx_map "hash table cref --> index";
       output SparsityPattern simPattern = {};
     protected
       ComponentRef cref;
@@ -510,8 +496,8 @@ public
     algorithm
       for col in cols loop
         (cref, dependencies) := col;
-        dep_indices := List.map(dependencies, function UnorderedMap.getOrFail(map = idx_map));
-        simPattern := (UnorderedMap.getOrFail(cref, idx_map), List.sort(dep_indices, intGt)) :: simPattern;
+        dep_indices := List.map(dependencies, function UnorderedMap.getOrFail(map = local_idx_map));
+        simPattern := (UnorderedMap.getOrFail(cref, local_idx_map), List.sort(dep_indices, intGt)) :: simPattern;
       end for;
       simPattern := List.sort(simPattern, Util.compareTupleIntGt);
     end createSparsityPattern;

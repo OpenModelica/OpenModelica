@@ -287,7 +287,7 @@ public
     extends filterCref;
     input Boolean init;
   algorithm
-    if BVariable.checkCref(cref, function BVariable.isContinuous(init = init), sourceInfo()) then
+    if BVariable.checkCref(cref, function BVariable.isContinuous(staticAsContinuous = init), sourceInfo()) then
       UnorderedSet.add(cref, acc);
     end if;
   end getContinuous;

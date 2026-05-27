@@ -73,14 +73,15 @@ protected
 public
   uniontype BackendInfo
     record BACKEND_INFO
-      VariableKind varKind                "Structural kind: state, algebraic...";
-      VariableAttributes attributes       "values on built-in attributes";
-      Annotations annotations             "values on annotations (vendor specific)";
-      Option<Pointer<Variable>> var_pre   "Pointer (var -> pre) or (pre -> var) if existent.";
-      Option<Pointer<Variable>> var_seed  "Pointer (var -> seed) or (seed -> var) if existent.";
-      Option<Pointer<Variable>> var_pder  "Pointer (var -> pder) or (pder -> var) if existent.";
-      Option<Pointer<Variable>> var_start "Pointer (var -> start) or (start -> var) if existent.";
-      Option<Pointer<Variable>> parent    "record parent if it is part of a record.";
+      VariableKind varKind                   "Structural kind: state, algebraic...";
+      VariableAttributes attributes          "values on built-in attributes";
+      Annotations annotations                "values on annotations (vendor specific)";
+      Option<Pointer<Variable>> var_pre      "Pointer (var -> pre) or (pre -> var) if existent.";
+      Option<Pointer<Variable>> var_seed     "Pointer (var -> seed) or (seed -> var) if existent.";
+      Option<Pointer<Variable>> var_pder_res "Pointer (var -> pder, result var in Jacobian) or (pder -> var) if existent.";
+      Option<Pointer<Variable>> var_pder_tmp "Pointer (var -> pder, tmp var in Jacobian) or (pder -> var) if existent.";
+      Option<Pointer<Variable>> var_start    "Pointer (var -> start) or (start -> var) if existent.";
+      Option<Pointer<Variable>> parent       "record parent if it is part of a record.";
     end BACKEND_INFO;
 
     function toString
@@ -144,8 +145,13 @@ public
     end setVarSeed;
 
     function setVarPDer extends setPartner;
+      input Boolean isTmp;
     algorithm
-      binfo.var_pder := var_ptr;
+      if isTmp then
+        binfo.var_pder_tmp := var_ptr;
+      else
+        binfo.var_pder_res := var_ptr;
+      end if;
     end setVarPDer;
 
     function setVarStart extends setPartner;
@@ -188,12 +194,12 @@ public
         case VariableKind.FRONTEND_DUMMY() then List.fill(binfo, length);
         else algorithm
           scalar_attributes := VariableAttributes.scalarize(binfo.attributes, length);
-        then list(BACKEND_INFO(binfo.varKind, attr, binfo.annotations, binfo.var_pre, binfo.var_seed, binfo.var_pder, binfo.var_start, binfo.parent) for attr in scalar_attributes);
+        then list(BACKEND_INFO(binfo.varKind, attr, binfo.annotations, binfo.var_pre, binfo.var_seed, binfo.var_pder_res, binfo.var_pder_tmp, binfo.var_start, binfo.parent) for attr in scalar_attributes);
       end match;
     end scalarize;
   end BackendInfo;
 
-  constant BackendInfo DUMMY_BACKEND_INFO = BackendInfo.BACKEND_INFO(VariableKind.FRONTEND_DUMMY(), EMPTY_VAR_ATTR_REAL, EMPTY_ANNOTATIONS, NONE(), NONE(), NONE(), NONE(), NONE());
+  constant BackendInfo DUMMY_BACKEND_INFO = BackendInfo.BACKEND_INFO(VariableKind.FRONTEND_DUMMY(), EMPTY_VAR_ATTR_REAL, EMPTY_ANNOTATIONS, NONE(), NONE(), NONE(), NONE(), NONE(), NONE());
 
   uniontype VariableKind
     record TIME end TIME;
