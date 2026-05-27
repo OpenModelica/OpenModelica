@@ -43,22 +43,21 @@
  */
 
 #include "OMEditApplication.h"
-#include "CrashReport/CrashReportDialog.h"
 #ifndef GC_THREADS
 #define GC_THREADS
 #endif
 
 extern "C" {
-#include "meta/meta_modelica.h"
+#include "meta/meta_modelica_data.h"
 #include "../../OMCompiler/Compiler/runtime/settingsimpl.h"
 }
 
 #include <QMessageBox>
 
 #ifdef QT_NO_DEBUG
+#include "CrashReport/CrashReportDialog.h"
 
-#if defined(_WIN32)
-
+#ifdef Q_OS_WIN
 #include "CrashReport/backtrace.h"
 
 static char *g_output = NULL;
@@ -140,7 +139,7 @@ void signalHandler(int signalNumber)
   pCrashReportDialog->exec();
   exit(signalNumber);
 }
-#endif // #if defined(_WIN32)
+#endif // #ifdef Q_OS_WIN
 
 #endif // #ifdef QT_NO_DEBUG
 
