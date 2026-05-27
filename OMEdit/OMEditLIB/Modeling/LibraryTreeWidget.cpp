@@ -1487,7 +1487,7 @@ void LibraryTreeModel::readLibraryTreeItemClassText(LibraryTreeItem *pLibraryTre
 {
   if (pLibraryTreeItem->isSSP()) {
     QString contents;
-    if (OMSProxy::instance()->exportSnapshot(pLibraryTreeItem->getNameStructure(), &contents)) {
+    if (OMSProxy::instance()->exportSnapshot(pLibraryTreeItem->getNameStructure(), contents)) {
       pLibraryTreeItem->setClassText(contents);
     }
   } else {
@@ -1997,7 +1997,7 @@ void LibraryTreeModel::reLoadOMSimulatorModel(const QString &modelName, const QS
       pEditedModelWidget->setWindowTitle(QString("%1*").arg(pNewEditedLibraryTreeItem->getName()));
       pEditedModelWidget->reDrawModelWidget();
       QString contents;
-      if (OMSProxy::instance()->exportSnapshot(pNewEditedLibraryTreeItem->getNameStructure(), &contents)) {
+      if (OMSProxy::instance()->exportSnapshot(pNewEditedLibraryTreeItem->getNameStructure(), contents)) {
         pNewEditedLibraryTreeItem->setClassText(contents);
       }
     }
@@ -2646,13 +2646,8 @@ LibraryTreeItem* LibraryTreeModel::createOMSLibraryTreeItemImpl(QString name, QS
     QString type = pOMSElement->getType();
   }
 
-  // SYSTEM
-  // if (type == "system") {
-  //   pLibraryTreeItem->setSystemType(oms_system_sc);
-  // }
-
   if (pLibraryTreeItem && pLibraryTreeItem->isComponentElement()) {
-    pLibraryTreeItem->setComponentType(oms_component_fmu);
+    //pLibraryTreeItem->setComponentType(oms_component_fmu);
     if (pLibraryTreeItem && pLibraryTreeItem->getOMSModelElement()->hasFMUInfo()) {
       const OMSModel::FMUInfo &pFMUInfo = pLibraryTreeItem->getOMSModelElement()->getFMUInfo();
       pLibraryTreeItem->setFMUInfo(pFMUInfo);
@@ -4317,7 +4312,7 @@ void LibraryWidget::openOMSModelFile(QFileInfo fileInfo, bool showProgress)
   // load the model in OMSimulator
   OMSProxy::instance()->setWorkingDirectory(fileInfo.absoluteDir().absolutePath());
   QString modelName;
-  bool success = OMSProxy::instance()->loadModel(fileInfo.absoluteFilePath(), &modelName);
+  bool success = OMSProxy::instance()->loadModel(fileInfo.absoluteFilePath(), modelName);
   OMSProxy::instance()->setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
   if (success) {
     // check if the file is already loaded.

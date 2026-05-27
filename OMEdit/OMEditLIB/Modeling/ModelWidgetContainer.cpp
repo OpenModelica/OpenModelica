@@ -6882,7 +6882,7 @@ void ModelWidget::createOMSimulatorUndoCommand(const QString &commandText, const
   }
   QString oldSnapshot = pModelLibraryTreeItem->getClassText(pLibraryTreeModel);
   QString newSnapshot;
-  OMSProxy::instance()->exportSnapshot(pModelLibraryTreeItem->getNameStructure(), &newSnapshot);
+  OMSProxy::instance()->exportSnapshot(pModelLibraryTreeItem->getNameStructure(), newSnapshot);
   mpUndoStack->push(new OMSimulatorUndoCommand(pModelLibraryTreeItem->getNameStructure(), oldSnapshot, newSnapshot, mpLibraryTreeItem->getNameStructure(),
                                                doSnapShot, switchToEdited, oldEditedCref, newEditedCref, "OMSimulator " + commandText));
 }
@@ -6907,7 +6907,7 @@ void ModelWidget::createOMSimulatorRenameModelUndoCommand(const QString &command
     pModelLibraryTreeItem->setName(newCref);
     pModelLibraryTreeItem->setNameStructure(newCref);
     QString newSnapshot;
-    OMSProxy::instance()->exportSnapshot(newCref, &newSnapshot);
+    OMSProxy::instance()->exportSnapshot(newCref, newSnapshot);
     mpUndoStack->push(new OMSimulatorUndoCommand(newCref, oldSnapshot, newSnapshot, mpLibraryTreeItem->getNameStructure(), true, true, "", "", "OMSimulator " + commandText));
   }
 }

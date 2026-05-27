@@ -42,7 +42,7 @@
 #include "Modeling/ItemDelegate.h"
 #include "Modeling/Commands.h"
 #include "OMS/BusDialog.h"
-#include "OMS/OMSModel.h";
+#include "OMS/OMSModel.h"
 #include "Util/ResourceCache.h"
 
 #include <QMessageBox>
@@ -1440,7 +1440,7 @@ void LineAnnotation::handleCollidingConnections()
   for (int i = 0; i < items.size(); ++i) {
     if (Element *pElement = dynamic_cast<Element*>(items.at(i))) {
       if (pElement->isConnector()
-          || (pElement->getLibraryTreeItem() && (pElement->getLibraryTreeItem()->getOMSConnector() || pElement->getLibraryTreeItem()->getOMSBusConnector()))) {
+          || (pElement->getLibraryTreeItem() && (pElement->getLibraryTreeItem()->getOMSModelConnector() || pElement->getLibraryTreeItem()->getOMSBusConnector()))) {
         mCollidingConnectorElements.append(pElement);
       }
     } else if (LineAnnotation *pConnectionAnnotation = dynamic_cast<LineAnnotation*>(items.at(i))) {
