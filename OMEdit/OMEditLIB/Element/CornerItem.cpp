@@ -60,7 +60,7 @@ CornerItem::CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotatio
   mIsElementMode = mpShapeAnnotation->getGraphicsView()->getModelWidget()->isElementMode();
   mIsInherited = mpShapeAnnotation->isInheritedShape();
   mIsOMSConnector = (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->isSSP() &&
-                   (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSConnector()
+                   (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSModelConnector()
                     || mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSBusConnector()));
   mIsVisualizationView = mpShapeAnnotation->getGraphicsView()->isVisualizationView();
   /* Shapes manipulation via CornerItem's if the class is not a system library class
@@ -249,7 +249,7 @@ void ResizerItem::setActive()
   setZValue(4000);
   if (mpComponent->isInheritedElement()
       || (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isSSP()
-          && (mpComponent->getLibraryTreeItem()->getOMSConnector()
+          && (mpComponent->getLibraryTreeItem()->getOMSModelConnector()
               || mpComponent->getLibraryTreeItem()->getOMSBusConnector()))) {
     mPen = mInheritedActivePen;
   } else {
@@ -407,7 +407,7 @@ void OriginItem::setActive()
   if ((mpShapeAnnotation && mpShapeAnnotation->isInheritedShape())
       || (mpComponent && (mpComponent->isInheritedElement()
                           || (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isSSP()
-                              && (mpComponent->getLibraryTreeItem()->getOMSConnector()
+                              && (mpComponent->getLibraryTreeItem()->getOMSModelConnector()
                                   || mpComponent->getLibraryTreeItem()->getOMSBusConnector()))))) {
     mPen = mInheritedActivePen;
   } else {

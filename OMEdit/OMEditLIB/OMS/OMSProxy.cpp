@@ -1210,12 +1210,11 @@ bool OMSProxy::initialize(QString cref)
 /*!
  * \brief OMSProxy::exportSnapshot
  * Lists the contents of a model.
- * Since memory is allocated so we need to call free.
  * \param cref
  * \param pContents
  * \return
  */
-bool OMSProxy::exportSnapshot(QString cref, QString *pContents)
+bool OMSProxy::exportSnapshot(QString cref, QString &pContents)
 {
   QJsonObject obj;
   obj["method"] = "exportSnapshot";
@@ -1226,7 +1225,7 @@ bool OMSProxy::exportSnapshot(QString cref, QString *pContents)
 
   QString xml = reply["xml"].toString();
   if (!xml.isEmpty())
-    *pContents = xml;
+    pContents = xml;
   return true;
 }
 
@@ -1237,17 +1236,22 @@ bool OMSProxy::exportSnapshot(QString cref, QString *pContents)
  * \param pModelName
  * \return
  */
-bool OMSProxy::loadModel(QString filename, QString* pModelName)
+bool OMSProxy::loadModel(QString filename, QString& pModelName)
 {
-  QString command = "oms_importFile";
-  QStringList args;
-  args << filename;
-  LOG_COMMAND(command, args);
-  char* cref = NULL;
-  oms_status_enu_t status = oms_importFile(filename.toUtf8().constData(), &cref);
-  *pModelName = QString(cref);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
+  QJsonObject obj, args;
+  obj["method"] = "importFile";
+  args["file"] = filename;
+  obj["args"] = args;
+  QJsonObject reply;
+
+  if (!sendZmqCommand(obj, reply))
+    return false;
+
+  QString modelName = reply["modelName"].toString();
+  if (!modelName.isEmpty())
+    pModelName = modelName;
+
+  return true;
 }
 
 /*!
@@ -1336,13 +1340,13 @@ bool OMSProxy::omsDelete(QString cref)
  */
 bool OMSProxy::saveModel(QString cref, QString filename)
 {
-  QString command = "oms_export";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_export(cref.toUtf8().constData(), filename.toUtf8().constData());
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
+  QJsonObject obj, args;
+  obj["method"] = "export";
+  args["file"] = filename;
+  obj["args"] = args;
+  qDebug() << "save model" << QJsonDocument(obj).toJson(QJsonDocument::Compact);
+  QJsonObject reply;
+  return sendZmqCommand(obj, reply);
 }
 
 /*!
