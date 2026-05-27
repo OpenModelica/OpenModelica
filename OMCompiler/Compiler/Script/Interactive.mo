@@ -10377,10 +10377,10 @@ public function getAccessAnnotation
   input Absyn.Program p;
   output String access;
 algorithm
-  access := match(className,p)
+  access := match p
     local
       String accessStr;
-    case(_,_)
+    case _
       algorithm
         accessStr := getNamedAnnotationExp(className, p, Absyn.IDENT("Protection"), SOME(""), getAccessAnnotationString);
       then
@@ -10476,10 +10476,7 @@ protected
   Absyn.Program p;
   String fileName;
 algorithm
-  classes := match(inProgram)
-    case p as Absyn.PROGRAM()
-      then p.classes;
-  end match;
+  Absyn.PROGRAM(classes=classes) := inProgram;
   for c in classes loop
     Absyn.CLASS(info=SOURCEINFO(fileName=fileName)) := c;
     containsEncryptedClass := containsEncryptedClass or StringUtil.endsWith(fileName, ".moc");

@@ -791,7 +791,13 @@ algorithm
         (cache,elabCases,resType) := elabMatchCases(cache,env,cases,tys,inputAliasesAndCrefs,declsTree,impl,performVectorization,pre,info);
         prop := DAE.PROP(resType,DAE.C_VAR());
         et := Types.simplifyType(resType);
-        (elabExps,inputAliases,elabCases) := filterUnusedPatterns(elabExps,inputAliases,elabCases) "filterUnusedPatterns() First time to speed up the other optimizations.";
+        checkMatchSingleInfallibleCase(matchTy, elabCases, info);
+        checkInfallibleNoBindingPatterns(elabCases, matchTy, info);
+        // If the whole match is a single infallible case (covered by
+        // MATCH_SINGLE_INFALLIBLE_CASE), don't also emit per-input "unused
+        // input" notifications for the same match — the agent would otherwise
+        // see two conflicting recommendations for the same code.
+        (elabExps,inputAliases,elabCases) := filterUnusedPatterns(elabExps,inputAliases,elabCases,info,not isSingleInfallibleMatch(matchTy, elabCases)) "filterUnusedPatterns() First time to speed up the other optimizations.";
         elabCases := caseDeadCodeElimination(matchTy, elabCases, {}, {}, false);
         // Do DCE before converting mc to m
         matchTy := optimizeContinueToMatch(matchTy,elabCases,info);
@@ -800,7 +806,7 @@ algorithm
         hashSize := Util.nextPrime(listLength(matchDecls));
         ht := getUsedLocalCrefs(Flags.isSet(Flags.PATTERNM_SKIP_FILTER_UNUSED_AS_BINDINGS),DAE.MATCHEXPRESSION(DAE.MATCHCONTINUE(),elabExps,inputAliases,matchDecls,elabCases,et),hashSize);
         (matchDecls,ht) := filterUnusedDecls(matchDecls,ht,{},HashTableStringToPath.emptyHashTableSized(hashSize));
-        (elabExps,inputAliases,elabCases) := filterUnusedPatterns(elabExps,inputAliases,elabCases) "filterUnusedPatterns() again to filter out the last parts.";
+        (elabExps,inputAliases,elabCases) := filterUnusedPatterns(elabExps,inputAliases,elabCases,info,false) "filterUnusedPatterns() again to filter out the last parts.";
         (elabMatchTy, elabCases) := optimizeMatchToSwitch(matchTy,elabCases,info);
         elabMatchTy := unboxSwitchType(elabMatchTy, elabExps);
         checkConstantMatchInputs(elabExps, info);
@@ -1042,6 +1048,8 @@ protected function filterUnusedPatterns
   input list<DAE.Exp> inputs "We can only remove inputs that are free from side-effects";
   input list<list<String>> inAliases;
   input list<DAE.MatchCase> inCases;
+  input SourceInfo info;
+  input Boolean emitNotifications "If true and PATTERNM_ALL_INFO is set, notifications are emitted for removable inputs and pattern-as-only cases.";
   output list<DAE.Exp> outInputs;
   output list<list<String>> outAliases;
   output list<DAE.MatchCase> outCases;
@@ -1054,7 +1062,7 @@ algorithm
     case (_,_,cases)
       algorithm
         patternMatrix := List.transposeList(List.map(cases,getCasePatterns));
-        (true,outInputs,outAliases,patternMatrix) := filterUnusedPatterns2(inputs,inAliases,patternMatrix,false,{},{},{});
+        (true,outInputs,outAliases,patternMatrix) := filterUnusedPatterns2(inputs,inAliases,patternMatrix,false,info,emitNotifications,{},{},{});
         patternMatrix := List.transposeList(patternMatrix);
         cases := setCasePatternsCheckZero(cases,patternMatrix);
       then (outInputs,outAliases,cases);
@@ -1082,6 +1090,8 @@ protected function filterUnusedPatterns2
   input list<list<String>> inAliases;
   input list<list<DAE.Pattern>> inPatternMatrix;
   input Boolean change "Only rebuild the cases if something changed";
+  input SourceInfo info;
+  input Boolean emitNotifications;
   input list<DAE.Exp> inputsAcc;
   input list<list<String>> aliasesAcc;
   input list<list<DAE.Pattern>> patternMatrixAcc;
@@ -1105,11 +1115,17 @@ algorithm
       algorithm
         (_,true) := Expression.traverseExpBottomUp(e,Expression.hasNoSideEffects,true);
         true := allPatternsWild(pats);
-        (outChange,outInputs,outAliases,outPatternMatrix) := filterUnusedPatterns2(inputs,aliases,patternMatrix,true,inputsAcc,aliasesAcc,patternMatrixAcc);
+        if emitNotifications and Flags.isSet(Flags.PATTERNM_ALL_INFO) then
+          Error.addSourceMessage(Error.META_MATCH_UNUSED_INPUT, {ExpressionBasics.printExpStr(e)}, info);
+        end if;
+        (outChange,outInputs,outAliases,outPatternMatrix) := filterUnusedPatterns2(inputs,aliases,patternMatrix,true,info,emitNotifications,inputsAcc,aliasesAcc,patternMatrixAcc);
       then (outChange,outInputs,outAliases,outPatternMatrix);
     case (e::inputs,alias::aliases,pats::patternMatrix,_,_,_,_)
       algorithm
-        (outChange,outInputs,outAliases,outPatternMatrix) := filterUnusedPatterns2(inputs,aliases,patternMatrix,change,e::inputsAcc,alias::aliasesAcc,pats::patternMatrixAcc);
+        if emitNotifications and Flags.isSet(Flags.PATTERNM_ALL_INFO) and Expression.isCref(e) and allPatternsAlwaysMatch(pats) and not allPatternsWild(pats) then
+          Error.addSourceMessage(Error.META_PATTERN_AS_ONLY, {ExpressionBasics.printExpStr(e), ExpressionBasics.printExpStr(e)}, info);
+        end if;
+        (outChange,outInputs,outAliases,outPatternMatrix) := filterUnusedPatterns2(inputs,aliases,patternMatrix,change,info,emitNotifications,e::inputsAcc,alias::aliasesAcc,pats::patternMatrixAcc);
       then (outChange,outInputs,outAliases,outPatternMatrix);
     else (false,{},{},{});
   end matchcontinue;
@@ -1852,7 +1868,29 @@ algorithm
     case (Absyn.MATCH(),_,_) then Absyn.MATCH();
     else optimizeContinueToMatch2(cases,{},info);
   end match;
+  if Flags.isSet(Flags.PATTERNM_ALL_INFO) then
+    checkMatchContinueSingleCaseToTry(outMatchType, cases, info);
+  end if;
 end optimizeContinueToMatch;
+
+protected function checkMatchContinueSingleCaseToTry
+  "Emits a notification when a matchcontinue has exactly one real case and an
+  else case, suggesting that it be rewritten as a try/else."
+  input Absyn.MatchType matchType;
+  input list<DAE.MatchCase> cases;
+  input SourceInfo info;
+algorithm
+  _ := match (matchType, cases)
+    local list<DAE.Pattern> firstPats, elsePats;
+    case (Absyn.MATCHCONTINUE(),
+          {DAE.CASE(patterns=firstPats), DAE.CASE(patterns=elsePats)})
+      guard not allPatternsWild(firstPats) and allPatternsWild(elsePats)
+      algorithm
+        Error.addSourceMessage(Error.MATCHCONTINUE_TO_TRY_OPTIMIZATION, {}, info);
+      then ();
+    else ();
+  end match;
+end checkMatchContinueSingleCaseToTry;
 
 protected function optimizeContinueToMatch2
   "If a matchcontinue expression has only one case, it is optimized to match instead.
@@ -2667,6 +2705,170 @@ algorithm
     else false;
   end match;
 end allPatternsAlwaysMatch;
+
+protected function isInfallibleNoBinding
+  "Returns true if the pattern is guaranteed to match without binding any
+  variable, but is not just PAT_WILD itself (so it could be replaced with _)."
+  input DAE.Pattern pat;
+  output Boolean b;
+algorithm
+  b := match pat
+    local list<DAE.Pattern> pats; list<tuple<DAE.Pattern,String,DAE.Type>> namedPats;
+    case DAE.PAT_META_TUPLE(patterns=pats) then List.all(pats, isInfallibleNoBindingOrWild);
+    case DAE.PAT_CALL_TUPLE(patterns=pats) then List.all(pats, isInfallibleNoBindingOrWild);
+    case DAE.PAT_CALL(knownSingleton=true, patterns=pats) then List.all(pats, isInfallibleNoBindingOrWild);
+    case DAE.PAT_CALL_NAMED(name=_, patterns=namedPats)
+      // PAT_CALL_NAMED has no knownSingleton flag, so only fire if there are no fields at all.
+      then listEmpty(namedPats);
+    else false;
+  end match;
+end isInfallibleNoBinding;
+
+protected function isInfallibleNoBindingOrWild
+  input DAE.Pattern pat;
+  output Boolean b;
+algorithm
+  b := match pat
+    case DAE.PAT_WILD() then true;
+    else isInfallibleNoBinding(pat);
+  end match;
+end isInfallibleNoBindingOrWild;
+
+protected function isInfalliblePattern
+  "Returns true if the pattern is guaranteed to match at runtime. Unlike
+  isInfallibleNoBinding, the pattern is allowed to bind variables (PAT_AS /
+  PAT_AS_FUNC_PTR), which is what makes it useful for the
+  match-single-infallible-case rewrite to a destructuring assignment."
+  input DAE.Pattern pat;
+  output Boolean b;
+algorithm
+  b := match pat
+    local
+      list<DAE.Pattern> pats;
+      list<tuple<DAE.Pattern,String,DAE.Type>> namedPats;
+      DAE.Pattern innerPat;
+    case DAE.PAT_WILD() then true;
+    case DAE.PAT_AS(pat=innerPat) then isInfalliblePattern(innerPat);
+    case DAE.PAT_AS_FUNC_PTR(pat=innerPat) then isInfalliblePattern(innerPat);
+    case DAE.PAT_META_TUPLE(patterns=pats) then List.all(pats, isInfalliblePattern);
+    case DAE.PAT_CALL_TUPLE(patterns=pats) then List.all(pats, isInfalliblePattern);
+    case DAE.PAT_CALL(knownSingleton=true, patterns=pats) then List.all(pats, isInfalliblePattern);
+    case DAE.PAT_CALL_NAMED(patterns=namedPats) then listEmpty(namedPats);
+    else false;
+  end match;
+end isInfalliblePattern;
+
+protected function isSingleInfallibleMatch
+  "True when a match (not matchcontinue) has exactly one case with no else and
+  every input's pattern in that case is infallible. Used both to emit the
+  MATCH_SINGLE_INFALLIBLE_CASE notification and to suppress weaker notifications
+  that the agent would otherwise see as duplicates."
+  input Absyn.MatchType matchType;
+  input list<DAE.MatchCase> cases;
+  output Boolean b;
+algorithm
+  b := match (matchType, cases)
+    local list<DAE.Pattern> pats;
+    case (Absyn.MATCH(), {DAE.CASE(patterns=pats)})
+      then List.all(pats, isInfalliblePattern);
+    else false;
+  end match;
+end isSingleInfallibleMatch;
+
+protected function checkMatchSingleInfallibleCase
+  "Emits a notification when isSingleInfallibleMatch holds. Such a match never
+  fails at runtime and is clearer as a destructuring assignment (or, if no
+  bindings, as a plain statement)."
+  input Absyn.MatchType matchType;
+  input list<DAE.MatchCase> cases;
+  input SourceInfo info;
+algorithm
+  if Flags.isSet(Flags.PATTERNM_ALL_INFO) and isSingleInfallibleMatch(matchType, cases) then
+    Error.addSourceMessage(Error.MATCH_SINGLE_INFALLIBLE_CASE, {}, info);
+  end if;
+end checkMatchSingleInfallibleCase;
+
+protected function checkInfallibleNoBindingPatterns
+  "Walks the patterns of each case looking for sub-patterns that are infallible
+  and bind no variables. Such patterns can be replaced by a wildcard. When the
+  whole match is a single infallible case (covered by the stronger
+  MATCH_SINGLE_INFALLIBLE_CASE notification), we skip per-pattern reporting for
+  that case so the user only sees the better recommendation."
+  input list<DAE.MatchCase> cases;
+  input Absyn.MatchType matchType;
+  input SourceInfo info;
+algorithm
+  if not Flags.isSet(Flags.PATTERNM_ALL_INFO) then
+    return;
+  end if;
+  if isSingleInfallibleMatch(matchType, cases) then
+    return;
+  end if;
+  for c in cases loop
+    _ := match c
+      local list<DAE.Pattern> pats; SourceInfo cinfo;
+      case DAE.CASE(patterns=pats, info=cinfo)
+        algorithm
+          for p in pats loop
+            checkPatternInfallibleNoBinding(p, cinfo);
+          end for;
+        then ();
+    end match;
+  end for;
+end checkInfallibleNoBindingPatterns;
+
+protected function checkPatternInfallibleNoBinding
+  input DAE.Pattern pat;
+  input SourceInfo info;
+algorithm
+  _ := match pat
+    local
+      list<DAE.Pattern> pats;
+      list<tuple<DAE.Pattern,String,DAE.Type>> namedPats;
+      DAE.Pattern innerPat;
+    case DAE.PAT_WILD() then ();
+    case _ guard isInfallibleNoBinding(pat)
+      algorithm
+        Error.addSourceMessage(Error.META_PATTERN_INFALLIBLE_NO_BINDING, {patternStr(pat)}, info);
+      then ();
+    case DAE.PAT_META_TUPLE(patterns=pats)
+      algorithm
+        for p in pats loop checkPatternInfallibleNoBinding(p, info); end for;
+      then ();
+    case DAE.PAT_CALL_TUPLE(patterns=pats)
+      algorithm
+        for p in pats loop checkPatternInfallibleNoBinding(p, info); end for;
+      then ();
+    case DAE.PAT_CALL(patterns=pats)
+      algorithm
+        for p in pats loop checkPatternInfallibleNoBinding(p, info); end for;
+      then ();
+    case DAE.PAT_CALL_NAMED(patterns=namedPats)
+      algorithm
+        for tpl in namedPats loop
+          checkPatternInfallibleNoBinding(Util.tuple31(tpl), info);
+        end for;
+      then ();
+    case DAE.PAT_CONS(head=innerPat)
+      algorithm
+        checkPatternInfallibleNoBinding(innerPat, info);
+        checkPatternInfallibleNoBinding(pat.tail, info);
+      then ();
+    case DAE.PAT_SOME(pat=innerPat)
+      algorithm
+        checkPatternInfallibleNoBinding(innerPat, info);
+      then ();
+    case DAE.PAT_AS(pat=innerPat)
+      algorithm
+        checkPatternInfallibleNoBinding(innerPat, info);
+      then ();
+    case DAE.PAT_AS_FUNC_PTR(pat=innerPat)
+      algorithm
+        checkPatternInfallibleNoBinding(innerPat, info);
+      then ();
+    else ();
+  end match;
+end checkPatternInfallibleNoBinding;
 
 protected function getCasePatterns
 "Accessor function for DAE.Case"

@@ -1254,6 +1254,16 @@ public constant ErrorTypes.Message CONVERSION_MISSING_NONE_FROM_VERSION = ErrorT
   Gettext.gettext("Conversion-annotation is missing version for noneFromVersion: %s."));
 public constant ErrorTypes.Message UNPATCHED_MODELICA_SERVICES = ErrorTypes.MESSAGE(5049, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
   Gettext.gettext("This version of ModelicaServices does not appear to be patched for use with OpenModelica, consider using a version distributed by OpenModelica instead to avoid compatibility issues."));
+public constant ErrorTypes.Message META_MATCH_UNUSED_INPUT = ErrorTypes.MESSAGE(5050, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),
+  Gettext.gettext("Match input %s is not used by any case and could be removed."));
+public constant ErrorTypes.Message META_PATTERN_INFALLIBLE_NO_BINDING = ErrorTypes.MESSAGE(5051, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),
+  Gettext.gettext("Pattern %s is infallible and binds no variables; it could be replaced with a wildcard."));
+public constant ErrorTypes.Message META_PATTERN_AS_ONLY = ErrorTypes.MESSAGE(5052, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),
+  Gettext.gettext("Pattern only renames the match input %s; the match expression could be rewritten without this input and the body could use %s directly."));
+public constant ErrorTypes.Message MATCHCONTINUE_TO_TRY_OPTIMIZATION = ErrorTypes.MESSAGE(5053, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),
+  Gettext.gettext("This matchcontinue has a single case and an else and could be rewritten as a try/else."));
+public constant ErrorTypes.Message MATCH_SINGLE_INFALLIBLE_CASE = ErrorTypes.MESSAGE(5054, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),
+  Gettext.gettext("This match expression has a single case with an infallible pattern; it could be rewritten as a destructuring assignment of the input(s)."));
 
 public constant ErrorTypes.Message COMPILER_ERROR = ErrorTypes.MESSAGE(5999, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.notrans("%s"));
