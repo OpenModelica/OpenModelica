@@ -146,10 +146,20 @@ void signalHandler(int signalNumber)
 
 void printOMEditUsage()
 {
-  fprintf(stderr, "Usage: OMEdit --paths --Debug=true|false] [files]\n");
-  fprintf(stderr, "    --NAPIProfiling=[true|false]    Enables the profiling of new json based api.\n");
-  fprintf(stderr, "    --paths                         Dumps the Qt paths in /tmp/qt-paths.txt.\n");
-  fprintf(stderr, "    files                           List of Modelica files(*.mo) to open.\n");
+  fprintf(stderr, "Usage:\n");
+  fprintf(stderr, "  OMEdit [options] [files]\n\n");
+
+  fprintf(stderr, "Options:\n");
+  fprintf(stderr, "  --Debug=[true|false]          Enable debugging features such as\n");
+  fprintf(stderr, "                                QUndoView and diffModelicaFileListings.\n");
+  fprintf(stderr, "                                Default: false.\n\n");
+
+  fprintf(stderr, "  --NAPIProfiling=[true|false]  Enable profiling for the new JSON-based API.\n");
+  fprintf(stderr, "                                Default: false.\n\n");
+
+  fprintf(stderr, "  --paths                       Dumps the Qt paths in /tmp/qt-paths.txt.\n\n");
+
+  fprintf(stderr, "files                           List of Modelica files (*.mo) to open.\n");
 }
 
 static int execution_failed()
@@ -165,6 +175,13 @@ int main(int argc, char *argv[])
   // if user asks for --help
   for(int i = 1; i < argc; i++) {
     if (strcmp(argv[i], "--help") == 0) {
+#ifdef Q_OS_WIN
+      /// Re-attach to the parent console (the cmd.exe that launched us)
+      if (AttachConsole(ATTACH_PARENT_PROCESS)) {
+        freopen("CONOUT$", "w", stdout);
+        freopen("CONOUT$", "w", stderr);
+      }
+#endif // #ifdef Q_OS_WIN
       printOMEditUsage();
       return 0;
     }
