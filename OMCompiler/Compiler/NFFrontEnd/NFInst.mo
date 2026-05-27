@@ -1161,7 +1161,7 @@ algorithm
         inst_cls as Class.EXPANDED_CLASS(elements = cls_tree) := InstNode.getClass(node);
 
         // Fetch modification on the class definition (for class extends).
-        mod := instElementModifier(InstNode.definition(node), node, par);
+        mod := instElementModifier(InstNode.definition(node), node, par, instLevel);
         mod := Modifier.propagate(mod, node, par);
         mod := Modifier.merge(mod, cls.ccMod);
         // Merge with any outer modifications.
@@ -1170,7 +1170,8 @@ algorithm
         mod := Modifier.merge(outer_mod, mod);
 
         // Apply the modifiers of extends nodes.
-        ClassTree.mapExtends(cls_tree, function modifyExtends(scope = par, context = context));
+        ClassTree.mapExtends(cls_tree,
+          function modifyExtends(scope = par, context = context, instLevel = instLevel));
 
         // Propagate the visibility of extends to their elements.
         ClassTree.mapExtends(cls_tree,
@@ -1186,12 +1187,12 @@ algorithm
         // Redeclare classes with redeclare modifiers. Redeclared components could
         // also be handled here, but since each component is only instantiated once
         // it's more efficient to apply the redeclare when instantiating them instead.
-        redeclareClasses(cls_tree, par, context);
+        redeclareClasses(cls_tree, par, context, instLevel);
 
         // Instantiate the extends nodes.
         ClassTree.mapExtends(cls_tree,
           function instExtends(attributes = attributes, useBinding = useBinding,
-                               instLevel = instLevel + 1, context = context));
+                               instLevel = instLevel, context = context));
 
         // Instantiate local components.
         ClassTree.applyLocalComponents(cls_tree,
@@ -1214,7 +1215,7 @@ algorithm
         Class.EXPANDED_DERIVED(baseClass = base_node) := InstNode.getClass(node);
 
         // Merge outer modifiers and attributes.
-        mod := instElementModifier(InstNode.definition(node), node, InstNode.rootParent(node));
+        mod := instElementModifier(InstNode.definition(node), node, InstNode.rootParent(node), instLevel);
         mod := Modifier.propagate(mod, node, par);
         mod := Modifier.merge(mod, cls.ccMod);
         outer_mod := Modifier.propagate(cls.modifier, node, par);
@@ -1254,7 +1255,7 @@ algorithm
         updateComponentType(parent, node);
         cls_tree := Class.classTree(InstNode.getClass(node));
 
-        mod := instElementModifier(InstNode.definition(node), node, InstNode.parent(node));
+        mod := instElementModifier(InstNode.definition(node), node, InstNode.parent(node), instLevel);
         outer_mod := Modifier.merge(outerMod, cls.modifier);
         mod := Modifier.merge(outer_mod, mod);
         applyModifier(mod, cls_tree, node, context);
@@ -1375,6 +1376,7 @@ function modifyExtends
   input output InstNode extendsNode;
   input InstNode scope;
   input InstContext.Type context;
+  input Integer instLevel;
 protected
   SCode.Element elem;
   Modifier ext_mod;
@@ -1388,11 +1390,12 @@ algorithm
 
   // Create a modifier from the extends.
   InstNodeType.BASE_CLASS(definition = elem) := InstNode.nodeType(extendsNode);
-  ext_mod := Modifier.fromElement(elem, scope);
+  ext_mod := Modifier.fromElement(elem, scope, instLevel);
   ext_mod := Modifier.merge(InstNode.getModifier(extendsNode), ext_mod);
 
   if not Class.isBuiltin(cls) then
-    ClassTree.mapExtends(cls_tree, function modifyExtends(scope = extendsNode, context = context));
+    ClassTree.mapExtends(cls_tree,
+      function modifyExtends(scope = extendsNode, context = context, instLevel = instLevel));
 
     () := match elem
       case SCode.EXTENDS()
@@ -1629,6 +1632,7 @@ function redeclareClasses
   input output ClassTree tree;
   input InstNode parent;
   input InstContext.Type context;
+  input Integer instLevel;
 protected
   InstNode cls_node, redecl_node;
   Class cls;
@@ -1644,7 +1648,7 @@ algorithm
 
           if Modifier.isRedeclare(mod) then
             Modifier.REDECLARE(element = redecl_node, outerMod = mod, constrainingMod = cc_mod) := mod;
-            cc_mod := getConstrainingMod(InstNode.definition(cls_node), parent, cc_mod);
+            cc_mod := getConstrainingMod(InstNode.definition(cls_node), parent, cc_mod, instLevel);
             cls_node := redeclareClass(redecl_node, cls_node, mod, cc_mod, context);
             Mutable.update(cls_ptr, cls_node);
           end if;
@@ -1906,7 +1910,7 @@ algorithm
     instComponentDef(def, Modifier.NOMOD(), inner_mod, NFAttributes.DEFAULT_ATTR,
       useBinding, comp_node, parent, instLevel, originalAttr, {}, next_context);
 
-    cc_mod := getConstrainingMod(def, parent, cc_mod);
+    cc_mod := getConstrainingMod(def, parent, cc_mod, instLevel);
     cc_mod := Modifier.merge(cc_mod, innerMod);
 
     outer_mod := Modifier.merge(InstNode.getModifier(rdcl_node), outer_mod);
@@ -1947,7 +1951,7 @@ algorithm
 
     case SCode.COMPONENT(info = info)
       algorithm
-        mod := instElementModifier(component, node, parent);
+        mod := instElementModifier(component, node, parent, instLevel);
 
         if not listEmpty(propagatedSubs) then
           mod := Modifier.propagateSubs(mod, propagatedSubs);
@@ -1958,7 +1962,7 @@ algorithm
 
         dims := list(Dimension.RAW_DIM(d, parent) for d in component.attributes.arrayDims);
         binding := if useBinding then Modifier.binding(mod) else NFBinding.EMPTY_BINDING;
-        condition := Binding.fromAbsyn(component.condition, false, false, parent, info);
+        condition := Binding.fromAbsyn(component.condition, false, false, parent, instLevel, info);
 
         // Instantiate the component's attributes, and merge them with the
         // attributes of the component's parent (e.g. constant SomeComplexClass c).
@@ -2036,16 +2040,17 @@ function instElementModifier
   input SCode.Element element;
   input InstNode component;
   input InstNode parent;
+  input Integer instLevel;
   output Modifier mod;
 protected
   Modifier cc_mod;
 algorithm
-  mod := Modifier.fromElement(element, parent);
+  mod := Modifier.fromElement(element, parent, instLevel);
 
   if InstNode.isRedeclared(component) then
     mod := propagateRedeclaredMod(mod, component);
   else
-    cc_mod := instConstrainingMod(element, parent);
+    cc_mod := instConstrainingMod(element, parent, instLevel);
     mod := Modifier.merge(mod, cc_mod);
   end if;
 end instElementModifier;
@@ -2053,6 +2058,7 @@ end instElementModifier;
 function instConstrainingMod
   input SCode.Element element;
   input InstNode parent;
+  input Integer instLevel;
   output Modifier ccMod;
 algorithm
   ccMod := match element
@@ -2061,11 +2067,11 @@ algorithm
 
     case SCode.Element.CLASS(prefixes = SCode.Prefixes.PREFIXES(replaceablePrefix =
         SCode.Replaceable.REPLACEABLE(cc = SOME(SCode.ConstrainClass.CONSTRAINCLASS(modifier = smod)))))
-      then Modifier.create(smod, element.name, ModifierScope.CLASS(element.name), parent);
+      then Modifier.create(smod, element.name, ModifierScope.CLASS(element.name), parent, instLevel);
 
     case SCode.Element.COMPONENT(prefixes = SCode.Prefixes.PREFIXES(replaceablePrefix =
         SCode.Replaceable.REPLACEABLE(cc = SOME(SCode.ConstrainClass.CONSTRAINCLASS(modifier = smod)))))
-      then Modifier.create(smod, element.name, ModifierScope.COMPONENT(element.name), parent);
+      then Modifier.create(smod, element.name, ModifierScope.COMPONENT(element.name), parent, instLevel);
 
     else Modifier.NOMOD();
   end match;
@@ -2075,6 +2081,7 @@ function getConstrainingMod
   input SCode.Element element;
   input InstNode parent;
   input Modifier outerMod;
+  input Integer instLevel;
   output Modifier ccMod;
 protected
   String name;
@@ -2085,7 +2092,7 @@ algorithm
 
   if not SCodeUtil.isEmptyMod(cc_smod) then
     name := SCodeUtil.elementName(element);
-    ccMod := Modifier.create(cc_smod, name, ModifierScope.fromElement(element), parent);
+    ccMod := Modifier.create(cc_smod, name, ModifierScope.fromElement(element), parent, instLevel);
     ccMod := Modifier.merge(outerMod, ccMod);
   else
     ccMod := outerMod;
@@ -2781,7 +2788,7 @@ algorithm
             bind_exp := Expression.SUBSCRIPTED_EXP(bind_exp, binding.subs, Type.UNKNOWN(), true);
           end if;
         then
-          Binding.UNTYPED_BINDING(bind_exp, false, binding.scope, binding.eachType, binding.source, binding.info);
+          Binding.UNTYPED_BINDING(bind_exp, false, binding.scope, binding.eachType, binding.source, binding.confidence, binding.info);
 
       else binding;
     end match;

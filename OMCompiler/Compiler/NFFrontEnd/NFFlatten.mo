@@ -886,10 +886,12 @@ protected
   Expression binding_exp;
   Variability var;
   Binding.Source bind_src;
+  Integer confidence;
 algorithm
   binding_exp := Binding.getTypedExp(binding);
   var := Binding.variability(binding);
   bind_src := NFBinding.Source.GENERATED;
+  confidence := Binding.confidence(binding);
 
   // Convert the expressions in the record expression into bindings.
   recordBindings := match binding_exp
@@ -899,12 +901,12 @@ algorithm
                // from an evaluated function call where it wasn't assigned a value.
                NFBinding.EMPTY_BINDING
              else
-               Binding.makeFlat(e, var, bind_src)
+               Binding.makeFlat(e, var, bind_src, confidence)
            for e in binding_exp.elements);
 
     case Expression.ARRAY()
       guard Type.isRecord(Type.arrayElementType(Expression.typeOf(binding_exp)))
-      then list(Binding.makeFlat(Expression.nthRecordElement(i, binding_exp), var, bind_src)
+      then list(Binding.makeFlat(Expression.nthRecordElement(i, binding_exp), var, bind_src, confidence)
                   for i in 1:arrayLength(comps));
 
     else
@@ -1201,6 +1203,7 @@ protected
   Type binding_ty;
   list<tuple<InstNode, Expression>> iters;
   ComponentRef prefix_cr;
+  Integer confidence;
 algorithm
   if not Binding.isBound(binding) then
     return;
@@ -1223,7 +1226,7 @@ algorithm
     case Expression.SUBSCRIPTED_EXP()
       guard Subscript.isEqualList(exp.subscripts, subs)
       algorithm
-        binding := Binding.makeFlat(exp.exp, Binding.variability(binding), Binding.source(binding));
+        binding := Binding.makeFlat(exp.exp, Binding.variability(binding), Binding.source(binding), Binding.confidence(binding));
         return;
       then
         ();
@@ -1251,7 +1254,7 @@ algorithm
     exp := Expression.CALL(array_call);
   end if;
 
-  binding := Binding.makeFlat(exp, Binding.variability(binding), Binding.source(binding));
+  binding := Binding.makeFlat(exp, Binding.variability(binding), Binding.source(binding), Binding.confidence(binding));
 end vectorizeBinding;
 
 function fillVectorizedBinding

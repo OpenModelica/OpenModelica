@@ -172,6 +172,7 @@ public
     input String name;
     input ModifierScope modScope;
     input InstNode scope;
+    input Integer confidence;
     output Modifier newMod;
   algorithm
     newMod := match mod
@@ -191,8 +192,8 @@ public
       case SCode.MOD()
         algorithm
           is_each := SCodeUtil.eachBool(mod.eachPrefix);
-          binding := Binding.fromAbsyn(mod.binding, is_each, ModifierScope.isClass(modScope), scope, mod.info);
-          submod_lst := list((m.ident, createSubMod(m, modScope, scope)) for m guard not SCodeUtil.isBreakSubMod(m) in mod.subModLst);
+          binding := Binding.fromAbsyn(mod.binding, is_each, ModifierScope.isClass(modScope), scope, confidence, mod.info);
+          submod_lst := list((m.ident, createSubMod(m, modScope, scope, confidence)) for m guard not SCodeUtil.isBreakSubMod(m) in mod.subModLst);
           submod_table := ModTable.fromList(submod_lst,
             function mergeLocal(scope = modScope, prefix = {}));
         then
@@ -206,7 +207,7 @@ public
             Inst.partialInstClass(node);
           end if;
 
-          cc_mod := createConstrainingMod(elem, scope);
+          cc_mod := createConstrainingMod(elem, scope, confidence);
         then
           REDECLARE(mod.finalPrefix, mod.eachPrefix, node, NOMOD(), NOMOD(), cc_mod, {});
 
@@ -216,6 +217,7 @@ public
   function createConstrainingMod
     input SCode.Element element;
     input InstNode scope;
+    input Integer confidence;
     output Modifier mod;
   protected
     SCode.Mod smod;
@@ -223,11 +225,11 @@ public
     mod := match element
       case SCode.Element.CLASS(prefixes = SCode.Prefixes.PREFIXES(replaceablePrefix =
           SCode.Replaceable.REPLACEABLE(cc = SOME(SCode.ConstrainClass.CONSTRAINCLASS(modifier = smod)))))
-        then create(smod, element.name, ModifierScope.CLASS(element.name), scope);
+        then create(smod, element.name, ModifierScope.CLASS(element.name), scope, confidence);
 
       case SCode.Element.COMPONENT(prefixes = SCode.Prefixes.PREFIXES(replaceablePrefix =
           SCode.Replaceable.REPLACEABLE(cc = SOME(SCode.ConstrainClass.CONSTRAINCLASS(modifier = smod)))))
-        then create(smod, element.name, ModifierScope.COMPONENT(element.name), scope);
+        then create(smod, element.name, ModifierScope.COMPONENT(element.name), scope, confidence);
 
       else NOMOD();
     end match;
@@ -265,6 +267,7 @@ public
   function fromElement
     input SCode.Element element;
     input InstNode scope;
+    input Integer confidence;
     output Modifier mod;
   algorithm
     mod := match element
@@ -273,19 +276,19 @@ public
         SCode.Mod smod;
 
       case SCode.EXTENDS()
-        then create(element.modifications, "", ModifierScope.EXTENDS(element.baseClassPath), scope);
+        then create(element.modifications, "", ModifierScope.EXTENDS(element.baseClassPath), scope, confidence);
 
       case SCode.COMPONENT()
         algorithm
           smod := patchElementModFinal(element.prefixes, element.info, element.modifications);
         then
-          create(smod, element.name, ModifierScope.COMPONENT(element.name), scope);
+          create(smod, element.name, ModifierScope.COMPONENT(element.name), scope, confidence);
 
       case SCode.CLASS(classDef = def as SCode.DERIVED())
-        then create(def.modifications, element.name, ModifierScope.CLASS(element.name), scope);
+        then create(def.modifications, element.name, ModifierScope.CLASS(element.name), scope, confidence);
 
       case SCode.CLASS(classDef = def as SCode.CLASS_EXTENDS())
-        then create(def.modifications, element.name, ModifierScope.CLASS(element.name), scope);
+        then create(def.modifications, element.name, ModifierScope.CLASS(element.name), scope, confidence);
 
       else NOMOD();
     end match;
@@ -689,7 +692,8 @@ protected
     input SCode.SubMod subMod;
     input ModifierScope modScope;
     input InstNode scope;
-    output Modifier mod = create(subMod.mod, subMod.ident, modScope, scope);
+    input Integer confidence;
+    output Modifier mod = create(subMod.mod, subMod.ident, modScope, scope, confidence);
   end createSubMod;
 
   function checkFinalOverride

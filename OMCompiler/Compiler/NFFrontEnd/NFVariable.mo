@@ -757,7 +757,7 @@ public
     input Binding.Source source = NFBinding.Source.GENERATED;
     output Binding binding;
   algorithm
-    binding := Binding.FLAT_BINDING(Expression.fromTypedCref(var.name, var.ty), variability(var), source);
+    binding := Binding.makeFlat(Expression.fromTypedCref(var.name, var.ty), variability(var), source);
   end asBinding;
 
   annotation(__OpenModelica_Interface="nf_frontend");

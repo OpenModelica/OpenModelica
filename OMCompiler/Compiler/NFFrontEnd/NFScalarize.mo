@@ -67,6 +67,7 @@ import SCode;
 uniontype AttributeIterator
   record ATTRIBUTE_ITERATOR
     String name;
+    Integer confidence;
     Mutable<ExpressionIterator> iterator;
   end ATTRIBUTE_ITERATOR;
 
@@ -78,7 +79,7 @@ uniontype AttributeIterator
     Binding binding;
   algorithm
     (name, binding) := attribute;
-    iter := ATTRIBUTE_ITERATOR(name, Mutable.create(ExpressionIterator.fromBinding(binding)));
+    iter := ATTRIBUTE_ITERATOR(name, Binding.confidence(binding), Mutable.create(ExpressionIterator.fromBinding(binding)));
   end create;
 
   function nextBinding
@@ -90,7 +91,7 @@ uniontype AttributeIterator
   algorithm
     (it, exp) := ExpressionIterator.next(Mutable.access(iter.iterator));
     Mutable.update(iter.iterator, it);
-    binding := (iter.name, Binding.makeFlat(exp, Variability.PARAMETER, NFBinding.Source.BINDING));
+    binding := (iter.name, Binding.makeFlat(exp, Variability.PARAMETER, NFBinding.Source.BINDING, iter.confidence));
   end nextBinding;
 end AttributeIterator;
 
@@ -143,6 +144,7 @@ protected
   BackendInfo binfo;
   Binding.Source bind_src;
   Boolean has_binding;
+  Integer confidence;
 algorithm
   var.binding := Binding.mapExp(var.binding, expandComplexCref_traverser);
 
@@ -157,6 +159,7 @@ algorithm
 
       has_binding := Binding.isBound(binding);
       bind_src := Binding.source(binding);
+      confidence := Binding.confidence(binding);
 
       if has_binding then
         binding_iter := ExpressionIterator.fromExp(Binding.getTypedExp(binding));
@@ -183,7 +186,7 @@ algorithm
       for cr in crefs loop
         if has_binding then
           (binding_iter, exp) := ExpressionIterator.next(binding_iter);
-          binding := Binding.makeFlat(exp, bind_var, bind_src);
+          binding := Binding.makeFlat(exp, bind_var, bind_src, confidence);
         end if;
 
         ty_attr := list(AttributeIterator.nextBinding(i) for i in ty_attr_iters);
@@ -213,6 +216,7 @@ protected
   Type elem_ty;
   BackendInfo binfo;
   list<BackendInfo> backend_attributes;
+  Integer confidence;
 algorithm
   try
     crefs               := listReverse(ComponentRef.scalarizeAll(ComponentRef.stripSubscriptsAll(var.name), false));
@@ -222,11 +226,12 @@ algorithm
       binding_iter      := ExpressionIterator.fromExp(Binding.getTypedExp(var.binding), true, false);
       bind_var          := Binding.variability(var.binding);
       bind_src          := Binding.source(var.binding);
+      confidence        := Binding.confidence(var.binding);
       vars := list(
         match cr
           case _ algorithm
             (binding_iter, exp) := ExpressionIterator.next(binding_iter);
-            binding := Binding.makeFlat(exp, bind_var, bind_src);
+            binding := Binding.makeFlat(exp, bind_var, bind_src, confidence);
             binfo :: backend_attributes := backend_attributes;
           then Variable.VARIABLE(cr, elem_ty, binding, var.visibility, var.attributes, {}, {}, var.comment, var.info, binfo);
         end match for cr in crefs
