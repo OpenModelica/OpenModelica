@@ -56,7 +56,7 @@ public:
 
     factory& operator=(factory<T> const& first)
     {
-        this->func = first->func;
+        this->func = first.func;
         return *this;
     }
 
