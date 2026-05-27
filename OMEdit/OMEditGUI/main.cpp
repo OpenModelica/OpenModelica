@@ -55,10 +55,9 @@ extern "C" {
 #include <QMessageBox>
 
 #ifdef QT_NO_DEBUG
+#include "CrashReport/CrashReportDialog.h"
 
 #ifdef Q_OS_WIN
-
-#include "CrashReport/CrashReportDialog.h"
 #include "CrashReport/backtrace.h"
 
 static char *g_output = NULL;
