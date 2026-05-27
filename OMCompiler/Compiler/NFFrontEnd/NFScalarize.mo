@@ -64,6 +64,36 @@ import ExpandExp = NFExpandExp;
 import NFInstNode.InstNode;
 import SCode;
 
+uniontype AttributeIterator
+  record ATTRIBUTE_ITERATOR
+    String name;
+    Mutable<ExpressionIterator> iterator;
+  end ATTRIBUTE_ITERATOR;
+
+  function create
+    input tuple<String, Binding> attribute;
+    output AttributeIterator iter;
+  protected
+    String name;
+    Binding binding;
+  algorithm
+    (name, binding) := attribute;
+    iter := ATTRIBUTE_ITERATOR(name, Mutable.create(ExpressionIterator.fromBinding(binding)));
+  end create;
+
+  function nextBinding
+    input AttributeIterator iter;
+    output tuple<String, Binding> binding;
+  protected
+    ExpressionIterator it;
+    Expression exp;
+  algorithm
+    (it, exp) := ExpressionIterator.next(Mutable.access(iter.iterator));
+    Mutable.update(iter.iterator, it);
+    binding := (iter.name, Binding.makeFlat(exp, Variability.PARAMETER, NFBinding.Source.BINDING));
+  end nextBinding;
+end AttributeIterator;
+
 public
 function scalarize
   input output FlatModel flatModel;
@@ -107,8 +137,7 @@ protected
   ExpressionIterator binding_iter;
   list<ComponentRef> crefs;
   Expression exp;
-  list<String> ty_attr_names;
-  array<ExpressionIterator> ty_attr_iters;
+  list<AttributeIterator> ty_attr_iters;
   list<BackendInfo> backend_attributes;
   Variability bind_var;
   BackendInfo binfo;
@@ -148,7 +177,7 @@ algorithm
       end if;
 
       elem_ty := Type.arrayElementType(ty);
-      (ty_attr_names, ty_attr_iters) := scalarizeTypeAttributes(ty_attr);
+      ty_attr_iters := list(AttributeIterator.create(a) for a in ty_attr);
       backend_attributes := BackendInfo.scalarize(binfo, listLength(crefs));
 
       for cr in crefs loop
@@ -157,7 +186,7 @@ algorithm
           binding := Binding.makeFlat(exp, bind_var, bind_src);
         end if;
 
-        ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
+        ty_attr := list(AttributeIterator.nextBinding(i) for i in ty_attr_iters);
         binfo :: backend_attributes := backend_attributes;
         vars := Variable.VARIABLE(cr, elem_ty, binding, vis, attr, ty_attr, {}, cmt, info, binfo) :: vars;
       end for;
@@ -250,44 +279,6 @@ algorithm
     else {var};
   end match;
 end scalarizeComplexVariable;
-
-function scalarizeTypeAttributes
-  input list<tuple<String, Binding>> attrs;
-  output list<String> names = {};
-  output array<ExpressionIterator> iters;
-protected
-  Integer len, i;
-  String name;
-  Binding binding;
-algorithm
-  len := listLength(attrs);
-  iters := arrayCreateNoInit(len, ExpressionIterator.NONE_ITERATOR());
-  i := len;
-
-  for attr in attrs loop
-    (name, binding) := attr;
-    names := name :: names;
-    arrayUpdate(iters, i, ExpressionIterator.fromBinding(binding));
-    i := i - 1;
-  end for;
-end scalarizeTypeAttributes;
-
-function nextTypeAttributes
-  input list<String> names;
-  input array<ExpressionIterator> iters;
-  output list<tuple<String, Binding>> attrs = {};
-protected
-  Integer i = 1;
-  ExpressionIterator iter;
-  Expression exp;
-algorithm
-  for name in names loop
-    (iter, exp) := ExpressionIterator.next(iters[i]);
-    arrayUpdate(iters, i, iter);
-    i := i + 1;
-    attrs := (name, Binding.makeFlat(exp, Variability.PARAMETER, NFBinding.Source.BINDING)) :: attrs;
-  end for;
-end nextTypeAttributes;
 
 function expandComplexCref
   input output Expression exp;
