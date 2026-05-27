@@ -218,7 +218,7 @@ algorithm
           smod := AbsynToSCode.translateMod(SOME(Absyn.CLASSMOD(stripped_mod, Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), NONE(), info);
           anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, ANNOTATION_CONTEXT, Absyn.dummyInfo, checkAccessViolations = false);
           inst_anncls := NFInst.expand(anncls, ANNOTATION_CONTEXT);
-          inst_anncls := NFInst.instClass(inst_anncls, Modifier.create(smod, annName, ModifierScope.CLASS(annName), inst_cls), NFAttributes.DEFAULT_ATTR, true, 0, inst_cls, ANNOTATION_CONTEXT);
+          inst_anncls := NFInst.instClass(inst_anncls, Modifier.create(smod, annName, ModifierScope.CLASS(annName), inst_cls, 0), NFAttributes.DEFAULT_ATTR, true, 0, inst_cls, ANNOTATION_CONTEXT);
           // Instantiate expressions (i.e. anything that can contains crefs, like
           // bindings, dimensions, etc). This is done as a separate step after
           // instantiation to make sure that lookup is able to find the correct nodes.
@@ -949,7 +949,7 @@ algorithm
     // instantiation will fail later).
     smod := AbsynToSCode.translateMod(SOME(amod),
       SCode.Final.NOT_FINAL(), SCode.Each.NOT_EACH(), NONE(), Absyn.dummyInfo);
-    outMod := Modifier.create(smod, "", NFModifier.ModifierScope.COMPONENT(""), scope);
+    outMod := Modifier.create(smod, "", NFModifier.ModifierScope.COMPONENT(""), scope, 0);
   else
     outMod := Modifier.NOMOD();
   end try;

@@ -2980,7 +2980,7 @@ algorithm
           end if;
         elseif isCastMatch(ty_match) then
           binding := Binding.TYPED_BINDING(exp, ty, binding.variability, binding.purity, binding.eachType,
-            binding.evalState, binding.isFlattened, binding.source, binding.info);
+            binding.evalState, binding.isFlattened, binding.source, binding.confidence, binding.info);
         end if;
       then
         ();

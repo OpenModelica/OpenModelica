@@ -748,6 +748,7 @@ public
   end reconstructRecordInstances;
 
   function reconstructRecordInstance
+    "Reconstructs a record instance variable from its individual field variables."
     input ComponentRef recordName;
     input list<Variable> variables;
     output Variable recordVar;

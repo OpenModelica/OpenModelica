@@ -1186,7 +1186,7 @@ algorithm
       then
         Binding.TYPED_BINDING(exp, ty, var, purity, binding.eachType,
           Mutable.create(NFBinding.EvalState.NOT_EVALUATED), false,
-          binding.source, binding.info);
+          binding.source, binding.confidence, binding.info);
 
     case Binding.TYPED_BINDING() then binding;
     case Binding.UNBOUND() then binding;
@@ -1249,7 +1249,7 @@ algorithm
         end if;
       then
         Binding.TYPED_BINDING(exp, ty, var, purity, NFBinding.EachType.NOT_EACH,
-          Mutable.create(eval_state), false, condition.source, info);
+          Mutable.create(eval_state), false, condition.source, condition.confidence, info);
 
   end match;
 end typeComponentCondition;
