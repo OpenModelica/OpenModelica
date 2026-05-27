@@ -52,6 +52,10 @@ extern "C" {
 #include "../../OMCompiler/Compiler/runtime/settingsimpl.h"
 }
 
+#ifdef Q_OS_WIN
+#include <windows.h>
+#endif
+
 #include <QMessageBox>
 
 #ifdef QT_NO_DEBUG
