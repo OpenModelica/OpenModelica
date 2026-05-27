@@ -1130,14 +1130,14 @@ algorithm
         algorithm
           comp := InstNode.component(node);
 
-          comp := match comp
+          (comp, def) := match comp
             case Component.COMPONENT_DEF(definition = def as SCode.COMPONENT(prefixes = prefs))
               algorithm
                 prefs.innerOuter := Absyn.INNER();
                 def.prefixes := prefs;
                 comp.definition := def;
               then
-                comp;
+                (comp, def);
 
             else
               algorithm

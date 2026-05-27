@@ -2241,6 +2241,7 @@ algorithm
           range_iter := RangeIterator.fromExp(range);
         else
           Error.addSourceMessage(Error.UNROLL_FAILURE, {Statement.toString(stmt)}, info);
+          fail();
         end try;
 
         has_for := Statement.containsList(stmt.body, Statement.isFor);
