@@ -41,7 +41,6 @@ encapsulated package Obfuscate
   import SCode;
   import SCodeUtil;
   import StringUtil;
-  import System;
   import UnorderedMap;
   import Util;
 
