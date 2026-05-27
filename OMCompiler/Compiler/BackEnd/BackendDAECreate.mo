@@ -3189,7 +3189,7 @@ algorithm
       list<BackendDAE.Equation> eqns;
       DAE.ElementSource eq_source;
 
-    case ({}, _) then iEqns;
+    case ({}, {}) then iEqns;
     // skip CREF(WILD())
     case (DAE.CREF(componentRef = DAE.WILD())::rest_targets, _::rest_sources)
       then
@@ -3600,7 +3600,7 @@ algorithm
       list<BackendDAE.Equation> eqns;
       DAE.Exp e1, e2;
       list<DAE.Exp> explst1, explst2;
-    case ({}, _)
+    case ({}, {})
       then
         (iVars, inGlobalKnownVars, iExtVars, iAVars, iRepl, iEqns);
     case (e1::explst1, e2::explst2)

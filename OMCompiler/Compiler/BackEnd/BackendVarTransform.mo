@@ -1551,7 +1551,7 @@ algorithm
       then
         listAppend(elseenqs,inEqns);
     // true case left with condition<>false
-    case ({},{},_,{},{})
+    case ({},{},_,_,_)
       algorithm
         explst := listReverse(conditions1);
         eqnslst := listReverse(theneqns1);
