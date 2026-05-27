@@ -7,15 +7,19 @@ mkdir("build/tmp");
 cd("build/tmp");
 if not checkInterfaceOfPackages(mainClass, {
 // Also update Compiler/.cmake/mm_check_interface.in.mos if you change this file.
-  {"parser", "", "", "", "", "", "", "", ""},
-  {"backend", "frontend", "util", "susan", "nf_frontend", "util_datatypes_basic", "parser", "frontend_types", "frontend_dump"},
-  {"frontend", "util", "susan", "util_datatypes_basic", "parser", "frontend_types", "frontend_dump", "", ""},
-  {"frontend_types", "", "", "util_datatypes_basic", "parser", "", "", "", ""},
-  {"frontend_dump", "util", "susan", "util_datatypes_basic", "parser", "frontend_types", "", "", ""},
-  {"nf_frontend", "util", "susan", "frontend_types", "util_datatypes_basic", "parser", "frontend_dump", "", ""},
-  {"susan", "util", "util_datatypes_basic", "parser", "", "", "", "", ""},
-  {"util", "util_datatypes_basic", "", "", "", "", "", "", ""},
-  {"util_datatypes_basic", "", "", "", "", "", "", "", ""}
+  {"parser", "", "", "", "", "", "", "", "", "", "", "", ""},
+  {"backend", "frontend", "util", "susan", "nf_frontend", "util_datatypes_basic", "parser", "frontend_types", "frontend_dump", "ast_collections", "dump_extra", "frontend_inst", "script_util"},
+  {"frontend", "util", "susan", "util_datatypes_basic", "parser", "frontend_types", "frontend_dump", "ast_collections", "frontend_inst", "script_util", "", "", ""},
+  {"frontend_types", "util_datatypes_basic", "parser", "", "", "", "", "", "", "", "", "", ""},
+  {"frontend_dump", "util", "susan", "util_datatypes_basic", "parser", "frontend_types", "", "", "", "", "", "", ""},
+  {"nf_frontend", "util", "susan", "frontend_types", "util_datatypes_basic", "parser", "frontend_dump", "", "", "", "", "", ""},
+  {"susan", "util", "util_datatypes_basic", "parser", "", "", "", "", "", "", "", "", ""},
+  {"util", "util_datatypes_basic", "", "", "", "", "", "", "", "", "", "", ""},
+  {"util_datatypes_basic", "", "", "", "", "", "", "", "", "", "", "", ""},
+  {"ast_collections", "util", "parser", "frontend_dump", "", "", "", "", "", "", "", "", ""},
+  {"dump_extra", "util", "susan", "parser", "frontend_dump", "", "", "", "", "", "", "", ""},
+  {"frontend_inst", "util_datatypes_basic", "parser", "frontend_types", "frontend_dump", "", "", "", "", "", "", "", ""},
+  {"script_util", "util", "util_datatypes_basic", "frontend_types", "frontend_dump", "", "", "", "", "", "", "", ""}
 }) then
   print(getErrorString());
   exit(1);

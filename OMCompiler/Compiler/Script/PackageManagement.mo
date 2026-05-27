@@ -814,5 +814,5 @@ algorithm
   info := SOURCEINFO(fileName, true, 0, 0, 0, 0, 0.0);
 end makeSourceInfo;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="script_util");
 end PackageManagement;

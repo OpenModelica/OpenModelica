@@ -110,5 +110,5 @@ with addBase or addDerived."
   external "C" UnitParserExtImpl__commit() annotation(Library = "omcruntime");
 end commit;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="script_util");
 end UnitParserExt;

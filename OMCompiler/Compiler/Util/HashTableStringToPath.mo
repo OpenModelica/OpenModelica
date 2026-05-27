@@ -103,5 +103,5 @@ algorithm
   hashTable := BaseHashTable.emptyHashTableWork(size,(stringHashDjb2,stringEq,Util.id,AbsynUtil.pathStringDefault));
 end emptyHashTableSized;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="ast_collections");
 end HashTableStringToPath;

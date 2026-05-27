@@ -40,6 +40,6 @@ encapsulated package GlobalScriptUtil
 
 "
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="script_util");
 
 end GlobalScriptUtil;

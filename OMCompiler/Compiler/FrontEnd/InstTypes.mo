@@ -91,5 +91,5 @@ algorithm
   end match;
 end callingScopeStr;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_inst");
 end InstTypes;
