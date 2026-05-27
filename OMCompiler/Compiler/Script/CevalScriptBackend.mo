@@ -6644,7 +6644,7 @@ protected
   Absyn.Program p;
 algorithm
   p := SymbolTable.getAbsyn();
-  _ := matchcontinue (inCache,inEnv,allClasses,inMsg)
+  _ := matchcontinue (inEnv,allClasses,inMsg)
     local
       list<Absyn.Path> rest;
       Absyn.Path className;
@@ -6657,9 +6657,9 @@ algorithm
       Absyn.Class c;
       Boolean f = false;
 
-    case (_,_,{},_) then ();
+    case (_,{},_) then ();
 
-    case (cache,env,className::rest,msg)
+    case (env,className::rest,msg)
       algorithm
         c := InteractiveUtil.getPathedClassInProgram(className, p);
         // filter out partial classes
@@ -6699,14 +6699,14 @@ algorithm
           (if reportTimes then realString(elapsedTime) + ", " else "") +
           AbsynUtil.pathString(className) + "\n");
         print ("-------------------------------------------------------------------------\n");
-        failed := checkAll(cache, env, rest, msg, reportTimes, failed);
+        failed := checkAll(inCache, env, rest, msg, reportTimes, failed);
       then ();
 
-    case (cache,env,className::rest,msg)
+    case (env,className::rest,msg)
       algorithm
         c := InteractiveUtil.getPathedClassInProgram(className, p);
         print("Checking skipped: " + Dump.unparseClassAttributesStr(c) + " " + AbsynUtil.pathString(className) + "...\n");
-        failed := checkAll(cache, env, rest, msg, reportTimes, failed);
+        failed := checkAll(inCache, env, rest, msg, reportTimes, failed);
       then
         ();
   end matchcontinue;
@@ -6945,20 +6945,20 @@ protected function getNthAlgorithmItem
   input Integer inInteger;
   output String outString;
 algorithm
-  outString := match (inClass,inInteger)
+  outString := match (inClass)
     local
       list<Absyn.ClassPart> parts;
       String str;
       Integer n;
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)),n)
+    case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)))
       algorithm
-        str := getNthAlgorithmItemInClassParts(parts,n);
+        str := getNthAlgorithmItemInClassParts(parts,inInteger);
       then
         str;
     // check also the case model extends X end X;
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)),n)
+    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)))
       algorithm
-        str := getNthAlgorithmItemInClassParts(parts,n);
+        str := getNthAlgorithmItemInClassParts(parts,inInteger);
       then
         str;
   end match;
@@ -7505,20 +7505,19 @@ protected function getNthInitialEquationItem
   input Integer inInteger;
   output String outString;
 algorithm
-  outString := match (inClass,inInteger)
+  outString := match (inClass)
     local
       list<Absyn.ClassPart> parts;
       String str;
-      Integer n;
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)),n)
+    case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)))
       algorithm
-        str := getNthInitialEquationItemInClassParts(parts,n);
+        str := getNthInitialEquationItemInClassParts(parts,inInteger);
       then
         str;
     // check also the case model extends X end X;
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)),n)
+    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)))
       algorithm
-        str := getNthInitialEquationItemInClassParts(parts,n);
+        str := getNthInitialEquationItemInClassParts(parts,inInteger);
       then
         str;
   end match;
@@ -7530,27 +7529,27 @@ protected function getNthInitialEquationItemInClassParts
   input Integer inInteger;
   output String outString;
 algorithm
-  outString := matchcontinue (inAbsynClassPartLst,inInteger)
+  outString := matchcontinue (inAbsynClassPartLst)
     local
       String str;
       list<Absyn.EquationItem> eqs;
       list<Absyn.ClassPart> xs;
       Integer n,c1,newn;
-    case ((Absyn.INITIALEQUATIONS(contents = eqs) :: _),n)
+    case (Absyn.INITIALEQUATIONS(contents = eqs) :: _)
       algorithm
-        str := getNthEquationItemInEquations(eqs, n);
+        str := getNthEquationItemInEquations(eqs, inInteger);
       then
         str;
-    case ((Absyn.INITIALEQUATIONS(contents = eqs) :: xs),n) /* The rule above failed, subtract the number of equations in the first section and try with the rest of the classparts */
+    case (Absyn.INITIALEQUATIONS(contents = eqs) :: xs) /* The rule above failed, subtract the number of equations in the first section and try with the rest of the classparts */
       algorithm
         c1 := getEquationItemsCountInEquationItems(eqs);
-        newn := n - c1;
+        newn := inInteger - c1;
         str := getNthInitialEquationItemInClassParts(xs, newn);
       then
         str;
-    case ((_ :: xs),n)
+    case (_ :: xs)
       algorithm
-        str := getNthInitialEquationItemInClassParts(xs, n);
+        str := getNthInitialEquationItemInClassParts(xs, inInteger);
       then
         str;
   end matchcontinue;
@@ -7702,13 +7701,12 @@ public function isShortDefinition
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (inPath,inProgram)
+  matchcontinue (inPath)
     local
       Absyn.Path path;
-      Absyn.Program p;
-    case (path,p)
+    case (path)
       algorithm
-        Absyn.CLASS(body = Absyn.DERIVED()) := InteractiveUtil.getPathedClassInProgram(path, p);
+        Absyn.CLASS(body = Absyn.DERIVED()) := InteractiveUtil.getPathedClassInProgram(path, inProgram);
       then
         true;
     else false;
@@ -8431,19 +8429,18 @@ protected function addInitialStateWithAnnotation
   output Boolean b;
   output Absyn.Program outProgram;
 algorithm
-  (b, outProgram) := match (inPath, state, inAnnotation, inProgram)
+  (b, outProgram) := match (inPath, state, inProgram)
     local
       Absyn.Path modelpath, package_;
       Absyn.Class cdef, newcdef;
       Absyn.Program newp, p;
       String state_;
-      Absyn.Annotation ann;
       Option<Absyn.Comment> cmt;
 
-    case (modelpath, state_, ann,(p as Absyn.PROGRAM()))
+    case (modelpath, state_,(p as Absyn.PROGRAM()))
       algorithm
         cdef := InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        cmt := SOME(Absyn.COMMENT(SOME(ann), NONE()));
+        cmt := SOME(Absyn.COMMENT(SOME(inAnnotation), NONE()));
         newcdef := InteractiveUtil.addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("initialState", {}),
                                 Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(state_, {}))}, {})), cmt, Absyn.dummyInfo));
         if AbsynUtil.pathIsIdent(AbsynUtil.makeNotFullyQualified(modelpath)) then
@@ -8454,7 +8451,7 @@ algorithm
         end if;
       then
         (true, newp);
-    case (_,_,_,(p as Absyn.PROGRAM())) then (false, p);
+    case (_,_,(p as Absyn.PROGRAM())) then (false, p);
   end match;
 end addInitialStateWithAnnotation;
 
@@ -8496,7 +8493,7 @@ protected function deleteInitialStateInClass
   input String state;
   output Absyn.Class outClass;
 algorithm
-  outClass := match (inClass, state)
+  outClass := match (inClass)
     local
       list<Absyn.EquationItem> eqlst,eqlst_1;
       list<Absyn.ClassPart> parts2,parts;
@@ -8505,7 +8502,6 @@ algorithm
       Absyn.Restriction r;
       Option<String> cmt;
       SourceInfo file_info;
-      String state_;
       list<Absyn.ElementArg> modif;
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
@@ -8513,20 +8509,20 @@ algorithm
     /* a class with parts */
     case (outClass as Absyn.CLASS(
                       body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann=ann,comment = cmt),
-                      info = _), state_)
+                      info = _))
       algorithm
         eqlst := InteractiveUtil.getEquationList(parts);
-        eqlst_1 := deleteInitialStateInEqlist(eqlst, state_);
+        eqlst_1 := deleteInitialStateInEqlist(eqlst, state);
         parts2 := InteractiveUtil.replaceEquationList(parts, eqlst_1);
         outClass.body := Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt);
       then outClass;
     /* an extended class with parts: model extends M end M;  */
     case (outClass as Absyn.CLASS(
                       body = Absyn.CLASS_EXTENDS(baseClassName = bcname,modifications=modif,parts = parts,ann = ann,comment = cmt)
-                      ), state_)
+                      ))
       algorithm
         eqlst := InteractiveUtil.getEquationList(parts);
-        eqlst_1 := deleteInitialStateInEqlist(eqlst, state_);
+        eqlst_1 := deleteInitialStateInEqlist(eqlst, state);
         parts2 := InteractiveUtil.replaceEquationList(parts, eqlst_1);
         outClass.body := Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann);
       then outClass;
@@ -8571,13 +8567,13 @@ protected function compareInitialStateFuncArgs
   input String state;
   output Boolean b;
 algorithm
-  b := matchcontinue (args, state)
+  b := matchcontinue (args)
     local
       String state1, state2;
 
-    case ({state1}, state2)
+    case ({state1})
       guard
-        stringEq(state1, state2)
+        stringEq(state1, state)
       then
         true;
 
@@ -8606,7 +8602,7 @@ algorithm
       Absyn.ArrayDim subs;
       Absyn.ElementSpec spec;
 
-    case Absyn.ELEMENT(specification = spec as Absyn.COMPONENTS(attributes = attr as Absyn.ATTR(),typeSpec = Absyn.TPATH(p, _)))
+    case Absyn.ELEMENT(specification = spec as Absyn.COMPONENTS(attributes = attr as _,typeSpec = Absyn.TPATH(p, _)))
       algorithm
         typename := matchcontinue ()
           case ()
@@ -8626,10 +8622,8 @@ algorithm
         for ci in spec.components loop
           (name, comment) := getComponentitemsName(ci);
 
-          dims := match ci
-            case Absyn.COMPONENTITEM(component=Absyn.COMPONENT(arrayDim=subs))
-              then listAppend(list(Dump.printSubscriptStr(sub) for sub in subs), dims1);
-          end match;
+          Absyn.COMPONENTITEM(component=Absyn.COMPONENT(arrayDim=subs)) := ci;
+          dims := listAppend(list(Dump.printSubscriptStr(sub) for sub in subs), dims1);
 
           vs := makeGetComponentsRecord(
             className = typename, name = name, comment = comment,
