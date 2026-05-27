@@ -739,14 +739,19 @@ void mat4_emit4(simulation_result *self, DATA *data, threadData_t *threadData)
     if (!mData->realVarsData[i].filterOutput && !mData->realVarsData[i].time_unvarying)
       WRITE_REAL_VALUE(matData->data_2, cur++, data->localData[0]->realVars[i]);
 
+  /* Sensitivity parameters */
   if (omc_flag[FLAG_IDAS])
-    for (int i=mData->nSensitivityParamVars; i < mData->nSensitivityVars; i++)
+  {
+    for (int i = 0; i < mData->nSensitivityVars - mData->nSensitivityParamVars; i++)
       WRITE_REAL_VALUE(matData->data_2, cur++, data->simulationInfo->sensitivityMatrix[i]);
+  }
 
+  /* Integer variables */
   for (int i=0; i < mData->nVariablesInteger; i++)
     if (!mData->integerVarsData[i].filterOutput && !mData->integerVarsData[i].time_unvarying)
       WRITE_REAL_VALUE(matData->data_2, cur++, data->localData[0]->integerVars[i]);
 
+  /* Boolean variables */
   for (int i=0; i < mData->nVariablesBoolean; i++)
     if (!mData->booleanVarsData[i].filterOutput && !mData->booleanVarsData[i].time_unvarying)
       WRITE_REAL_VALUE(matData->data_2, cur++, data->localData[0]->booleanVars[i]);

@@ -41,6 +41,7 @@ problem6-cvode.mos \
 problem6-irksco.mos \
 problem6-symSolverImp.mos \
 problem6-symSolverExp.mos \
+Ticket15649.mos
 
 # run only symSolver tests
 SYMSOLVER = \
