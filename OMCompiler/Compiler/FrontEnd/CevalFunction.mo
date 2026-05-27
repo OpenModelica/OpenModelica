@@ -2051,13 +2051,14 @@ algorithm
       Values.Value value;
       list<Values.Value> rest_vals;
       FCore.Graph env;
+      FCore.Cache cache;
     case ({}, _, env) then (inCache, env);
     case (cr :: rest_crefs, value :: rest_vals, env)
       algorithm
-        (inCache, env) := assignVariable(cr, value, inCache, env);
-        (inCache, env) := assignTuple(rest_crefs, rest_vals, inCache, env);
+        (cache, env) := assignVariable(cr, value, inCache, env);
+        (cache, env) := assignTuple(rest_crefs, rest_vals, cache, env);
       then
-        (inCache, env);
+        (cache, env);
   end match;
 end assignTuple;
 

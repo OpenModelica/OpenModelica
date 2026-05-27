@@ -5224,7 +5224,7 @@ protected function adjacencyRowEnhanced1
   input BackendDAE.Shared shared;
   output BackendDAE.AdjacencyMatrixElementEnhanced outRow;
 algorithm
-  outRow := matchcontinue(lst,e1,e2,globalKnownVars,mark,rowmark,inRow)
+  outRow := matchcontinue(lst,e1,e2)
     local
       Integer r,rabs;
       list<Integer> rest;
@@ -5236,15 +5236,8 @@ algorithm
       list<DAE.Exp> explst,crexplst, explst2;
       Boolean b,b2,solved,derived;
       BackendDAE.Constraints cons;
-    case({},_,_,_,_,_) then inRow;
-/*    case(r::rest,_,_,_,_,_,_)
-      algorithm
-        // if r negativ then unsolvable
-        true = intLt(r,0);
-      then
-        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_UNSOLVABLE())::inRow,trytosolve);
-*/
-    case(r::rest,DAE.CALL(path= Absyn.IDENT("der"),expLst={DAE.CREF(componentRef = cr)}),_,_,_,_,_)
+    case({},_,_) then inRow;
+    case(r::rest,DAE.CALL(path= Absyn.IDENT("der"),expLst={DAE.CREF(componentRef = cr)}),_)
       guard
         intGt(r,0)
       algorithm
@@ -5256,7 +5249,7 @@ algorithm
         false := Expression.expHasDerCref(e2,cr);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
-    case(r::rest,_,DAE.CALL(path= Absyn.IDENT("der"),expLst={DAE.CREF(componentRef = cr)}),_,_,_,_)
+    case(r::rest,_,DAE.CALL(path= Absyn.IDENT("der"),expLst={DAE.CREF(componentRef = cr)}))
       algorithm
         rabs := intAbs(r);
         // if not negatet rowmark then
@@ -5267,7 +5260,7 @@ algorithm
         false := Expression.expHasDerCref(e1,cr);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
-    case(r::rest,DAE.CREF(componentRef=cr),_,_,_,_)
+    case(r::rest,DAE.CREF(componentRef=cr),_)
       algorithm
         rabs := intAbs(r);
         // if not negatet rowmark then
@@ -5278,7 +5271,7 @@ algorithm
         false := Expression.expHasCrefNoPreorDer(e2,cr);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
-    case(r::rest,DAE.CREF(componentRef=cr),_,_,_,_)
+    case(r::rest,DAE.CREF(componentRef=cr),_)
       algorithm
         rabs := intAbs(r);
         // if not negatet rowmark then
@@ -5290,7 +5283,7 @@ algorithm
         false := Expression.expHasCrefNoPreorDer(e2,cr);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
-    case(r::rest,DAE.LUNARY(operator=DAE.NOT(_),exp=DAE.CREF(componentRef=cr)),_,_,_,_)
+    case(r::rest,DAE.LUNARY(operator=DAE.NOT(_),exp=DAE.CREF(componentRef=cr)),_)
       algorithm
         rabs := intAbs(r);
         // if not negatet rowmark then
@@ -5301,7 +5294,7 @@ algorithm
         false := Expression.expHasCrefNoPreorDer(e2,cr);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
-    case(r::rest,DAE.UNARY(operator=DAE.UMINUS(_),exp=DAE.CREF(componentRef=cr)),_,_,_,_)
+    case(r::rest,DAE.UNARY(operator=DAE.UMINUS(_),exp=DAE.CREF(componentRef=cr)),_)
       algorithm
         rabs := intAbs(r);
         // if not negatet rowmark then
@@ -5312,7 +5305,7 @@ algorithm
         false := Expression.expHasCrefNoPreorDer(e2,cr);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
-    case(r::rest,DAE.UNARY(operator=DAE.UMINUS_ARR(_),exp=DAE.CREF(componentRef=cr)),_,_,_,_)
+    case(r::rest,DAE.UNARY(operator=DAE.UMINUS_ARR(_),exp=DAE.CREF(componentRef=cr)),_)
       algorithm
         rabs := intAbs(r);
         // if not negatet rowmark then
@@ -5324,7 +5317,7 @@ algorithm
         false := Expression.expHasCrefNoPreorDer(e2,cr);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
-    case(r::rest,_,DAE.CREF(componentRef=cr),_,_,_)
+    case(r::rest,_,DAE.CREF(componentRef=cr))
       algorithm
         rabs := intAbs(r);
         // if not negatet rowmark then
@@ -5335,7 +5328,7 @@ algorithm
         false := Expression.expHasCrefNoPreorDer(e1,cr);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
-    case(r::rest,_,DAE.CREF(componentRef=cr),_,_,_)
+    case(r::rest,_,DAE.CREF(componentRef=cr))
       algorithm
         rabs := intAbs(r);
         // if not negatet rowmark then
@@ -5347,7 +5340,7 @@ algorithm
         false := Expression.expHasCrefNoPreorDer(e1,cr);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
-    case(r::rest,_,DAE.LUNARY(operator=DAE.NOT(_),exp=DAE.CREF(componentRef=cr)),_,_,_)
+    case(r::rest,_,DAE.LUNARY(operator=DAE.NOT(_),exp=DAE.CREF(componentRef=cr)))
       algorithm
         rabs := intAbs(r);
         // if not negatet rowmark then
@@ -5358,7 +5351,7 @@ algorithm
         false := Expression.expHasCrefNoPreorDer(e1,cr);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
-    case(r::rest,_,DAE.UNARY(operator=DAE.UMINUS(_),exp=DAE.CREF(componentRef=cr)),_,_,_)
+    case(r::rest,_,DAE.UNARY(operator=DAE.UMINUS(_),exp=DAE.CREF(componentRef=cr)))
       algorithm
         rabs := intAbs(r);
         // if not negatet rowmark then
@@ -5369,7 +5362,7 @@ algorithm
         false := Expression.expHasCrefNoPreorDer(e1,cr);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
-    case(r::rest,_,DAE.UNARY(operator=DAE.UMINUS_ARR(_),exp=DAE.CREF(componentRef=cr)),_,_,_)
+    case(r::rest,_,DAE.UNARY(operator=DAE.UMINUS_ARR(_),exp=DAE.CREF(componentRef=cr)))
       algorithm
         rabs := intAbs(r);
         // if not negatet rowmark then
@@ -5381,7 +5374,7 @@ algorithm
         false := Expression.expHasCrefNoPreorDer(e1,cr);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
-    case(r::rest,DAE.CREF(componentRef=cr),_,_,_,_)
+    case(r::rest,DAE.CREF(componentRef=cr),_)
       algorithm
         rabs := intAbs(r);
         // if not negatet rowmark then
@@ -5392,7 +5385,7 @@ algorithm
         false := Expression.expHasCrefNoPreorDer(e2,cr);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
-    case(r::rest,_,DAE.CREF(componentRef=cr),_,_,_)
+    case(r::rest,_,DAE.CREF(componentRef=cr))
       algorithm
         rabs := intAbs(r);
         // if not negatet rowmark then
@@ -5403,7 +5396,7 @@ algorithm
         false := Expression.expHasCrefNoPreorDer(e1,cr);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
-    case(r::rest,DAE.CALL(path=path,expLst=explst,attr=DAE.CALL_ATTR(ty= DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path1)))),_,_,_,_)
+    case(r::rest,DAE.CALL(path=path,expLst=explst,attr=DAE.CALL_ATTR(ty= DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path1)))),_)
       algorithm
         true := AbsynUtil.pathEqual(path,path1);
         rabs := intAbs(r);
@@ -5415,7 +5408,7 @@ algorithm
         false := Expression.expHasCrefNoPreorDer(e2,cr1);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
-    case(r::rest,_,DAE.CALL(path=path,expLst=explst,attr=DAE.CALL_ATTR(ty= DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path1)))),_,_,_)
+    case(r::rest,_,DAE.CALL(path=path,expLst=explst,attr=DAE.CALL_ATTR(ty= DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path1)))))
       algorithm
         true := AbsynUtil.pathEqual(path,path1);
         rabs := intAbs(r);
@@ -5427,7 +5420,7 @@ algorithm
         false := Expression.expHasCrefNoPreorDer(e1,cr1);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
-    case(r::rest,DAE.RECORD(exps=explst),_,_,_,_)
+    case(r::rest,DAE.RECORD(exps=explst),_)
       algorithm
         rabs := intAbs(r);
         // if not negated rowmark then
@@ -5438,7 +5431,7 @@ algorithm
         false := Expression.expHasCrefNoPreorDer(e2,cr1);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
-    case(r::rest,_,DAE.RECORD(exps=explst),_,_,_)
+    case(r::rest,_,DAE.RECORD(exps=explst))
       algorithm
         rabs := intAbs(r);
         // if not negated rowmark then
@@ -5449,7 +5442,7 @@ algorithm
         false := Expression.expHasCrefNoPreorDer(e1,cr1);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
-    case(r::rest,DAE.TUPLE(PR=explst),DAE.CALL(),_,_,_)
+    case(r::rest,DAE.TUPLE(PR=explst),DAE.CALL())
       algorithm
         rabs := intAbs(r);
         // if not negated rowmark then
@@ -5464,7 +5457,7 @@ algorithm
         false := Expression.expHasCrefNoPreorDer(e2,cr1);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
-    case(r::rest,_,_,_,_,_)
+    case(r::rest,_,_)
       // case: state derivative
       algorithm
         // ticket #6806, only allow inverting of function if the sizes match
@@ -5495,7 +5488,7 @@ algorithm
         end if;
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,solvab,cons)::inRow,trytosolve,size,shared);
-    case(r::rest,_,_,_,_,_)
+    case(r::rest,_,_)
       algorithm
         // ticket #6806, only allow inverting of function if the sizes match
         1 := size;
@@ -5528,7 +5521,7 @@ algorithm
         end if;
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,solvab,cons)::inRow,trytosolve,size,shared);
-    case(r::rest,_,_,_,_,_)
+    case(r::rest,_,_)
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_UNSOLVABLE(),{})::inRow,trytosolve,size,shared);
   end matchcontinue;
