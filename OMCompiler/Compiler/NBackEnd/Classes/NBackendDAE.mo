@@ -1341,7 +1341,7 @@ protected
       local
         FEquation.Equation elem;
         list<FEquation.Equation> rest;
-      case elem::rest then lowerWhenBranchBody(condition, rest, lowerWhenBranchStatement(elem, condition) :: stmts);
+      case elem::rest then lowerWhenBranchBody(condition, rest, lowerWhenBranchStatement(elem, condition, stmts));
       else stmts;
     end match;
   end lowerWhenBranchBody;
@@ -1349,28 +1349,91 @@ protected
   function lowerWhenBranchStatement
     input FEquation.Equation eq;
     input Expression condition;
-    output BEquation.WhenStatement stmt;
+    input output list<BEquation.WhenStatement> stmts;
   algorithm
-    stmt := match eq
+    stmts := match eq
       local
         ComponentRef cref;
+        Expression rhs;
+        FEquation.Branch head;
+        list<FEquation.Branch> tail;
+        UnorderedMap<ComponentRef, Expression> if_map;
 
-      case FEquation.TERMINATE()                                  then BEquation.TERMINATE(eq.message, eq.source);
-      case FEquation.REINIT(cref = Expression.CREF(cref = cref))  then BEquation.REINIT(cref, eq.reinitExp, eq.source);
-      case FEquation.NORETCALL()                                  then BEquation.NORETCALL(eq.exp, eq.source);
-      case FEquation.ASSERT()                                     then BEquation.ASSERT(eq.condition, eq.message, eq.level, eq.source);
-      case FEquation.EQUALITY()                                   then BEquation.ASSIGN(eq.lhs, eq.rhs, eq.source);
+      case FEquation.TERMINATE()                                  then BEquation.TERMINATE(eq.message, eq.source) :: stmts;
+      case FEquation.REINIT(cref = Expression.CREF(cref = cref))  then BEquation.REINIT(cref, eq.reinitExp, eq.source) :: stmts;
+      case FEquation.NORETCALL()                                  then BEquation.NORETCALL(eq.exp, eq.source) :: stmts;
+      case FEquation.ASSERT()                                     then BEquation.ASSERT(eq.condition, eq.message, eq.level, eq.source) :: stmts;
+      case FEquation.EQUALITY()                                   then BEquation.ASSIGN(eq.lhs, eq.rhs, eq.source) :: stmts;
+      case FEquation.IF() algorithm
+        // create a map to collect all individual assignments. traverse in reverse to create innermost first
+        if_map := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+        head :: tail := listReverse(eq.branches);
+        // lower the head to initialize each cref
+        lowerWhenBranchIf(head, if_map, true);
+        // lower all remaining branches and collect the if conditions
+        for branch in tail loop
+          lowerWhenBranchIf(branch, if_map, false);
+        end for;
+        // create all assignments from the collected if-expressions
+        for tpl in UnorderedMap.toList(if_map) loop
+          (cref, rhs) := tpl;
+          stmts := BEquation.ASSIGN(Expression.fromCref(cref), rhs, eq.source) :: stmts;
+        end for;
+      then stmts;
 
-      /* ToDo! implement proper cases for FOR and IF --> need FOR_ASSIGN and IF_ASSIGN ?
+      /* ToDo! implement proper cases for FOR --> need FOR_ASSIGN?
       case FEquation.FOR(iterator = iterator, range = SOME(range), body = body, source = source)
-      case FEquation.IF(branches = branches, source = source)
       */
 
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{"NBackendDAE.lowerWhenBranchStatement for " + FEquation.toString(eq)});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + FEquation.toString(eq)});
       then fail();
     end match;
   end lowerWhenBranchStatement;
+
+  function lowerWhenBranchIf
+    "inlines IF-equations to IF-expressions in WHEN-equations"
+    input FEquation.Branch branch;
+    input UnorderedMap<ComponentRef, Expression> if_map;
+    input Boolean first "allow adding new lhs crefs only if its the first observed branch";
+  algorithm
+    _ := match branch
+      local
+        ComponentRef cref;
+        Expression exp;
+
+      case FEquation.BRANCH() algorithm
+        for eq in branch.body loop
+          _ := match eq
+            case FEquation.EQUALITY(lhs = Expression.CREF(cref = cref)) algorithm
+              exp := match UnorderedMap.get(cref, if_map)
+                // we update the saved cref rhs with the branch information
+                case SOME(exp) guard(not first) then Expression.IF(Expression.typeOf(exp), branch.condition, eq.rhs, exp);
+                // we create the first entry for the cref
+                case NONE() guard(first) then eq.rhs;
+                // fail cases
+                case SOME(_) algorithm
+                  Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because branch has multiple assignments for the same cref:\n" + FEquation.Branch.toString(branch, "")});
+                then fail();
+                else algorithm
+                  Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because branch equation has an assignment that is missing in other branches:\n" + FEquation.toString(eq)});
+                then fail();
+              end match;
+              // update the cref -> rhs
+              UnorderedMap.add(cref, exp, if_map);
+            then ();
+
+            else algorithm
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for branch equation:\n" + FEquation.toString(eq)});
+            then fail();
+          end match;
+        end for;
+      then ();
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + FEquation.Branch.toString(branch, "")});
+      then fail();
+    end match;
+  end lowerWhenBranchIf;
 
   public function lowerAlgorithm
     input Algorithm alg;
