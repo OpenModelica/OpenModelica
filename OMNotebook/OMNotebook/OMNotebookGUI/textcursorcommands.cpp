@@ -69,53 +69,7 @@ namespace IAEX
   void TextCursorCutText::execute()
   {
     Cell *cell = document()->getCursor()->currentCell();
-    if( cell )
-    {
-      if( typeid(InputCell) == typeid(*cell) )
-      {
-        InputCell *inputcell = dynamic_cast<InputCell*>(cell);
-        if( inputcell->textEditOutput()->hasFocus() &&
-          inputcell->isEvaluated() )
-        {
-          inputcell->textEditOutput()->copy();
-        }
-        else
-          inputcell->textEdit()->cut();
-      }
-      else if( typeid(GraphCell) == typeid(*cell) )
-      {
-        GraphCell *graphcell = dynamic_cast<GraphCell*>(cell);
-        if( graphcell->textEditOutput()->hasFocus() &&
-          graphcell->isEvaluated() )
-        {
-          graphcell->textEditOutput()->copy();
-        }
-        else
-          graphcell->textEdit()->cut();
-      }
-
-      else if( typeid(LatexCell) == typeid(*cell) )
-      {
-        LatexCell *latexcell = dynamic_cast<LatexCell*>(cell);
-        if( latexcell->textEditOutput()->hasFocus() &&
-          latexcell->isEvaluated() )
-        {
-          latexcell->textEditOutput()->cut();
-        }
-        else
-          latexcell->textEdit()->cut();
-      }
-
-
-      else
-      {
-        QTextEdit *editor = cell->textEdit();
-        if( editor )
-        {
-          editor->cut();
-        }
-      }
-    }
+    if( cell ) cell->cutText();
   }
 
 
@@ -129,50 +83,7 @@ namespace IAEX
   void TextCursorCopyText::execute()
   {
     Cell *cell = document()->getCursor()->currentCell();
-    if( cell )
-    {
-      if( typeid(InputCell) == typeid(*cell) )
-      {
-        InputCell *inputcell = dynamic_cast<InputCell*>(cell);
-        if( inputcell->textEditOutput()->hasFocus() &&
-          inputcell->isEvaluated() )
-        {
-          inputcell->textEditOutput()->copy();
-        }
-        else
-          inputcell->textEdit()->copy();
-      }
-      else if( typeid(GraphCell) == typeid(*cell) )
-      {
-        GraphCell *graphcell = dynamic_cast<GraphCell*>(cell);
-        if( graphcell->textEditOutput()->hasFocus() &&
-          graphcell->isEvaluated() )
-        {
-          graphcell->textEditOutput()->copy();
-        }
-        else
-          graphcell->textEdit()->copy();
-      }
-      else if( typeid(LatexCell) == typeid(*cell) )
-      {
-        LatexCell *latexcell = dynamic_cast<LatexCell*>(cell);
-        if( latexcell->textEditOutput()->hasFocus() &&
-          latexcell->isEvaluated() )
-        {
-          latexcell->textEditOutput()->copy();
-        }
-        else
-          latexcell->textEdit()->copy();
-      }
-      else
-      {
-        QTextEdit *editor = cell->textEdit();
-        if( editor )
-        {
-          editor->copy();
-        }
-      }
-    }
+    if (cell) cell->copyText();
   }
 
 
@@ -186,37 +97,7 @@ namespace IAEX
   void TextCursorPasteText::execute()
   {
       Cell *cell = document()->getCursor()->currentCell();
-      if( cell )
-      {
-        if( typeid(LatexCell) == typeid(*cell) )
-        {
-          LatexCell *latexcell = dynamic_cast<LatexCell*>(cell);
-          if( latexcell->textEditOutput()->hasFocus() &&
-            latexcell->isEvaluated() )
-          {
-            latexcell->textEditOutput()->paste();
-          }
-          else
-          {
-            latexcell->textEdit()->paste();
-          }
-        }
-        else
-        {
-          QTextEdit *editor = cell->textEdit();
-          if( editor )
-          {
-            editor->paste();
-          }
-        }
-
-      }
-
-  /*  QTextEdit *editor = document()->getCursor()->currentCell()->textEdit();
-    if( editor )
-    {
-      editor->paste();
-    }*/
+      if ( cell ) cell->pasteText();
   }
 
 

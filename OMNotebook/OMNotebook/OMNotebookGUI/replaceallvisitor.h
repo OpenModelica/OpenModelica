@@ -79,14 +79,13 @@ namespace IAEX
     // Visitor function - TEXTCELL
     void visitTextCellNodeBefore( TextCell *node )
     {
-      if( node->textEdit() )
+      auto cursor = node->textCursor();
+      if( !cursor.isNull() )
       {
         int options( 0 );
 
         // move cursor to start of text
-        QTextCursor cursor = node->textEdit()->textCursor();
-        cursor.movePosition( QTextCursor::Start );
-        node->textEdit()->setTextCursor( cursor );
+        node->moveCursor(QTextCursor::Start);
 
         // match case & match word
         if( matchCase_ && matchWord_ )
@@ -97,9 +96,8 @@ namespace IAEX
           options = QTextDocument::FindWholeWords;
 
         // replace all
-        while( node->textEdit()->find( findText_, (QTextDocument::FindFlag)options ))
-        {
-          node->textEdit()->textCursor().insertText( replaceText_ );
+        while (node->findText(findText_, (QTextDocument::FindFlag)options)) {
+          node->textCursor().insertText(replaceText_);
           if( count_ )
             (*count_)++;
         }
@@ -110,14 +108,13 @@ namespace IAEX
     // Visitor function - INPUTCELL
     void visitInputCellNodeBefore( InputCell *node )
     {
-      if( node->textEdit() )
+      auto cursor = node->textCursor();
+      if( !cursor.isNull() )
       {
         int options( 0 );
 
         // move cursor to start of text
-        QTextCursor cursor = node->textEdit()->textCursor();
-        cursor.movePosition( QTextCursor::Start );
-        node->textEdit()->setTextCursor( cursor );
+        node->moveCursor(QTextCursor::Start);
 
         // match case & match word
         if( matchCase_ && matchWord_ )
@@ -128,9 +125,8 @@ namespace IAEX
           options = QTextDocument::FindWholeWords;
 
         // replace all
-        while( node->textEdit()->find( findText_, (QTextDocument::FindFlag)options ))
-        {
-          node->textEdit()->textCursor().insertText( replaceText_ );
+        while (node->findText(findText_, (QTextDocument::FindFlag)options)) {
+          node->textCursor().insertText(replaceText_);
           if( count_ )
             (*count_)++;
         }
@@ -142,14 +138,13 @@ namespace IAEX
     // Visitor function - GRAPHCELL
     void visitGraphCellNodeBefore( GraphCell *node )
     {
-      if( node->textEdit() )
+      auto cursor = node->textCursor();
+      if( !cursor.isNull() )
       {
         int options( 0 );
 
         // move cursor to start of text
-        QTextCursor cursor = node->textEdit()->textCursor();
-        cursor.movePosition( QTextCursor::Start );
-        node->textEdit()->setTextCursor( cursor );
+        node->moveCursor(QTextCursor::Start);
 
         // match case & match word
         if( matchCase_ && matchWord_ )
@@ -160,9 +155,8 @@ namespace IAEX
           options = QTextDocument::FindWholeWords;
 
         // replace all
-        while( node->textEdit()->find( findText_, (QTextDocument::FindFlag)options ))
-        {
-          node->textEdit()->textCursor().insertText( replaceText_ );
+        while (node->findText(findText_, (QTextDocument::FindFlag)options)) {
+          node->textCursor().insertText(replaceText_);
           if( count_ )
             (*count_)++;
         }
@@ -172,14 +166,13 @@ namespace IAEX
 
     void visitLatexCellNodeBefore( LatexCell *node )
     {
-      if( node->textEdit() )
+      auto cursor = node->textCursor();
+      if( !cursor.isNull() )
       {
         int options( 0 );
 
         // move cursor to start of text
-        QTextCursor cursor = node->textEdit()->textCursor();
-        cursor.movePosition( QTextCursor::Start );
-        node->textEdit()->setTextCursor( cursor );
+        node->moveCursor(QTextCursor::Start);
 
         // match case & match word
         if( matchCase_ && matchWord_ )
@@ -190,9 +183,8 @@ namespace IAEX
           options = QTextDocument::FindWholeWords;
 
         // replace all
-        while( node->textEdit()->find( findText_, (QTextDocument::FindFlag)options ))
-        {
-          node->textEdit()->textCursor().insertText( replaceText_ );
+        while (node->findText(findText_, (QTextDocument::FindFlag)options)) {
+          node->textCursor().insertText(replaceText_);
           if( count_ )
             (*count_)++;
         }

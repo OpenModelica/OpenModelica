@@ -939,6 +939,11 @@ namespace IAEX {
     return te.toHtml();
   }
 
+  QTextDocument* GraphCell::document()
+  {
+    return input_->document();
+  }
+
   /*!
   * \author Anders Fernström
   * \date 2005-11-23
@@ -983,19 +988,6 @@ namespace IAEX {
 
   /*!
   * \author Anders Fernström
-  * \date 2006-01-05
-  *
-  * \brief Return the input texteditor
-  *
-  * \return Texteditor for the inputpart of the GraphCell
-  */
-  QTextEdit *GraphCell::textEdit()
-  {
-    return (QTextEdit*)input_;
-  }
-
-  /*!
-  * \author Anders Fernström
   * \date 2006-02-03
   *
   * \brief Return the output texteditor
@@ -1005,6 +997,48 @@ namespace IAEX {
   QTextEdit* GraphCell::textEditOutput()
   {
     return output_;
+  }
+
+  void GraphCell::cutText()
+  {
+    if (output_->hasFocus() && isEvaluated()) {
+      output_->copy();
+    } else {
+      input_->cut();
+    }
+  }
+
+  void GraphCell::copyText()
+  {
+    if (output_->hasFocus() && isEvaluated()) {
+      output_->copy();
+    } else {
+      input_->copy();
+    }
+  }
+
+  void GraphCell::pasteText()
+  {
+    input_->paste();
+  }
+
+  bool GraphCell::findText(const QString &exp, QTextDocument::FindFlags options)
+  {
+    return input_->find(exp, options);
+  }
+
+  void GraphCell::clearSelection()
+  {
+    auto cursor = input_->textCursor();
+    cursor.clearSelection();
+    input_->setTextCursor(cursor);
+  }
+
+  void GraphCell::moveCursor(QTextCursor::MoveOperation operation)
+  {
+    auto cursor = input_->textCursor();
+    cursor.movePosition(operation);
+    input_->setTextCursor(cursor);
   }
 
   /*!

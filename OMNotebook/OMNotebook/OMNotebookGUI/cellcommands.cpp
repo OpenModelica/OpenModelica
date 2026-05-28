@@ -737,10 +737,9 @@ namespace IAEX
         if( dynamic_cast<TextCell*>(cell) || dynamic_cast<InputCell*>(cell) )
         {
           // extraxt text
-          QTextEdit* editor = cell->textEdit();
-          if( editor )
+          QTextCursor cursor = cell->textCursor();
+          if( !cursor.isNull() )
           {
-            QTextCursor cursor = editor->textCursor();
             cursor.movePosition( QTextCursor::End, QTextCursor::KeepAnchor );
             QTextDocumentFragment text = cursor.selection();
             cursor.removeSelectedText();
@@ -763,11 +762,9 @@ namespace IAEX
             }
 
             // add text to new cell
-            QTextEdit* newEditor = document()->getCursor()->currentCell()->textEdit();
-            QTextCursor newCursor = newEditor->textCursor();
-            newCursor.insertFragment( text );
-            newCursor.movePosition( QTextCursor::Start );
-            newEditor->setTextCursor( newCursor );
+            auto currentCell = document()->getCursor()->currentCell();
+            currentCell->textCursor().insertFragment(text);
+            currentCell->moveCursor(QTextCursor::Start);
 
             // update document
             document()->setChanged( true );

@@ -112,9 +112,17 @@ namespace IAEX
     //TextCell interface.
     virtual QString text() = 0;
     virtual QString textHtml(){return QString();}  // Added 2005-10-27 AF
+    virtual QTextDocument* document() { return nullptr; }
     virtual QTextCursor textCursor();          // Added 2005-10-27 AF
     virtual QTextEdit* textEdit(){return 0;}      // Added 2005-10-27 AF
-    virtual void viewExpression(const bool){};
+    virtual void viewExpression(const bool){}
+    virtual void cutText() {}
+    virtual void copyText() {}
+    virtual void pasteText() {}
+    virtual bool findText(const QString &exp, QTextDocument::FindFlags options) { return false; }
+
+    virtual void clearSelection() {}
+    virtual void moveCursor(QTextCursor::MoveOperation operation) {}
 
     //Cellgroup interface.
     virtual void addChild(Cell *){}

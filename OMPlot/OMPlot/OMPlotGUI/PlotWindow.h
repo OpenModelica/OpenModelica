@@ -93,7 +93,7 @@ private:
 	QComboBox* mpSimulationSpeedComboBox;
 	QFile mFile;
 	QStringList mVariablesList;
-	PlotType mPlotType;
+	PlotType mPlotType = PLOT;
 	QString mGridType;
 	QString mXLabel;
 	QString mYLabel;

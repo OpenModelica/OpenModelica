@@ -89,8 +89,17 @@ namespace IAEX{
     bool isClosed() const;
     bool isEditable();                // Added 2005-10-28 AF
 
+    QTextDocument* document() override;
     QTextEdit* textEdit();              // Added 2006-08-24 AF
 
+    void cutText() override;
+    void copyText() override;
+    void pasteText() override;
+    bool findText(const QString &exp, QTextDocument::FindFlags options) override;
+
+    QTextCursor textCursor() override;
+    void clearSelection() override;
+    void moveCursor(QTextCursor::MoveOperation operation) override;
 
   public slots:
     virtual void setStyle( CellStyle style );    // Changed 2005-10-28 AF
