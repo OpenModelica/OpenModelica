@@ -19,7 +19,7 @@ if not checkInterfaceOfPackages(mainClass, {
   {"ast_collections", "util", "parser", "frontend_dump", "", "", "", "", "", "", "", "", ""},
   {"dump_extra", "util", "susan", "parser", "frontend_dump", "", "", "", "", "", "", "", ""},
   {"frontend_inst", "util_datatypes_basic", "parser", "frontend_types", "frontend_dump", "", "", "", "", "", "", "", ""},
-  {"script_util", "util", "util_datatypes_basic", "frontend_types", "frontend_dump", "", "", "", "", "", "", "", ""}
+  {"script_util", "util", "util_datatypes_basic", "frontend_types", "frontend_dump", "parser", "", "", "", "", "", "", ""}
 }) then
   print(getErrorString());
   exit(1);
