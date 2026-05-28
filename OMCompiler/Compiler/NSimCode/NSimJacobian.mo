@@ -285,35 +285,21 @@ public
 
           try
             local_idx_map := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, listLength(seedVars) + listLength(resVars));
-            // build mappings from seed and results vars to local indices in the Jacobian
+
+            // build mappings from seed and result vars to local indices in the Jacobian
+            // always get the partner: SEED -> non-seed, pDer -> non-pDer that the sparsity pattern was built in the backend
             for var in seedVars loop
               cref := SimVar.getName(var);
-              if jacobian.isAdjoint then
-                if BVariable.checkCref(cref, BVariable.isPDer, sourceInfo()) then
-                  // TODO: FIXME this should not happen, fix it when collecting pDers!
-                  cref := BVariable.getPartnerCref(cref, function BVariable.getVarPDer(isTmp = false));
-                end if;
-              else
-                if BVariable.checkCref(cref, BVariable.isSeed, sourceInfo()) then
-                  // TODO: FIXME this should not happen, fix it when collecting seedVars!
-                  cref := BVariable.getPartnerCref(cref, BVariable.getVarSeed);
-                end if;
+              if BVariable.checkCref(cref, BVariable.isSeed, sourceInfo()) then
+                cref := BVariable.getPartnerCref(cref, BVariable.getVarSeed);
               end if;
               UnorderedMap.add(cref, var.index, local_idx_map);
             end for;
 
             for var in resVars loop
               cref := SimVar.getName(var);
-              if jacobian.isAdjoint then
-                if BVariable.checkCref(cref, BVariable.isSeed, sourceInfo()) then
-                  // FIXME this should not happen, fix it when collecting seedVars!
-                  cref := BVariable.getPartnerCref(cref, BVariable.getVarSeed);
-                end if;
-              else
-                if BVariable.checkCref(cref, BVariable.isPDer, sourceInfo()) then
-                  // FIXME this should not happen, fix it when collecting pDers!
-                  cref := BVariable.getPartnerCref(cref, function BVariable.getVarPDer(isTmp = false));
-                end if;
+              if BVariable.checkCref(cref, BVariable.isPDer, sourceInfo()) then
+                cref := BVariable.getPartnerCref(cref, function BVariable.getVarPDer(isTmp = false));
               end if;
               UnorderedMap.add(cref, var.index, local_idx_map);
             end for;
