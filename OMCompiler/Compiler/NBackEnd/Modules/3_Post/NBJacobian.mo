@@ -215,10 +215,15 @@ public
     SparsityPattern sparsityPattern;
     SparsityColoring sparsityColoring = SparsityColoring.lazy(EMPTY_SPARSITY_PATTERN);
   algorithm
-
     if List.hasOneElement(jacobians) then
       jacobian := listHead(jacobians);
-      jacobian := match jacobian case BackendDAE.JACOBIAN() algorithm jacobian.name := name; then jacobian; end match;
+      jacobian := match jacobian case BackendDAE.JACOBIAN() algorithm
+          jacobian.name := name;
+        then jacobian;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + BackendDAE.toString(jacobian)});
+        then fail();
+      end match;
     else
       for jac in jacobians loop
         () := match jac
@@ -827,14 +832,21 @@ public
       input SparsityColoring coloring2;
       output SparsityColoring coloring_out;
     protected
-      SparsityColoring smaller_coloring;
+      array<SparsityColoringCol> cols_big, cols_small;
+      array<SparsityColoringRow> rows_big, rows_small;
     algorithm
       // append the smaller to the bigger
-      (coloring_out, smaller_coloring) := if arrayLength(coloring2.cols) > arrayLength(coloring1.cols) then (coloring2, coloring1) else (coloring1, coloring2);
-
-      for i in 1:arrayLength(smaller_coloring.cols) loop
-        coloring_out.cols[i] := listAppend(coloring_out.cols[i], smaller_coloring.cols[i]);
-        coloring_out.rows[i] := listAppend(coloring_out.rows[i], smaller_coloring.rows[i]);
+      (cols_big, cols_small) := if arrayLength(coloring2.cols) > arrayLength(coloring1.cols) then (coloring2.cols, coloring1.cols) else (coloring1.cols, coloring2.cols);
+      (rows_big, rows_small) := if arrayLength(coloring2.rows) > arrayLength(coloring1.rows) then (coloring2.rows, coloring1.rows) else (coloring1.rows, coloring2.rows);
+      // initialize new coloring with the bigger ones
+      coloring_out := SPARSITY_COLORING(cols_big, rows_big);
+      // append the columns
+      for i in 1:arrayLength(cols_small) loop
+        coloring_out.cols[i] := listAppend(coloring_out.cols[i], cols_small[i]);
+      end for;
+      // append the rows
+      for i in 1:arrayLength(rows_small) loop
+        coloring_out.rows[i] := listAppend(coloring_out.rows[i], rows_small[i]);
       end for;
     end combine;
   end SparsityColoring;
