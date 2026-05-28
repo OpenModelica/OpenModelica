@@ -1081,7 +1081,7 @@ algorithm
     case (DAE.CALL(Absyn.IDENT("sample"), es as {start, interval}, attr), (ht, iDelay, iSample, iSpatial, timeEvents))
     guard (not Types.isClockOrSubTypeClock(Expression.typeof(interval))) algorithm
       iSample := iSample+1;
-      timeEvents := List.appendElt(BackendDAE.SAMPLE_TIME_EVENT(iSample, start, interval), timeEvents);
+      timeEvents := List.appendElt(BackendDAE.SAMPLE_TIME_EVENT(iSample, start, interval, NONE()), timeEvents);
       ht := BaseHashTable.add((inExp, iSample), ht);
     then (DAE.CALL(Absyn.IDENT("sample"), DAE.ICONST(iSample)::es, attr), (ht, iDelay, iSample, iSpatial, timeEvents));
 

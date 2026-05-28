@@ -2404,7 +2404,7 @@ algorithm
     algorithm
       (startExp,_) := replaceExp(startExp,inVariableReplacements,inFuncTypeExpExpToBooleanOption);
       (intervalExp,_) := replaceExp(intervalExp,inVariableReplacements,inFuncTypeExpExpToBooleanOption);
-    then BackendDAE.SAMPLE_TIME_EVENT(index, startExp, intervalExp);
+    then BackendDAE.SAMPLE_TIME_EVENT(index, startExp, intervalExp, teIn.iter);
   else
     then teIn;
   end matchcontinue;
