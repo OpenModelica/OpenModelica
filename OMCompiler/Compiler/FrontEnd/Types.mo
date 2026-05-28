@@ -3320,7 +3320,7 @@ algorithm
     case (_,(t1 :: _),(t2 :: _),true)
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- Types.matchTypeTuple failed:"+TypesDump.TypesDump.unparseType(t1)+" "+Types.TypesDump.unparseType(t2)+"\n");
+        Debug.trace("- Types.matchTypeTuple failed:"+TypesDump.unparseType(t1)+" "+TypesDump.unparseType(t2)+"\n");
       then
         fail();
   end matchcontinue;
