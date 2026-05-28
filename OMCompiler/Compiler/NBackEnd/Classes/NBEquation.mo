@@ -717,11 +717,26 @@ public
         // do not iterate call arguments
         case Expression.CALL() then (exp, iter);
 
+        // only consider if expressions if all sub-expressions contain an array constructor
+        case Expression.IF() guard(extractFromCallIfException(exp)) then (exp, iter);
+
         else algorithm
           (exp, iter) := Expression.mapFoldShallow(exp, function extractFromCall(replacements = replacements, new_iters = new_iters, dims_map = dims_map), iter);
         then (exp, iter);
       end match;
     end extractFromCall;
+
+    function extractFromCallIfException
+      "returns true if any branch is not an array constructor"
+      input Expression exp;
+      output Boolean b;
+    algorithm
+      b := match exp
+        case Expression.CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR()) then false;
+        case Expression.IF() then extractFromCallIfException(exp.trueBranch) or extractFromCallIfException(exp.falseBranch);
+        else true;
+      end match;
+    end extractFromCallIfException;
 
     function normalizedSubscripts
       "creates a normalized subscript list such that the traversed iterators result in
