@@ -937,7 +937,6 @@ protected
   list<tuple<SimCodeVar.SimVar, Boolean>> prevClockedVars;
   array<Option<SimCode.SubPartition>> simSubPartitions;
   BackendDAE.SubPartition subPartition;
-  BackendDAE.Var var;
   array<Boolean> isPrevVar;
   SimCode.SimEqSystem simEq;
 algorithm
