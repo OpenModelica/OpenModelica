@@ -35,15 +35,14 @@
 
 encapsulated package ReverseLookup
   import Absyn;
+import ProgramUtil;
 
 protected
   import AbsynUtil;
   import BaseAvlTree;
   import Dump;
   import ExecStat;
-  import InteractiveUtil;
   import JSON;
-  import NFApi;
   import Util;
 
   uniontype PathEntry
@@ -130,7 +129,7 @@ public
       paths := Paths.PATHS(tree, AbsynUtil.pathToStringList(relative_path), {});
 
       try
-        cls := InteractiveUtil.getPathedClassInProgram(scope, program);
+        cls := ProgramUtil.getPathedClassInProgram(scope, program);
         matches := lookupInClass(cls, paths, exactMatch, {});
       else
         matches := {};
@@ -1206,7 +1205,7 @@ protected
 
       json_elems := {};
       for m in group loop
-        json_elem := NFApi.dumpJSONSourceInfo(m.info, dumpFilename = false);
+        json_elem := ProgramUtil.dumpJSONSourceInfo(m.info, dumpFilename = false);
         json_elem := JSON.addPair("name", JSON.makeString(Dump.printComponentRefStr(m.name)), json_elem);
         json_elem := JSON.addPair("class", JSON.makeString(m.scope), json_elem);
         json_elems := json_elem :: json_elems;

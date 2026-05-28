@@ -46,14 +46,11 @@ public import Tpl;
 
 // private imports
 protected import BaseHashTable;
-protected import CodegenCFunctions;
-protected import CodegenMidToC;
 protected import ComponentReference;
-protected import DAEToMid;
+protected import ExpressionBasics;
 protected import Error;
 protected import Global;
 protected import List;
-protected import MidCode;
 protected import SimCodeFunctionUtil;
 protected import SCode;
 protected import Types;
@@ -383,139 +380,6 @@ public constant Context contextOMSI                   = OMSI_CONTEXT(NONE());
 
 constant list<DAE.Exp> listExpLength1 = {DAE.ICONST(0)} "For CodegenC.tpl";
 constant list<Variable> boxedRecordOutVars = VARIABLE(DAE.CREF_IDENT("",DAE.T_COMPLEX_DEFAULT_RECORD,{}),DAE.T_COMPLEX_DEFAULT_RECORD,NONE(),{},DAE.NON_PARALLEL(),DAE.VARIABLE(), false)::{} "For CodegenC.tpl";
-
-public function translateFunctions "
-  Entry point to translate Modelica/MetaModelica functions to C functions.
-  Called from other places in the compiler."
-  input Absyn.Program program;
-  input String name;
-  input Option<DAE.Function> optMainFunction;
-  input list<DAE.Function> idaeElements;
-  input list<DAE.Type> metarecordTypes;
-  input list<String> inIncludes;
-algorithm
-  setGlobalRoot(Global.optionSimCode, NONE());
-
-  () := match (optMainFunction, idaeElements, inIncludes)
-    local
-      DAE.Function daeMainFunction;
-      Function mainFunction;
-      list<Function> fns;
-      list<String> includes, libs, libPaths,includeDirs;
-      MakefileParams makefileParams;
-      FunctionCode fnCode;
-      list<RecordDeclaration> extraRecordDecls;
-      list<DAE.Exp> literals;
-      list<DAE.Function> daeElements;
-      Tpl.Text midCode;
-      list<MidCode.Function> midfuncs;
-    case (SOME(daeMainFunction), daeElements, includes)
-      algorithm
-        // Create FunctionCode
-        (daeElements,literals) := SimCodeFunctionUtil.findLiterals(daeMainFunction::daeElements);
-        (mainFunction::fns, extraRecordDecls, includes, includeDirs, libs, libPaths) := SimCodeFunctionUtil.elaborateFunctions(program, daeElements, metarecordTypes, literals, includes);
-        SimCodeFunctionUtil.checkValidMainFunction(name, mainFunction);
-        makefileParams := SimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, true);
-        fnCode := FUNCTIONCODE(name, SOME(mainFunction), fns, literals, includes, makefileParams, extraRecordDecls);
-
-        if Config.simCodeTarget() == "MidC" then
-          Tpl.tplString(CodegenCFunctions.translateFunctionHeaderFiles, fnCode);
-          midfuncs := DAEToMid.DAEFunctionsToMid(mainFunction::fns);
-          midCode := Tpl.tplCallWithFailError(CodegenMidToC.genProgram, MidCode.PROGRAM(name, midfuncs));
-          Tpl.textFileConvertLines(midCode, name + ".c");
-        else
-          Tpl.tplString(CodegenCFunctions.translateFunctions, fnCode);
-        end if;
-      then
-        ();
-    case (NONE(), daeElements, includes)
-      algorithm
-        // Create FunctionCode
-        (daeElements,literals) := SimCodeFunctionUtil.findLiterals(daeElements);
-        (fns, extraRecordDecls, includes, includeDirs, libs, libPaths) := SimCodeFunctionUtil.elaborateFunctions(program, daeElements, metarecordTypes, literals, includes);
-        makefileParams := SimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, true);
-        // remove OpenModelica.threadData.ThreadData
-        fns := removeThreadDataFunction(fns, {});
-        extraRecordDecls := removeThreadDataRecord(extraRecordDecls, {});
-        fnCode := FUNCTIONCODE(name, NONE(), fns, literals, includes, makefileParams, extraRecordDecls);
-
-        if Config.simCodeTarget() == "MidC" then
-          Tpl.tplString(CodegenCFunctions.translateFunctionHeaderFiles, fnCode);
-          midfuncs := DAEToMid.DAEFunctionsToMid(fns);
-          midCode := Tpl.tplCallWithFailError(CodegenMidToC.genProgram, MidCode.PROGRAM(name, midfuncs));
-          Tpl.textFileConvertLines(midCode, name + ".c");
-        else
-          Tpl.tplString(CodegenCFunctions.translateFunctions, fnCode);
-        end if;
-      then
-        ();
-
-  end match;
-end translateFunctions;
-
-protected function removeThreadDataRecord
-"remove OpenModelica.threadData.ThreadData
- as is already defined in openmodelica.h"
-  input list<RecordDeclaration> inRecs;
-  input list<RecordDeclaration> inAcc;
-  output list<RecordDeclaration> outRecs;
-algorithm
-  outRecs := match inRecs
-    local
-      list<RecordDeclaration> acc, rest;
-      RecordDeclaration r;
-
-    case {} then listReverse(inAcc);
-
-    case RECORD_DECL_FULL(name = "OpenModelica_threadData_ThreadData")::rest
-     algorithm
-       acc := removeThreadDataRecord(rest, inAcc);
-     then
-       acc;
-
-    case RECORD_DECL_DEF(path = Absyn.QUALIFIED("OpenModelica",Absyn.QUALIFIED("threadData",Absyn.IDENT("ThreadData"))))::rest
-     algorithm
-       acc := removeThreadDataRecord(rest, inAcc);
-     then
-       acc;
-
-    case r::rest
-     algorithm
-       acc := removeThreadDataRecord(rest, r::inAcc);
-     then
-       acc;
-
-  end match;
-end removeThreadDataRecord;
-
-protected function removeThreadDataFunction
-"remove OpenModelica.threadData.ThreadData
- as is already defined in openmodelica.h"
-  input list<Function> inFuncs;
-  input list<Function> inAcc;
-  output list<Function> outFuncs;
-algorithm
-  outFuncs := match inFuncs
-    local
-      list<Function> acc, rest;
-      Function f;
-
-    case {} then listReverse(inAcc);
-
-    case RECORD_CONSTRUCTOR(name = Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("OpenModelica",Absyn.QUALIFIED("threadData",Absyn.IDENT("ThreadData")))))::rest
-     algorithm
-       acc := removeThreadDataFunction(rest, inAcc);
-     then
-       acc;
-
-    case f::rest
-     algorithm
-       acc := removeThreadDataFunction(rest, f::inAcc);
-     then
-       acc;
-
-  end match;
-end removeThreadDataFunction;
 
 public function getCalledFunctionsInFunction
 "Goes through the given DAE, finds the given function and collects

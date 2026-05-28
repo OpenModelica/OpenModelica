@@ -7676,7 +7676,7 @@ template genericCallHeaders(list<SimGenericCall> genericCalls, Context context)
   separator="\n\n")
 end genericCallHeaders;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="codegen");
 end CodegenC;
 
 // vim: filetype=susan sw=2 sts=2

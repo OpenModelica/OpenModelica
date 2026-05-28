@@ -46,12 +46,14 @@ encapsulated package VisualXML
 protected
 
 import Absyn;
+import Error;
+import ExpressionBasics;
+import ProgramUtil;
 import AbsynUtil;
 import BackendDAE;
 import BackendDAEUtil;
 import BackendEquation;
 import BackendVariable;
-import CevalScript;
 import ComponentReference;
 import DAE;
 import DAEUtil;
@@ -516,7 +518,7 @@ protected
 algorithm
   chars := stringListStringChar(sIn);
   if listLength(chars) > 11 and stringEqual(stringDelimitList(List.firstN(chars,11),""),"modelica://") then
-    sOut := "file://"+CevalScript.getFullPathFromUri(program,sIn,true);
+    sOut := "file://"+ProgramUtil.getFullPathFromUri(program,sIn,true);
   end if;
 end getFullCADFilePath;
 

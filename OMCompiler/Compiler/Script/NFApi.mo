@@ -36,6 +36,7 @@
 encapsulated package NFApi
 
 import Absyn;
+import ProgramUtil;
 import AbsynUtil;
 import SCode;
 import DAE;
@@ -1122,7 +1123,7 @@ algorithm
     json := dumpJSONEquations(sections, node, json);
   end if;
 
-  json := JSON.addPair("source", dumpJSONSourceInfo(InstNode.info(node)), json);
+  json := JSON.addPair("source", ProgramUtil.dumpJSONSourceInfo(InstNode.info(node)), json);
 end dumpJSONInstanceTree;
 
 function dumpJSONInstanceAnnotation
@@ -1308,7 +1309,7 @@ algorithm
   node := InstNode.getRedeclaredNode(cls);
   elem := InstNode.definition(node);
   json := dumpJSONSCodeClass(elem, scope, node, true, json);
-  json := JSON.addPair("source", dumpJSONSourceInfo(InstNode.info(node)), json);
+  json := JSON.addPair("source", ProgramUtil.dumpJSONSourceInfo(InstNode.info(node)), json);
 end dumpJSONReplaceableClass;
 
 function dumpJSONComponent
@@ -1469,7 +1470,7 @@ algorithm
   json_elems := dumpJSONEnumTypeLiterals(comps, InstNode.parent(node), json_elems);
   json := JSON.addPair("elements", json_elems, json);
 
-  json := JSON.addPair("source", dumpJSONSourceInfo(InstNode.info(node)), json);
+  json := JSON.addPair("source", ProgramUtil.dumpJSONSourceInfo(InstNode.info(node)), json);
 end dumpJSONEnumType;
 
 function dumpJSONEnumTypeLiterals
@@ -1887,24 +1888,7 @@ algorithm
   ErrorExt.delCheckpoint(getInstanceName());
 end dumpJSONAnnotationExp2;
 
-function dumpJSONSourceInfo
-  input SourceInfo info;
-  input Boolean dumpFilename = true;
-  output JSON json = JSON.makeNull();
-algorithm
-  if dumpFilename then
-    json := JSON.addPair("filename", JSON.makeString(Testsuite.friendly(info.fileName)), json);
-  end if;
 
-  json := JSON.addPair("lineStart", JSON.makeInteger(info.lineNumberStart), json);
-  json := JSON.addPair("columnStart", JSON.makeInteger(info.columnNumberStart), json);
-  json := JSON.addPair("lineEnd", JSON.makeInteger(info.lineNumberEnd), json);
-  json := JSON.addPair("columnEnd", JSON.makeInteger(info.columnNumberEnd), json);
-
-  if info.isReadOnly then
-    json := JSON.addPair("readonly", JSON.makeBoolean(true), json);
-  end if;
-end dumpJSONSourceInfo;
 
 function dumpJSONAbsynExpression
   input Absyn.Exp exp;
@@ -3044,5 +3028,5 @@ algorithm
   FlagsUtil.set(Flags.DISABLE_SINGLE_FLOW_EQ, disable_single_flow_eq);
 end translateResidualsDAE;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="backend_main");
 end NFApi;

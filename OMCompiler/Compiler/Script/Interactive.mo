@@ -52,6 +52,7 @@ encapsulated package Interactive
 
 //public imports
 import Absyn;
+import ProgramUtil;
 import AbsynUtil;
 import ConnectionGraph;
 import DAE;
@@ -796,7 +797,7 @@ algorithm
     comps := extractAllComponents(p, classPath) "class in package" ;
     // rollback errors if we succeed
     ErrorExt.rollBack("Interactive.extractAllComponentreplacements");
-    false := isClassReadOnly(InteractiveUtil.getPathedClassInProgram(classPath,p));
+    false := isClassReadOnly(ProgramUtil.getPathedClassInProgram(classPath,p));
     comp_repsrules := InteractiveTypes.COMPONENTREPLACEMENTRULES({InteractiveTypes.COMPONENTREPLACEMENT(classPath,oldName,newName)},1);
     comp_reps := getComponentreplacementsrules(comps, comp_repsrules, 0);
   else
@@ -828,7 +829,7 @@ protected
   list<Absyn.Path> paths;
 algorithm
   try
-    if isClassReadOnly(InteractiveUtil.getPathedClassInProgram(classPath, program)) then
+    if isClassReadOnly(ProgramUtil.getPathedClassInProgram(classPath, program)) then
       result := ValuesMake.makeCodeTypeNameStr("Error: class: " + AbsynUtil.pathString(classPath) + " is in a read only file!");
       return;
     end if;
@@ -854,15 +855,15 @@ protected
   Absyn.Within w;
 algorithm
   try
-    if isClassReadOnly(InteractiveUtil.getPathedClassInProgram(classPath, program)) then
+    if isClassReadOnly(ProgramUtil.getPathedClassInProgram(classPath, program)) then
       result := ValuesMake.makeCodeTypeNameStr("Error: class: " + AbsynUtil.pathString(classPath) + " is in a read only file!");
       return;
     end if;
 
-    cl := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    cl := ProgramUtil.getPathedClassInProgram(classPath, program);
     cl := renameComponentInClass(cl, oldName, newName);
-    w := InteractiveUtil.buildWithin(AbsynUtil.makeFullyQualified(classPath));
-    program := InteractiveUtil.updateProgram(Absyn.PROGRAM({cl}, w), program);
+    w := ProgramUtil.buildWithin(AbsynUtil.makeFullyQualified(classPath));
+    program := ProgramUtil.updateProgram(Absyn.PROGRAM({cl}, w), program);
     result := ValuesMake.makeCodeTypeNameArray({classPath});
   else
     result := ValuesMake.makeBoolean(false);
@@ -2624,7 +2625,7 @@ algorithm
       Absyn.Program p;
     case p
       algorithm
-        cdef := InteractiveUtil.getPathedClassInProgram(path, p);
+        cdef := ProgramUtil.getPathedClassInProgram(path, p);
         comps := InteractiveUtil.getComponentsInClass(cdef);
         compelts := list(InteractiveUtil.getComponentitemsInElement(c) for c guard isParameterElement(c) in comps);
         compelts_1 := List.flatten(compelts);
@@ -2847,27 +2848,27 @@ algorithm
     case {} then {};
     case parts guard properties.isProtected /* public moved to protected protected moved to public */
       algorithm
-        publst := InteractiveUtil.getPublicList(parts);
+        publst := ProgramUtil.getPublicList(parts);
         Absyn.ELEMENTITEM(elt) := List.getMemberOnTrue(component, publst, AbsynUtil.isElementItemNamed);
         elt := setComponentPropertiesInElement(elt, component, properties);
         publst := deleteOrUpdateComponentFromElementitems(component, publst, NONE()); // TODO: Do not move the component...
-        protlst := InteractiveUtil.getProtectedList(parts);
+        protlst := ProgramUtil.getProtectedList(parts);
         protlst := List.appendElt(Absyn.ELEMENTITEM(elt), protlst);
-        parts := InteractiveUtil.replaceProtectedList(parts, protlst);
-        parts := InteractiveUtil.replacePublicList(parts, publst);
+        parts := ProgramUtil.replaceProtectedList(parts, protlst);
+        parts := ProgramUtil.replacePublicList(parts, publst);
       then
         parts;
 
     case parts guard not properties.isProtected /* protected moved to public protected attr not changed. */
       algorithm
-        protlst := InteractiveUtil.getProtectedList(parts);
+        protlst := ProgramUtil.getProtectedList(parts);
         Absyn.ELEMENTITEM(elt) := List.getMemberOnTrue(component, protlst, AbsynUtil.isElementItemNamed);
         elt := setComponentPropertiesInElement(elt, component, properties);
         protlst := deleteOrUpdateComponentFromElementitems(component, protlst, NONE()); // TODO: Do not move the component...
-        publst := InteractiveUtil.getPublicList(parts);
+        publst := ProgramUtil.getPublicList(parts);
         publst := List.appendElt(Absyn.ELEMENTITEM(elt), publst);
-        parts := InteractiveUtil.replacePublicList(parts, publst);
-        parts := InteractiveUtil.replaceProtectedList(parts, protlst);
+        parts := ProgramUtil.replacePublicList(parts, publst);
+        parts := ProgramUtil.replaceProtectedList(parts, protlst);
       then
         parts;
 
@@ -3028,7 +3029,7 @@ protected
   SourceInfo info;
 algorithm
   try
-    cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    cls := ProgramUtil.getPathedClassInProgram(classPath, program);
     info := cls.info;
     result := ValuesMake.makeArray({
       ValuesMake.makeCodeTypeNameStr(Testsuite.friendly(info.fileName)),
@@ -3255,10 +3256,10 @@ protected
   list<Absyn.ClassPart> parts;
 algorithm
   try
-    cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    cls := ProgramUtil.getPathedClassInProgram(classPath, program);
     parts := AbsynUtil.getClassPartsInClass(cls);
-    public_str := constructElementsInfo("public", InteractiveUtil.getPublicList(parts));
-    protected_str := constructElementsInfo("protected", InteractiveUtil.getProtectedList(parts));
+    public_str := constructElementsInfo("public", ProgramUtil.getPublicList(parts));
+    protected_str := constructElementsInfo("protected", ProgramUtil.getProtectedList(parts));
     result_str := appendNonEmptyStrings(public_str, protected_str, ", ");
     result_str := stringAppendList({"{ ", result_str, " }"});
   else
@@ -3290,7 +3291,7 @@ algorithm
       Absyn.Program p;
     case p /* class */
       algorithm
-        cdef := InteractiveUtil.getPathedClassInProgram(p_class, p);
+        cdef := ProgramUtil.getPathedClassInProgram(p_class, p);
         filename := AbsynUtil.classFilename(cdef);
       then filename;
     else "";
@@ -3322,10 +3323,10 @@ algorithm
 
     case (filename, p as Absyn.PROGRAM())
       algorithm
-        cdef := InteractiveUtil.getPathedClassInProgram(path, p);
-        within_ := InteractiveUtil.buildWithin(path);
+        cdef := ProgramUtil.getPathedClassInProgram(path, p);
+        within_ := ProgramUtil.buildWithin(path);
         cdef_1 := AbsynUtil.setClassFilename(cdef, filename);
-        newp := InteractiveUtil.updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
+        newp := ProgramUtil.updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
       then
         (true,newp);
     else (false,inProgram);
@@ -3351,11 +3352,11 @@ algorithm
 
     case (p_class,inherit_class,p as Absyn.PROGRAM())
       algorithm
-        within_ := InteractiveUtil.buildWithin(p_class);
-        cdef := InteractiveUtil.getPathedClassInProgram(p_class, p);
+        within_ := ProgramUtil.buildWithin(p_class);
+        cdef := ProgramUtil.getPathedClassInProgram(p_class, p);
         env := getClassEnv(p, p_class);
         cdef_1 := removeExtendsModifiersInClass(cdef, inherit_class, env, keepRedeclares);
-        newp := InteractiveUtil.updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
+        newp := ProgramUtil.updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
       then
         (newp, true);
     else (inProgram, false);
@@ -3635,10 +3636,10 @@ protected
   Absyn.Class cls;
 algorithm
   try
-    within_ := InteractiveUtil.buildWithin(path);
-    cls := InteractiveUtil.getPathedClassInProgram(path, inProgram);
+    within_ := ProgramUtil.buildWithin(path);
+    cls := ProgramUtil.getPathedClassInProgram(path, inProgram);
     cls := InteractiveUtil.clearComponentModifiersInClass(cls, inComponentName, keepRedeclares);
-    outProgram := InteractiveUtil.updateProgram(Absyn.PROGRAM({cls}, within_), inProgram);
+    outProgram := ProgramUtil.updateProgram(Absyn.PROGRAM({cls}, within_), inProgram);
     outResult := true;
   else
     outProgram := inProgram;
@@ -3661,7 +3662,7 @@ algorithm
   try
     cls_path := AbsynUtil.crefToPath(classRef);
     name := AbsynUtil.crefIdent(varRef);
-    cls := InteractiveUtil.getPathedClassInProgram(cls_path, program);
+    cls := ProgramUtil.getPathedClassInProgram(cls_path, program);
     Absyn.COMPONENTITEM(component = Absyn.COMPONENT(modification =
       SOME(Absyn.CLASSMOD(elementArgLst = args)))) := InteractiveUtil.getComponentInClass(cls, name);
     valueStr := Dump.printExpStr(getModificationValue(args, AbsynUtil.crefToPath(subModRef)));
@@ -3729,7 +3730,7 @@ algorithm
       algorithm
         p_class := AbsynUtil.crefToPath(class_);
         Absyn.IDENT(name) := AbsynUtil.crefToPath(ident);
-        cdef := InteractiveUtil.getPathedClassInProgram(p_class, p);
+        cdef := ProgramUtil.getPathedClassInProgram(p_class, p);
         comps := InteractiveUtil.getComponentsInClass(cdef);
         compelts := List.map(comps, InteractiveUtil.getComponentitemsInElement);
         compelts_1 := List.flatten(compelts);
@@ -3792,7 +3793,7 @@ algorithm
       Absyn.Program p;
     case p
       algorithm
-        cdef := InteractiveUtil.getPathedClassInProgram(path, p);
+        cdef := ProgramUtil.getPathedClassInProgram(path, p);
         comps := InteractiveUtil.getComponentsInClass(cdef);
         compelts := List.map(comps, InteractiveUtil.getComponentitemsInElement);
         compelts_1 := List.flatten(compelts);
@@ -3869,7 +3870,7 @@ protected
   Absyn.ComponentItem component;
 algorithm
   try
-    cls := InteractiveUtil.getPathedClassInProgram(path, program);
+    cls := ProgramUtil.getPathedClassInProgram(path, program);
     component := InteractiveUtil.getComponentInClass(cls, parameterName);
     bindingStr := Dump.printExpStr(InteractiveUtil.getVariableBindingInComponentitem(component));
   else
@@ -4183,9 +4184,9 @@ protected
     Absyn.Program p;
     String str;
   algorithm
-    cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    cls := ProgramUtil.getPathedClassInProgram(classPath, program);
     cls := Refactor.refactorGraphicalAnnotation(program, cls);
-    p := InteractiveUtil.updateProgram(Absyn.PROGRAM({cls}, Absyn.TOP()), program);
+    p := ProgramUtil.updateProgram(Absyn.PROGRAM({cls}, Absyn.TOP()), program);
     SymbolTable.setAbsyn(p);
     str := Dump.unparseStr(Absyn.PROGRAM({cls}, Absyn.TOP()), false);
     result := ValuesMake.makeString(str);
@@ -4248,7 +4249,7 @@ algorithm
     case Absyn.IDENT(name = "Boolean") then true;
     case _
       algorithm
-        class_ := InteractiveUtil.getPathedClassInProgram(className, inProgram);
+        class_ := ProgramUtil.getPathedClassInProgram(className, inProgram);
       then
         isPrimitiveClass(class_, inProgram);
     else false;
@@ -4272,7 +4273,7 @@ algorithm
     w := Absyn.WITHIN(wp);
   end if;
 
-  outProgram := InteractiveUtil.updateProgram(Absyn.PROGRAM({
+  outProgram := ProgramUtil.updateProgram(Absyn.PROGRAM({
     Absyn.CLASS(name, false, false, false, Absyn.R_MODEL(), Absyn.dummyParts,
         {}, {}, {}, Absyn.dummyInfo)}, w), inProgram);
 end createModel;
@@ -4302,26 +4303,26 @@ algorithm
         //Class inside another class, inside another class
         parentcpath := AbsynUtil.stripLast(classPath);
         parentparentcpath := AbsynUtil.stripLast(parentcpath);
-        cdef := InteractiveUtil.getPathedClassInProgram(classPath, inProgram);
-        parentcdef := InteractiveUtil.getPathedClassInProgram(parentcpath, inProgram);
+        cdef := ProgramUtil.getPathedClassInProgram(classPath, inProgram);
+        parentcdef := ProgramUtil.getPathedClassInProgram(parentcpath, inProgram);
         parentcdef_1 := InteractiveUtil.removeInnerClass(cdef, parentcdef);
-        outProgram := InteractiveUtil.updateProgram(Absyn.PROGRAM({parentcdef_1},Absyn.WITHIN(parentparentcpath)), inProgram);
+        outProgram := ProgramUtil.updateProgram(Absyn.PROGRAM({parentcdef_1},Absyn.WITHIN(parentparentcpath)), inProgram);
       then
         (true, outProgram);
     case _
       algorithm
         // Class inside other class
         parentcpath := AbsynUtil.stripLast(classPath);
-        cdef := InteractiveUtil.getPathedClassInProgram(classPath, inProgram);
-        parentcdef := InteractiveUtil.getPathedClassInProgram(parentcpath, inProgram);
+        cdef := ProgramUtil.getPathedClassInProgram(classPath, inProgram);
+        parentcdef := ProgramUtil.getPathedClassInProgram(parentcpath, inProgram);
         parentcdef_1 := InteractiveUtil.removeInnerClass(cdef, parentcdef);
-        outProgram := InteractiveUtil.updateProgram(Absyn.PROGRAM({parentcdef_1},Absyn.TOP()), inProgram);
+        outProgram := ProgramUtil.updateProgram(Absyn.PROGRAM({parentcdef_1},Absyn.TOP()), inProgram);
       then
         (true, outProgram);
     case _
       algorithm
         // Top level class
-        cdef := InteractiveUtil.getPathedClassInProgram(classPath, inProgram);
+        cdef := ProgramUtil.getPathedClassInProgram(classPath, inProgram);
         outProgram.classes := List.deleteMemberOnTrue(AbsynUtil.className(cdef),
           outProgram.classes, AbsynUtil.isClassNamed);
       then
@@ -4350,10 +4351,10 @@ algorithm
 
     case (p_class,str,p as Absyn.PROGRAM())
       algorithm
-        within_ := InteractiveUtil.buildWithin(p_class);
-        cdef := InteractiveUtil.getPathedClassInProgram(p_class, p);
+        within_ := ProgramUtil.buildWithin(p_class);
+        cdef := ProgramUtil.getPathedClassInProgram(p_class, p);
         cdef_1 := setClassCommentInClass(cdef, str);
-        newp := InteractiveUtil.updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
+        newp := ProgramUtil.updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
       then
         (newp,true);
 
@@ -4430,7 +4431,7 @@ protected
 algorithm
   try
     Absyn.CLASS(body = Absyn.DERIVED(typeSpec = ty, attributes = attr as Absyn.ATTR())) :=
-      InteractiveUtil.getPathedClassInProgram(classPath, program);
+      ProgramUtil.getPathedClassInProgram(classPath, program);
     vals := ValuesMake.makeArray(InteractiveUtil.dimensionListValues(AbsynUtil.typeSpecDimensions(ty))) :: vals;
     vals := ValuesMake.makeString(InteractiveUtil.attrDirectionStr(attr)) :: vals;
     vals := ValuesMake.makeString(InteractiveUtil.attrVariabilityStr(attr)) :: vals;
@@ -4455,7 +4456,7 @@ protected
   list<Values.Value> vals = {};
 algorithm
   try
-    cls := InteractiveUtil.getPathedClassInProgram(functionName, program);
+    cls := ProgramUtil.getPathedClassInProgram(functionName, program);
     Absyn.EXTERNAL(ext_decl, ann) := AbsynUtil.getExternalDecl(cls);
 
     vals := ValuesMake.makeString(Dump.unparseAnnotationOption(ann)) :: vals;
@@ -4495,7 +4496,7 @@ protected
   Absyn.Restriction restr;
 algorithm
   try
-    Absyn.CLASS(restriction = restr) := InteractiveUtil.getPathedClassInProgram(path, program);
+    Absyn.CLASS(restriction = restr) := ProgramUtil.getPathedClassInProgram(path, program);
     outRestriction := Dump.unparseRestrictionStr(restr);
   else
     outRestriction := "";
@@ -4655,7 +4656,7 @@ public function isPartial
   output Boolean res;
 algorithm
   try
-    Absyn.CLASS(partialPrefix=true) := InteractiveUtil.getPathedClassInProgram(path, program);
+    Absyn.CLASS(partialPrefix=true) := ProgramUtil.getPathedClassInProgram(path, program);
     res := true;
   else
     res := false;
@@ -4740,8 +4741,8 @@ protected
   list<Absyn.ElementItem> items;
 algorithm
   try
-    parts := AbsynUtil.getClassPartsInClass(InteractiveUtil.getPathedClassInProgram(className, program));
-    items := InteractiveUtil.getProtectedList(parts);
+    parts := AbsynUtil.getClassPartsInClass(ProgramUtil.getPathedClassInProgram(className, program));
+    items := ProgramUtil.getProtectedList(parts);
     getComponentsContainsName(AbsynUtil.pathToCref(componentName), items);
     res := true;
   else
@@ -4757,7 +4758,7 @@ public function isEnumeration
 algorithm
   try
     Absyn.CLASS(restriction = Absyn.R_TYPE(), body = Absyn.ENUMERATION()) :=
-      InteractiveUtil.getPathedClassInProgram(path, program);
+      ProgramUtil.getPathedClassInProgram(path, program);
     res := true;
   else
     res := false;
@@ -4776,8 +4777,8 @@ protected
   list<Absyn.ElementItem> items;
 algorithm
   try
-    parts := AbsynUtil.getClassPartsInClass(InteractiveUtil.getPathedClassInProgram(path, program));
-    items := InteractiveUtil.getProtectedList(parts);
+    parts := AbsynUtil.getClassPartsInClass(ProgramUtil.getPathedClassInProgram(path, program));
+    items := ProgramUtil.getProtectedList(parts);
     res := isProtectedClassInElements(items, className);
   else
     res := false;
@@ -4816,7 +4817,7 @@ protected
 algorithm
   try
     Absyn.CLASS(body = Absyn.ENUMERATION(enumLiterals = Absyn.ENUMLITERALS(enumLiterals = literals))) :=
-      InteractiveUtil.getPathedClassInProgram(classPath, program);
+      ProgramUtil.getPathedClassInProgram(classPath, program);
     names := list(AbsynUtil.enumLiteralName(l) for l in literals);
   else
     names := {};
@@ -4968,7 +4969,7 @@ public function existClass
   output Boolean res;
 algorithm
   try
-    InteractiveUtil.getPathedClassInProgram(classPath, program);
+    ProgramUtil.getPathedClassInProgram(classPath, program);
     res := true;
   else
     res := false;
@@ -5139,8 +5140,8 @@ algorithm
         //fprintln(Flags.INTER, "Interactive.lookupClassdef 1 Looking for: " + AbsynUtil.pathString(path) + " in: " + AbsynUtil.pathString(inmodel));
         // remove self reference, otherwise we go into an infinite loop!
         path := InstUtil.removeSelfReference(AbsynUtil.pathLastIdent(inmodel),path);
-        inmodeldef := InteractiveUtil.getPathedClassInProgram(inmodel, p) "Look first inside \'inmodel\'" ;
-        cdef := InteractiveUtil.getPathedClassInProgram(path, Absyn.PROGRAM({inmodeldef},Absyn.TOP()));
+        inmodeldef := ProgramUtil.getPathedClassInProgram(inmodel, p) "Look first inside \'inmodel\'" ;
+        cdef := ProgramUtil.getPathedClassInProgram(path, Absyn.PROGRAM({inmodeldef},Absyn.TOP()));
         newpath := AbsynUtil.joinPaths(inmodel, path);
       then
         (cdef,newpath);
@@ -5156,7 +5157,7 @@ algorithm
     case (path,_,p)
       algorithm
         //fprintln(Flags.INTER, "Interactive.lookupClassdef 3 Looking for: " + AbsynUtil.pathString(path) + " in: " + AbsynUtil.pathString(inmodel));
-        cdef := InteractiveUtil.getPathedClassInProgram(path, p) "Finally look in top level" ;
+        cdef := ProgramUtil.getPathedClassInProgram(path, p) "Finally look in top level" ;
       then
         (cdef,path);
 
@@ -5202,9 +5203,9 @@ protected
   Absyn.Class cls;
 algorithm
   w := if AbsynUtil.pathIsIdent(classPath) then Absyn.Within.TOP() else Absyn.Within.WITHIN(AbsynUtil.stripLast(classPath));
-  cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+  cls := ProgramUtil.getPathedClassInProgram(classPath, program);
   cls := deleteOrUpdateComponentFromClass(componentName, cls, item);
-  program := InteractiveUtil.updateProgram(Absyn.PROGRAM({cls}, w), program);
+  program := ProgramUtil.updateProgram(Absyn.PROGRAM({cls}, w), program);
 end deleteOrUpdateComponent;
 
 protected function deleteOrUpdateComponentFromClass
@@ -5235,18 +5236,18 @@ algorithm
                            body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann = ann,comment = cmt),
                            info = _))
       algorithm
-        publst := InteractiveUtil.getPublicList(parts);
+        publst := ProgramUtil.getPublicList(parts);
         (publst2, success) := deleteOrUpdateComponentFromElementitems(name, publst, item);
         l2 := listLength(publst2);
         l1 := listLength(publst);
         l1_1 := l1 - 1;
         if (/*delete case*/(intEq(l1_1, l2) and isNone(item) and success) or
             /*update case*/(boolNot(intEq(l1_1, l2)) and isSome(item)) and success) then
-          parts2 := InteractiveUtil.replacePublicList(parts, publst2);
+          parts2 := ProgramUtil.replacePublicList(parts, publst2);
         else
-          protlst := InteractiveUtil.getProtectedList(parts);
+          protlst := ProgramUtil.getProtectedList(parts);
           protlst2 := deleteOrUpdateComponentFromElementitems(name, protlst, item);
-          parts2 := InteractiveUtil.replaceProtectedList(parts, protlst2);
+          parts2 := ProgramUtil.replaceProtectedList(parts, protlst2);
         end if;
         outClass.body := Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt);
       then outClass;
@@ -5256,18 +5257,18 @@ algorithm
                            body = Absyn.CLASS_EXTENDS(baseClassName=bcpath, modifications=mod, parts = parts,ann = ann,comment = cmt),
                            info = _))
       algorithm
-        publst := InteractiveUtil.getPublicList(parts);
+        publst := ProgramUtil.getPublicList(parts);
         (publst2, success) := deleteOrUpdateComponentFromElementitems(name, publst, item);
         l2 := listLength(publst2);
         l1 := listLength(publst);
         l1_1 := l1 - 1;
         if (/*delete case*/(intEq(l1_1, l2) and isNone(item) and success) or
             /*update case*/(boolNot(intEq(l1_1, l2)) and isSome(item)) and success) then
-          parts2 := InteractiveUtil.replacePublicList(parts, publst2);
+          parts2 := ProgramUtil.replacePublicList(parts, publst2);
         else
-          protlst := InteractiveUtil.getProtectedList(parts);
+          protlst := ProgramUtil.getProtectedList(parts);
           protlst2 := deleteOrUpdateComponentFromElementitems(name, protlst, item);
-          parts2 := InteractiveUtil.replaceProtectedList(parts, protlst2);
+          parts2 := ProgramUtil.replaceProtectedList(parts, protlst2);
         end if;
         outClass.body := Absyn.CLASS_EXTENDS(bcpath,mod,cmt,parts2,ann);
       then outClass;
@@ -5399,7 +5400,7 @@ algorithm
     end match;
 
     cdef as Absyn.CLASS(info=SOURCEINFO(fileName=filename)) :=
-      InteractiveUtil.getPathedClassInProgram(classPath, program);
+      ProgramUtil.getPathedClassInProgram(classPath, program);
     info := SOURCEINFO(filename, false, 0, 0, 0, 0, 0.0);
 
     annotation_ := InteractiveUtil.makeCommentFromArgs(commentExp, annotationExp);
@@ -5422,7 +5423,7 @@ algorithm
           info, NONE())
       )
     );
-    program := InteractiveUtil.updateProgram(Absyn.PROGRAM({cdef}, w), program);
+    program := ProgramUtil.updateProgram(Absyn.PROGRAM({cdef}, w), program);
   else
     success := false;
   end try;
@@ -5438,7 +5439,7 @@ algorithm
   (io,redecl,attr) := match className
   local String str;
     case _ algorithm
-      str := getNamedAnnotationExp(className,p,Absyn.IDENT("defaultComponentPrefixes"),SOME("{}"),getDefaultComponentPrefixesModStr);
+      str := ProgramUtil.getNamedAnnotationExp(className,p,Absyn.IDENT("defaultComponentPrefixes"),SOME("{}"),ProgramUtil.getDefaultComponentPrefixesModStr);
       io := getDefaultInnerOuter(str);
       redecl := getDefaultReplaceable(str);
       redecl := makeReplaceableIfPartial(p, className, redecl);
@@ -5524,18 +5525,7 @@ algorithm
   end matchcontinue;
 end getDefaultAttr;
 
-public function getDefaultComponentPrefixesModStr "Extractor function for defaultComponentPrefixes modifier"
-  input Option<Absyn.Modification> mod;
-  output String docStr;
-algorithm
-  docStr := matchcontinue mod
-    local Absyn.Exp e;
-    case SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=e))) algorithm
-      docStr := Dump.printExpStr(e);
-    then docStr;
-    else "";
-  end matchcontinue;
-end getDefaultComponentPrefixesModStr;
+
 
 public function updateComponent
 " This function updates a component in a class. The reason for having
@@ -5561,9 +5551,9 @@ protected
   Option<Absyn.Comment> ann, annotation_;
 algorithm
   try
-    Absyn.CLASS(body = Absyn.PARTS(classParts = parts)) := InteractiveUtil.getPathedClassInProgram(classPath, program);
-    publst := InteractiveUtil.getPublicList(parts);
-    protlst := InteractiveUtil.getProtectedList(parts);
+    Absyn.CLASS(body = Absyn.PARTS(classParts = parts)) := ProgramUtil.getPathedClassInProgram(classPath, program);
+    publst := ProgramUtil.getPublicList(parts);
+    protlst := ProgramUtil.getProtectedList(parts);
     Absyn.ELEMENT(_,_,_,Absyn.COMPONENTS(_,Absyn.TPATH(_,_),items),_,_) := getElementContainsName(Absyn.CREF_IDENT(componentName,{}), listAppend(publst, protlst));
     Absyn.COMPONENTITEM(Absyn.COMPONENT(_,arrayDimensions,mod),cond,ann) := getCompitemNamed(Absyn.CREF_IDENT(componentName,{}), items);
     annotation_ := InteractiveUtil.makeCommentFromArgs(commentExp, annotationExp, ann);
@@ -5601,11 +5591,11 @@ protected
   Absyn.Within class_within;
 algorithm
   class_path := AbsynUtil.crefToPath(inClass);
-  cls := InteractiveUtil.getPathedClassInProgram(class_path, inProgram);
+  cls := ProgramUtil.getPathedClassInProgram(class_path, inProgram);
   cls := addClassAnnotationToClass(cls, InteractiveUtil.annotationListToAbsyn(inAnnotation));
   class_within := if AbsynUtil.pathIsIdent(class_path) then
     Absyn.TOP() else Absyn.WITHIN(AbsynUtil.stripLast(class_path));
-  outProgram := InteractiveUtil.updateProgram(Absyn.PROGRAM({cls}, class_within), inProgram);
+  outProgram := ProgramUtil.updateProgram(Absyn.PROGRAM({cls}, class_within), inProgram);
 end addClassAnnotation;
 
 public function addClassAnnotationToClass
@@ -5734,7 +5724,7 @@ try
 
     case modelpath
       algorithm
-        cdef := InteractiveUtil.getPathedClassInProgram(modelpath, SymbolTable.getAbsyn());
+        cdef := ProgramUtil.getPathedClassInProgram(modelpath, SymbolTable.getAbsyn());
         p_1 := SymbolTable.getSCode();
         (cache,env) := Inst.makeEnvFromProgram(p_1);
         (_,(c as SCode.CLASS()),env_1) := Lookup.lookupClass(cache,env, modelpath);
@@ -5744,7 +5734,7 @@ try
         paths;
     case modelpath /* if above fails, baseclass not defined. return its name */
       algorithm
-        cdef := InteractiveUtil.getPathedClassInProgram(modelpath, SymbolTable.getAbsyn());
+        cdef := ProgramUtil.getPathedClassInProgram(modelpath, SymbolTable.getAbsyn());
         extendsLst := getExtendsInClass(cdef);
         paths := List.map(extendsLst, AbsynUtil.elementSpecToPath);
       then
@@ -5775,7 +5765,7 @@ protected
   Absyn.Class cls;
 algorithm
   try
-    cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    cls := ProgramUtil.getPathedClassInProgram(classPath, program);
     result := ValuesMake.makeInteger(countBaseClasses(cls));
   else
     result := ValuesMake.makeInteger(0);
@@ -5912,7 +5902,7 @@ protected
   Option<Absyn.Annotation> opt_ann;
   list<Absyn.ElementArg> args;
 algorithm
-  cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+  cls := ProgramUtil.getPathedClassInProgram(classPath, program);
   (s, opt_ann) := getNthInheritedClassAnnotationOpt(classPath, n, cls, program);
 
   annStr := match opt_ann
@@ -5967,7 +5957,7 @@ public function getComponentCount
 protected
   Absyn.Class cdef;
 algorithm
-  cdef := InteractiveUtil.getPathedClassInProgram(model_, p);
+  cdef := ProgramUtil.getPathedClassInProgram(model_, p);
   count := countComponents(cdef);
 end getComponentCount;
 
@@ -6084,7 +6074,7 @@ protected
 algorithm
   try
     genv := InteractiveUtil.createEnvironment(SymbolTable.getAbsyn(), SOME(SymbolTable.getSCode()), classPath);
-    cdef := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    cdef := ProgramUtil.getPathedClassInProgram(classPath, program);
     result := getNthComponent2(cdef, n, genv);
   else
     result := ValuesMake.makeBoolean(false);
@@ -6185,7 +6175,7 @@ algorithm
       ErrorExt.setCheckpoint(getInstanceName());
     end if;
 
-    cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    cls := ProgramUtil.getPathedClassInProgram(classPath, program);
     env := InteractiveUtil.createEnvironment(program, SOME(SymbolTable.getSCode()), classPath);
 
     if access >= Access.diagram then // Access.diagram
@@ -6226,7 +6216,7 @@ protected
     list<Absyn.Element> comps;
 
   algorithm
-    cdef := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    cdef := ProgramUtil.getPathedClassInProgram(classPath, program);
 
     if accessLevel >= Access.diagram then
       comps := InteractiveUtil.getProtectedComponentsInClass(cdef);
@@ -6257,7 +6247,7 @@ protected
     Absyn.Class cdef;
     list<Absyn.Element> elts;
   algorithm
-    cdef := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    cdef := ProgramUtil.getPathedClassInProgram(classPath, program);
 
     if accessLevel >= Access.diagram then
       elts := InteractiveUtil.getProtectedElementsInClass(cdef);
@@ -6290,7 +6280,7 @@ protected
     Absyn.Class cdef;
     Absyn.Element comp;
   algorithm
-    cdef := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    cdef := ProgramUtil.getPathedClassInProgram(classPath, program);
     comp := InteractiveUtil.getNthComponentInClass(cdef, n);
     result := InteractiveUtil.getElementAnnotationsFromElts({comp}, cdef, program, classPath);
 
@@ -6314,7 +6304,7 @@ protected
   Absyn.Element comp;
 algorithm
   try
-    cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    cls := ProgramUtil.getPathedClassInProgram(classPath, program);
     comp := InteractiveUtil.getNthComponentInClass(cls, n);
     result := getComponentModification(comp);
   else
@@ -6334,7 +6324,7 @@ protected
   String str;
 algorithm
   try
-    cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    cls := ProgramUtil.getPathedClassInProgram(classPath, program);
     comp := InteractiveUtil.getNthComponentInClass(cls, n);
     str := getComponentCondition(comp);
     str := System.trim(str, " ");
@@ -6405,7 +6395,7 @@ algorithm
     case (model_,p,n)
       algorithm
         modelpath := AbsynUtil.crefToPath(model_);
-        cdef := InteractiveUtil.getPathedClassInProgram(modelpath, p);
+        cdef := ProgramUtil.getPathedClassInProgram(modelpath, p);
         Absyn.EQUATIONITEM(equation_ = eq, comment = cmt) := listGet(getConnections(cdef), n);
         str := getStringComment(cmt);
         (s1, s2) := getConnectionStr(eq);
@@ -6588,7 +6578,7 @@ algorithm
     case ((model_ as Absyn.CREF_IDENT()), from_, to_, condition_, immediate_, reset_, synchronize_, priority_, ann,(p as Absyn.PROGRAM()))
       algorithm
         modelpath := AbsynUtil.crefToPath(model_);
-        cdef := InteractiveUtil.getPathedClassInProgram(modelpath, p);
+        cdef := ProgramUtil.getPathedClassInProgram(modelpath, p);
         cmt := SOME(Absyn.COMMENT(SOME(ann), NONE()));
         GlobalScript.ISTMTS({GlobalScript.IEXP(conditionExp, _)}, _) := Parser.parsestringexp(condition_);
         newcdef := InteractiveUtil.addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("transition", {}),
@@ -6596,14 +6586,14 @@ algorithm
                                 conditionExp}, {Absyn.NAMEDARG("immediate", Absyn.BOOL(immediate_)),
                                 Absyn.NAMEDARG("reset", Absyn.BOOL(reset_)), Absyn.NAMEDARG("synchronize", Absyn.BOOL(synchronize_)),
                                 Absyn.NAMEDARG("priority", Absyn.INTEGER(priority_))})), cmt, Absyn.dummyInfo));
-        newp := InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef},p.within_), p);
+        newp := ProgramUtil.updateProgram(Absyn.PROGRAM({newcdef},p.within_), p);
       then
         (true, newp);
 
     case ((model_ as Absyn.CREF_QUAL()), from_, to_, condition_, immediate_, reset_, synchronize_, priority_, ann,(p as Absyn.PROGRAM()))
       algorithm
         modelpath := AbsynUtil.crefToPath(model_);
-        cdef := InteractiveUtil.getPathedClassInProgram(modelpath, p);
+        cdef := ProgramUtil.getPathedClassInProgram(modelpath, p);
         package_ := AbsynUtil.stripLast(modelpath);
         cmt := SOME(Absyn.COMMENT(SOME(ann), NONE()));
         GlobalScript.ISTMTS({GlobalScript.IEXP(conditionExp, _)}, _) := Parser.parsestringexp(condition_);
@@ -6612,7 +6602,7 @@ algorithm
                                 conditionExp}, {Absyn.NAMEDARG("immediate", Absyn.BOOL(immediate_)),
                                 Absyn.NAMEDARG("reset", Absyn.BOOL(reset_)), Absyn.NAMEDARG("synchronize", Absyn.BOOL(synchronize_)),
                                 Absyn.NAMEDARG("priority", Absyn.INTEGER(priority_))})), cmt, Absyn.dummyInfo));
-        newp := InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(package_)), p);
+        newp := ProgramUtil.updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(package_)), p);
       then
         (true, newp);
   end match;
@@ -6646,17 +6636,17 @@ algorithm
       algorithm
         modelpath := AbsynUtil.crefToPath(model_);
         modelwithin := AbsynUtil.stripLast(modelpath);
-        cdef := InteractiveUtil.getPathedClassInProgram(modelpath, p);
+        cdef := ProgramUtil.getPathedClassInProgram(modelpath, p);
         newcdef := deleteTransitionInClass(cdef, from_, to_, condition_, immediate_, reset_, synchronize_, priority_);
-        newp := InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p);
+        newp := ProgramUtil.updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p);
       then
         (true, newp);
     case (model_, from_, to_, condition_, immediate_, reset_, synchronize_, priority_ ,(p as Absyn.PROGRAM()))
       algorithm
         modelpath := AbsynUtil.crefToPath(model_);
-        cdef := InteractiveUtil.getPathedClassInProgram(modelpath, p);
+        cdef := ProgramUtil.getPathedClassInProgram(modelpath, p);
         newcdef := deleteTransitionInClass(cdef, from_, to_, condition_, immediate_, reset_, synchronize_, priority_);
-        newp := InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p);
+        newp := ProgramUtil.updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p);
       then
         (true, newp);
     case (_,_,_,_,_,_,_,_,(p as Absyn.PROGRAM())) then (false, p);
@@ -7076,7 +7066,7 @@ protected
     Absyn.Class cdef;
     Absyn.EquationItem conn;
   algorithm
-    cdef := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    cdef := ProgramUtil.getPathedClassInProgram(classPath, program);
     conn := listGet(getConnections(cdef), n);
     result := getConnectionAnnotationStr(conn, cdef, program, classPath);
   end impl;
@@ -7103,7 +7093,7 @@ algorithm
     //look through the components of the class for types declared using
     //the "connector" restricted class keyword. We also look in
     //base classes (recursively).
-    cdef := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    cdef := ProgramUtil.getPathedClassInProgram(classPath, program);
     result := ValuesMake.makeInteger(countPublicConnectors(classPath, program, cdef));
   else
     result := ValuesMake.makeBoolean(false);
@@ -7122,7 +7112,7 @@ protected
   Absyn.Path ty;
 algorithm
   try
-    cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    cls := ProgramUtil.getPathedClassInProgram(classPath, program);
     (SOME((name, ty)), _) := getNthPublicConnectorStr(classPath, cls, program, n);
     result := ValuesMake.makeCodeTypeNameArray({Absyn.Path.IDENT(name), ty});
   else
@@ -7148,7 +7138,7 @@ protected
     Absyn.Class cls;
     Absyn.Path ty;
   algorithm
-    cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    cls := ProgramUtil.getPathedClassInProgram(classPath, program);
     (SOME((_, ty)), _) := getNthPublicConnectorStr(classPath, cls, program, n);
     result := getIconAnnotation(ty, program);
   end impl;
@@ -7190,7 +7180,7 @@ protected
   protected
     Absyn.Class cls;
   algorithm
-    cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    cls := ProgramUtil.getPathedClassInProgram(classPath, program);
     cls := Refactor.refactorGraphicalAnnotation(program, cls);
     result := getNamedAnnotationValue(classPath, program, "Icon");
   end impl;
@@ -7233,7 +7223,7 @@ protected
   protected
     Absyn.Class cls;
   algorithm
-    cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    cls := ProgramUtil.getPathedClassInProgram(classPath, program);
     cls := Refactor.refactorGraphicalAnnotation(program, cls);
     result := getNamedAnnotationValue(classPath, program, "Diagram");
   end impl;
@@ -7257,7 +7247,7 @@ protected
   protected
     String str;
   algorithm
-    str := getNamedAnnotationExp(classPath, program, annotationPath, SOME("{}"), getAnnotationValue);
+    str := ProgramUtil.getNamedAnnotationExp(classPath, program, annotationPath, SOME("{}"), getAnnotationValue);
     result := ValuesMake.makeCodeTypeNameStr(str);
   end impl;
 algorithm
@@ -7265,49 +7255,17 @@ algorithm
     function impl(annotationPath = annotationPath), evaluateParams = true);
 end getNamedAnnotation;
 
-public function getNamedAnnotationExp
-"This function takes a Path and a Program and returns a comma separated
-  string of values for the Documentation annotation for the class named by the
-  first argument."
-  input Absyn.Path inPath;
-  input Absyn.Program inProgram;
-  input Absyn.Path id;
-  input Option<T> default;
-  input ModFunc f;
-  partial function ModFunc
-    input Option<Absyn.Modification> mod;
-    output T docStr;
-  end ModFunc;
-  output T outString;
-  replaceable type T subtypeof Any;
-algorithm
-  outString := matchcontinue (inPath, inProgram, default)
-    local
-      Absyn.Class cdef;
-      T str;
-      Absyn.Path modelpath;
-      Absyn.Program p;
 
-    case (modelpath, p, _)
-      algorithm
-        cdef := InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        SOME(str) := AbsynUtil.getNamedAnnotationInClass(cdef,id,f);
-      then
-        str;
-
-    case (_, _, SOME(str)) then str;
-  end matchcontinue;
-end getNamedAnnotationExp;
 
 public function getStringNamedAnnotation
-"Calls getNamedAnnotationExp and makes sure we don't fail if annotation is not String type."
+"Calls ProgramUtil.getNamedAnnotationExp and makes sure we don't fail if annotation is not String type."
   input Absyn.Path inPath;
   input Absyn.Program inProgram;
   input Absyn.Path id;
   output String outString;
 algorithm
   try
-    Absyn.STRING(outString) := getNamedAnnotationExp(inPath, inProgram, id, SOME(Absyn.STRING("")), getAnnotationExp);
+    Absyn.STRING(outString) := ProgramUtil.getNamedAnnotationExp(inPath, inProgram, id, SOME(Absyn.STRING("")), getAnnotationExp);
   else
     outString := "";
   end try;
@@ -7325,7 +7283,7 @@ protected
   Integer ann;
 algorithm
   try
-    cdef := InteractiveUtil.getPathedClassInProgram(inPath, inProgram);
+    cdef := ProgramUtil.getPathedClassInProgram(inPath, inProgram);
     exp := AbsynUtil.getNamedAnnotationInClass(cdef,id,getAnnotationExp);
     if isSome(exp) then
       SOME(Absyn.INTEGER(ann)) := exp;
@@ -7346,7 +7304,7 @@ function getNamedAnnotationValue
 protected
   Absyn.Class cls;
 algorithm
-  cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+  cls := ProgramUtil.getPathedClassInProgram(classPath, program);
   result := getNamedAnnotationValueInClass(classPath, cls, program, name);
 end getNamedAnnotationValue;
 
@@ -7693,7 +7651,7 @@ algorithm
       Absyn.Program p;
     case (modelpath,p)
       algorithm
-        cdef := InteractiveUtil.getPathedClassInProgram(modelpath, p);
+        cdef := ProgramUtil.getPathedClassInProgram(modelpath, p);
       then getPackagesInClass(modelpath, p, cdef);
     else {};
   end matchcontinue;
@@ -7851,8 +7809,8 @@ algorithm
       Boolean b,c;
     case (modelpath,p,b,c)
       algorithm
-        cdef := InteractiveUtil.getPathedClassInProgram(modelpath, p);
-      then InteractiveUtil.getClassnamesInClass(modelpath, p, cdef, b, c);
+        cdef := ProgramUtil.getPathedClassInProgram(modelpath, p);
+      then ProgramUtil.getClassnamesInClass(modelpath, p, cdef, b, c);
     else {};
   end matchcontinue;
 end getClassnamesInPath;
@@ -8049,7 +8007,7 @@ algorithm
       String docStr;
     case _
       algorithm
-        docStr := getNamedAnnotationExp(className,p,Absyn.IDENT("DocumentationClass"),SOME("false"),getDocumentationClassAnnotationModStr);
+        docStr := ProgramUtil.getNamedAnnotationExp(className,p,Absyn.IDENT("DocumentationClass"),SOME("false"),getDocumentationClassAnnotationModStr);
       then
         stringEq(docStr, "true");
   end match;
@@ -9005,7 +8963,7 @@ algorithm
       Absyn.Path classname;
     case (classname,p)
       algorithm
-        cdef := InteractiveUtil.getPathedClassInProgram(classname, p);
+        cdef := ProgramUtil.getPathedClassInProgram(classname, p);
         filename := AbsynUtil.classFilename(cdef);
         p_1 := getSurroundingPackage(classname, p);
         p_2 := removeInnerDiffFiledClasses(p_1);
@@ -9055,9 +9013,9 @@ algorithm
                       body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann = ann,comment = cmt),
                       info = (SOURCEINFO(fileName = file)))
       algorithm
-        publst := InteractiveUtil.getPublicList(parts);
+        publst := ProgramUtil.getPublicList(parts);
         publst2 := removeClassDiffFiledInElementitemlist(publst, file);
-        parts2 := InteractiveUtil.replacePublicList(parts, publst2);
+        parts2 := ProgramUtil.replacePublicList(parts, publst2);
         outClass.body := Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt);
       then
         outClass;
@@ -9071,9 +9029,9 @@ algorithm
                                                  comment = cmt),
                       info = (SOURCEINFO(fileName = file)))
       algorithm
-        publst := InteractiveUtil.getPublicList(parts);
+        publst := ProgramUtil.getPublicList(parts);
         publst2 := removeClassDiffFiledInElementitemlist(publst, file);
-        parts2 := InteractiveUtil.replacePublicList(parts, publst2);
+        parts2 := ProgramUtil.replacePublicList(parts, publst2);
         outClass.body := Absyn.CLASS_EXTENDS(baseClassName,modifications,cmt,parts2,ann);
       then
         outClass;
@@ -9135,10 +9093,10 @@ algorithm
 
     case _
       algorithm
-        cdef := InteractiveUtil.getPathedClassInProgram(classpath, p);
+        cdef := ProgramUtil.getPathedClassInProgram(classpath, p);
         filename1 := AbsynUtil.classFilename(cdef);
         ppath := AbsynUtil.stripLast(classpath);
-        pdef := InteractiveUtil.getPathedClassInProgram(ppath, p);
+        pdef := ProgramUtil.getPathedClassInProgram(ppath, p);
         filename2 := AbsynUtil.classFilename(pdef);
         true := stringEq(filename1, filename2);
         res := getSurroundingPackage(ppath, p);
@@ -9148,8 +9106,8 @@ algorithm
     /* No package with same filename */
     case Absyn.PROGRAM()
       algorithm
-        p.classes := {InteractiveUtil.getPathedClassInProgram(classpath, p)};
-        p.within_ := InteractiveUtil.buildWithin(classpath);
+        p.classes := {ProgramUtil.getPathedClassInProgram(classpath, p)};
+        p.within_ := ProgramUtil.buildWithin(classpath);
       then p;
   end matchcontinue;
 end getSurroundingPackage;
@@ -9751,7 +9709,7 @@ algorithm
     Print.printBufNewLine();
   end for;
 
-  cl := InteractiveUtil.getPathedClassInProgram(Absyn.IDENT("SourceInfo"), ast);
+  cl := ProgramUtil.getPathedClassInProgram(Absyn.IDENT("SourceInfo"), ast);
   Print.printBuf(getDefinitionsClass(cl, false));
   Print.printBuf("\n\n)");
   res := ValuesMake.makeString(Print.getString());
@@ -10041,7 +9999,7 @@ algorithm
     Parser.stopLibraryVendorExecutable(lveInstance);
   end if;
   if updateProgram then
-    SymbolTable.setAbsyn(InteractiveUtil.updateProgram(parsed, SymbolTable.getAbsyn()));
+    SymbolTable.setAbsyn(ProgramUtil.updateProgram(parsed, SymbolTable.getAbsyn()));
   end if;
 end parseFile;
 
@@ -10100,7 +10058,7 @@ algorithm
 
     case (p_class,p)
       algorithm
-        cdef := InteractiveUtil.getPathedClassInProgram(p_class, p);
+        cdef := ProgramUtil.getPathedClassInProgram(p_class, p);
         exts := InteractiveUtil.getExtendsElementspecInClass(cdef);
         paths := List.map(exts, InteractiveUtil.getBaseClassNameFromExtends);
       then
@@ -10173,10 +10131,10 @@ protected
   Absyn.Class cls;
 algorithm
   try
-    within_ := InteractiveUtil.buildWithin(inClass);
-    cls := InteractiveUtil.getPathedClassInProgram(inClass, inProgram);
+    within_ := ProgramUtil.buildWithin(inClass);
+    cls := ProgramUtil.getPathedClassInProgram(inClass, inProgram);
     cls := setComponentDimensionsInClass(cls, inComponentName, inDimensions);
-    outProgram := InteractiveUtil.updateProgram(Absyn.PROGRAM({cls}, within_), inProgram);
+    outProgram := ProgramUtil.updateProgram(Absyn.PROGRAM({cls}, within_), inProgram);
     outResult := true;
   else
     outProgram := inProgram;
@@ -10284,7 +10242,7 @@ algorithm
       String accessStr;
     case _
       algorithm
-        accessStr := getNamedAnnotationExp(className, p, Absyn.IDENT("Protection"), SOME(""), getAccessAnnotationString);
+        accessStr := ProgramUtil.getNamedAnnotationExp(className, p, Absyn.IDENT("Protection"), SOME(""), getAccessAnnotationString);
       then
         accessStr;
     else "";
@@ -10342,7 +10300,7 @@ protected
   Boolean encryptedClass;
 algorithm
   try
-    Absyn.CLASS(info=SOURCEINFO(fileName=fileName)) := InteractiveUtil.getPathedClassInProgram(path, p);
+    Absyn.CLASS(info=SOURCEINFO(fileName=fileName)) := ProgramUtil.getPathedClassInProgram(path, p);
     encryptedClass := StringUtil.endsWith(fileName, ".moc");
     if encryptedClass then
       access := match getAccessAnnotation(path, p)
@@ -10528,5 +10486,5 @@ algorithm
   cls := AbsynUtil.setClassPartsInClass(Dangerous.listReverseInPlace(accum_parts), cls);
 end updateEquation_impl;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_main");
 end Interactive;

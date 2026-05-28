@@ -156,7 +156,7 @@ template fmuMakefile(String target, SimCode simCode, Text& extraFuncs, Text& ext
   >>
 end fmuMakefile;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="codegen");
 end CodegenFMUCppHpcom;
 
 // vim: filetype=susan sw=2 sts=2

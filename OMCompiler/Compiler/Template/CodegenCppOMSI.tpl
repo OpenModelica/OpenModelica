@@ -13969,5 +13969,5 @@ end simulationFile_dae_header;
 
 /*end daeMode templates*/
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="codegen");
 end CodegenCppOMSI;

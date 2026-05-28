@@ -786,5 +786,5 @@ template insertCopyrightOpenModelica()
 end insertCopyrightOpenModelica;
 
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="codegen");
 end CodegenOMSI_common;

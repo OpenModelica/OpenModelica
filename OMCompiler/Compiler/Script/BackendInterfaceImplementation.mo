@@ -136,5 +136,5 @@ algorithm
   SymbolTable.setAbsyn(program);
 end appendLibrary;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_main");
 end BackendInterfaceImplementation;

@@ -43,6 +43,7 @@ encapsulated package SimCodeMain
 
 public
 import Absyn;
+import ProgramUtil;
 import BackendDAE;
 import BackendDAEUtil;
 import Ceval;
@@ -186,7 +187,7 @@ algorithm
   if ((Config.simCodeTarget() ==  "omsic") /*or (Config.simCodeTarget() == "omsicpp")*/) then
     fileDir := listHead(AbsynUtil.pathToStringList(className))+".tmp";
   else
-    fileDir := CevalScriptBackend.getFileDir(a_cref, p);
+    fileDir := ProgramUtil.getFileDir(a_cref, p);
   end if;
   (libs,libPaths,includes, includeDirs, recordDecls, functions, literals) :=
     SimCodeUtil.createFunctions(p, inBackendDAE.shared.functionTree);
@@ -235,7 +236,7 @@ protected
 algorithm
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
   a_cref := AbsynUtil.pathToCref(className);
-  fileDir := CevalScriptBackend.getFileDir(a_cref, p);
+  fileDir := ProgramUtil.getFileDir(a_cref, p);
   (libs, libPaths, includes, includeDirs, recordDecls, functions, literals) :=
     SimCodeUtil.createFunctions(p, inBackendDAE.shared.functionTree);
   (simCode,_) := SimCodeUtil.createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, NONE(), inRemovedInitialEquationLst,
@@ -285,7 +286,7 @@ algorithm
   end if;
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
   a_cref := AbsynUtil.pathToCref(className);
-  fileDir := CevalScriptBackend.getFileDir(a_cref, p);
+  fileDir := ProgramUtil.getFileDir(a_cref, p);
 
   (libs, libPaths, includes, includeDirs, recordDecls, functions, literals) := SimCodeUtil.createFunctions(p, inBackendDAE.shared.functionTree);
    /*Temporary disabled omsicpp
@@ -1100,7 +1101,7 @@ protected
   File.File file;
   String info, revisions, infoHeader;
 algorithm
-  (info, revisions, infoHeader) := Interactive.getNamedAnnotationExp(simCode.modelInfo.name, program, Absyn.IDENT("Documentation"), SOME(("","","")),Interactive.getDocumentationAnnotationString);
+  (info, revisions, infoHeader) := ProgramUtil.getNamedAnnotationExp(simCode.modelInfo.name, program, Absyn.IDENT("Documentation"), SOME(("","","")),Interactive.getDocumentationAnnotationString);
 
   // do not export if Documentation annotation does not exist
   if (stringEmpty(info) and stringEmpty(revisions) and stringEmpty(infoHeader)) then
@@ -1638,7 +1639,7 @@ algorithm
     // +++ create SimCode stuff +++
     // create SimCode functions
     a_cref := AbsynUtil.pathToCref(className);
-    fileDir := CevalScriptBackend.getFileDir(a_cref, p);
+    fileDir := ProgramUtil.getFileDir(a_cref, p);
     (libs, libPaths, includes, includeDirs, recordDecls, functions, literals) := SimCodeUtil.createFunctions(p, inBackendDAE.shared.functionTree);
 
     // create external objects
@@ -1949,5 +1950,5 @@ algorithm
   end for;
 end copyFiles;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_main");
 end SimCodeMain;

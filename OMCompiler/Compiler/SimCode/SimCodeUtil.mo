@@ -45,6 +45,11 @@ encapsulated package SimCodeUtil
 // public imports
 public
 import Absyn;
+import AvlTreePathFunction;
+import ExpressionBasics;
+import FCore;
+import FGraph;
+import ProgramUtil;
 import BackendDAE;
 import Ceval;
 import DAE;
@@ -131,8 +136,6 @@ import ZeroCrossings;
 import ReduceDAE;
 import Settings;
 import UnorderedSet;
-import Interactive;
-import InteractiveUtil;
 
 protected constant String UNDERLINE = "========================================";
 
@@ -7660,15 +7663,15 @@ algorithm
   try
     // name = AbsynUtil.pathStringNoQual(class_);
     directory := System.trim(fileDir, "\"");
-    version := System.trim(Interactive.getNamedAnnotationExp(class_, program, Absyn.IDENT("version"), SOME(""), Interactive.getDefaultComponentPrefixesModStr), "\"");
+    version := System.trim(ProgramUtil.getNamedAnnotationExp(class_, program, Absyn.IDENT("version"), SOME(""), ProgramUtil.getDefaultComponentPrefixesModStr), "\"");
 
     // fix issue https://github.com/OpenModelica/OpenModelica/issues/13169
-    author := System.trim(Interactive.getNamedAnnotationExp(class_, program, Absyn.IDENT("__OpenModelica_author"), SOME(""), Interactive.getDefaultComponentPrefixesModStr), "\"");
-    license := System.trim(Interactive.getNamedAnnotationExp(class_, program, Absyn.IDENT("__OpenModelica_license"), SOME(""), Interactive.getDefaultComponentPrefixesModStr), "\"");
-    copyright := System.trim(Interactive.getNamedAnnotationExp(class_, program, Absyn.IDENT("__OpenModelica_copyright"), SOME(""), Interactive.getDefaultComponentPrefixesModStr), "\"");
+    author := System.trim(ProgramUtil.getNamedAnnotationExp(class_, program, Absyn.IDENT("__OpenModelica_author"), SOME(""), ProgramUtil.getDefaultComponentPrefixesModStr), "\"");
+    license := System.trim(ProgramUtil.getNamedAnnotationExp(class_, program, Absyn.IDENT("__OpenModelica_license"), SOME(""), ProgramUtil.getDefaultComponentPrefixesModStr), "\"");
+    copyright := System.trim(ProgramUtil.getNamedAnnotationExp(class_, program, Absyn.IDENT("__OpenModelica_copyright"), SOME(""), ProgramUtil.getDefaultComponentPrefixesModStr), "\"");
 
     // get fileName as the filename and model name can be different which will be used in dataReconciliation Report
-    fileName := System.basename(AbsynUtil.classFilename(InteractiveUtil.getPathedClassInProgram(class_, program)));
+    fileName := System.basename(AbsynUtil.classFilename(ProgramUtil.getPathedClassInProgram(class_, program)));
     (vars, unitDefinitions) := createVars(dlow, inInitDAE, tempVars);
 
     if debug then execStat("simCode: createVars"); end if;

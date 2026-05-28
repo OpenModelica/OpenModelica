@@ -868,7 +868,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   >>
 end fmuMakefile;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="codegen");
 end CodegenFMUCppOMSI;
 
 // vim: filetype=susan sw=2 sts=2
