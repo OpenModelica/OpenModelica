@@ -479,7 +479,7 @@ algorithm
   (cache, cond_exp, cond_prop) := elabExpInExpression(inCache,
     inEnv, cond_e, inImplicit, inDoVect, inPrefix, inInfo);
 
-  _ := matchcontinue()
+  (outCache, outExp, outProperties) := matchcontinue()
     case ()
       algorithm
         ErrorExt.setCheckpoint("Static.elabExp:IFEXP");
@@ -492,7 +492,7 @@ algorithm
           inPrefix, inInfo);
         ErrorExt.delCheckpoint("Static.elabExp:IFEXP");
       then
-        ();
+        (outCache, outExp, outProperties);
 
     case ()
       algorithm
@@ -505,7 +505,7 @@ algorithm
         ErrorExt.delCheckpoint("Static.elabExp:IFEXP:HACK");
         ErrorExt.rollBack("Static.elabExp:IFEXP");
       then
-        ();
+        (outCache, outExp, outProperties);
 
     else
       algorithm
@@ -1486,8 +1486,8 @@ public function deduceIterationRange
   input FCore.Graph inEnv;
   input FCore.Cache inCache;
   input Absyn.Info inInfo;
-  output DAE.Exp outRange;
-  output DAE.Properties outProperties;
+  output DAE.Exp outRange = DAE.ICONST(0);
+  output DAE.Properties outProperties = DAE.PROP(DAE.T_UNKNOWN_DEFAULT, DAE.C_UNKNOWN());
   output FCore.Cache outCache = inCache;
 protected
   Absyn.ComponentRef acref;
