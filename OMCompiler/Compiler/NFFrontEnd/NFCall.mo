@@ -605,7 +605,7 @@ public
     isConstructor := match call
       case UNTYPED_CALL()
         then SCodeUtil.isRecord(InstNode.definition(ComponentRef.node(call.ref)));
-      case TYPED_CALL()
+      case TYPED_CALL() guard(not InstNode.isEmpty(call.fn.node))
         then SCodeUtil.isRecord(InstNode.definition(call.fn.node));
       else false;
     end match;
