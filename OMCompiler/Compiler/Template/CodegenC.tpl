@@ -2184,15 +2184,32 @@ template functionInitSample(list<BackendDAE.TimeEvent> timeEvents, String modelN
       match timeEvent
         case SAMPLE_TIME_EVENT(__) then
           let &preExp = buffer ""
+          let &sub = buffer ""
+          let forHead = match iter
+            case SOME(iter_) then (iter_ |> it =>
+              forIterator(it, contextZeroCross, &preExp, &varDecls, &auxFunction, &sub)
+              ;separator="\n";empty)
+            else ""
+          let forBody = match iter
+            case SOME(iter_) then <<int tmp = <%(iter_ |> it =>
+              forIteratorBody(it, contextZeroCross, &preExp, &varDecls, &auxFunction, &sub)
+              ;separator = "")%>0<%(iter_ |> it => ")";separator = "")%>;>>
+            else ""
+          let forTail = match iter
+            case SOME(iter_) then (iter_ |> it => "}";separator="\n";empty)
+            else ""
           let e1 = daeExp(startExp, contextOther, &preExp, &varDecls, &auxFunction)
           let e2 = daeExp(intervalExp, contextOther, &preExp, &varDecls, &auxFunction)
           <<
+          <%forHead%>
           <%preExp%>
+          <%forBody%>
           /* sample <%index%> */
           data->modelData->samplesInfo[i].index = <%index%>;
           data->modelData->samplesInfo[i].start = <%e1%>;
           data->modelData->samplesInfo[i].interval = <%e2%> /* (max real for single time events) */;
           i++;
+          <%forTail%>
           >>
         else '')
   let res = <<
@@ -5159,11 +5176,10 @@ template relationsTpl(list<ZeroCrossing> relations, Context context, Text &varDe
   ;separator="\n";empty)
 end relationsTpl;
 
-
 template relationTpl(Integer index1, Exp relation, Option<list<SimIterator>> iter, Context context, Text &varDecls, Text &auxFunction)
  "Generates code for a zero crossing."
 ::=
-let &preExp = buffer ""
+  let &preExp = buffer ""
   let &sub = buffer ""
   let forHead = match iter
     case SOME(iter_) then (iter_ |> it =>

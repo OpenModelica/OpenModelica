@@ -699,6 +699,7 @@ uniontype TimeEvent
     Integer index "unique sample index";
     .DAE.Exp startExp;
     .DAE.Exp intervalExp;
+    Option<list<SimIterator>> iter          "optional iterator for for-loops";
   end SAMPLE_TIME_EVENT;
 end TimeEvent;
 

@@ -1778,6 +1778,7 @@ package BackendDAE
       Integer index "unique sample index" ;
       DAE.Exp startExp;
       DAE.Exp intervalExp;
+      Option<list<SimIterator>> iter;
     end SAMPLE_TIME_EVENT;
   end TimeEvent;
 
