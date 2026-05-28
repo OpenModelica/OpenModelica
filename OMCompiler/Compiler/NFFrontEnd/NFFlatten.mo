@@ -331,7 +331,6 @@ protected
   list<Equation> eql, ieql;
   list<Algorithm> alg, ialg;
   DAE.ElementSource src;
-  Option<SCode.Comment> cmt;
   FlattenSettings settings;
   DeletedVariables deleted_vars;
   Prefix prefix;
@@ -672,7 +671,6 @@ protected
   SCode.Comment cmt;
   SourceInfo info;
   Attributes comp_attr;
-  Visibility vis;
   Equation eq;
   list<tuple<String, Binding>> ty_attrs;
   Variability var;
@@ -1138,7 +1136,6 @@ protected
   Sections sects;
   list<Equation> eq, ieq;
   list<Algorithm> alg, ialg;
-  ComponentRef indexed_prefix;
 algorithm
   // Skip the array if any dimension is zero.
   if List.any(dimensions, Dimension.isZero) then
@@ -1264,7 +1261,6 @@ protected
   Expression bind_exp;
   Type bind_ty;
   Integer dim_diff;
-  list<Dimension> dims;
   list<Expression> dim_expl;
 algorithm
   () := match binding
@@ -1438,7 +1434,6 @@ public function makeIterators
   output list<Expression> ranges = {};
   output list<Subscript> subscripts = {};
 protected
-  Component iter_comp;
   InstNode prefix_node, iter;
   Expression range;
   Subscript sub;
@@ -1571,11 +1566,6 @@ public function flattenBinding
   input Prefix prefix;
   input Boolean isTypeAttribute = false;
 protected
-  list<Subscript> subs, accum_subs;
-  Integer binding_level;
-  Expression bind_exp;
-  list<InstNode> pars;
-  InstNode par;
   SourceInfo info;
 algorithm
   binding := match binding
@@ -1692,8 +1682,6 @@ function flattenCref
   input output ComponentRef cref;
   input Prefix prefix;
   input SourceInfo info;
-protected
-  Type ty, ty2;
 algorithm
   cref := Prefix.apply(prefix, cref);
 
@@ -2167,8 +2155,7 @@ function splitForLoop2
   output list<Equation> connects = {};
   output list<Equation> nonConnects = {};
 protected
-  list<Equation> conns, nconns, eql;
-  Expression cond;
+  list<Equation> conns, nconns;
 algorithm
   for eq in forBody loop
     () := match eq

@@ -214,7 +214,7 @@ public function targetScope
   input Node inNode;
   output Scope outScope;
 algorithm
-  outScope := match(inNode)
+  outScope := match inNode
     case FCore.N(data = FCore.REF(target = outScope)) then outScope;
   end match;
 end targetScope;
@@ -267,7 +267,7 @@ protected function translateQualifiedImportToNamed
   input Import inImport;
   output Import outImport;
 algorithm
-  outImport := match(inImport)
+  outImport := match inImport
     local
       Name name;
       Absyn.Path path;
@@ -291,18 +291,18 @@ protected function checkUniqueQualifiedImport
   input list<Import> inImports;
   input SourceInfo inInfo;
 algorithm
-  _ := matchcontinue(inImport, inImports, inInfo)
+  () := matchcontinue inImport
     local
       Name name;
 
-    case (_, _, _)
+    case _
       algorithm
         false := List.isMemberOnTrue(inImport, inImports,
           compareQualifiedImportNames);
       then
         ();
 
-    case (Absyn.NAMED_IMPORT(name = name), _, _)
+    case Absyn.NAMED_IMPORT(name = name)
       algorithm
         Error.addSourceMessage(Error.MULTIPLE_QUALIFIED_IMPORTS_WITH_SAME_NAME,
           {name}, inInfo);
@@ -376,9 +376,6 @@ protected
   Integer id;
   Parents p;
   Children c;
-  Data d;
-  SCode.Element e;
-  Kind t;
   ImportTable it;
   Ref r;
 algorithm
@@ -395,10 +392,6 @@ protected
   Integer id;
   Parents p;
   Children c;
-  Data d;
-  SCode.Element e;
-  Kind t;
-  ImportTable it;
   list<DAE.Type> tys;
   Ref r;
 algorithm
@@ -416,9 +409,6 @@ protected
   Integer id;
   Parents p;
   Children c;
-  Data d;
-  SCode.Element e;
-  Kind t;
   Absyn.ForIterators it;
   Ref r;
 algorithm
@@ -435,10 +425,6 @@ protected
   Integer id;
   Parents p;
   Children c;
-  Data d;
-  SCode.Element e;
-  Kind t;
-  ImportTable it;
   Ref r;
   list<SCode.Element> dus;
 algorithm
@@ -450,9 +436,9 @@ public function name
   input Node n;
   output String name;
 algorithm
-  name := match(n)
+  name := match n
     local String s;
-    case (FCore.N(name = s)) then s;
+    case FCore.N(name = s) then s;
   end match;
 end name;
 
@@ -467,8 +453,8 @@ public function data
   input Node n;
   output Data d;
 algorithm
-  d := match(n)
-    case (FCore.N(data = d)) then d;
+  d := match n
+    case FCore.N(data = d) then d;
   end match;
 end data;
 
@@ -503,11 +489,11 @@ public function hasChild
   input Name inName;
   output Boolean b;
 algorithm
-  b := matchcontinue(inNode, inName)
+  b := matchcontinue inName
 
-    case (_, _)
+    case _
       algorithm
-        _ := childFromNode(inNode, inName);
+        childFromNode(inNode, inName);
       then
         true;
 
@@ -548,7 +534,6 @@ protected
   Id i;
   Parents p;
   Children c;
-  Data d;
 algorithm
   FCore.N(n, i, p, c, _) := inNode;
   outNode := FCore.N(n, i, p, c, inData);
@@ -579,32 +564,22 @@ public function element2Data
   output Data outData;
   output DAE.Var outVar;
 algorithm
-  (outData, outVar) := match(inElement, inKind)
+  (outData, outVar) := match inElement
     local
       String n;
-      SCode.Final finalPrefix;
-      SCode.Replaceable repl;
       SCode.Visibility vis;
       SCode.ConnectorType ct;
-      SCode.Redeclare redecl;
       Absyn.InnerOuter io;
-      SCode.Attributes attr;
-      list<Absyn.Subscript> ad;
       SCode.Parallelism prl;
       SCode.Variability var;
       Absyn.Direction dir;
-      Absyn.TypeSpec t;
-      SCode.Mod m;
-      SCode.Comment comment;
-      SourceInfo info;
-      Option<Absyn.Exp> condition;
       Data nd;
       DAE.Var i;
 
     // a component
-    case (SCode.COMPONENT(n,SCode.PREFIXES(vis,_,_,io,_),
+    case SCode.COMPONENT(n,SCode.PREFIXES(vis,_,_,io,_),
                                     SCode.ATTR(_,ct,prl,var,dir),
-                                    _,_,_,_,_), _)
+                                    _,_,_,_,_)
       algorithm
         nd := FCore.CO(inElement, DAE.NOMOD(), inKind, FCore.VAR_UNTYPED());
         i  := DAE.TYPES_VAR(
@@ -622,37 +597,36 @@ public function dataStr
   input Data inData;
   output String outStr;
 algorithm
-  outStr := match(inData)
+  outStr := match inData
     local
       Name n;
-      Absyn.ComponentRef c;
       String m;
 
-    case (FCore.TOP()) then "TOP";
-    case (FCore.IT(_)) then "I";
-    case (FCore.CL(e = SCode.CLASS(classDef = SCode.CLASS_EXTENDS()))) then "CE";
-    case (FCore.CL()) then "C";
-    case (FCore.CO()) then "c";
-    case (FCore.EX()) then "E";
-    case (FCore.DU(_)) then "U";
-    case (FCore.FT(_)) then "FT";
-    case (FCore.AL(_, _)) then "ALG";
-    case (FCore.EQ(_, _)) then "EQ";
-    case (FCore.OT(_, _)) then "OPT";
-    case (FCore.ED(_)) then "ED";
-    case (FCore.FS(_)) then "FS";
-    case (FCore.FI(_)) then "FI";
-    case (FCore.MS(_)) then "MS";
-    case (FCore.MO(_)) then "M";
-    case (FCore.EXP(name=n)) then n;
-    case (FCore.DIMS(name=n)) then n;
-    case (FCore.CR(_)) then "r";
-    case (FCore.CC(_)) then "CC";
-    case (FCore.ND(_)) then "ND";
-    case (FCore.REF(_)) then "REF";
-    case (FCore.VR()) then "VR";
-    case (FCore.IM(_)) then "IM";
-    case (FCore.ASSERT(m)) then "assert(" + m + ")";
+    case FCore.TOP() then "TOP";
+    case FCore.IT(_) then "I";
+    case FCore.CL(e = SCode.CLASS(classDef = SCode.CLASS_EXTENDS())) then "CE";
+    case FCore.CL() then "C";
+    case FCore.CO() then "c";
+    case FCore.EX() then "E";
+    case FCore.DU(_) then "U";
+    case FCore.FT(_) then "FT";
+    case FCore.AL(_, _) then "ALG";
+    case FCore.EQ(_, _) then "EQ";
+    case FCore.OT(_, _) then "OPT";
+    case FCore.ED(_) then "ED";
+    case FCore.FS(_) then "FS";
+    case FCore.FI(_) then "FI";
+    case FCore.MS(_) then "MS";
+    case FCore.MO(_) then "M";
+    case FCore.EXP(name=n) then n;
+    case FCore.DIMS(name=n) then n;
+    case FCore.CR(_) then "r";
+    case FCore.CC(_) then "CC";
+    case FCore.ND(_) then "ND";
+    case FCore.REF(_) then "REF";
+    case FCore.VR() then "VR";
+    case FCore.IM(_) then "IM";
+    case FCore.ASSERT(m) then "assert(" + m + ")";
 
     else "UKNOWN NODE DATA";
 
@@ -663,15 +637,13 @@ public function toStr
   input Node inNode;
   output String outStr;
 algorithm
-  outStr := matchcontinue(inNode)
+  outStr := matchcontinue inNode
     local
-     Name n;
      Id i;
      Parents p;
-     Children c;
      Data d;
 
-    case (FCore.N(_, i, p, _, d))
+    case FCore.N(_, i, p, _, d)
       algorithm
         outStr :=
            "[i:" + intString(i) + "] " +
@@ -691,24 +663,20 @@ public function toPathStr
   input Node inNode;
   output String outStr;
 algorithm
-  outStr := matchcontinue(inNode)
+  outStr := matchcontinue inNode
     local
-     Name n;
-     Id id;
      Parents p;
-     Children c;
-     Data d;
      Ref nr;
      String s;
 
     // top node
-    case (FCore.N(_, _, {}, _, _))
+    case FCore.N(_, _, {}, _, _)
       algorithm
         outStr := name(inNode);
       then
         outStr;
 
-    case (FCore.N(_, _, p, _, _))
+    case FCore.N(_, _, p, _, _)
       algorithm
         nr := contextual(p);
         true := hasParents(fromRef(nr));
@@ -717,7 +685,7 @@ algorithm
       then
         outStr;
 
-    case (FCore.N(_, _, p, _, _))
+    case FCore.N(_, _, p, _, _)
       algorithm
         nr := contextual(p);
         false := hasParents(fromRef(nr));
@@ -740,7 +708,7 @@ public function isImplicitScope
   input Node inNode;
   output Boolean b;
 algorithm
-  b := match(inNode)
+  b := match inNode
     case FCore.N(data = FCore.TOP()) then false;
     case FCore.N(data = FCore.CL()) then false;
     case FCore.N(data = FCore.CO()) then false;
@@ -764,7 +732,7 @@ public function isEncapsulated
   input Node inNode;
   output Boolean b;
 algorithm
-  b := match(inNode)
+  b := match inNode
     case FCore.N(data = FCore.CL(e = SCode.CLASS(encapsulatedPrefix = SCode.ENCAPSULATED()))) then true;
     case FCore.N(data = FCore.CO()) guard boolEq(Config.acceptMetaModelicaGrammar(), false) and boolNot(Flags.isSet(Flags.GRAPH_INST))
       then true;
@@ -776,7 +744,7 @@ public function isReference
   input Node inNode;
   output Boolean b;
 algorithm
-  b := match(inNode)
+  b := match inNode
     case FCore.N(data = FCore.REF()) then true;
     else false;
   end match;
@@ -786,7 +754,7 @@ public function isUserDefined
   input Node inNode;
   output Boolean b;
 algorithm
-  b := match(inNode)
+  b := match inNode
     local Ref p;
     case FCore.N(data = FCore.CL(kind = FCore.USERDEFINED())) then true;
     case FCore.N(data = FCore.CO(kind = FCore.USERDEFINED())) then true;
@@ -805,7 +773,7 @@ public function isTop
   input Node inNode;
   output Boolean b;
 algorithm
-  b := match(inNode)
+  b := match inNode
     case FCore.N(data = FCore.TOP()) then true;
     else false;
   end match;
@@ -815,7 +783,7 @@ public function isExtends
   input Node inNode;
   output Boolean b;
 algorithm
-  b := match(inNode)
+  b := match inNode
     case FCore.N(data = FCore.EX()) then true;
     else false;
   end match;
@@ -825,7 +793,7 @@ public function isDerived
   input Node inNode;
   output Boolean b;
 algorithm
-  b := match(inNode)
+  b := match inNode
     local SCode.Element e;
     case FCore.N(data = FCore.CL(e = e)) then SCodeUtil.isDerivedClass(e);
     else false;
@@ -836,7 +804,7 @@ public function isClass
   input Node inNode;
   output Boolean b;
 algorithm
-  b := match(inNode)
+  b := match inNode
     case FCore.N(data = FCore.CL()) then true;
     else false;
   end match;
@@ -846,7 +814,7 @@ public function isInstance
   input Node inNode;
   output Boolean b;
 algorithm
-  b := match(inNode)
+  b := match inNode
     case FCore.N(data = FCore.CL(status = FCore.CLS_INSTANCE(_))) then true;
     else false;
   end match;
@@ -856,7 +824,7 @@ public function isRedeclare
   input Node inNode;
   output Boolean b;
 algorithm
-  b := match(inNode)
+  b := match inNode
     case FCore.N(data = FCore.CL(e = SCode.CLASS(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE())))) then true;
     case FCore.N(data = FCore.CO(e = SCode.COMPONENT(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE())))) then true;
     else false;
@@ -867,7 +835,7 @@ public function isClassExtends
   input Node inNode;
   output Boolean b;
 algorithm
-  b := match(inNode)
+  b := match inNode
     case FCore.N(data = FCore.CL(e = SCode.CLASS(classDef = SCode.CLASS_EXTENDS()))) then true;
     else false;
   end match;
@@ -877,7 +845,7 @@ public function isComponent
   input Node inNode;
   output Boolean b;
 algorithm
-  b := match(inNode)
+  b := match inNode
     case FCore.N(data = FCore.CO()) then true;
     else false;
   end match;
@@ -887,7 +855,7 @@ public function isConstrainClass
   input Node inNode;
   output Boolean b;
 algorithm
-  b := match(inNode)
+  b := match inNode
     case FCore.N(data = FCore.CC()) then true;
     else false;
   end match;
@@ -897,7 +865,7 @@ public function isCref
   input Node inNode;
   output Boolean b;
 algorithm
-  b := match(inNode)
+  b := match inNode
     case FCore.N(data = FCore.CR()) then true;
     else false;
   end match;
@@ -907,7 +875,7 @@ public function isBasicType
   input Node inNode;
   output Boolean b;
 algorithm
-  b := match(inNode)
+  b := match inNode
     case FCore.N(data = FCore.CL(kind = FCore.BASIC_TYPE())) then true;
     else false;
   end match;
@@ -917,7 +885,7 @@ public function isBuiltin
   input Node inNode;
   output Boolean b;
 algorithm
-  b := match(inNode)
+  b := match inNode
     case FCore.N(data = FCore.CL(kind = FCore.BUILTIN())) then true;
     case FCore.N(data = FCore.CO(kind = FCore.BUILTIN())) then true;
     else false;
@@ -928,7 +896,7 @@ public function isFunction
   input Node inNode;
   output Boolean b;
 algorithm
-  b := match(inNode)
+  b := match inNode
     local
       SCode.Element e;
     case FCore.N(data = FCore.CL(e = e)) guard SCodeUtil.isFunction(e) or SCodeUtil.isOperator(e)
@@ -941,7 +909,7 @@ public function isRecord
   input Node inNode;
   output Boolean b = false;
 algorithm
-  b := match(inNode)
+  b := match inNode
     local
       SCode.Element e;
     case FCore.N(data = FCore.CL(e = e)) guard SCodeUtil.isRecord(e)
@@ -954,9 +922,9 @@ public function isSection
   input Node inNode;
   output Boolean b;
 algorithm
-  b := match(inNode)
-    case (FCore.N(data = FCore.AL())) then true;
-    case (FCore.N(data = FCore.EQ())) then true;
+  b := match inNode
+    case FCore.N(data = FCore.AL()) then true;
+    case FCore.N(data = FCore.EQ()) then true;
     else false;
   end match;
 end isSection;
@@ -965,8 +933,8 @@ public function isMod
   input Node inNode;
   output Boolean b;
 algorithm
-  b := match(inNode)
-    case (FCore.N(data = FCore.MO())) then true;
+  b := match inNode
+    case FCore.N(data = FCore.MO()) then true;
     else false;
   end match;
 end isMod;
@@ -975,9 +943,9 @@ public function isModHolder
   input Node inNode;
   output Boolean b;
 algorithm
-  b := match(inNode)
+  b := match inNode
     local Name n;
-    case (FCore.N(name = n, data = FCore.MO())) then stringEq(n, modNodeName);
+    case FCore.N(name = n, data = FCore.MO()) then stringEq(n, modNodeName);
     else false;
   end match;
 end isModHolder;
@@ -987,7 +955,7 @@ public function isClone
   input Node inNode;
   output Boolean b;
 algorithm
-  b := match(inNode)
+  b := match inNode
     local Ref r;
     case FCore.N(parents = r::_)
       algorithm
@@ -1001,7 +969,7 @@ public function isVersion
   input Node inNode;
   output Boolean b;
 algorithm
-  b := match(inNode)
+  b := match inNode
     case FCore.N(data = FCore.VR()) then true;
     else false;
   end match;
@@ -1011,8 +979,8 @@ public function isDims
   input Node inNode;
   output Boolean b;
 algorithm
-  b := match(inNode)
-    case (FCore.N(data = FCore.DIMS())) then true;
+  b := match inNode
+    case FCore.N(data = FCore.DIMS()) then true;
     else false;
   end match;
 end isDims;
@@ -1026,12 +994,12 @@ public function isIn
     output Boolean is;
   end FunctionRefIs;
 algorithm
-  b := match(inNode, inFunctionRefIs)
+  b := match inFunctionRefIs
     local
       Scope s;
       Boolean b1, b2;
 
-    case (_, _)
+    case _
       algorithm
         s := originalScope(toRef(inNode));
         b1 := List.applyAndFold(s, boolOr, inFunctionRefIs, false);
@@ -1051,18 +1019,18 @@ public function nonImplicitRefFromScope
   input Scope inScope;
   output Ref outRef;
 algorithm
-  outRef := match(inScope)
+  outRef := match inScope
     local
       Ref r;
       Scope rest;
 
-    case ({}) then fail();
+    case {} then fail();
 
-    case (r::_) guard not isRefImplicitScope(r)
+    case r::_ guard not isRefImplicitScope(r)
       then
         r;
 
-    case (_::rest)
+    case _::rest
       then
         nonImplicitRefFromScope(rest);
   end match;
@@ -1096,24 +1064,23 @@ protected function namesUpToParentName_dispatch
   input Names acc;
   output Names outNames;
 algorithm
-   outNames := match(inRef, inName, acc)
+   outNames := match(inRef, inName)
     local
       Ref r;
-      Names names;
       Name name;
 
     // bah, error!
-    case (r, _, _) guard isRefTop(r)
+    case (r, _) guard isRefTop(r)
       then
         {};
 
     // we're done, return
-    case (r, _, _) guard stringEq(inName, refName(r))
+    case (r, _) guard stringEq(inName, refName(r))
       then
         acc;
 
     // up the parent
-    case (r, name, _)
+    case (r, name)
       then
         namesUpToParentName_dispatch(original(refParents(r)), name, refName(r) :: acc);
 
@@ -1126,17 +1093,17 @@ public function getModifierTarget
   input Ref inRef;
   output Ref outRef;
 algorithm
-   outRef := matchcontinue(inRef)
+   outRef := matchcontinue inRef
     local
       Ref r;
 
     // bah, error!
-    case (r) guard isRefTop(r)
+    case r guard isRefTop(r)
       then
         fail();
 
     // we're done, return
-    case (r) guard isRefModHolder(r)
+    case r guard isRefModHolder(r)
       algorithm
         // get his parent
         r := original(refParents(r));
@@ -1174,18 +1141,18 @@ public function originalScope_dispatch
   input Scope inAcc;
   output Scope outScope;
 algorithm
-  outScope := match(inRef, inAcc)
+  outScope := match inAcc
     local
       Scope acc;
       Ref r;
 
     // top
-    case (_, acc) guard isTop(fromRef(inRef))
+    case acc guard isTop(fromRef(inRef))
       then
         listReverse(inRef::acc);
 
     // not top
-    case (_, acc)
+    case acc
       algorithm
         r := original(parents(fromRef(inRef)));
       then
@@ -1227,18 +1194,18 @@ public function contextualScope_dispatch
   input Scope inAcc;
   output Scope outScope;
 algorithm
-  outScope := match(inRef, inAcc)
+  outScope := match inAcc
     local
       Scope acc;
       Ref r;
 
     // top
-    case (_, acc) guard isTop(fromRef(inRef))
+    case acc guard isTop(fromRef(inRef))
       then
         listReverse(inRef::acc);
 
     // not top
-    case (_, acc)
+    case acc
       algorithm
         r := contextual(parents(fromRef(inRef)));
       then
@@ -1265,15 +1232,15 @@ public function lookupRef
   input Scope inScope;
   output Ref outRef;
 algorithm
-  outRef := matchcontinue(inRef, inScope)
+  outRef := matchcontinue inScope
     local
       Scope s;
       Ref r;
 
     // for the top, return itself
-    case (_, {_}) then inRef;
+    case {_} then inRef;
 
-    case (_, s)
+    case s
       algorithm
         // print("Searching for scope: " + toPathStr(fromRef(listHead(s))) + " in " + toPathStr(fromRef(inRef)) + "\n");
         // reverse and remove top
@@ -1293,15 +1260,15 @@ public function lookupRef_dispatch
   input Scope inScope;
   output Ref outRef;
 algorithm
-  outRef := match(inRef, inScope)
+  outRef := match inScope
     local
       Ref r;
       Scope rest;
       Name n;
 
-    case (_, {}) then inRef;
+    case {} then inRef;
 
-    case (_, r::rest)
+    case r::rest
       algorithm
         n := name(fromRef(r));
         // print("Lookup child: " + n + " in " + toPathStr(fromRef(inRef)) + "\n");
@@ -1522,7 +1489,7 @@ public function dfs
   input Ref inRef;
   output Refs outRefs;
 algorithm
-  outRefs := match(inRef)
+  outRefs := match inRef
     local
       Refs refs;
       Children c;
@@ -1563,10 +1530,10 @@ public function hasImports
   input Node inNode;
   output Boolean b;
 algorithm
-  b := match(inNode)
+  b := match inNode
     local list<Import> qi, uqi;
 
-    case (_)
+    case _
       algorithm
         FCore.IMPORT_TABLE(_, qi, uqi) := importTable(fromRef(refImport(toRef(inNode))));
         b := boolOr(not listEmpty(qi), not listEmpty(uqi));
@@ -1582,9 +1549,9 @@ public function imports
   output list<Import> outQualifiedImports;
   output list<Import> outUnQualifiedImports;
 algorithm
-  (outQualifiedImports, outUnQualifiedImports) := match(inNode)
+  (outQualifiedImports, outUnQualifiedImports) := match inNode
     local list<Import> qi, uqi;
-    case (_)
+    case _
       algorithm
          FCore.IMPORT_TABLE(_, qi, uqi) := importTable(fromRef(refImport(toRef(inNode))));
       then
@@ -1597,9 +1564,8 @@ public function derivedRef
   input Ref inRef;
   output Refs outRefs;
 algorithm
-  outRefs := match(inRef)
-    local Ref r;
-    case (_) guard isRefDerived(inRef)
+  outRefs := match inRef
+    local    case _ guard isRefDerived(inRef)
       then
         {child(inRef, refNodeName)};
 
@@ -1613,11 +1579,11 @@ public function extendsRefs
   input Ref inRef;
   output Refs outRefs;
 algorithm
-  outRefs := match(inRef)
+  outRefs := match inRef
     local
       Refs refs, rd;
 
-    case (_) guard isRefClass(inRef) // we have a class
+    case _ guard isRefClass(inRef) // we have a class
       algorithm
         // get the derived ref
         rd := derivedRef(inRef);
@@ -1645,13 +1611,12 @@ public function cloneRef
   output Graph outGraph;
   output Ref outRef;
 algorithm
-  (outGraph, outRef) := match(inName, inRef, inParentRef, inGraph)
+  (outGraph, outRef) := match inGraph
     local
-      Node n;
       Graph g;
       Ref r;
 
-    case (_, _, _, g)
+    case g
       algorithm
         (g, r) := clone(fromRef(inRef), inParentRef, g);
         addChildRef(inParentRef, inName, r);
@@ -1672,7 +1637,7 @@ public function clone
   output Graph outGraph;
   output Ref outRef;
 algorithm
-  (outGraph, outRef) := match(inNode, inParentRef, inGraph)
+  (outGraph, outRef) := match(inNode, inGraph)
     local
       Node n;
       Graph g;
@@ -1683,7 +1648,7 @@ algorithm
       Children children;
       Data data;
 
-    case (FCore.N(name, id, parents, children, data), _, g)
+    case (FCore.N(name, id, parents, children, data), g)
       algorithm
         // add parent
         parents := inParentRef::parents;
@@ -1736,13 +1701,12 @@ public function copyRef
   output Graph outGraph;
   output Ref outRef;
 algorithm
-  (outGraph, outRef) := match(inRef, inGraph)
+  (outGraph, outRef) := match inGraph
     local
-      Node n;
       Graph g;
       Ref r;
 
-    case (_, g)
+    case g
       algorithm
         // first copy the entire tree as it is
         // generating new array references
@@ -1764,17 +1728,16 @@ public function updateRefs
   output Graph outGraph;
   output Ref outRef;
 algorithm
-  (outGraph, outRef) := match(inRef, inGraph)
+  (outGraph, outRef) := match inGraph
     local
-      Node n;
       Graph g;
       Ref r;
 
-    case (_, g)
+    case g
       algorithm
         // for each node in the tree
         // update all refs from the node parents or node data
-        ((r, g)) := apply1(inRef, updateRefInGraph, (inRef, g));
+        (r, g) := apply1(inRef, updateRefInGraph, (inRef, g));
       then
         (g, r);
 
@@ -1787,9 +1750,9 @@ protected function updateRefInGraph
   input tuple<Ref, Graph> inTopRefAndGraph;
   output tuple<Ref, Graph> outTopRefAndGraph;
 algorithm
-  outTopRefAndGraph := match(inRef, inTopRefAndGraph)
+  outTopRefAndGraph := match inTopRefAndGraph
     local
-      Ref r, t;
+      Ref t;
       Graph g;
       Name n;
       Id i;
@@ -1797,13 +1760,13 @@ algorithm
       Children c;
       Data d;
 
-    case (_, (t, g))
+    case (t, g)
       algorithm
         // print("Updating references in node: " + toStr(fromRef(inRef)) + " / [" + toPathStr(fromRef(inRef)) + "]\n");
         FCore.N(n, i, p, c, d) := fromRef(inRef);
         p := List.map1r(p, lookupRefFromRef, t);
         d := updateRefInData(d, t);
-        _ := updateRef(inRef, FCore.N(n, i, p, c, d));
+        updateRef(inRef, FCore.N(n, i, p, c, d));
       then
         ((t, g));
 
@@ -1817,11 +1780,11 @@ public function lookupRefFromRef
   input Ref inOldRef;
   output Ref outRef;
 algorithm
-  outRef := match(inRef, inOldRef)
+  outRef := match inOldRef
     local
       Ref r;
       Scope s;
-    case (_, _)
+    case _
       algorithm
         // get the original scope from the old ref
         s := originalScope(inOldRef);
@@ -1839,17 +1802,11 @@ protected function updateRefInData
   input Ref inRef;
   output Data outData;
 algorithm
-  outData := match(inData, inRef)
+  outData := match inData
     local
-      Ref oldRef, r;
-      SCode.Element e;
-      DAE.Var i;
-      DAE.Mod m;
-      FCore.Status s;
-      Kind k;
       Scope sc;
 
-    case (FCore.REF(sc), _)
+    case FCore.REF(sc)
       algorithm
         sc := List.map1r(sc, lookupRefFromRef, inRef);
       then
@@ -1898,11 +1855,11 @@ public function getElement
   input Node inNode;
   output SCode.Element outElement;
 algorithm
-  outElement := match(inNode)
+  outElement := match inNode
     local
       SCode.Element e;
-    case (FCore.N(data = FCore.CL(e = e))) then e;
-    case (FCore.N(data = FCore.CO(e = e))) then e;
+    case FCore.N(data = FCore.CL(e = e)) then e;
+    case FCore.N(data = FCore.CO(e = e)) then e;
   end match;
 end getElement;
 
@@ -1955,11 +1912,11 @@ public function isRefRefUnresolved
   input Ref inRef;
   output Boolean b;
 algorithm
-  b := matchcontinue(inRef)
+  b := matchcontinue inRef
 
-    case (_)
+    case _
       algorithm
-        _ := refRef(inRef); // node exists
+        refRef(inRef); // node exists
         b := listEmpty(refRefTargetScope(inRef)); // with non empty scope
       then
         b;
@@ -2005,7 +1962,7 @@ public function importTable
   input Node inNode;
   output ImportTable it;
 algorithm
-  it := match(inNode)
+  it := match inNode
     case FCore.N(data = FCore.IM(i = it)) then it;
   end match;
 end importTable;

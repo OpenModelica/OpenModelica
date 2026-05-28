@@ -634,7 +634,7 @@ algorithm
   Call.TYPED_ARRAY_CONSTRUCTOR(ty, var, pur, exp, iters) := call;
   iters := list((Util.tuple21(i), simplify(Util.tuple22(i))) for i in iters);
 
-  outExp := matchcontinue (iters)
+  outExp := matchcontinue iters
     case {(iter, e)}
       algorithm
         Type.ARRAY(dimensions = {dim}) := Expression.typeOf(e);
@@ -749,7 +749,6 @@ function simplifyReduction2
 protected
   InstNode iter;
   Expression range, default_exp;
-  Boolean expanded = true;
   list<tuple<InstNode, Expression>> iters = {};
   Type ty;
   Operator op;
@@ -914,7 +913,7 @@ function simplifyMultarySigns
   output list<Expression> new_inv_arguments = {};
   output Boolean isNegative = false; // only relevant for multiplication
 algorithm
-  _ := match mcl
+  () := match mcl
     case NFOperator.MathClassification.ADDITION algorithm
       // check if arguments are negative
       // negate them and swap them to the other list
@@ -1218,7 +1217,6 @@ function simplifyLogicBinaryAnd
 algorithm
   exp := match (exp1, exp2)
     local
-      list<Expression> expl;
       Operator o;
       array<Expression> arr;
 
@@ -1251,7 +1249,6 @@ function simplifyLogicBinaryOr
 algorithm
   exp := match (exp1, exp2)
     local
-      list<Expression> expl;
       Operator o;
       array<Expression> arr;
 
@@ -1647,9 +1644,6 @@ algorithm
   result := match (optOperator, exp)
     local
       Operator op;
-      list<Expression> tmp, tmp_inv;
-      list<Expression> final_stack = {};
-      list<Expression> final_inverse_stack = {};
       Expression new_exp;
       ComponentRef cref;
       Call call;

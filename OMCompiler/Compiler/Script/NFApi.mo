@@ -147,20 +147,13 @@ function evaluateAnnotation_dispatch
   input Boolean addAnnotationName = false;
   output String outString = "";
 protected
-  InstNode top, cls, inst_cls, anncls, inst_anncls;
-  String name, clsName, annName, str;
-  FlatModel flat_model;
-  FunctionTree funcs;
+  InstNode top, inst_cls, anncls, inst_anncls;
+  String name, annName, str;
   SCode.Program program;
-  AvlTreePathFunction.Tree daeFuncs;
-  Absyn.Path fullClassPath;
   list<Absyn.ElementArg> el = {};
   list<String> stringLst = {};
   Absyn.Exp absynExp;
   Expression exp, save;
-  DAE.Exp dexp;
-  list<Absyn.ComponentItem> items;
-  Option<Absyn.ConstrainClass> cc;
   SourceInfo info;
   list<Absyn.ElementArg> mod, stripped_mod, graphics_mod;
   Absyn.EqMod eqmod;
@@ -326,27 +319,12 @@ function evaluateAnnotations_dispatch
   input list<Absyn.Element> inElements;
   output list<String> outStringLst = {};
 protected
-  InstNode top, cls, inst_cls, anncls, inst_anncls;
-  String name, clsName, annName, str;
-  FlatModel flat_model;
-  FunctionTree funcs;
-  SCode.Program program;
-  AvlTreePathFunction.Tree daeFuncs;
-  Absyn.Path fullClassPath;
+  String str;
   list<list<Absyn.ElementArg>> elArgs = {}, el = {};
   list<String> stringLst = {};
-  Absyn.Exp absynExp;
-  Expression exp;
-  DAE.Exp dexp;
   list<Absyn.ComponentItem> items;
   Option<Absyn.ConstrainClass> cc;
-  SourceInfo info;
-  list<Absyn.ElementArg> mod, anns;
-  Absyn.EqMod eqmod;
-  SCode.Mod smod;
-  DAE.DAElist dae;
-  Type ty;
-  Variability var;
+  list<Absyn.ElementArg> anns;
   Option<Absyn.Comment> cmt;
 algorithm
   // handle the annotations
@@ -409,7 +387,7 @@ function mkFullyQual
   input Boolean failOnError = false;
   output Absyn.Path qualPath = pathToQualify;
 protected
-  InstNode top, expanded_cls, cls;
+  InstNode expanded_cls, cls;
   SCode.Program program;
   String name, id1, id2;
   Boolean b, s;
@@ -418,7 +396,7 @@ algorithm
   // do some quick checks
   // classPath is already fully qualified
   // check if the paths start with the same id and the second path is qualified
-  _ := match (classPath, pathToQualify)
+  () := match (classPath, pathToQualify)
     case (Absyn.QUALIFIED(id1, _), Absyn.QUALIFIED(id2, _)) guard id1 == id2
       algorithm
         return;
@@ -530,7 +508,6 @@ function mkTop
 protected
   SCode.Program scode_builtin, graphicProgramSCode;
   Absyn.Program placementProgram;
-  InstNode cls;
   list<tuple<Absyn.Program, tuple<SCode.Program, InstNode>>> cache;
   Boolean update = true;
 algorithm
@@ -614,25 +591,9 @@ function frontEndBack
   input Boolean scalarize = true;
   output DAE.DAElist dae;
 protected
-  InstNode top;
-  String clsName, annName, str;
   FlatModel flat_model;
   FunctionTree funcs;
-  SCode.Program scode_builtin, program, graphicProgramSCode;
-  SCode.Element scls, sAnnCls;
-  Absyn.Program placementProgram;
   AvlTreePathFunction.Tree daeFuncs;
-  Absyn.Path fullClassPath;
-  list<list<Absyn.ElementArg>> elArgs, el = {};
-  list<String> stringLst = {};
-  Absyn.Exp absynExp;
-  Expression exp;
-  DAE.Exp dexp;
-  list<Absyn.ComponentItem> items;
-  Option<Absyn.ConstrainClass> cc;
-  SourceInfo info;
-  list<Absyn.ElementArg> mod;
-  SCode.Mod smod;
 algorithm
   // Type the class.
   Typing.typeClass(inst_cls, NFInstContext.RELAXED);
@@ -719,11 +680,7 @@ function frontEndLookup_dispatch
   output String name;
   output InstNode expanded_cls;
 protected
-  SCode.Program scode_builtin, graphicProgramSCode;
-  Absyn.Program placementProgram;
   InstNode top, cls;
-  list<tuple<Absyn.Program, tuple<SCode.Program, InstNode>>> cache;
-  Boolean update = true;
 algorithm
   name := AbsynUtil.pathString(classPath);
 
@@ -856,7 +813,6 @@ protected
   InstContext.Type context;
   InstanceTree inst_tree;
   InstSettings inst_settings;
-  String str;
   Modifier mod;
 algorithm
   try
@@ -1014,7 +970,6 @@ protected
   Integer cls_index = 1, comp_index = 1, ext_index = 1;
   InstanceTree tree;
   list<Integer> local_comps;
-  Mutable<InstNode> node_ptr;
   InstNode node;
 algorithm
   ClassTree.INSTANTIATED_TREE(classes = clss, components = comps, exts = exts,
@@ -1083,7 +1038,6 @@ function buildInstanceTreeGeneratedInners
   output list<InstanceTree> outElements;
 protected
   array<Mutable<InstNode>> comps;
-  InstNode comp;
   list<InstanceTree> elems = {};
 algorithm
   ClassTree.INSTANTIATED_TREE(components = comps) := classTree;
@@ -1143,7 +1097,6 @@ protected
   list<InstanceTree> elems;
   Sections sections;
   Option<SCode.Comment> cmt;
-  JSON j;
   SCode.Element def;
 algorithm
   InstanceTree.CLASS(node = node, elements = elems) := tree;
@@ -1307,7 +1260,6 @@ protected
   InstNode node;
   Class cls;
   SCode.Element cls_def, ext_def;
-  SCode.Mod mod;
 algorithm
   InstanceTree.CLASS(node = node) := ext;
   cls_def := InstNode.definition(node);
@@ -1351,11 +1303,7 @@ function dumpJSONReplaceableClass
   output JSON json = JSON.makeNull();
 protected
   SCode.Element elem;
-  SCode.ClassDef cdef;
-  InstNode node, derivedNode;
-  Absyn.Path path;
-  Option<list<Absyn.Subscript>> odims;
-  SCode.Comment cmt;
+  InstNode node;
 algorithm
   node := InstNode.getRedeclaredNode(cls);
   elem := InstNode.definition(node);
@@ -1373,9 +1321,6 @@ protected
   Component comp;
   SCode.Element elem;
   Boolean is_constant;
-  SCode.Comment cmt;
-  SCode.Annotation ann;
-  JSON j;
   Absyn.Path path;
 algorithm
   node := InstNode.resolveOuter(component);
@@ -1505,7 +1450,7 @@ protected
   InstNode node = InstNode.resolveInner(InstNode.classScope(enumNode));
   SCode.Element def;
   array<InstNode> comps;
-  JSON json_elems, json_ext;
+  JSON json_elems;
   list<InstanceTree> elems;
 algorithm
   def := InstNode.definition(node);
@@ -1621,7 +1566,7 @@ function dumpJSONDims
   input list<Dimension> typedDims;
   output JSON json = JSON.makeNull();
 protected
-  JSON ty_json, absyn_json;
+  JSON ty_json;
 algorithm
   json := JSON.addPairNotNull("absyn", dumpJSONAbsynDims(absynDims), json);
 
@@ -1703,11 +1648,10 @@ function dumpJSONClassPrefixes
   input InstNode scope;
   output JSON json;
 protected
-  SCode.Prefixes prefs;
   SCode.ClassDef cdef;
 algorithm
   json := match element
-    case SCode.CLASS(classDef = cdef, prefixes = prefs)
+    case SCode.CLASS(classDef = cdef, prefixes = _)
       algorithm
         json := match cdef
           case SCode.ClassDef.DERIVED() then dumpJSONAttributes(cdef.attributes, element.prefixes, scope);
@@ -1848,7 +1792,6 @@ protected
   String name;
   SCode.Mod mod;
   Absyn.Exp absyn_binding;
-  Expression binding_exp;
   JSON j;
 algorithm
   SCode.SubMod.NAMEMOD(ident = name, mod = mod) := subMod;
@@ -2394,8 +2337,6 @@ function dumpJSONSCodeClass
   input InstNode scope;
   input Boolean isRedeclare;
   input output JSON json = JSON.makeNull();
-protected
-  Option<list<Absyn.Subscript>> odims;
 algorithm
   () := match element
     case SCode.CLASS()
@@ -2510,7 +2451,6 @@ function dumpJSONChoicesAnnotation
 protected
   SCode.SubMod smod;
   list<SCode.SubMod> choices, others;
-  SCode.Mod choices_mod;
   JSON j;
 algorithm
   choices := list(m for m guard m.ident == "choice" in mods);
@@ -2567,7 +2507,6 @@ function updateMovedClassPaths
   input Absyn.Path clsPath "The fully qualified path of the class";
   input Absyn.Within destination "The destination package (or top scope)";
 protected
-  InstContext.Type context;
   InstNode top, cls_node;
   MoveEnv env;
   Absyn.Path dest_path;

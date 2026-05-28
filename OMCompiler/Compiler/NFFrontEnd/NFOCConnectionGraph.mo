@@ -389,7 +389,6 @@ function handleOverconstrainedConnections_dispatch
         output FlatEdges connected;
         output FlatEdges broken;
 protected
-  list<Equation> eqs, ieqs;
   list<ComponentRef> roots;
   CrefIndexTable rooted;
 algorithm
@@ -529,7 +528,6 @@ protected function canonical
 protected
   Option<ComponentRef> cref_opt;
 
-  ComponentRef parent, parentCanonical;
 algorithm
   cref_opt := UnorderedMap.get(inRef, inPartition);
 
@@ -623,7 +621,6 @@ protected function addRootsToTable
   input ComponentRef firstRoot;
 protected
   ComponentRef root;
-  list<ComponentRef> rest_roots;
 algorithm
   for root in roots loop
     UnorderedMap.add(root, firstRoot, table);
@@ -696,7 +693,7 @@ algorithm
       PotentialRoots tail;
 
     case {} then roots;
-    case ((potentialRoot,_)::tail)
+    case (potentialRoot,_)::tail
       algorithm
         canon1 := canonical(table, potentialRoot);
         canon2 := canonical(table, firstRoot);
@@ -735,7 +732,7 @@ protected function findResultGraph
   output FlatEdges outConnectedConnections;
   output FlatEdges outBrokenConnections;
 algorithm
-  (outRoots, outConnectedConnections, outBrokenConnections) := match(inGraph, modelNameQualified)
+  (outRoots, outConnectedConnections, outBrokenConnections) := match inGraph
     local
       DefiniteRoots definiteRoots, finalRoots;
       PotentialRoots potentialRoots, orderedPotentialRoots;
@@ -750,12 +747,12 @@ algorithm
       list<tuple<String,String>> userBrokenTplLst;
 
     // deal with empty connection graph
-    case (GRAPH(definiteRoots = {}, potentialRoots = {}, uniqueRoots = {}, branches = {}, connections = {}), _)
+    case GRAPH(definiteRoots = {}, potentialRoots = {}, uniqueRoots = {}, branches = {}, connections = {})
       then ({}, {}, {});
 
     // we have something in the connection graph
-    case (GRAPH(definiteRoots = definiteRoots, potentialRoots = potentialRoots, uniqueRoots = uniqueRoots,
-                   branches = branches, connections = connections), _)
+    case GRAPH(definiteRoots = definiteRoots, potentialRoots = potentialRoots, uniqueRoots = uniqueRoots,
+                   branches = branches, connections = connections)
       algorithm
         // reverse the conenction list to have them as in the model
         connections := listReverse(connections);
@@ -838,10 +835,10 @@ protected function printTupleStr
   input tuple<String,String> inTpl;
   output String out;
 algorithm
-  out := match(inTpl)
+  out := match inTpl
     local
       String c1,c2;
-    case ((c1,c2)) then c1 + " -- " + c2;
+    case (c1,c2) then c1 + " -- " + c2;
   end match;
 end printTupleStr;
 
@@ -849,7 +846,7 @@ protected function makeTuple
   input list<list<String>> inLstLst;
   output list<tuple<String,String>> outLst;
 algorithm
-  outLst := matchcontinue(inLstLst)
+  outLst := matchcontinue inLstLst
     local
       String c1,c2;
       list<list<String>> rest;
@@ -857,27 +854,27 @@ algorithm
       list<String> bad;
 
     // empty case
-    case ({}) then {};
+    case {} then {};
     // somthing case
-    case ({c1,c2}::rest)
+    case {c1,c2}::rest
       algorithm
         lst := makeTuple(rest);
       then
         (c1,c2)::lst;
     // ignore empty strings
-    case ({""}::rest)
+    case {""}::rest
       algorithm
         lst := makeTuple(rest);
       then
         lst;
     // ignore empty list
-    case ({}::rest)
+    case {}::rest
       algorithm
         lst := makeTuple(rest);
       then
         lst;
     // somthing case
-    case (bad::rest)
+    case bad::rest
       algorithm
         print("The following output from GraphViz OpenModelica assistant cannot be parsed:" +
             stringDelimitList(bad, ", ") +
@@ -892,12 +889,12 @@ protected function printPotentialRootTuple
   input PotentialRoot potentialRoot;
   output String outStr;
 algorithm
-  outStr := match(potentialRoot)
+  outStr := match potentialRoot
     local
       ComponentRef cr;
       Real priority;
       String str;
-    case ((cr, priority))
+    case (cr, priority)
       algorithm
         str := ComponentRef.toString(cr) + "(" + realString(priority) + ")";
       then str;
@@ -1059,7 +1056,6 @@ algorithm
       ComponentRef cref,cref1;
       Boolean result;
       Edges branches;
-      list<Expression> lst;
       Call call;
       String str;
       Dimension dim;
@@ -1179,10 +1175,10 @@ protected function getRooted
   input CrefIndexTable rooted;
   output Boolean result;
 algorithm
-  result := matchcontinue(cref1,cref2,rooted)
+  result := matchcontinue rooted
     local
       Integer i1,i2;
-    case(_,_,_)
+    case _
       algorithm
         i1 := UnorderedMap.getOrFail(cref1,rooted);
         i2 := UnorderedMap.getOrFail(cref2,rooted);
@@ -1229,13 +1225,13 @@ protected function printEdges
 "Prints a list of edges to stdout."
   input Edges inEdges;
 algorithm
-  _ := match(inEdges)
+  () := match inEdges
     local
       ComponentRef c1, c2;
       Edges tail;
 
-    case ({}) then ();
-    case ((c1, c2) :: tail)
+    case {} then ();
+    case (c1, c2) :: tail
       algorithm
         print("    ");
         print(ComponentRef.toString(c1));
@@ -1264,12 +1260,12 @@ protected function printNFOCConnectionGraph
   "Prints the content of NFOCConnectionGraph structure."
   input NFOCConnectionGraph inGraph;
 algorithm
-  _ := match(inGraph)
+  () := match inGraph
     local
       FlatEdges connections;
       Edges branches;
 
-    case (GRAPH(connections = connections, branches = branches))
+    case GRAPH(connections = connections, branches = branches)
       algorithm
         print("Connections:\n");
         printFlatEdges(connections);
@@ -1284,10 +1280,10 @@ protected function getDefiniteRoots
   input NFOCConnectionGraph inGraph;
   output DefiniteRoots outResult;
 algorithm
-  outResult := match(inGraph)
+  outResult := match inGraph
     local
       DefiniteRoots result;
-    case (GRAPH(definiteRoots = result)) then result;
+    case GRAPH(definiteRoots = result) then result;
   end match;
 end getDefiniteRoots;
 
@@ -1296,10 +1292,10 @@ protected function getUniqueRoots
   input NFOCConnectionGraph inGraph;
   output UniqueRoots outResult;
 algorithm
-  outResult := match(inGraph)
+  outResult := match inGraph
     local
       UniqueRoots result;
-    case (GRAPH(uniqueRoots = result)) then result;
+    case GRAPH(uniqueRoots = result) then result;
   end match;
 end getUniqueRoots;
 
@@ -1308,9 +1304,9 @@ protected function getPotentialRoots
   input NFOCConnectionGraph inGraph;
   output PotentialRoots outResult;
 algorithm
-  outResult := match(inGraph)
+  outResult := match inGraph
     local PotentialRoots result;
-    case (GRAPH(potentialRoots = result)) then result;
+    case GRAPH(potentialRoots = result) then result;
   end match;
 end getPotentialRoots;
 
@@ -1319,9 +1315,9 @@ protected function getBranches
   input NFOCConnectionGraph inGraph;
   output Edges outResult;
 algorithm
-  outResult := match(inGraph)
+  outResult := match inGraph
     local Edges result;
-    case (GRAPH(branches = result)) then result;
+    case GRAPH(branches = result) then result;
   end match;
 end getBranches;
 
@@ -1330,9 +1326,9 @@ protected function getConnections
   input NFOCConnectionGraph inGraph;
   output FlatEdges outResult;
 algorithm
-  outResult := match(inGraph)
+  outResult := match inGraph
     local FlatEdges result;
-    case (GRAPH(connections = result)) then result;
+    case GRAPH(connections = result) then result;
   end match;
 end getConnections;
 
@@ -1394,9 +1390,9 @@ protected function graphVizEdge
   input  Edge inEdge;
   output String out;
 algorithm
-  out := match(inEdge)
+  out := match inEdge
     local ComponentRef c1, c2; String strEdge;
-    case ((c1, c2))
+    case (c1, c2)
       algorithm
         strEdge := "\"" + ComponentRef.toString(c1) + "\" -- \"" + ComponentRef.toString(c2) + "\"" +
         " [color = blue, dir = \"none\", fontcolor=blue, label = \"branch\"];\n\t";
@@ -1447,9 +1443,9 @@ protected function graphVizDefiniteRoot
   input  DefiniteRoots inFinalRoots;
   output String out;
 algorithm
-  out := match(inDefiniteRoot, inFinalRoots)
+  out := match inDefiniteRoot
     local ComponentRef c; String strDefiniteRoot; Boolean isSelectedRoot;
-    case (c, _)
+    case c
       algorithm
         isSelectedRoot := List.isMemberOnTrue(c, inFinalRoots, ComponentRef.isEqual);
         strDefiniteRoot := "\"" + ComponentRef.toString(c) + "\"" +
@@ -1465,9 +1461,9 @@ protected function graphVizPotentialRoot
   input  DefiniteRoots inFinalRoots;
   output String out;
 algorithm
-  out := match(inPotentialRoot, inFinalRoots)
+  out := match inPotentialRoot
     local ComponentRef c; Real priority; String strPotentialRoot; Boolean isSelectedRoot;
-    case ((c, priority), _)
+    case (c, priority)
       algorithm
         isSelectedRoot := List.isMemberOnTrue(c, inFinalRoots, ComponentRef.isEqual);
         strPotentialRoot := "\"" + ComponentRef.toString(c) + "\"" +
@@ -1491,7 +1487,7 @@ protected function generateGraphViz
   input FlatEdges broken;
   output String brokenConnectsViaGraphViz;
 algorithm
-  brokenConnectsViaGraphViz := matchcontinue(modelNameQualified, definiteRoots, potentialRoots, uniqueRoots, branches, connections, finalRoots, broken)
+  brokenConnectsViaGraphViz := matchcontinue broken
     local
       String fileName, i, nrDR, nrPR, nrUR, nrBR, nrCO, nrFR, nrBC, timeStr,  infoNodeStr, brokenConnects;
       Real tStart, tEnd, t;
@@ -1499,13 +1495,13 @@ algorithm
       list<String> infoNode;
 
     // don't do anything if we don't have -d=cgraphGraphVizFile or -d=cgraphGraphVizShow
-    case(_, _, _, _, _, _, _, _)
+    case _
       algorithm
         false := boolOr(Flags.isSet(Flags.CGRAPH_GRAPHVIZ_FILE), Flags.isSet(Flags.CGRAPH_GRAPHVIZ_SHOW));
       then
         "";
 
-    case(_, _, _, _, _, _, _, _)
+    case _
       algorithm
         tStart := clock();
         i := "\t";
@@ -1601,13 +1597,13 @@ protected function showGraphViz
   input String modelNameQualified;
   output String brokenConnectsViaGraphViz;
 algorithm
-  brokenConnectsViaGraphViz := matchcontinue(fileNameGraphViz, modelNameQualified)
+  brokenConnectsViaGraphViz := matchcontinue modelNameQualified
     local
       String leftyCMD, fileNameTraceRemovedConnections, omhome, brokenConnects;
       Integer leftyExitStatus;
 
     // do not start graphviz if we don't have -d=cgraphGraphVizShow
-    case (_, _)
+    case _
       algorithm
         false := Flags.isSet(Flags.CGRAPH_GRAPHVIZ_SHOW);
       then
@@ -1648,26 +1644,24 @@ function removeBrokenConnects
   input IsDeletedFn isDeleted;
   output list<Equation> outEquations;
 algorithm
-  outEquations := match(inEquations, inConnected, inBroken)
+  outEquations := match inBroken
     local
-      list<ComponentRef> toRemove, toKeep, intersect;
       ComponentRef lhs, rhs;
       list<Equation> eql = {};
       Boolean isThere;
       String str;
-      Type ty1, ty2;
       DAE.ElementSource source;
 
     // if we have no broken then we don't care!
-    case (_, _, {}) then inEquations;
+    case {} then inEquations;
 
     // if we have nothing toRemove then we don't care!
-    case (_, _, _)
+    case _
       algorithm
         for eq in inEquations loop
           eql := match eq
-            case Equation.CONNECT(lhs = Expression.CREF(ty = ty1, cref = lhs),
-                                  rhs = Expression.CREF(ty = ty2, cref = rhs), source = source)
+            case Equation.CONNECT(lhs = Expression.CREF(ty = _, cref = lhs),
+                                  rhs = Expression.CREF(ty = _, cref = rhs), source = source)
               algorithm
                 if not (isDeleted(lhs) or isDeleted(rhs)) then
                   // check for equality

@@ -386,7 +386,7 @@ uniontype LookupState
     input LookupState state;
     output String str;
   algorithm
-    str := match(state)
+    str := match state
       case BEGIN() then "<begin>";
       case COMP() then System.gettext("component");
       case CLASS_COMP() then System.gettext("component");
@@ -428,7 +428,6 @@ uniontype LookupState
     output LookupState nextState;
   protected
     LookupState entry_ty;
-    SCode.Element el;
   algorithm
     if checkAccessViolations and not InstContext.inInstanceAPI(context) then
       // Check that the element is allowed to be accessed given its visibility.
@@ -530,7 +529,6 @@ uniontype LookupState
   algorithm
     nextState := match (elementState, currentState)
       local
-        String str;
 
       // Transitions from BEGIN.
       case (_,         BEGIN())      then elementState;

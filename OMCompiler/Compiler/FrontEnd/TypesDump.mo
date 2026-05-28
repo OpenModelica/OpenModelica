@@ -67,16 +67,16 @@ public function unparseEqMod
   input DAE.EqMod eq;
   output String str;
 algorithm
-  str := match(eq)
+  str := match eq
     local DAE.Exp e; Absyn.Exp e2;
 
-    case(DAE.TYPED(modifierAsExp = e))
+    case DAE.TYPED(modifierAsExp = e)
       algorithm
         str := ExpressionBasics.printExpStr(e);
       then
         str;
 
-    case(DAE.UNTYPED(exp=e2))
+    case DAE.UNTYPED(exp=e2)
       algorithm
         str := Dump.printExpStr(e2);
       then str;
@@ -88,7 +88,7 @@ public function unparseOptionEqMod
   input Option<DAE.EqMod> eq;
   output String str;
 algorithm
-  str := match(eq)
+  str := match eq
     local
       DAE.EqMod e;
     case NONE() then "NONE()";
@@ -101,7 +101,7 @@ public function unparseType
   input DAE.Type inType;
   output String outString;
 algorithm
-  outString := match (inType)
+  outString := match inType
     local
       String s1,s2,str,dims,res,vstr,name,st_str,bc_tp_str,paramstr,restypestr,tystr,funcstr;
       list<String> l,vars,paramstrs,tystrs;
@@ -110,39 +110,39 @@ algorithm
       list<DAE.Var> vs;
       ClassInf.State ci_state;
       list<DAE.FuncArg> params;
-      Absyn.Path path,p;
+      Absyn.Path path;
       list<DAE.Type> tys;
       DAE.CodeType codeType;
       Boolean b;
 
-    case (DAE.T_INTEGER(varLst = {})) then "Integer";
-    case (DAE.T_REAL(varLst = {})) then "Real";
-    case (DAE.T_STRING(varLst = {})) then "String";
-    case (DAE.T_BOOL(varLst = {})) then "Boolean";
+    case DAE.T_INTEGER(varLst = {}) then "Integer";
+    case DAE.T_REAL(varLst = {}) then "Real";
+    case DAE.T_STRING(varLst = {}) then "String";
+    case DAE.T_BOOL(varLst = {}) then "Boolean";
     // BTH
-    case (DAE.T_CLOCK()) then "Clock";
+    case DAE.T_CLOCK() then "Clock";
 
-    case (DAE.T_INTEGER(varLst = vs))
+    case DAE.T_INTEGER(varLst = vs)
       algorithm
         s1 := stringDelimitList(List.map(vs, unparseVarAttr),", ");
         s2 := "Integer(" + s1 + ")";
       then s2;
-    case (DAE.T_REAL(varLst = vs))
+    case DAE.T_REAL(varLst = vs)
       algorithm
         s1 := stringDelimitList(List.map(vs, unparseVarAttr),", ");
         s2 := "Real(" + s1 + ")";
       then s2;
-    case (DAE.T_STRING(varLst = vs))
+    case DAE.T_STRING(varLst = vs)
       algorithm
         s1 := stringDelimitList(List.map(vs, unparseVarAttr),", ");
         s2 := "String(" + s1 + ")";
       then s2;
-    case (DAE.T_BOOL(varLst = vs))
+    case DAE.T_BOOL(varLst = vs)
       algorithm
         s1 := stringDelimitList(List.map(vs, unparseVarAttr),", ");
         s2 := "Boolean(" + s1 + ")";
       then s2;
-    case (DAE.T_ENUMERATION(path = path, names = l))
+    case DAE.T_ENUMERATION(path = path, names = l)
       algorithm
         s1 := if Config.typeinfo() then " /*" + AbsynUtil.pathString(path) + "*/ (" else "(";
         s2 := stringDelimitList(l, ", ");
@@ -152,7 +152,7 @@ algorithm
       then
         str;
 
-    case (ty as DAE.T_ARRAY())
+    case ty as DAE.T_ARRAY()
       algorithm
         (ty,dimlst) := flattenArrayType(ty);
         tystr := unparseType(ty);
@@ -161,7 +161,7 @@ algorithm
       then
         res;
 
-    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path),varLst = vs))
+    case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path),varLst = vs)
       algorithm
         name := AbsynUtil.pathStringNoQual(path);
         vars := List.map(vs, unparseVar);
@@ -170,7 +170,7 @@ algorithm
       then
         res;
 
-    case (DAE.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(path, b),varLst = vs))
+    case DAE.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(path, b),varLst = vs)
       algorithm
         name := AbsynUtil.pathStringNoQual(path);
         vars := List.map(vs, unparseVar);
@@ -180,7 +180,7 @@ algorithm
       then
         res;
 
-    case (DAE.T_SUBTYPE_BASIC(complexClassType = ci_state, complexType = bc_tp))
+    case DAE.T_SUBTYPE_BASIC(complexClassType = ci_state, complexType = bc_tp)
       algorithm
         st_str := AbsynUtil.pathString(ClassInfUtil.getStateName(ci_state));
         res := ClassInfUtil.printStateStr(ci_state);
@@ -189,7 +189,7 @@ algorithm
       then
         res;
 
-    case (DAE.T_COMPLEX(complexClassType = ci_state))
+    case DAE.T_COMPLEX(complexClassType = ci_state)
       algorithm
         st_str := AbsynUtil.pathString(ClassInfUtil.getStateName(ci_state));
         res := ClassInfUtil.printStateStr(ci_state);
@@ -197,7 +197,7 @@ algorithm
       then
         res;
 
-    case (DAE.T_FUNCTION(funcArg = params, funcResultType = restype, path=path))
+    case DAE.T_FUNCTION(funcArg = params, funcResultType = restype, path=path)
       algorithm
         funcstr := AbsynUtil.pathString(path);
         paramstrs := List.map(params, unparseParam);
@@ -207,7 +207,7 @@ algorithm
       then
         res;
 
-    case (DAE.T_TUPLE(types = tys))
+    case DAE.T_TUPLE(types = tys)
       algorithm
         tystrs := match inType.names
           local
@@ -221,7 +221,7 @@ algorithm
         res;
 
     // MetaModelica tuple
-    case (DAE.T_METATUPLE(types = tys))
+    case DAE.T_METATUPLE(types = tys)
       algorithm
         tystrs := List.map(tys, unparseType);
         tystr := stringDelimitList(tystrs, ", ");
@@ -230,14 +230,14 @@ algorithm
         res;
 
      // MetaModelica list
-    case (DAE.T_METALIST(ty = ty))
+    case DAE.T_METALIST(ty = ty)
       algorithm
         tystr := unparseType(ty);
         res := stringAppendList({"list<",tystr,">"});
       then
         res;
 
-    case (DAE.T_METAARRAY(ty = ty))
+    case DAE.T_METAARRAY(ty = ty)
       algorithm
         tystr := unparseType(ty);
         res := stringAppendList({"array<",tystr,">"});
@@ -245,7 +245,7 @@ algorithm
         res;
 
     // MetaModelica list
-    case (DAE.T_METAPOLYMORPHIC(name = tystr))
+    case DAE.T_METAPOLYMORPHIC(name = tystr)
       algorithm
         res := stringAppendList({"polymorphic<",tystr,">"});
       then
@@ -273,29 +273,29 @@ algorithm
       then if listEmpty(inType.typeVars) then res else (res+"<"+stringDelimitList(list(unparseType(tv) for tv in inType.typeVars), ",")+">");
 
     // MetaModelica boxed type
-    case (DAE.T_METABOXED(ty = ty))
+    case DAE.T_METABOXED(ty = ty)
       algorithm
         res := unparseType(ty);
         res := "#" /* this is a box */ + res;
       then res;
 
     // MetaModelica Option type
-    case (DAE.T_METAOPTION(ty = DAE.T_UNKNOWN())) then "Option<Any>";
-    case (DAE.T_METAOPTION(ty = ty))
+    case DAE.T_METAOPTION(ty = DAE.T_UNKNOWN()) then "Option<Any>";
+    case DAE.T_METAOPTION(ty = ty)
       algorithm
         tystr := unparseType(ty);
         res := stringAppendList({"Option<",tystr,">"});
       then
         res;
 
-    case (DAE.T_METATYPE(ty = ty)) then unparseType(ty);
+    case DAE.T_METATYPE(ty = ty) then unparseType(ty);
 
-    case (DAE.T_NORETCALL())              then "#NORETCALL#";
-    case (DAE.T_UNKNOWN())                then "#T_UNKNOWN#";
-    case (DAE.T_ANYTYPE()) then "#ANYTYPE#";
-    case (DAE.T_CODE(ty = codeType)) then printCodeTypeStr(codeType);
-    case (DAE.T_FUNCTION_REFERENCE_VAR(functionType=ty)) then "#FUNCTION_REFERENCE_VAR#" + unparseType(ty);
-    case (DAE.T_FUNCTION_REFERENCE_FUNC(functionType=ty)) then "#FUNCTION_REFERENCE_FUNC#" + unparseType(ty);
+    case DAE.T_NORETCALL()              then "#NORETCALL#";
+    case DAE.T_UNKNOWN()                then "#T_UNKNOWN#";
+    case DAE.T_ANYTYPE() then "#ANYTYPE#";
+    case DAE.T_CODE(ty = codeType) then printCodeTypeStr(codeType);
+    case DAE.T_FUNCTION_REFERENCE_VAR(functionType=ty) then "#FUNCTION_REFERENCE_VAR#" + unparseType(ty);
+    case DAE.T_FUNCTION_REFERENCE_FUNC(functionType=ty) then "#FUNCTION_REFERENCE_FUNC#" + unparseType(ty);
     else "Internal error TypesDump.unparseType: not implemented yet\n";
   end match;
 end unparseType;
@@ -315,7 +315,7 @@ public function unparsePropTypeNoAttr
   input DAE.Properties inProps;
   output String outString;
 algorithm
-  outString := match(inProps)
+  outString := match inProps
     local
       DAE.Type ty;
 
@@ -328,7 +328,7 @@ public function unparseConst
   input DAE.Const inConst;
   output String outString;
 algorithm
-  outString := match(inConst)
+  outString := match inConst
     case DAE.C_CONST() then "constant";
     case DAE.C_PARAM() then "parameter";
     case DAE.C_VAR() then "continuous";
@@ -341,7 +341,7 @@ public function printConstStr
   input DAE.Const inConst;
   output String outString;
 algorithm
-  outString := match (inConst)
+  outString := match inConst
     case DAE.C_CONST() then "C_CONST";
     case DAE.C_PARAM() then "C_PARAM";
     case DAE.C_VAR() then "C_VAR";
@@ -356,7 +356,7 @@ public function printTupleConstStr
   input DAE.TupleConst inTupleConst;
   output String outString;
 algorithm
-  outString := match (inTupleConst)
+  outString := match inTupleConst
     local
       String cstr,res,res_1;
       DAE.Const c;
@@ -382,10 +382,9 @@ public function printTypeStr "This function prints a textual description of a Mo
   input DAE.Type inType;
   output String str;
 algorithm
-  str := matchcontinue (inType)
+  str := matchcontinue inType
     local
       list<DAE.Var> vars;
-      list<String> l;
       ClassInf.State st;
       list<DAE.Dimension> dims;
       Type t,ty,restype;
@@ -394,25 +393,25 @@ algorithm
       String s1,s2,compType;
       Absyn.Path path;
 
-    case (DAE.T_INTEGER(varLst = vars))
+    case DAE.T_INTEGER(varLst = vars)
       then List.toString(vars, printVarStr, "Integer", "(", ", ", ")", false);
 
-    case (DAE.T_REAL(varLst = vars))
+    case DAE.T_REAL(varLst = vars)
       then List.toString(vars, printVarStr, "Real", "(", ", ", ")", false);
 
-    case (DAE.T_STRING(varLst = vars))
+    case DAE.T_STRING(varLst = vars)
       then List.toString(vars, printVarStr, "String", "(", ", ", ")", false);
 
-    case (DAE.T_BOOL(varLst = vars))
+    case DAE.T_BOOL(varLst = vars)
       then List.toString(vars, printVarStr, "Boolean", "(", ", ", ")", false);
 
-    case (DAE.T_CLOCK(varLst = vars))
+    case DAE.T_CLOCK(varLst = vars)
       then List.toString(vars, printVarStr, "Clock", "(", ", ", ")", false);
 
-    case (DAE.T_ENUMERATION(literalVarLst = vars))
+    case DAE.T_ENUMERATION(literalVarLst = vars)
       then List.toString(vars, printVarStr, "Enumeration", "(", ", ", ")", false);
 
-    case (DAE.T_SUBTYPE_BASIC(complexClassType = st, complexType = t, varLst = vars))
+    case DAE.T_SUBTYPE_BASIC(complexClassType = st, complexType = t, varLst = vars)
       algorithm
         compType := printTypeStr(t);
         s1 := ClassInfUtil.printStateStr(st);
@@ -421,7 +420,7 @@ algorithm
       then
         str;
 
-    case (DAE.T_COMPLEX(complexClassType = st,varLst = vars))
+    case DAE.T_COMPLEX(complexClassType = st,varLst = vars)
       algorithm
         s1 := ClassInfUtil.printStateStr(st);
         s2 := stringDelimitList(List.map(vars, printVarStr),", ");
@@ -429,7 +428,7 @@ algorithm
       then
         str;
 
-    case (DAE.T_ARRAY(dims = dims,ty = t))
+    case DAE.T_ARRAY(dims = dims,ty = t)
       algorithm
         s1 := stringDelimitList(List.map(dims, ExpressionBasics.dimensionString), ", ");
         s2 := printTypeStr(t);
@@ -437,7 +436,7 @@ algorithm
       then
         str;
 
-    case (DAE.T_FUNCTION(funcArg = params,funcResultType = restype))
+    case DAE.T_FUNCTION(funcArg = params,funcResultType = restype)
       algorithm
         s1 := printParamsStr(params);
         s2 := printTypeStr(restype);
@@ -446,7 +445,7 @@ algorithm
       then
         str;
 
-    case (DAE.T_TUPLE(types = tys))
+    case DAE.T_TUPLE(types = tys)
       algorithm
         s1 := stringDelimitList(List.map(tys, printTypeStr),", ");
         str := stringAppendList({"(",s1,")"});
@@ -454,14 +453,14 @@ algorithm
         str;
 
     // MetaModelica tuple
-    case (DAE.T_METATUPLE(types = tys))
+    case DAE.T_METATUPLE(types = tys)
       algorithm
         str := printTypeStr(DAE.T_TUPLE(tys,NONE()));
       then
         str;
 
     // MetaModelica list
-    case (DAE.T_METALIST(ty = ty))
+    case DAE.T_METALIST(ty = ty)
       algorithm
         s1 := printTypeStr(ty);
         str := stringAppendList({"list<",s1,">"});
@@ -469,7 +468,7 @@ algorithm
         str;
 
     // MetaModelica Option
-    case (DAE.T_METAOPTION(ty = ty))
+    case DAE.T_METAOPTION(ty = ty)
       algorithm
         s1 := printTypeStr(ty);
         str := stringAppendList({"Option<",s1,">"});
@@ -477,7 +476,7 @@ algorithm
         str;
 
     // MetaModelica Array
-    case (DAE.T_METAARRAY(ty = ty))
+    case DAE.T_METAARRAY(ty = ty)
       algorithm
         s1 := printTypeStr(ty);
         str := stringAppendList({"array<",s1,">"});
@@ -485,7 +484,7 @@ algorithm
         str;
 
     // MetaModelica Boxed
-    case (DAE.T_METABOXED(ty = ty))
+    case DAE.T_METABOXED(ty = ty)
       algorithm
         s1 := printTypeStr(ty);
         str := stringAppendList({"boxed<",s1,">"});
@@ -493,38 +492,38 @@ algorithm
         str;
 
     // MetaModelica polymorphic
-    case (DAE.T_METAPOLYMORPHIC(name = s1))
+    case DAE.T_METAPOLYMORPHIC(name = s1)
       algorithm
         str := stringAppendList({"polymorphic<",s1,">"});
       then
         str;
 
     // NoType
-    case (DAE.T_UNKNOWN())
+    case DAE.T_UNKNOWN()
       algorithm
         str := "T_UNKNOWN";
       then
         str;
 
     // AnyType of none
-    case (DAE.T_ANYTYPE(anyClassType = NONE()))
+    case DAE.T_ANYTYPE(anyClassType = NONE())
       algorithm
         str := "ANYTYPE()";
       then
         str;
     // AnyType of some
-    case (DAE.T_ANYTYPE(anyClassType = SOME(st)))
+    case DAE.T_ANYTYPE(anyClassType = SOME(st))
       algorithm
         s1 := ClassInfUtil.printStateStr(st);
         str := "ANYTYPE(" + s1 + ")";
       then
         str;
 
-    case (DAE.T_NORETCALL())
+    case DAE.T_NORETCALL()
       then "()";
 
     // MetaType
-    case (DAE.T_METATYPE(ty = t))
+    case DAE.T_METATYPE(ty = t)
       algorithm
         s1 := printTypeStr(t);
         str := stringAppendList({"METATYPE(", s1, ")"});
@@ -532,13 +531,13 @@ algorithm
         str;
 
     // Uniontype, Metarecord
-    case (t as DAE.T_METARECORD())
+    case t as DAE.T_METARECORD()
       algorithm
         s1 := AbsynUtil.pathStringNoQual(t.path);
         str := "#" + s1 + "#";
       then
         str;
-    case (t as DAE.T_METAUNIONTYPE())
+    case t as DAE.T_METAUNIONTYPE()
       algorithm
         s1 := AbsynUtil.pathStringNoQual(t.path);
         str := "#" + s1 + "#";
@@ -546,11 +545,11 @@ algorithm
         str;
 
     // Code
-    case (DAE.T_CODE(DAE.C_EXPRESSION())) then "$Code(Expression)";
-    case (DAE.T_CODE(DAE.C_EXPRESSION_OR_MODIFICATION())) then "$Code(ExpressionOrModification)";
-    case (DAE.T_CODE(DAE.C_TYPENAME())) then "$Code(TypeName)";
-    case (DAE.T_CODE(DAE.C_VARIABLENAME())) then "$Code(VariableName)";
-    case (DAE.T_CODE(DAE.C_VARIABLENAMES())) then "$Code(VariableName[:])";
+    case DAE.T_CODE(DAE.C_EXPRESSION()) then "$Code(Expression)";
+    case DAE.T_CODE(DAE.C_EXPRESSION_OR_MODIFICATION()) then "$Code(ExpressionOrModification)";
+    case DAE.T_CODE(DAE.C_TYPENAME()) then "$Code(TypeName)";
+    case DAE.T_CODE(DAE.C_VARIABLENAME()) then "$Code(VariableName)";
+    case DAE.T_CODE(DAE.C_VARIABLENAMES()) then "$Code(VariableName[:])";
 
     // All the other ones we don't handle
     else
@@ -569,9 +568,8 @@ public function printConnectorTypeStr
   output String s "Connector type";
   output String s2 "Components of connector";
 algorithm
-  (s,s2) := matchcontinue(it)
+  (s,s2) := matchcontinue it
     local
-      ClassInf.State st;
       Absyn.Path connectorName;
       list<DAE.Var> vars;
       list<String> varNames;
@@ -579,7 +577,7 @@ algorithm
       String isExpandableStr;
       Type t;
 
-    case(DAE.T_COMPLEX(complexClassType = (ClassInf.CONNECTOR(connectorName,isExpandable)),varLst = vars))
+    case DAE.T_COMPLEX(complexClassType = (ClassInf.CONNECTOR(connectorName,isExpandable)),varLst = vars)
       algorithm
         varNames := List.map(vars,getVarName);
         isExpandableStr := if isExpandable then "/* expandable */ " else "";
@@ -589,7 +587,7 @@ algorithm
         (s,s2);
 
     // TODO! check if we can get T_SUBTYPE_BASIC here??!!
-    case(DAE.T_SUBTYPE_BASIC(complexClassType = (ClassInf.CONNECTOR(connectorName,isExpandable)), varLst = vars, complexType = t))
+    case DAE.T_SUBTYPE_BASIC(complexClassType = (ClassInf.CONNECTOR(connectorName,isExpandable)), varLst = vars, complexType = t)
       algorithm
         varNames := List.map(vars,getVarName);
         isExpandableStr := if isExpandable then "/* expandable */ " else "";
@@ -606,7 +604,7 @@ public function printParamsStr "Prints function arguments to a string."
   input list<DAE.FuncArg> inFuncArgLst;
   output String str;
 algorithm
-  str := matchcontinue (inFuncArgLst)
+  str := matchcontinue inFuncArgLst
     local
       String n;
       DAE.Type t;
@@ -619,7 +617,7 @@ algorithm
         str := stringAppendList({n," :: ",s1});
       then
         str;
-    case (DAE.FUNCARG(name=n,ty=t)::params)
+    case DAE.FUNCARG(name=n,ty=t)::params
       algorithm
         s1 := printTypeStr(t);
         s2 := printParamsStr(params);
@@ -634,7 +632,7 @@ public function unparseVarAttr "
   input DAE.Var inVar;
   output String outString;
 algorithm
-  outString := matchcontinue (inVar)
+  outString := matchcontinue inVar
     local
       String res,n,bindStr,valStr;
       Values.Value value;
@@ -661,7 +659,7 @@ public function unparseVar
   input DAE.Var inVar;
   output String outString;
 algorithm
-  outString := match (inVar)
+  outString := match inVar
     local
       String t,res,n, s;
       DAE.Type typ;
@@ -682,9 +680,8 @@ public function connectorTypeStr
   input DAE.ConnectorType ct;
   output String str;
 algorithm
-  str := matchcontinue(ct)
-    local String s;
-    case DAE.POTENTIAL() then "";
+  str := matchcontinue ct
+    local    case DAE.POTENTIAL() then "";
     case DAE.FLOW() then "flow ";
     case DAE.STREAM(_) then "stream ";
     else "";
@@ -695,7 +692,7 @@ protected function unparseParam "Prints a function argument to a string."
   input DAE.FuncArg inFuncArg;
   output String outString;
 algorithm
-  outString := match (inFuncArg)
+  outString := match inFuncArg
     local
       String tstr,res,id,cstr,estr,pstr;
       DAE.Type ty;
@@ -727,7 +724,7 @@ public function printVarStr "author: LS
   input DAE.Var inVar;
   output String str;
 algorithm
-  str := matchcontinue (inVar)
+  str := matchcontinue inVar
     local
       String vs,n;
       SCode.Variability var;
@@ -796,7 +793,7 @@ end printBindingStr;
 public function printFarg "Prints a function argument to the Print buffer."
   input DAE.FuncArg inFuncArg;
 algorithm
-  _ := match (inFuncArg)
+  () := match inFuncArg
     local
       String n;
       DAE.Type ty;
@@ -814,12 +811,11 @@ public function printFargStr "Prints a function argument to a string"
   input DAE.FuncArg inFuncArg;
   output String outString;
 algorithm
-  outString := match (inFuncArg)
+  outString := match inFuncArg
     local
-      String s,res,n,cs,ps;
+      String s,res,n,cs;
       DAE.Type ty;
       DAE.Const c;
-      DAE.VarParallelism p;
 
     case DAE.FUNCARG(n,ty,c,_,_)
       algorithm
@@ -836,30 +832,30 @@ public function getTypeName "Return the type name of a Type."
   input DAE.Type inType;
   output String outString;
 algorithm
-  outString := matchcontinue (inType)
+  outString := matchcontinue inType
     local
       String n,dimstr,tystr,str;
       ClassInf.State st;
       DAE.Type ty,arrayty;
       list<DAE.Dimension> dims;
 
-    case (DAE.T_INTEGER()) then "Integer";
-    case (DAE.T_REAL()) then "Real";
-    case (DAE.T_STRING()) then "String";
-    case (DAE.T_BOOL()) then "Boolean";
+    case DAE.T_INTEGER() then "Integer";
+    case DAE.T_REAL() then "Real";
+    case DAE.T_STRING() then "String";
+    case DAE.T_BOOL() then "Boolean";
     // BTH
-    case (DAE.T_CLOCK()) then "Clock";
-    case (DAE.T_COMPLEX(complexClassType = st))
+    case DAE.T_CLOCK() then "Clock";
+    case DAE.T_COMPLEX(complexClassType = st)
       algorithm
         n := AbsynUtil.pathString(ClassInfUtil.getStateName(st));
       then
         n;
-    case (DAE.T_SUBTYPE_BASIC(complexClassType = st))
+    case DAE.T_SUBTYPE_BASIC(complexClassType = st)
       algorithm
         n := AbsynUtil.pathString(ClassInfUtil.getStateName(st));
       then
         n;
-    case (arrayty as DAE.T_ARRAY())
+    case arrayty as DAE.T_ARRAY()
       algorithm
         (ty,dims) := flattenArrayType(arrayty);
         dimstr := ExpressionBasics.dimensionsString(dims);
@@ -869,7 +865,7 @@ algorithm
         str;
 
     // MetaModelica type
-    case (DAE.T_METALIST(ty = ty))
+    case DAE.T_METALIST(ty = ty)
       algorithm
         n := getTypeName(ty);
       then
@@ -883,10 +879,10 @@ function constStrFriendly "return the DAE.Const as a friendly string. Used for d
   input DAE.Const const;
   output String str;
 algorithm
-  str := match(const)
-    case(DAE.C_VAR()) then "";
-    case(DAE.C_PARAM()) then "parameter ";
-    case(DAE.C_CONST()) then "constant ";
+  str := match const
+    case DAE.C_VAR() then "";
+    case DAE.C_PARAM() then "parameter ";
+    case DAE.C_CONST() then "constant ";
 
   end match;
 end constStrFriendly;
@@ -895,7 +891,7 @@ function dumpVarParallelismStr "Dump VarParallelism to a string"
   input DAE.VarParallelism inVarParallelism;
   output String outString;
 algorithm
-  outString := match (inVarParallelism)
+  outString := match inVarParallelism
     case DAE.NON_PARALLEL() then "";
     case DAE.PARGLOBAL() then "parglobal ";
     case DAE.PARLOCAL() then "parlocal ";
@@ -906,11 +902,11 @@ function printBindingSourceStr "prints a binding source as a string"
   input DAE.BindingSource bindingSource;
   output String str;
 algorithm
-  str := match(bindingSource)
-    case(DAE.BINDING_FROM_DEFAULT_VALUE())       then "[DEFAULT VALUE]";
-    case(DAE.BINDING_FROM_START_VALUE())         then "[START VALUE]";
-    case(DAE.BINDING_FROM_RECORD_SUBMODS())      then "[RECORD SUBMODS]";
-    case(DAE.BINDING_FROM_DERIVED_RECORD_DECL()) then "[DERIVED RECORD]";
+  str := match bindingSource
+    case DAE.BINDING_FROM_DEFAULT_VALUE()       then "[DEFAULT VALUE]";
+    case DAE.BINDING_FROM_START_VALUE()         then "[START VALUE]";
+    case DAE.BINDING_FROM_RECORD_SUBMODS()      then "[RECORD SUBMODS]";
+    case DAE.BINDING_FROM_DERIVED_RECORD_DECL() then "[DERIVED RECORD]";
   end match;
 end printBindingSourceStr;
 
@@ -924,7 +920,6 @@ algorithm
     local
       Type ty;
       DAE.Dimensions dims;
-      DAE.Dimension dim;
 
     // Array type
     case DAE.T_ARRAY()
@@ -951,8 +946,8 @@ public function getVarName "Return the name of a Var"
   input DAE.Var v;
   output String name;
 algorithm
-  name := match (v)
-    case(DAE.TYPES_VAR(name = name)) then name;
+  name := match v
+    case DAE.TYPES_VAR(name = name) then name;
   end match;
 end getVarName;
 
@@ -963,7 +958,7 @@ public function stripTypeVars
   output DAE.Type outType;
   output list<DAE.Var> outVars;
 algorithm
-  (outType, outVars) := match(inType)
+  (outType, outVars) := match inType
     local
       list<DAE.Var> vars, sub_vars;
       DAE.Type ty;

@@ -799,8 +799,6 @@ public
     input Absyn.Path name;
     input SCode.Mod mod;
     output Absyn.Exp binding;
-  protected
-    SCode.Mod m;
   algorithm
     SCode.Mod.MOD(binding = SOME(binding)) := lookupMod(name, mod);
   end lookupModBinding;
@@ -984,7 +982,6 @@ public
     input MergeNameMap nameMap;
   protected
     Component comp;
-    Binding binding;
   algorithm
     if not InstNode.isComponent(node) then
       return;

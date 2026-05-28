@@ -99,16 +99,13 @@ algorithm
          DAE.Operator oper;
          Absyn.Operator aboper;
          DAE.Properties prop, props1, props2;
-         Absyn.Exp  absexp1, absexp2;
-         Boolean lastRound;
-         DAE.Dimension n,m1,m2,p;
          AvlTreePathFunction.Tree functionTree;
          Boolean didInline;
 
      // handle tuple op non_tuple
      case (_, _, _, props1 as DAE.PROP_TUPLE(), _, DAE.PROP(), _) guard not Config.acceptMetaModelicaGrammar()
        algorithm
-         (prop as DAE.PROP(type1, _)) := Types.propTupleFirstProp(props1);
+         prop as DAE.PROP(type1, _) := Types.propTupleFirstProp(props1);
          exp := DAE.TSUB(inExp1, 1, type1);
          (cache, exp, prop) := binary(inCache, inEnv, inOperator1, prop, exp, inProp2, inExp2, AbExp, AbExp1, AbExp2, inImpl, inPre, inInfo);
        then (cache, exp, prop);
@@ -116,7 +113,7 @@ algorithm
      // handle non_tuple op tuple
      case (_, _, _, DAE.PROP(), _, props2 as DAE.PROP_TUPLE(), _) guard not Config.acceptMetaModelicaGrammar()
        algorithm
-         (prop as DAE.PROP(type2, _)) := Types.propTupleFirstProp(props2);
+         prop as DAE.PROP(type2, _) := Types.propTupleFirstProp(props2);
          exp := DAE.TSUB(inExp2, 1, type2);
          (cache, exp, prop) := binary(inCache, inEnv, inOperator1, inProp1, inExp1, prop, exp, AbExp, AbExp1, AbExp2, inImpl, inPre, inInfo);
        then (cache, exp, prop);
@@ -173,7 +170,7 @@ resulting expression. "
   output DAE.Properties outProp;
 algorithm
   (outCache, outExp, outProp) :=
-   matchcontinue(inCache,inEnv,inOperator1, inProp1, inExp1, AbExp, AbExp1)
+   matchcontinue(inCache, inEnv, inOperator1, inProp1, inExp1, AbExp1)
      local
        String str1;
        FCore.Cache cache;
@@ -193,16 +190,16 @@ algorithm
        Absyn.Exp  absexp1;
 
      // handle op tuple
-     case (_, _, _, DAE.PROP_TUPLE(), exp1, _, _)
+     case (_, _, _, DAE.PROP_TUPLE(), exp1, _)
        algorithm
          false := Config.acceptMetaModelicaGrammar();
-         (prop as DAE.PROP(type1, _)) := Types.propTupleFirstProp(inProp1);
+         prop as DAE.PROP(type1, _) := Types.propTupleFirstProp(inProp1);
          exp := DAE.TSUB(exp1, 1, type1);
          (cache, exp, prop) := unary(inCache, inEnv, inOperator1, prop, exp, AbExp, AbExp1, inImpl, inPre, inInfo);
        then
          (cache, exp, prop);
 
-     case (_, _, aboper, DAE.PROP(type1,const), exp1, _, _)
+     case (_, _, aboper, DAE.PROP(type1,const), exp1, _)
        algorithm
          false := Types.isRecord(Types.arrayElementType(type1));
          opList := operatorsUnary(aboper);
@@ -215,7 +212,7 @@ algorithm
 
       // if we have a record check for overloaded operators
       // TODO: Improve this the same way we improved binary operators!
-     case(cache, env, aboper, DAE.PROP(type1,_) , _, _, absexp1)
+     case(cache, env, aboper, DAE.PROP(type1,_), _, absexp1)
        algorithm
 
          path := getRecordPath(type1);
@@ -400,15 +397,12 @@ function deoverloadBinaryUserdefNoConstructor
   input list<tuple<DAE.Exp,Option<DAE.Type>>> inAcc;
   output list<tuple<DAE.Exp,Option<DAE.Type>>> outExps;
 algorithm
-  outExps := matchcontinue (inTypeList,inLhs,inRhs,lhsType,rhsType,inAcc)
+  outExps := matchcontinue (inTypeList, inAcc)
       local
-        list<DAE.Type> types,scalartypes, arraytypes;
-        FCore.Cache cache;
+        list<DAE.Type> types;
         DAE.Exp daeExp;
-        DAE.Properties prop;
-        String str1;
         list<DAE.FuncArg> restArgs;
-        DAE.Type funcTy,ty,ty1,ty2;
+        DAE.Type ty,ty1,ty2;
         DAE.FunctionAttributes attr;
         Absyn.Path path;
         DAE.Exp lhs,rhs;
@@ -416,7 +410,7 @@ algorithm
         tuple<DAE.Exp,Option<DAE.Type>> tpl;
 
     // Matching types. Yay.
-    case ((DAE.T_FUNCTION(path=path,funcResultType=ty,functionAttributes=attr,funcArg=DAE.FUNCARG(ty=ty1)::DAE.FUNCARG(ty=ty2)::restArgs))::types, _, _, _, _, acc)
+    case ((DAE.T_FUNCTION(path=path,funcResultType=ty,functionAttributes=attr,funcArg=DAE.FUNCARG(ty=ty1)::DAE.FUNCARG(ty=ty2)::restArgs))::types, acc)
       algorithm
         (lhs,_) := Types.matchType(inLhs,lhsType,ty1,false);
         (rhs,_) := Types.matchType(inRhs,rhsType,ty2,false);
@@ -425,12 +419,12 @@ algorithm
         acc := deoverloadBinaryUserdefNoConstructor(types,inLhs,inRhs,lhsType,rhsType,tpl::acc);
       then acc;
 
-    case (_::types, _, _, _, _, _)
+    case (_::types, _)
       algorithm
         acc := deoverloadBinaryUserdefNoConstructor(types,inLhs,inRhs,lhsType,rhsType,inAcc);
       then acc;
 
-    case ({}, _, _, _, _, _)
+    case ({}, _)
       then inAcc;
 
   end matchcontinue;
@@ -454,22 +448,14 @@ function deoverloadBinaryUserdefNoConstructorListLhs
   input list<tuple<DAE.Exp,Option<DAE.Type>>> inAcc;
   output list<tuple<DAE.Exp,Option<DAE.Type>>> outExps;
 algorithm
-  outExps := match (types,inLhs,inRhs,rhsType,inAcc)
+  outExps := match (inLhs, inAcc)
       local
-        list<DAE.Type> scalartypes, arraytypes;
-        FCore.Cache cache;
-        DAE.Properties prop;
-        String str1;
-        list<DAE.FuncArg> restArgs;
-        DAE.Type ty,ty1,ty2;
-        DAE.FunctionAttributes attr;
-        Absyn.Path path;
-        DAE.Exp lhs,rhs;
+        DAE.Exp lhs;
         list<tuple<DAE.Exp,Option<DAE.Type>>> acc;
         list<DAE.Exp> rest;
 
     // Matching types. Yay.
-    case (_, lhs::rest, _, _, acc)
+    case (lhs::rest, acc)
       algorithm
         acc := deoverloadBinaryUserdefNoConstructor(types,lhs,inRhs,Expression.typeof(lhs),rhsType,acc);
         acc := deoverloadBinaryUserdefNoConstructorListLhs(types,rest,inRhs,rhsType,acc);
@@ -488,22 +474,14 @@ function deoverloadBinaryUserdefNoConstructorListRhs
   input list<tuple<DAE.Exp,Option<DAE.Type>>> inAcc;
   output list<tuple<DAE.Exp,Option<DAE.Type>>> outExps;
 algorithm
-  outExps := match (types,inLhs,inRhs,lhsType,inAcc)
+  outExps := match (inRhs, inAcc)
       local
-        list<DAE.Type> scalartypes, arraytypes;
-        FCore.Cache cache;
-        DAE.Properties prop;
-        String str1;
-        list<DAE.FuncArg> restArgs;
-        DAE.Type ty,ty1,ty2;
-        DAE.FunctionAttributes attr;
-        Absyn.Path path;
-        DAE.Exp lhs,rhs;
+        DAE.Exp rhs;
         list<tuple<DAE.Exp,Option<DAE.Type>>> acc;
         list<DAE.Exp> rest;
 
     // Matching types. Yay.
-    case (_, _, rhs::rest, _, acc)
+    case (rhs::rest, acc)
       algorithm
         acc := deoverloadBinaryUserdefNoConstructor(types,inLhs,rhs,lhsType,Expression.typeof(rhs),acc);
         acc := deoverloadBinaryUserdefNoConstructorListRhs(types,inLhs,rest,lhsType,acc);
@@ -521,34 +499,30 @@ function deoverloadUnaryUserdefNoConstructor
   input list<DAE.Exp> inAcc;
   output list<DAE.Exp> outExps;
 algorithm
-  outExps := matchcontinue (inTypeList,inExp,inType,inAcc)
+  outExps := matchcontinue (inTypeList, inAcc)
       local
-        list<DAE.Type> types,scalartypes, arraytypes;
-        FCore.Cache cache;
+        list<DAE.Type> types;
         DAE.Exp exp,daeExp;
-        DAE.Properties prop;
-        String str1;
         list<DAE.FuncArg> restArgs;
-        DAE.Type ty,ty1,ty2;
+        DAE.Type ty,ty1;
         DAE.FunctionAttributes attr;
         Absyn.Path path;
-        DAE.Exp lhs,rhs;
         list<DAE.Exp> acc;
 
     // Matching types. Yay.
-    case (DAE.T_FUNCTION(path=path,funcResultType=ty,functionAttributes=attr,funcArg=DAE.FUNCARG(ty=ty1)::restArgs)::types, _, _, acc)
+    case (DAE.T_FUNCTION(path=path,funcResultType=ty,functionAttributes=attr,funcArg=DAE.FUNCARG(ty=ty1)::restArgs)::types, acc)
       algorithm
         (exp,_) := Types.matchType(inExp,inType,ty1,false);
         daeExp := makeCallFillRestDefaults(path,{exp},restArgs,Types.makeCallAttr(ty,attr));
         acc := deoverloadUnaryUserdefNoConstructor(types,inExp,ty,daeExp::acc);
       then acc;
 
-    case (_::types, _, _, _)
+    case (_::types, _)
       algorithm
         acc := deoverloadUnaryUserdefNoConstructor(types,inExp,inType,inAcc);
       then acc;
 
-    case ({}, _, _, _)
+    case ({}, _)
       then inAcc;
 
   end matchcontinue;
@@ -579,17 +553,12 @@ algorithm
     local
       Boolean bool1,bool2;
       String opStr;
-      Absyn.Path path,path2;
-      list<Absyn.Path> operNames;
-      FCore.Graph recordEnv,env;
-      SCode.Element operatorCl;
+      FCore.Graph env;
       FCore.Cache cache;
       list<DAE.Type> types,types1,types2;
-      DAE.Properties prop;
       DAE.Type type1, type2;
       DAE.Exp exp1,exp2;
       Absyn.Operator op;
-      Absyn.ComponentRef comRef;
       DAE.Exp  daeExp;
       list<tuple<DAE.Exp,Option<DAE.Type>>> exps;
 
@@ -638,13 +607,13 @@ function binaryUserdefArray
   output FCore.Cache cache;
   output list<tuple<DAE.Exp,Option<DAE.Type>>> exps;
 algorithm
-  (cache,exps) := match (env,inExps,isArray)
+  (cache,exps) := match (inExps, isArray)
     local
-      Boolean isRelation,isLogical,isVector1,isVector2,isScalar1,isScalar2,isMatrix1,isMatrix2;
+      Boolean isRelation,isVector1,isVector2,isScalar1,isScalar2,isMatrix1,isMatrix2;
     // Already found a match
-    case (_,{_},_) then (inCache,inExps);
+    case ({_}, _) then (inCache,inExps);
     // No match in Step 3; look for array expansions
-    case (_,{},true)
+    case ({}, true)
       algorithm
         isRelation := listMember(inOper,{Absyn.LESS(),Absyn.LESSEQ(),Absyn.GREATER(),Absyn.GREATEREQ(),Absyn.EQUAL(),Absyn.NEQUAL()});
         Error.assertionOrAddSourceMessage(not isRelation,Error.COMPILER_ERROR,{"Not supporting overloading of relation array operations"},info);
@@ -689,18 +658,17 @@ function binaryUserdefArray2
   output FCore.Cache cache;
   output list<tuple<DAE.Exp,Option<DAE.Type>>> exps;
 algorithm
-  (cache,exps) := match (inCache,env,isScalar1,isVector1,isMatrix1,isScalar2,isVector2,isMatrix2,inOper)
+  (cache,exps) := match (inCache, isScalar1, isVector1, isMatrix1, isScalar2, isVector2, isMatrix2, inOper)
     local
       DAE.Exp mulExp,exp,cr,cr1,cr2,cr3,cr4,cr5,cr6,foldExp,transposed;
       DAE.Type newType1,newType2,resType,newType1_1,newType2_1,ty;
       DAE.Dimension dim1,dim2,dim1_1,dim1_2,dim2_1,dim2_2;
       DAE.ReductionIterator iter,iter1,iter2,iter3,iter4;
-      String foldName,resultName,foldName1,resultName1,foldName2,resultName2,foldName3,resultName3,foldName4,resultName4,iterName,iterName1,iterName2,iterName3,iterName4;
+      String foldName,resultName,foldName1,resultName1,foldName2,resultName2,iterName,iterName1,iterName2,iterName3,iterName4;
       Option<Values.Value> zeroConstructor;
-      Option<DAE.Type> foldType;
       list<DAE.Type> zeroTypes;
       Absyn.Operator op;
-    case (cache,_,false,_,_,true,_,_,_) // non-scalar op scalar
+    case (cache, false, _, _, true, _, _, _) // non-scalar op scalar
       algorithm
         DAE.T_ARRAY(ty=newType1,dims=dim1::{}) := inType1;
         // Not all operators are valid operations
@@ -722,7 +690,7 @@ algorithm
         exp := DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("array"),Absyn.COMBINE(),resType,NONE(),foldName,resultName,NONE()),exp,DAE.REDUCTIONITER(iterName,inExp1,NONE(),newType1)::{});
         // exp = ExpressionSimplify.simplify1(exp);
       then (cache,{(exp,NONE())});
-    case (cache,_,true,_,_,false,_,_,_) // scalar op non-scalar
+    case (cache, true, _, _, false, _, _, _) // scalar op non-scalar
       algorithm
         op := Util.assoc(inOper, {
             (Absyn.ADD_EW(),Absyn.ADD_EW()),
@@ -743,10 +711,10 @@ algorithm
         // exp = ExpressionSimplify.simplify1(exp);
       then (cache,{(exp,NONE())});
       // '*' invalid operations: vector*vector or vector*matrix
-    case (_,_,_,true,_,_,true,_,Absyn.MUL()) then fail();
-    case (_,_,_,true,_,_,_,true,Absyn.MUL()) then fail();
+    case (_, _, true, _, _, true, _, Absyn.MUL()) then fail();
+    case (_, _, true, _, _, _, true, Absyn.MUL()) then fail();
       // matrix-vector-multiply
-    case (cache,_,_,_,true,_,true,_,Absyn.MUL())
+    case (cache, _, _, true, _, true, _, Absyn.MUL())
       algorithm
         DAE.T_ARRAY(ty=newType1_1,dims=dim1_1::{}) := inType1;
         DAE.T_ARRAY(ty=newType1,dims=dim1_2::{}) := newType1_1;
@@ -784,7 +752,7 @@ algorithm
         exp := DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("array"),Absyn.COMBINE(),resType,NONE(),foldName2,resultName2,NONE()),exp,iter1::{});
       then (cache,{(exp,NONE())});
       // matrix-matrix-multiply
-    case (cache,_,_,_,true,_,_,true,Absyn.MUL())
+    case (cache, _, _, true, _, _, true, Absyn.MUL())
       algorithm
         DAE.T_ARRAY(ty=newType1_1,dims=dim1_1::{}) := inType1;
         DAE.T_ARRAY(ty=newType1,dims=dim1_2::{}) := newType1_1;
@@ -827,7 +795,7 @@ algorithm
       then (cache,{(exp,NONE())});
       // The rest are array op array, which are element-wise operations
       // We thus change the operator to the element-wise one to avoid other vector operations than this one
-    case (cache,_,false,_,_,false,_,_,_) // array op array, 1-D through n-D
+    case (cache, false, _, _, false, _, _, _) // array op array, 1-D through n-D
       algorithm
         op := Util.assoc(inOper, {
             (Absyn.ADD(),Absyn.ADD_EW()),
@@ -967,8 +935,6 @@ protected
       orTypes = (DAE.OR(bool_scalar), {bool_scalar, bool_scalar}, bool_scalar) ::
         list((DAE.OR(bool_scalar), {at,at},at) threaded for at in boolarrtypes);
   end OperatorsBinary;
-  DAE.Type t;
-  DAE.Exp e;
   Absyn.Operator op=inOperator;
   Boolean ia1=Types.isArray(t1), ia2=Types.isArray(t2);
 algorithm
@@ -992,10 +958,8 @@ algorithm
   try
   ops := match op
     local
-      list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> intarrs,realarrs,boolarrs,stringarrs,scalars,arrays,types,scalarprod,matrixprod,intscalararrs,realscalararrs,intarrsscalar,realarrsscalar,realarrscalar,arrscalar,stringarrsscalar;
+      list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> realarrs,scalars,types,realscalararrs,realarrsscalar;
       tuple<DAE.Operator, list<DAE.Type>, DAE.Type> enum_op;
-      DAE.Type int_scalar,int_vector,int_matrix,real_scalar,real_vector,real_matrix;
-      DAE.Operator int_mul,real_mul,int_mul_sp,real_mul_sp,int_mul_mp,real_mul_mp,real_div,real_pow;
 
     case Absyn.ADD() then OperatorsBinary.addTypes;
     case Absyn.ADD_EW() then OperatorsBinary.addEwTypes;
@@ -1281,24 +1245,20 @@ function getOperatorFuncsOrEmpty
   output FCore.Cache cache;
   output list<DAE.Type> funcs;
 algorithm
-  (cache,funcs) := matchcontinue (inCache,env,tys,opName,info,acc)
+  (cache,funcs) := matchcontinue tys
     local
-      Absyn.Path path,opNamePath;
-      SCode.Element operatorCl;
-      FCore.Graph recordEnv,operEnv;
-      list<Absyn.Path> paths;
-      DAE.Type ty,scalarType;
+      DAE.Type ty;
       list<DAE.Type> rest;
-    case (_,_,ty::rest,_,_,_)
+    case ty::rest
       algorithm
         (cache,funcs) := getOperatorFuncsOrEmptySingleTy(inCache,env,ty,opName,info);
         (cache,funcs) := getOperatorFuncsOrEmpty(cache,env,rest,opName,info,listAppend(funcs,acc));
       then (cache,funcs);
-    case (_,_,_::rest,_,_,_)
+    case _::rest
       algorithm
         (cache,funcs) := getOperatorFuncsOrEmpty(inCache,env,rest,opName,info,acc);
       then (cache,funcs);
-    case (_,_,{},_,_,_)
+    case {}
       algorithm
         (cache,Util.SUCCESS()) := Static.instantiateDaeFunctionFromTypes(inCache, env, acc, false, NONE(), true, Util.SUCCESS());
         (DAE.T_TUPLE(funcs,_),_) := Types.traverseType(DAE.T_TUPLE(acc,NONE()), -1, Types.makeExpDimensionsUnknown);
@@ -1427,18 +1387,17 @@ function checkOperatorFunctionOneOutput
   input SourceInfo info;
   output Boolean isOK;
 algorithm
-  isOK := match (ty,opType,info)
+  isOK := match ty
     local
       DAE.Type ty1,ty2;
-      Absyn.Path p;
       Boolean b;
-    case (DAE.T_FUNCTION(funcResultType=DAE.T_TUPLE()),_,_) then false;
-    case (DAE.T_FUNCTION(funcArg=DAE.FUNCARG(ty=ty1,defaultBinding=NONE())::DAE.FUNCARG(ty=ty2,defaultBinding=NONE())::_),_,_)
+    case DAE.T_FUNCTION(funcResultType=DAE.T_TUPLE()) then false;
+    case DAE.T_FUNCTION(funcArg=DAE.FUNCARG(ty=ty1,defaultBinding=NONE())::DAE.FUNCARG(ty=ty2,defaultBinding=NONE())::_)
       algorithm
         b := Types.equivtypesOrRecordSubtypeOf(Types.arrayElementType(ty1),opType) or Types.equivtypesOrRecordSubtypeOf(Types.arrayElementType(ty2),opType);
         checkOperatorFunctionOneOutputError(b,opType,ty,info);
       then b;
-    case (DAE.T_FUNCTION(funcArg=DAE.FUNCARG(ty=ty1,defaultBinding=NONE())::_),_,_)
+    case DAE.T_FUNCTION(funcArg=DAE.FUNCARG(ty=ty1,defaultBinding=NONE())::_)
       algorithm
         b := Types.equivtypesOrRecordSubtypeOf(Types.arrayElementType(ty1),opType);
         checkOperatorFunctionOneOutputError(b,opType,ty,info);
@@ -1453,10 +1412,10 @@ function checkOperatorFunctionOneOutputError
   input DAE.Type ty;
   input SourceInfo info;
 algorithm
-  _ := match (ok,opType,ty,info)
+  () := match ok
     local
       String str1,str2;
-    case (true,_,_,_) then ();
+    case true then ();
     else
       algorithm
         str1 := TypesDump.unparseType(opType);
@@ -1472,10 +1431,10 @@ function checkOperatorFunctionOutput
   input SourceInfo info;
   output Boolean isOK;
 algorithm
-  isOK := match (ty,expected,info)
+  isOK := match ty
     local
       DAE.Type actual;
-    case (DAE.T_FUNCTION(funcResultType=actual),_,_)
+    case DAE.T_FUNCTION(funcResultType=actual)
       algorithm
         isOK := Types.equivtypesOrRecordSubtypeOf(actual,expected);
         // Error.assertionOrAddSourceMessage(isOK, Error.COMPILER_WARNING, {"TODO: Better warning for: " + TypesDump.unparseType(actual) + ", expected: " + TypesDump.unparseType(actual)}, info);
@@ -1489,11 +1448,11 @@ function isOperatorBinaryFunctionOrWarn
   input SourceInfo info;
   output Boolean isBinaryFunc;
 algorithm
-  isBinaryFunc := match (ty,info)
+  isBinaryFunc := match ty
     local
       list<DAE.FuncArg> rest;
-    case (DAE.T_FUNCTION(funcArg={_}),_) then false; // Unary functions are legal even if we are not interested in them
-    case (DAE.T_FUNCTION(funcArg=DAE.FUNCARG(defaultBinding=NONE())::DAE.FUNCARG(defaultBinding=NONE())::rest),_)
+    case DAE.T_FUNCTION(funcArg={_}) then false; // Unary functions are legal even if we are not interested in them
+    case DAE.T_FUNCTION(funcArg=DAE.FUNCARG(defaultBinding=NONE())::DAE.FUNCARG(defaultBinding=NONE())::rest)
       algorithm
         isBinaryFunc := List.mapMapBoolAnd(rest, Types.funcArgDefaultBinding, isSome);
         // Error.assertionOrAddSourceMessage(isBinaryFunc, Error.COMPILER_WARNING, {"TODO: Better warning for: " + TypesDump.unparseType(ty) + ", expected arguments 3..n to have default values"}, info);
@@ -1577,7 +1536,7 @@ function deoverload "Given several lists of parameter types and one argument lis
   output DAE.Type outType;
 algorithm
   (outOperator, outArgs, outType) :=
-  matchcontinue (inOperators, inArgs, aexp, inPrefix, info)
+  matchcontinue (inOperators, inArgs, inPrefix)
     local
       list<DAE.Exp> exps,args_1;
       list<DAE.Type> types_1,params,tps;
@@ -1588,9 +1547,9 @@ algorithm
       DAE.Prefix pre;
       DAE.Type ty;
       list<String> exps_str,tps_str;
-      String estr, pre_str, s, tpsstr;
+      String pre_str, s, tpsstr;
 
-    case (((op,params,rtype) :: _),args,_,pre,_)
+    case (((op,params,rtype) :: _), args, pre)
       algorithm
         //Debug.fprint(Flags.DOVL, stringDelimitList(List.map(params, TypesDump.printTypeStr),"\n"));
         //Debug.fprint(Flags.DOVL, "\n===\n");
@@ -1601,7 +1560,7 @@ algorithm
       then
         (op,args_1,rtype_1);
 
-    case ((_ :: xs),args,_,pre,_)
+    case ((_ :: xs), args, pre)
       algorithm
         (op,args_1,rtype) := deoverload(xs,args,aexp,pre,info);
       then
@@ -1610,13 +1569,13 @@ algorithm
     //Don't fail and dont print error messages. Operators can be overloaded
     //for records.
     //mahge: TODO move this to the proper place and print.
-    case ({},args,_,pre,_)
+    case ({}, args, pre)
       algorithm
         s := Dump.printExpStr(aexp);
         exps := List.map(args, Util.tuple21);
         tps := List.map(args, Util.tuple22);
         exps_str := List.map(exps, ExpressionBasics.printExpStr);
-        _ := stringDelimitList(exps_str, ", ");
+        stringDelimitList(exps_str, ", ");
         tps_str := List.map(tps, TypesDump.unparseType);
         tpsstr := stringDelimitList(tps_str, ", ");
         pre_str := PrefixUtil.printPrefixStr3(pre);
@@ -1635,26 +1594,26 @@ function computeReturnType "This function determines the return type of
   input SourceInfo inInfo;
   output DAE.Type outType;
 algorithm
-  outType := matchcontinue (inOperator,inTypesTypeLst,inType,inPrefix, inInfo)
+  outType := matchcontinue (inOperator, inTypesTypeLst, inType, inPrefix)
     local
       DAE.Type typ1,typ2,rtype,etype,typ;
       String t1_str,t2_str,pre_str;
       DAE.Dimension n1,n2,m,n,m1,m2,p;
       DAE.Prefix pre;
 
-    case (DAE.ADD_ARR(),{typ1,typ2},_,_, _)
+    case (DAE.ADD_ARR(), {typ1,typ2}, _, _)
       algorithm
         true := Types.subtype(typ1, typ2);
       then
         typ1;
 
-    case (DAE.ADD_ARR(),{typ1,typ2},_,_, _)
+    case (DAE.ADD_ARR(), {typ1,typ2}, _, _)
       algorithm
         true := Types.subtype(typ2, typ1);
       then
         typ1;
 
-    case (DAE.ADD_ARR(),{typ1,typ2},_,pre, _)
+    case (DAE.ADD_ARR(), {typ1,typ2}, _, pre)
       algorithm
         t1_str := TypesDump.unparseType(typ1);
         t2_str := TypesDump.unparseType(typ2);
@@ -1664,19 +1623,19 @@ algorithm
       then
         fail();
 
-    case (DAE.SUB_ARR(),{typ1,typ2},_,_, _)
+    case (DAE.SUB_ARR(), {typ1,typ2}, _, _)
       algorithm
         true := Types.subtype(typ1, typ2);
       then
         typ1;
 
-    case (DAE.SUB_ARR(),{typ1,typ2},_,_, _)
+    case (DAE.SUB_ARR(), {typ1,typ2}, _, _)
       algorithm
         true := Types.subtype(typ2, typ1);
       then
         typ1;
 
-    case (DAE.SUB_ARR(),{typ1,typ2},_,pre, _)
+    case (DAE.SUB_ARR(), {typ1,typ2}, _, pre)
       algorithm
         t1_str := TypesDump.unparseType(typ1);
         t2_str := TypesDump.unparseType(typ2);
@@ -1686,19 +1645,19 @@ algorithm
       then
         fail();
 
-    case (DAE.MUL_ARR(),{typ1,typ2},_,_, _)
+    case (DAE.MUL_ARR(), {typ1,typ2}, _, _)
       algorithm
         true := Types.subtype(typ1, typ2);
       then
         typ1;
 
-    case (DAE.MUL_ARR(),{typ1,typ2},_,_, _)
+    case (DAE.MUL_ARR(), {typ1,typ2}, _, _)
       algorithm
         true := Types.subtype(typ2, typ1);
       then
         typ1;
 
-    case (DAE.MUL_ARR(),{typ1,typ2},_,pre, _)
+    case (DAE.MUL_ARR(), {typ1,typ2}, _, pre)
       algorithm
         t1_str := TypesDump.unparseType(typ1);
         t2_str := TypesDump.unparseType(typ2);
@@ -1708,19 +1667,19 @@ algorithm
       then
         fail();
 
-    case (DAE.DIV_ARR(),{typ1,typ2},_,_, _)
+    case (DAE.DIV_ARR(), {typ1,typ2}, _, _)
       algorithm
         true := Types.subtype(typ1, typ2);
       then
         typ1;
 
-    case (DAE.DIV_ARR(),{typ1,typ2},_,_, _)
+    case (DAE.DIV_ARR(), {typ1,typ2}, _, _)
       algorithm
         true := Types.subtype(typ2, typ1);
       then
         typ1;
 
-    case (DAE.DIV_ARR(),{typ1,typ2},_,pre, _)
+    case (DAE.DIV_ARR(), {typ1,typ2}, _, pre)
       algorithm
         t1_str := TypesDump.unparseType(typ1);
         t2_str := TypesDump.unparseType(typ2);
@@ -1731,7 +1690,7 @@ algorithm
         fail();
 
     // Matrix[n,m]^i
-    case (DAE.POW_ARR(),{typ1,_},_,_, _)
+    case (DAE.POW_ARR(), {typ1,_}, _, _)
       algorithm
         2 := nDims(typ1);
         n := Types.getDimensionNth(typ1, 1);
@@ -1740,19 +1699,19 @@ algorithm
       then
         typ1;
 
-    case (DAE.POW_ARR2(),{typ1,typ2},_,_, _)
+    case (DAE.POW_ARR2(), {typ1,typ2}, _, _)
       algorithm
         true := Types.subtype(typ1, typ2);
       then
         typ1;
 
-    case (DAE.POW_ARR2(),{typ1,typ2},_,_, _)
+    case (DAE.POW_ARR2(), {typ1,typ2}, _, _)
       algorithm
         true := Types.subtype(typ2, typ1);
       then
         typ1;
 
-    case (DAE.POW_ARR2(),{typ1,typ2},_,pre, _)
+    case (DAE.POW_ARR2(), {typ1,typ2}, _, pre)
       algorithm
         t1_str := TypesDump.unparseType(typ1);
         t2_str := TypesDump.unparseType(typ2);
@@ -1762,19 +1721,19 @@ algorithm
       then
         fail();
 
-    case (DAE.MUL_SCALAR_PRODUCT(),{typ1,typ2},rtype,_, _)
+    case (DAE.MUL_SCALAR_PRODUCT(), {typ1,typ2}, rtype, _)
       algorithm
         true := Types.subtype(typ1, typ2);
       then
         rtype;
 
-    case (DAE.MUL_SCALAR_PRODUCT(),{typ1,typ2},rtype,_, _)
+    case (DAE.MUL_SCALAR_PRODUCT(), {typ1,typ2}, rtype, _)
       algorithm
         true := Types.subtype(typ2, typ1);
       then
         rtype;
 
-    case (DAE.MUL_SCALAR_PRODUCT(),{typ1,typ2},_,pre, _)
+    case (DAE.MUL_SCALAR_PRODUCT(), {typ1,typ2}, _, pre)
       algorithm
         t1_str := TypesDump.unparseType(typ1);
         t2_str := TypesDump.unparseType(typ2);
@@ -1785,7 +1744,7 @@ algorithm
         fail();
 
     // Vector[n]*Matrix[n,m] = Vector[m]
-    case (DAE.MUL_MATRIX_PRODUCT(),{typ1,typ2},_,_, _)
+    case (DAE.MUL_MATRIX_PRODUCT(), {typ1,typ2}, _, _)
       algorithm
         1 := nDims(typ1);
         2 := nDims(typ2);
@@ -1801,7 +1760,7 @@ algorithm
         rtype;
 
     // Matrix[n,m]*Vector[m] = Vector[n]
-    case (DAE.MUL_MATRIX_PRODUCT(),{typ1,typ2},_,_, _)
+    case (DAE.MUL_MATRIX_PRODUCT(), {typ1,typ2}, _, _)
       algorithm
         2 := nDims(typ1);
         1 := nDims(typ2);
@@ -1817,7 +1776,7 @@ algorithm
         rtype;
 
     // Matrix[n,m] * Matrix[m,p] = Matrix[n, p]
-    case (DAE.MUL_MATRIX_PRODUCT(),{typ1,typ2},_,_, _)
+    case (DAE.MUL_MATRIX_PRODUCT(), {typ1,typ2}, _, _)
       algorithm
         2 := nDims(typ1);
         2 := nDims(typ2);
@@ -1833,7 +1792,7 @@ algorithm
       then
         rtype;
 
-    case (DAE.MUL_MATRIX_PRODUCT(),{typ1,typ2},_,pre, _)
+    case (DAE.MUL_MATRIX_PRODUCT(), {typ1,typ2}, _, pre)
       algorithm
         t1_str := TypesDump.unparseType(typ1);
         t2_str := TypesDump.unparseType(typ2);
@@ -1843,41 +1802,41 @@ algorithm
       then
         fail();
 
-    case (DAE.MUL_ARRAY_SCALAR(),{typ1,_},_,_, _) then typ1;  /* rtype */
+    case (DAE.MUL_ARRAY_SCALAR(), {typ1,_}, _, _) then typ1;  /* rtype */
 
-    case (DAE.ADD_ARRAY_SCALAR(),{typ1,_},_,_, _) then typ1;  /* rtype */
+    case (DAE.ADD_ARRAY_SCALAR(), {typ1,_}, _, _) then typ1;  /* rtype */
 
-    case (DAE.SUB_SCALAR_ARRAY(),{_,typ2},_,_, _) then typ2;  /* rtype */
+    case (DAE.SUB_SCALAR_ARRAY(), {_,typ2}, _, _) then typ2;  /* rtype */
 
-    case (DAE.DIV_SCALAR_ARRAY(),{_,typ2},_,_, _) then typ2;  /* rtype */
+    case (DAE.DIV_SCALAR_ARRAY(), {_,typ2}, _, _) then typ2;  /* rtype */
 
-    case (DAE.DIV_ARRAY_SCALAR(),{typ1,_},_,_, _) then typ1;  /* rtype */
+    case (DAE.DIV_ARRAY_SCALAR(), {typ1,_}, _, _) then typ1;  /* rtype */
 
-    case (DAE.POW_ARRAY_SCALAR(),{typ1,_},_,_, _) then typ1;  /* rtype */
+    case (DAE.POW_ARRAY_SCALAR(), {typ1,_}, _, _) then typ1;  /* rtype */
 
-    case (DAE.POW_SCALAR_ARRAY(),{_,typ2},_,_, _) then typ2;  /* rtype */
+    case (DAE.POW_SCALAR_ARRAY(), {_,typ2}, _, _) then typ2;  /* rtype */
 
-    case (DAE.ADD(),_,typ,_, _) then typ;
+    case (DAE.ADD(), _, typ, _) then typ;
 
-    case (DAE.SUB(),_,typ,_, _) then typ;
+    case (DAE.SUB(), _, typ, _) then typ;
 
-    case (DAE.MUL(),_,typ,_, _) then typ;
+    case (DAE.MUL(), _, typ, _) then typ;
 
-    case (DAE.DIV(),_,typ,_, _) then typ;
+    case (DAE.DIV(), _, typ, _) then typ;
 
-    case (DAE.POW(),_,typ,_, _) then typ;
+    case (DAE.POW(), _, typ, _) then typ;
 
-    case (DAE.UMINUS(),_,typ,_, _) then typ;
+    case (DAE.UMINUS(), _, typ, _) then typ;
 
-    case (DAE.UMINUS_ARR(),(typ1 :: _),_,_, _) then typ1;
+    case (DAE.UMINUS_ARR(), (typ1 :: _), _, _) then typ1;
 
-    case (DAE.AND(), {typ1, typ2}, _, _, _)
+    case (DAE.AND(), {typ1, typ2}, _, _)
       algorithm
         true := Types.equivtypes(typ1, typ2);
       then
         typ1;
 
-    case (DAE.AND(), {typ1, typ2}, _, pre, _)
+    case (DAE.AND(), {typ1, typ2}, _, pre)
       algorithm
         t1_str := TypesDump.unparseType(typ1);
         t2_str := TypesDump.unparseType(typ2);
@@ -1887,13 +1846,13 @@ algorithm
       then
         fail();
 
-    case (DAE.OR(), {typ1, typ2}, _, _, _)
+    case (DAE.OR(), {typ1, typ2}, _, _)
       algorithm
         true := Types.equivtypes(typ1, typ2);
       then
         typ1;
 
-    case (DAE.OR(), {typ1, typ2}, _, pre, _)
+    case (DAE.OR(), {typ1, typ2}, _, pre)
       algorithm
         t1_str := TypesDump.unparseType(typ1);
         t2_str := TypesDump.unparseType(typ2);
@@ -1903,21 +1862,21 @@ algorithm
       then
         fail();
 
-    case (DAE.NOT(),{typ1},_,_, _) then typ1;
+    case (DAE.NOT(), {typ1}, _, _) then typ1;
 
-    case (DAE.LESS(),_,typ,_, _) then typ;
+    case (DAE.LESS(), _, typ, _) then typ;
 
-    case (DAE.LESSEQ(),_,typ,_, _) then typ;
+    case (DAE.LESSEQ(), _, typ, _) then typ;
 
-    case (DAE.GREATER(),_,typ,_, _) then typ;
+    case (DAE.GREATER(), _, typ, _) then typ;
 
-    case (DAE.GREATEREQ(),_,typ,_, _) then typ;
+    case (DAE.GREATEREQ(), _, typ, _) then typ;
 
-    case (DAE.EQUAL(),_,typ,_, _) then typ;
+    case (DAE.EQUAL(), _, typ, _) then typ;
 
-    case (DAE.NEQUAL(),_,typ,_, _) then typ;
+    case (DAE.NEQUAL(), _, typ, _) then typ;
 
-    case (DAE.USERDEFINED(),_,typ,_, _) then typ;
+    case (DAE.USERDEFINED(), _, typ, _) then typ;
   end matchcontinue;
 end computeReturnType;
 
@@ -1925,20 +1884,20 @@ function nDims "Returns the number of dimensions of a Type."
   input DAE.Type inType;
   output Integer outInteger;
 algorithm
-  outInteger := match (inType)
+  outInteger := match inType
     local
       Integer ns;
       DAE.Type t;
-    case (DAE.T_INTEGER()) then 0;
-    case (DAE.T_REAL()) then 0;
-    case (DAE.T_STRING()) then 0;
-    case (DAE.T_BOOL()) then 0;
-    case (DAE.T_ARRAY(ty = t))
+    case DAE.T_INTEGER() then 0;
+    case DAE.T_REAL() then 0;
+    case DAE.T_STRING() then 0;
+    case DAE.T_BOOL() then 0;
+    case DAE.T_ARRAY(ty = t)
       algorithm
         ns := nDims(t);
       then
         ns + 1;
-    case (DAE.T_SUBTYPE_BASIC(complexType = t))
+    case DAE.T_SUBTYPE_BASIC(complexType = t)
       algorithm
         ns := nDims(t);
       then ns;
@@ -1966,18 +1925,18 @@ function elementType "Returns the element type of a type, i.e. for arrays, retur
   input DAE.Type inType;
   output DAE.Type outType;
 algorithm
-  outType := match (inType)
+  outType := match inType
     local DAE.Type t,t_1;
-    case ((t as DAE.T_INTEGER())) then t;
-    case ((t as DAE.T_REAL())) then t;
-    case ((t as DAE.T_STRING())) then t;
-    case ((t as DAE.T_BOOL())) then t;
-    case (DAE.T_ARRAY(ty = t))
+    case t as DAE.T_INTEGER() then t;
+    case t as DAE.T_REAL() then t;
+    case t as DAE.T_STRING() then t;
+    case t as DAE.T_BOOL() then t;
+    case DAE.T_ARRAY(ty = t)
       algorithm
         t_1 := elementType(t);
       then
         t_1;
-    case (DAE.T_SUBTYPE_BASIC(complexType = t))
+    case DAE.T_SUBTYPE_BASIC(complexType = t)
       algorithm
         t_1 := elementType(t);
       then t_1;
@@ -1993,40 +1952,39 @@ function replaceOperatorWithFcall "Replaces a userdefined operator expression wi
   input DAE.Const inConst;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue (AbExp,inExp1,inOper,inExp2,inConst)
+  outExp := matchcontinue (AbExp, inExp1, inOper, inExp2)
     local
       DAE.Exp e1,e2;
       Absyn.Path funcname;
-      DAE.Const c;
 
-    case (Absyn.BINARY(_,_,_), e1, DAE.USERDEFINED(fqName = funcname), SOME(e2), _)
+    case (Absyn.BINARY(_,_,_), e1, DAE.USERDEFINED(fqName = funcname), SOME(e2))
       then DAE.CALL(funcname,{e1,e2},DAE.callAttrOther);
 
-    case (Absyn.BINARY(_,_,_), e1, _, SOME(e2), _)
+    case (Absyn.BINARY(_,_,_), e1, _, SOME(e2))
       then DAE.BINARY(e1, inOper, e2);
 
-    case (Absyn.UNARY(_, _), e1, DAE.USERDEFINED(fqName = funcname), NONE(), _)
+    case (Absyn.UNARY(_, _), e1, DAE.USERDEFINED(fqName = funcname), NONE())
       then DAE.CALL(funcname,{e1},DAE.callAttrOther);
 
-    case (Absyn.UNARY(_, _), e1, _, NONE(), _)
+    case (Absyn.UNARY(_, _), e1, _, NONE())
         then DAE.UNARY(inOper,e1);
 
-    case (Absyn.LBINARY(_, _, _), e1, DAE.USERDEFINED(fqName = funcname), SOME(e2), _)
+    case (Absyn.LBINARY(_, _, _), e1, DAE.USERDEFINED(fqName = funcname), SOME(e2))
        then DAE.CALL(funcname,{e1,e2},DAE.callAttrOther);
 
-    case (Absyn.LBINARY(_,_,_), e1, _, SOME(e2), _)
+    case (Absyn.LBINARY(_,_,_), e1, _, SOME(e2))
       then DAE.LBINARY(e1, inOper, e2);
 
-    case (Absyn.LUNARY(_, _), e1, DAE.USERDEFINED(fqName = funcname), NONE(),_)
+    case (Absyn.LUNARY(_, _), e1, DAE.USERDEFINED(fqName = funcname), NONE())
       then DAE.CALL(funcname,{e1},DAE.callAttrOther);
 
-    case (Absyn.LUNARY(_, _), e1, _, NONE(), _)
+    case (Absyn.LUNARY(_, _), e1, _, NONE())
         then DAE.LUNARY(inOper,e1);
 
-    case (Absyn.RELATION(_, _, _), e1, DAE.USERDEFINED(fqName = funcname), SOME(e2),_)
+    case (Absyn.RELATION(_, _, _), e1, DAE.USERDEFINED(fqName = funcname), SOME(e2))
       then DAE.CALL(funcname,{e1,e2},DAE.callAttrOther);
 
-    case (Absyn.RELATION(_,_,_), e1, _, SOME(e2), _)
+    case (Absyn.RELATION(_,_,_), e1, _, SOME(e2))
       then DAE.RELATION(e1, inOper, e2, -1, NONE());
 
   end matchcontinue;
@@ -2042,19 +2000,18 @@ function warnUnsafeRelations "Check if we have Real == Real or Real != Real, if 
   input DAE.Prefix inPrefix;
   input SourceInfo inInfo;
 algorithm
-  _ := matchcontinue(inEnv,inExp,variability,t1,t2,e1,e2,op,inPrefix,inInfo)
+  () := matchcontinue(inExp, variability)
     local
       Boolean b1,b2;
-      String stmtString,opString,pre_str;
-      DAE.Prefix pre;
+      String stmtString,opString;
     // == or != on Real is permitted in functions, so don't print an error if
     // we're in a function.
-    case (_, _, _, _, _, _, _, _, _, _)
+    case (_, _)
       algorithm
         true := FGraph.inFunctionScope(inEnv);
       then ();
 
-    case(_, Absyn.RELATION(_, _, _), DAE.C_VAR(),_,_,_,_,_,_,_)
+    case(Absyn.RELATION(_, _, _), DAE.C_VAR())
       algorithm
         b1 := Types.isReal(t1);
         b2 := Types.isReal(t1);
@@ -2073,9 +2030,9 @@ function verifyOp "
 Helper function for warnUnsafeRelations
 We only want to check DAE.EQUAL and Expression.NEQUAL since they are the only illegal real operations."
 input DAE.Operator op;
-algorithm _ := match(op)
-  case(DAE.EQUAL(_)) then ();
-  case(DAE.NEQUAL(_)) then ();
+algorithm () := match op
+  case DAE.EQUAL(_) then ();
+  case DAE.NEQUAL(_) then ();
   end match;
 end verifyOp;
 
@@ -2103,13 +2060,13 @@ function binaryCastConstructor
   output FCore.Cache cache;
   output list<tuple<DAE.Exp,Option<DAE.Type>>> resExps;
 algorithm
-  (cache,resExps) := match (inCache,env,inExp1,inExp2,inType1,inType2,exps,types,info)
+  (cache,resExps) := match exps
     local
       list<list<DAE.FuncArg>> args;
       list<DAE.Type> tys1,tys2;
       list<DAE.Exp> exps1,exps2;
-    case (_,_,_,_,_,_,{_},_,_) then (inCache,exps); // We already have exactly 1 match, so don't look for more
-    case (_,_,_,_,_,_,{},_,_)
+    case {_} then (inCache,exps); // We already have exactly 1 match, so don't look for more
+    case {}
       algorithm
         // Step 3: Call constructor functions to try matching inputs
         args := List.map(types, Types.getFuncArg);

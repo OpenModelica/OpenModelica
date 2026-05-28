@@ -311,7 +311,6 @@ protected
     String id;
     SCode.Mod mod;
     Absyn.Exp aexp;
-    Absyn.ComponentRef acref;
     Integer index;
   algorithm
     for attr in attrs loop

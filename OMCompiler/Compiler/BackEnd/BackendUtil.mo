@@ -123,12 +123,12 @@ first  changes name 'der(v)' to $derivativev and 'pre(v)' to 'pre(v)' with appli
   input String inDerName;
   output String outDerName;
 algorithm
-  outDerName := matchcontinue(inDerName)
+  outDerName := matchcontinue inDerName
     local
       String name, derName;
       list<String> names;
 
-    case(derName) algorithm
+    case derName algorithm
       0 := System.strncmp(derName,"der(",4);
       // adrpo: 2009-09-08
       // the commented text: _::name::_ = listLast(System.strtok(derName,"()"));
@@ -138,12 +138,12 @@ algorithm
       names := List.map1(names, modelicaStringToCStr, false);
       name := DAE.derivativeNamePrefix + stringAppendList(names);
     then name;
-    case(derName) algorithm
+    case derName algorithm
       0 := System.strncmp(derName,"pre(",4);
       _::name::_:= System.strtok(derName,"()");
       name := "pre(" + modelicaStringToCStr(name,false) + ")";
     then name;
-    case(derName) then modelicaStringToCStr(derName,false);
+    case derName then modelicaStringToCStr(derName,false);
   end matchcontinue;
 end modelicaStringToCStr2;
 

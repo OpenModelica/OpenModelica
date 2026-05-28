@@ -87,7 +87,7 @@ protected function isClass
   input SCode.Element inClass;
   output Boolean outIsClass;
 algorithm
-  outIsClass := match(inClass)
+  outIsClass := match inClass
     case SCode.CLASS(restriction = SCode.R_FUNCTION(_)) then false;
     else true;
   end match;
@@ -108,12 +108,12 @@ public function flattenClassInProgram
   output SCode.Program outProgram;
   output Env outEnv;
 algorithm
-  (outProgram, outEnv) := matchcontinue(inClassName, inProgram)
+  (outProgram, outEnv) := matchcontinue inProgram
     local
       Env env;
       SCode.Program prog;
 
-    case (_, prog)
+    case prog
       algorithm
         //System.startTimer();
         System.tmpTickResetIndex(0, NFSCodeEnv.tmpTickIndex);
@@ -154,12 +154,12 @@ public function flattenCompleteProgram
   input SCode.Program inProgram;
   output SCode.Program outProgram;
 algorithm
-  outProgram := matchcontinue(inProgram)
+  outProgram := matchcontinue inProgram
     local
       Env env;
       SCode.Program prog;
 
-    case (prog)
+    case prog
       algorithm
         env := NFSCodeEnv.buildInitialEnv();
         env := NFSCodeEnv.extendEnvWithClasses(prog, env);

@@ -334,8 +334,6 @@ algorithm
       Expression lhs, rhs;
       Type ty;
       DAE.ElementSource src;
-      SourceInfo info;
-      list<Equation> eql;
       Boolean scalarize;
 
     case Equation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = src)

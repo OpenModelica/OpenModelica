@@ -101,14 +101,13 @@ public function loadClass
   input Boolean encrypted = false;
   output Absyn.Program outProgram;
 algorithm
-  outProgram := matchcontinue (inPath,priorityList,modelicaPath,encoding)
+  outProgram := matchcontinue (inPath, modelicaPath)
     local
       String gd,classname,mp,pack;
       list<String> mps;
       Absyn.Program p;
-      Absyn.Path rest;
     /* Simple names: Just load the file if it can be found in $OPENMODELICALIBRARY */
-    case (Absyn.IDENT(name = classname),_,mp,_)
+    case (Absyn.IDENT(name = classname), mp)
       algorithm
         gd := Autoconf.groupDelimiter;
         mps := System.strtok(mp, gd);
@@ -117,7 +116,7 @@ algorithm
       then
         p;
     /* Qualified names: First check if it is defined in a file pack.mo */
-    case (Absyn.QUALIFIED(name = pack),_,mp,_)
+    case (Absyn.QUALIFIED(name = pack), mp)
       algorithm
         gd := Autoconf.groupDelimiter;
         mps := System.strtok(mp, gd);
@@ -145,8 +144,8 @@ protected function loadClassFromMps
   input Boolean encrypted = false;
   output Absyn.Program outProgram;
 protected
-  String mp, name, pwd, cmd, version, userLibraries;
-  Boolean isDir, impactOK;
+  String mp, name, version;
+  Boolean isDir;
   Option<Absyn.Class> cl;
   list<String> versionsThatProvideTheWanted, commands, versions;
 algorithm
@@ -217,7 +216,7 @@ public function loadClassFromMp
   input Boolean encrypted = false;
   output Option<Absyn.Class> outClass;
 algorithm
-  outClass := match (id,path,name,isDir,optEncoding)
+  outClass := match isDir
     local
       String pd,encoding,encodingfile;
       Option<Absyn.Class> cl;
@@ -226,7 +225,7 @@ algorithm
       Boolean lveStarted;
       Option<Integer> lveInstance;
 
-    case (_,_,_,false,_)
+    case false
       algorithm
         pd := Autoconf.pathDelimiter;
         /* Check for path/package.encoding; OpenModelica extension */
@@ -237,7 +236,7 @@ algorithm
       then
         cl;
 
-    case (_,_,_,true,_)
+    case true
       algorithm
         /* Check for path/package.encoding; OpenModelica extension */
         pd := Autoconf.pathDelimiter;
@@ -298,24 +297,21 @@ protected function loadCompletePackageFromMp
   input Boolean encrypted = false;
   output Option<Absyn.Class> cl;
 algorithm
-  cl := matchcontinue (id,inIdent,inString,inWithin)
+  cl := matchcontinue (inIdent, inString, inWithin)
     local
-      String pd,mp_1,packagefile,orderfile,pack,mp,name,str;
+      String pd,mp_1,packagefile,orderfile,pack,mp;
       Absyn.Within within_;
       list<String> tv;
-      Boolean pp,fp,ep;
-      Absyn.Restriction r;
       list<Absyn.NamedArg> ca;
       list<Absyn.ClassPart> cp;
       Option<String> cmt;
-      SourceInfo info;
       Option<Absyn.Class> opt_cl;
       Absyn.Class class_;
       Absyn.Path path;
       Absyn.Within w2;
       list<PackageOrder> reverseOrder;
       list<Absyn.Annotation> ann;
-    case (_,pack,mp,within_)
+    case (pack, mp, within_)
       algorithm
         pd := Autoconf.pathDelimiter;
         mp_1 := stringAppendList({mp,pd,pack});
@@ -329,7 +325,7 @@ algorithm
         opt_cl := parsePackageFile(packagefile, strategy, true, within_, id, encrypted);
         // print("Got " + packagefile + "\n");
         if (isSome(opt_cl)) then
-          (class_ as Absyn.CLASS(body=Absyn.PARTS(tv,ca,cp,ann,cmt))) := Util.getOption(opt_cl);
+          class_ as Absyn.CLASS(body=Absyn.PARTS(tv,ca,cp,ann,cmt)) := Util.getOption(opt_cl);
           reverseOrder := getPackageContentNames(class_, orderfile, mp_1, Error.getNumErrorMessages(), encrypted);
           path := AbsynUtil.joinWithinPath(within_,Absyn.IDENT(id));
           w2 := Absyn.WITHIN(path);
@@ -338,7 +334,7 @@ algorithm
           opt_cl := SOME(class_);
         end if;
       then opt_cl;
-    case (_,pack,mp,_)
+    case (pack, mp, _)
       algorithm
         true := numError == Error.getNumErrorMessages();
         Error.addInternalError("loadCompletePackageFromMp failed for unknown reason: mp=" + mp + " pack=" + pack, sourceInfo());
@@ -504,15 +500,15 @@ protected function getPackageContentNames
   input Boolean encrypted = false;
   output list<PackageOrder> po "reverse";
 algorithm
-  (po) := matchcontinue (cl,filename,mp,numError)
+  po := matchcontinue cl
     local
-      String contents, duplicatesStr, differencesStr, classFilename;
-      list<String> duplicates, namesToFind, mofiles, subdirs, differences, intersection, caseInsensitiveFiles;
+      String contents, duplicatesStr, differencesStr;
+      list<String> duplicates, namesToFind, mofiles, subdirs, differences, intersection;
       list<Absyn.ClassPart> cp;
       SourceInfo info;
       list<PackageOrder> po1, po2;
 
-    case (Absyn.CLASS(body=Absyn.PARTS(classParts=cp),info=info),_,_,_)
+    case Absyn.CLASS(body=Absyn.PARTS(classParts=cp),info=info)
       algorithm
         try
           true := System.regularFileExists(filename);
@@ -540,7 +536,7 @@ algorithm
           mofiles := listAppend(subdirs,mofiles);
           // check if all are present in the package.order
           differences := List.setDifference(mofiles, namesToFind);
-          (po1) := getPackageContentNamesinParts(namesToFind,cp,{});
+          po1 := getPackageContentNamesinParts(namesToFind,cp,{});
           (po1,differences) := List.map3Fold(po1,checkPackageOrderFilesExist,mp,info,encrypted,differences);
 
           // issue a warning if not all are present
@@ -565,7 +561,7 @@ algorithm
       then
         po;
 
-    case (Absyn.CLASS(info=info),_,_,_)
+    case Absyn.CLASS(info=info)
       algorithm
         true := numError == Error.getNumErrorMessages();
         Error.addSourceMessage(Error.INTERNAL_ERROR,{"getPackageContentNames failed for unknown reason"},info);
@@ -603,11 +599,10 @@ protected function checkPackageOrderFilesExist
   input Boolean encrypted = false;
   input output list<String> differences;
 algorithm
-  _ := match (po,mp,info)
+  () := match po
     local
       String pd,str,str2,str3,str4;
-      list<String> strs;
-    case (CLASSLOAD(str),_,_)
+    case CLASSLOAD(str)
       algorithm
         pd := Autoconf.pathDelimiter;
         str2 := str + (if encrypted then ".moc" else ".mo");
@@ -646,29 +641,29 @@ protected function getPackageContentNamesinParts
   input list<PackageOrder> acc;
   output list<PackageOrder> outOrder "reverse";
 algorithm
-  outOrder := match (inNamesToSort,cps,acc)
+  outOrder := match (inNamesToSort, cps)
     local
       list<Absyn.ClassPart> rcp;
       list<Absyn.ElementItem> elts;
       list<String> namesToSort;
       Absyn.ClassPart cp;
-    case (namesToSort,{},_)
+    case (namesToSort, {})
       algorithm
         outOrder := listAppend(List.mapReverse(namesToSort,makeClassLoad),acc);
       then outOrder;
-    case (namesToSort,Absyn.PUBLIC(elts)::rcp,_)
+    case (namesToSort, Absyn.PUBLIC(elts)::rcp)
       algorithm
         (outOrder,namesToSort) := getPackageContentNamesinElts(namesToSort,elts,acc,true);
-        (outOrder) := getPackageContentNamesinParts(namesToSort,rcp,outOrder);
+        outOrder := getPackageContentNamesinParts(namesToSort,rcp,outOrder);
       then outOrder;
-    case (namesToSort,Absyn.PROTECTED(elts)::rcp,_)
+    case (namesToSort, Absyn.PROTECTED(elts)::rcp)
       algorithm
         (outOrder,namesToSort) := getPackageContentNamesinElts(namesToSort,elts,acc,false);
-        (outOrder) := getPackageContentNamesinParts(namesToSort,rcp,outOrder);
+        outOrder := getPackageContentNamesinParts(namesToSort,rcp,outOrder);
       then outOrder;
-    case (namesToSort,cp::rcp,_)
+    case (namesToSort, cp::rcp)
       algorithm
-        (outOrder) := getPackageContentNamesinParts(namesToSort,rcp,CLASSPART(cp)::acc);
+        outOrder := getPackageContentNamesinParts(namesToSort,rcp,CLASSPART(cp)::acc);
       then outOrder;
   end match;
 end getPackageContentNamesinParts;
@@ -681,7 +676,7 @@ protected function getPackageContentNamesinElts
   output list<PackageOrder> outOrder;
   output list<String> outNames;
 algorithm
-  (outOrder,outNames) := match (inNamesToSort,inElts,po,pub)
+  (outOrder,outNames) := match (inNamesToSort, inElts)
     local
       String name1,name2;
       list<String> namesToSort,names,compNames;
@@ -691,9 +686,9 @@ algorithm
       list<Absyn.ComponentItem> comps;
       Absyn.ElementItem ei;
       PackageOrder orderElt,load;
-    case (namesToSort,{},_,_) then (po,namesToSort);
+    case (namesToSort, {}) then (po,namesToSort);
 
-    case (name1::_,(ei as Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.COMPONENTS(components=comps),info=info)))::elts,_,_)
+    case (name1::_, (ei as Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.COMPONENTS(components=comps),info=info)))::elts)
       algorithm
         compNames := List.map(comps,AbsynUtil.componentName);
         (names,b) := matchCompNames(inNamesToSort,compNames,info);
@@ -701,7 +696,7 @@ algorithm
         (outOrder,names) := getPackageContentNamesinElts(names,if b then elts else inElts,orderElt :: po,pub);
       then (outOrder,names);
 
-    case (name1::namesToSort,(ei as Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(class_=Absyn.CLASS(name=name2,info=info)))))::elts,_,_)
+    case (name1::namesToSort, (ei as Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(class_=Absyn.CLASS(name=name2,info=info)))))::elts)
       algorithm
         load := makeClassLoad(name1);
         b := name1 == name2;
@@ -710,7 +705,7 @@ algorithm
         (outOrder,names) := getPackageContentNamesinElts(namesToSort,if b then elts else inElts,orderElt :: po, pub);
       then (outOrder,names);
 
-    case ({},(Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(class_=Absyn.CLASS(name=name2,info=info)))))::_,_,_)
+    case ({}, (Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(class_=Absyn.CLASS(name=name2,info=info)))))::_)
       algorithm
         load := makeClassLoad(name2);
         Error.assertionOrAddSourceMessage(not listMember(load,po), Error.PACKAGE_MO_NOT_IN_ORDER, {name2}, info);
@@ -718,7 +713,7 @@ algorithm
         (outOrder,names) := getPackageContentNamesinElts(name2 :: inNamesToSort, inElts, po, pub);
       then (outOrder,names);
 
-    case ({},Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.COMPONENTS(components=Absyn.COMPONENTITEM(component=Absyn.COMPONENT(name=name2))::_),info=info))::_,_,_)
+    case ({}, Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.COMPONENTS(components=Absyn.COMPONENTITEM(component=Absyn.COMPONENT(name=name2))::_),info=info))::_)
       algorithm
         load := makeClassLoad(name2);
         Error.assertionOrAddSourceMessage(not listMember(load,po), Error.PACKAGE_MO_NOT_IN_ORDER, {name2}, info);
@@ -726,7 +721,7 @@ algorithm
         (outOrder,names) := getPackageContentNamesinElts(name2 :: inNamesToSort, inElts, po, pub);
       then (outOrder,names);
 
-    case (namesToSort,ei::elts,_,_)
+    case (namesToSort, ei::elts)
       algorithm
         (outOrder,names) := getPackageContentNamesinElts(namesToSort,elts,ELEMENT(ei,pub) :: po, pub);
       then (outOrder,names);
@@ -740,15 +735,15 @@ protected function matchCompNames
   output list<String> outNames;
   output Boolean matchedNames;
 algorithm
-  (outNames,matchedNames) := match (names,comps,info)
+  (outNames,matchedNames) := match (names, comps)
     local
       Boolean b, b1;
       String n1,n2;
       list<String> rest1,rest2;
 
-    case (_,{},_) then (names,true);
+    case (_, {}) then (names,true);
 
-    case (n1::rest1,n2::rest2,_)
+    case (n1::rest1, n2::rest2)
       algorithm
         if (n1 == n2)
         then
@@ -780,7 +775,7 @@ protected
   list<Absyn.Class> classes;
 algorithm
   Absyn.PROGRAM(classes=classes) := p1;
-  _ := List.map2(classes,AbsynUtil.getNamedAnnotationInClass,Absyn.IDENT("__OpenModelica_messageOnLoad"),checkOnLoadMessageWork);
+  List.map2(classes,AbsynUtil.getNamedAnnotationInClass,Absyn.IDENT("__OpenModelica_messageOnLoad"),checkOnLoadMessageWork);
 end checkOnLoadMessage;
 
 protected function checkOnLoadMessageWork

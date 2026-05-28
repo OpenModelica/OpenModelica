@@ -63,14 +63,14 @@ public function checkRecursiveShortDefinition
   input NFSCodeEnv.Env inTypeEnv;
   input SourceInfo inInfo;
 algorithm
-  _ := matchcontinue(inTypeSpec, inTypeName, inTypeEnv, inInfo)
+  () := matchcontinue inTypeEnv
     local
       Absyn.Path ts_path, ty_path;
       String ty;
 
-    case (_, _, {}, _) then ();
+    case {} then ();
 
-    case (_, _, _ :: _, _)
+    case _ :: _
       algorithm
         ts_path := AbsynUtil.typeSpecPath(inTypeSpec);
         ty_path := NFSCodeEnv.getEnvPath(inTypeEnv);
@@ -95,14 +95,14 @@ protected function isSelfReference
   input Absyn.Path inReferencedName;
   output Boolean selfRef;
 algorithm
-  selfRef := match(inTypeName, inTypePath, inReferencedName)
+  selfRef := match(inTypePath, inReferencedName)
     local
       Absyn.Path p1, p2;
 
-    case (_, p1, Absyn.FULLYQUALIFIED(p2))
+    case (p1, Absyn.FULLYQUALIFIED(p2))
       then AbsynUtil.pathEqual(AbsynUtil.joinPaths(p1, Absyn.IDENT(inTypeName)), p2);
 
-    case (_, _, p2)
+    case (_, p2)
       then stringEqual(AbsynUtil.pathLastIdent(inTypePath), AbsynUtil.pathFirstIdent(p2));
 
   end match;
@@ -112,12 +112,10 @@ public function checkClassExtendsReplaceability
   input NFSCodeEnv.Item inBaseClass;
   input SourceInfo inOriginInfo;
 algorithm
-  _ := match(inBaseClass, inOriginInfo)
+  () := match inBaseClass
     local
-      SourceInfo info;
-      String name;
-    case (NFSCodeEnv.CLASS(cls = SCode.CLASS(prefixes = SCode.PREFIXES(
-        replaceablePrefix = SCode.REPLACEABLE()))), _)
+    case NFSCodeEnv.CLASS(cls = SCode.CLASS(prefixes = SCode.PREFIXES(
+        replaceablePrefix = SCode.REPLACEABLE())))
       then ();
   end match;
 end checkClassExtendsReplaceability;
@@ -127,12 +125,12 @@ public function checkRedeclareModifier
   input Absyn.Path inBaseClass;
   input NFSCodeEnv.Env inEnv;
 algorithm
-  _ := match(inModifier, inBaseClass, inEnv)
+  () := match inModifier
     local
       SCode.Element e;
 
-    case (NFSCodeEnv.RAW_MODIFIER(e as SCode.CLASS(classDef =
-        SCode.DERIVED())), _, _)
+    case NFSCodeEnv.RAW_MODIFIER(e as SCode.CLASS(classDef =
+        SCode.DERIVED()))
       algorithm
         checkRedeclareModifier2(e, inBaseClass, inEnv);
       then
@@ -147,23 +145,23 @@ public function checkRedeclareModifier2
   input Absyn.Path inBaseClass;
   input NFSCodeEnv.Env inEnv;
 algorithm
-  _ := matchcontinue(inModifier, inBaseClass, inEnv)
+  () := matchcontinue inModifier
     local
       Absyn.TypeSpec ty;
       SourceInfo info;
       String name, ty_str;
       Absyn.Path ty_path;
 
-    case (SCode.CLASS(name = name,
-        classDef = SCode.DERIVED(typeSpec = ty)), _, _)
+    case SCode.CLASS(name = name,
+        classDef = SCode.DERIVED(typeSpec = ty))
       algorithm
         ty_path := AbsynUtil.typeSpecPath(ty);
         false := isSelfReference(name, inBaseClass, ty_path);
       then
         ();
 
-    case (SCode.CLASS(name = name,
-        classDef = SCode.DERIVED(typeSpec = ty), info = info), _, _)
+    case SCode.CLASS(name = name,
+        classDef = SCode.DERIVED(typeSpec = ty), info = info)
       algorithm
         ty_str := Dump.unparseTypeSpec(ty);
         Error.addSourceMessage(Error.RECURSIVE_SHORT_CLASS_DEFINITION,
@@ -179,11 +177,11 @@ public function checkModifierIfRedeclare
   input SCode.Mod inModifier;
   input SourceInfo inInfo;
 algorithm
-  _ := match(inItem, inModifier, inInfo)
+  () := match inModifier
     local
       SCode.Element el;
 
-    case (_, SCode.REDECL(element = el), _)
+    case SCode.REDECL(element = el)
       algorithm
         checkRedeclaredElementPrefix(inItem, el, inInfo);
       then
@@ -200,7 +198,7 @@ public function checkRedeclaredElementPrefix
   input SCode.Element inReplacement;
   input SourceInfo inInfo;
 algorithm
-  _ := match(inItem, inReplacement)
+  () := match(inItem, inReplacement)
     local
       SCode.Replaceable repl;
       SCode.Final fin;
@@ -208,7 +206,6 @@ algorithm
       SourceInfo info;
       SCode.Variability var;
       SCode.Restriction res;
-      SCode.Visibility vis1, vis2;
       String ty;
       Absyn.TypeSpec ty1, ty2;
       Boolean ok;
@@ -387,7 +384,6 @@ public function checkDuplicateRedeclarations
   input NFSCodeEnv.Redeclaration inRedeclare;
   input list<NFSCodeEnv.Redeclaration> inRedeclarations;
 protected
-  SCode.Element el;
   String el_name;
   SourceInfo el_info;
 algorithm
@@ -402,17 +398,16 @@ protected function checkDuplicateRedeclarations2
   input list<NFSCodeEnv.Redeclaration> inRedeclarations;
   output Boolean outIsDuplicate;
 algorithm
-  outIsDuplicate := matchcontinue(inRedeclareName, inRedeclareInfo,
-      inRedeclarations)
+  outIsDuplicate := matchcontinue inRedeclarations
     local
       NFSCodeEnv.Redeclaration redecl;
       list<NFSCodeEnv.Redeclaration> rest_redecls;
       String el_name;
       SourceInfo el_info;
 
-    case (_, _, {}) then false;
+    case {} then false;
 
-    case (_, _, redecl :: _)
+    case redecl :: _
       algorithm
         (el_name, el_info) := NFSCodeEnv.getRedeclarationNameInfo(redecl);
         true := stringEqual(inRedeclareName, el_name);
@@ -422,7 +417,7 @@ algorithm
       then
         true;
 
-    case (_, _, _ :: rest_redecls)
+    case _ :: rest_redecls
       then checkDuplicateRedeclarations2(inRedeclareName,
         inRedeclareInfo, rest_redecls);
 
@@ -444,26 +439,25 @@ public function checkRecursiveComponentDeclaration
   input NFSCodeEnv.Item inTypeItem;
   input NFSCodeEnv.Env inComponentEnv;
 algorithm
-  _ := matchcontinue(inComponentName, inComponentInfo, inTypeEnv, inTypeItem,
-      inComponentEnv)
+  () := matchcontinue(inTypeEnv, inComponentEnv)
     local
       String cls_name, ty_name;
       EnvTree.Tree tree;
       SCode.Element el;
 
     // No environment means one of the basic types.
-    case (_, _, {}, _, _) then ();
+    case ({}, _) then ();
 
     // Check that the environment of the components type is not an enclosing
     // scope of the component itself.
-    case (_, _, _, _, _)
+    case (_, _)
       algorithm
         false := NFSCodeEnv.envPrefixOf(inTypeEnv, inComponentEnv);
       then
         ();
 
     // Make an exception for components in functions
-    case (_, _, _, _, NFSCodeEnv.FRAME(name = SOME(cls_name)) ::
+    case (_, NFSCodeEnv.FRAME(name = SOME(cls_name)) ::
         NFSCodeEnv.FRAME(clsAndVars = tree) :: _)
       algorithm
         NFSCodeEnv.CLASS(cls = el) := EnvTree.get(tree, cls_name);
@@ -472,7 +466,7 @@ algorithm
         ();
 
     // Make an exception for components in uniontypes
-    case (_, _, _, _, NFSCodeEnv.FRAME(name = SOME(cls_name)) ::
+    case (_, NFSCodeEnv.FRAME(name = SOME(cls_name)) ::
         NFSCodeEnv.FRAME(clsAndVars = tree) :: _)
       algorithm
         NFSCodeEnv.CLASS(cls = el) := EnvTree.get(tree, cls_name);
@@ -499,11 +493,11 @@ public function checkIdentNotEqTypeName
   input SourceInfo inInfo;
   output Boolean outIsNotEq;
 algorithm
-  outIsNotEq := matchcontinue(inIdent, inTypeName, inInfo)
+  outIsNotEq := matchcontinue(inIdent, inTypeName)
     local
       String id, ty;
 
-    case (id, Absyn.TPATH(path = Absyn.IDENT(ty)), _)
+    case (id, Absyn.TPATH(path = Absyn.IDENT(ty)))
       algorithm
         true := stringEq(id, ty);
         Error.addSourceMessage(Error.LOOKUP_TYPE_FOUND_COMP, {id}, inInfo);
@@ -518,8 +512,8 @@ public function checkComponentsEqual
   input NFInstTypes.Component inComponent1;
   input NFInstTypes.Component inComponent2;
 algorithm
-  _ := match(inComponent1, inComponent2)
-    case (_, _)
+  () := match inComponent2
+    case _
       algorithm
         print("Found duplicate component\n");
       then
@@ -533,18 +527,18 @@ public function checkInstanceRestriction
   input NFInstTypes.Prefix inPrefix;
   input SourceInfo inInfo;
 algorithm
-  _ := matchcontinue(inItem, inPrefix, inInfo)
+  () := matchcontinue inItem
     local
       SCode.Restriction res;
       String pre_str, res_str;
 
-    case (NFSCodeEnv.CLASS(cls = SCode.CLASS(restriction = res)), _, _)
+    case NFSCodeEnv.CLASS(cls = SCode.CLASS(restriction = res))
       algorithm
         true := SCodeUtil.isInstantiableClassRestriction(res);
       then
         ();
 
-    case (NFSCodeEnv.CLASS(cls = SCode.CLASS(restriction = res)), _, _)
+    case NFSCodeEnv.CLASS(cls = SCode.CLASS(restriction = res))
       algorithm
         res_str := SCodeDump.restrictionStringPP(res);
         pre_str := NFInstDump.prefixStr(inPrefix);
@@ -569,12 +563,12 @@ public function checkPartialInstance
   input NFSCodeEnv.Item inItem;
   input SourceInfo inInfo;
 algorithm
-  _ := match(inItem, inInfo)
+  () := match inItem
     local
       String name;
 
-    case (NFSCodeEnv.CLASS(cls = SCode.CLASS(name = name, partialPrefix =
-        SCode.PARTIAL())), _)
+    case NFSCodeEnv.CLASS(cls = SCode.CLASS(name = name, partialPrefix =
+        SCode.PARTIAL()))
       algorithm
         Error.addSourceMessage(Error.INST_PARTIAL_CLASS, {name}, inInfo);
       then

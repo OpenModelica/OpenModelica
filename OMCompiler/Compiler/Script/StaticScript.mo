@@ -74,9 +74,8 @@ protected function calculateSimulationTimes
   output DAE.Exp numberOfIntervals "number of intervals, default 500";
 algorithm
   (outCache, startTime, stopTime, numberOfIntervals) :=
-  matchcontinue (inCache, inEnv, inAbsynExpLst, inAbsynNamedArgLst, inImplInst, inPrefix, inInfo, inSimOpt)
+  matchcontinue (inCache, inEnv, inAbsynExpLst, inAbsynNamedArgLst, inImplInst, inPrefix, inInfo)
     local
-      Absyn.ComponentRef cr;
       list<Absyn.NamedArg> args;
       Boolean impl;
       DAE.Prefix pre;
@@ -87,7 +86,7 @@ algorithm
       FCore.Graph env;
 
     // special case for Parham Vaseles OpenModelica Interactive, where buildModel takes stepSize instead of startTime, stopTime and numberOfIntervals
-    case (cache,env,{Absyn.CREF()},args,impl,pre,info,_)
+    case (cache, env, {Absyn.CREF()}, args, impl, pre, info)
       algorithm
         // An ICONST is used as the default value of stepSize so that this case
         // fails if stepSize isn't given as argument to buildModel.
@@ -112,7 +111,7 @@ algorithm
         (cache, startTime, stopTime, numberOfIntervals);
 
     // normal case, fill in defaults
-    case (cache,env,{Absyn.CREF()},args,impl,pre,info,_)
+    case (cache, env, {Absyn.CREF()}, args, impl, pre, info)
       algorithm
         // An ICONST is used as the default value of stepSize so that this case
         // fails if stepSize isn't given as argument to buildModel.
@@ -154,7 +153,7 @@ public function getSimulationArguments
   output list<DAE.Exp> outSimulationArguments;
 algorithm
   (outCache, outSimulationArguments) :=
-  match (inCache, inEnv, inAbsynExpLst, inAbsynNamedArgLst, inImplInst, inPrefix, inInfo, defaultOption)
+  match (inCache, inEnv, inAbsynExpLst, inAbsynNamedArgLst, inImplInst, inPrefix, inInfo)
     local
       Absyn.Exp crexp;
       list<Absyn.NamedArg> args;
@@ -171,7 +170,7 @@ algorithm
       Values.Value v;
 
     // fill in defaults
-    case (cache,env,{crexp},args,impl,pre,info,_)
+    case (cache, env, {crexp}, args, impl, pre, info)
       algorithm
         checkSimulationArguments(args, callName, info);
         exp := Static.elabCodeExp(crexp,cache,env,DAE.C_TYPENAME(),info);
@@ -261,8 +260,6 @@ function checkSimulationArguments
   input list<Absyn.NamedArg> args;
   input String callName;
   input SourceInfo info;
-protected
-  list<String> valid_names;
 algorithm
   for arg in args loop
     if not listMember(arg.argName, VALID_SIMULATE_ARGS) then
@@ -323,14 +320,14 @@ protected function elabCallInteractive_work "This function elaborates the functi
 algorithm
    (outCache,outExp,outProperties):=
    matchcontinue
-     (inCache,inEnv,inComponentRef,inExps,inNamedArgs,inImplInst,inPrefix,info)
+     (inCache, inEnv, inComponentRef, inExps, inNamedArgs, inImplInst, inPrefix)
     local
       DAE.ComponentRef cr_1;
       FCore.Graph env;
       Absyn.ComponentRef cr,cr2;
       Boolean impl;
       Ident cname_str,str;
-      DAE.Exp filenameprefix,exp_1,crefExp,outputFile,dumpExtractionSteps,fmuversion,fmuType;
+      DAE.Exp filenameprefix,exp_1,crefExp,outputFile,dumpExtractionSteps;
       DAE.Type recordtype;
       list<Absyn.NamedArg> args;
       list<DAE.Exp> excludeList;
@@ -342,7 +339,7 @@ algorithm
       Absyn.Path className;
       list<DAE.Exp> simulationArgs;
       String name;
-    case (cache,env,cr2 as Absyn.CREF_IDENT(),_,_,impl,_,_)
+    case (cache, env, cr2 as Absyn.CREF_IDENT(), _, _, impl, _)
       algorithm
         ErrorExt.setCheckpoint("Scripting");
         cr := AbsynUtil.joinCrefs(Absyn.CREF_QUAL("OpenModelica",{},Absyn.CREF_IDENT("Scripting",{})),cr2);
@@ -350,18 +347,18 @@ algorithm
         ErrorExt.delCheckpoint("Scripting");
       then (cache,exp_1,prop);
 
-    case (_,_,Absyn.CREF_IDENT(),_,_,_,_,_)
+    case (_, _, Absyn.CREF_IDENT(), _, _, _, _)
       algorithm
         ErrorExt.rollBack("Scripting");
       then fail();
 
-    case (cache,env,Absyn.CREF_IDENT(name = "translateModel"),{Absyn.CREF()},args,_,_,_)
+    case (cache, env, Absyn.CREF_IDENT(name = "translateModel"), {Absyn.CREF()}, args, _, _)
       algorithm
         (cache, simulationArgs) := getSimulationArguments(cache, env, inExps, args, inImplInst, inPrefix, "translateModel", info, NONE());
       then
         (cache,Expression.makePureBuiltinCall("translateModel",simulationArgs,DAE.T_STRING_DEFAULT),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()));
 
-   case (cache,env,Absyn.CREF_IDENT(name = "modelEquationsUC"),{Absyn.CREF(componentRef = cr)},args,impl,pre,_)
+   case (cache, env, Absyn.CREF_IDENT(name = "modelEquationsUC"), {Absyn.CREF(componentRef = cr)}, args, impl, pre)
       algorithm
         (cache,cr_1) := Static.elabUntypedCref(cache,env,cr,impl,pre,info);
         className := ComponentReference.crefToPathIgnoreSubs(cr_1) "this extracts the fileNamePrefix which is used when generating code and init-file" ;
@@ -370,7 +367,7 @@ algorithm
       then
         (cache,Expression.makePureBuiltinCall("modelEquationsUC",{DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),outputFile,dumpExtractionSteps},DAE.T_STRING_DEFAULT),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()));
 
-   case (cache,env,Absyn.CREF_IDENT(name = "translateModelCPP"),{Absyn.CREF(componentRef = cr)},args,impl,pre,_)
+   case (cache, env, Absyn.CREF_IDENT(name = "translateModelCPP"), {Absyn.CREF(componentRef = cr)}, args, impl, pre)
       algorithm
         className := AbsynUtil.crefToPath(cr);
         cname_str := AbsynUtil.pathString(className);
@@ -385,7 +382,7 @@ algorithm
         (cache,Expression.makePureBuiltinCall("translateModelCPP",
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),filenameprefix},DAE.T_STRING_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "translateModelXML"),{Absyn.CREF(componentRef = cr)},args,impl,pre,_)
+    case (cache, env, Absyn.CREF_IDENT(name = "translateModelXML"), {Absyn.CREF(componentRef = cr)}, args, impl, pre)
       algorithm
         className := AbsynUtil.crefToPath(cr);
         cname_str := AbsynUtil.pathString(className);
@@ -400,7 +397,7 @@ algorithm
         (cache,Expression.makePureBuiltinCall("translateModelXML",
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),filenameprefix},DAE.T_STRING_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "exportDAEtoMatlab"),{Absyn.CREF(componentRef = cr)},args,impl,pre,_)
+    case (cache, env, Absyn.CREF_IDENT(name = "exportDAEtoMatlab"), {Absyn.CREF(componentRef = cr)}, args, impl, pre)
       algorithm
         className := AbsynUtil.crefToPath(cr);
         cname_str := AbsynUtil.pathString(className);
@@ -415,70 +412,70 @@ algorithm
         (cache,Expression.makePureBuiltinCall("exportDAEtoMatlab",
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),filenameprefix},DAE.T_STRING_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "buildModel"),{Absyn.CREF()},args,_,_,_)
+    case (cache, env, Absyn.CREF_IDENT(name = "buildModel"), {Absyn.CREF()}, args, _, _)
       algorithm
         (cache, simulationArgs) := getSimulationArguments(cache, env, inExps, args, inImplInst, inPrefix, "buildModel", info, NONE());
       then
         (cache,Expression.makePureBuiltinCall("buildModel",simulationArgs,DAE.T_UNKNOWN_DEFAULT),
          DAE.PROP(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(2)}),DAE.C_VAR()));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "buildModelBeast"),{Absyn.CREF()},args,_,_,_)
+    case (cache, env, Absyn.CREF_IDENT(name = "buildModelBeast"), {Absyn.CREF()}, args, _, _)
       algorithm
         (cache, simulationArgs) := getSimulationArguments(cache, env, inExps, args, inImplInst, inPrefix, "buildModelBeast", info, NONE());
       then
         (cache,Expression.makePureBuiltinCall("buildModelBeast",simulationArgs,DAE.T_UNKNOWN_DEFAULT),
          DAE.PROP(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(2)}),DAE.C_VAR()));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "simulate"),{Absyn.CREF()},args,_,_,_) /* Fill in rest of defaults here */
+    case (cache, env, Absyn.CREF_IDENT(name = "simulate"), {Absyn.CREF()}, args, _, _) /* Fill in rest of defaults here */
       algorithm
         (cache, simulationArgs) := getSimulationArguments(cache, env, inExps, args, inImplInst, inPrefix, "simulate", info, NONE());
         recordtype := CevalScriptBackend.getSimulationResultType();
       then
         (cache,Expression.makePureBuiltinCall("simulate",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "simulation"),{Absyn.CREF()},args,_,_,_) /* Fill in rest of defaults here */
+    case (cache, env, Absyn.CREF_IDENT(name = "simulation"), {Absyn.CREF()}, args, _, _) /* Fill in rest of defaults here */
       algorithm
         (cache, simulationArgs) := getSimulationArguments(cache, env, inExps, args, inImplInst, inPrefix, "simulation", info, NONE());
         recordtype := CevalScriptBackend.getDrModelicaSimulationResultType();
       then
         (cache,Expression.makePureBuiltinCall("simulation",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "linearize"),{Absyn.CREF()},args,_,_,_) /* Fill in rest of defaults here */
+    case (cache, env, Absyn.CREF_IDENT(name = "linearize"), {Absyn.CREF()}, args, _, _) /* Fill in rest of defaults here */
       algorithm
         (cache, simulationArgs) := getSimulationArguments(cache, env, inExps, args, inImplInst, inPrefix, "linearize", info, NONE());
         recordtype := CevalScriptBackend.getSimulationResultType();
       then
         (cache,Expression.makePureBuiltinCall("linearize",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "optimize"),{Absyn.CREF()},args,_,_,_) /* Fill in rest of defaults here */
+    case (cache, env, Absyn.CREF_IDENT(name = "optimize"), {Absyn.CREF()}, args, _, _) /* Fill in rest of defaults here */
       algorithm
         (cache, simulationArgs) := getSimulationArguments(cache, env, inExps, args, inImplInst, inPrefix, "optimize", info, NONE());
         recordtype := CevalScriptBackend.getSimulationResultType();
       then
         (cache,Expression.makePureBuiltinCall("optimize",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "moo"),{Absyn.CREF()},args,_,_,_) /* Fill in rest of defaults here */
+    case (cache, env, Absyn.CREF_IDENT(name = "moo"), {Absyn.CREF()}, args, _, _) /* Fill in rest of defaults here */
       algorithm
         (cache, simulationArgs) := getSimulationArguments(cache, env, inExps, args, inImplInst, inPrefix, "moo", info, NONE());
         recordtype := CevalScriptBackend.getSimulationResultType();
       then
         (cache,Expression.makePureBuiltinCall("moo",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "jacobian"),{Absyn.CREF(componentRef = cr)},_,impl,pre,_) /* Fill in rest of defaults here */
+    case (cache, env, Absyn.CREF_IDENT(name = "jacobian"), {Absyn.CREF(componentRef = cr)}, _, impl, pre) /* Fill in rest of defaults here */
       algorithm
         (cache,cr_1) := Static.elabUntypedCref(cache,env,cr,impl,pre,info);
         crefExp := Expression.crefExp(cr_1);
       then
         (cache,Expression.makePureBuiltinCall("jacobian",{crefExp},DAE.T_STRING_DEFAULT),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "timing"),{exp},{},impl,pre,_)
+    case (cache, env, Absyn.CREF_IDENT(name = "timing"), {exp}, {}, impl, pre)
       algorithm
         (cache,exp_1,_) := elabExp(cache,env, exp, impl, true,pre,info);
       then
         (cache,Expression.makePureBuiltinCall("timing",{exp_1},DAE.T_REAL_DEFAULT),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()));
 
       // MathCore-specific. Should be in MathCoreBuiltin.mo :p
-    case (cache,_,Absyn.CREF_IDENT(name = "checkExamplePackages"),{},args,_,_,_)
+    case (cache, _, Absyn.CREF_IDENT(name = "checkExamplePackages"), {}, args, _, _)
       algorithm
         excludeList := Static.getOptionalNamedArgExpList("exclude", args);
         excludeListSize := listLength(excludeList);
@@ -488,7 +485,7 @@ algorithm
         DAE.T_STRING_DEFAULT),
         DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()));
 
-    case (cache,_,Absyn.CREF_IDENT(name = "checkExamplePackages"),{Absyn.STRING(value = str)},args,_,_,_)
+    case (cache, _, Absyn.CREF_IDENT(name = "checkExamplePackages"), {Absyn.STRING(value = str)}, args, _, _)
       algorithm
         excludeList := Static.getOptionalNamedArgExpList("exclude", args);
         excludeListSize := listLength(excludeList);
@@ -498,7 +495,7 @@ algorithm
         DAE.T_STRING_DEFAULT),
         DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()));
 
-    case (cache,_,Absyn.CREF_IDENT(name = "checkExamplePackages"),{Absyn.CREF(componentRef = cr)},args,_,_,_)
+    case (cache, _, Absyn.CREF_IDENT(name = "checkExamplePackages"), {Absyn.CREF(componentRef = cr)}, args, _, _)
       algorithm
         className := AbsynUtil.crefToPath(cr);
         excludeList := Static.getOptionalNamedArgExpList("exclude", args);
@@ -510,7 +507,7 @@ algorithm
         DAE.T_STRING_DEFAULT),
         DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()));
 
-    case (cache,_,Absyn.CREF_IDENT(name = "checkExamplePackages"),{Absyn.CREF(componentRef = cr), Absyn.STRING(value = str)},args,_,_,_)
+    case (cache, _, Absyn.CREF_IDENT(name = "checkExamplePackages"), {Absyn.CREF(componentRef = cr), Absyn.STRING(value = str)}, args, _, _)
       algorithm
         className := AbsynUtil.crefToPath(cr);
         excludeList := Static.getOptionalNamedArgExpList("exclude", args);
@@ -557,26 +554,25 @@ function: Auxiliary function to elabExp that considers elabCallInteractive. If t
   output DAE.Properties outProperties;
 algorithm
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inExp,inImplicit,performVectorization,inPrefix,info,numErrorMessages)
+  matchcontinue (inCache, inEnv, inExp, inImplicit, performVectorization, inPrefix)
     local
       Boolean impl,doVect;
       DAE.Exp e_1;
       DAE.Properties prop;
       FCore.Graph env;
       Absyn.ComponentRef fn;
-      DAE.Const c;
       Absyn.Exp exp;
       list<Absyn.Exp> args;
       list<Absyn.NamedArg> nargs;
       FCore.Cache cache;
       DAE.Prefix pre;
-  case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,_,pre,_,_)
+  case (cache, env, Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)), impl, _, pre)
       algorithm
         (cache,e_1,prop) := elabCall(cache, env, fn, args, nargs, impl, pre, info, Error.getNumErrorMessages());
         (e_1,_) := ExpressionSimplify.simplify1(e_1);
       then
         (cache,e_1,prop);
-    case (cache,env,exp,impl,doVect,pre,_,_)
+    case (cache, env, exp, impl, doVect, pre)
       algorithm
         (cache,e_1,prop) := Static.elabExp(cache,env,exp,impl,doVect,pre,info);
       then
@@ -602,7 +598,7 @@ function: elabCall
   output DAE.Properties outProperties;
 algorithm
   (outCache,outExp,outProperties):=
-  match (inCache,inEnv,inComponentRef,inAbsynExpLst,inAbsynNamedArgLst,inImplInst,inPrefix,info,numErrorMessages)
+  match (inCache, inEnv, inComponentRef, inAbsynExpLst, inAbsynNamedArgLst, inImplInst, inPrefix)
     local
       DAE.Exp e;
       DAE.Properties prop;
@@ -613,7 +609,7 @@ algorithm
       Boolean impl;
       FCore.Cache cache;
       DAE.Prefix pre;
-  case (cache,env,fn,args,nargs,impl,pre,_,_)
+  case (cache, env, fn, args, nargs, impl, pre)
       algorithm
         (cache,e,prop) := elabCallInteractive_work(cache, env, fn, args, nargs, impl, pre, info) "Elaborate interactive function calls, such as simulate(), plot() etc." ;
       then
@@ -634,7 +630,7 @@ public function elabGraphicsExp
   output DAE.Properties outProperties;
 algorithm
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inExp,inImplInst,inPrefix,info)
+  matchcontinue (inCache, inEnv, inExp, inImplInst, inPrefix)
     local
       Boolean impl;
       DAE.Exp e_1;
@@ -647,12 +643,12 @@ algorithm
       FCore.Cache cache;
       DAE.Prefix pre;
     // Function calls
-    case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),_,pre,_)
+    case (cache, env, Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)), _, pre)
       algorithm
         (cache,e_1,prop) := elabCall(cache,env, fn, args, nargs, true,pre,info,Error.getNumErrorMessages());
       then
         (cache,e_1,prop);
-    case (cache,env,e,impl,pre,_)
+    case (cache, env, e, impl, pre)
       algorithm
         (cache,e_1,prop) := Static.elabGraphicsExp(cache,env,e,impl,pre,info);
       then

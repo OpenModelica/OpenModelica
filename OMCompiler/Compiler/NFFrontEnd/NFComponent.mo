@@ -897,8 +897,6 @@ public
   function getEvaluateAnnotation
     input Component component;
     output Option<Boolean> evaluate;
-  protected
-    SCode.Comment cmt;
   algorithm
     evaluate := SCodeUtil.getEvaluateAnnotation(comment(component));
   end getEvaluateAnnotation;
@@ -907,7 +905,6 @@ public
     input Component component;
     output Boolean fixed;
   protected
-    list<Modifier> typeAttrs = {};
     Binding binding;
   algorithm
     // for parameters the default is fixed = true

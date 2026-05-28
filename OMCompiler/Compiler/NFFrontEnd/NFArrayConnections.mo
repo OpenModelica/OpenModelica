@@ -261,7 +261,6 @@ protected
     list<Subscript> lhs_subs, rhs_subs;
     SBMultiInterval mi1, mi2;
     VertexDescriptor d1, d2;
-    list<Connector> lhs_conns, rhs_conns;
     Connector lhs_conn, rhs_conn;
   algorithm
     (lhs_cr, lhs_subs) := separate(Expression.toCref(lhs));
@@ -361,7 +360,7 @@ protected
   algorithm
     (name, pw1, pw2) := SBGraphUtil.linearMapFromIntervals(d1, d2, mi1, mi2, eCount);
     se := SET_EDGE(name, pw1, pw2);
-    _ := IncidenceList.addEdge(graph, d1, d2, se);
+    IncidenceList.addEdge(graph, d1, d2, se);
   end updateGraph;
 
   function createMaps
@@ -462,13 +461,13 @@ protected
     input NameVertexTable nmvTable;
     input output list<Equation> equations;
   protected
-    SBSet aux_s, sauxi, vc_domi, vc_domi_aux;
+    SBSet sauxi;
     SBMultiInterval mi, mi_range, aux_mi;
     array<SBInterval> inters;
     array<Expression> ranges;
-    list<ComponentRef> vars1, vars2;
+    list<ComponentRef> vars1;
     list<Equation> eql;
-    list<Expression> inds, iter_expl;
+    list<Expression> inds;
   algorithm
     for auxi in UnorderedSet.toArray(SBSet.asets(dom)) loop
       mi := SBAtomicSet.aset(auxi);
@@ -499,7 +498,6 @@ protected
     Expression l, r;
     Type ty;
     Equation eq;
-    DAE.ElementSource src;
   algorithm
     for var1 in vars1 loop
       for var2 in vars2 loop
@@ -710,7 +708,7 @@ protected
   protected
     array<SBInterval> ints1, ints2;
     SBInterval i1, i2;
-    Integer i1_sz, i2_sz, m_int, h_int;
+    Integer i1_sz, i2_sz, m_int;
     Expression x, m, h, e;
   algorithm
     if SBMultiInterval.ndim(mi1) <> SBMultiInterval.ndim(mi2) then

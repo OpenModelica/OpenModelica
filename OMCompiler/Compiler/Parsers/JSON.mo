@@ -743,8 +743,6 @@ end parse_value;
 function parse_string
   extends partialParser;
 protected
-  list<JSON> values = {};
-  Boolean cont;
   String content;
 algorithm
   not_eof(tokens);
@@ -764,8 +762,6 @@ end parse_string;
 function parse_integer
   extends partialParser;
 protected
-  list<JSON> values = {};
-  Boolean cont;
   String content;
 algorithm
   not_eof(tokens);
@@ -780,8 +776,6 @@ end parse_integer;
 function parse_number
   extends partialParser;
 protected
-  list<JSON> values = {};
-  Boolean cont;
   String content;
 algorithm
   not_eof(tokens);

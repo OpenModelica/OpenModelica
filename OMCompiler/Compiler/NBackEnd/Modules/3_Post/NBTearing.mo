@@ -403,7 +403,6 @@ protected
     list<Pointer<Equation>> eqns_lst, cont_eqns, disc_eqns;
     Integer num_vars, num_eqns;
     list<Slice<VariablePointer>> matched_vars, iteration_vars = {};
-    list<Slice<EquationPointer>> residual_lst;
     Adjacency.Matrix adj;
     Matching matching;
     list<StrongComponent> inner_comps;
@@ -474,10 +473,8 @@ protected
     Tearing strict;
     Integer nEqn;
     list<VarSlice> inner_vars, guru_vars, failed_vars;
-    UnorderedSet<VariablePointer> solvable_vars;
     UnorderedMap<ComponentRef, VarSlice> unsolved_inner_vars;
     UnorderedMap<ComponentRef, EqnSlice> unsolved_equations;
-    array<UnorderedSet<ComponentRef>> filtered_rows;
     Option<ComponentRef> solve_opt;
     ComponentRef solve_cref;
     VarSlice solve_var;
@@ -540,7 +537,7 @@ protected
                 end for;
 
                 // ToDo: multi-components (algorithms)
-                _:= match (solve_opt, success)
+                ():= match (solve_opt, success)
                   // case I: possibly solvable as inner. check if the full cref can be solved
                   case (SOME(solve_cref), true) algorithm
                     // ToDo: for now assume it can be fully solved, needs to be checked!
@@ -641,7 +638,7 @@ protected
       input Pointer<Variable> var;
       input UnorderedSet<ComponentRef> discrete_records;
     algorithm
-      _ := match BVariable.getParent(var)
+      () := match BVariable.getParent(var)
         local
           Pointer<Variable> parent;
         case SOME(parent) algorithm
@@ -687,7 +684,7 @@ protected
     vars := match Pointer.access(eqn)
       local
         Algorithm alg;
-        Expression tpl, cref;
+        Expression tpl;
 
       case Equation.ALGORITHM(alg = alg)
       then list(BVariable.getVarPointer(out_cr, sourceInfo()) for out_cr in alg.outputs);

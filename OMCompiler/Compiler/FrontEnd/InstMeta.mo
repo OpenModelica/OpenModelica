@@ -65,8 +65,6 @@ algorithm
       Absyn.Path p, p2, utPathOfRestriction, utPath;
       Boolean isSingleton;
       DAE.EvaluateSingletonType singletonType;
-      FCore.Graph env_1;
-      SCode.Element c;
       String name;
       list<Absyn.Path> paths;
       list<DAE.Type> typeVarsTypes;

@@ -348,7 +348,7 @@ algorithm
   outTree := match outTree
     local
       Integer lh, rh, diff;
-      Tree child, balanced_tree;
+      Tree balanced_tree;
 
     case LEAF() then inTree;
 
@@ -454,9 +454,7 @@ function printTreeStr2
   input String inIndent;
   output String outString;
 protected
-  Option<ValueNode> val_node;
   Option<Tree> left, right;
-  String left_str, right_str;
 algorithm
   outString := match inTree
     case NODE()

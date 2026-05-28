@@ -75,7 +75,6 @@ protected
 
   // Util imports
   import ClockIndexes;
-  import DoubleEnded;
   import Slice = NBSlice;
   import StringUtil;
 
@@ -190,7 +189,7 @@ public
     Pointer<list<Pointer<Equation>>> ptr_start_eqs = Pointer.create({});
     list<Pointer<Equation>> start_eqs;
   algorithm
-    _ := VariablePointers.mapPtr(states, function createStartEquation(ptr_start_vars = ptr_start_vars, ptr_start_vars_init = ptr_start_vars_init, ptr_start_eqs = ptr_start_eqs, idx = idx, algorithm_outputs = algorithm_outputs));
+    VariablePointers.mapPtr(states, function createStartEquation(ptr_start_vars = ptr_start_vars, ptr_start_vars_init = ptr_start_vars_init, ptr_start_eqs = ptr_start_eqs, idx = idx, algorithm_outputs = algorithm_outputs));
     start_eqs := Pointer.access(ptr_start_eqs);
 
     variables := BVariable.VariablePointers.addList(Pointer.access(ptr_start_vars), variables);
@@ -254,7 +253,7 @@ public
 
         // create unfixed scalar start equation
         case Variable.VARIABLE() algorithm
-          _ := match BVariable.getStartAttribute(var)
+          () := match BVariable.getStartAttribute(var)
             local
               Expression e;
             // only create if there is a start attribute that is not literal
@@ -312,7 +311,6 @@ public
     Pointer<Variable> var_ptr;
     Option<Pointer<Variable>> var_pre;
     ComponentRef pre;
-    list<list<Subscript>> subscripts;
     EquationKind kind;
     Pointer<Equation> eq;
   algorithm
@@ -345,7 +343,6 @@ public
     output ComponentRef start_name;
   protected
     Option<Pointer<Variable>> var_pre = BVariable.getVarPre(var_ptr);
-    Pointer<Variable> disc_state_var;
     ComponentRef merged_name;
   algorithm
     if BVariable.isPrevious(var_ptr) and Util.isSome(var_pre) then
@@ -396,8 +393,6 @@ public
   protected
     list<Pointer<Equation>> parameter_eqs = {};
     list<Pointer<Variable>> initial_param_vars = {};
-    Pointer<Variable> parent;
-    Boolean skip;
   algorithm
     for var in VariablePointers.toList(parameters) loop
       (parameter_eqs, initial_param_vars) := createParameterEquation(var, new_iters, idx, parameter_eqs, initial_param_vars);
@@ -479,7 +474,7 @@ public
   protected
     Expression start_exp, start_var_exp, e;
     Pointer<Variable> var_ptr, start_var;
-    ComponentRef name, start_name;
+    ComponentRef name;
     Option<Pointer<Equation>> start_eq = NONE();
     EquationKind kind;
     Iterator iterator;
@@ -833,7 +828,6 @@ public
         Equation new_eqn;
         list<Statement> stmts;
         list<ComponentRef> lhs_crefs;
-        Option<IfEquationBody> if_body;
 
       // reduce the body of for equations
       case Equation.FOR_EQUATION() algorithm
@@ -994,7 +988,7 @@ public
     input output Expression exp;
     input UnorderedSet<ComponentRef> pre_set;
   algorithm
-    _ := match exp
+    () := match exp
       case Expression.CREF() guard(BVariable.isPrevious(BVariable.getVarPointer(exp.cref, sourceInfo()))) algorithm
         UnorderedSet.add(exp.cref, pre_set);
       then ();
@@ -1042,7 +1036,7 @@ public
     input Expression condition;
     input UnorderedSet<Expression> condition_set;
   algorithm
-    _ := match condition
+    () := match condition
       case Expression.CREF() algorithm
         UnorderedSet.add(condition, condition_set);
       then ();
@@ -1059,7 +1053,7 @@ public
     input output Equation eqn;
     input UnorderedSet<ComponentRef> outputs;
   algorithm
-    _ := match eqn
+    () := match eqn
       local
         Algorithm alg;
         list<ComponentRef> out_crefs;

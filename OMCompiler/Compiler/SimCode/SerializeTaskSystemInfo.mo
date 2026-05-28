@@ -636,7 +636,7 @@ algorithm
       File.write(file, ",\"section\":\"");
       File.write(file, section);
       for whenOps in eq.whenStmtLst loop
-        _ := match whenOps
+        () := match whenOps
           case whenOp as BackendDAE.ASSIGN() algorithm
             File.write(file, "\",\"tag\":\"when\",\"defines\":[");
             serializeExp(file,whenOp.left);
@@ -692,7 +692,7 @@ algorithm
           then ();
         end match;
       end for;
-      _ := match eq.elseWhen
+      () := match eq.elseWhen
         local
           SimCode.SimEqSystem e;
         case SOME(e) algorithm if SimCodeUtil.simEqSystemIndex(e) <>0 then serializeEquation(file,e,section,withOperations); end if; then ();
@@ -747,7 +747,7 @@ function serializeLinearCell
   input tuple<Integer, Integer, SimCode.SimEqSystem> cell;
   input Boolean withOperations;
 algorithm
-  _ := match cell
+  () := match cell
     local
       Integer i,j;
       SimCode.SimEqSystem eq;
@@ -774,7 +774,7 @@ function serializeUses
   input File.File file;
   input list<DAE.ComponentRef> crefs;
 algorithm
-  _ := match crefs
+  () := match crefs
     local
       DAE.ComponentRef cr;
       list<DAE.ComponentRef> rest;
@@ -814,7 +814,7 @@ function serializeList<ArgType>
     input ArgType a;
   end FuncType;
 algorithm
-  _ := match lst
+  () := match lst
     local
       ArgType a;
       list<ArgType> rest;
@@ -844,7 +844,7 @@ function serializeList1<ArgType,Extra>
     input Extra extra;
   end FuncType;
 algorithm
-  _ := match lst
+  () := match lst
     local
       ArgType a;
       list<ArgType> rest;
@@ -941,13 +941,6 @@ function serializeSource
   input File.File file;
   input DAE.ElementSource source;
   input Boolean withOperations;
-protected
-  SourceInfo info;
-  list<Absyn.Path> paths,typeLst;
-  list<Absyn.Within> partOfLst;
-  DAE.ComponentPrefix instance;
-  Integer i;
-  list<DAE.SymbolicOperation> operations;
 algorithm
   File.write(file,"{}");
 end serializeSource;

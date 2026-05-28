@@ -62,7 +62,6 @@ public
     input InstContext.Type context;
     output Boolean isStructural;
   protected
-    Boolean is_fixed;
     Binding binding;
   algorithm
     if compAttrs.variability <> Variability.PARAMETER then
@@ -172,7 +171,6 @@ public
         InstNode node;
         Component c;
         Variability var;
-        Expression e;
 
       case Expression.CREF()
         guard ComponentRef.isCref(exp.cref) and not ComponentRef.isIterator(exp.cref)

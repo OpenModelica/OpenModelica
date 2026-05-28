@@ -123,18 +123,18 @@ public function addSimVarToHashTable
   output HashTable outHT;
 algorithm
   outHT :=
-  matchcontinue (simvarIn, inHT)
+  matchcontinue simvarIn
     local
       DAE.ComponentRef cr, acr;
       SimCodeVar.SimVar sv;
 
-    case (sv as SimCodeVar.SIMVAR(name = cr, arrayCref = NONE()), _)
+    case sv as SimCodeVar.SIMVAR(name = cr, arrayCref = NONE())
       algorithm
         //print("addSimVarToHashTable: handling variable '" + ComponentReferenceBasics.printComponentRefStr(cr) + "'\n");
         outHT := BaseHashTable.add((cr, sv), inHT);
       then outHT;
         // add the whole array crefs to the hashtable, too
-    case (sv as SimCodeVar.SIMVAR(name = cr, arrayCref = SOME(acr)), _)
+    case sv as SimCodeVar.SIMVAR(name = cr, arrayCref = SOME(acr))
       algorithm
         //print("addSimVarToHashTable: handling array variable '" + ComponentReferenceBasics.printComponentRefStr(cr) + "'\n");
         outHT := BaseHashTable.add((acr, sv), inHT);

@@ -110,7 +110,7 @@ public function evaluate
   output Values.Value outResult;
 algorithm
   (outCache, outResult) :=
-  matchcontinue(inCache, inEnv, inFunction, inFunctionArguments)
+  matchcontinue inFunction
     local
       Absyn.Path p;
       DAE.FunctionDefinition func;
@@ -124,12 +124,12 @@ algorithm
     // The DAE.FUNCTION structure might contain an optional function derivative
     // mapping which is why functions below is a list. We only evaluate the
     // first function, which is hopefully the one we want.
-    case (_, _, DAE.FUNCTION(
+    case DAE.FUNCTION(
         path = p,
         functions = func :: _,
         type_ = ty,
         partialPrefix = false,
-        source = src), _)
+        source = src)
       algorithm
         func_name := AbsynUtil.pathString(p);
         (cache, result) := evaluateFunctionDefinition(inCache, inEnv, func_name,
@@ -137,10 +137,10 @@ algorithm
       then
         (cache, result);
 
-    case (_, _, DAE.FUNCTION(
+    case DAE.FUNCTION(
         path = p,
         functions = _ :: _,
-        partialPrefix = partialPrefix), _)
+        partialPrefix = partialPrefix)
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- CevalFunction.evaluate failed for function: " + (if partialPrefix then "partial " else "") + AbsynUtil.pathString(p));
@@ -162,7 +162,7 @@ protected function evaluateFunctionDefinition
   output Values.Value outResult;
 algorithm
   (outCache, outResult) :=
-  matchcontinue(inCache, inEnv, inFuncName, inFunc, inFuncType, inFuncArgs, inSource)
+  matchcontinue inFunc
     local
       list<DAE.Element> body;
       list<DAE.Element> vars, output_vars;
@@ -173,9 +173,8 @@ algorithm
       Values.Value return_value;
       String ext_fun_name;
       list<DAE.ExtArg> ext_fun_args;
-      DAE.ExtArg ext_fun_ret;
 
-    case (_, _, _, DAE.FUNCTION_DEF(body = body), _, _, _)
+    case DAE.FUNCTION_DEF(body = body)
       algorithm
         // Split the definition into function variables and statements.
         (vars, body) := List.splitOnFirstMatch(body, DAEUtil.isNotVar);
@@ -202,9 +201,9 @@ algorithm
       then
         (cache, return_value);
 
-    case (_, _, _, DAE.FUNCTION_EXT(body = body, externalDecl =
+    case DAE.FUNCTION_EXT(body = body, externalDecl =
         DAE.EXTERNALDECL(name = ext_fun_name,
-                         args = ext_fun_args)), _, _, _)
+                         args = ext_fun_args))
       algorithm
         // Get all variables from the function. Ignore everything else, since
         // external functions shouldn't have statements.
@@ -291,7 +290,7 @@ protected function removeSelfReferentialDims
   input DAE.Element inElement;
   output DAE.Element outElement;
 algorithm
-  outElement := match(inElement)
+  outElement := match inElement
     local
       DAE.ComponentRef cref;
       DAE.VarKind vk;
@@ -324,12 +323,12 @@ protected function removeSelfReferentialDim
   input String inName;
   output DAE.Dimension outDim;
 algorithm
-  outDim := matchcontinue(inDim, inName)
+  outDim := matchcontinue inDim
     local
       DAE.Exp exp;
       list<DAE.ComponentRef> crefs;
 
-    case (DAE.DIM_EXP(exp = exp), _)
+    case DAE.DIM_EXP(exp = exp)
       algorithm
         crefs := Expression.extractCrefsFromExp(exp);
         true := List.isMemberOnTrue(inName, crefs, isCrefNamed);
@@ -346,11 +345,11 @@ protected function isCrefNamed
   input DAE.ComponentRef inCref;
   output Boolean outIsNamed;
 algorithm
-  outIsNamed := match(inName, inCref)
+  outIsNamed := match inCref
     local
       String name;
 
-    case (_, DAE.CREF_IDENT(ident = name)) then stringEq(inName, name);
+    case DAE.CREF_IDENT(ident = name) then stringEq(inName, name);
     else false;
   end match;
 end isCrefNamed;
@@ -363,7 +362,7 @@ protected function evaluateExtInputArg
   output Values.Value outValue;
   output FCore.Cache outCache;
 algorithm
-  (outValue, outCache) := matchcontinue(inArgument, inCache, inEnv)
+  (outValue, outCache) := matchcontinue(inArgument, inCache)
     local
       DAE.ComponentRef cref;
       DAE.Type ty;
@@ -372,19 +371,19 @@ algorithm
       FCore.Cache cache;
       String err_str;
 
-    case (DAE.EXTARG(componentRef = cref, type_ = ty), _, _)
+    case (DAE.EXTARG(componentRef = cref, type_ = ty), _)
       algorithm
         val := getVariableValue(cref, ty, inEnv);
       then
         (val, inCache);
 
-    case (DAE.EXTARGEXP(exp = exp), cache, _)
+    case (DAE.EXTARGEXP(exp = exp), cache)
       algorithm
         (cache, val) := cevalExp(exp, cache, inEnv);
       then
         (val, cache);
 
-    case (DAE.EXTARGSIZE(componentRef = cref, exp = exp), cache, _)
+    case (DAE.EXTARGSIZE(componentRef = cref, exp = exp), cache)
       algorithm
         exp := DAE.SIZE(DAE.CREF(cref, DAE.T_UNKNOWN_DEFAULT), SOME(exp));
         (cache, val) := cevalExp(exp, cache, inEnv);
@@ -534,7 +533,7 @@ protected function unliftExtOutputValue
   input FCore.Graph inEnv;
   output Values.Value outValue;
 algorithm
-  outValue := matchcontinue(inCref, inValue, inEnv)
+  outValue := matchcontinue inValue
     local
       DAE.Type ty;
       list<Values.Value> vals;
@@ -542,7 +541,7 @@ algorithm
       DAE.Dimensions dims;
 
     // Matrix value, array type => convert.
-    case (_, Values.ARRAY(valueLst = vals as Values.ARRAY() :: _, dimLst = dim :: _), _)
+    case Values.ARRAY(valueLst = vals as Values.ARRAY() :: _, dimLst = dim :: _)
       algorithm
         (DAE.T_ARRAY(ty = ty, dims = dims), _) := getVariableTypeAndBinding(inCref, inEnv);
         false := Types.isNonscalarArray(ty, dims);
@@ -1005,7 +1004,7 @@ protected function evaluateElements
   output LoopControl outLoopControl;
 algorithm
   (outCache, outEnv, outLoopControl) :=
-  match(inElements, inCache, inEnv, inLoopControl)
+  match(inElements, inLoopControl)
     local
       DAE.Element elem;
       list<DAE.Element> rest_elems;
@@ -1013,9 +1012,9 @@ algorithm
       FCore.Graph env;
       LoopControl loop_ctrl;
 
-    case (_, _, _, RETURN()) then (inCache, inEnv, inLoopControl);
-    case ({}, _, _, _) then (inCache, inEnv, NEXT());
-    case (elem :: rest_elems, _, _, _)
+    case (_, RETURN()) then (inCache, inEnv, inLoopControl);
+    case ({}, _) then (inCache, inEnv, NEXT());
+    case (elem :: rest_elems, _)
       algorithm
         (cache, env, loop_ctrl) := evaluateElement(elem, inCache, inEnv);
         (cache, env, loop_ctrl) :=
@@ -1034,14 +1033,14 @@ protected function evaluateElement
   output FCore.Graph outEnv;
   output LoopControl outLoopControl;
 algorithm
-  (outCache, outEnv, outLoopControl) := match(inElement, inCache, inEnv)
+  (outCache, outEnv, outLoopControl) := match inElement
     local
       FCore.Cache cache;
       FCore.Graph env;
       LoopControl loop_ctrl;
       list<DAE.Statement> sl;
 
-    case (DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = sl)), _, _)
+    case DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = sl))
       algorithm
         (sl, (_,env)) := DAEUtil.traverseDAEEquationsStmts(sl, Expression.traverseSubexpressionsHelper, (optimizeExpTraverser, inEnv));
         (cache, env, loop_ctrl) := evaluateStatements(sl, inCache, env);
@@ -1070,8 +1069,6 @@ algorithm
       list<DAE.Exp> exps;
       list<Values.Value> vals;
       list<DAE.Statement> statements;
-      Absyn.Path path;
-      DAE.Type returnType;
       LoopControl loop_ctrl;
       DAE.TailCall tailCall;
       String var;
@@ -1207,17 +1204,17 @@ protected function evaluateStatements2
   output LoopControl outLoopControl;
 algorithm
   (outCache, outEnv, outLoopControl) :=
-  match(inStatement, inCache, inEnv, inLoopControl)
+  match(inStatement, inLoopControl)
     local
       DAE.Statement stmt;
       list<DAE.Statement> rest_stmts;
       FCore.Cache cache;
       FCore.Graph env;
       LoopControl loop_ctrl;
-    case (_, _, _, BREAK()) then (inCache, inEnv, inLoopControl);
-    case (_, _, _, RETURN()) then (inCache, inEnv, inLoopControl);
-    case ({}, _, _, _) then (inCache, inEnv, inLoopControl);
-    case (stmt :: rest_stmts, _, _, NEXT())
+    case (_, BREAK()) then (inCache, inEnv, inLoopControl);
+    case (_, RETURN()) then (inCache, inEnv, inLoopControl);
+    case ({}, _) then (inCache, inEnv, inLoopControl);
+    case (stmt :: rest_stmts, NEXT())
       algorithm
         (cache, env, loop_ctrl) := evaluateStatement(stmt, inCache, inEnv);
         (cache, env, loop_ctrl) :=
@@ -1237,7 +1234,7 @@ protected function evaluateTupleAssignStatement
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
 algorithm
-  (outCache, outEnv) := match(inStatement, inCache, inEnv)
+  (outCache, outEnv) := match(inStatement, inEnv)
     local
       list<DAE.Exp> lhs_expl;
       DAE.Exp rhs;
@@ -1246,7 +1243,7 @@ algorithm
       FCore.Cache cache;
       FCore.Graph env;
 
-    case (DAE.STMT_TUPLE_ASSIGN(expExpLst = lhs_expl, exp = rhs), _, env)
+    case (DAE.STMT_TUPLE_ASSIGN(expExpLst = lhs_expl, exp = rhs), env)
       algorithm
         (cache, Values.TUPLE(valueLst = rhs_vals)) :=
           cevalExp(rhs, inCache, env);
@@ -1267,7 +1264,7 @@ protected function evaluateIfStatement
   output LoopControl outLoopControl;
 algorithm
   (outCache, outEnv, outLoopControl) :=
-  match(inStatement, inCache, inEnv)
+  match inStatement
     local
       DAE.Exp cond;
       list<DAE.Statement> stmts;
@@ -1277,7 +1274,7 @@ algorithm
       Boolean bool_cond;
       LoopControl loop_ctrl;
 
-    case (DAE.STMT_IF(exp = cond, statementLst = stmts, else_ = else_branch), _, _)
+    case DAE.STMT_IF(exp = cond, statementLst = stmts, else_ = else_branch)
       algorithm
         (cache, Values.BOOL(boolean = bool_cond)) :=
           cevalExp(cond, inCache, inEnv);
@@ -1300,7 +1297,7 @@ protected function evaluateIfStatement2
   output LoopControl outLoopControl;
 algorithm
   (outCache, outEnv, outLoopControl) :=
-  match(inCondition, inStatements, inElse, inCache, inEnv)
+  match(inCondition, inStatements, inElse, inEnv)
     local
       FCore.Cache cache;
       FCore.Graph env;
@@ -1311,7 +1308,7 @@ algorithm
       LoopControl loop_ctrl;
 
     // If the condition is true, evaluate the statements in the if branch.
-    case (true, statements, _, _, env)
+    case (true, statements, _, env)
       algorithm
         (cache, env, loop_ctrl) :=
           evaluateStatements(statements, inCache, env);
@@ -1319,7 +1316,7 @@ algorithm
         (cache, env, loop_ctrl);
     // If the condition is false and we have an else, evaluate the statements in
     // the else branch.
-    case (false, _, DAE.ELSE(statementLst = statements), _, env)
+    case (false, _, DAE.ELSE(statementLst = statements), env)
       algorithm
         (cache, env, loop_ctrl) :=
           evaluateStatements(statements, inCache, env);
@@ -1328,7 +1325,7 @@ algorithm
     // If the condition is false and we have an else if, call this function
     // again recursively.
     case (false, _, DAE.ELSEIF(exp = condition, statementLst = statements,
-        else_ = else_branch), _, env)
+        else_ = else_branch), env)
       algorithm
         (cache, Values.BOOL(boolean = bool_condition)) :=
           cevalExp(condition, inCache, env);
@@ -1337,7 +1334,7 @@ algorithm
       then
         (cache, env, loop_ctrl);
      // If the condition is false and we have no else branch, just continue.
-    case (false, _, DAE.NOELSE(), _, _) then (inCache, inEnv, NEXT());
+    case (false, _, DAE.NOELSE(), _) then (inCache, inEnv, NEXT());
   end match;
 end evaluateIfStatement2;
 
@@ -1351,7 +1348,7 @@ protected function evaluateForStatement
   output LoopControl outLoopControl;
 algorithm
   (outCache, outEnv, outLoopControl) :=
-  matchcontinue(inStatement, inCache, inEnv)
+  matchcontinue(inStatement, inEnv)
     local
       DAE.Type ety;
       DAE.Type ty;
@@ -1366,7 +1363,7 @@ algorithm
 
     // The case where the range is an array.
     case (DAE.STMT_FOR(type_ = ety, iter = iter_name,
-        range = range, statementLst = statements), _, env)
+        range = range, statementLst = statements), env)
       algorithm
         (cache, Values.ARRAY(valueLst = range_vals)) :=
           cevalExp(range, inCache, env);
@@ -1376,7 +1373,7 @@ algorithm
       then
       (cache, env, loop_ctrl);
 
-    case (DAE.STMT_FOR(range = range), _, _)
+    case (DAE.STMT_FOR(range = range), _)
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- evaluateForStatement not implemented for:");
@@ -1399,8 +1396,7 @@ protected function evaluateForLoopArray
   output FCore.Graph outEnv;
   output LoopControl outLoopControl;
 algorithm
-  (outCache, outEnv, outLoopControl) := match(inCache, inEnv, inIter,
-      inIterType, inValues, inStatements, inLoopControl)
+  (outCache, outEnv, outLoopControl) := match(inEnv, inValues, inLoopControl)
     local
       Values.Value value;
       list<Values.Value> rest_vals;
@@ -1408,10 +1404,10 @@ algorithm
       FCore.Graph env;
       LoopControl loop_ctrl;
 
-    case (_, _, _, _, _, _, BREAK()) then (inCache, inEnv, NEXT());
-    case (_, _, _, _, _, _, RETURN()) then (inCache, inEnv, inLoopControl);
-    case (_, _, _, _, {}, _, _) then (inCache, inEnv, inLoopControl);
-    case (_, env, _, _, value :: rest_vals, _, NEXT())
+    case (_, _, BREAK()) then (inCache, inEnv, NEXT());
+    case (_, _, RETURN()) then (inCache, inEnv, inLoopControl);
+    case (_, {}, _) then (inCache, inEnv, inLoopControl);
+    case (env, value :: rest_vals, NEXT())
       algorithm
         env := updateVariableBinding(inIter, env, inIterType, value);
         (cache, env, loop_ctrl) :=
@@ -1435,16 +1431,16 @@ protected function evaluateWhileStatement
   output LoopControl outLoopControl;
 algorithm
   (outCache, outEnv, outLoopControl) :=
-  match(inCondition, inStatements, inCache, inEnv, inLoopControl)
+  match inLoopControl
     local
       FCore.Cache cache;
       FCore.Graph env;
       LoopControl loop_ctrl;
       Boolean b;
 
-    case (_, _, _, _, BREAK()) then (inCache, inEnv, NEXT());
-    case (_, _, _, _, RETURN()) then (inCache, inEnv, inLoopControl);
-    case (_, _, _, _, _)
+    case BREAK() then (inCache, inEnv, NEXT());
+    case RETURN() then (inCache, inEnv, inLoopControl);
+    case _
       algorithm
         (cache, Values.BOOL(boolean = b)) := cevalExp(inCondition, inCache, inEnv);
         if b then
@@ -1466,7 +1462,7 @@ protected function extractLhsComponentRef
   input DAE.Exp inExp;
   output DAE.ComponentRef outCref;
 algorithm
-  outCref := match (inExp)
+  outCref := match inExp
     local
       DAE.ComponentRef cref;
     case DAE.CREF(componentRef = cref) then cref;
@@ -1553,7 +1549,7 @@ protected function extendEnvWithFunctionVar
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
 algorithm
-  (outCache, outEnv) := matchcontinue(inCache, inEnv, inFuncParam)
+  (outCache, outEnv) := matchcontinue(inEnv, inFuncParam)
     local
       DAE.Element e;
       Option<Values.Value> val;
@@ -1563,7 +1559,7 @@ algorithm
 
     // Input parameters are assigned their corresponding input argument given to
     // the function.
-    case (_, env, (e, val as SOME(_)))
+    case (env, (e, val as SOME(_)))
       algorithm
         (cache, env) := extendEnvWithElement(e, val, inCache, env);
       then
@@ -1571,14 +1567,14 @@ algorithm
 
     // Non-input parameters might have a default binding, so we use that if it's
     // available.
-    case (_, env, ((e as DAE.VAR(binding = binding_exp)), NONE()))
+    case (env, ((e as DAE.VAR(binding = binding_exp)), NONE()))
       algorithm
         (val, cache) := evaluateBinding(binding_exp, inCache, inEnv);
         (cache, env) := extendEnvWithElement(e, val, cache, env);
       then
         (cache, env);
 
-    case (_, _, (e, _))
+    case (_, (e, _))
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- CevalFunction.extendEnvWithFunctionVars failed for:");
@@ -1597,19 +1593,19 @@ protected function evaluateBinding
   output Option<Values.Value> outValue;
   output FCore.Cache outCache;
 algorithm
-  (outValue, outCache) := match(inBinding, inCache, inEnv)
+  (outValue, outCache) := match inBinding
     local
       DAE.Exp binding_exp;
       FCore.Cache cache;
       Values.Value val;
 
-    case (SOME(binding_exp), _, _)
+    case SOME(binding_exp)
       algorithm
         (cache, val) := cevalExp(binding_exp, inCache, inEnv);
       then
         (SOME(val), cache);
 
-    case (NONE(), _, _) then (NONE(), inCache);
+    case NONE() then (NONE(), inCache);
   end match;
 end evaluateBinding;
 
@@ -1624,7 +1620,7 @@ protected function extendEnvWithElement
   output FCore.Graph outEnv;
 algorithm
   (outCache, outEnv) :=
-  match(inElement, inBindingValue, inCache, inEnv)
+  match inElement
     local
       DAE.ComponentRef cr;
       String name;
@@ -1633,7 +1629,7 @@ algorithm
       FCore.Cache cache;
       FCore.Graph env;
 
-    case (DAE.VAR(componentRef = cr, ty = ty, dims = dims), _, _, _)
+    case DAE.VAR(componentRef = cr, ty = ty, dims = dims)
       algorithm
         name := ComponentReference.crefStr(cr);
         (cache, env) :=
@@ -1656,7 +1652,7 @@ protected function extendEnvWithVar
   output FCore.Graph outEnv;
 algorithm
   (outCache, outEnv) :=
-  matchcontinue(inName, inType, inOptValue, inDims, inCache, inEnv)
+  matchcontinue inEnv
     local
       DAE.Type ty;
       DAE.Var var;
@@ -1667,7 +1663,7 @@ algorithm
     // Records are special, since they have their own environment with their
     // components in them. A record variable is thus always unbound, and their
     // values are instead determined by their components values.
-    case (_, _, _, _, _, _)
+    case _
       algorithm
         true := Types.isRecord(inType);
         binding := makeBinding(inOptValue);
@@ -1734,7 +1730,7 @@ protected function makeBinding
   input Option<Values.Value> inBindingValue;
   output DAE.Binding outBinding;
 algorithm
-  outBinding := match(inBindingValue)
+  outBinding := match inBindingValue
     local Values.Value val;
     case SOME(val) then DAE.VALBOUND(val, DAE.BINDING_FROM_DEFAULT_VALUE());
     case NONE() then DAE.UNBOUND();
@@ -1753,7 +1749,7 @@ protected function makeRecordEnvironment
   output FCore.Graph outRecordEnv;
 algorithm
   (outCache, outRecordEnv) :=
-  match(inRecordType, inOptValue, inCache, inGraph)
+  match inRecordType
     local
       list<DAE.Var> var_lst;
       list<Option<Values.Value>> vals;
@@ -1762,7 +1758,7 @@ algorithm
       FCore.Ref parent, child;
       FCore.Node node;
 
-    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(),varLst = var_lst), _, _, _)
+    case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(),varLst = var_lst)
       algorithm
         parent := FGraph.lastScopeRef(inGraph);
         (graph, node) := FGraph.node(inGraph, FNode.feNodeName, {parent}, FCore.ND(NONE()));
@@ -1771,7 +1767,7 @@ algorithm
         graph := FGraph.pushScopeRef(graph, child);
 
         vals := getRecordValues(inOptValue, inRecordType);
-        ((cache, graph)) := List.threadFold(var_lst, vals,
+        (cache, graph) := List.threadFold(var_lst, vals,
           extendEnvWithRecordVar, (inCache, graph));
       then
         (cache, graph);
@@ -1815,14 +1811,14 @@ protected function extendEnvWithRecordVar
   input tuple<FCore.Cache, FCore.Graph> inEnv;
   output tuple<FCore.Cache, FCore.Graph> outEnv;
 algorithm
-  outEnv := match(inVar, inOptValue, inEnv)
+  outEnv := match(inVar, inEnv)
     local
       String name;
       DAE.Type ty;
       FCore.Cache cache;
       FCore.Graph env;
 
-    case (DAE.TYPES_VAR(name = name, ty = ty), _, (cache, env))
+    case (DAE.TYPES_VAR(name = name, ty = ty), (cache, env))
       algorithm
         (cache, env) :=
           extendEnvWithVar(name, ty, inOptValue, {}, cache, env);
@@ -1842,8 +1838,6 @@ protected function extendEnvWithForScope
   output FCore.Graph outEnv;
   output DAE.Type outIterType;
   output DAE.ComponentRef outIterCref;
-protected
-  DAE.ComponentRef iter_cr;
 algorithm
   outIterType := Types.expTypetoTypesType(inIterType);
   outEnv := FGraph.addForIterator(inEnv, inIterName, outIterType,
@@ -1887,7 +1881,7 @@ protected function appendDimensions2
   output DAE.Type outType;
 algorithm
   (outCache, outType) :=
-  matchcontinue(inType, inDims, inBindingDims, inCache, inEnv)
+  matchcontinue(inType, inDims, inBindingDims)
     local
       DAE.InstDims rest_dims;
       DAE.Exp dim_exp;
@@ -1896,12 +1890,11 @@ algorithm
       DAE.Dimension dim;
       DAE.Type ty;
       list<Integer> bind_dims;
-      DAE.Subscript sub;
       FCore.Cache cache;
 
-    case (ty, {}, _, _, _) then (inCache, ty);
+    case (ty, {}, _) then (inCache, ty);
 
-    case (ty, DAE.DIM_UNKNOWN() :: rest_dims, dim_int :: bind_dims, _, _)
+    case (ty, DAE.DIM_UNKNOWN() :: rest_dims, dim_int :: bind_dims)
       algorithm
         dim := Expression.intDimension(dim_int);
         (cache, ty) := appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv);
@@ -1909,13 +1902,13 @@ algorithm
         (cache, DAE.T_ARRAY(ty, {dim}));
 
     // If the variable is not an input, set the dimension size to 0 (dynamic size).
-    case (ty, DAE.DIM_UNKNOWN() :: rest_dims, bind_dims, _, _)
+    case (ty, DAE.DIM_UNKNOWN() :: rest_dims, bind_dims)
       algorithm
         (cache, ty) := appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv);
       then
         (cache, DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(0)}));
 
-    case (ty, DAE.DIM_INTEGER(dim_int) :: rest_dims, bind_dims, _, _)
+    case (ty, DAE.DIM_INTEGER(dim_int) :: rest_dims, bind_dims)
       algorithm
         dim := DAE.DIM_INTEGER(dim_int);
         bind_dims := List.restOrEmpty(bind_dims);
@@ -1923,7 +1916,7 @@ algorithm
       then
         (cache, DAE.T_ARRAY(ty, {dim}));
 
-    case (ty, DAE.DIM_BOOLEAN() :: rest_dims, bind_dims, _, _)
+    case (ty, DAE.DIM_BOOLEAN() :: rest_dims, bind_dims)
       algorithm
         dim := DAE.DIM_INTEGER(2);
         bind_dims := List.restOrEmpty(bind_dims);
@@ -1931,7 +1924,7 @@ algorithm
       then
         (cache, DAE.T_ARRAY(ty, {dim}));
 
-    case (ty, DAE.DIM_ENUM(size = dim_int) :: rest_dims, bind_dims, _, _)
+    case (ty, DAE.DIM_ENUM(size = dim_int) :: rest_dims, bind_dims)
       algorithm
         dim := DAE.DIM_INTEGER(dim_int);
         bind_dims := List.restOrEmpty(bind_dims);
@@ -1939,7 +1932,7 @@ algorithm
       then
         (cache, DAE.T_ARRAY(ty, {dim}));
 
-    case (ty, DAE.DIM_EXP(exp = dim_exp) :: rest_dims, bind_dims, _, _)
+    case (ty, DAE.DIM_EXP(exp = dim_exp) :: rest_dims, bind_dims)
       algorithm
         (cache, dim_val) := cevalExp(dim_exp, inCache, inEnv);
         dim_int := ValuesUtil.valueInteger(dim_val);
@@ -1949,7 +1942,7 @@ algorithm
       then
         (cache, DAE.T_ARRAY(ty, {dim}));
 
-    case (_, _ :: _, _, _, _)
+    case (_, _ :: _, _)
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- CevalFunction.appendDimensions2 failed\n");
@@ -1970,7 +1963,7 @@ protected function assignVariable
   output FCore.Graph outEnv;
 algorithm
   (outCache, outEnv) :=
-  matchcontinue(inCref, inNewValue, inCache, inEnv)
+  matchcontinue inCref
     local
       DAE.ComponentRef cr, cr_rest;
       FCore.Cache cache;
@@ -1984,11 +1977,11 @@ algorithm
       String id, comp_id;
 
     // Wildcard, no need to assign anything.
-    case (DAE.WILD(), _, _, _) then (inCache, inEnv);
+    case DAE.WILD() then (inCache, inEnv);
 
     // A record assignment.
-    case (DAE.CREF_IDENT(ident = id, subscriptLst = {}, identType = ety as
-        DAE.T_COMPLEX(complexClassType = ClassInf.RECORD())), _, _, _)
+    case DAE.CREF_IDENT(ident = id, subscriptLst = {}, identType = ety as
+        DAE.T_COMPLEX(complexClassType = ClassInf.RECORD()))
       algorithm
         (_, var, _, _, inst_status, env) :=
           Lookup.lookupIdentLocal(inCache, inEnv, id);
@@ -1999,7 +1992,7 @@ algorithm
         (cache, env);
 
     // If we get a scalar we just update the value.
-    case (cr as DAE.CREF_IDENT(subscriptLst = {}), _, _, _)
+    case cr as DAE.CREF_IDENT(subscriptLst = {})
       algorithm
         ty := Types.unflattenArrayType(Expression.typeof(ValuesUtil.valueExp(inNewValue))); // In case of zero-dimensions, update the dimensions; they are all known now
         env := updateVariableBinding(cr, inEnv, ty, inNewValue);
@@ -2008,7 +2001,7 @@ algorithm
 
     // If we get a vector we first get the old value and update the relevant
     // part of it, and then update the variables value.
-    case (DAE.CREF_IDENT(subscriptLst = subs), _, _, _)
+    case DAE.CREF_IDENT(subscriptLst = subs)
       algorithm
         cr := ComponentReference.crefStripSubs(inCref);
         (ty, val) := getVariableTypeAndValue(cr, inEnv);
@@ -2019,8 +2012,8 @@ algorithm
 
     // A qualified component reference is a record component, so first lookup
     // the records environment, and then assign the variable in that environment.
-    case (DAE.CREF_QUAL(ident = id, subscriptLst = {},
-        componentRef = cr_rest), _, _, _)
+    case DAE.CREF_QUAL(ident = id, subscriptLst = {},
+        componentRef = cr_rest)
       algorithm
         (_, var, _, _, inst_status, env) :=
           Lookup.lookupIdentLocal(inCache, inEnv, id);
@@ -2070,13 +2063,13 @@ protected function assignRecord
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
 algorithm
-  (outCache, outEnv) := match(inType, inValue, inCache, inEnv)
+  (outCache, outEnv) := match(inType, inValue)
     local
       list<Values.Value> values;
       list<DAE.Var> vars;
       FCore.Cache cache;
       FCore.Graph env;
-    case (DAE.T_COMPLEX(varLst = vars), Values.RECORD(orderd = values), _, _)
+    case (DAE.T_COMPLEX(varLst = vars), Values.RECORD(orderd = values))
       algorithm
         (cache, env) := assignRecordComponents(vars, values, inCache, inEnv);
       then
@@ -2092,7 +2085,7 @@ protected function assignRecordComponents
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
 algorithm
-  (outCache, outEnv) := match(inVars, inValues, inCache, inEnv)
+  (outCache, outEnv) := match(inVars, inValues)
     local
       list<DAE.Var> rest_vars;
       Values.Value val;
@@ -2103,9 +2096,9 @@ algorithm
       FCore.Cache cache;
       FCore.Graph env;
 
-    case ({}, {}, _, _) then (inCache, inEnv);
+    case ({}, {}) then (inCache, inEnv);
 
-    case (DAE.TYPES_VAR(name = name, ty = ty) :: rest_vars, val :: rest_vals, _ , _)
+    case (DAE.TYPES_VAR(name = name, ty = ty) :: rest_vars, val :: rest_vals)
       algorithm
         cr := ComponentReferenceBasics.makeCrefIdent(name, ty, {});
         (cache, env) := assignVariable(cr, val, inCache, inEnv);
@@ -2127,7 +2120,7 @@ public function assignVector
   output Values.Value outResult;
 algorithm
   (outCache, outResult) :=
-  matchcontinue(inNewValue, inOldValue, inSubscripts, inCache, inEnv)
+  matchcontinue(inNewValue, inOldValue, inSubscripts)
     local
       DAE.Exp e;
       Values.Value index, val;
@@ -2141,11 +2134,11 @@ algorithm
 
     // No subscripts, we have either reached the end of the recursion or the
     // whole vector was assigned.
-    case (_, _, {}, _, _) then (inCache, inNewValue);
+    case (_, _, {}) then (inCache, inNewValue);
 
     // An index subscript. Extract the indicated vector element and update it
     // with assignVector, and then put it back in the list of old values.
-    case (_, Values.ARRAY(valueLst = values, dimLst = dims), DAE.INDEX(exp = e) :: rest_subs, _, _)
+    case (_, Values.ARRAY(valueLst = values, dimLst = dims), DAE.INDEX(exp = e) :: rest_subs)
       algorithm
         (cache, index) := cevalExp(e, inCache, inEnv);
         i := ValuesUtil.valueInteger(index);
@@ -2156,9 +2149,7 @@ algorithm
         (cache, Values.ARRAY(values, dims));
 
     // A slice.
-    case (Values.ARRAY(valueLst = values),
-          Values.ARRAY(valueLst = old_values, dimLst = dims),
-          DAE.SLICE(exp = e) :: rest_subs, _, _)
+    case (Values.ARRAY(valueLst = values), Values.ARRAY(valueLst = old_values, dimLst = dims), DAE.SLICE(exp = e) :: rest_subs)
       algorithm
         // Evaluate the slice range to a list of values.
         (cache, Values.ARRAY(valueLst = (indices as (Values.INTEGER(integer = i) :: _)))) :=
@@ -2174,16 +2165,14 @@ algorithm
         (cache, Values.ARRAY(values, dims));
 
     // A : (whole dimension).
-    case (Values.ARRAY(valueLst = values),
-          Values.ARRAY(valueLst = values2, dimLst = dims),
-          DAE.WHOLEDIM() :: rest_subs, _, _)
+    case (Values.ARRAY(valueLst = values), Values.ARRAY(valueLst = values2, dimLst = dims), DAE.WHOLEDIM() :: rest_subs)
       algorithm
         (cache, values) :=
           assignWholeDim(values, values2, rest_subs, inCache, inEnv);
       then
         (cache, Values.ARRAY(values, dims));
 
-    case (_, _, sub :: _, _, _)
+    case (_, _, sub :: _)
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         print("- CevalFunction.assignVector failed on: ");
@@ -2207,17 +2196,16 @@ protected function assignSlice
   output list<Values.Value> outResult;
 algorithm
   (outCache, outResult) :=
-  matchcontinue(inNewValues, inOldValues, inIndices, inSubscripts, inIndex,
-  inCache, inEnv)
+  matchcontinue(inNewValues, inOldValues, inIndices)
     local
       Values.Value v1, v2, index;
       list<Values.Value> vl1, vl2, rest_indices;
       FCore.Cache cache;
 
-    case (_, _, {}, _, _, _, _) then (inCache, inOldValues);
+    case (_, _, {}) then (inCache, inOldValues);
 
     // Skip indices that are smaller than the next index in the slice.
-    case (vl1, v2 :: vl2, index :: _, _, _, _, _)
+    case (vl1, v2 :: vl2, index :: _)
       algorithm
         true := (inIndex < ValuesUtil.valueInteger(index));
         (cache, vl1) := assignSlice(vl1, vl2, inIndices, inSubscripts,
@@ -2225,7 +2213,7 @@ algorithm
       then
         (cache, v2 :: vl1);
 
-    case (v1 :: vl1, v2 :: vl2, _ :: rest_indices, _, _, _, _)
+    case (v1 :: vl1, v2 :: vl2, _ :: rest_indices)
       algorithm
         (cache, v1) := assignVector(v1, v2, inSubscripts, inCache, inEnv);
         (cache, vl1) := assignSlice(vl1, vl2, rest_indices, inSubscripts,
@@ -2246,13 +2234,13 @@ protected function assignWholeDim
   output list<Values.Value> outResult;
 algorithm
   (outCache, outResult) :=
-  match(inNewValues, inOldValues, inSubscripts, inCache, inEnv)
+  match(inNewValues, inOldValues)
     local
       Values.Value v1, v2;
       list<Values.Value> vl1, vl2;
       FCore.Cache cache;
-    case ({}, _, _, _, _) then (inCache, {});
-    case (v1 :: vl1, v2 :: vl2, _, _, _)
+    case ({}, _) then (inCache, {});
+    case (v1 :: vl1, v2 :: vl2)
       algorithm
         (cache, v1) := assignVector(v1, v2, inSubscripts, inCache, inEnv);
         (cache, vl1) := assignWholeDim(vl1, vl2, inSubscripts, inCache, inEnv);
@@ -2284,10 +2272,6 @@ protected function updateRecordBinding
   input Values.Value inValue;
   output DAE.Var outVar;
 protected
-  DAE.Ident name;
-  DAE.Attributes attr;
-  DAE.Type ty;
-  Option<DAE.Const> c;
 algorithm
   outVar := inVar;
   outVar.binding := DAE.VALBOUND(inValue, DAE.BINDING_FROM_DEFAULT_VALUE());
@@ -2356,7 +2340,7 @@ protected function getBindingValueOpt
   input DAE.Binding inBinding;
   output Option<Values.Value> outValue;
 algorithm
-  outValue := match(inBinding)
+  outValue := match inBinding
     local
       Values.Value val;
     case DAE.VALBOUND(valBound = val) then SOME(val);
@@ -2372,11 +2356,11 @@ protected function getBindingOrDefault
   input DAE.Type inType;
   output Values.Value outValue;
 algorithm
-  outValue := match(inBinding, inType)
+  outValue := match inBinding
     local
       Values.Value val;
-    case (DAE.VALBOUND(valBound = val), _) then val;
-    case (DAE.EQBOUND(evaluatedExp = SOME(val)), _) then val;
+    case DAE.VALBOUND(valBound = val) then val;
+    case DAE.EQBOUND(evaluatedExp = SOME(val)) then val;
     else generateDefaultBinding(inType);
   end match;
 end getBindingOrDefault;
@@ -2388,7 +2372,7 @@ protected function generateDefaultBinding
   input DAE.Type inType;
   output Values.Value outValue;
 algorithm
-  outValue := matchcontinue(inType)
+  outValue := matchcontinue inType
     local
       DAE.Dimension dim;
       Integer int_dim;
@@ -2400,14 +2384,14 @@ algorithm
       list<DAE.Var> vars;
       list<String> var_names;
 
-    case (DAE.T_INTEGER()) then Values.INTEGER(0);
-    case (DAE.T_REAL()) then Values.REAL(0.0);
-    case (DAE.T_STRING()) then Values.STRING("");
-    case (DAE.T_BOOL()) then Values.BOOL(false);
-    case (DAE.T_ENUMERATION())
+    case DAE.T_INTEGER() then Values.INTEGER(0);
+    case DAE.T_REAL() then Values.REAL(0.0);
+    case DAE.T_STRING() then Values.STRING("");
+    case DAE.T_BOOL() then Values.BOOL(false);
+    case DAE.T_ENUMERATION()
       then Values.ENUM_LITERAL(Absyn.IDENT(""), 0);
 
-    case (DAE.T_ARRAY(dims = {dim}, ty = ty))
+    case DAE.T_ARRAY(dims = {dim}, ty = ty)
       algorithm
         int_dim := Expression.dimensionSize(dim);
         value := generateDefaultBinding(ty);
@@ -2416,7 +2400,7 @@ algorithm
       then
         Values.ARRAY(values, int_dim :: dims);
 
-    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = path), varLst = vars))
+    case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = path), varLst = vars)
       algorithm
         (values, var_names) := List.map_2(vars, getRecordVarBindingAndName);
       then
@@ -2436,20 +2420,20 @@ protected function getRecordVarBindingAndName
   output Values.Value outBinding;
   output String outName;
 algorithm
-  (outBinding, outName) := matchcontinue(inVar)
+  (outBinding, outName) := matchcontinue inVar
     local
       String name;
       DAE.Type ty;
       DAE.Binding binding;
       Values.Value val;
 
-    case (DAE.TYPES_VAR(name = name, ty = ty, binding = binding))
+    case DAE.TYPES_VAR(name = name, ty = ty, binding = binding)
       algorithm
         val := getBindingOrDefault(binding, ty);
       then
         (val, name);
 
-    case (DAE.TYPES_VAR(name = name))
+    case DAE.TYPES_VAR(name = name)
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- CevalFunction.getRecordVarBindingAndName failed on variable "
@@ -2466,12 +2450,12 @@ protected function getFunctionReturnValue
   input FCore.Graph inEnv;
   output Values.Value outValue;
 algorithm
-  outValue := match(inOutputVar, inEnv)
+  outValue := match inOutputVar
     local
       DAE.ComponentRef cr;
       DAE.Type ty;
       Values.Value val;
-    case (DAE.VAR(componentRef = cr, ty = ty), _)
+    case DAE.VAR(componentRef = cr, ty = ty)
       algorithm
         val := getVariableValue(cr, ty, inEnv);
       then
@@ -2487,14 +2471,14 @@ protected function getVariableValue
   input FCore.Graph inEnv;
   output Values.Value outValue;
 algorithm
-  outValue := matchcontinue(inCref, inType, inEnv)
+  outValue := matchcontinue inType
     local
       Values.Value val;
       Absyn.Path p;
 
     // A record doesn't have a value, but an environment with it's components.
     // So we need to assemble the records value.
-    case (_, DAE.T_COMPLEX(complexClassType = ClassInf.RECORD()), _)
+    case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD())
       algorithm
         p := ComponentReference.crefToPath(inCref);
         val := getRecordValue(p, inType, inEnv);
@@ -2518,7 +2502,7 @@ protected function getRecordValue
   input FCore.Graph inEnv;
   output Values.Value outValue;
 algorithm
-  outValue := match(inRecordName, inType, inEnv)
+  outValue := match(inRecordName, inType)
     local
       list<DAE.Var> vars;
       list<Values.Value> vals;
@@ -2526,9 +2510,8 @@ algorithm
       String id;
       Absyn.Path p;
       FCore.Graph env;
-    case (Absyn.IDENT(name = id),
-          DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = p),
-                        varLst = vars), _)
+    case (Absyn.IDENT(name = id), DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = p),
+                        varLst = vars))
       algorithm
         (_, _, _, _, _, env) :=
           Lookup.lookupIdentLocal(FCore.emptyCache(), inEnv, id);
@@ -2545,7 +2528,7 @@ protected function getRecordComponentValue
   input FCore.Graph inEnv;
   output Values.Value outValues;
 algorithm
-  outValues := match(inVars, inEnv)
+  outValues := match inVars
     local
       Values.Value val;
       Option<Values.Value> oval;
@@ -2554,16 +2537,16 @@ algorithm
       DAE.Binding binding, tvbinding;
 
     // The component is a record itself.
-    case (DAE.TYPES_VAR(
+    case DAE.TYPES_VAR(
         name = id,
-        ty = ty as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD())), _)
+        ty = ty as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD()))
       algorithm
         val := getRecordValue(Absyn.IDENT(id), ty, inEnv);
       then
         val;
 
     // A non-record variable.
-    case (DAE.TYPES_VAR(name = id, ty = ty, binding = tvbinding), _)
+    case DAE.TYPES_VAR(name = id, ty = ty, binding = tvbinding)
       algorithm
         (_, DAE.TYPES_VAR(binding = binding), _, _, _, _) :=
           Lookup.lookupIdentLocal(FCore.emptyCache(), inEnv, id);
@@ -2595,13 +2578,13 @@ protected function boxReturnValue
   input list<Values.Value> inReturnValues;
   output Values.Value outValue;
 algorithm
-  outValue := match(inReturnValues)
+  outValue := match inReturnValues
     local
       Values.Value val;
 
-    case ({}) then Values.NORETCALL();
-    case ({val}) then val;
-    case (_ :: _) then Values.TUPLE(inReturnValues);
+    case {} then Values.NORETCALL();
+    case {val} then val;
+    case _ :: _ then Values.TUPLE(inReturnValues);
   end match;
 end boxReturnValue;
 
@@ -2631,14 +2614,14 @@ protected function getElementDependencies
   output list<FunctionVar> outDependencies;
   type Arg = tuple<list<FunctionVar>, list<FunctionVar>, list<DAE.Ident>>;
 algorithm
-  outDependencies := matchcontinue(inElement, inAllElements)
+  outDependencies := matchcontinue inElement
     local
       DAE.Exp bind_exp;
       list<FunctionVar> deps;
       list<DAE.Dimension> dims;
       Arg arg;
 
-    case ((DAE.VAR(binding = SOME(bind_exp), dims = dims), _), _)
+    case (DAE.VAR(binding = SOME(bind_exp), dims = dims), _)
       algorithm
         (_, arg as (_, deps, _)) := Expression.traverseExpBidir(
           bind_exp,
@@ -2650,7 +2633,7 @@ algorithm
       then
         deps;
 
-    case ((DAE.VAR(dims = dims), _), _)
+    case (DAE.VAR(dims = dims), _)
       algorithm
         (_, (_, deps, _)) := List.mapFold(dims,
           getElementDependenciesFromDims, (inAllElements, {}, {}));
@@ -2670,12 +2653,12 @@ protected function getElementDependenciesFromDims
   output Arg outArg;
   type Arg = tuple<list<FunctionVar>, list<FunctionVar>, list<DAE.Ident>>;
 algorithm
-  (outDimension, outArg) := matchcontinue(inDimension, inArg)
+  (outDimension, outArg) := matchcontinue inArg
     local
       Arg arg;
       DAE.Exp dim_exp;
 
-    case (_, _)
+    case _
       algorithm
         dim_exp := Expression.dimensionSizeExp(inDimension);
         (_, arg) := Expression.traverseExpBidir(
@@ -2831,7 +2814,7 @@ protected function checkCyclicalComponents
   input list<tuple<FunctionVar, list<FunctionVar>>> inCycles;
   input DAE.ElementSource inSource;
 algorithm
-  _ := match(inCycles, inSource)
+  () := match inCycles
     local
       list<list<FunctionVar>> cycles;
       list<list<DAE.Element>> elements;
@@ -2841,7 +2824,7 @@ algorithm
       String cycles_str, scope_str;
       SourceInfo info;
 
-    case ({}, _) then ();
+    case {} then ();
 
     else
       algorithm

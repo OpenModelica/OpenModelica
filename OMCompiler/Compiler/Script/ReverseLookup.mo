@@ -149,8 +149,6 @@ protected
   protected
     Option<PathEntry> opt_entry;
     PathEntry entry;
-    Option<PathTree.Tree> opt_tree;
-    PathTree.Tree rest_tree;
   algorithm
     tree := match path
       case Absyn.Path.IDENT() then PathTree.add(tree, path.name, PathEntry.ENTRY(PathTree.new(), false), conflictFunc = PathTree.addConflictKeep);

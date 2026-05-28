@@ -144,7 +144,7 @@ algorithm
     case (Sets.SETS(sets = node as SetTrieNode.SET_TRIE_NODE()),
           Sets.SETS())
       algorithm
-        _ := setTrieGetNode(setTrieNodeName(childSets.sets), node.nodes);
+        setTrieGetNode(setTrieNodeName(childSets.sets), node.nodes);
       then
         parentSets;
 
@@ -167,7 +167,7 @@ protected function isEmptySet
   input Sets sets;
   output Boolean isEmpty;
 algorithm
-  isEmpty := match(sets)
+  isEmpty := match sets
     case Sets.SETS(sets = SetTrieNode.SET_TRIE_NODE(nodes = {}),
       connections = {}, outerConnects = {}) then true;
     else false;
@@ -242,7 +242,7 @@ protected function makeConnectorType
 protected
   Option<DAE.ComponentRef> flowName;
 algorithm
-  ty := match(connectorType)
+  ty := match connectorType
     case DAE.POTENTIAL() then ConnectorType.EQU();
     case DAE.FLOW() then ConnectorType.FLOW();
     case DAE.STREAM(flowName) then ConnectorType.STREAM(flowName);
@@ -310,7 +310,7 @@ public function isExpandable
   input DAE.ComponentRef name;
   output Boolean expandableConnector;
 algorithm
-  expandableConnector := match(name)
+  expandableConnector := match name
     case DAE.CREF_IDENT()
       then Types.isExpandableConnector(name.identType);
 
@@ -358,7 +358,7 @@ protected
   DAE.ComponentRef name;
 algorithm
   for var in variables loop
-    _ := match var
+    () := match var
       // do not return the ones that have a binding as they are used
       // TODO: actually only if their binding is not another expandable??!!
       case DAE.VAR(componentRef = name, binding = NONE())
@@ -382,7 +382,7 @@ protected function getStreamAndFlowVariables
   output list<DAE.Var> streams = {};
 algorithm
   for var in variables loop
-    _ := match var
+    () := match var
       case DAE.TYPES_VAR(attributes = DAE.ATTR(connectorType = DAE.FLOW()))
         algorithm
           flows := var :: flows;
@@ -514,7 +514,7 @@ protected function reverseEnumType
   in the list instead of the last (more efficient)."
   input output DAE.Dimension dim;
 algorithm
-  _ := match dim
+  () := match dim
     case DAE.DIM_ENUM()
       algorithm
         dim.literals := listReverse(dim.literals);
@@ -593,7 +593,7 @@ protected function addStreamFlowAssociation2
   input DAE.ComponentRef flowCref;
   input output SetTrieNode node;
 algorithm
-  _ := match node
+  () := match node
     case SetTrieNode.SET_TRIE_LEAF()
       algorithm
         node.flowAssociation := SOME(flowCref);
@@ -1051,10 +1051,10 @@ protected function setTrieAddLeafElement
   input ConnectorElement element;
   input output SetTrieNode node;
 algorithm
-  _ := match node
+  () := match node
     case SetTrieNode.SET_TRIE_LEAF()
       algorithm
-        _ := match element.face
+        () := match element.face
           case Face.INSIDE()
             algorithm
               node.insideElement := SOME(element);
@@ -1128,7 +1128,7 @@ protected function setTrieUpdate<Arg>
     input output SetTrieNode node;
   end UpdateFunc;
 algorithm
-  _ := match(cref, trie)
+  () := match(cref, trie)
     local
       String id;
 
@@ -1194,7 +1194,7 @@ algorithm
   nodes := match cref
     local
       String id;
-      DAE.ComponentRef cr, rest_cr;
+      DAE.ComponentRef cr;
       SetTrieNode node;
       list<SetTrieNode> child_nodes;
 
@@ -1273,7 +1273,7 @@ protected function setTrieTraverseLeaves<Arg>
     input output Arg arg;
   end UpdateFunc;
 algorithm
-  _ := match node
+  () := match node
     local
       list<SetTrieNode> nodes;
 
@@ -1303,7 +1303,6 @@ protected function setTrieGet
 protected
   list<SetTrieNode> nodes;
   String subs_str, id_subs, id_nosubs;
-  SetTrieNode node;
 algorithm
   SetTrieNode.SET_TRIE_NODE(nodes = nodes) := trie;
 
@@ -1404,7 +1403,6 @@ protected
   list<Set> set_list;
   array<Set> set_array;
   DAE.DAElist dae, dae2;
-  Boolean has_stream, has_expandable, has_cardinality;
   ConnectionGraph.DaeEdges broken, connected;
 algorithm
   setGlobalRoot(Global.isInStream, NONE());
@@ -1447,7 +1445,7 @@ protected
   list<DAE.ComponentRef> cref_set;
 algorithm
   for set in sets loop
-    _ := match set
+    () := match set
       case Set.SET(ty = ConnectorType.EQU())
         algorithm
           cref_set := getAllEquCrefs({set});
@@ -1485,14 +1483,14 @@ end removeCrefsFromSets2;
 function mergeEquSetsAsCrefs
   input output list<list<DAE.ComponentRef>> setsAsCrefs;
 algorithm
-  setsAsCrefs := match(setsAsCrefs)
+  setsAsCrefs := match setsAsCrefs
     local
       list<DAE.ComponentRef> set;
       list<list<DAE.ComponentRef>> rest, sets;
 
-    case ({}) then {};
-    case ({set}) then {set};
-    case (set::rest)
+    case {} then {};
+    case {set} then {set};
+    case set::rest
       algorithm
         (set, rest) := mergeWithRest(set, rest);
         sets := mergeEquSetsAsCrefs(rest);
@@ -1818,7 +1816,6 @@ protected
   list<ConnectorElement> eql;
   list<list<ConnectorElement>> eqll;
   Real flowThreshold = Flags.getConfigReal(Flags.FLOW_THRESHOLD);
-  DAE.DAElist dae;
 algorithm
   for set in sets loop
     DAE := match set
@@ -1872,7 +1869,7 @@ protected function generateEquEquations
 protected
   list<DAE.Element> eql = {};
   ConnectorElement e1;
-  DAE.ElementSource src, x_src, y_src;
+  DAE.ElementSource src;
   DAE.ComponentRef x, y;
 algorithm
   if listEmpty(elements) then
@@ -1985,7 +1982,7 @@ protected function increaseRefCount
   input Integer amount;
   input output SetTrieNode node;
 algorithm
-  _ := match node
+  () := match node
     case SetTrieNode.SET_TRIE_NODE()
       algorithm
         node.connectCount := node.connectCount + amount;
@@ -2120,7 +2117,6 @@ protected
   list<ConnectorElement> outside;
   DAE.Exp cref_exp, res;
   DAE.ElementSource src;
-  DAE.DAElist dae;
   DAE.ComponentRef name;
   list<DAE.Element> eql = {};
 algorithm
@@ -2151,7 +2147,7 @@ protected function streamSumEquationExp
   input Real flowThreshold;
   output DAE.Exp sumExp;
 protected
-  DAE.Exp outside_sum1, outside_sum2, inside_sum1, inside_sum2, res;
+  DAE.Exp outside_sum1, outside_sum2, inside_sum1, inside_sum2;
 algorithm
   if listEmpty(outsideElements) then
     // No outside components.
@@ -2240,7 +2236,7 @@ protected function sumInside1
   output DAE.Exp exp;
 protected
   DAE.Exp stream_exp, flow_exp, flow_threshold;
-  DAE.Type flowTy, streamTy;
+  DAE.Type flowTy;
 algorithm
   (stream_exp, flow_exp) := streamFlowExp(element);
   flowTy := Expression.typeof(flow_exp);
@@ -2306,7 +2302,6 @@ protected function makePositiveMaxCall
   annotation(__OpenModelica_EarlyInline = true);
 protected
   DAE.Type ty;
-  list<DAE.Var> attr;
   Option<DAE.Exp> nominal_oexp;
   DAE.Exp nominal_exp, flow_threshold;
 algorithm
@@ -2543,7 +2538,7 @@ protected function evaluateActualStream
   output DAE.Exp exp;
 protected
   DAE.ComponentRef flow_cr;
-  DAE.Exp e, flow_exp, stream_exp, instream_exp, rel_exp;
+  DAE.Exp flow_exp, stream_exp, instream_exp, rel_exp;
   DAE.Type ety;
   Integer flow_dir;
 algorithm
@@ -2631,7 +2626,7 @@ protected function simplifyDAEElement
   input DAE.Element element;
   output list<DAE.Element> elements;
 algorithm
-  elements := matchcontinue(element)
+  elements := matchcontinue element
     local
       list<DAE.Exp> conds;
       list<list<DAE.Element>> branches;
@@ -2750,15 +2745,15 @@ public function componentFaceType
   input DAE.ComponentRef inComponentRef;
   output Face outFace;
 algorithm
-  outFace := match (inComponentRef)
+  outFace := match inComponentRef
     // is a non-qualified cref => OUTSIDE
-    case (DAE.CREF_IDENT()) then Face.OUTSIDE();
+    case DAE.CREF_IDENT() then Face.OUTSIDE();
     // is a qualified cref and is a connector => OUTSIDE
-    case (DAE.CREF_QUAL(identType = DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)))) then Face.OUTSIDE();
+    case DAE.CREF_QUAL(identType = DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_))) then Face.OUTSIDE();
     // is a qualified cref and is an array of connectors => OUTSIDE
-    case (DAE.CREF_QUAL(identType = DAE.T_ARRAY(ty = DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_))))) then Face.OUTSIDE();
+    case DAE.CREF_QUAL(identType = DAE.T_ARRAY(ty = DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)))) then Face.OUTSIDE();
     // is a qualified cref and is NOT a connector => INSIDE
-    case (DAE.CREF_QUAL()) then Face.INSIDE();
+    case DAE.CREF_QUAL() then Face.INSIDE();
   end match;
 end componentFaceType;
 
@@ -2787,7 +2782,7 @@ protected function checkConnectorBalance2
   input SourceInfo info;
   output Boolean isBalanced = true;
 protected
-  String error_str, flow_str, potential_str, class_str;
+  String flow_str, potential_str, class_str;
 algorithm
   // Don't check connector balance for language version 2.x and earlier.
   if Config.languageStandardAtMost(Config.LanguageStandard._2_x) then
@@ -2851,7 +2846,7 @@ algorithm
       flowVars := flowVars + f * n;
       streamVars := streamVars + s * n;
     else
-      _ := match attr
+      () := match attr
         // A flow variable.
         case DAE.ATTR(connectorType = DAE.FLOW())
           algorithm
@@ -3049,7 +3044,7 @@ protected function printLeafElementStr
   input Option<ConnectorElement> element;
   output String string;
 algorithm
-  string := match(element)
+  string := match element
     local
       ConnectorElement e;
       String res;
@@ -3158,7 +3153,7 @@ protected function getAllEquCrefs
   output list<DAE.ComponentRef> crefs = {};
 algorithm
   for set in sets loop
-    _ := match set
+    () := match set
       case Set.SET(ty = ConnectorType.EQU())
         algorithm
           for e in set.elements loop

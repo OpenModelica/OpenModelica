@@ -161,7 +161,6 @@ public
     DifferentiationArguments args;
     Option<Integer> opt_factor;
     Integer factor;
-    Expression shift;
     Integer shift_value, v2;
     EvalOrder eval;
   algorithm
@@ -183,7 +182,7 @@ public
                 Subscript.mapExp(sub, function collectVars(func = BVariable.isIterator, collector = ite_occurences));
               end for;
               iterators := UnorderedSet.toList(ite_occurences);
-              _ := match iterators
+              () := match iterators
                 case {iter} algorithm
                   eval := UnorderedMap.getSafe(iter, order, sourceInfo());
                   if eval < EvalOrder.FAILED then
@@ -194,7 +193,7 @@ public
                       opt_factor := SOME(factor);
                     end for;
 
-                    _ := match opt_factor
+                    () := match opt_factor
                       case SOME(factor) guard(factor <> 0) algorithm
                         try
                           Expression.INTEGER(shift_value) := getShift(Subscript.toExp(sub_to_solve), iter);
@@ -273,13 +272,12 @@ protected
     UnorderedSet<ComponentRef> constrained_vars = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     Dimension lhs_dim, rhs_dim;
     Expression const;
-    UnorderedSet<ComponentRef> local_parameters;
   algorithm
     if debug then
       print("[debug] checking equation:\n" + Equation.toString(eqn) + "\n");
     end if;
 
-    _ := match eqn
+    () := match eqn
       // Main Routine: collect iterators and resizable parameter constraints and target equations
       case Equation.FOR_EQUATION() algorithm
         resizables    := getResizableIterators(eqn.iter);
@@ -309,7 +307,7 @@ protected
             const := Expression.MULTARY({Dimension.sizeExp(lhs_dim)}, {Dimension.sizeExp(rhs_dim)}, Operator.makeAdd(Type.INTEGER()));
             try
               addConstraint(const, NONE(), c2pe, Expression.isZero, "array dimension", "=");
-              _ := Expression.map(const, function collectResizables(collector = parameters));
+              Expression.map(const, function collectResizables(collector = parameters));
             else
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed.\nViolation of implicit constraint `" + Dimension.toString(lhs_dim) + " = " + Dimension.toString(rhs_dim)
                 + "` for LHS and RHS type dimensions in equation:\n" + Equation.toString(eqn)});
@@ -360,7 +358,7 @@ protected
     (names, ranges) := Iterator.getFrames(iter);
     for tpl in List.zip(names, ranges) loop
       (name, range) := tpl;
-      _ := match range
+      () := match range
         case Expression.RANGE() algorithm
           if Util.isSome(range.step) and Expression.isNegative(Util.getOption(range.step)) then
             UnorderedMap.add(name, range.start, replacements);
@@ -404,7 +402,7 @@ protected
     input output Expression exp;
     input UnorderedSet<ComponentRef> collector;
   algorithm
-    _ := match exp
+    () := match exp
       case Expression.CREF() guard(BVariable.checkCref(exp.cref, BVariable.isResizableParameter, sourceInfo())) algorithm
         UnorderedSet.add(exp.cref, collector);
       then ();
@@ -416,9 +414,9 @@ protected
     input output Expression exp;
     input UnorderedMap<ComponentRef, Occurences> occs;
   algorithm
-    _ := match exp
+    () := match exp
       case Expression.CREF() algorithm
-        _ := ComponentRef.mapSubscripts(exp.cref, function collectOccurencesSubscript(occs = occs));
+        ComponentRef.mapSubscripts(exp.cref, function collectOccurencesSubscript(occs = occs));
       then ();
       else ();
     end match;
@@ -443,7 +441,7 @@ protected
     input UnorderedMap<ComponentRef, Occurences> occs;
     input UnorderedSet<ComponentRef> acc;
   algorithm
-    _ := match exp
+    () := match exp
       case Expression.CREF() guard(UnorderedMap.contains(exp.cref, occs)) algorithm
         UnorderedSet.add(exp.cref, acc);
       then ();
@@ -466,7 +464,7 @@ protected
     input BVariable.checkVar func;
     input UnorderedSet<ComponentRef> collector;
   algorithm
-    _ := match exp
+    () := match exp
       case Expression.CREF() guard(func(BVariable.getVarPointer(exp.cref, sourceInfo()))) algorithm
         UnorderedSet.add(exp.cref, collector);
       then ();
@@ -490,7 +488,7 @@ protected
     for cref in UnorderedMap.keyList(occs) loop
       range := UnorderedMap.getSafe(cref, resizables, sourceInfo());
       Expression.map(range, function collectResizables(collector = parameters));
-      _ := match range
+      () := match range
         case Expression.RANGE() algorithm
           // optimization target function (minimum)
           // min! f(x) = stop - start
@@ -499,7 +497,7 @@ protected
 
           // collect local parameters and merge with global parameters
           local_parameters := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
-          _ := Expression.map(range, function collectResizables(collector = local_parameters));
+          Expression.map(range, function collectResizables(collector = local_parameters));
           UnorderedSet.merge(parameters, local_parameters);
 
           // differentiate the target by all contained parameters to determine initial values
@@ -724,7 +722,7 @@ protected
       case Expression.RANGE() algorithm
         // collect local parameters
         parameters := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
-        _ := Expression.map(exp, function collectResizables(collector = parameters));
+        Expression.map(exp, function collectResizables(collector = parameters));
         getRangeConstraint(exp.start, exp.step, exp.stop, parameters, c2p, "variable");
       then Expression.rangeSizeExp(exp);
       else exp;
@@ -739,7 +737,6 @@ protected
     input UnorderedMap<ComponentRef, Expression> optimal_values;
   protected
     Expression diff, binding;
-    Boolean failed = false;
     Variable var;
   algorithm
     args.diffCref := cref;
@@ -844,7 +841,7 @@ protected
     end checkVal;
   protected
     UnorderedSet<Expression> parsed_constraints = UnorderedSet.new(Expression.hash, Expression.isEqual);
-    Expression constraint, replaced, old_optimal_value;
+    Expression constraint, old_optimal_value;
     list<ComponentRef> crefs;
     Equation eqn, solved_eqn;
     Solve.Status status;
@@ -854,7 +851,7 @@ protected
     // traversing constraints
     for tpl in UnorderedMap.toList(c2p) loop
       (constraint, crefs) := tpl;
-      _ := match checkConstraint(constraint, optimal_values)
+      () := match checkConstraint(constraint, optimal_values)
         // this constraint is not violated
         case SOME(value) guard(func(value)) algorithm
           if debug then
@@ -875,7 +872,7 @@ protected
             (solved_eqn, status, _) := Solve.solveBody(eqn, cref);
             if status == NBSolve.Status.EXPLICIT then
               // try to used solved value as new parameter value to fulfill constraint
-              _ := match checkConstraint(Util.getOption(Equation.getRHS(solved_eqn)), optimal_values)
+              () := match checkConstraint(Util.getOption(Equation.getRHS(solved_eqn)), optimal_values)
                 case SOME(value) algorithm
                   // saving previous optimal value and checking new one
                   old_optimal_value := UnorderedMap.getSafe(cref, optimal_values, sourceInfo());

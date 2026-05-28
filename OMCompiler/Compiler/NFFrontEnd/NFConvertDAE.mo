@@ -82,8 +82,6 @@ function convert
   output DAE.DAElist dae;
   output AvlTreePathFunction.Tree daeFunctions;
 protected
-  list<DAE.Element> elems;
-  DAE.Element class_elem;
 algorithm
   daeFunctions := convertFunctionTree(functions);
   dae := convertModel(flatModel);
@@ -171,7 +169,6 @@ protected
   DAE.ComponentRef dcref;
   DAE.Type dty;
   DAE.ElementSource source;
-  Direction dir;
 algorithm
   dcref := ComponentRef.toDAE(cref);
   dty := Type.toDAE(if settings.isFunctionParameter then Type.arrayElementType(ty) else ty);
@@ -234,8 +231,6 @@ function convertVarAttributes
 protected
   Boolean is_final;
   Option<Boolean> is_final_opt;
-  Type elTy;
-  Boolean is_array = false;
 algorithm
   is_final := compAttrs.isFinal or
               compAttrs.variability == Variability.STRUCTURAL_PARAMETER;
@@ -555,8 +550,6 @@ algorithm
       Expression lhs, rhs;
       DAE.Exp e1, e2, e3;
       DAE.ComponentRef cr1, cr2;
-      list<DAE.Dimension> dims;
-      list<DAE.Element> body;
 
     case Equation.EQUALITY(lhs = lhs as Expression.CREF(), rhs = rhs as Expression.CREF())
       guard Type.isScalarBuiltin(eq.ty)
@@ -731,9 +724,6 @@ algorithm
   elements := match eq
     local
       DAE.Exp e1, e2, e3;
-      DAE.ComponentRef cref;
-      list<DAE.Dimension> dims;
-      list<DAE.Element> body;
 
     case Equation.EQUALITY()
       algorithm
@@ -790,7 +780,6 @@ function convertAlgorithm
 protected
   list<DAE.Statement> stmts;
   DAE.Algorithm dalg;
-  DAE.ElementSource src;
 algorithm
   stmts := convertStatements(alg.statements);
   dalg := DAE.ALGORITHM_STMTS(stmts);
@@ -1238,8 +1227,6 @@ function makeTypeVars
   input InstNode complexCls;
   output list<DAE.Var> typeVars;
 protected
-  Component comp;
-  DAE.Var type_var;
 algorithm
   typeVars := match cls as InstNode.getClass(complexCls)
     case Class.INSTANCED_CLASS(restriction = Restriction.RECORD())

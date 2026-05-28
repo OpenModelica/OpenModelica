@@ -120,7 +120,7 @@ public function unelabExp
   input DAE.Exp inExp;
   output Absyn.Exp outExp;
 algorithm
-  outExp := matchcontinue (inExp)
+  outExp := matchcontinue inExp
     local
       Integer i;
       Real r;
@@ -145,78 +145,78 @@ algorithm
       DAE.Dimensions dims;
       Absyn.ReductionIterType iterType;
 
-    case (DAE.ICONST(integer = i)) then Absyn.INTEGER(i);
-    case (DAE.RCONST(real = r))
+    case DAE.ICONST(integer = i) then Absyn.INTEGER(i);
+    case DAE.RCONST(real = r)
       algorithm
         s := realString(r);
       then Absyn.REAL(s);
-    case (DAE.SCONST(string = s)) then Absyn.STRING(s);
-    case (DAE.BCONST(bool = b)) then Absyn.BOOL(b);
-    case (DAE.ENUM_LITERAL(name = path))
+    case DAE.SCONST(string = s) then Absyn.STRING(s);
+    case DAE.BCONST(bool = b) then Absyn.BOOL(b);
+    case DAE.ENUM_LITERAL(name = path)
       algorithm
         cr_1 := AbsynUtil.pathToCref(path);
       then Absyn.CREF(cr_1);
 
-    case (DAE.CREF(componentRef = cr))
+    case DAE.CREF(componentRef = cr)
       algorithm
         cr_1 := ComponentReference.unelabCref(cr);
       then
         Absyn.CREF(cr_1);
 
-    case(DAE.BINARY(e1,op,e2)) algorithm
+    case DAE.BINARY(e1,op,e2) algorithm
       aop := unelabOperator(op);
       ae1 := unelabExp(e1);
       ae2 := unelabExp(e2);
     then Absyn.BINARY(ae1,aop,ae2);
 
-    case(DAE.UNARY(op,e1)) algorithm
+    case DAE.UNARY(op,e1) algorithm
       aop := unelabOperator(op);
       ae1 := unelabExp(e1);
     then Absyn.UNARY(aop,ae1);
 
-    case(DAE.LBINARY(e1,op,e2)) algorithm
+    case DAE.LBINARY(e1,op,e2) algorithm
       aop := unelabOperator(op);
       ae1 := unelabExp(e1);
       ae2 := unelabExp(e2);
     then Absyn.LBINARY(ae1,aop,ae2);
 
-    case(DAE.LUNARY(op,e1)) algorithm
+    case DAE.LUNARY(op,e1) algorithm
       aop := unelabOperator(op);
       ae1 := unelabExp(e1);
     then Absyn.LUNARY(aop,ae1);
 
-    case(DAE.RELATION(exp1=e1,operator=op,exp2=e2)) algorithm
+    case DAE.RELATION(exp1=e1,operator=op,exp2=e2) algorithm
       aop := unelabOperator(op);
       ae1 := unelabExp(e1);
       ae2 := unelabExp(e2);
     then Absyn.RELATION(ae1,aop,ae2);
 
-    case(DAE.IFEXP(e1,e2,e3)) algorithm
+    case DAE.IFEXP(e1,e2,e3) algorithm
       ae1 := unelabExp(e1);
       ae2 := unelabExp(e2);
       ae3 := unelabExp(e3);
     then Absyn.IFEXP(ae1,ae2,ae3,{});
 
-    case (DAE.CALL(path,expl,_))
+    case DAE.CALL(path,expl,_)
       algorithm
         aexpl := List.map(expl,unelabExp);
         acref := AbsynUtil.pathToCref(path);
       then Absyn.CALL(acref,Absyn.FUNCTIONARGS(aexpl,{}),{});
 
-    case (DAE.RECORD(path = path,exps = expl))
+    case DAE.RECORD(path = path,exps = expl)
       algorithm
         aexpl := List.map(expl,unelabExp);
         acref := AbsynUtil.pathToCref(path);
       then Absyn.CALL(acref,Absyn.FUNCTIONARGS(aexpl,{}),{});
 
-    case(DAE.PARTEVALFUNCTION(path,expl,_,_))
+    case DAE.PARTEVALFUNCTION(path,expl,_,_)
       algorithm
         aexpl := List.map(expl,unelabExp);
         acref := AbsynUtil.pathToCref(path);
       then
         Absyn.PARTEVALFUNCTION(acref,Absyn.FUNCTIONARGS(aexpl,{}));
 
-    case (DAE.ARRAY(array = {}, ty = ty))
+    case DAE.ARRAY(array = {}, ty = ty)
       algorithm
         (ty, dims) := TypesDump.flattenArrayType(ty);
         ae1 := unleabZeroExpFromType(ty);
@@ -224,49 +224,49 @@ algorithm
       then
         Absyn.CALL(Absyn.CREF_IDENT("fill",{}),Absyn.FUNCTIONARGS(ae1::expl_1,{}),{});
 
-    case (DAE.ARRAY(array = expl))
+    case DAE.ARRAY(array = expl)
       algorithm
         expl_1 := List.map(expl, unelabExp);
       then
         Absyn.ARRAY(expl_1);
 
-    case(DAE.MATRIX(matrix = mexpl2))
+    case DAE.MATRIX(matrix = mexpl2)
       algorithm
         amexpl := List.mapList(mexpl2,unelabExp);
       then (Absyn.MATRIX(amexpl));
 
-    case(DAE.RANGE(_,e1,SOME(e2),e3)) algorithm
+    case DAE.RANGE(_,e1,SOME(e2),e3) algorithm
       ae1 := unelabExp(e1);
       ae2 := unelabExp(e2);
       ae3 := unelabExp(e3);
     then Absyn.RANGE(ae1,SOME(ae2),ae3);
 
-    case(DAE.RANGE(_,e1,NONE(),e3)) algorithm
+    case DAE.RANGE(_,e1,NONE(),e3) algorithm
       ae1 := unelabExp(e1);
       ae3 := unelabExp(e3);
     then Absyn.RANGE(ae1,NONE(),ae3);
 
-    case(DAE.TUPLE(expl))
+    case DAE.TUPLE(expl)
       algorithm
         expl_1 := List.map(expl, unelabExp);
       then
         Absyn.TUPLE(expl_1);
 
-    case(DAE.CAST(_,e1)) algorithm
+    case DAE.CAST(_,e1) algorithm
       ae1 := unelabExp(e1);
     then ae1;
 
      // ASUB can not be unelabed since it has no representation in Absyn.
-    case(DAE.ASUB(_,_)) algorithm
+    case DAE.ASUB(_,_) algorithm
       print("Internal Error, can not unelab ASUB\n");
     then fail();
 
     // TSUB(expression) => expression
-    case(DAE.TSUB(e1,_,_)) algorithm
+    case DAE.TSUB(e1,_,_) algorithm
       ae1 := unelabExp(e1);
     then ae1;
 
-    case(DAE.SIZE(e1,SOME(e2))) algorithm
+    case DAE.SIZE(e1,SOME(e2)) algorithm
       ae1 := unelabExp(e1);
       ae2 := unelabExp(e2);
     then Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({ae1,ae2},{}),{});
@@ -278,7 +278,7 @@ algorithm
     then Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({ae1,ae2},{}));
     */
 
-    case(DAE.CODE(code,_)) then Absyn.CODE(code);
+    case DAE.CODE(code,_) then Absyn.CODE(code);
 
     case DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(iterType=iterType,path=path),expr=e1,iterators=riters)
       algorithm
@@ -302,7 +302,7 @@ public function unelabDimension
   input DAE.Dimension inDim;
   output Absyn.Subscript outDim;
 algorithm
-  outDim := match (inDim)
+  outDim := match inDim
     local
       Integer i;
       Absyn.Path p;
@@ -310,23 +310,23 @@ algorithm
       DAE.Exp e;
       Absyn.Exp ae;
 
-    case (DAE.DIM_INTEGER(i)) then Absyn.SUBSCRIPT(Absyn.INTEGER(i));
+    case DAE.DIM_INTEGER(i) then Absyn.SUBSCRIPT(Absyn.INTEGER(i));
 
-    case (DAE.DIM_BOOLEAN()) then Absyn.SUBSCRIPT(Absyn.CREF(Absyn.CREF_IDENT("Boolean", {})));
+    case DAE.DIM_BOOLEAN() then Absyn.SUBSCRIPT(Absyn.CREF(Absyn.CREF_IDENT("Boolean", {})));
 
-    case (DAE.DIM_ENUM(enumTypeName = p))
+    case DAE.DIM_ENUM(enumTypeName = p)
       algorithm
         c := AbsynUtil.pathToCref(p);
       then
         Absyn.SUBSCRIPT(Absyn.CREF(c));
 
-    case (DAE.DIM_EXP(e))
+    case DAE.DIM_EXP(e)
       algorithm
         ae := unelabExp(e);
       then
         Absyn.SUBSCRIPT(ae);
 
-    case (DAE.DIM_UNKNOWN()) then Absyn.NOSUB();
+    case DAE.DIM_UNKNOWN() then Absyn.NOSUB();
 
   end match;
 end unelabDimension;
@@ -349,14 +349,14 @@ protected function unelabDimensionToFillExp
   input DAE.Dimension inDim;
   output Absyn.Exp outExp;
 algorithm
-  outExp := match (inDim)
+  outExp := match inDim
     local
       Integer i;
       DAE.Exp e;
 
-    case (DAE.DIM_INTEGER(i)) then Absyn.INTEGER(i);
+    case DAE.DIM_INTEGER(i) then Absyn.INTEGER(i);
 
-    case (DAE.DIM_EXP(e)) then unelabExp(e);
+    case DAE.DIM_EXP(e) then unelabExp(e);
 
     else Absyn.INTEGER(1); /* Probably bad, but only used with zero-length arrays */
 
@@ -386,38 +386,38 @@ protected function unelabOperator "help function to unelabExpression."
 input DAE.Operator op;
 output Absyn.Operator aop;
 algorithm
-  aop := match(op)
-    case(DAE.ADD(_)) then Absyn.ADD();
-    case(DAE.SUB(_)) then Absyn.SUB();
-    case(DAE.MUL(_)) then Absyn.MUL();
-    case(DAE.DIV(_)) then Absyn.DIV();
-    case(DAE.POW(_)) then Absyn.POW();
-    case(DAE.UMINUS(_)) then Absyn.UMINUS();
-    case(DAE.UMINUS_ARR(_)) then Absyn.UMINUS();
-    case(DAE.ADD_ARR(_)) then Absyn.ADD();
-    case(DAE.SUB_ARR(_)) then Absyn.SUB();
-    case(DAE.MUL_ARR(_)) then Absyn.MUL();
-    case(DAE.DIV_ARR(_)) then Absyn.DIV();
-    case(DAE.MUL_ARRAY_SCALAR(_)) then Absyn.MUL();
-    case(DAE.ADD_ARRAY_SCALAR(_)) then Absyn.ADD();
-    case(DAE.SUB_SCALAR_ARRAY(_)) then Absyn.SUB();
-    case(DAE.MUL_SCALAR_PRODUCT(_)) then Absyn.MUL();
-    case(DAE.MUL_MATRIX_PRODUCT(_)) then Absyn.MUL();
-    case(DAE.DIV_SCALAR_ARRAY(_)) then Absyn.DIV();
-    case(DAE.DIV_ARRAY_SCALAR(_)) then Absyn.DIV();
-    case(DAE.POW_SCALAR_ARRAY(_)) then Absyn.POW();
-    case(DAE.POW_ARRAY_SCALAR(_)) then Absyn.POW();
-    case(DAE.POW_ARR(_)) then Absyn.POW();
-    case(DAE.POW_ARR2(_)) then Absyn.POW();
-    case(DAE.AND(_)) then Absyn.AND();
-    case(DAE.OR(_)) then Absyn.OR();
-    case(DAE.NOT(_)) then Absyn.NOT();
-    case(DAE.LESS(_)) then Absyn.LESS();
-    case(DAE.LESSEQ(_)) then Absyn.LESSEQ();
-    case(DAE.GREATER(_)) then Absyn.GREATER();
-    case(DAE.GREATEREQ(_)) then Absyn.GREATEREQ();
-    case(DAE.EQUAL(_)) then Absyn.EQUAL();
-    case(DAE.NEQUAL(_)) then Absyn.NEQUAL();
+  aop := match op
+    case DAE.ADD(_) then Absyn.ADD();
+    case DAE.SUB(_) then Absyn.SUB();
+    case DAE.MUL(_) then Absyn.MUL();
+    case DAE.DIV(_) then Absyn.DIV();
+    case DAE.POW(_) then Absyn.POW();
+    case DAE.UMINUS(_) then Absyn.UMINUS();
+    case DAE.UMINUS_ARR(_) then Absyn.UMINUS();
+    case DAE.ADD_ARR(_) then Absyn.ADD();
+    case DAE.SUB_ARR(_) then Absyn.SUB();
+    case DAE.MUL_ARR(_) then Absyn.MUL();
+    case DAE.DIV_ARR(_) then Absyn.DIV();
+    case DAE.MUL_ARRAY_SCALAR(_) then Absyn.MUL();
+    case DAE.ADD_ARRAY_SCALAR(_) then Absyn.ADD();
+    case DAE.SUB_SCALAR_ARRAY(_) then Absyn.SUB();
+    case DAE.MUL_SCALAR_PRODUCT(_) then Absyn.MUL();
+    case DAE.MUL_MATRIX_PRODUCT(_) then Absyn.MUL();
+    case DAE.DIV_SCALAR_ARRAY(_) then Absyn.DIV();
+    case DAE.DIV_ARRAY_SCALAR(_) then Absyn.DIV();
+    case DAE.POW_SCALAR_ARRAY(_) then Absyn.POW();
+    case DAE.POW_ARRAY_SCALAR(_) then Absyn.POW();
+    case DAE.POW_ARR(_) then Absyn.POW();
+    case DAE.POW_ARR2(_) then Absyn.POW();
+    case DAE.AND(_) then Absyn.AND();
+    case DAE.OR(_) then Absyn.OR();
+    case DAE.NOT(_) then Absyn.NOT();
+    case DAE.LESS(_) then Absyn.LESS();
+    case DAE.LESSEQ(_) then Absyn.LESSEQ();
+    case DAE.GREATER(_) then Absyn.GREATER();
+    case DAE.GREATEREQ(_) then Absyn.GREATEREQ();
+    case DAE.EQUAL(_) then Absyn.EQUAL();
+    case DAE.NEQUAL(_) then Absyn.NEQUAL();
   end match;
 end unelabOperator;
 
@@ -444,8 +444,6 @@ algorithm
     local
       ComponentRef cr,crs;
       Type ty;
-      DAE.Exp e;
-      list<Boolean> blist;
 
     case DAE.CREF(ty = DAE.T_FUNCTION_REFERENCE_VAR())
       then inExp;
@@ -467,20 +465,20 @@ public function CodeVarToCref
   input DAE.Exp inExp;
   output DAE.Exp outExp;
 algorithm
-  outExp := match(inExp)
+  outExp := match inExp
     local
       ComponentRef e_cref;
       Absyn.ComponentRef cref;
       DAE.Exp e;
 
-    case(DAE.CODE(Absyn.C_VARIABLENAME(cref),_))
+    case DAE.CODE(Absyn.C_VARIABLENAME(cref),_)
       algorithm
         (_,e_cref) := Static.elabUntypedCref(FCore.emptyCache(),FGraph.empty(),cref,false,DAE.NOPRE(),Absyn.dummyInfo);
         e := crefExp(e_cref);
       then
         e;
 
-    case(DAE.CODE(Absyn.C_EXPRESSION(Absyn.CALL(function_ = Absyn.CREF_IDENT("der",{}), functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cref)},{}))),_))
+    case DAE.CODE(Absyn.C_EXPRESSION(Absyn.CALL(function_ = Absyn.CREF_IDENT("der",{}), functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cref)},{}))),_)
       algorithm
         (_,e_cref) := Static.elabUntypedCref(FCore.emptyCache(),FGraph.empty(),cref,false,DAE.NOPRE(),Absyn.dummyInfo);
         e := crefExp(e_cref);
@@ -509,12 +507,12 @@ public function liftArrayR "
   input DAE.Dimension n;
   output DAE.Type outTp;
 algorithm
-  outTp := match(tp,n)
+  outTp := match tp
     local
       Type elt_tp;
       list<DAE.Dimension> dims;
 
-    case(DAE.T_ARRAY(elt_tp,dims),_)
+    case DAE.T_ARRAY(elt_tp,dims)
       algorithm
         dims := n::dims;
       then
@@ -532,7 +530,7 @@ public function dimensionSizeConstantExp
   input DAE.Dimension dim;
   output DAE.Exp exp;
 algorithm
-  exp := match(dim)
+  exp := match dim
     local
       Integer i;
 
@@ -549,7 +547,7 @@ public function dimensionSizeExp
   input DAE.Dimension dim;
   output DAE.Exp exp;
 algorithm
-  exp := match(dim)
+  exp := match dim
     local
       Integer i;
       DAE.Exp e;
@@ -571,7 +569,7 @@ public function dimensionSizeExpHandleUnkown
   input DAE.Dimension dim;
   output DAE.Exp exp;
 algorithm
-  exp := match(dim)
+  exp := match dim
     case DAE.DIM_UNKNOWN() then DAE.ICONST(-1);
     else dimensionSizeExp(dim);
   end match;
@@ -591,7 +589,7 @@ public function dimensionSubscript
   input DAE.Dimension dim;
   output DAE.Subscript sub;
 algorithm
-  sub := match(dim)
+  sub := match dim
     local
       Integer i;
 
@@ -612,7 +610,7 @@ public function negate
   input DAE.Exp inExp;
   output DAE.Exp outExp;
 algorithm
-  outExp := match(inExp)
+  outExp := match inExp
     local
       Type t;
       Operator op;
@@ -622,41 +620,41 @@ algorithm
       DAE.Exp e,e1,e2;
 
     // to avoid un-necessary --e
-    case(DAE.UNARY(DAE.UMINUS(_),e)) then e;
-    case(DAE.UNARY(DAE.UMINUS_ARR(_),e)) then e;
-    case(DAE.LUNARY(DAE.NOT(_),e)) then e;
+    case DAE.UNARY(DAE.UMINUS(_),e) then e;
+    case DAE.UNARY(DAE.UMINUS_ARR(_),e) then e;
+    case DAE.LUNARY(DAE.NOT(_),e) then e;
 
     // -(a*b) = (-a)*b
     // -(a/b) = (-a)/b
-    case(DAE.BINARY(e1,op,e2)) guard(isMulOrDiv(op))
+    case DAE.BINARY(e1,op,e2) guard(isMulOrDiv(op))
     then DAE.BINARY(negate(e1),op,e2);
 
     // -(a-b) = b-a
-    case(DAE.BINARY(e1,op,e2)) guard(isSub(op))
+    case DAE.BINARY(e1,op,e2) guard(isSub(op))
     then DAE.BINARY(e2,op,e1);
 
     case e // -0 = 0
     guard isZero(e)
     then e;
 
-    case (DAE.ICONST(i))
+    case DAE.ICONST(i)
       algorithm
         i_1 := 0 - i;
       then DAE.ICONST(i_1);
-    case (DAE.RCONST(r))
+    case DAE.RCONST(r)
       algorithm
         r_1 := 0.0 - r;
       then DAE.RCONST(r_1);
-    case (DAE.BCONST(b))
+    case DAE.BCONST(b)
       algorithm
         b_1 := not b;
       then DAE.BCONST(b_1);
 
-    case(e)
+    case e
       algorithm
         t := typeof(e);
-        outExp := match (t)
-        case (DAE.T_BOOL()) // not e
+        outExp := match t
+        case DAE.T_BOOL() // not e
           then DAE.LUNARY(DAE.NOT(t),e);
         else
           algorithm
@@ -683,13 +681,13 @@ a *(b+c) => a*b + a*c"
   input DAE.Exp e;
   output DAE.Exp outE;
 algorithm
-  outE := match(e)
+  outE := match e
     local
       DAE.Type tp;
       DAE.Operator op;
       DAE.Exp e1,e2,e21,e22;
 
-    case(DAE.BINARY(e1,DAE.MUL(tp),e2 as DAE.BINARY(e21,op,e22))) guard isAddOrSub(op)
+    case DAE.BINARY(e1,DAE.MUL(tp),e2 as DAE.BINARY(e21,op,e22)) guard isAddOrSub(op)
       algorithm
         DAE.BINARY(e21,op,e22) := expand(e2);
       then
@@ -714,33 +712,32 @@ public function expAbs
   input DAE.Exp inExp;
   output DAE.Exp outExp;
 algorithm
-  outExp := match(inExp)
+  outExp := match inExp
     local
       Integer i2,i;
       Real r2,r;
       DAE.Exp e_1,e,e1_1,e2_1,e1,e2;
-      Type tp;
       Operator op;
 
-    case (DAE.ICONST(integer = i))
+    case DAE.ICONST(integer = i)
       algorithm
         i2 := intAbs(i);
       then
         DAE.ICONST(i2);
 
-    case (DAE.RCONST(real = r))
+    case DAE.RCONST(real = r)
       algorithm
         r2 := realAbs(r);
       then
         DAE.RCONST(r2);
 
-    case (DAE.UNARY(operator = DAE.UMINUS(),exp = e))
+    case DAE.UNARY(operator = DAE.UMINUS(),exp = e)
       algorithm
         e_1 := expAbs(e);
       then
         e_1;
 
-    case (DAE.BINARY(exp1 = e1,operator = op,exp2 = e2))
+    case DAE.BINARY(exp1 = e1,operator = op,exp2 = e2)
       algorithm
         e1_1 := expAbs(e1);
         e2_1 := expAbs(e2);
@@ -838,15 +835,15 @@ public function expStripLastSubs
   input DAE.Exp inExp;
   output DAE.Exp outExp;
 algorithm
-  outExp := match (inExp)
+  outExp := match inExp
     local
       ComponentRef cr,cr_1;
       Type ty;
-      Operator op,op1;
+      Operator op1;
       DAE.Exp e,e_1;
       Boolean b;
 
-    case (DAE.CREF(componentRef=cr))
+    case DAE.CREF(componentRef=cr)
       algorithm
         ty := ComponentReference.crefLastType(cr);
         cr_1 := ComponentReferenceBasics.crefStripLastSubs(cr);
@@ -854,7 +851,7 @@ algorithm
       then
         e;
 
-    case (DAE.UNARY(exp=e))
+    case DAE.UNARY(exp=e)
       algorithm
         e_1 := expStripLastSubs(e);
         ty := typeof(e_1);
@@ -871,15 +868,15 @@ public function expStripLastIdent
   output DAE.Exp outExp;
 algorithm
   outExp:=
-  match (inExp)
+  match inExp
     local
       ComponentRef cr,cr_1;
       Type ty;
-      Operator op,op1;
+      Operator op1;
       DAE.Exp e,e_1;
       Boolean b;
 
-    case (DAE.CREF(componentRef=cr))
+    case DAE.CREF(componentRef=cr)
       algorithm
         cr_1 := ComponentReference.crefStripLastIdent(cr);
         ty := ComponentReference.crefLastType(cr_1);
@@ -887,7 +884,7 @@ algorithm
       then
         e;
 
-    case (DAE.UNARY(exp=e))
+    case DAE.UNARY(exp=e)
       algorithm
         e_1 := expStripLastIdent(e);
         ty := typeof(e_1);
@@ -905,14 +902,14 @@ public function prependSubscriptExp
   input DAE.Subscript subscr;
   output DAE.Exp outExp;
 algorithm
-  outExp := match(exp,subscr)
+  outExp := match exp
     local
       Type t;
       ComponentRef cr, cr1, cr2;
       list<DAE.Subscript> subs;
       DAE.Exp e;
 
-    case (DAE.CREF(cr,t),_)
+    case DAE.CREF(cr,t)
       algorithm
         cr1 := ComponentReferenceBasics.crefStripLastSubs(cr);
         subs := ComponentReference.crefLastSubs(cr);
@@ -1005,10 +1002,6 @@ algorithm
       DAE.ComponentRef cref;
       DAE.Type ty;
       DAE.Exp exp;
-      list<DAE.Exp> explst;
-      DAE.Subscript sub;
-      list<DAE.Subscript> restsubs;
-      String str;
 
     case(_, {}) then inExp;
 
@@ -1044,19 +1037,18 @@ public function unliftArray
   input DAE.Type inType;
   output DAE.Type outType;
 algorithm
-  outType := match(inType)
+  outType := match inType
     local
-      Type tp,t;
-      DAE.Dimension d;
+      Type tp;
       DAE.Dimensions ds;
 
-    case (DAE.T_ARRAY(ty = tp,dims = {_}))
+    case DAE.T_ARRAY(ty = tp,dims = {_})
       then tp;
-    case (DAE.T_ARRAY(ty = tp,dims = (_ :: ds)))
+    case DAE.T_ARRAY(ty = tp,dims = (_ :: ds))
       then DAE.T_ARRAY(tp,ds);
-    case (DAE.T_METATYPE(ty = tp))
+    case DAE.T_METATYPE(ty = tp)
       then Types.simplifyType(unliftArray(tp));
-    case (DAE.T_METAARRAY(ty = tp))
+    case DAE.T_METAARRAY(ty = tp)
       then tp;
     else inType;
   end match;
@@ -1075,7 +1067,7 @@ public function unliftExp
   input DAE.Exp inExp;
   output DAE.Exp outExp;
 algorithm
-  outExp := match(inExp)
+  outExp := match inExp
     local
       Type ty;
       DAE.ComponentRef cr;
@@ -1203,39 +1195,39 @@ public function setOpType
   input DAE.Type inType;
   output DAE.Operator outOp;
 algorithm
-  outOp := match(inOp, inType)
-    case (DAE.ADD(), _) then DAE.ADD(inType);
-    case (DAE.SUB(), _) then DAE.SUB(inType);
-    case (DAE.MUL(), _) then DAE.MUL(inType);
-    case (DAE.DIV(), _) then DAE.DIV(inType);
-    case (DAE.POW(), _) then DAE.POW(inType);
-    case (DAE.UMINUS(), _) then DAE.UMINUS(inType);
-    case (DAE.UMINUS_ARR(), _) then DAE.UMINUS_ARR(inType);
-    case (DAE.ADD_ARR(), _) then DAE.ADD_ARR(inType);
-    case (DAE.SUB_ARR(), _) then DAE.SUB_ARR(inType);
-    case (DAE.MUL_ARR(), _) then DAE.MUL_ARR(inType);
-    case (DAE.DIV_ARR(), _) then DAE.DIV_ARR(inType);
-    case (DAE.MUL_ARRAY_SCALAR(), _) then DAE.MUL_ARRAY_SCALAR(inType);
-    case (DAE.ADD_ARRAY_SCALAR(), _) then DAE.ADD_ARRAY_SCALAR(inType);
-    case (DAE.SUB_SCALAR_ARRAY(), _) then DAE.SUB_SCALAR_ARRAY(inType);
-    case (DAE.MUL_SCALAR_PRODUCT(), _) then DAE.MUL_SCALAR_PRODUCT(inType);
-    case (DAE.MUL_MATRIX_PRODUCT(), _) then DAE.MUL_MATRIX_PRODUCT(inType);
-    case (DAE.DIV_ARRAY_SCALAR(), _) then DAE.DIV_ARRAY_SCALAR(inType);
-    case (DAE.DIV_SCALAR_ARRAY(), _) then DAE.DIV_SCALAR_ARRAY(inType);
-    case (DAE.POW_ARRAY_SCALAR(), _) then DAE.POW_ARRAY_SCALAR(inType);
-    case (DAE.POW_SCALAR_ARRAY(), _) then DAE.POW_SCALAR_ARRAY(inType);
-    case (DAE.POW_ARR(), _) then DAE.POW_ARR(inType);
-    case (DAE.POW_ARR2(), _) then DAE.POW_ARR2(inType);
-    case (DAE.AND(), _) then DAE.AND(inType);
-    case (DAE.OR(), _) then DAE.OR(inType);
-    case (DAE.NOT(),_ ) then DAE.NOT(inType);
-    case (DAE.LESS(), _) then inOp;
-    case (DAE.LESSEQ(), _) then inOp;
-    case (DAE.GREATER(), _) then inOp;
-    case (DAE.GREATEREQ(), _) then inOp;
-    case (DAE.EQUAL(), _) then inOp;
-    case (DAE.NEQUAL(), _) then inOp;
-    case (DAE.USERDEFINED(), _) then inOp;
+  outOp := match inOp
+    case DAE.ADD() then DAE.ADD(inType);
+    case DAE.SUB() then DAE.SUB(inType);
+    case DAE.MUL() then DAE.MUL(inType);
+    case DAE.DIV() then DAE.DIV(inType);
+    case DAE.POW() then DAE.POW(inType);
+    case DAE.UMINUS() then DAE.UMINUS(inType);
+    case DAE.UMINUS_ARR() then DAE.UMINUS_ARR(inType);
+    case DAE.ADD_ARR() then DAE.ADD_ARR(inType);
+    case DAE.SUB_ARR() then DAE.SUB_ARR(inType);
+    case DAE.MUL_ARR() then DAE.MUL_ARR(inType);
+    case DAE.DIV_ARR() then DAE.DIV_ARR(inType);
+    case DAE.MUL_ARRAY_SCALAR() then DAE.MUL_ARRAY_SCALAR(inType);
+    case DAE.ADD_ARRAY_SCALAR() then DAE.ADD_ARRAY_SCALAR(inType);
+    case DAE.SUB_SCALAR_ARRAY() then DAE.SUB_SCALAR_ARRAY(inType);
+    case DAE.MUL_SCALAR_PRODUCT() then DAE.MUL_SCALAR_PRODUCT(inType);
+    case DAE.MUL_MATRIX_PRODUCT() then DAE.MUL_MATRIX_PRODUCT(inType);
+    case DAE.DIV_ARRAY_SCALAR() then DAE.DIV_ARRAY_SCALAR(inType);
+    case DAE.DIV_SCALAR_ARRAY() then DAE.DIV_SCALAR_ARRAY(inType);
+    case DAE.POW_ARRAY_SCALAR() then DAE.POW_ARRAY_SCALAR(inType);
+    case DAE.POW_SCALAR_ARRAY() then DAE.POW_SCALAR_ARRAY(inType);
+    case DAE.POW_ARR() then DAE.POW_ARR(inType);
+    case DAE.POW_ARR2() then DAE.POW_ARR2(inType);
+    case DAE.AND() then DAE.AND(inType);
+    case DAE.OR() then DAE.OR(inType);
+    case DAE.NOT() then DAE.NOT(inType);
+    case DAE.LESS() then inOp;
+    case DAE.LESSEQ() then inOp;
+    case DAE.GREATER() then inOp;
+    case DAE.GREATEREQ() then inOp;
+    case DAE.EQUAL() then inOp;
+    case DAE.NEQUAL() then inOp;
+    case DAE.USERDEFINED() then inOp;
     else
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
@@ -1281,8 +1273,8 @@ protected function unliftOperator2
   input DAE.Type inType;
   output DAE.Operator outOperator;
 algorithm
-  outOperator := match(inOperator, inType)
-    case (_, DAE.T_ARRAY()) then setOpType(inOperator, inType);
+  outOperator := match inType
+    case DAE.T_ARRAY() then setOpType(inOperator, inType);
     else makeScalarOpFromArrayOp(inOperator, inType);
   end match;
 end unliftOperator2;
@@ -1294,19 +1286,19 @@ protected function makeScalarOpFromArrayOp
   input DAE.Type inType;
   output DAE.Operator outOperator;
 algorithm
-  outOperator := match(inOperator, inType)
-    case (DAE.MUL_ARRAY_SCALAR(), _) then DAE.MUL(inType);
-    case (DAE.ADD_ARRAY_SCALAR(), _) then DAE.ADD(inType);
-    case (DAE.SUB_SCALAR_ARRAY(), _) then DAE.SUB(inType);
-    case (DAE.DIV_ARRAY_SCALAR(), _) then DAE.DIV(inType);
-    case (DAE.DIV_SCALAR_ARRAY(), _) then DAE.DIV(inType);
-    case (DAE.POW_ARRAY_SCALAR(), _) then DAE.POW(inType);
-    case (DAE.POW_SCALAR_ARRAY(), _) then DAE.POW(inType);
-    case (DAE.UMINUS_ARR(), _)       then DAE.UMINUS(inType);
-    case (DAE.ADD_ARR(), _)          then DAE.ADD(inType);
-    case (DAE.SUB_ARR(), _)          then DAE.SUB(inType);
-    case (DAE.MUL_ARR(), _)          then DAE.MUL(inType);
-    case (DAE.DIV_ARR(), _)          then DAE.DIV(inType);
+  outOperator := match inOperator
+    case DAE.MUL_ARRAY_SCALAR() then DAE.MUL(inType);
+    case DAE.ADD_ARRAY_SCALAR() then DAE.ADD(inType);
+    case DAE.SUB_SCALAR_ARRAY() then DAE.SUB(inType);
+    case DAE.DIV_ARRAY_SCALAR() then DAE.DIV(inType);
+    case DAE.DIV_SCALAR_ARRAY() then DAE.DIV(inType);
+    case DAE.POW_ARRAY_SCALAR() then DAE.POW(inType);
+    case DAE.POW_SCALAR_ARRAY() then DAE.POW(inType);
+    case DAE.UMINUS_ARR()       then DAE.UMINUS(inType);
+    case DAE.ADD_ARR()          then DAE.ADD(inType);
+    case DAE.SUB_ARR()          then DAE.SUB(inType);
+    case DAE.MUL_ARR()          then DAE.MUL(inType);
+    case DAE.DIV_ARR()          then DAE.DIV(inType);
     else inOperator;
   end match;
 end makeScalarOpFromArrayOp;
@@ -1316,7 +1308,7 @@ public function isScalarArrayOp
   input DAE.Operator inOperator;
   output Boolean outIsScalarArrayOp;
 algorithm
-  outIsScalarArrayOp := match(inOperator)
+  outIsScalarArrayOp := match inOperator
     case DAE.SUB_SCALAR_ARRAY() then true;
     case DAE.DIV_SCALAR_ARRAY() then true;
     case DAE.POW_SCALAR_ARRAY() then true;
@@ -1329,7 +1321,7 @@ public function isArrayScalarOp
   input DAE.Operator inOperator;
   output Boolean outIsArrayScalarOp;
 algorithm
-  outIsArrayScalarOp := match(inOperator)
+  outIsArrayScalarOp := match inOperator
     case DAE.MUL_ARRAY_SCALAR() then true;
     case DAE.ADD_ARRAY_SCALAR() then true;
     case DAE.DIV_ARRAY_SCALAR() then true;
@@ -1347,24 +1339,24 @@ public function subscriptsAppend
   input DAE.Exp inSubscript;
   output list<DAE.Subscript> outSubscriptLst;
 algorithm
-  outSubscriptLst := match(inSubscriptLst,inSubscript)
+  outSubscriptLst := match inSubscriptLst
     local
       DAE.Exp e_1,e;
       Subscript s;
       list<DAE.Subscript> ss_1,ss;
 
-    case ({},_) then {DAE.INDEX(inSubscript)};
-    case (DAE.WHOLEDIM() :: ss,_) then DAE.INDEX(inSubscript) :: ss;
+    case {} then {DAE.INDEX(inSubscript)};
+    case DAE.WHOLEDIM() :: ss then DAE.INDEX(inSubscript) :: ss;
 
-    case ({DAE.SLICE(exp = e)},_)
+    case {DAE.SLICE(exp = e)}
       algorithm
         (e_1,_) := ExpressionSimplify.simplify1(makeASUB(e,{inSubscript}));
       then
         {DAE.INDEX(e_1)};
 
-    case ({(s as DAE.INDEX())},_) then {s,DAE.INDEX(inSubscript)};
+    case {(s as DAE.INDEX())} then {s,DAE.INDEX(inSubscript)};
 
-    case ((s :: ss),_)
+    case s :: ss
       algorithm
         ss_1 := subscriptsAppend(ss, inSubscript);
       then
@@ -1378,14 +1370,14 @@ public function subscriptsReplaceSlice
   input DAE.Subscript inSubscript;
   output list<DAE.Subscript> outSubscripts;
 algorithm
-  outSubscripts := match(inSubscripts, inSubscript)
+  outSubscripts := match inSubscripts
     local
       list<DAE.Subscript> rest_subs;
       DAE.Subscript sub;
 
-    case (DAE.WHOLEDIM() :: rest_subs, _) then inSubscript :: rest_subs;
-    case (DAE.SLICE() :: rest_subs, _) then inSubscript :: rest_subs;
-    case (sub :: rest_subs, _)
+    case DAE.WHOLEDIM() :: rest_subs then inSubscript :: rest_subs;
+    case DAE.SLICE() :: rest_subs then inSubscript :: rest_subs;
+    case sub :: rest_subs
       algorithm
         rest_subs := subscriptsReplaceSlice(rest_subs, inSubscript);
       then
@@ -1422,10 +1414,10 @@ Unlifts a type with X dimensions..."
   input Integer x;
   output DAE.Type outType;
 algorithm
-  outType := match(inType,x)
+  outType := match x
     local Type ty;
 
-    case (_,0) then inType;
+    case 0 then inType;
     else
       algorithm
         ty := unliftArray(inType);
@@ -1440,7 +1432,7 @@ public function arrayAppend
   input DAE.Exp rest;
   output DAE.Exp array;
 algorithm
-  array := match(head, rest)
+  array := match rest
     local
       DAE.Type ty;
       Boolean scalar;
@@ -1448,10 +1440,10 @@ algorithm
       Integer dim;
       DAE.Dimensions dims;
 
-    case (_, DAE.ARRAY(
+    case DAE.ARRAY(
         DAE.T_ARRAY(ty = ty, dims = DAE.DIM_INTEGER(dim) :: dims),
         scalar,
-        expl))
+        expl)
       algorithm
         dim := dim + 1;
         dims := DAE.DIM_INTEGER(dim) :: dims;
@@ -1474,12 +1466,12 @@ public function arrayDimensionSetFirst
   input DAE.Dimension dimension;
   output DAE.Type outArrayType;
 algorithm
-  outArrayType := match(inArrayType, dimension)
+  outArrayType := match inArrayType
     local
       DAE.Type ty;
       DAE.Dimensions rest_dims;
 
-    case (DAE.T_ARRAY(ty = ty, dims = _ :: rest_dims), _)
+    case DAE.T_ARRAY(ty = ty, dims = _ :: rest_dims)
       then DAE.T_ARRAY(ty, dimension :: rest_dims);
   end match;
 end arrayDimensionSetFirst;
@@ -1518,7 +1510,7 @@ algorithm
       Real r;
       Integer i;
       Option<Integer> op;
-    case (DAE.RCONST(real = r))
+    case DAE.RCONST(real = r)
       algorithm
         i := realInt(r);
         op := if realEq(r,intReal(i)) then SOME(i) else NONE();
@@ -1544,7 +1536,6 @@ public function getClockInterval
   output DAE.Exp outIntvl;
 protected
   DAE.Exp e, e2;
-  Integer res;
 algorithm
   outIntvl := match inClk
     case DAE.REAL_CLOCK(e)
@@ -1578,8 +1569,8 @@ public function varName "Returns the name of a Var"
   input DAE.Var v;
   output String name;
 algorithm
-  name := match(v)
-    case(DAE.TYPES_VAR(name = name)) then name;
+  name := match v
+    case DAE.TYPES_VAR(name = name) then name;
   end match;
 end varName;
 
@@ -1587,8 +1578,8 @@ public function varType "Returns the type of a Var"
   input DAE.Var v;
   output DAE.Type tp;
 algorithm
-  tp := match(v)
-    case(DAE.TYPES_VAR(ty = tp)) then tp;
+  tp := match v
+    case DAE.TYPES_VAR(ty = tp) then tp;
   end match;
 end varType;
 
@@ -1599,7 +1590,7 @@ public function expOrDerCref
   output Boolean isDer;
 algorithm
   (outComponentRef, isDer) :=
-  match (inExp)
+  match inExp
     local ComponentRef cr;
     case DAE.CREF(componentRef = cr) then (cr, false);
     case DAE.CALL(path = Absyn.IDENT(name = "der"),expLst={DAE.CREF(cr,_)}) then (cr, true);
@@ -1612,9 +1603,9 @@ public function expCref
   output DAE.ComponentRef outComponentRef;
 algorithm
   outComponentRef:=
-  match (inExp)
+  match inExp
     local ComponentRef cr;
-    case (DAE.CREF(componentRef = cr)) then cr;
+    case DAE.CREF(componentRef = cr) then cr;
   end match;
 end expCref;
 
@@ -1624,11 +1615,11 @@ public function expCrefNegCref
   output DAE.ComponentRef outComponentRef;
 algorithm
   outComponentRef:=
-  match (inExp)
+  match inExp
     local ComponentRef cr;
-    case (DAE.CREF(componentRef = cr)) then cr;
-    case (DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = cr))) then cr;
-    case (DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(componentRef = cr))) then cr;
+    case DAE.CREF(componentRef = cr) then cr;
+    case DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = cr)) then cr;
+    case DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(componentRef = cr)) then cr;
   end match;
 end expCrefNegCref;
 
@@ -1638,9 +1629,9 @@ public function expCrefTuple
   output DAE.ComponentRef outComponentRef;
 algorithm
   outComponentRef:=
-  match (inTuple)
+  match inTuple
     local ComponentRef cr;
-    case ((DAE.CREF(componentRef = cr),_)) then cr;
+    case (DAE.CREF(componentRef = cr),_) then cr;
   end match;
 end expCrefTuple;
 
@@ -1652,12 +1643,12 @@ public function expCrefInclIfExpFactors
   output list<DAE.ComponentRef> outComponentRefs;
 algorithm
   outComponentRefs:=
-  match (inExp)
-    local ComponentRef cr; DAE.Exp c,tb,fb;
+  match inExp
+    local ComponentRef cr; DAE.Exp tb,fb;
       list<DAE.Exp> f;
       list<DAE.ComponentRef> crefs;
-    case (DAE.CREF(componentRef = cr)) then {cr};
-    case(DAE.IFEXP(_,tb,fb)) algorithm
+    case DAE.CREF(componentRef = cr) then {cr};
+    case DAE.IFEXP(_,tb,fb) algorithm
       f := List.select(listAppend(factors(tb),factors(fb)),isCref);
       crefs := List.map(f,expCref);
     then crefs;
@@ -1676,7 +1667,7 @@ public function getArrayOrMatrixContents
   input DAE.Exp inExp;
   output list<DAE.Exp> outContents;
 algorithm
-  outContents := match(inExp)
+  outContents := match inExp
     local
       list<DAE.Exp> expl;
       list<list<DAE.Exp>> mat;
@@ -1729,16 +1720,14 @@ author:Waurich TUD 2014-04"
   input DAE.Exp e;
   output list<DAE.Exp> es;
 algorithm
-  es := matchcontinue(e)
+  es := matchcontinue e
     local
       Boolean noArr;
-      DAE.ComponentRef cref;
       DAE.Exp exp, exp1, exp2;
       DAE.Type ty;
       list<DAE.Exp> expLst, expLst1, expLst2;
       list<list<DAE.Exp>> expLstLst;
-      list<DAE.ComponentRef> crefs;
-    case(DAE.CREF())
+    case DAE.CREF()
       algorithm
         expLst := arrayElements(e);
         noArr := listLength(expLst)==1;
@@ -1748,7 +1737,7 @@ algorithm
       then
         expLst;
 
-    case(DAE.BINARY(exp1=exp1,operator=DAE.ADD_ARR(),exp2=exp2))
+    case DAE.BINARY(exp1=exp1,operator=DAE.ADD_ARR(),exp2=exp2)
       algorithm
         if isArray(exp1) then
           expLst1 := getComplexContents(exp1);
@@ -1767,37 +1756,37 @@ algorithm
       then
         expLst;
 
-    case(DAE.CALL(expLst=expLst))
+    case DAE.CALL(expLst=expLst)
       algorithm
          expLstLst := List.map(expLst,getComplexContentsInCall);
          expLst := List.flatten(expLstLst);
       then
         expLst;
-    case(DAE.RECORD(exps=expLst))
+    case DAE.RECORD(exps=expLst)
       algorithm
          expLstLst := List.map(expLst,getComplexContentsInCall);
          expLst := List.flatten(expLstLst);
       then
         expLst;
-    case(DAE.ARRAY())
+    case DAE.ARRAY()
       algorithm
       expLst := arrayElements(e);
       then
         expLst;
-    case(DAE.MATRIX(matrix=expLstLst))
+    case DAE.MATRIX(matrix=expLstLst)
       algorithm
         expLst := List.flatten(expLstLst);
       then
         expLst;
-    case(DAE.TUPLE(PR=expLst))
+    case DAE.TUPLE(PR=expLst)
       then
         expLst;
-    case(DAE.CAST(exp=exp))
+    case DAE.CAST(exp=exp)
       algorithm
         expLst := getComplexContents(exp);
       then
         expLst;
-    case(DAE.ASUB(exp=exp))
+    case DAE.ASUB(exp=exp)
       algorithm
         expLst := getComplexContents(exp);
       then
@@ -1875,10 +1864,10 @@ public function unboxExpType
   input DAE.Type inType;
   output DAE.Type outType;
 algorithm
-  outType := match(inType)
+  outType := match inType
     local
       Type ty;
-    case(DAE.T_METABOXED(ty = ty)) then ty;
+    case DAE.T_METABOXED(ty = ty) then ty;
     else inType;
   end match;
 end unboxExpType;
@@ -1888,10 +1877,10 @@ public function unboxExp
   input DAE.Exp ie;
   output DAE.Exp outExp;
 algorithm
-  outExp := match (ie)
+  outExp := match ie
     local
       DAE.Exp e;
-    case (DAE.BOX(e)) then unboxExp(e);
+    case DAE.BOX(e) then unboxExp(e);
     else ie;
   end match;
 end unboxExp;
@@ -1901,8 +1890,8 @@ public function boxExp
   input DAE.Exp e;
   output DAE.Exp outExp;
 algorithm
-  outExp := match (e)
-    case (DAE.BOX(_)) then e;
+  outExp := match e
+    case DAE.BOX(_) then e;
     else DAE.BOX(e);
   end match;
 end boxExp;
@@ -1912,7 +1901,7 @@ public function getSubscriptExp
   input DAE.Subscript inSubscript;
   output DAE.Exp outExp;
 algorithm
-  outExp := match(inSubscript)
+  outExp := match inSubscript
     local DAE.Exp e;
 
     case DAE.SLICE(exp = e) then e;
@@ -1928,9 +1917,9 @@ public function subscriptNonExpandedExp
   output DAE.Exp outExp;
 algorithm
   outExp:=
-  match (inSubscript)
+  match inSubscript
     local DAE.Exp e;
-    case (DAE.WHOLE_NONEXP(exp = e)) then e;
+    case DAE.WHOLE_NONEXP(exp = e) then e;
   end match;
 end subscriptNonExpandedExp;
 
@@ -1940,7 +1929,7 @@ public function subscriptIsFirst
   input DAE.Subscript inSubscript;
   output Boolean outIsFirst;
 algorithm
-  outIsFirst := match (inSubscript)
+  outIsFirst := match inSubscript
     case DAE.INDEX(exp=DAE.ICONST(1)) then true;
     case DAE.INDEX(exp=DAE.BCONST(false)) then true;
     case DAE.INDEX(exp=DAE.ENUM_LITERAL(index=1)) then true;
@@ -1953,7 +1942,7 @@ public function nthArrayExp "author: PA
   input Integer inInteger;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue (inExp)
+  outExp := matchcontinue inExp
     local
       DAE.Exp e1, e2, e_1, e_2;
       list<DAE.Exp> expl;
@@ -1981,18 +1970,18 @@ public function expLastSubs
   output list<DAE.Subscript> outSubscriptLst;
 algorithm
   outSubscriptLst:=
-  match (inExp)
+  match inExp
     local
       ComponentRef cr;
       list<DAE.Subscript> subs;
       DAE.Exp e;
 
-    case (DAE.CREF(componentRef=cr))
+    case DAE.CREF(componentRef=cr)
       algorithm
         subs := ComponentReference.crefLastSubs(cr);
       then subs;
 
-    case (DAE.UNARY(exp=e))
+    case DAE.UNARY(exp=e)
       algorithm
         subs := expLastSubs(e);
       then subs;
@@ -2004,7 +1993,7 @@ public function expDimensions
   input DAE.Exp inExp;
   output DAE.Dimensions outDims;
 algorithm
-  outDims := match(inExp)
+  outDims := match inExp
     local
       DAE.Type tp;
       Exp e;
@@ -2025,8 +2014,8 @@ Get dimension of array.
   input DAE.Type tp;
   output DAE.Dimensions dims;
 algorithm
-  dims := match(tp)
-    case(DAE.T_ARRAY(dims = dims)) then dims;
+  dims := match tp
+    case DAE.T_ARRAY(dims = dims) then dims;
     else {};
   end match;
 end arrayDimension;
@@ -2036,8 +2025,8 @@ public function arrayTypeDimensions
   input DAE.Type tp;
   output DAE.Dimensions dims;
 algorithm
-  dims := match(tp)
-    case(DAE.T_ARRAY(dims = dims)) then dims;
+  dims := match tp
+    case DAE.T_ARRAY(dims = dims) then dims;
   end match;
 end arrayTypeDimensions;
 
@@ -2055,7 +2044,7 @@ public function subscriptDimension
   input DAE.Subscript inSubscript;
   output DAE.Dimension outDimension;
 algorithm
-  outDimension := match(inSubscript)
+  outDimension := match inSubscript
     local
       Integer x;
       DAE.Exp e;
@@ -2092,9 +2081,9 @@ public function arrayEltType
   input DAE.Type inType;
   output DAE.Type outType;
 algorithm
-  outType := match(inType)
+  outType := match inType
     local Type t;
-    case (DAE.T_ARRAY(ty = t)) then arrayEltType(t);
+    case DAE.T_ARRAY(ty = t) then arrayEltType(t);
     else inType;
   end match;
 end arrayEltType;
@@ -2130,7 +2119,7 @@ public function dimensionSize
   input DAE.Dimension dim;
   output Integer value;
 algorithm
-  value := match(dim)
+  value := match dim
     local
       Integer i;
     case DAE.DIM_INTEGER(integer = i) then i;
@@ -2150,10 +2139,10 @@ public function addDimensions
   input DAE.Dimension dim2;
   output DAE.Dimension dim;
 algorithm
-  dim := matchcontinue (dim1,dim2)
+  dim := matchcontinue dim2
     local
-      Integer i1,i2,i;
-    case (_,_)
+      Integer i;
+    case _
       algorithm
         i := dimensionSize(dim1)+dimensionSize(dim2);
       then DAE.DIM_INTEGER(i);
@@ -2167,7 +2156,7 @@ public function dimensionSizeAll
   input DAE.Dimension dim;
   output Integer value;
 algorithm
-  value := matchcontinue(dim)
+  value := matchcontinue dim
     local
       Integer i;
       DAE.Exp e;
@@ -2200,17 +2189,17 @@ public function typeof "Retrieves the Type of the Expression"
   input DAE.Exp inExp;
   output DAE.Type outType;
 algorithm
-  outType := matchcontinue (inExp)
+  outType := matchcontinue inExp
     local
       Type tp;
       Operator op;
-      DAE.Exp e1,e2,e3,e,iterExp,operExp;
+      DAE.Exp e2,e,iterExp,operExp;
       list<DAE.Exp> explist,exps;
       Absyn.Path p;
       String msg;
       DAE.Type ty, iterTp, operTp;
       list<DAE.Type> tys, typeVars;
-      Integer i,i1,i2;
+      Integer i;
       DAE.Dimension dim;
       DAE.Dimensions iterdims;
       list<DAE.Subscript> subs;
@@ -2305,13 +2294,13 @@ protected function typeofRelation
   input DAE.Type inType;
   output DAE.Type outType;
 algorithm
-  outType := match(inType)
+  outType := match inType
     local
-      Type ty,ty1;
+      Type ty;
       DAE.Dimensions dims;
     case DAE.T_ARRAY(ty=ty,dims=dims)
       algorithm
-        _ := typeofRelation(ty);
+        typeofRelation(ty);
       then
         DAE.T_ARRAY(ty,dims);
     else DAE.T_BOOL_DEFAULT;
@@ -2323,41 +2312,41 @@ public function typeofOp
   input DAE.Operator inOperator;
   output DAE.Type outType;
 algorithm
-  outType := match (inOperator)
+  outType := match inOperator
     local Type t;
 
-    case (DAE.ADD(ty = t)) then t;
-    case (DAE.SUB(ty = t)) then t;
-    case (DAE.MUL(ty = t)) then t;
-    case (DAE.DIV(ty = t)) then t;
-    case (DAE.POW(ty = t)) then t;
-    case (DAE.UMINUS(ty = t)) then t;
-    case (DAE.UMINUS_ARR(ty = t)) then t;
-    case (DAE.ADD_ARR(ty = t)) then t;
-    case (DAE.SUB_ARR(ty = t)) then t;
-    case (DAE.MUL_ARR(ty = t)) then t;
-    case (DAE.DIV_ARR(ty = t)) then t;
-    case (DAE.MUL_ARRAY_SCALAR(ty = t)) then t;
-    case (DAE.ADD_ARRAY_SCALAR(ty = t)) then t;
-    case (DAE.SUB_SCALAR_ARRAY(ty = t)) then t;
-    case (DAE.MUL_SCALAR_PRODUCT(ty = t)) then t;
-    case (DAE.MUL_MATRIX_PRODUCT(ty = t)) then t;
-    case (DAE.DIV_ARRAY_SCALAR(ty = t)) then t;
-    case (DAE.DIV_SCALAR_ARRAY(ty = t)) then t;
-    case (DAE.POW_ARRAY_SCALAR(ty = t)) then t;
-    case (DAE.POW_SCALAR_ARRAY(ty = t)) then t;
-    case (DAE.POW_ARR(ty = t)) then t;
-    case (DAE.POW_ARR2(ty = t)) then t;
-    case (DAE.AND(ty = t)) then t;
-    case (DAE.OR(ty = t)) then t;
-    case (DAE.NOT(ty = t)) then t;
-    case (DAE.LESS(ty = t)) then t;
-    case (DAE.LESSEQ(ty = t)) then t;
-    case (DAE.GREATER(ty = t)) then t;
-    case (DAE.GREATEREQ(ty = t)) then t;
-    case (DAE.EQUAL(ty = t)) then t;
-    case (DAE.NEQUAL(ty = t)) then t;
-    case (DAE.USERDEFINED()) then DAE.T_UNKNOWN_DEFAULT;
+    case DAE.ADD(ty = t) then t;
+    case DAE.SUB(ty = t) then t;
+    case DAE.MUL(ty = t) then t;
+    case DAE.DIV(ty = t) then t;
+    case DAE.POW(ty = t) then t;
+    case DAE.UMINUS(ty = t) then t;
+    case DAE.UMINUS_ARR(ty = t) then t;
+    case DAE.ADD_ARR(ty = t) then t;
+    case DAE.SUB_ARR(ty = t) then t;
+    case DAE.MUL_ARR(ty = t) then t;
+    case DAE.DIV_ARR(ty = t) then t;
+    case DAE.MUL_ARRAY_SCALAR(ty = t) then t;
+    case DAE.ADD_ARRAY_SCALAR(ty = t) then t;
+    case DAE.SUB_SCALAR_ARRAY(ty = t) then t;
+    case DAE.MUL_SCALAR_PRODUCT(ty = t) then t;
+    case DAE.MUL_MATRIX_PRODUCT(ty = t) then t;
+    case DAE.DIV_ARRAY_SCALAR(ty = t) then t;
+    case DAE.DIV_SCALAR_ARRAY(ty = t) then t;
+    case DAE.POW_ARRAY_SCALAR(ty = t) then t;
+    case DAE.POW_SCALAR_ARRAY(ty = t) then t;
+    case DAE.POW_ARR(ty = t) then t;
+    case DAE.POW_ARR2(ty = t) then t;
+    case DAE.AND(ty = t) then t;
+    case DAE.OR(ty = t) then t;
+    case DAE.NOT(ty = t) then t;
+    case DAE.LESS(ty = t) then t;
+    case DAE.LESSEQ(ty = t) then t;
+    case DAE.GREATER(ty = t) then t;
+    case DAE.GREATEREQ(ty = t) then t;
+    case DAE.EQUAL(ty = t) then t;
+    case DAE.NEQUAL(ty = t) then t;
+    case DAE.USERDEFINED() then DAE.T_UNKNOWN_DEFAULT;
   end match;
 end typeofOp;
 
@@ -2366,16 +2355,16 @@ public function getRelations
   input DAE.Exp inExp;
   output list<DAE.Exp> outExpLst;
 algorithm
-  outExpLst := match (inExp)
+  outExpLst := match inExp
     local
       DAE.Exp e,e1,e2,cond,tb,fb;
       list<DAE.Exp> rellst1,rellst2,rellst,rellst3,rellst4,xs;
       Type t;
       Boolean sc;
 
-    case ((e as DAE.RELATION())) then {e};
+    case e as DAE.RELATION() then {e};
 
-    case (DAE.LBINARY(exp1 = e1,exp2 = e2))
+    case DAE.LBINARY(exp1 = e1,exp2 = e2)
       algorithm
         rellst1 := getRelations(e1);
         rellst2 := getRelations(e2);
@@ -2383,13 +2372,13 @@ algorithm
       then
         rellst;
 
-    case (DAE.LUNARY(exp = e))
+    case DAE.LUNARY(exp = e)
       algorithm
         rellst := getRelations(e);
       then
         rellst;
 
-    case (DAE.BINARY(exp1 = e1,exp2 = e2))
+    case DAE.BINARY(exp1 = e1,exp2 = e2)
       algorithm
         rellst1 := getRelations(e1);
         rellst2 := getRelations(e2);
@@ -2397,7 +2386,7 @@ algorithm
       then
         rellst;
 
-    case (DAE.IFEXP(expCond = cond,expThen = tb,expElse = fb))
+    case DAE.IFEXP(expCond = cond,expThen = tb,expElse = fb)
       algorithm
         rellst1 := getRelations(cond);
         rellst2 := getRelations(tb);
@@ -2407,13 +2396,13 @@ algorithm
       then
         rellst;
 
-    case (DAE.ARRAY(array = {e}))
+    case DAE.ARRAY(array = {e})
       algorithm
         rellst := getRelations(e);
       then
         rellst;
 
-    case (DAE.ARRAY(ty = t,scalar = sc,array = (e :: xs)))
+    case DAE.ARRAY(ty = t,scalar = sc,array = (e :: xs))
       algorithm
         rellst1 := getRelations(DAE.ARRAY(t,sc,xs));
         rellst2 := getRelations(e);
@@ -2421,7 +2410,7 @@ algorithm
       then
         rellst;
 
-    case (DAE.UNARY(exp = e))
+    case DAE.UNARY(exp = e)
       algorithm
         rellst := getRelations(e);
       then
@@ -2490,15 +2479,13 @@ public function allTerms
   input DAE.Exp inExp;
   output list<DAE.Exp> outExpLst;
 algorithm
-  outExpLst := matchcontinue(inExp)
+  outExpLst := matchcontinue inExp
     local
       list<DAE.Exp> f1,f2,res,f2_1;
-      DAE.Exp e1,e2,e;
-      Type tp;
-      ComponentRef cr;
+      DAE.Exp e1,e2;
       list<DAE.Subscript> subs;
 
-    case (DAE.BINARY(exp1 = e1,operator = DAE.ADD(),exp2 = e2))
+    case DAE.BINARY(exp1 = e1,operator = DAE.ADD(),exp2 = e2)
       algorithm
         f1 := allTerms(e1);
         f2 := allTerms(e2);
@@ -2506,7 +2493,7 @@ algorithm
       then
         res;
 
-    case (DAE.BINARY(exp1 = e1,operator = DAE.SUB(),exp2 = e2))
+    case DAE.BINARY(exp1 = e1,operator = DAE.SUB(),exp2 = e2)
       algorithm
         f1 := allTerms(e1);
         f2 := allTerms(e2);
@@ -2515,7 +2502,7 @@ algorithm
       then
         res;
 
-    case (DAE.BINARY(exp1 = e1,operator = DAE.ADD_ARR(),exp2 = e2))
+    case DAE.BINARY(exp1 = e1,operator = DAE.ADD_ARR(),exp2 = e2)
       algorithm
         f1 := allTerms(e1);
         f2 := allTerms(e2);
@@ -2523,7 +2510,7 @@ algorithm
       then
         res;
 
-    case (DAE.BINARY(exp1 = e1,operator = DAE.SUB_ARR(),exp2 = e2))
+    case DAE.BINARY(exp1 = e1,operator = DAE.SUB_ARR(),exp2 = e2)
       algorithm
         f1 := allTerms(e1);
         f2 := allTerms(e2);
@@ -2533,110 +2520,110 @@ algorithm
         res;
 
     // terms( a*(b+c)) => {a*b, c*b}
-    case (DAE.BINARY(e1,DAE.MUL(_),e2))
+    case DAE.BINARY(e1,DAE.MUL(_),e2)
       algorithm
-        (f1 as _::_::_) := allTerms(e2);
+        f1 as _::_::_ := allTerms(e2);
         f1 := List.map1(f1,makeProduct,e1);
         f1 := List.flatten(List.map(f1,allTerms));
       then
         f1;
 
-    case (DAE.BINARY(e1,DAE.MUL_ARR(_),e2))
+    case DAE.BINARY(e1,DAE.MUL_ARR(_),e2)
       algorithm
-        (f1 as _::_::_) := allTerms(e2);
+        f1 as _::_::_ := allTerms(e2);
         f1 := List.map1(f1,makeProduct,e1);
         f1 := List.flatten(List.map(f1,allTerms));
       then
         f1;
 
-    case (DAE.BINARY(e1,DAE.MUL_ARRAY_SCALAR(_),e2))
+    case DAE.BINARY(e1,DAE.MUL_ARRAY_SCALAR(_),e2)
       algorithm
-        (f1 as _::_::_) := allTerms(e2);
+        f1 as _::_::_ := allTerms(e2);
         f1 := List.map1(f1,makeProduct,e1);
         f1 := List.flatten(List.map(f1,allTerms));
       then
         f1;
 
     // terms( (b+c)*a) => {b*a, c*a}
-    case (DAE.BINARY(e1,DAE.MUL(_),e2))
+    case DAE.BINARY(e1,DAE.MUL(_),e2)
       algorithm
-        (f1 as _::_::_) := allTerms(e1);
+        f1 as _::_::_ := allTerms(e1);
         f1 := List.map1(f1,makeProduct,e2);
         f1 := List.flatten(List.map(f1,allTerms));
       then
         f1;
 
-    case (DAE.BINARY(e1,DAE.MUL_ARR(_),e2))
+    case DAE.BINARY(e1,DAE.MUL_ARR(_),e2)
       algorithm
-        (f1 as _::_::_) := allTerms(e1);
+        f1 as _::_::_ := allTerms(e1);
         f1 := List.map1(f1,makeProduct,e2);
         f1 := List.flatten(List.map(f1,allTerms));
       then
         f1;
 
-    case (DAE.BINARY(e1,DAE.MUL_ARRAY_SCALAR(_),e2))
+    case DAE.BINARY(e1,DAE.MUL_ARRAY_SCALAR(_),e2)
       algorithm
-        (f1 as _::_::_) := allTerms(e1);
+        f1 as _::_::_ := allTerms(e1);
         f1 := List.map1(f1,makeProduct,e2);
         f1 := List.flatten(List.map(f1,allTerms));
       then
         f1;
 
     // terms( (b+c)/a) => {b/a, c/a}
-    case (DAE.BINARY(e1,DAE.DIV(_),e2))
+    case DAE.BINARY(e1,DAE.DIV(_),e2)
       algorithm
-        (f1 as _::_::_) := allTerms(e1);
+        f1 as _::_::_ := allTerms(e1);
         f1 := List.map1(f1,expDiv,e2);
         f1 := List.flatten(List.map(f1,allTerms));
       then
         f1;
 
-    case (DAE.BINARY(e1,DAE.DIV_ARR(_),e2))
+    case DAE.BINARY(e1,DAE.DIV_ARR(_),e2)
       algorithm
-        (f1 as _::_::_) := allTerms(e1);
+        f1 as _::_::_ := allTerms(e1);
         f1 := List.map1(f1,expDiv,e2);
         f1 := List.flatten(List.map(f1,allTerms));
       then
         f1;
 
-    case (DAE.BINARY(e1,DAE.DIV_ARRAY_SCALAR(_),e2))
+    case DAE.BINARY(e1,DAE.DIV_ARRAY_SCALAR(_),e2)
       algorithm
-        (f1 as _::_::_) := allTerms(e1);
+        f1 as _::_::_ := allTerms(e1);
         f1 := List.map1(f1,expDiv,e2);
         f1 := List.flatten(List.map(f1,allTerms));
       then
         f1;
 
-    case (DAE.BINARY(e1,DAE.DIV_SCALAR_ARRAY(_),e2))
+    case DAE.BINARY(e1,DAE.DIV_SCALAR_ARRAY(_),e2)
       algorithm
-        (f1 as _::_::_) := allTerms(e1);
+        f1 as _::_::_ := allTerms(e1);
         f1 := List.map1(f1,expDiv,e2);
         f1 := List.flatten(List.map(f1,allTerms));
       then
         f1;
 
-    case (DAE.UNARY(operator = DAE.UMINUS(),exp=e1))
+    case DAE.UNARY(operator = DAE.UMINUS(),exp=e1)
       algorithm
         f1 := allTerms(e1);
         f1 := List.map(f1,negate);
       then
         f1;
 
-    case (DAE.UNARY(operator = DAE.UMINUS_ARR(),exp=e1))
+    case DAE.UNARY(operator = DAE.UMINUS_ARR(),exp=e1)
       algorithm
         f1 := allTerms(e1);
         f1 := List.map(f1,negate);
       then
         f1;
 
-    case (DAE.LUNARY(operator = DAE.NOT(), exp = e1))
+    case DAE.LUNARY(operator = DAE.NOT(), exp = e1)
       algorithm
         f1 := allTerms(e1);
         f1 := List.map(f1,negate);
       then
         f1;
 
-    case (DAE.ASUB(exp = e1,sub=subs))
+    case DAE.ASUB(exp = e1,sub=subs)
       algorithm
         f2 := list(Expression.getSubscriptExp(sub) for sub in subs);
         f1 := allTerms(e1);
@@ -2695,13 +2682,12 @@ public function allTermsForCref
   end MapFunc;
 
 algorithm
-  (outExpLstWithX,outExpLstWithoutX) := matchcontinue (inExp)
+  (outExpLstWithX,outExpLstWithoutX) := matchcontinue inExp
     local
       list<DAE.Exp> f1,f2,fx1,fx2,res,resx;
       DAE.Exp e1,e2,e;
-      Type tp;
 
-    case (DAE.BINARY(exp1 = e1,operator = DAE.ADD(),exp2 = e2))
+    case DAE.BINARY(exp1 = e1,operator = DAE.ADD(),exp2 = e2)
       algorithm
         (fx1,f1) := allTermsForCref(e1, cr, inFunc);
         (fx2,f2) := allTermsForCref(e2, cr, inFunc);
@@ -2710,7 +2696,7 @@ algorithm
       then
         (resx, res);
 
-    case (DAE.BINARY(exp1 = e1,operator = DAE.SUB(),exp2 = e2))
+    case DAE.BINARY(exp1 = e1,operator = DAE.SUB(),exp2 = e2)
       algorithm
         (fx1,f1) := allTermsForCref(e1, cr, inFunc);
         (fx2,f2) := allTermsForCref(e2, cr, inFunc);
@@ -2721,7 +2707,7 @@ algorithm
       then
         (resx,res);
 
-    case (DAE.BINARY(exp1 = e1,operator = DAE.ADD_ARR(),exp2 = e2))
+    case DAE.BINARY(exp1 = e1,operator = DAE.ADD_ARR(),exp2 = e2)
       algorithm
         (fx1,f1) := allTermsForCref(e1, cr, inFunc);
         (fx2,f2) := allTermsForCref(e2, cr, inFunc);
@@ -2730,7 +2716,7 @@ algorithm
       then
         (resx, res);
 
-    case (DAE.BINARY(exp1 = e1,operator = DAE.SUB_ARR(),exp2 = e2))
+    case DAE.BINARY(exp1 = e1,operator = DAE.SUB_ARR(),exp2 = e2)
       algorithm
         (fx1,f1) := allTermsForCref(e1, cr, inFunc);
         (fx2,f2) := allTermsForCref(e2, cr, inFunc);
@@ -2742,7 +2728,7 @@ algorithm
         (resx,res);
 
     // terms( a*(b+c)) => {a*b, c*b}
-    case (DAE.BINARY(e1,DAE.MUL(_),e2))
+    case DAE.BINARY(e1,DAE.MUL(_),e2)
       guard inFunc(e2,cr)
       algorithm
         (fx1, f1) := allTermsForCref(e2, cr, inFunc);
@@ -2764,7 +2750,7 @@ algorithm
         (fx1, f1);
 
     // terms( (b+c)*a) => {b*a, c*a}
-    case (DAE.BINARY(e1,DAE.MUL(_),e2))
+    case DAE.BINARY(e1,DAE.MUL(_),e2)
       guard inFunc(e1,cr)
       algorithm
         (fx1, f1) := allTermsForCref(e1, cr, inFunc);
@@ -2786,7 +2772,7 @@ algorithm
         (fx1, f1);
 
     // terms( (b+c)/a) => {b/a, c/a}
-    case (DAE.BINARY(e1,DAE.DIV(_),e2))
+    case DAE.BINARY(e1,DAE.DIV(_),e2)
       guard inFunc(e1,cr)
       algorithm
         (fx1, f1) := allTermsForCref(e1, cr, inFunc);
@@ -2808,7 +2794,7 @@ algorithm
         (fx1, f1);
 
     // -()
-    case (DAE.UNARY(operator = DAE.UMINUS(),exp=e1))
+    case DAE.UNARY(operator = DAE.UMINUS(),exp=e1)
       algorithm
         (fx1,f1) := allTermsForCref(e1, cr, inFunc);
         f1 := List.map(f1,negate);
@@ -2837,7 +2823,7 @@ public function termsExpandUnary
 algorithm
   outExpLst := match inExp
                 local DAE.Exp e;
-                case (DAE.UNARY(operator = DAE.UMINUS(),exp=e)) then List.map(terms(e), negate);
+                case DAE.UNARY(operator = DAE.UMINUS(),exp=e) then List.map(terms(e), negate);
                 else terms(inExp);
                end match;
 end termsExpandUnary;
@@ -2891,18 +2877,18 @@ public function quotient
   output DAE.Exp denom;
 algorithm
   (num,denom):=
-  matchcontinue (inExp)
+  matchcontinue inExp
     local
       DAE.Exp e1,e2,p,q;
       Type tp;
-    case (DAE.BINARY(exp1 = e1,operator = DAE.DIV(),exp2 = e2)) then (e1,e2);  /* (numerator,denominator) */
-    case (DAE.BINARY(exp1 = e1,operator = DAE.MUL(),exp2 = e2))
+    case DAE.BINARY(exp1 = e1,operator = DAE.DIV(),exp2 = e2) then (e1,e2);  /* (numerator,denominator) */
+    case DAE.BINARY(exp1 = e1,operator = DAE.MUL(),exp2 = e2)
       algorithm
         (p,q) := quotient(e1);
         tp := typeof(p);
       then
         (DAE.BINARY(e2,DAE.MUL(tp),p),q);
-    case (DAE.BINARY(exp1 = e1,operator = DAE.MUL(),exp2 = e2))
+    case DAE.BINARY(exp1 = e1,operator = DAE.MUL(),exp2 = e2)
       algorithm
         (p,q) := quotient(e2);
         tp := typeof(p);
@@ -2929,7 +2915,7 @@ protected function factorsWork
 algorithm
   acc := match inExp
     local
-      DAE.Exp e1,e2,e;
+      DAE.Exp e1,e2;
 
     case DAE.BINARY(exp1 = e1,operator = DAE.MUL(),exp2 = e2)
       algorithm
@@ -2956,21 +2942,21 @@ public function inverseFactors
   input DAE.Exp inExp;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue (inExp)
+  outExp := matchcontinue inExp
     local
       Type tp2,tp;
       DAE.Exp e1,e2,e;
       DAE.Operator op;
 
     // e1^e2 =>e1^(-e2)
-    case (DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = tp),exp2 = e2))
+    case DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = tp),exp2 = e2)
       algorithm
         tp2 := typeof(e2);
       then
         DAE.BINARY(e1,DAE.POW(tp),DAE.UNARY(DAE.UMINUS(tp2),e2));
 
     // e1 / e2 = e2 / e1
-    case (DAE.BINARY(exp1 = e1,operator = op as DAE.DIV(),exp2 = e2))
+    case DAE.BINARY(exp1 = e1,operator = op as DAE.DIV(),exp2 = e2)
       algorithm
        false := isZero(e1);
       then
@@ -2980,7 +2966,7 @@ algorithm
       algorithm
         false := isZero(e);
         tp := typeof(e);
-        e := match(tp)
+        e := match tp
           case DAE.T_REAL() then DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(DAE.T_REAL_DEFAULT),e);
           case DAE.T_INTEGER() then DAE.BINARY(DAE.ICONST(1),DAE.DIV(DAE.T_INTEGER_DEFAULT),e);
         end match;
@@ -3100,7 +3086,7 @@ protected
   DAE.Exp e1,e2, e;
   Operator op;
 algorithm
-   acc := matchcontinue(inExp)
+   acc := matchcontinue inExp
             case _
                 then factorsWork(inExp,acc,doInverseFactors);
             case DAE.BINARY(e1, DAE.MUL(), e2)
@@ -3140,12 +3126,12 @@ protected
 algorithm
 
 for elem in inAcc loop
-  tmpExpLst := match(elem)
-                 case(DAE.BINARY(DAE.BINARY(_,DAE.DIV(),_), DAE.POW(), _)) then expandFactorsWork(elem,{},doInverseFactors);
-                 case(DAE.BINARY(DAE.BINARY(_,DAE.MUL(),_), DAE.POW(), _)) then expandFactorsWork(elem,{},doInverseFactors);
-                 case(DAE.BINARY(DAE.BINARY(_,DAE.POW(),_), DAE.POW(), _)) then expandFactorsWork(elem,{},doInverseFactors);
-                 case(DAE.UNARY(DAE.UMINUS(),_))  then expandFactorsWork(elem,{},doInverseFactors);
-                 case(DAE.UNARY(DAE.UMINUS_ARR(),_))  then expandFactorsWork(elem,{},doInverseFactors);
+  tmpExpLst := match elem
+                 case DAE.BINARY(DAE.BINARY(_,DAE.DIV(),_), DAE.POW(), _) then expandFactorsWork(elem,{},doInverseFactors);
+                 case DAE.BINARY(DAE.BINARY(_,DAE.MUL(),_), DAE.POW(), _) then expandFactorsWork(elem,{},doInverseFactors);
+                 case DAE.BINARY(DAE.BINARY(_,DAE.POW(),_), DAE.POW(), _) then expandFactorsWork(elem,{},doInverseFactors);
+                 case DAE.UNARY(DAE.UMINUS(),_)  then expandFactorsWork(elem,{},doInverseFactors);
+                 case DAE.UNARY(DAE.UMINUS_ARR(),_)  then expandFactorsWork(elem,{},doInverseFactors);
                  else {elem};
                end match;
   outExpLst := listAppend(tmpExpLst, outExpLst);
@@ -3238,25 +3224,25 @@ E.g. {[1,2;3,4],[4,5;6,7]} => {1,2,3,4,4,5,6,7}"
   input DAE.Exp e;
   output list<DAE.Exp> expLst;
 algorithm
-  expLst := matchcontinue(e)
+  expLst := matchcontinue e
     local
       list<DAE.Exp> expl;
       list<list<DAE.Exp>> mexpl;
-    case(DAE.UNARY(operator=DAE.UMINUS_ARR(),exp=DAE.ARRAY(array=expl)))
+    case DAE.UNARY(operator=DAE.UMINUS_ARR(),exp=DAE.ARRAY(array=expl))
       algorithm
         expl := List.flatten(List.map(expl,flattenArrayExpToList));
         expLst := List.map(expl,negate);
       then expLst;
-    case(DAE.ARRAY(array=expl))
+    case DAE.ARRAY(array=expl)
       algorithm
         expLst := List.flatten(List.map(expl,flattenArrayExpToList));
       then expLst;
-    case(DAE.UNARY(operator=DAE.UMINUS_ARR(),exp=DAE.MATRIX(matrix=mexpl)))
+    case DAE.UNARY(operator=DAE.UMINUS_ARR(),exp=DAE.MATRIX(matrix=mexpl))
       algorithm
         expl := List.flatten(List.map(List.flatten(mexpl),flattenArrayExpToList));
         expLst := List.map(expl,negate);
       then expLst;
-    case(DAE.MATRIX(matrix=mexpl))
+    case DAE.MATRIX(matrix=mexpl)
       algorithm
         expLst := List.flatten(List.map(List.flatten(mexpl),flattenArrayExpToList));
       then expLst;
@@ -3297,11 +3283,11 @@ guarded expressions and a default value (the else branch)"
   input DAE.Exp fExp "default value, else branch";
   output DAE.Exp ifExp;
 algorithm
-  ifExp := match(inConds,inTbExps,fExp)
+  ifExp := match(inConds, inTbExps)
     local DAE.Exp c,tbExp; list<DAE.Exp> conds, tbExps;
-    case({c},{tbExp},_)
+    case({c}, {tbExp})
     then DAE.IFEXP(c,tbExp,fExp);
-    case(c::conds,tbExp::tbExps,_)
+    case(c::conds, tbExp::tbExps)
       algorithm
         ifExp := makeNestedIf(conds,tbExps,fExp);
       then DAE.IFEXP(c,tbExp,ifExp);
@@ -3362,7 +3348,7 @@ generate an DAE.CREF(ComponentRef, Type) from a ComponenRef, make array type cor
   input DAE.ComponentRef cr;
   output DAE.Exp cref;
 algorithm
-  cref := match(cr)
+  cref := match cr
     local
       Type ty1,ty2;
       list<DAE.Subscript> subs;
@@ -3372,7 +3358,7 @@ algorithm
     case _
       algorithm
         ty1 := ComponentReference.crefLastType(cr);
-        cref := match(ty1)
+        cref := match ty1
           case DAE.T_ARRAY()
             algorithm
               subs := ComponentReference.crefLastSubs(cr);
@@ -3414,8 +3400,8 @@ algorithm
       algorithm
         if Flags.isSet(Flags.CHECK_ASUB) // check the DAE.ASUB
         then
-          _ := match(inExp) // check the DAE.ASUB so that the given expression is NOT a cref
-            case (DAE.CREF())
+          () := match inExp // check the DAE.ASUB so that the given expression is NOT a cref
+            case DAE.CREF()
               algorithm
                 Debug.traceln("Warning: makeASUB: given expression: " +
                         ExpressionBasics.printExpStr(inExp) +
@@ -3454,14 +3440,14 @@ Author: Frenkel TUD 2010-05"
   input DAE.Var inVar;
   input DAE.ComponentRef inCrefPrefix;
   output DAE.Exp outCrefExp;
-algorithm outCrefExp := match(inVar,inCrefPrefix)
+algorithm outCrefExp := match inVar
   local
     String name;
     DAE.Type ty;
     DAE.ComponentRef cr;
     DAE.Exp e;
 
-  case (DAE.TYPES_VAR(name=name,ty=ty),_)
+  case DAE.TYPES_VAR(name=name,ty=ty)
     algorithm
       cr := ComponentReference.crefPrependIdent(inCrefPrefix,name,{},ty);
       e := makeCrefExp(cr, ty);
@@ -3476,14 +3462,13 @@ Author: Frenkel TUD 2010-05"
   input DAE.Var inVar;
   input DAE.ComponentRef inCrefPrefix;
   output DAE.ComponentRef outCref;
-algorithm outCref := match(inVar,inCrefPrefix)
+algorithm outCref := match inVar
   local
     String name;
     DAE.Type ty;
     DAE.ComponentRef cr;
-    DAE.Exp e;
 
-  case (DAE.TYPES_VAR(name=name,ty=ty),_)
+  case DAE.TYPES_VAR(name=name,ty=ty)
   algorithm
     cr := ComponentReference.crefPrependIdent(inCrefPrefix,name,{},ty);
   then
@@ -3557,7 +3542,6 @@ algorithm
       DAE.Exp e;
       Absyn.Path p1,p2;
       list<DAE.Exp> explst;
-      Boolean b;
 
     case (DAE.TUPLE(PR=explst), _)
       algorithm
@@ -3665,7 +3649,7 @@ algorithm
       Operator op;
       Real r1,r2;
       Integer i1,i2;
-      DAE.Exp e, x, y, z;
+      DAE.Exp e, x, y;
 
     case(_,_) guard isZero(e1)          then e2;
     case(_,_) guard isZero(e2)          then e1;
@@ -3838,11 +3822,11 @@ makeSum => a + (b + c)
 protected
   DAE.Exp e1,e2;
 algorithm
-  outExp := matchcontinue(inExpLst)
-            case({}) then DAE.RCONST(0.0);
-            case({e1}) then e1;
-            case({e1,e2}) then expAdd(e1,e2);
-            case(_)then makeSumWork(inExpLst, simplify);
+  outExp := matchcontinue inExpLst
+            case {} then DAE.RCONST(0.0);
+            case {e1} then e1;
+            case {e1,e2} then expAdd(e1,e2);
+            case _ then makeSumWork(inExpLst, simplify);
             else
               algorithm
                if Flags.isSet(Flags.FAILTRACE) then
@@ -3886,7 +3870,7 @@ public function makeSum
   output DAE.Exp outExp;
 algorithm
   outExp:=
-  matchcontinue (inExpLst)
+  matchcontinue inExpLst
     local
       DAE.Exp e1,e2,res;
       Boolean b1;
@@ -3896,17 +3880,17 @@ algorithm
       String str;
       Operator op;
       Boolean b;
-    case ({}) then DAE.RCONST(0.0);
-    case ({e1}) then e1;
-    case ({e1, e2})
+    case {} then DAE.RCONST(0.0);
+    case {e1} then e1;
+    case {e1, e2}
       algorithm
         true := isZero(e1);
       then e2;
-    case ({e1, e2})
+    case {e1, e2}
       algorithm
         true := isZero(e2);
       then e1;
-    case ({e1, e2})
+    case {e1, e2}
       algorithm
         tp := typeof(e1) "Take type info from e1, ok since type checking already performed." ;
         b := DAEUtil.expTypeArray(tp);
@@ -3922,7 +3906,7 @@ algorithm
         res = if_(b1,e2,res);
       then
         res;*/
-    case ((e1 :: rest))
+    case e1 :: rest
       algorithm
         b1 := isZero(e1);
         e2 := makeSum(rest);
@@ -3933,7 +3917,7 @@ algorithm
         res := if b1 then e2 else res;
       then
         res;
-    case (lst)
+    case lst
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("-Expression.makeSum failed, DAE.Exp lst:");
@@ -4013,7 +3997,6 @@ algorithm
     local
       Type tp;
       DAE.Exp e,e3,e4,e5;
-      Real r1,r2;
       Boolean b;
       Operator op;
 
@@ -4104,7 +4087,6 @@ public function expMinScalar "author: Frenkel TUD 2011-04
   output DAE.Exp outExp;
 protected
   Type tp;
-  Boolean b;
 algorithm
   tp := typeof(e1);
   outExp := DAE.CALL(Absyn.IDENT("min"),{e1,e2},DAE.CALL_ATTR(tp, false, true, false, false, DAE.NO_INLINE(), DAE.NO_TAIL()));
@@ -4194,7 +4176,7 @@ public function makeProductLst
   output DAE.Exp outExp;
 algorithm
   outExp:=
-  matchcontinue (inExpLst)
+  matchcontinue inExpLst
     local
       DAE.Exp e1,res,e,e2,p1;
       list<DAE.Exp> es,rest,lst;
@@ -4202,42 +4184,42 @@ algorithm
       list<String> explst;
       String str;
       Boolean b_isZero,b1,b2;
-    case ({}) then DAE.RCONST(1.0);
-    case ({e1}) then e1;
-    case ((e :: es)) /* to prevent infinite recursion, disregard constant 1. */
+    case {} then DAE.RCONST(1.0);
+    case {e1} then e1;
+    case e :: es /* to prevent infinite recursion, disregard constant 1. */
       algorithm
         true := isConstOne(e);
         res := makeProductLst(es);
       then
         res;
     // e1/e*e2 for e = 0 => fail
-    case (DAE.BINARY(operator = DAE.DIV(),exp2 = e)::_)
+    case DAE.BINARY(operator = DAE.DIV(),exp2 = e)::_
       algorithm
         true := isZero(e);
       then
         fail();
 
     // e2*e1/e for e = 0 => fail
-    case ({_,DAE.BINARY(operator = DAE.DIV(),exp2 = e)})
+    case {_,DAE.BINARY(operator = DAE.DIV(),exp2 = e)}
       algorithm
         true := isZero(e);
       then
         fail();
-     case ((e :: _)) /* to prevent infinite recursion, disregard constant 0. */
+     case e :: _ /* to prevent infinite recursion, disregard constant 0. */
       algorithm
         true := isZero(e);
       then e;
-    case ({DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = tp),exp2 = e),e2})
+    case {DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = tp),exp2 = e),e2}
       algorithm
         true := isConstOne(e1);
       then
         DAE.BINARY(e2,DAE.DIV(tp),e);
-    case ({e2,DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = tp),exp2 = e)})
+    case {e2,DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = tp),exp2 = e)}
       algorithm
         true := isConstOne(e1);
       then
         DAE.BINARY(e2,DAE.DIV(tp),e);
-    case ((DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = tp),exp2 = e) :: es))
+    case DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = tp),exp2 = e) :: es
       algorithm
         true := isConstOne(e1);
         p1 := makeProductLst(es);
@@ -4246,12 +4228,12 @@ algorithm
         res := if b_isZero then makeConstZero(typeof(e)) else res;
       then
         res;
-    case ({e1,e2})
+    case {e1,e2}
       algorithm
         true := isConstOne(e2);
       then
         e1;
-    case ({e1,e2})
+    case {e1,e2}
       algorithm
         b1 := isZero(e1);
         b2 := isZero(e2);
@@ -4262,7 +4244,7 @@ algorithm
         res := if b_isZero then makeConstZero(tp) else res;
       then
         res;
-    case ((e1 :: rest))
+    case e1 :: rest
       algorithm
         e2 := makeProductLst(rest);
         tp := typeof(e1);
@@ -4274,7 +4256,7 @@ algorithm
         res := if b_isZero then makeConstZero(typeof(e1)) else res;
       then
         res;
-    case (lst)
+    case lst
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("-Expression.makeProductLst failed, DAE.Exp lst:");
@@ -4293,7 +4275,7 @@ protected function checkIfOther
 input DAE.Type inTp;
 output DAE.Type outTp;
 algorithm
-  outTp := match(inTp)
+  outTp := match inTp
     case DAE.T_UNKNOWN() then DAE.T_REAL_DEFAULT;
     else inTp;
   end match;
@@ -4323,10 +4305,10 @@ public function makeDiv "Takes two expressions and create a division"
   input DAE.Exp e2;
   output DAE.Exp res;
 algorithm
-  res := match(e1,e2)
-    case(_,_) guard(isZero(e1) and not isZero(e2))
+  res := match e2
+    case _ guard(isZero(e1) and not isZero(e2))
     then e1;
-    case(_,_) guard(isOne(e2))
+    case _ guard(isOne(e2))
     then e1;
     else expDiv(e1,e2);
   end match;
@@ -4390,9 +4372,9 @@ public function makeConstOne
   input DAE.Type inType;
   output DAE.Exp outExp;
 algorithm
-  outExp := match (inType)
-    case (DAE.T_INTEGER()) then DAE.ICONST(1);
-    case (DAE.T_REAL()) then DAE.RCONST(1.0);
+  outExp := match inType
+    case DAE.T_INTEGER() then DAE.ICONST(1);
+    case DAE.T_REAL() then DAE.RCONST(1.0);
     else DAE.RCONST(1.0);
   end match;
 end makeConstOne;
@@ -4402,9 +4384,9 @@ public function makeConstZero
   input DAE.Type inType;
   output DAE.Exp const;
 algorithm
-  const := match(inType)
-    case (DAE.T_REAL()) then DAE.RCONST(0.0);
-    case (DAE.T_INTEGER()) then DAE.ICONST(0);
+  const := match inType
+    case DAE.T_REAL() then DAE.RCONST(0.0);
+    case DAE.T_INTEGER() then DAE.ICONST(0);
     else DAE.RCONST(0.0);
   end match;
 end makeConstZero;
@@ -4456,20 +4438,18 @@ public function createZeroExpression
   input DAE.Type inType;
   output DAE.Exp outExp;
 algorithm
-  (outExp) := match (inType)
+  outExp := match inType
     local
       DAE.Exp e;
       list<DAE.Type> typeLst;
       list<DAE.Exp> expLst;
       DAE.Dimensions dims;
-      DAE.ComponentRef cr;
-      list<DAE.ComponentRef> crefs;
       Absyn.Path path;
       list<DAE.Var> varLst;
       list<String> varNames;
 
     // real and integer
-    case (_) guard(isIntegerOrReal(inType)) then makeConstZero(inType);
+    case _ guard(isIntegerOrReal(inType)) then makeConstZero(inType);
 
     case DAE.T_TUPLE(types=typeLst) algorithm
       expLst := List.map(typeLst, createZeroExpression);
@@ -4501,7 +4481,7 @@ public function makeZeroExpression
   output DAE.Exp outExp;
   output DAE.Type outType;
 algorithm
-  (outExp,outType) := match(inDims)
+  (outExp,outType) := match inDims
     local
       Integer i;
       DAE.Dimension d;
@@ -4531,7 +4511,7 @@ public function makeOneExpression
   output DAE.Exp outExp;
   output DAE.Type outType;
 algorithm
-  (outExp,outType) := match(inDims)
+  (outExp,outType) := match inDims
     local
       Integer i;
       DAE.Dimension d;
@@ -4599,7 +4579,7 @@ protected function listToArray2
   input DAE.Type inType;
   output DAE.Exp oExp;
 algorithm
-  () := match(inList, iDims, inType)
+  () := match iDims
   local
     Integer i;
     DAE.Dimension d;
@@ -4608,7 +4588,7 @@ algorithm
     Boolean is_scalar;
     DAE.Type ty;
 
-  case(_, {d}, _)
+  case {d}
     algorithm
       is_scalar := not Types.isArray(inType);
       if dimensionKnown(d) then
@@ -4630,7 +4610,7 @@ algorithm
       end if;
     then ();
 
-  case(_, _ :: _ , _)
+  case _ :: _
     algorithm
       (d, dims) := List.splitLast(iDims);
       explst := listToArray3(inList,d);
@@ -4680,9 +4660,9 @@ public function arrayFill
   input DAE.Exp inExp;
   output DAE.Exp oExp;
 algorithm
-  oExp := match(dims,inExp)
+  oExp := match dims
 
-    case({},_) then inExp;
+    case {} then inExp;
 
     else
       algorithm
@@ -4698,7 +4678,7 @@ protected function arrayFill2
   input DAE.Exp inExp;
   output DAE.Exp oExp;
 algorithm
-  oExp := match(iDims,inExp)
+  oExp := match iDims
     local
       Integer i;
       DAE.Dimension d;
@@ -4707,7 +4687,7 @@ algorithm
       DAE.Exp arrexp;
       DAE.Dimensions dims;
 
-    case({d},_)
+    case {d}
       algorithm
         ty := typeof(inExp);
         i := dimensionSize(d);
@@ -4715,7 +4695,7 @@ algorithm
       then
         DAE.ARRAY(DAE.T_ARRAY(ty,{DAE.DIM_INTEGER(i)}),true,expl);
 
-    case(d::dims,_)
+    case d::dims
       algorithm
         arrexp := arrayFill2({d},inExp);
         arrexp := arrayFill2(dims,arrexp);
@@ -4766,7 +4746,7 @@ algorithm
     local
       DAE.Type et;
       DAE.Dimension dim1, dim2;
-      DAE.Dimensions dims1, dims2;
+      DAE.Dimensions dims1;
 
     case (DAE.T_ARRAY(ty = et, dims = dim1 :: dims1), DAE.T_ARRAY(dims = dim2 :: _))
       algorithm
@@ -4789,7 +4769,7 @@ algorithm
 
     case (e, (s, t))
       algorithm
-      ((e1, _)) := replaceExp(e, s, t);
+      (e1, _) := replaceExp(e, s, t);
       then (e1, tpl);
 
   end match;
@@ -4813,14 +4793,11 @@ protected function replaceExpWork
   output Boolean cont;
   output tuple<DAE.Exp,DAE.Exp,Integer> otpl;
 algorithm
-  (outExp,cont,otpl) := match(inExp,inTpl)
+  (outExp,cont,otpl) := match inTpl
     local
-      tuple<DAE.Exp,DAE.Exp,Integer> tpl;
-      DAE.Exp expr,source,target;
+      DAE.Exp source,target;
       Integer c;
-      DAE.ComponentRef cr;
-      DAE.Type ty;
-    case (_,(source,target,c))
+    case (source,target,c)
       guard ExpressionBasics.expEqual(inExp, source)
       then (target,false,(source,target,c+1));
 
@@ -4877,14 +4854,14 @@ public function containsInitialCall "public function containsInitialCall
   input DAE.Exp condition;    // expression of a when-clause
   output Boolean res;
 algorithm
-  res := match(condition)
+  res := match condition
     local
       list<Exp> array;
 
-    case (DAE.CALL(path = Absyn.IDENT(name = "initial")))
+    case DAE.CALL(path = Absyn.IDENT(name = "initial"))
     then true;
 
-    case (DAE.ARRAY(array=array))
+    case DAE.ARRAY(array=array)
     then List.any(array, containsInitialCall);
 
     else false;
@@ -4917,12 +4894,11 @@ public function traverseExpBottomUp<T>
     output T outExtArg;
   end FuncExpType;
 algorithm
-  (outExp, outExtArg) := match (inExp)
+  (outExp, outExtArg) := match inExp
     local
-      DAE.Exp e1_1, e, e1, e2_1, e2, e3_1, e3, e4, e4_1;
+      DAE.Exp e1_1, e, e1, e2_1, e2, e3_1, e3;
       T ext_arg;
       Operator op;
-      FuncExpType rel;
       list<DAE.Exp> expl_1, expl;
       Absyn.Path fn;
       Boolean scalar;
@@ -5429,10 +5405,7 @@ algorithm
   (outClk, outArg) := match inClk
     local
       DAE.Exp e, e1, e2, ea, eb;
-      Real intvl;
-      Integer i1, i2;
       Type_a arg;
-      String str;
       DAE.ClockKind clk;
     case DAE.RATIONAL_CLOCK(e1, e2)
       algorithm
@@ -5482,10 +5455,7 @@ algorithm
   (outClk, outArg) := match inClk
     local
       DAE.Exp e, e1, e2, ea, eb;
-      Real intvl;
-      Integer i1, i2;
       Type_a arg;
-      String str;
       DAE.ClockKind clk;
 
     case DAE.RATIONAL_CLOCK(e1, e2)
@@ -5537,8 +5507,8 @@ protected function traverseExpTopDown1
 algorithm
   (outExp,outArg) := match (cont,inExp,func,inArg)
     local
-      DAE.Exp e1_1,e,e1,e2_1,e2,e3_1,e3,e4,e4_1;
-      Type_a ext_arg_1,ext_arg_2,ext_arg,ext_arg_3,ext_arg_4;
+      DAE.Exp e1_1,e,e1,e2_1,e2,e3_1,e3;
+      Type_a ext_arg_1,ext_arg_2,ext_arg,ext_arg_3;
       Operator op;
       FuncExpType rel;
       list<DAE.Exp> expl_1,expl;
@@ -5849,13 +5819,13 @@ public function traverseExpOpt "Calls traverseExpBottomUp for SOME(exp) and does
   end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (outExp,outTypeA) := match (inExp,func,inTypeA)
+  (outExp,outTypeA) := match (inExp, inTypeA)
     local
       DAE.Exp e,e1;
       Type_a a;
       Option<DAE.Exp> oe;
-    case (NONE(),_,a) then (inExp/*In case external functions create a copy of NONE()*/,a);
-    case(oe as SOME(e),_,a) algorithm
+    case (NONE(), a) then (inExp/*In case external functions create a copy of NONE()*/,a);
+    case(oe as SOME(e), a) algorithm
       (e1,a) := traverseExpBottomUp(e,func,a);
       oe := if referenceEq(e,e1) then oe else SOME(e1);
      then (oe,a);
@@ -5877,10 +5847,10 @@ public function traverseExpOptTopDown "Calls traverseExpTopDown for SOME(exp) an
   end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (outExp,outA) := match (inExp,func,inTypeA)
+  (outExp,outA) := match (inExp, inTypeA)
     local DAE.Exp e,e1; Type_a a;
-    case(NONE(),_,a) then (NONE(),a);
-    case(SOME(e),_,a)
+    case(NONE(), a) then (NONE(),a);
+    case(SOME(e), a)
       algorithm
         (e1,a) := traverseExpTopDown(e,func,a);
       then (if referenceEq(e,e1) then inExp else SOME(e1),a);
@@ -5901,14 +5871,13 @@ public function traverseExpCrefDims<ArgT>
     output ArgT outArg;
   end FuncType;
 algorithm
-  (outCref, outArg) := match(inCref)
+  (outCref, outArg) := match inCref
     local
       DAE.Ident id;
       DAE.Type ty, new_ty;
       list<DAE.Subscript> subs;
       DAE.ComponentRef cr, new_cr;
       ArgT arg;
-      Integer idx;
 
     case DAE.CREF_QUAL(id, ty, subs, cr)
       algorithm
@@ -5945,10 +5914,10 @@ public function traverseExpTypeDims<ArgT>
     output ArgT outArg;
   end FuncType;
 algorithm
-  (outType, outArg) := match(inType)
+  (outType, outArg) := match inType
     local
       DAE.Type ty, new_ty;
-      list<DAE.Dimension> dims, new_dims;
+      list<DAE.Dimension> dims;
       ArgT arg;
       Boolean changed;
       ClassInf.State state;
@@ -5992,7 +5961,7 @@ protected
   DAE.Exp exp, new_exp;
 algorithm
   for dim in inDims loop
-    dim := match(dim)
+    dim := match dim
       case DAE.DIM_EXP(exp)
         algorithm
           (new_exp, outArg) := inFunc(exp, outArg);
@@ -6142,7 +6111,7 @@ public function extractCrefsStatment
   output list<DAE.ComponentRef> olcrefs;
   output list<DAE.ComponentRef> orcrefs;
 algorithm
-  (olcrefs,orcrefs) := match(inStmt)
+  (olcrefs,orcrefs) := match inStmt
     local
       Exp exp1,exp2;
       list<DAE.Exp> expLst;
@@ -6220,9 +6189,9 @@ protected function getLhsCrefsFromStatement "Extracts all lhs crefs from a state
   input DAE.Statement inStmt;
   output list<DAE.ComponentRef> lhsCrefs;
 algorithm
-  lhsCrefs := match(inStmt)
+  lhsCrefs := match inStmt
     local
-      Exp exp1,exp2;
+      Exp exp1;
       list<DAE.Exp> expLst;
       list<DAE.Statement> stmtLst;
 
@@ -6296,7 +6265,7 @@ public function expHasCrefs "
   input DAE.Exp inExp;
   output Boolean hasCrefs;
 algorithm
-  hasCrefs := match(inExp)
+  hasCrefs := match inExp
     local
       Boolean b;
 
@@ -6370,7 +6339,7 @@ algorithm
       ComponentRef cr,cr1;
 
     // pre(cr) does not count because it should be its own variable instead!
-    case (DAE.CALL(path = Absyn.IDENT("pre")), (_,_))
+    case (DAE.CALL(path = Absyn.IDENT("pre")), _)
     then (inExp, false, inTpl);
 
     case (DAE.CREF(componentRef = cr1), (cr,false))
@@ -6513,7 +6482,6 @@ algorithm
   (outExp,cont,outHasIt) := match(inExp,inHasIt)
     local
       Boolean b;
-      ComponentRef cr;
     case (DAE.CALL(path= Absyn.IDENT("pre")), false)
       then (inExp,false,true);
     case (_,b) then (inExp, not b, inHasIt);
@@ -6539,7 +6507,6 @@ algorithm
   (outExp,cont,outHasIt) := match(inExp,inHasIt)
     local
       Boolean b;
-      ComponentRef cr;
     case (DAE.CALL(path= Absyn.IDENT("previous")), false)
       then (inExp,false,true);
     case (_,b) then (inExp, not b, inHasIt);
@@ -6758,9 +6725,9 @@ Author: Frenkel TUD 2011-05, traverses all ComponentRef from an Expression."
   end FuncCrefTypeA;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outArg := match(inExp,inFunc,inArg)
+  outArg := match inArg
    local Type_a arg;
-    case(_,_,_)
+    case _
       algorithm
         (_,(_,arg)) := traverseExpBottomUp(inExp, traversingCrefFinder, (inFunc,inArg));
       then
@@ -6813,19 +6780,19 @@ Returns a list containing, all division DAE.Exp in an Expression."
   output DAE.Exp outExp;
   output list<DAE.Exp> acc;
 algorithm
-  (outExp,acc) := match (e,exps)
+  (outExp,acc) := match e
   local
       DAE.Exp e2;
-    case (DAE.BINARY(operator = DAE.DIV(_),exp2 = e2), _)
+    case DAE.BINARY(operator = DAE.DIV(_),exp2 = e2)
       then (e, e2::exps);
 
-    case (DAE.BINARY(operator = DAE.DIV_ARR(_),exp2 = e2), _)
+    case DAE.BINARY(operator = DAE.DIV_ARR(_),exp2 = e2)
       then (e, e2::exps);
 
-    case (DAE.BINARY(operator = DAE.DIV_ARRAY_SCALAR(_),exp2 = e2), _)
+    case DAE.BINARY(operator = DAE.DIV_ARRAY_SCALAR(_),exp2 = e2)
       then (e, e2::exps);
 
-    case (DAE.BINARY(operator = DAE.DIV_SCALAR_ARRAY(_),exp2 = e2), _)
+    case DAE.BINARY(operator = DAE.DIV_SCALAR_ARRAY(_),exp2 = e2)
       then (e, e2::exps);
 
     else (e,exps);
@@ -6922,7 +6889,7 @@ public function traverseExpOptBidir<ArgT>
     output ArgT outArg;
   end FuncType;
 algorithm
-  (outExp, outArg) := match(inExp)
+  (outExp, outArg) := match inExp
     local
       DAE.Exp e,e1;
       ArgT arg;
@@ -6954,7 +6921,7 @@ protected function traverseExpBidirSubExps<ArgT>
     output ArgT outArg;
   end FuncType;
 algorithm
-  (outExp, outArg) := match(inExp)
+  (outExp, outArg) := match inExp
     local
       Integer i;
       DAE.Exp e1, e2, e3, e1_1, e2_1, e3_1;
@@ -6963,7 +6930,6 @@ algorithm
       ComponentRef cref, cref_1;
       list<DAE.Exp> expl, expl_1;
       list<list<DAE.Exp>> mat_expl;
-      String error_msg;
       DAE.MatchType match_ty;
       list<DAE.Element> match_decls;
       list<DAE.MatchCase> match_cases;
@@ -7209,7 +7175,7 @@ public function traverseExpBidirCref<ArgT>
     output ArgT outArg;
   end FuncType;
 algorithm
-  (outCref, outArg) := match(inCref)
+  (outCref, outArg) := match inCref
     local
       String name;
       ComponentRef cr;
@@ -7254,17 +7220,16 @@ public function traverseExpCref
 
   replaceable type Type_a subtypeof Any;
 algorithm
-  (outCref, outArg) := match(inCref, rel, iarg)
+  (outCref, outArg) := match(inCref, iarg)
     local
       String name;
       ComponentRef cr,cr_1;
       Type ty;
       list<DAE.Subscript> subs,subs_1;
       Type_a arg;
-      Integer ix;
       String instant;
 
-    case (DAE.CREF_QUAL(ident = name, identType = ty, subscriptLst = subs, componentRef = cr), _, arg)
+    case (DAE.CREF_QUAL(ident = name, identType = ty, subscriptLst = subs, componentRef = cr), arg)
       algorithm
         (subs_1, arg) := traverseExpSubs(subs, rel, arg);
         (cr_1, arg) := traverseExpCref(cr, rel, arg);
@@ -7272,21 +7237,21 @@ algorithm
       then
         (cr, arg);
 
-    case (DAE.CREF_IDENT(ident = name, identType = ty, subscriptLst = subs), _, arg)
+    case (DAE.CREF_IDENT(ident = name, identType = ty, subscriptLst = subs), arg)
       algorithm
         (subs_1, arg) := traverseExpSubs(subs, rel, arg);
         cr := if referenceEq(subs,subs_1) then inCref else DAE.CREF_IDENT(name, ty, subs_1);
       then
         (cr, arg);
 
-    case (DAE.OPTIMICA_ATTR_INST_CREF(componentRef = cr, instant = instant), _, arg)
+    case (DAE.OPTIMICA_ATTR_INST_CREF(componentRef = cr, instant = instant), arg)
       algorithm
         (cr_1, arg) := traverseExpCref(cr, rel, arg);
         cr := if referenceEq(cr,cr_1) then inCref else DAE.OPTIMICA_ATTR_INST_CREF(cr_1, instant);
       then
         (cr, arg);
 
-    case (DAE.WILD(), _, arg) then (inCref, arg);
+    case (DAE.WILD(), arg) then (inCref, arg);
 
     else
       algorithm
@@ -7311,20 +7276,20 @@ protected function traverseExpSubs
 
   replaceable type Type_a subtypeof Any;
 algorithm
-  (outSubscript, outArg) := match(inSubscript, rel, iarg)
+  (outSubscript, outArg) := match(inSubscript, iarg)
     local
       DAE.Exp sub_exp,sub_exp_1;
       list<DAE.Subscript> rest,res;
       Type_a arg;
 
-    case ({}, _, arg) then (inSubscript,arg);
-    case (DAE.WHOLEDIM()::rest, _, arg)
+    case ({}, arg) then (inSubscript,arg);
+    case (DAE.WHOLEDIM()::rest, arg)
       algorithm
         (res,arg) := traverseExpSubs(rest,rel,arg);
         res := if referenceEq(rest,res) then inSubscript else (DAE.WHOLEDIM()::res);
       then (res, arg);
 
-    case (DAE.SLICE(exp = sub_exp)::rest, _, arg)
+    case (DAE.SLICE(exp = sub_exp)::rest, arg)
       algorithm
         (sub_exp_1,arg) := traverseExpBottomUp(sub_exp, rel, arg);
         (res,arg) := traverseExpSubs(rest,rel,arg);
@@ -7332,7 +7297,7 @@ algorithm
       then
         (res, arg);
 
-    case (DAE.INDEX(exp = sub_exp)::rest, _, arg)
+    case (DAE.INDEX(exp = sub_exp)::rest, arg)
       algorithm
         (sub_exp_1,arg) := traverseExpBottomUp(sub_exp, rel, arg);
         (res,arg) := traverseExpSubs(rest,rel,arg);
@@ -7340,7 +7305,7 @@ algorithm
       then
         (res, arg);
 
-    case (DAE.WHOLE_NONEXP(exp = sub_exp)::rest, _, arg)
+    case (DAE.WHOLE_NONEXP(exp = sub_exp)::rest, arg)
       algorithm
         (sub_exp_1,arg) := traverseExpBottomUp(sub_exp, rel, arg);
         (res,arg) := traverseExpSubs(rest,rel,arg);
@@ -7368,7 +7333,7 @@ public function traverseExpTopDownCrefHelper
 
   replaceable type Argument subtypeof Any;
 algorithm
-  (outCref, outArg) := match(inCref, rel, iarg)
+  (outCref, outArg) := match(inCref, iarg)
     local
       String name;
       ComponentRef cr, cr_1;
@@ -7376,20 +7341,20 @@ algorithm
       list<DAE.Subscript> subs, subs_1;
       Argument arg;
 
-    case (DAE.CREF_QUAL(ident = name, identType = ty, subscriptLst = subs, componentRef = cr), _, arg)
+    case (DAE.CREF_QUAL(ident = name, identType = ty, subscriptLst = subs, componentRef = cr), arg)
       algorithm
         (subs_1,arg) := traverseExpTopDownSubs(subs, rel, arg);
         (cr_1, arg) := traverseExpTopDownCrefHelper(cr, rel, arg);
       then
         (if referenceEq(subs,subs_1) and referenceEq(cr,cr_1) then inCref else DAE.CREF_QUAL(name, ty, subs_1, cr_1), arg);
 
-    case (DAE.CREF_IDENT(ident = name, identType = ty, subscriptLst = subs), _, arg)
+    case (DAE.CREF_IDENT(ident = name, identType = ty, subscriptLst = subs), arg)
       algorithm
         (subs_1,arg) := traverseExpTopDownSubs(subs, rel, arg);
       then
         (if referenceEq(subs,subs_1) then inCref else DAE.CREF_IDENT(name, ty, subs_1), arg);
 
-    case (DAE.WILD(), _, arg) then (inCref, arg);
+    case (DAE.WILD(), arg) then (inCref, arg);
   end match;
 end traverseExpTopDownCrefHelper;
 
@@ -7410,7 +7375,7 @@ protected function traverseExpBidirSubs<ArgT>
     output ArgT outArg;
   end FuncType;
 algorithm
-  (outSubscript, outArg) := match(inSubscript)
+  (outSubscript, outArg) := match inSubscript
     local
       DAE.Exp sub_exp;
       ArgT arg;
@@ -7506,9 +7471,9 @@ public function operatorDivOrMul "returns true if operator is division or multip
   input DAE.Operator op;
   output Boolean res;
 algorithm
-  res := match(op)
-    case(DAE.MUL(_)) then true;
-    case(DAE.DIV(_)) then true;
+  res := match op
+    case DAE.MUL(_) then true;
+    case DAE.DIV(_) then true;
     else false;
   end match;
 end operatorDivOrMul;
@@ -7518,7 +7483,7 @@ public function isRange
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match (inExp)
+  outBoolean := match inExp
     case DAE.RANGE() then true;
     else false;
   end match;
@@ -7528,7 +7493,7 @@ public function isReduction
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match (inExp)
+  outBoolean := match inExp
     case DAE.REDUCTION() then true;
     else false;
   end match;
@@ -7540,17 +7505,16 @@ public function isOne
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match (inExp)
+  outBoolean := match inExp
     local
       Integer ival;
       Real rval;
       Boolean res;
-      Type t;
       DAE.Exp e;
 
-    case (DAE.ICONST(integer = ival)) then intEq(ival,1);
-    case (DAE.RCONST(real = rval)) then realEq(rval,1.0);
-    case (DAE.CAST(exp = e))
+    case DAE.ICONST(integer = ival) then intEq(ival,1);
+    case DAE.RCONST(real = rval) then realEq(rval,1.0);
+    case DAE.CAST(exp = e)
       algorithm
         res := isOne(e) "Casting to one is still one" ;
       then
@@ -7565,34 +7529,33 @@ public function isZero
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match (inExp)
+  outBoolean := match inExp
     local
       Integer ival;
       Real rval;
-      Type t;
       DAE.Exp e;
       list<DAE.Exp> ae;
       list<list<DAE.Exp>> matrix;
 
-    case (DAE.ICONST(integer = ival))
+    case DAE.ICONST(integer = ival)
      then intEq(ival,0);
 
-    case (DAE.RCONST(real = rval))
+    case DAE.RCONST(real = rval)
      then realEq(rval,0.0);
 
-    case (DAE.CAST(exp = e))
+    case DAE.CAST(exp = e)
      then isZero(e);
 
-    case (DAE.UNARY(DAE.UMINUS(_),e))
+    case DAE.UNARY(DAE.UMINUS(_),e)
      then isZero(e);
 
-    case (DAE.ARRAY(array = ae))
+    case DAE.ARRAY(array = ae)
      then List.all(ae, isZero);
 
-    case (DAE.MATRIX(matrix = matrix))
+    case DAE.MATRIX(matrix = matrix)
      then List.all(matrix, function List.all(inFunc = isZero));
 
-    case (DAE.UNARY(DAE.UMINUS_ARR(_),e))
+    case DAE.UNARY(DAE.UMINUS_ARR(_),e)
      then isZero(e);
 
     else false;
@@ -7612,7 +7575,6 @@ algorithm
     local
       Integer ival;
       Real rval;
-      Type t;
       DAE.Exp e,e1;
       list<DAE.Exp> ae;
       list<list<DAE.Exp>> matrix;
@@ -7887,11 +7849,11 @@ public function isHalf
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match (inExp)
+  outBoolean := match inExp
     local
       Real rval;
 
-    case (DAE.RCONST(real = rval)) then realEq(rval,0.5);
+    case DAE.RCONST(real = rval) then realEq(rval,0.5);
     else false;
 
   end match;
@@ -7901,7 +7863,7 @@ public function isAtomic
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match (inExp)
+  outBoolean := match inExp
     case DAE.CREF() then true;
     case DAE.CALL() then true;
     case DAE.ICONST() then inExp.integer >= 0;
@@ -7992,7 +7954,6 @@ algorithm
         DAE.Type ty;
         list<DAE.Exp> expLst;
         Boolean subRec;
-        DAE.ComponentRef cr;
       case DAE.RECORD()
         algorithm
         then (inExp,false,true);
@@ -8065,34 +8026,32 @@ public function isConst
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match (inExp)
+  outBoolean := match inExp
     local
       Boolean res;
-      Operator op;
       DAE.Exp e,e1,e2;
-      Type t;
       list<DAE.Exp> ae;
       list<list<DAE.Exp>> matrix;
       Absyn.Path path;
       list<DAE.Subscript> subs;
 
-    case (DAE.ICONST()) then true;
-    case (DAE.RCONST()) then true;
-    case (DAE.BCONST()) then true;
-    case (DAE.SCONST()) then true;
-    case (DAE.ENUM_LITERAL()) then true;
+    case DAE.ICONST() then true;
+    case DAE.RCONST() then true;
+    case DAE.BCONST() then true;
+    case DAE.SCONST() then true;
+    case DAE.ENUM_LITERAL() then true;
 
-    case (DAE.UNARY(exp = e)) then isConst(e);
+    case DAE.UNARY(exp = e) then isConst(e);
 
-    case (DAE.CAST(exp = e)) then isConst(e);
+    case DAE.CAST(exp = e) then isConst(e);
 
-    case (DAE.BINARY(e1,_,e2))
+    case DAE.BINARY(e1,_,e2)
       algorithm
         res := isConst(e2);
       then
         if res then isConst(e1) else false;
 
-    case (DAE.IFEXP(e,e1,e2))
+    case DAE.IFEXP(e,e1,e2)
       algorithm
         res := isConst(e2);
         if res then
@@ -8101,31 +8060,31 @@ algorithm
       then
         if res then isConst(e) else false;
 
-    case (DAE.LBINARY(exp1=e1,exp2=e2))
+    case DAE.LBINARY(exp1=e1,exp2=e2)
       algorithm
         res := isConst(e2);
       then
         if res then isConst(e1) else false;
 
-    case (DAE.LUNARY(exp=e)) then isConst(e);
+    case DAE.LUNARY(exp=e) then isConst(e);
 
-    case (DAE.RELATION(exp1=e1,exp2=e2))
+    case DAE.RELATION(exp1=e1,exp2=e2)
       algorithm
         res := isConst(e2);
       then
         if res then isConst(e1) else false;
 
-    case (DAE.ARRAY(array = ae)) then isConstWorkList(ae);
+    case DAE.ARRAY(array = ae) then isConstWorkList(ae);
 
-    case (DAE.MATRIX(matrix = matrix)) then isConstWorkListList(matrix);
+    case DAE.MATRIX(matrix = matrix) then isConstWorkListList(matrix);
 
-    case (DAE.RANGE(start=e1,step=NONE(),stop=e2))
+    case DAE.RANGE(start=e1,step=NONE(),stop=e2)
       algorithm
         res := isConst(e2);
       then
         if res then isConst(e1) else false;
 
-    case (DAE.RANGE(start=e,step=SOME(e1),stop=e2))
+    case DAE.RANGE(start=e,step=SOME(e1),stop=e2)
       algorithm
         res := isConst(e2);
         if res then
@@ -8134,43 +8093,43 @@ algorithm
       then
         if res then isConst(e) else false;
 
-    case (DAE.PARTEVALFUNCTION(expList = ae)) then isConstWorkList(ae);
+    case DAE.PARTEVALFUNCTION(expList = ae) then isConstWorkList(ae);
 
-    case (DAE.TUPLE(PR = ae)) then isConstWorkList(ae);
+    case DAE.TUPLE(PR = ae) then isConstWorkList(ae);
 
-    case (DAE.ASUB(exp=e,sub=subs))
+    case DAE.ASUB(exp=e,sub=subs)
       algorithm
         ae := list(Expression.getSubscriptExp(sub) for sub in subs);
         res := isConst(e);
       then
         if res then isConstWorkList(ae) else false;
 
-    case (DAE.TSUB(exp=e)) then isConst(e);
+    case DAE.TSUB(exp=e) then isConst(e);
 
-    case (DAE.SIZE(exp=e,sz=NONE())) then isConst(e);
+    case DAE.SIZE(exp=e,sz=NONE()) then isConst(e);
 
-    case (DAE.SIZE(exp=e1,sz=SOME(e2)))
+    case DAE.SIZE(exp=e1,sz=SOME(e2))
       algorithm
         res := isConst(e2);
       then
         if res then isConst(e1) else false;
 
-    case (DAE.CALL(expLst=ae, attr=DAE.CALL_ATTR(builtin=false, isImpure=false))) then isConstWorkList(ae);
-    case (DAE.CALL(path=path, expLst=ae, attr=DAE.CALL_ATTR(builtin=true))) then
+    case DAE.CALL(expLst=ae, attr=DAE.CALL_ATTR(builtin=false, isImpure=false)) then isConstWorkList(ae);
+    case DAE.CALL(path=path, expLst=ae, attr=DAE.CALL_ATTR(builtin=true)) then
       if listMember(AbsynUtil.pathFirstIdent(path),
         {"initial","terminal","sample" /* der/edge/change/pre belongs to this list usually, but if we optimize the expression, we might end up with pre of a constant expression... */}
         ) then false else isConstWorkList(ae);
 
-    case (DAE.RECORD(exps=ae)) then isConstWorkList(ae);
+    case DAE.RECORD(exps=ae) then isConstWorkList(ae);
 
       /*TODO:Make this work for multiple iters, guard exps*/
-    case (DAE.REDUCTION(expr=e1,iterators={DAE.REDUCTIONITER(exp=e2)}))
+    case DAE.REDUCTION(expr=e1,iterators={DAE.REDUCTIONITER(exp=e2)})
       algorithm
         res := isConst(e2);
       then
         if res then isConst(e1) else false;
 
-    case(DAE.BOX(exp=e)) then isConst(e);
+    case DAE.BOX(exp=e) then isConst(e);
 
     else false;
   end match;
@@ -8181,10 +8140,8 @@ protected function isConstValueWork
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match (inExp)
+  outBoolean := match inExp
     local
-      Boolean res;
-      DAE.Exp e,e1,e2;
       list<DAE.Exp> ae;
       list<list<DAE.Exp>> matrix;
 
@@ -8292,8 +8249,8 @@ public function isRelation "Returns true if expression is a relation"
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match (inExp)
-    case (DAE.RELATION()) then true;
+  outBoolean := match inExp
+    case DAE.RELATION() then true;
     else false;
   end match;
 end isRelation;
@@ -8302,13 +8259,13 @@ public function isEventTriggeringFunctionExp
   input DAE.Exp inExp;
   output Boolean outB;
 algorithm
-  outB := match(inExp)
-    case (DAE.CALL(path = Absyn.IDENT("div"))) then true;
-    case (DAE.CALL(path = Absyn.IDENT("mod"))) then true;
-    case (DAE.CALL(path = Absyn.IDENT("rem"))) then true;
-    case (DAE.CALL(path = Absyn.IDENT("ceil"))) then true;
-    case (DAE.CALL(path = Absyn.IDENT("floor"))) then true;
-    case (DAE.CALL(path = Absyn.IDENT("integer"))) then true;
+  outB := match inExp
+    case DAE.CALL(path = Absyn.IDENT("div")) then true;
+    case DAE.CALL(path = Absyn.IDENT("mod")) then true;
+    case DAE.CALL(path = Absyn.IDENT("rem")) then true;
+    case DAE.CALL(path = Absyn.IDENT("ceil")) then true;
+    case DAE.CALL(path = Absyn.IDENT("floor")) then true;
+    case DAE.CALL(path = Absyn.IDENT("integer")) then true;
     else false;
   end match;
 end isEventTriggeringFunctionExp;
@@ -8324,9 +8281,9 @@ public function isAdd "returns true if operator is ADD"
   input DAE.Operator op;
   output Boolean res;
 algorithm
-  res := match(op)
-    case(DAE.ADD()) then true;
-    case(DAE.ADD_ARR()) then true;
+  res := match op
+    case DAE.ADD() then true;
+    case DAE.ADD_ARR() then true;
     else false;
   end match;
 end isAdd;
@@ -8335,9 +8292,9 @@ public function isSub "returns true if operator is SUB"
   input DAE.Operator op;
   output Boolean res;
 algorithm
-  res := match(op)
-    case(DAE.SUB()) then true;
-    case(DAE.SUB_ARR()) then true;
+  res := match op
+    case DAE.SUB() then true;
+    case DAE.SUB_ARR() then true;
     else false;
   end match;
 end isSub;
@@ -8348,8 +8305,8 @@ public function isAddOrSubBinary "returns true if BINARY is a+b or a-b"
 protected
   DAE.Operator op;
 algorithm
-  res := match(iExp)
-         case(DAE.BINARY(_,op,_)) then isAddOrSub(op);
+  res := match iExp
+         case DAE.BINARY(_,op,_) then isAddOrSub(op);
          else false;
          end match;
 end isAddOrSubBinary;
@@ -8363,9 +8320,9 @@ public function isMul "returns true if operator is MUL"
   input DAE.Operator op;
   output Boolean res;
 algorithm
-  res := match(op)
-    case(DAE.MUL()) then true;
-    case(DAE.MUL_ARR()) then true;
+  res := match op
+    case DAE.MUL() then true;
+    case DAE.MUL_ARR() then true;
     else false;
   end match;
 end isMul;
@@ -8374,9 +8331,9 @@ public function isDiv "returns true if operator is DIV"
   input DAE.Operator op;
   output Boolean res;
 algorithm
-  res := match(op)
-    case(DAE.DIV()) then true;
-    case(DAE.DIV_ARR()) then true;
+  res := match op
+    case DAE.DIV() then true;
+    case DAE.DIV_ARR() then true;
     else false;
   end match;
 end isDiv;
@@ -8387,8 +8344,8 @@ public function isDivBinary "returns true if BINARY is a/b"
 protected
   DAE.Operator op;
 algorithm
-  res := match(iExp)
-         case(DAE.BINARY(_,op,_)) then isDiv(op);
+  res := match iExp
+         case DAE.BINARY(_,op,_) then isDiv(op);
          else false;
          end match;
 end isDivBinary;
@@ -8400,8 +8357,8 @@ public function isMulorDivBinary "returns true if BINARY is a/b or a*b"
 protected
   DAE.Operator op;
 algorithm
-  res := match(iExp)
-         case(DAE.BINARY(_,op,_)) then isMulOrDiv(op);
+  res := match iExp
+         case DAE.BINARY(_,op,_) then isMulOrDiv(op);
          else false;
          end match;
 end isMulorDivBinary;
@@ -8410,8 +8367,8 @@ public function isPow "returns true if operator is POW"
   input DAE.Operator op;
   output Boolean res;
 algorithm
-  res := match(op)
-    case(DAE.POW()) then true;
+  res := match op
+    case DAE.POW() then true;
     else false;
   end match;
 end isPow;
@@ -8422,9 +8379,9 @@ public function isFunCall "return true if expression is DAE.CALL(path=Absyn.IDEN
   input String name;
   output Boolean res;
 algorithm
-  res := match(iExp, name)
+  res := match iExp
          local String name_;
-          case(DAE.CALL(path=Absyn.IDENT(name_)),_) then name_ == name;
+          case DAE.CALL(path=Absyn.IDENT(name_)) then name_ == name;
           else false;
          end match;
 end isFunCall;
@@ -8492,13 +8449,13 @@ public function typeBuiltin
   input DAE.Type inType;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match (inType)
-    case (DAE.T_INTEGER()) then true;
-    case (DAE.T_REAL()) then true;
-    case (DAE.T_STRING()) then true;
-    case (DAE.T_BOOL()) then true;
+  outBoolean := match inType
+    case DAE.T_INTEGER() then true;
+    case DAE.T_REAL() then true;
+    case DAE.T_STRING() then true;
+    case DAE.T_BOOL() then true;
     // BTH
-    case (DAE.T_CLOCK()) then true;
+    case DAE.T_CLOCK() then true;
     else false;
   end match;
 end typeBuiltin;
@@ -8507,8 +8464,8 @@ public function isWholeDim ""
   input DAE.Subscript s;
   output Boolean b;
 algorithm
-  b := match(s)
-    case(DAE.WHOLEDIM()) then true;
+  b := match s
+    case DAE.WHOLEDIM() then true;
     else false;
   end match;
 end isWholeDim;
@@ -8517,11 +8474,11 @@ public function isInt ""
   input DAE.Type it;
   output Boolean re;
 algorithm
-  re := match(it)
+  re := match it
     local
       Type t1;
-    case(DAE.T_INTEGER()) then true;
-    case(DAE.T_ARRAY(ty=t1)) then isInt(t1);
+    case DAE.T_INTEGER() then true;
+    case DAE.T_ARRAY(ty=t1) then isInt(t1);
     else false;
   end match;
 end isInt;
@@ -8530,11 +8487,11 @@ public function isReal ""
   input DAE.Type it;
   output Boolean re;
 algorithm
-  re := match(it)
+  re := match it
     local
       Type t1;
-    case(DAE.T_REAL()) then true;
-    case(DAE.T_ARRAY(ty=t1)) then isReal(t1);
+    case DAE.T_REAL() then true;
+    case DAE.T_ARRAY(ty=t1) then isReal(t1);
   else false;
   end match;
 end isReal;
@@ -8551,7 +8508,7 @@ public function isConstZeroLength
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match (inExp)
+  outBoolean := match inExp
     case DAE.ARRAY(array={}) then true;
     case DAE.MATRIX(matrix={}) then true;
     else false;
@@ -8563,7 +8520,7 @@ public function isConstFalse
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match(inExp)
+  outBoolean := match inExp
     case DAE.BCONST(false) then true;
     else false;
   end match;
@@ -8574,7 +8531,7 @@ public function isConstTrue
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match(inExp)
+  outBoolean := match inExp
     case DAE.BCONST(true) then true;
     else false;
   end match;
@@ -8585,7 +8542,7 @@ public function isConstOne
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match(inExp)
+  outBoolean := match inExp
     local Real rval; Integer ival;
 
     // constant real 1.0
@@ -8602,7 +8559,7 @@ public function isConstMinusOne
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match(inExp)
+  outBoolean := match inExp
     local Real rval; Integer ival;
 
     // is real -1.0
@@ -8619,9 +8576,9 @@ public function isGreatereqOrLesseq
   input DAE.Operator op;
   output Boolean b;
 algorithm
-  b := match(op)
-       case(DAE.GREATEREQ()) then true;
-       case(DAE.LESSEQ()) then true;
+  b := match op
+       case DAE.GREATEREQ() then true;
+       case DAE.LESSEQ() then true;
        else false;
        end match;
 end isGreatereqOrLesseq;
@@ -8630,9 +8587,9 @@ public function isLesseqOrLess
   input DAE.Operator op;
   output Boolean b;
 algorithm
-  b := match(op)
-       case(DAE.LESS()) then true;
-       case(DAE.LESSEQ()) then true;
+  b := match op
+       case DAE.LESS() then true;
+       case DAE.LESSEQ() then true;
        else false;
        end match;
 end isLesseqOrLess;
@@ -8646,117 +8603,115 @@ public function containVectorFunctioncall
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match (inExp)
+  outBoolean := match inExp
     local
       DAE.Exp e1,e2,e,e3;
       Boolean res;
-      list<Boolean> blst;
       list<DAE.Exp> elst,flatexplst;
       list<list<DAE.Exp>> explst;
-      Option<DAE.Exp> optexp;
 
     // der is not a vector function
-    case (DAE.CALL(path = Absyn.IDENT(name = "der"))) then false;
+    case DAE.CALL(path = Absyn.IDENT(name = "der")) then false;
 
     // pre is not a vector function, adrpo: 2009-03-03 -> pre is also needed here!
-    case (DAE.CALL(path = Absyn.IDENT(name = "pre"))) then false;
-    case (DAE.CALL(path = Absyn.IDENT(name = "previous"))) then false;
+    case DAE.CALL(path = Absyn.IDENT(name = "pre")) then false;
+    case DAE.CALL(path = Absyn.IDENT(name = "previous")) then false;
     // inStream and actualStream are not a vector function, adrpo: 2010-08-31 -> they are also needed here!
-    case (DAE.CALL(path = Absyn.IDENT(name = "inStream"))) then false;
-    case (DAE.CALL(path = Absyn.IDENT(name = "actualStream"))) then false;
+    case DAE.CALL(path = Absyn.IDENT(name = "inStream")) then false;
+    case DAE.CALL(path = Absyn.IDENT(name = "actualStream")) then false;
 
     // a call that has an return array type returns true
-    case (DAE.CALL(attr = DAE.CALL_ATTR(ty = DAE.T_ARRAY()))) then true;
+    case DAE.CALL(attr = DAE.CALL_ATTR(ty = DAE.T_ARRAY())) then true;
 
     // any other call returns false
-    case (DAE.CALL()) then false;
+    case DAE.CALL() then false;
 
     // partial evaluation
-    case (DAE.PARTEVALFUNCTION(expList = elst)) // stefan
+    case DAE.PARTEVALFUNCTION(expList = elst) // stefan
       then
         List.any(elst,containVectorFunctioncall);
 
     // binary operators, e1 has a vector function call
-    case (DAE.BINARY(exp1 = e1)) guard containVectorFunctioncall(e1)
+    case DAE.BINARY(exp1 = e1) guard containVectorFunctioncall(e1)
       then
         true;
     // binary operators, e2 has a vector function call
-    case (DAE.BINARY(exp2 = e2)) guard containVectorFunctioncall(e2)
+    case DAE.BINARY(exp2 = e2) guard containVectorFunctioncall(e2)
       then
         true;
     // unary operators
-    case (DAE.UNARY(exp = e))
+    case DAE.UNARY(exp = e)
       then
         containVectorFunctioncall(e);
     // logical binary operators, e1 is a vector call
-    case (DAE.LBINARY(exp1 = e1)) guard containVectorFunctioncall(e1)
+    case DAE.LBINARY(exp1 = e1) guard containVectorFunctioncall(e1)
       then
         true;
     // logical binary operators, e2 is a vector call
-    case (DAE.LBINARY(exp2 = e2)) guard containVectorFunctioncall(e2)
+    case DAE.LBINARY(exp2 = e2) guard containVectorFunctioncall(e2)
       then
         true;
     // logical unary operators, e is a vector call
-    case (DAE.LUNARY(exp = e))
+    case DAE.LUNARY(exp = e)
       then
         containVectorFunctioncall(e);
     // relations e1 op e2, where e1 is a vector call
-    case (DAE.RELATION(exp1 = e1)) guard containVectorFunctioncall(e1)
+    case DAE.RELATION(exp1 = e1) guard containVectorFunctioncall(e1)
       then
         true;
     // relations e1 op e2, where e2 is a vector call
-    case (DAE.RELATION(exp2 = e2)) guard containVectorFunctioncall(e2)
+    case DAE.RELATION(exp2 = e2) guard containVectorFunctioncall(e2)
       then
         true;
     // if expression where the condition is a vector call
-    case (DAE.IFEXP(expCond = e1)) guard containVectorFunctioncall(e1)
+    case DAE.IFEXP(expCond = e1) guard containVectorFunctioncall(e1)
       then
         true;
     // if expression where the then part is a vector call
-    case (DAE.IFEXP(expThen = e2)) guard containVectorFunctioncall(e2)
+    case DAE.IFEXP(expThen = e2) guard containVectorFunctioncall(e2)
       then
         true;
     // if expression where the else part is a vector call
-    case (DAE.IFEXP(expElse = e3)) guard containVectorFunctioncall(e3)
+    case DAE.IFEXP(expElse = e3) guard containVectorFunctioncall(e3)
       then
         true;
     // arrays
-    case (DAE.ARRAY(array = elst))
+    case DAE.ARRAY(array = elst)
       then
         List.any(elst, containVectorFunctioncall);
     // matrices
-    case (DAE.MATRIX(matrix = explst))
+    case DAE.MATRIX(matrix = explst)
       algorithm
         flatexplst := List.flatten(explst);
         res := List.any(flatexplst, containVectorFunctioncall);
       then
         res;
     // ranges [e1:step:e2], where e1 is a vector call
-    case (DAE.RANGE(start = e1)) guard containVectorFunctioncall(e1)
+    case DAE.RANGE(start = e1) guard containVectorFunctioncall(e1)
       then
         true;
     // ranges [e1:step:e2], where e2 is a vector call
-    case (DAE.RANGE(stop = e2)) guard containVectorFunctioncall(e2)
+    case DAE.RANGE(stop = e2) guard containVectorFunctioncall(e2)
       then
         true;
     // ranges [e1:step:e2], where step is a vector call
-    case (DAE.RANGE(step = SOME(e))) guard containVectorFunctioncall(e)
+    case DAE.RANGE(step = SOME(e)) guard containVectorFunctioncall(e)
       then
         true;
     // tuples return true all the time???!! adrpo: FIXME! TODO! is this really true?
-    case (DAE.TUPLE(PR = elst))
+    case DAE.TUPLE(PR = elst)
       then
         List.any(elst, containVectorFunctioncall);
     // cast
-    case (DAE.CAST(exp = e))
+    case DAE.CAST(exp = e)
       then
         containVectorFunctioncall(e);
     // size operator
-    case (DAE.SIZE(exp = e1)) guard containVectorFunctioncall(e1)
+    case DAE.SIZE(exp = e1) guard containVectorFunctioncall(e1)
       then
         true;
     // size operator
-    case (DAE.SIZE(sz = SOME(e2))) guard containVectorFunctioncall(e2)
+    case DAE.SIZE(sz = SOME(e2)) guard containVectorFunctioncall(e2)
       then
         true;
     // any other expressions return false
@@ -8772,90 +8727,88 @@ public function containFunctioncall
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match (inExp)
+  outBoolean := match inExp
     local
       DAE.Exp e1,e2,e,e3;
       Boolean res;
-      list<Boolean> blst;
       list<DAE.Exp> elst,flatexplst;
       list<list<DAE.Exp>> explst;
-      Option<DAE.Exp> optexp;
 
     // der(x) is not a function call
-    case (DAE.CALL(path = Absyn.IDENT(name = "der"))) then false;
+    case DAE.CALL(path = Absyn.IDENT(name = "der")) then false;
 
     // pre(x) is not a function call
-    case (DAE.CALL(path = Absyn.IDENT(name = "pre"))) then false;
+    case DAE.CALL(path = Absyn.IDENT(name = "pre")) then false;
 
-    case (DAE.CALL(path = Absyn.IDENT(name = "previous"))) then false;
+    case DAE.CALL(path = Absyn.IDENT(name = "previous")) then false;
 
     // any other call is a function call
-    case (DAE.CALL()) then true;
+    case DAE.CALL() then true;
 
     // partial evaluation functions
-    case (DAE.PARTEVALFUNCTION(expList = elst)) // stefan
+    case DAE.PARTEVALFUNCTION(expList = elst) // stefan
       algorithm
         res := List.any(elst,containFunctioncall);
       then
         res;
 
     // binary
-    case (DAE.BINARY(exp1 = e1)) guard containFunctioncall(e1)
+    case DAE.BINARY(exp1 = e1) guard containFunctioncall(e1)
       then
         true;
 
-    case (DAE.BINARY(exp2 = e2)) guard containFunctioncall(e2)
+    case DAE.BINARY(exp2 = e2) guard containFunctioncall(e2)
       then
         true;
 
     // unary
-    case (DAE.UNARY(exp = e))
+    case DAE.UNARY(exp = e)
       then
         containFunctioncall(e);
 
     // logical binary
-    case (DAE.LBINARY(exp1 = e1)) guard containFunctioncall(e1)
+    case DAE.LBINARY(exp1 = e1) guard containFunctioncall(e1)
       then
         true;
 
-    case (DAE.LBINARY(exp2 = e2)) guard containFunctioncall(e2)
+    case DAE.LBINARY(exp2 = e2) guard containFunctioncall(e2)
       then
         true;
 
     // logical unary
-    case (DAE.LUNARY(exp = e))
+    case DAE.LUNARY(exp = e)
       then
         containFunctioncall(e);
 
     // relations
-    case (DAE.RELATION(exp1 = e1)) guard containFunctioncall(e1)
+    case DAE.RELATION(exp1 = e1) guard containFunctioncall(e1)
       then
         true;
 
-    case (DAE.RELATION(exp2 = e2)) guard containFunctioncall(e2)
+    case DAE.RELATION(exp2 = e2) guard containFunctioncall(e2)
       then
         true;
 
     // if expressions
-    case (DAE.IFEXP(expCond = e1)) guard containFunctioncall(e1)
+    case DAE.IFEXP(expCond = e1) guard containFunctioncall(e1)
       then
         true;
 
-    case (DAE.IFEXP(expThen = e2)) guard containFunctioncall(e2)
+    case DAE.IFEXP(expThen = e2) guard containFunctioncall(e2)
       then
         true;
 
-    case (DAE.IFEXP(expElse = e3)) guard containFunctioncall(e3)
+    case DAE.IFEXP(expElse = e3) guard containFunctioncall(e3)
       then
         true;
 
     // arrays
-    case (DAE.ARRAY(array = elst))
+    case DAE.ARRAY(array = elst)
       then
         List.any(elst, containFunctioncall);
 
     // matrix
-    case (DAE.MATRIX(matrix = explst))
+    case DAE.MATRIX(matrix = explst)
       algorithm
         flatexplst := List.flatten(explst);
         res := List.any(flatexplst, containFunctioncall);
@@ -8863,39 +8816,39 @@ algorithm
         res;
 
     // ranges
-    case (DAE.RANGE(start = e1)) guard containFunctioncall(e1)
+    case DAE.RANGE(start = e1) guard containFunctioncall(e1)
       then
         true;
 
-    case (DAE.RANGE(stop = e2)) guard containFunctioncall(e2)
+    case DAE.RANGE(stop = e2) guard containFunctioncall(e2)
       then
         true;
 
-    case (DAE.RANGE(step = SOME(e))) guard containFunctioncall(e)
+    case DAE.RANGE(step = SOME(e)) guard containFunctioncall(e)
       then
         true;
 
     // tuples return true all the time???!! adrpo: FIXME! TODO! is this really true?
-    case (DAE.TUPLE(PR = elst))
+    case DAE.TUPLE(PR = elst)
       then
         List.any(elst, containVectorFunctioncall);
 
     // cast
-    case (DAE.CAST(exp = e))
+    case DAE.CAST(exp = e)
       then
         containFunctioncall(e);
 
     // asub
-    case (DAE.ASUB(exp = e))
+    case DAE.ASUB(exp = e)
       then
         containFunctioncall(e);
 
     // size
-    case (DAE.SIZE(exp = e1)) guard containFunctioncall(e1)
+    case DAE.SIZE(exp = e1) guard containFunctioncall(e1)
       then
         true;
 
-    case (DAE.SIZE(sz = SOME(e2))) guard containFunctioncall(e2)
+    case DAE.SIZE(sz = SOME(e2)) guard containFunctioncall(e2)
       then
         true;
 
@@ -8916,7 +8869,6 @@ algorithm
     local
       list<DAE.Exp> expl;
       Integer x1,x2;
-      Boolean b;
     case(_,{}) then true;
     case(x1, DAE.ICONST(x2)::expl) guard intEq(x1, x2)
       then
@@ -8930,9 +8882,9 @@ public function isArray "returns true if expression is an array.
   input DAE.Exp inExp;
   output Boolean outB;
 algorithm
-  outB := match(inExp)
-    case(DAE.ARRAY()) then true;
-    case(DAE.UNARY(operator=DAE.UMINUS_ARR(),exp=DAE.ARRAY())) then true;
+  outB := match inExp
+    case DAE.ARRAY() then true;
+    case DAE.UNARY(operator=DAE.UMINUS_ARR(),exp=DAE.ARRAY()) then true;
     else false;
   end match;
 end isArray;
@@ -8949,9 +8901,9 @@ public function isMatrix "returns true if expression is an matrix.
   input DAE.Exp inExp;
   output Boolean outB;
 algorithm
-  outB := match(inExp)
-    case(DAE.MATRIX()) then true;
-    case(DAE.UNARY(operator=DAE.UMINUS_ARR(),exp=DAE.MATRIX())) then true;
+  outB := match inExp
+    case DAE.MATRIX() then true;
+    case DAE.UNARY(operator=DAE.UMINUS_ARR(),exp=DAE.MATRIX()) then true;
     else false;
   end match;
 end isMatrix;
@@ -8962,7 +8914,7 @@ public function isVector
   input DAE.Exp inExp;
   output Boolean outIsVector;
 algorithm
-  outIsVector := match(inExp)
+  outIsVector := match inExp
     // Nested arrays are not vectors.
     case DAE.ARRAY(ty = DAE.T_ARRAY(ty = DAE.T_ARRAY())) then false;
     // Non-nested array with one dimension is a vector.
@@ -8976,8 +8928,8 @@ public function isUnary
   input DAE.Exp inExp;
   output Boolean outB;
 algorithm
-  outB:= match(inExp)
-    case(DAE.UNARY()) then true;
+  outB:= match inExp
+    case DAE.UNARY() then true;
     else false;
   end match;
 end isUnary;
@@ -8987,8 +8939,8 @@ public function isBinary
   input DAE.Exp inExp;
   output Boolean outB;
 algorithm
-  outB:= match(inExp)
-    case(DAE.BINARY()) then true;
+  outB:= match inExp
+    case DAE.BINARY() then true;
     else false;
   end match;
 end isBinary;
@@ -8998,8 +8950,8 @@ public function isNegativeUnary
   input DAE.Exp inExp;
   output Boolean outB;
 algorithm
-  outB:= match(inExp)
-    case(DAE.UNARY(operator=DAE.UMINUS())) then true;
+  outB:= match inExp
+    case DAE.UNARY(operator=DAE.UMINUS()) then true;
     else false;
   end match;
 end isNegativeUnary;
@@ -9010,7 +8962,7 @@ public function isCref
   input DAE.Exp inExp;
   output Boolean outIsCref;
 algorithm
-  outIsCref := match(inExp)
+  outIsCref := match inExp
     case DAE.CREF() then true;
     else false;
   end match;
@@ -9033,7 +8985,7 @@ public function isCall
   input DAE.Exp inExp;
   output Boolean outIsCall;
 algorithm
-  outIsCall := match(inExp)
+  outIsCall := match inExp
     case DAE.CALL() then true;
     else false;
   end match;
@@ -9045,7 +8997,7 @@ public function isTSUB
   input DAE.Exp inExp;
   output Boolean outIsCall;
 algorithm
-  outIsCall := match(inExp)
+  outIsCall := match inExp
     case DAE.TSUB() then true;
     else false;
   end match;
@@ -9076,11 +9028,11 @@ public function isRecordCall
   input AvlTreePathFunction.Tree funcsIn;
   output Boolean outIsCall;
 algorithm
-  outIsCall := match(inExp,funcsIn)
+  outIsCall := match inExp
     local
       Absyn.Path path;
       DAE.Function func;
-    case (DAE.CALL(path=path),_)
+    case DAE.CALL(path=path)
       algorithm
         SOME(func) := AvlTreePathFunction.get(funcsIn,path);
          then listEmpty(DAEUtil.getFunctionElements(func));
@@ -9094,7 +9046,7 @@ public function isNotCref
   input DAE.Exp inExp;
   output Boolean outIsCref;
 algorithm
-  outIsCref := match(inExp)
+  outIsCref := match inExp
     case DAE.CREF() then false;
     else true;
   end match;
@@ -9106,8 +9058,8 @@ public function isCrefArray
   input DAE.Exp inExp;
   output Boolean outIsArray;
 algorithm
-  outIsArray := match(inExp)
-    case(DAE.CREF(ty = DAE.T_ARRAY())) then true;
+  outIsArray := match inExp
+    case DAE.CREF(ty = DAE.T_ARRAY()) then true;
     else false;
   end match;
 end isCrefArray;
@@ -9117,7 +9069,7 @@ public function isCrefScalar
   input DAE.Exp inExp;
   output Boolean isScalar;
 algorithm
-  isScalar := matchcontinue(inExp)
+  isScalar := matchcontinue inExp
     local
       ComponentRef cr;
       Boolean b;
@@ -9141,7 +9093,7 @@ public function isTuple
   input DAE.Exp inExp;
   output Boolean outIsTuple;
 algorithm
-  outIsTuple := match(inExp)
+  outIsTuple := match inExp
     case DAE.TUPLE() then true;
     else false;
   end match;
@@ -9153,7 +9105,7 @@ public function isRecord
   input DAE.Exp inExp;
   output Boolean outIsRecord;
 algorithm
-  outIsRecord := match(inExp)
+  outIsRecord := match inExp
     case DAE.RECORD() then true;
     else false;
   end match;
@@ -9164,7 +9116,7 @@ public function isScalarConst
   input DAE.Exp inExp;
   output Boolean outIsScalar;
 algorithm
-  outIsScalar := match(inExp)
+  outIsScalar := match inExp
     case DAE.ICONST() then true;
     case DAE.RCONST() then true;
     case DAE.SCONST() then true;
@@ -9178,15 +9130,15 @@ public function isEven "returns true if const expression is even"
   input DAE.Exp e;
   output Boolean even;
 algorithm
-  even := match(e)
+  even := match e
     local
       Integer i;
       Real r;
       DAE.Exp exp;
 
-    case(DAE.ICONST(i)) then intMod(i,2) == 0;
-    case(DAE.RCONST(r)) then realMod(r, 2.0) == 0.0;
-    case(DAE.CAST(exp = exp)) then isEven(exp);
+    case DAE.ICONST(i) then intMod(i,2) == 0;
+    case DAE.RCONST(r) then realMod(r, 2.0) == 0.0;
+    case DAE.CAST(exp = exp) then isEven(exp);
     else false;
   end match;
 end isEven;
@@ -9195,15 +9147,15 @@ public function isOdd "returns true if const expression is odd"
   input DAE.Exp e;
   output Boolean even;
 algorithm
-  even := match(e)
+  even := match e
     local
       Integer i;
       Real r;
       DAE.Exp exp;
 
-    case(DAE.ICONST(i)) then intMod(i,2) == 1;
-    case(DAE.RCONST(r)) then realMod(r, 2.0) == 1.0;
-    case(DAE.CAST(exp = exp)) then isOdd(exp);
+    case DAE.ICONST(i) then intMod(i,2) == 1;
+    case DAE.RCONST(r) then realMod(r, 2.0) == 1.0;
+    case DAE.CAST(exp = exp) then isOdd(exp);
     else false;
   end match;
 end isOdd;
@@ -9212,7 +9164,7 @@ public function isIntegerOrReal "Returns true if Type is Integer or Real"
 input DAE.Type tp;
 output Boolean res;
 algorithm
-  res := match(tp)
+  res := match tp
     case DAE.T_REAL() then  true;
     case DAE.T_INTEGER() then true;
     else false;
@@ -9239,7 +9191,6 @@ algorithm
       Type tp1,tp2;
       Real r1,r2;
       Absyn.Path enum1, enum2;
-      ComponentRef cr1,cr2;
       list<DAE.Exp> ae1,ae2;
       list<DAE.Subscript> subs1, subs2;
 
@@ -9487,7 +9438,6 @@ algorithm
     local
       DAE.Exp e1,e2;
       list<DAE.Exp> es1,es2;
-      Boolean b;
     case ({},{}) then true;
     case (e1::es1,e2::es2) guard expStructuralEqual(e1,e2)
       then
@@ -9506,7 +9456,6 @@ algorithm
     local
       list<DAE.Exp> e1,e2;
       list<list<DAE.Exp>> es1,es2;
-      Boolean b;
     case ({},{}) then true;
     case (e1::es1,e2::es2) guard expStructuralEqualList(e1,e2)
       then
@@ -9631,8 +9580,8 @@ public function isExpCref
   input DAE.Exp e;
   output Boolean res;
 algorithm
-  res := match(e)
-    case(DAE.CREF(_,_)) then true;
+  res := match e
+    case DAE.CREF(_,_) then true;
     else false;
   end match;
 end isExpCref;
@@ -9642,9 +9591,9 @@ public function isExpCrefOrIfExp
   input DAE.Exp e;
   output Boolean res;
 algorithm
-  res := match(e)
-    case(DAE.CREF(_,_)) then true;
-    case(DAE.IFEXP(_,_,_)) then true;
+  res := match e
+    case DAE.CREF(_,_) then true;
+    case DAE.IFEXP(_,_,_) then true;
     else false;
   end match;
 end isExpCrefOrIfExp;
@@ -9654,7 +9603,7 @@ public function isExpIfExp
   input DAE.Exp e;
   output Boolean res;
 algorithm
-  res := match(e)
+  res := match e
     case DAE.IFEXP() then true;
     else false;
   end match;
@@ -9674,12 +9623,12 @@ public function arrayContainZeroDimension
   input list<DAE.Dimension> inDimensions;
   output Boolean outContainZeroDim;
 algorithm
-  outContainZeroDim := match(inDimensions)
+  outContainZeroDim := match inDimensions
     local
       list<DAE.Dimension> rest_dims;
 
-    case (DAE.DIM_INTEGER(0) :: _) then true;
-    case (_ :: rest_dims) then arrayContainZeroDimension(rest_dims);
+    case DAE.DIM_INTEGER(0) :: _ then true;
+    case _ :: rest_dims then arrayContainZeroDimension(rest_dims);
     else false;
 
   end match;
@@ -9690,11 +9639,11 @@ public function arrayContainWholeDimension
   input DAE.Dimensions inDim;
   output Boolean wholedim;
 algorithm
-  wholedim := match(inDim)
+  wholedim := match inDim
     local
       DAE.Dimensions rest_dims;
-    case (DAE.DIM_UNKNOWN() :: _) then true;
-    case (_ :: rest_dims) then arrayContainWholeDimension(rest_dims);
+    case DAE.DIM_UNKNOWN() :: _ then true;
+    case _ :: rest_dims then arrayContainWholeDimension(rest_dims);
     else false;
   end match;
 end arrayContainWholeDimension;
@@ -9715,7 +9664,7 @@ public function isRecordType
   input DAE.Type inType;
   output Boolean b;
 algorithm
-  b := match(inType)
+  b := match inType
     case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD()) then true;
     else false;
   end match;
@@ -9725,20 +9674,20 @@ public function isNotComplex "returns true if the exp is 1-dimensional"
   input DAE.Exp e;
   output Boolean b;
 algorithm
-  b := match(e)
+  b := match e
     local
       Boolean b2;
       DAE.Exp e2;
-    case(DAE.CALL())
+    case DAE.CALL()
       then
         false;
-    case(DAE.RECORD())
+    case DAE.RECORD()
       then
         false;
-    case(DAE.ARRAY())
+    case DAE.ARRAY()
       then
         false;
-    case(DAE.CAST(exp=e2))
+    case DAE.CAST(exp=e2)
       algorithm
         b2 := isNotComplex(e2);
       then b2;
@@ -9752,8 +9701,8 @@ public function isRealType
   input DAE.Type inType;
   output Boolean b;
 algorithm
-  b := match(inType)
-    case (DAE.T_REAL()) then true;
+  b := match inType
+    case DAE.T_REAL() then true;
     else false;
   end match;
 end isRealType;
@@ -9867,7 +9816,7 @@ public function dimensionKnown
   input DAE.Dimension dim;
   output Boolean known;
 algorithm
-  known := match(dim)
+  known := match dim
     case DAE.DIM_UNKNOWN() then false;
     case DAE.DIM_EXP(exp = DAE.ICONST()) then true;
     case DAE.DIM_EXP(exp = DAE.BCONST()) then true;
@@ -9882,7 +9831,7 @@ public function dimensionKnownAndNonZero
   input DAE.Dimension dim;
   output Boolean known;
 algorithm
-  known := match(dim)
+  known := match dim
     case DAE.DIM_EXP(exp = DAE.ICONST(0)) then false;
     case DAE.DIM_INTEGER(0) then false;
     else dimensionKnown(dim);
@@ -9902,7 +9851,7 @@ public function dimensionUnknownOrExp
   input DAE.Dimension dim;
   output Boolean known;
 algorithm
-  known := match(dim)
+  known := match dim
     case DAE.DIM_UNKNOWN() then true;
     case DAE.DIM_EXP() then true;
     else false;
@@ -9913,7 +9862,7 @@ public function dimensionUnknown
   input DAE.Dimension inDimension;
   output Boolean outUnknown;
 algorithm
-  outUnknown := match(inDimension)
+  outUnknown := match inDimension
     case DAE.DIM_UNKNOWN() then true;
     else false;
   end match;
@@ -9930,7 +9879,7 @@ public function subscriptConstant
   input DAE.Subscript sub;
   output Boolean b;
 algorithm
-  b := match(sub)
+  b := match sub
     case DAE.INDEX(exp = DAE.ICONST()) then true;
     case DAE.INDEX(exp = DAE.ENUM_LITERAL()) then true;
     case DAE.INDEX(exp = DAE.BCONST()) then true;
@@ -9955,7 +9904,7 @@ public function isValidSubscript
   input DAE.Exp inSub;
   output Boolean isValid;
 algorithm
-  isValid := match(inSub)
+  isValid := match inSub
     case DAE.ICONST() then true;
     case DAE.ENUM_LITERAL() then true;
     case DAE.BCONST() then true;
@@ -9973,7 +9922,6 @@ algorithm
       Boolean b;
       Subscript ss1,ss2;
       list<DAE.Subscript> ssl1,ssl2;
-      DAE.Exp e1,e2;
       Integer i;
       list<DAE.Exp> expl;
 
@@ -10022,7 +9970,6 @@ algorithm
   contained := match(inInt,inExp2)
     local
       Boolean b,b2;
-      DAE.Exp e1,e2;
       list<DAE.Exp> expl,expl2;
       Integer i,j;
       case(i,( (DAE.ICONST(j)) :: _)) guard (i == j)
@@ -10048,11 +9995,10 @@ public function hasNoSideEffects
   output DAE.Exp outExp;
   output Boolean ob;
 algorithm
-  (outExp,ob) := match (inExp,ib)
+  (outExp,ob) := match inExp
     local
-      DAE.Exp e;
-    case (DAE.CALL(),_) then (inExp,false);
-    case (DAE.MATCHEXPRESSION(),_) then (inExp,false);
+    case DAE.CALL() then (inExp,false);
+    case DAE.MATCHEXPRESSION() then (inExp,false);
     else (inExp,ib);
   end match;
 end hasNoSideEffects;
@@ -10133,7 +10079,7 @@ protected function traverseReductionIteratorBidir<ArgT>
     output ArgT outArg;
   end FuncType;
 algorithm
-  (outIter, outArg) := match(inIter)
+  (outIter, outArg) := match inIter
     local
       String id;
       DAE.Exp exp;
@@ -10168,14 +10114,14 @@ protected function traverseReductionIteratorTopDown
 
   replaceable type Type_a subtypeof Any;
 algorithm
-  (outIter,outArg) := match (iter,func,inArg)
+  (outIter,outArg) := match (iter, inArg)
     local
       String id;
       DAE.Exp exp;
       Option<DAE.Exp> gexp;
       DAE.Type ty;
       Type_a arg;
-    case (DAE.REDUCTIONITER(id,exp,gexp,ty),_,arg)
+    case (DAE.REDUCTIONITER(id,exp,gexp,ty), arg)
       algorithm
         (exp, arg) := traverseExpTopDown(exp, func, arg);
         (gexp, arg) := traverseExpOptTopDown(gexp, func, arg);
@@ -10200,14 +10146,14 @@ protected function traverseReductionIteratorsTopDown
 
   replaceable type Type_a subtypeof Any;
 algorithm
-  (outIters,outArg) := match (inIters,func,inArg)
+  (outIters,outArg) := match (inIters, inArg)
     local
       Type_a arg;
       DAE.ReductionIterator iter;
       DAE.ReductionIterators iters;
 
-    case ({},_,arg) then (inIters,arg);
-    case (iter::iters,_,arg)
+    case ({}, arg) then (inIters,arg);
+    case (iter::iters, arg)
       algorithm
         (iter, arg) := traverseReductionIteratorTopDown(iter, func, arg);
         (iters, arg) := traverseReductionIteratorsTopDown(iters, func, arg);
@@ -10230,7 +10176,7 @@ protected function traverseReductionIterator
   end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (outIter,outArg) := match (iter,func,iarg)
+  (outIter,outArg) := match (iter, iarg)
     local
       String id;
       DAE.Exp exp,exp1;
@@ -10238,7 +10184,7 @@ algorithm
       DAE.Type ty;
       Type_a arg;
 
-    case (DAE.REDUCTIONITER(id,exp,gexp,ty),_,arg)
+    case (DAE.REDUCTIONITER(id,exp,gexp,ty), arg)
       algorithm
         (exp1, arg) := traverseExpBottomUp(exp, func, arg);
         (gexp1, arg) := traverseExpOpt(gexp, func, arg);
@@ -10458,9 +10404,9 @@ protected function complexityBuiltin
   input DAE.Type tp;
   output Integer complexity;
 algorithm
-  complexity := match (name,tp)
-    case ("identity",_) then complexityAlloc+tpComplexity(tp);
-    case ("cross",_) then 3*3;
+  complexity := match name
+    case "identity" then complexityAlloc+tpComplexity(tp);
+    case "cross" then 3*3;
     else 25;
   end match;
 end complexityBuiltin;
@@ -10549,7 +10495,6 @@ public function makeEnumLiterals
   output list<DAE.Exp> outLiterals;
 protected
   list<Absyn.Path> enum_lit_names;
-  list<DAE.Exp> enum_lit_expl;
 algorithm
   enum_lit_names := List.map1r(inLiterals, AbsynUtil.suffixPath, inTypeName);
   (outLiterals, _) := List.mapFold(enum_lit_names, makeEnumLiteral, 1);
@@ -10591,7 +10536,7 @@ public function dimensionsToExps "Takes a list of dimensions and select the expr
   output list<DAE.Exp> exps = {};
 algorithm
   for d in dims loop
-    exps := match (d)
+    exps := match d
       local
         DAE.Exp exp;
       case DAE.DIM_EXP(exp) then exp::exps;
@@ -10648,7 +10593,7 @@ public function splitArray
   output list<DAE.Exp> outExp;
   output Boolean didSplit;
 algorithm
-  (outExp,didSplit) := match(inExp)
+  (outExp,didSplit) := match inExp
     local
       list<DAE.Exp> expl;
       list<list<DAE.Exp>> mat;
@@ -10697,7 +10642,7 @@ public function promoteExp
   output DAE.Exp outExp;
   output DAE.Type outType;
 algorithm
-  (outExp, outType) := matchcontinue(inExp, inType, inDims)
+  (outExp, outType) := matchcontinue inDims
     local
       Integer dims_to_add;
       DAE.Type ty, res_ty;
@@ -10706,7 +10651,7 @@ algorithm
       list<DAE.Dimension> dims, added_dims;
       Boolean is_array_ty;
 
-    case (_, _, _)
+    case _
       algorithm
         // Figure out how many dimensions we need to add.
         dims_to_add := inDims - Types.numberOfDimensions(inType);
@@ -10752,18 +10697,18 @@ protected function makePromotedTypes
   input list<DAE.Type> inAccumTypes;
   output list<DAE.Type> outAccumTypes;
 algorithm
-  outAccumTypes := match(inDimensions, inElementType, inAccumTypes)
+  outAccumTypes := match inDimensions
     local
       list<DAE.Dimension> rest_dims;
       DAE.Type ty;
 
-    case (_ :: rest_dims, _, _)
+    case _ :: rest_dims
       algorithm
         ty := DAE.T_ARRAY(inElementType, inDimensions);
       then
         makePromotedTypes(rest_dims, inElementType, ty :: inAccumTypes);
 
-    case ({}, _, _) then listReverse(inAccumTypes);
+    case {} then listReverse(inAccumTypes);
 
   end match;
 end makePromotedTypes;
@@ -10776,17 +10721,17 @@ protected function promoteExp2
   input list<DAE.Type> inTypes;
   output DAE.Exp outExp;
 algorithm
-  outExp := match(inExp, inIsArray, inDims, inTypes)
+  outExp := match(inExp, inIsArray, inTypes)
     local
       DAE.Type ty;
       list<DAE.Exp> expl;
       list<DAE.Type> rest_ty;
 
     // No types left, we're done!
-    case (_, _, _, {}) then inExp;
+    case (_, _, {}) then inExp;
 
     // An array, promote each element in the array.
-    case (DAE.ARRAY(_, _, expl), _, _, ty :: rest_ty)
+    case (DAE.ARRAY(_, _, expl), _, ty :: rest_ty)
       algorithm
         expl := List.map3(expl, promoteExp2, false, inDims, rest_ty);
       then
@@ -10794,7 +10739,7 @@ algorithm
 
     // An expression with array type, but which is not an array expression. Such
     // an expression can't be promoted here, so we create a promote call instead.
-    case (_, true, _, ty :: _)
+    case (_, true, ty :: _)
       then makePureBuiltinCall("promote", {inExp, DAE.ICONST(inDims)}, ty);
 
     // Any other expression, call promoteExp3.
@@ -10810,21 +10755,21 @@ protected function promoteExp3
   input list<DAE.Type> inTypes;
   output DAE.Exp outExp;
 algorithm
-  outExp := match(inExp, inTypes)
+  outExp := match inTypes
     local
       DAE.Type ty;
       list<DAE.Type> rest_ty;
       DAE.Exp exp;
 
     // No types left, were' done!
-    case (_, {}) then inExp;
+    case {} then inExp;
 
     // Only one type left, create a scalar array with it.
-    case (_, {ty}) then makeArray({inExp}, ty, true);
+    case {ty} then makeArray({inExp}, ty, true);
 
     // Several types left. Promote the expression using the rest of the types,
     // and then create an non-scalar array of the expression with the first type.
-    case (_, ty :: rest_ty)
+    case ty :: rest_ty
       algorithm
         exp := promoteExp3(inExp, rest_ty);
       then
@@ -10837,7 +10782,7 @@ public function hashExp "help function to hashExpMod"
   input DAE.Exp e;
   output Integer hash;
 algorithm
- hash := matchcontinue(e)
+ hash := matchcontinue e
    local
     Real r;
     Integer i;
@@ -10853,35 +10798,35 @@ algorithm
     DAE.ReductionInfo info;
     list<DAE.Subscript> subs;
 
- case(DAE.ICONST(i))                                then stringHashDjb2(intString(i));
- case(DAE.RCONST(r))                                then stringHashDjb2(realString(r));
- case(DAE.BCONST(b))                                then stringHashDjb2(boolString(b));
- case(DAE.SCONST(s))                                then stringHashDjb2(s);
- case(DAE.ENUM_LITERAL(name=path))                  then stringHashDjb2(AbsynUtil.pathString(path));
- case(DAE.CREF(componentRef=cr))                    then ComponentReference.hashComponentRef(cr);
+ case DAE.ICONST(i)                                then stringHashDjb2(intString(i));
+ case DAE.RCONST(r)                                then stringHashDjb2(realString(r));
+ case DAE.BCONST(b)                                then stringHashDjb2(boolString(b));
+ case DAE.SCONST(s)                                then stringHashDjb2(s);
+ case DAE.ENUM_LITERAL(name=path)                  then stringHashDjb2(AbsynUtil.pathString(path));
+ case DAE.CREF(componentRef=cr)                    then ComponentReference.hashComponentRef(cr);
 
- case(DAE.BINARY(e1,op,e2))                         then 1 + hashExp(e1)+hashOp(op)+hashExp(e2);
- case(DAE.UNARY(op,e1))                             then 2 + hashOp(op)+hashExp(e1);
- case(DAE.LBINARY(e1,op,e2))                        then 3 + hashExp(e1)+hashOp(op)+hashExp(e2);
- case(DAE.LUNARY(op,e1))                            then 4 + hashOp(op)+hashExp(e1);
- case(DAE.RELATION(e1,op,e2,_,_))                   then 5 + hashExp(e1)+hashOp(op)+hashExp(e2);
- case(DAE.IFEXP(e1,e2,e3))                          then 6 + hashExp(e1)+hashExp(e2)+hashExp(e3);
- case(DAE.CALL(path=path,expLst=expl))              then 7 + stringHashDjb2(AbsynUtil.pathString(path))+List.reduce(List.map(expl,hashExp),intAdd);
- case(DAE.RECORD(path=path,exps=expl))            then 8 + stringHashDjb2(AbsynUtil.pathString(path))+List.reduce(List.map(expl,hashExp),intAdd);
- case(DAE.PARTEVALFUNCTION(path=path,expList=expl)) then 9 + stringHashDjb2(AbsynUtil.pathString(path))+List.reduce(List.map(expl,hashExp),intAdd);
- case(DAE.ARRAY(array=expl))                        then 10 + List.reduce(List.map(expl,hashExp),intAdd);
- case(DAE.MATRIX(matrix=mexpl))                     then 11 + List.reduce(List.map(List.flatten(mexpl),hashExp),intAdd);
- case(DAE.RANGE(_,e1,SOME(e2),e3))                  then 12 + hashExp(e1)+hashExp(e2)+hashExp(e3);
- case(DAE.RANGE(_,e1,NONE(),e3))                    then 13 + hashExp(e1)+hashExp(e3);
- case(DAE.TUPLE(expl))                              then 14 + List.reduce(List.map(expl,hashExp),intAdd);
- case(DAE.CAST(_,e1))                               then 15 + hashExp(e1);
- case(DAE.ASUB(e1,subs))                            then 16 + hashExp(e1)+List.reduce(list(hashExp(Expression.getSubscriptExp(sub)) for sub in subs),intAdd);
- case(DAE.TSUB(e1,i,_))                             then 17 + hashExp(e1)+stringHashDjb2(intString(i));
- case(DAE.SIZE(e1,SOME(e2)))                        then 18 + hashExp(e1)+hashExp(e2);
- case(DAE.SIZE(e1,NONE()))                          then 19 + hashExp(e1);
+ case DAE.BINARY(e1,op,e2)                         then 1 + hashExp(e1)+hashOp(op)+hashExp(e2);
+ case DAE.UNARY(op,e1)                             then 2 + hashOp(op)+hashExp(e1);
+ case DAE.LBINARY(e1,op,e2)                        then 3 + hashExp(e1)+hashOp(op)+hashExp(e2);
+ case DAE.LUNARY(op,e1)                            then 4 + hashOp(op)+hashExp(e1);
+ case DAE.RELATION(e1,op,e2,_,_)                   then 5 + hashExp(e1)+hashOp(op)+hashExp(e2);
+ case DAE.IFEXP(e1,e2,e3)                          then 6 + hashExp(e1)+hashExp(e2)+hashExp(e3);
+ case DAE.CALL(path=path,expLst=expl)              then 7 + stringHashDjb2(AbsynUtil.pathString(path))+List.reduce(List.map(expl,hashExp),intAdd);
+ case DAE.RECORD(path=path,exps=expl)            then 8 + stringHashDjb2(AbsynUtil.pathString(path))+List.reduce(List.map(expl,hashExp),intAdd);
+ case DAE.PARTEVALFUNCTION(path=path,expList=expl) then 9 + stringHashDjb2(AbsynUtil.pathString(path))+List.reduce(List.map(expl,hashExp),intAdd);
+ case DAE.ARRAY(array=expl)                        then 10 + List.reduce(List.map(expl,hashExp),intAdd);
+ case DAE.MATRIX(matrix=mexpl)                     then 11 + List.reduce(List.map(List.flatten(mexpl),hashExp),intAdd);
+ case DAE.RANGE(_,e1,SOME(e2),e3)                  then 12 + hashExp(e1)+hashExp(e2)+hashExp(e3);
+ case DAE.RANGE(_,e1,NONE(),e3)                    then 13 + hashExp(e1)+hashExp(e3);
+ case DAE.TUPLE(expl)                              then 14 + List.reduce(List.map(expl,hashExp),intAdd);
+ case DAE.CAST(_,e1)                               then 15 + hashExp(e1);
+ case DAE.ASUB(e1,subs)                            then 16 + hashExp(e1)+List.reduce(list(hashExp(Expression.getSubscriptExp(sub)) for sub in subs),intAdd);
+ case DAE.TSUB(e1,i,_)                             then 17 + hashExp(e1)+stringHashDjb2(intString(i));
+ case DAE.SIZE(e1,SOME(e2))                        then 18 + hashExp(e1)+hashExp(e2);
+ case DAE.SIZE(e1,NONE())                          then 19 + hashExp(e1);
  // case(DAE.CODE(_,_))                             then 20; // TODO: implement hashing of CODE AST
  // case(DAE.EMPTY(scope=_))                        then 21; // TODO: implement hashing of EMTPY (needed ?)
- case(DAE.REDUCTION(info,e1,iters))                 then 22 + hashReductionInfo(info)+hashExp(e1)+List.reduce(List.map(iters,hashReductionIter),intAdd);
+ case DAE.REDUCTION(info,e1,iters)                 then 22 + hashReductionInfo(info)+hashExp(e1)+List.reduce(List.map(iters,hashReductionIter),intAdd);
  // TODO: hashing of all MetaModelica extensions
  else stringHashDjb2(ExpressionBasics.printExpStr(e));
  end matchcontinue;
@@ -10892,12 +10837,12 @@ protected function hashReductionInfo "help function to hashExp"
   input DAE.ReductionInfo info;
   output Integer hash;
 algorithm
-  hash := match(info)
+  hash := match info
   local
     Absyn.Path path;
 
     // TODO: complete hasing of all subexpressions
-    case (DAE.REDUCTIONINFO(path=path)) then 22 + stringHashDjb2(AbsynUtil.pathString(path));
+    case DAE.REDUCTIONINFO(path=path) then 22 + stringHashDjb2(AbsynUtil.pathString(path));
   end match;
 end hashReductionInfo;
 
@@ -10905,14 +10850,14 @@ protected protected function hashReductionIter "help function to hashExp"
   input DAE.ReductionIterator iter;
   output Integer hash;
 algorithm
-  hash := match(iter)
+  hash := match iter
   local
     String id;
     DAE.Exp e1,e2;
 
 
-    case(DAE.REDUCTIONITER(id,e1,SOME(e2),_))       then 23 + stringHashDjb2(id)+hashExp(e1)+hashExp(e2);
-    case(DAE.REDUCTIONITER(id,e1,NONE(),_))         then 24 + stringHashDjb2(id)+hashExp(e1);
+    case DAE.REDUCTIONITER(id,e1,SOME(e2),_)       then 23 + stringHashDjb2(id)+hashExp(e1)+hashExp(e2);
+    case DAE.REDUCTIONITER(id,e1,NONE(),_)         then 24 + stringHashDjb2(id)+hashExp(e1);
   end match;
 
 end hashReductionIter;
@@ -10920,42 +10865,42 @@ protected protected function hashOp "help function to hashExp"
   input DAE.Operator op;
   output Integer hash;
 algorithm
-  hash := match(op)
+  hash := match op
     local
       Absyn.Path path;
 
-    case(DAE.ADD(_))                                    then 25;
-    case(DAE.SUB(_))                                    then 26;
-    case(DAE.MUL(_))                                    then 27;
-    case(DAE.DIV(_))                                    then 28;
-    case(DAE.POW(_))                                    then 29;
-    case(DAE.UMINUS(_))                                 then 30;
-    case(DAE.UMINUS_ARR(_))                             then 31;
-    case(DAE.ADD_ARR(_))                                then 32;
-    case(DAE.SUB_ARR(_))                                then 33;
-    case(DAE.MUL_ARR(_))                                then 34;
-    case(DAE.DIV_ARR(_))                                then 35;
-    case(DAE.MUL_ARRAY_SCALAR(_))                       then 36;
-    case(DAE.ADD_ARRAY_SCALAR(_))                       then 37;
-    case(DAE.SUB_SCALAR_ARRAY(_))                       then 38;
-    case(DAE.MUL_SCALAR_PRODUCT(_))                     then 39;
-    case(DAE.MUL_MATRIX_PRODUCT(_))                     then 40;
-    case(DAE.DIV_ARRAY_SCALAR(_))                       then 41;
-    case(DAE.DIV_SCALAR_ARRAY(_))                       then 42;
-    case(DAE.POW_ARRAY_SCALAR(_))                       then 43;
-    case(DAE.POW_SCALAR_ARRAY(_))                       then 44;
-    case(DAE.POW_ARR(_))                                then 45;
-    case(DAE.POW_ARR2(_))                               then 46;
-    case(DAE.AND(_))                                    then 47;
-    case(DAE.OR(_))                                     then 48;
-    case(DAE.NOT(_))                                    then 49;
-    case(DAE.LESS(_))                                   then 50;
-    case(DAE.LESSEQ(_))                                 then 51;
-    case(DAE.GREATER(_))                                then 52;
-    case(DAE.GREATEREQ(_))                              then 53;
-    case(DAE.EQUAL(_))                                  then 54;
-    case(DAE.NEQUAL(_))                                 then 55;
-    case(DAE.USERDEFINED(path))                         then 56 + stringHashDjb2(AbsynUtil.pathString(path)) ;
+    case DAE.ADD(_)                                    then 25;
+    case DAE.SUB(_)                                    then 26;
+    case DAE.MUL(_)                                    then 27;
+    case DAE.DIV(_)                                    then 28;
+    case DAE.POW(_)                                    then 29;
+    case DAE.UMINUS(_)                                 then 30;
+    case DAE.UMINUS_ARR(_)                             then 31;
+    case DAE.ADD_ARR(_)                                then 32;
+    case DAE.SUB_ARR(_)                                then 33;
+    case DAE.MUL_ARR(_)                                then 34;
+    case DAE.DIV_ARR(_)                                then 35;
+    case DAE.MUL_ARRAY_SCALAR(_)                       then 36;
+    case DAE.ADD_ARRAY_SCALAR(_)                       then 37;
+    case DAE.SUB_SCALAR_ARRAY(_)                       then 38;
+    case DAE.MUL_SCALAR_PRODUCT(_)                     then 39;
+    case DAE.MUL_MATRIX_PRODUCT(_)                     then 40;
+    case DAE.DIV_ARRAY_SCALAR(_)                       then 41;
+    case DAE.DIV_SCALAR_ARRAY(_)                       then 42;
+    case DAE.POW_ARRAY_SCALAR(_)                       then 43;
+    case DAE.POW_SCALAR_ARRAY(_)                       then 44;
+    case DAE.POW_ARR(_)                                then 45;
+    case DAE.POW_ARR2(_)                               then 46;
+    case DAE.AND(_)                                    then 47;
+    case DAE.OR(_)                                     then 48;
+    case DAE.NOT(_)                                    then 49;
+    case DAE.LESS(_)                                   then 50;
+    case DAE.LESSEQ(_)                                 then 51;
+    case DAE.GREATER(_)                                then 52;
+    case DAE.GREATEREQ(_)                              then 53;
+    case DAE.EQUAL(_)                                  then 54;
+    case DAE.NEQUAL(_)                                 then 55;
+    case DAE.USERDEFINED(path)                         then 56 + stringHashDjb2(AbsynUtil.pathString(path)) ;
     end match;
 end hashOp;
 
@@ -10963,7 +10908,7 @@ public function matrixToArray
   input DAE.Exp inMatrix;
   output DAE.Exp outArray;
 algorithm
-  outArray := match(inMatrix)
+  outArray := match inMatrix
     local
       DAE.Type ty, row_ty;
       list<list<Exp>> matrix;
@@ -10986,7 +10931,7 @@ public function transposeArray
   output DAE.Exp outArray;
   output Boolean outWasTransposed;
 algorithm
-  (outArray, outWasTransposed) := match(inArray)
+  (outArray, outWasTransposed) := match inArray
     local
       DAE.Type ty, row_ty;
       DAE.Dimension dim1, dim2;
@@ -11037,7 +10982,7 @@ public function arrayElements
   input DAE.Exp inExp;
   output list<DAE.Exp> outExp;
 algorithm
-  outExp := match(inExp)
+  outExp := match inExp
     local
       list<DAE.Exp> expl;
       DAE.ComponentRef cr;
@@ -11077,7 +11022,7 @@ public function fromAbsynExp
   input Absyn.Exp inAExp;
   output DAE.Exp outDExp;
 algorithm
-  outDExp := match(inAExp)
+  outDExp := match inAExp
     local
       Integer i;
       Real r;
@@ -11098,22 +11043,22 @@ algorithm
       list<list<DAE.Exp>> expslst;
       Option<DAE.Exp> oe;
 
-    case (Absyn.INTEGER(i)) then DAE.ICONST(i);
-    case (Absyn.REAL(s))
+    case Absyn.INTEGER(i) then DAE.ICONST(i);
+    case Absyn.REAL(s)
       algorithm
         r := stringReal(s);
       then DAE.RCONST(r);
-    case (Absyn.BOOL(b)) then DAE.BCONST(b);
-    case (Absyn.STRING(s)) then DAE.SCONST(s);
+    case Absyn.BOOL(b) then DAE.BCONST(b);
+    case Absyn.STRING(s) then DAE.SCONST(s);
 
-    case (Absyn.CREF(acr))
+    case Absyn.CREF(acr)
       algorithm
         cr := ComponentReference.toExpCref(acr);
         e := makeCrefExp(cr, DAE.T_UNKNOWN_DEFAULT);
       then
         e;
 
-    case (Absyn.BINARY(ae1, aop, ae2))
+    case Absyn.BINARY(ae1, aop, ae2)
       algorithm
         op := fromAbsynOperator(aop, DAE.T_UNKNOWN_DEFAULT);
         e1 := fromAbsynExp(ae1);
@@ -11122,7 +11067,7 @@ algorithm
       then
         e;
 
-    case (Absyn.UNARY(aop, ae))
+    case Absyn.UNARY(aop, ae)
       algorithm
         op := fromAbsynOperator(aop, DAE.T_UNKNOWN_DEFAULT);
         e := fromAbsynExp(ae);
@@ -11130,7 +11075,7 @@ algorithm
       then
         e;
 
-    case (Absyn.LBINARY(ae1, aop, ae2))
+    case Absyn.LBINARY(ae1, aop, ae2)
       algorithm
         op := fromAbsynOperator(aop, DAE.T_UNKNOWN_DEFAULT);
         e1 := fromAbsynExp(ae1);
@@ -11139,7 +11084,7 @@ algorithm
       then
         e;
 
-    case (Absyn.LUNARY(aop, ae))
+    case Absyn.LUNARY(aop, ae)
       algorithm
         op := fromAbsynOperator(aop, DAE.T_UNKNOWN_DEFAULT);
         e := fromAbsynExp(ae);
@@ -11147,7 +11092,7 @@ algorithm
       then
         e;
 
-    case (Absyn.RELATION(ae1, aop, ae2))
+    case Absyn.RELATION(ae1, aop, ae2)
       algorithm
         op := fromAbsynOperator(aop, DAE.T_UNKNOWN_DEFAULT);
         e1 := fromAbsynExp(ae1);
@@ -11156,7 +11101,7 @@ algorithm
       then
         e;
 
-    case (ae as Absyn.IFEXP())
+    case ae as Absyn.IFEXP()
       algorithm
         Absyn.IFEXP(ifExp = cond, trueBranch = ae1, elseBranch = ae2) := AbsynUtil.canonIfExp(ae);
         e := fromAbsynExp(cond);
@@ -11166,7 +11111,7 @@ algorithm
       then
         e;
 
-    case (Absyn.CALL(acr, fargs))
+    case Absyn.CALL(acr, fargs)
       algorithm
         exps := fargsToExps(fargs);
         p := AbsynUtil.crefToPath(acr);
@@ -11174,7 +11119,7 @@ algorithm
       then
         e;
 
-    case (Absyn.PARTEVALFUNCTION(acr, fargs))
+    case Absyn.PARTEVALFUNCTION(acr, fargs)
       algorithm
         exps := fargsToExps(fargs);
         p := AbsynUtil.crefToPath(acr);
@@ -11182,14 +11127,14 @@ algorithm
       then
         e;
 
-    case (Absyn.ARRAY(aexps))
+    case Absyn.ARRAY(aexps)
       algorithm
         exps := List.map(aexps, fromAbsynExp);
         e := DAE.ARRAY(DAE.T_UNKNOWN_DEFAULT, false, exps);
       then
         e;
 
-    case (Absyn.MATRIX(aexpslst))
+    case Absyn.MATRIX(aexpslst)
       algorithm
         expslst := List.mapList(aexpslst, fromAbsynExp);
         i := listLength(listHead(expslst));
@@ -11197,7 +11142,7 @@ algorithm
       then
         e;
 
-    case (Absyn.RANGE(ae1, aoe, ae2))
+    case Absyn.RANGE(ae1, aoe, ae2)
       algorithm
         e1 := fromAbsynExp(ae1);
         e2 := fromAbsynExp(ae2);
@@ -11206,7 +11151,7 @@ algorithm
       then
         e;
 
-    case (Absyn.TUPLE(aexps))
+    case Absyn.TUPLE(aexps)
       algorithm
         exps := List.map(aexps, fromAbsynExp);
         e := DAE.TUPLE(exps);
@@ -11226,19 +11171,18 @@ public function fargsToExps
   input Absyn.FunctionArgs inFargs;
   output list<DAE.Exp> outExps;
 algorithm
-  outExps := matchcontinue(inFargs)
+  outExps := matchcontinue inFargs
     local
       list<DAE.Exp> exps;
-      list<Absyn.NamedArg> nargs;
       list<Absyn.Exp> aexps;
 
-    case (Absyn.FUNCTIONARGS(aexps, {}))
+    case Absyn.FUNCTIONARGS(aexps, {})
       algorithm
         exps := List.map(aexps, fromAbsynExp);
       then
         exps;
 
-    case (Absyn.FUNCTIONARGS(_, _))
+    case Absyn.FUNCTIONARGS(_, _)
       algorithm
         print("Expression.fargsToExps: Named arguments are not handled!\n");
       then
@@ -11251,14 +11195,14 @@ protected function fromAbsynExpOpt
   input Option<Absyn.Exp> aoe;
   output Option<DAE.Exp> oe;
 algorithm
-  oe := match(aoe)
+  oe := match aoe
     local
       Absyn.Exp ae;
       DAE.Exp e;
 
-    case (NONE()) then NONE();
+    case NONE() then NONE();
 
-    case (SOME(ae))
+    case SOME(ae)
       algorithm
         e := fromAbsynExp(ae);
       then
@@ -11273,22 +11217,22 @@ protected function fromAbsynOperator
  input DAE.Type ty;
  output DAE.Operator op;
 algorithm
-  op := match(aop, ty)
-    case(Absyn.ADD(), _) then DAE.ADD(ty);
-    case(Absyn.SUB(), _) then DAE.SUB(ty);
-    case(Absyn.MUL(), _) then DAE.MUL(ty);
-    case(Absyn.DIV(), _) then DAE.DIV(ty);
-    case(Absyn.POW(), _) then DAE.POW(ty);
-    case(Absyn.UMINUS(), _) then DAE.UMINUS(ty);
-    case(Absyn.AND(), _) then DAE.AND(ty);
-    case(Absyn.OR(), _) then DAE.OR(ty);
-    case(Absyn.NOT(), _) then DAE.NOT(ty);
-    case(Absyn.LESS(), _) then DAE.LESS(ty);
-    case(Absyn.LESSEQ(), _) then DAE.LESSEQ(ty);
-    case(Absyn.GREATER(), _) then DAE.GREATER(ty);
-    case(Absyn.GREATEREQ(), _) then DAE.GREATEREQ(ty);
-    case(Absyn.EQUAL(), _) then DAE.EQUAL(ty);
-    case(Absyn.NEQUAL(), _) then DAE.NEQUAL(ty);
+  op := match aop
+    case Absyn.ADD() then DAE.ADD(ty);
+    case Absyn.SUB() then DAE.SUB(ty);
+    case Absyn.MUL() then DAE.MUL(ty);
+    case Absyn.DIV() then DAE.DIV(ty);
+    case Absyn.POW() then DAE.POW(ty);
+    case Absyn.UMINUS() then DAE.UMINUS(ty);
+    case Absyn.AND() then DAE.AND(ty);
+    case Absyn.OR() then DAE.OR(ty);
+    case Absyn.NOT() then DAE.NOT(ty);
+    case Absyn.LESS() then DAE.LESS(ty);
+    case Absyn.LESSEQ() then DAE.LESSEQ(ty);
+    case Absyn.GREATER() then DAE.GREATER(ty);
+    case Absyn.GREATEREQ() then DAE.GREATEREQ(ty);
+    case Absyn.EQUAL() then DAE.EQUAL(ty);
+    case Absyn.NEQUAL() then DAE.NEQUAL(ty);
     else
     algorithm
       print("Expression.fromAbsynOperator: Unhandled operator: " + Dump.opSymbol(aop) + "\n");
@@ -11367,7 +11311,7 @@ public function checkExpDimensionSizes
   input DAE.Exp dim;
   output Boolean value;
 algorithm
-  value := match(dim)
+  value := match dim
     case DAE.ICONST() then dim.integer > 0;
     else
      false;
@@ -11380,7 +11324,7 @@ public function checkDimensionSizes
   input DAE.Dimension  dim;
   output Boolean value;
 algorithm
-  value := match(dim)
+  value := match dim
     case DAE.DIM_INTEGER() then true;
     case DAE.DIM_ENUM() then true;
     case DAE.DIM_BOOLEAN() then true;
@@ -11396,8 +11340,8 @@ public function dimensionsList
 protected
   list<Integer> dims;
 algorithm
-  outValues := matchcontinue(inDims)
-    case (_)
+  outValues := matchcontinue inDims
+    case _
       algorithm
         true := List.all(inDims, checkDimensionSizes);
         dims := List.map(inDims, dimensionSizeAll);
@@ -11433,8 +11377,8 @@ public function expDimensionsList
 protected
   list<Integer> dims;
 algorithm
-  outValues := matchcontinue(inDims)
-    case (_)
+  outValues := matchcontinue inDims
+    case _
       algorithm
         true := List.all(inDims, checkExpDimensionSizes);
         dims := List.map(inDims, expInt);
@@ -11451,13 +11395,12 @@ public function isCrefListWithEqualIdents
   output Boolean oCrefWithEqualIdents;
 protected
   Boolean tmpCrefWithEqualIdents;
-  list<Boolean> boolHelperList;
   list<DAE.ComponentRef> crefs;
   DAE.Exp head;
   DAE.ComponentRef headCref;
 algorithm
-  oCrefWithEqualIdents := matchcontinue(iExpressions)
-    case(head::_)
+  oCrefWithEqualIdents := matchcontinue iExpressions
+    case head::_
       algorithm
         //print("isCrefListWithEqualIdents: \n" + stringDelimitList(List.map1(iExpressions, ExpressionDump.dumpExpStr, 1), ""));
         true := List.all(iExpressions, isCref);
@@ -11467,7 +11410,7 @@ algorithm
         tmpCrefWithEqualIdents := List.all(crefs, function ComponentReferenceBasics.crefEqualWithoutLastSubs(cr2 = headCref));
         //print("isCrefListWithEqualIdents: returns " + boolString(tmpCrefWithEqualIdents) + "\n\n");
       then tmpCrefWithEqualIdents;
-    case({})
+    case {}
       then true;
     else
       algorithm
@@ -11522,7 +11465,7 @@ public function expandCrefs
 algorithm
   outExp := match inExp
     local
-      DAE.Type elem_ty, arr_ty;
+      DAE.Type arr_ty;
       list<DAE.Exp> exp_lst;
       DAE.Exp exp;
     case DAE.CREF(ty=arr_ty as DAE.T_ARRAY()) algorithm
@@ -11547,7 +11490,7 @@ public function expandExpression
   input Boolean expandRecord;
   output list<DAE.Exp> outExps;
 algorithm
-  (outExps) := match (inExp)
+  outExps := match inExp
     local
       DAE.ComponentRef cr;
       list<DAE.ComponentRef> crlst;
@@ -11556,18 +11499,18 @@ algorithm
       DAE.Exp e1, e2;
       DAE.Operator op;
 
-    case (DAE.CREF(cr,_))
+    case DAE.CREF(cr,_)
       algorithm
         crlst := ComponentReference.expandCref(cr, expandRecord);
         outExps := List.map(crlst, crefToExp);
       then outExps;
 
-    case (DAE.UNARY(operator=DAE.UMINUS()))
+    case DAE.UNARY(operator=DAE.UMINUS())
       algorithm
         expl := list(DAE.UNARY(inExp.operator, exp) for exp in expandExpression(inExp.exp, expandRecord));
       then expl;
 
-    case (DAE.BINARY())
+    case DAE.BINARY()
       algorithm
         // TODO! FIXME! we should change the type in the operator,
         // i.e. use Types.unliftArray on the type inside the operator
@@ -11611,12 +11554,12 @@ public function extendArrExp "author: Frenkel TUD 2010-07
   output DAE.Exp outExp;
   output Boolean outExpanded;
 algorithm
-  (outExp, outExpanded) := matchcontinue (inExp, inExpanded)
+  (outExp, outExpanded) := matchcontinue inExp
     local
       DAE.Exp exp;
       Boolean b;
 
-    case (outExp, _)
+    case outExp
       algorithm
         (exp, b) := traverseExpBottomUp(inExp, traversingextendArrExp, false);
       then
@@ -11636,7 +11579,7 @@ protected function traversingextendArrExp "author: Frenkel TUD 2010-07.
   output DAE.Exp outExp;
   output Boolean outExpanded;
 algorithm
-  (outExp, outExpanded) := match(inExp)
+  (outExp, outExpanded) := match inExp
     local
       DAE.ComponentRef cr;
       DAE.Type ty;
@@ -11762,7 +11705,7 @@ public function expandDimension
   input DAE.Dimension inDimension;
   output list<DAE.Subscript> outSubscript;
 algorithm
-  outSubscript := match(inDimension)
+  outSubscript := match inDimension
     local
       Integer dim_int;
       Absyn.Path enum_ty;
@@ -11793,10 +11736,9 @@ public function expandSliceExp
   input DAE.Exp inSliceExp;
   output list<DAE.Subscript> outSubscripts;
 algorithm
-  outSubscripts := match(inSliceExp)
+  outSubscripts := match inSliceExp
     local
       list<DAE.Exp> expl;
-      String exp_str, err_str;
 
     case DAE.ARRAY(array = expl)
       then List.map(expl, makeIndexSubscript);
@@ -11844,7 +11786,7 @@ algorithm
 
   resExp := matchcontinue(iExp1, iExp2)
     local
-      DAE.Exp e, e1, e2, res, res1, res2, N1, D1, N2, D2, N ,D;
+      DAE.Exp res, res1, res2, N1, D1, N2, D2;
       list<DAE.Exp> explst, explst1;
       DAE.Type ty;
 
@@ -11923,7 +11865,6 @@ author: Vitalij Ruge
   output DAE.Exp d "denominator";
 protected
   list<DAE.Exp> N, D, T;
-  DAE.Type tp = typeof(iExp);
 algorithm
   T := terms(iExp);
   T := ExpressionSimplify.simplifyList(T);
@@ -11943,13 +11884,13 @@ protected function moveDivToMul
   output list<DAE.Exp> oExpLst;
   output list<DAE.Exp> oExpMuls;
 algorithm
-  (oExpLst, oExpMuls) := match(iExpLst, iExpLstAcc, iExpMuls)
+  (oExpLst, oExpMuls) := match iExpLst
     local
       DAE.Exp e, e1, e2;
       list<DAE.Exp> rest, acc, elst, elst1;
-    case ({}, _, _) then (iExpLstAcc, iExpMuls);
+    case {} then (iExpLstAcc, iExpMuls);
     //-(a/b)
-    case (DAE.UNARY(_,DAE.BINARY(exp1=e1, operator=DAE.DIV(), exp2=e2))::rest, _, _)
+    case DAE.UNARY(_,DAE.BINARY(exp1=e1, operator=DAE.DIV(), exp2=e2))::rest
       algorithm
          acc := List.map1(iExpLstAcc, Expression.expMul, e2);
          rest := List.map1(rest, Expression.expMul, e2);
@@ -11957,7 +11898,7 @@ algorithm
         (elst, elst1) := moveDivToMul(rest, negate(e1)::acc, e2::iExpMuls);
       then
         (elst, elst1);
-    case (DAE.UNARY(_,DAE.BINARY(exp1=e1, operator=DAE.DIV_ARRAY_SCALAR(), exp2=e2))::rest, _, _)
+    case DAE.UNARY(_,DAE.BINARY(exp1=e1, operator=DAE.DIV_ARRAY_SCALAR(), exp2=e2))::rest
       algorithm
          acc := List.map1(iExpLstAcc, Expression.expMul, e2);
          rest := List.map1(rest, Expression.expMul, e2);
@@ -11966,7 +11907,7 @@ algorithm
       then
         (elst, elst1);
     // a/b
-    case (DAE.BINARY(exp1=e1, operator=DAE.DIV(), exp2=e2)::rest, _, _)
+    case DAE.BINARY(exp1=e1, operator=DAE.DIV(), exp2=e2)::rest
       algorithm
          acc := List.map1(iExpLstAcc, Expression.expMul, e2);
          rest := List.map1(rest, Expression.expMul, e2);
@@ -11974,7 +11915,7 @@ algorithm
         (elst, elst1) := moveDivToMul(rest, e1::acc, e2::iExpMuls);
       then
         (elst, elst1);
-    case (DAE.BINARY(exp1=e1, operator=DAE.DIV_ARRAY_SCALAR(), exp2=e2)::rest, _, _)
+    case DAE.BINARY(exp1=e1, operator=DAE.DIV_ARRAY_SCALAR(), exp2=e2)::rest
       algorithm
          acc := List.map1(iExpLstAcc, Expression.expMul, e2);
          rest := List.map1(rest, Expression.expMul, e2);
@@ -11982,7 +11923,7 @@ algorithm
         (elst, elst1) := moveDivToMul(rest, e1::acc, e2::iExpMuls);
       then
         (elst, elst1);
-    case (e::rest, _, _)
+    case e::rest
       algorithm
         (elst, elst1) := moveDivToMul(rest, e::iExpLstAcc, iExpMuls);
       then
@@ -12004,17 +11945,17 @@ protected
 algorithm
 
 while con and ii < 15 loop
-  (oExp1, oExp2, con) := matchcontinue(oExp1, oExp2)
-    local DAE.Exp e, e1, e2;
+  (oExp1, oExp2, con) := matchcontinue oExp2
+    local DAE.Exp e1, e2;
 
-    case(_,_)
+    case _
      algorithm
       (e1,e2,true) := createResidualExp3(oExp1, oExp2);
       (e1,_) := ExpressionSimplify.simplify1(e1);
       (e2,_) := ExpressionSimplify.simplify1(e2);
     then (e1 ,e2, true);
 
-    case(_,_)
+    case _
      algorithm
       (e2,e1,true) := createResidualExp3(oExp2, oExp1);
       (e1,_) := ExpressionSimplify.simplify1(e1);
@@ -12023,27 +11964,27 @@ while con and ii < 15 loop
     else (oExp1, oExp2, false);
     end matchcontinue;
 
-  (oExp1, oExp2, con1) := matchcontinue(oExp1, oExp2)
-    local DAE.Exp e, e1, e2;
-    case(_,_)
+  (oExp1, oExp2, con1) := matchcontinue oExp2
+    local DAE.Exp e1, e2;
+    case _
     algorithm
       true := isZero(oExp1);
       (e1,e2) := makeFraction(oExp2);
     then (e1 ,oExp1, not isOne(e2));
 
-    case(_,_)
+    case _
     algorithm
       true := isZero(oExp2);
       (e1,e2) := makeFraction(oExp1);
     then (e1 ,oExp2, not isOne(e2));
 
-    case(_,_)
+    case _
     algorithm
       true := isOne(oExp1);
       (e1,e2) := makeFraction(oExp2);
     then (e1 ,e2, not isOne(e2));
 
-    case(_,_)
+    case _
     algorithm
       true := isOne(oExp2);
       (e1,e2) := makeFraction(oExp1);
@@ -12085,10 +12026,9 @@ public function createResidualExp3
 algorithm
   (oExp1, oExp2, con) := matchcontinue(iExp1, iExp2)
       local
-        DAE.Exp e,e1,e2,e3,e4,e5,res;
+        DAE.Exp e,e1,e2;
         String s1, s2;
         DAE.Type tp;
-        Real r;
 
     // f(x) = f(y) -> x = y
     case(DAE.CALL(path = Absyn.IDENT(s1), expLst={e1}),DAE.CALL(path = Absyn.IDENT(s2) ,expLst={e2}))
@@ -12148,13 +12088,13 @@ protected function createResidualExp4"
   input String f;
   output Boolean resB;
 algorithm
-  resB := match(f)
-    case("sqrt") then true;
-    case("exp") then true;
-    case("log") then true;
-    case("log10") then true;
-    case("tanh") then true;
-    case("sinh") then true;
+  resB := match f
+    case "sqrt" then true;
+    case "exp" then true;
+    case "log" then true;
+    case "log10" then true;
+    case "tanh" then true;
+    case "sinh" then true;
     else false;
   end match;
 end createResidualExp4;
@@ -12163,8 +12103,8 @@ public function isAsubExp
   input DAE.Exp expIn;
   output Boolean isAsub;
 algorithm
-  isAsub := match(expIn)
-    case(DAE.ASUB(_,_)) algorithm
+  isAsub := match expIn
+    case DAE.ASUB(_,_) algorithm
       then true;
     else false;
   end match;
@@ -12461,8 +12401,6 @@ end isSimpleLiteralValue;
 
 public function consToListIgnoreSharedLiteral
   input output DAE.Exp e;
-protected
-  DAE.Exp exp;
 algorithm
   if match e
     case DAE.SHARED_LITERAL() then true;

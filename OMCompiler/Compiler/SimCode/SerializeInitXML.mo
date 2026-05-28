@@ -486,8 +486,6 @@ function scalarVariableTypeUseAttribute
   input File.File file;
   input Option<Exp> attr;
   input String use, name;
-protected
-  String expStr;
 algorithm
   File.write(file, " ");
   File.write(file, use);

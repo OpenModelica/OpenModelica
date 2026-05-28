@@ -292,9 +292,7 @@ uniontype Function
     input list<SCode.Comment> comments;
     output Function fn;
   protected
-    Class cls;
     list<InstNode> inputs, outputs, locals;
-    list<Slot> slots;
     DAE.FunctionAttributes attr;
     FunctionStatus status;
   algorithm
@@ -313,8 +311,6 @@ uniontype Function
     output ComponentRef functionRef;
   protected
     InstNode found_scope;
-    LookupState state;
-    Absyn.Path functionPath;
     ComponentRef prefix;
   algorithm
     (functionRef, found_scope) :=
@@ -331,7 +327,6 @@ uniontype Function
     output ComponentRef functionRef;
   protected
     InstNode found_scope;
-    LookupState state;
     Absyn.Path functionPath;
     ComponentRef prefix;
     Boolean is_class;
@@ -360,8 +355,6 @@ uniontype Function
     output ComponentRef fn_ref;
     output InstNode fn_node;
     output Boolean specialBuiltin;
-  protected
-    CachedData cache;
   algorithm
     fn_ref := lookupFunction(functionName, scope, context, info);
     (fn_ref, fn_node, specialBuiltin) := instFunctionRef(fn_ref, context, info);
@@ -432,7 +425,6 @@ uniontype Function
         Function fn;
         Absyn.ComponentRef cr;
         InstNode node;
-        list<Function> funcs;
         list<SCode.Comment> cmts;
 
       case SCode.CLASS() guard SCodeUtil.isOperatorRecord(def)
@@ -966,7 +958,6 @@ uniontype Function
     input String overrideName = "";
   protected
     String fn_name;
-    list<Statement> fn_body;
     SCode.Comment cmt;
     SCode.Mod annMod;
   algorithm
@@ -1096,8 +1087,7 @@ uniontype Function
     output Boolean matching;
   protected
     Slot slot;
-    list<Slot> slots, remaining_slots;
-    list<TypedArg> filled_named_args;
+    list<Slot> slots;
     array<Slot> slots_arr;
     Integer pos_arg_count, slot_count, index = 1;
   algorithm
@@ -1211,7 +1201,6 @@ uniontype Function
     output Boolean matching = true;
   protected
     Option<Expression> default;
-    Expression e;
     Option<TypedArg> arg;
     TypedArg a;
   algorithm
@@ -1493,7 +1482,6 @@ uniontype Function
   protected
     list<Dimension> arg_dims, input_dims, vect_dims, rest_dims;
     Type rest_ty;
-    TypeCheck.MatchKind mk;
     Integer vect_dims_count;
   algorithm
     arg_dims := Type.arrayDims(argTy);
@@ -1576,7 +1564,6 @@ uniontype Function
   protected
     list<TypedArg> m_args;
     FunctionMatchKind matchKind;
-    Boolean matched;
   algorithm
     matchedFunctions := {};
     for func in funcs loop
@@ -1639,7 +1626,6 @@ uniontype Function
   protected
     InstNode fn_node;
     Boolean typed, special;
-    String name;
   algorithm
     fn_node := InstNode.classScope(functionNode);
     CachedData.FUNCTION(functions, typed, special) := InstNode.getFuncCache(fn_node);
@@ -1676,7 +1662,6 @@ uniontype Function
     input output Function fn;
     input InstContext.Type context;
   protected
-    DAE.FunctionAttributes attr;
     InstNode node = fn.node;
     InstContext.Type fn_context;
   algorithm
@@ -1793,20 +1778,17 @@ uniontype Function
           output Purity purity;
   protected
     ComponentRef fn_ref;
-    list<Expression> args, ty_args = {};
-    list<String> arg_names, rest_names;
+    list<Expression> args;
+    list<String> arg_names;
     String arg_name;
-    Expression arg_exp;
     Type arg_ty;
     Variability arg_var;
     Purity arg_pur;
     Function fn;
     InstContext.Type next_context = InstContext.set(context, NFInstContext.SUBEXPRESSION);
-    list<InstNode> inputs;
     list<Slot> slots;
     array<Slot> slots_arr;
     TypedArg ty_arg;
-    TypeCheck.MatchKind mk;
   algorithm
     Expression.PARTIAL_FUNCTION_APPLICATION(fn = fn_ref, args = args, argNames = arg_names) := exp;
     // TODO: Handle overloaded functions?
@@ -2225,10 +2207,7 @@ uniontype Function
   protected
     Class cls;
     ClassTree ctree;
-    array<InstNode> comps;
     Sections sections;
-    Component comp;
-    Binding binding, binding2;
   algorithm
     cls := InstNode.getClass(fn.node);
 
@@ -2580,7 +2559,6 @@ protected
     output DAE.FunctionAttributes attr;
   protected
     SCode.Element def;
-    array<InstNode> params;
     SCode.Restriction res;
     SCode.FunctionRestriction fres;
     Boolean is_partial;
@@ -2605,7 +2583,6 @@ protected
         list<String> in_params, out_params;
         DAE.InlineType inline_ty;
         Boolean generateEvents;
-        DAE.FunctionBuiltin builtin;
 
       // External builtin function.
       case SCode.FunctionRestriction.FR_EXTERNAL_FUNCTION()
@@ -2972,7 +2949,6 @@ protected
     output Option<Function> derivative = NONE();
   protected
     list<FunctionDerivative> derivatives;
-    Boolean perfect_fit;
   algorithm
     for func in original.derivatives loop
       if FunctionDerivative.perfectFit(func, interface_map) then

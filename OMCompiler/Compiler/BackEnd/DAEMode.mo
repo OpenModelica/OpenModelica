@@ -94,13 +94,12 @@ public function getEqSystemDAEmode "Run the equation system pipeline."
   tuple<BackendDAEFunc.matchingAlgorithmFunc, String> matchingAlgorithm;
   BackendDAE.Variables globalKnownVars;
   Integer numCheckpoints, oldSize;
-  BackendDAE.EqSystem eqSyst;
 algorithm
   numCheckpoints:=ErrorExt.getNumCheckpoints();
   try
     StackOverflow.clearStacktraceMessages();
     preOptModules := BackendDAEUtil.getPreOptModules(strPreOptModules);
-    postOptModules := BackendDAEUtil.getPostOptModules(match strPostOptModules case (NONE()) then SOME(getPostOptModulesDAEString()); else strPostOptModules; end match);
+    postOptModules := BackendDAEUtil.getPostOptModules(match strPostOptModules case NONE() then SOME(getPostOptModulesDAEString()); else strPostOptModules; end match);
     matchingAlgorithm := BackendDAEUtil.getMatchingAlgorithm(strmatchingAlgorithm);
     FlagsUtil.setConfigString(Flags.INDEX_REDUCTION_METHOD, "dummyDerivatives");
     daeHandler := BackendDAEUtil.getIndexReductionMethod(strdaeHandler);
@@ -220,12 +219,9 @@ function createDAEmodeEqSystem
 protected
   TraverseEqnAryFold travArgs;
   BackendDAE.BackendDAEModeData globalDAEData;
-  BackendDAE.EquationArray tmp;
-  BackendDAE.Variables vars;
   BackendDAE.EqSystem retSystem;
   BackendDAE.Variables newDAEVars;
   BackendDAE.EquationArray newDAEEquations;
-  list<BackendDAE.Equation> resEqns;
   Integer systemSize;
   Boolean debug = Flags.isSet(Flags.DEBUG_DAEMODE);
   constant Boolean exec = false;
@@ -285,11 +281,9 @@ algorithm
   isStateVarInvolved := not Flags.getConfigBool(Flags.CAUSALIZE_DAE_MODE) or List.any(inVars, BackendVariable.isStateVar);
   isDiscrete := List.any(inVars, BackendVariable.isVarDiscrete);
 
-  (traverserArgs) :=
+  traverserArgs :=
   matchcontinue(inEqns, traverserArgs.recursiveStrongComponentRun, isStateVarInvolved, isDiscrete)
     local
-      BackendDAE.EqSystem syst;
-      BackendDAE.AdjacencyMatrix adjMatrix;
 
       list<BackendDAE.Equation> newResEqns;
       list<BackendDAE.Var> newResVars, newAuxVars, discVars, contVars;
@@ -297,10 +291,9 @@ algorithm
       BackendDAE.Variables systemVars;
       BackendDAE.Equation eq, new_eq, aux_eq;
       Integer size, newnumResVars;
-      DAE.Exp exp, exp2;
+      DAE.Exp exp;
       BackendDAE.BackendDAEModeData globalDAEData;
       DAE.ComponentRef cref, newCref;
-      AvlTreePathFunction.Tree funcsTree;
       list<DAE.ComponentRef> crlst;
       Boolean b1, b2;
       list<BackendDAE.Equation> discEqns;
@@ -609,14 +602,12 @@ end addVarsGlobalData;
 
 function setNonStateVarAlgState
   input output list<BackendDAE.Var> varList;
-protected
-  list<BackendDAE.Var> tmpVarList = {};
 algorithm
   for v in varList loop
-    v := match (v)
+    v := match v
       local
-      case (BackendDAE.VAR(varKind=BackendDAE.STATE())) then v;
-      case (BackendDAE.VAR(varKind=BackendDAE.VARIABLE()))
+      case BackendDAE.VAR(varKind=BackendDAE.STATE()) then v;
+      case BackendDAE.VAR(varKind=BackendDAE.VARIABLE())
         algorithm
           v := BackendVariable.setVarKind(v, BackendDAE.ALG_STATE());
         then v;

@@ -55,7 +55,6 @@ import CevalScriptBackend;
 import ClockIndexes;
 import Config;
 import Corba;
-import DAE;
 import Debug;
 import Dump;
 import DumpGraphviz;
@@ -75,7 +74,6 @@ import List;
 import Parser;
 import Print;
 import Settings;
-import SimCode;
 import Socket;
 import StackOverflow;
 import SymbolTable;
@@ -90,10 +88,10 @@ protected function makeDebugResult
   input String res;
   output String res_1;
 algorithm
-  res_1 := matchcontinue (inFlag,res)
+  res_1 := matchcontinue inFlag
     local
       String debugstr,res_with_debug,flagstr;
-    case (Flags.DEBUG_FLAG(name = flagstr),_)
+    case Flags.DEBUG_FLAG(name = flagstr)
       algorithm
         true := Flags.isSet(inFlag);
         debugstr := Print.getString();
@@ -112,13 +110,12 @@ protected function parseCommand
   output Option<GlobalScript.Statements> outStatements;
   output Option<Absyn.Program> outProgram;
 algorithm
-  (outStatements, outProgram) := matchcontinue(inCommand)
+  (outStatements, outProgram) := matchcontinue inCommand
     local
       GlobalScript.Statements stmts;
       Absyn.Program prog;
-      String str;
 
-    case (_)
+    case _
       algorithm
         ErrorExt.setCheckpoint("parsestring");
         stmts := Parser.parsestringexp(inCommand, "<interactive>");
@@ -126,7 +123,7 @@ algorithm
       then
         (SOME(stmts), NONE());
 
-    case (_)
+    case _
       algorithm
         ErrorExt.rollBack("parsestring");
         prog := Parser.parsestring(inCommand, "<interactive>");
@@ -235,20 +232,20 @@ protected function makeClassDefResult
   input Absyn.Program p;
   output String res;
 algorithm
-  res := match(p)
+  res := match p
     local
       list<Absyn.Path> names;
       Absyn.Path scope;
       list<Absyn.Class> cls;
 
-    case(Absyn.PROGRAM(classes=cls,within_=Absyn.WITHIN(scope)))
+    case Absyn.PROGRAM(classes=cls,within_=Absyn.WITHIN(scope))
       algorithm
         names := list(Absyn.Path.IDENT(AbsynUtil.className(c)) for c in cls);
         names := List.map1(names,AbsynUtil.joinPaths,scope);
         res := "{" + stringDelimitList(list(AbsynUtil.pathString(n) for n in names),",") + "}\n";
       then res;
 
-    case(Absyn.PROGRAM(classes=cls,within_=Absyn.TOP()))
+    case Absyn.PROGRAM(classes=cls,within_=Absyn.TOP())
       algorithm
         names := list(Absyn.Path.IDENT(AbsynUtil.className(c)) for c in cls);
         res := "{" + stringDelimitList(list(AbsynUtil.pathString(n) for n in names),",") + "}\n";
@@ -278,7 +275,7 @@ end isModelicaFile;
 protected function isEmptyOrFirstIsModelicaFile
   input list<String> libs;
 algorithm
-  _ := match libs
+  () := match libs
     local
       String f;
     case {} then ();
@@ -348,10 +345,9 @@ protected
   Boolean is_modelica_file;
 algorithm
   is_modelica_file := isModelicaFile(inLib);
-  _ := matchcontinue(is_modelica_file)
+  () := matchcontinue is_modelica_file
     local
-      String lib, mp;
-      list<String> rest;
+      String mp;
       Absyn.Program pnew, p;
       Absyn.Path path;
 
@@ -395,17 +391,12 @@ protected function translateFile
   list of libraries and .mo-files if the file is a .mo-file"
   input list<String> inStringLst;
 protected
-  Absyn.Program p, pLibs;
-  DAE.DAElist d;
-  String flatString,str,f;
+  String f;
   list<String>  libs;
   Absyn.Path cname;
   Boolean runBackend, runSilent;
   GlobalScript.Statements stmts;
-  FCore.Cache cache;
-  FCore.Graph env;
   String cls, fileNamePrefix;
-  SimCode.SimulationSettings sim_settings;
 algorithm
   // Execute the given script if --cmd is used.
   if not stringEmpty(Flags.getConfigString(Flags.EXECUTE_COMMAND)) then
@@ -419,10 +410,10 @@ algorithm
     end if;
   end if;
 
-  _ := matchcontinue (inStringLst)
+  () := matchcontinue inStringLst
     // A .mo-file, followed by an optional list of extra .mo-files and libraries.
     // The last class in the first file will be instantiated.
-    case (libs)
+    case libs
       algorithm
         //print("Class to instantiate: " + Config.classToInstantiate() + "\n");
         isEmptyOrFirstIsModelicaFile(libs);
@@ -456,13 +447,13 @@ algorithm
         runBackend := Config.simulationCg() or Config.simulation();
         runSilent := Config.silent();
 
-        (_ , _, _, _, _) := CevalScriptBackend.translateModel(FCore.emptyCache(), FGraph.empty(), cname,
+        CevalScriptBackend.translateModel(FCore.emptyCache(), FGraph.empty(), cname,
                                                                                 fileNamePrefix, runBackend, runSilent, NONE());
         showErrors(Print.getErrorString(), ErrorExt.printMessagesStr(false));
       then ();
 
     /* Modelica script file .mos */
-    case (f::libs)
+    case f::libs
       algorithm
         isModelicaScriptFile(f);
         // loading possible libraries given at the command line
@@ -493,7 +484,7 @@ algorithm
         ();
 
     // deal with problems
-    case (f::_)
+    case f::_
       algorithm
         if System.regularFileExists(f) then
           print("Error processing file: ");
@@ -621,7 +612,7 @@ protected
 algorithm
   if System.regularFileExists(filePath) then
     command := "runScript(\"" + filePath + "\")";
-    (_, _) := handleCommand(command);
+    handleCommand(command);
   end if;
 end readSettingsFile;
 
@@ -633,13 +624,13 @@ public function setWindowsPaths
               changes you will need to change here!"
   input String inOMHome;
 algorithm
-  _ := match(inOMHome)
+  () := match inOMHome
     local
       String oldPath, newPath, omHome, omdevPath, msysPath, mingwDir, binDir, libBinDir, msysBinDir;
       Boolean hasBinDir, hasLibBinDir;
 
     // check if we have OMDEV set
-    case (omHome)
+    case omHome
       algorithm
         System.setEnv("OPENMODELICAHOME",omHome,true);
         omdevPath := Util.makeValueOrDefault(System.readEnv,"OMDEV","");
@@ -723,7 +714,6 @@ public function main
   input list<String> args;
 protected
   list<String> args_1;
-  GCExt.ProfStats stats;
   Integer seconds;
 algorithm
   execStatReset();
@@ -740,7 +730,7 @@ algorithm
       main2(args_1);
     else
       ErrorExt.clearMessages();
-      failure(_ := FlagsUtil.new(args));
+      failure(FlagsUtil.new(args));
       print(ErrorExt.printMessagesStr(false)); print("\n");
       fail();
     end try;

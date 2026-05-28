@@ -362,10 +362,10 @@ Usefull for heavy string operations(causes malloc error on some models when gene
   input list<String> inStringLst;
   input String inDelimiter;
 algorithm
-  _:=
-  matchcontinue (inStringLst)
+  ():=
+  matchcontinue inStringLst
     local
-      String f,delim,str1,str2,str;
+      String f;
       list<String> r;
     case {} then ();
     case {f} algorithm Print.printBuf(f); then ();
@@ -406,9 +406,9 @@ protected function stringDelimitListAndSeparate2 "author: PA
   input Integer inInteger4;
   input Integer inInteger5;
 algorithm
-  _ := matchcontinue (inStringLst1,inString2,inString3,inInteger4,inInteger5)
+  () := matchcontinue (inStringLst1,inString2,inString3,inInteger4,inInteger5)
     local
-      String s,str1,str,f,sep1,sep2;
+      String s,f,sep1,sep2;
       list<String> r;
       Integer n,iter_1,iter;
     case ({},_,_,_,_) then ();  /* iterator */
@@ -546,7 +546,7 @@ public function applyOption<TI, TO>
     output TO outValue;
   end FuncType;
 algorithm
-  outOption := match(inOption)
+  outOption := match inOption
     local
       TI ival;
 
@@ -568,7 +568,7 @@ public function applyOption1<TI, TO, ArgT>
     output TO outValue;
   end FuncType;
 algorithm
-  outOption := match(inOption)
+  outOption := match inOption
     local
       TI ival;
 
@@ -591,7 +591,7 @@ public function applyOptionOrDefault<TI, TO>
     output TO outValue;
   end FuncType;
 algorithm
-  outValue := match(inValue)
+  outValue := match inValue
     local
       TI value;
 
@@ -616,7 +616,7 @@ public function applyOptionOrDefault1<TI, TO, ArgT>
     output TO outValue;
   end FuncType;
 algorithm
-  outValue := match(inValue)
+  outValue := match inValue
     local
       TI value;
 
@@ -643,7 +643,7 @@ public function applyOptionOrDefault2<TI, TO, ArgT1, ArgT2>
     output TO outValue;
   end FuncType;
 algorithm
-  outValue := match(inValue)
+  outValue := match inValue
     local
       TI value;
 
@@ -699,7 +699,7 @@ public function getOptionOrDefault<T>
   input T inDefault;
   output T outValue;
 algorithm
-  outValue := match(inOption)
+  outValue := match inOption
     local
       T value;
 
@@ -939,7 +939,7 @@ public function mulListIntegerOpt
   input Integer inAccum = 1;
   output Integer outResult;
 algorithm
-  outResult := match(inList)
+  outResult := match inList
     local
       Integer i;
       list<Option<Integer>> rest;
@@ -1052,7 +1052,7 @@ public function stringAppendNonEmpty
   input String inString2;
   output String outString;
 algorithm
-  outString := match(inString2)
+  outString := match inString2
     case "" then inString2;
     else stringAppend(inString1, inString2);
   end match;
@@ -1160,7 +1160,7 @@ protected function stringBool2
   input String inString;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match(inString)
+  outBoolean := match inString
     case "true" then true;
     case "false" then false;
     case "yes" then true;
@@ -1311,7 +1311,7 @@ public function swap<T>
   output T out1;
   output T out2;
 algorithm
-  (out1,out2) := match (cond)
+  (out1,out2) := match cond
     case true then (in2, in1);
     else (in1, in2);
   end match;
@@ -1340,7 +1340,7 @@ protected function createDirectoryTreeH
   input Boolean parentDirExists;
   output Boolean outBool;
 algorithm
-  outBool := matchcontinue(parentDirExists)
+  outBool := matchcontinue parentDirExists
     local
       Boolean b;
 

@@ -354,7 +354,6 @@ function storeAST
   output Integer id;
 protected
   SymbolTable table;
-  Integer index;
 algorithm
   table := get();
   id := table.cacheIndex + 1;
@@ -441,7 +440,7 @@ protected function addVarToVarList3
   input FCore.Graph inEnv;
   output InteractiveTypes.Variable outVariable;
 algorithm
-  outVariable := match(inFound, inOldVariable, inCref, inValue, inEnv)
+  outVariable := match(inFound, inOldVariable, inCref)
     local
       Absyn.Ident id;
       Values.Value val;
@@ -449,13 +448,13 @@ algorithm
       list<DAE.Subscript> subs;
 
     // InteractiveTypes.Variable is not a match, keep the old one.
-    case (false, _, _, _, _) then inOldVariable;
+    case (false, _, _) then inOldVariable;
 
     // Assigning whole variable => return new variable.
-    case (true, _, DAE.CREF_IDENT(id, ty, {}), _, _) then InteractiveTypes.IVAR(id, inValue, ty);
+    case (true, _, DAE.CREF_IDENT(id, ty, {})) then InteractiveTypes.IVAR(id, inValue, ty);
 
     // Assigning array slice => update the old variable's value.
-    case (true, InteractiveTypes.IVAR(id, val, ty), DAE.CREF_IDENT(subscriptLst = subs), _, _)
+    case (true, InteractiveTypes.IVAR(id, val, ty), DAE.CREF_IDENT(subscriptLst = subs))
       algorithm
         (_, val) := CevalFunction.assignVector(inValue, val, subs, FCore.emptyCache(), inEnv);
       then
@@ -471,21 +470,21 @@ protected function addVarToVarList4
   input list<InteractiveTypes.Variable> inVariables;
   output list<InteractiveTypes.Variable> outVariables;
 algorithm
-  outVariables := match(inFound, inCref, inValue, inVariables)
+  outVariables := match(inFound, inCref)
     local
       Absyn.Ident id;
       DAE.Type ty;
 
     // InteractiveTypes.Variable was already updated in addVarToVar, do nothing.
-    case (true, _, _, _) then inVariables;
+    case (true, _) then inVariables;
 
     // InteractiveTypes.Variable is new, add it to the list of variables.
-    case (false, DAE.CREF_IDENT(id, ty, {}), _, _)
+    case (false, DAE.CREF_IDENT(id, ty, {}))
       then InteractiveTypes.IVAR(id, inValue, ty) :: inVariables;
 
     // Assigning to an array slice is only allowed for variables that have
     // already been defined, i.e. that have a size. Print an error otherwise.
-    case (false, DAE.CREF_IDENT(ident = id, subscriptLst = _ :: _), _, _)
+    case (false, DAE.CREF_IDENT(ident = id, subscriptLst = _ :: _))
       algorithm
         Error.addMessage(Error.SLICE_ASSIGN_NON_ARRAY, {id});
       then
@@ -534,7 +533,7 @@ algorithm
       algorithm
         cref := ComponentReferenceBasics.makeCrefIdent(id, DAE.T_UNKNOWN_DEFAULT, {});
         empty_env := FGraph.empty();
-        (_,_,_,_,_,_,_,_,_) := Lookup.lookupVar(FCore.emptyCache(), env, cref);
+        Lookup.lookupVar(FCore.emptyCache(), env, cref);
         env := FGraph.updateComp(
                   env,
                   DAE.TYPES_VAR(
@@ -581,7 +580,7 @@ protected
 algorithm
   tree := AvlTreeStringString.EMPTY();
   for cl in classes loop
-    _ := match cl
+    () := match cl
       case Absyn.CLASS(info=SOURCEINFO(fileName="<interactive>")) then ();
       case Absyn.CLASS(name=name,info=SOURCEINFO(fileName=fileName))
         algorithm

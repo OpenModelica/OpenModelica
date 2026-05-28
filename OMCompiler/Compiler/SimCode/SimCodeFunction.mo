@@ -396,7 +396,7 @@ public function translateFunctions "
 algorithm
   setGlobalRoot(Global.optionSimCode, NONE());
 
-  _ := match (program, name, optMainFunction, idaeElements, metarecordTypes, inIncludes)
+  () := match (optMainFunction, idaeElements, inIncludes)
     local
       DAE.Function daeMainFunction;
       Function mainFunction;
@@ -409,7 +409,7 @@ algorithm
       list<DAE.Function> daeElements;
       Tpl.Text midCode;
       list<MidCode.Function> midfuncs;
-    case (_, _, SOME(daeMainFunction), daeElements, _, includes)
+    case (SOME(daeMainFunction), daeElements, includes)
       algorithm
         // Create FunctionCode
         (daeElements,literals) := SimCodeFunctionUtil.findLiterals(daeMainFunction::daeElements);
@@ -419,16 +419,16 @@ algorithm
         fnCode := FUNCTIONCODE(name, SOME(mainFunction), fns, literals, includes, makefileParams, extraRecordDecls);
 
         if Config.simCodeTarget() == "MidC" then
-          _ := Tpl.tplString(CodegenCFunctions.translateFunctionHeaderFiles, fnCode);
+          Tpl.tplString(CodegenCFunctions.translateFunctionHeaderFiles, fnCode);
           midfuncs := DAEToMid.DAEFunctionsToMid(mainFunction::fns);
           midCode := Tpl.tplCallWithFailError(CodegenMidToC.genProgram, MidCode.PROGRAM(name, midfuncs));
-          _ := Tpl.textFileConvertLines(midCode, name + ".c");
+          Tpl.textFileConvertLines(midCode, name + ".c");
         else
-          _ := Tpl.tplString(CodegenCFunctions.translateFunctions, fnCode);
+          Tpl.tplString(CodegenCFunctions.translateFunctions, fnCode);
         end if;
       then
         ();
-    case (_, _, NONE(), daeElements, _, includes)
+    case (NONE(), daeElements, includes)
       algorithm
         // Create FunctionCode
         (daeElements,literals) := SimCodeFunctionUtil.findLiterals(daeElements);
@@ -440,12 +440,12 @@ algorithm
         fnCode := FUNCTIONCODE(name, NONE(), fns, literals, includes, makefileParams, extraRecordDecls);
 
         if Config.simCodeTarget() == "MidC" then
-          _ := Tpl.tplString(CodegenCFunctions.translateFunctionHeaderFiles, fnCode);
+          Tpl.tplString(CodegenCFunctions.translateFunctionHeaderFiles, fnCode);
           midfuncs := DAEToMid.DAEFunctionsToMid(fns);
           midCode := Tpl.tplCallWithFailError(CodegenMidToC.genProgram, MidCode.PROGRAM(name, midfuncs));
-          _ := Tpl.textFileConvertLines(midCode, name + ".c");
+          Tpl.textFileConvertLines(midCode, name + ".c");
         else
-          _ := Tpl.tplString(CodegenCFunctions.translateFunctions, fnCode);
+          Tpl.tplString(CodegenCFunctions.translateFunctions, fnCode);
         end if;
       then
         ();
@@ -460,27 +460,26 @@ protected function removeThreadDataRecord
   input list<RecordDeclaration> inAcc;
   output list<RecordDeclaration> outRecs;
 algorithm
-  outRecs := match(inRecs, inAcc)
+  outRecs := match inRecs
     local
-      Absyn.Path p;
       list<RecordDeclaration> acc, rest;
       RecordDeclaration r;
 
-    case ({}, _) then listReverse(inAcc);
+    case {} then listReverse(inAcc);
 
-    case (RECORD_DECL_FULL(name = "OpenModelica_threadData_ThreadData")::rest, _)
+    case RECORD_DECL_FULL(name = "OpenModelica_threadData_ThreadData")::rest
      algorithm
        acc := removeThreadDataRecord(rest, inAcc);
      then
        acc;
 
-    case (RECORD_DECL_DEF(path = Absyn.QUALIFIED("OpenModelica",Absyn.QUALIFIED("threadData",Absyn.IDENT("ThreadData"))))::rest, _)
+    case RECORD_DECL_DEF(path = Absyn.QUALIFIED("OpenModelica",Absyn.QUALIFIED("threadData",Absyn.IDENT("ThreadData"))))::rest
      algorithm
        acc := removeThreadDataRecord(rest, inAcc);
      then
        acc;
 
-    case (r::rest, _)
+    case r::rest
      algorithm
        acc := removeThreadDataRecord(rest, r::inAcc);
      then
@@ -496,21 +495,20 @@ protected function removeThreadDataFunction
   input list<Function> inAcc;
   output list<Function> outFuncs;
 algorithm
-  outFuncs := match(inFuncs, inAcc)
+  outFuncs := match inFuncs
     local
-      Absyn.Path p;
       list<Function> acc, rest;
       Function f;
 
-    case ({}, _) then listReverse(inAcc);
+    case {} then listReverse(inAcc);
 
-    case (RECORD_CONSTRUCTOR(name = Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("OpenModelica",Absyn.QUALIFIED("threadData",Absyn.IDENT("ThreadData")))))::rest, _)
+    case RECORD_CONSTRUCTOR(name = Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("OpenModelica",Absyn.QUALIFIED("threadData",Absyn.IDENT("ThreadData")))))::rest
      algorithm
        acc := removeThreadDataFunction(rest, inAcc);
      then
        acc;
 
-    case (f::rest, _)
+    case f::rest
      algorithm
        acc := removeThreadDataFunction(rest, f::inAcc);
      then

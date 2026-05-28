@@ -88,7 +88,7 @@ algorithm
       end if;
       t := System.realtimeAccumulate(ClockIndexes.RT_CLOCK_EXECSTAT);
       total := System.realtimeAccumulated(ClockIndexes.RT_CLOCK_EXECSTAT);
-      (stats as GCExt.PROFSTATS(bytes_allocd_since_gc=since, allocd_bytes_before_gc=before, heapsize_full=heapsize_full, free_bytes_full=free_bytes_full)) := GCExt.getProfStats();
+      stats as GCExt.PROFSTATS(bytes_allocd_since_gc=since, allocd_bytes_before_gc=before, heapsize_full=heapsize_full, free_bytes_full=free_bytes_full) := GCExt.getProfStats();
       memory := since+before;
       oldStats := getGlobalRoot(Global.gcProfilingIndex);
       GCExt.PROFSTATS(bytes_allocd_since_gc=since, allocd_bytes_before_gc=before) := oldStats;

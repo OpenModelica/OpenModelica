@@ -143,13 +143,13 @@ public function tplSourceInfo
   output SourceInfo outSourceInfo;
 algorithm
   outSourceInfo  :=
-  match (inStartLineColumnNumber, inEndChars, inEndLineInfo)
+  match (inStartLineColumnNumber, inEndLineInfo)
     local
       Integer startL, startC, endL, endC;
       LineInfo endlinfo;
       String  fileName;
 
-    case ( (startL, startC), _, endlinfo as LINE_INFO(parseInfo = PARSE_INFO(fileName = fileName)) )
+    case ((startL, startC), endlinfo as LINE_INFO(parseInfo = PARSE_INFO(fileName = fileName)))
       algorithm
         (endL, endC) := getPosition(inEndChars, endlinfo);
         outSourceInfo := SOURCEINFO(fileName, false, startL, startC, endL, endC, 0.0);
@@ -161,13 +161,11 @@ end tplSourceInfo;
 public function startPositionFromExp
   input TplAbsyn.Expression inExpression;
   output LineColumnNumber outLineColumnNumber;
-protected
-  Integer line, col;
 algorithm
   outLineColumnNumber :=  match inExpression
     local
       Integer startL, startC;
-   case ((_, SOURCEINFO(lineNumberStart = startL, columnNumberStart = startC)))
+   case (_, SOURCEINFO(lineNumberStart = startL, columnNumberStart = startC))
      then ((startL, startC));
   end match;
 end startPositionFromExp;
@@ -201,16 +199,16 @@ end makeStartLineInfo;
 public function printAndFailIfError
   input  LineInfo inLineInfo;
 algorithm
-  _ := match (inLineInfo)
+  () := match inLineInfo
     local
       list<String> errLst;
 
-    case (LINE_INFO(parseInfo = PARSE_INFO(errors = {})))
+    case LINE_INFO(parseInfo = PARSE_INFO(errors = {}))
         algorithm
           print("\nSusan parsing successful.\n");
         then ();
 
-    case (LINE_INFO(parseInfo = PARSE_INFO(errors = errLst as (_::_))))
+    case LINE_INFO(parseInfo = PARSE_INFO(errors = errLst as (_::_)))
         algorithm
           print("\nSusan parse error(s):\n");
           print(stringDelimitList(listReverse(errLst), "\n"));
@@ -270,7 +268,7 @@ public function parseErrorPrevPosition
 
   output LineInfo outLineInfo;
 algorithm
-  (outLineInfo) := matchcontinue (inCharsPrevPos, inLineInfoPrevPos, inLineInfo, inErrMessage, isFatal)
+  outLineInfo := matchcontinue (inCharsPrevPos, inLineInfoPrevPos, inLineInfo, inErrMessage, isFatal)
     local
       list<String> charspp, solchars, solcharspp;
       LineInfo  linfopp;
@@ -308,8 +306,8 @@ public function wasFatalError
   input LineInfo inLineInfo;
   output Boolean outWasError;
 algorithm
-  (outWasError) := match (inLineInfo)
-    case (LINE_INFO( parseInfo = PARSE_INFO(wasFatalError = true)) )
+  outWasError := match inLineInfo
+    case LINE_INFO( parseInfo = PARSE_INFO(wasFatalError = true))
       then true;
 
     else false;
@@ -321,12 +319,12 @@ public function mergeErrors
   input LineInfo inLineInfoToAddErrorsFrom;
   output LineInfo outLineInfo;
 algorithm
-  (outLineInfo) := matchcontinue (inLineInfo, inLineInfoToAddErrorsFrom)
+  outLineInfo := matchcontinue (inLineInfo, inLineInfoToAddErrorsFrom)
     local
       list<String>  solchars, errLst, errLstToAdd;
       String fname;
       Integer lnum, llen;
-      Boolean wasFatalError, wasFatalErrorToAdd;
+      Boolean wasFatalError;
 
     case (LINE_INFO( parseInfo = PARSE_INFO(fileName = fname, errors = errLst, wasFatalError = wasFatalError),
                                      lineNumber = lnum, lineLength = llen, startOfLineChars = solchars
@@ -357,7 +355,7 @@ public function parseErrorPrevPositionOpt
 
   output LineInfo outLineInfo;
 algorithm
-  (outLineInfo) := matchcontinue (inCharsPrevPos, inLineInfoPrevPos, inLineInfo, inErrMessage, isFatal)
+  outLineInfo := matchcontinue (inCharsPrevPos, inLineInfoPrevPos, inLineInfo, inErrMessage, isFatal)
     local
       list<String> charspp;
       LineInfo linfo, linfopp;
@@ -370,7 +368,7 @@ algorithm
 
     case (charspp, linfopp, linfo, SOME(errMsg), isfatal)
       algorithm
-        (linfo) := parseErrorPrevPosition(charspp, linfopp, linfo, errMsg, isfatal);
+        linfo := parseErrorPrevPosition(charspp, linfopp, linfo, errMsg, isfatal);
       then (linfo);
 
     else
@@ -401,21 +399,20 @@ public function expectChar
   input output LineInfo lineInfo;
   input String inExpectedChar;
 algorithm
-  chars := match (chars)
+  chars := match chars
     local
       list<String> rest;
-      LineInfo linfo;
       String c;
 
-    case (c :: rest)
+    case c :: rest
       guard stringEq(c, inExpectedChar)
       then rest;
 
-    case (_)
+    case _
       algorithm
         // false = stringEq(c, ec));
         // or chars = {}
-        (lineInfo) := parseError(chars, lineInfo, "Expected character '" + inExpectedChar + "' at the position.", false);
+        lineInfo := parseError(chars, lineInfo, "Expected character '" + inExpectedChar + "' at the position.", false);
         //fprint(Flags.FAILTRACE, "???Expected character '" + ec + "'\n");
       then chars;
   end match;
@@ -440,7 +437,7 @@ algorithm
     case (chars, linfo, ec)
       algorithm
         (chars, linfo) := interleave(chars, linfo);
-        (c :: chars) := chars;
+        c :: chars := chars;
         true := stringEq(c, ec);
       then (chars, linfo);
 
@@ -448,7 +445,7 @@ algorithm
       algorithm
         // false = stringEq( c, ec );
         // or chars = {}
-        (linfo) := parseError(chars, linfo, "Expected character '" + ec + "' after the position.",false);
+        linfo := parseError(chars, linfo, "Expected character '" + ec + "' after the position.",false);
       then (chars, linfo);
 
     else
@@ -466,7 +463,7 @@ public function takeKeywordChars
 
   output list<String> outChars;
 algorithm
-  (outChars) := match (inChars, inKeywordChars)
+  outChars := match (inChars, inKeywordChars)
     local
       list<String> chars, kwchars;
       String c, kwc;
@@ -532,7 +529,7 @@ algorithm
         (chars, linfo) := interleave(chars, linfo);
         (_, false) := isKeyword(chars, kwchars);
         kw := stringCharListString(kwchars);
-        (linfo) := parseError(chars, linfo, "Expected keyword '" + kw + "' at the position.", isfatal);
+        linfo := parseError(chars, linfo, "Expected keyword '" + kw + "' at the position.", isfatal);
       then (chars, linfo);
 
     else
@@ -563,7 +560,7 @@ algorithm
     case (chars, linfo)
       algorithm
         (chars, linfo) := interleave(chars, linfo);
-        (linfo) := parseError(chars, linfo, "Expected end of file at the position.", false);
+        linfo := parseError(chars, linfo, "Expected end of file at the position.", false);
       then (chars, linfo);
 
     else
@@ -582,13 +579,13 @@ public function openFile
   output LineInfo outLineInfo;
   output Option<String> outErrorOpt;
 algorithm
-  (outChars, outLineInfo, outErrorOpt) := matchcontinue (inFile)
+  (outChars, outLineInfo, outErrorOpt) := matchcontinue inFile
     local
       String file, src, errStr;
       list<String> chars;
       LineInfo linfo;
 
-    case (file)
+    case file
       algorithm
         true := System.regularFileExists(file);
         src := System.readFile(file);
@@ -596,7 +593,7 @@ algorithm
         linfo := makeStartLineInfo(chars, file);
       then (chars, linfo,NONE());
 
-    case (file)
+    case file
       algorithm
         false := System.regularFileExists(file);
         chars := {};
@@ -617,14 +614,14 @@ public function templPackageFromFile
   input String inFile;
   output TplAbsyn.TemplPackage outTemplPackage;
 algorithm
-  (outTemplPackage) := matchcontinue (inFile)
+  outTemplPackage := matchcontinue inFile
     local
       String  file;
       Option<String> errOpt;
       list<String> chars;
       LineInfo linfo;
       TplAbsyn.TemplPackage tplPackage;
-    case (file)
+    case file
         algorithm
           (chars, linfo, errOpt) := openFile(file);
           linfo := parseErrorPrevPositionOpt(chars, linfo, linfo, errOpt, true);
@@ -730,18 +727,18 @@ public function templateDefToAstDefType
   input tuple<TplAbsyn.Ident,TplAbsyn.TemplateDef> inTemplateDef;
   output tuple<TplAbsyn.Ident, TplAbsyn.TypeInfo> outType;
 algorithm
-  (outType) := matchcontinue (inTemplateDef)
+  outType := matchcontinue inTemplateDef
     local
       TplAbsyn.Ident id;
       TplAbsyn.TypeSignature litType;
       TplAbsyn.TypedIdents iargs, oargs;
-    case ( (id, TplAbsyn.STR_TOKEN_DEF()) )
+    case (id, TplAbsyn.STR_TOKEN_DEF())
       then ( (id, TplAbsyn.TI_CONST_TYPE(TplAbsyn.STRING_TOKEN_TYPE())) );
 
-    case ( (id, TplAbsyn.LITERAL_DEF(litType = litType)) )
+    case (id, TplAbsyn.LITERAL_DEF(litType = litType))
       then ( (id, TplAbsyn.TI_CONST_TYPE(litType)) );
 
-    case ( (id, TplAbsyn.TEMPLATE_DEF(args = iargs)) )
+    case (id, TplAbsyn.TEMPLATE_DEF(args = iargs))
       algorithm
         iargs :=  TplAbsyn.imlicitTxtArg :: iargs;
         oargs := List.filterOnTrue(iargs, TplAbsyn.isText);
@@ -785,8 +782,8 @@ algorithm
         i := stringCharInt(c);
         if i == 13
         then
-          chars := match(chars)
-            case ("\n" :: chars) then chars; // \n
+          chars := match chars
+            case "\n" :: chars then chars; // \n
             else chars;
           end match;
         end if;
@@ -841,8 +838,8 @@ algorithm
 
     case (chars as ("/" :: "*" :: charsRest), linfo)
       algorithm
-        failure((_,_) := comment(charsRest, linfo));
-        (linfo) := parseError(chars, linfo, "Unmatched /* */ comment - reached end of file.", true);
+        failure(comment(charsRest, linfo));
+        linfo := parseError(chars, linfo, "Unmatched /* */ comment - reached end of file.", true);
       then ({}, linfo);
 
 
@@ -920,7 +917,7 @@ algorithm
       then (chars, linfo);
     case (chars as (_ :: charsRest), linfo)
       algorithm
-        failure((_,_) := newLine(chars, linfo));
+        failure(newLine(chars, linfo));
         (chars, linfo) := comment(charsRest,linfo);
       then (chars, linfo);
 
@@ -942,12 +939,12 @@ afterKeyword:
 public function afterKeyword
   input list<String> inChars;
 algorithm
-  _ := match inChars
+  () := match inChars
     local
       String c;
       Integer i;
 
-    case (c :: _)
+    case c :: _
       algorithm
         i := stringCharInt(c);
         //[_0-9A-Za-z]
@@ -957,7 +954,7 @@ algorithm
             or ( 97/*a*/ <= i and i <= 122/*z*/);
       then ();
 
-    case ({}) then ();
+    case {} then ();
 
   end match;
 end afterKeyword;
@@ -983,7 +980,7 @@ algorithm
       String c, ident;
       Integer i;
 
-    case (c :: chars)
+    case c :: chars
       algorithm
         i := stringCharInt(c);
         //[_A-Za-z]
@@ -1016,7 +1013,7 @@ algorithm
       String c;
       Integer i;
 
-    case (c :: chars)
+    case c :: chars
       algorithm
         i := stringCharInt(c);
         //[_0-9A-Za-z]
@@ -1133,8 +1130,8 @@ algorithm
 
     case (chars, linfo)
       algorithm
-        failure((_, _) := identifier(chars));
-        (linfo) := parseError(chars, linfo, "Expected an identifier at the position.", true);
+        failure(identifier(chars));
+        linfo := parseError(chars, linfo, "Expected an identifier at the position.", true);
       then (chars, linfo, "#error#");
 
   end matchcontinue;
@@ -1268,7 +1265,7 @@ algorithm
       algorithm
         afterKeyword(chars);
         (chars, linfo) := interleave(chars, linfo);
-        ("i"::"n"::"t"::"e"::"r"::"f"::"a"::"c"::"e" :: chars) := chars;
+        "i"::"n"::"t"::"e"::"r"::"f"::"a"::"c"::"e" :: chars := chars;
         afterKeyword(chars);
         //remember position for a file error
         (startChars, startLinfo) := interleave(chars, linfo);
@@ -1339,7 +1336,7 @@ algorithm
     case ("." :: chars, linfo)
       algorithm
         (chars, linfo) := interleave(chars, linfo);
-        ("*" :: chars) := chars;
+        "*" :: chars := chars;
       then (chars, linfo, true);
     else (inChars, inLineInfo, false);
   end matchcontinue;
@@ -1511,11 +1508,11 @@ public function typeSigFromPathIdent
   input TplAbsyn.PathIdent inPathIdent;
   output TplAbsyn.TypeSignature outTypeSignature;
 algorithm
-  (outTypeSignature) := match (inPathIdent)
-    case (TplAbsyn.IDENT("String") )  then TplAbsyn.STRING_TYPE();
-    case (TplAbsyn.IDENT("Integer") ) then TplAbsyn.INTEGER_TYPE();
-    case (TplAbsyn.IDENT("Real") )    then TplAbsyn.REAL_TYPE();
-    case (TplAbsyn.IDENT("Boolean") ) then TplAbsyn.BOOLEAN_TYPE();
+  outTypeSignature := match inPathIdent
+    case TplAbsyn.IDENT("String")  then TplAbsyn.STRING_TYPE();
+    case TplAbsyn.IDENT("Integer") then TplAbsyn.INTEGER_TYPE();
+    case TplAbsyn.IDENT("Real")    then TplAbsyn.REAL_TYPE();
+    case TplAbsyn.IDENT("Boolean") then TplAbsyn.BOOLEAN_TYPE();
 
     else TplAbsyn.NAMED_TYPE(inPathIdent);
 
@@ -1536,16 +1533,16 @@ public function publicProtected
   output list<String> outChars;
   output Boolean outIsDefault;
 algorithm
-  (outChars, outIsDefault) := matchcontinue (inChars)
+  (outChars, outIsDefault) := matchcontinue inChars
     local
       list<String> chars;
 
-    case ("p"::"u"::"b"::"l"::"i"::"c" :: chars)
+    case "p"::"u"::"b"::"l"::"i"::"c" :: chars
       algorithm
         afterKeyword(chars);
       then (chars, true);
 
-    case ("p"::"r"::"o"::"t"::"e"::"c"::"t"::"e"::"d" :: chars)
+    case "p"::"r"::"o"::"t"::"e"::"c"::"t"::"e"::"d" :: chars
       algorithm
         afterKeyword(chars);
       then (chars, false);
@@ -1630,7 +1627,7 @@ algorithm
 
     case (startChars as (_ :: chars), linfo)
       algorithm
-        failure((_, _) := newLine(startChars, linfo));
+        failure(newLine(startChars, linfo));
         (chars, linfo, optErr) := stringCommentRest(chars, linfo);
       then (chars, linfo, optErr);
 
@@ -1694,14 +1691,14 @@ public function interfacePackage
   output list<TplAbsyn.ASTDef> outAccASTDefs;
 algorithm
   (outChars, outLineInfo, outPid, outAccASTDefs)
-  := matchcontinue (inChars, inLineInfo, inAccASTDefs)
+  := matchcontinue (inChars, inLineInfo)
     local
       list<String> chars;
       LineInfo linfo;
       TplAbsyn.PathIdent pid;
       list<TplAbsyn.ASTDef> astDefs;
 
-    case (chars, linfo, _)
+    case (chars, linfo)
       algorithm
         (chars, linfo) := interleaveExpectKeyWord(chars, linfo, {"i","n","t","e","r","f","a","c","e"}, true);
         (chars, linfo) := interleaveExpectKeyWord(chars, linfo, {"p","a","c","k","a","g","e"}, true);
@@ -1785,7 +1782,7 @@ algorithm
       algorithm
         (chars, isD) := publicProtected(chars);
         (chars, linfo) := interleave(chars, linfo);
-        ("p"::"a"::"c"::"k"::"a"::"g"::"e" :: chars) := chars;
+        "p"::"a"::"c"::"k"::"a"::"g"::"e" :: chars := chars;
         afterKeyword(chars);
         (chars, linfo) := interleave(chars, linfo);
 
@@ -1849,7 +1846,7 @@ algorithm
    case (chars, linfo, _)
       algorithm
         (_, false) := isKeyword(chars, "e"::"n"::"d"::{});
-        (linfo) := parseError(chars, linfo, "Expected 'end' keyword at the position.", true);
+        linfo := parseError(chars, linfo, "Expected 'end' keyword at the position.", true);
       then (chars, linfo);
 
    case (chars, linfo, _)
@@ -1910,7 +1907,7 @@ algorithm
     case (chars, linfo, _)
       algorithm
         (_, false) := isKeyword(chars, "e"::"n"::"d"::{});
-        (linfo) := parseError(chars, linfo, "Expected 'end' keyword at the position.", true);
+        linfo := parseError(chars, linfo, "Expected 'end' keyword at the position.", true);
       then (chars, linfo);
 
     else
@@ -2608,7 +2605,7 @@ algorithm
       algorithm
         afterKeyword(chars);
         (chars, linfo) := interleave(chars, linfo);
-        ("&":: chars) := chars;
+        "&":: chars := chars;
         (chars, linfo) := interleave(chars, linfo);
         (chars, linfo, name) := identifierNoOpt(chars, linfo);
         (chars, linfo) := interleave(chars, linfo);
@@ -2731,10 +2728,10 @@ algorithm
     case ("," :: chars, linfo)
       algorithm
         (chars, linfo) := interleave(chars, linfo);
-        ("T"::"e"::"x"::"t":: chars) := chars;
+        "T"::"e"::"x"::"t":: chars := chars;
         afterKeyword(chars);
         (chars, linfo) := interleave(chars, linfo);
-        ("&":: chars) := chars;
+        "&":: chars := chars;
         (chars, linfo) := interleave(chars, linfo);
         (chars, linfo, name) := identifierNoOpt(chars, linfo);
         (chars, linfo) := interleave(chars, linfo);
@@ -2841,7 +2838,7 @@ algorithm
 
     case (chars, linfo, _, _, false)
       algorithm
-        (linfo) := parseError(chars, linfo, "Expecting an expression - not able to parse from this point.", true);
+        linfo := parseError(chars, linfo, "Expecting an expression - not able to parse from this point.", true);
       then (chars, linfo, (TplAbsyn.ERROR_EXP(), dummySourceInfo));
 
   end matchcontinue;
@@ -2855,13 +2852,13 @@ public function makeEscapedExp
   input list<TplAbsyn.EscOption> inOptions;
   output TplAbsyn.Expression outExpression;
 algorithm
-  (outExpression) := match (inEndChars, inEndLineInfo, inExpression, inOptions)
+  outExpression := match (inExpression, inOptions)
     local
       TplAbsyn.Expression exp;
       list<TplAbsyn.EscOption> opts;
       SourceInfo sinfo;
-   case (_, _, exp, {})  then exp;
-   case (_, _, exp, opts as (_::_))
+   case (exp, {})  then exp;
+   case (exp, opts as (_::_))
      algorithm
        sinfo := tplSourceInfo(startPositionFromExp(exp), inEndChars, inEndLineInfo);
      then ((TplAbsyn.ESCAPED(exp, opts), sinfo));
@@ -3263,7 +3260,7 @@ algorithm
         //capture only ident span for the letExp, the exp will have its own span
         sinfo := tplSourceInfo(captureStartPosition(startChars, startLInfo, 1), chars, linfo);
         (chars, linfo) := interleave(chars, linfo);
-        ("=":: chars) := chars;
+        "=":: chars := chars;
         (chars, linfo) := interleaveExpectKeyWord(chars, linfo, {"b","u","f","f","e","r"}, false);
         (chars, linfo) := interleave(chars, linfo);
         (chars, linfo, exp) := expression(chars, linfo, lesc, resc, false);
@@ -3275,7 +3272,7 @@ algorithm
         (chars, id) := identifier(chars);
         sinfo := tplSourceInfo(captureStartPosition(startChars, startLInfo, 1), chars, linfo);
         (chars, linfo) := interleave(chars, linfo);
-        ("+"::"=":: chars) := chars;
+        "+"::"=":: chars := chars;
         (chars, linfo) := interleave(chars, linfo);
         (chars, linfo, exp) := expression(chars, linfo, lesc, resc, false);
       then (chars, linfo, (TplAbsyn.TEXT_ADD(id, exp), sinfo));
@@ -3594,7 +3591,7 @@ algorithm
    case ("{" :: startChars, startLInfo, _, _)
       algorithm
         (chars, linfo) := interleave(startChars, startLInfo);
-        ("}" :: chars) := chars;
+        "}" :: chars := chars;
         sinfo := tplSourceInfo(captureStartPosition(startChars, startLInfo, 1), chars, linfo);
       then (chars, linfo, (TplAbsyn.MAP_ARG_LIST({}), sinfo));
 
@@ -3702,7 +3699,7 @@ algorithm
     case ("(":: chars, linfo, name, _, _)
       algorithm
         (chars, linfo) := interleave(chars, linfo);
-        (")" :: chars) := chars;
+        ")" :: chars := chars;
       then (chars, linfo, TplAbsyn.FUN_CALL(name,{}));
 
     case ("(":: chars, linfo, name, lesc, resc)
@@ -3890,11 +3887,11 @@ public function rightVerbatimConstQuote
   input  String inLeftQuote;
   output String outRightQuote;
 algorithm
-  (outRightQuote) := match (inLeftQuote)
-    case ("(" ) then ")";
-    case ("{" ) then "}";
-    case ("<" ) then ">";
-    case ("[" ) then "]";
+  outRightQuote := match inLeftQuote
+    case "(" then ")";
+    case "{" then "}";
+    case "<" then ">";
+    case "[" then "]";
     else inLeftQuote;
   end match;
 end rightVerbatimConstQuote;
@@ -3963,7 +3960,7 @@ algorithm
 
     case (chars as (c :: restChars), linfo, accChars, accStrList)
       algorithm
-        failure((_, _) := newLine(chars, linfo));
+        failure(newLine(chars, linfo));
         (chars, linfo,stRevLst,optError) := doubleQuoteConst(restChars, linfo, c::accChars, accStrList);
       then (chars, linfo, stRevLst,optError);
 
@@ -3989,11 +3986,11 @@ public function escChar
   input  String inEscChar;
   output String outTheChar;
 algorithm
-  (outTheChar) := match (inEscChar)
-    case ("'" ) then "'";
-    case ("\"" ) then "\"";
-    case ("?" ) then "?";
-    case ("\\" ) then "\\";
+  outTheChar := match inEscChar
+    case "'" then "'";
+    case "\"" then "\"";
+    case "?" then "?";
+    case "\\" then "\\";
     /*
     //TODO: Error in the .srz or .c compilation(\r)
     case ("a" ) then "\a";
@@ -4002,9 +3999,9 @@ algorithm
     case ("r" ) then "\r";
     case ("v" ) then "\v";
     */
-    case ("n" ) then "\n";
-    case ("t" ) then "\t";
-    case (" " ) then " ";
+    case "n" then "\n";
+    case "t" then "\t";
+    case " " then " ";
   end match;
 end escChar;
 
@@ -4039,23 +4036,14 @@ algorithm
     local
       list<String> chars, restChars, accChars, accStrList, stRevLst;
       LineInfo linfo;
-      String lquot,rquot,c,str, errStr;
+      String rquot,c,str, errStr;
       Option<String> optError;
-      Boolean isD;
-      TplAbsyn.Ident id;
-      TplAbsyn.TypedIdents fields,inargs,outargs;
-      tuple<TplAbsyn.Ident, TplAbsyn.TypedIdents> rtag;
-      tuple<TplAbsyn.Ident, TplAbsyn.TypeInfo> idti;
-      list<tuple<TplAbsyn.Ident, TplAbsyn.TypeInfo>> types;
-      list<tuple<TplAbsyn.Ident, TplAbsyn.TypedIdents>> rtags;
-      TplAbsyn.TypeSignature ts;
-      Tpl.StringToken st;
 
     //strip a last inline new line
     case (chars, linfo, rquot, accChars, accStrList)
       algorithm
         (chars, linfo) := newLine(chars, linfo);
-        (c :: "%" :: chars) := chars;
+        c :: "%" :: chars := chars;
         true := stringEq(c, rquot);
         str := stringCharListString(listReverse(accChars));
       then (chars, linfo, str :: accStrList,NONE());
@@ -4075,7 +4063,7 @@ algorithm
 
     case (chars as (c :: restChars), linfo, rquot, accChars, accStrList)
       algorithm
-        failure((_, _) := newLine(chars, linfo));
+        failure(newLine(chars, linfo));
         (chars, linfo, stRevLst, optError) := verbatimConst(restChars, linfo, rquot, c::accChars, accStrList);
       then (chars, linfo, stRevLst, optError);
 
@@ -4141,26 +4129,26 @@ public function makeStrTokFromRevStrList
   input list<String> inRevStrList;
   output Tpl.StringToken outStringToken;
 algorithm
-  (outStringToken) := matchcontinue (inRevStrList)
+  outStringToken := matchcontinue inRevStrList
     local
       list<String> strList;
       String str;
 
-    case ( { str } )
+    case { str }
       then Tpl.ST_STRING(str);
 
-    case ( { "", "\n" } )
+    case { "", "\n" }
       then Tpl.ST_NEW_LINE();
 
-    case ( { "" , str} )
+    case { "" , str}
       then Tpl.ST_LINE(str);
 
-    case ( "" :: strList )
+    case "" :: strList
       algorithm
         strList := listReverse(strList);
       then Tpl.ST_STRING_LIST(strList, true);
 
-    case ( strList as (_ :: _))
+    case strList as (_ :: _)
       algorithm
         strList := listReverse(strList);
       then Tpl.ST_STRING_LIST(strList, false);
@@ -4189,12 +4177,12 @@ public function plusMinus
   output list<String> outChars;
   output String outSign;
 algorithm
-  (outChars, outSign) := match (inChars)
+  (outChars, outSign) := match inChars
     local
       list<String> chars;
       String char;
 
-    case (char :: chars) guard char=="+" or char=="-"
+    case char :: chars guard char=="+" or char=="-"
       then (chars, char);
 
     else
@@ -4214,13 +4202,13 @@ public function digits
   output list<String> outChars;
   output list<String> outDigits;
 algorithm
-  (outChars, outDigits) := matchcontinue (inChars)
+  (outChars, outDigits) := matchcontinue inChars
     local
       String d;
       list<String> chars, ds;
       Integer i;
 
-    case (d :: chars)
+    case d :: chars
       algorithm
         i := stringCharInt(d);
         //[0-9]
@@ -4228,7 +4216,7 @@ algorithm
         (chars,ds) := digits(chars);
       then (chars, d::ds);
 
-    case (chars)
+    case chars
       then (chars, {});
 
   end matchcontinue;
@@ -4246,15 +4234,15 @@ public function dotNumber
   output String outDotNumber;
   output TplAbsyn.TypeSignature outLitType;
 algorithm
-  (outChars, outDotNumber, outLitType) := matchcontinue (inChars)
+  (outChars, outDotNumber, outLitType) := matchcontinue inChars
     local
       String dn;
       list<String> chars, ds;
 
-    case ("." :: chars)
+    case "." :: chars
       algorithm
         (chars,ds) := digits(chars);
-        (_::_) := ds; //some digits must be there
+        _::_ := ds; //some digits must be there
         dn := "." + stringCharListString(ds);
       then (chars, dn, TplAbsyn.REAL_TYPE());
 
@@ -4279,25 +4267,24 @@ public function exponent
   output String outExponent;
   output TplAbsyn.TypeSignature outLitType;
 algorithm
-  (outChars,outExponent,outLitType) := matchcontinue (inChars,inLitType)
+  (outChars,outExponent,outLitType) := matchcontinue inChars
     local
       String ex,pm;
       list<String> chars, ds;
-      TplAbsyn.TypeSignature litType;
 
-    case ("e" :: chars, _)
+    case "e" :: chars
       algorithm
         (chars,pm) := plusMinus(chars);
         (chars,ds) := digits(chars);
-        (_::_) := ds; //some digits must be there
+        _::_ := ds; //some digits must be there
         ex := "e" + pm + stringCharListString(ds);
       then (chars, ex, TplAbsyn.REAL_TYPE());
 
-    case ("E" :: chars, _)
+    case "E" :: chars
       algorithm
         (chars,pm) := plusMinus(chars);
         (chars,ds) := digits(chars);
-        (_::_) := ds; //some digits must be there
+        _::_ := ds; //some digits must be there
         ex := "E" + pm + stringCharListString(ds);
       then (chars, ex, TplAbsyn.REAL_TYPE());
 
@@ -4356,7 +4343,7 @@ algorithm
         //the base indent is the indent of the line where the << appears
         (_, baseInd) := lineIndent(solChars,0);
         //some non-space char(s) is after <<
-        failure( (_,_) := takeSpaceAndNewLine(startChars, startLInfo) );
+        failure( takeSpaceAndNewLine(startChars, startLInfo) );
         (chars, lineInd) := lineIndent(startChars,0);
         //correct the indent of the line right after << to baseInd
         lineInd := lineInd + baseInd;
@@ -4515,9 +4502,8 @@ protected
   list<tuple<Integer, list<TplAbsyn.Expression>>> ind_stack = inIndentStack;
 
   String char, next_char;
-  Boolean remaining_chars = true;
   TplAbsyn.Expression exp;
-  list<String> chars, sol_chars, acc_chars = {};
+  list<String> chars, acc_chars = {};
   Option<String> err_opt;
   LineInfo linfo;
 algorithm
@@ -4618,7 +4604,7 @@ public function dropNewLineAfterEmptyExp
   output Integer outLineIndent;
 algorithm
   (outChars, outLineInfo, outLineIndent)
-  := matchcontinue (inChars, inLineInfo, inLineIndent, inAccStringChars)
+  := matchcontinue (inChars, inLineInfo, inAccStringChars)
     local
       list<String> chars;
       LineInfo linfo;
@@ -4627,7 +4613,7 @@ algorithm
     //ignore a pure-empty-exp line
     //accChars = {} nothing before the empty exp
     //and [space] and newLine() after it
-    case (chars, linfo, _, {})
+    case (chars, linfo, {})
       algorithm
         (chars, linfo) := takeSpaceAndNewLine(chars, linfo);
         (chars,lineInd) := lineIndent(chars, 0);
@@ -4647,7 +4633,7 @@ public function makeTemplateFromExpList
 
   output TplAbsyn.ExpressionBase outExpressionBase;
 algorithm
-  (outExpressionBase)
+  outExpressionBase
   := matchcontinue (inExpressionList, inLeftQuote,inRightQuote)
     local
       String lquote, rquote;
@@ -4835,7 +4821,7 @@ algorithm
       algorithm
         true := ( lineInd >= actInd );
         accChars := listAppend(accChars, List.fill(" ",lineInd - actInd)) annotation(__OpenModelica_DisableListAppendWarning=true);
-        ( (TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST(strLst, false)),_) :: expLst)
+        (TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST(strLst, false)),_) :: expLst
          := addAccStringChars(expLst, accChars); //must create the ST becase of accChars as (_::_)
         //make the opened last ST be disposable new line
         expLst := (TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST(strLst, true)), dummySourceInfo) :: expLst;
@@ -4887,7 +4873,7 @@ public function onTemplEnd
 
   output list<TplAbsyn.Expression> outExpressionList;
 algorithm
-  (outExpressionList)
+  outExpressionList
   := matchcontinue (inDropLastNewLine, inExpressionList, inIndentStack, inActualIndent,
                     inLineIndent, inAccStringChars)
     local
@@ -5038,7 +5024,7 @@ public function addAccStringChars
 
   output list<TplAbsyn.Expression> outExpressionList;
 algorithm
-  (outExpressionList)
+  outExpressionList
   := matchcontinue (inExpressionList, inAccStringChars)
     local
       list<String> accChars, strLst;
@@ -5110,8 +5096,8 @@ public function finalizeLastStringToken
 
   output list<TplAbsyn.Expression> outExpressionList;
 algorithm
-  (outExpressionList)
-  := matchcontinue (inExpressionList)
+  outExpressionList
+  := matchcontinue inExpressionList
     local
       list<String>  strLst;
       String str, strNonNl;
@@ -5121,7 +5107,7 @@ algorithm
 
    // expLst = ST opened with new line :: _
    // merge the pushed new line with previous string without new line
-   case ( (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = ("" :: strNonNl :: strLst), lastHasNewLine = true)),_) :: expLst )
+   case (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = ("" :: strNonNl :: strLst), lastHasNewLine = true)),_) :: expLst
       algorithm
         failure("\n" := stringGetStringChar(strNonNl, stringLength(strNonNl)));
         // push the disposable new line
@@ -5131,7 +5117,7 @@ algorithm
 
    // expLst = ST opened with new line :: _
    // the last string has new line (or empty - should not happen)
-   case ( (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = ("" :: strLst), lastHasNewLine = true)),_) :: expLst)
+   case (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = ("" :: strLst), lastHasNewLine = true)),_) :: expLst
       algorithm
         //"\n" = stringGetStringChar(str, stringLength(str));
         expLst := finalizeLastStringToken( (TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST( ""::"\n"::strLst, false)), dummySourceInfo) :: expLst);
@@ -5140,13 +5126,13 @@ algorithm
 
    // expLst = ST opened with new line :: _
    // empty ST - for sure - should not happen
-   case ( (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = { "" }, lastHasNewLine = false)),_) :: expLst )
+   case (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = { "" }, lastHasNewLine = false)),_) :: expLst
       then expLst;
 
 
    // expLst = ST opened with new line :: _
    // the last and only string has new line
-   case ( (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = { "" , "\n" }, lastHasNewLine = false)),_) :: expLst )
+   case (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = { "" , "\n" }, lastHasNewLine = false)),_) :: expLst
       algorithm
         expLst := (TplAbsyn.STR_TOKEN(Tpl.ST_NEW_LINE()), dummySourceInfo) :: expLst;
       then expLst;
@@ -5154,7 +5140,7 @@ algorithm
 
    // expLst = ST opened with new line :: _
    // the last and only string has new line => ST_LINE
-   case ( (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = { "" , str }, lastHasNewLine = false)),_) :: expLst )
+   case (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = { "" , str }, lastHasNewLine = false)),_) :: expLst
       algorithm
         "\n" := stringGetStringChar(str, stringLength(str));
         expLst := (TplAbsyn.STR_TOKEN(Tpl.ST_LINE(str)), dummySourceInfo) :: expLst;
@@ -5162,7 +5148,7 @@ algorithm
 
    // expLst = ST opened with new line :: _
    // the last and only string has NOT a new line  => ST_STRING
-   case ( (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = { "" , str }, lastHasNewLine = false)),_) :: expLst )
+   case (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = { "" , str }, lastHasNewLine = false)),_) :: expLst
       algorithm
         failure("\n" := stringGetStringChar(str, stringLength(str)));
         expLst := (TplAbsyn.STR_TOKEN(Tpl.ST_STRING(str)), dummySourceInfo) :: expLst;
@@ -5171,7 +5157,7 @@ algorithm
 
    // expLst = ST is string list :: _
    // make it a ST_STRING_LIST with properly set lastHasNewLine
-   case ( (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST( strList = ("" :: (strLst as (str :: _))), lastHasNewLine = false)),_) :: expLst )
+   case (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST( strList = ("" :: (strLst as (str :: _))), lastHasNewLine = false)),_) :: expLst
       algorithm
         hasNL := ("\n" == stringGetStringChar(str, stringLength(str)));
         strLst := listReverse(strLst);
@@ -5258,7 +5244,7 @@ algorithm
    case (chars, linfo, lesc, resc)
      algorithm
        (_, false) := isKeyword(chars, "t"::"h"::"e"::"n"::{});
-       (linfo) := parseError(chars, linfo, "Expected 'then' keyword at the position.", false);
+       linfo := parseError(chars, linfo, "Expected 'then' keyword at the position.", false);
        (chars, linfo, exp) := expressionLet(chars, linfo, lesc, resc);
      then (chars, linfo, exp);
 
@@ -5579,7 +5565,7 @@ algorithm
         afterKeyword(chars);
         (chars, linfo) := interleave(chars, linfo);
         //both keywords are optional ... the match cannot be "expected" as there can be 'end' indentifier ';'
-        ("m"::"a"::"t"::"c"::"h" :: chars) := chars; // interleaveExpectKeyWord(chars, linfo, {"m","a","t","c","h"}, false);
+        "m"::"a"::"t"::"c"::"h" :: chars := chars; // interleaveExpectKeyWord(chars, linfo, {"m","a","t","c","h"}, false);
         afterKeyword(chars);
       then (chars, linfo);
 
@@ -5632,7 +5618,7 @@ public function makeMatchCaseLst
 
   output list<tuple<TplAbsyn.MatchingExp, TplAbsyn.Expression>> outMatchCaseLst;
 algorithm
-  (outMatchCaseLst) :=
+  outMatchCaseLst :=
   match (inMExpHeadLst, inExpression)
     local
       TplAbsyn.Expression exp;
@@ -5710,13 +5696,13 @@ algorithm
    case (chars, linfo, lesc, resc)
       algorithm
         (chars, linfo, mcaseLst) := matchCaseList(chars, linfo, lesc, resc);
-        (_::_) := mcaseLst;
+        _::_ := mcaseLst;
       then (chars, linfo, mcaseLst);
 
    case (chars, linfo, _, _)
       algorithm
         (_, false) := isKeyword(chars, "c"::"a"::"s"::"e"::{});
-        (linfo) := parseError(chars, linfo, "Expected keyword 'case' at the position.", true);
+        linfo := parseError(chars, linfo, "Expected keyword 'case' at the position.", true);
       then (chars, linfo, {});
 
    else
@@ -5864,7 +5850,7 @@ algorithm
    case ("{":: chars, linfo)
       algorithm
         (chars, linfo) := interleave(chars, linfo);
-        ("}"::chars) := chars;
+        "}"::chars := chars;
       then (chars, linfo, TplAbsyn.LIST_MATCH({}));
 
    case ("{":: chars, linfo)
@@ -5899,7 +5885,7 @@ algorithm
 
    case (chars, linfo)
       algorithm
-        (linfo) := parseError(chars, linfo, "Expected a valid match binding expression at the position.", true);
+        linfo := parseError(chars, linfo, "Expected a valid match binding expression at the position.", true);
         //true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Parse error - TplParser.matchBinding_base failed .\n");
       then (chars, linfo, TplAbsyn.LITERAL_MATCH("#Error#", TplAbsyn.UNRESOLVED_TYPE("#Error#")));
 
@@ -5933,7 +5919,7 @@ algorithm
     case ("(":: chars, linfo)
       algorithm
         (chars, linfo) := interleave(chars, linfo);
-        ("_"::"_":: chars) := chars;
+        "_"::"_":: chars := chars;
         (chars, linfo) := interleaveExpectChar(chars, linfo, ")");
       then (chars, linfo, TplAbsyn.REST_MATCH());
 
@@ -6093,13 +6079,13 @@ algorithm
     case ("(":: chars, linfo, pid)
       algorithm
         (chars, linfo) := interleave(chars, linfo);
-        (")":: chars) := chars;
+        ")":: chars := chars;
       then (chars, linfo, TplAbsyn.RECORD_MATCH(pid, {}));
 
     case ("(":: chars, linfo, pid)
       algorithm
         (chars, linfo) := interleave(chars, linfo);
-        ("_"::"_":: chars) := chars;
+        "_"::"_":: chars := chars;
         (chars, linfo) := interleaveExpectChar(chars, linfo, ")");
       then (chars, linfo, TplAbsyn.RECORD_MATCH(pid, {}));
 
@@ -6114,7 +6100,7 @@ algorithm
 
     case (chars, linfo, pid as TplAbsyn.PATH_IDENT(_,_))
       algorithm
-         (linfo) := parseError(chars, linfo, "Expected '(' after the dot path.", false);
+         linfo := parseError(chars, linfo, "Expected '(' after the dot path.", false);
       then (chars, linfo, TplAbsyn.RECORD_MATCH(pid, {}));
 
     case ("a"::"s":: chars, linfo, TplAbsyn.IDENT(id))

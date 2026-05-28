@@ -210,7 +210,7 @@ protected
   List<DAE.ComponentRef> uniqueHashValues, crefs, derCrefsAcc = {}, outerOutputCrefs;
   HashSet.HashSet derCrefsSet;
   AvlTreePathFunction.Tree emptyTree;
-  list<DAE.Element> dAElistNew, mergeEqns, mergeEqns_der, aliasEqns_der;
+  list<DAE.Element> mergeEqns, mergeEqns_der, aliasEqns_der;
   Integer nOfHits;
   Boolean hasDer;
   // FLAT_SM
@@ -337,12 +337,12 @@ Create RHS expression of merging equation.
 protected
   DAE.CallAttributes callAttributes = DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL());
 algorithm
-  res := match (inOuterCrefs)
+  res := match inOuterCrefs
     local
       DAE.ComponentRef outerCref, crefState;
       List<DAE.ComponentRef> rest;
-      DAE.Exp outerCrefExp, innerCrefExp, crefStateExp, ifExp, expCond, expElse;
-    case (outerCref::{})
+      DAE.Exp outerCrefExp, crefStateExp, ifExp, expCond, expElse;
+    case outerCref::{}
       algorithm
         outerCrefExp := DAE.CREF(outerCref, ty);
         crefState := ComponentReference.crefStripLastIdent(outerCref);
@@ -351,7 +351,7 @@ algorithm
         expElse := DAE.RCONST(0);
         ifExp := DAE.IFEXP(expCond, outerCrefExp, expElse);
       then ifExp;
-    case (outerCref::rest)
+    case outerCref::rest
       algorithm
         outerCrefExp := DAE.CREF(outerCref, ty);
         crefState := ComponentReference.crefStripLastIdent(outerCref);
@@ -382,7 +382,6 @@ algorithm
     local
       DAE.ComponentRef componentRef;
       list<DAE.Exp> expLst;
-      DAE.CallAttributes attr;
     case DAE.CALL(path=Absyn.IDENT("der"), expLst={DAE.CREF(componentRef=componentRef)})
       guard ComponentReferenceBasics.crefEqual(componentRef, cref)
         then (inExp, (cref, hitCount + 1));
@@ -423,12 +422,12 @@ Create RHS expression of merging equation.
 protected
   DAE.CallAttributes callAttributes = DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL());
 algorithm
-  res := match (inOuterCrefs)
+  res := match inOuterCrefs
     local
       DAE.ComponentRef outerCref, crefState;
       List<DAE.ComponentRef> rest;
       DAE.Exp outerCrefExp, innerCrefExp, crefStateExp, ifExp, expCond, expElse;
-    case (outerCref::{})
+    case outerCref::{}
       algorithm
         outerCrefExp := DAE.CREF(outerCref, ty);
         innerCrefExp := DAE.CREF(inInnerCref, ty);
@@ -438,7 +437,7 @@ algorithm
         expElse := DAE.CALL(Absyn.IDENT("previous"), {innerCrefExp}, callAttributes);
         ifExp := DAE.IFEXP(expCond, outerCrefExp, expElse);
       then ifExp;
-    case (outerCref::rest)
+    case outerCref::rest
       algorithm
         outerCrefExp := DAE.CREF(outerCref, ty);
         crefState := ComponentReference.crefStripLastIdent(outerCref);
@@ -548,12 +547,12 @@ Helper function to matchOuterWithInner
   input InnerOuter.InstHierarchy inIH;
   output DAE.ComponentRef outCrefFound;
 protected
-  DAE.ComponentRef testCref, strippedCref1, strippedCref2;
+  DAE.ComponentRef strippedCref1, strippedCref2;
   InnerOuter.InstHierarchyHashTable ht;
 algorithm
   InnerOuter.TOP_INSTANCE(ht=ht) := listHead(inIH);
   try
-    _ := InnerOuter.get(inCrefTest, ht);
+    InnerOuter.get(inCrefTest, ht);
     outCrefFound := inCrefTest;
   else
     strippedCref1 := ComponentReference.crefStripLastIdent(inCrefTest);
@@ -664,7 +663,7 @@ Check if element is a SM_COMP.
   input DAE.Element inElement;
   output Boolean outResult;
 algorithm
-  outResult := match (inElement)
+  outResult := match inElement
     case DAE.SM_COMP(_,_) then true;
     else false;
   end match;
@@ -803,7 +802,6 @@ protected
   HashTable.HashTable cref2index;
   array<array<Boolean>> adjacency;
   Integer n,k,i,j;
-  Boolean c;
 algorithm
   ADJACENCY_TABLE(cref2index, adjacency) := iTable;
   n := BaseHashTable.hashTableCurrentSize(cref2index);
@@ -835,7 +833,6 @@ Create adjacency table showing which modes are connected by transitions."
 protected
   HashTable.HashTable cref2index "Map cref to corresponding index in adjacency matrix";
   array<array<Boolean>> adjacency "Adjacency matrix showing which states are connected by transitions";
-  array<Boolean> iRow;
   Integer n,m,i,j,k;
   DAE.ComponentRef cref;
   HashSet.HashSet edges;
@@ -877,7 +874,6 @@ protected
   tuple<DAE.ComponentRef, Integer> entry;
   DAE.ComponentRef cref;
   Integer n,i,j,padn;
-  array<Boolean> row;
   String str,pads;
   Boolean b;
 algorithm
@@ -989,7 +985,7 @@ Helper function to getSMNodeTable"
   output SMNodeTable outTable = inTable;
 algorithm
 
-  outTable := match (inElement)
+  outTable := match inElement
     local
       SMNode smnode1, smnode2;
       DAE.ComponentRef cref1, cref2;
@@ -1083,7 +1079,7 @@ Return state instance componenent refs used as arguments in operator 'initialSta
 input SCode.Equation inElement;
 output Absyn.ComponentRef outElement;
 algorithm
-  outElement := match (inElement)
+  outElement := match inElement
     local
       Absyn.ComponentRef cref1;
     case SCode.EQ_NORETCALL(exp=Absyn.CALL(function_=
@@ -1103,7 +1099,7 @@ Return list of state instance componenent refs used as arguments in operators 't
 input SCode.Equation inElement;
 output list<Absyn.ComponentRef> outElement;
 algorithm
-  outElement := match (inElement)
+  outElement := match inElement
     local
       Absyn.ComponentRef cref1, cref2;
     case SCode.EQ_NORETCALL(exp=Absyn.CALL(function_=

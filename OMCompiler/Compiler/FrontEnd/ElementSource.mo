@@ -81,13 +81,6 @@ function addCommentToSource
 algorithm
   source := match(source,commentIn)
     local
-      SourceInfo info;
-      list<Absyn.Within> partOfLst1;
-      DAE.ComponentPrefix instanceOpt1;
-      list<tuple<DAE.ComponentRef, DAE.ComponentRef>> connectEquationOptLst1;
-      list<Absyn.Path> typeLst1;
-      list<DAE.SymbolicOperation> operations1;
-      list<SCode.Comment> comment1,comment2;
       SCode.Comment comment;
     case (DAE.SOURCE(_, _, _, _, _, _, _),SOME(comment))
       algorithm
@@ -124,7 +117,7 @@ function addAdditionalComment
   input String message;
   output DAE.ElementSource outSource;
 algorithm
-  outSource := match (source,message)
+  outSource := match source
     local
       SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Path> typeLst "the absyn type of the element" ;
@@ -136,7 +129,7 @@ algorithm
       Boolean b;
       SCode.Comment c;
 
-    case (DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, operations, comment),_)
+    case DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, operations, comment)
       algorithm
         c := SCode.COMMENT(NONE(), SOME(message));
         b := listMember(c, comment);
@@ -161,8 +154,6 @@ algorithm
       list<tuple<DAE.ComponentRef, DAE.ComponentRef>> connectEquationOptLst "this element came from this connect" ;
       list<DAE.SymbolicOperation> operations;
       list<SCode.Comment> commentLst;
-      Boolean b;
-      SCode.Comment c;
 
     case (DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, operations, commentLst),SCode.COMMENT(annotation_=SOME(_)))
       then DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, operations, comment::commentLst);
@@ -175,11 +166,11 @@ function getComments
   input DAE.ElementSource source;
   output list<SCode.Comment> outComments;
 algorithm
-  outComments := match (source)
+  outComments := match source
     local
       list<SCode.Comment> comment;
 
-    case (DAE.SOURCE(comment = comment)) then comment;
+    case DAE.SOURCE(comment = comment) then comment;
 
   end match;
 end getComments;
@@ -271,7 +262,7 @@ algorithm
   if not Flags.isSet(Flags.INFO_XML_OPERATIONS) then
     return;
   end if;
-  source := match (source,elt)
+  source := match source
     local
       SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Path> typeLst "the absyn type of the element" ;
@@ -279,13 +270,11 @@ algorithm
       DAE.ComponentPrefix instanceOpt "the instance this element is part of" ;
       list<tuple<DAE.ComponentRef, DAE.ComponentRef>> connectEquationOptLst "this element came from this connect" ;
       list<DAE.SymbolicOperation> operations;
-      DAE.Exp h1,t1,t2;
       list<SCode.Comment> comment;
       SCode.Equation scode;
-      list<DAE.Element> elts;
-    case (DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, DAE.FLATTEN(scode,NONE())::operations,comment),_)
+    case DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, DAE.FLATTEN(scode,NONE())::operations,comment)
       then DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, DAE.FLATTEN(scode,SOME(elt))::operations,comment);
-    case (DAE.SOURCE(info=info),_)
+    case DAE.SOURCE(info=info)
       algorithm
         Error.addSourceMessage(Error.INTERNAL_ERROR, {"Tried to add the flattened elements to the list of operations, but did not find the SCode equation"}, info);
       then fail();
@@ -445,7 +434,7 @@ function getStatementSource
   input DAE.Statement stmt;
   output DAE.ElementSource source;
 algorithm
-  source := match(stmt)
+  source := match stmt
     case DAE.STMT_ASSIGN() then stmt.source;
     case DAE.STMT_TUPLE_ASSIGN() then stmt.source;
     case DAE.STMT_ASSIGN_ARR() then stmt.source;
@@ -529,13 +518,13 @@ algorithm
   if not (Flags.isSet(Flags.INFO_XML_OPERATIONS) or Flags.isSet(Flags.VISUAL_XML)) then
     return;
   end if;
-  source := match(source, classPathOpt)
+  source := match classPathOpt
     local
       Absyn.Path classPath;
     // a top level
-    case (_, NONE())
+    case NONE()
       then source;
-    case (_, SOME(classPath))
+    case SOME(classPath)
       then addElementSourcePartOf(source, Absyn.WITHIN(classPath));
   end match;
 end addElementSourcePartOfOpt;
@@ -576,7 +565,7 @@ algorithm
   if not (Flags.isSet(Flags.INFO_XML_OPERATIONS) or Flags.isSet(Flags.VISUAL_XML)) then
     return;
   end if;
-  source := match(source, classPath)
+  source := match source
     local
       SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Path> typeLst "the absyn type of the element" ;
@@ -586,7 +575,7 @@ algorithm
       list<DAE.SymbolicOperation> operations;
       list<SCode.Comment> comment;
 
-    case (DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, operations,comment), _)
+    case DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, typeLst, operations,comment)
       then DAE.SOURCE(info, partOfLst, instanceOpt, connectEquationOptLst, classPath::typeLst, operations,comment);
   end match;
 end addElementSourceType;

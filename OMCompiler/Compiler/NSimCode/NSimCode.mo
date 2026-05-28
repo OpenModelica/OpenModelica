@@ -778,7 +778,7 @@ public
       input UnorderedMap<ComponentRef, SimStrongComponent.Block> equation_map;
     protected
       list<list<SimStrongComponent.Block>> blcks;
-      list<SimVar> residualVars, algebraicVars;
+      list<SimVar> residualVars;
     algorithm
       (blcks, residualVars, simCodeIndices) := SimStrongComponent.Block.createDAEModeBlocks(systems, simCodeIndices, simcode_map, equation_map);
       data := SOME(DAE_MODE_DATA(blcks, NONE(), residualVars, {}, {}, DaeModeConfig.ALL));
@@ -841,8 +841,6 @@ public
       daeModeDataOpt := match daeModeDataOpt
         local
           DaeModeData daeModeData;
-          SimJacobian jac;
-          Option<SimJacobian> daeModeJac;
 
         case SOME(daeModeData)
           algorithm

@@ -791,7 +791,6 @@ function parseFunctionUnits
   input Function func;
   output Functionargs outArgs;
 protected
-  String fn_name;
   list<String> in_units, out_units, in_args, out_args;
 algorithm
   in_units := list(Component.getUnitAttribute(InstNode.component(p), "NONE") for p in func.inputs);
@@ -811,7 +810,6 @@ function unitTypesEqual
 algorithm
   (isEqual, outUnit) := match (unit1, unit2)
     local
-      Real r;
       list<ComponentRef> vars1, vars2;
       String s1, s2;
 
@@ -858,14 +856,12 @@ protected function Errorfunction "returns the inconsistent Equation with sub-exp
   input Equation inEq;
   input Unit.UnitToStringTable inHtU2S;
 algorithm
-  _ := match(inexpList, inEq, inHtU2S)
+  () := match inexpList
     local
-      String s, s1, s2, s3, s4;
+      String s, s1, s2;
       list<tuple<Expression, Unit.Unit>> expList;
-      Expression exp1, exp2;
-      Integer i;
       SourceInfo info;
-    case (expList, _, _)
+    case expList
       algorithm
         info:=Equation.info(inEq);
         s := Equation.toString(inEq);
@@ -886,20 +882,20 @@ protected function Errorfunction2 "help-function"
   input Unit.UnitToStringTable inHtU2S;
   output String outS;
 algorithm
-  outS := match(inexpList, inHtU2S)
+  outS := match inexpList
     local
       list<tuple<Expression, Unit.Unit>> expList;
       Expression exp;
       Unit.Unit ut;
       String s, s1, s2;
 
-    case ((exp, ut)::{}, _) algorithm
+    case (exp, ut)::{} algorithm
       s := Expression.toString(exp);
       s1 := Unit.unitString(ut, inHtU2S);
       s := "- sub-expression \"" + s + "\" has unit \"" + s1 + "\"";
     then s;
 
-    case ((exp, ut)::expList, _) algorithm
+    case (exp, ut)::expList algorithm
       s := Expression.toString(exp);
       s1 := Unit.unitString(ut, inHtU2S);
       s2 := Errorfunction2(expList, inHtU2S);

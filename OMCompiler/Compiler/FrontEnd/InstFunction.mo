@@ -98,20 +98,19 @@ public function instantiateExternalObject
   output DAE.DAElist dae "resulting dae";
   output ClassInf.State ciState;
 algorithm
-  (outCache,outEnv,outIH,dae,ciState) := matchcontinue(inCache,inEnv,inIH,els,inMod,impl,comment,info)
+  (outCache,outEnv,outIH,dae,ciState) := matchcontinue(inCache, inEnv, inIH, impl)
     local
       SCode.Element destr,constr;
-      FCore.Graph env1;
       FCore.Cache cache;
       Ident className;
       Absyn.Path classNameFQ;
       DAE.Type functp;
-      FCore.Graph fs,fs1,env;
+      FCore.Graph env;
       FCore.Ref r;
       InstanceHierarchy ih;
       DAE.ElementSource source "the origin of the element";
       // Explicit instantiation, generate constructor and destructor and the function type.
-    case  (cache,env,ih,_,_,false,_,_)
+    case  (cache, env, ih, false)
       algorithm
         className := FNode.refName(FGraph.lastScopeRef(env)); // The external object classname is in top frame of environment.
         checkExternalObjectMod(inMod, className);
@@ -135,7 +134,7 @@ algorithm
         (cache,env,ih,DAE.DAE({DAE.EXTOBJECTCLASS(classNameFQ,source)}),ClassInf.EXTERNAL_OBJ(classNameFQ));
 
     // Implicit, do not instantiate constructor and destructor.
-    case (cache,_,ih,_,_,true,_,_)
+    case (cache, _, ih, true)
       algorithm
         SOME(classNameFQ):= FGraph.getScopePath(inEnv); // Fully qualified classname
       then
@@ -157,18 +156,18 @@ protected function checkExternalObjectMod
   input DAE.Mod inMod;
   input String inClassName;
 algorithm
-  _ := match(inMod, inClassName)
+  () := match inMod
     local
       DAE.Ident id;
       DAE.Mod mod;
       SourceInfo info;
 
-    case (DAE.NOMOD(), _) then ();
-    case (DAE.MOD(subModLst = {}), _) then ();
+    case DAE.NOMOD() then ();
+    case DAE.MOD(subModLst = {}) then ();
 
     // The modifier contains a list of submods. Print an error for the first one
     // to make it look like a normal modifier error.
-    case (DAE.MOD(subModLst = DAE.NAMEMOD(ident = id, mod = mod) :: _), _)
+    case DAE.MOD(subModLst = DAE.NAMEMOD(ident = id, mod = mod) :: _)
       algorithm
         info := Mod.getModInfo(mod);
         Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
@@ -188,13 +187,12 @@ protected function instantiateExternalObjectDestructor
   output FCore.Cache outCache;
   output InnerOuter.InstHierarchy outIH;
 algorithm
-  (outCache,outIH) := matchcontinue (inCache,env,inIH,cl)
+  (outCache,outIH) := matchcontinue (inCache, inIH)
     local
       FCore.Cache cache;
-      FCore.Graph env1;
       InstanceHierarchy ih;
 
-    case (cache,_,ih,_)
+    case (cache, ih)
       algorithm
         (cache,_,ih) := implicitFunctionInstantiation(cache,env,ih,DAE.NOMOD(),DAE.NOPRE(),cl,{});
       then
@@ -217,14 +215,14 @@ protected function instantiateExternalObjectConstructor
   output InnerOuter.InstHierarchy outIH;
   output DAE.Type outType;
 algorithm
-  (outCache,outIH,outType) := matchcontinue (inCache,env,inIH,cl)
+  (outCache,outIH,outType) := matchcontinue (inCache, inIH)
     local
       FCore.Cache cache;
       FCore.Graph env1;
       DAE.Type ty;
       InstanceHierarchy ih;
 
-    case (cache,_,ih,_)
+    case (cache, ih)
       algorithm
         (cache,env1,ih) := implicitFunctionInstantiation(cache,env,ih, DAE.NOMOD(), DAE.NOPRE(), cl, {});
         (cache,ty,_) := Lookup.lookupType(cache,env1,Absyn.IDENT("constructor"),NONE());
@@ -314,10 +312,9 @@ protected function implicitFunctionInstantiation2
   output InnerOuter.InstHierarchy outIH;
   output list<DAE.Function> funcs;
 algorithm
-  (outCache,outEnv,outIH,funcs):= matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inClass,inInstDims,instFunctionTypeOnly)
+  (outCache,outEnv,outIH,funcs):= matchcontinue (inCache, inEnv, inIH, inMod, inPrefix, inClass, inInstDims)
     local
       DAE.Type ty,ty1;
-      ClassInf.State st;
       FCore.Graph env_1,env,tempenv,cenv;
       Absyn.Path fpath;
       DAE.Mod mod;
@@ -332,7 +329,6 @@ algorithm
       DAE.ExternalDecl extdecl;
       SCode.Restriction restr;
       SCode.ClassDef parts;
-      list<SCode.Element> els;
       list<Absyn.Path> funcnames;
       FCore.Cache cache;
       InstanceHierarchy ih;
@@ -351,7 +347,7 @@ algorithm
       Absyn.FunctionPurity purity;
 
     // normal functions
-    case (cache,env,ih,mod,pre,SCode.CLASS(classDef=cd, prefixes=SCode.PREFIXES(visibility=visibility), partialPrefix = partialPrefix, name = n,restriction = SCode.R_FUNCTION(funcRest),info = info),inst_dims,_)
+    case (cache, env, ih, mod, pre, SCode.CLASS(classDef=cd, prefixes=SCode.PREFIXES(visibility=visibility), partialPrefix = partialPrefix, name = n,restriction = SCode.R_FUNCTION(funcRest),info = info), inst_dims)
       algorithm
         false := SCodeUtil.isExternalFunctionRestriction(funcRest);
         isImpure := SCodeUtil.isImpureFunctionRestriction(funcRest);
@@ -371,7 +367,7 @@ algorithm
         cmt := InstUtil.extractComment(daeElts);
         derFuncs := InstUtil.getDeriveAnnotation(cd, cmt,fpath,cache,cenv,ih,pre,info);
 
-        (cache) := instantiateDerivativeFuncs(cache,env,ih,derFuncs,fpath,info);
+        cache := instantiateDerivativeFuncs(cache,env,ih,derFuncs,fpath,info);
 
         ty1 := InstUtil.setFullyQualifiedTypename(ty,fpath);
         checkExtObjOutput(ty1,info);
@@ -392,8 +388,8 @@ algorithm
         (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_DEF(list(e for e guard not DAEUtil.isComment(e) in daeElts))::derFuncs,ty1,visibility,partialPrefixBool,isImpure,inlineType,{},source,SOME(cmt))});
 
     // External functions should also have their type in env, but no dae.
-    case (cache,env,ih,mod,pre,(c as SCode.CLASS(partialPrefix=partialPrefix, prefixes=SCode.PREFIXES(visibility=visibility), name = n,restriction = (restr as SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(purity))),
-        classDef = cd as (parts as SCode.PARTS(externalDecl=SOME(scExtdecl))), info=info, encapsulatedPrefix = encapsulatedPrefix)),inst_dims,_)
+    case (cache, env, ih, mod, pre, (c as SCode.CLASS(partialPrefix=partialPrefix, prefixes=SCode.PREFIXES(visibility=visibility), name = n,restriction = (restr as SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(purity))),
+        classDef = cd as (parts as SCode.PARTS(externalDecl=SOME(scExtdecl))), info=info, encapsulatedPrefix = encapsulatedPrefix)), inst_dims)
       algorithm
         (cache,cenv,ih,_,DAE.DAE(daeElts),_,ty,_,_,_) :=
           Inst.instClass(cache,env,ih, UnitAbsynBuilder.emptyInstStore(),mod, pre,
@@ -406,7 +402,7 @@ algorithm
         cmt := InstUtil.extractComment(daeElts);
         derFuncs := InstUtil.getDeriveAnnotation(cd,cmt,fpath,cache,env,ih,pre,info);
 
-        (cache) := instantiateDerivativeFuncs(cache,env,ih,derFuncs,fpath,info);
+        cache := instantiateDerivativeFuncs(cache,env,ih,derFuncs,fpath,info);
 
         ty1 := InstUtil.setFullyQualifiedTypename(ty,fpath);
         checkExtObjOutput(ty1,info);
@@ -429,8 +425,8 @@ algorithm
         (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_EXT(daeElts,extdecl)::derFuncs,ty1,visibility,partialPrefixBool,isImpure,DAE.NO_INLINE(),{},source,SOME(cmt))});
 
     // Instantiate overloaded functions
-    case (cache,env,ih,_,pre,(SCode.CLASS(name = n, prefixes=SCode.PREFIXES(visibility=visibility), restriction = (SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(purity))),
-          classDef = SCode.OVERLOAD(pathLst = funcnames),cmt=cmt)),_,_)
+    case (cache, env, ih, _, pre, (SCode.CLASS(name = n, prefixes=SCode.PREFIXES(visibility=visibility), restriction = (SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(purity))),
+          classDef = SCode.OVERLOAD(pathLst = funcnames),cmt=cmt)), _)
       algorithm
         (cache,env,ih,resfns) := instOverloadedFunctions(cache,env,ih,pre,funcnames,inClass.info) "Overloaded functions" ;
         (cache,fpath) := Inst.makeFullyQualifiedIdent(cache,env,n);
@@ -440,7 +436,7 @@ algorithm
         (cache,env,ih,resfns);
 
     // handle failure
-    case (_,env,_,_,_,SCode.CLASS(name=n),_,_)
+    case (_, env, _, _, _, SCode.CLASS(name=n), _)
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Inst.implicitFunctionInstantiation2 failed " + n);
@@ -460,7 +456,7 @@ dae and can be generated code for in case they are required"
   output FCore.Cache outCache;
 algorithm
  // print("instantiate deriative functions for "+AbsynUtil.pathString(path)+"\n");
- (outCache) := instantiateDerivativeFuncs2(cache,env,ih,DAEUtil.getDerivativePaths(funcs),path,info);
+ outCache := instantiateDerivativeFuncs2(cache,env,ih,DAEUtil.getDerivativePaths(funcs),path,info);
  // print("instantiated derivative functions for "+AbsynUtil.pathString(path)+"\n");
 end instantiateDerivativeFuncs;
 
@@ -473,7 +469,7 @@ protected function instantiateDerivativeFuncs2 "help function"
   input SourceInfo info;
   output FCore.Cache outCache;
 algorithm
-  (outCache) := matchcontinue(inCache,inEnv,inIH,inPaths,path,info)
+  outCache := matchcontinue(inCache, inEnv, inIH, inPaths)
     local
       list<DAE.Function> funcs;
       Absyn.Path p;
@@ -484,13 +480,13 @@ algorithm
       list<Absyn.Path> paths;
       String fun,scope;
 
-    case(cache,_,_,{},_,_) then (cache);
+    case(cache, _, _, {}) then (cache);
 
-    case(cache,env,ih,p::paths,_,_)
+    case(cache, env, ih, p::paths)
       algorithm
         (cache,cdef,cenv) := Lookup.lookupClass(cache,env,p,SOME(info));
         (cache,p) := Inst.makeFullyQualified(cache,cenv,p);
-        _ := matchcontinue()
+        () := matchcontinue()
           case () // Skipped recursive calls (by looking in cache)
             algorithm
               FCore.checkCachedInstFuncGuard(cache,p);
@@ -540,20 +536,17 @@ algorithm
     local
       SCode.Element stripped_class;
       FCore.Graph env_1,env;
-      String id,cn2;
+      String id;
       SCode.Partial p;
       SCode.Encapsulated e;
       SCode.Restriction r;
       Option<SCode.ExternalDecl> extDecl;
-      list<SCode.Element> elts, stripped_elts;
+      list<SCode.Element> elts;
       FCore.Cache cache;
       InstanceHierarchy ih;
-      list<SCode.Annotation> annotationLst;
       SourceInfo info;
-      DAE.DAElist dae;
       list<DAE.Function> funs;
       Absyn.Path cn,fpath;
-      Option<list<Absyn.Subscript>> ad;
       SCode.Mod mod1;
       DAE.Mod mod2;
       FCore.Graph cenv;
@@ -561,7 +554,6 @@ algorithm
       DAE.Type ty1,ty;
       SCode.Prefixes prefixes;
       SCode.Comment cmt;
-      list<Absyn.Path> paths;
 
     // For external functions, include everything essential
     case (cache,env,ih,SCode.CLASS(
@@ -640,24 +632,21 @@ protected function instOverloadedFunctions
   output InnerOuter.InstHierarchy outIH;
   output list<DAE.Function> outFns;
 algorithm
-  (outCache,outEnv,outIH,outFns) := matchcontinue (inCache,inEnv,inIH,pre,inAbsynPathLst)
+  (outCache,outEnv,outIH,outFns) := matchcontinue (inCache, inEnv, inIH, inAbsynPathLst)
     local
       FCore.Graph env,cenv;
       SCode.Element c;
-      String id;
-      SCode.Encapsulated encflag;
       Absyn.Path fn;
       list<Absyn.Path> fns;
       FCore.Cache cache;
       InstanceHierarchy ih;
-      SCode.Partial partialPrefix;
       list<DAE.Function> resfns1,resfns2;
       SCode.Restriction rest;
 
-    case (cache,_,ih,_,{}) then (cache,inEnv,ih,{});
+    case (cache, _, ih, {}) then (cache,inEnv,ih,{});
 
     // Instantiate each function, add its FQ name to the type, needed when deoverloading
-    case (cache,env,ih,_,(fn :: fns))
+    case (cache, env, ih, (fn :: fns))
       algorithm
         // print("instOvl: " + AbsynUtil.pathString(fn) + "\n");
         (cache,(c as SCode.CLASS(restriction=rest)),cenv) :=
@@ -669,7 +658,7 @@ algorithm
       then (cache,env,ih,listAppend(resfns1,resfns2));
 
     // failure
-    case (_,_,_,_,(fn :: _))
+    case (_, _, _, (fn :: _))
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Inst.instOverloaded_functions failed " + AbsynUtil.pathString(fn));
@@ -737,8 +726,6 @@ protected function instExtMakeDefaultExternalCall
 protected
   DAE.Type ty;
   Boolean singleOutput;
-  DAE.ComponentRef cr;
-  DAE.Element e;
 algorithm
   fargs := {};
   if lang=="builtin" then
@@ -796,7 +783,7 @@ public function getRecordConstructorFunction
   output FCore.Cache outCache;
   output DAE.Function outFunc;
 algorithm
-  (outCache,outFunc)  := matchcontinue (inCache,inEnv,inPath)
+  (outCache,outFunc)  := matchcontinue inPath
     local
       Absyn.Path path;
       SCode.Element recordCl;
@@ -811,14 +798,14 @@ algorithm
       Boolean extConvert;
 
 
-      case(_, _, _)
+      case _
         algorithm
           path := AbsynUtil.makeFullyQualified(inPath);
           func := FCore.getCachedInstFunc(inCache,path);
         then
           (inCache,func);
 
-      case(_, _, _)
+      case _
         algorithm
           (_,recordCl,recordEnv) := Lookup.lookupClass(inCache, inEnv, inPath);
           true := SCodeUtil.isRecord(recordCl);
@@ -877,21 +864,19 @@ public function addRecordConstructorFunction "Add record constructor whenever we
   input SourceInfo inInfo;
   output FCore.Cache outCache;
 algorithm
-  outCache := matchcontinue (inCache,inEnv,inType,inInfo)
+  outCache := matchcontinue (inCache, inType)
     local
       list<DAE.Var> vars, inputs, locals;
-      DAE.Type ty,recType,fixedTy,funcTy;
+      DAE.Type fixedTy,funcTy;
       DAE.EqualityConstraint eqCo;
       FCore.Cache cache;
       Absyn.Path path;
-      SCode.Element recordCl;
-      FCore.Graph recordEnv;
       DAE.Function func;
       list<DAE.FuncArg> fargs;
       Boolean extConvert;
 
     // try to instantiate class
-    case (cache, _, DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path)), _)
+    case (cache, DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path)))
       algorithm
         path := AbsynUtil.makeFullyQualified(path);
         (cache, _) := getRecordConstructorFunction(cache, inEnv, path);
@@ -899,7 +884,7 @@ algorithm
         cache;
 
     // if previous stuff didn't work, try to use the ty directly
-    case (cache, _, DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo, extConvert), _)
+    case (cache, DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo, extConvert))
       algorithm
         path := AbsynUtil.makeFullyQualified(path);
 
@@ -939,11 +924,11 @@ protected function checkExtObjOutput
   input DAE.Type inType;
   input SourceInfo info;
 algorithm
-  _ := match (inType,info)
+  () := match inType
     local
       Absyn.Path path;
       DAE.Type ty;
-    case (DAE.T_FUNCTION(funcResultType=ty,path=path),_)
+    case DAE.T_FUNCTION(funcResultType=ty,path=path)
       algorithm
         (_,(_,_,true)) := Types.traverseType(ty,(path,info,true),checkExtObjOutputWork);
       then ();

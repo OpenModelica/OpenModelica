@@ -530,7 +530,7 @@ protected function prefix2String
   input Real inReal;
   output String outPrefix;
 algorithm
-  outPrefix := match(inReal)
+  outPrefix := match inReal
     case 1e30   then "Q";   // quetta
     case 1e27   then "R";   // ronna
     case 1e24   then "Y";   // yotta
@@ -596,9 +596,9 @@ protected function parser3
   input StringToUnitTable inHtS2U;
   output Unit outUnit;
 algorithm
-  outUnit := matchcontinue(inMul, inTokenList, inUnit, inHtS2U)
+  outUnit := matchcontinue(inMul, inTokenList)
     local
-      String s, s1, s2, unit;
+      String s, unit;
       list<Token> tokens;
       Unit ut;
       Integer exponent;
@@ -606,17 +606,17 @@ algorithm
       list<Boolean> bRest;
 
     // ""
-    case ({true}, {}, _, _) then inUnit;
+    case ({true}, {}) then inUnit;
 
     // "1"
-    case (bMul::bRest, T_NUMBER(number=1)::tokens, _, _) algorithm
+    case (bMul::bRest, T_NUMBER(number=1)::tokens) algorithm
       ut := NFUnit.ONE;
       ut := if bMul then unitMul(inUnit,ut) else unitDiv(inUnit, ut);
       ut := parser3(bRest, tokens, ut, inHtS2U);
     then ut;
 
     // "unit^i"
-    case (bMul::bRest, T_UNIT(unit=s)::T_NUMBER(exponent)::tokens, _, _) algorithm
+    case (bMul::bRest, T_UNIT(unit=s)::T_NUMBER(exponent)::tokens) algorithm
       ut := unitToken2unit(s, inHtS2U);
       ut := unitPow(ut, exponent);
       ut := if bMul then unitMul(inUnit,ut) else unitDiv(inUnit, ut);
@@ -624,35 +624,35 @@ algorithm
     then ut;
 
     // "unit"
-    case (bMul::bRest, T_UNIT(unit=s)::tokens, _, _) algorithm
+    case (bMul::bRest, T_UNIT(unit=s)::tokens) algorithm
       ut := unitToken2unit(s, inHtS2U);
       ut := if bMul then unitMul(inUnit,ut) else unitDiv(inUnit, ut);
       ut := parser3(bRest, tokens, ut, inHtS2U);
     then ut;
 
     // "*("
-    case (bMul::_, T_MUL()::T_LPAREN()::tokens, _, _) algorithm
+    case (bMul::_, T_MUL()::T_LPAREN()::tokens) algorithm
       ut := parser3(bMul::bMul::inMul, tokens, inUnit, inHtS2U);
     then ut;
 
     // "/("
-    case (bMul::_, T_DIV()::T_LPAREN()::tokens, _, _) algorithm
+    case (bMul::_, T_DIV()::T_LPAREN()::tokens) algorithm
       b := not bMul;
       ut := parser3(b::b::inMul, tokens, inUnit, inHtS2U);
     then ut;
 
     // ")"
-    case (_::bRest, T_RPAREN()::tokens, _, _) algorithm
+    case (_::bRest, T_RPAREN()::tokens) algorithm
       ut := parser3(bRest, tokens, inUnit, inHtS2U);
     then ut;
 
     // "*"
-    case (bMul::_, T_MUL()::tokens, _, _) algorithm
+    case (bMul::_, T_MUL()::tokens) algorithm
       ut := parser3(bMul::inMul, tokens, inUnit, inHtS2U);
     then ut;
 
     // "/"
-    case (bMul::_, T_DIV()::tokens, _, _) algorithm
+    case (bMul::_, T_DIV()::tokens) algorithm
       b := not bMul;
       ut := parser3(b::inMul, tokens, inUnit, inHtS2U);
     then ut;
@@ -667,7 +667,7 @@ protected function unitToken2unit
   output Unit outUnit;
 protected
   Option<Unit> opt_unit;
-  String s, s2;
+  String s;
   Real r;
 algorithm
   opt_unit := UnorderedMap.get(inS, inHtS2U);
@@ -688,121 +688,121 @@ protected function getPrefix
   output Real outR;
   output String  outUnit;
 algorithm
-  (outR, outUnit) := matchcontinue(inS, inS2)
+  (outR, outUnit) := matchcontinue inS
     local
       list<String> strRest;
       String s;
 
-    case ("y", _) //-24
+    case "y" //-24
       algorithm
         _::strRest := stringListStringChar(inS2);
         s := stringCharListString(strRest);
     then (1e-24, s);
 
-    case ("z", _) //-21
+    case "z" //-21
       algorithm
         _::strRest := stringListStringChar(inS2);
         s := stringCharListString(strRest);
     then (1e-21, s);
 
-    case ("a", _) //-18
+    case "a" //-18
       algorithm
         _::strRest := stringListStringChar(inS2);
         s := stringCharListString(strRest);
     then (1e-18, s);
 
-    case ("f", _) //-15
+    case "f" //-15
       algorithm
         _::strRest := stringListStringChar(inS2);
         s := stringCharListString(strRest);
     then (1e-15, s);
 
-    case ("p", _) //-12
+    case "p" //-12
       algorithm
         _::strRest := stringListStringChar(inS2);
         s := stringCharListString(strRest);
     then (1e-12, s);
 
-    case ("u", _) //-6
+    case "u" //-6
       algorithm
         _::strRest := stringListStringChar(inS2);
         s := stringCharListString(strRest);
     then (1e-6, s);
 
-    case ("m", _) //-3
+    case "m" //-3
       algorithm
         _::strRest := stringListStringChar(inS2);
         s := stringCharListString(strRest);
     then (1e-3, s);
 
-    case ("c", _) //-2
+    case "c" //-2
       algorithm
         _::strRest := stringListStringChar(inS2);
         s := stringCharListString(strRest);
     then (1e-2, s);
 
-    case ("d", _)  //+1
+    case "d"  //+1
       algorithm
         strRest := stringListStringChar(inS2);
         "d"::"a"::strRest := strRest;
         s := stringCharListString(strRest);
     then (1e1, s);
 
-    case ("d", _) //-1
+    case "d" //-1
       algorithm
         _::strRest := stringListStringChar(inS2);
         s := stringCharListString(strRest);
     then (1e-1, s);
 
-    case ("h", _) //+2
+    case "h" //+2
       algorithm
         _::strRest := stringListStringChar(inS2);
         s := stringCharListString(strRest);
     then (1e2, s);
 
-    case ("k", _) //+3
+    case "k" //+3
       algorithm
         _::strRest := stringListStringChar(inS2);
         s := stringCharListString(strRest);
     then (1e3, s);
 
-    case ("M", _) //+6
+    case "M" //+6
       algorithm
         _::strRest := stringListStringChar(inS2);
         s := stringCharListString(strRest);
     then (1e6, s);
 
-    case ("G", _) //+9
+    case "G" //+9
       algorithm
         _::strRest := stringListStringChar(inS2);
         s := stringCharListString(strRest);
     then (1e9, s);
 
-    case ("T", _) //+12
+    case "T" //+12
       algorithm
         _::strRest := stringListStringChar(inS2);
         s := stringCharListString(strRest);
     then (1e12, s);
 
-    case ("P", _) //+15
+    case "P" //+15
       algorithm
         _::strRest := stringListStringChar(inS2);
         s := stringCharListString(strRest);
     then (1e15, s);
 
-    case ("E", _) //+18
+    case "E" //+18
       algorithm
         _::strRest := stringListStringChar(inS2);
         s := stringCharListString(strRest);
     then (1e18, s);
 
-    case ("Z", _) //+21
+    case "Z" //+21
       algorithm
         _::strRest := stringListStringChar(inS2);
         s := stringCharListString(strRest);
     then (1e21, s);
 
-    case ("Y", _) //+24
+    case "Y" //+24
       algorithm
         _::strRest := stringListStringChar(inS2);
         s := stringCharListString(strRest);
@@ -817,7 +817,7 @@ protected function lexer "author: lochel
   input list<String> inCharList;
   output list<Token> outTokenList;
 algorithm
-  outTokenList := matchcontinue(inCharList)
+  outTokenList := matchcontinue inCharList
     local
       list<String> charList;
       String number;
@@ -878,7 +878,7 @@ protected function popUnit
   output list<String> outCharList;
   output String outUnit;
 algorithm
-  (outCharList, outUnit) := matchcontinue(inCharList)
+  (outCharList, outUnit) := matchcontinue inCharList
     local
       String s1, s2;
       list<String> strRest;
@@ -905,7 +905,7 @@ protected function popNumber
   output list<String> outCharList;
   output String outNumber;
 algorithm
-  (outCharList, outNumber) := matchcontinue(inCharList)
+  (outCharList, outNumber) := matchcontinue inCharList
     local
       String s1, s2;
       list<String> strRest;

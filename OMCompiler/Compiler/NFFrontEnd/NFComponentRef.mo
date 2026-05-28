@@ -766,9 +766,7 @@ public
     cref := match cref
       local
         list<Dimension> dims;
-        Option<list<ComponentRef>> iter_crefs;
         ComponentRef new_cref;
-        list<Subscript> new_subs, rest_subs;
         Type ty = getSubscriptedType(cref);
         Integer num_local_dims;
 
@@ -1543,7 +1541,7 @@ public
     input list<JSON> accum = {};
     output list<JSON> objs;
   protected
-    JSON obj, subs;
+    JSON obj;
   algorithm
     objs := match cref
       case CREF()

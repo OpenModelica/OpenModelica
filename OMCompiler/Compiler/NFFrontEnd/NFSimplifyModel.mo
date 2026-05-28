@@ -146,9 +146,7 @@ function simplifyEquation
 algorithm
   equations := match eq
     local
-      Expression e, lhs, rhs;
-      Type ty;
-      Dimension dim;
+      Expression e;
       list<Equation> body;
 
     case Equation.EQUALITY() then simplifyEqualityEquation(eq, equations);
@@ -298,7 +296,7 @@ function simplifyStatement
 algorithm
   statements := match stmt
     local
-      Expression e, lhs, rhs;
+      Expression e;
       Dimension dim;
       list<Statement> body;
 
@@ -393,8 +391,7 @@ function simplifyAssignment
   input Statement stmt;
   input output list<Statement> statements;
 protected
-  Expression lhs, rhs, rhs_exp;
-  list<Expression> rhs_rest;
+  Expression lhs, rhs;
   Type ty;
   DAE.ElementSource src;
 algorithm

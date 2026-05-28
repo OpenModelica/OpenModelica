@@ -108,7 +108,7 @@ public
 
     // collect all event clocks
     for base in baseParts loop
-      _ := match base
+      () := match base
         local
           ComponentRef cond;
           DAE.ElementSource source;

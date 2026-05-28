@@ -90,13 +90,13 @@ public function inst
   input SCode.Program inProgram;
   output DAE.DAElist dae;
 algorithm
-  dae := matchcontinue(inPath, inProgram)
+  dae := matchcontinue inProgram
     local
-      Graph g, gclone;
+      Graph g;
       SCode.Program p;
       list<Real> lst;
 
-    case (_, _)
+    case _
       algorithm
         p := doSCodeDep(inProgram, inPath);
 
@@ -125,7 +125,7 @@ algorithm
         FGraphDump.dumpGraph(g, "F:\\dev\\" + AbsynUtil.pathString(inPath) + ".graph.graphml");
 
         System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
-        _ := FGraph.clone(g);
+        FGraph.clone(g);
         lst := List.consr(lst, System.realtimeTock(ClockIndexes.RT_CLOCK_FINST));
         print("FGraph->clone:  " + realString(listHead(lst)) + "\n");
 
@@ -133,7 +133,7 @@ algorithm
       then
         DAE.emptyDae;
 
-    case (_, _)
+    case _
       algorithm
         print("FInst.inst failed!\n");
       then
@@ -149,16 +149,15 @@ public function instPath
   input SCode.Program inProgram;
   output DAE.DAElist dae;
 algorithm
-  dae := matchcontinue(inPath, inProgram)
+  dae := matchcontinue inProgram
     local
       Graph g;
-      Ref r;
       SCode.Program p;
       list<Real> lst;
 
-    case (_, _) then inst(inPath, inProgram);
+    case _ then inst(inPath, inProgram);
 
-    case (_, _)
+    case _
       algorithm
         lst := {};
 
@@ -193,7 +192,7 @@ algorithm
       then
         DAE.emptyDae;
 
-    case (_, _)
+    case _
       algorithm
         print("FInst.inst failed!\n");
       then
@@ -208,9 +207,9 @@ protected function doSCodeDep
   input Absyn.Path inPath;
   output SCode.Program outProgram;
 algorithm
-  outProgram := matchcontinue(inProgram, inPath)
+  outProgram := matchcontinue inPath
 
-    case (_, _)
+    case _
       algorithm
         true := Flags.isSet(Flags.GRAPH_INST_RUN_DEP);
         outProgram := InstUtil.scodeFlatten(inProgram, inPath);

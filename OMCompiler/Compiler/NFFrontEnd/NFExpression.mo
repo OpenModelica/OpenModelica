@@ -717,7 +717,7 @@ public
       return;
     end if;
 
-    comp := match (exp1)
+    comp := match exp1
       local
         Integer i;
         Real r;
@@ -1198,10 +1198,8 @@ public
     input output Expression exp;
     input Type ty;
   protected
-    Type t, t2, ety;
-    list<Expression> el;
+    Type t, ety;
     Expression e1, e2;
-    Integer dim_diff;
     array<Expression> arr;
   algorithm
     ety := Type.arrayElementType(ty);
@@ -1483,8 +1481,6 @@ public
   algorithm
     (start, step, stop) := match range
       local
-        Expression step_exp;
-        Option<Expression> step_opt;
       case RANGE() algorithm
         try
           start := getInteger(range.start, resize);
@@ -1628,7 +1624,6 @@ public
     output Expression outExp;
   protected
     Subscript sub;
-    Integer index;
     array<Expression> expl;
   algorithm
     sub := Subscript.expandSlice(subscript, false);
@@ -1686,9 +1681,7 @@ public
     list<Subscript> rest_subs;
     array<Expression> expl;
     Type ty;
-    Integer el_count;
     Boolean literal;
-    Expression first_e;
   algorithm
     if isEmptyArray(exp) then
       outExp := makeSubscriptedExp(subscript :: restSubscripts, exp);
@@ -1794,8 +1787,6 @@ public
     output Expression outExp;
   protected
     Subscript sub;
-    Expression start_exp, stop_exp;
-    Option<Expression> step_exp;
     Type ty;
     array<Expression> expl;
   algorithm
@@ -2207,8 +2198,6 @@ public
     output String str;
   protected
     Type t;
-    Expression first, first_inv;
-    list<Expression> rest, rest_inv;
   algorithm
     str := match exp
       case INTEGER() then intString(exp.value);
@@ -2303,8 +2292,6 @@ public
     output String str;
   protected
     Type t;
-    Expression first;
-    list<Expression> rest;
   algorithm
     str := match exp
       case INTEGER() then intString(exp.value);
@@ -2667,8 +2654,6 @@ public
     input Expression exp;
     input Boolean allowEmpty = false "Whether to allow conversion of EMPTY or not";
     output DAE.Exp dexp;
-  protected
-    Boolean changed = true;
   algorithm
     dexp := match exp
       local
@@ -3549,7 +3534,7 @@ public
   algorithm
     result := match exp
       local
-        Expression e, e1, e2;
+        Expression e;
 
       case CLKCONST() then ClockKind.foldExp(exp.clk, func, arg);
       case CREF() then ComponentRef.foldExp(exp.cref, func, arg);
@@ -3697,7 +3682,6 @@ public
   algorithm
     () := match exp
       local
-        Expression e, e1, e2;
 
       case CLKCONST() algorithm ClockKind.applyExp(exp.clk, func); then ();
       case CREF() algorithm ComponentRef.applyExp(exp.cref, func); then ();
@@ -3834,7 +3818,6 @@ public
   algorithm
     () := match exp
       local
-        Expression e;
 
       case CLKCONST() algorithm ClockKind.applyExpShallow(exp.clk, func); then ();
       case CREF() algorithm ComponentRef.applyExpShallow(exp.cref, func); then ();
@@ -4206,13 +4189,12 @@ public
   algorithm
     outExp := match exp
       local
-        Expression e1, e2, e3, e4;
+        Expression e1, e2, e3;
         Option<Expression> oe;
         ComponentRef cr;
         list<Expression> expl;
         Call call;
         list<Subscript> subs;
-        Boolean unchanged;
         ClockKind ck;
         list<list<Expression>> mat;
         array<Expression> arr;
@@ -4459,7 +4441,6 @@ public
 
     res := match exp
       local
-        Expression e;
 
       case CLKCONST() then ClockKind.containsExp(exp.clk, func);
       case CREF() then ComponentRef.containsExp(exp.cref, func);
@@ -5493,8 +5474,6 @@ public
     Dimension dim1, dim2;
     list<Dimension> rest_dims;
     Type ty, row_ty;
-    list<Expression> expl;
-    list<list<Expression>> matrix;
     Boolean literal;
     array<Expression> arr;
     array<array<Expression>> matrix_arr;
@@ -5617,7 +5596,6 @@ public
       local
         Type ty;
         list<Type> rest_ty;
-        Expression arr_exp;
         Boolean expanded;
 
       // No types left, we're done!
@@ -5971,7 +5949,6 @@ public
         ClassTree cls_tree;
         Type ty;
         Integer index;
-        list<Expression> expl;
         ComponentRef cref;
         array<Expression> arr;
 
@@ -6046,7 +6023,6 @@ public
     outExp := match recordExp
       local
         InstNode node;
-        list<Expression> expl;
         Type ty;
         array<Expression> arr;
         Expression trueBranch, falseBranch;
@@ -6126,7 +6102,6 @@ public
   algorithm
     () := match exp
       local
-        list<Dimension> dims;
         Type ty;
 
       case RANGE()
@@ -6202,9 +6177,7 @@ public
       output Expression result;
     end FoldFn;
   protected
-    InstNode node;
-    Expression e, range;
-    Mutable<Expression> iter;
+    Expression e;
     list<Expression> ranges = {};
     list<Mutable<Expression>> iters = {};
   algorithm
@@ -6232,7 +6205,7 @@ public
     end FoldFn;
   protected
     Expression range, value;
-    list<Expression> ranges_rest, el;
+    list<Expression> ranges_rest;
     Mutable<Expression> iter;
     list<Mutable<Expression>> iters_rest;
     ExpressionIterator range_iter;
@@ -6314,11 +6287,10 @@ public
     input output Expression exp;
     input InstNode node;
   protected
-    Expression e;
     list<Subscript> subs;
   algorithm
     exp := match exp
-      case SUBSCRIPTED_EXP(exp = e, subscripts = subs)
+      case SUBSCRIPTED_EXP(exp = _, subscripts = subs)
         algorithm
           subs := list(s for s guard not filterSplitIndices2(s, node) in subs);
         then
@@ -6543,7 +6515,6 @@ public
       output Expression exp;
     end MapFn;
   protected
-    list<Expression> expl;
     Type ty;
     Boolean literal;
     ComponentRef cref;
@@ -7037,8 +7008,6 @@ public
     input Type tl;
     input Type tr;
     output Type tres;
-  protected
-    Type el;
   algorithm
     if Type.isArray(tl) and Type.isArray(tr) then
       // Both arrays: keep (left) array type (sizes should already match semantically)

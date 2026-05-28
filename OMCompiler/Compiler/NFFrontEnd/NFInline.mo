@@ -186,9 +186,6 @@ function replaceCrefNode
   input InstNode node;
   input Expression value;
 protected
-  InstNode cr_node;
-  ComponentRef rest_cr;
-  list<Subscript> subs;
   Type ty, repl_ty;
 algorithm
   exp := match exp
@@ -213,9 +210,6 @@ function replaceCrefNode2
   input InstNode node;
   input output Expression value;
 protected
-  list<Subscript> subs;
-  ComponentRef rest_cr;
-  Type ty;
 algorithm
   if not InstNode.refEqual(node, ComponentRef.node(cref)) then
     value := replaceCrefNode2(ComponentRef.rest(cref), node, value);

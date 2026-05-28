@@ -234,8 +234,6 @@ public
   function setTypedExp
     input Expression exp;
     input output Binding binding;
-  protected
-    Type ty1, ty2;
   algorithm
     () := match binding
       case TYPED_BINDING()

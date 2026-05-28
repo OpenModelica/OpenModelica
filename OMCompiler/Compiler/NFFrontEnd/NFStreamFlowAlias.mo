@@ -245,7 +245,6 @@ public
       input output Sets sets;
             output Boolean flippedSign;
     protected
-      FlowAlias negative_alias = alias;
       FlowAlias entry;
     algorithm
       (set, sets) := findSet(alias, sets);
@@ -420,7 +419,7 @@ public
     array<list<FlowAlias>> extracted_sets;
     FlowAlias representative;
     Variable repr_var;
-    list<FlowAlias> rest_aliases, accum_aliases = {};
+    list<FlowAlias> rest_aliases;
     Binding repr_binding;
     list<Variable> alias_vars = {};
     list<Equation> alias_eqs = {};
@@ -511,7 +510,6 @@ public
     list<Binding> start_values = {}, nominal_values = {};
     list<Expression> min_values = {}, max_values = {};
     list<FlowAlias> accum_aliases = {};
-    Expression min_value, max_value;
     Binding start_binding, nominal_binding, min_binding, max_binding;
   algorithm
     // Evaluate the start/nominal/min/max attributes of the aliases and sort them into lists.
@@ -672,7 +670,6 @@ public
   protected
     Variable var;
     list<tuple<String, Binding>> attrs = {};
-    String attr_name;
 
     function add_attribute
       input String name;

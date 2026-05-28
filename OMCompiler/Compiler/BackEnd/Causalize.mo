@@ -86,21 +86,21 @@ public function singularSystemCheck
   input BackendDAE.Shared ishared;
   output BackendDAE.EqSystem outSyst;
 algorithm
-  outSyst := matchcontinue (nvars,neqns,isyst,inMatchingOptions,matchingAlgorithm,arg,ishared)
+  outSyst := matchcontinue inMatchingOptions
     local
       String esize_str,vsize_str;
 
-    case (_,_,_,(_,BackendDAE.ALLOW_UNDERCONSTRAINED()),_,_,_)
+    case (_,BackendDAE.ALLOW_UNDERCONSTRAINED())
       then
         singularSystemCheck1(nvars,neqns,isyst,BackendDAE.ALLOW_UNDERCONSTRAINED(),matchingAlgorithm,arg,ishared);
 
-    case (_,_,_,(_,BackendDAE.EXACT()),_,_,_)
+    case (_,BackendDAE.EXACT())
       algorithm
         true := intEq(nvars,neqns);
       then
         singularSystemCheck1(nvars,neqns,isyst,BackendDAE.EXACT(),matchingAlgorithm,arg,ishared);
 
-    case (_,_,_,(_,BackendDAE.EXACT()),_,_,_)
+    case (_,BackendDAE.EXACT())
       algorithm
         true := intGt(nvars,neqns);
         esize_str := intString(neqns);
@@ -110,7 +110,7 @@ algorithm
       then
         fail();
 
-    case (_,_,_,_,_,_,_)
+    case _
       algorithm
         true := intLt(nvars,neqns);
         esize_str := intString(neqns) ;
@@ -146,7 +146,6 @@ protected function singularSystemCheck1
 protected
   BackendDAE.AdjacencyMatrix m;
   BackendDAE.AdjacencyMatrixT mT;
-  list<list<Integer>> comps;
   array<Integer> ass1,ass2;
   BackendDAEFunc.matchingAlgorithmFunc matchingFunc;
   BackendDAE.EqSystem syst;
@@ -175,7 +174,7 @@ algorithm
     DumpGraphML.dumpSystem(outSyst,iShared,NONE(),"SingularSystemCheck" + intString(nVars) + ".graphml",false);
   */
   // free states matching information because there it is unkown if the state or the state derivative was matched
-  ((_,ass1,ass2)) := BackendVariable.traverseBackendDAEVars(outSyst.orderedVars, freeStateAssignments, (1,ass1,ass2));
+  (_,ass1,ass2) := BackendVariable.traverseBackendDAEVars(outSyst.orderedVars, freeStateAssignments, (1,ass1,ass2));
 end singularSystemCheck1;
 
 protected function freeStateAssignments "unset assignments of statevariables."
@@ -210,7 +209,6 @@ protected function foundSingularSystem "print error message if the system contai
   input output BackendDAE.StructurallySingularSystemHandlerArg inArg;
 protected
   array<Integer> mapIncRowEqn;
-  BackendDAE.EqSystem syst;
   DAE.ElementSource source;
   Integer n;
   list<Integer> unmatched, unmatched1, vars;

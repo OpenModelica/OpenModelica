@@ -100,7 +100,6 @@ public
   algorithm
     iterator := match exp
       local
-        list<Expression> arr, slice;
         Expression e;
         Boolean expanded;
 
@@ -156,7 +155,6 @@ public
   algorithm
     iterator := match binding
       local
-        list<Expression> expl;
 
       case Binding.TYPED_BINDING(eachType = NFBinding.EachType.EACH)
         then EACH_ITERATOR(binding.bindingExp);
@@ -274,8 +272,6 @@ public
       input Expression exp;
       input Boolean trySimplify;
       output Boolean res;
-    protected
-      Expression call;
     algorithm
       res := match exp
         case Expression.SUBSCRIPTED_EXP(exp = Expression.CALL())
@@ -295,7 +291,6 @@ protected
     input Expression exp;
     output ExpressionIterator iterator;
   protected
-    array<Expression> arr;
     list<array<Expression>> arrays;
   algorithm
     arrays := flattenArray(exp, {});

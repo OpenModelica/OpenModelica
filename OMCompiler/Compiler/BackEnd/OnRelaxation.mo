@@ -88,9 +88,7 @@ protected function relaxSystem0 "author: Frenkel TUD 2011-05"
   output Boolean outChanged;
 protected
   BackendDAE.StrongComponents comps;
-  Boolean b, b1, b2;
-  BackendDAE.Shared shared;
-  BackendDAE.EqSystem syst;
+  Boolean b2;
 algorithm
   BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)) := isyst;
   (osyst, outShared, b2) := relaxSystem1(isyst, inShared, comps);
@@ -106,14 +104,13 @@ protected function relaxSystem1 "author: Frenkel TUD 2011-05"
   output Boolean outRunMatching;
 algorithm
   (osyst, oshared, outRunMatching):=
-  matchcontinue (isyst, ishared, inComps)
+  matchcontinue (ishared, inComps)
     local
       list<Integer> eindex, vindx, eorphans, vorphans, unassigned, otherorphans, roots, constraints, constraintresidual;
-      Boolean b, b1;
+      Boolean b;
       BackendDAE.EqSystem syst, subsyst;
       BackendDAE.Shared shared;
       BackendDAE.StrongComponents comps;
-      BackendDAE.StrongComponent comp, comp1;
       array<Integer> ass1, ass2, vec2, rowmarks, colummarks, mapIncRowEqn, orowmarks, ocolummarks;
       Integer size, mark, esize;
       list<BackendDAE.Equation> eqn_lst;
@@ -131,10 +128,9 @@ algorithm
       list<BackendDAE.Equation> neweqns;
       AvlTreePathFunction.Tree funcs;
 
-    case (_, _, {})
+    case (_, {})
       then (isyst, ishared, false);
-    case (_, shared as BackendDAE.SHARED(functionTree=funcs),
-      (BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(SOME(jac)), jacType=BackendDAE.JAC_LINEAR()))::comps)
+    case (shared as BackendDAE.SHARED(functionTree=funcs), (BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(SOME(jac)), jacType=BackendDAE.JAC_LINEAR()))::comps)
       algorithm
         print("try to relax\n");
           Util.profilerinit();
@@ -154,9 +150,9 @@ algorithm
         //  BackendDump.dumpEqSystem(subsyst);
 
         // Vector Matching a=f(..), f(..)=a
-        ((_, ass1, ass2)) := List.fold1(eqn_lst, vectorMatching, vars, (1, ass1, ass2));
+        (_, ass1, ass2) := List.fold1(eqn_lst, vectorMatching, vars, (1, ass1, ass2));
         // Alias Matching only if one side is matched
-        ((_, ass1, ass2)) := List.fold1(eqn_lst, aliasMatching, vars, (1, ass1, ass2));
+        (_, ass1, ass2) := List.fold1(eqn_lst, aliasMatching, vars, (1, ass1, ass2));
         // Vector matching
         m1 := arrayCreate(size, {});
         transformJacToAdjacencyMatrix2(jac, m1, mapIncRowEqn, eqns, ass1, ass2, isConstOneMinusOne);
@@ -322,7 +318,7 @@ algorithm
         //  _ = List.fold1(arrayList(vec2), transposeOrphanVec, vec3, 1);
         //  DumpGraphML.dumpSystem(subsyst, shared, SOME(vec3), "System.graphml");
 
-        ((_, _, _, eqns, vars)) := Array.fold(vec2, getEqnsinOrder, (eqns, vars, ass22, BackendEquation.listEquation({}), BackendVariable.emptyVars()));
+        (_, _, _, eqns, vars) := Array.fold(vec2, getEqnsinOrder, (eqns, vars, ass22, BackendEquation.listEquation({}), BackendVariable.emptyVars()));
           Util.profilerstop1();
           print("Indizierung  time: " + realString(Util.profilertime1()) + "\n");
           Util.profilerreset1();
@@ -395,7 +391,7 @@ algorithm
         (syst, shared, _) := relaxSystem1(syst, shared, comps);
       then
         (syst, shared, true);
-    case (_, _, _::comps)
+    case (_, _::comps)
       algorithm
         (syst, shared, b) := relaxSystem1(isyst, ishared, comps);
       then
@@ -408,10 +404,10 @@ protected function removeRootConnections
   input array<list<Integer>> orphansarray;
   input list<Integer> roots;
 algorithm
-  _:= matchcontinue(orphan, orphansarray, roots)
+  ():= matchcontinue roots
     local
       list<Integer> lst;
-    case(_, _, _)
+    case _
       algorithm
         lst := orphansarray[orphan];
         true := intGt(listLength(lst), 1);
@@ -419,7 +415,7 @@ algorithm
         arrayUpdate(orphansarray, orphan, lst);
       then
         ();
-    case(_, _, _)
+    case _
       then
         ();
   end matchcontinue;
@@ -448,7 +444,7 @@ algorithm
   (outExp, outTpl) := matchcontinue (inExp, tpl)
     local
       BackendDAE.Variables knvars;
-      DAE.Exp e, e1;
+      DAE.Exp e1;
       DAE.ComponentRef cr;
       BackendDAE.Var v;
     case (DAE.CREF(componentRef=cr), (knvars, _))
@@ -477,12 +473,7 @@ algorithm
       BackendDAE.Equation eqn;
       list<BackendDAE.Equation> eqns;
       BackendDAE.EqSystem eqSystem;
-      BackendDAE.Variables orderedVars;
       BackendDAE.EquationArray orderedEqs;
-      Option<BackendDAE.AdjacencyMatrix> m, mT;
-      BackendDAE.Matching matching;
-      BackendDAE.StateSets stateSets;
-      BackendDAE.BaseClockPartitionKind partitionKind;
 
     case ({}, _, _)
     then BackendEquation.equationsAddDAE(inEqns, inEqSystem);
@@ -510,9 +501,9 @@ protected function transposeOrphanVec "author: Frenkel TUD 2012-05"
   input Integer inId;
   output Integer outId;
 algorithm
-  outId := matchcontinue(c, vec3, inId)
+  outId := matchcontinue inId
     local list<Integer> lst;
-    case (_, _, _)
+    case _
       algorithm
         true := intGt(c, 0);
         lst := vec3[c];
@@ -547,17 +538,17 @@ protected function generateCliquesResidual "author: Frenkel TUD 2012-07"
   output Integer omark;
   output list<Integer> oconstraints;
 algorithm
-  (omark, oconstraints) := matchcontinue(inOrphans, ass1, ass2, m, mt, mark, rowmarks, colummarks, vars, iconstraints)
+  (omark, oconstraints) := matchcontinue inOrphans
     local
       list<Integer> rest, constraints, rlst, elst, partner;
       Integer o;
       Boolean foundflow;
       list<Boolean> blst;
       list<BackendDAE.Var> vlst;
-    case ({}, _, _, _, _, _, _, _, _, _)
+    case {}
       then
        (mark+2, iconstraints);
-    case (o::rest, _, _, _, _, _, _, _, _, _)
+    case o::rest
       algorithm
         false := intEq(colummarks[o], mark);
         arrayUpdate(colummarks, o, mark);
@@ -581,7 +572,7 @@ algorithm
         (omark, constraints) := generateCliquesResidual(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, vars, constraints);
       then
        (omark, constraints);
-    case (_::rest, _, _, _, _, _, _, _, _, _)
+    case _::rest
       algorithm
         (omark, constraints) := generateCliquesResidual(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, vars, iconstraints);
       then
@@ -661,14 +652,14 @@ protected function generateCliquesResidual2 "author: Frenkel TUD 2012-05"
   input array<Integer> colummarks;
   input list<Integer> orphan;
 algorithm
-  _ := match(eqns, ass1, ass2, m, mt, mark, rowmarks, colummarks, orphan)
+  () := match eqns
     local
       Integer e, r;
       list<Integer> rest, lst, rlst, lst1;
-    case ({}, _, _, _, _, _, _, _, _)
+    case {}
       then
         ();
-    case (r::rest, _, _, _, _, _, _, _, _)
+    case r::rest
       guard
         not intEq(rowmarks[r], mark)
       algorithm
@@ -676,7 +667,7 @@ algorithm
         e := ass1[r];
         rlst := ass2[e];
         lst := List.fold1(rlst, List.removeOnTrue, intEq, m[e]);
-        (lst1 as _::_) := List.select2(lst, unmarked, rowmarks, mark-1);
+        lst1 as _::_ := List.select2(lst, unmarked, rowmarks, mark-1);
         // print("generateClique " + intString(eqn) + " to " + stringDelimitList(List.map(lst1, intString), ", ") + "\n");
         List.map4_0(lst1, generateResidualClique, m, mt, orphan, e);
         List.map2_0(rlst, doMark, rowmarks, mark);
@@ -688,7 +679,7 @@ algorithm
         generateCliquesResidual2(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, orphan);
       then
         ();
-    case (_::rest, _, _, _, _, _, _, _, _)
+    case _::rest
       algorithm
         generateCliquesResidual2(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, orphan);
       then
@@ -713,16 +704,16 @@ protected function prepairOrphansOrder "author: Frenkel TUD 2012-07"
   output list<Integer> oroots;
   output list<Integer> oconstraints;
 algorithm
-  (omark, oroots, oconstraints) := match(inOrphans, ass1, ass2, m, mt, mark, rowmarks, colummarks, orphans, vars, iroots, iconstraints)
+  (omark, oroots, oconstraints) := match inOrphans
     local
       list<Integer> rest, roots, constraints, elst, rlst;
       Integer o;
       Boolean foundflow, constr;
       list<BackendDAE.Var> vlst;
-    case ({}, _, _, _, _, _, _, _, _, _, _, _)
+    case {}
       then
        (mark, iroots, iconstraints);
-    case (o::rest, _, _, _, _, _, _, _, _, _, _, _)
+    case o::rest
       guard
         not intEq(rowmarks[o], mark)
       algorithm
@@ -741,7 +732,7 @@ algorithm
         (omark, roots, constraints) := prepairOrphansOrder(rest, ass1, ass2, m, mt, mark+1, rowmarks, colummarks, orphans, vars, roots, constraints);
       then
        (omark, roots, constraints);
-    case (_::rest, _, _, _, _, _, _, _, _, _, _, _)
+    case _::rest
       algorithm
         (omark, roots, constraints) := prepairOrphansOrder(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, orphans, vars, iroots, iconstraints);
       then
@@ -807,14 +798,14 @@ protected function prepairOrphansOrder2 "author: Frenkel TUD 2012-07"
   input array<list<Integer>> orphans;
   output Integer omark;
 algorithm
-  omark := matchcontinue(inOrphans, ass1, ass2, m, mt, imark, rowmarks, colummarks, orphans)
+  omark := matchcontinue inOrphans
     local
       list<Integer> rest, elst, rlst, partner;
       Integer o;
-    case ({}, _, _, _, _, _, _, _, _)
+    case {}
       then
        imark+1;
-    case (o::rest, _, _, _, _, _, _, _, _)
+    case o::rest
       algorithm
         false := intEq(rowmarks[o], imark);
         arrayUpdate(rowmarks, o, imark);
@@ -830,7 +821,7 @@ algorithm
         prepairOrphansOrder3(mt[o], ass1, ass2, m, mt, imark, rowmarks, colummarks, o, partner, orphans, {o});
        then
         prepairOrphansOrder2(rest, ass1, ass2, m, mt, imark, rowmarks, colummarks, orphans);
-    case (_::rest, _, _, _, _, _, _, _, _)
+    case _::rest
       then
         prepairOrphansOrder2(rest, ass1, ass2, m, mt, imark, rowmarks, colummarks, orphans);
   end matchcontinue;
@@ -850,14 +841,14 @@ protected function prepairOrphansOrder3 "author: Frenkel TUD 2012-05"
   input array<list<Integer>> orphans;
   input list<Integer> prer;
 algorithm
-  _ := matchcontinue(eqns, ass1, ass2, m, mt, mark, rowmarks, colummarks, preorphan, partner, orphans, prer)
+  () := matchcontinue eqns
     local
       Integer e;
       list<Integer> rest, next, r, elst, lst;
-    case ({}, _, _, _, _, _, _, _, _, _, _, _)
+    case {}
       then
         ();
-    case (e::rest, _, _, _, _, _, _, _, _, _, _, _)
+    case e::rest
       algorithm
         false := intEq(colummarks[e], mark);
         // marked?
@@ -875,7 +866,7 @@ algorithm
         prepairOrphansOrder3(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, preorphan, partner, orphans, prer);
       then
         ();
-    case (e::rest, _, _, _, _, _, _, _, _, _, _, _)
+    case e::rest
       algorithm
         //  print("check Eqn " + intString(e)  + " ass[e]: " + stringDelimitList(List.map(ass2[e], intString), ", ") + "\n");
         false := intEq(colummarks[e], mark);
@@ -884,7 +875,7 @@ algorithm
         prepairOrphansOrder3(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, preorphan, partner, orphans, prer);
       then
         ();
-    case (_::rest, _, _, _, _, _, _, _, _, _, _, _)
+    case _::rest
       algorithm
         prepairOrphansOrder3(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, preorphan, partner, orphans, prer);
       then
@@ -899,12 +890,12 @@ protected function generateClique
   input list<Integer> orphans;
   input Integer e;
 algorithm
-  _:= match(r, m, mt, orphans, e)
+  ():= match orphans
     local
       Integer orphan;
       list<Integer> lst, rest;
-    case (_, _, _, {}, _) then ();
-    case (_, _, _, orphan::rest, _)
+    case {} then ();
+    case orphan::rest
       algorithm
         //  print("Replace " + intString(r) + " with " + intString(orphan) + "\n");
         lst := mt[r];
@@ -937,12 +928,12 @@ protected function generateResidualClique
   input list<Integer> orphans;
   input Integer e;
 algorithm
-  _:= match(r, m, mt, orphans, e)
+  ():= match orphans
     local
       Integer orphan;
       list<Integer> lst, rest;
-    case (_, _, _, {}, _) then ();
-    case (_, _, _, orphan::rest, _)
+    case {} then ();
+    case orphan::rest
       algorithm
         //  print("Replace " + intString(e) + " with " + intString(orphan) + "\n");
         lst := m[e];
@@ -981,14 +972,14 @@ protected function getOrphansOrderEdvanced "author: Frenkel TUD 2012-07"
   input array<list<Integer>> orphans;
   output Integer omark;
 algorithm
-  omark := matchcontinue(inOrphans, ass1, ass2, m, mt, mc, mct, mark, rowmarks, colummarks, orphans)
+  omark := matchcontinue inOrphans
     local
       list<Integer> rest;
       Integer o;
-    case ({}, _, _, _, _, _, _, _, _, _, _)
+    case {}
       then
        mark;
-    case (o::rest, _, _, _, _, _, _, _, _, _, _)
+    case o::rest
       algorithm
         false := intEq(rowmarks[o], mark);
         arrayUpdate(rowmarks, o, mark);
@@ -996,7 +987,7 @@ algorithm
         getOrphansOrderEdvanced1(mct[o], ass1, ass2, m, mt, mark, rowmarks, colummarks, o, orphans, {});
       then
         getOrphansOrderEdvanced(rest, ass1, ass2, m, mt, mc, mct, mark+1, rowmarks, colummarks, orphans);
-    case (_::rest, _, _, _, _, _, _, _, _, _, _)
+    case _::rest
       then
         getOrphansOrderEdvanced(rest, ass1, ass2, m, mt, mc, mct, mark, rowmarks, colummarks, orphans);
   end matchcontinue;
@@ -1008,14 +999,14 @@ protected function hasOrphanAdvanced "author: Frenkel TUD 2012-07"
   input list<Integer> iAcc;
   output list<Integer> oAcc;
 algorithm
-  oAcc := match(rows, ass1, iAcc)
+  oAcc := match(rows, iAcc)
     local
       list<Integer> rest;
       Integer r;
-    case ({}, _, _::_)
+    case ({}, _::_)
       then
         iAcc;
-    case (r::rest, _, _)
+    case (r::rest, _)
       then
         if not intGt(ass1[r], 0) then
           hasOrphanAdvanced(rest, ass1, r::iAcc)
@@ -1034,22 +1025,20 @@ algorithm
   //  print("Add orpan[" + intString(orphan) + "] = " + intString(preorphan) + "\n");
   olst := arr[orphan];
   olst := List.unionElt(preorphan, olst);
-  _:=arrayUpdate(arr, orphan, olst);
+  arrayUpdate(arr, orphan, olst);
 end addPreOrphan;
 
 protected function addPreOrphans
   input Integer orphan;
   input list<Integer> preorphans;
   input array<list<Integer>> arr;
-protected
-  list<Integer> olst;
 algorithm
-  _:=match(orphan, preorphans, arr)
+  ():=match preorphans
     local
       Integer o;
       list<Integer> rest;
-    case(_, {}, _) then ();
-    case(_, o::rest, _)
+    case {} then ();
+    case o::rest
       algorithm
         addPreOrphan(orphan, o, arr);
         addPreOrphans(orphan, rest, arr);
@@ -1071,19 +1060,19 @@ protected function getOrphansOrderEdvanced1 "author: Frenkel TUD 2012-07"
   input array<list<Integer>> orphans;
   input list<Integer> nextQueue;
 algorithm
-  _ := matchcontinue(eqns, ass1, ass2, m, mt, mark, rowmarks, colummarks, preorphan, orphans, nextQueue)
+  () := matchcontinue(eqns, nextQueue)
     local
       Integer e;
       list<Integer> rest, next, r, r1, elst, olst;
-    case ({}, _, _, _, _, _, _, _, _, _, {})
+    case ({}, {})
       then
         ();
-    case ({}, _, _, _, _, _, _, _, _, _, _)
+    case ({}, _)
       algorithm
         getOrphansOrderEdvanced1(nextQueue, ass1, ass2, m, mt, mark, rowmarks, colummarks, preorphan, orphans, {});
       then
         ();
-    case (e::_, _, _, _, _, _, _, _, _, _, _)
+    case (e::_, _)
       algorithm
         // print("Check Eqn: " + intString(e) + "\n");
         false := intEq(colummarks[e], mark);
@@ -1095,7 +1084,7 @@ algorithm
         addPreOrphans(preorphan, olst, orphans);
       then
         ();
-    case (e::rest, _, _, _, _, _, _, _, _, _, _)
+    case (e::rest, _)
       algorithm
         false := intEq(colummarks[e], mark);
         r := List.removeOnTrue(preorphan, intEq, m[e]) "vars of equation";
@@ -1108,7 +1097,7 @@ algorithm
         getOrphansOrderEdvanced1(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, preorphan, orphans, next);
       then
         ();
-    case (_::rest, _, _, _, _, _, _, _, _, _, _)
+    case (_::rest, _)
       algorithm
         getOrphansOrderEdvanced1(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, preorphan, orphans, nextQueue);
       then
@@ -1131,14 +1120,14 @@ protected function getConstraintesOrphansOrderEdvanced "author: Frenkel TUD 2012
   input array<list<Integer>> orphans;
   output Integer omark;
 algorithm
-  omark := matchcontinue(inOrphans, ass1, ass2, m, mt, mc, mct, mark, rowmarks, colummarks, orphans)
+  omark := matchcontinue inOrphans
     local
       list<Integer> rest;
       Integer o;
-    case ({}, _, _, _, _, _, _, _, _, _, _)
+    case {}
       then
        mark;
-    case (o::rest, _, _, _, _, _, _, _, _, _, _)
+    case o::rest
       algorithm
         false := intEq(rowmarks[o], mark);
         arrayUpdate(rowmarks, o, mark);
@@ -1146,7 +1135,7 @@ algorithm
         getConstraintesOrphansOrderEdvanced1(mct[o], ass1, ass2, m, mt, mark, rowmarks, colummarks, o, orphans, {});
       then
         getConstraintesOrphansOrderEdvanced(rest, ass1, ass2, m, mt, mc, mct, mark+1, rowmarks, colummarks, orphans);
-    case (_::rest, _, _, _, _, _, _, _, _, _, _)
+    case _::rest
       then
         getConstraintesOrphansOrderEdvanced(rest, ass1, ass2, m, mt, mc, mct, mark, rowmarks, colummarks, orphans);
   end matchcontinue;
@@ -1165,19 +1154,19 @@ protected function getConstraintesOrphansOrderEdvanced1 "author: Frenkel TUD 201
   input array<list<Integer>> orphans;
   input list<Integer> nextQueue;
 algorithm
-  _ := matchcontinue(eqns, ass1, ass2, m, mt, mark, rowmarks, colummarks, preorphan, orphans, nextQueue)
+  () := matchcontinue(eqns, nextQueue)
     local
       Integer e;
       list<Integer> rest, next, r, r1, elst, olst;
-    case ({}, _, _, _, _, _, _, _, _, _, {})
+    case ({}, {})
       then
         ();
-    case ({}, _, _, _, _, _, _, _, _, _, _)
+    case ({}, _)
       algorithm
         getConstraintesOrphansOrderEdvanced1(nextQueue, ass1, ass2, m, mt, mark, rowmarks, colummarks, preorphan, orphans, {});
       then
         ();
-    case (e::rest, _, _, _, _, _, _, _, _, _, _)
+    case (e::rest, _)
       algorithm
         // print("Check Eqn: " + intString(e) + "\n");
         false := intEq(colummarks[e], mark);
@@ -1194,7 +1183,7 @@ algorithm
         getConstraintesOrphansOrderEdvanced1(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, preorphan, orphans, next);
       then
         ();
-    case (e::rest, _, _, _, _, _, _, _, _, _, _)
+    case (e::rest, _)
       algorithm
         false := intEq(colummarks[e], mark);
         r := List.removeOnTrue(preorphan, intEq, m[e]) "vars of equation";
@@ -1207,7 +1196,7 @@ algorithm
         getConstraintesOrphansOrderEdvanced1(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, preorphan, orphans, next);
       then
         ();
-    case (_::rest, _, _, _, _, _, _, _, _, _, _)
+    case (_::rest, _)
       algorithm
         getConstraintesOrphansOrderEdvanced1(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, preorphan, orphans, nextQueue);
       then
@@ -1221,17 +1210,17 @@ protected function mergeOrphanParents
   input list<Integer> iAcc;
   output list<Integer> oAcc;
 algorithm
-  oAcc := matchcontinue(links, m, iAcc)
+  oAcc := matchcontinue links
     local
       Integer l;
       list<Integer> rest, lst;
-    case({}, _, _) then iAcc;
-    case(l::rest, _, _)
+    case {} then iAcc;
+    case l::rest
       algorithm
         {} := m[l];
       then
         mergeOrphanParents(rest, m, iAcc);
-    case(l::rest, _, _)
+    case l::rest
       algorithm
         lst := m[l];
       then
@@ -1248,19 +1237,19 @@ protected function getLinkPosition
   input list<Integer> iAcc;
   output list<Integer> ochilds;
 algorithm
-  ochilds := matchcontinue(orphans, m, mt, mark, rowmarks, iAcc)
+  ochilds := matchcontinue orphans
     local
       Integer o;
       list<Integer> rest, childs;
-    case({}, _, _, _, _, _) then iAcc;
-    case(o::rest, _, _, _, _, _)
+    case {} then iAcc;
+    case o::rest
       algorithm
         false := intEq(rowmarks[o], mark);
         arrayUpdate(rowmarks, o, mark);
         childs := getLinkPosition1(m[o], m, mt, mark, rowmarks, o, iAcc);
       then
         getLinkPosition(rest, m, mt, mark, rowmarks, childs);
-    case(_::rest, _, _, _, _, _)
+    case _::rest
       then
         getLinkPosition(rest, m, mt, mark, rowmarks, iAcc);
   end matchcontinue;
@@ -1276,24 +1265,24 @@ protected function getLinkPosition1
   input list<Integer> iAcc;
   output list<Integer> childs;
 algorithm
-  childs := matchcontinue(orphans, m, mt, mark, rowmarks, preorphan, iAcc)
+  childs := matchcontinue orphans
     local
       Integer o;
       list<Integer> lst;
-    case({}, _, _, _, _, _, _) then preorphan::iAcc;
-    case(o::{}, _, _, _, _, _, _)
+    case {} then preorphan::iAcc;
+    case o::{}
       algorithm
         false := intEq(rowmarks[o], mark);
         arrayUpdate(rowmarks, o, mark);
       then
         getLinkPosition1(m[o], m, mt, mark, rowmarks, o, iAcc);
-    case(o::{}, _, _, _, _, _, _)
+    case o::{}
       algorithm
         true := intEq(rowmarks[o], mark);
         lst := listAppend(mt[0], iAcc);
       then
         lst;
-    case(_, _, _, _, _, _, _)
+    case _
       algorithm
         print("Error in getLinkPosition1! Found Orphan with more than one parents " + stringDelimitList(List.map(orphans, intString), ", ") + "\n");
       then
@@ -1311,15 +1300,15 @@ protected function getOrphansOrderEdvanced5
   output list<list<Integer>> oAcc;
   output Integer omark;
 algorithm
-  (oAcc, omark) := match(linklst, m, mt, imark, rowmarks, iAcc)
+  (oAcc, omark) := match linklst
     local
       Integer mark;
       list<Integer> links, lst, childs;
       list<list<Integer>> rest, acc;
-    case({}, _, _, _, _, _)
+    case {}
       then
         (listReverse(iAcc), imark);
-    case(links::rest, _, _, _, _, _)
+    case links::rest
       algorithm
         lst := mergeOrphanParents(links, m, {});
         childs := getLinkPosition(lst, m, mt, imark, rowmarks, {});
@@ -1335,14 +1324,14 @@ protected function getOrphansOrderEdvanced6
   input list<list<Integer>> childslst;
   input array<List<Integer>> m;
 algorithm
-  _ := match(linklst, childslst, m)
+  () := match(linklst, childslst)
     local
       list<Integer> links, lst, childs;
       list<list<Integer>> rest, acc;
-    case({}, _, _)
+    case({}, _)
       then
         ();
-    case(links::rest, childs::acc, _)
+    case(links::rest, childs::acc)
       algorithm
         lst := List.unique(List.flatten(List.map1r(childs, arrayGet, m)));
         List.map2_0(links, doAssign, m, lst);
@@ -1376,7 +1365,7 @@ protected function getInvMap
   input Integer index;
   output Integer oindex;
 algorithm
-  _:=arrayUpdate(invmap, orphan, index);
+  arrayUpdate(invmap, orphan, index);
   oindex := index+1;
 end getInvMap;
 
@@ -1392,7 +1381,6 @@ protected
   list<list<Integer>> m = {};
   list<Integer> lst;
   Integer i;
-  array<list<Integer>> am, amT;
 algorithm
   for o in orphans loop
     lst := List.map1r(vorphansarray[o], arrayGet, invmap);
@@ -1431,12 +1419,11 @@ protected function getOrphansOrderEdvanced3
   output list<Integer> sortvorphans;
   output Integer omark;
 protected
-  list<Integer> order, leafs;
-  list<tuple<Integer, list<Integer>>> childlist;
+  list<Integer> order;
   Integer size;
   array<Integer> map, ass, invmap;
   array<List<Integer>> m, mt;
-  list<Integer> range, links;
+  list<Integer> range;
   list<list<Integer>> comps, linkslst;
 algorithm
   // get strong connected parts
@@ -1445,7 +1432,7 @@ algorithm
   //  print("map\n");
   //  BackendDump.dumpMatching(map);
   invmap := arrayCreate(arrayLength(vorphansarray), 0);
-  _ := List.fold1(vorphans, getInvMap, invmap, 1);
+  List.fold1(vorphans, getInvMap, invmap, 1);
   //  print("invmap\n");
   //  BackendDump.dumpMatching(invmap);
   range := List.intRange(size);
@@ -1455,7 +1442,7 @@ algorithm
   ass := listArray(range);
   comps := Sorting.TarjanTransposed(mt, ass);
   //  BackendDump.dumpComponentsOLD(comps);
-  ((order, linkslst)) := List.fold(comps, getOrder, ({}, {}));
+  (order, linkslst) := List.fold(comps, getOrder, ({}, {}));
   //  print("order: " + stringDelimitList(List.map(order, intString), ", ") + "\n");
   //  print("Links\n");
   //  BackendDump.dumpComponentsOLD(linkslst);
@@ -1480,18 +1467,17 @@ protected function reduceOrphancMatrix
   input list<list<Integer>> comps;
   input array<list<Integer>> m;
 algorithm
-  _ := match(comps, m)
+  () := match comps
     local
-      Integer c;
       list<Integer> comp;
       list<list<Integer>> rest;
-    case({}, _) then ();
-    case((_::{})::rest, _)
+    case {} then ();
+    case (_::{})::rest
       algorithm
         reduceOrphancMatrix(rest, m);
       then
         ();
-    case(comp::rest, _)
+    case comp::rest
       algorithm
         reduceOrphancMatrix1(comp, comp, m);
         reduceOrphancMatrix(rest, m);
@@ -1505,12 +1491,12 @@ protected function reduceOrphancMatrix1
   input list<Integer> comps1;
   input array<list<Integer>> m;
 algorithm
-  _ := match(comps, comps1, m)
+  () := match comps
     local
       Integer c;
       list<Integer> rest, lst;
-    case({}, _, _) then ();
-    case(c::rest, _, _)
+    case {} then ();
+    case c::rest
       algorithm
         lst := m[c];
         lst := List.setDifference(lst, comps1);
@@ -1527,18 +1513,18 @@ protected function hasResidualOrphan1 "author: Frenkel TUD 2012-07"
   input BackendDAE.EquationArray eqnsarr;
   output Integer Orphan;
 algorithm
-  Orphan := matchcontinue(eqns, ass, eqnsarr)
+  Orphan := matchcontinue eqns
     local
       list<Integer> rest;
       Integer e, len, size;
-    case (e::_, _, _)
+    case e::_
       algorithm
         len := listLength(ass[e]);
         size := BackendEquation.equationSize(BackendEquation.get(eqnsarr, e));
         true := intLt(len, size);
       then
         e;
-    case (_::rest, _, _)
+    case _::rest
       then
         hasResidualOrphan1(rest, ass, eqnsarr);
   end matchcontinue;
@@ -1549,16 +1535,16 @@ protected function hasResidualOrphan "author: Frenkel TUD 2012-07"
   input array<list<Integer>> ass;
   output Integer Orphan;
 algorithm
-  Orphan := matchcontinue(eqns, ass)
+  Orphan := matchcontinue eqns
     local
       list<Integer> rest;
       Integer e;
-    case (e::_, _)
+    case e::_
       algorithm
         {} := ass[e];
       then
         e;
-    case (_::rest, _)
+    case _::rest
       then
         hasResidualOrphan(rest, ass);
   end matchcontinue;
@@ -1579,20 +1565,20 @@ protected function makeGausEliminationRow "author: Frenkel TUD 2012-05"
   output DAE.Exp outExp;
   output DAE.Exp outExp1;
 algorithm
-  (outExp, outExp1) := matchcontinue(lst, size, vars, inExp)
+  (outExp, outExp1) := matchcontinue lst
     local
       Integer c;
       DAE.Exp e, e1, b;
       list<tuple<Integer, DAE.Exp>> rest;
-    case ({}, _, _, _)
+    case {}
       then
         (inExp, DAE.RCONST(0.0));
-    case ((c, e)::_, _, _, _)
+    case (c, e)::_
       algorithm
         true := intGt(c, size);
       then
         (inExp, e);
-    case ((c, e)::rest, _, _, _)
+    case (c, e)::rest
       algorithm
         e1 := Expression.expMul(e, vars[c]);
         e1 := Expression.expAdd(e1, inExp);
@@ -1611,16 +1597,16 @@ protected function makeGausElimination "author: Frenkel TUD 2012-05"
   input list<BackendDAE.Equation> iAcc;
   output list<BackendDAE.Equation> oAcc;
 algorithm
-  oAcc := matchcontinue(row, size, matrix, vars, iAcc)
+  oAcc := matchcontinue iAcc
     local
       DAE.Exp e, b;
       BackendDAE.Equation eqn;
-    case (_, _, _, _, _)
+    case _
       algorithm
         true := intGt(row, size);
       then
         listReverse(iAcc);
-    case (_, _, _, _, _)
+    case _
       algorithm
         (e, b) := makeGausEliminationRow(matrix[row], size, vars, DAE.RCONST(0.0));
         //(e, _) = ExpressionSimplify.simplify(e);
@@ -1637,12 +1623,12 @@ protected function dumpMatrix "author: Frenkel TUD 2012-05"
   input Integer size;
   input array<list<tuple<Integer, DAE.Exp>>> matrix;
 algorithm
-  _ := matchcontinue(row, size, matrix)
-    case (_, _, _) algorithm
+  () := matchcontinue matrix
+    case _ algorithm
       true := intGt(row, size);
     then ();
 
-    case (_, _, _) algorithm
+    case _ algorithm
       print(intString(row) + ": ");
       BackendDump.debuglst(matrix[row], dumpMatrix1, ", ", "\n");
       dumpMatrix(row+1, size, matrix);
@@ -1677,7 +1663,7 @@ protected function addRows "author: Frenkel TUD 2012-05"
   output BackendDAE.EquationArray outEqns "temporary equations";
   output tuple<Integer, Integer> outTpl;
 algorithm
-  (outElst, outVars, outEqns, outTpl) := matchcontinue(inA, inB, col, inVars, inEqns, inTpl, inElst)
+  (outElst, outVars, outEqns, outTpl) := matchcontinue(inA, inB)
     local
       Integer ca, cb;
       DAE.Exp ea, eb, e;
@@ -1685,23 +1671,23 @@ algorithm
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
       tuple<Integer, Integer> tpl;
-    case ({}, {}, _, _, _, _, _)
+    case ({}, {})
       then
         (listReverse(inElst), inVars, inEqns, inTpl);
-    case ({}, _, _, _, _, _, _)
+    case ({}, _)
       then
         (List.append_reverse(inElst, inB), inVars, inEqns, inTpl);
-    case (_, {}, _, _, _, _, _)
+    case (_, {})
       then
         (List.append_reverse(inElst, inA), inVars, inEqns, inTpl);
-    case ((ca, _)::resta, (cb, _)::restb, _, _, _, _, _)
+    case ((ca, _)::resta, (cb, _)::restb)
       algorithm
         true := intEq(ca, cb);
         true := intEq(ca, col);
         (elst, vars, eqns, tpl) := addRows(resta, restb, col, inVars, inEqns, inTpl, inElst);
       then
         (elst, vars, eqns, tpl);
-    case ((ca, ea)::resta, (cb, eb)::restb, _, _, _, _, _)
+    case ((ca, ea)::resta, (cb, eb)::restb)
       algorithm
         true := intEq(ca, cb);
         e := Expression.expAdd(ea, eb);
@@ -1710,27 +1696,27 @@ algorithm
         (elst, vars, eqns, tpl) := addRows(resta, restb, col, vars, eqns, tpl, (ca, e)::inElst);
       then
         (elst, vars, eqns, tpl);
-    case ((ca, _)::_, (cb, _)::restb, _, _, _, _, _)
+    case ((ca, _)::_, (cb, _)::restb)
       algorithm
         true := intGt(ca, cb);
         true := intEq(cb, col);
         (elst, vars, eqns, tpl) := addRows(inA, restb, col, inVars, inEqns, inTpl, inElst);
       then
         (elst, vars, eqns, tpl);
-    case ((ca, _)::_, (cb, eb)::restb, _, _, _, _, _)
+    case ((ca, _)::_, (cb, eb)::restb)
       algorithm
         true := intGt(ca, cb);
         (elst, vars, eqns, tpl) := addRows(inA, restb, col, inVars, inEqns, inTpl, (cb, eb)::inElst);
       then
         (elst, vars, eqns, tpl);
-    case ((ca, _)::resta, (cb, _)::_, _, _, _, _, _)
+    case ((ca, _)::resta, (cb, _)::_)
       algorithm
         true := intLt(ca, cb);
         true := intEq(ca, col);
         (elst, vars, eqns, tpl) := addRows(resta, inB, col, inVars, inEqns, inTpl, inElst);
       then
         (elst, vars, eqns, tpl);
-    case ((ca, ea)::resta, (cb, _)::_, _, _, _, _, _)
+    case ((ca, ea)::resta, (cb, _)::_)
       algorithm
         true := intLt(ca, cb);
         (elst, vars, eqns, tpl) := addRows(resta, inB, col, inVars, inEqns, inTpl, (ca, ea)::inElst);
@@ -1759,20 +1745,20 @@ protected function removeFromCol "author: Frenkel TUD 2012-05"
   input list<tuple<Integer, DAE.Exp>> inAcc;
   output list<tuple<Integer, DAE.Exp>> outAcc;
 algorithm
-  outAcc := match(i, inTpl, inAcc)
+  outAcc := match inTpl
     local
       DAE.Exp e;
       Integer c;
       list<tuple<Integer, DAE.Exp>> rest;
-      case (_, {}, _)
+      case {}
         then
           listReverse(inAcc);
-      case (_, (c, _)::rest, _)
+      case (c, _)::rest
         guard
           intEq(i, c)
         then
           listAppend(listReverse(inAcc), rest);
-      case (_, (c, e)::rest, _)
+      case (c, e)::rest
         then
           removeFromCol(i, rest, (c, e)::inAcc);
   end match;
@@ -1788,7 +1774,7 @@ protected function makeDummyVar "author: Frenkel TUD 2012-05"
   output DAE.Exp outExp;
   output tuple<Integer, Integer> outTpl;
 algorithm
-  (outVars, outEqns, outExp, outTpl) := matchcontinue(inTpl, e, inVars, inEqns)
+  (outVars, outEqns, outExp, outTpl) := matchcontinue(inTpl, e)
     local
       DAE.ComponentRef cr;
       BackendDAE.Var v;
@@ -1797,21 +1783,21 @@ algorithm
       BackendDAE.EquationArray eqns;
       BackendDAE.Variables vars;
       DAE.Exp cexp;
-    case (_, DAE.CREF(), _, _)
+    case (_, DAE.CREF())
       then
         (inVars, inEqns, e, inTpl);
-    case (_, DAE.UNARY(exp=DAE.CREF()), _, _)
+    case (_, DAE.UNARY(exp=DAE.CREF()))
       then
         (inVars, inEqns, e, inTpl);
-    case (_, DAE.RCONST(), _, _)
+    case (_, DAE.RCONST())
       then
         (inVars, inEqns, e, inTpl);
-    case (_, _, _, _)
+    case (_, _)
       algorithm
         true := Expression.isConst(e);
       then
         (inVars, inEqns, e, inTpl);
-    case((a, b), _, _, _)
+    case((a, b), _)
       algorithm
       sa := intString(a);
       sb := intString(b);
@@ -1838,19 +1824,19 @@ protected function gaussElimination1 "author: Frenkel TUD 2012-05"
   output BackendDAE.EquationArray outEqns "temporary equations";
   output tuple<Integer, Integer> outTpl;
 algorithm
-  (outVars, outEqns, outTpl) := matchcontinue (col, row, size, ce, matrix, inVars, inEqns, inTpl)
+  (outVars, outEqns, outTpl) := matchcontinue inTpl
     local
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
       DAE.Exp e, e1, cexp;
       list<tuple<Integer, DAE.Exp>> elst;
        tuple<Integer, Integer> tpl;
-    case (_, _, _, _, _, _, _, _)
+    case _
       algorithm
         true := intGt(row, size);
       then
         (inVars, inEqns, inTpl);
-    case(_, _, _, _, _, _, _, _)
+    case _
       algorithm
         SOME(e) := diagonalEntry(col, matrix[row]);
         //  print("Found entriy in " + intString(row) + "\n");
@@ -1870,7 +1856,7 @@ algorithm
         (vars, eqns, tpl) := gaussElimination1(col, row+1, size, ce, matrix, vars, eqns, tpl);
       then
         (vars, eqns, tpl);
-    case(_, _, _, _, _, _, _, _)
+    case _
       algorithm
         (vars, eqns, tpl) := gaussElimination1(col, row+1, size, ce, matrix, inVars, inEqns, inTpl);
       then
@@ -1888,18 +1874,18 @@ protected function gaussElimination "author: Frenkel TUD 2012-05"
   output BackendDAE.Variables outVars "temporary variables";
   output BackendDAE.EquationArray outEqns "temporary equations";
 algorithm
-  (outVars, outEqns) := matchcontinue (col, size, matrix, inVars, inEqns, inTpl)
+  (outVars, outEqns) := matchcontinue inTpl
     local
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
       DAE.Exp e;
       tuple<Integer, Integer> tpl;
-    case (_, _, _, _, _, _)
+    case _
       algorithm
         true := intGt(col, size);
       then
         (inVars, inEqns);
-    case(_, _, _, _, _, _)
+    case _
       algorithm
         SOME(e) := diagonalEntry(col, matrix[col]);
         //  print("Jacobian as Matrix " + intString(col) + "\n");
@@ -1909,7 +1895,7 @@ algorithm
         (vars, eqns) := gaussElimination(col+1, size, matrix, vars, eqns, tpl);
       then
         (vars, eqns);
-    case(_, _, _, _, _, _)
+    case _
       algorithm
         NONE() := diagonalEntry(col, matrix[col]);
         print("gaussElimination failt because of non diagonal Entry for col " + intString(col) + "\n");
@@ -1924,12 +1910,12 @@ protected function diagonalEntry "author: Frenkel TUD
   input list<tuple<Integer, DAE.Exp>> row;
   output Option<DAE.Exp> oe;
 algorithm
-  oe := match(col, row)
+  oe := match row
     local
       list<tuple<Integer, DAE.Exp>> rest;
       Integer r;
       DAE.Exp e;
-    case (_, (r, e)::rest)
+    case (r, e)::rest
       then
         if intEq(r, col) and not Expression.isZero(e) then
           SOME(e)
@@ -1963,7 +1949,7 @@ protected function transformJacToAdjacencyMatrix2 "author: Frenkel TUD
     output Boolean outBool;
   end CompareFunc;
 algorithm
- _ := match(jac, m, mapIncRowEqn, eqns, ass1, ass2, func)
+ () := match jac
     local
       Integer c, r, i;
       DAE.Exp e;
@@ -1971,9 +1957,9 @@ algorithm
       list<tuple<Integer, Integer, BackendDAE.Equation>> rest;
       list<Integer> lst;
       BackendDAE.Equation eqn;
-    case ({}, _, _, _, _, _, _)
+    case {}
       then ();
-    case ((r, c, BackendDAE.RESIDUAL_EQUATION(exp = e))::rest, _, _, _, _, _, _)
+    case (r, c, BackendDAE.RESIDUAL_EQUATION(exp = e))::rest
       algorithm
         i := mapIncRowEqn[r];
         eqn := BackendEquation.get(eqns, i);
@@ -1999,16 +1985,16 @@ protected function transformJacToAdjacencyMatrix1 "author: Frenkel TUD
     output Boolean outBool;
   end CompareFunc;
 algorithm
- _ := match(jac, m, ass1, ass2, func)
+ () := match jac
     local
       Integer c, r;
       DAE.Exp e;
       Boolean b, b1;
       list<tuple<Integer, Integer, BackendDAE.Equation>> rest;
       list<Integer> lst;
-    case ({}, _, _, _, _)
+    case {}
       then ();
-    case ((r, c, BackendDAE.RESIDUAL_EQUATION(exp=e))::rest, _, _, _, _)
+    case (r, c, BackendDAE.RESIDUAL_EQUATION(exp=e))::rest
       algorithm
         b1 := intLt(ass1[c], 1);
         b := func(e);
@@ -2029,18 +2015,18 @@ protected function transformJacToAdjacencyMatrix "author: Frenkel TUD"
     output Boolean outBool;
   end CompareFunc;
 algorithm
- _ := match(jac, m, mT, func)
+ () := match jac
     local
       Integer c, r;
       DAE.Exp e;
       Boolean b;
       list<tuple<Integer, Integer, BackendDAE.Equation>> rest;
       list<Integer> lst, lst1;
-    case ({}, _, _, _)
+    case {}
       algorithm
         transformJacToAdjacencyMatrix(jac, m, mT, func);
       then ();
-    case ((r, c, BackendDAE.RESIDUAL_EQUATION(exp = e))::rest, _, _, _)
+    case (r, c, BackendDAE.RESIDUAL_EQUATION(exp = e))::rest
       algorithm
         b := func(e);
         lst := List.consOnTrue(b, c, m[r]);
@@ -2061,7 +2047,7 @@ protected function transformJacToMatrix
   input list<DAE.Exp> b;
   input array<list<tuple<Integer, DAE.Exp>>> matrix;
 algorithm
-  _ := matchcontinue(jac, row, col, size, b, matrix)
+  () := matchcontinue jac
     local
       Integer c, r;
       DAE.Exp e, be;
@@ -2069,11 +2055,11 @@ algorithm
       list<tuple<Integer, Integer, BackendDAE.Equation>> rest;
       list<tuple<Integer, DAE.Exp>> lst;
 
-    case (_, _, _, _, _, _) algorithm
+    case _ algorithm
       true := intGt(row, size);
     then ();
 
-    case (_, _, _, _, _, _) algorithm
+    case _ algorithm
       true := intGt(col, size);
       be::b1 := b;
       lst := matrix[row];
@@ -2083,11 +2069,11 @@ algorithm
       transformJacToMatrix(jac, row+1, 1, size, b1, matrix);
     then ();
 
-    case ({}, _, _, _, _, _) algorithm
+    case {} algorithm
       transformJacToMatrix(jac, row, col+1, size, b, matrix);
     then ();
 
-    case ((r, c, BackendDAE.RESIDUAL_EQUATION(exp = e))::rest, _, _, _, _, _) algorithm
+    case (r, c, BackendDAE.RESIDUAL_EQUATION(exp = e))::rest algorithm
       true := intEq(r, row);
       true := intEq(c, col);
       lst := matrix[r];
@@ -2096,13 +2082,13 @@ algorithm
       transformJacToMatrix(rest, row, col+1, size, b, matrix);
     then ();
 
-    case ((r, c, _)::_, _, _, _, _, _) algorithm
+    case (r, c, _)::_ algorithm
       true := intEq(r, row);
       true := intLt(col, c);
       transformJacToMatrix(jac, row, col+1, size, b, matrix);
     then ();
 
-    case ((r, _, _)::_, _, _, _, _, _) algorithm
+    case (r, _, _)::_ algorithm
       true := intGe(r, row);
       transformJacToMatrix(jac, row, col+1, size, b, matrix);
     then ();
@@ -2116,7 +2102,7 @@ protected function dumpJacMatrix
   input Integer size;
   input BackendDAE.Variables vars;
 algorithm
-  _ := matchcontinue(jac, row, col, size, vars)
+  () := matchcontinue jac
     local
       String estr;
       Integer c, r;
@@ -2125,11 +2111,11 @@ algorithm
       list<tuple<Integer, Integer, BackendDAE.Equation>> rest;
       DAE.ComponentRef cr;
 
-    case (_, _, _, _, _) algorithm
+    case _ algorithm
       true := intGt(row, size);
     then ();
 
-    case (_, _, _, _, _) algorithm
+    case _ algorithm
       true := intGt(col, size);
       v := BackendVariable.getVarAt(vars, row);
       cr := BackendVariable.varCref(v);
@@ -2140,12 +2126,12 @@ algorithm
       dumpJacMatrix(jac, row+1, 1, size, vars);
     then ();
 
-    case ({}, _, _, _, _) algorithm
+    case {} algorithm
       print("0, ");
       dumpJacMatrix(jac, row, col+1, size, vars);
     then ();
 
-    case ((r, c, BackendDAE.RESIDUAL_EQUATION(exp = e))::rest, _, _, _, _) algorithm
+    case (r, c, BackendDAE.RESIDUAL_EQUATION(exp = e))::rest algorithm
       true := intEq(r, row);
       true := intEq(c, col);
       estr := ExpressionBasics.printExpStr(e);
@@ -2153,14 +2139,14 @@ algorithm
       dumpJacMatrix(rest, row, col+1, size, vars);
     then ();
 
-    case ((r, c, _)::_, _, _, _, _) algorithm
+    case (r, c, _)::_ algorithm
       true := intEq(r, row);
       true := intLt(col, c);
       print("0, ");
       dumpJacMatrix(jac, row, col+1, size, vars);
     then ();
 
-    case ((r, _, _)::_, _, _, _, _) algorithm
+    case (r, _, _)::_ algorithm
       false := intEq(r, row);
       print("0, ");
       dumpJacMatrix(jac, row, col+1, size, vars);
@@ -2200,13 +2186,13 @@ protected function sortVarsforOrder
   input BackendDAE.Variables vars;
   output list<BackendDAE.Var> outVarLst;
 algorithm
-  outVarLst := matchcontinue(inEqn, inVarLst, vindxs, vars)
+  outVarLst := matchcontinue inEqn
     local
       list<BackendDAE.Var> vlst;
       list<DAE.ComponentRef> crlst;
       DAE.Exp e1;
       list<DAE.Exp> elst;
-    case(BackendDAE.ARRAY_EQUATION(left=e1), _, _, _)
+    case BackendDAE.ARRAY_EQUATION(left=e1)
       algorithm
         // if array get all elements
         elst := Expression.flattenArrayExpToList(e1);
@@ -2216,7 +2202,7 @@ algorithm
         vlst := sortVarsforOrder1(crlst, 1, inVarLst, vindxs, arrayCreate(listLength(vindxs), NONE()), vars);
       then
         vlst;
-    case(BackendDAE.ARRAY_EQUATION(right=e1), _, _, _)
+    case BackendDAE.ARRAY_EQUATION(right=e1)
       algorithm
         // if array get all elements
         elst := Expression.flattenArrayExpToList(e1);
@@ -2226,7 +2212,7 @@ algorithm
         vlst := sortVarsforOrder1(crlst, 1, inVarLst, vindxs, arrayCreate(listLength(vindxs), NONE()), vars);
       then
         vlst;
-    case(_, _, _, _)
+    case _
       algorithm
          vlst := List.sort(inVarLst, BackendVariable.varSortFunc);
       then
@@ -2243,7 +2229,7 @@ protected function sortVarsforOrder1
   input BackendDAE.Variables vars;
   output list<BackendDAE.Var> outVarLst;
 algorithm
-  outVarLst := matchcontinue(crlst, index, inVarLst, vindxs, vararray, vars)
+  outVarLst := matchcontinue crlst
     local
       Integer i, p;
       list<Integer> ilst;
@@ -2251,13 +2237,13 @@ algorithm
       list<BackendDAE.Var> vlst;
       DAE.ComponentRef cr;
       list<DAE.ComponentRef> rest;
-    case({}, _, _, _, _, _)
+    case {}
       algorithm
         vlst := List.sort(inVarLst, BackendVariable.varSortFunc);
         vlst := sortVarsforOrder2(1, vlst, vararray, {});
       then
         vlst;
-    case(cr::rest, _, _, _, _, _)
+    case cr::rest
       algorithm
         (v, i) := BackendVariable.getVarSingle(cr, vars);
         p := List.position(i, vindxs);
@@ -2266,7 +2252,7 @@ algorithm
         arrayUpdate(vararray, index, SOME(v));
       then
         sortVarsforOrder1(rest, index+1, vlst, ilst, vararray, vars);
-    case(_::rest, _, _, _, _, _)
+    case _::rest
       then
         sortVarsforOrder1(rest, index+1, inVarLst, vindxs, vararray, vars);
   end matchcontinue;
@@ -2279,21 +2265,21 @@ protected function sortVarsforOrder2
   input list<BackendDAE.Var> iAcc;
   output list<BackendDAE.Var> outVarLst;
 algorithm
-  outVarLst := matchcontinue(index, inVarLst, vararray, iAcc)
+  outVarLst := matchcontinue inVarLst
     local
       BackendDAE.Var v;
       list<BackendDAE.Var> vlst;
-    case(_, _, _, _)
+    case _
       algorithm
        true := intGt(index, arrayLength(vararray));
       then
         listReverse(iAcc);
-    case(_, _, _, _)
+    case _
       algorithm
         SOME(v) := vararray[index];
       then
         sortVarsforOrder2(index+1, inVarLst, vararray, v::iAcc);
-    case(_, v::vlst, _, _)
+    case v::vlst
       then
         sortVarsforOrder2(index+1, vlst, vararray, v::iAcc);
   end matchcontinue;
@@ -2311,21 +2297,21 @@ protected function getOrphansPairs
   input array<Integer> colummarks;
   output Integer omark;
 algorithm
-  omark := matchcontinue(inOrphans, ass1, ass2, m, mt, mark, rowmarks, colummarks)
+  omark := matchcontinue inOrphans
     local
       list<Integer> rest;
       Integer o;
-    case ({}, _, _, _, _, _, _, _)
+    case {}
       then
        mark;
-    case (o::rest, _, _, _, _, _, _, _)
+    case o::rest
       algorithm
         false := intEq(rowmarks[o], mark);
         //  print("Process Orphan " + intString(o) + "\n");
         getOrphansPairs1({o}, ass1, ass2, m, mt, mark, rowmarks, colummarks, o, {});
       then
         getOrphansPairs(rest, ass1, ass2, m, mt, mark+1, rowmarks, colummarks);
-    case (_::rest, _, _, _, _, _, _, _)
+    case _::rest
       then
         getOrphansPairs(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks);
   end matchcontinue;
@@ -2344,20 +2330,20 @@ protected function getOrphansPairs1 "author: Frenkel TUD 2012-07"
   input Integer orphan;
   input list<Integer> nextQueue;
 algorithm
-  _ := matchcontinue(rows, ass1, ass2, m, mt, mark, rowmarks, colummarks, orphan, nextQueue)
+  () := matchcontinue(rows, nextQueue)
     local
       Integer r, o;
       list<Integer> rest, next, elst;
-    case ({}, _, _, _, _, _, _, _, _, {})
+    case ({}, {})
       then
         ();
-    case ({}, _, _, _, _, _, _, _, _, _)
+    case ({}, _)
       algorithm
         //  print("next queue " + stringDelimitList(List.map(nextQueue, intString), ", ") + "\n");
         getOrphansPairs1(nextQueue, ass1, ass2, m, mt, mark, rowmarks, colummarks, orphan, {});
       then
         ();
-    case (r::_, _, _, _, _, _, _, _, _, _)
+    case (r::_, _)
       algorithm
         // print("Check Var: " + intString(r) + "\n");
         false := intEq(rowmarks[r], mark);
@@ -2369,7 +2355,7 @@ algorithm
         arrayUpdate(ass2, o, {orphan});
       then
         ();
-    case (r::rest, _, _, _, _, _, _, _, _, _)
+    case (r::rest, _)
       algorithm
         false := intEq(rowmarks[r], mark);
         elst :=  List.select1(mt[r], intGt, 0) "equations of var";
@@ -2381,7 +2367,7 @@ algorithm
         getOrphansPairs1(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, orphan, next);
       then
         ();
-    case (_::rest, _, _, _, _, _, _, _, _, _)
+    case (_::rest, _)
       algorithm
         getOrphansPairs1(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, orphan, nextQueue);
       then
@@ -2402,14 +2388,14 @@ protected function getOrphansPairsConstraints "author: Frenkel TUD 2012-07"
   input BackendDAE.EquationArray eqns;
   output Integer omark;
 algorithm
-  omark := matchcontinue(inOrphans, ass1, ass2, m, mt, mark, rowmarks, colummarks, eqns)
+  omark := matchcontinue inOrphans
     local
       list<Integer> rest;
       Integer o;
-    case ({}, _, _, _, _, _, _, _, _)
+    case {}
       then
        mark;
-    case (o::rest, _, _, _, _, _, _, _, _)
+    case o::rest
       algorithm
         false := intEq(colummarks[o], mark);
         arrayUpdate(colummarks, o, mark);
@@ -2417,7 +2403,7 @@ algorithm
         getOrphansPairsConstraints1(mt[o], ass1, ass2, m, mt, mark, rowmarks, colummarks, eqns, o, {});
       then
         getOrphansPairsConstraints(rest, ass1, ass2, m, mt, mark+1, rowmarks, colummarks, eqns);
-    case (_::rest, _, _, _, _, _, _, _, _)
+    case _::rest
       then
         getOrphansPairsConstraints(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, eqns);
   end matchcontinue;
@@ -2437,19 +2423,19 @@ protected function getOrphansPairsConstraints1 "author: Frenkel TUD 2012-07"
   input Integer orphan;
   input list<Integer> nextQueue;
 algorithm
-  _ := matchcontinue(eqns, ass1, ass2, m, mt, mark, rowmarks, colummarks, eqnsarr, orphan, nextQueue)
+  () := matchcontinue(eqns, nextQueue)
     local
       Integer e, o;
       list<Integer> rest, next, rlst, lst, ass2lst;
-    case ({}, _, _, _, _, _, _, _, _, _, {})
+    case ({}, {})
       then
         ();
-    case ({}, _, _, _, _, _, _, _, _, _, _)
+    case ({}, _)
       algorithm
         getOrphansPairsConstraints1(nextQueue, ass1, ass2, m, mt, mark, rowmarks, colummarks, eqnsarr, orphan, {});
       then
         ();
-    case (e::_, _, _, _, _, _, _, _, _, _, _)
+    case (e::_, _)
       algorithm
         // print("Check Eqn: " + intString(e) + "\n");
         false := intEq(colummarks[e], mark);
@@ -2466,7 +2452,7 @@ algorithm
 
       then
         ();
-    case (e::rest, _, _, _, _, _, _, _, _, _, _)
+    case (e::rest, _)
       algorithm
         false := intEq(colummarks[e], mark);
         rlst := List.select1(m[e], intGt, 0) "vars of eqns";
@@ -2479,7 +2465,7 @@ algorithm
         getOrphansPairsConstraints1(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, eqnsarr, orphan, next);
       then
         ();
-    case (_::rest, _, _, _, _, _, _, _, _, _, _)
+    case (_::rest, _)
       algorithm
         getOrphansPairsConstraints1(rest, ass1, ass2, m, mt, mark, rowmarks, colummarks, eqnsarr, orphan, nextQueue);
       then
@@ -2512,18 +2498,18 @@ protected function getIndexesForEqnsAdvanced "author: Frenkel TUD 2012-07"
 
   output Integer outMark;
 algorithm
-  outMark := matchcontinue(orphans, index, m, mT, imark, rowmarks, colummarks, orowmarks, ocolummarks, ass1, ass2, vec1, vec2, queuemark, vars, eqns, shared, size)
+  outMark := matchcontinue orphans
     local
       Integer vorphan, eorphan, index1, mark;
       list<Integer> rest, rows, queue, rqueue, bvars, beqns, lst, vorphans, vorphanseqns;
       list<list<Integer>> queuelst;
 
-    case ({}, _, _, _, _, _, _, _, _, _, _, _ , _, _, _, _, _, _)
+    case {}
       algorithm
         //markIndexdColums(1, arrayLength(vec1), mark+1, colummarks, vec2);
         //getIndexesForEqnsRest(1, arrayLength(vec1), index, mark+1, colummarks, ass1, ass2, vec1, vec2);
       then imark;
-    case (vorphan::rest, _, _, _, _, _, _, _, _, _, _, _ , _, _, _, _, _, _)
+    case vorphan::rest
       algorithm
         true := intEq(orowmarks[vorphan], 1);
         eorphan := ass1[vorphan];
@@ -2533,7 +2519,7 @@ algorithm
         rows := List.select(m[eorphan], Util.intPositive);
         rows := List.fold1(ass2[eorphan], List.removeOnTrue, intEq, rows);
         // BackendDump.debuglst((rows, intString, ", ", "\n"));
-        _ := getIndexSubGraph(rows, vorphans, m, mT, imark, rowmarks, colummarks, orowmarks, ocolummarks, ass1, ass2, false);
+        getIndexSubGraph(rows, vorphans, m, mT, imark, rowmarks, colummarks, orowmarks, ocolummarks, ass1, ass2, false);
         // generate queue with BFS from tearing var to residual equation
         // print("getIndex ");
         vorphanseqns := List.unique(List.flatten(List.map1r(vorphans, arrayGet, mT)));
@@ -2544,7 +2530,7 @@ algorithm
         // BackendDump.debuglst((queue, intString, ", ", "\n"));
         // set indexes
         mark := imark+2;
-        ((index1, queue, rqueue)) := List.fold1(queue, setIndexQueue, (vec1, vec2, ass2, queuemark, colummarks, mark), (index, {}, {}));
+        (index1, queue, rqueue) := List.fold1(queue, setIndexQueue, (vec1, vec2, ass2, queuemark, colummarks, mark), (index, {}, {}));
         arrayUpdate(vec1, index1, vorphans);
         arrayUpdate(vec2, index1, eorphan);
         arrayUpdate(queuemark, eorphan, true);
@@ -2576,19 +2562,19 @@ algorithm
         setBoarderElemts(beqns, m, mark, rowmarks, vorphan);
         // unset orphanmark so it can passed
         //arrayUpdate(orowmarks, vorphan, -1);
-        _ := List.fold1(vorphans, markOrphans, -1, orowmarks);
+        List.fold1(vorphans, markOrphans, -1, orowmarks);
         arrayUpdate(ocolummarks, eorphan, -1);
 
        vorphans := List.removeOnTrue(vorphan, intEq, vorphans);
-       _ := List.fold1(vorphans, markOrphans, -1, orowmarks);
-       _ := List.fold1r(vorphans, arrayUpdate, {}, mT);
+       List.fold1(vorphans, markOrphans, -1, orowmarks);
+       List.fold1r(vorphans, arrayUpdate, {}, mT);
 
        //   syst = BackendDAE.EQSYSTEM(vars, eqns, SOME(m), SOME(mT), BackendDAE.NO_MATCHING(), {});
        //   DumpGraphML.dumpSystem(syst, shared, NONE(), intString(size) + "SystemIndexing" + intString(index) + ".graphml");
 
       then
        getIndexesForEqnsAdvanced(rest, index1+1, m, mT, mark+2, rowmarks, colummarks, orowmarks, ocolummarks, ass1, ass2, vec1, vec2, queuemark, vars, eqns, shared, size);
-    case (_::rest, _, _, _, _, _, _, _, _, _, _, _ , _, _, _, _, _, _)
+    case _::rest
       then
        getIndexesForEqnsAdvanced(rest, index, m, mT, imark, rowmarks, colummarks, orowmarks, ocolummarks, ass1, ass2, vec1, vec2, queuemark, vars, eqns, shared, size);
   end matchcontinue;
@@ -2604,12 +2590,12 @@ protected function getBorderElements
   input list<Integer> iAcc;
   output list<Integer> oAcc;
 algorithm
-  oAcc := match(elements, m, mark, arr, iAcc)
+  oAcc := match elements
     local
       Integer elem;
       list<Integer> rest, lst, lst1;
-    case({}, _, _, _, _) then iAcc;
-    case(elem::rest, _, _, _, _)
+    case {} then iAcc;
+    case elem::rest
       algorithm
         (lst, lst1) := List.split2OnTrue(m[elem], unmarked, arr, mark);
         arrayUpdate(m, elem, lst1);
@@ -2628,12 +2614,12 @@ protected function setBoarderElemts
   input array<Integer> arr;
   input Integer orphan;
 algorithm
-  _ := match(elements, m, mark, arr, orphan)
+  () := match elements
     local
       Integer elem;
       list<Integer> rest, lst;
-    case({}, _, _, _, _) then ();
-    case(elem::rest, _, _, _, _)
+    case {} then ();
+    case elem::rest
       algorithm
         lst := List.select2(m[elem], unmarked, arr, mark);
         arrayUpdate(m, elem, orphan::lst);
@@ -2650,14 +2636,14 @@ protected function setIndexQueue "author: Frenkel TUD 2012-07"
  input tuple<Integer, list<Integer>, list<Integer>> itpl;
  output tuple<Integer, list<Integer>, list<Integer>> otpl;
 algorithm
-  otpl := matchcontinue(col, tpl, itpl)
+  otpl := matchcontinue(tpl, itpl)
     local
       array<Integer> vec2, colummark;
       array<List<Integer>> vec1, ass2;
       list<Integer> r, rlst, elst;
       array<Boolean> queuemark;
       Integer index, mark;
-    case (_, (vec1, vec2, ass2, queuemark, colummark, mark), (index, elst, rlst))
+    case ((vec1, vec2, ass2, queuemark, colummark, mark), (index, elst, rlst))
       algorithm
         r := ass2[col];
         false := queuemark[col];
@@ -2668,7 +2654,7 @@ algorithm
         arrayUpdate(colummark, col, mark);
       then
         ((index+1, col::elst, listAppend(r, rlst)));
-    case (_, (_, _, ass2, _, colummark, mark), (index, elst, rlst))
+    case ((_, _, ass2, _, colummark, mark), (index, elst, rlst))
       algorithm
         r := ass2[col];
         false := intEq(colummark[col], mark);
@@ -2697,19 +2683,19 @@ protected function getIndexQueque "author: Frenkel TUD 2012-07"
   input list<list<Integer>> iqueue1;
   output list<list<Integer>> oqueue;
 algorithm
-  oqueue := match(colums, m, mT, mark, rowmarks, colummarks, ass1, ass2, vec2, queuemark, nextqueue, iqueue, iqueue1)
+  oqueue := match(colums, nextqueue)
     local
       Integer c;
       list<Integer> rest, queue, r, queue1, colums1;
-      Boolean b, b1, b2;
-    case ({}, _, _, _, _, _, _, _, _, _, {}, _, _) then iqueue1;
-    case ({}, _, _, _, _, _, _, _, _, _, _, _, _)
+      Boolean b1, b2;
+    case ({}, {}) then iqueue1;
+    case ({}, _)
       algorithm
         queue := List.unique(iqueue);
         // print("append level: "); BackendDump.debuglst((queue, intString, ", ", "\n"));
       then
         getIndexQueque(nextqueue, m, mT, mark, rowmarks, colummarks, ass1, ass2, vec2, queuemark, {}, {}, queue::iqueue1);
-    case (c::rest, _, _, _, _, _, _, _, _, _, _, _, _)
+    case (c::rest, _)
       algorithm
         r := ass2[c];
         //  print("Process Colum " + intString(c) + " Rows " + stringDelimitList(List.map(r, intString), ", ") + "  " + boolString(b) +"\n");
@@ -2803,7 +2789,7 @@ protected function doAssign "author: Frenkel TUD 2012-05"
   input array<list<Integer>> arr;
   input list<Integer> assign;
 algorithm
-  _ := arrayUpdate(arr, index, assign);
+  arrayUpdate(arr, index, assign);
 end doAssign;
 
 protected function doMark "author: Frenkel TUD 2012-05"
@@ -2811,7 +2797,7 @@ protected function doMark "author: Frenkel TUD 2012-05"
   input array<Integer> arr;
   input Integer mark;
 algorithm
-  _ := arrayUpdate(arr, index, mark);
+  arrayUpdate(arr, index, mark);
 end doMark;
 
 protected function getIndexSubGraph "author: Frenkel TUD 2012-07"
@@ -2829,23 +2815,23 @@ protected function getIndexSubGraph "author: Frenkel TUD 2012-07"
   input Boolean ifound;
   output Boolean found;
 algorithm
-  found := matchcontinue(rows, vorphan, m, mT, mark, rowmarks, colummarks, orowmarks, ocolummarks, ass1, ass2, ifound)
+  found := matchcontinue rows
     local
       Integer r, e;
       list<Integer> rest, nextrows;
       Boolean b;
-    case ({}, _, _, _, _, _, _, _, _, _, _, _) then ifound;
-    case (r::rest, _, _, _, _, _, _, _, _, _, _, _)
+    case {} then ifound;
+    case r::rest
       algorithm
         // is my var orphan?
         //true = intEq(r, vorphan);
         true := listMember(r, vorphan);
         // mark all entries in the queue
         // print("Found orphan " + intString(r) + "\n");
-         _ := getIndexSubGraph(rest, vorphan, m, mT, mark, rowmarks, colummarks, orowmarks, ocolummarks, ass1, ass2, false);
+         getIndexSubGraph(rest, vorphan, m, mT, mark, rowmarks, colummarks, orowmarks, ocolummarks, ass1, ass2, false);
       then
         true;
-    case (r::rest, _, _, _, _, _, _, _, _, _, _, _)
+    case r::rest
       algorithm
         //false = intEq(r, vorphan);
         false := listMember(r, vorphan);
@@ -2856,7 +2842,7 @@ algorithm
         List.map2_0(ass2[e], doMark, rowmarks, mark);
       then
         getIndexSubGraph(rest, vorphan, m, mT, mark, rowmarks, colummarks, orowmarks, ocolummarks, ass1, ass2, true);
-    case (r::rest, _, _, _, _, _, _, _, _, _, _, _)
+    case r::rest
       algorithm
         //false = intEq(r, vorphan);
         false := listMember(r, vorphan);
@@ -2876,7 +2862,7 @@ algorithm
         markIndexSubgraph(b, ass2[e], mark, rowmarks);
       then
         getIndexSubGraph(rest, vorphan, m, mT, mark, rowmarks, colummarks, orowmarks, ocolummarks, ass1, ass2, b or ifound);
-    case (_::rest, _, _, _, _, _, _, _, _, _, _, _)
+    case _::rest
       then
         getIndexSubGraph(rest, vorphan, m, mT, mark, rowmarks, colummarks, orowmarks, ocolummarks, ass1, ass2, ifound);
   end matchcontinue;
@@ -2888,9 +2874,9 @@ protected function markIndexSubgraph "author: Frenkel TUD 2012-07"
   input Integer mark;
   input array<Integer> rowmarks;
 algorithm
-  _ := match(b, r, mark, rowmarks)
-    case(false, _, _, _) then ();
-    case(true, _, _, _)
+  () := match b
+    case false then ();
+    case true
       algorithm
         List.map2_0(r, doMark, rowmarks, mark);
       then
@@ -2909,15 +2895,15 @@ protected function getIndexesForEqnsRest
   input array<Integer> vec1;
   input array<Integer> vec2;
 algorithm
-  _ := matchcontinue(i, size, id, mark, colummarks, ass1, ass2, vec1, vec2)
-  case(_, _, _, _, _, _, _, _, _)
+  () := matchcontinue vec2
+  case _
     algorithm
       false := intGt(i, size);
       true := intEq(mark, colummarks[i]);
       getIndexesForEqnsRest(i+1, size, id, mark, colummarks, ass1, ass2, vec1, vec2);
     then
       ();
-  case(_, _, _, _, _, _, _, _, _)
+  case _
     algorithm
       false := intGt(i, size);
       arrayUpdate(vec1, id, ass2[i]);
@@ -2938,8 +2924,8 @@ protected function markIndexdColums
   input array<Integer> colummarks;
   input array<Integer> vec2;
 algorithm
-  _ := matchcontinue(i, size, mark, colummarks, vec2)
-  case(_, _, _, _, _)
+  () := matchcontinue vec2
+  case _
     algorithm
       false := intGt(i, size);
       true := intGt(vec2[i], 0);
@@ -2947,7 +2933,7 @@ algorithm
       markIndexdColums(i+1, size, mark, colummarks, vec2);
     then
       ();
-  case(_, _, _, _, _)
+  case _
     algorithm
       false := intGt(i, size);
       markIndexdColums(i+1, size, mark, colummarks, vec2);
@@ -2966,15 +2952,15 @@ protected function getOrphans "author: Frenkel TUD 2011-05"
   input list<Integer> inOrphans;
   output list<Integer> outOrphans;
 algorithm
-  outOrphans := matchcontinue(indx, size, ass, inOrphans)
+  outOrphans := matchcontinue inOrphans
     local
       list<Integer> orphans;
-    case (_, _, _, _)
+    case _
       algorithm
         true := intGt(indx, size);
       then
         inOrphans;
-    case (_, _, _, _)
+    case _
       algorithm
         orphans := List.consOnTrue(intLt(ass[indx], 1), indx, inOrphans);
       then
@@ -3001,7 +2987,7 @@ protected function addCrefandParentsToSet
   input Option<DAE.ComponentRef> oprecr;
   output HashSet.HashSet ohs;
 algorithm
-  ohs := match(inCref, ihs, oprecr)
+  ohs := match(inCref, oprecr)
     local
       DAE.ComponentRef cr, idcr, precr, subcr;
       list<DAE.ComponentRef> crlst;
@@ -3009,18 +2995,18 @@ algorithm
       DAE.Type ty;
       DAE.Ident ident;
       list<DAE.Subscript> subscriptLst;
-    case (cr as DAE.CREF_IDENT(), _, NONE())
+    case (cr as DAE.CREF_IDENT(), NONE())
       algorithm
         crlst := ComponentReference.expandCref(cr, true);
         set := List.fold(cr::crlst, BaseHashSet.add, ihs);
       then set;
-    case (cr as DAE.CREF_IDENT(), _, SOME(precr))
+    case (cr as DAE.CREF_IDENT(), SOME(precr))
       algorithm
         crlst := ComponentReference.expandCref(cr, true);
         crlst := List.map1r(cr::crlst, ComponentReference.joinCrefs, precr);
         set := List.fold(crlst, BaseHashSet.add, ihs);
       then set;
-    case (DAE.CREF_QUAL(ident=ident, identType=ty, subscriptLst=subscriptLst, componentRef=subcr), _, NONE())
+    case (DAE.CREF_QUAL(ident=ident, identType=ty, subscriptLst=subscriptLst, componentRef=subcr), NONE())
       algorithm
         idcr := ComponentReferenceBasics.makeCrefIdent(ident, ty, {});
         set := BaseHashSet.add(idcr, ihs);
@@ -3028,7 +3014,7 @@ algorithm
         set := BaseHashSet.add(idcr, set);
       then
         addCrefandParentsToSet(subcr, set, SOME(idcr));
-    case (DAE.CREF_QUAL(ident=ident, identType=ty, subscriptLst=subscriptLst, componentRef=subcr), _, SOME(precr))
+    case (DAE.CREF_QUAL(ident=ident, identType=ty, subscriptLst=subscriptLst, componentRef=subcr), SOME(precr))
       algorithm
         idcr := ComponentReferenceBasics.makeCrefIdent(ident, ty, {});
         idcr := ComponentReference.joinCrefs(precr, idcr);
@@ -3072,12 +3058,12 @@ protected function assignLst
   input array<Integer> ass1;
   input array<Integer> ass2;
 algorithm
-  _ := match(vlst, e, ass1, ass2)
+  () := match vlst
     local
       Integer v;
       list<Integer> rest;
-    case ({}, _, _, _) then ();
-    case (v::rest, _, _, _)
+    case {} then ();
+    case v::rest
       algorithm
         arrayUpdate(ass1, v, e);
         arrayUpdate(ass2, e, v);
@@ -3091,12 +3077,12 @@ protected function unassignedLst
   input list<Integer> vlst;
   input array<Integer> ass1;
 algorithm
-  _ := match(vlst, ass1)
+  () := match vlst
     local
       Integer v;
       list<Integer> rest;
-    case ({}, _) then ();
-    case (v::rest, _)
+    case {} then ();
+    case v::rest
       algorithm
         false := intGt(ass1[v], 0);
         unassignedLst(rest, ass1);
@@ -3116,18 +3102,18 @@ protected function onefreeMatchingBFS "author: Frenkel TUD 2012-05"
   input Integer mark;
   input BackendDAE.AdjacencyMatrixElement nextQeue;
 algorithm
-  _ := match(queue, m, mt, size, ass1, ass2, columark, mark, nextQeue)
+  () := match(queue, nextQeue)
     local
       Integer c;
       BackendDAE.AdjacencyMatrixElement rest, newqueue, rows;
-    case ({}, _, _, _, _, _, _, _, {}) then ();
-    case ({}, _, _, _, _, _, _, _, _)
+    case ({}, {}) then ();
+    case ({}, _)
       algorithm
         //  print("NextQeue\n");
         onefreeMatchingBFS(nextQeue, m, mt, size, ass1, ass2, columark, mark, {});
       then
         ();
-    case(c::rest, _, _, _, _, _, _, _, _)
+    case(c::rest, _)
       algorithm
         //  print("Process Eqn " + intString(c) + "\n");
         rows := List.removeOnTrue(ass1, isAssignedSaveEnhanced, m[c]);
@@ -3158,11 +3144,11 @@ protected function onefreeMatchingBFS1 "author: Frenkel TUD 2012-05"
   input BackendDAE.AdjacencyMatrixElement inNextQeue;
   output BackendDAE.AdjacencyMatrixElement outNextQeue;
 algorithm
-  outNextQeue := matchcontinue(rows, c, mt, ass1, ass2, columark, mark, inNextQeue)
+  outNextQeue := matchcontinue rows
     local
       Integer r;
       BackendDAE.AdjacencyMatrixElement vareqns;
-    case (r::{}, _, _, _, _, _, _, _)
+    case r::{}
       algorithm
         //  print("Assign Var" + intString(r) + " with Eqn " + intString(c) + "\n");
         // assigen
@@ -3185,7 +3171,7 @@ protected function vectorMatching "author: Frenkel TUD 2012-05
   input tuple<Integer, array<Integer>, array<Integer>> inTpl;
   output tuple<Integer, array<Integer>, array<Integer>> outTpl;
 algorithm
-  outTpl := matchcontinue(eqn, vars, inTpl)
+  outTpl := matchcontinue(eqn, inTpl)
     local
       Integer id, size;
       array<Integer> vec1, vec2;
@@ -3194,26 +3180,26 @@ algorithm
       tuple<Integer, array<Integer>, array<Integer>> tpl;
 
     // array equations
-    case (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2), _, _)
+    case (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2), _)
       algorithm
         size := List.fold(ds, intMul, 1);
         tpl := vectorMatching1(e1, e2, size, vars, inTpl);
       then tpl;
-    case (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e2, right=e1), _, _)
+    case (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e2, right=e1), _)
       algorithm
         size := List.fold(ds, intMul, 1);
         tpl := vectorMatching1(e2, e1, size, vars, inTpl);
       then tpl;
     // complex equations
-    case (BackendDAE.COMPLEX_EQUATION(size=size, left=e1, right=e2), _, _)
+    case (BackendDAE.COMPLEX_EQUATION(size=size, left=e1, right=e2), _)
       algorithm
         tpl := vectorMatching1(e1, e2, size, vars, inTpl);
       then tpl;
-    case (BackendDAE.COMPLEX_EQUATION(size=size, left=e2, right=e1), _, _)
+    case (BackendDAE.COMPLEX_EQUATION(size=size, left=e2, right=e1), _)
       algorithm
         tpl := vectorMatching1(e2, e1, size, vars, inTpl);
       then tpl;
-    case (_, _, (id, vec1, vec2))
+    case (_, (id, vec1, vec2))
       algorithm
         size := BackendEquation.equationSize(eqn);
       then ((id+size, vec1, vec2));
@@ -3229,7 +3215,7 @@ protected function vectorMatching1 "author: Frenkel TUD 2012-05
   input tuple<Integer, array<Integer>, array<Integer>> inTpl;
   output tuple<Integer, array<Integer>, array<Integer>> outTpl;
 algorithm
-  outTpl := matchcontinue(e1, e2, size, vars, inTpl)
+  outTpl := matchcontinue(e1, e2, inTpl)
     local
       Integer id;
       array<Integer> vec1, vec2;
@@ -3240,7 +3226,7 @@ algorithm
       HashSet.HashSet set;
 
     // a = f(...)
-    case (DAE.CREF(componentRef=cr), _, _, _, (id, vec1, vec2))
+    case (DAE.CREF(componentRef=cr), _, (id, vec1, vec2))
       algorithm
         // check if cref is not also at the other side
         false := expHasCref(e2, cr);
@@ -3254,7 +3240,7 @@ algorithm
         assignLst(ilst, id, vec1, vec2);
       then ((id+size, vec1, vec2));
     // f(...) = a
-    case (_, DAE.CREF(componentRef=cr), _, _, (id, vec1, vec2))
+    case (_, DAE.CREF(componentRef=cr), (id, vec1, vec2))
       algorithm
         // check if cref is not also at the other side
         false := expHasCref(e1, cr);
@@ -3268,7 +3254,7 @@ algorithm
         assignLst(ilst, id, vec1, vec2);
       then ((id+size, vec1, vec2));
     // a = f(...)
-    case (DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF(componentRef=cr)), _, _, _, (id, vec1, vec2))
+    case (DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF(componentRef=cr)), _, (id, vec1, vec2))
       algorithm
         // check if cref is not also at the other side
         false := expHasCref(e2, cr);
@@ -3282,7 +3268,7 @@ algorithm
         assignLst(ilst, id, vec1, vec2);
       then ((id+size, vec1, vec2));
     // f(...) = a
-    case (_, DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF(componentRef=cr)), _, _, (id, vec1, vec2))
+    case (_, DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF(componentRef=cr)), (id, vec1, vec2))
       algorithm
         // check if cref is not also at the other side
         false := expHasCref(e1, cr);
@@ -3296,7 +3282,7 @@ algorithm
         assignLst(ilst, id, vec1, vec2);
       then ((id+size, vec1, vec2));
     // {a[1], a[2], a[3]} = f(...)
-    case (_, _, _, _, (id, vec1, vec2))
+    case (_, _, (id, vec1, vec2))
       algorithm
         // if array get all elements
         elst := Expression.flattenArrayExpToList(e1);
@@ -3319,7 +3305,7 @@ algorithm
         assignLst(ilst, id, vec1, vec2);
       then ((id+size, vec1, vec2));
     // f(...) = {a[1], a[2], a[3]}
-    case (_, _, _, _, (id, vec1, vec2))
+    case (_, _, (id, vec1, vec2))
       algorithm
         // if array get all elements
         elst := Expression.flattenArrayExpToList(e2);
@@ -3350,13 +3336,13 @@ protected function aliasMatching "author: Frenkel TUD 2011-07"
   input tuple<Integer, array<Integer>, array<Integer>> inTpl;
   output tuple<Integer, array<Integer>, array<Integer>> outTpl;
 algorithm
-  outTpl := matchcontinue(eqn, vars, inTpl)
+  outTpl := matchcontinue(eqn, inTpl)
     local
       Integer id, i, i1, i2, size;
       array<Integer> vec1, vec2;
       DAE.ComponentRef cr1, cr2;
 
-    case (BackendDAE.EQUATION(exp = DAE.CREF(componentRef=cr1), scalar=DAE.CREF(componentRef=cr2)), _, (id, vec1, vec2))
+    case (BackendDAE.EQUATION(exp = DAE.CREF(componentRef=cr1), scalar=DAE.CREF(componentRef=cr2)), (id, vec1, vec2))
       algorithm
         false := intGt(vec2[id], 0);
         (_, i1) := BackendVariable.getVarSingle(cr1, vars);
@@ -3365,7 +3351,7 @@ algorithm
         vec1 := arrayUpdate(vec1, i, id);
         vec2 := arrayUpdate(vec2, id, i);
       then ((id+1, vec1, vec2));
-    case (_, _, (id, vec1, vec2))
+    case (_, (id, vec1, vec2))
       algorithm
         size := BackendEquation.equationSize(eqn);
       then ((id+size, vec1, vec2));
@@ -3379,9 +3365,9 @@ protected function aliasMatching1 "author: Frenkel TUD 2011-07"
   input Boolean b2;
   output Integer i;
 algorithm
-  i := match(i1, i2, b1, b2)
-    case (_, _, false, true) then i1;
-    case (_, _, true, false) then i2;
+  i := match(b1, b2)
+    case (false, true) then i1;
+    case (true, false) then i2;
   end match;
 end aliasMatching1;
 
@@ -3391,15 +3377,13 @@ protected function naturalMatching "author: Frenkel TUD 2011-05"
   input tuple<Integer, array<Integer>, array<Integer>> inTpl;
   output tuple<Integer, array<Integer>, array<Integer>> outTpl;
 algorithm
-  outTpl := matchcontinue(eqn, vars, inTpl)
+  outTpl := matchcontinue(eqn, inTpl)
     local
       Integer id, i;
       array<Integer> vec1, vec2;
       DAE.ComponentRef cr;
-      DAE.Exp e, e1, e2;
-      list<BackendDAE.Var> vlst;
 
-    case (BackendDAE.EQUATION(exp = DAE.CREF(componentRef=cr)), _, (id, vec1, vec2))
+    case (BackendDAE.EQUATION(exp = DAE.CREF(componentRef=cr)), (id, vec1, vec2))
       algorithm
         false := intGt(vec2[id], 0);
         (_, i::_) := BackendVariable.getVar(cr, vars);
@@ -3407,7 +3391,7 @@ algorithm
         vec1 := arrayUpdate(vec1, i, id);
         vec2 := arrayUpdate(vec2, id, i);
       then ((id+1, vec1, vec2));
-    case (_, _, (id, vec1, vec2))
+    case (_, (id, vec1, vec2))
       then ((id+1, vec1, vec2));
   end matchcontinue;
 end naturalMatching;
@@ -3418,15 +3402,13 @@ protected function naturalMatching1 "author: Frenkel TUD 2011-05"
   input tuple<Integer, array<Integer>, array<Integer>> inTpl;
   output tuple<Integer, array<Integer>, array<Integer>> outTpl;
 algorithm
-  outTpl := matchcontinue(eqn, vars, inTpl)
+  outTpl := matchcontinue(eqn, inTpl)
     local
       Integer id, i;
       array<Integer> vec1, vec2;
       DAE.ComponentRef cr;
-      DAE.Exp e, e1, e2;
-      list<BackendDAE.Var> vlst;
 
-    case (BackendDAE.EQUATION(scalar = DAE.CREF(componentRef=cr)), _, (id, vec1, vec2))
+    case (BackendDAE.EQUATION(scalar = DAE.CREF(componentRef=cr)), (id, vec1, vec2))
       algorithm
         false := intGt(vec2[id], 0);
         (_, i::_) := BackendVariable.getVar(cr, vars);
@@ -3434,7 +3416,7 @@ algorithm
         vec1 := arrayUpdate(vec1, i, id);
         vec2 := arrayUpdate(vec2, id, i);
       then ((id+1, vec1, vec2));
-    case (_, _, (id, vec1, vec2))
+    case (_, (id, vec1, vec2))
       then ((id+1, vec1, vec2));
   end matchcontinue;
 end naturalMatching1;
@@ -3445,15 +3427,14 @@ protected function naturalMatching2 "author: Frenkel TUD 2011-05"
   input tuple<Integer, array<Integer>, array<Integer>> inTpl;
   output tuple<Integer, array<Integer>, array<Integer>> outTpl;
 algorithm
-  outTpl := matchcontinue(eqn, vars, inTpl)
+  outTpl := matchcontinue(eqn, inTpl)
     local
       Integer id, i;
       array<Integer> vec1, vec2;
-      DAE.ComponentRef cr;
       DAE.Exp e, e1, e2;
       list<BackendDAE.Var> vlst;
 
-    case (BackendDAE.EQUATION(exp=e1, scalar = e2), _, (id, vec1, vec2))
+    case (BackendDAE.EQUATION(exp=e1, scalar = e2), (id, vec1, vec2))
       algorithm
         false := intGt(vec2[id], 0);
         e := Expression.expSub(e1, e2);
@@ -3462,7 +3443,7 @@ algorithm
         vec1 := arrayUpdate(vec1, i, id);
         vec2 := arrayUpdate(vec2, id, i);
       then ((id+1, vec1, vec2));
-    case (_, _, (id, vec1, vec2))
+    case (_, (id, vec1, vec2))
       then ((id+1, vec1, vec2));
   end matchcontinue;
 end naturalMatching2;
@@ -3475,13 +3456,13 @@ protected function getConstOneVariable "author: Frenkel TUD 2011-05"
   output DAE.ComponentRef outCr;
   output Integer i;
 algorithm
-  (outCr, i) := matchcontinue(vlst, e, vec1, vars)
+  (outCr, i) := matchcontinue vlst
     local
       BackendDAE.Var v;
       list<BackendDAE.Var> rest;
       DAE.ComponentRef cr;
       DAE.Exp e1, e2;
-    case (v::_, _, _, _)
+    case v::_
       algorithm
         cr := BackendVariable.varCref(v);
         (_, i::_) := BackendVariable.getVar(cr, vars);
@@ -3491,7 +3472,7 @@ algorithm
         true := Expression.isConstOne(e2) or Expression.isConstMinusOne(e2);
       then
         (cr, i);
-    case (_::rest, _, _, _)
+    case _::rest
       algorithm
         (cr, i) := getConstOneVariable(rest, e, vec1, vars);
       then

@@ -126,7 +126,7 @@ public
       input Equation eqn;
       input ClockedInfo info;
     algorithm
-      _ := match (Equation.getLHS(eqn), Equation.getRHS(eqn))
+      () := match (Equation.getLHS(eqn), Equation.getRHS(eqn))
         local
           ComponentRef clock_name;
           Expression exp;
@@ -542,7 +542,7 @@ public
   protected
     String flag = "clocked"; //Flags.getConfigString(Flags.PARTITIONING)
   algorithm
-    (func) := match flag
+    func := match flag
       case "default"  then (partitioningClocked);
       case "clocked"  then (partitioningClocked);
       case "none"     then (partitioningNone);
@@ -767,13 +767,11 @@ protected
     protected
       list<ComponentRef> cvars = UnorderedSet.toList(cluster.variables);
       list<ComponentRef> cidnt = UnorderedSet.toList(cluster.eqn_idnts);
-      Boolean isInit = Partition.kindIsInitial(kind);
       Partition.Association association;
       list<Pointer<Variable>> var_lst, filtered_vars;
       list<Pointer<Equation>> eqn_lst;
       VariablePointers partVariables;
       EquationPointers partEquations;
-      Integer var_idx;
       UnorderedSet<ComponentRef> inferred_clocks = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     algorithm
       // find all variables and equations
@@ -916,7 +914,6 @@ protected
 
   function partitioningNone extends Module.partitioningInterface;
   protected
-    Boolean isInit = Partition.kindIsInitial(kind);
     VariablePointers clone_vars;
     EquationPointers clone_eqns;
   algorithm
@@ -1332,7 +1329,7 @@ protected
       input Call call;
       input Boolean basic;
     protected
-      Expression arg, arg1, arg2;
+      Expression arg1, arg2;
     algorithm
       {arg1, arg2} := match Call.arguments(call)
         // not collected samples have 2 arguments
@@ -1355,7 +1352,7 @@ protected
   algorithm
     exp := match exp
       local
-        Expression newExp, arg, arg2;
+        Expression newExp, arg;
         Call call;
 
       case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm

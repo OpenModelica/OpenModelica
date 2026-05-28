@@ -193,7 +193,7 @@ check if an element is of type EXTENDS or not."
   input SCode.Element ele;
   output Boolean isExtend;
 algorithm
-  isExtend := match(ele)
+  isExtend := match ele
     case SCode.EXTENDS() then true;
     else false;
   end match;
@@ -204,7 +204,7 @@ function isElementExtendsOrClassExtends
   input SCode.Element ele;
   output Boolean isExtend;
 algorithm
-  isExtend := match(ele)
+  isExtend := match ele
     case SCode.EXTENDS() then true;
     else false;
   end match;
@@ -215,7 +215,7 @@ check if an element is not of type CLASS_EXTENDS."
   input SCode.Element ele;
   output Boolean isExtend;
 algorithm
-  isExtend := match(ele)
+  isExtend := match ele
     case SCode.CLASS(classDef = SCode.CLASS_EXTENDS()) then false;
     else true;
   end match;
@@ -226,7 +226,7 @@ function isParameterOrConst
   input SCode.Variability inVariability;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match (inVariability)
+  outBoolean := match inVariability
     case SCode.PARAM() then true;
     case SCode.CONST() then true;
     else false;
@@ -238,7 +238,7 @@ function isConstant
   input SCode.Variability inVariability;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match (inVariability)
+  outBoolean := match inVariability
     case SCode.CONST() then true;
     else false;
   end match;
@@ -249,7 +249,7 @@ function countParts
   input SCode.Element inClass;
   output Integer outInteger;
 algorithm
-  outInteger := matchcontinue (inClass)
+  outInteger := matchcontinue inClass
     local
       Integer res;
       list<SCode.Element> elts;
@@ -277,17 +277,17 @@ function componentNames
   input SCode.Element inClass;
   output list<String> outStringLst;
 algorithm
-  outStringLst := match (inClass)
+  outStringLst := match inClass
     local list<String> res; list<SCode.Element> elts;
 
-    case (SCode.CLASS(classDef = SCode.PARTS(elementLst = elts)))
+    case SCode.CLASS(classDef = SCode.PARTS(elementLst = elts))
       algorithm
         res := componentNamesFromElts(elts);
       then
         res;
 
     /* adrpo: handle also the case model extends X end X;*/
-    case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(composition = SCode.PARTS(elementLst = elts))))
+    case SCode.CLASS(classDef = SCode.CLASS_EXTENDS(composition = SCode.PARTS(elementLst = elts)))
       algorithm
         res := componentNamesFromElts(elts);
       then
@@ -317,14 +317,14 @@ function elementInfo "retrieves the element info"
   input SCode.Element e;
   output SourceInfo info;
 algorithm
-  info := match(e)
+  info := match e
     local
       SourceInfo i;
 
-    case(SCode.COMPONENT(info = i)) then i;
-    case(SCode.CLASS(info = i)) then i;
-    case(SCode.EXTENDS(info = i)) then i;
-    case(SCode.IMPORT(info = i)) then i;
+    case SCode.COMPONENT(info = i) then i;
+    case SCode.CLASS(info = i) then i;
+    case SCode.EXTENDS(info = i) then i;
+    case SCode.IMPORT(info = i) then i;
     else Absyn.dummyInfo;
 
   end match;
@@ -346,9 +346,9 @@ function elementName ""
   input SCode.Element e;
   output String s;
 algorithm
-  s := match(e)
-    case (SCode.COMPONENT(name = s)) then s;
-    case (SCode.CLASS(name = s)) then s;
+  s := match e
+    case SCode.COMPONENT(name = s) then s;
+    case SCode.CLASS(name = s) then s;
   end match;
 end elementName;
 
@@ -375,11 +375,11 @@ protected function elementNamesWork "Gets all elements that have an element name
   input list<String> acc;
   output list<String> out;
 algorithm
-  out := match(e,acc)
+  out := match e
     local
       String s;
-    case (SCode.COMPONENT(name = s),_) then s::acc;
-    case (SCode.CLASS(name = s),_) then s::acc;
+    case SCode.COMPONENT(name = s) then s::acc;
+    case SCode.CLASS(name = s) then s::acc;
     else acc;
   end match;
 end elementNamesWork;
@@ -415,8 +415,8 @@ public function enumName ""
   input SCode.Enum e;
   output String s;
 algorithm
-  s := match(e)
-    case(SCode.ENUM(literal = s)) then s;
+  s := match e
+    case SCode.ENUM(literal = s) then s;
   end match;
 end enumName;
 
@@ -425,7 +425,7 @@ public function isRecord
   input SCode.Element inClass;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match(inClass)
+  outBoolean := match inClass
     case SCode.CLASS(restriction = SCode.R_RECORD()) then true;
     else false;
   end match;
@@ -436,7 +436,7 @@ public function isTypeVar
   input SCode.Element inClass;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match(inClass)
+  outBoolean := match inClass
     case SCode.CLASS(restriction = SCode.R_TYPE()) then true;
     else false;
   end match;
@@ -461,7 +461,7 @@ public function isOperatorRecord
   input SCode.Element inClass;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match(inClass)
+  outBoolean := match inClass
     case SCode.CLASS(restriction = SCode.R_RECORD(true)) then true;
     else false;
   end match;
@@ -472,7 +472,7 @@ public function isFunction
   input SCode.Element inClass;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match(inClass)
+  outBoolean := match inClass
     case SCode.CLASS(restriction = SCode.R_FUNCTION()) then true;
     else false;
   end match;
@@ -483,7 +483,7 @@ public function isUniontype
   input SCode.Element inClass;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match(inClass)
+  outBoolean := match inClass
     case SCode.CLASS(restriction = SCode.R_UNIONTYPE()) then true;
     else false;
   end match;
@@ -494,7 +494,7 @@ public function isFunctionRestriction
   input SCode.Restriction inRestriction;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match(inRestriction)
+  outBoolean := match inRestriction
     case SCode.R_FUNCTION() then true;
     else false;
   end match;
@@ -506,9 +506,9 @@ public function isFunctionOrExtFunctionRestriction
   input SCode.Restriction r;
   output Boolean res;
 algorithm
-  res := match(r)
-    case (SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION())) then true;
-    case (SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION())) then true;
+  res := match r
+    case SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION()) then true;
+    case SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION()) then true;
     else false;
   end match;
 end isFunctionOrExtFunctionRestriction;
@@ -519,9 +519,9 @@ public function isOperator
   input SCode.Element el;
   output Boolean res;
 algorithm
-  res := match(el)
-    case (SCode.CLASS(restriction=SCode.R_OPERATOR())) then true;
-    case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()))) then true;
+  res := match el
+    case SCode.CLASS(restriction=SCode.R_OPERATOR()) then true;
+    case SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION())) then true;
     else false;
   end match;
 end isOperator;
@@ -964,7 +964,6 @@ algorithm
     local
       SCode.Ident id1,id2;
       SCode.Mod mod1,mod2;
-      list<SCode.Subscript> ss1,ss2;
       list<SCode.SubMod>  subModLst1,subModLst2;
 
     case ({},{}) then true;
@@ -1203,16 +1202,16 @@ public function getClassComponents
   output list<SCode.Element> compElts;
   output list<String> compNames;
 algorithm
-  (compElts,compNames) := match (cl)
+  (compElts,compNames) := match cl
     local
       list<SCode.Element> elts, comps;
       list<String> names;
 
-    case (SCode.CLASS(classDef = SCode.PARTS(elementLst = elts)))
+    case SCode.CLASS(classDef = SCode.PARTS(elementLst = elts))
       algorithm
         (comps, names) := filterComponents(elts);
       then (comps,names);
-    case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(composition = SCode.PARTS(elementLst = elts))))
+    case SCode.CLASS(classDef = SCode.CLASS_EXTENDS(composition = SCode.PARTS(elementLst = elts)))
       algorithm
         (comps, names) := filterComponents(elts);
       then (comps,names);
@@ -1224,10 +1223,10 @@ public function getClassElements
   input SCode.Element cl;
   output list<SCode.Element> elts;
 algorithm
-  elts := match (cl)
-    case (SCode.CLASS(classDef = SCode.PARTS(elementLst = elts)))
+  elts := match cl
+    case SCode.CLASS(classDef = SCode.PARTS(elementLst = elts))
       then elts;
-    case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(composition = SCode.PARTS(elementLst = elts))))
+    case SCode.CLASS(classDef = SCode.CLASS_EXTENDS(composition = SCode.PARTS(elementLst = elts)))
       then elts;
     else {};
   end match;
@@ -1289,7 +1288,6 @@ algorithm
       list<list<SCode.Statement>> stmtsList;
       list<SCode.Statement> body,trueBranch,elseBranch;
       list<tuple<Absyn.Exp, list<SCode.Statement>>> branches;
-      Option<SCode.Comment> comment;
       list<Absyn.AlgorithmItem> algs1,algs2;
       list<list<Absyn.AlgorithmItem>> algsLst;
       list<tuple<Absyn.Exp,list<Absyn.AlgorithmItem>>> abranches;
@@ -1326,9 +1324,9 @@ algorithm
 
     case SCode.ALG_WHEN_A(branches,_,info)
       algorithm
-        (boolExpr::conditions) := List.map(branches, Util.tuple21);
+        boolExpr::conditions := List.map(branches, Util.tuple21);
         stmtsList := List.map(branches, Util.tuple22);
-        (algs1::algsLst) := List.mapList(stmtsList, statementToAlgorithmItem);
+        algs1::algsLst := List.mapList(stmtsList, statementToAlgorithmItem);
         abranches := List.zip(conditions,algsLst);
       then Absyn.ALGORITHMITEM(Absyn.ALG_WHEN_A(boolExpr,algs1,abranches),NONE(),info);
 
@@ -1368,7 +1366,7 @@ public function emptyModOrEquality
   input SCode.Mod mod;
   output Boolean b;
 algorithm
-  b := match(mod)
+  b := match mod
     case SCode.NOMOD() then true;
     case SCode.MOD(subModLst={}) then true;
     else false;
@@ -1380,11 +1378,11 @@ public function isComponentWithDirection
   input Absyn.Direction dir1;
   output Boolean b;
 algorithm
-  b := match(elt,dir1)
+  b := match elt
     local
       Absyn.Direction dir2;
 
-    case (SCode.COMPONENT(attributes = SCode.ATTR(direction = dir2)),_)
+    case SCode.COMPONENT(attributes = SCode.ATTR(direction = dir2))
       then AbsynUtil.directionEqual(dir1,dir2);
 
     else false;
@@ -1395,7 +1393,7 @@ public function isComponent
   input SCode.Element elt;
   output Boolean b;
 algorithm
-  b := match(elt)
+  b := match elt
     case SCode.COMPONENT() then true;
     else false;
   end match;
@@ -1405,7 +1403,7 @@ public function isNotComponent
   input SCode.Element elt;
   output Boolean b;
 algorithm
-  b := match(elt)
+  b := match elt
     case SCode.COMPONENT() then false;
     else true;
   end match;
@@ -1415,7 +1413,7 @@ public function isClassOrComponent
   input SCode.Element inElement;
   output Boolean outIsClassOrComponent;
 algorithm
-  outIsClassOrComponent := match(inElement)
+  outIsClassOrComponent := match inElement
     case SCode.CLASS() then true;
     case SCode.COMPONENT() then true;
   end match;
@@ -1899,33 +1897,33 @@ protected function mapFoldComponentRefExps<ArgT>
     input output ArgT arg;
   end TraverseFunc;
 algorithm
-  (outCref, outArg) := match(inCref, inFunc, inArg)
+  (outCref, outArg) := match inCref
     local
       Absyn.Ident name;
       list<Absyn.Subscript> subs;
       Absyn.ComponentRef cr;
       ArgT arg;
 
-    case (Absyn.CREF_FULLYQUALIFIED(componentRef = cr), _, _)
+    case Absyn.CREF_FULLYQUALIFIED(componentRef = cr)
       algorithm
         (cr, arg) := mapFoldComponentRefExps(cr, inFunc, inArg);
       then
         (AbsynUtil.crefMakeFullyQualified(cr), arg);
 
-    case (Absyn.CREF_QUAL(name = name, subscripts = subs, componentRef = cr), _, _)
+    case Absyn.CREF_QUAL(name = name, subscripts = subs, componentRef = cr)
       algorithm
         (cr, arg) := mapFoldComponentRefExps(cr, inFunc, inArg);
         (subs, arg) := List.map1Fold(subs, mapFoldSubscriptExps, inFunc, arg);
       then
         (Absyn.CREF_QUAL(name, subs, cr), arg);
 
-    case (Absyn.CREF_IDENT(name = name, subscripts = subs), _, _)
+    case Absyn.CREF_IDENT(name = name, subscripts = subs)
       algorithm
         (subs, arg) := List.map1Fold(subs, mapFoldSubscriptExps, inFunc, inArg);
       then
         (Absyn.CREF_IDENT(name, subs), arg);
 
-    case (Absyn.WILD(), _, _) then (inCref, inArg);
+    case Absyn.WILD() then (inCref, inArg);
   end match;
 end mapFoldComponentRefExps;
 
@@ -2166,7 +2164,6 @@ algorithm
     local
       TraverseFunc traverser;
       ArgT arg;
-      tuple<TraverseFunc, ArgT> tup;
       String iterator;
       Absyn.Exp e1, e2, e3;
       list<SCode.Statement> stmts1, stmts2;
@@ -2311,7 +2308,7 @@ public function getElementClass
   input SCode.Element el;
   output SCode.Element cl;
 algorithm
-  cl := match(el)
+  cl := match el
     case SCode.CLASS() then el;
     else fail();
   end match;
@@ -2325,20 +2322,20 @@ public function isBuiltinFunction
   input list<String> outVars;
   output String name;
 algorithm
-  name := match (cl,inVars,outVars)
+  name := match (cl, outVars)
     local
       String outVar1,outVar2;
       list<String> argsStr;
       list<Absyn.Exp> args;
-    case (SCode.CLASS(name=name,restriction=SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION()),classDef=SCode.PARTS(externalDecl=SOME(SCode.EXTERNALDECL(funcName=NONE(),lang=SOME("builtin"))))),_,_)
+    case (SCode.CLASS(name=name,restriction=SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION()),classDef=SCode.PARTS(externalDecl=SOME(SCode.EXTERNALDECL(funcName=NONE(),lang=SOME("builtin"))))), _)
       then name;
-    case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION()),classDef=SCode.PARTS(externalDecl=SOME(SCode.EXTERNALDECL(funcName=SOME(name),lang=SOME("builtin"))))),_,_)
+    case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION()),classDef=SCode.PARTS(externalDecl=SOME(SCode.EXTERNALDECL(funcName=SOME(name),lang=SOME("builtin"))))), _)
       then name;
-    case (SCode.CLASS(name=name,restriction=SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION()),classDef=SCode.PARTS(externalDecl=SOME(SCode.EXTERNALDECL(funcName=NONE(),lang=SOME("builtin"))))),_,_)
+    case (SCode.CLASS(name=name,restriction=SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION()),classDef=SCode.PARTS(externalDecl=SOME(SCode.EXTERNALDECL(funcName=NONE(),lang=SOME("builtin"))))), _)
       then name;
-    case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION()),classDef=SCode.PARTS(externalDecl=SOME(SCode.EXTERNALDECL(funcName=SOME(name),lang=SOME("builtin"))))),_,_)
+    case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION()),classDef=SCode.PARTS(externalDecl=SOME(SCode.EXTERNALDECL(funcName=SOME(name),lang=SOME("builtin"))))), _)
       then name;
-    case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION()), classDef=SCode.PARTS(externalDecl=SOME(SCode.EXTERNALDECL(funcName=SOME(name),lang=SOME("C"),output_=SOME(Absyn.CREF_IDENT(outVar2,{})),args=args)))),_,{outVar1})
+    case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION()), classDef=SCode.PARTS(externalDecl=SOME(SCode.EXTERNALDECL(funcName=SOME(name),lang=SOME("C"),output_=SOME(Absyn.CREF_IDENT(outVar2,{})),args=args)))), {outVar1})
       algorithm
         true := listMember(name,knownExternalCFunctions);
         true := outVar2 == outVar1;
@@ -2347,7 +2344,7 @@ algorithm
       then name;
     case (SCode.CLASS(name=name,
       restriction=SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION()),
-      classDef=SCode.PARTS(externalDecl=SOME(SCode.EXTERNALDECL(funcName=NONE(),lang=SOME("C"))))),_,_)
+      classDef=SCode.PARTS(externalDecl=SOME(SCode.EXTERNALDECL(funcName=NONE(),lang=SOME("C"))))), _)
       algorithm
         true := listMember(name,knownExternalCFunctions);
       then name;
@@ -2447,9 +2444,9 @@ public function visibilityBool
   input SCode.Visibility inVisibility;
   output Boolean bVisibility;
 algorithm
-  bVisibility := match(inVisibility)
-    case (SCode.PUBLIC()) then true;
-    case (SCode.PROTECTED()) then false;
+  bVisibility := match inVisibility
+    case SCode.PUBLIC() then true;
+    case SCode.PROTECTED() then false;
   end match;
 end visibilityBool;
 
@@ -2458,9 +2455,9 @@ public function boolVisibility
   input Boolean inBoolVisibility;
   output SCode.Visibility outVisibility;
 algorithm
-  outVisibility := match(inBoolVisibility)
-    case (true) then SCode.PUBLIC();
-    case (false) then SCode.PROTECTED();
+  outVisibility := match inBoolVisibility
+    case true then SCode.PUBLIC();
+    case false then SCode.PROTECTED();
   end match;
 end boolVisibility;
 
@@ -2480,9 +2477,9 @@ public function eachBool
   input SCode.Each inEach;
   output Boolean bEach;
 algorithm
-  bEach := match(inEach)
-    case (SCode.EACH()) then true;
-    case (SCode.NOT_EACH()) then false;
+  bEach := match inEach
+    case SCode.EACH() then true;
+    case SCode.NOT_EACH() then false;
   end match;
 end eachBool;
 
@@ -2490,9 +2487,9 @@ public function boolEach
   input Boolean inBoolEach;
   output SCode.Each outEach;
 algorithm
-  outEach := match(inBoolEach)
-    case (true) then SCode.EACH();
-    case (false) then SCode.NOT_EACH();
+  outEach := match inBoolEach
+    case true then SCode.EACH();
+    case false then SCode.NOT_EACH();
   end match;
 end boolEach;
 
@@ -2521,9 +2518,9 @@ public function redeclareBool
   input SCode.Redeclare inRedeclare;
   output Boolean bRedeclare;
 algorithm
-  bRedeclare := match(inRedeclare)
-    case (SCode.REDECLARE()) then true;
-    case (SCode.NOT_REDECLARE()) then false;
+  bRedeclare := match inRedeclare
+    case SCode.REDECLARE() then true;
+    case SCode.NOT_REDECLARE() then false;
   end match;
 end redeclareBool;
 
@@ -2531,9 +2528,9 @@ public function boolRedeclare
   input Boolean inBoolRedeclare;
   output SCode.Redeclare outRedeclare;
 algorithm
-  outRedeclare := match(inBoolRedeclare)
-    case (true) then SCode.REDECLARE();
-    case (false) then SCode.NOT_REDECLARE();
+  outRedeclare := match inBoolRedeclare
+    case true then SCode.REDECLARE();
+    case false then SCode.NOT_REDECLARE();
   end match;
 end boolRedeclare;
 
@@ -2541,9 +2538,9 @@ public function replaceableBool
   input SCode.Replaceable inReplaceable;
   output Boolean bReplaceable;
 algorithm
-  bReplaceable := match(inReplaceable)
-    case (SCode.REPLACEABLE()) then true;
-    case (SCode.NOT_REPLACEABLE()) then false;
+  bReplaceable := match inReplaceable
+    case SCode.REPLACEABLE() then true;
+    case SCode.NOT_REPLACEABLE() then false;
   end match;
 end replaceableBool;
 
@@ -2551,10 +2548,10 @@ public function replaceableOptConstraint
   input SCode.Replaceable inReplaceable;
   output Option<SCode.ConstrainClass> outOptConstrainClass;
 algorithm
-  outOptConstrainClass := match(inReplaceable)
+  outOptConstrainClass := match inReplaceable
     local Option<SCode.ConstrainClass> cc;
-    case (SCode.REPLACEABLE(cc)) then cc;
-    case (SCode.NOT_REPLACEABLE()) then NONE();
+    case SCode.REPLACEABLE(cc) then cc;
+    case SCode.NOT_REPLACEABLE() then NONE();
   end match;
 end replaceableOptConstraint;
 
@@ -2577,9 +2574,9 @@ public function encapsulatedBool
   input SCode.Encapsulated inEncapsulated;
   output Boolean bEncapsulated;
 algorithm
-  bEncapsulated := match(inEncapsulated)
-    case (SCode.ENCAPSULATED()) then true;
-    case (SCode.NOT_ENCAPSULATED()) then false;
+  bEncapsulated := match inEncapsulated
+    case SCode.ENCAPSULATED() then true;
+    case SCode.NOT_ENCAPSULATED() then false;
   end match;
 end encapsulatedBool;
 
@@ -2587,9 +2584,9 @@ public function boolEncapsulated
   input Boolean inBoolEncapsulated;
   output SCode.Encapsulated outEncapsulated;
 algorithm
-  outEncapsulated := match(inBoolEncapsulated)
-    case (true) then SCode.ENCAPSULATED();
-    case (false) then SCode.NOT_ENCAPSULATED();
+  outEncapsulated := match inBoolEncapsulated
+    case true then SCode.ENCAPSULATED();
+    case false then SCode.NOT_ENCAPSULATED();
   end match;
 end boolEncapsulated;
 
@@ -2597,9 +2594,9 @@ public function partialBool
   input SCode.Partial inPartial;
   output Boolean bPartial;
 algorithm
-  bPartial := match(inPartial)
-    case (SCode.PARTIAL()) then true;
-    case (SCode.NOT_PARTIAL()) then false;
+  bPartial := match inPartial
+    case SCode.PARTIAL() then true;
+    case SCode.NOT_PARTIAL() then false;
   end match;
 end partialBool;
 
@@ -2607,9 +2604,9 @@ public function boolPartial
   input Boolean inBoolPartial;
   output SCode.Partial outPartial;
 algorithm
-  outPartial := match(inBoolPartial)
-    case (true) then SCode.PARTIAL();
-    case (false) then SCode.NOT_PARTIAL();
+  outPartial := match inBoolPartial
+    case true then SCode.PARTIAL();
+    case false then SCode.NOT_PARTIAL();
   end match;
 end boolPartial;
 
@@ -2624,9 +2621,9 @@ public function finalBool
   input SCode.Final inFinal;
   output Boolean bFinal;
 algorithm
-  bFinal := match(inFinal)
-    case (SCode.FINAL()) then true;
-    case (SCode.NOT_FINAL()) then false;
+  bFinal := match inFinal
+    case SCode.FINAL() then true;
+    case SCode.NOT_FINAL() then false;
   end match;
 end finalBool;
 
@@ -2665,7 +2662,7 @@ public function potentialBool
   input SCode.ConnectorType inConnectorType;
   output Boolean outPotential;
 algorithm
-  outPotential := match(inConnectorType)
+  outPotential := match inConnectorType
     case SCode.POTENTIAL() then true;
     else false;
   end match;
@@ -2675,7 +2672,7 @@ public function flowBool
   input SCode.ConnectorType inConnectorType;
   output Boolean outFlow;
 algorithm
-  outFlow := match(inConnectorType)
+  outFlow := match inConnectorType
     case SCode.FLOW() then true;
     else false;
   end match;
@@ -2685,7 +2682,7 @@ public function boolFlow
   input Boolean inBoolFlow;
   output SCode.ConnectorType outFlow;
 algorithm
-  outFlow := match(inBoolFlow)
+  outFlow := match inBoolFlow
     case true then SCode.FLOW();
     else SCode.POTENTIAL();
   end match;
@@ -2695,7 +2692,7 @@ public function streamBool
   input SCode.ConnectorType inStream;
   output Boolean bStream;
 algorithm
-  bStream := match(inStream)
+  bStream := match inStream
     case SCode.STREAM() then true;
     else false;
   end match;
@@ -2705,7 +2702,7 @@ public function boolStream
   input Boolean inBoolStream;
   output SCode.ConnectorType outStream;
 algorithm
-  outStream := match(inBoolStream)
+  outStream := match inBoolStream
     case true then SCode.STREAM();
     else SCode.POTENTIAL();
   end match;
@@ -2716,11 +2713,11 @@ public function mergeAttributesFromClass
   input SCode.Element inClass;
   output SCode.Attributes outAttributes;
 algorithm
-  outAttributes := match(inAttributes, inClass)
+  outAttributes := match inClass
     local
       SCode.Attributes cls_attr, attr;
 
-    case (_, SCode.CLASS(classDef = SCode.DERIVED(attributes = cls_attr)))
+    case SCode.CLASS(classDef = SCode.DERIVED(attributes = cls_attr))
       algorithm
         SOME(attr) := mergeAttributes(inAttributes, SOME(cls_attr));
       then
@@ -2744,7 +2741,7 @@ algorithm
       SCode.Variability v1,v2,v;
       Absyn.Direction d1,d2,d;
       Absyn.IsField isf1, isf2, isf;
-      Absyn.ArrayDim ad1,ad2,ad;
+      Absyn.ArrayDim ad1,ad;
       SCode.ConnectorType ct1, ct2, ct;
 
     case (_,NONE()) then SOME(ele);
@@ -2837,7 +2834,7 @@ public function elementPrefixes
   input SCode.Element inElement;
   output SCode.Prefixes outPrefixes;
 algorithm
-  outPrefixes := match(inElement)
+  outPrefixes := match inElement
     case SCode.CLASS() then inElement.prefixes;
     case SCode.COMPONENT() then inElement.prefixes;
   end match;
@@ -2905,7 +2902,7 @@ public function attrVariability
   input SCode.Attributes attr;
   output SCode.Variability var;
 algorithm
-  var := match (attr)
+  var := match attr
     local SCode.Variability v;
     case  SCode.ATTR(variability = v) then v;
   end match;
@@ -2922,7 +2919,7 @@ public function isDerivedClassDef
   input SCode.ClassDef inClassDef;
   output Boolean isDerived;
 algorithm
-  isDerived := match(inClassDef)
+  isDerived := match inClassDef
     case SCode.DERIVED() then true;
     else false;
   end match;
@@ -2932,8 +2929,8 @@ public function isConnector
   input SCode.Restriction inRestriction;
   output Boolean isConnector;
 algorithm
-  isConnector := match(inRestriction)
-    case (SCode.R_CONNECTOR()) then true;
+  isConnector := match inRestriction
+    case SCode.R_CONNECTOR() then true;
     else false;
   end match;
 end isConnector;
@@ -2949,7 +2946,7 @@ protected function isNotBuiltinClass
   input SCode.Element inClass;
   output Boolean b;
 algorithm
-  b := match(inClass)
+  b := match inClass
     case SCode.CLASS(classDef = SCode.PARTS(externalDecl =
       SOME(SCode.EXTERNALDECL(lang = SOME("builtin"))))) then false;
     else true;
@@ -3088,10 +3085,10 @@ public function hasBooleanNamedAnnotationInClass
   input String namedAnnotation;
   output Boolean hasAnn;
 algorithm
-  hasAnn := match(inClass,namedAnnotation)
+  hasAnn := match inClass
     local
       SCode.Annotation ann;
-    case(SCode.CLASS(cmt=SCode.COMMENT(annotation_ = SOME(ann))), _)
+    case SCode.CLASS(cmt=SCode.COMMENT(annotation_ = SOME(ann)))
       then hasBooleanNamedAnnotation(ann, namedAnnotation);
     else false;
   end match;
@@ -3102,10 +3099,10 @@ public function hasBooleanNamedAnnotationInComponent
   input String namedAnnotation;
   output Boolean hasAnn;
 algorithm
-  hasAnn := match(inComponent,namedAnnotation)
+  hasAnn := match inComponent
     local
       SCode.Annotation ann;
-    case (SCode.COMPONENT(comment = SCode.COMMENT(annotation_ = SOME(ann))), _)
+    case SCode.COMPONENT(comment = SCode.COMMENT(annotation_ = SOME(ann)))
       then hasBooleanNamedAnnotation(ann, namedAnnotation);
     else false;
   end match;
@@ -3132,10 +3129,10 @@ public function optCommentHasBooleanNamedAnnotation
   input String annotationName;
   output Boolean outB;
 algorithm
-  outB := match (comm,annotationName)
+  outB := match comm
     local
       SCode.Annotation ann;
-    case (SOME(SCode.COMMENT(annotation_=SOME(ann))),_)
+    case SOME(SCode.COMMENT(annotation_=SOME(ann)))
       then hasBooleanNamedAnnotation(ann,annotationName);
     else false;
   end match;
@@ -3147,10 +3144,10 @@ public function commentHasBooleanNamedAnnotation
   input String annotationName;
   output Boolean outB;
 algorithm
-  outB := match (comm,annotationName)
+  outB := match comm
     local
       SCode.Annotation ann;
-    case (SCode.COMMENT(annotation_=SOME(ann)),_)
+    case SCode.COMMENT(annotation_=SOME(ann))
       then hasBooleanNamedAnnotation(ann,annotationName);
     else false;
   end match;
@@ -3179,10 +3176,10 @@ public function optCommentHasBooleanNamedAnnotationFalse
   input String annotationName;
   output Boolean outB;
 algorithm
-  outB := match (comm,annotationName)
+  outB := match comm
     local
       SCode.Annotation ann;
-    case (SOME(SCode.COMMENT(annotation_=SOME(ann))),_)
+    case SOME(SCode.COMMENT(annotation_=SOME(ann)))
       then hasBooleanNamedAnnotationFalse(ann, annotationName);
     else false;
   end match;
@@ -3212,7 +3209,6 @@ public function getEvaluateAnnotation
   output Option<Boolean> value;
 protected
   SCode.Annotation ann;
-  Option<Absyn.Exp> binding;
 algorithm
   value := match cmt
     case SCode.COMMENT(annotation_ = SOME(ann))
@@ -3281,7 +3277,7 @@ public function getModifierInfo
   input SCode.Mod inMod;
   output SourceInfo outInfo;
 algorithm
-  outInfo := match(inMod)
+  outInfo := match inMod
     local
       SourceInfo info;
       SCode.Element el;
@@ -3298,7 +3294,7 @@ public function getModifierBinding
   input SCode.Mod inMod;
   output Option<Absyn.Exp> outBinding;
 algorithm
-  outBinding := match(inMod)
+  outBinding := match inMod
     case SCode.MOD() then inMod.binding;
     else NONE();
   end match;
@@ -3342,7 +3338,7 @@ public function isInnerComponent
   input SCode.Element inElement;
   output Boolean outIsInner;
 algorithm
-  outIsInner := match(inElement)
+  outIsInner := match inElement
     local
       Absyn.InnerOuter io;
 
@@ -3395,7 +3391,7 @@ public function isElementEncapsulated
   input SCode.Element inElement;
   output Boolean outIsEncapsulated;
 algorithm
-  outIsEncapsulated := match(inElement)
+  outIsEncapsulated := match inElement
     case SCode.CLASS(encapsulatedPrefix = SCode.ENCAPSULATED()) then true;
     else false;
   end match;
@@ -3406,19 +3402,18 @@ public function getElementsFromElement
   input SCode.Element inElement;
   output SCode.Program outProgram;
 algorithm
-  outProgram := match(inProgram, inElement)
+  outProgram := match inElement
     local
       SCode.Program els;
       SCode.Element e;
       Absyn.Path p;
-      Absyn.Ident i;
 
     // a class with parts
-    case (_, SCode.CLASS(classDef = SCode.PARTS(elementLst = els))) then els;
+    case SCode.CLASS(classDef = SCode.PARTS(elementLst = els)) then els;
     // a class extends
-    case (_, SCode.CLASS(classDef = SCode.CLASS_EXTENDS(composition = SCode.PARTS(elementLst = els)))) then els;
+    case SCode.CLASS(classDef = SCode.CLASS_EXTENDS(composition = SCode.PARTS(elementLst = els))) then els;
     // a derived class
-    case (_, SCode.CLASS(classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = p))))
+    case SCode.CLASS(classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = p)))
       algorithm
         e := getElementWithPath(inProgram, p);
         els := getElementsFromElement(inProgram, e);
@@ -3436,8 +3431,8 @@ protected function getElementWithId
 algorithm
   outElement := match(inProgram, inId)
     local
-      SCode.Program sp, rest;
-      SCode.Element c, e;
+      SCode.Program rest;
+      SCode.Element e;
       Absyn.Path p;
       Absyn.Ident i, n;
 
@@ -3469,23 +3464,23 @@ public function getElementWithPath
   input Absyn.Path inPath;
   output SCode.Element outElement;
 algorithm
-  outElement := match (inProgram, inPath)
+  outElement := match inPath
     local
-      SCode.Program sp, rest;
-      SCode.Element c, e;
+      SCode.Program sp;
+      SCode.Element e;
       Absyn.Path p;
-      Absyn.Ident i, n;
+      Absyn.Ident i;
 
-    case (_, Absyn.FULLYQUALIFIED(p))
+    case Absyn.FULLYQUALIFIED(p)
       then getElementWithPath(inProgram, p);
 
-    case (_, Absyn.IDENT(i))
+    case Absyn.IDENT(i)
       algorithm
         e := getElementWithId(inProgram, i);
       then
         e;
 
-    case (_, Absyn.QUALIFIED(i, p))
+    case Absyn.QUALIFIED(i, p)
       algorithm
         e := getElementWithId(inProgram, i);
         sp := getElementsFromElement(inProgram, e);
@@ -3499,11 +3494,11 @@ public function getElementName ""
   input SCode.Element e;
   output String s;
 algorithm
-  s := match(e)
+  s := match e
     local Absyn.Path p;
-    case (SCode.COMPONENT(name = s)) then s;
-    case (SCode.CLASS(name = s)) then s;
-    case (SCode.EXTENDS(baseClassPath = p)) then AbsynUtil.pathString(p);
+    case SCode.COMPONENT(name = s) then s;
+    case SCode.CLASS(name = s) then s;
+    case SCode.EXTENDS(baseClassPath = p) then AbsynUtil.pathString(p);
   end match;
 end getElementName;
 
@@ -3592,7 +3587,7 @@ public function isDerivedClass
   input SCode.Element inClass;
   output Boolean isDerived;
 algorithm
-  isDerived := match(inClass)
+  isDerived := match inClass
     case SCode.CLASS(classDef = SCode.DERIVED()) then true;
     else false;
   end match;
@@ -3645,7 +3640,7 @@ public function getClassDef
   input SCode.Element inClass;
   output SCode.ClassDef outCdef;
 algorithm
-  outCdef := match(inClass)
+  outCdef := match inClass
     case SCode.CLASS(classDef = outCdef) then outCdef;
   end match;
 end getClassDef;
@@ -3683,7 +3678,7 @@ public function equationsContainReinit
   input list<SCode.Equation> inEqs;
   output Boolean hasReinit;
 algorithm
-  hasReinit := match(inEqs)
+  hasReinit := match inEqs
     local Boolean b;
     case _
       algorithm
@@ -3699,7 +3694,7 @@ public function equationContainReinit
   input SCode.Equation inEq;
   output Boolean hasReinit;
 algorithm
-  hasReinit := match(inEq)
+  hasReinit := match inEq
     local
       Boolean b;
       list<SCode.Equation> eqs;
@@ -3739,7 +3734,7 @@ public function algorithmsContainReinit
   input list<SCode.Statement> inAlgs;
   output Boolean hasReinit;
 algorithm
-  hasReinit := match(inAlgs)
+  hasReinit := match inAlgs
     local Boolean b;
     case _
       algorithm
@@ -3755,7 +3750,7 @@ public function algorithmContainReinit
   input SCode.Statement inAlg;
   output Boolean hasReinit;
 algorithm
-  hasReinit := match(inAlg)
+  hasReinit := match inAlg
     local
       Boolean b, b1, b2, b3;
       list<SCode.Statement> algs, algs1, algs2;
@@ -3816,7 +3811,7 @@ public function isRedeclareSubMod
   input SCode.SubMod inSubMod;
   output Boolean outIsRedeclare;
 algorithm
-  outIsRedeclare := match(inSubMod)
+  outIsRedeclare := match inSubMod
     case SCode.NAMEMOD(mod = SCode.REDECL()) then true;
     else false;
   end match;
@@ -3857,7 +3852,7 @@ public function componentMod
   input SCode.Element inElement;
   output SCode.Mod outMod;
 algorithm
-  outMod := match(inElement)
+  outMod := match inElement
     local
       SCode.Mod mod;
 
@@ -3871,7 +3866,7 @@ public function elementMod
   input SCode.Element inElement;
   output SCode.Mod outMod;
 algorithm
-  outMod := match(inElement)
+  outMod := match inElement
     local
       SCode.Mod mod;
 
@@ -3912,7 +3907,7 @@ public function isBuiltinElement
   input SCode.Element inElement;
   output Boolean outIsBuiltin;
 algorithm
-  outIsBuiltin := match(inElement)
+  outIsBuiltin := match inElement
     local
       SCode.Annotation ann;
 
@@ -3928,8 +3923,8 @@ public function isExternalFunctionRestriction
   input SCode.FunctionRestriction inRestr;
   output Boolean isExternal;
 algorithm
-  isExternal := match(inRestr)
-    case (SCode.FR_EXTERNAL_FUNCTION()) then true;
+  isExternal := match inRestr
+    case SCode.FR_EXTERNAL_FUNCTION() then true;
     else false;
   end match;
 end isExternalFunctionRestriction;
@@ -4002,11 +3997,11 @@ public function isClassNamed
   input SCode.Element inClass;
   output Boolean outIsNamed;
 algorithm
-  outIsNamed := match(inName, inClass)
+  outIsNamed := match inClass
     local
       SCode.Ident name;
 
-    case (_, SCode.CLASS(name = name)) then stringEq(inName, name);
+    case SCode.CLASS(name = name) then stringEq(inName, name);
     else false;
   end match;
 end isClassNamed;
@@ -4028,10 +4023,9 @@ public function getElementComment
   input SCode.Element inElement;
   output Option<SCode.Comment> outComment;
 algorithm
-  outComment := match(inElement)
+  outComment := match inElement
     local
       SCode.Comment cmt;
-      SCode.ClassDef cdef;
 
     case SCode.COMPONENT(comment = cmt) then SOME(cmt);
     case SCode.CLASS(cmt = cmt) then SOME(cmt);
@@ -4046,10 +4040,9 @@ public function stripAnnotationFromComment
   input Option<SCode.Comment> inComment;
   output Option<SCode.Comment> outComment;
 algorithm
-  outComment := match(inComment)
+  outComment := match inComment
     local
       Option<String> str;
-      Option<SCode.Comment> cmt;
 
     case SOME(SCode.COMMENT(_, str)) then SOME(SCode.COMMENT(NONE(), str));
     else NONE();
@@ -4061,7 +4054,7 @@ public function isOverloadedFunction
   input SCode.Element inElement;
   output Boolean isOverloaded;
 algorithm
-  isOverloaded := match(inElement)
+  isOverloaded := match inElement
     case SCode.CLASS(classDef = SCode.OVERLOAD()) then true;
     else false;
   end match;
@@ -4110,9 +4103,9 @@ public function getConstrainedByModifiers
   input SCode.Prefixes inPrefixes;
   output SCode.Mod outMod;
 algorithm
-  outMod := match(inPrefixes)
+  outMod := match inPrefixes
     local SCode.Mod m;
-    case (SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(SOME(SCode.CONSTRAINCLASS(modifier = m)))))
+    case SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(SOME(SCode.CONSTRAINCLASS(modifier = m))))
       then m;
     else SCode.NOMOD();
   end match;
@@ -4127,15 +4120,14 @@ public function mergeClassDef
   input SCode.Mod inCCModOld;
   output SCode.ClassDef outNew;
 algorithm
-  outNew := match(inNew, inOld, inCCModNew, inCCModOld)
+  outNew := match(inNew, inOld)
     local
-      SCode.ClassDef n, o;
-      Absyn.TypeSpec ts1, ts2;
+      SCode.ClassDef n;
+      Absyn.TypeSpec ts1;
       SCode.Mod m1, m2;
       SCode.Attributes a1, a2;
 
-    case (SCode.DERIVED(ts1,m1,a1),
-          SCode.DERIVED(_,m2,a2), _, _)
+    case (SCode.DERIVED(ts1,m1,a1), SCode.DERIVED(_,m2,a2))
       algorithm
         m2 := mergeModifiers(m2, inCCModOld);
         m1 := mergeModifiers(m1, inCCModNew);
@@ -4159,7 +4151,7 @@ algorithm
       SCode.Each e1, e2;
       list<SCode.SubMod> sl1, sl2, sl;
       Option<Absyn.Exp> b1, b2, b;
-      SourceInfo i1, i2;
+      SourceInfo i1;
       SCode.Mod m;
       Option<String> cmt;
 
@@ -4192,14 +4184,14 @@ protected function mergeSubMods
   input list<SCode.SubMod> inOld;
   output list<SCode.SubMod> outSubs;
 algorithm
-  outSubs := matchcontinue(inNew, inOld)
+  outSubs := matchcontinue inNew
     local
       list<SCode.SubMod> sl, rest, old;
       SCode.SubMod s;
 
-    case ({}, _) then inOld;
+    case {} then inOld;
 
-    case (s::rest, _)
+    case s::rest
       algorithm
         old := removeSub(s, inOld);
         sl := mergeSubMods(rest, old);
@@ -4219,7 +4211,6 @@ algorithm
     local
       list<SCode.SubMod> rest;
       SCode.Ident id1, id2;
-      list<SCode.Subscript> idxs1, idxs2;
       SCode.SubMod s;
 
     case (_, {}) then inOld;
@@ -4288,8 +4279,8 @@ public function propagateArrayDimensions
   input Absyn.ArrayDim inNewDims;
   output Absyn.ArrayDim outNewDims;
 algorithm
-  outNewDims := match(inOriginalDims, inNewDims)
-    case (_, {}) then inOriginalDims;
+  outNewDims := match inNewDims
+    case {} then inOriginalDims;
     else inNewDims;
   end match;
 end propagateArrayDimensions;
@@ -4406,7 +4397,7 @@ public function isPackage
   input SCode.Element inClass;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match(inClass)
+  outBoolean := match inClass
     case SCode.CLASS(restriction = SCode.R_PACKAGE()) then true;
     else false;
   end match;
@@ -4417,7 +4408,7 @@ public function isPartial
   input SCode.Element inClass;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match(inClass)
+  outBoolean := match inClass
     case SCode.CLASS(partialPrefix = SCode.PARTIAL()) then true;
     else false;
   end match;
@@ -4429,7 +4420,7 @@ public function isValidPackageElement
   input SCode.Element inElement;
   output Boolean outIsValid;
 algorithm
-  outIsValid := match(inElement)
+  outIsValid := match inElement
     case SCode.COMPONENT(attributes = SCode.ATTR(variability = SCode.CONST())) then true;
     case SCode.COMPONENT() then false;
     else true;
@@ -4442,7 +4433,7 @@ public function classIsExternalObject
   input SCode.Element cl;
   output Boolean res;
 algorithm
-  res := match(cl)
+  res := match cl
     local
       list<SCode.Element> els;
 
@@ -4473,7 +4464,7 @@ protected function hasExtendsOfExternalObject
   input list<SCode.Element> inEls;
   output Boolean res;
 algorithm
-  res:= match (inEls)
+  res:= match inEls
     local
       list<SCode.Element> els;
       Absyn.Path path;
@@ -4489,7 +4480,7 @@ protected function hasExternalObjectDestructor
   input list<SCode.Element> inEls;
   output Boolean res;
 algorithm
-  res:= match(inEls)
+  res:= match inEls
     local list<SCode.Element> els;
     case SCode.CLASS(name="destructor")::_ then true;
     case _::els then hasExternalObjectDestructor(els);
@@ -4502,7 +4493,7 @@ protected function hasExternalObjectConstructor
   input list<SCode.Element> inEls;
   output Boolean res;
 algorithm
-  res:= match(inEls)
+  res:= match inEls
     local list<SCode.Element> els;
     case SCode.CLASS(name="constructor")::_ then true;
     case _::els then hasExternalObjectConstructor(els);
@@ -4515,10 +4506,10 @@ public function getExternalObjectDestructor
   input list<SCode.Element> inEls;
   output SCode.Element cl;
 algorithm
-  cl:= match(inEls)
+  cl:= match inEls
     local list<SCode.Element> els;
-    case ((cl as SCode.CLASS(name="destructor"))::_) then cl;
-    case (_::els) then getExternalObjectDestructor(els);
+    case (cl as SCode.CLASS(name="destructor"))::_ then cl;
+    case _::els then getExternalObjectDestructor(els);
   end match;
 end getExternalObjectDestructor;
 
@@ -4527,10 +4518,10 @@ public function getExternalObjectConstructor
 input list<SCode.Element> inEls;
 output SCode.Element cl;
 algorithm
-  cl:= match(inEls)
+  cl:= match inEls
     local list<SCode.Element> els;
-    case ((cl as SCode.CLASS(name="constructor"))::_) then cl;
-    case (_::els) then getExternalObjectConstructor(els);
+    case (cl as SCode.CLASS(name="constructor"))::_ then cl;
+    case _::els then getExternalObjectConstructor(els);
   end match;
 end getExternalObjectConstructor;
 
@@ -4538,7 +4529,7 @@ public function isInstantiableClassRestriction
   input SCode.Restriction inRestriction;
   output Boolean outIsInstantiable;
 algorithm
-  outIsInstantiable := match(inRestriction)
+  outIsInstantiable := match inRestriction
     case SCode.R_CLASS() then true;
     case SCode.R_MODEL() then true;
     case SCode.R_RECORD() then true;
@@ -4569,8 +4560,8 @@ public function checkSameRestriction
   output SCode.Restriction outRes;
   output SourceInfo outInfo;
 algorithm
-  (outRes, outInfo) := match(inResNew, inResOrig, inInfoNew, inInfoOrig)
-    case (_, _, _, _)
+  (outRes, outInfo) := match inInfoOrig
+    case _
       algorithm
         // todo: check if the restrictions are the same for redeclared classes
       then
@@ -5533,8 +5524,6 @@ function onlyLiteralsInMod
   "Checks if the bindings in a modifier only contains literal expressions."
   input SCode.Mod mod;
   output Boolean onlyLiterals;
-protected
-  list<Absyn.Exp> lst;
 algorithm
   onlyLiterals := match mod
     case SCode.Mod.MOD()
@@ -5694,8 +5683,6 @@ public function setAnnotationInComment
   input output SCode.Comment cmt;
   input Boolean replace = true "Whether to replace the value of an existing annotation or not";
 protected
-  SCode.Annotation ann;
-  SCode.Mod mod;
 algorithm
   if isNone(cmt.annotation_) then
     cmt.annotation_ := SOME(makeSingleAnnotation(name, value));

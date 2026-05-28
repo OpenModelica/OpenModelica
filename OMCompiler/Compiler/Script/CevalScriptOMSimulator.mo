@@ -52,7 +52,7 @@ public function ceval
   input list<Values.Value> inVals;
   output Values.Value outValue;
 algorithm
-  (outValue) := match (inFunctionName,inVals)
+  outValue := match (inFunctionName,inVals)
     local
       String cref,crefA,crefB,busCref,connectorCref,stype_,signal,s_lower,s_upper,path,startscript,regex,fmuPath,filenameA,filenameB,var,source,target,filename,initialization,event,simulation,contents,snapshot,newCref,cmd,newTempDir,address,newWorkingDir,version;
       Real stepSize,lower,upper,delay,alpha,linearimpedance,angularimpedance,relTol,absTol,faultValue,loggingInterval,rvalue,startTime,stopTime,x1,x2,x3,A11,A12,A13,A21,A22,A23,A31,A32,A33,absoluteTolerance,relativeTolerance,initialStepSize,minimumStepSize,maximumStepSize;
