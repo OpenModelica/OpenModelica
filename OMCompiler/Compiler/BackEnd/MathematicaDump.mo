@@ -277,7 +277,6 @@ algorithm
         s2 := printExp2MmaStr(e2,vars,knvars);
         p := ExpressionDump.expPriority(e);
         p1 := ExpressionDump.expPriority(e1);
-        ExpressionDump.expPriority(e2);
         s1_1 := ExpressionDump.parenthesize(s1, p1, p,false);
         s2_1 := ExpressionDump.parenthesize(s2, p1, p,true);
         s := stringAppend(s1_1, sym);

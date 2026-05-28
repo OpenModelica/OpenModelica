@@ -154,7 +154,6 @@ algorithm
     case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)), NONE())
       algorithm
         vars := BackendVariable.daeVars(inSystem);
-        BackendEquation.getEqnsFromEqSystem(inSystem);
         funcs := BackendDAEUtil.getFunctions(inShared);
         (_,m,mt) := BackendDAEUtil.getAdjacencyMatrix(inSystem, BackendDAE.NORMAL(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
         graphInfo := GraphML.createGraphInfo();

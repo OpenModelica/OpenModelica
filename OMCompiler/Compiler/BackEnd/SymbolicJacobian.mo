@@ -3754,7 +3754,6 @@ algorithm
     // array equations
     case BackendDAE.ARRAY_EQUATION(dimSize=ds,left=e1,right=e2,source=source)
       algorithm
-        Expression.typeof(e1);
         e := Expression.expSub(e1,e2);
         (e,_) := Expression.extendArrExp(e,false);
         subslst := Expression.dimensionSizesSubscripts(ds);

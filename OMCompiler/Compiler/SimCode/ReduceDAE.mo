@@ -1290,7 +1290,7 @@ algorithm
          //case reduce terms
          true := Flags.getConfigBool(Flags.REDUCE_TERMS);
          //the number of the term is on the reduceList
-         List.getMember(i, reduceList);
+         true := List.contains(reduceList, i, intEq);
          //multiplies the term by 0
          e2:=Expression.expMul(DAE.RCONST(0.0),e);
          //increases the number of (invisible) labels
@@ -1635,7 +1635,7 @@ algorithm
     case  (e1, e2, true, vars, (i,p))
       algorithm
         true := Flags.getConfigBool(Flags.REDUCE_TERMS);
-        List.getMember(i,reduceList);
+        true := List.contains(reduceList, i, intEq);
         e3:=Expression.expMul(DAE.RCONST(0.0),e1);
         e4:=Expression.expMul(DAE.RCONST(1.0),e2);
         e5:=Expression.expAdd(e3,e4);

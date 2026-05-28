@@ -1749,7 +1749,6 @@ algorithm
     then ({}, {}, {});
 
     case currRedundantEqn::restRedundantEqns algorithm
-      BackendVariable.varsSize(inVars);
       nEqns := BackendEquation.equationArraySize(inEqns);
     //BackendDump.dumpMatchingVars(vecVarToEqs);
     //BackendDump.dumpMatchingEqns(vecEqsToVar);
@@ -2611,7 +2610,6 @@ algorithm
         isInput := BackendVariable.isVarOnTopLevelAndInput(var);
       end if;
       preUsed := BaseHashSet.has(cr, hs);
-      Expression.crefExp(cr);
 
       startCR := ComponentReference.crefPrefixStart(cr);
       startVar := BackendVariable.copyVarNewName(startCR, var);
@@ -2666,7 +2664,6 @@ algorithm
         isInput := BackendVariable.isVarOnTopLevelAndInput(var);
       end if;
       preUsed := BaseHashSet.has(cr, hs);
-      Expression.crefExp(cr);
 
       startCR := ComponentReference.crefPrefixStart(cr);
       startVar := BackendVariable.copyVarNewName(startCR, var);

@@ -474,7 +474,6 @@ algorithm
         v := BackendVariable.setVarKind(v,BackendDAE.OPT_INPUT_DER());
         outShared := BackendVariable.addGlobalKnownVarDAE(v, outShared);
       end for;
-      BackendVariable.daeGlobalKnownVars(outShared);
        //BackendDump.printVariables(vars);
     then (isyst, true);
 

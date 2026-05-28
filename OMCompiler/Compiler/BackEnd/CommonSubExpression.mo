@@ -2345,7 +2345,6 @@ case (SHORTCUT_CSE(eqIdcs={eqIdx1, eqIdx2}, sharedVar=sharedVar)::rest, syst as 
       {eq1, eq2} := BackendEquation.getList({eqIdx1, eqIdx2}, eqs);
       var := BackendVariable.getVarAt(vars, sharedVar);
       varExp := BackendVariable.varExp(var);
-      Expression.typeof(varExp);
       BackendDAE.EQUATION(exp=lhs1, scalar=rhs1) := eq1;
       BackendDAE.EQUATION(exp=lhs2, scalar=rhs2) := eq2;
 

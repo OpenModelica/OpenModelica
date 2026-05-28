@@ -2411,7 +2411,6 @@ algorithm
           e1_str := ExpressionBasics.printExpStr(inStartExp);
           e2_str := ExpressionBasics.printExpStr(inStopExp);
           t1_str := TypesDump.unparseTypeNoAttr(inStartType);
-          TypesDump.unparseTypeNoAttr(inStopType);
           Error.addSourceMessageAndFail(Error.UNRESOLVABLE_TYPE,
             {e1_str + ":" + e2_str, t1_str + ", " + t1_str, ""}, inInfo);
         end if;

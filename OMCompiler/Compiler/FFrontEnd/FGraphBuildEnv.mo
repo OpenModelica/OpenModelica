@@ -361,7 +361,6 @@ algorithm
 
     case (SCode.DERIVED(typeSpec = ts, modifications = m), g)
       algorithm
-        AbsynUtil.typeSpecPath(ts);
         nr := inParentRef;
         g := mkModNode(FNode.modNodeName, m, nr, inKind, g);
         ad := AbsynUtil.typeSpecDimensions(ts);

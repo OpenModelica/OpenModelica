@@ -1165,7 +1165,6 @@ algorithm
     case BackendDAE.SINGLEEQUATION(eqn=eqnIdx)
       algorithm
         (eqnVars, paramVars) := getVarsByEqns({eqnIdx}, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
-        List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
       then
         (eqnVars, paramVars);
     case BackendDAE.EQUATIONSYSTEM(eqns=eqns)
@@ -1176,31 +1175,26 @@ algorithm
     case BackendDAE.SINGLEARRAY(eqn=eqnIdx)
       algorithm
         (eqnVars, paramVars) := getVarsByEqns({eqnIdx}, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
-        List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
       then
         (eqnVars, paramVars);
     case BackendDAE.SINGLEALGORITHM(eqn=eqnIdx)
       algorithm
         (eqnVars, paramVars) := getVarsByEqns({eqnIdx}, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
-        List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
       then
         (eqnVars, paramVars);
     case BackendDAE.SINGLECOMPLEXEQUATION(eqn=eqnIdx)
       algorithm
         (eqnVars, paramVars) := getVarsByEqns({eqnIdx}, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
-        List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
       then
         (eqnVars, paramVars);
     case BackendDAE.SINGLEWHENEQUATION(eqn=eqnIdx)
       algorithm
         (eqnVars, paramVars) := getVarsByEqns({eqnIdx}, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
-        List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
       then
         (eqnVars, paramVars);
     case BackendDAE.SINGLEIFEQUATION(eqn=eqnIdx)
       algorithm
         (eqnVars, paramVars) := getVarsByEqns({eqnIdx}, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
-        List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
       then
         (eqnVars, paramVars);
     case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=resEqns,innerEquations = innerEquations))

@@ -139,7 +139,6 @@ algorithm
 
       //get simCode-backendDAE mappings
       //----------------------------
-      SimCodeUtil.getSimVarMappingOfBackendMapping(simCode.backendMapping);
       (simeqCompMapping, sccSimEqMapping, daeSccSimEqMapping) := HpcOmTaskGraph.setUpHpcOmMapping(inBackendDAE, simCode, lastEqMappingIdx, equationSccMapping);
       ExecStat.execStat("hpcom setup");
 

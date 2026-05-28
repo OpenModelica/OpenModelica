@@ -709,7 +709,6 @@ algorithm
     case (_,_,DAE.MOD(binding = SOME(DAE.TYPED(e,_,prop,_)), info = info),tp)
       algorithm
         e_tp := Types.getPropType(prop);
-        Types.propAllConst(prop);
         failure(Types.matchType(e, e_tp, tp, false));
         e_tp_str := TypesDump.unparseTypeNoAttr(e_tp);
         tp_str := TypesDump.unparseTypeNoAttr(tp);

@@ -1866,7 +1866,6 @@ algorithm
       algorithm
         comp := listHead(inComps);
         eqns := BackendEquation.getEqnsFromEqSystem(isyst);
-        BackendVariable.daeVars(isyst);
         // the torn equations
         eqnlst := BackendEquation.getList(tornEqs,eqns);
         explst := List.map(eqnlst,BackendEquation.getEquationRHS);

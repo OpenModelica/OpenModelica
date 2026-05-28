@@ -526,7 +526,6 @@ algorithm
       then erepl;
     case (DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=varLst)), SOME(pcr))
       algorithm
-        ComponentReferenceBasics.makeCrefIdent(ident,ty,{});
         precr1 := ComponentReference.joinCrefs(pcr,cr);
         // update Replacements
         UnorderedSet.addUnique(precr1, extendrepl);

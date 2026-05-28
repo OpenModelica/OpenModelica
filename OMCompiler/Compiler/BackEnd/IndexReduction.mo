@@ -3949,7 +3949,6 @@ algorithm
         dn := intMax(diffindex-level,0);
         // generate names
         (name,dummyderName) := crefPrefixDerN(dn,name);
-        ElementSource.addSymbolicTransformation(source,DAE.NEW_DUMMY_DER(dummyderName,{}));
         /* Dummy variables are algebraic variables, hence fixed = false */
         dattr := BackendVariable.getVariableAttributefromType(tp);
         odattr := DAEUtil.setFixedAttr(SOME(dattr), SOME(DAE.BCONST(false)));

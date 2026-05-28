@@ -5338,5 +5338,19 @@ algorithm
   end while;
 end trim;
 
+function apply<T>
+  "Applies a function to all the elements in the given list."
+  input list<T> lst;
+  input Fn fn;
+
+  partial function Fn
+    input T e;
+  end Fn;
+algorithm
+  for e in lst loop
+    fn(e);
+  end for;
+end apply;
+
 annotation(__OpenModelica_Interface="util_datatypes_basic");
 end List;

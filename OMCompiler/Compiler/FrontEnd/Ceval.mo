@@ -1423,9 +1423,9 @@ algorithm
 
     case (cache, env, DAE.ARRAY(array = (exp :: es)), dimExp, impl, msg)
       algorithm
-        Expression.typeof(exp) "Special case for array expressions with nonconstant
-                                        values For now: only arrays of scalar elements:
-                                        TODO generalize to arbitrary dimensions";
+        // Special case for array expressions with nonconstant values.
+        // For now: only arrays of scalar elements.
+        // TODO generalize to arbitrary dimensions
         (cache,Values.INTEGER(1)) := ceval(cache, env, dimExp, impl, msg, numIter+1);
         len := listLength(exp :: es);
       then

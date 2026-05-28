@@ -1616,7 +1616,6 @@ algorithm
     case({section}, HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps))
       algorithm
         // generate a serial section
-        List.flatten(List.map1(section,Array.getIndexFirst,inComps));
         //simEqSysIdcs = List.sort(simEqSysIdcs,intGt);
         task := makeCalcTaskLevel(section,inComps,iSccSimEqMapping);
         taskLst := HpcOmSimCode.SERIALTASKLIST({task}, true);
@@ -1659,7 +1658,6 @@ algorithm
     then listReverse(sectionsIn);
     case critPathNode::{}
       algorithm
-        HpcOmTaskGraph.getExeCostReqCycles(critPathNode,iMeta);
         critNodeLevel := arrayGet(levelAssIn,critPathNode);
         //print("critPathNode (last): \n"+intString(critPathNode)+" of level: "+intString(critNodeLevel)+"\n");
 
@@ -1718,7 +1716,6 @@ algorithm
 
         // the critical path node in this section is BIG enough, gather as much as possible nodes in this level
         true := critPathCost >= targetCosts;
-        Flags.getConfigInt(Flags.NUM_PROC);
           //print("critPathNode (big): \n"+intString(critPathNode)+" of level: "+intString(critNodeLevel)+"\n");
 
         // get the nodes that are necessary to compute the next critical path node
@@ -3988,7 +3985,6 @@ algorithm
       list<SimCode.SimEqSystem> eqSysLst;
     case _
       algorithm
-      SimCodeUtil.simEqSystemIndex(eqSysIn);
       pos := List.position1OnTrue(eqSysLstIn,SimCodeUtil.equationIndexEqual,eqSysIn);
       eqSysLst := List.replaceAt(eqSysIn,pos,eqSysLstIn);
     then eqSysLst;
@@ -5546,7 +5542,6 @@ algorithm
       maxLevel := List.fold(childTDSLevels,realMax,0.0);
       maxAlap := List.fold(childAlaps,realMax,0.0);
       maxLast := List.fold(childLasts,realMax,0.0);
-      List.fold(childLacts,realMax,0.0);
       tdsLevel := arrayUpdate(tdsLevelIn,nodeIdx,nodeExeCost + maxLevel);
       alap := arrayUpdate(alapIn,nodeIdx,nodeExeCost + maxAlap);
       last := arrayUpdate(lastIn,nodeIdx,nodeExeCost + maxLast);
