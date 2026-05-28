@@ -92,7 +92,6 @@ protected function addOptimizationVarsEqns
 protected
   Option<DAE.Exp> mayer, lagrange, startTimeE, finalTimeE;
   list<BackendDAE.Var> varlst;
-  BackendDAE.Var tG;
   list<BackendDAE.Equation> eqnsLst;
 
   list< .DAE.ClassAttributes> classAttrs;
@@ -118,7 +117,7 @@ algorithm
 
    (mayer,lagrange,startTimeE,finalTimeE) := getOptimicaArgs(classAttrs);
     varlst :=  BackendVariable.varList(globalKnownVars);
-    _ := addTimeGrid(varlst, globalKnownVars);
+    addTimeGrid(varlst, globalKnownVars);
     varlst := listAppend(varlst, BackendVariable.varList(vars)) annotation(__OpenModelica_DisableListAppendWarning=true);
 
     (vars, eqnsLst, mayer) := joinObjectFun(makeObject(BackendDAE.optimizationMayerTermName, findMayerTerm, varlst, mayer), vars, eqnsLst);
@@ -144,10 +143,10 @@ protected function getOptimicaArgs
   output Option<DAE.Exp> mayer,lagrange,startTimeE,finalTimeE;
 algorithm
   (mayer,lagrange,startTimeE,finalTimeE) :=
-  match(inClassAttr)
+  match inClassAttr
     local Option<DAE.Exp> mayer_, lagrange_, startTimeE_, finalTimeE_;
 
-    case({DAE.OPTIMIZATION_ATTRS(objetiveE=mayer_, objectiveIntegrandE=lagrange_,startTimeE=startTimeE_,finalTimeE=finalTimeE_)})
+    case {DAE.OPTIMIZATION_ATTRS(objetiveE=mayer_, objectiveIntegrandE=lagrange_,startTimeE=startTimeE_,finalTimeE=finalTimeE_)}
     then(mayer_,lagrange_,startTimeE_,finalTimeE_);
 
     else (NONE(), NONE(),NONE(),NONE());
@@ -205,10 +204,10 @@ protected function joinObjectFun "author: Vitalij Ruge"
   output list<BackendDAE.Equation> oe;
   output Option<DAE.Exp> objExp;
 algorithm
-  (ovars, oe, objExp) := match(obj)
+  (ovars, oe, objExp) := match obj
                 local BackendDAE.Var v; list<BackendDAE.Equation> e_; Option<DAE.Exp> e1;
-                case((_,{},_)) then(vars, e, NONE());
-                case((v, e_, e1)) then(BackendVariable.addNewVar(v, vars), listAppend(e_, e), e1);
+                case (_,{},_) then(vars, e, NONE());
+                case (v, e_, e1) then(BackendVariable.addNewVar(v, vars), listAppend(e_, e), e1);
                 end match;
 end joinObjectFun;
 
@@ -291,12 +290,12 @@ protected function addOptimizationVarsEqns2
  output BackendDAE.Variables outVars;
  output list<BackendDAE.Equation>  outEqns;
 algorithm
-  (outVars, outEqns) := match(inConstraint, inI, inVars, inEqns, globalKnownVars,prefConCrefName,conKind)
+  (outVars, outEqns) := match inConstraint
   local
    list<BackendDAE.Equation> e;
    BackendDAE.Variables v;
    list< .DAE.Exp> constraintLst;
-    case({DAE.CONSTRAINT_EXPS(constraintLst = constraintLst)}, _, _, _, _, _, _) algorithm
+    case {DAE.CONSTRAINT_EXPS(constraintLst = constraintLst)} algorithm
       (v, e) := addOptimizationVarsEqns1(constraintLst, inI, inVars, inEqns, globalKnownVars,prefConCrefName,conKind);
       then (v, e);
   else (inVars, inEqns);
@@ -390,9 +389,9 @@ protected
 list<BackendDAE.Var> varlst;
 list< .DAE.Exp> constraintLst;
 algorithm
-  constraintLst := match(inConstraint)
+  constraintLst := match inConstraint
                    local list< .DAE.Exp> constraintLst_;
-                   case({DAE.CONSTRAINT_EXPS(constraintLst = constraintLst_)}) then constraintLst_;
+                   case {DAE.CONSTRAINT_EXPS(constraintLst = constraintLst_)} then constraintLst_;
                    else {};
                    end match;
 
@@ -453,15 +452,13 @@ algorithm
     local
       BackendDAE.EquationArray orderedEqs "ordered Equations";
       list<DAE.ComponentRef> idercr={}, icr={};
-      DAE.ComponentRef cr;
-      String s;
       list<BackendDAE.Var> varLst={};
       BackendDAE.Variables vars;
 
     case BackendDAE.EQSYSTEM(orderedEqs=orderedEqs) algorithm
       vars := BackendVariable.daeGlobalKnownVars(outShared);
 
-      ((_, idercr, icr, varLst)) := BackendDAEUtil.traverseBackendDAEExpsEqns(orderedEqs, traverserinputDerivativesForDynOpt, (vars, idercr, icr, varLst));
+      (_, idercr, icr, varLst) := BackendDAEUtil.traverseBackendDAEExpsEqns(orderedEqs, traverserinputDerivativesForDynOpt, (vars, idercr, icr, varLst));
       if listEmpty(idercr) then
         fail();
       end if;
@@ -477,7 +474,7 @@ algorithm
         v := BackendVariable.setVarKind(v,BackendDAE.OPT_INPUT_DER());
         outShared := BackendVariable.addGlobalKnownVarDAE(v, outShared);
       end for;
-      _ := BackendVariable.daeGlobalKnownVars(outShared);
+      BackendVariable.daeGlobalKnownVars(outShared);
        //BackendDump.printVariables(vars);
     then (isyst, true);
 
@@ -504,7 +501,6 @@ algorithm
   (outExp,cont,outTpl) := matchcontinue (inExp,tpl)
     local
       BackendDAE.Variables vars;
-      DAE.Type tp;
       DAE.Exp e;
       DAE.ComponentRef cr, cr1;
       BackendDAE.Var var;
@@ -571,7 +567,6 @@ protected function findLoops1
   output BackendDAE.Shared oshared = ishared;
   output Boolean changed = inchanged "not used";
 protected
-  BackendDAE.EquationArray eqns;
   Boolean l2p_all = Flags.getConfigString(Flags.LOOP2CON) == "all";
   Boolean l2p_nl;
   Boolean l2p_l;
@@ -642,7 +637,7 @@ algorithm
     guard l2p_all or not l2p_l
     algorithm
       BackendDAE.EQUATION(exp=e1, scalar=e2) := BackendEquation.get(eqns, eindex_);
-      (v as BackendDAE.VAR(varName = cr)) := BackendVariable.getVarAt(vars, vindx_);
+      v as BackendDAE.VAR(varName = cr) := BackendVariable.getVarAt(vars, vindx_);
       varexp := Expression.crefExp(cr);
       varexp := if BackendVariable.isStateVar(v) then Expression.expDer(varexp) else varexp;
       failure(ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs), NONE()));
@@ -687,7 +682,6 @@ protected
   BackendDAE.Var var, var_;
   list<DAE.ComponentRef> cr_lst = List.map(var_lst, BackendVariable.varCref);
   DAE.ComponentRef cr, cr_var;
-  list<String> name_lst = List.map(cr_lst,ComponentReference.crefStr);
   DAE.Exp e, res;
   Integer ind_e, ind_v;
   list<Integer> ind_lst_v = List.map(vindx,intAbs);
@@ -762,8 +756,6 @@ protected
   DAE.Exp e1, e2, e, c;
   BackendDAE.Variables vars, globalKnownVars;
   BackendDAE.EquationArray eqns;
-  BackendDAE.BaseClockPartitionKind partitionKind;
-  BackendDAE.StateSets stateSets;
   AvlTreePathFunction.Tree funcs;
   Option<DAE.Exp> oMax_con, oMin_con;
   DAE.Exp max_con, min_con, zero, con2, z, der_e;
@@ -789,7 +781,7 @@ algorithm
          b3 := BackendVariable.isRealOptimizeConstraintsVars(var_con);
          if b3 then
            try
-             (eqn_ as BackendDAE.EQUATION(exp=e1, scalar=e2)):= BackendEquation.get(eqns, eindex);
+             eqn_ as BackendDAE.EQUATION(exp=e1, scalar=e2):= BackendEquation.get(eqns, eindex);
              true := ExpressionBasics.expEqual(e1, BackendVariable.varExp(var_con));
            else
              b3 := false;
@@ -816,7 +808,7 @@ algorithm
                 continue;
               end if;
               (z,_) := Expression.makeZeroExpression(Expression.arrayDimension(tp));
-              ((c,_)) := Expression.replaceExp(e2, e, z);
+              (c,_) := Expression.replaceExp(e2, e, z);
               (c,_) := ExpressionSimplify.simplify(c);
               //print("\nde = " + ExpressionBasics.printExpStr(der_e));
               //print("\nc = " + ExpressionBasics.printExpStr(c));

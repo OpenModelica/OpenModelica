@@ -69,9 +69,9 @@ public function valString2 "This function returns a textual representation of a 
   Uses an external buffer to store intermediate results."
   input Values.Value inValue;
 algorithm
-  _ := matchcontinue (inValue)
+  () := matchcontinue inValue
     local
-      String s, s_1, recordName, tyStr, scope, name;
+      String s, recordName, tyStr, scope, name;
       Integer n;
       Real x;
       list<Values.Value> xs,vs;
@@ -143,7 +143,7 @@ algorithm
       then
         ();
 
-    case ((Values.RECORD(record_ = Absyn.IDENT("SimulationResult"), orderd = xs, comp = ids)))
+    case Values.RECORD(record_ = Absyn.IDENT("SimulationResult"), orderd = xs, comp = ids)
       algorithm
         Print.printBuf("record SimulationResult\n");
         (xs,ids) := filterSimulationResults(Flags.isSet(Flags.SHORT_OUTPUT),xs,ids,{},{});
@@ -152,7 +152,7 @@ algorithm
       then
         ();
 
-    case ((Values.RECORD(record_ = recordPath, orderd = xs, comp = ids)))
+    case Values.RECORD(record_ = recordPath, orderd = xs, comp = ids)
       algorithm
         recordName := AbsynUtil.pathStringNoQual(recordPath);
 
@@ -162,20 +162,20 @@ algorithm
       then
         ();
 
-    case ((Values.OPTION(SOME(r))))
+    case Values.OPTION(SOME(r))
       algorithm
         Print.printBuf("SOME(");
         valString2(r);
         Print.printBuf(")");
       then
         ();
-    case ((Values.OPTION(NONE())))
+    case Values.OPTION(NONE())
       algorithm
         Print.printBuf("NONE()");
       then
         ();
 
-    case ((Values.META_BOX(r)))
+    case Values.META_BOX(r)
       algorithm
         Print.printBuf("#(");
         valString2(r);
@@ -183,19 +183,19 @@ algorithm
       then
         ();
 
-    case (Values.CODE(A = Absyn.C_TYPENAME(path)))
+    case Values.CODE(A = Absyn.C_TYPENAME(path))
       algorithm
         Print.printBuf(AbsynUtil.pathString(path));
       then
         ();
 
-    case (Values.CODE(A = Absyn.C_VARIABLENAME(cr)))
+    case Values.CODE(A = Absyn.C_VARIABLENAME(cr))
       algorithm
         Print.printBuf(Dump.printComponentRefStr(cr));
       then
         ();
 
-    case (Values.CODE(A = c))
+    case Values.CODE(A = c)
       algorithm
         Print.printBuf("$Code(");
         Print.printBuf(Dump.printCodeStr(c));
@@ -223,22 +223,22 @@ algorithm
 
     /* Until is it no able to get from an string Enumeration the C-Enumeration use the index value */
     /* Example: This is yet not possible Enum.e1 \\ PEnum   ->  1 \\ PEnum  with enum Enum(e1,e2), Enum PEnum; */
-    case (Values.ENUM_LITERAL(index = n, name=p))
+    case Values.ENUM_LITERAL(index = n, name=p)
       algorithm
         s := intString(n) + " /* ENUM: " + AbsynUtil.pathString(p) + " */";
         Print.printBuf(s);
       then
         ();
 
-    case (Values.NORETCALL())
+    case Values.NORETCALL()
       then ();
 
-    case (Values.META_FAIL())
+    case Values.META_FAIL()
       algorithm
         Print.printBuf("fail()");
       then ();
 
-    case (Values.EMPTY(scope = scope, name = name, tyStr = tyStr))
+    case Values.EMPTY(scope = scope, name = name, tyStr = tyStr)
       algorithm
         Print.printBuf("/* <EMPTY(scope: " + scope + ", name: " + name + ", ty: " + tyStr + ")> */");
       then ();
@@ -260,27 +260,27 @@ protected function filterSimulationResults
   output list<Values.Value> outValues;
   output list<String> outIds;
 algorithm
-  (outValues,outIds) := match (filter,inValues,inIds,valacc,idacc)
+  (outValues,outIds) := match (filter, inValues, inIds)
     local
       Values.Value v;
       list<Values.Value> vrest;
       String id,str;
       list<String> idrest;
-    case (_,{},{},_,_) then (listReverse(valacc),listReverse(idacc));
-    case (true,v::vrest,(id as "messages")::idrest,_,_)
+    case (_, {}, {}) then (listReverse(valacc),listReverse(idacc));
+    case (true, v::vrest, (id as "messages")::idrest)
       algorithm
         (outValues,outIds) := filterSimulationResults(filter,vrest,idrest,v::valacc,id::idacc);
       then (outValues,outIds);
-    case (true,Values.STRING(str)::vrest,(id as "resultFile")::idrest,_,_)
+    case (true, Values.STRING(str)::vrest, (id as "resultFile")::idrest)
       algorithm
         str := System.basename(str);
         (outValues,outIds) := filterSimulationResults(filter,vrest,idrest,Values.STRING(str)::valacc,id::idacc);
       then (outValues,outIds);
-    case (true,_::vrest,_::idrest,_,_)
+    case (true, _::vrest, _::idrest)
       algorithm
         (outValues,outIds) := filterSimulationResults(filter,vrest,idrest,valacc,idacc);
       then (outValues,outIds);
-    case (false,_,_,_,_) then (inValues,inIds);
+    case (false, _, _) then (inValues,inIds);
   end match;
 end filterSimulationResults;
 
@@ -290,7 +290,7 @@ protected function valRecordString
   input list<Values.Value> inValues;
   input list<String> inIds;
 algorithm
-  _ := matchcontinue (inValues,inIds)
+  () := matchcontinue (inValues,inIds)
     local
       String id;
       Values.Value x;
@@ -336,7 +336,7 @@ protected function valListString "
 "
   input list<Values.Value> inValueLst;
 algorithm
-  _ := match (inValueLst)
+  () := match inValueLst
     local
       Values.Value v;
       list<Values.Value> vs;
@@ -346,7 +346,7 @@ algorithm
         valString2(v);
       then
         ();
-    case (v :: vs)
+    case v :: vs
       algorithm
         valString2(v);
         Print.printBuf(", ");
@@ -378,12 +378,12 @@ public function unparseValues "Prints a list of Value to a string."
   input list<Values.Value> inValueLst;
   output String outString;
 algorithm
-  outString := match (inValueLst)
+  outString := match inValueLst
     local
       String s1,s2,s3,str;
       Values.Value v;
       list<Values.Value> vallst;
-    case ((v :: vallst))
+    case v :: vallst
       algorithm
         s1 := unparseDescription({v});
         s2 := unparseValueNumbers({v});
@@ -391,7 +391,7 @@ algorithm
         str := stringAppendList({s1,s2,"\n",s3});
       then
         str;
-    case ({}) then "";
+    case {} then "";
   end match;
 end unparseValues;
 
@@ -400,34 +400,34 @@ protected function unparseValueNumbers "Helper function to unparse_values.
   input list<Values.Value> inValueLst;
   output String outString;
 algorithm
-  outString := match (inValueLst)
+  outString := match inValueLst
     local
       String s1,s2,res,istr,sval;
       list<Values.Value> lst,xs;
       Integer i;
       Real r;
-    case ((Values.TUPLE(valueLst = lst) :: xs))
+    case Values.TUPLE(valueLst = lst) :: xs
       algorithm
         s1 := unparseValueNumbers(lst);
         s2 := unparseValueNumbers(xs);
         res := stringAppend(s1, s2);
       then
         res;
-    case ((Values.META_TUPLE(valueLst = lst) :: xs))
+    case Values.META_TUPLE(valueLst = lst) :: xs
       algorithm
         s1 := unparseValueNumbers(lst);
         s2 := unparseValueNumbers(xs);
         res := stringAppend(s1, s2);
       then
         res;
-    case ((Values.ARRAY(valueLst = lst) :: xs))
+    case Values.ARRAY(valueLst = lst) :: xs
       algorithm
         s1 := unparseValueNumbers(lst);
         s2 := unparseValueNumbers(xs);
         res := stringAppend(s1, s2);
       then
         res;
-    case ((Values.INTEGER(integer = i) :: xs))
+    case Values.INTEGER(integer = i) :: xs
       algorithm
         s1 := unparseValueNumbers(xs);
         istr := intString(i);
@@ -435,7 +435,7 @@ algorithm
         res := stringAppend(s2, s1);
       then
         res;
-    case ((Values.REAL(real = r) :: xs))
+    case Values.REAL(real = r) :: xs
       algorithm
         s1 := unparseValueNumbers(xs);
         istr := realString(r);
@@ -443,14 +443,14 @@ algorithm
         res := stringAppend(s2, s1);
       then
         res;
-    case ((Values.STRING(string = sval) :: xs))
+    case Values.STRING(string = sval) :: xs
       algorithm
         s1 := unparseValueNumbers(xs);
         s2 := stringAppend(sval, " ");
         res := stringAppend(s2, s1);
       then
         res;
-    case ({}) then "";
+    case {} then "";
   end match;
 end unparseValueNumbers;
 
@@ -463,24 +463,24 @@ protected function unparseDescription "
   output String outString;
 algorithm
   outString:=
-  match (inValueLst)
+  match inValueLst
     local
       String s1,str,slenstr,sval,s2,s4;
       list<Values.Value> xs,vallst;
       Integer slen;
-    case ((Values.INTEGER() :: xs))
+    case Values.INTEGER() :: xs
       algorithm
         s1 := unparseDescription(xs);
         str := stringAppend("# i!\n", s1);
       then
         str;
-    case ((Values.REAL() :: xs))
+    case Values.REAL() :: xs
       algorithm
         s1 := unparseDescription(xs);
         str := stringAppend("# r!\n", s1);
       then
         str;
-    case ((Values.STRING(string = sval) :: xs))
+    case Values.STRING(string = sval) :: xs
       algorithm
         s1 := unparseDescription(xs);
         slen := stringLength(sval);
@@ -488,7 +488,7 @@ algorithm
         str := stringAppendList({"# s! 1 ",slenstr,"\n",s1});
       then
         str;
-    case ((Values.ARRAY(valueLst = vallst) :: xs))
+    case Values.ARRAY(valueLst = vallst) :: xs
       algorithm
         s1 := unparseDescription(xs);
         s2 := unparseArrayDescription(vallst);
@@ -496,7 +496,7 @@ algorithm
         str := stringAppend(s4, " \n");
       then
         str;
-    case ({}) then "";
+    case {} then "";
   end match;
 end unparseDescription;
 
@@ -527,20 +527,20 @@ protected function unparsePrimType "
   output String outString;
 algorithm
   outString:=
-  match (inValueLst)
+  match inValueLst
     local
       String res;
       list<Values.Value> elts;
-    case ((Values.ARRAY(valueLst = elts) :: _))
+    case Values.ARRAY(valueLst = elts) :: _
       algorithm
         res := unparsePrimType(elts);
       then
         res;
-    case ((Values.INTEGER() :: _)) then "i";
-    case ((Values.REAL() :: _)) then "r";
-    case ((Values.STRING() :: _)) then "s";
-    case ((Values.BOOL() :: _)) then "b";
-    case ({}) then "{}";
+    case Values.INTEGER() :: _ then "i";
+    case Values.REAL() :: _ then "r";
+    case Values.STRING() :: _ then "s";
+    case Values.BOOL() :: _ then "b";
+    case {} then "{}";
     else "error";
   end match;
 end unparsePrimType;
@@ -553,11 +553,10 @@ protected function unparseNumDims "
   output Integer outInteger;
 algorithm
   outInteger:=
-  match (inValueLst)
+  match inValueLst
     local
-      Integer i1;
       list<Values.Value> vals;
-    case ((Values.ARRAY(valueLst = vals) :: _))
+    case Values.ARRAY(valueLst = vals) :: _
       then
         unparseNumDims(vals, inInteger + 1);
     else inInteger + 1;
@@ -571,12 +570,12 @@ protected function unparseDimSizes "
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inValueLst)
+  matchcontinue inValueLst
     local
       Integer i1,len;
       String s1,s2,s3,res;
       list<Values.Value> lst,vals;
-    case ((lst as (Values.ARRAY(valueLst = vals) :: _)))
+    case lst as (Values.ARRAY(valueLst = vals) :: _)
       algorithm
         i1 := listLength(lst);
         s1 := intString(i1);
@@ -585,7 +584,7 @@ algorithm
         res := stringAppend(s2, s3);
       then
         res;
-    case (lst)
+    case lst
       algorithm
         len := listLength(lst);
         res := intString(len);

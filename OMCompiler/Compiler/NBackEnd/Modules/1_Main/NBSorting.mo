@@ -248,7 +248,6 @@ public
       comps := match adj
         local
           list<list<Integer>> comps_indices, phase2_indices;
-          Option<StrongComponent> comp_opt;
           Adjacency.Matrix phase2_adj;
           Matching phase2_matching;
           array<SuperNode> super_nodes;
@@ -519,7 +518,7 @@ public
           for bucket in buckets loop
             (mode, val) := bucket;
             var_lst := list(phase2_matching.eqn_to_var[idx] for idx in Value.getEquations(val));
-            _ := match val
+            () := match val
               case Value.SINGLE_VAL() algorithm mergeArrayNodes(super_nodes, val.cref_to_solve, var_lst, index, UnorderedMap.getSafe(mode.eqn_name, eqn_map, sourceInfo()), false); then ();
               case Value.MULTI_VAL()  algorithm mergeLoopNodes(super_nodes, var_lst, index, false); then ();
             end match;
@@ -540,7 +539,7 @@ public
           for bucket in buckets loop
             (mode, val) := bucket;
             eqn_lst := Value.getEquations(val);
-            _ := match val
+            () := match val
               case Value.SINGLE_VAL() algorithm mergeArrayNodes(super_nodes, val.cref_to_solve, eqn_lst, index, UnorderedMap.getSafe(mode.eqn_name, eqn_map, sourceInfo()), true); then ();
               case Value.MULTI_VAL()  algorithm mergeLoopNodes(super_nodes, eqn_lst, index, true); then ();
             end match;

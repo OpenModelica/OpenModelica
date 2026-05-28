@@ -62,7 +62,7 @@ function parse
   output Version v;
 protected
   Integer n;
-  String major, minor, patch, nextString, versions;
+  String major, minor, patch, versions;
   list<String> prereleaseLst, metaLst, matches, split, versionsLst;
   constant String semverRegex = "^([0-9][0-9]*\\.?[0-9]*\\.?[0-9]*)([+-][0-9A-Za-z.-]*)?$";
 algorithm

@@ -300,8 +300,6 @@ public
   function isIterator
     input Subscript sub;
     output Boolean res;
-  protected
-    ComponentRef cref;
   algorithm
     res := match sub
       case UNTYPED() then Expression.isIterator(sub.exp);
@@ -1027,7 +1025,6 @@ public
   algorithm
     (outSubscript, expanded) := match subscript
       local
-        Expression exp;
         RangeIterator iter;
 
       case SLICE() then expandSlice(subscript, resize);

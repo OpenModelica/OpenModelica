@@ -120,22 +120,21 @@ function addToInstCache
   input Option<CachedInstItem> fullInstOpt;
   input Option<CachedInstItem> partialInstOpt;
 algorithm
-  _ := matchcontinue(fullEnvPathPlusClass,fullInstOpt, partialInstOpt)
+  () := matchcontinue(fullInstOpt, partialInstOpt)
     local
-      CachedInstItem fullInst, partialInst;
       HashTable instHash;
       Option<CachedInstItem> opt;
       list<Option<CachedInstItem>> lst;
 
     // nothing is we have -d=noCache
-    case (_, _, _)
+    case (_, _)
       algorithm
         false := Flags.isSet(Flags.CACHE);
        then
          ();
 
     // we have them both
-    case (_, SOME(_), SOME(_))
+    case (SOME(_), SOME(_))
       algorithm
         instHash := getGlobalRoot(Global.instHashIndex);
         instHash := BaseHashTable.add((fullEnvPathPlusClass,{fullInstOpt,partialInstOpt}),instHash);
@@ -144,7 +143,7 @@ algorithm
         ();
 
     // we have a partial inst result and the full in the cache
-    case (_, NONE(), SOME(_))
+    case (NONE(), SOME(_))
       algorithm
         instHash := getGlobalRoot(Global.instHashIndex);
         // see if we have a full inst here
@@ -155,7 +154,7 @@ algorithm
         ();
 
     // we have a partial inst result and the full is NOT in the cache
-    case (_, NONE(), SOME(_))
+    case (NONE(), SOME(_))
       algorithm
         instHash := getGlobalRoot(Global.instHashIndex);
         // see if we have a full inst here
@@ -166,18 +165,18 @@ algorithm
         ();
 
     // we have a full inst result and the partial in the cache
-    case (_, SOME(_), NONE())
+    case (SOME(_), NONE())
       algorithm
         instHash := getGlobalRoot(Global.instHashIndex);
         // see if we have a partial inst here
-        (_::(lst as {SOME(_)})) := BaseHashTable.get(fullEnvPathPlusClass, instHash);
+        _::(lst as {SOME(_)}) := BaseHashTable.get(fullEnvPathPlusClass, instHash);
         instHash := BaseHashTable.add((fullEnvPathPlusClass,fullInstOpt::lst),instHash);
         setGlobalRoot(Global.instHashIndex, instHash);
       then
         ();
 
     // we have a full inst result and the partial is NOT in the cache
-    case (_, SOME(_), NONE())
+    case (SOME(_), NONE())
       algorithm
         instHash := getGlobalRoot(Global.instHashIndex);
         // see if we have a partial inst here

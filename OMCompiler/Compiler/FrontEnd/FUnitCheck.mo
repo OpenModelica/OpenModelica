@@ -109,9 +109,9 @@ algorithm
     // new instantiation
     //((HtCr2U1, HtS2U, HtU2S)) := List.fold(varlist, convertUnitString2unit, (HtCr2U1, HtS2U, HtU2S));
     // old instantiation
-    ((HtCr2U1, HtS2U, HtU2S)) := List.fold(varlist, convertUnitString2unit_old, (HtCr2U1, HtS2U, HtU2S));
+    (HtCr2U1, HtS2U, HtU2S) := List.fold(varlist, convertUnitString2unit_old, (HtCr2U1, HtS2U, HtU2S));
     HtCr2U2 := BaseHashTable.copy(HtCr2U1);
-    ((HtCr2U2, HtS2U, HtU2S)) := algo(varlist, eqlist, args, HtCr2U2, HtS2U, HtU2S);
+    (HtCr2U2, HtS2U, HtU2S) := algo(varlist, eqlist, args, HtCr2U2, HtS2U, HtU2S);
     varlist := List.map2(varlist, returnVar, HtCr2U2, HtU2S);
     newdaelist := listAppend(varlist, eqlist);
     if Flags.isSet(Flags.DUMP_UNIT) then
@@ -135,7 +135,7 @@ protected function parseFunctionList
 protected
   list<DAE.Element> inelt, outelt;
   list<String> inunits, outunits, inargs, outargs;
-  String unitString, s;
+  String s;
 algorithm
   s := getFunctionName(infunction);
   inelt := DAEUtil.getFunctionInputVars(infunction);
@@ -178,7 +178,7 @@ algorithm
     local
       String unitString;
 
-    case(DAE.VAR(ty=DAE.T_REAL(), variableAttributesOption=SOME(DAE.VAR_ATTR_REAL(unit=SOME(DAE.SCONST(unitString))))))
+    case DAE.VAR(ty=DAE.T_REAL(), variableAttributesOption=SOME(DAE.VAR_ATTR_REAL(unit=SOME(DAE.SCONST(unitString)))))
       guard(unitString <> "")
     then unitString;
 
@@ -196,8 +196,7 @@ protected function updateDAElist
 algorithm
   outdaelist:= match(indaelist,indaevarlist)
     local
-      DAE.Element v,e;
-      list<DAE.Element> varlist,varlist2,elts1,elts2;
+      list<DAE.Element> varlist2;
       DAE.DAElist outdae;
       String ident;
       DAE.ElementSource eltsrc;
@@ -218,7 +217,7 @@ protected function returnVar "returns the new calculated units in DAE"
   input HashTableUnitToString.HashTable inHtU2S;
   output DAE.Element outVar;
 algorithm
-  outVar := match(inVar)
+  outVar := match inVar
     local
       DAE.Element var;
       DAE.ComponentRef cr;
@@ -226,9 +225,9 @@ algorithm
       Option<DAE.VariableAttributes> attr;
       String s;
 
-    case (DAE.VAR(variableAttributesOption=SOME(DAE.VAR_ATTR_REAL(unit=SOME(_))))) then inVar;
+    case DAE.VAR(variableAttributesOption=SOME(DAE.VAR_ATTR_REAL(unit=SOME(_)))) then inVar;
 
-    case (DAE.VAR(componentRef=cr,variableAttributesOption=attr)) algorithm
+    case DAE.VAR(componentRef=cr,variableAttributesOption=attr) algorithm
       if BaseHashTable.hasKey(cr, inHtCr2U) then
         ut := BaseHashTable.get(cr, inHtCr2U);
         if Unit.isUnit(ut) then
@@ -305,8 +304,8 @@ public function algo "algorithm to check the consistency"
   HashTableUnitToString.HashTable HtU2S;
   Boolean b1, b2, b3;
 algorithm
-  ((HtCr2U, b1, HtS2U, HtU2S)) := List.fold(invarlist, foldBindingExp, (inHtCr2U, true, inHtS2U, inHtU2S));
-  ((HtCr2U, b2, HtS2U, HtU2S)) := List.fold1(ineqList, foldEquation ,inargs,(HtCr2U, true, HtS2U, HtU2S));
+  (HtCr2U, b1, HtS2U, HtU2S) := List.fold(invarlist, foldBindingExp, (inHtCr2U, true, inHtS2U, inHtU2S));
+  (HtCr2U, b2, HtS2U, HtU2S) := List.fold1(ineqList, foldEquation ,inargs,(HtCr2U, true, HtS2U, HtU2S));
   b3 := BaseHashTable.hasKey(FUnit.UPDATECREF, HtCr2U);
   //outTpl := algo2(b1, b2, b3, invarlist, ineqList, HtCr2U, HtS2U, HtU2S);
   outTpl :=(HtCr2U, HtS2U, HtU2S);
@@ -333,7 +332,7 @@ algorithm
       algorithm
       crefExp := Expression.crefExp(cref);
       eq := DAE.EQUATION(crefExp, exp, source);
-      ((HtCr2U, b, HtS2U, HtU2S)):=foldEquation(eq,{},(HtCr2U, b, HtS2U, HtU2S));
+      (HtCr2U, b, HtS2U, HtU2S):=foldEquation(eq,{},(HtCr2U, b, HtS2U, HtU2S));
     then ((HtCr2U, b, HtS2U, HtU2S));
 
     case (DAE.VAR(ty=DAE.T_REAL(), binding=SOME(_)), (HtCr2U, _, HtS2U, HtU2S))
@@ -375,7 +374,7 @@ algorithm
   inconsistentUnits := match eq
     local
       DAE.Exp temp, lhs;
-      list<list<tuple<DAE.Exp, Unit.Unit>>> expList, expList2, expList3;
+      list<list<tuple<DAE.Exp, Unit.Unit>>> expList2, expList3;
       Absyn.Path path;
       Boolean b;
       Unit.Unit ut1, ut2;
@@ -582,7 +581,7 @@ algorithm
   outexp:=match(inexp,instring,instring1)
     local
       DAE.ComponentRef cr;
-      String name,name1,s1,s2;
+      String name,s1,s2;
     case (DAE.CREF(componentRef=DAE.CREF_IDENT(ident=name )),s1,s2)
       algorithm
         name:=s2+"()"+"."+s1;
@@ -612,15 +611,15 @@ algorithm
       HashTableStringToUnit.HashTable HtS2U;
       HashTableUnitToString.HashTable HtU2S;
       Integer i, i1, i2, i3, i4, i5, i6, i7;
-      list<DAE.ComponentRef> lcr, lcr2;
+      list<DAE.ComponentRef> lcr;
       list<DAE.Exp> ExpList;
       list<list<tuple<DAE.Exp, Unit.Unit>>> expListList, expListList2, expListList3;
       Real factor1;
       Real r;
-      String s1, s2;
+      String s1;
       Absyn.Path path;
       Unit.Unit ut, ut2;
-      list<String> invars,outvars,inunitlist,outunitlist;
+      list<String> invars,inunitlist;
 
     //SUB equal summands
     case (DAE.BINARY(exp1, DAE.SUB(), exp2), (HtCr2U, HtS2U, HtU2S), _) algorithm
@@ -1012,7 +1011,7 @@ protected function UnitTypesEqual "checks equality of two UnitExp's"
   output Unit.Unit outUt;
   output HashTableCrToUnit.HashTable outHtCr2U;
 algorithm
-  (b, outUt, outHtCr2U) := matchcontinue(inut, inut2, inHtCr2U)
+  (b, outUt, outHtCr2U) := matchcontinue(inut, inut2)
     local
       String s, s2;
       Integer i1, i2, i3, i4, i5, i6, i7;
@@ -1022,7 +1021,7 @@ algorithm
       Real factor1, factor2, r;
       Unit.Unit ut;
 
-    case (Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7), Unit.UNIT(factor2, j1, j2, j3, j4, j5, j6, j7), _) algorithm
+    case (Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7), Unit.UNIT(factor2, j1, j2, j3, j4, j5, j6, j7)) algorithm
       true := realEq(factor1,factor2);
       true := intEq(i1, j1);
       true := intEq(i2, j2);
@@ -1033,7 +1032,7 @@ algorithm
       true := intEq(i7, j7);
     then (true, Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7), inHtCr2U);
 
-    case (Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7), Unit.UNIT(factor2, j1, j2, j3, j4, j5, j6, j7), _) algorithm
+    case (Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7), Unit.UNIT(factor2, j1, j2, j3, j4, j5, j6, j7)) algorithm
       r:=realMax(realAbs(factor1), realAbs(factor2));
       true := realLe(realDiv(realAbs(realSub(factor1,factor2)),r),1e-3);
       true := intEq(i1, j1);
@@ -1045,24 +1044,24 @@ algorithm
       true := intEq(i7, j7);
     then (true, Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7), inHtCr2U);
 
-    case (ut as Unit.UNIT(), Unit.MASTER(lcr), _) algorithm
+    case (ut as Unit.UNIT(), Unit.MASTER(lcr)) algorithm
       HtCr2U := List.fold1(lcr, updateHtCr2U, ut, inHtCr2U);
     then (true, ut , HtCr2U);
 
-    case (Unit.MASTER(lcr), ut as Unit.UNIT(), _) algorithm
+    case (Unit.MASTER(lcr), ut as Unit.UNIT()) algorithm
       HtCr2U := List.fold1(lcr, updateHtCr2U, ut, inHtCr2U);
     then (true, ut, HtCr2U);
 
-    case (Unit.MASTER(lcr), Unit.MASTER(lcr2), _) algorithm
+    case (Unit.MASTER(lcr), Unit.MASTER(lcr2)) algorithm
       lcr2 := List.append_reverse(lcr, lcr2);
     then (true, Unit.MASTER(lcr2), inHtCr2U);
 
-    case (Unit.UNKNOWN(s), Unit.UNKNOWN(s2), _) algorithm
+    case (Unit.UNKNOWN(s), Unit.UNKNOWN(s2)) algorithm
       true := stringEqual(s, s2);
     then (true, Unit.UNKNOWN(s), inHtCr2U);
 
-    case (Unit.UNKNOWN(s), _, _) then (true, Unit.UNKNOWN(s), inHtCr2U);
-    case (_, Unit.UNKNOWN(s), _) then (true, Unit.UNKNOWN(s), inHtCr2U);
+    case (Unit.UNKNOWN(s), _) then (true, Unit.UNKNOWN(s), inHtCr2U);
+    case (_, Unit.UNKNOWN(s)) then (true, Unit.UNKNOWN(s), inHtCr2U);
 
       else (false, inut, inHtCr2U);
   end matchcontinue;
@@ -1076,12 +1075,11 @@ protected function updateHtCr2U
   input HashTableCrToUnit.HashTable inHtCr2U;
   output HashTableCrToUnit.HashTable outHtCr2U;
 algorithm
-  outHtCr2U:=matchcontinue(inCr, inUt, inHtCr2U)
+  outHtCr2U:=matchcontinue inHtCr2U
     local
-      DAE.ComponentRef cr;
       HashTableCrToUnit.HashTable HtCr2U;
 
-    case (_,_,_)
+    case _
       algorithm
         true := BaseHashTable.hasKey(FUnit.UPDATECREF, inHtCr2U);
         BaseHashTable.update((inCr,inUt),inHtCr2U);
@@ -1103,14 +1101,12 @@ protected function Errorfunction "returns the incostinent Equation with sub-expr
   input DAE.Element inEq;
   input HashTableUnitToString.HashTable inHtU2S;
 algorithm
-  _ := match(inexpList, inEq, inHtU2S)
+  () := match inexpList
     local
-      String s, s1, s2, s3, s4;
+      String s, s1, s2;
       list<tuple<DAE.Exp, Unit.Unit>> expList;
-      DAE.Exp exp1, exp2;
-      Integer i;
       SourceInfo info;
-    case (expList, _, _)
+    case expList
       algorithm
         info:=getSourceInfo(inEq);
         s := DAEDump.dumpEquationStr(inEq);
@@ -1130,10 +1126,10 @@ protected function getSourceInfo
 input DAE.Element inequation;
 output SourceInfo outinfo;
 algorithm
-  outinfo:=match(inequation)
+  outinfo:=match inequation
   local
    SourceInfo info;
-  case (DAE.EQUATION(source=DAE.SOURCE(info=info))) then info;
+  case DAE.EQUATION(source=DAE.SOURCE(info=info)) then info;
  end match;
 end getSourceInfo;
 
@@ -1142,20 +1138,20 @@ protected function Errorfunction2 "help-function"
   input HashTableUnitToString.HashTable inHtU2S;
   output String outS;
 algorithm
-  outS := match(inexpList, inHtU2S)
+  outS := match inexpList
     local
       list<tuple<DAE.Exp, Unit.Unit>> expList;
       DAE.Exp exp;
       Unit.Unit ut;
       String s, s1, s2;
 
-    case ((exp, ut)::{}, _) algorithm
+    case (exp, ut)::{} algorithm
       s := ExpressionBasics.printExpStr(exp);
       s1 := Unit.unitString(ut, inHtU2S);
       s := "- sub-expression \"" + s + "\" has unit \"" + s1 + "\"";
     then s;
 
-    case ((exp, ut)::expList, _) algorithm
+    case (exp, ut)::expList algorithm
       s := ExpressionBasics.printExpStr(exp);
       s1 := Unit.unitString(ut, inHtU2S);
       s2 := Errorfunction2(expList, inHtU2S);
@@ -1171,9 +1167,9 @@ public function GetVarList
   protected
   list<DAE.Element> varlist;
 algorithm
-  outstring:=match(indaelist)
-    case(DAE.DAE({DAE.COMP(dAElist =varlist)})) then varlist;
-    case(_)then {};
+  outstring:=match indaelist
+    case DAE.DAE({DAE.COMP(dAElist =varlist)}) then varlist;
+    case _ then {};
   end match;
 end GetVarList;
 
@@ -1182,10 +1178,9 @@ public function GetElementList
   output list<DAE.Element> outstring;
   protected
   list<DAE.Element> eq1;
-  DAE.Element eq2;
 algorithm
-  outstring:=match(eqlist)
-    case(DAE.DAE(eq1)) then eq1;
+  outstring:=match eqlist
+    case DAE.DAE(eq1) then eq1;
   end match;
 end GetElementList;
 
@@ -1227,11 +1222,9 @@ protected function foldCallArg1 "help-function for CALL case in userdefined top 
   output list<list<tuple<DAE.Exp, Unit.Unit>>> outExpListList = {};
   protected
   list<list<tuple<DAE.Exp, Unit.Unit>>> expListList;
-  Unit.Unit ut,ut1,ut2;
+  Unit.Unit ut,ut1;
   String s,formalarg,formalvar;
-  list<Functionargs> args;
   DAE.Exp exp,temp;
-  Integer count=0;
   Boolean b;
 algorithm
   for i in 1:listLength(inExpList) loop
@@ -1273,13 +1266,13 @@ protected function addUnit2HtU2S
   input HashTableUnitToString.HashTable inHtU2S;
   output HashTableUnitToString.HashTable outHtU2S;
 algorithm
-  outHtU2S := matchcontinue(inTpl, inHtU2S)
+  outHtU2S := matchcontinue inTpl
     local
       String s;
       Unit.Unit ut;
       HashTableUnitToString.HashTable HtU2S;
 
-    case ((s, ut), _)
+    case (s, ut)
       algorithm
         false := BaseHashTable.hasKey(ut, inHtU2S);
         HtU2S := BaseHashTable.add((ut,s),inHtU2S);
@@ -1297,11 +1290,9 @@ protected function convertUnitString2unit_old "converts String to unit"
 algorithm
   outTpl := match(var, inTpl)
     local
-      String unitString, s;
-      list<String> listStr;
+      String unitString;
       DAE.ComponentRef cr;
       Unit.Unit ut;
-      list<DAE.Var> varlst;
       HashTableStringToUnit.HashTable HtS2U;
       HashTableUnitToString.HashTable HtU2S;
       HashTableCrToUnit.HashTable HtCr2U;
@@ -1339,8 +1330,7 @@ protected function convertUnitString2unit "converts String to unit"
 algorithm
   outTpl := match(var, inTpl)
     local
-      String unitString, s;
-      list<String> listStr;
+      String unitString;
       DAE.ComponentRef cr;
       Unit.Unit ut;
       list<DAE.Var> varlst;
@@ -1372,23 +1362,23 @@ function parseVarList
   input list<DAE.Var> invarlist;
   output String outstring;
 algorithm
-  outstring:=match(invarlist)
+  outstring:=match invarlist
     local
       list<DAE.Var> varlist;
       DAE.Binding eqbind;
       String s,name;
-    case (DAE.Var.TYPES_VAR(name=name,binding=eqbind)::_)
+    case DAE.Var.TYPES_VAR(name=name,binding=eqbind)::_
       guard stringEq(name,"unit")
       algorithm
         s:=getStringFromExp(eqbind);
       then
         s;
-    case(_::varlist)
+    case _::varlist
       algorithm
         s:=parseVarList(varlist);
       then
         s;
-    case({}) then "None";
+    case {} then "None";
   end match;
 end parseVarList;
 
@@ -1396,14 +1386,12 @@ public function getStringFromExp
   input DAE.Binding binding;
   output String str;
 algorithm
-  str := match(binding)
+  str := match binding
     local
-      DAE.Exp e;
-      Values.Value v;
       String str1;
-    case(DAE.UNBOUND()) then "";
-    case(DAE.EQBOUND(exp=DAE.SCONST(str1))) then str1;
-    case(_)then "None";
+    case DAE.UNBOUND() then "";
+    case DAE.EQBOUND(exp=DAE.SCONST(str1)) then str1;
+    case _ then "None";
   end match;
 end getStringFromExp;
 

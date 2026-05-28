@@ -115,7 +115,7 @@ public
     input T key;
     input UnorderedSet<T> set;
   protected
-    Integer hash, pos;
+    Integer hash;
     Option<T> okey;
   algorithm
     (okey, hash) := find(key, set);
@@ -134,7 +134,7 @@ public
     input UnorderedSet<T> set;
   protected
     Hash hashfn = set.hashFn;
-    Integer hash, pos;
+    Integer hash;
   algorithm
     hash := intMod(hashfn(key), arrayLength(Mutable.access(set.buckets)));
     addKey(key, hash, set);

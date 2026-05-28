@@ -831,8 +831,6 @@ public
     input Boolean onlyEncrypted;
     input ObfuscationMap obfuscationMap;
   protected
-    SourceInfo info;
-    String filename;
     list<InstNode> nodes;
   algorithm
     if Variable.isProtected(var) and (not onlyEncrypted or Variable.isEncrypted(var)) then
@@ -1137,8 +1135,6 @@ public
     input FlatModel flatModel;
     input Integer minSize = 100;
     output Boolean hasArrays = false;
-  protected
-    Type ty;
   algorithm
     for eq in flatModel.equations loop
       if Equation.contains(eq, Equation.isConnect) and Equation.sizeOf(eq) >= minSize then

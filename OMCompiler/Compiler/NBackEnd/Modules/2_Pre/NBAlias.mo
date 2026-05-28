@@ -124,7 +124,7 @@ public
   protected
     Module.aliasInterface func;
   algorithm
-    (func) := getModule();
+    func := getModule();
 
     bdae := match bdae
       local
@@ -348,7 +348,7 @@ protected
     input output Equation eqn;
     input UnorderedMap<ComponentRef, ExceptionKind> acc;
   algorithm
-    _ := match eqn
+    () := match eqn
       // algorithm outputs shall not be replaced
       case Equation.ALGORITHM() algorithm
         for cref in eqn.alg.outputs loop
@@ -365,7 +365,7 @@ protected
     input output Expression exp;
     input UnorderedMap<ComponentRef, ExceptionKind> acc;
   algorithm
-    _ := match exp
+    () := match exp
       local
         Call call;
         ComponentRef cref;
@@ -384,7 +384,7 @@ protected
       // tuple elements shall not be replaced by something that is not a cref
       case Expression.TUPLE() algorithm
         for elem in exp.elements loop
-          _ := match elem
+          () := match elem
             case Expression.CREF() algorithm
               UnorderedMap.add(elem.cref, ExceptionKind.CREF_ALIAS, acc);
             then ();
@@ -778,7 +778,7 @@ protected
     input Integer cref_num;
     output Boolean b;
   algorithm
-    b := match(op)
+    b := match op
       case Operator.OPERATOR(op = NFOperator.Op.ADD)        then true;
       case Operator.OPERATOR(op = NFOperator.Op.SUB)        then true;
       case Operator.OPERATOR(op = NFOperator.Op.UMINUS)     then true;
@@ -838,7 +838,6 @@ protected
         list<StrongComponent> comps;
         AttributeCollector collector;
         Pointer<Pointer<Variable>> var_to_keep = Pointer.create(Pointer.create(NBVariable.DUMMY_VARIABLE));
-        Status status;
 
       case SOME(const_eq) algorithm
         // there is a constant binding -> no variable will be kept and all will be replaced by a constant
@@ -892,7 +891,6 @@ protected
     input AttributeCollector attrcollector;
     input AliasSet set;
   protected
-    list<Expression> lst;
     Option<ComponentRef> new_cref;
     Option<Expression> new_min, new_max, new_start;
     Option<StateSelect> new_stateSelect;
@@ -955,7 +953,6 @@ protected
       UnorderedMap.new<TearingSelect>(ComponentRef.hash, ComponentRef.isEqual));
   protected
     Pointer<Variable> var;
-    Variable cur_var;
     list<Pointer<Variable>> rest;
     Integer cur_rating, max_rating;
 
@@ -1355,9 +1352,8 @@ protected
       rating := -ComponentRef.depth(name);
     end if;
 
-     _ := match Pointer.access(var_ptr)
+     () := match Pointer.access(var_ptr)
         local
-          Variable var = Pointer.access(var_ptr);
           BackendExtension.VariableAttributes attr;
 
       case Variable.VARIABLE(backendinfo=BackendExtension.BACKEND_INFO(attributes=attr as BackendExtension.VariableAttributes.VAR_ATTR_REAL())) algorithm

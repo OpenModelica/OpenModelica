@@ -193,10 +193,10 @@ public function getFMIModelIdentifier
   input Info inFMIInfo;
   output String fmiModelIdentifier;
 algorithm
-  fmiModelIdentifier := match(inFMIInfo)
+  fmiModelIdentifier := match inFMIInfo
     local
       String modelIdentifier;
-    case (INFO(fmiModelIdentifier = modelIdentifier)) then modelIdentifier;
+    case INFO(fmiModelIdentifier = modelIdentifier) then modelIdentifier;
   end match;
 end getFMIModelIdentifier;
 
@@ -204,13 +204,13 @@ public function getFMIType
   input Info inFMIInfo;
   output String fmiType;
 algorithm
-  fmiType := match(inFMIInfo)
-    case (INFO(fmiVersion = "1.0", fmiType = 0)) then "me";
-    case (INFO(fmiVersion = "1.0", fmiType = 1)) then "cs_st";
-    case (INFO(fmiVersion = "1.0", fmiType = 2)) then "cs_tool";
-    case (INFO(fmiVersion = "2.0", fmiType = 1)) then "me";
-    case (INFO(fmiVersion = "2.0", fmiType = 2)) then "cs";
-    case (INFO(fmiVersion = "2.0", fmiType = 3)) then "me_cs";
+  fmiType := match inFMIInfo
+    case INFO(fmiVersion = "1.0", fmiType = 0) then "me";
+    case INFO(fmiVersion = "1.0", fmiType = 1) then "cs_st";
+    case INFO(fmiVersion = "1.0", fmiType = 2) then "cs_tool";
+    case INFO(fmiVersion = "2.0", fmiType = 1) then "me";
+    case INFO(fmiVersion = "2.0", fmiType = 2) then "cs";
+    case INFO(fmiVersion = "2.0", fmiType = 3) then "me_cs";
   end match;
 end getFMIType;
 
@@ -218,10 +218,10 @@ public function getFMIVersion
   input Info inFMIInfo;
   output String fmiVersion;
 algorithm
-  fmiVersion := match(inFMIInfo)
+  fmiVersion := match inFMIInfo
     local
       String version;
-    case (INFO(fmiVersion = version)) then version;
+    case INFO(fmiVersion = version) then version;
   end match;
 end getFMIVersion;
 
@@ -229,9 +229,9 @@ public function checkFMIVersion "Checks if the FMU version is supported."
   input String inFMIVersion;
   output Boolean success;
 algorithm
-  success := match (inFMIVersion)
-    case ("1.0") then true;
-    case ("2.0") then true;
+  success := match inFMIVersion
+    case "1.0" then true;
+    case "2.0" then true;
     else false;
   end match;
 end checkFMIVersion;
@@ -240,8 +240,8 @@ public function isFMIVersion10 "Checks if the FMI version is 1.0."
   input String inFMUVersion;
   output Boolean success;
 algorithm
-  success := match (inFMUVersion)
-    case ("1.0") then true;
+  success := match inFMUVersion
+    case "1.0" then true;
     else false;
   end match;
 end isFMIVersion10;
@@ -250,8 +250,8 @@ public function isFMIVersion20 "Checks if the FMI version is 2.0."
   input String inFMUVersion = getFMIVersionString();
   output Boolean success;
 algorithm
-  success := match (inFMUVersion)
-    case ("2.0") then true;
+  success := match inFMUVersion
+    case "2.0" then true;
     else false;
   end match;
 end isFMIVersion20;
@@ -264,10 +264,10 @@ public function checkFMIType "Checks if the FMU type is supported."
   input String inFMIType;
   output Boolean success;
 algorithm
-  success := match (inFMIType)
-    case ("me") then true;
-    case ("cs") then true;
-    case ("me_cs") then true;
+  success := match inFMIType
+    case "me" then true;
+    case "cs" then true;
+    case "me_cs" then true;
     else false;
   end match;
 end checkFMIType;
@@ -290,9 +290,9 @@ public function isFMIMEType "Checks if FMU type is model exchange"
   input String inFMIType;
   output Boolean success;
 algorithm
-  success := match (inFMIType)
-    case ("me") then true;
-    case ("me_cs") then true;
+  success := match inFMIType
+    case "me" then true;
+    case "me_cs" then true;
     else false;
   end match;
 end isFMIMEType;
@@ -301,9 +301,9 @@ public function isFMICSType "Checks if FMU type is co-simulation"
   input String inFMIType;
   output Boolean success;
 algorithm
-  success := match (inFMIType)
-    case ("cs") then true;
-    case ("me_cs") then true;
+  success := match inFMIType
+    case "cs" then true;
+    case "me_cs" then true;
     else false;
   end match;
 end isFMICSType;

@@ -86,7 +86,6 @@ public
     input ComponentRef cref;
     output Variable variable;
   protected
-    list<ComponentRef> crefs;
     InstNode node, class_node;
     Component comp;
     Type ty;
@@ -635,9 +634,6 @@ public
     input Boolean printBindingType = false;
     input output IOStream.IOStream s;
   protected
-    Boolean first;
-    Binding b;
-    Integer var_dims, binding_dims;
     list<Dimension> dims;
   algorithm
     s := IOStream.append(s, indent);

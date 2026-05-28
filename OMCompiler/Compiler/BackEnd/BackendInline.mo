@@ -107,7 +107,6 @@ protected function inlineCalls
   input BackendDAE.BackendDAE inBackendDAE;
   output BackendDAE.BackendDAE outBackendDAE;
 protected
-  list<DAE.InlineType> itlst;
   Inline.Functiontuple tpl;
   BackendDAE.EqSystems eqs;
   BackendDAE.Shared shared;
@@ -187,7 +186,7 @@ public function inlineEq "
   output BackendDAE.Equation outEquation;
   output Boolean inlined;
 algorithm
-  (outEquation,inlined) := matchcontinue(inEquation,fns)
+  (outEquation,inlined) := matchcontinue inEquation
     local
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
       Integer size;
@@ -198,7 +197,7 @@ algorithm
       DAE.ElementSource source;
       list<Integer> dimSize;
       DAE.Algorithm alg;
-      list<DAE.Statement> stmts,stmts1,assrtLst;
+      list<DAE.Statement> stmts,stmts1;
       list<BackendDAE.Equation> eqns;
       list<list<BackendDAE.Equation>> eqnslst;
       Boolean b1,b2,b3;
@@ -206,7 +205,7 @@ algorithm
       BackendDAE.EquationAttributes attr;
       BackendDAE.Equation eqn;
 
-    case(BackendDAE.EQUATION(e1,e2,source,attr),_)
+    case BackendDAE.EQUATION(e1,e2,source,attr)
       algorithm
         (e1_1,source,b1,_) := Inline.inlineExp(e1,fns,source);
         (e2_1,source,b2,_) := Inline.inlineExp(e2,fns,source);
@@ -214,7 +213,7 @@ algorithm
       then
        (BackendDAE.EQUATION(e1_1,e2_1,source,attr),true);
 
-    case(BackendDAE.ARRAY_EQUATION(dimSize,e1,e2,source,attr,recordSize),_)
+    case BackendDAE.ARRAY_EQUATION(dimSize,e1,e2,source,attr,recordSize)
       algorithm
         (e1_1,source,b1,_) := Inline.inlineExp(e1,fns,source);
         (e2_1,source,b2,_) := Inline.inlineExp(e2,fns,source);
@@ -227,38 +226,38 @@ algorithm
       then
         (eqn, true);
 
-    case(BackendDAE.FOR_EQUATION(e, e1, e2, eqn, source, attr), _)
+    case BackendDAE.FOR_EQUATION(e, e1, e2, eqn, source, attr)
       algorithm
         (eqn, true) := inlineEq(eqn, fns);
       then
         (BackendDAE.FOR_EQUATION(e, e1, e2, eqn, source, attr), true);
 
-    case(BackendDAE.SOLVED_EQUATION(cref,e,source,attr),_)
+    case BackendDAE.SOLVED_EQUATION(cref,e,source,attr)
       algorithm
         (e_1,source,true,_) := Inline.inlineExp(e,fns,source);
       then
         (BackendDAE.SOLVED_EQUATION(cref,e_1,source,attr),true);
 
-    case(BackendDAE.RESIDUAL_EQUATION(e,source,attr),_)
+    case BackendDAE.RESIDUAL_EQUATION(e,source,attr)
       algorithm
         (e_1,source,true,_) := Inline.inlineExp(e,fns,source);
       then
         (BackendDAE.RESIDUAL_EQUATION(e_1,source,attr),true);
 
-    case(BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS(statementLst=stmts),source,crefExpand,attr),_)
+    case BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS(statementLst=stmts),source,crefExpand,attr)
       algorithm
         (stmts1,true) := Inline.inlineStatements(stmts,fns,{},false);
         alg := DAE.ALGORITHM_STMTS(stmts1);
       then
         (BackendDAE.ALGORITHM(size,alg,source,crefExpand,attr),true);
 
-    case(BackendDAE.WHEN_EQUATION(size,weq,source,attr),_)
+    case BackendDAE.WHEN_EQUATION(size,weq,source,attr)
       algorithm
         (weq_1,source,true) := inlineWhenEq(weq,fns,source);
       then
         (BackendDAE.WHEN_EQUATION(size,weq_1,source,attr),true);
 
-    case(BackendDAE.COMPLEX_EQUATION(size,e1,e2,source,attr),_)
+    case BackendDAE.COMPLEX_EQUATION(size,e1,e2,source,attr)
       algorithm
         (e1_1,source,b1,_) := Inline.inlineExp(e1,fns,source);
         (e2_1,source,b2,_) := Inline.inlineExp(e2,fns,source);
@@ -266,7 +265,7 @@ algorithm
       then
         (BackendDAE.COMPLEX_EQUATION(size,e1_1,e2_1,source,attr),true);
 
-    case(BackendDAE.IF_EQUATION(explst,eqnslst,eqns,source,attr),_)
+    case BackendDAE.IF_EQUATION(explst,eqnslst,eqns,source,attr)
       algorithm
         (explst,source,b1) := Inline.inlineExps(explst,fns,source);
         (eqnslst,b2) := inlineEqsLst(eqnslst,fns,{},false);
@@ -288,13 +287,13 @@ protected function inlineEqsLst
   output list<list<BackendDAE.Equation>> outEqnsList;
   output Boolean OInlined;
 algorithm
-  (outEqnsList,OInlined) := match(inEqnsList,inFunctions,iAcc,iInlined)
+  (outEqnsList,OInlined) := match inEqnsList
     local
       list<BackendDAE.Equation> eqn;
       list<list<BackendDAE.Equation>> rest,acc;
       Boolean inlined;
-    case ({},_,_,_) then (listReverse(iAcc),iInlined);
-    case (eqn::rest,_,_,_)
+    case {} then (listReverse(iAcc),iInlined);
+    case eqn::rest
       algorithm
         (eqn,inlined) := inlineEqs(eqn,inFunctions,{},false);
         (acc,inlined) := inlineEqsLst(rest,inFunctions,eqn::iAcc,inlined or iInlined);
@@ -311,13 +310,13 @@ public function inlineEqs
   output list<BackendDAE.Equation> outEqnsList;
   output Boolean OInlined;
 algorithm
-  (outEqnsList,OInlined) := match(inEqnsList,inFunctions,iAcc,iInlined)
+  (outEqnsList,OInlined) := match inEqnsList
     local
       BackendDAE.Equation eqn;
       list<BackendDAE.Equation> rest,acc;
       Boolean inlined;
-    case ({},_,_,_) then (listReverse(iAcc),iInlined);
-    case (eqn::rest,_,_,_)
+    case {} then (listReverse(iAcc),iInlined);
+    case eqn::rest
       algorithm
         (eqn,inlined) := inlineEq(eqn,inFunctions);
         (acc,inlined) := inlineEqs(rest,inFunctions,eqn::iAcc,inlined or iInlined);
@@ -335,15 +334,12 @@ protected function inlineWhenEq
   output DAE.ElementSource outSource;
   output Boolean inlined;
 algorithm
-  (outWhenEquation,outSource,inlined) := match(inWhenEquation)
+  (outWhenEquation,outSource,inlined) := match inWhenEquation
     local
-      DAE.ComponentRef cref;
-      DAE.Exp e,e_1,cond;
-      BackendDAE.WhenEquation weq,weq_1;
+      DAE.Exp cond;
       DAE.ElementSource source;
       Boolean b1,b2,b3;
-      list<DAE.Statement> assrtLst;
-      BackendDAE.WhenEquation we, elsewe;
+      BackendDAE.WhenEquation elsewe;
       Option<BackendDAE.WhenEquation> oelsewe;
       list<BackendDAE.WhenOperator> whenStmtLst;
 
@@ -374,12 +370,11 @@ protected
 
 algorithm
   for whenOp in inWhenOps loop
-    _ := match (whenOp)
+    () := match whenOp
     local
       Boolean b, b2;
       DAE.Exp e1, e2, level;
       DAE.ComponentRef cr;
-      list<BackendDAE.WhenOperator> rest;
       DAE.ElementSource source;
 
     case BackendDAE.ASSIGN(left = e1, right = e2, source = source)
@@ -476,12 +471,12 @@ protected function inlineVarOpt
   output Option<BackendDAE.Var> outVarOption;
   output Boolean inlined;
 algorithm
-  (outVarOption,inlined) := match(inVarOption,fns)
+  (outVarOption,inlined) := match inVarOption
     local
       BackendDAE.Var var,var2;
       Boolean b;
-    case(NONE(),_) then (NONE(),false);
-    case(SOME(var),_)
+    case NONE() then (NONE(),false);
+    case SOME(var)
       algorithm
         (var2,b) := inlineVar(var,fns);
       then
@@ -497,7 +492,7 @@ protected function inlineVar
   output BackendDAE.Var outVar;
   output Boolean inlined;
 algorithm
-  (outVar, inlined) := match(inVar)
+  (outVar, inlined) := match inVar
     local
       DAE.ComponentRef varName;
       BackendDAE.VarKind varKind;
@@ -531,7 +526,7 @@ protected function inlineEventInfo "inlines function calls in event info"
   input BackendDAE.EventInfo inEventInfo;
   input Inline.Functiontuple fns;
 algorithm
-  _ := matchcontinue inEventInfo
+  () := matchcontinue inEventInfo
     local
       BackendDAE.ZeroCrossingSet zclst;
       DoubleEnded.MutableList<BackendDAE.ZeroCrossing> relations;
@@ -552,8 +547,6 @@ end inlineEventInfo;
 protected function inlineZeroCrossings "inlines function calls in zero crossings"
   input DoubleEnded.MutableList<BackendDAE.ZeroCrossing> inStmts;
   input Inline.Functiontuple fns;
-protected
-  BackendDAE.ZeroCrossing zc;
 algorithm
   DoubleEnded.mapNoCopy_1(inStmts, inlineZeroCrossing, fns);
 end inlineZeroCrossings;
@@ -565,7 +558,6 @@ algorithm
   zc := match zc
     local
       DAE.Exp e, e_1;
-      Boolean b;
 
     case BackendDAE.ZERO_CROSSING(relation_ = e)
       algorithm
@@ -587,7 +579,6 @@ protected function inlineCallsBDAE
   input BackendDAE.BackendDAE inBackendDAE;
   output BackendDAE.BackendDAE outBackendDAE;
 protected
-  list<DAE.InlineType> itlst;
   Inline.Functiontuple tpl;
   BackendDAE.EqSystems eqs;
   BackendDAE.Shared shared;
@@ -663,9 +654,6 @@ function: inlineEquationArray
   output BackendDAE.EqSystem outEqs;
   output Boolean oInlined;
   output BackendDAE.Shared shared = iShared;
-protected
-  Integer i1,size;
-  array<Option<BackendDAE.Equation>> eqarr;
 algorithm
   try
     (outEqs, oInlined, shared) := inlineEquationOptArrayAppend(outEquationArray, fns, shared);
@@ -737,7 +725,7 @@ protected function inlineEqAppend "
   output Boolean inlined;
   output BackendDAE.Shared shared = iShared;
 algorithm
-  (outEquation,outEqs,inlined) := matchcontinue(inEquation)
+  (outEquation,outEqs,inlined) := matchcontinue inEquation
     local
       DAE.Exp e1,e2;
       DAE.ElementSource source;
@@ -841,14 +829,13 @@ function: inlineCalls
   output Boolean inlined;
   output BackendDAE.Shared shared = iShared;
 algorithm
-  (outExp,outSource,outEqs,inlined) := matchcontinue (inExp)
+  (outExp,outSource,outEqs,inlined) := matchcontinue inExp
     local
       DAE.Exp e,e1,e2;
       DAE.ElementSource source;
-      list<DAE.Statement> assrtLst;
       Boolean b;
 
-    case (e)
+    case e
       algorithm
         (e1,(_,outEqs,b,_)) := Expression.traverseExpBottomUp(e,inlineCallsWork,(fns,inEqs,false,false));
         //source = DAEUtil.addSymbolicTransformation(b, inSource,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e1)));
@@ -876,28 +863,20 @@ protected function inlineCallsWork
 algorithm
   (outExp,outTuple) := matchcontinue (inExp,inTuple)
     local
-      Inline.Functiontuple fns,fns1;
+      Inline.Functiontuple fns;
       list<DAE.Element> fn;
       Absyn.Path p;
       list<DAE.Exp> args;
       list<DAE.ComponentRef> outputCrefs;
-      list<tuple<DAE.ComponentRef, DAE.Exp>> argmap;
-      list<DAE.ComponentRef> lst_cr;
-      DAE.ElementSource source;
-      DAE.Exp newExp,newExp1, e1, cond, msg, level, newAssrtCond, newAssrtMsg, newAssrtLevel, e2, e3;
+      DAE.Exp newExp;
       DAE.InlineType inlineType;
-      DAE.Statement assrt;
-      HashTableCG.HashTable checkcr;
-      list<DAE.Statement> stmts,assrtStmts, assrtLstIn, assrtLst;
-      Boolean generateEvents, b, b1;
-      Boolean inCoplexFunction, inArrayEq;
+      Boolean b;
       Option<SCode.Comment> comment;
-      DAE.Type ty;
       String funcname;
       BackendDAE.EqSystem eqSys, newEqSys;
       Boolean insideIfExp;
 
-    case (DAE.IFEXP(), (_,_,_,_))
+    case (DAE.IFEXP(), _)
       then fail();
 
     case (DAE.CALL(attr=DAE.CALL_ATTR(builtin=true)),_)
@@ -922,7 +901,7 @@ algorithm
 
         // MSL 3.2.1 need GenerateEvents to disable this
         if not Inline.hasGenerateEventsAnnotation(comment) then
-          _ := BackendDAEUtil.traverseBackendDAEExpsEqSystemWithUpdate(newEqSys, addNoEvent, false);
+          BackendDAEUtil.traverseBackendDAEExpsEqSystemWithUpdate(newEqSys, addNoEvent, false);
         end if;
         newEqSys := BackendDAEUtil.mergeEqSystems(newEqSys, eqSys);
       then
@@ -1016,16 +995,12 @@ protected function createEqnSysfromFunction
   output list<DAE.ComponentRef> oOutput = {};
   output BackendDAE.EqSystem outEqs;
 protected
-  list<DAE.Exp> args = inArgs, left_lst;
+  list<DAE.Exp> args = inArgs;
   BackendVarTransform.VariableReplacements repl;
   list<DAE.ComponentRef> fnInputs = {};
-  DAE.Type tp;
   list<tuple<DAE.ComponentRef, DAE.Exp>> argmap;
   HashTableCG.HashTable checkcr;
   DAE.ComponentRef cr;
-  BackendDAE.Var var;
-  BackendDAE.AdjacencyMatrix m;
-  array<Integer> ass1, ass2;
   list<BackendDAE.Equation> eqlst;
 algorithm
   if Flags.isSet(Flags.DUMPBACKENDINLINE_VERBOSE) then
@@ -1035,22 +1010,16 @@ algorithm
   repl := BackendVarTransform.emptyReplacements();
 
   for fn in fns loop
-  _ := match(fn)
+  () := match fn
     local
       DAE.ComponentRef crVar;
       list<DAE.Statement> st;
-      DAE.Exp eVar, eBind, e;
-      list<DAE.Exp> arrExp;
+      DAE.Exp eVar, eBind;
       BackendDAE.Equation eq;
-      Integer varDim;
-      list<DAE.ComponentRef> crefs;
-      Integer n,i;
-      DAE.Dimensions dims;
-      DAE.Dimension dim;
       list<BackendDAE.Var> varLst;
 
     // assume inArgs is syncron to fns.inputs
-    case (DAE.VAR(componentRef=cr,direction=DAE.INPUT(),kind=DAE.VARIABLE()))
+    case DAE.VAR(componentRef=cr,direction=DAE.INPUT(),kind=DAE.VARIABLE())
       algorithm
         fnInputs := cr :: fnInputs;
       then ();
@@ -1066,7 +1035,7 @@ algorithm
         oOutput := crVar::oOutput;
       then ();
 
-    case (DAE.VAR(componentRef=cr,protection=DAE.PROTECTED(),binding=NONE()))
+    case DAE.VAR(componentRef=cr,protection=DAE.PROTECTED(),binding=NONE())
     guard not Expression.isRecordType(ComponentReference.crefTypeFull(cr))
       algorithm
         // create variables
@@ -1075,7 +1044,7 @@ algorithm
         outEqs := BackendVariable.addVarsDAE(varLst, outEqs);
     then ();
 
-    case (DAE.VAR(componentRef=cr,protection=DAE.PROTECTED(),binding=SOME(eBind)))
+    case DAE.VAR(componentRef=cr,protection=DAE.PROTECTED(),binding=SOME(eBind))
     guard not Expression.isRecordType(ComponentReference.crefTypeFull(cr))
       algorithm
         // create variables
@@ -1089,7 +1058,7 @@ algorithm
         outEqs := BackendEquation.equationAddDAE(eq, outEqs);
       then ();
 
-    case (DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(st)))
+    case DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(st))
       algorithm
         eqlst := List.map(st, BackendEquation.statementEq);
         outEqs := BackendEquation.equationsAddDAE(eqlst, outEqs);
@@ -1150,7 +1119,7 @@ protected function addReplacement
   input BackendVarTransform.VariableReplacements iRepl;
   output BackendVarTransform.VariableReplacements oRepl;
 algorithm
-  oRepl := match(iCr,iExp,iRepl)
+  oRepl := match iCr
     local
       DAE.Type tp;
       BackendVarTransform.VariableReplacements repl;
@@ -1158,11 +1127,11 @@ algorithm
       list<DAE.Exp> arrExp;
       DAE.Exp e;
 
-    case (DAE.CREF_IDENT(identType=tp),_,_)
+    case DAE.CREF_IDENT(identType=tp)
       guard not Expression.isRecordType(tp) and not Expression.isArrayType(tp)
     then BackendVarTransform.addReplacement(iRepl, iCr, iExp, NONE());
 
-    case (DAE.CREF_IDENT(identType=tp),_,_)
+    case DAE.CREF_IDENT(identType=tp)
       guard Expression.isArrayType(tp)
       algorithm
         crefs := ComponentReference.expandCref(iCr, false);

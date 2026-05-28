@@ -78,7 +78,7 @@ public function flattenClass
   output SCode.Element outClass;
   output Env outEnv;
 algorithm
-  (outClass, outEnv) := matchcontinue(inClass, inEnv)
+  (outClass, outEnv) := matchcontinue inClass
     local
       SCode.Ident name;
       SCode.ClassDef cdef;
@@ -89,7 +89,7 @@ algorithm
       SCode.Element cls;
       NFSCodeEnv.ClassType cls_ty;
 
-    case (SCode.CLASS(name = name, classDef = cdef, info = info), _)
+    case SCode.CLASS(name = name, classDef = cdef, info = info)
       algorithm
         (NFSCodeEnv.CLASS(env = {cls_env}, classType = cls_ty), _) :=
           NFSCodeLookup.lookupInClass(name, inEnv);
@@ -119,7 +119,7 @@ protected function flattenClassDef
   output SCode.ClassDef outClassDef;
   output Env outEnv;
 algorithm
-  (outClassDef, outEnv) := match(inClassDef, inEnv, inInfo)
+  (outClassDef, outEnv) := match(inClassDef, inEnv)
     local
       list<SCode.Element> el;
       list<SCode.Equation> neql, ieql;
@@ -127,15 +127,13 @@ algorithm
       list<SCode.ConstraintSection> nco;
       list<Absyn.NamedArg> clats; //class attributes
       Option<SCode.ExternalDecl> extdecl;
-      list<SCode.Annotation> annl;
-      Option<SCode.Comment> cmt;
       Absyn.TypeSpec ty;
       SCode.Mod mods;
       SCode.Attributes attr;
       Env env;
       SCode.ClassDef cdef;
 
-    case (SCode.PARTS(el, neql, ieql, nal, ial, nco, clats, extdecl), _, _)
+    case (SCode.PARTS(el, neql, ieql, nal, ial, nco, clats, extdecl), _)
       algorithm
         // Lookup elements.
         el := List.filterOnTrue(el, isNotImport);
@@ -150,14 +148,14 @@ algorithm
       then
         (SCode.PARTS(el, neql, ieql, nal, ial, nco, clats, extdecl), env);
 
-    case (SCode.CLASS_EXTENDS(mods, cdef), _, _)
+    case (SCode.CLASS_EXTENDS(mods, cdef), _)
       algorithm
         (cdef, env) := flattenClassDef(cdef, inEnv, inInfo);
         mods := flattenModifier(mods, env, inInfo);
       then
         (SCode.CLASS_EXTENDS(mods, cdef), env);
 
-    case (SCode.DERIVED(ty, mods, attr), env, _)
+    case (SCode.DERIVED(ty, mods, attr), env)
       algorithm
         mods := flattenModifier(mods, env, inInfo);
         // Remove the extends from the local scope before flattening the derived
@@ -191,7 +189,7 @@ protected function isNotImport
   input SCode.Element inElement;
   output Boolean outB;
 algorithm
-  outB := match(inElement)
+  outB := match inElement
     case SCode.IMPORT() then false;
     else true;
   end match;
@@ -203,7 +201,7 @@ protected function flattenElement
   output SCode.Element outElement;
   output Env outEnv;
 algorithm
-  (outElement, outEnv) := match(inElement, inEnv)
+  (outElement, outEnv) := match inElement
     local
       Env env;
       SCode.Element elem;
@@ -211,7 +209,7 @@ algorithm
       Item item;
 
     // Lookup component types, modifications and conditions.
-    case (SCode.COMPONENT(name = name), _)
+    case SCode.COMPONENT(name = name)
       algorithm
         elem := flattenComponent(inElement, inEnv);
         item := NFSCodeEnv.newVarItem(elem, true);
@@ -220,14 +218,14 @@ algorithm
         (elem, env);
 
     // Lookup class definitions.
-    case (SCode.CLASS(), _)
+    case SCode.CLASS()
       algorithm
         (elem, env) := flattenClass(inElement, inEnv);
       then
         (elem, env);
 
     // Lookup base class and modifications in extends clauses.
-    case (SCode.EXTENDS(), _)
+    case SCode.EXTENDS()
       then (flattenExtends(inElement, inEnv), inEnv);
 
     else (inElement, inEnv);
@@ -240,14 +238,12 @@ protected function flattenComponent
   output SCode.Element outComponent;
 protected
   SCode.Ident name;
-  Absyn.InnerOuter io;
   SCode.Prefixes prefixes;
   SCode.Attributes attr;
   Absyn.TypeSpec type_spec;
   SCode.Mod mod;
   SCode.Comment cmt;
   Option<Absyn.Exp> cond;
-  Option<Absyn.ConstrainClass> cc;
   SourceInfo info;
 algorithm
   SCode.COMPONENT(name, prefixes, attr, type_spec, mod, cmt, cond, info) := inComponent;
@@ -282,25 +278,25 @@ protected function flattenTypeSpec
   input SourceInfo inInfo;
   output Absyn.TypeSpec outTypeSpec;
 algorithm
-  outTypeSpec := match(inTypeSpec, inEnv, inInfo)
+  outTypeSpec := match inTypeSpec
     local
       Absyn.Path path;
       Option<Absyn.ArrayDim> ad;
       list<Absyn.TypeSpec> tys;
 
     // A normal type.
-    case (Absyn.TPATH(path = path, arrayDim = ad), _, _)
+    case Absyn.TPATH(path = path, arrayDim = ad)
       algorithm
         (_, path, _) := NFSCodeLookup.lookupClassName(path, inEnv, inInfo);
       then
         Absyn.TPATH(path, ad);
 
     // A polymorphic type, i.e. replaceable type Type subtypeof Any.
-    case (Absyn.TCOMPLEX(path = Absyn.IDENT("polymorphic")), _, _)
+    case Absyn.TCOMPLEX(path = Absyn.IDENT("polymorphic"))
       then inTypeSpec;
 
     // A MetaModelica type such as list or tuple.
-    case (Absyn.TCOMPLEX(path = path, typeSpecs = tys, arrayDim = ad), _, _)
+    case Absyn.TCOMPLEX(path = path, typeSpecs = tys, arrayDim = ad)
       algorithm
         tys := List.map2(tys, flattenTypeSpec, inEnv, inInfo);
       then
@@ -454,7 +450,7 @@ protected function flattenModifier
   input SourceInfo inInfo;
   output SCode.Mod outMod;
 algorithm
-  outMod := match(inMod, inEnv, inInfo)
+  outMod := match inMod
     local
       SCode.Final fp;
       SCode.Each ep;
@@ -464,20 +460,20 @@ algorithm
       SourceInfo info;
       Option<String> cmt;
 
-    case (SCode.MOD(fp, ep, sub_mods, opt_exp, cmt, info), _, _)
+    case SCode.MOD(fp, ep, sub_mods, opt_exp, cmt, info)
       algorithm
         opt_exp := flattenModOptExp(opt_exp, inEnv, inInfo);
         sub_mods := List.map2(sub_mods, flattenSubMod, inEnv, inInfo);
       then
         SCode.MOD(fp, ep, sub_mods, opt_exp, cmt, info);
 
-    case (SCode.REDECL(fp, ep, el), _, _)
+    case SCode.REDECL(fp, ep, el)
       algorithm
         el := flattenRedeclare(el, inEnv);
       then
         SCode.REDECL(fp, ep, el);
 
-    case (SCode.NOMOD(), _, _) then inMod;
+    case SCode.NOMOD() then inMod;
   end match;
 end flattenModifier;
 
@@ -507,13 +503,12 @@ protected function flattenSubMod
   input SourceInfo inInfo;
   output SCode.SubMod outSubMod;
 algorithm
-  outSubMod := match(inSubMod, inEnv, inInfo)
+  outSubMod := match inSubMod
     local
       SCode.Ident ident;
-      list<SCode.Subscript> subs;
       SCode.Mod mod;
 
-    case (SCode.NAMEMOD(ident = ident, mod = mod), _, _)
+    case SCode.NAMEMOD(ident = ident, mod = mod)
       algorithm
         mod := flattenModifier(mod, inEnv, inInfo);
       then
@@ -527,7 +522,7 @@ protected function flattenRedeclare
   input Env inEnv;
   output SCode.Element outElement;
 algorithm
-  outElement := match(inElement, inEnv)
+  outElement := match inElement
     local
       SCode.Ident name;
       SCode.Prefixes prefixes;
@@ -539,18 +534,18 @@ algorithm
       SCode.ClassDef cdef,cdef2;
       SCode.Comment cmt;
 
-    case (SCode.CLASS(name, prefixes, ep, pp, res,
-          cdef as SCode.DERIVED(), cmt, info), _)
+    case SCode.CLASS(name, prefixes, ep, pp, res,
+          cdef as SCode.DERIVED(), cmt, info)
       algorithm
         cdef2 := flattenDerivedClassDef(cdef, inEnv, info);
       then
         SCode.CLASS(name, prefixes, ep, pp, res, cdef2, cmt, info);
 
-    case (SCode.CLASS(classDef = SCode.ENUMERATION()), _)
+    case SCode.CLASS(classDef = SCode.ENUMERATION())
       then
         inElement;
 
-    case (SCode.COMPONENT(), _)
+    case SCode.COMPONENT()
       algorithm
         element := flattenComponent(inElement, inEnv);
       then
@@ -572,17 +567,17 @@ protected function flattenSubscript
   input SourceInfo inInfo;
   output SCode.Subscript outSub;
 algorithm
-  outSub := match(inSub, inEnv, inInfo)
+  outSub := match inSub
     local
       Absyn.Exp exp;
 
-    case (Absyn.SUBSCRIPT(subscript = exp), _, _)
+    case Absyn.SUBSCRIPT(subscript = exp)
       algorithm
         exp := flattenExp(exp, inEnv, inInfo);
       then
         Absyn.SUBSCRIPT(exp);
 
-    case (Absyn.NOSUB(), _, _) then inSub;
+    case Absyn.NOSUB() then inSub;
   end match;
 end flattenSubscript;
 
@@ -601,11 +596,11 @@ protected function flattenOptExp
   input SourceInfo inInfo;
   output Option<Absyn.Exp> outExp;
 algorithm
-  outExp := match(inExp, inEnv, inInfo)
+  outExp := match inExp
     local
       Absyn.Exp exp;
 
-    case (SOME(exp), _, _)
+    case SOME(exp)
       algorithm
         exp := flattenExp(exp, inEnv, inInfo);
       then
@@ -680,7 +675,6 @@ protected function flattenExpTraverserExit
 algorithm
   (outExp,outTuple) := match(inExp,inTuple)
     local
-      Absyn.Exp e;
       Env env;
       SourceInfo info;
 
@@ -704,26 +698,26 @@ public function flattenComponentRefSubs
   input SourceInfo inInfo;
   output Absyn.ComponentRef outCref;
 algorithm
-  outCref := match(inCref, inEnv, inInfo)
+  outCref := match inCref
     local
       Absyn.Ident name;
       Absyn.ComponentRef cref;
       list<Absyn.Subscript> subs;
 
-    case (Absyn.CREF_IDENT(name, subs), _, _)
+    case Absyn.CREF_IDENT(name, subs)
       algorithm
         subs := List.map2(subs, flattenSubscript, inEnv, inInfo);
       then
         Absyn.CREF_IDENT(name, subs);
 
-    case (Absyn.CREF_QUAL(name, subs, cref), _, _)
+    case Absyn.CREF_QUAL(name, subs, cref)
       algorithm
         subs := List.map2(subs, flattenSubscript, inEnv, inInfo);
         cref := flattenComponentRefSubs(cref, inEnv, inInfo);
       then
         Absyn.CREF_QUAL(name, subs, cref);
 
-    case (Absyn.CREF_FULLYQUALIFIED(componentRef = cref), _, _)
+    case Absyn.CREF_FULLYQUALIFIED(componentRef = cref)
       algorithm
         cref := flattenComponentRefSubs(cref, inEnv, inInfo);
       then

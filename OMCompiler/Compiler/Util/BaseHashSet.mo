@@ -106,7 +106,6 @@ public function emptyHashSetWork
   output HashSet hashSet;
 protected
   array<list<tuple<Key,Integer>>> arr;
-  list<Option<Key>> lst;
   array<Option<Key>> emptyarr;
 protected
   Integer szArr;
@@ -182,11 +181,10 @@ public function addNoUpdCheck
 algorithm
   outHashSet := match (entry,hashSet)
     local
-      Integer hval,indx,newpos,n,n_1,bsize,indx_1;
+      Integer indx,newpos,n_1,bsize;
       tuple<Integer,Integer,array<Option<Key>>> varr_1,varr;
       list<tuple<Key,Integer>> indexes;
       array<list<tuple<Key,Integer>>> hashvec_1,hashvec;
-      String name_str;
       Key key;
       FuncsTuple fntpl;
       FuncHash hashFunc;
@@ -210,9 +208,9 @@ public function addUnique
   input HashSet hashSet;
   output HashSet outHashSet;
 algorithm
-  outHashSet := match(key, hashSet)
+  outHashSet := match hashSet
     local
-      Integer hval,indx,newpos,n,n_1,bsize,indx_1;
+      Integer indx,newpos,n_1,bsize;
       tuple<Integer,Integer,array<Option<Key>>> varr_1,varr;
       list<tuple<Key,Integer>> indexes;
       array<list<tuple<Key,Integer>>> hashvec_1,hashvec;
@@ -220,8 +218,7 @@ algorithm
       FuncHash hashFunc;
 
     // Adding when not existing previously
-    case (_,
-        ((hashvec, varr, bsize, _, fntpl as (hashFunc, _, _)))) guard not has(key, hashSet)
+    case (hashvec, varr, bsize, _, fntpl as (hashFunc, _, _)) guard not has(key, hashSet)
       algorithm
         indx := intMod(hashFunc(key), bsize);
         newpos := valueArrayLength(varr);
@@ -246,7 +243,7 @@ public function delete
   input HashSet hashSet;
   output HashSet outHashSet;
 protected
-  Integer indx,n,bsize,indx_1;
+  Integer indx,n,bsize;
   tuple<Integer,Integer,array<Option<Key>>> varr_1,varr;
   array<list<tuple<Key,Integer>>> hashvec;
   FuncsTuple fntpl;
@@ -263,11 +260,11 @@ public function has
   input HashSet hashSet;
   output Boolean b;
 algorithm
-  b:= match(key,hashSet)
+  b:= match hashSet
     local
       Option<Key> oKey;
     // empty set containg nothing
-    case (_,(_,(0,_,_),_,_,_))
+    case (_,(0,_,_),_,_,_)
       then
         false;
     else
@@ -307,9 +304,9 @@ protected function get1 "help function to get"
   output Option<Key> okey;
   output Integer indx;
 algorithm
-  (okey,indx) := match (key,hashSet)
+  (okey,indx) := match hashSet
     local
-      Integer hashindx,bsize,n;
+      Integer hashindx,bsize;
       list<tuple<Key,Integer>> indexes;
       array<list<tuple<Key,Integer>>> hashvec;
       ValueArray varr;
@@ -318,7 +315,7 @@ algorithm
       FuncHash hashFunc;
       Boolean b;
 
-    case (_,(hashvec,varr,bsize,_,(hashFunc,keyEqual,_)))
+    case (hashvec,varr,bsize,_,(hashFunc,keyEqual,_))
       algorithm
         hashindx := intMod(hashFunc(key), bsize);
         indexes := hashvec[hashindx + 1];
@@ -370,10 +367,10 @@ public function hashSetList "returns the entries in the hashSet as a list of Key
   input HashSet hashSet;
   output list<Key> lst;
 algorithm
-  lst := match(hashSet)
+  lst := match hashSet
     local
       ValueArray varr;
-    case((_,varr,_,_,_))
+    case (_,varr,_,_,_)
       then
       valueArrayList(varr);
   end match;
@@ -426,8 +423,8 @@ by factor 1.4"
   input Key entry;
   output ValueArray outValueArray;
 protected
-  Integer n_1,n,size,expandsize,expandsize_1,newsize;
-  array<Option<Key>> arr_1,arr,arr_2;
+  Integer n,size,expandsize,expandsize_1;
+  array<Option<Key>> arr;
   Real rsize,rexpandsize;
 algorithm
   (n,size,arr) := valueArray;
@@ -480,12 +477,12 @@ public function valueArrayNth
   input Integer pos;
   output Key key;
 algorithm
-  key := match (valueArray,pos)
+  key := match valueArray
     local
       Key k;
       Integer n;
       array<Option<Key>> arr;
-    case ((n,_,arr),_) guard pos <= n // should be pos<n
+    case (n,_,arr) guard pos <= n // should be pos<n
       algorithm
         SOME(k) := arr[pos + 1];
       then k;
@@ -498,12 +495,11 @@ protected function valueArrayNthT
   input Integer pos;
   output Option<Key> key;
 algorithm
-  key := match (valueArray,pos)
+  key := match valueArray
     local
-      Key k;
       Integer n;
       array<Option<Key>> arr;
-    case ((n,_,arr),_) guard pos <= n // should be pos<n
+    case (n,_,arr) guard pos <= n // should be pos<n
       then arr[pos + 1];
   end match;
 end valueArrayNthT;

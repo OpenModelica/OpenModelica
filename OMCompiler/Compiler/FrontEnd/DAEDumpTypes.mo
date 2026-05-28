@@ -87,7 +87,7 @@ function dumpCommentStr
   input Option<SCode.Comment> inComment;
   output String outString;
 algorithm
-  outString := match(inComment)
+  outString := match inComment
     local
       String cmt;
 
@@ -112,7 +112,7 @@ function dumpCommentAnnotationStr
   input Option<SCode.Comment> inComment;
   output String outString;
 algorithm
-  outString := match(inComment)
+  outString := match inComment
     case NONE() then "";
     else dumpCommentStr(inComment) + dumpCompAnnotationStr(inComment);
   end match;
@@ -131,12 +131,12 @@ protected function dumpAnnotationStr
   input String inSuffix;
   output String outString;
 algorithm
-  outString := matchcontinue(inComment, inPrefix, inSuffix)
+  outString := matchcontinue inComment
     local
       String ann;
       SCode.Mod ann_mod;
 
-    case (SOME(SCode.COMMENT(annotation_ = SOME(SCode.ANNOTATION(ann_mod)))), _, _)
+    case SOME(SCode.COMMENT(annotation_ = SOME(SCode.ANNOTATION(ann_mod))))
       algorithm
         if Config.showAnnotations() then
           ann := inPrefix + "annotation" + SCodeDump.printModStr(ann_mod, SCodeDump.defaultOptions) + inSuffix;

@@ -182,21 +182,14 @@ public function updatePackage
   input list<Absyn.ElementItem> ag_elems;
   output Absyn.Class  out_class;
 algorithm
-  out_class := match(in_class)
+  out_class := match in_class
     local
-      list<Absyn.Class>  r_classes, nr_classes;
-      Absyn.Class cls, n_cls;
-      Absyn.Ident name;
-      Boolean     partialPrefix, finalPrefix, encapsulatedPrefix;
-      Absyn.Restriction restriction;
-      Absyn.ClassDef    body, nbody;
-      SourceInfo       info ;
+      Absyn.ClassDef    body;
       list<String> typeVars ;
       list<Absyn.NamedArg> classAttrs ;
-      list<Absyn.ClassPart> classParts, nclsp;
       list<Absyn.Annotation> ann ;
       Option<String>  comment;
-    case(out_class as Absyn.CLASS(body=Absyn.PARTS(typeVars, classAttrs, _, ann, comment)))
+    case out_class as Absyn.CLASS(body=Absyn.PARTS(typeVars, classAttrs, _, ann, comment))
       algorithm
         out_class.body := Absyn.PARTS(typeVars, classAttrs, {Absyn.PUBLIC(ag_elems)}, ann, comment);
       then
@@ -210,9 +203,8 @@ input Integer autoVal;
 input List<Absyn.ElementItem>  elements_in;
 output List<Absyn.ElementItem> elements_out;
   algorithm
-  elements_out := match(element_defs)
+  elements_out := match element_defs
    local
-     list<SCode.Element> m;
      List<tuple<SCode.Element, String>> rest;
      Absyn.Element el;
      Absyn.Ident cname;
@@ -239,7 +231,7 @@ input String pathInProg;
 input List<tuple<SCode.Element, String>>  elements_in;
 output List<tuple<SCode.Element, String>> elements_out;
   algorithm
-  elements_out := match(element_defs)
+  elements_out := match element_defs
    local
      list<SCode.Element> rest;
      List<tuple<SCode.Element, String>> m;
@@ -258,17 +250,10 @@ input Ident typeName;
 input String pathInProg;
 output List<tuple<SCode.Element, String>> res_elem;
 algorithm
-  res_elem := matchcontinue(el)
+  res_elem := matchcontinue el
   local
-    Absyn.Ident n;
     list<SCode.Element> elist;
-    SCode.Mod mod, clientMod, providerMod;
-    list<Absyn.Exp> cMod, pMod, prMod;
-    String template, mType, name, nName;
-    Absyn.FunctionArgs pArgs, cArgs;
-    list<Client> cls;
-    list<Provider> prvs;
-    list<Preferred> pref;
+    String name, nName;
     case SCode.CLASS("Modelica", _, _, _, SCode.R_PACKAGE(), SCode.PARTS(_, _,_,_,_,_,_,_), _, _)
       algorithm
       print("**** Ignoring Standard Modelica library\n");
@@ -287,7 +272,7 @@ algorithm
       then getAllElementsOfType(elist, typeName, nName, {});
     case SCode.CLASS(_, _, _, _, _, SCode.PARTS(elist, _,_,_,_,_,_,_), _, _)
       algorithm
-        (true) := isOfType(elist, typeName);
+        true := isOfType(elist, typeName);
       print ("*** Found a " + typeName + "\n");
       then {(el,pathInProg)};
     case _
@@ -304,15 +289,10 @@ input list<SCode.Element> elems;
 input String typeName;
 output Boolean result;
   algorithm
-  (result) := matchcontinue(elems)
+  result := matchcontinue elems
    local
      list<SCode.Element> rest;
-     SCode.Element el;
-     Mediator m;
-     Absyn.Ident id;
      Absyn.Path p;
-     SCode.Mod mod;
-     String name;
 
     case {} then (false);
     case SCode.EXTENDS(p, _, _, _, _)::_
@@ -330,7 +310,7 @@ input Absyn.Class vmodel;
 input Absyn.Program env;
 output Absyn.Class out_vmodel;
  algorithm
-  out_vmodel := match(client_list)
+  out_vmodel := match client_list
    local
      Client_e ce;
      list<Client_e> rest;
@@ -349,17 +329,11 @@ input Absyn.Class vmodel;
 input Absyn.Program env;
 output Absyn.Class out_vmodel;
  algorithm
-   out_vmodel := match(client_e)
+   out_vmodel := match client_e
    local
-    list<Absyn.ComponentItem> components;
-   TypeSpec typeSpec, rootType, tSp;
-   Absyn.Class def;
-   Client_e predecessors;
-    String name;
-   String mType;
+   TypeSpec typeSpec, rootType;
    list<list<String>> iname;
    String template;
-   list<Client> clients;
    list<Provider> providers;
    list<Preferred> preferred;
    list<tuple<Absyn.Exp, String>>  out_es;
@@ -400,7 +374,7 @@ input list<tuple<Absyn.Exp, String>>  e_list;
 input list<Absyn.Exp>  in_es;
 output list<Absyn.Exp>  out_es;
  algorithm
-   out_es := match(e_list)
+   out_es := match e_list
    local
      list<tuple<Absyn.Exp, String>> rest;
      Absyn.Exp exp;
@@ -422,7 +396,7 @@ public function updateClass
   input String path;
   output Absyn.Class  out_class;
 algorithm
-  (out_class as Absyn.CLASS()) := in_class;
+  out_class as Absyn.CLASS() := in_class;
   out_class.body := parseClassDef(out_class.body, defs, typeSpec, rootType, exp, instance_name, hasPreferred, preferred, path + out_class.name + ".");
 end updateClass;
 
@@ -438,19 +412,16 @@ protected function parseClassDef
   input String path;
   output Absyn.ClassDef  out_def;
 algorithm
-  out_def := match(in_def)
+  out_def := match in_def
     local
       list<String> typeVars ;
       list<Absyn.NamedArg> classAttrs ;
       list<Absyn.ClassPart> classParts, nclsp;
       list<Absyn.Annotation> ann ;
       Option<String>  comment;
-      list<Absyn.EquationItem> contents;
-      list<Absyn.EquationItem> eqs;
-      list<Absyn.ElementItem> elems;
-    case(Absyn.PARTS(typeVars, classAttrs, classParts, ann, comment))
+    case Absyn.PARTS(typeVars, classAttrs, classParts, ann, comment)
       algorithm
-        (nclsp) := parseClassParts(classParts, defs, typeSpec, rootType, exp, instance_name, hasPreferred, preferred, path);
+        nclsp := parseClassParts(classParts, defs, typeSpec, rootType, exp, instance_name, hasPreferred, preferred, path);
       then
         Absyn.PARTS(typeVars, classAttrs, nclsp, ann, comment);
   end match;
@@ -469,18 +440,15 @@ protected function parseClassParts
   output list<Absyn.ClassPart>  out_classes;
 
 algorithm
-  (out_classes) := match(classes)
+  out_classes := match classes
     local
       list<Absyn.ClassPart>  r_classes, nr_classes;
       Absyn.ClassPart cls, n_cls;
-      list<Absyn.EquationItem> eqs1, eqs2;
-      list<Absyn.ElementItem> elems1, elems2;
-      Integer count, count1;
-    case({}) then ({});
-    case(cls :: r_classes)
+    case {} then ({});
+    case cls :: r_classes
       algorithm
-        (n_cls) := parseClassPart(cls, defs, typeSpec, rootType, exp, instance_name, hasPreferred, preferred, path);
-        (nr_classes) := parseClassParts(r_classes, defs, typeSpec, rootType, exp, instance_name, hasPreferred, preferred, path);
+        n_cls := parseClassPart(cls, defs, typeSpec, rootType, exp, instance_name, hasPreferred, preferred, path);
+        nr_classes := parseClassParts(r_classes, defs, typeSpec, rootType, exp, instance_name, hasPreferred, preferred, path);
            then
         (n_cls :: nr_classes);
   end match;
@@ -499,18 +467,11 @@ protected function parseClassPart
   output Absyn.ClassPart  out_def;
 
 algorithm
-  (out_def) := match(in_def)
+  out_def := match in_def
     local
       list<Absyn.ElementItem> elems;
-      list<Absyn.Exp> exps;
-      list<Absyn.EquationItem> eqs, neqs;
-      list<Absyn.AlgorithmItem> algs;
-      Absyn.ExternalDecl externalDecl;
-      Option<Absyn.Annotation> annotation_ ;
-      list<Absyn.EquationItem> eqs1, eqs2;
-      list<Absyn.ElementItem> elems1, elems2;
-      Integer count;
-    case(Absyn.PUBLIC(elems))
+      list<Absyn.ElementItem> elems1;
+    case Absyn.PUBLIC(elems)
     algorithm
         elems1 := parseElems(elems, defs, typeSpec, rootType, exp, instance_name, hasPreferred, preferred, path);
     then
@@ -518,7 +479,7 @@ algorithm
    /* case(Absyn.PROTECTED(elems)) //TODO
     then
       (Absyn.PROTECTED(elems), {}, {}, instNo); //TODO */
-    case(_)
+    case _
     then
       (in_def);
   end match;
@@ -536,7 +497,7 @@ protected function parseElems
    input String pathInClass;
   output list<Absyn.ElementItem> out_elems;
 algorithm
-  out_elems := matchcontinue(in_elems)
+  out_elems := matchcontinue in_elems
    local
    Boolean                   finalPrefix;
     Option<Absyn.RedeclareKeywords> redeclareKeywords "replaceable, redeclare" ;
@@ -544,22 +505,17 @@ algorithm
     Absyn.Info                      info  "File name the class is defined in + line no + column no" ;
     Option<Absyn.ConstrainClass> constrainClass "only valid for classdef and component" ;
     Absyn.ElementAttributes attributes;
-   Absyn.ElementItem e_item, e_new;
-   list<Absyn.ElementItem> rest, re_items, e_list;
-   list<Absyn.ComponentItem> components, cnew, cnew2;
-   Path path;
+   Absyn.ElementItem e_item;
+   list<Absyn.ElementItem> rest, e_list;
+   list<Absyn.ComponentItem> components;
    TypeSpec tSpec;
-   Absyn.Class def;
-   list<Client_e> l1, l2;
-   Boolean isCl;
-   List<Mediator> m;
    Boolean newName;
    case {}
      then in_elems;
-    case (Absyn.ELEMENTITEM(Absyn.ELEMENT(finalPrefix,redeclareKeywords,innerOuter,
-      Absyn.COMPONENTS(attributes, tSpec, components), info , constrainClass))::rest)
+    case Absyn.ELEMENTITEM(Absyn.ELEMENT(finalPrefix,redeclareKeywords,innerOuter,
+      Absyn.COMPONENTS(attributes, tSpec, components), info , constrainClass))::rest
       algorithm
-          _ := AbsynUtil.typeSpecPath(typeSpec);
+          AbsynUtil.typeSpecPath(typeSpec);
           //print ("**** Finding clients ... " + Dump.unparseTypeSpec(typeSpec) + "  +  " +Dump.unparseTypeSpec(tSpec)+ "  +  "+Dump.unparseTypeSpec(rootType) + "...\n");
           //if Interactive.isPrimitive(path, defs) then fail(); end if;
           // TODO: add generation error for is mandatory
@@ -577,7 +533,7 @@ algorithm
 
           end if;
       then listAppend(e_list, parseElems(rest, defs, typeSpec, rootType, exp2, instance_name, hasPreferred, preferred,  pathInClass));
-    case (e_item::rest)
+    case e_item::rest
         then e_item::parseElems(rest, defs, typeSpec, rootType, exp2, instance_name, hasPreferred, preferred,  pathInClass);
   end matchcontinue;
 end parseElems;
@@ -597,15 +553,10 @@ protected function applyModifiersPreferred
   input list<Preferred> preferred;
   output list<Absyn.ElementItem> out_elems;
   algorithm
-  out_elems := matchcontinue(exp)
+  out_elems := matchcontinue exp
    local
     list<tuple<Absyn.Exp, String>> rest;
     list<Absyn.ComponentItem> cnew;
-    Option<Absyn.ComponentCondition> condition "condition" ;
-    Option<Absyn.Comment> comment "comment" ;
-     Absyn.Ident name "name" ;
-    Absyn.ArrayDim arrayDim "Array dimensions, if any" ;
-    Option<Absyn.Modification> modification "Optional modification" ;
     Absyn.Exp e;
     String ename, client_pref;
     Absyn.ElementItem enew;
@@ -627,7 +578,7 @@ input String ename;
 input list<Preferred> elems;
 output String cl_name;
   algorithm
-  (cl_name) := matchcontinue(elems)
+  cl_name := matchcontinue elems
    local
      list<Preferred> rest;
      String c_id, p_id;
@@ -649,7 +600,7 @@ protected function applyModifierPreferred
   input String ename;
   output list<Absyn.ComponentItem> out_comps;
   algorithm
-  out_comps := matchcontinue(comps)
+  out_comps := matchcontinue comps
    local
      list<Absyn.ComponentItem> rest;
     Absyn.ComponentItem cnew;
@@ -657,7 +608,6 @@ protected function applyModifierPreferred
     Option<Absyn.Comment> comment "comment" ;
     Ident name "name" ;
     Absyn.ArrayDim arrayDim "Array dimensions, if any" ;
-    Option<Absyn.Modification> modification "Optional modification" ;
     case {} then {};
     case Absyn.COMPONENTITEM(Absyn.COMPONENT(name, arrayDim, _), condition, comment)::_
       algorithm
@@ -685,17 +635,11 @@ protected function applyModifiers
   input Boolean newName;
   output list<Absyn.ElementItem> out_elems;
   algorithm
-  out_elems := matchcontinue(exp)
+  out_elems := matchcontinue exp
    local
      list<tuple<Absyn.Exp, String>> rest;
     list<Absyn.ComponentItem> cnew;
-    Option<Absyn.ComponentCondition> condition "condition" ;
-    Option<Absyn.Comment> comment "comment" ;
-     Absyn.Ident name "name" ;
-    Absyn.ArrayDim arrayDim "Array dimensions, if any" ;
-    Option<Absyn.Modification> modification "Optional modification" ;
     Absyn.Exp e;
-    String ename;
     Absyn.ElementItem enew;
     case {}  then {};
     case (e, _)::rest
@@ -716,7 +660,7 @@ protected function applyModifier
   input Boolean newName;
   output list<Absyn.ComponentItem> out_comps;
   algorithm
-  out_comps := matchcontinue(comps)
+  out_comps := matchcontinue comps
    local
      list<Absyn.ComponentItem> rest;
     Absyn.ComponentItem cnew;
@@ -725,7 +669,6 @@ protected function applyModifier
      Absyn.Ident name, new_name ;
 
     Absyn.ArrayDim arrayDim "Array dimensions, if any" ;
-    Option<Absyn.Modification> modification "Optional modification" ;
     case {} then {};
     case Absyn.COMPONENTITEM(Absyn.COMPONENT(name, arrayDim, _), condition, comment)::_
       algorithm
@@ -756,7 +699,7 @@ input list<String> name_list;
 input Absyn.Exp  exp;
 output list<Absyn.ElementArg> out_modifiers;
 algorithm
-  out_modifiers := match (name_list)
+  out_modifiers := match name_list
   local
     list<String> rest;
     String name;
@@ -771,7 +714,7 @@ protected function buildAllComponentModifiers
 input list<list<String>> name_list;
 output list<String> out_names;
 algorithm
-  out_names := match (name_list)
+  out_names := match name_list
   local
     list<String> l, tmp_names;
     list<list<String>> rest;
@@ -788,10 +731,10 @@ input list<String> name_list;
 input list<String> name_list2;
 output list<String> out_names;
 algorithm
-  out_names := match (name_list)
+  out_names := match name_list
   local
     String s;
-    list<String> l, tmp_names;
+    list<String> tmp_names;
     list<String> rest;
     case {} then {};
     case s::rest
@@ -806,10 +749,9 @@ input String prefix;
 input list<String> name_list2;
 output list<String> out_names;
 algorithm
-  out_names := match (name_list2)
+  out_names := match name_list2
   local
     String s;
-    list<String> l, tmp_names;
     list<String> rest;
     case {} then {prefix};
     case s::rest
@@ -824,59 +766,52 @@ protected function parseAggregator
   input Absyn.FunctionArgs fargs;
   output Absyn.Exp  out_eq;
 algorithm
-  out_eq := match(in_eq)
+  out_eq := match in_eq
     local
-      Integer int;
-      Real rl;
-      Absyn.ComponentRef crf, new_crf;
-      String str;
-      Boolean bool;
+      Absyn.ComponentRef crf;
       Absyn.Exp exp1, exp2, nexp1, nexp2, ife, nife;
       Absyn.Operator op;
-      list<Absyn.EquationItem> eqs1, eqs2, eqs3, eqs4;
-      list<Absyn.ElementItem> elems1, elems2, elems3, elems4;
-      Integer count, count2, count3, count4;
-      list<tuple<Absyn.Exp, Absyn.Exp>> elif, nelif;
+      list<tuple<Absyn.Exp, Absyn.Exp>> elif;
 
-    case(Absyn.BINARY(exp1, op, exp2))
+    case Absyn.BINARY(exp1, op, exp2)
       algorithm
         nexp1 :=  parseAggregator(exp1, fargs);
         nexp2 :=  parseAggregator(exp2, fargs);
       then Absyn.BINARY(nexp1, op, nexp2);
 
-    case(Absyn.LBINARY(exp1, op, exp2))
+    case Absyn.LBINARY(exp1, op, exp2)
       algorithm
        nexp1 :=  parseAggregator(exp1, fargs);
         nexp2 :=  parseAggregator(exp2, fargs);
       then (Absyn.LBINARY(nexp1, op, nexp2));
-     case(Absyn.RELATION(exp1, op, exp2))
+     case Absyn.RELATION(exp1, op, exp2)
       algorithm
       nexp1 :=  parseAggregator(exp1, fargs);
         nexp2 :=  parseAggregator(exp2, fargs);
       then (Absyn.RELATION(nexp1, op, nexp2));
-    case(Absyn.UNARY(op, exp2))
+    case Absyn.UNARY(op, exp2)
       algorithm
          nexp1 :=  parseAggregator(exp2, fargs);
       then (Absyn.UNARY(op, nexp1));
 
-     case(Absyn.LUNARY(op, exp2))
+     case Absyn.LUNARY(op, exp2)
       algorithm
          nexp1 :=  parseAggregator(exp2, fargs);
       then (Absyn.LUNARY(op, nexp1));
 
-    case(Absyn.IFEXP(ife, exp1, exp2, elif))
+    case Absyn.IFEXP(ife, exp1, exp2, elif)
       algorithm
          nife :=  parseAggregator(ife, fargs);
          nexp1 :=  parseAggregator(exp1, fargs);
          nexp2 := parseAggregator(exp2, fargs);
         //(nelif, eqs4, elems4, count4) = parseExpressionTuple(elif, defs, eqs3, elems3, count3);
       then (Absyn.IFEXP(nife, nexp1, nexp2, elif));
-    case(Absyn.CALL(crf, _))
+    case Absyn.CALL(crf, _)
       algorithm
         //print("CALL...."  + "\n");
         //print(Dump.dumpExpStr(Absyn.CALL(crf, fargs)) + "\n");
       then (Absyn.CALL(crf, fargs, in_eq.typeVars));
-     case(_)
+     case _
        algorithm
         //print(Dump.dumpExpStr(in_eq) + "\n");
        then (in_eq);
@@ -891,18 +826,16 @@ input Absyn.Program env;
 input list<tuple<Absyn.Exp, String>>  in_es;
 output list<tuple<Absyn.Exp, String>>  out_es;
  algorithm
-   out_es := match(providers)
+   out_es := match providers
    local
-     Provider pr;
      list<Provider> rest;
-     String className, instance, template;
-     Absyn.Program upd_env;
+     String className, template;
      list<tuple<list<Absyn.ComponentItem>, String>> comps;
      list<tuple<Absyn.Exp, String>>  exps, new_es;
      list<Absyn.ElementItem> mlist;
      Absyn.Exp exp;
     case {} then in_es;
-    case PROVIDER(className, instance, template)::rest // TODO fix handling instance
+    case PROVIDER(className, _, template)::rest // TODO fix handling instance
       algorithm
         mlist := AbsynUtil.getElementItemsInClass(vmodel);
         comps := getAllProviderInstances(className, template, mlist, env, {}, "");
@@ -922,11 +855,10 @@ protected function applyTemplate
   input list<tuple<Absyn.Exp, String>>  in_es;
   output list<tuple<Absyn.Exp, String>>  out_es;
   algorithm
-  out_es := matchcontinue(comps)
+  out_es := matchcontinue comps
    local
      list<Absyn.ComponentItem> clist;
      list<tuple<list<Absyn.ComponentItem>, String>>  rest;
-     Absyn.Ident name;
      list<tuple<Absyn.Exp, String>> new_es;
      String pathInClass;
     case {}
@@ -948,7 +880,7 @@ protected function applyTemplate2
   input String pathInClass;
   output list<tuple<Absyn.Exp, String>>  out_es;
   algorithm
-  out_es := matchcontinue(comps)
+  out_es := matchcontinue comps
    local
      list<Absyn.ComponentItem> rest;
      Absyn.Ident name, newName;
@@ -971,58 +903,51 @@ protected function parseExpression
   input Absyn.Ident fargs;
   output Absyn.Exp  out_eq;
 algorithm
-  out_eq := match(in_eq)
+  out_eq := match in_eq
     local
-      Integer int;
-      Real rl;
       Absyn.ComponentRef crf, new_crf;
-      String str;
-      Boolean bool;
       Absyn.Exp exp1, exp2, nexp1, nexp2, ife, nife;
       Absyn.Operator op;
-      list<Absyn.EquationItem> eqs1, eqs2, eqs3, eqs4;
-      list<Absyn.ElementItem> elems1, elems2, elems3, elems4;
-      Integer count, count2, count3, count4;
-      list<tuple<Absyn.Exp, Absyn.Exp>> elif, nelif;
+      list<tuple<Absyn.Exp, Absyn.Exp>> elif;
 
-    case(Absyn.BINARY(exp1, op, exp2))
+    case Absyn.BINARY(exp1, op, exp2)
       algorithm
         nexp1 :=  parseExpression(exp1, fargs);
         nexp2 :=  parseExpression(exp2, fargs);
       then Absyn.BINARY(nexp1, op, nexp2);
 
-    case(Absyn.LBINARY(exp1, op, exp2))
+    case Absyn.LBINARY(exp1, op, exp2)
       algorithm
         nexp1 :=  parseExpression(exp1, fargs);
         nexp2 := parseExpression(exp2, fargs);
       then (Absyn.LBINARY(nexp1, op, nexp2));
-     case(Absyn.RELATION(exp1, op, exp2))
+     case Absyn.RELATION(exp1, op, exp2)
       algorithm
         nexp1 :=  parseExpression(exp1, fargs);
         nexp2 := parseExpression(exp2, fargs);
       then (Absyn.RELATION(nexp1, op, nexp2));
-    case(Absyn.UNARY(op, exp2))
+    case Absyn.UNARY(op, exp2)
       algorithm
          nexp1 :=  parseExpression(exp2, fargs);
       then (Absyn.UNARY(op, nexp1));
 
-     case(Absyn.LUNARY(op, exp2))
+     case Absyn.LUNARY(op, exp2)
       algorithm
          nexp1 :=  parseExpression(exp2, fargs);
       then (Absyn.LUNARY(op, nexp1));
 
-    case(Absyn.IFEXP(ife, exp1, exp2, elif))
+    case Absyn.IFEXP(ife, exp1, exp2, elif)
       algorithm
          nife :=  parseExpression(ife, fargs);
          nexp1 :=  parseExpression(exp1, fargs);
          nexp2 := parseExpression(exp2, fargs);
         //(nelif, eqs4, elems4, count4) = parseExpressionTuple(elif, defs, eqs3, elems3, count3);
       then (Absyn.IFEXP(nife, nexp1, nexp2, elif));
-    case(Absyn.CREF(crf))
+    case Absyn.CREF(crf)
       algorithm
         new_crf := updateCRF(crf, fargs);
       then (Absyn.CREF(new_crf));
-     case(_)
+     case _
        algorithm
          //print(Dump.dumpExpStr(in_eq) + "\n");
        then (in_eq);
@@ -1034,19 +959,19 @@ protected function updateCRF
   input Absyn.Ident name;
   output Absyn.ComponentRef out_componentRef;
   algorithm
-  out_componentRef := matchcontinue(componentRef)
+  out_componentRef := matchcontinue componentRef
   local
      Absyn.ComponentRef cRef, new_cRef;
      list<Absyn.Subscript> subscripts;
      Absyn.Ident id;
-  case (Absyn.CREF_FULLYQUALIFIED(cRef)) then updateCRF(cRef, name);
-  case (Absyn.CREF_QUAL("getPath", subscripts, cRef))
+  case Absyn.CREF_FULLYQUALIFIED(cRef) then updateCRF(cRef, name);
+  case Absyn.CREF_QUAL("getPath", subscripts, cRef)
     then Absyn.CREF_QUAL(name, subscripts, cRef);
-  case (Absyn.CREF_QUAL(id, subscripts, cRef))
+  case Absyn.CREF_QUAL(id, subscripts, cRef)
     algorithm
       new_cRef := updateCRF(cRef, name);
        then Absyn.CREF_QUAL(id, subscripts, new_cRef);
-  case (Absyn.CREF_IDENT("getPath", subscripts)) then Absyn.CREF_IDENT(name, subscripts);
+  case Absyn.CREF_IDENT("getPath", subscripts) then Absyn.CREF_IDENT(name, subscripts);
   case _ then    componentRef;
   end matchcontinue;
 end updateCRF;
@@ -1060,21 +985,17 @@ input list<tuple<list<Absyn.ComponentItem>, String>> in_components;
 input String pathInClass;
 output list<tuple<list<Absyn.ComponentItem>, String>> out_components;
 algorithm
-  out_components := matchcontinue(e_items)
+  out_components := matchcontinue e_items
    local
-   Absyn.ElementItem e_item;
    list<Absyn.ElementItem> rest, re_items;
    list<Absyn.ComponentItem> components;
    list<tuple<list<Absyn.ComponentItem>, String>> cnew, cnew2;
    TypeSpec typeSpec;
    Path path;
    Absyn.Class def;
-   list<Client_e> l1, l2;
-   Boolean isCl;
-   List<Mediator> m;
    case {}
      then in_components;
-    case (Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_, Absyn.COMPONENTS(_,typeSpec, components), _, _))::rest)
+    case Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_, Absyn.COMPONENTS(_,typeSpec, components), _, _))::rest
       algorithm
           path := AbsynUtil.typeSpecPath(typeSpec);
          //print ("TESTING PROVIDERS ... ");
@@ -1095,7 +1016,7 @@ algorithm
           re_items := AbsynUtil.getElementItemsInClass(def); // if the provider is an element from the class
           cnew2 := parseComponents(className, template, re_items, env,  components, cnew, pathInClass);
       then getAllProviderInstances(className, template, rest, env, cnew2, pathInClass);
-    case (_::rest)
+    case _::rest
         then getAllProviderInstances(className, template, rest, env, in_components, pathInClass);
   end matchcontinue;
 end getAllProviderInstances;
@@ -1111,17 +1032,12 @@ input list<tuple<list<Absyn.ComponentItem>, String>> in_components;
 input String pathInClass;
 output list<tuple<list<Absyn.ComponentItem>, String>> out_components;
 algorithm
-  out_components:= matchcontinue(components)
+  out_components:= matchcontinue components
    local
     list<Absyn.ComponentItem> rest;
-    Absyn.ComponentItem cnew;
-    Option<Absyn.ComponentCondition> condition "condition" ;
-    Option<Absyn.Comment> comment "comment" ;
-     Absyn.Ident name, new_name ;
+     Absyn.Ident name ;
      list<tuple<list<Absyn.ComponentItem>, String>> tmp;
      String newName;
-    Absyn.ArrayDim arrayDim "Array dimensions, if any" ;
-    Option<Absyn.Modification> modification "Optional modification" ;
     case {} then in_components;
     case Absyn.COMPONENTITEM(Absyn.COMPONENT(name, _, _), _, _)::rest
       algorithm
@@ -1180,7 +1096,7 @@ input Absyn.TypeSpec ts;
 input list<Client_e> predecessors;
 output  Boolean val;
   algorithm
-  val := match (predecessors)
+  val := match predecessors
    local
       list<Client_e> rest;
       Absyn.TypeSpec ots;
@@ -1201,9 +1117,8 @@ input list<list<String>> instance_list;
 output list<Client_e> client_list;
 
 algorithm
-  (client_list) := matchcontinue(e_items)
+  client_list := matchcontinue e_items
    local
-   Absyn.ElementItem e_item;
    list<Absyn.ElementItem> rest;
    list<Absyn.ComponentItem> components;
    TypeSpec typeSpec;
@@ -1216,7 +1131,7 @@ algorithm
    List<Mediator> m;
    case {}
      then in_client_list;
-    case (Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_, Absyn.COMPONENTS(_,typeSpec, components), _, _))::rest)
+    case Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_, Absyn.COMPONENTS(_,typeSpec, components), _, _))::rest
       algorithm
           path := AbsynUtil.typeSpecPath(typeSpec);
           //print ("TESTING in parseElementList ... ");
@@ -1237,7 +1152,7 @@ algorithm
            end if;
            l1 := buildInstList2(def, env, new_predecessors,  mediators, l2, instance_list, typeSpec);
       then parseElementInstList(rest, env, predecessors, mediators, l1, instance_list);
-    case (_::rest)
+    case _::rest
       algorithm
         //print("parseElementInstList unmatched pattern\n");
         then parseElementInstList(rest, env, predecessors, mediators, in_client_list, instance_list);
@@ -1248,7 +1163,7 @@ protected function getComponentNames
 input list<Absyn.ComponentItem> l;
 output list<String> res;
 algorithm
-    res := match(l)
+    res := match l
     local
       Absyn.ComponentItem ci;
       list<Absyn.ComponentItem> r;
@@ -1270,9 +1185,8 @@ input TypeSpec rootType;
 output list<Client_e> client_list;
 
 algorithm
-  (client_list) := matchcontinue(e_items)
+  client_list := matchcontinue e_items
    local
-   Absyn.ElementItem e_item;
    list<Absyn.ElementItem> rest;
    list<Absyn.ComponentItem> components;
    TypeSpec typeSpec;
@@ -1285,7 +1199,7 @@ algorithm
    List<Mediator> m;
    case {}
      then in_client_list;
-    case (Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_, Absyn.COMPONENTS(_,typeSpec, components), _, _))::rest)
+    case Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_, Absyn.COMPONENTS(_,typeSpec, components), _, _))::rest
       algorithm
           path := AbsynUtil.typeSpecPath(typeSpec);
           //print ("TESTING in parseElementList ... ");
@@ -1306,7 +1220,7 @@ algorithm
            //print("" + Dump.unparseClassStr(def) + "\n");
            l1 := buildInstList2(def, env, new_predecessors,  mediators, l2, getComponentNames(components)::instance_list, rootType);
       then parseElementInstList2(rest, env, predecessors, mediators, l1, instance_list, rootType);
-    case (_::rest)
+    case _::rest
       algorithm
         //print("parseElementInstList unmatched pattern\n");
         then parseElementInstList2(rest, env, predecessors, mediators, in_client_list, instance_list, rootType);
@@ -1321,9 +1235,9 @@ output Boolean isClient;
 output String iname;
 output List<Mediator> m;
 algorithm
-  (isClient, iname, m) := matchcontinue(mediators)
+  (isClient, iname, m) := matchcontinue mediators
    local
-     String name, nm;
+     String nm;
      String mType;
      String template;
      list<Client> clients;
@@ -1352,13 +1266,10 @@ output Boolean isClient;
 output String iname;
 algorithm
 
-  (isClient, iname) := matchcontinue(clients)
+  (isClient, iname) := matchcontinue clients
    local
-      list<Absyn.Class> parents;
-     Absyn.Class current_ci;
-     String name, inst, tmp;
+     String name, inst;
      list<Client> rest;
-     Boolean isM;
     case {} then (false, "");
     case CLIENT(name, inst, _, _)::_
       algorithm
@@ -1378,7 +1289,7 @@ input list<SCode.Element> mediator_defs;
 input List<Mediator>  mediators_in;
 output List<Mediator> mediators_out;
   algorithm
-  mediators_out := match(mediator_defs)
+  mediators_out := match mediator_defs
    local
      list<SCode.Element> rest;
      SCode.Element el;
@@ -1395,14 +1306,12 @@ protected function getMediatorDefsElement
 input SCode.Element el;
 output List<Mediator> mediator;
 algorithm
-  mediator := matchcontinue(el)
+  mediator := matchcontinue el
   local
-    Absyn.Ident n;
     list<SCode.Element> elist;
-    SCode.Mod mod, clientMod, providerMod;
+    SCode.Mod mod;
     list<Absyn.Exp> cMod, pMod, prMod;
-    String template, mType, name, str1, str2;
-    Absyn.FunctionArgs pArgs, cArgs;
+    String template, mType, str1, str2;
     list<Client> cls;
     list<Provider> prvs;
     list<Preferred> pref;
@@ -1443,10 +1352,8 @@ input  list<Absyn.Exp> e;
 input  list<Preferred> val;
 output  list<Preferred> n_val;
   algorithm
-  n_val := match(e)
+  n_val := match e
    local
-     Absyn.FunctionArgs fArgs;
-     list<SCode.SubMod>  smod;
      list<Absyn.NamedArg> argNames;
      list<Absyn.Exp> rest;
      String clientInstancePath;
@@ -1468,10 +1375,8 @@ input  list<Absyn.Exp> e;
 input  list<Client> val;
 output  list<Client> n_val;
   algorithm
-  n_val := match(e)
+  n_val := match e
    local
-     Absyn.FunctionArgs fArgs;
-     list<SCode.SubMod>  smod;
      list<Absyn.NamedArg> argNames;
      list<Absyn.Exp> rest;
      String className, instance, template, isM;
@@ -1499,10 +1404,8 @@ input  list<Absyn.Exp> e;
 input  list<Provider> val;
 output  list<Provider> n_val;
   algorithm
-  n_val := match(e)
+  n_val := match e
    local
-     Absyn.FunctionArgs fArgs;
-     list<SCode.SubMod>  smod;
      list<Absyn.NamedArg> argNames;
      list<Absyn.Exp> rest;
      String className, providerTemplate, instance;
@@ -1526,7 +1429,7 @@ input  list<Absyn.NamedArg> argNames;
 input  String name;
 output  String val;
   algorithm
-  val := matchcontinue(argNames)
+  val := matchcontinue argNames
    local
     String str, nname, str1, str2;
      list<Absyn.NamedArg> rest;
@@ -1553,12 +1456,9 @@ output Boolean result;
 output Option<SCode.Mod> mods;
   algorithm
 
-  (result, mods) := matchcontinue(elems)
+  (result, mods) := matchcontinue elems
    local
      list<SCode.Element> rest;
-     SCode.Element el;
-     Mediator m;
-     Absyn.Ident id;
      SCode.Mod mod;
      String tName;
     case {} then (false, NONE());
@@ -1577,7 +1477,7 @@ input Ident name "name of argument";
 input String retype "type of argument";
 output  Absyn.Exp val;
   algorithm
-  val := match (mod)
+  val := match mod
    local
      list<SCode.SubMod>  smod;
     case SCode.MOD(_,_, smod, _, _)
@@ -1593,7 +1493,6 @@ output Absyn.Exp val;
   algorithm
   val := matchcontinue(smod, retype)
    local
-     SCode.Mod mod;
      Absyn.Exp eval;
      Ident n;
      list<SCode.SubMod> rest;

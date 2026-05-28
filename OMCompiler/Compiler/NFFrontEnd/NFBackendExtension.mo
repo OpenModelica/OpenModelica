@@ -462,8 +462,6 @@ public
       output VariableAttributes attributes;
     protected
       Boolean is_final;
-      Type elTy;
-      Boolean is_array = false;
       ComplexType complexTy;
     algorithm
       is_final := compAttrs.isFinal or
@@ -1328,7 +1326,7 @@ public
       Integer index;
     algorithm
       for var in children loop
-        _ := match UnorderedMap.get(ComponentRef.firstName(var.name), indexMap)
+        () := match UnorderedMap.get(ComponentRef.firstName(var.name), indexMap)
           case SOME(index) algorithm
             childrenAttr[index] := create(var.typeAttributes, var.ty, var.attributes, var.children, var.comment);
           then ();
@@ -1532,10 +1530,10 @@ public
         annotations.resizable := true;
       end if;
 
-      _ := match comment
+      () := match comment
         case SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(modification=mod as SCode.MOD()))) algorithm
           for submod in mod.subModLst loop
-            _ := match submod
+            () := match submod
               case SCode.NAMEMOD(ident = "HideResult", mod = SCode.MOD(binding = SOME(Absyn.BOOL(true)))) algorithm
                 annotations.hideResult := true;
               then ();

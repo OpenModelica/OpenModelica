@@ -211,7 +211,6 @@ public
     list<ComponentRef> partial_vars = {};
     Integer nnz = 0;
     VarData varData;
-    EqData eqData;
     SparsityPattern sparsityPattern;
     SparsityColoring sparsityColoring = SparsityColoring.lazy(EMPTY_SPARSITY_PATTERN);
   algorithm
@@ -669,7 +668,6 @@ public
       array<ComponentRef> seed_nodes, partial_nodes;
       list<SparsityColoringCol> col_groups = {};
       list<SparsityColoringRow> row_groups = {};
-      Integer nCols, nRows, pad, k;
       array<SparsityColoringCol> cols_arr;
       array<SparsityColoringRow> rows_arr;
     algorithm
@@ -1130,7 +1128,6 @@ protected
     BVariable.VarData varDataJac;
     SparsityPattern sparsityPattern;
     SparsityColoring sparsityColoring;
-    Adjacency.Matrix sparsity;
 
     BVariable.checkVar func = getTmpFilterFunction(jacType);
   algorithm
@@ -1424,26 +1421,11 @@ protected
     BVariable.checkVar func = getTmpFilterFunction(jacType);
     type ExpressionList = list<Expression>; // for saving terms for the same lhs in a map
     UnorderedMap<ComponentRef, list<Expression>> adjoint_map;
-    list<Expression> terms, dF_in, dF_out;
-    Expression rhsExpr;
     Pointer<Variable> lhsVarPtr;
-    Pointer<NBEquation.Equation> eqPtr;
-    NBEquation.Equation eq;
 
-    UnorderedMap<ComponentRef, ComponentRef> mapPartialToNewSeed =
-      UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
-    UnorderedMap<ComponentRef, ComponentRef> mapSeedToNewPDer =
-      UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
     list<StrongComponent> algebraicLoopComps = {};
-    list<ComponentRef> tmpKeys;
-    list<ComponentRef> resKeys;
 
     // added locals for causalization of tmp equations
-    list<Pointer<Variable>> tmpVarPtrs_causal = {};
-    list<Pointer<NBEquation.Equation>> tmpEqPtrs_causal = {};
-    VariablePointers tmpVarsVP;
-    EquationPointers tmpEqnsEP;
-    Matching matchingTmp;
     list<StrongComponent> tmpComps = {}, resComps = {};
 
     list<ComponentRef> orderedTmpCrefs = {};
@@ -1543,7 +1525,6 @@ protected
           Pointer<NBEquation.Equation> resid_j;
           Option<ComponentRef> o_ySeedCref;
           ComponentRef ySeedCref;
-          Operator addOp = Operator.fromClassification((MathClassification.ADDITION, SizeClassification.SCALAR), Type.REAL());
         case NBStrongComponent.ALGEBRAIC_LOOP(strict = tearing)
           algorithm
             // Collect iteration vars
@@ -1914,7 +1895,7 @@ protected
       UnorderedMap.add(var.name, diff, map);
 
       // differentiate parent and add to map
-      _ := match BVariable.getParent(var_ptr)
+      () := match BVariable.getParent(var_ptr)
         case SOME(parent) algorithm
           parent_name := BVariable.getVarName(parent);
           diff_parent := match UnorderedMap.get(parent_name, map)

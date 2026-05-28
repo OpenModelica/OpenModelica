@@ -121,7 +121,7 @@ public
   protected
     String flag = "default"; //Flags.getConfigString(Flags.ZERO_CROSSINGS)
   algorithm
-    (func) := match flag
+    func := match flag
       case "default" then (eventsDefault);
       /* ... New detect states modules have to be added here */
       else fail();
@@ -251,7 +251,7 @@ public
       Bucket bucket = Pointer.access(bucket_ptr);
       Statement new_stmt;
       Condition cond;
-      ComponentRef aux, lhs_cref;
+      ComponentRef aux;
     algorithm
       if Util.isSome(bucket.aux_stmts) then
         // add all new statements to the algorithm body
@@ -441,7 +441,7 @@ public
           algorithm
             // create auxiliary equation and solve for TIME
             tmpEqn := Pointer.access(Equation.makeAssignment(exp.exp1, exp.exp2, Pointer.create(0), NBVariable.TEMPORARY_STR, Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false)));
-            _ := Equation.map(tmpEqn, function containsTimeTraverseExp(b = containsTime), SOME(function containsTimeTraverseCref(b = containsTime)));
+            Equation.map(tmpEqn, function containsTimeTraverseExp(b = containsTime), SOME(function containsTimeTraverseCref(b = containsTime)));
             if Pointer.access(containsTime) then
               (tmpEqn, status, invert) := Solve.solveBody(tmpEqn, NFBuiltin.TIME_CREF, funcMap);
               if status == NBSolve.Status.EXPLICIT and invert <> NBSolve.RelationInversion.UNKNOWN then
@@ -499,7 +499,6 @@ public
     algorithm
       (failed, clocked) := match (AbsynUtil.pathLastIdent(Call.functionName(call)), Call.arguments(call))
         local
-          Integer value;
           Expression clock, start, interval;
           TimeEvent timeEvent;
 
@@ -778,8 +777,6 @@ public
       input Boolean createEqn;
       output Boolean failed = false "returns true if composite event list could not be created";
     protected
-      Pointer<Variable> aux_var;
-      ComponentRef aux_cref;
     algorithm
       (exp, bucket, failed) := match exp
         local

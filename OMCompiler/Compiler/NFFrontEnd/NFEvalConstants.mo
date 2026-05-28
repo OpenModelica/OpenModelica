@@ -325,7 +325,6 @@ protected
   Type ty;
   Expression cond, tb, fb;
   Boolean c1, c2;
-  Type.Branch matched_branch;
 algorithm
   Expression.IF(ty, cond, tb, fb) := exp;
   (cond, outChanged) := evaluateExpTraverser(cond, info);
@@ -554,9 +553,6 @@ end evaluateStmtBranch;
 function evaluateFunction
   input output Function func;
 protected
-  Class cls;
-  Algorithm fn_body;
-  Sections sections;
   Boolean is_con;
 algorithm
   if not Function.isEvaluated(func) then

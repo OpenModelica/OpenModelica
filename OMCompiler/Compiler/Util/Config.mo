@@ -457,7 +457,7 @@ protected function intLanguageStandard
   input Integer inValue;
   output LanguageStandard outStandard;
 algorithm
-  outStandard := match(inValue)
+  outStandard := match inValue
     case 10 then LanguageStandard._1_x;
     case 20 then LanguageStandard._2_x;
     case 30 then LanguageStandard._3_0;
@@ -493,7 +493,7 @@ algorithm
     return;
   end if;
 
-  _ := matchcontinue(inLibraryName)
+  () := matchcontinue inLibraryName
     local
       String version;
       LanguageStandard new_std;
@@ -541,7 +541,7 @@ protected function versionStringToStd2
   input list<String> inVersion;
   output LanguageStandard outStandard;
 algorithm
-  outStandard := match(inVersion)
+  outStandard := match inVersion
     case "1" :: _ then LanguageStandard._1_x;
     case "2" :: _ then LanguageStandard._2_x;
     case "3" :: "0" :: _ then LanguageStandard._3_0;
@@ -616,22 +616,22 @@ end ignoreCommandLineOptionsAnnotation;
 public function globalHomotopy
   output Boolean outBoolean;
 algorithm
-  outBoolean := match(Flags.getConfigString(Flags.HOMOTOPY_APPROACH))
-    case("equidistantLocal") then false;
-    case("adaptiveLocal") then false;
-    case("equidistantGlobal") then true;
-    case("adaptiveGlobal") then true;
+  outBoolean := match Flags.getConfigString(Flags.HOMOTOPY_APPROACH)
+    case "equidistantLocal" then false;
+    case "adaptiveLocal" then false;
+    case "equidistantGlobal" then true;
+    case "adaptiveGlobal" then true;
   end match;
 end globalHomotopy;
 
 public function adaptiveHomotopy
   output Boolean outBoolean;
 algorithm
-  outBoolean := match(Flags.getConfigString(Flags.HOMOTOPY_APPROACH))
-    case("equidistantLocal") then false;
-    case("adaptiveLocal") then true;
-    case("equidistantGlobal") then false;
-    case("adaptiveGlobal") then true;
+  outBoolean := match Flags.getConfigString(Flags.HOMOTOPY_APPROACH)
+    case "equidistantLocal" then false;
+    case "adaptiveLocal" then true;
+    case "equidistantGlobal" then false;
+    case "adaptiveGlobal" then true;
   end match;
 end adaptiveHomotopy;
 

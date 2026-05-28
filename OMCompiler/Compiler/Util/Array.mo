@@ -655,8 +655,6 @@ function position<T>
   input T inElement;
   input Integer inFilledSize = arrayLength(inArray) "The filled size of the array.";
   output Integer outIndex;
-protected
-  T e;
 algorithm
   for i in 1:inFilledSize loop
     if valueEq(inElement, inArray[i]) then

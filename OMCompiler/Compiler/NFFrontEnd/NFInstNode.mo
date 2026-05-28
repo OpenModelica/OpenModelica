@@ -787,7 +787,6 @@ uniontype InstNode
     input Boolean ignoreBaseClass = false;
     output InstNode scope;
   protected
-    InstNodeType it;
     InstNode orig_node;
   algorithm
     scope := match node
@@ -2263,7 +2262,6 @@ uniontype InstNode
   function clearGeneratedInners
     input InstNode node;
   protected
-    InstNode top;
     UnorderedMap<String, InstNode> inners;
   algorithm
     InstNodeType.TOP_SCOPE(generatedInners = inners) := nodeType(InstNode.topScope(node));

@@ -352,7 +352,6 @@ protected
   protected
     UnorderedSet<ComponentRef> discrete_reals;
     list<Variable> illegal_discrete_vars = {};
-    String err_str = "";
   algorithm
     // use hash and equality that ignores subscripts to handle arrays
     discrete_reals := UnorderedSet.new(ComponentRef.hashStrip, ComponentRef.isEqualStrip);
@@ -421,9 +420,6 @@ protected
     () := match body_eqn
       local
         Expression lhs;
-        Type ty;
-        ComponentRef cref;
-        InstNode cls;
         list<Equation> body;
         list<Equation.Branch> branches;
 

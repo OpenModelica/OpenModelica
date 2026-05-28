@@ -214,7 +214,6 @@ public
     output list<Connector> connectors;
   protected
     Expression cref_exp;
-    ComponentRef cr;
     Boolean expanded;
   algorithm
     if not Flags.isSet(Flags.NF_SCALARIZE) then

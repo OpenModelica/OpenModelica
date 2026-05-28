@@ -92,22 +92,22 @@ function create
   input IOStreamType streamType;
   output IOStream outStream;
 algorithm
-  outStream := match (streamName, streamType)
+  outStream := match streamType
     local
       String fileName;
       Integer fileID, bufferID;
 
-    case (_, FILE(fileName))
+    case FILE(fileName)
       algorithm
         fileID := IOStreamExt.createFile(fileName);
       then
         IOSTREAM(streamName, streamType, FILE_DATA(fileID));
 
-    case (_, LIST())
+    case LIST()
       then
         IOSTREAM(streamName, streamType, LIST_DATA({}));
 
-    case (_, BUFFER())
+    case BUFFER()
       algorithm
         bufferID := IOStreamExt.createBuffer();
       then
@@ -120,25 +120,25 @@ function append
   input String inString;
   output IOStream outStream;
 algorithm
-  outStream := match (inStream, inString)
+  outStream := match inStream
     local
       list<String> listData;
       Integer fileID, bufferID;
-      IOStream fStream, lStream, bStream;
+      IOStream fStream, bStream;
       String streamName;
       IOStreamType streamType;
 
-    case (fStream as IOSTREAM(data = FILE_DATA(fileID)), _)
+    case fStream as IOSTREAM(data = FILE_DATA(fileID))
       algorithm
         IOStreamExt.appendFile(fileID, inString);
       then
         fStream;
 
-    case (IOSTREAM(streamName, streamType, LIST_DATA(listData)), _)
+    case IOSTREAM(streamName, streamType, LIST_DATA(listData))
       then
         IOSTREAM(streamName, streamType, LIST_DATA(inString::listData));
 
-    case (bStream as IOSTREAM(data = BUFFER_DATA(bufferID)), _)
+    case bStream as IOSTREAM(data = BUFFER_DATA(bufferID))
       algorithm
         IOStreamExt.appendBuffer(bufferID, inString);
       then
@@ -200,13 +200,12 @@ function close
   input IOStream inStream;
   output IOStream outStream;
 algorithm
-  outStream := matchcontinue (inStream)
+  outStream := matchcontinue inStream
     local
-      list<String> listData;
-      Integer fileID, bufferID;
-      IOStream fStream, lStream, bStream;
+      Integer fileID;
+      IOStream fStream;
 
-    case (fStream as IOSTREAM(data = FILE_DATA(fileID)))
+    case fStream as IOSTREAM(data = FILE_DATA(fileID))
       algorithm
         IOStreamExt.closeFile(fileID);
       then
@@ -220,23 +219,21 @@ end close;
 function delete
   input IOStream inStream;
 algorithm
-  _ := match (inStream)
+  () := match inStream
     local
-      list<String> listData;
       Integer fileID, bufferID;
-      IOStream fStream, lStream, bStream;
 
-    case (IOSTREAM(data = FILE_DATA(fileID)))
+    case IOSTREAM(data = FILE_DATA(fileID))
       algorithm
         IOStreamExt.deleteFile(fileID);
       then
         ();
 
-    case (IOSTREAM(data = LIST_DATA()))
+    case IOSTREAM(data = LIST_DATA())
       then
         ();
 
-    case (IOSTREAM(data = BUFFER_DATA(bufferID)))
+    case IOSTREAM(data = BUFFER_DATA(bufferID))
       algorithm
         IOStreamExt.deleteBuffer(bufferID);
       then
@@ -248,26 +245,25 @@ function clear
   input IOStream inStream;
   output IOStream outStream;
 algorithm
-  outStream := matchcontinue (inStream)
+  outStream := matchcontinue inStream
     local
-      list<String> listData;
       Integer fileID, bufferID;
-      IOStream fStream, lStream, bStream;
+      IOStream fStream, bStream;
       String name;
       IOStreamData data;
       IOStreamType ty;
 
-    case (fStream as IOSTREAM(data = FILE_DATA(fileID)))
+    case fStream as IOSTREAM(data = FILE_DATA(fileID))
       algorithm
         IOStreamExt.clearFile(fileID);
       then
         fStream;
 
-    case (IOSTREAM(name, ty, _))
+    case IOSTREAM(name, ty, _)
       then
         IOSTREAM(name, ty, LIST_DATA({}));
 
-    case (bStream as IOSTREAM(data = BUFFER_DATA(bufferID)))
+    case bStream as IOSTREAM(data = BUFFER_DATA(bufferID))
       algorithm
         IOStreamExt.clearBuffer(bufferID);
       then
@@ -290,26 +286,25 @@ function string
   input IOStream inStream;
   output String string;
 algorithm
-  string := match (inStream)
+  string := match inStream
     local
       list<String> listData;
       Integer fileID, bufferID;
-      IOStream fStream, lStream, bStream;
       String str;
 
-    case (IOSTREAM(data = FILE_DATA(fileID)))
+    case IOSTREAM(data = FILE_DATA(fileID))
       algorithm
         str := IOStreamExt.readFile(fileID);
       then
         str;
 
-    case (IOSTREAM(data = LIST_DATA(listData)))
+    case IOSTREAM(data = LIST_DATA(listData))
       algorithm
         str := IOStreamExt.appendReversedList(listData);
       then
         str;
 
-    case (IOSTREAM(data = BUFFER_DATA(bufferID)))
+    case IOSTREAM(data = BUFFER_DATA(bufferID))
       algorithm
         str := IOStreamExt.readBuffer(bufferID);
       then
@@ -325,25 +320,24 @@ function print
   input IOStream inStream;
   input Integer whereToPrint;
 algorithm
-  _ := match (inStream, whereToPrint)
+  () := match inStream
     local
       list<String> listData;
       Integer fileID, bufferID;
-      IOStream fStream, lStream, bStream;
 
-    case (IOSTREAM(data = FILE_DATA(fileID)), _)
+    case IOSTREAM(data = FILE_DATA(fileID))
       algorithm
         IOStreamExt.printFile(fileID, whereToPrint);
       then
         ();
 
-    case (IOSTREAM(data = BUFFER_DATA(bufferID)), _)
+    case IOSTREAM(data = BUFFER_DATA(bufferID))
       algorithm
         IOStreamExt.printBuffer(bufferID, whereToPrint);
       then
         ();
 
-    case (IOSTREAM(data = LIST_DATA(listData)), _)
+    case IOSTREAM(data = LIST_DATA(listData))
       algorithm
         IOStreamExt.printReversedList(listData, whereToPrint);
       then

@@ -229,7 +229,7 @@ public
   protected
     String flag = Flags.getConfigString(Flags.MATCHING_ALGORITHM);
   algorithm
-    (func) := match flag
+    func := match flag
       case "PFPlusExt"  then causalizePseudoArray;
       case "pseudo"     then causalizePseudoArray;
       /* ... New causalize modules have to be added here */

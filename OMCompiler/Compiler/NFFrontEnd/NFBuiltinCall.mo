@@ -114,10 +114,6 @@ public
     output Purity purity;
   protected
     ComponentRef cref;
-    InstNode fn_node;
-    Expression first;
-    list<Expression> rest;
-    String name;
     InstContext.Type next_context;
   algorithm
     Call.UNTYPED_CALL(ref = cref) := call;
@@ -207,10 +203,6 @@ public
     input SourceInfo info;
     output Expression arrayExp;
   protected
-    ComponentRef fn_ref;
-    list<Expression> args;
-    list<NamedArg> named_args;
-    Type ty;
   algorithm
     assertNoNamedParams("array", namedArgs, info);
 
@@ -478,9 +470,6 @@ protected
     output Purity purity;
   protected
     Call argtycall;
-    Function fn;
-    list<TypedArg> args;
-    TypedArg start,interval;
   algorithm
     argtycall := Call.typeMatchNormalCall(call, context, info);
     ty := Call.typeOf(argtycall);
@@ -663,11 +652,9 @@ protected
     output Purity purity;
   protected
     Call argtycall;
-    Function fn;
     list<TypedArg> args;
     TypedArg arg;
     InstNode fn_node;
-    NFCallAttributes ca;
   algorithm
     // edge may not be used in a function context.
     if InstContext.inFunction(context) then
@@ -702,7 +689,6 @@ protected
     ComponentRef fn_ref;
     list<Expression> args;
     list<NamedArg> named_args;
-    Expression arg;
     Function fn;
     Expression arg1, arg2;
     Type ty1, ty2;
@@ -805,7 +791,6 @@ protected
     Expression exp_arg, n_arg;
     Type exp_ty, n_ty;
     Variability n_var;
-    Function fn;
     Integer n;
   algorithm
     if not Config.languageStandardAtLeast(Config.LanguageStandard.experimental) then
@@ -950,7 +935,6 @@ protected
     output Variability variability = fillVariability;
     output Purity purity = fillPurity;
   protected
-    Expression fill_arg;
     list<Expression> ty_args;
     Variability arg_var;
     Purity arg_pur;
@@ -1099,7 +1083,6 @@ protected
     list<Expression> args;
     list<NamedArg> named_args;
     Expression arg;
-    Variability var;
     Function fn;
     Dimension vector_dim = Dimension.fromInteger(1);
     Boolean dim_found = false;
@@ -1152,7 +1135,6 @@ protected
     list<Expression> args;
     list<NamedArg> named_args;
     Expression arg;
-    Variability var;
     Function fn;
     list<Dimension> dims;
     Dimension dim1, dim2;
@@ -1213,7 +1195,6 @@ protected
     Variability var;
     Purity pur;
     TypeCheck.MatchKind mk;
-    Function fn;
     Integer n;
   algorithm
     Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
@@ -1336,12 +1317,6 @@ protected
     output Variability var = Variability.PARAMETER;
     output Purity purity = Purity.IMPURE;
   protected
-    ComponentRef fn_ref;
-    list<Expression> args;
-    list<NamedArg> named_args;
-    Expression arg;
-    Function fn;
-    InstNode node;
   algorithm
     // cardinality may only be used in a condition of an assert or
     // if-statement/equation (the specification says only if-statement,
@@ -1865,7 +1840,7 @@ protected
     InstNode scope;
   algorithm
     Call.UNTYPED_CALL(call_scope = scope) := call;
-    _ := Call.typeMatchNormalCall(call, context, info);
+    Call.typeMatchNormalCall(call, context, info);
     // getInstanceName is normally derived from the prefix during the flattening,
     // but sometimes the call is constant evaluated instead (e.g. when it's used
     // in a package). So we create an expression here that contains the scope.
@@ -1881,7 +1856,6 @@ protected
     output Variability var = Variability.PARAMETER;
     output Purity purity = Purity.IMPURE;
   protected
-    Call ty_call;
     list<Expression> args;
     Integer args_count;
     Expression e1, e2;
@@ -1931,12 +1905,11 @@ protected
     output Purity purity = Purity.IMPURE;
   protected
     Call ty_call;
-    Type arg_ty;
     list<TypedArg> args;
     list<TypedArg> namedArgs;
     Expression e1, e2;
-    Type t1, t2;
-    Variability v1, v2;
+    Type t1;
+    Variability v1;
     ComponentRef fn_ref;
     Function normalSample, clockedSample;
     InstNode recopnode;
@@ -2026,13 +1999,12 @@ protected
     output Variability variability = Variability.DISCRETE;
     output Purity purity = Purity.IMPURE;
   protected
-    ComponentRef fn_ref, arg_ref;
+    ComponentRef fn_ref;
     list<Expression> args;
     list<NamedArg> named_args;
     Expression arg;
     Variability var;
     Function fn;
-    InstNode arg_node;
   algorithm
     Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
     assertNoNamedParams(name, named_args, info);
@@ -2109,13 +2081,12 @@ protected
     output Variability variability = Variability.CONTINUOUS;
     output Purity purity = Purity.IMPURE;
   protected
-    ComponentRef fn_ref, arg_ref;
+    ComponentRef fn_ref;
     list<Expression> args;
     list<NamedArg> named_args;
     Expression arg1, arg2;
     Variability var1, var2;
     Function fn;
-    InstNode arg_node;
     Type ty1, ty2;
     Expression expStatic, expDynamic;
   algorithm
@@ -2290,8 +2261,6 @@ protected
     output Type ty;
     output Variability var;
     output Purity pur;
-  protected
-    Call c;
   algorithm
     outCall := Call.typeMatchNormalCall(call, context, info, vectorize);
     ty := Call.typeOf(outCall);

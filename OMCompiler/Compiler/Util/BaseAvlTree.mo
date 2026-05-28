@@ -416,7 +416,7 @@ function forEach
     input Value value;
   end EachFunc;
 algorithm
-  _ := match tree
+  () := match tree
     case NODE()
       algorithm
         forEach(tree.left, func);
@@ -457,7 +457,7 @@ algorithm
     local
       Key key;
       Value value, new_value;
-      Tree branch, new_left, new_right;
+      Tree new_left, new_right;
 
     case NODE(key=key, value=value)
       algorithm
@@ -613,7 +613,7 @@ algorithm
     local
       Key key;
       Value value, new_value;
-      Tree branch, new_left, new_right;
+      Tree new_left, new_right;
 
     case NODE(key=key, value=value)
       algorithm

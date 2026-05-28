@@ -174,10 +174,8 @@ protected function generateModelCodeFMU "
 protected
   list<String> includes,includeDirs;
   list<SimCodeFunction.Function> functions;
-  String filename, funcfilename;
   SimCode.SimCode simCode;
   list<SimCodeFunction.RecordDeclaration> recordDecls;
-  BackendDAE.BackendDAE indexed_dlow,indexed_dlow_1;
   Absyn.ComponentRef a_cref;
   list<String> libPaths;
   tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>> literals;
@@ -229,14 +227,11 @@ protected function generateModelCodeXML "
 protected
   list<String> includes,includeDirs;
   list<SimCodeFunction.Function> functions;
-  String filename, funcfilename;
   SimCode.SimCode simCode;
   list<SimCodeFunction.RecordDeclaration> recordDecls;
-  BackendDAE.BackendDAE indexed_dlow,indexed_dlow_1;
   list<String> libPaths;
   Absyn.ComponentRef a_cref;
   tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>> literals;
-  list<tuple<String, String>> program;
 algorithm
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
   a_cref := AbsynUtil.pathToCref(className);
@@ -278,9 +273,7 @@ protected
   list<SimCodeFunction.RecordDeclaration> recordDecls;
   Absyn.ComponentRef a_cref;
   tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
-  list<tuple<String, String>> program;
   Integer numCheckpoints;
-  String fmuVersion;
 
 algorithm
   numCheckpoints:=ErrorExt.getNumCheckpoints();
@@ -353,17 +346,17 @@ protected function createSimCode "
   output SimCode.SimCode simCode;
 algorithm
   // FIXME This matchcontinue is extremely horrible! Please remove it
-  simCode := matchcontinue(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, libPaths, program, simSettingsOpt, recordDecls, literals, args)
+  simCode := matchcontinue args
     local
       Integer numProc;
       SimCode.SimCode tmpSimCode;
 
-    case(_, _, _, _, _, _, _, _, _, _,_, _, _, _) algorithm
+    case _ algorithm
       // MULTI_RATE PARTITIONINIG
       true := Flags.isSet(Flags.MULTIRATE_PARTITION);
     then HpcOmSimCodeMain.createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inRemovedInitialEquationLst, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs,libPaths, program, simSettingsOpt, recordDecls, literals, args);
 
-    case(_, _, _, _, _, _, _, _, _, _,_, _, _, _) algorithm
+    case _ algorithm
       true := Flags.isSet(Flags.HPCOM);
 
       // either generate code for profiling or for parallel simulation
@@ -376,7 +369,7 @@ algorithm
       print("hpcom computes the ideal number of processors. If you want to set the number manually, use the flag +n=_\n");
     then HpcOmSimCodeMain.createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inRemovedInitialEquationLst, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs,libPaths,program, simSettingsOpt, recordDecls, literals, args);
 
-    case(_, _, _, _, _, _, _, _, _,_, _, _, _, _) algorithm
+    case _ algorithm
       true := Flags.isSet(Flags.HPCOM);
 
       // either generate code for profiling or for parallel simulation
@@ -538,7 +531,7 @@ protected
   protected
     Boolean b;
   algorithm
-    (res as (b,_)) := func();
+    res as (b,_) := func();
     if not b then
       Error.addInternalError(System.dladdr(func) + " failed\n", sourceInfo());
     end if;
@@ -562,15 +555,13 @@ protected
   AvlSetString.Tree generatedObjects=AvlSetString.EMPTY();
 algorithm
   setGlobalRoot(Global.optionSimCode, SOME(simCode));
-  _ := match target
+  () := match target
     local
       String str, guid;
       list<PartialRunTpl> codegenFuncs;
       Integer numThreads, n;
       list<tuple<Boolean,list<String>>> res = {};
-      tuple<Boolean,list<String>> res_i;
       list<String> strs, tmp, matches;
-      Integer i=0;
 
     case "Cpp"
       algorithm
@@ -667,7 +658,7 @@ algorithm
 
     case "ExperimentalEmbeddedC"
       algorithm
-        _ := System.getUUIDStr();
+        System.getUUIDStr();
 
         System.realtimeTick(ClockIndexes.RT_PROFILER0);
         codegenFuncs := {};
@@ -756,7 +747,7 @@ protected function callTargetTemplatesFMU
 algorithm
 
   setGlobalRoot(Global.optionSimCode, SOME(simCode));
-  _ := match (simCode,target)
+  () := match (simCode,target)
     local
       String str, newdir, newpath, resourcesDir, dirname, htmlFile;
       String fmutmp;
@@ -767,7 +758,7 @@ algorithm
       String install_include_omc_dir, install_include_omc_c_dir, install_share_buildproject_dir, install_fmu_sources_dir, fmu_tmp_sources_dir;
       String cmakelistsStr, needCvode, cvodeDirectory;
       String modelDefinesHeaderStr;
-      list<String> sourceFiles, model_desc_src_files, fmi2HeaderFiles, modelica_standard_table_sources;
+      list<String> model_desc_src_files, fmi2HeaderFiles, modelica_standard_table_sources;
       list<String> dgesv_sources, cminpack_sources, simrt_c_sundials_sources, simrt_linear_solver_sources, simrt_non_linear_solver_sources;
       list<String> simrt_mixed_solver_sources, fmi_export_files, model_gen_files, model_all_gen_files, shared_source_files;
       SimCode.VarInfo varInfo;
@@ -804,9 +795,8 @@ algorithm
         end for;
 
         // Add optional _flags.json to resources
-        _ := match simCode.fmiSimulationFlags
+        () := match simCode.fmiSimulationFlags
           local
-            SimCode.FmiSimulationFlags fmiSimFlags;
             String pathToFlagsJson;
           case SOME(SimCode.FMI_SIMULATION_FLAGS_FILE(path=pathToFlagsJson))
             algorithm
@@ -989,11 +979,11 @@ algorithm
           cmakelistsStr := System.stringReplace(cmakelistsStr, "@CMAKE_BUILD_TYPE@", "Release");
         end if;
         // Set CMake runtime dependencies level
-        _ := match (Flags.getConfigString(Flags.FMU_RUNTIME_DEPENDS))
+        () := match Flags.getConfigString(Flags.FMU_RUNTIME_DEPENDS)
           local
             SemanticVersion.Version cmakeVersion;
             SemanticVersion.Version minimumVersion;
-          case("default") algorithm
+          case "default" algorithm
             cmakeVersion := SimCodeUtil.getCMakeVersion();
             minimumVersion := SemanticVersion.SEMVER(3, 21, 0, {}, {}); // v3.21.0
             if SemanticVersion.compare(minimumVersion, cmakeVersion) <= 0 /* minimumVersion <= cmakeVersion */ then
@@ -1002,13 +992,13 @@ algorithm
               cmakelistsStr := System.stringReplace(cmakelistsStr, "@RUNTIME_DEPENDENCIES_LEVEL@", "\"none\"");
             end if;
             then();
-          case("none") algorithm
+          case "none" algorithm
             cmakelistsStr := System.stringReplace(cmakelistsStr, "@RUNTIME_DEPENDENCIES_LEVEL@", "\"none\"");
             then();
-          case("modelica") algorithm
+          case "modelica" algorithm
             cmakelistsStr := System.stringReplace(cmakelistsStr, "@RUNTIME_DEPENDENCIES_LEVEL@", "\"modelica\"");
             then();
-          case("all") algorithm
+          case "all" algorithm
             cmakelistsStr := System.stringReplace(cmakelistsStr, "@RUNTIME_DEPENDENCIES_LEVEL@", "\"all\"");
             then();
           else algorithm
@@ -1170,7 +1160,6 @@ protected
   FlatModel flatModel;
   FunctionTree funcTree;
   UnorderedMap<Absyn.Path, NFFunction.Function> funcMap;
-  NBackendDAE bdae;
   Boolean dumpValidFlatModelicaNF;
   String flatString = "", NFFlatString = "";
 
@@ -1323,7 +1312,7 @@ protected
   Real timeSimCode=0.0, timeTemplates=0.0, timeBackend=0.0;
 algorithm
   FlagsUtil.setConfigBool(Flags.BUILDING_MODEL, true);
-  (outLibs, outFileDir) := match (inEnv)
+  (outLibs, outFileDir) := match inEnv
     local
       String file_dir, description, fmuType;
       list<String> libs;
@@ -1339,7 +1328,7 @@ algorithm
       AvlTreePathFunction.Tree funcs;
 
     // old backend
-    case (graph) algorithm
+    case graph algorithm
       System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
       dae := DAEUtil.transformationsBeforeBackend(cache, graph, inDae);
       ExecStat.execStat("Transformations before backend");
@@ -1453,7 +1442,7 @@ protected
   Real timeSimCode=0.0, timeTemplates=0.0, timeBackend=0.0;
 algorithm
   (outLibs, outFileDir) :=
-  matchcontinue (inEnv)
+  matchcontinue inEnv
     local
       String file_dir, resstr, description;
       list<String> libs;
@@ -1463,7 +1452,7 @@ algorithm
       Option<BackendDAE.BackendDAE> initDAE_lambda0_option;
       list<BackendDAE.Equation> removedInitialEquationLst;
 
-    case (graph) algorithm
+    case graph algorithm
       System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
       dae := DAEUtil.transformationsBeforeBackend(cache, graph, inDae);
       ExecStat.execStat("Transformations before backend");
@@ -1589,7 +1578,6 @@ protected
   Absyn.ComponentRef a_cref;
   tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
   list<DAE.Exp> lits;
-  list<tuple<String, String>> program;
   Integer numCheckpoints;
   list<SimCodeVar.SimVar> tempVars = {};
   BackendDAE.BackendDAE emptyBDAE;
@@ -1603,9 +1591,6 @@ protected
   list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
   Integer maxDelayedExpIndex;
   Integer uniqueEqIndex = 1;
-  Integer nStates;
-  Integer numberofEqns, numberofLinearSys, numberofNonLinearSys,
-  numberofMixedSys, numberOfJacobians, numberofFixedParameters;
   Boolean tmpB;
 
   HashTableCrIListArray.HashTable varToArrayIndexMapping "maps each array-variable to a array of positions";
@@ -1620,9 +1605,6 @@ protected
 
   BackendDAE.Variables daeVars, resVars, algStateVars, auxVars;
   list<BackendDAE.Var> varsLst;
-  list<BackendDAE.Equation> eqnsLst;
-  BackendDAE.EquationArray daeEqns;
-  BackendDAE.Variables localSharedAlgVars;
   Option<SimCode.JacobianMatrix> daeModeSP;
   Option<SimCode.DaeModeData> daeModeData;
   SimCode.DaeModeConfig daeModeConf;
@@ -1638,7 +1620,7 @@ protected
   BackendDAE.NonlinearPattern nonlinearPattern;
 
   SimCode.JacobianMatrix symDAESparsPattern;
-  list<SimCode.JacobianMatrix> symJacs, SymbolicJacs, SymbolicJacsNLS, SymbolicJacsTemp, SymbolicJacsStateSelect;
+  list<SimCode.JacobianMatrix> symJacs, SymbolicJacs, SymbolicJacsNLS, SymbolicJacsTemp;
   list<SimCode.SimEqSystem> initialEquations;
   list<SimCode.SimEqSystem> initialEquations_lambda0;
   list<SimCode.SimEqSystem> removedInitialEquations;
@@ -1697,22 +1679,22 @@ algorithm
     ExecStat.execStat("simCode: created initialization part");
 
     // create parameter equations
-    ((uniqueEqIndex, startValueEquations, _)) := BackendDAEUtil.foldEqSystem(inInitDAE, SimCodeUtil.createStartValueEquations, (uniqueEqIndex, {}, inBackendDAE.shared.globalKnownVars));
+    (uniqueEqIndex, startValueEquations, _) := BackendDAEUtil.foldEqSystem(inInitDAE, SimCodeUtil.createStartValueEquations, (uniqueEqIndex, {}, inBackendDAE.shared.globalKnownVars));
     if debug then ExecStat.execStat("simCode: createStartValueEquations"); end if;
 
-    ((uniqueEqIndex, nominalValueEquations)) := SimCodeUtil.createValueEquationsShared(inBackendDAE.shared, SimCodeUtil.createInitialAssignmentsFromNominal, (uniqueEqIndex, nominalValueEquations));
+    (uniqueEqIndex, nominalValueEquations) := SimCodeUtil.createValueEquationsShared(inBackendDAE.shared, SimCodeUtil.createInitialAssignmentsFromNominal, (uniqueEqIndex, nominalValueEquations));
     if debug then ExecStat.execStat("simCode: createNominalValueEquationsShared"); end if;
-    ((uniqueEqIndex, nominalValueEquations)) := BackendDAEUtil.foldEqSystem(inBackendDAE, SimCodeUtil.createNominalValueEquations, (uniqueEqIndex, nominalValueEquations));
+    (uniqueEqIndex, nominalValueEquations) := BackendDAEUtil.foldEqSystem(inBackendDAE, SimCodeUtil.createNominalValueEquations, (uniqueEqIndex, nominalValueEquations));
     if debug then ExecStat.execStat("simCode: createNominalValueEquations"); end if;
 
-    ((uniqueEqIndex, minValueEquations)) := SimCodeUtil.createValueEquationsShared(inBackendDAE.shared, SimCodeUtil.createInitialAssignmentsFromMin, (uniqueEqIndex, minValueEquations));
+    (uniqueEqIndex, minValueEquations) := SimCodeUtil.createValueEquationsShared(inBackendDAE.shared, SimCodeUtil.createInitialAssignmentsFromMin, (uniqueEqIndex, minValueEquations));
     if debug then ExecStat.execStat("simCode: createMinValueEquationsShared"); end if;
-    ((uniqueEqIndex, minValueEquations)) := BackendDAEUtil.foldEqSystem(inBackendDAE, SimCodeUtil.createMinValueEquations, (uniqueEqIndex, minValueEquations));
+    (uniqueEqIndex, minValueEquations) := BackendDAEUtil.foldEqSystem(inBackendDAE, SimCodeUtil.createMinValueEquations, (uniqueEqIndex, minValueEquations));
     if debug then ExecStat.execStat("simCode: createMinValueEquations"); end if;
 
-    ((uniqueEqIndex, maxValueEquations)) := SimCodeUtil.createValueEquationsShared(inBackendDAE.shared, SimCodeUtil.createInitialAssignmentsFromMax, (uniqueEqIndex, maxValueEquations));
+    (uniqueEqIndex, maxValueEquations) := SimCodeUtil.createValueEquationsShared(inBackendDAE.shared, SimCodeUtil.createInitialAssignmentsFromMax, (uniqueEqIndex, maxValueEquations));
     if debug then ExecStat.execStat("simCode: createMaxValueEquationsShared"); end if;
-    ((uniqueEqIndex, maxValueEquations)) := BackendDAEUtil.foldEqSystem(inBackendDAE, SimCodeUtil.createMaxValueEquations, (uniqueEqIndex, maxValueEquations));
+    (uniqueEqIndex, maxValueEquations) := BackendDAEUtil.foldEqSystem(inBackendDAE, SimCodeUtil.createMaxValueEquations, (uniqueEqIndex, maxValueEquations));
     if debug then ExecStat.execStat("simCode: createMaxValueEquations"); end if;
 
     (uniqueEqIndex, parameterEquations, _) := SimCodeUtil.createParameterEquations(uniqueEqIndex, parameterEquations, inBackendDAE.shared.globalKnownVars);
@@ -1806,15 +1788,15 @@ algorithm
     daeVars := BackendVariable.listVar(varsLst);
 
     // create residual variables, set index and push them SimCode HashTable
-    ((_, resVars)) := BackendVariable.traverseBackendDAEVars(daeVars, BackendVariable.collectVarKindVarinVariables, (BackendVariable.isDAEmodeResVar, BackendVariable.emptyVars()));
-    ((residualVars, _)) :=  BackendVariable.traverseBackendDAEVars(resVars, SimCodeUtil.traversingdlowvarToSimvar, ({}, BackendVariable.emptyVars()));
+    (_, resVars) := BackendVariable.traverseBackendDAEVars(daeVars, BackendVariable.collectVarKindVarinVariables, (BackendVariable.isDAEmodeResVar, BackendVariable.emptyVars()));
+    (residualVars, _) :=  BackendVariable.traverseBackendDAEVars(resVars, SimCodeUtil.traversingdlowvarToSimvar, ({}, BackendVariable.emptyVars()));
     residualVars := SimCodeUtil.rewriteIndex(residualVars, 0);
     (residualVars, _) := SimCodeUtil.setVariableIndexHelper(residualVars, 0, 0);
     crefToSimVarHT:= List.fold(residualVars,HashTableCrefSimVar.addSimVarToHashTable,crefToSimVarHT);
 
     // create auxiliary variables, set index and push them SimCode Hash Table
-    ((_, auxVars)) := BackendVariable.traverseBackendDAEVars(daeVars, BackendVariable.collectVarKindVarinVariables, (BackendVariable.isDAEmodeAuxVar, BackendVariable.emptyVars()));
-    ((auxiliaryVars, _)) :=  BackendVariable.traverseBackendDAEVars(auxVars, SimCodeUtil.traversingdlowvarToSimvar, ({}, BackendVariable.emptyVars()));
+    (_, auxVars) := BackendVariable.traverseBackendDAEVars(daeVars, BackendVariable.collectVarKindVarinVariables, (BackendVariable.isDAEmodeAuxVar, BackendVariable.emptyVars()));
+    (auxiliaryVars, _) :=  BackendVariable.traverseBackendDAEVars(auxVars, SimCodeUtil.traversingdlowvarToSimvar, ({}, BackendVariable.emptyVars()));
     auxiliaryVars := List.sort(auxiliaryVars, SimCodeUtil.simVarCompareByCrefSubsAtEndlLexical);
     auxiliaryVars := SimCodeUtil.rewriteIndex(auxiliaryVars, 0);
     (auxiliaryVars, _) := SimCodeUtil.setVariableIndexHelper(auxiliaryVars, 0, 0);
@@ -1822,7 +1804,7 @@ algorithm
 
     // create SimCodeVars for algebraic states
     algStateVars := BackendVariable.listVar(inBackendDAE.shared.daeModeData.algStateVars);
-    ((algebraicStateVars, _)) :=  BackendVariable.traverseBackendDAEVars(algStateVars, SimCodeUtil.traversingdlowvarToSimvar, ({}, BackendVariable.emptyVars()));
+    (algebraicStateVars, _) :=  BackendVariable.traverseBackendDAEVars(algStateVars, SimCodeUtil.traversingdlowvarToSimvar, ({}, BackendVariable.emptyVars()));
 
     algebraicStateVars := SimCodeUtil.sortSimVarsAndWriteIndex(algebraicStateVars, crefToSimVarHT);
 

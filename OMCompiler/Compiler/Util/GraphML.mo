@@ -453,7 +453,6 @@ protected
   Graph iGraph;
   String gid;
   Boolean directed;
-  Integer newGraphIdx;
   list<Integer> nodeIdc;
   list<tuple<Integer,String>> attValues; //values of custom attributes (see GRAPHINFO definition). <attributeIndex,attributeValue>
 algorithm
@@ -481,10 +480,10 @@ protected
   list<Graph> graphs;
   Graph firstGraph;
 algorithm
-  oGraph := match(iGraphInfo)
-    case(GRAPHINFO(graphCount=0))
+  oGraph := match iGraphInfo
+    case GRAPHINFO(graphCount=0)
       then NONE();
-    case(GRAPHINFO(graphs=graphs))
+    case GRAPHINFO(graphs=graphs)
       algorithm
         firstGraph := listHead(graphs);
       then SOME((1,firstGraph));
@@ -500,12 +499,12 @@ protected
   list<Attribute> attributes;
   Option<tuple<Attribute,Integer>> tmpRes;
 algorithm
-  oAttribute := match(iAttributeName,iAttributeTarget,iGraphInfo)
-    case(_,_,GRAPHINFO(attributes=attributes))
+  oAttribute := match iGraphInfo
+    case GRAPHINFO(attributes=attributes)
       algorithm
         tmpRes := getAttributeByNameAndTargetTail(attributes, iAttributeName, iAttributeTarget);
       then tmpRes;
-    case(_,_,GRAPHINFO(attributes=attributes))
+    case GRAPHINFO(attributes=attributes)
       algorithm
         tmpRes := getAttributeByNameAndTargetTail(attributes, iAttributeName, iAttributeTarget);
       then tmpRes;
@@ -525,13 +524,13 @@ protected
   AttributeTarget attTarget;
    Option<tuple<Attribute,Integer>> tmpAttribute;
 algorithm
-  oAttribute := matchcontinue(iList,iAttributeName,iAttributeTarget)
-    case((head as ATTRIBUTE(attIdx=attIdx,name=name,attTarget=attTarget))::rest,_,_)
+  oAttribute := matchcontinue iList
+    case (head as ATTRIBUTE(attIdx=attIdx,name=name,attTarget=attTarget))::rest
       algorithm
         true := stringEq(name, iAttributeName);
         true := compareAttributeTargets(iAttributeTarget,attTarget);
       then SOME((head,attIdx));
-    case(head::rest,_,_)
+    case head::rest
       algorithm
         tmpAttribute := getAttributeByNameAndTargetTail(rest,iAttributeName,iAttributeTarget);
       then tmpAttribute;
@@ -556,10 +555,10 @@ protected function compareAttributeTarget0
   input AttributeTarget iTarget;
   output Integer oCodec;
 algorithm
-  oCodec := match(iTarget)
-    case(TARGET_NODE()) then 0;
-    case(TARGET_EDGE()) then 1;
-    case(TARGET_GRAPH()) then 1;
+  oCodec := match iTarget
+    case TARGET_NODE() then 0;
+    case TARGET_EDGE() then 1;
+    case TARGET_GRAPH() then 1;
   end match;
 end compareAttributeTarget0;
 
@@ -615,8 +614,7 @@ protected
     Integer graphCount; //number of graphs in the graphs list
     list<Node> nodes;
     Integer nodeCount; //number of nodes in the nodes list
-    list<Edge> edges;
-    Integer edgeCount; //number of edges in the edge list
+    //number of edges in the edge list
     list<Attribute> attributes;
     String graphNodeKey;
     String graphEdgeKey;
@@ -631,9 +629,6 @@ protected function printNode
   input Node node;
 protected
     String id,atts;
-    String color;
-    list<NodeLabel> nodeLabels;
-    ShapeType shapeType;
     Option<String> optDesc;
     list<tuple<Integer,String>> attValues; //values of custom attributes (see GRAPH definition). <attributeIndex,attributeValue>
 algorithm

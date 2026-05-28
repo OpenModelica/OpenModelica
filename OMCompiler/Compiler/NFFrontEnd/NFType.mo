@@ -1088,7 +1088,6 @@ public
     input String indent;
     input output IOStream.IOStream s;
   protected
-    Integer index;
     String name;
     ComplexType complexTy;
     Absyn.Path path;
@@ -1583,8 +1582,6 @@ public
     input Type ty;
     input Boolean resize = false;
     output Option<Integer> sz;
-  protected
-    Class cls;
   algorithm
     sz := match ty
       case ARRAY()                                    then complexSize(ty.elementType, resize);

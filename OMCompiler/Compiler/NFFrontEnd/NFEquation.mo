@@ -715,7 +715,6 @@ public
     eq := match eq
       local
         Expression e1, e2, e3;
-        ComponentRef cr1, cr2;
 
       case EQUALITY()
         algorithm

@@ -274,11 +274,11 @@ public
         for iter in call.iters loop
           call_exp := Expression.replaceIterator(call_exp, Util.tuple21(iter), Util.tuple22(iter));
         end for;
-        _ := Expression.mapShallow(call_exp, function filterExp(filter = filter, acc = acc));
+        Expression.mapShallow(call_exp, function filterExp(filter = filter, acc = acc));
       then ();
 
       else algorithm
-        _ := Expression.mapShallow(exp, function filterExp(filter = filter, acc = acc));
+        Expression.mapShallow(exp, function filterExp(filter = filter, acc = acc));
       then ();
     end match;
   end filterExp;
@@ -956,7 +956,6 @@ public
     Integer check_shift, pre_shift, shift = 1;
     Integer start, step, stop, max_size, new_step, new_stop, check_stop;
     Boolean fail_;
-    list<Integer> rest;
     list<Integer> starts = {}, stops = {}, steps = {}, shifts = {};
     list<Boolean> failed = {};
     Integer min_dim, max_dim;
@@ -1615,7 +1614,7 @@ protected
     input Pointer<Integer> eqn_idx_ptr          "mutable equation index";
     input Integer index = 1                     "dimension index for the key";
   algorithm
-    _ := match lst
+    () := match lst
       local
         Dimension dim;
         list<tuple<Dimension, Boolean>> rest;
@@ -1680,7 +1679,7 @@ protected
     input list<Subscript> acc = {};
     input Integer index = 1;
   algorithm
-    _ := match lst
+    () := match lst
       local
         list<tuple<Subscript, Dimension, Boolean>> rest;
         Subscript sub;

@@ -345,11 +345,11 @@ end variableIsBuiltin;
 public function isDer
   input Absyn.Path inPath;
 algorithm
-  _:=
-  match (inPath)
+  ():=
+  match inPath
     local Absyn.Path path;
-    case (Absyn.IDENT(name = "der")) then ();
-    case (Absyn.FULLYQUALIFIED(path)) algorithm isDer(path); then ();
+    case Absyn.IDENT(name = "der") then ();
+    case Absyn.FULLYQUALIFIED(path) algorithm isDer(path); then ();
   end match;
 end isDer;
 
@@ -381,13 +381,13 @@ algorithm
   (initialProgram,initialSCodeProgram) := matchcontinue ()
     case ()
       algorithm
-        failure(_ := getGlobalRoot(Global.builtinIndex));
+        failure(getGlobalRoot(Global.builtinIndex));
         setGlobalRoot(Global.builtinIndex,{});
       then fail();
     case ()
       algorithm
         assocLst := getGlobalRoot(Global.builtinIndex);
-        ((p,sp)) := Util.assoc(Util.makeTuple(Flags.getConfigEnum(Flags.GRAMMAR), Flags.isSet(Flags.SCODE_INST)) , assocLst);
+        (p,sp) := Util.assoc(Util.makeTuple(Flags.getConfigEnum(Flags.GRAMMAR), Flags.isSet(Flags.SCODE_INST)) , assocLst);
       then (p,sp);
     case ()
       algorithm
@@ -480,26 +480,24 @@ public function initialGraph
 protected
   FCore.Cache cache;
 algorithm
-  (outCache, graph) := matchcontinue(inCache)
+  (outCache, graph) := matchcontinue inCache
     local
-      list<Absyn.Class> initialClasses;
       SCode.Program initialProgram;
-      list<SCode.Element> types;
 
     // First look for cached version
-    case (cache) algorithm
+    case cache algorithm
       graph := FCore.getCachedInitialGraph(cache);
     then (cache,graph);
 
     // then look in the global roots[builtinEnvIndex]
-    case (cache)
+    case cache
       algorithm
         graph := getSetInitialGraph(NONE());
       then
         (cache, graph);
 
     // if no cached version found create initial graph.
-    case (cache)
+    case cache
       algorithm
         graph := FGraph.new("graph", FCore.dummyTopModel);
         graph := FGraphBuild.mkProgramGraph(basicTypes, FCore.BASIC_TYPE(), graph);
@@ -513,7 +511,7 @@ algorithm
         graph := FGraphBuild.mkProgramGraph(initialProgram, FCore.BUILTIN(), graph);
 
         cache := FCore.setCachedInitialGraph(cache,graph);
-        _ := getSetInitialGraph(SOME(graph));
+        getSetInitialGraph(SOME(graph));
       then
         (cache,graph);
 
@@ -525,27 +523,27 @@ protected function getSetInitialGraph
   input Option<FGraph.Graph> inEnvOpt;
   output FGraph.Graph initialEnv;
 algorithm
-  initialEnv := matchcontinue (inEnvOpt)
+  initialEnv := matchcontinue inEnvOpt
     local
       list<tuple<Integer,FGraph.Graph>> assocLst;
       FGraph.Graph graph;
 
     // nothing there
-    case (_)
+    case _
       algorithm
-        failure(_ := getGlobalRoot(Global.builtinGraphIndex));
+        failure(getGlobalRoot(Global.builtinGraphIndex));
         setGlobalRoot(Global.builtinGraphIndex, {});
       then
         fail();
 
     // return the correct graph depending on flags
-    case (NONE())
+    case NONE()
       algorithm
         assocLst := getGlobalRoot(Global.builtinGraphIndex);
       then
         Util.assoc(Flags.getConfigEnum(Flags.GRAMMAR), assocLst);
 
-    case (SOME(graph))
+    case SOME(graph)
       algorithm
         true := intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.METAMODELICA);
         assocLst := getGlobalRoot(Global.builtinGraphIndex);
@@ -553,7 +551,7 @@ algorithm
       then
         graph;
 
-    case (SOME(graph))
+    case SOME(graph)
       algorithm
         true := intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PARMODELICA);
         assocLst := getGlobalRoot(Global.builtinGraphIndex);
@@ -561,7 +559,7 @@ algorithm
       then
         graph;
 
-    case (SOME(graph))
+    case SOME(graph)
       algorithm
         true := intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.MODELICA) or intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.OPTIMICA);
         assocLst := getGlobalRoot(Global.builtinGraphIndex);
@@ -673,14 +671,11 @@ function getElementWithPathCheckBuiltin
   input Absyn.Path inPath;
   output SCode.Element outElement;
 algorithm
-  outElement := matchcontinue (inProgram, inPath)
+  outElement := matchcontinue inPath
     local
-      SCode.Program sp, rest;
-      SCode.Element c, e;
-      Absyn.Path p;
-      Absyn.Ident i, n;
+      SCode.Program sp;
 
-    case (_, _)
+    case _
       then SCodeUtil.getElementWithPath(inProgram, inPath);
 
     else

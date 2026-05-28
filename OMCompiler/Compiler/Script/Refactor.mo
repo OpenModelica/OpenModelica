@@ -60,10 +60,10 @@ public function refactorGraphicalAnnotation "This function refactors the graphic
   input Absyn.Class classToRefactor;
   output Absyn.Class changedClass; //Manipulerad AST
 algorithm
-  changedClass := match (wholeAST, classToRefactor)
+  changedClass := match classToRefactor
     local
       Absyn.Class c;
-    case(_, _)
+    case _
       algorithm
         c := refactorGraphAnnInClass(classToRefactor,wholeAST,Absyn.IDENT(""));
       then
@@ -85,10 +85,7 @@ algorithm
       Absyn.Program p;
       Absyn.ClassDef resultClassDef;
       String n;
-      Boolean part,f,e;
-      Absyn.Restriction r;
       Absyn.ClassDef d;
-      SourceInfo file_info;
       Absyn.Path cPath;
       Interactive.GraphicEnvCache env;
 
@@ -107,7 +104,7 @@ algorithm
        //  debug_print("Refactoring Class:", n);
         cPath := AbsynUtil.joinPaths(cPath,Absyn.IDENT(n));
         env := Interactive.getClassEnv(p,cPath);
-        _ := refactorGraphAnnInClassDef(d,p,cPath,env);
+        refactorGraphAnnInClassDef(d,p,cPath,env);
       then
         outClass;
 
@@ -126,7 +123,6 @@ algorithm
   outDef := matchcontinue (inDef,inProgram,classPath,inClassEnv)
     local
       Absyn.Program p;
-      Absyn.ClassDef cd;
       list<Absyn.ClassPart> cp,resultPart;
       list<Absyn.Annotation> ann;
       Option<String> cmt;
@@ -164,14 +160,14 @@ protected function refactorGraphAnnInClassParts "Helper function to refactorGrap
   input Interactive.GraphicEnvCache env;
   output list<Absyn.ClassPart> outParts;
 algorithm
-  outParts := match (inParts,inProgram,classPath,env)
+  outParts := match (inParts, inProgram, classPath)
     local
       Absyn.Program p;
       list<Absyn.ClassPart> restParts,resParts;
       Absyn.ClassPart firstPart,resultPart;
       Absyn.Path cPath;
-    case({},_,_,_) then {};
-    case(firstPart :: restParts ,p,cPath, _)
+    case({}, _, _) then {};
+    case(firstPart :: restParts, p, cPath)
       algorithm
         resultPart := refactorGraphAnnInClassPart(firstPart,p,cPath,env);
         resParts := refactorGraphAnnInClassParts(restParts,p,cPath,env);
@@ -260,15 +256,15 @@ protected function refactorGraphAnnInContentList"Helper function to refactorGrap
     output contentType outItem;
   end refactorGraphAnnInContent;
 algorithm
-  outList := match (inList,refactorGraphAnnInItem,inProgram,classPath,inClassEnv)
+  outList := match (inList, inProgram, classPath, inClassEnv)
     local
       Absyn.Program p;
       list<contentType> restList,resList;
       contentType firstItem,resultItem;
       Absyn.Path cPath;
       Interactive.GraphicEnvCache env;
-    case({},_,_,_,_) then {};
-    case(firstItem :: restList,_,p,cPath,env)
+    case({}, _, _, _) then {};
+    case(firstItem :: restList, p, cPath, env)
       algorithm
         resultItem := refactorGraphAnnInItem(firstItem,p,cPath,env);
         resList := refactorGraphAnnInContentList(restList,refactorGraphAnnInItem,p,cPath,env);
@@ -289,7 +285,6 @@ algorithm
     local
       Absyn.Program p;
       Absyn.Element el,resultElement;
-      list<Absyn.ElementArg> annList;
       Absyn.Path cPath;
       Interactive.GraphicEnvCache env;
 
@@ -311,7 +306,7 @@ protected function refactorGraphAnnInEqItem"Helper function to refactorGraphAnnI
 
 algorithm
 
-  outItem := matchcontinue (inItem,inProgram,classPath,inClassEnv)
+  outItem := matchcontinue (inItem, inProgram)
 
     local
       Absyn.Program p;
@@ -321,7 +316,7 @@ algorithm
       SourceInfo info;
 
     case(Absyn.EQUATIONITEM(equation_ = e, info = info, comment =
-      SOME(Absyn.COMMENT(annotation_ = SOME(Absyn.ANNOTATION(elementArgs = annList)),comment = com))),p,_,_)
+      SOME(Absyn.COMMENT(annotation_ = SOME(Absyn.ANNOTATION(elementArgs = annList)),comment = com))), p)
       algorithm
         annList := transformConnectAnnList(annList,{"Connect"},{},p); //Connectannotation
       then
@@ -338,15 +333,14 @@ protected function refactorGraphAnnInAlgItem"Helper function to refactorGraphAnn
   input Interactive.GraphicEnvCache inClassEnv;
   output Absyn.AlgorithmItem outItem;
 algorithm
-  outItem := matchcontinue (inItem,inProgram,classPath,inClassEnv)
+  outItem := matchcontinue inItem
     local
-      Absyn.Program p;
       Absyn.Algorithm alg;
       Option<String> com;
       list<Absyn.ElementArg> annList;
       SourceInfo info;
-    case(Absyn.ALGORITHMITEM(algorithm_ = alg, info = info, comment =
-      SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annList)),com))),_,_,_)
+    case Absyn.ALGORITHMITEM(algorithm_ = alg, info = info, comment =
+      SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annList)),com)))
       algorithm
         //        a = transformGraphAnn(a,p); whut?
 
@@ -450,7 +444,6 @@ algorithm
     local
 
       Absyn.Program p;
-      Absyn.ElementSpec e;
       Absyn.ElementAttributes at;
       Absyn.Path path,cPath;
       Absyn.ComponentItem firstComp,resultComp;
@@ -510,7 +503,6 @@ algorithm
       Absyn.Component comp;
       list<Absyn.ElementArg> annList;
       Option<String> str;
-      Option<Absyn.Comment> com;
       Interactive.GraphicEnvCache env;
 
     case(Absyn.COMPONENTITEM(component = comp, condition = con,
@@ -550,9 +542,9 @@ algorithm
       Absyn.Program p;
       Absyn.Path path,cPath;
       Absyn.Exp x1,x2,y1,y2;
-      list<Absyn.ElementArg> args,rest,res,trans;
+      list<Absyn.ElementArg> rest,res,trans;
       Absyn.ElementArg arg,iconTrans,diagramTrans;
-      Context context, c;
+      Context context;
       Boolean fi;
       Absyn.Each e;
       Option<String> com;
@@ -650,10 +642,10 @@ protected function getRestrictionInClass"
   input Absyn.Class inClass;
   output Absyn.Restriction outRestriction;
 algorithm
-  outRestriction := match(inClass)
+  outRestriction := match inClass
     local
       Absyn.Restriction restriction;
-    case(Absyn.CLASS(restriction = restriction)) then restriction;
+    case Absyn.CLASS(restriction = restriction) then restriction;
   end match;
 end getRestrictionInClass;
 
@@ -665,22 +657,22 @@ protected function getRotationDegree"
   input list<Absyn.ElementArg> inList;
   output Option<Real> degrees;
 algorithm
-  degrees := matchcontinue(inList)
+  degrees := matchcontinue inList
     local
       Real rot;
       Absyn.Exp ex;
       list<Absyn.ElementArg> rest;
       Option<Real> res;
 
-    case({}) then NONE();
+    case {} then NONE();
 
-    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "rotation"), modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=ex)))) :: _)
+    case Absyn.MODIFICATION(path = Absyn.IDENT(name = "rotation"), modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=ex)))) :: _
       algorithm
         rot := (getValueFromExp(ex));
       then
         SOME(rot);
 
-    case(_ :: rest)
+    case _ :: rest
       algorithm
         res := getRotationDegree(rest);
       then
@@ -1096,15 +1088,15 @@ protected function getCoordsFromCoordSysArgs"
   output Absyn.Exp x2;
   output Absyn.Exp y2;
 algorithm
-  (x1,y1,x2,y2) := match(inAnns)
+  (x1,y1,x2,y2) := match inAnns
     local
       list<Absyn.ElementArg> rest;
 
-    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "extent"), modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=Absyn.MATRIX(matrix = {{x1,y1},{x2,y2}} ))))) :: _)
+    case Absyn.MODIFICATION(path = Absyn.IDENT(name = "extent"), modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=Absyn.MATRIX(matrix = {{x1,y1},{x2,y2}} ))))) :: _
     then
       (x1,y1,x2,y2);
 
-    case(_ :: rest)
+    case _ :: rest
       algorithm
         (x1,y1,x2,y2) := getCoordsFromCoordSysArgs(rest);
       then
@@ -1120,15 +1112,15 @@ protected function getExtentModification
   output Absyn.Exp x2;
   output Absyn.Exp y2;
 algorithm
-  (x1,y1,x2,y2) := match (elementArgLst)
+  (x1,y1,x2,y2) := match elementArgLst
     local list<Absyn.ElementArg> rest;
-    case (Absyn.MODIFICATION(
+    case Absyn.MODIFICATION(
       path = Absyn.IDENT(name = "extent"),
-      modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=Absyn.ARRAY({Absyn.ARRAY({x1,y1}  ),Absyn.ARRAY({x2,y2})}))) )):: _)
+      modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=Absyn.ARRAY({Absyn.ARRAY({x1,y1}  ),Absyn.ARRAY({x2,y2})}))) )):: _
       algorithm
       then (x1,y1,x2,y2);
 
-    case (_:: rest)
+    case _:: rest
       algorithm
         (x1,y1,x2,y2) := getExtentModification(rest);
       then (x1,y1,x2,y2);
@@ -1143,17 +1135,17 @@ protected function getCoordsFromLayerArgs
   output Absyn.Exp x2;
   output Absyn.Exp y2;
 algorithm
-  (x1,y1,x2,y2) := matchcontinue(inAnns)
+  (x1,y1,x2,y2) := matchcontinue inAnns
     local
       list<Absyn.ElementArg> rest,args;
 
-    case (Absyn.MODIFICATION(path = Absyn.IDENT(name = "coordinateSystem"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args)))::_)
+    case Absyn.MODIFICATION(path = Absyn.IDENT(name = "coordinateSystem"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args)))::_
       algorithm
         (x1,y1,x2,y2) := getExtentModification(args);
       then
         (x1,y1,x2,y2);
 
-    case(_ :: rest)
+    case _ :: rest
       algorithm
         (x1,y1,x2,y2) := getCoordsFromLayerArgs(rest);
       then
@@ -1187,7 +1179,7 @@ algorithm
       Real thick;
       list<Absyn.ElementArg> args,rest,res;
       Absyn.ElementArg arg;
-      Context context, c;
+      Context context;
       Boolean fi;
       Absyn.Each e;
       Option<String> com;
@@ -1370,19 +1362,19 @@ protected function isLayerAnnInList"
   input list<Absyn.ElementArg> inList;
   output Boolean result;
 algorithm
-  result := match(inList)
+  result := match inList
     local
       list<Absyn.ElementArg> rest;
       Boolean res;
 
-    case({}) then false;
-    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "Diagram")) :: _)
+    case {} then false;
+    case Absyn.MODIFICATION(path = Absyn.IDENT(name = "Diagram")) :: _
     then
       true;
-    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "Icon")) :: _)
+    case Absyn.MODIFICATION(path = Absyn.IDENT(name = "Icon")) :: _
     then
       true;
-    case(_ :: rest)
+    case _ :: rest
       algorithm
         res := isLayerAnnInList(rest);
       then
@@ -1508,9 +1500,9 @@ protected function nameArgWithName
   input String argName;
   output Boolean res;
 algorithm
-  res := match(narg,argName)
+  res := match narg
   local String name;
-    case(Absyn.NAMEDARG(name,_),_) algorithm
+    case Absyn.NAMEDARG(name,_) algorithm
       res := (name == argName);
     then res;
   end match;
@@ -1537,7 +1529,7 @@ algorithm
 
       list<Absyn.ElementArg> args, rest;
       list<Absyn.NamedArg> res,restRes,argRes;
-      Context context, c;
+      Context context;
       list<String> arrows;
       Absyn.Exp x1,x2,y1,y2;
       Integer color1,color2,color3,x;
@@ -1673,11 +1665,11 @@ protected function cleanStyleAttrs "
   output list<Absyn.ElementArg> outArgs;
 
 algorithm
-  outArgs := matchcontinue(inArgs,resultList,inCon)
+  outArgs := matchcontinue inCon
     local Context context;
 
       /* If is Rectangle, Ellipse, Polygon or Text and no color attribute, set default to lineColor={0,0,255} */
-    case(_,_, context)
+    case context
       algorithm
         true := isLinebasedGraphic(context);
         {} := List.select(inArgs,isLineColorModifier);
@@ -1686,7 +1678,7 @@ algorithm
       then outArgs;
 
       /* If is Line and no color attribute, set default to color={0,0,255} */
-    case(_,_, context)
+    case context
       algorithm
         true := isLineGraphic(context);
         {} := List.select(inArgs,isLineColorModifier);
@@ -1705,9 +1697,9 @@ protected function isLineColorModifier
   input Absyn.ElementArg arg;
   output Boolean res;
 algorithm
-  res := match(arg)
-    case(Absyn.MODIFICATION(path = Absyn.IDENT("color"),
-        modification = SOME(Absyn.CLASSMOD(_,_))))
+  res := match arg
+    case Absyn.MODIFICATION(path = Absyn.IDENT("color"),
+        modification = SOME(Absyn.CLASSMOD(_,_)))
       then true;
     else false;
   end match;
@@ -1717,8 +1709,8 @@ protected function isStyleModifier
   input Absyn.ElementArg arg;
   output Boolean res;
 algorithm
-  res := match(arg)
-    case(Absyn.MODIFICATION(path = Absyn.IDENT("style"))) then true;
+  res := match arg
+    case Absyn.MODIFICATION(path = Absyn.IDENT("style")) then true;
     else false;
   end match;
 end isStyleModifier;
@@ -1727,11 +1719,11 @@ protected function isLinebasedGraphic "Returns true if context string is a line 
   input Context context;
   output Boolean res;
 algorithm
-  res := match(context)
-    case("Rectangle"::_) then true;
-    case("Ellipse"::_) then true;
-    case("Polygon"::_) then true;
-    case("Text"::_) then true;
+  res := match context
+    case "Rectangle"::_ then true;
+    case "Ellipse"::_ then true;
+    case "Polygon"::_ then true;
+    case "Text"::_ then true;
     else false;
   end match;
 end isLinebasedGraphic;
@@ -1740,8 +1732,8 @@ protected function isLineGraphic "Returns true if context string is a Line"
   input Context context;
   output Boolean res;
 algorithm
-  res := match(context)
-    case("Line"::_) then true;
+  res := match context
+    case "Line"::_ then true;
     else false;
   end match;
 end isLineGraphic;
@@ -1757,13 +1749,9 @@ protected function cleanStyleAttrs2 "
 algorithm
   outArgs := match (inArgs,inResultList,inCon)
     local
-      list<Absyn.ElementArg> args,outList,rest;
+      list<Absyn.ElementArg> outList,rest;
       Absyn.ElementArg arg;
-      Context context,c;
-      Boolean fi;
-      Absyn.Each e;
-      Option<Absyn.Modification> m;
-      Option<String> com;
+      Context context;
       list<Absyn.ElementArg> resultList;
 
     case({},resultList,_) then resultList;
@@ -1964,7 +1952,7 @@ algorithm
     local
       list<Absyn.ElementArg> lst;
 
-    case(lst)
+    case lst
       algorithm
         lst := Absyn.MODIFICATION(false, Absyn.NON_EACH(),
         Absyn.IDENT("fillPattern"), SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.INTEGER(1),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo) :: lst;
@@ -1982,18 +1970,14 @@ algorithm
   result := match inArgs
     local
       list<Absyn.ElementArg> rest;
-      Absyn.ElementArg arg;
-      Boolean fi,res;
-      Absyn.Each e;
-      Option<Absyn.Modification> m;
-      Option<String> com;
+      Boolean res;
 
-    case({}) then false;
+    case {} then false;
 
-    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "gradient")):: _)
+    case Absyn.MODIFICATION(path = Absyn.IDENT(name = "gradient")):: _
     then true;
 
-    case(_ :: rest)
+    case _ :: rest
       algorithm
         res := isGradientInList(rest);
       then res;
@@ -2012,18 +1996,14 @@ algorithm
   result := match inArgs
     local
       list<Absyn.ElementArg> rest;
-      Absyn.ElementArg arg;
-      Boolean fi,res;
-      Absyn.Each e;
-      Option<Absyn.Modification> m;
-      Option<String> com;
+      Boolean res;
 
-    case({}) then false;
+    case {} then false;
 
-    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "fillPattern")):: _)
+    case Absyn.MODIFICATION(path = Absyn.IDENT(name = "fillPattern")):: _
     then true;
 
-    case(_ :: rest)
+    case _ :: rest
       algorithm
         res := isFillPatternInList(rest);
       then res;
@@ -2042,13 +2022,13 @@ algorithm
       list<Absyn.ElementArg> rest,lst;
       Absyn.ElementArg arg;
 
-    case({}) then {};
+    case {} then {};
 
-    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "fillPattern")) :: rest)
+    case Absyn.MODIFICATION(path = Absyn.IDENT(name = "fillPattern")) :: rest
 
     then rest;
 
-    case(arg::rest)
+    case arg::rest
       algorithm
         lst := removeFillPatternInList(rest);
       then (arg::lst);
@@ -2090,12 +2070,11 @@ algorithm
   outBoolean := match inList
     local
       list<Absyn.ElementArg> rest;
-      Absyn.ElementArg arg;
-    case({})
+    case {}
       then false;
-    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "fillColor")):: _)
+    case Absyn.MODIFICATION(path = Absyn.IDENT(name = "fillColor")):: _
       then true;
-    case(_::rest)
+    case _::rest
       then isFillColorInList(rest);
   end match;
 end isFillColorInList;
@@ -2114,23 +2093,23 @@ algorithm
       Option<String> com;
       SourceInfo info;
 
-    case({}) then {};
-    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "thickness"), modification = SOME(Absyn.CLASSMOD())) :: rest)
+    case {} then {};
+    case Absyn.MODIFICATION(path = Absyn.IDENT(name = "thickness"), modification = SOME(Absyn.CLASSMOD())) :: rest
       algorithm
         lst := setDefaultLineInList(rest);
       then lst; //filtered
 
-    case(Absyn.MODIFICATION(path = Absyn.IDENT(name = "pattern"), modification = SOME(Absyn.CLASSMOD())) :: rest)
+    case Absyn.MODIFICATION(path = Absyn.IDENT(name = "pattern"), modification = SOME(Absyn.CLASSMOD())) :: rest
       algorithm
         lst := setDefaultLineInList(rest);
       then lst; //filtered
 
-    case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "color"), modification = SOME(Absyn.CLASSMOD(elementArgLst= args)), comment = com, info = info) :: rest)
+    case Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "color"), modification = SOME(Absyn.CLASSMOD(elementArgLst= args)), comment = com, info = info) :: rest
       algorithm
         lst := setDefaultLineInList(rest);
       then Absyn.MODIFICATION(fi, e, Absyn.IDENT("color"), SOME(Absyn.CLASSMOD(args,Absyn.EQMOD(Absyn.INTEGER(0),Absyn.dummyInfo))), com, info) :: lst;
 
-    case(arg::rest)
+    case arg::rest
       algorithm
         lst := setDefaultLineInList(rest);
       then (arg::lst);
@@ -2146,11 +2125,11 @@ protected function getMappedColor "
   output Integer color2;
   output Integer color3;
 algorithm
-  (color1,color2,color3) := match (inColor)
+  (color1,color2,color3) := match inColor
     local
       rgbColor rcol;
       Integer  color;
-    case(color)
+    case color
       algorithm
         rcol := listGet(colorMapList,color+1);
         color1 := listGet(rcol,1);
@@ -2202,20 +2181,20 @@ protected function getValueFromExp
   input Absyn.Exp expr;
   output Real value;
 algorithm
-  value := match(expr)
+  value := match expr
     local
       String realVal;
       Integer intVal;
-    case(Absyn.REAL(value = realVal))
+    case Absyn.REAL(value = realVal)
     then stringReal(realVal);
 
-    case(Absyn.UNARY(exp = Absyn.REAL(value = realVal)))
+    case Absyn.UNARY(exp = Absyn.REAL(value = realVal))
     then - stringReal(realVal);
 
-    case(Absyn.INTEGER(value = intVal))
+    case Absyn.INTEGER(value = intVal)
     then intReal(intVal);
 
-    case(Absyn.UNARY(exp = Absyn.INTEGER(value = intVal)))
+    case Absyn.UNARY(exp = Absyn.INTEGER(value = intVal))
     then - intReal(intVal);
   end match;
 end getValueFromExp;

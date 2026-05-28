@@ -92,7 +92,7 @@ public function createSimCode "
   input Absyn.FunctionArgs args;
   output SimCode.SimCode simCode;
 algorithm
-  simCode := matchcontinue (inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, libPaths,program,simSettingsOpt, recordDecls, literals, args)
+  simCode := matchcontinue inBackendDAE
     local
       Integer lastEqMappingIdx;
       BackendDAE.EqSystems eqs;
@@ -100,27 +100,24 @@ algorithm
       list<tuple<Integer,Integer>> equationSccMapping; //Maps each simEq to the scc
       array<list<Integer>> sccSimEqMapping, daeSccSimEqMapping; //Maps each scc to a list of simEqs
       array<Integer> simeqCompMapping; //Maps each simEq to the scc
-      BackendDAE.StrongComponents allComps;
 
-      HpcOmTaskGraph.TaskGraph taskGraph, taskGraphDae, taskGraphOde, taskGraphZeroFuncs, taskGraphOdeSimplified, taskGraphDaeSimplified, taskGraphZeroFuncSimplified, taskGraphOdeScheduled, taskGraphDaeScheduled, taskGraphZeroFuncScheduled, taskGraphInit;
-      HpcOmTaskGraph.TaskGraphMeta taskGraphData, taskGraphDataDae, taskGraphDataOde, taskGraphDataZeroFuncs, taskGraphDataOdeSimplified, taskGraphDataDaeSimplified, taskGraphDataZeroFuncSimplified, taskGraphDataOdeScheduled, taskGraphDataDaeScheduled, taskGraphDataZeroFuncScheduled, taskGraphDataInit;
-      String fileName, fileNamePrefix;
+      HpcOmTaskGraph.TaskGraph taskGraph, taskGraphDae, taskGraphOde, taskGraphZeroFuncs, taskGraphOdeSimplified, taskGraphDaeSimplified, taskGraphZeroFuncSimplified, taskGraphOdeScheduled;
+      HpcOmTaskGraph.TaskGraphMeta taskGraphData, taskGraphDataDae, taskGraphDataOde, taskGraphDataZeroFuncs, taskGraphDataOdeSimplified, taskGraphDataDaeSimplified, taskGraphDataZeroFuncSimplified, taskGraphDataOdeScheduled;
+      String fileName;
       Integer numProc;
       list<list<Integer>> criticalPaths, criticalPathsWoC;
       Real cpCosts, cpCostsWoC;
       list<HpcOmSimCode.Task> scheduledTasksOde, scheduledTasksDae, scheduledTasksZeroFunc;
       list<Integer> zeroFuncsSimEqIdc;
 
-      Boolean taskGraphMetaValid, numFixed;
+      Boolean taskGraphMetaValid;
       String criticalPathInfo;
       array<tuple<Integer,Integer,Real>> schedulerInfo; //maps each Task to <threadId, orderId, startCalcTime>
       HpcOmSimCode.Schedule scheduleOde, scheduleDae, scheduleZeroFunc;
-      array<tuple<Integer,Integer,Integer>> eqCompMapping, varCompMapping;
       Real graphCosts;
       Integer graphOps;
       Option<SimCode.BackendMapping> backendMapping;
       Option<HpcOmSimCode.MemoryMap> optTmpMemoryMap;
-      array<Option<SimCode.SimEqSystem>> simEqIdxSimEqMapping;
 
       array<list<SimCodeVar.SimVar>> simVarMapping; //maps each backend variable to a list of simVars
       HpcOmSimCode.HpcOmData hpcomData;
@@ -128,10 +125,8 @@ algorithm
       HashTableCrILst.HashTable varToIndexMapping;
 
       SimCode.PartitionData partData;
-      list<list<Integer>> partitions, activatorsForPartitions;
-      list<Integer> stateToActivators;
 
-    case (BackendDAE.DAE(), _, _, _, _,_, _, _, _, _, _, _, _, _) algorithm
+    case BackendDAE.DAE() algorithm
       // DO MULTI-RATE-PARTITIONING
       true :=  Flags.isSet(Flags.MULTIRATE_PARTITION);
       print("DO MULTIRATE\n");
@@ -144,7 +139,7 @@ algorithm
 
       //get simCode-backendDAE mappings
       //----------------------------
-      _ := SimCodeUtil.getSimVarMappingOfBackendMapping(simCode.backendMapping);
+      SimCodeUtil.getSimVarMappingOfBackendMapping(simCode.backendMapping);
       (simeqCompMapping, sccSimEqMapping, daeSccSimEqMapping) := HpcOmTaskGraph.setUpHpcOmMapping(inBackendDAE, simCode, lastEqMappingIdx, equationSccMapping);
       ExecStat.execStat("hpcom setup");
 
@@ -182,7 +177,7 @@ algorithm
     then
       simCode;
 
-    case (BackendDAE.DAE(eqs=eqs), _, _, _, _,_, _, _, _, _, _, _, _, _) algorithm
+    case BackendDAE.DAE(eqs=eqs) algorithm
       // DO HPCOM PARALLELIZATION
       true :=  Flags.isSet(Flags.HPCOM);
 
@@ -219,7 +214,7 @@ algorithm
       schedulerInfo := arrayCreate(arrayLength(taskGraphDae), (-1,-1,-1.0));
       ExecStat.execStat("hpcom create DAE TaskGraph");
 
-      _ := checkTaskGraphMetaConsistency(taskGraphDae, taskGraphDataDae, "DAE system");
+      checkTaskGraphMetaConsistency(taskGraphDae, taskGraphDataDae, "DAE system");
       ExecStat.execStat("hpcom validate DAE TaskGraph");
 
       //Create Costs
@@ -265,8 +260,8 @@ algorithm
       //Mark all event nodes in the DAE Task Graph
       taskGraphDataDae := HpcOmTaskGraph.markSystemComponents(taskGraphZeroFuncs, taskGraphDataZeroFuncs, (true, false, false), taskGraphDataDae);
 
-      _ := checkTaskGraphMetaConsistency(taskGraphZeroFuncs, taskGraphDataZeroFuncs, "ZeroFunc system");
-      _ := checkEquationCount(taskGraphDataZeroFuncs, "ZeroFunc system", listLength(zeroFuncsSimEqIdc), sccSimEqMapping);
+      checkTaskGraphMetaConsistency(taskGraphZeroFuncs, taskGraphDataZeroFuncs, "ZeroFunc system");
+      checkEquationCount(taskGraphDataZeroFuncs, "ZeroFunc system", listLength(zeroFuncsSimEqIdc), sccSimEqMapping);
 
       //Dump DAE Task Graph
       //-------------------
@@ -283,7 +278,7 @@ algorithm
       //----------------------------------
       ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC)) := HpcOmTaskGraph.getCriticalPaths(taskGraphOde,taskGraphDataOde);
       criticalPathInfo := HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
-      ((graphOps,graphCosts)) := HpcOmTaskGraph.sumUpExeCosts(taskGraphOde,taskGraphDataOde);
+      (graphOps,graphCosts) := HpcOmTaskGraph.sumUpExeCosts(taskGraphOde,taskGraphDataOde);
       graphCosts := HpcOmTaskGraph.roundReal(graphCosts,2);
       criticalPathInfo := criticalPathInfo + " sum: (" + realString(graphCosts) + " ; " + intString(graphOps) + ")";
       fileName := ("taskGraph"+filenamePrefix+"ODE.graphml");
@@ -393,8 +388,8 @@ protected
   array<list<Integer>> sccSimEqMapping;
   array<tuple<Integer,Integer,Real>> schedulerInfo;
 algorithm
-  _ := match(iInitDae, iFileNamePrefix)
-    case(SOME(initDAE), _)
+  () := match iInitDae
+    case SOME(initDAE)
       algorithm
         (tmpTaskGraph, tmpTaskGraphMeta) := HpcOmTaskGraph.createTaskGraph(initDAE);
         fileName := ("taskGraph"+iFileNamePrefix+"_init.graphml");
@@ -415,13 +410,12 @@ protected function setNumProc "author: Waurich TUD 2013-11
   output Integer numProcOut;
   output Boolean numFixed;
 algorithm
-  (numProcOut,numFixed) := match(numProcFlag,cpCosts,taskGraphMetaIn)
+  (numProcOut,numFixed) := match numProcFlag
     local
-      Boolean isFixed;
       Integer numProcSys, numProc, numProcSched;
       Real serCosts, maxSpeedUp;
       String string1, string2;
-    case(0,_,_)
+    case 0
       algorithm
         serCosts := HpcOmScheduler.getSerialExecutionTime(taskGraphMetaIn);
         if realNe(serCosts,0.0) then
@@ -464,8 +458,6 @@ protected
     HpcOmTaskGraph.TaskGraph taskGraph1,taskGraphT;
     HpcOmTaskGraph.TaskGraphMeta taskGraphMeta1;
     array<Integer> contractedTasks;
-    array<tuple<Integer,Integer,Real>> schedulerInfo;
-    String fileName;
  algorithm
    taskGraph1 := arrayCopy(iTaskGraph);
    taskGraphT := AdjacencyMatrix.transposeAdjacencyMatrix(taskGraph1,arrayLength(taskGraph1));
@@ -502,13 +494,13 @@ protected function applyGRS1 "author: Waurich 2014-11
   output HpcOmTaskGraph.TaskGraph oTaskGraphT;
   output HpcOmTaskGraph.TaskGraphMeta oTaskGraphMeta;
 algorithm
-  (oTaskGraph,oTaskGraphT,oTaskGraphMeta) := match(iTaskGraph,iTaskGraphT,iTaskGraphMeta,iContractedTasks,again)
+  (oTaskGraph,oTaskGraphT,oTaskGraphMeta) := match again
     local
       Boolean changed,changed2;
       HpcOmTaskGraph.TaskGraph tmpTaskGraph, tmpTaskGraphT;
       HpcOmTaskGraph.TaskGraphMeta tmpTaskGraphMeta;
       array<Integer> tmpContractedTasks;
-    case(_,_,_,_,true)
+    case true
       algorithm
         //Merge nodes
         (tmpTaskGraph,tmpTaskGraphT,tmpTaskGraphMeta,tmpContractedTasks,changed) := HpcOmTaskGraph.mergeSimpleNodes(iTaskGraph, iTaskGraphT, iTaskGraphMeta, iContractedTasks);
@@ -535,8 +527,8 @@ protected
   HpcOmTaskGraph.TaskGraph tmpTaskGraph, tmpTaskGraphT;
   HpcOmTaskGraph.TaskGraphMeta tmpTaskGraphMeta;
 algorithm
-  (oTaskGraph,oTaskGraphT,oTaskGraphMeta) := matchcontinue(iTaskGraph,iTaskGraphT,iTaskGraphMeta,iContractedTasks)
-    case(_,_,_,_)
+  (oTaskGraph,oTaskGraphT,oTaskGraphMeta) := matchcontinue iContractedTasks
+    case _
       algorithm
         flagValue := Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true := stringEq(flagValue, "levelfix");
@@ -564,11 +556,9 @@ protected
   array<tuple<Integer, Real>> exeCosts;
   Real bigTaskExecTime;
   array<list<Integer>> inComps;
-  HpcOmTaskGraph.TaskGraph tmpTaskGraph, tmpTaskGraphT;
-  HpcOmTaskGraph.TaskGraphMeta tmpTaskGraphMeta;
 algorithm
-  oContractedLevelfixTasks := match(iTaskGraphMeta, iContractedTasks, iLevelNodes, iContractedLevelfixTasks)
-    case(HpcOmTaskGraph.TASKGRAPHMETA(exeCosts=exeCosts,inComps=inComps),_,head::rest,_)
+  oContractedLevelfixTasks := match(iTaskGraphMeta, iLevelNodes)
+    case(HpcOmTaskGraph.TASKGRAPHMETA(exeCosts=exeCosts,inComps=inComps), head::rest)
       algorithm
         sortedHead := List.sort(head, function HpcOmTaskGraph.compareTasksByExecTime(iExeCosts=exeCosts,iTaskComps=inComps,iDescending=false));
         //print("applyGRSForLevelFixScheduler - Handling level with sorted nodes: " + stringDelimitList(List.map(sortedHead, intString), ",") + "\n");
@@ -598,16 +588,13 @@ public function applyGRSForLevelFixSchedulerLevel "author:mwalther 2014-12
   input list<list<Integer>> iContractedLevelfixTasks;
   output list<list<Integer>> oContractedLevelfixTasks;
 protected
-  array<tuple<Integer, Real>> exeCosts;
   list<list<Integer>> tmpContractedTasks;
-  list<Integer> head, bigTaskChilds;
+  list<Integer> bigTaskChilds;
   Real mergedGroupExecTime;
   Integer bigTaskIdx;
-  HpcOmTaskGraph.TaskGraph tmpTaskGraph, tmpTaskGraphT;
-  HpcOmTaskGraph.TaskGraphMeta tmpTaskGraphMeta;
 algorithm
-  oContractedLevelfixTasks := matchcontinue(iTaskGraphMeta, iContractedTasks, iCriticalSize, iSortedLevelTasks, iCurrentSmallTask, iCurrentBigTask, iContractedLevelfixTasks)
-    case(_,_,_,_,_,(bigTaskIdx, bigTaskChilds, mergedGroupExecTime),tmpContractedTasks)
+  oContractedLevelfixTasks := matchcontinue(iCurrentBigTask, iContractedLevelfixTasks)
+    case((bigTaskIdx, bigTaskChilds, mergedGroupExecTime), tmpContractedTasks)
       algorithm
         true := intLe(bigTaskIdx, iCurrentSmallTask); // the index of the big task is smaller or equal to the small task index
         //print("applyGRSForLevelFixSchedulerLevel: terminating recursion with list " + stringDelimitList(List.map(bigTaskChilds, intString), ",") + "\n");
@@ -616,7 +603,7 @@ algorithm
           tmpContractedTasks := (arrayGet(iSortedLevelTasks,bigTaskIdx)::bigTaskChilds)::tmpContractedTasks; //append the merged tasks list to result list
         end if;
       then tmpContractedTasks;
-    case(_,_,_,_,_,(bigTaskIdx, bigTaskChilds, mergedGroupExecTime),_)
+    case((bigTaskIdx, bigTaskChilds, mergedGroupExecTime), _)
       algorithm
         true := HpcOmTaskGraph.isNodeContracted(bigTaskIdx, iContractedTasks);
         //print("applyGRSForLevelFixSchedulerLevel: skipping big node " + intString(arrayGet(iSortedLevelTasks ,bigTaskIdx)) + " because it is already contracted\n");
@@ -628,14 +615,14 @@ algorithm
         //Big node is already contracted - skip it
         tmpContractedTasks := applyGRSForLevelFixSchedulerLevel(iTaskGraphMeta, iContractedTasks, iCriticalSize, iSortedLevelTasks, iCurrentSmallTask, (bigTaskIdx-1, {}, mergedGroupExecTime), iContractedLevelfixTasks);
       then tmpContractedTasks;
-    case(_,_,_,_,_,(bigTaskIdx, bigTaskChilds, mergedGroupExecTime),_)
+    case((bigTaskIdx, bigTaskChilds, mergedGroupExecTime), _)
       algorithm
         true := HpcOmTaskGraph.isNodeContracted(iCurrentSmallTask, iContractedTasks);
         //Small node is already contracted - skip it
         //print("applyGRSForLevelFixSchedulerLevel: skipping small node " + intString(arrayGet(iSortedLevelTasks ,iCurrentSmallTask)) + " because it is already contracted\n");
         tmpContractedTasks := applyGRSForLevelFixSchedulerLevel(iTaskGraphMeta, iContractedTasks, iCriticalSize, iSortedLevelTasks, iCurrentSmallTask+1, (bigTaskIdx, bigTaskChilds, mergedGroupExecTime), iContractedLevelfixTasks);
       then tmpContractedTasks;
-    case(_,_,_,_,_,(bigTaskIdx, bigTaskChilds, mergedGroupExecTime),tmpContractedTasks)
+    case((bigTaskIdx, bigTaskChilds, mergedGroupExecTime), tmpContractedTasks)
       algorithm
         //print("applyGRSForLevelFixSchedulerLevel:In with current group size: " + realString(mergedGroupExecTime) + "\n");
         mergedGroupExecTime := mergedGroupExecTime + HpcOmTaskGraph.getExeCostReqCycles(arrayGet(iSortedLevelTasks, iCurrentSmallTask), iTaskGraphMeta);
@@ -699,14 +686,14 @@ protected function GRS_newGraph2 "author: Waurich TUD 2014-11
   output HpcOmTaskGraph.TaskGraph graphOut;
   output array<list<Integer>> inCompsOut;
 algorithm
-  (graphOut,inCompsOut) := match(origNodes,removedNodes,contrTasks,origGraph,origInComps,newGraph,newInComps,newNode)
+  (graphOut,inCompsOut) := match origNodes
     local
       Integer node;
       list<Integer> rest,row,comps;
-    case({},_,_,_,_,_,_,_)
+    case {}
       algorithm
       then (newGraph,newInComps);
-    case(node::rest,_,_,_,_,_,_,_)
+    case node::rest
       algorithm
       //print("origNode "+intString(node)+" and newNode "+intString(newNode)+"\n");
       row := arrayGet(origGraph,node);
@@ -776,91 +763,90 @@ protected function createSchedule1 "author: mwalther, Waurich TUD
   output HpcOmTaskGraph.TaskGraphMeta oTaskGraphMeta;
   output array<list<Integer>> oSccSimEqMapping;
 protected
-  list<Integer> lst;
   array<list<Integer>> sccSimEqMap;
   HpcOmSimCode.Schedule schedule;
   HpcOmTaskGraph.TaskGraph taskGraph1;
   HpcOmTaskGraph.TaskGraphMeta taskGraphMeta1;
   SimCode.SimCode simCode;
 algorithm
-  (oSchedule,oSimCode,oTaskGraph,oTaskGraphMeta,oSccSimEqMapping) := matchcontinue(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping,iSimVarMapping,iFilenamePrefix,iNumProc,iSimCode,iScheduledTasks,iSystemName,iSchedulerName)
-    case(_,_,_,_,_,_,_,_,_,"none")
+  (oSchedule,oSimCode,oTaskGraph,oTaskGraphMeta,oSccSimEqMapping) := matchcontinue iSchedulerName
+    case "none"
       algorithm
         print("Using serial code for the " + iSystemName + "\n");
         schedule := HpcOmScheduler.createEmptySchedule(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
       then
         (schedule,iSimCode,iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
-    case(_,_,_,_,_,_,_,_,_,"level")
+    case "level"
       algorithm
         print("Using level Scheduler for the " + iSystemName + "\n");
         (schedule,taskGraphMeta1) := HpcOmScheduler.createLevelSchedule(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
       then (schedule,iSimCode,iTaskGraph,taskGraphMeta1,iSccSimEqMapping);
-    case(_,_,_,_,_,_,_,_,_,"levelfix")
+    case "levelfix"
       algorithm
         print("Using fixed level Scheduler (experimental) for the " + iSystemName + "\n");
         (schedule,taskGraphMeta1) := HpcOmScheduler.createFixedLevelSchedule(iTaskGraph,iTaskGraphMeta,iNumProc,iSccSimEqMapping);
       then (schedule,iSimCode,iTaskGraph,taskGraphMeta1,iSccSimEqMapping);
-    case(_,_,_,_,_,_,_,_,_,"ext")
+    case "ext"
       algorithm
         print("Using external Scheduler for the " + iSystemName + "\n");
         schedule := HpcOmScheduler.createExtSchedule(iTaskGraph, iTaskGraphMeta, iNumProc, iSccSimEqMapping, iSimVarMapping, "taskGraph" + iFilenamePrefix + "_ext.graphml");
       then (schedule,iSimCode,iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
-    case(_,_,_,_,_,_,_,_,_,"metis")
+    case "metis"
       algorithm
         print("Using METIS Scheduler for the " + iSystemName + "\n");
         schedule := HpcOmScheduler.createMetisSchedule(iTaskGraph, iTaskGraphMeta, iNumProc, iSccSimEqMapping, iSimVarMapping);
       then (schedule,iSimCode,iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
-    case(_,_,_,_,_,_,_,_,_,"hmet")
+    case "hmet"
       algorithm
         print("Using hMETIS Scheduler for the " + iSystemName + "\n");
         schedule := HpcOmScheduler.createHMetisSchedule(iTaskGraph, iTaskGraphMeta, iNumProc, iSccSimEqMapping,iSimVarMapping);
       then (schedule,iSimCode,iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
-    case(_,_,_,_,_,_,_,_,_,"listr")
+    case "listr"
       algorithm
         print("Using list reverse Scheduler for the " + iSystemName + "\n");
         schedule := HpcOmScheduler.createListScheduleReverse(iTaskGraph,iTaskGraphMeta,iNumProc,iSccSimEqMapping, iSimVarMapping);
       then (schedule,iSimCode,iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
-    case(_,_,_,_,_,_,_,_,_,"rand")
+    case "rand"
       algorithm
         print("Using Random Scheduler for the " + iSystemName + "\n");
         schedule := HpcOmScheduler.createRandomSchedule(iTaskGraph, iTaskGraphMeta, iNumProc, iSccSimEqMapping, iSimVarMapping);
       then (schedule,iSimCode,iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
-    case(_,_,_,_,_,_,_,_,_,"list")
+    case "list"
       algorithm
         print("Using list Scheduler for the " + iSystemName + "\n");
         schedule := HpcOmScheduler.createListSchedule(iTaskGraph,iTaskGraphMeta,iNumProc,iSccSimEqMapping, iSimVarMapping);
       then (schedule,iSimCode,iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
-    case(_,_,_,_,_,_,_,_,_,"mcp")
+    case "mcp"
       algorithm
         print("Using Modified Critical Path Scheduler for the " + iSystemName + "\n");
         schedule := HpcOmScheduler.createMCPschedule(iTaskGraph,iTaskGraphMeta,iNumProc,iSccSimEqMapping,iSimVarMapping);
       then (schedule,iSimCode,iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
-    case(_,_,_,_,_,_,_,_,_,"part")
+    case "part"
       algorithm
         print("Using partition Scheduler for the " + iSystemName + "\n");
         schedule := HpcOmScheduler.createPartSchedule(iTaskGraph,iTaskGraphMeta,iNumProc,iSccSimEqMapping,iSimVarMapping);
       then (schedule,iSimCode,iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
-    case(_,_,_,_,_,_,_,_,_,"taskdep")
+    case "taskdep"
       algorithm
         print("Using dynamic task dependencies for the " + iSystemName + "\n");
         schedule := HpcOmScheduler.createTaskDepSchedule(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
       then (schedule,iSimCode,iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
-    case(_,_,_,_,_,_,_,_,_,"tds")
+    case "tds"
       algorithm
         print("Using Task Duplication-based Scheduling for the " + iSystemName + "\n");
         (schedule,simCode,taskGraph1,taskGraphMeta1,sccSimEqMap) := HpcOmScheduler.TDS_schedule(iTaskGraph,iTaskGraphMeta,iNumProc,iSccSimEqMapping,iSimVarMapping,iSimCode);
       then (schedule,simCode,taskGraph1,taskGraphMeta1,sccSimEqMap);
-    case(_,_,_,_,_,_,_,_,_,"bls")
+    case "bls"
       algorithm
         print("Using Balanced Level Scheduling for the " + iSystemName + "\n");
         (schedule,taskGraphMeta1) := HpcOmScheduler.createBalancedLevelScheduling(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
       then (schedule,iSimCode,iTaskGraph,taskGraphMeta1,iSccSimEqMapping);
-    case(_,_,_,_,_,_,_,_,_,"sbs")
+    case "sbs"
       algorithm
         print("Using Single Block Scheduling for the " + iSystemName + "\n");
         schedule := HpcOmEqSystems.createSingleBlockSchedule(iTaskGraph,iTaskGraphMeta,iScheduledTasks,iSccSimEqMapping);
       then (schedule,iSimCode,iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
-    case(_,_,_,_,_,_,_,_,_,"sts")
+    case "sts"
       algorithm
         print("Using Single Thread Scheduling for the " + iSystemName + "\n");
         schedule := HpcOmScheduler.createSingleThreadSchedule(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping,iNumProc);
@@ -1078,7 +1064,7 @@ protected function outputTimeBenchmark2 "author:Waurich TUD 2014-12
   input BackendDAE.Shared shared;
   input Integer compIdx;
 algorithm
-  _ := matchcontinue(compsIn,numCycles,eqSystemsIn,shared,compIdx)
+  () := matchcontinue(compsIn, numCycles, eqSystemsIn)
     local
       Real exeCost, estimate;
       list<Real> restCosts;
@@ -1087,15 +1073,15 @@ algorithm
       BackendDAE.StrongComponent comp;
       list<BackendDAE.EqSystem> eqSysRest;
       list<BackendDAE.StrongComponent> comps;
-   case({},_,{_},_,_)
+   case({}, _, {_})
      algorithm
      then();
-   case({},_,_::eqSysRest,_,_)
+   case({}, _, _::eqSysRest)
      algorithm
         comps := BackendDAEUtil.getStrongComponents(listHead(eqSysRest));
        outputTimeBenchmark2(comps,numCycles,eqSysRest,shared,compIdx);
      then ();
-   case(comp::comps,exeCost::restCosts,eqSys::_,_,_)
+   case(comp::comps, exeCost::restCosts, eqSys::_)
      algorithm
        {compInfo} := BackendDAEOptimize.countOperationstraverseComps({comp}, eqSys, shared,{});
        (_,estimate) := HpcOmTaskGraph.calculateCosts(compInfo);

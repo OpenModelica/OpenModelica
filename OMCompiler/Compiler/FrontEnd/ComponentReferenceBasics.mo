@@ -58,15 +58,15 @@ function: crefDims
   input DAE.ComponentRef inComponentRef;
   output list<DAE.Dimension> outDimensionLst;
 algorithm
-  outDimensionLst := match (inComponentRef)
+  outDimensionLst := match inComponentRef
     local
       list<DAE.Dimension> dims,res;
       DAE.Type idType;
       DAE.ComponentRef cr;
 
-    case (DAE.CREF_IDENT(identType = idType)) then TypesDump.getDimensions(idType);
+    case DAE.CREF_IDENT(identType = idType) then TypesDump.getDimensions(idType);
 
-    case (DAE.CREF_QUAL(componentRef = cr, identType = idType))
+    case DAE.CREF_QUAL(componentRef = cr, identType = idType)
       algorithm
         dims := TypesDump.getDimensions(idType);
         res := crefDims(cr);
@@ -82,15 +82,14 @@ function: crefSubs
   input DAE.ComponentRef inComponentRef;
   output list<DAE.Subscript> outSubscriptLst;
 algorithm
-  outSubscriptLst := match (inComponentRef)
+  outSubscriptLst := match inComponentRef
     local
-      DAE.Ident id;
       list<DAE.Subscript> subs,res;
       DAE.ComponentRef cr;
 
-    case (DAE.CREF_IDENT(subscriptLst = subs)) then subs;
+    case DAE.CREF_IDENT(subscriptLst = subs) then subs;
 
-    case (DAE.CREF_QUAL(componentRef = cr,subscriptLst=subs))
+    case DAE.CREF_QUAL(componentRef = cr,subscriptLst=subs)
       algorithm
         res := crefSubs(cr);
         res := listAppend(subs,res);
@@ -150,15 +149,14 @@ public function crefFirstCref
   input DAE.ComponentRef inCr;
   output DAE.ComponentRef outCr;
 algorithm
-  outCr := match(inCr)
+  outCr := match inCr
     local
       DAE.Ident id;
       list<DAE.Subscript> subs;
-      DAE.ComponentRef cr;
       DAE.Type t2;
 
-    case( DAE.CREF_QUAL(id,t2,subs,_)) then makeCrefIdent(id,t2,subs);
-    case( DAE.CREF_IDENT(_,_,_)) then inCr;
+    case DAE.CREF_QUAL(id,t2,subs,_) then makeCrefIdent(id,t2,subs);
+    case DAE.CREF_IDENT(_,_,_) then inCr;
   end match;
 end crefFirstCref;
 
@@ -168,14 +166,14 @@ public function crefLastIdent
   input DAE.ComponentRef inComponentRef;
   output DAE.Ident outIdent;
 algorithm
-  outIdent := match (inComponentRef)
+  outIdent := match inComponentRef
     local
       DAE.Ident id,res;
       DAE.ComponentRef cr;
 
-    case (DAE.CREF_IDENT(ident = id)) then id;
+    case DAE.CREF_IDENT(ident = id) then id;
 
-    case (DAE.CREF_QUAL(componentRef = cr))
+    case DAE.CREF_QUAL(componentRef = cr)
       algorithm
         res := crefLastIdent(cr);
       then
@@ -188,14 +186,13 @@ public function crefLastCref "
   input DAE.ComponentRef inComponentRef;
   output DAE.ComponentRef outComponentRef;
 algorithm
-  outComponentRef := match (inComponentRef)
+  outComponentRef := match inComponentRef
     local
-      DAE.Ident id;
       DAE.ComponentRef res,cr;
 
-    case (DAE.CREF_IDENT()) then inComponentRef;
+    case DAE.CREF_IDENT() then inComponentRef;
 
-    case (DAE.CREF_QUAL(componentRef = cr))
+    case DAE.CREF_QUAL(componentRef = cr)
       algorithm
         res := crefLastCref(cr);
       then
@@ -221,7 +218,7 @@ public function crefFirstIdent
   input DAE.ComponentRef inComponentRef;
   output DAE.Ident outIdent;
 algorithm
-  outIdent := match(inComponentRef)
+  outIdent := match inComponentRef
     local
       DAE.Ident id;
 
@@ -296,7 +293,6 @@ package CompareWithGenericSubscript "Package that can be modified to do differen
     list<DAE.Subscript> ss=ss2;
     DAE.Subscript s2;
     Integer i1, i2;
-    DAE.Exp e1, e2;
   algorithm
     for s1 in ss1 loop
       if listEmpty(ss) then
@@ -759,18 +755,18 @@ public function crefStripLastSubs
   input DAE.ComponentRef inComponentRef;
   output DAE.ComponentRef outComponentRef;
 algorithm
-  outComponentRef := match (inComponentRef)
+  outComponentRef := match inComponentRef
     local
       DAE.Ident id;
-      list<DAE.Subscript> subs,s;
+      list<DAE.Subscript> s;
       DAE.ComponentRef cr_1,cr;
       DAE.Type t2;
 
-    case (DAE.CREF_IDENT(ident = id,identType = t2))
+    case DAE.CREF_IDENT(ident = id,identType = t2)
       then
         makeCrefIdent(id,t2,{});
 
-    case (DAE.CREF_QUAL(ident = id,identType = t2,subscriptLst = s,componentRef = cr))
+    case DAE.CREF_QUAL(ident = id,identType = t2,subscriptLst = s,componentRef = cr)
       algorithm
         cr_1 := crefStripLastSubs(cr);
       then
@@ -799,8 +795,6 @@ public function makeCrefQual
   input DAE.ComponentRef componentRef;
   output DAE.ComponentRef outCrefQual;
   annotation(__OpenModelica_EarlyInline = true);
-protected
-  DAE.ComponentRef subCref;
 algorithm
   // subCref := shareCref(componentRef);
   // outCrefQual := shareCref(DAE.CREF_QUAL(ident, identType, subscriptLst, subCref));
@@ -820,16 +814,15 @@ public function printComponentRefStr
   input DAE.ComponentRef inComponentRef;
   output String outString;
 algorithm
-  outString := match (inComponentRef)
+  outString := match inComponentRef
     local
       DAE.Ident s,str,strrest,strseb;
       list<DAE.Subscript> subs;
       DAE.ComponentRef cr;
       Boolean b;
-      Integer ix;
 
     // Optimize -- a function call less
-    case (DAE.CREF_IDENT(ident = s,subscriptLst = {}))
+    case DAE.CREF_IDENT(ident = s,subscriptLst = {})
       then s;
 
     // idents with subscripts
@@ -877,7 +870,7 @@ algorithm
       algorithm
         b := Config.modelicaOutput();
         str := ExpressionBasics.printListStr(l, ExpressionBasics.printSubscriptStr, ",");
-        ((strseba,strsebb)) := if b then ("_L","_R") else ("[","]");
+        (strseba,strsebb) := if b then ("_L","_R") else ("[","]");
         str := stringAppendList({s, strseba, str, strsebb});
       then
         str;

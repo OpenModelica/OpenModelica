@@ -492,7 +492,6 @@ protected
     list<Pointer<Equation>> eqns;
     list<Expression> lhs_elems, rhs_elems;
     Expression lhs, rhs;
-    Pointer<Equation> tmp_eqn;
   algorithm
     lhs_elems := getElementList(LHS);
     rhs_elems := getElementList(RHS);
@@ -531,10 +530,7 @@ protected
     input UnorderedSet<VariablePointer> set "new iterators";
     input Pointer<Integer> index;
   protected
-    Pointer<list<Pointer<Equation>>> tmp_eqns;
-    Equation inlined;
     list<Pointer<Equation>> eqns;
-    Pointer<Equation> new_eqn;
   algorithm
     if Flags.isSet(Flags.DUMPBACKENDINLINE) then
       print("\n[" + getInstanceName() + "] Inlining: ");
@@ -581,7 +577,7 @@ protected
 
     // inline the iterators
     frames  := list(Iterator.createFrame(iter, local_set) for iter in iters);
-    _ := UnorderedSet.merge(set, local_set);
+    UnorderedSet.merge(set, local_set);
 
     // add the iterators to the cref
     subs      := Iterator.normalizedSubscripts(Iterator.fromFrames(frames));
@@ -682,7 +678,7 @@ protected
     ComponentRef iterator_name, lhs, rhs;
     Pointer<Variable> iterator_var;
     VariablePointers update_vars;
-    Expression range, subscript_exp, lhs_sub, rhs_sub, lhs_exp, rhs_exp, shift, new_size;
+    Expression range, subscript_exp, lhs_sub, lhs_exp, rhs_exp, shift, new_size;
     Iterator local_iter;
     Pointer<Equation> new_eqn;
     Boolean failed = false;
@@ -799,7 +795,7 @@ protected
     input output Expression shift;
     input list<Subscript> subs = {};
   algorithm
-    _ := match exp
+    () := match exp
       local
         Expression sub_idx;
         Boolean is_cat_dim;
@@ -1079,7 +1075,7 @@ protected
       input Pointer<InlineRating> irp;
       input UnorderedMap<ComponentRef, InlineRating> local_map;
     algorithm
-      _ := match exp
+      () := match exp
         local
           Option<InlineRating> iro;
         case Expression.CREF() algorithm

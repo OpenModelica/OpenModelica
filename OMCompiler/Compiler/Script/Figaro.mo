@@ -178,7 +178,6 @@ algorithm
       String tn;
       Ident n;
       SCode.ClassDef cd;
-      Path p;
     // Element is an extends clause.
     case (fb, ft, program, SOME(cn), SCode.EXTENDS(baseClassPath = bcp, modifications = m), e)
       algorithm
@@ -216,11 +215,7 @@ algorithm
       list<SCode.Element> e, el;
       Ident cn;
       Path bcp;
-      SCode.Mod m;
-      String tn;
       Ident n;
-      SCode.ClassDef cd;
-      Path p;
     // Element is an extends clause.
     case (fb, ft, program, _, SCode.CLASS(name = n, classDef = SCode.PARTS(elementLst = el)), e)
       algorithm
@@ -257,7 +252,6 @@ algorithm
       list<SCode.Element> e;
       SCode.Element first;
       list<SCode.Element> rest;
-      list<FigaroClass> rf, rr;
     case (_, _, _, _, {}, _)
       then false;
     case (fb, ft, program, cn, first :: _, e)
@@ -780,7 +774,6 @@ protected function scan "Lexer main function."
 algorithm
   outTokenList := matchcontinue inStringList
     local
-      String first;
       list<String> rest, r;
       Token t;
       String s;
@@ -1145,7 +1138,7 @@ end reportErrors;
 protected function printFigaroClassList
   input list<FigaroClass> inFigaroClassList;
 algorithm
-  _ := matchcontinue (inFigaroClassList)
+  () := matchcontinue inFigaroClassList
     local
       FigaroClass first;
       list<FigaroClass> rest;
@@ -1166,7 +1159,7 @@ end printFigaroClassList;
 protected function printFigaroClass
   input FigaroClass inFigaroClass;
 algorithm
-  _ := match inFigaroClass
+  () := match inFigaroClass
     local
       Ident cn;
       String tn;
@@ -1180,7 +1173,7 @@ end printFigaroClass;
 protected function printFigaroObjectList
   input list<FigaroObject> inFigaroObjectList;
 algorithm
-  _ := matchcontinue (inFigaroObjectList)
+  () := matchcontinue inFigaroObjectList
     local
       FigaroObject first;
       list<FigaroObject> rest;
@@ -1201,7 +1194,7 @@ end printFigaroObjectList;
 protected function printTokenList
   input list<Token> inTokenList;
 algorithm
-  _ := matchcontinue inTokenList
+  () := matchcontinue inTokenList
     local
       Token first;
       list<Token> rest;
@@ -1223,7 +1216,7 @@ end printTokenList;
 protected function printToken
   input Token inToken;
 algorithm
-  _ := match inToken
+  () := match inToken
     local
       String s;
     case OPENTAG(tagName = s)

@@ -107,7 +107,6 @@ function evaluateNormal
   output Expression result;
 protected
   list<Statement> fn_body;
-  list<Binding> bindings;
   ArgumentMap arg_map;
   Integer call_count, limit;
   Pointer<Integer> call_counter = fn.callCounter;
@@ -223,7 +222,7 @@ function evaluateRecordConstructor
 protected
   ArgumentMap arg_map;
   list<Expression> expl = {};
-  InstNode node, out_ty;
+  InstNode out_ty;
 algorithm
   // Map the record fields to the arguments of the constructor.
   arg_map := createArgumentMap(fn.inputs, {}, fn.locals, args, mutableParams = false);
@@ -260,7 +259,6 @@ protected
   Expression arg;
   list<Expression> rest_args = args;
   Function fn;
-  CachedData cache;
 algorithm
   map := UnorderedMap.new<Expression>(InstNode.hash, InstNode.refEqual);
 
@@ -327,7 +325,6 @@ function getBindingExp
 protected
   Component comp;
   Binding binding;
-  Type ty;
 algorithm
   comp := InstNode.component(node);
   binding := Component.getBinding(comp);
@@ -521,11 +518,9 @@ function applyReplacementCall
   input Expression exp;
   output Expression outExp;
 protected
-  InstNode repl_node;
   Option<Expression> repl_oexp;
   Expression repl_exp;
   list<Expression> args;
-  list<String> names;
   Function fn;
 algorithm
   outExp := match call
@@ -940,7 +935,6 @@ algorithm
       Expression e, val;
       ClassTree cls_tree;
       array<InstNode> comps;
-      Option<Expression> binding_exp;
       Type ty;
 
     case Expression.RECORD()
@@ -1048,7 +1042,7 @@ function evaluateAssert
   input InstContext.Type context;
   output FlowControl ctrl = FlowControl.NEXT;
 protected
-  Expression cond, msg, lvl;
+  Expression msg, lvl;
   EvalTarget target = evalTargetFromSource(source, STATEMENT_CONTEXT, context);
 algorithm
   if Expression.isFalse(Ceval.evalExp(condition, target)) then
@@ -1508,7 +1502,6 @@ protected
   ArgumentMap arg_map;
   Expression val;
   list<Expression> vals, ret_vals;
-  Option<Expression> ret_val;
   ComponentRef cref;
 algorithm
   arg_map := UnorderedMap.new<Expression>(InstNode.hash, InstNode.refEqual);

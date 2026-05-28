@@ -80,12 +80,12 @@ public function path
   output Graph outGraph;
   output Ref outRef;
 algorithm
-  (outGraph, outRef)  := match(inGraph, inPath)
+  (outGraph, outRef)  := match inGraph
     local
       Ref r, t;
       Graph g;
 
-    case (g, _)
+    case g
       algorithm
         t := FGraph.top(g);
         r := t;
@@ -101,7 +101,7 @@ public function all
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph  := match(inGraph)
+  outGraph  := match inGraph
     local
       list<Real> lst;
       Graph g;

@@ -93,11 +93,11 @@ end variableNameIsBuiltin;
 public function isDer
   input Absyn.Path inPath;
 algorithm
-  _:=
-  match (inPath)
+  ():=
+  match inPath
     local Absyn.Path path;
-    case (Absyn.IDENT(name = "der")) then ();
-    case (Absyn.FULLYQUALIFIED(path)) algorithm isDer(path); then ();
+    case Absyn.IDENT(name = "der") then ();
+    case Absyn.FULLYQUALIFIED(path) algorithm isDer(path); then ();
   end match;
 end isDer;
 
@@ -117,42 +117,28 @@ public function initialGraph
   output FGraph.Graph graph;
 protected
   FCore.Cache cache;
-  constant DAE.Type anyNonExpandableConnector2int =
-          DAE.T_FUNCTION(
-            {DAE.FUNCARG("x", DAE.T_ANYTYPE(SOME(ClassInf.CONNECTOR(Absyn.IDENT("$dummy$"),false))),DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
-            DAE.T_INTEGER_DEFAULT,
-            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-            Absyn.IDENT("cardinality"));
 
-  constant DAE.Type anyExpandableConnector2int =
-          DAE.T_FUNCTION(
-            {DAE.FUNCARG("x",DAE.T_ANYTYPE(SOME(ClassInf.CONNECTOR(Absyn.IDENT("$dummy$"),true))),DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
-            DAE.T_INTEGER_DEFAULT,
-            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-            Absyn.IDENT("cardinality"));
 algorithm
-  (outCache, graph) := matchcontinue(inCache)
+  (outCache, graph) := matchcontinue inCache
     local
-      list<Absyn.Class> initialClasses;
       SCode.Program initialProgram;
-      list<SCode.Element> types;
 
     // First look for cached version
-    case (cache) algorithm
+    case cache algorithm
       graph := FCore.getCachedInitialGraph(cache);
       // we have references in the graph so we need to clone it before giving it away
       graph := FGraph.clone(graph);
     then (cache,graph);
 
     // then look in the global roots[builtinEnvIndex]
-    case (cache)
+    case cache
       algorithm
         graph := getSetInitialGraph(NONE());
       then
         (cache, graph);
 
     // if no cached version found create initial graph.
-    case (cache)
+    case cache
       algorithm
         graph := FGraph.new("graph", FCore.dummyTopModel);
         graph := FGraphBuildEnv.mkProgramGraph(FBuiltin.getBasicTypes(), FCore.BASIC_TYPE(), graph);
@@ -167,7 +153,7 @@ algorithm
         graph := FBuiltin.initialGraphMetaModelica(graph, FGraphBuildEnv.mkTypeNode);
 
         cache := FCore.setCachedInitialGraph(cache,graph);
-        _ := getSetInitialGraph(SOME(graph));
+        getSetInitialGraph(SOME(graph));
 
         graph := FGraph.clone(graph); // we have references in the graph so we need to clone it before returning it
       then
@@ -181,22 +167,22 @@ protected function getSetInitialGraph
   input Option<FGraph.Graph> inEnvOpt;
   output FGraph.Graph initialEnv;
 algorithm
-  initialEnv := matchcontinue (inEnvOpt)
+  initialEnv := matchcontinue inEnvOpt
     local
       list<tuple<Integer,FGraph.Graph>> assocLst;
       FGraph.Graph graph;
       Integer f;
 
     // nothing there
-    case (_)
+    case _
       algorithm
-        failure(_ := getGlobalRoot(Global.builtinGraphIndex));
+        failure(getGlobalRoot(Global.builtinGraphIndex));
         setGlobalRoot(Global.builtinGraphIndex, {});
       then
         fail();
 
     // return the correct graph depending on flags
-    case (NONE())
+    case NONE()
       algorithm
         assocLst := getGlobalRoot(Global.builtinGraphIndex);
         // we have references in the graph so we need to clone it before giving it away
@@ -204,7 +190,7 @@ algorithm
       then
         graph;
 
-    case (SOME(graph))
+    case SOME(graph)
       algorithm
         assocLst := getGlobalRoot(Global.builtinGraphIndex);
         f := Flags.getConfigEnum(Flags.GRAMMAR);

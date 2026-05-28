@@ -106,13 +106,11 @@ protected
   function daeModeDefault extends Module.daeModeInterface;
   protected
     list<Partition.Partition> new_partitions = {};
-    UnorderedSet<VariablePointer> dummy_set = UnorderedSet.new(BVariable.hash, BVariable.equalName);
   algorithm
     for part in partitions loop
       new_partitions := match part.association
         local
           Partition.Association association;
-          Option<array<StrongComponent>> new_comps;
           EquationPointers new_eqns;
           VariablePointers new_vars;
 

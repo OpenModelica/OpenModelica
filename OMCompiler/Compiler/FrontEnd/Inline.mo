@@ -86,7 +86,7 @@ public function inlineStartAttribute
   output DAE.ElementSource osource;
   output Boolean b;
 algorithm
-  (outVariableAttributesOption,osource,b):=matchcontinue (inVariableAttributesOption,isource,fns)
+  (outVariableAttributesOption,osource,b):=matchcontinue inVariableAttributesOption
     local
       DAE.ElementSource source;
       DAE.Exp r;
@@ -96,36 +96,35 @@ algorithm
       Option<DAE.Distribution> distributionOption;
       Option<DAE.Exp> equationBound;
       Option<Boolean> isProtected,finalPrefix;
-      list<DAE.Statement> assrtLst;
-    case (NONE(),_,_) then (NONE(),isource,false);
+    case NONE() then (NONE(),isource,false);
     case
-      (SOME(DAE.VAR_ATTR_REAL(quantity=quantity,unit=unit,displayUnit=displayUnit,min=min,max=max,start = SOME(r),
+      SOME(DAE.VAR_ATTR_REAL(quantity=quantity,unit=unit,displayUnit=displayUnit,min=min,max=max,start = SOME(r),
           fixed=fixed,nominal=nominal,stateSelectOption=stateSelectOption,uncertainOption=uncertainOption,
           distributionOption=distributionOption,equationBound=equationBound,isProtected=isProtected,finalPrefix=finalPrefix,
-          startOrigin=so)),_,_)
+          startOrigin=so))
       algorithm
         (r,source,true,_) := inlineExp(r,fns,isource);
       then (SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,max,SOME(r),fixed,nominal,
           stateSelectOption,uncertainOption,distributionOption,equationBound,isProtected,finalPrefix,so)),source,true);
-    case (SOME(DAE.VAR_ATTR_INT(quantity=quantity,min=min,max=max,start = SOME(r),
+    case SOME(DAE.VAR_ATTR_INT(quantity=quantity,min=min,max=max,start = SOME(r),
           fixed=fixed,uncertainOption=uncertainOption,distributionOption=distributionOption,equationBound=equationBound,
-          isProtected=isProtected,finalPrefix=finalPrefix,startOrigin=so)),_,_)
+          isProtected=isProtected,finalPrefix=finalPrefix,startOrigin=so))
       algorithm
         (r,source,true,_) := inlineExp(r,fns,isource);
       then (SOME(DAE.VAR_ATTR_INT(quantity,min,max,SOME(r),fixed,uncertainOption,distributionOption,equationBound,isProtected,finalPrefix,so)),source,true);
-    case (SOME(DAE.VAR_ATTR_BOOL(quantity=quantity,start = SOME(r),
-          fixed=fixed,equationBound=equationBound,isProtected=isProtected,finalPrefix=finalPrefix,startOrigin=so)),_,_)
+    case SOME(DAE.VAR_ATTR_BOOL(quantity=quantity,start = SOME(r),
+          fixed=fixed,equationBound=equationBound,isProtected=isProtected,finalPrefix=finalPrefix,startOrigin=so))
       algorithm
         (r,source,true,_) := inlineExp(r,fns,isource);
       then (SOME(DAE.VAR_ATTR_BOOL(quantity,SOME(r),fixed,equationBound,isProtected,finalPrefix,so)),source,true);
-    case (SOME(DAE.VAR_ATTR_STRING(quantity=quantity,start = SOME(r),fixed=fixed,
-          equationBound=equationBound,isProtected=isProtected,finalPrefix=finalPrefix,startOrigin=so)),_,_)
+    case SOME(DAE.VAR_ATTR_STRING(quantity=quantity,start = SOME(r),fixed=fixed,
+          equationBound=equationBound,isProtected=isProtected,finalPrefix=finalPrefix,startOrigin=so))
       algorithm
         (r,source,true,_) := inlineExp(r,fns,isource);
       then (SOME(DAE.VAR_ATTR_STRING(quantity,SOME(r),fixed,equationBound,isProtected,finalPrefix,so)),source,true);
-    case (SOME(DAE.VAR_ATTR_ENUMERATION(quantity=quantity,min=min,max=max,start = SOME(r),
+    case SOME(DAE.VAR_ATTR_ENUMERATION(quantity=quantity,min=min,max=max,start = SOME(r),
           fixed=fixed,equationBound=equationBound,
-          isProtected=isProtected,finalPrefix=finalPrefix,startOrigin=so)),_,_)
+          isProtected=isProtected,finalPrefix=finalPrefix,startOrigin=so))
       algorithm
         (r,source,true,_) := inlineExp(r,fns,isource);
       then (SOME(DAE.VAR_ATTR_ENUMERATION(quantity,min,max,SOME(r),fixed,equationBound,isProtected,finalPrefix,so)),source,true);
@@ -140,7 +139,6 @@ public function inlineCallsInFunctions
   output list<DAE.Function> outElementList;
 protected
   list<DAE.Element> body;
-  DAE.ExternalDecl ext_decl;
   DAE.FunctionDefinition fn_def;
   list<DAE.FunctionDefinition> fn_defs;
 algorithm
@@ -176,13 +174,13 @@ protected function inlineDAEElementsLst
   output list<list<DAE.Element>> outElementList;
   output Boolean OInlined;
 algorithm
-  (outElementList,OInlined) := match(inElementList,inFunctions,iAcc,iInlined)
+  (outElementList,OInlined) := match inElementList
     local
       list<DAE.Element> elem;
       list<list<DAE.Element>> rest,acc;
       Boolean inlined;
-    case ({},_,_,_) then (listReverse(iAcc),iInlined);
-    case (elem::rest,_,_,_)
+    case {} then (listReverse(iAcc),iInlined);
+    case elem::rest
       algorithm
         (elem,inlined) := inlineDAEElements(elem,inFunctions,{},false);
         (acc,inlined) := inlineDAEElementsLst(rest,inFunctions,elem::iAcc,inlined or iInlined);
@@ -199,13 +197,13 @@ protected function inlineDAEElements
   output list<DAE.Element> outElementList;
   output Boolean OInlined;
 algorithm
-  (outElementList,OInlined) := match(inElementList,inFunctions,iAcc,iInlined)
+  (outElementList,OInlined) := match inElementList
     local
       DAE.Element elem;
       list<DAE.Element> rest,acc;
       Boolean inlined;
-    case ({},_,_,_) then (listReverse(iAcc),iInlined);
-    case (elem::rest,_,_,_)
+    case {} then (listReverse(iAcc),iInlined);
+    case elem::rest
       algorithm
         (elem,inlined) := inlineDAEElement(elem,inFunctions);
         (acc,inlined) := inlineDAEElements(rest,inFunctions,elem::iAcc,inlined or iInlined);
@@ -243,11 +241,9 @@ algorithm
       DAE.Dimensions dimension;
       DAE.Algorithm alg,alg_1;
       String i;
-      Absyn.Path p;
       list<DAE.Exp> explst,explst_1;
       DAE.ElementSource source;
       Boolean b1,b2,b3;
-      list<DAE.Statement> assrtLst;
 
     case (DAE.VAR(componentRef,kind,direction,parallelism,protection,ty,SOME(binding),dims,ct,
                  source,variableAttributesOption,absynCommentOption,innerOuter,e),fns)
@@ -456,13 +452,13 @@ public function inlineStatements
   output list<DAE.Statement> outStatements;
   output Boolean OInlined;
 algorithm
-  (outStatements,OInlined) := match(inStatements,inElementList,iAcc,iInlined)
+  (outStatements,OInlined) := match inStatements
     local
       DAE.Statement stmt;
       list<DAE.Statement> rest,acc;
       Boolean inlined;
-    case ({},_,_,_) then (listReverse(iAcc),iInlined);
-    case (stmt::rest,_,_,_)
+    case {} then (listReverse(iAcc),iInlined);
+    case stmt::rest
       algorithm
         (stmt,inlined) := inlineStatement(stmt,inElementList);
         (acc,inlined) := inlineStatements(rest,inElementList,stmt::iAcc,inlined or iInlined);
@@ -485,7 +481,6 @@ algorithm
       DAE.Type t;
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1,e3,e3_1;
       list<DAE.Exp> explst,explst_1;
-      DAE.ComponentRef cref;
       DAE.Else a_else,a_else_1;
       list<DAE.Statement> stmts,stmts_1;
       Boolean b,b1,b2,b3;
@@ -493,7 +488,6 @@ algorithm
       DAE.ElementSource source;
       list<DAE.ComponentRef> conditions;
       Boolean initialCall;
-      list<DAE.Statement> assrtLst;
     case (DAE.STMT_ASSIGN(t,e1,e2,source),fns)
       algorithm
         (e1_1,source,b1,_) := inlineExp(e1,fns,source);
@@ -603,7 +597,6 @@ algorithm
       list<DAE.Statement> stmts,stmts_1;
       DAE.ElementSource source;
       Boolean b1,b2,b3;
-      list<DAE.Statement> assrtLst;
     case (DAE.ELSEIF(e,stmts,a_else),fns,source)
       algorithm
         (e_1,source,b1,_) := inlineExp(e,fns,source);
@@ -631,14 +624,13 @@ function: inlineExpOpt
   output DAE.ElementSource outSource;
   output Boolean inlined;
 algorithm
-  (outExpOption,outSource,inlined) := match(inExpOption,inElementList,inSource)
+  (outExpOption,outSource,inlined) := match inExpOption
     local
       DAE.Exp exp;
       DAE.ElementSource source;
       Boolean b;
-      list<DAE.Statement> assrtLst;
-    case(NONE(),_,_) then (NONE(),inSource,false);
-    case(SOME(exp),_,_)
+    case NONE() then (NONE(),inSource,false);
+    case SOME(exp)
       algorithm
         (exp,source,b,_) := inlineExp(exp,inElementList,inSource);
       then
@@ -663,7 +655,6 @@ algorithm
       DAE.Exp e,e_1,e_2;
       DAE.ElementSource source;
       list<DAE.Statement> assrtLst;
-      DAE.EquationExp eq;
 
     // never inline WILD!
     case (DAE.CREF(componentRef = DAE.WILD()),_,_) then (inExp,inSource,false,{});
@@ -698,9 +689,8 @@ algorithm
   (outExp,outSource,inlineperformed) := match (inExp,inElementList,inSource)
     local
       Functiontuple fns;
-      DAE.Exp e,e_1,e_2;
+      DAE.Exp e,e_1;
       DAE.ElementSource source;
-      list<DAE.Statement> assrtLst;
       AvlTreePathFunction.Tree functionTree;
       Boolean b;
     case (e,(SOME(functionTree),_),source)
@@ -756,16 +746,15 @@ function: inlineExp
   output DAE.ElementSource outSource;
   output Boolean oInlined;
 algorithm
-  (outExps,outSource,oInlined) := match (inExps,fns,inSource,iAcc,iInlined)
+  (outExps,outSource,oInlined) := match inExps
     local
       DAE.Exp e;
       list<DAE.Exp> exps;
       DAE.ElementSource source;
       Boolean b;
-      list<DAE.Statement> assrtLst;
 
-    case ({},_,_,_,_) then (listReverse(iAcc),inSource,iInlined);
-    case (e::exps,_,_,_,_)
+    case {} then (listReverse(iAcc),inSource,iInlined);
+    case e::exps
       algorithm
         (e,source,b,_) := inlineExp(e,fns,inSource);
         (exps,source,b) := inlineExpsWork(exps,fns,source,e::iAcc,b or iInlined);
@@ -781,11 +770,11 @@ public function checkExpsTypeEquiv
   input DAE.Exp inExp2;
   output Boolean bEquiv;
 algorithm
-  bEquiv := match(inExp1, inExp2)
+  bEquiv := match inExp2
     local
       DAE.Type ty1,ty2;
       Boolean b;
-    case (_, _)
+    case _
       algorithm
         if Config.acceptMetaModelicaGrammar() then
           // adrpo: DO NOT COMPARE TYPES for equivalence for MetaModelica!
@@ -814,8 +803,7 @@ algorithm
       list<DAE.ComponentRef> crefs;
       list<tuple<DAE.ComponentRef, DAE.Exp>> argmap;
       list<DAE.ComponentRef> lst_cr;
-      DAE.ElementSource source;
-      DAE.Exp newExp,newExp1, e1, cond, msg, level, newAssrtCond, newAssrtMsg, newAssrtLevel;
+      DAE.Exp newExp,newExp1, e1;
       DAE.InlineType inlineType;
       DAE.Statement assrt;
       HashTableCG.HashTable checkcr;
@@ -834,7 +822,7 @@ algorithm
       then (exp,assrtLst);
 
     // remove empty calls entirely if it is not impure
-    case (DAE.CALL(p,_,DAE.CALL_ATTR(ty=ty)))
+    case DAE.CALL(p,_,DAE.CALL_ATTR(ty=ty))
       algorithm
         // is impure?
         func := getFunction(p,fns);
@@ -844,7 +832,7 @@ algorithm
         newExp := Expression.makeArray({}, ty, true);
       then (newExp, assrtLst);
 
-    case (e1 as DAE.CALL(p,args,DAE.CALL_ATTR(ty=ty,inlineType=inlineType)))
+    case e1 as DAE.CALL(p,args,DAE.CALL_ATTR(ty=ty,inlineType=inlineType))
       algorithm
         //true = DAEUtil.convertInlineTypeToBool(inlineType);
         true := checkInlineType(inlineType,fns);
@@ -942,11 +930,10 @@ public function hasGenerateEventsAnnotation
   input Option<SCode.Comment> comment;
   output Boolean b;
 algorithm
-  b := match(comment)
+  b := match comment
     local
       SCode.Annotation anno;
-      list<SCode.Annotation> annos;
-    case (SOME(SCode.COMMENT(annotation_=SOME(anno))))
+    case SOME(SCode.COMMENT(annotation_=SOME(anno)))
       then
         SCodeUtil.hasBooleanNamedAnnotation(anno,"GenerateEvents");
     else false;
@@ -977,18 +964,16 @@ algorithm
       list<DAE.Exp> args;
       list<DAE.ComponentRef> lst_cr;
       list<DAE.ComponentRef> crefs;
-      list<DAE.Statement> assrtStmts;
       list<tuple<DAE.ComponentRef, DAE.Exp>> argmap;
       DAE.Exp newExp,newExp1, e1;
       DAE.InlineType inlineType;
-      DAE.Statement assrt;
       HashTableCG.HashTable checkcr;
       list<DAE.Statement> stmts;
       VarTransform.VariableReplacements repl;
-      Boolean generateEvents,b;
+      Boolean generateEvents;
       Option<SCode.Comment> comment;
 
-    case (e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType))) guard not AvlSetPath.hasKey(visitedPaths, p)
+    case e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)) guard not AvlSetPath.hasKey(visitedPaths, p)
       algorithm
         false := Config.acceptMetaModelicaGrammar();
         true := checkInlineType(inlineType,fns);
@@ -1024,7 +1009,7 @@ protected function mergeFunctionBody
   output VarTransform.VariableReplacements oRepl;
   output list<DAE.Statement> assertStmtsOut;
 algorithm
-  (oRepl,assertStmtsOut) := match(iStmts,iRepl,assertStmtsIn)
+  (oRepl,assertStmtsOut) := match iStmts
     local
       list<DAE.Statement> stmts;
       VarTransform.VariableReplacements repl;
@@ -1034,29 +1019,29 @@ algorithm
       DAE.Statement stmt;
       list<DAE.Exp> explst;
       list<DAE.Statement> assertStmts;
-    case ({},_,_) then (iRepl,assertStmtsIn);
-    case (DAE.STMT_ASSIGN(exp1 = DAE.CREF(componentRef = cr), exp = exp)::stmts,_,_)
+    case {} then (iRepl,assertStmtsIn);
+    case DAE.STMT_ASSIGN(exp1 = DAE.CREF(componentRef = cr), exp = exp)::stmts
       algorithm
         (exp,_) := VarTransform.replaceExp(exp,iRepl,NONE());
         repl := VarTransform.addReplacementNoTransitive(iRepl,cr,exp);
         (repl,assertStmts) := mergeFunctionBody(stmts,repl,assertStmtsIn);
       then
         (repl,assertStmts);
-    case (DAE.STMT_ASSIGN_ARR(lhs = DAE.CREF(componentRef = cr), exp = exp)::stmts,_,_)
+    case DAE.STMT_ASSIGN_ARR(lhs = DAE.CREF(componentRef = cr), exp = exp)::stmts
       algorithm
         (exp,_) := VarTransform.replaceExp(exp,iRepl,NONE());
         repl := VarTransform.addReplacementNoTransitive(iRepl,cr,exp);
         (repl,assertStmts) := mergeFunctionBody(stmts,repl,assertStmtsIn);
       then
         (repl,assertStmts);
-    case (DAE.STMT_TUPLE_ASSIGN(expExpLst = explst, exp = exp)::stmts,_,_)
+    case DAE.STMT_TUPLE_ASSIGN(expExpLst = explst, exp = exp)::stmts
       algorithm
         (exp,_) := VarTransform.replaceExp(exp,iRepl,NONE());
         repl := addTplAssignToRepl(explst,1,exp,iRepl);
         (repl,assertStmts) := mergeFunctionBody(stmts,repl,assertStmtsIn);
       then
         (repl,assertStmts);
-    case (DAE.STMT_ASSERT(cond = exp, msg = exp1, level = exp2, source = source)::stmts,_,_)
+    case DAE.STMT_ASSERT(cond = exp, msg = exp1, level = exp2, source = source)::stmts
       algorithm
         (exp,_) := VarTransform.replaceExp(exp,iRepl,NONE());
         (exp1,_) := VarTransform.replaceExp(exp1,iRepl,NONE());
@@ -1066,9 +1051,9 @@ algorithm
       then
         (repl,assertStmts);
     // if a then x := b; else x := c; end if; => x := if a then b else c;
-    case (DAE.STMT_IF(exp = exp,
+    case DAE.STMT_IF(exp = exp,
            statementLst = {DAE.STMT_ASSIGN(exp1 = DAE.CREF(componentRef = cr1), exp = exp1)},
-           else_=DAE.ELSE(statementLst={DAE.STMT_ASSIGN(exp1 = DAE.CREF(componentRef = cr2), exp = exp2)}))::stmts,_,_)
+           else_=DAE.ELSE(statementLst={DAE.STMT_ASSIGN(exp1 = DAE.CREF(componentRef = cr2), exp = exp2)}))::stmts
       guard ComponentReferenceBasics.crefEqual(cr1, cr2)
       algorithm
         (exp,_) := VarTransform.replaceExp(exp,iRepl,NONE());
@@ -1078,9 +1063,9 @@ algorithm
         (repl,assertStmts) := mergeFunctionBody(stmts,repl,assertStmtsIn);
       then (repl,assertStmts);
 
-    case (DAE.STMT_IF(exp = exp,
+    case DAE.STMT_IF(exp = exp,
            statementLst = {DAE.STMT_ASSIGN_ARR(lhs = DAE.CREF(componentRef = cr1), exp = exp1)},
-           else_=DAE.ELSE(statementLst={DAE.STMT_ASSIGN_ARR(lhs = DAE.CREF(componentRef = cr2), exp = exp2)}))::stmts,_,_)
+           else_=DAE.ELSE(statementLst={DAE.STMT_ASSIGN_ARR(lhs = DAE.CREF(componentRef = cr2), exp = exp2)}))::stmts
       guard ComponentReferenceBasics.crefEqual(cr1, cr2)
       algorithm
         (exp,_) := VarTransform.replaceExp(exp,iRepl,NONE());
@@ -1100,15 +1085,15 @@ protected function addTplAssignToRepl
   input VarTransform.VariableReplacements iRepl;
   output VarTransform.VariableReplacements oRepl;
 algorithm
-  oRepl := match(explst,indx,iExp,iRepl)
+  oRepl := match explst
     local
       VarTransform.VariableReplacements repl;
       DAE.ComponentRef cr;
       DAE.Exp exp;
       list<DAE.Exp> rest;
       DAE.Type tp;
-    case ({},_,_,_) then iRepl;
-    case (DAE.CREF(componentRef = cr,ty=tp)::rest,_,_,_)
+    case {} then iRepl;
+    case DAE.CREF(componentRef = cr,ty=tp)::rest
       algorithm
         exp := DAE.TSUB(iExp,indx,tp);
         repl := VarTransform.addReplacementNoTransitive(iRepl,cr,exp);
@@ -1133,7 +1118,7 @@ protected
 
 algorithm
   for elt in fn loop
-   _ := match(elt)
+   () := match elt
 
      case DAE.VAR(componentRef=cr,direction=DAE.INPUT())
          algorithm
@@ -1225,11 +1210,11 @@ protected function addOptBindingReplacements
   input VarTransform.VariableReplacements iRepl;
   output VarTransform.VariableReplacements oRepl;
 algorithm
-  oRepl := match(cr,binding,iRepl)
+  oRepl := match binding
     local
       DAE.Exp e;
-    case (_,SOME(e),_) then addReplacement(cr, e, iRepl);
-    case (_,NONE(),_) then iRepl;
+    case SOME(e) then addReplacement(cr, e, iRepl);
+    case NONE() then iRepl;
   end match;
 end addOptBindingReplacements;
 
@@ -1239,10 +1224,9 @@ protected function addReplacement
   input VarTransform.VariableReplacements iRepl;
   output VarTransform.VariableReplacements oRepl;
 algorithm
-  oRepl := match(iCr,iExp,iRepl)
+  oRepl := match iCr
     local
-      DAE.Type tp;
-    case (DAE.CREF_IDENT(),_,_)
+    case DAE.CREF_IDENT()
       then VarTransform.addReplacement(iRepl, iCr, iExp);
     else fail();
   end match;
@@ -1382,14 +1366,14 @@ protected function extendCrefRecords1
   input DAE.ComponentRef e;
   output tuple<DAE.ComponentRef, DAE.Exp> outArg;
 algorithm
-  outArg := matchcontinue(ev,c,e)
+  outArg := matchcontinue ev
     local
       DAE.Type tp;
       String name;
       DAE.ComponentRef c1,e1;
       DAE.Exp exp;
 
-    case(DAE.TYPES_VAR(name=name,ty=tp),_,_)
+    case DAE.TYPES_VAR(name=name,ty=tp)
       algorithm
         c1 := ComponentReference.crefPrependIdent(c,name,{},tp);
         e1 := ComponentReference.crefPrependIdent(e,name,{},tp);
@@ -1410,13 +1394,13 @@ protected function extendCrefRecords2
   input DAE.ComponentRef c;
   output DAE.ComponentRef outArg;
 algorithm
-  outArg := matchcontinue(ev,c)
+  outArg := matchcontinue ev
     local
       DAE.Type tp;
       String name;
       DAE.ComponentRef c1;
 
-    case(DAE.TYPES_VAR(name=name,ty=tp),_)
+    case DAE.TYPES_VAR(name=name,ty=tp)
       algorithm
         c1 := ComponentReference.crefPrependIdent(c,name,{},tp);
       then c1;
@@ -1436,12 +1420,12 @@ public function getFunctionBody
   output list<DAE.Element> outfn;
   output Option<SCode.Comment> oComment;
 algorithm
-  (outfn,oComment) := matchcontinue(p,fns)
+  (outfn,oComment) := matchcontinue fns
     local
       list<DAE.Element> body;
       AvlTreePathFunction.Tree ftree;
       Option<SCode.Comment> comment;
-    case(_,(SOME(ftree),_))
+    case (SOME(ftree),_)
       algorithm
         SOME(DAE.FUNCTION( functions = DAE.FUNCTION_DEF(body = body)::_,comment=comment)) := AvlTreePathFunction.get(ftree,p);
       then (body,comment);
@@ -1462,10 +1446,10 @@ public function getFunction
   input Functiontuple fns;
   output DAE.Function func;
 algorithm
-  func := matchcontinue(p,fns)
+  func := matchcontinue fns
     local
       AvlTreePathFunction.Tree ftree;
-    case(_,(SOME(ftree),_))
+    case (SOME(ftree),_)
       algorithm
         SOME(func) := AvlTreePathFunction.get(ftree,p);
       then func;
@@ -1483,20 +1467,20 @@ protected function getRhsExp
   input list<DAE.Element> inElementList;
   output DAE.Exp outExp;
 algorithm
-  outExp := match(inElementList)
+  outExp := match inElementList
     local
       list<DAE.Element> cdr;
       DAE.Exp res;
-    case({})
+    case {}
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("Inline.getRhsExp failed - cannot inline such a function\n");
       then
         fail();
-    case(DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS({DAE.STMT_ASSIGN(exp=res)})) :: _) then res;
-    case(DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(exp=res)})):: _) then res;
-    case(DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS({DAE.STMT_ASSIGN_ARR(exp=res)})) :: _) then res;
-    case(_ :: cdr)
+    case DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS({DAE.STMT_ASSIGN(exp=res)})) :: _ then res;
+    case DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(exp=res)})):: _ then res;
+    case DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS({DAE.STMT_ASSIGN_ARR(exp=res)})) :: _ then res;
+    case _ :: cdr
       algorithm
         res := getRhsExp(cdr);
       then
@@ -1523,7 +1507,6 @@ algorithm
       DAE.InlineType inlineType;
       DAE.TailCall tc;
       HashTableCG.HashTable checkcr;
-      Boolean replacedfailed;
 
     case (DAE.CREF(componentRef = cref),(argmap,_,true))
       algorithm
@@ -1557,7 +1540,7 @@ algorithm
     case (DAE.UNBOX(DAE.CALL(path,expLst,DAE.CALL_ATTR(_,tuple_,false,isImpure,_,inlineType,tc)),ty),(argmap,_,true))
       algorithm
         cref := ComponentReference.pathToCref(path);
-        (e as DAE.CREF(componentRef=cref,ty=ty2)) := getExpFromArgMap(argmap,cref);
+        e as DAE.CREF(componentRef=cref,ty=ty2) := getExpFromArgMap(argmap,cref);
         path := ComponentReference.crefToPath(cref);
         expLst := List.map(expLst,Expression.unboxExp);
         b := Expression.isBuiltinFunctionReference(e);
@@ -1576,7 +1559,7 @@ algorithm
     case (DAE.CALL(path,expLst,DAE.CALL_ATTR(DAE.T_METATYPE(),tuple_,false,isImpure,_,_,tc)),(argmap,_,true))
       algorithm
         cref := ComponentReference.pathToCref(path);
-        (e as DAE.CREF(componentRef=cref,ty=ty)) := getExpFromArgMap(argmap,cref);
+        e as DAE.CREF(componentRef=cref,ty=ty) := getExpFromArgMap(argmap,cref);
         path := ComponentReference.crefToPath(cref);
         expLst := List.map(expLst,Expression.unboxExp);
         b := Expression.isBuiltinFunctionReference(e);
@@ -1674,10 +1657,10 @@ protected function getInputCrefs
   input DAE.Element inElement;
   output DAE.ComponentRef outComponentRef;
 algorithm
-  outComponentRef := match(inElement)
+  outComponentRef := match inElement
     local
       DAE.ComponentRef cref;
-    case(DAE.VAR(componentRef=cref,direction=DAE.INPUT())) then cref;
+    case DAE.VAR(componentRef=cref,direction=DAE.INPUT()) then cref;
     else DAE.WILD();
   end match;
 end getInputCrefs;
@@ -1687,8 +1670,8 @@ protected function removeWilds
   input DAE.ComponentRef inComponentRef;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match(inComponentRef)
-    case(DAE.WILD()) then false;
+  outBoolean := match inComponentRef
+    case DAE.WILD() then false;
     else true;
   end match;
 end removeWilds;
@@ -1698,13 +1681,13 @@ public function printInlineTypeStr
   input DAE.InlineType it;
   output String str;
 algorithm
-  str := match(it)
-    case(DAE.NO_INLINE()) then "No inline";
-    case(DAE.AFTER_INDEX_RED_INLINE()) then "Inline after index reduction";
-    case(DAE.EARLY_INLINE()) then "Inline as soon as possible";
-    case(DAE.BUILTIN_EARLY_INLINE()) then "Inline as soon as possible, even if inlining is globally disabled";
-    case(DAE.NORM_INLINE()) then "Inline before index reduction";
-    case(DAE.DEFAULT_INLINE()) then "Inline if necessary";
+  str := match it
+    case DAE.NO_INLINE() then "No inline";
+    case DAE.AFTER_INDEX_RED_INLINE() then "Inline after index reduction";
+    case DAE.EARLY_INLINE() then "Inline as soon as possible";
+    case DAE.BUILTIN_EARLY_INLINE() then "Inline as soon as possible, even if inlining is globally disabled";
+    case DAE.NORM_INLINE() then "Inline before index reduction";
+    case DAE.DEFAULT_INLINE() then "Inline if necessary";
   end match;
 end printInlineTypeStr;
 
@@ -1758,8 +1741,6 @@ algorithm
       Boolean changed;
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
       DAE.EquationExp eq2;
-      Functiontuple fns;
-      list<DAE.Statement> assrtLst;
     case DAE.PARTIAL_EQUATION(e)
       algorithm
         (e_1,_) := Expression.traverseExpBottomUp(e,fn,{});
@@ -1798,15 +1779,14 @@ protected function getReplacementCheckComplex
   input DAE.Type ty;
   output DAE.Exp exp;
 algorithm
-  exp := matchcontinue (repl,cr,ty)
+  exp := matchcontinue ty
     local
       list<DAE.Var> vars;
       list<DAE.ComponentRef> crs;
-      list<String> strs;
       list<DAE.Exp> exps;
       Absyn.Path path;
-    case (_,_,_) then VarTransform.getReplacement(repl,cr);
-    case (_,_,DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path),varLst=vars))
+    case _ then VarTransform.getReplacement(repl,cr);
+    case DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path),varLst=vars)
       algorithm
         crs := List.map1(List.map(vars,TypesDump.getVarName),ComponentReference.appendStringCref,cr);
         exps := List.map1r(crs, VarTransform.getReplacement, repl);
