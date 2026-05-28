@@ -250,9 +250,9 @@ algorithm
   // 2. Collect bindings from variables and update in types
   arrayMap := UnorderedMap.new<ArrayBindingList>(ComponentReference.hashComponentRef, ComponentReferenceBasics.crefEqual);
 
-  List.map(varlst, function collectRecordElementBindings(map = map, arrayMap = arrayMap));
-  List.map(globalKnownVarLst, function collectRecordElementBindings(map = map, arrayMap = arrayMap));
-  List.map(extvarlst, function collectRecordElementBindings(map = map, arrayMap = arrayMap));
+  List.apply(varlst, function collectRecordElementBindings(map = map, arrayMap = arrayMap));
+  List.apply(globalKnownVarLst, function collectRecordElementBindings(map = map, arrayMap = arrayMap));
+  List.apply(extvarlst, function collectRecordElementBindings(map = map, arrayMap = arrayMap));
 
   map := collapseArrayBindings(arrayMap, map);
 

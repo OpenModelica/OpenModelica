@@ -1832,7 +1832,6 @@ algorithm
         (cache, mainFunction, dependencies, metarecordTypes) := collectDependencies(cache, env, path);
         pathstr  := generateFunctionName(path);
         fileName := generateFunctionFileName(path);
-        FCore.getFunctionTree(cache);
         SimCodeFunction.translateFunctions(program, fileName, SOME(mainFunction), dependencies, metarecordTypes, {});
         compileModel(fileName, {});
       then
@@ -2347,7 +2346,6 @@ algorithm
         end if;
 
         // p = Interactive.updateProgram(Absyn.PROGRAM({Absyn.CLASS(name,ppref,fpref,epref,Absyn.R_FUNCTION(funcRest),body,info)},w,ts), p);
-        AbsynUtil.getFileNameFromInfo(info);
 
         if Flags.isSet(Flags.DYN_LOAD) then
           print("[dynload]: [SOME SYMTAB] not in in CF list [finished]: " +
@@ -3343,7 +3341,11 @@ algorithm
     names := List.map(depschanged, Util.tuple21);
     // print("Files to recompile (" + intString(listLength(depschanged)) + "): " + stringDelimitList(names, ",") + "\n");
     fileNames := List.map1(names, stringAppend, suffix);
-    List.map(fileNames, System.removeFile);
+
+    for f in fileNames loop
+      System.removeFile(f);
+    end for;
+
     res := ValuesMake.makeArray(List.map(names,ValuesMake.makeString));
   else
     res := Values.META_FAIL();

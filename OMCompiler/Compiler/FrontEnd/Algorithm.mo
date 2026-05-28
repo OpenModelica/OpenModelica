@@ -726,7 +726,6 @@ algorithm
     case (i, e, DAE.PROP(type_ = DAE.T_ARRAY(ty = t, dims = dims)), stmts)
       algorithm
         isArray := Types.isNonscalarArray(t, dims);
-        Types.simplifyType(t);
       then
         DAE.STMT_PARFOR(t, isArray, i, e, stmts, inLoopPrlVars, source);
 

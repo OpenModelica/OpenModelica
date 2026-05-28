@@ -2382,7 +2382,6 @@ algorithm
         // inst_dims2 = InstUtil.instDimExpLst(dims, impl);
         inst_dims_1 := List.appendLastList(inst_dims, dims);
 
-        AbsynUtil.getArrayDimOptAsList(ad);
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph) := instClassIn(cache, cenv_2, ih, store, mods_1, pre, new_ci_state, c, vis,
           inst_dims_1, impl, callscope, graph, inSets, instSingleCref) "instantiate class in opened scope. " ;
 
@@ -4930,7 +4929,6 @@ algorithm
         (cache,env_2,ih,_,dae,_,_,_,_,_) :=
           instClass(cache,env_2,ih,UnitAbsyn.noStore, DAE.NOMOD(), DAE.NOPRE(),
             cdef, {}, false, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet) "impl" ;
-        AbsynUtil.pathString(path);
       then
         (cache,env_2,ih,dae);
 

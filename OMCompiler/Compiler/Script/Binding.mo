@@ -515,7 +515,6 @@ algorithm
     case Absyn.ELEMENTITEM(Absyn.ELEMENT(finalPrefix,redeclareKeywords,innerOuter,
       Absyn.COMPONENTS(attributes, tSpec, components), info , constrainClass))::rest
       algorithm
-          AbsynUtil.typeSpecPath(typeSpec);
           //print ("**** Finding clients ... " + Dump.unparseTypeSpec(typeSpec) + "  +  " +Dump.unparseTypeSpec(tSpec)+ "  +  "+Dump.unparseTypeSpec(rootType) + "...\n");
           //if Interactive.isPrimitive(path, defs) then fail(); end if;
           // TODO: add generation error for is mandatory

@@ -130,7 +130,6 @@ algorithm
         false := FNode.isRefDerived(r);
         FCore.EX(e = e) := FNode.refData(r);
         p := SCodeUtil.getBaseClassPath(e);
-        SCodeUtil.elementInfo(e);
         (g, rr) := FLookup.name(g, r, p, FLookup.ignoreNothing, FLookup.dummyLookupOption);
         g := FGraphBuild.mkRefNode(FNode.refNodeName, {rr}, r, g);
       then
@@ -143,7 +142,6 @@ algorithm
         false := FNode.isRefDerived(r);
         FCore.EX(e = e) := FNode.refData(r);
         p := SCodeUtil.getBaseClassPath(e);
-        SCodeUtil.elementInfo(e);
         failure(FLookup.name(g, r, p, FLookup.ignoreNothing, FLookup.dummyLookupOption));
         print("FResolve.ext_one: baseclass: " + AbsynUtil.pathString(p) +
               " not found in: " + FNode.toPathStr(FNode.fromRef(r)) +"!\n");

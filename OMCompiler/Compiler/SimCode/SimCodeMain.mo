@@ -658,8 +658,6 @@ algorithm
 
     case "ExperimentalEmbeddedC"
       algorithm
-        System.getUUIDStr();
-
         System.realtimeTick(ClockIndexes.RT_PROFILER0);
         codegenFuncs := {};
         for f in {

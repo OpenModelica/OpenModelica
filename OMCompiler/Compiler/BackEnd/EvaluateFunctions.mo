@@ -524,12 +524,6 @@ algorithm
         //repl = BackendVarTransform.addReplacements(repl,allInputCrefs,allInputExps,NONE());
           //BackendVarTransform.dumpReplacements(repl);
 
-        // recognize if there are statements we cannot evaluate at the moment
-        List.fold(algs,hasAssertFold,false);
-        List.fold(algs,hasReturnFold,false);
-        List.fold(algs,hasReturnFold,false);
-        List.fold(algs,hasReinitFold,false);
-
         // go through all algorithms and replace the variables with constants if possible, extend the ht after each algorithm, consider bindings of protected vars as well
         (algs,_,repl,_) := List.mapFold3(algs,function evaluateFunctions_updateAlgElements(recursionLimit = recursionLimit),funcsIn,repl,1);
         //print("\nall algs after"+intString(listLength(algs))+"\n"+DAEDump.dumpElementsStr(algs)+"\n");
@@ -1493,7 +1487,6 @@ algorithm
     case DAE.CREF_QUAL(subscriptLst=sl)
       algorithm
         typ := ComponentReference.crefLastType(cref);
-        Expression.crefExp(cref);
         i1 := ComponentReferenceBasics.crefFirstIdent(cref);
         i2 := ComponentReferenceBasics.crefLastIdent(cref);
         i1 := i1+"_"+i2;
@@ -3137,7 +3130,7 @@ algorithm
          // compare the constant outputs
          constantOutputs := compareConstantExps(expLstLst);
          outExps := List.map1(constantOutputs,List.getIndexFirst,allLHS);
-         List.map(outExps,Expression.expCref);
+         true := List.all(outExps, Expression.isCref);
          // print("constantOutputs: "+stringDelimitList(List.map(constantOutputs,intString),",")+"\n");
          expLst := List.map1(constantOutputs,List.getIndexFirst,listHead(expLstLst));
          // print("the constant shared outputs: "+stringDelimitList(List.map(expLst,ExpressionBasics.printExpStr),"\n")+"\n");

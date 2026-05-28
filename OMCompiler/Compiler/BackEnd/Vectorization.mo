@@ -718,8 +718,6 @@ case eq::rest
       //get similar equations
       (similarEqs,rest) := List.separate1OnTrue(classEqs,equationEqualNoCrefSubs,eq);
         //BackendDump.dumpEquationList(similarEqs,"simEqs");
-      Expression.expCref(lhs);
-      Expression.expCref(rhs);
       // update crefs in equation
       iterator := DAE.CREF(DAE.CREF_IDENT("i",DAE.T_INTEGER_DEFAULT,{}),DAE.T_INTEGER_DEFAULT);
       //lhs := BackendArrayVarTransform.replaceSubExp(Expression.crefExp(cref1),DAE.INDEX(iterator));

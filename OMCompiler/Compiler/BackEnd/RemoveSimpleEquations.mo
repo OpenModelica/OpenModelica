@@ -3134,7 +3134,6 @@ algorithm
       if not Flags.isSet(Flags.ALIAS_CONFLICTS) then
         Error.addMessage(Error.CONFLICTING_ALIAS_SET, {});
       else
-        BackendVariable.setVarFixed(inVar, true);
         // get all nonzero values
         zerofreevalues := List.fold(values, getZeroFreeValues, {});
         str := "Conflicting start values for fixed states:\n";

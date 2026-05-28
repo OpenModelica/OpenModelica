@@ -2611,31 +2611,16 @@ public function isUntypedMod
   input DAE.Mod inMod;
   output Boolean outIsUntyped;
 algorithm
-  outIsUntyped := matchcontinue inMod
-    local
-      list<DAE.SubMod> submods;
-
+  outIsUntyped := match inMod
     case DAE.MOD(binding = SOME(DAE.UNTYPED())) then true;
-
-    case DAE.MOD(subModLst = submods)
-      algorithm
-        List.find(submods, isUntypedSubMod);
-      then
-        true;
-
-    else false;
-  end matchcontinue;
+    case DAE.MOD() then List.any(inMod.subModLst, isUntypedSubMod);
+  end match;
 end isUntypedMod;
 
 protected function isUntypedSubMod
   "Returns true if a submodifier contains any untyped parts, otherwise false."
   input DAE.SubMod inSubMod;
-  output Boolean outIsUntyped;
-protected
-  DAE.Mod mod;
-algorithm
-  DAE.NAMEMOD(mod = mod) := inSubMod;
-  outIsUntyped := isUntypedMod(mod);
+  output Boolean outIsUntyped = isUntypedMod(inSubMod.mod);
 end isUntypedSubMod;
 
 public function getUntypedCrefs

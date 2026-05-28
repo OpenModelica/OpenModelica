@@ -3517,7 +3517,6 @@ algorithm
       algorithm
         // get the dimensions from the type!
         daeDims := TypesDump.getDimensions(ty);
-        List.map(daeDims,Expression.unelabDimension);
         if listEmpty(daeDims)
         then // empty dimensions
          daeExpandable := InstDAE.daeDeclare(inCache, inParentEnv, inClassEnv, cref, state, ty,

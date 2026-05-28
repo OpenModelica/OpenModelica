@@ -1081,7 +1081,6 @@ algorithm
     case {} then (listReverse(inAccum),inTypeA);
     case BackendDAE.ASSIGN(left = e1, right = e2, source = source)::rest
       algorithm
-        Expression.typeof(e2);
         (e1, extArg) := inFunc(e1, inTypeA);
         (e2, extArg) := inFunc(e2, extArg);
         (outWhenOps, extArg) := traverseExpsOfWhenOps(rest, inFunc, extArg,  BackendDAE.ASSIGN(e1, e2, source)::inAccum);
@@ -1213,7 +1212,6 @@ algorithm
     case {} then (inCont,inTypeA);
     case BackendDAE.ASSIGN(left = e1, right = e2)::rest
       algorithm
-        Expression.typeof(e2);
         if inCont then
          (_, b, extArg) := inFunc(e1, inTypeA);
         end if;

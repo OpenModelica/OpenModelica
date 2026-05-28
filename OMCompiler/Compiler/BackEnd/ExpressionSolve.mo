@@ -366,7 +366,6 @@ algorithm
         en := DAE.ENUM_LITERAL(p1,n);
         s1 := AbsynUtil.pathString(p1);
         sn := AbsynUtil.pathString(pn);
-        ExpressionBasics.printExpStr(iExp);
         crstr := ComponentReferenceBasics.printComponentRefStr(cr);
         estr := "Expression for " + crstr + " out of min(" + s1 + ")/max(" + sn + ") = ";
         // iExp >= e1 and iExp <= en

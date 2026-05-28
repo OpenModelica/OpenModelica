@@ -13371,7 +13371,6 @@ algorithm
     then {};
     case SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(vars=simVars,residual=residual))
       algorithm
-        List.flatten(List.map(residual,getSimEqSystemCrefsLHS));
         crefs2 := list(v.name for v in simVars);
       then listAppend(crefs2,crefs2);
     case SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(crefs=crefs))

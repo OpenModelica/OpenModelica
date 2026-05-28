@@ -774,7 +774,6 @@ algorithm
     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars)
       algorithm
         (_,p) := BackendVariable.getVar(cr, vars);
-        List.map(p, intString);
       then
         {};
 

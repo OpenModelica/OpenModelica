@@ -3168,7 +3168,6 @@ algorithm
       BackendVarTransform.VariableReplacements repl;
 
     case dae as BackendDAE.DAE((syst as BackendDAE.EQSYSTEM(orderedEqs=eqns,orderedVars=vars))::_,(shared as BackendDAE.SHARED(globalKnownVars=globalKnownVars,initialEqs=ieqns))) algorithm
-      BackendEquation.equationList(ieqns);
       eqnLst := BackendEquation.equationList(eqns);
       crefDouble := findArraysPartiallyIndexed(eqnLst);
       //print("partially indexed crs:"+Util.stringDelimitList(Util.listMap(crefDouble,Exp.printComponentRefStr),",\n")+"\n");
@@ -3230,7 +3229,6 @@ algorithm
     case({},ht) then  ht;
     case( BackendDAE.ALGORITHM(alg=alg) :: eqs,ht)
       algorithm
-        Algorithm.getAllExps(alg);
         ht := findArraysPartiallyIndexed1(eqs,ht);
       then
         ht;

@@ -2529,9 +2529,7 @@ end daeAliasVars;
 public function varsSize
   "Returns the number of variables in the Variables structure."
   input BackendDAE.Variables inVariables;
-  output Integer outNumVariables;
-algorithm
-  BackendDAE.VARIABLES(varArr=BackendDAE.VARIABLE_ARRAY(numberOfElements=outNumVariables)) := inVariables;
+  output Integer outNumVariables = inVariables.varArr.numberOfElements;
 end varsSize;
 
 /*

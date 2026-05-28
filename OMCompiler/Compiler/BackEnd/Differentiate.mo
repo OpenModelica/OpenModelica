@@ -999,9 +999,7 @@ algorithm
           tp := Expression.typeof(e1);
         then SOME(DAE.STMT_ASSIGN(tp, e1, e2, source));
 
-      case (e1, e2) guard(Expression.isZero(e1))
-        algorithm
-          Expression.typeof(e2);
+      case (e1, e2) guard Expression.isZero(e1)
         then NONE();
 
   end match;
@@ -1827,7 +1825,6 @@ algorithm
     // diff(rem(e1,e2)) = diff(e1 -div(e1,e2)*e2)
     case ("rem", {e1,e2}, DAE.CALL_ATTR(ty=tp))
       algorithm
-        Expression.makePureBuiltinCall("div", {e1, e2}, tp);
         (res1, funcs) := differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
       then
         (res1, funcs);
