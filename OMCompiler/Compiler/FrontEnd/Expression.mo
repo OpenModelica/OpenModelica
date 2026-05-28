@@ -4159,24 +4159,6 @@ public function lenVec
   len := Expression.makePureBuiltinCall("sqrt",{len},DAE.T_REAL_DEFAULT);
 end lenVec;
 
-public function addVec
-  input array<DAE.Exp> v;
-  input array<DAE.Exp> w;
-  output array<DAE.Exp> y;
-
-protected
-  Integer size1=arrayLength(v), size2= arrayLength(w);
-algorithm
-  if size1 <> size2 then
-    print("addVec fail.\n");
-    return ;
-  end if;
-  y := arrayCreate(size1, DAE.RCONST(0.0));
-  for i in 1:size1 loop
-    arrayUpdate(y,i,expAdd(arrayGet(v,i), arrayGet(w,i)));
-  end for;
-end addVec;
-
 public function subVec
   input array<DAE.Exp> v;
   input array<DAE.Exp> w;
@@ -4186,8 +4168,8 @@ protected
   Integer size1=arrayLength(v), size2= arrayLength(w);
 algorithm
   if size1 <> size2 then
-    print("addVec fail.\n");
-    return ;
+    print("subVec fail.\n");
+    fail();
   end if;
   y := arrayCreate(size1, DAE.RCONST(0.0));
   for i in 1:size1 loop
