@@ -58,7 +58,6 @@ public
 protected
   // Old Frontend imports
   import Absyn.Path;
-  import AbsynUtil;
 
   // New Frontend imports
   import Algorithm = NFAlgorithm;
@@ -103,7 +102,6 @@ protected
   import ClockIndexes;
   import Error;
   import ExecStat;
-  import ExpandableArray;
   import Flags;
   import StringUtil;
   import System;

@@ -61,7 +61,6 @@ protected import BackendDAEUtil;
 protected import BackendEquation;
 protected import BackendUtil;
 protected import BackendVariable;
-protected import BackendVarTransform;
 protected import ClassInf;
 protected import ComponentReference;
 protected import DAEDump;

@@ -70,7 +70,6 @@ protected import Flags;
 protected import Inst;
 protected import InstDAE;
 protected import InstFunction;
-protected import InstTypes;
 protected import InstUtil;
 protected import List;
 protected import Lookup;

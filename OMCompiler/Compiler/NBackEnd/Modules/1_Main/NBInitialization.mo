@@ -75,7 +75,6 @@ protected
 
   // Util imports
   import ClockIndexes;
-  import DoubleEnded;
   import Slice = NBSlice;
   import StringUtil;
 

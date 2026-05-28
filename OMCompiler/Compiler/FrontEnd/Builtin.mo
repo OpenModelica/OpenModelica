@@ -51,7 +51,6 @@ import FGraph;
 
 protected
 
-import ClassInf;
 import Config;
 import FBuiltin;
 import Flags;

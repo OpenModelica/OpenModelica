@@ -48,7 +48,6 @@ public import Absyn;
 public import AbsynUtil;
 public import BackendDAE;
 public import DAE;
-public import FCore;
 public import HashTable2;
 
 protected

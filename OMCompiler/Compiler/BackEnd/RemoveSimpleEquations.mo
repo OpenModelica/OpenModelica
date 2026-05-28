@@ -52,7 +52,6 @@ encapsulated package RemoveSimpleEquations "
 public import Absyn;
 public import BackendDAE;
 public import DAE;
-public import FCore;
 
 protected
 import AvlSetInt;

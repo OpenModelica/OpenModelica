@@ -79,7 +79,6 @@ protected
   import Error;
   import List;
   import StringUtil;
-  import UnorderedSet;
 
   // ############################################################
   //                      Main Functions

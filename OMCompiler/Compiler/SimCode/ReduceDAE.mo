@@ -44,7 +44,6 @@ public import DAE;
 public import Expression;
 public import List;
 public import SimCode;
-public import SimCodeFunction;
 public import SimCodeVar;
 
 protected

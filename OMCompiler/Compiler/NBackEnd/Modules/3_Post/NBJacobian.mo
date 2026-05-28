@@ -83,7 +83,6 @@ protected
   import SymbolicJacobian;
 
   // Util imports
-  import AvlSetPath;
   import StringUtil;
   import UnorderedMap;
   import UnorderedSet;

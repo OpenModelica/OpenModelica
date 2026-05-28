@@ -41,7 +41,6 @@ encapsulated package EvaluateFunctions
 public import Absyn;
 public import BackendDAE;
 public import DAE;
-public import HashTable2;
 public import BackendVarTransform;
 public import HashSetExp;
 

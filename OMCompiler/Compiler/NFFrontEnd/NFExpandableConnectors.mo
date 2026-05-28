@@ -49,7 +49,6 @@ import ConnectionSets = NFConnectionSets.ConnectionSets;
 import Connector = NFConnector;
 import ElementSource;
 import Error;
-import ErrorTypes;
 import Expression = NFExpression;
 import MetaModelica.Dangerous.listReverseInPlace;
 import Class = NFClass;

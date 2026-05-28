@@ -43,7 +43,6 @@ public
   // OF imports
   import Absyn.Path;
   import AbsynUtil;
-  import DAE;
 
   // NF imports
   import Algorithm = NFAlgorithm;

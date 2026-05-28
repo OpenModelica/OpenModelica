@@ -75,7 +75,6 @@ import MathematicaDump;
 import Print;
 import SCode;
 import AbsynToSCode;
-import SimCode;
 import Sorting;
 import SymbolTable;
 import System;

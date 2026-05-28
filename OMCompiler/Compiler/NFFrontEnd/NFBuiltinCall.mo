@@ -37,7 +37,6 @@ encapsulated package NFBuiltinCall
   import Absyn;
   import AbsynUtil;
   import Call = NFCall;
-  import NFCallAttributes;
   import Expression = NFExpression;
   import NFInstNode.InstNode;
   import NFPrefixes.{Variability, Purity};

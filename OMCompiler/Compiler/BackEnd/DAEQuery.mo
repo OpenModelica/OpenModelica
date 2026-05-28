@@ -41,7 +41,6 @@ encapsulated package DAEQuery
 
 // public imports
 public import BackendDAE;
-public import SCode;
 
 // protected imports
 protected import Absyn;
