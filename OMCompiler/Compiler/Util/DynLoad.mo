@@ -76,5 +76,5 @@ algorithm
   end if;
 end executeFunction;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="script_util");
 end DynLoad;

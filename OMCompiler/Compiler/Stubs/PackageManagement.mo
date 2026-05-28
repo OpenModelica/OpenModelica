@@ -78,5 +78,5 @@ end upgradeInstalledPackages;
 function installCachedPackages
 end installCachedPackages;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="script_util");
 end PackageManagement;

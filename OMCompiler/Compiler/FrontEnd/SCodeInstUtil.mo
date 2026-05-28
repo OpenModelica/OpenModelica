@@ -429,5 +429,5 @@ algorithm
   outSCodeElementLst := list(SCodeUtil.makeEnumType(e,info) for e in inEnumLst);
 end makeEnumComponents;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_inst");
 end SCodeInstUtil;

@@ -47,5 +47,5 @@ encapsulated package AvlSetPath
   algorithm
     outResult := AbsynUtil.pathCompare(inKey1, inKey2);
   end keyCompare;
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="ast_collections");
 end AvlSetPath;

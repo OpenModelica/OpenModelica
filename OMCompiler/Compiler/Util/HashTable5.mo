@@ -109,5 +109,5 @@ algorithm
   hashTable := BaseHashTable.emptyHashTableWork(size,(hashFunc,AbsynUtil.crefEqual,Dump.printComponentRefStr,intString));
 end emptyHashTableSized;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="ast_collections");
 end HashTable5;

@@ -974,5 +974,5 @@ algorithm
   end match;
 end matchVarNamedArg;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="dump_extra");
 end BlockCallRewrite;

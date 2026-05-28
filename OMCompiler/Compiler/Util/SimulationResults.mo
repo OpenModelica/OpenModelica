@@ -159,5 +159,5 @@ public function filterSimulationResults
   external "C" result=SimulationResults_filterSimulationResults(inFile,outFile,vars,numberOfIntervals,removeDescription,hintReadAllVars) annotation(Library = "omcruntime");
 end filterSimulationResults;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="script_util");
 end SimulationResults;
