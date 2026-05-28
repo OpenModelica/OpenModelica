@@ -181,58 +181,25 @@ namespace IAEX
     while( !foundText )
     {
       // if cell have a editor, search in it.
-      QTextEdit* editor;
       if( currentCell )
       {
-        editor = currentCell->textEdit();
-        if( editor )
+        // FIND FUNCTION
+        if( searchDown )
         {
-          // FIND FUNCTION
-          if( searchDown )
+          if( currentCell->findText( searchText_, (QTextDocument::FindFlag)options ))
           {
-            if( editor->find( searchText_, (QTextDocument::FindFlag)options ))
-            {
-              // TODO: Activate Main Window, don't know if it is necessary
-              //parentWidget()->activateWindow();
-              break;
-            }
-          }
-          else
-          {
-            if( editor->find( searchText_, (QTextDocument::FindFlag)options | QTextDocument::FindBackward ))
-            {
-              // TODO: Activate Main Window, don't know if it is necessary
-              //parentWidget()->activateWindow();
-              break;
-            }
+            // TODO: Activate Main Window, don't know if it is necessary
+            //parentWidget()->activateWindow();
+            break;
           }
         }
-
-        // search inside inputcells
-        if( typeid( (*currentCell) ) == typeid( InputCell ) )
+        else
         {
-          InputCell* inputcell = dynamic_cast<InputCell*>( currentCell );
-          if( inputcell )
+          if( currentCell->findText( searchText_, (QTextDocument::FindFlag)options | QTextDocument::FindBackward ))
           {
-            // only look inside open inputcells
-            if( !inputcell->isClosed() )
-            {
-              editor = inputcell->textEditOutput();
-              if( editor )
-              {
-                // FIND FUNCTION
-                if( searchDown )
-                {
-                  if( editor->find( searchText_, (QTextDocument::FindFlag)options ))
-                    break;
-                }
-                else
-                {
-                  if( editor->find( searchText_, (QTextDocument::FindFlag)options | QTextDocument::FindBackward ))
-                    break;
-                }
-              }
-            }
+            // TODO: Activate Main Window, don't know if it is necessary
+            //parentWidget()->activateWindow();
+            break;
           }
         }
       }
@@ -286,23 +253,9 @@ namespace IAEX
         }
 
         // before moving, clear last cursor selection
-        if( currentCell->textEdit() )
+        if( currentCell )
         {
-          QTextCursor cursor = currentCell->textEdit()->textCursor();
-          cursor.clearSelection();
-          currentCell->textEdit()->setTextCursor( cursor );
-
-          // if inputcell, clear output also
-          if( typeid( (*currentCell) ) == typeid( InputCell ) )
-          {
-            InputCell* inputcell = dynamic_cast<InputCell*>( currentCell );
-            if( inputcell )
-            {
-              QTextCursor cursor = inputcell->textEditOutput()->textCursor();
-              cursor.clearSelection();
-              inputcell->textEditOutput()->setTextCursor( cursor );
-            }
-          }
+          currentCell->clearSelection();
         }
 
         if( document_->getCursor()->moveDown() )
@@ -316,29 +269,7 @@ namespace IAEX
           // if the new currentCell have a text editor, move the text cursor to pos 'start'
           if( currentCell )
           {
-            editor = currentCell->textEdit();
-            if( editor )
-            {
-              QTextCursor cursor = editor->textCursor();
-              cursor.movePosition( QTextCursor::Start );
-              editor->setTextCursor( cursor );
-            }
-
-            // if inputcell, also move the cursor of the output
-            if( typeid( (*currentCell) ) == typeid( InputCell ) )
-            {
-              InputCell* inputcell = dynamic_cast<InputCell*>( currentCell );
-              if( inputcell )
-              {
-                editor = inputcell->textEditOutput();
-                if( editor )
-                {
-                  QTextCursor cursor = editor->textCursor();
-                  cursor.movePosition( QTextCursor::Start );
-                  editor->setTextCursor( cursor );
-                }
-              }
-            }
+            currentCell->moveCursor(QTextCursor::Start);
           }
         }
         else
@@ -354,23 +285,9 @@ namespace IAEX
       {
         // UP
         // before moving, clear last cursor selection
-        if( currentCell->textEdit() )
+        if( currentCell )
         {
-          QTextCursor cursor = currentCell->textEdit()->textCursor();
-          cursor.clearSelection();
-          currentCell->textEdit()->setTextCursor( cursor );
-
-          // if inputcell, clear output also
-          if( typeid( (*currentCell) ) == typeid( InputCell ) )
-          {
-            InputCell* inputcell = dynamic_cast<InputCell*>( currentCell );
-            if( inputcell )
-            {
-              QTextCursor cursor = inputcell->textEditOutput()->textCursor();
-              cursor.clearSelection();
-              inputcell->textEditOutput()->setTextCursor( cursor );
-            }
-          }
+          currentCell->clearSelection();
         }
 
         // move
@@ -383,31 +300,7 @@ namespace IAEX
           currentCell = document_->getCursor()->currentCell();
           if( currentCell )
           {
-            // if the new currentCell have a text editor,
-            // move the text cursor to pos 'end'
-            editor = currentCell->textEdit();
-            if( editor )
-            {
-              QTextCursor cursor = editor->textCursor();
-              cursor.movePosition( QTextCursor::End );
-              editor->setTextCursor( cursor );
-            }
-
-            // if inputcell, also move the cursor of the output
-            if( typeid( (*currentCell) ) == typeid( InputCell ) )
-            {
-              InputCell* inputcell = dynamic_cast<InputCell*>( currentCell );
-              if( inputcell )
-              {
-                editor = inputcell->textEditOutput();
-                if( editor )
-                {
-                  QTextCursor cursor = editor->textCursor();
-                  cursor.movePosition( QTextCursor::End );
-                  editor->setTextCursor( cursor );
-                }
-              }
-            }
+            currentCell->moveCursor(QTextCursor::End);
 
             // if the new currentCell is closed and the option inside cells is set,
             // open the new cell
@@ -456,27 +349,23 @@ namespace IAEX
     Cell* currentCell = document_->getCursor()->currentCell();
     if( currentCell )
     {
-      QTextEdit* editor = currentCell->textEdit();
-      if( editor )
+      QTextCursor cursor = currentCell->textCursor();
+      if( cursor.hasSelection() )
       {
-        QTextCursor cursor = editor->textCursor();
-        if( cursor.hasSelection() )
-        {
-          // check if correct text is selected
-          int cs( 0 );
-          QString text = cursor.selectedText();
-          if( matchCase_ )
-            cs = Qt::CaseSensitive;
-          else
-            cs = Qt::CaseInsensitive;
+        // check if correct text is selected
+        int cs( 0 );
+        QString text = cursor.selectedText();
+        if( matchCase_ )
+          cs = Qt::CaseSensitive;
+        else
+          cs = Qt::CaseInsensitive;
 
-          if( text.startsWith( searchText_, ( Qt::CaseSensitivity)cs ) &&
-            text.endsWith( searchText_, ( Qt::CaseSensitivity)cs ))
-          {
-            // REPLACE
-            correct = true;
-            cursor.insertText( ui.replaceText_->text() );
-          }
+        if( text.startsWith( searchText_, ( Qt::CaseSensitivity)cs ) &&
+          text.endsWith( searchText_, ( Qt::CaseSensitivity)cs ))
+        {
+          // REPLACE
+          correct = true;
+          cursor.insertText( ui.replaceText_->text() );
         }
       }
     }

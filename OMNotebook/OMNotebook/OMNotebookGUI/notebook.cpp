@@ -1698,17 +1698,17 @@ void NotebookWindow::updateStyleMenu()
   */
 void NotebookWindow::updateEditMenu()
 {
-  QTextEdit *editor = subject_->getCursor()->currentCell()->textEdit();
-  if( editor )
+  QTextDocument *doc = subject_->getCursor()->currentCell()->document();
+  if( doc )
   {
     // undo
-    if( editor->document()->isUndoAvailable() )
+    if( doc->isUndoAvailable() )
       undoAction->setEnabled( true );
     else
       undoAction->setEnabled( false );
 
     // redo
-    if( editor->document()->isRedoAvailable() )
+    if( doc->isRedoAvailable() )
       redoAction->setEnabled( true );
     else
       redoAction->setEnabled( false );
@@ -1747,7 +1747,7 @@ void NotebookWindow::updateEditMenu()
       }
       else
       {
-        in_cursor = editor->textCursor();
+        in_cursor = subject_->getCursor()->currentCell()->textCursor();
       }
 
       if( in_cursor.hasSelection() ||
@@ -3332,11 +3332,8 @@ void NotebookWindow::changeWindow(QAction *action)
   */
 void NotebookWindow::undoEdit()
 {
-  QTextEdit *editor = subject_->getCursor()->currentCell()->textEdit();
-  if( editor )
-  {
-    editor->document()->undo();
-  }
+  QTextDocument *doc = subject_->getCursor()->currentCell()->document();
+  if( doc ) doc->undo();
 }
 
 /*!
@@ -3347,11 +3344,8 @@ void NotebookWindow::undoEdit()
   */
 void NotebookWindow::redoEdit()
 {
-  QTextEdit *editor = subject_->getCursor()->currentCell()->textEdit();
-  if( editor )
-  {
-    editor->document()->redo();
-  }
+  QTextDocument *doc = subject_->getCursor()->currentCell()->document();
+  if( doc ) doc->redo();
 }
 
 /*!

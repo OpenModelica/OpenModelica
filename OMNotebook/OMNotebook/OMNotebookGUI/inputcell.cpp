@@ -520,6 +520,11 @@ namespace IAEX
     return input_->toHtml();
   }
 
+  QTextDocument* InputCell::document()
+  {
+    return input_->document();
+  }
+
   /*!
    * \author Anders Fernström
    * \date 2005-11-23
@@ -586,6 +591,57 @@ namespace IAEX
   QTextEdit* InputCell::textEditOutput()
   {
     return output_;
+  }
+
+  void InputCell::cutText()
+  {
+    if (output_->hasFocus() && isEvaluated()) {
+      output_->copy();
+    } else {
+      input_->cut();
+    }
+  }
+
+  void InputCell::copyText()
+  {
+    if (output_->hasFocus() && isEvaluated()) {
+      output_->copy();
+    } else {
+      input_->copy();
+    }
+  }
+
+  void InputCell::pasteText()
+  {
+    input_->paste();
+  }
+
+  bool InputCell::findText(const QString &exp, QTextDocument::FindFlags options)
+  {
+    if (input_->find(exp, options)) return true;
+    // Also look inside open input cells.
+    if (!isClosed()) return output_->find(exp, options);
+    return false;
+  }
+
+  void InputCell::clearSelection()
+  {
+    auto cursor = input_->textCursor();
+    cursor.clearSelection();
+    input_->setTextCursor(cursor);
+    cursor = output_->textCursor();
+    cursor.clearSelection();
+    output_->setTextCursor(cursor);
+  }
+
+  void InputCell::moveCursor(QTextCursor::MoveOperation operation)
+  {
+    auto cursor = input_->textCursor();
+    cursor.movePosition(operation);
+    input_->setTextCursor(cursor);
+    cursor = output_->textCursor();
+    cursor.movePosition(operation);
+    output_->setTextCursor(cursor);
   }
 
   /*!
