@@ -384,7 +384,14 @@ function simplifyInStreamDiv
 protected
   Expression stream_exp, fallback;
 algorithm
-  {stream_exp, fallback} := args;
+  if listLength(args) == 2 then
+    {stream_exp, fallback} := args;
+  else
+    Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because inStreamDiv needs to have exactly two arguments:\n  "
+      + List.toString(args, Expression.toString)});
+    fail();
+  end if;
+
   if Expression.isNaN(stream_exp) then
     // inStreamDiv(0/0, fallback) = fallback
     exp := fallback;
@@ -410,12 +417,14 @@ algorithm
   exp := match exp
     local
       Call call;
-      Expression res;
-    case Expression.CALL(call = call as Call.TYPED_CALL())
-      guard "$OMC$inStreamDiv" == AbsynUtil.pathFirstIdent(Function.nameConsiderBuiltin(call.fn))
+      Expression arg;
+      list<Expression> rest;
+
+    case Expression.CALL(call = call as Call.TYPED_CALL(arguments = arg::rest))
+      guard("$OMC$inStreamDiv" == AbsynUtil.pathFirstIdent(Function.nameConsiderBuiltin(call.fn)))
       algorithm
-        res := simplify(Expression.map(listHead(call.arguments), removePositiveMax), true);
-      then simplifyInStreamDiv(res :: listRest(call.arguments), call, true);
+        arg := simplify(Expression.map(arg, removePositiveMax), true);
+      then simplifyInStreamDiv(arg :: rest, call, true);
     else exp;
   end match;
 end removeInStreamDiv;
@@ -426,15 +435,16 @@ algorithm
   exp := match exp
     local
       Call call;
-      Expression res;
-    case Expression.CALL(call = call as Call.TYPED_CALL())
+      Expression res, arg;
+
+    case Expression.CALL(call = call as Call.TYPED_CALL(arguments = arg::_))
       guard "$OMC$PositiveMax" == AbsynUtil.pathFirstIdent(Function.nameConsiderBuiltin(call.fn))
       algorithm
         // positiveMax(flow_exp, eps) = max(flow_exp, eps) in the general case
         res := Expression.CALL(Call.makeTypedCall(
           fn          = NFBuiltinFuncs.MAX_REAL,
           args        = call.arguments,
-          variability = Expression.variability(listHead(call.arguments)),
+          variability = Expression.variability(arg),
           purity      = NFPrefixes.Purity.PURE
         ));
       then res;

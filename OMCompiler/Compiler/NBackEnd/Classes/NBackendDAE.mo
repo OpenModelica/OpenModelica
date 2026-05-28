@@ -443,7 +443,6 @@ public
       local
         EqData eqData;
         VarData varData;
-        list<Pointer<Variable>> acc_discrete_states_accessed;
 
       case MAIN(eqData = eqData as BEquation.EQ_DATA_SIM()) algorithm
         if init then
@@ -454,27 +453,7 @@ public
         bdae.eqData := EqData.compress(eqData);
 
         // update varData with accs obtained from mapping
-        bdae.varData := match bdae.varData
-          case varData as VarData.VAR_DATA_SIM() algorithm
-            acc_discrete_states_accessed := Pointer.access(acc_discrete_states);
-
-            VariablePointers.removeList(acc_discrete_states_accessed, varData.unknowns);
-            VariablePointers.removeList(acc_discrete_states_accessed, varData.discretes);
-            VariablePointers.removeList(acc_discrete_states_accessed, varData.discrete_states);
-
-            VariablePointers.removeList(Pointer.access(acc_previous), varData.previous);
-            VariablePointers.removeList(Pointer.access(acc_previous), varData.variables);
-
-            VariablePointers.addList(acc_discrete_states_accessed, varData.parameters);
-            VariablePointers.addList(acc_discrete_states_accessed, varData.knowns);
-
-            for v in acc_discrete_states_accessed loop
-              BVariable.setVarKind(v, VariableKind.PARAMETER(NONE()));
-              BVariable.removePartner(v, BackendInfo.setVarPre);
-            end for;
-          then varData;
-          else bdae.varData;
-        end match;
+        bdae.varData := updateDiscreteStates(bdae.varData, acc_discrete_states, acc_previous);
       then bdae;
       else bdae;
     end match;
@@ -502,10 +481,48 @@ public
             acc_previous = acc_previous,
             simplifyExp = SimplifyExp.removeStream));
         bdae.eqData := EqData.compress(eqData);
+
+        // update varData with accs obtained from mapping
+        bdae.varData := updateDiscreteStates(bdae.varData, acc_discrete_states, acc_previous);
       then bdae;
       else bdae;
     end match;
   end removeStream;
+
+  function updateDiscreteStates
+    "update varData with accs obtained from mapping"
+    input output VarData varData;
+    input Pointer<list<Pointer<Variable>>> acc_discrete_states;
+    input Pointer<list<Pointer<Variable>>> acc_previous;
+  algorithm
+    varData := match varData
+      local
+        list<Pointer<Variable>> ads_accessed, ap_accessed;
+
+      case VarData.VAR_DATA_SIM() algorithm
+        ads_accessed := Pointer.access(acc_discrete_states);
+        ap_accessed  := Pointer.access(acc_previous);
+
+        if not (listEmpty(ads_accessed) and listEmpty(ap_accessed)) then
+          VariablePointers.removeList(ads_accessed, varData.unknowns);
+          VariablePointers.removeList(ads_accessed, varData.discretes);
+          VariablePointers.removeList(ads_accessed, varData.discrete_states);
+
+          VariablePointers.removeList(ap_accessed, varData.previous);
+          VariablePointers.removeList(ap_accessed, varData.variables);
+
+          VariablePointers.addList(ads_accessed, varData.parameters);
+          VariablePointers.addList(ads_accessed, varData.knowns);
+
+          for v in ads_accessed loop
+            BVariable.setVarKind(v, VariableKind.PARAMETER(NONE()));
+            BVariable.removePartner(v, BackendInfo.setVarPre);
+          end for;
+        end if;
+      then varData;
+      else varData;
+    end match;
+  end updateDiscreteStates;
 
   function getLoopResiduals
     input BackendDAE bdae;
