@@ -462,7 +462,7 @@ void freeRK_NLS_DATA(NONLINEAR_SYSTEM_DATA* nlsData)
     gbInternalNlsFree(dataSolver->ordinaryData);
     break;
   default:
-    throwStreamPrint(NULL, "Not handled NONLINEAR_SOLVER in gbode_freeData. Are we leaking memroy?");
+    throwStreamPrint(NULL, "Not handled NONLINEAR_SOLVER in gbode_freeData. Are we leaking memory?");
   }
   free(dataSolver);
   freeNlsDataGB(nlsData);

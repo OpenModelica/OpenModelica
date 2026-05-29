@@ -306,7 +306,7 @@ static void readFlag(int *flag, int max, const char *value, const char *flagName
   }
 
   for (i=1; i<max; ++i) {
-    if (0 == strcmp(value, names[i])) {
+    if (names[i] != NULL && 0 == strcmp(value, names[i])) {
       *flag = i;
       return;
     }
@@ -314,7 +314,9 @@ static void readFlag(int *flag, int max, const char *value, const char *flagName
 
   warningStreamPrint(OMC_LOG_STDOUT, 1, "unrecognized option %s=%s, current options are:", flagName, value);
   for (i=1; i<max; ++i) {
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "%-18s [%s]", names[i], desc[i]);
+    if (names[i] != NULL) {
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "%-19s [%s]", names[i], desc[i] != NULL ? desc[i] : "");
+    }
   }
   messageCloseWarning(OMC_LOG_STDOUT);
   throwStreamPrint(NULL,"see last warning");
