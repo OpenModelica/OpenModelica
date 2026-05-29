@@ -429,11 +429,11 @@ public
             (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := collectAlgebraicLoops(init, init_0, ode, algebraic, daeModeData, simCodeIndices, simcode_map);
 
             if isSome(daeModeData) then
-              (jacA, jacAdjoint, jacLfg, jacMrf, jacR0, simCodeIndices) := SimJacobian.createSimulationJacobian(Util.getOption(bdae.dae), simCodeIndices, simcode_map);
+              (jacA, jacAdjoint, simCodeIndices) := SimJacobian.createSimulationJacobian(Util.getOption(bdae.dae), simCodeIndices, simcode_map);
               // should jacAdjoint be added aswell? -> for now no
               daeModeData := DaeModeData.addJacobian(daeModeData, jacA);
             else
-              (jacA, jacAdjoint, jacLfg, jacMrf, jacR0, simCodeIndices) := SimJacobian.createSimulationJacobian(listAppend(bdae.ode, bdae.ode_event), simCodeIndices, simcode_map);
+              (jacA, jacAdjoint, simCodeIndices) := SimJacobian.createSimulationJacobian(listAppend(bdae.ode, bdae.ode_event), simCodeIndices, simcode_map);
             end if;
 
             (jacB, simCodeIndices) := SimJacobian.empty("B", simCodeIndices);
@@ -441,6 +441,9 @@ public
             (jacD, simCodeIndices) := SimJacobian.empty("D", simCodeIndices);
             (jacF, simCodeIndices) := SimJacobian.empty("F", simCodeIndices);
             (jacH, simCodeIndices) := SimJacobian.empty("H", simCodeIndices);
+
+            (jacLfg, jacMrf, jacR0, simCodeIndices) := SimJacobian.createOptimizationJacobian(listAppend(bdae.ode, bdae.ode_event), simCodeIndices, simcode_map);
+
             //jacobians := jacA :: jacB :: jacC :: jacD :: jacF :: jacH :: jacAdjoint :: jacobians;
             jacobians := listReverse(jacR0 :: jacMrf :: jacLfg :: jacAdjoint :: jacH :: jacF :: jacD :: jacC :: jacB :: jacA :: jacobians);
 

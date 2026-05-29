@@ -242,6 +242,18 @@ buildModel(AdjointJacobian2); getErrorString();
 //   {3}
 //   {4}
 //
+// ============================================================
+//   [EMPTY] SimCode Jacobian OPT_LFG(idx = 7, partition = 0)
+// ============================================================
+//
+// ============================================================
+//   [EMPTY] SimCode Jacobian OPT_MRF(idx = 8, partition = 0)
+// ============================================================
+//
+// ===========================================================
+//   [EMPTY] SimCode Jacobian OPT_R0(idx = 9, partition = 0)
+// ===========================================================
+//
 //
 //
 // *********************
@@ -393,6 +405,12 @@ buildModel(AdjointJacobian2); getErrorString();
 // index:1: $pDER_ODE_JAC_ADJ.t (no alias)  initial: 	no arrCref index:(2) []
 // index:2: $pDER_ODE_JAC_ADJ.$FUN_1 (no alias)  initial: 	no arrCref index:(3) []
 // index:3: $pDER_ODE_JAC_ADJ.$FUN_2 (no alias)  initial: 	no arrCref index:(4) []
+// 	Jacobian idx: 7
+//
+// 	Jacobian idx: 8
+//
+// 	Jacobian idx: 9
+//
 //
 // modelInfo:
 // ========================================

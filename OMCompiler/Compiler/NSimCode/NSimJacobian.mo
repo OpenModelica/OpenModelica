@@ -343,16 +343,13 @@ public
       input list<Partition.Partition> partitions;
       output SimJacobian simJac;
       output SimJacobian simJacAdjoint;
-      output SimJacobian simJacLfg;
-      output SimJacobian simJacMrf;
-      output SimJacobian simJacR0;
       input output SimCode.SimCodeIndices simCodeIndices;
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
     protected
-      list<BackendDAE> jacobians = {}, jacobiansAdjoint = {}, jacobiansLfg = {}, jacobiansMrf = {}, jacobiansR0 = {};
-      BackendDAE simJacobian, simJacobianAdjoint, simJacobianLfg, simJacobianMrf, simJacobianR0;
-      Option<SimJacobian> simJac_opt, simJacAdj_opt, simJacLfg_opt, simJacMrf_opt, simJacR0_opt;
-      Option<BackendDAE> jacobian, jacobianAdjoint, jacobianLfg, jacobianMrf, jacobianR0;
+      list<BackendDAE> jacobians = {}, jacobiansAdjoint = {};
+      BackendDAE simJacobian, simJacobianAdjoint;
+      Option<SimJacobian> simJac_opt, simJacAdj_opt;
+      Option<BackendDAE> jacobian, jacobianAdjoint;
     algorithm
       for partition in partitions loop
         // save jacobian if existent
@@ -363,20 +360,6 @@ public
         jacobianAdjoint := Partition.Partition.getJacobianAdjoint(partition);
         if isSome(jacobianAdjoint) then
           jacobiansAdjoint := Util.getOption(jacobianAdjoint) :: jacobiansAdjoint;
-        end if;
-
-        // Optimization Jacobians
-        jacobianLfg := Partition.Partition.getJacobianLfg(partition);
-        if Util.isSome(jacobianLfg) then
-          jacobiansLfg := Util.getOption(jacobianLfg) :: jacobiansLfg;
-        end if;
-        jacobianMrf := Partition.Partition.getJacobianMrf(partition);
-        if Util.isSome(jacobianMrf) then
-          jacobiansMrf := Util.getOption(jacobianMrf) :: jacobiansMrf;
-        end if;
-        jacobianR0 := Partition.Partition.getJacobianR0(partition);
-        if Util.isSome(jacobianR0) then
-          jacobiansR0 := Util.getOption(jacobianR0) :: jacobiansR0;
         end if;
       end for;
 
@@ -406,6 +389,37 @@ public
           (simJacAdjoint, simCodeIndices) := SimJacobian.empty("ADJ", simCodeIndices);
         end if;
       end if;
+
+    end createSimulationJacobian;
+
+    function createOptimizationJacobian
+      input list<Partition.Partition> partitions;
+      output SimJacobian simJacLfg;
+      output SimJacobian simJacMrf;
+      output SimJacobian simJacR0;
+      input output SimCode.SimCodeIndices simCodeIndices;
+      input UnorderedMap<ComponentRef, SimVar> simcode_map;
+    protected
+      list<BackendDAE> jacobiansLfg = {}, jacobiansMrf = {}, jacobiansR0 = {};
+      BackendDAE simJacobianLfg, simJacobianMrf, simJacobianR0;
+      Option<SimJacobian> simJacLfg_opt, simJacMrf_opt, simJacR0_opt;
+      Option<BackendDAE> jacobianLfg, jacobianMrf, jacobianR0;
+    algorithm
+      for partition in partitions loop
+        // collect
+        jacobianLfg := Partition.Partition.getJacobianLfg(partition);
+        if Util.isSome(jacobianLfg) then
+          jacobiansLfg := Util.getOption(jacobianLfg) :: jacobiansLfg;
+        end if;
+        jacobianMrf := Partition.Partition.getJacobianMrf(partition);
+        if Util.isSome(jacobianMrf) then
+          jacobiansMrf := Util.getOption(jacobianMrf) :: jacobiansMrf;
+        end if;
+        jacobianR0 := Partition.Partition.getJacobianR0(partition);
+        if Util.isSome(jacobianR0) then
+          jacobiansR0 := Util.getOption(jacobianR0) :: jacobiansR0;
+        end if;
+      end for;
 
       // create empty Lfg jacobian as fallback
       if listEmpty(jacobiansLfg) then
@@ -445,7 +459,7 @@ public
           (simJacR0, simCodeIndices) := SimJacobian.empty("OPT_R0", simCodeIndices);
         end if;
       end if;
-    end createSimulationJacobian;
+    end createOptimizationJacobian;
 
     function createSparsity
       input BackendDAE jacobian;
@@ -482,7 +496,26 @@ public
     algorithm
       for col in cols loop
         (cref, dependencies) := col;
-        dep_indices := List.map(dependencies, function UnorderedMap.getOrFail(map = local_idx_map));
+        // TODO: once this works consistently, strip aways these safety checks
+        if not UnorderedMap.contains(cref, local_idx_map) then
+          Error.addCompilerWarning(
+            getInstanceName() + ": column cref not found in Jacobian local_idx_map: " +
+            ComponentRef.toString(cref) + "\n\tAvailable keys: " + stringDelimitList(List.map(UnorderedMap.keyList(local_idx_map), ComponentRef.toString), ", "));
+          fail();
+        end if;
+
+        dep_indices := {};
+        for dep in dependencies loop
+          // TODO: once this works consistently, strip aways these safety checks
+          if not UnorderedMap.contains(dep, local_idx_map) then
+            Error.addCompilerWarning(
+              getInstanceName() + ": dependency cref not found in Jacobian local_idx_map: " +
+              ComponentRef.toString(dep) + "\n\tWhile processing column: " + ComponentRef.toString(cref) +
+              "\n\tAvailable keys: " + stringDelimitList(List.map(UnorderedMap.keyList(local_idx_map), ComponentRef.toString), ", "));
+            fail();
+          end if;
+          dep_indices := UnorderedMap.getOrFail(dep, local_idx_map) :: dep_indices;
+        end for;
         simPattern := (UnorderedMap.getOrFail(cref, local_idx_map), List.sort(dep_indices, intGt)) :: simPattern;
       end for;
       simPattern := List.sort(simPattern, Util.compareTupleIntGt);

@@ -859,8 +859,8 @@ protected
   algorithm
     b := BVariable.checkCref(cref, BVariable.isResidual, sourceInfo())
            or (BVariable.checkCref(cref, BVariable.isStateDerivative, sourceInfo()) and jacType <> JacobianType.OPT_MRF and jacType <> JacobianType.OPT_R0)
-           or (jacType == JacobianType.OPT_LFG and BVariable.checkCref(cref, BVariable.isLagrangeOrPathConstraint, sourceInfo()))
-           or (jacType == JacobianType.OPT_MRF and BVariable.checkCref(cref, BVariable.isMayerOrFinalConstraint, sourceInfo()))
+           or (jacType == JacobianType.OPT_LFG and BVariable.checkCref(cref, BVariable.isLfgFunction, sourceInfo()))
+           or (jacType == JacobianType.OPT_MRF and BVariable.checkCref(cref, BVariable.isMrfFunction, sourceInfo()))
            or (jacType == JacobianType.OPT_R0 and BVariable.checkCref(cref, BVariable.isInitialConstraint, sourceInfo()));
   end isRowInJacobian;
 
@@ -875,66 +875,6 @@ protected
       end if;
     end for;
   end getOptimizableVars;
-
-  function getLagrangePathEquations
-    input Partition.Partition part;
-    input VariablePointers variables;
-    output list<Pointer<Variable>> out = {};
-  algorithm
-    for var_ptr in VariablePointers.toList(variables) loop
-      if BVariable.isLagrangeOrPathConstraint(var_ptr) then
-        out := var_ptr :: out;
-      end if;
-    end for;
-  end getLagrangePathEquations;
-
-  function getMayerFinalEquations
-    input Partition.Partition part;
-    input VariablePointers variables;
-    output list<Pointer<Variable>> out = {};
-  algorithm
-    for var_ptr in VariablePointers.toList(variables) loop
-      if BVariable.isMayerOrFinalConstraint(var_ptr) then
-        out := var_ptr :: out;
-      end if;
-    end for;
-  end getMayerFinalEquations;
-
-  function getInitialEquations
-    input Partition.Partition part;
-    input VariablePointers variables;
-    output list<Pointer<Variable>> out = {};
-  algorithm
-    for var_ptr in VariablePointers.toList(variables) loop
-      if BVariable.isInitialConstraint(var_ptr) then
-        out := var_ptr :: out;
-      end if;
-    end for;
-  end getInitialEquations;
-
-  function isLfgVariable
-    "Lfg contains variables: x (states), u (controls) and p (parameters)"
-    input Pointer<Variable> var_ptr;
-    output Boolean out;
-  algorithm
-    out := not (BVariable.isFinalTime(var_ptr) or BVariable.isInitialTime(var_ptr));
-  end isLfgVariable;
-
-  function isMrfVariable
-    "Mrf contains variables: x (states), u (controls) at final time, p (parameters) and tf (final time)"
-    input Pointer<Variable> var_ptr;
-    output Boolean out;
-  algorithm
-    out := not BVariable.isInitialTime(var_ptr);
-  end isMrfVariable;
-
-  function isR0Variable
-    "r0 contains variables: x (states), u (controls) at initial time, p (parameters) and t0 (initial time)"
-    input Pointer<Variable> var_ptr;
-    output Boolean out;
-  algorithm
-    out := not (BVariable.isFinalTime(var_ptr));
-  end isR0Variable;
 
   function getSeedCandidatesDynamicOptimization
     input Partition.Partition part;
@@ -955,35 +895,52 @@ protected
 
   function getLfgPartialCandidates
     input Partition.Partition part;
-    input VariablePointers all_knowns;
     output list<Pointer<Variable>> partialCandidates;
+  protected
+    list<Pointer<Variable>> lagrange_vars = {}, derivative_vars = {}, path_vars = {};
   algorithm
-    partialCandidates := VariablePointers.toList(part.unknowns);
-    partialCandidates := listAppend(getLagrangePathEquations(part, all_knowns), partialCandidates);
-    // sort?
+    for var_ptr in VariablePointers.toList(part.unknowns) loop
+      if BVariable.isLagrange(var_ptr) then
+        lagrange_vars := var_ptr :: lagrange_vars;
+      elseif BVariable.isStateDerivative(var_ptr) then
+        derivative_vars := var_ptr :: derivative_vars;
+      elseif BVariable.isPathConstraint(var_ptr) then
+        path_vars := var_ptr :: path_vars;
+      end if;
+    end for;
+    partialCandidates := listReverse(listAppend(lagrange_vars, listAppend(derivative_vars, path_vars)));
   end getLfgPartialCandidates;
 
   function getMrfPartialCandidates
     input Partition.Partition part;
-    input VariablePointers all_knowns;
     output list<Pointer<Variable>> partialCandidates;
+  protected
+    list<Pointer<Variable>> mayer_vars = {}, final_vars = {};
   algorithm
-    partialCandidates := VariablePointers.toList(part.unknowns);
-    partialCandidates := listAppend(getMayerFinalEquations(part, all_knowns), partialCandidates);
-    // sort?
+    for var_ptr in VariablePointers.toList(part.unknowns) loop
+      if BVariable.isMayer(var_ptr) then
+        mayer_vars := var_ptr :: mayer_vars;
+      elseif BVariable.isFinalConstraint(var_ptr) then
+        final_vars := var_ptr :: final_vars;
+      end if;
+    end for;
+    partialCandidates := listReverse(listAppend(mayer_vars, final_vars));
   end getMrfPartialCandidates;
 
   function getR0PartialCandidates
     input Partition.Partition part;
-    input VariablePointers all_knowns;
-    output list<Pointer<Variable>> partialCandidates;
+    output list<Pointer<Variable>> partialCandidates = {};
   algorithm
-    partialCandidates := VariablePointers.toList(part.unknowns);
-    partialCandidates := listAppend(getInitialEquations(part, all_knowns), partialCandidates);
-    // sort?
+    for var_ptr in VariablePointers.toList(part.unknowns) loop
+      if BVariable.isInitialConstraint(var_ptr) then
+        partialCandidates := var_ptr :: partialCandidates;
+      end if;
+    end for;
+    partialCandidates := listReverse(partialCandidates);
   end getR0PartialCandidates;
 
-  // before this is ever called, we should check if the variable / annotation pairs are even valid: e.g. path constraint with final time or so!
+  // TODO: before this is ever called, we should check if the variable / annotation pairs are even valid: e.g. path constraint with final time or so!
+  // add a module for optimization? where we check the model, may do some transformations etc?
   function partJacobianDynamicOptimization
     input Partition.Partition part;
     input VariablePointers all_knowns;
@@ -998,25 +955,25 @@ protected
     Boolean staticAsContinuous = true;
     VariablePointers seedCandidates, partialCandidates;
   algorithm
-    // Lfg Jacobian (Lagrange (L), ODE (f), Path Constraints (g))
-    partialCandidates := VariablePointers.fromList(getLfgPartialCandidates(part, all_knowns), part.unknowns.scalarized);
-    seedCandidates := VariablePointers.fromList(getSeedCandidatesDynamicOptimization(part, all_knowns, isLfgVariable), partialCandidates.scalarized);
+    // Lfg Jacobian (Lagrange (L), ODE (f), Path Constraints (g)), append all unkowns of partition, as we might need their partials for inner
+    partialCandidates := VariablePointers.fromList(listAppend(getLfgPartialCandidates(part), VariablePointers.toList(part.unknowns)), part.unknowns.scalarized);
+    seedCandidates := VariablePointers.fromList(getSeedCandidatesDynamicOptimization(part, all_knowns, BVariable.isLfgVariable), partialCandidates.scalarized);
 
     // TODO: add _OPT to name?
     LFG_jacobian := func(name, JacobianType.OPT_LFG, seedCandidates, partialCandidates,
                          part.equations, part.strongComponents, part.adjacencyMatrix, funcMap, staticAsContinuous);
 
-    // Mrf Jacobian (Mayer (M), Final Constraints (rf))
-    partialCandidates := VariablePointers.fromList(getMrfPartialCandidates(part, all_knowns), part.unknowns.scalarized);
-    seedCandidates := VariablePointers.fromList(getSeedCandidatesDynamicOptimization(part, all_knowns, isMrfVariable), partialCandidates.scalarized);
+    // Mrf Jacobian (Mayer (M), Final Constraints (rf)), append all unkowns of partition, as we might need their partials
+    partialCandidates := VariablePointers.fromList(listAppend(getMrfPartialCandidates(part), VariablePointers.toList(part.unknowns)), part.unknowns.scalarized);
+    seedCandidates := VariablePointers.fromList(getSeedCandidatesDynamicOptimization(part, all_knowns, BVariable.isMrfVariable), partialCandidates.scalarized);
 
     // TODO: add _OPT to name?
     MRF_jacobian := func(name, JacobianType.OPT_MRF, seedCandidates, partialCandidates,
                          part.equations, part.strongComponents, part.adjacencyMatrix, funcMap, staticAsContinuous);
 
-    // r0 Jacobian (Initial Constraints (r0))
-    partialCandidates := VariablePointers.fromList(getR0PartialCandidates(part, all_knowns), part.unknowns.scalarized);
-    seedCandidates := VariablePointers.fromList(getSeedCandidatesDynamicOptimization(part, all_knowns, isR0Variable), partialCandidates.scalarized);
+    // r0 Jacobian (Initial Constraints (r0)), append all unkowns of partition, as we might need their partials
+    partialCandidates := VariablePointers.fromList(listAppend(getR0PartialCandidates(part), VariablePointers.toList(part.unknowns)), part.unknowns.scalarized);
+    seedCandidates := VariablePointers.fromList(getSeedCandidatesDynamicOptimization(part, all_knowns, BVariable.isR0Variable), partialCandidates.scalarized);
 
     // TODO: add _OPT to name?
     R0_jacobian := func(name, JacobianType.OPT_R0, seedCandidates, partialCandidates,
@@ -1877,8 +1834,8 @@ protected
       case JacobianType.DAE     then BVariable.isResidual;
       case JacobianType.LS      then BVariable.isResidual;
       case JacobianType.NLS     then BVariable.isResidual;
-      case JacobianType.OPT_LFG then BVariable.isLagrangeOrPathConstraintOrStateDerivative;
-      case JacobianType.OPT_MRF then BVariable.isMayerOrFinalConstraint;
+      case JacobianType.OPT_LFG then BVariable.isLfgFunction;
+      case JacobianType.OPT_MRF then BVariable.isMrfFunction;
       case JacobianType.OPT_R0  then BVariable.isInitialConstraint;
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because jacobian type is not known: " + jacobianTypeString(jacType)});
