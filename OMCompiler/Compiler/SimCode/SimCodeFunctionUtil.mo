@@ -36,6 +36,13 @@
 encapsulated package SimCodeFunctionUtil "SimCode functions not related to equation systems"
 
 import DAE;
+import AbsynUtil;
+import ClassInf;
+import Settings;
+import Types;
+import Util;
+import Global;
+import ProgramUtil;
 import HashTableExpToIndex;
 import HashTableStringToPath;
 import SimCodeFunction;
@@ -47,7 +54,6 @@ import Absyn;
 import Array;
 import Autoconf;
 import BaseHashTable;
-import CevalScript;
 import ComponentReference;
 import ComponentReferenceBasics;
 import DAEDump;
@@ -1977,13 +1983,13 @@ algorithm
       algorithm
         SCode.MOD(binding = SOME(Absyn.STRING(str))) :=
           Mod.getUnelabedSubMod(inMod, "IncludeDirectory");
-        str := CevalScript.getFullPathFromUri(program, str, false);
+        str := ProgramUtil.getFullPathFromUri(program, str, false);
         istr := "\"-I"+str+"\"";
       then if System.directoryExists(str) then {istr} else {};
     case _
       algorithm
         str := "modelica://" + AbsynUtil.pathFirstIdent(path) + "/Resources/Include";
-        str := CevalScript.getFullPathFromUri(program, str, false);
+        str := ProgramUtil.getFullPathFromUri(program, str, false);
         istr := "\"-I"+str+"\"";
       then if System.directoryExists(str) then {istr} else {};
         // Read SourceInfo instead?
@@ -2054,8 +2060,8 @@ algorithm
             then str;
           else "modelica://" + AbsynUtil.pathFirstIdent(path) + "/Resources/Library";
         end matchcontinue;
-        str := CevalScript.getFullPathFromUri(program, str, false);
-        resourcesStr := CevalScript.getFullPathFromUri(program, "modelica://" + AbsynUtil.pathFirstIdent(path) + "/Resources", false);
+        str := ProgramUtil.getFullPathFromUri(program, str, false);
+        resourcesStr := ProgramUtil.getFullPathFromUri(program, "modelica://" + AbsynUtil.pathFirstIdent(path) + "/Resources", false);
         isLinux := stringEq("linux",Autoconf.os);
         target := Flags.getConfigString(Flags.TARGET);
         // please, take care about ordering these libraries, the most specific should have the highest priority
@@ -2106,7 +2112,7 @@ algorithm
       algorithm
         SCode.MOD(binding = SOME(Absyn.STRING(str))) :=
           Mod.getUnelabedSubMod(inMod, "LibraryDirectory");
-        str := CevalScript.getFullPathFromUri(program, str, false);
+        str := ProgramUtil.getFullPathFromUri(program, str, false);
         platform1 := System.openModelicaPlatform();
         platform2 := System.openModelicaPlatformAlternative();
         platform3 := System.modelicaPlatform();
@@ -2120,7 +2126,7 @@ algorithm
     case _
       algorithm
         str := "modelica://" + AbsynUtil.pathFirstIdent(path) + "/Resources/Library";
-        str := CevalScript.getFullPathFromUri(program, str, false);
+        str := ProgramUtil.getFullPathFromUri(program, str, false);
         platform1 := System.openModelicaPlatform();
         platform2 := System.openModelicaPlatformAlternative();
         platform3 := System.modelicaPlatform();

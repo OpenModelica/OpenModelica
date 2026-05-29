@@ -46,6 +46,7 @@ encapsulated package Main
 
 protected
 import Absyn;
+import ProgramUtil;
 import AbsynJLDumpTpl;
 import AbsynUtil;
 import Autoconf;
@@ -69,7 +70,6 @@ import GCExt;
 import Global;
 import GlobalScript;
 import Interactive;
-import InteractiveUtil;
 import List;
 import Parser;
 import Print;
@@ -188,7 +188,7 @@ algorithm
         ast := table.ast;
         vars := table.vars;
         prog2 := Interactive.addScope(prog, vars);
-        prog2 := InteractiveUtil.updateProgram(prog2, ast);
+        prog2 := ProgramUtil.updateProgram(prog2, ast);
         if Flags.isSet(Flags.DUMP) then
           Debug.trace("\n--------------- Parsed program ---------------\n");
           Print.printBuf(Dump.unparseStr(prog2));
@@ -812,5 +812,5 @@ algorithm
   end try;
 end main2;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_main");
 end Main;

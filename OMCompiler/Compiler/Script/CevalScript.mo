@@ -54,6 +54,7 @@ encapsulated package CevalScript
 
 // public imports
 import Absyn;
+import ProgramUtil;
 import AbsynUtil;
 import Ceval;
 import CevalScriptOMSimulator;
@@ -75,6 +76,7 @@ import CevalScriptBackend;
 import ClassInf;
 import ClassLoader;
 import CodegenCFunctions;
+import CodegenMidToC;
 import ComponentReference;
 import Config;
 import Corba;
@@ -112,6 +114,9 @@ import SCodeUtil;
 import SemanticVersion;
 import Settings;
 import SimCodeFunction;
+import SimCodeFunctionUtil;
+import DAEToMid;
+import MidCode;
 import StackOverflow;
 import Static;
 import StringUtil;
@@ -442,7 +447,7 @@ protected
   list<tuple<Absyn.Path,String,list<String>,Boolean>> modelsToLoad;
 algorithm
   modelsToLoad := if checkUses then Interactive.getUsesAnnotationOrDefault(newp, requireExactVersion) else {};
-  p := InteractiveUtil.updateProgram(newp, p, mergeAST);
+  p := ProgramUtil.updateProgram(newp, p, mergeAST);
   (p, _) := loadModel(modelsToLoad, modelicaPath, p, false, notifyLoad, checkUses, requireExactVersion, false);
 end checkUsesAndUpdateProgram;
 
@@ -526,7 +531,7 @@ algorithm
       end if;
     end if;
 
-    program := InteractiveUtil.updateProgram(pnew, program);
+    program := ProgramUtil.updateProgram(pnew, program);
 
     if checkUses then
       modelsToLoad := Interactive.getUsesAnnotationOrDefault(pnew, requireExactVersion);
@@ -563,7 +568,7 @@ algorithm
     case (_, true, _) then false;
     case ((path,requestOrigin,str1::_,_), false, _)
       algorithm
-        cdef := InteractiveUtil.getPathedClassInProgram(path,p);
+        cdef := ProgramUtil.getPathedClassInProgram(path,p);
         ostr2 := AbsynUtil.getNamedAnnotationInClass(cdef,Absyn.IDENT("version"),Interactive.getAnnotationStringValueOrFail);
         (withoutConversion,withConversion) := Interactive.getConversionAnnotation(cdef);
         checkValidVersion(path,str1,ostr2,requestOrigin=requestOrigin,withConversion=withConversion,withoutConversion=withoutConversion);
@@ -631,7 +636,7 @@ algorithm
   if name == "ModelicaServices" then
     try
       // Try to look up ModelicaServices.ExternalReferences.loadResource.
-      cls := InteractiveUtil.getPathedClassInProgram(Absyn.Path.QUALIFIED("ModelicaServices",
+      cls := ProgramUtil.getPathedClassInProgram(Absyn.Path.QUALIFIED("ModelicaServices",
         Absyn.Path.QUALIFIED("ExternalReferences", Absyn.Path.IDENT("loadResource"))), program);
       // Check if the first statement in the first algorithm section is a function call.
       Absyn.ClassPart.ALGORITHMS(contents = {Absyn.AlgorithmItem.ALGORITHMITEM(algorithm_ = alg)}) :=
@@ -1306,7 +1311,7 @@ algorithm
 
     case ("getImportedNames",{Values.CODE(Absyn.C_TYPENAME(path))})
       algorithm
-        (vals, cvars) := getImportedNames(InteractiveUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn()));
+        (vals, cvars) := getImportedNames(ProgramUtil.getPathedClassInProgram(path, SymbolTable.getAbsyn()));
         v := Values.TUPLE({ValuesMake.makeArray(vals),ValuesMake.makeArray(cvars)});
       then
         v;
@@ -1451,7 +1456,7 @@ algorithm
     case ("reloadClass",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(encoding)})
       algorithm
         Absyn.CLASS(info=SOURCEINFO(fileName=filename,lastModification=r2)) :=
-          InteractiveUtil.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
+          ProgramUtil.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
         (true,_,r1,_) := System.stat(filename);
         if not realEq(r1, r2) then
           reloadClass(filename, encoding);
@@ -1461,7 +1466,7 @@ algorithm
 
     case ("reloadClass",{Values.CODE(Absyn.C_TYPENAME(classpath)),_})
       algorithm
-        failure(InteractiveUtil.getPathedClassInProgram(classpath, SymbolTable.getAbsyn()));
+        failure(ProgramUtil.getPathedClassInProgram(classpath, SymbolTable.getAbsyn()));
         Error.addMessage(Error.LOAD_MODEL_ERROR, {AbsynUtil.pathString(classpath)});
       then
         Values.BOOL(false);
@@ -1491,7 +1496,7 @@ algorithm
     case ("getTimeStamp",{Values.CODE(Absyn.C_TYPENAME(classpath))})
       algorithm
         Absyn.CLASS(info=SOURCEINFO(lastModification=r)) :=
-          InteractiveUtil.getPathedClassInProgram(classpath,SymbolTable.getAbsyn());
+          ProgramUtil.getPathedClassInProgram(classpath,SymbolTable.getAbsyn());
         str := System.ctime(r);
       then
         Values.TUPLE({Values.REAL(r),Values.STRING(str)});
@@ -1507,13 +1512,13 @@ algorithm
 
     case ("classAnnotationExists",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.CODE(Absyn.C_TYPENAME(path))})
       algorithm
-        b := Interactive.getNamedAnnotationExp(classpath, SymbolTable.getAbsyn(), path, SOME(false), isSome);
+        b := ProgramUtil.getNamedAnnotationExp(classpath, SymbolTable.getAbsyn(), path, SOME(false), isSome);
       then
         Values.BOOL(b);
 
     case ("getBooleanClassAnnotation",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.CODE(Absyn.C_TYPENAME(path))})
       algorithm
-        Absyn.BOOL(b) := Interactive.getNamedAnnotationExp(classpath, SymbolTable.getAbsyn(), path, NONE(), Interactive.getAnnotationExp);
+        Absyn.BOOL(b) := ProgramUtil.getNamedAnnotationExp(classpath, SymbolTable.getAbsyn(), path, NONE(), Interactive.getAnnotationExp);
       then
         Values.BOOL(b);
 
@@ -1648,7 +1653,7 @@ algorithm
   evalParamAnn := Config.getEvaluateParametersInAnnotations();
   Config.setEvaluateParametersInAnnotations(true);
   try
-    Absyn.STRING(version) := Interactive.getNamedAnnotationExp(path, p, Absyn.IDENT("version"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
+    Absyn.STRING(version) := ProgramUtil.getNamedAnnotationExp(path, p, Absyn.IDENT("version"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
   else
     version := "";
   end try;
@@ -1832,7 +1837,7 @@ algorithm
         (cache, mainFunction, dependencies, metarecordTypes) := collectDependencies(cache, env, path);
         pathstr  := generateFunctionName(path);
         fileName := generateFunctionFileName(path);
-        SimCodeFunction.translateFunctions(program, fileName, SOME(mainFunction), dependencies, metarecordTypes, {});
+        translateFunctions(program, fileName, SOME(mainFunction), dependencies, metarecordTypes, {});
         compileModel(fileName, {});
       then
         (cache, pathstr, fileName);
@@ -1849,7 +1854,7 @@ algorithm
         fileName := generateFunctionFileName(path);
         // The list of functions is not ordered, so we need to filter out the main function...
         dependencies := DAEUtil.getFunctionList(funcs);
-        SimCodeFunction.translateFunctions(program, fileName, NONE(), dependencies, {}, {});
+        translateFunctions(program, fileName, NONE(), dependencies, {}, {});
       then
         (cache, pathstr, fileName);
     case (cache, env, path) guard Flags.isSet(Flags.GEN) and Flags.isSet(Flags.FAILTRACE)
@@ -2020,7 +2025,7 @@ algorithm
         System.writeFile(name + ".deps", "$(GEN_DIR)" + name + ".o: $(GEN_DIR)" + name + ".c" + " " + stringDelimitList(strs," "));
         dependencies := List.map1(dependencies,stringAppend,"\"");
         dependencies := List.map1r(dependencies,stringAppend,"#include \"");
-        SimCodeFunction.translateFunctions(p, name, NONE(), d, {}, dependencies);
+        translateFunctions(p, name, NONE(), d, {}, dependencies);
         str := Tpl.tplString(Unparsing.programExternalHeaderFromTypes, metarecords);
         System.writeFile(name + "_records.c","#include <meta/meta_modelica.h>\n" + str);
         cache := if cleanCache then icache else cache;
@@ -2337,9 +2342,9 @@ algorithm
 
         System.freeLibrary(libHandle, print_debug);
         // update the build time in the class!
-        Absyn.CLASS(restriction=Absyn.R_FUNCTION(_),info=info) := InteractiveUtil.getPathedClassInProgram(funcpath, p);
+        Absyn.CLASS(restriction=Absyn.R_FUNCTION(_),info=info) := ProgramUtil.getPathedClassInProgram(funcpath, p);
 
-        w := InteractiveUtil.buildWithin(funcpath);
+        w := ProgramUtil.buildWithin(funcpath);
 
         if Flags.isSet(Flags.DYN_LOAD) then
           print("[dynload]: Updating build time for function path: " + AbsynUtil.pathString(funcpath) + " within: " + Dump.unparseWithin(w) + "\n");
@@ -2860,127 +2865,150 @@ protected
   Absyn.Program newp;
 algorithm
   newp := Parser.parse(filename,encoding); /* Don't use the classloader since that can pull in entire directory structures. We only want to reload one single file. */
-  newp := InteractiveUtil.updateProgram(newp, SymbolTable.getAbsyn());
+  newp := ProgramUtil.updateProgram(newp, SymbolTable.getAbsyn());
   SymbolTable.setAbsyn(newp);
 end reloadClass;
 
-public function getFullPathFromUri
+public function translateFunctions "
+  Entry point to translate Modelica/MetaModelica functions to C functions.
+  Called from other places in the compiler."
   input Absyn.Program program;
-  input String uri;
-  input Boolean printError;
-  output String path;
-protected
-  String str1,str2,str3;
+  input String name;
+  input Option<DAE.Function> optMainFunction;
+  input list<DAE.Function> idaeElements;
+  input list<DAE.Type> metarecordTypes;
+  input list<String> inIncludes;
 algorithm
-  (str1,str2,str3) := System.uriToClassAndPath(uri);
-  path := getBasePathFromUri(str1,str2,program,Settings.getModelicaPath(Testsuite.isRunning()),printError) + str3;
-end getFullPathFromUri;
+  setGlobalRoot(Global.optionSimCode, NONE());
 
-protected function getBasePathFromUri "Handle modelica:// URIs"
-  input String scheme;
-  input String iname;
-  input Absyn.Program program;
-  input String modelicaPath;
-  input Boolean printError;
-  output String basePath;
-algorithm
-  basePath := matchcontinue (scheme, iname, modelicaPath, printError)
+  () := match (optMainFunction, idaeElements, inIncludes)
     local
-      Boolean isDir;
-      list<String> mps,names;
-      String gd,mp,bp,str,name,fileName;
-    case ("modelica://", name, _, _)
+      DAE.Function daeMainFunction;
+      SimCodeFunction.Function mainFunction;
+      list<SimCodeFunction.Function> fns;
+      list<String> includes, libs, libPaths,includeDirs;
+      SimCodeFunction.MakefileParams makefileParams;
+      SimCodeFunction.FunctionCode fnCode;
+      list<SimCodeFunction.RecordDeclaration> extraRecordDecls;
+      list<DAE.Exp> literals;
+      list<DAE.Function> daeElements;
+      Tpl.Text midCode;
+      list<MidCode.Function> midfuncs;
+    case (SOME(daeMainFunction), daeElements, includes)
       algorithm
-        name::names := System.strtok(name,".");
-        Absyn.CLASS(info=SOURCEINFO(fileName=fileName)) := InteractiveUtil.getPathedClassInProgram(Absyn.IDENT(name),program);
-        mp := System.dirname(fileName);
-        bp := findModelicaPath2(mp,names,"",true);
-      then bp;
-    case ("modelica://", name, mp, _)
-      algorithm
-        name::names := System.strtok(name,".");
-        failure(InteractiveUtil.getPathedClassInProgram(Absyn.IDENT(name),program));
-        gd := Autoconf.groupDelimiter;
-        mps := System.strtok(mp, gd);
-        (mp,name,isDir) := System.getLoadModelPath(name, {"default"}, mps);
-        mp := if isDir then mp + name else mp;
-        bp := findModelicaPath2(mp,names,"",true);
-      then bp;
-    case ("file://", _, _, _) then "";
-    case ("modelica://", name, mp, true)
-      algorithm
-        name::_ := System.strtok(name,".");
-        str := "Could not resolve modelica://" + name + " with MODELICAPATH: " + mp;
-        Error.addMessage(Error.COMPILER_ERROR,{str});
-      then fail();
-  end matchcontinue;
-end getBasePathFromUri;
+        // Create FunctionCode
+        (daeElements,literals) := SimCodeFunctionUtil.findLiterals(daeMainFunction::daeElements);
+        (mainFunction::fns, extraRecordDecls, includes, includeDirs, libs, libPaths) := SimCodeFunctionUtil.elaborateFunctions(program, daeElements, metarecordTypes, literals, includes);
+        SimCodeFunctionUtil.checkValidMainFunction(name, mainFunction);
+        makefileParams := SimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, true);
+        fnCode := SimCodeFunction.FUNCTIONCODE(name, SOME(mainFunction), fns, literals, includes, makefileParams, extraRecordDecls);
 
-protected function findModelicaPath "Handle modelica:// URIs"
-  input list<String> imps;
-  input list<String> names;
-  input String version;
-  output String basePath;
+        if Config.simCodeTarget() == "MidC" then
+          Tpl.tplString(CodegenCFunctions.translateFunctionHeaderFiles, fnCode);
+          midfuncs := DAEToMid.DAEFunctionsToMid(mainFunction::fns);
+          midCode := Tpl.tplCallWithFailError(CodegenMidToC.genProgram, MidCode.PROGRAM(name, midfuncs));
+          Tpl.textFileConvertLines(midCode, name + ".c");
+        else
+          Tpl.tplString(CodegenCFunctions.translateFunctions, fnCode);
+        end if;
+      then
+        ();
+    case (NONE(), daeElements, includes)
+      algorithm
+        // Create FunctionCode
+        (daeElements,literals) := SimCodeFunctionUtil.findLiterals(daeElements);
+        (fns, extraRecordDecls, includes, includeDirs, libs, libPaths) := SimCodeFunctionUtil.elaborateFunctions(program, daeElements, metarecordTypes, literals, includes);
+        makefileParams := SimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, true);
+        // remove OpenModelica.threadData.ThreadData
+        fns := removeThreadDataFunction(fns, {});
+        extraRecordDecls := removeThreadDataRecord(extraRecordDecls, {});
+        fnCode := SimCodeFunction.FUNCTIONCODE(name, NONE(), fns, literals, includes, makefileParams, extraRecordDecls);
+
+        if Config.simCodeTarget() == "MidC" then
+          Tpl.tplString(CodegenCFunctions.translateFunctionHeaderFiles, fnCode);
+          midfuncs := DAEToMid.DAEFunctionsToMid(fns);
+          midCode := Tpl.tplCallWithFailError(CodegenMidToC.genProgram, MidCode.PROGRAM(name, midfuncs));
+          Tpl.textFileConvertLines(midCode, name + ".c");
+        else
+          Tpl.tplString(CodegenCFunctions.translateFunctions, fnCode);
+        end if;
+      then
+        ();
+
+  end match;
+end translateFunctions;
+
+protected function removeThreadDataRecord
+"remove OpenModelica.threadData.ThreadData
+ as is already defined in openmodelica.h"
+  input list<SimCodeFunction.RecordDeclaration> inRecs;
+  input list<SimCodeFunction.RecordDeclaration> inAcc;
+  output list<SimCodeFunction.RecordDeclaration> outRecs;
 algorithm
-  basePath := matchcontinue imps
+  outRecs := match inRecs
     local
-      String mp;
-      list<String> mps;
+      list<SimCodeFunction.RecordDeclaration> acc, rest;
+      SimCodeFunction.RecordDeclaration r;
 
-    case mp::_
-      then findModelicaPath2(mp,names,version,false);
-    case _::mps
-      then findModelicaPath(mps,names,version);
-  end matchcontinue;
-end findModelicaPath;
+    case {} then listReverse(inAcc);
 
-protected function findModelicaPath2 "Handle modelica:// URIs"
-  input String mp;
-  input list<String> inames;
-  input String version;
-  input Boolean b;
-  output String basePath;
+    case SimCodeFunction.RECORD_DECL_FULL(name = "OpenModelica_threadData_ThreadData")::rest
+     algorithm
+       acc := removeThreadDataRecord(rest, inAcc);
+     then
+       acc;
+
+    case SimCodeFunction.RECORD_DECL_DEF(path = Absyn.QUALIFIED("OpenModelica",Absyn.QUALIFIED("threadData",Absyn.IDENT("ThreadData"))))::rest
+     algorithm
+       acc := removeThreadDataRecord(rest, inAcc);
+     then
+       acc;
+
+    case r::rest
+     algorithm
+       acc := removeThreadDataRecord(rest, r::inAcc);
+     then
+       acc;
+
+  end match;
+end removeThreadDataRecord;
+
+protected function removeThreadDataFunction
+"remove OpenModelica.threadData.ThreadData
+ as is already defined in openmodelica.h"
+  input list<SimCodeFunction.Function> inFuncs;
+  input list<SimCodeFunction.Function> inAcc;
+  output list<SimCodeFunction.Function> outFuncs;
 algorithm
-  basePath := matchcontinue (inames, b)
+  outFuncs := match inFuncs
     local
-      list<String> names;
-      String name,file;
+      list<SimCodeFunction.Function> acc, rest;
+      SimCodeFunction.Function f;
 
-    case (name::names, _)
-      algorithm
-        false := stringEq(version,"");
-        file := mp + "/" + name + " " + version;
-        true := System.directoryExists(file);
-        // print("Found file 1: " + file + "\n");
-      then findModelicaPath2(file,names,"",true);
-    case (name::_, _)
-      algorithm
-        false := stringEq(version,"");
-        file := mp + "/" + name + " " + version + ".mo";
-        true := System.regularFileExists(file);
-        // print("Found file 2: " + file + "\n");
-      then mp;
+    case {} then listReverse(inAcc);
 
-    case (name::names, _)
-      algorithm
-        file := mp + "/" + name;
-        true := System.directoryExists(file);
-        // print("Found file 3: " + file + "\n");
-      then findModelicaPath2(file,names,"",true);
-    case (name::_, _)
-      algorithm
-        file := mp + "/" + name + ".mo";
-        true := System.regularFileExists(file);
-        // print("Found file 4: " + file + "\n");
-      then mp;
+    case SimCodeFunction.RECORD_CONSTRUCTOR(name = Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("OpenModelica",Absyn.QUALIFIED("threadData",Absyn.IDENT("ThreadData")))))::rest
+     algorithm
+       acc := removeThreadDataFunction(rest, inAcc);
+     then
+       acc;
 
-      // This class is part of the current package.mo, or whatever...
-    case (_, true)
-      algorithm
-        // print("Did not find file 5: " + mp + " - " + name + "\n");
-      then mp;
-  end matchcontinue;
-end findModelicaPath2;
+    case f::rest
+     algorithm
+       acc := removeThreadDataFunction(rest, f::inAcc);
+     then
+       acc;
+
+  end match;
+end removeThreadDataFunction;
+
+
+
+
+
+
+
+
 
 protected function unZipEncryptedPackageAndCheckFile
   input String inWorkdir;
@@ -3094,7 +3122,7 @@ algorithm
         false := valueEq(Absyn.IDENT("AllLoadedClasses"),className);
         p := SymbolTable.getAbsyn();
         scodeP := SymbolTable.getSCode();
-        absynClass := InteractiveUtil.getPathedClassInProgram(className, p);
+        absynClass := ProgramUtil.getPathedClassInProgram(className, p);
         absynClass := if interface_only then AbsynUtil.getFunctionInterface(absynClass) else absynClass;
         absynClass := if short_only then AbsynUtil.getShortClass(absynClass) else absynClass;
         p := Absyn.PROGRAM({absynClass},Absyn.TOP());
@@ -3134,7 +3162,7 @@ algorithm
         end match;
         // handle encryption
         access := Interactive.checkAccessAnnotationAndEncryption(path, SymbolTable.getAbsyn());
-        absynClass as Absyn.CLASS(restriction=restriction, info=SOURCEINFO(fileName=str)) := InteractiveUtil.getPathedClassInProgram(className, SymbolTable.getAbsyn());
+        absynClass as Absyn.CLASS(restriction=restriction, info=SOURCEINFO(fileName=str)) := ProgramUtil.getPathedClassInProgram(className, SymbolTable.getAbsyn());
         absynClass := if nested then absynClass else AbsynUtil.filterNestedClasses(absynClass);
         /* If the class has Access.packageText annotation or higher
          * If the class has Access.nonPackageText annotation or higher and class is not a package
@@ -3174,19 +3202,19 @@ algorithm
   p := SymbolTable.getAbsyn();
 
   if builtin then
-    p := InteractiveUtil.updateProgram(p, FBuiltin.getInitialFunctions());
+    p := ProgramUtil.updateProgram(p, FBuiltin.getInitialFunctions());
   end if;
 
   if AbsynUtil.pathEqual(path, Absyn.IDENT("AllLoadedClasses")) then
     if recursive then
-      (_, paths) := InteractiveUtil.getClassNamesRecursive(NONE(), p, protects, constants, {});
+      (_, paths) := ProgramUtil.getClassNamesRecursive(NONE(), p, protects, constants, {});
       paths := listReverseInPlace(paths);
     else
       paths := Interactive.getTopClassnames(p);
     end if;
   else
     if recursive then
-      (_, paths) := InteractiveUtil.getClassNamesRecursive(SOME(path), p, protects, constants, {});
+      (_, paths) := ProgramUtil.getClassNamesRecursive(SOME(path), p, protects, constants, {});
       paths := listReverseInPlace(paths);
     else
       paths := Interactive.getClassnamesInPath(path, p, protects, constants);
@@ -3493,7 +3521,7 @@ protected
   list<Absyn.Import> pub_imports_list , pro_imports_list;
   String imp_ident;
 algorithm
-  package_class := InteractiveUtil.getPathedClassInProgram(Absyn.IDENT(in_package_name), SymbolTable.getAbsyn());
+  package_class := ProgramUtil.getPathedClassInProgram(Absyn.IDENT(in_package_name), SymbolTable.getAbsyn());
 
   (pub_imports_list , pro_imports_list) := getImportList(package_class);
 
@@ -3541,5 +3569,5 @@ algorithm
 
 end getMMfilePublicDependencies;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_main");
 end CevalScript;

@@ -45,11 +45,11 @@ encapsulated package Refactor
 
 
 public import Absyn;
+import ProgramUtil;
 public import AbsynUtil;
 
 protected import List;
 protected import Interactive;
-protected import InteractiveUtil;
 protected import Inst;
 protected import FCore;
 protected import System; // stringReal
@@ -613,7 +613,7 @@ algorithm
       algorithm
         fullPath := fixPaths(cPath, path);
        // debug_print("getRestrictionFromPath: TryingLookingUp:", AbsynUtil.pathString(fullPath));
-        cdef := InteractiveUtil.getPathedClassInProgram(fullPath,p);
+        cdef := ProgramUtil.getPathedClassInProgram(fullPath,p);
         restriction := getRestrictionInClass(cdef);
       then
         restriction;
@@ -622,7 +622,7 @@ algorithm
       algorithm
         (_,fullPath) := Interactive.mkFullyQual(env,path);
     //    debug_print("getRestrictionFromPath: LookingUp:", AbsynUtil.pathString(fullPath));
-        cdef := InteractiveUtil.getPathedClassInProgram(fullPath,p);
+        cdef := ProgramUtil.getPathedClassInProgram(fullPath,p);
         restriction := getRestrictionInClass(cdef);
       then
         restriction;
@@ -975,7 +975,7 @@ algorithm
       algorithm
         fullPath := fixPaths(cPath, path);
 //        debug_print("getCoordsInPath: TryingLookingUp:", AbsynUtil.pathString(fullPath));
-        cdef := InteractiveUtil.getPathedClassInProgram(fullPath,p);
+        cdef := ProgramUtil.getPathedClassInProgram(fullPath,p);
         (x1,y1,x2,y2) := getCoordsInClass(cdef,context);
       then
        (x1,y1,x2,y2);
@@ -990,7 +990,7 @@ algorithm
         //print("\npath = ");
         //print(str);
     //    debug_print("getCoordsInPath: LookingUp:", AbsynUtil.pathString(fullPath));
-        cdef := InteractiveUtil.getPathedClassInProgram(fullPath,p);
+        cdef := ProgramUtil.getPathedClassInProgram(fullPath,p);
         (x1,y1,x2,y2) := getCoordsInClass(cdef,context);
       then
         (x1,y1,x2,y2);//(Absyn.REAL(-100.0),Absyn.REAL(-100.0),Absyn.REAL(100.0),Absyn.REAL(100.0));
@@ -2307,5 +2307,5 @@ algorithm
   end matchcontinue;
 end fixPaths;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_main");
 end Refactor;

@@ -3129,5 +3129,5 @@ template timeEventLength(SimCode simCode)
       >>
 end timeEventLength;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="codegen");
 end CodegenCppCommon;

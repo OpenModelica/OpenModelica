@@ -4030,6 +4030,6 @@ let() = Tpl.addSourceTemplateError(errMessage, srcInfo)
 >>
 end error;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="codegen");
 end CodegenXML;
 // vim: filetype=susan sw=2 sts=2

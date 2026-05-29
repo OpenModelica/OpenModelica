@@ -656,5 +656,5 @@ algorithm
   end matchcontinue;
 end elabGraphicsExp;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_main");
 end StaticScript;
