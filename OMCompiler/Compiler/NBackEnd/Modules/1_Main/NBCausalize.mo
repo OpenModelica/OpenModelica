@@ -152,52 +152,7 @@ public
       new_partitions := if Partition.isEmpty(new_partition) then new_partitions else new_partition :: new_partitions;
     end for;
     new_partitions := listReverse(new_partitions);
-
-    if not Partition.kindIsInitial(kind) then
-      for partition in new_partitions loop
-        violated := checkSystemVariabilities(partition) or violated;
-      end for;
-      if violated then fail(); end if;
-    end if;
   end applyModule;
-
-  function checkSystemVariabilities
-    "checks whether variability is valid. Prevents things like `Integer i = time;`"
-    input Partition partition;
-    output Boolean violated = false;
-  protected
-    String err;
-  algorithm
-    if isSome(partition.strongComponents) then
-      for scc in Util.getOption(partition.strongComponents) loop
-        () := match scc
-          local
-            Type ty1, ty2;
-            TypeCheck.MatchKind kind;
-
-          case StrongComponent.SINGLE_COMPONENT() algorithm
-            ty1 := Type.removeSizeOneArraysAndRecords(Variable.typeOf(Pointer.access(scc.var)));
-            ty2 := Type.removeSizeOneArraysAndRecords(Equation.getType(Pointer.access(scc.eqn)));
-            (_, _, kind) := TypeCheck.matchTypes(ty1, ty2, Expression.fromCref(BVariable.getVarName(scc.var)));
-
-            if kind <> NFTypeCheck.MatchKind.EXACT then
-              // The variability of the equation must be greater or equal to that of the variable it solves.
-              // See MLS section 3.8 Variability of Expressions
-              err := getInstanceName() + " failed. The following strong component has conflicting types: "
-                + Type.toString(ty1) + " != " + Type.toString(ty2) + "\n" + StrongComponent.toString(scc);
-              if Flags.isSet(Flags.BLT_DUMP) then
-                err := err + "\n" + Partition.toString(partition);
-              end if;
-              Error.addMessage(Error.COMPILER_ERROR, {err});
-              violated := true;
-            end if;
-          then ();
-          /* TODO case StrongComponent.MULTI_COMPONENT() */
-          else ();
-        end match;
-      end for;
-    end if;
-  end checkSystemVariabilities;
 
   function simple
     input VariablePointers vars;
