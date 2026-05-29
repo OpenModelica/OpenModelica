@@ -41,5 +41,5 @@ $(LIB): Makefile.lib
 
 build: $(NAME) $(LIB)
 	cp -p ../bin/$(NAME)$(EXE) $(OMBUILDDIR)/bin
-	windeployqt6.exe --no-compiler-runtime --no-system-d3d-compiler --no-quick-import --libdir $(builddir_bin) $(builddir_bin)/$(NAME)$(EXE)
+	windeployqt6.exe --no-compiler-runtime --no-system-d3d-compiler --no-quick-import --libdir $(OMBUILDDIR)/bin $(OMBUILDDIR)/bin/$(NAME)$(EXE)
 	cp -a *.h $(OMBUILDDIR)/include/omplot
