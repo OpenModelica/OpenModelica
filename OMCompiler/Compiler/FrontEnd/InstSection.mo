@@ -2262,6 +2262,9 @@ algorithm
           when_stmt := Algorithm.makeWhenA(cond_exp, cond_prop, branch, when_stmt_opt, source);
           when_stmt_opt := SOME(when_stmt);
         end for;
+        // A when-statement always has at least one branch (enforced by
+        // checkWhenAlgorithm above), so when_stmt_opt is SOME here.
+        SOME(when_stmt) := when_stmt_opt;
       then
         {when_stmt};
 
