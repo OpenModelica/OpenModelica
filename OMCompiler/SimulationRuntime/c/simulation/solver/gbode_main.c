@@ -586,7 +586,7 @@ void gbodef_freeData(DATA_GBODEF *gbfData)
   freeEvalSelection(gbfData->evalSelectionFast);
 
   /* Free non-linear system data */
-  freeRK_NLS_DATA(gbfData->nlsData);
+  freeRK_NLS_DATA(gbfData->nlsSolverMethod, gbfData->nlsData);
 
   /* Free Jacobian */
   freeJacobianCopy(gbfData->jacobian);
@@ -643,7 +643,7 @@ void gbode_freeData(DATA* data, DATA_GBODE *gbData)
   freeJacobian(jacobian);
 
   /* Free non-linear system data */
-  freeRK_NLS_DATA(gbData->nlsData);
+  freeRK_NLS_DATA(gbData->nlsSolverMethod, gbData->nlsData);
 
   /* Free Jacobian */
   freeJacobianCopy(gbData->jacobian);
