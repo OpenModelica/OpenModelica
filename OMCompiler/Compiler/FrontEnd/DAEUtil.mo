@@ -4602,18 +4602,8 @@ algorithm
     case (DAE.STMT_ASSIGN_ARR(type_ = tp, lhs=e, exp = e2, source = source), extraArg)
       algorithm
         (e_2, extraArg) := func(e2, extraArg);
-        try
-          (e_1 as DAE.CREF(_,_), extraArg) := traverseStatementsOptionsEvalLhs(e, extraArg, func, opt);
-          x := if referenceEq(e2,e_2) and referenceEq(e,e_1) then inStmt else DAE.STMT_ASSIGN_ARR(tp,e_1,e_2,source);
-        else
-          failure((DAE.CREF(_,_), _) := func(e, extraArg));
-          x := if referenceEq(e2,e_2) then inStmt else DAE.STMT_ASSIGN_ARR(tp,e,e_2,source);
-          /* We need to pass this through because simplify/etc may scalarize the cref...
-             true = Flags.isSet(Flags.FAILTRACE);
-             print(DAEDump.ppStatementStr(x));
-             print("Warning, not allowed to set the componentRef to a expression in DAEUtil.traverseDAEEquationsStmts\n");
-          */
-        end try;
+        (e_1, extraArg) := traverseStatementsOptionsEvalLhs(e, extraArg, func, opt);
+        x := if referenceEq(e2,e_2) and referenceEq(e,e_1) then inStmt else DAE.STMT_ASSIGN_ARR(tp,e_1,e_2,source);
       then (x::{},extraArg);
 
     case (DAE.STMT_IF(exp=e,statementLst=stmts,else_ = algElse, source = source), extraArg)
