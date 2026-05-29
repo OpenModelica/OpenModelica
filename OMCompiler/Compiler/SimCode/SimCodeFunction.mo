@@ -42,14 +42,12 @@ public import AbsynUtil;
 public import DAE;
 public import HashTableCrefSimVar;
 public import HashTableStringToPath;
-public import Tpl;
 
 // private imports
 protected import BaseHashTable;
 protected import ComponentReference;
 protected import ExpressionBasics;
 protected import Error;
-protected import Global;
 protected import List;
 protected import SimCodeFunctionUtil;
 protected import SCode;

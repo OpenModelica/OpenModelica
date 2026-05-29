@@ -108,7 +108,6 @@ import VerifyModel = NFVerifyModel;
 import SCodeUtil;
 import ElementSource;
 import InstSettings = NFInst.InstSettings;
-import Testsuite;
 import MetaModelica.Dangerous.listReverseInPlace;
 
 constant InstContext.Type ANNOTATION_CONTEXT = intBitOr(NFInstContext.RELAXED, NFInstContext.ANNOTATION);

@@ -70,7 +70,6 @@ import GCExt;
 import Global;
 import GlobalScript;
 import Interactive;
-import InteractiveUtil;
 import List;
 import Parser;
 import Print;

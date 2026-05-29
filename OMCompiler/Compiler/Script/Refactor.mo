@@ -50,7 +50,6 @@ public import AbsynUtil;
 
 protected import List;
 protected import Interactive;
-protected import InteractiveUtil;
 protected import Inst;
 protected import FCore;
 protected import System; // stringReal
