@@ -1717,28 +1717,25 @@ algorithm
       algorithm
         node := FNode.fromRef(FGraph.lastScopeRef(env));
         (qimports, uqimports) := FNode.imports(node);
-        () := matchcontinue(qimports, uqimports)
+        try
           // Search among qualified imports, e.g. import A.B; or import D=A.B;
-          case (_::_, _)
-            algorithm
-              cr := lookupQualifiedImportedVarInFrame(qimports, id);
-              Mutable.update(inState,true);
-        // if the first name of the import A.B is equal with the scope we are in, skip it!
-        cr := if FNode.name(FNode.fromRef(FGraph.lastScopeRef(env))) == ComponentReferenceBasics.crefFirstIdent(cr)
-             then ComponentReference.crefStripFirstIdent(cr)
-           else cr;
-              f::prevFrames := listReverse(FGraph.currentScope(env));
-              env := FGraph.setScope(env, {f});
-              (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name) := lookupVarInPackages(cache,env,cr,prevFrames,inState);
-            then ();
+          false := listEmpty(qimports);
+          cr := lookupQualifiedImportedVarInFrame(qimports, id);
+          Mutable.update(inState,true);
+          // if the first name of the import A.B is equal with the scope we are in, skip it!
+          cr := if FNode.name(FNode.fromRef(FGraph.lastScopeRef(env))) == ComponentReferenceBasics.crefFirstIdent(cr)
+               then ComponentReference.crefStripFirstIdent(cr)
+             else cr;
+          f::prevFrames := listReverse(FGraph.currentScope(env));
+          env := FGraph.setScope(env, {f});
+          (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name) := lookupVarInPackages(cache,env,cr,prevFrames,inState);
+        else
           // Search among unqualified imports, e.g. import A.B.*
-          case (_, _::_)
-            algorithm
-              (cache,p_env,attr,ty,bind,cnstForRange,unique,splicedExpData,componentEnv,name) := lookupUnqualifiedImportedVarInFrame(cache, uqimports, env, id);
-              reportSeveralNamesError(unique,id);
-              Mutable.update(inState,true);
-            then ();
-        end matchcontinue;
+          false := listEmpty(uqimports);
+          (cache,p_env,attr,ty,bind,cnstForRange,unique,splicedExpData,componentEnv,name) := lookupUnqualifiedImportedVarInFrame(cache, uqimports, env, id);
+          reportSeveralNamesError(unique,id);
+          Mutable.update(inState,true);
+        end try;
       then
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name);
 
@@ -2859,20 +2856,17 @@ algorithm
     case (cache, _, totenv, name, _)
       algorithm
         (qimports, uqimports) := FNode.imports(inFrame);
-        () := matchcontinue (qimports, uqimports)
+        try
           // Search among the qualified imports, e.g. import A.B; or import D=A.B;
-          case (_::_, _)
-            algorithm
-              (cache,c,env_1,prevFrames) := lookupQualifiedImportedClassInFrame(cache,qimports,totenv,name,inState,inInfo);
-            then ();
+          false := listEmpty(qimports);
+          (cache,c,env_1,prevFrames) := lookupQualifiedImportedClassInFrame(cache,qimports,totenv,name,inState,inInfo);
+        else
           // Search among the unqualified imports, e.g. import A.B.*;
-          case (_, _::_)
-            algorithm
-              (cache,c,env_1,prevFrames,unique) := lookupUnqualifiedImportedClassInFrame(cache,uqimports,totenv,name,inInfo);
-              Mutable.update(inState,true);
-              reportSeveralNamesError(unique,name);
-            then ();
-        end matchcontinue;
+          false := listEmpty(uqimports);
+          (cache,c,env_1,prevFrames,unique) := lookupUnqualifiedImportedClassInFrame(cache,uqimports,totenv,name,inInfo);
+          Mutable.update(inState,true);
+          reportSeveralNamesError(unique,name);
+        end try;
       then
         (cache,c,env_1,prevFrames);
 

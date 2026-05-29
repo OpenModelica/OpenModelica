@@ -1150,6 +1150,7 @@ algorithm
             then (cache, env, RETURN());
           case DAE.TAIL(outVars=vars)
             algorithm
+              env := inEnv;
               Values.TUPLE(vals) := v;
               for val in vals loop
                 var::vars := vars;

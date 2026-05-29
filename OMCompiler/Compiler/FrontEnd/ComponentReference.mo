@@ -2832,7 +2832,7 @@ public function explode
   input DAE.ComponentRef inCref;
   output list<DAE.ComponentRef> outParts;
 algorithm
-  outParts := Dangerous.listReverse(explode_tail(inCref, {}));
+  outParts := Dangerous.listReverseInPlace(explode_tail(inCref, {}));
 end explode;
 
 protected function explode_tail

@@ -155,38 +155,28 @@ protected
   DAE.Exp exp;
   DAE.Properties prop;
   DAE.Type last_ty = inLastType;
+  Absyn.ComponentRef cr;
+  Absyn.Path path, path1, path2;
+  String name;
+  list<String> names;
+  Integer idx;
 algorithm
   for e in inExpl loop
-    () := matchcontinue(e, last_ty)
-      local
-        Absyn.ComponentRef cr;
-        Absyn.Path path, path1, path2;
-        String name;
-        list<String> names;
-        Integer idx;
-
+    try
       // Hack to make enumeration arrays elaborate a _lot_ faster
-      case (Absyn.CREF(cr as Absyn.CREF_FULLYQUALIFIED()),
-            DAE.T_ENUMERATION(path = path2, names = names))
-        algorithm
-          path := AbsynUtil.crefToPath(cr);
-          (path1, Absyn.IDENT(name)) := AbsynUtil.splitQualAndIdentPath(path);
-          true := AbsynUtil.pathEqual(path1, path2);
-          idx := List.position(name, names);
-          exp := DAE.ENUM_LITERAL(path, idx);
-          prop := DAE.PROP(last_ty, DAE.C_CONST());
-        then
-          ();
-
-      else
-        algorithm
-          (outCache, exp, prop) := elabExpInExpression(outCache, inEnv,
-            e, inImplicit, inDoVect, inPrefix, inInfo);
-          last_ty := Types.getPropType(prop);
-        then
-          ();
-
-    end matchcontinue;
+      Absyn.CREF(cr as Absyn.CREF_FULLYQUALIFIED()) := e;
+      DAE.T_ENUMERATION(path = path2, names = names) := last_ty;
+      path := AbsynUtil.crefToPath(cr);
+      (path1, Absyn.IDENT(name)) := AbsynUtil.splitQualAndIdentPath(path);
+      true := AbsynUtil.pathEqual(path1, path2);
+      idx := List.position(name, names);
+      exp := DAE.ENUM_LITERAL(path, idx);
+      prop := DAE.PROP(last_ty, DAE.C_CONST());
+    else
+      (outCache, exp, prop) := elabExpInExpression(outCache, inEnv,
+        e, inImplicit, inDoVect, inPrefix, inInfo);
+      last_ty := Types.getPropType(prop);
+    end try;
 
     outExpl := exp :: outExpl;
     outProperties := prop :: outProperties;
@@ -6664,6 +6654,9 @@ protected
   Integer numErrorMessages = Error.getNumErrorMessages();
   list<Integer> handles;
   String name, s, s1, s2;
+  Absyn.Path fn_1;
+  String fnstr,argstr,prestr;
+  list<String> argstrs;
 algorithm
   if hasBuiltInHandler(fn) then
     try
@@ -6681,47 +6674,31 @@ algorithm
     end try;
   end if;
   handles := {};
-  (cache,e,prop):=
-  matchcontinue ()
-    local
-      Absyn.Path fn_1;
-      String fnstr,argstr,prestr;
-      list<String> argstrs;
-
+  try
     // Interactive mode
-    case ()
-      algorithm
-        ErrorExt.setCheckpoint("elabCall_InteractiveFunction");
-        fn_1 := AbsynUtil.crefToPath(fn);
-        (cache,e,prop) := elabCallArgs(cache,env, fn_1, args, nargs, typeVars, impl,pre,info);
-        ErrorExt.delCheckpoint("elabCall_InteractiveFunction");
-      then
-        (cache,e,prop);
-
-    case ()
-      algorithm
-        true := Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Static.elabCall failed\n");
-        Debug.trace(" function: ");
-        fnstr := Dump.printComponentRefStr(fn);
-        Debug.trace(fnstr);
-        Debug.trace("   posargs: ");
-        argstrs := List.map(args, Dump.printExpStr);
-        argstr := stringDelimitList(argstrs, ", ");
-        Debug.traceln(argstr);
-        Debug.trace(" prefix: ");
-        prestr := PrefixUtil.printPrefixStr(pre);
-        Debug.traceln(prestr);
-      then
-        fail();
-
-    case ()
-      /* Handle the scripting interface */
-      algorithm
-        (cache,e,prop) := BackendCevalInterface.elabCallInteractive(cache, env, fn, args, nargs, impl, pre, info) "Elaborate interactive function calls, such as simulate(), plot() etc." ;
-      then (cache,e,prop);
-
-  end matchcontinue;
+    ErrorExt.setCheckpoint("elabCall_InteractiveFunction");
+    fn_1 := AbsynUtil.crefToPath(fn);
+    (cache,e,prop) := elabCallArgs(cache,env, fn_1, args, nargs, typeVars, impl,pre,info);
+    // If elabCallArgs fails, BackendCevalInterface.elabCallInteractive handles the checkpoint
+    ErrorExt.delCheckpoint("elabCall_InteractiveFunction");
+  else
+    // Best-effort failure trace before trying the scripting interface.
+    if Flags.isSet(Flags.FAILTRACE) then
+      Debug.traceln("- Static.elabCall failed\n");
+      Debug.trace(" function: ");
+      fnstr := Dump.printComponentRefStr(fn);
+      Debug.trace(fnstr);
+      Debug.trace("   posargs: ");
+      argstrs := List.map(args, Dump.printExpStr);
+      argstr := stringDelimitList(argstrs, ", ");
+      Debug.traceln(argstr);
+      Debug.trace(" prefix: ");
+      prestr := PrefixUtil.printPrefixStr(pre);
+      Debug.traceln(prestr);
+    end if;
+    // Handle the scripting interface: simulate(), plot() etc.
+    (cache,e,prop) := BackendCevalInterface.elabCallInteractive(cache, env, fn, args, nargs, impl, pre, info);
+  end try;
 end elabCall;
 
 protected function hasBuiltInHandler "Determine if a function has a builtin handler or not."
@@ -12242,24 +12219,16 @@ algorithm
       algorithm
         ErrorExt.setCheckpoint("elabCodeExp_dispatch1");
         id := AbsynUtil.crefFirstIdent(cr);
-        () := matchcontinue()
-          case () // if the first one is OpenModelica, search
-            algorithm
-              true := id == "OpenModelica";
-              (_,dexp,prop) := elabExpInExpression(cache,env,exp,false,false,DAE.NOPRE(),info);
-            then
-              ();
-
-          case () // not a class or OpenModelica, continue
-            algorithm
-              failure(Lookup.lookupClassIdent(cache, env, id));
-              (_,dexp,prop) := elabExpInExpression(cache,env,exp,false,false,DAE.NOPRE(),info);
-            then
-              ();
-
-          // a class which is not OpenModelica, fail
-          else fail();
-        end matchcontinue;
+        try
+          // if the first one is OpenModelica, search
+          true := id == "OpenModelica";
+          (_,dexp,prop) := elabExpInExpression(cache,env,exp,false,false,DAE.NOPRE(),info);
+        else
+          // not a class or OpenModelica, continue; a class which is not
+          // OpenModelica makes this fail (and the enclosing case rolls back).
+          failure(Lookup.lookupClassIdent(cache, env, id));
+          (_,dexp,prop) := elabExpInExpression(cache,env,exp,false,false,DAE.NOPRE(),info);
+        end try;
         DAE.T_CODE(ty=ct2) := Types.getPropType(prop);
         true := valueEq(ct,ct2);
         ErrorExt.delCheckpoint("elabCodeExp_dispatch1");
