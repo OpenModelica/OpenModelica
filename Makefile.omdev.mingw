@@ -16,7 +16,60 @@ else # new OMDev, use clang
 	IS_NEW_OMDEV = true
 	CC = clang
 	CXX = clang++
-	QT_EXTRA_DLLS=libdouble-conversion.dll libzstd.dll libwoff2dec.dll libwoff2common.dll Qt6WebEngineCore.dll Qt6WebEngineWidgets.dll Qt6Positioning.dll Qt6Qml.dll Qt6Quick.dll Qt6QmlMeta.dll Qt6QmlWorkerScript.dll Qt6QmlModels.dll Qt6WebChannel.dll Qt6QuickWidgets.dll Qt6Widgets.dll Qt6Xml.dll libharfbuzz-subset-0.dll liblcms2-2.dll libminizip-1.dll libopenjp2-7.dll libopus-0.dll libsnappy.dll libdeflate.dll libjbig-0.dll libLerc.dll libwebpdemux-2.dll libwebpmux-3.dll libngtcp2-16.dll libngtcp2_crypto_ossl-0.dll libtiff*.dll libnghttp2-14.dll libgraphite2.dll libbrotlidec.dll libbrotlicommon.dll libfontconfig-1.dll
+	QT_EXTRA_DLLS = \
+    libdouble-conversion.dll \
+    libzstd.dll \
+    libharfbuzz-0.dll \
+    libharfbuzz-subset-0.dll \
+    liblcms2-2.dll \
+    libminizip-1.dll \
+    libopenjp2-7.dll \
+    libopus-0.dll \
+    libsnappy.dll \
+    libdeflate.dll \
+    libjbig-0.dll \
+    libLerc.dll \
+    libngtcp2-16.dll \
+    libngtcp2_crypto_ossl-0.dll \
+    libtiff*.dll \
+    libnghttp2-14.dll \
+    libgraphite2.dll \
+    libbrotlidec.dll \
+    libbrotlicommon.dll \
+    libfontconfig-1.dll \
+    libb2-1.dll \
+    libintl-8.dll \
+    libiconv-2.dll \
+    libxslt-1.dll \
+    liblzma-5.dll \
+    libxml2-*.dll \
+    libwebp-*.dll \
+    zlib1.dll \
+    libpng16-16.dll \
+    libjpeg-8.dll \
+    libfreetype-6.dll \
+    libglib-2.0-0.dll \
+    libbz2-1.dll \
+    libicuin*.dll \
+    libicuuc*.dll \
+    libicudt*.dll \
+    libpcre*.dll \
+    libOpenThreads.dll \
+    libosg.dll \
+    libosgViewer.dll \
+    libosgDB.dll \
+    libosgUtil.dll \
+    libosgGA.dll \
+    libosgText.dll \
+    libmd4c.dll \
+    libsharpyuv-0.dll \
+    libcurl-4.dll \
+    libcrypto-3-x64.dll \
+    libidn2-0.dll \
+    libunistring-5.dll \
+    libpsl-5.dll \
+    libssh2-1.dll \
+    libssl-3-x64.dll
 endif
 
 # CFLAGS=-g -O2
@@ -43,10 +96,6 @@ builddir_build=$(OMBUILDDIR)
 builddir_bin=$(OMBUILDDIR)/bin
 builddir_lib=$(OMBUILDDIR)/lib/omc
 builddir_inc=$(OMBUILDDIR)/include/omc
-builddir_bin_share_qt5_translations=$(OMBUILDDIR)/bin/share/qt5/translations
-builddir_bin_share_qt6_translations=$(OMBUILDDIR)/bin/share/qt6/translations
-builddir_bin_share_qt6_resources=$(OMBUILDDIR)/bin/share/qt6/resources
-builddir_bin_share_qt6_bin=$(OMBUILDDIR)/bin/share/qt6/bin
 
 PKG_CONFIG_PATH=$(OM_MSYS_ENV_DIR)/lib/pkgconfig
 
@@ -115,7 +164,6 @@ omsimulator:
 	cp -vpPR OMSimulator/install/share/OMSimulator/ $(OMBUILDDIR)/share
 	cp -vpPR OMSimulator/install/lib/* $(OMBUILDDIR)/lib/omc/
 
-
 omnotebook: omc omplot qtclientsDLLs
 	$(MAKE) -f $(defaultMakefileTarget) -C OMNotebook/OMNotebook/OMNotebookGUI OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)" OM_QT_MAJOR_VERSION=$(OM_QT_MAJOR_VERSION)
 
@@ -133,91 +181,6 @@ qtclients: omplot omedit omnotebook omshell omoptim omsens_qt
 qtclientsDLLs:
 	echo Copying needed .dlls
 	mkdir -p $(builddir_bin)/
-
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libintl-8.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libiconv-2.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libxslt-1.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/liblzma-5.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libxml2-*.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libwebp-*.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libsqlite3-0.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/zlib1.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libsz*.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libhdf5-*.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libpng16-16.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libjpeg-8.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libfreetype-6.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libglib-2.0-0.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libbz2-1.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libicuin*.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libicuuc*.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libicudt*.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libpcre*.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libharfbuzz-0.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libOpenThreads.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libosg.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libosgViewer.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libosgDB.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libosgUtil.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libosgGA.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libosgText.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libmd4c.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libsharpyuv-0.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libcurl-4.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libcrypto-3-x64.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libidn2-0.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libunistring-5.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libpsl-5.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libssh2-1.dll  $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libssl-3-x64.dll  $(builddir_bin)/
-
-ifeq ($(OM_QT_MAJOR_VERSION),6)
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libb2-1.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6Core.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6Gui.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6Xml.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6Widgets.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6Core5Compat.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6PrintSupport.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6Svg.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6Network.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6OpenGLWidgets.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6OpenGL.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6Concurrent.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6HttpServer.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6WebSockets.dll $(builddir_bin)/
-	cp -pufr $(OM_MSYS_ENV_DIR)/share/qt6/plugins/* $(builddir_bin)/
-	mkdir -p $(builddir_bin_share_qt6_translations)/
-	cp -pufr $(OM_MSYS_ENV_DIR)/share/qt6/translations/* $(builddir_bin_share_qt6_translations)/
-	mkdir -p $(builddir_bin_share_qt6_bin)/
-	cp -pufr $(OM_MSYS_ENV_DIR)/share/qt6/bin/* $(builddir_bin_share_qt6_bin)/
-	mkdir -p $(builddir_bin_share_qt6_resources)/
-	cp -pufr $(OM_MSYS_ENV_DIR)/share/qt6/resources/* $(builddir_bin_share_qt6_resources)/
-else
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5Core.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5Gui.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5Network.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5Svg.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5WebKit.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5WebKitWidgets.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5Xml.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5XmlPatterns.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5Widgets.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5PrintSupport.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5Multimedia.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5MultimediaWidgets.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5Positioning.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5Qml.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5Quick.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5Sensors.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5WebChannel.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5Sql.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5OpenGL.dll $(builddir_bin)/
-	cp -pufr $(OM_MSYS_ENV_DIR)/share/qt5/plugins/* $(builddir_bin)/
-	mkdir -p $(builddir_bin_share_qt5_translations)/
-	cp -pufr $(OM_MSYS_ENV_DIR)/share/qt5/translations/* $(builddir_bin_share_qt5_translations)/
-endif
-
 	for f in $(QT_EXTRA_DLLS); do cp -puf $(OM_MSYS_ENV_DIR)/bin/$$f $(builddir_bin)/; done
 	mkdir -p $(builddir_bin)/osgPlugins-3.6.5/
 	cp -pufr $(OM_MSYS_ENV_DIR)/bin/osgPlugins-3.6.5/* $(builddir_bin)/osgPlugins-3.6.5/
