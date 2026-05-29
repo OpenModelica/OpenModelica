@@ -125,7 +125,7 @@ public
     str := str + "### Iteration Variables:\n" + Slice.lstToString(set.iteration_vars, BVariable.pointerToString);
     str := str + "\n### Residual Equations:\n" + Slice.lstToString(set.residual_eqns, function Equation.pointerToString(str = ""));
     str := str + "\n### Inner Equations:\n" + Array.toString(set.innerEquations, function StrongComponent.toString(index = -1), "", "\t", "\n\t", "");
-    if Util.isSome(set.jac) then
+    if isSome(set.jac) then
       str := str + "\n" + BJacobian.toString(Util.getOption(set.jac), "NLS");
     end if;
   end toString;
@@ -155,7 +155,7 @@ public
       case (_, BackendDAE.MAIN(eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index))) guard(Partition.kindIsInitial(kind))
         algorithm
           bdae.init := tearingTraverser(bdae.init, funcs, bdae.funcMap, eq_index, kind);
-          if Util.isSome(bdae.init_0) then
+          if isSome(bdae.init_0) then
             bdae.init_0 := SOME(tearingTraverser(Util.getOption(bdae.init_0), funcs, bdae.funcMap, eq_index, kind));
           end if;
       then bdae;

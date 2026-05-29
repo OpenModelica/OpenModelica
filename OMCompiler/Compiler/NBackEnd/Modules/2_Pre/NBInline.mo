@@ -1080,7 +1080,7 @@ protected
           Option<InlineRating> iro;
         case Expression.CREF() algorithm
           iro := UnorderedMap.get(exp.cref, local_map);
-          if Util.isSome(iro) then
+          if isSome(iro) then
             Pointer.update(irp, add(Pointer.access(irp), multiply(Util.getOption(iro), i)));
           end if;
         then ();
@@ -1159,7 +1159,7 @@ protected
           case Expression.CALL() guard(functionInlineable(Call.typedFunction(exp.call))) algorithm
             fn  := Call.typedFunction(exp.call);
             lir := UnorderedMap.get(fn, func_map);
-            if Util.isSome(lir) then
+            if isSome(lir) then
               // add the found rating to the overall rating
               Pointer.update(irp, addMapped(Pointer.access(irp), Util.getOption(lir), listArray(Call.arguments(exp.call)), local_map));
               cont := false;

@@ -410,7 +410,7 @@ public
         print(toString(bdae, "(" + name + ")"));
       end if;
 
-      if Util.isSome(eq_filter_opt) then
+      if isSome(eq_filter_opt) then
         debugFollowEquations(bdae, eq_filter_opt, "(" + name + ")");
       end if;
     end for;
@@ -1761,7 +1761,7 @@ public
           strongcomponentinfo("Simulation", {bdae.ode, bdae.algebraic, bdae.ode_event, bdae.alg_event});
           // collect strong component info initialization
           strongcomponentinfo("Initialization", {bdae.init});
-          if Util.isSome(bdae.init_0) then
+          if isSome(bdae.init_0) then
             strongcomponentinfo("Initialization (lambda=0)", {Util.getOption(bdae.init_0)});
           end if;
 

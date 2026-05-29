@@ -237,7 +237,7 @@ public
       try
         // parse the clock and see if it depends on another clock
         (clock, baseClock) := fromExp(exp);
-        if Util.isSome(baseClock) then
+        if isSome(baseClock) then
           // sub clock
           UnorderedMap.add(clock_name, clock, info.subClocks);
           UnorderedMap.add(clock_name, Util.getOption(baseClock), info.subToBase);
@@ -470,7 +470,7 @@ public
         UnorderedMap.add(clock_name, base_clock, info.subToBase);
 
         // also update and add the implicit clock
-        if Util.isSome(implicit_clock_opt) then
+        if isSome(implicit_clock_opt) then
           SOME(implicit_clock) := implicit_clock_opt;
           // add the implicit clock as a sub clock
           UnorderedMap.add(implicit_clock, dest, info.subClocks);
@@ -743,11 +743,11 @@ protected
       for eqn_name in UnorderedSet.toList(cluster.eqn_idnts) loop
         Equation.map(Pointer.access(EquationPointers.getEqnByName(equations, eqn_name)), function findClock(info = info, clock_ptr = clock_ptr), NONE(), Expression.fakeMap);
         clock_opt := Pointer.access(clock_ptr);
-        if Util.isSome(clock_opt) then break; end if;
+        if isSome(clock_opt) then break; end if;
       end for;
 
       // if a clock/clocked signal was found, add all a mapping for each variable in the cluster to the clock
-      if Util.isSome(clock_opt) then
+      if isSome(clock_opt) then
         SOME(clock) := clock_opt;
         for var_name in UnorderedSet.toList(cluster.variables) loop
           UnorderedMap.add(var_name, clock, clock_map);
@@ -1082,7 +1082,7 @@ protected
     // merge clocked partitions by baseclock, subclock
     for partition in clocked_partitions loop
       (clock, baseClock_opt, _)  := Partition.Partition.getClocks(partition);
-      if Util.isSome(baseClock_opt) then
+      if isSome(baseClock_opt) then
         // it is a sub clock
         SOME(baseClock) := baseClock_opt;
         baseClock       := BClock.baseClockInferrence(baseClock, base_clock_inferrence);
@@ -1230,7 +1230,7 @@ protected
           end for;
 
           // finalize last partition
-          if Util.isSome(collector) then
+          if isSome(collector) then
             SOME((vars, eqns, clock)) := collector;
             part := Partition.PARTITION(0, Partition.Association.CLOCKED(clock, baseClock, UnorderedSet.new(BClock.hash, BClock.isEqual), false),
               VariablePointers.fromList(vars), NONE(), EquationPointers.fromList(eqns), NONE(), NONE(), NONE());

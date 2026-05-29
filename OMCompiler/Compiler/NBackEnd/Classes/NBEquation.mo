@@ -1068,7 +1068,7 @@ public
       protected
         list<ComponentRef> names;
       algorithm
-        if Util.isSome(map) then
+        if isSome(map) then
           (names, _) := getFrames(Util.getOption(map));
           str := str + " (" + ComponentRef.toString(listHead(names)) + ")";
         end if;
@@ -1095,7 +1095,7 @@ public
     algorithm
       iter := match iter
         case SINGLE() algorithm
-          if Util.isSome(funcCrefOpt) then
+          if isSome(funcCrefOpt) then
             funcCref := Util.getOption(funcCrefOpt);
             iter.name := funcCref(iter.name);
           end if;
@@ -1103,7 +1103,7 @@ public
         then iter;
 
         case NESTED() algorithm
-          if Util.isSome(funcCrefOpt) then
+          if isSome(funcCrefOpt) then
             funcCref := Util.getOption(funcCrefOpt);
             for i in 1:arrayLength(iter.names) loop
               iter.names[i] := funcCref(iter.names[i]);
@@ -3151,7 +3151,7 @@ public
       // referenceEq for lists?
       ifBody.then_eqns := List.map(ifBody.then_eqns, func);
 
-      if Util.isSome(ifBody.else_if) then
+      if isSome(ifBody.else_if) then
         old_else_if := Util.getOption(ifBody.else_if);
         else_if := mapEqnExpCref(old_else_if, func, funcExp, funcCrefOpt, mapFunc);
         if not referenceEq(else_if, old_else_if) then
@@ -3183,7 +3183,7 @@ public
       for eqn in body.then_eqns loop
         Equation.createName(eqn, idx, context);
       end for;
-      if Util.isSome(body.else_if) then
+      if isSome(body.else_if) then
         createNames(Util.getOption(body.else_if), idx, context);
       end if;
     end createNames;
@@ -3197,7 +3197,7 @@ public
       Expression condition = if Expression.isEnd(body.condition) then Expression.BOOLEAN(true) else body.condition;
     algorithm
       stmt := (condition, List.flatten(list(Equation.toStatement(Pointer.access(eqn)) for eqn in body.then_eqns)));
-      if Util.isSome(body.else_if) then
+      if isSome(body.else_if) then
         stmts := stmt :: toStatement(Util.getOption(body.else_if));
       else
         stmts := {stmt};
@@ -3253,7 +3253,7 @@ public
         case {eqn_ptr} algorithm
           SOME(new_exp) := Equation.getLHS(Pointer.access(eqn_ptr));
           if Expression.isEnd(exp) or Expression.isEqual(exp, new_exp) then
-            if Util.isSome(body.else_if) then
+            if isSome(body.else_if) then
               (new_exp, success) := getLHS(Util.getOption(body.else_if), new_exp);
             end if;
           else
@@ -3280,7 +3280,7 @@ public
       exp := match body.then_eqns
         case {eqn_ptr} algorithm
           SOME(new_exp) := Equation.getRHS(Pointer.access(eqn_ptr));
-          if Util.isSome(body.else_if) then
+          if isSome(body.else_if) then
             new_exp := Expression.IF(Expression.typeOf(new_exp), body.condition, new_exp, getRHS(Util.getOption(body.else_if)));
           end if;
         then new_exp;
@@ -3406,7 +3406,7 @@ public
         then_eqns[i] := eqn :: then_eqns[i];
         i := i + 1;
       end for;
-      if Util.isSome(body.else_if) then
+      if isSome(body.else_if) then
         (conditions, then_eqns) := splitCollect(Util.getOption(body.else_if), conditions, then_eqns);
       end if;
     end splitCollect;
@@ -3521,7 +3521,7 @@ public
       tuple<Expression, list<Statement>> stmt;
     algorithm
       stmt := (body.condition, list(WhenStatement.toStatement(st) for st in body.when_stmts));
-      if Util.isSome(body.else_when) then
+      if isSome(body.else_when) then
         stmts := stmt :: toStatement(Util.getOption(body.else_when));
       else
         stmts := {stmt};
@@ -3615,7 +3615,7 @@ public
           end for;
           // create body from flat list and add to new bodies
           new_body := fromFlatList(flat_new);
-          if Util.isSome(new_body) then
+          if isSome(new_body) then
             bodies := Util.getOption(new_body) :: bodies;
           else
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
@@ -3636,7 +3636,7 @@ public
           // if there is a statement: create the when body and combine with previous
           // conditions. if there is no statement in this branch, save the condition
           // negated for the next branch
-          if Util.isSome(stmt) then
+          if isSome(stmt) then
             condition := combineConditions(acc_condition, condition, false);
             acc_condition := Expression.EMPTY(Type.INTEGER());
             flat_new := (condition, {Util.getOption(stmt)}) :: flat_new;
@@ -3646,7 +3646,7 @@ public
         end for;
         // create body from flat list and add to new bodies
         new_body := fromFlatList(flat_new);
-        if Util.isSome(new_body) then
+        if isSome(new_body) then
           bodies := Util.getOption(new_body) :: bodies;
         else
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
@@ -3669,7 +3669,7 @@ public
           flat_new := (condition, stmts) :: flat_new;
           // create body from flat list and add to new bodies
           new_body := fromFlatList(flat_new);
-          if Util.isSome(new_body) then
+          if isSome(new_body) then
             bodies := Util.getOption(new_body) :: bodies;
           end if;
         else
@@ -3768,7 +3768,7 @@ public
     protected
       WhenEquationBody body;
     algorithm
-      if Util.isSome(body_opt) then
+      if isSome(body_opt) then
         body := Util.getOption(body_opt);
         for stmt in body.when_stmts loop
           () := match stmt
@@ -4192,7 +4192,7 @@ public
       output OldBackendDAE.EquationAttributes oldAttributes;
     algorithm
       oldAttributes := OldBackendDAE.EQUATION_ATTRIBUTES(
-        differentiated  = Util.isSome(attributes.derivative),
+        differentiated  = isSome(attributes.derivative),
         kind            = convertEquationKind(attributes.kind, attributes.clock_idx, attributes.exclusively_initial),
         evalStages      = Evaluation.Stages.convert(attributes.evalStages));
     end convert;
@@ -4260,7 +4260,7 @@ public
                                     else "[UKWN";
     end match;
     str := if exclusively_initial then "[INI]" + str else "[DAE]" + str;
-    if Util.isSome(clock_idx) then
+    if isSome(clock_idx) then
       str := str + "(" + intString(Util.getOption(clock_idx)) + ")]";
     else
       str := str + "]";
@@ -4283,8 +4283,8 @@ public
       Integer luI = lastUsedIndex(equations);
       Integer length, scal_start, current_index = 1;
       String index;
-      Boolean useMapping = Util.isSome(mapping_opt);
-      Boolean filterEqs = Util.isSome(filter_opt);
+      Boolean useMapping = isSome(mapping_opt);
+      Boolean filterEqs = isSome(filter_opt);
       array<tuple<Integer,Integer>> mapping;
       UnorderedSet<String> filter;
       Pointer<Equation> eqn;

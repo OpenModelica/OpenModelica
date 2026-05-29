@@ -360,9 +360,9 @@ protected
       (name, range) := tpl;
       () := match range
         case Expression.RANGE() algorithm
-          if Util.isSome(range.step) and Expression.isNegative(Util.getOption(range.step)) then
+          if isSome(range.step) and Expression.isNegative(Util.getOption(range.step)) then
             UnorderedMap.add(name, range.start, replacements);
-          elseif Util.isNone(range.step) or Expression.isPositive(Util.getOption(range.step)) then
+          elseif isNone(range.step) or Expression.isPositive(Util.getOption(range.step)) then
             UnorderedMap.add(name, range.stop, replacements);
           else
             max_call := Expression.CALL(Call.makeTypedCall(
@@ -549,7 +549,7 @@ protected
     diff := SimplifyExp.simplify(diff);
     factor := Expression.integerValueOrDefault(diff, 0);
 
-    if Util.isSome(opt_factor) and factor <> Util.getOption(opt_factor) then
+    if isSome(opt_factor) and factor <> Util.getOption(opt_factor) then
       factor := 0;
     end if;
   end getFactor;
@@ -574,7 +574,7 @@ protected
     Expression shift;
     Integer factor, distance;
   algorithm
-    if Util.isNone(opt_factor) or Util.getOption(opt_factor) <> 0 then
+    if isNone(opt_factor) or Util.getOption(opt_factor) <> 0 then
       factor := getFactor(exp, args, opt_factor);
 
       if factor <> 0 then
@@ -583,7 +583,7 @@ protected
         try
           // the shift has to be a single integer value
           Expression.INTEGER(distance) := shift;
-          if Util.isNone(opt_factor) then
+          if isNone(opt_factor) then
             min_distance := distance;
             max_distance := distance;
             opt_factor := SOME(factor);
@@ -661,7 +661,7 @@ protected
     DifferentiationArguments args;
     UnorderedMap<ComponentRef, Expression> zero_replacements;
   algorithm
-    if Util.isSome(replacements) then
+    if isSome(replacements) then
       const := Expression.map(old_const, function Replacements.applySimpleExp(replacements = Util.getOption(replacements)));
     else
       const := old_const;
@@ -770,12 +770,12 @@ protected
       value := match var
         case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(attributes = attributes as VariableAttributes.VAR_ATTR_INT())) algorithm
           if UnorderedSet.contains(cref, min_parameters) then
-            if Util.isSome(attributes.min) then
+            if isSome(attributes.min) then
               SOME(value) := attributes.min;
             else
               value := Expression.INTEGER(0);
             end if;
-          elseif Util.isSome(attributes.max) then
+          elseif isSome(attributes.max) then
             SOME(value) := attributes.max;
           else
             value := Expression.INTEGER(0);
