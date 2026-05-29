@@ -430,16 +430,6 @@ public
     end match;
   end isTrivialCref;
 
-  function isRelation
-    input Expression exp;
-    output Boolean b;
-  algorithm
-    b := match exp
-      case RELATION() then true;
-      else false;
-    end match;
-  end isRelation;
-
   function hash
     input Expression exp;
     output Integer hash = hashContinue(exp, Util.HASH_SEED);

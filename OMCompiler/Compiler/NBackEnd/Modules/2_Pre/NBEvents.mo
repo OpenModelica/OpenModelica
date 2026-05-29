@@ -1123,7 +1123,7 @@ protected
       then exp;
 
       // logical binarys: e.g. (a and b)
-      case Expression.LBINARY() guard(Expression.fold(exp, containsRelation, false)) algorithm
+      case Expression.LBINARY() algorithm
         (exp, bucket) := collectEventsCondition(exp, Pointer.access(bucket_ptr), iter, eqn, funcMap, createEqn);
         Pointer.update(bucket_ptr, bucket);
       then exp;
@@ -1225,15 +1225,6 @@ protected
       Pointer.update(b, true);
     end if;
   end containsTimeTraverseCref;
-
-  function containsRelation
-    input Expression exp;
-    input output Boolean b;
-  algorithm
-    if not b then
-      b := Expression.isRelation(exp);
-    end if;
-  end containsRelation;
 
 annotation(__OpenModelica_Interface="backend");
 end NBEvents;
