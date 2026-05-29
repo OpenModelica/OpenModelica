@@ -160,11 +160,12 @@ int OMSSimulationDialog::exec(const QString &modelCref, LibraryTreeItem *pLibrar
   }
   // start time
   double startTime;
-  OMSProxy::instance()->getStartTime(mModelCref, &startTime);
+  OMSProxy::instance()->getStartTime(mModelCref, startTime);
   mpStartTimeTextBox->setText(QString::number(startTime));
   // stop time
   double stopTime;
-  OMSProxy::instance()->getStopTime(mModelCref, &stopTime);
+  OMSProxy::instance()->getStopTime(mModelCref, stopTime);
+  qDebug() << "stop setting :" << stopTime;
   mpStopTimeTextBox->setText(QString::number(stopTime));
   // result file
   char *fileName = (char*)"";

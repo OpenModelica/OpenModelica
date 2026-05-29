@@ -233,9 +233,9 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
   pMainLayout->addWidget(mpSimulationOutputPlainTextEdit, 1, 0, 1, 6);
   setLayout(pMainLayout);
   // save the model start time
-  OMSProxy::instance()->getStartTime(mCref, &mStartTime);
+  OMSProxy::instance()->getStartTime(mCref, mStartTime);
   // save the model stop time
-  OMSProxy::instance()->getStopTime(mCref, &mStopTime);
+  OMSProxy::instance()->getStopTime(mCref, mStopTime);
   // create the ArchivedSimulationItem
   mpArchivedSimulationItem = new ArchivedSimulationItem(mCref, mStartTime, mStopTime, this);
   ArchivedSimulationsWidget::instance()->getArchivedSimulationsTreeWidget()->addTopLevelItem(mpArchivedSimulationItem);
