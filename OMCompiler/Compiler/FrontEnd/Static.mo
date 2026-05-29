@@ -6679,6 +6679,7 @@ algorithm
     ErrorExt.setCheckpoint("elabCall_InteractiveFunction");
     fn_1 := AbsynUtil.crefToPath(fn);
     (cache,e,prop) := elabCallArgs(cache,env, fn_1, args, nargs, typeVars, impl,pre,info);
+    // If elabCallArgs fails, BackendCevalInterface.elabCallInteractive handles the checkpoint
     ErrorExt.delCheckpoint("elabCall_InteractiveFunction");
   else
     // Best-effort failure trace before trying the scripting interface.
