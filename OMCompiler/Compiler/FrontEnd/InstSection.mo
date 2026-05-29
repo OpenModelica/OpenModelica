@@ -175,43 +175,34 @@ protected function instEquationCommon
   output ConnectionGraph.ConnectionGraph outGraph;
 protected
   Integer errorCount = Error.getNumErrorMessages();
+  String s;
+  ClassInf.State state;
 algorithm
-  () := matchcontinue()
-    local
-      String s;
-      ClassInf.State state;
-
-    case ()
-      algorithm
-        state := ClassInfUtil.trans(inState,ClassInf.FOUND_EQUATION());
-        (outCache, outEnv, outIH, outDae, outSets, outState, outGraph) :=
-          instEquationCommonWork(inCache, inEnv, inIH, inPrefix, inSets, state,
-            inEquation, inInitial, inImpl, inGraph, DAE.FLATTEN(inEquation,NONE()));
-        outDae := DAEUtil.traverseDAE(outDae, AvlTreePathFunction.Tree.EMPTY(),
-          Expression.traverseSubexpressionsHelper,
-          (ExpressionSimplify.simplifyWork, ExpressionSimplifyTypes.optionSimplifyOnly));
-      then
-        ();
-
-    case ()
-      algorithm
-        failure(ClassInfUtil.trans(inState,ClassInf.FOUND_EQUATION()));
-        s := ClassInfUtil.printStateStr(inState);
-        Error.addSourceMessage(Error.EQUATION_TRANSITION_FAILURE, {s}, SCodeUtil.getEquationInfo(inEquation));
-      then
-        fail();
-
-    // We only want to print a generic error message if no other error message was printed
-    // Providing two error messages for the same error is confusing (but better than none)
+  try
+    state := ClassInfUtil.trans(inState,ClassInf.FOUND_EQUATION());
+    (outCache, outEnv, outIH, outDae, outSets, outState, outGraph) :=
+      instEquationCommonWork(inCache, inEnv, inIH, inPrefix, inSets, state,
+        inEquation, inInitial, inImpl, inGraph, DAE.FLATTEN(inEquation,NONE()));
+    outDae := DAEUtil.traverseDAE(outDae, AvlTreePathFunction.Tree.EMPTY(),
+      Expression.traverseSubexpressionsHelper,
+      (ExpressionSimplify.simplifyWork, ExpressionSimplifyTypes.optionSimplifyOnly));
+  else
+    // The instantiation failed; produce an appropriate error message and fail.
+    try
+      // If the class state cannot accept an equation, that is the cause.
+      failure(ClassInfUtil.trans(inState,ClassInf.FOUND_EQUATION()));
+      s := ClassInfUtil.printStateStr(inState);
+      Error.addSourceMessage(Error.EQUATION_TRANSITION_FAILURE, {s}, SCodeUtil.getEquationInfo(inEquation));
     else
-      algorithm
-        true := errorCount == Error.getNumErrorMessages();
+      // We only want to print a generic error message if no other error message was printed.
+      // Providing two error messages for the same error is confusing (but better than none).
+      if errorCount == Error.getNumErrorMessages() then
         s := "\n" + SCodeDump.equationStr(inEquation);
         Error.addSourceMessage(Error.EQUATION_GENERIC_FAILURE, {s}, SCodeUtil.getEquationInfo(inEquation));
-      then
-        fail();
-
-  end matchcontinue;
+      end if;
+    end try;
+    fail();
+  end try;
 end instEquationCommon;
 
 protected function instEquationCommonWork
