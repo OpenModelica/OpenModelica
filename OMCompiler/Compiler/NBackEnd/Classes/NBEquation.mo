@@ -2289,6 +2289,7 @@ public
           end if;
         then ty;
         case WHEN_EQUATION()    then WhenEquationBody.getType(eq.body);
+        case IF_EQUATION()      then IfEquationBody.getType(eq.body);
                                 else Type.REAL(); // TODO: WRONG there should not be an else case
       end match;
     end getType;
@@ -3355,6 +3356,17 @@ public
         else false;
       end match;
     end isRecordOrTupleEquation;
+
+    function getType
+      "only look at one branch, all should have the same type"
+      input IfEquationBody body;
+      output Type ty;
+    protected
+      list<Type> body_types;
+    algorithm
+      body_types := list(Equation.getType(Pointer.access(b)) for b in body.then_eqns);
+      ty := if listLength(body_types) == 1 then listHead(body_types) else Type.TUPLE(body_types, NONE());
+    end getType;
 
   protected
     function sortForSplit
