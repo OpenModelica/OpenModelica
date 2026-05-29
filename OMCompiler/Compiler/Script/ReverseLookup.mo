@@ -35,7 +35,6 @@
 
 encapsulated package ReverseLookup
   import Absyn;
-import ProgramUtil;
 
 protected
   import AbsynUtil;
@@ -43,6 +42,7 @@ protected
   import Dump;
   import ExecStat;
   import JSON;
+  import ProgramUtil;
   import Util;
 
   uniontype PathEntry
@@ -1205,7 +1205,7 @@ protected
 
       json_elems := {};
       for m in group loop
-        json_elem := ProgramUtil.dumpJSONSourceInfo(m.info, dumpFilename = false);
+        json_elem := JSON.dumpJSONSourceInfo(m.info, dumpFilename = false);
         json_elem := JSON.addPair("name", JSON.makeString(Dump.printComponentRefStr(m.name)), json_elem);
         json_elem := JSON.addPair("class", JSON.makeString(m.scope), json_elem);
         json_elems := json_elem :: json_elems;

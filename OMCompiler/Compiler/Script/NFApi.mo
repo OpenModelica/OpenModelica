@@ -36,7 +36,6 @@
 encapsulated package NFApi
 
 import Absyn;
-import ProgramUtil;
 import AbsynUtil;
 import SCode;
 import DAE;
@@ -1123,7 +1122,7 @@ algorithm
     json := dumpJSONEquations(sections, node, json);
   end if;
 
-  json := JSON.addPair("source", ProgramUtil.dumpJSONSourceInfo(InstNode.info(node)), json);
+  json := JSON.addPair("source", JSON.dumpJSONSourceInfo(InstNode.info(node)), json);
 end dumpJSONInstanceTree;
 
 function dumpJSONInstanceAnnotation
@@ -1309,7 +1308,7 @@ algorithm
   node := InstNode.getRedeclaredNode(cls);
   elem := InstNode.definition(node);
   json := dumpJSONSCodeClass(elem, scope, node, true, json);
-  json := JSON.addPair("source", ProgramUtil.dumpJSONSourceInfo(InstNode.info(node)), json);
+  json := JSON.addPair("source", JSON.dumpJSONSourceInfo(InstNode.info(node)), json);
 end dumpJSONReplaceableClass;
 
 function dumpJSONComponent
@@ -1470,7 +1469,7 @@ algorithm
   json_elems := dumpJSONEnumTypeLiterals(comps, InstNode.parent(node), json_elems);
   json := JSON.addPair("elements", json_elems, json);
 
-  json := JSON.addPair("source", ProgramUtil.dumpJSONSourceInfo(InstNode.info(node)), json);
+  json := JSON.addPair("source", JSON.dumpJSONSourceInfo(InstNode.info(node)), json);
 end dumpJSONEnumType;
 
 function dumpJSONEnumTypeLiterals

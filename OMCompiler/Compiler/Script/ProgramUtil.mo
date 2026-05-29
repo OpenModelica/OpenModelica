@@ -51,7 +51,6 @@ import FBuiltin;
 import List;
 import Print;
 import Util;
-import JSON;
 import Testsuite;
 import System;
 import Settings;
@@ -1358,23 +1357,5 @@ algorithm
       then mp;
   end matchcontinue;
 end findModelicaPath2;
-public function dumpJSONSourceInfo
-  input SourceInfo info;
-  input Boolean dumpFilename = true;
-  output JSON json = JSON.makeNull();
-algorithm
-  if dumpFilename then
-    json := JSON.addPair("filename", JSON.makeString(Testsuite.friendly(info.fileName)), json);
-  end if;
-
-  json := JSON.addPair("lineStart", JSON.makeInteger(info.lineNumberStart), json);
-  json := JSON.addPair("columnStart", JSON.makeInteger(info.columnNumberStart), json);
-  json := JSON.addPair("lineEnd", JSON.makeInteger(info.lineNumberEnd), json);
-  json := JSON.addPair("columnEnd", JSON.makeInteger(info.columnNumberEnd), json);
-
-  if info.isReadOnly then
-    json := JSON.addPair("readonly", JSON.makeBoolean(true), json);
-  end if;
-end dumpJSONSourceInfo;
 annotation(__OpenModelica_Interface="program_util");
 end ProgramUtil;
