@@ -602,6 +602,7 @@ bool OMSProxy::addConnection(QString crefA, QString crefB, bool suppressUnitConv
 
   QJsonObject obj, args;
   obj["method"] = "addConnection";
+  obj["model"]  = crefA.split('.').first();
 
   args["crefA"] = QJsonArray::fromStringList(startConnector);
   args["crefB"] = QJsonArray::fromStringList(endConnector);
@@ -645,6 +646,7 @@ bool OMSProxy::addConnector(QString cref, OMSModel::Causality causality, OMSMode
 
   QJsonObject obj, args;
   obj["method"] = "addConnector";
+  obj["model"]  = cref.split('.').first();
 
   args["cref"] = QJsonArray::fromStringList(parts);
   args["name"] = connectorName;
@@ -688,6 +690,7 @@ bool OMSProxy::addSubModel(QString cref, QString fmuPath)
   parts.removeFirst();
   QJsonObject obj, args;
   obj["method"] = "addComponent";
+  obj["model"]  = cref.split('.').first();
   args["cref"] = QJsonArray::fromStringList(parts);
   args["source"] = fmuPath;
   args["new_name"] = "resources/" + parts.last() + ".fmu";
@@ -765,6 +768,7 @@ bool OMSProxy::addSystem(QString cref)
 
   QJsonObject obj;
   obj["method"] = "addSystem";
+  obj["model"]  = cref.split('.').first();
   obj["args"] = args;
 
   QJsonObject reply;
@@ -938,6 +942,7 @@ bool OMSProxy::getElementsJson(QString cref, QJsonArray &elements)
 {
   QJsonObject obj;
   obj["method"] = "getElements";
+  obj["model"]  = cref.split('.').first();
 
   QJsonObject args;
   args["cref"] = cref;
@@ -1061,21 +1066,41 @@ bool OMSProxy::getSolver(QString cref, oms_solver_enu_t *solver)
 }
 
 /*!
+ * \brief OMSProxy::getExperiment
+ * Fetches experiment settings (startTime, stopTime, resultFile, bufferSize) from the Python SSP model.
+ */
+// bool OMSProxy::getExperiment(const QString &cref, double *pStartTime, double *pStopTime, QString *pResultFile, int *pBufferSize)
+// {
+//   QJsonObject obj;
+//   obj["method"] = "getExperiment";
+//   obj["model"]  = cref.split('.').first();
+//   QJsonObject reply;
+//   if (!sendZmqCommand(obj, reply))
+//     return false;
+//   *pStartTime  = reply["startTime"].toDouble(0.0);
+//   *pStopTime   = reply["stopTime"].toDouble(1.0);
+//   *pResultFile = reply["resultFile"].toString("model_res.mat");
+//   *pBufferSize = reply["bufferSize"].toInt(0);
+//   return true;
+// }
+
+/*!
  * \brief OMSProxy::setStartTime
  * Get the start time from the model.
  * \param cref
  * \param startTime
  * \return
  */
-bool OMSProxy::getStartTime(QString cref, double* startTime)
+bool OMSProxy::getStartTime(QString cref, double& startTime)
 {
-  QString command = "oms_getStartTime";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getStartTime(cref.toUtf8().constData(), startTime);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
+  QJsonObject obj;
+  obj["method"] = "getStartTime";
+  obj["model"]  = cref.split('.').first();
+  QJsonObject reply;
+  if (!sendZmqCommand(obj, reply))
+    return false;
+  startTime = reply["value"].toDouble(0.0);
+  return true;
 }
 
 /*!
@@ -1085,15 +1110,16 @@ bool OMSProxy::getStartTime(QString cref, double* startTime)
  * \param stopTime
  * \return
  */
-bool OMSProxy::getStopTime(QString cref, double* stopTime)
+bool OMSProxy::getStopTime(QString cref, double& stopTime)
 {
-  QString command = "oms_getStopTime";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getStopTime(cref.toUtf8().constData(), stopTime);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
+  QJsonObject obj;
+  obj["method"] = "getStopTime";
+  obj["model"]  = cref.split('.').first();
+  QJsonObject reply;
+  if (!sendZmqCommand(obj, reply))
+    return false;
+  stopTime = reply["value"].toDouble(1.0);
+  return true;
 }
 
 /*!
@@ -1218,6 +1244,7 @@ bool OMSProxy::exportSnapshot(QString cref, QString &pContents)
 {
   QJsonObject obj;
   obj["method"] = "exportSnapshot";
+  obj["model"]  = cref.split('.').first();
   QJsonObject reply;
 
   if (!sendZmqCommand(obj, reply))
@@ -1288,8 +1315,7 @@ bool OMSProxy::newModel(QString cref, QString systemName)
 {
   QJsonObject obj, args;
   obj["method"] = "newModel";
-
-  args["name"] = cref;
+  obj["model"]  = cref;
   args["system_name"] = systemName;
   obj["args"] = args;
 
@@ -1342,6 +1368,7 @@ bool OMSProxy::saveModel(QString cref, QString filename)
 {
   QJsonObject obj, args;
   obj["method"] = "export";
+  obj["model"]  = cref.split('.').first();
   args["file"] = filename;
   obj["args"] = args;
   qDebug() << "save model" << QJsonDocument(obj).toJson(QJsonDocument::Compact);
@@ -1453,6 +1480,7 @@ bool OMSProxy::setConnectionGeometry(QString crefA, QString crefB, const OMSMode
 
   QJsonObject obj;
   obj["method"] = "setConnectionGeometry";
+  obj["model"]  = crefA.split('.').first();
   obj["args"] = args;
 
   QJsonObject reply;
@@ -1492,6 +1520,7 @@ bool OMSProxy::setConnectorGeometry(QString cref, const OMSModel::ConnectorGeome
 
   QJsonObject obj;
   obj["method"] = "setConnectorGeometry";
+  obj["model"]  = cref.split('.').first();
   obj["args"] = args;
 
   QJsonObject reply;
@@ -1538,6 +1567,7 @@ bool OMSProxy::setElementGeometry(QString cref, const OMSModel::ElementGeometry 
 
   QJsonObject obj;
   obj["method"] = "setElementGeometry";
+  obj["model"]  = cref.split('.').first();
   obj["args"] = args;
 
   QJsonObject reply;
@@ -1669,13 +1699,14 @@ bool OMSProxy::setReal(QString cref, double value)
  */
 bool OMSProxy::setResultFile(QString cref, QString filename, int bufferSize)
 {
-  QString command = "oms_setResultFile";
-  QStringList args;
-  args << "\"" + cref + "\"" << "\"" + filename + "\"" << QString::number(bufferSize);
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setResultFile(cref.toUtf8().constData(), filename.toUtf8().constData(), bufferSize);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
+  QJsonObject obj, args;
+  obj["method"] = "setResultFile";
+  obj["model"]  = cref.split('.').first();
+  args["file"]       = filename;
+  args["bufferSize"] = bufferSize;
+  obj["args"] = args;
+  QJsonObject reply;
+  return sendZmqCommand(obj, reply);
 }
 
 bool OMSProxy::getResultFile(QString cref, char **pFilename, int *pBufferSize)
@@ -1716,13 +1747,14 @@ bool OMSProxy::setSolver(QString cref, oms_solver_enu_t solver)
  */
 bool OMSProxy::setStartTime(QString cref, double startTime)
 {
-  QString command = "oms_setStartTime";
-  QStringList args;
-  args << "\"" + cref + "\"" << QString::number(startTime);
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setStartTime(cref.toUtf8().constData(), startTime);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
+  QJsonObject obj, args;
+  obj["method"] = "setStartTime";
+  obj["model"]  = cref.split('.').first();
+  args["value"] = startTime;
+  obj["args"] = args;
+
+  QJsonObject reply;
+  return sendZmqCommand(obj, reply);
 }
 
 /*!
@@ -1734,13 +1766,14 @@ bool OMSProxy::setStartTime(QString cref, double startTime)
  */
 bool OMSProxy::setStopTime(QString cref, double stopTime)
 {
-  QString command = "oms_setStopTime";
-  QStringList args;
-  args << "\"" + cref + "\"" << QString::number(stopTime);
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setStopTime(cref.toUtf8().constData(), stopTime);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
+  QJsonObject obj, args;
+  obj["method"] = "setStopTime";
+  obj["model"]  = cref.split('.').first();
+  args["value"] = stopTime;
+  obj["args"] = args;
+
+  QJsonObject reply;
+  return sendZmqCommand(obj, reply);
 }
 
 /*!

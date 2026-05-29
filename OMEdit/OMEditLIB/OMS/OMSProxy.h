@@ -132,8 +132,8 @@ public:
   bool getModelState(const QString &cref, oms_modelState_enu_t* modelState);
   bool getReal(QString cref, double* value);
   bool getSolver(QString cref, oms_solver_enu_t* solver);
-  bool getStartTime(QString cref, double* startTime);
-  bool getStopTime(QString cref, double* stopTime);
+  bool getStartTime(QString cref, double& startTime);
+  bool getStopTime(QString cref, double& stopTime);
   bool getSubModelPath(QString cref, QString* pPath);
   bool getSystemType(QString cref, oms_system_enu_t *pType);
   bool getTolerance(QString cref, double* absoluteTolerance, double* relativeTolerance);
