@@ -852,6 +852,8 @@ void MainWindow::beforeClosingMainWindow()
   GitCommands::destroy();
   // delete the searchwidget object to call the destructor, to cancel the search operation running on seperate thread
   delete mpSearchWidget;
+  // delete the DocumentationWidget object
+  delete mpDocumentationWidget;
   // if new api profiling file is open then close it.
   if (mpNewApiProfilingFile) {
     fclose(mpNewApiProfilingFile);
