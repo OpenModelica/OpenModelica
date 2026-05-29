@@ -84,35 +84,52 @@ namespace FlatModelica
 
   Expression evalString(const std::vector<Expression> &args)
   {
-    switch (args.size()) {
-      case 2: // String(r, format)
-        return Expression(format_string("%" + args[1].stringValue(), args[0].realValue()));
-
-      case 3: // String(i|b|e, minimumLength, leftJustified)
-        if (args[0].isInteger()) {
-          return Expression(format_string(
-              (args[2].boolValue() ? "%-" : "%") + args[1].toString() + "d",
-              args[0].intValue()
-            ));
-        } else {
-          // Boolean or enumeration, convert to string and pad with spaces if necessary.
-          auto str = args[0].toString();
-          auto len = args[1].intValue();
-          auto pad_len = len - str.size();
-          if (pad_len > 0) {
-            str.insert(args[2].boolValue() ? str.end() : str.begin(), pad_len, ' ');
-          }
-          return Expression(std::move(str));
-        }
-
-      case 4: // String(r, significantDigits, mininumLength, leftJustified)
-        return Expression(format_string(
-          (args[3].boolValue() ? "%-" : "%") + args[2].toString() + "." + args[1].toString() + "g",
-          args[0].realValue()
-        ));
+    if (args.size() == 2 && args[1].argName() == "format") {
+      // String(r, format)
+      return Expression(format_string("%" + args[1].argValue().stringValue(), args[0].realValue()));
     }
 
-    return Expression(args[0].toString());
+    int significant_digits = 6;
+    bool significant_digits_set = false;
+    int minimum_length = 0;
+    bool left_justified = false;
+
+    // Handle optional named arguments for String.
+    for (auto &arg: args) {
+      auto name = arg.argName();
+      if (name.empty()) continue;
+
+      if (name == "significantDigits") {
+        significant_digits = arg.argValue().intValue();
+        significant_digits_set = true;
+      } else if (name == "minimumLength") {
+        minimum_length = arg.argValue().intValue();
+      } else if (name == "leftJustified") {
+        left_justified = arg.argValue().boolValue();
+      }
+    }
+
+    if (significant_digits_set || args[0].isReal()) {
+      // String(r, significantDigits, minimumLength, leftJustified)
+      return Expression{format_string(
+          (left_justified ? "%-" : "%") + std::to_string(minimum_length) + "." +
+           std::to_string(significant_digits) + "g", args[0].realValue()
+        )};
+    } else if (args[0].isInteger()) {
+      // String(i, minimumLength, leftJustified)
+      return Expression{format_string(
+          (left_justified ? "%-" : "%") + std::to_string(minimum_length) + "d",
+          args[0].intValue()
+        )};
+    }
+
+    // String(b|e, minimumLength, leftJustified)
+    auto str = args[0].toString();
+    auto pad_len = minimum_length - str.size();
+    if (pad_len > 0) {
+      str.insert(left_justified ? str.end() : str.begin(), pad_len, ' ');
+    }
+    return Expression{std::move(str)};
   }
 
   Expression evalDiv(const Expression &x, const Expression &y)
