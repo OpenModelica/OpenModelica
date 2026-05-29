@@ -54,12 +54,14 @@ public
       ScalarizeMode scalarizeMode;
       RecordMode recordMode;
       Boolean moveBindings;
+      Boolean showConfidence;
     end OUTPUT_FORMAT;
   end OutputFormat;
 
   constant OutputFormat defaultFormat = OutputFormat.OUTPUT_FORMAT(
       ScalarizeMode.PARTIALLY_SCALARIZED,
       RecordMode.WITH_RECORDS,
+      false,
       false
   );
 
@@ -80,6 +82,7 @@ public
         case "nonScalarized"       algorithm format.scalarizeMode := ScalarizeMode.NOT_SCALARIZED; then ();
         case "withRecords"         algorithm format.recordMode := RecordMode.WITH_RECORDS; then ();
         case "withoutRecords"      algorithm format.recordMode := RecordMode.WITHOUT_RECORDS; then ();
+        case "showConfidence"      algorithm format.showConfidence := true; then ();
         else ();
       end match;
     end for;

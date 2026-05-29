@@ -846,6 +846,12 @@ public
       s := IOStream.append(s, " = ");
       s := IOStream.append(s, Expression.toFlatString(bind_exp, format));
 
+      if format.showConfidence then
+        s := IOStream.append(s, " /* confidence = ");
+        s := IOStream.append(s, String(Binding.actualConfidence(binding)));
+        s := IOStream.append(s, "*/");
+      end if;
+
       ty_attrs := listRest(ty_attrs);
       if listEmpty(ty_attrs) then
         break;

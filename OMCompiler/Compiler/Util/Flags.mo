@@ -1361,7 +1361,8 @@ constant ConfigFlag BASE_MODELICA_FORMAT = CONFIG_FLAG(153, "baseModelicaFormat"
     ("partiallyScalarized", Gettext.notrans("Include subscripts in the quoted identifiers, except for the last name ('a[1].x'[3]).")),
     ("nonScalarized", Gettext.notrans("Don't include subscripts in the quoted identifiers ('a'[1].'x'[3]).")),
     ("withRecords", Gettext.notrans("Keep records and don't expand them.")),
-    ("withoutRecords", Gettext.notrans("Expand records into separate components."))
+    ("withoutRecords", Gettext.notrans("Expand records into separate components.")),
+    ("showConfidence", Gettext.notrans("Add comments that show confidence numbers for binding equations."))
   })),
   Gettext.gettext("Formatting options for Base Modelica"));
 constant ConfigFlag BASE_MODELICA_OPTIONS = CONFIG_FLAG(154, "baseModelicaOptions",
