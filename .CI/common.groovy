@@ -329,6 +329,10 @@ def getQtMajorVersion(qtVersion) {
   return OM_QT_MAJOR_VERSION
 }
 
+def tmpDirName() {
+  return "/tmp/save-${NODE_NAME}-${BUILD_NUMBER}"
+}
+
 void buildGUI(stash, qtVersion) {
   if (isWindows()) {
   bat ("""
@@ -357,7 +361,11 @@ void buildGUI(stash, qtVersion) {
 
   if (stash) {
     standardSetup()
+    // do hoops for newer Jenkins, mv the link so unstash works
+    sh "mkdir -p ${tmpDirName()}/ && mv OMEdit/common ${tmpDirName()}/"
     unstash stash
+    // mv the link back after unstash
+    sh "mv ${tmpDirName()}/common OMEdit/common && rm -rf ${tmpDirName()}/ || true"
   }
   sh 'autoreconf --install'
   if (stash) {
@@ -406,7 +414,11 @@ void buildAndRunOMEditTestsuite(stash, qtVersion) {
 
   if (stash) {
     standardSetup()
+    // do hoops for newer Jenkins, mv the link so unstash works
+    sh "mkdir -p ${tmpDirName()} && mv OMEdit/common ${tmpDirName()}"
     unstash stash
+    // mv the link back after unstash
+    sh "mv ${tmpDirName()}/common OMEdit/common && rm -rf ${tmpDirName()}/ || true"
   }
   sh 'autoreconf --install'
   if (stash) {

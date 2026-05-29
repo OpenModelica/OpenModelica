@@ -570,7 +570,7 @@ pipeline {
             script {
               common.buildGUI('omc-clang', 'qt5')
             }
-            stash name: 'omedit-testsuite-clang-qt5', includes: 'build/**, **/config.status, OMEdit/**'
+            stash name: 'omedit-testsuite-clang-qt5', includes: 'build/**, **/config.status, OMEdit/**', excludes: 'OMEdit/common'
           }
         }
 
@@ -587,7 +587,7 @@ pipeline {
             script {
               common.buildGUI('omc-clang', 'qt6')
             }
-            stash name: 'omedit-testsuite-clang-qt6', includes: 'build/**, **/config.status, OMEdit/**'
+            stash name: 'omedit-testsuite-clang-qt6', includes: 'build/**, **/config.status, OMEdit/**', excludes: 'OMEdit/common'
           }
         }
 
