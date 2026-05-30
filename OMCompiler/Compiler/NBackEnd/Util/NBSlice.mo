@@ -1426,7 +1426,6 @@ protected
           // II.3 all reduced - full dependency per row. scalarize and add to all rows of the equation
           resolveAllReduced(cref, original_cref, eqn_name, skip_idx, size, iter_size, frames, rep, map, m, mapping, modes);
         end if;
-
       end for;
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + ComponentRef.toString(original_cref) + "."});
@@ -1543,7 +1542,7 @@ protected
 
       // 5. iterate over all equation dimensions and use the map to get the correct dependencies
       key := arrayCreate(listLength(subs), 0);
-      resolveEquationDimensions(List.zip(eq_dims, eq_reg), map2, key, m, modes, Mode.create(eqn_name, {original_cref}, false), Pointer.create(skip_idx));
+      resolveEquationDimensions(List.zip(eq_dims, eq_reg), regulars, map2, key, m, modes, Mode.create(eqn_name, {original_cref}, false), Pointer.create(skip_idx));
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because subscripts, dimensions and dependencies were not of equal length.\n"
         + "variable subscripts(" + intString(listLength(subs)) + "): " + List.toString(subs, Subscript.toString) + "\n"
@@ -1606,6 +1605,7 @@ protected
     is TRUE if its a regular occurence of the cref and FALSE if its a reduced occurence.
     The key is created from the dimensions and the additional boolean to look up the cref occurence in the map."
     input list<tuple<Dimension, Boolean>> lst   "equation dimension and cref regularity tuple list";
+    input list<Boolean> regulars                "used to skip to the proper index";
     input UnorderedMap<Key, Val2> map           "map to look up occurence";
     input Array<Integer> key                    "mutable key";
     input array<list<Integer>> m                "adjacency matrix";
@@ -1614,14 +1614,15 @@ protected
     input Pointer<Integer> eqn_idx_ptr          "mutable equation index";
     input Integer index = 1                     "dimension index for the key";
   algorithm
-    () := match lst
+    () := match (lst, regulars)
       local
         Dimension dim;
         list<tuple<Dimension, Boolean>> rest;
         Integer eqn_idx;
         list<Integer> scal_lst;
+        list<Boolean> rest_reg;
 
-      case {} algorithm
+      case ({}, _) algorithm
         // no further dimensions. resolve with current key config and bump equation index
         eqn_idx := Pointer.access(eqn_idx_ptr);
         scal_lst := UnorderedMap.getSafe(arrayList(key), map, sourceInfo());
@@ -1631,19 +1632,24 @@ protected
         Pointer.update(eqn_idx_ptr, eqn_idx + 1);
       then ();
 
-      case (dim, false)::rest algorithm
-        // reduced dimension, keep key index at 0 and go deeper with next dimension
+      case (_, false::rest_reg) algorithm
+        // reduced dimension no overlap, keep key index at 0 and go deeper with next dimension
+        resolveEquationDimensions(lst, rest_reg, map, key, m, modes, mode, eqn_idx_ptr, index+1);
+      then ();
+
+      case ((dim, false)::rest, _::rest_reg) algorithm
+        // reduced dimension with overlap, keep key index at 0 and go deeper with next dimension
         for i in 1:Dimension.size(dim, true) loop
-          resolveEquationDimensions(rest, map, key, m, modes, mode, eqn_idx_ptr, index+1);
+          resolveEquationDimensions(rest, rest_reg, map, key, m, modes, mode, eqn_idx_ptr, index+1);
         end for;
       then ();
 
-      case (dim, true)::rest algorithm
+      case ((dim, true)::rest, _::rest_reg) algorithm
         // regular dimension, update key index to corresponding dimension index
         // and go deeper with next dimension
         for i in 1:Dimension.size(dim, true) loop
           arrayUpdate(key, index, i);
-          resolveEquationDimensions(rest, map, key, m, modes, mode, eqn_idx_ptr, index+1);
+          resolveEquationDimensions(rest, rest_reg, map, key, m, modes, mode, eqn_idx_ptr, index+1);
         end for;
       then ();
     end match;
