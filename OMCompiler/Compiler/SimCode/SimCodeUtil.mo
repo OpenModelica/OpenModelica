@@ -600,8 +600,8 @@ algorithm
     (stateSets, modelInfo, SymbolicJacsStateSelect, SymbolicJacsStateSelectInternal) :=  addAlgebraicLoopsModelInfoStateSets(stateSets, modelInfo);
     if debug then execStat("simCode: collect and index LS/NLS in modelInfo"); end if;
 
-    // collect fmi partial derivative
-    if FMI.isFMIVersion20(FMUVersion) then
+    // collect fmi partial derivative (FMI 2.0 and 3.0 both expose a ModelStructure)
+    if FMI.isFMIVersion20(FMUVersion) or FMI.isFMIVersion30(FMUVersion) then
       (SymbolicJacsFMI, modelStructure, modelInfo, SymbolicJacsTemp, uniqueEqIndex) := createFMIModelStructure(inFMIDer, modelInfo, uniqueEqIndex, inInitDAE, inBackendDAE);
       SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
       if debug then execStat("simCode: create FMI model structure"); end if;
@@ -2975,7 +2975,7 @@ algorithm
 
     case DAE.CREF(cr, ty)::rest algorithm
       slst := List.map(dims, intString);
-      if FMI.isFMIVersion20() then
+      if (FMI.isFMIVersion20() or FMI.isFMIVersion30()) then
         var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(name), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), slst, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false);
       else
         var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(name), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), slst, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false);
@@ -3015,7 +3015,7 @@ algorithm
       arrayCref := ComponentReference.getArrayCref(cr);
       inst_dims := ComponentReferenceBasics.crefDims(cr);
       numArrayElement := List.map(inst_dims, ExpressionBasics.dimensionString);
-      if FMI.isFMIVersion20() then
+      if (FMI.isFMIVersion20() or FMI.isFMIVersion30()) then
         var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, arrayCref, SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false);
       else
         var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, arrayCref, SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false);
@@ -3063,7 +3063,7 @@ algorithm
         arraycref := ComponentReference.crefStripSubs(cr);
         numArrayElement := List.map(ComponentReferenceBasics.crefDims(cr), ExpressionBasics.dimensionString);
         ty := ComponentReference.crefTypeFull(cr);
-        if FMI.isFMIVersion20() then
+        if (FMI.isFMIVersion20() or FMI.isFMIVersion30()) then
           var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(arraycref), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false);
         else
           var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(arraycref), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false);
@@ -3073,7 +3073,7 @@ algorithm
         ttmpvars := {var};
         for cr in crlst loop
           ty := ComponentReference.crefTypeFull(cr);
-          if FMI.isFMIVersion20() then
+          if (FMI.isFMIVersion20() or FMI.isFMIVersion30()) then
             var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false);
           else
             var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false);
@@ -5406,7 +5406,7 @@ protected function makeTmpRealSimCodeVar
   input BackendDAE.VarKind inVarKind;
   output SimCodeVar.SimVar outSimVar;
 algorithm
-  if FMI.isFMIVersion20() then
+  if (FMI.isFMIVersion20() or FMI.isFMIVersion30()) then
     outSimVar := SimCodeVar.SIMVAR(inName, inVarKind, "", "", "", -1 /* use -1 to get an error in simulation if something failed */,
         NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT,
         false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource,
@@ -10338,7 +10338,7 @@ protected function updateStartValue
   input SimCodeVar.Causality causality;
 algorithm
   // update start value for FMI-2.0 only
-  if Flags.getConfigBool(Flags.BUILDING_FMU) and FMI.isFMIVersion20() then
+  if Flags.getConfigBool(Flags.BUILDING_FMU) and (FMI.isFMIVersion20() or FMI.isFMIVersion30()) then
     startValue := match startValue
       case SOME(_) guard isInitialExactOrApprox(initial_) then startValue;
       case NONE() guard isInitialExactOrApprox(initial_) then setDefaultStartValue(var.varType);
@@ -14599,6 +14599,109 @@ algorithm
   outDefaultValueReference := String(reference - 1);
 end getDefaultValueReference;
 
+public function getFMI3TypeOffset
+  "Returns the offset that is added to the per-base-type value reference to make
+   it globally unique, as required by the FMI 3.0 standard (in FMI 2.0 value
+   references only need to be unique per base type). The offsets are chosen so
+   that they match the per-base-type array layout used by getDefaultValueReference
+   and the C runtime (fmu3_model_interface.c): reals first, then integers, then
+   booleans, then strings. The very same offsets are emitted as #defines into the
+   generated FMI 3.0 model code so the runtime can recover the per-type index by
+   subtracting the offset.
+   author: adrpo"
+  input DAE.Type inType;
+  input SimCode.VarInfo inVarInfo;
+  output Integer outOffset;
+protected
+  Integer numReal = 2*inVarInfo.numStateVars + inVarInfo.numAlgVars + inVarInfo.numDiscreteReal + inVarInfo.numParams + inVarInfo.numAlgAliasVars;
+  Integer numInteger = inVarInfo.numIntAlgVars + inVarInfo.numIntParams + inVarInfo.numIntAliasVars;
+  Integer numBoolean = inVarInfo.numBoolAlgVars + inVarInfo.numBoolParams + inVarInfo.numBoolAliasVars;
+algorithm
+  outOffset := match inType
+    case DAE.T_REAL() then 0;
+    // enumerations are stored in the integer arrays of the OM runtime
+    case DAE.T_INTEGER() then numReal;
+    case DAE.T_ENUMERATION() then numReal;
+    case DAE.T_BOOL() then numReal + numInteger;
+    case DAE.T_STRING() then numReal + numInteger + numBoolean;
+    else 0;
+  end match;
+end getFMI3TypeOffset;
+
+public function getFMI3ValueReference
+  "Returns the globally unique value reference of a variable for the FMI 3.0
+   export. It is the per-base-type value reference (see getValueReference) shifted
+   by the per-base-type offset (see getFMI3TypeOffset).
+   author: adrpo"
+  input SimCodeVar.SimVar inSimVar;
+  input SimCode.SimCode inSimCode;
+  output String outValueReference;
+protected
+  Integer offset, localRef;
+algorithm
+  offset := getFMI3TypeOffset(inSimVar.type_, inSimCode.modelInfo.varInfo);
+  localRef := stringInt(getValueReference(inSimVar, inSimCode, false));
+  outValueReference := String(offset + localRef);
+end getFMI3ValueReference;
+
+public function getFMI3ValueReferenceFromFMIIndex
+  "Maps an FMI variable index (the 1-based position in the ModelVariables list as
+   stored in the FmiModelStructure unknowns/dependencies) to the globally unique
+   FMI 3.0 value reference of the corresponding variable. Used to emit the
+   ModelStructure (Output/ContinuousStateDerivative/InitialUnknown) which, unlike
+   FMI 2.0, references variables by valueReference instead of by index.
+   Returns the input index as a string if no matching variable is found, so the
+   generated XML is still well-formed.
+   author: adrpo"
+  input SimCode.SimCode inSimCode;
+  input Integer inFMIIndex;
+  output String outValueReference;
+protected
+  SimCode.ModelInfo modelInfo = inSimCode.modelInfo;
+  SimCodeVar.SimVars vars = modelInfo.vars;
+  list<list<SimCodeVar.SimVar>> allLists;
+  Option<SimCodeVar.SimVar> found = NONE();
+algorithm
+  allLists := {vars.stateVars, vars.derivativeVars, vars.algVars, vars.discreteAlgVars,
+               vars.intAlgVars, vars.boolAlgVars, vars.stringAlgVars,
+               vars.inputVars, vars.outputVars,
+               vars.paramVars, vars.intParamVars, vars.boolParamVars, vars.stringParamVars,
+               vars.aliasVars, vars.intAliasVars, vars.boolAliasVars, vars.stringAliasVars};
+  for lst in allLists loop
+    for v in lst loop
+      if intEq(getVariableFMIIndex(v), inFMIIndex) then
+        found := SOME(v);
+        break;
+      end if;
+    end for;
+    if isSome(found) then
+      break;
+    end if;
+  end for;
+  outValueReference := match found
+    case SOME(_) then getFMI3ValueReference(Util.getOption(found), inSimCode);
+    else String(inFMIIndex);
+  end match;
+end getFMI3ValueReferenceFromFMIIndex;
+
+
+public function getFMI3TimeValueReference
+  "Returns a value reference for the independent variable (time) that does not
+   collide with any model variable. It is the first free value reference past the
+   real/integer/boolean/string blocks. The same value is emitted as a #define
+   (FMI3_TIME_VR) into the generated FMI 3.0 model code.
+   author: adrpo"
+  input SimCode.SimCode inSimCode;
+  output String outValueReference;
+protected
+  SimCode.VarInfo vi = inSimCode.modelInfo.varInfo;
+  Integer numReal = 2*vi.numStateVars + vi.numAlgVars + vi.numDiscreteReal + vi.numParams + vi.numAlgAliasVars;
+  Integer numInteger = vi.numIntAlgVars + vi.numIntParams + vi.numIntAliasVars;
+  Integer numBoolean = vi.numBoolAlgVars + vi.numBoolParams + vi.numBoolAliasVars;
+  Integer numString = vi.numStringAlgVars + vi.numStringParamVars + vi.numStringAliasVars;
+algorithm
+  outValueReference := String(numReal + numInteger + numBoolean + numString);
+end getFMI3TimeValueReference;
 
 public function getLocalValueReference
  "returns the local value reference of current OMSIFuncton of a variable for

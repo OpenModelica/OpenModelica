@@ -89,6 +89,7 @@ import CodegenCFunctions.*;
 import CodegenFMUCommon.*;
 import CodegenFMU1;
 import CodegenFMU2;
+import CodegenFMU3;
 
 
 template translateModel(SimCode simCode, String FMUVersion, String FMUType, list<String> sourceFiles)
@@ -236,7 +237,8 @@ case SIMCODE(__) then
   <<
   <?xml version="1.0" encoding="UTF-8"?>
   <%
-  if isFMIVersion20(FMUVersion) then CodegenFMU2.fmiModelDescription(simCode, guid, FMUType, sourceFiles)
+  if isFMIVersion30(FMUVersion) then CodegenFMU3.fmiModelDescription(simCode, guid, FMUType, sourceFiles)
+  else if isFMIVersion20(FMUVersion) then CodegenFMU2.fmiModelDescription(simCode, guid, FMUType, sourceFiles)
   else CodegenFMU1.fmiModelDescription(simCode,guid,FMUType)
   %>
   >>
@@ -291,7 +293,12 @@ case SIMCODE(__) then
   #endif
 
   extern void <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>(DATA *data, threadData_t *threadData);
-  <%if isFMIVersion20(FMUVersion) then
+  <%if isFMIVersion30(FMUVersion) then
+    <<
+    #define fmu3_model_interface_setupDataStruc <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>
+    #include "fmi-export/fmu3_model_interface.h"
+    >>
+  else if isFMIVersion20(FMUVersion) then
     <<
     #define fmu2_model_interface_setupDataStruc <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>
     #include "fmi-export/fmu2_model_interface.h"
@@ -309,7 +316,28 @@ case SIMCODE(__) then
     >>
   %>
 
-  <%if isFMIVersion20(FMUVersion) then
+  <%if isFMIVersion30(FMUVersion) then
+  <<
+  // FMI 3.0 export. fmu3_model_interface.c is self-contained (its own model
+  // engine) and is built independently of the FMI 2.0 files. The generated
+  // per-base-type get/set helper functions below (getReal/setReal/...) are
+  // shared model code. FMI 3.0 requires globally unique value references, so the
+  // per-base-type value references are shifted by the offsets below to recover
+  // the per-type index used by the engine. fmi2Functions.h is included only for
+  // the FMI 2.0 scalar/utility types used by the engine and the generated helpers.
+  #define FMI2_FUNCTION_PREFIX <%modelNamePrefix(simCode)%>_
+  #include "fmi2Functions.h"
+  #define FMI3_FUNCTION_PREFIX <%modelNamePrefix(simCode)%>_
+  #include "fmi3Functions.h"
+
+  #define FMI3_REAL_VR_OFFSET    0
+  #define FMI3_INTEGER_VR_OFFSET (NUMBER_OF_REALS)
+  #define FMI3_BOOLEAN_VR_OFFSET (NUMBER_OF_REALS + NUMBER_OF_INTEGERS)
+  #define FMI3_STRING_VR_OFFSET  (NUMBER_OF_REALS + NUMBER_OF_INTEGERS + NUMBER_OF_BOOLEANS)
+  #define FMI3_TIME_VR           (NUMBER_OF_REALS + NUMBER_OF_INTEGERS + NUMBER_OF_BOOLEANS + NUMBER_OF_STRINGS)
+  #define FMI3_EVENT_INDICATOR_VR_START (FMI3_TIME_VR + 1)
+  >>
+  else if isFMIVersion20(FMUVersion) then
   <<
   #define FMI2_FUNCTION_PREFIX <%modelNamePrefix(simCode)%>_
   #include "fmi2Functions.h"
@@ -320,7 +348,7 @@ case SIMCODE(__) then
 
   void setStartValues(ModelInstance *comp);
   void setDefaultStartValues(ModelInstance *comp);
-  <%if isFMIVersion20(FMUVersion) then
+  <%if boolOr(isFMIVersion20(FMUVersion), isFMIVersion30(FMUVersion)) then
   <<
   void eventUpdate(ModelInstance* comp, fmi2EventInfo* eventInfo);
   fmi2Real getReal(ModelInstance* comp, const fmi2ValueReference vr);
@@ -391,7 +419,7 @@ case SIMCODE(__) then
   <%setStartValues(modelInfo)%>
 
   // implementation of the Model Exchange functions
-  <%if isFMIVersion20(FMUVersion) then
+  <%if boolOr(isFMIVersion20(FMUVersion), isFMIVersion30(FMUVersion)) then
   <<
   <%eventUpdateFunction2(simCode)%>
   <%getRealFunction2(simCode, modelInfo)%>
@@ -1455,7 +1483,7 @@ template fmuMakefile(String target, SimCode simCode, String FMUVersion, list<Str
       # /I - Include Directories
       # /DNOMINMAX - Define NOMINMAX (does what it says)
       # /TP - Use C++ Compiler
-      CFLAGS=/MP /Od /ZI /EHa /fp:except /I"<%makefileParams.omhome%>/include/omc/c" /I"<%makefileParams.omhome%>/include/omc/msvc/" <%if isFMIVersion20(FMUVersion) then '/I"<%makefileParams.omhome%>/include/omc/c/fmi2"' else '/I"<%makefileParams.omhome%>/include/omc/c/fmi1"'%> /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY  <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then '/DFMU_EXPERIMENTAL'%>
+      CFLAGS=/MP /Od /ZI /EHa /fp:except /I"<%makefileParams.omhome%>/include/omc/c" /I"<%makefileParams.omhome%>/include/omc/msvc/" <%if isFMIVersion30(FMUVersion) then '/I"<%makefileParams.omhome%>/include/omc/c/fmi3" /I"<%makefileParams.omhome%>/include/omc/c/fmi2"' else if isFMIVersion20(FMUVersion) then '/I"<%makefileParams.omhome%>/include/omc/c/fmi2"' else '/I"<%makefileParams.omhome%>/include/omc/c/fmi1"'%> /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY  <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then '/DFMU_EXPERIMENTAL'%>
 
       # /ZI enable Edit and Continue debug info
       CDFLAGS=/ZI
@@ -1528,7 +1556,7 @@ template fmuMakefile(String target, SimCode simCode, String FMUVersion, list<Str
       FMIPLATFORM=@FMIPLATFORM@
       # Note: Simulation of the fmu with dymola does not work with -finline-small-functions (enabled by most optimization levels)
       CPPFLAGS=@CPPFLAGS@
-      override CPPFLAGS += -DFMI2_OVERRIDE_FUNCTION_PREFIX
+      override CPPFLAGS += <%if isFMIVersion30(FMUVersion) then "-DFMI3_OVERRIDE_FUNCTION_PREFIX -DFMI2_OVERRIDE_FUNCTION_PREFIX" else "-DFMI2_OVERRIDE_FUNCTION_PREFIX"%>
 
       override CPPFLAGS += <%makefileParams.includes ; separator=" "%>
 
@@ -1576,7 +1604,98 @@ template fmudeffile(SimCode simCode, String FMUVersion)
 ::=
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
-  if isFMIVersion20(FMUVersion) then
+  if isFMIVersion30(FMUVersion) then
+  <<
+  EXPORTS
+    ;***************************************************
+    ;Common Functions
+    ;****************************************************
+    <%fileNamePrefix%>_fmi3GetVersion
+    <%fileNamePrefix%>_fmi3SetDebugLogging
+    <%fileNamePrefix%>_fmi3InstantiateModelExchange
+    <%fileNamePrefix%>_fmi3InstantiateCoSimulation
+    <%fileNamePrefix%>_fmi3InstantiateScheduledExecution
+    <%fileNamePrefix%>_fmi3FreeInstance
+    <%fileNamePrefix%>_fmi3EnterInitializationMode
+    <%fileNamePrefix%>_fmi3ExitInitializationMode
+    <%fileNamePrefix%>_fmi3EnterEventMode
+    <%fileNamePrefix%>_fmi3Terminate
+    <%fileNamePrefix%>_fmi3Reset
+    <%fileNamePrefix%>_fmi3GetFloat32
+    <%fileNamePrefix%>_fmi3GetFloat64
+    <%fileNamePrefix%>_fmi3GetInt8
+    <%fileNamePrefix%>_fmi3GetUInt8
+    <%fileNamePrefix%>_fmi3GetInt16
+    <%fileNamePrefix%>_fmi3GetUInt16
+    <%fileNamePrefix%>_fmi3GetInt32
+    <%fileNamePrefix%>_fmi3GetUInt32
+    <%fileNamePrefix%>_fmi3GetInt64
+    <%fileNamePrefix%>_fmi3GetUInt64
+    <%fileNamePrefix%>_fmi3GetBoolean
+    <%fileNamePrefix%>_fmi3GetString
+    <%fileNamePrefix%>_fmi3GetBinary
+    <%fileNamePrefix%>_fmi3GetClock
+    <%fileNamePrefix%>_fmi3SetFloat32
+    <%fileNamePrefix%>_fmi3SetFloat64
+    <%fileNamePrefix%>_fmi3SetInt8
+    <%fileNamePrefix%>_fmi3SetUInt8
+    <%fileNamePrefix%>_fmi3SetInt16
+    <%fileNamePrefix%>_fmi3SetUInt16
+    <%fileNamePrefix%>_fmi3SetInt32
+    <%fileNamePrefix%>_fmi3SetUInt32
+    <%fileNamePrefix%>_fmi3SetInt64
+    <%fileNamePrefix%>_fmi3SetUInt64
+    <%fileNamePrefix%>_fmi3SetBoolean
+    <%fileNamePrefix%>_fmi3SetString
+    <%fileNamePrefix%>_fmi3SetBinary
+    <%fileNamePrefix%>_fmi3SetClock
+    <%fileNamePrefix%>_fmi3GetNumberOfVariableDependencies
+    <%fileNamePrefix%>_fmi3GetVariableDependencies
+    <%fileNamePrefix%>_fmi3GetFMUState
+    <%fileNamePrefix%>_fmi3SetFMUState
+    <%fileNamePrefix%>_fmi3FreeFMUState
+    <%fileNamePrefix%>_fmi3SerializedFMUStateSize
+    <%fileNamePrefix%>_fmi3SerializeFMUState
+    <%fileNamePrefix%>_fmi3DeserializeFMUState
+    <%fileNamePrefix%>_fmi3GetDirectionalDerivative
+    <%fileNamePrefix%>_fmi3GetAdjointDerivative
+    <%fileNamePrefix%>_fmi3EnterConfigurationMode
+    <%fileNamePrefix%>_fmi3ExitConfigurationMode
+    <%fileNamePrefix%>_fmi3GetIntervalDecimal
+    <%fileNamePrefix%>_fmi3GetIntervalFraction
+    <%fileNamePrefix%>_fmi3GetShiftDecimal
+    <%fileNamePrefix%>_fmi3GetShiftFraction
+    <%fileNamePrefix%>_fmi3SetIntervalDecimal
+    <%fileNamePrefix%>_fmi3SetIntervalFraction
+    <%fileNamePrefix%>_fmi3SetShiftDecimal
+    <%fileNamePrefix%>_fmi3SetShiftFraction
+    <%fileNamePrefix%>_fmi3EvaluateDiscreteStates
+    <%fileNamePrefix%>_fmi3UpdateDiscreteStates
+    ;***************************************************
+    ;Functions for Model Exchange
+    ;****************************************************
+    <%fileNamePrefix%>_fmi3EnterContinuousTimeMode
+    <%fileNamePrefix%>_fmi3CompletedIntegratorStep
+    <%fileNamePrefix%>_fmi3SetTime
+    <%fileNamePrefix%>_fmi3SetContinuousStates
+    <%fileNamePrefix%>_fmi3GetContinuousStateDerivatives
+    <%fileNamePrefix%>_fmi3GetEventIndicators
+    <%fileNamePrefix%>_fmi3GetContinuousStates
+    <%fileNamePrefix%>_fmi3GetNominalsOfContinuousStates
+    <%fileNamePrefix%>_fmi3GetNumberOfEventIndicators
+    <%fileNamePrefix%>_fmi3GetNumberOfContinuousStates
+    ;***************************************************
+    ;Functions for Co-Simulation
+    ;****************************************************
+    <%fileNamePrefix%>_fmi3EnterStepMode
+    <%fileNamePrefix%>_fmi3GetOutputDerivatives
+    <%fileNamePrefix%>_fmi3DoStep
+    ;***************************************************
+    ;Functions for Scheduled Execution
+    ;****************************************************
+    <%fileNamePrefix%>_fmi3ActivateModelPartition
+  >>
+  else if isFMIVersion20(FMUVersion) then
   <<
   EXPORTS
     ;***************************************************

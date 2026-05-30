@@ -1343,6 +1343,23 @@ package SimCodeUtil
     output String outValueReference;
   end getValueReference;
 
+  function getFMI3ValueReference
+    input SimCodeVar.SimVar inSimVar;
+    input SimCode.SimCode inSimCode;
+    output String outValueReference;
+  end getFMI3ValueReference;
+
+  function getFMI3ValueReferenceFromFMIIndex
+    input SimCode.SimCode inSimCode;
+    input Integer inFMIIndex;
+    output String outValueReference;
+  end getFMI3ValueReferenceFromFMIIndex;
+
+  function getFMI3TimeValueReference
+    input SimCode.SimCode inSimCode;
+    output String outValueReference;
+  end getFMI3TimeValueReference;
+
   function getLocalValueReference
     input SimCodeVar.SimVar inSimVar;
     input SimCode.SimCode inSimCode;

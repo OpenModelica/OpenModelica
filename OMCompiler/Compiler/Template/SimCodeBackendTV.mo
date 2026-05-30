@@ -308,6 +308,11 @@ package FMI
     output Boolean success;
   end isFMIVersion20;
 
+  function isFMIVersion30 "Checks if the FMI version is 3.0."
+    input String inFMUVersion;
+    output Boolean success;
+  end isFMIVersion30;
+
   function isFMICSType "Checks if FMU type is co-simulation"
     input String inFMIType;
     output Boolean success;
@@ -317,6 +322,11 @@ package FMI
     input String inFMIType;
     output Boolean success;
   end isFMIMEType;
+
+  function isFMISEType "Checks if FMU type is scheduled execution"
+    input String inFMIType;
+    output Boolean success;
+  end isFMISEType;
 
   function getEnumerationTypeFromTypes
     input list<TypeDefinitions> inTypeDefinitionsList;

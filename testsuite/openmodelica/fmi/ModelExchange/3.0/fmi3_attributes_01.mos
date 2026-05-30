@@ -1,0 +1,60 @@
+// name: fmi3_attributes_01.mos
+// keywords: FMI 3.0 export
+// status: correct
+// teardown_command: rm -rf fmi3_attributes_01.fmu fmi3_attributes_01.xml fmi3_attributes_01_tmp.xml fmi3_attributes_01.fmutmp/
+
+setCommandLineOptions("-d=newInst"); getErrorString();
+
+loadString("
+model fmi3_attributes_01
+  Real x(start=1.0);
+  output Real y;
+  parameter Real a = 2.0;
+equation
+  der(x) = -a*x;
+  y = 2*x + a;
+end fmi3_attributes_01;
+"); getErrorString();
+
+buildModelFMU(fmi3_attributes_01, version="3.0", fmuType="me"); getErrorString();
+
+// unzip to console, quiet, extra quiet
+system("unzip -cqq fmi3_attributes_01.fmu modelDescription.xml > fmi3_attributes_01_tmp.xml"); getErrorString();
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" fmi3_attributes_01_tmp.xml > fmi3_attributes_01.xml"); getErrorString();
+readFile("fmi3_attributes_01.xml"); getErrorString();
+
+system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" fmi3_attributes_01_tmp.xml > fmi3_attributes_01.xml"); getErrorString();
+readFile("fmi3_attributes_01.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi3_attributes_01.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// 0
+// ""
+// 0
+// ""
+// "  <ModelVariables>
+//   <Float64 name=\"time\" valueReference=\"5\" causality=\"independent\" variability=\"continuous\" description=\"Simulation time\"/>
+//   <Float64 name=\"x\" valueReference=\"0\" initial=\"exact\"  start=\"1.0\"/>
+//   <Float64 name=\"der(x)\" valueReference=\"1\"  derivative=\"0\"/>
+//   <Float64 name=\"y\" valueReference=\"2\" causality=\"output\" />
+//   <Float64 name=\"a\" valueReference=\"3\" causality=\"parameter\" variability=\"fixed\"  start=\"2.0\"/>
+//   </ModelVariables>
+// "
+// ""
+// 0
+// ""
+// "  <ModelStructure>
+//     <Output valueReference=\"2\" dependencies=\"0\" dependenciesKind=\"dependent\"/>
+//     <ContinuousStateDerivative valueReference=\"1\" dependencies=\"0\" dependenciesKind=\"dependent\"/>
+//     <InitialUnknown valueReference=\"1\" dependencies=\"0 3\" dependenciesKind=\"dependent dependent\"/>
+//     <InitialUnknown valueReference=\"2\" dependencies=\"0 3\" dependenciesKind=\"dependent dependent\"/>
+//   </ModelStructure>
+// "
+// ""
+// endResult

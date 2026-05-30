@@ -1,0 +1,56 @@
+// name: fmi3_types.mos
+// keywords: FMI 3.0 export typed variables
+// status: correct
+// teardown_command: rm -rf fmi3_types.fmu fmi3_types.xml fmi3_types_tmp.xml fmi3_types.fmutmp/
+
+setCommandLineOptions("-d=newInst"); getErrorString();
+
+loadString("
+model fmi3_types
+  Real x(start=3.0);
+  output Real ro = 2.0*x;
+  parameter Real rp = 1.5;
+  parameter Integer ip = 7;
+  parameter Boolean bp = true;
+  parameter String sp = \"hello\";
+  Integer ic(start=4);
+equation
+  der(x) = -x;
+  when sample(0,1) then
+    ic = pre(ic) + 1;
+  end when;
+end fmi3_types;
+"); getErrorString();
+
+buildModelFMU(fmi3_types, version="3.0", fmuType="me"); getErrorString();
+
+system("unzip -cqq fmi3_types.fmu modelDescription.xml > fmi3_types_tmp.xml"); getErrorString();
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" fmi3_types_tmp.xml > fmi3_types.xml"); getErrorString();
+readFile("fmi3_types.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi3_types.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// 0
+// ""
+// 0
+// ""
+// "  <ModelVariables>
+//   <Float64 name=\"time\" valueReference=\"10\" causality=\"independent\" variability=\"continuous\" description=\"Simulation time\"/>
+//   <Float64 name=\"x\" valueReference=\"0\" initial=\"exact\"  start=\"3.0\"/>
+//   <Float64 name=\"der(x)\" valueReference=\"1\"  derivative=\"0\"/>
+//   <Float64 name=\"ro\" valueReference=\"2\" causality=\"output\" />
+//   <Float64 name=\"rp\" valueReference=\"3\" causality=\"parameter\" variability=\"fixed\"  start=\"1.5\"/>
+//   <Int32 name=\"ic\" valueReference=\"5\" variability=\"discrete\" initial=\"exact\"  start=\"4\"/>
+//   <Int32 name=\"ip\" valueReference=\"6\" causality=\"parameter\" variability=\"fixed\"  start=\"7\"/>
+//   <Boolean name=\"bp\" valueReference=\"8\" causality=\"parameter\" variability=\"fixed\"  start=\"true\"/>
+//   <String name=\"sp\" valueReference=\"9\" causality=\"parameter\" variability=\"fixed\" ><Start value=\"hello\"/></String>
+//   </ModelVariables>
+// "
+// ""
+// endResult

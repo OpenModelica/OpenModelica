@@ -1,0 +1,56 @@
+// name: fmi3_cs_01.mos
+// keywords: FMI 3.0 export CoSimulation
+// status: correct
+// teardown_command: rm -rf fmi3_cs_01.fmu fmi3_cs_01.xml fmi3_cs_01_tmp.xml fmi3_cs_01.fmutmp/
+
+setCommandLineOptions("-d=newInst"); getErrorString();
+
+loadString("
+model fmi3_cs_01
+  Real x(start=1.0);
+  output Real y;
+  parameter Real a = 2.0;
+equation
+  der(x) = -a*x;
+  y = 2*x + a;
+end fmi3_cs_01;
+"); getErrorString();
+
+buildModelFMU(fmi3_cs_01, version="3.0", fmuType="cs"); getErrorString();
+
+system("unzip -cqq fmi3_cs_01.fmu modelDescription.xml > fmi3_cs_01_tmp.xml"); getErrorString();
+system("sed -n \"/<CoSimulation/,/\\/>/p\" fmi3_cs_01_tmp.xml > fmi3_cs_01.xml"); getErrorString();
+readFile("fmi3_cs_01.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi3_cs_01.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// 0
+// ""
+// 0
+// ""
+// "  <CoSimulation
+//     modelIdentifier=\"fmi3_cs_01\"
+//     needsExecutionTool=\"false\"
+//     canHandleVariableCommunicationStepSize=\"true\"
+//     canBeInstantiatedOnlyOncePerProcess=\"false\"
+//     maxOutputDerivativeOrder=\"1\"
+//     providesIntermediateUpdate=\"false\"
+//     mightReturnEarlyFromDoStep=\"true\"
+//     canReturnEarlyAfterIntermediateUpdate=\"false\"
+//     hasEventMode=\"true\"
+//     providesEvaluateDiscreteStates=\"false\"
+//     recommendedIntermediateInputSmoothness=\"0\"
+//     canGetAndSetFMUState=\"false\"
+//     canSerializeFMUState=\"false\"
+//     providesDirectionalDerivatives=\"false\"
+//     providesAdjointDerivatives=\"false\"
+//     providesPerElementDependencies=\"false\"/>
+// "
+// ""
+// endResult
