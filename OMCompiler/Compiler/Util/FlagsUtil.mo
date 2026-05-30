@@ -448,13 +448,13 @@ algorithm
   setGlobalRoot(Global.flagsIndex, inFlags);
 end saveFlags;
 
-protected function createConfigFlags
+public function createConfigFlags
   output array<Flags.FlagData> configFlags;
 algorithm
   configFlags := listArray(list(flag.defaultValue for flag in allConfigFlags));
 end createConfigFlags;
 
-protected function createDebugFlags
+public function createDebugFlags
   output array<Boolean> debugFlags;
 algorithm
   debugFlags := listArray(list(flag.default for flag in allDebugFlags));

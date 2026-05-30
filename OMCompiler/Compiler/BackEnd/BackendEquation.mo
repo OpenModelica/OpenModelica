@@ -1197,23 +1197,22 @@ protected function traverseExpsOfWhenOps_WithStop<T>
     input T inTypeA;
     output DAE.Exp outExp;
     output Boolean cont;
-    output T outTypeA;
+    output T extArg = inTypeA;
   end FuncExpType;
 algorithm
-  (outCont, outTypeA) := match inWhenOps
+  (outCont, extArg) := match inWhenOps
     local
       DAE.Type tp;
       DAE.Exp e1, e2;
       DAE.ComponentRef cr;
       list<BackendDAE.WhenOperator> rest;
-      T extArg;
       Boolean b = false;
 
-    case {} then (inCont,inTypeA);
+    case {} then (inCont,extArg);
     case BackendDAE.ASSIGN(left = e1, right = e2)::rest
       algorithm
         if inCont then
-         (_, b, extArg) := inFunc(e1, inTypeA);
+         (_, b, extArg) := inFunc(e1, extArg);
         end if;
         if b then
          (_, b, extArg) := inFunc(e2, extArg);
@@ -1226,7 +1225,7 @@ algorithm
         tp := Expression.typeof(e2);
         e1 := Expression.makeCrefExp(cr, tp);
         if inCont then
-         (_, b, extArg) := inFunc(e1, inTypeA);
+         (_, b, extArg) := inFunc(e1, extArg);
         end if;
         if b then
          (_, b, extArg) := inFunc(e2, extArg);
@@ -1237,7 +1236,7 @@ algorithm
     case BackendDAE.ASSERT(condition = e1, message = e2)::rest
       algorithm
         if inCont then
-         (_, b, extArg) := inFunc(e1, inTypeA);
+         (_, b, extArg) := inFunc(e1, extArg);
         end if;
         if b then
          (_, b, extArg) := inFunc(e2, extArg);
@@ -1248,7 +1247,7 @@ algorithm
     case BackendDAE.TERMINATE(message = e1)::rest
       algorithm
         if inCont then
-         (_, b, extArg) := inFunc(e1, inTypeA);
+         (_, b, extArg) := inFunc(e1, extArg);
         end if;
         (b, extArg) := traverseExpsOfWhenOps_WithStop(rest, inFunc, extArg,  b);
       then (b, extArg);
@@ -1256,7 +1255,7 @@ algorithm
     case BackendDAE.NORETCALL(exp = e1)::rest
       algorithm
         if inCont then
-         (_, b, extArg) := inFunc(e1, inTypeA);
+         (_, b, extArg) := inFunc(e1, extArg);
         end if;
         (b, extArg) := traverseExpsOfWhenOps_WithStop(rest, inFunc, extArg,  b);
       then (b, extArg);
