@@ -1553,13 +1553,11 @@ public
     InstNode node;
     ComponentRef var_cref;
     Variable var;
-    list<ComponentRef> iter_crefs;
     list<Subscript> iter_subs;
     Type ty;
   algorithm
     // get subscripts from optional iterator
-    (iter_crefs, _) := Iterator.getFrames(iterator);
-    iter_subs := list(Subscript.fromTypedExp(Expression.fromCref(iter)) for iter in iter_crefs);
+    iter_subs := Iterator.normalizedSubscripts(iterator);
     if listEmpty(iter_subs) then
       ty := var_ty;
     else
