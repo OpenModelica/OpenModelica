@@ -174,7 +174,18 @@ static inline void qwtExecCommand(
 
             if ( data->flags & QPaintEngine::DirtyTransform )
             {
-                painter->setTransform( data->transform * transform );
+                // Qt ( seen with Qt >= 6.5 ) may emit the initial state change
+                // of a custom QPaintEngine ( as used by QwtNullPaintDevice /
+                // QwtGraphic ) carrying a default constructed, null transform
+                // instead of the identity. Replaying it here would collapse the
+                // painter matrix to a singular ( zero ) matrix and erase
+                // everything that is painted afterwards - f.e. the line of a
+                // plot legend icon. Ignore such degenerate transforms.
+                // See OpenModelica issue #15626.
+                if ( data->transform.isInvertible() )
+                    painter->setTransform( data->transform * transform );
+                else
+                    painter->setTransform( transform );
             }
 
             if ( data->flags & QPaintEngine::DirtyClipEnabled )
@@ -819,16 +830,18 @@ QPixmap QwtGraphic::toPixmap( qreal devicePixelRatio ) const
     const int w = qwtCeil( sz.width() );
     const int h = qwtCeil( sz.height() );
 
-    QPixmap pixmap( w, h );
-
-#if QT_VERSION >= 0x050000
-    if ( devicePixelRatio <= 0.0 )
-        devicePixelRatio = qwtDevicePixelRatio();
-
-    pixmap.setDevicePixelRatio( devicePixelRatio );
-#else
+    // Allocate the pixmap in logical pixels and deliberately do NOT tag it with
+    // a device pixel ratio. OMPlot renders the plot canvas itself without HiDPI
+    // scaling - a curve stays a constant ~1 physical pixel wide whatever the
+    // screen scale factor is - so a legend icon has to be rendered the same way
+    // to match it. Allocating size * devicePixelRatio and tagging the pixmap
+    // ( the way plain qwt and toImage() do ) makes the legend preview line grow
+    // thicker and thicker as the scale factor increases and no longer match the
+    // graph, while the old logical allocation *with* setDevicePixelRatio()
+    // pushed the centered line down to the bottom of a too-small pixmap.
+    // See OpenModelica #15626.
     Q_UNUSED( devicePixelRatio )
-#endif
+    QPixmap pixmap( w, h );
 
     pixmap.fill( Qt::transparent );
 
@@ -859,16 +872,11 @@ QPixmap QwtGraphic::toPixmap( qreal devicePixelRatio ) const
 QPixmap QwtGraphic::toPixmap( const QSize& size,
     Qt::AspectRatioMode aspectRatioMode, qreal devicePixelRatio ) const
 {
-    QPixmap pixmap( size );
-
-#if QT_VERSION >= 0x050000
-    if ( devicePixelRatio <= 0.0 )
-        devicePixelRatio = qwtDevicePixelRatio();
-
-    pixmap.setDevicePixelRatio( devicePixelRatio );
-#else
+    // Render at logical size without a device pixel ratio, so the icon matches
+    // the ( unscaled ) plot canvas instead of growing with the screen scale
+    // factor; see toPixmap( qreal ) and OpenModelica #15626.
     Q_UNUSED( devicePixelRatio )
-#endif
+    QPixmap pixmap( size );
     pixmap.fill( Qt::transparent );
 
     const QRect r( 0, 0, size.width(), size.height() );
