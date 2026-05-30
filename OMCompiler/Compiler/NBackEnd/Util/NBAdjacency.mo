@@ -1864,7 +1864,7 @@ public
         // gather unsolvables from iterator
         occ2 := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
         filter := function Slice.getDependentCref(map = map, pseudo = true);
-        Iterator.map(eqn.iter, function Slice.Slice.filterExp(filter = filter, acc = occ2),
+        Iterator.map(eqn.iter, function Slice.filterExp(filter = filter, acc = occ2),
           SOME(function filter(acc = occ2)), Expression.mapShallow);
         // update unsolvables
         Solvability.updateList(UnorderedSet.toList(occ2), Solvability.UNSOLVABLE(), sol_map);

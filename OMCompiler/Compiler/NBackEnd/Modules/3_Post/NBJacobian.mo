@@ -1939,8 +1939,8 @@ protected
   protected
     Integer m1 = listLength(itVarPtrs);
     Integer m2 = listLength(resEqnPtrs);
-    list<NBSlice.Slice<NBVariable.VariablePointer>> itVars_s;
-    list<NBSlice.Slice<Pointer<NBEquation.Equation>>> res_s;
+    list<NBSlice<NBVariable.VariablePointer>> itVars_s;
+    list<NBSlice<Pointer<NBEquation.Equation>>> res_s;
     NBTearing.Tearing tearingSet;
   algorithm
     // sanity
