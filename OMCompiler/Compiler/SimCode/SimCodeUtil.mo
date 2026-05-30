@@ -2870,7 +2870,7 @@ algorithm
     (eqCrefs, newExp, lhsExpLstRes, rhsExpLstRes, lhsExpLstAss, rhsExpLstAss) := createTmpCrefExpsForComplexEqnSys_work(e, crPrefix, eqCrefs, callCrefs, lhsExpLstRes, rhsExpLstRes, lhsExpLstAss, rhsExpLstAss);
     outExpList := newExp::outExpList;
   end for;
-  outExpList := List.listReverseInPlace(outExpList);
+  outExpList := Dangerous.listReverseInPlace(outExpList);
 end createTmpCrefExpsForComplexEqnSys;
 
 protected function createTmpCrefExpsForComplexEqnSys_work
