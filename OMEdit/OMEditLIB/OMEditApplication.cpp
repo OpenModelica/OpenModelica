@@ -221,6 +221,7 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   // if user has requested to open the file by passing it in argument then,
   bool debug = false;
   bool newApiProfiling = false;
+  bool newApiNoJson = false;
   QString fileName = "";
   QStringList fileNames, invalidFlags;
   if (arguments().size() > 1 && !testsuiteRunning) {
@@ -236,6 +237,12 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
         napiProfilingArg.remove("--NAPIProfiling=");
         if (0 == strcmp("true", napiProfilingArg.toUtf8().constData())) {
           newApiProfiling = true;
+        }
+      } else if (strncmp(arguments().at(i).toUtf8().constData(), "--NAPINoJson=",13) == 0) {
+        QString napiNoJsonArg = arguments().at(i);
+        napiNoJsonArg.remove("--NAPINoJson=");
+        if (0 == strcmp("true", napiNoJsonArg.toUtf8().constData())) {
+          newApiNoJson = true;
         }
       } else if (strncmp(arguments().at(i).toUtf8().constData(), "--paths",7) == 0) {
         dumpQtPaths();
@@ -262,6 +269,7 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   MainWindow *pMainwindow = MainWindow::instance();
   pMainwindow->setDebug(debug);
   pMainwindow->setNewApiProfiling(newApiProfiling);
+  pMainwindow->setNewApiNoJson(newApiNoJson);
   pMainwindow->setTestsuiteRunning(testsuiteRunning);
   pMainwindow->setUpMainWindow(threadData);
   if (pMainwindow->getExitApplicationStatus()) {        // if there is some issue in running the application.

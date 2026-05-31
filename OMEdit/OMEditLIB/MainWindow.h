@@ -112,6 +112,8 @@ public:
   void setDebug(bool debug) {mDebug = debug;}
   bool isNewApiProfiling() const {return mNewApiProfiling;}
   void setNewApiProfiling(bool newApiProfiling);
+  bool isNewApiNoJson() const {return mNewApiNoJson;}
+  void setNewApiNoJson(bool newApiNoJson) {mNewApiNoJson = newApiNoJson;}
   bool isCRMLEnabled() const {return mCRMLEnabled;}
   void setCRMLEnabled(bool crmlEnabled) {mCRMLEnabled = crmlEnabled;}
   bool isTestsuiteRunning() const {return mTestsuiteRunning;}
@@ -272,6 +274,7 @@ private:
   bool mDebug;
   bool mNewApiProfiling = false;
   FILE *mpNewApiProfilingFile = nullptr;
+  bool mNewApiNoJson = false;
   bool mCRMLEnabled = false;
   bool mTestsuiteRunning = false;
   bool mSkipExpressionEvaluation = false;
