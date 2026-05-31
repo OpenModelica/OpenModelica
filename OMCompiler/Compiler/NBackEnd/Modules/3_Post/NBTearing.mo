@@ -618,7 +618,7 @@ protected
     linear := match full
       case Adjacency.Matrix.FULL() then UnorderedMap.all(e, function eqnIsLinear(occ = full.occurrences, sol = full.solvabilities, v = v));
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " expected type full, got type " + Adjacency.Matrix.strictnessString(Adjacency.Matrix.getStrictness(full)) + "."});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " expected type full, got type " + Adjacency.strictnessString(Adjacency.Matrix.getStrictness(full)) + "."});
       then fail();
     end match;
   end checkLinearity;

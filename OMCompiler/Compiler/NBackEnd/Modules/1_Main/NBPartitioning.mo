@@ -332,6 +332,7 @@ public
       end match;
     end fromExp;
 
+  public
     function updateSubClock
       "adding the sub clock src to the sub clock dest. not symmetrical/commutative"
       input output BClock dest;
