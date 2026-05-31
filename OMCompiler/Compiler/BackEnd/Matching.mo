@@ -6811,7 +6811,7 @@ algorithm
   else
     true := n <= arrayLength(arrIx);
     for i in 1:n loop
-      Dangerous.arrayUpdate(arr, Dangerous.arrayGetNoBoundsChecking(arrIx, i), false);
+      Dangerous.arrayUpdateNoBoundsChecking(arr, Dangerous.arrayGetNoBoundsChecking(arrIx, i), false);
     end for;
   end if;
   if debug then
