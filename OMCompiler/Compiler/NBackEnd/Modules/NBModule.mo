@@ -79,6 +79,7 @@ protected
   import Jacobian = NBackendDAE;
   import NBJacobian.JacobianType;
   import StrongComponent = NBStrongComponent;
+  import Matching = NBMatching;
   import Partition = NBPartition;
   import NBPartitioning.ClockedInfo;
   import BVariable = NBVariable;
