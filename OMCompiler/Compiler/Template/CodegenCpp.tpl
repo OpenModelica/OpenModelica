@@ -14137,5 +14137,5 @@ end simulationFile_dae_header;
 
 /*end daeMode templates*/
 
-annotation(__OpenModelica_Interface="codegen");
+annotation(__OpenModelica_Interface="codegen_cpp");
 end CodegenCpp;
