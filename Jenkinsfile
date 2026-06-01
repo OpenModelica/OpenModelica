@@ -550,7 +550,7 @@ pipeline {
         stage('11 build-gui-clang-qt6') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.22.6-qttools'
+              image 'ghcr.io/openmodelica/build-deps:v1.22.3'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
@@ -795,7 +795,7 @@ pipeline {
         stage('clang-qt6-omedit-testsuite') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.22.6-qttools'
+              image 'ghcr.io/openmodelica/build-deps:v1.22.3'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
