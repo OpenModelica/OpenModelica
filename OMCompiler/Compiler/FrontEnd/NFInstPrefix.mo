@@ -101,12 +101,12 @@ public function addOptPath
   input Prefix inPrefix;
   output Prefix outPrefix;
 algorithm
-  outPrefix := match(inOptPath, inPrefix)
+  outPrefix := match inOptPath
     local
       Absyn.Path p;
 
-    case (NONE(), _) then inPrefix;
-    case (SOME(p), _) then addPath(p, inPrefix);
+    case NONE() then inPrefix;
+    case SOME(p) then addPath(p, inPrefix);
 
   end match;
 end addOptPath;
@@ -143,11 +143,9 @@ public function firstName
   input Prefix inPrefix;
   output String outStr;
 algorithm
-  outStr := match(inPrefix)
+  outStr := match inPrefix
     local
-      String name, str;
-      Prefix rest_prefix;
-      Absyn.Path path;
+      String name;
 
     case EMPTY_PREFIX() then "";
     case PREFIX(name = name) then name;
@@ -161,15 +159,15 @@ public function prefixCref
   input Prefix inPrefix;
   output DAE.ComponentRef outCref;
 algorithm
-  outCref := match(inCref, inPrefix)
+  outCref := match inPrefix
     local
       String name;
       Prefix rest_prefix;
       DAE.ComponentRef cref;
 
-    case (_, EMPTY_PREFIX()) then inCref;
+    case EMPTY_PREFIX() then inCref;
 
-    case (_, PREFIX(name = name, restPrefix = rest_prefix))
+    case PREFIX(name = name, restPrefix = rest_prefix)
       algorithm
         cref := DAE.CREF_QUAL(name, DAE.T_UNKNOWN_DEFAULT, {}, inCref);
       then
@@ -184,15 +182,15 @@ public function prefixPath
   input Prefix inPrefix;
   output Absyn.Path outPath;
 algorithm
-  outPath := match(inPath, inPrefix)
+  outPath := match inPrefix
     local
       String name;
       Prefix rest_prefix;
       Absyn.Path path;
 
-    case (_, EMPTY_PREFIX()) then inPath;
+    case EMPTY_PREFIX() then inPath;
 
-    case (_, PREFIX(name = name, restPrefix = rest_prefix))
+    case PREFIX(name = name, restPrefix = rest_prefix)
       algorithm
         path := Absyn.QUALIFIED(name, inPath);
       then
@@ -207,11 +205,11 @@ public function prefixStr
   input Prefix inPrefix;
   output String outString;
 algorithm
-  outString := match(inString, inPrefix)
+  outString := match inPrefix
     local
       String str;
 
-    case (_, EMPTY_PREFIX()) then inString;
+    case EMPTY_PREFIX() then inString;
 
     else
       algorithm
@@ -228,17 +226,17 @@ public function toCref
   input Prefix inPrefix;
   output DAE.ComponentRef outCref;
 algorithm
-  outCref := match(inPrefix)
+  outCref := match inPrefix
     local
       String name;
       Prefix rest_prefix;
       DAE.ComponentRef cref;
 
-    case (PREFIX(name = name, restPrefix = EMPTY_PREFIX()))
+    case PREFIX(name = name, restPrefix = EMPTY_PREFIX())
       then
         DAE.CREF_IDENT(name, DAE.T_UNKNOWN_DEFAULT, {});
 
-    case (PREFIX(name = name, restPrefix = rest_prefix))
+    case PREFIX(name = name, restPrefix = rest_prefix)
       algorithm
         cref := DAE.CREF_IDENT(name, DAE.T_UNKNOWN_DEFAULT, {});
       then
@@ -252,7 +250,7 @@ public function toPath
   input Prefix inPrefix;
   output Absyn.Path outPath;
 algorithm
-  outPath := match(inPrefix)
+  outPath := match inPrefix
     local
       String name;
       Prefix rest_prefix;
@@ -284,18 +282,18 @@ protected function fromPath2
   input Prefix inPrefix;
   output Prefix outPrefix;
 algorithm
-  outPrefix := match(inPath, inPrefix)
+  outPrefix := match inPath
     local
       Absyn.Path path;
       String name;
 
-    case (Absyn.QUALIFIED(name, path), _)
+    case Absyn.QUALIFIED(name, path)
       then fromPath2(path, PREFIX(name, {}, inPrefix));
 
-    case (Absyn.IDENT(name), _)
+    case Absyn.IDENT(name)
       then PREFIX(name, {}, inPrefix);
 
-    case (Absyn.FULLYQUALIFIED(path), _)
+    case Absyn.FULLYQUALIFIED(path)
       then fromPath2(path, inPrefix);
 
   end match;
@@ -315,12 +313,12 @@ protected function fromStringList2
   input Prefix inPrefix;
   output Prefix outPrefix;
 algorithm
-  outPrefix := match(inStrings, inPrefix)
+  outPrefix := match inStrings
     local
       list<String> strl;
       String str;
 
-    case (str :: strl, _) then fromStringList2(strl, PREFIX(str, {}, inPrefix));
+    case str :: strl then fromStringList2(strl, PREFIX(str, {}, inPrefix));
     else inPrefix;
 
   end match;
@@ -331,7 +329,7 @@ public function toStr
   input Prefix inPrefix;
   output String outStr;
 algorithm
-  outStr := match(inPrefix)
+  outStr := match inPrefix
     local
       String name, str;
       Prefix rest_prefix;
@@ -356,7 +354,7 @@ public function toStrWithEmpty
   input Prefix inPrefix;
   output String outStr;
 algorithm
-  outStr := match(inPrefix)
+  outStr := match inPrefix
     local
       String name, str;
       Prefix rest_prefix;
@@ -385,7 +383,7 @@ public function isPackagePrefix
   input Prefix inPrefix;
   output Boolean outIsPackagePrefix;
 algorithm
-  outIsPackagePrefix := match(inPrefix)
+  outIsPackagePrefix := match inPrefix
     local
       Prefix prefix;
 
@@ -400,7 +398,7 @@ public function toPackagePrefix
   input Prefix inPrefix;
   output Prefix outPrefix;
 algorithm
-  outPrefix := match(inPrefix)
+  outPrefix := match inPrefix
     local
       String name;
       DAE.Dimensions dims;

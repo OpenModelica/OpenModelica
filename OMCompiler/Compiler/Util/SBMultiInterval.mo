@@ -236,8 +236,6 @@ public
   function minElem
     input SBMultiInterval mi;
     output array<Integer> res;
-  protected
-    Integer idx;
   algorithm
     for i in mi.intervals loop
       if SBInterval.isEmpty(i) then

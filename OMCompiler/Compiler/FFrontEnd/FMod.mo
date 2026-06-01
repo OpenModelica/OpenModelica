@@ -86,11 +86,11 @@ public function merge
   output Graph outGraph;
   output Ref outMergedModRef;
 algorithm
-  (outGraph, outMergedModRef) := match(inParentRef, inOuterModRef, inInnerModRef, inGraph)
+  (outGraph, outMergedModRef) := match(inParentRef, inGraph)
     local
       Ref r;
       Graph g;
-    case (r, _, _, g)
+    case (r, g)
       algorithm
       then
         (g, r);
@@ -106,11 +106,11 @@ public function apply
   output Graph outGraph;
   output Ref outNodeRef;
 algorithm
-  (outGraph, outNodeRef) := match(inTargetRef, inModRef, inGraph)
+  (outGraph, outNodeRef) := match(inTargetRef, inGraph)
     local
       Ref r;
       Graph g;
-    case (r, _, g)
+    case (r, g)
       algorithm
       then
         (g, r);
@@ -165,18 +165,18 @@ protected function compactSubMod2
   output SCode.SubMod outMod;
   output Boolean outFound;
 algorithm
-  (outMod, outFound) := matchcontinue(inExistingMod, inNewMod, inModScope, inName)
+  (outMod, outFound) := matchcontinue(inExistingMod, inNewMod)
     local
       String name1, name2;
       SCode.SubMod submod;
 
-    case (SCode.NAMEMOD(ident = name1), SCode.NAMEMOD(ident = name2), _, _)
+    case (SCode.NAMEMOD(ident = name1), SCode.NAMEMOD(ident = name2))
       algorithm
         false := stringEqual(name1, name2);
       then
         (inExistingMod, false);
 
-    case (SCode.NAMEMOD(ident = name1), _, _, _)
+    case (SCode.NAMEMOD(ident = name1), _)
       algorithm
         submod := mergeSubModsInSameScope(inExistingMod, inNewMod, name1 :: inName, inModScope);
       then
@@ -235,7 +235,7 @@ protected function printModScope
   input ModScope inModScope;
   output String outString;
 algorithm
-  outString := match(inModScope)
+  outString := match inModScope
     local
       String name;
       Absyn.Path path;

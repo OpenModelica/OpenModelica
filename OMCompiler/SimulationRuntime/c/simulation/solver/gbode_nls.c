@@ -299,12 +299,8 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     nlsData->solverData = solverData;
     break;
   case GB_NLS_INTERNAL:
-      nlsData->nlsMethod = NLS_GB_INTERNAL;
-    if (nlsData->isPatternAvailable) {
-      nlsData->nlsLinearSolver = NLS_LS_KLU;
-    } else {
-      nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
-    }
+    nlsData->nlsMethod = NLS_NONE;
+    nlsData->nlsLinearSolver = LS_NONE;
     solverData->ordinaryData = (void*) gbInternalNlsAllocate(nlsData->size, nlsUserData, FALSE, nlsData->isPatternAvailable, FALSE);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
@@ -418,12 +414,8 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
     nlsData->solverData = solverData;
     break;
   case GB_NLS_INTERNAL:
-    nlsData->nlsMethod = NLS_GB_INTERNAL;
-    if (nlsData->isPatternAvailable) {
-      nlsData->nlsLinearSolver = NLS_LS_KLU;
-    } else {
-      nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
-    }
+    nlsData->nlsMethod = NLS_NONE;
+    nlsData->nlsLinearSolver = LS_NONE;
     solverData->ordinaryData = (void*) gbInternalNlsAllocate(nlsData->size, nlsUserData, FALSE, nlsData->isPatternAvailable, TRUE);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
@@ -442,27 +434,27 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
  *
  * @param nlsData           Pointer to non-linear system data.
  */
-void freeRK_NLS_DATA(NONLINEAR_SYSTEM_DATA* nlsData)
+void freeRK_NLS_DATA(enum GB_NLS_METHOD method, NONLINEAR_SYSTEM_DATA* nlsData)
 {
   if (nlsData == NULL) return;
 
   struct dataSolver *dataSolver = nlsData->solverData;
-  switch (nlsData->nlsMethod)
+  switch (method)
   {
-  case NLS_NEWTON:
+  case GB_NLS_NEWTON:
     freeNewtonData(dataSolver->ordinaryData);
     break;
-  case NLS_KINSOL:
+  case GB_NLS_KINSOL:
     nlsKinsolFree(dataSolver->ordinaryData);
     break;
-  case NLS_KINSOL_B:
+  case GB_NLS_KINSOL_B:
     B_nlsKinsolFree(dataSolver->ordinaryData);
     break;
-  case NLS_GB_INTERNAL:
+  case GB_NLS_INTERNAL:
     gbInternalNlsFree(dataSolver->ordinaryData);
     break;
   default:
-    throwStreamPrint(NULL, "Not handled NONLINEAR_SOLVER in gbode_freeData. Are we leaking memroy?");
+    throwStreamPrint(NULL, "Not handled NONLINEAR_SOLVER in gbode_freeData. Are we leaking memory?");
   }
   free(dataSolver);
   freeNlsDataGB(nlsData);

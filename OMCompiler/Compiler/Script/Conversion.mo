@@ -164,7 +164,6 @@ public
     input String scriptFile;
   protected
     ConversionRules rules;
-    Env env;
     list<GlobalScript.Statement> stmts;
   algorithm
     stmts := loadScript(scriptFile);
@@ -901,11 +900,8 @@ protected
   algorithm
     () := match cdef
       local
-        Option<ConversionRule> ty_rule;
         RuleTable local_rules;
         list<ConversionRule> mod_rules;
-        Absyn.Path ty_path;
-        Option<tuple<Absyn.Path, String>> import_path;
         Absyn.TypeSpec ty;
 
       case Absyn.ClassDef.PARTS()
@@ -945,7 +941,6 @@ protected
     input SourceInfo info;
   protected
     list<ConversionRules> extends_rules;
-    ImportTree imps;
     Env cls_env;
   algorithm
     cls_env := addImportNamesToEnv(getImportsInParts(parts), rules, env);
@@ -1480,7 +1475,6 @@ protected
   algorithm
     () := match spec
       local
-        Option<ConversionRule> ty_rule;
         RuleTable local_rules;
         list<ConversionRule> mod_rules;
         Absyn.Path ty_path;

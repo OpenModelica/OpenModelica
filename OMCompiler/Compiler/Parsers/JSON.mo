@@ -46,6 +46,7 @@ import Error;
 import MetaModelica.Dangerous.listReverseInPlace;
 import Util;
 import Print;
+import Testsuite;
 
 public
 
@@ -743,8 +744,6 @@ end parse_value;
 function parse_string
   extends partialParser;
 protected
-  list<JSON> values = {};
-  Boolean cont;
   String content;
 algorithm
   not_eof(tokens);
@@ -764,8 +763,6 @@ end parse_string;
 function parse_integer
   extends partialParser;
 protected
-  list<JSON> values = {};
-  Boolean cont;
   String content;
 algorithm
   not_eof(tokens);
@@ -780,8 +777,6 @@ end parse_integer;
 function parse_number
   extends partialParser;
 protected
-  list<JSON> values = {};
-  Boolean cont;
   String content;
 algorithm
   not_eof(tokens);
@@ -926,6 +921,25 @@ algorithm
   Error.addSourceMessage(Error.COMPILER_ERROR, {"JSON expected "+expected+", got token "+String(tok.id)+": " + tokenContent(tok)}, tokenSourceInfo(tok));
   fail();
 end errorExpected;
+
+public function dumpJSONSourceInfo
+  input SourceInfo info;
+  input Boolean dumpFilename = true;
+  output JSON json = JSON.makeNull();
+algorithm
+  if dumpFilename then
+    json := JSON.addPair("filename", JSON.makeString(Testsuite.friendly(info.fileName)), json);
+  end if;
+
+  json := JSON.addPair("lineStart", JSON.makeInteger(info.lineNumberStart), json);
+  json := JSON.addPair("columnStart", JSON.makeInteger(info.columnNumberStart), json);
+  json := JSON.addPair("lineEnd", JSON.makeInteger(info.lineNumberEnd), json);
+  json := JSON.addPair("columnEnd", JSON.makeInteger(info.columnNumberEnd), json);
+
+  if info.isReadOnly then
+    json := JSON.addPair("readonly", JSON.makeBoolean(true), json);
+  end if;
+end dumpJSONSourceInfo;
 
 annotation(__OpenModelica_Interface="util");
 end JSON;

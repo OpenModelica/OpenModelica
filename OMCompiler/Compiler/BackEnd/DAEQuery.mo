@@ -41,7 +41,6 @@ encapsulated package DAEQuery
 
 // public imports
 public import BackendDAE;
-public import SCode;
 
 // protected imports
 protected import Absyn;
@@ -65,12 +64,12 @@ public function writeAdjacencyMatrix
   input String flatModelicaStr;
   output String fileName;
 algorithm
-  fileName := match(dlow, fileNamePrefix, flatModelicaStr)
+  fileName := match flatModelicaStr
     local
       String file, strIMatrix, strVariables, flatStr, strEquations;
       array<list<String>> m;
 
-    case (_, _, flatStr)
+    case flatStr
       algorithm
         file := stringAppend(fileNamePrefix, "_imatrix.m");
         m := adjacencyMatrix(dlow);
@@ -103,13 +102,13 @@ public function equationStr
   input BackendDAE.Equation inEquation;
   output String outString;
 algorithm
-  outString := match (inEquation)
+  outString := match inEquation
     local
       String s1,s2,s3,res;
       DAE.Exp e1,e2,e,condition;
       DAE.ComponentRef cr;
 
-    case (BackendDAE.EQUATION(exp = e1,scalar = e2))
+    case BackendDAE.EQUATION(exp = e1,scalar = e2)
       algorithm
         s1 := ExpressionBasics.printExpStr(e1);
         s2 := ExpressionBasics.printExpStr(e2);
@@ -117,7 +116,7 @@ algorithm
       then
         res;
 
-    case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2))
+    case BackendDAE.ARRAY_EQUATION(left=e1,right=e2)
       algorithm
         s1 := ExpressionBasics.printExpStr(e1);
         s2 := ExpressionBasics.printExpStr(e2);
@@ -125,7 +124,7 @@ algorithm
       then
         res;
 
-    case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2))
+    case BackendDAE.COMPLEX_EQUATION(left=e1,right=e2)
       algorithm
         s1 := ExpressionBasics.printExpStr(e1);
         s2 := ExpressionBasics.printExpStr(e2);
@@ -133,7 +132,7 @@ algorithm
       then
         res;
 
-    case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2))
+    case BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2)
       algorithm
         s1 := ComponentReferenceBasics.printComponentRefStr(cr);
         s2 := ExpressionBasics.printExpStr(e2);
@@ -141,7 +140,7 @@ algorithm
       then
         res;
 
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(condition=condition,whenStmtLst={BackendDAE.ASSIGN(left = e1,right = e2)})))
+    case BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_STMTS(condition=condition,whenStmtLst={BackendDAE.ASSIGN(left = e1,right = e2)}))
       algorithm
         s1 := ExpressionBasics.printExpStr(e1);
         s2 := ExpressionBasics.printExpStr(e2);
@@ -150,14 +149,14 @@ algorithm
       then
         res;
 
-    case (BackendDAE.RESIDUAL_EQUATION(exp = e))
+    case BackendDAE.RESIDUAL_EQUATION(exp = e)
       algorithm
         s1 := ExpressionBasics.printExpStr(e);
         res := stringAppendList({"'", s1,"= 0", ";'"});
       then
         res;
 
-    case (BackendDAE.ALGORITHM())
+    case BackendDAE.ALGORITHM()
       algorithm
         res := stringAppendList({"Algorithm\n"});
       then
@@ -191,19 +190,19 @@ protected function getAdjacencyMatrix2 "author: adrpo
   output String strIMatrix;
 algorithm
   strIMatrix :=
-  match (inStringLstLst,rowIndex)
+  match inStringLstLst
     local
       list<String> row;
       list<list<String>> rows;
       String str, str1, str2;
-    case ({},_) then "";
-    case ((row :: {}),_)
+    case {} then "";
+    case row :: {}
       algorithm
         str1 := getAdjacencyRow(row);
         str := stringAppendList({"{", str1, "}"});
       then
         str;
-    case ((row :: rows),_)
+    case row :: rows
       algorithm
         str1 := getAdjacencyRow(row);
         str2 := getAdjacencyMatrix2(rows,rowIndex+1);
@@ -220,13 +219,13 @@ protected function getAdjacencyRow "author: adrpo
   output String strRow;
 algorithm
   strRow :=
-  match (inStringLst)
+  match inStringLst
     local
       String s,  s2, x;
       list<String> xs;
-    case ({}) then "";
-    case ((x :: {})) then x;
-    case ((x :: xs))
+    case {} then "";
+    case x :: {} then x;
+    case x :: xs
       algorithm
         s2 := getAdjacencyRow(xs);
         s := stringAppendList({x, ",", s2});
@@ -241,12 +240,12 @@ public function getVariables "This function returns the variables
   output String strVars;
 algorithm
   strVars:=
-  match (inBackendDAE)
+  match inBackendDAE
     local
       list<BackendDAE.Var> vars;
       String s;
       BackendDAE.Variables vars1;
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars1)::{}))
+    case BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars1)::{})
       algorithm
         vars := BackendVariable.varList(vars1);
         s := dumpVars(vars);
@@ -273,19 +272,10 @@ algorithm
   strVars :=
   matchcontinue (inVarLst,inInteger)
     local
-      String varnostr,dirstr,str,str1,str2;
+      String str,str1,str2;
       Integer varno_1,varno;
-      BackendDAE.Var v;
       DAE.ComponentRef cr;
-      BackendDAE.VarKind kind;
-      DAE.VarDirection dir;
-      Option<DAE.Exp> e;
-      Option<DAE.VariableAttributes> dae_var_attr;
-      Option<SCode.Comment> comment;
-      DAE.ConnectorType ct;
       list<BackendDAE.Var> xs;
-      BackendDAE.Type var_type;
-      DAE.ElementSource source;
 
     case ({},_) then "";
     case (((BackendDAE.VAR(varName = cr)) :: {}),_)
@@ -350,21 +340,21 @@ public function adjacencyMatrix
   output array<list<String>> outAdjacencyMatrix;
 algorithm
   outAdjacencyMatrix:=
-  matchcontinue (inBackendDAE)
+  matchcontinue inBackendDAE
     local
       list<BackendDAE.Equation> eqnsl;
       list<list<String>> lstlst;
       array<list<String>> arr;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns)::{}))
+    case BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns)::{})
       algorithm
         eqnsl := BackendEquation.equationList(eqns);
         lstlst := adjacencyMatrix2(vars, eqnsl);
         arr := listArray(lstlst);
       then
         arr;
-    case (_)
+    case _
       algorithm
         print("DAEQuery.adjacencyMatrix failed\n");
       then
@@ -606,9 +596,9 @@ algorithm
       list<String> pStr,s1,s2,s3;
       String s, ss, ss1, ss2, ss3, opStr, sb;
       list<list<String>> lst;
-      DAE.ComponentRef cr,cref1;
+      DAE.ComponentRef cr;
       BackendDAE.Variables vars;
-      DAE.Exp e1,e2,e,e3,ee1,ee2;
+      DAE.Exp e1,e2,e,e3,ee2;
       list<DAE.Exp> expl;
       DAE.Operator op1;
       list<list<DAE.Exp>> explTpl;
@@ -727,7 +717,7 @@ algorithm
     // If expression with logic sentence.
     case (DAE.IFEXP(expCond = e1 as DAE.LBINARY(),expThen = e2,expElse = e3),vars) /* if expressions. */
       algorithm
-        _ := printExpStr(e1);
+        printExpStr(e1);
         //opStr = ExpressionDump.relopSymbol(op1);
         //s = printExpStr(ee2);
         sb := stringAppendList({"'true',","'=='"});
@@ -784,7 +774,6 @@ algorithm
     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars)
       algorithm
         (_,p) := BackendVariable.getVar(cr, vars);
-        _ := List.map(p, intString);
       then
         {};
 
@@ -860,16 +849,16 @@ protected function adjacencyRowIter
   input BackendDAE.Variables vars;
   output list<String> strs;
 algorithm
-  strs := match (iter,vars)
+  strs := match iter
     local
       DAE.Exp e1,e2;
       list<String> s1,s2;
-    case (DAE.REDUCTIONITER(guardExp = SOME(e1), exp = e2),_)
+    case DAE.REDUCTIONITER(guardExp = SOME(e1), exp = e2)
       algorithm
         s1 := adjacencyRowExp(e1, vars);
         s2 := adjacencyRowExp(e2, vars);
       then listAppend(s1,s2);
-    case (DAE.REDUCTIONITER(exp = e1),_)
+    case DAE.REDUCTIONITER(exp = e1)
       then adjacencyRowExp(e1, vars);
   end match;
 end adjacencyRowIter;

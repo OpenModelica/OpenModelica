@@ -3119,8 +3119,10 @@ QStringList OMCProxy::getEnumerationLiterals(QString className)
 void OMCProxy::getSolverMethods(QStringList *methods, QStringList *descriptions)
 {
   for (int i = S_UNKNOWN + 1 ; i < S_MAX ; i++) {
-    *methods << SOLVER_METHOD_NAME[i];
-    *descriptions << SOLVER_METHOD_DESC[i];
+    if (SOLVER_METHOD_NAME[i] != NULL) {
+      *methods << SOLVER_METHOD_NAME[i];
+      *descriptions << (SOLVER_METHOD_DESC[i] != NULL ? SOLVER_METHOD_DESC[i] : "");
+    }
   }
 }
 
@@ -3133,8 +3135,10 @@ void OMCProxy::getSolverMethods(QStringList *methods, QStringList *descriptions)
 void OMCProxy::getJacobianMethods(QStringList *methods, QStringList *descriptions)
 {
   for (int i = JAC_UNKNOWN + 1 ; i < JAC_MAX ; i++) {
-    *methods << JACOBIAN_METHOD_NAME[i];
-    *descriptions << JACOBIAN_METHOD_DESC[i];
+    if (JACOBIAN_METHOD_NAME[i] != NULL) {
+      *methods << JACOBIAN_METHOD_NAME[i];
+      *descriptions << (JACOBIAN_METHOD_DESC[i] != NULL ? JACOBIAN_METHOD_DESC[i] : "");
+    }
   }
 }
 
@@ -3157,8 +3161,10 @@ QString OMCProxy::getJacobianFlagDetailedDescription()
 void OMCProxy::getInitializationMethods(QStringList *methods, QStringList *descriptions)
 {
   for (int i = IIM_UNKNOWN + 1 ; i < IIM_MAX ; i++) {
-    *methods << INIT_METHOD_NAME[i];
-    *descriptions << INIT_METHOD_DESC[i];
+    if (INIT_METHOD_NAME[i] != NULL) {
+      *methods << INIT_METHOD_NAME[i];
+      *descriptions << (INIT_METHOD_DESC[i] != NULL ? INIT_METHOD_DESC[i] : "");
+    }
   }
 }
 
@@ -3171,8 +3177,10 @@ void OMCProxy::getInitializationMethods(QStringList *methods, QStringList *descr
 void OMCProxy::getLinearSolvers(QStringList *methods, QStringList *descriptions)
 {
   for (int i = LS_NONE + 1 ; i < LS_MAX ; i++) {
-    *methods << LS_NAME[i];
-    *descriptions << LS_DESC[i];
+    if (LS_NAME[i] != NULL) {
+      *methods << LS_NAME[i];
+      *descriptions << (LS_DESC[i] != NULL ? LS_DESC[i] : "");
+    }
   }
 }
 
@@ -3185,8 +3193,10 @@ void OMCProxy::getLinearSolvers(QStringList *methods, QStringList *descriptions)
 void OMCProxy::getNonLinearSolvers(QStringList *methods, QStringList *descriptions)
 {
   for (int i = NLS_NONE + 1 ; i < NLS_MAX ; i++) {
-    *methods << NLS_NAME[i];
-    *descriptions << NLS_DESC[i];
+    if (NLS_NAME[i] != NULL) {
+      *methods << NLS_NAME[i];
+      *descriptions << (NLS_DESC[i] != NULL ? NLS_DESC[i] : "");
+    }
   }
 }
 
@@ -3199,8 +3209,10 @@ void OMCProxy::getNonLinearSolvers(QStringList *methods, QStringList *descriptio
 void OMCProxy::getLogStreams(QStringList *names, QStringList *descriptions)
 {
   for (int i = firstOMCErrorStream ; i < OMC_SIM_LOG_MAX ; i++) {
-    *names << OMC_LOG_STREAM_NAME[i];
-    *descriptions << OMC_LOG_STREAM_DESC[i];
+    if (OMC_LOG_STREAM_NAME[i] != NULL) {
+      *names << OMC_LOG_STREAM_NAME[i];
+      *descriptions << (OMC_LOG_STREAM_DESC[i] != NULL ? OMC_LOG_STREAM_DESC[i] : "");
+    }
   }
 }
 

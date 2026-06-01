@@ -134,7 +134,6 @@ public
     UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map = UnorderedMap.new<EquationPointerList>(ComponentRef.hash, ComponentRef.isEqual);
     list<StrongComponent> solved_comps = {};
     Integer implicit_index = Pointer.access(implicit_index_ptr);
-    array<StrongComponent> new_comps;
     Pointer<Integer> sliced_idx, comp_idx = Pointer.create(1);
     ComponentRef name;
     list<Pointer<Equation>> sliced_eqns;
@@ -189,7 +188,7 @@ public
           Equation eqn;
           Slice<VariablePointer> var_slice;
           Slice<EquationPointer> eqn_slice;
-          ComponentRef var_cref, eqn_cref;
+          ComponentRef var_cref;
           StrongComponent generic_comp, solved_comp;
           list<StrongComponent> entwined_slices = {};
           Tearing strict;
@@ -205,8 +204,6 @@ public
           Pointer<Integer> idx;
           UnorderedMap<ComponentRef, ComponentRef> cref_repl;
           UnorderedMap<ComponentRef, Expression> exp_repl;
-          list<Slice<VariablePointer>> iter_vars;
-          list<Slice<EquationPointer>> residuals;
 
         case StrongComponent.SINGLE_COMPONENT() algorithm
           (eqn, solve_status, implicit_index) := solveSingleStrongComponent(Pointer.access(comp.eqn), Pointer.access(comp.var), funcMap, kind, implicit_index, slicing_map, varData, eqData);
@@ -642,7 +639,6 @@ public
     ComponentRef fixed_cref;
     Expression residual, derivative;
     Differentiate.DifferentiationArguments diffArgs;
-    Operator divOp, uminOp;
   algorithm
     // fix crefs where the array is of size one
     fixed_cref := ComponentRef.stripSubscriptsAll(cref);
@@ -919,7 +915,7 @@ protected
     input ComponentRef cref;
     output Status status;
   protected
-    Expression crefExp = Expression.fromCref(cref), exp, solvedRHS;
+    Expression crefExp = Expression.fromCref(cref), solvedRHS;
     Boolean crefFound;
     list<Expression> inverseInstructions = {};
     Type ty = ComponentRef.getSubscriptedType(cref, true);
@@ -957,8 +953,6 @@ protected
   protected
     Expression substExp = NBVariable.toExpression(Pointer.create(NBVariable.SUBST_VARIABLE));
     Type ty = ComponentRef.getSubscriptedType(cref, true);
-    Boolean crefFoundInRecursion;
-    String name;
     Call call;
   algorithm
     // TODO: update crefFounds, hard to read!
@@ -1024,15 +1018,15 @@ protected
         then ();
 
       // cases where the cref does not appear
-      case (Expression.CALL(call = call as Call.TYPED_CALL()))              guard(List.none(Call.arguments(exp.call), function solveUniqueExpressionNoCref(cref = cref))) then ();
-      case (Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR())) guard(List.none(Call.arguments(exp.call), function solveUniqueExpressionNoCref(cref = cref))) then ();
-      case (Expression.CALL(call = call as Call.TYPED_REDUCTION()))         guard(List.none(Call.arguments(exp.call), function solveUniqueExpressionNoCref(cref = cref))) then ();
+      case Expression.CALL(call = call as Call.TYPED_CALL())              guard(List.none(Call.arguments(exp.call), function solveUniqueExpressionNoCref(cref = cref))) then ();
+      case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) guard(List.none(Call.arguments(exp.call), function solveUniqueExpressionNoCref(cref = cref))) then ();
+      case Expression.CALL(call = call as Call.TYPED_REDUCTION())         guard(List.none(Call.arguments(exp.call), function solveUniqueExpressionNoCref(cref = cref))) then ();
 
       // check if invertable if occurs
-      case (Expression.CALL(call = call as Call.TYPED_CALL())) guard(List.hasOneElement(Call.arguments(exp.call))) algorithm
+      case Expression.CALL(call = call as Call.TYPED_CALL()) guard(List.hasOneElement(Call.arguments(exp.call))) algorithm
         (crefFound, inverseInstructions, status) := solveUniqueFindInstructionsCallOneArg(ty, substExp, exp, cref, crefFound, inverseInstructions);
         then ();
-      case (Expression.CALL(call = call as Call.TYPED_CALL())) guard(listLength(Call.arguments(exp.call)) == 2) algorithm
+      case Expression.CALL(call = call as Call.TYPED_CALL()) guard(listLength(Call.arguments(exp.call)) == 2) algorithm
         (crefFound, inverseInstructions, status) := solveUniqueFindInstructionsCallTwoArgs(ty, substExp, exp, cref, crefFound, inverseInstructions);
         then ();
 
@@ -1263,7 +1257,7 @@ protected
     String name;
   algorithm
     () := match exp
-      case (Expression.CALL(call = call as Call.TYPED_CALL())) guard List.hasOneElement(Call.arguments(exp.call)) algorithm
+      case Expression.CALL(call = call as Call.TYPED_CALL()) guard List.hasOneElement(Call.arguments(exp.call)) algorithm
         name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
         argExp := listHead(Call.arguments(call));
         (crefFoundInRecursion, inverseInstructions, status) := solveUniqueFindInstructions(argExp, cref, crefFound, inverseInstructions);
@@ -1332,12 +1326,12 @@ protected
     output Status status;
   protected
     Boolean crefFoundInRecursion;
-    Expression argExp1, argExp2, e1, e2;
+    Expression argExp1, argExp2;
     Call call;
     String name;
   algorithm
     () := match exp
-      case (Expression.CALL(call = call as Call.TYPED_CALL())) guard(listLength(Call.arguments(exp.call)) == 2) algorithm
+      case Expression.CALL(call = call as Call.TYPED_CALL()) guard(listLength(Call.arguments(exp.call)) == 2) algorithm
         name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
         {argExp1, argExp2} := Call.arguments(call);
         (crefFoundInRecursion, inverseInstructions, status) := solveUniqueFindInstructions(argExp1, cref, crefFound, inverseInstructions);
@@ -1549,7 +1543,7 @@ protected
       end for;
       // set the map entry for all variables that occur to true
       for exp in filtered_exps loop
-        _ := match exp
+        () := match exp
           case Expression.CREF() guard(UnorderedMap.contains(exp.cref, map)) algorithm
             UnorderedMap.add(exp.cref, true, map);
           then ();
@@ -1566,7 +1560,6 @@ protected
     input Equation eqn;
     output Status solve_status;
   protected
-    Pointer<Variable> var_ptr = BVariable.getVarPointer(var_cref, sourceInfo());
     list<ComponentRef> slices_lst;
     Option<Pointer<Variable>> record_parent;
   algorithm

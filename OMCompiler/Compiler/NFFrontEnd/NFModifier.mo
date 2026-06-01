@@ -177,12 +177,10 @@ public
   algorithm
     newMod := match mod
       local
-        list<SCode.SubMod> submods;
         list<tuple<String, Modifier>> submod_lst;
         ModTable.Tree submod_table;
         Binding binding;
         SCode.Element elem;
-        SCode.Mod smod;
         Boolean is_each;
         InstNode node;
         Modifier cc_mod;
@@ -646,7 +644,7 @@ public
     input Boolean printName = true;
   protected
     list<Modifier> submods;
-    String subs_str, binding_str, binding_sep;
+    String binding_sep;
   algorithm
     () := match mod
       case MODIFIER()
@@ -703,7 +701,7 @@ protected
     input Modifier outerMod;
     input SourceInfo innerInfo;
   algorithm
-    _ := match innerFinal
+    () := match innerFinal
       case SCode.FINAL()
         algorithm
           Error.addMultiSourceMessage(Error.FINAL_COMPONENT_OVERRIDE,

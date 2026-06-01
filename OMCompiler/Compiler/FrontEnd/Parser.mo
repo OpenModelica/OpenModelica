@@ -314,12 +314,12 @@ protected function getLicenseAnnotationWork1
   input Option<Absyn.Modification> mod;
   output tuple<String, String> license;
 algorithm
-  license := match (mod)
+  license := match mod
     local
       list<Absyn.ElementArg> arglst;
       String libraryKey, licenseFile;
 
-    case (SOME(Absyn.CLASSMOD(elementArgLst = arglst)))
+    case SOME(Absyn.CLASSMOD(elementArgLst = arglst))
       algorithm
         (libraryKey, licenseFile) := getLicenseAnnotationWork2(arglst);
       then (libraryKey, licenseFile);
@@ -337,14 +337,14 @@ algorithm
       list<Absyn.ElementArg> xs;
       String libraryKey, licenseFile;
 
-    case ({}) then ("", "");
+    case {} then ("", "");
 
-    case (Absyn.MODIFICATION(path = Absyn.IDENT(name="License"), modification = mod)::_)
+    case Absyn.MODIFICATION(path = Absyn.IDENT(name="License"), modification = mod)::_
       algorithm
         (libraryKey, licenseFile) := getLicenseAnnotationTuple(mod);
       then (libraryKey, licenseFile);
 
-    case (_::xs)
+    case _::xs
       algorithm
         (libraryKey, licenseFile) := getLicenseAnnotationWork2(xs);
       then (libraryKey, licenseFile);
@@ -357,12 +357,12 @@ protected function getLicenseAnnotationTuple
   input Option<Absyn.Modification> mod;
   output tuple<String, String> license;
 algorithm
-  license := match (mod)
+  license := match mod
     local
       list<Absyn.ElementArg> arglst;
       String libraryKey, licenseFile;
 
-    case (SOME(Absyn.CLASSMOD(elementArgLst = arglst)))
+    case SOME(Absyn.CLASSMOD(elementArgLst = arglst))
       algorithm
         libraryKey := getLicenseAnnotationLibraryKey(arglst);
         licenseFile := getLicenseAnnotationLicenseFile(arglst);
@@ -380,12 +380,12 @@ algorithm
       list<Absyn.ElementArg> xs;
       String s;
 
-    case ({}) then "";
+    case {} then "";
 
-    case (Absyn.MODIFICATION(path = Absyn.IDENT(name="libraryKey"), modification = SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.STRING(s)))))::_)
+    case Absyn.MODIFICATION(path = Absyn.IDENT(name="libraryKey"), modification = SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.STRING(s)))))::_
       then s;
 
-    case (_::xs)
+    case _::xs
       algorithm
         s := getLicenseAnnotationLibraryKey(xs);
       then s;
@@ -403,12 +403,12 @@ algorithm
       list<Absyn.ElementArg> xs;
       String s;
 
-    case ({}) then "";
+    case {} then "";
 
-    case (Absyn.MODIFICATION(path = Absyn.IDENT(name="licenseFile"), modification = SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.STRING(s)))))::_)
+    case Absyn.MODIFICATION(path = Absyn.IDENT(name="licenseFile"), modification = SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.STRING(s)))))::_
       then s;
 
-    case (_::xs)
+    case _::xs
       algorithm
         s := getLicenseAnnotationLicenseFile(xs);
       then s;
@@ -434,11 +434,11 @@ protected function getFeaturesAnnotationList
   input Option<Absyn.Modification> mod;
   output list<String> features;
 algorithm
-  features := match (mod)
+  features := match mod
     local
       list<Absyn.ElementArg> arglst;
 
-    case (SOME(Absyn.CLASSMOD(elementArgLst = arglst)))
+    case SOME(Absyn.CLASSMOD(elementArgLst = arglst))
       then getFeaturesAnnotationList2(arglst);
 
   end match;
@@ -455,14 +455,14 @@ algorithm
       list<Absyn.ElementArg> xs;
       list<String> featuresList;
 
-    case ({}) then {};
+    case {} then {};
 
-    case (Absyn.MODIFICATION(path = Absyn.IDENT(name="features"), modification = SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.ARRAY(expList)))))::_)
+    case Absyn.MODIFICATION(path = Absyn.IDENT(name="features"), modification = SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.ARRAY(expList)))))::_
       algorithm
         featuresList := List.map(expList, expToString);
       then featuresList;
 
-    case (_::xs)
+    case _::xs
       algorithm
         featuresList := getFeaturesAnnotationList2(xs);
       then featuresList;
@@ -474,11 +474,11 @@ protected function expToString
   input Absyn.Exp inExp;
   output String outExp;
 algorithm
-  outExp := match (inExp)
+  outExp := match inExp
     local
       String str;
-    case (Absyn.STRING(str)) then str;
-    case (_) then "";
+    case Absyn.STRING(str) then str;
+    case _ then "";
   end match;
 end expToString;
 

@@ -114,6 +114,7 @@ if true then /* Suppress output */
     "../Script/GlobalScriptUtil.mo",
     "../Script/Interactive.mo",
     "../Script/InteractiveTypes.mo",
+    "../Script/ProgramUtil.mo",
     "../Script/StaticScript.mo",
     "../Script/SymbolTable.mo",
     "../Script/InteractiveUtil.mo",

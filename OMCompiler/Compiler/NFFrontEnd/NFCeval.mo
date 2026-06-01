@@ -151,14 +151,9 @@ function evalExp
 algorithm
   exp := match exp
     local
-      InstNode c;
-      Binding binding;
-      Expression exp1, exp2, exp3;
+      Expression exp1, exp2;
       Call call;
-      Component comp;
-      Option<Expression> oexp;
       ComponentRef cref;
-      Dimension dim;
 
     case Expression.CREF()
       then evalCref(exp.cref, exp, target);
@@ -302,8 +297,7 @@ function evalExpPartial
   output Expression outExp;
   output Boolean outEvaluated "True if the whole expression is evaluated, otherwise false.";
 protected
-  Expression e, e1, e2;
-  Boolean eval1, eval2;
+  Expression e;
 algorithm
   (e, outEvaluated) :=
     Expression.mapFoldShallow(exp, function evalExpPartial(target = target), true);
@@ -346,8 +340,6 @@ function evalCref
   output Expression exp;
 protected
   InstNode c;
-  Boolean evaled;
-  list<Subscript> subs;
 algorithm
   exp := match cref
     case ComponentRef.CREF(node = c as InstNode.COMPONENT_NODE())
@@ -372,8 +364,6 @@ protected
   Component comp;
   Binding binding;
   Boolean evaluated;
-  list<Subscript> subs;
-  Variability var;
   Option<Expression> start_exp;
   Type cref_ty, exp_ty;
   Integer dim_diff;
@@ -622,8 +612,6 @@ protected
   Component start_comp;
   Binding binding;
   Expression exp;
-  list<Subscript> subs;
-  Integer pcount;
 algorithm
   // Only use the start value if the component is a fixed parameter.
   var := Component.variability(comp);
@@ -822,8 +810,6 @@ protected
   Type ty;
   Expression start_exp, stop_exp;
   Option<Expression> step_exp;
-  Expression max_prop_exp;
-  Integer max_prop_count;
 algorithm
   Expression.RANGE(ty = ty, start = start_exp, step = step_exp, stop = stop_exp) := rangeExp;
   start_exp := evalExp(start_exp, target);
@@ -1415,8 +1401,6 @@ algorithm
   exp := match (exp1, exp2)
     local
       Type elem_ty;
-      Expression e2;
-      list<Expression> rest_e2;
 
     case (Expression.ARRAY(ty = Type.ARRAY(elem_ty)), Expression.ARRAY())
       guard arrayLength(exp1.elements) == arrayLength(exp2.elements)
@@ -1447,7 +1431,6 @@ function evalBinaryMatrixProduct
   output Expression exp;
 protected
   Expression e2;
-  list<Expression> expl1, expl2;
   Type elem_ty, row_ty, mat_ty;
   Dimension n, p;
   array<Expression> arr1, arr2, arr;
@@ -2030,7 +2013,6 @@ protected
 algorithm
   exp := match c
     local
-      list<Expression> args;
 
     case Call.TYPED_CALL()
       algorithm
@@ -2348,7 +2330,6 @@ function evalBuiltinDiagonal
 protected
   Type elem_ty, row_ty;
   Expression zero, exp;
-  list<Expression> elems, row, rows = {};
   Integer n, i = 1;
   Boolean e_lit, arg_lit = true;
   array<Expression> arr_zero, arr_row, arr_rows;
@@ -2938,7 +2919,7 @@ algorithm
   result := match args
     local
       Expression arg;
-      Integer min_len, str_len, significant_digits, idx, c;
+      Integer min_len, str_len, significant_digits;
       Boolean left_justified;
       String str, format;
       Real r;
@@ -3079,12 +3060,7 @@ function evalBuiltinTranspose
   input Expression arg;
   output Expression result;
 protected
-  Dimension dim1, dim2;
-  list<Dimension> rest_dims;
   Type ty;
-  list<Expression> arr;
-  list<list<Expression>> arrl;
-  Boolean literal;
 algorithm
   ty := Expression.typeOf(arg);
 
@@ -3101,7 +3077,6 @@ function evalBuiltinVector
   output Expression result;
 protected
   list<Expression> expl;
-  Type ty;
 algorithm
   expl := Expression.arrayScalarElements(arg);
   result := Expression.makeExpArray(listArray(expl),
@@ -3304,7 +3279,7 @@ function evalArrayConstructor2
   input list<Mutable<Expression>> iterators;
   output Expression result;
 protected
-  Expression range, e;
+  Expression range;
   list<Expression> ranges_rest, expl = {};
   array<Expression> arr;
   Mutable<Expression> iter;

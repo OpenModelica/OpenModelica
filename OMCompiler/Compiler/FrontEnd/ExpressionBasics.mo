@@ -67,13 +67,12 @@ public function dimensionString
   input DAE.Dimension dim;
   output String str;
 algorithm
-  str := match(dim)
+  str := match dim
     local
       String s;
       Integer x;
       Absyn.Path p;
       DAE.Exp e;
-      Integer size;
     case DAE.DIM_UNKNOWN() then ":";
 
     case DAE.DIM_ENUM(enumTypeName = p)
@@ -148,7 +147,7 @@ protected function isAssociativeExp
   input DAE.Exp inExp;
   output Boolean outIsAssociative;
 algorithm
-  outIsAssociative := match(inExp)
+  outIsAssociative := match inExp
     local
       DAE.Operator op;
 
@@ -232,7 +231,7 @@ protected function priorityBinopLhs
   input DAE.Operator inOp;
   output Integer outPriority;
 algorithm
-  outPriority := match(inOp)
+  outPriority := match inOp
     case DAE.ADD() then 5;
     case DAE.SUB() then 5;
     case DAE.MUL() then 2;
@@ -263,7 +262,7 @@ protected function priorityBinopRhs
   input DAE.Operator inOp;
   output Integer outPriority;
 algorithm
-  outPriority := match(inOp)
+  outPriority := match inOp
     case DAE.ADD() then 6;
     case DAE.SUB() then 5;
     case DAE.MUL() then 3;
@@ -291,7 +290,7 @@ protected function priorityLBinop
   input DAE.Operator inOp;
   output Integer outPriority;
 algorithm
-  outPriority := match(inOp)
+  outPriority := match inOp
     case DAE.AND() then 8;
     case DAE.OR() then 9;
   end match;
@@ -440,7 +439,7 @@ algorithm
   // Since the expressions have already been verified to be of the same type
   // above we can match on only one of them to allow the pattern matching to
   // optimize this to jump directly to the correct case.
-  comp := match(inExp1)
+  comp := match inExp1
     local
       Integer i;
       Real r;

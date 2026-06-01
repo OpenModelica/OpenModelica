@@ -109,16 +109,16 @@ algorithm
   tasks := {({},oldFunction.entryId)};
 
   while not listEmpty(tasks) loop
-    ((jumps,node) :: tasks) := tasks; // pop
+    (jumps,node) :: tasks := tasks; // pop
     oldBlock := lookupId(oldBody,node); // O(length(oldBody))
     newBlock := oldBlock; // don't change the block by defualt
     if isPushJmp(oldBlock.terminator) then
       jumps := (listHead(getSuccessors(oldBlock)) :: jumps); // push
     elseif isLongJmp(oldBlock.terminator) and not listEmpty(jumps) then
-      (jump :: _) := jumps; // peek
+      jump :: _ := jumps; // peek
       newBlock := MidCode.BLOCK(id=oldBlock.id,stmts=oldBlock.stmts, terminator=MidCode.GOTO(jump));
     elseif isPopJmp(oldBlock.terminator) then
-      (_ :: jumps) := jumps; // pop
+      _ :: jumps := jumps; // pop
     end if;
     newBody := newBlock :: newBody;
 
@@ -151,8 +151,8 @@ protected
   MidCode.Block block_local;
 algorithm
   block_ := match blocks
-    case (block_local :: _) guard (block_local.id == id) then block_local;
-    case (_ :: blocks_local) then lookupId(blocks_local, id);
+    case block_local :: _ guard (block_local.id == id) then block_local;
+    case _ :: blocks_local then lookupId(blocks_local, id);
     //else listHead(blocks);
   end match;
 end lookupId;

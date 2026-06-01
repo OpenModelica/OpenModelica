@@ -81,12 +81,8 @@ protected function inlineArrayEqn1
 algorithm
   (outEqSystem, outOptimized) := matchcontinue inEqSystem
     local
-      BackendDAE.Variables orderedVars;
       BackendDAE.EquationArray orderedEqs;
-      BackendDAE.Shared shared;
       list<BackendDAE.Equation> eqnLst;
-      BackendDAE.StateSets stateSets;
-      BackendDAE.BaseClockPartitionKind partitionKind;
 
     case BackendDAE.EQSYSTEM(orderedEqs=orderedEqs) algorithm
       eqnLst := BackendEquation.equationList(orderedEqs);
@@ -116,16 +112,16 @@ protected function getScalarArrayEqns0 "
   output list<BackendDAE.Equation> outEqnLst;
   output Boolean outFound;
 algorithm
-  (outEqnLst, outFound) := match(inEqnLst, inAccEqnLst, inFound)
+  (outEqnLst, outFound) := match inEqnLst
     local
       BackendDAE.Equation eqn;
       list<BackendDAE.Equation> eqns, eqns1;
       Boolean b;
 
-    case ({}, _, _)
+    case {}
     then (listReverse(inAccEqnLst), inFound);
 
-    case (eqn::eqns, _, _) algorithm
+    case eqn::eqns algorithm
       (eqns1, b) := getScalarArrayEqns1(eqn, inAccEqnLst);
       (eqns1, b) := getScalarArrayEqns0(eqns, eqns1, b or inFound);
     then (eqns1, b);
@@ -145,7 +141,6 @@ algorithm
       list<DAE.Exp> ea1, ea2;
       list<BackendDAE.Equation> eqns;
       BackendDAE.EquationAttributes attr;
-      DAE.Exp e1_1, e2_1;
 
     case BackendDAE.ARRAY_EQUATION(left = lhs, right = rhs, source = source, attr = attr)
       algorithm
@@ -167,7 +162,7 @@ algorithm
           ea2 := Expression.flattenArrayExpToList(e2);
         end if;
 
-        ((_, eqns)) := List.threadFold3(ea1, ea2, generateScalarArrayEqns2,
+        (_, eqns) := List.threadFold3(ea1, ea2, generateScalarArrayEqns2,
           source, attr, DAE.EQUALITY_EXPS(lhs, rhs), (1, inAccEqnLst));
       then
         (eqns, true);
@@ -176,7 +171,7 @@ algorithm
       algorithm
         ea1 := Expression.splitRecord(lhs, Expression.typeof(lhs));
         ea2 := Expression.splitRecord(rhs, Expression.typeof(rhs));
-        ((_, eqns)) := List.threadFold3(ea1, ea2, generateScalarArrayEqns2,
+        (_, eqns) := List.threadFold3(ea1, ea2, generateScalarArrayEqns2,
           source, attr, DAE.EQUALITY_EXPS(lhs, rhs), (1, inAccEqnLst));
       then
         (eqns, true);

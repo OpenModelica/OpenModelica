@@ -63,7 +63,7 @@ algorithm
     return;
   end if;
 
-  _ := match outProgram
+  () := match outProgram
     case Absyn.PROGRAM()
       algorithm
         for c in outProgram.classes loop
@@ -91,7 +91,7 @@ protected
   Absyn.ClassDef body;
   list<Absyn.ClassPart> parts;
 algorithm
-  _ := match outClass
+  () := match outClass
     local
       list<String> typeVars;
     case Absyn.CLASS(restriction = Absyn.R_UNIONTYPE(),
@@ -115,7 +115,7 @@ algorithm
     else ();
   end match;
 
-  _ := match outClass
+  () := match outClass
     case Absyn.CLASS(body = body as Absyn.PARTS())
       algorithm
         body.classParts := createMetaClassesFromClassParts(body.classParts);
@@ -261,7 +261,7 @@ algorithm
         Absyn.CLASSDEF(class_ = c as Absyn.CLASS(restriction = Absyn.R_RECORD()))))
       algorithm
         body := c.body;
-        _ := match body
+        () := match body
           case Absyn.PARTS(typeVars=_::_)
             algorithm
               Error.addSourceMessage(Error.METARECORD_WITH_TYPEVARS, {stringDelimitList(body.typeVars, ",")}, c.info);

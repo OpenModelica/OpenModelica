@@ -165,7 +165,7 @@ algorithm
     mt := arrayCreate(size, {});
     ass2 := Array.createIntRange(size);
     ht := FCore.getEvaluatedParams(cache); // get structural parameters
-    ((_, _, _, selectedParameters, m, mt, _, _)) := BackendVariable.traverseBackendDAEVars(globalKnownVars, getParameterAdjacencyMatrix, (globalKnownVars, 1, selectParameterfunc, {}, m, mt, ht, isInitial));
+    (_, _, _, selectedParameters, m, mt, _, _) := BackendVariable.traverseBackendDAEVars(globalKnownVars, getParameterAdjacencyMatrix, (globalKnownVars, 1, selectParameterfunc, {}, m, mt, ht, isInitial));
     nselect := listLength(selectedParameters);
 
     if Flags.isSet(Flags.EVAL_PARAM_DUMP) then
@@ -412,7 +412,7 @@ protected function evaluateSelectedParameters1
   input output BackendVarTransform.VariableReplacements repl;
   input output BackendVarTransform.VariableReplacements replEvaluate = BackendVarTransform.emptyReplacements();
 algorithm
-  (globalKnownVars, cache, mark, repl, replEvaluate) := matchcontinue(iUsed)
+  (globalKnownVars, cache, mark, repl, replEvaluate) := matchcontinue iUsed
     local
       Integer i;
       list<Integer> rest;
@@ -449,7 +449,7 @@ protected function evaluateSelectedParameter
   input output FCore.Cache cache;
   input FCore.Graph graph;
 algorithm
-  _ := matchcontinue(var)
+  () := matchcontinue var
     local
       BackendDAE.Var v;
       DAE.ComponentRef cr;
@@ -566,7 +566,7 @@ protected function evaluateParameter
   input output BackendVarTransform.VariableReplacements repl;
   input output BackendVarTransform.VariableReplacements replEvaluate;
 algorithm
-  _ := match var
+  () := match var
     local
       BackendDAE.Var v;
       DAE.ComponentRef cr;
@@ -628,12 +628,11 @@ protected function evaluateFixedAttribute
   input Boolean isInitial;
   input output BackendVarTransform.VariableReplacements repl;
 algorithm
-  (var,globalKnownVars,cache,mark,repl) := match(var)
+  (var,globalKnownVars,cache,mark,repl) := match var
     local
       DAE.ComponentRef cr;
       DAE.Exp e;
       Option<DAE.VariableAttributes> attr;
-      BackendDAE.Var v;
       DAE.ElementSource source;
     case BackendDAE.VAR(values= NONE())
       then
@@ -784,7 +783,7 @@ protected function traverseParameterSorted
   output FCore.Cache oCache;
   output Integer oMark;
 algorithm
-  (oKnVars,oRepl,oReplEvaluate,oCache,oMark) := match (inComps)
+  (oKnVars,oRepl,oReplEvaluate,oCache,oMark) := match inComps
     local
       BackendDAE.Variables globalKnownVars;
       BackendDAE.Var v;
@@ -824,7 +823,7 @@ protected function evaluateParameterBindings
   input output BackendVarTransform.VariableReplacements repl;
   input output BackendVarTransform.VariableReplacements replEvaluate;
 algorithm
-  _ := matchcontinue(var)
+  () := matchcontinue var
     local
       BackendDAE.Var v;
       DAE.ComponentRef cr;
@@ -848,14 +847,14 @@ algorithm
         if b then
           (e, _) := ExpressionSimplify.simplify(e);
           // If call with constant arguments then evaluate
-          e := match(e)
+          e := match e
             local DAE.Exp e1;
-            case(DAE.CALL(expLst=exps)) guard Expression.isConstWorkList(exps)
+            case DAE.CALL(expLst=exps) guard Expression.isConstWorkList(exps)
               algorithm
                (_,value) := Ceval.ceval(cache, graph, e, false, Absyn.NO_MSG(),0);
                e1 := ValuesUtil.valueExp(value);
              then e1;
-            case(DAE.ASUB(DAE.CALL(expLst=exps),_)) guard Expression.isConstWorkList(exps)
+            case DAE.ASUB(DAE.CALL(expLst=exps),_) guard Expression.isConstWorkList(exps)
               algorithm
                (_,value) := Ceval.ceval(cache, graph, e, false, Absyn.NO_MSG(),0);
                e1 := ValuesUtil.valueExp(value);
@@ -876,7 +875,7 @@ algorithm
       (attr, (replEvaluate, _)) := BackendDAEUtil.traverseBackendDAEVarAttr(v.values, traverseExpVisitorWrapper, (replEvaluate, false));
       v := BackendVariable.setVarAttributes(v, attr);
       // apply replacements in hideResult attribute
-      v.hideResult := match (hideResultOpt)
+      v.hideResult := match hideResultOpt
       case SOME(hideResultExp) algorithm
         (hideResultExp, b) := BackendVarTransform.replaceExp(hideResultExp, replEvaluate, NONE());
         if b then
@@ -898,14 +897,14 @@ algorithm
       if b then
         (e, _) := ExpressionSimplify.simplify(e);
         // If call with constant arguments then evaluate
-        e := match(e)
+        e := match e
           local DAE.Exp e1;
-          case(DAE.CALL(expLst=exps)) guard Expression.isConstWorkList(exps)
+          case DAE.CALL(expLst=exps) guard Expression.isConstWorkList(exps)
             algorithm
              (_,value) := Ceval.ceval(cache, graph, e, false, Absyn.NO_MSG(),0);
              e1 := ValuesUtil.valueExp(value);
            then e1;
-          case(DAE.ASUB(DAE.CALL(expLst=exps),_)) guard Expression.isConstWorkList(exps)
+          case DAE.ASUB(DAE.CALL(expLst=exps),_) guard Expression.isConstWorkList(exps)
             algorithm
              (_,value) := Ceval.ceval(cache, graph, e, false, Absyn.NO_MSG(),0);
              e1 := ValuesUtil.valueExp(value);
@@ -920,7 +919,7 @@ algorithm
       (attr, (replEvaluate, _)) := BackendDAEUtil.traverseBackendDAEVarAttr(attr, traverseExpVisitorWrapper, (replEvaluate, false));
       v := BackendVariable.setVarAttributes(v, attr);
       // apply replacements in hideResult attribute
-      v.hideResult := match (hideResultOpt)
+      v.hideResult := match hideResultOpt
       case SOME(hideResultExp) algorithm
         (hideResultExp, b) := BackendVarTransform.replaceExp(hideResultExp, replEvaluate, NONE());
         if b then
@@ -940,14 +939,14 @@ algorithm
       if b then
         (e, _) := ExpressionSimplify.simplify(e);
         // If call with constant arguments then evaluate
-        e := match(e)
+        e := match e
           local DAE.Exp e1;
-          case(DAE.CALL(expLst=exps)) guard Expression.isConstWorkList(exps)
+          case DAE.CALL(expLst=exps) guard Expression.isConstWorkList(exps)
             algorithm
              (_,value) := Ceval.ceval(cache, graph, e, false, Absyn.NO_MSG(),0);
              e1 := ValuesUtil.valueExp(value);
            then e1;
-          case(DAE.ASUB(DAE.CALL(expLst=exps),_)) guard Expression.isConstWorkList(exps)
+          case DAE.ASUB(DAE.CALL(expLst=exps),_) guard Expression.isConstWorkList(exps)
             algorithm
              (_,value) := Ceval.ceval(cache, graph, e, false, Absyn.NO_MSG(),0);
              e1 := ValuesUtil.valueExp(value);
@@ -960,7 +959,7 @@ algorithm
       (attr, (replEvaluate, _)) := BackendDAEUtil.traverseBackendDAEVarAttr(v.values, traverseExpVisitorWrapper, (replEvaluate, false));
       v := BackendVariable.setVarAttributes(v, attr);
       // apply replacements in hideResult attribute
-      v.hideResult := match (hideResultOpt)
+      v.hideResult := match hideResultOpt
       case SOME(hideResultExp) algorithm
         (hideResultExp, b) := BackendVarTransform.replaceExp(hideResultExp, replEvaluate, NONE());
         if b then
@@ -978,7 +977,7 @@ algorithm
       (attr, (replEvaluate, true)) := BackendDAEUtil.traverseBackendDAEVarAttr(attr, traverseExpVisitorWrapper, (replEvaluate, false));
       v := BackendVariable.setVarAttributes(var, attr);
       // apply replacements in hideResult attribute
-      v.hideResult := match (hideResultOpt)
+      v.hideResult := match hideResultOpt
       case SOME(hideResultExp) algorithm
         (hideResultExp, b) := BackendVarTransform.replaceExp(hideResultExp, replEvaluate, NONE());
         if b then

@@ -73,10 +73,9 @@ public function printStateStr "- Printing
   output String outString;
 algorithm
   outString:=
-  match (inState)
+  match inState
     local
-      Absyn.Path p;
-      Boolean b1,b2,b3;
+      Boolean b1,b2;
     case ClassInf.UNKNOWN() then "unknown";
     case ClassInf.OPTIMIZATION() then "optimization";
     case ClassInf.MODEL() then "model";
@@ -111,8 +110,8 @@ end printStateStr;
 public function printState
   input ClassInf.State inState;
 algorithm
-  _:=
-  match (inState)
+  ():=
+  match inState
     local Absyn.Path p;
 
     case ClassInf.UNKNOWN(path = p)
@@ -219,7 +218,7 @@ public function getStateName "Returns the classname of the state."
   input ClassInf.State inState;
   output Absyn.Path outPath;
 algorithm
-  outPath := match (inState)
+  outPath := match inState
     local
       Absyn.Path p;
     case ClassInf.UNKNOWN(path = p) then p;
@@ -259,7 +258,7 @@ protected function printEventStr
   input ClassInf.Event inEvent;
   output String str;
 algorithm
-  str := match (inEvent)
+  str := match inEvent
     local
       String name;
     case ClassInf.FOUND_EQUATION() then "equation";
@@ -289,7 +288,7 @@ protected function start_dispatch "
 algorithm
   outState:=
   match (inRestriction,inPath)
-    local Absyn.Path p; Boolean isExpandable, isImpure;
+    local Absyn.Path p; Boolean isExpandable;
     case (SCode.R_CLASS(),p) then ClassInf.UNKNOWN(p);
     case (SCode.R_OPTIMIZATION(),p) then ClassInf.OPTIMIZATION(p);
     case (SCode.R_MODEL(),p) then ClassInf.MODEL(p);
@@ -330,9 +329,8 @@ algorithm
       Absyn.Path p;
       ClassInf.State st;
       ClassInf.Event ev;
-      Boolean isExpandable,b,b1,b2,b3,isImpure;
+      Boolean b1,b2,b3;
       String s;
-      list<String> msg;
     case (ClassInf.UNKNOWN(path = p),ClassInf.NEWDEF()) then ClassInf.HAS_RESTRICTIONS(p,false,false,false);  /* Event `NEWDEF\' */
     case (ClassInf.OPTIMIZATION(),ClassInf.NEWDEF()) then inState;
     case (ClassInf.MODEL(),ClassInf.NEWDEF()) then inState;
@@ -425,9 +423,8 @@ public function valid "
   input ClassInf.State inState;
   input SCode.Restriction inRestriction;
 algorithm
-  _ := match (inState,inRestriction)
-    local Absyn.Path p;
-
+  () := match (inState,inRestriction)
+    local
     case (ClassInf.UNKNOWN(),_) then ();
 
     case (ClassInf.HAS_RESTRICTIONS(),SCode.R_CLASS()) then ();
@@ -488,17 +485,17 @@ public function assertValid "This function has the same semantical meaning as th
   input SCode.Restriction inRestriction;
   input SourceInfo info;
 algorithm
-  _ := matchcontinue (inState,inRestriction,info)
+  () := matchcontinue (inState, inRestriction)
     local
       ClassInf.State st;
       SCode.Restriction re;
       String str1,str2,str3;
-    case (st,re,_)
+    case (st, re)
       algorithm
         valid(st, re);
       then
         ();
-    case (st,re,_)
+    case (st, re)
       algorithm
         str1 := AbsynUtil.pathString(getStateName(st));
         str2 := printStateStr(st);
@@ -516,13 +513,13 @@ public function assertTrans "This function has the same semantical meaning as th
   input SourceInfo info;
   output ClassInf.State outState;
 algorithm
-  outState := matchcontinue (inState,event,info)
+  outState := matchcontinue inState
     local
       ClassInf.State st;
       String str1,str2,str3;
-    case (st,_,_)
+    case st
       then trans(st, event);
-    case (st,_,_)
+    case st
       algorithm
         str1 := AbsynUtil.pathString(getStateName(st));
         str2 := printStateStr(st);
@@ -576,7 +573,7 @@ public function isFunction
   input ClassInf.State inState;
   output Boolean b;
 algorithm
-  b := match (inState)
+  b := match inState
     case ClassInf.FUNCTION() then true;
     else false;
   end match;
@@ -586,7 +583,7 @@ public function isFunctionOrRecord "Fails for states that are not FUNCTION or RE
   input ClassInf.State inState;
   output Boolean b;
 algorithm
-  b := match (inState)
+  b := match inState
     case ClassInf.FUNCTION() then true;
     case ClassInf.RECORD() then true;
     else false;
@@ -598,8 +595,8 @@ public function isConnector "
 "
   input ClassInf.State inState;
 algorithm
-  _:=
-  match (inState)
+  ():=
+  match inState
     case ClassInf.CONNECTOR() then ();
   end match;
 end isConnector;
@@ -630,7 +627,7 @@ public function isTypeOrRecord
   input ClassInf.State inState;
   output Boolean outIsTypeOrRecord;
 algorithm
-  outIsTypeOrRecord := match(inState)
+  outIsTypeOrRecord := match inState
     case ClassInf.TYPE() then true;
     case ClassInf.RECORD() then true;
     else false;

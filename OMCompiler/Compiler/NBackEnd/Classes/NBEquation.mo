@@ -357,17 +357,17 @@ public
       (intersection, rest1, rest2) := match (iter1, iter2)
         local
           Integer start1, step1, stop1, start2, step2, stop2;
-          Integer start_min, start_max, stop_min, stop_max;
+          Integer start_max, stop_min;
 
         // ToDo: index shift if mod start1 != start2
         case (SINGLE(range = Expression.RANGE(start=Expression.INTEGER(start1), step=SOME(Expression.INTEGER(step1)), stop=Expression.INTEGER(stop1))),
               SINGLE(range = Expression.RANGE(start=Expression.INTEGER(start2), step=SOME(Expression.INTEGER(step2)), stop=Expression.INTEGER(stop2))))
               guard(step1 == step2 and intMod(start1, step1) == intMod(start2, step2))
           algorithm
-            _ := intMin(start1, start2);
+            intMin(start1, start2);
             start_max := intMax(start1, start2);
             stop_min := intMin(stop1, stop2);
-            _ := intMax(stop1, stop2);
+            intMax(stop1, stop2);
 
             // create intersection
             if start_max >= stop_min then
@@ -548,7 +548,7 @@ public
       input Integer location;
       input UnorderedMap<ComponentRef, Expression> replacements   "replacement rules";
     algorithm
-      _ := match map
+      () := match map
         local
           ComponentRef name;
           Expression arr;
@@ -687,10 +687,8 @@ public
         local
           Call call;
           list<Frame> frames = {};
-          InstNode node;
-          Expression range;
           Iterator tmp;
-          list<Dimension> full_dims, elem_dims;
+          list<Dimension> full_dims;
 
         case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
           // inline the frontend iterator to get frames for backend iterator
@@ -717,11 +715,26 @@ public
         // do not iterate call arguments
         case Expression.CALL() then (exp, iter);
 
+        // only consider if expressions if all sub-expressions contain an array constructor
+        case Expression.IF() guard(extractFromCallIfException(exp)) then (exp, iter);
+
         else algorithm
           (exp, iter) := Expression.mapFoldShallow(exp, function extractFromCall(replacements = replacements, new_iters = new_iters, dims_map = dims_map), iter);
         then (exp, iter);
       end match;
     end extractFromCall;
+
+    function extractFromCallIfException
+      "returns true if any branch is not an array constructor"
+      input Expression exp;
+      output Boolean b;
+    algorithm
+      b := match exp
+        case Expression.CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR()) then false;
+        case Expression.IF() then extractFromCallIfException(exp.trueBranch) or extractFromCallIfException(exp.falseBranch);
+        else true;
+      end match;
+    end extractFromCallIfException;
 
     function normalizedSubscripts
       "creates a normalized subscript list such that the traversed iterators result in
@@ -1507,8 +1520,6 @@ public
       input output String str = "";
       input String indent = "";
       input String indicator = "";
-    protected
-      String iterators;
     algorithm
       str := str + indicator + "\n";
       str := str + indent + "for " + Iterator.toString(iter) + " loop\n";
@@ -1543,7 +1554,6 @@ public
     algorithm
       eq := match eq
         local
-          EquationAttributes tmp;
           Equation body;
         case SCALAR_EQUATION()  algorithm eq.attr := attr; then eq;
         case ARRAY_EQUATION()   algorithm eq.attr := attr; then eq;
@@ -1563,7 +1573,6 @@ public
     algorithm
       eq := match eq
         local
-          EquationAttributes tmp;
           Equation body;
         case SCALAR_EQUATION()  algorithm eq.attr := EquationAttributes.setKind(eq.attr, kind, clock_idx); then eq;
         case ARRAY_EQUATION()   algorithm eq.attr := EquationAttributes.setKind(eq.attr, kind, clock_idx); then eq;
@@ -1618,10 +1627,8 @@ public
       eq := match eq
         local
           Equation body;
-          MapFuncCref funcCref;
           Expression lhs, rhs;
           Iterator iter;
-          ComponentRef lhs_cref, rhs_cref;
           Algorithm alg;
           IfEquationBody ifEqBody;
           WhenEquationBody whenEqBody;
@@ -1764,7 +1771,7 @@ public
       UnorderedSet<ComponentRef> acc = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     algorithm
       // map with the expression and cref filter functions
-      _ := map(eq, function Slice.filterExp(filter = filter, acc = acc),
+      map(eq, function Slice.filterExp(filter = filter, acc = acc),
               SOME(function filter(acc = acc)),
               mapFunc = mapFunc);
       cref_lst := UnorderedSet.toList(acc);
@@ -1793,7 +1800,7 @@ public
     protected
       Boolean success;
     algorithm
-      lhs := match(eq)
+      lhs := match eq
         local
           Expression exp;
         case SCALAR_EQUATION()        then SOME(eq.lhs);
@@ -1812,7 +1819,7 @@ public
       input Equation eq;
       output Option<Expression> rhs;
     algorithm
-      rhs := match(eq)
+      rhs := match eq
         case SCALAR_EQUATION()        then SOME(eq.rhs);
         case ARRAY_EQUATION()         then SOME(eq.rhs);
         case RECORD_EQUATION()        then SOME(eq.rhs);
@@ -1827,7 +1834,7 @@ public
       input output Equation eq;
       input Expression lhs;
     algorithm
-      eq := match(eq)
+      eq := match eq
         case SCALAR_EQUATION()  algorithm eq.lhs := lhs; then eq;
         case ARRAY_EQUATION()   algorithm eq.lhs := lhs; then eq;
         case RECORD_EQUATION()  algorithm eq.lhs := lhs; then eq;
@@ -1845,7 +1852,7 @@ public
       input output Equation eq;
       input Expression rhs;
     algorithm
-      eq := match(eq)
+      eq := match eq
         case SCALAR_EQUATION()  algorithm eq.rhs := rhs; then eq;
         case ARRAY_EQUATION()   algorithm eq.rhs := rhs; then eq;
         case RECORD_EQUATION()  algorithm eq.rhs := rhs; then eq;
@@ -1884,7 +1891,6 @@ public
       eqn := match eqn
         local
           Expression tmpExp;
-          ComponentRef tmpCref;
 
         case SCALAR_EQUATION() algorithm
           tmpExp := eqn.rhs;
@@ -2663,7 +2669,7 @@ public
     protected
       Equation eqn = Pointer.access(eqn_ptr);
     algorithm
-      _ := match eqn
+      () := match eqn
         local
           UnorderedMap<ComponentRef, Expression> replacements;
 
@@ -3213,8 +3219,6 @@ public
       output IfEquationBody body_res;
     protected
       Pointer<Equation> eqn_ptr;
-      Equation eqn;
-      Expression exp;
     algorithm
       body_res := IF_EQUATION_BODY(body.condition, {}, Util.applyOption(body.else_if, function createResidual(res = res, new = new, allowFail = allowFail)));
       body_res := match body.then_eqns
@@ -5005,7 +5009,7 @@ public
       input list<Pointer<Equation>> eq_lst;
       input Boolean newName = true;
     protected
-      list<Pointer<Equation>> equation_lst, continuous_lst, clocked_lst, discretes_lst, initials_lst, auxiliaries_lst, simulation_lst, removed_lst;
+      list<Pointer<Equation>> continuous_lst, clocked_lst, discretes_lst, initials_lst, auxiliaries_lst, simulation_lst, removed_lst;
     algorithm
 
       eqData := match eqData

@@ -384,7 +384,14 @@ function simplifyInStreamDiv
 protected
   Expression stream_exp, fallback;
 algorithm
-  {stream_exp, fallback} := args;
+  if listLength(args) == 2 then
+    {stream_exp, fallback} := args;
+  else
+    Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because inStreamDiv needs to have exactly two arguments:\n  "
+      + List.toString(args, Expression.toString)});
+    fail();
+  end if;
+
   if Expression.isNaN(stream_exp) then
     // inStreamDiv(0/0, fallback) = fallback
     exp := fallback;
@@ -410,12 +417,14 @@ algorithm
   exp := match exp
     local
       Call call;
-      Expression res;
-    case Expression.CALL(call = call as Call.TYPED_CALL())
-      guard "$OMC$inStreamDiv" == AbsynUtil.pathFirstIdent(Function.nameConsiderBuiltin(call.fn))
+      Expression arg;
+      list<Expression> rest;
+
+    case Expression.CALL(call = call as Call.TYPED_CALL(arguments = arg::rest))
+      guard("$OMC$inStreamDiv" == AbsynUtil.pathFirstIdent(Function.nameConsiderBuiltin(call.fn)))
       algorithm
-        res := simplify(Expression.map(listHead(call.arguments), removePositiveMax), true);
-      then simplifyInStreamDiv(res :: listRest(call.arguments), call, true);
+        arg := simplify(Expression.map(arg, removePositiveMax), true);
+      then simplifyInStreamDiv(arg :: rest, call, true);
     else exp;
   end match;
 end removeInStreamDiv;
@@ -426,15 +435,16 @@ algorithm
   exp := match exp
     local
       Call call;
-      Expression res;
-    case Expression.CALL(call = call as Call.TYPED_CALL())
+      Expression res, arg;
+
+    case Expression.CALL(call = call as Call.TYPED_CALL(arguments = arg::_))
       guard "$OMC$PositiveMax" == AbsynUtil.pathFirstIdent(Function.nameConsiderBuiltin(call.fn))
       algorithm
         // positiveMax(flow_exp, eps) = max(flow_exp, eps) in the general case
         res := Expression.CALL(Call.makeTypedCall(
           fn          = NFBuiltinFuncs.MAX_REAL,
           args        = call.arguments,
-          variability = Expression.variability(listHead(call.arguments)),
+          variability = Expression.variability(arg),
           purity      = NFPrefixes.Purity.PURE
         ));
       then res;
@@ -624,7 +634,7 @@ algorithm
   Call.TYPED_ARRAY_CONSTRUCTOR(ty, var, pur, exp, iters) := call;
   iters := list((Util.tuple21(i), simplify(Util.tuple22(i))) for i in iters);
 
-  outExp := matchcontinue (iters)
+  outExp := matchcontinue iters
     case {(iter, e)}
       algorithm
         Type.ARRAY(dimensions = {dim}) := Expression.typeOf(e);
@@ -739,7 +749,6 @@ function simplifyReduction2
 protected
   InstNode iter;
   Expression range, default_exp;
-  Boolean expanded = true;
   list<tuple<InstNode, Expression>> iters = {};
   Type ty;
   Operator op;
@@ -904,7 +913,7 @@ function simplifyMultarySigns
   output list<Expression> new_inv_arguments = {};
   output Boolean isNegative = false; // only relevant for multiplication
 algorithm
-  _ := match mcl
+  () := match mcl
     case NFOperator.MathClassification.ADDITION algorithm
       // check if arguments are negative
       // negate them and swap them to the other list
@@ -1208,7 +1217,6 @@ function simplifyLogicBinaryAnd
 algorithm
   exp := match (exp1, exp2)
     local
-      list<Expression> expl;
       Operator o;
       array<Expression> arr;
 
@@ -1241,7 +1249,6 @@ function simplifyLogicBinaryOr
 algorithm
   exp := match (exp1, exp2)
     local
-      list<Expression> expl;
       Operator o;
       array<Expression> arr;
 
@@ -1637,9 +1644,6 @@ algorithm
   result := match (optOperator, exp)
     local
       Operator op;
-      list<Expression> tmp, tmp_inv;
-      list<Expression> final_stack = {};
-      list<Expression> final_inverse_stack = {};
       Expression new_exp;
       ComponentRef cref;
       Call call;

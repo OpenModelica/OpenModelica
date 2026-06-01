@@ -273,11 +273,9 @@ function matchOverloadedBinaryOperator
   output Type outType;
 protected
   list<TypedArg> args;
-  FunctionMatchKind matchKind;
   MatchedFunction matchedFunc;
   list<MatchedFunction> matchedFunctions, exactMatches;
   Function fn;
-  Operator.Op oop;
 algorithm
   args := {
     TypedArg.TYPED_ARG(NONE(), exp1, type1, var1, Purity.PURE),
@@ -522,7 +520,7 @@ function checkOverloadedBinaryArrayMul
 protected
   Boolean valid;
   list<Dimension> dims1, dims2;
-  Dimension dim11, dim12, dim21, dim22;
+  Dimension dim11, dim12, dim21;
 algorithm
   dims1 := Type.arrayDims(type1);
   dims2 := Type.arrayDims(type2);
@@ -550,7 +548,7 @@ algorithm
       then
         (valid, outExp);
     // matrix[n, m] * matrix[m, p] = vector[n, p]
-    case ({dim11, dim12}, {dim21, dim22})
+    case ({dim11, dim12}, {dim21, _})
       algorithm
         valid := Dimension.isEqual(dim12, dim21);
         // TODO: Implement me!
@@ -602,7 +600,6 @@ function checkOverloadedBinaryScalarArray2
   output Expression outExp;
   output Type outType;
 protected
-  list<Expression> expl;
   Type ty;
   array<Expression> arr;
   Expression e2;
@@ -675,7 +672,6 @@ function checkOverloadedBinaryArrayScalar2
   output Type outType;
 protected
   Expression e1;
-  list<Expression> expl;
   Type ty;
   array<Expression> arr;
 algorithm
@@ -751,7 +747,6 @@ function checkOverloadedBinaryArrayEW
 protected
   Expression e1, e2;
   MatchKind mk;
-  Type ty;
 algorithm
   if Type.isArray(type1) and Type.isArray(type2) then
     (e1, e2, _, mk) := matchExpressions(exp1, type1, exp2, type2, ALLOW_UNKNOWN);
@@ -863,13 +858,11 @@ function implicitConstructAndMatch
   output Type outType;
 protected
   list<InstNode> inputs;
-  InstNode in1, in2, scope;
-  MatchKind mk1,mk2;
-  ComponentRef fn_ref;
+  InstNode in1, in2;
   Function operfn;
   list<tuple<Function, list<Expression>, Variability>> matchedfuncs = {};
   Expression exp1,exp2;
-  Type ty, arg1_ty, arg2_ty;
+  Type arg1_ty, arg2_ty;
   Variability var;
   Boolean matched;
   SourceInfo arg1_info, arg2_info;
@@ -1317,7 +1310,6 @@ public function checkUnaryOperation
   output Expression unaryExp;
   output Type unaryType;
 protected
-  Boolean valid = true;
   Operator op;
 algorithm
   if Type.isComplex(Type.arrayElementType(type1)) then
@@ -1349,13 +1341,8 @@ public function checkOverloadedUnaryOperator
   output Type outType;
 protected
   String opstr;
-  Function operfn;
-  InstNode node1, fn_node;
-  ComponentRef fn_ref;
   list<Function> candidates;
-  Boolean matched;
   list<TypedArg> args;
-  FunctionMatchKind matchKind;
   MatchedFunction matchedFunc;
   list<MatchedFunction> matchedFunctions = {}, exactMatches;
 algorithm
@@ -1437,9 +1424,6 @@ function checkLogicalUnaryOperation
   input SourceInfo info;
   output Expression outExp;
   output Type resultType = type1;
-protected
-  Expression e1, e2;
-  MatchKind mk;
 algorithm
   if Type.isComplex(Type.arrayElementType(type1)) then
     (outExp,resultType) := checkOverloadedUnaryOperator(exp1, type1, var1, operator, context, info);
@@ -1846,16 +1830,11 @@ protected
   ClassTree ctree;
   InstNode anode, enode;
   array<InstNode> comps1, comps2;
-  Absyn.Path path;
   Type ty;
   ComplexType cty1, cty2;
-  Expression e;
   list<Expression> matched_elements = {};
   array<Expression> elem_arr;
-  MatchKind mk;
-  Component comp1, comp2;
   MatchOptions opt = options;
-  Integer idx;
   list<Dimension> dims;
 algorithm
   Type.COMPLEX(cls = anode) := actualType;
@@ -1873,9 +1852,8 @@ algorithm
     opt := setOption(opt, IGNORE_DIMENSIONS);
   end if;
 
-  () := match (cls1, actualType, cls2, expectedType, expression)
-    case (_, Type.COMPLEX(complexTy = cty1 as ComplexType.CONNECTOR()),
-          _, Type.COMPLEX(complexTy = cty2 as ComplexType.CONNECTOR()), _)
+  () := match (cls1, actualType, cls2, expectedType)
+    case (_, Type.COMPLEX(complexTy = cty1 as ComplexType.CONNECTOR()), _, Type.COMPLEX(complexTy = cty2 as ComplexType.CONNECTOR()))
       algorithm
         matchKind := matchComponentList(cty1.potentials, cty2.potentials, options);
         if matchKind <> MatchKind.NOT_COMPATIBLE then
@@ -1891,8 +1869,7 @@ algorithm
       then
         ();
 
-    case (Class.INSTANCED_CLASS(elements = ctree as ClassTree.FLAT_TREE(components = comps1)), _,
-          Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps2)), _, _)
+    case (Class.INSTANCED_CLASS(elements = ctree as ClassTree.FLAT_TREE(components = comps1)), _, Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps2)), _)
       algorithm
         // Both types must contain the same number of components.
         if arrayLength(comps1) <> arrayLength(comps2) then
@@ -2094,11 +2071,9 @@ function matchFunctionTypes
         output Type compatibleType = actualType;
         output MatchKind matchKind = MatchKind.EXACT;
 protected
-  list<InstNode> inputs1, inputs2, remaining_inputs, outputs1, outputs2;
+  list<InstNode> inputs1, inputs2, outputs1, outputs2;
   list<Slot> slots1, slots2;
-  InstNode input2, output2;
   Slot slot1, slot2;
-  Boolean matching;
 algorithm
   Type.FUNCTION(fn =
     Function.FUNCTION(inputs = inputs1, outputs = outputs1, slots = slots1)) := actualType;
@@ -2707,7 +2682,6 @@ function getRangeType
   input SourceInfo info;
   output Type rangeType;
 protected
-  Expression step_exp;
   Dimension dim;
 algorithm
   dim := match rangeElemType
@@ -2964,7 +2938,6 @@ algorithm
       MatchKind ty_match;
       Expression exp;
       Type ty, bind_ty, comp_ty;
-      list<list<Dimension>> dims;
 
     case Binding.TYPED_BINDING(bindingExp = exp)
       algorithm
@@ -3098,7 +3071,6 @@ function printBindingTypeError
   input InstContext.Type context;
 protected
   SourceInfo binding_info, comp_info;
-  String bind_ty_str, comp_ty_str;
   MatchKind mk;
 algorithm
   binding_info := Binding.getInfo(binding);
@@ -3155,7 +3127,6 @@ function checkReductionType
   input Expression exp;
   input SourceInfo info;
 protected
-  Type ety;
   String err;
 algorithm
   err := match name
@@ -3241,8 +3212,6 @@ function matchIfBranches
 algorithm
   (compatibleType, matchKind) := match (trueType, falseType)
     local
-      MatchKind mk1, mk2;
-      Type cty1, cty2;
 
     case (Type.ARRAY(), Type.ARRAY())
       algorithm

@@ -98,12 +98,12 @@ public function rewriteFrontEnd
   output Absyn.Exp outExp;
   output Boolean isChanged;
 algorithm
-  (outExp, isChanged) := match(inExp)
+  (outExp, isChanged) := match inExp
     local
       Rules rules;
       Boolean b;
 
-    case (_)
+    case _
       algorithm
         rules := getRulesFrontEnd(getAllRules());
         (outExp, b) := matchAndRewriteExpFrontEnd(inExp, rules);
@@ -122,7 +122,7 @@ public function matchAndRewriteExpFrontEnd
   output Absyn.Exp outExp;
   output Boolean changed;
 algorithm
-  (outExp, changed) := matchcontinue(inExp, inRules)
+  (outExp, changed) := matchcontinue inRules
     local
       Absyn.Exp from, to;
       Rules rest;
@@ -130,12 +130,12 @@ algorithm
       Boolean b;
 
     // nothing matched!
-    case (_, {}) then (inExp, false);
+    case {} then (inExp, false);
 
     // matches the head
-    case (_, FRONTEND_RULE(from, to)::_)
+    case FRONTEND_RULE(from, to)::_
       algorithm
-        (binds as _::_) := matchesFrontEnd(inExp, from, {});
+        binds as _::_ := matchesFrontEnd(inExp, from, {});
         outExp := rewriteExpFrontEnd(to, binds);
         b := boolNot(referenceEq(inExp, outExp));
         print("FrontEnd Exp:     " + Dump.printExpStr(inExp) + "\n" +
@@ -146,7 +146,7 @@ algorithm
         (outExp, b);
 
     // not match for the head, try next
-    case (_, _::rest)
+    case _::rest
       algorithm
         (outExp, b) := matchAndRewriteExpFrontEnd(inExp, rest);
       then
@@ -191,8 +191,7 @@ public function replaceBindFrontEnd
   input Binds inBinds;
   output Absyn.Exp outExp;
 protected
-  Boolean found;
-  Absyn.Exp e, to;
+  Absyn.Exp e;
 algorithm
   for bind in inBinds loop
     FRONTEND_BIND(e, outExp) := bind;
@@ -218,11 +217,10 @@ public function matchesFrontEnd
   input Binds inAcc;
   output Binds outBinds;
 algorithm
-  outBinds := matchcontinue(inExp, inUnifyWith, inAcc)
+  outBinds := matchcontinue(inExp, inUnifyWith)
     local
       Absyn.Exp e1a, e2a, e1b, e2b, cond1a, cond1b;
       Absyn.Operator op1a, op1b;
-      list<tuple<Absyn.Exp, Absyn.Exp>> elseIfa, elseIfb;
       Absyn.ComponentRef cr1a, cr1b;
       Absyn.FunctionArgs fargs1a, fargs1b;
       list<Absyn.Exp> exps1a, exps1b;
@@ -231,7 +229,7 @@ algorithm
       Absyn.Ident id1a, id1b;
 
     // we have a place holder
-    case (_, Absyn.CREF(_), _)
+    case (_, Absyn.CREF(_))
       algorithm
         true := isPlaceHolderFrontEnd(inUnifyWith);
         outBinds := FRONTEND_BIND(inUnifyWith, inExp)::inAcc;
@@ -239,38 +237,38 @@ algorithm
         outBinds;
 
     // must be equal
-    case (Absyn.INTEGER(_), _, _)
+    case (Absyn.INTEGER(_), _)
       algorithm
         true := AbsynUtil.expEqual(inExp, inUnifyWith);
       then
         inAcc;
 
-    case (Absyn.REAL(_), _, _)
+    case (Absyn.REAL(_), _)
       algorithm
         true := AbsynUtil.expEqual(inExp, inUnifyWith);
       then
         inAcc;
 
-    case (Absyn.STRING(_), _, _)
+    case (Absyn.STRING(_), _)
       algorithm
         true := AbsynUtil.expEqual(inExp, inUnifyWith);
       then
         inAcc;
 
-    case (Absyn.BOOL(_), _, _)
+    case (Absyn.BOOL(_), _)
       algorithm
         true := AbsynUtil.expEqual(inExp, inUnifyWith);
       then
         inAcc;
 
     // cref
-    case (Absyn.CREF(_), _, _)
+    case (Absyn.CREF(_), _)
       algorithm
         true := AbsynUtil.expEqual(inExp, inUnifyWith);
       then
         inAcc;
 
-    case (Absyn.BINARY(e1a, op1a, e2a), Absyn.BINARY(e1b, op1b, e2b), _)
+    case (Absyn.BINARY(e1a, op1a, e2a), Absyn.BINARY(e1b, op1b, e2b))
       algorithm
         true := AbsynUtil.opEqual(op1a, op1b);
         outBinds := matchesFrontEnd(e1a, e1b, inAcc);
@@ -278,29 +276,14 @@ algorithm
       then
         outBinds;
 
-    case (Absyn.UNARY(op1a, e1a), Absyn.UNARY(op1b, e1b), _)
+    case (Absyn.UNARY(op1a, e1a), Absyn.UNARY(op1b, e1b))
       algorithm
         true := AbsynUtil.opEqual(op1a, op1b);
         outBinds := matchesFrontEnd(e1a, e1b, inAcc);
       then
         outBinds;
 
-    case (Absyn.LBINARY(e1a, op1a, e2a), Absyn.LBINARY(e1b, op1b, e2b), _)
-      algorithm
-        true := AbsynUtil.opEqual(op1a, op1b);
-        outBinds := matchesFrontEnd(e1a, e1b, inAcc);
-        outBinds := matchesFrontEnd(e2a, e2b, outBinds);
-      then
-        outBinds;
-
-    case (Absyn.LUNARY(op1a, e1a), Absyn.LUNARY(op1b, e1b), _)
-      algorithm
-        true := AbsynUtil.opEqual(op1a, op1b);
-        outBinds := matchesFrontEnd(e1a, e1b, inAcc);
-      then
-        outBinds;
-
-    case (Absyn.RELATION(e1a, op1a, e2a), Absyn.RELATION(e1b, op1b, e2b), _)
+    case (Absyn.LBINARY(e1a, op1a, e2a), Absyn.LBINARY(e1b, op1b, e2b))
       algorithm
         true := AbsynUtil.opEqual(op1a, op1b);
         outBinds := matchesFrontEnd(e1a, e1b, inAcc);
@@ -308,7 +291,22 @@ algorithm
       then
         outBinds;
 
-    case (Absyn.IFEXP(cond1a, e1a, e2a, _), Absyn.IFEXP(cond1b, e1b, e2b, _), _)
+    case (Absyn.LUNARY(op1a, e1a), Absyn.LUNARY(op1b, e1b))
+      algorithm
+        true := AbsynUtil.opEqual(op1a, op1b);
+        outBinds := matchesFrontEnd(e1a, e1b, inAcc);
+      then
+        outBinds;
+
+    case (Absyn.RELATION(e1a, op1a, e2a), Absyn.RELATION(e1b, op1b, e2b))
+      algorithm
+        true := AbsynUtil.opEqual(op1a, op1b);
+        outBinds := matchesFrontEnd(e1a, e1b, inAcc);
+        outBinds := matchesFrontEnd(e2a, e2b, outBinds);
+      then
+        outBinds;
+
+    case (Absyn.IFEXP(cond1a, e1a, e2a, _), Absyn.IFEXP(cond1b, e1b, e2b, _))
       algorithm
         outBinds := matchesFrontEnd(cond1a, cond1b, inAcc);
         outBinds := matchesFrontEnd(e1a, e1b, outBinds);
@@ -318,33 +316,33 @@ algorithm
       then
         outBinds;
 
-    case (Absyn.CALL(cr1a, fargs1a), Absyn.CALL(cr1b, fargs1b), _)
+    case (Absyn.CALL(cr1a, fargs1a), Absyn.CALL(cr1b, fargs1b))
       algorithm
         true := AbsynUtil.crefEqual(cr1a, cr1b);
         outBinds := matchesFargsFrontEnd(fargs1a, fargs1b, inAcc);
       then
         outBinds;
 
-    case (Absyn.PARTEVALFUNCTION(cr1a, fargs1a), Absyn.PARTEVALFUNCTION(cr1b, fargs1b), _)
+    case (Absyn.PARTEVALFUNCTION(cr1a, fargs1a), Absyn.PARTEVALFUNCTION(cr1b, fargs1b))
       algorithm
         true := AbsynUtil.crefEqual(cr1a, cr1b);
         outBinds := matchesFargsFrontEnd(fargs1a, fargs1b, inAcc);
       then
         outBinds;
 
-    case (Absyn.ARRAY(exps1a), Absyn.ARRAY(exps1b), _)
+    case (Absyn.ARRAY(exps1a), Absyn.ARRAY(exps1b))
       algorithm
         outBinds := matchesExpLstFrontEnd(exps1a, exps1b, inAcc);
       then
         outBinds;
 
-    case (Absyn.MATRIX(expsLst1a), Absyn.MATRIX(expsLst1b), _)
+    case (Absyn.MATRIX(expsLst1a), Absyn.MATRIX(expsLst1b))
       algorithm
         outBinds := matchesExpLstLstFrontEnd(expsLst1a, expsLst1b, inAcc);
       then
         outBinds;
 
-    case (Absyn.RANGE(e1a, oe1a, e2a), Absyn.RANGE(e1b, oe1b, e2b), _)
+    case (Absyn.RANGE(e1a, oe1a, e2a), Absyn.RANGE(e1b, oe1b, e2b))
       algorithm
         outBinds := matchesFrontEnd(e1a, e1b, inAcc);
         outBinds := matchesExpOptFrontEnd(oe1a, oe1b, outBinds);
@@ -352,33 +350,33 @@ algorithm
       then
         outBinds;
 
-    case (Absyn.TUPLE(exps1a), Absyn.TUPLE(exps1b), _)
+    case (Absyn.TUPLE(exps1a), Absyn.TUPLE(exps1b))
       algorithm
         outBinds := matchesExpLstFrontEnd(exps1a, exps1b, inAcc);
       then
         outBinds;
 
-    case (Absyn.END(), Absyn.END(), _) then inAcc;
+    case (Absyn.END(), Absyn.END()) then inAcc;
 
-    case (Absyn.CODE(_), Absyn.CODE(_), _) then inAcc;
+    case (Absyn.CODE(_), Absyn.CODE(_)) then inAcc;
 
-    case (Absyn.AS(id1a, e1a), Absyn.AS(id1b, e1b), _)
+    case (Absyn.AS(id1a, e1a), Absyn.AS(id1b, e1b))
       algorithm
         true := stringEq(id1a, id1b);
         outBinds := matchesFrontEnd(e1a, e1b, inAcc);
       then outBinds;
 
-    case (Absyn.CONS(e1a, e2a), Absyn.CONS(e1b, e2b), _)
+    case (Absyn.CONS(e1a, e2a), Absyn.CONS(e1b, e2b))
       algorithm
         outBinds := matchesFrontEnd(e1a, e1b, inAcc);
         outBinds := matchesFrontEnd(e2a, e2b, outBinds);
       then outBinds;
 
     // TODO! support matchexp
-    case (Absyn.MATCHEXP(), Absyn.MATCHEXP(), _)
+    case (Absyn.MATCHEXP(), Absyn.MATCHEXP())
       then inAcc;
 
-    case (Absyn.LIST(exps1a), Absyn.LIST(exps1b), _)
+    case (Absyn.LIST(exps1a), Absyn.LIST(exps1b))
       algorithm
         outBinds := matchesExpLstFrontEnd(exps1a, exps1b, inAcc);
       then
@@ -392,10 +390,10 @@ public function matchesExpOptFrontEnd
   input Binds inAcc;
   output Binds outBinds;
 algorithm
-  outBinds := match(inOExp1, inOExp2, inAcc)
+  outBinds := match(inOExp1, inOExp2)
     local Absyn.Exp e1a, e1b;
-    case (NONE(), NONE(), _) then inAcc;
-    case (SOME(e1a), SOME(e1b), _)
+    case (NONE(), NONE()) then inAcc;
+    case (SOME(e1a), SOME(e1b))
       algorithm
         outBinds := matchesFrontEnd(e1a, e1b, inAcc);
       then
@@ -410,13 +408,13 @@ public function matchesExpLstFrontEnd
   input Binds inAcc;
   output Binds outBinds;
 algorithm
-  outBinds := match(inExps1, inExps2, inAcc)
+  outBinds := match(inExps1, inExps2)
     local
       Absyn.Exp e1a, e1b;
       list<Absyn.Exp> exps1a, exps1b;
 
-    case ({}, {}, _) then inAcc;
-    case (e1a::exps1a, e1b::exps1b, _)
+    case ({}, {}) then inAcc;
+    case (e1a::exps1a, e1b::exps1b)
       algorithm
         outBinds := matchesFrontEnd(e1a, e1b, inAcc);
         outBinds := matchesExpLstFrontEnd(exps1a, exps1b, outBinds);
@@ -432,13 +430,13 @@ public function matchesFargsFrontEnd
   input Binds inAcc;
   output Binds outBinds;
 algorithm
-  outBinds := match(inFargs1, inFargs2, inAcc)
+  outBinds := match(inFargs1, inFargs2)
     local
       list<Absyn.Exp> exps1a, exps1b;
       list<Absyn.NamedArg> nargs1a, nargs1b;
       Absyn.Exp e1a, e1b;
 
-    case (Absyn.FUNCTIONARGS(exps1a, nargs1a), Absyn.FUNCTIONARGS(exps1b, nargs1b), _)
+    case (Absyn.FUNCTIONARGS(exps1a, nargs1a), Absyn.FUNCTIONARGS(exps1b, nargs1b))
       algorithm
         outBinds := matchesExpLstFrontEnd(exps1a, exps1b, inAcc);
         // fargs should be equal
@@ -449,7 +447,7 @@ algorithm
         outBinds;
 
     // TODO, handle for iterators!
-    case (Absyn.FOR_ITER_FARG(e1a, _, _), Absyn.FOR_ITER_FARG(e1b, _, _), _)
+    case (Absyn.FOR_ITER_FARG(e1a, _, _), Absyn.FOR_ITER_FARG(e1b, _, _))
       algorithm
         outBinds := matchesFrontEnd(e1a, e1b, inAcc);
       then
@@ -482,15 +480,15 @@ public function matchesNargsFrontEnd
   input Binds inAcc;
   output Binds outBinds;
 algorithm
-  outBinds := match(inNargs1, inNargs2, inAcc)
+  outBinds := match(inNargs1, inNargs2)
     local
       Absyn.Ident n1a, n1b;
       Absyn.Exp e1a, e1b;
       list<Absyn.NamedArg> nargs1a, nargs1b;
 
-    case ({}, {}, _) then inAcc;
+    case ({}, {}) then inAcc;
 
-    case (Absyn.NAMEDARG(n1a, e1a)::nargs1a, Absyn.NAMEDARG(n1b, e1b)::nargs1b, _)
+    case (Absyn.NAMEDARG(n1a, e1a)::nargs1a, Absyn.NAMEDARG(n1b, e1b)::nargs1b)
       algorithm
         true := stringEq(n1a, n1b);
         outBinds := matchesFrontEnd(e1a, e1b, inAcc);
@@ -507,13 +505,13 @@ public function matchesExpLstLstFrontEnd
   input Binds inAcc;
   output Binds outBinds;
 algorithm
-  outBinds := match(inExps1, inExps2, inAcc)
+  outBinds := match(inExps1, inExps2)
     local
       list<Absyn.Exp> e1a, e1b;
       list<list<Absyn.Exp>> exps1a, exps1b;
 
-    case ({}, {}, _) then inAcc;
-    case (e1a::exps1a, e1b::exps1b, _)
+    case ({}, {}) then inAcc;
+    case (e1a::exps1a, e1b::exps1b)
       algorithm
         outBinds := matchesExpLstFrontEnd(e1a, e1b, inAcc);
         outBinds := matchesExpLstLstFrontEnd(exps1a, exps1b, outBinds);
@@ -529,12 +527,12 @@ public function isPlaceHolderFrontEnd
  input Absyn.Exp inExp;
  output Boolean isHolder;
 algorithm
- isHolder := match(inExp)
+ isHolder := match inExp
    local
      Boolean b;
      Absyn.Ident name;
 
-   case (Absyn.CREF(Absyn.CREF_IDENT(name, _)))
+   case Absyn.CREF(Absyn.CREF_IDENT(name, _))
      algorithm
        // find the string '$ at position 0
        b := intEq(System.stringFind(name, "'$"), 0);
@@ -553,12 +551,12 @@ public function rewriteBackEnd
   output DAE.Exp outExp;
   output Boolean isChanged;
 algorithm
-  (outExp, isChanged) := match(inExp)
+  (outExp, isChanged) := match inExp
    local
      Rules rules;
      Boolean b;
 
-   case (_)
+   case _
      algorithm
        rules := getRulesBackEnd(getAllRules());
        (outExp, b) := matchAndRewriteExpBackEnd(inExp, rules);
@@ -577,7 +575,7 @@ public function matchAndRewriteExpBackEnd
   output DAE.Exp outExp;
   output Boolean changed;
 algorithm
-  (outExp, changed) := matchcontinue(inExp, inRules)
+  (outExp, changed) := matchcontinue inRules
     local
       Absyn.Exp afrom, ato;
       DAE.Exp from, to;
@@ -586,14 +584,14 @@ algorithm
       Boolean b;
 
     // nothing matched!
-    case (_, {}) then (inExp, false);
+    case {} then (inExp, false);
 
     // matches the head
-    case (_, BACKEND_RULE(afrom, ato)::_)
+    case BACKEND_RULE(afrom, ato)::_
       algorithm
         from := Expression.fromAbsynExp(afrom);
         to :=  Expression.fromAbsynExp(ato);
-        (binds as _::_) := matchesBackEnd(inExp, from, {});
+        binds as _::_ := matchesBackEnd(inExp, from, {});
         outExp := rewriteExpBackEnd(to, binds);
         b := boolNot(referenceEq(inExp, outExp));
         print("BackEnd Exp:     " + ExpressionBasics.printExpStr(inExp) + "\n" +
@@ -604,7 +602,7 @@ algorithm
         (outExp, b);
 
     // not match for the head, try next
-    case (_, _::rest)
+    case _::rest
       algorithm
         (outExp, b) := matchAndRewriteExpBackEnd(inExp, rest);
       then
@@ -648,7 +646,6 @@ public function replaceBindBackEnd
   input Binds inBinds;
   output DAE.Exp outExp;
 protected
-  Boolean found;
   DAE.Exp e, to;
 algorithm
   for bind in inBinds loop
@@ -676,19 +673,17 @@ public function matchesBackEnd
   input Binds inAcc;
   output Binds outBinds;
 algorithm
-  outBinds := matchcontinue(inExp, inUnifyWith, inAcc)
+  outBinds := matchcontinue(inExp, inUnifyWith)
     local
-      DAE.Exp e1a, e2a, e1b, e2b, cond1a, cond1b, thenExp, elseExp;
+      DAE.Exp e1a, e2a, e1b, e2b, cond1a, cond1b;
       DAE.Operator op1a, op1b;
-      DAE.ComponentRef cr1a, cr1b;
       Absyn.Path p1a, p1b;
       list<DAE.Exp> exps1a, exps1b;
       list<list<DAE.Exp>> expsLst1a, expsLst1b;
       Option<DAE.Exp> oe1a, oe1b;
-      DAE.Ident id1a, id1b;
 
     // we have a place holder
-    case (_, DAE.CREF(_, _), _)
+    case (_, DAE.CREF(_, _))
       algorithm
         true := isPlaceHolderBackEnd(inUnifyWith);
         outBinds := BACKEND_BIND(inUnifyWith, inExp)::inAcc;
@@ -696,38 +691,38 @@ algorithm
         outBinds;
 
     // must be equal
-    case (DAE.ICONST(_), _, _)
+    case (DAE.ICONST(_), _)
       algorithm
         true := expEqual(inExp, inUnifyWith);
       then
         inAcc;
 
-    case (DAE.RCONST(_), _, _)
+    case (DAE.RCONST(_), _)
       algorithm
         true := expEqual(inExp, inUnifyWith);
       then
         inAcc;
 
-    case (DAE.SCONST(_), _, _)
+    case (DAE.SCONST(_), _)
       algorithm
         true := expEqual(inExp, inUnifyWith);
       then
         inAcc;
 
-    case (DAE.BCONST(_), _, _)
+    case (DAE.BCONST(_), _)
       algorithm
         true := expEqual(inExp, inUnifyWith);
       then
         inAcc;
 
     // cref
-    case (DAE.CREF(_, _), _, _)
+    case (DAE.CREF(_, _), _)
       algorithm
         true := expEqual(inExp, inUnifyWith);
       then
         inAcc;
 
-    case (DAE.BINARY(e1a, op1a, e2a), DAE.BINARY(e1b, op1b, e2b), _)
+    case (DAE.BINARY(e1a, op1a, e2a), DAE.BINARY(e1b, op1b, e2b))
       algorithm
         true := operatorMatches(op1a, op1b);
         outBinds := matchesBackEnd(e1a, e1b, inAcc);
@@ -735,29 +730,14 @@ algorithm
       then
         outBinds;
 
-    case (DAE.UNARY(op1a, e1a), DAE.UNARY(op1b, e1b), _)
+    case (DAE.UNARY(op1a, e1a), DAE.UNARY(op1b, e1b))
       algorithm
         true := operatorMatches(op1a, op1b);
         outBinds := matchesBackEnd(e1a, e1b, inAcc);
       then
         outBinds;
 
-    case (DAE.LBINARY(e1a, op1a, e2a), DAE.LBINARY(e1b, op1b, e2b), _)
-      algorithm
-        true := operatorMatches(op1a, op1b);
-        outBinds := matchesBackEnd(e1a, e1b, inAcc);
-        outBinds := matchesBackEnd(e2a, e2b, outBinds);
-      then
-        outBinds;
-
-    case (DAE.LUNARY(op1a, e1a), DAE.LUNARY(op1b, e1b), _)
-      algorithm
-        true := operatorMatches(op1a, op1b);
-        outBinds := matchesBackEnd(e1a, e1b, inAcc);
-      then
-        outBinds;
-
-    case (DAE.RELATION(e1a, op1a, e2a, _, _), DAE.RELATION(e1b, op1b, e2b, _, _), _)
+    case (DAE.LBINARY(e1a, op1a, e2a), DAE.LBINARY(e1b, op1b, e2b))
       algorithm
         true := operatorMatches(op1a, op1b);
         outBinds := matchesBackEnd(e1a, e1b, inAcc);
@@ -765,7 +745,22 @@ algorithm
       then
         outBinds;
 
-    case (DAE.IFEXP(cond1a, e1a, e2a), DAE.IFEXP(cond1b, e1b, e2b), _)
+    case (DAE.LUNARY(op1a, e1a), DAE.LUNARY(op1b, e1b))
+      algorithm
+        true := operatorMatches(op1a, op1b);
+        outBinds := matchesBackEnd(e1a, e1b, inAcc);
+      then
+        outBinds;
+
+    case (DAE.RELATION(e1a, op1a, e2a, _, _), DAE.RELATION(e1b, op1b, e2b, _, _))
+      algorithm
+        true := operatorMatches(op1a, op1b);
+        outBinds := matchesBackEnd(e1a, e1b, inAcc);
+        outBinds := matchesBackEnd(e2a, e2b, outBinds);
+      then
+        outBinds;
+
+    case (DAE.IFEXP(cond1a, e1a, e2a), DAE.IFEXP(cond1b, e1b, e2b))
       algorithm
         outBinds := matchesBackEnd(cond1a, cond1b, inAcc);
         outBinds := matchesBackEnd(e1a, e1b, outBinds);
@@ -773,33 +768,33 @@ algorithm
       then
         outBinds;
 
-    case (DAE.CALL(p1a, exps1a, _), DAE.CALL(p1b, exps1b, _), _)
+    case (DAE.CALL(p1a, exps1a, _), DAE.CALL(p1b, exps1b, _))
       algorithm
         true := AbsynUtil.pathEqual(p1a, p1b);
         outBinds := matchesExpLstBackEnd(exps1a, exps1b, inAcc);
       then
         outBinds;
 
-    case (DAE.PARTEVALFUNCTION(p1a, exps1a, _, _), DAE.PARTEVALFUNCTION(p1b, exps1b, _, _), _)
+    case (DAE.PARTEVALFUNCTION(p1a, exps1a, _, _), DAE.PARTEVALFUNCTION(p1b, exps1b, _, _))
       algorithm
         true := AbsynUtil.pathEqual(p1a, p1b);
         outBinds := matchesExpLstBackEnd(exps1a, exps1b, inAcc);
       then
         outBinds;
 
-    case (DAE.ARRAY(array = exps1a), DAE.ARRAY(array = exps1b), _)
+    case (DAE.ARRAY(array = exps1a), DAE.ARRAY(array = exps1b))
       algorithm
         outBinds := matchesExpLstBackEnd(exps1a, exps1b, inAcc);
       then
         outBinds;
 
-    case (DAE.MATRIX(matrix = expsLst1a), DAE.MATRIX(matrix = expsLst1b), _)
+    case (DAE.MATRIX(matrix = expsLst1a), DAE.MATRIX(matrix = expsLst1b))
       algorithm
         outBinds := matchesExpLstLstBackEnd(expsLst1a, expsLst1b, inAcc);
       then
         outBinds;
 
-    case (DAE.RANGE(_, e1a, oe1a, e2a), DAE.RANGE(_, e1b, oe1b, e2b), _)
+    case (DAE.RANGE(_, e1a, oe1a, e2a), DAE.RANGE(_, e1b, oe1b, e2b))
       algorithm
         outBinds := matchesBackEnd(e1a, e1b, inAcc);
         outBinds := matchesExpOptBackEnd(oe1a, oe1b, outBinds);
@@ -807,23 +802,23 @@ algorithm
       then
         outBinds;
 
-    case (DAE.TUPLE(exps1a), DAE.TUPLE(exps1b), _)
+    case (DAE.TUPLE(exps1a), DAE.TUPLE(exps1b))
       algorithm
         outBinds := matchesExpLstBackEnd(exps1a, exps1b, inAcc);
       then
         outBinds;
 
-    case (DAE.CONS(e1a, e2a), DAE.CONS(e1b, e2b), _)
+    case (DAE.CONS(e1a, e2a), DAE.CONS(e1b, e2b))
       algorithm
         outBinds := matchesBackEnd(e1a, e1b, inAcc);
         outBinds := matchesBackEnd(e2a, e2b, outBinds);
       then outBinds;
 
     // TODO! support matchexp
-    case (DAE.MATCHEXPRESSION(), DAE.MATCHEXPRESSION(), _)
+    case (DAE.MATCHEXPRESSION(), DAE.MATCHEXPRESSION())
       then inAcc;
 
-    case (DAE.LIST(exps1a), DAE.LIST(exps1b), _)
+    case (DAE.LIST(exps1a), DAE.LIST(exps1b))
       algorithm
         outBinds := matchesExpLstBackEnd(exps1a, exps1b, inAcc);
       then
@@ -838,10 +833,10 @@ public function matchesExpOptBackEnd
   input Binds inAcc;
   output Binds outBinds;
 algorithm
-  outBinds := match(inOExp1, inOExp2, inAcc)
+  outBinds := match(inOExp1, inOExp2)
     local DAE.Exp e1a, e1b;
-    case (NONE(), NONE(), _) then inAcc;
-    case (SOME(e1a), SOME(e1b), _)
+    case (NONE(), NONE()) then inAcc;
+    case (SOME(e1a), SOME(e1b))
       algorithm
         outBinds := matchesBackEnd(e1a, e1b, inAcc);
       then
@@ -856,13 +851,13 @@ public function matchesExpLstBackEnd
   input Binds inAcc;
   output Binds outBinds;
 algorithm
-  outBinds := match(inExps1, inExps2, inAcc)
+  outBinds := match(inExps1, inExps2)
     local
       DAE.Exp e1a, e1b;
       list<DAE.Exp> exps1a, exps1b;
 
-    case ({}, {}, _) then inAcc;
-    case (e1a::exps1a, e1b::exps1b, _)
+    case ({}, {}) then inAcc;
+    case (e1a::exps1a, e1b::exps1b)
       algorithm
         outBinds := matchesBackEnd(e1a, e1b, inAcc);
         outBinds := matchesExpLstBackEnd(exps1a, exps1b, outBinds);
@@ -878,13 +873,13 @@ public function matchesExpLstLstBackEnd
   input Binds inAcc;
   output Binds outBinds;
 algorithm
-  outBinds := match(inExps1, inExps2, inAcc)
+  outBinds := match(inExps1, inExps2)
     local
       list<DAE.Exp> e1a, e1b;
       list<list<DAE.Exp>> exps1a, exps1b;
 
-    case ({}, {}, _) then inAcc;
-    case (e1a::exps1a, e1b::exps1b, _)
+    case ({}, {}) then inAcc;
+    case (e1a::exps1a, e1b::exps1b)
       algorithm
         outBinds := matchesExpLstBackEnd(e1a, e1b, inAcc);
         outBinds := matchesExpLstLstBackEnd(exps1a, exps1b, outBinds);
@@ -900,12 +895,12 @@ public function isPlaceHolderBackEnd
  input DAE.Exp inExp;
  output Boolean isHolder;
 algorithm
- isHolder := match(inExp)
+ isHolder := match inExp
    local
      Boolean b;
      Absyn.Ident name;
 
-   case (DAE.CREF(DAE.CREF_IDENT(ident = name), _))
+   case DAE.CREF(DAE.CREF_IDENT(ident = name), _)
      algorithm
        // find the string '$ at position 0
        b := intEq(System.stringFind(name, "'$"), 0);
@@ -956,8 +951,6 @@ protected function operatorMatches
 algorithm
   b := matchcontinue(op1, op2)
     local
-      Boolean res;
-      Absyn.Path p1,p2;
 
     case (DAE.UMINUS_ARR(),DAE.UMINUS()) then true;
     case (DAE.ADD_ARR(),DAE.ADD()) then true;
@@ -984,7 +977,7 @@ end operatorMatches;
 
 public function loadRules
 algorithm
-  _ := match()
+  () := match()
     local
       String file;
 
@@ -1064,7 +1057,7 @@ public function loadRulesFromFile
 "load the rewite rules in the global array with index: Global.rewriteRulesIndex"
   input String inFile;
 algorithm
-  _ := matchcontinue(inFile)
+  () := matchcontinue inFile
     local
       list<GlobalScript.Statement> stmts;
       Rules rules;
@@ -1124,19 +1117,19 @@ public function getRulesFrontEnd
   input Rules inRules;
   output Rules outRules;
 algorithm
-  outRules := match(inRules)
+  outRules := match inRules
     local
       Rules rest, lst;
       Rule r;
 
-    case ({}) then {};
+    case {} then {};
 
-    case ((r as FRONTEND_RULE())::rest)
+    case (r as FRONTEND_RULE())::rest
       algorithm
         lst := getRulesFrontEnd(rest);
       then r::lst;
 
-    case (_::rest) then getRulesFrontEnd(rest);
+    case _::rest then getRulesFrontEnd(rest);
 
   end match;
 end getRulesFrontEnd;
@@ -1145,19 +1138,19 @@ public function getRulesBackEnd
   input Rules inRules;
   output Rules outRules;
 algorithm
-  outRules := match(inRules)
+  outRules := match inRules
     local
       Rules rest, lst;
       Rule r;
 
-    case ({}) then {};
+    case {} then {};
 
-    case ((r as BACKEND_RULE())::rest)
+    case (r as BACKEND_RULE())::rest
       algorithm
         lst := getRulesBackEnd(rest);
       then r::lst;
 
-    case (_::rest) then getRulesBackEnd(rest);
+    case _::rest then getRulesBackEnd(rest);
 
   end match;
 end getRulesBackEnd;
@@ -1167,7 +1160,7 @@ protected function stmtsToRules
   input Rules inAcc;
   output Rules outRules;
 algorithm
-  outRules := matchcontinue(inStmts, inAcc)
+  outRules := matchcontinue inStmts
     local
       list<GlobalScript.Statement> rest;
       GlobalScript.Statement s;
@@ -1175,14 +1168,14 @@ algorithm
       Absyn.Exp from, to;
 
     // empty case
-    case ({}, _) then listReverse(inAcc);
+    case {} then listReverse(inAcc);
 
     // frontend-rules
-    case (GlobalScript.IEXP(
+    case GlobalScript.IEXP(
            Absyn.CALL(
              Absyn.CREF_IDENT(name = "rewrite"),
              Absyn.FUNCTIONARGS({from, to}, {}))
-           )::rest, _)
+           )::rest
       algorithm
         print("FrontEnd rule: " + Dump.printExpStr(from) + " -> " + Dump.printExpStr(to) + "\n");
         acc := stmtsToRules(rest, FRONTEND_RULE(from, to)::inAcc);
@@ -1190,11 +1183,11 @@ algorithm
         acc;
 
     // frontend-rules
-    case (GlobalScript.IEXP(
+    case GlobalScript.IEXP(
            Absyn.CALL(
              Absyn.CREF_IDENT(name = "rewriteFrontEnd"),
              Absyn.FUNCTIONARGS({from, to}, {}))
-           )::rest, _)
+           )::rest
       algorithm
         print("FrontEnd rule: " + Dump.printExpStr(from) + " -> " + Dump.printExpStr(to) + "\n");
         acc := stmtsToRules(rest, FRONTEND_RULE(from, to)::inAcc);
@@ -1202,18 +1195,18 @@ algorithm
         acc;
 
     // backend-rules
-    case (GlobalScript.IEXP(
+    case GlobalScript.IEXP(
            Absyn.CALL(
              Absyn.CREF_IDENT(name = "rewriteBackEnd"),
              Absyn.FUNCTIONARGS({from, to}, {}))
-           )::rest, _)
+           )::rest
       algorithm
         print("BackEnd rule: " + Dump.printExpStr(from) + " -> " + Dump.printExpStr(to) + "\n");
         acc := stmtsToRules(rest, BACKEND_RULE(from, to)::inAcc);
       then
         acc;
 
-    case (s::_, _)
+    case s::_
       algorithm
         Error.addInternalError("Unable to parse rewrite rule: " + GlobalScriptDump.printIstmtStr(s), sourceInfo());
       then

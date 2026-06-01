@@ -78,7 +78,7 @@ function diff<T>
     output String o;
   end ToString;
 protected
-  Integer start1, end1, start2, end2, len1, len2;
+  Integer start1, end1, start2, end2;
   array<T> arr1, arr2;
 algorithm
   arr1 := listArray(seq1);

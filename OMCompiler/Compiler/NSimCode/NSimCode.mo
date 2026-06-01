@@ -40,6 +40,16 @@ encapsulated package NSimCode
               all data. It further contains the lower and solve main function.
 "
 import SimCodeFunction;
+import AvlTreeCRToInt;
+import AvlTreePathFunction;
+import ComponentReference;
+import Flags;
+import HashTableCrefSimVar;
+import List;
+import Pointer;
+import UnorderedMap;
+import Util;
+import ProgramUtil;
 
 protected
   // OF imports
@@ -88,7 +98,6 @@ protected
   import HashTableCrIListArray;
   import HashTableCrILst;
   import HpcOmSimCode;
-  import InteractiveUtil;
   import OldSimCode = SimCode;
   import OldSimCodeFunction = SimCodeFunction;
   import OldSimCodeFunctionUtil = SimCodeFunctionUtil;
@@ -100,7 +109,6 @@ protected
   import StringUtil;
 
   // Script imports
-  import CevalScriptBackend;
 
 public
   uniontype SimCodeIndices
@@ -411,13 +419,13 @@ public
             // to new simcode and literals have to be based on new Expressions.
             // Will probably be mostly the same in all other regards
             program := SymbolTable.getAbsyn();
-            directory := CevalScriptBackend.getFileDir(AbsynUtil.pathToCref(name), program);
+            directory := ProgramUtil.getFileDir(AbsynUtil.pathToCref(name), program);
             // The OB function tree is needed both here and when dumping the flat model,
             // but converting it is destructive so return it to avoid doing it again.
             oldFunctionTree := ConvertDAE.convertFunctionTree(FunctionTree.fromList(UnorderedMap.toList(funcMap)));
             (libs, libPaths, externalFunctionIncludes, includeDirs, recordDecls, functions, _) := OldSimCodeUtil.createFunctions(program, oldFunctionTree);
             makefileParams  := OldSimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false, false);
-            fileName        := System.basename(AbsynUtil.classFilename(InteractiveUtil.getPathedClassInProgram(name, program)));
+            fileName        := System.basename(AbsynUtil.classFilename(ProgramUtil.getPathedClassInProgram(name, program)));
 
             (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := collectAlgebraicLoops(init, init_0, ode, algebraic, daeModeData, simCodeIndices, simcode_map);
 
@@ -805,7 +813,7 @@ public
       input UnorderedMap<ComponentRef, SimStrongComponent.Block> equation_map;
     protected
       list<list<SimStrongComponent.Block>> blcks;
-      list<SimVar> residualVars, algebraicVars;
+      list<SimVar> residualVars;
     algorithm
       (blcks, residualVars, simCodeIndices) := SimStrongComponent.Block.createDAEModeBlocks(systems, simCodeIndices, simcode_map, equation_map);
       data := SOME(DAE_MODE_DATA(blcks, NONE(), residualVars, {}, {}, DaeModeConfig.ALL));
@@ -868,8 +876,6 @@ public
       daeModeDataOpt := match daeModeDataOpt
         local
           DaeModeData daeModeData;
-          SimJacobian jac;
-          Option<SimJacobian> daeModeJac;
 
         case SOME(daeModeData)
           algorithm

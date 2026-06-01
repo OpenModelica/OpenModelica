@@ -261,7 +261,6 @@ public
   function replaceVariableConstants
     input output Variable var;
   protected
-    ComponentRef cref;
     Binding binding;
   algorithm
     binding := replaceBindingConstants(var.binding);

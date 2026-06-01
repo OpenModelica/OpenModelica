@@ -121,7 +121,7 @@ public
   protected
     String flag = "default"; //Flags.getConfigString(Flags.ZERO_CROSSINGS)
   algorithm
-    (func) := match flag
+    func := match flag
       case "default" then (eventsDefault);
       /* ... New detect states modules have to be added here */
       else fail();
@@ -251,7 +251,7 @@ public
       Bucket bucket = Pointer.access(bucket_ptr);
       Statement new_stmt;
       Condition cond;
-      ComponentRef aux, lhs_cref;
+      ComponentRef aux;
     algorithm
       if Util.isSome(bucket.aux_stmts) then
         // add all new statements to the algorithm body
@@ -309,26 +309,33 @@ public
     record SINGLE           "e.g. time > 0.5"
       Integer index         "unique sample index";
       Expression trigger    "single point in time that triggers it";
+      Iterator iter         "potential iterator";
     end SINGLE;
 
     record SAMPLE           "e.g. sample(1, 1)"
       Integer index         "unique sample index";
       Expression start      "first trigger point";
       Expression interval   "equidistant intervals";
+      Iterator iter         "potential iterator";
     end SAMPLE;
 
     function toString
       input TimeEvent timeEvent;
       input Boolean printIndex = true "for hashing we want to supress index";
       output String str;
+    protected
+      Iterator iter;
     algorithm
-      str := match timeEvent
-        case SINGLE() then "time > " + Expression.toString(timeEvent.trigger);
-        case SAMPLE() then "sample(" + intString(timeEvent.index) + ", " + Expression.toString(timeEvent.start) + ", " + Expression.toString(timeEvent.interval) + ")";
+      (str, iter) := match timeEvent
+        case SINGLE() then ("time > " + Expression.toString(timeEvent.trigger), timeEvent.iter);
+        case SAMPLE() then ("sample(" + intString(timeEvent.index) + ", " + Expression.toString(timeEvent.start) + ", " + Expression.toString(timeEvent.interval) + ")", timeEvent.iter);
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
         then fail();
       end match;
+      if not Iterator.isEmpty(iter) then
+        str := str + " for {" + Iterator.toString(iter) + "}";
+      end if;
       if printIndex then
         str := "(" + intString(getIndex(timeEvent)) + ") " + str;
       end if;
@@ -431,7 +438,7 @@ public
 
         // check for "sample" call
         case Expression.CALL() algorithm
-          (call, bucket, failed, _) := createSample(exp.call, bucket);
+          (call, bucket, failed, _) := createSample(exp.call, bucket, iter);
           exp.call := call;
         then (exp, failed);
 
@@ -441,7 +448,7 @@ public
           algorithm
             // create auxiliary equation and solve for TIME
             tmpEqn := Pointer.access(Equation.makeAssignment(exp.exp1, exp.exp2, Pointer.create(0), NBVariable.TEMPORARY_STR, Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false)));
-            _ := Equation.map(tmpEqn, function containsTimeTraverseExp(b = containsTime), SOME(function containsTimeTraverseCref(b = containsTime)));
+            Equation.map(tmpEqn, function containsTimeTraverseExp(b = containsTime), SOME(function containsTimeTraverseCref(b = containsTime)));
             if Pointer.access(containsTime) then
               (tmpEqn, status, invert) := Solve.solveBody(tmpEqn, NFBuiltin.TIME_CREF, funcMap);
               if status == NBSolve.Status.EXPLICIT and invert <> NBSolve.RelationInversion.UNKNOWN then
@@ -470,7 +477,7 @@ public
 
                 // create and add the time event
                 if can_trigger then
-                  timeEvent := SINGLE(UnorderedSet.size(bucket.time_set), trigger);
+                  timeEvent := SINGLE(UnorderedSet.size(bucket.time_set), trigger, iter);
                   if not UnorderedSet.contains(timeEvent, bucket.time_set) then
                     UnorderedSet.add(timeEvent, bucket.time_set);
                   end if;
@@ -494,12 +501,12 @@ public
     function createSample
       input output Call call;
       input output Bucket bucket;
+      input Iterator iter                 "potential iterator";
       output Boolean failed;
       output Boolean clocked;
     algorithm
       (failed, clocked) := match (AbsynUtil.pathLastIdent(Call.functionName(call)), Call.arguments(call))
         local
-          Integer value;
           Expression clock, start, interval;
           TimeEvent timeEvent;
 
@@ -507,7 +514,7 @@ public
         case ("sample", {_, clock})    guard(Type.isClock(Expression.typeOf(clock))) then (false, true);
 
         case ("sample", {start, interval}) algorithm
-          timeEvent := SAMPLE(UnorderedSet.size(bucket.time_set), start, interval);
+          timeEvent := SAMPLE(UnorderedSet.size(bucket.time_set), start, interval, iter);
           if not UnorderedSet.contains(timeEvent, bucket.time_set) then
             UnorderedSet.add(timeEvent, bucket.time_set);
           end if;
@@ -529,6 +536,7 @@ public
       "used only for StateEvent traversal to encapsulate sample operators"
       input output Expression exp         "has to be LBINARY() with comparing operator or a sample CALL()";
       input output Bucket bucket          "bucket containing the events";
+      input Iterator iter                 "potential iterator";
       input Pointer<Boolean> clocked      "true if its clocked and should not create an auxiliary";
     protected
       Boolean c;
@@ -537,7 +545,7 @@ public
         local
           Call call;
         case Expression.CALL(call = call) algorithm
-          (call, bucket, _, c) := createSample(call, bucket);
+          (call, bucket, _, c) := createSample(call, bucket, iter);
           exp.call := call;
           if c then Pointer.update(clocked, c); end if;
         then exp;
@@ -575,11 +583,13 @@ public
         case SINGLE() then OldBackendDAE.TimeEvent.SAMPLE_TIME_EVENT(
           index       = timeEvent.index,
           startExp    = Expression.toDAE(timeEvent.trigger),
-          intervalExp = Expression.toDAE(Expression.makeMaxValue(Type.REAL())));
+          intervalExp = Expression.toDAE(Expression.makeMaxValue(Type.REAL())),
+          iter        = convertEventIterator(timeEvent.iter));
         case SAMPLE() then OldBackendDAE.TimeEvent.SAMPLE_TIME_EVENT(
           index       = timeEvent.index,
           startExp    = Expression.toDAE(timeEvent.start),
-          intervalExp = Expression.toDAE(timeEvent.interval));
+          intervalExp = Expression.toDAE(timeEvent.interval),
+          iter        = convertEventIterator(timeEvent.iter));
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
         then fail();
@@ -684,7 +694,7 @@ public
       Pointer<Boolean> clocked = Pointer.create(false);
     algorithm
       // collect possible sample events from exp
-      (exp, bucket) := Expression.mapFold(exp, function TimeEvent.createSampleTraverse(clocked = clocked), bucket);
+      (exp, bucket) := Expression.mapFold(exp, function TimeEvent.createSampleTraverse(iter = iter, clocked = clocked), bucket);
 
       if createEqn then
         // create an equation
@@ -732,7 +742,7 @@ public
       list<Integer> eqn_indices;
     algorithm
       (cond, sev) := sev_tpl;
-      iter        := if Iterator.isEmpty(cond.iter) then NONE() else SOME(list(SimIterator.convert(it) for it in SimIterator.fromIterator(cond.iter)));
+      iter        := convertEventIterator(cond.iter);
       eqn_names   := list(Equation.getEqnName(eqn) for eqn guard(not Equation.isDummy(Pointer.access(eqn))) in UnorderedSet.toList(sev.eqns));
       eqn_indices := list(Block.getIndex(UnorderedMap.getSafe(name, equation_map, sourceInfo())) for name guard(UnorderedMap.contains(name, equation_map)) in eqn_names);
       oldZc := OldBackendDAE.ZERO_CROSSING(
@@ -778,8 +788,6 @@ public
       input Boolean createEqn;
       output Boolean failed = false "returns true if composite event list could not be created";
     protected
-      Pointer<Variable> aux_var;
-      ComponentRef aux_cref;
     algorithm
       (exp, bucket, failed) := match exp
         local
@@ -855,7 +863,7 @@ public
     protected
       Boolean failed2;
     algorithm
-      (call, bucket, failed, _) := TimeEvent.createSample(call, bucket);
+      (call, bucket, failed, _) := TimeEvent.createSample(call, bucket, iter);
       if not failed then
         (exp, bucket, failed2) := create(exp, bucket, iter, createEqn);
         if not failed2 then
@@ -958,6 +966,13 @@ public
       end match;
     end setRelationIndex;
   end Condition;
+
+  function convertEventIterator
+    input Iterator iter;
+    output Option<list<OldSimIterator>> sim_iter;
+  algorithm
+    sim_iter := if Iterator.isEmpty(iter) then NONE() else SOME(list(SimIterator.convert(it) for it in SimIterator.fromIterator(iter)));
+  end convertEventIterator;
 
 // =========================================================================
 //                    PROTECTED UNIONTYPES AND FUNCTIONS
@@ -1108,7 +1123,6 @@ protected
       then exp;
 
       // logical binarys: e.g. (a and b)
-      // Todo: this might not always be correct -> check with something like "contains relation?"
       case Expression.LBINARY() algorithm
         (exp, bucket) := collectEventsCondition(exp, Pointer.access(bucket_ptr), iter, eqn, funcMap, createEqn);
         Pointer.update(bucket_ptr, bucket);

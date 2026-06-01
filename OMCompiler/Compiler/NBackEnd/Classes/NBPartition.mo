@@ -275,7 +275,7 @@ public
             clock_opt := NONE();
           end if;
 
-          _ := match (clock_opt, Pointer.access(clock_ptr))
+          () := match (clock_opt, Pointer.access(clock_ptr))
             local
               BClock new, old;
               ComponentRef name;
@@ -453,7 +453,6 @@ public
     algorithm
       b := match part.association
         local
-          Kind kind;
         case Association.CLOCKED() then true;
         else false;
       end match;

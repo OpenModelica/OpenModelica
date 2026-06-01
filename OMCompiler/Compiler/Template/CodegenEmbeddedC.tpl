@@ -751,7 +751,7 @@ template callExternalObjectDestructors(ExtObjInfo extObjInfo)
   end match
 end callExternalObjectDestructors;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="codegen");
 end CodegenEmbeddedC;
 
 // vim: filetype=susan sw=2 sts=2

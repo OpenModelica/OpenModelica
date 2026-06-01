@@ -108,16 +108,16 @@ public function makeArray "
   output Values.Value outValue;
 algorithm
   outValue:=
-  matchcontinue (inValueLst)
+  matchcontinue inValueLst
     local
       Integer i1;
       list<Integer> il;
       list<Values.Value> vlst;
-    case (vlst as (Values.ARRAY(dimLst = il)::_))
+    case vlst as (Values.ARRAY(dimLst = il)::_)
       algorithm
         i1 := listLength(vlst);
       then Values.ARRAY(vlst,i1::il);
-    case (vlst)
+    case vlst
       algorithm
         i1 := listLength(vlst);
       then Values.ARRAY(vlst,{i1});

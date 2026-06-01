@@ -131,7 +131,7 @@ algorithm
     fail();
   end if;
   for el in listReverse(inLocalElements) loop
-    _ := matchcontinue el
+    () := matchcontinue el
       local
         String cn, bc_str, scope_str, base_first_id;
         SCode.Mod emod;
@@ -140,7 +140,6 @@ algorithm
         SCode.Element cls;
         FCore.Graph cenv;
         SCode.Encapsulated encf;
-        SCode.Restriction r;
         list<SCode.Element> els1, rest_els, import_els, cdef_els, clsext_els;
         list<tuple<SCode.Element, DAE.Mod, Boolean>> els2;
         list<SCode.Equation> eq1, ieq1, eq2, ieq2;
@@ -514,9 +513,7 @@ algorithm
       SCode.Visibility vis2;
       String name1,name2,env_path;
       Option<SCode.ExternalDecl> externalDecl1,externalDecl2;
-      list<SCode.Annotation> annotationLst1,annotationLst2;
       SCode.Comment comment1,comment2;
-      Option<SCode.Annotation> ann1,ann2;
       list<SCode.Element> els1,els2;
       list<SCode.Equation> nEqn1,nEqn2,inEqn1,inEqn2;
       list<SCode.AlgorithmSection> nAlg1,nAlg2,inAlg1,inAlg2;
@@ -667,7 +664,7 @@ algorithm
       InstanceHierarchy ih;
       SCode.Comment cmt;
       list<SCode.Enum> enumLst;
-      String n,name,str1,str2,strDepth,cn;
+      String n,name,str1,str2;
       Option<SCode.ExternalDecl> extdecl;
       DAE.Prefix pre;
       SourceInfo info;
@@ -941,12 +938,6 @@ algorithm
       Absyn.Path extendsPath1, extendsPath2;
       SCode.Visibility vis;
       Absyn.ArrayDim ad;
-      SCode.ConnectorType ct;
-      SCode.Variability var;
-      SCode.Parallelism prl;
-      Absyn.Direction dir;
-      Absyn.IsField isf;
-      FCore.Cache cache;
       FCore.Graph env;
       SCode.Element elt, elt2;
       SCode.Attributes attr;
@@ -1063,8 +1054,6 @@ algorithm
       list<SCode.ConstraintSection> nc,nc_1;
       list<Absyn.NamedArg> clats;
       Option<SCode.ExternalDecl> ed;
-      list<SCode.Annotation> ann;
-      Option<SCode.Comment> c;
       Absyn.TypeSpec ts,ts_1;
       SCode.Attributes attr;
       SCode.Mod mod,mod_1;
@@ -1280,8 +1269,6 @@ algorithm
       list<SCode.Statement> truebranch1,truebranch2,elsebranch1,elsebranch2,body1,body2;
       SCode.Comment comment;
       SourceInfo info;
-      SCode.Statement stmt;
-      Absyn.ComponentRef cr1,cr2;
 
     case SCode.ALG_ASSIGN(exp1,exp2,comment,info)
       algorithm
@@ -1467,7 +1454,7 @@ algorithm
     case _
       algorithm
         //fprintln(Flags.DEBUG,"Try makeFullyQualified " + AbsynUtil.pathString(path));
-        (_, _) := Lookup.lookupClassLocal(inEnv, AbsynUtil.pathFirstIdent(inPath));
+        Lookup.lookupClassLocal(inEnv, AbsynUtil.pathFirstIdent(inPath));
         path := FGraph.pathStripGraphScopePrefix(inPath, inEnv, false);
         //fprintln(Flags.DEBUG,"FullyQual: " + AbsynUtil.pathString(path));
       then path;
@@ -1522,12 +1509,9 @@ algorithm
   outCref := matchcontinue (inEnv,inCref)
     local
       String id;
-      Absyn.Path path;
-      DAE.ComponentRef cref_;
       FCore.Graph env, denv;
       Absyn.ComponentRef cref;
       SCode.Element c;
-      Boolean isOutside;
 
     case (env, Absyn.CREF_FULLYQUALIFIED())
       algorithm
@@ -1681,14 +1665,11 @@ protected function fixExpTraverse
 "
   input output Absyn.Exp exp;
   input output tuple<array<FCore.Cache>,FCore.Graph,AvlSetString.Tree> tpl;
-protected
-  Absyn.Exp inExp=exp;
 algorithm
   exp := match (exp,tpl)
     local
       Absyn.FunctionArgs fargs;
       Absyn.ComponentRef cref, cref1;
-      Absyn.Path path;
       array<FCore.Cache> cache;
       FCore.Graph env;
       AvlSetString.Tree tree;
@@ -1817,8 +1798,6 @@ protected function fixListTuple2<Type_A, Type_B>
     output Type_B outTypeA;
   end FixBFn;
 protected
-  Type_A a1,a2;
-  Type_B b1,b2;
 algorithm
   outA := fixList(inCache, inEnv, inRest, tree, function fixTuple2(fixA=fixA, fixB=fixB));
 end fixListTuple2;

@@ -74,8 +74,8 @@ public function algorithmEmpty "Returns true if algorithm is empty, i.e. no stat
   input DAE.Algorithm alg;
   output Boolean empty;
 algorithm
-  empty := match(alg)
-    case(DAE.ALGORITHM_STMTS({})) then true;
+  empty := match alg
+    case DAE.ALGORITHM_STMTS({}) then true;
     else false;
   end match;
 end algorithmEmpty;
@@ -84,8 +84,8 @@ public function isReinitStatement "returns true if statement is a reinit"
   input DAE.Statement stmt;
   output Boolean res;
 algorithm
-  res := match(stmt)
-    case(DAE.STMT_REINIT()) then true;
+  res := match stmt
+    case DAE.STMT_REINIT() then true;
     else false;
   end match;
 end isReinitStatement;
@@ -94,8 +94,8 @@ public function isNotAssertStatement "returns true if statement is NOT an assert
   input DAE.Statement stmt;
   output Boolean res;
 algorithm
-  res := match(stmt)
-    case(DAE.STMT_ASSERT()) then false;
+  res := match stmt
+    case DAE.STMT_ASSERT() then false;
     else true;
   end match;
 end isNotAssertStatement;
@@ -108,10 +108,10 @@ public function makeAssignmentNoTypeCheck
   input DAE.ElementSource source;
   output DAE.Statement outStatement;
 algorithm
-  outStatement := match (ty,lhs,rhs,source)
-    case (_,DAE.CREF(componentRef=DAE.WILD()),_,_)
+  outStatement := match lhs
+    case DAE.CREF(componentRef=DAE.WILD())
       then DAE.STMT_NORETCALL(rhs, source);
-    case (_,DAE.PATTERN(pattern=DAE.PAT_WILD()),_,_)
+    case DAE.PATTERN(pattern=DAE.PAT_WILD())
       then DAE.STMT_NORETCALL(rhs, source);
     else DAE.STMT_ASSIGN(ty, lhs, rhs, source);
   end match;
@@ -125,8 +125,8 @@ public function makeArrayAssignmentNoTypeCheck
   input DAE.ElementSource source;
   output DAE.Statement outStatement;
 algorithm
-  outStatement := match (ty,lhs,rhs,source)
-    case (_,DAE.CREF(DAE.WILD()),_,_)
+  outStatement := match lhs
+    case DAE.CREF(DAE.WILD())
       then DAE.STMT_NORETCALL(rhs, source);
     else DAE.STMT_ASSIGN_ARR(ty, lhs, rhs, source);
   end match;
@@ -156,15 +156,14 @@ protected function makeTupleAssignmentNoTypeCheck2
   input DAE.ElementSource source;
   output DAE.Statement outStatement;
 algorithm
-  outStatement := match (allWild,singleAssign,ty,lhs,rhs,source)
+  outStatement := match (allWild, singleAssign, ty, lhs)
     local
       DAE.Type ty1;
       DAE.Exp lhs1;
-      DAE.ComponentRef cr;
-    case (true,_,_,_,_,_) then DAE.STMT_NORETCALL(rhs, source);
-    case (_,true,DAE.T_TUPLE(types=(ty1 as DAE.T_ARRAY())::_),lhs1::_,_,_)
+    case (true, _, _, _) then DAE.STMT_NORETCALL(rhs, source);
+    case (_, true, DAE.T_TUPLE(types=(ty1 as DAE.T_ARRAY())::_), lhs1::_)
       then DAE.STMT_ASSIGN_ARR(ty1, lhs1, DAE.TSUB(rhs, 1, ty1), source);
-    case (_,true,DAE.T_TUPLE(types=ty1::_),lhs1::_,_,_)
+    case (_, true, DAE.T_TUPLE(types=ty1::_), lhs1::_)
       then DAE.STMT_ASSIGN(ty1, lhs1, DAE.TSUB(rhs,1,ty1), source);
     else DAE.STMT_TUPLE_ASSIGN(ty,lhs,rhs,source);
   end match;
@@ -186,21 +185,20 @@ public function makeAssignment
   input DAE.ElementSource source;
   output DAE.Statement outStatement;
 algorithm
-  outStatement := matchcontinue (inExp1, inProperties2, inExp3, inProperties4, inAttributes, initial_, source)
+  outStatement := matchcontinue (inExp1, inProperties2, inExp3, inProperties4, inAttributes, initial_)
     local
       String lhs_str, rhs_str, lt_str, rt_str;
       DAE.Exp lhs, rhs;
       DAE.Properties lprop, rprop, lhprop, rhprop;
       DAE.ComponentRef cr;
       DAE.Type lt, rt;
-      Absyn.Direction direction;
       SourceInfo info;
 
-    case ((DAE.CREF(componentRef=DAE.WILD())), _, rhs, _, _, _, _)
+    case ((DAE.CREF(componentRef=DAE.WILD())), _, rhs, _, _, _)
       then DAE.STMT_NORETCALL(rhs, source);
 
     // assign to parameter in algorithm okay if record
-    case ((lhs as DAE.CREF(componentRef=cr)), lhprop, rhs, rhprop, _, SCode.NON_INITIAL(), _)
+    case ((lhs as DAE.CREF(componentRef=cr)), lhprop, rhs, rhprop, _, SCode.NON_INITIAL())
       algorithm
         DAE.C_PARAM() := Types.propAnyConst(lhprop);
         true := ComponentReference.isRecord(cr);
@@ -208,7 +206,7 @@ algorithm
       then outStatement;
 
     // assign to parameter in algorithm produce error
-    case (lhs, lprop, rhs, _, _, SCode.NON_INITIAL(), _)
+    case (lhs, lprop, rhs, _, _, SCode.NON_INITIAL())
       algorithm
         DAE.C_PARAM() := Types.propAnyConst(lprop);
         lhs_str := ExpressionBasics.printExpStr(lhs);
@@ -218,7 +216,7 @@ algorithm
         fail();
 
     // assignment to a constant, report error
-    case (lhs, _, _, _, DAE.ATTR(variability = SCode.CONST()), _, _)
+    case (lhs, _, _, _, DAE.ATTR(variability = SCode.CONST()), _)
       algorithm
         lhs_str := ExpressionBasics.printExpStr(lhs);
         Error.addSourceMessage(Error.ASSIGN_READONLY_ERROR, {"constant", lhs_str}, ElementSource.getElementSourceFileInfo(source));
@@ -226,20 +224,20 @@ algorithm
         fail();
 
     // assignment to parameter ok in initial algorithm
-    case (lhs, lhprop, rhs, rhprop, _, SCode.INITIAL(), _)
+    case (lhs, lhprop, rhs, rhprop, _, SCode.INITIAL())
       algorithm
         DAE.C_PARAM() := Types.propAnyConst(lhprop);
         outStatement := makeAssignment2(lhs, lhprop, rhs, rhprop, source);
       then outStatement;
 
-    case (lhs, lhprop, rhs, rhprop, DAE.ATTR(), _, _)
+    case (lhs, lhprop, rhs, rhprop, DAE.ATTR(), _)
       algorithm
         DAE.C_VAR() := Types.propAnyConst(lhprop);
         outStatement := makeAssignment2(lhs, lhprop, rhs, rhprop, source);
       then outStatement;
 
     /* report an error */
-    case (lhs, lprop, rhs, rprop, _, _, _)
+    case (lhs, lprop, rhs, rprop, _, _)
       algorithm
         lt := Types.getPropType(lprop);
         rt := Types.getPropType(rprop);
@@ -256,7 +254,7 @@ algorithm
         fail();
 
      /* failing */
-    case (lhs, _, rhs, _, _, _, _)
+    case (lhs, _, rhs, _, _, _)
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Algorithm.makeAssignment failed");
@@ -280,16 +278,14 @@ protected function makeAssignment2
 algorithm
   outStatement := match lhs
     local
-      DAE.ComponentRef c;
       DAE.Exp rhs_1, e3, e1;
       DAE.Type t, ty;
-      list<DAE.Exp> ea2;
 
     case DAE.CREF() guard not Types.isPropArray(lhprop)
       algorithm
         rhs_1 := Types.matchProp(rhs, rhprop, lhprop, true);
         t := getPropExpType(lhprop);
-        _ := match rhs_1
+        () := match rhs_1
           case DAE.CALL(attr=DAE.CALL_ATTR(builtin=true), path=Absyn.IDENT("listAppend"), expLst=(e1 as DAE.CREF())::_)
             guard ExpressionBasics.expEqual(lhs, e1)
             algorithm
@@ -351,7 +347,7 @@ public function makeAssignmentsList
   input DAE.ElementSource source;
   output list<DAE.Statement> assignments;
 algorithm
-  assignments := match(lhsExps, lhsProps, rhsExps, rhsProps, attributes, initial_, source)
+  assignments := match(lhsExps, lhsProps, rhsExps, rhsProps)
     local
       DAE.Exp lhs, rhs;
       list<DAE.Exp> rest_lhs, rest_rhs;
@@ -359,11 +355,10 @@ algorithm
       list<DAE.Properties> rest_lhs_prop, rest_rhs_prop;
       DAE.Statement ass;
       list<DAE.Statement> rest_ass;
-    case ({}, {}, _, _, _, _, _) then {}; /* rhs does not need to be empty */
-    case (DAE.CREF(componentRef=DAE.WILD()) :: rest_lhs, _ :: rest_lhs_prop, _ :: rest_rhs, _ :: rest_rhs_prop, _, _, _)
+    case ({}, {}, _, _) then {}; /* rhs does not need to be empty */
+    case (DAE.CREF(componentRef=DAE.WILD()) :: rest_lhs, _ :: rest_lhs_prop, _ :: rest_rhs, _ :: rest_rhs_prop)
       then makeAssignmentsList(rest_lhs, rest_lhs_prop, rest_rhs, rest_rhs_prop, attributes, initial_, source);
-    case (lhs :: rest_lhs, lhs_prop :: rest_lhs_prop,
-          rhs :: rest_rhs, rhs_prop :: rest_rhs_prop, _, _, _)
+    case (lhs :: rest_lhs, lhs_prop :: rest_lhs_prop, rhs :: rest_rhs, rhs_prop :: rest_rhs_prop)
       algorithm
         ass := makeAssignment(lhs, lhs_prop, rhs, rhs_prop, attributes, initial_, source);
         rest_ass := makeAssignmentsList(rest_lhs, rest_lhs_prop, rest_rhs, rest_rhs_prop, attributes, initial_, source);
@@ -386,7 +381,7 @@ protected
   String c, l, r;
 algorithm
   for p in props loop
-    _ := match p
+    () := match p
       // variables is fine
       case DAE.PROP(constFlag = DAE.C_VAR()) then ();
       // constant
@@ -428,7 +423,7 @@ public function makeTupleAssignment "This function creates an `DAE.STMT_TUPLE_AS
   input DAE.ElementSource source;
   output DAE.Statement outStatement;
 algorithm
-  outStatement := matchcontinue (inExpExpLst, inTypesPropertiesLst, inExp, inProperties, initial_, source)
+  outStatement := matchcontinue (inExpExpLst, inTypesPropertiesLst, inExp, inProperties, initial_)
     local
       list<DAE.Const> bvals;
       list<String> sl;
@@ -438,11 +433,9 @@ algorithm
       DAE.Exp rhs;
       DAE.Properties rprop;
       list<DAE.Type> lhrtypes, tpl;
-      list<DAE.TupleConst> clist;
       DAE.Type ty;
-      DAE.Const const;
 
-    case (lhs, lprop, rhs, _, _, _)
+    case (lhs, lprop, rhs, _, _)
       algorithm
         bvals := List.map(lprop, Types.propAnyConst);
         DAE.C_CONST() := List.reduce(bvals, Types.constOr);
@@ -453,7 +446,7 @@ algorithm
         Error.addSourceMessage(Error.ASSIGN_CONSTANT_ERROR, {lhs_str, rhs_str}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
-    case (lhs, lprop, rhs, _, SCode.NON_INITIAL(), _)
+    case (lhs, lprop, rhs, _, SCode.NON_INITIAL())
       algorithm
         bvals := List.map(lprop, Types.propAnyConst);
         DAE.C_PARAM() := List.reduce(bvals, Types.constOr);
@@ -465,7 +458,7 @@ algorithm
       then
         fail();
     // a normal prop in rhs that contains a T_TUPLE!
-    case (expl, lhprops, rhs, DAE.PROP(type_ = ty as DAE.T_TUPLE(types = tpl)), _, _)
+    case (expl, lhprops, rhs, DAE.PROP(type_ = ty as DAE.T_TUPLE(types = tpl)), _)
       algorithm
         checkLHSWritable(expl, lhprops, rhs, source);
         lhrtypes := List.map(lhprops, Types.getPropType);
@@ -474,14 +467,14 @@ algorithm
             several output args are not clearly defined. */
       then makeTupleAssignmentNoTypeCheck(ty, expl, rhs, source);
     // a tuple in rhs
-    case (expl, lhprops, rhs, DAE.PROP_TUPLE(type_ = ty as DAE.T_TUPLE(types = tpl), tupleConst = DAE.TUPLE_CONST()), _, _)
+    case (expl, lhprops, rhs, DAE.PROP_TUPLE(type_ = ty as DAE.T_TUPLE(types = tpl), tupleConst = DAE.TUPLE_CONST()), _)
       algorithm
         checkLHSWritable(expl, lhprops, rhs, source);
         lhrtypes := List.map(lhprops, Types.getPropType);
         Types.matchTypeTupleCall(rhs, tpl, lhrtypes);
          /* Don\'t use new rhs\', since type conversions of several output args are not clearly defined. */
       then makeTupleAssignmentNoTypeCheck(ty, expl, rhs, source);
-    case (lhs, lprop, rhs, rprop, _, _)
+    case (lhs, lprop, rhs, rprop, _)
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         sl := List.map(lhs, ExpressionBasics.printExpStr);
@@ -523,7 +516,7 @@ public function makeIf "This function creates an `DAE.STMT_IF\' construct, check
   output list<DAE.Statement> outStatements;
 algorithm
   outStatements :=
-  matchcontinue (inExp, inProperties, inTrueBranch, inElseIfBranches, inElseBranch, source)
+  matchcontinue (inExp, inProperties, inTrueBranch, inElseIfBranches, inElseBranch)
     local
       DAE.Else else_;
       DAE.Exp e;
@@ -532,19 +525,19 @@ algorithm
       String e_str, t_str;
       DAE.Type t;
       DAE.Properties prop;
-    case (DAE.BCONST(true), _, tb, _, _, _)
+    case (DAE.BCONST(true), _, tb, _, _)
       then tb;
-    case (DAE.BCONST(false), _, _, {}, fb, _)
+    case (DAE.BCONST(false), _, _, {}, fb)
       then fb;
-    case (DAE.BCONST(false), _, _, (e, prop, tb)::eib, fb, _)
+    case (DAE.BCONST(false), _, _, (e, prop, tb)::eib, fb)
       then makeIf(e, prop, tb, eib, fb, source);
-    case (e, DAE.PROP(type_ = t), tb, eib, fb, _)
+    case (e, DAE.PROP(type_ = t), tb, eib, fb)
       algorithm
         (e, _) := Types.matchType(e, t, DAE.T_BOOL_DEFAULT, true);
         else_ := makeElse(eib, fb, source);
       then
         {DAE.STMT_IF(e, tb, else_, source)};
-    case (e, DAE.PROP(type_ = t), _, _, _, _)
+    case (e, DAE.PROP(type_ = t), _, _, _)
       algorithm
         e_str := ExpressionBasics.printExpStr(e);
         t_str := TypesDump.unparseTypeNoAttr(t);
@@ -560,14 +553,14 @@ public function makeIfFromBranches "
   input DAE.ElementSource source;
   output list<DAE.Statement> outStatements;
 algorithm
-  outStatements := match (branches, source)
+  outStatements := match branches
     local
       DAE.Else else_;
       DAE.Exp e;
       list<DAE.Statement> br;
       list<tuple<DAE.Exp, list<DAE.Statement>>> rest;
-    case ({}, _) then {};
-    case ((e, br)::rest, _)
+    case {} then {};
+    case (e, br)::rest
       algorithm
         else_ := makeElseFromBranches(rest);
       then {DAE.STMT_IF(e, br, else_, source)};
@@ -586,7 +579,7 @@ algorithm
       list<tuple<DAE.Exp, list<DAE.Statement>>> xs;
     case {} then DAE.NOELSE();
     case {(DAE.BCONST(true), b)} then DAE.ELSE(b);
-    case ((e, b)::xs)
+    case (e, b)::xs
       algorithm
         else_ := makeElseFromBranches(xs);
       then DAE.ELSEIF(e, b, else_);
@@ -624,9 +617,9 @@ public function optimizeElseIf
   input DAE.Else els;
   output DAE.Else oelse;
 algorithm
-  oelse := match (cond, stmts, els)
-    case (DAE.BCONST(true), _, _) then DAE.ELSE(stmts);
-    case (DAE.BCONST(false), _, _) then els;
+  oelse := match cond
+    case DAE.BCONST(true) then DAE.ELSE(stmts);
+    case DAE.BCONST(false) then els;
     else DAE.ELSEIF(cond, stmts, els);
   end match;
 end optimizeElseIf;
@@ -637,7 +630,7 @@ protected function makeElse "This function creates the ELSE part of the DAE.STMT
   input DAE.ElementSource inSource;
   output DAE.Else outElse;
 algorithm
-  outElse := matchcontinue(inTuple, inStatementLst, inSource)
+  outElse := matchcontinue(inTuple, inStatementLst)
     local
       list<DAE.Statement> fb, b;
       DAE.Else else_;
@@ -647,17 +640,17 @@ algorithm
       DAE.Type t;
       SourceInfo info;
 
-    case ({}, {}, _) then DAE.NOELSE();  /* This removes empty else branches */
-    case ({}, fb, _) then DAE.ELSE(fb);
-    case (((DAE.BCONST(true), DAE.PROP(), b) :: _), _, _) then DAE.ELSE(b);
-    case (((DAE.BCONST(false), DAE.PROP(), _) :: xs), fb, _) then makeElse(xs, fb, inSource);
-    case (((e, DAE.PROP(type_ = t), b) :: xs), fb, _)
+    case ({}, {}) then DAE.NOELSE();  /* This removes empty else branches */
+    case ({}, fb) then DAE.ELSE(fb);
+    case (((DAE.BCONST(true), DAE.PROP(), b) :: _), _) then DAE.ELSE(b);
+    case (((DAE.BCONST(false), DAE.PROP(), _) :: xs), fb) then makeElse(xs, fb, inSource);
+    case (((e, DAE.PROP(type_ = t), b) :: xs), fb)
       algorithm
         (e, _) := Types.matchType(e, t, DAE.T_BOOL_DEFAULT, true);
         else_ := makeElse(xs, fb, inSource);
       then
         DAE.ELSEIF(e, b, else_);
-    case (((e, DAE.PROP(type_ = t), _) :: _), _, _)
+    case (((e, DAE.PROP(type_ = t), _) :: _), _)
       algorithm
         e_str := ExpressionBasics.printExpStr(e);
         t_str := TypesDump.unparseTypeNoAttr(t);
@@ -677,32 +670,31 @@ public function makeFor "This function creates a DAE.STMT_FOR construct, checkin
   input DAE.ElementSource source;
   output DAE.Statement outStatement;
 algorithm
-  outStatement := matchcontinue (inIdent, inExp, inProperties, inStatementLst, source)
+  outStatement := matchcontinue (inIdent, inExp, inProperties, inStatementLst)
     local
       Boolean isArray;
-      DAE.Type et;
       String i, e_str, t_str;
       DAE.Exp e;
       DAE.Type t;
       list<DAE.Statement> stmts;
       DAE.Dimensions dims;
 
-    case (i, e, DAE.PROP(type_ = DAE.T_ARRAY(ty = t, dims = dims)), stmts, _)
+    case (i, e, DAE.PROP(type_ = DAE.T_ARRAY(ty = t, dims = dims)), stmts)
       algorithm
         isArray := Types.isNonscalarArray(t, dims);
       then DAE.STMT_FOR(t, isArray, i, e, stmts, source);
 
-    case (i, e, DAE.PROP(type_ = DAE.T_METALIST(ty = t)), stmts, _)
+    case (i, e, DAE.PROP(type_ = DAE.T_METALIST(ty = t)), stmts)
       algorithm
         t := Types.simplifyType(t);
       then DAE.STMT_FOR(t, false, i, e, stmts, source);
 
-    case (i, e, DAE.PROP(type_ = DAE.T_METAARRAY(ty = t)), stmts, _)
+    case (i, e, DAE.PROP(type_ = DAE.T_METAARRAY(ty = t)), stmts)
       algorithm
         t := Types.simplifyType(t);
       then DAE.STMT_FOR(t, false, i, e, stmts, source);
 
-    case (_, e, DAE.PROP(type_ = t), _, _)
+    case (_, e, DAE.PROP(type_ = t), _)
       algorithm
         e_str := ExpressionBasics.printExpStr(e);
         t_str := TypesDump.unparseTypeNoAttr(t);
@@ -722,24 +714,22 @@ public function makeParFor "This function creates a DAE.STMT_PARFOR construct, c
   input DAE.ElementSource source;
   output DAE.Statement outStatement;
 algorithm
-  outStatement := matchcontinue (inIdent, inExp, inProperties, inStatementLst, inLoopPrlVars, source)
+  outStatement := matchcontinue (inIdent, inExp, inProperties, inStatementLst)
     local
       Boolean isArray;
-      DAE.Type et;
       String i, e_str, t_str;
       DAE.Exp e;
       DAE.Type t;
       list<DAE.Statement> stmts;
       DAE.Dimensions dims;
 
-    case (i, e, DAE.PROP(type_ = DAE.T_ARRAY(ty = t, dims = dims)), stmts, _, _)
+    case (i, e, DAE.PROP(type_ = DAE.T_ARRAY(ty = t, dims = dims)), stmts)
       algorithm
         isArray := Types.isNonscalarArray(t, dims);
-        _ := Types.simplifyType(t);
       then
         DAE.STMT_PARFOR(t, isArray, i, e, stmts, inLoopPrlVars, source);
 
-    case (_, e, DAE.PROP(type_ = t), _, _, _)
+    case (_, e, DAE.PROP(type_ = t), _)
       algorithm
         e_str := ExpressionBasics.printExpStr(e);
         t_str := TypesDump.unparseTypeNoAttr(t);
@@ -758,14 +748,14 @@ public function makeWhile "This function creates a DAE.STMT_WHILE construct, che
   output DAE.Statement outStatement;
 algorithm
   outStatement:=
-  matchcontinue (inExp, inProperties, inStatementLst, source)
+  matchcontinue (inExp, inProperties, inStatementLst)
     local
       DAE.Exp e;
       list<DAE.Statement> stmts;
       String e_str, t_str;
       DAE.Type t;
-    case (e, DAE.PROP(type_ = DAE.T_BOOL()), stmts, _) then DAE.STMT_WHILE(e, stmts, source);
-    case (e, DAE.PROP(type_ = t), _, _)
+    case (e, DAE.PROP(type_ = DAE.T_BOOL()), stmts) then DAE.STMT_WHILE(e, stmts, source);
+    case (e, DAE.PROP(type_ = t), _)
       algorithm
         e_str := ExpressionBasics.printExpStr(e);
         t_str := TypesDump.unparseTypeNoAttr(t);
@@ -785,16 +775,16 @@ public function makeWhenA "This function creates a DAE.STMT_WHEN algorithm const
   output DAE.Statement outStatement;
 algorithm
   outStatement:=
-  matchcontinue (inExp, inProperties, inStatementLst, elseWhenStmt, source)
+  matchcontinue (inExp, inProperties, inStatementLst, elseWhenStmt)
     local
       DAE.Exp e;
       list<DAE.Statement> stmts;
       Option<DAE.Statement> elsew;
       String e_str, t_str;
       DAE.Type t;
-    case (e, DAE.PROP(type_ = DAE.T_BOOL()), stmts, elsew, _) then DAE.STMT_WHEN(e, {}, false, stmts, elsew, source);
-    case (e, DAE.PROP(type_ = DAE.T_ARRAY(ty = DAE.T_BOOL())), stmts, elsew, _) then DAE.STMT_WHEN(e, {}, false, stmts, elsew, source);
-    case (e, DAE.PROP(type_ = t), _, _, _)
+    case (e, DAE.PROP(type_ = DAE.T_BOOL()), stmts, elsew) then DAE.STMT_WHEN(e, {}, false, stmts, elsew, source);
+    case (e, DAE.PROP(type_ = DAE.T_ARRAY(ty = DAE.T_BOOL())), stmts, elsew) then DAE.STMT_WHEN(e, {}, false, stmts, elsew, source);
+    case (e, DAE.PROP(type_ = t), _, _)
       algorithm
         e_str := ExpressionBasics.printExpStr(e);
         t_str := TypesDump.unparseTypeNoAttr(t);
@@ -816,7 +806,6 @@ algorithm
   outStatement := matchcontinue (inExp1, inExp2, inProperties3, inProperties4)
     local
       DAE.Exp var, val, var_1, val_1;
-      DAE.Properties prop1, prop2;
       DAE.Type tp1, tp2;
 
     case (var as DAE.CREF(), val, DAE.PROP(tp1, _), DAE.PROP(tp2, _))
@@ -847,16 +836,16 @@ public function makeAssert "Creates an assert statement from two expressions.
   input DAE.ElementSource source;
   output list<DAE.Statement> outStatement;
 algorithm
-  outStatement := matchcontinue (cond, msg, level, inProperties3, inProperties4, inProperties5, source)
+  outStatement := matchcontinue (cond, inProperties3, inProperties4, inProperties5)
     local
       SourceInfo info;
       DAE.Type t1, t2, t3;
       String strTy, strExp;
-    case (DAE.BCONST(true), _, _, DAE.PROP(type_ = DAE.T_BOOL()), DAE.PROP(type_ = DAE.T_STRING()), DAE.PROP(type_ = DAE.T_ENUMERATION(path=Absyn.FULLYQUALIFIED(Absyn.IDENT("AssertionLevel")))), _)
+    case (DAE.BCONST(true), DAE.PROP(type_ = DAE.T_BOOL()), DAE.PROP(type_ = DAE.T_STRING()), DAE.PROP(type_ = DAE.T_ENUMERATION(path=Absyn.FULLYQUALIFIED(Absyn.IDENT("AssertionLevel")))))
       then {};
-    case (_, _, _, DAE.PROP(type_ = DAE.T_BOOL()), DAE.PROP(type_ = DAE.T_STRING()), DAE.PROP(type_ = DAE.T_ENUMERATION(path=Absyn.FULLYQUALIFIED(Absyn.IDENT("AssertionLevel")))), _)
+    case (_, DAE.PROP(type_ = DAE.T_BOOL()), DAE.PROP(type_ = DAE.T_STRING()), DAE.PROP(type_ = DAE.T_ENUMERATION(path=Absyn.FULLYQUALIFIED(Absyn.IDENT("AssertionLevel")))))
       then {DAE.STMT_ASSERT(cond, msg, level, source)};
-    case (_, _, _, DAE.PROP(type_ = t1), DAE.PROP(type_ = t2), DAE.PROP(type_ = t3), _)
+    case (_, DAE.PROP(type_ = t1), DAE.PROP(type_ = t2), DAE.PROP(type_ = t3))
       algorithm
         info := ElementSource.getElementSourceFileInfo(source);
         strExp := ExpressionBasics.printExpStr(cond);
@@ -881,8 +870,8 @@ public function makeTerminate "
   input DAE.ElementSource source;
   output list<DAE.Statement> outStatement;
 algorithm
-  outStatement := match (msg, props, source)
-    case (_, DAE.PROP(type_ = DAE.T_STRING()), _) then {DAE.STMT_TERMINATE(msg, source)};
+  outStatement := match props
+    case DAE.PROP(type_ = DAE.T_STRING()) then {DAE.STMT_TERMINATE(msg, source)};
   end match;
 end makeTerminate;
 
@@ -902,7 +891,7 @@ public function getAllExps "
   output list<DAE.Exp> outExpExpLst;
 algorithm
   outExpExpLst:=
-  match (inAlgorithm)
+  match inAlgorithm
     local
       list<DAE.Exp> exps;
       list<DAE.Statement> stmts;

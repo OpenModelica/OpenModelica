@@ -382,7 +382,6 @@ protected
   list<InstNode> iterators = {};
   list<Expression> ranges = {};
   list<Subscript> subs = {};
-  Equation eq;
 algorithm
   c :: c_rest := elements;
   src := c.source;
@@ -441,7 +440,6 @@ protected
   DAE.ElementSource src, src1, src2;
   Expression cref1, cref2, e1, e2;
   list<Connector> inside, outside;
-  Variability var1, var2;
 algorithm
   (outside, inside) := List.splitOnTrue(elements, Connector.isOutside);
   inside := list(s for s guard not isNoFlowInside(s, variables) in inside);
@@ -524,7 +522,7 @@ function streamSumEquationExp
   input UnorderedMap<ComponentRef, Variable> variables;
   output Expression sumExp;
 protected
-  Expression outside_sum1, outside_sum2, inside_sum1, inside_sum2, res;
+  Expression outside_sum1, outside_sum2, inside_sum1, inside_sum2;
 algorithm
   sumExp := match (listEmpty(outsideElements), listEmpty(insideElements))
     case (true, true) then fallback;
@@ -631,7 +629,7 @@ function sumInside1
   input UnorderedMap<ComponentRef, Variable> variables;
   output Expression exp;
 protected
-  Expression stream_exp, flow_exp, flow_threshold;
+  Expression stream_exp, flow_exp;
 algorithm
   (stream_exp, flow_exp) := streamFlowExp(element);
   flow_exp := Expression.UNARY(Operator.makeUMinus(Type.REAL()), flow_exp);

@@ -128,15 +128,15 @@ function meld2
   input T inTs2;
   output T ts;
 algorithm
-  ts := match (b1,b2,t1,inTs1,t2,inTs2)
+  ts := match (b1, b2, inTs1, inTs2)
     local
       T ts1,ts2;
 
-    case (true,_,_,ts1,_,ts2)
+    case (true, _, ts1, ts2)
       algorithm
         ts := meld(ts1,t2::ts2);
       then t1::ts;
-    case (_,true,_,ts1,_,ts2)
+    case (_, true, ts1, ts2)
       algorithm
         ts := meld(t1::ts1,ts2);
       then t2::ts;
@@ -196,12 +196,12 @@ function elements2
   input list<Element> acc;
   output list<Element> elts;
 algorithm
-  elts := match (its,acc)
+  elts := match its
     local
       Element elt;
       T ts;
-    case ({},_) then listReverse(acc);
-    case (ts,_)
+    case {} then listReverse(acc);
+    case ts
       algorithm
         (ts,elt) := deleteAndReturnMin(ts);
       then elements2(ts,elt::acc);

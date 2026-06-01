@@ -224,7 +224,6 @@ function groupStateMachines
 protected
   list<ComponentRef> allFroms = {}, allTos = {}, allInits = {};
   ComponentRef cr1, cr2;
-  list<list<ComponentRef>> groups = {};
   list<ComponentRef> group;
 algorithm
   // Collect transition() and initialState() from both equation sections
@@ -347,7 +346,7 @@ function flatSmToDataFlow
   input UnorderedMap<ComponentRef, list<tuple<ComponentRef, ComponentRef>>> outerVarMap;
   output FlatSmSemantics outSem;
 protected
-  list<Equation> transitionEqs, initialStateEqs, stateEqs;
+  list<Equation> transitionEqs, initialStateEqs;
   FlatSmSemantics sem, semWithProp, semFinal;
   ComponentRef parentPrefix;
   list<String> varCrefStrings;
@@ -848,9 +847,8 @@ protected
   list<ComponentRef> tFromRefs = {}, tToRefs = {}, tImmediateRefs = {}, tResetRefs = {},
     tSynchronizeRefs = {}, tPriorityRefs = {};
 
-  Expression exp, rhs, expCond, expThen, expElse, exp1, exp2, expIf;
+  Expression rhs, expCond, expThen, expElse, exp1, exp2, expIf;
   list<Expression> expLst;
-  Option<Expression> bindExp;
   Boolean immediateVal;
 
   // Dimension objects
@@ -1127,7 +1125,7 @@ protected
   array<ComponentRef> enclosingComps;
 
   // Per-state indicator variables
-  ComponentRef stateRef, activePlotRef, ticksRef, timeEnteredRef, timeInRef;
+  ComponentRef stateRef, activePlotRef;
   Variable activePlotVar, ticksVar, timeEnteredVar, timeInVar;
   Equation activePlotEq, ticksEq, timeEnteredEq, timeInEq;
 algorithm
@@ -1224,7 +1222,6 @@ function elabXInStateOps
 protected
   list<Transition> tElab = {};
   list<Expression> cElab = {};
-  list<Equation> eqsElab;
   Integer i;
   ComponentRef stateRef;
   Expression substTickExp, substTimeExp, c3, c4;
@@ -1315,7 +1312,6 @@ protected
   ComponentRef preRef, lhsRef, cRef;
   Type tArrayBool;
   Expression lhs, rhs, newRhs;
-  Boolean found;
 algorithm
   outEq := match eq
     case Equation.EQUALITY()

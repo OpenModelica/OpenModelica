@@ -219,7 +219,7 @@ public function wordWrap
   output list<String> outStrings = {};
 protected
   Integer start_pos = 1, end_pos = inWrapLength;
-  Integer line_len, pos, next_char, char, gap_size, next_gap_size;
+  Integer line_len, pos, next_char, char, gap_size;
   String str, delim = "";
   list<String> lines;
 algorithm

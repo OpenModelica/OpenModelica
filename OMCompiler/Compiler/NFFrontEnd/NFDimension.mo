@@ -105,8 +105,6 @@ public
       local
         Expression exp_simple, e1, e2;
         Integer value, value_original;
-        Class cls;
-        ComponentRef cref;
         Type ty;
 
       case Expression.INTEGER() then INTEGER(exp.value, var);
@@ -336,8 +334,6 @@ public
     input InstNode node2;
     input Integer index2;
     output Boolean isEqual;
-  protected
-    Expression cref_exp, index_exp;
   algorithm
     isEqual := match (dim1, dim2)
       // dim1 is equal to dim2 if dim1 = size(node2, ...)

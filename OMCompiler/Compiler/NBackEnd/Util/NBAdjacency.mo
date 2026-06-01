@@ -157,7 +157,6 @@ public
     protected
       array<Integer> eqn_StA, var_StA;
       array<tuple<Integer,Integer>> eqn_AtS, var_AtS;
-      Integer eqn_scalar_size, var_scalar_size;
       Integer neqn_scal = sum(Equation.size(eqn, true) for eqn in eqn_lst);
       Integer nvar_scal = sum(BVariable.size(var, true) for var in var_lst);
       Integer neqn_arr = listLength(eqn_lst);
@@ -706,7 +705,7 @@ public
       adj := match (adj, full)
         local
           Matrix new;
-          Integer rank, max_index_eq, max_index_var;
+          Integer rank;
           list<ComponentRef> filtered;
           UnorderedMap<ComponentRef, Integer> v = vo;
 
@@ -750,7 +749,7 @@ public
           // transpose the matrix
           if UnorderedMap.isEmpty(vo) and UnorderedMap.isEmpty(vn) then
           else
-            _ := intMax(max(i for i in UnorderedMap.valueList(vo)), max(i for i in UnorderedMap.valueList(vn)));
+            intMax(max(i for i in UnorderedMap.valueList(vo)), max(i for i in UnorderedMap.valueList(vn)));
           end if;
           adj.mT := transposeScalar(adj.m, VariablePointers.scalarSize(vars, true));
         then adj;
@@ -1613,8 +1612,6 @@ public
       input Integer depth;
       input UnorderedMap<ComponentRef, Dependency> map;
       input UnorderedSet<ComponentRef> rep;
-    protected
-      Dependency dep;
     algorithm
       for cref in lst loop
         UnorderedMap.add(cref, create(ComponentRef.getSubscriptedType(cref), depth), map);
@@ -1643,7 +1640,7 @@ public
     algorithm
       for cref in crefs loop
         repeats := UnorderedSet.contains(cref, rep_set);
-        _ := match UnorderedMap.getSafe(cref, map, sourceInfo())
+        () := match UnorderedMap.getSafe(cref, map, sourceInfo())
           local
             array<list<Integer>> skips;
             list<Kind> kinds;
@@ -1754,7 +1751,7 @@ public
       output list<ComponentRef> QQ = {};
     algorithm
       for cref in crefs loop
-        _ := match UnorderedMap.getSafe(cref, map, sourceInfo())
+        () := match UnorderedMap.getSafe(cref, map, sourceInfo())
           case UNSOLVABLE()                       algorithm XX := cref :: XX; then();
           case IMPLICIT()                         algorithm II := cref :: II; then();
           case EXPLICIT_NONLINEAR(unique = false) algorithm NM := cref :: NM; then();
@@ -1867,7 +1864,7 @@ public
         // gather unsolvables from iterator
         occ2 := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
         filter := function Slice.getDependentCref(map = map, pseudo = true);
-        _ := Iterator.map(eqn.iter, function Slice.Slice.filterExp(filter = filter, acc = occ2),
+        Iterator.map(eqn.iter, function Slice.Slice.filterExp(filter = filter, acc = occ2),
           SOME(function filter(acc = occ2)), Expression.mapShallow);
         // update unsolvables
         Solvability.updateList(UnorderedSet.toList(occ2), Solvability.UNSOLVABLE(), sol_map);
@@ -1897,7 +1894,6 @@ public
   algorithm
     set := match exp
       local
-        Dependency dep;
         UnorderedSet<ComponentRef> set1, set2, diff;
         list<UnorderedSet<ComponentRef>> sets = {};
         Expression call_exp;
@@ -2323,7 +2319,7 @@ public
     input UnorderedSet<ComponentRef> candidates;
     input UnorderedSet<ComponentRef> result;
   algorithm
-    _ := match stmt
+    () := match stmt
 
       // actual occurrence can only happen here
       case Statement.ASSIGNMENT() algorithm
@@ -2405,7 +2401,7 @@ public
     // only do something if its an initial partition
     if Partition.kindIsInitial(kind) then
       for cref in UnorderedSet.toList(occs) loop
-        _ := match BVariable.getVarStart(BVariable.getVarPointer(cref, sourceInfo()))
+        () := match BVariable.getVarStart(BVariable.getVarPointer(cref, sourceInfo()))
           local
             Pointer<Variable> start;
             ComponentRef start_cref;

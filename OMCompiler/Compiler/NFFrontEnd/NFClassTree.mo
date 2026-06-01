@@ -128,12 +128,11 @@ public
     protected
       LookupTree.Tree ltree;
       LookupTree.Entry lentry;
-      Integer clsc, compc, extc, i;
+      Integer clsc, compc, extc;
       array<InstNode> clss, comps, exts;
       Integer cls_idx = 0, ext_idx = 0, comp_idx = 0;
       DuplicateTree.Tree dups;
       list<Import> imps = {};
-      array<Import> imps_arr;
       SourceInfo info;
     algorithm
       ltree := LookupTree.new();
@@ -363,7 +362,7 @@ public
       array<InstNode> exts, clss, comps;
       array<Import> imps;
       list<tuple<Integer, Integer>> ext_idxs = {};
-      Integer ccount, cls_idx, comp_idx = 1;
+      Integer cls_idx, comp_idx = 1;
       DuplicateTree.Tree dups;
       Mutable<DuplicateTree.Tree> dups_ptr;
     algorithm
@@ -447,16 +446,15 @@ public
             output Integer compCount = 0;
     protected
       Class cls;
-      ClassTree tree, ext_tree;
+      ClassTree tree;
       LookupTree.Tree ltree;
       array<InstNode> exts, old_clss, old_comps;
       array<Import> imps;
       array<Mutable<InstNode>> clss, comps, ext_clss;
-      list<Integer> local_comps = {}, break_indices;
+      list<Integer> local_comps = {};
       Integer cls_idx = 1, comp_idx = 1, cls_count, comp_count;
-      InstNode node, parent_scope, inner_node, inst_scope;
+      InstNode node, parent_scope, inst_scope;
       DuplicateTree.Tree dups;
-      Component comp;
       SCode.Element ext_def;
       Boolean is_typish;
       InstNodeType inst_ty;
@@ -1573,7 +1571,6 @@ public
       array<Mutable<InstNode>> ext_comps_ptrs;
       array<InstNode> ext_comps;
       Integer comp_count;
-      InstNode ext_comp;
     algorithm
       () := match Class.classTree(InstNode.getClass(extNode))
         case INSTANTIATED_TREE(components = ext_comps_ptrs)
@@ -1661,9 +1658,9 @@ public
     protected
       InstNode n1, n2;
     algorithm
-      entry := match (newEntry, oldEntry)
+      entry := match oldEntry
         // Local elements overwrite imported elements with same name.
-        case (_, LookupTree.Entry.IMPORT()) then newEntry;
+        case LookupTree.Entry.IMPORT() then newEntry;
         // Otherwise we have two local elements with the same name, which is an error.
         else
           algorithm

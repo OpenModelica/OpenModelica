@@ -43,7 +43,6 @@ public
   // OF imports
   import Absyn.Path;
   import AbsynUtil;
-  import DAE;
 
   // NF imports
   import Algorithm = NFAlgorithm;
@@ -198,7 +197,6 @@ public
         Pointer<Variable> new_var;
         Pointer<Equation> new_eqn;
         list<Slice<VariablePointer>> new_var_slices;
-        list<Pointer<Equation>> new_eqns;
         ComponentRef new_cref;
         Slice<VariablePointer> new_var_slice;
         Slice<EquationPointer> new_eqn_slice;
@@ -347,9 +345,7 @@ public
     end if;
     (eq, diffArguments) := match eq
       local
-        Equation res;
         Expression lhs, rhs;
-        ComponentRef lhs_cref, rhs_cref;
         list<Equation> forBody = {};
         IfEquationBody ifBody;
         WhenEquationBody whenBody;
@@ -1461,12 +1457,10 @@ public
     (exp, diffArguments) := match exp
       local
         Expression ret, arg;
-        Call call, der_call;
+        Call call;
         Option<Function> func_opt, der_func_opt;
-        list<Function> derivatives;
         Function func, der_func;
         list<Expression> arguments = {};
-        Operator addOp, mulOp;
         list<tuple<Expression, InstNode>> arguments_inputs;
         InstNode inp;
         Boolean isCont, isReal, isFunc, isSkipped;
@@ -1601,7 +1595,7 @@ public
     Operator addOp = Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), Type.REAL());
     Operator mulOp = Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), Type.REAL());
   algorithm
-    exp := match (exp)
+    exp := match exp
       local
         Integer i;
         Expression ret, ret1, ret2, arg1, arg2, arg3, diffArg1, diffArg2, diffArg3, current_grad, cond1, cond2, cond, zero1, zero2, grad_x, grad_y, old_grad;
@@ -1623,7 +1617,7 @@ public
         Expression diagG;
 
       // d/dz delay(x, delta) = (dt/dz - d delta/dz) * delay(der(x), delta)
-      case (Expression.CALL()) guard(name == "delay")
+      case Expression.CALL() guard(name == "delay")
       algorithm
         (arg1, arg2, arg3) := match Call.arguments(exp.call)
           case {arg1, arg2, arg3} then (arg1, arg2, arg3);
@@ -1650,7 +1644,7 @@ public
       then ret;
 
       // SMOOTH
-      case (Expression.CALL()) guard(name == "smooth")
+      case Expression.CALL() guard(name == "smooth")
       algorithm
         ret := match Call.arguments(exp.call)
           case {arg1 as Expression.INTEGER(i), arg2} guard(i > 0) algorithm
@@ -1672,7 +1666,7 @@ public
         end match;
       then ret;
 
-      case (Expression.CALL()) guard(name == "sum")
+      case Expression.CALL() guard(name == "sum")
       algorithm
         arg1 := match Call.arguments(exp.call)
           case {arg1} then arg1;
@@ -1704,7 +1698,7 @@ public
       // symmetric(A):
       // Forward: symmetric(dA/dz)
       // Reverse: grad_A = triu(G + Gᵀ) - diag(G)
-      case (Expression.CALL()) guard(name == "symmetric")
+      case Expression.CALL() guard(name == "symmetric")
       algorithm
         arg1 := match Call.arguments(exp.call)
           case {arg1} then arg1;
@@ -1775,7 +1769,7 @@ public
       // diagonal(v):
       // Forward: diagonal(dv/dz)
       // Reverse: grad_v = diag(G)  (extract diagonal of upstream matrix)
-      case (Expression.CALL()) guard(name == "diagonal")
+      case Expression.CALL() guard(name == "diagonal")
       algorithm
         arg1 := match Call.arguments(exp.call)
           case {arg1} then arg1;
@@ -1808,7 +1802,7 @@ public
       //   - if rX < 2: dropLastDimIndex1(G) (2-rX times)
       //   - if rX = 2: G
       //   - if rX > 2: promote(G, rX)
-      case (Expression.CALL()) guard(name == "matrix")
+      case Expression.CALL() guard(name == "matrix")
       algorithm
         arg1 := match Call.arguments(exp.call)
           case {arg1} then arg1;
@@ -1853,7 +1847,7 @@ public
       // Functions with one argument that differentiate "through"
       // through means that the derivative of the function wrt. its input is equal to the function of derivative of input
       // d/dz f(x) -> f(dx/dz)
-      case (Expression.CALL()) guard(List.contains({"pre", "noEvent", "scalar", "vector", "transpose", "skew"}, name, stringEqual))
+      case Expression.CALL() guard(List.contains({"pre", "noEvent", "scalar", "vector", "transpose", "skew"}, name, stringEqual))
       algorithm
         arg1 := match Call.arguments(exp.call)
           case {arg1} then arg1;
@@ -1867,7 +1861,7 @@ public
 
       // Functions with two arguments that differentiate "through"
       // df(x,y)/dz = f(dx/dz, dy/dz)
-      case (Expression.CALL()) guard(List.contains({"homotopy", "$OMC$inStreamDiv"}, name, stringEqual))
+      case Expression.CALL() guard(List.contains({"homotopy", "$OMC$inStreamDiv"}, name, stringEqual))
       algorithm
         (arg1, arg2) := match Call.arguments(exp.call)
           case {arg1, arg2} then (arg1, arg2);
@@ -1898,7 +1892,7 @@ public
       then exp;
 
       // d/dz promote(A, n) = promote(dA/dz, n)
-      case (Expression.CALL()) guard(name == "promote")
+      case Expression.CALL() guard(name == "promote")
       algorithm
         (arg1, arg2) := match Call.arguments(exp.call)
           case {arg1, arg2} then (arg1, arg2);
@@ -1924,7 +1918,7 @@ public
       then exp;
 
       // d/dz identity(n) = zeros(n, n)
-      case (Expression.CALL()) guard(name == "identity")
+      case Expression.CALL() guard(name == "identity")
       algorithm
         // diffArguments.current_grad := Expression.makeZero(Expression.typeOf(exp));?
         arg1 := match Call.arguments(exp.call)
@@ -1941,7 +1935,7 @@ public
         ));
 
       // d/dz fill(x, n1, n2, ...) = fill(dx/dz, n1, n2, ...)
-      case (Expression.CALL()) guard(name == "fill")
+      case Expression.CALL() guard(name == "fill")
       algorithm
         // only differentiate 1st input
         arg1 :: rest := Call.arguments(exp.call);
@@ -1964,7 +1958,7 @@ public
 
       // SEMI LINEAR
       // d sL(x, m1, m2)/dz = sL(x, dm1/dz, dm2/dz) + dx/dz * (if x >= 0 then m1 else m2)
-      case (Expression.CALL()) guard(name == "semiLinear")
+      case Expression.CALL() guard(name == "semiLinear")
       algorithm
         (arg1, arg2, arg3) := match Call.arguments(exp.call)
           case {arg1, arg2, arg3} then (arg1, arg2, arg3);
@@ -2018,7 +2012,7 @@ public
       // d/dz max(X) = (dX/dz)[argmax(X)]
       // d/dz min(x,y) = if x < y then dx/dz else dy/dz
       // d/dz max(x,y) = if x > y then dx/dz else dy/dz
-      case (Expression.CALL()) guard(name == "min" or name == "max")
+      case Expression.CALL() guard(name == "min" or name == "max")
       algorithm
         ret := match Call.arguments(exp.call)
           case {arg1} algorithm
@@ -2110,7 +2104,7 @@ public
 
       // Builtin function call with one argument
       // df(x)/dz = df/dx * dx/dz
-      case (Expression.CALL()) guard List.hasOneElement(Call.arguments(exp.call))
+      case Expression.CALL() guard List.hasOneElement(Call.arguments(exp.call))
       algorithm
         arg1 := match Call.arguments(exp.call)
           case {arg1} then arg1;
@@ -2134,7 +2128,7 @@ public
 
       // Builtin function call with two arguments
       // df(x,y)/dz = df/dx * dx/dz + df/dy * dy/dz
-      case (Expression.CALL()) guard(listLength(Call.arguments(exp.call)) == 2)
+      case Expression.CALL() guard(listLength(Call.arguments(exp.call)) == 2)
       algorithm
         (arg1, arg2) := match Call.arguments(exp.call)
           case {arg1, arg2} then (arg1, arg2);
@@ -2159,7 +2153,7 @@ public
       then ret;
 
       // try some simple known cases
-      case (Expression.CALL()) algorithm
+      case Expression.CALL() algorithm
         ret := match Call.functionNameLast(exp.call)
           case "sample" then Expression.BOOLEAN(false);
           else algorithm
@@ -2186,18 +2180,18 @@ public
     Operator addOp = Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), Type.REAL());
     Operator mulOp = Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), Type.REAL());
   algorithm
-    derFuncCall := match (name)
+    derFuncCall := match name
       local
         Expression ret;
 
       // all these have integer values and therefore zero derivative
-      case ("sign")     then Expression.INTEGER(0);
-      case ("ceil")     then Expression.REAL(0.0);
-      case ("floor")    then Expression.REAL(0.0);
-      case ("integer")  then Expression.INTEGER(0);
+      case "sign"     then Expression.INTEGER(0);
+      case "ceil"     then Expression.REAL(0.0);
+      case "floor"    then Expression.REAL(0.0);
+      case "integer"  then Expression.INTEGER(0);
 
       // abs(arg) -> sign(arg)
-      case ("abs") then Expression.CAST(
+      case "abs" then Expression.CAST(
         Expression.typeOf(arg),
         Expression.CALL(Call.makeTypedCall(
           fn          = NFBuiltinFuncs.SIGN,
@@ -2207,13 +2201,13 @@ public
         )));
 
       // sqrt(arg) -> 0.5/arg^(0.5)
-      case ("sqrt") algorithm
+      case "sqrt" algorithm
         ret := Expression.BINARY(arg, powOp, Expression.REAL(0.5));       // arg^0.5
         ret := Expression.MULTARY({Expression.REAL(0.5)}, {ret}, mulOp);  // 1/(2*arg^0.5)
       then ret;
 
       // sin(arg) -> cos(arg)
-      case ("sin") then Expression.CALL(Call.makeTypedCall(
+      case "sin" then Expression.CALL(Call.makeTypedCall(
           fn          = NFBuiltinFuncs.COS_REAL,
           args        = {arg},
           variability = Expression.variability(arg),
@@ -2221,7 +2215,7 @@ public
         ));
 
       // cos(arg) -> -sin(arg)
-      case ("cos") then Expression.negate(Expression.CALL(Call.makeTypedCall(
+      case "cos" then Expression.negate(Expression.CALL(Call.makeTypedCall(
           fn          = NFBuiltinFuncs.SIN_REAL,
           args        = {arg},
           variability = Expression.variability(arg),
@@ -2230,7 +2224,7 @@ public
 
       // tan(arg) -> 1/cos(arg)^2
       // kabdelhak: ToDo - investigate numerical properties: 1+tan(arg)^2 maybe better?
-      case ("tan") algorithm
+      case "tan" algorithm
         ret := Expression.CALL(Call.makeTypedCall(
           fn          = NFBuiltinFuncs.COS_REAL,
           args        = {arg},
@@ -2241,7 +2235,7 @@ public
       then ret;
 
       // asin(arg) -> 1/sqrt(1-arg^2)
-      case ("asin") algorithm
+      case "asin" algorithm
         ret := Expression.BINARY(arg, powOp, Expression.REAL(2.0));       // arg^2
         ret := Expression.MULTARY({Expression.REAL(1.0)}, {ret}, addOp);  // 1-arg^2
         ret := Expression.BINARY(ret, powOp, Expression.REAL(0.5));       // sqrt(1-arg^2)
@@ -2249,7 +2243,7 @@ public
       then ret;
 
       // acos(arg) -> -1/sqrt(1-arg^2)
-      case ("acos") algorithm
+      case "acos" algorithm
         ret := Expression.BINARY(arg, powOp, Expression.REAL(2.0));       // arg^2
         ret := Expression.MULTARY({Expression.REAL(1.0)}, {ret}, addOp);  // 1-arg^2
         ret := Expression.BINARY(ret, powOp, Expression.REAL(0.5));       // sqrt(1-arg^2)
@@ -2257,14 +2251,14 @@ public
       then ret;
 
       // atan(arg) -> 1/(1+arg^2)
-      case ("atan") algorithm
+      case "atan" algorithm
         ret := Expression.BINARY(arg, powOp, Expression.REAL(2.0));       // arg^2
         ret := Expression.MULTARY({Expression.REAL(1.0), ret}, {}, addOp);// 1+arg^2
         ret := Expression.MULTARY({Expression.REAL(1.0)}, {ret}, mulOp);  // 1/(1+arg^2)
       then ret;
 
       // sinh(arg) -> cosh(arg)
-      case ("sinh") then Expression.CALL(Call.makeTypedCall(
+      case "sinh" then Expression.CALL(Call.makeTypedCall(
           fn          = NFBuiltinFuncs.COSH_REAL,
           args        = {arg},
           variability = Expression.variability(arg),
@@ -2272,7 +2266,7 @@ public
         ));
 
       // cosh(arg) -> sinh(arg)
-      case ("cosh") then Expression.CALL(Call.makeTypedCall(
+      case "cosh" then Expression.CALL(Call.makeTypedCall(
           fn          = NFBuiltinFuncs.SINH_REAL,
           args        = {arg},
           variability = Expression.variability(arg),
@@ -2280,7 +2274,7 @@ public
         ));
 
       // tanh(arg) -> 1-tanh(arg)^2
-      case ("tanh") algorithm
+      case "tanh" algorithm
         ret := Expression.CALL(Call.makeTypedCall(
           fn          = NFBuiltinFuncs.TANH_REAL,
           args        = {arg},
@@ -2291,7 +2285,7 @@ public
       then ret;
 
       // acosh(arg) -> 1/sqrt(arg^2-1)
-      case ("acosh") algorithm
+      case "acosh" algorithm
         ret := Expression.BINARY(arg, powOp, Expression.REAL(2.0));       // arg^2
         ret := Expression.MULTARY({ret}, {Expression.REAL(1.0)}, addOp);  // arg^2-1
         ret := Expression.BINARY(ret, powOp, Expression.REAL(0.5));       // sqrt(arg^2-1)
@@ -2299,7 +2293,7 @@ public
       then ret;
 
       // asinh(arg) -> 1/sqrt(arg^2+1)
-      case ("asinh") algorithm
+      case "asinh" algorithm
         ret := Expression.BINARY(arg, powOp, Expression.REAL(2.0));         // arg^2
         ret := Expression.MULTARY({ret, Expression.REAL(1.0)}, {}, addOp);  // arg^2+1
         ret := Expression.BINARY(ret, powOp, Expression.REAL(0.5));         // sqrt(arg^2+1)
@@ -2307,14 +2301,14 @@ public
       then ret;
 
       // atanh(arg) -> 1/(1-arg^2)
-      case ("atanh") algorithm
+      case "atanh" algorithm
         ret := Expression.BINARY(arg, powOp, Expression.REAL(2.0));       // arg^2
         ret := Expression.MULTARY({Expression.REAL(1.0)}, {ret}, addOp);  // 1-arg^2
         ret := Expression.MULTARY({Expression.REAL(1.0)}, {ret}, mulOp);  // 1/(1-arg^2)
       then ret;
 
       // exp(arg) -> exp(arg)
-      case ("exp") then Expression.CALL(Call.makeTypedCall(
+      case "exp" then Expression.CALL(Call.makeTypedCall(
           fn          = NFBuiltinFuncs.EXP_REAL,
           args        = {arg},
           variability = Expression.variability(arg),
@@ -2322,10 +2316,10 @@ public
         ));
 
       // log(arg) -> 1/arg
-      case ("log") then Expression.MULTARY({Expression.REAL(1.0)}, {arg}, mulOp);
+      case "log" then Expression.MULTARY({Expression.REAL(1.0)}, {arg}, mulOp);
 
       // log10(arg) -> 1/(arg*log(10))
-      case ("log10") algorithm
+      case "log10" algorithm
         ret := Expression.CALL(Call.makeTypedCall(
           fn          = NFBuiltinFuncs.LOG_REAL,
           args        = {Expression.REAL(10.0)},
@@ -2354,17 +2348,17 @@ public
     Operator addOp = Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), Type.REAL());
     Operator mulOp = Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), Type.REAL());
   algorithm
-    (derFuncCall1, derFuncCall2) := match (name)
+    (derFuncCall1, derFuncCall2) := match name
       local
         Expression exp1, exp2, ret1, ret2;
 
       // div(arg1, arg2) truncates the fractional part of arg1/arg2 so it has discrete values
       // therefore it has zero derivative where it's defined
-      case ("div") then (Expression.INTEGER(0), Expression.INTEGER(0));
+      case "div" then (Expression.INTEGER(0), Expression.INTEGER(0));
 
       // d/darg1 mod(arg1, arg2) -> 1
       // d/darg2 mod(arg1, arg2) -> -floor(arg1/arg2)
-      case ("mod") algorithm
+      case "mod" algorithm
         exp2 := Expression.CALL(Call.makeTypedCall(
           fn          = NFBuiltinFuncs.FLOOR,
           args        = {Expression.MULTARY({arg1}, {arg2}, mulOp)},          // arg1/arg2
@@ -2376,7 +2370,7 @@ public
 
       // d/darg1 rem(arg1, arg2) -> 1
       // d/darg2 rem(arg1, arg2) -> -div(arg1, arg2)
-      case ("rem") algorithm
+      case "rem" algorithm
         exp2 := Expression.CALL(Call.makeTypedCall(
           fn          = NFBuiltinFuncs.DIV_REAL,
           args        = {arg1, arg2},
@@ -2388,7 +2382,7 @@ public
 
       // d/darg1 atan2(arg1, arg2) -> -arg2/(arg1^2+arg2^2)
       // d/darg2 atan2(arg1, arg2) ->  arg1/(arg1^2+arg2^2)
-      case ("atan2") algorithm
+      case "atan2" algorithm
         exp1 := Expression.BINARY(arg1, powOp, Expression.REAL(2.0));         // arg1^2
         exp2 := Expression.BINARY(arg2, powOp, Expression.REAL(2.0));         // arg2^2
         exp1 := Expression.MULTARY({exp1, exp2}, {}, addOp);                  // arg1^2+arg2^2
@@ -2710,7 +2704,6 @@ public
     UnorderedSet<InstNode> diffInfo;
     list<Algorithm> algorithms;
     CachedData cachedData;
-    InstNode diffVar;
     ComponentRef diffCref;
     list<InstNode> locals, outputs, local_outputs;
     Boolean changed = false;
@@ -3279,10 +3272,10 @@ public
         list<Expression> arguments, new_arguments = {};
         list<Expression> inv_arguments, new_inv_arguments = {};
         list<Expression> diff_arguments, diff_inv_arguments;
-        Operator operator, addOp, powOp, mulOp, mulEWOp, addEWOp;
+        Operator operator, addOp, powOp, mulEWOp;
         Operator.SizeClassification sizeClass, powSizeClass;
-        Expression current_grad, upstream, e_over_f, term, e_over_g, numProd, denomProd;
-        List<Expression> add_terms, sub_terms, arg_rest, arg_products;
+        Expression current_grad, upstream, e_over_f, e_over_g, numProd, denomProd;
+        List<Expression> arg_rest;
         Boolean hasArray, hasArrayNum;
         Expression local_grad, localUpF, localUpG;
         Integer i;
@@ -3386,10 +3379,10 @@ public
         algorithm
           (_, sizeClass) := Operator.classify(operator);
           // Determine operators
-          _ := Operator.fromClassification(
+          Operator.fromClassification(
             (NFOperator.MathClassification.ADDITION, sizeClass),
             operator.ty);
-          _ := makeMulFromOperator(operator);
+          makeMulFromOperator(operator);
 
           // Use element-wise mul for reverse local upstream assembly to avoid array*scalar miscodegen
           // when upstream and partial products are arrays.
@@ -3397,7 +3390,7 @@ public
           mulEWOp := Operator.fromClassification(
             (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.ELEMENT_WISE),
             operator.ty);
-          _ := Operator.fromClassification(
+          Operator.fromClassification(
             (NFOperator.MathClassification.ADDITION, NFOperator.SizeClassification.ELEMENT_WISE),
             operator.ty);
 
@@ -3436,9 +3429,9 @@ public
           // Differentiate denominator factors
           i := 1;
           powSizeClass := if Expression.hasArrayType(listHead(inv_arguments)) then NFOperator.SizeClassification.ARRAY_SCALAR else NFOperator.SizeClassification.SCALAR;
-          _ := Operator.fromClassification((NFOperator.MathClassification.POWER, powSizeClass), Type.REAL());
+          Operator.fromClassification((NFOperator.MathClassification.POWER, powSizeClass), Type.REAL());
           for g in inv_arguments loop
-            _ := listDelete(inv_arguments, i);
+            listDelete(inv_arguments, i);
             // exp / g : add one more g to denominator list
             e_over_g := Expression.MULTARY({numProd}, g :: inv_arguments, operator);
 
@@ -3454,7 +3447,7 @@ public
             (diff_arg, diffArguments) := differentiateExpression(g, diffArguments);
 
             // Forward term: - g' * (exp / g)
-            _ := Expression.negate(Expression.MULTARY({diff_arg, e_over_g}, {}, mulEWOp));
+            Expression.negate(Expression.MULTARY({diff_arg, e_over_g}, {}, mulEWOp));
             i := i + 1;
           end for;
           // Restore upstream gradient
@@ -3863,7 +3856,6 @@ protected
     NFCall call;
     NFPrefixes.Variability var = Expression.variability(arr);
     NFPrefixes.Purity pur = Expression.purity(arr);
-    NFFunction.Function PROMOTE_FUNC;
   algorithm
     elTy := if Type.isArray(inTy) then Type.arrayElementType(inTy) else inTy;
     inDims := if Type.isArray(inTy) then Type.arrayDims(inTy) else {};
@@ -3898,7 +3890,6 @@ protected
     NFCall call;
     NFPrefixes.Variability var = Expression.variability(arr);
     NFPrefixes.Purity pur = Expression.purity(arr);
-    NFFunction.Function SUM_FUNC;
   algorithm
     // Not an array: just return expression (sum(x) == x)
     if not Type.isArray(inTy) then
@@ -4103,12 +4094,10 @@ protected
     Type elTy;
     Operator addOp;
     Boolean seedIsArray;
-    Integer m, j, loI, hiI, stI;
-    array<Expression> elems = arrayCreate(0, Expression.INTEGER(0));
+    Integer m, j, loI, hiI;
     Option<Expression> accOpt;
     Option<Expression> ohOpt;
-    Expression acc, seedElem, term;
-    list<Expression> idxElems;
+    Expression acc, term;
   algorithm
     arrTy := ComponentRef.getSubscriptedType(derBaseCref);
     elTy  := Type.arrayElementType(arrTy);

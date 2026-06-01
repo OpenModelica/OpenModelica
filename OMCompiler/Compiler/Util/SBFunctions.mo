@@ -62,7 +62,7 @@ public
     SBLinearMap lm_aux;
     array<SBSet> dom_res;
     array<SBLinearMap> lm_res;
-    SBSet s_aux, d1, d2;
+    SBSet d1, d2;
     Real g1i, g2i, o1i, o2i, xinter;
     SBInterval inti, i1, i2;
 
@@ -71,7 +71,6 @@ public
       input SBLinearMap map;
       output SBPWLinearMap outMap;
     protected
-      SBAtomicSet set;
       array<SBSet> dom;
       array<SBLinearMap> lm;
     algorithm
@@ -262,7 +261,7 @@ public
     Vector<SBLinearMap> lres;
     SBPWLinearMap pw_copy, new_map;
     SBSet di, new_domi;
-    SBLinearMap li, new_lm;
+    SBLinearMap li;
     Real gdim, odim;
     Integer off;
     SBMultiInterval mi;
@@ -434,7 +433,7 @@ public
     SBSet d, dom_inv, aux;
     SBLinearMap lm_inv, aux_lm1, aux_lm2, lm_res;
     SBPWLinearMap inv_pw, aux_inv, aux_res;
-    Real min_g, max_g, inf, g;
+    Real inf, g;
     array<Integer> min_aux;
     array<Real> resg, reso, gain, off, gres, oi, ginv;
   algorithm

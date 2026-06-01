@@ -41,9 +41,8 @@ protected
   import BaseAvlTree;
   import Dump;
   import ExecStat;
-  import InteractiveUtil;
   import JSON;
-  import NFApi;
+  import ProgramUtil;
   import Util;
 
   uniontype PathEntry
@@ -130,7 +129,7 @@ public
       paths := Paths.PATHS(tree, AbsynUtil.pathToStringList(relative_path), {});
 
       try
-        cls := InteractiveUtil.getPathedClassInProgram(scope, program);
+        cls := ProgramUtil.getPathedClassInProgram(scope, program);
         matches := lookupInClass(cls, paths, exactMatch, {});
       else
         matches := {};
@@ -149,8 +148,6 @@ protected
   protected
     Option<PathEntry> opt_entry;
     PathEntry entry;
-    Option<PathTree.Tree> opt_tree;
-    PathTree.Tree rest_tree;
   algorithm
     tree := match path
       case Absyn.Path.IDENT() then PathTree.add(tree, path.name, PathEntry.ENTRY(PathTree.new(), false), conflictFunc = PathTree.addConflictKeep);
@@ -1208,7 +1205,7 @@ protected
 
       json_elems := {};
       for m in group loop
-        json_elem := NFApi.dumpJSONSourceInfo(m.info, dumpFilename = false);
+        json_elem := JSON.dumpJSONSourceInfo(m.info, dumpFilename = false);
         json_elem := JSON.addPair("name", JSON.makeString(Dump.printComponentRefStr(m.name)), json_elem);
         json_elem := JSON.addPair("class", JSON.makeString(m.scope), json_elem);
         json_elems := json_elem :: json_elems;

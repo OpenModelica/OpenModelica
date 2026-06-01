@@ -58,7 +58,6 @@ public
 protected
   // Old Frontend imports
   import Absyn.Path;
-  import AbsynUtil;
 
   // New Frontend imports
   import Algorithm = NFAlgorithm;
@@ -103,7 +102,6 @@ protected
   import ClockIndexes;
   import Error;
   import ExecStat;
-  import ExpandableArray;
   import Flags;
   import StringUtil;
   import System;
@@ -367,7 +365,6 @@ public
     Module.wrapper func;
     String name, debugStr;
     Real clock_time;
-    Integer length;
     tuple<Integer, Integer> varSizes, eqnSizes;
   algorithm
     for module in modules loop
@@ -443,7 +440,6 @@ public
       local
         EqData eqData;
         VarData varData;
-        list<Pointer<Variable>> acc_discrete_states_accessed;
 
       case MAIN(eqData = eqData as BEquation.EQ_DATA_SIM()) algorithm
         if init then
@@ -454,27 +450,7 @@ public
         bdae.eqData := EqData.compress(eqData);
 
         // update varData with accs obtained from mapping
-        bdae.varData := match bdae.varData
-          case varData as VarData.VAR_DATA_SIM() algorithm
-            acc_discrete_states_accessed := Pointer.access(acc_discrete_states);
-
-            VariablePointers.removeList(acc_discrete_states_accessed, varData.unknowns);
-            VariablePointers.removeList(acc_discrete_states_accessed, varData.discretes);
-            VariablePointers.removeList(acc_discrete_states_accessed, varData.discrete_states);
-
-            VariablePointers.removeList(Pointer.access(acc_previous), varData.previous);
-            VariablePointers.removeList(Pointer.access(acc_previous), varData.variables);
-
-            VariablePointers.addList(acc_discrete_states_accessed, varData.parameters);
-            VariablePointers.addList(acc_discrete_states_accessed, varData.knowns);
-
-            for v in acc_discrete_states_accessed loop
-              BVariable.setVarKind(v, VariableKind.PARAMETER(NONE()));
-              BVariable.removePartner(v, BackendInfo.setVarPre);
-            end for;
-          then varData;
-          else bdae.varData;
-        end match;
+        bdae.varData := updateDiscreteStates(bdae.varData, acc_discrete_states, acc_previous);
       then bdae;
       else bdae;
     end match;
@@ -502,10 +478,48 @@ public
             acc_previous = acc_previous,
             simplifyExp = SimplifyExp.removeStream));
         bdae.eqData := EqData.compress(eqData);
+
+        // update varData with accs obtained from mapping
+        bdae.varData := updateDiscreteStates(bdae.varData, acc_discrete_states, acc_previous);
       then bdae;
       else bdae;
     end match;
   end removeStream;
+
+  function updateDiscreteStates
+    "update varData with accs obtained from mapping"
+    input output VarData varData;
+    input Pointer<list<Pointer<Variable>>> acc_discrete_states;
+    input Pointer<list<Pointer<Variable>>> acc_previous;
+  algorithm
+    varData := match varData
+      local
+        list<Pointer<Variable>> ads_accessed, ap_accessed;
+
+      case VarData.VAR_DATA_SIM() algorithm
+        ads_accessed := Pointer.access(acc_discrete_states);
+        ap_accessed  := Pointer.access(acc_previous);
+
+        if not (listEmpty(ads_accessed) and listEmpty(ap_accessed)) then
+          VariablePointers.removeList(ads_accessed, varData.unknowns);
+          VariablePointers.removeList(ads_accessed, varData.discretes);
+          VariablePointers.removeList(ads_accessed, varData.discrete_states);
+
+          VariablePointers.removeList(ap_accessed, varData.previous);
+          VariablePointers.removeList(ap_accessed, varData.variables);
+
+          VariablePointers.addList(ads_accessed, varData.parameters);
+          VariablePointers.addList(ads_accessed, varData.knowns);
+
+          for v in ads_accessed loop
+            BVariable.setVarKind(v, VariableKind.PARAMETER(NONE()));
+            BVariable.removePartner(v, BackendInfo.setVarPre);
+          end for;
+        end if;
+      then varData;
+      else varData;
+    end match;
+  end updateDiscreteStates;
 
   function getLoopResiduals
     input BackendDAE bdae;
@@ -896,7 +910,6 @@ protected
     UnorderedSet<VariablePointer> set = UnorderedSet.new(BVariable.hash, BVariable.equalName);
     list<Pointer<Equation>> equation_lst, continuous_lst, clocked_lst, discretes_lst, initials_lst, auxiliaries_lst, simulation_lst, removed_lst;
     EquationPointers equations;
-    Pointer<Equation> eq;
     Pointer<Integer> idx = Pointer.create(0);
   algorithm
     equation_lst := lowerEquationsAndAlgorithms(eq_lst, al_lst, init_eq_lst, init_al_lst);
@@ -1230,12 +1243,11 @@ protected
   algorithm
     backend_equations := match frontend_eq
       local
-        EquationAttributes attr;
         Algorithm alg;
         Expression cond;
 
       case FEquation.ASSERT() algorithm
-        _ := EquationAttributes.default(EquationKind.EMPTY, init);
+        EquationAttributes.default(EquationKind.EMPTY, init);
         cond := if Expression.isCall(frontend_eq.condition) then frontend_eq.condition else Expression.CALL(Call.makeTypedCall(
           fn          = NFBuiltinFuncs.NO_EVENT,
           args        = {frontend_eq.condition},
@@ -1397,14 +1409,14 @@ protected
     input UnorderedMap<ComponentRef, Expression> if_map;
     input Boolean first "allow adding new lhs crefs only if its the first observed branch";
   algorithm
-    _ := match branch
+    () := match branch
       local
         ComponentRef cref;
         Expression exp;
 
       case FEquation.BRANCH() algorithm
         for eq in branch.body loop
-          _ := match eq
+          () := match eq
             case FEquation.EQUALITY(lhs = Expression.CREF(cref = cref)) algorithm
               exp := match UnorderedMap.get(cref, if_map)
                 // we update the saved cref rhs with the branch information
@@ -1441,7 +1453,7 @@ protected
     output Pointer<Equation> eq;
   protected
     Integer size;
-    list<ComponentRef> inputs, outputs;
+    list<ComponentRef> outputs;
     EquationAttributes attr;
   algorithm
     size := sum(ComponentRef.size(out, false) for out in alg.outputs);
@@ -1513,7 +1525,6 @@ protected
     input Boolean complete = true       "if false it will not report lowering errors";
   protected
     Pointer<Variable> var;
-    list<list<Subscript>> subs;
   algorithm
     try
       if not ComponentRef.isWild(cref) then
@@ -1678,7 +1689,7 @@ public
     input BackendDAE bdae;
   algorithm
     if Flags.isSet(Flags.DUMP_BACKENDDAE_INFO) then
-      _ := match bdae
+      () := match bdae
         local
           VarData varData;
           EqData eqData;
@@ -1791,7 +1802,7 @@ public
     input Option<UnorderedSet<String>> eq_filter_opt = NONE();
     input String str;
   algorithm
-    _ := match bdae
+    () := match bdae
       local
         String tmp = "";
 
@@ -1807,7 +1818,7 @@ public
   function debugLowering
     input BackendDAE bdae;
   algorithm
-    _ := match bdae
+    () := match bdae
       case MAIN() algorithm
         EqData.map(bdae.eqData, checkLoweredCrefEqn);
         VariablePointers.mapPtr(VarData.getVariables(bdae.varData), checkLoweredCrefVar);
@@ -1844,7 +1855,7 @@ public
     input output Expression exp;
     input UnorderedSet<ComponentRef> set;
   algorithm
-    _ := match exp
+    () := match exp
       case Expression.CREF() algorithm
         checkLoweredCref(exp.cref, set);
       then ();
@@ -1856,7 +1867,7 @@ public
     input output ComponentRef cref;
     input UnorderedSet<ComponentRef> set;
   algorithm
-    _ := match cref
+    () := match cref
       case ComponentRef.CREF(node = InstNode.VAR_NODE()) then ();
       case ComponentRef.CREF(node = InstNode.NAME_NODE()) then ();
       case ComponentRef.CREF() algorithm

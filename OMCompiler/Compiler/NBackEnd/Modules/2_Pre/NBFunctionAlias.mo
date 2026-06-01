@@ -81,7 +81,7 @@ public
   protected
     Module.aliasInterface func;
   algorithm
-    (func) := getModule();
+    func := getModule();
 
     bdae := match bdae
       local
@@ -133,7 +133,7 @@ public
     list<Pointer<Variable>> new_vars_cont = {}, new_vars_recd = {};
     list<Pointer<Equation>> new_eqns_cont = {};
   algorithm
-    _ := match (eqData, varData)
+    () := match (eqData, varData)
       local
         UnorderedMap<ComponentRef,Indices> map = UnorderedMap.new<Indices>(ComponentRef.hash, ComponentRef.isEqual);
         UnorderedSet<ComponentRef> set;
@@ -291,7 +291,7 @@ protected
     list<Pointer<Equation>> new_eqns_disc = {}, new_eqns_cont = {}, new_eqns_init = {}, new_eqns_clck, new_eqns_infr;
     list<tuple<Call_Id, Call_Aux>> debug_lst_sim = {}, debug_lst_ini;
   algorithm
-    _ := match (eqData, varData)
+    () := match (eqData, varData)
       case (EqData.EQ_DATA_SIM(), VarData.VAR_DATA_SIM()) algorithm
         // first collect all new functions from simulation equations
         eqData.simulation := EquationPointers.map(eqData.simulation,
@@ -610,7 +610,7 @@ protected
           Expression arg1, arg2;
 
         case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
-          _ := match (Call.functionName(call), call.arguments)
+          () := match (Call.functionName(call), call.arguments)
             case (Absyn.IDENT(name = "cat"), _) algorithm
               call.arguments  := listHead(call.arguments) :: list(if Expression.isLiteral(arg) or Expression.isCref(arg) then arg
                 else introduceAlias(arg, map, aux_index, aux_name, iter, init) for arg in listRest(call.arguments));
@@ -724,14 +724,12 @@ protected
     UnorderedMap<ComponentRef, Expression> frame_map = UnorderedMap.fromLists<Expression>(names, ranges, ComponentRef.hash, ComponentRef.isEqual);
     UnorderedMap<ComponentRef, Expression> new_map = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
 
-    Pointer<list<ComponentRef>> names_acc = Pointer.create({});
-    Pointer<list<Expression>> ranges_acc = Pointer.create({});
     function collectFrames
       input output Expression exp;
       input UnorderedMap<ComponentRef, Expression> frame_map;
       input UnorderedMap<ComponentRef, Expression> new_map;
     algorithm
-      _ := match exp
+      () := match exp
         local
           Option<Expression> range;
         case Expression.CREF() algorithm
@@ -748,7 +746,7 @@ protected
     list<Expression> r;
     list<Option<Iterator>> m;
   algorithm
-    _ := Expression.map(exp, function collectFrames(frame_map = frame_map, new_map = new_map));
+    Expression.map(exp, function collectFrames(frame_map = frame_map, new_map = new_map));
     n := UnorderedMap.keyList(new_map);
     r := UnorderedMap.valueList(new_map);
     m := List.fill(NONE(), listLength(n));
@@ -766,7 +764,6 @@ protected
     input Boolean init;
   protected
     list<Variable> children;
-    Pointer<Variable> var_ptr;
   algorithm
     if BVariable.isRecord(new_var) then
       new_vars_recd := new_var :: new_vars_recd;

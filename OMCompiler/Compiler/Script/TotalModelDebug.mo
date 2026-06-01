@@ -712,7 +712,6 @@ public
     input output list<SCode.Element> elements;
   protected
     SCode.Element elem = element;
-    Boolean is_empty;
   algorithm
     elements := match elem
       case SCode.Element.CLASS()

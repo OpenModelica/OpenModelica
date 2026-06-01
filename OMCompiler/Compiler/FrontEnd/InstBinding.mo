@@ -156,7 +156,7 @@ algorithm
     local
       DAE.Mod mod2,mod;
       DAE.Exp e,e_1;
-      DAE.Type ty2,ty_1,expected_type,etype;
+      DAE.Type ty2,expected_type,etype;
       String bind_name;
       Option<DAE.Exp> result;
       list<Integer> index_list;
@@ -183,7 +183,7 @@ algorithm
 
     case (mod,_,_,{},bind_name) /* No modifier for this name. */
       algorithm
-        failure(_ := Mod.lookupCompModification(mod, bind_name));
+        failure(Mod.lookupCompModification(mod, bind_name));
       then
         NONE();
 
@@ -217,7 +217,7 @@ algorithm
     local
       DAE.Mod mod2,mod;
       DAE.Exp e,e_1;
-      DAE.Type ty2,ty_1,etype;
+      DAE.Type ty2,etype;
       Integer index;
       String bind_name;
       Option<DAE.Exp> result;
@@ -281,7 +281,6 @@ algorithm
     local
       DAE.Mod mod2,mod;
       String bind_name;
-      DAE.Binding binding;
       Ident name;
       list<DAE.Var> varLst;
 
@@ -319,13 +318,12 @@ public function instDaeVariableAttributes
   output Option<DAE.VariableAttributes> outDAEVariableAttributesOption;
 algorithm
   (outCache,outDAEVariableAttributesOption) :=
-  matchcontinue (inCache,inEnv,inMod,inType,inIntegerLst)
+  matchcontinue (inCache, inMod, inType, inIntegerLst)
     local
       Option<DAE.Exp> quantity_str,unit_str,displayunit_str,nominal_val,fixed_val,exp_bind_select,exp_bind_uncertainty,exp_bind_min,exp_bind_max,exp_bind_start,min_val,max_val,start_val,startOrigin;
       Option<DAE.StateSelect> stateSelect_value;
       Option<DAE.Uncertainty> uncertainty_value;
       Option<DAE.Distribution> distribution_value;
-      FCore.Graph env;
       DAE.Mod mod;
       list<Integer> index_list;
       DAE.Type enumtype;
@@ -334,22 +332,22 @@ algorithm
       list<DAE.Var> varLst;
 
     // Real
-    case (cache,_,mod,DAE.T_REAL(varLst = varLst),index_list)
+    case (cache, mod, DAE.T_REAL(varLst = varLst), index_list)
       algorithm
-        (quantity_str) := instBinding(mod, varLst, DAE.T_STRING_DEFAULT,index_list, "quantity",false);
-        (unit_str) := instBinding(mod, varLst, DAE.T_STRING_DEFAULT, index_list, "unit",false);
-        (displayunit_str) := instBinding(mod, varLst,DAE.T_STRING_DEFAULT, index_list, "displayUnit",false);
-        (min_val) := instBinding(mod, varLst, DAE.T_REAL_DEFAULT,index_list, "min",false);
-        (max_val) := instBinding(mod, varLst, DAE.T_REAL_DEFAULT,index_list, "max",false);
-        (start_val) := instBinding(mod, varLst, DAE.T_REAL_DEFAULT,index_list, "start",false);
-        (fixed_val) := instBinding( mod, varLst, DAE.T_BOOL_DEFAULT,index_list, "fixed",true);
-        (nominal_val) := instBinding(mod, varLst, DAE.T_REAL_DEFAULT,index_list, "nominal",false);
+        quantity_str := instBinding(mod, varLst, DAE.T_STRING_DEFAULT,index_list, "quantity",false);
+        unit_str := instBinding(mod, varLst, DAE.T_STRING_DEFAULT, index_list, "unit",false);
+        displayunit_str := instBinding(mod, varLst,DAE.T_STRING_DEFAULT, index_list, "displayUnit",false);
+        min_val := instBinding(mod, varLst, DAE.T_REAL_DEFAULT,index_list, "min",false);
+        max_val := instBinding(mod, varLst, DAE.T_REAL_DEFAULT,index_list, "max",false);
+        start_val := instBinding(mod, varLst, DAE.T_REAL_DEFAULT,index_list, "start",false);
+        fixed_val := instBinding( mod, varLst, DAE.T_BOOL_DEFAULT,index_list, "fixed",true);
+        nominal_val := instBinding(mod, varLst, DAE.T_REAL_DEFAULT,index_list, "nominal",false);
 
-        (exp_bind_select) := instEnumerationBinding(mod, varLst, index_list, "stateSelect",stateSelectType,true);
-        (stateSelect_value) := InstUtil.getStateSelectFromExpOption(exp_bind_select);
+        exp_bind_select := instEnumerationBinding(mod, varLst, index_list, "stateSelect",stateSelectType,true);
+        stateSelect_value := InstUtil.getStateSelectFromExpOption(exp_bind_select);
 
-        (exp_bind_uncertainty) := instEnumerationBinding(mod, varLst, index_list, "uncertain",uncertaintyType,true);
-        (uncertainty_value) := getUncertainFromExpOption(exp_bind_uncertainty);
+        exp_bind_uncertainty := instEnumerationBinding(mod, varLst, index_list, "uncertain",uncertaintyType,true);
+        uncertainty_value := getUncertainFromExpOption(exp_bind_uncertainty);
         distribution_value := instDistributionBinding(mod, varLst, index_list, "distribution", false);
         startOrigin := instStartOrigin(mod, varLst, "start");
 
@@ -360,15 +358,15 @@ algorithm
           start_val,fixed_val,nominal_val,stateSelect_value,uncertainty_value,distribution_value,NONE(),NONE(),NONE(),startOrigin)));
 
     // Integer
-    case (cache,_,mod,DAE.T_INTEGER(varLst = varLst),index_list)
+    case (cache, mod, DAE.T_INTEGER(varLst = varLst), index_list)
       algorithm
-        (quantity_str) := instBinding(mod, varLst, DAE.T_STRING_DEFAULT, index_list, "quantity",false);
-        (min_val) := instBinding(mod, varLst, DAE.T_INTEGER_DEFAULT, index_list, "min",false);
-        (max_val) := instBinding(mod, varLst, DAE.T_INTEGER_DEFAULT, index_list, "max",false);
-        (start_val) := instBinding(mod, varLst, DAE.T_INTEGER_DEFAULT, index_list, "start",false);
-        (fixed_val) := instBinding(mod, varLst, DAE.T_BOOL_DEFAULT,index_list, "fixed",true);
-        (exp_bind_uncertainty) := instEnumerationBinding(mod, varLst, index_list, "uncertain",uncertaintyType,true);
-        (uncertainty_value) := getUncertainFromExpOption(exp_bind_uncertainty);
+        quantity_str := instBinding(mod, varLst, DAE.T_STRING_DEFAULT, index_list, "quantity",false);
+        min_val := instBinding(mod, varLst, DAE.T_INTEGER_DEFAULT, index_list, "min",false);
+        max_val := instBinding(mod, varLst, DAE.T_INTEGER_DEFAULT, index_list, "max",false);
+        start_val := instBinding(mod, varLst, DAE.T_INTEGER_DEFAULT, index_list, "start",false);
+        fixed_val := instBinding(mod, varLst, DAE.T_BOOL_DEFAULT,index_list, "fixed",true);
+        exp_bind_uncertainty := instEnumerationBinding(mod, varLst, index_list, "uncertain",uncertaintyType,true);
+        uncertainty_value := getUncertainFromExpOption(exp_bind_uncertainty);
         distribution_value := instDistributionBinding(mod, varLst, index_list, "distribution", false);
 
         startOrigin := instStartOrigin(mod, varLst, "start");
@@ -376,44 +374,44 @@ algorithm
         (cache,SOME(DAE.VAR_ATTR_INT(quantity_str,min_val,max_val,start_val,fixed_val,uncertainty_value,distribution_value,NONE(),NONE(),NONE(),startOrigin)));
 
     // Boolean
-    case (cache,_,mod,tp as DAE.T_BOOL(varLst = varLst),index_list)
+    case (cache, mod, tp as DAE.T_BOOL(varLst = varLst), index_list)
       algorithm
-        (quantity_str) := instBinding( mod, varLst, DAE.T_STRING_DEFAULT, index_list, "quantity",false);
-        (start_val) := instBinding(mod, varLst, tp, index_list, "start",false);
-        (fixed_val) := instBinding(mod, varLst, tp, index_list, "fixed",true);
+        quantity_str := instBinding( mod, varLst, DAE.T_STRING_DEFAULT, index_list, "quantity",false);
+        start_val := instBinding(mod, varLst, tp, index_list, "start",false);
+        fixed_val := instBinding(mod, varLst, tp, index_list, "fixed",true);
         startOrigin := instStartOrigin(mod, varLst, "start");
       then
         (cache,SOME(DAE.VAR_ATTR_BOOL(quantity_str,start_val,fixed_val,NONE(),NONE(),NONE(),startOrigin)));
 
     // BTH Clock
-    case (cache,_,_,DAE.T_CLOCK(),_)
+    case (cache, _, DAE.T_CLOCK(), _)
       then
         (cache,SOME(DAE.VAR_ATTR_CLOCK(NONE(),NONE())));
 
     // String
-    case (cache,_,mod,tp as DAE.T_STRING(varLst = varLst),index_list)
+    case (cache, mod, tp as DAE.T_STRING(varLst = varLst), index_list)
       algorithm
-        (quantity_str) := instBinding(mod, varLst, tp, index_list, "quantity",false);
-        (start_val) := instBinding(mod, varLst, tp, index_list, "start",false);
-        (fixed_val) := instBinding(mod, varLst, DAE.T_BOOL_DEFAULT, index_list, "fixed",true);
+        quantity_str := instBinding(mod, varLst, tp, index_list, "quantity",false);
+        start_val := instBinding(mod, varLst, tp, index_list, "start",false);
+        fixed_val := instBinding(mod, varLst, DAE.T_BOOL_DEFAULT, index_list, "fixed",true);
         startOrigin := instStartOrigin(mod, varLst, "start");
       then
         (cache,SOME(DAE.VAR_ATTR_STRING(quantity_str,start_val,fixed_val,NONE(),NONE(),NONE(),startOrigin)));
 
     // Enumeration
-    case (cache,_,mod,enumtype as DAE.T_ENUMERATION(attributeLst = varLst),index_list)
+    case (cache, mod, enumtype as DAE.T_ENUMERATION(attributeLst = varLst), index_list)
       algorithm
-        (quantity_str) := instBinding(mod, varLst, DAE.T_STRING_DEFAULT,index_list, "quantity",false);
-        (exp_bind_min) := instBinding(mod, varLst, enumtype, index_list, "min",false);
-        (exp_bind_max) := instBinding(mod, varLst, enumtype, index_list, "max",false);
-        (exp_bind_start) := instBinding(mod, varLst, enumtype, index_list, "start",false);
-        (fixed_val) := instBinding(mod, varLst, DAE.T_BOOL_DEFAULT, index_list, "fixed",true);
+        quantity_str := instBinding(mod, varLst, DAE.T_STRING_DEFAULT,index_list, "quantity",false);
+        exp_bind_min := instBinding(mod, varLst, enumtype, index_list, "min",false);
+        exp_bind_max := instBinding(mod, varLst, enumtype, index_list, "max",false);
+        exp_bind_start := instBinding(mod, varLst, enumtype, index_list, "start",false);
+        fixed_val := instBinding(mod, varLst, DAE.T_BOOL_DEFAULT, index_list, "fixed",true);
         startOrigin := instStartOrigin(mod, varLst, "start");
       then
         (cache,SOME(DAE.VAR_ATTR_ENUMERATION(quantity_str,exp_bind_min,exp_bind_max,exp_bind_start,fixed_val,NONE(),NONE(),NONE(),startOrigin)));
 
     // not a basic type?
-    case (cache,_,_,_,_)
+    case (cache, _, _, _)
       then (cache,NONE());
   end matchcontinue;
 end instDaeVariableAttributes;
@@ -457,7 +455,7 @@ algorithm
       String bind_name;
       DAE.Type ty;
       Integer paramDim;
-      DAE.ComponentRef cr,crName,crParams,crParamNames;
+      DAE.ComponentRef cr,crName,crParams;
       Absyn.Path path;
 
     //Record constructor
@@ -506,11 +504,11 @@ protected function getUncertainFromExpOption
   input Option<DAE.Exp> expOption;
   output Option<DAE.Uncertainty> out;
 algorithm
-  out := match (expOption)
-    case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED(name = "Uncertainty", path = Absyn.IDENT("given"))))) then SOME(DAE.GIVEN());
-    case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED(name = "Uncertainty", path = Absyn.IDENT("sought"))))) then SOME(DAE.SOUGHT());
-    case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED(name = "Uncertainty", path = Absyn.IDENT("refine"))))) then SOME(DAE.REFINE());
-    case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED(name = "Uncertainty", path = Absyn.IDENT("propagate"))))) then SOME(DAE.PROPAGATE());
+  out := match expOption
+    case SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED(name = "Uncertainty", path = Absyn.IDENT("given")))) then SOME(DAE.GIVEN());
+    case SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED(name = "Uncertainty", path = Absyn.IDENT("sought")))) then SOME(DAE.SOUGHT());
+    case SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED(name = "Uncertainty", path = Absyn.IDENT("refine")))) then SOME(DAE.REFINE());
+    case SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED(name = "Uncertainty", path = Absyn.IDENT("propagate")))) then SOME(DAE.PROPAGATE());
     else NONE();
   end match;
 end getUncertainFromExpOption;
@@ -529,10 +527,8 @@ algorithm
     local
       DAE.Type t;
       DAE.DAElist dae;
-      DAE.Mod mod,m;
       DAE.Exp e,lhs;
       DAE.Properties prop2;
-      Boolean impl;
       Absyn.Exp aexp1,aexp2;
       SCode.Equation scode;
       Absyn.ComponentRef acr;
@@ -605,7 +601,7 @@ algorithm
       DAE.Exp e_1,e,e_val_exp;
       Option<Values.Value> e_val;
       DAE.Const c;
-      String e_tp_str,tp_str,e_str,e_str_1,str,s,pre_str;
+      String e_tp_str,tp_str,e_str,e_str_1,str;
       FCore.Cache cache;
       DAE.Properties prop;
       DAE.Binding binding;
@@ -619,8 +615,8 @@ algorithm
     // A record might have bindings from the class, use those if there is no modifier!
     case (cache, _, DAE.NOMOD(), _)
       algorithm
-        (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = tpath),
-           varLst = complex_vars)) := Types.arrayElementType(inType);
+        DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = tpath),
+           varLst = complex_vars) := Types.arrayElementType(inType);
         true := Types.allHaveBindings(complex_vars);
         binding := makeRecordBinding(cache, inEnv, tpath, inType, complex_vars, {}, inInfo);
       then
@@ -664,8 +660,8 @@ algorithm
     // a binding.
     case (cache, _, DAE.MOD(subModLst = sub_mods as _ :: _), _)
       algorithm
-        (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = tpath),
-           varLst = complex_vars)) := Types.arrayElementType(inType);
+        DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = tpath),
+           varLst = complex_vars) := Types.arrayElementType(inType);
         binding := makeRecordBinding(cache, inEnv, tpath, inType, complex_vars, sub_mods, inInfo);
       then
         (cache, binding);
@@ -713,8 +709,7 @@ algorithm
     case (_,_,DAE.MOD(binding = SOME(DAE.TYPED(e,_,prop,_)), info = info),tp)
       algorithm
         e_tp := Types.getPropType(prop);
-        _ := Types.propAllConst(prop);
-        failure((_,_) := Types.matchType(e, e_tp, tp, false));
+        failure(Types.matchType(e, e_tp, tp, false));
         e_tp_str := TypesDump.unparseTypeNoAttr(e_tp);
         tp_str := TypesDump.unparseTypeNoAttr(tp);
         e_str := ExpressionBasics.printExpStr(e);
@@ -826,37 +821,37 @@ protected function makeRecordBinding3
   output DAE.Exp outExp;
   output Values.Value outValue;
 algorithm
-  (outExp, outValue) := matchcontinue(inSubMod)
+  (outExp, outValue) := matchcontinue inSubMod
     local
       DAE.Exp exp;
       Values.Value val;
-      DAE.Type ty,ty2;
+      DAE.Type ty;
       DAE.Ident ident;
       String binding_str, expected_type_str, given_type_str;
 
     // Array type and each prefix => return the expression and value.
-    case (SOME(DAE.NAMEMOD(mod = DAE.MOD(eachPrefix = SCode.EACH(), binding =
-        SOME(DAE.TYPED(modifierAsExp = exp, modifierAsValue = SOME(val)))))))
+    case SOME(DAE.NAMEMOD(mod = DAE.MOD(eachPrefix = SCode.EACH(), binding =
+        SOME(DAE.TYPED(modifierAsExp = exp, modifierAsValue = SOME(val))))))
       then (exp, val);
 
     // Scalar type and no each prefix => return the expression and value.
-    case (SOME(DAE.NAMEMOD(mod = DAE.MOD(eachPrefix = SCode.NOT_EACH(), binding =
-        SOME(DAE.TYPED(modifierAsExp = exp, modifierAsValue = SOME(val), properties = DAE.PROP(type_ = ty)))))))
+    case SOME(DAE.NAMEMOD(mod = DAE.MOD(eachPrefix = SCode.NOT_EACH(), binding =
+        SOME(DAE.TYPED(modifierAsExp = exp, modifierAsValue = SOME(val), properties = DAE.PROP(type_ = ty))))))
       algorithm
         (exp, ty) := Types.matchType(exp, ty, inType, true);
       then
         (exp, val);
 
     // Scalar type and no each prefix => bindings given by expressions myRecord(v1 = inV1, v2 = inV2)
-    case (SOME(DAE.NAMEMOD(mod = DAE.MOD(eachPrefix = SCode.NOT_EACH(), binding =
-        SOME(DAE.TYPED(modifierAsExp = exp, modifierAsValue = NONE(), properties = DAE.PROP(type_ = ty)))))))
+    case SOME(DAE.NAMEMOD(mod = DAE.MOD(eachPrefix = SCode.NOT_EACH(), binding =
+        SOME(DAE.TYPED(modifierAsExp = exp, modifierAsValue = NONE(), properties = DAE.PROP(type_ = ty))))))
       algorithm
         (exp, ty) := Types.matchType(exp, ty, inType, true);
       then
         (exp, Values.OPTION(NONE()));
 
-    case (SOME(DAE.NAMEMOD(ident = ident, mod = DAE.MOD(binding =
-        SOME(DAE.TYPED(modifierAsExp = exp, properties = DAE.PROP(type_ = ty)))))))
+    case SOME(DAE.NAMEMOD(ident = ident, mod = DAE.MOD(binding =
+        SOME(DAE.TYPED(modifierAsExp = exp, properties = DAE.PROP(type_ = ty))))))
       algorithm
         binding_str := ExpressionBasics.printExpStr(exp);
         expected_type_str := TypesDump.unparseTypeNoAttr(inType);

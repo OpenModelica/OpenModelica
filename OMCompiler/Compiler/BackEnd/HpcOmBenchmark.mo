@@ -79,8 +79,8 @@ protected
   String fullFileName;
   list<tuple<Integer,Integer,Real>> tmpCalcTimes;
 algorithm
-  calcTimes := matchcontinue(iFileNamePrefix)
-    case(_)
+  calcTimes := matchcontinue iFileNamePrefix
+    case _
       algorithm
         fullFileName := iFileNamePrefix + ".json";
         SOME(_) := System.getFileModificationTime(fullFileName);
@@ -88,7 +88,7 @@ algorithm
         print("Using json-file\n");
         tmpCalcTimes := readCalcTimesFromJson(fullFileName);
       then tmpCalcTimes;
-    case(_)
+    case _
       algorithm
         fullFileName := iFileNamePrefix + ".xml";
         SOME(_) := System.getFileModificationTime(fullFileName);
@@ -138,15 +138,15 @@ protected
   list<Real> rest;
   list<tuple<Integer,Integer,Real>> tmpTuples;
 algorithm
-  oTuples := matchcontinue(iList, iTuples)
-  case(numOfCalcs::calcTimeSum::eqIdx::rest,_)
+  oTuples := matchcontinue iList
+  case numOfCalcs::calcTimeSum::eqIdx::rest
     algorithm
       //print("readCalcTimesFromXml1 eqIdx: " + intString(realInt(eqIdx)) + " numOfCalcs: " + intString(realInt(numOfCalcs)) + " calcTime: " + realString(calcTimeSum) + " \n");
       intNumOfCalcs := realInt(numOfCalcs);
       intEqIdx := realInt(eqIdx);
       tmpTuples := expandCalcTimes(rest, (intEqIdx,intNumOfCalcs,calcTimeSum)::iTuples);
     then tmpTuples;
-  case ({},_)
+  case {}
     then iTuples;
   else
     algorithm

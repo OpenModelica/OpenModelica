@@ -49,7 +49,6 @@ import ConnectionSets = NFConnectionSets.ConnectionSets;
 import Connector = NFConnector;
 import ElementSource;
 import Error;
-import ErrorTypes;
 import Expression = NFExpression;
 import MetaModelica.Dangerous.listReverseInPlace;
 import Class = NFClass;
@@ -133,7 +132,6 @@ function sortConnections
   output list<Connection> normalConnections = {};
 protected
   Connector c1, c2;
-  Option<tuple<ErrorTypes.Message, list<Connector>>> err_msg;
   Boolean is_undeclared1, is_undeclared2, is_expandable1, is_expandable2;
 algorithm
   for conn in conns loop
@@ -363,7 +361,6 @@ protected
   InstNode exp_node, comp_node, cls_node, node;
   Class cls;
   ClassTree cls_tree;
-  Component comp;
   list<InstNode> nodes = {};
   Type ty;
   ComplexType complex_ty;
@@ -435,7 +432,6 @@ function createVirtualVariables
   input output list<Variable> vars;
 protected
   Variable var;
-  array<InstNode> comps;
   ComponentRef name;
   Type ty;
 algorithm

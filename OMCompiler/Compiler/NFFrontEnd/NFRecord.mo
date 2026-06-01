@@ -145,7 +145,7 @@ function instDefaultConstructor
   input InstContext.Type context;
   input SourceInfo info;
 protected
-  list<InstNode> inputs, locals, all_params, sorted_locals;
+  list<InstNode> inputs, locals, all_params;
   DAE.FunctionAttributes attr;
   Pointer<FunctionStatus> status;
   InstNode ctor_node, out_rec;

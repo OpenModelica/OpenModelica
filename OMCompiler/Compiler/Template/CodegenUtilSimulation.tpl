@@ -504,7 +504,7 @@ template dumpEqsAlternativeTearingWork(list<SimEqSystem> eqs)
       >>
 end dumpEqsAlternativeTearingWork;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="codegen");
 end CodegenUtilSimulation;
 
 // vim: filetype=susan sw=2 sts=2

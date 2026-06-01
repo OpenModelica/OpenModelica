@@ -231,12 +231,12 @@ public function enterScope
   input SCode.Ident inName;
   output Env outEnv;
 algorithm
-  outEnv := matchcontinue(inEnv, inName)
+  outEnv := matchcontinue inName
     local
       Frame cls_env;
       Item item;
 
-    case (_, _)
+    case _
       algorithm
         /*********************************************************************/
         // TODO: Should we use the environment returned by lookupInClass?
@@ -247,7 +247,7 @@ algorithm
       then
         outEnv;
 
-    case (_, _)
+    case _
       algorithm
         print("Failed to enterScope: " + inName + " in env: " + printEnvStr(inEnv) + "\n");
       then
@@ -260,22 +260,22 @@ public function enterScopePath
   input Absyn.Path inPath;
   output Env outEnv;
 algorithm
-  outEnv := match(inEnv, inPath)
+  outEnv := match inPath
     local
       Absyn.Ident name;
       Absyn.Path path;
       Env env;
 
-    case (_, Absyn.QUALIFIED(name = name, path = path))
+    case Absyn.QUALIFIED(name = name, path = path)
       algorithm
         env := enterScope(inEnv, name);
       then
         enterScopePath(env, path);
 
-    case (_, Absyn.IDENT(name = name))
+    case Absyn.IDENT(name = name)
       then enterScope(inEnv, name);
 
-    case (_, Absyn.FULLYQUALIFIED(path = path))
+    case Absyn.FULLYQUALIFIED(path = path)
       algorithm
         env := getEnvTopScope(inEnv);
       then
@@ -310,7 +310,7 @@ protected function getFrameType
   input SCode.Encapsulated encapsulatedPrefix;
   output FrameType outType;
 algorithm
-  outType := match(encapsulatedPrefix)
+  outType := match encapsulatedPrefix
     case SCode.ENCAPSULATED() then ENCAPSULATED_SCOPE();
     else NORMAL_SCOPE();
   end match;
@@ -352,7 +352,7 @@ public function newItem
   input SCode.Element inElement;
   output Item outItem;
 algorithm
-  outItem := match(inElement)
+  outItem := match inElement
     local
       Env class_env;
       Item item;
@@ -414,10 +414,10 @@ public function getClassType
   input SCode.ClassDef inClassDef;
   output ClassType outType;
 algorithm
-  outType := match(inClassDef)
+  outType := match inClassDef
     // A builtin class.
-    case (SCode.PARTS(externalDecl = SOME(SCode.EXTERNALDECL(
-        lang = SOME("builtin")))))
+    case SCode.PARTS(externalDecl = SOME(SCode.EXTERNALDECL(
+        lang = SOME("builtin"))))
       then BUILTIN();
     // A user-defined class (i.e. not builtin).
     else USERDEFINED();
@@ -428,7 +428,7 @@ public function printClassType
   input ClassType inClassType;
   output String outString;
 algorithm
-  outString := match(inClassType)
+  outString := match inClassType
     case BUILTIN() then "BUILTIN";
     case CLASS_EXTENDS() then "CLASS_EXTENDS";
     case USERDEFINED() then "USERDEFINED";
@@ -553,7 +553,6 @@ protected
   Option<String> name;
   FrameType ty;
   EnvTree.Tree tree;
-  ImportTable imps;
   ExtendsTable exts;
   Env rest;
   list<Import> qi, uqi;
@@ -572,13 +571,13 @@ public function setImportsInItemHidden
   input Boolean inHidden;
   output Item outItem;
 algorithm
-  outItem := match(inItem, inHidden)
+  outItem := match inItem
     local
       SCode.Element cls;
       Env env;
       ClassType cls_ty;
 
-    case (CLASS(cls = cls, env = env, classType = cls_ty), _)
+    case CLASS(cls = cls, env = env, classType = cls_ty)
       algorithm
         env := setImportTableHidden(env, inHidden);
       then
@@ -593,7 +592,7 @@ public function isItemUsed
   input Item inItem;
   output Boolean isUsed;
 algorithm
-  isUsed := match(inItem)
+  isUsed := match inItem
     local
       Mutable<Boolean> is_used;
       Item item;
@@ -654,7 +653,7 @@ public function isClassItem
   input Item inItem;
   output Boolean outIsClass;
 algorithm
-  outIsClass := match(inItem)
+  outIsClass := match inItem
     local
       Item item;
 
@@ -668,7 +667,7 @@ public function isVarItem
   input Item inItem;
   output Boolean outIsVar;
 algorithm
-  outIsVar := match(inItem)
+  outIsVar := match inItem
     local
       Item item;
 
@@ -682,7 +681,7 @@ public function isClassExtendsItem
   input Item inItem;
   output Boolean outIsClassExtends;
 algorithm
-  outIsClassExtends := match(inItem)
+  outIsClassExtends := match inItem
     local
       Item item;
 
@@ -698,7 +697,7 @@ protected function extendEnvWithClassDef
   input Env inEnv;
   output Env outEnv;
 algorithm
-  outEnv := match(inClassDefElement, inEnv)
+  outEnv := match inClassDefElement
     local
       String cls_name, alias_name;
       Env class_env, env;
@@ -707,12 +706,12 @@ algorithm
       SourceInfo info;
 
     // A class extends.
-    case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS()), _)
+    case SCode.CLASS(classDef = SCode.CLASS_EXTENDS())
       then
         NFEnvExtends.extendEnvWithClassExtends(inClassDefElement, inEnv);
 
-    case (SCode.CLASS(name = cls_name, classDef = cdef, prefixes = SCode.PREFIXES(
-        replaceablePrefix = SCode.REPLACEABLE(_)), info = info), _)
+    case SCode.CLASS(name = cls_name, classDef = cdef, prefixes = SCode.PREFIXES(
+        replaceablePrefix = SCode.REPLACEABLE(_)), info = info)
       algorithm
         class_env := makeClassEnvironment(inClassDefElement, false);
         cls_type := getClassType(cdef);
@@ -724,7 +723,7 @@ algorithm
         env;
 
     // A normal class.
-    case (SCode.CLASS(name = cls_name, classDef = cdef), _)
+    case SCode.CLASS(name = cls_name, classDef = cdef)
       algorithm
         // Create a new environment and add the class's components to it.
         class_env := makeClassEnvironment(inClassDefElement, false);
@@ -743,7 +742,6 @@ public function makeClassEnvironment
   output Env outClassEnv;
 protected
   SCode.ClassDef cdef;
-  SCode.Element cls;
   String cls_name;
   Env env, enclosing_env;
   SourceInfo info;
@@ -835,7 +833,6 @@ algorithm
       list<Import> qual_imps, unqual_imps;
       FrameType ty;
       Env rest;
-      SourceInfo info;
       Boolean hidden;
       Option<Mutable<Boolean>> is_used;
 
@@ -866,7 +863,7 @@ protected function translateQualifiedImportToNamed
   input Import inImport;
   output Import outImport;
 algorithm
-  outImport := match(inImport)
+  outImport := match inImport
     local
       Absyn.Ident name;
       Absyn.Path path;
@@ -893,7 +890,6 @@ protected
   SCode.Mod mods;
   list<Redeclaration> redecls;
   SourceInfo info;
-  Env env;
   Integer index;
 algorithm
   SCode.EXTENDS(baseClassPath = bc, modifications = mods, info = info) :=
@@ -941,7 +937,7 @@ protected function extendEnvWithClassComponents
   input SourceInfo inInfo;
   output Env outEnv;
 algorithm
-  outEnv := match(inClassName, inClassDef, inEnv, inEnclosingScope, inInfo)
+  outEnv := match inClassDef
     local
       list<SCode.Element> el;
       list<SCode.Enum> enums;
@@ -950,14 +946,14 @@ algorithm
       SCode.Mod mods;
       Absyn.Path path;
 
-    case (_, SCode.PARTS(elementLst = el), _, _, _)
+    case SCode.PARTS(elementLst = el)
       algorithm
         env := List.fold(el, extendEnvWithElement, inEnv);
       then
         env;
 
-    case (_, SCode.DERIVED(typeSpec = ty as Absyn.TPATH(path = path),
-        modifications = mods), _, _, _)
+    case SCode.DERIVED(typeSpec = ty as Absyn.TPATH(path = path),
+        modifications = mods)
       algorithm
         NFSCodeCheck.checkRecursiveShortDefinition(ty, inClassName,
           inEnclosingScope, inInfo);
@@ -966,7 +962,7 @@ algorithm
       then
         env;
 
-    case (_, SCode.ENUMERATION(enumLst = enums), _, _, _)
+    case SCode.ENUMERATION(enumLst = enums)
       algorithm
         path := Absyn.IDENT(inClassName);
         env := extendEnvWithEnumLiterals(enums, path, 1, inEnv, inInfo);
@@ -983,13 +979,12 @@ protected function extendEnvWithElement
   input Env inEnv;
   output Env outEnv;
 algorithm
-  outEnv := matchcontinue(inElement, inEnv)
+  outEnv := matchcontinue inElement
     local
       Env env;
-      SCode.Ident name;
 
     // redeclare-as-element component
-    case (SCode.COMPONENT(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE())), _)
+    case SCode.COMPONENT(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE()))
       algorithm
         env := addElementRedeclarationToEnvExtendsTable(inElement, inEnv);
         env := extendEnvWithVar(inElement, env);
@@ -997,14 +992,14 @@ algorithm
         env;
 
     // normal component
-    case (SCode.COMPONENT(), _)
+    case SCode.COMPONENT()
       algorithm
         env := extendEnvWithVar(inElement, inEnv);
       then
         env;
 
     // redeclare-as-element class
-    case (SCode.CLASS( prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE())), _)
+    case SCode.CLASS( prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE()))
       algorithm
         env := addElementRedeclarationToEnvExtendsTable(inElement, inEnv);
         env := extendEnvWithClassDef(inElement, env);
@@ -1012,25 +1007,25 @@ algorithm
         env;
 
     // normal class
-    case (SCode.CLASS(), _)
+    case SCode.CLASS()
       algorithm
         env := extendEnvWithClassDef(inElement, inEnv);
       then
         env;
 
-    case (SCode.EXTENDS(), _)
+    case SCode.EXTENDS()
       algorithm
         env := extendEnvWithExtends(inElement, inEnv);
       then
         env;
 
-    case (SCode.IMPORT(), _)
+    case SCode.IMPORT()
       algorithm
         env := extendEnvWithImport(inElement, inEnv);
       then
         env;
 
-    case (SCode.DEFINEUNIT(), _)
+    case SCode.DEFINEUNIT()
       then inEnv;
 
   end matchcontinue;
@@ -1043,18 +1038,18 @@ public function checkUniqueQualifiedImport
   input list<Import> inImports;
   input SourceInfo inInfo;
 algorithm
-  _ := matchcontinue(inImport, inImports, inInfo)
+  () := matchcontinue inImport
     local
       Absyn.Ident name;
 
-    case (_, _, _)
+    case _
       algorithm
         false := List.isMemberOnTrue(inImport, inImports,
           compareQualifiedImportNames);
       then
         ();
 
-    case (Absyn.NAMED_IMPORT(name = name), _, _)
+    case Absyn.NAMED_IMPORT(name = name)
       algorithm
         Error.addSourceMessage(Error.MULTIPLE_QUALIFIED_IMPORTS_WITH_SAME_NAME,
           {name}, inInfo);
@@ -1091,19 +1086,19 @@ protected function extendEnvWithEnumLiterals
   input SourceInfo inInfo;
   output Env outEnv;
 algorithm
-  outEnv := match(inEnum, inEnumPath, inNextValue, inEnv, inInfo)
+  outEnv := match inEnum
     local
       SCode.Enum lit;
       list<SCode.Enum> rest_lits;
       Env env;
 
-    case (lit :: rest_lits, _, _, _, _)
+    case lit :: rest_lits
       algorithm
         env := extendEnvWithEnum(lit, inEnumPath, inNextValue, inEnv, inInfo);
       then
         extendEnvWithEnumLiterals(rest_lits, inEnumPath, inNextValue + 1, env, inInfo);
 
-    case ({}, _, _, _, _) then inEnv;
+    case {} then inEnv;
 
   end match;
 end extendEnvWithEnumLiterals;
@@ -1185,13 +1180,13 @@ protected function extendEnvWithElementItem
   input Env inEnv;
   output Env outEnv;
 algorithm
-  outEnv := match(inElementItem, inEnv)
+  outEnv := match inElementItem
     local
       Absyn.Element element;
       list<SCode.Element> el;
       Env env;
 
-    case (Absyn.ELEMENTITEM(element = element), _)
+    case Absyn.ELEMENTITEM(element = element)
       algorithm
         // Translate the element item to a SCode element.
         el := AbsynToSCode.translateElement(element, SCode.PROTECTED());
@@ -1208,7 +1203,7 @@ public function getEnvName
   input Env inEnv;
   output String outString;
 algorithm
-  outString := matchcontinue(inEnv)
+  outString := matchcontinue inEnv
     local
       String str;
 
@@ -1228,22 +1223,22 @@ public function getEnvPath
   input Env inEnv;
   output Absyn.Path outPath;
 algorithm
-  outPath := match(inEnv)
+  outPath := match inEnv
     local
       String name;
       Absyn.Path path;
       Env rest;
 
-    case (FRAME(frameType = IMPLICIT_SCOPE()) :: rest)
+    case FRAME(frameType = IMPLICIT_SCOPE()) :: rest
       then getEnvPath(rest);
 
-    case ({FRAME(name = SOME(name))})
+    case {FRAME(name = SOME(name))}
       then Absyn.IDENT(name);
 
-    case ({FRAME(name = SOME(name)), FRAME(name = NONE())})
+    case {FRAME(name = SOME(name)), FRAME(name = NONE())}
       then Absyn.IDENT(name);
 
-    case (FRAME(name = SOME(name)) :: rest)
+    case FRAME(name = SOME(name)) :: rest
       algorithm
         path := getEnvPath(rest);
         path := AbsynUtil.joinPaths(path, Absyn.IDENT(name));
@@ -1257,7 +1252,7 @@ public function getScopeName
   input Env inEnv;
   output String outString;
 algorithm
-  outString := match(inEnv)
+  outString := match inEnv
     local
       String name;
       Env rest;
@@ -1314,22 +1309,22 @@ public function envScopeNames2
   input list<String> inAccumNames;
   output list<String> outNames;
 algorithm
-  outNames := match(inEnv, inAccumNames)
+  outNames := match inEnv
     local
       String name;
       Env rest_env;
       list<String> names;
 
-    case (FRAME(name = SOME(name)) :: rest_env, _)
+    case FRAME(name = SOME(name)) :: rest_env
       algorithm
         names := envScopeNames2(rest_env, name :: inAccumNames);
       then
         names;
 
-    case (FRAME(name = NONE()) :: rest_env, _)
+    case FRAME(name = NONE()) :: rest_env
       then envScopeNames2(rest_env, inAccumNames);
 
-    case ({}, _) then inAccumNames;
+    case {} then inAccumNames;
 
   end match;
 end envScopeNames2;
@@ -1348,21 +1343,20 @@ public function envEqualPrefix2
   input Env inAccumEnv;
   output Env outPrefix;
 algorithm
-  outPrefix := matchcontinue(inEnv1, inEnv2, inAccumEnv)
+  outPrefix := matchcontinue(inEnv1, inEnv2)
     local
       String name1, name2;
       Env env, rest_env1, rest_env2;
       Frame frame;
 
-    case ((frame as FRAME(name = SOME(name1))) :: rest_env1,
-          FRAME(name = SOME(name2)) :: rest_env2, _)
+    case ((frame as FRAME(name = SOME(name1))) :: rest_env1, FRAME(name = SOME(name2)) :: rest_env2)
       algorithm
         true := stringEq(name1, name2);
         env := envEqualPrefix2(rest_env1, rest_env2, frame :: inAccumEnv);
       then
         env;
 
-    case (FRAME(name = NONE()) :: rest_env1, FRAME(name = NONE()) :: rest_env2, _)
+    case (FRAME(name = NONE()) :: rest_env1, FRAME(name = NONE()) :: rest_env2)
       then envEqualPrefix2(rest_env1, rest_env2, inAccumEnv);
 
     else inAccumEnv;
@@ -1375,7 +1369,7 @@ public function getItemInfo
   input Item inItem;
   output SourceInfo outInfo;
 algorithm
-  outInfo := match(inItem)
+  outInfo := match inItem
     local
       SourceInfo info;
       Item item;
@@ -1392,7 +1386,7 @@ public function itemStr
   input Item inItem;
   output String outName;
 algorithm
-  outName := matchcontinue(inItem)
+  outName := matchcontinue inItem
     local
       String name, alias_str;
       SCode.Element el;
@@ -1427,7 +1421,7 @@ public function getItemName
   input Item inItem;
   output String outName;
 algorithm
-  outName := match(inItem)
+  outName := match inItem
     local
       String name;
       Item item;
@@ -1444,7 +1438,7 @@ public function getItemEnv
   input Item inItem;
   output Env outEnv;
 algorithm
-  outEnv := match(inItem)
+  outEnv := match inItem
     local
       Env env;
       Item item;
@@ -1460,7 +1454,7 @@ public function getItemEnvNoFail
   input Item inItem;
   output Env outEnv;
 algorithm
-  outEnv := matchcontinue(inItem)
+  outEnv := matchcontinue inItem
     local
       Env env;
       Item item;
@@ -1486,16 +1480,15 @@ public function setItemEnv
   input Env inNewEnv;
   output Item outItem;
 algorithm
-  outItem := match(inItem, inNewEnv)
+  outItem := match inItem
     local
-      Env env;
       Item item;
       SCode.Element cls;
       ClassType ct;
 
-    case (CLASS(cls, _, ct), _)
+    case CLASS(cls, _, ct)
       then CLASS(cls, inNewEnv, ct);
-    case (REDECLARED_ITEM(item = item), _)
+    case REDECLARED_ITEM(item = item)
       then setItemEnv(item, inNewEnv);
   end match;
 end setItemEnv;
@@ -1506,13 +1499,13 @@ public function mergeItemEnv
   input Env inEnv;
   output Env outEnv;
 algorithm
-  outEnv := match(inItem, inEnv)
+  outEnv := match inItem
     local
       Frame cls_env;
       Item item;
 
-    case (CLASS(env = {cls_env}), _) then enterFrame(cls_env, inEnv);
-    case (REDECLARED_ITEM(item = item), _) then mergeItemEnv(item, inEnv);
+    case CLASS(env = {cls_env}) then enterFrame(cls_env, inEnv);
+    case REDECLARED_ITEM(item = item) then mergeItemEnv(item, inEnv);
     else inEnv;
   end match;
 end mergeItemEnv;
@@ -1523,12 +1516,11 @@ public function unmergeItemEnv
   input Env inEnv;
   output Env outEnv;
 algorithm
-  outEnv := match(inItem, inEnv)
+  outEnv := match inEnv
     local
-      Item item;
       Env env;
 
-    case (_, _::env) then env;
+    case _::env then env;
     else inEnv;
   end match;
 end unmergeItemEnv;
@@ -1537,7 +1529,7 @@ public function getItemPrefixes
   input Item inItem;
   output SCode.Prefixes outPrefixes;
 algorithm
-  outPrefixes := match(inItem)
+  outPrefixes := match inItem
     local
       SCode.Prefixes pf;
       Item item;
@@ -1555,12 +1547,12 @@ public function resolveRedeclaredItem
   output Env outEnv;
   output list<tuple<Item, Env>> outPreviousItem;
 algorithm
-  (outItem, outEnv, outPreviousItem) := match(inItem, inEnv)
+  (outItem, outEnv, outPreviousItem) := match inItem
     local
       Item item;
       Env env;
 
-    case (REDECLARED_ITEM(item = item, declaredEnv = env), _) then (item, env, {(inItem, inEnv)});
+    case REDECLARED_ITEM(item = item, declaredEnv = env) then (item, env, {(inItem, inEnv)});
 
     else (inItem, inEnv, {});
 
@@ -1590,13 +1582,13 @@ public function getDerivedClassRedeclares
  input Env inEnv;
  output list<Redeclaration> outRedeclarations;
 algorithm
-  outRedeclarations := matchcontinue(inDerivedName, inTypeSpec, inEnv)
+  outRedeclarations := matchcontinue inTypeSpec
     local
       Absyn.Path bc, path;
       list<Redeclaration> rm;
 
     // only one extends!
-    case (_, Absyn.TPATH(path, _), _)
+    case Absyn.TPATH(path, _)
       algorithm
         {EXTENDS(baseClass = bc, redeclareModifiers = rm)} :=
           getEnvExtendsFromTable(inEnv);
@@ -1604,7 +1596,7 @@ algorithm
       then
         rm;
 
-    case (_, Absyn.TPATH(path, _), _)
+    case Absyn.TPATH(path, _)
       algorithm
         {EXTENDS(baseClass = bc, redeclareModifiers = rm)} :=
           getEnvExtendsFromTable(inEnv);
@@ -1657,13 +1649,13 @@ public function mergePathWithEnvPath
   input Env inEnv;
   output Absyn.Path outPath;
 algorithm
-  outPath := matchcontinue(inPath, inEnv)
+  outPath := matchcontinue inEnv
     local
       Absyn.Path env_path;
       Absyn.Ident id;
 
     // Try to merge the last identifier in the path with the environment path.
-    case (_, _)
+    case _
       algorithm
         env_path := getEnvPath(inEnv);
         id := AbsynUtil.pathLastIdent(inPath);
@@ -1682,14 +1674,14 @@ public function mergeTypeSpecWithEnvPath
   input Env inEnv;
   output Absyn.TypeSpec outTS;
 algorithm
-  outTS := matchcontinue(inTS, inEnv)
+  outTS := matchcontinue inTS
     local
       Absyn.Path path;
       Absyn.Ident id;
       Option<Absyn.ArrayDim> ad;
 
     // Try to merge the last identifier in the path with the environment path.
-    case (Absyn.TPATH(path, ad), _)
+    case Absyn.TPATH(path, ad)
       algorithm
         id := AbsynUtil.pathLastIdent(path);
         path := AbsynUtil.joinPaths(getEnvPath(inEnv), Absyn.IDENT(id));
@@ -1708,11 +1700,11 @@ public function prefixIdentWithEnv
   input Env inEnv;
   output Absyn.Path outPath;
 algorithm
-  outPath := match(inIdent, inEnv)
+  outPath := match inEnv
     local
       Absyn.Path path;
 
-    case (_, {FRAME(name = NONE())}) then Absyn.IDENT(inIdent);
+    case {FRAME(name = NONE())} then Absyn.IDENT(inIdent);
     else
       algorithm
         path := getEnvPath(inEnv);
@@ -1727,7 +1719,7 @@ public function getRedeclarationElement
   input Redeclaration inRedeclare;
   output SCode.Element outElement;
 algorithm
-  outElement := match(inRedeclare)
+  outElement := match inRedeclare
     local
       SCode.Element e;
       Item item;
@@ -1745,7 +1737,7 @@ public function getRedeclarationNameInfo
   output String outName;
   output SourceInfo outInfo;
 algorithm
-  (outName, outInfo) := match(inRedeclare)
+  (outName, outInfo) := match inRedeclare
     local
       SCode.Element el;
       String name;
@@ -1774,7 +1766,6 @@ protected
   ImportTable imps;
   Mutable<Boolean> is_used;
   SCode.Program p;
-  list<Absyn.Class> initialClasses;
 algorithm
   tree := EnvTree.new();
   exts := newExtendsTable();
@@ -1819,7 +1810,7 @@ protected function printFrameStr
   input Frame inFrame;
   output String outString;
 algorithm
-  outString := match(inFrame)
+  outString := match inFrame
     local
       Option<String> name;
       FrameType ty;
@@ -1828,7 +1819,7 @@ algorithm
       ImportTable imps;
       String name_str, ty_str, tree_str, ext_str, imp_str, out;
 
-    case (FRAME(name, ty, tree, exts, imps, _))
+    case FRAME(name, ty, tree, exts, imps, _)
       algorithm
         name_str := printFrameNameStr(name);
         ty_str := printFrameTypeStr(ty);
@@ -1849,7 +1840,7 @@ protected function printFrameNameStr
   input Option<String> inFrame;
   output String outString;
 algorithm
-  outString := match(inFrame)
+  outString := match inFrame
     local
       String name;
 
@@ -1862,7 +1853,7 @@ protected function printFrameTypeStr
   input FrameType inFrame;
   output String outString;
 algorithm
-  outString := match(inFrame)
+  outString := match inFrame
     case NORMAL_SCOPE() then "Normal";
     case ENCAPSULATED_SCOPE() then "Encapsulated";
     case IMPLICIT_SCOPE() then "Implicit";
@@ -1903,11 +1894,11 @@ public function printRedeclarationStr
   input Redeclaration inRedeclare;
   output String outString;
 algorithm
-  outString := matchcontinue(inRedeclare)
+  outString := matchcontinue inRedeclare
     local String name; Absyn.Path p;
-    case (PROCESSED_MODIFIER(modifier = ALIAS(name = name, path = SOME(p))))
+    case PROCESSED_MODIFIER(modifier = ALIAS(name = name, path = SOME(p)))
       then "ALIAS(" + AbsynUtil.pathString(p) + "." + name + ")";
-    case (PROCESSED_MODIFIER(modifier = ALIAS(name = name)))
+    case PROCESSED_MODIFIER(modifier = ALIAS(name = name))
       then "ALIAS(" + name + ")";
     else SCodeDump.unparseElementStr(getRedeclarationElement(inRedeclare),SCodeDump.defaultOptions);
   end matchcontinue;

@@ -519,7 +519,6 @@ public
       type SimPartitions = list<SimPartition>;
       UnorderedMap<BClock, SimPartitions> clock_collector = UnorderedMap.new<SimPartitions>(BClock.hash, BClock.isEqual);
       // set to collect the dependencies of a block
-      UnorderedSet<BClock> clock_dependencies;
       list<Block> blcks;
       list<SimVar> vars;
       BClock clock, subClock, baseClock;
@@ -656,21 +655,16 @@ public
         local
           Tearing strict;
           NonlinearSystem system;
-          list<Block> result = {}, eqns = {};
+          list<Block> eqns = {};
           list<ComponentRef> crefs = {};
           Block tmp;
-          Pointer<Variable> varPtr;
           Variable var;
-          SimJacobian tmpJac;
           Option<SimJacobian> jacobian;
           EquationPointer eqn_ptr;
           Equation eqn;
           SlicingStatus status;
           ComponentRef var_cref;
           Integer aliasOf, generic_call_index, residual_index = 0;
-          list<Integer> eqn_indices, sizes;
-          list<Equation> entwined_eqns = {};
-          UnorderedMap<ComponentRef, Expression> replacements;
           Block single_call;
           list<Block> single_calls = {};
           UnorderedMap<ComponentRef, Integer> entwined_index_map;
@@ -869,7 +863,6 @@ public
     algorithm
       blck := match (eqn, status)
         local
-          Type ty;
           Operator operator;
           Expression lhs, rhs;
           Block tmp;
@@ -1017,9 +1010,7 @@ public
       blck := match eqn
         local
           Equation qual;
-          Type ty;
           Operator operator;
-          SimVar residualVar;
           ComponentRef cref;
           Expression lhs, rhs;
           Block tmp;
@@ -1082,9 +1073,6 @@ public
           Expression range, exp;
           list<tuple<DAE.ComponentRef, DAE.Exp>> old_iterators = {};
           list<Block> blcks;
-          DAE.ComponentRef oldIter;
-          DAE.Type oldType;
-          DAE.Statement for_stmt;
           list<tuple<DAE.Exp, list<OldSimCode.SimEqSystem>>> oldBranches = {};
           list<OldSimCode.SimEqSystem> else_branch = {};
 

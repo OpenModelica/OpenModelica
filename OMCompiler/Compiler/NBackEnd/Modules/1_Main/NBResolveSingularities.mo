@@ -110,13 +110,12 @@ public
     array<Boolean> excluded_eqns;
     array<list<Integer>> msss;
     list<Integer> marked_eqns;
-    Adjacency.Matrix state_adj;
-    Pointer<Equation> constraint, sliced_eqn, diffed_eqn;
-    list<Slice<VariablePointer>> state_candidates = {}, states, dummy_states, sliced_dummies = {};
-    list<Pointer<Variable>> sliced_candidates, sliced_states, sliced_dummy_states, state_derivatives, dummy_derivatives = {}, dummy_slice_vars;
+    Pointer<Equation> constraint, diffed_eqn;
+    list<Slice<VariablePointer>> states, dummy_states, sliced_dummies = {};
+    list<Pointer<Variable>> sliced_states, sliced_dummy_states, state_derivatives, dummy_derivatives = {}, dummy_slice_vars;
     list<Pointer<Variable>> current_candidates, rest_candidates;
     list<Slice<EquationPointer>> constraint_eqns, matched_eqns, unmatched_eqns;
-    list<Pointer<Equation>> sliced_constraints, new_eqns = {};
+    list<Pointer<Equation>> new_eqns = {};
     Differentiate.DifferentiationArguments diffArguments;
     Pointer<Differentiate.DifferentiationArguments> diffArguments_ptr;
     VariablePointers candidate_ptrs;
@@ -572,7 +571,7 @@ protected
   function resolveClustering
     input array<Integer> color_clustering;
   protected
-    Integer color, color2;
+    Integer color;
   algorithm
     for i in 1:arrayLength(color_clustering) loop
       color := i;

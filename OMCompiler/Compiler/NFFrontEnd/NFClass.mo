@@ -800,8 +800,6 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
   function getDerivedComments
     input Class cls;
     input output list<SCode.Comment> cmts;
-  protected
-    ClassTree cls_tree;
   algorithm
     cmts := match cls
       case EXPANDED_DERIVED() then InstNode.getComments(cls.baseClass, cmts);
@@ -840,7 +838,6 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
     output Boolean hasOperator;
   protected
     InstNode op_node;
-    Class op_cls;
   algorithm
     if Restriction.isOperatorRecord(restriction(cls)) then
       try

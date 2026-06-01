@@ -104,14 +104,14 @@ function dumpNode "Dumps a node to a string."
   input Node inNode;
   output Ident outIdent;
 algorithm
-  outIdent := match (inNode)
+  outIdent := match inNode
     local
       Label nm,typlbl,out,typ,lblstr;
       Attributes newattr,attr;
       Children children;
       list<Label> lbl_1,lbl;
 
-    case (NODE(type_ = typ,attributes = attr,children = children))
+    case NODE(type_ = typ,attributes = attr,children = children)
       algorithm
         nm := nodename(typ);
         typlbl := makeLabel({typ});
@@ -122,7 +122,7 @@ algorithm
       then
         nm;
 
-    case (LNODE(type_ = typ,labelLst = lbl,attributes = attr,children = children))
+    case LNODE(type_ = typ,labelLst = lbl,attributes = attr,children = children)
       algorithm
         nm := nodename(typ);
         lbl_1 := typ::lbl;
@@ -152,7 +152,7 @@ function makeLabelReq "Helper function to makeLabel"
   input String inString;
   output String outString;
 algorithm
-  outString := match (inStringLst)
+  outString := match inStringLst
     local
       Label s,s1,s2;
       list<Label> rest;
@@ -166,7 +166,7 @@ algorithm
         s := stringAppend(s, s2);
       then s;
 
-    case (s1 :: rest)
+    case s1 :: rest
       algorithm
         s := stringAppend(inString, s1);
         s := stringAppend(s, "\\n");
@@ -179,7 +179,7 @@ function dumpChildren "Helper function to dumpNode"
   input Ident inIdent;
   input Children inChildren;
 algorithm
-  _ := match (inIdent,inChildren)
+  () := match (inIdent,inChildren)
     local
       Label nm,parent;
       Node node;
@@ -260,7 +260,7 @@ function makeAttrReq "Helper function to makeAttr."
   input String inString;
   output String outString;
 algorithm
-  outString := match (inAttributeLst)
+  outString := match inAttributeLst
     local
       Label s,name,v;
       list<Attribute> rest;
@@ -272,7 +272,7 @@ algorithm
       then
         stringAppend(s, v);
 
-    case ((ATTR(name = name,value = v) :: rest))
+    case ATTR(name = name,value = v) :: rest
       algorithm
         s := stringAppend(inString, name);
         s := stringAppend(s, "=");

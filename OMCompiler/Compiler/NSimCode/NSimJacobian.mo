@@ -242,7 +242,6 @@ public
           UnorderedMap<ComponentRef, SimVar> jac_map;
           UnorderedMap<ComponentRef, Integer> idx_map;
           ComponentRef cref;
-          list<Subscript> subscripts;
           SparsityPattern sparsity, sparsityT;
           SparsityColoring coloring, rowColoring;
           SimJacobian jac;

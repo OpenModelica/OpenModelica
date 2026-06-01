@@ -180,11 +180,9 @@ public
   protected
     InstNode node, class_node;
     array<InstNode> child_nodes;
-    ComponentRef child_cref;
     Type ty;
     Prefixes.Visibility vis;
     SourceInfo info;
-    Integer complexSize;
     list<Variable> children = {};
   algorithm
     node := ComponentRef.node(cref);
@@ -765,7 +763,7 @@ public
   protected
     OptimizerExpression optExp;
   algorithm
-    b := match (var.backendinfo)
+    b := match var.backendinfo
       case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
         then (optExp == OptimizerExpression.LAGRANGE or optExp == OptimizerExpression.PATH_CONSTRAINT);
       else false;
@@ -777,7 +775,7 @@ public
   protected
     OptimizerExpression optExp;
   algorithm
-    b := match (var.backendinfo)
+    b := match var.backendinfo
       case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
         then (optExp == OptimizerExpression.MAYER or optExp == OptimizerExpression.FINAL_CONSTRAINT);
       else false;
@@ -789,7 +787,7 @@ public
   protected
     OptimizerExpression optExp;
   algorithm
-    b := match (var.backendinfo)
+    b := match var.backendinfo
       case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
         then (optExp == OptimizerExpression.INITIAL_CONSTRAINT);
       else false;
@@ -825,7 +823,7 @@ public
     Variable var = Pointer.access(var_ptr);
     Option<Expression> val = UnorderedMap.get(var.name, optimal_values);
   algorithm
-    _ := match (val, var.backendinfo)
+    () := match (val, var.backendinfo)
       local
         Integer i;
         VariableKind varKind;
@@ -1263,7 +1261,6 @@ public
     var := Pointer.access(varPointer);
     var.backendinfo := match BackendInfo.getVarKind(var.backendinfo)
       local
-        VariableKind varKind;
         Variable der_var;
 
       case VariableKind.STATE(derivative = SOME(derivative)) algorithm
@@ -1530,7 +1527,6 @@ public
   protected
     InstNode node;
     Variable var;
-    list<Dimension> dims = Type.arrayDims(ty);
   algorithm
     // create inst node with dummy variable pointer and create cref from it
     node := InstNode.VAR_NODE(RESIDUAL_STR + "_" + name + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
@@ -1594,7 +1590,6 @@ public
   protected
     InstNode node;
     Variable var;
-    list<Dimension> dims = Type.arrayDims(ty);
     function updateBackendInfo
       input output Variable var;
       input Boolean makeParam;
@@ -1691,7 +1686,6 @@ public
   protected
     InstNode node;
     Variable var;
-    list<Dimension> dims = Type.arrayDims(ty);
   algorithm
     // create inst node with dummy variable pointer and create cref from it
     node := InstNode.VAR_NODE(CLOCK_STR + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
@@ -1727,8 +1721,7 @@ public
   function hasEvaluableBinding
     extends checkVar;
   protected
-    Expression binding, start;
-    Option<Expression> opt_start;
+    Expression binding;
     function isEvaluable
       input Expression exp;
       output Boolean b;

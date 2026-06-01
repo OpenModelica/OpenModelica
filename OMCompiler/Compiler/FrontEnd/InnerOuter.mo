@@ -195,7 +195,7 @@ protected function changeInnerOuterInOuterConnect2
   input Connect.OuterConnect inOC;
   output Connect.OuterConnect outOC;
 algorithm
-  outOC := matchcontinue(inOC)
+  outOC := matchcontinue inOC
     local
       DAE.ComponentRef cr1,cr2,ncr1,ncr2;
       Absyn.InnerOuter io1,io2;
@@ -263,15 +263,15 @@ protected function removeInnerPrefixFromCref
  input DAE.ComponentRef inCref;
  output DAE.ComponentRef outCref;
 algorithm
-  outCref := matchcontinue(inPrefix, inCref)
+  outCref := matchcontinue inPrefix
     local
       DAE.ComponentRef crefPrefix, crOuter;
 
     // no prefix to strip, return the cref!
-    case (DAE.NOPRE(),_) then inCref;
+    case DAE.NOPRE() then inCref;
 
     // we have a prefix, remove it from the cref
-    case (_, _)
+    case _
       algorithm
         // transform prefix into cref
         crefPrefix := PrefixUtil.prefixToCref(inPrefix);
@@ -307,7 +307,7 @@ protected function retrieveOuterConnections2
   output ConnectionGraph.ConnectionGraph outCGraph;
 algorithm
   (outOuterConnects, outSets, outInnerOuterConnects, outCGraph) :=
-  matchcontinue(inCache, inEnv, inIH, inPrefix, inOuterConnects, inSets, inTopCall, inCGraph)
+  matchcontinue(inOuterConnects, inSets, inTopCall, inCGraph)
     local
       DAE.ComponentRef cr1, cr2;
       Absyn.InnerOuter io1, io2;
@@ -322,10 +322,10 @@ algorithm
       ConnectionGraph.ConnectionGraph graph;
 
     // handle empty
-    case (_, _, _, _, {}, _, _, _) then (inOuterConnects, inSets, {}, inCGraph);
+    case ({}, _, _, _) then (inOuterConnects, inSets, {}, inCGraph);
 
     // an inner only outer connect
-    case(_, _, _, _, Connect.OUTERCONNECT(scope, cr1, io1, f1, cr2, io2, f2,
+    case(Connect.OUTERCONNECT(scope, cr1, io1, f1, cr2, io2, f2,
         source as DAE.SOURCE(info = info)) :: rest_oc, sets, _, graph)
       algorithm
         (inner1, outer1) := lookupVarInnerOuterAttr(inCache, inEnv, inIH, cr1, cr2);
@@ -352,7 +352,7 @@ algorithm
         (rest_oc, sets, ioc, graph);
 
     // this case is for innerouter declarations, since we do not have them in environment we need to treat them in a special way
-    case(_, _, _, _, Connect.OUTERCONNECT(_, cr1, io1, f1, cr2, io2, f2,
+    case(Connect.OUTERCONNECT(_, cr1, io1, f1, cr2, io2, f2,
         DAE.SOURCE(info = info)) :: rest_oc, sets, true, graph)
       algorithm
         (inner1, outer1) := innerOuterBooleans(io1);
@@ -373,7 +373,7 @@ algorithm
         (rest_oc, sets, ioc, graph);
 
     // just keep the outer connects the same if we don't find them in the same scope
-    case(_, _, _, _, oc :: rest_oc, sets, _, graph)
+    case(oc :: rest_oc, sets, _, graph)
       algorithm
         (rest_oc, sets, ioc, graph) :=
           retrieveOuterConnections2(inCache, inEnv, inIH, inPrefix, rest_oc, sets, inTopCall, graph);
@@ -390,8 +390,8 @@ protected function convertInnerOuterInnerToOuter
   input Absyn.InnerOuter io;
   output Absyn.InnerOuter oio;
 algorithm
-  oio := match(io)
-    case(Absyn.INNER()) then Absyn.OUTER();
+  oio := match io
+    case Absyn.INNER() then Absyn.OUTER();
     else io;
   end match;
 end convertInnerOuterInnerToOuter;
@@ -421,12 +421,11 @@ protected function addOuterConnectIfEmpty
   output Connect.Sets outSets;
   output ConnectionGraph.ConnectionGraph outCGraph;
 algorithm
-  (outSets, outCGraph) := match(inCache,inEnv,inIH,pre,inSets,added,cr1,iio1,f1,cr2,iio2,f2,info,inCGraph)
+  (outSets, outCGraph) := match(inCache, inEnv, inIH, inSets, added, iio1, iio2, inCGraph)
      local
        SCode.Variability vt1,vt2;
        DAE.Type t1,t2;
        DAE.ConnectorType ct;
-       DAE.DAElist dae;
        InstHierarchy ih;
        Connect.SetTrie sets;
        Integer sc;
@@ -438,11 +437,11 @@ algorithm
        ConnectionGraph.ConnectionGraph graph;
 
     // if it was added, return the same
-    case(_,_,_,_,_,true,_,_,_,_,_,_,_,_)
+    case(_, _, _, _, true, _, _, _)
       then (inSets, inCGraph);
 
     // if it was not added, add it (search for both components)
-    case(cache,env,ih,_, Connect.SETS(sets, sc, cl, oc),false,_,io1,_,_,io2,_,_, graph)
+    case(cache, env, ih, Connect.SETS(sets, sc, cl, oc), false, io1, io2, graph)
       algorithm
         (cache,DAE.ATTR(connectorType = ct, variability = vt1),t1,_,_,_,_,_,_) := Lookup.lookupVar(cache,env,cr1);
         (cache,DAE.ATTR(variability = vt2),t2,_,_,_,_,_,_) := Lookup.lookupVar(cache,env,cr2);
@@ -474,11 +473,11 @@ protected function removeOuter
   input Absyn.InnerOuter io;
   output Absyn.InnerOuter outIo;
 algorithm
-  outIo := match(io)
-    case(Absyn.OUTER())           then Absyn.NOT_INNER_OUTER();
-    case(Absyn.INNER())           then Absyn.INNER();
-    case(Absyn.INNER_OUTER())     then Absyn.INNER();
-    case(Absyn.NOT_INNER_OUTER()) then Absyn.NOT_INNER_OUTER();
+  outIo := match io
+    case Absyn.OUTER()           then Absyn.NOT_INNER_OUTER();
+    case Absyn.INNER()           then Absyn.INNER();
+    case Absyn.INNER_OUTER()     then Absyn.INNER();
+    case Absyn.NOT_INNER_OUTER() then Absyn.NOT_INNER_OUTER();
   end match;
 end removeOuter;
 
@@ -494,13 +493,12 @@ protected function lookupVarInnerOuterAttr
   output Boolean isInner;
   output Boolean isOuter;
 algorithm
-  (isInner,isOuter) := matchcontinue(cache,env,inIH,cr1,cr2)
+  (isInner,isOuter) := matchcontinue cr2
     local
       Absyn.InnerOuter io,io1,io2;
       Boolean isInner1,isInner2,isOuter1,isOuter2;
-      InstHierarchy ih;
     // Search for both
-    case(_,_,_,_,_)
+    case _
       algorithm
         ErrorExt.setCheckpoint("lookupVarInnerOuterAttr");
         (_,DAE.ATTR(innerOuter=io1),_,_,_,_,_,_,_) := Lookup.lookupVar(cache,env,cr1);
@@ -513,7 +511,7 @@ algorithm
       then
         (isInner,isOuter);
     // try to find var cr1 (lookup can fail for one of them)
-    case(_,_,_,_,_)
+    case _
       algorithm
         (_,DAE.ATTR(innerOuter=io),_,_,_,_,_,_,_) := Lookup.lookupVar(cache,env,cr1);
         (isInner,isOuter) := innerOuterBooleans(io);
@@ -521,7 +519,7 @@ algorithm
       then
         (isInner,isOuter);
      // ..else try cr2 (lookup can fail for one of them)
-    case(_,_,_,_,_)
+    case _
       algorithm
         (_,DAE.ATTR(innerOuter=io),_,_,_,_,_,_,_) := Lookup.lookupVar(cache,env,cr2);
         (isInner,isOuter) := innerOuterBooleans(io);
@@ -541,11 +539,11 @@ protected function innerOuterBooleans
   output Boolean inner1;
   output Boolean outer1;
 algorithm
-  (inner1,outer1) := match(io)
-    case(Absyn.INNER()) then (true,false);
-    case(Absyn.OUTER()) then (false,true);
-    case(Absyn.INNER_OUTER()) then (true,true);
-    case(Absyn.NOT_INNER_OUTER()) then (false,false);
+  (inner1,outer1) := match io
+    case Absyn.INNER() then (true,false);
+    case Absyn.OUTER() then (false,true);
+    case Absyn.INNER_OUTER() then (true,true);
+    case Absyn.NOT_INNER_OUTER() then (false,false);
   end match;
 end innerOuterBooleans;
 
@@ -572,14 +570,13 @@ protected function lookupInnerInIH
  input SCode.Ident inComponentIdent;
  output InstInner outInstInner;
 algorithm
-  (outInstInner) := matchcontinue(inTIH, inPrefix, inComponentIdent)
+  outInstInner := matchcontinue(inTIH, inPrefix, inComponentIdent)
     local
       SCode.Ident name;
       DAE.Prefix prefix;
       InstHierarchyHashTable ht;
       DAE.ComponentRef cref;
       InstInner instInner;
-      OuterPrefixes outerPrefixes;
 
     // no prefix, this is an error!
     // disabled as this is used in Interactive.getComponents
@@ -636,7 +633,7 @@ algorithm
         (_,cref) := PrefixUtil.prefixCref(FCore.emptyCache(), FGraph.empty(), emptyInstHierarchy, prefix, ComponentReferenceBasics.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {}));
 
         // search in instance hierarchy we had a failure
-        failure(_ := get(cref, ht));
+        failure(get(cref, ht));
 
         // fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : Couldn't find: " + ComponentReferenceBasics.printComponentRefStr(cref) + " going deeper");
 
@@ -670,11 +667,11 @@ According to specification modifiers on outer elements is not allowed."
   input SourceInfo inInfo;
   output Boolean modd;
 algorithm
-  modd := matchcontinue(cache,env,ih,prefix,componentName,cr,inMod,io,impl,inInfo)
+  modd := matchcontinue(inMod, io)
     local
       String s1,s2,s;
     // if we don't have the same modification on inner report error!
-    case(_,_,_,_,_,_,DAE.MOD(),Absyn.OUTER(),_,_)
+    case(DAE.MOD(), Absyn.OUTER())
       algorithm
         s1 := ComponentReferenceBasics.printComponentRefStr(cr);
         s2 := Mod.prettyPrintMod(inMod, 0);
@@ -697,7 +694,6 @@ public function switchInnerToOuterInGraph
 algorithm
   outEnv := match(inEnv,inCr)
     local
-      FCore.Graph envIn,  envRest;
       DAE.ComponentRef cr;
       FCore.Ref r;
       FCore.Node n;
@@ -723,7 +719,7 @@ function switchInnerToOuterInFrame
   input DAE.ComponentRef inCr;
   output FCore.Node outNode = inNode;
 algorithm
-  _ := match outNode
+  () := match outNode
     case FCore.N()
       algorithm
         outNode.children := FNode.RefTree.map(outNode.children,
@@ -755,9 +751,8 @@ function switchInnerToOuterInChildrenValue
   input DAE.ComponentRef inCr;
   output FCore.Node outNode;
 algorithm
-  outNode := matchcontinue(inNode,inCr)
+  outNode := matchcontinue inNode
     local
-      DAE.ComponentRef cr;
       FCore.Ref r;
       FCore.Node node;
 
@@ -775,7 +770,7 @@ algorithm
       Option<DAE.Const> cnstForRange;
 
     // inner
-    case (node, _)
+    case node
       algorithm
         // get the instance child
         r := FNode.childFromNode(node, FNode.itNodeName);
@@ -789,7 +784,7 @@ algorithm
         node;
 
     // inner outer
-    case (node, _)
+    case node
       algorithm
         // get the instance child
         r := FNode.childFromNode(node, FNode.itNodeName);
@@ -803,7 +798,7 @@ algorithm
         node;
 
     // leave unchanged
-    case (_, _) then inNode;
+    case _ then inNode;
 
   end matchcontinue;
 end switchInnerToOuterInChildrenValue;
@@ -836,11 +831,9 @@ public function lookupInnerVar
   input Absyn.InnerOuter io;
   output InstInner outInstInner;
 algorithm
-  (outInstInner) := matchcontinue (inCache,inEnv,inIH,inPrefix,inIdent,io)
+  outInstInner := matchcontinue (inIH, inPrefix, inIdent)
     local
-      Cache cache;
       String n;
-      FCore.Graph env;
       DAE.Prefix pre;
       TopInstance tih;
       InstInner instInner;
@@ -848,7 +841,7 @@ algorithm
     // adrpo: if component is an outer or an inner/outer we need to
     //        lookup the modification of the inner component and use it
     //        when we instantiate the outer component
-    case (_,_,tih::_,pre,n,_)
+    case (tih::_, pre, n)
       algorithm
         // is component an outer or an inner/outer?
         //true = AbsynUtil.isOuter(io);  // is outer
@@ -859,7 +852,7 @@ algorithm
         instInner;
 
     // failure in case we look for anything else but outer!
-    case (_,_,_,pre,n,_)
+    case (_, pre, n)
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("InnerOuter.lookupInnerVar failed on component: " + PrefixUtil.printPrefixStr(pre) + "/" + n);
@@ -878,13 +871,12 @@ public function updateInstHierarchy
   input InstInner inInstInner;
   output InstHierarchy outIH;
 algorithm
-  outIH := match(inIH,inPrefix,inInnerOuter,inInstInner)
+  outIH := match(inIH, inInstInner)
     local
       TopInstance tih;
       InstHierarchy restIH, ih;
       DAE.ComponentRef cref;
       SCode.Ident name;
-      Absyn.InnerOuter io;
       InstHierarchyHashTable ht;
       Option<Absyn.Path> pathOpt;
       OuterPrefixes outerPrefixes;
@@ -902,7 +894,7 @@ algorithm
         ih;*/
 
     // no hashtable, create one!
-    case({},_,_,INST_INNER())
+    case({}, INST_INNER())
       algorithm
         // print ("InnerOuter.updateInstHierarchy creating an empty hash table! \n");
         ht := emptyInstHierarchyHashTable();
@@ -913,8 +905,7 @@ algorithm
         ih;
 
     // add to the hierarchy
-    case((TOP_INSTANCE(pathOpt, ht, outerPrefixes, sm))::restIH,_,_,
-         INST_INNER(name=name))
+    case((TOP_INSTANCE(pathOpt, ht, outerPrefixes, sm))::restIH, INST_INNER(name=name))
       algorithm
         // prefix the name!
         cref_ := ComponentReferenceBasics.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {});
@@ -926,7 +917,7 @@ algorithm
         TOP_INSTANCE(pathOpt, ht, outerPrefixes, sm)::restIH;
 
     // failure
-    case(_,_,_,INST_INNER())
+    case(_, INST_INNER())
       algorithm
         // prefix the name!
         //(_,cref) = PrefixUtil.prefixCref(FCore.emptyCache(),{},emptyInstHierarchy,inPrefix, ComponentReferenceBasics.makeCrefIdent("UNKNOWN", DAE.T_UNKNOWN_DEFAULT, {}));
@@ -996,13 +987,13 @@ public function addClassIfInner
   input InstHierarchy inIH;
   output InstHierarchy outIH;
 algorithm
-  outIH := matchcontinue(inClass, inPrefix, inScope, inIH)
+  outIH := matchcontinue inClass
     local
       String name, scopeName;
       Absyn.InnerOuter io;
 
     // add inner or innerouter
-    case (SCode.CLASS(name = name, prefixes = SCode.PREFIXES(innerOuter = io)), _, _, _)
+    case SCode.CLASS(name = name, prefixes = SCode.PREFIXES(innerOuter = io))
       algorithm
         true := AbsynUtil.isInner(io);
         scopeName := FGraph.getGraphNameStr(inScope);
@@ -1035,7 +1026,7 @@ public function addOuterPrefixToIH
   input DAE.ComponentRef inInnerComponentRef;
   output InstHierarchy outIH;
 algorithm
-  outIH := matchcontinue(inIH, inOuterComponentRef, inInnerComponentRef)
+  outIH := matchcontinue inIH
     local
       TopInstance tih;
       InstHierarchy restIH, ih;
@@ -1045,7 +1036,7 @@ algorithm
       HashSet.HashSet sm;
 
     // no hashtable, create one!
-    case({}, _, _)
+    case {}
       algorithm
         // create an empty table and add the crefs to it.
         ht := emptyInstHierarchyHashTable();
@@ -1056,7 +1047,7 @@ algorithm
         ih;
 
     // add to the top instance
-    case((TOP_INSTANCE(pathOpt, ht, outerPrefixes, sm))::restIH, _, _)
+    case (TOP_INSTANCE(pathOpt, ht, outerPrefixes, sm))::restIH
       algorithm
         // fprintln(Flags.INNER_OUTER, "InnerOuter.addOuterPrefix adding: outer cref: " +
         //   ComponentReferenceBasics.printComponentRefStr(inOuterComponentRef) + " refers to inner cref: " +
@@ -1085,18 +1076,18 @@ public function prefixOuterCrefWithTheInnerPrefix
   input DAE.Prefix inPrefix;
   output DAE.ComponentRef outInnerComponentRef;
 algorithm
-  outInnerComponentRef := match(inIH, inOuterComponentRef, inPrefix)
+  outInnerComponentRef := match inIH
     local
       DAE.ComponentRef outerCrefPrefix, fullCref, innerCref, innerCrefPrefix;
       OuterPrefixes outerPrefixes;
 
     // we have no outer references, fail so prefixing can happen in the calling function
-    case ({}, _, _)
+    case {}
       then
         fail();
 
     // we have some outer references, search for our prefix + cref in them
-    case ({TOP_INSTANCE(_, _, outerPrefixes as _::_, _)}, _, _)
+    case {TOP_INSTANCE(_, _, outerPrefixes as _::_, _)}
       algorithm
         (_,fullCref) := PrefixUtil.prefixCref(FCore.emptyCache(), FGraph.empty(), emptyInstHierarchy, inPrefix, inOuterComponentRef);
 
@@ -1177,7 +1168,7 @@ protected function searchForInnerPrefix
   output DAE.ComponentRef outerCrefPrefix;
   output DAE.ComponentRef innerCrefPrefix;
 protected
-  DAE.ComponentRef cr, id;
+  DAE.ComponentRef cr;
   Boolean b1 = false, b2 = false;
 algorithm
   // print("L:" + intString(listLength(outerPrefixes)) + "\n");
@@ -1205,19 +1196,15 @@ protected function printInnerDefStr
   input InstInner inInstInner;
   output String outStr;
 algorithm
-  outStr := match(inInstInner)
+  outStr := match inInstInner
     local
-      DAE.Prefix innerPrefix;
-      SCode.Ident name;
-      Absyn.InnerOuter io;
-      Option<InstResult> instResult;
       String fullName "full inner component name";
       Absyn.Path typePath "the type of the inner";
       String scope "the scope of the inner";
       list<DAE.ComponentRef> outers "which outers are referencing this inner";
       String str, strOuters;
 
-    case(INST_INNER(_, _, _, fullName, typePath, scope, _, outers, _))
+    case INST_INNER(_, _, _, fullName, typePath, scope, _, outers, _)
       algorithm
         outers := List.uniqueOnTrue(outers, ComponentReferenceBasics.crefEqualNoStringCompare);
         strOuters := if listEmpty(outers)
@@ -1237,23 +1224,19 @@ public function getExistingInnerDeclarations
   input FCore.Graph inEnv;
   output String innerDeclarations;
 algorithm
-  innerDeclarations := match(inIH, inEnv)
+  innerDeclarations := match inIH
     local
-      TopInstance tih;
-      InstHierarchy restIH;
       InstHierarchyHashTable ht;
-      Option<Absyn.Path> pathOpt;
-      OuterPrefixes outerPrefixes;
       list<InstInner> inners;
       String str;
 
     // we have no inner components yet
-    case ({}, _)
+    case {}
       then
         "There are no 'inner' components defined in the model in any of the parent scopes of 'outer' component's scope: " + FGraph.printGraphPathStr(inEnv) + "." ;
 
     // get the list of components
-    case((TOP_INSTANCE(_, ht, _, _))::_, _)
+    case (TOP_INSTANCE(_, ht, _, _))::_
       algorithm
         inners := getInnersFromInstHierarchyHashTable(ht);
         str := stringDelimitList(List.map(inners, printInnerDefStr), "\n    ");
@@ -1275,8 +1258,8 @@ protected function getValue
   input tuple<Key,Value> tpl;
   output InstInner v;
 algorithm
-  v := match(tpl)
-    case((_,v)) then v;
+  v := match tpl
+    case (_,v) then v;
   end match;
 end getValue;
 
@@ -1313,10 +1296,9 @@ protected function dumpTuple
   input tuple<Key,Value> tpl;
   output String str;
 algorithm
-  str := match(tpl)
+  str := match tpl
     local
-      Key k; Value v;
-    case((k,_))
+      Key k;    case (k,_)
       algorithm
         str := "{" +
          ComponentReference.crefStr(k) +
@@ -1354,7 +1336,6 @@ protected function emptyInstHierarchyHashTable
   output InstHierarchyHashTable hashTable;
 protected
   array<list<tuple<Key,Integer>>> arr;
-  list<Option<tuple<Key,Value>>> lst;
   array<Option<tuple<Key,Value>>> emptyarr;
 algorithm
   arr := arrayCreate(1000, {});
@@ -1373,17 +1354,16 @@ algorithm
   outHashTable :=
   matchcontinue (entry,hashTable)
     local
-      Integer hval,indx,newpos,n,n_1,bsize,indx_1;
+      Integer hval,indx,newpos,n,n_1,bsize;
       ValueArray varr_1,varr;
       list<tuple<Key,Integer>> indexes;
       array<list<tuple<Key,Integer>>> hashvec_1,hashvec;
       tuple<Key,Value> v,newv;
       Key key;
-      Value value;
       /* Adding when not existing previously */
     case ((v as (key,_)),(HASHTABLE(hashvec,varr,bsize,_)))
       algorithm
-        failure((_) := get(key, hashTable));
+        failure(get(key, hashTable));
         hval := hashFunc(key);
         indx := intMod(hval, bsize);
         newpos := valueArrayLength(varr);
@@ -1426,16 +1406,16 @@ protected function get1 "help function to get"
   output Value value;
   output Integer indx;
 algorithm
-  (value, indx) := match (key,hashTable)
+  (value, indx) := match hashTable
     local
-      Integer hval,hashindx,bsize,n;
+      Integer hval,hashindx,bsize;
       list<tuple<Key,Integer>> indexes;
       Value v;
       array<list<tuple<Key,Integer>>> hashvec;
       ValueArray varr;
       Key k;
 
-    case (_,(HASHTABLE(hashvec,varr,bsize,_)))
+    case HASHTABLE(hashvec,varr,bsize,_)
       algorithm
         hval := hashFunc(key);
         hashindx := intMod(hval, bsize);
@@ -1455,16 +1435,16 @@ protected function get2
   input list<tuple<Key,Integer>> keyIndices;
   output Integer index;
 algorithm
-  index := matchcontinue (key,keyIndices)
+  index := matchcontinue keyIndices
     local
       Key key2;
       list<tuple<Key,Integer>> xs;
-    case (_,((key2,index) :: _))
+    case (key2,index) :: _
       algorithm
         true := keyEqual(key, key2);
       then
         index;
-    case (_,(_ :: xs))
+    case _ :: xs
       algorithm
         index := get2(key, xs);
       then
@@ -1476,9 +1456,9 @@ protected function hashTableList "returns the entries in the hashTable as a list
   input InstHierarchyHashTable hashTable;
   output list<tuple<Key,Value>> tplLst;
 algorithm
-  tplLst := match(hashTable)
+  tplLst := match hashTable
   local ValueArray varr;
-    case(HASHTABLE(valueArr = varr)) algorithm
+    case HASHTABLE(valueArr = varr) algorithm
       tplLst := valueArrayList(varr);
     then tplLst;
   end match;
@@ -1490,19 +1470,19 @@ protected function valueArrayList
   input ValueArray valueArray;
   output list<tuple<Key,Value>> tplLst;
 algorithm
-  tplLst := matchcontinue (valueArray)
+  tplLst := matchcontinue valueArray
     local
       array<Option<tuple<Key,Value>>> arr;
       tuple<Key,Value> elt;
-      Integer lastpos,n,size;
+      Integer lastpos,n;
       list<tuple<Key,Value>> lst;
-    case (VALUE_ARRAY(numberOfElements = 0)) then {};
-    case (VALUE_ARRAY(numberOfElements = 1,valueArray = arr))
+    case VALUE_ARRAY(numberOfElements = 0) then {};
+    case VALUE_ARRAY(numberOfElements = 1,valueArray = arr)
       algorithm
         SOME(elt) := arr[0 + 1];
       then
         {elt};
-    case (VALUE_ARRAY(numberOfElements = n,valueArray = arr))
+    case VALUE_ARRAY(numberOfElements = n,valueArray = arr)
       algorithm
         lastpos := n - 1;
         lst := valueArrayList2(arr, 0, lastpos);
@@ -1551,8 +1531,8 @@ protected function valueArrayLength
   input ValueArray valueArray;
   output Integer size;
 algorithm
-  size := match (valueArray)
-    case (VALUE_ARRAY(numberOfElements = size)) then size;
+  size := match valueArray
+    case VALUE_ARRAY(numberOfElements = size) then size;
   end match;
 end valueArrayLength;
 
@@ -1564,19 +1544,19 @@ protected function valueArrayAdd
   input tuple<Key,Value> entry;
   output ValueArray outValueArray;
 algorithm
-  outValueArray := matchcontinue (valueArray,entry)
+  outValueArray := matchcontinue valueArray
     local
-      Integer n_1,n,size,expandsize,expandsize_1,newsize;
+      Integer n_1,n,size,expandsize,expandsize_1;
       array<Option<tuple<Key,Value>>> arr_1,arr,arr_2;
       Real rsize,rexpandsize;
-    case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),_) guard n < arrayLength(arr)
+    case VALUE_ARRAY(numberOfElements = n,valueArray = arr) guard n < arrayLength(arr)
       algorithm
         n_1 := n + 1;
         arr_1 := arrayUpdate(arr, n + 1, SOME(entry));
       then
         VALUE_ARRAY(n_1,arr_1);
 
-    case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),_) guard n < arrayLength(arr)
+    case VALUE_ARRAY(numberOfElements = n,valueArray = arr) guard n < arrayLength(arr)
       algorithm
         size := arrayLength(arr);
         rsize := intReal(size);
@@ -1604,11 +1584,10 @@ protected function valueArraySetnth
   input tuple<Key,Value> entry;
   output ValueArray outValueArray;
 algorithm
-  outValueArray := matchcontinue (valueArray,pos,entry)
+  outValueArray := matchcontinue valueArray
     local
       array<Option<tuple<Key,Value>>> arr;
-      Integer n,size;
-    case (VALUE_ARRAY(_,arr),_,_) guard pos < arrayLength(arr)
+    case VALUE_ARRAY(_,arr) guard pos < arrayLength(arr)
       algorithm
         arrayUpdate(arr, pos + 1, SOME(entry));
       then
@@ -1628,11 +1607,10 @@ protected function valueArrayClearnth
   input Integer pos;
   output ValueArray outValueArray;
 algorithm
-  outValueArray := matchcontinue (valueArray,pos)
+  outValueArray := matchcontinue valueArray
     local
       array<Option<tuple<Key,Value>>> arr;
-      Integer n,size;
-    case (VALUE_ARRAY(_,arr),_) guard pos < arrayLength(arr)
+    case VALUE_ARRAY(_,arr) guard pos < arrayLength(arr)
       algorithm
         arrayUpdate(arr, pos + 1,NONE());
       then
@@ -1653,14 +1631,14 @@ protected function valueArrayNth
   output Key key;
   output Value value;
 algorithm
-  (key, value) := match (valueArray,pos)
+  (key, value) := match valueArray
     local
       Key k;
       Value v;
       Integer n;
       array<Option<tuple<Key,Value>>> arr;
 
-    case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),_)
+    case VALUE_ARRAY(numberOfElements = n,valueArray = arr)
       algorithm
         true := (pos < n);
         SOME((k,v)) := arr[pos + 1];

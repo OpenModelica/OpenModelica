@@ -160,7 +160,7 @@ algorithm
   b := serializeVarsHelp(file, vars.boolConstVars, withOperations, b);
   b := serializeVarsHelp(file, vars.stringConstVars, withOperations, b);
   b := serializeVarsHelp(file, vars.jacobianVars, withOperations, b);
-  _ := serializeVarsHelp(file, vars.sensitivityVars, withOperations, b);
+  serializeVarsHelp(file, vars.sensitivityVars, withOperations, b);
 end serializeVars;
 
 function serializeVarsHelp
@@ -220,7 +220,6 @@ protected
   list<Absyn.Path> paths,typeLst;
   list<Absyn.Within> partOfLst;
   DAE.ComponentPrefix instance;
-  Integer i;
   list<DAE.SymbolicOperation> operations;
 algorithm
   DAE.SOURCE(typeLst=typeLst,info=info,instance=instance,partOfLst=partOfLst,operations=operations) := source;
@@ -280,7 +279,7 @@ function serializeOperation
   input File.File file;
   input DAE.SymbolicOperation op;
 algorithm
-  _ := match op
+  () := match op
     local
       DAE.Element elt;
     case DAE.FLATTEN(dae=SOME(elt))
@@ -1115,7 +1114,7 @@ function serializeLinearCell
   input tuple<Integer, Integer, SimCode.SimEqSystem> cell;
   input Boolean withOperations;
 algorithm
-  _ := match cell
+  () := match cell
     local
       Integer i,j;
       SimCode.SimEqSystem eq;

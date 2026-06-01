@@ -234,8 +234,6 @@ public
   function setTypedExp
     input Expression exp;
     input output Binding binding;
-  protected
-    Type ty1, ty2;
   algorithm
     () := match binding
       case TYPED_BINDING()
@@ -496,6 +494,10 @@ public
       case INVALID_BINDING() then toFlatString(binding.binding, format, prefix);
       else "";
     end match;
+
+    if format.showConfidence then
+      string := string + " /* confidence = " + String(actualConfidence(binding)) + "*/";
+    end if;
   end toFlatString;
 
   function toDebugString

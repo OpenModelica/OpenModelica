@@ -61,7 +61,6 @@ protected import BackendDAEUtil;
 protected import BackendEquation;
 protected import BackendUtil;
 protected import BackendVariable;
-protected import BackendVarTransform;
 protected import ClassInf;
 protected import ComponentReference;
 protected import DAEDump;
@@ -187,7 +186,7 @@ algorithm
   ({}, _) := List.split1OnTrue(fac, Expression.expHasCrefInIf, inCref); // check if differentiateExpSolve is allowed
 
   try
-    fun := match(functions)
+    fun := match functions
       local
         AvlTreePathFunction.Tree fun_;
       case SOME(fun_) then fun_;
@@ -291,15 +290,13 @@ algorithm
   end if;
   (outEquation, outFunctionTree) := match inEquation
     local
-      DAE.Exp e1_1, e2_1, e1_2, e2_2, e1, e2;
+      DAE.Exp e1_1, e2_1, e1, e2;
       DAE.ComponentRef cref;
       DAE.ElementSource source;
       Integer size;
       Option<Integer> recordSize;
-      list<DAE.Exp> out1, expExpLst, expExpLst1;
-      DAE.Type exptyp;
+      list<DAE.Exp> expExpLst;
       list<Integer> dimSize;
-      String se1, dse1, se2, dse2;
       DAE.SymbolicOperation op1, op2;
       AvlTreePathFunction.Tree funcs;
       DAE.Algorithm alg;
@@ -440,7 +437,7 @@ protected function differentiateEquations
   output list<BackendDAE.Equation> outEquations;
   output AvlTreePathFunction.Tree outFunctionTree;
 algorithm
-  (outEquations,outFunctionTree) := matchcontinue (inEquations)
+  (outEquations,outFunctionTree) := matchcontinue inEquations
     local
       AvlTreePathFunction.Tree funcs;
       list<BackendDAE.Equation> rest, eqns;
@@ -481,8 +478,6 @@ algorithm
       AvlTreePathFunction.Tree funcs;
       list<list<BackendDAE.Equation>> rest, eqnsLst;
       list<BackendDAE.Equation> eqns;
-      String msg;
-      DAE.ElementSource source;
 
     case {} then (listReverse(inEquationsLstAccum), inFunctionTree);
 
@@ -522,7 +517,7 @@ algorithm
   funcs := inFunctionTree;
   stmtLst := {};
   for rs in whenStmtLst loop
-    rs := match(rs)
+    rs := match rs
       local
         DAE.ElementSource src;
         DAE.Exp right, dright, eleft, dleft;
@@ -957,7 +952,7 @@ algorithm
     else
       algorithm
         if Flags.isSet(Flags.FAILTRACE) then
-          (currStatement::_) := inStmts;
+          currStatement::_ := inStmts;
           s1 := DAEDump.ppStatementStr(currStatement);
           s2 := ComponentReferenceBasics.printComponentRefStr(inDiffwrtCref);
           Debug.trace("- differentiateStatements " + s1 + " w.r.t: " + s2 + " failed\n");
@@ -970,7 +965,7 @@ protected function isDiscreteAssignStatment
   input DAE.Statement inStmt;
   output Boolean out;
 algorithm
-  out := match (inStmt)
+  out := match inStmt
    local
      DAE.Type tp;
     case DAE.STMT_ASSIGN(type_= tp)
@@ -991,22 +986,20 @@ protected function makeAssignmentfromTuple
   input AvlTreePathFunction.Tree inFunctionTree;
   output Option<DAE.Statement> outStmt;
 algorithm
-  outStmt := match(inTpl)
+  outStmt := match inTpl
     local
       DAE.Exp e1, e2;
       DAE.Type tp;
 
-      case ((e1 as DAE.CREF(ty=tp), e2))
+      case (e1 as DAE.CREF(ty=tp), e2)
         then SOME(DAE.STMT_ASSIGN(tp, e1, e2, source));
 
-      case ((e1 as DAE.CALL(), e2)) guard( Expression.isRecordCall(e1, inFunctionTree))
+      case (e1 as DAE.CALL(), e2) guard( Expression.isRecordCall(e1, inFunctionTree))
         algorithm
           tp := Expression.typeof(e1);
         then SOME(DAE.STMT_ASSIGN(tp, e1, e2, source));
 
-      case ((e1, e2)) guard(Expression.isZero(e1))
-        algorithm
-          _ := Expression.typeof(e2);
+      case (e1, e2) guard Expression.isZero(e1)
         then NONE();
 
   end match;
@@ -1035,7 +1028,7 @@ algorithm
   if debug then print("\nDifferentiate Exp-Cref: "+ExpressionBasics.printExpStr(inExp)+
                       " w.r.t. "+ComponentReferenceBasics.printComponentRefStr(inDiffwrtCref)+"\n"); end if;
   (outDiffedExp, outFunctionTree) :=
-    matchcontinue(inExp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree)
+    matchcontinue(inExp, inDiffwrtCref, inInputData, inDiffType)
     local
 
       BackendDAE.DifferentiationType diffType;
@@ -1046,7 +1039,7 @@ algorithm
       BackendDAE.Var var;
       BackendDAE.VarKind kind;
 
-      list<BackendDAE.Var> vars, scalarLst;
+      list<BackendDAE.Var> scalarLst;
       DAE.Type tp, arrayType;
       DAE.Exp e, e1, zero, one;
       DAE.Exp res, res1;
@@ -1054,8 +1047,7 @@ algorithm
       list<DAE.Exp> expl, expl_1, diffed_exps = {};
 
       list<DAE.Var> varLst;
-      list<Boolean> b_lst;
-      list<DAE.ComponentRef> crefs, diffCref, scalarCrefs;
+      list<DAE.ComponentRef> scalarCrefs;
 
       String s1, s2, serr, se1, matrixName;
 
@@ -1064,7 +1056,7 @@ algorithm
     //
 
     // case for records without expanding the record
-    case ((DAE.CREF(componentRef = cr,ty = tp as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))), _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), BackendDAE.DIFFERENTIATION_FUNCTION(), _)
+    case ((DAE.CREF(componentRef = cr,ty = tp as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))), _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), BackendDAE.DIFFERENTIATION_FUNCTION())
       algorithm
         cr := ComponentReference.prependStringCref(BackendDAE.functionDerivativeNamePrefix, cr);
         cr := ComponentReference.prependStringCref(matrixName, cr);
@@ -1074,7 +1066,7 @@ algorithm
         (res, inFunctionTree);
 
     // case for Records
-    case ((DAE.CREF(componentRef = cr,ty = tp as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(path)))), _, _, _, _)
+    case ((DAE.CREF(componentRef = cr,ty = tp as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(path)))), _, _, _)
       algorithm
         expl := List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
         (expl_1, outFunctionTree) := List.map3Fold(expl, function differentiateExp(maxIter=maxIter), inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
@@ -1084,7 +1076,7 @@ algorithm
 
 
    // case for array without expanding the array
-   case (DAE.CREF(componentRef = cr,ty=tp as DAE.T_ARRAY()), _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), BackendDAE.DIFFERENTIATION_FUNCTION(), _)
+   case (DAE.CREF(componentRef = cr,ty=tp as DAE.T_ARRAY()), _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), BackendDAE.DIFFERENTIATION_FUNCTION())
       algorithm
         cr := ComponentReference.prependStringCref(BackendDAE.functionDerivativeNamePrefix, cr);
         cr := ComponentReference.prependStringCref(matrixName, cr);
@@ -1094,7 +1086,7 @@ algorithm
         (res, inFunctionTree);
 
     // case for arrays
-    case ((e as DAE.CREF(ty = DAE.T_ARRAY())), _, _, diffType, _) guard ( match diffType case BackendDAE.GENERIC_GRADIENT() then false; else true; end match )
+    case ((e as DAE.CREF(ty = DAE.T_ARRAY())), _, _, diffType) guard ( match diffType case BackendDAE.GENERIC_GRADIENT() then false; else true; end match )
       algorithm
         true := Flags.isSet(Flags.NF_SCALARIZE); // only expand if scalarize
         (e1,true) := Expression.extendArrExp(e,false);
@@ -1103,12 +1095,12 @@ algorithm
         (res, outFunctionTree);
 
     // let WILD() => WILD()
-    case ((e as DAE.CREF(componentRef = DAE.WILD())), _, _, _, _)
+    case ((e as DAE.CREF(componentRef = DAE.WILD())), _, _, _)
       then
         (e, inFunctionTree);
 
     // D(x)/dx => 1
-    case (DAE.CREF(componentRef = cr, ty = tp), _, _, _, _)
+    case (DAE.CREF(componentRef = cr, ty = tp), _, _, _)
       algorithm
         true := ComponentReferenceBasics.crefEqual(cr, inDiffwrtCref);
         (one,_) := Expression.makeOneExpression(Expression.arrayDimension(tp));
@@ -1116,7 +1108,7 @@ algorithm
         (one, inFunctionTree);
 
     // D(y)/dx => 0
-    case (DAE.CREF(ty = tp), _, _, BackendDAE.SIMPLE_DIFFERENTIATION(), _)
+    case (DAE.CREF(ty = tp), _, _, BackendDAE.SIMPLE_DIFFERENTIATION())
       algorithm
         (zero,_) := Expression.makeZeroExpression(Expression.arrayDimension(tp));
 
@@ -1124,14 +1116,14 @@ algorithm
         (zero, inFunctionTree);
 
     // D(y)/dx => 0
-    case (DAE.CREF(ty = tp), _, _, BackendDAE.DIFF_FULL_JACOBIAN(), _)
+    case (DAE.CREF(ty = tp), _, _, BackendDAE.DIFF_FULL_JACOBIAN())
       algorithm
         (zero,_) := Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then
         (zero, inFunctionTree);
 
     // Constants, known variables, parameters and discrete variables have a 0-derivative, not the inputs
-    case ((DAE.CREF(componentRef = cr, ty = tp)), _, BackendDAE.DIFFINPUTDATA(knownVars=SOME(knvars)), _, _)
+    case ((DAE.CREF(componentRef = cr, ty = tp)), _, BackendDAE.DIFFINPUTDATA(knownVars=SOME(knvars)), _)
       algorithm
         //print("\nExp-Cref\n known vars: " + ExpressionBasics.printExpStr(e));
         (var,_) := BackendVariable.getVarSingle(cr, knvars);
@@ -1141,7 +1133,7 @@ algorithm
         (zero, inFunctionTree);
 
     // d(discrete)/d(x) = 0
-    case ((DAE.CREF(componentRef = cr,ty = tp)), _, BackendDAE.DIFFINPUTDATA(allVars=SOME(timevars)), BackendDAE.DIFFERENTIATION_TIME(), _)
+    case ((DAE.CREF(componentRef = cr,ty = tp)), _, BackendDAE.DIFFINPUTDATA(allVars=SOME(timevars)), BackendDAE.DIFFERENTIATION_TIME())
       algorithm
         (BackendDAE.VAR(varKind = kind),_) := BackendVariable.getVarSingle(cr, timevars);
         //print("\nExp-Cref\n known vars: " + ComponentReferenceBasics.printComponentRefStr(cr));
@@ -1154,7 +1146,7 @@ algorithm
     //
 
     // special rule for DUMMY_STATES, they become DUMMY_DER
-    case ((DAE.CREF(componentRef = cr,ty = tp)), _, BackendDAE.DIFFINPUTDATA(dependenentVars=SOME(timevars)), BackendDAE.DIFFERENTIATION_TIME(), _)
+    case ((DAE.CREF(componentRef = cr,ty = tp)), _, BackendDAE.DIFFINPUTDATA(dependenentVars=SOME(timevars)), BackendDAE.DIFFERENTIATION_TIME())
       algorithm
         (var,_) := BackendVariable.getVarSingle(cr, timevars);
         true := BackendVariable.isDummyStateVar(var);
@@ -1164,10 +1156,10 @@ algorithm
         (res, inFunctionTree);
 
     // Continuous-time variables (and for shared eq-systems, also unknown variables: keep them as-they-are)
-    case ((e as DAE.CREF(componentRef = cr,ty = tp)), _, BackendDAE.DIFFINPUTDATA(dependenentVars=SOME(timevars)), BackendDAE.DIFFERENTIATION_TIME(), _)
+    case ((e as DAE.CREF(componentRef = cr,ty = tp)), _, BackendDAE.DIFFINPUTDATA(dependenentVars=SOME(timevars)), BackendDAE.DIFFERENTIATION_TIME())
       algorithm
         //({BackendDAE.VAR(varKind = BackendDAE.STATE(index=_))},_) = BackendVariable.getVar(cr, timevars);
-        (_,_) := BackendVariable.getVarSingle(cr, timevars);
+        BackendVariable.getVarSingle(cr, timevars);
         res := DAE.CALL(Absyn.IDENT("der"),{e},DAE.CALL_ATTR(tp,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
       then
         (res, inFunctionTree);
@@ -1176,24 +1168,24 @@ algorithm
     // This part contains special rules for DIFFERENTIATION_FUNCTION()
     //
     // dependenent variable cref without subscript
-    case ((DAE.CREF(componentRef = cr,ty=tp)), _, BackendDAE.DIFFINPUTDATA(dependenentVars=SOME(timevars)), BackendDAE.DIFFERENTIATION_FUNCTION(), _)
+    case ((DAE.CREF(componentRef = cr,ty=tp)), _, BackendDAE.DIFFINPUTDATA(dependenentVars=SOME(timevars)), BackendDAE.DIFFERENTIATION_FUNCTION())
       algorithm
         cr1 := ComponentReferenceBasics.crefStripLastSubs(cr);
-        (_,_) := BackendVariable.getVar(cr1, timevars);
+        BackendVariable.getVar(cr1, timevars);
         (zero, _) := Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then
         (zero, inFunctionTree);
 
     // dependenent variable cref
-    case ((DAE.CREF(componentRef = cr,ty=tp)), _, BackendDAE.DIFFINPUTDATA(dependenentVars=SOME(timevars)), BackendDAE.DIFFERENTIATION_FUNCTION(), _)
+    case ((DAE.CREF(componentRef = cr,ty=tp)), _, BackendDAE.DIFFINPUTDATA(dependenentVars=SOME(timevars)), BackendDAE.DIFFERENTIATION_FUNCTION())
       algorithm
-        (_,_) := BackendVariable.getVar(cr, timevars);
+        BackendVariable.getVar(cr, timevars);
         (zero, _) := Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then
         (zero, inFunctionTree);
 
     // all other variable crefs are needed to differentiate
-    case ((DAE.CREF(componentRef = cr,ty=tp)), _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), BackendDAE.DIFFERENTIATION_FUNCTION(), _)
+    case ((DAE.CREF(componentRef = cr,ty=tp)), _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), BackendDAE.DIFFERENTIATION_FUNCTION())
       algorithm
         cr := ComponentReference.prependStringCref(BackendDAE.functionDerivativeNamePrefix, cr);
         cr := ComponentReference.prependStringCref(matrixName, cr);
@@ -1204,14 +1196,14 @@ algorithm
     //
     // This part contains special rules for GENERIC_GRADIENT()
     //
-    case (DAE.CREF(ty=tp), DAE.CREF_IDENT(ident="$"), _, BackendDAE.GENERIC_GRADIENT(), _)
+    case (DAE.CREF(ty=tp), DAE.CREF_IDENT(ident="$"), _, BackendDAE.GENERIC_GRADIENT())
       algorithm
           (res,_) := Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then
         (res, inFunctionTree);
 
     // d(x)/d(x) => generate seed variables
-    case ((DAE.CREF(componentRef = cr,ty = tp)), _, BackendDAE.DIFFINPUTDATA(independenentVars=SOME(timevars),matrixName=SOME(matrixName)), BackendDAE.GENERIC_GRADIENT(), _)
+    case ((DAE.CREF(componentRef = cr,ty = tp)), _, BackendDAE.DIFFINPUTDATA(independenentVars=SOME(timevars),matrixName=SOME(matrixName)), BackendDAE.GENERIC_GRADIENT())
       algorithm
         //true = List.isMemberOnTrue(cr, diffCref, ComponentReferenceBasics.crefEqual);
         (scalarLst, _) := BackendVariable.getVar(cr, timevars);
@@ -1238,7 +1230,7 @@ algorithm
 
 
     // d(x)/d(z) = CREF(d(x)/d(dummy))
-    case (DAE.CREF(componentRef=cr, ty=tp), _, BackendDAE.DIFFINPUTDATA(allVars=SOME(timevars),matrixName=SOME(matrixName)), BackendDAE.GENERIC_GRADIENT(), _)
+    case (DAE.CREF(componentRef=cr, ty=tp), _, BackendDAE.DIFFINPUTDATA(allVars=SOME(timevars),matrixName=SOME(matrixName)), BackendDAE.GENERIC_GRADIENT())
       algorithm
         (var::_, _) := BackendVariable.getVar(cr, timevars);
         //Take care! state means => der(state)
@@ -1250,7 +1242,7 @@ algorithm
         (res, inFunctionTree);
 
     // d(x)/d(z) = CREF(d(x)/d(dummy))
-    case (DAE.CREF(componentRef=cr, ty=tp), _, BackendDAE.DIFFINPUTDATA(dependenentVars=SOME(timevars),matrixName=SOME(matrixName)), BackendDAE.GENERIC_GRADIENT(), _)
+    case (DAE.CREF(componentRef=cr, ty=tp), _, BackendDAE.DIFFINPUTDATA(dependenentVars=SOME(timevars),matrixName=SOME(matrixName)), BackendDAE.GENERIC_GRADIENT())
       algorithm
         (var::_, _) := BackendVariable.getVar(cr, timevars);
         //Take care! state means => der(state)
@@ -1264,7 +1256,7 @@ algorithm
     // d(state)/d(x) = 0
     // d(input)/d(x) = 0
     // d(all other)/d(x) = 0
-    case (DAE.CREF(ty=tp), _, _, BackendDAE.GENERIC_GRADIENT(), _)
+    case (DAE.CREF(ty=tp), _, _, BackendDAE.GENERIC_GRADIENT())
       algorithm
         (zero, _) := Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then
@@ -1272,7 +1264,7 @@ algorithm
 
     // fallback case -> not known cref results in zero
     // D(y)/dx => 0
-    case (DAE.CREF(ty = tp), _, _, BackendDAE.DIFFERENTIATION_TIME(), _)
+    case (DAE.CREF(ty = tp), _, _, BackendDAE.DIFFERENTIATION_TIME())
       algorithm
         (zero,_) := Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then
@@ -1360,43 +1352,35 @@ algorithm
                       " w.r.t. "+ComponentReferenceBasics.printComponentRefStr(inDiffwrtCref)+"\n"); end if;
 
   (outDiffedExp, outFunctionTree) :=
-    match(inExp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree)
+    match(inExp, inDiffwrtCref, inInputData, inDiffType)
     local
 
       Absyn.Path path;
 
-      BackendDAE.Var var;
       BackendDAE.Variables timevars;
-      BackendDAE.Variables knvars;
 
       DAE.CallAttributes attr;
       DAE.ComponentRef cr, cj;
-      DAE.Exp e, e1, e2, zero;
-      DAE.Exp res, res1, actual, simplified;
+      DAE.Exp e, e1, zero;
+      DAE.Exp res, actual, simplified;
       DAE.Type tp;
       AvlTreePathFunction.Tree funcs;
 
       Integer i;
 
-      list<Boolean> blst;
-      list<DAE.ComponentRef> crefs;
-      list<DAE.Exp> expl, expl_1;
+      list<DAE.Exp> expl;
 
-      list<list<DAE.ComponentRef>> crefslstls;
-      Option<BackendDAE.Shared> optShared;
 
       String s1, s2, serr, matrixName, name;
 
     // differentiate homotopy
-    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst={actual, simplified}), _, _, _, _) algorithm
+    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst={actual, simplified}), _, _, _) algorithm
       (e1, funcs) := differentiateExp(actual, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
       (_, funcs) := differentiateExp(simplified, inDiffwrtCref, inInputData, inDiffType, funcs, maxIter);
     then (e1, funcs);
 
     /* with previous are the actaully states marked in synchronous */
-    case (DAE.CALL(path=Absyn.IDENT(name = "previous"), expLst = {DAE.CREF(componentRef=cr, ty=tp)}),
-           _, BackendDAE.DIFFINPUTDATA(independenentVars=SOME(timevars),matrixName=SOME(matrixName)),
-          BackendDAE.GENERIC_GRADIENT(), _) algorithm
+    case (DAE.CALL(path=Absyn.IDENT(name = "previous"), expLst = {DAE.CREF(componentRef=cr, ty=tp)}), _, BackendDAE.DIFFINPUTDATA(independenentVars=SOME(timevars),matrixName=SOME(matrixName)), BackendDAE.GENERIC_GRADIENT()) algorithm
 
       cr := ComponentReferenceBasics.makeCrefQual(DAE.previousNamePrefix, tp, {}, cr);
       (_::_, _) := BackendVariable.getVar(cr, timevars);
@@ -1405,11 +1389,11 @@ algorithm
       res := DAE.CREF(cr, tp);
     then (res, inFunctionTree);
 
-    case (DAE.CALL(path = path as Absyn.IDENT(name = "der"),expLst = {e},attr=attr), _, _, BackendDAE.DIFFERENTIATION_TIME(), _)
+    case (DAE.CALL(path = path as Absyn.IDENT(name = "der"),expLst = {e},attr=attr), _, _, BackendDAE.DIFFERENTIATION_TIME())
       then
         (DAE.CALL(path,{e,DAE.ICONST(2)},attr),  inFunctionTree);
 
-    case (DAE.CALL(path = (path as Absyn.IDENT(name = "der")),expLst = {e,DAE.ICONST(i)},attr=attr), _, _, BackendDAE.DIFFERENTIATION_TIME(), _)
+    case (DAE.CALL(path = (path as Absyn.IDENT(name = "der")),expLst = {e,DAE.ICONST(i)},attr=attr), _, _, BackendDAE.DIFFERENTIATION_TIME())
       algorithm
         i := i + 1;
       then
@@ -1418,7 +1402,7 @@ algorithm
     // special case for daeMode:
     // der(x) gets differentiated to $cj * x.Seed
     // (cj aka alpha, provided by the dae mode integrator)
-    case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {e}), _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), BackendDAE.GENERIC_GRADIENT(true), _)
+    case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {e}), _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), BackendDAE.GENERIC_GRADIENT(true))
       algorithm
         cj := DAE.CREF_IDENT(SymbolicJacobian.DAE_CJ, DAE.T_REAL_DEFAULT, {});
         cr := Expression.expCref(e);
@@ -1429,7 +1413,7 @@ algorithm
       then
         (res, inFunctionTree);
 
-    case (DAE.CALL(path=Absyn.IDENT(name = "der"),expLst = {e}), _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), _, _)
+    case (DAE.CALL(path=Absyn.IDENT(name = "der"),expLst = {e}), _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), _)
       algorithm
         cr := Expression.expCref(e);
         tp := Expression.typeof(e);
@@ -1444,7 +1428,7 @@ algorithm
         (res, inFunctionTree);
 
     /* Differentiate with respect to DAE.CREF_IDENT(ident="$") demands zero expressions */
-    case (DAE.CALL(path=Absyn.IDENT(name = "der"),expLst = {e}), DAE.CREF_IDENT(ident="$"), _, _, _)
+    case (DAE.CALL(path=Absyn.IDENT(name = "der"),expLst = {e}), DAE.CREF_IDENT(ident="$"), _, _)
       algorithm
         (zero,_) := Expression.makeZeroExpression(Expression.arrayDimension(Expression.typeof(e)));
       then
@@ -1452,7 +1436,7 @@ algorithm
 
     /* Exclude records here, they are handled component-wise in differentiateFunctionCall
        and builtin function are handled in differentiateCall* */
-    case (e as DAE.CALL(attr=DAE.CALL_ATTR(ty=tp,builtin=false)), DAE.CREF_IDENT(ident="$"), _, _, _)
+    case (e as DAE.CALL(attr=DAE.CALL_ATTR(ty=tp,builtin=false)), DAE.CREF_IDENT(ident="$"), _, _)
       guard ( not Expression.isRecordCall(e, inFunctionTree) )
       algorithm
         (zero,_) := Expression.makeZeroExpression(Expression.arrayDimension(tp));
@@ -1460,24 +1444,24 @@ algorithm
         (zero, inFunctionTree);
 
     // differentiate builtin calls with 1 argument
-    case (DAE.CALL(path=Absyn.IDENT(name),attr=DAE.CALL_ATTR(builtin=true),expLst={e}), _, _, _, _)
+    case (DAE.CALL(path=Absyn.IDENT(name),attr=DAE.CALL_ATTR(builtin=true),expLst={e}), _, _, _)
       algorithm
         (res,  funcs) := differentiateCallExp1Arg(name, e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
       then (res,  funcs);
 
     // differentiate builtin calls with N arguments with match
     // der(arctan2(y,0)) = der(sign(y)*pi/2) = 0
-    case (DAE.CALL(path=Absyn.IDENT("atan2"),attr=DAE.CALL_ATTR(builtin=true),expLst={_,e1 as  DAE.RCONST(real=0.0)}), _, _, _, _)
+    case (DAE.CALL(path=Absyn.IDENT("atan2"),attr=DAE.CALL_ATTR(builtin=true),expLst={_,e1 as  DAE.RCONST(real=0.0)}), _, _, _)
       then
         (e1,  inFunctionTree);
 
     // differentiate builtin calls with N arguments as match
-    case (DAE.CALL(path=Absyn.IDENT(name),attr=(attr as DAE.CALL_ATTR(builtin=true)),expLst= (expl as (_::_::_))), _, _, _, _)
+    case (DAE.CALL(path=Absyn.IDENT(name),attr=(attr as DAE.CALL_ATTR(builtin=true)),expLst= (expl as (_::_::_))), _, _, _)
       algorithm
         (res,  funcs) := differentiateCallExpNArg(name, expl, attr, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
       then (res,  funcs);
 
-    case (e as DAE.CALL(), _, _, _, _)
+    case (e as DAE.CALL(), _, _, _)
       algorithm
         (e1, funcs) := differentiateFunctionCall(e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
         (e1,_,_,_) := Inline.inlineExp(e1,(SOME(funcs),{DAE.NORM_INLINE()}),DAE.emptyElementSource/*TODO:Can we propagate source?*/);
@@ -1753,15 +1737,11 @@ protected function differentiateCallExpNArg "
 algorithm
   (outDiffedExp,outFunctionTree) := match(name,inExpl,inAttr)
     local
-      DAE.Exp e, e1, e2, e3, e4, cond, etmp;
+      DAE.Exp e, e1, e2, e3, e4, etmp;
       DAE.Exp res, res1, res2;
-      list<DAE.Exp> expl, dexpl;
       DAE.Type tp;
       AvlTreePathFunction.Tree funcs;
-      String e_str;
       Integer i;
-      list<DAE.ComponentRef> seeds;
-      BackendVarTransform.VariableReplacements repl;
 
     case ("smooth",{DAE.ICONST(i),e2}, DAE.CALL_ATTR(ty=tp))
       algorithm
@@ -1845,7 +1825,6 @@ algorithm
     // diff(rem(e1,e2)) = diff(e1 -div(e1,e2)*e2)
     case ("rem", {e1,e2}, DAE.CALL_ATTR(ty=tp))
       algorithm
-        _ := Expression.makePureBuiltinCall("div", {e1, e2}, tp);
         (res1, funcs) := differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
       then
         (res1, funcs);
@@ -1913,28 +1892,17 @@ algorithm
   (outDiffedExp, outFunctionTree) := match inExp
     local
 
-      Absyn.Path path;
 
-      BackendDAE.Var var;
-      BackendDAE.Variables timevars;
-      BackendDAE.Variables knvars;
 
-      DAE.CallAttributes attr;
       DAE.ComponentRef cr;
       DAE.Exp e, e0, e1, e2, zero, etmp;
       DAE.Exp de1, de2;
       AvlTreePathFunction.Tree funcs;
-      DAE.Operator op;
       DAE.Type tp, tp1;
 
       Integer i;
 
-      list<Boolean> blst;
-      list<DAE.ComponentRef> crefs;
-      list<DAE.Exp> expl, expl_1;
 
-      list<list<DAE.ComponentRef>> crefslstls;
-      Option<BackendDAE.Shared> optShared;
 
       Real r;
 
@@ -2185,14 +2153,12 @@ Author: Frenkel TUD, wbraun
   output AvlTreePathFunction.Tree outFunctionTree;
 algorithm
   (outDiffedExp, outFunctionTree) :=
-    matchcontinue(inExp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree)
+    matchcontinue(inExp, inDiffType)
     local
 
-      BackendDAE.DifferentiateInputData inputData, diffFuncData;
 
       DAE.Exp e, de, zero;
       list<DAE.Exp> expl,expl1,dexpl;
-      BackendDAE.Variables timevars;
       Absyn.Path path,dpath;
       Boolean b,c,isImpure;
       DAE.InlineType dinl;
@@ -2202,17 +2168,11 @@ algorithm
       DAE.Type tp, dtp;
       list<Boolean> blst;
       list<DAE.Type> tlst;
-      list<tuple<DAE.Exp,Boolean>> expBoolLst;
-      String typstring, dastring, funstring;
+      String typstring, dastring;
       list<String> typlststring;
       DAE.TailCall tc;
       DAE.CallAttributes attr;
 
-      DAE.FunctionDefinition derfuncdef;
-      DAE.Function func,dfunc;
-      list<DAE.Function> fns;
-      String funcname, s1;
-      list<DAE.FuncArg> falst;
 
 
     /* ticket5459
@@ -2220,13 +2180,13 @@ algorithm
     prevents failing of this function
     - Maybe not only for SIMPLE_DIFFERENTIATION ?
     */
-    case (_, _, _, BackendDAE.SIMPLE_DIFFERENTIATION(), _)
+    case (_, BackendDAE.SIMPLE_DIFFERENTIATION())
       guard(not Expression.expHasCref(inExp, inDiffwrtCref))
       algorithm
         (e, _) := Expression.makeZeroExpression(Expression.arrayDimension(ComponentReference.crefTypeFull(inDiffwrtCref)));
     then (e, inFunctionTree);
 
-    case (DAE.CALL(path=path,expLst=expl,attr=DAE.CALL_ATTR(tuple_=b,builtin=c,isImpure=isImpure,ty=ty,tailCall=tc)), _, _, BackendDAE.DIFFERENTIATION_TIME(), _)
+    case (DAE.CALL(path=path,expLst=expl,attr=DAE.CALL_ATTR(tuple_=b,builtin=c,isImpure=isImpure,ty=ty,tailCall=tc)), BackendDAE.DIFFERENTIATION_TIME())
       algorithm
         // get function mapper
         //print("Search for function mapper\n");
@@ -2241,7 +2201,7 @@ algorithm
       then
         (DAE.CALL(dpath,expl1,DAE.CALL_ATTR(ty,b,c,isImpure,false,dinl,tc)),outFunctionTree);
 
-    case (DAE.CALL(path=path,expLst=expl), _, _, BackendDAE.DIFFERENTIATION_TIME(), _)
+    case (DAE.CALL(path=path,expLst=expl), BackendDAE.DIFFERENTIATION_TIME())
       algorithm
         // get function mapper
         //print("Search for function mapper2\n");
@@ -2260,7 +2220,7 @@ algorithm
         fail();
 
     // try to inline
-    case (DAE.CALL(attr=DAE.CALL_ATTR(builtin=false)), _, _, _, _)
+    case (DAE.CALL(attr=DAE.CALL_ATTR(builtin=false)), _)
       algorithm
         failure(BackendDAE.DIFF_FULL_JACOBIAN() := inDiffType);
         (e,_,true) := Inline.forceInlineExp(inExp,(SOME(inFunctionTree),{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource);
@@ -2269,13 +2229,13 @@ algorithm
         (e, functions);
 
     // differentiate record call
-    case (e as DAE.CALL(path=path, expLst=expl, attr=attr), _, _, _, _) guard( Expression.isRecordCall(e, inFunctionTree))
+    case (e as DAE.CALL(path=path, expLst=expl, attr=attr), _) guard( Expression.isRecordCall(e, inFunctionTree))
       algorithm
         (dexpl, functions) := List.map3Fold(expl, function differentiateExp(maxIter=maxIter), inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
       then (DAE.CALL(path, dexpl, attr), functions);
 
     //differentiate function partial
-    case (e, _, _, _, _)
+    case (e, _)
       algorithm
         // Debug dump
         if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
@@ -2293,7 +2253,7 @@ algorithm
       then
         (de, functions);
 
-    case (_, _, _, _, _)
+    case (_, _)
       algorithm
         /* TODO: Check replace this rule by other, since it's not correct
                  in case of
@@ -2332,14 +2292,13 @@ Author: Frenkel TUD, wbraun
   output AvlTreePathFunction.Tree outFunctionTree;
 algorithm
   (outDiffedExp, outFunctionTree) :=
-    matchcontinue(inExp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree)
+    matchcontinue inExp
     local
 
-      BackendDAE.DifferentiateInputData inputData, diffFuncData;
+      BackendDAE.DifferentiateInputData diffFuncData;
 
-      DAE.Exp e, exp, zero, ezero;
+      DAE.Exp e, exp;
       list<DAE.Exp> expl,expl1,dexpl,dexplZero;
-      BackendDAE.Variables timevars;
       Absyn.Path path,dpath;
       Boolean b,c,isImpure;
       DAE.InlineType dinl;
@@ -2354,21 +2313,14 @@ algorithm
       list<String> typlststring;
       DAE.TailCall tc;
 
-      list<DAE.Element> funcbody, funcbodyDer;
-      list<DAE.Element> inputVars, inputVarsNoDer, inputVarsDer;
-      list<DAE.Element> outputVars, outputVarsNoDer, outputVarsDer;
-      list<DAE.Element> protectedVars, protectedVarsNoDer, protectedVarsDer, newProtectedVars;
-      list<DAE.Statement> bodyStmts, derbodyStmts;
+      list<DAE.Element> inputVarsDer;
+      list<DAE.Element> outputVarsDer;
 
-      DAE.FunctionDefinition derfuncdef;
       DAE.Function func,dfunc;
-      list<DAE.Function> fns;
       String funcname;
-      list<DAE.FuncArg> falst;
-      Integer n;
       Boolean success;
 
-    case (DAE.CALL(path=path,expLst=expl,attr=DAE.CALL_ATTR(tuple_=b,builtin=c,isImpure=isImpure,ty=ty,tailCall=tc)), _, _, _, _)
+    case DAE.CALL(path=path,expLst=expl,attr=DAE.CALL_ATTR(tuple_=b,builtin=c,isImpure=isImpure,ty=ty,tailCall=tc))
       algorithm
         // get function mapper
         //print("Search for function mapper\n");
@@ -2394,7 +2346,7 @@ algorithm
       then
         (e,functions);
 
-    case (DAE.CALL(path=path,expLst=expl), _, _, _, _)
+    case DAE.CALL(path=path,expLst=expl)
       algorithm
         // get function mapper
         //print("Search for function mapper2\n");
@@ -2413,7 +2365,7 @@ algorithm
         fail();
 
     // differentiate function
-    case (e as DAE.CALL(path=path,expLst=expl,attr=DAE.CALL_ATTR(tuple_=b,builtin=false,isImpure=isImpure,ty=ty,tailCall=tc)), _, _, _, _)
+    case e as DAE.CALL(path=path,expLst=expl,attr=DAE.CALL_ATTR(tuple_=b,builtin=false,isImpure=isImpure,ty=ty,tailCall=tc))
       algorithm
         // TODO: FIXIT! expressionSolve and analyticJacobian don't
         // return  new functionTree, so we can't differentiate functions then.
@@ -2639,7 +2591,6 @@ for de in inDiffExpl loop
   outExp := match(de, inCall)
     local
       DAE.Exp e,  eone, eArray;
-      list<DAE.Exp> rest;
       list<list<DAE.Exp>> arrayArgs;
       list<DAE.Exp> expl, expLst, dexpLst;
       DAE.Type tp;
@@ -2697,7 +2648,7 @@ algorithm
 
     // skip for zero differentiation
     if not Expression.isZero(de) then
-      res := match(inCall)
+      res := match inCall
        local
          Absyn.Path path;
          DAE.CallAttributes attr;
@@ -2731,17 +2682,17 @@ protected function prepareArgumentsExplArray
   input list<list<DAE.Exp>> inAccum;
   output list<list<DAE.Exp>> outExpLstLst;
 algorithm
-  outExpLstLst := match(inWorkLst, inArgs, inCurrentArg, inAccum)
+  outExpLstLst := match inWorkLst
     local
       list<DAE.Exp> rest, args;
       DAE.Exp e, eone;
       DAE.Type tp;
       DAE.Dimensions dims;
 
-    case ({}, _, _, _)
+    case {}
     then listReverse(inAccum);
 
-    case (e::rest, _, _, _) algorithm
+    case e::rest algorithm
       tp := Expression.typeof(e);
       dims := Expression.arrayDimension(tp);
       (eone,_) := Expression.makeOneExpression(dims);
@@ -2761,19 +2712,18 @@ protected function differentiatePartialFunction "Author: wbraun"
   output AvlTreePathFunction.Tree outFunctionTree;
   output list<Boolean> outBooleanlst;
 algorithm
-  (outDerFunction, outFunctionTree, outBooleanlst) := matchcontinue(inFunction, inDiffwrtCref, inInputData, inDiffType, inFunctionTree)
+  (outDerFunction, outFunctionTree, outBooleanlst) := matchcontinue inFunction
     local
       BackendDAE.DifferentiateInputData inputData, diffFuncData;
 
       Absyn.Path path, dpath;
-      Option<Absyn.Path> dpathOption;
       Boolean isImpure;
       DAE.InlineType dinl;
       AvlTreePathFunction.Tree functions;
-      DAE.Type dtp, outdtp;
+      DAE.Type dtp;
       String  str;
 
-      list<DAE.Element> funcbody, funcbodyDer;
+      list<DAE.Element> funcbodyDer;
       list<DAE.Element> inputVars, inputVarsNoDer, inputVarsDer;
       list<DAE.Element> outputVars, outputVarsNoDer, outputVarsDer;
       list<DAE.Element> protectedVars, protectedVarsNoDer, protectedVarsDer, newProtectedVars;
@@ -2782,13 +2732,11 @@ algorithm
       DAE.Function func,dfunc;
 
       String funcname, funstring;
-      DAE.ComponentRef diffwrtCref;
-      list<DAE.ComponentRef> diffwrtCrefs;
       list<Boolean> blst;
       SCode.Visibility visibility;
 
     // differentiate function
-    case (func, _, _, _, _) algorithm
+    case func algorithm
       // debug
       if Flags.isSet(Flags.DEBUG_DIFFERENTIATION_VERBOSE) then
         funstring := Tpl.tplString(DAEDumpTpl.dumpFunction, func);
@@ -2915,26 +2863,24 @@ protected function differentiateElementVars
   output list<DAE.Element>  outElementsNoDer;
   output list<Boolean>  outBooleanLst;
 algorithm
-  (outElements, outFunctionTree, outElementsNoDer, outBooleanLst) := matchcontinue(inElements, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, inElementsDer, inElementsNoDer, inBooleanLst)
+  (outElements, outFunctionTree, outElementsNoDer, outBooleanLst) := matchcontinue(inElements, inInputData)
   local
     BackendDAE.Variables timevars;
-    list<DAE.Element> rest, vars, newVars, elementsNoDer;
+    list<DAE.Element> rest, vars, elementsNoDer;
     DAE.Element var, var1;
     DAE.ComponentRef cref, dcref;
     list<DAE.ComponentRef> crefLst;
     DAE.Exp e;
     AvlTreePathFunction.Tree functions;
     DAE.Type tp;
-    list<DAE.Type> tpLst;
     DAE.Exp binding, dbinding;
-    list<DAE.Var> varLst;
     list<Boolean> blst;
     String matrixName;
 
-    case ({}, _, _, _, _, _, _, _)
+    case ({}, _)
     then (MetaModelica.Dangerous.listReverseInPlace(inElementsDer), inFunctionTree, MetaModelica.Dangerous.listReverseInPlace(inElementsNoDer), MetaModelica.Dangerous.listReverseInPlace(inBooleanLst));
 
-    case ((var1 as DAE.VAR(componentRef = cref, ty= (DAE.T_COMPLEX(complexClassType=ClassInf.RECORD())),  binding=SOME(binding)))::rest, _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), _, _, _, _, _) algorithm
+    case ((var1 as DAE.VAR(componentRef = cref, ty= (DAE.T_COMPLEX(complexClassType=ClassInf.RECORD())),  binding=SOME(binding)))::rest, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName))) algorithm
       dcref := createDiffedCrefName(cref, matrixName);
       var := DAEUtil.replaceCrefInVar(dcref, var1);
       (dbinding,_) := differentiateExp(binding, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
@@ -2944,7 +2890,7 @@ algorithm
       (vars, functions, elementsNoDer, blst) := differentiateElementVars(rest, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, vars, inElementsNoDer, blst, maxIter, elementListInputs);
     then (vars, functions, elementsNoDer, blst);
 
-    case ((var1 as DAE.VAR(componentRef = cref, ty= (DAE.T_COMPLEX(complexClassType=ClassInf.RECORD()))))::rest, _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), _, _, _, _, _) algorithm
+    case ((var1 as DAE.VAR(componentRef = cref, ty= (DAE.T_COMPLEX(complexClassType=ClassInf.RECORD()))))::rest, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName))) algorithm
       dcref := createDiffedCrefName(cref, matrixName);
       var := DAEUtil.replaceCrefInVar(dcref, var1);
 
@@ -2958,7 +2904,7 @@ algorithm
       (vars, functions, elementsNoDer, blst) := differentiateElementVars(rest, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, vars, inElementsNoDer, blst, maxIter, elementListInputs);
     then (vars, functions, elementsNoDer, blst);
 
-    case((var as DAE.VAR(binding=SOME(binding)))::rest, _, BackendDAE.DIFFINPUTDATA(independenentVars=SOME(timevars)), _, _, _, _, _) algorithm
+    case((var as DAE.VAR(binding=SOME(binding)))::rest, BackendDAE.DIFFINPUTDATA(independenentVars=SOME(timevars))) algorithm
       // check if bindung depends on independentVars
       crefLst := Expression.extractCrefsFromExp(binding);
       ({},{}) := BackendVariable.getVarLst(crefLst, timevars);
@@ -2968,7 +2914,7 @@ algorithm
       (vars, functions, elementsNoDer, blst) := differentiateElementVars(rest, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, inElementsDer, vars, blst, maxIter, elementListInputs);
     then (vars, functions, elementsNoDer, blst);
 
-    case((var1 as DAE.VAR(componentRef = cref, ty=tp, binding=SOME(binding)))::rest, _, _, _, _, _, _, _) algorithm
+    case((var1 as DAE.VAR(componentRef = cref, ty=tp, binding=SOME(binding)))::rest, _) algorithm
       if elementListInputs then
         true := Types.isRealOrSubTypeReal(tp);
       end if;
@@ -2983,7 +2929,7 @@ algorithm
       (vars, functions, elementsNoDer, blst) := differentiateElementVars(rest, inDiffwrtCref, inInputData, inDiffType, functions, vars, inElementsNoDer, blst, maxIter, elementListInputs);
     then (vars, functions, elementsNoDer, blst);
 
-    case((var1 as DAE.VAR(componentRef = cref, ty=tp))::rest, _, _, _, _, _, _, _) algorithm
+    case((var1 as DAE.VAR(componentRef = cref, ty=tp))::rest, _) algorithm
       if elementListInputs then
         true := Types.isRealOrSubTypeReal(tp);
       end if;
@@ -2996,7 +2942,7 @@ algorithm
       (vars, functions, elementsNoDer, blst) := differentiateElementVars(rest, inDiffwrtCref, inInputData, inDiffType, functions, vars, inElementsNoDer, blst, maxIter, elementListInputs);
     then (vars, functions, elementsNoDer, blst);
 
-    case((var as DAE.VAR())::rest, _, _, _, _, _, _, _) algorithm
+    case((var as DAE.VAR())::rest, _) algorithm
       elementsNoDer := var::inElementsNoDer;
       blst := false::inBooleanLst;
       (vars, functions, elementsNoDer, blst) := differentiateElementVars(rest, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, inElementsDer, elementsNoDer, blst, maxIter, elementListInputs);
@@ -3013,9 +2959,8 @@ protected function differentiateFunction1 "Author: Frenkel TUD"
   output Absyn.Path outFuncName;
   output list<Boolean> blst;
 algorithm
-  (outFuncName,blst) := matchcontinue (inFuncName,inMapper,inTp,expl,inDiffArgs)
+  (outFuncName,blst) := matchcontinue (inMapper, inTp, inDiffArgs)
     local
-      BackendDAE.Variables timevars;
       AvlTreePathFunction.Tree functions;
       Absyn.Path default,fname,da,inDFuncName;
       list<tuple<Integer,DAE.derivativeCond>> cr;
@@ -3029,7 +2974,7 @@ algorithm
       array<Boolean> ba;
 
     // check conditions, order=1
-    case (_,DAE.FUNCTION_DER_MAPPER(derivativeFunction=inDFuncName,derivativeOrder=derivativeOrder,conditionRefs=cr),DAE.T_FUNCTION(funcArg=funcArg),_,_)
+    case (DAE.FUNCTION_DER_MAPPER(derivativeFunction=inDFuncName,derivativeOrder=derivativeOrder,conditionRefs=cr), DAE.T_FUNCTION(funcArg=funcArg), _)
       guard intEq(1,derivativeOrder)
       algorithm
          tplst := List.map(funcArg,Types.funcArgType);
@@ -3038,7 +2983,7 @@ algorithm
       then
         (inDFuncName,bl);
     // check conditions, order>1
-    case (_,DAE.FUNCTION_DER_MAPPER(derivativeFunction=inDFuncName,derivativeOrder=derivativeOrder,conditionRefs=cr),tp,_,(_,_,_,functions))
+    case (DAE.FUNCTION_DER_MAPPER(derivativeFunction=inDFuncName,derivativeOrder=derivativeOrder,conditionRefs=cr), tp, (_,_,_,functions))
       guard not intEq(1,derivativeOrder)
       algorithm
          // get n-1 func name
@@ -3054,7 +2999,7 @@ algorithm
       then
         (inDFuncName,bl);
     // conditions failed use default
-    case (_,DAE.FUNCTION_DER_MAPPER(derivedFunction=fname,derivativeOrder=derivativeOrder,defaultDerivative=SOME(default),lowerOrderDerivatives=lowerOrderDerivatives),tp,_,_)
+    case (DAE.FUNCTION_DER_MAPPER(derivedFunction=fname,derivativeOrder=derivativeOrder,defaultDerivative=SOME(default),lowerOrderDerivatives=lowerOrderDerivatives), tp, _)
       algorithm
           (da,bl) := differentiateFunction1(inFuncName,DAE.FUNCTION_DER_MAPPER(fname,default,derivativeOrder,{},SOME(default),lowerOrderDerivatives),tp,expl,inDiffArgs);
       then
@@ -3069,14 +3014,13 @@ protected function checkDerivativeFunctionInputs "Author: Frenkel TUD"
   output Boolean outBoolean;
   output list<DAE.Type> outExpectedTypeLst;
 algorithm
-  (outBoolean,outExpectedTypeLst) := matchcontinue(blst,tp,dtp)
+  (outBoolean,outExpectedTypeLst) := matchcontinue(tp, dtp)
     local
       list<DAE.FuncArg> falst,falst1,falst2,dfalst;
       list<DAE.Type> tlst,dtlst;
       Boolean ret;
-      list<String> typlststring;
 
-    case (_,DAE.T_FUNCTION(funcArg=falst),DAE.T_FUNCTION(funcArg=dfalst)) algorithm
+    case (DAE.T_FUNCTION(funcArg=falst), DAE.T_FUNCTION(funcArg=dfalst)) algorithm
       // generate expected function inputs
       (falst1,_) := List.splitOnBoolList(falst,blst);
       falst2 := listAppend(falst,falst1);
@@ -3086,7 +3030,7 @@ algorithm
       ret := List.isEqualOnTrue(tlst,dtlst,Types.equivtypes);
     then (ret,tlst);
 
-    case (_,_,_)
+    case (_, _)
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("-Differentiate.checkDerivativeFunctionInputs failed\n");
@@ -3116,7 +3060,7 @@ algorithm
   for tpl in icrlst loop
     (i, dc) := tpl;
 
-    _ := matchcontinue(dc)
+    () := matchcontinue dc
       // Zero derivative, check that it's actually zero.
       case DAE.ZERO_DERIVATIVE()
         algorithm
@@ -3159,12 +3103,12 @@ protected function getlowerOrderDerivative "Author: Frenkel TUD"
   input AvlTreePathFunction.Tree functions;
   output Absyn.Path outFName;
 algorithm
-  outFName := match(fname,functions)
+  outFName := match functions
     local
       list<DAE.FunctionDefinition> flst;
       list<Absyn.Path> lowerOrderDerivatives;
       Absyn.Path name;
-    case(_,_)
+    case _
       algorithm
           SOME(DAE.FUNCTION(functions=flst)) := AvlTreePathFunction.get(functions,fname);
           DAE.FUNCTION_DER_MAPPER(lowerOrderDerivatives=lowerOrderDerivatives) := getFunctionMapper1(flst);
@@ -3179,18 +3123,18 @@ public function getFunctionMapper "Author: Frenkel TUD"
   output DAE.FunctionDefinition mapper;
   output DAE.Type tp;
 algorithm
-  (mapper,tp) := matchcontinue(fname,functions)
+  (mapper,tp) := matchcontinue functions
     local
       list<DAE.FunctionDefinition> flst;
       DAE.Type t;
       DAE.FunctionDefinition m;
       String s;
-    case(_,_)
+    case _
       algorithm
         SOME(DAE.FUNCTION(functions=flst,type_=t)) := AvlTreePathFunction.get(functions,fname);
         m := getFunctionMapper1(flst);
       then (m,t);
-    case (_,_)
+    case _
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         s := AbsynUtil.pathString(fname);
@@ -3205,18 +3149,17 @@ protected function getFunctionMapper1 "Author: Frenkel TUD"
   input list<DAE.FunctionDefinition> inFuncDefs;
   output DAE.FunctionDefinition mapper;
 algorithm
-  mapper := matchcontinue(inFuncDefs)
+  mapper := matchcontinue inFuncDefs
     local
       DAE.FunctionDefinition m;
-      Absyn.Path p1;
       list<DAE.FunctionDefinition> funcDefs;
 
-    case((m as DAE.FUNCTION_DER_MAPPER())::_) then m;
-    case(_::funcDefs)
+    case (m as DAE.FUNCTION_DER_MAPPER())::_ then m;
+    case _::funcDefs
     algorithm
       m := getFunctionMapper1(funcDefs);
     then m;
-    case (_)
+    case _
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("-Differentiate.getFunctionMapper1 failed\n");
