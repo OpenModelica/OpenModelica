@@ -1190,14 +1190,14 @@ protected function traverseExpsOfWhenOps_WithStop<T>
   input T inTypeA;
   input Boolean inCont;
   output Boolean outCont;
-  output T outTypeA;
+  output T extArg = inTypeA;
 
   partial function FuncExpType
     input DAE.Exp inExp;
     input T inTypeA;
     output DAE.Exp outExp;
     output Boolean cont;
-    output T extArg = inTypeA;
+    output T outTypeA;
   end FuncExpType;
 algorithm
   (outCont, extArg) := match inWhenOps
