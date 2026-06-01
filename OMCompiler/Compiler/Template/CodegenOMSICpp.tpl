@@ -153,7 +153,7 @@ end simulationOMSUCPPMainRunScript;
 
 
 
-annotation(__OpenModelica_Interface="codegen");
+annotation(__OpenModelica_Interface="codegen_cpp");
 end CodegenOMSICpp;
 
 

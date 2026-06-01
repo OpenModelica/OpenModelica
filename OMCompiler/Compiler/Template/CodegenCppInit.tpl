@@ -360,5 +360,5 @@ template jacobianMatrixXML(Integer indexJacobian, list<JacobianColumn> jacobianC
   >>
 end jacobianMatrixXML;
 
-annotation(__OpenModelica_Interface="codegen");
+annotation(__OpenModelica_Interface="codegen_cpp");
 end CodegenCppInit;
