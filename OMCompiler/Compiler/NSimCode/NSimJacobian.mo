@@ -408,15 +408,15 @@ public
       for partition in partitions loop
         // collect
         jacobianLfg := Partition.Partition.getJacobianLfg(partition);
-        if Util.isSome(jacobianLfg) then
+        if isSome(jacobianLfg) then
           jacobiansLfg := Util.getOption(jacobianLfg) :: jacobiansLfg;
         end if;
         jacobianMrf := Partition.Partition.getJacobianMrf(partition);
-        if Util.isSome(jacobianMrf) then
+        if isSome(jacobianMrf) then
           jacobiansMrf := Util.getOption(jacobianMrf) :: jacobiansMrf;
         end if;
         jacobianR0 := Partition.Partition.getJacobianR0(partition);
-        if Util.isSome(jacobianR0) then
+        if isSome(jacobianR0) then
           jacobiansR0 := Util.getOption(jacobianR0) :: jacobiansR0;
         end if;
       end for;
@@ -427,7 +427,7 @@ public
       else
         simJacobianLfg := Jacobian.combine(jacobiansLfg, "OPT_LFG");
         (simJacLfg_opt, simCodeIndices) := SimJacobian.create(simJacobianLfg, simCodeIndices, simcode_map);
-        if Util.isSome(simJacLfg_opt) then
+        if isSome(simJacLfg_opt) then
           simJacLfg := Util.getOption(simJacLfg_opt);
         else
           (simJacLfg, simCodeIndices) := SimJacobian.empty("OPT_LFG", simCodeIndices);
@@ -440,7 +440,7 @@ public
       else
         simJacobianMrf := Jacobian.combine(jacobiansMrf, "OPT_MRF");
         (simJacMrf_opt, simCodeIndices) := SimJacobian.create(simJacobianMrf, simCodeIndices, simcode_map);
-        if Util.isSome(simJacMrf_opt) then
+        if isSome(simJacMrf_opt) then
           simJacMrf := Util.getOption(simJacMrf_opt);
         else
           (simJacMrf, simCodeIndices) := SimJacobian.empty("OPT_MRF", simCodeIndices);
@@ -453,7 +453,7 @@ public
       else
         simJacobianR0 := Jacobian.combine(jacobiansR0, "OPT_R0");
         (simJacR0_opt, simCodeIndices) := SimJacobian.create(simJacobianR0, simCodeIndices, simcode_map);
-        if Util.isSome(simJacR0_opt) then
+        if isSome(simJacR0_opt) then
           simJacR0 := Util.getOption(simJacR0_opt);
         else
           (simJacR0, simCodeIndices) := SimJacobian.empty("OPT_R0", simCodeIndices);
