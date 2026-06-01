@@ -290,7 +290,7 @@ public
     input Option<Adjacency.Matrix> full                   "full adjacency matrix to create sparsity pattern";
     output Option<Jacobian> jacobian                      "Resulting jacobian";
     input UnorderedMap<Path, Function> funcMap            "Function call bodies";
-    input Boolean init;
+    input Boolean staticAsContinuous                      "Treat static variables (constant over time, e.g. params) as continuous if these have a continuous type (Real)";
   end jacobianInterface;
 
 // =========================================================================

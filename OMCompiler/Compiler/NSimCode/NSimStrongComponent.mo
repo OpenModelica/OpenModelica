@@ -752,7 +752,7 @@ public
             end if;
           end for;
 
-          // reactivate this once nonlinear loops actually work
+          // TODO: reactivate this once nonlinear loops actually work
           if false and isSome(strict.jac) then
             (jacobian, simCodeIndices) := SimJacobian.create(Util.getOption(strict.jac), simCodeIndices, simcode_map);
           else
@@ -1044,23 +1044,39 @@ public
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
     algorithm
       for blck_lst in blcks loop
-        for blck in blck_lst loop
-          (linearLoops, nonlinearLoops) := match blck
-            local
-              Option<SimJacobian> jacobian;
-            case LINEAR() then (blck :: linearLoops, nonlinearLoops);
-            case NONLINEAR() algorithm
-              jacobian := NonlinearSystem.getJacobian(blck.system);
-              if isSome(jacobian) then
-                jacobians := Util.getOption(jacobian) :: jacobians;
-              end if;
-              blck.system := NonlinearSystem.setJacobian(blck.system, jacobian);
-            then (linearLoops, blck :: nonlinearLoops);
-            else (linearLoops, nonlinearLoops);
-          end match;
-        end for;
+        (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := collectAlgebraicLoopsSingle(blck_lst, linearLoops, nonlinearLoops, jacobians, simCodeIndices, simcode_map);
       end for;
     end collectAlgebraicLoops;
+
+    function collectAlgebraicLoopsSingle
+      input list<Block> blck_lst;
+      input output list<Block> linearLoops;
+      input output list<Block> nonlinearLoops;
+      input output list<SimJacobian> jacobians;
+      input output SimCodeIndices simCodeIndices;
+      input UnorderedMap<ComponentRef, SimVar> simcode_map;
+    algorithm
+      for blck in blck_lst loop
+        (linearLoops, nonlinearLoops) := match blck
+          local
+            Option<SimJacobian> opt_jacobian;
+            SimJacobian jacobian;
+            ComponentRef cref;
+            SimVar sim_var;
+
+          case LINEAR() then (blck :: linearLoops, nonlinearLoops);
+          case NONLINEAR() algorithm
+            opt_jacobian := NonlinearSystem.getJacobian(blck.system);
+            if isSome(opt_jacobian) then
+              jacobian := Util.getOption(opt_jacobian);
+              jacobians := jacobian :: jacobians;
+            end if;
+            blck.system := NonlinearSystem.setJacobian(blck.system, opt_jacobian);
+          then (linearLoops, blck :: nonlinearLoops);
+          else (linearLoops, nonlinearLoops);
+        end match;
+      end for;
+    end collectAlgebraicLoopsSingle;
 
     function convert
       input Block blck;

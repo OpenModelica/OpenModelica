@@ -319,6 +319,18 @@ simulate(TestInversePlant.BackwardOffDesignHomotopy); getErrorString();
 //   [EMPTY] SimCode Jacobian ADJ(idx = 1, partition = 0)
 // ========================================================
 //
+// ============================================================
+//   [EMPTY] SimCode Jacobian OPT_LFG(idx = 7, partition = 0)
+// ============================================================
+//
+// ============================================================
+//   [EMPTY] SimCode Jacobian OPT_MRF(idx = 8, partition = 0)
+// ============================================================
+//
+// ===========================================================
+//   [EMPTY] SimCode Jacobian OPT_R0(idx = 9, partition = 0)
+// ===========================================================
+//
 //
 //
 // *********************
@@ -468,6 +480,12 @@ simulate(TestInversePlant.BackwardOffDesignHomotopy); getErrorString();
 // 	Jacobian idx: 6
 //
 // 	Jacobian idx: 1
+//
+// 	Jacobian idx: 7
+//
+// 	Jacobian idx: 8
+//
+// 	Jacobian idx: 9
 //
 //
 // modelInfo:
