@@ -133,8 +133,12 @@ void Legend::switchAxis(bool checked)
 void Legend::showSetupDialog()
 {
   if (mpPlotCurve) {
-    mpPlot->getParentPlotWindow()->showSetupDialog(mpPlotCurve->getNameStructure());
+    auto name = mpPlotCurve->getNameStructure();
+    // Clear the curve before showing the setup dialog, because this Legend
+    // might be destroyed when the setup dialog applies the settings so doing
+    // anything after showing the dialog is unsafe.
     mpPlotCurve = 0;
+    mpPlot->getParentPlotWindow()->showSetupDialog(std::move(name));
   }
 }
 
