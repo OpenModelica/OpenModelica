@@ -1153,7 +1153,7 @@ protected function replaceArgs
   output DAE.Exp outExp;
   output tuple<list<tuple<DAE.ComponentRef,DAE.Exp>>,HashTableCG.HashTable,Boolean> outTuple;
 algorithm
-  (outExp,outTuple) := Expression.Expression.traverseExpBottomUp(inExp,Inline.replaceArgs,inTuple);
+  (outExp,outTuple) := Expression.traverseExpBottomUp(inExp,Inline.replaceArgs,inTuple);
   if not Util.tuple33(outTuple) then
     if Flags.isSet(Flags.FAILTRACE) then
       Debug.traceln("BackendInline.replaceArgs failed");
