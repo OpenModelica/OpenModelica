@@ -191,22 +191,6 @@ int main(int argc, char *argv[])
   }
   MMC_INIT();
   MMC_TRY_TOP()
-#if defined(_MSC_VER) || defined(__MINGW32__)
-  const char *installationDirectoryPath = SettingsImpl__getInstallationDirectoryPath();
-  // make QtWebEngineProcess find the Qt dlls!
-  QString p = QString(installationDirectoryPath).replace("/", "\\");
-  qputenv("PATH", QByteArray(p.toUtf8()) + "\\bin;" + qgetenv("PATH"));
-  // currently the sandbox does not work with qt6-webengine
-  qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " --no-sandbox");
-  // Qt6Core.dll lives in <install>/bin, so Qt computes its prefix as <install>/ and
-  // looks for QtWebEngine resources/process/locales under <install>/share/qt6/...
-  // We install those under <install>/bin/share/qt6/... instead, so override the
-  // search paths here before any QtWebEngine subprocess is launched.
-  QByteArray qt6Share = QByteArray(installationDirectoryPath) + "/bin/share/qt6";
-  qputenv("QTWEBENGINEPROCESS_PATH",     qt6Share + "/bin/QtWebEngineProcess.exe");
-  qputenv("QTWEBENGINE_RESOURCES_PATH",  qt6Share + "/resources");
-  qputenv("QTWEBENGINE_LOCALES_PATH",    qt6Share + "/translations/qtwebengine_locales");
-#endif
   Q_INIT_RESOURCE(resource_omedit);
 #if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
   QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);

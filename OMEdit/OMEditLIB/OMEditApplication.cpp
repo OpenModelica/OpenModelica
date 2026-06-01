@@ -149,6 +149,24 @@ void dumpQtPaths()
 OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threadData, bool testsuiteRunning)
   : QApplication(argc, argv)
 {
+  const char *installationDirectoryPath = SettingsImpl__getInstallationDirectoryPath();
+  if (!installationDirectoryPath) {
+    QMessageBox::critical(0, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::INSTALLATIONDIRECTORY_NOT_FOUND), QMessageBox::Ok);
+    quit();
+    exit(1);
+  }
+#ifdef Q_OS_WIN
+  // currently the sandbox does not work with qt6-webengine
+  qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " --no-sandbox");
+  // make QtWebEngineProcess find the Qt dlls!
+  // Qt6Core.dll lives in <install>/bin, so Qt computes its prefix as <install>/ and
+  // looks for QtWebEngine resources/locales under <install>/...
+  // We install those under <install>/bin/... instead, so override the
+  // search paths here before any QtWebEngine subprocess is launched.
+  qputenv("QTWEBENGINE_RESOURCES_PATH",  QByteArray(installationDirectoryPath) + "/bin/resources");
+  qputenv("QTWEBENGINE_LOCALES_PATH",  QByteArray(installationDirectoryPath) + "/bin/translations/qtwebengine_locales");
+#endif // #ifdef Q_OS_WIN
+
 /* We need a better handling of ligth and dark themes.
  * For now just force light theme for Qt 6.8
  * The default color scheme is based on the system theme, so Qt will automatically use light or dark theme based on the user's system settings.
@@ -172,12 +190,6 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
 #endif // #ifdef Q_OS_WIN
   // Localization
   //*a.severin/ add localization
-  const char *installationDirectoryPath = SettingsImpl__getInstallationDirectoryPath();
-  if (!installationDirectoryPath) {
-    QMessageBox::critical(0, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::INSTALLATIONDIRECTORY_NOT_FOUND), QMessageBox::Ok);
-    quit();
-    exit(1);
-  }
   QSettings *pSettings = Utilities::getApplicationSettings();
   QLocale settingsLocale = QLocale(pSettings->value("language").toString());
   QString locale = settingsLocale.name() == "C" ? QLocale::system().name() : settingsLocale.name();

@@ -35,5 +35,34 @@ target_link_libraries(OMShell PRIVATE Qt${OM_QT_MAJOR_VERSION}::Widgets)
 target_link_libraries(OMShell PRIVATE Qt${OM_QT_MAJOR_VERSION}::PrintSupport)
 
 omc_install_gui_client(OMShell)
+
+if(MINGW)
+  # Find windeployqt6
+  find_program(WINDEPLOYQT_EXECUTABLE
+    NAMES windeployqt windeployqt6
+    HINTS "${MSYSTEM_PREFIX_ESCAPED}/bin"
+    REQUIRED
+  )
+
+  install(CODE "
+    message(STATUS \"Running windeployqt6 on OMShell...\")
+    execute_process(
+      COMMAND \"${WINDEPLOYQT_EXECUTABLE}\"
+        --no-compiler-runtime
+        --no-system-d3d-compiler
+        --no-quick-import
+        --libdir \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}\"
+        \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/OMShell.exe\"
+      RESULT_VARIABLE WINDEPLOYQT_RESULT
+      OUTPUT_VARIABLE WINDEPLOYQT_OUTPUT
+      ERROR_VARIABLE  WINDEPLOYQT_ERROR
+    )
+    if(NOT WINDEPLOYQT_RESULT EQUAL 0)
+      message(FATAL_ERROR \"windeployqt6 failed:\n\${WINDEPLOYQT_OUTPUT}\n\${WINDEPLOYQT_ERROR}\")
+    endif()
+    message(STATUS \"windeployqt6 output: \${WINDEPLOYQT_OUTPUT}\")
+  ")
+endif()
+
 install(FILES commands.xml
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omshell)

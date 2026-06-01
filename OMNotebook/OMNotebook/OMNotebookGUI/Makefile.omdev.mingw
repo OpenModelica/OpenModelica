@@ -43,6 +43,7 @@ build: omc_config.h $(NAME) Resources/nls/qm.stamp
 	mkdir -p $(builddir_share)/omnotebook/drmodelica/ $(builddir_share)/omnotebook/drcontrol/ $(builddir_share)/omnotebook/nls/
 	cp -p $(resourcedir)/*.qm $(builddir_share)/omnotebook/nls/
 	cp -p ../bin/$(NAME)$(EXE) $(builddir_bin);
+	windeployqt6.exe --no-compiler-runtime --no-system-d3d-compiler --no-quick-import --libdir $(builddir_bin) $(builddir_bin)/$(NAME)$(EXE)
 	cp -p *.xml $(builddir_share)/omnotebook/
 	cp -p ../../OMNotebookHelp.onb $(OMBUILDDIR)/share/omnotebook/
 	(DRMODELICAPWD=`cd ../../DrModelica/ && pwd` && \

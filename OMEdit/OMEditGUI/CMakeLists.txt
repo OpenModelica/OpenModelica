@@ -37,23 +37,6 @@ if(OM_OMEDIT_INSTALL_RUNTIME_DLLS AND MINGW)
     string(REPLACE "\\" "/" MSYSTEM_PREFIX_ESCAPED "$ENV{MSYSTEM_PREFIX}")
   endif()
 
-  # Install the Qt5/Qt6 plugins directories
-  message(STATUS "Installing QT${OM_QT_MAJOR_VERSION} plugins from ${MSYSTEM_PREFIX_ESCAPED}/share/qt${OM_QT_MAJOR_VERSION}/plugins/")
-  install(DIRECTORY ${MSYSTEM_PREFIX_ESCAPED}/share/qt${OM_QT_MAJOR_VERSION}/plugins/    # Note the slash at the end!
-          DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/)
-  # Install the Qt5/Qt6 translation directories
-  message(STATUS "Installing QT${OM_QT_MAJOR_VERSION} translation from ${MSYSTEM_PREFIX_ESCAPED}/share/qt${OM_QT_MAJOR_VERSION}/translations/")
-  install(DIRECTORY ${MSYSTEM_PREFIX_ESCAPED}/share/qt${OM_QT_MAJOR_VERSION}/translations/    # Note the slash at the end!
-          DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/share/qt${OM_QT_MAJOR_VERSION}/translations)
-  # Install the Qt5/Qt6 resources directories
-  message(STATUS "Installing QT${OM_QT_MAJOR_VERSION} translation from ${MSYSTEM_PREFIX_ESCAPED}/share/qt${OM_QT_MAJOR_VERSION}/resources/")
-  install(DIRECTORY ${MSYSTEM_PREFIX_ESCAPED}/share/qt${OM_QT_MAJOR_VERSION}/resources/    # Note the slash at the end!
-          DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/share/qt${OM_QT_MAJOR_VERSION}/resources)
-  # Install the Qt share/qtX/bin directory
-  message(STATUS "Installing QT${OM_QT_MAJOR_VERSION} translation from ${MSYSTEM_PREFIX_ESCAPED}/share/qt${OM_QT_MAJOR_VERSION}/bin/")
-  install(DIRECTORY ${MSYSTEM_PREFIX_ESCAPED}/share/qt${OM_QT_MAJOR_VERSION}/bin/    # Note the slash at the end!
-          DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/share/qt${OM_QT_MAJOR_VERSION}/bin)
-
   # TODO: This is stupid, but I can't get install with RUNTIME_DEPENDENCIES to run.
   # It needs to link to libs that are installed to ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR},
   # but if I add that to DIRECTORIES it will throw errors on the second run.
@@ -80,6 +63,32 @@ if(OM_OMEDIT_INSTALL_RUNTIME_DLLS AND MINGW)
             DIRECTORIES ${MSYSTEM_PREFIX_ESCAPED}/bin ${RUNTIME_LIB_DIRS}
             PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-"
             POST_EXCLUDE_REGEXES ".*system32/.*\\.dll")
+
+  # Find windeployqt6
+  find_program(WINDEPLOYQT_EXECUTABLE
+    NAMES windeployqt windeployqt6
+    HINTS "${MSYSTEM_PREFIX_ESCAPED}/bin"
+    REQUIRED
+  )
+
+  install(CODE "
+    message(STATUS \"Running windeployqt6 on OMEdit...\")
+    execute_process(
+      COMMAND \"${WINDEPLOYQT_EXECUTABLE}\"
+        --no-compiler-runtime
+        --no-system-d3d-compiler
+        --no-quick-import
+        --libdir \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}\"
+        \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/OMEdit.exe\"
+      RESULT_VARIABLE WINDEPLOYQT_RESULT
+      OUTPUT_VARIABLE WINDEPLOYQT_OUTPUT
+      ERROR_VARIABLE  WINDEPLOYQT_ERROR
+    )
+    if(NOT WINDEPLOYQT_RESULT EQUAL 0)
+      message(FATAL_ERROR \"windeployqt6 failed:\n\${WINDEPLOYQT_OUTPUT}\n\${WINDEPLOYQT_ERROR}\")
+    endif()
+    message(STATUS \"windeployqt6 output: \${WINDEPLOYQT_OUTPUT}\")
+  ")
 else ()
   omc_install_gui_client(OMEdit)
 endif()
