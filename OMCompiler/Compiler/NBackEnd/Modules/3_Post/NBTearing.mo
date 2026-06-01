@@ -240,17 +240,17 @@ public
     output list<Module.tearingInterface> funcs;
   protected
     String flag = Flags.getConfigString(Flags.TEARING_METHOD);
-    function isNotGuruVar extends BVariable.checkVar;
+    function isGuruVar extends BVariable.checkVar;
       input Boolean init;
     algorithm
-      b := BVariable.hasTearingSelect(var_ptr, NFBackendExtension.TearingSelect.PREFER, intLt);
-    end isNotGuruVar;
+      b := BVariable.hasTearingSelect(var_ptr, NFBackendExtension.TearingSelect.PREFER, intGe /* PREFER OR ALWAYS */);
+    end isGuruVar;
   algorithm
     funcs := match flag
-      case "minimalTearing" then {function initialize(varFunc = BVariable.isDiscontinuous, eqnFunc = Equation.isDiscontinuous), minimal, finalize};
-      case "cellier"        then {function initialize(varFunc = BVariable.isDiscontinuous, eqnFunc = Equation.isDiscontinuous), minimal, finalize}; // TODO set `minimal = false` when it's actually doing something
-      case "omcTearing"     then {function initialize(varFunc = BVariable.isDiscontinuous, eqnFunc = Equation.isDiscontinuous), minimal, finalize}; // TODO set `minimal = false` when it's actually doing something
-      case "guruTearing"    then {function initialize(varFunc = isNotGuruVar, eqnFunc = noFilterEqn), guru, finalize};
+      case "minimalTearing" then {function initialize(varFunc = BVariable.isContinuous, eqnFunc = Equation.isContinuous), minimal, finalize};
+      case "cellier"        then {function initialize(varFunc = BVariable.isContinuous, eqnFunc = Equation.isContinuous), minimal, finalize}; // TODO set `minimal = false` when it's actually doing something
+      case "omcTearing"     then {function initialize(varFunc = BVariable.isContinuous, eqnFunc = Equation.isContinuous), minimal, finalize}; // TODO set `minimal = false` when it's actually doing something
+      case "guruTearing"    then {function initialize(varFunc = isGuruVar, eqnFunc = noFilterEqn), guru, finalize};
       /* ... New tearing modules have to be added here */
       else fail();
     end match;
