@@ -1,0 +1,10 @@
+/*!
+\page qwtchangelog What's new in Qwt 6.4
+
+\tableofcontents
+
+\section PLATFORM Qt >= 5.6
+
+Support for Qt < Qt 5.6 has been dropped.
+
+ */
