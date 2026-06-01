@@ -651,14 +651,14 @@ public
   function hasStartAttr
     extends checkVar;
   algorithm
-    b := Util.isSome(VariableAttributes.getStartAttribute(var.backendinfo.attributes));
+    b := isSome(VariableAttributes.getStartAttribute(var.backendinfo.attributes));
   end hasStartAttr;
 
   function hasPre
     "only returns true if the variable itself is not a pre() or previous() and has a pre() pointer set"
     extends checkVar;
   algorithm
-    b := not isPrevious(var_ptr) and Util.isSome(getVarPre(var_ptr));
+    b := not isPrevious(var_ptr) and isSome(getVarPre(var_ptr));
   end hasPre;
 
 function isJacobianResultVar
@@ -1859,7 +1859,7 @@ function isJacobianResultVar
 
     // map start exp
     opt_start   := getStartAttribute(var_ptr);
-    if Util.isSome(opt_start) then
+    if isSome(opt_start) then
       SOME(start) := opt_start;
       new_start   := mapFunc(start, funcExp);
 
@@ -2035,7 +2035,7 @@ function isJacobianResultVar
       Integer numberOfElements = VariablePointers.size(variables);
       Integer length, scal_start;
       String index;
-      Boolean useMapping = Util.isSome(mapping_opt);
+      Boolean useMapping = isSome(mapping_opt);
       array<tuple<Integer,Integer>> mapping;
     algorithm
       if useMapping then
@@ -2301,7 +2301,7 @@ function isJacobianResultVar
       var_ptr := match UnorderedMap.get(cref, variables.map)
         case SOME(index) guard(index > 0) then ExpandableArray.get(index, variables.varArr);
         else algorithm
-          if Util.isSome(info) then
+          if isSome(info) then
             Error.addInternalError(getInstanceName() + " failed for " + ComponentRef.toString(cref), Util.getOption(info));
           end if;
         then fail();

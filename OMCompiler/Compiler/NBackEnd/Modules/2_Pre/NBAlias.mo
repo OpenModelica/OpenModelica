@@ -664,7 +664,7 @@ protected
 
       // fail for record elements for now
       case Expression.CREF()
-        guard(Util.isSome(BVariable.getParent(BVariable.getVarPointer(exp.cref, sourceInfo()))))
+        guard(isSome(BVariable.getParent(BVariable.getVarPointer(exp.cref, sourceInfo()))))
       then FAILED_CREF_TPL;
 
       // variable found
@@ -900,12 +900,12 @@ protected
   algorithm
   // function calls of different set functions in NBVariable.mo
     new_min := getMaximum(attrcollector.min_val_map);
-    if Util.isSome(new_min) then
+    if isSome(new_min) then
       Pointer.update(var_to_keep, BVariable.setMin(Pointer.access(var_to_keep), new_min, true));
       UnorderedMap.add(BVariable.getVarName(var_to_keep), Util.getOption(new_min), attrcollector.min_val_map); // update attribute collector
     end if;
     new_max := getMinimum(attrcollector.max_val_map);
-    if Util.isSome(new_max) then
+    if isSome(new_max) then
       Pointer.update(var_to_keep, BVariable.setMax(Pointer.access(var_to_keep), new_max, true));
       UnorderedMap.add(BVariable.getVarName(var_to_keep), Util.getOption(new_max), attrcollector.max_val_map); // update attribute collector
     end if;
@@ -921,7 +921,7 @@ protected
       UnorderedMap.add(BVariable.getVarName(var_to_keep), Util.getOption(new_start), attrcollector.start_map); // update attribute collector
     end if;
     (new_cref, new_stateSelect) := chooseStateSelect(attrcollector.stateSelect_map);
-    if Util.isSome(new_stateSelect) and Util.isSome(UnorderedMap.get(BVariable.getVarName(var_to_keep),attrcollector.stateSelect_map)) then // only update stateSelect value, if var_to_keep has a stateSelect value
+    if isSome(new_stateSelect) and isSome(UnorderedMap.get(BVariable.getVarName(var_to_keep),attrcollector.stateSelect_map)) then // only update stateSelect value, if var_to_keep has a stateSelect value
       Pointer.update(var_to_keep, BVariable.setStateSelect(Pointer.access(var_to_keep), Util.getOption(new_stateSelect), true));
       UnorderedMap.add(BVariable.getVarName(var_to_keep), Util.getOption(new_stateSelect), attrcollector.stateSelect_map); // update attribute collector
       if Util.getOption(new_stateSelect) == StateSelect.ALWAYS then // start value of var with StateSelect = always is stronger than start value of fixed var
@@ -931,7 +931,7 @@ protected
       end if;
     end if;
     new_tearingSelect := chooseTearingSelect(attrcollector.tearingSelect_map);
-    if Util.isSome(new_tearingSelect) and Util.isSome(UnorderedMap.get(BVariable.getVarName(var_to_keep),attrcollector.tearingSelect_map)) then // only update tearingSelect value, if var_to_keep has a tearingSelect value
+    if isSome(new_tearingSelect) and isSome(UnorderedMap.get(BVariable.getVarName(var_to_keep),attrcollector.tearingSelect_map)) then // only update tearingSelect value, if var_to_keep has a tearingSelect value
       Pointer.update(var_to_keep, BVariable.setTearingSelect(Pointer.access(var_to_keep), Util.getOption(new_tearingSelect), true));
       UnorderedMap.add(BVariable.getVarName(var_to_keep), Util.getOption(new_tearingSelect), attrcollector.tearingSelect_map); // update attribute collector
     end if;
@@ -1306,11 +1306,11 @@ protected
   protected
     Expression min_val, max_val;
   algorithm
-    if Util.isSome(attr_min) then
+    if isSome(attr_min) then
       min_val := Util.getOption(attr_min);
       UnorderedMap.add(BVariable.getVarName(var_ptr), min_val, attrcollector.min_val_map);
     end if;
-    if Util.isSome(attr_max) then
+    if isSome(attr_max) then
       max_val := Util.getOption(attr_max);
       UnorderedMap.add(BVariable.getVarName(var_ptr), max_val, attrcollector.max_val_map);
     end if;
@@ -1324,11 +1324,11 @@ protected
   protected
     Expression start_val, fixed_val;
   algorithm
-    if Util.isSome(attr_start) then
+    if isSome(attr_start) then
       start_val := Util.getOption(attr_start);
       UnorderedMap.add(BVariable.getVarName(var_ptr), start_val, attrcollector.start_map);
     end if;
-    if Util.isSome(attr_fixed) then
+    if isSome(attr_fixed) then
       fixed_val := Util.getOption(attr_fixed);
       UnorderedMap.add(BVariable.getVarName(var_ptr), fixed_val, attrcollector.fixed_map);
     end if;
@@ -1359,18 +1359,18 @@ protected
       case Variable.VARIABLE(backendinfo=BackendExtension.BACKEND_INFO(attributes=attr as BackendExtension.VariableAttributes.VAR_ATTR_REAL())) algorithm
         attrcollector := optionMinMax(var_ptr, attr.min, attr.max, attrcollector);
         attrcollector := optionStartFixed(var_ptr, attr.start, attr.fixed, attrcollector);
-        if Util.isSome(attr.nominal) then
+        if isSome(attr.nominal) then
           nominal_val := Util.getOption(attr.nominal);
           UnorderedMap.add(BVariable.getVarName(var_ptr), nominal_val, attrcollector.nominal_map);
         end if;
-        if Util.isSome(attr.stateSelect) then
+        if isSome(attr.stateSelect) then
           stateSelect_val := Util.getOption(attr.stateSelect);
           if stateSelect_val == StateSelect.ALWAYS then
             rating := rating + 100;
           end if;
           UnorderedMap.add(BVariable.getVarName(var_ptr), stateSelect_val, attrcollector.stateSelect_map);
         end if;
-        if Util.isSome(attr.tearingSelect) then
+        if isSome(attr.tearingSelect) then
           tearingSelect_val := Util.getOption(attr.tearingSelect);
           UnorderedMap.add(BVariable.getVarName(var_ptr), tearingSelect_val, attrcollector.tearingSelect_map);
         end if;
@@ -1441,7 +1441,7 @@ protected
     algorithm
       SOME(rhs) := Equation.getRHS(solved_eq);
       // min:
-      if Util.isSome(min_val_opt) then
+      if isSome(min_val_opt) then
         UnorderedMap.add(var_cref, Util.getOption(min_val_opt), repl);
         new_rhs := Expression.map(rhs, function Replacements.applySimpleExp(replacements = repl));
         new_rhs := SimplifyExp.simplify(new_rhs);
@@ -1450,7 +1450,7 @@ protected
       end if;
 
       // max:
-      if Util.isSome(max_val_opt) then
+      if isSome(max_val_opt) then
         UnorderedMap.add(var_cref, Util.getOption(max_val_opt), repl);
         new_rhs := Expression.map(rhs, function Replacements.applySimpleExp(replacements = repl));
         new_rhs := SimplifyExp.simplify(new_rhs);
@@ -1469,13 +1469,13 @@ protected
       else
         swap_min_max := false;
       end if;
-      if swap_min_max and Util.isSome(min_val_opt) and Util.isSome(max_val_opt) then
+      if swap_min_max and isSome(min_val_opt) and isSome(max_val_opt) then
         UnorderedMap.add(var_cref, Util.getOption(max_val_opt), attrcollector.min_val_map);
         UnorderedMap.add(var_cref, Util.getOption(min_val_opt), attrcollector.max_val_map);
       end if;
 
       // start:
-      if Util.isSome(start_opt) then
+      if isSome(start_opt) then
         UnorderedMap.add(var_cref, Util.getOption(start_opt), repl);
         new_rhs := Expression.map(rhs, function Replacements.applySimpleExp(replacements = repl));
         new_rhs := SimplifyExp.simplify(new_rhs);
@@ -1483,7 +1483,7 @@ protected
       end if;
 
       // nominal:
-      if Util.isSome(nominal_opt) then
+      if isSome(nominal_opt) then
         UnorderedMap.add(var_cref, Util.getOption(nominal_opt), repl);
         new_rhs := Expression.map(rhs, function Replacements.applySimpleExp(replacements = repl));
         // normalize the nominal values (remove negations)

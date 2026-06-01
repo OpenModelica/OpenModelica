@@ -263,7 +263,7 @@ public
     Option<ComponentRef> cref;
   algorithm
     cref := UnorderedMap.get(BVariable.getVarName(var_ptr), replacements);
-    if Util.isSome(cref) then
+    if isSome(cref) then
       var_ptr := BVariable.getVarPointer(Util.getOption(cref), sourceInfo());
     end if;
   end replaceVarPtr;
@@ -351,7 +351,7 @@ public
             for local_node in fn.locals loop
               local_cref      := ComponentRef.fromNode(local_node, InstNode.getType(local_node));
               binding_exp_opt := InstNode.getBindingExpOpt(local_node);
-              if Util.isSome(binding_exp_opt) then
+              if isSome(binding_exp_opt) then
                 // replace binding expression with already gathered input replacements
                 binding_exp := Expression.map(Util.getOption(binding_exp_opt), function applySimpleExp(replacements = local_replacements));
               else

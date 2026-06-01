@@ -351,7 +351,7 @@ public
     input output String str;
     input Option<Integer> i_opt = NONE();
   protected
-    String i = if Util.isSome(i_opt) then intString(Util.getOption(i_opt)) else "";
+    String i = if isSome(i_opt) then intString(Util.getOption(i_opt)) else "";
   algorithm
     str := NBVariable.FUNCTION_DERIVATIVE_STR + i + "_" + str;
   end makeFDerString;

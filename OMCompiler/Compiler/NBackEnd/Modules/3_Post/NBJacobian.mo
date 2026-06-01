@@ -144,7 +144,7 @@ public
           bdae.algebraic := applyToPartitions(bdae.algebraic, bdae.funcMap, knowns, name, func);
           bdae.alg_event := applyToPartitions(bdae.alg_event, bdae.funcMap, knowns, name, func);
           bdae.init := applyToPartitions(bdae.init, bdae.funcMap, knowns, name, func);
-          if Util.isSome(bdae.init_0) then
+          if isSome(bdae.init_0) then
             bdae.init_0 := SOME(applyToPartitions(Util.getOption(bdae.init_0), bdae.funcMap, knowns, name, func));
           end if;
       then bdae;
@@ -1026,7 +1026,7 @@ protected
         (LFG_jacobian, MRF_jacobian, R0_jacobian) := partJacobianDynamicOptimization(part, knowns, name, func, funcMap);
       end if;
 
-      if Util.isSome(jacobian) then
+      if isSome(jacobian) then
         if BackendDAE.getIsAdjoint(Util.getOption(jacobian)) then
           part.association := Partition.Association.CONTINUOUS(kind, NONE(), jacobian, LFG_jacobian, MRF_jacobian, R0_jacobian);
         else
@@ -1099,7 +1099,7 @@ protected
 
     BVariable.checkVar func = getTmpFilterFunction(jacType);
   algorithm
-    if Util.isSome(strongComponents) then
+    if isSome(strongComponents) then
       // filter all discrete strong components and differentiate the others
       // todo: mixed algebraic loops should be here without the discrete subsets
       comps := list(comp for comp guard(not StrongComponent.isDiscrete(comp)) in Util.getOption(strongComponents));
@@ -1164,7 +1164,7 @@ protected
       seedVars      = VariablePointers.fromList(seed_vars)
     );
 
-    if Util.isSome(full) then
+    if isSome(full) then
       //sparsity := Adjacency.Matrix.fullToSparsity(Util.getOption(full), comps);
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because full adjacency matrix to create sparsity pattern is missing."});
@@ -1407,7 +1407,7 @@ protected
     Option<ComponentRef> o_pDerCref;
   algorithm
     newName := name + "_ADJ";
-    if Util.isSome(strongComponents) then
+    if isSome(strongComponents) then
       comps := list(comp for comp guard(not StrongComponent.isDiscrete(comp)) in Util.getOption(strongComponents));
       // only allow single components and algebraic loops
       for c in comps loop
@@ -1909,7 +1909,7 @@ protected
       vstr := "[" + stringDelimitList(list(Expression.toString(e) for e in elst), ", ") + "]";
     end valueToString;
   algorithm
-    if Util.isNone(adjoint_map) then
+    if isNone(adjoint_map) then
       str := "{}";
       return;
     end if;

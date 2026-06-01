@@ -427,7 +427,7 @@ public
       case Equation.ARRAY_EQUATION() algorithm
         (lhs, diffArguments) := differentiateExpressionNoCollect(eq.lhs, diffArguments);
         // Only do per-element reverse seeding for explicit element-wise array assembly on RHS
-        if Util.isSome(diffArguments.adjoint_map) and
+        if isSome(diffArguments.adjoint_map) and
           diffArguments.diffType == DifferentiationType.JACOBIAN and
           Expression.isArray(eq.rhs) then
 
@@ -625,7 +625,7 @@ public
         list<list<Expression>> new_matrix_elements = {};
         array<Expression> arr;
         ComponentRef d_fn;
-        Boolean isReverse = Util.isSome(diffArguments.adjoint_map);
+        Boolean isReverse = isSome(diffArguments.adjoint_map);
 
       // differentiation of constant expressions results in zero
       case Expression.INTEGER()   then (Expression.INTEGER(0), diffArguments);
@@ -797,7 +797,7 @@ public
   protected
     Boolean oldCollect;
   algorithm
-    if Util.isSome(diffArguments.adjoint_map) then
+    if isSome(diffArguments.adjoint_map) then
       oldCollect := diffArguments.collectAdjoints;
       diffArguments.collectAdjoints := false;
       (expr, diffArguments) := differentiateExpression(expr, diffArguments);
@@ -831,7 +831,7 @@ public
         + " | diffType=" + DifferentiationArguments.diffTypeStr(diffArguments.diffType)
         + " | scalarized=" + boolString(diffArguments.scalarized)
         + " | collectAdjoints=" + boolString(diffArguments.collectAdjoints));
-    if Util.isSome(diffArguments.adjoint_map) then
+    if isSome(diffArguments.adjoint_map) then
       dbg("[dCREF] current_grad=" + Expression.toString(diffArguments.current_grad));
     end if;
 
@@ -1007,14 +1007,14 @@ public
                 algorithm
                   dbg("[dCREF:JAC] adjoint via INDEX[" + intString(iidx) + "]");
                   onehotOpt := buildOneHotVectorAdjoint(derCref, iidx, diffArguments.current_grad);
-                then (if Util.isSome(onehotOpt) then Util.getOption(onehotOpt) else diffArguments.current_grad);
+                then (if isSome(onehotOpt) then Util.getOption(onehotOpt) else diffArguments.current_grad);
 
               // Single slice/range -> multi-hot scatter
               case {Subscript.SLICE()}
                 algorithm
                   dbg("[dCREF:JAC] adjoint via SLICE " + Subscript.toString(listHead(expCrefSubscripts)));
                   multiOpt := buildMultiHotVectorAdjoint(derCref, listHead(expCrefSubscripts), diffArguments.current_grad);
-                then (if Util.isSome(multiOpt) then Util.getOption(multiOpt) else diffArguments.current_grad);
+                then (if isSome(multiOpt) then Util.getOption(multiOpt) else diffArguments.current_grad);
 
               // Whole dimension -> pass upstream as-is
               case {Subscript.WHOLE()}
@@ -1048,7 +1048,7 @@ public
   protected
     Boolean oldCollect;
   algorithm
-    if Util.isSome(diffArguments.adjoint_map) then
+    if isSome(diffArguments.adjoint_map) then
       oldCollect := diffArguments.collectAdjoints;
       diffArguments.collectAdjoints := false;
       (exp, diffArguments) := differentiateComponentRef(exp, diffArguments);
@@ -1132,7 +1132,7 @@ public
       // user defined functions
       case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
         func_opt := UnorderedMap.get(call.fn.path, diffArguments.funcMap);
-        if Util.isSome(func_opt) then
+        if isSome(func_opt) then
           // The function is in the function tree
           SOME(func) := func_opt;
           interface_map := UnorderedMap.new<Boolean>(stringHashDjb2, stringEqual);
@@ -1158,7 +1158,7 @@ public
 
           // try to get a fitting function from derivatives -> if none is found, differentiate
           der_func_opt := Function.getDerivative(func, interface_map);
-          if Util.isSome(der_func_opt) then
+          if isSome(der_func_opt) then
             SOME(der_func) := der_func_opt;
             der_func := addDiffInfo(func, der_func, diffArguments);
           else
@@ -1246,7 +1246,7 @@ public
         Type ty;
         DifferentiationType diffType;
         Integer rY, rX;
-        Boolean isReverse = Util.isSome(diffArguments.adjoint_map);
+        Boolean isReverse = isSome(diffArguments.adjoint_map);
 
         Type elTy;
         // sumG = G + Gᵀ
@@ -2557,7 +2557,7 @@ public
         Type ty1, ty2;
         Integer r1, r2;
         list<Integer> dim1, dim2;
-        Boolean isReverse = Util.isSome(diffArguments.adjoint_map);
+        Boolean isReverse = isSome(diffArguments.adjoint_map);
 
       // Addition calculations (ADD, ADD_EW, ...)
       // (f + g)' = f' + g'
@@ -2851,7 +2851,7 @@ public
     input output Expression exp "Has to be Expression.MULTARY()";
     input output DifferentiationArguments diffArguments;
   protected
-    Boolean isReverse = Util.isSome(diffArguments.adjoint_map);
+    Boolean isReverse = isSome(diffArguments.adjoint_map);
   algorithm
     if Flags.isSet(Flags.DEBUG_ADJOINT) then
       print("differentiateMultary: " + Expression.toString(exp) + "\n");
@@ -3103,7 +3103,7 @@ public
     Array<List<Expression>> diff_lists;
     List<Expression> arg_products, restArgs;
     Integer idx = 1;
-    Boolean isReverse = Util.isSome(diffArguments.adjoint_map);
+    Boolean isReverse = isSome(diffArguments.adjoint_map);
     Operator mulEWOp = Operator.fromClassification(
       (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.ELEMENT_WISE),
       operator.ty);
@@ -3195,7 +3195,7 @@ public
     Expression exp;
   algorithm
     opt_exp := Binding.getExpOpt(binding);
-    if Util.isSome(opt_exp) then
+    if isSome(opt_exp) then
       (exp, diffArgs) := differentiateExpression(Util.getOption(opt_exp), diffArgs);
       binding := Binding.setExp(exp, binding);
     end if;
@@ -3525,7 +3525,7 @@ protected
       //             else seed;
 
       //           ohOpt := buildOneHotVectorAdjoint(derBaseCref, Expression.toInteger(elems[j]), seedElem);
-      //           if Util.isSome(ohOpt) then
+      //           if isSome(ohOpt) then
       //             acc := Expression.MULTARY({acc, Util.getOption(ohOpt)}, {}, addOp);
       //           else
       //             scatter := NONE(); return;
@@ -3557,8 +3557,8 @@ protected
                 then Expression.applySubscripts({Subscript.INDEX(Expression.INTEGER(j+1))}, seed, true)
                 else seed
             );
-            if Util.isSome(ohOpt) then
-              if Util.isSome(accOpt) then
+            if isSome(ohOpt) then
+              if isSome(accOpt) then
                 acc := Util.getOption(accOpt);
                 term := Util.getOption(ohOpt);
                 accOpt := SOME(Expression.MULTARY({acc, term}, {}, addOp));
@@ -3570,7 +3570,7 @@ protected
             end if;
           end for;
 
-          scatter := if Util.isSome(accOpt) then accOpt else SOME(Expression.makeZero(arrTy));
+          scatter := if isSome(accOpt) then accOpt else SOME(Expression.makeZero(arrTy));
         then scatter;
 
       else NONE();

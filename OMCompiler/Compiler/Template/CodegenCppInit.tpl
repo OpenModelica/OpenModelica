@@ -214,7 +214,7 @@ template ScalarVariableType(SimCode simCode, DAE.ComponentRef simVarCref, AliasV
     case T_REAL(__) then
       let start_  = ScalarVariableTypeStartAttribute(simCode, simVarCref, simVarAlias, startValue, "Real", complexStartExpressions, stateDerVectorName)
       let fixed_  = ' fixed="<%isFixed%>"'
-      let nom_    = ' useNominal="<%Util.isSome(nominalValue)%>"<%attributeOptionString(nominalValue, "nominal")%>'
+      let nom_    = ' useNominal="<%isSome(nominalValue)%>"<%attributeOptionString(nominalValue, "nominal")%>'
       let min_    = attributeOptionString(minValue, "min")
       let max_    = attributeOptionString(maxValue, "max")
       let unit_   = unitString(unit, "unit")
