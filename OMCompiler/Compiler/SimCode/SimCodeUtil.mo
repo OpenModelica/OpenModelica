@@ -3842,13 +3842,8 @@ algorithm
 
        clockIndex := partitionKindToClockIndex(isyst.partitionKind);
 
-<<<<<<< HEAD
-       nlSystem := SimCode.NONLINEARSYSTEM(uniqueEqIndex, eqs, tcrs, 0, listLength(tvars)+nInnerVars+listLength(tempvars)-listLength(itempvars), jacobianMatrix, homotopySupport, mixedSystem, true, clockIndex);
+       nlSystem := SimCode.NONLINEARSYSTEM(uniqueEqIndex, eqs, tcrs, 0, listLength(tvars)+nInnerVars+listLength(tempvars)-listLength(itempvars), jacobianMatrix, homotopySupport, mixedSystem, true, clockIndex, NONE());
        tempvars2 := tempvars;
-=======
-       nlSystem = SimCode.NONLINEARSYSTEM(uniqueEqIndex, eqs, tcrs, 0, listLength(tvars)+nInnerVars+listLength(tempvars)-listLength(itempvars), jacobianMatrix, homotopySupport, mixedSystem, true, clockIndex, NONE());
-       tempvars2 = tempvars;
->>>>>>> 0603260e43 (make sure that algebraic loops in jacobians are properly generated as nonlinear systems)
 
        // Do if dynamic tearing is activated
        if isSome(casualTearingSet) then
@@ -3873,11 +3868,7 @@ algorithm
            (_, homotopySupport) := BackendEquation.traverseExpsOfEquationList(reqns, BackendDAEUtil.containsHomotopyCall, false);
          end if;
 
-<<<<<<< HEAD
-         alternativeTearingNl := SOME(SimCode.NONLINEARSYSTEM(uniqueEqIndex, eqs, tcrs, 0, listLength(tvars)+nInnerVars+listLength(tempvars2)-listLength(tempvars), jacobianMatrix, homotopySupport, mixedSystem, true, clockIndex));
-=======
-         alternativeTearingNl = SOME(SimCode.NONLINEARSYSTEM(uniqueEqIndex, eqs, tcrs, 0, listLength(tvars)+nInnerVars+listLength(tempvars2)-listLength(tempvars), jacobianMatrix, homotopySupport, mixedSystem, true, clockIndex, NONE()));
->>>>>>> 0603260e43 (make sure that algebraic loops in jacobians are properly generated as nonlinear systems)
+         alternativeTearingNl := SOME(SimCode.NONLINEARSYSTEM(uniqueEqIndex, eqs, tcrs, 0, listLength(tvars)+nInnerVars+listLength(tempvars2)-listLength(tempvars), jacobianMatrix, homotopySupport, mixedSystem, true, clockIndex, NONE()));
        else
          alternativeTearingNl := NONE();
        end if;
@@ -6453,17 +6444,10 @@ algorithm
       e2 := Expression.replaceDerOpInExp(e2);
 
       // Create nonlinear equation system from complex function
-<<<<<<< HEAD
       (resEqs, uniqueEqIndex, tempvars, crefs) := createNonlinearResidualEquationsSingleComplex(e1, e2, source, eqAttr, iuniqueEqIndex, itempvars, crefs);
       resEqs := fixNonlinearResidualIndices(resEqs);
       (_, homotopySupport) := BackendEquation.traverseExpsOfEquation(inEquation, BackendDAEUtil.containsHomotopyCall, false);
-    then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, crefs, 0, listLength(inVars)+listLength(tempvars)-listLength(itempvars), NONE(), homotopySupport, false, false, clockIndex), NONE(), eqAttr)}, uniqueEqIndex+1, tempvars);
-=======
-      (resEqs, uniqueEqIndex, tempvars, crefs) = createNonlinearResidualEquationsSingleComplex(e1, e2, source, eqAttr, iuniqueEqIndex, itempvars, crefs);
-      resEqs = fixNonlinearResidualIndices(resEqs);
-      (_, homotopySupport) = BackendEquation.traverseExpsOfEquation(inEquation, BackendDAEUtil.containsHomotopyCall, false);
     then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, crefs, 0, listLength(inVars)+listLength(tempvars)-listLength(itempvars), NONE(), homotopySupport, false, false, clockIndex, NONE()), NONE(), eqAttr)}, uniqueEqIndex+1, tempvars);
->>>>>>> 0603260e43 (make sure that algebraic loops in jacobians are properly generated as nonlinear systems)
 
     case BackendDAE.COMPLEX_EQUATION(attr=eqAttr) algorithm
       crefs := List.map(inVars, BackendVariable.varCref);
@@ -6476,17 +6460,10 @@ algorithm
       // TODO: Fix createNonlinearResidualEquations support cases where
       //       solved variables are on rhs and also lhs. This is not
       //       considered yet there.
-<<<<<<< HEAD
       (resEqs, (uniqueEqIndex, _), tempvars) := createNonlinearResidualEquations({inEquation}, (iuniqueEqIndex, 0), itempvars, funcTree);
       resEqs := fixNonlinearResidualIndices(resEqs);
       (_, homotopySupport) := BackendEquation.traverseExpsOfEquation(inEquation, BackendDAEUtil.containsHomotopyCall, false);
-    then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, crefs, 0, listLength(inVars)+listLength(tempvars)-listLength(itempvars), NONE(), homotopySupport, false, false, clockIndex), NONE(), eqAttr)}, uniqueEqIndex+1, tempvars);
-=======
-      (resEqs, (uniqueEqIndex, _), tempvars) = createNonlinearResidualEquations({inEquation}, (iuniqueEqIndex, 0), itempvars, funcTree);
-      resEqs = fixNonlinearResidualIndices(resEqs);
-      (_, homotopySupport) = BackendEquation.traverseExpsOfEquation(inEquation, BackendDAEUtil.containsHomotopyCall, false);
     then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, crefs, 0, listLength(inVars)+listLength(tempvars)-listLength(itempvars), NONE(), homotopySupport, false, false, clockIndex, NONE()), NONE(), eqAttr)}, uniqueEqIndex+1, tempvars);
->>>>>>> 0603260e43 (make sure that algebraic loops in jacobians are properly generated as nonlinear systems)
 
     // failure
     case BackendDAE.COMPLEX_EQUATION(left=e1, right=e2) algorithm
@@ -7045,13 +7022,8 @@ algorithm
       if not listEmpty(solvedVars) then
         result := {SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(iuniqueEqIndex+1,
                       {SimCode.SES_INVERSE_ALGORITHM(iuniqueEqIndex, algStatements, knownOutputCrefs, true, eqAttr)},
-<<<<<<< HEAD
-                   solvedVars, 0, listLength(vars), NONE(), false, false, false, clockIndex), NONE(), eqAttr)};
-        ouniqueEqIndex := iuniqueEqIndex+2;
-=======
                    solvedVars, 0, listLength(vars), NONE(), false, false, false, clockIndex, NONE()), NONE(), eqAttr)};
-        ouniqueEqIndex = iuniqueEqIndex+2;
->>>>>>> 0603260e43 (make sure that algebraic loops in jacobians are properly generated as nonlinear systems)
+        ouniqueEqIndex := iuniqueEqIndex+2;
       else
         result := {SimCode.SES_INVERSE_ALGORITHM(iuniqueEqIndex, algStatements, knownOutputCrefs, false, eqAttr)};
         ouniqueEqIndex := iuniqueEqIndex+1;

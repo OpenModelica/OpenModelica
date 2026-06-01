@@ -5840,8 +5840,7 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String
           isAdjoint,
           isBidirectional,
           adjointJacobianIndex,
-          adjointMatrixName,
-          isAdjoint)
+          adjointMatrixName)
       // Normal: use regular sparsity and column coloring
       else
         initialAnalyticJacobians(
@@ -5856,8 +5855,7 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String
           isAdjoint,
           isBidirectional,
           adjointJacobianIndex,
-          adjointMatrixName,
-          isAdjoint)
+          adjointMatrixName)
       ;separator="\n")
 
   let jacMats = (JacobianMatrices |> JAC_MATRIX() =>

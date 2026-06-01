@@ -502,15 +502,6 @@ public
 
           // Emit accumulation statements from adjoint_map
           (diffArguments, stmts) := makeAdjointAccumulationStatements(diffArguments);
-
-          // // Emit seed reset: seed := 0
-          // vty := ComponentRef.getSubscriptedType(seedCref, true);
-          // stmts := Statement.ASSIGNMENT(
-          //   Expression.fromCref(seedCref),
-          //   Expression.makeZero(vty),
-          //   vty,
-          //   DAE.emptyElementSource
-          // ) :: stmts;
           stmts := listReverse(stmts);
         else
           stmts := {};
@@ -570,15 +561,6 @@ public
           end if;
 
           (diffArguments, stmts) := makeAdjointAccumulationStatements(diffArguments);
-
-          // // Seed reset
-          // vty := ComponentRef.getSubscriptedType(seed_base, true);
-          // stmts := Statement.ASSIGNMENT(
-          //   Expression.fromCref(seed_base),
-          //   Expression.makeZero(vty),
-          //   vty,
-          //   DAE.emptyElementSource
-          // ) :: stmts;
           stmts := listReverse(stmts);
         else
           stmts := {};
@@ -602,14 +584,6 @@ public
           (_, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
 
           (diffArguments, stmts) := makeAdjointAccumulationStatements(diffArguments);
-
-          // vty := ComponentRef.getSubscriptedType(seedCref, true);
-          // stmts := Statement.ASSIGNMENT(
-          //   Expression.fromCref(seedCref),
-          //   Expression.makeZero(vty),
-          //   vty,
-          //   DAE.emptyElementSource
-          // ) :: stmts;
           stmts := listReverse(stmts);
         else
           stmts := {};
@@ -4230,6 +4204,7 @@ protected
       origVar.backendinfo.var_pre,
       NONE() /* var_seed */,
       NONE() /* var_pder */,
+      origVar.backendinfo.var_start,
       origVar.backendinfo.parent
     );
 

@@ -129,7 +129,7 @@ void setJacElementDasslSparse(int l, int k, int nth, double val,
                                      void* matrixA, int rows);
 
 void setJacElementDasslSparseAdj(int row, int column, int nth, double value,
-                                 void* Jac, int nCols);
+                                 void* Jac, int cols);
 
 void  DDASKR(
     int (*res) (double *t, double *y, double *yprime, double* cj, double *delta, int *ires, double *rpar, int* ipar),
@@ -1083,12 +1083,12 @@ int jacA_symColored(double *t, double *y, double *yprime, double *delta,
  * @param nCols     Number of columns of Jacobian matrix
  */
 void setJacElementDasslSparseAdj(int row, int column, int nth, double value,
-                                 void* Jac, int nCols)
+                                 void* Jac, int rows)
 {
   UNUSED(nth);
   /* Store so that resulting matrix matches forward layout */
   double* A = (double*) Jac;
-  A[row * nCols + column] = value;
+  A[row * rows + column] = value;
 }
 
 /* \fn jacADJ_symColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
@@ -1386,63 +1386,6 @@ int jacA_numColored(double *t, double *y, double *yprime, double *delta,
       }
     }
   }
-
-  return 0;
-}
-
-/**
- * @brief Set element of dense Jacobian matrix.
- *
- * Jac(row, column) = val.
- *
- * @param row       Row of matrix element.
- * @param column    Column of matrix element.
- * @param nth       Sparsity pattern lead index, unused.
- * @param value     Value to set in position (i,j)
- * @param Jac       Pointer to double array storing matrix.
- * @param nRows     Number of rows of Jacobian matrix
- */
-void setJacElementDasslSparseAdj(int row, int column, int nth, double value,
-                                 void* Jac, int nRows)
-{
-  UNUSED(nth);
-  double* A = (double*) Jac;
-  A[column*nRows + row] = value;
-}
-
-/* \fn jacADJ_symColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
-   double *rpar, int* ipar)
- *
- *
- * This function calculates symbolically the adjoint jacobian matrix and exploiting the coloring.
- */
-int jacADJ_symColored(double *t, double *y, double *yprime, double *delta,
-                    double *matrixA, double *cj, double *h, double *wt,
-                    double *rpar, int *ipar)
-{
-  DATA* data = (DATA*)(void*)((double**)rpar)[0];
-  threadData_t *threadData = (threadData_t*)(void*)((double**)rpar)[2];
-  DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
-  const int index = data->callback->INDEX_JAC_ADJ;
-  JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
-
-#ifdef USE_PARJAC
-  JACOBIAN* t_jac = (dasslData->jacColumns);
-#else
-  JACOBIAN* t_jac = jac;
-#endif
-
-  unsigned int columns = jac->sizeCols;
-  unsigned int rows = jac->sizeRows;
-  SPARSE_PATTERN* spp = jac->sparsePattern;
-
-  /* Evaluate constant equations if available */
-  if (jac->constantEqns != NULL) {
-      jac->constantEqns(data, threadData, jac, NULL);
-  }
-
-  genericColoredSymbolicJacobianEvaluation(rows, columns, spp, matrixA, t_jac,
-                                           data, threadData, &setJacElementDasslSparseAdj);
 
   return 0;
 }

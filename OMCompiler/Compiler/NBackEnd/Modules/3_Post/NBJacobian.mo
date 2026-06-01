@@ -1012,24 +1012,35 @@ public
       input SparsityColoring coloring2;
       output SparsityColoring coloring_out;
     protected
+      array<SparsityColoringCol> cols1, cols2;
       array<SparsityColoringCol> cols_big, cols_small;
+      array<SparsityColoringRow> rows1, rows2;
       array<SparsityColoringRow> rows_big, rows_small;
     algorithm
+      cols1 := getCols(coloring1);
+      cols2 := getCols(coloring2);
+      rows1 := getRows(coloring1);
+      rows2 := getRows(coloring2);
+
       // append the smaller to the bigger
-      (cols_big, cols_small) := if arrayLength(coloring2.cols) > arrayLength(coloring1.cols) then (coloring2.cols, coloring1.cols) else (coloring1.cols, coloring2.cols);
-      (rows_big, rows_small) := if arrayLength(coloring2.rows) > arrayLength(coloring1.rows) then (coloring2.rows, coloring1.rows) else (coloring1.rows, coloring2.rows);
-      // initialize new coloring with the bigger ones
-      coloring_out := SPARSITY_COLORING(cols_big, rows_big);
+      (cols_big, cols_small) := if arrayLength(cols2) > arrayLength(cols1) then (arrayCopy(cols2), cols1) else (arrayCopy(cols1), cols2);
+      (rows_big, rows_small) := if arrayLength(rows2) > arrayLength(rows1) then (arrayCopy(rows2), rows1) else (arrayCopy(rows1), rows2);
+
       // append the columns
       for i in 1:arrayLength(cols_small) loop
-        coloring_out.cols[i] := listAppend(coloring_out.cols[i], cols_small[i]);
-      end for;
-      // append the rows
-      for i in 1:arrayLength(rows_small) loop
-        coloring_out.rows[i] := listAppend(coloring_out.rows[i], rows_small[i]);
+        cols_big[i] := listAppend(cols_big[i], cols_small[i]);
       end for;
 
-      coloring_out := SPARSITY_COLORING(bigCols, bigRows);
+      // append the rows
+      for i in 1:arrayLength(rows_small) loop
+        rows_big[i] := listAppend(rows_big[i], rows_small[i]);
+      end for;
+
+      coloring_out := match (coloring1, coloring2)
+        case (SPARSITY_BICOLORING(), _) then SPARSITY_BICOLORING(cols_big, rows_big, arrayLength(cols_big), arrayLength(rows_big));
+        case (_, SPARSITY_BICOLORING()) then SPARSITY_BICOLORING(cols_big, rows_big, arrayLength(cols_big), arrayLength(rows_big));
+        else SPARSITY_COLORING(cols_big, rows_big);
+      end match;
     end combine;
   end SparsityColoring;
 
