@@ -50,6 +50,7 @@ public import Absyn;
 public import BackendDAE;
 public import DAE;
 public import DAEUtil;
+public import AvlTreePathFunction;
 
 // protected imports
 protected import AbsynUtil;
@@ -2393,7 +2394,7 @@ algorithm
             print("### Differentiate function: \n" + funstring + "\n\n");
           end if;
 
-          functions := DAEUtil.addDaeFunction({dfunc}, functions);
+          functions := AvlTreePathFunction.addDaeFunction({dfunc}, functions);
           // add differentiated function as function mapper
           func := DAEUtil.addFunctionDefinition(func, DAE.FUNCTION_DER_MAPPER(path, dpath, 1, {}, NONE(), {}));
           functions := AvlTreePathFunction.add(functions, path, SOME(func));

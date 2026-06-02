@@ -90,9 +90,7 @@ algorithm
   end for;
 end addDaeExtFunction;
 
-protected function functionName "returns the name of a FUNCTION or RECORD_CONSTRUCTOR.
-  Private copy of DAEUtil.functionName so the function-tree builders stay in
-  frontend_dump and FCore can populate the cache without depending on DAEUtil."
+protected function functionName "returns the name of a FUNCTION or RECORD_CONSTRUCTOR"
   input DAE.Function elt;
   output Absyn.Path name;
 algorithm
@@ -102,8 +100,7 @@ algorithm
   end match;
 end functionName;
 
-protected function isExtFunction "returns true if element matches an external function.
-  Private copy of DAEUtil.isExtFunction (see functionName)."
+protected function isExtFunction "returns true if element matches an external function"
   input DAE.Function elt;
   output Boolean res;
 algorithm

@@ -5659,16 +5659,6 @@ algorithm
   end match;
 end collectFunctionRefVarPaths;
 
-public function addDaeFunction "add functions present in the element list to the function tree"
-  input list<DAE.Function> functions;
-  input output AvlTreePathFunction.Tree functionTree;
-algorithm
-  // Implementation moved to AvlTreePathFunction (frontend_dump) so FCore can
-  // populate the function cache without depending on DAEUtil; kept as a
-  // forwarder so existing DAEUtil.addDaeFunction callers are unaffected.
-  functionTree := AvlTreePathFunction.addDaeFunction(functions, functionTree);
-end addDaeFunction;
-
 public function addFunctionDefinition
 "adds a functionDefinition to a function. can be used to add function_der_mapper to a function"
   input DAE.Function ifunc;
@@ -5685,18 +5675,6 @@ algorithm
     else ();
   end match;
 end addFunctionDefinition;
-
-public function addDaeExtFunction "
-  add extermal functions present in the element list to the function tree
-  Note: normal functions are skipped.
-  See also addDaeFunction"
-  input list<DAE.Function> ifuncs;
-  input AvlTreePathFunction.Tree itree;
-  output AvlTreePathFunction.Tree outTree;
-algorithm
-  // Implementation moved to AvlTreePathFunction (frontend_dump); see addDaeFunction.
-  outTree := AvlTreePathFunction.addDaeExtFunction(ifuncs, itree);
-end addDaeExtFunction;
 
 public function getFunctionsInfo
   input AvlTreePathFunction.Tree ft;
