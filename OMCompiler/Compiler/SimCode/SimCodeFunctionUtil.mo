@@ -2794,8 +2794,6 @@ algorithm
   end match;
 end appendCurrentCrefPrefix;
 
-// ---- functions moved here from SimCodeUtil so the new backend (NSimCode) can
-// ---- reuse them without depending on the old backend crate ----
 protected function simulationFindLiterals
   "Finds all literal expressions in functionsa"
   input list<DAE.Function> fns;

@@ -106,6 +106,7 @@ import SerializeInitXML;
 import SerializeModelInfo;
 import SerializeSparsityPattern;
 import SimCodeUtil;
+import SimCodeFunctionUtil;
 import SimCodeVar;
 import StackOverflow;
 import StringUtil;
@@ -190,7 +191,7 @@ algorithm
     fileDir := ProgramUtil.getFileDir(a_cref, p);
   end if;
   (libs,libPaths,includes, includeDirs, recordDecls, functions, literals) :=
-    SimCodeUtil.createFunctions(p, inBackendDAE.shared.functionTree);
+    SimCodeFunctionUtil.createFunctions(p, inBackendDAE.shared.functionTree);
   simCode := createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, NONE(),
     inRemovedInitialEquationLst, className, filenamePrefix, fileDir, functions,
     includes, includeDirs, libs, libPaths, p, simSettings, recordDecls,
@@ -238,7 +239,7 @@ algorithm
   a_cref := AbsynUtil.pathToCref(className);
   fileDir := ProgramUtil.getFileDir(a_cref, p);
   (libs, libPaths, includes, includeDirs, recordDecls, functions, literals) :=
-    SimCodeUtil.createFunctions(p, inBackendDAE.shared.functionTree);
+    SimCodeFunctionUtil.createFunctions(p, inBackendDAE.shared.functionTree);
   (simCode,_) := SimCodeUtil.createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, NONE(), inRemovedInitialEquationLst,
     className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, p, simSettingsOpt, recordDecls, literals,Absyn.FUNCTIONARGS({},{}));
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
@@ -288,7 +289,7 @@ algorithm
   a_cref := AbsynUtil.pathToCref(className);
   fileDir := ProgramUtil.getFileDir(a_cref, p);
 
-  (libs, libPaths, includes, includeDirs, recordDecls, functions, literals) := SimCodeUtil.createFunctions(p, inBackendDAE.shared.functionTree);
+  (libs, libPaths, includes, includeDirs, recordDecls, functions, literals) := SimCodeFunctionUtil.createFunctions(p, inBackendDAE.shared.functionTree);
    /*Temporary disabled omsicpp
    if Config.simCodeTarget() ==  "omsicpp" then
      fmuVersion:="2.0";
@@ -1654,7 +1655,7 @@ algorithm
     // create SimCode functions
     a_cref := AbsynUtil.pathToCref(className);
     fileDir := ProgramUtil.getFileDir(a_cref, p);
-    (libs, libPaths, includes, includeDirs, recordDecls, functions, literals) := SimCodeUtil.createFunctions(p, inBackendDAE.shared.functionTree);
+    (libs, libPaths, includes, includeDirs, recordDecls, functions, literals) := SimCodeFunctionUtil.createFunctions(p, inBackendDAE.shared.functionTree);
 
     // create external objects
     extObjInfo := SimCodeUtil.createExtObjInfo(inBackendDAE.shared);
@@ -1845,7 +1846,7 @@ algorithm
     // crefToSimVarHT := SimCodeUtil.createCrefToSimVarHT(modelInfo);
 
     if stringEqual(Config.simCodeTarget(), "Cpp") then
-      (varToArrayIndexMapping, varToIndexMapping) := SimCodeUtil.createVarToArrayIndexMapping(modelInfo);
+      (varToArrayIndexMapping, varToIndexMapping) := SimCodeFunctionUtil.createVarToArrayIndexMapping(modelInfo);
       (crefToClockIndexHT, _) := List.fold(listReverse(inBackendDAE.eqs), SimCodeUtil.collectClockedVars, (HashTable.emptyHashTable(), 1));
     else
       varToArrayIndexMapping := HashTableCrIListArray.emptyHashTable();
