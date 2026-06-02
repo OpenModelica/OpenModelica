@@ -647,9 +647,7 @@ pipeline {
               unstash 'omc-clang'
               common.makeLibsAndCache()
             }
-            sh '''
-            make -C testsuite/openmodelica/icon-generator test
-            '''
+            sh 'make -C testsuite/openmodelica/icon-generator test'
           }
         }
 
