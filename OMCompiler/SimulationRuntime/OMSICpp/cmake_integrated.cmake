@@ -9,7 +9,7 @@
 # when OPENMODELICA_NEW_CMAKE_BUILD is set, and execution returns to the caller
 # immediately afterward via return().
 
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.14...4.3)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 # Make OMSICpp-specific CMake modules available (PrecompiledHeader, CheckCXX11, …)
@@ -355,7 +355,12 @@ macro(INSTALL_HEADERS_WITH_DIRECTORY HEADER_LIST)
   foreach(HEADER ${${HEADER_LIST}})
     string(REGEX MATCH "(.*)[/\\]" DIR ${HEADER})
     string(REPLACE "runtime/include" "" DIR ${DIR})
-    install(FILES ${HEADER} DESTINATION include/omc/omsicpp/${DIR})
+    if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.20")
+      cmake_path(SET DIR NORMALIZE "include/omc/omsicpp/${DIR}")
+    else()
+      set(DIR "include/omc/omsicpp/${DIR}")
+    endif()
+    install(FILES ${HEADER} DESTINATION ${DIR})
   endforeach()
 endmacro()
 
