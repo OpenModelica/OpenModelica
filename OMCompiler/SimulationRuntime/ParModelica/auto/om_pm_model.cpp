@@ -77,18 +77,24 @@ void Equation::execute() {
     function_system[task_id](data, threadData);
 }
 
+std::unique_ptr<TaskGraphScheduler> make_parmod_scheduler(TaskSystem_v2<Equation>& sys, size_t max_num_threads) {
+    if (parmod_config().scheduler == "level")
+        return std::unique_ptr<TaskGraphScheduler>(new StepLevels<Equation>(sys, max_num_threads));
+    return std::unique_ptr<TaskGraphScheduler>(new ClusterDynamicScheduler<Equation>(sys, max_num_threads));
+}
+
 OMModel::OMModel(const std::string& in_name, size_t mnt)
     : name(in_name)
     , max_num_threads(mnt)
     , tbb_system(tbb::global_control::max_allowed_parallelism, mnt)
     , INI_system(name, mnt)
-    , INI_scheduler(INI_system, mnt)
+    , INI_scheduler(make_parmod_scheduler(INI_system, mnt))
     , DAE_system(name, mnt)
-    , DAE_scheduler(DAE_system, mnt)
+    , DAE_scheduler(make_parmod_scheduler(DAE_system, mnt))
     , ODE_system(name, mnt)
-    , ODE_scheduler(ODE_system, mnt)
+    , ODE_scheduler(make_parmod_scheduler(ODE_system, mnt))
     , ALG_system(name, mnt)
-    , ALG_scheduler(ALG_system, mnt) {
+    , ALG_scheduler(make_parmod_scheduler(ALG_system, mnt)) {
     intialized = false;
 }
 

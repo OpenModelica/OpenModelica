@@ -35,6 +35,9 @@
 
 #include <tbb/flow_graph.h>
 #include "pm_clustering.hpp"
+#include "pm_clustering_json.hpp"
+#include "pm_runtime_config.hpp"
+#include "pm_scheduler_base.hpp"
 
 namespace openmodelica { namespace parmodelica {
 
@@ -53,7 +56,7 @@ struct ClusterLauncher {
 };
 
 template <typename TaskType>
-class ClusterDynamicScheduler {
+class ClusterDynamicScheduler : public TaskGraphScheduler {
   public:
     typedef TaskSystem_v2<TaskType> TaskSystemType;
 
@@ -138,11 +141,42 @@ class ClusterDynamicScheduler {
         if (task_system.levels_valid == false)
             task_system.update_node_levels();
 
-        cluster_merge_common::apply(task_system);
-        cluster_merge_level_for_bins::apply(task_system);
+        const ParmodConfig& cfg = parmod_config();
+
+        /*! Optionally export the fine-grained task graph (before clustering). */
+        nlohmann::json graph_dump;
+        if (cfg.dump_taskgraph)
+            collect_task_graph_json(task_system, graph_dump);
+
+        /*! Select the clustering strategy from the runtime config (parmodClustering
+            flag, PARMOD_CLUSTERING env var fallback). With parmodImportClustering an
+            external clustering is applied instead of computing one. "default" is the
+            merge-based clustering; "fixed_width_min_height" clusters each level into a
+            fixed number of lanes (= CPU cores) and minimizes the graph height; "none"
+            leaves one flow node per equation. */
+        if (cfg.import_clustering) {
+            import_clustering_json(task_system, cfg.import_clustering);
+        }
+        else if (cfg.clustering == cluster_fixed_width_min_height::name() ||
+                 cfg.clustering == "fixed_width_min_height") {
+            cluster_fixed_width_min_height::apply(task_system);
+        }
+        else if (cfg.clustering == "none") {
+            /*! no clustering. */
+        }
+        else {
+            cluster_merge_common::apply(task_system);
+            cluster_merge_level_for_bins::apply(task_system);
+        }
 
         task_system.levels_valid = false;
         task_system.update_node_levels();
+
+        /*! Optionally export the resulting clustering alongside the task graph. */
+        if (cfg.dump_taskgraph) {
+            collect_clusters_json(task_system, graph_dump);
+            write_json_file(cfg.dump_taskgraph, graph_dump);
+        }
 
         construct_flow_graph();
         clustering_timer.stop_timer();
@@ -206,7 +240,7 @@ class ClusterDynamicScheduler {
         flow_graph_created = true;
     }
 
-    void execute() {
+    void execute() override {
 
         if (!flow_graph_created) {
             schedule();
@@ -220,6 +254,12 @@ class ClusterDynamicScheduler {
         total_evaluations++;
         parallel_evaluations++;
     }
+
+    int    get_total_evaluations() const override { return total_evaluations; }
+    int    get_sequential_evaluations() const override { return sequential_evaluations; }
+    int    get_parallel_evaluations() const override { return parallel_evaluations; }
+    double get_execution_time() override { return execution_timer.get_elapsed_time(); }
+    double get_clustering_time() override { return clustering_timer.get_elapsed_time(); }
 };
 
 }} // namespace openmodelica::parmodelica

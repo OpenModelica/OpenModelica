@@ -35,6 +35,8 @@
 
 #include "gc.h"
 
+#include <cmath>
+
 #include <tbb/parallel_for.h>
 #include <tbb/tick_count.h>
 
@@ -42,6 +44,7 @@
 // #include <sys/syscall.h>
 
 #include "pm_clustering.hpp"
+#include "pm_scheduler_base.hpp"
 
 namespace openmodelica { namespace parmodelica {
 
@@ -101,7 +104,7 @@ template <typename TaskType,
           typename clustetring3 = cluster_none,
           typename clustetring4 = cluster_none,
           typename clustetring5 = cluster_none>
-class StepLevels : boost::noncopyable {
+class StepLevels : public TaskGraphScheduler, boost::noncopyable {
   public:
     typedef TaskSystem_v2<TaskType>                TaskSystemType;
     typedef typename TaskSystemType::GraphType     GraphType;
@@ -227,7 +230,13 @@ class StepLevels : boost::noncopyable {
 
     }
 
-    void execute() {
+    int    get_total_evaluations() const override { return total_evaluations; }
+    int    get_sequential_evaluations() const override { return sequential_evaluations; }
+    int    get_parallel_evaluations() const override { return parallel_evaluations; }
+    double get_execution_time() override { return execution_timer.get_elapsed_time(); }
+    double get_clustering_time() override { return clustering_timer.get_elapsed_time(); }
+
+    void execute() override {
 
         if (this->reschedule_needed())
             return execute_and_schedule();
