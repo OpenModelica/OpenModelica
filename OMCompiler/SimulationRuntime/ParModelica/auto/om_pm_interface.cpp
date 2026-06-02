@@ -30,9 +30,50 @@
 */
 
 #include <iostream>
+#include <algorithm>
+#include <cstring>
+
+#include <tbb/task_arena.h>
+#include <tbb/task_scheduler_observer.h>
+
+#include "gc.h"
 
 #include "om_pm_interface.hpp"
 #include "om_pm_model.hpp"
+
+namespace {
+
+/* The simulation runtime allocates with the Boehm GC, which only scans threads
+   that have registered with it. Unlike the old (patched) TBB fork that spawned
+   its workers via GC_pthread_create, stock oneTBB worker threads are unknown to
+   the GC, so model code allocating on a worker (e.g. simple_array_alloc_copy)
+   corrupts the GC heap and crashes. This global task_scheduler_observer mirrors
+   the C runtime's OpenMP handling (see dassl.c): register every worker thread
+   with the GC as it enters a TBB arena. Threads stay registered for their
+   lifetime (TBB workers are pooled for the whole run), matching the C runtime. */
+class GCThreadRegistrationObserver : public tbb::task_scheduler_observer {
+public:
+    GCThreadRegistrationObserver() : tbb::task_scheduler_observer() {
+        GC_allow_register_threads();
+        observe(true);
+    }
+    void on_scheduler_entry(bool /*is_worker*/) override {
+        if (!GC_thread_is_registered()) {
+            struct GC_stack_base sb;
+            memset(&sb, 0, sizeof(sb));
+            GC_get_stack_base(&sb);
+            GC_register_my_thread(&sb);
+        }
+    }
+};
+
+/* Activate GC registration of TBB worker threads exactly once. */
+void ensure_gc_thread_registration() {
+    static GCThreadRegistrationObserver observer;
+    (void)observer;
+}
+
+} // anonymous namespace
 
 extern "C" {
 
@@ -43,7 +84,19 @@ PMTimer seq_ode_timer;
 
 void* PM_Model_create(const char* model_name, DATA* data, threadData_t* threadData, size_t in_max_num_threads) {
 
-    size_t max_num_threads = in_max_num_threads ? in_max_num_threads : tbb::this_task_arena::max_concurrency();
+    /* When the user does not request a specific thread count (-parmodNumThreads),
+       do NOT default to all hardware threads. These task graphs are fine-grained
+       and often memory-bound, so a large TBB arena oversubscribes the few ready
+       tasks per level and the parallel run ends up slower than serial on
+       many-core machines. Cap the default at a modest value; users can still
+       override upwards explicitly. */
+    const size_t default_thread_cap = 6;
+    size_t max_num_threads = in_max_num_threads
+                                 ? in_max_num_threads
+                                 : std::min((size_t)tbb::this_task_arena::max_concurrency(), default_thread_cap);
+
+    // Make TBB worker threads known to the Boehm GC before any task runs model code.
+    ensure_gc_thread_registration();
 
     OMModel* pm_om_model = new OMModel(model_name, max_num_threads);
     pm_om_model->data = data;

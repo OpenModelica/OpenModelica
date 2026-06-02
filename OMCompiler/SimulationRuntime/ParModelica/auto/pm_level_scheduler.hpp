@@ -36,7 +36,6 @@
 #include <iostream>
 
 #include <tbb/parallel_for.h>
-#include <tbb/task_scheduler_init.h>
 
 #include "pm_task_system.hpp"
 #include "pm_timer.hpp"
@@ -112,7 +111,6 @@ class LevelSchedulerThreadOblivious : boost::noncopyable {
     LevelSchedulerThreadOblivious(TaskSystem<TaskTypeT>& task_system);
 
     TaskSystem<TaskTypeT>&      task_system;
-    tbb::task_scheduler_init    tbb_task_init;
     TBBLevelExecutor<TaskTypeT> level_executor;
 
     double  total_parallel_cost;
@@ -227,7 +225,6 @@ class LevelSchedulerThreadAware : boost::noncopyable {
     LevelSchedulerThreadAware(TaskSystem<TaskTypeT>& task_system);
 
     TaskSystem<TaskTypeT>&                      task_system;
-    tbb::task_scheduler_init                    tbb_task_init;
     TBBConcurrentExecutor<ConcurrentQueuesType> level_executor;
 
     double                      total_parallel_cost;
