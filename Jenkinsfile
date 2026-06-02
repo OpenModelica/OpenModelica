@@ -543,8 +543,6 @@ pipeline {
               common.makeLibsAndCache()
             }
             sh '''
-            expost HOME="$PWD"
-            pip install --upgrade OMPython==3.6.0 # Hack: downgrade OMPython to 3.6
             export OPENMODELICAHOME=$PWD/build
             test ! -d $PWD/build/lib/omlibrary
             cp -a libraries/.openmodelica/libraries $PWD/build/lib/omlibrary
@@ -650,8 +648,6 @@ pipeline {
               common.makeLibsAndCache()
             }
             sh '''
-            expost HOME="$PWD"
-            pip install --upgrade OMPython==3.6.0 # Hack: downgrade OMPython to 3.6
             make -C testsuite/openmodelica/icon-generator test
             '''
           }
