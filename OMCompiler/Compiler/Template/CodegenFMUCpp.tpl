@@ -919,7 +919,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   >>
 end fmuMakefile;
 
-annotation(__OpenModelica_Interface="codegen_cpp");
+annotation(__OpenModelica_Interface="codegen_cpp_ext");
 end CodegenFMUCpp;
 
 // vim: filetype=susan sw=2 sts=2

@@ -2146,5 +2146,5 @@ template numStringvarsHpcom(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemoryOp
       CodegenCppOMSI.numStringvars(modelInfo)
 end numStringvarsHpcom;
 
-annotation(__OpenModelica_Interface="codegen_cpp");
+annotation(__OpenModelica_Interface="codegen_cpp_omsi_ext");
 end CodegenCppHpcomOMSI;
