@@ -79,8 +79,8 @@ protected
   import NFOperator.{MathClassification, SizeClassification};
   import NBVariable.{VariablePointer, VariablePointers, VarData};
 
-  // Old Backend Import (remove once coloring ins ported)
-  import SymbolicJacobian;
+  // Sparsity-pattern graph coloring, shared with the old backend.
+  import Coloring;
 
   // Util imports
   import StringUtil;
@@ -640,8 +640,8 @@ public
       end for;
 
       // call C function (old backend - ToDo: port to new backend!)
-      // colored_cols := SymbolicJacobian.createColoring(cols, rows, sizeRows, sizeCols);
-      colored_cols := SymbolicJacobian.createColoring(rows, cols, sizeCols, sizeRows);
+      // colored_cols := Coloring.createColoring(cols, rows, sizeRows, sizeCols);
+      colored_cols := Coloring.createColoring(rows, cols, sizeCols, sizeRows);
       // get cref based coloring
       cref_colored_cols := arrayCreate(arrayLength(colored_cols), {});
       for i in 1:arrayLength(colored_cols) loop
@@ -649,7 +649,7 @@ public
       end for;
 
       // Row coloring (color partials)
-      colored_rows := SymbolicJacobian.createColoring(cols, rows, sizeRows, sizeCols);
+      colored_rows := Coloring.createColoring(cols, rows, sizeRows, sizeCols);
       cref_colored_rows := arrayCreate(arrayLength(colored_rows), {});
       for i in 1:arrayLength(colored_rows) loop
         cref_colored_rows[i] := list(partials[idx] for idx in colored_rows[i]);

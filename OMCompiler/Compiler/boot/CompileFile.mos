@@ -8,9 +8,10 @@ cd("build/tmp");
 if not checkInterfaceOfPackages(mainClass, {
 // Also update Compiler/.cmake/mm_check_interface.in.mos if you change this file.
   {"parser", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
-  {"backend", "backend_types", "simcode_types", "frontend", "util", "susan", "nf_frontend", "util_datatypes_basic", "parser", "frontend_types", "frontend_dump", "ast_collections", "dump_extra", "frontend_inst", "script_util", "program_util", "", "", ""},
+  {"backend", "backend_types", "simcode_types", "backend_util", "frontend", "util", "susan", "nf_frontend", "util_datatypes_basic", "parser", "frontend_types", "frontend_dump", "ast_collections", "dump_extra", "frontend_inst", "script_util", "program_util", "", ""},
   {"backend_types", "frontend", "util", "frontend_types", "frontend_dump", "ast_collections", "util_datatypes_basic", "parser", "", "", "", "", "", "", "", "", "", "", ""},
   {"simcode_types", "backend_types", "frontend", "util", "frontend_types", "frontend_dump", "ast_collections", "util_datatypes_basic", "parser", "", "", "", "", "", "", "", "", "", ""},
+  {"backend_util", "util", "util_datatypes_basic", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
   {"frontend", "util", "susan", "util_datatypes_basic", "parser", "frontend_types", "frontend_dump", "ast_collections", "frontend_inst", "script_util", "", "", "", "", "", "", "", "", ""},
   {"frontend_types", "util_datatypes_basic", "parser", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""},
   {"frontend_dump", "util", "susan", "util_datatypes_basic", "parser", "frontend_types", "", "", "", "", "", "", "", "", "", "", "", "", ""},

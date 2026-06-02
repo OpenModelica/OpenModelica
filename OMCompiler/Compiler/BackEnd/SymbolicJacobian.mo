@@ -52,6 +52,7 @@ import BackendDAETransform;
 import BackendDAEUtil;
 import BackendDump;
 import BackendEquation;
+import Coloring;
 import BackendVariable;
 import BackendVarTransform;
 import BaseHashSet;
@@ -1332,7 +1333,7 @@ algorithm
           coloring := list({arrayGet(inDepCompRefs, i)} for i in 1:sizeN);
         else
           // get coloring based on sparse pattern
-          coloredArray := createColoring(sparseArray, sparseArrayT, sizeN, sizeM);
+          coloredArray := Coloring.createColoring(sparseArray, sparseArrayT, sizeN, sizeM);
           coloring := list(list(arrayGet(inDepCompRefs, i) for i in lst) for lst in coloredArray);
         end if;
         if debug then execStat("generateSparsePattern -> coloring done "); end if;
@@ -1354,68 +1355,6 @@ algorithm
       then fail();
   end matchcontinue;
 end generateSparsePattern;
-
-public function createColoring
-  input array<list<Integer>> sparseArray;
-  input array<list<Integer>> sparseArrayT;
-  input Integer sizeVars;
-  input Integer sizeVarswithDep;
-  output array<list<Integer>> coloredArray;
-protected
-  constant Boolean debug = false;
-  list<Integer> nodesList;
-  array<Integer> colored;
-  array<Integer> forbiddenColor;
-  list<tuple<Integer, list<Integer>>> sparseGraph, sparseGraphT;
-  array<tuple<Integer, list<Integer>>> arraysparseGraph;
-  Integer maxColor;
-algorithm
-  try
-    // build up a bi-partied graph of pattern
-    if Flags.isSet(Flags.DUMP_SPARSE_VERBOSE) then
-      print("analytical Jacobians[SPARSE] -> build sparse graph.\n");
-    end if;
-    nodesList := List.intRange2(1,sizeVarswithDep);
-    sparseGraph := Graph.buildGraph(nodesList,createBipartiteGraph,sparseArray);
-    sparseGraphT := Graph.buildGraph(List.intRange2(1,sizeVars),createBipartiteGraph,sparseArrayT);
-
-    // debug dump
-    if Flags.isSet(Flags.DUMP_SPARSE_VERBOSE) then
-      print("sparse graph: \n");
-      Graph.printGraphInt(sparseGraph);
-      print("transposed sparse graph: \n");
-      Graph.printGraphInt(sparseGraphT);
-      print("analytical Jacobians[SPARSE] -> builded graph for coloring.\n");
-    end if;
-
-    // color sparse bipartite graph
-    forbiddenColor := arrayCreate(sizeVars,0);
-    colored := arrayCreate(sizeVars,0);
-    arraysparseGraph := listArray(sparseGraph);
-    if debug then execStat("generateSparsePattern -> coloring start "); end if;
-    if (sizeVars>0) then
-      Graph.partialDistance2colorInt(sparseGraphT, forbiddenColor, nodesList, arraysparseGraph, colored);
-    end if;
-    if debug then execStat("generateSparsePattern -> coloring end "); end if;
-    GCExt.free(forbiddenColor);
-    GCExt.free(arraysparseGraph);
-    // get max color used
-    maxColor := Array.fold(colored, intMax, 0);
-
-    // map index of that array into colors
-    coloredArray := arrayCreate(maxColor, {});
-    mapIndexColors(colored, sizeVars, coloredArray);
-    GCExt.free(colored);
-
-    if Flags.isSet(Flags.DUMP_SPARSE_VERBOSE) then
-      print("Print Coloring Cols: \n");
-      BackendDump.dumpSparsePattern(arrayList(coloredArray));
-    end if;
-  else
-    Error.addInternalError("function createColoring failed", sourceInfo());
-    fail();
-  end try;
-end createColoring;
 
 protected function dumpSparsePatternStatistics
   input Integer nonZeroElements;
@@ -1655,36 +1594,6 @@ algorithm
     MetaModelica.Dangerous.arrayUpdateNoBoundsChecking(outSparsePattern, i, tmpTuple);
   end for;
 end transposeSparsePatternTuple;
-
-protected function mapIndexColors
-  input array<Integer> inColors;
-  input Integer inMaxIndex;
-  input array<list<Integer>> inArray;
-protected
-  Integer index;
-algorithm
-  try
-    for i in 1:inMaxIndex loop
-      index := arrayGet(inColors, i);
-      arrayUpdate(inArray, index, i::arrayGet(inArray, index));
-    end for;
-  else
-    Error.addInternalError("function mapIndexColors failed", sourceInfo());
-    fail();
-  end try;
-end mapIndexColors;
-
-protected function createBipartiteGraph
-  input Integer inNode;
-  input array<list<Integer>> inSparsePattern;
-  output list<Integer> outEdges = {};
-algorithm
-  if inNode >= 1 and inNode <= arrayLength(inSparsePattern)  then
-    outEdges := arrayGet(inSparsePattern,inNode);
-  else
-    outEdges := {};
-  end if;
-end createBipartiteGraph;
 
 protected function createInDepVars
 "This function creates variables for the dependecy
