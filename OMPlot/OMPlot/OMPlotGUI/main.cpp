@@ -40,12 +40,9 @@
 #include <QtGui/QApplication>
 #endif
 
-
 #include "PlotMainWindow.h"
 #include "PlotApplication.h"
 #include "PlotWindowContainer.h"
-
-#include "util/omc_error.h"
 
 #include <QMessageBox>
 #include <QDir>

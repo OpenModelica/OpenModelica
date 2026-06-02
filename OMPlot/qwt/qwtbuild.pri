@@ -88,7 +88,7 @@ linux {
         # CONFIG           += separate_debug_info
 
         sanitize_undefined {
-        
+
             GCC_VERSION = $$system("$$QMAKE_CXX -dumpversion")
             equals(GCC_VERSION,4) || contains(GCC_VERSION, 4.* ) {
 
@@ -113,11 +113,11 @@ linux {
             QMAKE_CXXFLAGS   *= -Wlogical-op
             QMAKE_CXXFLAGS   *= -Wredundant-decls
             QMAKE_CXXFLAGS   *= -Wformat
-            QMAKE_CXXFLAGS   *= -Wshadow 
+            QMAKE_CXXFLAGS   *= -Wshadow
             QMAKE_CXXFLAGS   *= -Woverloaded-virtual
 
             # checks qwt code does not pass, but should be able to
-            # QMAKE_CXXFLAGS   *= -Wconversion 
+            # QMAKE_CXXFLAGS   *= -Wconversion
 
             # checks qwt code does not pass
 
@@ -125,7 +125,7 @@ linux {
             # QMAKE_CXXFLAGS   *= -Wmissing-declarations
             # QMAKE_CXXFLAGS   *= -Winline
             # QMAKE_CXXFLAGS   *= -Wdouble-promotion
-            # QMAKE_CXXFLAGS   *= -Wfloat-equal 
+            # QMAKE_CXXFLAGS   *= -Wfloat-equal
             # QMAKE_CXXFLAGS   *= -Wpadded
             # QMAKE_CXXFLAGS   *= -Waggregate-return
             # QMAKE_CXXFLAGS   *= -Wzero-as-null-pointer-constant
@@ -173,7 +173,7 @@ linux {
 }
 
 qtsystemincludes {
-    
+
     # mark Qt directories as a system directories - usually to get rid
     # of compiler warnings in Qt headers of old Qt versions
     # when being built with modern compilers
@@ -212,5 +212,19 @@ if ( !isEmpty( LOCAL_PRI ) ) {
         # them all on the command line
 
         include( $${LOCAL_PRI} )
+    }
+}
+
+unix {
+
+    exists( $${QMAKE_LIBDIR_QT}/libomqwt.* ) {
+
+        # On some Linux distributions the Qwt libraries are installed
+        # in the same directory as the Qt libraries. Unfortunately
+        # qmake always adds QMAKE_LIBDIR_QT at the beginning of the
+        # linker path, so that the installed libraries will be
+        # used instead of the local ones.
+
+        error( "local build will conflict with $${QMAKE_LIBDIR_QT}/libqwt.*" )
     }
 }

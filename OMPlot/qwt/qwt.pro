@@ -20,24 +20,25 @@ TEMPLATE = subdirs
 CONFIG   += ordered
 
 SUBDIRS = \
-    src \
-    classincludes \
-    doc
+#    src \
+#    classincludes \
+#    doc
+    src
 
 contains(QWT_CONFIG, QwtDesigner ) {
-    SUBDIRS += designer 
+    SUBDIRS += designer
 }
 
 contains(QWT_CONFIG, QwtExamples ) {
-    SUBDIRS += examples 
+    SUBDIRS += examples
 }
 
 contains(QWT_CONFIG, QwtPlayground ) {
-    SUBDIRS += playground 
+    SUBDIRS += playground
 }
- 
+
 contains(QWT_CONFIG, QwtTests ) {
-    SUBDIRS += tests 
+    SUBDIRS += tests
 }
 
 qwtspec.files  = qwtconfig.pri qwtfunctions.pri qwt.prf
@@ -45,3 +46,15 @@ qwtspec.path  = $${QWT_INSTALL_FEATURES}
 
 INSTALLS += qwtspec
 
+win32 {
+  _cxx = $$(CXX)
+  contains(_cxx, clang++) {
+    message("Found clang++ on windows in $CXX, removing unknown flags: -fno-keep-inline-dllexport -mthreads")
+    QMAKE_CFLAGS -= -fno-keep-inline-dllexport
+    QMAKE_CXXFLAGS -= -fno-keep-inline-dllexport
+    QMAKE_CXXFLAGS_EXCEPTIONS_ON -= -mthreads
+  } else {
+    # -Wno-clobbered is not recognized by clang
+    QMAKE_CXXFLAGS += -Wno-clobbered
+  }
+}

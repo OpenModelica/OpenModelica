@@ -1,3 +1,4 @@
-http://svn.code.sf.net/p/qwt/code/trunk/qwt@3219 qwt
-Make qwt/qwtbuild.pri not be silent
-rm -r qwt/doc qwt/examples qwt/playground qwt/designer qwt/textengines
+git subtree add --squash --prefix OMPlot/qwt https://git.code.sf.net/p/qwt/git develop
+git rm -r qwt/doc qwt/classincludes qwt/examples qwt/playground qwt/designer qwt/tests
+Fix hard coded install path in qwt/qwtconfig.pri
+Change the lib name from qwt to omqwt in qwt/qwt.prf and qwt/src/src.pro

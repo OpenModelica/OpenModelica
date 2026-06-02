@@ -17,7 +17,7 @@ include( $${QWT_ROOT}/qwtfunctions.pri )
 QWT_OUT_ROOT = $${OUT_PWD}/..
 
 TEMPLATE          = lib
-TARGET            = $$qwtLibraryTarget(qwt)
+TARGET            = $$qwtLibraryTarget(omqwt)
 
 DESTDIR           = $${QWT_OUT_ROOT}/lib
 
@@ -28,7 +28,7 @@ contains(QWT_CONFIG, QwtDll) {
 
     unix:!macx:!android {
         !isEmpty( QMAKE_LFLAGS_SONAME ) {
-    
+
             # we increase the SONAME for every minor number
 
             QWT_SONAME=libqwt.so.$${VER_MAJ}.$${VER_MIN}
@@ -39,7 +39,7 @@ contains(QWT_CONFIG, QwtDll) {
 }
 else {
     CONFIG += staticlib
-} 
+}
 
 contains(QWT_CONFIG, QwtFramework) {
 
@@ -51,7 +51,7 @@ include ( $${PWD}/src.pri )
 # Install directives
 
 target.path    = $${QWT_INSTALL_LIBS}
-INSTALLS       = target 
+INSTALLS       = target
 
 CONFIG(lib_bundle) {
 
@@ -102,7 +102,7 @@ contains(QWT_CONFIG, QwtPkgConfig) {
     else {
 
         # there is no QMAKE_PKGCONFIG_FILE for Qt4
-        QMAKE_PKGCONFIG_REQUIRES = QtGui 
+        QMAKE_PKGCONFIG_REQUIRES = QtGui
 
         contains(QWT_CONFIG, QwtSvg) {
             QMAKE_PKGCONFIG_REQUIRES += QtSvg
@@ -116,4 +116,17 @@ contains(QWT_CONFIG, QwtPkgConfig) {
     }
 
     QMAKE_DISTCLEAN += $${DESTDIR}/libqwt.prl
+}
+
+win32 {
+  _cxx = $$(CXX)
+  contains(_cxx, clang++) {
+    message("Found clang++ on windows in $CXX, removing unknown flags: -fno-keep-inline-dllexport -mthreads")
+    QMAKE_CFLAGS -= -fno-keep-inline-dllexport
+    QMAKE_CXXFLAGS -= -fno-keep-inline-dllexport
+    QMAKE_CXXFLAGS_EXCEPTIONS_ON -= -mthreads
+  } else {
+    # -Wno-clobbered is not recognized by clang
+    QMAKE_CXXFLAGS += -Wno-clobbered
+  }
 }
