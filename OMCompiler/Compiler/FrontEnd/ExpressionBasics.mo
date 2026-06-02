@@ -1035,10 +1035,7 @@ algorithm
 end hashOp;
 
 protected function getSubscriptExp
-  "Returns the subscript expression, or fails on DAE.WHOLEDIM.
-   Private copy for hashExp so the cref/exp hashing cluster can live in
-   frontend_dump (ExpressionBasics/ComponentReferenceBasics) without pulling in
-   the full frontend Expression module. Mirrors Expression.getSubscriptExp."
+  "Returns the subscript expression, or fails on DAE.WHOLEDIM."
   input DAE.Subscript inSubscript;
   output DAE.Exp outExp;
 algorithm

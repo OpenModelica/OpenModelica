@@ -64,6 +64,7 @@ protected import FCore;
 protected import ElementSource;
 protected import ErrorExt;
 protected import Expression;
+protected import ExpressionBasics;
 protected import Dump;
 protected import ExpressionDump;
 protected import Flags;
@@ -3133,7 +3134,7 @@ algorithm
 
     // general case, this is O(n) but has a small overhead
     else algorithm
-      coeff_map := UnorderedMap.new<Real>(Expression.hashExp, ExpressionBasics.expEqual, listLength(inTplExpRealLst));
+      coeff_map := UnorderedMap.new<Real>(ExpressionBasics.hashExp, ExpressionBasics.expEqual, listLength(inTplExpRealLst));
       for tpl in inTplExpRealLst loop
         (exp1, coeff1) := tpl;
         // set the coefficient of exp1 to coeff1, add the previous coefficient if exp1 is already in the map

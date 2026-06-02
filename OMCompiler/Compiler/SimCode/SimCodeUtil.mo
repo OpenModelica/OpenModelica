@@ -174,13 +174,13 @@ algorithm
   hash := match eq
     local
       DAE.Statement stmt;
-    case SimCode.SES_RESIDUAL() then Expression.hashExp(eq.exp);
-    case SimCode.SES_FOR_RESIDUAL() then Expression.hashExp(eq.exp); // also hash the indices?
-    case SimCode.SES_GENERIC_RESIDUAL() then Expression.hashExp(eq.exp); // also hash the indices?
-    case SimCode.SES_SIMPLE_ASSIGN() then ComponentReferenceBasics.hashComponentRef(eq.cref)+7*Expression.hashExp(eq.exp);
-    case SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS() then ComponentReferenceBasics.hashComponentRef(eq.cref)+7*Expression.hashExp(eq.exp);
-    case SimCode.SES_ARRAY_CALL_ASSIGN() then Expression.hashExp(eq.lhs)+7*Expression.hashExp(eq.exp);
-    case SimCode.SES_ALGORITHM(statements={stmt as DAE.STMT_ASSERT()}) then Expression.hashExp(stmt.cond)+7*Expression.hashExp(stmt.msg)+49*Expression.hashExp(stmt.level);
+    case SimCode.SES_RESIDUAL() then ExpressionBasics.hashExp(eq.exp);
+    case SimCode.SES_FOR_RESIDUAL() then ExpressionBasics.hashExp(eq.exp); // also hash the indices?
+    case SimCode.SES_GENERIC_RESIDUAL() then ExpressionBasics.hashExp(eq.exp); // also hash the indices?
+    case SimCode.SES_SIMPLE_ASSIGN() then ComponentReferenceBasics.hashComponentRef(eq.cref)+7*ExpressionBasics.hashExp(eq.exp);
+    case SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS() then ComponentReferenceBasics.hashComponentRef(eq.cref)+7*ExpressionBasics.hashExp(eq.exp);
+    case SimCode.SES_ARRAY_CALL_ASSIGN() then ExpressionBasics.hashExp(eq.lhs)+7*ExpressionBasics.hashExp(eq.exp);
+    case SimCode.SES_ALGORITHM(statements={stmt as DAE.STMT_ASSERT()}) then ExpressionBasics.hashExp(stmt.cond)+7*ExpressionBasics.hashExp(stmt.msg)+49*ExpressionBasics.hashExp(stmt.level);
     // Whatever; we're not caching these values anyway
     else valueConstructor(eq);
   end match;

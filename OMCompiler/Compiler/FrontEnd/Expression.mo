@@ -10749,18 +10749,6 @@ algorithm
   end match;
 end promoteExp3;
 
-public function hashExp "help function to hashExpMod"
-  input DAE.Exp e;
-  output Integer hash;
-algorithm
-  // The hashing cluster (hashExp and its helpers, plus ComponentReference.hashComponentRef)
-  // was moved to ExpressionBasics/ComponentReferenceBasics (frontend_dump) so that
-  // the cref hashtables and other low-level types-crates can hash crefs/expressions
-  // without depending on the full frontend Expression/ComponentReference modules.
-  // This is kept as a thin forwarder so existing Expression.hashExp callers are unaffected.
-  hash := ExpressionBasics.hashExp(e);
-end hashExp;
-
 public function matrixToArray
   input DAE.Exp inMatrix;
   output DAE.Exp outArray;
