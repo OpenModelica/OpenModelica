@@ -31,7 +31,7 @@ contains(QWT_CONFIG, QwtDll) {
 
             # we increase the SONAME for every minor number
 
-            QWT_SONAME=libqwt.so.$${VER_MAJ}.$${VER_MIN}
+            QWT_SONAME=libomqwt.so.$${VER_MAJ}.$${VER_MIN}
             QMAKE_LFLAGS *= $${QMAKE_LFLAGS_SONAME}$${QWT_SONAME}
             QMAKE_LFLAGS_SONAME=
         }
