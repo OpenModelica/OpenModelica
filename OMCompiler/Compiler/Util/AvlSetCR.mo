@@ -47,5 +47,5 @@ encapsulated package AvlSetCR
   algorithm
     outResult := ComponentReferenceBasics.crefCompareGenericNotAlphabetic(inKey1, inKey2);
   end keyCompare;
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_dump");
 end AvlSetCR;

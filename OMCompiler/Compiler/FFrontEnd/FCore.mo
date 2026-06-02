@@ -53,7 +53,6 @@ import Mutable;
 import SCode;
 
 protected
-import DAEUtil;
 import Config;
 
 // ************************ FNode structures ***************************
@@ -620,7 +619,7 @@ algorithm
 
     case CACHE(_,ef,_,_)
       algorithm
-        Mutable.update(ef,DAEUtil.addDaeFunction(funcs, Mutable.access(ef)));
+        Mutable.update(ef,AvlTreePathFunction.addDaeFunction(funcs, Mutable.access(ef)));
       then inCache;
     else inCache;
 
@@ -639,7 +638,7 @@ algorithm
 
     case CACHE(_,ef,_,_)
       algorithm
-        Mutable.update(ef,DAEUtil.addDaeExtFunction(funcs, Mutable.access(ef)));
+        Mutable.update(ef,AvlTreePathFunction.addDaeExtFunction(funcs, Mutable.access(ef)));
       then inCache;
     else inCache;
 
@@ -733,5 +732,5 @@ algorithm
   end if;
 end getRecordConstructorPath;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_dump");
 end FCore;

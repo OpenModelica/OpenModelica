@@ -5663,9 +5663,10 @@ public function addDaeFunction "add functions present in the element list to the
   input list<DAE.Function> functions;
   input output AvlTreePathFunction.Tree functionTree;
 algorithm
-  for f in functions loop
-    functionTree := AvlTreePathFunction.add(functionTree, functionName(f), SOME(f));
-  end for;
+  // Implementation moved to AvlTreePathFunction (frontend_dump) so FCore can
+  // populate the function cache without depending on DAEUtil; kept as a
+  // forwarder so existing DAEUtil.addDaeFunction callers are unaffected.
+  functionTree := AvlTreePathFunction.addDaeFunction(functions, functionTree);
 end addDaeFunction;
 
 public function addFunctionDefinition
@@ -5693,27 +5694,8 @@ public function addDaeExtFunction "
   input AvlTreePathFunction.Tree itree;
   output AvlTreePathFunction.Tree outTree;
 algorithm
-  outTree := matchcontinue(ifuncs,itree)
-    local
-      DAE.Function func;
-      list<DAE.Function> funcs;
-      AvlTreePathFunction.Tree tree;
-
-    case ({},tree)
-      algorithm
-        //showCacheFuncs(tree);
-      then tree;
-
-    case (func::funcs,tree)
-      algorithm
-        true := isExtFunction(func);
-        // print("Add ext to cache: " + AbsynUtil.pathString(functionName(func)) + "\n");
-        tree := AvlTreePathFunction.add(tree,functionName(func),SOME(func));
-      then addDaeExtFunction(funcs,tree);
-
-    case (_::funcs,tree) then addDaeExtFunction(funcs,tree);
-
-  end matchcontinue;
+  // Implementation moved to AvlTreePathFunction (frontend_dump); see addDaeFunction.
+  outTree := AvlTreePathFunction.addDaeExtFunction(ifuncs, itree);
 end addDaeExtFunction;
 
 public function getFunctionsInfo

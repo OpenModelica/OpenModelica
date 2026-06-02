@@ -47,7 +47,6 @@ import BackendDAE.ZeroCrossingSet.ZERO_CROSSING_SET;
 
 protected
 import DoubleEnded;
-import Expression;
 import ExpressionBasics;
 
 public
