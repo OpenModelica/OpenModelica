@@ -43,5 +43,5 @@ encapsulated package ZeroCrossings
 
 type Tree = Integer;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_types");
 end ZeroCrossings;
