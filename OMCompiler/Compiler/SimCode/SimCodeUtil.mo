@@ -5064,7 +5064,7 @@ algorithm
         seedVars := List.sort(seedVars, compareVarIndexGt);
 
         if Flags.isSet(Flags.JAC_DUMP2) then
-          print("diffCrefs: " + ComponentReference.printComponentRefListStr(diffCompRefs) + "\n");
+          print("diffCrefs: " + ComponentReferenceBasics.printComponentRefListStr(diffCompRefs) + "\n");
           print("\n---+++  seedVars +++---\n");
           print(Tpl.tplString(SimCodeDump.dumpVarsShort, seedVars));
         end if;
@@ -5073,7 +5073,7 @@ algorithm
         indexVars := List.sort(indexVars, compareVarIndexGt);
 
         if Flags.isSet(Flags.JAC_DUMP2) then
-          print("diffedCrefs: " + ComponentReference.printComponentRefListStr(diffedCompRefs) + "\n");
+          print("diffedCrefs: " + ComponentReferenceBasics.printComponentRefListStr(diffedCompRefs) + "\n");
           print("\n---+++  indexVars +++---\n");
           print(Tpl.tplString(SimCodeDump.dumpVarsShort, indexVars));
           print("\n---+++  sparse pattern vars +++---\n");
@@ -5157,7 +5157,7 @@ algorithm
         seedVars := List.sort(seedVars, compareVarIndexGt);
 
         if Flags.isSet(Flags.JAC_DUMP2) then
-          print("diffCrefs: " + ComponentReference.printComponentRefListStr(diffCompRefs) + "\n");
+          print("diffCrefs: " + ComponentReferenceBasics.printComponentRefListStr(diffCompRefs) + "\n");
           print("\n---+++  seedVars +++---\n");
           print(Tpl.tplString(SimCodeDump.dumpVarsShort, seedVars));
         end if;
@@ -5166,7 +5166,7 @@ algorithm
         indexVars := List.sort(indexVars, compareVarIndexGt);
 
         if Flags.isSet(Flags.JAC_DUMP2) then
-          print("diffedCrefs: " + ComponentReference.printComponentRefListStr(diffedCompRefs) + "\n");
+          print("diffedCrefs: " + ComponentReferenceBasics.printComponentRefListStr(diffedCompRefs) + "\n");
           print("\n---+++  indexVars +++---\n");
           print(Tpl.tplString(SimCodeDump.dumpVarsShort, indexVars));
 
@@ -6436,7 +6436,7 @@ algorithm
 
       s1 := ExpressionBasics.printExpStr(e1);
       s2 := ExpressionBasics.printExpStr(e2);
-      s3 := ComponentReference.printComponentRefListStr(crefs);
+      s3 := ComponentReferenceBasics.printComponentRefListStr(crefs);
       s := stringAppendList({"No support of solving not real variables with a non-linear solver. Equation:\n", s1, " = " , s2, " solve for ", s3 });
       Error.addInternalError(s, sourceInfo());
     then fail();
@@ -6451,7 +6451,7 @@ algorithm
 
       s1 := ExpressionBasics.printExpStr(e1);
       s2 := ExpressionBasics.printExpStr(e2);
-      s3 := ComponentReference.printComponentRefListStr(crefs);
+      s3 := ComponentReferenceBasics.printComponentRefListStr(crefs);
       s := stringAppendList({"complex equations currently only supported on form v = functioncall(...). Equation: ", s1, " = " , s2, " solve for ", s3 });
       Error.addInternalError(s, sourceInfo());
     then fail();
@@ -6652,7 +6652,7 @@ algorithm
     case (e1 as DAE.TUPLE(expl), e2 as DAE.CALL())
       algorithm
         // debug
-        // print("Tuple crefs Strings: "+ ComponentReference.printComponentRefListStr(crefs) + "\n");
+        // print("Tuple crefs Strings: "+ ComponentReferenceBasics.printComponentRefListStr(crefs) + "\n");
         // print(" = ExpList : " + ExpressionDump.printExpListStr(expl) + "\n");
         tp := Expression.typeof(e1);
 
@@ -6672,7 +6672,7 @@ algorithm
     case (DAE.TUPLE(expl), DAE.TUPLE(expl1))
       algorithm
         // debug
-        // print("Tuple crefs Strings: "+ ComponentReference.printComponentRefListStr(crefs) + "\n");
+        // print("Tuple crefs Strings: "+ ComponentReferenceBasics.printComponentRefListStr(crefs) + "\n");
         // print(" = ExpList : " + ExpressionDump.printExpListStr(expl1) + "\n");
 
         //check that all crefs are on lhs
@@ -6692,7 +6692,7 @@ algorithm
     case (DAE.TUPLE(expl1), DAE.TUPLE(expl))
       algorithm
         // debug
-        // print("Tuple crefs Strings: "+ ComponentReference.printComponentRefListStr(crefs) + "\n");
+        // print("Tuple crefs Strings: "+ ComponentReferenceBasics.printComponentRefListStr(crefs) + "\n");
         // print(" = ExpList : " + ExpressionDump.printExpListStr(expl1) + "\n");
 
         //check that all crefs are on rhs
@@ -6715,7 +6715,7 @@ algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         s1 := ExpressionBasics.printExpStr(e1);
         s2 := ExpressionBasics.printExpStr(e2);
-        s3 := ComponentReference.printComponentRefListStr(crefs);
+        s3 := ComponentReferenceBasics.printComponentRefListStr(crefs);
         s := stringAppendList({"function createSingleComplexEqnCode2 failed for: ", s1, " = " , s2, " solve for ", s3 });
         Debug.traceln(s);
     then
@@ -6997,7 +6997,7 @@ algorithm
       solvedVars := List.map(vars, BackendVariable.varCref);
       false := CheckModel.isCrefListAlgorithmOutput(solvedVars, alg, source, crefExpand);
 
-      crefsStr := ComponentReference.printComponentRefListStr(solvedVars);
+      crefsStr := ComponentReferenceBasics.printComponentRefListStr(solvedVars);
       algStr :=  DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg, source)});
       Error.addInternalError("Inverse Algorithm needs to be solved for " + crefsStr + " in\n" + algStr + "Discrete variables are not supported yet.", sourceInfo());
     then fail();
@@ -13980,7 +13980,7 @@ algorithm
     ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
 
   if debug then
-    print ("\n FmiInitialUnknownsDependencyList :" + ComponentReference.printComponentRefListStr(initialUnknownCrefs));
+    print ("\n FmiInitialUnknownsDependencyList :" + ComponentReferenceBasics.printComponentRefListStr(initialUnknownCrefs));
   end if;
 
   //prepare initialization DAE
@@ -14072,8 +14072,8 @@ algorithm
     end for;
   end for;
 
-  //print("\nUnknownVars :" + ComponentReference.printComponentRefListStr(depCrefs));
-  //print("\nknownVars :" + ComponentReference.printComponentRefListStr(indepCrefs));
+  //print("\nUnknownVars :" + ComponentReferenceBasics.printComponentRefListStr(depCrefs));
+  //print("\nknownVars :" + ComponentReferenceBasics.printComponentRefListStr(indepCrefs));
 
   // generate Partial derivative for initDAE here, as we have the list of all depVars and inDepVars
   if not Flags.isSet(Flags.FMI20_DEPENDENCIES) and not stringEq(Config.simCodeTarget(), "Cpp") then
@@ -14217,7 +14217,7 @@ algorithm
   (_, rowspT, _, _) := sparsePattern;
   for i in rowspT loop
     (var, dependencylist) := i;
-    print(ComponentReferenceBasics.printComponentRefStr(var) + "=====>" + ComponentReference.printComponentRefListStr(dependencylist) + "\n");
+    print(ComponentReferenceBasics.printComponentRefStr(var) + "=====>" + ComponentReferenceBasics.printComponentRefListStr(dependencylist) + "\n");
   end for;
 end dumpFmiInitialUnknownsDependencies;
 

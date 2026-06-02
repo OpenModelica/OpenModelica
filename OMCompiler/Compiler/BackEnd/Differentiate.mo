@@ -63,6 +63,7 @@ protected import BackendUtil;
 protected import BackendVariable;
 protected import ClassInf;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import DAEDump;
 protected import DAEDumpTpl;
 protected import Debug;
@@ -1315,7 +1316,7 @@ algorithm
   outCref := ComponentReferenceBasics.crefStripLastSubs(inCref);
   outCref := ComponentReference.crefSetLastType(outCref, DAE.T_UNKNOWN_DEFAULT);
   outCref := ComponentReference.joinCrefs(outCref, ComponentReferenceBasics.makeCrefIdent("Seed" + inMatrixName, DAE.T_UNKNOWN_DEFAULT, {}));
-  if debug then print("after join: " + ComponentReference.printComponentRefListStr(ComponentReference.expandCref(outCref, true)) + "\n"); end if;
+  if debug then print("after join: " + ComponentReferenceBasics.printComponentRefListStr(ComponentReference.expandCref(outCref, true)) + "\n"); end if;
   outCref := ComponentReference.crefSetLastSubs(outCref, subs);
   outCref := ComponentReference.crefSetLastType(outCref, ComponentReference.crefLastType(inCref));
   if debug then print("outCref: " + ComponentReferenceBasics.printComponentRefStr(outCref) +"\n"); end if;
@@ -3296,7 +3297,7 @@ algorithm
      BackendDump.printVarList(inDiffData.controlVars);
    end if;
    if not listEmpty(inDiffData.diffCrefs) then
-     print("diffCrefs:\n" + ComponentReference.printComponentRefListStr(inDiffData.diffCrefs) + "\n");
+     print("diffCrefs:\n" + ComponentReferenceBasics.printComponentRefListStr(inDiffData.diffCrefs) + "\n");
    end if;
 end dumpInputData;
 

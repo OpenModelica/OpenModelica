@@ -2173,16 +2173,6 @@ algorithm
   end matchcontinue;
 end printComponentRef2;
 
-public function printComponentRefListStr
-  input list<DAE.ComponentRef> crs;
-  output String res;
-algorithm
-  // Moved to ComponentReferenceBasics (frontend_dump) so the cref hashtables can
-  // use it without depending on the full frontend ComponentReference module.
-  // Kept as a thin forwarder so existing callers are unaffected.
-  res := ComponentReferenceBasics.printComponentRefListStr(crs);
-end printComponentRefListStr;
-
 public function printComponentRefList
   input list<DAE.ComponentRef> crs;
 protected
