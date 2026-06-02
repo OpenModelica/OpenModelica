@@ -77,7 +77,6 @@ protected import Expression;
 protected import ExpressionSimplify;
 protected import Flags;
 protected import List;
-protected import Patternm;
 protected import Print;
 protected import Util;
 protected import System;
@@ -3715,9 +3714,9 @@ algorithm
     case (DAE.MATCHEXPRESSION(matchTy,inputs,aliases,localDecls,cases,et), _, _)
       algorithm
         true := Config.acceptMetaModelicaGrammar();
-        elist := Patternm.resultExps(cases);
+        elist := resultExps(cases);
         (elist_1,_) := matchTypeList(elist, actual, expected, printFailtrace);
-        cases:=Patternm.fixCaseReturnTypes2(cases,elist_1,Absyn.dummyInfo);
+        cases:=fixCaseReturnTypes2(cases,elist_1,Absyn.dummyInfo);
         et:=simplifyType(expected);
       then
         (DAE.MATCHEXPRESSION(matchTy,inputs,aliases,localDecls,cases,et),expected);
@@ -7701,6 +7700,65 @@ algorithm
     else ty;
   end match;
 end getBasicType;
+
+public function resultExps
+  "Collects the result expressions of a list of match-expression cases.
+   Moved here from Patternm so Types does not depend on the instantiation cluster."
+  input list<DAE.MatchCase> inCases;
+  output list<DAE.Exp> exps;
+algorithm
+  exps := match inCases
+    local
+      DAE.Exp exp; list<DAE.MatchCase> cases;
+    case {} then {};
+    case DAE.CASE(result=SOME(exp))::cases
+      algorithm
+        exps := resultExps(cases);
+      then exp::exps;
+    case _::cases then resultExps(cases);
+  end match;
+end resultExps;
+
+public function fixCaseReturnTypes2
+  "Replaces the result expressions of a list of match-expression cases.
+   Moved here from Patternm (see resultExps)."
+  input list<DAE.MatchCase> inCases;
+  input list<DAE.Exp> inExps;
+  input SourceInfo inInfo;
+  output list<DAE.MatchCase> outCases;
+algorithm
+  outCases := matchcontinue (inCases,inExps,inInfo)
+    local
+      list<DAE.Pattern> patterns;
+      list<DAE.Element> decls;
+      list<DAE.Statement> body;
+      Option<DAE.Exp> patternGuard;
+      DAE.Exp exp;
+      DAE.MatchCase case_;
+      Integer jump;
+      SourceInfo resultInfo,info2;
+      list<DAE.MatchCase> cases;
+      list<DAE.Exp> exps;
+      SourceInfo info;
+
+    case ({},{},_) then {};
+
+    case (DAE.CASE(patterns,patternGuard,decls,body,SOME(_),resultInfo,jump,info2)::cases,exp::exps,info)
+      algorithm
+        cases := fixCaseReturnTypes2(cases,exps,info);
+      then DAE.CASE(patterns,patternGuard,decls,body,SOME(exp),resultInfo,jump,info2)::cases;
+
+    case ((case_ as DAE.CASE(result=NONE()))::cases,exps,info)
+      algorithm
+        cases := fixCaseReturnTypes2(cases,exps,info);
+      then case_::cases;
+
+    else
+      algorithm
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {"Types.fixCaseReturnTypes2 failed"}, inInfo);
+      then fail();
+  end matchcontinue;
+end fixCaseReturnTypes2;
 
 annotation(__OpenModelica_Interface="frontend");
 end Types;

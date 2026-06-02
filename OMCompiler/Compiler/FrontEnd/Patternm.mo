@@ -2312,7 +2312,7 @@ algorithm
         ty := Types.makeRegularTupleFromMetaTupleOnTrue(Types.allTuple(tys),ty);
         ty := Types.getUniontypeIfMetarecordReplaceAllSubtypes(ty);
         (exps,_) := Types.matchTypes(exps, tys, ty, true);
-        cases := fixCaseReturnTypes2(cases,exps,info);
+        cases := Types.fixCaseReturnTypes2(cases,exps,info);
       then (cases,ty);
 
     // 2 different cases, one boxed and one unboxed to handle everything
@@ -2324,7 +2324,7 @@ algorithm
         ty := Types.makeRegularTupleFromMetaTupleOnTrue(Types.allTuple(tys),ty);
         ty := Types.getUniontypeIfMetarecordReplaceAllSubtypes(ty);
         (exps,_) := Types.matchTypes(exps, tys, ty, true);
-        cases := fixCaseReturnTypes2(cases,exps,info);
+        cases := Types.fixCaseReturnTypes2(cases,exps,info);
       then (cases,ty);
 
     else
@@ -2336,45 +2336,6 @@ algorithm
 
   end matchcontinue;
 end fixCaseReturnTypes;
-
-public function fixCaseReturnTypes2
-  input list<DAE.MatchCase> inCases;
-  input list<DAE.Exp> inExps;
-  input SourceInfo inInfo;
-  output list<DAE.MatchCase> outCases;
-algorithm
-  outCases := matchcontinue (inCases,inExps,inInfo)
-    local
-      list<DAE.Pattern> patterns;
-      list<DAE.Element> decls;
-      list<DAE.Statement> body;
-      Option<DAE.Exp> patternGuard;
-      DAE.Exp exp;
-      DAE.MatchCase case_;
-      Integer jump;
-      SourceInfo resultInfo,info2;
-      list<DAE.MatchCase> cases;
-      list<DAE.Exp> exps;
-      SourceInfo info;
-
-    case ({},{},_) then {};
-
-    case (DAE.CASE(patterns,patternGuard,decls,body,SOME(_),resultInfo,jump,info2)::cases,exp::exps,info)
-      algorithm
-        cases := fixCaseReturnTypes2(cases,exps,info);
-      then DAE.CASE(patterns,patternGuard,decls,body,SOME(exp),resultInfo,jump,info2)::cases;
-
-    case ((case_ as DAE.CASE(result=NONE()))::cases,exps,info)
-      algorithm
-        cases := fixCaseReturnTypes2(cases,exps,info);
-      then case_::cases;
-
-    else
-      algorithm
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {"Patternm.fixCaseReturnTypes2 failed"}, inInfo);
-      then fail();
-  end matchcontinue;
-end fixCaseReturnTypes2;
 
 public function traverseConstantPatternsHelper<T>
   input DAE.Exp inExp;
@@ -2577,22 +2538,6 @@ algorithm
     outTpl := (cache,true);
   end if;
 end checkLocalShadowing;
-
-public function resultExps
-  input list<DAE.MatchCase> inCases;
-  output list<DAE.Exp> exps;
-algorithm
-  exps := match inCases
-    local
-      DAE.Exp exp; list<DAE.MatchCase> cases;
-    case {} then {};
-    case DAE.CASE(result=SOME(exp))::cases
-      algorithm
-        exps := resultExps(cases);
-      then exp::exps;
-    case _::cases then resultExps(cases);
-  end match;
-end resultExps;
 
 protected function allPatternsWild
   "Returns true if all patterns in the list are wildcards"
