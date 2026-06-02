@@ -56,6 +56,7 @@ public import SCode;
 protected import Algorithm;
 protected import Ceval;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import Config;
 protected import ConnectUtil;
 protected import DAEUtil;

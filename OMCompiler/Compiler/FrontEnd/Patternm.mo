@@ -62,6 +62,7 @@ import Algorithm;
 import AvlSetString;
 import BaseHashTable;
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import DAE.Connect;
 import DAEUtil;
 import ElementSource;

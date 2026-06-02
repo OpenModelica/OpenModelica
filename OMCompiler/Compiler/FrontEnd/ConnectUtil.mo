@@ -64,11 +64,13 @@ import ConnectionGraph;
 // protected imports
 protected
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import DAEUtil;
 import Debug;
 import ElementSource;
 import Error;
 import Expression;
+protected import ExpressionBasics;
 import ExpressionDump;
 import ExpressionSimplify;
 import Flags;

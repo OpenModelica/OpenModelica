@@ -58,6 +58,7 @@ import BackendVariable;
 import BackendVarTransform;
 import BaseHashTable;
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import Differentiate;
 import ElementSource;
 import Error;

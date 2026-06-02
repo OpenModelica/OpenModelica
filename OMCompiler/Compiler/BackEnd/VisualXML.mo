@@ -55,6 +55,7 @@ import BackendDAEUtil;
 import BackendEquation;
 import BackendVariable;
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import DAE;
 import DAEUtil;
 import ElementSource;

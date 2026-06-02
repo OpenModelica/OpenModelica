@@ -58,6 +58,7 @@ import BaseHashTable;
 import ClassInf;
 import ClockIndexes;
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import DAEUtil;
 import Error;
 import Expression;

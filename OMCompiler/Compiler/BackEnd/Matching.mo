@@ -69,6 +69,7 @@ import UnorderedSet;
 import Util;
 import Sorting;
 import System;
+protected import ComponentReferenceBasics;
 
 // =============================================================================
 // just a matching algorithm

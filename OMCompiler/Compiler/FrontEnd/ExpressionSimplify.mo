@@ -57,6 +57,7 @@ protected type Subscript = DAE.Subscript;
 
 // protected imports
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import Config;
 protected import DAEUtil;
 protected import Debug;

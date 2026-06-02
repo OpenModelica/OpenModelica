@@ -345,6 +345,7 @@ end addConnection;
 
 protected import BaseHashTable;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import ConnectUtil;
 protected import Debug;
 protected import Flags;

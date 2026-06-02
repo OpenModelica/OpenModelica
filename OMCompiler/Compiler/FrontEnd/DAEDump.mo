@@ -49,6 +49,7 @@ public import SCode;
 
 // protected imports
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import Config;
 protected import DAEUtil;
 protected import DAEDumpTypes;
@@ -58,6 +59,7 @@ protected import Error;
 protected import Print;
 protected import Util;
 protected import Expression;
+protected import ExpressionBasics;
 protected import ExpressionDump;
 protected import Absyn;
 protected import AbsynUtil;

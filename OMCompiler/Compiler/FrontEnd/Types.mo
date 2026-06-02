@@ -69,6 +69,7 @@ protected type Var = DAE.Var;
 protected type EqMod = DAE.EqMod;
 
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import Config;
 protected import Dump;
 protected import Debug;

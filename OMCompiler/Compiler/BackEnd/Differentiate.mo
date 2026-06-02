@@ -71,6 +71,7 @@ protected import Debug;
 protected import ElementSource;
 protected import Error;
 protected import Expression;
+protected import ExpressionBasics;
 protected import ExpressionSimplify;
 protected import Flags;
 protected import Inline;

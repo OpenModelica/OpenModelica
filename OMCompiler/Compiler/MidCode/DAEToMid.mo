@@ -55,6 +55,7 @@ import SimCode;
 import Expression;
 import ExpressionDump;
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import System;
 import DoubleEnded;
 import Mutable;

@@ -53,6 +53,7 @@ public import SCode;
 
 protected import ClassInfUtil;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import Config;
 protected import DAEUtil;
 protected import Debug;

@@ -51,6 +51,7 @@ public import Graphviz;
 
 // protected imports
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import Config;
 protected import DAEDump;
 protected import Dump;

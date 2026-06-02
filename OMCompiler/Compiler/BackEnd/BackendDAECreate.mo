@@ -68,6 +68,7 @@ import ElementSource;
 import Error;
 import ErrorExt;
 import Expression;
+protected import ExpressionBasics;
 import ExpressionDump;
 import ExpressionSimplify;
 import ExpressionSolve;

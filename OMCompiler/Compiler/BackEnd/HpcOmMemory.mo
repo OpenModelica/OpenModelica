@@ -53,6 +53,7 @@ import BackendEquation;
 import BackendVariable;
 import BaseHashTable;
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import Config;
 import Error;
 import ExpandableArray;

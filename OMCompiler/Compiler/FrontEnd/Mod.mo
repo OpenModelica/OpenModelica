@@ -55,6 +55,7 @@ public import FGraph;
 public import SCode;
 public import InnerOuter;
 public import ComponentReference;
+protected import ComponentReferenceBasics;
 
 protected type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
 

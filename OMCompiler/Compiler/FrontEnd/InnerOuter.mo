@@ -51,6 +51,7 @@ import HashSet;
 
 protected import Array;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import ConnectUtil;
 protected import DAEUtil;
 protected import Debug;

@@ -60,6 +60,7 @@ protected import Debug;
 protected import DoubleEnded;
 protected import ElementSource;
 protected import Expression;
+protected import ExpressionBasics;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;

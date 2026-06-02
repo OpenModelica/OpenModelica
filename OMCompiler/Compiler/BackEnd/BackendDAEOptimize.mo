@@ -74,6 +74,7 @@ import Differentiate;
 import ElementSource;
 import ExpandableArray;
 import Expression;
+protected import ExpressionBasics;
 import ExpressionDump;
 import ExpressionSolve;
 import ExpressionSimplify;

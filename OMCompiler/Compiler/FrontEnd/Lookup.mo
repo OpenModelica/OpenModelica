@@ -61,6 +61,7 @@ public import Types;
 protected import BaseHashTable;
 protected import Builtin;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import Config;
 protected import DAE.Connect;
 protected import ConnectionGraph;

@@ -56,6 +56,7 @@ public import DAE;
 public import SCode;
 
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import DAEUtil;
 protected import Debug;
 protected import ElementSource;

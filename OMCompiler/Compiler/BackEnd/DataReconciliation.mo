@@ -52,6 +52,7 @@ import BackendDAEUtil;
 import BackendEquation;
 import BackendVariable;
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import Expression;
 import Error;
 import Flags;

@@ -74,6 +74,7 @@ protected import Types;
 protected import PrefixUtil;
 protected import List;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import UnitAbsynBuilder;
 protected import Flags;
 protected import Expression;

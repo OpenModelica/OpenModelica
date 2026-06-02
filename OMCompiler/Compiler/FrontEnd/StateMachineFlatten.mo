@@ -50,6 +50,7 @@ public import FCore;
 
 protected import List;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import Expression;
 protected import DAEUtil;
 protected import Util;

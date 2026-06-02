@@ -67,6 +67,7 @@ type Var = DAE.Var;
 protected import Array;
 protected import ClassInf;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import Config;
 protected import DAEUtil;
 protected import Debug;

@@ -60,6 +60,7 @@ protected
 import Ceval;
 import ClassInf;
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import Config;
 import DAEDump;
 import Debug;
