@@ -35,6 +35,7 @@
 
 #include "pm_cluster_system.hpp"
 #include <algorithm>
+#include <cstdlib>
 
 namespace openmodelica { namespace parmodelica {
 
@@ -361,7 +362,23 @@ struct cluster_merge_level_for_bins {
         ClusterLevels& clusters_by_level = task_system.clusters_by_level;
         GraphType&     sys_graph = task_system.sys_graph;
 
-        unsigned nr_of_clusters = task_system.max_num_threads * 2;
+        /*! Decouple the per-level cluster count from the raw core count.
+            Using max_num_threads*2 means a many-core machine fragments every
+            level into many tiny clusters, so TBB's per-node scheduling overhead
+            dominates the (small) per-cluster work and the parallel run ends up
+            slower than serial. We cap the number of clusters per level at a
+            fixed, tunable bound so clusters stay coarse regardless of core
+            count; the TBB flow graph still load-balances them across all
+            threads. Override with PARMOD_CLUSTERS_PER_LEVEL. */
+        unsigned cluster_cap = 8;
+        if (const char* env = std::getenv("PARMOD_CLUSTERS_PER_LEVEL")) {
+            int v = std::atoi(env);
+            if (v > 0)
+                cluster_cap = (unsigned)v;
+        }
+        unsigned nr_of_clusters = std::min((unsigned)(task_system.max_num_threads * 2), cluster_cap);
+        if (nr_of_clusters < 1)
+            nr_of_clusters = 1;
 
         if (task_system.levels_valid == false)
             task_system.update_node_levels();

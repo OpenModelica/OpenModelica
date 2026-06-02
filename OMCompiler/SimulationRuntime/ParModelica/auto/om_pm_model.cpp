@@ -80,7 +80,7 @@ void Equation::execute() {
 OMModel::OMModel(const std::string& in_name, size_t mnt)
     : name(in_name)
     , max_num_threads(mnt)
-    , tbb_system(mnt)
+    , tbb_system(tbb::global_control::max_allowed_parallelism, mnt)
     , INI_system(name, mnt)
     , INI_scheduler(INI_system, mnt)
     , DAE_system(name, mnt)

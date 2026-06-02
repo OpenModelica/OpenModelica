@@ -33,7 +33,7 @@
  Mahder.Gebremedhin@liu.se  2020-10-12
 */
 
-#include <tbb/task_scheduler_init.h>
+#include <tbb/global_control.h>
 #include <simulation_data.h>
 
 #include "pm_cluster_level_scheduler.hpp"
@@ -100,7 +100,8 @@ class OMModel
 public:
     std::string name;
     size_t max_num_threads;
-    tbb::task_scheduler_init tbb_system;
+    // oneTBB removed tbb::task_scheduler_init; cap the global thread pool instead.
+    tbb::global_control tbb_system;
 
     bool intialized;
     DATA* data;
