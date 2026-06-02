@@ -45,12 +45,10 @@ public import HashTableStringToPath;
 
 // private imports
 protected import BaseHashTable;
-protected import ComponentReference;
 protected import ExpressionBasics;
 protected import Error;
 protected import List;
 protected import SCode;
-protected import Types;
 
 public uniontype FunctionCode
   "Root data structure containing information required for templates to

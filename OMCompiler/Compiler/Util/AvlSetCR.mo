@@ -37,7 +37,7 @@ encapsulated package AvlSetCR
   import BaseAvlSet;
   extends BaseAvlSet;
   import DAE;
-  import ComponentReference;
+  import ComponentReferenceBasics;
   redeclare type Key = DAE.ComponentRef;
   redeclare function extends keyStr
   algorithm

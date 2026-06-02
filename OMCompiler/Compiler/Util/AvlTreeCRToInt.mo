@@ -37,7 +37,7 @@ encapsulated package AvlTreeCRToInt "AvlTree for String to Integer. New implemen
   import BaseAvlTree;
   import DAE;
   protected
-  import ComponentReference;
+  import ComponentReferenceBasics;
   public
   extends BaseAvlTree;
   redeclare type Key = DAE.ComponentRef;
