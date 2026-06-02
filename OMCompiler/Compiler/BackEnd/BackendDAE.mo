@@ -690,9 +690,7 @@ public uniontype SimIterator
 end SimIterator;
 
 public function getSimIteratorSize
-  "Total number of scalar elements iterated over by a (possibly nested) sim iterator.
-   Defined here next to the SimIterator datatype so packages that only depend on the
-   backend datatypes (e.g. ZeroCrossings) need not pull in BackendDAEUtil."
+  "Total number of scalar elements iterated over by a (possibly nested) sim iterator."
   input list<SimIterator> iters;
   output Integer size = 1;
 protected

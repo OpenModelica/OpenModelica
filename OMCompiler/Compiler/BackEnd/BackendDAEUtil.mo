@@ -599,17 +599,6 @@ algorithm
   osyst := setEqSystVars(syst, BackendVariable.addVars(varlst, vars));
 end addVarsToEqSystem;
 
-public function getSimIteratorSize
-  "Thin wrapper kept for existing callers (templates/SimCodeTV reference
-   BackendDAEUtil.getSimIteratorSize). The implementation now lives in BackendDAE
-   next to the SimIterator datatype so the backend datatype packages do not depend
-   on BackendDAEUtil."
-  input list<BackendDAE.SimIterator> iters;
-  output Integer size;
-algorithm
-  size := BackendDAE.getSimIteratorSize(iters);
-end getSimIteratorSize;
-
 public function numberOfZeroCrossings "author: lochel"
   input BackendDAE.BackendDAE inBackendDAE;
   output Integer outNumZeroCrossings "number of ordinary zero crossings" ;

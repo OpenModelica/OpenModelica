@@ -1773,6 +1773,11 @@ package BackendDAE
     end SIM_ITERATOR_LIST;
   end SimIterator;
 
+  function getSimIteratorSize
+    input list<SimIterator> iters;
+    output Integer size ;
+  end getSimIteratorSize;
+
   uniontype TimeEvent
     record SIMPLE_TIME_EVENT "e.g. time > 0.5"
     end SIMPLE_TIME_EVENT;
@@ -1876,13 +1881,6 @@ package BackendDAE
     end EQUATION_ATTRIBUTES;
   end EquationAttributes;
 end BackendDAE;
-
-package BackendDAEUtil
-  function getSimIteratorSize
-    input list<BackendDAE.SimIterator> iters;
-    output Integer size ;
-  end getSimIteratorSize;
-end BackendDAEUtil;
 
 package System
   function substring
