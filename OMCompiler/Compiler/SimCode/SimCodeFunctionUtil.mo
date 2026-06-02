@@ -2508,6 +2508,23 @@ algorithm
   end matchcontinue;
 end getCalledFunctionsInFunction2;
 
+public function getCalledFunctionsInFunction
+"Goes through the given DAE, finds the given function and collects
+  the names of the functions called from within those functions.
+  Lives here (next to its helper getCalledFunctionsInFunction2) rather than in
+  SimCodeFunction so the SimCodeFunction datatype package does not depend on
+  this function package."
+  input Absyn.Path path;
+  input AvlTreePathFunction.Tree funcs;
+  output list<Absyn.Path> outPaths;
+protected
+  HashTableStringToPath.HashTable ht;
+algorithm
+  ht := HashTableStringToPath.emptyHashTable();
+  ht := getCalledFunctionsInFunction2(path,AbsynUtil.pathStringNoQual(path),ht,funcs);
+  outPaths := BaseHashTable.hashTableValueList(ht);
+end getCalledFunctionsInFunction;
+
 protected function addDestructor
   input DAE.Function func;
   input HashTableStringToPath.HashTable inHt;

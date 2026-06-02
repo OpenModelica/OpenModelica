@@ -152,5 +152,5 @@ uniontype Variability
   record CONTINUOUS end CONTINUOUS;
 end Variability;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="simcode_types");
 end SimCodeVar;

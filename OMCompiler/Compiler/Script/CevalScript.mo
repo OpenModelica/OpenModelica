@@ -1788,7 +1788,7 @@ algorithm
   funcs := FCore.getFunctionTree(cache);
   // First check if the main function exists... If it does not it might be an interactive function...
   mainFunction := DAEUtil.getNamedFunction(functionName, funcs);
-  dependencies := SimCodeFunction.getCalledFunctionsInFunction(functionName,funcs);
+  dependencies := SimCodeFunctionUtil.getCalledFunctionsInFunction(functionName,funcs);
 end getFunctionDependencies;
 
 public function collectDependencies

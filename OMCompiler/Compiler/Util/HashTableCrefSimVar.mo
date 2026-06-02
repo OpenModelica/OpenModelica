@@ -148,5 +148,5 @@ algorithm
   end matchcontinue;
 end addSimVarToHashTable;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="simcode_types");
 end HashTableCrefSimVar;
