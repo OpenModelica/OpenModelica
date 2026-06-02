@@ -3480,7 +3480,7 @@ algorithm
         c1 := Types.constAnd(c1,Types.propAllConst(prop));
         sty := Types.getPropType(prop);
         (cache,dimvals) := Ceval.cevalList(cache, env, dims_1, impl, Absyn.NO_MSG(),0);
-        (cache,exp,prop) := elabBuiltinFill2(cache, env, s_1, sty, dimvals, c1, pre, dims, info);
+        (cache,exp,prop) := ExpressionSimplify.elabBuiltinFill2(cache, s_1, sty, dimvals, c1, dims, info);
       then
         (cache, exp, prop);
 
@@ -3538,82 +3538,6 @@ algorithm
         fail();
   end matchcontinue;
 end elabBuiltinFill;
-
-public function elabBuiltinFill2
-"
-  function: elabBuiltinFill2
-  Helper function to: elabBuiltinFill
-
-  Public since it is used by ExpressionSimplify.simplifyBuiltinCalls.
-"
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input DAE.Exp inExp;
-  input DAE.Type inType;
-  input list<Values.Value> inValuesValueLst;
-  input DAE.Const constVar;
-  input DAE.Prefix inPrefix;
-  input list<Absyn.Exp> inDims;
-  input SourceInfo inInfo;
-  output FCore.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-algorithm
-  (outCache,outExp,outProperties) := matchcontinue (inCache, inEnv, inExp, inType, inValuesValueLst, constVar, inPrefix)
-    local
-      list<DAE.Exp> arraylist;
-      DAE.Type at;
-      Boolean is_scalar;
-      FCore.Graph env;
-      DAE.Exp s,exp;
-      DAE.Type sty,ty,sty2;
-      Integer v;
-      list<Values.Value> rest;
-      FCore.Cache cache;
-      DAE.Const c1;
-      DAE.Prefix pre;
-      String str;
-
-    // we might get here negative integers!
-    case (cache, _, s, sty, {Values.INTEGER(integer = v)}, c1, _)
-      algorithm
-        true := intLt(v, 0); // fill with 0 then!
-        v := 0;
-        arraylist := List.fill(s, v);
-        sty2 := DAE.T_ARRAY(sty, {DAE.DIM_INTEGER(v)});
-        at := Types.simplifyType(sty2);
-        is_scalar := not Types.isArray(sty);
-      then
-        (cache,DAE.ARRAY(at,is_scalar,arraylist),DAE.PROP(sty2,c1));
-
-    case (cache, _, s, sty, {Values.INTEGER(integer = v)}, c1, _)
-      algorithm
-        arraylist := List.fill(s, v);
-        sty2 := DAE.T_ARRAY(sty, {DAE.DIM_INTEGER(v)});
-        at := Types.simplifyType(sty2);
-        is_scalar := not Types.isArray(sty);
-      then
-        (cache,DAE.ARRAY(at,is_scalar,arraylist),DAE.PROP(sty2,c1));
-
-    case (cache, env, s, sty, (Values.INTEGER(integer = v) :: rest), c1, pre)
-      algorithm
-        (cache,exp,DAE.PROP(ty,_)) := elabBuiltinFill2(cache,env, s, sty, rest,c1,pre,inDims,inInfo);
-        arraylist := List.fill(exp, v);
-        sty2 := DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(v)});
-        at := Types.simplifyType(sty2);
-      then
-        (cache,DAE.ARRAY(at,false,arraylist),DAE.PROP(sty2,c1));
-
-    else
-      algorithm
-        str := "Static.elabBuiltinFill2 failed in component" + PrefixUtil.printPrefixStr3(inPrefix) +
-              " and scope: " + FGraph.printGraphPathStr(inEnv) +
-              " for expression: fill(" + Dump.printExpLstStr(inDims) + ")";
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, inInfo);
-      then
-        fail();
-  end matchcontinue;
-end elabBuiltinFill2;
 
 protected function elabBuiltinSymmetric "This function elaborates the builtin operator symmetric"
   input FCore.Cache inCache;

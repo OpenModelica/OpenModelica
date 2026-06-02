@@ -71,8 +71,6 @@ protected import Config;
 protected import DAEUtil;
 protected import Debug;
 protected import DoubleEnded;
-protected import FCore;
-protected import FGraph;
 protected import Error;
 protected import ExpressionDump;
 protected import ExpressionBasics.printExpStr;
@@ -81,8 +79,6 @@ protected import ExpressionSimplify;
 protected import Dump;
 protected import Flags;
 protected import List;
-protected import Patternm;
-protected import Static;
 protected import System; // stringReal
 protected import Types;
 protected import Util;
@@ -461,32 +457,6 @@ algorithm
 
   end match;
 end traversingstringifyCrefFinder;
-
-public function CodeVarToCref
-  input DAE.Exp inExp;
-  output DAE.Exp outExp;
-algorithm
-  outExp := match inExp
-    local
-      ComponentRef e_cref;
-      Absyn.ComponentRef cref;
-      DAE.Exp e;
-
-    case DAE.CODE(Absyn.C_VARIABLENAME(cref),_)
-      algorithm
-        (_,e_cref) := Static.elabUntypedCref(FCore.emptyCache(),FGraph.empty(),cref,false,DAE.NOPRE(),Absyn.dummyInfo);
-        e := crefExp(e_cref);
-      then
-        e;
-
-    case DAE.CODE(Absyn.C_EXPRESSION(Absyn.CALL(function_ = Absyn.CREF_IDENT("der",{}), functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cref)},{}))),_)
-      algorithm
-        (_,e_cref) := Static.elabUntypedCref(FCore.emptyCache(),FGraph.empty(),cref,false,DAE.NOPRE(),Absyn.dummyInfo);
-        e := crefExp(e_cref);
-      then
-        DAE.CALL(Absyn.IDENT("der"),{e},DAE.callAttrBuiltinReal);
-  end match;
-end CodeVarToCref;
 
 public function realToIntIfPossible
 "converts to ICONST if possible. If it does
@@ -5158,7 +5128,7 @@ algorithm
     case DAE.MATCHEXPRESSION(matchTy, expl, aliases, localDecls, cases, tp) algorithm
       // Don't traverse the local declarations; we don't store bindings there (yet)
       (expl_1, ext_arg) := traverseExpList(expl, inFunc, inExtArg);
-      (cases_1, ext_arg) := Patternm.traverseCases(cases, inFunc, ext_arg);
+      (cases_1, ext_arg) := traverseCases(cases, inFunc, ext_arg);
       e := if referenceEq(expl, expl_1) and referenceEq(cases, cases_1) then inExp else DAE.MATCHEXPRESSION(matchTy, expl_1, aliases, localDecls, cases_1, tp);
       (e, ext_arg) := inFunc(e, ext_arg);
     then (e, ext_arg);
@@ -5709,7 +5679,7 @@ algorithm
     case (_,DAE.MATCHEXPRESSION(matchType,expl,aliases,localDecls,cases,et),rel,ext_arg)
       algorithm
         (expl,ext_arg) := traverseExpListTopDown(expl,rel,ext_arg);
-        (cases, ext_arg) := Patternm.traverseCasesTopDown(cases, rel, ext_arg);
+        (cases, ext_arg) := traverseCasesTopDown(cases, rel, ext_arg);
       then (DAE.MATCHEXPRESSION(matchType,expl,aliases,localDecls,cases,et),ext_arg);
 
     case (_,DAE.METARECORDCALL(fn,expl,fieldNames,i,typeVars),rel,ext_arg)
@@ -12323,6 +12293,83 @@ algorithm
     else exp;
   end match;
 end arrayFirstScalar;
+
+public function traverseCases
+  "Traverses the expressions in a list of match-expression cases (bottom-up).
+   Moved here from Patternm so Expression does not depend on the instantiation
+   cluster; the body/guard/result are pure DAE expressions."
+  replaceable type A subtypeof Any;
+  input list<DAE.MatchCase> inCases;
+  input FuncExpType func;
+  input A inA;
+  output list<DAE.MatchCase> outCases;
+  output A oa;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    input A inTypeA;
+    output DAE.Exp outExp;
+    output A outA;
+  end FuncExpType;
+algorithm
+  (outCases,oa) := match (inCases, inA)
+    local
+      list<DAE.Pattern> patterns;
+      list<DAE.Element> decls;
+      list<DAE.Statement> body,body1;
+      Option<DAE.Exp> result,result1,patternGuard,patternGuard1;
+      Integer jump;
+      SourceInfo resultInfo,info;
+      list<DAE.MatchCase> cases,cases1;
+      A a;
+
+    case ({}, a) then ({},a);
+    case (DAE.CASE(patterns,patternGuard,decls,body,result,resultInfo,jump,info)::cases, a)
+      algorithm
+        (body1,(_,a)) := DAEUtil.traverseDAEEquationsStmts(body,traverseSubexpressionsHelper,(func,a));
+        (patternGuard1,a) := traverseExpOpt(patternGuard,func,a);
+        (result1,a) := traverseExpOpt(result,func,a);
+        (cases1,a) := traverseCases(cases,func,a);
+        cases := if referenceEq(cases,cases1) and referenceEq(patternGuard,patternGuard1) and referenceEq(result,result1) and referenceEq(body,body1)
+          then inCases
+          else DAE.CASE(patterns,patternGuard1,decls,body1,result1,resultInfo,jump,info)::cases1;
+      then (cases,a);
+  end match;
+end traverseCases;
+
+public function traverseCasesTopDown<A>
+  "Traverses the expressions in a list of match-expression cases (top-down).
+   Moved here from Patternm (see traverseCases)."
+  input list<DAE.MatchCase> inCases;
+  input FuncExpType func;
+  input A inA;
+  output list<DAE.MatchCase> cases = {};
+  output A a = inA;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    input A inTypeA;
+    output DAE.Exp outExp;
+    output Boolean cont;
+    output A outA;
+  end FuncExpType;
+protected
+  list<DAE.Pattern> patterns;
+  list<DAE.Element> decls;
+  list<DAE.Statement> body,body1;
+  Option<DAE.Exp> result,result1,patternGuard,patternGuard1;
+  Integer jump;
+  SourceInfo resultInfo,info;
+  tuple<FuncExpType,A> tpl;
+algorithm
+  for c in inCases loop
+    DAE.CASE(patterns,patternGuard,decls,body,result,resultInfo,jump,info) := c;
+    tpl := (func,a);
+    (body1,(_,a)) := DAEUtil.traverseDAEEquationsStmts(body,traverseSubexpressionsTopDownHelper,tpl);
+    (patternGuard1,a) := traverseExpOptTopDown(patternGuard,func,a);
+    (result1,a) := traverseExpOptTopDown(result,func,a);
+    cases := DAE.CASE(patterns,patternGuard1,decls,body1,result1,resultInfo,jump,info)::cases;
+  end for;
+  cases := listReverse(cases);
+end traverseCasesTopDown;
 
 annotation(__OpenModelica_Interface="frontend");
 end Expression;

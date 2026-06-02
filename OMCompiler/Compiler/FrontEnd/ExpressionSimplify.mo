@@ -61,15 +61,14 @@ protected import Config;
 protected import DAEUtil;
 protected import Debug;
 protected import FCore;
-protected import FGraph;
 protected import ElementSource;
 protected import ErrorExt;
 protected import Expression;
+protected import Dump;
 protected import ExpressionDump;
 protected import Flags;
 protected import List;
 protected import MetaModelica.Dangerous;
-protected import Static;
 protected import System;
 protected import Types;
 protected import UnorderedMap;
@@ -1130,6 +1129,74 @@ algorithm
 end reductionExpression;
 
 
+public function elabBuiltinFill2
+"Helper that builds a filled array from a value list. Moved here from Static
+ (and Static.elabBuiltinFill now calls this) so ExpressionSimplify does not
+ depend on the instantiation cluster. The env/prefix that the old Static version
+ carried were only used to decorate an internal-error message, so they are
+ dropped here."
+  input FCore.Cache inCache;
+  input DAE.Exp inExp;
+  input DAE.Type inType;
+  input list<Values.Value> inValuesValueLst;
+  input DAE.Const constVar;
+  input list<Absyn.Exp> inDims;
+  input SourceInfo inInfo;
+  output FCore.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+algorithm
+  (outCache,outExp,outProperties) := matchcontinue (inCache, inExp, inType, inValuesValueLst, constVar)
+    local
+      list<DAE.Exp> arraylist;
+      DAE.Type at;
+      Boolean is_scalar;
+      DAE.Exp s,exp;
+      DAE.Type sty,ty,sty2;
+      Integer v;
+      list<Values.Value> rest;
+      FCore.Cache cache;
+      DAE.Const c1;
+      String str;
+
+    case (cache, s, sty, {Values.INTEGER(integer = v)}, c1)
+      algorithm
+        true := intLt(v, 0); // fill with 0 then!
+        v := 0;
+        arraylist := List.fill(s, v);
+        sty2 := DAE.T_ARRAY(sty, {DAE.DIM_INTEGER(v)});
+        at := Types.simplifyType(sty2);
+        is_scalar := not Types.isArray(sty);
+      then
+        (cache,DAE.ARRAY(at,is_scalar,arraylist),DAE.PROP(sty2,c1));
+
+    case (cache, s, sty, {Values.INTEGER(integer = v)}, c1)
+      algorithm
+        arraylist := List.fill(s, v);
+        sty2 := DAE.T_ARRAY(sty, {DAE.DIM_INTEGER(v)});
+        at := Types.simplifyType(sty2);
+        is_scalar := not Types.isArray(sty);
+      then
+        (cache,DAE.ARRAY(at,is_scalar,arraylist),DAE.PROP(sty2,c1));
+
+    case (cache, s, sty, (Values.INTEGER(integer = v) :: rest), c1)
+      algorithm
+        (cache,exp,DAE.PROP(ty,_)) := elabBuiltinFill2(cache, s, sty, rest, c1, inDims, inInfo);
+        arraylist := List.fill(exp, v);
+        sty2 := DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(v)});
+        at := Types.simplifyType(sty2);
+      then
+        (cache,DAE.ARRAY(at,false,arraylist),DAE.PROP(sty2,c1));
+
+    else
+      algorithm
+        str := "ExpressionSimplify.elabBuiltinFill2 failed for expression: fill(" + Dump.printExpLstStr(inDims) + ")";
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, inInfo);
+      then
+        fail();
+  end matchcontinue;
+end elabBuiltinFill2;
+
 protected function simplifyBuiltinCalls "simplifies some builtin calls (with no constant expressions)"
   input DAE.Exp exp;
   output DAE.Exp outExp;
@@ -1267,7 +1334,7 @@ algorithm
     case DAE.CALL(path = Absyn.IDENT("fill"), expLst = e::expl)
       algorithm
         valueLst := List.map(expl, ValuesUtil.expValue);
-        (_,outExp,_) := Static.elabBuiltinFill2(FCore.noCache(), FGraph.empty(), e, Expression.typeof(e), valueLst, DAE.C_CONST(), DAE.NOPRE(), {}, Absyn.dummyInfo);
+        (_,outExp,_) := elabBuiltinFill2(FCore.noCache(), e, Expression.typeof(e), valueLst, DAE.C_CONST(), {}, Absyn.dummyInfo);
       then
         outExp;
 

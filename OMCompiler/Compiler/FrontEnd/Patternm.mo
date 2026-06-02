@@ -1142,7 +1142,7 @@ algorithm
       then ht;
     case (false, DAE.MATCHEXPRESSION(cases=cases))
       algorithm
-        (_,ht) := traverseCases(cases, addLocalCref, HashTableStringToPath.emptyHashTableSized(hashSize));
+        (_,ht) := Expression.traverseCases(cases, addLocalCref, HashTableStringToPath.emptyHashTableSized(hashSize));
       then ht;
   end match;
 end getUsedLocalCrefs;
@@ -2449,78 +2449,6 @@ algorithm
     else inPattern;
   end match;
 end traverseConstantPatternsHelper2;
-
-public function traverseCases
-  replaceable type A subtypeof Any;
-  input list<DAE.MatchCase> inCases;
-  input FuncExpType func;
-  input A inA;
-  output list<DAE.MatchCase> outCases;
-  output A oa;
-  partial function FuncExpType
-    input DAE.Exp inExp;
-    input A inTypeA;
-    output DAE.Exp outExp;
-    output A outA;
-  end FuncExpType;
-algorithm
-  (outCases,oa) := match (inCases, inA)
-    local
-      list<DAE.Pattern> patterns;
-      list<DAE.Element> decls;
-      list<DAE.Statement> body,body1;
-      Option<DAE.Exp> result,result1,patternGuard,patternGuard1;
-      Integer jump;
-      SourceInfo resultInfo,info;
-      list<DAE.MatchCase> cases,cases1;
-      A a;
-
-    case ({}, a) then ({},a);
-    case (DAE.CASE(patterns,patternGuard,decls,body,result,resultInfo,jump,info)::cases, a)
-      algorithm
-        (body1,(_,a)) := DAEUtil.traverseDAEEquationsStmts(body,Expression.traverseSubexpressionsHelper,(func,a));
-        (patternGuard1,a) := Expression.traverseExpOpt(patternGuard,func,a);
-        (result1,a) := Expression.traverseExpOpt(result,func,a);
-        (cases1,a) := traverseCases(cases,func,a);
-        cases := if referenceEq(cases,cases1) and referenceEq(patternGuard,patternGuard1) and referenceEq(result,result1) and referenceEq(body,body1)
-          then inCases
-          else DAE.CASE(patterns,patternGuard1,decls,body1,result1,resultInfo,jump,info)::cases1;
-      then (cases,a);
-  end match;
-end traverseCases;
-
-public function traverseCasesTopDown<A>
-  input list<DAE.MatchCase> inCases;
-  input FuncExpType func;
-  input A inA;
-  output list<DAE.MatchCase> cases = {};
-  output A a = inA;
-  partial function FuncExpType
-    input DAE.Exp inExp;
-    input A inTypeA;
-    output DAE.Exp outExp;
-    output Boolean cont;
-    output A outA;
-  end FuncExpType;
-protected
-  list<DAE.Pattern> patterns;
-  list<DAE.Element> decls;
-  list<DAE.Statement> body,body1;
-  Option<DAE.Exp> result,result1,patternGuard,patternGuard1;
-  Integer jump;
-  SourceInfo resultInfo,info;
-  tuple<FuncExpType,A> tpl;
-algorithm
-  for c in inCases loop
-    DAE.CASE(patterns,patternGuard,decls,body,result,resultInfo,jump,info) := c;
-    tpl := (func,a);
-    (body1,(_,a)) := DAEUtil.traverseDAEEquationsStmts(body,Expression.traverseSubexpressionsTopDownHelper,tpl); // TODO: Enable with new tarball
-    (patternGuard1,a) := Expression.traverseExpOptTopDown(patternGuard,func,a);
-    (result1,a) := Expression.traverseExpOptTopDown(result,func,a);
-    cases := DAE.CASE(patterns,patternGuard1,decls,body1,result1,resultInfo,jump,info)::cases;
-  end for;
-  cases := listReverse(cases); // TODO: in-place reverse?
-end traverseCasesTopDown;
 
 protected function filterEmptyPattern
   input tuple<DAE.Pattern,String,DAE.Type> tpl;
