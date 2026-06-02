@@ -52,6 +52,7 @@ protected
   import SimplifyExp = NFSimplifyExp;
   import Subscript = NFSubscript;
   import Type = NFType;
+  import NFPrefixes.Variability;
   import Variable = NFVariable;
 
   // NB imports
@@ -1426,6 +1427,7 @@ protected
           // II.3 all reduced - full dependency per row. scalarize and add to all rows of the equation
           resolveAllReduced(cref, original_cref, eqn_name, skip_idx, size, iter_size, frames, rep, map, m, mapping, modes);
         end if;
+
       end for;
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + ComponentRef.toString(original_cref) + "."});
@@ -1500,6 +1502,7 @@ protected
     list<Integer> scal_lst;
     Integer size_comp;
     list<Boolean> eq_reg;
+    list<tuple<Dimension, Boolean>> lst;
   algorithm
     // 1. get the cref subscripts and dimensions as well as the equation dimensions (they have to match in length)
     subs    := ComponentRef.subscriptsAllWithWholeFlat(cref);
@@ -1526,23 +1529,17 @@ protected
       if size_comp > 0 then
         // bigger equation than variable
         eq_reg := listAppend(regulars, List.fill(false, listLength(eq_dims) - listLength(regulars)));
+        lst := List.zip(eq_dims, eq_reg);
       elseif size_comp < 0 then
         // bigger variable than equation
-        eq_reg := List.filterOnTrue(regulars, Util.id);
-        size_comp := List.compareLength(eq_dims, eq_reg);
-
-        if size_comp > 0 then
-          eq_reg := listAppend(eq_reg, List.fill(false, listLength(eq_dims) - listLength(eq_reg))) annotation(__OpenModelica_DisableListAppendWarning=true);
-        elseif size_comp < 0 then
-          eq_reg := List.firstN(eq_reg, listLength(eq_dims));
-        end if;
+        lst := resolveMixedDimensions(eq_dims, regulars);
       else
-        eq_reg := regulars;
+        lst := List.zip(eq_dims, regulars);
       end if;
 
       // 5. iterate over all equation dimensions and use the map to get the correct dependencies
       key := arrayCreate(listLength(subs), 0);
-      resolveEquationDimensions(List.zip(eq_dims, eq_reg), regulars, map2, key, m, modes, Mode.create(eqn_name, {original_cref}, false), Pointer.create(skip_idx));
+      resolveEquationDimensions(lst, map2, key, m, modes, Mode.create(eqn_name, {original_cref}, false), Pointer.create(skip_idx));
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because subscripts, dimensions and dependencies were not of equal length.\n"
         + "variable subscripts(" + intString(listLength(subs)) + "): " + List.toString(subs, Subscript.toString) + "\n"
@@ -1552,6 +1549,28 @@ protected
       fail();
     end if;
   end resolveMixed;
+
+  function resolveMixedDimensions
+    "fills the list with dimensions of size one at the proper place even if they are skipped.
+    allows a function that resolves all configurations of variable and equation sizes.
+    prepares for resolveEquationDimensions() if the variable is bigger than the equation"
+    input list<Dimension> eq_dims;
+    input list<Boolean> regulars;
+    input output list<tuple<Dimension, Boolean>> lst = {};
+  algorithm
+    lst := match (eq_dims, regulars)
+      local
+        Dimension dim;
+        list<Dimension> rest_dim;
+        list<Boolean> rest_reg;
+      // dummy dimension that will be skipped
+      case (_, false :: rest_reg) then (Dimension.fromExp(Expression.INTEGER(1), Variability.CONSTANT), false) :: resolveMixedDimensions(eq_dims, rest_reg);
+      // correct dimension that will be kept
+      case (dim :: rest_dim, true :: rest_reg) then (dim, true) :: resolveMixedDimensions(rest_dim, rest_reg);
+      // excess unfitting is ignored
+      else {};
+    end match;
+  end resolveMixedDimensions;
 
   function resolveAllReduced
     "II.3 all reduced - full dependency per row. scalarize and add to all rows of the equation"
@@ -1605,7 +1624,6 @@ protected
     is TRUE if its a regular occurence of the cref and FALSE if its a reduced occurence.
     The key is created from the dimensions and the additional boolean to look up the cref occurence in the map."
     input list<tuple<Dimension, Boolean>> lst   "equation dimension and cref regularity tuple list";
-    input list<Boolean> regulars                "used to skip to the proper index";
     input UnorderedMap<Key, Val2> map           "map to look up occurence";
     input Array<Integer> key                    "mutable key";
     input array<list<Integer>> m                "adjacency matrix";
@@ -1614,15 +1632,14 @@ protected
     input Pointer<Integer> eqn_idx_ptr          "mutable equation index";
     input Integer index = 1                     "dimension index for the key";
   algorithm
-    () := match (lst, regulars)
+    () := match lst
       local
         Dimension dim;
         list<tuple<Dimension, Boolean>> rest;
         Integer eqn_idx;
         list<Integer> scal_lst;
-        list<Boolean> rest_reg;
 
-      case ({}, _) algorithm
+      case {} algorithm
         // no further dimensions. resolve with current key config and bump equation index
         eqn_idx := Pointer.access(eqn_idx_ptr);
         scal_lst := UnorderedMap.getSafe(arrayList(key), map, sourceInfo());
@@ -1632,24 +1649,19 @@ protected
         Pointer.update(eqn_idx_ptr, eqn_idx + 1);
       then ();
 
-      case (_, false::rest_reg) algorithm
-        // reduced dimension no overlap, keep key index at 0 and go deeper with next dimension
-        resolveEquationDimensions(lst, rest_reg, map, key, m, modes, mode, eqn_idx_ptr, index+1);
-      then ();
-
-      case ((dim, false)::rest, _::rest_reg) algorithm
-        // reduced dimension with overlap, keep key index at 0 and go deeper with next dimension
+      case (dim, false)::rest algorithm
+        // reduced dimension, keep key index at 0 and go deeper with next dimension
         for i in 1:Dimension.size(dim, true) loop
-          resolveEquationDimensions(rest, rest_reg, map, key, m, modes, mode, eqn_idx_ptr, index+1);
+          resolveEquationDimensions(rest, map, key, m, modes, mode, eqn_idx_ptr, index+1);
         end for;
       then ();
 
-      case ((dim, true)::rest, _::rest_reg) algorithm
+      case (dim, true)::rest algorithm
         // regular dimension, update key index to corresponding dimension index
         // and go deeper with next dimension
         for i in 1:Dimension.size(dim, true) loop
           arrayUpdate(key, index, i);
-          resolveEquationDimensions(rest, rest_reg, map, key, m, modes, mode, eqn_idx_ptr, index+1);
+          resolveEquationDimensions(rest, map, key, m, modes, mode, eqn_idx_ptr, index+1);
         end for;
       then ();
     end match;
