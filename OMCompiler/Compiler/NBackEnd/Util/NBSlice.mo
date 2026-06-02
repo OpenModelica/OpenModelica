@@ -301,7 +301,7 @@ public
   protected
     ComponentRef checkCref = ComponentRef.stripSubscriptsAll(cref);
   algorithm
-    if ComponentRef.isEqual(name, checkCref) or ComponentRef.isEqualRecordChild(name, checkCref) then
+    if ComponentRef.isEqual(name, checkCref) or ComponentRef.isEqual(name, cref) or ComponentRef.isEqualRecordChild(name, checkCref) then
       UnorderedSet.add(cref, acc);
     end if;
   end getSliceCandidates;
