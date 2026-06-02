@@ -48,6 +48,7 @@ keyEqual   - A comparison function between two keys, returns true if equal.
 public import BaseHashTable;
 public import DAE;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import ExpressionBasics;
 protected import Util;
 
@@ -88,7 +89,7 @@ protected function hashFunc
   input Key tpl;
   output Integer res;
 algorithm
-  res := ComponentReference.hashComponentRef(Util.tuple21(tpl)) + Util.tuple22(tpl);
+  res := ComponentReferenceBasics.hashComponentRef(Util.tuple21(tpl)) + Util.tuple22(tpl);
 end hashFunc;
 
 protected function keyEqual

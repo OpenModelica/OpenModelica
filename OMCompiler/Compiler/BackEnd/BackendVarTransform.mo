@@ -54,6 +54,7 @@ protected import BackendEquation;
 protected import BackendVariable;
 protected import ClassInf;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import DAEUtil;
 protected import Debug;
 protected import DoubleEnded;
@@ -99,30 +100,30 @@ partial function FuncTypeExp_ExpToBoolean
 end FuncTypeExp_ExpToBoolean;
 
 function newCrefExpTable
-  output CrefExpTable table = UnorderedMap.new<ExpOpt>(ComponentReference.hashComponentRef, ComponentReferenceBasics.crefEqual);
+  output CrefExpTable table = UnorderedMap.new<ExpOpt>(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
 end newCrefExpTable;
 
 function newCrefExpTableSized
   input Integer size;
-  output CrefExpTable table = UnorderedMap.new<ExpOpt>(ComponentReference.hashComponentRef, ComponentReferenceBasics.crefEqual, size);
+  output CrefExpTable table = UnorderedMap.new<ExpOpt>(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual, size);
 end newCrefExpTableSized;
 
 function newCrefCrefListTable
-  output CrefCrefListTable table = UnorderedMap.new<CrefListOpt>(ComponentReference.hashComponentRef, ComponentReferenceBasics.crefEqual);
+  output CrefCrefListTable table = UnorderedMap.new<CrefListOpt>(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
 end newCrefCrefListTable;
 
 function newCrefCrefListTableSized
   input Integer size;
-  output CrefCrefListTable table = UnorderedMap.new<CrefListOpt>(ComponentReference.hashComponentRef, ComponentReferenceBasics.crefEqual, size);
+  output CrefCrefListTable table = UnorderedMap.new<CrefListOpt>(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual, size);
 end newCrefCrefListTableSized;
 
 function newCrefSet
-  output CrefSet set = UnorderedSet.new(ComponentReference.hashComponentRef, ComponentReferenceBasics.crefEqual);
+  output CrefSet set = UnorderedSet.new(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
 end newCrefSet;
 
 function newCrefSetSized
   input Integer size;
-  output CrefSet set = UnorderedSet.new(ComponentReference.hashComponentRef, ComponentReferenceBasics.crefEqual, size);
+  output CrefSet set = UnorderedSet.new(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual, size);
 end newCrefSetSized;
 
 public function emptyReplacements "

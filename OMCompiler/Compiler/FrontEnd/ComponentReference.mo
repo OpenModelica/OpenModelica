@@ -69,18 +69,6 @@ protected import Util;
 // do not make this public. instead use the function below.
 protected constant DAE.ComponentRef dummyCref = DAE.CREF_IDENT("dummy", DAE.T_UNKNOWN_DEFAULT, {});
 
-public function hashComponentRef "new hashing that properly deals with subscripts so [1,2] and [2,1] hash to different values"
-  input DAE.ComponentRef cr;
-  output Integer hash;
-algorithm
-  // Moved to ComponentReferenceBasics (frontend_dump), together with the
-  // mutually-recursive Expression.hashExp (now ExpressionBasics.hashExp), so the
-  // cref hashtables and other low-level types-crates can hash crefs without
-  // depending on the full frontend ComponentReference/Expression modules.
-  // Kept as a thin forwarder so existing ComponentReference.hashComponentRef callers are unaffected.
-  hash := ComponentReferenceBasics.hashComponentRef(cr);
-end hashComponentRef;
-
 public function createEmptyCrefMemory
 "@author: adrpo
   creates an array, with one element for each record in ComponentRef!"

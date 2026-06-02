@@ -49,6 +49,7 @@ public import BaseHashTable;
 public import DAE;
 public import BackendDAE;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import BackendDump;
 protected import List;
 
@@ -100,7 +101,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReference.hashComponentRef,ComponentReferenceBasics.crefEqual,ComponentReferenceBasics.printComponentRefStr,printTupleComponentRefEqListStr));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReferenceBasics.hashComponentRef,ComponentReferenceBasics.crefEqual,ComponentReferenceBasics.printComponentRefStr,printTupleComponentRefEqListStr));
 end emptyHashTableSized;
 
 public function printTupleComponentRefEqListStr

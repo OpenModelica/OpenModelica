@@ -60,6 +60,7 @@ keyEqual   - A comparison function between two keys, returns true if equal.
 public import BaseHashTable;
 public import DAE;
 public import ComponentReference;
+public import ComponentReferenceBasics;
 public import FUnit;
 
 
@@ -113,7 +114,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size, (ComponentReference.hashComponentRef, ComponentReferenceBasics.crefEqual, ComponentReferenceBasics.printComponentRefStr, FUnit.unit2string));
+  hashTable := BaseHashTable.emptyHashTableWork(size, (ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual, ComponentReferenceBasics.printComponentRefStr, FUnit.unit2string));
 end emptyHashTableSized;
 
 annotation(__OpenModelica_Interface="frontend");

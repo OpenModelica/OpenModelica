@@ -64,6 +64,7 @@ import BaseHashSet;
 import BaseHashTable;
 import Ceval;
 import ComponentReference;
+import ComponentReferenceBasics;
 import Debug;
 import ElementSource;
 import Error;
@@ -3477,7 +3478,7 @@ protected function replaceCrefWithBindExp
   output Boolean replaced;
 protected
   UnorderedSet<DAE.ComponentRef> replaced_crefs =
-    UnorderedSet.new(ComponentReference.hashComponentRef, ComponentReferenceBasics.crefEqual);
+    UnorderedSet.new(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
 algorithm
   (outExp, replaced) := Expression.traverseExpBottomUp(exp,
     function replaceCrefWithBindExp_traverser(vars = vars, replacedCrefs = replaced_crefs), false);

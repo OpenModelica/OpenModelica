@@ -51,6 +51,7 @@ import BackendDAEUtil;
 import BaseHashSet;
 import BaseHashTable;
 import ComponentReference;
+import ComponentReferenceBasics;
 import CommonSubExpression;
 import DAEUtil;
 import Debug;
@@ -2836,7 +2837,7 @@ protected
 algorithm
   BackendDAE.VARIABLES(indices, arr, buckets, num_vars) := inVariables;
   (arr, outVar as BackendDAE.VAR(varName = cr)) := vararrayDelete(arr, inIndex);
-  hash_idx := intMod(ComponentReference.hashComponentRef(cr), buckets) + 1;
+  hash_idx := intMod(ComponentReferenceBasics.hashComponentRef(cr), buckets) + 1;
   cr_indices := indices[hash_idx];
   cr_indices := List.deleteMemberOnTrue(BackendDAE.CREFINDEX(cr, inIndex - 1), cr_indices, removeVar2);
   arrayUpdate(indices, hash_idx, cr_indices);
@@ -3021,7 +3022,7 @@ protected
   Integer hash_idx, arr_idx;
   list<BackendDAE.CrefIndex> indices;
 algorithm
-  hash_idx := intMod(ComponentReference.hashComponentRef(inVar.varName), inVariables.bucketSize) + 1;
+  hash_idx := intMod(ComponentReferenceBasics.hashComponentRef(inVar.varName), inVariables.bucketSize) + 1;
   indices := arrayGet(inVariables.crefIndices, hash_idx);
 
   try
@@ -3066,7 +3067,7 @@ protected
   list<BackendDAE.CrefIndex> indices;
 algorithm
   BackendDAE.VARIABLES(hashvec, varr, bsize, num_vars) := inVariables;
-  idx := intMod(ComponentReference.hashComponentRef(inVar.varName), bsize) + 1;
+  idx := intMod(ComponentReferenceBasics.hashComponentRef(inVar.varName), bsize) + 1;
   varr := vararrayAdd(varr, inVar);
   indices := hashvec[idx];
   arrayUpdate(hashvec, idx, (BackendDAE.CREFINDEX(inVar.varName, num_vars)::indices));
@@ -3471,7 +3472,7 @@ protected
   DAE.ComponentRef cr;
 algorithm
   BackendDAE.VARIABLES(crefIndices=indices, varArr=arr, bucketSize=buckets) := inVariables;
-  hash_idx := intMod(ComponentReference.hashComponentRef(inCref), buckets) + 1;
+  hash_idx := intMod(ComponentReferenceBasics.hashComponentRef(inCref), buckets) + 1;
   cr_indices := indices[hash_idx];
   BackendDAE.CREFINDEX(index=outIndex) := List.getMemberOnTrue(inCref, cr_indices, crefIndexEqualCref);
   outIndex := outIndex + 1;

@@ -48,6 +48,7 @@ public import BaseHashTable;
 public import DAE;
 public import MidCode;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 
 public type Key = DAE.ComponentRef;
 public type Value = MidCode.Var;
@@ -95,7 +96,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReference.hashComponentRef,ComponentReferenceBasics.crefEqual,ComponentReferenceBasics.printComponentRefStr,MidCode.varString));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReferenceBasics.hashComponentRef,ComponentReferenceBasics.crefEqual,ComponentReferenceBasics.printComponentRefStr,MidCode.varString));
 end emptyHashTableSized;
 
 annotation(__OpenModelica_Interface="backend");

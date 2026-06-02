@@ -177,8 +177,8 @@ algorithm
     case SimCode.SES_RESIDUAL() then Expression.hashExp(eq.exp);
     case SimCode.SES_FOR_RESIDUAL() then Expression.hashExp(eq.exp); // also hash the indices?
     case SimCode.SES_GENERIC_RESIDUAL() then Expression.hashExp(eq.exp); // also hash the indices?
-    case SimCode.SES_SIMPLE_ASSIGN() then ComponentReference.hashComponentRef(eq.cref)+7*Expression.hashExp(eq.exp);
-    case SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS() then ComponentReference.hashComponentRef(eq.cref)+7*Expression.hashExp(eq.exp);
+    case SimCode.SES_SIMPLE_ASSIGN() then ComponentReferenceBasics.hashComponentRef(eq.cref)+7*Expression.hashExp(eq.exp);
+    case SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS() then ComponentReferenceBasics.hashComponentRef(eq.cref)+7*Expression.hashExp(eq.exp);
     case SimCode.SES_ARRAY_CALL_ASSIGN() then Expression.hashExp(eq.lhs)+7*Expression.hashExp(eq.exp);
     case SimCode.SES_ALGORITHM(statements={stmt as DAE.STMT_ASSERT()}) then Expression.hashExp(stmt.cond)+7*Expression.hashExp(stmt.msg)+49*Expression.hashExp(stmt.level);
     // Whatever; we're not caching these values anyway
@@ -8212,7 +8212,7 @@ algorithm
 
   // get all iterationVars from initialization DAE which are needed for FMI-2.0 exports
   (_, iterationVarsLst) := BackendDAEOptimize.listAllIterationVariables0(inInitDAE.eqs);
-  iterationVars := if listEmpty(iterationVarsLst) then NONE() else SOME(UnorderedSet.fromList(iterationVarsLst, ComponentReference.hashComponentRef, ComponentReferenceBasics.crefEqual));
+  iterationVars := if listEmpty(iterationVarsLst) then NONE() else SOME(UnorderedSet.fromList(iterationVarsLst, ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual));
 
   primeSize := Util.nextPrime(
     integer(1.4*(
@@ -13977,7 +13977,7 @@ protected
 algorithm
   initialUnknownCrefs := List.map(initialUnknownList, getCrefFromSimVar); // extract cref from initialUnknownsList
   initialUnknowns := UnorderedSet.fromList(initialUnknownCrefs,
-    ComponentReference.hashComponentRef, ComponentReferenceBasics.crefEqual);
+    ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
 
   if debug then
     print ("\n FmiInitialUnknownsDependencyList :" + ComponentReference.printComponentRefListStr(initialUnknownCrefs));

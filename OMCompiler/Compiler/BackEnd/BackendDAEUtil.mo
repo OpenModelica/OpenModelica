@@ -76,6 +76,7 @@ import CheckModel;
 import ClassInf;
 import CommonSubExpression;
 import ComponentReference;
+import ComponentReferenceBasics;
 import Config;
 import DAEDump;
 import DAEMode;
@@ -10298,7 +10299,7 @@ algorithm
   syst := match syst
     local
       BackendDAE.StrongComponents comps;
-      UnorderedSet<DAE.ComponentRef> set = UnorderedSet.new(ComponentReference.hashComponentRef, ComponentReferenceBasics.crefEqual);
+      UnorderedSet<DAE.ComponentRef> set = UnorderedSet.new(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
     case BackendDAE.EQSYSTEM(matching = BackendDAE.MATCHING(comps = comps)) algorithm
       for comp in comps loop
         markNonlinearIterationVariablesStrongComponent(comp, set);
