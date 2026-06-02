@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.5...4.3)
 
 add_subdirectory(Base)
 add_subdirectory(Extended)
