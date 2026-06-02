@@ -116,7 +116,7 @@ public:
   bool deleteConnection(QString crefA, QString crefB);
   bool deleteConnectorFromBus(QString busCref, QString connectorCref);
   bool deleteConnectorFromTLMBus(QString busCref, QString connectorCref);
-  bool getBoolean(QString signal, bool* value);
+  bool getBoolean(QString signal, bool &value);
   bool getBus(QString cref, oms_busconnector_t **pBusConnector);
   bool getComponentType(QString cref, oms_component_enu_t *pType);
   bool getConnections(QString cref, oms_connection_t ***pConnections);
@@ -128,9 +128,9 @@ public:
   oms_element_t* jsonToElement(const QJsonObject &obj);
   bool getFixedStepSize(QString cref, double* stepSize);
   bool getFMUInfo(QString cref, const oms_fmu_info_t** pFmuInfo);
-  bool getInteger(QString signal, int* value);
+  bool getInteger(QString signal, int &value);
   bool getModelState(const QString &cref, oms_modelState_enu_t* modelState);
-  bool getReal(QString cref, double* value);
+  bool getReal(QString cref, double &value);
   bool getSolver(QString cref, oms_solver_enu_t* solver);
   bool getStartTime(QString cref, double& startTime);
   bool getStopTime(QString cref, double& stopTime);

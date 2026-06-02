@@ -818,15 +818,22 @@ bool OMSProxy::deleteConnectorFromBus(QString busCref, QString connectorCref)
  * \param value
  * \return
  */
-bool OMSProxy::getBoolean(QString cref, bool *value)
+bool OMSProxy::getBoolean(QString cref, bool &value)
 {
-  QString command = "oms_getBoolean";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getBoolean(cref.toUtf8().constData(), value);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
+  QStringList parts = cref.split('.');
+  QJsonObject obj, args;
+  obj["method"] = "getValue";
+  obj["model"]  = parts.first();
+  parts.removeFirst();
+  args["cref"]  = QJsonArray::fromStringList(parts);
+  obj["args"]   = args;
+
+  QJsonObject reply;
+  if (!sendZmqCommand(obj, reply))
+    return false;
+
+  value = reply["value"].toString().toLower() == "true" || reply["value"].toString() == "1";
+  return true;
 }
 
 /*!
@@ -1000,15 +1007,22 @@ bool OMSProxy::getFMUInfo(QString cref, const oms_fmu_info_t** pFmuInfo)
  * \param value
  * \return
  */
-bool OMSProxy::getInteger(QString cref, int *value)
+bool OMSProxy::getInteger(QString cref, int &value)
 {
-  QString command = "oms_getInteger";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getInteger(cref.toUtf8().constData(), value);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
+  QStringList parts = cref.split('.');
+  QJsonObject obj, args;
+  obj["method"] = "getValue";
+  obj["model"]  = parts.first();
+  parts.removeFirst();
+  args["cref"]  = QJsonArray::fromStringList(parts);
+  obj["args"]   = args;
+
+  QJsonObject reply;
+  if (!sendZmqCommand(obj, reply))
+    return false;
+
+  value = reply["value"].toString().toInt();
+  return true;
 }
 
 /*!
@@ -1036,15 +1050,21 @@ bool OMSProxy::getModelState(const QString &cref, oms_modelState_enu_t *modelSta
  * \param value
  * \return
  */
-bool OMSProxy::getReal(QString cref, double *value)
+bool OMSProxy::getReal(QString cref, double &value)
 {
-  QString command = "oms_getReal";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getReal(cref.toUtf8().constData(), value);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
+  QStringList parts = cref.split('.');
+  QJsonObject obj, args;
+  obj["method"] = "getValue";
+  obj["model"]  = parts.first();
+  parts.removeFirst();
+  args["cref"]  = QJsonArray::fromStringList(parts);
+  obj["args"]   = args;
+
+  QJsonObject reply;
+  if (!sendZmqCommand(obj, reply))
+    return false;
+  value = reply["value"].toString().toDouble();
+  return true;
 }
 
 /*!
@@ -1316,6 +1336,7 @@ bool OMSProxy::newModel(QString cref, QString systemName)
   QJsonObject obj, args;
   obj["method"] = "newModel";
   obj["model"]  = cref;
+  args["name"]  = cref;
   args["system_name"] = systemName;
   obj["args"] = args;
 
@@ -1385,13 +1406,16 @@ bool OMSProxy::saveModel(QString cref, QString filename)
  */
 bool OMSProxy::setBoolean(QString cref, bool value)
 {
-  QString command = "oms_setBoolean";
-  QStringList args;
-  args << "\"" + cref + "\"" << (value ? "true" : "false");
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setBoolean(cref.toUtf8().constData(), value);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
+  QStringList parts = cref.split('.');
+  QJsonObject obj, args;
+  obj["method"] = "setValue";
+  obj["model"]  = parts.first();
+  parts.removeFirst();
+  args["cref"]  = QJsonArray::fromStringList(parts);
+  args["value"] = value ? QString("true") : QString("false");
+  obj["args"]   = args;
+  QJsonObject reply;
+  return sendZmqCommand(obj, reply);
 }
 
 /*!
@@ -1662,13 +1686,16 @@ void OMSProxy::setLoggingLevel(int logLevel)
  */
 bool OMSProxy::setInteger(QString cref, int value)
 {
-  QString command = "oms_setInteger";
-  QStringList args;
-  args << "\"" + cref + "\"" << QString::number(value);
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setInteger(cref.toUtf8().constData(), value);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
+  QStringList parts = cref.split('.');
+  QJsonObject obj, args;
+  obj["method"] = "setValue";
+  obj["model"]  = parts.first();
+  parts.removeFirst();
+  args["cref"]  = QJsonArray::fromStringList(parts);
+  args["value"] = QString::number(value);
+  obj["args"]   = args;
+  QJsonObject reply;
+  return sendZmqCommand(obj, reply);
 }
 
 /*!
@@ -1680,13 +1707,16 @@ bool OMSProxy::setInteger(QString cref, int value)
  */
 bool OMSProxy::setReal(QString cref, double value)
 {
-  QString command = "oms_setReal";
-  QStringList args;
-  args << "\"" + cref + "\"" << QString::number(value);
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setReal(cref.toUtf8().constData(), value);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
+  QStringList parts = cref.split('.');
+  QJsonObject obj, args;
+  obj["method"] = "setValue";
+  obj["model"]  = parts.first();
+  parts.removeFirst();
+  args["cref"]  = QJsonArray::fromStringList(parts);
+  args["value"] = QString::number(value);
+  obj["args"]   = args;
+  QJsonObject reply;
+  return sendZmqCommand(obj, reply);
 }
 
 /*!
