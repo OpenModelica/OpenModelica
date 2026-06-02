@@ -407,7 +407,7 @@ algorithm
   StackOverflow.clearStacktraceMessages();
   try
     System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
-    (simCode, oldFunctionTree) := NSimCode.SimCode.create(bdae, className, fileNamePrefix, simSettingsOpt);
+    (simCode, oldFunctionTree) := NSimCode.SimCode.create(bdae, className, fileNamePrefix, simSettingsOpt, SymbolTable.getAbsyn());
     if Flags.isSet(Flags.DUMP_SIMCODE) then
       print(NSimCode.SimCode.toString(simCode));
     end if;

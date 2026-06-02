@@ -92,7 +92,6 @@ protected
   import SimPartition = NSimPartition;
   import SimStrongComponent = NSimStrongComponent;
   import NSimVar.{SimVar, SimVars, VarInfo, ExtObjInfo};
-  import SymbolTable;
 
   // Old SimCode imports
   import HashTableCrIListArray;
@@ -101,7 +100,6 @@ protected
   import OldSimCode = SimCode;
   import OldSimCodeFunction = SimCodeFunction;
   import OldSimCodeFunctionUtil = SimCodeFunctionUtil;
-  import OldSimCodeUtil = SimCodeUtil;
   import System;
 
   // Util imports
@@ -290,6 +288,7 @@ public
       input Absyn.Path name;
       input String fileNamePrefix;
       input Option<OldSimCode.SimulationSettings> simSettingsOpt;
+      input Absyn.Program program "the instantiated program; passed in by the caller (e.g. from SymbolTable.getAbsyn) so NSimCode does not depend on the old backend's SymbolTable";
       output SimCode simCode;
       output AvlTreePathFunction.Tree oldFunctionTree;
     protected
@@ -306,7 +305,6 @@ public
           VariablePointers residual_vars;
           SimVars vars;
           // old SimCode strcutures
-          Absyn.Program program;
           list<String> libs, includeDirs, libPaths;
           String directory, fileName;
           OldSimCodeFunction.MakefileParams makefileParams;
@@ -417,12 +415,11 @@ public
             // this has to be adapted at some point SimCodeFuntion needs to be translated
             // to new simcode and literals have to be based on new Expressions.
             // Will probably be mostly the same in all other regards
-            program := SymbolTable.getAbsyn();
             directory := ProgramUtil.getFileDir(AbsynUtil.pathToCref(name), program);
             // The OB function tree is needed both here and when dumping the flat model,
             // but converting it is destructive so return it to avoid doing it again.
             oldFunctionTree := ConvertDAE.convertFunctionTree(FunctionTree.fromList(UnorderedMap.toList(funcMap)));
-            (libs, libPaths, externalFunctionIncludes, includeDirs, recordDecls, functions, _) := OldSimCodeUtil.createFunctions(program, oldFunctionTree);
+            (libs, libPaths, externalFunctionIncludes, includeDirs, recordDecls, functions, _) := OldSimCodeFunctionUtil.createFunctions(program, oldFunctionTree);
             makefileParams  := OldSimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false, false);
             fileName        := System.basename(AbsynUtil.classFilename(ProgramUtil.getPathedClassInProgram(name, program)));
 
@@ -528,7 +525,7 @@ public
       modelInfo := ModelInfo.convert(simCode.modelInfo);
       (zeroCrossings, relations, timeEvents) := EventInfo.convert(simCode.eventInfo, simCode.equation_map);
 
-      (varToArrayIndexMapping, varToIndexMapping) := OldSimCodeUtil.createVarToArrayIndexMapping(modelInfo);
+      (varToArrayIndexMapping, varToIndexMapping) := OldSimCodeFunctionUtil.createVarToArrayIndexMapping(modelInfo);
       crefToSimVarHT := SimCodeUtil.convertSimCodeMap(simCode.simcode_map);
       // do we still need the following for DAE mode?
       if isSome(simCode.daeModeData) then
