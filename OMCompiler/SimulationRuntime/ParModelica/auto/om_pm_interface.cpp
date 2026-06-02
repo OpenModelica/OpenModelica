@@ -115,7 +115,7 @@ void PM_Model_load_ODE_system(void* v_model, FunctionType* ode_system_funcs) {
 void PM_evaluate_ODE_system(void* v_model) {
 
     OMModel& model = *(static_cast<OMModel*>(v_model));
-    model.ODE_scheduler.execute();
+    model.ODE_scheduler->execute();
 
     // pm_om_model.ODE_scheduler.execution_timer.start_timer();
     // for(int i = 0; i < size; ++i)
@@ -146,28 +146,18 @@ double seq_ode_timer_get_elapsed_time() {
 void dump_times(void* v_model) {
     OMModel& model = *(static_cast<OMModel*>(v_model));
 
-#ifdef USE_LEVEL_SCHEDULER
-    utility::log("") << "Using level scheduler" << std::endl;
-#else
-#ifdef USE_FLOW_SCHEDULER
-    utility::log("") << "Using flow scheduler" << std::endl;
-#else
-#error "please specify scheduler. See makefile"
-#endif
-#endif
+    TaskGraphScheduler& sched = *model.ODE_scheduler;
+
+    utility::log("") << "Using " << parmod_config().scheduler << " scheduler" << std::endl;
     utility::log("") << "Nr.of threads " << model.max_num_threads << std::endl;
-    utility::log("") << "Nr.of ODE evaluations: " << model.ODE_scheduler.total_evaluations << std::endl;
-    utility::log("") << "Nr.of profiling ODE Evaluations: " << model.ODE_scheduler.sequential_evaluations << std::endl;
-    // utility::log("") << "Total ODE evaluation time : " << model.ODE_scheduler.total_parallel_cost << std::endl;
-    utility::log("") << "Total ODE evaluation time : " << model.ODE_scheduler.execution_timer.get_elapsed_time()
-                     << std::endl;
-    utility::log("") << "Avg. ODE evaluation time : "
-                     << model.ODE_scheduler.execution_timer.get_elapsed_time() /
-                            model.ODE_scheduler.parallel_evaluations
-                     << std::endl;
+    utility::log("") << "Nr.of ODE evaluations: " << sched.get_total_evaluations() << std::endl;
+    utility::log("") << "Nr.of profiling ODE Evaluations: " << sched.get_sequential_evaluations() << std::endl;
+    const double ode_time = sched.get_execution_time();
+    const int    par_evals = sched.get_parallel_evaluations();
+    utility::log("") << "Total ODE evaluation time : " << ode_time << std::endl;
+    utility::log("") << "Avg. ODE evaluation time : " << (par_evals ? ode_time / par_evals : 0.0) << std::endl;
     utility::log("") << "Total ODE loading time: " << model.load_system_timer.get_elapsed_time() << std::endl;
-    utility::log("") << "Total ODE Clustering time: " << model.ODE_scheduler.clustering_timer.get_elapsed_time()
-                     << std::endl;
+    utility::log("") << "Total ODE Clustering time: " << sched.get_clustering_time() << std::endl;
 }
 
 } // extern "C"

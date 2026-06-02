@@ -6,8 +6,9 @@ AR_=ar -rcs
 SRCS = $(OS_SRCS) \
 om_pm_equation.cpp \
 pm_utility.cpp \
+pm_runtime_config.cpp \
 om_pm_interface.cpp \
-om_pm_model.cpp 
+om_pm_model.cpp
 
 HDRS = *.hpp *.inl
 OBJS = $(SRCS:.cpp=.o)
@@ -20,13 +21,8 @@ DPFLAGS = -MM
 # default number of threads if not specified.
 DEFAULT_NUM_THREADS=4
 
-ifeq ($(USE_LEVEL_SCHEDULER), 1)
-CPPFLAGS += -DUSE_LEVEL_SCHEDULER
-# $(info ************  COMPILING FOR LEVEL SCHEDULER ************)
-else
-# $(info ************  COMPILING FOR FLOW SCHEDULER ************)
-CPPFLAGS += -DUSE_FLOW_SCHEDULER
-endif
+# The scheduler (flow vs level) is now selected at run time via the parmodScheduler
+# flag, so both schedulers are always compiled in (no -DUSE_*_SCHEDULER define).
 
 
 libParModelicaAuto.a: $(OBJS)
