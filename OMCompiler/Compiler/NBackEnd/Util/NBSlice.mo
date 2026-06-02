@@ -301,6 +301,7 @@ public
   protected
     ComponentRef checkCref = ComponentRef.stripSubscriptsAll(cref);
   algorithm
+    // check if the cref, the stripped version or the record parent are equal
     if ComponentRef.isEqual(name, checkCref) or ComponentRef.isEqual(name, cref) or ComponentRef.isEqualRecordChild(name, checkCref) then
       UnorderedSet.add(cref, acc);
     end if;
