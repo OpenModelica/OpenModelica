@@ -396,7 +396,7 @@ void evalJacobianBidirectional(DATA* data, threadData_t *threadData,
   const SPARSE_PATTERN* adjsp = adj->sparsePattern;
   const int nRows = (int)fwd->sizeRows;
   const int nCols = (int)fwd->sizeCols;
-  int color, column, row, nz;
+  int color, column, row, nz, j;
 
   if (fwd->constantEqns) fwd->constantEqns(data, threadData, fwd, parentJacobian);
   if (adj->constantEqns) adj->constantEqns(data, threadData, adj, parentJacobian);
@@ -453,6 +453,8 @@ void evalJacobianBidirectional(DATA* data, threadData_t *threadData,
     }
     /* Reset adjoint result vars to zero after reading to prevent accumulation across colors */
     memset(adj->resultVars, 0, (size_t)nRows * sizeof(modelica_real));
+    // also for tmp vars
+    memset(adj->tmpVars, 0, (size_t)adj->sizeTmpVars * sizeof(modelica_real));
   }
 }
 

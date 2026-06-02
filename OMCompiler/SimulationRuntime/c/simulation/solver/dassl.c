@@ -129,7 +129,7 @@ void setJacElementDasslSparse(int l, int k, int nth, double val,
                                      void* matrixA, int rows);
 
 void setJacElementDasslSparseAdj(int row, int column, int nth, double value,
-                                 void* Jac, int cols);
+                                 void* Jac, int nRows);
 
 void  DDASKR(
     int (*res) (double *t, double *y, double *yprime, double* cj, double *delta, int *ires, double *rpar, int* ipar),
@@ -1080,15 +1080,14 @@ int jacA_symColored(double *t, double *y, double *yprime, double *delta,
  * @param nth       Sparsity pattern lead index, unused.
  * @param value     Value to set in position (i,j)
  * @param Jac       Pointer to double array storing matrix.
- * @param nCols     Number of columns of Jacobian matrix
+ * @param nRows     Number of rows of Jacobian matrix
  */
 void setJacElementDasslSparseAdj(int row, int column, int nth, double value,
-                                 void* Jac, int rows)
+                                 void* Jac, int nRows)
 {
   UNUSED(nth);
-  /* Store so that resulting matrix matches forward layout */
   double* A = (double*) Jac;
-  A[row * rows + column] = value;
+  A[column*nRows + row] = value;
 }
 
 /* \fn jacADJ_symColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
@@ -1122,7 +1121,6 @@ int jacADJ_symColored(double *t, double *y, double *yprime, double *delta,
       jac->constantEqns(data, threadData, jac, NULL);
   }
 
-  // Note: this assumes a square matrix i.e. `nRows == nCols`
   genericColoredSymbolicJacobianEvaluation(rows, columns, spp, matrixA, t_jac,
                                            data, threadData, &setJacElementDasslSparseAdj);
 
