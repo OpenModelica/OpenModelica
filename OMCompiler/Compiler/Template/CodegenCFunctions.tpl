@@ -8092,7 +8092,7 @@ template typeCastContextInt(Context context, Type ty)
       end match
 end typeCastContextInt;
 
-annotation(__OpenModelica_Interface="codegen");
+annotation(__OpenModelica_Interface="codegen_cfunctions");
 end CodegenCFunctions;
 
 // vim: filetype=susan sw=2 sts=2
