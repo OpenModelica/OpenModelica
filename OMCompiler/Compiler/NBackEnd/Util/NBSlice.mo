@@ -1941,5 +1941,5 @@ protected
     end match;
   end applyNewFrameRange;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBSlice;

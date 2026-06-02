@@ -817,5 +817,5 @@ protected
     str := s1 + s2 + s3 + s4 + "\n";
   end toStringUnmatched;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBResolveSingularities;

@@ -3577,5 +3577,5 @@ protected
     end match;
   end buildMultiHotVectorAdjoint;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBDifferentiate;

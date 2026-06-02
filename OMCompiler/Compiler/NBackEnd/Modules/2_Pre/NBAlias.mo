@@ -1494,5 +1494,5 @@ protected
 
   end AttributeCollector;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBAlias;

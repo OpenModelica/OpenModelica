@@ -112,5 +112,5 @@ public
     old_ht := List.fold(SimVar.convertList(vars), HashTableCrefSimVar.addSimVarToHashTable, old_ht);
   end convertSimCodeMap;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="nbackend");
 end NSimCodeUtil;

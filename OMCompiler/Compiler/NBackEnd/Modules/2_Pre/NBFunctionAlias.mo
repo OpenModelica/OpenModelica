@@ -949,5 +949,5 @@ protected
     end match;
   end introduceSlicedStateAliasExp;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBFunctionAlias;

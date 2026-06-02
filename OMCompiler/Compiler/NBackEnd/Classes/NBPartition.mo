@@ -823,5 +823,5 @@ public
     output Boolean b = kind == Kind.INI or kind == Kind.INI_0;
   end kindIsInitial;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBPartition;

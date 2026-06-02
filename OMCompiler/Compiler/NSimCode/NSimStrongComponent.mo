@@ -1449,5 +1449,5 @@ public
     end convert;
   end NonlinearSystem;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NSimStrongComponent;

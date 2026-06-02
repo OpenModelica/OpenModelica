@@ -355,5 +355,5 @@ public
   algorithm
     str := NBVariable.FUNCTION_DERIVATIVE_STR + i + "_" + str;
   end makeFDerString;
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBBackendUtil;

@@ -677,7 +677,7 @@ protected
     end match;
   end updateStateOrder;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBDetectStates;
 
 

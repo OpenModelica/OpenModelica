@@ -118,5 +118,5 @@ public
     external "C" ASSC_printMatrix() annotation(Library = "omcruntime");
   end printMatrix;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBASSC;

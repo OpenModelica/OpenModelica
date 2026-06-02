@@ -753,5 +753,5 @@ protected
   end predecessors;
 
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBSorting;

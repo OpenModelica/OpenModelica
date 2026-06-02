@@ -157,5 +157,5 @@ protected
     partitions := listReverse(new_partitions);
   end daeModeDefault;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBDAEMode;
