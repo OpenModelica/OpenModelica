@@ -55,6 +55,7 @@ protected import Debug;
 protected import Dump;
 protected import Error;
 protected import Expression;
+protected import ExpressionBasics;
 protected import ExpressionDump;
 protected import Flags;
 protected import List;
@@ -3135,12 +3136,12 @@ algorithm
   outCref := replaceSubsWithString(outCref);
   if debug then print("after full type: " + TypesDump.printTypeStr(crefTypeFull(crefStripIterSub(outCref))) + "\n"); end if;
   outCref := crefSetLastType(outCref, DAE.T_UNKNOWN_DEFAULT);
-  if debug then print("after strip: " + printComponentRefListStr(expandCref(outCref, true)) + "\n"); end if;
+  if debug then print("after strip: " + ComponentReferenceBasics.printComponentRefListStr(expandCref(outCref, true)) + "\n"); end if;
 
   // join crefs
   outCref := joinCrefs(outCref, ComponentReferenceBasics.makeCrefIdent(DAE.partialDerivativeNamePrefix + inMatrixName, DAE.T_UNKNOWN_DEFAULT, {}));
   outCref := joinCrefs(outCref, inX);
-  if debug then print("after join: " + printComponentRefListStr(expandCref(outCref, true)) + "\n"); end if;
+  if debug then print("after join: " + ComponentReferenceBasics.printComponentRefListStr(expandCref(outCref, true)) + "\n"); end if;
 
   // fix subs and type of the last cref
   outCref := crefSetLastSubs(outCref, subs);
@@ -3172,7 +3173,7 @@ public function uniqueList
   input list<DAE.ComponentRef> crefs;
   output list<DAE.ComponentRef> uniqueCrefs;
 algorithm
-  uniqueCrefs := UnorderedSet.unique_list(crefs, hashComponentRef, ComponentReferenceBasics.crefEqual);
+  uniqueCrefs := UnorderedSet.unique_list(crefs, ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
 end uniqueList;
 
 annotation(__OpenModelica_Interface="frontend");
