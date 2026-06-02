@@ -58,6 +58,7 @@ CMAKE_FLAGS += -DCMAKE_INSTALL_MESSAGE=LAZY
 
 OMC_MOO_ROOT = 3rdParty/moo-0.1.0
 OMC_PRIMME_ROOT = 3rdParty/primme-3.2.3
+OMC_COLPACK_ROOT = 3rdParty/ColPack
 OMC_TBB_ROOT = 3rdParty/oneTBB
 
 
@@ -127,7 +128,7 @@ interactive-common: .testvariables boehm-gc libryu idl antlr-copy libffi $(MINGW
 interactive-short: .testvariables interactive-common
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) bootstrap-dependencies OMBUILDDIR=$(OMBUILDDIR)
 
-interactive: .testvariables interactive-common lis Cdaskr CMinpack docs cppzmq $(MOO_TARGET) $(PRIMME_TARGET) $(SUITESPARSE_TARGET) antlr-copy $(MINGW_EXTRA_LIBS) OMSI $(SEMLA_LIB) simdjson
+interactive: .testvariables interactive-common lis Cdaskr CMinpack docs cppzmq $(MOO_TARGET) $(PRIMME_TARGET) $(COLPACK_TARGET) $(SUITESPARSE_TARGET) antlr-copy $(MINGW_EXTRA_LIBS) OMSI $(SEMLA_LIB) simdjson
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 	$(MAKE) -f $(defaultMakefileTarget) bootstrap-dependencies-post
 
@@ -209,6 +210,23 @@ primme:
 primme-clean:
 	if test -f $(OMC_PRIMME_ROOT)/build/Makefile; then $(MAKE) -C $(OMC_PRIMME_ROOT)/build/ clean; fi
 	rm -rf $(OMC_PRIMME_ROOT)/build
+
+colpack:
+	mkdir -p $(OMC_COLPACK_ROOT)/build
+	cd $(OMC_COLPACK_ROOT)/build && $(CMAKE) .. \
+		-G $(CMAKE_TARGET) \
+		-DCMAKE_VERBOSE_MAKEFILE:Bool=ON \
+		-DCMAKE_INSTALL_PREFIX:PATH="$(top_builddir)" \
+		-DCMAKE_INSTALL_LIBDIR="$(builddir_lib_omc)" \
+		-DCMAKE_INSTALL_INCLUDEDIR="$(builddir_inc)" \
+		-DCMAKE_CXX_FLAGS="$(CXXFLAGS)"
+
+	$(CMAKE) --build $(OMC_COLPACK_ROOT)/build --target colpack
+	$(CMAKE) --build $(OMC_COLPACK_ROOT)/build --target install
+
+colpack-clean:
+	if test -f $(OMC_COLPACK_ROOT)/build/Makefile; then $(MAKE) -C $(OMC_COLPACK_ROOT)/build/ clean; fi
+	rm -rf $(OMC_COLPACK_ROOT)/build
 
 suitesparse:
 	mkdir -p 3rdParty/SuiteSparse-5.8.1/build
@@ -557,7 +575,7 @@ openblas-clean:
 	# OpenBLAS make clean actually gives error-messages. Let it do it, but silently
 	test ! -d 3rdParty/OpenBLAS-0.2.8 || $(MAKE) -C 3rdParty/OpenBLAS-0.2.8 clean > /dev/null 2>&1
 
-clean: $(SEMLA_CLEAN) fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean openblas-clean suitesparse-clean OMSI-clean libffi-clean moo-clean primme-clean ModelicaExternalC-clean zlib-clean simdjson-clean
+clean: $(SEMLA_CLEAN) fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean openblas-clean suitesparse-clean OMSI-clean libffi-clean moo-clean primme-clean colpack-clean ModelicaExternalC-clean zlib-clean simdjson-clean
 	(cd SimulationRuntime/c && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	(cd Parser && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
