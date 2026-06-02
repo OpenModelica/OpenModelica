@@ -599,15 +599,14 @@ algorithm
 end addVarsToEqSystem;
 
 public function getSimIteratorSize
+  "Thin wrapper kept for existing callers (templates/SimCodeTV reference
+   BackendDAEUtil.getSimIteratorSize). The implementation now lives in BackendDAE
+   next to the SimIterator datatype so the backend datatype packages do not depend
+   on BackendDAEUtil."
   input list<BackendDAE.SimIterator> iters;
-  output Integer size = 1;
-protected
-  Integer local_size;
+  output Integer size;
 algorithm
-  for iter in iters loop
-    local_size := match iter case BackendDAE.SIM_ITERATOR_RANGE() then iter.non_resizable_size; case BackendDAE.SIM_ITERATOR_LIST() then iter.size; end match;
-    size := size * local_size;
-  end for;
+  size := BackendDAE.getSimIteratorSize(iters);
 end getSimIteratorSize;
 
 public function numberOfZeroCrossings "author: lochel"

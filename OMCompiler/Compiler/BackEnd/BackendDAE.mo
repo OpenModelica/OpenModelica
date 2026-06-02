@@ -50,7 +50,6 @@ import HashTableCG;
 import MMath;
 import SCode;
 import ZeroCrossings;
-import SimCode;
 
 public
 type Type = .DAE.Type
@@ -177,7 +176,7 @@ uniontype ExtraInfo "extra information that we should send around with the DAE"
   record EXTRA_INFO
     String description    "the model description string";
     String fileNamePrefix "the model name to be used in the dumps";
-    Option<SimCode.SimulationSettings> simSettingsOption "simulation settings options needed for data reconciliation to apply start values from csv files";
+    Option<String> simflags "the simulation flag string (-sx=...) needed for data reconciliation to read measurement start values from a csv file. Kept as a plain String rather than a SimCode.SimulationSettings reference so this datatype package does not depend on SimCode.";
   end EXTRA_INFO;
 end ExtraInfo;
 
@@ -690,6 +689,21 @@ public uniontype SimIterator
   end SIM_ITERATOR_LIST;
 end SimIterator;
 
+public function getSimIteratorSize
+  "Total number of scalar elements iterated over by a (possibly nested) sim iterator.
+   Defined here next to the SimIterator datatype so packages that only depend on the
+   backend datatypes (e.g. ZeroCrossings) need not pull in BackendDAEUtil."
+  input list<SimIterator> iters;
+  output Integer size = 1;
+protected
+  Integer local_size;
+algorithm
+  for iter in iters loop
+    local_size := match iter case SIM_ITERATOR_RANGE() then iter.non_resizable_size; case SIM_ITERATOR_LIST() then iter.size; end match;
+    size := size * local_size;
+  end for;
+end getSimIteratorSize;
+
 public
 uniontype TimeEvent
   record SIMPLE_TIME_EVENT "e.g. time > 0.5"
@@ -939,5 +953,5 @@ uniontype BackendDAEModeData
 end BackendDAEModeData;
 constant BackendDAEModeData emptyDAEModeData = BDAE_MODE_DATA({},{},0,NONE());
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_types");
 end BackendDAE;

@@ -376,17 +376,15 @@ protected function readMeasurementsFromCSV
 protected
   String content;
   list<String> tokens, lines;
-  SimCode.SimulationSettings simulationSettings;
   Absyn.Program p;
 algorithm
-  if isNone(shared.info.simSettingsOption) then
-    Error.addMessage(Error.INTERNAL_ERROR, {": SimulationSettings is NONE, expected SimulationSettings to be present in shared.info.simSettingsOption for reading measurements from csv file for data reconciliation initialization."});
+  if isNone(shared.info.simflags) then
+    Error.addMessage(Error.INTERNAL_ERROR, {": simflags is NONE, expected the simulation flags to be present in shared.info.simflags for reading measurements from csv file for data reconciliation initialization."});
     fail();
   end if;
 
-  simulationSettings := Util.getOption(shared.info.simSettingsOption);
   // extract the csv file path from simflags
-  csvFileName := extractSxPath(simulationSettings.simflags);
+  csvFileName := extractSxPath(Util.getOption(shared.info.simflags));
 
   if stringEmpty(csvFileName) then
     Error.addMessage(Error.INTERNAL_ERROR, {": No csv file provided or failed to read file with -sx flag in simflags."});

@@ -44,7 +44,6 @@ encapsulated package ZeroCrossings
 import BackendDAE;
 import BackendDAE.{ZeroCrossing,ZeroCrossingSet};
 import BackendDAE.ZeroCrossingSet.ZERO_CROSSING_SET;
-import BackendDAEUtil;
 
 protected
 import DoubleEnded;
@@ -97,7 +96,7 @@ algorithm
   s := match zc.iter
     local
       list<BackendDAE.SimIterator> iter;
-    case SOME(iter) then BackendDAEUtil.getSimIteratorSize(iter);
+    case SOME(iter) then BackendDAE.getSimIteratorSize(iter);
     else 1;
   end match;
 end zeroCrossingSize;
@@ -206,5 +205,5 @@ algorithm
   end match;
 end compare;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_types");
 end ZeroCrossings;

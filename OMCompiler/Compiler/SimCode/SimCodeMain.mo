@@ -1294,6 +1294,20 @@ algorithm
   end if;
 end translateModelCallBackend;
 
+protected function simSettingsSimflags
+  "Extracts the simulation flag string from the simulation settings, if present.
+   BackendDAE.ExtraInfo stores only this String (not the SimCode.SimulationSettings
+   record) so the backend datatype package does not depend on SimCode."
+  input Option<SimCode.SimulationSettings> inSimSettingsOpt;
+  output Option<String> simflags;
+algorithm
+  simflags := match inSimSettingsOpt
+    local String s;
+    case SOME(SimCode.SIMULATION_SETTINGS(simflags = s)) then SOME(s);
+    else NONE();
+  end match;
+end simSettingsSimflags;
+
 protected function translateModelCallBackendOB
   input TranslateModelKind kind;
   input output FCore.Cache cache;
@@ -1348,7 +1362,7 @@ algorithm
       end if;
 
       description := DAEUtil.daeDescription(dae);
-      dlow := BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description, inFileNamePrefix, inSimSettingsOpt));
+      dlow := BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description, inFileNamePrefix, simSettingsSimflags(inSimSettingsOpt)));
 
       GCExt.free(dae);
 
@@ -1470,7 +1484,7 @@ algorithm
       end if;
 
       description := DAEUtil.daeDescription(dae);
-      dlow := BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,inFileNamePrefix,inSimSettingsOpt));
+      dlow := BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,inFileNamePrefix,simSettingsSimflags(inSimSettingsOpt)));
 
       GCExt.free(dae);
 
