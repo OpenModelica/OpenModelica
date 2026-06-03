@@ -608,11 +608,18 @@ public
     protected
       Integer or_start, or_step, or_stop, ee_start, ee_step, ee_stop;
       Expression exp;
+      function rangeLength
+        "compute the number of traversed elements. floor to integer as ranges are allowed to be defined in a non-strict boundary"
+        input Integer start;
+        input Integer step;
+        input Integer stop;
+        output Integer length = realInt((stop-start+Util.intSign(step))/step);
+      end rangeLength;
     algorithm
       (or_start, or_step, or_stop) := Expression.getIntegerRange(replacor_range, true);
       (ee_start, ee_step, ee_stop) := Expression.getIntegerRange(replacee_range, true);
       // check if same size
-      if (or_stop-or_start+1)/or_step == (ee_stop-ee_start+1)/ee_step then
+      if rangeLength(or_start, or_step, or_stop) == rangeLength(ee_start, ee_step, ee_stop) then
         // replacee = ee_start + (ee_step/or_step) * (replacor-or_start)
         exp := Expression.MULTARY(
           arguments     = {Expression.REAL(intReal(ee_start)),
