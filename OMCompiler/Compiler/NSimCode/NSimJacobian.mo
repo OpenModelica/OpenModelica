@@ -225,8 +225,7 @@ public
     algorithm
       simJacobian := match jacobian
         local
-          // dummy map for strong component creation (no alias possible here)
-          UnorderedMap<ComponentRef, SimVar> dummy_sim_map = UnorderedMap.new<SimVar>(ComponentRef.hash, ComponentRef.isEqual);
+          // dummy equation map for strong component creation (no alias possible here)
           UnorderedMap<ComponentRef, SimStrongComponent.Block> dummy_eqn_map = UnorderedMap.new<SimStrongComponent.Block>(ComponentRef.hash, ComponentRef.isEqual);
           SimStrongComponent.Block columnEqn;
           list<SimStrongComponent.Block> columnEqns = {};
@@ -246,19 +245,6 @@ public
           list<SimGenericCall> generic_loop_calls;
 
         case BackendDAE.JACOBIAN(varData = varData as BVariable.VAR_DATA_JAC()) algorithm
-          // temporarily save the generic call map from simcode to recover it afterwards
-          // we use a local map to have seperated generic call lists for each jacobian
-          sim_map := indices.generic_call_map;
-          indices.generic_call_map := UnorderedMap.new<Integer>(Identifier.hash, Identifier.isEqual);
-          for i in arrayLength(jacobian.comps):-1:1 loop
-            (columnEqn, indices, _) := SimStrongComponent.Block.fromStrongComponent(jacobian.comps[i], indices, NBPartition.Kind.JAC, dummy_sim_map, dummy_eqn_map);
-            columnEqns := columnEqn :: columnEqns;
-          end for;
-
-          // extract generic loop calls and put the old generic call map back
-          generic_loop_calls := list(SimGenericCall.fromIdentifier(tpl) for tpl in UnorderedMap.toList(indices.generic_call_map));
-          indices.generic_call_map := sim_map;
-
           // scalarize variables for sim code
           if Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE) then
             seed_vec := VariablePointers.scalarize(varData.seedVars);
@@ -282,6 +268,19 @@ public
           SimCodeUtil.addListSimCodeMap(seedVars, jac_map);
           SimCodeUtil.addListSimCodeMap(resVars, jac_map);
           SimCodeUtil.addListSimCodeMap(tmpVars, jac_map);
+
+          // temporarily save the generic call map from simcode to recover it afterwards
+          // we use a local map to have seperated generic call lists for each jacobian
+          sim_map := indices.generic_call_map;
+          indices.generic_call_map := UnorderedMap.new<Integer>(Identifier.hash, Identifier.isEqual);
+          for i in arrayLength(jacobian.comps):-1:1 loop
+            (columnEqn, indices, _) := SimStrongComponent.Block.fromStrongComponent(jacobian.comps[i], indices, NBPartition.Kind.JAC, jac_map, dummy_eqn_map);
+            columnEqns := columnEqn :: columnEqns;
+          end for;
+
+          // extract generic loop calls and put the old generic call map back
+          generic_loop_calls := list(SimGenericCall.fromIdentifier(tpl) for tpl in UnorderedMap.toList(indices.generic_call_map));
+          indices.generic_call_map := sim_map;
 
           try
             local_idx_map := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, listLength(seedVars) + listLength(resVars));

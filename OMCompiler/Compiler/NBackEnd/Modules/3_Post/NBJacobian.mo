@@ -63,6 +63,7 @@ protected
   // Backend imports
   import Adjacency = NBAdjacency;
   import NBAdjacency.Mapping;
+  import NBAdjacency.MatrixStrictness;
   import BEquation = NBEquation;
   import BVariable = NBVariable;
   import Differentiate = NBDifferentiate;
@@ -324,6 +325,22 @@ public
                                 else "[ERR]";
     end match;
   end jacobianTypeString;
+
+  function jacobianTypeName
+    input JacobianType jacType;
+    output String str;
+  algorithm
+    str := match jacType
+      case JacobianType.ODE     then "ODE";
+      case JacobianType.DAE     then "DAE";
+      case JacobianType.LS      then "LS";
+      case JacobianType.NLS     then "NLS";
+      case JacobianType.OPT_LFG then "OPT_LFG";
+      case JacobianType.OPT_MRF then "OPT_MRF";
+      case JacobianType.OPT_R0  then "OPT_R0";
+                                else "ERR";
+    end match;
+  end jacobianTypeName;
 
   // necessary as wrapping value type for UnorderedMap
   type CrefLst = list<ComponentRef>;
@@ -1108,6 +1125,8 @@ protected
     UnorderedMap<ComponentRef,ComponentRef> diff_map = UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
     Differentiate.DifferentiationArguments diffArguments;
     Pointer<Integer> idx = Pointer.create(0);
+    Pointer<Integer> lsJacIdx = Pointer.create(0);
+    Boolean freshVars = System.stringFind(name, "_LS_JAC_") >= 0;
 
     list<Pointer<Variable>> all_vars, unknown_vars, aux_vars, alias_vars, depend_vars, res_vars, tmp_vars, seed_vars;
     BVariable.VarData varDataJac;
@@ -1126,22 +1145,35 @@ protected
     end if;
 
     // create seed vars
-    VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, map = diff_map,
-                                                                     makeVar = BVariable.makeSeedVar, staticAsContinuous = staticAsContinuous));
+    if freshVars then
+      VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, map = diff_map,
+                                                                       makeVar = BVariable.makeFreshSeedVar, staticAsContinuous = staticAsContinuous));
+    else
+      VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, map = diff_map,
+                                                                       makeVar = BVariable.makeSeedVar, staticAsContinuous = staticAsContinuous));
+    end if;
 
     // create pDer vars (also filters out discrete vars)
     (res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
     (tmp_vars, _) := List.splitOnTrue(tmp_vars, function BVariable.isContinuous(staticAsContinuous = staticAsContinuous));
 
     for v in res_vars loop
-      makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = false), staticAsContinuous = staticAsContinuous);
+      if freshVars then
+        makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makeFreshPDerVar(isTmp = false), staticAsContinuous = staticAsContinuous);
+      else
+        makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = false), staticAsContinuous = staticAsContinuous);
+      end if;
     end for;
 
     res_vars := Pointer.access(pDer_vars_ptr);
 
     pDer_vars_ptr := Pointer.create({});
     for v in tmp_vars loop
-      makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = true), staticAsContinuous = staticAsContinuous);
+      if freshVars then
+        makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makeFreshPDerVar(isTmp = true), staticAsContinuous = staticAsContinuous);
+      else
+        makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = true), staticAsContinuous = staticAsContinuous);
+      end if;
     end for;
     tmp_vars := Pointer.access(pDer_vars_ptr);
 
@@ -1160,6 +1192,7 @@ protected
 
     // differentiate all strong components
     (diffed_comps, diffArguments) := Differentiate.differentiateStrongComponentList(comps, diffArguments, idx, name, getInstanceName());
+    diffed_comps := list(addLinearLoopJacobian(comp, funcMap, name, jacType, staticAsContinuous, lsJacIdx) for comp in diffed_comps);
 
     // collect var data (most of this can be removed)
     unknown_vars  := listAppend(res_vars, tmp_vars);
@@ -1202,6 +1235,42 @@ protected
       isAdjoint         = false
     ));
   end jacobianSymbolic;
+
+  function addLinearLoopJacobian
+    input output StrongComponent comp;
+    input UnorderedMap<Path, Function> funcMap;
+    input String parentName;
+    input JacobianType parentJacType;
+    input Boolean staticAsContinuous;
+    input Pointer<Integer> lsJacIdx;
+  protected
+    Tearing strict;
+    list<StrongComponent> residual_comps;
+    String name;
+    Integer idx;
+  algorithm
+    comp := match comp
+      case StrongComponent.ALGEBRAIC_LOOP(strict = strict) guard(comp.linear and not isSome(strict.jac)) algorithm
+        residual_comps := list(StrongComponent.SINGLE_COMPONENT(Equation.getResidualVar(Slice.getT(eqn)), Slice.getT(eqn), NBSolve.Status.EXPLICIT) for eqn in strict.residual_eqns);
+        idx := Pointer.access(lsJacIdx);
+        Pointer.update(lsJacIdx, idx + 1);
+        name := parentName + "_" + jacobianTypeName(parentJacType) + "_LS_JAC_" + intString(idx);
+        strict.jac := nonlinear(
+          seedCandidates     = VariablePointers.fromList(Tearing.getIterationVars(strict)),
+          partialCandidates  = VariablePointers.fromList(Tearing.getResidualVars(strict)),
+          equations          = EquationPointers.fromList(Tearing.getResidualEqns(strict)),
+          comps              = listArray(residual_comps),
+          full               = SOME(Adjacency.Matrix.EMPTY(MatrixStrictness.LINEAR)),
+          funcMap            = funcMap,
+          name               = name,
+          staticAsContinuous = staticAsContinuous
+        );
+        comp.strict := strict;
+      then comp;
+
+      else comp;
+    end match;
+  end addLinearLoopJacobian;
 
   function sizeClassificationFromType
     input Type ty;
