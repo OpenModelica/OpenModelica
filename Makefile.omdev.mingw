@@ -44,6 +44,8 @@ else # new OMDev, use clang
     liblzma-5.dll \
     libxml2-*.dll \
     libwebp-*.dll \
+    libwebpdemux-2.dll \
+    libwebpmux-3.dll \
     zlib1.dll \
     libpng16-16.dll \
     libjpeg-8.dll \
