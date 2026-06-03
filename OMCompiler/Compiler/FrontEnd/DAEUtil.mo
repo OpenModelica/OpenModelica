@@ -52,7 +52,6 @@ import Values;
 import ValuesUtil;
 import HashTable;
 import AvlSetCR;
-import HashTable2;
 
 protected
 import Algorithm;
@@ -68,7 +67,6 @@ import ElementSource;
 import Error;
 import Expression;
 protected import ExpressionBasics;
-import ExpressionDump;
 import ExpressionSimplify;
 import Flags;
 import List;
