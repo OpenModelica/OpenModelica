@@ -48,54 +48,72 @@
 #ifndef XMLPARSER_H
 #define XMLPARSER_H
 
-
-//QT Headers
+// ---------------------------------------------------------------------------
+// Qt headers
+// ---------------------------------------------------------------------------
 #include <QtCore/QString>
 
-//IAEX Headers
+// ---------------------------------------------------------------------------
+// IAEX headers
+// ---------------------------------------------------------------------------
 #include "nbparser.h"
 #include "document.h"
 #include "factory.h"
 #include "xmlnodename.h"
 
-//Forward declaration
+// Forward declarations (these stay unchanged)
 class QDomDocument;
 class QDomElement;
 class QDomNode;
-
 
 namespace IAEX
 {
   class XMLParser : public NBParser
   {
   public:
-    XMLParser( const QString filename, Factory *factory, Document *document, int readmode = READMODE_NORMAL );
+    XMLParser( const QString filename,
+               Factory *factory,
+               Document *document,
+               int readmode = READMODE_NORMAL );
+
     virtual ~XMLParser();
-    virtual Cell *parse();
+
+    /** NBParser declares a virtual `Cell* parse()` – we explicitly mark the
+     *  override here to silence the “missing override” warning. */
+    Cell *parse() override;
 
   private:
+    // -----------------------------------------------------------------------
+    //  Read‑mode specific helpers
+    // -----------------------------------------------------------------------
     Cell *parseNormal( QDomDocument &domdoc );
-    Cell *parseOld( QDomDocument &domdoc );
+    Cell *parseOld   ( QDomDocument &domdoc );
 
-    // READMODE_NORMAL
-    void traverseCells( Cell *parent, QDomNode &node );
-    void traverseGroupCell( Cell *parent, QDomElement &element );
-    void traverseTextCell( Cell *parent, QDomElement &element );
-    void traverseInputCell( Cell *parent, QDomElement &element );
-    void traverseGraphCell( Cell *parent, QDomElement &element );
-    void traverseLatexCell( Cell *parent, QDomElement &element );
+    // -----------------------------------------------------------------------
+    //  Normal‑mode traversal helpers
+    // -----------------------------------------------------------------------
+    void traverseCells      ( Cell *parent, QDomNode &node );
+    void traverseGroupCell  ( Cell *parent, QDomElement &element );
+    void traverseTextCell   ( Cell *parent, QDomElement &element );
+    void traverseInputCell  ( Cell *parent, QDomElement &element );
+    void traverseGraphCell  ( Cell *parent, QDomElement &element );
+    void traverseLatexCell  ( Cell *parent, QDomElement &element );
 
     void addImage( Cell *parent, QDomElement &element );
 
-    // READMODE_OLD
+    // -----------------------------------------------------------------------
+    //  Old‑format traversal helper
+    // -----------------------------------------------------------------------
     void xmltraverse( Cell *parent, QDomNode &node );
 
-
-    // variables
-    QString filename_;
-    Factory *factory_;
+    // -----------------------------------------------------------------------
+    //  Member variables
+    // -----------------------------------------------------------------------
+    QString   filename_;
+    Factory  *factory_;
     Document *doc_;
-    int readmode_;
+    int       readmode_;
   };
-};
-#endif
+} // namespace IAEX
+
+#endif // XMLPARSER_H

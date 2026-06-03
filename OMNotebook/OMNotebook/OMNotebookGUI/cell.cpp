@@ -38,7 +38,6 @@
 //QT Headers
 #include <QtGlobal>
 #include <QtWidgets>
-#include <QRegExp>
 
 #include <exception>
 #include <stdexcept>
