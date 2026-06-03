@@ -442,6 +442,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCode.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCodeMain.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCodeUtil.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCodeUtilShared.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/ReduceDAE.mo
 
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/AbsynToJulia.mo

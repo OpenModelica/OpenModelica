@@ -124,6 +124,7 @@ import PriorityQueue;
 import SemanticVersion;
 import SimCodeDump;
 import SimCodeFunctionUtil;
+import SimCodeUtilShared;
 import Static;
 import StringUtil;
 import SymbolicJacobian;
@@ -718,7 +719,7 @@ algorithm
     backendMapping := setBackendVarMapping(inBackendDAE, crefToSimVarHT, modelInfo, backendMapping);
     //dumpBackendMapping(backendMapping);
 
-    (varToArrayIndexMapping, varToIndexMapping) := SimCodeFunctionUtil.createVarToArrayIndexMapping(modelInfo);
+    (varToArrayIndexMapping, varToIndexMapping) := SimCodeUtilShared.createVarToArrayIndexMapping(modelInfo);
     //print("HASHTABLE MAPPING\n\n");
     //BaseHashTable.dumpHashTable(varToArrayIndexMapping);
     //print("END MAPPING\n\n");
@@ -7715,7 +7716,7 @@ protected function getNumberOfRealInputs
   input list<SimCodeVar.SimVar> inputVars;
   output Integer numRealInputs = 0;
 algorithm
-  //numScalars := List.applyAndFold(vars, intAdd, SimCodeFunctionUtil.getNumElems, 0);
+  //numScalars := List.applyAndFold(vars, intAdd, SimCodeUtilShared.getNumElems, 0);
   for var in inputVars loop
     if isRealInput(var) then
       numRealInputs := numRealInputs + 1;
@@ -9650,7 +9651,7 @@ algorithm
     subs := ComponentReference.crefLastSubs(var.name);
     if listLength(subs) > 1 then
       arrayDimensions := List.map(var.numArrayElement, stringInt);
-      elementIndex := SimCodeFunctionUtil.getScalarElementIndex(subs, arrayDimensions);
+      elementIndex := SimCodeUtilShared.getScalarElementIndex(subs, arrayDimensions);
       var.index := index - elementIndex + convertIndexToColumnMajor(elementIndex, arrayDimensions);
     else
       var.index := index;
@@ -9695,11 +9696,11 @@ algorithm
   (index, fmi_index) := tpl;
 
   var.variable_index := SOME(index);
-  index := index + SimCodeFunctionUtil.getNumElems(var);
+  index := index + SimCodeUtilShared.getNumElems(var);
 
   if isSome(var.exportVar) then
     var.fmi_index := SOME(fmi_index);
-    fmi_index := fmi_index + SimCodeFunctionUtil.getNumElems(var);
+    fmi_index := fmi_index + SimCodeUtilShared.getNumElems(var);
   else
     var.fmi_index := NONE();
   end if;
@@ -12155,7 +12156,7 @@ algorithm
     else
       arraySize := arrayLength(varIndices);
     end if;
-    concreteVarIndex := SimCodeFunctionUtil.getScalarElementIndex(arraySubscripts, arrayDimensions);
+    concreteVarIndex := SimCodeUtilShared.getScalarElementIndex(arraySubscripts, arrayDimensions);
     toColumnMajor := iColumnMajor and listLength(arrayDimensions) > 1;
     if toColumnMajor then
       concreteVarIndex := convertIndexToColumnMajor(concreteVarIndex, arrayDimensions);
@@ -14365,7 +14366,7 @@ function getNumScalars
   input list<SimCodeVar.SimVar> vars;
   output Integer numScalars;
 algorithm
-  numScalars := List.applyAndFold(vars, intAdd, SimCodeFunctionUtil.getNumElems, 0);
+  numScalars := List.applyAndFold(vars, intAdd, SimCodeUtilShared.getNumElems, 0);
 end getNumScalars;
 
 protected
@@ -14981,14 +14982,14 @@ algorithm
       sv.variable_index := match sv.variable_index
         local Integer index;
         case SOME(index)
-        then SOME(index + SimCodeFunctionUtil.getScalarElementIndex(subs, List.map(sv.numArrayElement, stringInt)) - 1);
+        then SOME(index + SimCodeUtilShared.getScalarElementIndex(subs, List.map(sv.numArrayElement, stringInt)) - 1);
         else sv.variable_index;
       end match;
       // fix fmi_index when using nfScalarize
       sv.fmi_index := match sv.fmi_index
         local Integer fmiIndex;
         case SOME(fmiIndex)
-        then SOME(fmiIndex + SimCodeFunctionUtil.getScalarElementIndex(subs, List.map(sv.numArrayElement, stringInt)) - 1);
+        then SOME(fmiIndex + SimCodeUtilShared.getScalarElementIndex(subs, List.map(sv.numArrayElement, stringInt)) - 1);
         else sv.fmi_index;
       end match;
     end if;

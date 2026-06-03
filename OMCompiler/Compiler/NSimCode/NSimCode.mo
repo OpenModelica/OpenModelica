@@ -100,6 +100,7 @@ protected
   import OldSimCode = SimCode;
   import OldSimCodeFunction = SimCodeFunction;
   import OldSimCodeFunctionUtil = SimCodeFunctionUtil;
+  import SimCodeUtilShared;
   import System;
 
   // Util imports
@@ -419,7 +420,7 @@ public
             // The OB function tree is needed both here and when dumping the flat model,
             // but converting it is destructive so return it to avoid doing it again.
             oldFunctionTree := ConvertDAE.convertFunctionTree(FunctionTree.fromList(UnorderedMap.toList(funcMap)));
-            (libs, libPaths, externalFunctionIncludes, includeDirs, recordDecls, functions, _) := OldSimCodeFunctionUtil.createFunctions(program, oldFunctionTree);
+            (libs, libPaths, externalFunctionIncludes, includeDirs, recordDecls, functions, _) := SimCodeUtilShared.createFunctions(program, oldFunctionTree);
             makefileParams  := OldSimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false, false);
             fileName        := System.basename(AbsynUtil.classFilename(ProgramUtil.getPathedClassInProgram(name, program)));
 
@@ -525,7 +526,7 @@ public
       modelInfo := ModelInfo.convert(simCode.modelInfo);
       (zeroCrossings, relations, timeEvents) := EventInfo.convert(simCode.eventInfo, simCode.equation_map);
 
-      (varToArrayIndexMapping, varToIndexMapping) := OldSimCodeFunctionUtil.createVarToArrayIndexMapping(modelInfo);
+      (varToArrayIndexMapping, varToIndexMapping) := SimCodeUtilShared.createVarToArrayIndexMapping(modelInfo);
       crefToSimVarHT := SimCodeUtil.convertSimCodeMap(simCode.simcode_map);
       // do we still need the following for DAE mode?
       if isSome(simCode.daeModeData) then
