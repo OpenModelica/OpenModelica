@@ -1246,18 +1246,21 @@ protected
   protected
     Tearing strict;
     list<StrongComponent> residual_comps;
+    list<VariablePointer> seed_candidates, residual_vars;
     String name;
     Integer idx;
   algorithm
     comp := match comp
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) guard(comp.linear and not isSome(strict.jac)) algorithm
         residual_comps := list(StrongComponent.SINGLE_COMPONENT(Equation.getResidualVar(Slice.getT(eqn)), Slice.getT(eqn), NBSolve.Status.EXPLICIT) for eqn in strict.residual_eqns);
+        seed_candidates := listReverse(Tearing.getIterationVars(strict));
+        residual_vars := listReverse(Tearing.getResidualVars(strict));
         idx := Pointer.access(lsJacIdx);
         Pointer.update(lsJacIdx, idx + 1);
         name := parentName + "_" + jacobianTypeName(parentJacType) + "_LS_JAC_" + intString(idx);
         strict.jac := nonlinear(
-          seedCandidates     = VariablePointers.fromList(Tearing.getIterationVars(strict)),
-          partialCandidates  = VariablePointers.fromList(Tearing.getResidualVars(strict)),
+          seedCandidates     = VariablePointers.fromList(seed_candidates),
+          partialCandidates  = VariablePointers.fromList(residual_vars),
           equations          = EquationPointers.fromList(Tearing.getResidualEqns(strict)),
           comps              = listArray(residual_comps),
           full               = SOME(Adjacency.Matrix.EMPTY(MatrixStrictness.LINEAR)),
