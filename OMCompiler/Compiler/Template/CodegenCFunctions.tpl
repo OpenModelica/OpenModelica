@@ -1301,15 +1301,6 @@ case func as EXTERNAL_FUNCTION(__) then
   >>
 end extFunDefDynamic;
 
-/* public */ template extFunctionName(String name, String language) "used in Compiler/Template/CodegenFMU.tpl"
-::=
-  match language
-  case "BUILTIN"
-  case "C" then '<%name%>'
-  case "FORTRAN 77" then '<%name%>_'
-  else error(sourceInfo(), 'Unsupported external language: <%language%>')
-end extFunctionName;
-
 template extFunDefArgs(list<SimExtArg> args, String language)
 ::=
   match language
