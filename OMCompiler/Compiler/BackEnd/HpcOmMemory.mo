@@ -63,7 +63,6 @@ import GraphML;
 import HpcOmScheduler;
 import List;
 import SimCodeUtil;
-import SimCodeFunctionUtil;
 import SimCodeUtilShared;
 import Util;
 

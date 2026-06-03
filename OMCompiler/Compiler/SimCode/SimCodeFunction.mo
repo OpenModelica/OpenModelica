@@ -41,10 +41,8 @@ public import Absyn;
 public import AbsynUtil;
 public import DAE;
 public import HashTableCrefSimVar;
-public import HashTableStringToPath;
 
 // private imports
-protected import BaseHashTable;
 protected import ComponentReferenceBasics;
 protected import ExpressionBasics;
 protected import Error;
