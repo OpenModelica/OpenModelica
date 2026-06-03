@@ -49,16 +49,34 @@
 
 extern "C" {
 #include "meta/meta_modelica_data.h"
-#include "../../OMCompiler/Compiler/runtime/settingsimpl.h"
 }
 
 #ifdef Q_OS_WIN
 #include <windows.h>
 #endif
 
-#include <QMessageBox>
-
 #ifdef QT_NO_DEBUG
+#include <QMutex>
+
+static QMutex mutex;
+void messageHandler(QtMsgType type, const QMessageLogContext &ctx, const QString &msg)
+{
+  Q_UNUSED(ctx);
+  QMutexLocker lock(&mutex);
+
+  QString line;
+  switch (type) {
+    case QtDebugMsg:    line = QStringLiteral("[QtDebug]  ") + msg; break;
+    case QtInfoMsg:     line = QStringLiteral("[QtInfo] ") + msg; break;
+    case QtWarningMsg:  line = QStringLiteral("[QtWarning] ") + msg; break;
+    case QtCriticalMsg: line = QStringLiteral("[QtCritical] ") + msg; break;
+    case QtFatalMsg:    line = QStringLiteral("[QtFatal]") + msg; break;
+  }
+
+  FILE *out = (type == QtDebugMsg || type == QtInfoMsg) ? stdout : stderr;
+  fprintf(out, "%s\n", qPrintable(line));
+}
+
 #include "CrashReport/CrashReportDialog.h"
 
 #ifdef Q_OS_WIN
@@ -160,7 +178,7 @@ void printOMEditUsage()
   fprintf(stderr, "  --NAPIProfiling=[true|false]  Enable profiling for the new JSON-based API.\n");
   fprintf(stderr, "                                Default: false.\n\n");
 
-  fprintf(stderr, "  --paths                       Dumps the Qt paths in /tmp/qt-paths.txt.\n\n");
+  fprintf(stderr, "  --paths                       Prints the Qt paths.\n\n");
 
   fprintf(stderr, "files                           List of Modelica files (*.mo) to open.\n");
 }
@@ -175,16 +193,20 @@ static int execution_failed()
 
 int main(int argc, char *argv[])
 {
-  // if user asks for --help
-  for(int i = 1; i < argc; i++) {
-    if (strcmp(argv[i], "--help") == 0) {
 #ifdef Q_OS_WIN
-      /// Re-attach to the parent console (the cmd.exe that launched us)
-      if (AttachConsole(ATTACH_PARENT_PROCESS)) {
-        freopen("CONOUT$", "w", stdout);
-        freopen("CONOUT$", "w", stderr);
-      }
+  /// Re-attach to the parent console (the cmd.exe that launched us)
+  if (AttachConsole(ATTACH_PARENT_PROCESS)) {
+    freopen("CONOUT$", "w", stdout);
+    freopen("CONOUT$", "w", stderr);
+  }
 #endif // #ifdef Q_OS_WIN
+#ifdef QT_NO_DEBUG
+  // install the message handler before creating the application object so that we can catch all messages
+  qInstallMessageHandler(messageHandler);
+#endif // #ifdef QT_NO_DEBUG
+  // if user asks for --help
+  for (int i = 1; i < argc; i++) {
+    if (strcmp(argv[i], "--help") == 0) {
       printOMEditUsage();
       return 0;
     }

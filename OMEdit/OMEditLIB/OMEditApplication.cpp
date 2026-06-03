@@ -99,41 +99,38 @@ QFont getWindowsUIFont()
 
 void dumpQtPaths()
 {
-  QString fname = QDir::tempPath() + QDir::separator() + QString("qt-paths.txt");
-  FILE *fout = fopen(fname.toUtf8(), "w");
-  fprintf(fout, "Qt location/paths:\n");
-  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::PrefixPath) = \n\t%s\n",
+  fprintf(stdout, "Qt location/paths:\n");
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::PrefixPath) = \n\t%s\n",
     qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::PrefixPath)));
-  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::DocumentationPath) = \n\t%s\n",
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::DocumentationPath) = \n\t%s\n",
     qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::DocumentationPath)));
-  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::HeadersPath) = \n\t%s\n",
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::HeadersPath) = \n\t%s\n",
     qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::HeadersPath)));
-  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::LibrariesPath) = \n\t%s\n",
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::LibrariesPath) = \n\t%s\n",
     qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::LibrariesPath)));
-  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::LibraryExecutablesPath) =\n\t%s\n",
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::LibraryExecutablesPath) =\n\t%s\n",
     qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::LibraryExecutablesPath)));
-  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::BinariesPath) =\n\t%s\n",
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::BinariesPath) =\n\t%s\n",
     qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::BinariesPath)));
-  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::PluginsPath) =\n\t%s\n",
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::PluginsPath) =\n\t%s\n",
     qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::PluginsPath)));
-  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::PluginsPath) =\n\t%s\n",
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::PluginsPath) =\n\t%s\n",
     qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::PluginsPath)));
-  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::QmlImportsPath) =\n\t%s\n",
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::QmlImportsPath) =\n\t%s\n",
     qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QT_LIBRRY_INFO_QMLIP)));
-  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::ArchDataPath) =\n\t%s\n",
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::ArchDataPath) =\n\t%s\n",
     qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::ArchDataPath)));
-  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::DataPath) =\n\t%s\n",
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::DataPath) =\n\t%s\n",
     qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::DataPath)));
-  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::TranslationsPath) =\n\t%s\n",
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::TranslationsPath) =\n\t%s\n",
     qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::TranslationsPath)));
-  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::ExamplesPath) =\n\t%s\n",
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::ExamplesPath) =\n\t%s\n",
     qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::ExamplesPath)));
-  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::TestsPath) =\n\t%s\n",
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::TestsPath) =\n\t%s\n",
     qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::TestsPath)));
-  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::SettingsPath) =\n\t%s\n",
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::SettingsPath) =\n\t%s\n",
     qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::SettingsPath)));
   fflush(NULL);
-  fclose(fout);
 }
 
 /*!
