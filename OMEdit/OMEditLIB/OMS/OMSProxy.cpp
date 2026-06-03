@@ -971,16 +971,38 @@ bool OMSProxy::getElementsJson(QString cref, QJsonArray &elements)
  * \param stepSize
  * \return
  */
-bool OMSProxy::getFixedStepSize(QString cref, double *stepSize)
+bool OMSProxy::getFixedStepSize(QString cref, double& stepSize)
 {
-  QString command = "oms_getFixedStepSize";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getFixedStepSize(cref.toUtf8().constData(), stepSize);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
+  QJsonObject obj;
+  obj["method"] = "getFixedStepSize";
+  obj["model"]  = cref.split('.').first();
+  QJsonObject reply;
+  if (!sendZmqCommand(obj, reply))
+    return false;
+
+  stepSize = reply["value"].toString().toDouble();
+  return true;
 }
+
+/*!
+ * \brief OMSProxy::setFixedStepSize
+ * Set the fixed step size for the simulation.
+ * \param cref
+ * \param stepSize
+ * \return
+ */
+bool OMSProxy::setFixedStepSize(QString cref, double stepSize)
+{
+  QJsonObject obj, args;
+  obj["method"] = "setFixedStepSize";
+  obj["model"]  = cref.split('.').first();
+  args["value"] = stepSize;
+  obj["args"] = args;
+
+  QJsonObject reply;
+  return sendZmqCommand(obj, reply);
+}
+
 
 /*!
  * \brief OMSProxy::getFMUInfo
@@ -1074,15 +1096,41 @@ bool OMSProxy::getReal(QString cref, double &value)
  * \param solver
  * \return
  */
-bool OMSProxy::getSolver(QString cref, oms_solver_enu_t *solver)
+bool OMSProxy::getSolverSettings(const QString &cref, QJsonObject &settings)
 {
-  QString command = "oms_getSolver";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getSolver(cref.toUtf8().constData(), solver);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
+  QJsonObject obj;
+  obj["method"] = "getSolverSettings";
+  obj["model"]  = cref.split('.').first();
+  QJsonObject reply;
+  if (!sendZmqCommand(obj, reply))
+    return false;
+  settings = reply["settings"].toObject();
+  return true;
+}
+
+bool OMSProxy::setSolverSettings(const QString &cref, const QJsonObject &settings)
+{
+  QJsonObject obj, args;
+  obj["method"] = "setSolverSettings";
+  obj["model"]  = cref.split('.').first();
+  args["settings"] = settings;
+  obj["args"]   = args;
+  QJsonObject reply;
+  return sendZmqCommand(obj, reply);
+}
+
+bool OMSProxy::setSolver(const QString &cref, const QString &solverName)
+{
+  QStringList parts = cref.split('.');
+  QJsonObject obj, args;
+  obj["method"] = "setSolver";
+  obj["model"]  = parts.first();
+  parts.removeFirst();
+  args["cref"]   = QJsonArray::fromStringList(parts);
+  args["solver"] = solverName;
+  obj["args"]    = args;
+  QJsonObject reply;
+  return sendZmqCommand(obj, reply);
 }
 
 /*!
@@ -1105,7 +1153,7 @@ bool OMSProxy::getSolver(QString cref, oms_solver_enu_t *solver)
 // }
 
 /*!
- * \brief OMSProxy::setStartTime
+ * \brief OMSProxy::getStartTime
  * Get the start time from the model.
  * \param cref
  * \param startTime
@@ -1119,13 +1167,13 @@ bool OMSProxy::getStartTime(QString cref, double& startTime)
   QJsonObject reply;
   if (!sendZmqCommand(obj, reply))
     return false;
-  startTime = reply["value"].toDouble(0.0);
+  startTime = reply["value"].toString().toDouble();
   return true;
 }
 
 /*!
- * \brief OMSProxy::setStopTime
- * Get the stop time from the model.
+ * \brief OMSProxy::getStopTime
+ * Get the stop time sfrom the model.
  * \param cref
  * \param stopTime
  * \return
@@ -1138,7 +1186,7 @@ bool OMSProxy::getStopTime(QString cref, double& stopTime)
   QJsonObject reply;
   if (!sendZmqCommand(obj, reply))
     return false;
-  stopTime = reply["value"].toDouble(1.0);
+  stopTime = reply["value"].toString().toDouble();
   return true;
 }
 
@@ -1184,19 +1232,20 @@ bool OMSProxy::getSystemType(QString cref, oms_system_enu_t *pType)
  * \brief OMSProxy::getTolerance
  * Gets the tolerance.
  * \param cref
- * \param absoluteTolerance
  * \param relativeTolerance
  * \return
  */
-bool OMSProxy::getTolerance(QString cref, double *absoluteTolerance, double *relativeTolerance)
+bool OMSProxy::getTolerance(QString cref, double &relativeTolerance)
 {
-  QString command = "oms_getTolerance";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getTolerance(cref.toUtf8().constData(), absoluteTolerance, relativeTolerance);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
+  QJsonObject obj;
+  obj["method"] = "getTolerance";
+  obj["model"]  = cref.split('.').first();
+  QJsonObject reply;
+  if (!sendZmqCommand(obj, reply))
+    return false;
+
+  relativeTolerance = reply["value"].toString().toDouble();
+  return true;
 }
 
 /*!
@@ -1208,15 +1257,19 @@ bool OMSProxy::getTolerance(QString cref, double *absoluteTolerance, double *rel
  * \param maximumStepSize
  * \return
  */
-bool OMSProxy::getVariableStepSize(QString cref, double *initialStepSize, double *minimumStepSize, double *maximumStepSize)
+bool OMSProxy::getVariableStepSize(QString cref, double& initialStepSize, double& minimumStepSize, double& maximumStepSize)
 {
-  QString command = "oms_getVariableStepSize";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getVariableStepSize(cref.toUtf8().constData(), initialStepSize, minimumStepSize, maximumStepSize);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
+  QJsonObject obj;
+  obj["method"] = "getVariableStepSize";
+  obj["model"]  = cref.split('.').first();
+  QJsonObject reply;
+  if (!sendZmqCommand(obj, reply))
+    return false;
+  initialStepSize = reply["initialStepSize"].toString().toDouble();
+  minimumStepSize = reply["minimumStepSize"].toString().toDouble();
+  maximumStepSize = reply["maximumStepSize"].toString().toDouble();
+
+  return true;
 }
 
 /*!
@@ -1599,24 +1652,6 @@ bool OMSProxy::setElementGeometry(QString cref, const OMSModel::ElementGeometry 
 }
 
 /*!
- * \brief OMSProxy::setCommunicationInterval
- * Set the fixed step size for the simulation.
- * \param cref
- * \param stepSize
- * \return
- */
-bool OMSProxy::setFixedStepSize(QString cref, double stepSize)
-{
-  QString command = "oms_setFixedStepSize";
-  QStringList args;
-  args << "\"" + cref + "\"" << QString::number(stepSize);
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setFixedStepSize(cref.toUtf8().constData(), stepSize);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
  * \brief OMSProxy::setLogFile
  * Sets the log file.
  * \param filename
@@ -1751,22 +1786,13 @@ bool OMSProxy::getResultFile(QString cref, char **pFilename, int *pBufferSize)
 }
 
 /*!
- * \brief OMSProxy::setSolver
+ * \brief OMSProxy::setS
  * Sets the solver.
  * \param cref
  * \param solver
  * \return
  */
-bool OMSProxy::setSolver(QString cref, oms_solver_enu_t solver)
-{
-  QString command = "oms_setSolver";
-  QStringList args;
-  args << "\"" + cref + "\"" << "\"" + QString::number(solver) + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setSolver(cref.toUtf8().constData(), solver);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
+// setSolver(const QString&, const QString&) implemented above with getSolverSettings/setSolverSettings
 
 /*!
  * \brief OMSProxy::setStartTime
@@ -1828,15 +1854,16 @@ void OMSProxy::setTempDirectory(QString path)
  * \param tolerance
  * \return
  */
-bool OMSProxy::setTolerance(QString cref, double absoluteTolerance, double relativeTolerance)
+bool OMSProxy::setTolerance(QString cref, double relativeTolerance)
 {
-  QString command = "oms_setTolerance";
-  QStringList args;
-  args << "\"" + cref + "\"" << QString::number(absoluteTolerance) << QString::number(relativeTolerance);
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setTolerance(cref.toUtf8().constData(), absoluteTolerance, relativeTolerance);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
+  QJsonObject obj, args;
+  obj["method"] = "setTolerance";
+  obj["model"]  = cref.split('.').first();
+  args["value"] = relativeTolerance;
+  obj["args"] = args;
+
+  QJsonObject reply;
+  return sendZmqCommand(obj, reply);
 }
 
 /*!
@@ -1850,13 +1877,16 @@ bool OMSProxy::setTolerance(QString cref, double absoluteTolerance, double relat
  */
 bool OMSProxy::setVariableStepSize(QString cref, double initialStepSize, double minimumStepSize, double maximumStepSize)
 {
-  QString command = "oms_setVariableStepSize";
-  QStringList args;
-  args << "\"" + cref + "\"" << QString::number(initialStepSize) << QString::number(minimumStepSize) << QString::number(maximumStepSize);
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setVariableStepSize(cref.toUtf8().constData(), initialStepSize, minimumStepSize, maximumStepSize);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
+  QJsonObject obj, args;
+  obj["method"] = "setTolerance";
+  obj["model"]  = cref.split('.').first();
+  args["initialStepSize"] = initialStepSize;
+  args["minimumStepSize"] = minimumStepSize;
+  args["maximumStepSize"] = maximumStepSize;
+  obj["args"] = args;
+
+  QJsonObject reply;
+  return sendZmqCommand(obj, reply);
 }
 
 /*!

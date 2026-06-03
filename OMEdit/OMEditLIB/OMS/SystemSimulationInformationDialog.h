@@ -40,34 +40,27 @@
 #ifndef SYSTEMSIMULATIONINFORMATIONDIALOG_H
 #define SYSTEMSIMULATIONINFORMATIONDIALOG_H
 
-#include "OMSimulator/OMSimulator.h"
-
 #include <QDialog>
 #include <QLineEdit>
 #include <QComboBox>
 #include <QDialogButtonBox>
+#include <QGroupBox>
+#include <QTableWidget>
+#include <QStackedWidget>
+#include <QPushButton>
+#include <QJsonArray>
+#include <QJsonObject>
 
 class ModelWidget;
 class Label;
-
-class SystemSimulationInformationWidget : public QWidget
+class LibraryTreeItem;
+class SolverSettingsDialog : public QDialog
 {
-  Q_OBJECT
 public:
-  SystemSimulationInformationWidget(ModelWidget *pModelWidget);
-  bool setSystemSimulationInformation(bool pushOnStack);
+  SolverSettingsDialog(ModelWidget *pModelWidget, const QString &solverName, const QString &method, const QJsonObject &params, QWidget *pParent = nullptr);
+  QJsonObject getSolverSettings() const;
 private:
-  ModelWidget *mpModelWidget;
-  // TLM system simulation information
-  Label *mpIpAddressLabel;
-  QLineEdit *mpIpAddressTextBox;
-  Label *mpManagerPortLabel;
-  QLineEdit *mpManagerPortTextBox;
-  Label *mpMonitorPortLabel;
-  QLineEdit *mpMonitorPortTextBox;
-  // WC/SC system simulation information
-  Label *mpSolverLabel;
-  QComboBox *mpSolverComboBox;
+  QString mMethod;
   Label *mpFixedStepSizeLabel;
   QLineEdit *mpFixedStepSizeTextBox;
   Label *mpInitialStepSizeLabel;
@@ -76,12 +69,35 @@ private:
   QLineEdit *mpMinimumStepSizeTextBox;
   Label *mpMaximumStepSizeLabel;
   QLineEdit *mpMaximumStepSizeTextBox;
-  Label *mpAbsoluteToleranceLabel;
-  QLineEdit *mpAbsoluteToleranceTextBox;
   Label *mpRelativeToleranceLabel;
   QLineEdit *mpRelativeToleranceTextBox;
+};
+
+class SystemSimulationInformationWidget : public QWidget
+{
+  Q_OBJECT
+public:
+  SystemSimulationInformationWidget(ModelWidget *pModelWidget);
+  bool setSystemSimulationInformation(bool pushOnStack);
+  static bool isVariableStep(const QString &method);
+private:
+  // helpers
+  void addSolverRow(const QString &name, const QString &method, const QJsonObject &params);
+  void populateComponentAssignments(LibraryTreeItem *pLibraryTreeItem, const QJsonArray &solvers, const QJsonObject &assignments);
+  void populateSolverCombos();
+  ModelWidget * mpModelWidget;
+  int mCurrentSolverRow = -1;
+
+  // Solver configurations table: Name | Method
+  QTableWidget *mpSolversTable;
+  QPushButton  *mpAddSolverButton;
+  QPushButton  *mpRemoveSolverButton;
+  // Component assignments: Component | Solver combo
+  QTableWidget *mpAssignmentsTable;
 private slots:
-  void solverChanged(int index);
+  void addSolver();
+  void removeSolver();
+  void editSolverParameters();
 };
 
 class SystemSimulationInformationDialog : public QDialog

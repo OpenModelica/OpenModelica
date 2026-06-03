@@ -39,227 +39,347 @@
 
 #include "SystemSimulationInformationDialog.h"
 #include "Modeling/ModelWidgetContainer.h"
+#include "Modeling/LibraryTreeWidget.h"
 #include "Modeling/Commands.h"
+#include "OMS/OMSProxy.h"
+#include "OMS/OMSModel.h"
+#include "Util/Helper.h"
 
 #include <QGridLayout>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QGroupBox>
+#include <QHeaderView>
 #include <QMessageBox>
+
+
+SolverSettingsDialog::SolverSettingsDialog(ModelWidget *pModelWidget, const QString &solverName, const QString &method, const QJsonObject &params, QWidget *pParent)
+  : QDialog(pParent), mMethod(method)
+{
+  setWindowTitle(tr("SolverSettings - %1 (%2)").arg(solverName, method));
+
+  QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
+
+  // fixed step size
+  mpFixedStepSizeLabel = new Label(tr("Fixed Step Size:"));
+  mpFixedStepSizeTextBox = new QLineEdit;
+  mpFixedStepSizeTextBox->setValidator(pDoubleValidator);
+
+  double fixedStepSize;
+  if (OMSProxy::instance()->getFixedStepSize(pModelWidget->getLibraryTreeItem()->getNameStructure(), fixedStepSize)) {
+    mpFixedStepSizeTextBox->setText(QString::number(fixedStepSize));
+  }
+  // initial step size
+  mpInitialStepSizeLabel = new Label(tr("Initial Step Size:"));
+  mpInitialStepSizeTextBox = new QLineEdit;
+  mpInitialStepSizeTextBox->setValidator(pDoubleValidator);
+  // minimum step size
+  mpMinimumStepSizeLabel = new Label(tr("Minimum Step Size:"));
+  mpMinimumStepSizeTextBox = new QLineEdit;
+  mpMinimumStepSizeTextBox->setValidator(pDoubleValidator);
+  // maximum step size
+  mpMaximumStepSizeLabel = new Label(tr("Maximum Step Size:"));
+  mpMaximumStepSizeTextBox = new QLineEdit;
+  mpMaximumStepSizeTextBox->setValidator(pDoubleValidator);
+
+  double initialStepSize, minimumStepSize, maximumStepSize;
+  if (OMSProxy::instance()->getVariableStepSize(pModelWidget->getLibraryTreeItem()->getNameStructure(), initialStepSize, minimumStepSize, maximumStepSize)) {
+    mpInitialStepSizeTextBox->setText(QString::number(initialStepSize));
+    mpMinimumStepSizeTextBox->setText(QString::number(minimumStepSize));
+    mpMaximumStepSizeTextBox->setText(QString::number(maximumStepSize));
+  }
+  // relative tolerance
+  mpRelativeToleranceLabel = new Label("Relative Tolerance:");
+  mpRelativeToleranceTextBox = new QLineEdit;
+  mpRelativeToleranceTextBox->setValidator(pDoubleValidator);
+
+  double relativeTolerance;
+  if (OMSProxy::instance()->getTolerance(pModelWidget->getLibraryTreeItem()->getNameStructure(), relativeTolerance)) {
+    mpRelativeToleranceTextBox->setText(QString::number(relativeTolerance));
+  }
+
+  // set the layout
+  QGridLayout *pMainLayout = new QGridLayout;
+  int row = 0;
+  pMainLayout->addWidget(mpFixedStepSizeLabel, row, 0);
+  pMainLayout->addWidget(mpFixedStepSizeTextBox, row++, 1);
+  pMainLayout->addWidget(mpInitialStepSizeLabel, row, 0);
+  pMainLayout->addWidget(mpInitialStepSizeTextBox, row++, 1);
+  pMainLayout->addWidget(mpMinimumStepSizeLabel, row, 0);
+  pMainLayout->addWidget(mpMinimumStepSizeTextBox, row++, 1);
+  pMainLayout->addWidget(mpMaximumStepSizeLabel, row, 0);
+  pMainLayout->addWidget(mpMaximumStepSizeTextBox, row++, 1);
+  pMainLayout->addWidget(mpRelativeToleranceLabel, row, 0);
+  pMainLayout->addWidget(mpRelativeToleranceTextBox, row++, 1);
+
+  QDialogButtonBox *pButtons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+  connect(pButtons, &QDialogButtonBox::accepted, this, &QDialog::accept);
+  connect(pButtons, &QDialogButtonBox::rejected, this, &QDialog::reject);
+  pMainLayout->addWidget(pButtons, row, 0, 1, 2);
+  setLayout(pMainLayout);
+}
+
+QJsonObject SolverSettingsDialog::getSolverSettings() const
+{
+  QJsonObject params;
+  if (SystemSimulationInformationWidget::isVariableStep(mMethod)) {
+    params["initialStepSize"] = mpInitialStepSizeTextBox ? mpInitialStepSizeTextBox->text() : "";
+    params["minimumStepSize"] = mpMinimumStepSizeTextBox ? mpMinimumStepSizeTextBox->text() : "";
+    params["maximumStepSize"] = mpMaximumStepSizeTextBox ? mpMaximumStepSizeTextBox->text() : "";
+    params["relativeTolerance"] = mpRelativeToleranceTextBox ? mpRelativeToleranceTextBox->text() : "";
+  } else {
+    params["fixedStepSize"] = mpFixedStepSizeTextBox ? mpFixedStepSizeTextBox->text() : "0.001";
+  }
+  return params;
+}
+
+// ---------------------------------------------------------------------------
+// SystemSimulationInformationWidget
+// ---------------------------------------------------------------------------
 
 SystemSimulationInformationWidget::SystemSimulationInformationWidget(ModelWidget *pModelWidget)
   : QWidget(pModelWidget)
 {
   mpModelWidget = pModelWidget;
 
-  QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
+  // --- Solver configurations table: Name | Method | Parameters ---
+  mpSolversTable = new QTableWidget(0, 3, this);
+  mpSolversTable->setHorizontalHeaderLabels({tr("Name"), tr("Method"), tr("Parameters")});
+  mpSolversTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+  mpSolversTable->setSelectionBehavior(QAbstractItemView::SelectRows);
 
-  if (mpModelWidget->getLibraryTreeItem()->isWCSystem() || mpModelWidget->getLibraryTreeItem()->isSCSystem()) {
-    // solver
-    mpSolverLabel = new Label(tr("Solver:"));
-    mpSolverComboBox = new QComboBox;
-    // fixed step size
-    mpFixedStepSizeLabel = new Label(tr("Fixed Step Size:"));
-    mpFixedStepSizeTextBox = new QLineEdit;
-    mpFixedStepSizeTextBox->setValidator(pDoubleValidator);
+  mpAddSolverButton    = new QPushButton(tr("Add"));
+  mpRemoveSolverButton = new QPushButton(tr("Remove"));
+  connect(mpAddSolverButton,    &QPushButton::clicked, this, &SystemSimulationInformationWidget::addSolver);
+  connect(mpRemoveSolverButton, &QPushButton::clicked, this, &SystemSimulationInformationWidget::removeSolver);
 
-    double fixedStepSize;
-    if (OMSProxy::instance()->getFixedStepSize(mpModelWidget->getLibraryTreeItem()->getNameStructure(), &fixedStepSize)) {
-      mpFixedStepSizeTextBox->setText(QString::number(fixedStepSize));
+  QHBoxLayout *pSolverButtonsLayout = new QHBoxLayout;
+  pSolverButtonsLayout->addWidget(mpAddSolverButton);
+  pSolverButtonsLayout->addWidget(mpRemoveSolverButton);
+  pSolverButtonsLayout->addStretch();
+
+  QGroupBox *pSolversGroup = new QGroupBox(tr("Solver Configurations"));
+  QVBoxLayout *pSolversGroupLayout = new QVBoxLayout;
+  pSolversGroupLayout->addWidget(mpSolversTable);
+  pSolversGroupLayout->addLayout(pSolverButtonsLayout);
+  pSolversGroup->setLayout(pSolversGroupLayout);
+
+  // --- Component assignments table: Component | Solver ---
+  mpAssignmentsTable = new QTableWidget(0, 2, this);
+  mpAssignmentsTable->setHorizontalHeaderLabels({tr("Component"), tr("Solver")});
+  mpAssignmentsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+  mpAssignmentsTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+  QGroupBox *pAssignmentsGroup = new QGroupBox(tr("Component Assignments"));
+  QVBoxLayout *pAssignmentsGroupLayout = new QVBoxLayout;
+  pAssignmentsGroupLayout->addWidget(mpAssignmentsTable);
+  pAssignmentsGroup->setLayout(pAssignmentsGroupLayout);
+
+  // Fetch current settings and populate
+  QJsonObject settings;
+  if (OMSProxy::instance()->getSolverSettings(mpModelWidget->getLibraryTreeItem()->getNameStructure(), settings)) {
+    const QJsonArray solvers = settings["solvers"].toArray();
+
+    // Populate solvers table
+    for (const QJsonValue &sv : solvers) {
+      QJsonObject s = sv.toObject();
+      addSolverRow(s["name"].toString(), s["method"].toString("oms-ma"), s["params"].toObject());
     }
-    // initial step size
-    mpInitialStepSizeLabel = new Label(tr("Initial Step Size:"));
-    mpInitialStepSizeTextBox = new QLineEdit;
-    mpInitialStepSizeTextBox->setValidator(pDoubleValidator);
-    // minimum step size
-    mpMinimumStepSizeLabel = new Label(tr("Minimum Step Size:"));
-    mpMinimumStepSizeTextBox = new QLineEdit;
-    mpMinimumStepSizeTextBox->setValidator(pDoubleValidator);
-    // maximum step size
-    mpMaximumStepSizeLabel = new Label(tr("Maximum Step Size:"));
-    mpMaximumStepSizeTextBox = new QLineEdit;
-    mpMaximumStepSizeTextBox->setValidator(pDoubleValidator);
 
-    double initialStepSize, minimumStepSize, maximumStepSize;
-    if (OMSProxy::instance()->getVariableStepSize(mpModelWidget->getLibraryTreeItem()->getNameStructure(), &initialStepSize, &minimumStepSize, &maximumStepSize)) {
-      mpInitialStepSizeTextBox->setText(QString::number(initialStepSize));
-      mpMinimumStepSizeTextBox->setText(QString::number(minimumStepSize));
-      mpMaximumStepSizeTextBox->setText(QString::number(maximumStepSize));
-    }
-    // absolute tolerance
-    mpAbsoluteToleranceLabel = new Label("Absolute Tolerance:");
-    mpAbsoluteToleranceTextBox = new QLineEdit;
-    mpAbsoluteToleranceTextBox->setValidator(pDoubleValidator);
-    // relative tolerance
-    mpRelativeToleranceLabel = new Label("Relative Tolerance:");
-    mpRelativeToleranceTextBox = new QLineEdit;
-    mpRelativeToleranceTextBox->setValidator(pDoubleValidator);
-
-    double absoluteTolerance, relativeTolerance;
-    if (OMSProxy::instance()->getTolerance(mpModelWidget->getLibraryTreeItem()->getNameStructure(), &absoluteTolerance, &relativeTolerance)) {
-      mpAbsoluteToleranceTextBox->setText(QString::number(absoluteTolerance));
-      mpRelativeToleranceTextBox->setText(QString::number(relativeTolerance));
-    }
+    // Populate assignments table — iterate root system's children (the actual FMU components)
+    const QJsonObject assignments = settings["assignments"].toObject();
+    LibraryTreeItem *pRootItem = mpModelWidget->getLibraryTreeItem();
+    populateComponentAssignments(pRootItem, solvers, assignments);
   }
 
-  if (mpModelWidget->getLibraryTreeItem()->isWCSystem()) { // oms_system_wc
-    mpSolverComboBox->addItem("oms-ma", oms_solver_wc_ma);
-    mpSolverComboBox->addItem("oms-mav", oms_solver_wc_mav);
-    mpSolverComboBox->addItem("oms-mav-2", oms_solver_wc_mav2);
-  } else if (mpModelWidget->getLibraryTreeItem()->isSCSystem()) { // oms_system_sc
-    mpSolverComboBox->addItem("cvode", oms_solver_sc_cvode);
-    mpSolverComboBox->addItem("explicit-euler", oms_solver_sc_explicit_euler);
-  }
-
-  if (mpModelWidget->getLibraryTreeItem()->isWCSystem() || mpModelWidget->getLibraryTreeItem()->isSCSystem()) {
-    oms_solver_enu_t solver;
-    if (OMSProxy::instance()->getSolver(mpModelWidget->getLibraryTreeItem()->getNameStructure(), &solver)) {
-      int currentIndex = mpSolverComboBox->findData(solver);
-      if (currentIndex > -1) {
-        mpSolverComboBox->setCurrentIndex(currentIndex);
-      }
-    }
-    // update based on selected solver
-    connect(mpSolverComboBox, SIGNAL(currentIndexChanged(int)), SLOT(solverChanged(int)));
-    solverChanged(mpSolverComboBox->currentIndex());
-  }
-  // set the layout
-  QGridLayout *pMainLayout = new QGridLayout;
+  // Main layout
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
-  pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-  int row = 0;
-  if (mpModelWidget->getLibraryTreeItem()->isWCSystem() || mpModelWidget->getLibraryTreeItem()->isSCSystem()) {
-    pMainLayout->addWidget(mpSolverLabel, row, 0);
-    pMainLayout->addWidget(mpSolverComboBox, row++, 1);
-    pMainLayout->addWidget(mpFixedStepSizeLabel, row, 0);
-    pMainLayout->addWidget(mpFixedStepSizeTextBox, row++, 1);
-    pMainLayout->addWidget(mpInitialStepSizeLabel, row, 0);
-    pMainLayout->addWidget(mpInitialStepSizeTextBox, row++, 1);
-    pMainLayout->addWidget(mpMinimumStepSizeLabel, row, 0);
-    pMainLayout->addWidget(mpMinimumStepSizeTextBox, row++, 1);
-    pMainLayout->addWidget(mpMaximumStepSizeLabel, row, 0);
-    pMainLayout->addWidget(mpMaximumStepSizeTextBox, row++, 1);
-    pMainLayout->addWidget(mpAbsoluteToleranceLabel, row, 0);
-    pMainLayout->addWidget(mpAbsoluteToleranceTextBox, row++, 1);
-    pMainLayout->addWidget(mpRelativeToleranceLabel, row, 0);
-    pMainLayout->addWidget(mpRelativeToleranceTextBox, row++, 1);
-  }
+  pMainLayout->addWidget(pSolversGroup);
+  pMainLayout->addWidget(pAssignmentsGroup);
   setLayout(pMainLayout);
 }
 
-/*!
- * \brief SystemSimulationInformationWidget::solverChanged
- * Slot activated when mpSolverComboBox currentIndexChanged SIGNAL is raised.
- * Enables the step size controls based on the selected solver.
- * \param index
- */
-void SystemSimulationInformationWidget::solverChanged(int index)
+void SystemSimulationInformationWidget::populateComponentAssignments(LibraryTreeItem *pLibraryTreeItem, const QJsonArray &solvers, const QJsonObject &assignments)
 {
-  oms_solver_enu_t solver = (oms_solver_enu_t)mpSolverComboBox->itemData(index).toInt();
+  if (!pLibraryTreeItem && !pLibraryTreeItem->getOMSModelElement()) {
+    return;
+  }
 
-  switch (solver) {
-    case oms_solver_wc_mav:
-    case oms_solver_wc_mav2:
-    case oms_solver_sc_cvode:
-      mpInitialStepSizeTextBox->setEnabled(true);
-      mpMinimumStepSizeTextBox->setEnabled(true);
-      mpMaximumStepSizeTextBox->setEnabled(true);
-      mpFixedStepSizeTextBox->setEnabled(false);
-      break;
-    case oms_solver_wc_ma:
-    case oms_solver_sc_explicit_euler:
-    default:
-      mpInitialStepSizeTextBox->setEnabled(false);
-      mpMinimumStepSizeTextBox->setEnabled(false);
-      mpMaximumStepSizeTextBox->setEnabled(false);
-      mpFixedStepSizeTextBox->setEnabled(true);
-      break;
+  if (pLibraryTreeItem->isComponentElement()) {
+    int row = mpAssignmentsTable->rowCount();
+    mpAssignmentsTable->insertRow(row);
+
+    QTableWidgetItem *pComponentItem = new QTableWidgetItem(pLibraryTreeItem->getName());
+    pComponentItem->setData(Qt::UserRole, displayName);
+    pComponentItem->setToolTip(pLibraryTreeItem->getNameStructure());
+    mpAssignmentsTable->setItem(row, 0, pComponentItem);
+
+    QComboBox *pSolverCombo = new QComboBox;
+    pSolverCombo->addItem(tr("(none)"), "");
+
+    for (const QJsonValue &sv : solvers) {
+      const QString solverName = sv.toObject()["name"].toString();
+      pSolverCombo->addItem(solverName, solverName);
+    }
+
+    const QString assigned = assignments.value(displayName).toString();
+    int sidx = pSolverCombo->findData(assigned);
+    if (sidx > -1) {
+      pSolverCombo->setCurrentIndex(sidx);
+    }
+
+    mpAssignmentsTable->setCellWidget(row, 1, pSolverCombo);
+  }
+  // recurse the subsystems
+  for (int i = 0; i < pLibraryTreeItem->childrenSize(); ++i) {
+    populateComponentAssignments(pLibraryTreeItem->childAt(i), solvers, assignments);
   }
 }
 
-/*!
- * \brief SystemSimulationInformationWidget::setSystemSimulationInformation
- * Sets the simulation information of the system.
- * \param pushOnStack
- * \return
- */
+bool SystemSimulationInformationWidget::isVariableStep(const QString &method)
+{
+  return method == "oms-mav" || method == "oms-mav-2" || method == "cvode";
+}
+
+void SystemSimulationInformationWidget::addSolver()
+{
+  QJsonObject params;
+  params["fixedStepSize"] = "0.001";
+  addSolverRow(QString("solver%1").arg(mpSolversTable->rowCount() + 1), "oms-ma", params);
+  populateSolverCombos();
+}
+
+void SystemSimulationInformationWidget::addSolverRow(const QString &name, const QString &method, const QJsonObject &params)
+{
+  const int row = mpSolversTable->rowCount();
+  mpSolversTable->insertRow(row);
+
+  QTableWidgetItem *pNameItem = new QTableWidgetItem(name);
+  pNameItem->setData(Qt::UserRole, params);
+  mpSolversTable->setItem(row, 0, pNameItem);
+
+  QComboBox *pMethodCombo = new QComboBox;
+  pMethodCombo->addItem("oms-ma", "oms-ma");
+  pMethodCombo->addItem("oms-mav", "oms-mav");
+  pMethodCombo->addItem("oms-mav-2", "oms-mav-2");
+  pMethodCombo->addItem("euler", "euler");
+  pMethodCombo->addItem("cvode", "cvode");
+  int index = pMethodCombo->findData(method);
+  if (index > -1) {
+    pMethodCombo->setCurrentIndex(index);
+  }
+  mpSolversTable->setCellWidget(row, 1, pMethodCombo);
+
+  QPushButton *pEditButton = new QPushButton(tr("Edit"));
+  mpSolversTable->setCellWidget(row, 2, pEditButton);
+  connect(pEditButton, &QPushButton::clicked, this, &SystemSimulationInformationWidget::editSolverParameters);
+}
+
+void SystemSimulationInformationWidget::editSolverParameters()
+{
+  QObject *pSender = sender();
+  int row = -1;
+  for (int i = 0; i < mpSolversTable->rowCount(); ++i) {
+    if (mpSolversTable->cellWidget(i, 2) == pSender) {
+      row = i;
+      break;
+    }
+  }
+  if (row < 0)
+    return;
+
+  QTableWidgetItem *pNameItem = mpSolversTable->item(row, 0);
+  QComboBox *pMethodCombo = qobject_cast<QComboBox*>(mpSolversTable->cellWidget(row, 1));
+  if (!pNameItem || !pMethodCombo)
+    return;
+
+  SolverSettingsDialog pSolverSettingsDialog(mpModelWidget, pNameItem->text(), pMethodCombo->currentData().toString(), pNameItem->data(Qt::UserRole).toJsonObject(), this);
+  if (pSolverSettingsDialog.exec() == QDialog::Accepted) {
+    pNameItem->setData(Qt::UserRole, pSolverSettingsDialog.getSolverSettings());
+  }
+}
+
+void SystemSimulationInformationWidget::removeSolver()
+{
+  const int row = mpSolversTable->currentRow();
+  if (row < 0) return;
+  mpSolversTable->removeRow(row);
+  populateSolverCombos();
+}
+
+void SystemSimulationInformationWidget::populateSolverCombos()
+{
+  // Collect current solver names from the table
+  QStringList solverNames;
+  for (int r = 0; r < mpSolversTable->rowCount(); ++r) {
+    QTableWidgetItem *item = mpSolversTable->item(r, 0);
+    if (item) solverNames << item->text();
+  }
+
+  // Rebuild assignment combos, preserving the current selection
+  for (int r = 0; r < mpAssignmentsTable->rowCount(); ++r) {
+    QComboBox *pCombo = qobject_cast<QComboBox*>(mpAssignmentsTable->cellWidget(r, 1));
+    if (!pCombo) continue;
+    const QString current = pCombo->currentData().toString();
+    pCombo->clear();
+    pCombo->addItem(tr("(none)"), "");
+    for (const QString &name : solverNames)
+      pCombo->addItem(name, name);
+    int idx = pCombo->findData(current);
+    if (idx > -1) pCombo->setCurrentIndex(idx);
+  }
+}
+
+// ---------------------------------------------------------------------------
+
 bool SystemSimulationInformationWidget::setSystemSimulationInformation(bool pushOnStack)
 {
-  if (mpModelWidget->getLibraryTreeItem()->isWCSystem() || mpModelWidget->getLibraryTreeItem()->isSCSystem()) {
-    oms_solver_enu_t solver = (oms_solver_enu_t)mpSolverComboBox->itemData(mpSolverComboBox->currentIndex()).toInt();
-    switch (solver) {
-      case oms_solver_wc_mav:
-      case oms_solver_wc_mav2:
-      case oms_solver_sc_cvode:
-        if (mpInitialStepSizeTextBox->text().isEmpty()) {
-          QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                                GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("Initial Step Size"), QMessageBox::Ok);
-          return false;
-        }
-        if (mpMinimumStepSizeTextBox->text().isEmpty()) {
-          QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                                GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("Minimum Step Size"), QMessageBox::Ok);
-          return false;
-        }
-        if (mpMaximumStepSizeTextBox->text().isEmpty()) {
-          QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                                GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("Maximum Step Size"), QMessageBox::Ok);
-          return false;
-        }
-        break;
-      case oms_solver_wc_ma:
-      case oms_solver_sc_explicit_euler:
-      default:
-        if (mpFixedStepSizeTextBox->text().isEmpty()) {
-          QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                                GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("Fixed Step Size"), QMessageBox::Ok);
-          return false;
-        }
-        break;
-    }
-
-    if (mpAbsoluteToleranceTextBox->text().isEmpty()) {
-      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("Absolute Tolerance"), QMessageBox::Ok);
-      return false;
-    }
-
-    if (mpRelativeToleranceTextBox->text().isEmpty()) {
-      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("Relative Tolerance"), QMessageBox::Ok);
+  // Validate — every solver row must have a non-empty name
+  for (int r = 0; r < mpSolversTable->rowCount(); ++r) {
+    QTableWidgetItem *nameItem = mpSolversTable->item(r, 0);
+    if (!nameItem || nameItem->text().trimmed().isEmpty()) {
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Solver name in row %1 is empty.").arg(r + 1), QMessageBox::Ok);
       return false;
     }
   }
 
-  LibraryTreeItem *pLibraryTreeItem = mpModelWidget->getLibraryTreeItem();
-  const QString cref = pLibraryTreeItem->getNameStructure();
-  if (pLibraryTreeItem->isWCSystem() || pLibraryTreeItem->isSCSystem()) {
-    // set solver
-    oms_solver_enu_t solver = (oms_solver_enu_t)mpSolverComboBox->itemData(mpSolverComboBox->currentIndex()).toInt();
-    if (!OMSProxy::instance()->setSolver(cref, solver)) {
-      return false;
-    }
-    // set step size
-    switch (solver) {
-      case oms_solver_wc_mav:
-      case oms_solver_wc_mav2:
-      case oms_solver_sc_cvode:
-        if (!OMSProxy::instance()->setVariableStepSize(cref, mpInitialStepSizeTextBox->text().toDouble(), mpMinimumStepSizeTextBox->text().toDouble(),
-                                                       mpMaximumStepSizeTextBox->text().toDouble())) {
-          return false;
-        }
-        break;
-      case oms_solver_wc_ma:
-      case oms_solver_sc_explicit_euler:
-      default:
-        if (!OMSProxy::instance()->setFixedStepSize(cref, mpFixedStepSizeTextBox->text().toDouble())) {
-          return false;
-        }
-        break;
-    }
-    // set tolerance
-    if (!OMSProxy::instance()->setTolerance(cref, mpAbsoluteToleranceTextBox->text().toDouble(), mpRelativeToleranceTextBox->text().toDouble())) {
-      return false;
-    }
+  // Build solvers array
+  QJsonArray solversArray;
+  for (int r = 0; r < mpSolversTable->rowCount(); ++r) {
+    QTableWidgetItem *pNameItem = mpSolversTable->item(r, 0);
+    QComboBox *pMethodCombo = qobject_cast<QComboBox*>(mpSolversTable->cellWidget(r, 1));
+    if (!pNameItem)
+      continue;
+    QJsonObject solver;
+    solver["name"] = pNameItem->text().trimmed();
+    solver["method"] = pMethodCombo ? pMethodCombo->currentData().toString() : "oms-ma";
+    solver["params"] = pNameItem->data(Qt::UserRole).toJsonObject();
+    solversArray.append(solver);
   }
-  // push on stack
+
+  // Build assignments dict
+  QJsonObject assignmentsObj;
+  for (int r = 0; r < mpAssignmentsTable->rowCount(); ++r) {
+    QComboBox *pSolverCombo = qobject_cast<QComboBox*>(mpAssignmentsTable->cellWidget(r, 1));
+    if (!pSolverCombo)
+      continue;
+    const QString solverName = pSolverCombo->currentData().toString();
+    qDebug() << "saving solver : " << solverName << "=>" << mpAssignmentsTable->item(r,0)->toolTip();
+    if (!solverName.isEmpty())
+      assignmentsObj[mpAssignmentsTable->item(r, 0)->text()] = solverName;
+  }
+
+  QJsonObject args;
+  args["solvers"]     = solversArray;
+  args["assignments"] = assignmentsObj;
+  //qDebug() << "save solver :" << QJsonDocument(args).toJson(QJsonDocument::Compact);
+
+  const QString cref = mpModelWidget->getLibraryTreeItem()->getNameStructure();
+  if (!OMSProxy::instance()->setSolverSettings(cref, args)) {
+    return false;
+  }
+
   if (pushOnStack) {
     mpModelWidget->createOMSimulatorUndoCommand(QString("System %1 simulation information").arg(cref));
     mpModelWidget->updateModelText();
@@ -267,13 +387,13 @@ bool SystemSimulationInformationWidget::setSystemSimulationInformation(bool push
   return true;
 }
 
+// ---------------------------------------------------------------------------
+// SystemSimulationInformationDialog
+// ---------------------------------------------------------------------------
+
 /*!
  * \class SystemSimulationInformationDialog
  * \brief A dialog for system simulation information.
- */
-/*!
- * \brief SystemSimulationInformationDialog::SystemSimulationInformationDialog
- * \param pModelWidget
  */
 SystemSimulationInformationDialog::SystemSimulationInformationDialog(ModelWidget *pModelWidget)
   : QDialog(pModelWidget)
@@ -308,10 +428,6 @@ SystemSimulationInformationDialog::SystemSimulationInformationDialog(ModelWidget
   setLayout(pMainLayout);
 }
 
-/*!
- * \brief SystemSimulationInformationDialog::setSystemSimulationInformation
- * Sets the simulation information of the system.
- */
 void SystemSimulationInformationDialog::setSystemSimulationInformation()
 {
   if (mpSystemSimulationInformationWidget->setSystemSimulationInformation(true)) {
