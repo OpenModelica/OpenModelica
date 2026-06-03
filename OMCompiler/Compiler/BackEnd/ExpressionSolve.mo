@@ -53,6 +53,7 @@ protected import ComponentReferenceBasics;
 protected import Debug;
 protected import Differentiate;
 protected import ElementSource;
+protected import Ceval;
 protected import Expression;
 protected import ExpressionBasics;
 protected import ExpressionDump;
@@ -1161,7 +1162,7 @@ author: vitalij
      guard expHasCref(inExp, X)
      algorithm
        //print("\nfIn: ");print(ExpressionBasics.printExpStr(inExp));
-       (e,_,b) := Inline.forceInlineExp(inExp,(functions,{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource);
+       (e,_,b) := Inline.forceInlineExp(inExp,(functions,{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource,Ceval.cevalSimpleWithFunctionTreeReturnExp);
        //print("\nfOut: ");print(ExpressionBasics.printExpStr(e));
      then (e, not b, iT);
    else (inExp, true, iT);

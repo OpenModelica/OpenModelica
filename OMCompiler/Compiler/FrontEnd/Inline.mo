@@ -57,7 +57,6 @@ type Functiontuple = tuple<Option<AvlTreePathFunction.Tree>,list<DAE.InlineType>
 
 protected
 
-import Ceval;
 import ClassInf;
 import ComponentReference;
 protected import ComponentReferenceBasics;
@@ -683,9 +682,18 @@ function: inlineExp
   input DAE.Exp inExp;
   input Functiontuple inElementList;
   input DAE.ElementSource inSource;
+  input CevalConstFunc cevalConst;
   output DAE.Exp outExp;
   output DAE.ElementSource outSource;
   output Boolean inlineperformed;
+  // Constant folding of a fully constant expression is provided by the caller
+  // (Ceval lives in the lookup/evaluation cluster, which Inline must not depend
+  // on). Backend callers pass Ceval.cevalSimpleWithFunctionTreeReturnExp.
+  partial function CevalConstFunc
+    input DAE.Exp exp;
+    input AvlTreePathFunction.Tree functions;
+    output DAE.Exp oexp;
+  end CevalConstFunc;
 algorithm
   (outExp,outSource,inlineperformed) := match (inExp,inElementList,inSource)
     local
@@ -699,7 +707,7 @@ algorithm
         Expression.isConst(inExp)
       algorithm
         try
-          e_1 := Ceval.cevalSimpleWithFunctionTreeReturnExp(inExp, functionTree);
+          e_1 := cevalConst(inExp, functionTree);
           source := ElementSource.addSymbolicTransformation(source,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e_1)));
           b := true;
         else

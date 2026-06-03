@@ -70,6 +70,7 @@ protected import DAEDumpTpl;
 protected import Debug;
 protected import ElementSource;
 protected import Error;
+protected import Ceval;
 protected import Expression;
 protected import ExpressionBasics;
 protected import ExpressionSimplify;
@@ -2226,7 +2227,7 @@ algorithm
     case (DAE.CALL(attr=DAE.CALL_ATTR(builtin=false)), _)
       algorithm
         failure(BackendDAE.DIFF_FULL_JACOBIAN() := inDiffType);
-        (e,_,true) := Inline.forceInlineExp(inExp,(SOME(inFunctionTree),{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource);
+        (e,_,true) := Inline.forceInlineExp(inExp,(SOME(inFunctionTree),{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource,Ceval.cevalSimpleWithFunctionTreeReturnExp);
         (e, functions) := differentiateExp(e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
       then
         (e, functions);
@@ -2245,7 +2246,7 @@ algorithm
           BackendDump.debugStrExpStr("### Differentiate call\n ", e, " w.r.t. " + ComponentReference.crefStr(inDiffwrtCref) + "\n");
         end if;
         (de, functions) := differentiateFunctionCallPartial(e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
-        (e,_,b) := Inline.forceInlineExp(de,(SOME(functions),{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource);
+        (e,_,b) := Inline.forceInlineExp(de,(SOME(functions),{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource,Ceval.cevalSimpleWithFunctionTreeReturnExp);
         if b then
           de := e;
         end if;
