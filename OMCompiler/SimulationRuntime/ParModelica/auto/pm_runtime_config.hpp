@@ -50,6 +50,8 @@ struct ParmodConfig {
     int         clusters_per_level; /*!< <= 0 means "use the clustering's own default". */
     const char* dump_taskgraph;    /*!< output json path, or NULL. */
     const char* import_clustering; /*!< input json path, or NULL. */
+    const char* dump_stages;       /*!< output json file-name prefix for the per-optimization
+                                        before/after snapshots, or NULL. */
 };
 
 /*! Returns the (lazily initialized, cached) ParModelica auto configuration. */
