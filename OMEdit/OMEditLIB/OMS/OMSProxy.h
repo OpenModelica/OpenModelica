@@ -126,18 +126,20 @@ public:
   bool getElementsJson(QString cref, QJsonArray &elements);
   oms_element_t** jsonArrayToElements(const QJsonArray &arr);
   oms_element_t* jsonToElement(const QJsonObject &obj);
-  bool getFixedStepSize(QString cref, double* stepSize);
+  bool getFixedStepSize(QString cref, double& stepSize);
   bool getFMUInfo(QString cref, const oms_fmu_info_t** pFmuInfo);
   bool getInteger(QString signal, int &value);
   bool getModelState(const QString &cref, oms_modelState_enu_t* modelState);
   bool getReal(QString cref, double &value);
-  bool getSolver(QString cref, oms_solver_enu_t* solver);
+  bool getSolverSettings(const QString &cref, QJsonObject &settings);
+  bool setSolverSettings(const QString &cref, const QJsonObject &settings);
+  bool setSolver(const QString &cref, const QString &solverName);
   bool getStartTime(QString cref, double& startTime);
   bool getStopTime(QString cref, double& stopTime);
   bool getSubModelPath(QString cref, QString* pPath);
   bool getSystemType(QString cref, oms_system_enu_t *pType);
-  bool getTolerance(QString cref, double* absoluteTolerance, double* relativeTolerance);
-  bool getVariableStepSize(QString cref, double* initialStepSize, double* minimumStepSize, double* maximumStepSize);
+  bool getTolerance(QString cref, double& relativeTolerance);
+  bool getVariableStepSize(QString cref, double& initialStepSize, double& minimumStepSize, double& maximumStepSize);
   bool instantiate(QString cref);
   bool initialize(QString cref);
   bool exportSnapshot(QString cref, QString &pContents);
@@ -165,11 +167,11 @@ public:
   bool setReal(QString cref, double value);
   bool setResultFile(QString cref, QString filename, int bufferSize);
   bool getResultFile(QString cref, char **pFilename, int *pBufferSize);
-  bool setSolver(QString cref, oms_solver_enu_t solver);
+  // setSolver(const QString&, const QString&) declared above with getSolverSettings
   bool setStartTime(QString cref, double startTime);
   bool setStopTime(QString cref, double stopTime);
   void setTempDirectory(QString path);
-  bool setTolerance(QString cref, double absoluteTolerance, double relativeTolerance);
+  bool setTolerance(QString cref, double relativeTolerance);
   bool setVariableStepSize(QString cref, double initialStepSize, double minimumStepSize, double maximumStepSize);
   void setWorkingDirectory(QString path);
   bool terminate(QString cref);

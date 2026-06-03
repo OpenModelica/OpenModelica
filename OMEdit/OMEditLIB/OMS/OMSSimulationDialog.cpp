@@ -67,13 +67,11 @@ OMSSimulationDialog::OMSSimulationDialog(QWidget *pParent)
   mpSimulationHeading->setElideMode(Qt::ElideMiddle);
   // Horizontal separator
   mpHorizontalLine = Utilities::getHeadingLine();
-  // tab widget
-  QTabWidget *pTabWidget = new QTabWidget;
+  // tab widget — stored as member so exec() can add/remove the Solver Settings tab
+  mpTabWidget = new QTabWidget;
+  mpSystemSimulationInformationWidget = nullptr;
   // General tab
   QWidget *pGeneralWidget = new QWidget;
-  // system simulation information groupbox
-  mpSystemSimulationInformationWidget = 0;
-  mpSystemSimulationInformationGroupBox = new QGroupBox(Helper::systemSimulationInformation);
   // start time
   mpStartTimeLabel = new Label(QString("%1:").arg(Helper::startTime));
   mpStartTimeTextBox = new QLineEdit;
@@ -94,22 +92,21 @@ OMSSimulationDialog::OMSSimulationDialog(QWidget *pParent)
   QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
   mpStartTimeTextBox->setValidator(pDoubleValidator);
   mpStopTimeTextBox->setValidator(pDoubleValidator);
-  // General tab widget layout
+  // General tab layout — experiment settings only; solver settings go in a separate tab
   QGridLayout *pGeneralTabWidgetGridLayout = new QGridLayout;
   pGeneralTabWidgetGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pGeneralTabWidgetGridLayout->addWidget(mpSystemSimulationInformationGroupBox, 1, 0, 1, 2);
-  pGeneralTabWidgetGridLayout->addWidget(mpStartTimeLabel, 2, 0);
-  pGeneralTabWidgetGridLayout->addWidget(mpStartTimeTextBox, 2, 1);
-  pGeneralTabWidgetGridLayout->addWidget(mpStopTimeLabel, 3, 0);
-  pGeneralTabWidgetGridLayout->addWidget(mpStopTimeTextBox, 3, 1);
-  pGeneralTabWidgetGridLayout->addWidget(mpResultFileLabel, 4, 0);
-  pGeneralTabWidgetGridLayout->addWidget(mpResultFileTextBox, 4, 1);
-  pGeneralTabWidgetGridLayout->addWidget(mpResultFileBufferSizeLabel, 5, 0);
-  pGeneralTabWidgetGridLayout->addWidget(mpResultFileBufferSizeSpinBox, 5, 1);
-  pGeneralTabWidgetGridLayout->addWidget(mpLoggingIntervalLabel, 6, 0);
-  pGeneralTabWidgetGridLayout->addWidget(mpLoggingIntervalTextBox, 6, 1);
+  pGeneralTabWidgetGridLayout->addWidget(mpStartTimeLabel,              0, 0);
+  pGeneralTabWidgetGridLayout->addWidget(mpStartTimeTextBox,            0, 1);
+  pGeneralTabWidgetGridLayout->addWidget(mpStopTimeLabel,               1, 0);
+  pGeneralTabWidgetGridLayout->addWidget(mpStopTimeTextBox,             1, 1);
+  pGeneralTabWidgetGridLayout->addWidget(mpResultFileLabel,             2, 0);
+  pGeneralTabWidgetGridLayout->addWidget(mpResultFileTextBox,           2, 1);
+  pGeneralTabWidgetGridLayout->addWidget(mpResultFileBufferSizeLabel,   3, 0);
+  pGeneralTabWidgetGridLayout->addWidget(mpResultFileBufferSizeSpinBox, 3, 1);
+  pGeneralTabWidgetGridLayout->addWidget(mpLoggingIntervalLabel,        4, 0);
+  pGeneralTabWidgetGridLayout->addWidget(mpLoggingIntervalTextBox,      4, 1);
   pGeneralWidget->setLayout(pGeneralTabWidgetGridLayout);
-  pTabWidget->addTab(pGeneralWidget, Helper::general);
+  mpTabWidget->addTab(pGeneralWidget, Helper::general);
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
@@ -126,7 +123,7 @@ OMSSimulationDialog::OMSSimulationDialog(QWidget *pParent)
   pMainGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pMainGridLayout->addWidget(mpSimulationHeading, 0, 0);
   pMainGridLayout->addWidget(mpHorizontalLine, 1, 0);
-  pMainGridLayout->addWidget(pTabWidget, 2, 0);
+  pMainGridLayout->addWidget(mpTabWidget, 2, 0);
   pMainGridLayout->addWidget(mpButtonBox, 3, 0);
   setLayout(pMainGridLayout);
 }
@@ -138,14 +135,16 @@ int OMSSimulationDialog::exec(const QString &modelCref, LibraryTreeItem *pLibrar
 
   setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName, Helper::simulationSetup, mModelCref));
   mpSimulationHeading->setText(QString("%1 - %2").arg(Helper::simulationSetup, mModelCref));
-  // initialize system simulation information
-  if (mpSystemSimulationInformationWidget) {
-    delete mpSystemSimulationInformationGroupBox->layout();
-    delete mpSystemSimulationInformationWidget;
-    mpSystemSimulationInformationWidget = 0;
+  // Remove the existing Solver Settings tab if present (always tab index 1)
+  if (mpTabWidget->count() > 1) {
+    mpTabWidget->removeTab(1);
   }
+  delete mpSystemSimulationInformationWidget;
+  mpSystemSimulationInformationWidget = nullptr;
+
+  // Add a fresh Solver Settings tab for this model
   LibraryTreeItem *pTopLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(mpLibraryTreeItem);
-  LibraryTreeItem *pRootSystemLibraryTreeItem = 0;
+  LibraryTreeItem *pRootSystemLibraryTreeItem = nullptr;
   if (pTopLibraryTreeItem && pTopLibraryTreeItem->childrenSize() > 0) {
     pRootSystemLibraryTreeItem = pTopLibraryTreeItem->childAt(0);
     if (pRootSystemLibraryTreeItem) {
@@ -153,27 +152,18 @@ int OMSSimulationDialog::exec(const QString &modelCref, LibraryTreeItem *pLibrar
         MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pRootSystemLibraryTreeItem, false);
       }
       mpSystemSimulationInformationWidget = new SystemSimulationInformationWidget(pRootSystemLibraryTreeItem->getModelWidget());
-      QHBoxLayout *pSystemSimulationInformationGroupBoxLayout = new QHBoxLayout;
-      pSystemSimulationInformationGroupBoxLayout->addWidget(mpSystemSimulationInformationWidget);
-      mpSystemSimulationInformationGroupBox->setLayout(pSystemSimulationInformationGroupBoxLayout);
+      mpTabWidget->addTab(mpSystemSimulationInformationWidget, tr("Solver Settings"));
     }
   }
-  // start time
-  double startTime;
+
+  // Populate General tab
+  double startTime = 0.0;
   OMSProxy::instance()->getStartTime(mModelCref, startTime);
   mpStartTimeTextBox->setText(QString::number(startTime));
-  // stop time
-  double stopTime;
+
+  double stopTime = 1.0;
   OMSProxy::instance()->getStopTime(mModelCref, stopTime);
-  qDebug() << "stop setting :" << stopTime;
   mpStopTimeTextBox->setText(QString::number(stopTime));
-  // result file
-  char *fileName = (char*)"";
-  int bufferSize;
-  OMSProxy::instance()->getResultFile(mModelCref, &fileName, &bufferSize);
-  mpResultFileTextBox->setText(QString(fileName));
-  // result file buffer size
-  mpResultFileBufferSizeSpinBox->setValue(bufferSize);
   mpOkButton->setEnabled(!mpLibraryTreeItem->isSystemLibrary());
 
   return QDialog::exec();
@@ -238,8 +228,10 @@ void OMSSimulationDialog::saveSimulationSettings()
     return;
   }
 
+  // Save solver settings from the Solver Settings tab
   if (mpSystemSimulationInformationWidget) {
-    mpSystemSimulationInformationWidget->setSystemSimulationInformation(false);
+    if (!mpSystemSimulationInformationWidget->setSystemSimulationInformation(false))
+      return;
   }
 
   // set the simulation settings
