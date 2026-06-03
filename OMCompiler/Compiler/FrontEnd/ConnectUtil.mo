@@ -3240,9 +3240,7 @@ end isEquType;
 
 public function topLevelInput "author: PA
   if variable is input declared at the top level of the model,
-  or if it is an input in a connector instance at top level return true.
-  Moved here from DAEUtil: the connector-face test (componentFaceType) lives
-  in ConnectUtil, and DAEUtil must stay free of cluster (ConnectUtil) deps."
+  or if it is an input in a connector instance at top level return true."
   input DAE.ComponentRef componentRef;
   input DAE.VarDirection varDirection;
   input DAE.ConnectorType connectorType;

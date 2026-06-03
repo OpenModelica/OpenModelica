@@ -66,6 +66,7 @@ protected import ComponentReferenceBasics;
 import DAE.Connect;
 import ElementSource;
 import Expression;
+import ExpressionDump;
 import Error;
 import ErrorExt;
 import Flags;
@@ -676,63 +677,6 @@ algorithm
       then fail();
   end matchcontinue;
 end validUniontype;
-
-public function patternStr "Pattern to String unparsing"
-  input DAE.Pattern pattern;
-  output String str;
-algorithm
-  str := matchcontinue pattern
-    local
-      list<DAE.Pattern> pats;
-      list<String> fields,patsStr;
-      DAE.Exp exp;
-      DAE.Pattern pat,head,tail;
-      String id;
-      list<tuple<DAE.Pattern,String,DAE.Type>> namedpats;
-      Absyn.Path name;
-    case DAE.PAT_WILD() then "_";
-    case DAE.PAT_AS(id=id,pat=DAE.PAT_WILD()) then id;
-    case DAE.PAT_AS_FUNC_PTR(id,DAE.PAT_WILD()) then id;
-    case DAE.PAT_SOME(pat)
-      algorithm
-        str := patternStr(pat);
-      then "SOME(" + str + ")";
-    case DAE.PAT_META_TUPLE(pats)
-      algorithm
-        str := stringDelimitList(List.map(pats,patternStr),",");
-      then "(" + str + ")";
-
-    case DAE.PAT_CALL_TUPLE(pats)
-      algorithm
-        str := stringDelimitList(List.map(pats,patternStr),",");
-      then "(" + str + ")";
-
-    case DAE.PAT_CALL(name=name, patterns=pats)
-      algorithm
-        id := AbsynUtil.pathString(name);
-        str := stringDelimitList(List.map(pats,patternStr),",");
-      then stringAppendList({id,"(",str,")"});
-
-    case DAE.PAT_CALL_NAMED(name=name, patterns=namedpats)
-      algorithm
-        id := AbsynUtil.pathString(name);
-        fields := List.map(namedpats, Util.tuple32);
-        patsStr := List.map1r(List.mapMap(namedpats, Util.tuple31, patternStr), stringAppend, "=");
-        str := stringDelimitList(List.threadMap(fields, patsStr, stringAppend), ",");
-      then stringAppendList({id,"(",str,")"});
-
-    case DAE.PAT_CONS(head,tail) then patternStr(head) + "::" + patternStr(tail);
-
-    case DAE.PAT_CONSTANT(exp=exp) then ExpressionBasics.printExpStr(exp);
-    // case DAE.PAT_CONSTANT(SOME(et),exp) then "(" + TypesDump.unparseType(et) + ")" + ExpressionBasics.printExpStr(exp);
-    case DAE.PAT_AS(id=id,pat=pat) then id + " as " + patternStr(pat);
-    case DAE.PAT_AS_FUNC_PTR(id, pat) then id + " as " + patternStr(pat);
-    else
-      algorithm
-        Error.addMessage(Error.INTERNAL_ERROR, {"Patternm.patternStr not implemented correctly"});
-      then "*PATTERN*";
-  end matchcontinue;
-end patternStr;
 
 public function elabMatchExpression
   input FCore.Cache inCache;
@@ -1649,7 +1593,7 @@ algorithm
       then (pat,extra);
     case pat
       algorithm
-        str := "Patternm.traversePattern failed: " + patternStr(pat);
+        str := "Patternm.traversePattern failed: " + ExpressionDump.patternStr(pat);
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end match;
@@ -2690,7 +2634,7 @@ algorithm
     case DAE.PAT_WILD() then ();
     case _ guard isInfallibleNoBinding(pat)
       algorithm
-        Error.addSourceMessage(Error.META_PATTERN_INFALLIBLE_NO_BINDING, {patternStr(pat)}, info);
+        Error.addSourceMessage(Error.META_PATTERN_INFALLIBLE_NO_BINDING, {ExpressionDump.patternStr(pat)}, info);
       then ();
     case DAE.PAT_META_TUPLE(patterns=pats)
       algorithm

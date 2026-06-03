@@ -689,9 +689,6 @@ function: inlineExp
   output DAE.Exp outExp;
   output DAE.ElementSource outSource;
   output Boolean inlineperformed;
-  // Constant folding of a fully constant expression is provided by the caller
-  // (Ceval lives in the lookup/evaluation cluster, which Inline must not depend
-  // on). Backend callers pass Ceval.cevalSimpleWithFunctionTreeReturnExp.
   partial function CevalConstFunc
     input DAE.Exp exp;
     input AvlTreePathFunction.Tree functions;

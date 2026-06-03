@@ -5062,9 +5062,6 @@ public function transformationsBeforeBackend
   input DAE.DAElist inDAElist;
   input StateMachineToDataFlowFunc stateMachineToDataFlow;
   output DAE.DAElist outDAElist;
-  // State-machine flattening (StateMachineFlatten) lives in the lookup/inst
-  // cluster, which DAEUtil must not depend on. Callers (script/simcode/backend)
-  // inject StateMachineFlatten.stateMachineToDataFlow.
   partial function StateMachineToDataFlowFunc
     input FCore.Cache cache;
     input FCore.Graph env;
