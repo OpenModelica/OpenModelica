@@ -132,6 +132,7 @@ import Settings;
 import SimCodeMain;
 import SimCodeFunction;
 import SimCodeFunctionUtil;
+import StateMachineFlatten;
 import SimpleModelicaParser;
 import SimulationResults;
 import StaticScript;
@@ -3580,7 +3581,7 @@ algorithm
     ExecStat.execStat("FrontEnd - DAE generated");
 
     if transform then
-      dae := DAEUtil.transformationsBeforeBackend(cache, env, dae);
+      dae := DAEUtil.transformationsBeforeBackend(cache, env, dae, StateMachineFlatten.stateMachineToDataFlow);
     end if;
 
     odae := SOME(dae);

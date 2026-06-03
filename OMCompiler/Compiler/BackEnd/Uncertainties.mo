@@ -78,6 +78,7 @@ import SCode;
 import AbsynToSCode;
 import Sorting;
 import SymbolTable;
+import StateMachineFlatten;
 import System;
 import Util;
 
@@ -2167,7 +2168,7 @@ algorithm
       (cache,graph,_,dae) := Inst.instantiateClass(icache,InnerOuter.emptyInstHierarchy,p_1,className);
       System.realtimeTock(ClockIndexes.RT_CLOCK_UNCERTAINTIES);
       System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
-      dae := DAEUtil.transformationsBeforeBackend(cache,graph,dae);
+      dae := DAEUtil.transformationsBeforeBackend(cache,graph,dae, StateMachineFlatten.stateMachineToDataFlow);
     then (dae,cache,graph);
   else
       algorithm

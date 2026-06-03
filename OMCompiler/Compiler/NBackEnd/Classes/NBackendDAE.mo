@@ -781,7 +781,7 @@ protected
   function lowerVariableKind
     "ToDo: Merge this part from old backend conversion:
       /* Consider toplevel inputs as known unless they are protected. Ticket #5591 */
-      false := DAEUtil.topLevelInput(inComponentRef, inVarDirection, inConnectorType, protection);"
+      false := ConnectUtil.topLevelInput(inComponentRef, inVarDirection, inConnectorType, protection);"
     input Variable var;
     output VariableKind varKind;
     input output VariableAttributes attributes;
