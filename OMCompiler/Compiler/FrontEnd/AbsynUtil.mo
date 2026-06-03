@@ -1222,8 +1222,9 @@ algorithm
         then (p,count+stringLength(p.name),false);
       case Absyn.QUALIFIED()
         algorithm
-          System.stringAllocatorStringCopy(sb, p.name, if reverse then len-count-dlen-stringLength(p.name) else count);
-          System.stringAllocatorStringCopy(sb, delimiter, if reverse then len-count-dlen else count+stringLength(p.name));
+          // In reverse order the delimiter goes to the left of the name
+          System.stringAllocatorStringCopy(sb, p.name, if reverse then len-count-stringLength(p.name) else count);
+          System.stringAllocatorStringCopy(sb, delimiter, if reverse then len-count-stringLength(p.name)-dlen else count+stringLength(p.name));
         then (p.path,count+stringLength(p.name)+dlen,true);
       case Absyn.FULLYQUALIFIED()
         algorithm
