@@ -2957,5 +2957,5 @@ protected
     Pointer.update(acc, getVarName(var) :: Pointer.access(acc));
   end getVarNameTraverse;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBVariable;

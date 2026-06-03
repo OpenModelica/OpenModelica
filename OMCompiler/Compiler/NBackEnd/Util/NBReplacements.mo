@@ -500,5 +500,5 @@ public
     end match;
   end wrapEvents;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBReplacements;

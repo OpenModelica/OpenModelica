@@ -5198,5 +5198,5 @@ public
     end for;
   end typeList;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBEquation;

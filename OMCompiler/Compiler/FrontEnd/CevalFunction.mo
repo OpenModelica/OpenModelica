@@ -67,6 +67,7 @@ public import Values;
 protected import Ceval;
 protected import ClassInf;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import DAEDump;
 protected import DAEUtil;
 protected import Debug;

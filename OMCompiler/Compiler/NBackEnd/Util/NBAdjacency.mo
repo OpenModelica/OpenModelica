@@ -2425,5 +2425,5 @@ public
     end if;
   end addInitialStartOccurrences;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBAdjacency;

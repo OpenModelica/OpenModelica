@@ -52,6 +52,7 @@ import BackendVariable;
 import BackendVarTransform;
 import BackendDump;
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import Expression;
 import ExpressionBasics;
 import ExpressionSimplify;

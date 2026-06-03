@@ -41,17 +41,14 @@ public import Absyn;
 public import AbsynUtil;
 public import DAE;
 public import HashTableCrefSimVar;
-public import HashTableStringToPath;
 
 // private imports
-protected import BaseHashTable;
-protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import ExpressionBasics;
 protected import Error;
 protected import List;
-protected import SimCodeFunctionUtil;
 protected import SCode;
-protected import Types;
+protected import TypesDump;
 
 public uniontype FunctionCode
   "Root data structure containing information required for templates to
@@ -379,19 +376,5 @@ public constant Context contextOMSI                   = OMSI_CONTEXT(NONE());
 constant list<DAE.Exp> listExpLength1 = {DAE.ICONST(0)} "For CodegenC.tpl";
 constant list<Variable> boxedRecordOutVars = VARIABLE(DAE.CREF_IDENT("",DAE.T_COMPLEX_DEFAULT_RECORD,{}),DAE.T_COMPLEX_DEFAULT_RECORD,NONE(),{},DAE.NON_PARALLEL(),DAE.VARIABLE(), false)::{} "For CodegenC.tpl";
 
-public function getCalledFunctionsInFunction
-"Goes through the given DAE, finds the given function and collects
-  the names of the functions called from within those functions"
-  input Absyn.Path path;
-  input AvlTreePathFunction.Tree funcs;
-  output list<Absyn.Path> outPaths;
-protected
-  HashTableStringToPath.HashTable ht;
-algorithm
-  ht := HashTableStringToPath.emptyHashTable();
-  ht := SimCodeFunctionUtil.getCalledFunctionsInFunction2(path,AbsynUtil.pathStringNoQual(path),ht,funcs);
-  outPaths := BaseHashTable.hashTableValueList(ht);
-end getCalledFunctionsInFunction;
-
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="simcode_types");
 end SimCodeFunction;

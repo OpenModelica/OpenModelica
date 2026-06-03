@@ -37,7 +37,7 @@ encapsulated package AvlTreeCRToInt "AvlTree for String to Integer. New implemen
   import BaseAvlTree;
   import DAE;
   protected
-  import ComponentReference;
+  import ComponentReferenceBasics;
   public
   extends BaseAvlTree;
   redeclare type Key = DAE.ComponentRef;
@@ -54,5 +54,5 @@ encapsulated package AvlTreeCRToInt "AvlTree for String to Integer. New implemen
   algorithm
     outResult := ComponentReferenceBasics.crefCompareIntSubscript(inKey1, inKey2);
   end keyCompare;
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="simcode_types");
 end AvlTreeCRToInt;

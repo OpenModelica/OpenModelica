@@ -1426,5 +1426,5 @@ protected
     end match;
   end replaceClockedWhen;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="nbackend");
 end NBPartitioning;

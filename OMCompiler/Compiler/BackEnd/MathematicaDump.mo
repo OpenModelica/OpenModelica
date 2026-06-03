@@ -41,10 +41,12 @@ encapsulated package MathematicaDump
   import BackendDump;
   import BackendVariable;
   import ComponentReference;
+  protected import ComponentReferenceBasics;
   import DAE;
 protected
   import DAEDump;
   import Expression;
+  protected import ExpressionBasics;
   import ExpressionDump;
   import IOStream;
   import List;

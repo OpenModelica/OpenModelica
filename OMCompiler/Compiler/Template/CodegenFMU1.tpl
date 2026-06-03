@@ -134,7 +134,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = SIMVARS(s
   >>
 end fmiModelDescriptionAttributes;
 
-annotation(__OpenModelica_Interface="codegen");
+annotation(__OpenModelica_Interface="codegen_fmu");
 end CodegenFMU1;
 
 // vim: filetype=susan sw=2 sts=2

@@ -49,10 +49,12 @@ public import DAE;
 
 // protected imports
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import Debug;
 protected import Differentiate;
 protected import ElementSource;
 protected import Expression;
+protected import ExpressionBasics;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;

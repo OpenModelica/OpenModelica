@@ -1194,5 +1194,5 @@ protected
     end rateExpression;
   end InlineRating;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBInline;

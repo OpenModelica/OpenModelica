@@ -46,6 +46,7 @@ keyEqual   - A comparison function between two keys, returns true if equal.
 public import BaseHashSet;
 public import DAE;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 
 public type Key = DAE.ComponentRef;
 
@@ -90,7 +91,7 @@ public function emptyHashSetSized
   input Integer size;
   output HashSet hashSet;
 algorithm
-  hashSet := BaseHashSet.emptyHashSetWork(size,(ComponentReference.hashComponentRef,ComponentReferenceBasics.crefEqual,ComponentReferenceBasics.printComponentRefStr));
+  hashSet := BaseHashSet.emptyHashSetWork(size,(ComponentReferenceBasics.hashComponentRef,ComponentReferenceBasics.crefEqual,ComponentReferenceBasics.printComponentRefStr));
 end emptyHashSetSized;
 
 annotation(__OpenModelica_Interface="frontend");

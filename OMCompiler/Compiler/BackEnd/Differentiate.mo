@@ -50,6 +50,7 @@ public import Absyn;
 public import BackendDAE;
 public import DAE;
 public import DAEUtil;
+public import AvlTreePathFunction;
 
 // protected imports
 protected import AbsynUtil;
@@ -63,12 +64,14 @@ protected import BackendUtil;
 protected import BackendVariable;
 protected import ClassInf;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import DAEDump;
 protected import DAEDumpTpl;
 protected import Debug;
 protected import ElementSource;
 protected import Error;
 protected import Expression;
+protected import ExpressionBasics;
 protected import ExpressionSimplify;
 protected import Flags;
 protected import Inline;
@@ -1315,7 +1318,7 @@ algorithm
   outCref := ComponentReferenceBasics.crefStripLastSubs(inCref);
   outCref := ComponentReference.crefSetLastType(outCref, DAE.T_UNKNOWN_DEFAULT);
   outCref := ComponentReference.joinCrefs(outCref, ComponentReferenceBasics.makeCrefIdent("Seed" + inMatrixName, DAE.T_UNKNOWN_DEFAULT, {}));
-  if debug then print("after join: " + ComponentReference.printComponentRefListStr(ComponentReference.expandCref(outCref, true)) + "\n"); end if;
+  if debug then print("after join: " + ComponentReferenceBasics.printComponentRefListStr(ComponentReference.expandCref(outCref, true)) + "\n"); end if;
   outCref := ComponentReference.crefSetLastSubs(outCref, subs);
   outCref := ComponentReference.crefSetLastType(outCref, ComponentReference.crefLastType(inCref));
   if debug then print("outCref: " + ComponentReferenceBasics.printComponentRefStr(outCref) +"\n"); end if;
@@ -2392,7 +2395,7 @@ algorithm
             print("### Differentiate function: \n" + funstring + "\n\n");
           end if;
 
-          functions := DAEUtil.addDaeFunction({dfunc}, functions);
+          functions := AvlTreePathFunction.addDaeFunction({dfunc}, functions);
           // add differentiated function as function mapper
           func := DAEUtil.addFunctionDefinition(func, DAE.FUNCTION_DER_MAPPER(path, dpath, 1, {}, NONE(), {}));
           functions := AvlTreePathFunction.add(functions, path, SOME(func));
@@ -3296,7 +3299,7 @@ algorithm
      BackendDump.printVarList(inDiffData.controlVars);
    end if;
    if not listEmpty(inDiffData.diffCrefs) then
-     print("diffCrefs:\n" + ComponentReference.printComponentRefListStr(inDiffData.diffCrefs) + "\n");
+     print("diffCrefs:\n" + ComponentReferenceBasics.printComponentRefListStr(inDiffData.diffCrefs) + "\n");
    end if;
 end dumpInputData;
 

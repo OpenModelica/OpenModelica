@@ -471,5 +471,5 @@ template createMakefileIn(SimCode simCode, String target, String FileNamePrefix,
 end createMakefileIn;
 
 
-annotation(__OpenModelica_Interface="codegen");
+annotation(__OpenModelica_Interface="codegen_fmu");
 end CodegenOMSIC;

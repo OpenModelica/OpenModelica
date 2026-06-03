@@ -197,7 +197,7 @@ case SIMCODE(__) then
 end CoSimulation;
 
 
-annotation(__OpenModelica_Interface="codegen");
+annotation(__OpenModelica_Interface="codegen_fmu");
 end CodegenFMU2;
 
 // vim: filetype=susan sw=2 sts=2

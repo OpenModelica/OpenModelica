@@ -55,7 +55,7 @@ type Value = SimCodeVar.SimVar;
 
 protected
 
-import ComponentReference;
+import ComponentReferenceBasics;
 
 public
 
@@ -104,7 +104,7 @@ function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReference.hashComponentRef,ComponentReferenceBasics.crefEqual,ComponentReferenceBasics.printComponentRefStr,opaqueStr));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReferenceBasics.hashComponentRef,ComponentReferenceBasics.crefEqual,ComponentReferenceBasics.printComponentRefStr,opaqueStr));
 end emptyHashTableSized;
 
 protected
@@ -148,5 +148,5 @@ algorithm
   end matchcontinue;
 end addSimVarToHashTable;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="simcode_types");
 end HashTableCrefSimVar;

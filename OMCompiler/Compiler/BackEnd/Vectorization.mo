@@ -49,6 +49,7 @@ protected import BackendDump;
 protected import BackendEquation;
 protected import BackendVariable;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;

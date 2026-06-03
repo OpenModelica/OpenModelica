@@ -69,10 +69,12 @@ public import Lookup;
 protected
 protected import BackendCevalInterface;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import Config;
 protected import Debug;
 protected import Error;
 protected import Expression;
+protected import ExpressionBasics;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;

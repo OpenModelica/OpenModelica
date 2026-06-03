@@ -48,6 +48,7 @@ protected import Config;
 protected import Flags;
 protected import List;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import HashTable;
 protected import HashTableSM1;
 protected import HashTableCG;

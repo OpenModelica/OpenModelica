@@ -315,5 +315,5 @@ public
     input Partition.Kind kind = NBPartition.Kind.ODE  "partition type";
   end tearingInterface;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBModule;

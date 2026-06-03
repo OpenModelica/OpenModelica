@@ -869,7 +869,7 @@ match simulationSettings
     >>
 end DefaultExperimentAttribute;
 
-annotation(__OpenModelica_Interface="codegen");
+annotation(__OpenModelica_Interface="codegen_fmu");
 end CodegenFMUCommon;
 
 // vim: filetype=susan sw=2 sts=2

@@ -1226,5 +1226,5 @@ protected
     end if;
   end containsTimeTraverseCref;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="nbackend");
 end NBEvents;

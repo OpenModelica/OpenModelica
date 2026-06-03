@@ -48,6 +48,7 @@ public import SimCodeVar;
 
 protected
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import Debug;
 import Differentiate;
 import ExpressionBasics;

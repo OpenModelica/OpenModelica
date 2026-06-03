@@ -63,9 +63,11 @@ protected
 type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
 
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import Config;
 import Error;
 import Expression;
+protected import ExpressionBasics;
 import ExpressionDump;
 import Flags;
 import List;

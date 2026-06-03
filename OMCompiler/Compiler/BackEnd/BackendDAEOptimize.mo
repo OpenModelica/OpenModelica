@@ -66,6 +66,7 @@ import BaseHashTable;
 import CheckModel;
 import ClassInf;
 import ComponentReference;
+import ComponentReferenceBasics;
 import DAEUtil;
 import DAEDump;
 import DoubleEnded;
@@ -73,6 +74,7 @@ import Differentiate;
 import ElementSource;
 import ExpandableArray;
 import Expression;
+protected import ExpressionBasics;
 import ExpressionDump;
 import ExpressionSolve;
 import ExpressionSimplify;
@@ -5873,7 +5875,7 @@ algorithm
     end if;
 
     // make unneeded state derivatives and add them to unneeded vars
-    der_replacement := UnorderedMap.new<DAE.Exp>(ComponentReference.hashComponentRef, ComponentReferenceBasics.crefEqual);
+    der_replacement := UnorderedMap.new<DAE.Exp>(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
     for state in BackendVariable.varList(vars) loop
       if BackendVariable.isStateVar(state) then
         derVar := BackendVariable.makeVar(ComponentReference.prependStringCref("$DER_REM_", state.varName));

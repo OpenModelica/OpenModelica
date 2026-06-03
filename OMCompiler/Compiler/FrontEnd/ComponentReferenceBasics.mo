@@ -878,5 +878,83 @@ algorithm
   end match;
 end printComponentRef2Str;
 
+public function printComponentRefListStr
+  input list<DAE.ComponentRef> crs;
+  output String res;
+algorithm
+  res := "{" + stringDelimitList(List.map(crs, printComponentRefStr), ",") + "}";
+end printComponentRefListStr;
+
+public function hashComponentRef "new hashing that properly deals with subscripts so [1,2] and [2,1] hash to different values"
+  input DAE.ComponentRef cr;
+  output Integer hash;
+algorithm
+hash := match cr
+  local
+    DAE.Ident id;
+    DAE.Type tp;
+    list<DAE.Subscript> subs;
+    DAE.ComponentRef cr1;
+  case DAE.CREF_IDENT(id,tp,subs) algorithm
+    //print("IDENT, "+id+" hashed to "+intString(stringHashDjb2(id))+", subs hashed to "+intString(hashSubscripts(tp,subs))+"\n");
+  then stringHashDjb2(id) + hashSubscripts(tp,subs);
+
+  case DAE.CREF_QUAL(id,tp,subs,cr1) algorithm
+    //print("QUAL, "+id+" hashed to "+intString(stringHashDjb2(id))+", subs hashed to "+intString(hashSubscripts(tp,subs))+"\n");
+  then stringHashDjb2(id)+hashSubscripts(tp,subs)+hashComponentRef(cr1);
+
+  else 0;
+end match;
+end hashComponentRef;
+
+protected function hashSubscripts "help function, hashing subscripts making sure [1,2] and [2,1] doesn't match to the same number"
+  input DAE.Type tp;
+  input list<DAE.Subscript> subs;
+  output Integer hash;
+algorithm
+  hash := match subs
+  case {} then 0;
+  // TODO: Currently, the types of component references are wrong, they consider the subscripts but they should not.
+  // For example, given Real a[10,10];  the component reference 'a[1,2]' should have type Real[10,10] but it has type Real.
+  else hashSubscripts2(List.fill(1,listLength(subs)),/*DAEUtil.expTypeArrayDimensions(tp),*/subs,1);
+  end match;
+end hashSubscripts;
+
+protected function hashSubscripts2 "help function"
+  input list<Integer> dims;
+  input list<DAE.Subscript> subs;
+  input Integer factor;
+  output Integer hash;
+algorithm
+  hash := match(dims, subs)
+  local
+    DAE.Subscript s;
+    list<Integer> rest_dims;
+    list<DAE.Subscript> rest_subs;
+
+    case({}, {}) then 0;
+    case(_::rest_dims, s::rest_subs)
+    // TODO: change to using dimensions once cref types has been fixed.
+    then hashSubscript(s)*factor + hashSubscripts2(rest_dims,rest_subs,factor*1000/* *i1 */);
+  end match;
+end hashSubscripts2;
+
+protected function hashSubscript "help function"
+  input DAE.Subscript sub;
+  output Integer hash;
+algorithm
+ hash := match sub
+   local
+     DAE.Exp exp;
+     Integer i;
+
+   case DAE.WHOLEDIM() then 0;
+   case DAE.INDEX(DAE.ICONST(i)) then i;
+   case DAE.SLICE(exp) then ExpressionBasics.hashExp(exp);
+   case DAE.INDEX(exp) then ExpressionBasics.hashExp(exp);
+   case DAE.WHOLE_NONEXP(exp) then ExpressionBasics.hashExp(exp);
+ end match;
+end hashSubscript;
+
 annotation(__OpenModelica_Interface="frontend_dump");
 end ComponentReferenceBasics;

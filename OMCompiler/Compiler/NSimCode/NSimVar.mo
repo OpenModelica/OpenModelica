@@ -1387,5 +1387,5 @@ public
     end convert;
   end ExtObjInfo;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NSimVar;

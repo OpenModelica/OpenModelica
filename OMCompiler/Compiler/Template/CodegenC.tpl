@@ -4976,7 +4976,7 @@ end functionZeroCrossing;
 template descriptionString(Text &descStr, Option<list<SimIterator>> iter)
 ::=
   match iter
-    case SOME(iter_) then (List.intRange(BackendDAEUtil.getSimIteratorSize(iter_)) |> idx =>
+    case SOME(iter_) then (List.intRange(BackendDAE.getSimIteratorSize(iter_)) |> idx =>
       '"[<%idx%>] <%descStr%>';separator=",\n")
     else <<"<%descStr%>>>
 end descriptionString;
@@ -7676,7 +7676,7 @@ template genericCallHeaders(list<SimGenericCall> genericCalls, Context context)
   separator="\n\n")
 end genericCallHeaders;
 
-annotation(__OpenModelica_Interface="codegen");
+annotation(__OpenModelica_Interface="codegen_c");
 end CodegenC;
 
 // vim: filetype=susan sw=2 sts=2

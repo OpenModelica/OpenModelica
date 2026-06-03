@@ -60,6 +60,7 @@ import BaseHashTable;
 import Ceval;
 import AvlTreePathFunction;
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import Config;
 import DAE.Connect;
 import ConnectUtil;
@@ -69,6 +70,7 @@ import DoubleEnded;
 import ElementSource;
 import Error;
 import Expression;
+protected import ExpressionBasics;
 import ExpressionDump;
 import ExpressionSimplify;
 import Flags;
@@ -5659,15 +5661,6 @@ algorithm
   end match;
 end collectFunctionRefVarPaths;
 
-public function addDaeFunction "add functions present in the element list to the function tree"
-  input list<DAE.Function> functions;
-  input output AvlTreePathFunction.Tree functionTree;
-algorithm
-  for f in functions loop
-    functionTree := AvlTreePathFunction.add(functionTree, functionName(f), SOME(f));
-  end for;
-end addDaeFunction;
-
 public function addFunctionDefinition
 "adds a functionDefinition to a function. can be used to add function_der_mapper to a function"
   input DAE.Function ifunc;
@@ -5684,37 +5677,6 @@ algorithm
     else ();
   end match;
 end addFunctionDefinition;
-
-public function addDaeExtFunction "
-  add extermal functions present in the element list to the function tree
-  Note: normal functions are skipped.
-  See also addDaeFunction"
-  input list<DAE.Function> ifuncs;
-  input AvlTreePathFunction.Tree itree;
-  output AvlTreePathFunction.Tree outTree;
-algorithm
-  outTree := matchcontinue(ifuncs,itree)
-    local
-      DAE.Function func;
-      list<DAE.Function> funcs;
-      AvlTreePathFunction.Tree tree;
-
-    case ({},tree)
-      algorithm
-        //showCacheFuncs(tree);
-      then tree;
-
-    case (func::funcs,tree)
-      algorithm
-        true := isExtFunction(func);
-        // print("Add ext to cache: " + AbsynUtil.pathString(functionName(func)) + "\n");
-        tree := AvlTreePathFunction.add(tree,functionName(func),SOME(func));
-      then addDaeExtFunction(funcs,tree);
-
-    case (_::funcs,tree) then addDaeExtFunction(funcs,tree);
-
-  end matchcontinue;
-end addDaeExtFunction;
 
 public function getFunctionsInfo
   input AvlTreePathFunction.Tree ft;

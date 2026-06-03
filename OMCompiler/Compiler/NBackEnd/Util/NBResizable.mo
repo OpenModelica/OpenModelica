@@ -1014,5 +1014,5 @@ protected
     output String str = List.toString(constraints, Expression.toString);
   end constraintsToString;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBResizable;

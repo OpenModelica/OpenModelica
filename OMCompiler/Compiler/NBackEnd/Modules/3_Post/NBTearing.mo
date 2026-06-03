@@ -700,5 +700,5 @@ protected
     end match;
   end getImpliedInnerVars;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBTearing;
