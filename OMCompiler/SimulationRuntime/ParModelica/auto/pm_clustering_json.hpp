@@ -39,7 +39,10 @@
       { "name": ..., "num_threads": K,
         "tasks":        [ {"eq", "level", "cost", "out_degree"}, ... ],
         "dependencies": [ [eq_src, eq_dst], ... ],
-        "clusters":     [ {"eqs": [eq, ...]}, ... ] }   // the resulting clustering
+        "clusters":     [ {"eqs": [eq, ...], "lane": L}, ... ] }   // the resulting clustering
+    "lane" is the hardware lane (core), 0..K-1, assigned by lane-based clustering
+    (cluster_fixed_width_min_height); it is -1 when the active clustering does not
+    assign lanes.
 
     Import:
       { "clusters": [ {"eqs": [eq, ...]}, ... ] }
@@ -140,6 +143,10 @@ void collect_clusters_json(TaskSystemType& task_system, nlohmann::json& out) {
             eqs.push_back(it->index);
         nlohmann::json cl;
         cl["eqs"] = eqs;
+        /* Real hardware lane (core) assigned by lane-based clustering
+           (cluster_fixed_width_min_height); -1 means the active clustering does
+           not assign lanes, so consumers should fall back / ignore it. */
+        cl["lane"] = clust.lane;
         clusters.push_back(cl);
     }
 
