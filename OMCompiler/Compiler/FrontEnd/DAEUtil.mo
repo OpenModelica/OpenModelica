@@ -6706,5 +6706,5 @@ algorithm
     else true;
   end matchcontinue;
 end optMRFACheckCrefRead;
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_base");
 end DAEUtil;

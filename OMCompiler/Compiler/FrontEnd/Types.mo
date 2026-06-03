@@ -7761,5 +7761,5 @@ algorithm
   end matchcontinue;
 end fixCaseReturnTypes2;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_base");
 end Types;

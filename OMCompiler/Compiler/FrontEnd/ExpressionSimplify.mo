@@ -5884,5 +5884,5 @@ algorithm
           Expression.expSub(Expression.makeProduct(x1, y2), Expression.makeProduct(x2, y1))};
 end simplifyCross;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_base");
 end ExpressionSimplify;

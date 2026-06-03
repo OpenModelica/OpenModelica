@@ -1830,5 +1830,5 @@ algorithm
   end match;
 end getInlineHashTableVarTransform;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_base");
 end Inline;

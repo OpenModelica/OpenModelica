@@ -1779,5 +1779,5 @@ algorithm
   end match;
 end arraySize;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_base");
 end ValuesUtil;

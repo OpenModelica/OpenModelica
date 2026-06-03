@@ -12360,5 +12360,5 @@ algorithm
   cases := listReverse(cases);
 end traverseCasesTopDown;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_base");
 end Expression;

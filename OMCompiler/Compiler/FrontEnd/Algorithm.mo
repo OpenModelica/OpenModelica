@@ -957,5 +957,5 @@ algorithm
   end match;
 end isNotDummyStatement;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_base");
 end Algorithm;
