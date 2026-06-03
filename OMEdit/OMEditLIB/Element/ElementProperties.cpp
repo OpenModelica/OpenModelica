@@ -1275,7 +1275,7 @@ void ParametersScrollArea::addGroupBox(GroupBox *pGroupBox)
   if (!getGroupBox(pGroupBox->title())) {
     pGroupBox->hide();  /* create a hidden groupbox, we show it when it contains the parameters. */
     mGroupBoxesList.append(pGroupBox);
-    mpVerticalLayout->addWidget(pGroupBox);
+    mpVerticalLayout->addWidget(pGroupBox, 0, Qt::AlignTop);
   }
 }
 
@@ -1519,7 +1519,7 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
             }
           }
         } else {
-          pParameter->setValueWidget(pModifier->toString(true, true, false, true), defaultValue, pParameter->getUnit(), mNested);
+          pParameter->setValueWidget(value, defaultValue, pParameter->getUnit(), mNested);
           // set final and each checkboxes in the menu
           setFinalEachBreak(pParameter->getFinalEachMenu(), pModifier);
         }
