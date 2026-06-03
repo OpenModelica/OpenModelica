@@ -56,39 +56,6 @@
 
 #include "../../OMCompiler/Compiler/runtime/settingsimpl.h"
 
-#ifdef Q_OS_WIN
-/*!
- * \brief getWindowsUIFont
- * Retrieves the Windows UI font as a QFont.
- * This function uses the SystemParametersInfo API to get the non-client metrics,
- * specifically the message font, and converts it to a QFont.
- * \return
- */
-QFont getWindowsUIFont()
-{
-  NONCLIENTMETRICS ncm;
-  ncm.cbSize = sizeof(NONCLIENTMETRICS);
-  SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICS), &ncm, 0);
-
-  LOGFONT lf = ncm.lfMessageFont;
-
-  // Get DPI of primary monitor
-  HDC screenDC = GetDC(nullptr);
-  int dpi = GetDeviceCaps(screenDC, LOGPIXELSY);
-  ReleaseDC(nullptr, screenDC);
-
-  // Convert lfHeight to point size
-  int pixelHeight = (lf.lfHeight < 0) ? -lf.lfHeight : lf.lfHeight;
-  double pointSize = 0.0;
-  pointSize = pixelHeight * 72.0 / dpi;
-
-  QFont font(QString::fromWCharArray(lf.lfFaceName));
-  font.setPointSizeF(pointSize); // floating-point for exact scaling
-
-  return font;
-}
-#endif
-
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #define QT_LIBRRY_INFO_PATH_OR_LOCATION QLibraryInfo::path
 #define QT_LIBRRY_INFO_QMLIP QLibraryInfo::QmlImportsPath
@@ -177,14 +144,6 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   QTextCodec::setCodecForLocale(QTextCodec::codecForName(Helper::utf8.toUtf8().constData()));
 #endif // #ifndef WIN32
   setAttribute(Qt::AA_DontShowIconsInMenus, false);
-#ifdef Q_OS_WIN
-  /*! @todo Qt by default uses "MS Shell Dlg 2" on Windows which doesn't scale good.
-   *  Use the Windows default font instead of Qt default.
-   *  Remove this workaround once we move to Qt6.
-   *  Qt6 automatically uses the Windows UI font.
-   */
-  setFont(getWindowsUIFont());
-#endif // #ifdef Q_OS_WIN
   // Localization
   //*a.severin/ add localization
   QSettings *pSettings = Utilities::getApplicationSettings();
