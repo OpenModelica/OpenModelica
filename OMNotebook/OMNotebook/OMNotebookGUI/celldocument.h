@@ -47,14 +47,12 @@
 //QT Headers
 #include <QtGlobal>
 #include <QtWidgets>
+#include <QDomDocument>
+#include <QEvent>
+#include <QLayout>
+#include <QScrollArea>
+#include <QUrl>
 
-
-//Forward declaration
-class QDom;
-class QEvent;
-class QLayout;
-class QScrollArea;
-class QUrl;
 
 //IAEX Headers
 #include "cellapplication.h"

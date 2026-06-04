@@ -65,15 +65,15 @@ namespace IAEX
     InputCell(Document *doc, QWidget *parent=0);  // Changed 2005-11-23 AF
     virtual ~InputCell();
 
-    QString text();
-    QString textHtml();            // Added 2005-10-27 AF
+    QString text() override;
+    QString textHtml() override;            // Added 2005-10-27 AF
     QTextDocument* document() override;
     virtual QString textOutput();      // Added 2005-11-23 AF
     virtual QString textOutputHtml();    // Added 2005-11-23 AF
-    virtual QTextCursor textCursor();    // Added 2005-10-27 AF
-    virtual QTextEdit* textEdit();      // Added 2006-01-05 AF
+    virtual QTextCursor textCursor() override;    // Added 2005-10-27 AF
+    virtual QTextEdit* textEdit() override;      // Added 2006-01-05 AF
     virtual QTextEdit* textEditOutput();  // Added 2006-02-03 AF
-    virtual void viewExpression(const bool){}
+    void viewExpression(const bool) override;
     void cutText() override;
     void copyText() override;
     void pasteText() override;
@@ -82,13 +82,13 @@ namespace IAEX
     void clearSelection() override;
     void moveCursor(QTextCursor::MoveOperation operation) override;
 
-    virtual void addCellWidgets();
-    virtual void removeCellWidgets();
+    virtual void addCellWidgets() override;
+    virtual void removeCellWidgets() override;
 
     void setDelegate(InputCellDelegate *d);
-    virtual void accept(Visitor &v);
+    virtual void accept(Visitor &v) override;
     virtual bool isClosed();              // Added 2006-01-17 AF
-    virtual bool isEditable();
+    virtual bool isEditable() override;
     virtual bool isEvaluated();              // Added 2005-11-23 AF
 
   signals:
@@ -105,26 +105,26 @@ namespace IAEX
     void clickEvent();
     void clickEventOutput();            // Added 2006-02-03 AF
     void contentChanged();
-    void setText(QString text);
-    void setTextHtml(QString html);          // Added 2005-11-01 AF
+    void setText(QString text) override;
+    void setTextHtml(QString html) override;          // Added 2005-11-01 AF
     virtual void setTextOutput(QString output);    // Added 2005-11-23 AF
     virtual void setTextOutputHtml(QString html);  // Added 2005-11-23 AF
-    void setStyle(const QString &stylename);    // Changed 2005-10-28 AF
-    void setStyle(CellStyle style);          // Changed 2005-10-27 AF
+    void setStyle(const QString &stylename) override;    // Changed 2005-10-28 AF
+    void setStyle(CellStyle style) override;          // Changed 2005-10-27 AF
     void setChapterCounter(QString number);      // Added 2006-03-02 AF
     QString ChapterCounter();            // Added 2006-03-02 AF
     QString ChapterCounterHtml();          // Added 2006-03-03 AF
-    void setReadOnly(const bool readonly);      // Added 2005-11-01 AF
+    void setReadOnly(const bool readonly) override;      // Added 2005-11-01 AF
     void setEvaluated(const bool evaluated);    // Added 2006-01-16 AF
-    void setClosed(const bool closed, bool update = true); //Changed 2006-08-24
-    virtual void setFocus(const bool focus);
+    void setClosed(const bool closed, bool update = true) override; //Changed 2006-08-24
+    virtual void setFocus(const bool focus) override;
     virtual void setFocusOutput(const bool focus);  // Added 2006-02-03 AF
 
 
 
   protected:
-    void resizeEvent(QResizeEvent *event);    //AF
-    void mouseDoubleClickEvent(QMouseEvent *);
+    void resizeEvent(QResizeEvent *event) override;    //AF
+    void mouseDoubleClickEvent(QMouseEvent *) override;
     void clear();
 
     bool hasDelegate();

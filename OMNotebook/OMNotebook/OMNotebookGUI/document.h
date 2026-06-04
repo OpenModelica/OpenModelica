@@ -48,16 +48,15 @@
 
 //QT Headers
 #include <QtCore/QObject>
+#include <QColor>
+#include <QFrame>
+#include <QImage>
+#include <QUrl>
 
 //IAEX Headers
 #include "cellcursor.h"
 
 //Forward declaration
-class QColor;
-class QFrame;
-class QImage;
-class QUrl;
-
 class CellStyle;
 
 

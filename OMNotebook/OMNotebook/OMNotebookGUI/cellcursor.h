@@ -46,9 +46,8 @@
 
 //IAEX Headers
 #include "cell.h"
+#include <QPaintEvent>
 
-// forward declaration
-class QPaintEvent;
 
 namespace IAEX
 {

@@ -1906,4 +1906,7 @@ namespace IAEX {
       next()->accept(v);
   }
 
+  void GraphCell::viewExpression(const bool flag) {
+  }
+
 }
