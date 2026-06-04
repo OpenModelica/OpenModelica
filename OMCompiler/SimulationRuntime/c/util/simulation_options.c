@@ -183,6 +183,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_PARMOD_CLUSTERS_PER_LEVEL */    "parmodClustersPerLevel",
   /* FLAG_PARMOD_DUMP_TASKGRAPH */        "parmodDumpTaskGraph",
   /* FLAG_PARMOD_IMPORT_CLUSTERING */     "parmodImportClustering",
+  /* FLAG_PARMOD_DUMP_STAGES */           "parmodDumpStages",
 
   "FLAG_MAX"
 };
@@ -343,6 +344,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_PARMOD_CLUSTERS_PER_LEVEL */    "[int] value sets the maximum number of clusters per level for the default clustering",
   /* FLAG_PARMOD_DUMP_TASKGRAPH */        "value specifies a json file to which the parmodauto task graph and clustering are exported",
   /* FLAG_PARMOD_IMPORT_CLUSTERING */     "value specifies a json file from which a parmodauto clustering is imported instead of computing one",
+  /* FLAG_PARMOD_DUMP_STAGES */           "value specifies a file name prefix to which the parmodauto task graph and clustering are exported before and after each clustering optimization",
 
   "FLAG_MAX"
 };
@@ -731,6 +733,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Exports the parmodauto task graph (tasks, dependencies) and the resulting clustering to the given json file, keyed by equation index.",
   /* FLAG_PARMOD_IMPORT_CLUSTERING */
   "  Imports a clustering (groups of equation indices) from the given json file instead of computing one. The simulation aborts if the clustering is invalid (forms a cycle or references unknown equations).",
+  /* FLAG_PARMOD_DUMP_STAGES */
+  "  Exports the parmodauto task graph and clustering before and after each clustering optimization to a series of json files named <prefix>.NN.<stage>.json, so the effect of each optimization can be inspected.",
 
 
   "FLAG_MAX"
@@ -892,6 +896,7 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_PARMOD_CLUSTERS_PER_LEVEL */    FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_PARMOD_DUMP_TASKGRAPH */        FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_PARMOD_IMPORT_CLUSTERING */     FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_PARMOD_DUMP_STAGES */           FLAG_REPEAT_POLICY_FORBID,
 };
 
 
@@ -1051,6 +1056,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_PARMOD_CLUSTERS_PER_LEVEL */    FLAG_TYPE_OPTION,
   /* FLAG_PARMOD_DUMP_TASKGRAPH */        FLAG_TYPE_OPTION,
   /* FLAG_PARMOD_IMPORT_CLUSTERING */     FLAG_TYPE_OPTION,
+  /* FLAG_PARMOD_DUMP_STAGES */           FLAG_TYPE_OPTION,
 };
 
 const char *GB_METHOD_NAME[RK_MAX] = {

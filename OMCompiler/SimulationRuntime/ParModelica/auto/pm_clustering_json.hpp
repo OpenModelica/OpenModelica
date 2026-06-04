@@ -39,7 +39,10 @@
       { "name": ..., "num_threads": K,
         "tasks":        [ {"eq", "level", "cost", "out_degree"}, ... ],
         "dependencies": [ [eq_src, eq_dst], ... ],
-        "clusters":     [ {"eqs": [eq, ...]}, ... ] }   // the resulting clustering
+        "clusters":     [ {"eqs": [eq, ...], "lane": L}, ... ] }   // the resulting clustering
+    "lane" is the hardware lane (core), 0..K-1, assigned by lane-based clustering
+    (cluster_fixed_width_min_height); it is -1 when the active clustering does not
+    assign lanes.
 
     Import:
       { "clusters": [ {"eqs": [eq, ...]}, ... ] }
@@ -140,20 +143,94 @@ void collect_clusters_json(TaskSystemType& task_system, nlohmann::json& out) {
             eqs.push_back(it->index);
         nlohmann::json cl;
         cl["eqs"] = eqs;
+        /* Real hardware lane (core) assigned by lane-based clustering
+           (cluster_fixed_width_min_height); -1 means the active clustering does
+           not assign lanes, so consumers should fall back / ignore it. */
+        cl["lane"] = clust.lane;
         clusters.push_back(cl);
     }
 
     out["clusters"] = clusters;
 }
 
-inline void write_json_file(const std::string& path, const nlohmann::json& j) {
+inline void write_json_file(const std::string& path, const nlohmann::json& j,
+                            const std::string& what = "task graph") {
     std::ofstream f(path.c_str());
     if (!f.is_open()) {
-        parmod_json_fatal("Could not open '" + path + "' for writing the parmodauto task graph.");
+        parmod_json_fatal("Could not open '" + path + "' for writing the parmodauto " + what + ".");
     }
     f << j.dump(2) << std::endl;
-    std::cout << "Exported parmodauto task graph to " << path << std::endl;
+    std::cout << "Exported parmodauto " << what << " to " << path << std::endl;
 }
+
+/*! Build the file name for a per-optimization snapshot: <prefix>.NN.<stage>.json.
+    A trailing ".json" on the prefix is stripped so the user can pass either form. */
+inline std::string stage_snapshot_path(const std::string& prefix, int stage, const std::string& stage_name) {
+    std::string base = prefix;
+    const std::string dotjson = ".json";
+    if (base.size() >= dotjson.size() && base.compare(base.size() - dotjson.size(), dotjson.size(), dotjson) == 0)
+        base.erase(base.size() - dotjson.size());
+
+    std::string num = std::to_string(stage);
+    if (num.size() < 2)
+        num = "0" + num; /* zero-pad to two digits so the files sort in order */
+
+    return base + "." + num + "." + stage_name + ".json";
+}
+
+/*! Stage-by-stage exporter for task 4: lets a user see how each clustering
+    optimization was applied. The fine-grained task graph (tasks + dependencies)
+    is captured once, while every vertex is still a single task; each call to
+    snapshot() then writes that task graph together with the clustering as it
+    stands at that moment, into its own numbered file. Calling snapshot() before
+    the first optimization and again after every optimization yields a
+    before/after series:
+
+      <prefix>.00.initial.json
+      <prefix>.01.<first optimization>.json
+      <prefix>.02.<second optimization>.json
+      ...
+
+    Each file uses the same schema as the single-shot -parmodDumpTaskGraph export
+    (name, num_threads, tasks, dependencies, clusters) plus the "stage" index and
+    "stage_name", so the external tools (and the python/Julia visualizers) can read
+    a snapshot exactly like a normal export. */
+template <typename TaskSystemType>
+class ClusteringStageDumper {
+    TaskSystemType& task_system;
+    std::string     prefix;
+    nlohmann::json  base_graph; /* name, num_threads, tasks, dependencies (captured once) */
+    int             stage;
+    bool            active;
+
+  public:
+    /*! path_prefix == NULL or empty disables dumping (snapshot() becomes a no-op),
+        so callers can construct the dumper unconditionally. */
+    ClusteringStageDumper(TaskSystemType& ts, const char* path_prefix)
+        : task_system(ts), stage(0), active(path_prefix != 0 && path_prefix[0] != '\0') {
+        if (!active)
+            return;
+        prefix = path_prefix;
+        /* Capture the fine-grained task graph now, before any clustering merges
+           vertices and loses the original per-equation dependencies. */
+        collect_task_graph_json(task_system, base_graph);
+    }
+
+    bool is_active() const { return active; }
+
+    /*! Write one snapshot of the current clustering, tagged with stage_name. */
+    void snapshot(const std::string& stage_name) {
+        if (!active)
+            return;
+        nlohmann::json snap = base_graph; /* name, num_threads, tasks, dependencies */
+        snap["stage"] = stage;
+        snap["stage_name"] = stage_name;
+        collect_clusters_json(task_system, snap); /* adds the current "clusters" */
+        write_json_file(stage_snapshot_path(prefix, stage, stage_name), snap,
+                        "stage '" + stage_name + "'");
+        ++stage;
+    }
+};
 
 /*! Apply an externally produced clustering. Aborts (fatal) on an invalid clustering. */
 template <typename TaskSystemType>

@@ -63,6 +63,7 @@ const ParmodConfig& parmod_config() {
 
     cfg.dump_taskgraph = flag_value_or_null(FLAG_PARMOD_DUMP_TASKGRAPH);
     cfg.import_clustering = flag_value_or_null(FLAG_PARMOD_IMPORT_CLUSTERING);
+    cfg.dump_stages = flag_value_or_null(FLAG_PARMOD_DUMP_STAGES);
 
     initialized = true;
     return cfg;

@@ -693,6 +693,12 @@ struct cluster_fixed_width_min_height {
                         task_system.concat_same_level_clusters(rep, vid[n]);
                     }
                 }
+                /* Record the real lane (core) this cluster was assigned to, so it
+                   can be exported (collect_clusters_json) and the schedule lanes
+                   visualized as-computed instead of reconstructed. The lane index
+                   is consistent across levels: lane l is the l-th worker lane. */
+                if (have_rep)
+                    task_system.sys_graph[rep].lane = target_lane;
             }
         }
 

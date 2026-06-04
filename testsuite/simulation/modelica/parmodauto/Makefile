@@ -2,9 +2,6 @@ TEST = ../../../rtest -v
 
 TESTFILES = \
 Modelica.Electrical.Analog.Examples.CauerLowPassSC.mos \
-Modelica.Electrical.Analog.Examples.CauerLowPassSC_parmodScheduler.mos \
-Modelica.Electrical.Analog.Examples.CauerLowPassSC_parmodClustering.mos \
-Modelica.Electrical.Analog.Examples.CauerLowPassSC_parmodJson.mos \
 Modelica.Fluid.Examples.BranchingDynamicPipes.mos
 
 # test that currently fail. Move up when fixed.

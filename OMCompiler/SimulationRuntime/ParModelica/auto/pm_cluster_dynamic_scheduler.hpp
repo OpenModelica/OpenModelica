@@ -148,6 +148,13 @@ class ClusterDynamicScheduler : public TaskGraphScheduler {
         if (cfg.dump_taskgraph)
             collect_task_graph_json(task_system, graph_dump);
 
+        /*! Optionally export a before/after snapshot of the clustering for each
+            optimization (parmodDumpStages), so the user can see how the
+            clustering was applied step by step. The "initial" snapshot is the
+            unclustered task graph (one cluster per equation). */
+        ClusteringStageDumper<TaskSystemType> stages(task_system, cfg.dump_stages);
+        stages.snapshot("initial");
+
         /*! Select the clustering strategy from the runtime config (parmodClustering
             flag, PARMOD_CLUSTERING env var fallback). With parmodImportClustering an
             external clustering is applied instead of computing one. "default" is the
@@ -156,17 +163,21 @@ class ClusterDynamicScheduler : public TaskGraphScheduler {
             leaves one flow node per equation. */
         if (cfg.import_clustering) {
             import_clustering_json(task_system, cfg.import_clustering);
+            stages.snapshot("imported");
         }
         else if (cfg.clustering == cluster_fixed_width_min_height::name() ||
                  cfg.clustering == "fixed_width_min_height") {
             cluster_fixed_width_min_height::apply(task_system);
+            stages.snapshot(cluster_fixed_width_min_height::name());
         }
         else if (cfg.clustering == "none") {
             /*! no clustering. */
         }
         else {
             cluster_merge_common::apply(task_system);
+            stages.snapshot(cluster_merge_common::name());
             cluster_merge_level_for_bins::apply(task_system);
+            stages.snapshot(cluster_merge_level_for_bins::name());
         }
 
         task_system.levels_valid = false;
