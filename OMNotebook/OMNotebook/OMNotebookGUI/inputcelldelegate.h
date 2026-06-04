@@ -58,8 +58,8 @@ namespace IAEX
    public:
      virtual ~InputCellDelegate() = default;
      virtual QString getResult() = 0;
-     virtual QString getError() = 0;          // Added 2006-02-02 AF
-     virtual int getErrorLevel() = 0;          // Added 2006-02-02 AF
+     virtual QString getError() = 0;
+     virtual int getErrorLevel() = 0;
      virtual void evalExpression(const QString expr) = 0;
    };
 

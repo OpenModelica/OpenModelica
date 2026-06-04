@@ -129,7 +129,7 @@ namespace IAEX
     // PORT >> setBackgroundMode(Qt::PaletteBase);
     setBackgroundRole( QPalette::Base );
     setTreeWidget(new TreeView(this));
-    setStyle( *c.style() ); // Added 2005-10-27 AF
+    setStyle( *c.style() );
 
 
     QPalette palette;
@@ -483,19 +483,7 @@ namespace IAEX
   }
 
 
-
-
-
-
-
-
-
-
   // ***************************************************************
-
-
-
-
 
 
   /*! \brief Set the cells mainwidget.

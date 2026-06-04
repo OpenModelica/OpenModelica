@@ -109,7 +109,7 @@ public slots:
   void setState(QString);
   void setStatusMenu(QList<QAction*>);
   void recentTriggered();
-  QVector<Cell*> SearchCells(Cell* current);  // Added 2015-07-14 To search the cells in a document and return the number of cells
+  QVector<Cell*> SearchCells(Cell* current);  // search the cells in a document and return the number of cells
 
 protected:
   void keyPressEvent(QKeyEvent *event);
@@ -207,7 +207,7 @@ private:
   QMenu *formatMenu;
   QMenu *windowMenu;
 
-  // 2005-11-03/04/07 AF, Added some more for text setting changes
+  // Added some more for text setting changes
   QMenu *styleMenu;
   QMenu *fontMenu;
   QMenu *faceMenu;

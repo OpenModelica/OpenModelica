@@ -87,23 +87,22 @@ namespace IAEX
     virtual void detach(DocumentView *d);
     virtual void notify();
 
-    //Cursor methods
+    // Cursor methods
     virtual void cursorStepUp();
     virtual void cursorStepDown();
     virtual void cursorAddCell();
-    virtual void cursorUngroupCell();          // Added 2006-04-26 AF
-    virtual void cursorSplitCell();            // Added 2006-04-26 AF
+    virtual void cursorUngroupCell();
+    virtual void cursorSplitCell();
     virtual void cursorDeleteCell();
     virtual void cursorCutCell();
     virtual void cursorCopyCell();
     virtual void cursorPasteCell();
-    virtual void cursorChangeStyle(CellStyle style);  // Changed 2005-10-28 AF
+    virtual void cursorChangeStyle(CellStyle style);
 
-    //TextCursor operations, added 2006-02-07 AF
+    // TextCursor operations
     virtual void textcursorCutText();
     virtual void textcursorCopyText();
     virtual void textcursorPasteText();
-    //TextCursor operations, added 2005-11-03 AF
     virtual void textcursorChangeFontFamily( QString family );
     virtual void textcursorChangeFontFace( int face );
     virtual void textcursorChangeFontSize( int size );
@@ -115,24 +114,24 @@ namespace IAEX
     virtual void textcursorChangePadding( int padding );
     virtual void textcursorChangeBorder( int border );
 
-    // Added 2005-11-18 AF, Image operations
+    // Image operations
     virtual void textcursorInsertImage( QString filepath, QSize size );
     virtual QString addImage( QImage *image );
     virtual QImage *getImage( QString name );
 
-    // Added 2005-12-05 AF, Link operations
+    // Link operations
     virtual void textcursorInsertLink( QString filepath, QTextCursor& cursor);
 
     //State operations
     virtual bool hasChanged() const;
     bool isOpen() const;
     bool isSaved() const;
-    bool isEmpty() const;    // Added 2006-08-24 AF
+    bool isEmpty() const;
 
     //Cursor operations
     CellCursor *getCursor();
     Factory *cellFactory();
-    Cell* getMainCell();        // Added 2006-08-24 AF
+    Cell* getMainCell();
     std::vector<Cell*> getSelection();
 
     //Command
@@ -150,13 +149,13 @@ namespace IAEX
     void toggleMainTreeView();
     void setEditable(bool editable);
     void cursorChangedPosition();
-    void updateScrollArea();        // Added 2005-11-29 AF
-    void setChanged( bool changed );    // Added 2006-01-17 AF
-    void hoverOverUrl( const QUrl &link );  // Added 2006-02-10 AF
+    void updateScrollArea();
+    void setChanged( bool changed );
+    void hoverOverUrl( const QUrl &link );
     void selectedACell(Cell *selected, Qt::KeyboardModifiers);
     void clearSelection();
     void mouseClickedOnCell(Cell *clickedCell);
-    void mouseClickedOnCellOutput(Cell *clickedCell); //Added 2006-02-03
+    void mouseClickedOnCellOutput(Cell *clickedCell);
     void linkClicked(const QUrl *url);
 //    void anchorClicked(const QUrl *url);
     virtual void cursorMoveAfter(Cell *aCell, const bool open);
@@ -168,9 +167,9 @@ namespace IAEX
     void widthChanged(const int);
     void cursorChanged();
     void viewExpression(const bool);
-    void contentChanged();        // Added 2005-11-29 AF
-    void hoverOverFile( QString );    // Added 2006-02-10 AF
-    void forwardAction( int );      // Added 2006-04-27 AF
+    void contentChanged();
+    void hoverOverFile( QString );
+    void forwardAction( int );
 
   protected:
     void setWorkspace(Cell *newWorkspace);
@@ -182,7 +181,7 @@ namespace IAEX
 
 
   private:
-    bool changed_;          // Added 2006-01-17 AF
+    bool changed_;
     bool open_;
     bool saved_;
 
@@ -190,11 +189,11 @@ namespace IAEX
     QString filename_;
 
     Cell *workspace_;        //This should alwas be a cellgroup.
-    Cell *lastClickedCell_;      // Added 2006-04-25 AF
+    Cell *lastClickedCell_;
     QFrame *mainFrame_;
 
 
-    QScrollArea *scroll_;      // Added 2005-11-01 AF
+    QScrollArea *scroll_;
     QGridLayout *mainLayout_;
 
     CellCursor *current_;
@@ -206,8 +205,8 @@ namespace IAEX
     observers_t observers_;
     bool autoIndent;
   private:
-    QHash<QString, QImage*> images_;    // Added 2005-11-19 AF
-    int currentImageNo_;          // Added 2005-11-19 AF
+    QHash<QString, QImage*> images_;
+    int currentImageNo_;
   };
 
 }
