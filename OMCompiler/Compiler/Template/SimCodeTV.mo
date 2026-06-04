@@ -4172,6 +4172,7 @@ package Flags
   constant ConfigFlag OBFUSCATE;
   constant ConfigFlag MAX_SIZE_LINEARIZATION;
   constant ConfigFlag NEW_BACKEND;
+  constant ConfigFlag FMI_EXTRA_ANNOTATIONS;
 
   function isSet
     input DebugFlag inFlag;

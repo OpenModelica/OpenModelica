@@ -429,7 +429,8 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.CAUSALIZE_DAE_MODE,
   Flags.SIM_CODE_SCALARIZE,
   Flags.EXECUTE_COMMAND,
-  Flags.MOO_DYNAMIC_OPTIMIZATION
+  Flags.MOO_DYNAMIC_OPTIMIZATION,
+  Flags.FMI_EXTRA_ANNOTATIONS
 };
 
 public function new
