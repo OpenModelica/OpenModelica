@@ -70,10 +70,10 @@ public
       Option<Variable> variable;
     end FLOW_ALIAS;
 
-    function isFlow
+    function isNonFlow
       input FlowAlias alias;
-      output Boolean isFlow = Util.applyOptionOrDefault(alias.variable, Variable.isFlow, false);
-    end isFlow;
+      output Boolean isNonFlow = isSome(alias.variable) and not Variable.isFlow(Util.getOption(alias.variable));
+    end isNonFlow;
   end FlowAlias;
 
   redeclare function extends EntryHash
@@ -96,18 +96,22 @@ public
     end if;
   end EntryString;
 
+  type Replacements = UnorderedMap<ComponentRef, Expression>;
+
   function eliminateAliases
     "Performs alias eliminiation for flow variables defined in stream connectors."
     input output FlatModel flatModel;
+    input        UnorderedMap<ComponentRef, Variable> vars;
+          output Replacements replacements;
   protected
     Sets sets;
-    UnorderedMap<ComponentRef, Expression> replacements;
     list<tuple<FlowAlias, list<FlowAlias>>> aliases;
   algorithm
     (flatModel, sets) := fromModel(flatModel);
     (flatModel, aliases) := createAliases(sets, flatModel);
     replacements := buildReplacements(aliases);
     flatModel := applyReplacements(replacements, flatModel);
+    findConstantBindings(flatModel, vars);
   end eliminateAliases;
 
   function fromModel
@@ -423,6 +427,7 @@ public
     Binding repr_binding;
     list<Variable> alias_vars = {};
     list<Equation> alias_eqs = {};
+    Boolean negated;
   algorithm
     extracted_sets := extractSets(sets);
 
@@ -438,7 +443,8 @@ public
 
       // Define the rest of the set as aliases of the representative.
       for alias in rest_aliases loop
-        (alias, alias_eqs) := defineAlias(alias, repr_binding, alias_eqs);
+        negated := representative.negative <> alias.negative;
+        (alias, alias_eqs) := defineAlias(alias, repr_binding, negated, alias_eqs);
         alias_vars := Util.getOption(alias.variable) :: alias_vars;
       end for;
 
@@ -453,7 +459,7 @@ public
   function buildReplacements
     "Constructs an alias->representative map."
     input list<tuple<FlowAlias, list<FlowAlias>>> aliases;
-    output UnorderedMap<ComponentRef, Expression> replacements;
+    output Replacements replacements;
   protected
     FlowAlias representative;
     Expression exp, negative_exp;
@@ -475,15 +481,27 @@ public
 
   function applyReplacements
     "Replaces aliases with the chosen representative variable in the model."
-    input UnorderedMap<ComponentRef, Expression> replacements;
+    input Replacements replacements;
     input output FlatModel flatModel;
   algorithm
-    flatModel := FlatModel.mapExp(flatModel,
-      function Expression.map(func = function applyReplacementsInExp(replacements = replacements)));
+    flatModel := FlatModel.mapExp(flatModel, function applyReplacementsInExp(replacements = replacements));
   end applyReplacements;
 
+  function applyReplacementsInEql
+    input Replacements replacements;
+    input output list<Equation> eql;
+  algorithm
+    eql := Equation.mapExpList(eql, function applyReplacementsInExp(replacements = replacements));
+  end applyReplacementsInEql;
+
   function applyReplacementsInExp
-    input UnorderedMap<ComponentRef, Expression> replacements;
+    input Replacements replacements;
+    input Expression exp;
+    output Expression outExp = Expression.map(exp, function applyReplacementsInExp_traverser(replacements = replacements));
+  end applyReplacementsInExp;
+
+  function applyReplacementsInExp_traverser
+    input Replacements replacements;
     input output Expression exp;
   protected
     Option<Expression> opt_val;
@@ -497,7 +515,7 @@ public
 
       else exp;
     end match;
-  end applyReplacementsInExp;
+  end applyReplacementsInExp_traverser;
 
   function defineRepresentative
     "Defines a representative for an alias set, by choosing one of the aliases
@@ -507,25 +525,32 @@ public
     output FlowAlias representative;
     output list<FlowAlias> restAliases;
   protected
-    list<Binding> start_values = {}, nominal_values = {};
+    list<tuple<ComponentRef, Binding>> start_values = {}, nominal_values = {};
     list<Expression> min_values = {}, max_values = {};
     list<FlowAlias> accum_aliases = {};
     Binding start_binding, nominal_binding, min_binding, max_binding;
+    Boolean negated;
   algorithm
+    try
+      // Try to select a non-flow variable as the representative for the set.
+      (representative, restAliases) := List.findAndRemove(aliases, FlowAlias.isNonFlow);
+    else
+      // If there aren't any non-flow variables, just select any variable.
+      representative :: restAliases := aliases;
+    end try;
+
     // Evaluate the start/nominal/min/max attributes of the aliases and sort them into lists.
-    for alias in aliases loop
+    for alias in representative :: restAliases loop
+      negated := representative.negative <> alias.negative;
       (alias, start_values, nominal_values, min_values, max_values) :=
-        evalAliasAttributes(alias, start_values, nominal_values, min_values, max_values);
+        evalAliasAttributes(alias, negated, start_values, nominal_values, min_values, max_values);
       accum_aliases := alias :: accum_aliases;
     end for;
 
-    // Select any flow variable in the set as the representative.
-    (representative, restAliases) := List.findAndRemove(aliases, FlowAlias.isFlow);
-
     // Compute start/nominal/min/max attributes for the representative.
     // start/nominal is chosen according to 8.6.2
-    start_binding := if listEmpty(start_values) then NFBinding.EMPTY_BINDING else listHead(start_values);
-    nominal_binding := if listEmpty(nominal_values) then NFBinding.EMPTY_BINDING else listHead(nominal_values);
+    start_binding := selectValue(start_values);
+    nominal_binding := selectValue(nominal_values);
     // min/max is max(min_values) and min(max_values) respectively.
     min_binding := computeLimit(min_values, Ceval.evalBuiltinMax2);
     max_binding := computeLimit(max_values, Ceval.evalBuiltinMin2);
@@ -557,14 +582,48 @@ public
     end if;
   end computeLimit;
 
+  function selectValue
+    "Returns the binding with the highest confidence. In case of a tie, the
+     binding belonging to the variable highest in the instance tree is chosen."
+    input list<tuple<ComponentRef, Binding>> bindings;
+    output Binding value = NFBinding.EMPTY_BINDING;
+  protected
+    Integer confidence, max_confidence = -1, name_len, cur_name_len = 0;
+    ComponentRef name;
+    Binding binding;
+  algorithm
+    for b in bindings loop
+      (name, binding) := b;
+      confidence := Binding.actualConfidence(binding);
+
+      if max_confidence < 0 or confidence < max_confidence then
+        // Use this binding if it's the first or it has higher confidence than
+        // the current best.
+        value := binding;
+        cur_name_len := ComponentRef.depth(name);
+        max_confidence := confidence;
+      elseif confidence == max_confidence then
+        // Use this binding if it has the same confidence as the current best
+        // but it belongs to a variable higher up in the instance tree.
+        name_len := ComponentRef.depth(name);
+        if name_len < cur_name_len then
+          value := binding;
+          cur_name_len := name_len;
+        end if;
+      end if;
+    end for;
+  end selectValue;
+
   function defineAlias
     input output FlowAlias alias;
     input Binding binding;
+    input Boolean negated;
     input output list<Equation> equations;
   protected
     Variable var;
     Expression var_exp, bind_exp;
     Equation bind_eq;
+    Binding b;
   algorithm
     SOME(var) := alias.variable;
 
@@ -576,9 +635,15 @@ public
       equations := bind_eq :: equations;
     end if;
 
+    if negated then
+      b := Binding.mapExp(binding, Expression.negate);
+    else
+      b := binding;
+    end if;
+
     // Replace the variable's binding with the given representative binding and
     // mark it as an alias with a comment.
-    var.binding := binding;
+    var.binding := b;
     var.comment := SCode.Comment.COMMENT(var.comment.annotation_, SOME("Alias variable"));
     alias.variable := SOME(var);
   end defineAlias;
@@ -590,8 +655,9 @@ public
      Start/nominal values are returned as bindings since we need to know where
      they come from, while for min/max we only need the values."
     input output FlowAlias alias;
-    input output list<Binding> startValues;
-    input output list<Binding> nominalValues;
+    input Boolean negated;
+    input output list<tuple<ComponentRef, Binding>> startValues;
+    input output list<tuple<ComponentRef, Binding>> nominalValues;
     input output list<Expression> minValues;
     input output list<Expression> maxValues;
   protected
@@ -612,28 +678,48 @@ public
           case "start"
             algorithm
               attr_binding := evalAliasAttribute(attr_binding);
-              startValues := attr_binding :: startValues;
+
+              if negated then
+                attr_binding := Binding.mapExp(attr_binding, Expression.negate);
+              end if;
+
+              startValues := (var.name, attr_binding) :: startValues;
             then
               (attr_name, attr_binding);
 
           case "nominal"
             algorithm
               attr_binding := evalAliasAttribute(attr_binding);
-              nominalValues := attr_binding :: nominalValues;
+
+              if negated then
+                attr_binding := Binding.mapExp(attr_binding, Expression.negate);
+              end if;
+
+              nominalValues := (var.name, attr_binding) :: nominalValues;
             then
               (attr_name, attr_binding);
 
           case "min"
             algorithm
               (attr_binding, attr_exp) := evalAliasAttribute(attr_binding);
-              minValues := attr_exp :: minValues;
+
+              if negated then
+                maxValues := attr_exp :: maxValues;
+              else
+                minValues := attr_exp :: minValues;
+              end if;
             then
               (attr_name, attr_binding);
 
           case "max"
             algorithm
               (attr_binding, attr_exp) := evalAliasAttribute(attr_binding);
-              maxValues := attr_exp :: maxValues;
+
+              if negated then
+                minValues := attr_exp :: minValues;
+              else
+                maxValues := attr_exp :: maxValues;
+              end if;
             then
               (attr_name, attr_binding);
 
@@ -696,6 +782,57 @@ public
     var.typeAttributes := attrs;
     alias.variable := SOME(var);
   end setRepresentativeAttributes;
+
+  function findConstantBindings
+    input FlatModel flatModel;
+    input UnorderedMap<ComponentRef, Variable> vars;
+  algorithm
+    for eq in flatModel.equations loop
+      findConstantBindingsInEq(eq, vars);
+    end for;
+  end findConstantBindings;
+
+  function findConstantBindingsInEq
+    input Equation eq;
+    input UnorderedMap<ComponentRef, Variable> vars;
+  protected
+    ComponentRef cref;
+    Expression exp;
+
+    function update_binding
+      input Option<Variable> var;
+      input Expression value;
+      output Variable outVar;
+    algorithm
+      SOME(outVar) := var;
+
+      if Variable.isFlow(outVar) then
+        outVar.binding := Binding.makeFlat(value, Variability.CONSTANT, NFBinding.Source.GENERATED);
+      end if;
+    end update_binding;
+  algorithm
+    () := match eq
+      case Equation.EQUALITY(lhs = Expression.CREF(cref = cref), rhs = exp)
+        guard ComponentRef.isFlow(cref) and Expression.variability(exp) <= Variability.STRUCTURAL_PARAMETER
+        algorithm
+          Structural.markExp(exp);
+          exp := Ceval.tryEvalExp(exp);
+          UnorderedMap.tryAddUpdate(cref, function update_binding(value = exp), vars);
+        then
+          ();
+
+      case Equation.EQUALITY(lhs = exp, rhs = Expression.CREF(cref = cref))
+        guard ComponentRef.isFlow(cref) and Expression.variability(exp) <= Variability.STRUCTURAL_PARAMETER
+        algorithm
+          Structural.markExp(exp);
+          exp := Ceval.tryEvalExp(exp);
+          UnorderedMap.tryAddUpdate(cref, function update_binding(value = exp), vars);
+        then
+          ();
+
+      else ();
+    end match;
+  end findConstantBindingsInEq;
 
 annotation(__OpenModelica_Interface="nf_frontend");
 end NFStreamFlowAlias;

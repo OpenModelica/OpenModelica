@@ -36,23 +36,22 @@ instantiateModel(TestAliasStream.Test4); getErrorString();
 //     Real 'sensor.port.h';
 //     Real 'sensor.h';
 //     Real 'sensor.T';
-//     Real 'pump.outlet.w';
-//     Real 'pump.w' = 'pump.outlet.w' \"Alias variable\";
+//     Real 'pump.w' = sin(time);
+//     Real 'pump.outlet.w' = -'pump.w' \"Alias variable\";
 //   equation
 //     'sensor.port.p' = 'tank.port.p';
 //     'sensor.port.p' = 'pump.outlet.p';
-//     'sensor.port.w' + 'tank.port.w' + 'pump.outlet.w' = 0.0;
+//     'sensor.port.w' + 'tank.port.w' - 'pump.w' = 0.0;
 //     'pump.outlet.h' = 4200.0 * 'pump.T';
-//     'pump.P' = if (-'pump.outlet.w') > 0.0 then (-'pump.outlet.w') * ('pump.outlet.p' - 1e5) / 1000.0 else 0.0;
+//     'pump.P' = if 'pump.w' > 0.0 then 'pump.w' * ('pump.outlet.p' - 1e5) / 1000.0 else 0.0;
 //     1000.0 * 'tank.A' * der('tank.y') = 'tank.port.w';
 //     1000.0 * 'tank.A' * 4200.0 * der('tank.y' * 'tank.T') = smooth(0, 'tank.port.w' * (if 'tank.port.w' > 0.0 then 'pump.outlet.h' else 'tank.port.h'));
 //     'tank.port.h' = 4200.0 * 'tank.T';
 //     'tank.port.p' = 1e5 + 9810.0 * 'tank.y';
 //     'sensor.port.w' = 0.0;
 //     'sensor.port.h' = 0.0;
-//     'sensor.h' = ('$OMC$PositiveMax'(-'pump.outlet.w', 1e-7) * 'pump.outlet.h' + '$OMC$PositiveMax'(-'tank.port.w', 1e-7) * 'tank.port.h') / ('$OMC$PositiveMax'(-'pump.outlet.w', 1e-7) + '$OMC$PositiveMax'(-'tank.port.w', 1e-7));
+//     'sensor.h' = ('$OMC$PositiveMax'('pump.w', 1e-7) * 'pump.outlet.h' + '$OMC$PositiveMax'(-'tank.port.w', 1e-7) * 'tank.port.h') / ('$OMC$PositiveMax'('pump.w', 1e-7) + '$OMC$PositiveMax'(-'tank.port.w', 1e-7));
 //     'sensor.h' = 4200.0 * 'sensor.T';
-//     -'pump.outlet.w' = sin(time);
 //   end 'Test4';
 // end 'Test4';
 // "
