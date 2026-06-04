@@ -108,6 +108,8 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let numBoolVars = numBoolvars(modelInfo)
   let numStringVars = numStringvars(modelInfo)
 
+  let extraAnnotations = Flags.getConfigString(FMI_EXTRA_ANNOTATIONS)
+
   let _ = FlagsUtil.set(Flags.HARDCODED_START_VALUES, true)
   let cpp = CodegenCpp.translateModel(simCode)
   let()= textFile(fmuWriteOutputHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>WriteOutput.h')
@@ -116,7 +118,7 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let()= textFile((if isFMIVersion10(FMUVersion) then CodegenCppInit.modelInitXMLFile(simCode, numRealVars, numIntVars, numBoolVars, numStringVars, FMUVersion, FMUType, guid, true, "cpp-runtime", complexStartExpressions, stateDerVectorName) else
                    CodegenFMU.fmuModelDescriptionFile(simCode, guid, FMUVersion, FMUType, sourceFiles)), 'modelDescription.xml')
   let()= textFile(fmudeffile(simCode, FMUVersion), '<%fileNamePrefix%>.def')
-  let()= textFile(fmuMakefile(target,simCode, extraFuncs, extraFuncsDecl, "", FMUVersion, "", "", "", ""), '<%fileNamePrefix%>_FMU.makefile')
+  let()= textFile(fmuMakefile(target, simCode, extraFuncs, extraFuncsDecl, "", FMUVersion, "", "", "", "", extraAnnotations), '<%fileNamePrefix%>_FMU.makefile')
   let()= textFile(fmuCalcHelperMainfile(simCode), 'OMCpp<%fileNamePrefix%>CalcHelperMain.cpp')
   let _ = FlagsUtil.set(Flags.HARDCODED_START_VALUES, false)
 
@@ -708,7 +710,7 @@ case SIMCODE(modelInfo=MODELINFO(), modelStructure=fmiModelStructure) then
 end directionalDerivativeFunction;
 
 template fmuMakefile(String target, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, String FMUVersion, String additionalLinkerFlags_GCC,
-                            String additionalLinkerFlags_MSVC, String additionalCFlags_GCC, String additionalCFlags_MSVC)
+                     String additionalLinkerFlags_MSVC, String additionalCFlags_GCC, String additionalCFlags_MSVC, String extraAnnotations)
  "Generates the contents of the makefile for the simulation case. Copy libexpat & correct linux fmu"
 ::=
 match getGeneralTarget(target)
@@ -907,14 +909,22 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   <%\t%>zip -r "<%fmuTargetName%>.fmu" modelDescription.xml binaries sources
   endif
   endif
+  ifneq ("<%extraAnnotations%>","")
+  <%\t%><%mkdir%> -p extra/org.openmodelica
+  <%\t%>jq --arg regex "<%extraAnnotations%>" -f "$(OMHOME)/share/omc/scripts/filter-annotations.jq" <%fileNamePrefix%>_modelInstance.json > extra/org.openmodelica/modelAnnotations.json
+  ifeq ($(ZIP_FMU),ON)
+  <%\t%>zip -ur "<%fmuTargetName%>.fmu" extra
+  endif
+  endif
 
   ifeq ($(ZIP_FMU),OFF)
   <%\t%>rm -f OMCpp<%fileNamePrefix%>* <%fileNamePrefix%>_FMU.* <%fileNamePrefix%>.def <%fileNamePrefix%>.sh <%fileNamePrefix%>.bat <%fileNamePrefix%>.makefile <%fileNamePrefix%>_init.xml
+  <%\t%>rm -f <%fileNamePrefix%>_modelInstance.json
   endif
 
   clean:
   <%\t%>rm -f OMCpp<%fileNamePrefix%>* <%fileNamePrefix%>_FMU.* <%fileNamePrefix%>.def <%fileNamePrefix%>.sh <%fileNamePrefix%>.bat <%fileNamePrefix%>.makefile <%fileNamePrefix%>_init.xml
-  <%\t%>rm -rf modelDescription.xml binaries sources documentation
+  <%\t%>rm -rf modelDescription.xml binaries sources documentation extra <%fileNamePrefix%>_modelInstance.json
 
   >>
 end fmuMakefile;

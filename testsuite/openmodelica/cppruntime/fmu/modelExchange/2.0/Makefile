@@ -7,6 +7,7 @@ exposeLocalIOs.mos \
 exposeLocalIOsArray.mos \
 solveOneNonlinearEquationTest.mos \
 testArrayEquations.mos \
+testExtraAnnotations.mos \
 testFMU2MatrixIO.mos \
 testModelDescription.mos \
 testClockDescription.mos \

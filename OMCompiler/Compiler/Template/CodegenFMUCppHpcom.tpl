@@ -152,7 +152,7 @@ template fmuMakefile(String target, SimCode simCode, Text& extraFuncs, Text& ext
 
   <<
   <%CodegenCppHpcom.getAdditionalMakefileFlags(additionalCFlags_GCC, additionalCFlags_MSVC, additionalLinkerFlags_GCC, additionalLinkerFlags_MSVC)%>
-  <%CodegenFMUCpp.fmuMakefile(target, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, FMUVersion, additionalLinkerFlags_GCC, additionalLinkerFlags_MSVC, additionalCFlags_GCC, additionalCFlags_MSVC)%>
+  <%CodegenFMUCpp.fmuMakefile(target, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, FMUVersion, additionalLinkerFlags_GCC, additionalLinkerFlags_MSVC, additionalCFlags_GCC, additionalCFlags_MSVC, "")%>
   >>
 end fmuMakefile;
 
