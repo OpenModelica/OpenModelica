@@ -23,6 +23,7 @@ jobs:
         run: |
           export OMVERSION=`git describe --tags --match "v*.*" --always`
           echo Version: $OMVERSION
+          echo "$OMVERSION" > OMVERSION.txt
           cd ..
           ln -s ${{ github.event.repository.name }} ${{ github.event.repository.name }}-$OMVERSION
           zip ${{ github.event.repository.name }}/${{ github.event.repository.name }}-$OMVERSION-nightly.zip ${{ github.event.repository.name }}-$OMVERSION -r -x '*/.git/*'
