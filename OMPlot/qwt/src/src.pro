@@ -25,10 +25,21 @@ contains(QWT_CONFIG, QwtDll) {
 
     CONFIG += dll
     win32|symbian: DEFINES += QT_DLL QWT_DLL QWT_MAKEDLL
+
+    unix:!macx:!android {
+        !isEmpty( QMAKE_LFLAGS_SONAME ) {
+
+            # we increase the SONAME for every minor number
+
+            QWT_SONAME=libomqwt.so.$${VER_MAJ}.$${VER_MIN}
+            QMAKE_LFLAGS *= $${QMAKE_LFLAGS_SONAME}$${QWT_SONAME}
+            QMAKE_LFLAGS_SONAME=
+        }
+    }
 }
 else {
     CONFIG += staticlib
-} 
+}
 
 contains(QWT_CONFIG, QwtFramework) {
 
@@ -40,7 +51,7 @@ include ( $${PWD}/src.pri )
 # Install directives
 
 target.path    = $${QWT_INSTALL_LIBS}
-INSTALLS       = target 
+INSTALLS       = target
 
 CONFIG(lib_bundle) {
 
@@ -70,23 +81,28 @@ contains(QWT_CONFIG, QwtPkgConfig) {
 
     greaterThan(QT_MAJOR_VERSION, 4) {
 
-        QMAKE_PKGCONFIG_FILE = Qt$${QT_MAJOR_VERSION}$${QMAKE_PKGCONFIG_NAME}
-        QMAKE_PKGCONFIG_REQUIRES = Qt5Widgets Qt5Concurrent Qt5PrintSupport
+        QTLIB_PREFIX = Qt$${QT_MAJOR_VERSION}  # e.g., "Qt5"
+        QMAKE_PKGCONFIG_FILE = $${QTLIB_PREFIX}$${QMAKE_PKGCONFIG_NAME}  # e.g., "Qt5Qwt6"
+
+        # Base Qt library requirements
+        QMAKE_PKGCONFIG_REQUIRES = $${QTLIB_PREFIX}Widgets
+        QMAKE_PKGCONFIG_REQUIRES += $${QTLIB_PREFIX}Concurrent
+        QMAKE_PKGCONFIG_REQUIRES += $${QTLIB_PREFIX}PrintSupport
 
         contains(QWT_CONFIG, QwtSvg) {
-            QMAKE_PKGCONFIG_REQUIRES += Qt5Svg
+            QMAKE_PKGCONFIG_REQUIRES += $${QTLIB_PREFIX}Svg
         }
 
         contains(QWT_CONFIG, QwtOpenGL) {
-            QMAKE_PKGCONFIG_REQUIRES += Qt5OpenGL
+            QMAKE_PKGCONFIG_REQUIRES += $${QTLIB_PREFIX}OpenGL
         }
 
         QMAKE_DISTCLEAN += $${DESTDIR}/$${QMAKE_PKGCONFIG_DESTDIR}/$${QMAKE_PKGCONFIG_FILE}.pc
     }
     else {
 
-        # there is no QMAKE_PKGCONFIG_FILE fo Qt4
-        QMAKE_PKGCONFIG_REQUIRES = QtGui 
+        # there is no QMAKE_PKGCONFIG_FILE for Qt4
+        QMAKE_PKGCONFIG_REQUIRES = QtGui
 
         contains(QWT_CONFIG, QwtSvg) {
             QMAKE_PKGCONFIG_REQUIRES += QtSvg
@@ -102,13 +118,15 @@ contains(QWT_CONFIG, QwtPkgConfig) {
     QMAKE_DISTCLEAN += $${DESTDIR}/libqwt.prl
 }
 
-
 win32 {
   _cxx = $$(CXX)
   contains(_cxx, clang++) {
-    message("Found clang++ on windows in $CXX, removing unknown flags: -fno-keep-inline-dllexport")
+    message("Found clang++ on windows in $CXX, removing unknown flags: -fno-keep-inline-dllexport -mthreads")
     QMAKE_CFLAGS -= -fno-keep-inline-dllexport
     QMAKE_CXXFLAGS -= -fno-keep-inline-dllexport
+    QMAKE_CXXFLAGS_EXCEPTIONS_ON -= -mthreads
+  } else {
+    # -Wno-clobbered is not recognized by clang
+    QMAKE_CXXFLAGS += -Wno-clobbered
   }
 }
-
