@@ -1347,5 +1347,5 @@ algorithm
   replacementPerformed := acc2;
 end replaceExpMatrix;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_base");
 end VarTransform;

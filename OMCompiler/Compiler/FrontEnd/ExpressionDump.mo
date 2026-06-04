@@ -55,14 +55,15 @@ protected import ComponentReferenceBasics;
 protected import Config;
 protected import DAEDump;
 protected import Dump;
+protected import Error;
 protected import Expression;
 public import ExpressionDumpTpl;
 protected import List;
-protected import Patternm;
 protected import Print;
 protected import System;
 protected import Tpl;
 protected import Types;
+protected import Util;
 
 /*
  * - Printing expressions
@@ -770,7 +771,7 @@ algorithm
       then printExp2Str(e, stringDelimiter, opcreffunc, opcallfunc);
 
     case (DAE.PATTERN(pattern=pat), _, _)
-      then Patternm.patternStr(pat);
+      then patternStr(pat);
 
     case (DAE.CODE(code=code), _, _) then "$Code(" + Dump.printCodeStr(code) + ")";
 
@@ -867,22 +868,22 @@ algorithm
       String resultStr,patternsStr,bodyStr;
     case DAE.CASE(patterns=patterns, body={}, result=SOME(result))
       algorithm
-        patternsStr := Patternm.patternStr(DAE.PAT_META_TUPLE(patterns));
+        patternsStr := patternStr(DAE.PAT_META_TUPLE(patterns));
         resultStr := ExpressionBasics.printExpStr(result);
       then stringAppendList({"    case ",patternsStr," then ",resultStr,";\n"});
     case DAE.CASE(patterns=patterns, body={}, result=NONE())
       algorithm
-        patternsStr := Patternm.patternStr(DAE.PAT_META_TUPLE(patterns));
+        patternsStr := patternStr(DAE.PAT_META_TUPLE(patterns));
       then stringAppendList({"    case ",patternsStr," then fail();\n"});
     case DAE.CASE(patterns=patterns, body=body, result=SOME(result))
       algorithm
-        patternsStr := Patternm.patternStr(DAE.PAT_META_TUPLE(patterns));
+        patternsStr := patternStr(DAE.PAT_META_TUPLE(patterns));
         resultStr := ExpressionBasics.printExpStr(result);
         bodyStr := stringAppendList(List.map1(body, DAEDump.ppStmtStr, 8));
       then stringAppendList({"    case ",patternsStr,"\n      algorithm\n",bodyStr,"      then ",resultStr,";\n"});
     case DAE.CASE(patterns=patterns, body=body, result=NONE())
       algorithm
-        patternsStr := Patternm.patternStr(DAE.PAT_META_TUPLE(patterns));
+        patternsStr := patternStr(DAE.PAT_META_TUPLE(patterns));
         bodyStr := stringAppendList(List.map1(body, DAEDump.ppStmtStr, 8));
       then stringAppendList({"    case ",patternsStr,"\n      algorithm\n",bodyStr,"      then fail();\n"});
   end match;
@@ -1750,5 +1751,62 @@ algorithm
   end for;
 end constraintDTlistToString;
 
-annotation(__OpenModelica_Interface="frontend");
+public function patternStr "Pattern to String unparsing"
+  input DAE.Pattern pattern;
+  output String str;
+algorithm
+  str := match pattern
+    local
+      list<DAE.Pattern> pats;
+      list<String> fields,patsStr;
+      DAE.Exp exp;
+      DAE.Pattern pat,head,tail;
+      String id;
+      list<tuple<DAE.Pattern,String,DAE.Type>> namedpats;
+      Absyn.Path name;
+    case DAE.PAT_WILD() then "_";
+    case DAE.PAT_AS(id=id,pat=DAE.PAT_WILD()) then id;
+    case DAE.PAT_AS_FUNC_PTR(id,DAE.PAT_WILD()) then id;
+    case DAE.PAT_SOME(pat)
+      algorithm
+        str := patternStr(pat);
+      then "SOME(" + str + ")";
+    case DAE.PAT_META_TUPLE(pats)
+      algorithm
+        str := stringDelimitList(List.map(pats,patternStr),",");
+      then "(" + str + ")";
+
+    case DAE.PAT_CALL_TUPLE(pats)
+      algorithm
+        str := stringDelimitList(List.map(pats,patternStr),",");
+      then "(" + str + ")";
+
+    case DAE.PAT_CALL(name=name, patterns=pats)
+      algorithm
+        id := AbsynUtil.pathString(name);
+        str := stringDelimitList(List.map(pats,patternStr),",");
+      then stringAppendList({id,"(",str,")"});
+
+    case DAE.PAT_CALL_NAMED(name=name, patterns=namedpats)
+      algorithm
+        id := AbsynUtil.pathString(name);
+        fields := List.map(namedpats, Util.tuple32);
+        patsStr := List.map1r(List.mapMap(namedpats, Util.tuple31, patternStr), stringAppend, "=");
+        str := stringDelimitList(List.threadMap(fields, patsStr, stringAppend), ",");
+      then stringAppendList({id,"(",str,")"});
+
+    case DAE.PAT_CONS(head,tail) then patternStr(head) + "::" + patternStr(tail);
+
+    case DAE.PAT_CONSTANT(exp=exp) then ExpressionBasics.printExpStr(exp);
+    // case DAE.PAT_CONSTANT(SOME(et),exp) then "(" + TypesDump.unparseType(et) + ")" + ExpressionBasics.printExpStr(exp);
+    case DAE.PAT_AS(id=id,pat=pat) then id + " as " + patternStr(pat);
+    case DAE.PAT_AS_FUNC_PTR(id, pat) then id + " as " + patternStr(pat);
+    else
+      algorithm
+        Error.addMessage(Error.INTERNAL_ERROR, {"ExpressionDump.patternStr not implemented correctly"});
+      then "*PATTERN*";
+  end match;
+end patternStr;
+
+annotation(__OpenModelica_Interface="frontend_base");
 end ExpressionDump;

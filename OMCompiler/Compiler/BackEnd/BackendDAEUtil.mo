@@ -94,6 +94,7 @@ import EvaluateFunctions;
 import EvaluateParameter;
 import ExecStat.execStat;
 import ExpandableArray;
+import Ceval;
 import Expression;
 import ExpressionBasics;
 import ExpressionDump;
@@ -6714,7 +6715,7 @@ algorithm
   case (false, (_,_,funcs,_))
     algorithm
       // try to inline
-      (e,_,true) := Inline.forceInlineExp(inExp,(funcs,{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource);
+      (e,_,true) := Inline.forceInlineExp(inExp,(funcs,{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource,Ceval.cevalSimpleWithFunctionTreeReturnExp);
       (e,(_,_,_,notfound)) := Expression.traverseExpTopDown(e, getEqnsysRhsExp1, iTpl);
     then
       (e,notfound);

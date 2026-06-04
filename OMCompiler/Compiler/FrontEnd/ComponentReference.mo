@@ -3176,5 +3176,5 @@ algorithm
   uniqueCrefs := UnorderedSet.unique_list(crefs, ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
 end uniqueList;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_base");
 end ComponentReference;

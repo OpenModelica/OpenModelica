@@ -3199,7 +3199,7 @@ algorithm
   // 2 - remove all expandable without binding from the dae
   dae := DAEUtil.removeVariables(DAE, expandableVars);
   // 2 - get all expandable crefs used in the dae (without the expandable vars)
-  usedInDAE := DAEUtil.getAllExpandableCrefsFromDAE(dae);
+  usedInDAE := getAllExpandableCrefsFromDAE(dae);
   // print("Used in the DAE (2):\n  " + stringDelimitList(List.map(usedInDAE, ComponentReferenceBasics.printComponentRefStr), "\n  ") + "\n");
 
   // 3 - get all expandable crefs that are connected ONLY with expandable
@@ -3237,6 +3237,70 @@ algorithm
     else false;
   end match;
 end isEquType;
+
+public function topLevelInput "author: PA
+  if variable is input declared at the top level of the model,
+  or if it is an input in a connector instance at top level return true."
+  input DAE.ComponentRef componentRef;
+  input DAE.VarDirection varDirection;
+  input DAE.ConnectorType connectorType;
+  input DAE.VarVisibility visibility = DAE.PUBLIC();
+  output Boolean isTopLevel;
+protected
+  // the new frontend only keeps top level inputs, obsoleting bogus check for DAE.CREF_IDENT
+  Boolean newInst = Flags.isSet(Flags.SCODE_INST);
+algorithm
+  isTopLevel := match (varDirection, componentRef, visibility, newInst)
+    case (          _,                _, DAE.PROTECTED(),    _) then false;
+    case (DAE.INPUT(),                _,               _, true) then true;
+    case (DAE.INPUT(), DAE.CREF_IDENT(),               _,    _) then true;
+    case (DAE.INPUT(),                _,               _,    _)
+      guard(faceEqual(componentFaceType(componentRef), Face.OUTSIDE()))
+      then topLevelConnectorType(connectorType);
+    else false;
+  end match;
+end topLevelInput;
+
+protected function topLevelConnectorType
+  input DAE.ConnectorType inConnectorType;
+  output Boolean isTopLevel;
+algorithm
+  isTopLevel := match inConnectorType
+    case DAE.FLOW() then true;
+    case DAE.POTENTIAL() then true;
+    else false;
+  end match;
+end topLevelConnectorType;
+
+public function getAllExpandableCrefsFromDAE
+"@author: adrpo
+ collect all crefs from the DAE"
+  input DAE.DAElist inDAE;
+  output list<DAE.ComponentRef> outCrefs;
+protected
+  list<DAE.Element> elts;
+algorithm
+  DAE.DAE(elts) := inDAE;
+  (_, (_, outCrefs)) := DAEUtil.traverseDAEElementList(elts, Expression.traverseSubexpressionsHelper, (collectAllExpandableCrefsInExp, {}));
+end getAllExpandableCrefsFromDAE;
+
+protected function collectAllExpandableCrefsInExp "collect all crefs from expression"
+  input DAE.Exp exp;
+  input list<DAE.ComponentRef> acc;
+  output DAE.Exp outExp;
+  output list<DAE.ComponentRef> outCrefs;
+algorithm
+  (outExp,outCrefs) := match exp
+    local
+      DAE.ComponentRef cr;
+
+    case DAE.CREF(componentRef = cr)
+      then (exp,List.consOnTrue(isExpandable(cr),cr,acc));
+
+    else (exp,acc);
+
+  end match;
+end collectAllExpandableCrefsInExp;
 
 annotation(__OpenModelica_Interface="frontend");
 end ConnectUtil;

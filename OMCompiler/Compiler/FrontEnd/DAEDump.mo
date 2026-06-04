@@ -3959,5 +3959,5 @@ algorithm
 end getOptionWithConcatStr;
 
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_base");
 end DAEDump;

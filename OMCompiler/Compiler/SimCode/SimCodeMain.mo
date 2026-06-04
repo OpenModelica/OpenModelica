@@ -107,6 +107,7 @@ import SerializeModelInfo;
 import SerializeSparsityPattern;
 import SimCodeUtil;
 import SimCodeFunctionUtil;
+import StateMachineFlatten;
 import SimCodeUtilShared;
 import SimCodeVar;
 import StackOverflow;
@@ -1345,7 +1346,7 @@ algorithm
     // old backend
     case graph algorithm
       System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
-      dae := DAEUtil.transformationsBeforeBackend(cache, graph, inDae);
+      dae := DAEUtil.transformationsBeforeBackend(cache, graph, inDae, StateMachineFlatten.stateMachineToDataFlow);
       ExecStat.execStat("Transformations before backend");
 
       if Flags.isSet(Flags.SERIALIZED_SIZE) then
@@ -1469,7 +1470,7 @@ algorithm
 
     case graph algorithm
       System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
-      dae := DAEUtil.transformationsBeforeBackend(cache, graph, inDae);
+      dae := DAEUtil.transformationsBeforeBackend(cache, graph, inDae, StateMachineFlatten.stateMachineToDataFlow);
       ExecStat.execStat("Transformations before backend");
 
       if Flags.isSet(Flags.SERIALIZED_SIZE) then

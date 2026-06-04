@@ -63,6 +63,7 @@ import Differentiate;
 import ElementSource;
 import Error;
 import ErrorExt;
+import Ceval;
 import Expression;
 import ExpressionBasics;
 import ExpressionSimplify;
@@ -2752,7 +2753,7 @@ protected function forceInlinEqn
   output AvlTreePathFunction.Tree funcs;
 algorithm
   funcs := inFuncs;
-  (e,_,_) := Inline.forceInlineExp(inExp,(SOME(funcs),{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource);
+  (e,_,_) := Inline.forceInlineExp(inExp,(SOME(funcs),{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource,Ceval.cevalSimpleWithFunctionTreeReturnExp);
 end forceInlinEqn;
 
 protected function getSetSystem

@@ -57,6 +57,7 @@ import BackendVarTransform;
 import BaseHashTable;
 import CheckModel;
 import ComponentReference;
+import ConnectUtil;
 import ComponentReferenceBasics;
 import Config;
 import ClassInf;
@@ -1675,7 +1676,7 @@ algorithm
     else
       algorithm
         /* Consider toplevel inputs as known unless they are protected. Ticket #5591 */
-        false := DAEUtil.topLevelInput(inComponentRef, inVarDirection, inConnectorType, protection);
+        false := ConnectUtil.topLevelInput(inComponentRef, inVarDirection, inConnectorType, protection);
       then
         match (inVarKind, inType)
           case (DAE.VARIABLE(), DAE.T_BOOL()) then BackendDAE.DISCRETE();
@@ -1703,7 +1704,7 @@ algorithm
     case DAE.CONST() then BackendDAE.CONST();
     case DAE.VARIABLE()
       algorithm
-        true := DAEUtil.topLevelInput(componentRef, varDirection, connectorType, visibility);
+        true := ConnectUtil.topLevelInput(componentRef, varDirection, connectorType, visibility);
       then
         BackendDAE.VARIABLE();
     // adrpo: topLevelInput might fail!
