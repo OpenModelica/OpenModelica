@@ -57,8 +57,9 @@ protected
 import Algorithm;
 import BaseHashTable;
 import AvlTreePathFunction;
+import ClassInfUtil;
 import ComponentReference;
-protected import ComponentReferenceBasics;
+import ComponentReferenceBasics;
 import Config;
 import DAEDump;
 import Debug;
