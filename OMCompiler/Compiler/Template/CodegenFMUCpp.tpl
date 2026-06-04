@@ -766,9 +766,15 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   #      make TARGET_TRIPLET=i686-w64-mingw32 -f <%fileNamePrefix%>_FMU.makefile
 
   #TARGET_TRIPLET=
-  OMHOME=<%if boolOr(stringEq(makefileParams.platform, "win32"),stringEq(makefileParams.platform, "win64")) then '$(OPENMODELICAHOME)' else makefileParams.omhome%>
-  include $(OMHOME)/include/omc/cpp/ModelicaConfig_gcc.inc
-  include $(OMHOME)/include/omc/cpp/ModelicaLibraryConfig_gcc.inc
+  # escape spaces for make
+  empty :=
+  space := $(empty) $(empty)
+  escape_path = $(subst $(space),\$(space),$1)
+
+  OMHOME:=<%if boolOr(stringEq(makefileParams.platform, "win32"),stringEq(makefileParams.platform, "win64")) then '$(OPENMODELICAHOME)' else makefileParams.omhome%>
+  OMHOME_ESCAPED:=$(call escape_path,$(OMHOME))
+  include $(OMHOME_ESCAPED)/include/omc/cpp/ModelicaConfig_gcc.inc
+  include $(OMHOME_ESCAPED)/include/omc/cpp/ModelicaLibraryConfig_gcc.inc
 
   # simulations use -O0 by default; can be changed to e.g. -O2 or -Ofast
   SIM_OPT_LEVEL=-O0
