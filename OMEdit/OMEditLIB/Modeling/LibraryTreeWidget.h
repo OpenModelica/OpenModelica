@@ -218,7 +218,7 @@ private:
   bool mInternal = false;
   bool mAccessAnnotations = false;
   QString mSubModelPath;
-  // new oms3 JSON format
+  // new OMSModel instance structure for OMS-3.0
   OMSModel::FMUInfo mpFMUInfo;
   OMSModel::Model * mpOMSModel = 0;
   OMSModel::Element *mpOMSModelElement = 0;
@@ -268,8 +268,6 @@ public:
   void createLibraryTreeItems(QFileInfo fileInfo, LibraryTreeItem *pParentLibraryTreeItem, int row = -1);
   LibraryTreeItem* createLibraryTreeItem(LibraryTreeItem::LibraryType type, QString name, QString nameStructure, QString path, bool isSaved, bool isInternal,
                                          LibraryTreeItem *pParentLibraryTreeItem, int row = -1);
-  // LibraryTreeItem* createLibraryTreeItem(QString name, QString nameStructursre, QString path, bool isSaved, LibraryTreeItem *pParentLibraryTreeItem,
-  //                                        oms_element_t *pOMSElement = 0, oms_connector_t *pOMSConnector = 0, oms_busconnector_t *pOMSBusConnector = 0, int row = -1);
   LibraryTreeItem* createLibraryTreeItem(QString name, QString nameStructure, QString path, bool isSaved, LibraryTreeItem *pParentLibraryTreeItem,
                                          OMSModel::Element *pOMSElement = 0, OMSModel::Connector *pOMSConnector = 0, int row = -1);
   void updateLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
@@ -313,18 +311,12 @@ private:
   void createLibraryTreeItemsImpl(QFileInfo fileInfo, LibraryTreeItem *pParentLibraryTreeItem, int row = -1);
   LibraryTreeItem* createLibraryTreeItemImpl(LibraryTreeItem::LibraryType type, QString name, QString nameStructure, QString path, bool isSaved, bool isInternal,
                                              LibraryTreeItem *pParentLibraryTreeItem, int row = -1);
-  // LibraryTreeItem* createOMSLibraryTreeItemImpl(QString name, QString nameStructure, QString path, bool isSaved,
-  //                                               LibraryTreeItem *pParentLibraryTreeItem, oms_element_t *pOMSElement = 0,
-  //                                               oms_connector_t *pOMSConnector = 0, oms_busconnector_t *pOMSBusConnector = 0);
   LibraryTreeItem* createOMSLibraryTreeItemImpl(QString name, QString nameStructure, QString path, bool isSaved,
                                                 LibraryTreeItem *pParentLibraryTreeItem, OMSModel::Element* pOMSElement = 0, OMSModel::Connector *pOMSConnector = 0);
 
   void createLibraryTreeItemsFromOMSModel(const QVector<OMSModel::Element*> &elements, LibraryTreeItem *pParent);
   LibraryTreeItem* createLibraryTreeItemFromOMSModelElement(OMSModel::Element *pElement, LibraryTreeItem *pParent);
   LibraryTreeItem* createLibraryTreeItemFromOMSModelConnector(OMSModel::Connector *pConnector, LibraryTreeItem *pParent);
-
-  // void createOMSConnectorLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
-  // void createOMSBusConnectorLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
   void unloadClassChildren(LibraryTreeItem *pLibraryTreeItem, bool deleteFile);
   void unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, bool deleteFile);
 protected:
