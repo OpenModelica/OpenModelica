@@ -1095,8 +1095,8 @@ protected
         residual_comps        := list(StrongComponent.fromSolvedEquationSlice(eqn) for eqn in strict.residual_eqns);
 
         // create seed and partial candidates
-        seed_candidates := list(Slice.getT(var) for var in strict.iteration_vars);
-        residual_vars   := list(Equation.getResidualVar(Slice.getT(eqn)) for eqn in strict.residual_eqns);
+        seed_candidates := listReverse(list(Slice.getT(var) for var in strict.iteration_vars));
+        residual_vars   := listReverse(list(Equation.getResidualVar(Slice.getT(eqn)) for eqn in strict.residual_eqns));
         inner_vars      := listAppend(list(var for var guard(BVariable.isContinuous(var, staticAsContinuous)) in StrongComponent.getVariables(comp)) for comp in strict.innerEquations);
         jacType         := if comp.linear then JacobianType.LS else JacobianType.NLS;
 
