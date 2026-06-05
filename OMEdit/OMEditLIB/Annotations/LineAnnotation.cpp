@@ -41,7 +41,6 @@
 #include "LineAnnotation.h"
 #include "Modeling/ItemDelegate.h"
 #include "Modeling/Commands.h"
-#include "OMS/BusDialog.h"
 #include "OMS/OMSModel.h"
 #include "Util/ResourceCache.h"
 
@@ -1392,11 +1391,6 @@ void LineAnnotation::updateToolTip()
 
 void LineAnnotation::showOMSConnection()
 {
-  if ((mpStartElement && mpStartElement->getLibraryTreeItem()->getOMSBusConnector())
-      && (mpEndElement && mpEndElement->getLibraryTreeItem()->getOMSBusConnector())) {
-    BusConnectionDialog *pBusConnectionDialog = new BusConnectionDialog(mpGraphicsView, this, false);
-    pBusConnectionDialog->exec();
-  }
 }
 
 /*!
@@ -1440,7 +1434,7 @@ void LineAnnotation::handleCollidingConnections()
   for (int i = 0; i < items.size(); ++i) {
     if (Element *pElement = dynamic_cast<Element*>(items.at(i))) {
       if (pElement->isConnector()
-          || (pElement->getLibraryTreeItem() && (pElement->getLibraryTreeItem()->getOMSModelConnector() || pElement->getLibraryTreeItem()->getOMSBusConnector()))) {
+          || (pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->getOMSModelConnector())) {
         mCollidingConnectorElements.append(pElement);
       }
     } else if (LineAnnotation *pConnectionAnnotation = dynamic_cast<LineAnnotation*>(items.at(i))) {

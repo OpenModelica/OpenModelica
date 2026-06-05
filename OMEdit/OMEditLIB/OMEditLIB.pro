@@ -191,7 +191,6 @@ SOURCES += Util/Helper.cpp \
   Traceability/TraceabilityInformationURI.cpp \
   OMS/OMSProxy.cpp \
   OMS/ModelDialog.cpp \
-  OMS/BusDialog.cpp \
   OMS/ElementPropertiesDialog.cpp \
   OMS/SystemSimulationInformationDialog.cpp \
   OMS/OMSSimulationDialog.cpp \
@@ -315,7 +314,6 @@ HEADERS  += Util/Helper.h \
   Traceability/TraceabilityInformationURI.h \
   OMS/OMSProxy.h \
   OMS/ModelDialog.h \
-  OMS/BusDialog.h \
   OMS/ElementPropertiesDialog.h \
   OMS/SystemSimulationInformationDialog.h \
   OMS/OMSSimulationDialog.h \

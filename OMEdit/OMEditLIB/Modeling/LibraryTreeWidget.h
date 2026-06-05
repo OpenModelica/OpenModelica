@@ -145,12 +145,10 @@ public:
   void setInternal(bool internal) {mInternal = internal;}
   bool isAccessAnnotationsEnabled() const {return mAccessAnnotations;}
   void setAccessAnnotations(bool accessAnnotations) {mAccessAnnotations = accessAnnotations;}
-  void setOMSElement(oms_element_t *pOMSComponent) {mpOMSElement = pOMSComponent;}
-  oms_element_t* getOMSElement() const {return mpOMSElement;}
-
-  bool isSystemElement() const { return (mpOMSModelElement && mpOMSModelElement->isSystem()); }
+  bool isSystemElement() const {return (mpOMSModelElement && mpOMSModelElement->isSystem());}
   bool isComponentElement() const {return (mpOMSModelElement && mpOMSModelElement->isComponent());}
-  bool isFMUComponent() const {return (mpOMSModelElement && mpOMSModelElement->isComponent());}
+  bool isFMUComponent() const {return (mpOMSModelElement && mpOMSModelElement->isComponent() && mpOMSModelElement->hasFMUInfo());}
+  bool isTableComponent() const {return isFMUComponent();} // TODO: distinguish table components properly
 
   void setOMSModel(OMSModel::Model *pOMSModel) {mpOMSModel = pOMSModel;}
   void setOMSModelElement(OMSModel::Element *pElement) {mpOMSModelElement = pElement;}
@@ -158,20 +156,6 @@ public:
 
   void setOMSModelConnector(OMSModel::Connector *pConnector) {mpOMSModelConnector = pConnector;}
   OMSModel::Connector* getOMSModelConnector() const {return mpOMSModelConnector;}
-
-  bool isExternalTLMModelComponent() const {return (mpOMSElement && (mpOMSElement->type == oms_element_component) && (mComponentType == oms_component_external));}
-  bool isTableComponent() const {return (mpOMSElement && (mpOMSElement->type == oms_element_component) && (mComponentType == oms_component_table));}
-  void setSystemType(oms_system_enu_t type) {mSystemType = type;}
-  oms_system_enu_t getSystemType() {return mSystemType;}
-  bool isWCSystem() const {return mSystemType == oms_system_wc;}
-  bool isSCSystem() const {return mSystemType == oms_system_sc;}
-  void setComponentType(oms_component_enu_t type) {mComponentType = type;}
-  oms_component_enu_t getComponentType() {return mComponentType;}
-  ssd_element_geometry_t getOMSElementGeometry();
-  void setOMSConnector(oms_connector_t *pOMSConnector) {mpOMSConnector = pOMSConnector;}
-  oms_connector_t* getOMSConnector() const {return mpOMSConnector;}
-  void setOMSBusConnector(oms_busconnector_t *pOMSBusConnector) {mpOMSBusConnector = pOMSBusConnector;}
-  oms_busconnector_t* getOMSBusConnector() const {return mpOMSBusConnector;}
   void setFMUInfo(const OMSModel::FMUInfo &pFMUInfo) {mpFMUInfo = pFMUInfo;}
   const OMSModel::FMUInfo& getFMUInfo() const {return mpFMUInfo;}
   void setSubModelPath(QString subModelPath) {mSubModelPath = subModelPath;}
@@ -233,11 +217,6 @@ private:
   bool mExpanded = false;
   bool mInternal = false;
   bool mAccessAnnotations = false;
-  oms_element_t *mpOMSElement = 0;
-  oms_system_enu_t mSystemType = oms_system_none;
-  oms_component_enu_t mComponentType = oms_component_none;
-  oms_connector_t *mpOMSConnector = 0;
-  oms_busconnector_t *mpOMSBusConnector = 0;
   QString mSubModelPath;
   // new oms3 JSON format
   OMSModel::FMUInfo mpFMUInfo;

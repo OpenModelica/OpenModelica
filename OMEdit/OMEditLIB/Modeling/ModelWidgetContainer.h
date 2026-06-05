@@ -723,7 +723,6 @@ public slots:
   void addOrEditIcon();
   void deleteIcon();
   void addConnector();
-  void addBus();
   void addSubModel();
 };
 

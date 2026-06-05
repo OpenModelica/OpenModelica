@@ -46,7 +46,6 @@
 #include "Modeling/DocumentationWidget.h"
 #include "Modeling/ElementTreeWidget.h"
 #include "Plotting/VariablesWidget.h"
-#include "OMS/BusDialog.h"
 #include "Util/ResourceCache.h"
 #include "Options/OptionsDialog.h"
 
@@ -340,7 +339,6 @@ Element::Element(Element *pElement, Element *pParentElement, Element *pRootParen
   mElementType = Element::Port;
   mpGraphicsView = mpParentElement->getGraphicsView();
   mTransformationString = mpReferenceElement->getTransformationString();
-  mpBusComponent = mpReferenceElement->getBusComponent();
   drawInheritedElementsAndShapes();
   mTransformation = Transformation(mpReferenceElement->mTransformation);
   setTransform(mTransformation.getTransformationMatrix());
@@ -350,7 +348,7 @@ Element::Element(Element *pElement, Element *pParentElement, Element *pRootParen
   mpTopRightResizerItem = 0;
   mpBottomRightResizerItem = 0;
   updateToolTip();
-  setVisible(!mpReferenceElement->isInBus());
+  setVisible(true);
 }
 
 /*!
@@ -1171,24 +1169,11 @@ void Element::updateElementTransformations(const Transformation &oldTransformati
  */
 void Element::handleOMSElementDoubleClick()
 {
-  if (mpLibraryTreeItem && mpLibraryTreeItem->getOMSBusConnector()) {
-    AddBusDialog *pAddBusDialog = new AddBusDialog(QList<Element*>(), mpLibraryTreeItem, mpGraphicsView);
-    pAddBusDialog->exec();
-  } else if (mpLibraryTreeItem && (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement())) {
+  if (mpLibraryTreeItem && (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement())) {
     showElementPropertiesDialog();
   }
 }
 
-/*!
- * \brief Element::setBusComponent
- * Sets the bus component.
- * \param pBusElement
- */
-void Element::setBusComponent(Element *pBusElement)
-{
-  mpBusComponent = pBusElement;
-  setVisible(!isInBus());
-}
 
 /*!
  * \brief Element::reDrawConnector
@@ -1404,15 +1389,6 @@ void Element::drawOMSElement()
       }
       mShapesList.append(pOutputPolygonAnnotation);
     }
-  } else if (mpLibraryTreeItem->getOMSBusConnector()) { // if component is a bus
-    RectangleAnnotation *pBusRectangleAnnotation = new RectangleAnnotation(this);
-    QVector<QPointF> extents;
-    extents << QPointF(-100, -100) << QPointF(100, 100);
-    pBusRectangleAnnotation->setExtents(extents);
-    pBusRectangleAnnotation->setLineColor(QColor(73, 151, 60));
-    pBusRectangleAnnotation->setFillColor(QColor(73, 151, 60));
-    pBusRectangleAnnotation->setFillPattern(StringHandler::FillSolid);
-    mShapesList.append(pBusRectangleAnnotation);
   }
 }
 
@@ -1577,9 +1553,7 @@ void Element::createResizerItems()
   bool isOMSConnector = (mpLibraryTreeItem
                          && mpLibraryTreeItem->isSSP()
                          && mpLibraryTreeItem->getOMSModelConnector());
-  bool isOMSBusConnecor = (mpLibraryTreeItem
-                           && mpLibraryTreeItem->isSSP()
-                           && mpLibraryTreeItem->getOMSBusConnector());
+  bool isOMSBusConnecor = false;
   qreal x1, y1, x2, y2;
   getResizerItemsPositions(&x1, &y1, &x2, &y2);
   //Bottom left resizer
@@ -1799,18 +1773,12 @@ void Element::updatePlacementAnnotation()
       elementGeometry.setRotation(mTransformation.getRotateAngle());
       OMSProxy::instance()->setElementGeometry(mpLibraryTreeItem->getNameStructure(), elementGeometry);
       mpLibraryTreeItem->getOMSModelElement()->setGeometry(elementGeometry);
-    } else if (mpLibraryTreeItem && (mpLibraryTreeItem->getOMSModelConnector()
-                                     || mpLibraryTreeItem->getOMSBusConnector())) {
+    } else if (mpLibraryTreeItem && mpLibraryTreeItem->getOMSModelConnector()) {
       OMSModel::ConnectorGeometry connectorGeometry;
-      //ssd_connector_geometry_t connectorGeometry;
       connectorGeometry.setX(Utilities::mapToCoordinateSystem(mTransformation.getOrigin().x(), -100, 100, 0, 1));
       connectorGeometry.setY(Utilities::mapToCoordinateSystem(mTransformation.getOrigin().y(), -100, 100, 0, 1));
-      if (mpLibraryTreeItem->getOMSModelConnector()) {
-        OMSProxy::instance()->setConnectorGeometry(mpLibraryTreeItem->getNameStructure(), connectorGeometry);
-        mpLibraryTreeItem->getOMSModelConnector()->setGeometry(connectorGeometry);
-      } else if (mpLibraryTreeItem->getOMSBusConnector()) {
-        //OMSProxy::instance()->setBusGeometry(mpLibraryTreeItem->getNameStructure(), &connectorGeometry);
-      }
+      OMSProxy::instance()->setConnectorGeometry(mpLibraryTreeItem->getNameStructure(), connectorGeometry);
+      mpLibraryTreeItem->getOMSModelConnector()->setGeometry(connectorGeometry);
       /* We have connector both on icon and diagram layer.
        * If one connector is updated then update the other connector automatically.
        */
