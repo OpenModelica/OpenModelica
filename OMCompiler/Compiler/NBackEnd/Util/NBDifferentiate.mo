@@ -743,20 +743,6 @@ public
 
           // Emit accumulation statements
           (diffArguments, stmts) := makeAdjointAccumulationStatements(diffArguments);
-
-          // Only emit a seed reset when no carry statement was produced for lhsCref.
-          // A carry exists when lhsCref appears as the LHS of one of the emitted statements
-          // (meaning the seed variable undergoes a self-overwrite transition, e.g.
-          // x := x * c, and the gradient must be propagated forward rather than zeroed).
-          // if not List.any(stmts, function stmtHasCrefAsLhs(key = lhsCref)) then
-          //   vty := ComponentRef.getSubscriptedType(lhsCref, true);
-          //   stmts := Statement.ASSIGNMENT(
-          //     Expression.fromCref(lhsCref),
-          //     Expression.makeZero(vty),
-          //     vty,
-          //     DAE.emptyElementSource
-          //   ) :: stmts;
-          // end if;
         else
           stmts := {};
         end if;
@@ -850,11 +836,6 @@ public
     "Read the adjoint_map and generate accumulation statements:
      For each key v in the map with entries [(_, e1), (_, e2), ...]:
        v := v + e1 + e2 + ...
-     Carry statements (where accRhs contains v, i.e. self-overwrite transitions) are
-     returned FIRST in the output list. Because the caller collects statements via LIFO
-     prepend, items at the front of the returned list end up at the tail of the parent
-     allStmts and execute LAST within this reverse-statement's block. This ensures that
-     accumulations using the pre-transition value of v execute before the carry transition.
      Clears the adjoint_map after reading."
     input output DifferentiationArguments diffArguments;
     output list<Statement> stmts;
@@ -868,14 +849,11 @@ public
     NFOperator.SizeClassification sc;
     Operator addOp;
     ComponentRef key;
-    list<Statement> carryStmts, accumStmts;
   algorithm
     stmts := {};
     if Util.isSome(diffArguments.adjoint_map) then
       SOME(amap) := diffArguments.adjoint_map;
       keys := UnorderedMap.keyList(amap);
-      carryStmts := {};
-      accumStmts := {};
       for key in keys loop
         taggedTerms := UnorderedMap.getOrFail(key, amap);
         if not listEmpty(taggedTerms) then
@@ -892,39 +870,24 @@ public
             accRhs := SimplifyExp.simplify(Expression.MULTARY(terms, {}, addOp));
           end if;
 
-          // v := v + accRhs (unless accRhs already contains v, then just use accRhs)
-          if Expression.containsCref(accRhs, key) then
-            // Carry statement: accRhs is a transition of v (self-overwrite case).
-            // Prepend to carryStmts so it is emitted FIRST and executes LAST after LIFO reversal.
-            carryStmts := Statement.ASSIGNMENT(
-              Expression.fromCref(key),
-              Expression.map(accRhs, Expression.repairOperator),
-              vty,
-              DAE.emptyElementSource
-            ) :: carryStmts;
-          else
-            sc := sizeClassificationFromType(vty);
-            addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sc), vty);
-            accRhs := SimplifyExp.simplify(Expression.MULTARY({Expression.fromCref(key), accRhs}, {}, addOp));
-            accRhs := Expression.map(accRhs, Expression.repairOperator);
-            accumStmts := Statement.ASSIGNMENT(
-              Expression.fromCref(key),
-              accRhs,
-              vty,
-              DAE.emptyElementSource
-            ) :: accumStmts;
-          end if;
+          // Basic accumulation only: v := v + sum(terms)
+          sc := sizeClassificationFromType(vty);
+          addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sc), vty);
+          accRhs := SimplifyExp.simplify(Expression.MULTARY({Expression.fromCref(key), accRhs}, {}, addOp));
+          accRhs := Expression.map(accRhs, Expression.repairOperator);
+          stmts := Statement.ASSIGNMENT(
+            Expression.fromCref(key),
+            accRhs,
+            vty,
+            DAE.emptyElementSource
+          ) :: stmts;
         end if;
       end for;
-
-      // Carry stmts appear first so after LIFO reversal they execute last (correct ordering).
-      stmts := listAppend(carryStmts, accumStmts);
 
       // Clear the adjoint_map for next use
       UnorderedMap.clear(amap);
       diffArguments.adjoint_map := SOME(amap);
     end if;
-    // stmts is returned with carries first; caller uses LIFO prepend so carries execute last.
   end makeAdjointAccumulationStatements;
 
   function differentiateIfEquationBody
@@ -4212,21 +4175,6 @@ protected
       else NONE();
     end match;
   end buildMultiHotVectorAdjoint;
-
-  function stmtHasCrefAsLhs
-    "Returns true if the statement is a real-valued assignment whose LHS cref
-     is equal to the given key. Used to detect carry statements in the adjoint."
-    input Statement s;
-    input ComponentRef key;
-    output Boolean b;
-  algorithm
-    b := match s
-      local ComponentRef lhsCref;
-      case Statement.ASSIGNMENT(lhs = Expression.CREF(cref = lhsCref))
-        then ComponentRef.isEqual(lhsCref, key);
-      else false;
-    end match;
-  end stmtHasCrefAsLhs;
 
   function makeSSAVar
     "Creates a fresh SSA variable named 'baseName_idx' that copies all

@@ -1260,19 +1260,12 @@ public
       s := match eqn
         local
           Equation body;
-          Integer bodySize;
         case SCALAR_EQUATION()            then 1;
         case ARRAY_EQUATION()             then Type.sizeOf(eqn.ty, resize);
         case RECORD_EQUATION()            then Type.sizeOf(eqn.ty, resize);
         case ALGORITHM()                  then eqn.size;
         case IF_EQUATION()                then if resize then IfEquationBody.size(eqn.body, resize) else eqn.size;
         case FOR_EQUATION(body = {body})  then if resize then Iterator.size(eqn.iter, resize) * Equation.size(Pointer.create(body), resize) else eqn.size;
-        case FOR_EQUATION() algorithm
-          bodySize := 0;
-          for body in eqn.body loop
-            bodySize := bodySize + Equation.size(Pointer.create(body), resize);
-          end for;
-        then if resize or listLength(eqn.body) <> 1 then Iterator.size(eqn.iter, resize) * bodySize else eqn.size;
         case WHEN_EQUATION()              then if resize then WhenEquationBody.size(eqn.body, resize) else eqn.size;
         case AUX_EQUATION()               then Variable.size(Pointer.access(eqn.auxiliary), resize);
         case DUMMY_EQUATION()             then 0;

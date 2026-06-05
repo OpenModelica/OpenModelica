@@ -557,21 +557,6 @@ int printVector(int logLevel, const char* name,  double* vec, int n, double time
   return 0;
 }
 
-int printRealVarsVector(int logLevel, DATA* data, double time)
-{
-  unsigned int i;
-  SIMULATION_DATA *sData = data->localData[0];
-
-  infoStreamPrint(logLevel, 1, "realVars at time=%g", time);
-  for(i = 0; i < data->modelData->nVariablesReal; ++i)
-  {
-    infoStreamPrint(logLevel, 0, "%u. %s = %g", i+1, data->modelData->realVarsData[i].info.name, sData->realVars[i]);
-  }
-  messageClose(logLevel);
-
-  return 0;
-}
-
 int printJacobianMatrix(int logLevel, const char* name, double* matrix, DATA* data, int n, double time)
 {
   int row, col;

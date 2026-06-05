@@ -1207,7 +1207,6 @@ protected
     Option<Jacobian> adjointJac;
     Partition.Kind kind = Partition.Partition.getKind(part);
     Boolean updated;
-    Real t_bidi_start;
   algorithm
     // create algebraic loop jacobians
     part.strongComponents := match part.strongComponents
@@ -1557,31 +1556,6 @@ protected
 
     diffed_comp := makeAdjointComponentFromRhs(lhsKey, rhsExpr, contextName, eqIndex);
   end makeAdjointComponent;
-
-  function makeAdjointAccumulationComponent
-    input ComponentRef lhsKey;
-    input Expression contribution;
-    input String contextName;
-    input Integer eqIndex;
-    output NBStrongComponent diffed_comp;
-  protected
-    Type vty;
-    SizeClassification sc;
-    Operator addOp;
-    Expression rhsExpr;
-  algorithm
-    vty := ComponentRef.getComponentType(lhsKey);
-    if Expression.containsCref(contribution, lhsKey) then
-      rhsExpr := contribution;
-    else
-      sc := sizeClassificationFromType(vty);
-      addOp := Operator.fromClassification((MathClassification.ADDITION, sc), vty);
-      rhsExpr := SimplifyExp.simplify(Expression.MULTARY({Expression.fromCref(lhsKey), contribution}, {}, addOp));
-    end if;
-    rhsExpr := Expression.map(rhsExpr, Expression.repairOperator);
-
-    diffed_comp := makeAdjointComponentFromRhs(lhsKey, rhsExpr, contextName, eqIndex);
-  end makeAdjointAccumulationComponent;
 
   function addEntryToLPAMap
     input Pointer<Variable> vptr;
@@ -2393,36 +2367,6 @@ protected
       end match;
     end if;
   end makeVarTraverse;
-
-  function adjointMapToString
-    "Pretty print the optional adjoint_map:
-       { cref1 -> [(seed1, e1), (seed2, e2), ...]; cref2 -> [ ... ]; }
-     If NONE() => {}"
-    input Option<UnorderedMap<ComponentRef, list<tuple<ComponentRef, Expression>>>> adjoint_map;
-    output String str;
-  protected
-    UnorderedMap<ComponentRef, list<tuple<ComponentRef, Expression>>> map;
-
-    function valueToString
-      input list<tuple<ComponentRef, Expression>> elst;
-      output String vstr;
-    algorithm
-      vstr := "[" + stringDelimitList(list(
-        "(" + ComponentRef.toString(Util.tuple21(t)) + ", " + Expression.toString(Util.tuple22(t)) + ")"
-        for t in elst), ", ") + "]";
-    end valueToString;
-  algorithm
-    if isNone(adjoint_map) then
-      str := "{}";
-      return;
-    end if;
-
-    SOME(map) := adjoint_map;
-
-    // TODO Collect and sort keys (for deterministic output).
-    str := UnorderedMap.toString(map, ComponentRef.toString, valueToString, "\n  ", " -> ");
-    str := "{\n  " + str + "\n}";
-  end adjointMapToString;
 
   function diffMapToString
     input UnorderedMap<ComponentRef, ComponentRef> map;
