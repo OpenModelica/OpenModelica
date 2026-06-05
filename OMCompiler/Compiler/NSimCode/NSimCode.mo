@@ -445,8 +445,6 @@ public
             //jacobians := jacA :: jacB :: jacC :: jacD :: jacF :: jacH :: jacAdjoint :: jacobians;
             jacobians := listReverse(jacR0 :: jacMrf :: jacLfg :: jacAdjoint :: jacH :: jacF :: jacD :: jacC :: jacB :: jacA :: jacobians);
 
-            (vars, simcode_map) := addSeedAndJacobianVars(jacobians, vars, simcode_map);
-
             // collect systems that are embedded in jacobian column equations before assigning
             // global equation indices for the flattened jacobian equation list
             jac_blocks := SimJacobian.getJacobiansBlocks(jacobians);
