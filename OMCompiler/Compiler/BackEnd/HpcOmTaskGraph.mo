@@ -52,6 +52,7 @@ import BackendDump;
 import BackendEquation;
 import BackendVariable;
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import DAEDumpTypes;
 import Error;
 import ExpandableArray;

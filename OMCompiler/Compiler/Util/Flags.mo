@@ -1405,6 +1405,9 @@ constant ConfigFlag EXECUTE_COMMAND = CONFIG_FLAG(162, "cmd",
 constant ConfigFlag MOO_DYNAMIC_OPTIMIZATION = CONFIG_FLAG(163, "moo",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Generate code for dynamic optimization library MOO."));
+constant ConfigFlag FMI_EXTRA_ANNOTATIONS = CONFIG_FLAG(164, "fmiExtraAnnotations",
+  NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
+  Gettext.gettext("Export annotations matching the given regex to extra/org.openmodelica/modelAnnotations.json."));
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."

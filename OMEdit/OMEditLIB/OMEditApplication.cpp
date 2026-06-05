@@ -56,39 +56,6 @@
 
 #include "../../OMCompiler/Compiler/runtime/settingsimpl.h"
 
-#ifdef Q_OS_WIN
-/*!
- * \brief getWindowsUIFont
- * Retrieves the Windows UI font as a QFont.
- * This function uses the SystemParametersInfo API to get the non-client metrics,
- * specifically the message font, and converts it to a QFont.
- * \return
- */
-QFont getWindowsUIFont()
-{
-  NONCLIENTMETRICS ncm;
-  ncm.cbSize = sizeof(NONCLIENTMETRICS);
-  SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICS), &ncm, 0);
-
-  LOGFONT lf = ncm.lfMessageFont;
-
-  // Get DPI of primary monitor
-  HDC screenDC = GetDC(nullptr);
-  int dpi = GetDeviceCaps(screenDC, LOGPIXELSY);
-  ReleaseDC(nullptr, screenDC);
-
-  // Convert lfHeight to point size
-  int pixelHeight = (lf.lfHeight < 0) ? -lf.lfHeight : lf.lfHeight;
-  double pointSize = 0.0;
-  pointSize = pixelHeight * 72.0 / dpi;
-
-  QFont font(QString::fromWCharArray(lf.lfFaceName));
-  font.setPointSizeF(pointSize); // floating-point for exact scaling
-
-  return font;
-}
-#endif
-
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #define QT_LIBRRY_INFO_PATH_OR_LOCATION QLibraryInfo::path
 #define QT_LIBRRY_INFO_QMLIP QLibraryInfo::QmlImportsPath
@@ -99,41 +66,38 @@ QFont getWindowsUIFont()
 
 void dumpQtPaths()
 {
-  QString fname = QDir::tempPath() + QDir::separator() + QString("qt-paths.txt");
-  FILE *fout = fopen(fname.toUtf8(), "w");
-  fprintf(fout, "Qt location/paths:\n");
-  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::PrefixPath) = \n\t%s\n",
+  fprintf(stdout, "Qt location/paths:\n");
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::PrefixPath) = \n\t%s\n",
     qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::PrefixPath)));
-  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::DocumentationPath) = \n\t%s\n",
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::DocumentationPath) = \n\t%s\n",
     qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::DocumentationPath)));
-  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::HeadersPath) = \n\t%s\n",
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::HeadersPath) = \n\t%s\n",
     qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::HeadersPath)));
-  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::LibrariesPath) = \n\t%s\n",
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::LibrariesPath) = \n\t%s\n",
     qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::LibrariesPath)));
-  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::LibraryExecutablesPath) =\n\t%s\n",
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::LibraryExecutablesPath) =\n\t%s\n",
     qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::LibraryExecutablesPath)));
-  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::BinariesPath) =\n\t%s\n",
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::BinariesPath) =\n\t%s\n",
     qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::BinariesPath)));
-  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::PluginsPath) =\n\t%s\n",
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::PluginsPath) =\n\t%s\n",
     qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::PluginsPath)));
-  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::PluginsPath) =\n\t%s\n",
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::PluginsPath) =\n\t%s\n",
     qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::PluginsPath)));
-  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::QmlImportsPath) =\n\t%s\n",
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::QmlImportsPath) =\n\t%s\n",
     qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QT_LIBRRY_INFO_QMLIP)));
-  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::ArchDataPath) =\n\t%s\n",
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::ArchDataPath) =\n\t%s\n",
     qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::ArchDataPath)));
-  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::DataPath) =\n\t%s\n",
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::DataPath) =\n\t%s\n",
     qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::DataPath)));
-  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::TranslationsPath) =\n\t%s\n",
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::TranslationsPath) =\n\t%s\n",
     qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::TranslationsPath)));
-  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::ExamplesPath) =\n\t%s\n",
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::ExamplesPath) =\n\t%s\n",
     qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::ExamplesPath)));
-  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::TestsPath) =\n\t%s\n",
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::TestsPath) =\n\t%s\n",
     qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::TestsPath)));
-  fprintf(fout, "QLibraryInfo::location|path(QLibraryInfo::SettingsPath) =\n\t%s\n",
+  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::SettingsPath) =\n\t%s\n",
     qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::SettingsPath)));
   fflush(NULL);
-  fclose(fout);
 }
 
 /*!
@@ -149,6 +113,24 @@ void dumpQtPaths()
 OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threadData, bool testsuiteRunning)
   : QApplication(argc, argv)
 {
+  const char *installationDirectoryPath = SettingsImpl__getInstallationDirectoryPath();
+  if (!installationDirectoryPath) {
+    QMessageBox::critical(0, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::INSTALLATIONDIRECTORY_NOT_FOUND), QMessageBox::Ok);
+    quit();
+    exit(1);
+  }
+#ifdef Q_OS_WIN
+  // currently the sandbox does not work with qt6-webengine
+  qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " --no-sandbox");
+  // make QtWebEngineProcess find the Qt dlls!
+  // Qt6Core.dll lives in <install>/bin, so Qt computes its prefix as <install>/ and
+  // looks for QtWebEngine resources/locales under <install>/...
+  // We install those under <install>/bin/... instead, so override the
+  // search paths here before any QtWebEngine subprocess is launched.
+  qputenv("QTWEBENGINE_RESOURCES_PATH",  QByteArray(installationDirectoryPath) + "/bin/resources");
+  qputenv("QTWEBENGINE_LOCALES_PATH",  QByteArray(installationDirectoryPath) + "/bin/translations/qtwebengine_locales");
+#endif // #ifdef Q_OS_WIN
+
 /* We need a better handling of ligth and dark themes.
  * For now just force light theme for Qt 6.8
  * The default color scheme is based on the system theme, so Qt will automatically use light or dark theme based on the user's system settings.
@@ -162,22 +144,8 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   QTextCodec::setCodecForLocale(QTextCodec::codecForName(Helper::utf8.toUtf8().constData()));
 #endif // #ifndef WIN32
   setAttribute(Qt::AA_DontShowIconsInMenus, false);
-#ifdef Q_OS_WIN
-  /*! @todo Qt by default uses "MS Shell Dlg 2" on Windows which doesn't scale good.
-   *  Use the Windows default font instead of Qt default.
-   *  Remove this workaround once we move to Qt6.
-   *  Qt6 automatically uses the Windows UI font.
-   */
-  setFont(getWindowsUIFont());
-#endif // #ifdef Q_OS_WIN
   // Localization
   //*a.severin/ add localization
-  const char *installationDirectoryPath = SettingsImpl__getInstallationDirectoryPath();
-  if (!installationDirectoryPath) {
-    QMessageBox::critical(0, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::INSTALLATIONDIRECTORY_NOT_FOUND), QMessageBox::Ok);
-    quit();
-    exit(1);
-  }
   QSettings *pSettings = Utilities::getApplicationSettings();
   QLocale settingsLocale = QLocale(pSettings->value("language").toString());
   QString locale = settingsLocale.name() == "C" ? QLocale::system().name() : settingsLocale.name();

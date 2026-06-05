@@ -129,5 +129,5 @@ uniontype Schedule   // stores all scheduling-informations
   end EMPTYSCHEDULE;
 end Schedule;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="simcode_types");
 end HpcOmSimCode;

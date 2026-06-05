@@ -253,7 +253,7 @@ public
       Condition cond;
       ComponentRef aux;
     algorithm
-      if Util.isSome(bucket.aux_stmts) then
+      if isSome(bucket.aux_stmts) then
         // add all new statements to the algorithm body
         for tpl in Util.getOption(bucket.aux_stmts) loop
           (cond, aux) := tpl;
@@ -706,7 +706,7 @@ public
       end if;
 
       sev_opt := UnorderedMap.get(condition, bucket.state_map);
-      if Util.isSome(sev_opt) then
+      if isSome(sev_opt) then
         // if the state event already exist update the equations it belongs to
         SOME(sev) := sev_opt;
         UnorderedSet.add(eqn, sev.eqns);
@@ -895,7 +895,7 @@ public
       end if;
 
       cev_opt := UnorderedMap.get(condition, bucket.time_map);
-      if Util.isSome(cev_opt) then
+      if isSome(cev_opt) then
         // time event already exists, just get the identifier
         SOME(cev) := cev_opt;
         aux_cref := BVariable.getVarName(cev.auxiliary);
@@ -1226,5 +1226,5 @@ protected
     end if;
   end containsTimeTraverseCref;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="nbackend");
 end NBEvents;

@@ -53,6 +53,7 @@ import BackendEquation;
 import BackendVariable;
 import CheckModel;
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import DAEDump;
 import DAEUtil;
 import Error;

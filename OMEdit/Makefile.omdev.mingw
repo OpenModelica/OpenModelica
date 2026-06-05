@@ -49,6 +49,7 @@ mkbuilddirs:
 install: build OMEditLIB/Resources/nls/qm.stamp
 	cp -p $(resourcedir)/*.qm $(builddir_share)/omedit/nls/
 	cp -p bin/$(NAME)$(EXE) $(builddir_bin)
+	windeployqt6.exe --no-compiler-runtime --no-system-d3d-compiler --no-quick-import --libdir $(builddir_bin) $(builddir_bin)/$(NAME)$(EXE)
 
 OMEditLIB/Resources/nls/qm.stamp: OMEditLIB/OMEditLIB.pro OMEditLIB/Resources/nls/*.ts
 	lrelease $<

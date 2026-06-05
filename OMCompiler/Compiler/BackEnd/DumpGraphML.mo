@@ -50,6 +50,7 @@ protected import BackendDAETransform;
 protected import BackendDAEUtil;
 protected import BackendVariable;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import GraphML;
 protected import List;
 protected import Util;

@@ -50,6 +50,7 @@ public import Absyn;
 public import BackendDAE;
 public import DAE;
 public import DAEUtil;
+public import AvlTreePathFunction;
 
 // protected imports
 protected import AbsynUtil;
@@ -63,12 +64,15 @@ protected import BackendUtil;
 protected import BackendVariable;
 protected import ClassInf;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import DAEDump;
 protected import DAEDumpTpl;
 protected import Debug;
 protected import ElementSource;
 protected import Error;
+protected import Ceval;
 protected import Expression;
+protected import ExpressionBasics;
 protected import ExpressionSimplify;
 protected import Flags;
 protected import Inline;
@@ -1315,7 +1319,7 @@ algorithm
   outCref := ComponentReferenceBasics.crefStripLastSubs(inCref);
   outCref := ComponentReference.crefSetLastType(outCref, DAE.T_UNKNOWN_DEFAULT);
   outCref := ComponentReference.joinCrefs(outCref, ComponentReferenceBasics.makeCrefIdent("Seed" + inMatrixName, DAE.T_UNKNOWN_DEFAULT, {}));
-  if debug then print("after join: " + ComponentReference.printComponentRefListStr(ComponentReference.expandCref(outCref, true)) + "\n"); end if;
+  if debug then print("after join: " + ComponentReferenceBasics.printComponentRefListStr(ComponentReference.expandCref(outCref, true)) + "\n"); end if;
   outCref := ComponentReference.crefSetLastSubs(outCref, subs);
   outCref := ComponentReference.crefSetLastType(outCref, ComponentReference.crefLastType(inCref));
   if debug then print("outCref: " + ComponentReferenceBasics.printComponentRefStr(outCref) +"\n"); end if;
@@ -2223,7 +2227,7 @@ algorithm
     case (DAE.CALL(attr=DAE.CALL_ATTR(builtin=false)), _)
       algorithm
         failure(BackendDAE.DIFF_FULL_JACOBIAN() := inDiffType);
-        (e,_,true) := Inline.forceInlineExp(inExp,(SOME(inFunctionTree),{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource);
+        (e,_,true) := Inline.forceInlineExp(inExp,(SOME(inFunctionTree),{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource,Ceval.cevalSimpleWithFunctionTreeReturnExp);
         (e, functions) := differentiateExp(e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
       then
         (e, functions);
@@ -2242,7 +2246,7 @@ algorithm
           BackendDump.debugStrExpStr("### Differentiate call\n ", e, " w.r.t. " + ComponentReference.crefStr(inDiffwrtCref) + "\n");
         end if;
         (de, functions) := differentiateFunctionCallPartial(e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
-        (e,_,b) := Inline.forceInlineExp(de,(SOME(functions),{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource);
+        (e,_,b) := Inline.forceInlineExp(de,(SOME(functions),{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource,Ceval.cevalSimpleWithFunctionTreeReturnExp);
         if b then
           de := e;
         end if;
@@ -2392,7 +2396,7 @@ algorithm
             print("### Differentiate function: \n" + funstring + "\n\n");
           end if;
 
-          functions := DAEUtil.addDaeFunction({dfunc}, functions);
+          functions := AvlTreePathFunction.addDaeFunction({dfunc}, functions);
           // add differentiated function as function mapper
           func := DAEUtil.addFunctionDefinition(func, DAE.FUNCTION_DER_MAPPER(path, dpath, 1, {}, NONE(), {}));
           functions := AvlTreePathFunction.add(functions, path, SOME(func));
@@ -3296,7 +3300,7 @@ algorithm
      BackendDump.printVarList(inDiffData.controlVars);
    end if;
    if not listEmpty(inDiffData.diffCrefs) then
-     print("diffCrefs:\n" + ComponentReference.printComponentRefListStr(inDiffData.diffCrefs) + "\n");
+     print("diffCrefs:\n" + ComponentReferenceBasics.printComponentRefListStr(inDiffData.diffCrefs) + "\n");
    end if;
 end dumpInputData;
 

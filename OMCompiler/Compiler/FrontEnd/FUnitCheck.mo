@@ -52,8 +52,10 @@ import System;
 protected
 import BaseHashTable;
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import Error;
 import Expression;
+protected import ExpressionBasics;
 import ExpressionDump;
 import Flags;
 import HashTableCrToUnit = FHashTableCrToUnit;

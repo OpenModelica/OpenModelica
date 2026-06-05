@@ -59,6 +59,7 @@ protected type InstDims = list<list<DAE.Dimension>>;
 
 protected import Ceval;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import ElementSource;
 protected import Error;
 protected import Expression;

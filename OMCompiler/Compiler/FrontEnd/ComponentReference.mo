@@ -55,6 +55,7 @@ protected import Debug;
 protected import Dump;
 protected import Error;
 protected import Expression;
+protected import ExpressionBasics;
 protected import ExpressionDump;
 protected import Flags;
 protected import List;
@@ -68,77 +69,6 @@ protected import Util;
 
 // do not make this public. instead use the function below.
 protected constant DAE.ComponentRef dummyCref = DAE.CREF_IDENT("dummy", DAE.T_UNKNOWN_DEFAULT, {});
-
-public function hashComponentRef "new hashing that properly deals with subscripts so [1,2] and [2,1] hash to different values"
-  input DAE.ComponentRef cr;
-  output Integer hash;
-algorithm
-hash := match cr
-  local
-    DAE.Ident id;
-    DAE.Type tp;
-    list<DAE.Subscript> subs;
-    DAE.ComponentRef cr1;
-  case DAE.CREF_IDENT(id,tp,subs) algorithm
-    //print("IDENT, "+id+" hashed to "+intString(stringHashDjb2(id))+", subs hashed to "+intString(hashSubscripts(tp,subs))+"\n");
-  then stringHashDjb2(id) + hashSubscripts(tp,subs);
-
-  case DAE.CREF_QUAL(id,tp,subs,cr1) algorithm
-    //print("QUAL, "+id+" hashed to "+intString(stringHashDjb2(id))+", subs hashed to "+intString(hashSubscripts(tp,subs))+"\n");
-  then stringHashDjb2(id)+hashSubscripts(tp,subs)+hashComponentRef(cr1);
-
-  else 0;
-end match;
-end hashComponentRef;
-
-protected protected function hashSubscripts "help function, hashing subscripts making sure [1,2] and [2,1] doesn't match to the same number"
-  input DAE.Type tp;
-  input list<DAE.Subscript> subs;
-  output Integer hash;
-algorithm
-  hash := match subs
-  case {} then 0;
-  // TODO: Currently, the types of component references are wrong, they consider the subscripts but they should not.
-  // For example, given Real a[10,10];  the component reference 'a[1,2]' should have type Real[10,10] but it has type Real.
-  else hashSubscripts2(List.fill(1,listLength(subs)),/*DAEUtil.expTypeArrayDimensions(tp),*/subs,1);
-  end match;
-end hashSubscripts;
-
-protected protected function hashSubscripts2 "help function"
-  input list<Integer> dims;
-  input list<DAE.Subscript> subs;
-  input Integer factor;
-  output Integer hash;
-algorithm
-  hash := match(dims, subs)
-  local
-    DAE.Subscript s;
-    list<Integer> rest_dims;
-    list<DAE.Subscript> rest_subs;
-
-    case({}, {}) then 0;
-    case(_::rest_dims, s::rest_subs)
-    // TODO: change to using dimensions once cref types has been fixed.
-    then hashSubscript(s)*factor + hashSubscripts2(rest_dims,rest_subs,factor*1000/* *i1 */);
-  end match;
-end hashSubscripts2;
-
-protected function hashSubscript "help function"
-  input DAE.Subscript sub;
-  output Integer hash;
-algorithm
- hash := match sub
-   local
-     DAE.Exp exp;
-     Integer i;
-
-   case DAE.WHOLEDIM() then 0;
-   case DAE.INDEX(DAE.ICONST(i)) then i;
-   case DAE.SLICE(exp) then Expression.hashExp(exp);
-   case DAE.INDEX(exp) then Expression.hashExp(exp);
-   case DAE.WHOLE_NONEXP(exp) then Expression.hashExp(exp);
- end match;
-end hashSubscript;
 
 public function createEmptyCrefMemory
 "@author: adrpo
@@ -2244,13 +2174,6 @@ algorithm
   end matchcontinue;
 end printComponentRef2;
 
-public function printComponentRefListStr
-  input list<DAE.ComponentRef> crs;
-  output String res;
-algorithm
-  res := "{" + stringDelimitList(List.map(crs, ComponentReferenceBasics.printComponentRefStr), ",") + "}";
-end printComponentRefListStr;
-
 public function printComponentRefList
   input list<DAE.ComponentRef> crs;
 protected
@@ -2832,7 +2755,7 @@ public function explode
   input DAE.ComponentRef inCref;
   output list<DAE.ComponentRef> outParts;
 algorithm
-  outParts := Dangerous.listReverse(explode_tail(inCref, {}));
+  outParts := Dangerous.listReverseInPlace(explode_tail(inCref, {}));
 end explode;
 
 protected function explode_tail
@@ -3213,12 +3136,12 @@ algorithm
   outCref := replaceSubsWithString(outCref);
   if debug then print("after full type: " + TypesDump.printTypeStr(crefTypeFull(crefStripIterSub(outCref))) + "\n"); end if;
   outCref := crefSetLastType(outCref, DAE.T_UNKNOWN_DEFAULT);
-  if debug then print("after strip: " + printComponentRefListStr(expandCref(outCref, true)) + "\n"); end if;
+  if debug then print("after strip: " + ComponentReferenceBasics.printComponentRefListStr(expandCref(outCref, true)) + "\n"); end if;
 
   // join crefs
   outCref := joinCrefs(outCref, ComponentReferenceBasics.makeCrefIdent(DAE.partialDerivativeNamePrefix + inMatrixName, DAE.T_UNKNOWN_DEFAULT, {}));
   outCref := joinCrefs(outCref, inX);
-  if debug then print("after join: " + printComponentRefListStr(expandCref(outCref, true)) + "\n"); end if;
+  if debug then print("after join: " + ComponentReferenceBasics.printComponentRefListStr(expandCref(outCref, true)) + "\n"); end if;
 
   // fix subs and type of the last cref
   outCref := crefSetLastSubs(outCref, subs);
@@ -3250,8 +3173,8 @@ public function uniqueList
   input list<DAE.ComponentRef> crefs;
   output list<DAE.ComponentRef> uniqueCrefs;
 algorithm
-  uniqueCrefs := UnorderedSet.unique_list(crefs, hashComponentRef, ComponentReferenceBasics.crefEqual);
+  uniqueCrefs := UnorderedSet.unique_list(crefs, ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
 end uniqueList;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_base");
 end ComponentReference;

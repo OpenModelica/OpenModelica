@@ -51,9 +51,12 @@ protected import BackendEquation;
 protected import BackendVariable;
 protected import ClassInf;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import DAEUtil;
+protected import AvlTreePathFunction;
 protected import DAEDump;
 protected import Expression;
+protected import ExpressionBasics;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
@@ -851,7 +854,7 @@ algorithm
         elements := listAppend(allInputs,elements);
         elements := List.unique(elements);
         (func,path) := updateFunctionBody(func,elements,idx, updatedVarOutputs, allOutputs);
-        funcs := if funcIsPartConst then DAEUtil.addDaeFunction({func},funcs) else funcs;
+        funcs := if funcIsPartConst then AvlTreePathFunction.addDaeFunction({func},funcs) else funcs;
         idx := if funcIsPartConst or funcIsConst then (idx+1) else idx;
 
 

@@ -478,7 +478,6 @@ void Plot::replot()
   } else {
     setAxisTitle(QwtPlot::yRight, mpParentPlotWindow->getYRightCustomLabel());
   }
-
 }
 
 } // namespace OMPlot

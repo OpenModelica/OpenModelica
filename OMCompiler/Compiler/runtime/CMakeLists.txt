@@ -288,4 +288,11 @@ else()
    message(FATAL_ERROR "Unknow system for OpenModelica simulation code generation and compilation. OpenModelica does not know how to compile and simulate simulation code on this configuration.")
 endif()
 
+# Libraries linked into generated simulation code when --parmodauto is enabled (ParModelica auto + oneTBB).
+# OMC_PARMODELICA_TBB_LINK_NAME is resolved to oneTBB's default library name in OMCompiler/3rdParty/CMakeLists.txt.
+if(NOT OMC_PARMODELICA_TBB_LINK_NAME)
+  set(OMC_PARMODELICA_TBB_LINK_NAME tbb)
+endif()
+set(PARMODELICAAUTO_LDFLAGS " -lParModelicaAuto -l${OMC_PARMODELICA_TBB_LINK_NAME} ")
+
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo.in ${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo)

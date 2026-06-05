@@ -35,6 +35,8 @@
 
 #include "gc.h"
 
+#include <cmath>
+
 #include <tbb/parallel_for.h>
 #include <tbb/tick_count.h>
 
@@ -42,6 +44,9 @@
 // #include <sys/syscall.h>
 
 #include "pm_clustering.hpp"
+#include "pm_clustering_json.hpp"
+#include "pm_runtime_config.hpp"
+#include "pm_scheduler_base.hpp"
 
 namespace openmodelica { namespace parmodelica {
 
@@ -101,7 +106,7 @@ template <typename TaskType,
           typename clustetring3 = cluster_none,
           typename clustetring4 = cluster_none,
           typename clustetring5 = cluster_none>
-class StepLevels : boost::noncopyable {
+class StepLevels : public TaskGraphScheduler, boost::noncopyable {
   public:
     typedef TaskSystem_v2<TaskType>                TaskSystemType;
     typedef typename TaskSystemType::GraphType     GraphType;
@@ -203,20 +208,36 @@ class StepLevels : boost::noncopyable {
         if (task_system.levels_valid == false)
             task_system.update_node_levels();
 
+        /*! Optionally export a before/after snapshot of the clustering for each
+            optimization (parmodDumpStages), so the user can see how the clustering
+            was applied. cluster_none passes are no-ops and are not snapshotted. */
+        ClusteringStageDumper<TaskSystemType> stages(task_system, parmod_config().dump_stages);
+        stages.snapshot("initial");
+
         clustetring1::apply(task_system);
         clustetring1::dump_graph(task_system);
+        if (clustetring1::name() != cluster_none::name())
+            stages.snapshot(clustetring1::name());
 
         clustetring2::apply(task_system);
         clustetring2::dump_graph(task_system);
+        if (clustetring2::name() != cluster_none::name())
+            stages.snapshot(clustetring2::name());
 
         clustetring3::apply(task_system);
         clustetring3::dump_graph(task_system);
+        if (clustetring3::name() != cluster_none::name())
+            stages.snapshot(clustetring3::name());
 
         clustetring4::apply(task_system);
         clustetring4::dump_graph(task_system);
+        if (clustetring4::name() != cluster_none::name())
+            stages.snapshot(clustetring4::name());
 
         clustetring5::apply(task_system);
         clustetring5::dump_graph(task_system);
+        if (clustetring5::name() != cluster_none::name())
+            stages.snapshot(clustetring5::name());
 
         schedule_available = true;
         task_system.levels_valid = false;
@@ -227,7 +248,13 @@ class StepLevels : boost::noncopyable {
 
     }
 
-    void execute() {
+    int    get_total_evaluations() const override { return total_evaluations; }
+    int    get_sequential_evaluations() const override { return sequential_evaluations; }
+    int    get_parallel_evaluations() const override { return parallel_evaluations; }
+    double get_execution_time() override { return execution_timer.get_elapsed_time(); }
+    double get_clustering_time() override { return clustering_timer.get_elapsed_time(); }
+
+    void execute() override {
 
         if (this->reschedule_needed())
             return execute_and_schedule();

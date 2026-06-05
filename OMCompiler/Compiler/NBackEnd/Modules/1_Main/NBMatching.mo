@@ -442,5 +442,5 @@ protected
     BackendDAEEXT.getAssignment(ass2, ass1);
   end PFPlusExternal;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBMatching;

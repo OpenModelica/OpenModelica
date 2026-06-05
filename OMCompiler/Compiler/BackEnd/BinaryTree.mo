@@ -49,6 +49,7 @@ public import DAE;
 
 protected import BaseHashTable;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import Error;
 protected import List;
 protected import Util;

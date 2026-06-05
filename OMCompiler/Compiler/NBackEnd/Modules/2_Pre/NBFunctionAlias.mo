@@ -648,7 +648,7 @@ protected
         then Expression.fromCref(name);
       end match;
 
-      if Util.isNone(aux_opt) then
+      if isNone(aux_opt) then
         // create auxilliary and add to map if there was none before
         aux := CALL_AUX(exp, if Type.isDiscrete(ty) then EquationKind.DISCRETE else EquationKind.CONTINUOUS, false);
         UnorderedMap.add(id, aux, map);
@@ -949,5 +949,5 @@ protected
     end match;
   end introduceSlicedStateAliasExp;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBFunctionAlias;

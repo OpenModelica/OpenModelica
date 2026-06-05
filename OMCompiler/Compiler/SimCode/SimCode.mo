@@ -776,5 +776,5 @@ end FmiSimulationFlags;
 
 constant FmiSimulationFlags defaultFmiSimulationFlags = FMI_SIMULATION_FLAGS({("s","euler")});
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="simcode_types");
 end SimCode;

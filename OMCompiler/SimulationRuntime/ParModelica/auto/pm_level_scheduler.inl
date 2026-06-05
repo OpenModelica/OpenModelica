@@ -40,8 +40,7 @@ namespace openmodelica { namespace parmodelica {
 
 template <typename TaskTypeT>
 LevelSchedulerThreadOblivious<TaskTypeT>::LevelSchedulerThreadOblivious(TaskSystem<TaskTypeT>& task_system)
-    : task_system(task_system)
-    , tbb_task_init(4) {
+    : task_system(task_system) {
     nodes_have_been_leveled = false;
     total_parallel_cost = 0;
     is_set_up_ = false;
@@ -212,8 +211,7 @@ void LevelSchedulerThreadOblivious<TaskTypeT>::profile_execute() {
 
 template <typename TaskTypeT>
 LevelSchedulerThreadAware<TaskTypeT>::LevelSchedulerThreadAware(TaskSystem<TaskTypeT>& task_system)
-    : task_system(task_system)
-    , tbb_task_init(4) {
+    : task_system(task_system) {
     nodes_have_been_leveled = false;
     total_parallel_cost = 0;
     is_set_up_ = false;

@@ -2,7 +2,7 @@
 # Note: zlib is only here because it is referred to from MSL Tables and
 # thus passed to the linker. It is not used by default ModelicaMatIO though.
 
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.5...4.3)
 project(${ModelicaExternalName})
 
 include_directories(${MODELICAEXTERNALCDIR})

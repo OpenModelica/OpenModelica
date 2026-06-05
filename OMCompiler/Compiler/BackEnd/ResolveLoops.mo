@@ -52,6 +52,7 @@ import BackendVariable;
 import BackendVarTransform;
 import BackendDump;
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import Expression;
 import ExpressionBasics;
 import ExpressionSimplify;
@@ -1244,7 +1245,7 @@ algorithm
     local
       Boolean algSign;
       Integer eqIdx2;
-      list<Integer> adjVars, adjVars1, adjVars2, restLoop, posVars, negVars;
+      list<Integer> adjVars, adjVars1, adjVars2, restLoop, posVars, negVars, nonUnitVars;
       list<DAE.ComponentRef> adjCrefs;
       BackendDAE.Equation eq2, eq3, resolvedEq;
       BackendVarTransform.VariableReplacements replacements;
@@ -1258,13 +1259,20 @@ algorithm
       adjVars2 := arrayGet(m,eqIdx2);
       (adjVars, adjVars1, adjVars2) := List.intersection1OnTrue(adjVars1, adjVars2, intEq);
 
+      // Only shared variables with a +/-1 coefficient in BOTH equations can be cancelled by
+      // adding/subtracting the equations (the cancellation below replaces them with zero).
+      // A variable scaled by a non-unit factor (e.g. a state, or a zero-sequence current
+      // n*i0 = sum(i)) must NOT be cancelled this way, otherwise its coefficient would be
+      // silently dropped and the resolved equation would be wrong (#13292). Keep such vars.
+      (adjVars, nonUnitVars) := List.splitOnTrue(adjVars, function varIsUnitCoeff(varMap = varMap, daeVarsIn = daeVarsIn, eq1 = eq, eq2 = eq2));
+
       // split shared vars by sign
       (posVars, negVars) := List.splitOnTrue(adjVars, function varSign(varMap = varMap, daeVarsIn = daeVarsIn, eq1 = eq, eq2 = eq2));
       algSign := listLength(posVars) > listLength(negVars); // choose set with more canceling vars
       adjCrefs := list(crefFromIndex(idx, varMap, daeVarsIn) for idx in (if algSign then posVars else negVars));
 
-      // shared crefs are removed from adjacecy
-      m_row := List.flatten({adjVars1, adjVars2, (if algSign then negVars else posVars)});
+      // cancelled crefs are removed from adjacency; non-cancellable shared vars are kept
+      m_row := List.flatten({adjVars1, adjVars2, nonUnitVars, (if algSign then negVars else posVars)});
 
       // replace `cref` with zero to make the job easier for `simplify`
       replacements := BackendVarTransform.emptyReplacementsSized(listLength(adjCrefs));
@@ -1306,6 +1314,61 @@ protected
 algorithm
   algSign := CRefIsPosOnRHS(cref, eq1) <> CRefIsPosOnRHS(cref, eq2) "check the algebraic signs"; // XOR
 end varSign;
+
+protected function varIsUnitCoeff "author: #13292
+  true if the variable (given by its loop-local index) occurs with a +/-1 coefficient in
+  both equations and can therefore be cancelled by adding/subtracting the two equations."
+  input Integer index;
+  input array<Integer> varMap;
+  input BackendDAE.Variables daeVarsIn;
+  input BackendDAE.Equation eq1;
+  input BackendDAE.Equation eq2;
+  output Boolean isUnit;
+protected
+  DAE.ComponentRef cref = crefFromIndex(index, varMap, daeVarsIn);
+algorithm
+  isUnit := crefHasUnitCoeff(cref, eq1) and crefHasUnitCoeff(cref, eq2);
+end varIsUnitCoeff;
+
+protected function crefHasUnitCoeff "author: #13292
+  true unless the cref appears scaled by a constant other than +/-1 in the equation."
+  input DAE.ComponentRef cref;
+  input BackendDAE.Equation eq;
+  output Boolean isUnit;
+algorithm
+  isUnit := match eq
+    local
+      DAE.Exp e1, e2;
+    case BackendDAE.EQUATION(exp = e1, scalar = e2)
+      then crefUnitCoeffInExp(e1, cref) and crefUnitCoeffInExp(e2, cref);
+    else true;
+  end match;
+end crefHasUnitCoeff;
+
+protected function crefUnitCoeffInExp "author: #13292
+  false if cref appears multiplied by a non-(+/-1) constant in exp; true otherwise
+  (cref absent, or present with a +/-1 coefficient)."
+  input DAE.Exp exp;
+  input DAE.ComponentRef cref;
+  output Boolean isUnit;
+algorithm
+  isUnit := match exp
+    local
+      DAE.Exp e1, e2;
+      DAE.ComponentRef c;
+    case DAE.BINARY(exp1 = e1, operator = DAE.ADD(), exp2 = e2)
+      then crefUnitCoeffInExp(e1, cref) and crefUnitCoeffInExp(e2, cref);
+    case DAE.BINARY(exp1 = e1, operator = DAE.SUB(), exp2 = e2)
+      then crefUnitCoeffInExp(e1, cref) and crefUnitCoeffInExp(e2, cref);
+    case DAE.UNARY(exp = e1)
+      then crefUnitCoeffInExp(e1, cref);
+    case DAE.BINARY(exp1 = DAE.CREF(componentRef = c), operator = DAE.MUL(), exp2 = e2)
+      then not ComponentReferenceBasics.crefEqualNoStringCompare(cref, c) or Expression.isOne(e2) or Expression.isConstMinusOne(e2);
+    case DAE.BINARY(exp1 = e1, operator = DAE.MUL(), exp2 = DAE.CREF(componentRef = c))
+      then not ComponentReferenceBasics.crefEqualNoStringCompare(cref, c) or Expression.isOne(e1) or Expression.isConstMinusOne(e1);
+    else true;
+  end match;
+end crefUnitCoeffInExp;
 
 public function sortLoop "author:Waurich TUD 2014-01
   sorts the equations in a loop so that they are solved in a row."

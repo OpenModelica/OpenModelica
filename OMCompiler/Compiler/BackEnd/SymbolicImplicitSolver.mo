@@ -55,6 +55,7 @@ import BackendDump;
 import BackendEquation;
 import BackendVariable;
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import Expression;
 import Flags;
 import FlagsUtil;

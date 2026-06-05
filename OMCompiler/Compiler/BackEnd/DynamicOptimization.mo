@@ -52,6 +52,7 @@ protected import BackendDAEUtil;
 
 protected import BackendVariable;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import Config;
 
 protected import Differentiate;

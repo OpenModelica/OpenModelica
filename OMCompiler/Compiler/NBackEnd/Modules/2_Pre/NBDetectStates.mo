@@ -573,7 +573,7 @@ protected
     for eqn in body.then_eqns loop
       collectDiscreteStatesFromWhen(Pointer.access(eqn), acc_discrete_states, acc_previous, scalarized);
     end for;
-    if Util.isSome(body.else_if) then
+    if isSome(body.else_if) then
       collectDiscreteStatesFromWhenInIf(Util.getOption(body.else_if),  acc_discrete_states, acc_previous, scalarized);
     end if;
   end collectDiscreteStatesFromWhenInIf;
@@ -588,7 +588,7 @@ protected
     Option<Pointer<Variable>> pre = BVariable.getVarPre(var_ptr);
     Pointer<Variable> pre_var;
   algorithm
-    if Util.isSome(pre) then
+    if isSome(pre) then
       SOME(pre_var) := pre;
       pre_cref := BVariable.getVarName(pre_var);
       pre_cref := ComponentRef.copySubscripts(var_cref, pre_cref);
@@ -677,7 +677,7 @@ protected
     end match;
   end updateStateOrder;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBDetectStates;
 
 

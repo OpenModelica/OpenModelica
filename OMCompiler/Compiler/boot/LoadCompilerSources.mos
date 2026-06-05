@@ -253,6 +253,7 @@ if true then /* Suppress output */
     "../BackEnd/BinaryTree.mo",
     "../BackEnd/BinaryTreeInt.mo",
     "../BackEnd/Causalize.mo",
+    "../BackEnd/Coloring.mo",
     "../BackEnd/CommonSubExpression.mo",
     "../BackEnd/DAEQuery.mo",
     "../BackEnd/DAEMode.mo",
@@ -477,6 +478,7 @@ if true then /* Suppress output */
     "../SimCode/SimCode.mo",
     "../SimCode/SimCodeMain.mo",
     "../SimCode/SimCodeUtil.mo",
+    "../SimCode/SimCodeUtilShared.mo",
     "../SimCode/ReduceDAE.mo",
 
     "../Template/AbsynToJulia.mo",

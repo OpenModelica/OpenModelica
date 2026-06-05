@@ -52,6 +52,7 @@ import Debug;
 import Dump;
 import Error;
 import Expression;
+protected import ExpressionBasics;
 import ExpressionDump;
 import ExpressionSimplify;
 import FGraph;

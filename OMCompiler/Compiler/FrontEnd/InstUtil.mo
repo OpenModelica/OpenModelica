@@ -66,6 +66,7 @@ import Expression;
 import Error;
 import Util;
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import Patternm;
 import DAEUtil;
 import DAEDump;

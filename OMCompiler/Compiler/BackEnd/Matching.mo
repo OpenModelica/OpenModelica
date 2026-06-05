@@ -59,6 +59,7 @@ import Differentiate;
 import DumpGraphML;
 import ElementSource;
 import Error;
+import Ceval;
 import Expression;
 import Flags;
 import IndexReduction;
@@ -69,6 +70,7 @@ import UnorderedSet;
 import Util;
 import Sorting;
 import System;
+protected import ComponentReferenceBasics;
 
 // =============================================================================
 // just a matching algorithm
@@ -5792,7 +5794,7 @@ algorithm
           // Only check if the equation actually contains the cref
           if Expression.expHasCref(residualExp, cr) then
             // Check if the equation can be differentiated by the artificial state
-            (residualExp,_,_) := Inline.forceInlineExp(residualExp,(SOME(shared.functionTree),{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource);
+            (residualExp,_,_) := Inline.forceInlineExp(residualExp,(SOME(shared.functionTree),{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource,Ceval.cevalSimpleWithFunctionTreeReturnExp);
             residualExp := Expression.replaceDerOpInExp(residualExp);
             Differentiate.differentiateExpSolve(residualExp, cr, SOME(shared.functionTree));
             // Check if the equation contains smooth(0, cr)
@@ -6811,7 +6813,7 @@ algorithm
   else
     true := n <= arrayLength(arrIx);
     for i in 1:n loop
-      Dangerous.arrayUpdate(arr, Dangerous.arrayGetNoBoundsChecking(arrIx, i), false);
+      arrayUpdate(arr, Dangerous.arrayGetNoBoundsChecking(arrIx, i), false);
     end for;
   end if;
   if debug then

@@ -84,7 +84,6 @@ import interface SimCodeTV;
 import interface SimCodeBackendTV;
 import CodegenUtil.*;
 import CodegenUtilSimulation.*;
-import CodegenC.*; //unqualified import, no need the CodegenC is optional when calling a template; or mandatory when the same named template exists in this package (name hiding)
 import CodegenFMUCommon.*;
 
 // Code for generating modelDescription.xml file for FMI 1.0 ModelExchange.
@@ -134,7 +133,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = SIMVARS(s
   >>
 end fmiModelDescriptionAttributes;
 
-annotation(__OpenModelica_Interface="codegen");
+annotation(__OpenModelica_Interface="codegen_fmu");
 end CodegenFMU1;
 
 // vim: filetype=susan sw=2 sts=2

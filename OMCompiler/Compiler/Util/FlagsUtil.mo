@@ -429,7 +429,8 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.CAUSALIZE_DAE_MODE,
   Flags.SIM_CODE_SCALARIZE,
   Flags.EXECUTE_COMMAND,
-  Flags.MOO_DYNAMIC_OPTIMIZATION
+  Flags.MOO_DYNAMIC_OPTIMIZATION,
+  Flags.FMI_EXTRA_ANNOTATIONS
 };
 
 public function new
@@ -448,13 +449,13 @@ algorithm
   setGlobalRoot(Global.flagsIndex, inFlags);
 end saveFlags;
 
-protected function createConfigFlags
+public function createConfigFlags
   output array<Flags.FlagData> configFlags;
 algorithm
   configFlags := listArray(list(flag.defaultValue for flag in allConfigFlags));
 end createConfigFlags;
 
-protected function createDebugFlags
+public function createDebugFlags
   output array<Boolean> debugFlags;
 algorithm
   debugFlags := listArray(list(flag.default for flag in allDebugFlags));

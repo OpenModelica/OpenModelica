@@ -76,6 +76,7 @@ import ClassInf;
 import ClockIndexes;
 import CodegenFMU;
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import Config;
 import Conversion;
 import DAEDump;
@@ -88,6 +89,7 @@ import Error;
 import ErrorExt;
 import ExecStat;
 import Expression;
+protected import ExpressionBasics;
 import FBuiltin;
 import FGraph;
 import Figaro;
@@ -130,6 +132,7 @@ import Settings;
 import SimCodeMain;
 import SimCodeFunction;
 import SimCodeFunctionUtil;
+import StateMachineFlatten;
 import SimpleModelicaParser;
 import SimulationResults;
 import StaticScript;
@@ -677,7 +680,7 @@ algorithm
       FMI.Info fmiInfo;
       list<String> strs,strs1,strs2;
       Real timeTotal,timeSimulation,linearizeTime,offset,offset1,offset2,scaleFactor,scaleFactor1,scaleFactor2;
-      Boolean bval, b, b1, b2, b3, b4, b5, showProtected, inputConnectors, outputConnectors, sanityCheckFailed;
+      Boolean bval, b, b1, b2, b3, b4, b5, showProtected, inputConnectors, outputConnectors, sanityCheckFailed, lineEndingIsCRLF;
       list<tuple<String,Values.Value>> resultValues;
       list<Values.Value> cvars;
       list<Absyn.Path> paths;
@@ -1035,6 +1038,14 @@ algorithm
         ExecStat.execStatReset();
 
         (s1, bom) := StringUtil.stripBOM(s1);
+        // Work internally with LF line endings only, so that lines coming from
+        // the original file (s1) and lines produced by the listing (s2, always LF)
+        // compare and merge uniformly. Remember the original (s1) convention and
+        // restore it on output, so we do not rewrite every line ending of a file
+        // that uses CRLF (e.g. on Windows checkouts). See #13447.
+        lineEndingIsCRLF := s1 <> System.stringReplace(s1, "\r\n", "\n"); // removing CRLF changed s1 => it originally contained CRLF
+        s1 := System.stringReplace(s1, "\r\n", "\n");
+        s1 := System.stringReplace(s1, "\r", "\n"); // also fold any remaining lone CR (old Mac) to LF
         (tokens1, errorTokens) := scanString(s1);
         reportErrors(errorTokens);
 
@@ -1059,6 +1070,8 @@ algorithm
         end if;
 
         (s2, bom) := StringUtil.stripBOM(s2);
+        s2 := System.stringReplace(s2, "\r\n", "\n");
+        s2 := System.stringReplace(s2, "\r", "\n");
         (tokens2, errorTokens) := scanString(s2);
         reportErrors(errorTokens);
         ExecStat.execStat("diffModelicaFileListings scan string 2");
@@ -1131,6 +1144,8 @@ algorithm
               Error.addInternalError("Unknown diffModelicaFileListings choice", sourceInfo());
             then fail();
         end matchcontinue;
+        // Restore the original file's line-ending convention (we processed as LF above).
+        str := if lineEndingIsCRLF then System.stringReplace(str, "\n", "\r\n") else str;
       then
         Values.STRING(bom + str);
 
@@ -2554,11 +2569,11 @@ algorithm
         b := System.plotCallBackDefined();
         if boolOr(forceOMPlot, boolNot(b)) then
           // seperate the variables
-          str := stringDelimitList(vars_1,"\" \"");
+          str := stringDelimitList(vars_1,"' '");
           // create the path till OMPlot
           str2 := stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
           // create the list of arguments for OMPlot
-          str3 := "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plot --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --yaxis=\"" + yAxis + "\" --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --ylabel-right=\"" + yLabelRight + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --yrange-right=" + realString(y1R) + ":" + realString(y2R) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale) + " \"" + str + "\"";
+          str3 := "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plot --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --yaxis=\"" + yAxis + "\" --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --ylabel-right=\"" + yLabelRight + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --yrange-right=" + realString(y1R) + ":" + realString(y2R) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale) + " '" + str + "'";
           call := stringAppendList({"\"",str2,"\""," ",str3});
           0 := System.spawnCall(str2, call);
         elseif b then
@@ -3566,7 +3581,7 @@ algorithm
     ExecStat.execStat("FrontEnd - DAE generated");
 
     if transform then
-      dae := DAEUtil.transformationsBeforeBackend(cache, env, dae);
+      dae := DAEUtil.transformationsBeforeBackend(cache, env, dae, StateMachineFlatten.stateMachineToDataFlow);
     end if;
 
     odae := SOME(dae);
@@ -4441,6 +4456,11 @@ algorithm
   dir := fmutmp+"/sources/";
 
   if Config.simCodeTarget() == "Cpp" then
+    // dump modelInstance.json so the FMU makefile can filter out the
+    // requested extra annotations (see flag --fmiExtraAnnotations)
+    if Flags.getConfigString(Flags.FMI_EXTRA_ANNOTATIONS) <> "" then
+      System.writeFile(filenameprefix + "_modelInstance.json", ValuesUtil.extractValueString(NFApi.getModelInstance(className, className, "", true)));
+    end if;
     System.removeDirectory("binaries");
     for platform in platforms loop
       if platform == "dynamic" or platform == "static" then

@@ -70,5 +70,45 @@ end keyCompare;
 
 redeclare function addConflictDefault = addConflictReplace;
 
+public function addDaeFunction "add functions present in the element list to the function tree"
+  input list<DAE.Function> functions;
+  input output Tree functionTree;
+algorithm
+  for f in functions loop
+    functionTree := add(functionTree, functionName(f), SOME(f));
+  end for;
+end addDaeFunction;
+
+public function addDaeExtFunction "add the external functions present in the element list to the function tree (normal functions are skipped)"
+  input list<DAE.Function> functions;
+  input output Tree functionTree;
+algorithm
+  for f in functions loop
+    if isExtFunction(f) then
+      functionTree := add(functionTree, functionName(f), SOME(f));
+    end if;
+  end for;
+end addDaeExtFunction;
+
+protected function functionName "returns the name of a FUNCTION or RECORD_CONSTRUCTOR"
+  input DAE.Function elt;
+  output Absyn.Path name;
+algorithm
+  name := match elt
+    case DAE.FUNCTION(path=name) then name;
+    case DAE.RECORD_CONSTRUCTOR(path=name) then name;
+  end match;
+end functionName;
+
+protected function isExtFunction "returns true if element matches an external function"
+  input DAE.Function elt;
+  output Boolean res;
+algorithm
+  res := match elt
+    case DAE.FUNCTION(functions=DAE.FUNCTION_EXT()::_) then true;
+    else false;
+  end match;
+end isExtFunction;
+
 annotation(__OpenModelica_Interface="frontend_dump");
 end AvlTreePathFunction;

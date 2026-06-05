@@ -52,24 +52,22 @@ import Values;
 import ValuesUtil;
 import HashTable;
 import AvlSetCR;
-import HashTable2;
 
 protected
 import Algorithm;
 import BaseHashTable;
-import Ceval;
 import AvlTreePathFunction;
+import ClassInfUtil;
 import ComponentReference;
+import ComponentReferenceBasics;
 import Config;
-import DAE.Connect;
-import ConnectUtil;
 import DAEDump;
 import Debug;
 import DoubleEnded;
 import ElementSource;
 import Error;
 import Expression;
-import ExpressionDump;
+protected import ExpressionBasics;
 import ExpressionSimplify;
 import Flags;
 import List;
@@ -77,7 +75,6 @@ import SCodeUtil;
 import System;
 import Types;
 import Util;
-import StateMachineFlatten;
 import VarTransform;
 import ValuesDump;
 import MetaModelica.Dangerous.listReverseInPlace;
@@ -105,57 +102,6 @@ algorithm
     case DAE.C_CONST() then DAE.CONST();
   end match;
 end const2VarKind;
-
-public function topLevelInput "author: PA
-  if variable is input declared at the top level of the model,
-  or if it is an input in a connector instance at top level return true."
-  input DAE.ComponentRef componentRef;
-  input DAE.VarDirection varDirection;
-  input DAE.ConnectorType connectorType;
-  input DAE.VarVisibility visibility = DAE.PUBLIC();
-  output Boolean isTopLevel;
-protected
-  // the new frontend only keeps top level inputs, obsoleting bogus check for DAE.CREF_IDENT
-  Boolean newInst = Flags.isSet(Flags.SCODE_INST);
-algorithm
-  isTopLevel := match (varDirection, componentRef, visibility, newInst)
-    case (          _,                _, DAE.PROTECTED(),    _) then false;
-    case (DAE.INPUT(),                _,               _, true) then true;
-    case (DAE.INPUT(), DAE.CREF_IDENT(),               _,    _) then true;
-    case (DAE.INPUT(),                _,               _,    _)
-      guard(ConnectUtil.faceEqual(ConnectUtil.componentFaceType(componentRef), Connect.OUTSIDE()))
-      then topLevelConnectorType(connectorType);
-    else false;
-  end match;
-end topLevelInput;
-
-public function topLevelOutput "author: PA
-  if variable is output declared at the top level of the model,
-  or if it is an output in a connector instance at top level return true."
-  input DAE.ComponentRef componentRef;
-  input DAE.VarDirection varDirection;
-  input DAE.ConnectorType connectorType;
-  output Boolean isTopLevel;
-algorithm
-  isTopLevel := match (varDirection, componentRef)
-    case (DAE.OUTPUT(), DAE.CREF_IDENT()) then true;
-    case (DAE.OUTPUT(), _)
-      guard(ConnectUtil.faceEqual(ConnectUtil.componentFaceType(componentRef), Connect.OUTSIDE()))
-      then topLevelConnectorType(connectorType);
-    else false;
-  end match;
-end topLevelOutput;
-
-protected function topLevelConnectorType
-  input DAE.ConnectorType inConnectorType;
-  output Boolean isTopLevel;
-algorithm
-  isTopLevel := match inConnectorType
-    case DAE.FLOW() then true;
-    case DAE.POTENTIAL() then true;
-    else false;
-  end match;
-end topLevelConnectorType;
 
 public function expTypeSimple "returns true if type is simple type"
   input DAE.Type tp;
@@ -2329,57 +2275,6 @@ algorithm
   end match;
 end getStreamVariables2;
 
-public function daeToRecordValue "Transforms a list of elements into a record value.
-  TODO: This does not work for records inside records.
-  For a general approach we need to build an environment from the DAE and then
-  instead investigate the variables and lookup their values from the created environment."
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input Absyn.Path inPath;
-  input list<DAE.Element> inElementLst;
-  input Boolean inBoolean;
-  output FCore.Cache outCache;
-  output Values.Value outValue;
-algorithm
-  (outCache, outValue) := matchcontinue (inCache,inEnv,inPath,inElementLst,inBoolean)
-    local
-      Absyn.Path cname;
-      Values.Value value;
-      list<Values.Value> vals;
-      list<String> names;
-      String cr_str, str;
-      DAE.ComponentRef cr;
-      DAE.Exp rhs;
-      list<DAE.Element> rest;
-      Boolean impl;
-      Integer ix;
-      DAE.Element el;
-      FCore.Cache cache;
-      FCore.Graph env;
-      DAE.ElementSource source;
-      SourceInfo info;
-
-    case (cache,_,cname,{},_) then (cache,Values.RECORD(cname,{},{},-1));  /* impl */
-    case (cache,env,cname,DAE.VAR(componentRef = cr, binding = SOME(rhs),
-          source= source)::rest, impl)
-      algorithm
-        // fprintln(Flags.FAILTRACE, "- DAEUtil.daeToRecordValue typeOfRHS: " + ExpressionDump.typeOfString(rhs));
-        info := ElementSource.getElementSourceFileInfo(source);
-        (cache, value) := Ceval.ceval(cache, env, rhs, impl, Absyn.MSG(info),0);
-        (cache, Values.RECORD(cname,vals,names,ix)) := daeToRecordValue(cache, env, cname, rest, impl);
-        cr_str := ComponentReferenceBasics.printComponentRefStr(cr);
-      then
-        (cache,Values.RECORD(cname,(value::vals),(cr_str::names),ix));
-    case (_,_,_,el::_,_)
-      algorithm
-        true := Flags.isSet(Flags.FAILTRACE);
-        str := DAEDump.dumpDebugDAE(DAE.DAE({el}));
-        Debug.traceln("- DAEUtil.daeToRecordValue failed on: " + str);
-      then
-        fail();
-  end matchcontinue;
-end daeToRecordValue;
-
 public function toModelicaForm "function toModelicaForm.
 
   Transforms all variables from a.b.c to a_b_c, etc
@@ -3390,355 +3285,6 @@ algorithm (outrefs,matching) := match inCrefs
   end match;
 end compareCrefList;
 
-public function evaluateAnnotation "lochel: This is not used.
-  evaluates the annotation Evaluate"
-  input FCore.Cache inCache;
-  input FCore.Graph env;
-  input DAE.DAElist inDAElist;
-  output DAE.DAElist outDAElist;
-algorithm
-  outDAElist := matchcontinue inDAElist
-    local
-      DAE.DAElist dae;
-      HashTable2.HashTable ht,pv,ht1;
-      list<DAE.Element> elts,elts2;
-    case dae as DAE.DAE(elts)
-      algorithm
-        pv := getParameterVars(dae,HashTable2.emptyHashTable());
-        (ht,true) := evaluateAnnotation1(dae,pv,HashTable2.emptyHashTable());
-        (_,ht1,_) := evaluateAnnotation2_loop(inCache,env,dae,ht,BaseHashTable.hashTableCurrentSize(ht));
-        (elts2,_) := traverseDAEElementList(elts, Expression.traverseSubexpressionsHelper, (evaluateAnnotationTraverse, (ht1,0,0)));
-      then
-        DAE.DAE(elts2);
-    else inDAElist;
-  end matchcontinue;
-end evaluateAnnotation;
-
-protected function evaluateAnnotationTraverse "author: Frenkel TUD, 2010-12"
-  input DAE.Exp inExp;
-  input tuple<HashTable2.HashTable,Integer,Integer> itpl;
-  output DAE.Exp outExp;
-  output tuple<HashTable2.HashTable,Integer,Integer> otpl;
-algorithm
-  (outExp,otpl) := matchcontinue (inExp,itpl)
-    local
-      HashTable2.HashTable ht;
-      DAE.Exp exp,e1;
-      Integer i,j,k;
-
-    // Special Case for Records
-    case (exp as DAE.CREF(ty= DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_))),(ht,i,j))
-      algorithm
-        (e1,true) := Expression.extendArrExp(exp,false);
-        (e1,(ht,i,k)) := Expression.traverseExpBottomUp(e1,evaluateAnnotationTraverse,itpl);
-        true := intGt(k,j);
-      then (e1,(ht,i,k));
-    // Special Case for Arrays
-    case (exp as DAE.CREF(ty = DAE.T_ARRAY()),(ht,i,j))
-      algorithm
-        (e1,true) := Expression.extendArrExp(exp,false);
-        (e1,(ht,i,k)) := Expression.traverseExpBottomUp(e1,evaluateAnnotationTraverse,itpl);
-        true := intGt(k,j);
-      then (e1,(ht,i,k));
-
-    case (exp as DAE.CREF(),(ht,i,j))
-      algorithm
-        e1 := replaceCrefInAnnotation(exp, ht);
-        true := Expression.isConst(e1);
-      then (e1,(ht,i,j+1));
-
-    case (exp as DAE.CREF(),(ht,i,j))
-      then (exp,(ht,i+1,j));
-
-    else (inExp,itpl);
-  end matchcontinue;
-end evaluateAnnotationTraverse;
-
-protected function replaceCrefInAnnotation "
-  helper of evaluateAnnotationTraverse"
-  input DAE.Exp inExp;
-  input HashTable2.HashTable inTable;
-  output DAE.Exp outExp;
-algorithm
-  outExp := matchcontinue inExp
-    local
-      DAE.ComponentRef cr;
-      DAE.Exp exp;
-
-    case DAE.CREF(componentRef = cr)
-      algorithm
-        exp := BaseHashTable.get(cr, inTable);
-      then
-        replaceCrefInAnnotation(exp, inTable);
-
-    else inExp;
-  end matchcontinue;
-end replaceCrefInAnnotation;
-
-public function getParameterVars
-  input DAE.DAElist dae;
-  input HashTable2.HashTable ht;
-  output HashTable2.HashTable oht;
-protected
-  list<DAE.Element> elts;
-algorithm
-  DAE.DAE(elts) := dae;
-  oht := List.fold(elts,getParameterVars2,ht);
-end getParameterVars;
-
-protected function getParameterVars2
-  input DAE.Element elt;
-  input HashTable2.HashTable ht;
-  output HashTable2.HashTable ouHt;
-algorithm
-  ouHt := matchcontinue elt
-    local
-      DAE.ComponentRef cr;
-      DAE.Exp e;
-      Option<DAE.VariableAttributes> dae_var_attr;
-      list<DAE.Element> elts;
-
-    case DAE.COMP(dAElist = elts) then List.fold(elts,getParameterVars2,ht);
-
-    case DAE.VAR(componentRef = cr,kind=DAE.PARAM(),binding=SOME(e))
-      then BaseHashTable.add((cr,e),ht);
-
-    case DAE.VAR(componentRef = cr,kind=DAE.PARAM(),variableAttributesOption=dae_var_attr)
-      algorithm
-        e := getStartAttrFail(dae_var_attr);
-      then BaseHashTable.add((cr,e),ht);
-
-    else ht;
-  end matchcontinue;
-end getParameterVars2;
-
-public function evaluateAnnotation1
-"evaluates the annotation Evaluate"
-  input DAE.DAElist dae;
-  input HashTable2.HashTable pv;
-  input HashTable2.HashTable ht;
-  output HashTable2.HashTable oht;
-  output Boolean hasEvaluate;
-protected
-  list<DAE.Element> elts;
-algorithm
-  DAE.DAE(elts) := dae;
-  (oht,hasEvaluate) := List.fold1r(elts,evaluateAnnotation1Fold,pv,(ht,false));
-end evaluateAnnotation1;
-
-protected function evaluateAnnotation1Fold
-"evaluates the annotation Evaluate"
-  input tuple<HashTable2.HashTable,Boolean> tpl;
-  input DAE.Element el;
-  input HashTable2.HashTable inPV;
-  output tuple<HashTable2.HashTable,Boolean> otpl;
-algorithm
-  otpl := matchcontinue (tpl,el,inPV)
-    local
-      list<DAE.Element> sublist;
-      SCode.Comment comment;
-      HashTable2.HashTable ht,ht1,pv;
-      DAE.ComponentRef cr;
-      SCode.Annotation anno;
-      DAE.Exp e,e1;
-    case (_,DAE.COMP(dAElist = sublist),pv)
-      then List.fold1r(sublist,evaluateAnnotation1Fold,pv,tpl);
-    case ((ht,_),DAE.VAR(componentRef = cr,kind=DAE.PARAM(),binding=SOME(e),comment=SOME(comment)),pv)
-      algorithm
-        SCode.COMMENT(annotation_=SOME(anno)) := comment;
-        true := SCodeUtil.hasBooleanNamedAnnotation(anno,"Evaluate");
-        e1 := evaluateParameter(e,pv);
-        ht1 := BaseHashTable.add((cr,e1),ht);
-      then
-        ((ht1,true));
-    else tpl;
-  end matchcontinue;
-end evaluateAnnotation1Fold;
-
-protected function evaluateParameter
-  input DAE.Exp inExp;
-  input HashTable2.HashTable inPV;
-  output DAE.Exp outExp;
-algorithm
-  outExp := matchcontinue (inExp,inPV)
-    local
-      HashTable2.HashTable pv;
-      DAE.Exp e,e1,e2;
-      Integer i;
-    case (e,_)
-      algorithm
-        true := Expression.isConst(e);
-      then e;
-    case (e,_)
-      algorithm
-        false := Expression.expHasCrefs(e); // {} = Expression.extractCrefsFromExp(e);
-      then e;
-    case (e,pv)
-      algorithm
-        (e1,(_,i,_)) := Expression.traverseExpBottomUp(e,evaluateAnnotationTraverse,(pv,0,0));
-        true := intEq(i,0);
-        e2 := evaluateParameter(e1,pv);
-      then
-        e2;
-  end matchcontinue;
-end evaluateParameter;
-
-protected function evaluateAnnotation2_loop
-  input FCore.Cache cache;
-  input FCore.Graph env;
-  input DAE.DAElist inDAElist;
-  input HashTable2.HashTable inHt;
-  input Integer sizeBefore;
-  output list<DAE.Element> outDAElist;
-  output HashTable2.HashTable outHt;
-  output FCore.Cache outCache;
-protected
-  Integer newsize;
-algorithm
-  (outDAElist,outHt,outCache) := evaluateAnnotation2(cache,env,inDAElist,inHt);
-  newsize := BaseHashTable.hashTableCurrentSize(outHt);
-  (outDAElist,outHt,outCache) := evaluateAnnotation2_loop1(intEq(newsize,sizeBefore),outCache,env,DAE.DAE(outDAElist),outHt,newsize);
-end evaluateAnnotation2_loop;
-
-protected function evaluateAnnotation2_loop1
-  input Boolean finish;
-  input FCore.Cache inCache;
-  input FCore.Graph env;
-  input DAE.DAElist inDAElist;
-  input HashTable2.HashTable inHt;
-  input Integer sizeBefore;
-  output list<DAE.Element> outDAElist;
-  output HashTable2.HashTable outHt;
-  output FCore.Cache outCache;
-algorithm
-  (outDAElist,outHt,outCache) := match (finish, inDAElist)
-    local
-      HashTable2.HashTable ht;
-      list<DAE.Element> elst;
-      FCore.Cache cache;
-    case(true, DAE.DAE(elst)) then (elst,inHt,inCache);
-    else
-      algorithm
-        (elst,ht,cache) := evaluateAnnotation2_loop(inCache,env,inDAElist,inHt,sizeBefore);
-      then
-        (elst,ht,cache);
-  end match;
-end evaluateAnnotation2_loop1;
-
-protected function evaluateAnnotation2
-"evaluates the parameters with bindings parameters with annotation Evaluate"
-  input FCore.Cache inCache;
-  input FCore.Graph env;
-  input DAE.DAElist inDAElist;
-  input HashTable2.HashTable inHt;
-  output list<DAE.Element> outDAElist;
-  output HashTable2.HashTable outHt;
-  output FCore.Cache outCache;
-algorithm
-  (outDAElist,outHt,outCache) := matchcontinue (inDAElist, inHt)
-    local
-      list<DAE.Element> elementLst,elementLst1;
-      HashTable2.HashTable ht,ht1;
-      FCore.Cache cache;
-    case (DAE.DAE({}), ht) then ({},ht,inCache);
-    case (DAE.DAE(elementLst=elementLst), ht)
-      algorithm
-        (elementLst1,(ht1,cache,_)) := List.mapFold(elementLst,evaluateAnnotation3,(ht,inCache,env));
-      then
-        (elementLst1,ht1,cache);
-  end matchcontinue;
-end evaluateAnnotation2;
-
-protected function evaluateAnnotation3
-"evaluates the parameters with bindings parameters with annotation Evaluate"
-  input DAE.Element iel;
-  input tuple<HashTable2.HashTable,FCore.Cache,FCore.Graph> inHt;
-  output DAE.Element oel;
-  output tuple<HashTable2.HashTable,FCore.Cache,FCore.Graph> outHt;
-algorithm
-  (oel,outHt) := matchcontinue (iel,inHt)
-    local
-      tuple<HashTable2.HashTable,FCore.Cache,FCore.Graph> httpl;
-      FCore.Cache cache;
-      FCore.Graph env;
-      list<DAE.Element> sublist,sublist1;
-      HashTable2.HashTable ht,ht1;
-      DAE.ComponentRef cr;
-      DAE.Exp e,e1,e2;
-      DAE.Ident ident;
-      DAE.ElementSource source;
-      Option<SCode.Comment> comment;
-      DAE.VarKind kind;
-      DAE.VarDirection direction;
-      DAE.VarParallelism parallelism;
-      DAE.VarVisibility protection;
-      DAE.Type ty;
-      Option<DAE.Exp> binding;
-      DAE.InstDims  dims;
-      DAE.ConnectorType ct;
-      Option<DAE.VariableAttributes> variableAttributesOption;
-      Option<SCode.Comment> absynCommentOption;
-      Absyn.InnerOuter innerOuter;
-      Boolean encrypted;
-      Integer i,j;
-
-    case (DAE.COMP(ident=ident,dAElist = sublist,source=source,comment=comment),_)
-      algorithm
-        (sublist1,httpl) := List.mapFold(sublist,evaluateAnnotation3,inHt);
-      then
-        (DAE.COMP(ident,sublist1,source,comment),httpl);
-    case (DAE.VAR(componentRef = cr,kind=DAE.PARAM(),direction=direction,parallelism=parallelism,
-                  protection=protection,ty=ty,binding=SOME(e),dims=dims,connectorType=ct,
-                  source=source,variableAttributesOption=variableAttributesOption,
-                  comment=absynCommentOption,innerOuter=innerOuter,encrypted=encrypted),(ht,cache,env))
-      algorithm
-        (e1,(_,i,j)) := Expression.traverseExpBottomUp(e,evaluateAnnotationTraverse,(ht,0,0));
-        (e2,ht1,cache) := evaluateAnnotation4(cache,env,cr,e1,i,j,ht);
-      then
-        (DAE.VAR(cr,DAE.PARAM(),direction,parallelism,protection,ty,SOME(e2),dims,ct,
-            source,variableAttributesOption,absynCommentOption,innerOuter,encrypted),(ht1,cache,env));
-    else (iel,inHt);
-  end matchcontinue;
-end evaluateAnnotation3;
-
-protected function evaluateAnnotation4
-"evaluates the parameters with bindings parameters with annotation Evaluate"
-  input FCore.Cache inCache;
-  input FCore.Graph env;
-  input DAE.ComponentRef inCr;
-  input DAE.Exp inExp;
-  input Integer inInteger1;
-  input Integer inInteger2;
-  input HashTable2.HashTable inHt;
-  output DAE.Exp outExp;
-  output HashTable2.HashTable outHt;
-  output FCore.Cache outCache;
-algorithm
-  (outExp,outHt,outCache) := matchcontinue (inCr, inExp, inInteger1, inInteger2, inHt)
-    local
-      DAE.ComponentRef cr;
-      DAE.Exp e,e1;
-      Integer i,j;
-      HashTable2.HashTable ht,ht1;
-      FCore.Cache cache;
-      Values.Value value;
-    case (cr, e, i, j, ht)
-      algorithm
-        // there is a paramter with evaluate=true
-        true := intGt(j,0);
-        // there are no other crefs
-        true := intEq(i,0);
-        // evalute expression
-        (e1,(ht,_,_)) := Expression.traverseExpBottomUp(e,evaluateAnnotationTraverse,(ht,0,0));
-        (cache, value) := Ceval.ceval(inCache, env, e1, false, Absyn.NO_MSG(),0);
-         e1 := ValuesUtil.valueExp(value);
-        // e1 = e;
-        ht1 := BaseHashTable.add((cr,e1),ht);
-      then (e1,ht1,cache);
-    case (_, e, _, _, ht) then (e,ht,inCache);
-  end matchcontinue;
-end evaluateAnnotation4;
-
 public function renameUniqueOuterVars "author: BZ, 2008-12
   Rename innerouter(the inner part of innerouter) variables that have been renamed to a.b.$unique$var
   Just remove the $unique$ from the var name.
@@ -3746,7 +3292,7 @@ public function renameUniqueOuterVars "author: BZ, 2008-12
   input DAE.DAElist dae;
   output DAE.DAElist odae;
 algorithm
-  (odae,_,_) := traverseDAE(dae, AvlTreePathFunction.Tree.EMPTY(), Expression.traverseSubexpressionsHelper, (removeUniqieIdentifierFromCref, {}));
+  (odae,_,_) := traverseDAE(dae, AvlTreePathFunction.Tree.EMPTY(), Expression.traverseSubexpressionsHelper, (removeUniqieIdentifierFromCref, 0));
 end renameUniqueOuterVars;
 
 protected function removeUniqieIdentifierFromCref "Function for Expression.traverseExpBottomUp, removes the constant 'UNIQUEIO' from any cref it might visit."
@@ -3779,7 +3325,7 @@ public function nameUniqueOuterVars "author: BZ, 2008-12
   input DAE.DAElist dae;
   output DAE.DAElist odae;
 algorithm
-  (odae,_,_) := traverseDAE(dae, AvlTreePathFunction.Tree.EMPTY(), Expression.traverseSubexpressionsHelper, (addUniqueIdentifierToCref, {}));
+  (odae,_,_) := traverseDAE(dae, AvlTreePathFunction.Tree.EMPTY(), Expression.traverseSubexpressionsHelper, (addUniqueIdentifierToCref, 0));
 end nameUniqueOuterVars;
 
 protected function addUniqueIdentifierToCref "author: BZ, 2008-12
@@ -4602,25 +4148,11 @@ algorithm
     case (DAE.STMT_ASSIGN_ARR(type_ = tp, lhs=e, exp = e2, source = source), extraArg)
       algorithm
         (e_2, extraArg) := func(e2, extraArg);
-        () := matchcontinue()
-          case ()
-            algorithm
-              (e_1 as DAE.CREF(_,_), extraArg) := traverseStatementsOptionsEvalLhs(e, extraArg, func, opt);
-               x := if referenceEq(e2,e_2) and referenceEq(e,e_1) then inStmt else DAE.STMT_ASSIGN_ARR(tp,e_1,e_2,source);
-             then
-               ();
-          else
-            algorithm
-              failure((DAE.CREF(_,_), _) := func(e, extraArg));
-              x := if referenceEq(e2,e_2) then inStmt else DAE.STMT_ASSIGN_ARR(tp,e,e_2,source);
-              /* We need to pass this through because simplify/etc may scalarize the cref...
-                 true = Flags.isSet(Flags.FAILTRACE);
-                 print(DAEDump.ppStatementStr(x));
-                 print("Warning, not allowed to set the componentRef to a expression in DAEUtil.traverseDAEEquationsStmts\n");
-              */
-            then
-              ();
-        end matchcontinue;
+        (e_1, extraArg) := traverseStatementsOptionsEvalLhs(e, extraArg, func, opt);
+        x := match e_1
+          case DAE.CREF() then if referenceEq(e2,e_2) and referenceEq(e,e_1) then inStmt else DAE.STMT_ASSIGN_ARR(tp,e_1,e_2,source);
+          else if referenceEq(e2,e_2) then inStmt else DAE.STMT_ASSIGN_ARR(tp,e,e_2,source);
+        end match;
       then (x::{},extraArg);
 
     case (DAE.STMT_IF(exp=e,statementLst=stmts,else_ = algElse, source = source), extraArg)
@@ -5527,14 +5059,21 @@ public function transformationsBeforeBackend
   input FCore.Cache cache;
   input FCore.Graph env;
   input DAE.DAElist inDAElist;
+  input StateMachineToDataFlowFunc stateMachineToDataFlow;
   output DAE.DAElist outDAElist;
+  partial function StateMachineToDataFlowFunc
+    input FCore.Cache cache;
+    input FCore.Graph env;
+    input DAE.DAElist inDAElist;
+    output DAE.DAElist outDAElist;
+  end StateMachineToDataFlowFunc;
 protected
   DAE.DAElist dAElist;
   list<DAE.Element> elts;
   AvlSetCR.Tree ht;
 algorithm
   // Transform Modelica state machines to flat data-flow equations
-  dAElist := StateMachineFlatten.stateMachineToDataFlow(cache, env, inDAElist);
+  dAElist := stateMachineToDataFlow(cache, env, inDAElist);
 
   if Flags.isSet(Flags.SCODE_INST) then
     // This is stupid, but `outDAElist := dAElist` causes crashes for some reason. GC bug?
@@ -5673,15 +5212,6 @@ algorithm
   end match;
 end collectFunctionRefVarPaths;
 
-public function addDaeFunction "add functions present in the element list to the function tree"
-  input list<DAE.Function> functions;
-  input output AvlTreePathFunction.Tree functionTree;
-algorithm
-  for f in functions loop
-    functionTree := AvlTreePathFunction.add(functionTree, functionName(f), SOME(f));
-  end for;
-end addDaeFunction;
-
 public function addFunctionDefinition
 "adds a functionDefinition to a function. can be used to add function_der_mapper to a function"
   input DAE.Function ifunc;
@@ -5698,37 +5228,6 @@ algorithm
     else ();
   end match;
 end addFunctionDefinition;
-
-public function addDaeExtFunction "
-  add extermal functions present in the element list to the function tree
-  Note: normal functions are skipped.
-  See also addDaeFunction"
-  input list<DAE.Function> ifuncs;
-  input AvlTreePathFunction.Tree itree;
-  output AvlTreePathFunction.Tree outTree;
-algorithm
-  outTree := matchcontinue(ifuncs,itree)
-    local
-      DAE.Function func;
-      list<DAE.Function> funcs;
-      AvlTreePathFunction.Tree tree;
-
-    case ({},tree)
-      algorithm
-        //showCacheFuncs(tree);
-      then tree;
-
-    case (func::funcs,tree)
-      algorithm
-        true := isExtFunction(func);
-        // print("Add ext to cache: " + AbsynUtil.pathString(functionName(func)) + "\n");
-        tree := AvlTreePathFunction.add(tree,functionName(func),SOME(func));
-      then addDaeExtFunction(funcs,tree);
-
-    case (_::funcs,tree) then addDaeExtFunction(funcs,tree);
-
-  end matchcontinue;
-end addDaeExtFunction;
 
 public function getFunctionsInfo
   input AvlTreePathFunction.Tree ft;
@@ -6130,36 +5629,6 @@ algorithm
 
   end match;
 end splitVariableNamed;
-
-public function getAllExpandableCrefsFromDAE
-"@author: adrpo
- collect all crefs from the DAE"
-  input DAE.DAElist inDAE;
-  output list<DAE.ComponentRef> outCrefs;
-protected
-  list<DAE.Element> elts;
-algorithm
-  DAE.DAE(elts) := inDAE;
-  (_, (_, outCrefs)) := traverseDAEElementList(elts, Expression.traverseSubexpressionsHelper, (collectAllExpandableCrefsInExp, {}));
-end getAllExpandableCrefsFromDAE;
-
-protected function collectAllExpandableCrefsInExp "collect all crefs from expression"
-  input DAE.Exp exp;
-  input list<DAE.ComponentRef> acc;
-  output DAE.Exp outExp;
-  output list<DAE.ComponentRef> outCrefs;
-algorithm
-  (outExp,outCrefs) := match exp
-    local
-      DAE.ComponentRef cr;
-
-    case DAE.CREF(componentRef = cr)
-      then (exp,List.consOnTrue(ConnectUtil.isExpandable(cr),cr,acc));
-
-    else (exp,acc);
-
-  end match;
-end collectAllExpandableCrefsInExp;
 
 public function daeDescription
   input DAE.DAElist inDAE;
@@ -7236,5 +6705,5 @@ algorithm
     else true;
   end matchcontinue;
 end optMRFACheckCrefRead;
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_base");
 end DAEUtil;

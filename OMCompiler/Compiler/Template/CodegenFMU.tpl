@@ -3415,7 +3415,7 @@ template ScalarVariableTypeFMU(String attrstr, String unit, String displayUnit, 
     else error(sourceInfo(), 'ScalarVariableTypeFMU: <%unparseType(type_)%>')
 end ScalarVariableTypeFMU;
 
-annotation(__OpenModelica_Interface="codegen");
+annotation(__OpenModelica_Interface="codegen_fmu_c");
 end CodegenFMU;
 
 // vim: filetype=susan sw=2 sts=2

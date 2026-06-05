@@ -57,6 +57,8 @@ import BackendVarTransform;
 import BaseHashTable;
 import CheckModel;
 import ComponentReference;
+import ConnectUtil;
+import ComponentReferenceBasics;
 import Config;
 import ClassInf;
 import DAEDump;
@@ -67,6 +69,7 @@ import ElementSource;
 import Error;
 import ErrorExt;
 import Expression;
+protected import ExpressionBasics;
 import ExpressionDump;
 import ExpressionSimplify;
 import ExpressionSolve;
@@ -241,14 +244,14 @@ algorithm
   // 1. Collect all possible record types from equations and globalKnownVars
   // (the frontend does not keep correct types at the variables so they have to be grabbed from eqns beforehand
   // I don't like it but thats how it is).
-  map := UnorderedMap.new<DAE.Type>(ComponentReference.hashComponentRef, ComponentReferenceBasics.crefEqual);
+  map := UnorderedMap.new<DAE.Type>(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
   collectRecordTypesVarLst(map, globalKnownVarLst);
   eqns  := List.map(eqns, function collectRecordTypesEqn(map = map));
   reqns := List.map(reqns, function collectRecordTypesEqn(map = map));
   ieqns := List.map(ieqns, function collectRecordTypesEqn(map = map));
 
   // 2. Collect bindings from variables and update in types
-  arrayMap := UnorderedMap.new<ArrayBindingList>(ComponentReference.hashComponentRef, ComponentReferenceBasics.crefEqual);
+  arrayMap := UnorderedMap.new<ArrayBindingList>(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
 
   List.apply(varlst, function collectRecordElementBindings(map = map, arrayMap = arrayMap));
   List.apply(globalKnownVarLst, function collectRecordElementBindings(map = map, arrayMap = arrayMap));
@@ -1673,7 +1676,7 @@ algorithm
     else
       algorithm
         /* Consider toplevel inputs as known unless they are protected. Ticket #5591 */
-        false := DAEUtil.topLevelInput(inComponentRef, inVarDirection, inConnectorType, protection);
+        false := ConnectUtil.topLevelInput(inComponentRef, inVarDirection, inConnectorType, protection);
       then
         match (inVarKind, inType)
           case (DAE.VARIABLE(), DAE.T_BOOL()) then BackendDAE.DISCRETE();
@@ -1701,7 +1704,7 @@ algorithm
     case DAE.CONST() then BackendDAE.CONST();
     case DAE.VARIABLE()
       algorithm
-        true := DAEUtil.topLevelInput(componentRef, varDirection, connectorType, visibility);
+        true := ConnectUtil.topLevelInput(componentRef, varDirection, connectorType, visibility);
       then
         BackendDAE.VARIABLE();
     // adrpo: topLevelInput might fail!

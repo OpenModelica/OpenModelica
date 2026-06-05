@@ -423,28 +423,20 @@ QString FixedCheckBox::getTickStateString() const
 void FixedCheckBox::paintEvent(QPaintEvent *event)
 {
   Q_UNUSED(event);
-  QStylePainter p(this);
-  QStyleOptionButton opt;
-  opt.initFrom(this);
+  QStylePainter painter(this);
+  QStyleOptionButton option;
+  option.initFrom(this);
+  // Draw only the checkbox indicator.
+  option.rect = style()->subElementRect(QStyle::SE_CheckBoxIndicator, &option, this);
+
+  bool checked = (!mDefaultValue && mFixedState) || (mDefaultValue && mInheritedValue);
+  option.state |= checked ? QStyle::State_On : QStyle::State_Off;
+
   if (mDefaultValue) {
-    p.setBrush(QColor(225, 225, 225));
-  } else {
-    p.setBrush(Qt::white);
+    painter.fillRect(option.rect.adjusted(1, 1, -1, -1), QColor(225, 225, 225));
   }
-  p.drawRect(opt.rect.adjusted(0, 0, -1, -1));
-  // if is checked then draw a tick
-  if ((!mDefaultValue && mFixedState) || (mDefaultValue && mInheritedValue)) {
-    p.setRenderHint(QPainter::Antialiasing);
-    QPen pen = p.pen();
-    pen.setWidthF(1.5);
-    p.setPen(pen);
-    QVector<QPoint> lines;
-    lines << QPoint(opt.rect.left() + 3, opt.rect.center().y());
-    lines << QPoint(opt.rect.center().x() - 1, opt.rect.bottom() - 3);
-    lines << QPoint(opt.rect.center().x() - 1, opt.rect.bottom() - 3);
-    lines << QPoint(opt.rect.width() - 3, opt.rect.top() + 3);
-    p.drawLines(lines);
-  }
+
+  painter.drawPrimitive(QStyle::PE_IndicatorCheckBox, option);
 }
 
 PreviewPlainTextEdit::PreviewPlainTextEdit(QWidget *parent)

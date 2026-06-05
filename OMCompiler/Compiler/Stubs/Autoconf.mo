@@ -50,6 +50,8 @@ encapsulated package Autoconf
   constant String ldflags_runtime_sim = "";
   constant String ldflags_runtime_fmu = "";
 
+  constant String parModelicaAutoLibs = "";
+
   constant String platform = "";
   constant String pathDelimiter = "/";
   constant String groupDelimiter = ";";

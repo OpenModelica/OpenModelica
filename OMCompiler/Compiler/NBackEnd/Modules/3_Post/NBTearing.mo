@@ -125,7 +125,7 @@ public
     str := str + "### Iteration Variables:\n" + Slice.lstToString(set.iteration_vars, BVariable.pointerToString);
     str := str + "\n### Residual Equations:\n" + Slice.lstToString(set.residual_eqns, function Equation.pointerToString(str = ""));
     str := str + "\n### Inner Equations:\n" + Array.toString(set.innerEquations, function StrongComponent.toString(index = -1), "", "\t", "\n\t", "");
-    if Util.isSome(set.jac) then
+    if isSome(set.jac) then
       str := str + "\n" + BJacobian.toString(Util.getOption(set.jac), "NLS");
     end if;
   end toString;
@@ -155,7 +155,7 @@ public
       case (_, BackendDAE.MAIN(eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index))) guard(Partition.kindIsInitial(kind))
         algorithm
           bdae.init := tearingTraverser(bdae.init, funcs, bdae.funcMap, eq_index, kind);
-          if Util.isSome(bdae.init_0) then
+          if isSome(bdae.init_0) then
             bdae.init_0 := SOME(tearingTraverser(Util.getOption(bdae.init_0), funcs, bdae.funcMap, eq_index, kind));
           end if;
       then bdae;
@@ -481,7 +481,7 @@ protected
     EqnSlice solve_eqn;
     Boolean success, var_assigned;
     ComponentRef stripped;
-    constant Boolean init = Partition.kindIsInitial(kind);
+    constant Boolean staticAsContinuous = Partition.kindIsInitial(kind);
   algorithm
     comp := match (comp, full)
       case (StrongComponent.ALGEBRAIC_LOOP(strict = strict), Adjacency.FULL()) algorithm
@@ -496,7 +496,7 @@ protected
             + StrongComponent.toString(comp)});
           fail();
         else
-          failed_vars := list(var for var guard(Slice.check(var, function NBVariable.isDiscontinuous(init = init))) in guru_vars);
+          failed_vars := list(var for var guard(Slice.check(var, function NBVariable.isDiscontinuous(staticAsContinuous = staticAsContinuous))) in guru_vars);
           if not listEmpty(failed_vars) then
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Following variables cannot be chosen as iteration variables because they are discontinuous:\n"
               + List.toString(failed_vars, function Slice.toString(func = BVariable.pointerToString, maxLength = 10), "", "\t" , "\n\t", "")});
@@ -580,7 +580,7 @@ protected
             end if;
           end while;
 
-          comp.mixed := List.any(inner_vars, function Slice.check(func = function BVariable.isDiscontinuous(init = init)));
+          comp.mixed := List.any(inner_vars, function Slice.check(func = function BVariable.isDiscontinuous(staticAsContinuous = staticAsContinuous)));
 
           // save residuals equations and iteration variables to the strong component
           strict.innerEquations := listArray(listReverse(inner_comps));
@@ -618,7 +618,7 @@ protected
     linear := match full
       case Adjacency.Matrix.FULL() then UnorderedMap.all(e, function eqnIsLinear(occ = full.occurrences, sol = full.solvabilities, v = v));
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " expected type full, got type " + Adjacency.Matrix.strictnessString(Adjacency.Matrix.getStrictness(full)) + "."});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " expected type full, got type " + Adjacency.strictnessString(Adjacency.Matrix.getStrictness(full)) + "."});
       then fail();
     end match;
   end checkLinearity;
@@ -626,7 +626,7 @@ protected
   function filterDiscreteVariables
     "splits off all discrete variables. also splits off variables that belong to a record with a discrete variable in this algebraic loop"
     input list<Pointer<Variable>> vars_lst;
-    input Boolean init;
+    input Boolean staticAsContinuous;
     output list<Pointer<Variable>> cont_vars;
     output list<Pointer<Variable>> disc_vars;
   protected
@@ -665,7 +665,7 @@ protected
     end checkDiscreteRecord;
   algorithm
     // basic filter all discrete variables
-    (cont_vars, disc_vars) := List.splitOnTrue(vars_lst, function BVariable.isContinuous(init = init));
+    (cont_vars, disc_vars) := List.splitOnTrue(vars_lst, function BVariable.isContinuous(staticAsContinuous = staticAsContinuous));
     // add all records that contain discrete variables
     for var in disc_vars loop addDiscreteRecord(var, discrete_records); end for;
     // split off all variables that are part of records of which discretes are in this loop
@@ -700,5 +700,5 @@ protected
     end match;
   end getImpliedInnerVars;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBTearing;

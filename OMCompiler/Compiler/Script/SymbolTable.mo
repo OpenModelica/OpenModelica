@@ -60,6 +60,7 @@ import List;
 import AbsynToSCode;
 import System;
 import SCodeUtil;
+protected import ComponentReferenceBasics;
 
 public
 

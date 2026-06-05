@@ -76,6 +76,7 @@ import CheckModel;
 import ClassInf;
 import CommonSubExpression;
 import ComponentReference;
+import ComponentReferenceBasics;
 import Config;
 import DAEDump;
 import DAEMode;
@@ -93,6 +94,7 @@ import EvaluateFunctions;
 import EvaluateParameter;
 import ExecStat.execStat;
 import ExpandableArray;
+import Ceval;
 import Expression;
 import ExpressionBasics;
 import ExpressionDump;
@@ -597,18 +599,6 @@ algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars) := syst;
   osyst := setEqSystVars(syst, BackendVariable.addVars(varlst, vars));
 end addVarsToEqSystem;
-
-public function getSimIteratorSize
-  input list<BackendDAE.SimIterator> iters;
-  output Integer size = 1;
-protected
-  Integer local_size;
-algorithm
-  for iter in iters loop
-    local_size := match iter case BackendDAE.SIM_ITERATOR_RANGE() then iter.non_resizable_size; case BackendDAE.SIM_ITERATOR_LIST() then iter.size; end match;
-    size := size * local_size;
-  end for;
-end getSimIteratorSize;
 
 public function numberOfZeroCrossings "author: lochel"
   input BackendDAE.BackendDAE inBackendDAE;
@@ -6725,7 +6715,7 @@ algorithm
   case (false, (_,_,funcs,_))
     algorithm
       // try to inline
-      (e,_,true) := Inline.forceInlineExp(inExp,(funcs,{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource);
+      (e,_,true) := Inline.forceInlineExp(inExp,(funcs,{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource,Ceval.cevalSimpleWithFunctionTreeReturnExp);
       (e,(_,_,_,notfound)) := Expression.traverseExpTopDown(e, getEqnsysRhsExp1, iTpl);
     then
       (e,notfound);
@@ -10299,7 +10289,7 @@ algorithm
   syst := match syst
     local
       BackendDAE.StrongComponents comps;
-      UnorderedSet<DAE.ComponentRef> set = UnorderedSet.new(ComponentReference.hashComponentRef, ComponentReferenceBasics.crefEqual);
+      UnorderedSet<DAE.ComponentRef> set = UnorderedSet.new(ComponentReferenceBasics.hashComponentRef, ComponentReferenceBasics.crefEqual);
     case BackendDAE.EQSYSTEM(matching = BackendDAE.MATCHING(comps = comps)) algorithm
       for comp in comps loop
         markNonlinearIterationVariablesStrongComponent(comp, set);

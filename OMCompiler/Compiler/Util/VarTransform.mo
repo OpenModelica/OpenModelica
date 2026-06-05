@@ -66,8 +66,10 @@ end VariableReplacements;
 protected import Absyn;
 protected import BaseHashTable;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 //protected import Debug;
 protected import Expression;
+protected import ExpressionBasics;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import List;
@@ -1345,5 +1347,5 @@ algorithm
   replacementPerformed := acc2;
 end replaceExpMatrix;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_base");
 end VarTransform;

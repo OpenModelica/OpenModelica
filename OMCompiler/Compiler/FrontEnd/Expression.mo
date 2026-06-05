@@ -67,21 +67,19 @@ type Var = DAE.Var;
 protected import Array;
 protected import ClassInf;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import Config;
 protected import DAEUtil;
 protected import Debug;
 protected import DoubleEnded;
-protected import FCore;
-protected import FGraph;
 protected import Error;
 protected import ExpressionDump;
 protected import ExpressionBasics.printExpStr;
+protected import ExpressionBasics;
 protected import ExpressionSimplify;
 protected import Dump;
 protected import Flags;
 protected import List;
-protected import Patternm;
-protected import Static;
 protected import System; // stringReal
 protected import Types;
 protected import Util;
@@ -460,32 +458,6 @@ algorithm
 
   end match;
 end traversingstringifyCrefFinder;
-
-public function CodeVarToCref
-  input DAE.Exp inExp;
-  output DAE.Exp outExp;
-algorithm
-  outExp := match inExp
-    local
-      ComponentRef e_cref;
-      Absyn.ComponentRef cref;
-      DAE.Exp e;
-
-    case DAE.CODE(Absyn.C_VARIABLENAME(cref),_)
-      algorithm
-        (_,e_cref) := Static.elabUntypedCref(FCore.emptyCache(),FGraph.empty(),cref,false,DAE.NOPRE(),Absyn.dummyInfo);
-        e := crefExp(e_cref);
-      then
-        e;
-
-    case DAE.CODE(Absyn.C_EXPRESSION(Absyn.CALL(function_ = Absyn.CREF_IDENT("der",{}), functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cref)},{}))),_)
-      algorithm
-        (_,e_cref) := Static.elabUntypedCref(FCore.emptyCache(),FGraph.empty(),cref,false,DAE.NOPRE(),Absyn.dummyInfo);
-        e := crefExp(e_cref);
-      then
-        DAE.CALL(Absyn.IDENT("der"),{e},DAE.callAttrBuiltinReal);
-  end match;
-end CodeVarToCref;
 
 public function realToIntIfPossible
 "converts to ICONST if possible. If it does
@@ -5157,7 +5129,7 @@ algorithm
     case DAE.MATCHEXPRESSION(matchTy, expl, aliases, localDecls, cases, tp) algorithm
       // Don't traverse the local declarations; we don't store bindings there (yet)
       (expl_1, ext_arg) := traverseExpList(expl, inFunc, inExtArg);
-      (cases_1, ext_arg) := Patternm.traverseCases(cases, inFunc, ext_arg);
+      (cases_1, ext_arg) := traverseCases(cases, inFunc, ext_arg);
       e := if referenceEq(expl, expl_1) and referenceEq(cases, cases_1) then inExp else DAE.MATCHEXPRESSION(matchTy, expl_1, aliases, localDecls, cases_1, tp);
       (e, ext_arg) := inFunc(e, ext_arg);
     then (e, ext_arg);
@@ -5708,7 +5680,7 @@ algorithm
     case (_,DAE.MATCHEXPRESSION(matchType,expl,aliases,localDecls,cases,et),rel,ext_arg)
       algorithm
         (expl,ext_arg) := traverseExpListTopDown(expl,rel,ext_arg);
-        (cases, ext_arg) := Patternm.traverseCasesTopDown(cases, rel, ext_arg);
+        (cases, ext_arg) := traverseCasesTopDown(cases, rel, ext_arg);
       then (DAE.MATCHEXPRESSION(matchType,expl,aliases,localDecls,cases,et),ext_arg);
 
     case (_,DAE.METARECORDCALL(fn,expl,fieldNames,i,typeVars),rel,ext_arg)
@@ -10778,132 +10750,6 @@ algorithm
   end match;
 end promoteExp3;
 
-public function hashExp "help function to hashExpMod"
-  input DAE.Exp e;
-  output Integer hash;
-algorithm
- hash := matchcontinue e
-   local
-    Real r;
-    Integer i;
-    Boolean b;
-    String s;
-    Absyn.Path path;
-    DAE.Exp e1,e2,e3;
-    DAE.Operator op;
-    list<DAE.Exp> expl;
-    list<list<DAE.Exp>> mexpl;
-    DAE.ComponentRef cr;
-    DAE.ReductionIterators iters;
-    DAE.ReductionInfo info;
-    list<DAE.Subscript> subs;
-
- case DAE.ICONST(i)                                then stringHashDjb2(intString(i));
- case DAE.RCONST(r)                                then stringHashDjb2(realString(r));
- case DAE.BCONST(b)                                then stringHashDjb2(boolString(b));
- case DAE.SCONST(s)                                then stringHashDjb2(s);
- case DAE.ENUM_LITERAL(name=path)                  then stringHashDjb2(AbsynUtil.pathString(path));
- case DAE.CREF(componentRef=cr)                    then ComponentReference.hashComponentRef(cr);
-
- case DAE.BINARY(e1,op,e2)                         then 1 + hashExp(e1)+hashOp(op)+hashExp(e2);
- case DAE.UNARY(op,e1)                             then 2 + hashOp(op)+hashExp(e1);
- case DAE.LBINARY(e1,op,e2)                        then 3 + hashExp(e1)+hashOp(op)+hashExp(e2);
- case DAE.LUNARY(op,e1)                            then 4 + hashOp(op)+hashExp(e1);
- case DAE.RELATION(e1,op,e2,_,_)                   then 5 + hashExp(e1)+hashOp(op)+hashExp(e2);
- case DAE.IFEXP(e1,e2,e3)                          then 6 + hashExp(e1)+hashExp(e2)+hashExp(e3);
- case DAE.CALL(path=path,expLst=expl)              then 7 + stringHashDjb2(AbsynUtil.pathString(path))+List.reduce(List.map(expl,hashExp),intAdd);
- case DAE.RECORD(path=path,exps=expl)            then 8 + stringHashDjb2(AbsynUtil.pathString(path))+List.reduce(List.map(expl,hashExp),intAdd);
- case DAE.PARTEVALFUNCTION(path=path,expList=expl) then 9 + stringHashDjb2(AbsynUtil.pathString(path))+List.reduce(List.map(expl,hashExp),intAdd);
- case DAE.ARRAY(array=expl)                        then 10 + List.reduce(List.map(expl,hashExp),intAdd);
- case DAE.MATRIX(matrix=mexpl)                     then 11 + List.reduce(List.map(List.flatten(mexpl),hashExp),intAdd);
- case DAE.RANGE(_,e1,SOME(e2),e3)                  then 12 + hashExp(e1)+hashExp(e2)+hashExp(e3);
- case DAE.RANGE(_,e1,NONE(),e3)                    then 13 + hashExp(e1)+hashExp(e3);
- case DAE.TUPLE(expl)                              then 14 + List.reduce(List.map(expl,hashExp),intAdd);
- case DAE.CAST(_,e1)                               then 15 + hashExp(e1);
- case DAE.ASUB(e1,subs)                            then 16 + hashExp(e1)+List.reduce(list(hashExp(Expression.getSubscriptExp(sub)) for sub in subs),intAdd);
- case DAE.TSUB(e1,i,_)                             then 17 + hashExp(e1)+stringHashDjb2(intString(i));
- case DAE.SIZE(e1,SOME(e2))                        then 18 + hashExp(e1)+hashExp(e2);
- case DAE.SIZE(e1,NONE())                          then 19 + hashExp(e1);
- // case(DAE.CODE(_,_))                             then 20; // TODO: implement hashing of CODE AST
- // case(DAE.EMPTY(scope=_))                        then 21; // TODO: implement hashing of EMTPY (needed ?)
- case DAE.REDUCTION(info,e1,iters)                 then 22 + hashReductionInfo(info)+hashExp(e1)+List.reduce(List.map(iters,hashReductionIter),intAdd);
- // TODO: hashing of all MetaModelica extensions
- else stringHashDjb2(ExpressionBasics.printExpStr(e));
- end matchcontinue;
-end hashExp;
-
-
-protected function hashReductionInfo "help function to hashExp"
-  input DAE.ReductionInfo info;
-  output Integer hash;
-algorithm
-  hash := match info
-  local
-    Absyn.Path path;
-
-    // TODO: complete hasing of all subexpressions
-    case DAE.REDUCTIONINFO(path=path) then 22 + stringHashDjb2(AbsynUtil.pathString(path));
-  end match;
-end hashReductionInfo;
-
-protected protected function hashReductionIter "help function to hashExp"
-  input DAE.ReductionIterator iter;
-  output Integer hash;
-algorithm
-  hash := match iter
-  local
-    String id;
-    DAE.Exp e1,e2;
-
-
-    case DAE.REDUCTIONITER(id,e1,SOME(e2),_)       then 23 + stringHashDjb2(id)+hashExp(e1)+hashExp(e2);
-    case DAE.REDUCTIONITER(id,e1,NONE(),_)         then 24 + stringHashDjb2(id)+hashExp(e1);
-  end match;
-
-end hashReductionIter;
-protected protected function hashOp "help function to hashExp"
-  input DAE.Operator op;
-  output Integer hash;
-algorithm
-  hash := match op
-    local
-      Absyn.Path path;
-
-    case DAE.ADD(_)                                    then 25;
-    case DAE.SUB(_)                                    then 26;
-    case DAE.MUL(_)                                    then 27;
-    case DAE.DIV(_)                                    then 28;
-    case DAE.POW(_)                                    then 29;
-    case DAE.UMINUS(_)                                 then 30;
-    case DAE.UMINUS_ARR(_)                             then 31;
-    case DAE.ADD_ARR(_)                                then 32;
-    case DAE.SUB_ARR(_)                                then 33;
-    case DAE.MUL_ARR(_)                                then 34;
-    case DAE.DIV_ARR(_)                                then 35;
-    case DAE.MUL_ARRAY_SCALAR(_)                       then 36;
-    case DAE.ADD_ARRAY_SCALAR(_)                       then 37;
-    case DAE.SUB_SCALAR_ARRAY(_)                       then 38;
-    case DAE.MUL_SCALAR_PRODUCT(_)                     then 39;
-    case DAE.MUL_MATRIX_PRODUCT(_)                     then 40;
-    case DAE.DIV_ARRAY_SCALAR(_)                       then 41;
-    case DAE.DIV_SCALAR_ARRAY(_)                       then 42;
-    case DAE.POW_ARRAY_SCALAR(_)                       then 43;
-    case DAE.POW_SCALAR_ARRAY(_)                       then 44;
-    case DAE.POW_ARR(_)                                then 45;
-    case DAE.POW_ARR2(_)                               then 46;
-    case DAE.AND(_)                                    then 47;
-    case DAE.OR(_)                                     then 48;
-    case DAE.NOT(_)                                    then 49;
-    case DAE.LESS(_)                                   then 50;
-    case DAE.LESSEQ(_)                                 then 51;
-    case DAE.GREATER(_)                                then 52;
-    case DAE.GREATEREQ(_)                              then 53;
-    case DAE.EQUAL(_)                                  then 54;
-    case DAE.NEQUAL(_)                                 then 55;
-    case DAE.USERDEFINED(path)                         then 56 + stringHashDjb2(AbsynUtil.pathString(path)) ;
-    end match;
-end hashOp;
-
 public function matrixToArray
   input DAE.Exp inMatrix;
   output DAE.Exp outArray;
@@ -12437,5 +12283,82 @@ algorithm
   end match;
 end arrayFirstScalar;
 
-annotation(__OpenModelica_Interface="frontend");
+public function traverseCases
+  "Traverses the expressions in a list of match-expression cases (bottom-up).
+   Moved here from Patternm so Expression does not depend on the instantiation
+   cluster; the body/guard/result are pure DAE expressions."
+  replaceable type A subtypeof Any;
+  input list<DAE.MatchCase> inCases;
+  input FuncExpType func;
+  input A inA;
+  output list<DAE.MatchCase> outCases;
+  output A oa;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    input A inTypeA;
+    output DAE.Exp outExp;
+    output A outA;
+  end FuncExpType;
+algorithm
+  (outCases,oa) := match (inCases, inA)
+    local
+      list<DAE.Pattern> patterns;
+      list<DAE.Element> decls;
+      list<DAE.Statement> body,body1;
+      Option<DAE.Exp> result,result1,patternGuard,patternGuard1;
+      Integer jump;
+      SourceInfo resultInfo,info;
+      list<DAE.MatchCase> cases,cases1;
+      A a;
+
+    case ({}, a) then ({},a);
+    case (DAE.CASE(patterns,patternGuard,decls,body,result,resultInfo,jump,info)::cases, a)
+      algorithm
+        (body1,(_,a)) := DAEUtil.traverseDAEEquationsStmts(body,traverseSubexpressionsHelper,(func,a));
+        (patternGuard1,a) := traverseExpOpt(patternGuard,func,a);
+        (result1,a) := traverseExpOpt(result,func,a);
+        (cases1,a) := traverseCases(cases,func,a);
+        cases := if referenceEq(cases,cases1) and referenceEq(patternGuard,patternGuard1) and referenceEq(result,result1) and referenceEq(body,body1)
+          then inCases
+          else DAE.CASE(patterns,patternGuard1,decls,body1,result1,resultInfo,jump,info)::cases1;
+      then (cases,a);
+  end match;
+end traverseCases;
+
+public function traverseCasesTopDown<A>
+  "Traverses the expressions in a list of match-expression cases (top-down).
+   Moved here from Patternm (see traverseCases)."
+  input list<DAE.MatchCase> inCases;
+  input FuncExpType func;
+  input A inA;
+  output list<DAE.MatchCase> cases = {};
+  output A a = inA;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    input A inTypeA;
+    output DAE.Exp outExp;
+    output Boolean cont;
+    output A outA;
+  end FuncExpType;
+protected
+  list<DAE.Pattern> patterns;
+  list<DAE.Element> decls;
+  list<DAE.Statement> body,body1;
+  Option<DAE.Exp> result,result1,patternGuard,patternGuard1;
+  Integer jump;
+  SourceInfo resultInfo,info;
+  tuple<FuncExpType,A> tpl;
+algorithm
+  for c in inCases loop
+    DAE.CASE(patterns,patternGuard,decls,body,result,resultInfo,jump,info) := c;
+    tpl := (func,a);
+    (body1,(_,a)) := DAEUtil.traverseDAEEquationsStmts(body,traverseSubexpressionsTopDownHelper,tpl);
+    (patternGuard1,a) := traverseExpOptTopDown(patternGuard,func,a);
+    (result1,a) := traverseExpOptTopDown(result,func,a);
+    cases := DAE.CASE(patterns,patternGuard1,decls,body1,result1,resultInfo,jump,info)::cases;
+  end for;
+  cases := listReverse(cases);
+end traverseCasesTopDown;
+
+annotation(__OpenModelica_Interface="frontend_base");
 end Expression;

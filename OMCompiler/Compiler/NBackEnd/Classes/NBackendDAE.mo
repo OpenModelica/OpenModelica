@@ -410,7 +410,7 @@ public
         print(toString(bdae, "(" + name + ")"));
       end if;
 
-      if Util.isSome(eq_filter_opt) then
+      if isSome(eq_filter_opt) then
         debugFollowEquations(bdae, eq_filter_opt, "(" + name + ")");
       end if;
     end for;
@@ -763,7 +763,7 @@ protected
       var.backendinfo := match var.backendinfo
         case BackendInfo.BACKEND_INFO(varKind = VariableKind.FRONTEND_DUMMY()) algorithm
           (varKind, attributes) := lowerVariableKind(var, attributes, var.ty);
-        then BackendInfo.BACKEND_INFO(varKind, attributes, annotations, NONE(), NONE(), NONE(), NONE(), NONE());
+        then BackendInfo.BACKEND_INFO(varKind, attributes, annotations, NONE(), NONE(), NONE(), NONE(), NONE(), NONE());
         else BackendInfo.setAttributes(var.backendinfo, attributes, annotations);
       end match;
 
@@ -781,7 +781,7 @@ protected
   function lowerVariableKind
     "ToDo: Merge this part from old backend conversion:
       /* Consider toplevel inputs as known unless they are protected. Ticket #5591 */
-      false := DAEUtil.topLevelInput(inComponentRef, inVarDirection, inConnectorType, protection);"
+      false := ConnectUtil.topLevelInput(inComponentRef, inVarDirection, inConnectorType, protection);"
     input Variable var;
     output VariableKind varKind;
     input output VariableAttributes attributes;
@@ -1761,7 +1761,7 @@ public
           strongcomponentinfo("Simulation", {bdae.ode, bdae.algebraic, bdae.ode_event, bdae.alg_event});
           // collect strong component info initialization
           strongcomponentinfo("Initialization", {bdae.init});
-          if Util.isSome(bdae.init_0) then
+          if isSome(bdae.init_0) then
             strongcomponentinfo("Initialization (lambda=0)", {Util.getOption(bdae.init_0)});
           end if;
 
@@ -1877,5 +1877,5 @@ public
     end match;
   end checkLoweredCref;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBackendDAE;

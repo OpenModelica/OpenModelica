@@ -58,6 +58,7 @@ import ComponentReferenceBasics;
 import DAEUtil;
 import ExpandableArray;
 import Expression;
+protected import ExpressionBasics;
 import ExpressionDump;
 import ExpressionSolve;
 import ExpressionSimplify;

@@ -82,8 +82,8 @@ protected
   import NFOperator.{MathClassification, SizeClassification};
   import NBVariable.{VariablePointer, VariablePointers, VarData};
 
-  // Old Backend Import (remove once coloring ins ported)
-  import SymbolicJacobian;
+  // Sparsity-pattern graph coloring, shared with the old backend.
+  import Coloring;
 
   // Util imports
   import StringUtil;
@@ -147,7 +147,7 @@ public
           bdae.algebraic := applyToPartitions(bdae.algebraic, bdae.funcMap, knowns, name, func);
           bdae.alg_event := applyToPartitions(bdae.alg_event, bdae.funcMap, knowns, name, func);
           bdae.init := applyToPartitions(bdae.init, bdae.funcMap, knowns, name, func);
-          if Util.isSome(bdae.init_0) then
+          if isSome(bdae.init_0) then
             bdae.init_0 := SOME(applyToPartitions(Util.getOption(bdae.init_0), bdae.funcMap, knowns, name, func));
           end if;
       then bdae;
@@ -178,7 +178,7 @@ public
     input Option<Adjacency.Matrix> full;
     input UnorderedMap<Path, Function> funcMap;
     input String name;
-    input Boolean init;
+    input Boolean staticAsContinuous;
     output Option<Jacobian> jacobian;
   protected
     constant Module.jacobianInterface func = if Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN)
@@ -186,15 +186,15 @@ public
       else jacobianNumeric;
   algorithm
     jacobian := func(
-        name              = name,
-        jacType           = JacobianType.NLS,
-        seedCandidates    = seedCandidates,
-        partialCandidates = partialCandidates,
-        equations         = equations,
-        strongComponents  = SOME(comps),
-        full              = full,
-        funcMap           = funcMap,
-        init              = init
+        name                = name,
+        jacType             = JacobianType.NLS,
+        seedCandidates      = seedCandidates,
+        partialCandidates   = partialCandidates,
+        equations           = equations,
+        strongComponents    = SOME(comps),
+        full                = full,
+        funcMap             = funcMap,
+        staticAsContinuous  = staticAsContinuous
       );
   end nonlinear;
 
@@ -700,8 +700,8 @@ public
       end for;
 
       // call C function (old backend - ToDo: port to new backend!)
-      // colored_cols := SymbolicJacobian.createColoring(cols, rows, sizeRows, sizeCols);
-      colored_cols := SymbolicJacobian.createColoring(rows, cols, sizeCols, sizeRows);
+      // colored_cols := Coloring.createColoring(cols, rows, sizeRows, sizeCols);
+      colored_cols := Coloring.createColoring(rows, cols, sizeCols, sizeRows);
       // get cref based coloring
       cref_colored_cols := arrayCreate(arrayLength(colored_cols), {});
       for i in 1:arrayLength(colored_cols) loop
@@ -709,7 +709,7 @@ public
       end for;
 
       // Row coloring (color partials)
-      colored_rows := SymbolicJacobian.createColoring(cols, rows, sizeRows, sizeCols);
+      colored_rows := Coloring.createColoring(cols, rows, sizeRows, sizeCols);
       cref_colored_rows := arrayCreate(arrayLength(colored_rows), {});
       for i in 1:arrayLength(colored_rows) loop
         cref_colored_rows[i] := list(partials[idx] for idx in colored_rows[i]);
@@ -1071,8 +1071,8 @@ protected
   algorithm
     b := BVariable.checkCref(cref, BVariable.isResidual, sourceInfo())
            or (BVariable.checkCref(cref, BVariable.isStateDerivative, sourceInfo()) and jacType <> JacobianType.OPT_MRF and jacType <> JacobianType.OPT_R0)
-           or (jacType == JacobianType.OPT_LFG and BVariable.checkCref(cref, BVariable.isLagrangeOrPathConstraint, sourceInfo()))
-           or (jacType == JacobianType.OPT_MRF and BVariable.checkCref(cref, BVariable.isMayerOrFinalConstraint, sourceInfo()))
+           or (jacType == JacobianType.OPT_LFG and BVariable.checkCref(cref, BVariable.isLfgFunction, sourceInfo()))
+           or (jacType == JacobianType.OPT_MRF and BVariable.checkCref(cref, BVariable.isMrfFunction, sourceInfo()))
            or (jacType == JacobianType.OPT_R0 and BVariable.checkCref(cref, BVariable.isInitialConstraint, sourceInfo()));
   end isRowInJacobian;
 
@@ -1087,66 +1087,6 @@ protected
       end if;
     end for;
   end getOptimizableVars;
-
-  function getLagrangePathEquations
-    input Partition.Partition part;
-    input VariablePointers variables;
-    output list<Pointer<Variable>> out = {};
-  algorithm
-    for var_ptr in VariablePointers.toList(variables) loop
-      if BVariable.isLagrangeOrPathConstraint(var_ptr) then
-        out := var_ptr :: out;
-      end if;
-    end for;
-  end getLagrangePathEquations;
-
-  function getMayerFinalEquations
-    input Partition.Partition part;
-    input VariablePointers variables;
-    output list<Pointer<Variable>> out = {};
-  algorithm
-    for var_ptr in VariablePointers.toList(variables) loop
-      if BVariable.isMayerOrFinalConstraint(var_ptr) then
-        out := var_ptr :: out;
-      end if;
-    end for;
-  end getMayerFinalEquations;
-
-  function getInitialEquations
-    input Partition.Partition part;
-    input VariablePointers variables;
-    output list<Pointer<Variable>> out = {};
-  algorithm
-    for var_ptr in VariablePointers.toList(variables) loop
-      if BVariable.isInitialConstraint(var_ptr) then
-        out := var_ptr :: out;
-      end if;
-    end for;
-  end getInitialEquations;
-
-  function isLfgVariable
-    "Lfg contains variables: x (states), u (controls) and p (parameters)"
-    input Pointer<Variable> var_ptr;
-    output Boolean out;
-  algorithm
-    out := not (BVariable.isFinalTime(var_ptr) or BVariable.isInitialTime(var_ptr));
-  end isLfgVariable;
-
-  function isMrfVariable
-    "Mrf contains variables: x (states), u (controls) at final time, p (parameters) and tf (final time)"
-    input Pointer<Variable> var_ptr;
-    output Boolean out;
-  algorithm
-    out := not BVariable.isInitialTime(var_ptr);
-  end isMrfVariable;
-
-  function isR0Variable
-    "r0 contains variables: x (states), u (controls) at initial time, p (parameters) and t0 (initial time)"
-    input Pointer<Variable> var_ptr;
-    output Boolean out;
-  algorithm
-    out := not (BVariable.isFinalTime(var_ptr));
-  end isR0Variable;
 
   function getSeedCandidatesDynamicOptimization
     input Partition.Partition part;
@@ -1167,35 +1107,52 @@ protected
 
   function getLfgPartialCandidates
     input Partition.Partition part;
-    input VariablePointers all_knowns;
     output list<Pointer<Variable>> partialCandidates;
+  protected
+    list<Pointer<Variable>> lagrange_vars = {}, derivative_vars = {}, path_vars = {};
   algorithm
-    partialCandidates := VariablePointers.toList(part.unknowns);
-    partialCandidates := listAppend(getLagrangePathEquations(part, all_knowns), partialCandidates);
-    // sort?
+    for var_ptr in VariablePointers.toList(part.unknowns) loop
+      if BVariable.isLagrange(var_ptr) then
+        lagrange_vars := var_ptr :: lagrange_vars;
+      elseif BVariable.isStateDerivative(var_ptr) then
+        derivative_vars := var_ptr :: derivative_vars;
+      elseif BVariable.isPathConstraint(var_ptr) then
+        path_vars := var_ptr :: path_vars;
+      end if;
+    end for;
+    partialCandidates := listReverse(listAppend(lagrange_vars, listAppend(derivative_vars, path_vars)));
   end getLfgPartialCandidates;
 
   function getMrfPartialCandidates
     input Partition.Partition part;
-    input VariablePointers all_knowns;
     output list<Pointer<Variable>> partialCandidates;
+  protected
+    list<Pointer<Variable>> mayer_vars = {}, final_vars = {};
   algorithm
-    partialCandidates := VariablePointers.toList(part.unknowns);
-    partialCandidates := listAppend(getMayerFinalEquations(part, all_knowns), partialCandidates);
-    // sort?
+    for var_ptr in VariablePointers.toList(part.unknowns) loop
+      if BVariable.isMayer(var_ptr) then
+        mayer_vars := var_ptr :: mayer_vars;
+      elseif BVariable.isFinalConstraint(var_ptr) then
+        final_vars := var_ptr :: final_vars;
+      end if;
+    end for;
+    partialCandidates := listReverse(listAppend(mayer_vars, final_vars));
   end getMrfPartialCandidates;
 
   function getR0PartialCandidates
     input Partition.Partition part;
-    input VariablePointers all_knowns;
-    output list<Pointer<Variable>> partialCandidates;
+    output list<Pointer<Variable>> partialCandidates = {};
   algorithm
-    partialCandidates := VariablePointers.toList(part.unknowns);
-    partialCandidates := listAppend(getInitialEquations(part, all_knowns), partialCandidates);
-    // sort?
+    for var_ptr in VariablePointers.toList(part.unknowns) loop
+      if BVariable.isInitialConstraint(var_ptr) then
+        partialCandidates := var_ptr :: partialCandidates;
+      end if;
+    end for;
+    partialCandidates := listReverse(partialCandidates);
   end getR0PartialCandidates;
 
-  // before this is ever called, we should check if the variable / annotation pairs are even valid: e.g. path constraint with final time or so!
+  // TODO: before this is ever called, we should check if the variable / annotation pairs are even valid: e.g. path constraint with final time or so!
+  // add a module for optimization? where we check the model, may do some transformations etc?
   function partJacobianDynamicOptimization
     input Partition.Partition part;
     input VariablePointers all_knowns;
@@ -1207,32 +1164,32 @@ protected
     output Option<Jacobian> R0_jacobian;
   protected
     Partition.Kind kind = Partition.Partition.getKind(part);
-    Boolean init = Partition.kindIsInitial(kind); // TODO for parameter seed?
+    Boolean staticAsContinuous = true;
     VariablePointers seedCandidates, partialCandidates;
   algorithm
-    // Lfg Jacobian (Lagrange (L), ODE (f), Path Constraints (g))
-    partialCandidates := VariablePointers.fromList(getLfgPartialCandidates(part, all_knowns), part.unknowns.scalarized);
-    seedCandidates := VariablePointers.fromList(getSeedCandidatesDynamicOptimization(part, all_knowns, isLfgVariable), partialCandidates.scalarized);
+    // Lfg Jacobian (Lagrange (L), ODE (f), Path Constraints (g)), append all unkowns of partition, as we might need their partials for inner
+    partialCandidates := VariablePointers.fromList(listAppend(getLfgPartialCandidates(part), VariablePointers.toList(part.unknowns)), part.unknowns.scalarized);
+    seedCandidates := VariablePointers.fromList(getSeedCandidatesDynamicOptimization(part, all_knowns, BVariable.isLfgVariable), partialCandidates.scalarized);
 
     // TODO: add _OPT to name?
     LFG_jacobian := func(name, JacobianType.OPT_LFG, seedCandidates, partialCandidates,
-                         part.equations, part.strongComponents, part.adjacencyMatrix, funcMap, init);
+                         part.equations, part.strongComponents, part.adjacencyMatrix, funcMap, staticAsContinuous);
 
-    // Mrf Jacobian (Mayer (M), Final Constraints (rf))
-    partialCandidates := VariablePointers.fromList(getMrfPartialCandidates(part, all_knowns), part.unknowns.scalarized);
-    seedCandidates := VariablePointers.fromList(getSeedCandidatesDynamicOptimization(part, all_knowns, isMrfVariable), partialCandidates.scalarized);
+    // Mrf Jacobian (Mayer (M), Final Constraints (rf)), append all unkowns of partition, as we might need their partials
+    partialCandidates := VariablePointers.fromList(listAppend(getMrfPartialCandidates(part), VariablePointers.toList(part.unknowns)), part.unknowns.scalarized);
+    seedCandidates := VariablePointers.fromList(getSeedCandidatesDynamicOptimization(part, all_knowns, BVariable.isMrfVariable), partialCandidates.scalarized);
 
     // TODO: add _OPT to name?
     MRF_jacobian := func(name, JacobianType.OPT_MRF, seedCandidates, partialCandidates,
-                         part.equations, part.strongComponents, part.adjacencyMatrix, funcMap, init);
+                         part.equations, part.strongComponents, part.adjacencyMatrix, funcMap, staticAsContinuous);
 
-    // r0 Jacobian (Initial Constraints (r0))
-    partialCandidates := VariablePointers.fromList(getR0PartialCandidates(part, all_knowns), part.unknowns.scalarized);
-    seedCandidates := VariablePointers.fromList(getSeedCandidatesDynamicOptimization(part, all_knowns, isR0Variable), partialCandidates.scalarized);
+    // r0 Jacobian (Initial Constraints (r0)), append all unkowns of partition, as we might need their partials
+    partialCandidates := VariablePointers.fromList(listAppend(getR0PartialCandidates(part), VariablePointers.toList(part.unknowns)), part.unknowns.scalarized);
+    seedCandidates := VariablePointers.fromList(getSeedCandidatesDynamicOptimization(part, all_knowns, BVariable.isR0Variable), partialCandidates.scalarized);
 
     // TODO: add _OPT to name?
     R0_jacobian := func(name, JacobianType.OPT_R0, seedCandidates, partialCandidates,
-                        part.equations, part.strongComponents, part.adjacencyMatrix, funcMap, init);
+                        part.equations, part.strongComponents, part.adjacencyMatrix, funcMap, staticAsContinuous);
   end partJacobianDynamicOptimization;
 
   function partJacobian
@@ -1312,7 +1269,7 @@ protected
     Tearing strict;
     list<StrongComponent> residual_comps;
     list<VariablePointer> seed_candidates, residual_vars, inner_vars;
-    constant Boolean init = Partition.kindIsInitial(kind);
+    constant Boolean staticAsContinuous = Partition.kindIsInitial(kind);
   algorithm
     (comp, updated) := match comp
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
@@ -1322,18 +1279,18 @@ protected
         // create seed and partial candidates
         seed_candidates := list(Slice.getT(var) for var in strict.iteration_vars);
         residual_vars   := list(Equation.getResidualVar(Slice.getT(eqn)) for eqn in strict.residual_eqns);
-        inner_vars      := listAppend(list(var for var guard(BVariable.isContinuous(var, init)) in StrongComponent.getVariables(comp)) for comp in strict.innerEquations);
+        inner_vars      := listAppend(list(var for var guard(BVariable.isContinuous(var, staticAsContinuous)) in StrongComponent.getVariables(comp)) for comp in strict.innerEquations);
 
         // update jacobian to take slices (just to have correct inner variables and such)
         strict.jac := nonlinear(
-          seedCandidates    = VariablePointers.fromList(seed_candidates),
-          partialCandidates = VariablePointers.fromList(listAppend(residual_vars, inner_vars)),
-          equations         = EquationPointers.fromList(list(Slice.getT(eqn) for eqn in strict.residual_eqns)),
-          comps             = Array.appendList(strict.innerEquations, residual_comps),
-          full              = full,
-          funcMap           = funcMap,
-          name              = Partition.Partition.kindToString(kind) + (if comp.linear then "_LS_JAC_" else "_NLS_JAC_") + intString(comp.idx),
-          init              = Partition.kindIsInitial(kind));
+          seedCandidates     = VariablePointers.fromList(seed_candidates),
+          partialCandidates  = VariablePointers.fromList(listAppend(residual_vars, inner_vars)),
+          equations          = EquationPointers.fromList(list(Slice.getT(eqn) for eqn in strict.residual_eqns)),
+          comps              = Array.appendList(strict.innerEquations, residual_comps),
+          full               = full,
+          funcMap            = funcMap,
+          name               = Partition.Partition.kindToString(kind) + (if comp.linear then "_LS_JAC_" else "_NLS_JAC_") + intString(comp.idx),
+          staticAsContinuous = staticAsContinuous);
         comp.strict := strict;
 
         if Flags.isSet(Flags.JAC_DUMP) then
@@ -1361,7 +1318,7 @@ protected
     BVariable.checkVar func = getTmpFilterFunction(jacType);
     Real t_start, t_diff, t_sparsity;
   algorithm
-    if Util.isSome(strongComponents) then
+    if isSome(strongComponents) then
       // filter all discrete strong components and differentiate the others
       // todo: mixed algebraic loops should be here without the discrete subsets
       comps := list(comp for comp guard(not StrongComponent.isDiscrete(comp)) in Util.getOption(strongComponents));
@@ -1371,17 +1328,23 @@ protected
 
     t_start := clock();
     // create seed vars
-    VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, map = diff_map, makeVar = BVariable.makeSeedVar, init = init));
+    VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, map = diff_map,
+                                                                     makeVar = BVariable.makeSeedVar, staticAsContinuous = staticAsContinuous));
 
     // create pDer vars (also filters out discrete vars)
     (res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
-    (tmp_vars, _) := List.splitOnTrue(tmp_vars, function BVariable.isContinuous(init = init));
+    (tmp_vars, _) := List.splitOnTrue(tmp_vars, function BVariable.isContinuous(staticAsContinuous = staticAsContinuous));
 
-    for v in res_vars loop makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = false), init = init); end for;
+    for v in res_vars loop
+      makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = false), staticAsContinuous = staticAsContinuous);
+    end for;
+
     res_vars := Pointer.access(pDer_vars_ptr);
 
     pDer_vars_ptr := Pointer.create({});
-    for v in tmp_vars loop makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = true), init = init); end for;
+    for v in tmp_vars loop
+      makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = true), staticAsContinuous = staticAsContinuous);
+    end for;
     tmp_vars := Pointer.access(pDer_vars_ptr);
 
     // Build differentiation argument structure
@@ -1423,7 +1386,7 @@ protected
       seedVars      = VariablePointers.fromList(seed_vars)
     );
 
-    if Util.isSome(full) then
+    if isSome(full) then
       //sparsity := Adjacency.Matrix.fullToSparsity(Util.getOption(full), comps);
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because full adjacency matrix to create sparsity pattern is missing."});
@@ -2201,7 +2164,7 @@ protected
     Real t_start, t_comps, t_sparsity;
   algorithm
     newName := name + "_ADJ";
-    if Util.isSome(strongComponents) then
+    if isSome(strongComponents) then
       comps := list(comp for comp guard(not StrongComponent.isDiscrete(comp)) in Util.getOption(strongComponents));
       primalComps := comps;
       // only allow currently implemented adjoint-capable components
@@ -2226,14 +2189,16 @@ protected
     end if;
 
     // create seed vars
-    for v in VariablePointers.toList(seedCandidates) loop makeVarTraverse(v, newName, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = false), init = init); end for;
+    for v in VariablePointers.toList(seedCandidates) loop
+      makeVarTraverse(v, newName, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = false), staticAsContinuous = staticAsContinuous);
+    end for;
     res_vars := Pointer.access(pDer_vars_ptr);
 
     // create pDer vars (also filters out discrete vars)
     (old_res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
-    (tmp_vars, _) := List.splitOnTrue(tmp_vars, function BVariable.isContinuous(init = init));
+    (tmp_vars, _) := List.splitOnTrue(tmp_vars, function BVariable.isContinuous(staticAsContinuous = staticAsContinuous));
 
-    for v in old_res_vars loop makeVarTraverse(v, newName, seed_vars_ptr, diff_map, BVariable.makeSeedVar, init = init); end for;
+    for v in old_res_vars loop makeVarTraverse(v, newName, seed_vars_ptr, diff_map, BVariable.makeSeedVar, staticAsContinuous = staticAsContinuous); end for;
     seed_vars := Pointer.access(seed_vars_ptr);
 
     if Flags.isSet(Flags.DEBUG_ADJOINT) then
@@ -2243,7 +2208,7 @@ protected
     end if;
 
     pDer_vars_ptr := Pointer.create({});
-    for v in tmp_vars loop makeVarTraverse(v, newName, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = true), init = init); end for;
+    for v in tmp_vars loop makeVarTraverse(v, newName, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = true), staticAsContinuous = staticAsContinuous); end for;
     tmp_vars := Pointer.access(pDer_vars_ptr);
     baseTmpVarCandidates := getBaseTmpVarCandidates(VariablePointers.toList(partialCandidates), tmp_vars, diff_map);
 
@@ -2343,7 +2308,7 @@ protected
     BVariable.checkVar func = getTmpFilterFunction(jacType);
   algorithm
     (res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
-    (tmp_vars, _) := List.splitOnTrue(tmp_vars, function BVariable.isContinuous(init = init));
+    (tmp_vars, _) := List.splitOnTrue(tmp_vars, function BVariable.isContinuous(staticAsContinuous = staticAsContinuous));
 
     varDataJac := BVariable.VAR_DATA_JAC(
       variables     = VariablePointers.fromList({}),
@@ -2387,9 +2352,9 @@ protected
       case JacobianType.DAE     then BVariable.isResidual;
       case JacobianType.LS      then BVariable.isResidual;
       case JacobianType.NLS     then BVariable.isResidual;
-      case JacobianType.OPT_LFG then BVariable.isStateDerivative;
-      case JacobianType.OPT_MRF then BVariable.isStateDerivative;
-      case JacobianType.OPT_R0  then BVariable.isStateDerivative;
+      case JacobianType.OPT_LFG then BVariable.isLfgFunction;
+      case JacobianType.OPT_MRF then BVariable.isMrfFunction;
+      case JacobianType.OPT_R0  then BVariable.isInitialConstraint;
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because jacobian type is not known: " + jacobianTypeString(jacType)});
       then fail();
@@ -2402,7 +2367,7 @@ protected
     input Pointer<list<Pointer<Variable>>> vars_ptr;
     input UnorderedMap<ComponentRef,ComponentRef> map;
     input Func makeVar;
-    input Boolean init;
+    input Boolean staticAsContinuous;
 
     partial function Func
       input output ComponentRef cref;
@@ -2415,7 +2380,7 @@ protected
     Pointer<Variable> diff_ptr, parent, diff_parent;
   algorithm
     // only create seed or pDer var if it is continuous
-    if BVariable.isContinuous(var_ptr, init) then
+    if BVariable.isContinuous(var_ptr, staticAsContinuous) then
       // make the new differentiated variable itself
       (diff, diff_ptr) := makeVar(var.name, name);
       // add $<new>.x variable pointer to the variables
@@ -2464,7 +2429,7 @@ protected
         for t in elst), ", ") + "]";
     end valueToString;
   algorithm
-    if Util.isNone(adjoint_map) then
+    if isNone(adjoint_map) then
       str := "{}";
       return;
     end if;
@@ -2494,8 +2459,8 @@ protected
   protected
     Integer m1 = listLength(itVarPtrs);
     Integer m2 = listLength(resEqnPtrs);
-    list<NBSlice.Slice<NBVariable.VariablePointer>> itVars_s;
-    list<NBSlice.Slice<Pointer<NBEquation.Equation>>> res_s;
+    list<NBSlice<NBVariable.VariablePointer>> itVars_s;
+    list<NBSlice<Pointer<NBEquation.Equation>>> res_s;
     NBTearing.Tearing tearingSet;
   algorithm
     // sanity
@@ -2528,5 +2493,5 @@ protected
     );
   end makeLinearAlgebraicLoop;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBJacobian;

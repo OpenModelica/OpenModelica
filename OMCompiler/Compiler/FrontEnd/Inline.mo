@@ -47,6 +47,7 @@ encapsulated package Inline
 import Absyn;
 import AbsynUtil;
 import AvlSetPath;
+import AvlTreePathFunction;
 import BaseHashTable;
 import DAE;
 import HashTableCG;
@@ -57,11 +58,12 @@ type Functiontuple = tuple<Option<AvlTreePathFunction.Tree>,list<DAE.InlineType>
 
 protected
 
-import Ceval;
 import ClassInf;
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import Config;
 import DAEDump;
+import DAEUtil;
 import Debug;
 import ElementSource;
 import Error;
@@ -74,6 +76,7 @@ import HashTable3;
 import List;
 import SCodeUtil;
 import Types;
+import TypesDump;
 import VarTransform;
 import ClassInfUtil;
 import ExpressionBasics;
@@ -682,9 +685,15 @@ function: inlineExp
   input DAE.Exp inExp;
   input Functiontuple inElementList;
   input DAE.ElementSource inSource;
+  input CevalConstFunc cevalConst;
   output DAE.Exp outExp;
   output DAE.ElementSource outSource;
   output Boolean inlineperformed;
+  partial function CevalConstFunc
+    input DAE.Exp exp;
+    input AvlTreePathFunction.Tree functions;
+    output DAE.Exp oexp;
+  end CevalConstFunc;
 algorithm
   (outExp,outSource,inlineperformed) := match (inExp,inElementList,inSource)
     local
@@ -698,7 +707,7 @@ algorithm
         Expression.isConst(inExp)
       algorithm
         try
-          e_1 := Ceval.cevalSimpleWithFunctionTreeReturnExp(inExp, functionTree);
+          e_1 := cevalConst(inExp, functionTree);
           source := ElementSource.addSymbolicTransformation(source,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e_1)));
           b := true;
         else
@@ -1821,5 +1830,5 @@ algorithm
   end match;
 end getInlineHashTableVarTransform;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_base");
 end Inline;

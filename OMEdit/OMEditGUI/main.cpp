@@ -49,16 +49,34 @@
 
 extern "C" {
 #include "meta/meta_modelica_data.h"
-#include "../../OMCompiler/Compiler/runtime/settingsimpl.h"
 }
 
 #ifdef Q_OS_WIN
 #include <windows.h>
 #endif
 
-#include <QMessageBox>
-
 #ifdef QT_NO_DEBUG
+#include <QMutex>
+
+static QMutex mutex;
+void messageHandler(QtMsgType type, const QMessageLogContext &ctx, const QString &msg)
+{
+  Q_UNUSED(ctx);
+  QMutexLocker lock(&mutex);
+
+  QString line;
+  switch (type) {
+    case QtDebugMsg:    line = QStringLiteral("[QtDebug]  ") + msg; break;
+    case QtInfoMsg:     line = QStringLiteral("[QtInfo] ") + msg; break;
+    case QtWarningMsg:  line = QStringLiteral("[QtWarning] ") + msg; break;
+    case QtCriticalMsg: line = QStringLiteral("[QtCritical] ") + msg; break;
+    case QtFatalMsg:    line = QStringLiteral("[QtFatal]") + msg; break;
+  }
+
+  FILE *out = (type == QtDebugMsg || type == QtInfoMsg) ? stdout : stderr;
+  fprintf(out, "%s\n", qPrintable(line));
+}
+
 #include "CrashReport/CrashReportDialog.h"
 
 #ifdef Q_OS_WIN
@@ -160,7 +178,7 @@ void printOMEditUsage()
   fprintf(stderr, "  --NAPIProfiling=[true|false]  Enable profiling for the new JSON-based API.\n");
   fprintf(stderr, "                                Default: false.\n\n");
 
-  fprintf(stderr, "  --paths                       Dumps the Qt paths in /tmp/qt-paths.txt.\n\n");
+  fprintf(stderr, "  --paths                       Prints the Qt paths.\n\n");
 
   fprintf(stderr, "files                           List of Modelica files (*.mo) to open.\n");
 }
@@ -175,38 +193,26 @@ static int execution_failed()
 
 int main(int argc, char *argv[])
 {
-  // if user asks for --help
-  for(int i = 1; i < argc; i++) {
-    if (strcmp(argv[i], "--help") == 0) {
 #ifdef Q_OS_WIN
-      /// Re-attach to the parent console (the cmd.exe that launched us)
-      if (AttachConsole(ATTACH_PARENT_PROCESS)) {
-        freopen("CONOUT$", "w", stdout);
-        freopen("CONOUT$", "w", stderr);
-      }
+  /// Re-attach to the parent console (the cmd.exe that launched us)
+  if (AttachConsole(ATTACH_PARENT_PROCESS)) {
+    freopen("CONOUT$", "w", stdout);
+    freopen("CONOUT$", "w", stderr);
+  }
 #endif // #ifdef Q_OS_WIN
+#ifdef QT_NO_DEBUG
+  // install the message handler before creating the application object so that we can catch all messages
+  qInstallMessageHandler(messageHandler);
+#endif // #ifdef QT_NO_DEBUG
+  // if user asks for --help
+  for (int i = 1; i < argc; i++) {
+    if (strcmp(argv[i], "--help") == 0) {
       printOMEditUsage();
       return 0;
     }
   }
   MMC_INIT();
   MMC_TRY_TOP()
-#if defined(_MSC_VER) || defined(__MINGW32__)
-  const char *installationDirectoryPath = SettingsImpl__getInstallationDirectoryPath();
-  // make QtWebEngineProcess find the Qt dlls!
-  QString p = QString(installationDirectoryPath).replace("/", "\\");
-  qputenv("PATH", QByteArray(p.toUtf8()) + "\\bin;" + qgetenv("PATH"));
-  // currently the sandbox does not work with qt6-webengine
-  qputenv("QTWEBENGINE_CHROMIUM_FLAGS", qgetenv("QTWEBENGINE_CHROMIUM_FLAGS") + " --no-sandbox");
-  // Qt6Core.dll lives in <install>/bin, so Qt computes its prefix as <install>/ and
-  // looks for QtWebEngine resources/process/locales under <install>/share/qt6/...
-  // We install those under <install>/bin/share/qt6/... instead, so override the
-  // search paths here before any QtWebEngine subprocess is launched.
-  QByteArray qt6Share = QByteArray(installationDirectoryPath) + "/bin/share/qt6";
-  qputenv("QTWEBENGINEPROCESS_PATH",     qt6Share + "/bin/QtWebEngineProcess.exe");
-  qputenv("QTWEBENGINE_RESOURCES_PATH",  qt6Share + "/resources");
-  qputenv("QTWEBENGINE_LOCALES_PATH",    qt6Share + "/translations/qtwebengine_locales");
-#endif
   Q_INIT_RESOURCE(resource_omedit);
 #if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
   QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);

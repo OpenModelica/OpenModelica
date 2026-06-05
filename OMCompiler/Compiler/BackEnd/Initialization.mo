@@ -63,6 +63,7 @@ import BackendVarTransform;
 import BaseHashSet;
 import CheckModel;
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import Config;
 import DoubleEnded;
 import ElementSource;

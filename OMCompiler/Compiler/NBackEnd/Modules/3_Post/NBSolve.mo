@@ -102,10 +102,10 @@ public
         // The order here is important. Whatever comes first is declared the "original", same components afterwards will be alias
         // Has to be the same order as in SimCode!
         bdae.init       := list(solvePartition(par, bdae.funcMap, implicit_index_ptr, duplicate_map, bdae.varData, bdae.eqData) for par in bdae.init);
-        if Util.isSome(bdae.init_0) then
+        if isSome(bdae.init_0) then
           bdae.init_0   := SOME(list(solvePartition(par, bdae.funcMap, implicit_index_ptr, duplicate_map, bdae.varData, bdae.eqData) for par in Util.getOption(bdae.init_0)));
         end if;
-        if Util.isSome(bdae.dae) then
+        if isSome(bdae.dae) then
           bdae.dae      := SOME(list(solvePartition(par, bdae.funcMap, implicit_index_ptr, duplicate_map, bdae.varData, bdae.eqData) for par in Util.getOption(bdae.dae)));
         end if;
         bdae.ode        := list(solvePartition(par, bdae.funcMap, implicit_index_ptr, duplicate_map, bdae.varData, bdae.eqData) for par in bdae.ode);
@@ -138,7 +138,7 @@ public
     ComponentRef name;
     list<Pointer<Equation>> sliced_eqns;
   algorithm
-    if Util.isSome(partition.strongComponents) then
+    if isSome(partition.strongComponents) then
       for comp in Util.getOption(partition.strongComponents) loop
         solved_comps := match UnorderedMap.get(comp, duplicate_map)
           local list<StrongComponent> alias_comps;
@@ -717,7 +717,7 @@ public
     end for;
     body.then_eqns := listReverse(new_then_eqns);
     // if there is an else branch -> go deeper
-    if Util.isSome(body.else_if) then
+    if isSome(body.else_if) then
       (else_if, status, implicit_index) := solveIfBody(Util.getOption(body.else_if), vars, funcMap, kind, implicit_index, slicing_map, iter, varData, eqData);
       body.else_if := SOME(else_if);
     else
@@ -864,7 +864,7 @@ protected
     IfEquationBody else_if;
     Equation eqn;
   algorithm
-    if Util.isSome(body.else_if) then
+    if isSome(body.else_if) then
       (else_if, status, _) := solveSimpleIf(Util.getOption(body.else_if), cref);
       if status == Status.EXPLICIT then
         body.else_if := SOME(else_if);
@@ -1571,7 +1571,7 @@ protected
     else
       // check if the record parents occur (todo: vice versa?)
       record_parent := BVariable.getParent(BVariable.getVarPointer(var_cref, sourceInfo()));
-      if Util.isSome(record_parent) then
+      if isSome(record_parent) then
         (var_cref, solve_status) := getVarSlice(BVariable.getVarName(Util.getOption(record_parent)), eqn);
       else
         // todo: choose best slice of list if more than one.
@@ -1604,5 +1604,5 @@ protected
     end if;
   end solveForVarSlice;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBSolve;

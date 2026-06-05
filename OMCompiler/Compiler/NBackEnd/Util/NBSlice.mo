@@ -52,6 +52,7 @@ protected
   import SimplifyExp = NFSimplifyExp;
   import Subscript = NFSubscript;
   import Type = NFType;
+  import NFPrefixes.Variability;
   import Variable = NFVariable;
 
   // NB imports
@@ -287,7 +288,7 @@ public
     extends filterCref;
     input Boolean init;
   algorithm
-    if BVariable.checkCref(cref, function BVariable.isContinuous(init = init), sourceInfo()) then
+    if BVariable.checkCref(cref, function BVariable.isContinuous(staticAsContinuous = init), sourceInfo()) then
       UnorderedSet.add(cref, acc);
     end if;
   end getContinuous;
@@ -300,7 +301,8 @@ public
   protected
     ComponentRef checkCref = ComponentRef.stripSubscriptsAll(cref);
   algorithm
-    if ComponentRef.isEqual(name, checkCref) or ComponentRef.isEqualRecordChild(name, checkCref) then
+    // check if the cref, the stripped version or the record parent are equal
+    if ComponentRef.isEqual(name, checkCref) or ComponentRef.isEqual(name, cref) or ComponentRef.isEqualRecordChild(name, checkCref) then
       UnorderedSet.add(cref, acc);
     end if;
   end getSliceCandidates;
@@ -1501,6 +1503,7 @@ protected
     list<Integer> scal_lst;
     Integer size_comp;
     list<Boolean> eq_reg;
+    list<tuple<Dimension, Boolean>> lst;
   algorithm
     // 1. get the cref subscripts and dimensions as well as the equation dimensions (they have to match in length)
     subs    := ComponentRef.subscriptsAllWithWholeFlat(cref);
@@ -1527,23 +1530,17 @@ protected
       if size_comp > 0 then
         // bigger equation than variable
         eq_reg := listAppend(regulars, List.fill(false, listLength(eq_dims) - listLength(regulars)));
+        lst := List.zip(eq_dims, eq_reg);
       elseif size_comp < 0 then
         // bigger variable than equation
-        eq_reg := List.filterOnTrue(regulars, Util.id);
-        size_comp := List.compareLength(eq_dims, eq_reg);
-
-        if size_comp > 0 then
-          eq_reg := listAppend(eq_reg, List.fill(false, listLength(eq_dims) - listLength(eq_reg))) annotation(__OpenModelica_DisableListAppendWarning=true);
-        elseif size_comp < 0 then
-          eq_reg := List.firstN(eq_reg, listLength(eq_dims));
-        end if;
+        lst := resolveMixedDimensions(eq_dims, regulars);
       else
-        eq_reg := regulars;
+        lst := List.zip(eq_dims, regulars);
       end if;
 
       // 5. iterate over all equation dimensions and use the map to get the correct dependencies
       key := arrayCreate(listLength(subs), 0);
-      resolveEquationDimensions(List.zip(eq_dims, eq_reg), map2, key, m, modes, Mode.create(eqn_name, {original_cref}, false), Pointer.create(skip_idx));
+      resolveEquationDimensions(lst, map2, key, m, modes, Mode.create(eqn_name, {original_cref}, false), Pointer.create(skip_idx));
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because subscripts, dimensions and dependencies were not of equal length.\n"
         + "variable subscripts(" + intString(listLength(subs)) + "): " + List.toString(subs, Subscript.toString) + "\n"
@@ -1553,6 +1550,28 @@ protected
       fail();
     end if;
   end resolveMixed;
+
+  function resolveMixedDimensions
+    "fills the list with dimensions of size one at the proper place even if they are skipped.
+    allows a function that resolves all configurations of variable and equation sizes.
+    prepares for resolveEquationDimensions() if the variable is bigger than the equation"
+    input list<Dimension> eq_dims;
+    input list<Boolean> regulars;
+    input output list<tuple<Dimension, Boolean>> lst = {};
+  algorithm
+    lst := match (eq_dims, regulars)
+      local
+        Dimension dim;
+        list<Dimension> rest_dim;
+        list<Boolean> rest_reg;
+      // dummy dimension that will be skipped
+      case (_, false :: rest_reg) then (Dimension.fromExp(Expression.INTEGER(1), Variability.CONSTANT), false) :: resolveMixedDimensions(eq_dims, rest_reg);
+      // correct dimension that will be kept
+      case (dim :: rest_dim, true :: rest_reg) then (dim, true) :: resolveMixedDimensions(rest_dim, rest_reg);
+      // excess unfitting is ignored
+      else {};
+    end match;
+  end resolveMixedDimensions;
 
   function resolveAllReduced
     "II.3 all reduced - full dependency per row. scalarize and add to all rows of the equation"
@@ -1922,5 +1941,5 @@ protected
     end match;
   end applyNewFrameRange;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBSlice;

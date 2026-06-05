@@ -62,10 +62,11 @@ import Algorithm;
 import AvlSetString;
 import BaseHashTable;
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import DAE.Connect;
-import DAEUtil;
 import ElementSource;
 import Expression;
+import ExpressionDump;
 import Error;
 import ErrorExt;
 import Flags;
@@ -677,63 +678,6 @@ algorithm
   end matchcontinue;
 end validUniontype;
 
-public function patternStr "Pattern to String unparsing"
-  input DAE.Pattern pattern;
-  output String str;
-algorithm
-  str := matchcontinue pattern
-    local
-      list<DAE.Pattern> pats;
-      list<String> fields,patsStr;
-      DAE.Exp exp;
-      DAE.Pattern pat,head,tail;
-      String id;
-      list<tuple<DAE.Pattern,String,DAE.Type>> namedpats;
-      Absyn.Path name;
-    case DAE.PAT_WILD() then "_";
-    case DAE.PAT_AS(id=id,pat=DAE.PAT_WILD()) then id;
-    case DAE.PAT_AS_FUNC_PTR(id,DAE.PAT_WILD()) then id;
-    case DAE.PAT_SOME(pat)
-      algorithm
-        str := patternStr(pat);
-      then "SOME(" + str + ")";
-    case DAE.PAT_META_TUPLE(pats)
-      algorithm
-        str := stringDelimitList(List.map(pats,patternStr),",");
-      then "(" + str + ")";
-
-    case DAE.PAT_CALL_TUPLE(pats)
-      algorithm
-        str := stringDelimitList(List.map(pats,patternStr),",");
-      then "(" + str + ")";
-
-    case DAE.PAT_CALL(name=name, patterns=pats)
-      algorithm
-        id := AbsynUtil.pathString(name);
-        str := stringDelimitList(List.map(pats,patternStr),",");
-      then stringAppendList({id,"(",str,")"});
-
-    case DAE.PAT_CALL_NAMED(name=name, patterns=namedpats)
-      algorithm
-        id := AbsynUtil.pathString(name);
-        fields := List.map(namedpats, Util.tuple32);
-        patsStr := List.map1r(List.mapMap(namedpats, Util.tuple31, patternStr), stringAppend, "=");
-        str := stringDelimitList(List.threadMap(fields, patsStr, stringAppend), ",");
-      then stringAppendList({id,"(",str,")"});
-
-    case DAE.PAT_CONS(head,tail) then patternStr(head) + "::" + patternStr(tail);
-
-    case DAE.PAT_CONSTANT(exp=exp) then ExpressionBasics.printExpStr(exp);
-    // case DAE.PAT_CONSTANT(SOME(et),exp) then "(" + TypesDump.unparseType(et) + ")" + ExpressionBasics.printExpStr(exp);
-    case DAE.PAT_AS(id=id,pat=pat) then id + " as " + patternStr(pat);
-    case DAE.PAT_AS_FUNC_PTR(id, pat) then id + " as " + patternStr(pat);
-    else
-      algorithm
-        Error.addMessage(Error.INTERNAL_ERROR, {"Patternm.patternStr not implemented correctly"});
-      then "*PATTERN*";
-  end matchcontinue;
-end patternStr;
-
 public function elabMatchExpression
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
@@ -1142,7 +1086,7 @@ algorithm
       then ht;
     case (false, DAE.MATCHEXPRESSION(cases=cases))
       algorithm
-        (_,ht) := traverseCases(cases, addLocalCref, HashTableStringToPath.emptyHashTableSized(hashSize));
+        (_,ht) := Expression.traverseCases(cases, addLocalCref, HashTableStringToPath.emptyHashTableSized(hashSize));
       then ht;
   end match;
 end getUsedLocalCrefs;
@@ -1649,7 +1593,7 @@ algorithm
       then (pat,extra);
     case pat
       algorithm
-        str := "Patternm.traversePattern failed: " + patternStr(pat);
+        str := "Patternm.traversePattern failed: " + ExpressionDump.patternStr(pat);
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end match;
@@ -2312,7 +2256,7 @@ algorithm
         ty := Types.makeRegularTupleFromMetaTupleOnTrue(Types.allTuple(tys),ty);
         ty := Types.getUniontypeIfMetarecordReplaceAllSubtypes(ty);
         (exps,_) := Types.matchTypes(exps, tys, ty, true);
-        cases := fixCaseReturnTypes2(cases,exps,info);
+        cases := Types.fixCaseReturnTypes2(cases,exps,info);
       then (cases,ty);
 
     // 2 different cases, one boxed and one unboxed to handle everything
@@ -2324,7 +2268,7 @@ algorithm
         ty := Types.makeRegularTupleFromMetaTupleOnTrue(Types.allTuple(tys),ty);
         ty := Types.getUniontypeIfMetarecordReplaceAllSubtypes(ty);
         (exps,_) := Types.matchTypes(exps, tys, ty, true);
-        cases := fixCaseReturnTypes2(cases,exps,info);
+        cases := Types.fixCaseReturnTypes2(cases,exps,info);
       then (cases,ty);
 
     else
@@ -2336,45 +2280,6 @@ algorithm
 
   end matchcontinue;
 end fixCaseReturnTypes;
-
-public function fixCaseReturnTypes2
-  input list<DAE.MatchCase> inCases;
-  input list<DAE.Exp> inExps;
-  input SourceInfo inInfo;
-  output list<DAE.MatchCase> outCases;
-algorithm
-  outCases := matchcontinue (inCases,inExps,inInfo)
-    local
-      list<DAE.Pattern> patterns;
-      list<DAE.Element> decls;
-      list<DAE.Statement> body;
-      Option<DAE.Exp> patternGuard;
-      DAE.Exp exp;
-      DAE.MatchCase case_;
-      Integer jump;
-      SourceInfo resultInfo,info2;
-      list<DAE.MatchCase> cases;
-      list<DAE.Exp> exps;
-      SourceInfo info;
-
-    case ({},{},_) then {};
-
-    case (DAE.CASE(patterns,patternGuard,decls,body,SOME(_),resultInfo,jump,info2)::cases,exp::exps,info)
-      algorithm
-        cases := fixCaseReturnTypes2(cases,exps,info);
-      then DAE.CASE(patterns,patternGuard,decls,body,SOME(exp),resultInfo,jump,info2)::cases;
-
-    case ((case_ as DAE.CASE(result=NONE()))::cases,exps,info)
-      algorithm
-        cases := fixCaseReturnTypes2(cases,exps,info);
-      then case_::cases;
-
-    else
-      algorithm
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {"Patternm.fixCaseReturnTypes2 failed"}, inInfo);
-      then fail();
-  end matchcontinue;
-end fixCaseReturnTypes2;
 
 public function traverseConstantPatternsHelper<T>
   input DAE.Exp inExp;
@@ -2449,78 +2354,6 @@ algorithm
     else inPattern;
   end match;
 end traverseConstantPatternsHelper2;
-
-public function traverseCases
-  replaceable type A subtypeof Any;
-  input list<DAE.MatchCase> inCases;
-  input FuncExpType func;
-  input A inA;
-  output list<DAE.MatchCase> outCases;
-  output A oa;
-  partial function FuncExpType
-    input DAE.Exp inExp;
-    input A inTypeA;
-    output DAE.Exp outExp;
-    output A outA;
-  end FuncExpType;
-algorithm
-  (outCases,oa) := match (inCases, inA)
-    local
-      list<DAE.Pattern> patterns;
-      list<DAE.Element> decls;
-      list<DAE.Statement> body,body1;
-      Option<DAE.Exp> result,result1,patternGuard,patternGuard1;
-      Integer jump;
-      SourceInfo resultInfo,info;
-      list<DAE.MatchCase> cases,cases1;
-      A a;
-
-    case ({}, a) then ({},a);
-    case (DAE.CASE(patterns,patternGuard,decls,body,result,resultInfo,jump,info)::cases, a)
-      algorithm
-        (body1,(_,a)) := DAEUtil.traverseDAEEquationsStmts(body,Expression.traverseSubexpressionsHelper,(func,a));
-        (patternGuard1,a) := Expression.traverseExpOpt(patternGuard,func,a);
-        (result1,a) := Expression.traverseExpOpt(result,func,a);
-        (cases1,a) := traverseCases(cases,func,a);
-        cases := if referenceEq(cases,cases1) and referenceEq(patternGuard,patternGuard1) and referenceEq(result,result1) and referenceEq(body,body1)
-          then inCases
-          else DAE.CASE(patterns,patternGuard1,decls,body1,result1,resultInfo,jump,info)::cases1;
-      then (cases,a);
-  end match;
-end traverseCases;
-
-public function traverseCasesTopDown<A>
-  input list<DAE.MatchCase> inCases;
-  input FuncExpType func;
-  input A inA;
-  output list<DAE.MatchCase> cases = {};
-  output A a = inA;
-  partial function FuncExpType
-    input DAE.Exp inExp;
-    input A inTypeA;
-    output DAE.Exp outExp;
-    output Boolean cont;
-    output A outA;
-  end FuncExpType;
-protected
-  list<DAE.Pattern> patterns;
-  list<DAE.Element> decls;
-  list<DAE.Statement> body,body1;
-  Option<DAE.Exp> result,result1,patternGuard,patternGuard1;
-  Integer jump;
-  SourceInfo resultInfo,info;
-  tuple<FuncExpType,A> tpl;
-algorithm
-  for c in inCases loop
-    DAE.CASE(patterns,patternGuard,decls,body,result,resultInfo,jump,info) := c;
-    tpl := (func,a);
-    (body1,(_,a)) := DAEUtil.traverseDAEEquationsStmts(body,Expression.traverseSubexpressionsTopDownHelper,tpl); // TODO: Enable with new tarball
-    (patternGuard1,a) := Expression.traverseExpOptTopDown(patternGuard,func,a);
-    (result1,a) := Expression.traverseExpOptTopDown(result,func,a);
-    cases := DAE.CASE(patterns,patternGuard1,decls,body1,result1,resultInfo,jump,info)::cases;
-  end for;
-  cases := listReverse(cases); // TODO: in-place reverse?
-end traverseCasesTopDown;
 
 protected function filterEmptyPattern
   input tuple<DAE.Pattern,String,DAE.Type> tpl;
@@ -2649,22 +2482,6 @@ algorithm
     outTpl := (cache,true);
   end if;
 end checkLocalShadowing;
-
-public function resultExps
-  input list<DAE.MatchCase> inCases;
-  output list<DAE.Exp> exps;
-algorithm
-  exps := match inCases
-    local
-      DAE.Exp exp; list<DAE.MatchCase> cases;
-    case {} then {};
-    case DAE.CASE(result=SOME(exp))::cases
-      algorithm
-        exps := resultExps(cases);
-      then exp::exps;
-    case _::cases then resultExps(cases);
-  end match;
-end resultExps;
 
 protected function allPatternsWild
   "Returns true if all patterns in the list are wildcards"
@@ -2817,7 +2634,7 @@ algorithm
     case DAE.PAT_WILD() then ();
     case _ guard isInfallibleNoBinding(pat)
       algorithm
-        Error.addSourceMessage(Error.META_PATTERN_INFALLIBLE_NO_BINDING, {patternStr(pat)}, info);
+        Error.addSourceMessage(Error.META_PATTERN_INFALLIBLE_NO_BINDING, {ExpressionDump.patternStr(pat)}, info);
       then ();
     case DAE.PAT_META_TUPLE(patterns=pats)
       algorithm

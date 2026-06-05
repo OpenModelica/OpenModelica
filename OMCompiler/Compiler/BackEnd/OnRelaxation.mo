@@ -53,6 +53,7 @@ import BackendEquation;
 import BackendVariable;
 import BaseHashSet;
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import Differentiate;
 import DumpGraphML;
 import Expression;

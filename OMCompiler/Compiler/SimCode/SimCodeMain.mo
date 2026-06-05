@@ -106,6 +106,9 @@ import SerializeInitXML;
 import SerializeModelInfo;
 import SerializeSparsityPattern;
 import SimCodeUtil;
+import SimCodeFunctionUtil;
+import StateMachineFlatten;
+import SimCodeUtilShared;
 import SimCodeVar;
 import StackOverflow;
 import StringUtil;
@@ -190,7 +193,7 @@ algorithm
     fileDir := ProgramUtil.getFileDir(a_cref, p);
   end if;
   (libs,libPaths,includes, includeDirs, recordDecls, functions, literals) :=
-    SimCodeUtil.createFunctions(p, inBackendDAE.shared.functionTree);
+    SimCodeUtilShared.createFunctions(p, inBackendDAE.shared.functionTree);
   simCode := createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, NONE(),
     inRemovedInitialEquationLst, className, filenamePrefix, fileDir, functions,
     includes, includeDirs, libs, libPaths, p, simSettings, recordDecls,
@@ -238,7 +241,7 @@ algorithm
   a_cref := AbsynUtil.pathToCref(className);
   fileDir := ProgramUtil.getFileDir(a_cref, p);
   (libs, libPaths, includes, includeDirs, recordDecls, functions, literals) :=
-    SimCodeUtil.createFunctions(p, inBackendDAE.shared.functionTree);
+    SimCodeUtilShared.createFunctions(p, inBackendDAE.shared.functionTree);
   (simCode,_) := SimCodeUtil.createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, NONE(), inRemovedInitialEquationLst,
     className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, p, simSettingsOpt, recordDecls, literals,Absyn.FUNCTIONARGS({},{}));
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
@@ -288,7 +291,7 @@ algorithm
   a_cref := AbsynUtil.pathToCref(className);
   fileDir := ProgramUtil.getFileDir(a_cref, p);
 
-  (libs, libPaths, includes, includeDirs, recordDecls, functions, literals) := SimCodeUtil.createFunctions(p, inBackendDAE.shared.functionTree);
+  (libs, libPaths, includes, includeDirs, recordDecls, functions, literals) := SimCodeUtilShared.createFunctions(p, inBackendDAE.shared.functionTree);
    /*Temporary disabled omsicpp
    if Config.simCodeTarget() ==  "omsicpp" then
      fmuVersion:="2.0";
@@ -407,7 +410,7 @@ algorithm
   StackOverflow.clearStacktraceMessages();
   try
     System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
-    (simCode, oldFunctionTree) := NSimCode.SimCode.create(bdae, className, fileNamePrefix, simSettingsOpt);
+    (simCode, oldFunctionTree) := NSimCode.SimCode.create(bdae, className, fileNamePrefix, simSettingsOpt, SymbolTable.getAbsyn());
     if Flags.isSet(Flags.DUMP_SIMCODE) then
       print(NSimCode.SimCode.toString(simCode));
     end if;
@@ -1294,6 +1297,20 @@ algorithm
   end if;
 end translateModelCallBackend;
 
+protected function simSettingsSimflags
+  "Extracts the simulation flag string from the simulation settings, if present.
+   BackendDAE.ExtraInfo stores only this String (not the SimCode.SimulationSettings
+   record) so the backend datatype package does not depend on SimCode."
+  input Option<SimCode.SimulationSettings> inSimSettingsOpt;
+  output Option<String> simflags;
+algorithm
+  simflags := match inSimSettingsOpt
+    local String s;
+    case SOME(SimCode.SIMULATION_SETTINGS(simflags = s)) then SOME(s);
+    else NONE();
+  end match;
+end simSettingsSimflags;
+
 protected function translateModelCallBackendOB
   input TranslateModelKind kind;
   input output FCore.Cache cache;
@@ -1329,7 +1346,7 @@ algorithm
     // old backend
     case graph algorithm
       System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
-      dae := DAEUtil.transformationsBeforeBackend(cache, graph, inDae);
+      dae := DAEUtil.transformationsBeforeBackend(cache, graph, inDae, StateMachineFlatten.stateMachineToDataFlow);
       ExecStat.execStat("Transformations before backend");
 
       if Flags.isSet(Flags.SERIALIZED_SIZE) then
@@ -1348,7 +1365,7 @@ algorithm
       end if;
 
       description := DAEUtil.daeDescription(dae);
-      dlow := BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description, inFileNamePrefix, inSimSettingsOpt));
+      dlow := BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description, inFileNamePrefix, simSettingsSimflags(inSimSettingsOpt)));
 
       GCExt.free(dae);
 
@@ -1453,7 +1470,7 @@ algorithm
 
     case graph algorithm
       System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
-      dae := DAEUtil.transformationsBeforeBackend(cache, graph, inDae);
+      dae := DAEUtil.transformationsBeforeBackend(cache, graph, inDae, StateMachineFlatten.stateMachineToDataFlow);
       ExecStat.execStat("Transformations before backend");
 
       if Flags.isSet(Flags.SERIALIZED_SIZE) then
@@ -1470,7 +1487,7 @@ algorithm
       end if;
 
       description := DAEUtil.daeDescription(dae);
-      dlow := BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,inFileNamePrefix,inSimSettingsOpt));
+      dlow := BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,inFileNamePrefix,simSettingsSimflags(inSimSettingsOpt)));
 
       GCExt.free(dae);
 
@@ -1640,7 +1657,7 @@ algorithm
     // create SimCode functions
     a_cref := AbsynUtil.pathToCref(className);
     fileDir := ProgramUtil.getFileDir(a_cref, p);
-    (libs, libPaths, includes, includeDirs, recordDecls, functions, literals) := SimCodeUtil.createFunctions(p, inBackendDAE.shared.functionTree);
+    (libs, libPaths, includes, includeDirs, recordDecls, functions, literals) := SimCodeUtilShared.createFunctions(p, inBackendDAE.shared.functionTree);
 
     // create external objects
     extObjInfo := SimCodeUtil.createExtObjInfo(inBackendDAE.shared);
@@ -1831,7 +1848,7 @@ algorithm
     // crefToSimVarHT := SimCodeUtil.createCrefToSimVarHT(modelInfo);
 
     if stringEqual(Config.simCodeTarget(), "Cpp") then
-      (varToArrayIndexMapping, varToIndexMapping) := SimCodeUtil.createVarToArrayIndexMapping(modelInfo);
+      (varToArrayIndexMapping, varToIndexMapping) := SimCodeUtilShared.createVarToArrayIndexMapping(modelInfo);
       (crefToClockIndexHT, _) := List.fold(listReverse(inBackendDAE.eqs), SimCodeUtil.collectClockedVars, (HashTable.emptyHashTable(), 1));
     else
       varToArrayIndexMapping := HashTableCrIListArray.emptyHashTable();

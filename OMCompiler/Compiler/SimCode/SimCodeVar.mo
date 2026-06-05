@@ -79,7 +79,8 @@ uniontype SimVars "Container for metadata about variables in a Modelica model."
 end SimVars;
 
 public constant SimVars emptySimVars = SIMVARS({}, {}, {}, {}, {}, {}, {}, {},
-  {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {});
+  {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+  {}, {});
 
 public uniontype SimVar "Information about a variable in a Modelica model."
   record SIMVAR
@@ -151,5 +152,5 @@ uniontype Variability
   record CONTINUOUS end CONTINUOUS;
 end Variability;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="simcode_types");
 end SimCodeVar;

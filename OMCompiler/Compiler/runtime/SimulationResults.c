@@ -89,6 +89,7 @@ static void SimulationResultsImpl__close(SimulationResult_Globals* simresglob)
   simresglob->curFormat = UNKNOWN_PLOT;
   if (simresglob->curFileName) free(simresglob->curFileName);
   simresglob->curFileName = NULL;
+  simresglob->mtime = 0;
 }
 
 static PlotFormat SimulationResultsImpl__openFile(const char *filename, SimulationResult_Globals* simresglob)
@@ -269,9 +270,7 @@ static void* makeOMCStyle(const char *var, int omcStyle)
   }
   res1 = openmodelicaStyleVariableName(var);
   res2 = _replace(res1 ? res1 : var, " ", "");
-  if (res1 == NULL) {
-    free(res1);
-  }
+  free(res1);
   return mmc_mk_scon(res2);
 }
 
@@ -440,12 +439,10 @@ static inline int intMax(int a, int b)
 
 static int endsWith(const char *s, const char *suffix)
 {
-  s = strrchr(s, *suffix);
-  if (s != NULL) {
-    return 0==strcmp(s, suffix);
-  } else {
-    return 0;
-  }
+  size_t len_s = strlen(s);
+  size_t len_suffix = strlen(suffix);
+  if (len_suffix > len_s) return 0;
+  return (strcmp(s + len_s - len_suffix, suffix) == 0);
 }
 int SimulationResults_filterSimulationResults(const char *inFile, const char *outFile, void *vars, int numberOfIntervals, int removeDescription, int readAllVars)
 {
@@ -653,6 +650,7 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
       double *timevals = omc_matlab4_read_vals(&simresglob.matReader, 1);
       int last_found=0;
       int nevents=0, neventpoints=0;
+      j=0;
       for (i=1; i<numberOfIntervals; i++) {
         double t = start + (stop-start)*((double)i)/numberOfIntervals;
         while (timevals[j]<=t) {

@@ -38,6 +38,7 @@
 
 
 #include <string>
+#include <string_view>
 #include <stack>
 
 #if !defined(__has_include)
@@ -83,9 +84,9 @@ extern "C" {
   {
     string str(source_str);
     size_t len;
-    FindAndReplace(str,string(search_str),string(replace_str));
+    FindAndReplace(str,std::string(search_str),std::string(replace_str));
 
-    len = strlen(str.c_str());
+    len = str.size();
     char* res = (char *)omc_alloc_interface.malloc_atomic(len + 1);
     strcpy(res, str.c_str());
     res[len] = '\0';
@@ -99,16 +100,17 @@ static inline size_t actualByteSize(size_t sz)
   /* GC uses 2 words as the minimum allocation unit: a granule
    * GC also uses up 1 byte of the allocation for its internal use.
    */
-  size_t res = GC_GRANULE_BYTES*((sz+GC_GRANULE_BYTES-1+1) / GC_GRANULE_BYTES);
-  return res;
+  size_t granules = (sz + GC_GRANULE_BYTES - 1) / GC_GRANULE_BYTES;
+  return granules * GC_GRANULE_BYTES;;
 }
+
 #include <stdio.h>
 double SystemImpl__getSizeOfData(void *data, double *raw_size_res, double *nonshared_str_res)
 {
   size_t sz=0, raw_sz=0, nonshared_str_sz=0;
-  std::unordered_map<void*,void*> handled;
+  std::unordered_set<void*> handled;
   std::stack<void*> work;
-  std::unordered_set<std::string> strings;
+  std::unordered_set<std::string_view> strings;
   work.push(data);
   while (!work.empty()) {
     void *item = work.top();
@@ -116,7 +118,7 @@ double SystemImpl__getSizeOfData(void *data, double *raw_size_res, double *nonsh
     if (handled.find(item) != handled.end()) {
       continue;
     }
-    handled[item] = 0;
+    handled.insert(item);
     if (MMC_IS_IMMEDIATE(item)) {
       /* Uses up zero space */
       continue;
@@ -134,11 +136,11 @@ double SystemImpl__getSizeOfData(void *data, double *raw_size_res, double *nonsh
     if (MMC_HDRISSTRING(hdr)) {
       size_t t = sizeof(void*)+MMC_STRLEN(item)+1;
       size_t actual = actualByteSize(t);
-      std::string s(MMC_STRINGDATA(item));
-      if (strings.find(s) != strings.end()) {
+      const char* cstr = MMC_STRINGDATA(item);
+      if (strings.find(cstr) != strings.end()) {
         nonshared_str_sz += actual;
       } else {
-        strings.insert(s);
+        strings.insert(cstr);
       }
       raw_sz += t;
       sz += actual;

@@ -37,7 +37,7 @@ encapsulated package AvlSetCR
   import BaseAvlSet;
   extends BaseAvlSet;
   import DAE;
-  import ComponentReference;
+  import ComponentReferenceBasics;
   redeclare type Key = DAE.ComponentRef;
   redeclare function extends keyStr
   algorithm
@@ -47,5 +47,5 @@ encapsulated package AvlSetCR
   algorithm
     outResult := ComponentReferenceBasics.crefCompareGenericNotAlphabetic(inKey1, inKey2);
   end keyCompare;
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_dump");
 end AvlSetCR;

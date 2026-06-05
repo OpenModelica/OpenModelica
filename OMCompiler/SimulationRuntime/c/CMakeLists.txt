@@ -153,6 +153,11 @@ if(OM_OMC_ENABLE_PRIMME)
   target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::primme)
 endif()
 
+if(OM_OMC_ENABLE_COLPACK)
+  target_compile_definitions(SimulationRuntimeC PRIVATE OMC_HAVE_COLPACK)
+  target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::colpack)
+endif()
+
 target_include_directories(SimulationRuntimeC
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
 )

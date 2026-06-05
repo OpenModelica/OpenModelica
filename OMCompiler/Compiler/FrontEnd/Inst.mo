@@ -120,6 +120,7 @@ import Builtin;
 import Ceval;
 import ConnectUtil;
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import Config;
 import DAEUtil;
 import Debug;

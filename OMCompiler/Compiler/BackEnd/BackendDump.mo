@@ -64,6 +64,7 @@ import BackendEquation;
 import BackendVariable;
 import BaseHashSet;
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import DAEDump;
 import DAEDumpTypes;
 import DAEUtil;
@@ -73,6 +74,7 @@ import DumpHTML;
 import ElementSource;
 import Error;
 import Expression;
+protected import ExpressionBasics;
 import ExpressionDump;
 import Flags;
 import GraphvizDump;
@@ -2872,7 +2874,7 @@ algorithm
     case BackendDAE.CLOCKED_EQUATION(i)
       algorithm
         cr := DAE.CREF_IDENT(BackendDAE.WHENCLK_PRREFIX + intString(i), DAE.T_CLOCK_DEFAULT, {});
-      then "clocked(" + DAE.ComponentReferenceBasics.printComponentRefStr(cr) + ")";
+      then "clocked(" + ComponentReferenceBasics.printComponentRefStr(cr) + ")";
     else
       algorithm
         Error.addInternalError("function equationKindString failed", sourceInfo());

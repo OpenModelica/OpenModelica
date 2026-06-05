@@ -349,19 +349,6 @@ void QwtPlotScaleItem::draw( QPainter* painter,
 {
     QwtScaleDraw* sd = m_data->scaleDraw;
 
-    if ( m_data->scaleDivFromAxis )
-    {
-        const QwtInterval interval =
-            m_data->scaleInterval( canvasRect, xMap, yMap );
-
-        if ( interval != sd->scaleDiv().interval() )
-        {
-            QwtScaleDiv scaleDiv = sd->scaleDiv();
-            scaleDiv.setInterval( interval );
-            sd->setScaleDiv( scaleDiv );
-        }
-    }
-
     QPen pen = painter->pen();
     pen.setStyle( Qt::SolidLine );
     painter->setPen( pen );
@@ -425,8 +412,22 @@ void QwtPlotScaleItem::draw( QPainter* painter,
         sd->setTransformation( transform );
     }
 
-    painter->setFont( m_data->font );
+    if ( m_data->scaleDivFromAxis )
+    {
+        const QwtInterval interval =
+            m_data->scaleInterval( canvasRect, xMap, yMap );
 
+        const QwtInterval oldInterval( sd->scaleMap().s1(), sd->scaleMap().s1() );
+
+        if ( interval != oldInterval )
+        {
+            QwtScaleDiv scaleDiv = sd->scaleDiv();
+            scaleDiv.setInterval( interval );
+            sd->setScaleDiv( scaleDiv );
+        }
+    }
+
+    painter->setFont( m_data->font );
     sd->draw( painter, m_data->palette );
 }
 

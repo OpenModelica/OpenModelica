@@ -96,5 +96,5 @@ public
     part.strongComponents := Util.applyOption(part.strongComponents, function Array.filter(fun = StrongComponent.isDummy));
   end removeDummyComponents;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBEvaluation;

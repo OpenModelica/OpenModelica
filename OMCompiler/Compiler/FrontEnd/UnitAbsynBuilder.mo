@@ -46,6 +46,7 @@ public import AbsynUtil;
 protected import Array;
 protected import BaseHashTable;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import DAEUtil;
 protected import Expression;
 protected import ExpressionBasics;

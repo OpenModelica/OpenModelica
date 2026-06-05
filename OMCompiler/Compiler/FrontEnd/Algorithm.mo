@@ -56,6 +56,7 @@ public import DAE;
 public import SCode;
 
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import DAEUtil;
 protected import Debug;
 protected import ElementSource;
@@ -956,5 +957,5 @@ algorithm
   end match;
 end isNotDummyStatement;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_base");
 end Algorithm;

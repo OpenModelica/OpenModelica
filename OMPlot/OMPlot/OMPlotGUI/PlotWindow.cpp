@@ -226,31 +226,31 @@ void PlotWindow::initializePlot(QStringList arguments)
   if (plotRightYAxis.size() > 0) {
     QStringList variablesPlotted;
     QString label;
-    int i = 0; 
+    int i = 0;
     while (i < variablesToRead.size()) {
-        if (isPlotParametric()) {
-            label = variablesToRead[i] + "|" + variablesToRead[i+1];
-            i += 2;
-        } else {
-            label = getXLabel() + "|" + variablesToRead[i];
-            i++;
-        }
-        variablesPlotted.append(label);
+      if (isPlotParametric()) {
+        label = variablesToRead[i] + "|" + variablesToRead[i+1];
+        i += 2;
+      } else {
+        label = getXLabel() + "|" + variablesToRead[i];
+        i++;
+      }
+      variablesPlotted.append(label);
     }
     foreach (PlotCurve* curve, getPlot()->getPlotCurvesList()) {
-        label = curve->getXVariable() + "|" + curve->getYVariable();
-        int index = variablesPlotted.indexOf(label);
-        if (isPlotAll()) {
-            // if all variables are plotted, use first value of plotRightYAxis
-            curve->setYAxisRight(plotRightYAxis[0]);
-        } else if (index < 0) {
-            continue; // curve not specified at command line
-        } else if (plotRightYAxis.size() == 1) {
-            // if only one axis was specified, apply to all newly plotted curves
-            curve->setYAxisRight(plotRightYAxis[0]);
-        } else {
-            curve->setYAxisRight(plotRightYAxis.value(index, false));
-        }
+      label = curve->getXVariable() + "|" + curve->getYVariable();
+      int index = variablesPlotted.indexOf(label);
+      if (isPlotAll()) {
+        // if all variables are plotted, use first value of plotRightYAxis
+        curve->setYAxisRight(plotRightYAxis[0]);
+      } else if (index < 0) {
+        continue; // curve not specified at command line
+      } else if (plotRightYAxis.size() == 1) {
+        // if only one axis was specified, apply to all newly plotted curves
+        curve->setYAxisRight(plotRightYAxis[0]);
+      } else {
+        curve->setYAxisRight(plotRightYAxis.value(index, false));
+      }
     }
     updatePlot();
   }
@@ -2037,7 +2037,7 @@ bool PlotWindow::toggleSign(PlotCurve *pPlotCurve, bool checked)
 
 void PlotWindow::setYAxisRight(PlotCurve* pPlotCurve, bool right) {
     if (pPlotCurve) {
-		pPlotCurve->setYAxisRight(right);
+      pPlotCurve->setYAxisRight(right);
     }
 }
 

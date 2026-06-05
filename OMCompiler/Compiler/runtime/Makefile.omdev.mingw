@@ -48,6 +48,6 @@ SHELL	= /bin/sh
 CC	= gcc
 CXX = g++
 override CFLAGS += $(CORBA_C_CLFAGS) $(USE_METIS) -Werror=implicit-function-declaration -Wall -Wno-unused-variable -I$(OMC_CONFIG_INC) -I$(top_builddir)/SimulationRuntime/c -I$(top_builddir)/SimulationRuntime/c/simulation/results -I$(top_builddir)/SimulationRuntime/c/util -I$(top_builddir)/SimulationRuntime/c/meta -I$(top_builddir)/SimulationRuntime/c/meta/gc $(CORBAINCL) $(GCINCLUDE) -I$(FMIINCLUDE) -I$(CJSONINCLUDE) -I$(GRAPHINCLUDE) -I$(SQLITE3INCLUDE) -I$(ZMQINCLUDE) -I"$(TOP_DIR)/3rdParty/zlib" -I"$(TOP_DIR)/3rdParty/libffi/install/include/" -DWIN32_LEAN_AND_MEAN
-override CXXFLAGS += -std=c++11 $(CFLAGS)
+override CXXFLAGS += -std=c++17 $(CFLAGS)
 
 include Makefile.common
