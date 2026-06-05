@@ -563,6 +563,8 @@ constant DebugFlag DEBUG_ADJOINT = DEBUG_FLAG(197, "debugAdjoint", false,
   Gettext.gettext("Dumps debug output for the adjoint differentiation process in the new backend."));
 constant DebugFlag FLOW_ALIAS_ELIMINATION = DEBUG_FLAG(198, "flowAliasElimination", false,
   Gettext.gettext("Enables simple alias elimination of flow variables in stream connectors."));
+constant DebugFlag DUMP_CHECK_MODEL = DEBUG_FLAG(199, "dumpCheckModel", false,
+  Gettext.gettext("Dumps the variables and equations found by checkModel."));
 
 public
 // CONFIGURATION FLAGS
