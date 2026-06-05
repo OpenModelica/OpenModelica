@@ -1462,7 +1462,7 @@ public
       end for;
       jacobian := Pointer.access(system.jacobian);
       if isSome(jacobian) then
-        simJac := createOldSimJac(Util.getOption(jacobian), system.residual);
+        simJac := createOldSimJac(Util.getOption(jacobian));
       end if;
       oldSystem := OldSimCode.LINEARSYSTEM(
         index                 = system.index,
@@ -1481,25 +1481,23 @@ public
     end convert;
 
     function createOldSimJac
-      "Convert the SimJacobian to the old simJac structure, which is needed e.g. for the nnz field
-       in linear systems static initialization ('initialLinearSystem(int nLinearSystems, LINEAR_SYSTEM_DATA* linearSystemData)').
-       Probably, this field is obsolete once a new codegen for NB exists."
+      "I have no clue what must be done here! TODO: the jacobian is already converted by
+       jacobianMatrix = Util.applyOption(jacobian, SimJacobian.convert), so what even is this?
+       see SimCodeUtil 3642ff + jacToSimjac() function."
       input SimJacobian jacobian;
-      input list<Block> residual;
       output list<tuple<Integer, Integer, OldSimCode.SimEqSystem>> simJac = {};
     protected
       Integer col;
       list<Integer> rows;
-      list<Block> residual_lst = if listEmpty(residual) then {Block.RESIDUAL(-1, -1, Expression.REAL(0.0), DAE.emptyElementSource, EquationAttributes.default(EquationKind.CONTINUOUS, false))} else residual;
-      Block blck;
+      OldSimCode.SimEqSystem dummyEq;
     algorithm
       () := match jacobian
         case SimJacobian.SIM_JAC() algorithm
+          dummyEq := OldSimCode.SES_RESIDUAL(0, 0, DAE.RCONST(0.0), DAE.emptyElementSource, EquationAttributes.convert(EquationAttributes.default(EquationKind.CONTINUOUS, false)));
           for tpl in jacobian.sparsity loop
             (col, rows) := tpl;
             for row in rows loop
-              blck := listGet(residual_lst, min(row + 1, listLength(residual_lst)));
-              simJac := (row, col, Block.convert(blck)) :: simJac;
+              simJac := (row - 1, col - 1, dummyEq) :: simJac;
             end for;
           end for;
         then ();
