@@ -46,7 +46,6 @@
 #include <QDialogButtonBox>
 #include <QGroupBox>
 #include <QTableWidget>
-#include <QStackedWidget>
 #include <QPushButton>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -57,7 +56,7 @@ class LibraryTreeItem;
 class SolverSettingsDialog : public QDialog
 {
 public:
-  SolverSettingsDialog(ModelWidget *pModelWidget, const QString &solverName, const QString &method, const QJsonObject &params, QWidget *pParent = nullptr);
+  SolverSettingsDialog(const QString &solverName, const QString &method, const QJsonObject &solveSettings, QWidget *pParent = nullptr);
   QJsonObject getSolverSettings() const;
 private:
   QString mMethod;
@@ -79,12 +78,16 @@ class SystemSimulationInformationWidget : public QWidget
 public:
   SystemSimulationInformationWidget(ModelWidget *pModelWidget);
   bool setSystemSimulationInformation(bool pushOnStack);
-  static bool isVariableStep(const QString &method);
+  static bool isVariableStepSizeSolver(const QString &method);
+  static QStringList variableStepSizeSolverKeys();
+  static QStringList fixedStepSizeSolverKeys();
+  static QStringList solverSettingsKeys(const QString &method);
 private:
   // helpers
   void addSolverRow(const QString &name, const QString &method, const QJsonObject &params);
   void populateComponentAssignments(LibraryTreeItem *pLibraryTreeItem, const QJsonArray &solvers, const QJsonObject &assignments);
   void populateSolverCombos();
+  QJsonObject fetchSolverParams(const QString &method, const QString &solverName = QString());
   ModelWidget * mpModelWidget;
   int mCurrentSolverRow = -1;
 

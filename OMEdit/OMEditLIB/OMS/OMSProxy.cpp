@@ -1104,7 +1104,8 @@ bool OMSProxy::getSolverSettings(const QString &cref, QJsonObject &settings)
   QJsonObject reply;
   if (!sendZmqCommand(obj, reply))
     return false;
-  settings = reply["settings"].toObject();
+  settings["solvers"] = reply["solvers"].toArray();
+  settings["assignments"] = reply["assignments"].toObject();
   return true;
 }
 
@@ -1113,8 +1114,9 @@ bool OMSProxy::setSolverSettings(const QString &cref, const QJsonObject &setting
   QJsonObject obj, args;
   obj["method"] = "setSolverSettings";
   obj["model"]  = cref.split('.').first();
-  args["settings"] = settings;
-  obj["args"]   = args;
+  args["solvers"] = settings["solvers"];
+  args["assignments"] = settings["assignments"];
+  obj["args"]  = args;
   QJsonObject reply;
   return sendZmqCommand(obj, reply);
 }
@@ -1257,11 +1259,13 @@ bool OMSProxy::getTolerance(QString cref, double &relativeTolerance)
  * \param maximumStepSize
  * \return
  */
-bool OMSProxy::getVariableStepSize(QString cref, double& initialStepSize, double& minimumStepSize, double& maximumStepSize)
+bool OMSProxy::getVariableStepSize(QString cref, QString solverName, double& initialStepSize, double& minimumStepSize, double& maximumStepSize)
 {
-  QJsonObject obj;
+  QJsonObject obj, args;
   obj["method"] = "getVariableStepSize";
   obj["model"]  = cref.split('.').first();
+  args["solver"] = solverName;
+  obj["args"] = args;
   QJsonObject reply;
   if (!sendZmqCommand(obj, reply))
     return false;
@@ -1445,7 +1449,6 @@ bool OMSProxy::saveModel(QString cref, QString filename)
   obj["model"]  = cref.split('.').first();
   args["file"] = filename;
   obj["args"] = args;
-  qDebug() << "save model" << QJsonDocument(obj).toJson(QJsonDocument::Compact);
   QJsonObject reply;
   return sendZmqCommand(obj, reply);
 }

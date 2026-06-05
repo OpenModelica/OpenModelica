@@ -139,7 +139,7 @@ public:
   bool getSubModelPath(QString cref, QString* pPath);
   bool getSystemType(QString cref, oms_system_enu_t *pType);
   bool getTolerance(QString cref, double& relativeTolerance);
-  bool getVariableStepSize(QString cref, double& initialStepSize, double& minimumStepSize, double& maximumStepSize);
+  bool getVariableStepSize(QString cref, QString solverName, double& initialStepSize, double& minimumStepSize, double& maximumStepSize);
   bool instantiate(QString cref);
   bool initialize(QString cref);
   bool exportSnapshot(QString cref, QString &pContents);
