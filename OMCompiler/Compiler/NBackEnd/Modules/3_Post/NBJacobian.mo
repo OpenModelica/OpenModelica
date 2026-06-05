@@ -1126,7 +1126,6 @@ protected
     Differentiate.DifferentiationArguments diffArguments;
     Pointer<Integer> idx = Pointer.create(0);
     Pointer<Integer> lsJacIdx = Pointer.create(0);
-    Boolean freshVars = System.stringFind(name, "_LS_JAC_") >= 0;
 
     list<Pointer<Variable>> all_vars, unknown_vars, aux_vars, alias_vars, depend_vars, res_vars, tmp_vars, seed_vars;
     BVariable.VarData varDataJac;
@@ -1145,35 +1144,22 @@ protected
     end if;
 
     // create seed vars
-    if freshVars then
-      VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, map = diff_map,
-                                                                       makeVar = BVariable.makeFreshSeedVar, staticAsContinuous = staticAsContinuous));
-    else
-      VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, map = diff_map,
-                                                                       makeVar = BVariable.makeSeedVar, staticAsContinuous = staticAsContinuous));
-    end if;
+    VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, map = diff_map,
+                                                                     makeVar = BVariable.makeSeedVar, staticAsContinuous = staticAsContinuous));
 
     // create pDer vars (also filters out discrete vars)
     (res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
     (tmp_vars, _) := List.splitOnTrue(tmp_vars, function BVariable.isContinuous(staticAsContinuous = staticAsContinuous));
 
     for v in res_vars loop
-      if freshVars then
-        makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makeFreshPDerVar(isTmp = false), staticAsContinuous = staticAsContinuous);
-      else
-        makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = false), staticAsContinuous = staticAsContinuous);
-      end if;
+      makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = false), staticAsContinuous = staticAsContinuous);
     end for;
 
     res_vars := Pointer.access(pDer_vars_ptr);
 
     pDer_vars_ptr := Pointer.create({});
     for v in tmp_vars loop
-      if freshVars then
-        makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makeFreshPDerVar(isTmp = true), staticAsContinuous = staticAsContinuous);
-      else
-        makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = true), staticAsContinuous = staticAsContinuous);
-      end if;
+      makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = true), staticAsContinuous = staticAsContinuous);
     end for;
     tmp_vars := Pointer.access(pDer_vars_ptr);
 

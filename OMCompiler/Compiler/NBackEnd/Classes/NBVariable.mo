@@ -1464,45 +1464,6 @@ function isJacobianResultVar
     end match;
   end makeSeedVar;
 
-  function makeFreshSeedVar
-    "Creates a seed variable pointer without reusing an existing seed partner.
-    This is needed for nested Jacobians where the same original variable can be
-    seeded in multiple independent local Jacobian matrices."
-    input output ComponentRef cref    "old component reference to new component reference";
-    input String name                 "name of the matrix this seed belongs to";
-    output Pointer<Variable> var_ptr  "pointer to new variable";
-  algorithm
-    () := match ComponentRef.node(cref)
-      local
-        InstNode qual;
-        Pointer<Variable> old_var_ptr;
-        Variable var;
-        VariableKind varKind;
-
-      case qual as InstNode.VAR_NODE() algorithm
-        old_var_ptr := getVarPointer(cref, sourceInfo());
-        qual.name := SEED_STR + "_" + name;
-        cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
-        var := fromCref(cref, NFAttributes.IMPL_DISCRETE_ATTR);
-
-        varKind := match getVarKind(old_var_ptr)
-          case varKind as VariableKind.RECORD() algorithm
-            varKind.children := {};
-          then varKind;
-          else VariableKind.SEED_VAR();
-        end match;
-        var.backendinfo := BackendInfo.setVarKind(var.backendinfo, varKind);
-        var.backendinfo := BackendInfo.setVarSeed(var.backendinfo, SOME(old_var_ptr));
-
-        (var_ptr, cref) := makeVarPtrCyclic(var, cref);
-      then ();
-
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref)});
-      then fail();
-    end match;
-  end makeFreshSeedVar;
-
   function makePDerVar
     "Creates a partial derivative variable pointer from a cref. Used in NBJacobian and NBHessian
     to represent generic gradient equations.
@@ -1554,46 +1515,6 @@ function isJacobianResultVar
       then fail();
     end match;
   end makePDerVar;
-
-  function makeFreshPDerVar
-    "Creates a partial derivative variable pointer without reusing an existing
-    pDer partner. This keeps nested Jacobian local variables named after their
-    owning matrix instead of the first matrix that differentiated the variable."
-    input output ComponentRef cref    "old component reference to new component reference";
-    input String name                 "name of the matrix this partial derivative belongs to";
-    input Boolean isTmp               "sets variable kind for tmpVar or resultVar accordingly";
-    output Pointer<Variable> var_ptr  "pointer to new variable";
-  algorithm
-    () := match ComponentRef.node(cref)
-      local
-        InstNode qual;
-        Pointer<Variable> res_ptr;
-        VariableKind varKind;
-        Variable var;
-
-      case qual as InstNode.VAR_NODE() algorithm
-        res_ptr := getVarPointer(cref, sourceInfo());
-        qual.name := PARTIAL_DERIVATIVE_STR + "_" + name;
-        cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
-        var := fromCref(cref, Variable.attributes(Pointer.access(res_ptr)));
-
-        varKind := match getVarKind(res_ptr)
-          case varKind as VariableKind.RECORD() algorithm
-            varKind.children := {};
-          then varKind;
-          else if isTmp then VariableKind.JAC_TMP_VAR() else VariableKind.JAC_VAR();
-        end match;
-        var.backendinfo := BackendInfo.setVarKind(var.backendinfo, varKind);
-        var.backendinfo := BackendInfo.setVarPDer(var.backendinfo, SOME(res_ptr), isTmp = isTmp);
-
-        (var_ptr, cref) := makeVarPtrCyclic(var, cref);
-      then ();
-
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref)});
-      then fail();
-    end match;
-  end makeFreshPDerVar;
 
   function makeFDerVar
     "Creates a function derivative cref. Used in NBDifferentiation
