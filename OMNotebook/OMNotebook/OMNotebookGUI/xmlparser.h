@@ -52,6 +52,9 @@
 // Qt headers
 // ---------------------------------------------------------------------------
 #include <QtCore/QString>
+#include <QDomDocument>
+#include <QDomElement>
+#include <QDomNode>
 
 // ---------------------------------------------------------------------------
 // IAEX headers
@@ -60,11 +63,6 @@
 #include "document.h"
 #include "factory.h"
 #include "xmlnodename.h"
-
-// Forward declarations (these stay unchanged)
-class QDomDocument;
-class QDomElement;
-class QDomNode;
 
 namespace IAEX
 {

@@ -45,17 +45,19 @@
 #define TEXTCELL_H
 
 
-//QT Headers
+// ---------------------------------------------------------------------------
+// Qt headers
+// ---------------------------------------------------------------------------
 #include <QtGlobal>
 #include <QtWidgets>
+#include <QResizeEvent>
+#include <QUrl>
+#include <QWidget>
 
-//IAEX Headers
+// ---------------------------------------------------------------------------
+// IAEX headers
+// ---------------------------------------------------------------------------
 #include "cell.h"
-
-// forward declaration
-class QResizeEvent;
-class QUrl;
-class QWidget;
 
 
 
@@ -145,7 +147,7 @@ namespace IAEX
 
   public slots:
 #if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-    void setSource(const QUrl &name);
+    void setSource(const QUrl &name) override;
 #endif
 
   protected:

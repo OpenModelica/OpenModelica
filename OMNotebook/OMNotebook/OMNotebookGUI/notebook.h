@@ -46,25 +46,28 @@
 //STD Headers
 #include <map>
 
-//QT Headers
+// ---------------------------------------------------------------------------
+// Qt headers
+// ---------------------------------------------------------------------------
 #include <QtCore/QHash>
 
-//IAEX Headers
+#include <QAction>
+#include <QActionGroup>
+#include <QKeyEvent>
+#include <QMenu>
+#include <QMenuBar>
+#include <QWidget>
+#include <QLabel>
+
+// ---------------------------------------------------------------------------
+// IAEX headers
+// ---------------------------------------------------------------------------
 #include "application.h"
 #include "document.h"
 #include "documentview.h"
 #if USE_OMSKETCH
 #include "Tools.h"
 #endif
-//Forward declaration
-class QAction;
-class QActionGroup;
-class QKeyEvent;
-class QMenu;
-class QMenuBar;
-class QStatusbar;
-class QWidget;
-class QLabel;
 
 
 namespace IAEX

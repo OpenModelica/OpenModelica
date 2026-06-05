@@ -41,14 +41,18 @@
 #ifndef PRINTERVISITOR_H
 #define PRINTERVISITOR_H
 
-//IAEX Headers
+// ---------------------------------------------------------------------------
+// Qt headers
+// ---------------------------------------------------------------------------
+#include <QTextEdit>
+#include <QTextTable>
+#include <QPrinter>
+
+// ---------------------------------------------------------------------------
+// IAEX headers
+// ---------------------------------------------------------------------------
 #include "visitor.h"
 #include "document.h"
-
-// forward declaration
-class QTextEdit;
-class QTextTable;
-class QPrinter;
 
 
 namespace IAEX
