@@ -775,7 +775,6 @@ public
               torn        = true,
               simvars     = simvars,
               beqs        = {},
-              simJac      = {},
               residual    = listReverse(eqns),
               jacobian    = Pointer.create(jacobian),
               sources     = {},
@@ -1420,7 +1419,6 @@ public
       Boolean torn;
       list<SimVar> simvars;
       list<Expression> beqs; //ToDo what is this? binding expressions?
-      list<tuple<Integer, Integer, Block>> simJac; // ToDo: is this the old jacobian structure?
       /* solver linear tearing system */
       list<Block> residual;
       Pointer<Option<SimJacobian>> jacobian;
@@ -1454,16 +1452,15 @@ public
       output OldSimCode.LinearSystem oldSystem;
     protected
       list<DAE.Exp> beqs = {};
-      list<tuple<Integer, Integer, OldSimCode.SimEqSystem>> simJac;
+      list<tuple<Integer, Integer, OldSimCode.SimEqSystem>> simJac = {};
       Option<SimJacobian> jacobian;
     algorithm
       for beq in system.beqs loop
         beqs := Expression.toDAE(beq) :: beqs;
       end for;
       jacobian := Pointer.access(system.jacobian);
-      simJac := convertSimJac(system.simJac);
-      if listEmpty(simJac) and isSome(jacobian) then
-        simJac := symbolicSimJac(Util.getOption(jacobian), system.residual);
+      if isSome(jacobian) then
+        simJac := createOldSimJac(Util.getOption(jacobian), system.residual);
       end if;
       oldSystem := OldSimCode.LINEARSYSTEM(
         index                 = system.index,
@@ -1473,7 +1470,7 @@ public
         beqs                  = listReverse(beqs),
         simJac                = simJac,
         residual              = Block.convertList(system.residual),
-        jacobianMatrix        = Util.applyOption(jacobian, SimJacobian.convert), // ToDo update this!
+        jacobianMatrix        = Util.applyOption(jacobian, SimJacobian.convert), // ToDo update this?
         sources               = system.sources,
         indexLinearSystem     = system.indexSystem,
         nUnknowns             = system.size,
@@ -1481,25 +1478,10 @@ public
       );
     end convert;
 
-    function convertSimJac
-      input list<tuple<Integer, Integer, Block>> simJac;
-      output list<tuple<Integer, Integer, OldSimCode.SimEqSystem>> oldSimJac = {};
-    protected
-      Integer row;
-      Integer col;
-      Block blck;
-    algorithm
-      for tpl in simJac loop
-        (row, col, blck) := tpl;
-        oldSimJac := (row, col, Block.convert(blck)) :: oldSimJac;
-      end for;
-      oldSimJac := listReverse(oldSimJac);
-    end convertSimJac;
-
-    function symbolicSimJac
-      "Carries symbolic Jacobian sparsity through old SimCode for method-1
-      linear systems. The C target uses jacobianMatrix for values; these entries
-      provide the row/column nonzero structure so nnz is not reported as zero."
+    function createOldSimJac
+      "Convert the SimJacobian to the old simJac structure, which is needed e.g. for the nnz field
+       in linear systems static initialization ('initialLinearSystem(int nLinearSystems, LINEAR_SYSTEM_DATA* linearSystemData)').
+       Probably, this field is obsolete once a new codegen for NB exists."
       input SimJacobian jacobian;
       input list<Block> residual;
       output list<tuple<Integer, Integer, OldSimCode.SimEqSystem>> simJac = {};
@@ -1519,11 +1501,10 @@ public
             end for;
           end for;
         then ();
-
         else ();
       end match;
       simJac := listReverse(simJac);
-    end symbolicSimJac;
+    end createOldSimJac;
   end LinearSystem;
 
   uniontype NonlinearSystem
