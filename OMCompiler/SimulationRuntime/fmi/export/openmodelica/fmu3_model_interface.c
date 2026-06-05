@@ -687,6 +687,11 @@ ModelInstance* omcInstantiate(fmi3String instanceName, OMC_FmuType fmuType, fmi3
   comp->fmuData->callback->read_simulation_info(comp->fmuData->simulationInfo);
   allocModelDataVars(comp->fmuData->modelData, FALSE, comp->threadData);
   scalarAllocArrayAttributes(comp->fmuData->modelData);
+  /* read_input_fmu sets the variable info, the array dimensions and the
+     attribute values. It must run before calculateAllScalarLength /
+     computeVarIndices (in initializeDataStruc) so that non-scalarized array
+     variables size their scalar value vectors correctly. */
+  comp->fmuData->callback->read_input_fmu(comp->fmuData->modelData);
   calculateAllScalarLength(comp->fmuData->modelData);
 
   /* setup model data with default start data */
@@ -695,7 +700,6 @@ ModelInstance* omcInstantiate(fmi3String instanceName, OMC_FmuType fmuType, fmi3
 
   setAllParamsToStart(comp->fmuData->simulationInfo, comp->fmuData->modelData);
   setAllVarsToStart(comp->fmuData->localData[0], comp->fmuData->simulationInfo, comp->fmuData->modelData);
-  comp->fmuData->callback->read_input_fmu(comp->fmuData->modelData);
 
 
 #if !defined(OMC_MINIMAL_METADATA)
@@ -3019,30 +3023,36 @@ fmi3Status fmi3GetFloat64(fmi3Instance instance, const fmi3ValueReference valueR
     size_t nValueReferences, fmi3Float64 values[], size_t nValues)
 {
   ModelInstance *comp = fmu3InnerComp(instance);
-  size_t i;
-  (void)nValues;
+  size_t i, j, k = 0;
   if (!comp) {
     return fmi3Error;
   }
   for (i = 0; i < nValueReferences; i++) {
     fmi3ValueReference vr = valueReferences[i];
-    if (vr == (fmi3ValueReference)FMI3_TIME_VR) {
-      values[i] = (fmi3Float64)comp->fmuData->localData[0]->timeValue;
-    } else if (vr >= (fmi3ValueReference)FMI3_EVENT_INDICATOR_VR_START) {
+    /* Array variables occupy a contiguous block of scalar value references. When
+       a single (array) variable is requested the master passes nValues scalar
+       elements for it; otherwise there is one value per value reference. */
+    size_t cnt = (nValueReferences == 1) ? nValues : 1;
+    for (j = 0; j < cnt; j++, k++) {
+      fmi3ValueReference evr = vr + (fmi3ValueReference)j;
+      if (evr == (fmi3ValueReference)FMI3_TIME_VR) {
+        values[k] = (fmi3Float64)comp->fmuData->localData[0]->timeValue;
+      } else if (evr >= (fmi3ValueReference)FMI3_EVENT_INDICATOR_VR_START) {
 #if NUMBER_OF_EVENT_INDICATORS > 0
-      fmi3Float64 ei[NUMBER_OF_EVENT_INDICATORS];
-      fmi3Status s = omcGetEventIndicators((ModelInstance*)comp, ei, NUMBER_OF_EVENT_INDICATORS);
-      if (s > fmi3Warning) return (fmi3Status)s;
-      values[i] = (fmi3Float64)ei[vr - (fmi3ValueReference)FMI3_EVENT_INDICATOR_VR_START];
+        fmi3Float64 ei[NUMBER_OF_EVENT_INDICATORS];
+        fmi3Status s = omcGetEventIndicators((ModelInstance*)comp, ei, NUMBER_OF_EVENT_INDICATORS);
+        if (s > fmi3Warning) return (fmi3Status)s;
+        values[k] = (fmi3Float64)ei[evr - (fmi3ValueReference)FMI3_EVENT_INDICATOR_VR_START];
 #else
-      return fmi3Error;
+        return fmi3Error;
 #endif
-    } else {
-      fmi3ValueReference lvr = (fmi3ValueReference)(vr - FMI3_REAL_VR_OFFSET);
-      fmi3Float64 value;
-      fmi3Status s = omcGetReal((ModelInstance*)comp, &lvr, 1, &value);
-      if (s > fmi3Warning) return (fmi3Status)s;
-      values[i] = (fmi3Float64)value;
+      } else {
+        fmi3ValueReference lvr = (fmi3ValueReference)(evr - FMI3_REAL_VR_OFFSET);
+        fmi3Float64 value;
+        fmi3Status s = omcGetReal((ModelInstance*)comp, &lvr, 1, &value);
+        if (s > fmi3Warning) return (fmi3Status)s;
+        values[k] = (fmi3Float64)value;
+      }
     }
   }
   return fmi3OK;
@@ -3052,15 +3062,17 @@ fmi3Status fmi3GetInt32(fmi3Instance instance, const fmi3ValueReference valueRef
     size_t nValueReferences, fmi3Int32 values[], size_t nValues)
 {
   ModelInstance* c = fmu3InnerComp(instance);
-  size_t i;
-  (void)nValues;
+  size_t i, j, k = 0;
   if (!c) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
-    fmi3ValueReference lvr = (fmi3ValueReference)(valueReferences[i] - FMI3_INTEGER_VR_OFFSET);
-    fmi3Int32 value;
-    fmi3Status s = omcGetInteger(c, &lvr, 1, &value);
-    if (s > fmi3Warning) return (fmi3Status)s;
-    values[i] = (fmi3Int32)value;
+    size_t cnt = (nValueReferences == 1) ? nValues : 1;
+    for (j = 0; j < cnt; j++, k++) {
+      fmi3ValueReference lvr = (fmi3ValueReference)((valueReferences[i] + j) - FMI3_INTEGER_VR_OFFSET);
+      fmi3Int32 value;
+      fmi3Status s = omcGetInteger(c, &lvr, 1, &value);
+      if (s > fmi3Warning) return (fmi3Status)s;
+      values[k] = (fmi3Int32)value;
+    }
   }
   return fmi3OK;
 }
@@ -3069,15 +3081,17 @@ fmi3Status fmi3GetBoolean(fmi3Instance instance, const fmi3ValueReference valueR
     size_t nValueReferences, fmi3Boolean values[], size_t nValues)
 {
   ModelInstance* c = fmu3InnerComp(instance);
-  size_t i;
-  (void)nValues;
+  size_t i, j, k = 0;
   if (!c) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
-    fmi3ValueReference lvr = (fmi3ValueReference)(valueReferences[i] - FMI3_BOOLEAN_VR_OFFSET);
-    fmi3Boolean value;
-    fmi3Status s = omcGetBoolean(c, &lvr, 1, &value);
-    if (s > fmi3Warning) return (fmi3Status)s;
-    values[i] = value ? fmi3True : fmi3False;
+    size_t cnt = (nValueReferences == 1) ? nValues : 1;
+    for (j = 0; j < cnt; j++, k++) {
+      fmi3ValueReference lvr = (fmi3ValueReference)((valueReferences[i] + j) - FMI3_BOOLEAN_VR_OFFSET);
+      fmi3Boolean value;
+      fmi3Status s = omcGetBoolean(c, &lvr, 1, &value);
+      if (s > fmi3Warning) return (fmi3Status)s;
+      values[k] = value ? fmi3True : fmi3False;
+    }
   }
   return fmi3OK;
 }
@@ -3086,15 +3100,17 @@ fmi3Status fmi3GetString(fmi3Instance instance, const fmi3ValueReference valueRe
     size_t nValueReferences, fmi3String values[], size_t nValues)
 {
   ModelInstance* c = fmu3InnerComp(instance);
-  size_t i;
-  (void)nValues;
+  size_t i, j, k = 0;
   if (!c) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
-    fmi3ValueReference lvr = (fmi3ValueReference)(valueReferences[i] - FMI3_STRING_VR_OFFSET);
-    fmi3String value;
-    fmi3Status s = omcGetString(c, &lvr, 1, &value);
-    if (s > fmi3Warning) return (fmi3Status)s;
-    values[i] = (fmi3String)value;
+    size_t cnt = (nValueReferences == 1) ? nValues : 1;
+    for (j = 0; j < cnt; j++, k++) {
+      fmi3ValueReference lvr = (fmi3ValueReference)((valueReferences[i] + j) - FMI3_STRING_VR_OFFSET);
+      fmi3String value;
+      fmi3Status s = omcGetString(c, &lvr, 1, &value);
+      if (s > fmi3Warning) return (fmi3Status)s;
+      values[k] = (fmi3String)value;
+    }
   }
   return fmi3OK;
 }
@@ -3103,21 +3119,26 @@ fmi3Status fmi3SetFloat64(fmi3Instance instance, const fmi3ValueReference valueR
     size_t nValueReferences, const fmi3Float64 values[], size_t nValues)
 {
   ModelInstance* c = fmu3InnerComp(instance);
-  size_t i;
-  (void)nValues;
+  size_t i, j, k = 0;
   if (!c) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
     fmi3ValueReference vr = valueReferences[i];
-    fmi3ValueReference lvr;
-    fmi3Float64 value;
-    /* time and event indicators are not settable */
-    if (vr == (fmi3ValueReference)FMI3_TIME_VR || vr >= (fmi3ValueReference)FMI3_EVENT_INDICATOR_VR_START) {
-      continue;
+    /* Array variables occupy a contiguous block of scalar value references (see
+       fmi3GetFloat64). */
+    size_t cnt = (nValueReferences == 1) ? nValues : 1;
+    for (j = 0; j < cnt; j++, k++) {
+      fmi3ValueReference evr = vr + (fmi3ValueReference)j;
+      fmi3ValueReference lvr;
+      fmi3Float64 value;
+      /* time and event indicators are not settable */
+      if (evr == (fmi3ValueReference)FMI3_TIME_VR || evr >= (fmi3ValueReference)FMI3_EVENT_INDICATOR_VR_START) {
+        continue;
+      }
+      lvr = (fmi3ValueReference)(evr - FMI3_REAL_VR_OFFSET);
+      value = (fmi3Float64)values[k];
+      fmi3Status s = omcSetReal(c, &lvr, 1, &value);
+      if (s > fmi3Warning) return (fmi3Status)s;
     }
-    lvr = (fmi3ValueReference)(vr - FMI3_REAL_VR_OFFSET);
-    value = (fmi3Float64)values[i];
-    fmi3Status s = omcSetReal(c, &lvr, 1, &value);
-    if (s > fmi3Warning) return (fmi3Status)s;
   }
   return fmi3OK;
 }
@@ -3126,14 +3147,16 @@ fmi3Status fmi3SetInt32(fmi3Instance instance, const fmi3ValueReference valueRef
     size_t nValueReferences, const fmi3Int32 values[], size_t nValues)
 {
   ModelInstance* c = fmu3InnerComp(instance);
-  size_t i;
-  (void)nValues;
+  size_t i, j, k = 0;
   if (!c) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
-    fmi3ValueReference lvr = (fmi3ValueReference)(valueReferences[i] - FMI3_INTEGER_VR_OFFSET);
-    fmi3Int32 value = (fmi3Int32)values[i];
-    fmi3Status s = omcSetInteger(c, &lvr, 1, &value);
-    if (s > fmi3Warning) return (fmi3Status)s;
+    size_t cnt = (nValueReferences == 1) ? nValues : 1;
+    for (j = 0; j < cnt; j++, k++) {
+      fmi3ValueReference lvr = (fmi3ValueReference)((valueReferences[i] + j) - FMI3_INTEGER_VR_OFFSET);
+      fmi3Int32 value = (fmi3Int32)values[k];
+      fmi3Status s = omcSetInteger(c, &lvr, 1, &value);
+      if (s > fmi3Warning) return (fmi3Status)s;
+    }
   }
   return fmi3OK;
 }
@@ -3142,14 +3165,16 @@ fmi3Status fmi3SetBoolean(fmi3Instance instance, const fmi3ValueReference valueR
     size_t nValueReferences, const fmi3Boolean values[], size_t nValues)
 {
   ModelInstance* c = fmu3InnerComp(instance);
-  size_t i;
-  (void)nValues;
+  size_t i, j, k = 0;
   if (!c) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
-    fmi3ValueReference lvr = (fmi3ValueReference)(valueReferences[i] - FMI3_BOOLEAN_VR_OFFSET);
-    fmi3Boolean value = values[i] ? fmi3True : fmi3False;
-    fmi3Status s = omcSetBoolean(c, &lvr, 1, &value);
-    if (s > fmi3Warning) return (fmi3Status)s;
+    size_t cnt = (nValueReferences == 1) ? nValues : 1;
+    for (j = 0; j < cnt; j++, k++) {
+      fmi3ValueReference lvr = (fmi3ValueReference)((valueReferences[i] + j) - FMI3_BOOLEAN_VR_OFFSET);
+      fmi3Boolean value = values[k] ? fmi3True : fmi3False;
+      fmi3Status s = omcSetBoolean(c, &lvr, 1, &value);
+      if (s > fmi3Warning) return (fmi3Status)s;
+    }
   }
   return fmi3OK;
 }
@@ -3158,14 +3183,16 @@ fmi3Status fmi3SetString(fmi3Instance instance, const fmi3ValueReference valueRe
     size_t nValueReferences, const fmi3String values[], size_t nValues)
 {
   ModelInstance* c = fmu3InnerComp(instance);
-  size_t i;
-  (void)nValues;
+  size_t i, j, k = 0;
   if (!c) return fmi3Error;
   for (i = 0; i < nValueReferences; i++) {
-    fmi3ValueReference lvr = (fmi3ValueReference)(valueReferences[i] - FMI3_STRING_VR_OFFSET);
-    fmi3String value = (fmi3String)values[i];
-    fmi3Status s = omcSetString(c, &lvr, 1, &value);
-    if (s > fmi3Warning) return (fmi3Status)s;
+    size_t cnt = (nValueReferences == 1) ? nValues : 1;
+    for (j = 0; j < cnt; j++, k++) {
+      fmi3ValueReference lvr = (fmi3ValueReference)((valueReferences[i] + j) - FMI3_STRING_VR_OFFSET);
+      fmi3String value = (fmi3String)values[k];
+      fmi3Status s = omcSetString(c, &lvr, 1, &value);
+      if (s > fmi3Warning) return (fmi3Status)s;
+    }
   }
   return fmi3OK;
 }

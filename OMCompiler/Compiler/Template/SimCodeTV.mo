@@ -1355,6 +1355,22 @@ package SimCodeUtil
     output String outValueReference;
   end getFMI3ValueReferenceFromFMIIndex;
 
+  function numScalarElems
+    input list<SimCodeVar.SimVar> vars;
+    output Integer n;
+  end numScalarElems;
+
+  function getFMIScalarVRs
+    input SimCodeVar.SimVar var;
+    input SimCode.SimCode simCode;
+    output String out;
+  end getFMIScalarVRs;
+
+  function getFMI3ArrayStart
+    input SimCodeVar.SimVar var;
+    output String out;
+  end getFMI3ArrayStart;
+
   function getFMI3TimeValueReference
     input SimCode.SimCode inSimCode;
     output String outValueReference;

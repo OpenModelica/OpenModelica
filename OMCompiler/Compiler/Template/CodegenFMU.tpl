@@ -459,14 +459,17 @@ template ModelDefineData(SimCode simCode, ModelInfo modelInfo)
 ::=
 match modelInfo
 case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(stateVars = listStates)) then
-let numberOfReals = intAdd(intMul(varInfo.numStateVars,2),intAdd(varInfo.numDiscreteReal, intAdd(varInfo.numAlgVars,intAdd(varInfo.numParams,varInfo.numAlgAliasVars))))
-let numberOfIntegers = intAdd(varInfo.numIntAlgVars,intAdd(varInfo.numIntParams,varInfo.numIntAliasVars))
-let numberOfStrings = intAdd(varInfo.numStringAlgVars,intAdd(varInfo.numStringParamVars,varInfo.numStringAliasVars))
-let numberOfBooleans = intAdd(varInfo.numBoolAlgVars,intAdd(varInfo.numBoolParams,varInfo.numBoolAliasVars))
+// Per-scalar sizes (sum getNumElems): equals the per-variable varInfo counts for
+// scalarized variables, but counts each element for non-scalarized arrays.
+// (numScalarElems is inlined because a Susan `let` binds a Text, not an Integer.)
+let numberOfReals = intAdd(intMul(SimCodeUtil.numScalarElems(vars.stateVars),2),intAdd(SimCodeUtil.numScalarElems(vars.discreteAlgVars), intAdd(SimCodeUtil.numScalarElems(vars.algVars),intAdd(SimCodeUtil.numScalarElems(vars.paramVars),SimCodeUtil.numScalarElems(vars.aliasVars)))))
+let numberOfIntegers = intAdd(SimCodeUtil.numScalarElems(vars.intAlgVars),intAdd(SimCodeUtil.numScalarElems(vars.intParamVars),SimCodeUtil.numScalarElems(vars.intAliasVars)))
+let numberOfStrings = intAdd(SimCodeUtil.numScalarElems(vars.stringAlgVars),intAdd(SimCodeUtil.numScalarElems(vars.stringParamVars),SimCodeUtil.numScalarElems(vars.stringAliasVars)))
+let numberOfBooleans = intAdd(SimCodeUtil.numScalarElems(vars.boolAlgVars),intAdd(SimCodeUtil.numScalarElems(vars.boolParamVars),SimCodeUtil.numScalarElems(vars.boolAliasVars)))
 let numberOfRealInputs = varInfo.numRealInputVars
   <<
   // define model size
-  #define NUMBER_OF_STATES <%if intEq(varInfo.numStateVars,1) then statesnumwithDummy(listStates) else  varInfo.numStateVars%>
+  #define NUMBER_OF_STATES <%if intEq(SimCodeUtil.numScalarElems(vars.stateVars),1) then statesnumwithDummy(listStates) else  SimCodeUtil.numScalarElems(vars.stateVars)%>
   #define NUMBER_OF_EVENT_INDICATORS <%varInfo.numZeroCrossings%>
   #define NUMBER_OF_REALS <%numberOfReals%>
   #define NUMBER_OF_REAL_INPUTS <%numberOfRealInputs%>
@@ -475,9 +478,10 @@ let numberOfRealInputs = varInfo.numRealInputVars
   #define NUMBER_OF_BOOLEANS <%numberOfBooleans%>
   #define NUMBER_OF_EXTERNALFUNCTIONS <%countDynamicExternalFunctions(functions)%>
 
-  // define initial state vector as vector of value references
-  #define STATES { <%vars.stateVars |> SIMVAR(__) => if stringEq(crefStr(name),"$dummy") then '' else lookupVR(name, simCode)  ;separator=", "%> }
-  #define STATESDERIVATIVES { <%vars.derivativeVars |> SIMVAR(__) => if stringEq(crefStr(name),"der($dummy)") then '' else lookupVR(name, simCode)  ;separator=", "%> }
+  // define initial state vector as vector of value references (arrays expanded to
+  // their scalar element value references)
+  #define STATES { <%vars.stateVars |> simvar as SIMVAR(__) => if stringEq(crefStr(name),"$dummy") then '' else SimCodeUtil.getFMIScalarVRs(simvar, simCode)  ;separator=", "%> }
+  #define STATESDERIVATIVES { <%vars.derivativeVars |> simvar as SIMVAR(__) => if stringEq(crefStr(name),"der($dummy)") then '' else SimCodeUtil.getFMIScalarVRs(simvar, simCode)  ;separator=", "%> }
 
   <%System.tmpTickReset(0)%>
   <%(functions |> fn => defineExternalFunction(fn) ; separator="\n")%>
@@ -585,7 +589,10 @@ template initVals(SimVar var, String arrayName) ::=
         ''
       else
         match type_
-          case T_REAL() then
+          // For a non-scalarized real array the start attribute is a single
+          // (broadcast) scalar element, so it is set like a scalar real.
+          case T_REAL()
+          case T_ARRAY(ty=T_REAL()) then
             <<
             put_real_element(comp->fmuData->localData[0]-><%arrayName%>[<%var.index%>], 0, &comp->fmuData->modelData-><%arrayName%>Data[<%var.index%>].attribute.start);
             >>
@@ -609,7 +616,9 @@ end initParams;
 
 template initValsDefault(SimVar var, String arrayName) ::=
   match var
-    case SIMVAR(index=index, type_=T_REAL()) then
+    // a non-scalarized real array's start attribute is a single broadcast scalar.
+    case SIMVAR(index=index, type_=T_REAL())
+    case SIMVAR(index=index, type_=T_ARRAY(ty=T_REAL())) then
       <<
       put_real_element(<%initValDefault(var)%>, 0, &comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start);
       >>
@@ -643,14 +652,23 @@ template initValDefault(SimVar var) ::=
       case SOME(v as RCONST(__))
       case SOME(v as SCONST(__))
       case SOME(v as BCONST(__))
-      case SOME(v as ENUM_LITERAL(__)) then initVal(v)
+      case SOME(v as ENUM_LITERAL(__))
+      // non-scalarized array start (broadcast scalar) given as an array
+      // constructor / reduction:
+      case SOME(v as ARRAY(__))
+      case SOME(v as REDUCTION(__)) then initVal(v)
       else
         match var.type_
           case T_INTEGER(__)
           case T_REAL(__)
           case T_ENUMERATION(__)
-          case T_BOOL(__) then '0'
-          case T_STRING(__) then 'mmc_mk_scon("")'
+          case T_BOOL(__)
+          case T_ARRAY(ty=T_INTEGER())
+          case T_ARRAY(ty=T_REAL())
+          case T_ARRAY(ty=T_ENUMERATION())
+          case T_ARRAY(ty=T_BOOL()) then '0'
+          case T_STRING(__)
+          case T_ARRAY(ty=T_STRING()) then 'mmc_mk_scon("")'
           else error(sourceInfo(), 'Unknown type for initValDefault: <%unparseType(var.type_)%>')
 end initValDefault;
 
@@ -662,6 +680,9 @@ template initVal(Exp initialValue)
   case SCONST(__) then '"<%Util.escapeModelicaStringToXmlString(string)%>"'
   case BCONST(__) then if bool then "1" else "0"
   case ENUM_LITERAL(__) then '<%index%>'
+  // non-scalarized array start (broadcast scalar): extract the element value.
+  case ARRAY(array = first :: _) then initVal(first)
+  case REDUCTION(expr = first) then initVal(first)
   else error(sourceInfo(), 'initial value of unknown type: <%printExpStr(initialValue)%>')
 end initVal;
 
@@ -875,9 +896,12 @@ template getRealFunction2(SimCode simCode, ModelInfo modelInfo)
 ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numAlgAliasVars=numAlgAliasVars, numParams=numParams, numStateVars=numStateVars, numAlgVars= numAlgVars, numDiscreteReal=numDiscreteReal)) then
-  let ixFirstParam = intAdd(intMul(2,numStateVars),intAdd(numAlgVars,numDiscreteReal))
-  let ixFirstAlias = intAdd(numParams, intAdd(intMul(2,numStateVars),intAdd(numAlgVars,numDiscreteReal)))
-  let ixEnd = intAdd(numAlgAliasVars,intAdd(numParams, intAdd(intMul(2,numStateVars),intAdd(numAlgVars,numDiscreteReal))))
+  // per-scalar block boundaries (sum getNumElems), so non-scalarized array
+  // variables index the correct contiguous realVars range. (numScalarElems is
+  // inlined because a Susan `let` binds a Text, not an Integer.)
+  let ixFirstParam = intAdd(intMul(2,SimCodeUtil.numScalarElems(vars.stateVars)),intAdd(SimCodeUtil.numScalarElems(vars.algVars),SimCodeUtil.numScalarElems(vars.discreteAlgVars)))
+  let ixFirstAlias = intAdd(SimCodeUtil.numScalarElems(vars.paramVars), intAdd(intMul(2,SimCodeUtil.numScalarElems(vars.stateVars)),intAdd(SimCodeUtil.numScalarElems(vars.algVars),SimCodeUtil.numScalarElems(vars.discreteAlgVars))))
+  let ixEnd = intAdd(numAlgAliasVars,intAdd(SimCodeUtil.numScalarElems(vars.paramVars), intAdd(intMul(2,SimCodeUtil.numScalarElems(vars.stateVars)),intAdd(SimCodeUtil.numScalarElems(vars.algVars),SimCodeUtil.numScalarElems(vars.discreteAlgVars)))))
   <<
   <%if numAlgAliasVars then
   <<
@@ -913,9 +937,10 @@ template setRealFunction2(SimCode simCode, ModelInfo modelInfo)
 ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numAlgAliasVars=numAlgAliasVars, numParams=numParams, numStateVars=numStateVars, numAlgVars= numAlgVars, numDiscreteReal=numDiscreteReal)) then
-  let ixFirstParam = intAdd(intMul(2,numStateVars),intAdd(numAlgVars,numDiscreteReal))
-  let ixFirstAlias = intAdd(numParams, intAdd(intMul(2,numStateVars),intAdd(numAlgVars,numDiscreteReal)))
-  let ixEnd = intAdd(numAlgAliasVars,intAdd(numParams, intAdd(intMul(2,numStateVars),intAdd(numAlgVars,numDiscreteReal))))
+  // per-scalar block boundaries (sum getNumElems) for non-scalarized arrays.
+  let ixFirstParam = intAdd(intMul(2,SimCodeUtil.numScalarElems(vars.stateVars)),intAdd(SimCodeUtil.numScalarElems(vars.algVars),SimCodeUtil.numScalarElems(vars.discreteAlgVars)))
+  let ixFirstAlias = intAdd(SimCodeUtil.numScalarElems(vars.paramVars), intAdd(intMul(2,SimCodeUtil.numScalarElems(vars.stateVars)),intAdd(SimCodeUtil.numScalarElems(vars.algVars),SimCodeUtil.numScalarElems(vars.discreteAlgVars))))
+  let ixEnd = intAdd(numAlgAliasVars,intAdd(SimCodeUtil.numScalarElems(vars.paramVars), intAdd(intMul(2,SimCodeUtil.numScalarElems(vars.stateVars)),intAdd(SimCodeUtil.numScalarElems(vars.algVars),SimCodeUtil.numScalarElems(vars.discreteAlgVars)))))
   <<
   fmi2Status setReal(ModelInstance* comp, const fmi2ValueReference vr, const fmi2Real value) {
     // set start value attribute for all variable that has start value, till initialization mode
@@ -1339,6 +1364,13 @@ case SIMCODE(modelStructure=SOME(FMIMODELSTRUCTURE(fmiInitialUnknowns=FMIINITIAL
         }
     }
     >>
+else
+    <<
+    /* no model structure / initial unknowns available */
+    fmi2ValueReference mapInitialUnknownsdependentIndex(const fmi2ValueReference vr) {
+        return -1;
+    }
+    >>
 end match
 end mapInitialUnknownsdependentCrefs;
 
@@ -1356,6 +1388,13 @@ case SIMCODE(modelStructure=SOME(FMIMODELSTRUCTURE(fmiInitialUnknowns=FMIINITIAL
           default:
             return -1;
         }
+    }
+    >>
+else
+    <<
+    /* no model structure / initial unknowns available */
+    fmi2ValueReference mapInitialUnknownsIndependentIndex(const fmi2ValueReference vr) {
+        return -1;
     }
     >>
 end match
@@ -3481,23 +3520,48 @@ template ScalarVariableFMU(SimVar simVar, String classType)
       <%infostr%>.name = "<%Util.escapeModelicaStringToCString(crefStrNoUnderscore(name))%>";
       <%infostr%>.comment = "<%description%>";
       <%getInfoArgsFMU(infostr+".info", info)%>
+      <%DimensionsFMU(simVar, classType, ci)%>
       <%ScalarVariableTypeFMU(attrstr, unit, displayUnit, minValue, maxValue, initialValue, nominalValue, isFixed, type_)%>
       >>
 end ScalarVariableFMU;
 
-template optInitValFMU(Option<Exp> exp, String default)
+template DimensionsFMU(SimVar simVar, String classType, String ci)
+ "Sets the runtime array dimensions of a non-scalarized variable so that
+  calculateAllScalarLength / computeVarIndices size the value vectors correctly.
+  Emits nothing for scalars (numberOfDimensions defaults to 0)."
 ::=
-  match exp
-  case SOME(e) then
-  (
+match simVar
+case SIMVAR(numArrayElement = dims) then
+  if listEmpty(dims) then '' else
+  <<
+  modelData-><%classType%>[<%ci%>].dimension.numberOfDimensions = <%listLength(dims)%>;
+  modelData-><%classType%>[<%ci%>].dimension.dimensions = (DIMENSION_ATTRIBUTE*)calloc(<%listLength(dims)%>, sizeof(DIMENSION_ATTRIBUTE));
+  <%dims |> d hasindex k0 =>
+    'modelData-><%classType%>[<%ci%>].dimension.dimensions[<%k0%>].start = <%d%>;<%\n%>modelData-><%classType%>[<%ci%>].dimension.dimensions[<%k0%>].valueReference = -1;<%\n%>modelData-><%classType%>[<%ci%>].dimension.dimensions[<%k0%>].type = DIMENSION_BY_START;'
+   ;separator="\n"%>
+  >>
+end DimensionsFMU;
+
+template scalarValFMU(Exp e, String default)
+ "Returns a C literal for a scalar constant expression. For a non-scalarized
+  array start (a uniform array constructor / reduction) the single broadcast
+  element value is extracted."
+::=
   match e
   case ICONST(__) then integer
   case RCONST(__) then real
   case SCONST(__) then 'mmc_mk_scon("<%Util.escapeModelicaStringToCString(string)%>")'
   case BCONST(__) then if bool then 1 else 0
   case ENUM_LITERAL(__) then '<%index%>'
+  case ARRAY(array = first :: _) then scalarValFMU(first, default)
+  case REDUCTION(expr = first) then scalarValFMU(first, default)
   else default // error(sourceInfo(), 'initial value of unknown type: <%printExpStr(e)%>')
-  )
+end scalarValFMU;
+
+template optInitValFMU(Option<Exp> exp, String default)
+::=
+  match exp
+  case SOME(e) then scalarValFMU(e, default)
   else default
 end optInitValFMU;
 
@@ -3539,6 +3603,9 @@ template ScalarVariableTypeFMU(String attrstr, String unit, String displayUnit, 
       <%attrstr%>.fixed = <%if isFixed then 1 else 0%>;
       <%attrstr%>.start = <%optInitValFMU(startValue,"0")%>;
       >>
+    case T_ARRAY(ty=ty) then
+      // non-scalarized array variable: emit the attributes using the element type
+      ScalarVariableTypeFMU(attrstr, unit, displayUnit, minValue, maxValue, startValue, nominalValue, isFixed, ty)
     else error(sourceInfo(), 'ScalarVariableTypeFMU: <%unparseType(type_)%>')
 end ScalarVariableTypeFMU;
 

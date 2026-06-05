@@ -305,9 +305,22 @@ template Variable3(SimVar simVar, SimCode simCode, list<SimVar> stateVars)
  "Generates a typed variable element for FMI 3.0."
 ::=
 match simVar
-case SIMVAR(type_ = T_ARRAY()) then
-  /* roll out array as XML only supports scalar variables */
-  '<%getScalarElements(simVar) |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>'
+case SIMVAR(name = name, exportVar = exportVar, type_ = T_ARRAY(ty = arrayElementType)) then
+  // FMI 3.0 native array variable: one element with one valueReference and
+  // <Dimension> children (the value reference of the first scalar element; the
+  // array occupies a contiguous block of scalar value references).
+  if boolNot(isSome(exportVar)) then ''
+  else
+  match arrayElementType
+    case T_REAL(__) then
+      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, stateVars)%><%ArrayStartString3(simVar)%>><%Dimensions3(simVar)%></Float64>'
+    case T_INTEGER(__) then
+      '<Int32 <%VariableCommonAttributes3(simVar, simCode)%><%ArrayStartString3(simVar)%>><%Dimensions3(simVar)%></Int32>'
+    case T_BOOL(__) then
+      '<Boolean <%VariableCommonAttributes3(simVar, simCode)%><%ArrayStartString3(simVar)%>><%Dimensions3(simVar)%></Boolean>'
+    case T_STRING(__) then
+      '<String <%VariableCommonAttributes3(simVar, simCode)%>><%Dimensions3(simVar)%></String>'
+    else '<!-- UNKNOWN_ARRAY_TYPE <%crefStr(name)%> -->'
 case SIMVAR(__) then
   if stringEq(crefStr(name),"$dummy") then
   <<>>
@@ -329,6 +342,34 @@ case SIMVAR(__) then
       '<Enumeration <%VariableCommonAttributes3(simVar, simCode)%>declaredType="<%AbsynUtil.pathString(path, ".", false)%>"<%StartString2(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%>/>'
     else '<!-- UNKNOWN_TYPE <%crefStr(name)%> -->'
 end Variable3;
+
+template ArrayStartString3(SimVar simVar)
+ "Generates the start attribute (a space separated list of the scalar element
+  start values) for an FMI 3.0 array variable. Emitted only where a scalar would
+  emit a start (exact/approx initial or input), to keep the schema consistent."
+::=
+match simVar
+case SIMVAR(aliasvar = SimCodeVar.ALIAS(__)) then ''
+case SIMVAR(initial_ = SOME(SimCodeVar.EXACT())) then arrayStartAttr(simVar)
+case SIMVAR(initial_ = SOME(SimCodeVar.APPROX())) then arrayStartAttr(simVar)
+case SIMVAR(causality = SOME(SimCodeVar.INPUT())) then arrayStartAttr(simVar)
+else ''
+end ArrayStartString3;
+
+template arrayStartAttr(SimVar simVar)
+::=
+  let s = SimCodeUtil.getFMI3ArrayStart(simVar)
+  if stringEq(s, "") then '' else ' start="<%s%>"'
+end arrayStartAttr;
+
+template Dimensions3(SimVar simVar)
+ "Generates the <Dimension start='N'/> children of an FMI 3.0 array variable
+  from the variable's dimension sizes (row major)."
+::=
+match simVar
+case SIMVAR(numArrayElement = dims) then
+  (dims |> d => '<Dimension start="<%d%>"/>' ;separator="")
+end Dimensions3;
 
 template VariableCommonAttributes3(SimVar simVar, SimCode simCode)
  "Generates the common attributes (name, valueReference, description, causality,
@@ -358,8 +399,10 @@ template DerivativeAttribute3(SimVar simVar, SimCode simCode, list<SimVar> state
 match simVar
 case SIMVAR(varKind = STATE_DER(__)) then
   match simCode
-  case SIMCODE(modelInfo = MODELINFO(varInfo = VARINFO(numStateVars = numStateVars))) then
-    ' derivative="<%intSub(stringInt(SimCodeUtil.getFMI3ValueReference(simVar, simCode)), numStateVars)%>"'
+  case SIMCODE(modelInfo = MODELINFO(vars = SIMVARS(stateVars = stateVarsList))) then
+    // per-scalar state count, so the derivative VR minus it yields the state VR
+    // (works for non-scalarized array states too).
+    ' derivative="<%intSub(stringInt(SimCodeUtil.getFMI3ValueReference(simVar, simCode)), SimCodeUtil.numScalarElems(stateVarsList))%>"'
   else ''
 else ''
 end DerivativeAttribute3;

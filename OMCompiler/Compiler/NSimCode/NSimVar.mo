@@ -192,6 +192,7 @@ public
             causality           = SOME(causality),
             variable_index      = SOME(uniqueIndex),
             fmi_index           = SOME(typeIndex),
+            // dimension sizes (row-major); empty for scalars. Used for FMI array variables.
             numArrayElement     = list(Dimension.sizeExp(dim) for dim in Type.arrayDims(var.ty)),
             isValueChangeable   = isValueChangeable,
             isProtected         = isProtected,
@@ -201,7 +202,7 @@ public
             matrixName          = NONE(),
             variability         = NONE(),
             initial_            = NONE(),
-            exportVar           = NONE()
+            exportVar           = SOME(var.name)
           );
         then result;
 
@@ -332,7 +333,7 @@ public
         arrayCref           = Util.applyOption(simVar.arrayCref, ComponentRef.toDAE),
         aliasvar            = Alias.convert(simVar.aliasvar),
         source              = DAE.emptyElementSource, //ToDo update this!
-        causality           = NONE(),  //ToDo update this!
+        causality           = Util.applyOption(simVar.causality, convertCausality),
         variable_index      = simVar.variable_index,
         fmi_index           = simVar.fmi_index,
         numArrayElement     = list(Expression.toString(e) for e in simVar.numArrayElement),
@@ -343,11 +344,59 @@ public
         inputIndex          = simVar.inputIndex,
         initNonlinear       = false,  // TODO: Check what to add here!
         matrixName          = simVar.matrixName,
-        variability         = NONE(),  //ToDo update this!
-        initial_            = NONE(),  //ToDo update this!
+        variability         = SOME(convertVariability(simVar.varKind)),
+        initial_            = convertInitial(convertVariability(simVar.varKind), Util.applyOption(simVar.causality, convertCausality)),
         exportVar           = Util.applyOption(simVar.exportVar, ComponentRef.toDAE),
         relativeQuantity    = false);
     end convert;
+
+    function convertCausality
+      "Convert the new-backend Causality enum to the old SimCodeVar.Causality used
+       by the FMI model-description templates."
+      input Causality c;
+      output OldSimCodeVar.Causality oc;
+    algorithm
+      oc := match c
+        case Causality.NONE                 then OldSimCodeVar.NONECAUS();
+        case Causality.OUTPUT               then OldSimCodeVar.OUTPUT();
+        case Causality.INPUT                then OldSimCodeVar.INPUT();
+        case Causality.LOCAL                then OldSimCodeVar.LOCAL();
+        case Causality.PARAMETER            then OldSimCodeVar.PARAMETER();
+        case Causality.CALCULATED_PARAMETER then OldSimCodeVar.CALCULATED_PARAMETER();
+      end match;
+    end convertCausality;
+
+    function convertVariability
+      "Derive the FMI variability attribute from the variable kind."
+      input VariableKind vk;
+      output OldSimCodeVar.Variability v;
+    algorithm
+      v := match vk
+        case VariableKind.CONSTANT()       then OldSimCodeVar.CONSTANT();
+        case VariableKind.PARAMETER()      then OldSimCodeVar.FIXED();
+        case VariableKind.DISCRETE()       then OldSimCodeVar.DISCRETE();
+        case VariableKind.DISCRETE_STATE() then OldSimCodeVar.DISCRETE();
+        case VariableKind.CLOCKED()        then OldSimCodeVar.DISCRETE();
+        case VariableKind.PREVIOUS()       then OldSimCodeVar.DISCRETE();
+        else OldSimCodeVar.CONTINUOUS();
+      end match;
+    end convertVariability;
+
+    function convertInitial
+      "Default FMI initial attribute from variability + causality (mirrors
+       SimCodeUtil.getDefaultFmiInitialAttribute). Only the EXACT cases matter
+       for now: they make the start value be emitted to modelDescription.xml."
+      input OldSimCodeVar.Variability v;
+      input Option<OldSimCodeVar.Causality> c;
+      output Option<OldSimCodeVar.Initial> initial_;
+    algorithm
+      initial_ := match (v, c)
+        case (OldSimCodeVar.CONSTANT(), _)                                  then SOME(OldSimCodeVar.EXACT());
+        case (OldSimCodeVar.FIXED(),   SOME(OldSimCodeVar.PARAMETER()))     then SOME(OldSimCodeVar.EXACT());
+        case (OldSimCodeVar.TUNABLE(), SOME(OldSimCodeVar.PARAMETER()))     then SOME(OldSimCodeVar.EXACT());
+        else NONE();
+      end match;
+    end convertInitial;
 
     function convertList
       input list<SimVar> simVar_lst;

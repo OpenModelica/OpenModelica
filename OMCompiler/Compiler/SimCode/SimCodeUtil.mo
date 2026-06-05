@@ -14415,6 +14415,73 @@ algorithm
 end getNumScalars;
 
 protected
+public function numScalarElems
+  "Total number of scalar elements over a list of SimVars (rolling out arrays).
+   Equals listLength for scalarized variables. Public wrapper around getNumScalars
+   used by the FMU templates to compute per-scalar NUMBER_OF_* sizes for
+   non-scalarized arrays."
+  input list<SimCodeVar.SimVar> vars;
+  output Integer n;
+algorithm
+  n := getNumScalars(vars);
+end numScalarElems;
+
+public function getFMI3ArrayStart
+  "Space separated list of scalar start values for an FMI 3.0 array variable
+   (length = number of scalar elements). The non-scalarized runtime stores a
+   single broadcast start, so the (uniform) element value is repeated; returns
+   the empty string when there is no start value."
+  input SimCodeVar.SimVar var;
+  output String out = "";
+protected
+  String sval;
+  Integer n;
+algorithm
+  out := match var.initialValue
+    local DAE.Exp e;
+    case SOME(e) algorithm
+        sval := getFMIArrayStartScalar(e);
+        n := SimCodeUtilShared.getNumElems(var);
+      then if stringEq(sval, "") then "" else stringDelimitList(List.fill(sval, n), " ");
+    else "";
+  end match;
+end getFMI3ArrayStart;
+
+protected function getFMIArrayStartScalar
+  "Extract the scalar (broadcast) value of an array start expression as a string."
+  input DAE.Exp e;
+  output String s;
+algorithm
+  s := match e
+    local DAE.Exp first; Real r; Integer i; Boolean b;
+    case DAE.RCONST(r) then realString(r);
+    case DAE.ICONST(i) then intString(i);
+    case DAE.BCONST(b) then if b then "true" else "false";
+    case DAE.ARRAY(array = first :: _) then getFMIArrayStartScalar(first);
+    case DAE.REDUCTION(expr = first) then getFMIArrayStartScalar(first);
+    else "";
+  end match;
+end getFMIArrayStartScalar;
+
+public function getFMIScalarVRs
+  "Comma separated list of the scalar value references occupied by a (possibly
+   array) FMI variable: base, base+1, ..., base+getNumElems-1. For a scalar this
+   is just its value reference. Used for the STATES/STATESDERIVATIVES macros."
+  input SimCodeVar.SimVar var;
+  input SimCode.SimCode simCode;
+  output String out;
+protected
+  Integer base, n;
+  list<String> refs = {};
+algorithm
+  base := lookupVR(var.name, simCode);
+  n := SimCodeUtilShared.getNumElems(var);
+  for i in 0:n-1 loop
+    refs := String(base + i) :: refs;
+  end for;
+  out := stringDelimitList(listReverse(refs), ", ");
+end getFMIScalarVRs;
+
 public
 function getScalarElements
   "Get scalar elements of an array in row major order. This is
@@ -14610,20 +14677,26 @@ public function getFMI3TypeOffset
    subtracting the offset.
    author: adrpo"
   input DAE.Type inType;
-  input SimCode.VarInfo inVarInfo;
+  input SimCode.ModelInfo inModelInfo;
   output Integer outOffset;
 protected
-  Integer numReal = 2*inVarInfo.numStateVars + inVarInfo.numAlgVars + inVarInfo.numDiscreteReal + inVarInfo.numParams + inVarInfo.numAlgAliasVars;
-  Integer numInteger = inVarInfo.numIntAlgVars + inVarInfo.numIntParams + inVarInfo.numIntAliasVars;
-  Integer numBoolean = inVarInfo.numBoolAlgVars + inVarInfo.numBoolParams + inVarInfo.numBoolAliasVars;
+  SimCodeVar.SimVars vars = inModelInfo.vars;
+  // per-scalar counts so the offsets match the contiguous scalar realVars layout
+  // (an array variable occupies getNumElems scalar slots).
+  Integer numReal = 2*numScalarElems(vars.stateVars) + numScalarElems(vars.algVars) + numScalarElems(vars.discreteAlgVars) + numScalarElems(vars.paramVars) + numScalarElems(vars.aliasVars);
+  Integer numInteger = numScalarElems(vars.intAlgVars) + numScalarElems(vars.intParamVars) + numScalarElems(vars.intAliasVars);
+  Integer numBoolean = numScalarElems(vars.boolAlgVars) + numScalarElems(vars.boolParamVars) + numScalarElems(vars.boolAliasVars);
 algorithm
   outOffset := match inType
+    local DAE.Type aty;
     case DAE.T_REAL() then 0;
     // enumerations are stored in the integer arrays of the OM runtime
     case DAE.T_INTEGER() then numReal;
     case DAE.T_ENUMERATION() then numReal;
     case DAE.T_BOOL() then numReal + numInteger;
     case DAE.T_STRING() then numReal + numInteger + numBoolean;
+    // non-scalarized array variable: the offset is determined by the element type
+    case DAE.T_ARRAY(ty = aty) then getFMI3TypeOffset(aty, inModelInfo);
     else 0;
   end match;
 end getFMI3TypeOffset;
@@ -14639,8 +14712,12 @@ public function getFMI3ValueReference
 protected
   Integer offset, localRef;
 algorithm
-  offset := getFMI3TypeOffset(inSimVar.type_, inSimCode.modelInfo.varInfo);
-  localRef := stringInt(getValueReference(inSimVar, inSimCode, false));
+  offset := getFMI3TypeOffset(inSimVar.type_, inSimCode.modelInfo);
+  // Use the element-cumulative per-base-type value-reference map (same one the
+  // C runtime macros use via lookupVR) so that array variables get the value
+  // reference of their first scalar element and occupy a contiguous block.
+  // For scalars this equals the former getValueReference result.
+  localRef := lookupVR(inSimVar.name, inSimCode);
   outValueReference := String(offset + localRef);
 end getFMI3ValueReference;
 
@@ -14694,11 +14771,13 @@ public function getFMI3TimeValueReference
   input SimCode.SimCode inSimCode;
   output String outValueReference;
 protected
-  SimCode.VarInfo vi = inSimCode.modelInfo.varInfo;
-  Integer numReal = 2*vi.numStateVars + vi.numAlgVars + vi.numDiscreteReal + vi.numParams + vi.numAlgAliasVars;
-  Integer numInteger = vi.numIntAlgVars + vi.numIntParams + vi.numIntAliasVars;
-  Integer numBoolean = vi.numBoolAlgVars + vi.numBoolParams + vi.numBoolAliasVars;
-  Integer numString = vi.numStringAlgVars + vi.numStringParamVars + vi.numStringAliasVars;
+  SimCodeVar.SimVars vars = inSimCode.modelInfo.vars;
+  // per-scalar counts (an array variable occupies getNumElems scalar slots), so
+  // that time comes after the real/integer/boolean/string scalar blocks.
+  Integer numReal = 2*numScalarElems(vars.stateVars) + numScalarElems(vars.algVars) + numScalarElems(vars.discreteAlgVars) + numScalarElems(vars.paramVars) + numScalarElems(vars.aliasVars);
+  Integer numInteger = numScalarElems(vars.intAlgVars) + numScalarElems(vars.intParamVars) + numScalarElems(vars.intAliasVars);
+  Integer numBoolean = numScalarElems(vars.boolAlgVars) + numScalarElems(vars.boolParamVars) + numScalarElems(vars.boolAliasVars);
+  Integer numString = numScalarElems(vars.stringAlgVars) + numScalarElems(vars.stringParamVars) + numScalarElems(vars.stringAliasVars);
 algorithm
   outValueReference := String(numReal + numInteger + numBoolean + numString);
 end getFMI3TimeValueReference;
@@ -15392,7 +15471,7 @@ algorithm
   end if;
 end lookupVRForRealOutputDerivative;
 
-protected function getValueReferenceMapping
+public function getValueReferenceMapping
   input SimCode.ModelInfo modelInfo;
   output AvlTreeCRToInt.Tree tree;
 protected
@@ -15421,6 +15500,28 @@ algorithm
   (i,tree) := getValueReferenceMapping2(vars.stringAliasVars, i, tree);
 end getValueReferenceMapping;
 
+public function createMinimalFMIModelStructure
+  "Build a minimal FMI ModelStructure (continuous state derivatives and outputs,
+   without dependency information) directly from the SimVars. Used by the new
+   backend FMU export, which does not have the old BackendDAE that
+   createFMIModelStructure needs. Without at least the ContinuousStateDerivative
+   entries an FMI 3.0 Model Exchange master cannot drive the integration."
+  input SimCode.ModelInfo modelInfo;
+  output Option<SimCode.FmiModelStructure> outStructure;
+protected
+  list<SimCode.FmiUnknown> derivs, outs;
+algorithm
+  derivs := list(SimCode.FMIUNKNOWN(getVariableFMIIndex(v), {}, {}) for v in modelInfo.vars.derivativeVars);
+  outs   := list(SimCode.FMIUNKNOWN(getVariableFMIIndex(v), {}, {}) for v in modelInfo.vars.outputVars);
+  outStructure := SOME(SimCode.FMIMODELSTRUCTURE(
+    SimCode.FMIOUTPUTS(outs),
+    SimCode.FMIDERIVATIVES(derivs),
+    NONE(),
+    NONE(),
+    SimCode.FMIDISCRETESTATES({}),
+    SimCode.FMIINITIALUNKNOWNS({}, {}, {})));
+end createMinimalFMIModelStructure;
+
 protected function getValueReferenceMapping2
   input list<SimCodeVar.SimVar> vars;
   input output Integer i;
@@ -15428,7 +15529,9 @@ protected function getValueReferenceMapping2
 algorithm
   for v in vars loop
     tree := AvlTreeCRToInt.add(tree, v.name, i);
-    i := i + 1;
+    // advance by the number of scalar elements so array variables occupy a
+    // contiguous block of value references (getNumElems = 1 for scalars).
+    i := i + SimCodeUtilShared.getNumElems(v);
   end for;
 end getValueReferenceMapping2;
 
