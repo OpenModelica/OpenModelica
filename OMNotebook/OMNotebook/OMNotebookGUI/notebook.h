@@ -200,18 +200,12 @@ private:
   void evalCells();
   //void createSavingTimer();
 
-  QVector<Cell*> cells,temp_cells; //Added by jhansi
+  QVector<Cell*> cells; //Added by jhansi
 
 private:
   QToolBar* toolBar;
-  QMenu *fileMenu;
-  QMenu *recentMenu;
-  QMenu *editMenu;
-  QMenu *cellMenu;
   QMenu *formatMenu;
-  QMenu *insertMenu;
   QMenu *windowMenu;
-  QMenu *aboutMenu;
 
   // 2005-11-03/04/07 AF, Added some more for text setting changes
   QMenu *styleMenu;
@@ -225,41 +219,9 @@ private:
   QMenu *borderMenu;
   QMenu *marginMenu;
   QMenu *paddingMenu;
-  // 2005-12-01 AF, added for import old omnotebook file
-  QMenu *importMenu;
-  // 2005-11-21 AF, added for export pure text
-  QMenu *exportMenu;
 
-  QMenu *indentMenu;
-  // 2005-10-07 AF, Porting, Added this actions
-  // 2005-11-03/04/07 AF, Added some more for text setting changes
-  QActionGroup *stylesgroup;
-  QActionGroup *fontsgroup;
-  QActionGroup *sizesgroup;
-  QActionGroup *stretchsgroup;
-  QActionGroup *colorsgroup;
-  QActionGroup *alignmentsgroup;
-  QActionGroup *verticalAlignmentsgroup;
-  QActionGroup *bordersgroup;
-  QActionGroup *marginsgroup;
-  QActionGroup *paddingsgroup;
-
-  QAction *newAction;
-  QAction *openFileAction;
-  QAction *saveAsAction;
-  QAction *saveAction;
-  QAction *printAction;
-  QAction *pdfAction;
-  QAction *closeFileAction;
   QAction *quitWindowAction;
-  QAction *indentAction;
   QAction *autoIndentAction;
-  QAction *evalAction;
-  QAction *evalallAction;
-  QAction *evalLatexAction;
-  QAction *shiftcellsupAction;
-  QAction *shiftcellsdownAction;
-  QAction *shiftselectedcellsAction;
 
 public:
   QAction *undoAction;
@@ -268,86 +230,21 @@ public:
   QAction *copyAction;
   QAction *pasteAction;
 private:
-  QAction *findAction;
-  QAction *replaceAction;
   QAction *showExprAction;
 
-  //QAction *cutCellAction;
-  //QAction *copyCellAction;
-  //QAction *pasteCellAction;
-  QAction *addCellAction;
+  QAction *groupAction;
   QAction *ungroupCellAction;
   QAction *splitCellAction;
   QAction *deleteCellAction;
-  QAction *nextCellAction;
-  QAction *previousCellAction;
 
-  QAction *groupAction;
-  QAction *inputAction;
-  QAction *latexAction;
-  QAction *textAction;
-  QAction *evalCellAction;
-  QAction *evalAllCellsAction;
-  QAction *evalAllLatexCellsAction;
-
-  QAction *aboutAction;
-  QAction *helpAction;
-  QAction *aboutQtAction;
-
-  QAction *facePlain;
   QAction *faceBold;
   QAction *faceItalic;
   QAction *faceUnderline;
 
-  QAction *sizeSmaller;
-  QAction *sizeLarger;
-  QAction *size8pt;
-  QAction *size9pt;
-  QAction *size10pt;
-  QAction *size12pt;
-  QAction *size14pt;
-  QAction *size16pt;
-  QAction *size18pt;
-  QAction *size20pt;
-  QAction *size24pt;
-  QAction *size36pt;
-  QAction *size72pt;
   QAction *sizeOther;
-
-  QAction *stretchUltraCondensed;
-  QAction *stretchExtraCondensed;
-  QAction *stretchCondensed;
-  QAction *stretchSemiCondensed;
-  QAction *stretchUnstretched;
-  QAction *stretchSemiExpanded;
-  QAction *stretchExpanded;
-  QAction *stretchExtraExpanded;
-  QAction *stretchUltraExpanded;
-
-  QAction *colorBlack;
-  QAction *colorWhite;
-  QAction *color10Gray;
-  QAction *color33Gray;
-  QAction *color50Gray;
-  QAction *color66Gray;
-  QAction *color90Gray;
-  QAction *colorRed;
-  QAction *colorGreen;
-  QAction *colorBlue;
-  QAction *colorCyan;
-  QAction *colorMagenta;
-  QAction *colorYellow;
   QAction *colorOther;
 
   QAction *chooseFont;
-
-  QAction *alignmentLeft;
-  QAction *alignmentRight;
-  QAction *alignmentCenter;
-  QAction *alignmentJustify;
-  QAction *verticalNormal;
-  QAction *verticalSub;
-  QAction *verticalSuper;
 
   QAction *borderOther;
   QAction *marginOther;
@@ -355,25 +252,8 @@ private:
 
   QAction *insertImageAction;
   QAction *insertLinkAction;
-  QAction *importOldFile;
-  QAction *exportPureText;
 
 #if USE_OMSKETCH
-//Added by jhansi
-  QAction *insertSketch;
-  QAction *insertSketchImage;
-  QAction *editSketchImage;
-  QAction *editSketchAttributes;
-
-  QString imageFileName;
-
-  //vector to hold the stored image file names,position of in cell and text of the cell
-  QVector<QString> filenames;
-  QVector<QString> onbfilenames;
-  QVector<QString> positions;
-  QVector<QString> texts;
-  QVector<QString> cellIds;
-
   Tools *window;
   bool isShown;
 #endif
@@ -382,7 +262,7 @@ private:
   QHash<QString, QAction*> fonts_;
   QHash<QString, QAction*> sizes_;
   QHash<int, QAction*> stretchs_;
-  QHash<QAction*, QColor*> colors_;
+  QHash<QAction*, QColor> colors_;
   QHash<int, QAction*> alignments_;
   QHash<int, QAction*> verticals_;
   QHash<int, QAction*> borders_;
