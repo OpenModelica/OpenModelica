@@ -765,6 +765,17 @@ algorithm
   end match;
 end toString;
 
+function hashIntArray
+  "Computes a hash value for an array of Integer.
+   The same array contents always give the same hash value."
+  input array<Integer> arr;
+  output Integer hash = 5381;
+algorithm
+  for i in 1:arrayLength(arr) loop
+    hash := intMod(hash * 31 + arrayGetNoBoundsChecking(arr, i), 536870911);
+  end for;
+end hashIntArray;
+
 function isEqual<T>
   "Checks if two arrays are equal."
   input array<T> inArr1;
