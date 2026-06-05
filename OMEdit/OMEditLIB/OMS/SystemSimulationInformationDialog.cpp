@@ -128,8 +128,8 @@ QJsonObject SolverSettingsDialog::getSolverSettings() const
 
   QJsonObject solverSettings;
   for (const QString &key : SystemSimulationInformationWidget::solverSettingsKeys(mMethod)) {
-    QLineEdit *pWidget = keyToWidget.value(key, nullptr);
-    solverSettings[key] = pWidget ? pWidget->text() : "";
+    QLineEdit *pLineEditWidget = keyToWidget.value(key, nullptr);
+    solverSettings[key] = pLineEditWidget ? pLineEditWidget->text() : "";
   }
   return solverSettings;
 }
