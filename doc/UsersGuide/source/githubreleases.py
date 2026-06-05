@@ -18,6 +18,7 @@ for release in om.get_releases():
       "v1.9.3"
     ]:
         continue
+    release.complete() # to get the body
     fout.write("# Release Notes for %s" % release.title)
     fout.write("\n")
     fout.write(release.body)
