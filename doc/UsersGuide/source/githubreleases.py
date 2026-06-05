@@ -19,11 +19,11 @@ for release in om.get_releases():
     ]:
         continue
     release.complete() # to get the body
-    fout.write("# Release Notes for %s" % release.title)
+    fout.write("# Release Notes for %s" % release.name)
     fout.write("\n")
-    fout.write(release.body)
+    fout.write(release.body or "")
     fout.write("\n")
-    print(release.title)
+    print(release.name)
 fout.close()
 call(["pandoc", "--wrap=none", "--standalone", "-f", "gfm", "-t", "rst", "--shift-heading-level-by=3", "-o", "githubreleases.tmp.rst", "githubreleases.md"])
 with open("githubreleases.tmp.rst", "r", encoding="utf-8") as fin:
