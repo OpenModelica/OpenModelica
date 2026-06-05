@@ -280,10 +280,6 @@ ElementPropertiesDialog::ElementPropertiesDialog(Element *pComponent, QWidget *p
   pMainLayout->addWidget(mpHorizontalLine, 1, 0, 1, 2);
   pMainLayout->addWidget(mpNameLabel, 2, 0);
   pMainLayout->addWidget(mpNameTextBox, 2, 1);
-  if(mpComponent->getLibraryTreeItem()->isExternalTLMModelComponent()) {
-      pMainLayout->addWidget(mpStartScriptLabel, 3, 0);
-      pMainLayout->addWidget(mpStartScriptTextBox, 3, 1);
-  }
   if (mpComponent->getLibraryTreeItem()->getOMSModelElement()->hasFMUInfo() || hasParameter || hasInput) {
       pMainLayout->addWidget(mpTabWidget, 4, 0, 1, 2);
   }

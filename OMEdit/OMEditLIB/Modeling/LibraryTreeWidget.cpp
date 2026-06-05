@@ -357,45 +357,6 @@ QString LibraryTreeItem::getClassText(LibraryTreeModel *pLibraryTreeModel)
   return mClassText;
 }
 
-/*!
- * \brief LibraryTreeItem::getOMSElementGeometry
- * \return
- */
-ssd_element_geometry_t LibraryTreeItem::getOMSElementGeometry()
-{
-  ssd_element_geometry_t elementGeometry;
-
-  if (getOMSElement() && getOMSElement()->geometry) {
-    elementGeometry.x1 = getOMSElement()->geometry->x1;
-    elementGeometry.y1 = getOMSElement()->geometry->y1;
-    elementGeometry.x2 = getOMSElement()->geometry->x2;
-    elementGeometry.y2 = getOMSElement()->geometry->y2;
-    elementGeometry.rotation = getOMSElement()->geometry->rotation;
-
-    if (getOMSElement()->geometry->iconSource) {
-      elementGeometry.iconSource = new char[strlen(getOMSElement()->geometry->iconSource) + 1];
-      strcpy(elementGeometry.iconSource, getOMSElement()->geometry->iconSource);
-    } else {
-      elementGeometry.iconSource = NULL;
-    }
-
-    elementGeometry.iconRotation = getOMSElement()->geometry->iconRotation;
-    elementGeometry.iconFlip = getOMSElement()->geometry->iconFlip;
-    elementGeometry.iconFixedAspectRatio = getOMSElement()->geometry->iconFixedAspectRatio;
-  } else {
-    elementGeometry.x1 = -10.0;
-    elementGeometry.y1 = -10.0;
-    elementGeometry.x2 = 10.0;
-    elementGeometry.y2 = 10.0;
-    elementGeometry.rotation = 0.0;
-    elementGeometry.iconSource = NULL;
-    elementGeometry.iconRotation = 0.0;
-    elementGeometry.iconFlip = false;
-    elementGeometry.iconFixedAspectRatio = false;
-  }
-
-  return elementGeometry;
-}
 
 /*!
  * \brief LibraryTreeItem::getTooltip
@@ -438,10 +399,6 @@ QString LibraryTreeItem::getTooltip() const {
                 .arg(Helper::name).arg(mName)
                 .arg(Helper::type).arg(mpOMSModelConnector->getSignalTypeString())
                 .arg(QObject::tr("Causality")).arg(mpOMSModelConnector->getCausalityString());
-    } else if (mpOMSBusConnector) {
-      tooltip = QString("%1 %2<br />%3: %4")
-                .arg(Helper::name).arg(mName)
-                .arg(Helper::type).arg("Bus");
     }
   } else {
     tooltip = QString("%1 %2\n%3: %4")
@@ -501,11 +458,9 @@ QIcon LibraryTreeItem::getLibraryTreeItemIcon() const
               return ResourceCache::getIcon(":/Resources/icons/package-icon.svg");
           }
         default:
-          qDebug() << "Unhanled connector type" << mpOMSConnector->type;
+          qDebug() << "Unhanled connector type" << mpOMSModelConnector->getSignalTypeString();
           break;
       }
-    } else if (mpOMSBusConnector) {
-      return QIcon(":/Resources/icons/bus-connector.svg");
     }
   } else if (isModelica()) {
     switch (getRestriction()) {
@@ -3108,7 +3063,7 @@ void LibraryTreeView::libraryTreeItemDoubleClicked(const QModelIndex &index)
         mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
       }
     } else if (pLibraryTreeItem->isSSP()) {
-      if ((pLibraryTreeItem->getOMSModelConnector() || pLibraryTreeItem->getOMSBusConnector())) {
+      if (pLibraryTreeItem->getOMSModelConnector()) {
         return;
       } else {
         mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);

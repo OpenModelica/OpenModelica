@@ -148,6 +148,7 @@ namespace OMSModel
     void setX2(double value) {x2 = value;}
     void setY2(double value) {y2 = value;}
     void setRotation(double value) {rotation = value;}
+    void setIconSource(const QString &value) {iconSource = value;}
   private:
     double x1 = -10.0;
     double y1 = -10.0;

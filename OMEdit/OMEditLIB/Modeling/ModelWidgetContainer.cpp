@@ -53,7 +53,6 @@
 #include "Git/GitCommands.h"
 #include "OMS/OMSProxy.h"
 #include "OMS/ModelDialog.h"
-#include "OMS/BusDialog.h"
 #include "OMS/SystemSimulationInformationDialog.h"
 #include "Util/ResourceCache.h"
 #include "Plotting/PlotWindowContainer.h"
@@ -3137,7 +3136,7 @@ Element* GraphicsView::connectorElementAtPosition(QPoint position)
             !(mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView()) &&
             (pElement->isConnector() ||
              (mpModelWidget->getLibraryTreeItem()->isSSP() &&
-              (pElement->getLibraryTreeItem()->getOMSModelConnector() || pElement->getLibraryTreeItem()->getOMSBusConnector()
+              (pElement->getLibraryTreeItem()->getOMSModelConnector()
                || pElement->isPort())))) {
           return pElement;
         }
@@ -3340,23 +3339,11 @@ void GraphicsView::addConnection(Element *pElement, bool createConnector)
               || (pRootParentElement && (pRootParentElement->isExpandableConnector() || (pRootParentElement->isArray() && !pRootParentElement->isConnectorSizing()))))) {
         showConnectionArrayDialog = true;
       }
-      // check if any starting or ending elements are bus
-      bool showBusConnectionDialog = false;
-      if ((pStartElement->getLibraryTreeItem() && pStartElement->getLibraryTreeItem()->getOMSBusConnector())
-        || (pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->getOMSBusConnector())) {
-        showBusConnectionDialog = true;
-      }
       // if connectorSizing annotation is set then don't show the CreateConnectionDialog
       if (showConnectionArrayDialog) {
         CreateConnectionDialog *pConnectionArray = new CreateConnectionDialog(this, mpConnectionLineAnnotation, createConnector, MainWindow::instance());
         // if user cancels the array connection
         if (!pConnectionArray->exec()) {
-          removeCurrentConnection();
-        }
-      } else if (showBusConnectionDialog) {
-        BusConnectionDialog *pBusConnectionDialog = new BusConnectionDialog(this, mpConnectionLineAnnotation);
-        // if user cancels the bus connection
-        if (!pBusConnectionDialog->exec()) {
           removeCurrentConnection();
         }
       } else {
@@ -3495,47 +3482,7 @@ void GraphicsView::removeCurrentTransition()
  */
 void GraphicsView::deleteConnection(LineAnnotation *pConnectionLineAnnotation)
 {
-  // if deleting a bus connection
-  if (mpModelWidget->getLibraryTreeItem()->isSSP()) {
-    if (pConnectionLineAnnotation->getStartElement()->getLibraryTreeItem()
-        && pConnectionLineAnnotation->getStartElement()->getLibraryTreeItem()->getOMSBusConnector()
-        && pConnectionLineAnnotation->getEndElement()->getLibraryTreeItem()
-        && pConnectionLineAnnotation->getEndElement()->getLibraryTreeItem()->getOMSBusConnector()) {
-      oms_busconnector_t *pStartBus = pConnectionLineAnnotation->getStartElement()->getLibraryTreeItem()->getOMSBusConnector();
-      oms_busconnector_t *pEndBus = pConnectionLineAnnotation->getEndElement()->getLibraryTreeItem()->getOMSBusConnector();
-      // start bus connectors
-      QStringList startBusConnectors;
-      if (pStartBus->connectors) {
-        for (int i = 0; pStartBus->connectors[i] ; ++i) {
-          startBusConnectors.append(QString(pStartBus->connectors[i]));
-        }
-      }
-      // end bus connectors
-      QStringList endBusConnectors;
-      if (pEndBus->connectors) {
-        for (int i = 0; pEndBus->connectors[i] ; ++i) {
-          endBusConnectors.append(QString(pEndBus->connectors[i]));
-        }
-      }
-      // Delete the atomic connections before deleting the actual bus connection.
-      foreach (LineAnnotation *pAtomicConnectionLineAnnotation, mConnectionsList) {
-        if (pAtomicConnectionLineAnnotation->getOMSConnectionType() == oms_connection_single) {
-          if (pStartBus->connectors) {
-            for (int i = 0; pStartBus->connectors[i] ; ++i) {
-              if (startBusConnectors.contains(pAtomicConnectionLineAnnotation->getStartElement()->getName())
-                  && endBusConnectors.contains(pAtomicConnectionLineAnnotation->getEndElement()->getName())) {
-                deleteConnectionFromClass(pAtomicConnectionLineAnnotation);
-                break;
-              }
-            }
-          }
-        }
-      }
-    }
-    deleteConnectionFromClass(pConnectionLineAnnotation);
-  } else {
-    deleteConnectionFromClass(pConnectionLineAnnotation);
-  }
+  deleteConnectionFromClass(pConnectionLineAnnotation);
 }
 
 /*!
@@ -3865,7 +3812,6 @@ void GraphicsView::omsGraphicsViewContextMenu(QMenu *pMenu)
     pMenu->addAction(MainWindow::instance()->getDeleteIconAction());
     pMenu->addSeparator();
     pMenu->addAction(MainWindow::instance()->getAddConnectorAction());
-    pMenu->addAction(MainWindow::instance()->getAddBusAction());
     if (mpModelWidget->getLibraryTreeItem()->isSystemElement()) {
       pMenu->addSeparator();
       pMenu->addAction(MainWindow::instance()->getAddSubModelAction());
@@ -3884,7 +3830,7 @@ void GraphicsView::omsGraphicsViewContextMenu(QMenu *pMenu)
 void GraphicsView::omsOneShapeContextMenu(ShapeAnnotation *pShapeAnnotation, QMenu *pMenu)
 {
   BitmapAnnotation *pBitmapAnnotation = dynamic_cast<BitmapAnnotation*>(pShapeAnnotation);
-  if (pBitmapAnnotation && mpModelWidget->getLibraryTreeItem()->getOMSElement()) {
+  if (pBitmapAnnotation && mpModelWidget->getLibraryTreeItem()->getOMSModelElement()) {
     pMenu->addAction(MainWindow::instance()->getAddOrEditIconAction());
     pMenu->addAction(MainWindow::instance()->getDeleteIconAction());
   }
@@ -5218,8 +5164,7 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
       } else if (mpModelWidget->getLibraryTreeItem()->isSSP()) {
         // No context menu for component of type OMS connector i.e., input/output signal or OMS bus connector.
         if (pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isSSP()
-            && (pComponent->getLibraryTreeItem()->getOMSModelConnector()
-                || pComponent->getLibraryTreeItem()->getOMSBusConnector())) {
+            && pComponent->getLibraryTreeItem()->getOMSModelConnector()) {
           return;
         }
         omsOneComponentContextMenu(pComponent, &menu);
@@ -6167,9 +6112,10 @@ void ModelWidget::createModelWidgetComponents()
  */
 ShapeAnnotation* ModelWidget::drawOMSModelElement()
 {
-  if (mpLibraryTreeItem->getOMSElement() && mpLibraryTreeItem->getOMSElement()->geometry && mpLibraryTreeItem->getOMSElement()->geometry->iconSource) {
+  const QString iconSource = mpLibraryTreeItem->getOMSModelElement() ? mpLibraryTreeItem->getOMSModelElement()->getGeometry().getIconSource() : QString();
+  if (!iconSource.isEmpty()) {
     // Draw bitmap with icon source
-    QUrl url(mpLibraryTreeItem->getOMSElement()->geometry->iconSource);
+    QUrl url(iconSource);
     QFileInfo fileInfo(url.toLocalFile());
     BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(fileInfo.absoluteFilePath(), mpIconGraphicsView);
     pBitmapAnnotation->drawCornerItems();
@@ -6246,24 +6192,14 @@ ShapeAnnotation* ModelWidget::drawOMSModelElement()
  */
 void ModelWidget::addUpdateDeleteOMSElementIcon(const QString &iconPath)
 {
-  // update element ssd_element_geometry_t
-  if (mpLibraryTreeItem && mpLibraryTreeItem->getOMSElement() && mpLibraryTreeItem->getOMSElement()->geometry) {
-    ssd_element_geometry_t elementGeometry = mpLibraryTreeItem->getOMSElementGeometry();
-    QString fileURI = "file:///" + iconPath;
-    QString commandText = "Add";
-    if (elementGeometry.iconSource) {
-      commandText = "Update";
-      delete[] elementGeometry.iconSource;
-    }
-    if (iconPath.isEmpty()) {
-      commandText = "Delete";
-      elementGeometry.iconSource = NULL;
-    } else {
-      size_t size = fileURI.toStdString().size() + 1;
-      elementGeometry.iconSource = new char[size];
-      memcpy(elementGeometry.iconSource, fileURI.toStdString().c_str(), size*sizeof(char));
-    }
-    if (OMSProxy::instance()->setElementGeometry(mpLibraryTreeItem->getNameStructure(), &elementGeometry)) {
+  if (mpLibraryTreeItem && mpLibraryTreeItem->getOMSModelElement()) {
+    OMSModel::ElementGeometry elementGeometry = mpLibraryTreeItem->getOMSModelElement()->getGeometry();
+    const QString currentIcon = elementGeometry.getIconSource();
+    QString commandText = iconPath.isEmpty() ? "Delete" : (currentIcon.isEmpty() ? "Add" : "Update");
+    const QString fileURI = iconPath.isEmpty() ? "" : "file:///" + iconPath;
+    elementGeometry.setIconSource(fileURI);
+    if (OMSProxy::instance()->setElementGeometry(mpLibraryTreeItem->getNameStructure(), elementGeometry)) {
+      mpLibraryTreeItem->getOMSModelElement()->setGeometry(elementGeometry);
       createOMSimulatorUndoCommand(QString("%1 Icon %2").arg(commandText, iconPath));
       updateModelText();
     }
@@ -7561,17 +7497,8 @@ void ModelWidget::drawOMSModelConnections()
  */
 void ModelWidget::associateBusWithConnectors(Element *pBusComponent, GraphicsView *pGraphicsView)
 {
-  if (pBusComponent && pBusComponent->getLibraryTreeItem() && pBusComponent->getLibraryTreeItem()->getOMSBusConnector()) {
-    oms_busconnector_t *pBusConnector = pBusComponent->getLibraryTreeItem()->getOMSBusConnector();
-    if (pBusConnector->connectors) {
-      for (int i = 0 ; pBusConnector->connectors[i] ; i++) {
-        Element *pConnectorComponent = pGraphicsView->getElementObject(QString(pBusConnector->connectors[i]));
-        if (pConnectorComponent) {
-          pConnectorComponent->setBusComponent(pBusComponent);
-        }
-      }
-    }
-  }
+  Q_UNUSED(pBusComponent);
+  Q_UNUSED(pGraphicsView);
 }
 
 /*!
@@ -7939,7 +7866,6 @@ ModelWidgetContainer::ModelWidgetContainer(QWidget *pParent)
   connect(MainWindow::instance()->getAddOrEditIconAction(), SIGNAL(triggered()), SLOT(addOrEditIcon()));
   connect(MainWindow::instance()->getDeleteIconAction(), SIGNAL(triggered()), SLOT(deleteIcon()));
   connect(MainWindow::instance()->getAddConnectorAction(), SIGNAL(triggered()), SLOT(addConnector()));
-  connect(MainWindow::instance()->getAddBusAction(), SIGNAL(triggered()), SLOT(addBus()));
   connect(MainWindow::instance()->getAddSubModelAction(), SIGNAL(triggered()), SLOT(addSubModel()));
 }
 
@@ -8528,7 +8454,6 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getAddOrEditIconAction()->setEnabled(enabled && !diagramGraphicsView && !textView && (omsSystem || omsSubmodel));
   MainWindow::instance()->getDeleteIconAction()->setEnabled(enabled && !diagramGraphicsView && !textView && (omsSystem || omsSubmodel));
   MainWindow::instance()->getAddConnectorAction()->setEnabled(enabled && !textView && omsSystem);
-  MainWindow::instance()->getAddBusAction()->setEnabled(enabled && !textView && (omsSystem || omsSubmodel));
   MainWindow::instance()->getAddSubModelAction()->setEnabled(enabled && !iconGraphicsView && !textView && omsSystem);
   MainWindow::instance()->getLogCurrentFileAction()->setEnabled(enabled && gitWorkingDirectory);
   MainWindow::instance()->getStageCurrentFileForCommitAction()->setEnabled(enabled && gitWorkingDirectory);
@@ -8854,34 +8779,6 @@ void ModelWidgetContainer::addConnector()
     }
     AddConnectorDialog *pAddConnectorDialog = new AddConnectorDialog(pGraphicsView);
     pAddConnectorDialog->exec();
-  }
-}
-
-/*!
- * \brief ModelWidgetContainer::addBus
- * Opens the AddBusDialog.
- */
-void ModelWidgetContainer::addBus()
-{
-  ModelWidget *pModelWidget = getCurrentModelWidget();
-  if (pModelWidget) {
-    GraphicsView *pGraphicsView = 0;
-    if (pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) {
-      pGraphicsView = pModelWidget->getIconGraphicsView();
-    } else if (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()) {
-      pGraphicsView = pModelWidget->getDiagramGraphicsView();
-    }
-    QList<Element*> components;
-    QList<QGraphicsItem*> selectedItems = pGraphicsView->scene()->selectedItems();
-    for (int i = 0 ; i < selectedItems.size() ; i++) {
-      // check the selected components.
-      Element *pComponent = dynamic_cast<Element*>(selectedItems.at(i));
-      if (pComponent && pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getOMSModelConnector()) {
-        components.append(pComponent);
-      }
-    }
-    AddBusDialog *pAddBusDialog = new AddBusDialog(components, 0, pGraphicsView);
-    pAddBusDialog->exec();
   }
 }
 

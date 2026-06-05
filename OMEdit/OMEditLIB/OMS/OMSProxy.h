@@ -94,8 +94,6 @@ private slots:
 public:
   static OMSProxy* instance() {return mpInstance;}
 
-  static QString getSystemTypeString(oms_system_enu_t type);
-  static QString getSystemTypeShortString(oms_system_enu_t type);
   static QString getFMUKindString(oms_fmi_kind_enu_t kind);
   static QString getSignalTypeString(oms_signal_type_enu_t type);
   static QString getCausalityString(oms_causality_enu_t causality);
@@ -104,28 +102,17 @@ public:
   void emitLogGUIMessage(MessageItem messageItem) {emit logGUIMessage(messageItem);}
   bool sendZmqCommand(const QJsonObject &obj, QJsonObject &reply);
 
-  bool addBus(QString cref);
   bool addConnection(QString crefA, QString crefB, bool suppressUnitConversion = false);
   bool addConnector(QString cref, oms_causality_enu_t causality, oms_signal_type_enu_t type);
   bool addConnector(QString cref, OMSModel::Causality causality, OMSModel::SignalType type);
-  bool addConnectorToBus(QString busCref, QString connectorCref);
   bool addSubModel(QString cref, QString fmuPath);
   bool replaceSubModel(QString cref, QString fmuPath, bool dryCount, int* count);
   void createElementGeometryUsingPosition(const QString &cref, QPointF position);
   bool addSystem(QString cref);
   bool deleteConnection(QString crefA, QString crefB);
-  bool deleteConnectorFromBus(QString busCref, QString connectorCref);
-  bool deleteConnectorFromTLMBus(QString busCref, QString connectorCref);
   bool getBoolean(QString signal, bool &value);
-  bool getBus(QString cref, oms_busconnector_t **pBusConnector);
-  bool getComponentType(QString cref, oms_component_enu_t *pType);
   bool getConnections(QString cref, oms_connection_t ***pConnections);
-  bool getConnector(QString cref, oms_connector_t **pConnector);
-  bool getElement(QString cref, oms_element_t **pElement);
-  bool getElements(QString cref, oms_element_t ***pElements);
   bool getElementsJson(QString cref, QJsonArray &elements);
-  oms_element_t** jsonArrayToElements(const QJsonArray &arr);
-  oms_element_t* jsonToElement(const QJsonObject &obj);
   bool getFixedStepSize(QString cref, double& stepSize);
   bool getFMUInfo(QString cref, const oms_fmu_info_t** pFmuInfo);
   bool getInteger(QString signal, int &value);
@@ -137,7 +124,6 @@ public:
   bool getStartTime(QString cref, double& startTime);
   bool getStopTime(QString cref, double& stopTime);
   bool getSubModelPath(QString cref, QString* pPath);
-  bool getSystemType(QString cref, oms_system_enu_t *pType);
   bool getTolerance(QString cref, double& relativeTolerance);
   bool getVariableStepSize(QString cref, QString solverName, double& initialStepSize, double& minimumStepSize, double& maximumStepSize);
   bool instantiate(QString cref);
@@ -150,7 +136,6 @@ public:
   bool omsDelete(QString cref);
   bool saveModel(QString cref, QString filename);
   bool setBoolean(QString signal, bool value);
-  bool setBusGeometry(QString cref, const ssd_connector_geometry_t* pGeometry);
   bool setCommandLineOption(QString cmd);
   bool setConnectionGeometry(QString crefA, QString crefB, const ssd_connection_geometry_t *pGeometry);
   bool setConnectionGeometry(QString crefA, QString crefB, const OMSModel::ConnectionGeometry &geometry);

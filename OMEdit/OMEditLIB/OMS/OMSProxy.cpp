@@ -375,43 +375,6 @@ void OMSProxy::logResponse(QString command, oms_status_enu_t status, QElapsedTim
   MainWindow::instance()->printStandardOutAndErrorFilesMessages();
 }
 
-/*!
- * \brief OMSProxy::getSystemTypeString
- * Returns the oms_system_enu_t as string.
- * \param type
- * \return
- */
-QString OMSProxy::getSystemTypeString(oms_system_enu_t type)
-{
-  switch (type) {
-    case oms_system_wc:
-      return Helper::systemWC;
-    case oms_system_sc:
-      return Helper::systemSC;
-    default:
-      // should never be reached
-      return Helper::systemWC;
-  }
-}
-
-/*!
- * \brief OMSProxy::getSystemTypeShortString
- * Returns the oms_system_enu_t as short string.
- * \param type
- * \return
- */
-QString OMSProxy::getSystemTypeShortString(oms_system_enu_t type)
-{
-  switch (type) {
-    case oms_system_wc:
-      return "WC";
-    case oms_system_sc:
-      return "SC";
-    default:
-      // should never be reached
-      return "WC";
-  }
-}
 
 /*!
  * \brief OMSProxy::getFMUKindString
@@ -568,22 +531,6 @@ bool OMSProxy::sendZmqCommand(const QJsonObject &obj, QJsonObject &reply)
   return true;
 }
 
-/*!
- * \brief OMSProxy::addBus
- * Adds a bus.
- * \param cref
- * \return
- */
-bool OMSProxy::addBus(QString cref)
-{
-  QString command = "oms_addBus";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_addBus(cref.toUtf8().constData());
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
 
 /*!
  * \brief OMSProxy::addConnection
@@ -659,23 +606,6 @@ bool OMSProxy::addConnector(QString cref, OMSModel::Causality causality, OMSMode
   return sendZmqCommand(obj, reply);
 }
 
-/*!
- * \brief OMSProxy::addConnectorToBus
- * Adds a connector to a bus.
- * \param busCref
- * \param connectorCref
- * \return
- */
-bool OMSProxy::addConnectorToBus(QString busCref, QString connectorCref)
-{
-  QString command = "oms_addConnectorToBus";
-  QStringList args;
-  args << busCref << connectorCref;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_addConnectorToBus(busCref.toUtf8().constData(), connectorCref.toUtf8().constData());
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
 
 /*!
  * \brief OMSProxy::addSubModel
@@ -793,23 +723,6 @@ bool OMSProxy::deleteConnection(QString crefA, QString crefB)
   return statusToBool(status);
 }
 
-/*!
- * \brief OMSProxy::deleteConnectorFromBus
- * Deletes a connector from a bus.
- * \param busCref
- * \param connectorCref
- * \return
- */
-bool OMSProxy::deleteConnectorFromBus(QString busCref, QString connectorCref)
-{
-  QString command = "oms_deleteConnectorFromBus";
-  QStringList args;
-  args << busCref << connectorCref;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_deleteConnectorFromBus(busCref.toUtf8().constData(), connectorCref.toUtf8().constData());
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
 
 /*!
  * \brief OMSProxy::getBoolean
@@ -836,41 +749,6 @@ bool OMSProxy::getBoolean(QString cref, bool &value)
   return true;
 }
 
-/*!
- * \brief OMSProxy::getBus
- * Gets the bus.
- * \param cref
- * \param pBusConnector
- * \return
- */
-bool OMSProxy::getBus(QString cref, oms_busconnector_t **pBusConnector)
-{
-  QString command = "oms_getBus";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getBus(cref.toUtf8().constData(), pBusConnector);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::getComponentType
- * Get the component type.
- * \param cref
- * \param pType
- * \return
- */
-bool OMSProxy::getComponentType(QString cref, oms_component_enu_t *pType)
-{
-  QString command = "oms_getComponentType";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getComponentType(cref.toUtf8().constData(), pType);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
 
 /*!
  * \brief OMSProxy::getConnections
@@ -890,60 +768,6 @@ bool OMSProxy::getConnections(QString cref, oms_connection_t*** pConnections)
   return statusToBool(status);
 }
 
-/*!
- * \brief OMSProxy::getConnector
- * Gets the connector.
- * \param cref
- * \param pConnector
- * \return
- */
-bool OMSProxy::getConnector(QString cref, oms_connector_t **pConnector)
-{
-  QString command = "oms_getConnector";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getConnector(cref.toUtf8().constData(), pConnector);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::getElement
- * Gets the model element
- * \param cref
- * \param pElement
- * \return
- */
-bool OMSProxy::getElement(QString cref, oms_element_t** pElement)
-{
-  QString command = "oms_getElement";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getElement(cref.toUtf8().constData(), pElement);
-  logResponse(command, status, &commandTime);
-
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::getElements
- * Get the model elements
- * \param cref
- * \param pElements
- * \return
- */
-bool OMSProxy::getElements(QString cref, oms_element_t*** pElements)
-{
-  QString command = "oms_getElements";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getElements(cref.toUtf8().constData(), pElements);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
 
 bool OMSProxy::getElementsJson(QString cref, QJsonArray &elements)
 {
@@ -1212,23 +1036,6 @@ bool OMSProxy::getSubModelPath(QString cref, QString* pPath)
   return statusToBool(status);
 }
 
-/*!
- * \brief OMSProxy::getSystemType
- * Get the system type.
- * \param cref
- * \param pType
- * \return
- */
-bool OMSProxy::getSystemType(QString cref, oms_system_enu_t *pType)
-{
-  QString command = "oms_getSystemType";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getSystemType(cref.toUtf8().constData(), pType);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
 
 /*!
  * \brief OMSProxy::getTolerance
@@ -1474,23 +1281,6 @@ bool OMSProxy::setBoolean(QString cref, bool value)
   return sendZmqCommand(obj, reply);
 }
 
-/*!
- * \brief OMSProxy::setBusGeometry
- * Sets the bus geometry.
- * \param cref
- * \param pGeometry
- * \return
- */
-bool OMSProxy::setBusGeometry(QString cref, const ssd_connector_geometry_t* pGeometry)
-{
-  QString command = "oms_setBusGeometry";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setBusGeometry(cref.toUtf8().constData(), pGeometry);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
 
 /*!
  * \brief OMSProxy::setCommandLineOption
