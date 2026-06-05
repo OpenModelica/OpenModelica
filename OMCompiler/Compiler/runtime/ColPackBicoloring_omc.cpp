@@ -62,17 +62,7 @@ extern "C" {
 #undef FALSE
 #endif
 
-#if defined(__has_include)
-#  if __has_include(<ColPack/ColPackHeaders.h>)
-#    include <ColPack/ColPackHeaders.h>
-#  elif __has_include(<ColPack_headers/ColPackHeaders.h>)
-#    include <ColPack_headers/ColPackHeaders.h>
-#  else
-#    error "Required ColPack headers not found"
-#  endif
-#else
-#  include <ColPack/ColPackHeaders.h>
-#endif
+#include <ColPackHeaders.h>
 
 #include <vector>
 #include <cstring>

@@ -1316,7 +1316,6 @@ protected
     SparsityColoring sparsityColoring;
 
     BVariable.checkVar func = getTmpFilterFunction(jacType);
-    Real t_start, t_diff, t_sparsity;
   algorithm
     if isSome(strongComponents) then
       // filter all discrete strong components and differentiate the others
@@ -1326,7 +1325,6 @@ protected
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because no strong components were given!"});
     end if;
 
-    t_start := clock();
     // create seed vars
     VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, map = diff_map,
                                                                      makeVar = BVariable.makeSeedVar, staticAsContinuous = staticAsContinuous));
@@ -1363,7 +1361,6 @@ protected
 
     // differentiate all strong components
     (diffed_comps, diffArguments) := Differentiate.differentiateStrongComponentList(comps, diffArguments, idx, name, getInstanceName());
-    t_diff := clock() - t_start;
 
     // collect var data (most of this can be removed)
     unknown_vars  := listAppend(res_vars, tmp_vars);
@@ -1393,12 +1390,6 @@ protected
       fail();
     end if;
     (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType);
-    t_sparsity := clock() - t_start - t_diff;
-
-    print("[NBJacobian] jacobianSymbolic('" + name + "' " + jacobianTypeString(jacType)
-      + "): differentiation=" + realString(t_diff) + "s"
-      + ", sparsity+coloring=" + realString(t_sparsity) + "s"
-      + ", total=" + realString(t_diff + t_sparsity) + "s\n");
 
     jacobian := SOME(Jacobian.JACOBIAN(
       name              = name,
@@ -1682,7 +1673,7 @@ protected
     input UnorderedMap<ComponentRef, ComponentRef> diff_map;
     input UnorderedMap<Path, Function> funcMap;
     input Boolean scalarized;
-    input Boolean init;
+    input Boolean staticAsContinuous;
     input Pointer<Integer> idx;
     input String contextName;
     input VariablePointers seedCandidates "for algebraic loop x-inputs";
@@ -1744,6 +1735,8 @@ protected
         SizeClassification sc_x;
         Operator addOp_x;
         Expression accRhs;
+        // this true when its an initial problem? but we are only in the dynamic case
+        Boolean init = false;
 
       // ===================== ALGEBRAIC_LOOP =====================
       case StrongComponent.ALGEBRAIC_LOOP(strict = tearing) algorithm
@@ -1908,7 +1901,7 @@ protected
             // gradients through the SSA rename chain (e.g. x_1 -> pDer.x_1).
             for ssaVarPtr in newVars loop
               makeVarTraverse(ssaVarPtr, contextName, ssaPDerVarsPtr, diff_map,
-                function BVariable.makePDerVar(isTmp = true), init = init);
+                function BVariable.makePDerVar(isTmp = true), staticAsContinuous = staticAsContinuous);
             end for;
             // Collect the newly created pDer vars as temporaries
             for pDerVarPtr in Pointer.access(ssaPDerVarsPtr) loop
@@ -2161,7 +2154,6 @@ protected
     // Per-component adjoint generation
     list<StrongComponent> compAdjComps;
     list<Pointer<Variable>> compNewVars;
-    Real t_start, t_comps, t_sparsity;
   algorithm
     newName := name + "_ADJ";
     if isSome(strongComponents) then
@@ -2175,14 +2167,15 @@ protected
           });
           fail();
         end if;
-        print("Primal component: " + StrongComponent.toString(c) + "\n");
+        if Flags.isSet(Flags.DEBUG_ADJOINT) then
+          print("Primal component: " + StrongComponent.toString(c) + "\n");
+        end if;
       end for;
     else
       Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed because no strong components were given!"});
       fail();
     end if;
 
-    t_start := clock();
     if Flags.isSet(Flags.DEBUG_ADJOINT) then
       print("Seed candidates before pDer creation:\n" + BVariable.VariablePointers.toString(seedCandidates, "Seed Candidates") + "\n");
       print("Partial candidates before pDer creation:\n" + BVariable.VariablePointers.toString(partialCandidates, "Partial Candidates") + "\n");
@@ -2221,7 +2214,7 @@ protected
     // and prepend to the unified list.
     for comp in primalComps loop
       (compAdjComps, compNewVars) := generateAdjointComponent(
-        comp, diff_map, funcMap, seedCandidates.scalarized, init, idx, newName, seedCandidates, baseTmpVarCandidates);
+        comp, diff_map, funcMap, seedCandidates.scalarized, staticAsContinuous, idx, newName, seedCandidates, baseTmpVarCandidates);
 
       // Prepend adjoint components (already in correct order from generateAdjointComponent)
       // only more than one if the original component was an algebraic loop
@@ -2240,7 +2233,6 @@ protected
         end for;
       end if;
     end for;
-    t_comps := clock() - t_start;
     // diffed_comps is now in LIFO order (correct for adjoint execution)
 
     if Flags.isSet(Flags.DEBUG_ADJOINT) then
@@ -2272,20 +2264,11 @@ protected
     );
 
     (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType);
-    t_sparsity := clock() - t_start - t_comps;
-
-    print("[NBJacobian] jacobianSymbolicAdjoint('" + name + "' " + jacobianTypeString(jacType)
-      + "): component generation=" + realString(t_comps) + "s"
-      + ", sparsity+coloring=" + realString(t_sparsity) + "s"
-      + ", total=" + realString(t_comps + t_sparsity) + "s\n");
 
     if Flags.isSet(Flags.DEBUG_ADJOINT) then
       print("Adjoint sparsity pattern and coloring:\n");
       print(SparsityPattern.toString(sparsityPattern) + "\n" + SparsityColoring.toString(sparsityColoring) + "\n");
     end if;
-    //print("number of column colors: " + intString(arrayLength(sparsityColoring.cols)) + "\n");
-    //print("number of row colors: " + intString(arrayLength(sparsityColoring.rows)) + "\n");
-    //print(boolString(arrayLength(sparsityColoring.cols) > arrayLength(sparsityColoring.rows)) + "\n");
 
     jacobian := SOME(Jacobian.JACOBIAN(
       name              = newName,

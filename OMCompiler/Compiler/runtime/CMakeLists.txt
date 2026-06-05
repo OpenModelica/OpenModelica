@@ -59,6 +59,10 @@ set(OMC_RUNTIIME_SOURCES
     systemimplmisc.cpp
     ffi_omc.cpp)
 
+if(OM_OMC_ENABLE_COLPACK)
+  list(APPEND OMC_RUNTIIME_SOURCES ColPackBicoloring_omc.cpp)
+endif()
+
 
 # ######################################################################################################################
 # Library: omcruntime
@@ -76,6 +80,10 @@ target_link_libraries(omcruntime PUBLIC omc::3rd::ffi)
 target_link_libraries(omcruntime PUBLIC omc::3rd::libzmq)
 target_link_libraries(omcruntime PUBLIC omc::3rd::simdjson)
 target_link_libraries(omcruntime PUBLIC omc::3rd::zlib)
+
+if(OM_OMC_ENABLE_COLPACK)
+  target_link_libraries(omcruntime PUBLIC omc::3rd::colpack)
+endif()
 
 if(OM_OMC_USE_LAPACK)
   target_link_libraries(omcruntime PUBLIC ${LAPACK_LIBRARIES})

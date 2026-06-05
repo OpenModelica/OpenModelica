@@ -1222,7 +1222,7 @@ public
         UnorderedMap<ComponentRef,ComponentRef> diff_map;
         list<Subscript> expCrefSubscripts;
         ComponentRef adjointKey;
-
+        Integer iidx;
       // -------------------------------------
       //    EMPTY and WILD crefs do nothing
       // -------------------------------------
@@ -1381,11 +1381,10 @@ public
             // Create adjoint expression from subscripts:
             adjExpr := match expCrefSubscripts
               local
-                Option<Expression> multiOpt;
+                Option<Expression> onehotOpt, multiOpt;
               // Single literal index -> one-hot
               case {Subscript.INDEX(Expression.INTEGER(iidx))}
                 algorithm
-                  dbg("[dCREF:JAC] adjoint via INDEX[" + intString(iidx) + "]");
                   onehotOpt := buildOneHotVectorAdjoint(derCref, iidx, diffArguments.current_grad);
                 then (if isSome(onehotOpt) then Util.getOption(onehotOpt) else diffArguments.current_grad);
 
@@ -4265,7 +4264,8 @@ protected
       origVar.backendinfo.annotations,
       origVar.backendinfo.var_pre,
       NONE() /* var_seed */,
-      NONE() /* var_pder */,
+      NONE() /* var_pder_res */,
+      NONE() /* var_pder_tmp */,
       origVar.backendinfo.var_start,
       origVar.backendinfo.parent
     );

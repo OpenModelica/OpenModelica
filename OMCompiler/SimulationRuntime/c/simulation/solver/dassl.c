@@ -1436,18 +1436,17 @@ static int callJacobian(double *t, double *y, double *yprime, double *deltaD,
   }
 
   /* debug */
-  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC)) {
-    printRealVarsVector(OMC_LOG_JAC, data, *t);
-    printJacobianMatrix(OMC_LOG_JAC, "DASSL-Solver: analytical Jacobian pd (column-major)", pd,
-                        data, dasslData->N, *t);
-  }
-
   /* Compare evaluated Jacobian against a numerical reference.
    * Only meaningful when the configured method is not already numerical. */
   if (OMC_ACTIVE_STREAM(OMC_LOG_JAC)
       && dasslData->dasslJacobian != COLOREDNUMJAC
       && dasslData->dasslJacobian != NUMJAC)
   {
+    // print the analytical Jacobian for debugging
+    printJacobianMatrix(OMC_LOG_JAC, "DASSL-Solver: analytical Jacobian pd (column-major)", pd,
+                        data, dasslData->N, *t);
+
+    // and print comparison to numerical Jacobian
     double* pdNumerical = (double*) calloc(dasslData->N * dasslData->N, sizeof(double));
     if (pdNumerical != NULL)
     {
@@ -1488,10 +1487,6 @@ static int callJacobian(double *t, double *y, double *yprime, double *deltaD,
                       maxRelDiff, maxRelRow, data->modelData->realVarsData[maxRelRow].info.name,
                       maxRelCol, data->modelData->realVarsData[maxRelCol].info.name);
       messageClose(OMC_LOG_JAC);
-
-      printJacobianMatrix(OMC_LOG_JAC, "DASSL-Solver: numerical Jacobian pdNumerical (column-major)",
-                          pdNumerical, data, dasslData->N, *t);
-
       free(pdNumerical);
     }
   }
