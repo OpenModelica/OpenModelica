@@ -2289,9 +2289,6 @@ void LibraryTreeModel::createLibraryTreeItemsFromOMSModel(const QVector<OMSModel
   }
 }
 
-
-
-
 /*!
  * \brief LibraryTreeModel::createLibraryTreeItems
  * Creates all the nested Library items.
@@ -2613,37 +2610,6 @@ LibraryTreeItem* LibraryTreeModel::createOMSLibraryTreeItemImpl(QString name, QS
 
   return pLibraryTreeItem;
 }
-/*!
- * \brief LibraryTreeModel::createOMSConnectorLibraryTreeItems
- * Creates the OMS connector LibraryTreeItems
- * \param pLibraryTreeItem
- */
-// void LibraryTreeModel::createOMSConnectorLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
-// {
-//   if (pLibraryTreeItem->getOMSElement() && pLibraryTreeItem->getOMSElement()->connectors) {
-//     for (int j = 0 ; pLibraryTreeItem->getOMSElement()->connectors[j] ; j++) {
-//       QString name = pLibraryTreeItem->getOMSElement()->connectors[j]->name;
-//       createLibraryTreeItem(name, QString("%1.%2").arg(pLibraryTreeItem->getNameStructure()).arg(name), pLibraryTreeItem->getFileName(),
-//                             true, pLibraryTreeItem, 0, pLibraryTreeItem->getOMSElement()->connectors[j]);
-//     }
-//   }
-// }
-
-/*!
- * \brief LibraryTreeModel::createOMSBusConnectorLibraryTreeItems
- * Creates the OMS bus connector LibraryTreeItems
- * \param pLibraryTreeItem
- */
-// void LibraryTreeModel::createOMSBusConnectorLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
-// {
-//   if (pLibraryTreeItem->getOMSElement() && pLibraryTreeItem->getOMSElement()->busconnectors) {
-//     for (int j = 0 ; pLibraryTreeItem->getOMSElement()->busconnectors[j] ; j++) {
-//       QString name = pLibraryTreeItem->getOMSElement()->busconnectors[j]->name;
-//       createLibraryTreeItem(name, QString("%1.%2").arg(pLibraryTreeItem->getNameStructure()).arg(name), pLibraryTreeItem->getFileName(),
-//                             true, pLibraryTreeItem, 0, 0, pLibraryTreeItem->getOMSElement()->busconnectors[j]);
-//     }
-//   }
-// }
 
 /*!
  * \brief LibraryTreeModel::unloadClassChildren
