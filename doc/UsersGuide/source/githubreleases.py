@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 from subprocess import call
-from github import Github
+from github import Github, Auth
 import os
 
 gh_auth = os.environ["GITHUB_AUTH"]
-g = Github(gh_auth)
+g = Github(auth=Auth.Token(gh_auth))
 om = g.get_repo("OpenModelica/OpenModelica")
 fout = open("githubreleases.md", "w", encoding="utf-8")
 
