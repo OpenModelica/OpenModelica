@@ -756,7 +756,9 @@ public
             end if;
           end for;
 
-          if isSome(strict.jac) then
+          // TODO: MAJOR: Analytic Jacobians for nonlinear systems are not yet
+          // working correctly. Use a numerical Jacobian for NLS and only pass analytic Jacobians for linear systems.
+          if comp.linear and isSome(strict.jac) then
             (jacobian, simCodeIndices) := SimJacobian.create(Util.getOption(strict.jac), simCodeIndices, simcode_map);
           else
             jacobian := NONE();
