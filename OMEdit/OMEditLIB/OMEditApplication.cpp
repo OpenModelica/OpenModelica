@@ -48,6 +48,9 @@
 #include "Simulation/TranslationFlagsWidget.h"
 
 #include <locale.h>
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
 #include <QMessageBox>
 #include <QTextCodec>
 #if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
@@ -100,6 +103,45 @@ void dumpQtPaths()
   fflush(NULL);
 }
 
+namespace {
+  QString absolutePath(const QString &fileName)
+  {
+    QFileInfo fileInfo(fileName);
+    QString absoluteFileName = fileName;
+    if (fileInfo.isRelative()) {
+      absoluteFileName = QString("%1/%2").arg(QDir::currentPath()).arg(fileName);
+    }
+    return absoluteFileName.replace("\\", "/");
+  }
+
+  bool styleSheetArgumentValue(const QString &argument, QString *pFileName)
+  {
+    QString optionPrefix = "--StyleSheet=";
+    if (argument.startsWith(optionPrefix)) {
+      *pFileName = argument.mid(optionPrefix.length());
+      return true;
+    }
+    optionPrefix = "--stylesheet=";
+    if (argument.startsWith(optionPrefix)) {
+      *pFileName = argument.mid(optionPrefix.length());
+      return true;
+    }
+    return false;
+  }
+
+  bool readStyleSheetFile(const QString &fileName, QString *pStyleSheet, QString *pErrorString)
+  {
+    QFile styleSheetFile(fileName);
+    if (!styleSheetFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+      *pErrorString = QString("Failed to load stylesheet file %1: %2").arg(fileName, styleSheetFile.errorString());
+      return false;
+    }
+    *pStyleSheet = QString::fromUtf8(styleSheetFile.readAll());
+    pErrorString->clear();
+    return true;
+  }
+}
+
 /*!
  * \class OMEditApplication
  * \brief It is a subclass for QApplication so that we can handle QFileOpenEvent sent by OSX at startup.
@@ -139,7 +181,30 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   styleHints()->setColorScheme(Qt::ColorScheme::Light);  // must be before setStyleSheet
 #endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
   // set the stylesheet
-  setStyleSheet("file:///:/Resources/css/stylesheet.qss");
+  QString applicationStyleSheet;
+  QString styleSheetLoadError;
+  if (readStyleSheetFile(":/Resources/css/stylesheet.qss", &applicationStyleSheet, &styleSheetLoadError)) {
+    setStyleSheet(applicationStyleSheet);
+  } else {
+    setStyleSheet("file:///:/Resources/css/stylesheet.qss");
+    styleSheetLoadError.clear();
+  }
+  if (arguments().size() > 1 && !testsuiteRunning) {
+    for (int i = 1; i < arguments().size(); i++) {
+      QString styleSheetFileName;
+      if (styleSheetArgumentValue(arguments().at(i), &styleSheetFileName)) {
+        const QString absoluteStyleSheetFileName = absolutePath(styleSheetFileName);
+        QString customStyleSheet;
+        if (readStyleSheetFile(absoluteStyleSheetFileName, &customStyleSheet, &styleSheetLoadError)) {
+          if (!applicationStyleSheet.isEmpty()) {
+            applicationStyleSheet.append("\n");
+          }
+          applicationStyleSheet.append(customStyleSheet);
+          setStyleSheet(applicationStyleSheet);
+        }
+      }
+    }
+  }
 #ifndef WIN32
   QTextCodec::setCodecForLocale(QTextCodec::codecForName(Helper::utf8.toUtf8().constData()));
 #endif // #ifndef WIN32
@@ -207,16 +272,13 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
         }
       } else if (strncmp(arguments().at(i).toUtf8().constData(), "--paths",7) == 0) {
         dumpQtPaths();
+      } else if (styleSheetArgumentValue(arguments().at(i), &fileName)) {
+        // The stylesheet option is handled before MainWindow initialization.
       } else {
         fileName = arguments().at(i);
         if (!fileName.isEmpty()) {
           // if path is relative make it absolute
-          QFileInfo file (fileName);
-          QString absoluteFileName = fileName;
-          if (file.isRelative()) {
-            absoluteFileName = QString("%1/%2").arg(QDir::currentPath()).arg(fileName);
-          }
-          absoluteFileName = absoluteFileName.replace("\\", "/");
+          const QString absoluteFileName = absolutePath(fileName);
           if (QFile::exists(absoluteFileName)) {
             fileNames << absoluteFileName;
           } else {
@@ -240,6 +302,10 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   if (!invalidFlags.isEmpty()) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QString("Invalid command line argument(s): %1").arg(invalidFlags.join(", ")),
                                                           Helper::scriptingKind, Helper::errorLevel));
+  }
+  // show stylesheet load error
+  if (!styleSheetLoadError.isEmpty()) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, styleSheetLoadError, Helper::scriptingKind, Helper::errorLevel));
   }
   // show qt translator load error
   if (!qtTranslatorLoadError.isEmpty()) {

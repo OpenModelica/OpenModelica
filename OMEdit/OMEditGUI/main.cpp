@@ -178,6 +178,9 @@ void printOMEditUsage()
   fprintf(stderr, "  --NAPIProfiling=[true|false]  Enable profiling for the new JSON-based API.\n");
   fprintf(stderr, "                                Default: false.\n\n");
 
+  fprintf(stderr, "  --StyleSheet=<file>           Load an additional Qt stylesheet after\n");
+  fprintf(stderr, "                                OMEdit's default stylesheet.\n\n");
+
   fprintf(stderr, "  --paths                       Prints the Qt paths.\n\n");
 
   fprintf(stderr, "files                           List of Modelica files (*.mo) to open.\n");
