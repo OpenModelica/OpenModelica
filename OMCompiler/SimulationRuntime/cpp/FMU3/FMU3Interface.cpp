@@ -472,8 +472,20 @@ fmi3Status fmi3DeserializeFMUState(fmi3Instance instance, const fmi3Byte seriali
 fmi3Status fmi3GetDirectionalDerivative(fmi3Instance instance, const fmi3ValueReference unknowns[],
     size_t nUnknowns, const fmi3ValueReference knowns[], size_t nKnowns, const fmi3Float64 seed[],
     size_t nSeed, fmi3Float64 sensitivity[], size_t nSensitivity)
-{ (void)instance; (void)unknowns; (void)nUnknowns; (void)knowns; (void)nKnowns;
-  (void)seed; (void)nSeed; (void)sensitivity; (void)nSensitivity; return fmi3Error; }
+{
+  FMU3CppInstance *inst = FMU3_W(instance);
+  if (nUnknowns == 0) return fmi3OK;
+  if (unknowns == NULL || knowns == NULL || seed == NULL || sensitivity == NULL) return fmi3Error;
+  if (nSeed != nKnowns || nSensitivity != nUnknowns) return fmi3Error;
+  try {
+    // unknowns (derivatives/outputs) and knowns (states/inputs) are Float64;
+    // recover the per-real-type value reference the wrapper expects
+    std::vector<unsigned int> u(nUnknowns), k(nKnowns);
+    for (size_t i = 0; i < nUnknowns; i++) u[i] = (unsigned int)(unknowns[i] - FMI3_REAL_VR_OFFSET);
+    for (size_t i = 0; i < nKnowns;   i++) k[i] = (unsigned int)(knowns[i]   - FMI3_REAL_VR_OFFSET);
+    return (fmi3Status)inst->wrapper->getDirectionalDerivative(&u[0], nUnknowns, &k[0], nKnowns, seed, sensitivity);
+  } FMU3_CATCH(inst)
+}
 
 fmi3Status fmi3GetAdjointDerivative(fmi3Instance instance, const fmi3ValueReference unknowns[],
     size_t nUnknowns, const fmi3ValueReference knowns[], size_t nKnowns, const fmi3Float64 seed[],

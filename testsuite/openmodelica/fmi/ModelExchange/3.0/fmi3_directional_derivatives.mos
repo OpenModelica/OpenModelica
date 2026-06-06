@@ -1,0 +1,41 @@
+// name: fmi3_directional_derivatives.mos
+// keywords: FMI 3.0 export directional derivatives jacobian
+// status: correct
+// teardown_command: rm -rf Mdd.fmu Mdd.fmutmp/ Mdd_md.xml
+//
+// FMI 3.0 directional derivatives. With -d=-disableDirectionalDerivatives the
+// FMIDER Jacobian is generated, the ModelExchange element advertises
+// providesDirectionalDerivatives="true", and the runtime fmi3GetDirectionalDerivative
+// returns the Jacobian-vector product (verified at runtime via the FMI 3.0 C API).
+
+setCommandLineOptions("-d=-disableDirectionalDerivatives"); getErrorString();
+
+loadString("
+model Mdd
+  Real x(start = 1.0);
+  Real y(start = 2.0);
+equation
+  der(x) = -2*x + y;
+  der(y) = x - 3*y;
+end Mdd;
+"); getErrorString();
+
+buildModelFMU(Mdd, version="3.0", fmuType="me"); getErrorString();
+
+system("unzip -cqq Mdd.fmu modelDescription.xml > Mdd_md.xml"); getErrorString();
+system("grep -oE 'providesDirectionalDerivatives=\"[a-z]*\"' Mdd_md.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "Mdd.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// 0
+// ""
+// providesDirectionalDerivatives="true"
+// 0
+// ""
+// endResult

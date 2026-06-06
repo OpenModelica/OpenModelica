@@ -6,7 +6,8 @@ fmi3_arrays.mos \
 fmi3_types.mos \
 fmi3_terminals.mos \
 fmi3_binary_extobj.mos \
-fmi3_fmustate.mos
+fmi3_fmustate.mos \
+fmi3_directional_derivatives.mos
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

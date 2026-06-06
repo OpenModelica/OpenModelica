@@ -3388,10 +3388,32 @@ fmi3Status fmi3GetDirectionalDerivative(fmi3Instance instance, const fmi3ValueRe
     size_t nUnknowns, const fmi3ValueReference knowns[], size_t nKnowns, const fmi3Float64 seed[],
     size_t nSeed, fmi3Float64 sensitivity[], size_t nSensitivity)
 {
-  (void)instance; (void)unknowns; (void)nUnknowns; (void)knowns; (void)nKnowns;
-  (void)seed; (void)nSeed; (void)sensitivity; (void)nSensitivity;
-  /* TODO: map value references and delegate to omcGetDirectionalDerivative. */
-  return fmi3Error;
+  ModelInstance* c = fmu3InnerComp(instance);
+  size_t i;
+  fmi3ValueReference *u, *k;
+  fmi3Status status;
+  if (!c) return fmi3Error;
+  if (nUnknowns == 0) return fmi3OK;
+  if (nullPointer(c, "fmi3GetDirectionalDerivative", "unknowns", unknowns) ||
+      nullPointer(c, "fmi3GetDirectionalDerivative", "knowns", knowns) ||
+      nullPointer(c, "fmi3GetDirectionalDerivative", "seed", seed) ||
+      nullPointer(c, "fmi3GetDirectionalDerivative", "sensitivity", sensitivity))
+    return fmi3Error;
+  /* the directional-derivative unknowns (derivatives/outputs) and knowns
+     (states/inputs) are all Float64 variables. Recover the per-real-type value
+     reference understood by omcGetDirectionalDerivative by subtracting the real
+     base-type offset. The FMI 3.0 seed maps to dvKnown and sensitivity to
+     dvUnknown. */
+  if (nSeed != nKnowns || nSensitivity != nUnknowns) return fmi3Error;
+  u = (fmi3ValueReference*) calloc(nUnknowns, sizeof(fmi3ValueReference));
+  k = (fmi3ValueReference*) calloc(nKnowns,   sizeof(fmi3ValueReference));
+  if (!u || !k) { free(u); free(k); return fmi3Error; }
+  for (i = 0; i < nUnknowns; i++) u[i] = (fmi3ValueReference)(unknowns[i] - FMI3_REAL_VR_OFFSET);
+  for (i = 0; i < nKnowns;   i++) k[i] = (fmi3ValueReference)(knowns[i]   - FMI3_REAL_VR_OFFSET);
+  status = omcGetDirectionalDerivative(c, u, nUnknowns, k, nKnowns, seed, sensitivity);
+  free(u);
+  free(k);
+  return status;
 }
 
 fmi3Status fmi3GetAdjointDerivative(fmi3Instance instance, const fmi3ValueReference unknowns[],
