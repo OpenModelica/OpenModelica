@@ -36,6 +36,8 @@
 
 #include <cstdarg>
 #include <cstdio>
+#include <cstdint>
+#include <cstring>
 
 static fmi3String const _LogCategoryFMUNames[] = {
   "logEvents",
@@ -516,6 +518,203 @@ fmi3Status FMU3Wrapper::getDirectionalDerivative(const unsigned int vrUnknown[],
     _nclockTick = 0;
   }
   _needJacUpdate = false;
+  return fmi3OK;
+}
+
+// ---------------------------------------------------------------------------
+// FMU state get/set/free and (de)serialization
+//
+// The state is a complete snapshot of the model variables (time, continuous
+// states and the full real/integer/boolean/string arrays), taken and restored
+// through the bulk IContinuous accessors. This mirrors the C runtime, which
+// snapshots the simulation-data arrays.
+// ---------------------------------------------------------------------------
+fmi3Status FMU3Wrapper::getFMUState(fmi3FMUState* state)
+{
+  if (_needUpdate)
+    updateModel();
+
+  FMU3State* s = (FMU3State*) (*state);
+  if (s == NULL)
+    s = new FMU3State();
+
+  int nReal   = _model->getDimReal();
+  int nInt    = _model->getDimInteger();
+  int nBool   = _model->getDimBoolean();
+  int nString = _model->getDimString();
+  int nStates = _model->getDimContinuousStates();
+
+  // the bulk array accessors live on IContinuous; the per-value-reference
+  // overloads on the model hide them, so reach them through the base interface
+  IContinuous* ic = _model;
+
+  s->time = _model->getTime();
+  s->reals.resize(nReal);
+  s->integers.resize(nInt);
+  s->booleans.resize(nBool);
+  s->strings.resize(nString);
+  s->states.resize(nStates);
+
+  if (nReal)   ic->getReal(&s->reals[0]);
+  if (nInt)    ic->getInteger(&s->integers[0]);
+  if (nBool) {
+    // getBoolean expects bool*; snapshot via a temporary, store as char
+    bool* raw = new bool[nBool];
+    ic->getBoolean(raw);
+    for (int i = 0; i < nBool; i++) s->booleans[i] = raw[i] ? 1 : 0;
+    delete[] raw;
+  }
+  if (nString) ic->getString(&s->strings[0]);
+  if (nStates) ic->getContinuousStates(&s->states[0]);
+
+  *state = (fmi3FMUState) s;
+  return fmi3OK;
+}
+
+fmi3Status FMU3Wrapper::setFMUState(fmi3FMUState state)
+{
+  FMU3State* s = (FMU3State*) state;
+  if (s == NULL)
+    return fmi3Error;
+
+  IContinuous* ic = _model;
+
+  _model->setTime(s->time);
+  if (!s->reals.empty())    ic->setReal(&s->reals[0]);
+  if (!s->integers.empty()) ic->setInteger(&s->integers[0]);
+  if (!s->booleans.empty()) {
+    bool* raw = new bool[s->booleans.size()];
+    for (size_t i = 0; i < s->booleans.size(); i++) raw[i] = s->booleans[i] != 0;
+    ic->setBoolean(raw);
+    delete[] raw;
+  }
+  if (!s->strings.empty())  ic->setString(&s->strings[0]);
+  if (!s->states.empty())   ic->setContinuousStates(&s->states[0]);
+
+  // algebraic variables / derivatives are recomputed on the next access
+  _needUpdate = true;
+  return fmi3OK;
+}
+
+fmi3Status FMU3Wrapper::freeFMUState(fmi3FMUState* state)
+{
+  if (state != NULL && *state != NULL) {
+    delete (FMU3State*) (*state);
+    *state = NULL;
+  }
+  return fmi3OK;
+}
+
+fmi3Status FMU3Wrapper::serializedFMUStateSize(fmi3FMUState state, size_t* size)
+{
+  FMU3State* s = (FMU3State*) state;
+  if (s == NULL || size == NULL)
+    return fmi3Error;
+
+  size_t sz = sizeof(double);                          // time
+  sz += 5 * sizeof(uint32_t);                          // the five array lengths
+  sz += s->reals.size()    * sizeof(double);
+  sz += s->integers.size() * sizeof(int32_t);
+  sz += s->booleans.size() * sizeof(char);
+  sz += s->states.size()   * sizeof(double);
+  for (size_t i = 0; i < s->strings.size(); i++)       // each string: length + bytes
+    sz += sizeof(uint32_t) + s->strings[i].size();
+
+  *size = sz;
+  return fmi3OK;
+}
+
+// helper: append raw bytes to a moving cursor
+static inline void omc_pack(fmi3Byte** p, const void* src, size_t n)
+{
+  memcpy(*p, src, n);
+  *p += n;
+}
+// helper: read raw bytes from a moving cursor
+static inline void omc_unpack(const fmi3Byte** p, void* dst, size_t n)
+{
+  memcpy(dst, *p, n);
+  *p += n;
+}
+
+fmi3Status FMU3Wrapper::serializeFMUState(fmi3FMUState state, fmi3Byte serializedState[], size_t size)
+{
+  FMU3State* s = (FMU3State*) state;
+  if (s == NULL || serializedState == NULL)
+    return fmi3Error;
+
+  fmi3Byte* p = serializedState;
+  uint32_t nReal   = (uint32_t) s->reals.size();
+  uint32_t nInt    = (uint32_t) s->integers.size();
+  uint32_t nBool   = (uint32_t) s->booleans.size();
+  uint32_t nString = (uint32_t) s->strings.size();
+  uint32_t nStates = (uint32_t) s->states.size();
+
+  omc_pack(&p, &s->time, sizeof(double));
+  omc_pack(&p, &nReal,   sizeof(uint32_t));
+  omc_pack(&p, &nInt,    sizeof(uint32_t));
+  omc_pack(&p, &nBool,   sizeof(uint32_t));
+  omc_pack(&p, &nString, sizeof(uint32_t));
+  omc_pack(&p, &nStates, sizeof(uint32_t));
+  if (nReal)   omc_pack(&p, &s->reals[0],    nReal   * sizeof(double));
+  if (nInt) {
+    for (uint32_t i = 0; i < nInt; i++) {
+      int32_t v = (int32_t) s->integers[i];
+      omc_pack(&p, &v, sizeof(int32_t));
+    }
+  }
+  if (nBool)   omc_pack(&p, &s->booleans[0], nBool   * sizeof(char));
+  if (nStates) omc_pack(&p, &s->states[0],   nStates * sizeof(double));
+  for (uint32_t i = 0; i < nString; i++) {
+    uint32_t len = (uint32_t) s->strings[i].size();
+    omc_pack(&p, &len, sizeof(uint32_t));
+    if (len) omc_pack(&p, s->strings[i].data(), len);
+  }
+
+  // sanity: we must have written exactly `size` bytes
+  if ((size_t)(p - serializedState) != size)
+    return fmi3Error;
+  return fmi3OK;
+}
+
+fmi3Status FMU3Wrapper::deSerializeFMUState(const fmi3Byte serializedState[], size_t size, fmi3FMUState* state)
+{
+  if (serializedState == NULL || state == NULL)
+    return fmi3Error;
+
+  FMU3State* s = new FMU3State();
+  const fmi3Byte* p = serializedState;
+  uint32_t nReal = 0, nInt = 0, nBool = 0, nString = 0, nStates = 0;
+
+  omc_unpack(&p, &s->time, sizeof(double));
+  omc_unpack(&p, &nReal,   sizeof(uint32_t));
+  omc_unpack(&p, &nInt,    sizeof(uint32_t));
+  omc_unpack(&p, &nBool,   sizeof(uint32_t));
+  omc_unpack(&p, &nString, sizeof(uint32_t));
+  omc_unpack(&p, &nStates, sizeof(uint32_t));
+
+  s->reals.resize(nReal);
+  s->integers.resize(nInt);
+  s->booleans.resize(nBool);
+  s->strings.resize(nString);
+  s->states.resize(nStates);
+
+  if (nReal)   omc_unpack(&p, &s->reals[0], nReal * sizeof(double));
+  for (uint32_t i = 0; i < nInt; i++) {
+    int32_t v = 0;
+    omc_unpack(&p, &v, sizeof(int32_t));
+    s->integers[i] = (int) v;
+  }
+  if (nBool)   omc_unpack(&p, &s->booleans[0], nBool * sizeof(char));
+  if (nStates) omc_unpack(&p, &s->states[0], nStates * sizeof(double));
+  for (uint32_t i = 0; i < nString; i++) {
+    uint32_t len = 0;
+    omc_unpack(&p, &len, sizeof(uint32_t));
+    s->strings[i].assign((const char*) p, len);
+    p += len;
+  }
+
+  *state = (fmi3FMUState) s;
   return fmi3OK;
 }
 

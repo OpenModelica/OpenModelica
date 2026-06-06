@@ -206,8 +206,8 @@ case SIMCODE(__) then
     modelIdentifier="<%modelIdentifier%>"
     needsExecutionTool="false"
     canBeInstantiatedOnlyOncePerProcess="false"
-    <% if Flags.isSet(FMU_EXPERIMENTAL) then 'canGetAndSetFMUState="true"' else 'canGetAndSetFMUState="false"'%>
-    <% if Flags.isSet(FMU_EXPERIMENTAL) then 'canSerializeFMUState="true"' else 'canSerializeFMUState="false"'%>
+    canGetAndSetFMUState="true"
+    canSerializeFMUState="true"
     <% if providesDirectionalDerivative(simCode) then 'providesDirectionalDerivatives="true"' else 'providesDirectionalDerivatives="false"'%>
     providesAdjointDerivatives="false"
     providesPerElementDependencies="false"
@@ -234,8 +234,8 @@ case SIMCODE(__) then
     hasEventMode="true"
     providesEvaluateDiscreteStates="false"
     recommendedIntermediateInputSmoothness="0"
-    <% if Flags.isSet(FMU_EXPERIMENTAL) then 'canGetAndSetFMUState="true"' else 'canGetAndSetFMUState="false"'%>
-    <% if Flags.isSet(FMU_EXPERIMENTAL) then 'canSerializeFMUState="true"' else 'canSerializeFMUState="false"'%>
+    canGetAndSetFMUState="true"
+    canSerializeFMUState="true"
     <% if providesDirectionalDerivative(simCode) then 'providesDirectionalDerivatives="true"' else 'providesDirectionalDerivatives="false"'%>
     providesAdjointDerivatives="false"
     providesPerElementDependencies="false"/>
@@ -253,8 +253,8 @@ case SIMCODE(__) then
     modelIdentifier="<%Util.escapeModelicaStringToXmlString(modelIdentifier)%>"
     needsExecutionTool="false"
     canBeInstantiatedOnlyOncePerProcess="false"
-    <% if Flags.isSet(FMU_EXPERIMENTAL) then 'canGetAndSetFMUState="true"' else 'canGetAndSetFMUState="false"'%>
-    <% if Flags.isSet(FMU_EXPERIMENTAL) then 'canSerializeFMUState="true"' else 'canSerializeFMUState="false"'%>
+    canGetAndSetFMUState="true"
+    canSerializeFMUState="true"
     <% if providesDirectionalDerivative(simCode) then 'providesDirectionalDerivatives="true"' else 'providesDirectionalDerivatives="false"'%>
     providesAdjointDerivatives="false"
     providesPerElementDependencies="false"/>

@@ -78,6 +78,20 @@ typedef struct {
   double nextEventTime;
 } FMU3EventInfo;
 
+/* Snapshot of the complete model variable state used by the fmi3*FMUState
+   functions. It captures the time, the continuous states and the full
+   real/integer/boolean/string variable arrays (the same data the C runtime
+   snapshots in its ring buffer). Booleans are stored as char so the snapshot
+   has a portable, serializable layout. */
+typedef struct {
+  double                   time;
+  std::vector<double>      reals;
+  std::vector<int>         integers;
+  std::vector<char>        booleans;
+  std::vector<std::string> strings;
+  std::vector<double>      states;
+} FMU3State;
+
 class FMU3Wrapper;
 
 /**
@@ -185,6 +199,14 @@ class FMU3Wrapper
                                       size_t nKnown,
                                       const double dvKnown[],
                                       double dvUnknown[]);
+
+  // FMU state get/set/free and (de)serialization
+  virtual fmi3Status getFMUState (fmi3FMUState* state);
+  virtual fmi3Status setFMUState (fmi3FMUState  state);
+  virtual fmi3Status freeFMUState(fmi3FMUState* state);
+  virtual fmi3Status serializedFMUStateSize(fmi3FMUState state, size_t* size);
+  virtual fmi3Status serializeFMUState     (fmi3FMUState state, fmi3Byte serializedState[], size_t size);
+  virtual fmi3Status deSerializeFMUState   (const fmi3Byte serializedState[], size_t size, fmi3FMUState* state);
 
  private:
   FMU3GlobalSettings _globalSettings;

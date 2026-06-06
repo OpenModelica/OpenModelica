@@ -46,8 +46,8 @@ readFile("fmi3_cs_01.xml"); getErrorString();
 //     hasEventMode=\"true\"
 //     providesEvaluateDiscreteStates=\"false\"
 //     recommendedIntermediateInputSmoothness=\"0\"
-//     canGetAndSetFMUState=\"false\"
-//     canSerializeFMUState=\"false\"
+//     canGetAndSetFMUState=\"true\"
+//     canSerializeFMUState=\"true\"
 //     providesDirectionalDerivatives=\"false\"
 //     providesAdjointDerivatives=\"false\"
 //     providesPerElementDependencies=\"false\"/>

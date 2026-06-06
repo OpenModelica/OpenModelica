@@ -433,17 +433,41 @@ fmi3Status fmi3GetVariableDependencies(fmi3Instance instance, fmi3ValueReference
   (void)elementIndicesOfIndependents; (void)dependencyKinds; (void)nDependencies; return fmi3Error; }
 
 fmi3Status fmi3GetFMUState(fmi3Instance instance, fmi3FMUState* FMUState)
-{ (void)instance; (void)FMUState; return fmi3Error; }
+{
+  FMU3CppInstance *inst = FMU3_W(instance);
+  if (FMUState == NULL) return fmi3Error;
+  try { return (fmi3Status)inst->wrapper->getFMUState(FMUState); } FMU3_CATCH(inst)
+}
 fmi3Status fmi3SetFMUState(fmi3Instance instance, fmi3FMUState FMUState)
-{ (void)instance; (void)FMUState; return fmi3Error; }
+{
+  FMU3CppInstance *inst = FMU3_W(instance);
+  if (FMUState == NULL) return fmi3Error;
+  try { return (fmi3Status)inst->wrapper->setFMUState(FMUState); } FMU3_CATCH(inst)
+}
 fmi3Status fmi3FreeFMUState(fmi3Instance instance, fmi3FMUState* FMUState)
-{ (void)instance; (void)FMUState; return fmi3Error; }
+{
+  FMU3CppInstance *inst = FMU3_W(instance);
+  if (FMUState == NULL || *FMUState == NULL) return fmi3OK; /* freeing NULL is a no-op */
+  try { return (fmi3Status)inst->wrapper->freeFMUState(FMUState); } FMU3_CATCH(inst)
+}
 fmi3Status fmi3SerializedFMUStateSize(fmi3Instance instance, fmi3FMUState FMUState, size_t* size)
-{ (void)instance; (void)FMUState; (void)size; return fmi3Error; }
+{
+  FMU3CppInstance *inst = FMU3_W(instance);
+  if (FMUState == NULL || size == NULL) return fmi3Error;
+  try { return (fmi3Status)inst->wrapper->serializedFMUStateSize(FMUState, size); } FMU3_CATCH(inst)
+}
 fmi3Status fmi3SerializeFMUState(fmi3Instance instance, fmi3FMUState FMUState, fmi3Byte serializedState[], size_t size)
-{ (void)instance; (void)FMUState; (void)serializedState; (void)size; return fmi3Error; }
+{
+  FMU3CppInstance *inst = FMU3_W(instance);
+  if (FMUState == NULL || serializedState == NULL) return fmi3Error;
+  try { return (fmi3Status)inst->wrapper->serializeFMUState(FMUState, serializedState, size); } FMU3_CATCH(inst)
+}
 fmi3Status fmi3DeserializeFMUState(fmi3Instance instance, const fmi3Byte serializedState[], size_t size, fmi3FMUState* FMUState)
-{ (void)instance; (void)serializedState; (void)size; (void)FMUState; return fmi3Error; }
+{
+  FMU3CppInstance *inst = FMU3_W(instance);
+  if (serializedState == NULL || FMUState == NULL) return fmi3Error;
+  try { return (fmi3Status)inst->wrapper->deSerializeFMUState(serializedState, size, FMUState); } FMU3_CATCH(inst)
+}
 
 fmi3Status fmi3GetDirectionalDerivative(fmi3Instance instance, const fmi3ValueReference unknowns[],
     size_t nUnknowns, const fmi3ValueReference knowns[], size_t nKnowns, const fmi3Float64 seed[],

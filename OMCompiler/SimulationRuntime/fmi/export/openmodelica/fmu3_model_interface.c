@@ -1283,8 +1283,8 @@ fmi3Status omcSetInteger(ModelInstance* c, const fmi3ValueReference vr[], size_t
 {
   int i;
   ModelInstance *comp = (ModelInstance *)c;
-  int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode;
-  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete;
+  int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated;
+  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_terminated;
 
   if (invalidState(comp, "omcSetInteger", meStates, csStates))
     return fmi3Error;
@@ -1309,8 +1309,8 @@ fmi3Status omcSetInteger(ModelInstance* c, const fmi3ValueReference vr[], size_t
 fmi3Status omcSetBoolean(ModelInstance* c, const fmi3ValueReference vr[], size_t nvr, const fmi3Boolean value[]) {
   int i;
   ModelInstance *comp = (ModelInstance *)c;
-  int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode;
-  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete;
+  int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated;
+  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_terminated;
 
   if (invalidState(comp, "omcSetBoolean", meStates, csStates))
     return fmi3Error;
@@ -1336,8 +1336,8 @@ fmi3Status omcSetString(ModelInstance* c, const fmi3ValueReference vr[], size_t 
 {
   int i, n;
   ModelInstance *comp = (ModelInstance *)c;
-  int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode;
-  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete;
+  int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated;
+  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_terminated;
 
   if (invalidState(comp, "omcSetString", meStates, csStates))
     return fmi3Error;
@@ -1365,8 +1365,8 @@ fmi3Status omcGetFMUstate(ModelInstance* c, fmi3FMUState* FMUstate)
 {
   ModelInstance *comp = (ModelInstance *) c;
 
-  int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode;
-  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete;
+  int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated;
+  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_terminated;
 
   if (invalidState(comp, "omcGetFMUstate", meStates, csStates))
     return fmi3Error;
@@ -1450,8 +1450,8 @@ fmi3Status omcSetFMUstate(ModelInstance* c, fmi3FMUState FMUstate)
 {
   ModelInstance *comp = (ModelInstance *) c;
 
-  int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode;
-  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete;
+  int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated;
+  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_terminated;
 
   if (invalidState(comp, "omcGetFMUstate", meStates, csStates))
     return fmi3Error;
@@ -1500,8 +1500,8 @@ fmi3Status omcFreeFMUstate(ModelInstance* c, fmi3FMUState* FMUstate)
 {
   ModelInstance *comp = (ModelInstance *) c;
 
-  int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode;
-  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete;
+  int meStates = model_state_instantiated|model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated;
+  int csStates = model_state_instantiated|model_state_initialization_mode|model_state_cs_step_complete|model_state_terminated;
 
   if (invalidState(comp, "omcFreeFMUstate", meStates, csStates))
     return fmi3Error;
@@ -3326,40 +3326,59 @@ fmi3Status fmi3GetVariableDependencies(fmi3Instance instance, fmi3ValueReference
 /* ---------------------------------------------------------------------------
  * Getting and setting the internal FMU state (not yet supported)
  * ------------------------------------------------------------------------- */
+/* FMU state get/set/free and (de)serialization. These delegate to the native
+ * omc*FMUstate helpers above, which snapshot/restore the simulation ring buffer
+ * (timeValue + real/integer/boolean/string variables) and the model parameters. */
 fmi3Status fmi3GetFMUState(fmi3Instance instance, fmi3FMUState* FMUState)
 {
-  (void)instance; (void)FMUState;
-  return fmi3Error;
+  ModelInstance* c = fmu3InnerComp(instance);
+  if (!c) return fmi3Error;
+  if (nullPointer(c, "fmi3GetFMUState", "FMUState", FMUState)) return fmi3Error;
+  return omcGetFMUstate(c, FMUState);
 }
 
 fmi3Status fmi3SetFMUState(fmi3Instance instance, fmi3FMUState FMUState)
 {
-  (void)instance; (void)FMUState;
-  return fmi3Error;
+  ModelInstance* c = fmu3InnerComp(instance);
+  if (!c) return fmi3Error;
+  if (nullPointer(c, "fmi3SetFMUState", "FMUState", FMUState)) return fmi3Error;
+  return omcSetFMUstate(c, FMUState);
 }
 
 fmi3Status fmi3FreeFMUState(fmi3Instance instance, fmi3FMUState* FMUState)
 {
-  (void)instance; (void)FMUState;
-  return fmi3Error;
+  ModelInstance* c = fmu3InnerComp(instance);
+  if (!c) return fmi3Error;
+  /* per the FMI spec freeing a NULL state (or *FMUState == NULL) is a no-op */
+  if (FMUState == NULL || *FMUState == NULL) return fmi3OK;
+  return omcFreeFMUstate(c, FMUState);
 }
 
 fmi3Status fmi3SerializedFMUStateSize(fmi3Instance instance, fmi3FMUState FMUState, size_t* size)
 {
-  (void)instance; (void)FMUState; (void)size;
-  return fmi3Error;
+  ModelInstance* c = fmu3InnerComp(instance);
+  if (!c) return fmi3Error;
+  if (nullPointer(c, "fmi3SerializedFMUStateSize", "FMUState", FMUState) ||
+      nullPointer(c, "fmi3SerializedFMUStateSize", "size", size)) return fmi3Error;
+  return omcSerializedFMUstateSize(c, FMUState, size);
 }
 
 fmi3Status fmi3SerializeFMUState(fmi3Instance instance, fmi3FMUState FMUState, fmi3Byte serializedState[], size_t size)
 {
-  (void)instance; (void)FMUState; (void)serializedState; (void)size;
-  return fmi3Error;
+  ModelInstance* c = fmu3InnerComp(instance);
+  if (!c) return fmi3Error;
+  if (nullPointer(c, "fmi3SerializeFMUState", "FMUState", FMUState) ||
+      nullPointer(c, "fmi3SerializeFMUState", "serializedState", serializedState)) return fmi3Error;
+  return omcSerializeFMUstate(c, FMUState, serializedState, size);
 }
 
 fmi3Status fmi3DeserializeFMUState(fmi3Instance instance, const fmi3Byte serializedState[], size_t size, fmi3FMUState* FMUState)
 {
-  (void)instance; (void)serializedState; (void)size; (void)FMUState;
-  return fmi3Error;
+  ModelInstance* c = fmu3InnerComp(instance);
+  if (!c) return fmi3Error;
+  if (nullPointer(c, "fmi3DeserializeFMUState", "serializedState", serializedState) ||
+      nullPointer(c, "fmi3DeserializeFMUState", "FMUState", FMUState)) return fmi3Error;
+  return omcDeSerializeFMUstate(c, serializedState, size, FMUState);
 }
 
 /* ---------------------------------------------------------------------------
