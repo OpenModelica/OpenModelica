@@ -24,7 +24,8 @@ QMenuBar::item:selected, QMenu::item:selected {
   background-color: #3a3f44;
 }
 
-QLineEdit, QTextEdit, QTextBrowser, QPlainTextEdit, QTreeView, QTreeWidget, QListView, QListWidget, QTableView, QTableWidget {
+QLineEdit, QTextEdit, QTextBrowser, QPlainTextEdit, QTreeView, QTreeWidget, QListView, QListWidget, QTableView, QTableWidget,
+QGraphicsView, QMdiArea, QScrollArea {
   background-color: #111827;
   color: #f3f4f6;
   border: 1px solid #4b5563;
