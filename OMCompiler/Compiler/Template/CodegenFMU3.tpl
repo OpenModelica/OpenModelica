@@ -113,6 +113,43 @@ case SIMCODE(__) then
   >>
 end fmiModelDescription;
 
+template fmiBuildDescriptionFile(SimCode simCode, list<String> sourceFiles, String fileNamePrefixHash)
+ "Writes sources/buildDescription.xml (FMI 3.0). Returns the empty string (the
+  content is written to a file). Skipped when there are no source files
+  (--fmiFilter=blackBox or fmiSources=false)."
+::=
+match sourceFiles
+case {} then ''
+else
+  let()= textFile(fmiBuildDescription(simCode, sourceFiles), '<%fileNamePrefixHash%>.fmutmp/sources/buildDescription.xml')
+  ''
+end fmiBuildDescriptionFile;
+
+template fmiBuildDescription(SimCode simCode, list<String> sourceFiles)
+ "Generates the FMI 3.0 sources/buildDescription.xml: the C source files, include
+  directories and preprocessor definitions needed to build the source FMU. In FMI
+  2.0 the source file list lived in modelDescription.xml (<SourceFiles>); FMI 3.0
+  moves it here. Paths are relative to the sources/ directory."
+::=
+match simCode
+case SIMCODE(__) then
+  let modelIdentifier = modelNamePrefix(simCode)
+  <<
+  <?xml version="1.0" encoding="UTF-8"?>
+  <fmiBuildDescription fmiVersion="3.0">
+    <BuildConfiguration modelIdentifier="<%modelIdentifier%>">
+      <SourceFileSet language="C">
+        <%sourceFiles |> file => '<SourceFile name="<%file%>"/>' ;separator="\n        "%>
+        <PreprocessorDefinition name="FMI2_OVERRIDE_FUNCTION_PREFIX"/>
+        <PreprocessorDefinition name="FMI3_OVERRIDE_FUNCTION_PREFIX"/>
+        <IncludeDirectory name="."/>
+        <IncludeDirectory name="fmi"/>
+      </SourceFileSet>
+    </BuildConfiguration>
+  </fmiBuildDescription>
+  >>
+end fmiBuildDescription;
+
 template fmiTerminalsAndIconsFile(SimCode simCode, String fileNamePrefixHash)
  "Writes terminalsAndIcons/terminalsAndIcons.xml into the FMU when the model has
   connector-derived terminals. Returns the empty string (the content is written to

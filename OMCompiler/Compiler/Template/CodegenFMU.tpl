@@ -127,6 +127,9 @@ case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   // Generate optional terminalsAndIcons/terminalsAndIcons.xml (FMI 3.0 Terminals)
   let _ = if stringEq(FMUVersion, "3.0") then CodegenFMU3.fmiTerminalsAndIconsFile(simCode, fileNamePrefixHash)
 
+  // Generate sources/buildDescription.xml (FMI 3.0 source-FMU build instructions)
+  let _ = if stringEq(FMUVersion, "3.0") then CodegenFMU3.fmiBuildDescriptionFile(simCode, sourceFiles, fileNamePrefixHash)
+
   // Generate optional <fmiPrefix>_flags.json
   let _ = match sc.fmiSimulationFlags
     case SOME(fmiSimFlags as FMI_SIMULATION_FLAGS(__)) then

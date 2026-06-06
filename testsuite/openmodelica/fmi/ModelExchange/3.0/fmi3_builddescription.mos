@@ -1,0 +1,42 @@
+// name: fmi3_builddescription.mos
+// keywords: FMI 3.0 export buildDescription source
+// status: correct
+// teardown_command: rm -rf Mbd.fmu Mbd.fmutmp/ Mbd_bd.xml
+//
+// FMI 3.0 source FMUs ship sources/buildDescription.xml describing how to build
+// them (the source file list that FMI 2.0 kept in modelDescription <SourceFiles>).
+// Here we check the file exists, declares the BuildConfiguration for the model,
+// a C SourceFileSet, the FMI_OVERRIDE_FUNCTION_PREFIX defines and the include
+// directories. (A full build from it is exercised separately with an FMI tool.)
+
+loadString("model Mbd Real x(start = 1.0); equation der(x) = -x; end Mbd;"); getErrorString();
+
+buildModelFMU(Mbd, version="3.0", fmuType="me"); getErrorString();
+
+system("unzip -cqq Mbd.fmu sources/buildDescription.xml > Mbd_bd.xml"); getErrorString();
+// the structural lines (the long per-file SourceFile list is omitted)
+system("grep -E 'fmiBuildDescription fmiVersion|BuildConfiguration modelIdentifier|SourceFileSet language|PreprocessorDefinition|IncludeDirectory' Mbd_bd.xml | sed 's/^ *//'"); getErrorString();
+// the model's own translation unit must be listed
+system("grep -c '<SourceFile name=\"Mbd.c\"/>' Mbd_bd.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// "Mbd.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// 0
+// ""
+// <fmiBuildDescription fmiVersion="3.0">
+// <BuildConfiguration modelIdentifier="Mbd">
+// <SourceFileSet language="C">
+// <PreprocessorDefinition name="FMI2_OVERRIDE_FUNCTION_PREFIX"/>
+// <PreprocessorDefinition name="FMI3_OVERRIDE_FUNCTION_PREFIX"/>
+// <IncludeDirectory name="."/>
+// <IncludeDirectory name="fmi"/>
+// 0
+// ""
+// 1
+// 0
+// ""
+// endResult
