@@ -385,11 +385,14 @@ case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__))) then
   #define FMI3_NUMBER_OF_INTEGERS (<%varInfo.numIntAlgVars%> + <%varInfo.numIntParams%> + <%varInfo.numIntAliasVars%>)
   #define FMI3_NUMBER_OF_BOOLEANS (<%varInfo.numBoolAlgVars%> + <%varInfo.numBoolParams%> + <%varInfo.numBoolAliasVars%>)
   #define FMI3_NUMBER_OF_STRINGS (<%varInfo.numStringAlgVars%> + <%varInfo.numStringParamVars%> + <%varInfo.numStringAliasVars%>)
+  #define FMI3_NUMBER_OF_EXTERNALOBJECTS (<%varInfo.numExternalObjects%>)
   #define FMI3_REAL_VR_OFFSET    0
   #define FMI3_INTEGER_VR_OFFSET (FMI3_NUMBER_OF_REALS)
   #define FMI3_BOOLEAN_VR_OFFSET (FMI3_NUMBER_OF_REALS + FMI3_NUMBER_OF_INTEGERS)
   #define FMI3_STRING_VR_OFFSET  (FMI3_NUMBER_OF_REALS + FMI3_NUMBER_OF_INTEGERS + FMI3_NUMBER_OF_BOOLEANS)
-  #define FMI3_TIME_VR           (FMI3_NUMBER_OF_REALS + FMI3_NUMBER_OF_INTEGERS + FMI3_NUMBER_OF_BOOLEANS + FMI3_NUMBER_OF_STRINGS)
+  // external objects are exported as FMI 3.0 Binary, after the string block
+  #define FMI3_BINARY_VR_OFFSET  (FMI3_NUMBER_OF_REALS + FMI3_NUMBER_OF_INTEGERS + FMI3_NUMBER_OF_BOOLEANS + FMI3_NUMBER_OF_STRINGS)
+  #define FMI3_TIME_VR           (FMI3_NUMBER_OF_REALS + FMI3_NUMBER_OF_INTEGERS + FMI3_NUMBER_OF_BOOLEANS + FMI3_NUMBER_OF_STRINGS + FMI3_NUMBER_OF_EXTERNALOBJECTS)
   #define FMI3_EVENT_INDICATOR_VR_START (FMI3_TIME_VR + 1)
   #define FMI3_NUMBER_OF_STATES  <%varInfo.numStateVars%>
   >>

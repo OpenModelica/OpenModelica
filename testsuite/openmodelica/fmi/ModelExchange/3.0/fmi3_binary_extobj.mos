@@ -1,0 +1,57 @@
+// name: fmi3_binary_extobj.mos
+// keywords: FMI 3.0 export ExternalObject Binary
+// status: correct
+// teardown_command: rm -rf M.fmu M.fmutmp/ M_md.xml
+//
+// A Modelica ExternalObject is an opaque handle (void*). It is exported to FMI 3.0
+// as a <Binary> variable whose value is the raw handle bytes (fmi3GetBinary /
+// fmi3SetBinary in the runtime). The value reference uses its own per-base-type
+// block after the strings; time shifts past it.
+
+loadString("
+class ExtObj
+  extends ExternalObject;
+  function constructor
+    output ExtObj eo;
+    external \"C\" eo = MyConstructor() annotation(Include=\"
+      #include <stdlib.h>
+      void* MyConstructor(void) { double* p = (double*)malloc(sizeof(double)); *p = 42.0; return p; }
+      void MyDestructor(void* eo) { free(eo); }
+    \");
+  end constructor;
+  function destructor
+    input ExtObj eo;
+    external \"C\" MyDestructor(eo);
+  end destructor;
+end ExtObj;
+model M
+  ExtObj eo = ExtObj();
+  Real x(start = 1.0);
+equation
+  der(x) = -x;
+end M;
+"); getErrorString();
+
+buildModelFMU(M, version="3.0", fmuType="me"); getErrorString();
+
+// extract the ModelVariables: the ExternalObject is a <Binary>
+system("unzip -cqq M.fmu modelDescription.xml > M_md.xml"); getErrorString();
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" M_md.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// "M.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// 0
+// ""
+//   <ModelVariables>
+//   <Float64 name="time" valueReference="3" causality="independent" variability="continuous" description="Simulation time"/>
+//   <Float64 name="x" valueReference="0" initial="exact"  start="1.0"/>
+//   <Float64 name="der(x)" valueReference="1"  derivative="0"/>
+//   <Binary name="eo" valueReference="2" causality="local" variability="fixed"/>
+//   </ModelVariables>
+// 0
+// ""
+// endResult

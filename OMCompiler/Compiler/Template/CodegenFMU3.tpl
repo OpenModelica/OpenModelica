@@ -323,6 +323,7 @@ case MODELINFO(vars=SIMVARS(stateVars=stateVars)) then
   <%vars.stringAlgVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
   <%vars.stringParamVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
   <%vars.stringAliasVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
+  <%vars.extObjVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
   <%EventIndicatorVariables3(simCode)%>
   </ModelVariables>
   >>
@@ -356,6 +357,11 @@ template Variable3(SimVar simVar, SimCode simCode, list<SimVar> stateVars)
  "Generates a typed variable element for FMI 3.0."
 ::=
 match simVar
+case SIMVAR(name = name, type_ = T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(__))) then
+  // FMI 3.0 Binary variable: a Modelica ExternalObject is an opaque handle
+  // (void*); it is exported as a Binary whose value is the raw handle bytes (see
+  // fmi3GetBinary/fmi3SetBinary in fmu3_model_interface.c).
+  '<Binary <%BinaryVariableAttributes3(simVar, simCode)%>/>'
 case SIMVAR(name = name, exportVar = exportVar, type_ = T_ARRAY(ty = arrayElementType)) then
   // FMI 3.0 native array variable: one element with one valueReference and
   // <Dimension> children (the value reference of the first scalar element; the
@@ -439,6 +445,22 @@ case SIMVAR(__) then
   name="<%name%>" valueReference="<%valueReference%>" <%description%><%if boolNot(stringEq(caus, "")) then 'causality="'+caus+'" '%><%if boolNot(stringEq(variability_, "")) then 'variability="'+variability_+'" '%><%if boolNot(stringEq(initial, "")) then 'initial="'+initial+'" '%>
   >>
 end VariableCommonAttributes3;
+
+template BinaryVariableAttributes3(SimVar simVar, SimCode simCode)
+ "Generates the attributes for an FMI 3.0 Binary variable (a Modelica
+  ExternalObject). External objects have no exportVar/start; the name is taken
+  directly from the SimVar cref. They are constructed during initialization and
+  constant afterwards, hence variability=\"fixed\", causality=\"local\"."
+::=
+match simVar
+case SIMVAR(__) then
+  let nm = Util.escapeModelicaStringToXmlString(System.stringReplace(crefStrNoUnderscore(name),"$", "_D_"))
+  let valueReference = SimCodeUtil.getFMI3ValueReference(simVar, simCode)
+  let description = if comment then 'description="<%Util.escapeModelicaStringToXmlString(comment)%>" '
+  <<
+  name="<%nm%>" valueReference="<%valueReference%>" <%description%>causality="local" variability="fixed"
+  >>
+end BinaryVariableAttributes3;
 
 template DerivativeAttribute3(SimVar simVar, SimCode simCode, list<SimVar> stateVars)
  "Generates the derivative attribute (FMI 3.0 references the *valueReference* of

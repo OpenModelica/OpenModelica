@@ -337,7 +337,9 @@ case SIMCODE(__) then
   #define FMI3_INTEGER_VR_OFFSET (NUMBER_OF_REALS)
   #define FMI3_BOOLEAN_VR_OFFSET (NUMBER_OF_REALS + NUMBER_OF_INTEGERS)
   #define FMI3_STRING_VR_OFFSET  (NUMBER_OF_REALS + NUMBER_OF_INTEGERS + NUMBER_OF_BOOLEANS)
-  #define FMI3_TIME_VR           (NUMBER_OF_REALS + NUMBER_OF_INTEGERS + NUMBER_OF_BOOLEANS + NUMBER_OF_STRINGS)
+  // external objects are exported as FMI 3.0 Binary, after the string block
+  #define FMI3_BINARY_VR_OFFSET  (NUMBER_OF_REALS + NUMBER_OF_INTEGERS + NUMBER_OF_BOOLEANS + NUMBER_OF_STRINGS)
+  #define FMI3_TIME_VR           (NUMBER_OF_REALS + NUMBER_OF_INTEGERS + NUMBER_OF_BOOLEANS + NUMBER_OF_STRINGS + NUMBER_OF_EXTERNALOBJECTS)
   #define FMI3_EVENT_INDICATOR_VR_START (FMI3_TIME_VR + 1)
   >>
   else if isFMIVersion20(FMUVersion) then
@@ -479,6 +481,7 @@ let numberOfRealInputs = varInfo.numRealInputVars
   #define NUMBER_OF_INTEGERS <%numberOfIntegers%>
   #define NUMBER_OF_STRINGS <%numberOfStrings%>
   #define NUMBER_OF_BOOLEANS <%numberOfBooleans%>
+  #define NUMBER_OF_EXTERNALOBJECTS <%listLength(vars.extObjVars)%>
   #define NUMBER_OF_EXTERNALFUNCTIONS <%countDynamicExternalFunctions(functions)%>
 
   // define initial state vector as vector of value references (arrays expanded to

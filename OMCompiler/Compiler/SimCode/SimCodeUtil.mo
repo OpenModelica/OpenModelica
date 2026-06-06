@@ -14686,6 +14686,7 @@ protected
   Integer numReal = 2*numScalarElems(vars.stateVars) + numScalarElems(vars.algVars) + numScalarElems(vars.discreteAlgVars) + numScalarElems(vars.paramVars) + numScalarElems(vars.aliasVars);
   Integer numInteger = numScalarElems(vars.intAlgVars) + numScalarElems(vars.intParamVars) + numScalarElems(vars.intAliasVars);
   Integer numBoolean = numScalarElems(vars.boolAlgVars) + numScalarElems(vars.boolParamVars) + numScalarElems(vars.boolAliasVars);
+  Integer numString = numScalarElems(vars.stringAlgVars) + numScalarElems(vars.stringParamVars) + numScalarElems(vars.stringAliasVars);
 algorithm
   outOffset := match inType
     local DAE.Type aty;
@@ -14695,6 +14696,8 @@ algorithm
     case DAE.T_ENUMERATION() then numReal;
     case DAE.T_BOOL() then numReal + numInteger;
     case DAE.T_STRING() then numReal + numInteger + numBoolean;
+    // external objects are exported as FMI 3.0 Binary, after the string block
+    case DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ()) then numReal + numInteger + numBoolean + numString;
     // non-scalarized array variable: the offset is determined by the element type
     case DAE.T_ARRAY(ty = aty) then getFMI3TypeOffset(aty, inModelInfo);
     else 0;
@@ -14778,8 +14781,10 @@ protected
   Integer numInteger = numScalarElems(vars.intAlgVars) + numScalarElems(vars.intParamVars) + numScalarElems(vars.intAliasVars);
   Integer numBoolean = numScalarElems(vars.boolAlgVars) + numScalarElems(vars.boolParamVars) + numScalarElems(vars.boolAliasVars);
   Integer numString = numScalarElems(vars.stringAlgVars) + numScalarElems(vars.stringParamVars) + numScalarElems(vars.stringAliasVars);
+  // external objects (FMI 3.0 Binary) occupy their own block before time
+  Integer numExtObj = numScalarElems(vars.extObjVars);
 algorithm
-  outValueReference := String(numReal + numInteger + numBoolean + numString);
+  outValueReference := String(numReal + numInteger + numBoolean + numString + numExtObj);
 end getFMI3TimeValueReference;
 
 public function getLocalValueReference
@@ -15498,6 +15503,9 @@ algorithm
   (i,tree) := getValueReferenceMapping2(vars.stringAlgVars, 0, tree);
   (i,tree) := getValueReferenceMapping2(vars.stringParamVars, i, tree);
   (i,tree) := getValueReferenceMapping2(vars.stringAliasVars, i, tree);
+
+  // external objects are exported as FMI 3.0 Binary variables; own base-type block
+  (i,tree) := getValueReferenceMapping2(vars.extObjVars, 0, tree);
 end getValueReferenceMapping;
 
 public function createMinimalFMIModelStructure

@@ -3232,18 +3232,62 @@ FMU3_UNSUPPORTED_SET(fmi3SetUInt32, fmi3UInt32)
 FMU3_UNSUPPORTED_SET(fmi3SetInt64,  fmi3Int64)
 FMU3_UNSUPPORTED_SET(fmi3SetUInt64, fmi3UInt64)
 
+/* A Modelica ExternalObject is an opaque handle (void*) constructed by its
+ * constructor and stored in fmuData->simulationInfo->extObjs. It is exported as
+ * an FMI 3.0 Binary variable whose value is the raw bytes of that handle. The
+ * value reference is shifted by FMI3_BINARY_VR_OFFSET to recover the index into
+ * the extObjs array. Each binary value is sizeof(void*) bytes. */
 fmi3Status fmi3GetBinary(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, size_t valueSizes[], fmi3Binary values[], size_t nValues)
 {
-  (void)instance; (void)valueReferences; (void)valueSizes; (void)values; (void)nValues;
-  return nValueReferences == 0 ? fmi3OK : fmi3Error;
+  ModelInstance* c = fmu3InnerComp(instance);
+  size_t i;
+  if (!c) return fmi3Error;
+  if (nValueReferences > 0 && (nullPointer(c, "fmi3GetBinary", "vr[]", valueReferences) ||
+      nullPointer(c, "fmi3GetBinary", "valueSizes[]", valueSizes) ||
+      nullPointer(c, "fmi3GetBinary", "values[]", values)))
+    return fmi3Error;
+  /* one binary value per value reference (each external object is a scalar handle) */
+  if (nValueReferences != nValues) return fmi3Error;
+  for (i = 0; i < nValueReferences; i++) {
+    fmi3ValueReference lvr = (fmi3ValueReference)(valueReferences[i] - FMI3_BINARY_VR_OFFSET);
+    if (lvr >= (fmi3ValueReference)c->fmuData->modelData->nExtObjs) {
+      FILTERED_LOG(c, fmi3Error, LOG_STATUSERROR, "fmi3GetBinary: illegal value reference %u.", valueReferences[i])
+      return fmi3Error;
+    }
+    valueSizes[i] = sizeof(void*);
+    values[i]     = (fmi3Binary)&c->fmuData->simulationInfo->extObjs[lvr];
+    FILTERED_LOG(c, fmi3OK, LOG_FMI3_CALL, "fmi3GetBinary: #b%u# (%zu bytes)", valueReferences[i], valueSizes[i])
+  }
+  return fmi3OK;
 }
 
 fmi3Status fmi3SetBinary(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, const size_t valueSizes[], const fmi3Binary values[], size_t nValues)
 {
-  (void)instance; (void)valueReferences; (void)valueSizes; (void)values; (void)nValues;
-  return nValueReferences == 0 ? fmi3OK : fmi3Error;
+  ModelInstance* c = fmu3InnerComp(instance);
+  size_t i;
+  if (!c) return fmi3Error;
+  if (nValueReferences > 0 && (nullPointer(c, "fmi3SetBinary", "vr[]", valueReferences) ||
+      nullPointer(c, "fmi3SetBinary", "valueSizes[]", valueSizes) ||
+      nullPointer(c, "fmi3SetBinary", "values[]", values)))
+    return fmi3Error;
+  if (nValueReferences != nValues) return fmi3Error;
+  for (i = 0; i < nValueReferences; i++) {
+    fmi3ValueReference lvr = (fmi3ValueReference)(valueReferences[i] - FMI3_BINARY_VR_OFFSET);
+    if (lvr >= (fmi3ValueReference)c->fmuData->modelData->nExtObjs) {
+      FILTERED_LOG(c, fmi3Error, LOG_STATUSERROR, "fmi3SetBinary: illegal value reference %u.", valueReferences[i])
+      return fmi3Error;
+    }
+    /* the external object handle is a single void*; only that exact size is accepted */
+    if (valueSizes[i] != sizeof(void*)) {
+      FILTERED_LOG(c, fmi3Error, LOG_STATUSERROR, "fmi3SetBinary: value reference %u expects %zu bytes, got %zu.", valueReferences[i], sizeof(void*), valueSizes[i])
+      return fmi3Error;
+    }
+    memcpy(&c->fmuData->simulationInfo->extObjs[lvr], values[i], sizeof(void*));
+    FILTERED_LOG(c, fmi3OK, LOG_FMI3_CALL, "fmi3SetBinary: #b%u# (%zu bytes)", valueReferences[i], valueSizes[i])
+  }
+  return fmi3OK;
 }
 
 fmi3Status fmi3GetClock(fmi3Instance instance, const fmi3ValueReference valueReferences[],
