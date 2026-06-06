@@ -203,9 +203,15 @@ ENDFOREACH(lib ${SUNDIALS_LIBRARIES})
 
 SET(LAPACK_LIBRARIES_ "")
 FOREACH(lib ${LAPACK_LIBRARIES})
-	GET_FILENAME_COMPONENT(libNew "${lib}" NAME_WE)
-	STRING(REGEX REPLACE "^lib" "" libNew ${libNew})
-	SET(LAPACK_LIBRARIES_ "${LAPACK_LIBRARIES_} ${LINKER_LIB_PREFIX}${libNew}")
+	# FindLAPACK/FindBLAS may return raw linker flags (e.g. "-lm;-ldl") mixed in
+	# with library paths; pass those through instead of prefixing another "-l".
+	IF("${lib}" MATCHES "^-")
+		SET(LAPACK_LIBRARIES_ "${LAPACK_LIBRARIES_} ${lib}")
+	ELSE()
+		GET_FILENAME_COMPONENT(libNew "${lib}" NAME_WE)
+		STRING(REGEX REPLACE "^lib" "" libNew ${libNew})
+		SET(LAPACK_LIBRARIES_ "${LAPACK_LIBRARIES_} ${LINKER_LIB_PREFIX}${libNew}")
+	ENDIF()
 ENDFOREACH(lib ${LAPACK_LIBRARIES})
 
 SET(INTEL_TBB_LIBS "")
