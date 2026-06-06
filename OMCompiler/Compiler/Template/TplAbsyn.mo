@@ -407,6 +407,13 @@ uniontype MMExp
     Ident eltName;
     list<MMExp> statements;
   end MM_FOR_LOOP;
+
+  record MM_LIST_FOR_LOOP "iterative list map: for eltName in listName loop match eltName ... end for;"
+    Ident eltName;
+    Ident listName;
+    TypedIdents matchLocals "pattern and body locals of the per-element match";
+    list<MMMatchCase> matchCases "the matched case plus an optional skip (else) case";
+  end MM_LIST_FOR_LOOP;
 end MMExp;
 
 public type MMMatchCase = tuple<list<MatchingExp>, list<MMExp>>;
@@ -2574,7 +2581,7 @@ algorithm
       TypeSignature argtype, oftype;
       ScopeEnv scEnv;
       Ident intxt, outtxt, fname,   idxName, freshIdxName, arrName, eltName;
-      TypedIdents locals,  localArgs, encodedExtargs, maplocals, caseLocals,   iargs, oargs;
+      TypedIdents locals,  localArgs, encodedExtargs, maplocals, caseLocals,   iargs, oargs, matchLocals;
       MapContext mapctx;
       TemplPackage tplPackage;
       list<MMDeclaration> accMMDecls;
@@ -2584,7 +2591,7 @@ algorithm
       Expression mapexp;
       list<MMEscOption> iopts;
       list<ASTDef> astDefs;
-      MMMatchCase mmmcEmptyList, mmmcCons, mmFailCons;
+      MMMatchCase mmmcEmptyList, mmmcCons, mmFailCons, mmmcMatched;
       Boolean isfirst, useiter,  isUsed;
       MMDeclaration mmFun;
       list<tuple<MatchingExp, TypedIdents, list<MMExp>>> elabcases;
@@ -2653,43 +2660,35 @@ algorithm
         //oargs = List.filterOnTrue(extargs, isText);
         oargs := List.filter1OnTrue(encodedExtargs, isAssignedText, assignedIdents);
         oargs := imlicitTxtArg :: oargs;
-        lhsArgs := List.map(oargs, Util.tuple21);
-        inMapExtargvals :=  List.map(encodedExtargs, makeMMArgValue);
-        rhsMMArgs := List.map(inMapExtargvals, Util.tuple31);
-        //recursive call
-        mmRecCall := MM_ASSIGN(
-            lhsArgs,
-            MM_FN_CALL(IDENT(fname), MM_IDENT(IDENT(imlicitTxt)) :: MM_IDENT(IDENT("rest")) :: rhsMMArgs)
-        );
-        //add the recursive call for the "rest" and revese statemnts
-        mapstmts := listReverse(mmRecCall :: mapstmts);
+        //reverse the per-element statements into source order
+        mapstmts := listReverse(mapstmts);
         //add indexed value if needed
         (mapstmts, maplocals)
           := addGetIndex(isUsed, freshIdxName, mapstmts, imlicitTxt, maplocals);
 
-        //make the empty case, cons case and a failing cons case (only recusive call for the rest)
-        mmmcEmptyList := makeMMMatchCase( (LIST_MATCH({}), {},{}), encodedExtargs, oargs);
-        mmmcCons := makeMMMatchCase(
-          (LIST_CONS_MATCH(mexp, BIND_MATCH("rest")), encodedExtargs, mapstmts),
-          encodedExtargs, oargs);
-        //TODO: the fail recursive call could be made conditional, only when the mexp can fail
-        // or, maybe, always like it is, to make easier location of failing of (badly)imported functions(they should not fail)
-        mmFailCons := makeMMMatchCase(
-          (LIST_CONS_MATCH(REST_MATCH(), BIND_MATCH("rest")), encodedExtargs, {mmRecCall}),
-          encodedExtargs, oargs);
-        mmmcases := if isAlwaysMatchedBool(mexp) then { mmmcEmptyList, mmmcCons } else { mmmcEmptyList, mmmcCons, mmFailCons };
-         //  listAppend({ mmmcEmptyList, mmmcCons },
-         //  { makeMMMatchCase(
-         // (LIST_CONS_MATCH(REST_MATCH(), BIND_MATCH("rest")), encodedExtargs, {mmRecCall}),
-         // encodedExtargs, oargs) } );
+        // The element-pattern bindings and per-element temporaries become the
+        // locals of the per-element match; the threaded text accumulators stay
+        // as the function's input/output arguments (iargs/oargs above).
+        matchLocals := maplocals;
+
+        // fresh loop variable bound to each list element (the match scrutinee)
+        eltName := "lstElt_" + intString(listLength(accMMDecls));
+
+        // The matched case runs the per-element body; the empty list is handled
+        // by the for-loop itself. When the element pattern may fail to match,
+        // add a skip case that leaves the accumulators unchanged.
+        mmmcMatched := ({mexp}, mapstmts);
+        mmmcases := if isAlwaysMatchedBool(mexp) then { mmmcMatched }
+                    else { mmmcMatched, ({REST_MATCH()}, {}) };
 
         mapctx := MAP_CONTEXT(ofbind, mapexp, iopts, hasIndexIdentOpt, useiter);
-        maplocals := listAppend(encodedExtargs, maplocals);
-        maplocals := imlicitTxtArg :: ("rest",argtype) :: maplocals;
 
-        // make fun
-        mmFun := MM_FUN(false,fname, iargs, oargs, maplocals,
-                        { MM_MATCH( mmmcases /*{ mmmcEmptyList, mmmcCons, mmFailCons } */ ) },
+        // make fun: an iterative for-loop over the list rather than a
+        // self-recursive helper. The recursion is a tail call (the C backend
+        // tail-call-optimises it), but a straight loop avoids deep call stacks
+        // for large models in every backend.
+        mmFun := MM_FUN(false, fname, iargs, oargs, {},
+                        { MM_LIST_FOR_LOOP(eltName, "items", matchLocals, mmmcases) },
                         GI_MAP_FUN(argtype, mapctx)
                 );
 
@@ -2903,6 +2902,17 @@ algorithm
   (outIntersection, outList1Rest, outList2Rest) := List.intersection1OnTrue(inList1, inList2, areTypedIdentsEqual);
   outIntersectionAndRests := (outIntersection, outList1Rest, outList2Rest);
 end intersectInOutArgs;
+
+public function isTupleListMember "True when an identifier names one of the typed idents in the list."
+  input Ident inId;
+  input TypedIdents inList;
+  output Boolean outIsMember;
+algorithm
+  outIsMember := matchcontinue ()
+    case () algorithm lookupTupleList(inList, inId); then true;
+    else false;
+  end matchcontinue;
+end isTupleListMember;
 
 /*
 function isIndexArg
@@ -6845,6 +6855,7 @@ algorithm
     case MM_FN_CALL() then List.foldr(exp.args, addExpToSet, addPathIdentToSet(set, exp.fnName));
     case MM_IDENT() then addPathIdentToSet(set, exp.ident);
     case MM_MATCH() then List.foldr(exp.matchCases, addMatchCaseToSet, set);
+    case MM_LIST_FOR_LOOP() then List.foldr(exp.matchCases, addMatchCaseToSet, set);
     else set;
   end match;
 end addExpToSet;
