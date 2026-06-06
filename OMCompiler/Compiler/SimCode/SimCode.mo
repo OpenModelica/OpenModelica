@@ -760,6 +760,23 @@ public uniontype FmiModelStructure
   end FMIMODELSTRUCTURE;
 end FmiModelStructure;
 
+/* FMI 3.0 Terminals (terminalsAndIcons.xml) */
+public uniontype FmiTerminal
+  record FMI_TERMINAL
+    String name             "connector instance name, e.g. bus (also the matchingRule)";
+    Boolean isExpandable    "true for expandable connectors";
+    list<FmiTerminalMember> members;
+  end FMI_TERMINAL;
+end FmiTerminal;
+
+public uniontype FmiTerminalMember
+  record FMI_TERMINAL_MEMBER
+    DAE.ComponentRef variable "exported variable cref; template formats it exactly as in modelDescription.xml (e.g. bus.a)";
+    String memberName       "name within the terminal, e.g. a";
+    String variableKind     "role of the member, derived from causality (input/output/...)";
+  end FMI_TERMINAL_MEMBER;
+end FmiTerminalMember;
+
 public uniontype FmiSimulationFlags
   record FMI_SIMULATION_FLAGS
     list<tuple<String,String>> nameValueTuples;

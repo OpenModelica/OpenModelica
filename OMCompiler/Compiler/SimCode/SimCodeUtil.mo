@@ -15522,6 +15522,138 @@ algorithm
     SimCode.FMIINITIALUNKNOWNS({}, {}, {})));
 end createMinimalFMIModelStructure;
 
+public function getFMI3Terminals
+  "Collect the FMI 3.0 terminals from the exported SimVars. The flat-model type of
+   each variable tells us whether it stems from a connector: a variable whose cref
+   has a connector-typed qualifier (identType = T_COMPLEX / T_SUBTYPE_BASIC with
+   ClassInf.CONNECTOR) is a member of that connector instance. Members are grouped
+   by their connector instance (the terminal), preserving the variable order. Used
+   by CodegenFMU3 to emit terminalsAndIcons.xml."
+  input SimCode.SimCode simCode;
+  output list<SimCode.FmiTerminal> terminals = {};
+protected
+  SimCodeVar.SimVars vars;
+  list<SimCodeVar.SimVar> allVars;
+  list<tuple<String, Boolean, SimCode.FmiTerminalMember>> flat = {};
+  list<String> names = {};
+  Option<tuple<String, Boolean, SimCode.FmiTerminalMember>> om;
+  String tname, tname2;
+  Boolean texp, texp2;
+  SimCode.FmiTerminalMember mem;
+  list<SimCode.FmiTerminalMember> mems;
+algorithm
+  vars := simCode.modelInfo.vars;
+  // gather the variables that also end up in modelDescription.xml (no alias vars,
+  // their canonical member is already covered by the real variable)
+  allVars := List.flatten({vars.stateVars, vars.derivativeVars, vars.algVars,
+    vars.discreteAlgVars, vars.paramVars, vars.intAlgVars, vars.intParamVars,
+    vars.boolAlgVars, vars.boolParamVars, vars.stringAlgVars, vars.stringParamVars});
+  for v in allVars loop
+    om := connectorMemberOf(v);
+    if isSome(om) then
+      flat := Util.getOption(om) :: flat;
+    end if;
+  end for;
+  flat := listReverse(flat);
+  // distinct terminal names in first-seen order
+  for t in flat loop
+    (tname, _, _) := t;
+    if not listMember(tname, names) then
+      names := tname :: names;
+    end if;
+  end for;
+  names := listReverse(names);
+  // one terminal per connector instance, members in first-seen order
+  for nm in names loop
+    mems := {};
+    texp := false;
+    for t in flat loop
+      (tname2, texp2, mem) := t;
+      if stringEq(tname2, nm) then
+        mems := mem :: mems;
+        texp := texp2;
+      end if;
+    end for;
+    terminals := SimCode.FMI_TERMINAL(nm, texp, listReverse(mems)) :: terminals;
+  end for;
+  terminals := listReverse(terminals);
+end getFMI3Terminals;
+
+protected function connectorMemberOf
+  "If the variable stems from a connector, return its terminal (connector instance)
+   name, the connector's isExpandable flag and the terminal member descriptor."
+  input SimCodeVar.SimVar var;
+  output Option<tuple<String, Boolean, SimCode.FmiTerminalMember>> result;
+algorithm
+  result := matchcontinue var
+    local
+      DAE.ComponentRef cref;
+      String tname, member, kind;
+      Boolean isExp;
+    case _ guard isSome(var.exportVar)
+      algorithm
+        cref := Util.getOption(var.exportVar);
+        (tname, member, isExp) := crefConnectorSplit(cref);
+        kind := terminalVariableKind(var.causality);
+      then SOME((tname, isExp, SimCode.FMI_TERMINAL_MEMBER(cref, member, kind)));
+    else NONE();
+  end matchcontinue;
+end connectorMemberOf;
+
+protected function crefConnectorSplit
+  "Split a cref at its outermost connector-typed qualifier: returns the connector
+   instance name (terminal), the remaining member path and the connector's
+   isExpandable flag. Fails if no qualifier has a connector type."
+  input DAE.ComponentRef cref;
+  output String terminalName;
+  output String memberName;
+  output Boolean isExpandable;
+algorithm
+  (terminalName, memberName, isExpandable) := match cref
+    local
+      DAE.ComponentRef rest;
+      DAE.Type ity;
+      String id, innerT, innerM;
+      Boolean isExp;
+    // the outermost qualifier is itself a connector: bus.a -> terminal bus, member a
+    case DAE.CREF_QUAL(ident = id, identType = ity, componentRef = rest)
+      guard Types.isConnector(ity)
+      then (id, ComponentReference.crefStr(rest), connectorIsExpandable(ity));
+    // a non-connector qualifier wrapping a connector deeper in: comp.bus.a
+    case DAE.CREF_QUAL(ident = id, componentRef = rest)
+      algorithm
+        (innerT, innerM, isExp) := crefConnectorSplit(rest);
+      then (id + "." + innerT, innerM, isExp);
+  end match;
+end crefConnectorSplit;
+
+protected function connectorIsExpandable
+  input DAE.Type ty;
+  output Boolean isExpandable;
+algorithm
+  isExpandable := match ty
+    local Boolean b;
+    case DAE.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(isExpandable = b)) then b;
+    case DAE.T_SUBTYPE_BASIC(complexClassType = ClassInf.CONNECTOR(isExpandable = b)) then b;
+    else false;
+  end match;
+end connectorIsExpandable;
+
+protected function terminalVariableKind
+  "Map a SimVar causality to the FMI 3.0 terminal member variableKind."
+  input Option<SimCodeVar.Causality> causality;
+  output String kind;
+algorithm
+  kind := match causality
+    case SOME(SimCodeVar.INPUT()) then "input";
+    case SOME(SimCodeVar.OUTPUT()) then "output";
+    case SOME(SimCodeVar.PARAMETER()) then "parameter";
+    case SOME(SimCodeVar.CALCULATED_PARAMETER()) then "calculatedParameter";
+    case SOME(SimCodeVar.LOCAL()) then "local";
+    else "local";
+  end match;
+end terminalVariableKind;
+
 protected function getValueReferenceMapping2
   input list<SimCodeVar.SimVar> vars;
   input output Integer i;

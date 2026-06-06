@@ -3,7 +3,8 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 fmi3_attributes_01.mos \
 fmi3_arrays.mos \
-fmi3_types.mos
+fmi3_types.mos \
+fmi3_terminals.mos
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

@@ -1036,6 +1036,22 @@ package SimCode
     end FMIMODELSTRUCTURE;
   end FmiModelStructure;
 
+  uniontype FmiTerminal
+    record FMI_TERMINAL
+      String name;
+      Boolean isExpandable;
+      list<FmiTerminalMember> members;
+    end FMI_TERMINAL;
+  end FmiTerminal;
+
+  uniontype FmiTerminalMember
+    record FMI_TERMINAL_MEMBER
+      DAE.ComponentRef variable;
+      String memberName;
+      String variableKind;
+    end FMI_TERMINAL_MEMBER;
+  end FmiTerminalMember;
+
   uniontype FmiSimulationFlags
     record FMI_SIMULATION_FLAGS
       list<tuple<String,String>> nameValueTuples;
@@ -1370,6 +1386,11 @@ package SimCodeUtil
     input SimCodeVar.SimVar var;
     output String out;
   end getFMI3ArrayStart;
+
+  function getFMI3Terminals
+    input SimCode.SimCode simCode;
+    output list<SimCode.FmiTerminal> terminals;
+  end getFMI3Terminals;
 
   function getFMI3TimeValueReference
     input SimCode.SimCode inSimCode;

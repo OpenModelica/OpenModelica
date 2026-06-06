@@ -1,0 +1,47 @@
+// name: fmi3_terminals.mos
+// keywords: FMI 3.0 export terminals connector
+// status: correct
+// teardown_command: rm -rf Ctrl.fmu Ctrl.fmutmp/ Ctrl_term.xml
+//
+// FMI 3.0 Terminals: variables that stem from a connector (detected from the
+// flat-model component type, i.e. a connector-typed cref qualifier) are grouped
+// into one Terminal per connector instance in terminalsAndIcons/terminalsAndIcons.xml.
+
+loadString("
+connector InBus
+  input Real a;
+  input Real b;
+end InBus;
+model Ctrl
+  InBus bus;
+  output Real y;
+  parameter Real k = 2;
+equation
+  y = k*(bus.a + bus.b);
+end Ctrl;
+"); getErrorString();
+
+buildModelFMU(Ctrl, version="3.0", fmuType="me"); getErrorString();
+
+// extract the generated terminalsAndIcons.xml
+system("unzip -cqq Ctrl.fmu terminalsAndIcons/terminalsAndIcons.xml > Ctrl_term.xml"); getErrorString();
+readFile("Ctrl_term.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// "Ctrl.fmu"
+// ""
+// 0
+// ""
+// "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+// <fmiTerminalsAndIcons fmiVersion=\"3.0\">
+//   <Terminals>
+//     <Terminal name=\"bus\" matchingRule=\"bus\">
+//       <TerminalMemberVariable variableName=\"bus.a\" memberName=\"a\" variableKind=\"input\"/>
+//       <TerminalMemberVariable variableName=\"bus.b\" memberName=\"b\" variableKind=\"input\"/>
+//     </Terminal>
+//   </Terminals>
+// </fmiTerminalsAndIcons>"
+// ""
+// endResult

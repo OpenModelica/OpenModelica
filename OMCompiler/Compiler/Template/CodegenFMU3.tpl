@@ -113,6 +113,57 @@ case SIMCODE(__) then
   >>
 end fmiModelDescription;
 
+template fmiTerminalsAndIconsFile(SimCode simCode, String fileNamePrefixHash)
+ "Writes terminalsAndIcons/terminalsAndIcons.xml into the FMU when the model has
+  connector-derived terminals. Returns the empty string (the content is written to
+  a file). The terminalsAndIcons/ directory is created in SimCodeMain beforehand."
+::=
+match SimCodeUtil.getFMI3Terminals(simCode)
+case {} then ''
+case terminals then
+  let()= textFile(fmiTerminalsAndIcons(terminals), '<%fileNamePrefixHash%>.fmutmp/terminalsAndIcons/terminalsAndIcons.xml')
+  ''
+end fmiTerminalsAndIconsFile;
+
+template fmiTerminalsAndIcons(list<FmiTerminal> terminals)
+ "Generates the terminalsAndIcons.xml content (FMI 3.0 Terminals): one <Terminal>
+  per connector instance, grouping its member variables. The connector membership
+  is detected from the flat-model component type (a connector-typed cref qualifier)
+  in SimCodeUtil.getFMI3Terminals."
+::=
+  <<
+  <?xml version="1.0" encoding="UTF-8"?>
+  <fmiTerminalsAndIcons fmiVersion="3.0">
+    <Terminals>
+      <%terminals |> t => Terminal3(t) ;separator="\n"%>
+    </Terminals>
+  </fmiTerminalsAndIcons>
+  >>
+end fmiTerminalsAndIcons;
+
+template Terminal3(FmiTerminal terminal)
+ "Generates one <Terminal>. matchingRule=\"bus\" means the members are matched by
+  name when two terminals are connected, the natural rule for Modelica connectors."
+::=
+match terminal
+case FMI_TERMINAL(__) then
+  <<
+  <Terminal name="<%Util.escapeModelicaStringToXmlString(name)%>" matchingRule="bus">
+    <%members |> m => TerminalMember3(m) ;separator="\n"%>
+  </Terminal>
+  >>
+end Terminal3;
+
+template TerminalMember3(FmiTerminalMember member)
+ "Generates a <TerminalMemberVariable> referencing a modelDescription variable.
+  variableName is formatted exactly like the variable name in modelDescription.xml."
+::=
+match member
+case FMI_TERMINAL_MEMBER(__) then
+  let varName = Util.escapeModelicaStringToXmlString(System.stringReplace(crefStrNoUnderscore(variable),"$", "_D_"))
+  '<TerminalMemberVariable variableName="<%varName%>" memberName="<%Util.escapeModelicaStringToXmlString(memberName)%>" variableKind="<%variableKind%>"/>'
+end TerminalMember3;
+
 template fmiModelDescriptionAttributes(SimCode simCode, String guid)
  "Generates the attributes of the fmiModelDescription element for FMI 3.0."
 ::=

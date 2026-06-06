@@ -965,6 +965,12 @@ algorithm
         // For FMI 3.0 also copy the FMI 3.0 reference headers into the FMU sources.
         if FMUVersion == "3.0" then
           copyFiles({"fmi/fmi3Functions.h","fmi/fmi3FunctionTypes.h","fmi/fmi3PlatformTypes.h"}, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+          // FMI 3.0 Terminals: create the terminalsAndIcons/ directory (the
+          // CodegenFMU3 template writes terminalsAndIcons.xml into it) when the
+          // model has connector-derived terminals.
+          if not listEmpty(SimCodeUtil.getFMI3Terminals(simCode)) then
+            Util.createDirectoryTree(fmutmp + "/terminalsAndIcons/");
+          end if;
         end if;
 
         /*
