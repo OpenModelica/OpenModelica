@@ -799,7 +799,7 @@ namespace IAEX {
     connect( input_, SIGNAL(updatePos(int, int)), this, SIGNAL(updatePos(int, int)));
     contentChanged();
 
-    connect(input_, SIGNAL(setState(int)), this, SLOT(setState(int)));
+    connect(input_, &MyTextEdit2a::setState, this, &IAEX::GraphCell::setState);
     connect(input_, SIGNAL(textChanged()), input_, SLOT(setModified()));
   }
 

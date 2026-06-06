@@ -383,30 +383,52 @@ namespace IAEX
           // adrpo --> add URL conversion because Qt 4.4.2 doesn't accept \ in the URL!
           QString text = e.text();
 
-          // --------------------------------------------------------------
-          // Replace back‑slashes inside href attributes (e.g. href="c:\foo")
-          // using QRegularExpression (Qt6 friendly)
-          // --------------------------------------------------------------
-          const QString pattern(R"(href[^=]*=[^"]*"[^"\\]*)\\([^"]*")");
+          // replace all href="...\..." with href=".../..."
+          QString pattern("(href[^=]*=[^\"]*\"[^\"\\\\]*)\\\\([^\"]*\")");
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
           QRegularExpression rx(pattern, QRegularExpression::CaseInsensitiveOption);
+#else
+          QRegularExpression rx(pattern);
+rx.setPatternOptions(QRegularExpression::CaseInsensitiveOption | QRegularExpression::InvertedGreedinessOption);
+
+#endif
           if (!rx.isValid())
           {
-            fprintf(stderr,
-                    "Invalid QRegularExpression(%s)\n",
-                    qPrintable(rx.pattern()));
+            fprintf(stderr, "Invalid QRegExp(%s)\n", rx.pattern().toStdString().c_str());
           }
-
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
           QRegularExpressionMatch match = rx.match(text);
           while (match.hasMatch())
           {
-            // capture group 1 = everything before the back‑slash,
-            // capture group 2 = everything after the back‑slash (excluding the closing quote)
-            text = text.replace(rx,
-                               match.captured(1) + QString::fromAscii("/") + match.captured(2));
+            text = text.replace(rx, match.captured(1) + QString::fromAscii("/") + match.captured(2));
             match = rx.match(text);
           }
 
           textcell->setTextHtml(text);
+#else
+          QRegularExpressionMatch match = rx.match(text);
+          if (match.hasMatch())
+          {
+              while (match.hasMatch())
+              {
+                  // int numX = match.lastCapturedIndex(); 
+                  // QString s1 = match.captured(1);
+                  // QString s2 = match.captured(2);
+                  
+                  // Ersetzt das erste Vorkommen des Treffers im Text
+                  text.replace(match.capturedStart(0), match.capturedLength(0), 
+                              match.captured(1) + QStringLiteral("/") + match.captured(2));
+                  
+                  // Suche erneut im modifizierten Text
+                  match = rx.match(text);
+              }
+              textcell->setTextHtml(text);
+          }
+          else // Keine Treffer gefunden
+          {
+              textcell->setTextHtml(text);
+          }
+#endif
         }
         else if( e.tagName() == XML_RULE )
         {

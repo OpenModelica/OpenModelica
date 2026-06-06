@@ -117,7 +117,6 @@ public:
     void             setFocus(bool focus)          override;
     void             setFocusOutput(bool focus);
     void             setExpr(QString expr);
-    void             setState(int state);
     void             delegateFinished(InputCellDelegate *delegate);
 
 public slots:
@@ -130,6 +129,7 @@ public slots:
     void             clickEventOutput();
     void             contentChanged();
     void             addToHighlighter();
+    void             setState(int state);
 
 signals:
     void             plotVariables(QStringList lst);
