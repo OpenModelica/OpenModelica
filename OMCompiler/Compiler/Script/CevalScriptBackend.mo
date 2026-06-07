@@ -3181,6 +3181,15 @@ algorithm
     case ("getModelInstanceAnnotation", {Values.CODE(Absyn.C_TYPENAME(classpath)), v as Values.ARRAY(), Values.BOOL(b)})
       then NFApi.getModelInstanceAnnotation(classpath, ValuesUtil.arrayValueStrings(v), b);
 
+    case ("getModelInstanceReference", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(str)})
+      then NFApi.getModelInstanceReference(classpath, path, str);
+
+    case ("getModelInstanceAnnotationReference", {Values.CODE(Absyn.C_TYPENAME(classpath)), v as Values.ARRAY()})
+      then NFApi.getModelInstanceAnnotationReference(classpath, ValuesUtil.arrayValueStrings(v));
+
+    case ("releaseModelInstanceReference", {Values.INTEGER(i)})
+      then NFApi.releaseModelInstanceReference(i);
+
     case ("modifierToJSON", {Values.STRING(str), Values.BOOL(b)})
       then NFApi.modifierToJSON(str, b);
 

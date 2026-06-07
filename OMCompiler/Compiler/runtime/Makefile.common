@@ -22,6 +22,7 @@ endif
 
 OMC_OBJ_SHARED = Error_omc$(OBJEXT) \
   Print_omc.o \
+  ModelInstanceReference_omc.o \
   ErrorMessage$(OBJEXT) systemimplmisc.o System_omc$(OBJEXT) \
   Lapack_omc.o Settings_omc$(OBJEXT) \
   UnitParserExt_omc.o unitparser.o \
