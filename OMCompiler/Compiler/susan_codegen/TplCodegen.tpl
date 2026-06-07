@@ -50,6 +50,8 @@ template mmDeclaration(MMDeclaration it) ::=
        mmMatchFunBody(mf.inArgs, mf.outArgs, mf.locals, c.matchCases)
      case {c as MM_FOR_LOOP(__)} then //for-loop function
        mmForLoopFunBody(mf.inArgs, mf.outArgs, mf.locals, c.idxName, c.arrName, c.eltName, c.statements)
+     case {c as MM_LIST_FOR_LOOP(__)} then //iterative list-map for-loop function
+       mmListForLoopFunBody(mf.inArgs, mf.outArgs, mf.locals, c.eltName, c.listName, c.matchLocals, c.matchCases)
      case sts then //simple assignment functions
        <<
          <%typedIdentsEx(mf.inArgs, "input", "")%>
@@ -149,6 +151,53 @@ end try;
 %>
 >>
 end mmForLoopFunBody;
+
+template mmListForLoopFunBody(TypedIdents inArgs, TypedIdents outArgs, TypedIdents locals, Ident eltName, Ident listName, TypedIdents matchLocals, list<MMMatchCase> matchCases) ::=
+<<
+  <%inArgs |> (nm, ts) => '<%if isTupleListMember(nm, outArgs) then "input output" else "input"%> <%typeSig(ts)%> <%nm%>;' ;separator="\n"%>
+<%if locals then <<
+protected
+  <%typedIdents(locals)%>
+>>%>
+algorithm<% if debugSusan() then
+<<
+
+try
+>>
+%>
+  for <%eltName%> in <%listName%> loop
+    <%match outArgs
+     case {(nm,_)} then nm
+     case oas      then '(<%oas |> (nm,_)=> nm ;separator=", "%>)'
+    %> := match <%eltName%><%if matchLocals then <<
+
+      local
+        <%typedIdents(matchLocals)%>
+    >>%>
+  <%matchCases |> (mexps, statements) =>
+  <<
+
+    case <%mexps |> it => mmMatchingExp(it) ;separator=",\n"; anchor%>
+      <%if statements then <<
+      algorithm
+        <%statements |> it => '<%mmExp(it, ":=")%>;' ;separator="\n"%>
+      >>%>
+      then <%match outArgs
+            case {(nm,_)} then nm
+            case oas then '(<%oas |> (nm,_)=> nm ;separator=", "%>)'
+           %>;
+  >>;separator="\n"%>
+    end match;
+  end for;<% if debugSusan() then
+<<
+
+else
+  Tpl.fakeStackOverflow();
+end try;
+>>
+%>
+>>
+end mmListForLoopFunBody;
 
 template inOutArgs(TypedIdents inArgs, TypedIdents outArgs) ::=
   match intersectInOutArgs(inArgs, outArgs)
