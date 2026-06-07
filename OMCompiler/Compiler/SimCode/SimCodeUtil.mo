@@ -11910,7 +11910,7 @@ protected function traverseExpsEqSystems
   input A ia;
   input list<SimCode.SimEqSystem> acc;
   output list<SimCode.SimEqSystem> oeqs;
-  output A oa;
+  output A oa = ia;
   replaceable type A subtypeof Any;
   partial function Func
     input DAE.Exp inExp;
@@ -11918,20 +11918,15 @@ protected function traverseExpsEqSystems
     output DAE.Exp outExp;
     output A outA;
   end Func;
+protected
+  SimCode.SimEqSystem teq;
+  list<SimCode.SimEqSystem> racc = acc;
 algorithm
-  (oeqs, oa) := match (ieqs, ia)
-    local
-      SimCode.SimEqSystem eq;
-      A a;
-      list<SimCode.SimEqSystem> eqs;
-
-    case ({}, a) then (listReverse(acc), a);
-    case (eq::eqs, a)
-      algorithm
-        (eq, a) := traverseExpsEqSystem(eq, func, a);
-        (oeqs, a) := traverseExpsEqSystems(eqs, func, a, eq::acc);
-      then (oeqs, a);
-  end match;
+  for eq in ieqs loop
+    (teq, oa) := traverseExpsEqSystem(eq, func, oa);
+    racc := teq :: racc;
+  end for;
+  oeqs := listReverse(racc);
 end traverseExpsEqSystems;
 
 protected function traverseExpsEqSystem
