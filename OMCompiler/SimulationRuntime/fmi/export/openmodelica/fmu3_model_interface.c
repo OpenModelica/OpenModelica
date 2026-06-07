@@ -3706,8 +3706,95 @@ fmi3Status fmi3DoStep(fmi3Instance instance, fmi3Float64 currentCommunicationPoi
 fmi3Status fmi3ActivateModelPartition(fmi3Instance instance, fmi3ValueReference clockReference,
     fmi3Float64 activationTime)
 {
-  /* TODO: drive the corresponding clocked partition. For now treat the model
-     partition activation as a no-op event so the basic SE handshake works. */
-  (void)instance; (void)clockReference; (void)activationTime;
-  return fmi3OK;
+  /* Scheduled Execution: the simulation algorithm activates one model partition
+     at a time. Each base clock is one model partition (its value reference is
+     FMI3_CLOCK_VR_OFFSET + base-clock index, the same scheme as fmi3GetClock).
+     The simple strategy here advances the model to the activation time and runs
+     that clocked partition (its synchronous equations + interval update) via the
+     same engine used by Model Exchange event mode. */
+  ModelInstance* comp = fmu3InnerComp(instance);
+  threadData_t *threadData;
+  jmp_buf *old_jmp;
+  fmi3ValueReference lvr;
+  int done = 0;
+
+  if (!comp) {
+    return fmi3Error;
+  }
+
+  lvr = (fmi3ValueReference)(clockReference - FMI3_CLOCK_VR_OFFSET);
+  if (lvr >= (fmi3ValueReference)comp->fmuData->modelData->nBaseClocks) {
+    FILTERED_LOG(comp, fmi3Error, LOG_STATUSERROR, "fmi3ActivateModelPartition: illegal clock reference %u.", clockReference)
+    return fmi3Error;
+  }
+
+  FILTERED_LOG(comp, fmi3OK, LOG_FMI3_CALL, "fmi3ActivateModelPartition: #c%u# at t=%g", clockReference, activationTime)
+
+  /* Flush any pending continuous/algebraic evaluation first (manages its own
+     thread data). This must happen before the clocked partition runs: otherwise
+     the deferred update would be triggered by the next fmi3Get* and would
+     overwrite the partition's freshly computed clocked outputs. */
+  if (updateIfNeeded(comp, "fmi3ActivateModelPartition") != fmi3OK) {
+    return fmi3Error;
+  }
+
+  threadData = comp->threadData;
+  old_jmp = threadData->mmc_jumper;
+  setThreadData(comp);
+  MemPoolState mem_pool_state = omc_util_get_pool_state();
+  /* try */
+  MMC_TRY_INTERNAL(simulationJumpBuffer)
+
+    {
+      DATA* fmuData = comp->fmuData;
+      BASECLOCK_DATA* bc = &fmuData->simulationInfo->baseClocks[lvr];
+
+      /* Advance to the activation time and run this base clock's partition. We
+         drive the partition directly rather than via handleBaseClock(): in
+         Scheduled Execution the importer owns the scheduling, so we don't want
+         handleBaseClock's internal sub-clock timer bookkeeping (nor its
+         initialization-time special case, which would defer the first tick to an
+         event loop that does not exist here). We still update the clock stats so
+         fmi3GetClock / fmi3GetInterval* report this activation. */
+      fmuData->localData[0]->timeValue = activationTime;
+
+      bc->stats.count++;
+      if (bc->isEventClock) {
+        if (bc->stats.count > 1) {
+          bc->stats.previousInterval = activationTime - bc->stats.lastActivationTime;
+        }
+      } else {
+        bc->stats.previousInterval = bc->interval;
+      }
+      bc->stats.lastActivationTime = activationTime;
+      if (bc->subClocks != NULL && bc->nSubClocks > 0) {
+        SUBCLOCK_DATA* sc = &bc->subClocks[0];
+        sc->stats.count++;
+        sc->stats.previousInterval = bc->stats.previousInterval;
+        sc->stats.lastActivationTime = activationTime;
+      }
+
+      fmuData->callback->function_equationsSynchronous(fmuData, comp->threadData, (long)lvr, 0);
+      if (!bc->isEventClock) {
+        fmuData->callback->function_updateSynchronous(fmuData, comp->threadData, (long)lvr);
+      }
+
+      /* The partition's clocked outputs are now current; keep them. Clearing the
+         flag stops the next fmi3Get* from re-running the continuous/algebraic
+         evaluation (which would clobber the just-computed clocked values). */
+      comp->_need_update = 0;
+    }
+    done = 1;
+
+  /* catch */
+  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  threadData->mmc_jumper = old_jmp;
+  omc_util_restore_pool_state(mem_pool_state);
+  resetThreadData(comp);
+
+  if (done) {
+    return fmi3OK;
+  }
+  FILTERED_LOG(comp, fmi3Error, LOG_FMI3_CALL, "fmi3ActivateModelPartition: terminated by an assertion.")
+  return fmi3Error;
 }

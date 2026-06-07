@@ -10,7 +10,8 @@ fmi3_fmustate.mos \
 fmi3_directional_derivatives.mos \
 fmi3_builddescription.mos \
 fmi3_clocks.mos \
-fmi3_graphics.mos
+fmi3_graphics.mos \
+fmi3_scheduled.mos
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

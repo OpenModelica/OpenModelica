@@ -107,7 +107,7 @@ case SIMCODE(__) then
     </LogCategories>
     >> %>
     <%DefaultExperiment3(simulationSettingsOpt)%>
-    <%fmiModelVariables3(simCode)%>
+    <%fmiModelVariables3(simCode, FMUType)%>
     <%modelStructure3(simCode, modelStructure)%>
   </fmiModelDescription>
   >>
@@ -335,8 +335,10 @@ case SIMVAR(type_ = T_ENUMERATION(path=path, names=names)) then
   >>
 end TypeDefinition3;
 
-template fmiModelVariables3(SimCode simCode)
- "Generates the ModelVariables element for FMI 3.0."
+template fmiModelVariables3(SimCode simCode, String FMUType)
+ "Generates the ModelVariables element for FMI 3.0. FMUType selects the clock
+  causality: Scheduled Execution clocks are input clocks (the importer activates
+  the model partition), all others are output clocks."
 ::=
 match simCode
 case SIMCODE(modelInfo=modelInfo) then
@@ -361,7 +363,7 @@ case MODELINFO(vars=SIMVARS(stateVars=stateVars)) then
   <%vars.stringParamVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
   <%vars.stringAliasVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
   <%vars.extObjVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-  <%SimCodeUtil.getFMI3Clocks(simCode) |> clk => Clock3(clk) ;separator="\n"%>
+  <%SimCodeUtil.getFMI3Clocks(simCode) |> clk => Clock3(clk, FMUType) ;separator="\n"%>
   <%EventIndicatorVariables3(simCode)%>
   </ModelVariables>
   >>
@@ -438,19 +440,22 @@ case SIMVAR(__) then
     else '<!-- UNKNOWN_TYPE <%crefStr(name)%> -->'
 end Variable3;
 
-template Clock3(FmiClock clock)
- "Generates an FMI 3.0 <Clock> variable for a model clock (an output clock the
-  FMU activates). intervalVariability is required; the period (intervalDecimal)
-  or the counter/resolution fraction is emitted when known at description time."
+template Clock3(FmiClock clock, String FMUType)
+ "Generates an FMI 3.0 <Clock> variable for a model clock. For Scheduled
+  Execution the clock is an input clock (the importer activates the associated
+  model partition via fmi3ActivateModelPartition); otherwise it is an output
+  clock the FMU activates. intervalVariability is required; the period
+  (intervalDecimal) or the counter/resolution fraction is emitted when known."
 ::=
 match clock
 case FMI_CLOCK(__) then
+  let causality = if isFMISEType(FMUType) then "input" else "output"
   let nm = Util.escapeModelicaStringToXmlString(System.stringReplace(name,"$", "_D_"))
   let intervalDec = if boolNot(stringEq(intervalDecimal, "")) then ' intervalDecimal="<%intervalDecimal%>"'
   let fraction = if supportsFraction then ' supportsFraction="true"'
   let counter = if boolNot(stringEq(intervalCounter, "")) then ' intervalCounter="<%intervalCounter%>"'
   let res = if boolNot(stringEq(resolution, "")) then ' resolution="<%resolution%>"'
-  '<Clock name="<%nm%>" valueReference="<%valueReference%>" causality="output" intervalVariability="<%intervalVariability%>"<%intervalDec%><%fraction%><%counter%><%res%>/>'
+  '<Clock name="<%nm%>" valueReference="<%valueReference%>" causality="<%causality%>" intervalVariability="<%intervalVariability%>"<%intervalDec%><%fraction%><%counter%><%res%>/>'
 end Clock3;
 
 template ArrayStartString3(SimVar simVar)
