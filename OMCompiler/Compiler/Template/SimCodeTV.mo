@@ -1052,6 +1052,18 @@ package SimCode
     end FMI_TERMINAL_MEMBER;
   end FmiTerminalMember;
 
+  uniontype FmiClock
+    record FMI_CLOCK
+      Integer valueReference;
+      String name;
+      String intervalVariability;
+      Boolean supportsFraction;
+      String intervalDecimal;
+      String intervalCounter;
+      String resolution;
+    end FMI_CLOCK;
+  end FmiClock;
+
   uniontype FmiSimulationFlags
     record FMI_SIMULATION_FLAGS
       list<tuple<String,String>> nameValueTuples;
@@ -1391,6 +1403,11 @@ package SimCodeUtil
     input SimCode.SimCode simCode;
     output list<SimCode.FmiTerminal> terminals;
   end getFMI3Terminals;
+
+  function getFMI3Clocks
+    input SimCode.SimCode simCode;
+    output list<SimCode.FmiClock> clocks;
+  end getFMI3Clocks;
 
   function getFMI3TimeValueReference
     input SimCode.SimCode inSimCode;

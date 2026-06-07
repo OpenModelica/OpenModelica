@@ -3290,11 +3290,37 @@ fmi3Status fmi3SetBinary(fmi3Instance instance, const fmi3ValueReference valueRe
   return fmi3OK;
 }
 
+/* Output clocks: each base clock of the model's clocked partitions is exported
+ * as an FMI 3.0 output <Clock>. The value reference is shifted by
+ * FMI3_CLOCK_VR_OFFSET to recover the base-clock index. The clocks are ticked by
+ * the engine in internalEventUpdate (handleTimersFMI), which records the
+ * activation in baseClocks[i].stats; a clock is "active" when it fired at the
+ * current event time. */
 fmi3Status fmi3GetClock(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, fmi3Clock values[])
 {
-  (void)instance; (void)valueReferences; (void)values;
-  return nValueReferences == 0 ? fmi3OK : fmi3Error;
+  ModelInstance* c = fmu3InnerComp(instance);
+  size_t i;
+  double t, d;
+  if (!c) return fmi3Error;
+  if (nValueReferences > 0 && (nullPointer(c, "fmi3GetClock", "vr[]", valueReferences) ||
+      nullPointer(c, "fmi3GetClock", "values[]", values)))
+    return fmi3Error;
+  t = c->fmuData->localData[0]->timeValue;
+  for (i = 0; i < nValueReferences; i++) {
+    fmi3ValueReference lvr = (fmi3ValueReference)(valueReferences[i] - FMI3_CLOCK_VR_OFFSET);
+    BASECLOCK_DATA* bc;
+    if (lvr >= (fmi3ValueReference)c->fmuData->modelData->nBaseClocks) {
+      FILTERED_LOG(c, fmi3Error, LOG_STATUSERROR, "fmi3GetClock: illegal value reference %u.", valueReferences[i])
+      return fmi3Error;
+    }
+    bc = &c->fmuData->simulationInfo->baseClocks[lvr];
+    d = bc->stats.lastActivationTime - t;
+    if (d < 0) d = -d;
+    values[i] = (bc->stats.count > 0 && d <= 1e-10) ? fmi3ClockActive : fmi3ClockInactive;
+    FILTERED_LOG(c, fmi3OK, LOG_FMI3_CALL, "fmi3GetClock: #c%u# = %d", valueReferences[i], (int)values[i])
+  }
+  return fmi3OK;
 }
 
 fmi3Status fmi3SetClock(fmi3Instance instance, const fmi3ValueReference valueReferences[],
@@ -3436,11 +3462,58 @@ fmi3Status fmi3ExitConfigurationMode(fmi3Instance instance) { (void)instance; re
  * ------------------------------------------------------------------------- */
 fmi3Status fmi3GetIntervalDecimal(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, fmi3Float64 intervals[], fmi3IntervalQualifier qualifiers[])
-{ (void)instance; (void)valueReferences; (void)intervals; (void)qualifiers; return nValueReferences == 0 ? fmi3OK : fmi3Error; }
+{
+  ModelInstance* c = fmu3InnerComp(instance);
+  size_t i;
+  if (!c) return fmi3Error;
+  if (nValueReferences > 0 && (nullPointer(c, "fmi3GetIntervalDecimal", "vr[]", valueReferences) ||
+      nullPointer(c, "fmi3GetIntervalDecimal", "intervals[]", intervals)))
+    return fmi3Error;
+  for (i = 0; i < nValueReferences; i++) {
+    fmi3ValueReference lvr = (fmi3ValueReference)(valueReferences[i] - FMI3_CLOCK_VR_OFFSET);
+    BASECLOCK_DATA* bc;
+    if (lvr >= (fmi3ValueReference)c->fmuData->modelData->nBaseClocks) {
+      FILTERED_LOG(c, fmi3Error, LOG_STATUSERROR, "fmi3GetIntervalDecimal: illegal value reference %u.", valueReferences[i])
+      return fmi3Error;
+    }
+    bc = &c->fmuData->simulationInfo->baseClocks[lvr];
+    if (bc->isEventClock) {
+      /* triggered clock: the interval is only meaningful once it has fired */
+      intervals[i] = (bc->stats.count > 0) ? bc->stats.previousInterval : 0.0;
+      if (qualifiers) qualifiers[i] = (bc->stats.count > 0) ? fmi3IntervalChanged : fmi3IntervalNotYetKnown;
+    } else {
+      /* periodic clock: constant period */
+      intervals[i] = bc->interval;
+      if (qualifiers) qualifiers[i] = fmi3IntervalUnchanged;
+    }
+  }
+  return fmi3OK;
+}
 
 fmi3Status fmi3GetIntervalFraction(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, fmi3UInt64 counters[], fmi3UInt64 resolutions[], fmi3IntervalQualifier qualifiers[])
-{ (void)instance; (void)valueReferences; (void)counters; (void)resolutions; (void)qualifiers; return nValueReferences == 0 ? fmi3OK : fmi3Error; }
+{
+  ModelInstance* c = fmu3InnerComp(instance);
+  size_t i;
+  if (!c) return fmi3Error;
+  if (nValueReferences > 0 && (nullPointer(c, "fmi3GetIntervalFraction", "vr[]", valueReferences) ||
+      nullPointer(c, "fmi3GetIntervalFraction", "counters[]", counters) ||
+      nullPointer(c, "fmi3GetIntervalFraction", "resolutions[]", resolutions)))
+    return fmi3Error;
+  for (i = 0; i < nValueReferences; i++) {
+    fmi3ValueReference lvr = (fmi3ValueReference)(valueReferences[i] - FMI3_CLOCK_VR_OFFSET);
+    BASECLOCK_DATA* bc;
+    if (lvr >= (fmi3ValueReference)c->fmuData->modelData->nBaseClocks) {
+      FILTERED_LOG(c, fmi3Error, LOG_STATUSERROR, "fmi3GetIntervalFraction: illegal value reference %u.", valueReferences[i])
+      return fmi3Error;
+    }
+    bc = &c->fmuData->simulationInfo->baseClocks[lvr];
+    counters[i]    = (fmi3UInt64)bc->intervalCounter;
+    resolutions[i] = (fmi3UInt64)bc->resolution;
+    if (qualifiers) qualifiers[i] = fmi3IntervalUnchanged;
+  }
+  return fmi3OK;
+}
 
 fmi3Status fmi3GetShiftDecimal(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, fmi3Float64 shifts[])

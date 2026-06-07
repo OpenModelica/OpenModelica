@@ -361,6 +361,7 @@ case MODELINFO(vars=SIMVARS(stateVars=stateVars)) then
   <%vars.stringParamVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
   <%vars.stringAliasVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
   <%vars.extObjVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
+  <%SimCodeUtil.getFMI3Clocks(simCode) |> clk => Clock3(clk) ;separator="\n"%>
   <%EventIndicatorVariables3(simCode)%>
   </ModelVariables>
   >>
@@ -436,6 +437,21 @@ case SIMVAR(__) then
       '<Enumeration <%VariableCommonAttributes3(simVar, simCode)%>declaredType="<%AbsynUtil.pathString(path, ".", false)%>"<%StartString2(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%>/>'
     else '<!-- UNKNOWN_TYPE <%crefStr(name)%> -->'
 end Variable3;
+
+template Clock3(FmiClock clock)
+ "Generates an FMI 3.0 <Clock> variable for a model clock (an output clock the
+  FMU activates). intervalVariability is required; the period (intervalDecimal)
+  or the counter/resolution fraction is emitted when known at description time."
+::=
+match clock
+case FMI_CLOCK(__) then
+  let nm = Util.escapeModelicaStringToXmlString(System.stringReplace(name,"$", "_D_"))
+  let intervalDec = if boolNot(stringEq(intervalDecimal, "")) then ' intervalDecimal="<%intervalDecimal%>"'
+  let fraction = if supportsFraction then ' supportsFraction="true"'
+  let counter = if boolNot(stringEq(intervalCounter, "")) then ' intervalCounter="<%intervalCounter%>"'
+  let res = if boolNot(stringEq(resolution, "")) then ' resolution="<%resolution%>"'
+  '<Clock name="<%nm%>" valueReference="<%valueReference%>" causality="output" intervalVariability="<%intervalVariability%>"<%intervalDec%><%fraction%><%counter%><%res%>/>'
+end Clock3;
 
 template ArrayStartString3(SimVar simVar)
  "Generates the start attribute (a space separated list of the scalar element

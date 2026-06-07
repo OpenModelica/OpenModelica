@@ -412,8 +412,22 @@ fmi3Status fmi3SetBinary(fmi3Instance instance, const fmi3ValueReference valueRe
 
 fmi3Status fmi3GetClock(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, fmi3Clock values[])
-{ (void)instance; (void)valueReferences; (void)values;
-  return nValueReferences == 0 ? fmi3OK : fmi3Error; }
+{
+  FMU3CppInstance *inst = FMU3_W(instance);
+  if (nValueReferences == 0) return fmi3OK;
+  if (valueReferences == NULL || values == NULL) return fmi3Error;
+  try {
+    for (size_t i = 0; i < nValueReferences; i++) {
+      // the wrapper uses 1-based clock indices
+      int idx = (int)(valueReferences[i] - FMI3_CLOCK_VR_OFFSET) + 1;
+      int tick = 0;
+      fmi3Status s = (fmi3Status)inst->wrapper->getClock(&idx, 1, &tick);
+      if (s > fmi3Warning) return s;
+      values[i] = tick ? fmi3ClockActive : fmi3ClockInactive;
+    }
+    return fmi3OK;
+  } FMU3_CATCH(inst)
+}
 
 fmi3Status fmi3SetClock(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, const fmi3Clock values[])
@@ -498,7 +512,22 @@ fmi3Status fmi3ExitConfigurationMode(fmi3Instance instance) { (void)instance; re
 
 fmi3Status fmi3GetIntervalDecimal(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, fmi3Float64 intervals[], fmi3IntervalQualifier qualifiers[])
-{ (void)instance; (void)valueReferences; (void)intervals; (void)qualifiers; return nValueReferences == 0 ? fmi3OK : fmi3Error; }
+{
+  FMU3CppInstance *inst = FMU3_W(instance);
+  if (nValueReferences == 0) return fmi3OK;
+  if (valueReferences == NULL || intervals == NULL) return fmi3Error;
+  try {
+    for (size_t i = 0; i < nValueReferences; i++) {
+      int idx = (int)(valueReferences[i] - FMI3_CLOCK_VR_OFFSET) + 1;
+      double iv = 0.0;
+      fmi3Status s = (fmi3Status)inst->wrapper->getInterval(&idx, 1, &iv);
+      if (s > fmi3Warning) return s;
+      intervals[i] = iv;
+      if (qualifiers) qualifiers[i] = fmi3IntervalUnchanged;
+    }
+    return fmi3OK;
+  } FMU3_CATCH(inst)
+}
 fmi3Status fmi3GetIntervalFraction(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, fmi3UInt64 counters[], fmi3UInt64 resolutions[], fmi3IntervalQualifier qualifiers[])
 { (void)instance; (void)valueReferences; (void)counters; (void)resolutions; (void)qualifiers; return nValueReferences == 0 ? fmi3OK : fmi3Error; }

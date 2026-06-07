@@ -14781,10 +14781,11 @@ protected
   Integer numInteger = numScalarElems(vars.intAlgVars) + numScalarElems(vars.intParamVars) + numScalarElems(vars.intAliasVars);
   Integer numBoolean = numScalarElems(vars.boolAlgVars) + numScalarElems(vars.boolParamVars) + numScalarElems(vars.boolAliasVars);
   Integer numString = numScalarElems(vars.stringAlgVars) + numScalarElems(vars.stringParamVars) + numScalarElems(vars.stringAliasVars);
-  // external objects (FMI 3.0 Binary) occupy their own block before time
+  // external objects (FMI 3.0 Binary) and clocks occupy their own blocks before time
   Integer numExtObj = numScalarElems(vars.extObjVars);
+  Integer numClock = listLength(inSimCode.clockedPartitions);
 algorithm
-  outValueReference := String(numReal + numInteger + numBoolean + numString + numExtObj);
+  outValueReference := String(numReal + numInteger + numBoolean + numString + numExtObj + numClock);
 end getFMI3TimeValueReference;
 
 public function getLocalValueReference
@@ -15661,6 +15662,77 @@ algorithm
     else "local";
   end match;
 end terminalVariableKind;
+
+public function getFMI3Clocks
+  "Collect the FMI 3.0 output clocks from the model's clocked partitions: each
+   base clock becomes one <Clock> variable (causality output). The value
+   reference lies in the clock base-type block, after reals/integers/booleans/
+   strings/binaries, matching FMI3_CLOCK_VR_OFFSET in the generated code."
+  input SimCode.SimCode simCode;
+  output list<SimCode.FmiClock> clocks = {};
+protected
+  Integer offset, i = 0;
+algorithm
+  offset := getFMI3ClockVROffset(simCode.modelInfo);
+  for p in simCode.clockedPartitions loop
+    clocks := makeFmiClock(p.baseClock, offset + i, i) :: clocks;
+    i := i + 1;
+  end for;
+  clocks := listReverse(clocks);
+end getFMI3Clocks;
+
+protected function getFMI3ClockVROffset
+  "First value reference of the clock base-type block (after the real, integer,
+   boolean, string and binary/external-object blocks)."
+  input SimCode.ModelInfo modelInfo;
+  output Integer offset;
+protected
+  SimCodeVar.SimVars vars = modelInfo.vars;
+algorithm
+  offset := 2*numScalarElems(vars.stateVars) + numScalarElems(vars.algVars) + numScalarElems(vars.discreteAlgVars) + numScalarElems(vars.paramVars) + numScalarElems(vars.aliasVars)
+          + numScalarElems(vars.intAlgVars) + numScalarElems(vars.intParamVars) + numScalarElems(vars.intAliasVars)
+          + numScalarElems(vars.boolAlgVars) + numScalarElems(vars.boolParamVars) + numScalarElems(vars.boolAliasVars)
+          + numScalarElems(vars.stringAlgVars) + numScalarElems(vars.stringParamVars) + numScalarElems(vars.stringAliasVars)
+          + numScalarElems(vars.extObjVars);
+end getFMI3ClockVROffset;
+
+protected function makeFmiClock
+  "Map an OpenModelica clock kind to an FMI 3.0 <Clock> descriptor."
+  input DAE.ClockKind kind;
+  input Integer vr;
+  input Integer idx;
+  output SimCode.FmiClock clk;
+protected
+  String nm = "$clock" + intString(idx + 1);
+algorithm
+  clk := match kind
+    local DAE.Exp e, ic, res; String iv;
+    // periodic real clock: constant interval if the period is a literal
+    case DAE.REAL_CLOCK(interval = e)
+      then SimCode.FMI_CLOCK(vr, nm, (if stringEq(clockConstString(e), "") then "fixed" else "constant"), false, clockConstString(e), "", "");
+    // rational clock: counter/resolution fraction
+    case DAE.RATIONAL_CLOCK(intervalCounter = ic, resolution = res)
+      then SimCode.FMI_CLOCK(vr, nm, "constant", true, "", clockConstString(ic), clockConstString(res));
+    // event clock: ticks when a condition becomes true
+    case DAE.EVENT_CLOCK()
+      then SimCode.FMI_CLOCK(vr, nm, "triggered", false, "", "", "");
+    else SimCode.FMI_CLOCK(vr, nm, "fixed", false, "", "", "");
+  end match;
+end makeFmiClock;
+
+protected function clockConstString
+  "The numeric value of a clock interval/counter expression as a string, or \"\"
+   when it is not a literal constant."
+  input DAE.Exp e;
+  output String s;
+algorithm
+  s := match e
+    local Real r; Integer i;
+    case DAE.RCONST(r) then realString(r);
+    case DAE.ICONST(i) then intString(i);
+    else "";
+  end match;
+end clockConstString;
 
 protected function getValueReferenceMapping2
   input list<SimCodeVar.SimVar> vars;

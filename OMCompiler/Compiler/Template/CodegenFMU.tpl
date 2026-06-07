@@ -340,9 +340,10 @@ case SIMCODE(__) then
   #define FMI3_INTEGER_VR_OFFSET (NUMBER_OF_REALS)
   #define FMI3_BOOLEAN_VR_OFFSET (NUMBER_OF_REALS + NUMBER_OF_INTEGERS)
   #define FMI3_STRING_VR_OFFSET  (NUMBER_OF_REALS + NUMBER_OF_INTEGERS + NUMBER_OF_BOOLEANS)
-  // external objects are exported as FMI 3.0 Binary, after the string block
+  // external objects are exported as FMI 3.0 Binary, then the model clocks, after the string block
   #define FMI3_BINARY_VR_OFFSET  (NUMBER_OF_REALS + NUMBER_OF_INTEGERS + NUMBER_OF_BOOLEANS + NUMBER_OF_STRINGS)
-  #define FMI3_TIME_VR           (NUMBER_OF_REALS + NUMBER_OF_INTEGERS + NUMBER_OF_BOOLEANS + NUMBER_OF_STRINGS + NUMBER_OF_EXTERNALOBJECTS)
+  #define FMI3_CLOCK_VR_OFFSET   (NUMBER_OF_REALS + NUMBER_OF_INTEGERS + NUMBER_OF_BOOLEANS + NUMBER_OF_STRINGS + NUMBER_OF_EXTERNALOBJECTS)
+  #define FMI3_TIME_VR           (NUMBER_OF_REALS + NUMBER_OF_INTEGERS + NUMBER_OF_BOOLEANS + NUMBER_OF_STRINGS + NUMBER_OF_EXTERNALOBJECTS + NUMBER_OF_CLOCKS)
   #define FMI3_EVENT_INDICATOR_VR_START (FMI3_TIME_VR + 1)
   >>
   else if isFMIVersion20(FMUVersion) then
@@ -466,7 +467,7 @@ template ModelDefineData(SimCode simCode, ModelInfo modelInfo)
  "Generates global data in simulation file."
 ::=
 match modelInfo
-case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(stateVars = listStates)) then
+case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(stateVars = listStates), nClocks=numberOfClocks) then
 // Per-scalar sizes (sum getNumElems): equals the per-variable varInfo counts for
 // scalarized variables, but counts each element for non-scalarized arrays.
 // (numScalarElems is inlined because a Susan `let` binds a Text, not an Integer.)
@@ -485,6 +486,7 @@ let numberOfRealInputs = varInfo.numRealInputVars
   #define NUMBER_OF_STRINGS <%numberOfStrings%>
   #define NUMBER_OF_BOOLEANS <%numberOfBooleans%>
   #define NUMBER_OF_EXTERNALOBJECTS <%listLength(vars.extObjVars)%>
+  #define NUMBER_OF_CLOCKS <%numberOfClocks%>
   #define NUMBER_OF_EXTERNALFUNCTIONS <%countDynamicExternalFunctions(functions)%>
 
   // define initial state vector as vector of value references (arrays expanded to

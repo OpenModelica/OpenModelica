@@ -777,6 +777,19 @@ public uniontype FmiTerminalMember
   end FMI_TERMINAL_MEMBER;
 end FmiTerminalMember;
 
+/* FMI 3.0 Clocks (output clocks from the model's clocked partitions) */
+public uniontype FmiClock
+  record FMI_CLOCK
+    Integer valueReference     "globally unique value reference (clock base-type block)";
+    String name                "clock name as in modelDescription.xml";
+    String intervalVariability "constant | fixed | tunable | changing | countdown | triggered";
+    Boolean supportsFraction   "true for rational (counter/resolution) clocks";
+    String intervalDecimal     "the period for a periodic clock, or \"\" if not constant";
+    String intervalCounter     "rational-clock counter, or \"\"";
+    String resolution          "rational-clock resolution, or \"\"";
+  end FMI_CLOCK;
+end FmiClock;
+
 public uniontype FmiSimulationFlags
   record FMI_SIMULATION_FLAGS
     list<tuple<String,String>> nameValueTuples;
