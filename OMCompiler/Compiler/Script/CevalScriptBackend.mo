@@ -4349,6 +4349,194 @@ algorithm
   FlagsUtil.setConfigString(Flags.FMI_VERSION, "");
 end callTranslateModelFMU;
 
+protected function generateFMI3GraphicalRepresentation
+  "FMI 3.0 graphical user annotations (issue #15686 task 9). Using the in-memory
+   model instance (issue #15219) for the *graphical* side only, this renders the
+   model Icon to icons/<modelIdentifier>.svg, adds an FMI 3.0
+   <GraphicalRepresentation> to terminalsAndIcons.xml, and for every placed
+   connector component renders its port icon to icons/<iconBaseName>.svg and adds
+   a <TerminalGraphicalRepresentation> (placement box + iconBaseName). The set of
+   ports and their input/output direction are NOT taken from the model instance:
+   structured connectors already have a <Terminal> from SimCode (we only add the
+   graphics), and a simple signal port gets a terminal whose variableKind is the
+   flat-model causality read from modelDescription.xml. Best-effort: any failure
+   (e.g. a model without an icon) is silently ignored so it never blocks the build."
+  input Absyn.Path className;
+  input String fmutmp;
+  input String modelIdentifier;
+protected
+  Integer handle, nConn, i;
+  String svg, grepr, modelName, iconsDir, taiDir, taiFile, content;
+  String info, cname, ibase, sx1, sy1, sx2, sy2, csvg, tgr;
+  list<String> parts;
+algorithm
+  try
+    // Full in-memory model instance: the model Icon plus the connector components
+    // (placement + connector-type icons). Graphics only.
+    Values.INTEGER(handle) := NFApi.getModelInstanceReference(className, className, "");
+    if handle > 0 then
+      modelName := AbsynUtil.pathLastIdent(className);
+      iconsDir := fmutmp + "/icons/";
+      taiDir := fmutmp + "/terminalsAndIcons/";
+      taiFile := taiDir + "terminalsAndIcons.xml";
+
+      svg := OMGraphics_iconSVGFromHandle(handle, modelName);
+      grepr := OMGraphics_graphicalRepresentationXMLFromHandle(handle, 0.5);
+      nConn := OMGraphics_placedConnectorCount(handle);
+
+      // model icon -> icons/<modelIdentifier>.svg
+      if svg <> "" then
+        Util.createDirectoryTree(iconsDir);
+        System.writeFile(iconsDir + modelIdentifier + ".svg", svg);
+      end if;
+
+      if grepr <> "" or nConn > 0 then
+        // start from the SimCode-written terminals file, or a fresh skeleton
+        if System.regularFileExists(taiFile) then
+          content := System.readFile(taiFile);
+        else
+          Util.createDirectoryTree(taiDir);
+          content := "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<fmiTerminalsAndIcons fmiVersion=\"3.0\">\n</fmiTerminalsAndIcons>\n";
+        end if;
+
+        // For each placed connector add its TerminalGraphicalRepresentation and
+        // render its port icon. The terminal itself (name + member + input/output
+        // direction) is produced by SimCode from the flat model; here we only add
+        // the graphics, matched to the existing <Terminal> by the connector name.
+        for i in 0:nConn-1 loop
+          info := OMGraphics_placedConnectorInfo(handle, i);
+          parts := System.strtok(info, "\t"); // name, iconBaseName, x1, y1, x2, y2
+          if listLength(parts) == 6 then
+            cname := listGet(parts, 1);
+            ibase := listGet(parts, 2);
+            sx1 := listGet(parts, 3);
+            sy1 := listGet(parts, 4);
+            sx2 := listGet(parts, 5);
+            sy2 := listGet(parts, 6);
+
+            if System.stringFind(content, "<Terminal name=\"" + cname + "\"") >= 0 then
+              // the connector's own port icon -> icons/<iconBaseName>.svg
+              csvg := OMGraphics_placedConnectorIconSVG(handle, i);
+              if csvg <> "" then
+                Util.createDirectoryTree(iconsDir);
+                System.writeFile(iconsDir + ibase + ".svg", csvg);
+              end if;
+
+              tgr := "      <TerminalGraphicalRepresentation x1=\"" + sx1 + "\" y1=\"" + sy1 +
+                     "\" x2=\"" + sx2 + "\" y2=\"" + sy2 + "\" iconBaseName=\"" + ibase + "\"/>\n";
+              content := insertBeforeTerminalClose(content, cname, tgr);
+            end if;
+          end if;
+        end for;
+
+        // GraphicalRepresentation first (FMI 3.0 schema order: before Terminals)
+        if grepr <> "" then
+          content := spliceGraphicalRepresentation(content, grepr);
+        end if;
+
+        System.writeFile(taiFile, content);
+      end if;
+
+      Values.BOOL(_) := NFApi.releaseModelInstanceReference(handle);
+    end if;
+  else
+    // no model instance / no graphics: skip graphical representation
+  end try;
+end generateFMI3GraphicalRepresentation;
+
+protected function spliceGraphicalRepresentation
+  "Insert a <GraphicalRepresentation> block in FMI 3.0 schema order: right before
+   the <Terminals> open tag when present, otherwise before the closing root tag."
+  input String content;
+  input String graphicalRepresentation;
+  output String result;
+algorithm
+  if System.stringFind(content, "  <Terminals>") >= 0 then
+    result := System.stringReplace(content, "  <Terminals>", graphicalRepresentation + "  <Terminals>");
+  else
+    result := System.stringReplace(content, "</fmiTerminalsAndIcons>", graphicalRepresentation + "</fmiTerminalsAndIcons>");
+  end if;
+end spliceGraphicalRepresentation;
+
+protected function insertBeforeTerminalClose
+  "Insert `insertion` (a TerminalGraphicalRepresentation line) on its own line just
+   before the </Terminal> that closes the <Terminal name=\"name\" ...> element
+   emitted by SimCode. The closing tag's own indentation is preserved by inserting
+   after the newline that precedes it."
+  input String content;
+  input String name;
+  input String insertion;
+  output String result;
+protected
+  String marker, tail;
+  Integer p, r, k, len;
+algorithm
+  marker := "<Terminal name=\"" + name + "\"";
+  p := System.stringFind(content, marker);
+  len := stringLength(content);
+  if p < 0 then
+    result := content;
+  else
+    tail := substring(content, p + 1, len);   // from the opening tag onward
+    r := System.stringFind(tail, "</Terminal>");
+    if r < 0 then
+      result := content;
+    else
+      // p + r is the 0-based index of '<' of </Terminal>; back up over the close
+      // tag's leading spaces so the insertion lands after the preceding newline
+      k := p + r;                              // 1-based position of the char before '<'
+      while k >= 1 and stringEq(substring(content, k, k), " ") loop
+        k := k - 1;
+      end while;
+      result := substring(content, 1, k) + insertion + substring(content, k + 1, len);
+    end if;
+  end if;
+end insertBeforeTerminalClose;
+
+protected function OMGraphics_iconSVGFromHandle
+  "Render the model Icon (issue #15219 model-instance reference handle) to an SVG
+   document via the OMGraphics runtime library. Empty string if there is no icon."
+  input Integer handle;
+  input String modelName;
+  output String svg;
+  external "C" svg = OMGraphics_iconSVGFromHandle(handle, modelName) annotation(Library = "omcruntime");
+end OMGraphics_iconSVGFromHandle;
+
+protected function OMGraphics_graphicalRepresentationXMLFromHandle
+  "Build the FMI 3.0 <GraphicalRepresentation> element for the model Icon (issue
+   #15219 model-instance reference handle). Empty string if there is no icon."
+  input Integer handle;
+  input Real scaleToMm;
+  output String xml;
+  external "C" xml = OMGraphics_graphicalRepresentationXMLFromHandle(handle, scaleToMm) annotation(Library = "omcruntime");
+end OMGraphics_graphicalRepresentationXMLFromHandle;
+
+protected function OMGraphics_placedConnectorCount
+  "Number of top-level connector components that have a graphical placement (the
+   graphical ports of the model)."
+  input Integer handle;
+  output Integer n;
+  external "C" n = OMGraphics_placedConnectorCount(handle) annotation(Library = "omcruntime");
+end OMGraphics_placedConnectorCount;
+
+protected function OMGraphics_placedConnectorInfo
+  "Tab-separated graphical info for placed connector `index`:
+   name, iconBaseName, x1, y1, x2, y2 (placement bounding box in icon coordinates)."
+  input Integer handle;
+  input Integer index;
+  output String info;
+  external "C" info = OMGraphics_placedConnectorInfo(handle, index) annotation(Library = "omcruntime");
+end OMGraphics_placedConnectorInfo;
+
+protected function OMGraphics_placedConnectorIconSVG
+  "Render the connector-type icon (the port symbol) of placed connector `index`
+   to SVG. Empty string if it has no icon."
+  input Integer handle;
+  input Integer index;
+  output String svg;
+  external "C" svg = OMGraphics_placedConnectorIconSVG(handle, index) annotation(Library = "omcruntime");
+end OMGraphics_placedConnectorIconSVG;
+
 protected function buildModelFMU
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
@@ -4465,6 +4653,15 @@ algorithm
   fmutmp := Util.hashFileNamePrefix(filenameprefix) + ".fmutmp";
   logfile := filenameprefix + ".log";
   dir := fmutmp+"/sources/";
+
+  // FMI 3.0 graphical user annotations (issue #15686 task 9): render the model
+  // Icon to icons/<modelIdentifier>.svg and add a <GraphicalRepresentation> to
+  // terminalsAndIcons.xml. Done here (after translateModel, before the FMU is
+  // packed) for the C target; the OMGraphics renderer consumes the in-memory
+  // model-instance annotation reference (issue #15219).
+  if FMUVersion == "3.0" and Config.simCodeTarget() == "C" then
+    generateFMI3GraphicalRepresentation(className, fmutmp, filenameprefix);
+  end if;
 
   if Config.simCodeTarget() == "Cpp" then
     System.removeDirectory("binaries");

@@ -540,6 +540,12 @@ public
         case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.PARAMETER()))
         then (start, false, Causality.CALCULATED_PARAMETER);
 
+        // 4. top level input / output variables -> FMI input/output causality (the
+        //    flat-model direction; mirrors the old backend so modelDescription.xml
+        //    gets causality="input"/"output" and FMI 3.0 terminals get a direction)
+        case _ guard Variable.isInput(var)  then (start, true,  Causality.INPUT);
+        case _ guard Variable.isOutput(var) then (start, false, Causality.OUTPUT);
+
         // 0. other variables -> regular start value and it can be changed after simulation
         else (start, false, Causality.LOCAL);
 
@@ -548,6 +554,18 @@ public
         // FIXME: variables that are fixed and are not CALCULATED should have isValueChangeable=true
       end match;
     end parseBinding;
+
+    function isOutputSimVar
+      "True if the SimVar is an FMI output (causality OUTPUT), used to collect the
+       output interface variables (the new backend has no top-level-output list)."
+      input SimVar v;
+      output Boolean b;
+    algorithm
+      b := match v.causality
+        case SOME(Causality.OUTPUT) then true;
+        else false;
+      end match;
+    end isOutputSimVar;
 
     function convertVarKind
       "Usually this function would belong to NFBackendExtension, but we want to
@@ -870,6 +888,11 @@ public
           ({algVars}, simCodeIndices)                                                                     := createSimVarLists(varData.algebraics, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
           ({inputVars}, simCodeIndices)                                                                   := createSimVarLists(varData.top_level_inputs, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
           ({nonTrivialAlias}, simCodeIndices)                                                             := createSimVarLists(varData.nonTrivialAlias, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
+          // The new backend has no separate top-level-output partition; outputs are
+          // algebraic (or state) variables flagged OUTPUT by parseBinding. Collect
+          // them for the FMI inputVars/outputVars interface (used e.g. by the FMI
+          // 3.0 terminal export). The variables stay in their original lists too.
+          outputVars := List.filterOnTrue(listAppend(algVars, stateVars), SimVar.isOutputSimVar);
           ({discreteAlgVars, intAlgVars, boolAlgVars, stringAlgVars, enumAlgVars}, simCodeIndices)        := createSimVarLists(varData.discretes, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
           ({discreteAlgVars2, intAlgVars2, boolAlgVars2, stringAlgVars2, enumAlgVars2}, simCodeIndices)   := createSimVarLists(varData.discrete_states, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
           ({discreteAlgVars3, intAlgVars3, boolAlgVars3, stringAlgVars3, enumAlgVars3}, simCodeIndices)   := createSimVarLists(varData.clocked_states, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);

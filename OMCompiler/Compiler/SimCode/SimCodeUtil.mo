@@ -15585,8 +15585,49 @@ algorithm
     end for;
     terminals := SimCode.FMI_TERMINAL(nm, texp, listReverse(mems)) :: terminals;
   end for;
-  terminals := listReverse(terminals);
+  // Append the simple signal ports: top-level scalar input/output variables. A
+  // signal connector (e.g. Modelica.Blocks.Interfaces.RealInput/RealOutput, the
+  // short class `connector RealInput = input Real`) collapses to a plain
+  // input/output Real in the flat model, so it cannot be told apart from a
+  // structured connector member by the cref type. Instead we take the model's
+  // input/output interface variables (already partitioned by causality in the
+  // flat model, no annotation/JSON needed) and make each top-level scalar its own
+  // single-member terminal; structured connector members are qualified crefs and
+  // are already grouped above, so they are skipped here.
+  terminals := listAppend(listReverse(terminals), simplePortTerminals(vars, names));
 end getFMI3Terminals;
+
+protected function simplePortTerminals
+  "One single-member terminal per top-level scalar input/output variable (the FMU
+   signal ports), the variableKind taken from the input/output partition. Skips
+   variables that are already part of a structured connector terminal (`taken`)."
+  input SimCodeVar.SimVars vars;
+  input list<String> taken;
+  output list<SimCode.FmiTerminal> terminals = {};
+protected
+  list<String> seen = taken;
+algorithm
+  for v in listAppend(vars.inputVars, vars.outputVars) loop
+    terminals := matchcontinue v
+      local
+        DAE.ComponentRef cr;
+        String nm, kind;
+      // a top-level scalar interface variable: cref is a bare identifier
+      case _ guard isSome(v.exportVar)
+        algorithm
+          cr := Util.getOption(v.exportVar);
+          DAE.CREF_IDENT(ident = nm, subscriptLst = {}) := cr;
+          if listMember(nm, seen) then
+            fail();
+          end if;
+          seen := nm :: seen;
+          kind := terminalVariableKind(v.causality);
+        then SimCode.FMI_TERMINAL(nm, false, {SimCode.FMI_TERMINAL_MEMBER(cr, nm, kind)}) :: terminals;
+      else terminals;
+    end matchcontinue;
+  end for;
+  terminals := listReverse(terminals);
+end simplePortTerminals;
 
 protected function connectorMemberOf
   "If the variable stems from a connector, return its terminal (connector instance)

@@ -41,6 +41,9 @@ readFile("Ctrl_term.xml"); getErrorString();
 //       <TerminalMemberVariable variableName=\"bus.a\" memberName=\"a\" variableKind=\"input\"/>
 //       <TerminalMemberVariable variableName=\"bus.b\" memberName=\"b\" variableKind=\"input\"/>
 //     </Terminal>
+//     <Terminal name=\"y\" matchingRule=\"bus\">
+//       <TerminalMemberVariable variableName=\"y\" memberName=\"y\" variableKind=\"output\"/>
+//     </Terminal>
 //   </Terminals>
 // </fmiTerminalsAndIcons>"
 // ""
