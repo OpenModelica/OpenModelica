@@ -152,25 +152,37 @@ void CreateModelDialog::createNewModel()
     return;
   }
 
+  // Check if model already exists in scope
+  LibraryTreeItem *pParentLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->getRootLibraryTreeItem();
+  for (int i = 0 ; i < pParentLibraryTreeItem->childrenSize() ; i++) {
+    LibraryTreeItem *pChildLibraryTreeItem = pParentLibraryTreeItem->child(i);
+    if (pChildLibraryTreeItem && pChildLibraryTreeItem->getName().compare(mpNameTextBox->text()) == 0) {
+        QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                              GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS)
+                                  .arg(tr("Model"), mpNameTextBox->text(), "in scope"), QMessageBox::Ok);
+        return;
+    }
+  }
+
   // create new model, also internally create a root system
   if (OMSProxy::instance()->newModel(mpNameTextBox->text(), mpSystemWidget->getNameTextBox()->text())) {
-      LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-      LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text(), mpNameTextBox->text(), "", false, pLibraryTreeModel->getRootLibraryTreeItem());
-      if (pLibraryTreeItem) {
-        pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
-        // expand the ssp model
-        QModelIndex modelIndex = pLibraryTreeModel->libraryTreeItemIndex(pLibraryTreeItem);
-        QModelIndex proxyIndex = MainWindow::instance()->getLibraryWidget()->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
-        MainWindow::instance()->getLibraryWidget()->getLibraryTreeView()->expand(proxyIndex);
-        // open the root system inside it
-        if (pLibraryTreeItem->childrenSize() > 0) {
-          LibraryTreeItem *pRootSystemLibraryTreeItem  = pLibraryTreeItem->childAt(0);
-          if (pRootSystemLibraryTreeItem) {
-            pLibraryTreeModel->showModelWidget(pRootSystemLibraryTreeItem);
-          }
+    LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+    LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text(), mpNameTextBox->text(), "", false, pLibraryTreeModel->getRootLibraryTreeItem());
+    if (pLibraryTreeItem) {
+      pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
+      // expand the ssp model
+      QModelIndex modelIndex = pLibraryTreeModel->libraryTreeItemIndex(pLibraryTreeItem);
+      QModelIndex proxyIndex = MainWindow::instance()->getLibraryWidget()->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
+      MainWindow::instance()->getLibraryWidget()->getLibraryTreeView()->expand(proxyIndex);
+      // open the root system inside it
+      if (pLibraryTreeItem->childrenSize() > 0) {
+        LibraryTreeItem *pRootSystemLibraryTreeItem  = pLibraryTreeItem->childAt(0);
+        if (pRootSystemLibraryTreeItem) {
+          pLibraryTreeModel->showModelWidget(pRootSystemLibraryTreeItem);
         }
       }
-      accept();
+    }
+    accept();
   }
 }
 
