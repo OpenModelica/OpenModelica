@@ -212,7 +212,7 @@ void Dynamics::allocate() {
                     ::Simulation::JacobianFormat::CSC,
                     reinterpret_cast<int*>(sparsePattern->index)     /* row indices */,
                     reinterpret_cast<int*>(sparsePattern->leadindex) /* col pointers */,
-                    sparsePattern->numberOfNonZeros);
+                    sparsePattern->nnz);
 }
 
 void Dynamics::free() {
