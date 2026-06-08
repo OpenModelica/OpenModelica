@@ -2517,8 +2517,11 @@ algorithm
 
   // FMI 3.0 flange causalization: expose unconnected acausal connectors as a
   // causal FMU boundary (flow -> input, potential -> output) so the FMU can be
-  // reconnected into a physical circuit (issue #15686).
-  if Flags.getConfigBool(Flags.BUILDING_FMU) and stringEq(Flags.getConfigString(Flags.FMI_VERSION), "3.0") then
+  // reconnected into a physical circuit (issue #15686). Restricted to the old
+  // backend: the new backend's initialization (NBResolveSingularities) cannot yet
+  // balance the model once the zero-flow equations are replaced by boundary inputs.
+  if Flags.getConfigBool(Flags.BUILDING_FMU) and stringEq(Flags.getConfigString(Flags.FMI_VERSION), "3.0")
+     and not settings.newBackend then
     flatModel := causalizeAcausalConnectors(flatModel);
   end if;
 
