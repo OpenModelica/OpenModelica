@@ -35,6 +35,9 @@
 
 #include <tbb/flow_graph.h>
 #include "pm_clustering.hpp"
+#include "pm_clustering_json.hpp"
+#include "pm_runtime_config.hpp"
+#include "pm_scheduler_base.hpp"
 
 namespace openmodelica { namespace parmodelica {
 
@@ -53,7 +56,7 @@ struct ClusterLauncher {
 };
 
 template <typename TaskType>
-class ClusterDynamicScheduler {
+class ClusterDynamicScheduler : public TaskGraphScheduler {
   public:
     typedef TaskSystem_v2<TaskType> TaskSystemType;
 
@@ -93,11 +96,99 @@ class ClusterDynamicScheduler {
         total_evaluations = 0;
     }
 
+    /*! Measure the cost of every individual task (equation) by executing each
+        one once and timing it. The clustering passes below need these costs to
+        balance work; without them every task has cost 0 and clustering becomes
+        a no-op, leaving one fine-grained flow node per equation. */
+    void profile_execute() {
+        GraphType& sys_graph = task_system.sys_graph;
+
+        typename GraphType::vertex_iterator vert_iter, vert_end;
+        boost::tie(vert_iter, vert_end) = vertices(sys_graph);
+        /*! skip the root node. */
+        ++vert_iter;
+        for (; vert_iter != vert_end; ++vert_iter) {
+            sys_graph[*vert_iter].profile_execute();
+        }
+
+        ++sequential_evaluations;
+        ++total_evaluations;
+    }
+
     void schedule() {
         // task_system.dump_graphml("original");
         clustering_timer.start_timer();
-        // cluster_merge_common::apply(task_system);
-        // cluster_merge_common::dump_graph(task_system);
+
+        /*! A couple of untimed warm-up evaluations so the profiled costs are
+            not skewed by cold caches / first-touch page faults. */
+        {
+            GraphType& sys_graph = task_system.sys_graph;
+            typename GraphType::vertex_iterator vert_iter, vert_end;
+            for (int warmup = 0; warmup < 2; ++warmup) {
+                boost::tie(vert_iter, vert_end) = vertices(sys_graph);
+                ++vert_iter; /*! skip the root node. */
+                for (; vert_iter != vert_end; ++vert_iter)
+                    sys_graph[*vert_iter].execute();
+            }
+        }
+
+        /*! Profile per-equation cost, then merge tasks into coarser clusters so
+            that TBB's per-node scheduling overhead is amortized over real work.
+            First collapse single-parent chains, then bin each level down to
+            ~2*max_num_threads balanced clusters. */
+        profile_execute();
+
+        if (task_system.levels_valid == false)
+            task_system.update_node_levels();
+
+        const ParmodConfig& cfg = parmod_config();
+
+        /*! Optionally export the fine-grained task graph (before clustering). */
+        nlohmann::json graph_dump;
+        if (cfg.dump_taskgraph)
+            collect_task_graph_json(task_system, graph_dump);
+
+        /*! Optionally export a before/after snapshot of the clustering for each
+            optimization (parmodDumpStages), so the user can see how the
+            clustering was applied step by step. The "initial" snapshot is the
+            unclustered task graph (one cluster per equation). */
+        ClusteringStageDumper<TaskSystemType> stages(task_system, cfg.dump_stages);
+        stages.snapshot("initial");
+
+        /*! Select the clustering strategy from the runtime config (parmodClustering
+            flag, PARMOD_CLUSTERING env var fallback). With parmodImportClustering an
+            external clustering is applied instead of computing one. "default" is the
+            merge-based clustering; "fixed_width_min_height" clusters each level into a
+            fixed number of lanes (= CPU cores) and minimizes the graph height; "none"
+            leaves one flow node per equation. */
+        if (cfg.import_clustering) {
+            import_clustering_json(task_system, cfg.import_clustering);
+            stages.snapshot("imported");
+        }
+        else if (cfg.clustering == cluster_fixed_width_min_height::name() ||
+                 cfg.clustering == "fixed_width_min_height") {
+            cluster_fixed_width_min_height::apply(task_system);
+            stages.snapshot(cluster_fixed_width_min_height::name());
+        }
+        else if (cfg.clustering == "none") {
+            /*! no clustering. */
+        }
+        else {
+            cluster_merge_common::apply(task_system);
+            stages.snapshot(cluster_merge_common::name());
+            cluster_merge_level_for_bins::apply(task_system);
+            stages.snapshot(cluster_merge_level_for_bins::name());
+        }
+
+        task_system.levels_valid = false;
+        task_system.update_node_levels();
+
+        /*! Optionally export the resulting clustering alongside the task graph. */
+        if (cfg.dump_taskgraph) {
+            collect_clusters_json(task_system, graph_dump);
+            write_json_file(cfg.dump_taskgraph, graph_dump);
+        }
+
         construct_flow_graph();
         clustering_timer.stop_timer();
     }
@@ -109,21 +200,34 @@ class ClusterDynamicScheduler {
         ClusterIdType& root_node_id = task_system.root_node_id;
 
         typename GraphType::vertex_iterator vert_iter, vert_end;
-        boost::tie(vert_iter, vert_end) = vertices(sys_graph);
 
+        /*! First pass: create a flow node for every cluster and record it in the
+            map. We can not create edges in the same pass because clustering may
+            have reordered the vertices so that a parent no longer precedes its
+            child in the vertex list; looking it up before it exists would throw
+            std::out_of_range. */
+        boost::tie(vert_iter, vert_end) = vertices(sys_graph);
         /*! skip the root node. */
         ++vert_iter;
         for (; vert_iter != vert_end; ++vert_iter) {
             ClusterIdType& curr_clust_id = *vert_iter;
             ClusterType&   curr_clust = sys_graph[curr_clust_id];
-            // std::cout << "adding " << curr_b_node.index << std::endl;
 
             /*! create new flow node for tbb. */
             flow::continue_node<flow::continue_msg>* curr_f_node =
                 new flow::continue_node<flow::continue_msg>(dynamic_graph, ClusterLauncher<TaskType>(curr_clust));
 
-            /*! create a maping. we use it to add edges from this node to its children later. */
+            /*! create a maping. we use it to add edges between nodes below. */
             cluster_flow_id_map.insert(std::make_pair(curr_clust_id, curr_f_node));
+        }
+
+        /*! Second pass: now that every node exists in the map, wire the edges. */
+        boost::tie(vert_iter, vert_end) = vertices(sys_graph);
+        /*! skip the root node. */
+        ++vert_iter;
+        for (; vert_iter != vert_end; ++vert_iter) {
+            ClusterIdType& curr_clust_id = *vert_iter;
+            flow::continue_node<flow::continue_msg>* curr_f_node = cluster_flow_id_map.at(curr_clust_id);
 
             /*! Iterate through all parents of the current node and add edges.*/
             typename GraphType::inv_adjacency_iterator par_iter, par_end;
@@ -147,7 +251,7 @@ class ClusterDynamicScheduler {
         flow_graph_created = true;
     }
 
-    void execute() {
+    void execute() override {
 
         if (!flow_graph_created) {
             schedule();
@@ -161,6 +265,12 @@ class ClusterDynamicScheduler {
         total_evaluations++;
         parallel_evaluations++;
     }
+
+    int    get_total_evaluations() const override { return total_evaluations; }
+    int    get_sequential_evaluations() const override { return sequential_evaluations; }
+    int    get_parallel_evaluations() const override { return parallel_evaluations; }
+    double get_execution_time() override { return execution_timer.get_elapsed_time(); }
+    double get_clustering_time() override { return clustering_timer.get_elapsed_time(); }
 };
 
 }} // namespace openmodelica::parmodelica

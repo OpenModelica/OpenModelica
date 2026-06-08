@@ -260,6 +260,16 @@ void OptionsDialog::readGeneralSettings()
   } else {
     mpGeneralSettingsPage->getDisplayNFAPIErrorsWarningsCheckBox()->setChecked(OptionsDefaults::GeneralSettings::displayNFAPIErrorsWarnings);
   }
+  // read read-model-instance-from-memory (no JSON) option (issue #15219)
+  if (mpSettings->contains("enableInstanceApiNoJson")) {
+    mpGeneralSettingsPage->getEnableInstanceApiNoJsonCheckBox()->setChecked(mpSettings->value("enableInstanceApiNoJson").toBool());
+  } else {
+    mpGeneralSettingsPage->getEnableInstanceApiNoJsonCheckBox()->setChecked(OptionsDefaults::GeneralSettings::enableInstanceApiNoJson);
+  }
+  // The option and the --NAPINoJson command-line flag both feed the same MainWindow flag; OR them
+  // so the command-line flag still forces the path on even when the option is off.
+  MainWindow::instance()->setNewApiNoJson(mpGeneralSettingsPage->getEnableInstanceApiNoJsonCheckBox()->isChecked()
+                                          || MainWindow::instance()->isNewApiNoJson());
   // read enable CRML support
   if (mpSettings->contains("enableCRMLSupport")) {
     mpGeneralSettingsPage->getEnableCRMLSupportCheckBox()->setChecked(mpSettings->value("enableCRMLSupport").toBool());
@@ -1611,6 +1621,15 @@ void OptionsDialog::saveGeneralSettings()
   } else {
     mpSettings->setValue("createBackupFile", createBackupFile);
   }
+  // save read-model-instance-from-memory (no JSON) option (issue #15219)
+  bool enableInstanceApiNoJson = mpGeneralSettingsPage->getEnableInstanceApiNoJsonCheckBox()->isChecked();
+  if (enableInstanceApiNoJson == OptionsDefaults::GeneralSettings::enableInstanceApiNoJson) {
+    mpSettings->remove("enableInstanceApiNoJson");
+  } else {
+    mpSettings->setValue("enableInstanceApiNoJson", enableInstanceApiNoJson);
+  }
+  // apply immediately so the change takes effect without restarting OMEdit
+  MainWindow::instance()->setNewApiNoJson(enableInstanceApiNoJson);
   // save enable CRML support
   bool enableCRMLSupport = mpGeneralSettingsPage->getEnableCRMLSupportCheckBox()->isChecked();
   if (enableCRMLSupport == OptionsDefaults::GeneralSettings::enableCRMLSupport) {
@@ -3576,6 +3595,9 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   mpCreateBackupFileCheckbox->setChecked(OptionsDefaults::GeneralSettings::createBackupFile);
   /* Display errors/warnings when new instantiation fails in evaluating graphical annotations */
   mpDisplayNFAPIErrorsWarningsCheckBox = new QCheckBox(tr("Display errors/warnings when instantiating the graphical annotations"));
+  /* Read the model instance directly from memory instead of via a JSON string (issue #15219) */
+  mpEnableInstanceApiNoJsonCheckBox = new QCheckBox(tr("Read the model instance directly from memory instead of JSON (faster for large models)"));
+  mpEnableInstanceApiNoJsonCheckBox->setChecked(OptionsDefaults::GeneralSettings::enableInstanceApiNoJson);
   // Enable CRML support
   mpEnableCRMLSupportCheckBox = new QCheckBox(tr("Enable CRML Support *"));
   mpEnableCRMLSupportCheckBox->setChecked(OptionsDefaults::GeneralSettings::enableCRMLSupport);
@@ -3600,7 +3622,8 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   pGeneralSettingsLayout->addWidget(mpActivateAccessAnnotationsComboBox, 7, 1, 1, 2);
   pGeneralSettingsLayout->addWidget(mpCreateBackupFileCheckbox, 8, 0, 1, 3);
   pGeneralSettingsLayout->addWidget(mpDisplayNFAPIErrorsWarningsCheckBox, 9, 0, 1, 3);
-  pGeneralSettingsLayout->addWidget(mpEnableCRMLSupportCheckBox, 10, 0, 1, 3);
+  pGeneralSettingsLayout->addWidget(mpEnableInstanceApiNoJsonCheckBox, 10, 0, 1, 3);
+  pGeneralSettingsLayout->addWidget(mpEnableCRMLSupportCheckBox, 11, 0, 1, 3);
   mpGeneralSettingsGroupBox->setLayout(pGeneralSettingsLayout);
   // Library Browser group box
   mpLibraryBrowserGroupBox = new QGroupBox(tr("Library Browser"));

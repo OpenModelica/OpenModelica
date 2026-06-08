@@ -109,5 +109,5 @@ function dummyStr
   output String str = "<dummy Absyn.Program string>";
 end dummyStr;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="ast_collections");
 end HashTableStringToProgram;

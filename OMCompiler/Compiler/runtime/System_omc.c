@@ -326,7 +326,7 @@ extern void* System_strtok(const char *str0, const char *delimit)
   while ((s=strtok_r(NULL,delimit,&saveptr))) {
     res = mmc_mk_cons(mmc_mk_scon(s),res);
   }
-  return listReverse(res);
+  return listReverseInPlace(res);
 }
 
 extern char* System_substring(const char *str, int start, int stop)
@@ -364,8 +364,9 @@ extern char* System_substring(const char *str, int start, int stop)
 extern char* System_toupper(const char *str)
 {
   int i;
-  char* strToUpper = strcpy(ModelicaAllocateString(strlen(str)),str);
-  for (i = 0; i < strlen(strToUpper); i++)
+  size_t len = strlen(str);
+  char* strToUpper = strcpy(ModelicaAllocateString(len),str);
+  for (i = 0; i < len; i++)
   {
     strToUpper[i] = toupper(strToUpper[i]);
   }
@@ -375,8 +376,9 @@ extern char* System_toupper(const char *str)
 extern char* System_tolower(const char *str)
 {
   int i;
-  char* strToLower = strcpy(ModelicaAllocateString(strlen(str)),str);
-  for (i = 0; i < strlen(strToLower); i++)
+  size_t len = strlen(str);
+  char* strToLower = strcpy(ModelicaAllocateString(len),str);
+  for (i = 0; i < len; i++)
   {
     strToLower[i] = tolower(strToLower[i]);
   }
@@ -1146,7 +1148,7 @@ extern void* System_splitOnNewline(const char *str, int includeDelimiter)
     lst = mmc_mk_cons(mmc_mk_scon_n(start, current - start), lst);
   }
 
-  return listReverse(lst);
+  return listReverseInPlace(lst);
 }
 
 extern void* System_strtokIncludingDelimiters(const char *str0, const char *delimit)

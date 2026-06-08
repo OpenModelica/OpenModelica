@@ -56,7 +56,7 @@ function printIstmtsStr
   input GlobalScript.Statements inStatements;
   output String outString;
 algorithm
-  outString := match(inStatements)
+  outString := match inStatements
     local
       list<GlobalScript.Statement> stmts;
 
@@ -71,7 +71,7 @@ function printIstmtStr
   input GlobalScript.Statement inStatement;
   output String outString;
 algorithm
-  outString := match(inStatement)
+  outString := match inStatement
     local
       Absyn.AlgorithmItem alg;
       Absyn.Exp expr;

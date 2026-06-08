@@ -51,7 +51,7 @@ public function commentIsInlineFunc
   input SCode.Comment cmt;
   output DAE.InlineType outInlineType;
 algorithm
-  outInlineType := matchcontinue(cmt)
+  outInlineType := matchcontinue cmt
     local
       list<SCode.SubMod> smlst;
 
@@ -141,7 +141,7 @@ protected
     end for;
   end commentGenerateEvents2;
 algorithm
-  generateEvents := match(cmt)
+  generateEvents := match cmt
     local
       list<SCode.SubMod> smlst;
 

@@ -75,12 +75,15 @@ struct TaskCluster : public utility::pm_vector<T> {
     long        level;
     std::string index_list;
     int         group;
+    int         lane; /*!< hardware lane (0..K-1) assigned by lane-based clustering
+                           (cluster_fixed_width_min_height); -1 if not lane-assigned. */
 
     TaskCluster() {
         cost = 0;
         level = 0;
         index_list = "$";
         group = 0;
+        lane = -1;
     }
 
     TaskType& add_task(const TaskType& task) {

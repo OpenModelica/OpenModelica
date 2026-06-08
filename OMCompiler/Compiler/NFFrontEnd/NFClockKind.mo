@@ -99,7 +99,7 @@ public
   algorithm
     comp := match (ck1, ck2)
       local
-        Expression i1, ic1, r1, c1, si1, sm1, i2, ic2, r2, c2, si2, sm2;
+        Expression i1, r1, c1, si1, sm1, i2, r2, c2, si2, sm2;
       case (INFERRED_CLOCK(), INFERRED_CLOCK()) then Util.intCompare(ck1.idx, ck2.idx);
       case (RATIONAL_CLOCK(i1, r1),RATIONAL_CLOCK(i2, r2))
         algorithm
@@ -488,7 +488,7 @@ public
   algorithm
     ock := match ick
       local
-        Expression i, ic, r, c, si, sm;
+        Expression i, r, c, si, sm;
       case INFERRED_CLOCK()     then DAE.INFERRED_CLOCK();
       case RATIONAL_CLOCK(i, r) then DAE.RATIONAL_CLOCK(Expression.toDAE(i), Expression.toDAE(r));
       case REAL_CLOCK(i)        then DAE.REAL_CLOCK(Expression.toDAE(i));
@@ -503,7 +503,7 @@ public
   algorithm
     ock := match ick
       local
-        Expression i, ic, r, c, si, sm;
+        Expression i, r, c, si, sm;
       case INFERRED_CLOCK()     then "INFERRED_CLOCK(" + intString(ick.idx) + ")";
       case RATIONAL_CLOCK(i, r) then "RATIONAL_CLOCK(" + Expression.toString(i) + ", " + Expression.toString(r) + ")";
       case REAL_CLOCK(i)        then "REAL_CLOCK(" + Expression.toString(i) + ")";

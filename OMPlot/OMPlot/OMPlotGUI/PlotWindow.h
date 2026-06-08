@@ -60,7 +60,6 @@
 #include <QDialogButtonBox>
 
 #include "qwt_series_data.h"
-#include "qwt_scale_draw.h"
 #include "qwt_plot_curve.h"
 #if QWT_VERSION >= 0x060000
 #if QWT_VERSION < 0x060200
@@ -93,7 +92,7 @@ private:
 	QComboBox* mpSimulationSpeedComboBox;
 	QFile mFile;
 	QStringList mVariablesList;
-	PlotType mPlotType;
+	PlotType mPlotType = PLOT;
 	QString mGridType;
 	QString mXLabel;
 	QString mYLabel;

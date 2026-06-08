@@ -75,7 +75,6 @@ protected
 
   // Util imports
   import ClockIndexes;
-  import DoubleEnded;
   import Slice = NBSlice;
   import StringUtil;
 
@@ -190,7 +189,7 @@ public
     Pointer<list<Pointer<Equation>>> ptr_start_eqs = Pointer.create({});
     list<Pointer<Equation>> start_eqs;
   algorithm
-    _ := VariablePointers.mapPtr(states, function createStartEquation(ptr_start_vars = ptr_start_vars, ptr_start_vars_init = ptr_start_vars_init, ptr_start_eqs = ptr_start_eqs, idx = idx, algorithm_outputs = algorithm_outputs));
+    VariablePointers.mapPtr(states, function createStartEquation(ptr_start_vars = ptr_start_vars, ptr_start_vars_init = ptr_start_vars_init, ptr_start_eqs = ptr_start_eqs, idx = idx, algorithm_outputs = algorithm_outputs));
     start_eqs := Pointer.access(ptr_start_eqs);
 
     variables := BVariable.VariablePointers.addList(Pointer.access(ptr_start_vars), variables);
@@ -254,7 +253,7 @@ public
 
         // create unfixed scalar start equation
         case Variable.VARIABLE() algorithm
-          _ := match BVariable.getStartAttribute(var)
+          () := match BVariable.getStartAttribute(var)
             local
               Expression e;
             // only create if there is a start attribute that is not literal
@@ -312,14 +311,13 @@ public
     Pointer<Variable> var_ptr;
     Option<Pointer<Variable>> var_pre;
     ComponentRef pre;
-    list<list<Subscript>> subscripts;
     EquationKind kind;
     Pointer<Equation> eq;
   algorithm
     (cref, iter) := tpl;
     var_ptr := BVariable.getVarPointer(cref, sourceInfo());
     var_pre := BVariable.getVarPre(var_ptr);
-    if Util.isSome(var_pre) then
+    if isSome(var_pre) then
       pre := BVariable.getVarName(Util.getOption(var_pre));
       pre := ComponentRef.copySubscripts(cref, pre);
       kind := if BVariable.isContinuous(var_ptr, true) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
@@ -345,14 +343,13 @@ public
     output ComponentRef start_name;
   protected
     Option<Pointer<Variable>> var_pre = BVariable.getVarPre(var_ptr);
-    Pointer<Variable> disc_state_var;
     ComponentRef merged_name;
   algorithm
-    if BVariable.isPrevious(var_ptr) and Util.isSome(var_pre) then
+    if BVariable.isPrevious(var_ptr) and isSome(var_pre) then
       // for previous change the rhs to the start value of the discrete state
       merged_name := BVariable.getVarName(Util.getOption(var_pre));
       merged_name := ComponentRef.mergeSubscripts(subscripts, merged_name, true, true, true);
-    elseif Util.isSome(var_pre) then
+    elseif isSome(var_pre) then
       // for vars with previous change the lhs cref to the $PRE cref
       merged_name := ComponentRef.mergeSubscripts(subscripts, name, true, true, true);
       var_ptr := Util.getOption(var_pre);
@@ -396,8 +393,6 @@ public
   protected
     list<Pointer<Equation>> parameter_eqs = {};
     list<Pointer<Variable>> initial_param_vars = {};
-    Pointer<Variable> parent;
-    Boolean skip;
   algorithm
     for var in VariablePointers.toList(parameters) loop
       (parameter_eqs, initial_param_vars) := createParameterEquation(var, new_iters, idx, parameter_eqs, initial_param_vars);
@@ -479,7 +474,7 @@ public
   protected
     Expression start_exp, start_var_exp, e;
     Pointer<Variable> var_ptr, start_var;
-    ComponentRef name, start_name;
+    ComponentRef name;
     Option<Pointer<Equation>> start_eq = NONE();
     EquationKind kind;
     Iterator iterator;
@@ -518,7 +513,7 @@ public
       end match;
     end if;
 
-    if Util.isSome(start_eq) then
+    if isSome(start_eq) then
       // empty list indicates full array, slice otherwise
       if not listEmpty(var_slice.indices) then
         (sliced_eqn, _) := Equation.slice(Util.getOption(start_eq), var_slice.indices);
@@ -635,7 +630,7 @@ public
   algorithm
     if not BVariable.isPrevious(var_ptr) then
       pre := BVariable.getVarPre(var_ptr);
-      if Util.isSome(pre) then
+      if isSome(pre) then
         kind := if BVariable.isContinuous(var_ptr, true) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
         pre_eq := Equation.makeAssignment(Expression.fromCref(BVariable.getVarName(var_ptr)), Expression.fromCref(BVariable.getVarName(Util.getOption(pre))), idx, NBEquation.PRE_STR, Iterator.EMPTY(), EquationAttributes.default(kind, true));
         Pointer.update(ptr_pre_eqs, pre_eq :: Pointer.access(ptr_pre_eqs));
@@ -665,7 +660,7 @@ public
     var_ptr := Slice.getT(var_slice);
     if not BVariable.isPrevious(var_ptr) then
       pre := BVariable.getVarPre(var_ptr);
-      if Util.isSome(pre) then
+      if isSome(pre) then
         name    := BVariable.getVarName(var_ptr);
         dims    := Type.arrayDims(ComponentRef.getSubscriptedType(name));
         (iterators, ranges, subscripts) := Flatten.makeIterators(name, dims);
@@ -703,7 +698,7 @@ public
         bdae.algebraic  := list(Partition.mapEqn(par, function cleanupInitialCall(kind = Partition.getKind(par))) for par in bdae.algebraic);
         bdae.ode_event  := list(Partition.mapEqn(par, function cleanupInitialCall(kind = Partition.getKind(par))) for par in bdae.ode_event);
         bdae.alg_event  := list(Partition.mapEqn(par, function cleanupInitialCall(kind = Partition.getKind(par))) for par in bdae.alg_event);
-        if Util.isSome(bdae.dae) then
+        if isSome(bdae.dae) then
           bdae.dae := SOME(list(Partition.mapEqn(par, function cleanupInitialCall(kind = Partition.getKind(par))) for par in Util.getOption(bdae.dae)));
         end if;
         // homotopy(actual, simplified) -> actual
@@ -711,7 +706,7 @@ public
         bdae.algebraic  := list(Partition.mapExp(par, function cleanupHomotopy(kind = Partition.getKind(par))) for par in bdae.algebraic);
         bdae.ode_event  := list(Partition.mapExp(par, function cleanupHomotopy(kind = Partition.getKind(par))) for par in bdae.ode_event);
         bdae.alg_event  := list(Partition.mapExp(par, function cleanupHomotopy(kind = Partition.getKind(par))) for par in bdae.alg_event);
-        if Util.isSome(bdae.dae) then
+        if isSome(bdae.dae) then
           bdae.dae := SOME(list(Partition.mapExp(par, function cleanupHomotopy(kind = Partition.getKind(par))) for par in Util.getOption(bdae.dae)));
         end if;
 
@@ -833,7 +828,6 @@ public
         Equation new_eqn;
         list<Statement> stmts;
         list<ComponentRef> lhs_crefs;
-        Option<IfEquationBody> if_body;
 
       // reduce the body of for equations
       case Equation.FOR_EQUATION() algorithm
@@ -994,7 +988,7 @@ public
     input output Expression exp;
     input UnorderedSet<ComponentRef> pre_set;
   algorithm
-    _ := match exp
+    () := match exp
       case Expression.CREF() guard(BVariable.isPrevious(BVariable.getVarPointer(exp.cref, sourceInfo()))) algorithm
         UnorderedSet.add(exp.cref, pre_set);
       then ();
@@ -1042,7 +1036,7 @@ public
     input Expression condition;
     input UnorderedSet<Expression> condition_set;
   algorithm
-    _ := match condition
+    () := match condition
       case Expression.CREF() algorithm
         UnorderedSet.add(condition, condition_set);
       then ();
@@ -1059,7 +1053,7 @@ public
     input output Equation eqn;
     input UnorderedSet<ComponentRef> outputs;
   algorithm
-    _ := match eqn
+    () := match eqn
       local
         Algorithm alg;
         list<ComponentRef> out_crefs;
@@ -1075,5 +1069,5 @@ public
     end match;
   end collectAlgorithmOutputs;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBInitialization;

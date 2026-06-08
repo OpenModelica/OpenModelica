@@ -79,11 +79,11 @@ void ExpressionTest::dynamicSelect_data()
     << "DynamicSelect({{-35,35},{35,-35}},{{0,0},{0,0}})";
 
   QTest::addRow("DynamicSelect3")
-    << "DynamicSelect(\"\", String(T - 273.15, \".1f\"))"
+    << "DynamicSelect(\"\", String(T - 273.15, format = \".1f\"))"
     << "DynamicSelect(\"\",\"-272.1\")";
 
   QTest::addRow("DynamicSelect4")
-    << "DynamicSelect(\"\", String((if use_T_in then T_in else T) - 273.15, \".1f\"))"
+    << "DynamicSelect(\"\", String((if use_T_in then T_in else T) - 273.15, format = \".1f\"))"
     << "DynamicSelect(\"\",\"-272.1\")";
 
   QTest::addRow("DynamicSelect5")

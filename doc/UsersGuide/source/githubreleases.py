@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 from subprocess import call
-from github import Github
+from github import Github, Auth
 import os
 
 gh_auth = os.environ["GITHUB_AUTH"]
-g = Github(gh_auth)
+g = Github(auth=Auth.Token(gh_auth))
 om = g.get_repo("OpenModelica/OpenModelica")
 fout = open("githubreleases.md", "w", encoding="utf-8")
 
@@ -18,11 +18,12 @@ for release in om.get_releases():
       "v1.9.3"
     ]:
         continue
-    fout.write("# Release Notes for %s" % release.title)
+    release.complete() # to get the body
+    fout.write("# Release Notes for %s" % release.name)
     fout.write("\n")
-    fout.write(release.body)
+    fout.write(release.body or "")
     fout.write("\n")
-    print(release.title)
+    print(release.name)
 fout.close()
 call(["pandoc", "--wrap=none", "--standalone", "-f", "gfm", "-t", "rst", "--shift-heading-level-by=3", "-o", "githubreleases.tmp.rst", "githubreleases.md"])
 with open("githubreleases.tmp.rst", "r", encoding="utf-8") as fin:

@@ -86,7 +86,6 @@ public
     input ComponentRef cref;
     output Variable variable;
   protected
-    list<ComponentRef> crefs;
     InstNode node, class_node;
     Component comp;
     Type ty;
@@ -635,9 +634,6 @@ public
     input Boolean printBindingType = false;
     input output IOStream.IOStream s;
   protected
-    Boolean first;
-    Binding b;
-    Integer var_dims, binding_dims;
     list<Dimension> dims;
   algorithm
     s := IOStream.append(s, indent);
@@ -757,7 +753,7 @@ public
     input Binding.Source source = NFBinding.Source.GENERATED;
     output Binding binding;
   algorithm
-    binding := Binding.FLAT_BINDING(Expression.fromTypedCref(var.name, var.ty), variability(var), source);
+    binding := Binding.makeFlat(Expression.fromTypedCref(var.name, var.ty), variability(var), source);
   end asBinding;
 
   annotation(__OpenModelica_Interface="nf_frontend");

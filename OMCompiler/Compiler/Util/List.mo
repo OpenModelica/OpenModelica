@@ -196,7 +196,7 @@ public function fromOption<T>
   input Option<T> inElement;
   output list<T> outList;
 algorithm
-  outList := match(inElement)
+  outList := match inElement
     local
       T e;
 
@@ -393,7 +393,7 @@ public function consOption<T>
   input list<T> inList;
   output list<T> outList;
 algorithm
-  outList := match(inElement)
+  outList := match inElement
     local
       T e;
 
@@ -444,18 +444,18 @@ public function appendLastList<T>
   input list<T> inList;
   output list<list<T>> outListList;
 algorithm
-  outListList := match(inListList, inList)
+  outListList := match inListList
     local
       list<T> l;
       list<list<T>> ll;
       list<list<T>> ol = {};
 
-    case ({}, _) then {inList};
+    case {} then {inList};
 
-    case ({l}, _)
+    case {l}
       then {listAppend(l, inList)};
 
-    case (l :: ll, _)
+    case l :: ll
       algorithm
         while not listEmpty(ll) loop
           ol := l::ol;
@@ -517,16 +517,15 @@ protected function insertListSorted1<T>
 protected
   list<T> listRest, listRest2, tmpResultList;
   T listHead, listHead2;
-  T elem;
 algorithm
-  outResultList := match(inList, inList2, inCompFunc, inResultList)
-    case({},{},_,_)
+  outResultList := match(inList, inList2)
+    case({}, {})
       then inResultList;
-    case({},_,_,_)
+    case({}, _)
       then append_reverse(inList2, inResultList);
-    case(_,{},_,_)
+    case(_, {})
       then append_reverse(inList, inResultList);
-    case(listHead::listRest, listHead2::listRest2,_,_)
+    case(listHead::listRest, listHead2::listRest2)
       algorithm
         if(inCompFunc(listHead, listHead2)) then
           tmpResultList := listHead::inResultList;
@@ -561,7 +560,7 @@ public function firstOrEmpty<T>
   input list<T> inList;
   output list<T> outList;
 algorithm
-  outList := match(inList)
+  outList := match inList
     local
       T e;
 
@@ -805,7 +804,6 @@ public function sortedListAllUnique<T>
     output Boolean outEqual;
   end CompareFunc;
 protected
-  T e;
   list<T> rest = lst;
 algorithm
   while not listEmpty(rest) loop
@@ -925,9 +923,8 @@ protected function merge<T>
 algorithm
   outList := match (inLeft, inRight)
     local
-      Boolean b;
       T l, r, el;
-      list<T> l_rest, r_rest, res;
+      list<T> l_rest, r_rest;
 
     /* Tail recursive version */
     case (l :: l_rest, r :: r_rest)
@@ -1357,7 +1354,7 @@ public function sublist<T>
   output list<T> outList = {};
 protected
   T e;
-  list<T> rest = inList, res;
+  list<T> rest = inList;
 algorithm
   true := inOffset > 0;
   true := inLength >= 0;
@@ -1383,7 +1380,6 @@ public function transposeList<T>
   output list<list<T>> outList = {};
 protected
   array<array<T>> arr;
-  array<T> arr_row;
   list<T> new_row;
   Integer c_len, r_len;
 algorithm
@@ -1463,7 +1459,7 @@ protected function addPos
   output array<Integer> outArray;
 algorithm
   for i in inList loop
-    _ := arrayUpdate(inArray, i, intAdd(arrayGet(inArray, i), inIndex));
+    arrayUpdate(inArray, i, intAdd(arrayGet(inArray, i), inIndex));
   end for;
 
   outArray := inArray;
@@ -1514,7 +1510,6 @@ public function intersection1OnTrue<T>
     output Boolean outIsEqual;
   end CompFunc;
 protected
-  Option<T> oe;
   list<T> lst1 = inList1, lst2 = inList2;
 algorithm
   if listEmpty(inList1) then
@@ -1802,7 +1797,6 @@ public function mapCheckReferenceEq<TI>
     output TI outElement;
   end MapFunc;
 protected
-  Boolean allEq=true;
   DoubleEnded.MutableList<TI> delst;
   Integer n=0;
   TI e1, savedElt;
@@ -3396,15 +3390,15 @@ public function threadMap1_0<T1, T2, ArgT1>
     input ArgT1 inArg1;
   end MapFunc;
 algorithm
-  _ := match(inList1, inList2, inMapFunc, inArg1)
+  () := match(inList1, inList2)
     local
       T1 e1;
       list<T1> rest1;
       T2 e2;
       list<T2> rest2;
 
-    case ({}, {}, _, _) then ();
-    case (e1 :: rest1, e2 :: rest2, _, _)
+    case ({}, {}) then ();
+    case (e1 :: rest1, e2 :: rest2)
       algorithm
         inMapFunc(e1, e2, inArg1);
         threadMap1_0(rest1, rest2, inMapFunc, inArg1);
@@ -3758,8 +3752,7 @@ public function getMember<T>
   input list<T> inList;
   output T outElement;
 protected
-  T e, res;
-  list<T> rest;
+  T e;
 algorithm
   for e in inList loop
     if valueEq(inElement, e) then
@@ -4682,7 +4675,7 @@ public function hasOneElement<T>
   input list<T> inList;
   output Boolean b;
 algorithm
-  b := match(inList)
+  b := match inList
     case {_} then true;
     else false;
   end match;
@@ -4694,7 +4687,7 @@ public function hasSeveralElements<T>
   input list<T> inList;
   output Boolean b;
 algorithm
-  b := match(inList)
+  b := match inList
     case {_} then false;
     case {} then false;
     else true;
@@ -4880,7 +4873,7 @@ protected function combination_tail<TI>
   input list<list<TI>> inAccumElems;
   output list<list<TI>> outElements;
 algorithm
-  outElements := match(inElements)
+  outElements := match inElements
     local
       list<TI> head;
       list<list<TI>> rest;
@@ -4934,7 +4927,7 @@ protected function combinationMap_tail<TI, TO>
     output TO outElement;
   end MapFunc;
 algorithm
-  outElements := match(inElements)
+  outElements := match inElements
     local
       list<TI> head;
       list<list<TI>> rest;
@@ -5191,15 +5184,15 @@ public function allCombinations<T>
   input SourceInfo info;
   output list<list<T>> out;
 algorithm
-  out := match (lst,maxTotalSize,info)
+  out := match maxTotalSize
     local
       Integer sz,maxSz;
-    case (_,SOME(maxSz),_)
+    case SOME(maxSz)
       algorithm
         sz := intMul(listLength(lst), applyAndFold(lst,intMul,listLength,1));
         true := (sz <= maxSz);
       then allCombinations2(lst);
-    case (_,NONE(),_) then allCombinations2(lst);
+    case NONE() then allCombinations2(lst);
     /*
     case (_,SOME(_),_)
       algorithm
@@ -5217,12 +5210,12 @@ protected function allCombinations2<T>
   input list<list<T>> ilst;
   output list<list<T>> out;
 algorithm
-  out := match (ilst)
+  out := match ilst
     local
       list<T> x;
       list<list<T>> lst;
     case {} then {};
-    case (x::lst)
+    case x::lst
       algorithm
         lst := allCombinations2(lst);
       then allCombinations3(x, lst, {});
@@ -5344,6 +5337,20 @@ algorithm
     l := listRest(l);
   end while;
 end trim;
+
+function apply<T>
+  "Applies a function to all the elements in the given list."
+  input list<T> lst;
+  input Fn fn;
+
+  partial function Fn
+    input T e;
+  end Fn;
+algorithm
+  for e in lst loop
+    fn(e);
+  end for;
+end apply;
 
 annotation(__OpenModelica_Interface="util_datatypes_basic");
 end List;

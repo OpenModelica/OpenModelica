@@ -106,7 +106,7 @@ public
     algorithm
       str := match association
         case CONTINUOUS() algorithm
-          if Util.isSome(association.jacobian) then
+          if isSome(association.jacobian) then
             str := BJacobian.toString(Util.getOption(association.jacobian), Partition.kindToString(association.kind));
             if (Flags.getConfigBool(Flags.MOO_DYNAMIC_OPTIMIZATION)) then
               str := "\n" + str + BJacobian.toString(Util.getOption(association.LFG_jacobian), Partition.kindToString(association.kind));
@@ -116,13 +116,13 @@ public
           else
             str := StringUtil.headline_1("No Jacobian");
           end if;
-          if Util.isSome(association.jacobianAdjoint) then
+          if isSome(association.jacobianAdjoint) then
             str := BJacobian.toString(Util.getOption(association.jacobianAdjoint), Partition.kindToString(association.kind) + " Adjoint") + "\n";
           end if;
         then str;
         case CLOCKED() algorithm
           str := BClock.toString(association.clock);
-          if Util.isSome(association.baseClock) then
+          if isSome(association.baseClock) then
             str := StringUtil.headline_1("Sub clock: " + str + " of base clock " + BClock.toString(Util.getOption(association.baseClock)));
           else
             str := StringUtil.headline_1("Base clock: " + str);
@@ -159,7 +159,7 @@ public
       clock_tpl := Pointer.access(clock_ptr);
       infer := Pointer.access(infer_ptr);
 
-      if Util.isSome(clock_tpl) then
+      if isSome(clock_tpl) then
         SOME((name, clock)) := clock_tpl;
 
         // throw an error if there are different clocks in this partition
@@ -172,7 +172,7 @@ public
         if BClock.isBaseClock(clock) then
           // if the clock is still an inferred clock without reference, update it to the default base clock and add to the base clocks
           if BClock.isInferredClock(clock) then
-            if Util.isNone(infer) then
+            if isNone(infer) then
               clock := NBPartitioning.DEFAULT_BASE_CLOCK;
               UnorderedMap.add(name, clock, info.baseClocks);
             else
@@ -275,7 +275,7 @@ public
             clock_opt := NONE();
           end if;
 
-          _ := match (clock_opt, Pointer.access(clock_ptr))
+          () := match (clock_opt, Pointer.access(clock_ptr))
             local
               BClock new, old;
               ComponentRef name;
@@ -453,7 +453,6 @@ public
     algorithm
       b := match part.association
         local
-          Kind kind;
         case Association.CLOCKED() then true;
         else false;
       end match;
@@ -570,6 +569,36 @@ public
       end match;
     end getJacobianAdjoint;
 
+    function getJacobianLfg
+      input Partition part;
+      output Option<Jacobian> jac;
+    algorithm
+      jac := match part.association
+        case CONTINUOUS(LFG_jacobian = jac) then jac;
+        else NONE();
+      end match;
+    end getJacobianLfg;
+
+    function getJacobianMrf
+      input Partition part;
+      output Option<Jacobian> jac;
+    algorithm
+      jac := match part.association
+        case CONTINUOUS(MRF_jacobian = jac) then jac;
+        else NONE();
+      end match;
+    end getJacobianMrf;
+
+    function getJacobianR0
+      input Partition part;
+      output Option<Jacobian> jac;
+    algorithm
+      jac := match part.association
+        case CONTINUOUS(R0_jacobian = jac) then jac;
+        else NONE();
+      end match;
+    end getJacobianR0;
+
     function getKind
       input Partition part;
       output Kind kind;
@@ -629,7 +658,7 @@ public
       input Partition part;
       output list<Pointer<Variable>> residuals = {};
     algorithm
-      if Util.isSome(part.strongComponents) then
+      if isSome(part.strongComponents) then
         for comp in Util.getOption(part.strongComponents) loop
           residuals := listAppend(StrongComponent.getLoopResiduals(comp), residuals);
         end for;
@@ -665,7 +694,7 @@ public
     protected
       array<StrongComponent> comps;
     algorithm
-      if Util.isSome(partition.strongComponents) then
+      if isSome(partition.strongComponents) then
         SOME(comps) := partition.strongComponents;
         for i in 1:arrayLength(comps) loop
           comps[i] := func(comps[i]);
@@ -743,7 +772,7 @@ public
     protected
       array<StrongComponent> comps;
     algorithm
-      if Util.isSome(par.strongComponents) then
+      if isSome(par.strongComponents) then
         // no need to override comps afterwards since arrays are mutable
         comps := Util.getOption(par.strongComponents);
         for i in 1:arrayLength(comps) loop
@@ -771,13 +800,13 @@ public
       input Partition part2;
       input Boolean strict;
     algorithm
-      if Util.isSome(part1.daeUnknowns) or Util.isSome(part2.daeUnknowns) then
+      if isSome(part1.daeUnknowns) or isSome(part2.daeUnknowns) then
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Cannot merge DAE-Mode partitions."}); fail();
-      elseif Util.isSome(part1.strongComponents) or Util.isSome(part2.strongComponents) then
+      elseif isSome(part1.strongComponents) or isSome(part2.strongComponents) then
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Should not merge sorted partitions."}); fail();
-      elseif Util.isSome(part1.matching) or Util.isSome(part2.matching) then
+      elseif isSome(part1.matching) or isSome(part2.matching) then
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Should not merge matched partitions."}); fail();
-      elseif Util.isSome(part1.adjacencyMatrix) or Util.isSome(part2.adjacencyMatrix) then
+      elseif isSome(part1.adjacencyMatrix) or isSome(part2.adjacencyMatrix) then
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Should not merge partitions with adjacency matrix."}); fail();
       end if;
 
@@ -794,5 +823,5 @@ public
     output Boolean b = kind == Kind.INI or kind == Kind.INI_0;
   end kindIsInitial;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBPartition;

@@ -285,7 +285,6 @@ public
     output Expression outExp;
     output Boolean expanded;
   protected
-    RangeIterator range_iter;
     Type ty;
   algorithm
     Expression.RANGE(ty = ty) := exp;
@@ -417,7 +416,6 @@ public
     Purity pur;
     NFCallAttributes attr;
     Expression arg;
-    list<Expression> args;
   algorithm
     Call.TYPED_CALL(fn, ty, var, pur, {arg}, attr) := call;
     ty := Type.arrayElementType(ty);

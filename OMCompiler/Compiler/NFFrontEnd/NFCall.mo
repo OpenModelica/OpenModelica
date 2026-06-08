@@ -282,8 +282,6 @@ public
   algorithm
     call := match call
       local
-        list<Function> fnl;
-        Boolean is_external;
         InstContext.Type fn_context;
 
       case UNTYPED_CALL()
@@ -295,7 +293,7 @@ public
             fn_context := NFInstContext.FUNCTION;
           end if;
 
-          _ := Function.typeRefCache(call.ref, fn_context);
+          Function.typeRefCache(call.ref, fn_context);
         then
           typeArgs(call, context, info);
 
@@ -605,7 +603,7 @@ public
     isConstructor := match call
       case UNTYPED_CALL()
         then SCodeUtil.isRecord(InstNode.definition(ComponentRef.node(call.ref)));
-      case TYPED_CALL()
+      case TYPED_CALL() guard(not InstNode.isEmpty(call.fn.node))
         then SCodeUtil.isRecord(InstNode.definition(call.fn.node));
       else false;
     end match;
@@ -807,7 +805,6 @@ public
     output String str;
   protected
     String name, arg_str,c;
-    Expression argexp;
     list<InstNode> iters;
   algorithm
     str := match call
@@ -882,7 +879,6 @@ public
     output String str;
   protected
     String name, arg_str,c;
-    Expression argexp;
     list<InstNode> iters;
   algorithm
     str := match call
@@ -980,7 +976,6 @@ public
     output String str;
   protected
     String name, arg_str,c;
-    Expression argexp;
   algorithm
     str := match call
       case ARG_TYPED_CALL()
@@ -2453,7 +2448,6 @@ protected
     ComponentRef fn_ref;
     Expression exp;
     list<tuple<InstNode, Expression>> iters;
-    Boolean is_array;
   algorithm
     // The parser turns {exp for i in ...} into $array(exp for i in ...), but we
     // change it to just array here so we can handle array constructors uniformly.
@@ -2480,7 +2474,7 @@ protected
     output Expression exp;
     output list<tuple<InstNode, Expression>> iters;
   algorithm
-    _ := match args
+    () := match args
       local
         InstNode for_scope;
 
@@ -2607,15 +2601,12 @@ protected
           output Purity purity;
   protected
     Expression range, arg;
-    Option<Expression> default_exp, fold_exp;
     InstNode iter;
     Variability iter_var, exp_var;
     Purity iter_pur, exp_pur;
     list<tuple<InstNode, Expression>> iters = {};
     InstContext.Type next_context;
     Function fn;
-    String fold_id, res_id;
-    tuple<Option<Expression>, String, String> fold_tuple;
   algorithm
     (call, ty, variability, purity) := match call
       case UNTYPED_REDUCTION()
@@ -2714,7 +2705,6 @@ protected
     input SourceInfo info;
     output Option<Expression> foldExp;
   protected
-    Type ty;
     InstNode op_node;
     Function fn;
   algorithm
@@ -2822,7 +2812,6 @@ protected
     list<Function> allfuncs;
     InstNode fn_node;
     Integer numerr = Error.getNumErrorMessages();
-    list<Integer> errors;
   algorithm
     ErrorExt.setCheckpoint("NFCall:checkMatchingFunctions");
 
@@ -2897,8 +2886,6 @@ protected
   protected
     InstNode iter_node;
     Expression iter_range;
-    Component c;
-    Binding b;
   algorithm
     (iter_node, iter_range) := iter;
     diter := DAE.REDUCTIONITER(InstNode.name(iter_node), Expression.toDAE(iter_range), NONE(),

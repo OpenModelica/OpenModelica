@@ -145,7 +145,7 @@ function typeComponents
 protected
   Class c = InstNode.getClass(cls), c2;
   ClassTree cls_tree;
-  InstNode ext_node, con, de;
+  InstNode con, de;
 algorithm
   () := match c
     case Class.INSTANCED_CLASS(restriction = Restriction.TYPE()) then ();
@@ -439,7 +439,6 @@ function typeComponent
 protected
   InstNode node;
   Component c;
-  Expression cond;
   Boolean is_deleted;
   array<Dimension> dims;
 algorithm
@@ -609,14 +608,13 @@ function typeDimension
 algorithm
   dimension := match dimension
     local
-      Expression exp, dim_exp;
-      Option<Expression> oexp;
+      Expression exp;
       Variability var;
       Dimension dim;
       Binding b;
       Type ty;
       TypingError ty_err;
-      Integer parent_dims, dim_index;
+      Integer parent_dims;
       Ceval.EvalTarget target;
 
     // A dimension that we're already trying to type.
@@ -913,7 +911,6 @@ function getRecordElementBinding
 protected
   InstNode parent;
   Component comp;
-  Expression exp;
   Binding parent_binding;
 algorithm
   parent := InstNode.instanceParent(component);
@@ -954,7 +951,6 @@ function typeBindings
 protected
   Class c;
   ClassTree cls_tree;
-  InstNode node;
 algorithm
   c := InstNode.getClass(cls);
 
@@ -1000,10 +996,8 @@ protected
   InstNode node;
   Component c;
   Binding binding;
-  InstNode cls;
-  MatchKind matchKind;
   String name;
-  Variability comp_var, comp_eff_var, bind_var, bind_eff_var;
+  Variability comp_var;
   Attributes attrs;
   Type ty;
 algorithm
@@ -1177,7 +1171,6 @@ algorithm
       Variability var;
       Purity purity;
       SourceInfo info;
-      NFBinding.EachType each_ty;
 
     case Binding.UNTYPED_BINDING(bindingExp = exp)
       algorithm
@@ -1186,7 +1179,7 @@ algorithm
       then
         Binding.TYPED_BINDING(exp, ty, var, purity, binding.eachType,
           Mutable.create(NFBinding.EvalState.NOT_EVALUATED), false,
-          binding.source, binding.info);
+          binding.source, binding.confidence, binding.info);
 
     case Binding.TYPED_BINDING() then binding;
     case Binding.UNBOUND() then binding;
@@ -1249,7 +1242,7 @@ algorithm
         end if;
       then
         Binding.TYPED_BINDING(exp, ty, var, purity, NFBinding.EachType.NOT_EACH,
-          Mutable.create(eval_state), false, condition.source, info);
+          Mutable.create(eval_state), false, condition.source, condition.confidence, info);
 
   end match;
 end typeComponentCondition;
@@ -1263,7 +1256,6 @@ protected
   String name;
   Binding binding;
   InstNode parent;
-  Type ty;
 algorithm
   attribute := match attribute
     // Modifier with submodifier, e.g. Real x(start(y = 1)), is an error.
@@ -1838,7 +1830,6 @@ function typeCrefDim
   output TypingError error = TypingError.NO_ERROR();
 protected
   list<ComponentRef> crl;
-  list<Subscript> subs;
   Integer index, dim_count, dim_total = 0;
   InstNode node;
   Component c;
@@ -1864,7 +1855,7 @@ algorithm
 
   for cr in crl loop
     () := match cr
-      case ComponentRef.CREF(node = InstNode.COMPONENT_NODE(), subscripts = subs)
+      case ComponentRef.CREF(node = InstNode.COMPONENT_NODE(), subscripts = _)
         algorithm
           node := InstNode.resolveOuter(cr.node);
           c := InstNode.component(node);
@@ -1922,8 +1913,6 @@ function checkCyclicDimension
   input InstNode component;
   input Integer index;
   input SourceInfo info;
-protected
-  Expression dim_exp;
 algorithm
   () := match dim
     case Dimension.UNTYPED(isProcessing = true)
@@ -1972,7 +1961,6 @@ function typeCrefExp
 protected
   ComponentRef cr;
   Variability node_var, subs_var;
-  Boolean eval;
 algorithm
   (cr, ty, node_var, subs_var) := typeCref(cref, context, info);
   exp := Expression.CREF(ty, cr);
@@ -1987,8 +1975,6 @@ function typeCref
         output Type ty;
         output Variability nodeVariability;
         output Variability subsVariability;
-protected
-  Variability subs_var;
 algorithm
   // Check that time isn't used in a function context.
   // TODO: Fix NFBuiltin.TIME_CREF so that the compiler treats it like an actual
@@ -2144,7 +2130,6 @@ function typeSubscript
 protected
   Expression e = Expression.EMPTY(Type.UNKNOWN());
   Type ty, matched_ty;
-  MatchKind mk;
 algorithm
   (ty, variability) := match subscript
     // An untyped subscript, type the expression and create a typed subscript.
@@ -2533,7 +2518,7 @@ protected
   Expression exp, index;
   Type exp_ty, index_ty;
   TypeCheck.MatchKind ty_match;
-  Integer iindex, dim_size;
+  Integer iindex;
   Dimension dim;
   TypingError ty_err;
   Option<Expression> oexp;
@@ -2663,8 +2648,6 @@ function evaluateEnd
  algorithm
    outExp := match exp
      local
-      Type ty;
-      ComponentRef cr;
 
     case Expression.END() then Dimension.endExp(dim, subscriptedExp, index);
 
@@ -2743,7 +2726,7 @@ protected
 algorithm
   cls := InstNode.getClass(classNode);
 
-  _ := match cls
+  () := match cls
     case Class.INSTANCED_CLASS() guard Type.isBasic(Type.arrayElementType(cls.ty)) then ();
 
     case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = components),
@@ -2808,7 +2791,7 @@ protected
 algorithm
   cls := InstNode.getClass(classNode);
 
-  _ := match cls
+  () := match cls
     case Class.INSTANCED_CLASS(sections = sections)
       algorithm
         sections := match sections
@@ -2919,7 +2902,6 @@ algorithm
   extDecl := match extDecl
     local
       list<Expression> args;
-      ComponentRef output_ref;
       Function fn;
       Boolean single_output;
       array<InstNode> comps;
@@ -3050,13 +3032,9 @@ function typeEquation
 algorithm
   eq := match eq
     local
-      Expression cond, e1, e2, e3;
-      Type ty, ty1, ty2;
-      list<Equation> eqs1, body;
-      list<Equation.Branch> tybrs;
+      Expression e1, e2, e3;
+      list<Equation> body;
       InstNode iterator;
-      MatchKind mk;
-      Variability var, bvar;
       Integer next_context;
       SourceInfo info;
 
@@ -3122,11 +3100,9 @@ function typeConnect
 protected
   Expression lhs, rhs;
   Type lhs_ty, rhs_ty;
-  Variability lhs_var, rhs_var;
   MatchKind mk;
   InstContext.Type next_context;
   SourceInfo info;
-  list<Equation> eql;
   Boolean lhs_deleted, rhs_deleted;
 algorithm
   info := ElementSource.getInfo(source);
@@ -3736,7 +3712,6 @@ function typeReinit
   input InstContext.Type context;
   input DAE.ElementSource source;
 protected
-  Variability var;
   MatchKind mk;
   Type ty1, ty2;
   ComponentRef cref;

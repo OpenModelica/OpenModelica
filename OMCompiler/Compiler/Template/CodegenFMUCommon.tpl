@@ -84,8 +84,6 @@ import interface SimCodeTV;
 import interface SimCodeBackendTV;
 import CodegenUtil.*;
 import CodegenUtilSimulation.*;
-import CodegenC.*; //unqualified import, no need the CodegenC is optional when calling a template; or mandatory when the same named template exists in this package (name hiding)
-import CodegenCFunctions.*;
 
 template ModelExchange(SimCode simCode, list<String> sourceFiles)
  "Generates ModelExchange code for ModelDescription file for FMU target."
@@ -869,7 +867,7 @@ match simulationSettings
     >>
 end DefaultExperimentAttribute;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="codegen_fmu");
 end CodegenFMUCommon;
 
 // vim: filetype=susan sw=2 sts=2

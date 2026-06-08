@@ -357,12 +357,10 @@ function lookupLocalCref
   output InstNode foundScope "The scope where the first part of the cref was found.";
   output LookupState state;
 protected
-  MatchType match_ty;
   InstNode node;
 algorithm
   (foundCref, foundScope, state) := matchcontinue cref
     local
-      InstNode found_scope;
 
     case Absyn.ComponentRef.CREF_IDENT()
       algorithm
@@ -513,7 +511,7 @@ protected
 algorithm
   if InstContext.inAnnotation(context) then
     try
-      _ := lookupLocalSimpleName(name, InstNode.annotationScope(scope));
+      lookupLocalSimpleName(name, InstNode.annotationScope(scope));
       // Name refers to builtin annotation that shouldn't be qualified.
       path := Absyn.Path.IDENT(name);
       return;
@@ -846,7 +844,6 @@ function lookupSimpleCref
 protected
   Boolean require_builtin = false;
   Boolean loaded = false;
-  Boolean is_enclosing = false;
 algorithm
   try
     (node, cref, state) := lookupSimpleBuiltinCref(name, subs);
@@ -1039,7 +1036,7 @@ function resolveInnerCref
   input output ComponentRef cref;
   input output InstNode foundScope;
 protected
-  InstNode prev_node, scope;
+  InstNode scope;
 algorithm
   if InstNode.isInnerOuterNode(node) then
     // Resolve the outer node to its inner.
@@ -1076,7 +1073,6 @@ protected
   InstNodeType node_ty;
   String name;
   Option<InstNode> inner_node_opt;
-  InstNode inner_node, parent_node;
 algorithm
   node_ty := InstNode.nodeType(topScope);
 
@@ -1130,14 +1126,14 @@ algorithm
         algorithm
           comp := InstNode.component(node);
 
-          comp := match comp
+          (comp, def) := match comp
             case Component.COMPONENT_DEF(definition = def as SCode.COMPONENT(prefixes = prefs))
               algorithm
                 prefs.innerOuter := Absyn.INNER();
                 def.prefixes := prefs;
                 comp.definition := def;
               then
-                comp;
+                (comp, def);
 
             else
               algorithm
@@ -1181,7 +1177,7 @@ function loadLibrary_work
   input InstNode scope;
   output String version = "(default)";
 protected
-  String modelica_path, cls_name;
+  String modelica_path;
   Absyn.Program aprog;
   SCode.Element scls;
   Class cls;

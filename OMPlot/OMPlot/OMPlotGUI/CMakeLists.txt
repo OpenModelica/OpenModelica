@@ -51,8 +51,6 @@ endif ()
 target_link_libraries(OMPlotLib PUBLIC omqwt)
 target_link_libraries(OMPlotLib PUBLIC omc::simrt::runtime)
 
-
-
 if(APPLE)
   set(MACOSX_BUNDLE_ICON_FILE omplot.ico)
 
@@ -69,3 +67,31 @@ target_link_libraries(OMPlot PRIVATE OMPlotLib)
 
 install(TARGETS OMPlotLib)
 omc_install_gui_client(OMPlot)
+
+if(MINGW)
+  # Find windeployqt6
+  find_program(WINDEPLOYQT_EXECUTABLE
+    NAMES windeployqt windeployqt6
+    HINTS "${MSYSTEM_PREFIX_ESCAPED}/bin"
+    REQUIRED
+  )
+
+  install(CODE "
+    message(STATUS \"Running windeployqt6 on OMPlot...\")
+    execute_process(
+      COMMAND \"${WINDEPLOYQT_EXECUTABLE}\"
+        --no-compiler-runtime
+        --no-system-d3d-compiler
+        --no-quick-import
+        --libdir \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}\"
+        \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/OMPlot.exe\"
+      RESULT_VARIABLE WINDEPLOYQT_RESULT
+      OUTPUT_VARIABLE WINDEPLOYQT_OUTPUT
+      ERROR_VARIABLE  WINDEPLOYQT_ERROR
+    )
+    if(NOT WINDEPLOYQT_RESULT EQUAL 0)
+      message(FATAL_ERROR \"windeployqt6 failed:\n\${WINDEPLOYQT_OUTPUT}\n\${WINDEPLOYQT_ERROR}\")
+    endif()
+    message(STATUS \"windeployqt6 output: \${WINDEPLOYQT_OUTPUT}\")
+  ")
+endif()

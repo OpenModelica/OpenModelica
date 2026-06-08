@@ -33,11 +33,14 @@
  Mahder.Gebremedhin@liu.se  2020-10-12
 */
 
-#include <tbb/task_scheduler_init.h>
+#include <tbb/global_control.h>
 #include <simulation_data.h>
+
+#include <memory>
 
 #include "pm_cluster_level_scheduler.hpp"
 #include "pm_cluster_dynamic_scheduler.hpp"
+#include "pm_scheduler_base.hpp"
 
 #include "pm_timer.hpp"
 
@@ -76,6 +79,11 @@ public:
 };
 
 
+/*! Create the scheduler selected at run time by the parmodScheduler flag
+    ("flow" -> ClusterDynamicScheduler, "level" -> StepLevels). */
+std::unique_ptr<TaskGraphScheduler> make_parmod_scheduler(TaskSystem_v2<Equation>& sys, size_t max_num_threads);
+
+
 class OMModel
   : boost::noncopyable {
     typedef Equation::FunctionType FunctionType;
@@ -84,23 +92,19 @@ class OMModel
     // typedef LevelSchedulerThreadOblivious<Equation> SchedulerT;
     // typedef DynamicScheduler<Equation> SchedulerT;
     // typedef TaskSystem<Equation> TaskSystemT;
-#ifdef USE_LEVEL_SCHEDULER
-    typedef StepLevels<Equation> SchedulerT;
-#else
-  #ifdef USE_FLOW_SCHEDULER
-    typedef ClusterDynamicScheduler<Equation> SchedulerT;
-  #else
-    #error "please specify scheduler. See makefile"
-  #endif
-#endif
-    typedef TaskSystem_v2<Equation> TaskSystemT;
+    // The scheduler is selected at run time (parmodScheduler flag) instead of a
+    // compile-time #define, so both implementations are compiled in.
+    typedef ClusterDynamicScheduler<Equation> FlowSchedulerT;
+    typedef StepLevels<Equation>              LevelSchedulerT;
+    typedef TaskSystem_v2<Equation>           TaskSystemT;
 
 
 
 public:
     std::string name;
     size_t max_num_threads;
-    tbb::task_scheduler_init tbb_system;
+    // oneTBB removed tbb::task_scheduler_init; cap the global thread pool instead.
+    tbb::global_control tbb_system;
 
     bool intialized;
     DATA* data;
@@ -115,19 +119,19 @@ public:
 
     FunctionType* ini_system_funcs;
     TaskSystemT INI_system;
-    SchedulerT INI_scheduler;
+    std::unique_ptr<TaskGraphScheduler> INI_scheduler;
 
     FunctionType* dae_system_funcs;
     TaskSystemT DAE_system;
-    SchedulerT DAE_scheduler;
+    std::unique_ptr<TaskGraphScheduler> DAE_scheduler;
 
     FunctionType* ode_system_funcs;
     TaskSystemT ODE_system;
-    SchedulerT ODE_scheduler;
+    std::unique_ptr<TaskGraphScheduler> ODE_scheduler;
 
     FunctionType alg_system_funcs;
     TaskSystemT ALG_system;
-    SchedulerT ALG_scheduler;
+    std::unique_ptr<TaskGraphScheduler> ALG_scheduler;
 
     void load_from_xml(TaskSystemT&, const std::string&, FunctionType*);
     void load_from_json(TaskSystemT&, const std::string&, FunctionType*);

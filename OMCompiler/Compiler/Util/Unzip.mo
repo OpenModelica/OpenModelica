@@ -43,5 +43,5 @@ function unzipPath
   external "C" success = om_unzip(fileName, pathToExtract, destinationPath);
 end unzipPath;
 
-annotation(__OpenModelica_Interface="util");
+annotation(__OpenModelica_Interface="script_util");
 end Unzip;

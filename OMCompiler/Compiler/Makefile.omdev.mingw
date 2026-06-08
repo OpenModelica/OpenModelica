@@ -16,7 +16,7 @@ LIBSOCKET = -lwsock32
 
 SHELL	= /bin/sh
 
-SCRIPT_FILES = Compile.bat Prompt.bat openmodelica.lefty default_profiling.xsl replace-startValue.* simcodedump.xsl ngspicetoModelica.py
+SCRIPT_FILES = Compile.bat Prompt.bat openmodelica.lefty default_profiling.xsl replace-startValue.* simcodedump.xsl ngspicetoModelica.py filter-annotations.jq
 
 SUBDIRS	= runtime Script
 

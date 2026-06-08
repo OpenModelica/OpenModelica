@@ -1430,7 +1430,7 @@ void mat4_emit4(simulation_result *self, DATA *data, threadData_t *threadData)
   /* Sensitivity parameters */
   if (omc_flag[FLAG_IDAS])
   {
-    for (int i = mData->nSensitivityParamVars; i < mData->nSensitivityVars; i++)
+    for (int i = 0; i < mData->nSensitivityVars - mData->nSensitivityParamVars; i++)
     {
       WRITE_REAL_VALUE(matData->data_2, cur++, data->simulationInfo->sensitivityMatrix[i]);
     }

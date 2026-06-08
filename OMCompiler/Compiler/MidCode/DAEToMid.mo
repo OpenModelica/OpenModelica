@@ -55,6 +55,7 @@ import SimCode;
 import Expression;
 import ExpressionDump;
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import System;
 import DoubleEnded;
 import Mutable;
@@ -275,7 +276,6 @@ protected
   State state;
   DoubleEnded.MutableList<MidCode.Var> inputs;
   DoubleEnded.MutableList<MidCode.Var> outputs;
-  MidCode.Block block_;
   Absyn.Path path;
   Integer labelFirst;
 
@@ -291,8 +291,6 @@ algorithm
     list<SimCodeFunction.Variable> functionArguments;
     list<SimCodeFunction.Variable> variableDeclarations;
     list<DAE.Statement> body;
-    SCode.Visibility visibility;
-    SourceInfo info;
 
   case SimCodeFunction.FUNCTION(name, outVars, functionArguments, variableDeclarations, body, _, _)
   algorithm
@@ -350,44 +348,30 @@ algorithm
   local
     DAE.Statement stmt;
     list<DAE.Statement> tail;
-  case ({}) then ();
-  case (stmt::tail)
+  case {} then ();
+  case stmt::tail
     algorithm
       () := match stmt
       local
-        DAE.Type ty;
         DAE.Exp exp1;
         DAE.Exp exp;
         DAE.ComponentRef cref;
         DAE.Pattern pattern;
-        list<DAE.Statement> daestmtLst;
         list<DAE.Exp> expLst;
-        list<MidCode.Var> indexesLst;
         MidCode.Var varCref;
         MidCode.Var varArray;
         MidCode.Var varIndex;
         MidCode.Var varValue;
         MidCode.Var varCondition;
-        MidCode.Var varIter;
-        MidCode.Var varLast;
-        MidCode.Var varStep;
         MidCode.Var varMessage;
         MidCode.Var varLevel;
         MidCode.Var varRHS;
-        MidCode.OutVar outvar;
-        MidCode.Block block_;
         Integer labelBody;
         Integer labelNext;
         Integer labelCondition;
-        Integer labelStep;
         DAE.Else else_;
         DoubleEnded.MutableList<MidCode.OutVar> outvars;
         String iter;
-        Integer index;
-        list<DAE.Subscript> subscripts;
-        MidCode.Stmt midstmt;
-        MidCode.RValue rvalue;
-        array<list<MidCode.Stmt>> assignBlock;
       case DAE.STMT_ASSIGN(_, exp1 as DAE.CREF(__), exp, _)
       algorithm
         cref := ComponentReferenceBasics.crefLastCref(exp1.componentRef); //gå runt CREF_QUAL tills vidare
@@ -560,15 +544,11 @@ algorithm
     Integer labelElse;
     Integer labelNext;
     Integer index;
-    Integer length;
     Integer numTailTypes;
-    MidCode.Block block_;
     MidCode.Terminator terminator;
-    Absyn.Path path;
     list<DAE.Exp> expLst;
     DoubleEnded.MutableList<MidCode.Var> values;
     list<MidCode.OutVar> outvars;
-    Option<DAE.Exp> option;
     DAE.CallAttributes callattrs;
     list<DAE.Subscript> subscripts;
     MidCode.RValue rvalue;
@@ -815,7 +795,6 @@ algorithm
     Integer labelNext;
     DoubleEnded.MutableList<MidCode.Var> inputs;
     MidCode.Var var1;
-    MidCode.Block block_;
   case DAE.CALL(path, expLst, callattr)
   algorithm
     labelNext := GenBlockId();
@@ -988,7 +967,6 @@ protected
   Integer labelElse;
   Integer labelNext;
   MidCode.Var var1;
-  MidCode.Block block_;
 algorithm
   labelBody := GenBlockId();
   labelElse := GenBlockId();
@@ -1104,7 +1082,6 @@ protected
   MidCode.Var srcVar, aliasVar;
   list<String> aliasList;
   DAE.Type ty;
-  DAE.ComponentRef cref;
   list<MidCode.Var> inputsMidVar;
   DAE.Exp daeExp;
   list<Integer> caseLabelIterator;
@@ -1247,7 +1224,7 @@ algorithm
         algorithm
           // No more cases.
         then ();
-        case (DAE.CASE(patterns=patterns,body=daeBody,patternGuard=patternGuard,result=caseResult)::cases) // note: modifies cases
+        case DAE.CASE(patterns=patterns,body=daeBody,patternGuard=patternGuard,result=caseResult)::cases // note: modifies cases
         algorithm
           // first do checks and assignments
           // NOTE: If the guard fails we will have made pattern assignments for a failing case. This is how it was done before as far as I can tell.
@@ -1260,11 +1237,11 @@ algorithm
           end if;
           // then guard
           () := match patternGuard
-            case (NONE())
+            case NONE()
             algorithm
               // No guard.
             then ();
-            case (SOME(daeExp))
+            case SOME(daeExp)
             algorithm
               midvar := RValueToVar(ExpToMid(daeExp,state),state);
               if matchContinue
@@ -1389,11 +1366,9 @@ function patternToMidCode2
   input Integer labelNoMatch; /* where to go on a failed match*/
   input array<list<MidCode.Stmt>> assignBlock; /* A block of assignments to perform for a pattern. */
 protected
-    Absyn.Path name;
     Integer index;
     list<DAE.Pattern> morePatterns, iterator;
     list<DAE.Var> fields;
-    list<DAE.Type> typeVars;
     Boolean knownSingleton;
     Integer fieldNr;
 algorithm
@@ -1595,7 +1570,7 @@ algorithm
 
     then ();
 
-    case (scrutinee,DAE.PAT_CALL(name,index,morePatterns,fields,typeVars,knownSingleton)) :: restMatches
+    case (scrutinee,DAE.PAT_CALL(_,index,morePatterns,fields,_,knownSingleton)) :: restMatches
     algorithm
       // TODO: Is this correct usage of knownSingleton?
 

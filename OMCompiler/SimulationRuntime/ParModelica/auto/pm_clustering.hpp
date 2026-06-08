@@ -34,7 +34,12 @@
 */
 
 #include "pm_cluster_system.hpp"
+#include "pm_runtime_config.hpp"
 #include <algorithm>
+#include <cstdlib>
+#include <vector>
+#include <map>
+#include <set>
 
 namespace openmodelica { namespace parmodelica {
 
@@ -361,7 +366,22 @@ struct cluster_merge_level_for_bins {
         ClusterLevels& clusters_by_level = task_system.clusters_by_level;
         GraphType&     sys_graph = task_system.sys_graph;
 
-        unsigned nr_of_clusters = task_system.max_num_threads * 2;
+        /*! Decouple the per-level cluster count from the raw core count.
+            Using max_num_threads*2 means a many-core machine fragments every
+            level into many tiny clusters, so TBB's per-node scheduling overhead
+            dominates the (small) per-cluster work and the parallel run ends up
+            slower than serial. We cap the number of clusters per level at a
+            fixed, tunable bound so clusters stay coarse regardless of core
+            count; the TBB flow graph still load-balances them across all
+            threads. Override with the parmodClustersPerLevel flag (or the
+            PARMOD_CLUSTERS_PER_LEVEL env var), resolved by parmod_config(). */
+        unsigned cluster_cap = 8;
+        int      configured_cap = parmod_config().clusters_per_level;
+        if (configured_cap > 0)
+            cluster_cap = (unsigned)configured_cap;
+        unsigned nr_of_clusters = std::min((unsigned)(task_system.max_num_threads * 2), cluster_cap);
+        if (nr_of_clusters < 1)
+            nr_of_clusters = 1;
 
         if (task_system.levels_valid == false)
             task_system.update_node_levels();
@@ -413,6 +433,273 @@ struct cluster_merge_level_for_bins {
             // for(auto& c: current_level)
             // std::cout << sys_graph[c].cost << ",";
             // std::cout << "}" << std::endl;
+        }
+
+        task_system.levels_valid = false;
+    }
+};
+
+/*! FixedWidthMinHeight clustering.
+
+    Cluster the task nodes of every level into a fixed number of lanes equal to
+    the number of available CPU cores, then minimize the height of the resulting
+    layered graph (the longest root->leaf path, summed over cluster costs) so the
+    longest computation path is as short as possible.
+
+    Each task's estimated cost is its node out-degree. The height of the graph is
+    the sum of the cost of the clusters along a path from the root to the leaves.
+    To minimize it we repeatedly take the longest path, move a task off the
+    heaviest cluster on that path into a lighter cluster (lane) at the same level,
+    and keep the move only while it strictly reduces the height; we stop at the
+    fixpoint where no move helps.
+
+    The optimization runs on auxiliary per-node arrays (lane assignment) and only
+    afterwards realizes the chosen lanes on the boost graph via
+    concat_same_level_clusters. Moving a task between lanes of the same level keeps
+    every dependency edge pointing to a strictly higher level, so the cluster graph
+    stays acyclic (verified below). */
+struct cluster_fixed_width_min_height {
+    static std::string name() { return "cluster_fixed_width_min_height"; }
+
+    template <typename TaskSystemType>
+    static void dump_graph(TaskSystemType& task_system, std::string suffix = "cluster_fixed_width_min_height") {
+        task_system.dump_graphml(cluster_fixed_width_min_height::name() + "_" + suffix);
+    }
+
+    template <typename TaskSystemType>
+    static void apply(TaskSystemType& task_system) {
+
+        typedef typename TaskSystemType::GraphType          GraphType;
+        typedef typename TaskSystemType::ClusterIdType      ClusterIdType;
+        typedef typename TaskSystemType::vertex_iterator    vertex_iterator;
+        typedef typename TaskSystemType::adjacency_iterator adjacency_iterator;
+
+        GraphType& sys_graph = task_system.sys_graph;
+
+        if (task_system.levels_valid == false)
+            task_system.update_node_levels();
+
+        /* ---- Phase A: build auxiliary arrays from the leveled single-task graph ---- */
+        std::map<ClusterIdType, int> id_to_idx;
+        std::vector<ClusterIdType>   vid;   // idx -> vertex id
+        std::vector<int>             level; // idx -> level
+        std::vector<double>          cost;  // idx -> out-degree cost (per the spec)
+
+        const ClusterIdType root_id = task_system.root_node_id;
+
+        vertex_iterator vert_iter, vert_end;
+        boost::tie(vert_iter, vert_end) = vertices(sys_graph);
+        for (; vert_iter != vert_end; ++vert_iter) {
+            const ClusterIdType v = *vert_iter;
+            if (v == root_id)
+                continue;
+            id_to_idx[v] = (int)vid.size();
+            vid.push_back(v);
+            level.push_back((int)sys_graph[v].level);
+            cost.push_back((double)out_degree(v, sys_graph));
+        }
+
+        const int N = (int)vid.size();
+        if (N == 0) {
+            task_system.levels_valid = false;
+            return;
+        }
+
+        std::vector<std::vector<int> > children(N);
+        int                            max_level = 0;
+        for (int i = 0; i < N; ++i) {
+            max_level = std::max(max_level, level[i]);
+            adjacency_iterator c_iter, c_end;
+            boost::tie(c_iter, c_end) = adjacent_vertices(vid[i], sys_graph);
+            for (; c_iter != c_end; ++c_iter) {
+                typename std::map<ClusterIdType, int>::iterator it = id_to_idx.find(*c_iter);
+                if (it != id_to_idx.end())
+                    children[i].push_back(it->second);
+            }
+        }
+
+        std::vector<std::vector<int> > nodes_by_level(max_level + 1);
+        for (int i = 0; i < N; ++i)
+            nodes_by_level[level[i]].push_back(i);
+
+        /* Required cycle check: every dependency edge must go to a strictly higher
+           level. If so, grouping nodes by (level, lane) can never form a cycle. */
+        for (int i = 0; i < N; ++i)
+            for (size_t e = 0; e < children[i].size(); ++e)
+                if (level[children[i][e]] <= level[i]) {
+                    std::cerr << "cluster_fixed_width_min_height: non-forward edge "
+                              << level[i] << " -> " << level[children[i][e]]
+                              << " would create a cycle; skipping clustering." << std::endl;
+                    task_system.levels_valid = false;
+                    return;
+                }
+
+        int K = (int)task_system.max_num_threads;
+        if (K < 1)
+            K = 1;
+
+        /* ---- Phase B: initial fixed-width partition per level (LPT load balance) ---- */
+        std::vector<int> lane(N, 0);
+        for (int L = 1; L <= max_level; ++L) {
+            std::vector<int>& level_nodes = nodes_by_level[L];
+            if (level_nodes.empty())
+                continue;
+            const int width = std::min((int)level_nodes.size(), K);
+            std::sort(level_nodes.begin(), level_nodes.end(),
+                      [&](int a, int b) { return cost[a] > cost[b]; });
+            std::vector<double> lane_load(width, 0.0);
+            for (size_t t = 0; t < level_nodes.size(); ++t) {
+                const int n = level_nodes[t];
+                int       best = 0;
+                for (int l = 1; l < width; ++l)
+                    if (lane_load[l] < lane_load[best])
+                        best = l;
+                lane[n] = best;
+                lane_load[best] += cost[n];
+            }
+        }
+
+        /* ---- Phase C: minimize the height by moving tasks between same-level lanes ---- */
+        const int LANES = K;
+        auto      cid_of = [&](int i) { return level[i] * LANES + lane[i]; };
+
+        /* Returns the height and, via out-params, the cluster on the critical path
+           that is heaviest plus that cluster's (level, lane). */
+        auto analyze = [&](int& hot_level, int& hot_lane) -> double {
+            std::map<int, double> ccost;
+            for (int i = 0; i < N; ++i)
+                ccost[cid_of(i)] += cost[i];
+
+            std::map<int, std::set<int> > preds; // cluster -> predecessor clusters
+            for (int i = 0; i < N; ++i) {
+                const int ci = cid_of(i);
+                for (size_t e = 0; e < children[i].size(); ++e) {
+                    const int cj = cid_of(children[i][e]);
+                    if (ci != cj)
+                        preds[cj].insert(ci);
+                }
+            }
+
+            std::vector<int> cids;
+            cids.reserve(ccost.size());
+            for (std::map<int, double>::iterator it = ccost.begin(); it != ccost.end(); ++it)
+                cids.push_back(it->first);
+            /* process in increasing level order (cid = level*LANES + lane) */
+            std::sort(cids.begin(), cids.end(), [&](int a, int b) { return (a / LANES) < (b / LANES); });
+
+            std::map<int, double> dp;
+            std::map<int, int>    par;
+            double                height = 0;
+            int                   end_c = -1;
+            for (size_t k = 0; k < cids.size(); ++k) {
+                const int c = cids[k];
+                double    best_pred = 0;
+                int       best_pc = -1;
+                std::map<int, std::set<int> >::iterator pit = preds.find(c);
+                if (pit != preds.end())
+                    for (std::set<int>::iterator p = pit->second.begin(); p != pit->second.end(); ++p)
+                        if (dp[*p] > best_pred) {
+                            best_pred = dp[*p];
+                            best_pc = *p;
+                        }
+                dp[c] = best_pred + ccost[c];
+                par[c] = best_pc;
+                if (dp[c] > height) {
+                    height = dp[c];
+                    end_c = c;
+                }
+            }
+
+            /* walk back the critical path and pick its heaviest cluster */
+            hot_level = -1;
+            hot_lane = -1;
+            double hot_cost = -1;
+            for (int c = end_c; c != -1; c = par[c])
+                if (ccost[c] > hot_cost) {
+                    hot_cost = ccost[c];
+                    hot_level = c / LANES;
+                    hot_lane = c % LANES;
+                }
+            return height;
+        };
+
+        const long max_evals = 20000; /* safety budget on analyze() calls */
+        long       evals = 0;
+        while (evals < max_evals) {
+            int    hot_level = -1, hot_lane = -1;
+            double height = analyze(hot_level, hot_lane);
+            ++evals;
+            if (hot_level < 1)
+                break;
+
+            std::vector<int>& level_nodes = nodes_by_level[hot_level];
+            const int         width = std::min((int)level_nodes.size(), K);
+            if (width <= 1)
+                break; /* nothing to move into at this level */
+
+            /* lightest lane at this level that is not the hot lane */
+            std::vector<double> lane_load(width, 0.0);
+            for (size_t t = 0; t < level_nodes.size(); ++t)
+                lane_load[lane[level_nodes[t]]] += cost[level_nodes[t]];
+            int target = -1;
+            for (int l = 0; l < width; ++l)
+                if (l != hot_lane && (target < 0 || lane_load[l] < lane_load[target]))
+                    target = l;
+            if (target < 0)
+                break;
+
+            /* try moving each task of the hot cluster (heaviest first) to the target
+               lane; keep the first move that strictly reduces the height. */
+            std::vector<int> hot_nodes;
+            for (size_t t = 0; t < level_nodes.size(); ++t)
+                if (lane[level_nodes[t]] == hot_lane)
+                    hot_nodes.push_back(level_nodes[t]);
+            std::sort(hot_nodes.begin(), hot_nodes.end(), [&](int a, int b) { return cost[a] > cost[b]; });
+
+            bool improved = false;
+            for (size_t h = 0; h < hot_nodes.size() && evals < max_evals; ++h) {
+                const int n = hot_nodes[h];
+                const int old_lane = lane[n];
+                lane[n] = target;
+                int    dummy_l, dummy_w;
+                double new_height = analyze(dummy_l, dummy_w);
+                ++evals;
+                if (new_height < height) {
+                    improved = true; /* commit: leave lane[n] == target */
+                    break;
+                }
+                lane[n] = old_lane; /* revert */
+            }
+            if (!improved)
+                break; /* fixpoint */
+        }
+
+        /* ---- Phase D: realize the lanes on the boost graph ---- */
+        for (int L = 1; L <= max_level; ++L) {
+            std::vector<int>& level_nodes = nodes_by_level[L];
+            const int         width = std::min((int)level_nodes.size(), K);
+            for (int target_lane = 0; target_lane < width; ++target_lane) {
+                ClusterIdType rep = ClusterIdType();
+                bool          have_rep = false;
+                for (size_t t = 0; t < level_nodes.size(); ++t) {
+                    const int n = level_nodes[t];
+                    if (lane[n] != target_lane)
+                        continue;
+                    if (!have_rep) {
+                        rep = vid[n];
+                        have_rep = true;
+                    }
+                    else {
+                        task_system.concat_same_level_clusters(rep, vid[n]);
+                    }
+                }
+                /* Record the real lane (core) this cluster was assigned to, so it
+                   can be exported (collect_clusters_json) and the schedule lanes
+                   visualized as-computed instead of reconstructed. The lane index
+                   is consistent across levels: lane l is the l-th worker lane. */
+                if (have_rep)
+                    task_system.sys_graph[rep].lane = target_lane;
+            }
         }
 
         task_system.levels_valid = false;

@@ -15,7 +15,8 @@
 /OMPlot/OMPlotGUI/Makefile.lib.Release
 /OMPlot/OMPlotGUI/Makefile.Release
 /OMPlot/OMPlotGUI/Makefile.unix
-/OMPlot/OMPlotGUI/object_script.*
+/OMPlot/OMPlotGUI/debug/object_script.*
+/OMPlot/OMPlotGUI/release/object_script.*
 /OMPlot/OMPlotGUI/OMPlotGUI.config
 OMPlotGUI.pro.*
 OMPlotLib.pro.*

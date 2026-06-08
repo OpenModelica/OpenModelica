@@ -46,6 +46,7 @@ public import AbsynUtil;
 protected import Array;
 protected import BaseHashTable;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import DAEUtil;
 protected import Expression;
 protected import ExpressionBasics;
@@ -69,17 +70,17 @@ in the scopes of the classLst for each variable"
  protected
  list<Absyn.Path> paths; list<SCode.Element> du;
 algorithm
-   _ := matchcontinue(cache,env,dae)
+   () := matchcontinue dae
    local
      list<DAE.Element> elts;
-   case(_,_,_) algorithm
+   case _ algorithm
        // phi: very old unit checking
        /*
        false = Flags.getConfigBool(Flags.UNIT_CHECKING);
        */
    then ();
 
-   case(_,_,DAE.DAE(elementLst=elts)) algorithm
+   case DAE.DAE(elementLst=elts) algorithm
      /* TODO: This is very unefficient. It increases instantiationtime by factor 2 for
        instantiation of largeTests/TestNandTotal.mo */
        paths := List.unionList(List.map(elts,DAEUtil.getClassList));
@@ -95,12 +96,12 @@ protected function retrieveUnitsFromEnv "help function to registerUnitWeights"
   output list<SCode.Element> du;
 
 algorithm
-   du := matchcontinue(p,tpl)
+   du := matchcontinue tpl
      local
        FCore.Graph env;
        FCore.Ref r;
 
-     case(_,_) algorithm
+     case _ algorithm
        (_,_,env) := Lookup.lookupClass(Util.tuple21(tpl),Util.tuple22(tpl),p,NONE());
        r := FGraph.lastScopeRef(env);
        // get the defined units node
@@ -115,10 +116,10 @@ end retrieveUnitsFromEnv;
 protected function registerUnitWeightDefineunits "help function to registerUnitWeightForClass"
   input list<SCode.Element> du;
 algorithm
-   _ := matchcontinue(du)
+   () := matchcontinue du
      /* No defineunits found, for backward compatibility, use default implementation:
      SI system ,with lower cost on Hz and Bq */
-     case({}) algorithm
+     case {} algorithm
        registerUnitWeightDefineunits2({
        SCode.DEFINEUNIT("m",SCode.PUBLIC(),NONE(),NONE(), SCodeUtil.dummyInfo),
        SCode.DEFINEUNIT("kg",SCode.PUBLIC(),NONE(),NONE(), SCodeUtil.dummyInfo),
@@ -157,19 +158,19 @@ end registerUnitWeightDefineunits;
 protected function registerUnitWeightDefineunits2 "help function to registerUnitWeightDefineunits"
   input list<SCode.Element> idu;
 algorithm
-   _ := matchcontinue(idu)
+   () := matchcontinue idu
      local String n; Real w; list<SCode.Element> du;
-     case(SCode.DEFINEUNIT(name=n,weight = SOME(w))::du) algorithm
+     case SCode.DEFINEUNIT(name=n,weight = SOME(w))::du algorithm
        UnitParserExt.registerWeight(n,w);
        registerUnitWeightDefineunits2(du);
      then ();
-     case(SCode.DEFINEUNIT(weight = NONE())::du) algorithm
+     case SCode.DEFINEUNIT(weight = NONE())::du algorithm
        registerUnitWeightDefineunits2(du);
      then ();
-     case(_::du) algorithm
+     case _::du algorithm
        registerUnitWeightDefineunits2(du);
      then ();
-     case({}) then ();
+     case {} then ();
 
   end matchcontinue;
 end registerUnitWeightDefineunits2;
@@ -180,7 +181,7 @@ are referenced in the model are picked up
 "
   input Absyn.Program prg;
 algorithm
-  _ := matchcontinue(prg)
+  () := matchcontinue prg
     case _
       algorithm
         // phi: very old unit checking
@@ -201,29 +202,26 @@ protected function registerUnitInClass " help function to registerUnits"
   input tuple<Absyn.Class,Option<Absyn.Path>,Integer> inTpl;
   output tuple<Absyn.Class,Option<Absyn.Path>,Integer> outTpl;
 algorithm
-  outTpl := matchcontinue(inTpl)
+  outTpl := matchcontinue inTpl
   local Absyn.Class cl;
     Option<Absyn.Path> pa;
     Integer i;
     list<Absyn.Element> defunits;
     list<Absyn.ElementItem> elts;
-    String n;
-    case((cl as Absyn.CLASS(),pa,i)) algorithm
+    case (cl as Absyn.CLASS(),pa,i) algorithm
       elts := AbsynUtil.getElementItemsInClass(cl);
       defunits := AbsynUtil.getDefineUnitsInElements(elts);
       registerDefineunits(defunits);
     then ((cl,pa,i));
-    case((cl,pa,i)) then ((cl,pa,i));
+    case (cl,pa,i) then ((cl,pa,i));
   end matchcontinue;
 end registerUnitInClass;
 
 protected function registerDefineunits "help function to registerUnitInClass"
   input list<Absyn.Element> elts;
 algorithm
-   _ := matchcontinue(elts)
-   local String name; list<Absyn.NamedArg> args; Absyn.Element du;
-     String exp; Real weight;
-     case({})
+   () := matchcontinue elts
+   local     case {}
      algorithm registerDefineunits2({
        Absyn.DEFINEUNIT("m",{}, Absyn.dummyInfo),
        Absyn.DEFINEUNIT("kg",{}, Absyn.dummyInfo),
@@ -266,12 +264,10 @@ end registerDefineunits;
 protected function registerDefineunits2 "help function to registerUnitInClass"
   input list<Absyn.Element> elts;
 algorithm
-   _ := matchcontinue(elts)
+   () := matchcontinue elts
      local
        String exp,name;
-       list<Absyn.NamedArg> args;
        Absyn.Element du;
-       Real weight;
        list<Absyn.Element> rest;
 
      case {} then ();
@@ -283,7 +279,7 @@ algorithm
      then ();*/
 
      /* Derived unit without weigth */
-     case ((du as Absyn.DEFINEUNIT())::rest)
+     case (du as Absyn.DEFINEUNIT())::rest
        algorithm
          {SCode.DEFINEUNIT(name,_,SOME(exp),_)} := AbsynToSCode.translateElement(du,SCode.PUBLIC());
          UnitParserExt.addDerived(name,exp);
@@ -291,7 +287,7 @@ algorithm
        then ();
 
        /* base unit does not not have weight*/
-     case((du as Absyn.DEFINEUNIT())::rest)
+     case (du as Absyn.DEFINEUNIT())::rest
        algorithm
          {SCode.DEFINEUNIT(name,_,NONE(),_)} := AbsynToSCode.translateElement(du,SCode.PUBLIC());
          UnitParserExt.addBase(name);
@@ -311,14 +307,14 @@ public function add "Adds a unit to the UnitAbsyn.Store"
   output UnitAbsyn.Store outSt;
   output Integer index;
 algorithm
-  (outSt,index) := matchcontinue(unit,ist)
+  (outSt,index) := matchcontinue ist
     local array<Option<UnitAbsyn.Unit>> vector; Integer newIndx,numElts; UnitAbsyn.Store st;
-    case(_,st as UnitAbsyn.STORE(storeVector=vector,numElts = numElts)) algorithm
+    case st as UnitAbsyn.STORE(storeVector=vector,numElts = numElts) algorithm
       true := numElts == arrayLength(vector);
       st := expandStore(st);
       (st,index) := add(unit,st);
     then (st,index);
-    case(_,UnitAbsyn.STORE(storeVector=vector,numElts = numElts)) algorithm
+    case UnitAbsyn.STORE(storeVector=vector,numElts = numElts) algorithm
       newIndx := numElts+1;
       vector := arrayUpdate(vector,newIndx,SOME(unit));
     then (UnitAbsyn.STORE(vector,newIndx),newIndx);
@@ -330,10 +326,10 @@ public function updateInstStore "  "
   input UnitAbsyn.Store st;
   output UnitAbsyn.InstStore outStore;
 algorithm
-  outStore := match(store,st)
+  outStore := match store
   local HashTable.HashTable ht; Option<UnitAbsyn.UnitCheckResult> res;
-    case(UnitAbsyn.INSTSTORE(_,ht,res),_) then UnitAbsyn.INSTSTORE(st,ht,res);
-    case(UnitAbsyn.NOSTORE(),_) then UnitAbsyn.NOSTORE();
+    case UnitAbsyn.INSTSTORE(_,ht,res) then UnitAbsyn.INSTSTORE(st,ht,res);
+    case UnitAbsyn.NOSTORE() then UnitAbsyn.NOSTORE();
   end match;
 end updateInstStore;
 
@@ -343,9 +339,9 @@ Expansion factor: 1.4
   input UnitAbsyn.Store st;
   output UnitAbsyn.Store outSt;
 algorithm
-  outSt := match(st)
+  outSt := match st
   local array<Option<UnitAbsyn.Unit>> vector; Integer indx,incr;
-    case(UnitAbsyn.STORE(vector,indx)) algorithm
+    case UnitAbsyn.STORE(vector,indx) algorithm
         incr := intMin(1,realInt(intReal(indx) * 0.4));
         vector := Array.expand(incr,vector,NONE());
      then UnitAbsyn.STORE(vector,indx);
@@ -359,9 +355,9 @@ public function update "Updates  unit at index in UnitAbsyn.Store"
   input UnitAbsyn.Store st;
   output UnitAbsyn.Store outSt;
 algorithm
-  outSt := matchcontinue(unit,index,st)
+  outSt := matchcontinue st
   local array<Option<UnitAbsyn.Unit>> vector; Integer indx;
-    case(_,_,UnitAbsyn.STORE(vector,indx)) algorithm
+    case UnitAbsyn.STORE(vector,indx) algorithm
       vector := arrayUpdate(vector,index,SOME(unit)) "destroys ";
     then UnitAbsyn.STORE(vector,indx);
 
@@ -376,11 +372,10 @@ public function find "finds a unit in the UnitAbsyn.Store given an index"
   input UnitAbsyn.Store st;
   output UnitAbsyn.Unit unit;
 algorithm
-  unit := matchcontinue(index,st)
+  unit := matchcontinue st
     local
       array<Option<UnitAbsyn.Unit>> vector;
-      Integer indx;
-    case(_,UnitAbsyn.STORE(vector,_)) algorithm
+    case UnitAbsyn.STORE(vector,_) algorithm
       SOME(unit) := vector[index];
     then unit;
     else algorithm
@@ -394,9 +389,9 @@ public function instGetStore "Retrives the Store from an InstStore"
   input UnitAbsyn.InstStore store;
   output UnitAbsyn.Store st;
 algorithm
-  st := match(store)
-    case(UnitAbsyn.INSTSTORE(st,_,_)) then st;
-    case(UnitAbsyn.NOSTORE()) then emptyStore();
+  st := match store
+    case UnitAbsyn.INSTSTORE(st,_,_) then st;
+    case UnitAbsyn.NOSTORE() then emptyStore();
   end match;
 end instGetStore;
 
@@ -450,35 +445,34 @@ public function printTermStr "print one term to a string"
   input UnitAbsyn.UnitTerm term;
   output String str;
 algorithm
-  str := match(term)
-  local UnitAbsyn.UnitTerm ut1,ut2; String s1;
-    Integer i,i1,i2;
+  str := match term
+  local String s1;
     DAE.Exp e;
-    case(UnitAbsyn.ADD(_,_,e)) algorithm
+    case UnitAbsyn.ADD(_,_,e) algorithm
       s1 := ExpressionBasics.printExpStr(e);
     then s1;
 
-    case(UnitAbsyn.SUB(_,_,e)) algorithm
+    case UnitAbsyn.SUB(_,_,e) algorithm
       s1 := ExpressionBasics.printExpStr(e);
     then s1;
 
-    case(UnitAbsyn.MUL(_,_,e)) algorithm
+    case UnitAbsyn.MUL(_,_,e) algorithm
       s1 := ExpressionBasics.printExpStr(e);
     then s1;
 
-    case(UnitAbsyn.DIV(_,_,e)) algorithm
+    case UnitAbsyn.DIV(_,_,e) algorithm
       s1 := ExpressionBasics.printExpStr(e);
     then s1;
 
-    case(UnitAbsyn.EQN(_,_,e)) algorithm
+    case UnitAbsyn.EQN(_,_,e) algorithm
       s1 := ExpressionBasics.printExpStr(e);
     then s1;
 
-    case(UnitAbsyn.LOC(_,e)) algorithm
+    case UnitAbsyn.LOC(_,e) algorithm
     s1 := ExpressionBasics.printExpStr(e);
     then s1;
 
-    case(UnitAbsyn.POW(_,MMath.RATIONAL(_,_),e)) algorithm
+    case UnitAbsyn.POW(_,MMath.RATIONAL(_,_),e) algorithm
       s1 := ExpressionBasics.printExpStr(e);
     then s1;
 
@@ -488,25 +482,24 @@ end printTermStr;
 public function printInstStore "prints the inst store to stdout"
 input UnitAbsyn.InstStore st;
 algorithm
-  _ := match(st)
+  () := match st
   local UnitAbsyn.Store s; HashTable.HashTable h;
-    case(UnitAbsyn.INSTSTORE(s,h,_)) algorithm
+    case UnitAbsyn.INSTSTORE(s,h,_) algorithm
       print("instStore, s:");
       printStore(s);
       print("\nht:");
       BaseHashTable.dumpHashTable(h);
     then ();
-    case(UnitAbsyn.NOSTORE()) then ();
+    case UnitAbsyn.NOSTORE() then ();
   end match;
 end printInstStore;
 
 public function printStore "prints the store to stdout"
 input UnitAbsyn.Store st;
 algorithm
-  _ := match(st)
-  local array<Option<UnitAbsyn.Unit>> vector; Integer indx;
-    list<Option<UnitAbsyn.Unit>> lst;
-    case(UnitAbsyn.STORE(vector,_)) algorithm
+  () := match st
+  local array<Option<UnitAbsyn.Unit>> vector;    list<Option<UnitAbsyn.Unit>> lst;
+    case UnitAbsyn.STORE(vector,_) algorithm
       lst := arrayList(vector);
       printStore2(lst,1);
    then ();
@@ -517,41 +510,41 @@ protected function printStore2 "help function to printStore"
 input list<Option<UnitAbsyn.Unit>> lst;
 input Integer indx;
 algorithm
-  _ := match(lst,indx)
+  () := match lst
     local
       UnitAbsyn.Unit unit;
       list<Option<UnitAbsyn.Unit>> rest;
-    case({},_) then ();
+    case {} then ();
 
-    case(SOME(unit)::rest,_) algorithm
+    case SOME(unit)::rest algorithm
       print(intString(indx));print("->");
       printUnit(unit);
       print("\n");
       printStore2(rest,indx+1);
     then();
-    case(NONE()::_,_) then ();
+    case NONE()::_ then ();
   end match;
 end printStore2;
 
 protected function printUnit "prints a unit to stdout (only for debugging)"
 input UnitAbsyn.Unit unit;
 algorithm
-  _ := matchcontinue(unit)
+  () := matchcontinue unit
   local list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> typeparams;
     list<MMath.Rational> baseunits;
     /*case(unit) equation
       print(unit2str(unit));
     then();*/
-    case (UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT({},baseunits))) algorithm
+    case UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT({},baseunits)) algorithm
       print(printBaseUnitsStr(baseunits));
       print(" [");print(unit2str(unit)); print("]");
     then();
-    case(UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(typeparams,baseunits))) algorithm
+    case UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(typeparams,baseunits)) algorithm
       print(stringDelimitList(List.map(typeparams,printTypeParameterStr),","));
       print(printBaseUnitsStr(baseunits));
       print(" [");print(unit2str(unit)); print("]");
     then();
-    case(UnitAbsyn.UNSPECIFIED()) algorithm
+    case UnitAbsyn.UNSPECIFIED() algorithm
       print("Unspecified");
     then ();
   end matchcontinue;
@@ -561,13 +554,13 @@ protected function printBaseUnitsStr "help function to printUnit"
   input list<MMath.Rational> lst;
   output String str;
 algorithm
-  str := matchcontinue(lst)
+  str := matchcontinue lst
   local Integer i1,i2,i3,i4;
-    case(MMath.RATIONAL(i1,i2)::MMath.RATIONAL(i3,i4)::_) algorithm
+    case MMath.RATIONAL(i1,i2)::MMath.RATIONAL(i3,i4)::_ algorithm
     str := "m^("+intString(i1)+"/"+intString(i2)+")"
     +  "s^("+intString(i3)+"/"+intString(i4)+")" ;
     then str;
-    case({}) then "";
+    case {} then "";
     else "printBaseUnitsStr failed len:" + intString(listLength(lst)) + "\n";
   end matchcontinue;
 end printBaseUnitsStr;
@@ -576,15 +569,15 @@ protected function printTypeParameterStr "help function to printUnit"
   input tuple<MMath.Rational,UnitAbsyn.TypeParameter> typeParam;
   output String str;
 algorithm
-  str := match(typeParam)
-  local String name; Integer i1,i2,i3,indx;
-    case((MMath.RATIONAL(0,0),UnitAbsyn.TYPEPARAMETER(name,indx))) algorithm
+  str := match typeParam
+  local String name; Integer i1,i2,indx;
+    case (MMath.RATIONAL(0,0),UnitAbsyn.TYPEPARAMETER(name,indx)) algorithm
       str := name + "[indx =" + intString(indx) + "]";
       then str;
-    case((MMath.RATIONAL(i1,1),UnitAbsyn.TYPEPARAMETER(name,indx))) algorithm
+    case (MMath.RATIONAL(i1,1),UnitAbsyn.TYPEPARAMETER(name,indx)) algorithm
       str := name + "^" + intString(i1) + "[indx=" + intString(indx) + "]";
     then str;
-    case((MMath.RATIONAL(i1,i2),UnitAbsyn.TYPEPARAMETER(name,indx))) algorithm
+    case (MMath.RATIONAL(i1,i2),UnitAbsyn.TYPEPARAMETER(name,indx)) algorithm
       str := name+ "^("+ intString(i1) + "/" + intString(i2)+")" + "[indx=" + intString(indx) + "]";
     then str;
   end match;
@@ -595,10 +588,10 @@ public function splitRationals "splits a list of Rationals into a list of numera
   output list<Integer> nums;
   output list<Integer> denoms;
 algorithm
-  (nums,denoms) := match(inRationals)
+  (nums,denoms) := match inRationals
     local Integer i1,i2; list<MMath.Rational> rationals;
-    case({}) then ({},{});
-    case(MMath.RATIONAL(i1,i2)::rationals) algorithm
+    case {} then ({},{});
+    case MMath.RATIONAL(i1,i2)::rationals algorithm
       (nums,denoms) := splitRationals(rationals);
     then (i1::nums,i2::denoms);
   end match;
@@ -609,7 +602,7 @@ public function joinRationals "joins a lists of numerators and denominators into
   input list<Integer> idenoms;
   output list<MMath.Rational> rationals;
 algorithm
-  (rationals) := match(inums,idenoms)
+  rationals := match(inums,idenoms)
     local Integer i1,i2; list<Integer> nums,denoms;
     case({},{}) then ({});
     case(i1::nums,i2::denoms) algorithm
@@ -625,10 +618,10 @@ public function joinTypeParams "creates type parameter lists from list of numera
   input Option<Integer> funcInstIdOpt;
   output list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> typeParams;
 algorithm
-  typeParams := match(inums,idenoms,itpstrs,funcInstIdOpt)
+  typeParams := match(inums, idenoms, itpstrs)
     local Integer i1,i2; String tpParam,s; list<Integer> nums, denoms; list<String> tpstrs;
-    case({},{},{},_) then {};
-    case(i1::nums,i2::denoms,tpParam::tpstrs,_) algorithm
+    case({}, {}, {}) then {};
+    case(i1::nums, i2::denoms, tpParam::tpstrs) algorithm
       typeParams := joinTypeParams(nums,denoms,tpstrs,funcInstIdOpt);
       s := Util.applyOptionOrDefault(funcInstIdOpt, intString, "");
       tpParam := tpParam + s;
@@ -642,10 +635,10 @@ public function splitTypeParams "splits type parameter lists into numerators, de
   output list<Integer> denoms;
   output list<String> tpstrs;
 algorithm
-  (nums,denoms,tpstrs) := match(iTypeParams)
+  (nums,denoms,tpstrs) := match iTypeParams
     local String tpParam; Integer i1,i2; list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> typeParams;
-    case({}) then ({},{},{});
-    case((MMath.RATIONAL(i1,i2),UnitAbsyn.TYPEPARAMETER(tpParam,_))::typeParams) algorithm
+    case {} then ({},{},{});
+    case (MMath.RATIONAL(i1,i2),UnitAbsyn.TYPEPARAMETER(tpParam,_))::typeParams algorithm
       (nums,denoms,tpstrs) := splitTypeParams(typeParams);
     then (i1::nums,i2::denoms,tpParam::tpstrs);
   end match;
@@ -660,14 +653,14 @@ variable names to store locations."
   output UnitAbsyn.InstStore outStore;
   output UnitAbsyn.UnitTerms terms;
 algorithm
-  (outStore,terms) := matchcontinue(env,dae,compDae,store)
+  (outStore,terms) := matchcontinue store
     local
       UnitAbsyn.Store st;
       HashTable.HashTable ht;
       UnitAbsyn.UnitTerms terms2;
       Option<UnitAbsyn.UnitCheckResult> res;
-    case (_,_,_,UnitAbsyn.NOSTORE()) then  (UnitAbsyn.NOSTORE(),{});
-    case(_,_,_,UnitAbsyn.INSTSTORE(st,ht,res))
+    case UnitAbsyn.NOSTORE() then  (UnitAbsyn.NOSTORE(),{});
+    case UnitAbsyn.INSTSTORE(st,ht,res)
       algorithm
         (terms,st) := buildTerms(env,dae,ht,st);
         (terms2,st) := buildTerms(env,compDae,ht,st) "to get bindings of scalar variables";
@@ -704,7 +697,7 @@ public function instAddStore "Called when instantiating a Real class"
   input DAE.ComponentRef cr;
   output UnitAbsyn.InstStore outStore;
 algorithm
-  outStore := matchcontinue(istore,itp,cr)
+  outStore := matchcontinue(istore, itp)
     local
       UnitAbsyn.Store st;
       HashTable.HashTable ht;
@@ -715,13 +708,13 @@ algorithm
       UnitAbsyn.InstStore store;
       DAE.Type tp;
 
-    case(UnitAbsyn.NOSTORE(),_,_)
+    case(UnitAbsyn.NOSTORE(), _)
       then istore;
 
-    case(UnitAbsyn.INSTSTORE(st,ht,res),DAE.T_REAL(varLst = varLst),_)
+    case(UnitAbsyn.INSTSTORE(st,ht,res), DAE.T_REAL(varLst = varLst))
       algorithm
         for v in varLst loop
-          _ := match v
+          () := match v
             case DAE.TYPES_VAR(name="unit",binding = DAE.EQBOUND(exp=DAE.SCONST(unitStr)))
               algorithm
                 unit := str2unit(unitStr,NONE());
@@ -738,7 +731,7 @@ algorithm
         ht := BaseHashTable.add((cr,indx),ht);
       then UnitAbsyn.INSTSTORE(st,ht,res);
 
-    case(store,DAE.T_SUBTYPE_BASIC(complexType=tp),_)
+    case(store, DAE.T_SUBTYPE_BASIC(complexType=tp))
       then instAddStore(store,tp,cr);
     else istore;
   end matchcontinue;
@@ -748,8 +741,8 @@ public function storeSize "return the number of elements of the store"
 input UnitAbsyn.Store store;
 output Integer size;
 algorithm
-  size := match(store)
-    case(UnitAbsyn.STORE(_,size)) then size;
+  size := match store
+    case UnitAbsyn.STORE(_,size) then size;
   end match;
 end storeSize;
 
@@ -794,7 +787,7 @@ protected function createTypeParameterLocations2 "help function"
   output HashTable.HashTable outHt;
   output Integer outNextElt;
 algorithm
-  (outStore,outHt,outNextElt) := matchcontinue(istore,iht,i,inextElt)
+  (outStore,outHt,outNextElt) := matchcontinue(istore, iht, inextElt)
     local
       Integer numElts;
       array<Option<UnitAbsyn.Unit>> vect;
@@ -803,18 +796,18 @@ algorithm
       HashTable.HashTable ht;
       Integer nextElt;
 
-    case(store as UnitAbsyn.STORE(_,numElts),ht,_,nextElt) algorithm
+    case(store as UnitAbsyn.STORE(_,numElts), ht, nextElt) algorithm
       true := i > numElts;
      then (store,ht,nextElt);
 
-    case(UnitAbsyn.STORE(vect,numElts),ht,_,nextElt) algorithm
+    case(UnitAbsyn.STORE(vect,numElts), ht, nextElt) algorithm
       SOME(unit) := vect[i];
       (unit,ht,nextElt) := createTypeParameterLocations3(unit,ht,nextElt);
       vect := arrayUpdate(vect,i,SOME(unit));
       (store,ht,nextElt) := createTypeParameterLocations2(UnitAbsyn.STORE(vect,numElts),ht,i+1,nextElt);
     then (store,ht,nextElt);
 
-    case(UnitAbsyn.STORE(vect,numElts),ht,_,nextElt) algorithm
+    case(UnitAbsyn.STORE(vect,numElts), ht, nextElt) algorithm
       (store,ht,nextElt) := createTypeParameterLocations2(UnitAbsyn.STORE(vect,numElts),ht,i+1,nextElt);
     then (store,ht,nextElt);
   end matchcontinue;
@@ -899,7 +892,7 @@ protected function buildTerms "builds the unit terms from DAE elements (equation
   output UnitAbsyn.UnitTerms terms;
   output UnitAbsyn.Store outStore;
 algorithm
-  (terms,outStore) := matchcontinue(env,dae,ht,istore)
+  (terms,outStore) := matchcontinue(dae, istore)
     local
       DAE.Exp e1,e2,crefExp1,crefExp2;
       UnitAbsyn.UnitTerm ut1,ut2;
@@ -908,16 +901,16 @@ algorithm
       list<DAE.Element> elts;
       UnitAbsyn.Store store;
 
-    case (_,DAE.DAE(elementLst={}),_,store) then ({},store);
+    case (DAE.DAE(elementLst={}), store) then ({},store);
 
-    case(_,DAE.DAE(elementLst=DAE.EQUATION(e1,e2,_)::elts),_,store) algorithm
+    case(DAE.DAE(elementLst=DAE.EQUATION(e1,e2,_)::elts), store) algorithm
       (ut1,terms1,store) := buildTermExp(env,e1,false,ht,store);
       (ut2,terms2,store) := buildTermExp(env,e2,false,ht,store);
       (terms,store) := buildTerms(env,DAE.DAE(elts),ht,store);
       terms := listAppend(terms1,listAppend(terms2,terms));
     then  (UnitAbsyn.EQN(ut1,ut2,DAE.BINARY(e1,DAE.SUB(DAE.T_REAL_DEFAULT),e2))::terms,store);
 
-    case(_,DAE.DAE(elementLst=DAE.EQUEQUATION(cr1,cr2,_)::elts),_,store) algorithm
+    case(DAE.DAE(elementLst=DAE.EQUEQUATION(cr1,cr2,_)::elts), store) algorithm
       crefExp1 := Expression.crefExp(cr1);
       crefExp2 := Expression.crefExp(cr2);
       (ut1,terms1,store) := buildTermExp(env,crefExp1,false,ht,store);
@@ -928,7 +921,7 @@ algorithm
       (UnitAbsyn.EQN(ut1,ut2,DAE.BINARY(crefExp1,DAE.SUB(DAE.T_REAL_DEFAULT),crefExp2))::terms,store);
 
       /* Only consider variables with binding from this instance level, not furhter down */
-    case(_,DAE.DAE(elementLst=DAE.VAR(componentRef=cr1 as DAE.CREF_IDENT(_,_,_),binding = SOME(e1))::elts),_,store) algorithm
+    case(DAE.DAE(elementLst=DAE.VAR(componentRef=cr1 as DAE.CREF_IDENT(_,_,_),binding = SOME(e1))::elts), store) algorithm
       crefExp1 := Expression.crefExp(cr1);
       (ut1,terms1,store) := buildTermExp(env,crefExp1,false,ht,store);
       (ut2,terms2,store) := buildTermExp(env,e1,false,ht,store);
@@ -937,7 +930,7 @@ algorithm
     then
       (UnitAbsyn.EQN(ut1,ut2,DAE.BINARY(crefExp1,DAE.SUB(DAE.T_REAL_DEFAULT),e1))::terms,store);
 
-    case(_,DAE.DAE(elementLst=DAE.DEFINE(cr1,e1,_)::elts),_,store) algorithm
+    case(DAE.DAE(elementLst=DAE.DEFINE(cr1,e1,_)::elts), store) algorithm
       crefExp1 := Expression.crefExp(cr1);
       (ut1,terms1,store) := buildTermExp(env,crefExp1,false,ht,store);
       (ut2,terms2,store) := buildTermExp(env,e1,false,ht,store);
@@ -946,7 +939,7 @@ algorithm
     then
       (UnitAbsyn.EQN(ut1,ut2,DAE.BINARY(crefExp1,DAE.SUB(DAE.T_REAL_DEFAULT),e1))::terms,store);
 
-    case(_,DAE.DAE(elementLst=_::elts),_,store) algorithm
+    case(DAE.DAE(elementLst=_::elts), store) algorithm
       (terms,store) := buildTerms(env,DAE.DAE(elts),ht,store);
       then (terms,store);
   end matchcontinue;
@@ -964,7 +957,7 @@ protected function buildTermExp "help function to buildTerms, handles expression
   output list<UnitAbsyn.UnitTerm> extraTerms "additional terms from e.g. function calls";
   output UnitAbsyn.Store outStore;
 algorithm
-  (ut,extraTerms,outStore) := matchcontinue(env,exp,idivOrMul,iht,istore)
+  (ut,extraTerms,outStore) := matchcontinue(exp, idivOrMul, iht, istore)
     local
       Real r;
       DAE.Operator op;
@@ -987,7 +980,7 @@ algorithm
       indx = BaseHashTable.get(ComponentReferenceBasics.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{}),ht);
     then (UnitAbsyn.LOC(indx,e),{},store);*/
 
-    case(_,e as DAE.ICONST(i),divOrMul,ht,store) algorithm
+    case(e as DAE.ICONST(i), divOrMul, ht, store) algorithm
       s1 := "$"+intString(tick())+"_"+intString(i);
       u := if divOrMul then str2unit("1",NONE()) else UnitAbsyn.UNSPECIFIED();
       (store,indx) := add(u,store);
@@ -995,23 +988,23 @@ algorithm
     then (UnitAbsyn.LOC(indx,e),{},store);
 
     /* for each constant, add new unspecified unit*/
-    case(_,e as DAE.RCONST(r),divOrMul,ht,store)algorithm
+    case(e as DAE.RCONST(r), divOrMul, ht, store)algorithm
       s1 := "$"+intString(tick())+"_"+realString(r);
       u := if divOrMul then str2unit("1",NONE()) else UnitAbsyn.UNSPECIFIED();
       (store,indx) := add(u,store);
        ht := BaseHashTable.add((ComponentReferenceBasics.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{}),indx),ht);
     then (UnitAbsyn.LOC(indx,e),{},store);
 
-    case(_,DAE.CAST(_,e1),divOrMul,ht,store) algorithm
+    case(DAE.CAST(_,e1), divOrMul, ht, store) algorithm
       (ut,terms,store) := buildTermExp(env,e1,divOrMul,ht,store);
     then (ut,terms,store);
 
-    case(_,e as DAE.CREF(cr,_),_,ht,store) algorithm
+    case(e as DAE.CREF(cr,_), _, ht, store) algorithm
      indx := BaseHashTable.get(cr,ht);
     then (UnitAbsyn.LOC(indx,e),{},store);
 
     /* special case for pow */
-    case(_,e as DAE.BINARY(e1,DAE.POW(_),e2 as DAE.ICONST(i)),divOrMul,ht,store)
+    case(e as DAE.BINARY(e1,DAE.POW(_),e2 as DAE.ICONST(i)), divOrMul, ht, store)
       algorithm
         (ut1,terms1,store) := buildTermExp(env,e1,divOrMul,ht,store);
         (_,terms2,store) := buildTermExp(env,e2,divOrMul,ht,store);
@@ -1019,7 +1012,7 @@ algorithm
         ut := UnitAbsyn.POW(ut1,MMath.RATIONAL(i,1),e);
     then (ut,terms,store);
 
-    case(_,e as DAE.BINARY(e1,DAE.POW(_),e2 as DAE.RCONST(r)),divOrMul,ht,store)
+    case(e as DAE.BINARY(e1,DAE.POW(_),e2 as DAE.RCONST(r)), divOrMul, ht, store)
       algorithm
         (ut1,terms1,store) := buildTermExp(env,e1,divOrMul,ht,store);
         (_,terms2,store) := buildTermExp(env,e2,divOrMul,ht,store);
@@ -1029,7 +1022,7 @@ algorithm
         ut := UnitAbsyn.POW(ut1,MMath.RATIONAL(i,1),e);
     then (ut,terms,store);
 
-    case(_,e as DAE.BINARY(e1,op,e2),divOrMul,ht,store) algorithm
+    case(e as DAE.BINARY(e1,op,e2), divOrMul, ht, store) algorithm
       divOrMul := Expression.operatorDivOrMul(op);
       (ut1,terms1,store) := buildTermExp(env,e1,divOrMul,ht,store);
       (ut2,terms2,store) := buildTermExp(env,e2,divOrMul,ht,store);
@@ -1038,24 +1031,24 @@ algorithm
     then (ut,terms,store);
 
       /* failed to build term for e2, use e1*/
-    case(_,DAE.BINARY(e1,op,_),divOrMul,ht,store) algorithm
+    case(DAE.BINARY(e1,op,_), divOrMul, ht, store) algorithm
       divOrMul := Expression.operatorDivOrMul(op);
       (ut,terms,store) := buildTermExp(env,e1,divOrMul,ht,store);
-      failure((_,_,_) := buildTermExp(env,e1,divOrMul,ht,store));
+      failure(buildTermExp(env,e1,divOrMul,ht,store));
     then (ut,terms,store);
 
       /* failed to build term for e1, use e2*/
-    case(_,DAE.BINARY(e1,op,e2),divOrMul,ht,store) algorithm
+    case(DAE.BINARY(e1,op,e2), divOrMul, ht, store) algorithm
       divOrMul := Expression.operatorDivOrMul(op);
-      failure((_,_,_) := buildTermExp(env,e1,divOrMul,ht,store));
+      failure(buildTermExp(env,e1,divOrMul,ht,store));
       (ut,terms,store) := buildTermExp(env,e2,divOrMul,ht,store);
     then (ut,terms,store);
 
-    case(_,DAE.UNARY(_,e1),divOrMul,ht,store) algorithm
+    case(DAE.UNARY(_,e1), divOrMul, ht, store) algorithm
       (ut,terms,store) := buildTermExp(env,e1,divOrMul,ht,store);
     then (ut,terms,store);
 
-    case(_,e as DAE.IFEXP(_,e1,e2),divOrMul,ht,store) algorithm
+    case(e as DAE.IFEXP(_,e1,e2), divOrMul, ht, store) algorithm
       divOrMul := false;
       (ut1,terms1,store) := buildTermExp(env,e1,divOrMul,ht,store);
       (ut2,terms2,store) := buildTermExp(env,e2,divOrMul,ht,store);
@@ -1063,14 +1056,14 @@ algorithm
     then (UnitAbsyn.EQN(ut1,ut2,e),terms,store);
 
     /* function call */
-    case(_,e as DAE.CALL(path=path,expLst=expl),divOrMul,ht,store) algorithm
+    case(e as DAE.CALL(path=path,expLst=expl), divOrMul, ht, store) algorithm
       divOrMul := false;
       (ut,terms,store) := buildTermCall(env,path,e,expl,divOrMul,ht,store);
     then  (ut,terms,store);
 
     /* Array, all elements must be of same dimension, since an array with different units in different positions
     can not be declared in Modelica, since modifiers on arrays must affect the whole array */
-    case(_,e as DAE.ARRAY(_,_,expl),_,ht,store)
+    case(e as DAE.ARRAY(_,_,expl), _, ht, store)
       algorithm
         print("vector ="+ExpressionBasics.printExpStr(e)+"\n");
       (uts,terms,store) := buildTermExpList(env,expl,ht,store);
@@ -1078,7 +1071,7 @@ algorithm
       uts := listAppend(terms,uts);
     then (ut,uts,store);
 
-    case(_,e as DAE.MATRIX(matrix=mexpl),_,ht,store)
+    case(e as DAE.MATRIX(matrix=mexpl), _, ht, store)
       algorithm
         print("Matrix ="+ExpressionBasics.printExpStr(e)+"\n");
         expl := List.flatten(mexpl);
@@ -1087,7 +1080,7 @@ algorithm
         uts := listAppend(terms,uts);
       then (ut,uts,store);
 
-    case(_,e as DAE.CALL(),_,_,_) algorithm
+    case(e as DAE.CALL(), _, _, _) algorithm
       print("buildTermDAE.CALL failed exp: "+ExpressionBasics.printExpStr(e)+"\n");
     then fail();
   end matchcontinue;
@@ -1127,15 +1120,15 @@ protected function buildTermCall "builds a term and additional terms from a func
   output list<UnitAbsyn.UnitTerm> extraTerms "additional terms from e.g. function calls";
   output UnitAbsyn.Store outStore;
 algorithm
-  (ut,extraTerms,outStore) := match(env,path,funcCallExp,expl,divOrMul,ht,istore)
+  (ut,extraTerms,outStore) := match istore
     local
       list<Integer> formalParamIndxs;
       Integer funcInstId;
-      list<UnitAbsyn.UnitTerm> actTermLst,terms,terms2,extraTerms2;
+      list<UnitAbsyn.UnitTerm> actTermLst,terms,extraTerms2;
       DAE.Type functp;
       UnitAbsyn.Store store;
 
-    case(_,_,_,_,_,_,store) algorithm
+    case store algorithm
        (_,functp,_) := Lookup.lookupType(FCore.noCache(),env,path,NONE());
        funcInstId:=tick();
        (store,formalParamIndxs) := buildFuncTypeStores(functp,funcInstId,store);
@@ -1157,14 +1150,14 @@ new locations"
   output list<UnitAbsyn.UnitTerm> extraTerms;
   output UnitAbsyn.Store outStore;
 algorithm
-  (terms,extraTerms,outStore) := matchcontinue(ifunctp,funcInstId,funcCallExp,istore)
+  (terms,extraTerms,outStore) := matchcontinue(ifunctp, istore)
     local
       String unitStr; UnitAbsyn.Unit unit; Integer indx,indx2; Boolean unspec;
       list<DAE.Type> typeLst;
       DAE.Type functp;
       UnitAbsyn.Store store;
     // Real
-    case(DAE.T_FUNCTION(_,functp,_,_),_,_,store) algorithm
+    case(DAE.T_FUNCTION(_,functp,_,_), store) algorithm
       unitStr := getUnitStr(functp);
       //print("Got unit='"+unitStr+"'\n");
       unspec := 0 == stringCompare(unitStr,"");
@@ -1176,7 +1169,7 @@ algorithm
       then ({UnitAbsyn.LOC(indx2,funcCallExp)},{UnitAbsyn.EQN(UnitAbsyn.LOC(indx2,funcCallExp),UnitAbsyn.LOC(indx,funcCallExp),funcCallExp)},store);
 
     // Tuple
-    case(DAE.T_FUNCTION(funcResultType=DAE.T_TUPLE(types = typeLst)),_,_,store) algorithm
+    case(DAE.T_FUNCTION(funcResultType=DAE.T_TUPLE(types = typeLst)), store) algorithm
       (terms,extraTerms,store) := buildTupleResultTerms(typeLst,funcInstId,funcCallExp,store);
      then (terms,extraTerms,store);
     else algorithm
@@ -1194,13 +1187,13 @@ protected function buildTupleResultTerms "help function to buildResultTerms"
   output list<UnitAbsyn.UnitTerm> extraTerms;
   output UnitAbsyn.Store outStore;
 algorithm
-  (terms,extraTerms,outStore) := match(ifunctps,funcInstId,funcCallExp,istore)
+  (terms,extraTerms,outStore) := match(ifunctps, istore)
     local
       list<UnitAbsyn.UnitTerm> terms1,terms2,extraTerms1,extraTerms2; DAE.Type tp;
       list<DAE.Type> functps;
       UnitAbsyn.Store store;
-    case({},_,_,store) then ({},{},store);
-    case(tp::functps,_,_,store) algorithm
+    case({}, store) then ({},{},store);
+    case(tp::functps, store) algorithm
       (terms1,extraTerms1,store) := buildResultTerms(tp,funcInstId,funcCallExp,store);
       (terms2,extraTerms2,store) := buildTupleResultTerms(functps,funcInstId,funcCallExp,store);
       terms := listAppend(terms1,terms2);
@@ -1218,7 +1211,7 @@ protected function buildTermExpList "build terms from list of expressions"
   output list<UnitAbsyn.UnitTerm> extraTerms;
   output UnitAbsyn.Store outStore;
 algorithm
-  (terms,extraTerms,outStore) := matchcontinue(env,iexpl,ht,istore)
+  (terms,extraTerms,outStore) := matchcontinue(iexpl, istore)
     local
       DAE.Exp e;
       list<UnitAbsyn.UnitTerm> eterms1,eterms2;
@@ -1226,13 +1219,13 @@ algorithm
       list<DAE.Exp> expl;
       UnitAbsyn.Store store;
 
-    case (_,{},_,store) then ({},{},store);
-    case(_,e::expl,_,store) algorithm
+    case ({}, store) then ({},{},store);
+    case(e::expl, store) algorithm
       (ut,eterms1,store) :=  buildTermExp(env,e,false,ht,store);
       (terms,eterms2,store) := buildTermExpList(env,expl,ht,store);
       extraTerms := listAppend(eterms1,eterms2);
     then (ut::terms,extraTerms,store);
-    case(_,e::_,_,_) algorithm
+    case(e::_, _) algorithm
       print("buildTermExpList failed for exp"+ExpressionBasics.printExpStr(e)+"\n");
     then fail();
   end matchcontinue;
@@ -1246,12 +1239,12 @@ protected function buildFuncTypeStores "help function to buildTermCall"
   output UnitAbsyn.Store outStore;
   output list<Integer> indxs;
 algorithm
-  (outStore,indxs) := matchcontinue(funcType,funcInstId,istore)
+  (outStore,indxs) := matchcontinue(funcType, istore)
     local list<DAE.FuncArg> args; DAE.Type tp; UnitAbsyn.Store store;
-    case(DAE.T_FUNCTION(funcArg = args),_,store) algorithm
+    case(DAE.T_FUNCTION(funcArg = args), store) algorithm
       (store,indxs) := buildFuncTypeStores2(args,funcInstId,store);
     then (store,indxs);
-    case(tp,_,_) algorithm
+    case(tp, _) algorithm
       print("buildFuncTypeStores failed, tp"+TypesDump.unparseType(tp)+"\n");
     then fail();
   end matchcontinue;
@@ -1264,7 +1257,7 @@ protected function buildFuncTypeStores2 "help function to buildFuncTypeStores"
   output UnitAbsyn.Store outStore;
   output list<Integer> indxs;
 algorithm
-  (outStore,indxs) := match(ifargs,funcInstId,istore)
+  (outStore,indxs) := match(ifargs, istore)
     local
       String unitStr;
       Integer indx;
@@ -1273,8 +1266,8 @@ algorithm
       list<DAE.FuncArg> fargs;
       UnitAbsyn.Store store;
 
-    case({},_,store) then (store,{});
-    case(DAE.FUNCARG(ty=tp)::fargs,_,store) algorithm
+    case({}, store) then (store,{});
+    case(DAE.FUNCARG(ty=tp)::fargs, store) algorithm
       unitStr := getUnitStr(tp);
 
       unit := str2unit(unitStr,SOME(funcInstId));
@@ -1290,7 +1283,7 @@ from a Type (must be T_REAL)"
   input DAE.Type itp;
   output String str;
 algorithm
-  str := matchcontinue(itp)
+  str := matchcontinue itp
     local
       list<DAE.Var> varLst;
       DAE.Type tp;
@@ -1298,15 +1291,15 @@ algorithm
     case DAE.T_REAL(varLst = varLst)
       algorithm
         for v in varLst loop
-          _ := match v
+          () := match v
             case DAE.TYPES_VAR(name="unit",binding=DAE.EQBOUND(exp=DAE.SCONST(str))) algorithm return; then ();
             else ();
           end match;
         end for;
       then "";
-    case(DAE.T_INTEGER()) then "";
-    case(DAE.T_ARRAY(ty=tp)) then getUnitStr(tp);
-    case(tp) algorithm print("getUnitStr for type "+TypesDump.unparseType(tp)+" failed\n"); then fail();
+    case DAE.T_INTEGER() then "";
+    case DAE.T_ARRAY(ty=tp) then getUnitStr(tp);
+    case tp algorithm print("getUnitStr for type "+TypesDump.unparseType(tp)+" failed\n"); then fail();
   end matchcontinue;
 end getUnitStr;
 
@@ -1336,14 +1329,14 @@ protected function origExpInTerm "Returns the origExp of a term"
 input UnitAbsyn.UnitTerm ut;
 output DAE.Exp origExp;
 algorithm
-  origExp := match(ut) local DAE.Exp e;
-    case(UnitAbsyn.ADD(_,_,e)) then e;
-    case(UnitAbsyn.SUB(_,_,e)) then e;
-    case(UnitAbsyn.MUL(_,_,e)) then e;
-    case(UnitAbsyn.DIV(_,_,e)) then e;
-    case(UnitAbsyn.EQN(_,_,e)) then e;
-    case(UnitAbsyn.LOC(_,e)) then e;
-    case(UnitAbsyn.POW(_,_,e)) then e;
+  origExp := match ut local DAE.Exp e;
+    case UnitAbsyn.ADD(_,_,e) then e;
+    case UnitAbsyn.SUB(_,_,e) then e;
+    case UnitAbsyn.MUL(_,_,e) then e;
+    case UnitAbsyn.DIV(_,_,e) then e;
+    case UnitAbsyn.EQN(_,_,e) then e;
+    case UnitAbsyn.LOC(_,e) then e;
+    case UnitAbsyn.POW(_,_,e) then e;
   end match;
 end origExpInTerm;
 
@@ -1354,11 +1347,11 @@ protected function buildTermOp "Takes two UnitTerms and and DAE.Operator and cre
   input DAE.Exp origExp;
   output UnitAbsyn.UnitTerm ut;
 algorithm
-  ut := match(ut1,ut2,op,origExp)
-    case (_,_,DAE.ADD(),_) then UnitAbsyn.ADD(ut1,ut2,origExp);
-    case (_,_,DAE.SUB(),_) then UnitAbsyn.SUB(ut1,ut2,origExp);
-    case (_,_,DAE.MUL(),_) then UnitAbsyn.MUL(ut1,ut2,origExp);
-    case (_,_,DAE.DIV(),_) then UnitAbsyn.DIV(ut1,ut2,origExp);
+  ut := match op
+    case DAE.ADD() then UnitAbsyn.ADD(ut1,ut2,origExp);
+    case DAE.SUB() then UnitAbsyn.SUB(ut1,ut2,origExp);
+    case DAE.MUL() then UnitAbsyn.MUL(ut1,ut2,origExp);
+    case DAE.DIV() then UnitAbsyn.DIV(ut1,ut2,origExp);
   end match;
 end buildTermOp;
 
@@ -1369,21 +1362,18 @@ protected function buildStores2 "help function"
   output UnitAbsyn.Store outStore;
   output HashTable.HashTable outHt;
 algorithm
-  (outStore,outHt) := matchcontinue(dae,inStore,inHt)
+  (outStore,outHt) := matchcontinue dae
     local
       DAE.ComponentRef cr;
       Option<DAE.VariableAttributes> attropt;
       Integer indx;
       String unitStr;
-      list<MMath.Rational> units;
-      list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> typeParams;
       UnitAbsyn.Unit unit;
-      DAE.Exp e1,e2;
       list<DAE.Element> elts;
       UnitAbsyn.Store store;
       HashTable.HashTable ht;
-    case(DAE.DAE(elementLst = {}),_,_) then (inStore,inHt);
-    case(DAE.DAE(elementLst = DAE.VAR(componentRef=cr,variableAttributesOption=attropt)::elts),_,_)
+    case DAE.DAE(elementLst = {}) then (inStore,inHt);
+    case DAE.DAE(elementLst = DAE.VAR(componentRef=cr,variableAttributesOption=attropt)::elts)
       algorithm
         DAE.SCONST(unitStr) := DAEUtil.getUnitAttr(attropt);
         unit := str2unit(unitStr,NONE()); /* Scale and offset not used yet*/
@@ -1393,13 +1383,13 @@ algorithm
       then (store,ht);
 
     /* Failed to parse will give unspecified unit*/
-    case(DAE.DAE(elementLst = DAE.VAR(componentRef=cr)::_),_,_)
+    case DAE.DAE(elementLst = DAE.VAR(componentRef=cr)::_)
       algorithm
         (store,indx) := add(UnitAbsyn.UNSPECIFIED(),inStore);
         ht := BaseHashTable.add((cr,indx),inHt);
       then (store,ht);
 
-    case(DAE.DAE(elementLst = _::elts),_,_)
+    case DAE.DAE(elementLst = _::elts)
       algorithm
         (store,ht) := buildStores2(DAE.DAE(elts),inStore,inHt);
       then (store,ht);
@@ -1414,12 +1404,7 @@ protected function buildStores3 "help function"
   output HashTable.HashTable outHt;
 algorithm
   (outStore,outHt) := matchcontinue(dae,inStore,inHt)
-  local DAE.ComponentRef cr; Option<DAE.VariableAttributes> attropt;
-    Integer indx; String unitStr;
-    list<MMath.Rational> units;
-    list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> typeParams;
-    UnitAbsyn.Unit unit;
-    DAE.Exp e1,e2;
+  local    DAE.Exp e1,e2;
     list<DAE.Element> elts;
     UnitAbsyn.Store store;
     HashTable.HashTable ht;
@@ -1445,13 +1430,13 @@ protected function buildStoreExp " build stores from constants in expressions an
   output UnitAbsyn.Store outStore;
   output HashTable.HashTable outHt;
 algorithm
-  (outStore,outHt) := matchcontinue(exp,inStore,inHt,parentOp)
+  (outStore,outHt) := matchcontinue(exp, inStore, inHt)
   local Real r; String s1; Integer i,indx; UnitAbsyn.Unit unit; DAE.Exp e1,e2; DAE.Operator op;
     DAE.ComponentRef cref_;
     UnitAbsyn.Store store;
     HashTable.HashTable ht;
     /* Constant on top level, e.g. x = 1 => unspecified type */
-    case(DAE.RCONST(r),store,ht,_) algorithm
+    case(DAE.RCONST(r), store, ht) algorithm
       unit := selectConstantUnit(parentOp);
       (store,indx) := add(unit,store);
       s1 := realString(r);
@@ -1459,7 +1444,7 @@ algorithm
       ht := BaseHashTable.add((cref_,indx),ht);
     then (store,ht);
 
-   case(DAE.CAST(_,DAE.ICONST(i)),store,ht,_) algorithm
+   case(DAE.CAST(_,DAE.ICONST(i)), store, ht) algorithm
       unit := selectConstantUnit(parentOp);
       (store,indx) := add(unit,store);
       s1 := intString(i);
@@ -1467,21 +1452,21 @@ algorithm
       ht := BaseHashTable.add((cref_,indx),ht);
     then (store,ht);
 
-    case(DAE.BINARY(e1,op,e2),store,ht,_) algorithm
+    case(DAE.BINARY(e1,op,e2), store, ht) algorithm
       (store,ht) := buildStoreExp(e1,store,ht,SOME(op));
       (store,ht) := buildStoreExp(e2,store,ht,SOME(op));
     then (store,ht);
 
-    case(DAE.UNARY(_,e1),store,ht,_) algorithm
+    case(DAE.UNARY(_,e1), store, ht) algorithm
       (store,ht) := buildStoreExp(e1,store,ht,parentOp);
     then (store,ht);
 
-    case(DAE.IFEXP(_,e1,e2),store,ht,_) algorithm
+    case(DAE.IFEXP(_,e1,e2), store, ht) algorithm
       (store,ht) := buildStoreExp(e1,store,ht,parentOp);
       (store,ht) := buildStoreExp(e2,store,ht,parentOp);
     then (store,ht);
 
-    case(_,store,ht,_) then (store,ht);
+    case(_, store, ht) then (store,ht);
   end matchcontinue;
 end buildStoreExp;
 
@@ -1507,11 +1492,11 @@ parent expression as type of a constant expression"
   input Option<DAE.Operator> op;
   output UnitAbsyn.Unit unit;
 algorithm
-  unit := match(op)
-    case(NONE()) then UnitAbsyn.UNSPECIFIED();
-    case(SOME(DAE.ADD(_))) then UnitAbsyn.UNSPECIFIED();
-    case(SOME(DAE.SUB(_))) then UnitAbsyn.UNSPECIFIED();
-    case(SOME(_)) then str2unit("1",NONE());
+  unit := match op
+    case NONE() then UnitAbsyn.UNSPECIFIED();
+    case SOME(DAE.ADD(_)) then UnitAbsyn.UNSPECIFIED();
+    case SOME(DAE.SUB(_)) then UnitAbsyn.UNSPECIFIED();
+    case SOME(_) then str2unit("1",NONE());
   end match;
 end selectConstantUnit;
 
@@ -1519,19 +1504,19 @@ public function unit2str "Translate a unit to a string"
   input UnitAbsyn.Unit unit;
   output String res;
 algorithm
-  res := match(unit)
+  res := match unit
     local
       list<Integer> nums,denoms,tpnoms,tpdenoms;
       list<String> tpstrs;
       list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> typeParams;
       list<MMath.Rational> units;
 
-    case(UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(typeParams,units))) algorithm
+    case UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(typeParams,units)) algorithm
       (nums,denoms) := splitRationals(units);
       (tpnoms,tpdenoms,tpstrs) := splitTypeParams(typeParams);
       res := UnitParserExt.unit2str(nums,denoms,tpnoms,tpdenoms,tpstrs,1.0/*scaleFactor*/,0.0/*offset*/);
     then res;
-    case(UnitAbsyn.UNSPECIFIED()) then "unspecified";
+    case UnitAbsyn.UNSPECIFIED() then "unspecified";
    end match;
 end unit2str;
 
@@ -1539,11 +1524,6 @@ public function str2unit "Translate a unit string to a unit"
   input String res;
   input Option<Integer> funcInstIdOpt;
   output UnitAbsyn.Unit unit;
-protected
-   list<Integer> nums,denoms,tpnoms,tpdenoms;
-   list<String> tpstrs;
-   list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> typeParams;
-   list<MMath.Rational> units;
 algorithm
   (unit,_,_) := str2unitWithScaleFactor(res,funcInstIdOpt);
 end str2unit;

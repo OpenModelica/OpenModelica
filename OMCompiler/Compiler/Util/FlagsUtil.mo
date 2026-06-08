@@ -259,7 +259,8 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.DUMP_SOLVE,
   Flags.FORCE_SCALARIZE,
   Flags.DEBUG_ADJOINT,
-  Flags.FLOW_ALIAS_ELIMINATION
+  Flags.FLOW_ALIAS_ELIMINATION,
+  Flags.DUMP_CHECK_MODEL
 };
 
 protected
@@ -429,7 +430,8 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.CAUSALIZE_DAE_MODE,
   Flags.SIM_CODE_SCALARIZE,
   Flags.EXECUTE_COMMAND,
-  Flags.MOO_DYNAMIC_OPTIMIZATION
+  Flags.MOO_DYNAMIC_OPTIMIZATION,
+  Flags.FMI_EXTRA_ANNOTATIONS
 };
 
 public function new
@@ -437,7 +439,7 @@ public function new
   input list<String> inArgs;
   output list<String> outArgs;
 algorithm
-  _ := loadFlags();
+  loadFlags();
   outArgs := readArgs(inArgs);
 end new;
 
@@ -448,13 +450,13 @@ algorithm
   setGlobalRoot(Global.flagsIndex, inFlags);
 end saveFlags;
 
-protected function createConfigFlags
+public function createConfigFlags
   output array<Flags.FlagData> configFlags;
 algorithm
   configFlags := listArray(list(flag.defaultValue for flag in allConfigFlags));
 end createConfigFlags;
 
-protected function createDebugFlags
+public function createDebugFlags
   output array<Boolean> debugFlags;
 algorithm
   debugFlags := listArray(list(flag.default for flag in allDebugFlags));
@@ -656,7 +658,7 @@ algorithm
   end while;
 
   outArgs := List.append_reverse(outArgs, rest_args);
-  _ := List.map2(outArgs, System.iconv, "UTF-8", "UTF-8");
+  List.map2(outArgs, System.iconv, "UTF-8", "UTF-8");
   Error.assertionOrAddSourceMessage(numError == Error.getNumErrorMessages(), Error.UTF8_COMMAND_LINE_ARGS, {}, Util.dummyInfo);
   saveFlags(flags);
 
@@ -826,7 +828,7 @@ protected function evaluateConfigFlag
   input String inValue;
   input Flags.Flag inFlags;
 algorithm
-  _ := match(inFlag, inFlags)
+  () := match(inFlag, inFlags)
     local
       array<Boolean> debug_flags;
       array<Flags.FlagData> config_flags;
@@ -922,14 +924,14 @@ protected function setDebugFlag2
   input Boolean inValue;
   input array<Boolean> inFlags;
 algorithm
-  _ := matchcontinue(inFlag, inValue, inFlags)
+  () := matchcontinue inFlags
     local
       Flags.DebugFlag flag;
 
-    case (_, _, _)
+    case _
       algorithm
         flag := List.getMemberOnTrue(inFlag, allDebugFlags, matchDebugFlag);
-        (_, _) := updateDebugFlagArray(inFlags, inValue, flag);
+        updateDebugFlagArray(inFlags, inValue, flag);
       then
         ();
 
@@ -983,7 +985,7 @@ protected
 algorithm
   Flags.CONFIG_FLAG(name = name, defaultValue = default_value, validOptions = validOptions) := inFlag;
   data := stringFlagData(inValue, default_value, validOptions, name);
-  _ := updateConfigFlagArray(inConfigData, data, inFlag);
+  updateConfigFlagArray(inConfigData, data, inFlag);
 end setConfigFlag;
 
 protected function stringFlagData
@@ -995,28 +997,28 @@ protected function stringFlagData
   input String inName;
   output Flags.FlagData outValue;
 algorithm
-  outValue := matchcontinue(inValue, inExpectedType, validOptions, inName)
+  outValue := matchcontinue(inValue, inExpectedType, validOptions)
     local
       Boolean b;
       Integer i;
       list<Integer> ilst;
-      String s, et, at;
+      String et, at;
       list<tuple<String, Integer>> enums;
-      list<String> flags, slst;
+      list<String> flags;
       Flags.ValidOptions options;
 
     // No value, but a boolean flag => enable the flag.
-    case ("", Flags.BOOL_FLAG(), _, _) then Flags.BOOL_FLAG(true);
+    case ("", Flags.BOOL_FLAG(), _) then Flags.BOOL_FLAG(true);
 
     // A boolean value.
-    case (_, Flags.BOOL_FLAG(), _, _)
+    case (_, Flags.BOOL_FLAG(), _)
       algorithm
         b := Util.stringBool(inValue);
       then
         Flags.BOOL_FLAG(b);
 
     // An integer value.
-    case (_, Flags.INT_FLAG(), _, _)
+    case (_, Flags.INT_FLAG(), _)
       algorithm
         i := stringInt(inValue);
         true := stringEq(intString(i), inValue);
@@ -1024,40 +1026,40 @@ algorithm
         Flags.INT_FLAG(i);
 
     // integer list.
-    case (_, Flags.INT_LIST_FLAG(), _, _)
+    case (_, Flags.INT_LIST_FLAG(), _)
       algorithm
         ilst := list(stringInt(v) for v in splitCSV(inValue));
       then
         Flags.INT_LIST_FLAG(ilst);
 
     // A real value.
-    case (_, Flags.REAL_FLAG(), _, _)
+    case (_, Flags.REAL_FLAG(), _)
       then Flags.REAL_FLAG(stringReal(inValue));
 
     // A string value with valid options specified.
-    case (_, Flags.STRING_FLAG(), SOME(options), _)
+    case (_, Flags.STRING_FLAG(), SOME(options))
       algorithm
         flags := getValidStringOptions(options);
         true := listMember(inValue,flags);
       then Flags.STRING_FLAG(inValue);
 
     // A string value without valid options specified.
-    case (_, Flags.STRING_FLAG(), NONE(), _)
+    case (_, Flags.STRING_FLAG(), NONE())
       guard not stringEmpty(inValue)
       then Flags.STRING_FLAG(inValue);
 
     // A multiple-string value.
-    case (_, Flags.STRING_LIST_FLAG(), _, _) then Flags.STRING_LIST_FLAG(splitCSV(inValue));
+    case (_, Flags.STRING_LIST_FLAG(), _) then Flags.STRING_LIST_FLAG(splitCSV(inValue));
 
     // An enumeration value.
-    case (_, Flags.ENUM_FLAG(validValues = enums), _, _)
+    case (_, Flags.ENUM_FLAG(validValues = enums), _)
       algorithm
         i := Util.assoc(inValue, enums);
       then
         Flags.ENUM_FLAG(i, enums);
 
     // Type mismatch, print error.
-    case (_, _, NONE(), _)
+    case (_, _, NONE())
       algorithm
         et := printExpectedTypeStr(inExpectedType);
         at := printActualTypeStr(inValue);
@@ -1065,7 +1067,7 @@ algorithm
       then
         fail();
 
-    case (_, _, SOME(options), _)
+    case (_, _, SOME(options))
       algorithm
         flags := getValidStringOptions(options);
         et := stringDelimitList(flags, ", ");
@@ -1082,7 +1084,7 @@ protected function printExpectedTypeStr
   input Flags.FlagData inType;
   output String outTypeStr;
 algorithm
-  outTypeStr := match(inType)
+  outTypeStr := match inType
     local
       list<tuple<String, Integer>> enums;
       list<String> enum_strs;
@@ -1105,9 +1107,8 @@ protected function printActualTypeStr
   input String inType;
   output String outTypeStr;
 algorithm
-  outTypeStr := matchcontinue(inType)
+  outTypeStr := matchcontinue inType
     local
-      String s;
       Integer i;
 
     case "" then "nothing";
@@ -1215,13 +1216,13 @@ protected function applySideEffects
   input Flags.ConfigFlag inFlag;
   input Flags.FlagData inValue;
 algorithm
-  _ := matchcontinue(inFlag, inValue)
+  () := matchcontinue inValue
     local
       Boolean value;
-      String corba_name, corba_objid_path, zeroMQFileSuffix;
+      String corba_name, corba_objid_path;
 
     // +showErrorMessages needs to be sent to the C runtime.
-    case (_, _)
+    case _
       algorithm
         true := configFlagsIsEqualIndex(inFlag, Flags.SHOW_ERROR_MESSAGES);
         Flags.BOOL_FLAG(data = value) := inValue;
@@ -1230,7 +1231,7 @@ algorithm
         ();
 
     // The corba object reference file path needs to be sent to the C runtime.
-    case (_, _)
+    case _
       algorithm
         true := configFlagsIsEqualIndex(inFlag, Flags.CORBA_OBJECT_REFERENCE_FILE_PATH);
         Flags.STRING_FLAG(data = corba_objid_path) := inValue;
@@ -1239,7 +1240,7 @@ algorithm
         ();
 
     // The corba session name needs to be sent to the C runtime.
-    case (_, _)
+    case _
       algorithm
         true := configFlagsIsEqualIndex(inFlag, Flags.CORBA_SESSION);
         Flags.STRING_FLAG(data = corba_name) := inValue;
@@ -1339,7 +1340,7 @@ public function printHelp
   input list<String> inTopics;
   output String help;
 algorithm
-  help := matchcontinue (inTopics)
+  help := matchcontinue inTopics
     local
       Gettext.TranslatableContent desc;
       list<String> rest_topics, strs, data;
@@ -1436,7 +1437,7 @@ algorithm
 
     case {str}
       algorithm
-        (config_flag as Flags.CONFIG_FLAG(name=name,description=desc)) := List.getMemberOnTrue(str, allConfigFlags, matchConfigFlag);
+        config_flag as Flags.CONFIG_FLAG(name=name,description=desc) := List.getMemberOnTrue(str, allConfigFlags, matchConfigFlag);
         str1 := "-" + name;
         str2 := stringAppendList(StringUtil.wordWrap(Gettext.translateContent(desc), System.getTerminalWidth(), "\n"));
         str := printFlagValidOptionsDesc(config_flag);
@@ -1446,7 +1447,7 @@ algorithm
     case {str}
       then "I'm sorry, I don't know what " + str + " is.\n";
 
-    case (str :: (rest_topics as _::_))
+    case str :: (rest_topics as _::_)
       algorithm
         str := printHelp({str}) + "\n";
         help := printHelp(rest_topics);
@@ -1614,7 +1615,7 @@ protected function printConfigFlag
   input Flags.ConfigFlag inFlag;
   output String outString;
 algorithm
-  outString := match(inFlag)
+  outString := match inFlag
     local
       Gettext.TranslatableContent desc;
       String name, desc_str, flag_str, delim_str, opt_str;
@@ -1642,11 +1643,10 @@ protected function printConfigFlagSphinx
   input Flags.ConfigFlag inFlag;
   output String outString;
 algorithm
-  outString := match(inFlag)
+  outString := match inFlag
     local
       Gettext.TranslatableContent desc;
-      String name, longName, desc_str, flag_str, delim_str, opt_str;
-      list<String> wrapped_str;
+      String name, longName, desc_str, flag_str, opt_str;
 
     case Flags.CONFIG_FLAG(visibility = Flags.INTERNAL()) then "";
 
@@ -1671,7 +1671,7 @@ protected function printConfigFlagName
   output String outString;
   output String longName;
 algorithm
-  (outString,longName) := match(inFlag)
+  (outString,longName) := match inFlag
     local
       String name, shortname;
 
@@ -1691,7 +1691,7 @@ protected function printValidOptions
   input Flags.ConfigFlag inFlag;
   output String outString;
 algorithm
-  outString := match(inFlag)
+  outString := match inFlag
     local
       list<String> strl;
       String opt_str;
@@ -1721,7 +1721,7 @@ protected function printValidOptionsSphinx
   input Flags.ConfigFlag inFlag;
   output String outString;
 algorithm
-  outString := match(inFlag)
+  outString := match inFlag
     local
       list<String> strl;
       String opt_str;
@@ -1815,7 +1815,6 @@ protected function removeSphinxMathMode
 protected
   Integer i;
   list<String> strs;
-  String s1,s2,s3;
 algorithm
   (i,strs) := System.regex(o, "^(.*):math:`([^`]*)[`](.*)$", 4, extended=true);
   if i==4 then
@@ -1955,7 +1954,6 @@ function unparseFlags
    values that differ from the default. The format of each string is flag=value."
   output list<String> flagStrings = {};
 protected
-  Flags.Flag flags;
   array<Boolean> debug_flags;
   array<Flags.FlagData> config_flags;
   String name;

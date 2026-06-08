@@ -38,6 +38,7 @@
 
 #include <memory>
 #include <string>
+#include <string_view>
 #include <ostream>
 #include <functional>
 #include <vector>
@@ -134,6 +135,7 @@ namespace FlatModelica
       std::string enumValue() const;
       int enumIndex() const;
       QString QStringValue() const;
+      std::string_view name() const;
       QString functionName() const;
 
       int priority(bool lhs) const;
@@ -145,6 +147,8 @@ namespace FlatModelica
       const std::vector<Expression>& args() const;
       const Expression& arg(size_t index) const;
       void setArg(size_t index, const Expression &e);
+      std::string_view argName() const;
+      const Expression& argValue() const;
 
       Expression& operator+= (const Expression &other);
       Expression& operator-= (const Expression &other);

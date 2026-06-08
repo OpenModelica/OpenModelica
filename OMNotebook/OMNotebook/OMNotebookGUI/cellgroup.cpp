@@ -209,6 +209,14 @@ namespace IAEX{
     return false;
   }
 
+  QTextDocument* CellGroup::document()
+  {
+    if ( isClosed() && hasChilds() )
+      return child()->document();
+
+    return nullptr;
+  }
+
   /*!
    * \author Anders Fernström
    * \date 2005-08-24
@@ -224,6 +232,56 @@ namespace IAEX{
       return child()->textEdit();
     else
       return 0;
+  }
+
+  void CellGroup::cutText()
+  {
+    if (isClosed() && hasChilds())
+      child()->cutText();
+  }
+
+  void CellGroup::copyText()
+  {
+    if (isClosed() && hasChilds())
+      child()->copyText();
+  }
+
+  void CellGroup::pasteText()
+  {
+    if (isClosed() && hasChilds())
+      child()->pasteText();
+  }
+
+  bool CellGroup::findText(const QString &exp, QTextDocument::FindFlags options)
+  {
+    if (isClosed() && hasChilds()) {
+      return child()->findText(exp, options);
+    }
+
+    return false;
+  }
+
+  QTextCursor CellGroup::textCursor()
+  {
+    if (isClosed() && hasChilds()) {
+      return child()->textCursor();
+    }
+
+    return QTextCursor{};
+  }
+
+  void CellGroup::clearSelection()
+  {
+    if (isClosed() && hasChilds()) {
+      child()->clearSelection();
+    }
+  }
+
+  void CellGroup::moveCursor(QTextCursor::MoveOperation operation)
+  {
+    if (isClosed() && hasChilds()) {
+      child()->moveCursor(operation);
+    }
   }
 
   /*!

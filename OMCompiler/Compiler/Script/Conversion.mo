@@ -90,7 +90,7 @@ protected
     function newNode
       output ConversionRules node;
     algorithm
-      node := CONVERSION_RULES(UnorderedMap.new<ConversionRules>(System.stringHashDjb2, stringEq), {});
+      node := CONVERSION_RULES(UnorderedMap.new<ConversionRules>(stringHashDjb2, stringEq), {});
     end newNode;
   end ConversionRules;
 
@@ -164,7 +164,6 @@ public
     input String scriptFile;
   protected
     ConversionRules rules;
-    Env env;
     list<GlobalScript.Statement> stmts;
   algorithm
     stmts := loadScript(scriptFile);
@@ -706,13 +705,13 @@ protected
   function newRuleTable
     output RuleTable table;
   algorithm
-    table := UnorderedMap.new<RuleList>(System.stringHashDjb2, stringEq);
+    table := UnorderedMap.new<RuleList>(stringHashDjb2, stringEq);
   end newRuleTable;
 
   function newTypeTable
     output TypeTable table;
   algorithm
-    table := UnorderedMap.new<Absyn.Path>(System.stringHashDjb2, stringEq);
+    table := UnorderedMap.new<Absyn.Path>(stringHashDjb2, stringEq);
   end newTypeTable;
 
   function newEnv
@@ -901,11 +900,8 @@ protected
   algorithm
     () := match cdef
       local
-        Option<ConversionRule> ty_rule;
         RuleTable local_rules;
         list<ConversionRule> mod_rules;
-        Absyn.Path ty_path;
-        Option<tuple<Absyn.Path, String>> import_path;
         Absyn.TypeSpec ty;
 
       case Absyn.ClassDef.PARTS()
@@ -945,7 +941,6 @@ protected
     input SourceInfo info;
   protected
     list<ConversionRules> extends_rules;
-    ImportTree imps;
     Env cls_env;
   algorithm
     cls_env := addImportNamesToEnv(getImportsInParts(parts), rules, env);
@@ -1195,7 +1190,7 @@ protected
   protected
     type OptExp = Option<Absyn.Exp>;
   algorithm
-    placeholders := UnorderedMap.new<OptExp>(System.stringHashDjb2, stringEq);
+    placeholders := UnorderedMap.new<OptExp>(stringHashDjb2, stringEq);
 
     for arg in args loop
       UnorderedMap.add(AbsynUtil.pathString(AbsynUtil.elementArgName(arg)),
@@ -1480,7 +1475,6 @@ protected
   algorithm
     () := match spec
       local
-        Option<ConversionRule> ty_rule;
         RuleTable local_rules;
         list<ConversionRule> mod_rules;
         Absyn.Path ty_path;

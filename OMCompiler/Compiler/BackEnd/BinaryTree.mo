@@ -49,6 +49,7 @@ public import DAE;
 
 protected import BaseHashTable;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import Error;
 protected import List;
 protected import Util;
@@ -132,13 +133,13 @@ protected function treeGet2
   input Integer keyhash;
   output Integer compResult;
 algorithm
-  compResult := match (inBinTree,keystr,keyhash)
+  compResult := match inBinTree
     local
       String rkeystr;
       Integer rkeyhash;
 
     // found it
-    case (TREENODE(value = SOME(TREEVALUE(str=rkeystr,hash=rkeyhash))),_,_)
+    case TREENODE(value = SOME(TREEVALUE(str=rkeystr,hash=rkeyhash)))
       then keyCompareNinjaSecretHashTricks(rkeystr, rkeyhash, keystr, keyhash);
   end match;
 end treeGet2;
@@ -151,21 +152,21 @@ protected function treeGet3
   input Integer inCompResult;
   output Value outValue;
 algorithm
-  outValue := match (inBinTree,keystr,keyhash,inCompResult)
+  outValue := match (inBinTree, inCompResult)
     local
       Value rval;
       BinTree right, left;
       Integer compResult;
 
     // found it
-    case (TREENODE(value = SOME(TREEVALUE(value=rval))),_,_,0) then rval;
+    case (TREENODE(value = SOME(TREEVALUE(value=rval))), 0) then rval;
     // search right
-    case (TREENODE(rightSubTree = SOME(right)),_,_,1)
+    case (TREENODE(rightSubTree = SOME(right)), 1)
       algorithm
         compResult := treeGet2(right, keystr, keyhash);
       then treeGet3(right, keystr, keyhash, compResult);
     // search left
-    case (TREENODE(leftSubTree = SOME(left)),_,_,-1)
+    case (TREENODE(leftSubTree = SOME(left)), -1)
       algorithm
         compResult := treeGet2(left, keystr, keyhash);
       then treeGet3(left, keystr, keyhash, compResult);
@@ -224,48 +225,48 @@ protected function treeAdd2 "author: PA
   input Value inValue;
   output BinTree outBinTree;
 algorithm
-  outBinTree := matchcontinue (inBinTree,inKey,keyhash,keystr,inValue)
+  outBinTree := matchcontinue (inBinTree, inKey, inValue)
     local
       DAE.ComponentRef key,rkey;
-      Value value,rval;
+      Value value;
       String rkeystr;
       Option<BinTree> left,right;
       BinTree t_1,t,right_1,left_1;
       Integer rhash;
       Option<TreeValue> optVal;
 
-    case (TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE()),key,_,_,value)
+    case (TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE()), key, value)
       then
         TREENODE(SOME(TREEVALUE(key,keystr,keyhash,value)),NONE(),NONE());
 
-    case (TREENODE(value = SOME(TREEVALUE(rkey,rkeystr,rhash,_)),leftSubTree = left,rightSubTree = right),_,_,_,value)
+    case (TREENODE(value = SOME(TREEVALUE(rkey,rkeystr,rhash,_)),leftSubTree = left,rightSubTree = right), _, value)
       algorithm
         0 := keyCompareNinjaSecretHashTricks(rkeystr,rhash,keystr,keyhash);
       then
         TREENODE(SOME(TREEVALUE(rkey,rkeystr,rhash,value)),left,right);
 
-    case (TREENODE(value = optVal as SOME(TREEVALUE(_,rkeystr,rhash,_)),leftSubTree = left,rightSubTree = (SOME(t))),key,_,_,value)
+    case (TREENODE(value = optVal as SOME(TREEVALUE(_,rkeystr,rhash,_)),leftSubTree = left,rightSubTree = (SOME(t))), key, value)
       algorithm
         1 := keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
         t_1 := treeAdd2(t, key, keyhash, keystr, value);
       then
         TREENODE(optVal,left,SOME(t_1));
 
-    case (TREENODE(value = optVal as SOME(TREEVALUE(_,rkeystr,rhash,_)),leftSubTree = left,rightSubTree = (NONE())),key,_,_,value)
+    case (TREENODE(value = optVal as SOME(TREEVALUE(_,rkeystr,rhash,_)),leftSubTree = left,rightSubTree = (NONE())), key, value)
       algorithm
         1 := keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
         right_1 := treeAdd2(TREENODE(NONE(),NONE(),NONE()), key, keyhash, keystr, value);
       then
         TREENODE(optVal,left,SOME(right_1));
 
-    case (TREENODE(value = optVal as SOME(TREEVALUE(_,rkeystr,rhash,_)),leftSubTree = (SOME(t)),rightSubTree = right),key,_,_,value)
+    case (TREENODE(value = optVal as SOME(TREEVALUE(_,rkeystr,rhash,_)),leftSubTree = (SOME(t)),rightSubTree = right), key, value)
       algorithm
         -1 := keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
         t_1 := treeAdd2(t, key, keyhash, keystr, value);
       then
         TREENODE(optVal,SOME(t_1),right);
 
-    case (TREENODE(value = optVal as SOME(TREEVALUE(_,rkeystr,rhash,_)),leftSubTree = (NONE()),rightSubTree = right),key,_,_,value)
+    case (TREENODE(value = optVal as SOME(TREEVALUE(_,rkeystr,rhash,_)),leftSubTree = (NONE()),rightSubTree = right), key, value)
       algorithm
         -1 := keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
         left_1 := treeAdd2(TREENODE(NONE(),NONE(),NONE()), key, keyhash, keystr, value);
@@ -453,16 +454,16 @@ public function bintreeToList "author: PA
   output list<Value> outValueLst;
 algorithm
   (outKeyLst,outValueLst):=
-  matchcontinue (inBinTree)
+  matchcontinue inBinTree
     local
       list<Key> klst;
       list<Value> vlst;
-    case (_)
+    case _
       algorithm
         (klst,vlst) := bintreeToList2(inBinTree, {}, {});
       then
         (klst,vlst);
-    case (_)
+    case _
       algorithm
         print("- BackendDAEUtil.bintreeToList failed\n");
       then
@@ -478,7 +479,7 @@ protected function bintreeToList2 "author: PA
   output list<Key> outKeyLst;
   output list<Value> outValueLst;
 algorithm
-  (outKeyLst,outValueLst) := matchcontinue (inBinTree,inKeyLst,inValueLst)
+  (outKeyLst,outValueLst) := matchcontinue inBinTree
     local
       list<Key> klst;
       list<Value> vlst;
@@ -486,17 +487,17 @@ algorithm
       Value value;
       Option<BinTree> left,right;
 
-    case (TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE()),_,_)
+    case TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE())
       then (inKeyLst,inValueLst);
 
-    case (TREENODE(value = SOME(TREEVALUE(key=key,value=value)),leftSubTree = left,rightSubTree = right),_,_)
+    case TREENODE(value = SOME(TREEVALUE(key=key,value=value)),leftSubTree = left,rightSubTree = right)
       algorithm
         (klst,vlst) := bintreeToListOpt(left, key::inKeyLst, value::inValueLst);
         (klst,vlst) := bintreeToListOpt(right, klst, vlst);
       then
         (klst,vlst);
 
-    case (TREENODE(value = NONE(),leftSubTree = left),_,_)
+    case TREENODE(value = NONE(),leftSubTree = left)
       algorithm
         (klst,vlst) := bintreeToListOpt(left, inKeyLst, inValueLst);
         (klst,vlst) := bintreeToListOpt(left, klst, vlst);
@@ -513,15 +514,15 @@ protected function bintreeToListOpt "author: PA
   output list<Key> outKeyLst;
   output list<Value> outValueLst;
 algorithm
-  (outKeyLst,outValueLst) := match (inBinTreeOption,inKeyLst,inValueLst)
+  (outKeyLst,outValueLst) := match inBinTreeOption
     local
       list<Key> klst;
       list<Value> vlst;
       BinTree bt;
 
-    case (NONE(),_,_) then (inKeyLst,inValueLst);
+    case NONE() then (inKeyLst,inValueLst);
 
-    case (SOME(bt),_,_)
+    case SOME(bt)
       algorithm
         (klst,vlst) := bintreeToList2(bt, inKeyLst,inValueLst);
       then
@@ -551,12 +552,12 @@ protected function binTreeintersection1
   input BinTree iBt;
   output BinTree oBt;
 algorithm
-  oBt := matchcontinue(key,bt2,iBt)
+  oBt := matchcontinue iBt
     local
      BinTree bt;
-    case(_,_,_)
+    case _
       algorithm
-        _ := treeGet(bt2,key);
+        treeGet(bt2,key);
         bt := treeAdd(iBt,key,0);
       then
         bt;

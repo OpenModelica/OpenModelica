@@ -79,7 +79,6 @@ protected
   import Error;
   import List;
   import StringUtil;
-  import UnorderedSet;
 
   // ############################################################
   //                      Main Functions
@@ -114,7 +113,7 @@ public
           end if;
           (partitions, varData, eqData) := applyModule(partitions, kind, varData, eqData, bdae.funcMap, func);
           bdae.init := partitions;
-          if Util.isSome(bdae.init_0) then
+          if isSome(bdae.init_0) then
             (partitions, varData, eqData) := applyModule(Util.getOption(bdae.init_0), kind, varData, eqData, bdae.funcMap, func);
             bdae.init_0 := SOME(partitions);
           end if;
@@ -229,7 +228,7 @@ public
   protected
     String flag = Flags.getConfigString(Flags.MATCHING_ALGORITHM);
   algorithm
-    (func) := match flag
+    func := match flag
       case "PFPlusExt"  then causalizePseudoArray;
       case "pseudo"     then causalizePseudoArray;
       /* ... New causalize modules have to be added here */
@@ -340,5 +339,5 @@ protected
     // nothing to do?
   end causalizeDAEMode;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBCausalize;

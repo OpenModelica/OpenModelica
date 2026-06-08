@@ -89,8 +89,6 @@ public
     input Integer step;
     input Integer hi;
     output SBInterval int;
-  protected
-    Integer r;
   algorithm
     if lo >= 0 and step > 0 and hi >= 0 then
       if lo <= hi and hi < System.intMaxLit() then

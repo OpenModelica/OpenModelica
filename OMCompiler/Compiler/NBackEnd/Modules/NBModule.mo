@@ -79,6 +79,7 @@ protected
   import Jacobian = NBackendDAE;
   import NBJacobian.JacobianType;
   import StrongComponent = NBStrongComponent;
+  import Matching = NBMatching;
   import Partition = NBPartition;
   import NBPartitioning.ClockedInfo;
   import BVariable = NBVariable;
@@ -290,7 +291,7 @@ public
     input Option<Adjacency.Matrix> full                   "full adjacency matrix to create sparsity pattern";
     output Option<Jacobian> jacobian                      "Resulting jacobian";
     input UnorderedMap<Path, Function> funcMap            "Function call bodies";
-    input Boolean init;
+    input Boolean staticAsContinuous                      "Treat static variables (constant over time, e.g. params) as continuous if these have a continuous type (Real)";
   end jacobianInterface;
 
 // =========================================================================
@@ -314,5 +315,5 @@ public
     input Partition.Kind kind = NBPartition.Kind.ODE  "partition type";
   end tearingInterface;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBModule;

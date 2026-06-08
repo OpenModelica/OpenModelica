@@ -172,7 +172,7 @@ protected
   String str;
   SemanticVersion.Version thisVersion;
 algorithm
-  _ := match wantedVersion
+  () := match wantedVersion
     case SemanticVersion.NONSEMVER(str) guard str == "default" or str == ""
       algorithm
         matches := true; /* Any version matches the empty */
@@ -325,7 +325,6 @@ function getAllProvidedVersionsForLibrary
 protected
   JSON obj, libobject, vers, provides;
   AvlSetString.Tree tree;
-  list<JSON> values;
 algorithm
   result := {};
   tree := AvlSetString.new();
@@ -416,7 +415,6 @@ function versionsThatConvertToTheWanted
 protected
   JSON obj, libobject, vers;
   SemanticVersion.Version wantedVersion, libVersion;
-  String versionStr;
 algorithm
   result := {};
   try
@@ -814,5 +812,5 @@ algorithm
   info := SOURCEINFO(fileName, true, 0, 0, 0, 0, 0.0);
 end makeSourceInfo;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="script_util");
 end PackageManagement;

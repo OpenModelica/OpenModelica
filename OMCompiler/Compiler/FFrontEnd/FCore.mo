@@ -53,7 +53,6 @@ import Mutable;
 import SCode;
 
 protected
-import DAEUtil;
 import Config;
 
 // ************************ FNode structures ***************************
@@ -463,7 +462,7 @@ public function addEvaluatedCref
   input DAE.ComponentRef cr;
   output Cache ocache;
 algorithm
-  ocache := match (cache,var,cr)
+  ocache := match (cache, var)
     local
       Option<Graph> initialGraph;
       Mutable<AvlTreePathFunction.Tree> functions;
@@ -472,10 +471,10 @@ algorithm
       list<DAE.ComponentRef> crs;
       Absyn.Path p;
 
-    case (CACHE(initialGraph,functions,(ht,crs::st),p),SCode.PARAM(),_)
+    case (CACHE(initialGraph,functions,(ht,crs::st),p), SCode.PARAM())
       then CACHE(initialGraph,functions,(ht,(cr::crs)::st),p);
 
-    case (CACHE(initialGraph,functions,(ht,{}),p),SCode.PARAM(),_)
+    case (CACHE(initialGraph,functions,(ht,{}),p), SCode.PARAM())
       then CACHE(initialGraph,functions,(ht,{cr}::{}),p);
 
     else cache;
@@ -504,13 +503,13 @@ public function setCacheClassName
   input Absyn.Path p;
   output Cache outCache;
 algorithm
-  outCache := match(inCache,p)
+  outCache := match inCache
     local
       Mutable<AvlTreePathFunction.Tree> ef;
       StructuralParameters ht;
       Option<Graph> igraph;
 
-    case (CACHE(igraph,ef,ht,_),_)
+    case CACHE(igraph,ef,ht,_)
       then CACHE(igraph,ef,ht,p);
     else inCache;
   end match;
@@ -520,12 +519,12 @@ public function isImplicitScope
   input Name inName;
   output Boolean isImplicit;
 algorithm
-  isImplicit := matchcontinue(inName)
+  isImplicit := matchcontinue inName
 
     local
       Name id;
 
-    case (id) then stringGet(id,1) == 36; // "$"
+    case id then stringGet(id,1) == 36; // "$"
 
     else false;
 
@@ -538,10 +537,10 @@ public function getCachedInstFunc
   input Absyn.Path path;
   output DAE.Function func;
 algorithm
-  func := match(inCache,path)
+  func := match inCache
     local
       Mutable<AvlTreePathFunction.Tree> ef;
-    case(CACHE(functions=ef),_)
+    case CACHE(functions=ef)
       algorithm
         SOME(func) := AvlTreePathFunction.get(Mutable.access(ef),path);
       then func;
@@ -553,10 +552,10 @@ public function checkCachedInstFuncGuard
   input Cache inCache;
   input Absyn.Path path;
 algorithm
-  _ := match(inCache,path)
+  () := match inCache
     local
       Mutable<AvlTreePathFunction.Tree> ef;
-    case(CACHE(functions=ef),_) algorithm
+    case CACHE(functions=ef) algorithm
       AvlTreePathFunction.get(Mutable.access(ef),path);
     then ();
   end match;
@@ -585,9 +584,6 @@ algorithm
   outCache := matchcontinue(cache,func)
     local
       Mutable<AvlTreePathFunction.Tree> ef;
-      Option<Graph> igraph;
-      StructuralParameters ht;
-      Absyn.Path p;
 
     // Don't overwrite SOME() with NONE()
     case (_, _)
@@ -617,16 +613,13 @@ public function addDaeFunction
   input list<DAE.Function> funcs "fully qualified function name";
   output Cache outCache;
 algorithm
-  outCache := match(inCache,funcs)
+  outCache := match inCache
     local
       Mutable<AvlTreePathFunction.Tree> ef;
-      Option<Graph> igraph;
-      StructuralParameters ht;
-      Absyn.Path p;
 
-    case (CACHE(_,ef,_,_),_)
+    case CACHE(_,ef,_,_)
       algorithm
-        Mutable.update(ef,DAEUtil.addDaeFunction(funcs, Mutable.access(ef)));
+        Mutable.update(ef,AvlTreePathFunction.addDaeFunction(funcs, Mutable.access(ef)));
       then inCache;
     else inCache;
 
@@ -639,16 +632,13 @@ public function addDaeExtFunction
   input list<DAE.Function> funcs "fully qualified function name";
   output Cache outCache;
 algorithm
-  outCache := match(inCache,funcs)
+  outCache := match inCache
     local
       Mutable<AvlTreePathFunction.Tree> ef;
-      Option<Graph> igraph;
-      StructuralParameters ht;
-      Absyn.Path p;
 
-    case (CACHE(_,ef,_,_),_)
+    case CACHE(_,ef,_,_)
       algorithm
-        Mutable.update(ef,DAEUtil.addDaeExtFunction(funcs, Mutable.access(ef)));
+        Mutable.update(ef,AvlTreePathFunction.addDaeExtFunction(funcs, Mutable.access(ef)));
       then inCache;
     else inCache;
 
@@ -659,7 +649,7 @@ public function setCachedFunctionTree
   input Cache inCache;
   input AvlTreePathFunction.Tree inFunctions;
 algorithm
-  _ := match inCache
+  () := match inCache
     case CACHE()
       algorithm
         Mutable.update(inCache.functions, inFunctions);
@@ -675,8 +665,8 @@ public function isTyped
   input Status is;
   output Boolean b;
 algorithm
-  b := match(is)
-    case(VAR_UNTYPED()) then false;
+  b := match is
+    case VAR_UNTYPED() then false;
     else true;
   end match;
 end isTyped;
@@ -697,8 +687,8 @@ public function getCachedInitialGraph "get the initial environment from the cach
   input Cache cache;
   output Graph g;
 algorithm
-  g := match(cache)
-    case (CACHE(initialGraph = SOME(g))) then g;
+  g := match cache
+    case CACHE(initialGraph = SOME(g)) then g;
   end match;
 end getCachedInitialGraph;
 
@@ -742,5 +732,5 @@ algorithm
   end if;
 end getRecordConstructorPath;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_dump");
 end FCore;

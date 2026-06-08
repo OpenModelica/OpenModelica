@@ -49,6 +49,7 @@ public import SCode;
 
 // protected imports
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import Config;
 protected import DAEUtil;
 protected import DAEDumpTypes;
@@ -58,6 +59,7 @@ protected import Error;
 protected import Print;
 protected import Util;
 protected import Expression;
+protected import ExpressionBasics;
 protected import ExpressionDump;
 protected import Absyn;
 protected import AbsynUtil;
@@ -78,11 +80,11 @@ public function dump "This function prints the DAE in the standard output format
   input DAE.DAElist dae;
   input AvlTreePathFunction.Tree functionTree;
 algorithm
-  _ := match (dae,functionTree)
+  () := match dae
     local
       list<DAE.Element> daelist;
 
-    case (DAE.DAE(daelist),_)
+    case DAE.DAE(daelist)
       algorithm
         List.map_0(sortFunctions(DAEUtil.getFunctionList(functionTree)),dumpFunction);
         List.map_0(daelist, dumpExtObjectClass);
@@ -104,7 +106,7 @@ public function functionNameStr
   input DAE.Function inElement;
   output String res;
 algorithm
-  res := matchcontinue (inElement)
+  res := matchcontinue inElement
     local
       Absyn.Path fpath;
 
@@ -132,8 +134,8 @@ protected function funcGreaterThan "sorting function for two DAE.Element that ar
   input DAE.Function func2;
   output Boolean res;
 algorithm
-  res := matchcontinue(func1,func2)
-    case(_,_) algorithm
+  res := matchcontinue func2
+    case _ algorithm
       res := stringCompare(functionNameStr(func1),functionNameStr(func2)) > 0;
     then res;
     else true;
@@ -146,42 +148,41 @@ Dump operator to a string."
   input DAE.Operator op;
   output String str;
 algorithm
-  str := match(op)
+  str := match op
     local
       Absyn.Path p;
-      DAE.Type ty;
-    case(DAE.ADD()) then " ADD ";
-    case(DAE.SUB()) then " SUB ";
-    case(DAE.MUL()) then " MUL ";
-    case(DAE.DIV()) then " DIV ";
-    case(DAE.POW()) then " POW ";
-    case(DAE.UMINUS()) then " UMINUS ";
-    case(DAE.UMINUS_ARR()) then " UMINUS_ARR ";
-    case(DAE.ADD_ARR()) then " ADD_ARR ";
-    case(DAE.SUB_ARR()) then " SUB_ARR ";
-    case(DAE.MUL_ARR()) then " MUL_ARR ";
-    case(DAE.DIV_ARR()) then " DIV_ARR ";
-    case(DAE.MUL_ARRAY_SCALAR()) then " MUL_ARRAY_SCALAR ";
-    case(DAE.ADD_ARRAY_SCALAR()) then " ADD_ARRAY_SCALAR ";
-    case(DAE.SUB_SCALAR_ARRAY()) then " SUB_SCALAR_ARRAY ";
-    case(DAE.MUL_SCALAR_PRODUCT()) then " MUL_SCALAR_PRODUCT ";
-    case(DAE.MUL_MATRIX_PRODUCT()) then " MUL_MATRIX_PRODUCT ";
-    case(DAE.DIV_ARRAY_SCALAR()) then " DIV_ARRAY_SCALAR ";
-    case(DAE.DIV_SCALAR_ARRAY()) then " DIV_SCALAR_ARRAY ";
-    case(DAE.POW_ARRAY_SCALAR()) then " POW_ARRAY_SCALAR ";
-    case(DAE.POW_SCALAR_ARRAY()) then " POW_SCALAR_ARRAY ";
-    case(DAE.POW_ARR()) then " POW_ARR ";
-    case(DAE.POW_ARR2()) then " POW_ARR2 ";
-    case(DAE.OR(_)) then " OR ";
-    case(DAE.AND(_)) then " AND ";
-    case(DAE.NOT(_)) then " NOT ";
-    case(DAE.LESSEQ()) then " LESSEQ ";
-    case(DAE.GREATER()) then " GREATER ";
-    case(DAE.GREATEREQ()) then " GREATEREQ ";
-    case(DAE.LESS()) then " LESS ";
-    case(DAE.EQUAL()) then " EQUAL ";
-    case(DAE.NEQUAL()) then " NEQUAL ";
-    case(DAE.USERDEFINED(p)) then " Userdefined:" + AbsynUtil.pathString(p) + " ";
+    case DAE.ADD() then " ADD ";
+    case DAE.SUB() then " SUB ";
+    case DAE.MUL() then " MUL ";
+    case DAE.DIV() then " DIV ";
+    case DAE.POW() then " POW ";
+    case DAE.UMINUS() then " UMINUS ";
+    case DAE.UMINUS_ARR() then " UMINUS_ARR ";
+    case DAE.ADD_ARR() then " ADD_ARR ";
+    case DAE.SUB_ARR() then " SUB_ARR ";
+    case DAE.MUL_ARR() then " MUL_ARR ";
+    case DAE.DIV_ARR() then " DIV_ARR ";
+    case DAE.MUL_ARRAY_SCALAR() then " MUL_ARRAY_SCALAR ";
+    case DAE.ADD_ARRAY_SCALAR() then " ADD_ARRAY_SCALAR ";
+    case DAE.SUB_SCALAR_ARRAY() then " SUB_SCALAR_ARRAY ";
+    case DAE.MUL_SCALAR_PRODUCT() then " MUL_SCALAR_PRODUCT ";
+    case DAE.MUL_MATRIX_PRODUCT() then " MUL_MATRIX_PRODUCT ";
+    case DAE.DIV_ARRAY_SCALAR() then " DIV_ARRAY_SCALAR ";
+    case DAE.DIV_SCALAR_ARRAY() then " DIV_SCALAR_ARRAY ";
+    case DAE.POW_ARRAY_SCALAR() then " POW_ARRAY_SCALAR ";
+    case DAE.POW_SCALAR_ARRAY() then " POW_SCALAR_ARRAY ";
+    case DAE.POW_ARR() then " POW_ARR ";
+    case DAE.POW_ARR2() then " POW_ARR2 ";
+    case DAE.OR(_) then " OR ";
+    case DAE.AND(_) then " AND ";
+    case DAE.NOT(_) then " NOT ";
+    case DAE.LESSEQ() then " LESSEQ ";
+    case DAE.GREATER() then " GREATER ";
+    case DAE.GREATEREQ() then " GREATEREQ ";
+    case DAE.LESS() then " LESS ";
+    case DAE.EQUAL() then " EQUAL ";
+    case DAE.NEQUAL() then " NEQUAL ";
+    case DAE.USERDEFINED(p) then " Userdefined:" + AbsynUtil.pathString(p) + " ";
     else " --UNDEFINED-- ";
   end match;
 end dumpOperatorString;
@@ -192,41 +193,41 @@ Dump operator to a string."
   input DAE.Operator op;
   output String str;
 algorithm
-  str := match(op)
+  str := match op
     local
       Absyn.Path p;
-    case(DAE.ADD(_)) then " + ";
-    case(DAE.SUB(_)) then " - ";
-    case(DAE.MUL(_)) then " .* ";
-    case(DAE.DIV(_)) then " / ";
-    case(DAE.POW(_)) then " ^ ";
-    case(DAE.UMINUS(_)) then " - ";
-    case(DAE.UMINUS_ARR(_)) then " - ";
-    case(DAE.ADD_ARR(_)) then " + ";
-    case(DAE.SUB_ARR(_)) then " - ";
-    case(DAE.MUL_ARR(_)) then " .* ";
-    case(DAE.DIV_ARR(_)) then " ./ ";
-    case(DAE.MUL_ARRAY_SCALAR(_)) then " * ";
-    case(DAE.ADD_ARRAY_SCALAR(_)) then " .+ ";
-    case(DAE.SUB_SCALAR_ARRAY(_)) then " .- ";
-    case(DAE.MUL_SCALAR_PRODUCT(_)) then " * ";
-    case(DAE.MUL_MATRIX_PRODUCT(_)) then " * ";
-    case(DAE.DIV_ARRAY_SCALAR(_)) then " / ";
-    case(DAE.DIV_SCALAR_ARRAY(_)) then " ./ ";
-    case(DAE.POW_ARRAY_SCALAR(_)) then " .^ ";
-    case(DAE.POW_SCALAR_ARRAY(_)) then " .^ ";
-    case(DAE.POW_ARR(_)) then " ^ ";
-    case(DAE.POW_ARR2(_)) then " .^ ";
-    case(DAE.OR(_)) then " or ";
-    case(DAE.AND(_)) then " and ";
-    case(DAE.NOT(_)) then " not ";
-    case(DAE.LESSEQ(_)) then " <= ";
-    case(DAE.GREATER(_)) then " > ";
-    case(DAE.GREATEREQ(_)) then " >= ";
-    case(DAE.LESS(_)) then " < ";
-    case(DAE.EQUAL(_)) then " == ";
-    case(DAE.NEQUAL(_)) then " <> ";
-    case(DAE.USERDEFINED(p)) then " Userdefined:" + AbsynUtil.pathString(p) + " ";
+    case DAE.ADD(_) then " + ";
+    case DAE.SUB(_) then " - ";
+    case DAE.MUL(_) then " .* ";
+    case DAE.DIV(_) then " / ";
+    case DAE.POW(_) then " ^ ";
+    case DAE.UMINUS(_) then " - ";
+    case DAE.UMINUS_ARR(_) then " - ";
+    case DAE.ADD_ARR(_) then " + ";
+    case DAE.SUB_ARR(_) then " - ";
+    case DAE.MUL_ARR(_) then " .* ";
+    case DAE.DIV_ARR(_) then " ./ ";
+    case DAE.MUL_ARRAY_SCALAR(_) then " * ";
+    case DAE.ADD_ARRAY_SCALAR(_) then " .+ ";
+    case DAE.SUB_SCALAR_ARRAY(_) then " .- ";
+    case DAE.MUL_SCALAR_PRODUCT(_) then " * ";
+    case DAE.MUL_MATRIX_PRODUCT(_) then " * ";
+    case DAE.DIV_ARRAY_SCALAR(_) then " / ";
+    case DAE.DIV_SCALAR_ARRAY(_) then " ./ ";
+    case DAE.POW_ARRAY_SCALAR(_) then " .^ ";
+    case DAE.POW_SCALAR_ARRAY(_) then " .^ ";
+    case DAE.POW_ARR(_) then " ^ ";
+    case DAE.POW_ARR2(_) then " .^ ";
+    case DAE.OR(_) then " or ";
+    case DAE.AND(_) then " and ";
+    case DAE.NOT(_) then " not ";
+    case DAE.LESSEQ(_) then " <= ";
+    case DAE.GREATER(_) then " > ";
+    case DAE.GREATEREQ(_) then " >= ";
+    case DAE.LESS(_) then " < ";
+    case DAE.EQUAL(_) then " == ";
+    case DAE.NEQUAL(_) then " <> ";
+    case DAE.USERDEFINED(p) then " Userdefined:" + AbsynUtil.pathString(p) + " ";
     else " --UNDEFINED-- ";
   end match;
 end dumpOperatorSymbol;
@@ -234,10 +235,10 @@ end dumpOperatorSymbol;
 protected function dumpStartValue "Dumps the StartValue for a variable."
   input DAE.StartValue inStartValue;
 algorithm
-  _ := matchcontinue (inStartValue)
+  () := matchcontinue inStartValue
     local
       DAE.Exp e;
-    case (SOME(e))
+    case SOME(e)
       algorithm
         Print.printBuf("(start=");
         ExpressionDump.printExp(e);
@@ -252,11 +253,11 @@ public function dumpStartValueStr "Dumps the start value for a variable to a str
   input DAE.StartValue inStartValue;
   output String outString;
 algorithm
-  outString := matchcontinue (inStartValue)
+  outString := matchcontinue inStartValue
     local
       String s,res;
       DAE.Exp e;
-    case (SOME(e))
+    case SOME(e)
       algorithm
         s := ExpressionBasics.printExpStr(e);
         res := stringAppendList({"(start=",s,")"});
@@ -270,7 +271,7 @@ public function dumpExtDeclStr "Dumps the external declaration to a string."
   input DAE.ExternalDecl inExternalDecl;
   output String outString;
 algorithm
-  outString := match (inExternalDecl)
+  outString := match inExternalDecl
     local
       String extargsstr,rettystr,str,id,lang;
       list<DAE.ExtArg> extargs;
@@ -290,16 +291,11 @@ public function dumpExtArgStr "Helper function to dumpExtDeclStr"
   input DAE.ExtArg inExtArg;
   output String outString;
 algorithm
-  outString := match (inExtArg)
+  outString := match inExtArg
     local
       String crstr,str,dimstr;
       DAE.ComponentRef cr;
-      SCode.ConnectorType ct;
-      SCode.Variability var;
-      Absyn.Direction dir;
-      DAE.Type ty;
       DAE.Exp exp,dim;
-      DAE.Attributes attr;
 
     case DAE.NOEXTARG() then "";
     case DAE.EXTARG(componentRef = cr)
@@ -325,7 +321,7 @@ end dumpExtArgStr;
 protected function dumpCompElement "Dumps Component elements."
   input DAE.Element inElement;
 algorithm
-  _ := matchcontinue (inElement)
+  () := matchcontinue inElement
     local
       String n;
       list<DAE.Element> l;
@@ -383,7 +379,7 @@ end dumpVars;
 protected function dumpKind "Dump VarKind."
   input DAE.VarKind inVarKind;
 algorithm
-  _ := match (inVarKind)
+  () := match inVarKind
     case DAE.CONST()
       algorithm
         Print.printBuf(" constant  ");
@@ -411,7 +407,7 @@ public function dumpKindStr "Dump VarKind to a string."
   input DAE.VarKind inVarKind;
   output String outString;
 algorithm
-  outString := match (inVarKind)
+  outString := match inVarKind
     case DAE.CONST() then "constant ";
     case DAE.PARAM() then "parameter ";
     case DAE.DISCRETE() then "discrete ";
@@ -422,7 +418,7 @@ end dumpKindStr;
 protected function dumpDirection "Dump VarDirection."
   input DAE.VarDirection inVarDirection;
 algorithm
-  _ := match (inVarDirection)
+  () := match inVarDirection
     case DAE.INPUT()
       algorithm
         Print.printBuf(" input  ");
@@ -444,7 +440,7 @@ end dumpDirection;
 protected function dumpParallelism "Dump VarParallelism."
   input DAE.VarParallelism inVarParallelism;
 algorithm
-  _ := match (inVarParallelism)
+  () := match inVarParallelism
     case DAE.NON_PARALLEL()
       algorithm
         Print.printBuf("        ");
@@ -467,7 +463,7 @@ public function dumpDirectionStr "Dump VarDirection to a string"
   input DAE.VarDirection inVarDirection;
   output String outString;
 algorithm
-  outString := match (inVarDirection)
+  outString := match inVarDirection
     case DAE.INPUT() then "input ";
     case DAE.OUTPUT() then "output ";
     case DAE.BIDIR() then "";
@@ -478,7 +474,7 @@ protected function dumpStateSelectStr "Dump StateSelect to a string."
   input DAE.StateSelect inStateSelect;
   output String outString;
 algorithm
-  outString := match (inStateSelect)
+  outString := match inStateSelect
     case DAE.NEVER() then "StateSelect.never";
     case DAE.AVOID() then "StateSelect.avoid";
     case DAE.PREFER() then "StateSelect.prefer";
@@ -496,7 +492,7 @@ protected function dumpUncertaintyStr
   input DAE.Uncertainty uncertainty;
   output String out;
 algorithm
-  out := match (uncertainty)
+  out := match uncertainty
     case DAE.GIVEN() then "Uncertainty.given";
     case DAE.SOUGHT() then "Uncertainty.sought";
     case DAE.REFINE() then "Uncertainty.refine";
@@ -513,7 +509,7 @@ protected function dumpDistributionStr
   input DAE.Distribution distribution;
   output String out;
 algorithm
-  out := match (distribution)
+  out := match distribution
     local
       DAE.Exp name;
       DAE.Exp params;
@@ -542,15 +538,15 @@ public function dumpVariableAttributesStr "Dump VariableAttributes option to a s
   input Option<DAE.VariableAttributes> inVariableAttributesOption;
   output String outString;
 algorithm
-  outString := matchcontinue (inVariableAttributesOption)
+  outString := matchcontinue inVariableAttributesOption
     local
-      String quantity,unit_str,displayUnit_str,stateSel_str,min_str,max_str,nominal_str,initial_str,fixed_str,uncertainty_str,dist_str,res_1,res1,res,startOriginStr;
+      String quantity,unit_str,displayUnit_str,stateSel_str,min_str,max_str,nominal_str,initial_str,fixed_str,uncertainty_str,dist_str,res_1,res,startOriginStr;
       Option<DAE.Exp> quant,unit,displayUnit,min,max,initialExp,nominal,fixed,startOrigin;
       Option<DAE.StateSelect> stateSel;
       Option<DAE.Uncertainty> uncertainty;
       Option<DAE.Distribution> dist;
 
-    case (SOME(DAE.VAR_ATTR_REAL(quant,unit,displayUnit,min,max,initialExp,fixed,nominal,stateSel,uncertainty,dist,_,_,_,startOrigin)))
+    case SOME(DAE.VAR_ATTR_REAL(quant,unit,displayUnit,min,max,initialExp,fixed,nominal,stateSel,uncertainty,dist,_,_,_,startOrigin))
       algorithm
         quantity := getOptionWithConcatStr(quant, ExpressionBasics.printExpStr, "quantity = ");
         unit_str := getOptionWithConcatStr(unit, ExpressionBasics.printExpStr, "unit = ");
@@ -573,7 +569,7 @@ algorithm
       then
         res;
 
-    case (SOME(DAE.VAR_ATTR_INT(quant,min,max,initialExp,fixed,uncertainty,dist,_,_,_,startOrigin)))
+    case SOME(DAE.VAR_ATTR_INT(quant,min,max,initialExp,fixed,uncertainty,dist,_,_,_,startOrigin))
       algorithm
         quantity := getOptionWithConcatStr(quant, ExpressionBasics.printExpStr, "quantity = ");
         min_str := getOptionWithConcatStr(min, ExpressionBasics.printExpStr, "min = ");
@@ -590,7 +586,7 @@ algorithm
       then
         res;
 
-    case (SOME(DAE.VAR_ATTR_BOOL(quant,initialExp,fixed,_,_,_,startOrigin)))
+    case SOME(DAE.VAR_ATTR_BOOL(quant,initialExp,fixed,_,_,_,startOrigin))
       algorithm
         quantity := getOptionWithConcatStr(quant, ExpressionBasics.printExpStr, "quantity = ");
         initial_str := getOptionWithConcatStr(initialExp, ExpressionBasics.printExpStr, "start = ");
@@ -603,7 +599,7 @@ algorithm
       then
         res;
 
-    case (SOME(DAE.VAR_ATTR_STRING(quant,initialExp,fixed,_,_,_,startOrigin)))
+    case SOME(DAE.VAR_ATTR_STRING(quant,initialExp,fixed,_,_,_,startOrigin))
       algorithm
         quantity := getOptionWithConcatStr(quant, ExpressionBasics.printExpStr, "quantity = ");
         initial_str := getOptionWithConcatStr(initialExp, ExpressionBasics.printExpStr, "start = ");
@@ -616,7 +612,7 @@ algorithm
       then
         res;
 
-    case (SOME(DAE.VAR_ATTR_ENUMERATION(quant,min,max,initialExp,fixed,_,_,_,startOrigin)))
+    case SOME(DAE.VAR_ATTR_ENUMERATION(quant,min,max,initialExp,fixed,_,_,_,startOrigin))
       algorithm
         quantity := getOptionWithConcatStr(quant, ExpressionBasics.printExpStr, "quantity = ");
         min_str := getOptionWithConcatStr(min, ExpressionBasics.printExpStr, "min = ");
@@ -631,7 +627,7 @@ algorithm
       then
         res;
 
-    case (NONE()) then "";
+    case NONE() then "";
 
     else "(unknown VariableAttributes)";
   end matchcontinue;
@@ -641,13 +637,13 @@ protected function getStartOrigin
   input Option<DAE.Exp> inStartOrigin;
   output String outStartOrigin;
 algorithm
-  outStartOrigin := match(inStartOrigin)
+  outStartOrigin := match inStartOrigin
     local
       String str;
 
-    case (NONE()) then "";
+    case NONE() then "";
 
-    case (_)
+    case _
       algorithm
         if (Flags.isSet(Flags.SHOW_START_ORIGIN))
         then
@@ -665,7 +661,7 @@ protected function dumpVarVisibilityStr "Prints 'protected' to a string for prot
   input DAE.VarVisibility prot;
   output String str;
 algorithm
-  str := match(prot)
+  str := match prot
     case DAE.PUBLIC() then "";
     case DAE.PROTECTED() then "protected ";
   end match;
@@ -675,7 +671,7 @@ public function dumpVarParallelismStr "Dump VarParallelism to a string"
   input DAE.VarParallelism inVarParallelism;
   output String outString;
 algorithm
-  outString := match (inVarParallelism)
+  outString := match inVarParallelism
     case DAE.NON_PARALLEL() then "";
     case DAE.PARGLOBAL() then "parglobal ";
     case DAE.PARLOCAL() then "parlocal ";
@@ -694,16 +690,14 @@ end dumpCommentOption;
 protected function dumpEquation "Dump equation."
   input DAE.Element inElement;
 algorithm
-  _ := matchcontinue (inElement)
+  () := matchcontinue inElement
     local
       DAE.Exp e1,e2,e;
       DAE.ComponentRef c,cr1,cr2;
-      Absyn.Path functionName;
-      list<DAE.Exp> functionArgs;
       DAE.ElementSource src;
       String sourceStr;
 
-    case (DAE.EQUATION(exp = e1, scalar = e2, source = src))
+    case DAE.EQUATION(exp = e1, scalar = e2, source = src)
       algorithm
         Print.printBuf("  ");
         ExpressionDump.printExp(e1);
@@ -715,7 +709,7 @@ algorithm
       then
         ();
 
-      case (DAE.EQUEQUATION(cr1=cr1, cr2=cr2, source = src))
+      case DAE.EQUEQUATION(cr1=cr1, cr2=cr2, source = src)
       algorithm
         Print.printBuf("  ");
         ComponentReference.printComponentRef(cr1);
@@ -727,7 +721,7 @@ algorithm
       then
         ();
 
-    case (DAE.ARRAY_EQUATION(exp = e1, array= e2, source = src))
+    case DAE.ARRAY_EQUATION(exp = e1, array= e2, source = src)
       algorithm
         Print.printBuf("  ");
         ExpressionDump.printExp(e1);
@@ -739,7 +733,7 @@ algorithm
       then
         ();
 
-    case (DAE.COMPLEX_EQUATION(lhs = e1, rhs= e2, source = src))
+    case DAE.COMPLEX_EQUATION(lhs = e1, rhs= e2, source = src)
       algorithm
         Print.printBuf("  ");
         ExpressionDump.printExp(e1);
@@ -751,7 +745,7 @@ algorithm
       then
         ();
 
-    case (DAE.DEFINE(componentRef = c, exp = e, source = src))
+    case DAE.DEFINE(componentRef = c, exp = e, source = src)
       algorithm
         Print.printBuf("  ");
         ComponentReference.printComponentRef(c);
@@ -763,7 +757,7 @@ algorithm
       then
         ();
 
-    case (DAE.ASSERT(condition=e1, message=e2, source = src))
+    case DAE.ASSERT(condition=e1, message=e2, source = src)
       algorithm
         Print.printBuf("assert(");
         ExpressionDump.printExp(e1);
@@ -776,7 +770,7 @@ algorithm
       then
         ();
 
-    case (DAE.NORETCALL(exp = e1, source = src))
+    case DAE.NORETCALL(exp = e1, source = src)
       algorithm
         ExpressionDump.printExp(e1);
         sourceStr := getSourceInformationStr(src);
@@ -797,7 +791,7 @@ end dumpEquation;
 protected function dumpInitialEquation "Dump initial equation."
   input DAE.Element inElement;
 algorithm
-  _ := matchcontinue (inElement)
+  () := matchcontinue inElement
     local
       DAE.Exp e1,e2,e;
       DAE.ComponentRef c;
@@ -809,7 +803,7 @@ algorithm
       DAE.ElementSource src;
       list<SCode.Comment> cmt;
 
-    case (DAE.INITIALEQUATION(exp1 = e1,exp2 = e2))
+    case DAE.INITIALEQUATION(exp1 = e1,exp2 = e2)
       algorithm
         Print.printBuf("  ");
         ExpressionDump.printExp(e1);
@@ -819,7 +813,7 @@ algorithm
       then
         ();
 
-    case (DAE.INITIALDEFINE(componentRef = c,exp = e))
+    case DAE.INITIALDEFINE(componentRef = c,exp = e)
       algorithm
         Print.printBuf("  ");
         ComponentReference.printComponentRef(c);
@@ -829,7 +823,7 @@ algorithm
       then
         ();
 
-    case (DAE.INITIAL_ARRAY_EQUATION(exp = e1, array = e2))
+    case DAE.INITIAL_ARRAY_EQUATION(exp = e1, array = e2)
       algorithm
         Print.printBuf("  ");
         ExpressionDump.printExp(e1);
@@ -839,7 +833,7 @@ algorithm
       then
         ();
 
-    case (DAE.INITIAL_COMPLEX_EQUATION(lhs = e1,rhs = e2))
+    case DAE.INITIAL_COMPLEX_EQUATION(lhs = e1,rhs = e2)
       algorithm
         Print.printBuf("  ");
         ExpressionDump.printExp(e1);
@@ -849,7 +843,7 @@ algorithm
       then
         ();
 
-    case (DAE.INITIAL_IF_EQUATION(condition1 = (e::conds),equations2 = (xs1::trueBranches),equations3 = xs2))
+    case DAE.INITIAL_IF_EQUATION(condition1 = (e::conds),equations2 = (xs1::trueBranches),equations3 = xs2)
       algorithm
         Print.printBuf("  if ");
         ExpressionDump.printExp(e);
@@ -864,7 +858,7 @@ algorithm
       then
         ();
 
-    case (DAE.INITIAL_ASSERT(condition=e1,message = e2,source = src))
+    case DAE.INITIAL_ASSERT(condition=e1,message = e2,source = src)
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
@@ -875,7 +869,7 @@ algorithm
       then
         ();
 
-    case (DAE.INITIAL_TERMINATE(message=e1,source = src))
+    case DAE.INITIAL_TERMINATE(message=e1,source = src)
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
@@ -885,7 +879,7 @@ algorithm
       then
         ();
 
-    case (DAE.INITIAL_NORETCALL(exp = e1))
+    case DAE.INITIAL_NORETCALL(exp = e1)
       algorithm
         ExpressionDump.printExp(e1);
         Print.printBuf(";\n");
@@ -900,17 +894,15 @@ public function dumpEquationStr "Dump equation to a string."
   input DAE.Element inElement;
   output String outString;
 algorithm
-  outString := matchcontinue (inElement)
+  outString := matchcontinue inElement
     local
       String s1,s2,s3,s4,s5,str,sourceStr;
       DAE.Exp e1,e2,e;
       DAE.ComponentRef c,cr1,cr2;
-      list<DAE.Exp> es;
-      Absyn.Path path;
       DAE.ElementSource src;
       list<SCode.Comment> cmt;
 
-    case (DAE.EQUATION(exp = e1,scalar = e2,source = src))
+    case DAE.EQUATION(exp = e1,scalar = e2,source = src)
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
@@ -920,7 +912,7 @@ algorithm
       then
         str;
 
-     case (DAE.EQUEQUATION(cr1=cr1,cr2=cr2,source = src))
+     case DAE.EQUEQUATION(cr1=cr1,cr2=cr2,source = src)
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
@@ -930,7 +922,7 @@ algorithm
       then
         str;
 
-    case(DAE.ARRAY_EQUATION(exp=e1,array=e2,source = src))
+    case DAE.ARRAY_EQUATION(exp=e1,array=e2,source = src)
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
@@ -940,7 +932,7 @@ algorithm
       then
         str;
 
-    case(DAE.COMPLEX_EQUATION(lhs=e1,rhs=e2,source = src))
+    case DAE.COMPLEX_EQUATION(lhs=e1,rhs=e2,source = src)
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
@@ -950,7 +942,7 @@ algorithm
       then
         str;
 
-    case (DAE.DEFINE(componentRef = c,exp = e,source = src))
+    case DAE.DEFINE(componentRef = c,exp = e,source = src)
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
@@ -963,7 +955,7 @@ algorithm
       then
         str;
 
-    case (DAE.ASSERT(condition=e1,message = e2,source = src))
+    case DAE.ASSERT(condition=e1,message = e2,source = src)
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
@@ -973,7 +965,7 @@ algorithm
       then
         str;
 
-    case (DAE.TERMINATE(message=e1,source = src))
+    case DAE.TERMINATE(message=e1,source = src)
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
@@ -982,7 +974,7 @@ algorithm
       then
         str;
 
-    case (DAE.NORETCALL(exp=e1,source = src))
+    case DAE.NORETCALL(exp=e1,source = src)
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
@@ -998,7 +990,7 @@ end dumpEquationStr;
 public function dumpAlgorithm "Dump algorithm."
   input DAE.Element inElement;
 algorithm
-  _ := matchcontinue (inElement)
+  () := matchcontinue inElement
     local list<DAE.Statement> stmts;
     case DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = stmts))
       algorithm
@@ -1013,7 +1005,7 @@ end dumpAlgorithm;
 protected function dumpInitialAlgorithm "Dump initial algorithm."
   input DAE.Element inElement;
 algorithm
-  _ := matchcontinue (inElement)
+  () := matchcontinue inElement
     local list<DAE.Statement> stmts;
     case DAE.INITIALALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = stmts))
       algorithm
@@ -1029,7 +1021,7 @@ protected function dumpExtObjectClass
 "Dump External Object class"
   input DAE.Element inElement;
 algorithm
-  _ := matchcontinue (inElement)
+  () := matchcontinue inElement
     local
       String fstr;
       Absyn.Path fpath;
@@ -1054,16 +1046,16 @@ public function derivativeCondStr "
   input DAE.derivativeCond dc;
   output String str;
 algorithm
-  str := match(dc)
+  str := match dc
     local DAE.Exp e;
 
-    case(DAE.NO_DERIVATIVE(e))
+    case DAE.NO_DERIVATIVE(e)
       algorithm
         str  := "noDerivative(" + ExpressionBasics.printExpStr(e) + ")";
       then
         str;
 
-    case(DAE.ZERO_DERIVATIVE()) then "zeroDerivative";
+    case DAE.ZERO_DERIVATIVE() then "zeroDerivative";
   end match;
 end derivativeCondStr;
 
@@ -1071,9 +1063,9 @@ protected function dumpFunction
 "Dump function"
   input DAE.Function inElement;
 algorithm
-  _ := matchcontinue (inElement)
+  () := matchcontinue inElement
     local
-      String fstr, inlineTypeStr, ext_decl_str, parallelism_str, impureStr, typeStr;
+      String fstr, ext_decl_str, parallelism_str, impureStr, typeStr;
       Absyn.Path fpath;
       list<DAE.Element> daeElts;
       DAE.Type t;
@@ -1156,10 +1148,10 @@ protected function dumpParallelismStr
   input DAE.Type inType;
   output String outString;
 algorithm
-  outString := match(inType)
-    case (DAE.T_FUNCTION(_, _, DAE.FUNCTION_ATTRIBUTES(functionParallelism=DAE.FP_NON_PARALLEL()), _)) then "";
-    case (DAE.T_FUNCTION(_, _, DAE.FUNCTION_ATTRIBUTES(functionParallelism=DAE.FP_PARALLEL_FUNCTION()), _)) then "parallel ";
-    case (DAE.T_FUNCTION(_, _, DAE.FUNCTION_ATTRIBUTES(functionParallelism=DAE.FP_KERNEL_FUNCTION()), _)) then "kernel ";
+  outString := match inType
+    case DAE.T_FUNCTION(_, _, DAE.FUNCTION_ATTRIBUTES(functionParallelism=DAE.FP_NON_PARALLEL()), _) then "";
+    case DAE.T_FUNCTION(_, _, DAE.FUNCTION_ATTRIBUTES(functionParallelism=DAE.FP_PARALLEL_FUNCTION()), _) then "parallel ";
+    case DAE.T_FUNCTION(_, _, DAE.FUNCTION_ATTRIBUTES(functionParallelism=DAE.FP_KERNEL_FUNCTION()), _) then "kernel ";
     else "#dumpParallelismStr failed#";
 end match;
 end dumpParallelismStr;
@@ -1168,13 +1160,13 @@ public function dumpInlineTypeStr
   input DAE.InlineType inlineType;
   output String str;
 algorithm
-  str := match(inlineType)
-    case(DAE.NO_INLINE()) then "\"Inline never\"";
-    case(DAE.AFTER_INDEX_RED_INLINE()) then " \"Inline after index reduction\"";
-    case(DAE.NORM_INLINE()) then " \"Inline before index reduction\"";
-    case(DAE.DEFAULT_INLINE()) then "\"Inline if necessary\"";
-    case(DAE.EARLY_INLINE()) then "\"Inline earier than normal inline\"";
-    case(DAE.BUILTIN_EARLY_INLINE()) then "\"Inline even if inlining is disabled\"";
+  str := match inlineType
+    case DAE.NO_INLINE() then "\"Inline never\"";
+    case DAE.AFTER_INDEX_RED_INLINE() then " \"Inline after index reduction\"";
+    case DAE.NORM_INLINE() then " \"Inline before index reduction\"";
+    case DAE.DEFAULT_INLINE() then "\"Inline if necessary\"";
+    case DAE.EARLY_INLINE() then "\"Inline earier than normal inline\"";
+    case DAE.BUILTIN_EARLY_INLINE() then "\"Inline even if inlining is disabled\"";
     else "\"unknown\"";
   end match;
 end dumpInlineTypeStr;
@@ -1183,13 +1175,13 @@ public function dumpInlineTypeBackendStr
   input DAE.InlineType inlineType;
   output String str;
 algorithm
-  str := match(inlineType)
-    case(DAE.NO_INLINE()) then "NONE";
-    case(DAE.AFTER_INDEX_RED_INLINE()) then "AFTER_INDEX_RED";
-    case(DAE.NORM_INLINE()) then "NORMAL";
-    case(DAE.DEFAULT_INLINE()) then "DEFAULT";
-    case(DAE.EARLY_INLINE()) then "EARLY";
-    case(DAE.BUILTIN_EARLY_INLINE()) then "BUILTIN_EARLY";
+  str := match inlineType
+    case DAE.NO_INLINE() then "NONE";
+    case DAE.AFTER_INDEX_RED_INLINE() then "AFTER_INDEX_RED";
+    case DAE.NORM_INLINE() then "NORMAL";
+    case DAE.DEFAULT_INLINE() then "DEFAULT";
+    case DAE.EARLY_INLINE() then "EARLY";
+    case DAE.BUILTIN_EARLY_INLINE() then "BUILTIN_EARLY";
     else "UNKNOWN";
   end match;
 end dumpInlineTypeBackendStr;
@@ -1200,7 +1192,7 @@ protected function printRecordConstructorInputsStr
   input DAE.Type itp;
   output String str;
 algorithm
-  str := match(itp)
+  str := match itp
     local
       list<String> var_strl;
       list<DAE.Var> vars;
@@ -1237,7 +1229,7 @@ protected function printRecordConstructorInputAttrStr
   input DAE.Attributes inAttributes;
   output String outString;
 algorithm
-  outString := match(inAttributes)
+  outString := match inAttributes
     // protected vars are not input!, see Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
     case DAE.ATTR(visibility = SCode.PROTECTED()) then "protected ";
     // constants are not input! see Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
@@ -1250,16 +1242,16 @@ protected function printRecordConstructorBinding "prints the binding of a record
   input DAE.Binding binding;
   output String str;
 algorithm
-  str := match(binding)
+  str := match binding
     local DAE.Exp e; Values.Value v;
-    case(DAE.UNBOUND()) then "";
-    case(DAE.EQBOUND(exp=e, source=DAE.BINDING_FROM_DEFAULT_VALUE())) algorithm
+    case DAE.UNBOUND() then "";
+    case DAE.EQBOUND(exp=e, source=DAE.BINDING_FROM_DEFAULT_VALUE()) algorithm
       str := " = "+ExpressionBasics.printExpStr(e);
     then str;
-    case(DAE.EQBOUND(exp=e, source=DAE.BINDING_FROM_RECORD_SUBMODS())) algorithm
+    case DAE.EQBOUND(exp=e, source=DAE.BINDING_FROM_RECORD_SUBMODS()) algorithm
       str := " = "+ExpressionBasics.printExpStr(e);
     then str;
-    case(DAE.VALBOUND(valBound=v, source=DAE.BINDING_FROM_DEFAULT_VALUE())) algorithm
+    case DAE.VALBOUND(valBound=v, source=DAE.BINDING_FROM_DEFAULT_VALUE()) algorithm
       str := " = " + ValuesDump.valString(v);
     then str;
   end match;
@@ -1285,9 +1277,8 @@ protected function ppStmt
   input DAE.Statement inStatement;
   input Integer inInteger;
 algorithm
-  _ := matchcontinue (inStatement,inInteger)
+  () := matchcontinue (inStatement,inInteger)
     local
-      DAE.ComponentRef c;
       DAE.Exp e,cond,msg,e1,e2;
       Integer i,i_1;
       String s1,s2,s3,str,id,name;
@@ -1393,7 +1384,7 @@ algorithm
     case (DAE.STMT_NORETCALL(exp = e1),i)
       algorithm
         indent(i);
-        _ := match e1
+        () := match e1
           case DAE.CALL(attr=DAE.CALL_ATTR(tailCall=DAE.TAIL()))
             algorithm
               Print.printBuf("return ");
@@ -1528,7 +1519,6 @@ algorithm
   outString := matchcontinue (inStatement,inInteger)
     local
       String s1,s2,s3,s4,s5,s6,str,s7,s8,s9,s10,s11,id,cond_str,msg_str,e1_str,e2_str;
-      DAE.ComponentRef c;
       DAE.Exp e,cond,msg,e1,e2;
       Integer i,i_1;
       list<String> es;
@@ -1536,7 +1526,6 @@ algorithm
       list<DAE.Statement> then_,stmts;
       DAE.Statement stmt;
       DAE.Else else_;
-      DAE.ElementSource source;
 
     case (DAE.STMT_ASSIGN(exp1 = e2,exp = e),i)
       algorithm
@@ -1709,7 +1698,7 @@ protected function ppStmtList "
   input list<DAE.Statement> inAlgorithmStatementLst;
   input Integer inInteger;
 algorithm
-  _:=
+  ():=
   match (inAlgorithmStatementLst,inInteger)
     local
       DAE.Statement stmt;
@@ -1756,7 +1745,7 @@ protected function ppElse "
   input DAE.Else inElse;
   input Integer inInteger;
 algorithm
-  _:=
+  ():=
   match (inElse,inInteger)
     local
       Integer i_1,i;
@@ -1833,8 +1822,8 @@ protected function indent "
 "
   input Integer inInteger;
 algorithm
-  _:=
-  matchcontinue (inInteger)
+  ():=
+  matchcontinue inInteger
     local Integer i_1,i;
     case 0 then ();
     case i
@@ -1854,7 +1843,7 @@ protected function indentStr "
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inInteger)
+  matchcontinue inInteger
     local
       Integer i_1,i;
       String s1,str;
@@ -1877,8 +1866,8 @@ public function dumpDebug "
 "
   input DAE.DAElist inDAElist;
 algorithm
-  _:=
-  match (inDAElist)
+  ():=
+  match inDAElist
     local list<DAE.Element> elist;
     case DAE.DAE(elementLst = elist)
       algorithm
@@ -1895,13 +1884,13 @@ protected function dumpDebugElist "
 "
   input list<DAE.Element> inElementLst;
 algorithm
-  _:=
-  match (inElementLst)
+  ():=
+  match inElementLst
     local
       DAE.Element first;
       list<DAE.Element> rest;
     case {} then ();
-    case (first :: rest)
+    case first :: rest
       algorithm
         dumpDebugElement(first);
         Print.printBuf("\n");
@@ -1915,10 +1904,10 @@ public function dumpDebugDAE ""
   input DAE.DAElist dae;
   output String str;
 algorithm
-  str := match (dae)
+  str := match dae
     local
       list<DAE.Element> elems;
-    case(DAE.DAE(elementLst=elems))
+    case DAE.DAE(elementLst=elems)
       algorithm
         Print.clearBuf();
         dumpDebugElist(elems);
@@ -1933,13 +1922,12 @@ public function dumpDebugElement "
 "
   input DAE.Element inElement;
 algorithm
-  _:=
-  matchcontinue (inElement)
+  ():=
+  matchcontinue inElement
     local
       String comment_str,tmp_str,n;
       DAE.ComponentRef cr,cr1,cr2;
       DAE.VarKind vk;
-      DAE.VarDirection vd;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       DAE.Exp e,exp,e1,e2;
@@ -2176,7 +2164,7 @@ Author BZ 2008-07, dump flow properties to string."
   input DAE.ConnectorType var;
   output String flowString;
 algorithm
-  flowString := match(var)
+  flowString := match var
     case DAE.FLOW() then "flow";
     case DAE.POTENTIAL() then "effort";
     case DAE.NON_CONNECTOR() then "non_connector";
@@ -2187,7 +2175,7 @@ public function dumpConnectorType
   input DAE.ConnectorType inConnectorType;
   output String outString;
 algorithm
-  outString := match(inConnectorType)
+  outString := match inConnectorType
     case DAE.FLOW() then "flow";
     case DAE.STREAM() then "stream";
     else "";
@@ -2213,7 +2201,7 @@ protected function buildGraphviz "
   output Graphviz.Node outNode;
 algorithm
   outNode:=
-  match (inDAElist)
+  match inDAElist
     local
       list<DAE.Element> vars,nonvars,els;
       list<Graphviz.Node> nonvarnodes,varnodes,nodelist;
@@ -2235,14 +2223,14 @@ protected function buildGrList "Helper function to build_graphviz.
   output list<Graphviz.Node> outGraphvizNodeLst;
 algorithm
   outGraphvizNodeLst:=
-  match (inElementLst)
+  match inElementLst
     local
       Graphviz.Node node;
       list<Graphviz.Node> nodelist;
       DAE.Element el;
       list<DAE.Element> rest;
     case {} then {};
-    case (el :: rest)
+    case el :: rest
       algorithm
         node := buildGrElement(el);
         nodelist := buildGrList(rest);
@@ -2256,7 +2244,7 @@ protected function buildGrVars "Helper function to build_graphviz.
   input list<DAE.Element> inElementLst;
   output list<Graphviz.Node> outGraphvizNodeLst;
 algorithm
-  outGraphvizNodeLst := matchcontinue (inElementLst)
+  outGraphvizNodeLst := matchcontinue inElementLst
     local
       list<String> strlist;
       list<DAE.Element> vars;
@@ -2311,7 +2299,7 @@ protected function buildGrVarStr "Helper function to build_graphviz.
   output String outString;
 algorithm
   outString:=
-  match (inElement)
+  match inElement
     local
       String str,expstr,str_1,str_2;
       DAE.ComponentRef cr;
@@ -2339,7 +2327,7 @@ protected function printExpStrSpecial "
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inExp)
+  matchcontinue inExp
     local
       String s_1,s_2,s,str;
       DAE.Exp exp;
@@ -2363,12 +2351,11 @@ protected function buildGrElement "
   input DAE.Element inElement;
   output Graphviz.Node outNode;
 algorithm
-  outNode := match (inElement)
+  outNode := match inElement
     local
       String crstr,vkstr,expstr,expstr_1,e1str,e2str,n;
       DAE.ComponentRef cr,cr1,cr2;
       DAE.VarKind vk;
-      DAE.VarDirection vd;
       DAE.Exp exp,e1,e2;
       list<Graphviz.Node> nodes;
       list<DAE.Element> elts;
@@ -2432,7 +2419,7 @@ protected function unparseType "wrapper function for TypesDump.unparseType, so r
   input DAE.Type tp;
   output String str;
 algorithm
-  str := matchcontinue(tp)
+  str := matchcontinue tp
     local
       String name, dim_str;
       Absyn.Path path;
@@ -2507,7 +2494,7 @@ public function dumpElementsStr "This function prints the DAE to a string."
   input list<DAE.Element> els;
   output String outString;
 algorithm
-  outString := match (els)
+  outString := match els
     local
       IOStream.IOStream myStream;
       String str;
@@ -2526,7 +2513,7 @@ public function dumpAlgorithmsStr "This function prints the algorithms to a stri
   input list<DAE.Element> algs;
   output String outString;
 algorithm
-  outString := match (algs)
+  outString := match algs
     local
       IOStream.IOStream myStream;
       String str;
@@ -2546,7 +2533,7 @@ public function dumpConstraintsStr "This function prints the constraints to a st
   input list<DAE.Element> constrs;
   output String outString;
 algorithm
-  outString := match (constrs)
+  outString := match constrs
     local
       IOStream.IOStream myStream;
       String str;
@@ -2572,13 +2559,13 @@ public function dumpStream "This function prints the DAE to a stream."
   input IOStream.IOStream inStream;
   output IOStream.IOStream outStream;
 algorithm
-  outStream := match (dae,functionTree,inStream)
+  outStream := match (dae, inStream)
     local
       list<DAE.Element> daelist;
       list<DAE.Function> funcs;
       IOStream.IOStream str;
 
-    case (DAE.DAE(daelist), _, str)
+    case (DAE.DAE(daelist), str)
       algorithm
         funcs := DAEUtil.getFunctionList(functionTree);
         funcs := sortFunctions(funcs);
@@ -2595,7 +2582,7 @@ public function dumpFunctionList " returns sorted functions and record construct
   input AvlTreePathFunction.Tree functionTree;
   output functionList funList;
 algorithm
-  (funList) := match (functionTree)
+  funList := match functionTree
     local
       list<DAE.Function> funcs;
 
@@ -2678,15 +2665,15 @@ public function dumpElementsStream "Dump elements to a stream"
   input IOStream.IOStream inStream;
   output IOStream.IOStream outStream;
 algorithm
-  outStream := match(l, inStream)
+  outStream := match inStream
     local
       IOStream.IOStream str;
-      list<DAE.Element> v,o,ie,ia,e,a,ca,co;
+      list<DAE.Element> v,ie,ia,e,a,co;
       list<DAEDumpTypes.compWithSplitElements> sm;
       list<SCode.Comment> comments;
       Option<SCode.Annotation> ann;
 
-    case (_, str)
+    case str
      algorithm
        // classify DAE
        (v,ie,ia,e,a,_,co,_,sm,comments) := DAEUtil.splitElements(l);
@@ -2732,7 +2719,7 @@ algorithm
       String cstr;
       IOStream.IOStream str;
       list<DAEDumpTypes.compWithSplitElements> xs;
-      list<DAE.Element> v,o,ie,ia,e,a,ca,co;
+      list<DAE.Element> v,ie,ia,e,a,co;
       list<DAEDumpTypes.compWithSplitElements> sm;
 
     case ({}, str) then str;
@@ -2833,14 +2820,13 @@ algorithm
   outStream := match (inElementLst, inStream)
     local
       String s1,s2,s3,s,sourceStr;
-      DAE.Exp e1,e2,e3,e;
-      list<DAE.Exp> conds,expl;
+      DAE.Exp e1,e2,e;
+      list<DAE.Exp> conds;
       list<DAE.Element> xs,xs1,xs2;
       list<list<DAE.Element>> tb;
       DAE.ComponentRef c,cr,cr1,cr2;
       IOStream.IOStream str;
       DAE.Element el;
-      Absyn.Path path;
       DAE.Dimensions dims;
       DAE.ElementSource src;
 
@@ -2922,7 +2908,7 @@ algorithm
 
     case (DAE.FOR_EQUATION(iter = s, range = e1, equations = xs1, source = src) :: xs, str)
       algorithm
-        _ := getSourceInformationStr(src);
+        getSourceInformationStr(src);
         s1 := ExpressionBasics.printExpStr(e1);
         str := IOStream.appendList(str, {"  for ", s, " in ", s1, " loop\n"});
         str := dumpEquationsStream(xs1, str);
@@ -2966,7 +2952,7 @@ algorithm
 
     case ((DAE.WHEN_EQUATION(condition = e,equations = xs1,elsewhen_ = SOME(el), source = src) :: xs), str)
       algorithm
-        _ := getSourceInformationStr(src);
+        getSourceInformationStr(src);
         str := IOStream.append(str, "when ");
         str := IOStream.append(str, ExpressionBasics.printExpStr(e));
         str := IOStream.append(str, " then\n");
@@ -3100,7 +3086,7 @@ algorithm
 
     case (DAE.INITIAL_FOR_EQUATION(iter = s2, range = e1, equations = xs1, source = src) :: xs, str)
       algorithm
-        _ := getSourceInformationStr(src);
+        getSourceInformationStr(src);
         s1 := ExpressionBasics.printExpStr(e1);
         str := IOStream.appendList(str, {"  for ", s2, " in ", s1, " loop\n"});
         str := dumpEquationsStream(xs1, str);
@@ -3197,12 +3183,12 @@ print a DAE.DAEList to a string"
   input DAE.DAElist d;
   output String str;
 algorithm
-  str := match(d)
+  str := match d
     local
       list<DAE.Element> l;
       IOStream.IOStream myStream;
 
-    case(DAE.DAE(elementLst=l))
+    case DAE.DAE(elementLst=l)
       algorithm
         myStream := IOStream.create("", IOStream.LIST());
         myStream := dumpElementsStream(l, myStream);
@@ -3217,15 +3203,15 @@ public function dumpVarsStream "Dump variables to a string."
   input IOStream.IOStream inStream;
   output IOStream.IOStream outStream;
 algorithm
-  outStream := match (inElementLst, printTypeDimension, inStream)
+  outStream := match (inElementLst, inStream)
     local
       IOStream.IOStream str;
       DAE.Element first;
       list<DAE.Element> rest;
     // handle nothingness
-    case ({},_,_) then inStream;
+    case ({}, _) then inStream;
     // the usual case
-    case (first :: rest, _, str)
+    case (first :: rest, str)
       algorithm
         str := dumpVarStream(first, printTypeDimension, str);
         str := dumpVarsStream(rest, printTypeDimension, str);
@@ -3281,7 +3267,7 @@ public function dumpVarBindingStr
   input Option<DAE.Exp> inBinding;
   output String outString;
 algorithm
-  outString := match(inBinding)
+  outString := match inBinding
     local
       DAE.Exp exp;
       String bind_str;
@@ -3303,7 +3289,7 @@ protected function dumpVarStream
   input IOStream.IOStream inStream;
   output IOStream.IOStream outStream;
 algorithm
-  outStream := matchcontinue(inElement, printTypeDimension, inStream)
+  outStream := matchcontinue(inElement, inStream)
     local
       String final_str, kind_str, dir_str, ty_str, ty_vars_str, dim_str, name_str;
       String vis_str, par_str, cmt_str, attr_str, binding_str;
@@ -3318,7 +3304,6 @@ algorithm
       Option<DAE.Exp> binding;
       DAE.InstDims dims;
       IOStream.IOStream str;
-      list<DAE.Var> ty_vars;
 
     case (DAE.VAR(componentRef = id,
                   kind = kind,
@@ -3329,7 +3314,7 @@ algorithm
                   dims = dims,
                   binding = binding,
                   variableAttributesOption = attr,
-                  comment = cmt), _, str)
+                  comment = cmt), str)
       algorithm
         final_str := if DAEUtil.getFinalAttr(attr) then "final " else "";
         kind_str := dumpKindStr(kind);
@@ -3401,7 +3386,6 @@ public function ppStatementStream
   input IOStream.IOStream inStream;
   output IOStream.IOStream outStream;
 protected
-  String tmp;
   Integer hnd;
 algorithm
   hnd := Print.saveAndClearBuf();
@@ -3424,7 +3408,7 @@ public function dumpFunctionStr "Dump function to a string."
   input DAE.Function inElement;
   output String outString;
 algorithm
-  outString := matchcontinue (inElement)
+  outString := matchcontinue inElement
     local
       String s;
       Integer hnd;
@@ -3447,7 +3431,7 @@ protected function dumpExtObjClassStr
   input DAE.Element inElement;
   output String outString;
 algorithm
-  outString := matchcontinue (inElement)
+  outString := matchcontinue inElement
     local
       String s;
       Integer hnd;
@@ -3561,7 +3545,7 @@ public function unparseVarKind
   input DAE.VarKind inVarKind;
   output String outString;
 algorithm
-  outString := match(inVarKind)
+  outString := match inVarKind
     case DAE.VARIABLE() then "";
     case DAE.PARAM() then "parameter";
     case DAE.CONST() then "const";
@@ -3573,7 +3557,7 @@ public function unparseVarDirection
   input DAE.VarDirection inVarDirection;
   output String outString;
 algorithm
-  outString := match(inVarDirection)
+  outString := match inVarDirection
     case DAE.BIDIR() then "";
     case DAE.INPUT() then "input";
     case DAE.OUTPUT() then "output";
@@ -3598,24 +3582,20 @@ public function getSourceInformationStr
   input DAE.ElementSource inSource;
   output String outStr;
 algorithm
-  outStr := matchcontinue(inSource)
+  outStr := matchcontinue inSource
     local
-      SourceInfo i;
       list<Absyn.Within> po;
-      list<Option<DAE.ComponentRef>> iol;
       list<tuple<DAE.ComponentRef, DAE.ComponentRef>> ceol;
-      list<Absyn.Path> tl;
-      list<DAE.SymbolicOperation> op;
       list<SCode.Comment> cmt;
       String str;
 
-    case (_)
+    case _
       algorithm
         false := Flags.isSet(Flags.SHOW_EQUATION_SOURCE);
       then
         "";
 
-    case (DAE.SOURCE(_, po, _, ceol, _, _, cmt))
+    case DAE.SOURCE(_, po, _, ceol, _, _, cmt)
       algorithm
         str := cmtListToString(cmt);
         str := str + " /* models: {" + stringDelimitList(List.map(po, withinString), ", ") + "}" +
@@ -3629,16 +3609,16 @@ protected function connectsStr
   input list<tuple<DAE.ComponentRef, DAE.ComponentRef>> inLst;
   output list<String> outStr;
 algorithm
-  outStr := matchcontinue(inLst)
+  outStr := matchcontinue inLst
     local
       list<tuple<DAE.ComponentRef, DAE.ComponentRef>> rest;
       list<String> slst;
       String str;
       DAE.ComponentRef c1, c2;
 
-    case ({}) then {};
+    case {} then {};
 
-    case ({(c1,c2)})
+    case {(c1,c2)}
       algorithm
         str := ComponentReferenceBasics.printComponentRefStr(c1) + "," +
               ComponentReferenceBasics.printComponentRefStr(c2);
@@ -3646,7 +3626,7 @@ algorithm
       then
         {str};
 
-    case ((c1,c2)::rest)
+    case (c1,c2)::rest
       algorithm
         str := ComponentReferenceBasics.printComponentRefStr(c1) + "," +
               ComponentReferenceBasics.printComponentRefStr(c2);
@@ -3662,11 +3642,11 @@ protected function withinString
   input Absyn.Within w;
   output String str;
 algorithm
-  str := match (w)
+  str := match w
     local
       Absyn.Path p1;
-    case (Absyn.TOP()) then "TOP";
-    case (Absyn.WITHIN(p1)) then AbsynUtil.pathString(p1);
+    case Absyn.TOP() then "TOP";
+    case Absyn.WITHIN(p1) then AbsynUtil.pathString(p1);
   end match;
 end withinString;
 
@@ -3674,21 +3654,21 @@ public function cmtListToString
   input list<SCode.Comment> inCmtLst;
   output String outStr;
 algorithm
-  outStr := matchcontinue(inCmtLst)
+  outStr := matchcontinue inCmtLst
     local
       SCode.Comment c;
       list<SCode.Comment> rest;
       String str;
 
-    case ({}) then "";
+    case {} then "";
 
-    case ({c})
+    case {c}
       algorithm
         str := dumpCommentAnnotationStr(SOME(c));
       then
         str;
 
-    case (c::rest)
+    case c::rest
       algorithm
         str := dumpCommentAnnotationStr(SOME(c));
         str := str + " " + cmtListToString(rest);
@@ -3704,18 +3684,18 @@ public function clockKindString
   input DAE.ClockKind cK;
   output String sOut;
 algorithm
-  sOut := match(cK)
+  sOut := match cK
     local
       DAE.Exp e1,e2;
-  case(DAE.INFERRED_CLOCK())
+  case DAE.INFERRED_CLOCK()
     then "Inferred Clock";
-  case(DAE.RATIONAL_CLOCK(intervalCounter=e1, resolution=e2))
+  case DAE.RATIONAL_CLOCK(intervalCounter=e1, resolution=e2)
     then "Rational Clock("+ExpressionBasics.printExpStr(e1)+"; "+ExpressionBasics.printExpStr(e2)+")";
-  case(DAE.REAL_CLOCK(interval=e1))
+  case DAE.REAL_CLOCK(interval=e1)
     then "Real Clock("+ExpressionBasics.printExpStr(e1)+")";
-  case(DAE.EVENT_CLOCK(condition=e1, startInterval=e2))
+  case DAE.EVENT_CLOCK(condition=e1, startInterval=e2)
     then "Event Clock("+ExpressionBasics.printExpStr(e1)+"; "+ExpressionBasics.printExpStr(e2)+")";
-  case(DAE.SOLVER_CLOCK(c=e1, solverMethod=e2))
+  case DAE.SOLVER_CLOCK(c=e1, solverMethod=e2)
     then "Solver Clock("+ExpressionBasics.printExpStr(e1)+"; "+ExpressionBasics.printExpStr(e2)+")";
   end match;
 end clockKindString;
@@ -3725,26 +3705,25 @@ public function dumpDebugElementStr "Dump equation to a string.For debug purpose
   input DAE.Element inElement;
   output String outString;
 algorithm
-  outString := matchcontinue (inElement)
+  outString := matchcontinue inElement
     local
       Absyn.Path path;
-      String s1,s2,s3,s4,s5,str,sourceStr;
-      DAE.Exp e1,e2,e;
+      String s1,s2,str,sourceStr;
+      DAE.Exp e1,e2;
       DAE.ComponentRef c,cr1,cr2;
-      list<DAE.Exp> es;
       list<DAE.Element> elst;
       Absyn.Path path;
       DAE.ElementSource src;
       list<SCode.Comment> cmt;
 
-    case (DAE.VAR(componentRef = c))
+    case DAE.VAR(componentRef = c)
       algorithm
         s1 := ComponentReferenceBasics.printComponentRefStr(c);
         str := stringAppendList({"VAR:  ", s1,";\n"});
       then
         str;
 
-    case (DAE.DEFINE(componentRef = c,source = src))
+    case DAE.DEFINE(componentRef = c,source = src)
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
@@ -3753,7 +3732,7 @@ algorithm
       then
         str;
 
-    case (DAE.INITIALDEFINE(componentRef = c,source = src))
+    case DAE.INITIALDEFINE(componentRef = c,source = src)
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
@@ -3762,7 +3741,7 @@ algorithm
       then
         str;
 
-    case (DAE.EQUATION(exp = e1,scalar = e2,source = src))
+    case DAE.EQUATION(exp = e1,scalar = e2,source = src)
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
@@ -3772,7 +3751,7 @@ algorithm
       then
         str;
 
-     case (DAE.EQUEQUATION(cr1=cr1,cr2=cr2,source = src))
+     case DAE.EQUEQUATION(cr1=cr1,cr2=cr2,source = src)
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
@@ -3782,7 +3761,7 @@ algorithm
       then
         str;
 
-    case(DAE.ARRAY_EQUATION(exp=e1,array=e2,source = src))
+    case DAE.ARRAY_EQUATION(exp=e1,array=e2,source = src)
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
@@ -3792,7 +3771,7 @@ algorithm
       then
         str;
 
-    case(DAE.INITIAL_ARRAY_EQUATION(exp=e1,array=e2,source = src))
+    case DAE.INITIAL_ARRAY_EQUATION(exp=e1,array=e2,source = src)
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
@@ -3802,7 +3781,7 @@ algorithm
       then
         str;
 
-    case(DAE.COMPLEX_EQUATION(lhs=e1,rhs=e2,source = src))
+    case DAE.COMPLEX_EQUATION(lhs=e1,rhs=e2,source = src)
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
@@ -3812,7 +3791,7 @@ algorithm
       then
         str;
 
-    case(DAE.INITIAL_COMPLEX_EQUATION(lhs=e1,rhs=e2,source = src))
+    case DAE.INITIAL_COMPLEX_EQUATION(lhs=e1,rhs=e2,source = src)
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
@@ -3822,7 +3801,7 @@ algorithm
       then
         str;
 
-    case (DAE.WHEN_EQUATION(condition = e1,source = src))
+    case DAE.WHEN_EQUATION(condition = e1,source = src)
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
@@ -3831,7 +3810,7 @@ algorithm
       then
         str;
 
-    case (DAE.IF_EQUATION(source = src))
+    case DAE.IF_EQUATION(source = src)
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
@@ -3839,7 +3818,7 @@ algorithm
       then
         str;
 
-    case (DAE.INITIAL_IF_EQUATION(source = src))
+    case DAE.INITIAL_IF_EQUATION(source = src)
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
@@ -3847,7 +3826,7 @@ algorithm
       then
         str;
 
-    case (DAE.INITIALEQUATION(exp1 = e1,exp2 = e2,source = src))
+    case DAE.INITIALEQUATION(exp1 = e1,exp2 = e2,source = src)
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
@@ -3857,7 +3836,7 @@ algorithm
       then
         str;
 
-    case (DAE.ALGORITHM(source = src))
+    case DAE.ALGORITHM(source = src)
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
@@ -3865,7 +3844,7 @@ algorithm
       then
         str;
 
-    case (DAE.INITIALALGORITHM(source = src))
+    case DAE.INITIALALGORITHM(source = src)
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
@@ -3873,7 +3852,7 @@ algorithm
       then
         str;
 
-    case (DAE.COMP(source = src, dAElist = elst))
+    case DAE.COMP(source = src, dAElist = elst)
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
@@ -3882,7 +3861,7 @@ algorithm
       then
         str;
 
-    case (DAE.EXTOBJECTCLASS(path = path, source = src))
+    case DAE.EXTOBJECTCLASS(path = path, source = src)
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
@@ -3891,7 +3870,7 @@ algorithm
       then
         str;
 
-    case (DAE.ASSERT(condition=e1,message = e2,source = src))
+    case DAE.ASSERT(condition=e1,message = e2,source = src)
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
@@ -3901,7 +3880,7 @@ algorithm
       then
         str;
 
-    case (DAE.INITIAL_ASSERT(condition=e1,message = e2,source = src))
+    case DAE.INITIAL_ASSERT(condition=e1,message = e2,source = src)
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
@@ -3911,7 +3890,7 @@ algorithm
       then
         str;
 
-    case (DAE.TERMINATE(message=e1,source = src))
+    case DAE.TERMINATE(message=e1,source = src)
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
@@ -3920,7 +3899,7 @@ algorithm
       then
         str;
 
-    case (DAE.INITIAL_TERMINATE(message=e1,source = src))
+    case DAE.INITIAL_TERMINATE(message=e1,source = src)
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
@@ -3929,7 +3908,7 @@ algorithm
       then
         str;
 
-    case (DAE.REINIT(source = src))
+    case DAE.REINIT(source = src)
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
@@ -3937,7 +3916,7 @@ algorithm
       then
         str;
 
-    case (DAE.NORETCALL(exp=e1,source = src))
+    case DAE.NORETCALL(exp=e1,source = src)
       algorithm
         cmt := ElementSource.getComments(src);
         sourceStr := cmtListToString(cmt);
@@ -3980,5 +3959,5 @@ algorithm
 end getOptionWithConcatStr;
 
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_base");
 end DAEDump;

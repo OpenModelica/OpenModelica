@@ -260,9 +260,9 @@ public
   protected
     CountCollector collector = Pointer.access(collector_ptr);
   algorithm
-    _ := match comp
+    () := match comp
       case SINGLE_COMPONENT() algorithm
-        _ := match Pointer.access(comp.eqn)
+        () := match Pointer.access(comp.eqn)
           case Equation.SCALAR_EQUATION() algorithm collector.single_scalar := collector.single_scalar + 1; Pointer.update(collector_ptr, collector); then ();
           case Equation.ARRAY_EQUATION()  algorithm collector.single_array := collector.single_array + 1; Pointer.update(collector_ptr, collector);   then ();
           case Equation.RECORD_EQUATION() algorithm collector.single_record := collector.single_record + 1; Pointer.update(collector_ptr, collector); then ();
@@ -271,7 +271,7 @@ public
       then ();
 
       case MULTI_COMPONENT() algorithm
-        _ := match Pointer.access(Slice.getT(comp.eqn))
+        () := match Pointer.access(Slice.getT(comp.eqn))
           case Equation.ALGORITHM()       algorithm collector.multi_algorithm := collector.multi_algorithm + 1; Pointer.update(collector_ptr, collector); then ();
           case Equation.WHEN_EQUATION()   algorithm collector.multi_when := collector.multi_when + 1; Pointer.update(collector_ptr, collector);           then ();
           case Equation.IF_EQUATION()     algorithm collector.multi_if := collector.multi_if + 1; Pointer.update(collector_ptr, collector);               then ();
@@ -281,7 +281,7 @@ public
       then ();
 
       case SLICED_COMPONENT() algorithm
-        _ := match Pointer.access(Slice.getT(comp.eqn))
+        () := match Pointer.access(Slice.getT(comp.eqn))
           case Equation.SCALAR_EQUATION() algorithm collector.single_scalar := collector.single_scalar + 1; Pointer.update(collector_ptr, collector); then ();
           case Equation.ARRAY_EQUATION()  algorithm collector.single_array := collector.single_array + 1; Pointer.update(collector_ptr, collector);   then ();
           case Equation.RECORD_EQUATION() algorithm collector.single_record := collector.single_record + 1; Pointer.update(collector_ptr, collector); then ();
@@ -423,7 +423,6 @@ public
   protected
     UnorderedMap<Integer, Slice.IntLst> elem_map = UnorderedMap.new<Slice.IntLst>(Util.id, intEq);
     UnorderedMap<Integer, ComponentRef> cref_map = UnorderedMap.new<ComponentRef>(Util.id, intEq);
-    list<tuple<Integer, Slice.IntLst>> flat_map;
     Integer eqn_arr_idx, var_arr_idx;
     Slice.IntLst scal_indices;
     list<StrongComponent> entwined_slices = {};
@@ -724,8 +723,6 @@ public
         Tearing strict;
         Equation eqn, body;
         Iterator iter;
-        list<ComponentRef> names;
-        list<Expression> ranges;
         UnorderedSet<ComponentRef> deps_set;
 
       // sliced array equations - create all the single entries
@@ -1078,7 +1075,7 @@ public
   algorithm
     comp := match comp_indices
       local
-        Integer i, var_scal_idx, var_arr_idx, size;
+        Integer i, var_scal_idx, var_arr_idx;
         Pointer<Variable> var;
         Pointer<Equation> eqn;
         list<Slice<VariablePointer>> comp_vars;
@@ -1293,5 +1290,5 @@ protected
     end match;
   end prepareDependencies;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBStrongComponent;

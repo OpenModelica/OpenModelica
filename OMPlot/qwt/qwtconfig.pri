@@ -8,7 +8,7 @@
 ################################################################
 
 QWT_VER_MAJ      = 6
-QWT_VER_MIN      = 2
+QWT_VER_MIN      = 3
 QWT_VER_PAT      = 0
 QWT_VERSION      = $${QWT_VER_MAJ}.$${QWT_VER_MIN}.$${QWT_VER_PAT}
 
@@ -22,11 +22,13 @@ QWT_INSTALL_PREFIX = $$PWD/build
 #QWT_INSTALL_PREFIX = $$[QT_INSTALL_PREFIX]
 
 #unix {
-#    QWT_INSTALL_PREFIX    = /usr/local/qwt-$$QWT_VERSION-svn
+#    QWT_INSTALL_PREFIX    = /usr/local/qwt-$$QWT_VERSION-dev
+#    # QWT_INSTALL_PREFIX = /usr/local/qwt-$$QWT_VERSION-dev-qt-$$QT_VERSION
 #}
 
 #win32 {
-#    QWT_INSTALL_PREFIX    = C:/Qwt-$$QWT_VERSION-svn
+#    QWT_INSTALL_PREFIX    = C:/Qwt-$$QWT_VERSION-dev
+#    # QWT_INSTALL_PREFIX = C:/Qwt-$$QWT_VERSION-dev-qt-$$QT_VERSION
 #}
 
 QWT_INSTALL_DOCS      = $${QWT_INSTALL_PREFIX}/doc
@@ -141,7 +143,13 @@ QWT_CONFIG     += QwtSvg
 # Otherwise you have to build them from the examples directory.
 ######################################################################
 
-#QWT_CONFIG     += QwtExamples
+#QWT_NO_EXAMPLES=$$(QWT_NO_EXAMPLES)
+#isEmpty(QWT_NO_EXAMPLES) {
+#    QWT_CONFIG     += QwtExamples
+#    message('enable examples')
+#} else {
+#    message('disable examples')
+#}
 
 ######################################################################
 # The playground is primarily intended for the Qwt development
@@ -152,7 +160,26 @@ QWT_CONFIG     += QwtSvg
 # Otherwise you have to build them from the playground directory.
 ######################################################################
 
-#QWT_CONFIG     += QwtPlayground
+#QWT_NO_PLAYGROUND=$$(QWT_NO_PLAYGROUND)
+#isEmpty(QWT_NO_PLAYGROUND) {
+#    QWT_CONFIG     += QwtPlayground
+#    message('enable playground')
+#} else {
+#    message('disable playground')
+#}
+
+######################################################################
+# If you want to auto build the tests, enable the line below
+# Otherwise you have to build them from the tests directory.
+######################################################################
+
+#QWT_NO_TESTS=$$(QWT_NO_TESTS)
+#isEmpty(QWT_NO_TESTS) {
+#    QWT_CONFIG     += QwtTests
+#    message('enable tests')
+#} else {
+#    message('disable tests')
+#}
 
 ######################################################################
 # When Qt has been built as framework qmake wants
@@ -171,5 +198,5 @@ QWT_CONFIG     += QwtSvg
 
 #unix {
 #
-#    #QWT_CONFIG     += QwtPkgConfig
+#    QWT_CONFIG     += QwtPkgConfig
 #}

@@ -111,6 +111,11 @@ bool Legend::eventFilter(QObject *object, QEvent *event)
   return QwtLegend::eventFilter(object, event);
 }
 
+/*!
+ * \brief Legend::toggleSign
+ * Toggle the sign of the PlotCurve item clicked in the legend.
+ * \param checked
+ */
 void Legend::toggleSign(bool checked)
 {
   if (mpPlotCurve) {
@@ -120,21 +125,34 @@ void Legend::toggleSign(bool checked)
   }
 }
 
+/*!
+ * \brief Legend::switchAxis
+ * Switch the Y-Axis of the PlotCurve item clicked in the legend.
+ * \param checked
+ */
 void Legend::switchAxis(bool checked)
 {
-    if (mpPlotCurve) {
-        mpPlotCurve->setYAxisRight(checked);
-        mpPlotCurve = 0;
-        mpPlot->getParentPlotWindow()->updatePlot();
-    }
-    return;
+  if (mpPlotCurve) {
+    mpPlotCurve->setYAxisRight(checked);
+    mpPlotCurve = 0;
+    mpPlot->getParentPlotWindow()->updatePlot();
+  }
+  return;
 }
 
+/*!
+ * \brief Legend::showSetupDialog
+ * Show the setup dialog for the PlotCurve item clicked in the legend.
+ */
 void Legend::showSetupDialog()
 {
   if (mpPlotCurve) {
-    mpPlot->getParentPlotWindow()->showSetupDialog(mpPlotCurve->getNameStructure());
+    auto name = mpPlotCurve->getNameStructure();
+    // Clear the curve before showing the setup dialog, because this Legend
+    // might be destroyed when the setup dialog applies the settings so doing
+    // anything after showing the dialog is unsafe.
     mpPlotCurve = 0;
+    mpPlot->getParentPlotWindow()->showSetupDialog(std::move(name));
   }
 }
 

@@ -55,6 +55,7 @@ import BackendDump;
 import BackendEquation;
 import BackendVariable;
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import Expression;
 import Flags;
 import FlagsUtil;
@@ -91,7 +92,6 @@ protected
   BackendDAE.Shared shared;
   BackendDAE.Var tmpv;
   DAE.ComponentRef cref;
-  BackendDAE.Shared sharedIn;
   BackendDAE.EqSystems localInline;
   BackendDAE.Variables knownVariables, saveKnGlobalVars;
   BackendDAE.BackendDAE inlineBDAE;
@@ -154,7 +154,7 @@ algorithm
                                                             "calculateStrongComponentJacobians",
                                                             "removeConstants",
                                                             "simplifyTimeIndepFuncCalls"});
-  _ := FlagsUtil.set(Flags.EXEC_STAT, execbool);
+  FlagsUtil.set(Flags.EXEC_STAT, execbool);
   if Flags.isSet(Flags.DUMP_INLINE_SOLVER) then
     BackendDump.bltdump("Final inline systems:", inlineBDAE);
   end if;
@@ -175,7 +175,6 @@ protected function symSolverUpdateSyst
   output BackendDAE.EqSystem oSyst;
   output BackendDAE.Variables oKnVars = inKnVars;
 protected
-  array<Option<BackendDAE.Equation>> equOptArr;
   BackendDAE.Equation eqn;
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;

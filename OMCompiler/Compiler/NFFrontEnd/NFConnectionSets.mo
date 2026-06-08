@@ -111,8 +111,6 @@ package ConnectionSets
     input Connection connection;
     input BrokenEdges broken;
     input output ConnectionSets.Sets sets;
-  protected
-    list<Connection> conns;
   algorithm
     if not listEmpty(broken) and isBroken(connection.lhs, connection.rhs, broken) then
       return;

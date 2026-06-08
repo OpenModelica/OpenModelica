@@ -407,6 +407,13 @@ uniontype MMExp
     Ident eltName;
     list<MMExp> statements;
   end MM_FOR_LOOP;
+
+  record MM_LIST_FOR_LOOP "iterative list map: for eltName in listName loop match eltName ... end for;"
+    Ident eltName;
+    Ident listName;
+    TypedIdents matchLocals "pattern and body locals of the per-element match";
+    list<MMMatchCase> matchCases "the matched case plus an optional skip (else) case";
+  end MM_LIST_FOR_LOOP;
 end MMExp;
 
 public type MMMatchCase = tuple<list<MatchingExp>, list<MMExp>>;
@@ -580,7 +587,7 @@ public function transformAST
   input TemplPackage inTplPackage;
   output MMPackage outMMPackage;
 algorithm
-  outMMPackage := match (inTplPackage)
+  outMMPackage := match inTplPackage
     local
       PathIdent name;
       list<tuple<Ident,TemplateDef>>  templateDefs;
@@ -606,7 +613,7 @@ public function fullyQualifyTemplatePackage
   input TemplPackage inTplPackage;
   output TemplPackage outTplPackage;
 algorithm
-  outTplPackage := match (inTplPackage)
+  outTplPackage := match inTplPackage
     local
       PathIdent name;
       list<tuple<Ident,TemplateDef>>  templateDefs;
@@ -754,13 +761,13 @@ protected function encodeIdentNoPrefix
   input Ident inIdent "original ident; it can be sringified dot path, too";
   output Ident outIdent "unambiguous,ono-one back-convertible legal ident; can start with '_' ";
 algorithm
-  (outIdent) := matchcontinue (inIdent)
+  outIdent := matchcontinue inIdent
     local
       Ident ident;
 
     //to prevent ambiguity when prefixing the encoded ident,
     //when the first character is "_", encode it as "_0" (although this is not relevant for MM yet)
-    case ( ident  )
+    case ident
       algorithm
         true := (stringLength(ident) > 0) and (stringGetStringChar(ident,1) == "_");
         ident := System.stringReplace(ident, "_", "__");
@@ -770,7 +777,7 @@ algorithm
       then
         ( ident );
 
-    case ( ident  )
+    case ident
       algorithm
         //false = (stringLength(ident) > 0) and (stringGetStringChar(ident,1) == "_");
 
@@ -802,12 +809,12 @@ public function encodeTypedIdent
   input Ident prefix;
   output tuple<Ident,TypeSignature> outTypedIdent;
 algorithm
-  (outTypedIdent) := matchcontinue (inTypedIdent, prefix)
+  outTypedIdent := matchcontinue inTypedIdent
     local
       Ident ident;
       TypeSignature ts;
 
-    case ((ident,ts),_)
+    case (ident,ts)
       algorithm
         ident := encodeIdent(ident, prefix);
       then
@@ -830,7 +837,7 @@ public function addOutPrefixes
 
   output list<MMExp> outStmts;
 algorithm
-  (outStmts) := matchcontinue (inStmts, inTextArgs, inTranslatedTextArgs)
+  outStmts := matchcontinue (inStmts, inTextArgs, inTranslatedTextArgs)
     local
       list<MMExp> stmts;
       MMExp stmt, rhs;
@@ -869,10 +876,9 @@ public function addOutPrefixesRhs
 
   output MMExp outStmt;
 algorithm
-  (outStmt) := matchcontinue (inStmt, inTranslatedTextArgs)
+  outStmt := matchcontinue (inStmt, inTranslatedTextArgs)
     local
       list<MMExp>  fargs;
-      MMExp stmt;
       Ident ident, outident;
       PathIdent fpath;
       list<tuple<Ident,Ident>> trIdents;
@@ -914,7 +920,7 @@ algorithm
 
     case ( ident :: largs, txtargs, trIdents)
       algorithm
-        _ := lookupTupleList(txtargs, ident);
+        lookupTupleList(txtargs, ident);
         outident := outPrefix + ident;
         trIdents := updateTupleList(trIdents, (ident,outident) );
         (largs, trIdents) := addOutPrefixesLhs(largs, txtargs, trIdents);
@@ -922,7 +928,7 @@ algorithm
 
     case ( ident :: largs, txtargs, trIdents)
       algorithm
-        failure(_ := lookupTupleList(txtargs, ident));
+        failure(lookupTupleList(txtargs, ident));
         (largs, trIdents) := addOutPrefixesLhs(largs, txtargs, trIdents);
       then ( ident :: largs, trIdents );
 
@@ -948,7 +954,7 @@ algorithm
   for id in inTextArgs loop
     (ident,_) := id;
     try
-      _ := lookupTupleList(inTranslatedTextArgs, ident);
+      lookupTupleList(inTranslatedTextArgs, ident);
     else
       outident := outPrefix + ident;
       outStmts := MM_ASSIGN({outident},MM_IDENT(IDENT(ident))) :: outStmts;
@@ -1017,7 +1023,7 @@ algorithm
       Option<MatchingExp> rhsval;
       list<EscOption> opts;
       list<MMEscOption> mmopts;
-      Boolean hasretval, isnot, isUsed;
+      Boolean hasretval, isnot;
       Integer n;
       StringToken st;
       list<ASTDef> astDefs;
@@ -1257,7 +1263,7 @@ algorithm
         (stmts, locals, scEnv, accMMDecls, intxt)
           := statementsFromExp(exp, {}, stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls);
         //pop the let scope
-        (LET_SCOPE() :: scEnv) := scEnv;
+        LET_SCOPE() :: scEnv := scEnv;
         //TODO: worn when not used
       then ( stmts, locals, scEnv, accMMDecls, intxt);
 
@@ -1291,7 +1297,7 @@ algorithm
         scEnv := RECURSIVE_SCOPE(ident, encIdent) :: scEnv;
         (stmts, locals, scEnv, accMMDecls, _)
           := statementsFromExp(txtexp, {}, stmts, encIdent, encIdent, locals, scEnv, tplPackage, accMMDecls);
-        (RECURSIVE_SCOPE() :: scEnv) := scEnv;
+        RECURSIVE_SCOPE() :: scEnv := scEnv;
 
         (stmts, locals, scEnv, accMMDecls, intxt)
           := statementsFromExp(exp, {}, stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls);
@@ -1348,7 +1354,7 @@ algorithm
       algorithm
         (fname,_, oargs,_) := getFunSignature(fname, sinfo2, tplPackage);
         //fprint(Flags.FAILTRACE," after fname = " + pathIdentString(fname) + "\n");
-        (_::_) := oargs;
+        _::_ := oargs;
 
         if Flags.isSet(Flags.FAILTRACE) then
           Debug.trace("Error - NORET_CALL with a '" + pathIdentString(fname) + "' template or function that has output argument(s).\n");
@@ -1418,16 +1424,16 @@ public function warnIfSomeOptions
   input list<MMEscOption> inMMEscOptions;
 
 algorithm
-  _ :=
-  matchcontinue (inMMEscOptions)
+  () :=
+  matchcontinue inMMEscOptions
     local
       Ident optid;
 
     //ok, no options
-    case ( {} ) then ();
+    case {} then ();
 
     //warning - more options than expected
-    case ( (optid,_) ::_ )
+    case (optid,_) ::_
       algorithm
         true := Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - more options specified than expected for an expression (first option is '" + optid + "').\n");
        then fail();
@@ -1486,7 +1492,7 @@ algorithm
            stmts, locals, scEnv, tplPackage, accMMDecls )
       algorithm
         defoptval := lookupTupleList(defaultEscOptions, optid);
-        failure(_ := lookupTupleList(accMMEscOpts, optid)); //no duplicity
+        failure(lookupTupleList(accMMEscOpts, optid)); //no duplicity
         (accMMEscOpts, stmts, locals, scEnv, accMMDecls)
          := statementsFromEscOptions(opts, (optid, defoptval) :: accMMEscOpts,
           stmts, locals, scEnv, tplPackage, accMMDecls);
@@ -1497,8 +1503,8 @@ algorithm
     case ( (optid, SOME(optexp)) :: opts, accMMEscOpts,
            stmts, locals, scEnv, tplPackage as TEMPL_PACKAGE(astDefs = astdefs), accMMDecls )
       algorithm
-        ((_, opttype)) := lookupTupleList(defaultEscOptions, optid);
-        failure(_ := lookupTupleList(accMMEscOpts, optid)); //no duplicity
+        (_, opttype) := lookupTupleList(defaultEscOptions, optid);
+        failure(lookupTupleList(accMMEscOpts, optid)); //no duplicity
         ((mmarg,exptype,sinfo), stmts, locals, scEnv, accMMDecls)
           := statementsFromArg(optexp, stmts, locals, scEnv, tplPackage, accMMDecls);
         (mmarg, stmts, locals) := typeAdaptMMOption(mmarg, exptype, sinfo, opttype, stmts, locals, astdefs);
@@ -1512,7 +1518,7 @@ algorithm
     case ( (optid, _) :: opts, accMMEscOpts,
            stmts, locals, scEnv, tplPackage, accMMDecls )
       algorithm
-        failure(_ := lookupTupleList(defaultEscOptions, optid));
+        failure(lookupTupleList(defaultEscOptions, optid));
         true := Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - an unknown option'" + optid + "' was specified. \n");
         (accMMEscOpts, stmts, locals, scEnv, accMMDecls)
           := statementsFromEscOptions(opts, accMMEscOpts, stmts, locals, scEnv, tplPackage, accMMDecls);
@@ -1524,8 +1530,8 @@ algorithm
     case ( (optid, _) :: opts, accMMEscOpts,
            stmts, locals, scEnv, tplPackage, accMMDecls )
       algorithm
-        _ := lookupTupleList(defaultEscOptions, optid);
-        _ := lookupTupleList(accMMEscOpts, optid);
+        lookupTupleList(defaultEscOptions, optid);
+        lookupTupleList(accMMEscOpts, optid);
         true := Flags.isSet(Flags.FAILTRACE); Debug.trace("Warning - a duplicit option'" + optid + "' was specified. It will be ignored (not evaluated).\n");
         (accMMEscOpts, stmts, locals, scEnv, accMMDecls)
          := statementsFromEscOptions(opts, accMMEscOpts, stmts, locals, scEnv, tplPackage, accMMDecls);
@@ -1550,7 +1556,7 @@ algorithm
     local
       list<Expression> explst;
 
-    case ( (MAP_ARG_LIST(parts = explst), _) )  then explst;
+    case (MAP_ARG_LIST(parts = explst), _)  then explst;
     else {inExp};
   end match;
 end getExpListForMap;
@@ -1872,7 +1878,7 @@ public function addWriteCallFromMMExp
   output Ident outInText;
 algorithm
   (outStmts, outLocals, outScopeEnv, outMMDecls, outInText)
-  := matchcontinue (inHasRetValue, inMMExp, inType, inSourceInfo, inMMEscOptions, inStmts, inInText, inOutText, inLocals, inScopeEnv, inTplPackage, inAccMMDecls)
+  := matchcontinue (inHasRetValue, inMMExp, inType, inMMEscOptions, inStmts, inInText, inOutText, inLocals, inScopeEnv, inTplPackage, inAccMMDecls)
     local
       Ident intxt, outtxt;
       PathIdent fname;
@@ -1890,12 +1896,12 @@ algorithm
     //it is not a ret value,
     //if it is from a temlate call or a non-template call without a return value,
     //the statement is already added, nothing to do here
-    case (false, _, _, _, _, stmts, intxt, _, locals, scEnv, _,  accMMDecls)
+    case (false, _, _, _, stmts, intxt, _, locals, scEnv, _, accMMDecls)
       then
         ( stmts, locals, scEnv, accMMDecls, intxt);
 
     //an option -> match it case SOME(val) then val // if exp = SOME(val) then val
-    case (_, mmexp, exptype as OPTION_TYPE(), _, mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage,  accMMDecls)
+    case (_, mmexp, exptype as OPTION_TYPE(), mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls)
       algorithm
         warnIfSomeOptions(mmopts);
         //internal encodeing of val is not needed as the val is bound tightly, it hides possible val from upper scope
@@ -1911,7 +1917,7 @@ algorithm
         ( (stmt :: stmts), locals, scEnv, accMMDecls, intxt);
 
     //a list expression -> concat
-    case (_, mmexp, exptype as LIST_TYPE(), _, mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage,  accMMDecls)
+    case (_, mmexp, exptype as LIST_TYPE(), mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls)
       algorithm
         mapctx := MAP_CONTEXT(BIND_MATCH("it"), (BOUND_VALUE(IDENT("it")),dummySourceInfo) , mmopts, NONE(), false);
         (stmts, locals, scEnv, accMMDecls, intxt)
@@ -1921,7 +1927,7 @@ algorithm
         ( stmts, locals, scEnv, accMMDecls, intxt);
 
     //string const - inline or defined by the user as an ident
-    case (_, mmexp, STRING_TOKEN_TYPE(), _, mmopts, stmts, intxt, outtxt, locals, scEnv, _,  accMMDecls)
+    case (_, mmexp, STRING_TOKEN_TYPE(), mmopts, stmts, intxt, outtxt, locals, scEnv, _, accMMDecls)
       algorithm
         warnIfSomeOptions(mmopts);
         stmt := tplStatement("writeTok", {mmexp}, intxt, outtxt);
@@ -1929,7 +1935,7 @@ algorithm
         ( (stmt :: stmts), locals, scEnv, accMMDecls, outtxt);
 
     //text -> writeText
-    case (_, mmexp, TEXT_TYPE(), _, mmopts, stmts, intxt, outtxt, locals, scEnv, _,  accMMDecls)
+    case (_, mmexp, TEXT_TYPE(), mmopts, stmts, intxt, outtxt, locals, scEnv, _, accMMDecls)
       algorithm
         warnIfSomeOptions(mmopts);
         stmt := tplStatement("writeText", {mmexp}, intxt, outtxt);
@@ -1937,7 +1943,7 @@ algorithm
         ( (stmt :: stmts), locals, scEnv, accMMDecls, outtxt);
 
     //try to-string conversion
-    case (_, mmexp, exptype, _, mmopts, stmts, intxt, outtxt, locals, scEnv, _,  accMMDecls)
+    case (_, mmexp, exptype, mmopts, stmts, intxt, outtxt, locals, scEnv, _, accMMDecls)
       algorithm
         warnIfSomeOptions(mmopts);
         mmexp := mmExpToString(mmexp, exptype, inSourceInfo);
@@ -1962,51 +1968,51 @@ public function mmExpToString
 
   output MMExp outMMExp;
 algorithm
-  outMMExp := matchcontinue (inMMExp, inType, inSourceInfo)
+  outMMExp := matchcontinue (inMMExp, inType)
     local
       MMExp mmexp;
       String reason, str;
       StringToken st;
       TypeSignature ts;
 
-    case (mmexp, STRING_TYPE(), _)
+    case (mmexp, STRING_TYPE())
       then
         mmexp;
 
     //a literal constant to string - inline it as a special MM_STRING
-    case (MM_LITERAL(value = str), _, _)
+    case (MM_LITERAL(value = str), _)
       then
         MM_STRING(str);
 
     //an inlined string constant, can be inlined as MM_STRING
-    case (MM_STR_TOKEN(value = st), _, _)
+    case (MM_STR_TOKEN(value = st), _)
       algorithm
         str := Tpl.strTokString(st);
       then
         MM_STRING(str);
 
     //runtime strTokString
-    case (mmexp, STRING_TOKEN_TYPE(), _)
+    case (mmexp, STRING_TOKEN_TYPE())
       then
         MM_FN_CALL(PATH_IDENT("Tpl",IDENT("strTokString")), { mmexp });
 
     //runtime textString
-    case (mmexp, TEXT_TYPE(), _)
+    case (mmexp, TEXT_TYPE())
       then
         MM_FN_CALL(PATH_IDENT("Tpl",IDENT("textString")), { mmexp });
 
     //runtime integer type conversion
-    case (mmexp, INTEGER_TYPE(), _)
+    case (mmexp, INTEGER_TYPE())
       then
         MM_FN_CALL(IDENT("intString"),{ mmexp });
 
     //runtime real type conversion
-    case (mmexp, REAL_TYPE(), _)
+    case (mmexp, REAL_TYPE())
       then
         MM_FN_CALL(IDENT("realString"),{ mmexp });
 
     //runtime boolean type conversion
-    case (mmexp, BOOLEAN_TYPE(), _)
+    case (mmexp, BOOLEAN_TYPE())
       then
         MM_FN_CALL(PATH_IDENT("Tpl", IDENT("booleanString")),{ mmexp });
 
@@ -2014,7 +2020,7 @@ algorithm
     //trying to convert an unresolved value
     //it is already reported as an error, just embed and continue
     //or it is an illegal no-ret fun call (to be auto-converted to "" in the future??)
-    case (mmexp, UNRESOLVED_TYPE(reason = reason), _)
+    case (mmexp, UNRESOLVED_TYPE(reason = reason))
       algorithm
         reason := "#UnresType# " + reason + " #";
         if Flags.isSet(Flags.FAILTRACE) then
@@ -2024,7 +2030,7 @@ algorithm
         MM_FN_CALL(IDENT(reason),{ mmexp });
 
     //trying to convert a value when there is no conversion for its type
-    case (mmexp, ts, _)
+    case (mmexp, ts)
       algorithm
         str := "Elaborated expression '" + mmExpString(mmexp) + "' of type '"
            + typeSignatureString(ts) + "' has no automatic to-string conversion.";
@@ -2063,7 +2069,7 @@ public function statementFromFun
   output Ident outOutText;
 algorithm
   (outHasRetValue, outStmt, outRetMMExp, outRetType, outLocals, outOutText)
-    := matchcontinue (inArgValues, inFunName, inInArgs, inOutArgs, inTypeVars, inInText, inOutText, inLocals, inTplPackage, inInfo)
+    := matchcontinue (inArgValues, inFunName, inInArgs, inOutArgs, inTypeVars, inInText, inOutText, inLocals, inTplPackage)
     local
 
       PathIdent fname;
@@ -2084,8 +2090,7 @@ algorithm
 
     //simple template function - one implicit text argument
     //- make a template call statement and return the out argument
-    case (argvals, fname, ( iarg  :: iargs ),  { oarg }, tyVars,
-          intxt, outtxt, locals, tplPackage as TEMPL_PACKAGE(astDefs = astDefs), _)
+    case (argvals, fname, ( iarg  :: iargs ), { oarg }, tyVars, intxt, outtxt, locals, tplPackage as TEMPL_PACKAGE(astDefs = astDefs))
       algorithm
         areTextInOutArgs(iarg, oarg, tplPackage); //texts and equal or equal without conventional prefixes in/out, i.e. inId = outId
         //equality(listLength(argvals) = listLength(iargs));
@@ -2097,10 +2102,7 @@ algorithm
 
     //multi output template function - one implicit text argument + extra text in/out arguments
     //- make a template call statement and return only the first out argument
-    case (argvals, fname,
-           ( iarg :: iargs ),
-           ( oarg :: (oargs as (_::_)) ), tyVars,
-           intxt, outtxt, locals, tplPackage as TEMPL_PACKAGE(astDefs = astDefs), _)
+    case (argvals, fname, ( iarg :: iargs ), ( oarg :: (oargs as (_::_)) ), tyVars, intxt, outtxt, locals, tplPackage as TEMPL_PACKAGE(astDefs = astDefs))
       algorithm
         areTextInOutArgs(iarg, oarg, tplPackage); //texts and equal or equal without conventional prefixes in/out, i.e. inId = outId
         //equality(listLength(argvals) = listLength(iargs));
@@ -2115,8 +2117,7 @@ algorithm
     //a non-template function - no implicit text argument
     //one return value
     //- make a locally bound return value and assign the function to it
-    case (argvals, fname, iargs,  { (_, outtype) }, tyVars,
-         intxt, _, locals, TEMPL_PACKAGE(astDefs = astDefs), _)
+    case (argvals, fname, iargs, { (_, outtype) }, tyVars, intxt, _, locals, TEMPL_PACKAGE(astDefs = astDefs))
       algorithm
         //equality(listLength(argvals) = listLength(iargs));
         (mmargs, setTyVars) := typeAdaptMMArgsForFun(argvals, iargs, tyVars, {}, astDefs);
@@ -2133,8 +2134,7 @@ algorithm
     //a non-template function - no implicit text argument
     //no return value - i.e. an intrinsic call like <# fun(arg) #>
     //- inline it as it is
-    case (argvals, fname, iargs,  {}, tyVars,
-          intxt, _, locals, TEMPL_PACKAGE(astDefs = astDefs), _)
+    case (argvals, fname, iargs, {}, tyVars, intxt, _, locals, TEMPL_PACKAGE(astDefs = astDefs))
       algorithm
         //equality(listLength(argvals) = listLength(iargs));
         (mmargs,_) := typeAdaptMMArgsForFun(argvals, iargs, tyVars, {}, astDefs);
@@ -2143,7 +2143,7 @@ algorithm
         //perhaps, UNIT_TYPE() or VOID_TYPE will fit here better
         ( false, mmexp, mmexp, UNRESOLVED_TYPE("No return value."), locals, intxt );
 
-    case (argvals, fname, iargs,  oargs, _, _, _, _, _, _)
+    case (argvals, fname, iargs, oargs, _, _, _, _, _)
       algorithm
         errArgVals := List.map(argvals, Util.tuple312);
         str := "Cannot elaborate function\n  "
@@ -2164,7 +2164,7 @@ public function areTextInOutArgs
   input tuple<Ident,TypeSignature> inOutArg;
   input TemplPackage inTplPackage;
 algorithm
-  _ := matchcontinue (inInArg, inOutArg, inTplPackage)
+  () := matchcontinue (inInArg, inOutArg, inTplPackage)
     local
       Ident inid, outid;
       TypeSignature itype, otype;
@@ -2183,8 +2183,8 @@ algorithm
     // equals with usage of in/out prefixes ... for external templates from an ast definition
     case ((inid,itype), (outid,otype), TEMPL_PACKAGE(astDefs = astdefs))
       algorithm
-        ("i" :: "n" :: inlst) := stringListStringChar(inid);
-        ("o" :: "u" :: "t" :: outlst) := stringListStringChar(outid);
+        "i" :: "n" :: inlst := stringListStringChar(inid);
+        "o" :: "u" :: "t" :: outlst := stringListStringChar(outid);
         true := valueEq(inlst, outlst);
         TEXT_TYPE() := deAliasedType(itype, astdefs);
         TEXT_TYPE() := deAliasedType(otype, astdefs);
@@ -2382,7 +2382,7 @@ public function typeAdaptMMOption
   output TypedIdents outLocals;
 algorithm
   (outMMArg, outStmts, outLocals) :=
-  matchcontinue (inMMArg, inArgType, sinfo, inTargetType, inStmts, inLocals, inASTDefs)
+  matchcontinue (inMMArg, inArgType, inTargetType, inStmts, inLocals, inASTDefs)
     local
       MMExp mmarg;
       TypeSignature argtype, targettype;
@@ -2391,7 +2391,7 @@ algorithm
       TypedIdents locals;
 
     //concrete type to its option SOME - when from a value of the concrete type
-    case ( mmarg, argtype, _, OPTION_TYPE(ofType = targettype), stmts, locals, astdefs)
+    case (mmarg, argtype, OPTION_TYPE(ofType = targettype), stmts, locals, astdefs)
       algorithm
         targettype := deAliasedType(targettype, astdefs);
         (mmarg, stmts, locals) := typeAdaptMMOption(mmarg, argtype, sinfo, targettype, stmts, locals, astdefs);
@@ -2399,7 +2399,7 @@ algorithm
       then
         (mmarg, stmts, locals);
 
-    case ( mmarg, argtype, _, targettype, stmts, locals, astdefs)
+    case (mmarg, argtype, targettype, stmts, locals, astdefs)
       algorithm
         argtype := deAliasedType(argtype, astdefs);
         (mmarg,_) := typeAdaptMMArg(mmarg, argtype, sinfo, false, targettype, {}, {}, astdefs);
@@ -2408,7 +2408,7 @@ algorithm
         (mmarg, stmts, locals);
 
     //textStrTok -  when from a template
-    case ( mmarg, TEXT_TYPE(), _, STRING_TOKEN_TYPE(), stmts, locals, _)
+    case (mmarg, TEXT_TYPE(), STRING_TOKEN_TYPE(), stmts, locals, _)
       algorithm
         mmarg := MM_FN_CALL(PATH_IDENT("Tpl",IDENT("textStrTok")), { mmarg });
         (mmarg, stmts, locals) := mmEnsureNonFunctionArg(mmarg, STRING_TOKEN_TYPE(), stmts, locals);
@@ -2416,7 +2416,7 @@ algorithm
         (mmarg, stmts, locals);
 
     //stringStrTok - when from a value of type string or others (int, real, bool)
-    case ( mmarg, argtype, _, STRING_TOKEN_TYPE(), stmts, locals, _)
+    case (mmarg, argtype, STRING_TOKEN_TYPE(), stmts, locals, _)
       algorithm
         mmarg := mmExpToString(mmarg, argtype, sinfo);
         (mmarg, stmts, locals) := mmEnsureNonFunctionArg(mmarg, STRING_TYPE(), stmts, locals);
@@ -2577,11 +2577,11 @@ algorithm
   := matchcontinue (inIsFirstArgToMap, inArgValuesToMap, inMapContext, inStmts, inInText, inOutText, inLocals, inScopeEnv, inTplPackage, inAccMMDecls)
     local
       list<MMExp> stmts, mapstmts, rhsMMArgs;
-      MMExp stmt, argmmexp, mmRecCall;
+      MMExp stmt, mmRecCall;
       TypeSignature argtype, oftype;
       ScopeEnv scEnv;
       Ident intxt, outtxt, fname,   idxName, freshIdxName, arrName, eltName;
-      TypedIdents locals,  localArgs, encodedExtargs, maplocals, caseLocals,   iargs, oargs;
+      TypedIdents locals,  localArgs, encodedExtargs, maplocals, caseLocals,   iargs, oargs, matchLocals;
       MapContext mapctx;
       TemplPackage tplPackage;
       list<MMDeclaration> accMMDecls;
@@ -2591,7 +2591,7 @@ algorithm
       Expression mapexp;
       list<MMEscOption> iopts;
       list<ASTDef> astDefs;
-      MMMatchCase mmmcEmptyList, mmmcCons, mmFailCons;
+      MMMatchCase mmmcEmptyList, mmmcCons, mmFailCons, mmmcMatched;
       Boolean isfirst, useiter,  isUsed;
       MMDeclaration mmFun;
       list<tuple<MatchingExp, TypedIdents, list<MMExp>>> elabcases;
@@ -2639,10 +2639,10 @@ algorithm
               :: FUN_SCOPE({},{})
               :: scEnv,
               tplPackage, accMMDecls);
-        (LET_SCOPE(_, _, _, isUsed)
+        LET_SCOPE(_, _, _, isUsed)
          :: CASE_SCOPE(mexp, _, localNames, caseLocals, encodedExtargs, _, _)
          :: FUN_SCOPE(_,localArgs)
-         :: scEnv) := scEnv; //releaseImmediateLocalScope(scEnv);
+         :: scEnv := scEnv; //releaseImmediateLocalScope(scEnv);
 
         (mexp,_) := rewriteMatchExpByLocalNames(mexp, oftype, localNames,{}, astDefs);
         maplocals := listAppend(caseLocals, maplocals);
@@ -2660,43 +2660,35 @@ algorithm
         //oargs = List.filterOnTrue(extargs, isText);
         oargs := List.filter1OnTrue(encodedExtargs, isAssignedText, assignedIdents);
         oargs := imlicitTxtArg :: oargs;
-        lhsArgs := List.map(oargs, Util.tuple21);
-        inMapExtargvals :=  List.map(encodedExtargs, makeMMArgValue);
-        rhsMMArgs := List.map(inMapExtargvals, Util.tuple31);
-        //recursive call
-        mmRecCall := MM_ASSIGN(
-            lhsArgs,
-            MM_FN_CALL(IDENT(fname), MM_IDENT(IDENT(imlicitTxt)) :: MM_IDENT(IDENT("rest")) :: rhsMMArgs)
-        );
-        //add the recursive call for the "rest" and revese statemnts
-        mapstmts := listReverse(mmRecCall :: mapstmts);
+        //reverse the per-element statements into source order
+        mapstmts := listReverse(mapstmts);
         //add indexed value if needed
         (mapstmts, maplocals)
           := addGetIndex(isUsed, freshIdxName, mapstmts, imlicitTxt, maplocals);
 
-        //make the empty case, cons case and a failing cons case (only recusive call for the rest)
-        mmmcEmptyList := makeMMMatchCase( (LIST_MATCH({}), {},{}), encodedExtargs, oargs);
-        mmmcCons := makeMMMatchCase(
-          (LIST_CONS_MATCH(mexp, BIND_MATCH("rest")), encodedExtargs, mapstmts),
-          encodedExtargs, oargs);
-        //TODO: the fail recursive call could be made conditional, only when the mexp can fail
-        // or, maybe, always like it is, to make easier location of failing of (badly)imported functions(they should not fail)
-        mmFailCons := makeMMMatchCase(
-          (LIST_CONS_MATCH(REST_MATCH(), BIND_MATCH("rest")), encodedExtargs, {mmRecCall}),
-          encodedExtargs, oargs);
-        mmmcases := if isAlwaysMatchedBool(mexp) then { mmmcEmptyList, mmmcCons } else { mmmcEmptyList, mmmcCons, mmFailCons };
-         //  listAppend({ mmmcEmptyList, mmmcCons },
-         //  { makeMMMatchCase(
-         // (LIST_CONS_MATCH(REST_MATCH(), BIND_MATCH("rest")), encodedExtargs, {mmRecCall}),
-         // encodedExtargs, oargs) } );
+        // The element-pattern bindings and per-element temporaries become the
+        // locals of the per-element match; the threaded text accumulators stay
+        // as the function's input/output arguments (iargs/oargs above).
+        matchLocals := maplocals;
+
+        // fresh loop variable bound to each list element (the match scrutinee)
+        eltName := "lstElt_" + intString(listLength(accMMDecls));
+
+        // The matched case runs the per-element body; the empty list is handled
+        // by the for-loop itself. When the element pattern may fail to match,
+        // add a skip case that leaves the accumulators unchanged.
+        mmmcMatched := ({mexp}, mapstmts);
+        mmmcases := if isAlwaysMatchedBool(mexp) then { mmmcMatched }
+                    else { mmmcMatched, ({REST_MATCH()}, {}) };
 
         mapctx := MAP_CONTEXT(ofbind, mapexp, iopts, hasIndexIdentOpt, useiter);
-        maplocals := listAppend(encodedExtargs, maplocals);
-        maplocals := imlicitTxtArg :: ("rest",argtype) :: maplocals;
 
-        // make fun
-        mmFun := MM_FUN(false,fname, iargs, oargs, maplocals,
-                        { MM_MATCH( mmmcases /*{ mmmcEmptyList, mmmcCons, mmFailCons } */ ) },
+        // make fun: an iterative for-loop over the list rather than a
+        // self-recursive helper. The recursion is a tail call (the C backend
+        // tail-call-optimises it), but a straight loop avoids deep call stacks
+        // for large models in every backend.
+        mmFun := MM_FUN(false, fname, iargs, oargs, {},
+                        { MM_LIST_FOR_LOOP(eltName, "items", matchLocals, mmmcases) },
                         GI_MAP_FUN(argtype, mapctx)
                 );
 
@@ -2737,10 +2729,10 @@ algorithm
               :: FUN_SCOPE({},{})
               :: scEnv,
               tplPackage, accMMDecls);
-        (LET_SCOPE(_, _, _, isUsed)
+        LET_SCOPE(_, _, _, isUsed)
          :: CASE_SCOPE(mexp, _, localNames, caseLocals, encodedExtargs, _, _)
          :: FUN_SCOPE(_,localArgs)
-         :: scEnv) := scEnv; //releaseImmediateLocalScope(scEnv);
+         :: scEnv := scEnv; //releaseImmediateLocalScope(scEnv);
 
         (mexp,_) := rewriteMatchExpByLocalNames(mexp, oftype, localNames,{}, astDefs);
         maplocals := listAppend(caseLocals, maplocals);
@@ -2823,10 +2815,10 @@ algorithm
               :: FUN_SCOPE({},{})
               :: scEnv,
               tplPackage, accMMDecls);
-        (LET_SCOPE(_, _, _, isUsed)
+        LET_SCOPE(_, _, _, isUsed)
          :: CASE_SCOPE(mexp, _, localNames, caseLocals, encodedExtargs, _, _)
          :: FUN_SCOPE(_,localArgs)
-         :: scEnv) := scEnv; //releaseImmediateLocalScope(scEnv);
+         :: scEnv := scEnv; //releaseImmediateLocalScope(scEnv);
 
         (mexp,_) := rewriteMatchExpByLocalNames(mexp, argtype, localNames,{}, astDefs);
         maplocals := listAppend(caseLocals, maplocals);
@@ -2911,6 +2903,17 @@ algorithm
   outIntersectionAndRests := (outIntersection, outList1Rest, outList2Rest);
 end intersectInOutArgs;
 
+public function isTupleListMember "True when an identifier names one of the typed idents in the list."
+  input Ident inId;
+  input TypedIdents inList;
+  output Boolean outIsMember;
+algorithm
+  outIsMember := matchcontinue ()
+    case () algorithm lookupTupleList(inList, inId); then true;
+    else false;
+  end matchcontinue;
+end isTupleListMember;
+
 /*
 function isIndexArg
   input tuple<Ident, TypeSignature> inArg;
@@ -2934,7 +2937,7 @@ public function shouldUseIterFunctions
 
   output Boolean outUseIterFuns;
 algorithm
-  (outUseIterFuns)
+  outUseIterFuns
   := matchcontinue (inIsFirstArgToMap, inUseIterLast, inIsListArgToMap, wasIndexVarUsed, inIterOptions, inRestArgValsToMap)
     local
       Boolean useiter;
@@ -2951,10 +2954,10 @@ algorithm
     case (true, _, true, false, iopts, _)
       algorithm
         iopts := listAppend(iopts, nonSpecifiedIterOptions) annotation(__OpenModelica_DisableListAppendWarning=true);
-        ((MM_LITERAL("NONE()"),_)) := lookupTupleList(iopts, emptyOptionId);
-        ((MM_LITERAL("NONE()"),_)) := lookupTupleList(iopts, separatorOptionId);
-        ((MM_LITERAL("0"),_))    := lookupTupleList(iopts, alignNumOptionId);
-        ((MM_LITERAL("0"),_))    := lookupTupleList(iopts, wrapWidthOptionId);
+        (MM_LITERAL("NONE()"),_) := lookupTupleList(iopts, emptyOptionId);
+        (MM_LITERAL("NONE()"),_) := lookupTupleList(iopts, separatorOptionId);
+        (MM_LITERAL("0"),_)    := lookupTupleList(iopts, alignNumOptionId);
+        (MM_LITERAL("0"),_)    := lookupTupleList(iopts, wrapWidthOptionId);
       then false;
 
     //- scalar argument to be mapped,
@@ -2965,7 +2968,7 @@ algorithm
     case (true, _, false, false, iopts, {})
       algorithm
         iopts := listAppend(iopts, nonSpecifiedIterOptions) annotation(__OpenModelica_DisableListAppendWarning=true);
-        ((MM_LITERAL("NONE()"),_)) := lookupTupleList(iopts, emptyOptionId);
+        (MM_LITERAL("NONE()"),_) := lookupTupleList(iopts, emptyOptionId);
       then false;
 
     //otherwise use it
@@ -3165,12 +3168,11 @@ public function makeMatchFun
 
 algorithm
   (outArgvals, outFunName, outInArgs, outOutArgs, outScopeEnv, outMMDecls)
-  := matchcontinue (inArgval, inMCases, inArgExp, hasImplicitLookup, inScopeEnv, inTplPackage, inAccMMDecls)
+  := matchcontinue (inArgval, inMCases, inScopeEnv, inTplPackage, inAccMMDecls)
     local
       ScopeEnv scEnv;
       tuple<MMExp, TypeSignature, SourceInfo> argval;
       list<tuple<MMExp, TypeSignature, SourceInfo>> argvals;
-      SourceInfo sinfo;
       MMExp mmexp;
       TypeSignature exptype;
       TypedIdents iargs, oargs, extargs, localArgs, encodedExtargs, funLocals;
@@ -3183,7 +3185,7 @@ algorithm
       Ident fname, matchArgName, implicitValueName;
       list<Ident> assignedIdents;
 
-    case ( argval as (mmexp, exptype, _), mcases, _, _, scEnv, tplPackage, accMMDecls )
+    case (argval as (mmexp, exptype, _), mcases, scEnv, tplPackage, accMMDecls)
       algorithm
         //TODO: when mmexp is an identifier, it should be made available through implicit context
         //so we will prepend it before each mexp in every case (instead 'it')
@@ -3262,7 +3264,7 @@ algorithm
    := matchcontinue inArgExp
     local
       PathIdent path;
-    case ( (BOUND_VALUE(path), _) )
+    case (BOUND_VALUE(path), _)
       algorithm
         outInputValueName := pathIdentString(path);
         outMatchArgName := encodeIdent(outInputValueName, funArgNamePrefix);
@@ -3282,7 +3284,7 @@ algorithm
       Ident argname;
       TypeSignature ts;
 
-    case ( (argname, ts) )  then ( (MM_IDENT(IDENT(argname)) , ts, dummySourceInfo) );
+    case (argname, ts)  then ( (MM_IDENT(IDENT(argname)) , ts, dummySourceInfo) );
 
   end match;
 end makeMMArgValue;
@@ -3292,8 +3294,8 @@ public function isText
   input tuple<Ident, TypeSignature> inArg;
   output Boolean outB;
 algorithm
-  outB := match(inArg)
-    case ( (_ , TEXT_TYPE()) )
+  outB := match inArg
+    case (_ , TEXT_TYPE())
       then true;
     else false;
   end match;
@@ -3335,7 +3337,7 @@ public function elabMatchCases
   output list<Ident> outAssignedIdents;
 algorithm
   (outMMMCases, outLocals, outScopeEnv, outMMDecls, outAssignedIdents)
-  := matchcontinue (inItArgVal, inImplicitValueName, inMCases, hasImplicitLookup, inLocals, inAccCaseLocals, inScopeEnv, inTplPackage, inAccMMDecls)
+  := matchcontinue (inItArgVal, inMCases, inLocals, inAccCaseLocals, inScopeEnv, inTplPackage, inAccMMDecls)
     local
       ScopeEnv scEnv;
       TypedIdents locals, accCaseLocals;
@@ -3348,22 +3350,18 @@ algorithm
       TemplPackage tplPackage;
       list<ASTDef> astdefs;
       list<MMDeclaration> accMMDecls;
-      MMExp mmexp;
       list<MMExp> stmts;
       tuple<MMExp, TypeSignature> argval;
       list<Ident> assignedIdents;
       list<tuple<Ident, Ident>> localNames;
 
-    case ( _, _, {}, _, locals, _, scEnv, _, accMMDecls)
+    case (_, {}, locals, _, scEnv, _, accMMDecls)
       algorithm
         locals := listAppend(inAccCaseLocals, locals);
       then
         ( {}, locals, scEnv, accMMDecls, {});
 
-    case ( argval as (_, exptype), _,
-           (mexp,exp) :: mcases,
-           _, locals, accCaseLocals, scEnv,
-           tplPackage as TEMPL_PACKAGE(astDefs = astdefs), accMMDecls )
+    case (argval as (_, exptype), (mexp,exp) :: mcases, locals, accCaseLocals, scEnv, tplPackage as TEMPL_PACKAGE(astDefs = astdefs), accMMDecls)
       algorithm
         mexp := typeCheckMatchingExp(mexp, exptype, astdefs);
         //mexp = encodeMatchingExp(mexp);
@@ -3371,7 +3369,7 @@ algorithm
         (stmts, locals, scEnv, accMMDecls, _)
           := statementsFromExp(exp,{}, {}, imlicitTxt, imlicitTxt, locals,
               (CASE_SCOPE(mexp, exptype, {}, accCaseLocals, {}, inImplicitValueName, hasImplicitLookup) :: scEnv), tplPackage, accMMDecls);
-        (CASE_SCOPE(mexp, _, localNames, accCaseLocals, extargs, _, _) :: scEnv) := scEnv; //releaseImmediateLocalScope(scEnv);
+        CASE_SCOPE(mexp, _, localNames, accCaseLocals, extargs, _, _) :: scEnv := scEnv; //releaseImmediateLocalScope(scEnv);
         stmts := listReverse(stmts);
         //TODO: locals can be gathered with introduction of another function scope
         //and then to see what was used, the rest can be eliminated with the typecheck function
@@ -3399,7 +3397,7 @@ public function getAssignedIdents
 
   output list<Ident> outAssignedIdents;
 algorithm
-  (outAssignedIdents)
+  outAssignedIdents
   := matchcontinue (inStatements, inAssignedIdents)
     local
        list<MMExp> stmts;
@@ -3468,7 +3466,7 @@ public function typeCheckMatchingExp
 
   output MatchingExp outTransformedMatchingExp;
 algorithm
-  (outTransformedMatchingExp)
+  outTransformedMatchingExp
     := matchcontinue (inMatchingExp, inMType, inASTDefs)
     local
       Ident bid;
@@ -3616,8 +3614,8 @@ public function typeCheckMatchingExpRecord
 
   output list<tuple<Ident, MatchingExp>> outTransformedMatchingExp;
 algorithm
-  (outTransformedMatchingExp)
-    := matchcontinue (inFieldMatchings, fields, inASTDefs)
+  outTransformedMatchingExp
+    := matchcontinue (inFieldMatchings, inASTDefs)
     local
       Ident ident;
       MatchingExp mexp;
@@ -3625,11 +3623,11 @@ algorithm
       list<tuple<Ident, MatchingExp>> fms;
       list<ASTDef> astDefs;
 
-    case ( {}, _, _)
+    case ({}, _)
       then
         {};
 
-    case ( (ident, mexp) :: fms, _, astDefs)
+    case ((ident, mexp) :: fms, astDefs)
       algorithm
         mtype := lookupTupleList(fields, ident);
         mexp := typeCheckMatchingExp(mexp, mtype, astDefs);
@@ -3637,10 +3635,10 @@ algorithm
       then
         ((ident, mexp) :: fms);
 
-    case ( (ident, _) :: _, _, _)
+    case ((ident, _) :: _, _)
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
-        failure( _ := lookupTupleList(fields, ident) );
+        failure( lookupTupleList(fields, ident) );
         //reason = "#Error - unresolved type - cannot find field '" + ident + "'#";
         true := Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - typeCheckMatchingExpRecord failed to find field '" + ident + "'\n");
         //(locals, fms) = localsFromMatchExpAndTypeCheckRecord(fms, fields, locals, astDefs);
@@ -3667,7 +3665,7 @@ public function typeCheckMatchingExpList
 
   output list<MatchingExp> outTransformedMatchingExp;
 algorithm
-  (outTransformedMatchingExp)
+  outTransformedMatchingExp
     := match (inMatchingExpLst, inTypeLst, inASTDefs)
     local
       MatchingExp mexp;
@@ -3716,11 +3714,11 @@ public function eliminateWildAs
 
   output MatchingExp outRewrittenMatchingExp;
 algorithm
-  outRewrittenMatchingExp := match (inMatchingExp)
+  outRewrittenMatchingExp := match inMatchingExp
     local
       Ident bid;
 
-    case ( BIND_AS_MATCH(bid, REST_MATCH()))  then   BIND_MATCH(bid);
+    case BIND_AS_MATCH(bid, REST_MATCH())  then   BIND_MATCH(bid);
     else inMatchingExp;
 
   end match;
@@ -3737,7 +3735,7 @@ public function rewriteMatchExpByLocalNames
   output TypedIdents outUsedLocals;
 algorithm
   (outRewrittenMatchingExp, outUsedLocals)
-    := matchcontinue (inMatchingExp, inMType, inLocalNames, inUsedLocals, inASTDefs)
+    := matchcontinue (inMatchingExp, inMType, inUsedLocals, inASTDefs)
     local
       Ident bid, fldId, localIdent;
       PathIdent tagpath;
@@ -3749,9 +3747,9 @@ algorithm
       TypedIdents fields, usedLocals;
       list<ASTDef> astDefs;
 
-    case ( BIND_AS_MATCH(
+    case (BIND_AS_MATCH(
              bindIdent = bid,
-             matchingExp = mexp ), mtype, _, usedLocals, astDefs)
+             matchingExp = mexp ), mtype, usedLocals, astDefs)
       algorithm
         localIdent := lookupTupleList(inLocalNames, bid);
         //TODO: a better error report - non stopping one here
@@ -3762,16 +3760,16 @@ algorithm
         (mexp, usedLocals);
 
     //eliminate the non-used binding
-    case ( BIND_AS_MATCH(
+    case (BIND_AS_MATCH(
              bindIdent = bid,
-             matchingExp = mexp ), mtype, _, usedLocals, astDefs)
+             matchingExp = mexp ), mtype, usedLocals, astDefs)
       algorithm
-        failure(_ := lookupTupleList(inLocalNames, bid));
+        failure(lookupTupleList(inLocalNames, bid));
         (mexp, usedLocals) := rewriteMatchExpByLocalNames(mexp, mtype, inLocalNames, usedLocals, astDefs);
       then
         (mexp, usedLocals);
 
-    case ( BIND_MATCH(bindIdent = bid), mtype, _, usedLocals, _)
+    case (BIND_MATCH(bindIdent = bid), mtype, usedLocals, _)
       algorithm
         localIdent := lookupTupleList(inLocalNames, bid);
         //TODO: a better error report - use match expression source info
@@ -3780,29 +3778,27 @@ algorithm
         (BIND_MATCH(localIdent), usedLocals);
 
     //eliminate the non-used binding
-    case ( BIND_MATCH(bindIdent = bid), _, _, usedLocals, _)
+    case (BIND_MATCH(bindIdent = bid), _, usedLocals, _)
       algorithm
-        failure(_ := lookupTupleList(inLocalNames, bid));
+        failure(lookupTupleList(inLocalNames, bid));
       then
         (REST_MATCH(), usedLocals);
 
     // a record with some fields is matched but no fields were used
     //-> adjust it to match the first field with "_" to obey MM semantics
     //TODO: when bootstrapped MM, make it (__) matching
-    case ( RECORD_MATCH(
+    case (RECORD_MATCH(
              tagName = tagpath,
-             fieldMatchings = {} ),
-           mtype, _,usedLocals, astDefs )
+             fieldMatchings = {} ), mtype, usedLocals, astDefs)
       algorithm
         mtype := deAliasedType(mtype, astDefs);
         ((fldId,_)::_, tagpath) := getFieldsForRecord(mtype, tagpath, astDefs);
       then
         (RECORD_MATCH(tagpath, {(fldId, REST_MATCH())} ), usedLocals);
 
-    case ( RECORD_MATCH(
+    case (RECORD_MATCH(
              tagName = tagpath,
-             fieldMatchings = fms ),
-           mtype, _, usedLocals, astDefs )
+             fieldMatchings = fms ), mtype, usedLocals, astDefs)
       algorithm
         mtype := deAliasedType(mtype, astDefs);
         (fields, tagpath) := getFieldsForRecord(mtype, tagpath, astDefs);
@@ -3810,17 +3806,16 @@ algorithm
       then
         (RECORD_MATCH(tagpath, fms ), usedLocals);
 
-    case ( SOME_MATCH(
-             value = mexp ), mtype, _, usedLocals, astDefs)
+    case (SOME_MATCH(
+             value = mexp ), mtype, usedLocals, astDefs)
       algorithm
         OPTION_TYPE(ofType = mtype) := deAliasedType(mtype, astDefs);
         (mexp, usedLocals) := rewriteMatchExpByLocalNames(mexp, mtype, inLocalNames, usedLocals, astDefs);
       then
         (SOME_MATCH(mexp), usedLocals);
 
-    case ( TUPLE_MATCH(
-             tupleArgs = mexpLst),
-           mtype, _, usedLocals, astDefs )
+    case (TUPLE_MATCH(
+             tupleArgs = mexpLst), mtype, usedLocals, astDefs)
       algorithm
         TUPLE_TYPE(ofTypes = otLst) := deAliasedType(mtype, astDefs);
         //equality( listLength(mexpLst) = listLength(otLst) );
@@ -3828,9 +3823,8 @@ algorithm
       then
         (TUPLE_MATCH(mexpLst), usedLocals);
 
-    case ( LIST_MATCH(
-             listElts = mexpLst),
-           mtype, _, usedLocals, astDefs )
+    case (LIST_MATCH(
+             listElts = mexpLst), mtype, usedLocals, astDefs)
       algorithm
         LIST_TYPE(ofType = ot) := deAliasedType(mtype, astDefs);
         otLst := List.fill(ot, listLength(mexpLst));
@@ -3838,10 +3832,9 @@ algorithm
       then
         (LIST_MATCH(mexpLst), usedLocals);
 
-    case ( LIST_CONS_MATCH(
+    case (LIST_CONS_MATCH(
              head = mexp,
-             rest = restmexp),
-           mtype, _, usedLocals, astDefs )
+             rest = restmexp), mtype, usedLocals, astDefs)
       algorithm
         mtype := deAliasedType(mtype, astDefs);
         LIST_TYPE(ofType = ot) := mtype;
@@ -3851,7 +3844,7 @@ algorithm
         (LIST_CONS_MATCH(mexp, restmexp), usedLocals);
 
     // the rest - NONE_MATCH, STRING_MATCH, LITERAL_MATCH, REST_MATCH
-    case ( mexp ,_,_,usedLocals,_)
+    case (mexp, _, usedLocals, _)
       then
         (mexp, usedLocals);
 
@@ -3874,7 +3867,7 @@ public function rewriteMatchExpByLocalNamesRecord
   output TypedIdents outUsedLocals;
 algorithm
   (outRewrittenMatchingExp, outUsedLocals)
-    := matchcontinue (inFieldMatchings, fields, inLocalNames, inUsedLocals, inASTDefs)
+    := matchcontinue (inFieldMatchings, inUsedLocals, inASTDefs)
     local
       Ident ident;
       MatchingExp mexp;
@@ -3882,13 +3875,12 @@ algorithm
       list<tuple<Ident, MatchingExp>> fms;
       TypedIdents usedLocals;
       list<ASTDef> astDefs;
-      String reason;
 
-    case ( {}, _, _, _, _)
+    case ({}, _, _)
       then
         ({}, inUsedLocals);
 
-    case ( (ident, mexp) :: fms, _, _, usedLocals, astDefs)
+    case ((ident, mexp) :: fms, usedLocals, astDefs)
       algorithm
         mtype := lookupTupleList(fields, ident);
         (mexp, usedLocals) := rewriteMatchExpByLocalNames(mexp, mtype, inLocalNames, usedLocals, astDefs);
@@ -3897,9 +3889,9 @@ algorithm
         ((ident, mexp) :: fms, usedLocals);
 
     //TODO: should we report an error here? ... perhaps, only internal as the mexp shpuld be already checked
-    case ( (ident, mexp) :: fms, _, _, usedLocals, astDefs)
+    case ((ident, mexp) :: fms, usedLocals, astDefs)
       algorithm
-        failure( _ := lookupTupleList(fields, ident) );
+        failure( lookupTupleList(fields, ident) );
         //locals = addLocalValue(ident, UNRESOLVED_TYPE(reason), locals);
         if Flags.isSet(Flags.FAILTRACE) then
           Debug.trace("Error - rewriteMatchExpByLocalNamesRecord failed to find field '" + ident + "'\n");
@@ -3930,7 +3922,7 @@ public function rewriteMatchExpByLocalNamesList
   output TypedIdents outUsedLocals;
 algorithm
   (outRewrittenMatchingExp, outUsedLocals)
-    := matchcontinue (inMatchingExpLst, inTypeLst, inLocalNames, inUsedLocals, inASTDefs)
+    := matchcontinue (inMatchingExpLst, inTypeLst, inUsedLocals, inASTDefs)
     local
       MatchingExp mexp;
       list<MatchingExp> mexpLst;
@@ -3940,11 +3932,11 @@ algorithm
       TypedIdents usedLocals;
       list<ASTDef> astDefs;
 
-    case ( {}, {}, _,usedLocals,_)
+    case ({}, {}, usedLocals, _)
       then
         ({}, usedLocals);
 
-    case ( mexp :: mexpLst, mtype :: tsLst, _, usedLocals, astDefs)
+    case (mexp :: mexpLst, mtype :: tsLst, usedLocals, astDefs)
       algorithm
         (mexp, usedLocals)    := rewriteMatchExpByLocalNames(mexp, mtype, inLocalNames, usedLocals, astDefs);
         (mexpLst, usedLocals) := rewriteMatchExpByLocalNamesList(mexpLst, tsLst, inLocalNames, usedLocals, astDefs);
@@ -3986,13 +3978,13 @@ algorithm
 
     case ( ident, mtype, locals)
       algorithm
-        failure( _ := lookupTupleList(locals, ident) );
+        failure( lookupTupleList(locals, ident) );
       then
         ((ident, mtype) :: locals);
 
     case ( ident, mtype, locals)
       algorithm
-        _ := lookupTupleList(locals, ident);
+        lookupTupleList(locals, ident);
         msg := "A duplicite identifier '" + ident + "' bound in a matching expression.";
         addSusanError(msg, dummySourceInfo); //TODO: Match expressions source info here
         //true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - (addLocalValue) a duplicite identifier '" + ident + "' bound in a matching expression. \n");
@@ -4010,7 +4002,7 @@ public function makeMMMatchCase
 
   output MMMatchCase outMMMCase;
 algorithm
-  (outMMMCase)
+  outMMMCase
   := matchcontinue (inElabCase, inExtraArgs, inOutArgs)
     local
       MatchingExp mexp;
@@ -4049,13 +4041,13 @@ algorithm
     //out args are always passed through
     case ( (argname, _), _, oargs)
       algorithm
-        _ := lookupTupleList(oargs, argname);
+        lookupTupleList(oargs, argname);
       then
         BIND_MATCH(argname);
 
     case ( (argname, _), caseargs, _)
       algorithm
-        _ := lookupTupleList(caseargs, argname);
+        lookupTupleList(caseargs, argname);
       then
         BIND_MATCH(argname);
 
@@ -4079,23 +4071,23 @@ public function addRestElabCase
 
   output list<tuple<MatchingExp, TypedIdents, list<MMExp>>> outElabCases;
 algorithm
-  outElabCases := matchcontinue (inElabCases)
+  outElabCases := matchcontinue inElabCases
     local
       MatchingExp mexp;
       tuple<MatchingExp, TypedIdents, list<MMExp>> elabcase;
       list<tuple<MatchingExp, TypedIdents, list<MMExp>>> restcases;
 
-    case ( {} )
+    case {}
       then
         ( { (REST_MATCH(),{},{}) } );
 
-    case ( restcases as ( (mexp, _, _) :: _) )
+    case restcases as ( (mexp, _, _) :: _)
       algorithm
         isAlwaysMatched(mexp);
       then
         ( restcases );
 
-    case ( (elabcase as (_, _, _)) :: restcases )
+    case (elabcase as _) :: restcases
       algorithm
         //failure(isAlwaysMatched(mexp));
         restcases := addRestElabCase(restcases);
@@ -4116,25 +4108,25 @@ public function isAlwaysMatched "Takes a MatchingExp and fails when it is not a 
   input MatchingExp inMatchingExp;
 
 algorithm
-  _ := match (inMatchingExp)
+  () := match inMatchingExp
     local
       MatchingExp mexp;
       list<MatchingExp> mexplst;
 
-    case ( BIND_AS_MATCH(matchingExp = mexp) )
+    case BIND_AS_MATCH(matchingExp = mexp)
       algorithm
         isAlwaysMatched(mexp);
       then ();
 
-    case ( BIND_MATCH() )
+    case BIND_MATCH()
       then ();
 
-    case ( TUPLE_MATCH(tupleArgs = mexplst) )
+    case TUPLE_MATCH(tupleArgs = mexplst)
       algorithm
         List.map_0(mexplst, isAlwaysMatched);
       then ();
 
-    case ( REST_MATCH() )
+    case REST_MATCH()
       then ();
   end match;
 end isAlwaysMatched;
@@ -4144,10 +4136,10 @@ public function isAlwaysMatchedBool "Takes a MatchingExp and fails when it is no
   input MatchingExp inMatchingExp;
   output Boolean isAlwaysMatched;
 algorithm
-  isAlwaysMatched := matchcontinue (inMatchingExp)
+  isAlwaysMatched := matchcontinue inMatchingExp
     local
       MatchingExp mexp;
-    case (mexp)
+    case mexp
       algorithm
         isAlwaysMatched(mexp);
       then true;
@@ -4169,7 +4161,7 @@ public function adaptTextToString
   output TypedIdents outLocals;
 algorithm
   (outArgValue, outArgExp, outStmts, outLocals)
-    := matchcontinue (inArgValue, inArgExp, inStmts, inLocals, inTplPackage)
+    := matchcontinue (inArgValue, inStmts, inLocals, inTplPackage)
     local
       list<MMExp> stmts;
       MMExp stmt, mmexp;
@@ -4184,7 +4176,7 @@ algorithm
     //if it is needed to match against the Text structure, a simple deconstruction functions can be used,
     //one of type Text -> list<StringToken>, the second of type Text -> list<tuple<Tokens,BlockType>> for the stack
     //but who will need this, anyway ? (maybe for debugging of Susan it can help)
-    case ( (mmexp, exptype, sinfo), _, stmts, locals,  TEMPL_PACKAGE(astDefs = astdefs))
+    case ((mmexp, exptype, sinfo), stmts, locals, TEMPL_PACKAGE(astDefs = astdefs))
       algorithm
         TEXT_TYPE() := deAliasedType(exptype, astdefs);
         strid := textToStringNamePrefix + intString(listLength(locals));
@@ -4195,7 +4187,7 @@ algorithm
         ( (MM_IDENT(IDENT(strid)), STRING_TYPE(), sinfo), emptyExpression, stmt::stmts,  locals);
 
    //other types are ok for the match statement
-   case ( argval, _, stmts, locals, _)
+   case (argval, stmts, locals, _)
       then
         ( argval, inArgExp, stmts,  locals);
 
@@ -4219,12 +4211,11 @@ public function elabCasesFromCondition
 
   output list<tuple<MatchingExp,Expression>> outMCases;
 algorithm
-  outMCases := matchcontinue (inArgType, inIsNot, inRhsValue, inTrueBranch, inElseBranchOpt, inTplPackage)
+  outMCases := matchcontinue (inArgType, inIsNot, inRhsValue, inTrueBranch, inElseBranchOpt)
     local
       Boolean isnot;
       Expression tbranch;
       Option<Expression> ebranchOpt;
-      TemplPackage tplPackage;
 
     /* from the "if EXP is PATTERN then ..." form
     // if  exp = mexp  then
@@ -4243,31 +4234,31 @@ algorithm
     */
 
     // List ... if valLst then / if not valLst then
-    case ( LIST_TYPE(), isnot,NONE(), tbranch, ebranchOpt, _)
+    case (LIST_TYPE(), isnot, NONE(), tbranch, ebranchOpt)
       then
        casesForTrueFalseCondition(isnot, LIST_MATCH({}), tbranch, ebranchOpt);
     // Option
-    case ( OPTION_TYPE(), isnot,NONE(), tbranch, ebranchOpt, _)
+    case (OPTION_TYPE(), isnot, NONE(), tbranch, ebranchOpt)
       then
        casesForTrueFalseCondition(isnot, NONE_MATCH(), tbranch, ebranchOpt);
     // String and Text (auto-converted to String)
-    case ( STRING_TYPE(), isnot,NONE(), tbranch, ebranchOpt, _)
+    case (STRING_TYPE(), isnot, NONE(), tbranch, ebranchOpt)
       then
        casesForTrueFalseCondition(isnot, STRING_MATCH(""), tbranch, ebranchOpt);
     //Integer
-    case ( INTEGER_TYPE(), isnot,NONE(), tbranch, ebranchOpt, _)
+    case (INTEGER_TYPE(), isnot, NONE(), tbranch, ebranchOpt)
       then
        casesForTrueFalseCondition(isnot, LITERAL_MATCH("0", INTEGER_TYPE()), tbranch, ebranchOpt);
     //Real
-    case ( REAL_TYPE(), isnot,NONE(), tbranch, ebranchOpt, _)
+    case (REAL_TYPE(), isnot, NONE(), tbranch, ebranchOpt)
       then
        casesForTrueFalseCondition(isnot, LITERAL_MATCH("0.0", REAL_TYPE()), tbranch, ebranchOpt);
     //Boolean
-    case ( BOOLEAN_TYPE(), isnot,NONE(), tbranch, ebranchOpt, _)
+    case (BOOLEAN_TYPE(), isnot, NONE(), tbranch, ebranchOpt)
       then
        casesForTrueFalseCondition(isnot, LITERAL_MATCH("false", BOOLEAN_TYPE()), tbranch, ebranchOpt);
 
-    case ( TEXT_TYPE(), isnot, NONE(), tbranch, ebranchOpt, _)
+    case (TEXT_TYPE(), isnot, NONE(), tbranch, ebranchOpt)
       then
        casesForTrueFalseCondition(isnot,
           //MEM_TEXT( tokens = {} )
@@ -4329,7 +4320,7 @@ algorithm
     local
       Expression ebranch;
 
-    case ( SOME(ebranch) ) then ebranch;
+    case SOME(ebranch) then ebranch;
 
     //empty map-argument list will generate no code
     case NONE() then emptyExpression;
@@ -4455,12 +4446,11 @@ public function checkResolvedType
   input SourceInfo inInfo;
 
 algorithm
-  _ := matchcontinue (inPath, inType, inUnresolvedMsg, inInfo)
+  () := matchcontinue (inType, inUnresolvedMsg)
     local
-      PathIdent path;
       String reason, msg;
 
-    case ( _, UNRESOLVED_TYPE(reason), msg, _)
+    case (UNRESOLVED_TYPE(reason), msg)
       algorithm
 
         //true = Flags.isSet(Flags.FAILTRACE);
@@ -4484,18 +4474,18 @@ public function checkTextType
   input SourceInfo inInfo;
   output TypeSignature outType;
 algorithm
-  outType := matchcontinue (inType, inIdent, inUnresolvedMsg, inInfo)
+  outType := matchcontinue (inType, inUnresolvedMsg)
     local
       String msg;
       TypeSignature ts;
 
     //OK
-    case (TEXT_TYPE(),_, _, _) then inType;
+    case (TEXT_TYPE(), _) then inType;
 
     //already handled by checkResolvedType
-    case (UNRESOLVED_TYPE(),_ , _, _) then inType;
+    case (UNRESOLVED_TYPE(), _) then inType;
 
-    case ( ts, _, msg, _)
+    case (ts, msg)
       algorithm
         msg := "(" + msg + ") identifier '" + inIdent + "' was expected to have Text& type but resolved to " + typeSignatureString(ts)
            + ".\n Only Text& typed variables can be appended to.";
@@ -4518,7 +4508,6 @@ algorithm
     local
       Ident ident;
       TypeSignature idtype, lt;
-      StringToken st;
       String litstr, reason;
 
     // string constants are of StringToken type and does not involve a type conversion, use them through idents
@@ -4559,21 +4548,21 @@ public function prepareMatchArgument
   output Ident outIdent;
   output MatchingExp outMExp;
 algorithm
-  (outIdent, outMExp) := matchcontinue (inMExp, inMatchArgName)
+  (outIdent, outMExp) := matchcontinue inMExp
     local
       MatchingExp mexp;
       Ident ident;
 
-    case (mexp as BIND_MATCH(bindIdent = ident), _ )
+    case mexp as BIND_MATCH(bindIdent = ident)
       then
         (ident, mexp);
 
-    case (mexp as BIND_AS_MATCH(bindIdent = ident), _)
+    case mexp as BIND_AS_MATCH(bindIdent = ident)
       then
         (ident, mexp);
 
     //replace a wild match with the inMatchArgName
-    case (REST_MATCH(), _)
+    case REST_MATCH()
       then
         (inMatchArgName, BIND_MATCH(inMatchArgName));
 
@@ -4794,7 +4783,7 @@ public function addPostfixToIdent
 
   output Ident outPostfixedIdent;
 algorithm
-  (outPostfixedIdent) :=
+  outPostfixedIdent :=
   match (inIdent, inPostfix)
     local
       Ident ident;
@@ -4825,7 +4814,7 @@ public function updateLocalsForMatchingExp
   output TypedIdents outLocals;
 algorithm
   (outLocalIdent, outLocalNames, outLocals) :=
-  matchcontinue (inIdent, inEncIdent, inPostfix, inType, inLocalNames, inLocals)
+  matchcontinue (inIdent, inLocalNames, inLocals)
     local
       Ident ident, encIdent;
       TypeSignature loctype;
@@ -4833,25 +4822,25 @@ algorithm
       list<tuple<Ident,Ident>> localNames;
 
     //already in localNames
-    case ( ident, _, _, _, localNames, locals)
+    case (ident, localNames, locals)
       algorithm
         encIdent := lookupTupleList(localNames, ident);
       then
         (encIdent, localNames, locals);
 
     //not yet in locals
-    case ( ident, _, _, _, localNames, locals)
+    case (ident, localNames, locals)
       algorithm
         // already failed in first case: failure( _ = lookupTupleList(localNames, ident) );
         encIdent := addPostfixToIdent(inEncIdent, inPostfix);
-        failure( _ := lookupTupleList(locals, encIdent));
+        failure( lookupTupleList(locals, encIdent));
       then
         (encIdent,
          (ident, encIdent) :: localNames,
          (encIdent, inType) :: locals);
 
     //re-use from locals
-    case ( ident, _, _, _, localNames, locals)
+    case (ident, localNames, locals)
       algorithm
         // already failed in first case: failure( _ = lookupTupleList(localNames, ident) );
         encIdent := addPostfixToIdent(inEncIdent, inPostfix);
@@ -4861,7 +4850,7 @@ algorithm
         (encIdent, (ident, encIdent) :: localNames, locals);
 
     //try the next postfix
-    case ( ident, _, _, _, localNames, locals)
+    case (ident, localNames, locals)
       algorithm
         // already failed in first case: failure( _ = lookupTupleList(localNames, ident) );
         encIdent := addPostfixToIdent(inEncIdent, inPostfix);
@@ -4891,36 +4880,32 @@ public function usedInImmediateLetScope
   output Boolean outIsUsed;
 algorithm
   outIsUsed
-  := matchcontinue (inIdent, inFreshIdent, inScopeEnv)
+  := matchcontinue inScopeEnv
     local
       Ident letIdent, freshIdent;
       ScopeEnv restEnv;
 
-    case (_, _,
-           LET_SCOPE(ident = letIdent, freshIdent = freshIdent) :: _)
+    case LET_SCOPE(ident = letIdent, freshIdent = freshIdent) :: _
       algorithm
         true := stringEq(inIdent, letIdent);
         true := stringEq(inFreshIdent, freshIdent);
       then
         true;
 
-    case (_, _,
-           LET_SCOPE() :: restEnv)
+    case LET_SCOPE() :: restEnv
       //equation
         //false = stringEq(_, letIdent) and stringEq(_, freshIdent);
       then
         usedInImmediateLetScope(inIdent, inFreshIdent, restEnv);
 
-    case (_, _,
-           RECURSIVE_SCOPE(recIdent = letIdent, freshIdent = freshIdent) :: _)
+    case RECURSIVE_SCOPE(recIdent = letIdent, freshIdent = freshIdent) :: _
       algorithm
         true := stringEq(inIdent, letIdent);
         true := stringEq(inFreshIdent, freshIdent);
       then
         true;
 
-    case (_, _,
-           RECURSIVE_SCOPE() :: restEnv)
+    case RECURSIVE_SCOPE() :: restEnv
       //equation
         //false = stringEq(_, letIdent) and stringEq(_, freshIdent);
       then
@@ -4944,22 +4929,22 @@ public function updateLocalsForLetExp
   output TypedIdents outLocals;
 algorithm
   (outLocalIdent, outLocals) :=
-  matchcontinue (inIdent, inEncIdent, inPostfix, inType, inLocals, inScopeEnv)
+  matchcontinue inScopeEnv
     local
       Ident  encIdent;
       TypeSignature loctype;
       TypedIdents locals;
 
     //not yet in locals, add
-    case (_, _, _, _, _, _)
+    case _
       algorithm
         encIdent := addPostfixToIdent(inEncIdent, inPostfix);
-        failure( _ := lookupTupleList(inLocals, encIdent));
+        failure( lookupTupleList(inLocals, encIdent));
       then
         (encIdent, (encIdent, inType) :: inLocals);
 
     //already in locals, but not the same type, try postfix+1
-    case (_, _, _, _, _, _)
+    case _
       algorithm
         encIdent := addPostfixToIdent(inEncIdent, inPostfix);
         loctype := lookupTupleList(inLocals, encIdent);
@@ -4970,7 +4955,7 @@ algorithm
         (encIdent, locals);
 
     //already in locals, the same type, not used in the immediate scope, OK
-    case (_, _, _, _, _, _)
+    case _
       algorithm
         encIdent := addPostfixToIdent(inEncIdent, inPostfix);
         loctype := lookupTupleList(inLocals, encIdent);
@@ -4980,7 +4965,7 @@ algorithm
         (encIdent, inLocals);
 
     //already in locals, the same type, but used in the immediate scope, try postfix+1
-    case (_, _, _, _, _, _)
+    case _
       algorithm
         encIdent := addPostfixToIdent(inEncIdent, inPostfix);
         loctype := lookupTupleList(inLocals, encIdent);
@@ -5183,7 +5168,7 @@ algorithm
       algorithm
         mtype := deAliasedType(mtype, astDefs);
         (fields,tagpath) := getFieldsForRecord(mtype, tagpath, astDefs); // this should not fail as we have type-checked the matching expression
-        failure( _ := lookupTupleList(fields, id));
+        failure( lookupTupleList(fields, id));
         reason := "Unresolved path - failed in lookup for field '" + id + "' at the end of the path '" + inid
                  + "', no such field in '" + pathIdentString(tagpath) + "' record fields.\n";
         valtype := UNRESOLVED_TYPE(reason);
@@ -5209,7 +5194,7 @@ algorithm
       algorithm
         mtype := deAliasedType(mtype, astDefs);
         (fields, tagpath) := getFieldsForRecord(mtype, tagpath, astDefs); // this should not fail as we have type-checked the matching expression
-        failure( _ := lookupTupleList(fields, id));
+        failure( lookupTupleList(fields, id));
         reason := "Unresolved path - failed in lookup for field '" + id + "' inside the (encoded) path '" + inid
               + "', no such field in '" + pathIdentString(tagpath) + "' record fields.\n";
         valtype := UNRESOLVED_TYPE( reason );
@@ -5245,7 +5230,7 @@ public function updateFieldMatchingsForField
 
   output list<tuple<Ident, MatchingExp>> outFieldMatchings;
 algorithm
-  (outFieldMatchings) := matchcontinue (inIdent, inField, inFieldMatchings)
+  outFieldMatchings := matchcontinue (inIdent, inField, inFieldMatchings)
     local
       Ident inid, fieldid, ident;
       list<tuple<Ident, MatchingExp>> fms;
@@ -5285,7 +5270,7 @@ public function makeBindAs
 
   output MatchingExp outMExp;
 algorithm
-  (outMExp) := matchcontinue (inIdent, inMExp)
+  outMExp := matchcontinue (inIdent, inMExp)
     local
       Ident inid, bid;
       MatchingExp mexp, inmexp;
@@ -5422,7 +5407,7 @@ algorithm
     case ( _, _, (ident, _) :: _, fields, _ )
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
-        failure( _ := lookupTupleList(fields, ident) );
+        failure( lookupTupleList(fields, ident) );
         true := Flags.isSet(Flags.FAILTRACE); Debug.trace("-Error!!!lookupUpdateMExpRecord failed in lookup for field (type) ident '" + ident + "'.\n");
       then
         fail(); //?? will fail the whole lookupUpdateMExpRecord or retry the next case ?
@@ -5489,7 +5474,6 @@ algorithm
   (outFields, inFullyQualifiedTagPath)
     := matchcontinue (inMType, inTagPath, inASTDefs)
     local
-      TypeSignature mtype;
       Ident typeident, tagident;
       PathIdent typepath, tagpath, typepckg;
       Option<PathIdent> typepckgOpt, tagpckgOpt;
@@ -5531,20 +5515,20 @@ public function splitPackageAndIdent
   output Option<PathIdent> outPackagePath;
   output Ident outTypeIdent;
 algorithm
-  (outPackagePath, outTypeIdent) := matchcontinue (inTypePathIdent)
+  (outPackagePath, outTypeIdent) := matchcontinue inTypePathIdent
     local
       Ident typeident, pckgident;
       PathIdent  typepath, typepckg;
 
-    case ( IDENT(ident = typeident) )
+    case IDENT(ident = typeident)
       then
         (NONE(), typeident );
 
-    case ( PATH_IDENT(ident = pckgident, path = IDENT(ident = typeident) ) )
+    case PATH_IDENT(ident = pckgident, path = IDENT(ident = typeident) )
       then
         ( SOME(IDENT(pckgident)), typeident);
 
-    case ( PATH_IDENT(ident = pckgident, path = typepath as PATH_IDENT() ) )
+    case PATH_IDENT(ident = pckgident, path = typepath as PATH_IDENT() )
       algorithm
         (SOME(typepckg), typeident) := splitPackageAndIdent(typepath);
       then
@@ -5575,7 +5559,7 @@ public function makePathIdent
 
   output PathIdent outPathIdent;
 algorithm
-  (outPathIdent) := matchcontinue (inPackage, inIdent)
+  outPathIdent := matchcontinue (inPackage, inIdent)
     local
       Ident pckgident, ident;
       PathIdent pckgpath, path;
@@ -5786,7 +5770,7 @@ algorithm
     //infer/make a new set type var
     case ( NAMED_TYPE(name = IDENT(tid)), tyConcrete, tyVars as (_::_), setTyVars, astDefs )
       algorithm
-        failure(_ := lookupTupleList(setTyVars, tid));
+        failure(lookupTupleList(setTyVars, tid));
         true := listMember(tid, tyVars);
         tyConcreteDA := deAliasedType(tyConcrete, astDefs);
       then
@@ -5820,7 +5804,7 @@ It assumes the input types are deAliasedType-ed.
   input list<ASTDef> inASTDefs;
 
 algorithm
-  _:= matchcontinue(inTypeA, inTypeB, inASTDefs)
+  ():= matchcontinue(inTypeA, inTypeB, inASTDefs)
     local
       TypeSignature tyA, tyB;
       PathIdent na, nb;
@@ -5837,7 +5821,7 @@ algorithm
     case ( tyA, tyB, astDefs )
       algorithm
         failure(NAMED_TYPE() := tyA);
-        _ := typesEqual(tyA, tyB, {},{}, astDefs);
+        typesEqual(tyA, tyB, {},{}, astDefs);
       then
         ();
 
@@ -5936,7 +5920,7 @@ algorithm
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         true := listMember(tid, tyVars);
-        failure(_ := lookupTupleList(setTyVars, tid));
+        failure(lookupTupleList(setTyVars, tid));
         true := Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - cannot infer type variable '" + tid + "'.\n" );
       then
         fail();
@@ -5965,7 +5949,7 @@ public function getFunSignature
   output list<Ident> outTypeVars;
 algorithm
   (outPath, outInArgs, outOutArgs, outTypeVars)
-  := matchcontinue (inFunName, inSourceInfo, inTplPackage)
+  := matchcontinue (inFunName, inTplPackage)
     local
       PathIdent fname, funpckg;
       Option<PathIdent> funpckgOpt;
@@ -5976,7 +5960,7 @@ algorithm
       TypedIdents iargs, oargs;
       String msg;
 
-    case (fname as IDENT(ident = templname), _, TEMPL_PACKAGE(templateDefs = templateDefs))
+    case (fname as IDENT(ident = templname), TEMPL_PACKAGE(templateDefs = templateDefs))
       algorithm
         TEMPLATE_DEF(args = iargs)  :=  lookupTupleList(templateDefs, templname);
         iargs := imlicitTxtArg :: iargs;
@@ -5987,15 +5971,15 @@ algorithm
       then
         (fname, iargs, oargs, {});
 
-    case (IDENT(templname), _, TEMPL_PACKAGE(templateDefs = templateDefs))
+    case (IDENT(templname), TEMPL_PACKAGE(templateDefs = templateDefs))
       algorithm
-        _  :=  lookupTupleList(templateDefs, templname);
+        lookupTupleList(templateDefs, templname);
         msg := "Constant template '" + templname + "' is used in a function/template context (while it is defined as a constant).";
         addSusanError(msg, inSourceInfo);
       then
         fail();
 
-    case (fname, _, TEMPL_PACKAGE(astDefs = astDefs))
+    case (fname, TEMPL_PACKAGE(astDefs = astDefs))
       algorithm
         NAMED_TYPE(fname) := deAliasedType(NAMED_TYPE(fname), astDefs);
         (funpckgOpt, fident) := splitPackageAndIdent(fname);
@@ -6019,7 +6003,7 @@ public function checkPackageOpt
   input PathIdent inPackage;
   input Option<PathIdent> inPackageOpt;
 algorithm
-  _ := matchcontinue (inPackage, inPackageOpt)
+  () := matchcontinue (inPackage, inPackageOpt)
     local
       PathIdent path, pckgpath;
 
@@ -6050,7 +6034,7 @@ public function getFields
 
   output TypedIdents outFields;
 algorithm
-  (outFields) := matchcontinue (inTagIdent, inTypeInfo, inTypeIdent)
+  outFields := matchcontinue (inTagIdent, inTypeInfo, inTypeIdent)
     local
       Ident typeident, tagident;
       TypeInfo typeinfo;
@@ -6066,7 +6050,7 @@ algorithm
     case ( tagident, TI_UNION_TYPE(recTags = rectags) , typeident)
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
-        failure(_ := lookupTupleList(rectags, tagident));
+        failure(lookupTupleList(rectags, tagident));
         true := Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - getFields failed to lookup the union tag '" + tagident + "', that is not found in type '" + typeident + "'.\n");
       then
         fail();
@@ -6103,7 +6087,7 @@ public function isRecordTag
   input Ident inTypeIdent;
 
 algorithm
-  _ :=
+  () :=
   match (inTagIdent, inTypeInfo, inTypeIdent)
     local
       Ident typeident, tagident;
@@ -6111,7 +6095,7 @@ algorithm
 
     case ( tagident, TI_UNION_TYPE(recTags = rectags) , _)
       algorithm
-        _ := lookupTupleList(rectags, tagident);
+        lookupTupleList(rectags, tagident);
       then ();
 
     case ( tagident, TI_RECORD_TYPE(), typeident )
@@ -6132,21 +6116,21 @@ algorithm
       list<ASTDef> restAstDefs;
       Boolean isdefault;
 
-    case ( {} ) then {};
+    case {} then {};
 
-    case ( AST_DEF(
+    case AST_DEF(
             importPackage = importckg,
             isDefault     = isdefault,
-            types         = typeLst) :: restAstDefs)
+            types         = typeLst) :: restAstDefs
       algorithm
         typeLst := listMap1Tuple22(typeLst, fullyQualifyAstTypeInfo, importckg);
         restAstDefs := fullyQualifyASTDefs(restAstDefs);
       then
         (AST_DEF(importckg, isdefault, typeLst) :: restAstDefs);
 
-    case ( AST_DEF(
+    case AST_DEF(
             importPackage = importckg,
-            types         = typeLst) :: _)
+            types         = typeLst) :: _
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         failure(typeLst := listMap1Tuple22(typeLst, fullyQualifyAstTypeInfo, importckg));
@@ -6305,9 +6289,9 @@ public function convertNameTypeIfIntrinsic
   input PathIdent inNameOfType;
   output TypeSignature outTypeSignature;
 algorithm
-  outTypeSignature := match (inNameOfType)
+  outTypeSignature := match inNameOfType
 
-    case ( PATH_IDENT(ident = "Tpl", path = IDENT("Text")) )
+    case PATH_IDENT(ident = "Tpl", path = IDENT("Text"))
       then
         TEXT_TYPE();
 
@@ -6375,7 +6359,7 @@ algorithm
     local
       list<TypeSignature> typeLst;
       Ident typeident;
-      TypeSignature ota, ts;
+      TypeSignature ota;
       list<ASTDef> astDefs;
       PathIdent typepckg, typepath;
       Option<PathIdent> typepckgOpt;
@@ -6459,12 +6443,11 @@ algorithm
   outList := matchcontinue(inList, inTuple)
     local
        Type_a a;
-       tuple<Type_a,Type_b> tpl;
        list<tuple<Type_a,Type_b>> lst;
 
     case (lst, (a,_))
       algorithm
-        _ := lookupTupleList(lst, a);
+        lookupTupleList(lst, a);
       then lst;
 
     else (inTuple :: inList);
@@ -6654,19 +6637,19 @@ public function canBeEscapedUnquoted
     output Boolean outCanBeUnquoted;
 algorithm
   outCanBeUnquoted :=
-  matchcontinue (inStringList)
+  matchcontinue inStringList
     local
       String str;
       list<String> rest;
 
-    case ( { str } )
+    case { str }
       algorithm
         true := stringLength(str) > 0;
         true := canBeEscapedUnquotedChars(stringListStringChar(str));
       then
         true;
 
-    case ( str :: (rest as (_::_)) )
+    case str :: (rest as (_::_))
       algorithm
         true := stringLength(str) > 0;
         true := canBeEscapedUnquotedChars(stringListStringChar(str));
@@ -6686,15 +6669,15 @@ protected function canBeEscapedUnquotedChars
   output Boolean outCanBeUnquoted;
 algorithm
   outCanBeUnquoted :=
-  match(inChars)
+  match inChars
     local
       String c;
       list<String> chars;
 
-    case ({}) then true;
+    case {} then true;
 
         // \a \b \f \r \v  ... TODO: Error in the .srz or .c compilation(\r)
-    case ( c  :: chars)
+    case c  :: chars
       guard (c == "\'")
          or (c == "\"")
          or (c == "?")
@@ -6724,16 +6707,16 @@ public function pathIdentString
   input PathIdent inPathIndent;
   output String outPathIdentString;
 algorithm
-  (outPathIdentString) := matchcontinue (inPathIndent)
+  outPathIdentString := matchcontinue inPathIndent
     local
       Ident ident;
       PathIdent path;
 
-    case ( IDENT(ident = ident) )
+    case IDENT(ident = ident)
       then
         ident;
 
-    case ( PATH_IDENT(ident = ident, path = path ) )
+    case PATH_IDENT(ident = ident, path = path )
       algorithm
         ident := ident + "." + pathIdentString(path);
       then
@@ -6796,7 +6779,7 @@ protected
 algorithm
   set := AvlSetString.EMPTY();
   for e in pkg.mmDeclarations loop
-    _ := match e
+    () := match e
       case MM_FUN()
         algorithm
           set := addTypedIdentsToSet(set, e.inArgs);
@@ -6872,6 +6855,7 @@ algorithm
     case MM_FN_CALL() then List.foldr(exp.args, addExpToSet, addPathIdentToSet(set, exp.fnName));
     case MM_IDENT() then addPathIdentToSet(set, exp.ident);
     case MM_MATCH() then List.foldr(exp.matchCases, addMatchCaseToSet, set);
+    case MM_LIST_FOR_LOOP() then List.foldr(exp.matchCases, addMatchCaseToSet, set);
     else set;
   end match;
 end addExpToSet;

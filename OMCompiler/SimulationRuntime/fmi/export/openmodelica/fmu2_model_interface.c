@@ -258,6 +258,7 @@ fmi2Status internalEventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
   int i, done=0;
   ModelInstance* comp = (ModelInstance *)c;
   threadData_t *threadData = comp->threadData;
+  jmp_buf *old_jmp = threadData->mmc_jumper;
   fmi2Real nextSampleEvent;
   fmi2Boolean nextSampleEventDefined;
   modelica_boolean nextTimerDefined;
@@ -274,6 +275,7 @@ fmi2Status internalEventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
   MemPoolState mem_pool_state = omc_util_get_pool_state();
   /* try */
   MMC_TRY_INTERNAL(simulationJumpBuffer)
+    threadData->mmc_jumper = threadData->simulationJumpBuffer;
 
 #if !defined(OMC_NO_STATESELECTION)
     if (stateSelection(comp->fmuData, comp->threadData, 1, 1)) {
@@ -368,6 +370,7 @@ fmi2Status internalEventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
 
   /* catch */
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  threadData->mmc_jumper = old_jmp;
   omc_util_restore_pool_state(mem_pool_state);
   resetThreadData(comp);
 
@@ -1972,6 +1975,7 @@ fmi2Status internalGetDerivatives(fmi2Component c, fmi2Real derivatives[], size_
   int i, done=0;
   ModelInstance* comp = (ModelInstance *)c;
   threadData_t *threadData = comp->threadData;
+  jmp_buf *old_jmp = threadData->mmc_jumper;
   if (invalidNumber(comp, "fmi2GetDerivatives", "nx", nx, NUMBER_OF_STATES))
     return fmi2Error;
   if (nullPointer(comp, "fmi2GetDerivatives", "derivatives[]", derivatives))
@@ -1981,6 +1985,7 @@ fmi2Status internalGetDerivatives(fmi2Component c, fmi2Real derivatives[], size_
   MemPoolState mem_pool_state = omc_util_get_pool_state();
   /* try */
   MMC_TRY_INTERNAL(simulationJumpBuffer)
+    threadData->mmc_jumper = threadData->simulationJumpBuffer;
 
     if (comp->_need_update)
     {
@@ -2001,6 +2006,7 @@ fmi2Status internalGetDerivatives(fmi2Component c, fmi2Real derivatives[], size_
   /* catch */
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
 
+  threadData->mmc_jumper = old_jmp;
   omc_util_restore_pool_state(mem_pool_state);
   resetThreadData(comp);
 
@@ -2025,6 +2031,7 @@ fmi2Status internalGetEventIndicators(fmi2Component c, fmi2Real eventIndicators[
   int i, done=0;
   ModelInstance *comp = (ModelInstance *)c;
   threadData_t *threadData = comp->threadData;
+  jmp_buf *old_jmp = threadData->mmc_jumper;
   if (invalidNumber(comp, "fmi2GetEventIndicators", "nx", nx, NUMBER_OF_EVENT_INDICATORS))
     return fmi2Error;
 
@@ -2032,6 +2039,7 @@ fmi2Status internalGetEventIndicators(fmi2Component c, fmi2Real eventIndicators[
   MemPoolState mem_pool_state = omc_util_get_pool_state();
   /* try */
   MMC_TRY_INTERNAL(simulationJumpBuffer)
+    threadData->mmc_jumper = threadData->simulationJumpBuffer;
 
 #if NUMBER_OF_EVENT_INDICATORS > 0
     /* eval needed equations*/
@@ -2050,6 +2058,7 @@ fmi2Status internalGetEventIndicators(fmi2Component c, fmi2Real eventIndicators[
 
   /* catch */
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  threadData->mmc_jumper = old_jmp;
   omc_util_restore_pool_state(mem_pool_state);
   resetThreadData(comp);
 

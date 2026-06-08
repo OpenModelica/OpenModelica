@@ -111,7 +111,7 @@ public function dumpUntypedComponentDims
   input NFInstTypes.Component inComponent;
   output String outString;
 algorithm
-  outString := match(inComponent)
+  outString := match inComponent
     local
       array<NFInstTypes.Dimension> dims;
       String dims_str;

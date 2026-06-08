@@ -39,6 +39,7 @@ encapsulated package HashTableSM1 "
 public import BaseHashTable;
 public import DAE;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import HashSet;
 protected import BaseHashSet;
 protected import List;
@@ -90,7 +91,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReference.hashComponentRef,ComponentReferenceBasics.crefEqual,ComponentReferenceBasics.printComponentRefStr,modeStr));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReferenceBasics.hashComponentRef,ComponentReferenceBasics.crefEqual,ComponentReferenceBasics.printComponentRefStr,modeStr));
 end emptyHashTableSized;
 
 public function modeStr

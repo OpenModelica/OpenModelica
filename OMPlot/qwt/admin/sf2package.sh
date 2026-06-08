@@ -1,8 +1,8 @@
 #! /bin/sh
 # 
-# Generates a Qwt package from sourceforge svn
+# Generates a Qwt package from the sourceforge repository
 #
-# Usage: svn2package.sh [-b|--branch <svn-branch>] [packagename] 
+# Usage: 2package.sh.sh [-b|--branch <branch>] [packagename] 
 # 
 
 ##########################
@@ -10,15 +10,15 @@
 ##########################
 
 function usage() {
-    echo "Usage: $0 [-b|--branch <svn-branch>] [-s|--suffix <suffix>] [-html] [-pdf] [-qch] [packagename]"
+    echo "Usage: $0 [-b|--branch <branch>] [-s|--suffix <suffix>] [-html] [-pdf] [-qch] [packagename]"
     exit 1
 }
 
 ################################
-# checkout 
+# downloadQwt 
 ################################
 
-function checkoutQwt() {
+function downloadQwt() {
 
     if [ -x $2 ]
     then
@@ -29,18 +29,14 @@ function checkoutQwt() {
         fi
     fi
 
-    svn -q co https://svn.code.sf.net/p/qwt/code/$1/$2
+    git clone -b $1 git://git.code.sf.net/p/qwt/git $2
     if [ $? -ne 0 ]
     then
-        echo "Can't access sourceforge SVN"
+        echo "Can't access sourceforge repository"
         exit $?
     fi
 
-    if [ "$3" != "$2" ]
-    then
-        rm -rf $3
-        mv $2 $3
-    fi
+    rm -rf $2/.git $2/.gitignore
 }
 
 ##########################
@@ -54,8 +50,6 @@ function cleanQwt {
     then
         exit $?
     fi
-
-    find . -name .svn -print | xargs rm -r
 
     rm -f TODO
     rm -rf admin
@@ -86,10 +80,10 @@ function cleanQwt {
 
     if [ "$SUFFIX" != "" ]
     then
-        sed -i -e "s/\$\$QWT_VERSION-svn/\$\$QWT_VERSION-$SUFFIX/" qwtconfig.pri 
+        sed -i -e "s/\$\$QWT_VERSION-dev/\$\$QWT_VERSION-$SUFFIX/" qwtconfig.pri 
     	sed -i -e "s/\$(QWTVERSION)/$VERSION-$SUFFIX/" doc/install.dox
     else
-        sed -i -e "s/\$\$QWT_VERSION-svn/\$\$QWT_VERSION/" qwtconfig.pri
+        sed -i -e "s/\$\$QWT_VERSION-dev/\$\$QWT_VERSION/" qwtconfig.pri
     	sed -i -e "s/\$(QWTVERSION)/$VERSION/" doc/install.dox
     fi
 
@@ -234,8 +228,7 @@ function prepare4Unix {
 ##########################
 
 QWTDIR=
-SVNDIR=trunk
-BRANCH=qwt
+BRANCH=develop
 SUFFIX=
 VERSION=
 GENERATE_DOC=0
@@ -248,7 +241,7 @@ while [ $# -gt 0 ] ; do
         -h|--help)
             usage; exit 1 ;;
         -b|--branch)
-            shift; SVNDIR=branches; BRANCH=$1; shift;;
+            shift; BRANCH=$1; shift;;
         -s|--suffix)
             shift; SUFFIX=$1; shift;;
         -html)
@@ -276,8 +269,8 @@ fi
 
 TMPDIR=/tmp/$QWTDIR-tmp
 
-echo -n "checkout to $TMPDIR ... "
-checkoutQwt $SVNDIR $BRANCH $TMPDIR
+echo -n "downloading to $TMPDIR ... "
+downloadQwt $BRANCH $TMPDIR
 cleanQwt $TMPDIR
 echo done
 

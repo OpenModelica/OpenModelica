@@ -65,16 +65,16 @@ public function main
   input String inFile;
 
 algorithm
-  _ := match inFile
+  () := match inFile
     local
       String file, strErrBuf;
 
-    case ( "SusanTest.tpl" )
+    case "SusanTest.tpl"
       algorithm
         tplMainTest("a");
       then ();
 
-    case ( file )
+    case file
       algorithm
         Print.clearBuf();
         translateFile(file);
@@ -91,7 +91,7 @@ public function translateFile
   input String inFile;
 
 algorithm
-  _ := matchcontinue inFile
+  () := matchcontinue inFile
     local
       String file, destFile,  res;
       Tpl.Text txt;
@@ -100,7 +100,7 @@ algorithm
       Integer nErrors;
       Boolean wasError;
 
-    case ( file )
+    case file
       algorithm
         print("\nProcessing file '" + file + "'\n");
         nErrors := Error.getNumErrorMessages();
@@ -128,7 +128,7 @@ algorithm
         false := wasError;
       then ();
 
-    case (file)
+    case file
       algorithm
         print("\n### translation of file '"+ file + "' failed!  ###\n" );
         print("### Error Buffer ###\n");
@@ -256,7 +256,7 @@ public function tplMainTest
   input String inFile;
 algorithm
 
-  _ := matchcontinue inFile
+  () := matchcontinue inFile
     local
       //Tpl.Tokens toks, txttoks;
       String  str, strOut, ident, cval;
@@ -272,7 +272,7 @@ algorithm
       Tpl.StringToken tok;
       Real tstart;
       Integer lnum,colnum, llen, notPassedCnt;
-    case ( "a" )
+    case "a"
       algorithm
         notPassedCnt := 0;
         Print.clearErrorBuf();
@@ -823,7 +823,7 @@ end Susan;:)";
 
         txt := emptyTxt;
         txt := TplCodegen.pathIdent(txt, pid);
-        _ := Tpl.textString(txt);
+        Tpl.textString(txt);
         strOut := Tpl.booleanString(tequal) +"*" + stringCharListString(chars);
         notPassedCnt := testStringEquality(strOut,
            "true*:)", true, true, "TplParser.templPackage - function stringListStringChar\n", notPassedCnt);
@@ -1038,7 +1038,7 @@ end Susan;:)";
 
         txt := emptyTxt;
         txt := TplCodegen.pathIdent(txt, pid);
-        _ := Tpl.textString(txt);
+        Tpl.textString(txt);
         strOut := "parsed*" + stringCharListString(chars);
         notPassedCnt := testStringEquality(strOut,
            "parsed*:)", true, true, "TplParser.templPackage - all types for Susan's backend\n", notPassedCnt);
@@ -1346,7 +1346,7 @@ is\\n verbatim!
         str := "Susan:)";
         chars := stringListStringChar( str );
         llen := TplParser.charsTillEndOfLine(chars, 1);
-        (_ :: _ :: chars) := chars;
+        _ :: _ :: chars := chars;
         (lnum,colnum) := TplParser.getPosition(chars, TplParser.LINE_INFO(TplParser.PARSE_INFO("test - no file",{},false), 11, llen, chars));
         notPassedCnt := testStringEquality(intString(lnum) + "," + intString(colnum) + " of " + intString(llen),
            "11,3 of 8", true, true, "TplParser.charsTillEndOfLine and getPosition \n", notPassedCnt);
@@ -1412,7 +1412,7 @@ is\\n verbatim!
 
 
     //should not ever happen -  a badly designed test ?
-    case (str)
+    case str
       algorithm
         print("\n######## tplMainTest '"+ str + "' (fatally) failed!  ########\n" );
         print("### Error Buffer ###\n");

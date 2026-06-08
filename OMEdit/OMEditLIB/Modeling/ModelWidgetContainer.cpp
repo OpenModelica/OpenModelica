@@ -5380,7 +5380,6 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   mpRecentItemsListWidget = new QListWidget;
   mpRecentItemsListWidget->setObjectName("RecentItemsList");
   mpRecentItemsListWidget->setContentsMargins(0, 0, 0, 0);
-  mpRecentItemsListWidget->setSpacing(5);
   mpRecentItemsListWidget->setFrameStyle(QFrame::NoFrame);
   mpRecentItemsListWidget->setViewMode(QListView::ListMode);
   mpRecentItemsListWidget->setMovement(QListView::Static);
@@ -5413,7 +5412,6 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   mpLatestNewsListWidget = new QListWidget;
   mpLatestNewsListWidget->setObjectName("LatestNewsList");
   mpLatestNewsListWidget->setContentsMargins(0, 0, 0, 0);
-  mpLatestNewsListWidget->setSpacing(5);
   mpLatestNewsListWidget->setFrameStyle(QFrame::NoFrame);
   mpLatestNewsListWidget->setViewMode(QListView::ListMode);
   mpLatestNewsListWidget->setMovement(QListView::Static);

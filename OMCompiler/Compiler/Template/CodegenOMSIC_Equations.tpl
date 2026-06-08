@@ -350,5 +350,5 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls, Text &aux
 end equationWhen;
 
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="codegen_fmu_omsi");
 end CodegenOMSIC_Equations;

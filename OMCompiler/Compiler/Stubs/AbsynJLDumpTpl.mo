@@ -44,5 +44,5 @@ algorithm
   out_txt := txt;
 end dump;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="dump_extra");
 end AbsynJLDumpTpl;

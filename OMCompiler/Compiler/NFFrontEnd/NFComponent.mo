@@ -846,6 +846,12 @@ public
       s := IOStream.append(s, " = ");
       s := IOStream.append(s, Expression.toFlatString(bind_exp, format));
 
+      if format.showConfidence then
+        s := IOStream.append(s, " /* confidence = ");
+        s := IOStream.append(s, String(Binding.actualConfidence(binding)));
+        s := IOStream.append(s, "*/");
+      end if;
+
       ty_attrs := listRest(ty_attrs);
       if listEmpty(ty_attrs) then
         break;
@@ -897,8 +903,6 @@ public
   function getEvaluateAnnotation
     input Component component;
     output Option<Boolean> evaluate;
-  protected
-    SCode.Comment cmt;
   algorithm
     evaluate := SCodeUtil.getEvaluateAnnotation(comment(component));
   end getEvaluateAnnotation;
@@ -907,7 +911,6 @@ public
     input Component component;
     output Boolean fixed;
   protected
-    list<Modifier> typeAttrs = {};
     Binding binding;
   algorithm
     // for parameters the default is fixed = true

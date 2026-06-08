@@ -3,7 +3,7 @@ echo(false);
 if bool then
   a := stringReplace(a, "ValuesUtil.makeArray", "ValuesMake.makeArray");
   a := stringReplace(a, "ValuesUtil.valString", "ValuesDump.valString");
-  OpenModelica.Scripting.writeFile("OpenModelicaScriptingAPI.tmp.mo","encapsulated package OpenModelicaScriptingAPI\n\n" + a + "annotation(__OpenModelica_Interface=\"backend\");\nend OpenModelicaScriptingAPI;\n");getErrorString();
+  OpenModelica.Scripting.writeFile("OpenModelicaScriptingAPI.tmp.mo","encapsulated package OpenModelicaScriptingAPI\n\n" + a + "annotation(__OpenModelica_Interface=\"backend_main\");\nend OpenModelicaScriptingAPI;\n");getErrorString();
   setCommandLineOptions("-g=MetaModelica");
   bool := OpenModelica.Scripting.loadFile("OpenModelicaScriptingAPI.tmp.mo");
   if bool then

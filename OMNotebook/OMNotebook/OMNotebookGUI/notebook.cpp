@@ -228,159 +228,6 @@ NotebookWindow::~NotebookWindow()
   subject_->detach(this);
   delete subject_;
   //subject_ = 0;
-
-  // 2005-11-03/04/07 AF, remova all created QAction
-  std::map<QString, QAction*>::iterator s_iter = styles_.begin();
-  while( s_iter != styles_.end() )
-  {
-    delete (*s_iter).second;
-    ++s_iter;
-  }
-
-  QHash<QString, QAction*>::iterator f_iter = fonts_.begin();
-  while( f_iter != fonts_.end() )
-  {
-    delete f_iter.value();
-    ++f_iter;
-  }
-
-  QHash<QAction*, QColor*>::iterator c_iter = colors_.begin();
-  while( c_iter != colors_.end() )
-  {
-    delete c_iter.value();
-    ++c_iter;
-  }
-
-  QHash<QAction*, DocumentView*>::iterator w_iter = windows_.begin();
-  while( w_iter != windows_.end() )
-  {
-    delete w_iter.key();
-    ++w_iter;
-  }
-
-  delete stylesgroup;
-  delete fontsgroup;
-  delete sizesgroup;
-  delete stretchsgroup;
-  delete colorsgroup;
-  delete alignmentsgroup;
-  delete verticalAlignmentsgroup;
-  delete bordersgroup;
-  delete marginsgroup;
-  delete paddingsgroup;
-
-
-  delete newAction;
-  delete openFileAction;
-  delete saveAsAction;
-  delete saveAction;
-  delete printAction;
-  delete pdfAction;
-  delete closeFileAction;
-  delete quitWindowAction;
-
-  delete undoAction;
-  delete redoAction;
-  delete cutAction;
-  delete copyAction;
-  delete pasteAction;
-  delete findAction;
-  delete replaceAction;
-  delete showExprAction;
-
-  //delete cutCellAction;
-  //delete copyCellAction;
-  //delete pasteCellAction;
-  delete addCellAction;
-  delete ungroupCellAction;
-  delete splitCellAction;
-  delete deleteCellAction;
-  delete nextCellAction;
-  delete previousCellAction;
-  delete evalCellAction;
-  delete evalAllCellsAction;
-  delete evalAllLatexCellsAction;
-
-  delete groupAction;
-  delete inputAction;
-  delete latexAction;
-  delete textAction;
-
-  delete aboutAction;
-  delete helpAction;
-  delete aboutQtAction;
-
-  delete facePlain;
-  delete faceBold;
-  delete faceItalic;
-  delete faceUnderline;
-
-  delete sizeSmaller;
-  delete sizeLarger;
-  delete size8pt;
-  delete size9pt;
-  delete size10pt;
-  delete size12pt;
-  delete size14pt;
-  delete size16pt;
-  delete size18pt;
-  delete size20pt;
-  delete size24pt;
-  delete size36pt;
-  delete size72pt;
-  delete sizeOther;
-
-  delete stretchUltraCondensed;
-  delete stretchExtraCondensed;
-  delete stretchCondensed;
-  delete stretchSemiCondensed;
-  delete stretchUnstretched;
-  delete stretchSemiExpanded;
-  delete stretchExpanded;
-  delete stretchExtraExpanded;
-  delete stretchUltraExpanded;
-
-  delete colorBlack;
-  delete colorWhite;
-  delete color10Gray;
-  delete color33Gray;
-  delete color50Gray;
-  delete color66Gray;
-  delete color90Gray;
-  delete colorRed;
-  delete colorGreen;
-  delete colorBlue;
-  delete colorCyan;
-  delete colorMagenta;
-  delete colorYellow;
-  delete colorOther;
-
-  delete chooseFont;
-
-  delete alignmentLeft;
-  delete alignmentRight;
-  delete alignmentCenter;
-  delete alignmentJustify;
-  delete verticalNormal;
-  delete verticalSub;
-  delete verticalSuper;
-
-  delete borderOther;
-  delete marginOther;
-  delete paddingOther;
-
-  delete insertImageAction;
-  delete insertLinkAction;
-  delete importOldFile;
-  delete exportPureText;
-
-  // 2006-08-24 AF, delete findForm if it exists
-  if( findForm_ )
-    delete findForm_;
-
-  delete toolBar;
-  delete posIndicator;
-  delete stateIndicator;
 }
 
 /*!
@@ -430,7 +277,7 @@ CellApplication *NotebookWindow::application()
 void NotebookWindow::createFileMenu()
 {
   // NEW
-  newAction = new QAction( tr("&New"), this );
+  auto newAction = new QAction( tr("&New"), this );
   newAction->setShortcut( QKeySequence("Ctrl+N") );
   newAction->setStatusTip( tr("Create a new document") );
   connect(newAction, SIGNAL(triggered()), this, SLOT(newFile()));
@@ -438,10 +285,10 @@ void NotebookWindow::createFileMenu()
 
   toolBar->addAction(newAction);
 
-  recentMenu = new QMenu(tr("Recent &Files"), this);
+  auto recentMenu = new QMenu(tr("Recent &Files"), this);
 
   // OPEN FILE
-  openFileAction = new QAction( tr("&Open"), this );
+  auto openFileAction = new QAction( tr("&Open"), this );
   openFileAction->setShortcut( QKeySequence("Ctrl+O") );
   openFileAction->setStatusTip( tr("Open a file") );
   connect(openFileAction, SIGNAL(triggered()), this, SLOT(openFile()));
@@ -455,13 +302,13 @@ void NotebookWindow::createFileMenu()
   toolBar->addWidget(b);
 
   // SAVE AS
-  saveAsAction = new QAction( tr("Save &As..."), this );
+  auto saveAsAction = new QAction( tr("Save &As..."), this );
   saveAsAction->setShortcut( QKeySequence("Ctrl+Shift+S") );
   saveAsAction->setStatusTip( tr("Save the document as a new file") );
   connect(saveAsAction, SIGNAL(triggered()), this, SLOT(saveas()));
 
   // SAVE
-  saveAction = new QAction( tr("&Save"), this );
+  auto saveAction = new QAction( tr("&Save"), this );
   saveAction->setShortcut( QKeySequence("Ctrl+S") );
   saveAction->setStatusTip( tr("Save the document") );
   connect(saveAction, SIGNAL(triggered()), this, SLOT(save()));
@@ -471,13 +318,13 @@ void NotebookWindow::createFileMenu()
   toolBar->addSeparator();
 
   // CLOSE FILE
-  closeFileAction = new QAction( tr("&Close"), this );
+  auto closeFileAction = new QAction( tr("&Close"), this );
   closeFileAction->setShortcut( QKeySequence("Ctrl+W") );
   closeFileAction->setStatusTip( tr("Close the window") );
   connect(closeFileAction, SIGNAL(triggered()), this, SLOT(closeFile()));
 
   // PRINT
-  printAction = new QAction( tr("&Print"), this );
+  auto printAction = new QAction( tr("&Print"), this );
   printAction->setShortcut( QKeySequence("Ctrl+P") );
   printAction->setStatusTip( tr("Print the document") );
   connect(printAction, SIGNAL(triggered()), this, SLOT(print()));
@@ -498,7 +345,7 @@ void NotebookWindow::createFileMenu()
   connect(quitWindowAction, SIGNAL(triggered()), this, SLOT(quitOMNotebook()));
 
   // CREATE MENU
-  fileMenu = menuBar()->addMenu( tr("&File") );
+  auto fileMenu = menuBar()->addMenu( tr("&File") );
   fileMenu->addAction( newAction );
   fileMenu->addAction( openFileAction );
   fileMenu->addAction( saveAction );
@@ -525,15 +372,15 @@ void NotebookWindow::createFileMenu()
 
   fileMenu->addSeparator();
 
-  importMenu = fileMenu->addMenu( tr("&Import") );
-  exportMenu = fileMenu->addMenu( tr("E&xport") );
+  auto importMenu = fileMenu->addMenu( tr("&Import") );
+  auto exportMenu = fileMenu->addMenu( tr("E&xport") );
   fileMenu->addSeparator();
   fileMenu->addAction( quitWindowAction );
 
 
   // IMPORT MENU
   // Added 2005-12-01
-  importOldFile = new QAction( tr("&Old OMNotebook file"), this );
+  auto importOldFile = new QAction( tr("&Old OMNotebook file"), this );
   importOldFile->setStatusTip( tr("Import an old OMNotebook file") );
   connect( importOldFile, SIGNAL( triggered() ),
            this, SLOT( openOldFile() ));
@@ -543,7 +390,7 @@ void NotebookWindow::createFileMenu()
 
   // EXPORT MENU
   // Added 2005-11-21
-  exportPureText = new QAction( tr("&Pure text"), this );
+  auto exportPureText = new QAction( tr("&Pure text"), this );
   exportPureText->setStatusTip( tr("Export the document content to pure text") );
   connect( exportPureText, SIGNAL( triggered() ),
            this, SLOT( pureText() ));
@@ -551,7 +398,7 @@ void NotebookWindow::createFileMenu()
   exportMenu->addAction( exportPureText );
 
   // PDF
-  pdfAction = new QAction( tr("P&DF"), this );
+  auto pdfAction = new QAction( tr("P&DF"), this );
   pdfAction->setShortcut( QKeySequence("Alt+P") );
   pdfAction->setStatusTip( tr("Export the document to PDF") );
   connect(pdfAction, SIGNAL(triggered()), this, SLOT(pdf()));
@@ -629,7 +476,7 @@ void NotebookWindow::createEditMenu()
 
 
   // FIND
-  findAction = new QAction( tr("&Find"), this);
+  auto findAction = new QAction( tr("&Find"), this);
   findAction->setShortcut( QKeySequence("Ctrl+F") );
   findAction->setStatusTip( tr("Search through the document") );
   connect( findAction, SIGNAL( triggered() ),
@@ -640,7 +487,7 @@ void NotebookWindow::createEditMenu()
   toolBar->addSeparator();
 
   // REPLACE, added 2006-08-24 AF
-  replaceAction = new QAction( tr("Re&place"), this);
+  auto replaceAction = new QAction( tr("Re&place"), this);
   replaceAction->setShortcut( QKeySequence("Ctrl+H") );
   replaceAction->setStatusTip( tr("Search through the document and replace") );
   connect( replaceAction, SIGNAL( triggered() ),
@@ -656,7 +503,7 @@ void NotebookWindow::createEditMenu()
 
 #if USE_OMSKETCH
   //Edit Sketch image,and view the attributes added by jhansi
-  editSketchImage = new QAction( tr("&EditSketchImage"), this );
+  auto editSketchImage = new QAction( tr("&EditSketchImage"), this );
   editSketchImage->setShortcut( QKeySequence("Ctrl+E") );
   editSketchImage->setStatusTip( tr("Sketch Image Edit") );
   connect( editSketchImage, SIGNAL( triggered() ),
@@ -666,7 +513,7 @@ void NotebookWindow::createEditMenu()
   toolBar->addSeparator();
 #endif
 
-  editMenu = menuBar()->addMenu( tr("&Edit") );
+  auto editMenu = menuBar()->addMenu( tr("&Edit") );
   editMenu->addAction( undoAction );
   editMenu->addAction( redoAction );
   editMenu->addSeparator();
@@ -694,22 +541,22 @@ void NotebookWindow::createEditMenu()
   */
 void NotebookWindow::createCellMenu()
 {
-  addCellAction = new QAction( tr("&Add Cell (previous cell style)"), this);
+  auto addCellAction = new QAction( tr("&Add Cell (previous cell style)"), this);
   addCellAction->setShortcut( QKeySequence("Alt+Enter") );
   addCellAction->setStatusTip( tr("Add a new textcell with the previuos cells style") );
   connect(addCellAction, SIGNAL(triggered()), this, SLOT(createNewCell()));
 
-  inputAction = new QAction( tr("Add &Input Cell"), this);
+  auto inputAction = new QAction( tr("Add &Input Cell"), this);
   inputAction->setShortcut( QKeySequence("Ctrl+Shift+I") );
   inputAction->setStatusTip( tr("Add an input cell") );
   connect(inputAction, SIGNAL(triggered()), this, SLOT(inputCellsAction()));
 
-  latexAction = new QAction( tr("Add &LaTeX Cell"), this);
+  auto latexAction = new QAction( tr("Add &LaTeX Cell"), this);
   latexAction->setShortcut( QKeySequence("Ctrl+Shift+E") );
   latexAction->setStatusTip( tr("Add Latex cell") );
   connect(latexAction, SIGNAL(triggered()), this, SLOT(latexCellsAction()));
 
-  textAction = new QAction( tr("Add &Text Cell"), this);
+  auto textAction = new QAction( tr("Add &Text Cell"), this);
   textAction->setShortcut( QKeySequence("Ctrl+Shift+T") );
   textAction->setStatusTip( tr("Add a text cell") );
   connect(textAction, SIGNAL(triggered()), this, SLOT(textCellsAction()));
@@ -734,33 +581,33 @@ void NotebookWindow::createCellMenu()
   deleteCellAction->setStatusTip( tr("Delete selected cell") );
   connect(deleteCellAction, SIGNAL(triggered()), this, SLOT(deleteCurrentCellAsk()));
 
-  nextCellAction = new QAction( tr("&Next Cell"), this);
+  auto nextCellAction = new QAction( tr("&Next Cell"), this);
   nextCellAction->setStatusTip( tr("Move to next cell") );
   nextCellAction->setShortcut( QKeySequence("Alt+Down") );
   connect(nextCellAction, SIGNAL(triggered()), this, SLOT(moveCursorDown()));
 
-  previousCellAction = new QAction( tr("P&revious Cell"), this);
+  auto previousCellAction = new QAction( tr("P&revious Cell"), this);
   previousCellAction->setShortcut( QKeySequence("Alt+Up") );
   previousCellAction->setStatusTip( tr("Move to previous cell") );
   connect(previousCellAction, SIGNAL(triggered()), this, SLOT(moveCursorUp()));
 
-  evalCellAction = new QAction(tr("&Evaluate Cell"), this);
+  auto evalCellAction = new QAction(tr("&Evaluate Cell"), this);
   evalCellAction->setShortcut( QKeySequence("Shift+Enter") );
   evalCellAction->setStatusTip(tr("Evaluate the selected cell"));
   connect(evalCellAction, SIGNAL(triggered()), this, SLOT(eval()));
 
-  evalAllCellsAction = new QAction(tr("Evaluate all Input&cells"), this);
+  auto evalAllCellsAction = new QAction(tr("Evaluate all Input&cells"), this);
   evalAllCellsAction->setStatusTip(tr("Evaluate all Input cells in the document"));
   evalAllCellsAction->setShortcut( QKeySequence("Ctrl+R") );
   connect(evalAllCellsAction, SIGNAL(triggered()), this, SLOT(evalall()));
 
-  evalAllLatexCellsAction = new QAction(tr("Evaluate all Late&xcells"), this);
+  auto evalAllLatexCellsAction = new QAction(tr("Evaluate all Late&xcells"), this);
   evalAllLatexCellsAction->setStatusTip(tr("Evaluate all Latex cells in the document"));
   evalAllLatexCellsAction->setShortcut( QKeySequence("Ctrl+Shift+R") );
   connect(evalAllLatexCellsAction, SIGNAL(triggered()), this, SLOT(evalallLatex()));
 
   // 2006-04-27 AF, remove cut,copy,paste cell from menu
-  cellMenu = menuBar()->addMenu( tr("&Cell") );
+  auto cellMenu = menuBar()->addMenu( tr("&Cell") );
   //cellMenu->addAction( cutCellAction );
   //cellMenu->addAction( copyCellAction );
   //cellMenu->addAction( pasteCellAction );
@@ -802,7 +649,7 @@ void NotebookWindow::createFormatMenu()
   Stylesheet *sheet = Stylesheet::instance("stylesheet.xml");
 
   // Create the style actions //AF
-  stylesgroup = new QActionGroup( this );
+  auto stylesgroup = new QActionGroup( this );
   formatMenu = menuBar()->addMenu( tr("&Format") );
   styleMenu = formatMenu->addMenu( tr("&Styles") );
 
@@ -827,7 +674,7 @@ void NotebookWindow::createFormatMenu()
   // -----------------------------------------------------
   // Code for creating the font menu
   formatMenu->addSeparator();
-  fontsgroup = new QActionGroup( this );
+  auto fontsgroup = new QActionGroup( this );
   fontMenu = formatMenu->addMenu( tr("&Font") );
 
 #if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
@@ -860,7 +707,7 @@ void NotebookWindow::createFormatMenu()
   // Code for creating the face menu
   faceMenu = formatMenu->addMenu( tr("Fa&ce") );
 
-  facePlain = new QAction( tr("&Plain"), this);
+  auto facePlain = new QAction( tr("&Plain"), this);
   facePlain->setWhatsThis("Plain");
   facePlain->setCheckable( false );
   facePlain->setStatusTip( tr("Set font face to Plain") );
@@ -904,71 +751,71 @@ void NotebookWindow::createFormatMenu()
   // Code for creating the size menu
 
   sizeMenu = formatMenu->addMenu( tr("Si&ze") );
-  sizesgroup = new QActionGroup( this );
+  auto sizesgroup = new QActionGroup( this );
 
-  sizeSmaller = new QAction( tr("&Smaller"), this);
+  auto sizeSmaller = new QAction( tr("&Smaller"), this);
   sizeSmaller->setWhatsThis("Smaller");
   sizeSmaller->setShortcut( QKeySequence("Ctrl+-") );
   sizeSmaller->setCheckable( false );
   sizeSmaller->setStatusTip( tr("Set font size smaller") );
 
-  sizeLarger = new QAction( tr("&Larger"), this);
+  auto sizeLarger = new QAction( tr("&Larger"), this);
   sizeLarger->setWhatsThis("Larger");
   sizeLarger->setShortcut( QKeySequence("Ctrl++") );
   sizeLarger->setCheckable( false );
   sizeLarger->setStatusTip( tr("Set font size larger") );
 
-  size8pt = new QAction( "8", this);
+  auto size8pt = new QAction( "8", this);
   size8pt->setCheckable( true );
   sizes_.insert( "8", size8pt );
   sizesgroup->addAction( size8pt );
 
-  size9pt = new QAction( "9", this);
+  auto size9pt = new QAction( "9", this);
   size9pt->setCheckable( true );
   sizes_.insert( "9", size9pt );
   sizesgroup->addAction( size9pt );
 
-  size10pt = new QAction( "10", this);
+  auto size10pt = new QAction( "10", this);
   size10pt->setCheckable( true );
   sizes_.insert( "10", size10pt );
   sizesgroup->addAction( size10pt );
 
-  size12pt = new QAction( "12", this);
+  auto size12pt = new QAction( "12", this);
   size12pt->setCheckable( true );
   sizes_.insert( "12", size12pt );
   sizesgroup->addAction( size12pt );
 
-  size14pt = new QAction( "14", this);
+  auto size14pt = new QAction( "14", this);
   size14pt->setCheckable( true );
   sizes_.insert( "14", size14pt );
   sizesgroup->addAction( size14pt );
 
-  size16pt = new QAction( "16", this);
+  auto size16pt = new QAction( "16", this);
   size16pt->setCheckable( true );
   sizes_.insert( "16", size16pt );
   sizesgroup->addAction( size16pt );
 
-  size18pt = new QAction( "18", this);
+  auto size18pt = new QAction( "18", this);
   size18pt->setCheckable( true );
   sizes_.insert( "18", size18pt );
   sizesgroup->addAction( size18pt );
 
-  size20pt = new QAction( "20", this);
+  auto size20pt = new QAction( "20", this);
   size20pt->setCheckable( true );
   sizes_.insert( "20", size20pt );
   sizesgroup->addAction( size20pt );
 
-  size24pt = new QAction( "24", this);
+  auto size24pt = new QAction( "24", this);
   size24pt->setCheckable( true );
   sizes_.insert( "24", size24pt );
   sizesgroup->addAction( size24pt );
 
-  size36pt = new QAction( "36", this);
+  auto size36pt = new QAction( "36", this);
   size36pt->setCheckable( true );
   sizes_.insert( "36", size36pt );
   sizesgroup->addAction( size36pt );
 
-  size72pt = new QAction( "72", this);
+  auto size72pt = new QAction( "72", this);
   size72pt->setCheckable( true );
   sizes_.insert( "72", size72pt );
   sizesgroup->addAction( size72pt );
@@ -1012,65 +859,65 @@ void NotebookWindow::createFormatMenu()
   // Code for creating the stretch menu
 
   stretchMenu = formatMenu->addMenu( tr("S&tretch") );
-  stretchsgroup = new QActionGroup( this );
+  auto stretchsgroup = new QActionGroup( this );
 
-  stretchUltraCondensed = new QAction( tr("U&ltra Condensed"), this);
+  auto stretchUltraCondensed = new QAction( tr("U&ltra Condensed"), this);
   stretchUltraCondensed->setCheckable( true );
   stretchUltraCondensed->setWhatsThis("ucon");
   stretchUltraCondensed->setStatusTip( tr("Set font stretch to Ultra Condensed") );
   stretchs_.insert( QFont::UltraCondensed, stretchUltraCondensed );
   stretchsgroup->addAction( stretchUltraCondensed );
 
-  stretchExtraCondensed = new QAction( tr("E&xtra Condensed"), this);
+  auto stretchExtraCondensed = new QAction( tr("E&xtra Condensed"), this);
   stretchExtraCondensed->setCheckable( true );
   stretchExtraCondensed->setWhatsThis("econ");
   stretchExtraCondensed->setStatusTip( tr("Set font stretch to Extra Condensed") );
   stretchs_.insert( QFont::ExtraCondensed, stretchExtraCondensed );
   stretchsgroup->addAction( stretchExtraCondensed );
 
-  stretchCondensed = new QAction( tr("&Condensed"), this);
+  auto stretchCondensed = new QAction( tr("&Condensed"), this);
   stretchCondensed->setCheckable( true );
   stretchCondensed->setWhatsThis("con");
   stretchCondensed->setStatusTip( tr("Set font stretch to Condensed") );
   stretchs_.insert( QFont::Condensed, stretchCondensed );
   stretchsgroup->addAction( stretchCondensed );
 
-  stretchSemiCondensed = new QAction( tr("S&emi Condensed"), this);
+  auto stretchSemiCondensed = new QAction( tr("S&emi Condensed"), this);
   stretchSemiCondensed->setCheckable( true );
   stretchSemiCondensed->setWhatsThis("scon");
   stretchSemiCondensed->setStatusTip( tr("Set font stretch to Semi Condensed") );
   stretchs_.insert( QFont::SemiCondensed, stretchSemiCondensed );
   stretchsgroup->addAction( stretchSemiCondensed );
 
-  stretchUnstretched = new QAction( tr("&Unstretched"), this);
+  auto stretchUnstretched = new QAction( tr("&Unstretched"), this);
   stretchUnstretched->setCheckable( true );
   stretchUnstretched->setWhatsThis("uns");
   stretchUnstretched->setStatusTip( tr("Set font stretch to Unstretched") );
   stretchs_.insert( QFont::Unstretched, stretchUnstretched );
   stretchsgroup->addAction( stretchUnstretched );
 
-  stretchSemiExpanded = new QAction( tr("&Semi Expanded"), this);
+  auto stretchSemiExpanded = new QAction( tr("&Semi Expanded"), this);
   stretchSemiExpanded->setCheckable( true );
   stretchSemiExpanded->setWhatsThis("sexp");
   stretchSemiExpanded->setStatusTip( tr("Set font stretch to Semi Expanded") );
   stretchs_.insert( QFont::SemiExpanded, stretchSemiExpanded );
   stretchsgroup->addAction( stretchSemiExpanded );
 
-  stretchExpanded = new QAction( tr("&Expanded"), this);
+  auto stretchExpanded = new QAction( tr("&Expanded"), this);
   stretchExpanded->setCheckable( true );
   stretchExpanded->setWhatsThis("exp");
   stretchExpanded->setStatusTip( tr("Set font stretch to Expanded") );
   stretchs_.insert( QFont::Expanded, stretchExpanded );
   stretchsgroup->addAction( stretchExpanded );
 
-  stretchExtraExpanded = new QAction( tr("Ex&tra Expanded"), this);
+  auto stretchExtraExpanded = new QAction( tr("Ex&tra Expanded"), this);
   stretchExtraExpanded->setCheckable( true );
   stretchExtraExpanded->setWhatsThis("eexp");
   stretchExtraExpanded->setStatusTip( tr("Set font stretch to Extra Expanded") );
   stretchs_.insert( QFont::ExtraExpanded, stretchExtraExpanded );
   stretchsgroup->addAction( stretchExtraExpanded );
 
-  stretchUltraExpanded = new QAction( tr("Ult&ra Expanded"), this);
+  auto stretchUltraExpanded = new QAction( tr("Ult&ra Expanded"), this);
   stretchUltraExpanded->setCheckable( true );
   stretchUltraExpanded->setWhatsThis("uexp");
   stretchUltraExpanded->setStatusTip( tr("Set font stretch to Ultra Expanded") );
@@ -1104,84 +951,84 @@ void NotebookWindow::createFormatMenu()
   // -----------------------------------------------------
   // Code for creating the color menu
   colorMenu = formatMenu->addMenu( tr("&Color") );
-  colorsgroup = new QActionGroup( this );
+  auto colorsgroup = new QActionGroup( this );
 
-  colorBlack = new QAction( tr("Blac&k"), this);
+  auto colorBlack = new QAction( tr("Blac&k"), this);
   colorBlack->setCheckable( true );
   colorBlack->setStatusTip( tr("Set font color to Black") );
-  colors_.insert( colorBlack, new QColor(0,0,0) );
+  colors_.insert( colorBlack, QColor(0,0,0) );
   colorsgroup->addAction( colorBlack );
 
-  colorWhite = new QAction( tr("&White"), this);
+  auto colorWhite = new QAction( tr("&White"), this);
   colorWhite->setCheckable( true );
   colorWhite->setStatusTip( tr("Set font color to White") );
-  colors_.insert( colorWhite, new QColor(255,255,255) );
+  colors_.insert( colorWhite, QColor(255,255,255) );
   colorsgroup->addAction( colorWhite );
 
-  color10Gray = new QAction( tr("&10% Gray"), this);
+  auto color10Gray = new QAction( tr("&10% Gray"), this);
   color10Gray->setCheckable( true );
   color10Gray->setStatusTip( tr("Set font color to 10% Gray") );
-  colors_.insert( color10Gray, new QColor(25,25,25) );
+  colors_.insert( color10Gray, QColor(25,25,25) );
   colorsgroup->addAction( color10Gray );
 
-  color33Gray = new QAction( tr("&33% Gray"), this);
+  auto color33Gray = new QAction( tr("&33% Gray"), this);
   color33Gray->setCheckable( true );
   color33Gray->setStatusTip( tr("Set font color to 33% Gray") );
-  colors_.insert( color33Gray, new QColor(85,85,85) );
+  colors_.insert( color33Gray, QColor(85,85,85) );
   colorsgroup->addAction( color33Gray );
 
-  color50Gray = new QAction( tr("&50% Gray"), this);
+  auto color50Gray = new QAction( tr("&50% Gray"), this);
   color50Gray->setCheckable( true );
   color50Gray->setStatusTip( tr("Set font color to 50% Gray") );
-  colors_.insert( color50Gray, new QColor(128,128,128) );
+  colors_.insert( color50Gray, QColor(128,128,128) );
   colorsgroup->addAction( color50Gray );
 
-  color66Gray = new QAction( tr("&66% Gray"), this);
+  auto color66Gray = new QAction( tr("&66% Gray"), this);
   color66Gray->setCheckable( true );
   color66Gray->setStatusTip( tr("Set font color to 66% Gray") );
-  colors_.insert( color66Gray, new QColor(170,170,170) );
+  colors_.insert( color66Gray, QColor(170,170,170) );
   colorsgroup->addAction( color66Gray );
 
-  color90Gray = new QAction( tr("&90% Gray"), this);
+  auto color90Gray = new QAction( tr("&90% Gray"), this);
   color90Gray->setCheckable( true );
   color90Gray->setStatusTip( tr("Set font color to 90% Gray") );
-  colors_.insert( color90Gray, new QColor(230,230,230) );
+  colors_.insert( color90Gray, QColor(230,230,230) );
   colorsgroup->addAction( color90Gray );
 
-  colorRed = new QAction( tr("&Red"), this);
+  auto colorRed = new QAction( tr("&Red"), this);
   colorRed->setCheckable( true );
   colorRed->setStatusTip( tr("Set font color to Red") );
-  colors_.insert( colorRed, new QColor(255,0,0) );
+  colors_.insert( colorRed, QColor(255,0,0) );
   colorsgroup->addAction( colorRed );
 
-  colorGreen = new QAction( tr("&Green"), this);
+  auto colorGreen = new QAction( tr("&Green"), this);
   colorGreen->setCheckable( true );
   colorGreen->setStatusTip( tr("Set font color to Green") );
-  colors_.insert( colorGreen, new QColor(0,255,0) );
+  colors_.insert( colorGreen, QColor(0,255,0) );
   colorsgroup->addAction( colorGreen );
 
-  colorBlue = new QAction( tr("&Blue"), this);
+  auto colorBlue = new QAction( tr("&Blue"), this);
   colorBlue->setCheckable( true );
   colorBlue->setStatusTip( tr("Set font color to Blue") );
-  colors_.insert( colorBlue, new QColor(0,0,255) );
+  colors_.insert( colorBlue, QColor(0,0,255) );
   colorsgroup->addAction( colorBlue );
 
-  colorCyan = new QAction( tr("&Cyan"), this);
+  auto colorCyan = new QAction( tr("&Cyan"), this);
   colorCyan->setCheckable( true );
   colorCyan->setStatusTip( tr("Set font color to Cyan") );
-  colors_.insert( colorCyan, new QColor(0,255,255) );
+  colors_.insert( colorCyan, QColor(0,255,255) );
   colorsgroup->addAction( colorCyan );
 
-  colorMagenta = new QAction( tr("&Magenta"), this);
+  auto colorMagenta = new QAction( tr("&Magenta"), this);
   colorMagenta->setCheckable( true );
   colorMagenta->setStatusTip( tr("Set font color to Magenta") );
-  colors_.insert( colorMagenta, new QColor(255,0,255) );
+  colors_.insert( colorMagenta, QColor(255,0,255) );
   colorsgroup->addAction( colorMagenta );
 
-  colorYellow = new QAction( tr("&Yellow"), this);
+  auto colorYellow = new QAction( tr("&Yellow"), this);
   colorYellow->setCheckable( true );
   colorYellow->setStatusTip( tr("Set font color to Yellow") );
-  colors_.insert( colorYellow, new QColor(255,255,0) );
+  colors_.insert( colorYellow, QColor(255,255,0) );
   colorsgroup->addAction( colorYellow );
 
   colorOther = new QAction( tr("&Other..."), this);
@@ -1230,47 +1077,47 @@ void NotebookWindow::createFormatMenu()
   formatMenu->addSeparator();
 
   alignmentMenu = formatMenu->addMenu( tr("&Alignment") );
-  alignmentsgroup = new QActionGroup( this );
+  auto alignmentsgroup = new QActionGroup( this );
   verticalAlignmentMenu = formatMenu->addMenu( tr("&Vertical Alignment") );
-  verticalAlignmentsgroup = new QActionGroup( this );
+  auto verticalAlignmentsgroup = new QActionGroup( this );
 
-  alignmentLeft = new QAction( tr("&Left"), this);
+  auto alignmentLeft = new QAction( tr("&Left"), this);
   alignmentLeft->setCheckable( true );
   alignmentLeft->setStatusTip( tr("Set text alignment to Left") );
   alignments_.insert( Qt::AlignLeft, alignmentLeft );
   alignmentsgroup->addAction( alignmentLeft );
 
-  alignmentRight = new QAction( tr("&Right"), this);
+  auto alignmentRight = new QAction( tr("&Right"), this);
   alignmentRight->setCheckable( true );
   alignmentRight->setStatusTip( tr("Set text alignment to Right") );
   alignments_.insert( Qt::AlignRight, alignmentRight );
   alignmentsgroup->addAction( alignmentRight );
 
-  alignmentCenter = new QAction( tr("&Center"), this);
+  auto alignmentCenter = new QAction( tr("&Center"), this);
   alignmentCenter->setCheckable( true );
   alignmentCenter->setStatusTip( tr("Set text alignment to Center") );
   alignments_.insert( Qt::AlignHCenter, alignmentCenter );
   alignmentsgroup->addAction( alignmentCenter );
 
-  alignmentJustify = new QAction( tr("&Justify"), this);
+  auto alignmentJustify = new QAction( tr("&Justify"), this);
   alignmentJustify->setCheckable( true );
   alignmentJustify->setStatusTip( tr("Set text alignment to Justify") );
   alignments_.insert( Qt::AlignJustify, alignmentJustify );
   alignmentsgroup->addAction( alignmentJustify );
 
-  verticalNormal = new QAction( tr("&Normal/Baseline"), this);
+  auto verticalNormal = new QAction( tr("&Normal/Baseline"), this);
   verticalNormal->setCheckable( true );
   verticalNormal->setStatusTip( tr("Set vertical text alignment to Normal") );
   verticals_.insert( QTextCharFormat::AlignNormal, verticalNormal );
   verticalAlignmentsgroup->addAction( verticalNormal );
 
-  verticalSub = new QAction( tr("&Subscript"), this);
+  auto verticalSub = new QAction( tr("&Subscript"), this);
   verticalSub->setCheckable( true );
   verticalSub->setStatusTip( tr("Set vertical text alignment to Subscript") );
   verticals_.insert( QTextCharFormat::AlignSubScript, verticalSub );
   verticalAlignmentsgroup->addAction( verticalSub );
 
-  verticalSuper = new QAction( tr("S&uperscript"), this);
+  auto verticalSuper = new QAction( tr("S&uperscript"), this);
   verticalSuper->setCheckable( true );
   verticalSuper->setStatusTip( tr("Set vertical text alignment to Superscript") );
   verticals_.insert( QTextCharFormat::AlignSuperScript, verticalSuper );
@@ -1303,7 +1150,7 @@ void NotebookWindow::createFormatMenu()
   // Code for creating the border menu
   formatMenu->addSeparator();
   borderMenu = formatMenu->addMenu( tr("&Border") );
-  bordersgroup = new QActionGroup( this );
+  auto bordersgroup = new QActionGroup( this );
 
   int borderSizes[] = { 0,1,2,3,4,5,6,7,8,9,10 };
   for( int i = 0; i < sizeof(borderSizes)/sizeof(int); i++ )
@@ -1338,7 +1185,7 @@ void NotebookWindow::createFormatMenu()
   // -----------------------------------------------------
   // Code for creating the margin menu
   marginMenu = formatMenu->addMenu( tr("&Margin") );
-  marginsgroup = new QActionGroup( this );
+  auto marginsgroup = new QActionGroup( this );
 
   int marginSizes[] = { 0,1,2,3,4,5,6,7,8,9,10,15,20,25,30 };
   for( int i = 0; i < sizeof(marginSizes)/sizeof(int); i++ )
@@ -1373,7 +1220,7 @@ void NotebookWindow::createFormatMenu()
   // -----------------------------------------------------
   // Code for creating the padding menu
   paddingMenu = formatMenu->addMenu( tr("&Padding") );
-  paddingsgroup = new QActionGroup( this );
+  auto paddingsgroup = new QActionGroup( this );
 
   int paddingSizes[] = { 0,2,4,6,8,10,15 };
   for( int i = 0; i < sizeof(paddingSizes)/sizeof(int); i++ )
@@ -1443,7 +1290,7 @@ void NotebookWindow::createInsertMenu()
 
 #if USE_OMSKETCH
   //Sketch
-  insertSketch = new QAction( tr("&Sketch"), this );
+  auto insertSketch = new QAction( tr("&Sketch"), this );
   insertSketch->setStatusTip( tr("Sketch App") );
   connect( insertSketch, SIGNAL( triggered() ),
            this, SLOT( Sketch() ));
@@ -1453,7 +1300,7 @@ void NotebookWindow::createInsertMenu()
 #endif
 
   //INDENT
-  indentAction = new QAction(tr("Indent"), this);
+  auto indentAction = new QAction(tr("Indent"), this);
   indentAction->setStatusTip(tr("Indent the code in the selected cell"));
   indentAction->setIcon(QIcon(":/Resources/toolbarIcons/text_right.png"));
   connect(indentAction, SIGNAL(triggered()), this, SLOT(indent()));
@@ -1461,7 +1308,7 @@ void NotebookWindow::createInsertMenu()
 
   QToolButton * b = new QToolButton;
   b->setDefaultAction(indentAction);
-  indentMenu = new QMenu(this);
+  auto indentMenu = new QMenu(this);
   autoIndentAction = new QAction("Autoindent", this);
   autoIndentAction->setStatusTip(tr("Tries to move the cursor to the right position when return is pressed"));
   autoIndentAction->setCheckable(true);
@@ -1483,39 +1330,39 @@ void NotebookWindow::createInsertMenu()
 
 
   //EVAL
-  evalAction = new QAction(tr("Evaluate"), this);
+  auto evalAction = new QAction(tr("Evaluate"), this);
   evalAction->setStatusTip(tr("Evaluate the selected cell"));
   evalAction->setIcon(QIcon(":/Resources/toolbarIcons/apply.png"));
   connect(evalAction, SIGNAL(triggered()), this, SLOT(eval()));
   toolBar->addAction(evalAction);
 
-  evalallAction = new QAction(tr("Evaluate all cells"), this);
+  auto evalallAction = new QAction(tr("Evaluate all cells"), this);
   evalallAction->setStatusTip(tr("Evaluate all cells in the document"));
   evalallAction->setIcon(QIcon(":/Resources/toolbarIcons/evalall.png"));
 //  evalallAction->setShortcut( QKeySequence("Ctrl+R") );
   connect(evalallAction, SIGNAL(triggered()), this, SLOT(evalall()));
   toolBar->addAction(evalallAction);
 
-  shiftcellsupAction = new QAction(tr("Move cells up"), this);
+  auto shiftcellsupAction = new QAction(tr("Move cells up"), this);
   shiftcellsupAction->setStatusTip(tr("Move cells up, by clicking on the cell"));
   shiftcellsupAction->setIcon(QIcon(":/Resources/toolbarIcons/up.png"));
   connect(shiftcellsupAction, SIGNAL(triggered()), this, SLOT(shiftcellsUp()));
   toolBar->addAction(shiftcellsupAction);
 
-  shiftcellsdownAction = new QAction(tr("Move cells down"), this);
+  auto shiftcellsdownAction = new QAction(tr("Move cells down"), this);
   shiftcellsdownAction->setStatusTip(tr("Move cells down, by clicking on the cell"));
   shiftcellsdownAction->setIcon(QIcon(":/Resources/toolbarIcons/down.png"));
   connect(shiftcellsdownAction, SIGNAL(triggered()), this, SLOT(shiftcellsDown()));
   toolBar->addAction(shiftcellsdownAction);
 
-  shiftselectedcellsAction = new QAction(tr("Move selected cells"), this);
+  auto shiftselectedcellsAction = new QAction(tr("Move selected cells"), this);
   shiftselectedcellsAction->setStatusTip(tr("Put the cursor to a position where you want the cells to be moved, and then select the cells you would like to move that position"));
   shiftselectedcellsAction->setIcon(QIcon(":/Resources/toolbarIcons/updown.png"));
   connect(shiftselectedcellsAction, SIGNAL(triggered()), this, SLOT(shiftselectedcells()));
   toolBar->addAction(shiftselectedcellsAction);
 
   // MENU
-  insertMenu = menuBar()->addMenu( tr("&Insert") );
+  auto insertMenu = menuBar()->addMenu( tr("&Insert") );
   insertMenu->addAction( insertImageAction );
   insertMenu->addAction( insertLinkAction );
 
@@ -1549,27 +1396,27 @@ void NotebookWindow::createWindowMenu()
   */
 void NotebookWindow::createAboutMenu()
 {
-  aboutAction = new QAction( tr("&About OMNotebook"), this );
+  auto aboutAction = new QAction( tr("&About OMNotebook"), this );
   aboutAction->setStatusTip( tr("Display OMNotebook's About dialog") );
   aboutAction->setMenuRole(QAction::AboutRole);
   connect(aboutAction, SIGNAL(triggered()), this, SLOT(aboutQTNotebook()));
 
   // 2006-02-03 AF, Added a help action
-  helpAction = new QAction( tr("&Help Text"), this );
+  auto helpAction = new QAction( tr("&Help Text"), this );
   helpAction->setShortcut( QKeySequence("F1") );
   helpAction->setStatusTip( tr("Open help document") );
   connect( helpAction, SIGNAL( triggered() ),
            this, SLOT( helpText() ));
 
   // 2006-02-21 AF, Added a about qt action
-  aboutQtAction = new QAction( tr("About &Qt"), this );
+  auto aboutQtAction = new QAction( tr("About &Qt"), this );
   aboutQtAction->setStatusTip( tr("Display information about Qt") );
   aboutQtAction->setMenuRole(QAction::AboutQtRole);
   connect( aboutQtAction, SIGNAL( triggered() ),
            this, SLOT( aboutQT() ));
 
   // 2005-10-07 AF, Porting, new code for creating menu
-  aboutMenu = menuBar()->addMenu( tr("&Help") );
+  auto aboutMenu = menuBar()->addMenu( tr("&Help") );
   aboutMenu->addAction( aboutAction );
   aboutMenu->addAction( aboutQtAction );
   aboutMenu->addSeparator();
@@ -1654,7 +1501,6 @@ void NotebookWindow::updateMenus()
   chooseFont->setEnabled( editable );
   insertImageAction->setEnabled( editable );
   insertLinkAction->setEnabled( editable );
-  //    editSketchAttributes->setEnabled( editable );
 }
 
 /*!
@@ -1698,17 +1544,17 @@ void NotebookWindow::updateStyleMenu()
   */
 void NotebookWindow::updateEditMenu()
 {
-  QTextEdit *editor = subject_->getCursor()->currentCell()->textEdit();
-  if( editor )
+  QTextDocument *doc = subject_->getCursor()->currentCell()->document();
+  if( doc )
   {
     // undo
-    if( editor->document()->isUndoAvailable() )
+    if( doc->isUndoAvailable() )
       undoAction->setEnabled( true );
     else
       undoAction->setEnabled( false );
 
     // redo
-    if( editor->document()->isRedoAvailable() )
+    if( doc->isRedoAvailable() )
       redoAction->setEnabled( true );
     else
       redoAction->setEnabled( false );
@@ -1747,7 +1593,7 @@ void NotebookWindow::updateEditMenu()
       }
       else
       {
-        in_cursor = editor->textCursor();
+        in_cursor = subject_->getCursor()->currentCell()->textCursor();
       }
 
       if( in_cursor.hasSelection() ||
@@ -1985,10 +1831,10 @@ void NotebookWindow::updateFontColorMenu()
   {
     QColor color = cursor.charFormat().foreground().color();
 
-    QHash<QAction*, QColor*>::iterator c_iter = colors_.begin();
+    QHash<QAction*, QColor>::iterator c_iter = colors_.begin();
     while( c_iter != colors_.end() )
     {
-      if( (*c_iter.value()) == color )
+      if( c_iter.value() == color )
       {
         c_iter.key()->setChecked( true );
         colorOther->setChecked( false );
@@ -3102,9 +2948,10 @@ void NotebookWindow::changeFontColor( QAction *action )
   if( !cellEditable() )
     return;
 
-  if( colors_.contains( action ))
+  auto it = colors_.find( action );
+  if (it != colors_.end())
   {
-    subject_->textcursorChangeFontColor( (*colors_[action]) );
+    subject_->textcursorChangeFontColor( *it );
   }
   else
   {
@@ -3332,11 +3179,8 @@ void NotebookWindow::changeWindow(QAction *action)
   */
 void NotebookWindow::undoEdit()
 {
-  QTextEdit *editor = subject_->getCursor()->currentCell()->textEdit();
-  if( editor )
-  {
-    editor->document()->undo();
-  }
+  QTextDocument *doc = subject_->getCursor()->currentCell()->document();
+  if( doc ) doc->undo();
 }
 
 /*!
@@ -3347,11 +3191,8 @@ void NotebookWindow::undoEdit()
   */
 void NotebookWindow::redoEdit()
 {
-  QTextEdit *editor = subject_->getCursor()->currentCell()->textEdit();
-  if( editor )
-  {
-    editor->document()->redo();
-  }
+  QTextDocument *doc = subject_->getCursor()->currentCell()->document();
+  if( doc ) doc->redo();
 }
 
 /*!

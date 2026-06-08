@@ -58,6 +58,7 @@ import BaseHashTable;
 import ClassInf;
 import ClockIndexes;
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import DAEUtil;
 import Error;
 import Expression;
@@ -75,9 +76,9 @@ import MathematicaDump;
 import Print;
 import SCode;
 import AbsynToSCode;
-import SimCode;
 import Sorting;
 import SymbolTable;
+import StateMachineFlatten;
 import System;
 import Util;
 
@@ -108,7 +109,7 @@ public function modelEquationsUC
 
 algorithm
   (outCache,outValue):=
-  matchcontinue (inCache,inEnv,className,outputFileIn,dumpSteps)
+  matchcontinue (inCache, inEnv, outputFileIn)
     local
       String outputFile,resstr;
 
@@ -119,7 +120,7 @@ algorithm
 
       BackendDAE.BackendDAE dlow,dlow_1;
 
-      BackendDAE.AdjacencyMatrix m,mt;
+      BackendDAE.AdjacencyMatrix m;
 
       list<Integer>     approximatedEquations,approximatedEquations_one;
       list<BackendDAE.Equation> setC_eq,setS_eq;
@@ -142,7 +143,7 @@ algorithm
 
       Boolean forceOrdering = Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING);
 
-    case (cache,graph,_,outputFile,_)
+    case (cache, graph, outputFile)
       algorithm
         //print("Initiating\n");
         Print.clearBuf();
@@ -154,7 +155,7 @@ algorithm
         dlow := BackendDAECreate.lower(dae,cache,graph,BackendDAE.EXTRA_INFO(description,outputFile,NONE()));
         //(dlow_1,funcs1) = BackendDAEUtil.getSolvedSystem(dlow, funcs,SOME({"removeSimpleEquations","removeFinalParameters", "removeEqualRHS", "expandDerOperator"}), NONE(), NONE(),NONE());
         FlagsUtil.setConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING, false);
-        (dlow_1) := BackendDAEUtil.getSolvedSystem(dlow, "", SOME({"removeSimpleEquations","removeUnusedVariables","removeEqualRHS","expandDerOperator"}), NONE(), NONE(), SOME({}));
+        dlow_1 := BackendDAEUtil.getSolvedSystem(dlow, "", SOME({"removeSimpleEquations","removeUnusedVariables","removeEqualRHS","expandDerOperator"}), NONE(), NONE(), SOME({}));
         FlagsUtil.setConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING, forceOrdering);
         //print("* Lowered Ok \n");
 
@@ -293,11 +294,11 @@ algorithm
         //resstr="Done...";
       then
         (cache,Values.STRING(resstr));
-    case (_,_,_,outputFile,_)
+    case (_, _, outputFile)
       algorithm
         Print.printBuf("{"+getMathematicaText("Extraction failed")+"}");
         outStringA := "Grid[{"+Print.getString()+"}]";
-        _:=writeFileIfNonEmpty(outputFile,outStringA);
+        writeFileIfNonEmpty(outputFile,outStringA);
         true := Flags.isSet(Flags.FAILTRACE);
         resstr := AbsynUtil.pathStringNoQual(className);
         resstr := stringAppendList({"modelEquationsUC: The model equations in model",resstr," could not be extracted"});
@@ -314,53 +315,39 @@ public function dataReconciliation
   input  BackendDAE.BackendDAE inDae;
   output BackendDAE.BackendDAE outDae;
 algorithm
-    outDae:=match(inDae)
+    outDae:=match inDae
     local
       BackendDAE.BackendDAE dae;
-      BackendDAE.BackendDAE dlow,dlow_1;
-      BackendDAE.AdjacencyMatrix m,mt;
-      list<Integer> approximatedEquations,approximatedEquations_one,constantvars,extractedvars,extractedeqs,extractedsetsvars;
+      BackendDAE.AdjacencyMatrix m;
+      list<Integer> approximatedEquations,approximatedEquations_one,constantvars,extractedvars;
       list<BackendDAE.Equation> setC_eq,setS_eq,reqns;
       list<BackendDAE.EqSystem> eqsyslist;
-      BackendDAE.Variables allVars,knownVariables,unknownVariables,globalKnownVars,finalvars,inDiffVars,inResVars,inotherVars,tmpglobalKnownVars,setcVars;
-      BackendDAE.EquationArray allEqs,newEqs,inResEquations,inotherEquations;
-      list<BackendDAE.Var> knownvarlist,knvarlst, states, inputvars, paramvars,newfinalvars,resVarsLst;
-      list<Integer> variables,knowns,unknowns,directlyLinked,indirectlyLinked,inputvar,outputvars,fullvars,finalvarlist;
+      BackendDAE.Variables allVars,globalKnownVars,tmpglobalKnownVars,setcVars;
+      BackendDAE.EquationArray allEqs;
+      list<BackendDAE.Var> resVarsLst;
+      list<Integer> variables,knowns,unknowns,directlyLinked,indirectlyLinked,outputvars,finalvarlist;
       BackendDAE.Shared shared;
       BackendDAE.EqSystem currentSystem;
       ExtAdjacencyMatrix mExt;
-      list<Integer> setS,setC,tempsetS,tempsetC,removedequationsquared,
-      matchedknownssetc,matchedunknownssetc,inputvarlist;
+      list<Integer> setS,setC,tempsetS,tempsetC,inputvarlist;
       array<list<Integer>> mapEqnIncRow;
-      array<Integer> mapIncRowEqn, match1,match2;
+      array<Integer> mapIncRowEqn, match1;
       list<list<Integer>> bltblocks,blockstofind;
       list<tuple<list<Integer>,Integer>> blockranks;
       list<list<String>> blockstatus;
       list<tuple<Integer,Integer>> var;
-      list<BackendDAE.Var> tempvar,tempvar1,tmpparamvars;
+      list<BackendDAE.Var> tempvar,tmpparamvars;
       list<tuple<list<Integer>,list<tuple<list<Integer>,Integer>>,list<tuple<list<String>,Integer>>>> blocktargetinfo;
       list<tuple<list<Integer>,list<tuple<list<Integer>,Integer>>,list<tuple<list<String>,Integer>>,list<Integer>,list<Integer>>> predecessorblocktargetinfo;
-      list<Boolean> blocksqstatus;
-      list<Integer> removedequationssolvedvar,outputblocks,removedequationvars,approximated_eq_solvar,
-      sets_eqs,sets_vars;
       mapBlocks initblocks;
-      list<tuple<list<Integer>,list<String>,Boolean,Integer,Boolean>> blockdata;
       String modelname;
       BackendDAE.ExtraInfo einfo;
-      Option<BackendDAE.SymbolicJacobian> outJacobian;
       BackendDAE.Jacobian simcodejacobian;
-      AvlTreePathFunction.Tree outFunctionTree;
-      BackendDAE.SparsePattern outSparsePattern;
-      BackendDAE.SparseColoring outSparseColoring;
-      SimCode.JacobianMatrix jacmatrix;
-      list<SimCodeVar.SimVar> simcodevars;
-      list<tuple<Integer,list<Integer>>> var_dependencytree,eq_dependencytree;
-      BackendDAE.Variables outDiffVars,outResidualVars,outOtherVars,tmpdatavars;
+      BackendDAE.Variables outDiffVars,outResidualVars,outOtherVars;
       BackendDAE.EquationArray outResidualEqns,outOtherEqns;
-      list<BackendDAE.InnerEquation> sets_inner_equations;
       String str;
       list<DAE.ComponentRef> cr_lst;
-    case(dae)
+    case dae
        algorithm
         BackendDAE.DAE(currentSystem::eqsyslist,shared) := dae;
         BackendDAE.EQSYSTEM(orderedVars=allVars,orderedEqs=allEqs) := currentSystem;
@@ -389,13 +376,13 @@ algorithm
         unknowns := listAppend(directlyLinked,indirectlyLinked);
         outputvars := List.setDifference(List.intRange(BackendVariable.varsSize(allVars)),listAppend(unknowns,knowns));
         unknowns := listAppend(unknowns,outputvars) annotation(__OpenModelica_DisableListAppendWarning=true);
-        _ :=listAppend(unknowns,knowns);
+        listAppend(unknowns,knowns);
         initblocks:=setInitialBlocks(bltblocks);
         constantvars:=getConstantVariables(mExt);
         // Extract approximated equation
         approximatedEquations_one := getEquationsWithApproximatedAnnotation(dae);
         approximatedEquations := List.flatten(List.map1r(approximatedEquations_one,listGet,arrayList(mapEqnIncRow)));
-        _ := getRemovedEquationSolvedVariables(approximatedEquations,var);
+        getRemovedEquationSolvedVariables(approximatedEquations,var);
         // Extraction Algorithm steps
         (blockstofind,blockstatus):=originalBlocks(bltblocks,knowns,unknowns,outputvars,var);
         blockranks:=List.toListWithPositions(blockstofind);
@@ -428,9 +415,9 @@ algorithm
 
         //tempsetS=List.setDifferenceOnTrue(tempsetS,approximatedEquations,intEq);
         //tempsetC = List.setDifferenceOnTrue(tempsetC,tempsetS,intEq);
-        (_,_) := getVariableOccurence(tempsetC,mExt,knowns);
+        getVariableOccurence(tempsetC,mExt,knowns);
         extractedvars:=getVariablesAfterExtraction(tempsetC,tempsetS,mExt);
-        _ :=getVariablesAfterExtraction(tempsetS,{},mExt);
+        getVariablesAfterExtraction(tempsetS,{},mExt);
         finalvarlist:=getRemovedEquationSolvedVariables(listAppend(tempsetC,tempsetS),var);
         (finalvarlist,inputvarlist,_):=List.intersection1OnTrue(extractedvars,finalvarlist,intEq);
 
@@ -495,7 +482,7 @@ algorithm
         BackendDump.dumpEquationArray(outOtherEqns,"Jacobian_other_Equation");*/
         (simcodejacobian,shared):=SymbolicJacobian.getSymbolicJacobian(outDiffVars,outResidualEqns,outResidualVars,outOtherEqns,outOtherVars,shared,BackendVariable.listVar(List.map1r(extractedvars,BackendVariable.getVarAt,allVars)),"F",false);
         // put the jacobian also into shared object
-        _ :=BackendVariable.listVar(List.map1r(getRemovedEquationSolvedVariables(tempsetC,var),BackendVariable.getVarAt,allVars));
+        BackendVariable.listVar(List.map1r(getRemovedEquationSolvedVariables(tempsetC,var),BackendVariable.getVarAt,allVars));
         shared.dataReconciliationData := SOME(BackendDAE.DATA_RECON(symbolicJacobian=simcodejacobian,setcVars=outResidualVars,datareconinputs=outDiffVars,setBVars=NONE(), symbolicJacobianH=NONE(), relatedBoundaryConditions=0));
         //BackendDump.dumpVariables(setcVars,"SET_C_SOLVEDVARS");
 
@@ -519,7 +506,7 @@ algorithm
         outDae:=BackendDAE.DAE({currentSystem}, shared);
       then
        outDae;
-    case(_) then inDae;
+    case _ then inDae;
   end match;
 end dataReconciliation;
 
@@ -603,8 +590,7 @@ protected
    list<Integer> eqs,varlist;
    list<BackendDAE.Equation> depeqs;
    list<BackendDAE.Var> var;
-   list<Integer> kn1,kn2,kn3,c1,c2,c3;
-   Boolean flag=false;
+   list<Integer> kn1,kn2,kn3;
 algorithm
      for i in invartree loop
        (varnumber,varlist):=i;
@@ -711,12 +697,10 @@ public function VerifyDataReconciliation
    input list<BackendDAE.Equation> outsetS_eq;
 protected
    list<Integer> matchedeq,matchedknownssetc,matchedunknownssetc,matchedknownssets,matchedunknownssets;
-   list<Integer> tmpunknowns,tmpknowns,tmplist1,tmplist2,tmplist3,tmplist1sets,setstmp;
-   list<Integer> tmplistvar1,tmplistvar2,tmplistvar3,sets_eqs,sets_vars,extractedeqs;
-   Integer eqnumber,varnumber;
-   list<tuple<Integer,list<Integer>>> var_dependencytree,eq_dependencytree;
+   list<Integer> tmplist1,tmplist2,tmplist3,tmplist1sets;
+   list<Integer> tmplistvar1,tmplistvar2,tmplistvar3;
    String str,resstr;
-   list<BackendDAE.Var> var,convar;
+   list<BackendDAE.Var> var;
 algorithm
 
    print("\n\nAutomatic Verification Steps of DataReconciliation Algorithm"+ "\n" + UNDERLINE + "\n");
@@ -845,11 +829,10 @@ public function BuildSquareSubSetHelper
 algorithm
   (outlist1,outlist2):=match(invars,knowns,mExt,solvedeqvar,solvedvars,solvedeqs,constantvars)
    local
-       list<Integer> t1,t2,t3,tempeqs,tempvars1,tempvars2,allvars,tmp1,tmp2,tmp3,tempsolvedvars,tempsolvedeqs;
+       list<Integer> t1,t2,tempeqs,tempvars1,tempvars2,allvars,tmp2,tempsolvedvars,tempsolvedeqs;
        list<tuple<Integer,Integer>> tmpsolveeqvar;
-       list<Integer> tmpvars,tmpknowns,tempsolvedvars1,tempsolvedeqs1,tmpconstantvars,c1,c2,c3;
+       list<Integer> tmpvars,tmpknowns,tmpconstantvars,c1;
        ExtAdjacencyMatrix tmpExt;
-       Integer eqnumber, varnumber;
        Boolean found=false;
    case(tmpvars,tmpknowns,tmpExt,tmpsolveeqvar,tempsolvedvars,tempsolvedeqs,tmpconstantvars)
      algorithm
@@ -921,8 +904,8 @@ public function BuildSquareSubSet
     output list<tuple<Integer,list<Integer>>> dependency_variables_tree={};
     output list<tuple<Integer,list<Integer>>> dependency_equation_tree={};
 protected
-    list<Integer> tempvars1,tempvars2,allvars,tempeqs,t1,t2,t3,e1,e2,e3,tmpvars,tmpeqs;
-    Integer eqnumber,varnumber,count=1;
+    list<Integer> tempvars1,tempvars2,allvars,t1,t2,t3,tmpvars,tmpeqs;
+    Integer varnumber,count=1;
 algorithm
     for i in ineqs loop
        (tempvars1,tempvars2):=getVariableOccurence({i},mExt,knowns);
@@ -1042,7 +1025,7 @@ public function sortBlocks
    input list<tuple<list<Integer>,Integer>> inlist2;
    output list<tuple<list<Integer>,Integer>> outlist={};
 protected
-   Integer e1,e2;
+   Integer e1;
    list<Integer> blocks;
 algorithm
    for i in sortedranklist loop
@@ -1130,7 +1113,7 @@ public function findBlockTargetsHelper
 algorithm
    outlist:=match(inlist1,inlist2,solvedvariables,mxt,map,actualblocks)
    local
-     list<Integer> first,dependencyequation,targetblockslist;
+     list<Integer> first,dependencyequation;
      list<list<Integer>> rest, targetblocks,targetblocks1,originalblocks;
      list<list<String>> restitem;
      list<String> firstitem;
@@ -1169,14 +1152,12 @@ public function findPredecessorBlocks
   output list<tuple<list<Integer>,list<tuple<list<Integer>,Integer>>,list<tuple<list<String>,Integer>>,list<Integer>,list<Integer>>> outblockinfo={};
 protected
   list<Integer> dependencyequation;
-  list<tuple<list<Integer>,Integer>> blockstoupdate,targetblocks,tmptargetblocks;
+  list<tuple<list<Integer>,Integer>> targetblocks,tmptargetblocks;
   list<tuple<list<String>,Integer>> targetblocksvar;
-  list<Integer> blockitem,blockitems1,blockitems2,foundblockranks;
-  list<String> blockvarlst,blockvarlst1,blockvarlst2;
-  Integer foundblock,count=1,foundblockrank,tmpcount;
+  list<Integer> blockitems1,foundblockranks;
+  Integer count=1,tmpcount;
   //mapBlocks map1=map;
-  Boolean visited,square,status,checkknowns,finalsquarestauts,exist,exist1,targetexist;
-  list<tuple<list<Integer>,list<String>,Boolean,Integer>> outlist1={};
+  Boolean exist,targetexist;
 algorithm
   print("Targets of blocks without predecessors\n" + "=====================================\n");
   for blocks in blockinfo loop
@@ -1276,14 +1257,13 @@ public function findSquareAndNonSquareBlocks
   output list<Boolean> outlist={};
   output list<tuple<list<Integer>,list<String>,Boolean,Integer,Boolean>> outlist2={};
 protected
-  list<Integer> dependencyequation;
   list<tuple<list<Integer>,Integer>> blockstoupdate,targetblocks;
   list<tuple<list<String>,Integer>> targetblocksvar;
-  list<Integer> blockitem,blockitems1,blockitems2;
-  list<String> blockvarlst,blockvarlst1,blockvarlst2;
+  list<Integer> blockitem,blockitems1;
+  list<String> blockvarlst1,blockvarlst2;
   Integer foundblock,count=1,foundblockrank;
   mapBlocks map1=map;
-  Boolean visited,square,status,checkknowns,finalsquarestauts,exist,exist1;
+  Boolean visited,finalsquarestauts,exist,exist1;
   list<tuple<list<Integer>,list<String>,Boolean,Integer>> outlist1={};
 algorithm
    for blocks in blockinfo loop
@@ -1319,7 +1299,6 @@ protected
     Boolean checkknowns;
     list<String> blocksvarlist;
     Integer count=1,rank;
-    list<tuple<list<Integer>,Integer>> targetblockstest={};
 algorithm
     for i in inlist2 loop
         (blocksvarlist,rank):=i;
@@ -1417,14 +1396,11 @@ public function ExtractEquationsfromPredecessorBlocks
   output list<Integer> sets={};
 protected
   list<Integer> dependendblock,foundblockranks,knownblocks,usedblocks,targetblocktobeinserted,blockspostoberemoved={};
-  list<tuple<list<Integer>,Integer>> blockstoupdate,targetblocks,tmptargetblocks;
+  list<tuple<list<Integer>,Integer>> targetblocks,tmptargetblocks;
   list<tuple<list<String>,Integer>> targetblocksvar,tmptargetblocksvar;
-  list<Integer> blockitems,blockitems1,blockitems2,tmpsetc,tmpsets;
-  list<String> blockvarlst,blockvarlst1,blockvarlst2;
-  Integer foundblock,count,tmpcount,blocksize;
-  Boolean visited,square,status,checkknowns,finalsquarestauts,exist,exist1,targetexist;
-  list<tuple<list<Integer>,list<String>,Boolean,Integer>> outlist1={};
-  list<tuple<list<Integer>,list<tuple<list<Integer>,Integer>>,list<tuple<list<String>,Integer>>,list<Integer>,list<Integer>>> tmppredecessortargetinfo;
+  list<Integer> blockitems,blockitems1,tmpsetc,tmpsets;
+  list<String> blockvarlst1;
+  Integer count,tmpcount,blocksize;
 algorithm
   // first loop
   tmpcount:=1;
@@ -1523,11 +1499,11 @@ public function ExtractEquationsfromBlocks
    output list<Integer> sets={};
    output list<Integer> removedeq={};
 protected
-   list<Integer> blockitem,blockitem1,setc1,sets1,temp1,temp2,rmeqlist,tmplist1,tmplist2,tmplist3;
+   list<Integer> blockitem,blockitem1,setc1,sets1,temp1,tmplist1,tmplist2,tmplist3;
    list<list<Integer>> usedblocklist={};
    list<String> blockvarlist;
-   Boolean blockexist,squarestatus,used=false,checkusedblock,targetBlockSquareStatus;
-   Integer blockrank,knownvarcount,blocksize;
+   Boolean blockexist,squarestatus,checkusedblock,targetBlockSquareStatus;
+   Integer blockrank;
 algorithm
    for i in blockdata loop
       (blockitem,blockvarlist,blockexist,blockrank,squarestatus):=i;
@@ -1611,8 +1587,6 @@ end getRemovedEquationSolvedVariables;
 public function countKnownVariables
   input list<String> inlist1;
   output Integer count=0;
-protected
-  Boolean value;
 algorithm
    for i in inlist1 loop
        if(valueEq(i,"knowns")) then
@@ -1628,7 +1602,7 @@ public function checkBlockStatus
    output list<list<String>> instringlist={};
 protected
    Integer count=0;
-   Boolean b1,b2,b3,setinputs=true,setinputs1=true;
+   Boolean b1,b2,b3,setinputs=true;
 algorithm
    for i in inlist2 loop
        b1:=listMember("knowns",i);
@@ -1866,15 +1840,15 @@ protected function numerateList
   input Integer index;
   output String out;
 algorithm
-  out:=match(elems,index)
+  out:=match elems
     local String h,s,ss; list<String> t;
-    case({},_)
+    case {}
       then "";
-    case({h},_)
+    case {h}
       algorithm
         s:="{"+(intString(index))+","+h+"}";
       then s;
-    case(h::t,_)
+    case h::t
         algorithm
           s:="{"+(intString(index))+","+h+"}";
           ss:=s+","+(numerateList(t,index+1));
@@ -1956,7 +1930,7 @@ protected function getEquationStringOrNothing
   input array<Integer> mapIncRowEqn;
   output list<String> out;
 algorithm
-out:=matchcontinue(equations,allEqs,variables,knownVariables,mapIncRowEqn)
+out:=matchcontinue equations
   local
     Integer eqn;
     list<Integer> eqn_t;
@@ -1964,15 +1938,15 @@ out:=matchcontinue(equations,allEqs,variables,knownVariables,mapIncRowEqn)
     list<String> r;
     BackendDAE.Equation e;
 
-  case({},_,_,_,_) then {};
+  case {} then {};
 
-  case(eqn::eqn_t,_,_,_,_)
+  case eqn::eqn_t
    algorithm
       true := intEq(eqn,0);
       r := getEquationStringOrNothing(eqn_t,allEqs,variables,knownVariables,mapIncRowEqn);
       s := "\"-\"";
     then s::r;
-  case(eqn::eqn_t,_,_,_,_)
+  case eqn::eqn_t
     algorithm
       e := BackendEquation.get(allEqs,eqn);
       r := getEquationStringOrNothing(eqn_t,allEqs,variables,knownVariables,mapIncRowEqn);
@@ -1990,7 +1964,6 @@ protected function unknowsMatchingToMathematicaGrid
   input array<Integer> mapIncRowEqn;
   output String out;
   protected
-  list<BackendDAE.Equation> eqList;
   list<BackendDAE.Var> varList;
   list<String> eqsString,varString;
   list<Integer> eqns;
@@ -2021,20 +1994,20 @@ protected function writeFileIfNonEmpty
   input String content;
   output String out;
 algorithm
-out:=matchcontinue(filename,content)
+out:=matchcontinue filename
     local String directory;
-    case("",_)
+    case ""
       algorithm
         //print("Mathematica Expression =\n"+content);
       then content;
-    case(_,_)
+    case _
       algorithm
         directory:=System.dirname(filename);
         true:=System.directoryExists(directory);
         //print("Writing file "+filename);
         System.writeFile(filename,content);
       then "Done...";
-    case(_,_)
+    case _
         algorithm
           //print("Mathematica Expression =\n"+content);
         then content;
@@ -2045,11 +2018,11 @@ protected function dumpVarDistributionInfo
   input Option<DAE.Distribution> d;
   output String out;
 algorithm
-out:=match(d)
+out:=match d
 local
   DAE.Exp name,params,paramNames;
   String e1,e2,e3,s,s1;
-case(SOME(DAE.DISTRIBUTION(name,params,paramNames)))
+case SOME(DAE.DISTRIBUTION(name,params,paramNames))
   algorithm
     e1:=MathematicaDump.printExpMmaStr(name,BackendVariable.emptyVars(),BackendVariable.emptyVars());
     e2:=MathematicaDump.printExpMmaStr(params,BackendVariable.emptyVars(),BackendVariable.emptyVars());
@@ -2057,7 +2030,7 @@ case(SOME(DAE.DISTRIBUTION(name,params,paramNames)))
     s1:=stringDelimitList({e1,e2,e3},",");
     s:=stringAppendList({"{",s1,"}"});
   then s;
-  case(NONE())
+  case NONE()
     then "\"None\"";
 end match;
 end dumpVarDistributionInfo;
@@ -2073,16 +2046,16 @@ protected function getEquationsWithApproximatedAnnotation
    input BackendDAE.BackendDAE dae;
    output list<Integer> outEqs;
 algorithm
-  outEqs:=match(dae)
+  outEqs:=match dae
      local
        BackendDAE.EquationArray orderedEqs;
        list<Integer> ret;
-    case(BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedEqs=orderedEqs)::_,_))
+    case BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedEqs=orderedEqs)::_,_)
       algorithm
         ret:=getEquationsWithApproximatedAnnotation2(BackendEquation.equationList(orderedEqs),1);
       then
         ret;
-    case(_)
+    case _
       then {};
   end match;
 end getEquationsWithApproximatedAnnotation;
@@ -2120,16 +2093,16 @@ protected function isApproximatedEquation
   input BackendDAE.Equation eqn;
   output Boolean out;
 algorithm
-  out:= match(eqn)
+  out:= match eqn
     local
       list<SCode.Comment> comment;
       Boolean ret;
-    case(BackendDAE.EQUATION(source=DAE.SOURCE(comment=comment)))
+    case BackendDAE.EQUATION(source=DAE.SOURCE(comment=comment))
       algorithm
         ret := isApproximatedEquation2(comment);
       then
         ret;
-    case(_)
+    case _
       then
         false;
   end match;
@@ -2139,21 +2112,20 @@ protected function isApproximatedEquation2
   input list<SCode.Comment> commentIn;
   output Boolean out;
  algorithm
-  out:= matchcontinue(commentIn)
+  out:= matchcontinue commentIn
     local
-      SCode.Comment h;
       list<SCode.Comment> t;
       Boolean ret;
       list<SCode.SubMod> subModLst;
-    case({})
+    case {}
       algorithm
         then false;
-    case(SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(SCode.MOD(subModLst=subModLst))))::t)
+    case SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(SCode.MOD(subModLst=subModLst))))::t
       algorithm
         ret := (List.any(subModLst,isApproximatedEquation3)) or isApproximatedEquation2(t);
       then
         ret;
-    case(_::t)
+    case _::t
       algorithm
         ret := isApproximatedEquation2(t);
       then
@@ -2165,10 +2137,10 @@ protected function isApproximatedEquation3
   input SCode.SubMod m;
   output Boolean out;
 algorithm
-out:= match(m)
-  case(SCode.NAMEMOD("__OpenModelica_ApproximatedEquation",SCode.MOD(binding = SOME(Absyn.BOOL(true)))))
+out:= match m
+  case SCode.NAMEMOD("__OpenModelica_ApproximatedEquation",SCode.MOD(binding = SOME(Absyn.BOOL(true))))
      then true;
-  case(_)
+  case _
      then false;
    end match;
 end isApproximatedEquation3;
@@ -2182,23 +2154,21 @@ protected function flattenModel
   output FCore.Cache cacheOut;
   output FCore.Graph graphOut;
 algorithm
-(daeOut,cacheOut,graphOut):=matchcontinue(className,p,icache)
+(daeOut,cacheOut,graphOut):=matchcontinue icache
   local
     list<SCode.Element> p_1;
-    Absyn.Program ptot;
     DAE.DAElist dae;
     FCore.Graph graph;
-    Real timeFrontend;
     String resstr;
     FCore.Cache cache;
-  case(_,_,_)
+  case _
     algorithm
       System.realtimeTick(ClockIndexes.RT_CLOCK_UNCERTAINTIES);
       p_1 := AbsynToSCode.translateAbsyn2SCode(p);
       (cache,graph,_,dae) := Inst.instantiateClass(icache,InnerOuter.emptyInstHierarchy,p_1,className);
-      _ := System.realtimeTock(ClockIndexes.RT_CLOCK_UNCERTAINTIES);
+      System.realtimeTock(ClockIndexes.RT_CLOCK_UNCERTAINTIES);
       System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
-      dae := DAEUtil.transformationsBeforeBackend(cache,graph,dae);
+      dae := DAEUtil.transformationsBeforeBackend(cache,graph,dae, StateMachineFlatten.stateMachineToDataFlow);
     then (dae,cache,graph);
   else
       algorithm
@@ -2214,7 +2184,6 @@ protected function getMathematicaVarStr
   input BackendDAE.Variables vars;
   output String out;
   protected list<String> states,algs,outputs,inputsStates;
-  protected String s1;
 algorithm
   (states,algs,outputs,inputsStates) := MathematicaDump.printMmaVarsStr(vars);
   out := "{"+Util.stringDelimitListNonEmptyElts(listAppend(states,listAppend(algs,listAppend(outputs,inputsStates))),",")+"}";
@@ -2236,7 +2205,7 @@ protected function getEquationsForUnknownsSystem
   output list<Integer> eqnsOut;
   output list<Integer> varsOut;
 algorithm
-(eqnsOut,varsOut):=matchcontinue(m,knowns,unknowns)
+(eqnsOut,varsOut):=matchcontinue unknowns
   local
     ExtAdjacencyMatrix unknownsSystem;
     list<Integer> yEqMap,yVarMap,setS;
@@ -2244,10 +2213,10 @@ algorithm
     BackendDAE.AdjacencyMatrix my;
     array<Integer> ass1,ass2;
     list<Integer> vars;
-  case(_,_,{})
+  case {}
     algorithm
     then ({},{});
-  case(_,_,_)
+  case _
     algorithm
         unknownsSystem:=getSystemForUnknowns(m,knowns,unknowns);
 
@@ -2282,7 +2251,7 @@ protected function getEquationsForKnownsSystem
   output list<Integer> setCOut;
   output list<Integer> removed_equations_squaredOut;
 algorithm
-(setCOut,removed_equations_squaredOut):=matchcontinue(m,knowns,unknowns,setS,allEqs,variables,knownVariables,mapIncRowEqn)
+(setCOut,removed_equations_squaredOut):=matchcontinue knowns
   local
     ExtAdjacencyMatrix knownsSystem,knownsSystemComp;
     list<Integer> xEqMap,xVarMap;
@@ -2291,10 +2260,10 @@ algorithm
     list<list<Integer>> comps,comps_fixed;
     list<Integer> setC,removed_equations_squared;
     Integer nxVarMap,nxEqMap,size;
-  case(_,{},_,_,_,_,_,_)
+  case {}
     algorithm
     then ({},{});
-  case(_,_,_,_,_,_,_,_)
+  case _
       algorithm
         //print("Knowns = ");printIntList(knowns);print(";\n");
         //print("Cleaning up system of knowns..");
@@ -2304,7 +2273,7 @@ algorithm
         print("Warning: The system is ill-posed. There are no remaining equations containing the knowns.\n");
     then
       ({},{});
-  case(_,_,_,_,_,_,_,_)
+  case _
       algorithm
         //print("Knowns = ");printIntList(knowns);print(";\n");
         //print("Cleaning up system of knowns..");
@@ -2389,19 +2358,19 @@ protected function pickReductionCandidates
   input list<tuple<list<Integer>,list<Integer>>> elems;
   output list<list<Integer>> elemsOut;
 algorithm
-elemsOut:=matchcontinue(elems)
+elemsOut:=matchcontinue elems
   local
     list<Integer> occurrence,vars;
     list<tuple<list<Integer>,list<Integer>>> tail;
     list<list<Integer>> newElems;
-  case({}) then {};
-  case((occurrence,vars)::tail)
+  case {} then {};
+  case (occurrence,vars)::tail
     algorithm
       true := listLength(vars)>1 and listLength(occurrence)>1;
       newElems := pickReductionCandidates(tail);
     then
       vars::newElems;
-  case(_::tail)
+  case _::tail
      then pickReductionCandidates(tail);
 end matchcontinue;
 end pickReductionCandidates;
@@ -2417,8 +2386,8 @@ protected
   list<tuple<list<Integer>,list<Integer>>> reducedVars;
   ExtAdjacencyMatrix newM;
 algorithm
-  mOut:=matchcontinue(m,knowns)
-    case(_,_)
+  mOut:=matchcontinue knowns
+    case _
     algorithm
       neq := listLength(getEquationsNumber(m));
       variables := getVariables(m);
@@ -2426,7 +2395,7 @@ algorithm
       true :=  neq>=nvar; // The system is squared or overdetermined do nothing
     then
       m;
-    case(_,_)
+    case _
     algorithm
       neq := listLength(getEquationsNumber(m));
       variables := getVariables(m);
@@ -2448,26 +2417,26 @@ protected function reduceVariablesInMatrix
   input Integer count;
   output ExtAdjacencyMatrix mOut;
 algorithm
-  mOut:=matchcontinue(m,candidates,count)
+  mOut:=matchcontinue candidates
     local
       list<Integer> candidate,variables;
       Integer temp;
       list<list<Integer>> candidatesTail;
       ExtAdjacencyMatrix newM;
-    case(_,{},_)
+    case {}
       algorithm
         true:=count>0;
         print("Warning: The system of equations is under-determined. The results may be incorrect.\n");
         then
           m;
-    case(_,{},_)
+    case {}
         then
           m;
-    case(_,_,_)
+    case _
       algorithm
         true:=intEq(count,0);
       then m;
-    case(_,candidate::candidatesTail,_)
+    case candidate::candidatesTail
       algorithm
         true:=count>0;
         temp := listHead(candidate);
@@ -2485,14 +2454,14 @@ protected function findReductionCantidates
   input list<tuple<list<Integer>,list<Integer>>> acc;
   output list<tuple<list<Integer>,list<Integer>>> out;
 algorithm
-out:=match(variables,occurrences,acc)
+out:=match(variables, occurrences)
   local
     Integer var;
     list<Integer> occurrence,varTail;
     list<list<Integer>> occurrenceTail;
     list<tuple<list<Integer>,list<Integer>>> newAcc;
-  case({},{},_) then acc;
-  case(var::varTail,occurrence::occurrenceTail,_)
+  case({}, {}) then acc;
+  case(var::varTail, occurrence::occurrenceTail)
     algorithm
       newAcc:=findReductionCantidates2(var,occurrence,acc);
     then
@@ -2506,17 +2475,17 @@ protected function findReductionCantidates2
   input list<tuple<list<Integer>,list<Integer>>> acc;
   output list<tuple<list<Integer>,list<Integer>>> accOut;
 algorithm
-accOut:=matchcontinue(var,occurrence,acc)
+accOut:=matchcontinue acc
   local
     list<tuple<list<Integer>,list<Integer>>> newAcc,tail;
     list<Integer> elemOccurrences,vars;
     tuple<list<Integer>,list<Integer>> elem;
-  case(_,_,{})
+  case {}
     algorithm
       newAcc := {(occurrence,{var})};
     then
      newAcc;
-  case(_,_,(elemOccurrences,vars)::tail)
+  case (elemOccurrences,vars)::tail
     algorithm
       true := intEq(listLength(occurrence),listLength(elemOccurrences));
       true := containsAll(occurrence,elemOccurrences);
@@ -2524,7 +2493,7 @@ accOut:=matchcontinue(var,occurrence,acc)
       newAcc := elem::tail;
     then
       newAcc;
-  case(_,_,(elemOccurrences,vars)::tail)
+  case (elemOccurrences,vars)::tail
     algorithm
       newAcc := findReductionCantidates2(var,occurrence,tail);
     then
@@ -2562,19 +2531,19 @@ protected function occurrencesOfVariable
   input Integer var;
   output list<Integer> out;
 algorithm
-  out:=matchcontinue(m,var)
+  out:=matchcontinue m
     local
       ExtAdjacencyMatrix tail;
       list<Integer> ret,vars;
       Integer eq;
-      case({},_) then {};
-      case((eq,vars)::tail,_)
+      case {} then {};
+      case (eq,vars)::tail
         algorithm
           true := containsAny(vars,{var});
           ret := occurrencesOfVariable(tail,var);
         then
           eq::ret;
-      case((_,_)::tail,_)
+      case (_,_)::tail
         algorithm
           ret := occurrencesOfVariable(tail,var);
         then
@@ -2586,15 +2555,15 @@ protected function getEquationsNumber
   input ExtAdjacencyMatrix m;
   output list<Integer> numbers;
 algorithm
-numbers:= match(m)
+numbers:= match m
     local
       ExtAdjacencyMatrix t;
       Integer eq;
       list<Integer> inner_ret;
-    case({})
+    case {}
         algorithm
         then {};
-    case((eq,_)::t)
+    case (eq,_)::t
       algorithm
         inner_ret := getEquationsNumber(t);
       then eq::inner_ret;
@@ -2615,21 +2584,21 @@ protected function getComponentsWrapper
   input array<Integer> ass2;
   output list<list<Integer>> compsOut;
 algorithm
-compsOut:=matchcontinue(m,mt,ass1,ass2)
+compsOut:=matchcontinue ass2
   local
     list<list<Integer>> comps;
     list<Integer> comp;
-  case(_,_,_,_)
+  case _
     algorithm
       true := intEq(0,arrayLength(m));
     then {{}};
-  case(_,_,_,_)
+  case _
     algorithm
       true := intEq(1,arrayLength(m));
     then {{1}};
-  case(_,_,_,_)
+  case _
     algorithm
-       failure(_:=Sorting.TarjanTransposed(mt,ass2));
+       failure(Sorting.TarjanTransposed(mt,ass2));
 
        print("TarjanAlgorithm failed\n");
        Error.clearMessages();
@@ -2637,7 +2606,7 @@ compsOut:=matchcontinue(m,mt,ass1,ass2)
        comps := {comp};
     then
       comps;
-  case(_,_,_,_)
+  case _
     algorithm
        comps:=Sorting.TarjanTransposed(mt,ass2);
     then
@@ -2649,14 +2618,14 @@ protected function getVariables
   input ExtAdjacencyMatrix m;
   output list<Integer> varsOut;
 algorithm
-varsOut:= match(m)
+varsOut:= match m
    local
       list<Integer> vars,newVars;
       ExtAdjacencyMatrix t;
-   case({})
+   case {}
         algorithm
         then {};
-   case((_,vars)::t)
+   case (_,vars)::t
         algorithm
            newVars:=listAppend(vars,getVariables(t));
            newVars:=List.unique(newVars);
@@ -2672,17 +2641,17 @@ protected function removeEquationInSquaredBlock
   output ExtAdjacencyMatrix mOut;
   output list<Integer> removedEquations;
 algorithm
-(mOut,removedEquations):=matchcontinue(m,knowns,unknowns,components)
+(mOut,removedEquations):=matchcontinue components
   local
     list<Integer> h,vars,usedKnowns;
     list<list<Integer>> t;
     ExtAdjacencyMatrix compEqns,compsSorted,tailEquations,inner_ret;
     Integer removeEquation;
     list<Integer> removed_inner;
-  case(_,_,_,{})
+  case {}
     algorithm
     then ({},{});
-  case(_,_,_,h::t)
+  case h::t
     algorithm
        compEqns:=getEquations(m,h);
        vars:=getVariables(compEqns);
@@ -2693,7 +2662,7 @@ algorithm
        (inner_ret,removed_inner):=removeEquationInSquaredBlock(m,knowns,unknowns,t);
        removed_inner := if listLength(compsSorted)>1 then removeEquation::removed_inner else removed_inner;
     then (listAppend(tailEquations,inner_ret),removed_inner);
-  case(_,_,_,h::t)
+  case h::t
     algorithm
        compEqns:=getEquations(m,h);
        vars:=getVariables(compEqns);
@@ -2738,11 +2707,11 @@ protected function countKnowns
   input list<Integer> knowns;
   output Integer out;
 algorithm
-  out:= match(row,knowns)
+  out:= match row
     local
       list<Integer> vars;
       Integer n;
-    case((_,vars),_)
+    case (_,vars)
         algorithm
           n:=listLength(List.intersectionOnTrue(vars,knowns,intEq));
         then n;
@@ -2788,20 +2757,20 @@ protected function removeEquations
   input list<Integer> eqns;
   output ExtAdjacencyMatrix mOut;
 algorithm
-mOut:=matchcontinue(m,eqns)
+mOut:=matchcontinue m
   local
     ExtAdjacencyMatrixRow e;
     ExtAdjacencyMatrix t,inner_ret;
     Integer eq;
-  case({},_)
+  case {}
     algorithm
     then {};
-  case((e as (eq,_))::t,_)
+  case (e as (eq,_))::t
     algorithm
       false := containsAny({eq},eqns);
       inner_ret:=removeEquations(t,eqns);
     then e::inner_ret;
-  case(((eq,_))::t,_)
+  case ((eq,_))::t
     algorithm
       true := containsAny({eq},eqns);
       inner_ret:=removeEquations(t,eqns);
@@ -2815,10 +2784,10 @@ protected function getEquationsHelper
   input list<Integer> eqns;
   output Boolean out;
 algorithm
-  out:=match(m,eqns)
+  out:=match m
     local
       Integer e;
-    case((e,_),_)
+    case (e,_)
       then List.isMemberOnTrue(e,eqns,intEq);
   end match;
 end getEquationsHelper;
@@ -2836,11 +2805,11 @@ protected function removeUnrelatedEquations2
   input list<Integer> knowns;
   output Boolean out;
 algorithm
-out:= match(row,knowns)
+out:= match row
   local
     list<Integer> vars;
     Boolean ret;
-  case((_,vars),_)
+  case (_,vars)
       algorithm
         ret := containsAny(vars,knowns);
       then ret;
@@ -2860,15 +2829,15 @@ protected function checkSystemContainsVars "Check that each variable is containe
     input list<Integer> knows;
     input BackendDAE.Variables variables;
 algorithm
-    _:=matchcontinue(m,knows,variables)
+    ():=matchcontinue knows
         local
             Integer h;
-            list<Integer> t,ret;
+            list<Integer> t;
             BackendDAE.Var not_found_var;
             String str;
-        case(_,{},_)
+        case {}
         then ();
-        case(_,h::t,_)
+        case h::t
             algorithm
                 true:=listEmpty(removeUnrelatedEquations(m,{h}));
                 not_found_var:=BackendVariable.getVarAt(variables,h);
@@ -2876,7 +2845,7 @@ algorithm
                 print("Warning: The variable '"+str+"' was not found in the system of knowns\n");
                 checkSystemContainsVars(m,t,variables);
             then ();
-        case(_,h::t,_)
+        case h::t
             algorithm
                false:=listEmpty(removeUnrelatedEquations(m,{h}));
                 checkSystemContainsVars(m,t,variables);
@@ -2900,21 +2869,20 @@ protected function getRelatedVariables
   input list<Integer> vars;
   output list<Integer> varsOut;
 algorithm
-varsOut:=matchcontinue(m,vars)
+varsOut:=matchcontinue m
   local
      ExtAdjacencyMatrix t;
-     ExtAdjacencyMatrixRow h;
      list<Integer> eqvars;
-  case({},_)
+  case {}
       algorithm
       then {};
-  case(((_,eqvars))::t,_)
+  case ((_,eqvars))::t
     algorithm
       true := containsAny(eqvars,vars);
       eqvars := listAppend(eqvars,getRelatedVariables(t,vars)) annotation(__OpenModelica_DisableListAppendWarning=true);
       eqvars := List.setDifference(setOfList(eqvars),vars);
     then eqvars;
-  case(((_,eqvars))::t,_)
+  case ((_,eqvars))::t
     algorithm
       false := containsAny(eqvars,vars);
       eqvars := getRelatedVariables(t,vars);
@@ -2928,14 +2896,14 @@ protected function restoreIndicesEquivalence
   input list<Integer> map;
   output list<Integer> out;
 algorithm
-out:= match(inList,map)
+out:= match inList
   local
     list<Integer> t,inner_ret;
     Integer h,v;
-  case({},_)
+  case {}
     algorithm
     then {};
-  case(h::t,_)
+  case h::t
       algorithm
         v := listGet(map,h);
         inner_ret := restoreIndicesEquivalence(t,map);
@@ -2949,17 +2917,17 @@ protected function addIndexEquivalence
   output Integer indexOut;
   output list<Integer> mapOut;
 algorithm
-(indexOut,mapOut):=matchcontinue(index,map)
+(indexOut,mapOut):=matchcontinue map
   local
     Integer pos;
     list<Integer> newMap;
-  case(_,_)
+  case _
     algorithm
       true := List.isMemberOnTrue(index,map,intEq);
       pos := List.position(index,map);
     then
       (pos,map);
-  case(_,_)
+  case _
     algorithm
       false := List.isMemberOnTrue(index,map,intEq);
       pos := listLength(map)+1;
@@ -2976,14 +2944,14 @@ protected function addVarEquivalences
   output list<Integer> varMapOut;
   output list<Integer> varsOut;
 algorithm
-(varMapOut,varsOut):= match(vars,map,varsFixed)
+(varMapOut,varsOut):= match vars
   local
     Integer h,v;
     list<Integer> remaining,newMap,innerVars,innerMap;
-  case({},_,_)
+  case {}
     algorithm
     then (map,varsFixed);
-  case(h::remaining,_,_)
+  case h::remaining
       algorithm
        (v,newMap):=addIndexEquivalence(h,map);
        (innerMap,innerVars):=addVarEquivalences(remaining,newMap,v::varsFixed);
@@ -3000,17 +2968,17 @@ protected function prepareForMatching2
   output list<Integer> varMapOut;
   output list<list<Integer>> mOut;
 algorithm
-(eqMapOut,varMapOut,mOut):= match(mExt,eqMap,varMap,m)
+(eqMapOut,varMapOut,mOut):= match mExt
     local
       Integer eq;
       list<Integer> vars,newVarMap,newEqMap,newVars;
       ExtAdjacencyMatrix t;
       list<list<Integer>> newM;
-    case({},_,_,_)
+    case {}
       algorithm
         newM := listReverse(m);
       then (eqMap,varMap,newM);
-    case((eq,vars)::t,_,_,_)
+    case (eq,vars)::t
         algorithm
           (_,newEqMap) := addIndexEquivalence(eq,eqMap);
           (newVarMap,newVars) := addVarEquivalences(vars,varMap,{});
@@ -3036,13 +3004,13 @@ protected function removeDummyEquations
    input Integer max_neqs;
    output list<list<Integer>> out;
 algorithm
-out:= match(comps,max_neqs)
+out:= match comps
    local
       list<list<Integer>> t,ret;
       list<Integer> h,row;
-   case({},_)
+   case {}
       then {};
-   case(h::t,_)
+   case h::t
       algorithm
         row:=List.removeOnTrue(max_neqs,intLt,h);
         ret:=removeDummyEquations(t,max_neqs);
@@ -3056,17 +3024,17 @@ protected function fixUnderdeterminedSystem
    input Integer neqs;
    output list<list<Integer>> mOut;
 algorithm
-  mOut:=matchcontinue(m,nvars,neqs)
+  mOut:=matchcontinue neqs
      local
         list<Integer> dummyEq;
         list<list<Integer>> new_m;
-     case(_,_,_)
+     case _
         algorithm
           true:=intGt(nvars,neqs);
           dummyEq:=List.intRange(nvars);
           new_m:=fixUnderdeterminedSystem(listAppend(m,{dummyEq}),nvars,neqs+1);
         then new_m;
-     case(_,_,_)
+     case _
            then m;
   end matchcontinue;
 end fixUnderdeterminedSystem;
@@ -3084,14 +3052,14 @@ protected function getExtAdjacencyMatrix2
   input ExtAdjacencyMatrix acc;
   output ExtAdjacencyMatrix mOut;
 algorithm
-  mOut:= match(i,m,acc)
+  mOut:= match m
     local
       BackendDAE.AdjacencyMatrixElement h;
       list<BackendDAE.AdjacencyMatrixElement> t;
-    case(_,{},_)
+    case {}
       algorithm
       then listReverse(acc);
-    case(_,h::t,_)
+    case h::t
         algorithm
         then getExtAdjacencyMatrix2(i+1,t,(i,h)::acc);
   end match;
@@ -3100,14 +3068,14 @@ end getExtAdjacencyMatrix2;
 protected function dumpExtAdjacencyMatrix
   input ExtAdjacencyMatrix m;
 algorithm
-  _:=match(m)
+  ():=match m
     local
       ExtAdjacencyMatrix t;
       Integer eq;
       list<Integer> vars;
-    case({})
+    case {}
         then ();
-    case((eq,vars)::t)
+    case (eq,vars)::t
         algorithm
           print(intString(eq)+":"+stringDelimitList(List.map(vars,intString),",")+"\n");
           dumpExtAdjacencyMatrix(t);
@@ -3149,17 +3117,17 @@ public function getUncertainRefineVariableIndexes
   output list<Integer> indices;
   output list<Option<DAE.Distribution>> distributions;
 algorithm
-  (indices,distributions) := matchcontinue (allVariables, variableIndexList)
+  (indices,distributions) := matchcontinue variableIndexList
     local
       list<Integer> variableIndexListRest, refineVariableIndexList;
       Integer index;
       BackendDAE.Var var;
       Option<DAE.Distribution> dist;
       list<Option<DAE.Distribution>> distInner;
-    case (_, {}) then
+    case {} then
       ({},{});
     // Variable has its uncertain attribute set to Uncertainty.Refine?
-    case (_, index :: variableIndexListRest) algorithm
+    case index :: variableIndexListRest algorithm
       var := BackendVariable.getVarAt(allVariables, index);
       true := BackendVariable.varHasUncertainValueRefine(var);
       dist := BackendVariable.varTryGetDistribution(var);
@@ -3167,13 +3135,13 @@ algorithm
     then
       (index :: refineVariableIndexList,dist::distInner);
     // Variable is missing the uncertain attribute or it is not set to Uncertainty.Refine?
-    case (_, index :: variableIndexListRest) algorithm
+    case index :: variableIndexListRest algorithm
       var := BackendVariable.getVarAt(allVariables, index);
       false := BackendVariable.varHasUncertainValueRefine(var);
       (refineVariableIndexList,distInner) := getUncertainRefineVariableIndexes(allVariables, variableIndexListRest);
     then
       (refineVariableIndexList,distInner);
-    case (_,_) algorithm print("getUncertainRefineVariableIndexes failed!\n"); then fail();
+    case _ algorithm print("getUncertainRefineVariableIndexes failed!\n"); then fail();
   end matchcontinue;
 end getUncertainRefineVariableIndexes;
 
@@ -3188,7 +3156,7 @@ public function eliminateVariablesDAE
   input BackendDAE.BackendDAE indae;
   output BackendDAE.BackendDAE outDae;
 algorithm
-  outDae := match(elimVarIndexList, indae)
+  outDae := match indae
     local
       BackendDAE.BackendDAE dae;
       BackendDAE.Variables vars,vars_1,globalKnownVars,kvars_1;
@@ -3198,11 +3166,10 @@ algorithm
       HashTable.HashTable crefDouble;
       BackendDAE.AdjacencyMatrix m;
       HashTable.HashTable movedvars_1;
-      list<BackendDAE.Equation> seqns,eqnLst,ieqnLst;
+      list<BackendDAE.Equation> eqnLst;
       BackendVarTransform.VariableReplacements repl;
 
-    case(_,dae as BackendDAE.DAE((syst as BackendDAE.EQSYSTEM(orderedEqs=eqns,orderedVars=vars))::_,(shared as BackendDAE.SHARED(globalKnownVars=globalKnownVars,initialEqs=ieqns)))) algorithm
-      _ := BackendEquation.equationList(ieqns);
+    case dae as BackendDAE.DAE((syst as BackendDAE.EQSYSTEM(orderedEqs=eqns,orderedVars=vars))::_,(shared as BackendDAE.SHARED(globalKnownVars=globalKnownVars,initialEqs=ieqns))) algorithm
       eqnLst := BackendEquation.equationList(eqns);
       crefDouble := findArraysPartiallyIndexed(eqnLst);
       //print("partially indexed crs:"+Util.stringDelimitList(Util.listMap(crefDouble,Exp.printComponentRefStr),",\n")+"\n");
@@ -3254,19 +3221,16 @@ a.v[:]
   input HashTable.HashTable inht;
   output HashTable.HashTable outHt;
 algorithm
-  (outHt) :=
+  outHt :=
   matchcontinue(inEqs,inht)
       local
         list<BackendDAE.Equation> eqs;
-        BackendDAE.Equation eq1;
         DAE.Exp e1,e2;
-        list<DAE.Exp> expl;
         HashTable.HashTable ht;
         DAE.Algorithm alg;
     case({},ht) then  ht;
     case( BackendDAE.ALGORITHM(alg=alg) :: eqs,ht)
       algorithm
-        _ := Algorithm.getAllExps(alg);
         ht := findArraysPartiallyIndexed1(eqs,ht);
       then
         ht;
@@ -3297,7 +3261,6 @@ algorithm
   outHt := match(inRef,indubRef,inht)
     local
       DAE.ComponentRef c1,c2;
-      DAE.Exp e1;
       list<DAE.Exp> expl1;
       HashTable.HashTable dubRef,ht;
 
@@ -3333,8 +3296,7 @@ protected function findArrayVariables "collects all variables that are arrays an
   output HashTable.HashTable outHt;
 algorithm
   outHt := matchcontinue(inRef,inht)
-    local DAE.Exp e1;
-      list<DAE.Exp> expl1;
+    local      list<DAE.Exp> expl1;
       DAE.ComponentRef c1;
       HashTable.HashTable ht;
     case({},ht) then ht;
@@ -3384,16 +3346,16 @@ protected function  findArraysInRecordLst "help function to findArraysPartiallyI
  input list<DAE.Var> invarLst;
  output HashTable.HashTable outHt "resulting accumulated crefs";
 algorithm
-  outHt := matchcontinue(inht,recordCr,invarLst)
+  outHt := matchcontinue(inht, invarLst)
     local
       HashTable.HashTable ht;
       String name;
       DAE.Type tp;
       DAE.ComponentRef thisCr;
       list<DAE.Var> varLst;
-    case (ht,_,{}) then ht;
+    case (ht, {}) then ht;
     // found array
-    case(ht,_,DAE.TYPES_VAR(name=name,ty=tp)::varLst) algorithm
+    case(ht, DAE.TYPES_VAR(name=name,ty=tp)::varLst) algorithm
       true := Expression.isArrayType(tp);
       thisCr := ComponentReference.joinCrefs(recordCr,DAE.CREF_IDENT(name,tp,{}));
       ht := BaseHashTable.add((thisCr,0),ht);
@@ -3406,7 +3368,7 @@ algorithm
     //  ht = findArraysInRecordLst(ht,recordCr,varLst);
     //then ht;
     // other element (scalar)
-    case(ht,_,_::varLst) algorithm
+    case(ht, _::varLst) algorithm
       ht := findArraysInRecordLst(ht,recordCr,varLst);
     then ht;
 
@@ -3437,7 +3399,7 @@ protected function eliminateVariablesDAE2
   output BackendVarTransform.VariableReplacements outRepl;
 algorithm
   (outEqns,outSimpleEqns,outMvars,outRepl):=
-  matchcontinue (ieqns,eqnIndex,vars,globalKnownVars,mvars,repl,inDoubles,m,elimVarIndexList,failCheck)
+  matchcontinue (ieqns, failCheck)
     local
       HashTable.HashTable mvars_1,mvars_2;
       BackendVarTransform.VariableReplacements repl_1,repl_2;
@@ -3449,20 +3411,19 @@ algorithm
       list<BackendDAE.Equation> eqns;
       DAE.Exp e2;
       DAE.ElementSource source;
-      array<Option<BackendDAE.Var>> varOptArr;
       BackendDAE.Var elimVar;
 
-    case ({},_,_,_,_,_,_,_,_,false) then
+    case ({}, false) then
       ({},{},mvars,repl);
 
-    case (e::eqns,_,_,_,_,_,_,_,_,false) algorithm
+    case (e::eqns, false) algorithm
       //true = RTOpts.eliminationLevel() > 0;
       //false = equationHasZeroCrossing(e);
       ({e},_) := BackendVarTransform.replaceEquations({e},repl,NONE()) "this can be dangerous in case of if-equations, because the can be simplified to a list of equations";
 
       // Attempt to solve the equation wrt to the variables to be eliminated.
       varIndexList := m[eqnIndex];
-      (elimVarIndex :: _) := List.intersectionOnTrue(varIndexList, elimVarIndexList, intEq);
+      elimVarIndex :: _ := List.intersectionOnTrue(varIndexList, elimVarIndexList, intEq);
       elimVarIndexList_1 := List.removeOnTrue(elimVarIndex,  intEq, elimVarIndexList);
       elimVar := BackendVariable.getVarAt(vars, elimVarIndex);
       BackendDAE.VAR(varName = cr1) := elimVar;
@@ -3482,7 +3443,7 @@ algorithm
       (eqns_1,(BackendDAE.SOLVED_EQUATION(cr1,e2,source,BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN) :: seqns_1),mvars_2,repl_2);
 
     // Next equation.
-    case ((e :: eqns),_,_,_,_,_,_,_,_,false)
+    case ((e :: eqns), false)
       algorithm
         (eqns_1,seqns_1,mvars_1,repl_1) := eliminateVariablesDAE2(eqns, eqnIndex + 1, vars, globalKnownVars, mvars,  repl, inDoubles, m, elimVarIndexList, false) "Not a simple variable, check rest";
       then
@@ -3496,14 +3457,14 @@ protected function solveEqn2 "solves an equation w.r.t. a variable"
   output DAE.Exp exp;
   output DAE.ElementSource source;
 algorithm
-  (exp,source) := match(eqn,cr)
+  (exp,source) := match eqn
     local
       DAE.Exp e1,e2;
-    case(BackendDAE.EQUATION(exp=e1,scalar=e2,source=source),_)
+    case BackendDAE.EQUATION(exp=e1,scalar=e2,source=source)
       algorithm
         (exp,_) := ExpressionSolve.solve(e1,e2,DAE.CREF(cr,DAE.T_REAL_DEFAULT));
       then (exp,source);
-    case(_,_)
+    case _
       algorithm
         then fail();
   end match;
@@ -3590,15 +3551,15 @@ if replaceName is false it only replaces in binding expression.
 
   output list<BackendDAE.Var> outVarLst;
 algorithm
-  outVarLst := match(invarLst,repl,func,replaceName)
+  outVarLst := match(invarLst, replaceName)
     local
       BackendDAE.Var v;
       DAE.ComponentRef cr;
       Option<DAE.Exp> bindExp;
       list<BackendDAE.Var> varLst;
 
-    case({},_,_,_) then {};
-    case(v::varLst,_,_,true) algorithm
+    case({}, _) then {};
+    case(v::varLst, true) algorithm
       cr := BackendVariable.varCref(v);
       bindExp := varBindingOpt(v);
       bindExp := replaceExpOpt(bindExp,repl,func);
@@ -3609,7 +3570,7 @@ algorithm
       varLst := replaceVars(varLst,repl,func,replaceName);
     then v::varLst;
 
-    case(v::varLst,_,_,false) algorithm
+    case(v::varLst, false) algorithm
       bindExp := varBindingOpt(v);
       bindExp := replaceExpOpt(bindExp,repl,func);
       bindExp := applyOptionSimplify(bindExp);
@@ -3625,8 +3586,8 @@ returns the binding expression option of a variable"
 input BackendDAE.Var v;
 output Option<DAE.Exp> exp;
 algorithm
-  exp := match(v)
-    case(BackendDAE.VAR(bindExp = exp)) then exp;
+  exp := match v
+    case BackendDAE.VAR(bindExp = exp) then exp;
   end match;
 end varBindingOpt;
 
@@ -3641,10 +3602,10 @@ public function replaceExpOpt "Similar to replaceExp but takes Option<Exp> inste
     output Boolean outBoolean;
   end FuncTypeExp_ExpToBoolean;
 algorithm
-  outExp := match (inExp,repl,funcOpt)
+  outExp := match inExp
   local DAE.Exp e;
-    case(NONE(),_,_) then NONE();
-    case(SOME(e),_,_)
+    case NONE() then NONE();
+    case SOME(e)
       algorithm
         /* TODO: Propagate this boolean? */
         (e,_) := BackendVarTransform.replaceExp(e,repl,funcOpt);
@@ -3656,7 +3617,7 @@ public function applyOptionSimplify
   input Option<DAE.Exp> bindExpIn;
   output Option<DAE.Exp> bindExpOut;
 algorithm
-  bindExpOut := match(bindExpIn)
+  bindExpOut := match bindExpIn
     local
       DAE.Exp e, e1;
 
@@ -3719,7 +3680,7 @@ public function moveVariables "
   output BackendDAE.Variables outVariables2;
 protected
   list<BackendDAE.Var> lst1, lst2, lst1_1, lst2_1;
-  BackendDAE.Variables v1, v2, vars, globalKnownVars;
+  BackendDAE.Variables v1, v2;
 algorithm
   lst1 := BackendVariable.varList(inVariables1);
   lst2 := BackendVariable.varList(inVariables2);
@@ -3818,15 +3779,15 @@ protected function mergeBy1
     output Integer outRes;
   end CompareFunc;
 algorithm
-  outList := matchcontinue(inLeft, inRight, inCompFunc,inArgument1)
+  outList := matchcontinue(inLeft, inRight)
     local
       ElementType l, r;
       list<ElementType> l_rest, r_rest, res;
       Integer ri,li;
 
-    case ({}, {}, _,_) then {};
+    case ({}, {}) then {};
 
-    case (l :: l_rest, r :: _, _,_)
+    case (l :: l_rest, r :: _)
       algorithm
         ri := inCompFunc(r,inArgument1);
         li := inCompFunc(l,inArgument1);
@@ -3835,14 +3796,14 @@ algorithm
       then
         l :: res;
 
-    case (_ :: _, r :: r_rest, _,_)
+    case (_ :: _, r :: r_rest)
       algorithm
         res := mergeBy1(inLeft, r_rest, inCompFunc,inArgument1);
       then
         r :: res;
 
-    case ({}, _, _,_) then inRight;
-    case (_, {}, _,_) then inLeft;
+    case ({}, _) then inRight;
+    case (_, {}) then inLeft;
 
   end matchcontinue;
 end mergeBy1;
@@ -3862,7 +3823,7 @@ protected function removeSimpleEquationsUC
   input BackendDAE.BackendDAE daeIn;
   output BackendDAE.BackendDAE daeOut;
 algorithm
-  daeOut:= match(daeIn)
+  daeOut:= match daeIn
     local
       BackendDAE.BackendDAE dae;
       list<AliasSet> sets;
@@ -3872,7 +3833,7 @@ algorithm
       list<DAE.ComponentRef> set_solutions,removed_vars;
       BackendVarTransform.VariableReplacements repl;
       HashTable.HashTable removed_vars_table;
-    case(dae as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedEqs=eqns,orderedVars=vars)::_, BackendDAE.SHARED(globalKnownVars=globalKnownVars)))
+    case dae as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedEqs=eqns,orderedVars=vars)::_, BackendDAE.SHARED(globalKnownVars=globalKnownVars))
       algorithm
         repl:=BackendVarTransform.emptyReplacements();
         removed_vars_table:=HashTable.emptyHashTable();
@@ -3906,14 +3867,14 @@ protected function addCrefsToHashTable
    input HashTable.HashTable table;
    output HashTable.HashTable out;
 algorithm
-out:=match(crefs,table)
+out:=match crefs
    local
       DAE.ComponentRef h;
       list<DAE.ComponentRef> t;
       HashTable.HashTable new_table;
-   case({},_)
+   case {}
       then table;
-   case(h::t,_)
+   case h::t
     algorithm
       new_table:=BaseHashTable.add((h,0),table);
       new_table:=addCrefsToHashTable(t,new_table);
@@ -3928,14 +3889,14 @@ protected function getAllVariablesForCref
   input BackendDAE.Variables globalKnownVars;
   output list<BackendDAE.Var> outVarLst;
 algorithm
-  outVarLst:=matchcontinue(cr,vars,globalKnownVars)
+  outVarLst:=matchcontinue globalKnownVars
     local
       list<BackendDAE.Var> out;
-    case(_,_,_)
+    case _
       algorithm
         (out,_):=BackendVariable.getVar(cr,vars);
       then out;
-    case(_,_,_)
+    case _
       algorithm
         (out,_):=BackendVariable.getVar(cr,globalKnownVars);
       then out;
@@ -3970,15 +3931,15 @@ protected function rateVariableList
   input list<BackendDAE.Var> vars;
   output Real out;
 algorithm
-out:= match(vars)
+out:= match vars
   local
     Real r1,r2,r;
     BackendDAE.Var h;
     list<BackendDAE.Var> t;
-    case({})
+    case {}
       algorithm
       then 0.0;
-    case(h::t)
+    case h::t
       algorithm
         r1 := rateVariable(h);
         r2 := rateVariableList(t);
@@ -4038,8 +3999,6 @@ end solveAliasSet;
 protected function isRemovableVar
   input BackendDAE.Var var;
   output Boolean out;
-  protected
-    DAE.ComponentRef cr;
 algorithm
   // I'm keeping only uncertain variables and states
   out:=(not BackendVariable.isStateVar(var)) and (not BackendVariable.varHasUncertainValueRefine(var));
@@ -4049,15 +4008,15 @@ protected function isRemovableVarList
   input list<BackendDAE.Var> vars;
   output Boolean out;
 algorithm
-out:= match(vars)
+out:= match vars
   local
     Boolean r1,r2,r;
     BackendDAE.Var h;
     list<BackendDAE.Var> t;
-    case({})
+    case {}
       algorithm
       then true;
-    case(h::t)
+    case h::t
       algorithm
         r1 := isRemovableVar(h);
         r2 := isRemovableVarList(t);
@@ -4083,15 +4042,14 @@ protected function fixSingOfExp
   input DAE.Exp eIn;
   output DAE.Exp out;
 algorithm
-  out:=match(sign,eIn)
+  out:=match sign
     local
-      DAE.Exp e;
       DAE.Type tp;
-    case(-1,_)
+    case -1
       algorithm
         tp := Expression.typeof(eIn);
       then DAE.UNARY(DAE.UMINUS(tp),eIn);
-    case(_,_)
+    case _
       then eIn;
   end match;
 end fixSingOfExp;
@@ -4119,7 +4077,7 @@ protected function createReplacementsAndEquationsForSet
   output list<BackendDAE.Equation> eqnsOut;
   output list<DAE.ComponentRef> removed_varsOut;
 algorithm
-  (replOut,eqnsOut,removed_varsOut):=matchcontinue(solution,symbols,set,vars,globalKnownVars,repl_acc,eqns_acc,removed_vars_acc)
+  (replOut,eqnsOut,removed_varsOut):=matchcontinue symbols
     local
       list<DAE.ComponentRef> t,new_removed_vars;
       DAE.ComponentRef h;
@@ -4129,14 +4087,14 @@ algorithm
       list<BackendDAE.Equation> new_eqns;
       BackendDAE.Equation eqn;
       DAE.ElementSource source;
-    case(_,{},_,_,_,_,_,_)
+    case {}
       then (repl_acc,eqns_acc,removed_vars_acc);
-    case(_,h::t,_,_,_,_,_,_)
+    case h::t
       algorithm // ignore if the current cref is the solution
         true:=ComponentReferenceBasics.crefEqual(solution,h);
         (new_repl,new_eqns,new_removed_vars):=createReplacementsAndEquationsForSet(solution,t,set,vars,globalKnownVars,repl_acc,eqns_acc,removed_vars_acc);
       then (new_repl,new_eqns,new_removed_vars);
-    case(_,h::t,_,_,_,_,_,_)
+    case h::t
       algorithm // if it's removable, create a replacement
         true:=isRemovableSymbol(h,vars,globalKnownVars);
         (sign1,e):=getAliasSetExpressionAndSign(solution,set);
@@ -4147,7 +4105,7 @@ algorithm
         new_removed_vars:=h::removed_vars_acc;
         (new_repl,new_eqns,new_removed_vars):=createReplacementsAndEquationsForSet(solution,t,set,vars,globalKnownVars,new_repl,eqns_acc,new_removed_vars);
       then (new_repl,new_eqns,new_removed_vars);
-    case(_,h::t,_,_,_,_,_,_)
+    case h::t
       algorithm // otherwise create an algorithm
         false:=isRemovableSymbol(h,vars,globalKnownVars);
         (sign1,e):=getAliasSetExpressionAndSign(solution,set);
@@ -4174,7 +4132,7 @@ protected function createReplacementsAndEquations
   output list<BackendDAE.Equation> eqnsOut;
   output list<DAE.ComponentRef> removed_vars;
 algorithm
-(replOut,eqnsOut,removed_vars):=match(solutions,sets,vars,globalKnownVars,repl_acc,eqns_acc,removed_vars_acc)
+(replOut,eqnsOut,removed_vars):=match(solutions, sets)
   local
     list<DAE.ComponentRef> symbols,solt,new_removed_vars;
     list<AliasSet> sett;
@@ -4182,9 +4140,9 @@ algorithm
     DAE.ComponentRef solution;
     BackendVarTransform.VariableReplacements new_repl;
     list<BackendDAE.Equation> new_eqns;
-  case({},{},_,_,_,_,_)
+  case({}, {})
     then (repl_acc,eqns_acc,removed_vars_acc);
-  case(solution::solt,set::sett,_,_,_,_,_)
+  case(solution::solt, set::sett)
     algorithm
       symbols:=getAliasSetSymbolList(set);
       (new_repl,new_eqns,new_removed_vars):=createReplacementsAndEquationsForSet(solution,symbols,set,vars,globalKnownVars,repl_acc,eqns_acc,removed_vars_acc);
@@ -4205,29 +4163,29 @@ protected function separateAliasSetsAndEquations
   output list<BackendDAE.Equation> eqn_accOut;
 algorithm
   (setsOut,eqn_accOut):=
-  match (eqnIn,sets,eqn_accIn)
+  match eqnIn
     local
       DAE.ComponentRef cr;
       DAE.Exp e1,e2;
       BackendDAE.Equation eqn;
       list<BackendDAE.Equation> t,eqn_acc;
       list<AliasSet> new_sets;
-    case({},_,_)
+    case {}
       algorithm
         eqn_acc:=listReverse(eqn_accIn);
       then (sets,eqn_acc);
-    case ((eqn as BackendDAE.EQUATION(exp=e1,scalar=e2))::t,_,_)
+    case (eqn as BackendDAE.EQUATION(exp=e1,scalar=e2))::t
       algorithm
         (new_sets,eqn_acc) := addPairToSet(sets,eqn_accIn,eqn,e1,e2);
         (new_sets,eqn_acc) := separateAliasSetsAndEquations(t,new_sets,eqn_acc);
       then (new_sets,eqn_acc);
-    case ((eqn as BackendDAE.SOLVED_EQUATION(componentRef=cr,exp=e2))::t,_,_)
+    case (eqn as BackendDAE.SOLVED_EQUATION(componentRef=cr,exp=e2))::t
       algorithm
         e1 := Expression.crefExp(cr);
         (new_sets,eqn_acc) := addPairToSet(sets,eqn_accIn,eqn,e1,e2);
         (new_sets,eqn_acc) := separateAliasSetsAndEquations(t,new_sets,eqn_acc);
       then (new_sets,eqn_acc);
-    case (eqn::t,_,_)
+    case eqn::t
       algorithm
         (new_sets,eqn_acc) := separateAliasSetsAndEquations(t,sets,eqn::eqn_accIn);
       then (new_sets,eqn_acc);
@@ -4247,33 +4205,32 @@ protected function addPairToSet
   output list<AliasSet> out;
   output list<BackendDAE.Equation> eqn_acc_out;
 algorithm
-  (out,eqn_acc_out) := match (sets,eqn_acc,eqn,lhs,rhs)
+  (out,eqn_acc_out) := match (lhs, rhs)
     local
       DAE.ComponentRef cr1,cr2;
       list<AliasSet> new_sets;
-      DAE.Type tp;
       DAE.Exp e1,e2;
       Option<DAE.ElementSource> source;
     // a = b;
-    case (_,_,_,e1 as DAE.CREF(componentRef = cr1),e2 as DAE.CREF(componentRef = cr2))
+    case (e1 as DAE.CREF(componentRef = cr1), e2 as DAE.CREF(componentRef = cr2))
       algorithm
         source:=getSourceIfApproximated(eqn);
         new_sets:=pushToSetList(sets,cr1,e1,1,cr2,e2,1,source);
       then (new_sets,eqn_acc);
     // a = -b;
-    case (_,_,_,e1 as DAE.CREF(componentRef = cr1),DAE.UNARY(DAE.UMINUS(_),e2 as DAE.CREF(componentRef = cr2)))
+    case (e1 as DAE.CREF(componentRef = cr1), DAE.UNARY(DAE.UMINUS(_),e2 as DAE.CREF(componentRef = cr2)))
       algorithm
         source:=getSourceIfApproximated(eqn);
         new_sets:=pushToSetList(sets,cr1,e1,1,cr2,e2,-1,source);
       then (new_sets,eqn_acc);
     // -a = b;
-    case (_,_,_,e1 as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = cr1)),e2 as DAE.CREF(componentRef = cr2))
+    case (e1 as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = cr1)), e2 as DAE.CREF(componentRef = cr2))
       algorithm
         source:=getSourceIfApproximated(eqn);
         new_sets:=pushToSetList(sets,cr1,e1,-1,cr2,e2,1,source);
       then (new_sets,eqn_acc);
     // -a = -b;
-    case (_,_,_,e1 as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = cr1)),e2 as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = cr2)))
+    case (e1 as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = cr1)), e2 as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = cr2)))
       algorithm
         source:=getSourceIfApproximated(eqn);
         new_sets:=pushToSetList(sets,cr1,e1,-1,cr2,e2,-1,source);
@@ -4307,13 +4264,13 @@ protected function createSet
   input Option<DAE.ElementSource> source;
   output AliasSet setOut;
 algorithm
-  setOut:=match(cr1,e1,sign1In,cr2,e2,sign2In,source)
+  setOut:=match(sign1In, sign2In)
     local
       Integer sign1,sign2;
       HashSet.HashSet new_symbols;
       HashTable.HashTable new_signs;
       HashTable2.HashTable new_expl;
-    case(_,_,sign1,_,_,sign2,_)
+    case(sign1, sign2)
       algorithm
         new_signs:=HashTable.emptyHashTable();
         new_symbols:=HashSet.emptyHashSet();
@@ -4342,14 +4299,14 @@ protected function addToSet
   input Option<DAE.ElementSource> sourceIn;
   output AliasSet setOut;
 algorithm
-  setOut:=match(set,cr1,e1,sign1In,cr2,e2,sign2In,sourceIn)
+  setOut:=match(set, sign1In, sign2In)
     local
       Integer current_sign,sign1_temp,sign1,sign2;
       HashSet.HashSet symbols,new_symbols;
       HashTable.HashTable signs,new_signs;
       HashTable2.HashTable expl,new_expl;
       Option<DAE.ElementSource> source_current,source_new;
-    case(ALIASSET(symbols,expl,signs,source_current),_,_,sign1,_,_,sign2,_)
+    case(ALIASSET(symbols,expl,signs,source_current), sign1, sign2)
       algorithm
         // fix the signs of the new alias
         current_sign:=BaseHashTable.get(cr1,signs); // get existing sign of cr1
@@ -4391,11 +4348,11 @@ protected function existsInSet
   input DAE.ComponentRef cr;
   output Boolean out;
 algorithm
-  out:=match(set,cr)
+  out:=match set
     local
       HashSet.HashSet symbols;
       Boolean ret;
-    case(ALIASSET(symbols,_,_,_),_)
+    case ALIASSET(symbols,_,_,_)
       algorithm
         ret := BaseHashSet.has(cr,symbols);
       then ret;
@@ -4415,25 +4372,25 @@ protected function pushToSetList
   input Option<DAE.ElementSource> source;
   output list<AliasSet> setsOut;
 algorithm
-  setsOut:=matchcontinue(sets,cr1,e1,sign1,cr2,e2,sign2,source)
+  setsOut:=matchcontinue sets
     local
       AliasSet new_set,h;
       list<AliasSet> t,inner_sets;
-    case({},_,_,_,_,_,_,_)
+    case {}
       algorithm  // None of the crs exist in a set. Create a new one
         new_set := createSet(cr1,e1,sign1,cr2,e2,sign2,source);
       then {new_set};
-    case(h::t,_,_,_,_,_,_,_)
+    case h::t
       algorithm
         true:=existsInSet(h,cr1); // cr1 exists in a set
         new_set:=addToSet(h,cr1,e1,sign1,cr2,e2,sign2,source);
       then new_set::t;
-    case(h::t,_,_,_,_,_,_,_)
+    case h::t
       algorithm
         true:=existsInSet(h,cr2); // cr2 exists in a set
         new_set:=addToSet(h,cr2,e2,sign2,cr1,e1,sign1,source);
       then new_set::t;
-    case(h::t,_,_,_,_,_,_,_)
+    case h::t
       algorithm
         inner_sets:=pushToSetList(t,cr1,e1,sign1,cr2,e2,sign2,source);
       then h::inner_sets;
@@ -4445,11 +4402,11 @@ protected function getAliasSetSymbolList
   input AliasSet set;
   output list<DAE.ComponentRef> out;
 algorithm
-out:=match(set)
+out:=match set
   local
     list<DAE.ComponentRef> crl;
     HashSet.HashSet symbols;
-  case(ALIASSET(symbols,_,_,_))
+  case ALIASSET(symbols,_,_,_)
     algorithm
       crl:=BaseHashSet.hashSetList(symbols);
     then crl;
@@ -4460,12 +4417,12 @@ protected function getAliasSetSource
   input AliasSet set;
   output DAE.ElementSource out;
 algorithm
-out:=match(set)
+out:=match set
   local
     DAE.ElementSource source;
-  case(ALIASSET(_,_,_,SOME(source)))
+  case ALIASSET(_,_,_,SOME(source))
     then source;
-  case(ALIASSET(_,_,_,NONE()))
+  case ALIASSET(_,_,_,NONE())
     then DAE.emptyElementSource;
 end match;
 end getAliasSetSource;
@@ -4476,13 +4433,13 @@ protected function getAliasSetExpressionAndSign
   output Integer signOut;
   output DAE.Exp eOut;
 algorithm
-(signOut,eOut):=match(cr,set)
+(signOut,eOut):=match set
   local
     HashTable2.HashTable expl;
     HashTable.HashTable signs;
     Integer sign;
     DAE.Exp e;
-  case(_,ALIASSET(_,expl,signs,_))
+  case ALIASSET(_,expl,signs,_)
     algorithm
       sign:=BaseHashTable.get(cr,signs);
       e:=BaseHashTable.get(cr,expl);
@@ -4495,7 +4452,7 @@ protected function dumpAliasSets
 " Prints all the sets"
   input list<AliasSet> sets;
 algorithm
-  _:=match(sets)
+  ():=match sets
     local
       list<AliasSet> t;
       list<DAE.ComponentRef> crefs;
@@ -4503,9 +4460,9 @@ algorithm
       HashSet.HashSet symbols;
       HashTable.HashTable signs;
       Option<DAE.ElementSource> source;
-    case({})
+    case {}
       then ();
-    case(ALIASSET(symbols,_,signs,source)::t)
+    case ALIASSET(symbols,_,signs,source)::t
       algorithm
         crefs:=BaseHashSet.hashSetList(symbols);
         sign_values:=List.map1(crefs,BaseHashTable.get,signs);
@@ -4521,7 +4478,7 @@ protected function dumpAliasSets2
   input list<DAE.ComponentRef> crefs;
   input list<Integer> sign_values;
 algorithm
-  _:=match(crefs,sign_values)
+  ():=match(crefs,sign_values)
     local
       DAE.ComponentRef cr;
       list<DAE.ComponentRef> cr_t;
@@ -4543,15 +4500,15 @@ protected function dumpAliasSets3 "
 Auxiliary function of dumpAliasSets. Prints true if the alias came from an approximated equation."
   input Option<DAE.ElementSource> sourceIn;
 algorithm
-  _ :=match(sourceIn)
+  () :=match sourceIn
   local
     list<SCode.Comment> comment;
     String str;
-  case(NONE())
+  case NONE()
   algorithm
     print(" *Approximated = false");
   then ();
-  case(SOME(DAE.SOURCE(comment=comment)))
+  case SOME(DAE.SOURCE(comment=comment))
   algorithm
     str := boolString(isApproximatedEquation2(comment));
     print(" *Approximated = "+str);

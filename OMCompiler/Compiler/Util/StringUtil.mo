@@ -219,7 +219,7 @@ public function wordWrap
   output list<String> outStrings = {};
 protected
   Integer start_pos = 1, end_pos = inWrapLength;
-  Integer line_len, pos, next_char, char, gap_size, next_gap_size;
+  Integer line_len, pos, next_char, char, gap_size;
   String str, delim = "";
   list<String> lines;
 algorithm
@@ -446,7 +446,10 @@ end stripFileExtension;
 public function rest
   "Returns all but the first character of a string."
   input String str;
-  output String rest = substring(str, 2, stringLength(str));
+  output String rest;
+algorithm
+  // TODO: Change substring to allow returning the last 0 characters at the end of a string?
+  rest := if stringLength(str) == 1 then "" else substring(str, 2, stringLength(str));
 end rest;
 
 annotation(__OpenModelica_Interface="util");

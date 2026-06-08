@@ -159,7 +159,6 @@ public
     Absyn.Path path;
     InstNode node, scope;
     ClassTree tree;
-    list<InstNode> elements;
     SourceInfo info;
   algorithm
     UNRESOLVED_IMPORT(imp = Absyn.Import.UNQUAL_IMPORT(path = path), scope = scope, info = info) := imp;

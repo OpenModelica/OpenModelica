@@ -1,9 +1,18 @@
 // name:      Modelica.Electrical.Analog.Examples.CauerLowPassSC
-// keywords:  parmodauto
+// keywords:  parmodauto scheduler clustering json export import stages
 // status:    correct
 // cflags:
 //
-// Tests automatic parallelization with parmodauto
+// Combined parmodauto test. To keep CI time reasonable this single file loads
+// MSL 3.2.1 once and then exercises every parmodauto run-time flag against the
+// same model, instead of paying the MSL-load + model-compile cost once per
+// flag in a separate .mos file:
+//   (default)                                        plain --parmodauto
+//   -parmodScheduler=level                           select the level scheduler
+//   -parmodClustering=fixed_width_min_height         select a clustering strategy
+//   -parmodDumpTaskGraph / -parmodImportClustering   JSON task-graph export + import
+//   -parmodDumpStages                                per-optimization before/after snapshots
+// Every run must still match the reference result.
 //
 
 setCommandLineOptions("--parmodauto");
@@ -13,23 +22,70 @@ loadModel(Modelica, {"3.2.1"});
 getErrorString();
 
 echo(false);
-res := simulate(Modelica.Electrical.Analog.Examples.CauerLowPassSC);
-echo(true);
-getErrorString();
 
-
-echo(false);
 expectedRes := getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Electrical.Analog.Examples.CauerLowPassSC.mat";
-outDiffFile := "Modelica.Electrical.Analog.Examples.CauerLowPassSC_diff";
-
+resFile := "Modelica.Electrical.Analog.Examples.CauerLowPassSC_res.mat";
 varsToCompare := {"C1.v","C2.v","C3.v","C4.v","C7.v","R4.Capacitor1.v","R5.Capacitor1.v","R8.Capacitor1.v","R9.Capacitor1.v","R1.Capacitor1.v","R2.Capacitor1.v","R3.Capacitor1.v","Rp1.Capacitor1.v"};
+
+// --- default --parmodauto -------------------------------------------------
+resDefault := simulate(Modelica.Electrical.Analog.Examples.CauerLowPassSC);
+(defaultOk, defaultDiffVars) := OpenModelica.Scripting.diffSimulationResults(actualFile=resFile, expectedFile=expectedRes,
+               diffPrefix="Modelica.Electrical.Analog.Examples.CauerLowPassSC_diff", vars=varsToCompare);
+
+// --- scheduler: -parmodScheduler=level ------------------------------------
+resScheduler := simulate(Modelica.Electrical.Analog.Examples.CauerLowPassSC, simflags="-parmodScheduler=level");
+(schedulerOk, schedulerDiffVars) := OpenModelica.Scripting.diffSimulationResults(actualFile=resFile, expectedFile=expectedRes,
+                 diffPrefix="Modelica.Electrical.Analog.Examples.CauerLowPassSC_parmodScheduler_diff", vars=varsToCompare);
+
+// --- clustering: -parmodClustering=fixed_width_min_height -----------------
+resClustering := simulate(Modelica.Electrical.Analog.Examples.CauerLowPassSC, simflags="-parmodClustering=fixed_width_min_height");
+(clusteringOk, clusteringDiffVars) := OpenModelica.Scripting.diffSimulationResults(actualFile=resFile, expectedFile=expectedRes,
+                  diffPrefix="Modelica.Electrical.Analog.Examples.CauerLowPassSC_parmodClustering_diff", vars=varsToCompare);
+
+// --- json export (-parmodDumpTaskGraph) + import (-parmodImportClustering) --
+resExport := simulate(Modelica.Electrical.Analog.Examples.CauerLowPassSC, simflags="-parmodDumpTaskGraph=taskgraph.json");
+graphJson := readFile("taskgraph.json");
+// The exported json carries the fine-grained task graph and the clustering.
+hasGraph := regexBool(graphJson, "\"tasks\"") and regexBool(graphJson, "\"dependencies\"") and regexBool(graphJson, "\"clusters\"");
+// Re-import the exported clustering (the importer reads the "clusters" array).
+resImport := simulate(Modelica.Electrical.Analog.Examples.CauerLowPassSC, simflags="-parmodImportClustering=taskgraph.json");
+(jsonOk, jsonDiffVars) := OpenModelica.Scripting.diffSimulationResults(actualFile=resFile, expectedFile=expectedRes,
+            diffPrefix="Modelica.Electrical.Analog.Examples.CauerLowPassSC_parmodJson_diff", vars=varsToCompare);
+
+// --- per-optimization snapshots (-parmodDumpStages) -----------------------
+// The default clustering runs two optimizations, so we get three snapshots:
+//   stages.00.initial.json
+//   stages.01.cluster_merge_common.json
+//   stages.02.cluster_merge_level_for_bins.json
+resStages := simulate(Modelica.Electrical.Analog.Examples.CauerLowPassSC, simflags="-parmodDumpStages=stages");
+initialJson := readFile("stages.00.initial.json");
+commonJson  := readFile("stages.01.cluster_merge_common.json");
+binsJson    := readFile("stages.02.cluster_merge_level_for_bins.json");
+// The "initial" snapshot carries the fine-grained task graph and is tagged stage 0.
+hasInitial := regexBool(initialJson, "\"tasks\"") and regexBool(initialJson, "\"dependencies\"")
+              and regexBool(initialJson, "\"clusters\"") and regexBool(initialJson, "\"stage\": 0")
+              and regexBool(initialJson, "\"stage_name\": \"initial\"");
+// Each optimization snapshot is tagged with its stage index and the optimization name.
+hasCommon := regexBool(commonJson, "\"stage\": 1")
+             and regexBool(commonJson, "\"stage_name\": \"cluster_merge_common\"")
+             and regexBool(commonJson, "\"clusters\"");
+hasBins := regexBool(binsJson, "\"stage\": 2")
+           and regexBool(binsJson, "\"stage_name\": \"cluster_merge_level_for_bins\"")
+           and regexBool(binsJson, "\"clusters\"");
+(stagesOk, stagesDiffVars) := OpenModelica.Scripting.diffSimulationResults(actualFile=resFile, expectedFile=expectedRes,
+              diffPrefix="Modelica.Electrical.Analog.Examples.CauerLowPassSC_parmodStages_diff", vars=varsToCompare);
+
 echo(true);
 
-
-OpenModelica.Scripting.diffSimulationResults(actualFile = "Modelica.Electrical.Analog.Examples.CauerLowPassSC_res.mat",
-                                             expectedFile = expectedRes,
-                                             diffPrefix = outDiffFile,
-                                             vars = varsToCompare);
+defaultOk;
+schedulerOk;
+clusteringOk;
+hasGraph;
+jsonOk;
+hasInitial;
+hasCommon;
+hasBins;
+stagesOk;
 getErrorString();
 
 // Result:
@@ -38,8 +94,14 @@ getErrorString();
 // true
 // ""
 // true
-// ""
 // true
-// (true, {})
+// true
+// true
+// true
+// true
+// true
+// true
+// true
+// true
 // ""
 // endResult

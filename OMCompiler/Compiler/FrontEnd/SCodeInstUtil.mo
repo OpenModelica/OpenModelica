@@ -53,7 +53,7 @@ protected function constantBindingOrNone
   input Option<Absyn.Exp> inBinding;
   output Option<Absyn.Exp> outBinding;
 algorithm
-  outBinding := match (inBinding)
+  outBinding := match inBinding
     local
       Absyn.Exp e;
 
@@ -73,7 +73,7 @@ public function removeNonConstantBindingsKeepRedeclares
   input Boolean onlyRedeclares;
   output SCode.Mod outMod;
 algorithm
-  outMod := match (inMod, onlyRedeclares)
+  outMod := match inMod
     local
       list<SCode.SubMod> sl;
       SCode.Final fp;
@@ -82,14 +82,14 @@ algorithm
       Option<Absyn.Exp> binding;
       Option<String> cmt;
 
-    case (SCode.MOD(fp, ep, sl, binding, cmt, i), _)
+    case SCode.MOD(fp, ep, sl, binding, cmt, i)
       algorithm
         binding := if onlyRedeclares then NONE() else constantBindingOrNone(binding);
         sl := removeNonConstantBindingsKeepRedeclaresFromSubMod(sl, onlyRedeclares);
       then
         SCode.MOD(fp, ep, sl, binding, cmt, i);
 
-    case (SCode.REDECL(), _) then inMod;
+    case SCode.REDECL() then inMod;
 
     else inMod;
 
@@ -103,16 +103,15 @@ protected function removeNonConstantBindingsKeepRedeclaresFromSubMod
   input Boolean onlyRedeclares;
   output list<SCode.SubMod> outSl;
 algorithm
-  outSl := match(inSl, onlyRedeclares)
+  outSl := match inSl
     local
       String n;
       list<SCode.SubMod> sl,rest;
       SCode.Mod m;
-      list<SCode.Subscript> ssl;
 
-    case ({}, _) then {};
+    case {} then {};
 
-    case (SCode.NAMEMOD(n, m)::rest, _)
+    case SCode.NAMEMOD(n, m)::rest
       algorithm
         m := removeNonConstantBindingsKeepRedeclares(m, onlyRedeclares);
         sl := removeNonConstantBindingsKeepRedeclaresFromSubMod(rest, onlyRedeclares);
@@ -253,7 +252,7 @@ public function removeSelfReferenceFromMod
   input Absyn.ComponentRef inCref;
   output SCode.Mod outMod;
 algorithm
-  outMod := match (inMod, inCref)
+  outMod := match inMod
     local
       list<SCode.SubMod> sl;
       SCode.Final fp;
@@ -262,14 +261,14 @@ algorithm
       Option<Absyn.Exp> binding;
       Option<String> cmt;
 
-    case (SCode.MOD(fp, ep, sl, binding, cmt, i), _)
+    case SCode.MOD(fp, ep, sl, binding, cmt, i)
       algorithm
         binding := removeReferenceInBinding(binding, inCref);
         sl := removeSelfReferenceFromSubMod(sl, inCref);
       then
         SCode.MOD(fp, ep, sl, binding, cmt, i);
 
-    case (SCode.REDECL(), _) then inMod;
+    case SCode.REDECL() then inMod;
 
     else inMod;
 
@@ -283,16 +282,15 @@ protected function removeSelfReferenceFromSubMod
   input Absyn.ComponentRef inCref;
   output list<SCode.SubMod> outSl;
 algorithm
-  outSl := match(inSl, inCref)
+  outSl := match inSl
     local
       String n;
       list<SCode.SubMod> sl,rest;
       SCode.Mod m;
-      list<SCode.Subscript> ssl;
 
-    case ({}, _) then {};
+    case {} then {};
 
-    case (SCode.NAMEMOD(n, m)::rest, _)
+    case SCode.NAMEMOD(n, m)::rest
       algorithm
         m := removeSelfReferenceFromMod(m, inCref);
         sl := removeSelfReferenceFromSubMod(rest, inCref);
@@ -358,7 +356,7 @@ public function expandEnumerationClass
   input SCode.Element inElement;
   output SCode.Element outElement;
 algorithm
-  outElement := match(inElement)
+  outElement := match inElement
     local
       SCode.Ident n;
       list<SCode.Enum> l;
@@ -429,5 +427,5 @@ algorithm
   outSCodeElementLst := list(SCodeUtil.makeEnumType(e,info) for e in inEnumLst);
 end makeEnumComponents;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_inst");
 end SCodeInstUtil;

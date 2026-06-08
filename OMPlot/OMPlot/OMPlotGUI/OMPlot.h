@@ -41,17 +41,17 @@
 #include <QList>
 #include <QColor>
 
+#include "PlotWindow.h"
+#include "Legend.h"
+#include "PlotGrid.h"
+#include "PlotZoomer.h"
+#include "PlotPanner.h"
+#include "PlotPicker.h"
+#include "ScaleDraw.h"
+#include "PlotCurve.h"
+
 namespace OMPlot
 {
-class PlotWindow;
-class Legend;
-class PlotGrid;
-class PlotZoomer;
-class PlotPanner;
-class PlotPicker;
-class ScaleDraw;
-class PlotCurve;
-
 class Plot : public QwtPlot
 {
   Q_OBJECT

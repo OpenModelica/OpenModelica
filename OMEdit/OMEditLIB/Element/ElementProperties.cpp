@@ -63,7 +63,8 @@ static QString Parameters("Parameters");
 static QString Initialization("Initialization");
 static QString AddNewModifiers("Add New Modifiers");
 
-static int DefaultMinimumWidth = 300;
+static int DefaultMinimumWidthForValue = 100;
+static int DefaultMinimumWidthForComment = 300;
 
 /*!
  * \class FinalEachToolButton
@@ -281,7 +282,9 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
    */
   mpCommentLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   mpCommentLabel->setWordWrap(true);
-  mpCommentLabel->setMinimumWidth(DefaultMinimumWidth);
+  // create a dummy label to calculate the minimum width for comment label based on the comment text
+  QLabel dummyLabel(comment.simplified());
+  mpCommentLabel->setMinimumWidth(qMin(DefaultMinimumWidthForComment, dummyLabel.sizeHint().width()));
   // if comment is empty then hide the comment label so that it doesn't take up space in the layout.
   if (comment.isEmpty()) {
     mpCommentLabel->hide();
@@ -735,7 +738,7 @@ void Parameter::createValueWidget()
     case Parameter::Normal:
     default:
       mpValueTextBox = new QLineEdit;
-      mpValueTextBox->setMinimumWidth(DefaultMinimumWidth);
+      mpValueTextBox->setMinimumWidth(DefaultMinimumWidthForValue);
       mpValueTextBox->installEventFilter(this);
       break;
   }
@@ -748,7 +751,7 @@ void Parameter::createValueWidget()
 void Parameter::createValueComboBox()
 {
   mpValueComboBox = new ComboBox;
-  mpValueComboBox->setMinimumWidth(DefaultMinimumWidth);
+  mpValueComboBox->setMinimumWidth(DefaultMinimumWidthForValue);
   mpValueComboBox->setEditable(true);
   mpValueComboBox->setInsertPolicy(QComboBox::NoInsert);
   mpValueComboBox->addItemWithToolTip("", "", "");
@@ -1275,7 +1278,7 @@ void ParametersScrollArea::addGroupBox(GroupBox *pGroupBox)
   if (!getGroupBox(pGroupBox->title())) {
     pGroupBox->hide();  /* create a hidden groupbox, we show it when it contains the parameters. */
     mGroupBoxesList.append(pGroupBox);
-    mpVerticalLayout->addWidget(pGroupBox);
+    mpVerticalLayout->addWidget(pGroupBox, 0, Qt::AlignTop);
   }
 }
 
@@ -1519,7 +1522,7 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
             }
           }
         } else {
-          pParameter->setValueWidget(pModifier->toString(true, true, false, true), defaultValue, pParameter->getUnit(), mNested);
+          pParameter->setValueWidget(value, defaultValue, pParameter->getUnit(), mNested);
           // set final and each checkboxes in the menu
           setFinalEachBreak(pParameter->getFinalEachMenu(), pModifier);
         }

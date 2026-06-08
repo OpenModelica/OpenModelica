@@ -108,7 +108,7 @@ public
 
     // collect all event clocks
     for base in baseParts loop
-      _ := match base
+      () := match base
         local
           ComponentRef cond;
           DAE.ElementSource source;
@@ -220,5 +220,5 @@ public
     end match;
   end convertSub;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NSimPartition;

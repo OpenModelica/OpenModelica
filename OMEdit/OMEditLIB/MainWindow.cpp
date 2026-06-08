@@ -852,6 +852,8 @@ void MainWindow::beforeClosingMainWindow()
   GitCommands::destroy();
   // delete the searchwidget object to call the destructor, to cancel the search operation running on seperate thread
   delete mpSearchWidget;
+  // delete the DocumentationWidget object
+  delete mpDocumentationWidget;
   // if new api profiling file is open then close it.
   if (mpNewApiProfilingFile) {
     fclose(mpNewApiProfilingFile);
@@ -5074,6 +5076,7 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
      "<h2>%1 - %2</h2>"
      "<b>Connected to %3 %4 encryption support</b><br />"
      "<b>Connected to %5</b><br /><br />"
+     "Compiled with <b>Qt %7</b>, running with <b>Qt %8</b>.<br /><br />"
      "Installation path <b>%6</b><br /><br />"
      "Copyright <b>Open Source Modelica Consortium (OSMC)</b>.<br />"
      "Distributed under OSMC-PL and GPL, see <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>."
@@ -5090,7 +5093,9 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
           "without",
 #endif
           oms_getVersion(),
-          Helper::OpenModelicaHome);
+          Helper::OpenModelicaHome,
+          QStringLiteral(QT_VERSION_STR),
+          QString::fromLatin1(qVersion()));
   // about text label
   Label *pAboutTextLabel = new Label(aboutText);
   pAboutTextLabel->setWordWrap(true);

@@ -52,6 +52,7 @@ import BackendVariable;
 import BackendVarTransform;
 import BackendDump;
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import Expression;
 import ExpressionBasics;
 import ExpressionSimplify;
@@ -89,21 +90,18 @@ protected function resolveLoops_main "author: Waurich TUD 2014-01
   output BackendDAE.Shared outShared = inShared "unused";
   output Integer outSysIdx;
 algorithm
-  (outEqSys, outSysIdx) := matchcontinue(inEqSys)
+  (outEqSys, outSysIdx) := matchcontinue inEqSys
     local
-      Integer numSimpEqs, numVars, numSimpVars;
+      Integer numSimpEqs, numVars;
       array<Integer> eqMapArr,varMapArr,nonLoopEqMark,markLinEqVars;
-      list<Integer> eqMapping, varMapping, eqCrossLst, varCrossLst;
-      list<list<Integer>> partitions, loops;
+      list<Integer> eqMapping;
+      list<list<Integer>> partitions;
       list<tuple<Boolean,String>> varAtts,eqAtts;
       BackendDAE.Variables vars,simpVars;
       BackendDAE.EquationArray eqs,simpEqs;
       BackendDAE.EqSystem syst;
-      BackendDAE.AdjacencyMatrix m,mT,m_cut, mT_cut, m_after, mT_after;
-      BackendDAE.Matching matching;
-      BackendDAE.StateSets stateSets;
-      list<DAE.ComponentRef> crefs;
-      list<BackendDAE.Equation> simpEqLst,resolvedEqs;
+      BackendDAE.AdjacencyMatrix m,mT,m_cut, mT_cut, m_after;
+      list<BackendDAE.Equation> simpEqLst;
       list<BackendDAE.Var> simpVarLst;
 
     case syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs)
@@ -189,14 +187,14 @@ protected function resolveLoops_resolvePartitions "author:Waurich TUD 2014-02
   input array<Integer> nonLoopEqMark;
   output BackendDAE.EquationArray daeEqsOut;
 algorithm
-  daeEqsOut := match(partitionsIn,mIn,mTIn,m_uncut,mT_uncut,eqMap,varMap,daeEqs,daeVars,nonLoopEqMark)
+  daeEqsOut := match partitionsIn
     local
       Option<tuple<list<Integer>,BackendDAE.AdjacencyMatrix,list<list<Integer>>>> optStructureMapping;
       list<Integer> partition, eqCrossLst, varCrossLst, mapIndices;
       list<list<Integer>> rest, loops;
       BackendDAE.EquationArray eqs;
       BackendDAE.AdjacencyMatrix map;
-    case(partition::rest,_,_,_,_,_,_,_,_,_)
+    case partition::rest
       algorithm
         // search the partitions for loops
         partition := List.filter1OnTrue(partition,arrayIsZeroAt,nonLoopEqMark);  //the eqs that are loops
@@ -222,7 +220,7 @@ algorithm
         end if;
       then
         eqs;
-    case({},_,_,_,_,_,_,_,_,_)
+    case {}
       algorithm
       then
         daeEqs;
@@ -236,14 +234,11 @@ protected function resolveLoops_cutNodes "author: Waurich TUD 2014-01
   output array<Integer> deadEndVarsMark;
   output array<Integer> deadEndEqsMark;
 algorithm
-  (deadEndVarsMark,deadEndEqsMark) := matchcontinue(mIn,mTIn)
+  (deadEndVarsMark,deadEndEqsMark) := matchcontinue mTIn
    local
      Integer numVars, numEqs, idx;
-     list<Integer>  loopVars, loopEqs, eqs, nonLoopVars, nonLoopEqs, eqCrossLst, varCrossLst;
-     list<list<Integer>>  restPartitions, loopVarLst;
-     list<BackendDAE.Equation> eqLst;
-     list<BackendDAE.Var> varLst;
-   case(_,_)
+     list<Integer>  loopVars, loopEqs, nonLoopVars;
+   case _
      algorithm
        // get the outer deadEnd variables
        numVars := arrayLength(mTIn);
@@ -380,7 +375,6 @@ protected
   list<list<Integer>> loops, eqVars;
   list<Integer> eqCrossLst, varCrossLst, partitionVars;
   AvlSetInt.Tree set;
-  tuple<list<Integer>,BackendDAE.AdjacencyMatrix,list<list<Integer>>> structureMapping;
 algorithm
   for partition in partitionsIn loop
     try
@@ -423,19 +417,16 @@ protected function resolveLoops_findLoops2 "author: Waurich TUD 2014-01
   output list<list<Integer>> loopsOut;
   output Option<tuple<list<Integer>,BackendDAE.AdjacencyMatrix,list<list<Integer>>>> structureMapping;
 algorithm
-  (loopsOut,structureMapping) := match(eqsIn,eqCrossLstIn,varCrossLstIn,mIn,mTIn)
+  (loopsOut,structureMapping) := match(eqCrossLstIn, varCrossLstIn)
     local
       Boolean isNoSingleLoop;
-      Integer replaceIdx,eqIdx,varIdx,parEqIdx,daeEqIdx;
-      list<Integer> varCrossLst, eqCrossLst, crossNodes, restNodes, adjCrossNodes, partition, partition2, replEqs, subLoop, mapIndices;
-      list<list<Integer>> paths, allPaths, simpleLoops, tripleLoops, varEqsLst, crossEqLst, paths0, paths1, closedPaths, loopConnectors, connectedPaths;
-      BackendDAE.Equation resolvedEq, startEq;
-      list<BackendDAE.Equation> eqLst;
+      list<Integer> eqCrossLst, subLoop, mapIndices;
+      list<list<Integer>> paths, allPaths, simpleLoops, tripleLoops, paths0, paths1, closedPaths, loopConnectors, connectedPaths;
       AvlSetInt.Tree eqCrossSet;
       BackendDAE.AdjacencyMatrix minAdj,map;
       tuple<list<Integer>,BackendDAE.AdjacencyMatrix> mapping;
       Option<tuple<list<Integer>,BackendDAE.AdjacencyMatrix,list<list<Integer>>>> optTripleMapping;
-    case(_,_::_,{},_,_)
+    case(_::_, {})
       algorithm //KAB1
         //print("partition has only eqCrossNodes\n");
         // get the paths between the crossEqNodes and order them according to their length
@@ -480,7 +471,7 @@ algorithm
         //print("all paths to be resolved: \n"+stringDelimitList(List.map(paths0,HpcOmTaskGraph.intLstString)," / ")+"\n");
       then
         (paths0, optTripleMapping);
-    case(_,{},_::_,_,_)
+    case({}, _::_)
       algorithm
           //print("partition has only varCrossNodes\n");
         // get the paths between the crossVarNodes and order them according to their length
@@ -504,7 +495,7 @@ algorithm
           end if;
         end if;
       then (closedPaths,NONE());
-    case(_,{},{},_,_)
+    case({}, {})
       algorithm
         // no crossNodes
           //print("no crossNodes\n");
@@ -516,7 +507,7 @@ algorithm
           end if;
         end for;
       then ({subLoop},NONE());
-    case(_,_::_,_::_,_,_)
+    case(_::_, _::_)
       algorithm
         //print("there are both varCrossNodes and eqNodes\n");
         //at least get paths of length 2 between eqCrossNodes
@@ -734,12 +725,12 @@ author: vwaurich TUD 12-2016"
   input Boolean findExactlyOneLoop;
   output list<list<Integer>> pathsOut;
 algorithm
-  pathsOut := match(eqCrossLstIn, mIn, mTIn, pathsIn)
+  pathsOut := match eqCrossLstIn
     local
       Integer crossEq, adjVar, adjEq;
-      list<Integer> rest, adjVars, adjVars2, adjEqs, sharedVars, newPath;
+      list<Integer> rest, adjVars, newPath;
       list<list<Integer>> paths = {};
-  case(crossEq::rest,_,_,_)
+  case crossEq::rest
     algorithm
       //print("check crossEq "+intString(crossEq)+"\n");
       adjVars := arrayGet(mIn, crossEq);
@@ -764,7 +755,7 @@ algorithm
       end for;
       paths := getShortPathsBetweenEqCrossNodes(rest, eqCrossSet, mIn, mTIn, listAppend(paths, pathsIn), findExactlyOneLoop);
     then paths;
-  case({},_,_,_)
+  case {}
     then pathsIn;
   end match;
 end getShortPathsBetweenEqCrossNodes;
@@ -800,7 +791,7 @@ protected function connectPathsToOneLoop "author:Waurich TUD 2014-02
 algorithm
   loopOut := matchcontinue(allPathsIn,loopIn)
     local
-      Integer startNode, endNode, startNode1, endNode1;
+      Integer startNode, endNode;
       list<Integer> path, nextPath, restPath;
       list<list<Integer>> rest, nextPaths1, nextPaths2;
     case(_,startNode::path)
@@ -857,18 +848,18 @@ protected function resolveLoops_resolveAndReplace "author:Waurich TUD 2014-01
   output BackendDAE.EquationArray daeEqsOut;
   output list<Integer> replEqsOut;
 algorithm
-  (daeEqsOut,replEqsOut) := match(loopsIn,eqCrossLstIn,varCrossLstIn,mIn,mTIn,eqMap,varMap,daeEqsIn,daeVarsIn,replEqsIn)
+  (daeEqsOut,replEqsOut) := match(loopsIn, eqCrossLstIn, varCrossLstIn)
     local
-      Integer pos,crossEq,crossVar,eq1,eq2;
-      list<Integer> loop1, eqs, vars, crossEqs, crossEqs2, removeCrossEqs, crossVars, replEqs, loopVars, adjVars, m_row;
+      Integer pos,eq1,eq2;
+      list<Integer> loop1, eqs, vars, crossEqs, crossVars, replEqs, loopVars, adjVars, m_row;
       list<list<Integer>> rest, eqVars;
       BackendDAE.Equation resolvedEq;
       BackendDAE.EquationArray daeEqs;
-  case({},_,_,_,_,_,_,_,_,_)
+  case({}, _, _)
     algorithm
       then
         (daeEqsIn,replEqsIn);
-  case(loop1::rest,_::crossEqs,{},_,_,_,_,_,_,_)
+  case(loop1::rest, _::crossEqs, {})
     algorithm
       // only eqCrossNodes
       //print("only eqCrossNodes\n");
@@ -921,7 +912,7 @@ algorithm
       (daeEqs,replEqs) := resolveLoops_resolveAndReplace(rest,eqCrossLstIn,varCrossLstIn,mIn,mTIn,eqMap,varMap,daeEqs,daeVarsIn,replEqs);
     then
       (daeEqs,replEqs);
-  case(loop1::rest,{},_::crossVars,_,_,_,_,_,_,_)
+  case(loop1::rest, {}, _::crossVars)
     algorithm
       // only varCrossNodes
         //print("only varCrossNodes\n");
@@ -975,7 +966,7 @@ algorithm
       (daeEqs,replEqs) := resolveLoops_resolveAndReplace(rest,eqCrossLstIn,varCrossLstIn,mIn,mTIn,eqMap,varMap,daeEqs,daeVarsIn,replEqs);
     then
       (daeEqs,replEqs);
-  case(loop1::rest,{},{},_,_,_,_,_,_,_)
+  case(loop1::rest, {}, {})
     algorithm
       // single Loop
       loop1 := List.unique(loop1);
@@ -984,7 +975,7 @@ algorithm
 
       // update AdjacencyMatrix
       (_,crossEqs,_) := List.intersection1OnTrue(loop1,replEqsIn,intEq);  // do not replace an already replaced Eq
-      (pos::_) := crossEqs;  // the equation that will be replaced = pos
+      pos::_ := crossEqs;  // the equation that will be replaced = pos
       eqVars := List.map1(loop1,Array.getIndexFirst,mIn);
       vars := List.flatten(eqVars);
         //print("delete vars: "+stringDelimitList(List.map(vars,intString),",")+" in the eqs: "+stringDelimitList(List.map(crossEqs,intString),",")+"\n");
@@ -1001,7 +992,7 @@ algorithm
       (daeEqs,replEqs) := resolveLoops_resolveAndReplace(rest,eqCrossLstIn,varCrossLstIn,mIn,mTIn,eqMap,varMap,daeEqs,daeVarsIn,replEqs);
     then
       (daeEqs,replEqs);
-  case(loop1::rest,_::_,_::_,_,_,_,_,_,_,_)
+  case(loop1::rest, _::_, _::_)
     algorithm
       // both eqCrossNodes and varCrossNodes, at least try the small loops
         //print("both eqCrossNodes and varCrossNodes, loopLength"+intString(listLength(loop1))+"\n");
@@ -1043,10 +1034,10 @@ author: vwaurich TUD 2017-01"
   input BackendDAE.Equation eq;
   output Boolean b;
 algorithm
-  b :=match(eq)
-    case(BackendDAE.EQUATION(exp=DAE.RCONST(),scalar=DAE.CREF()))
+  b :=match eq
+    case BackendDAE.EQUATION(exp=DAE.RCONST(),scalar=DAE.CREF())
       then true;
-    case(BackendDAE.EQUATION(exp=DAE.CREF(),scalar=DAE.RCONST()))
+    case BackendDAE.EQUATION(exp=DAE.CREF(),scalar=DAE.RCONST())
       then true;
   else then false;
   end match;
@@ -1102,7 +1093,7 @@ protected
 algorithm
   entry := arrayGet(arrIn,idx);
   (_,entry,_) := List.intersection1OnTrue(entry,delEntries,intEq);
-  _ := arrayUpdate(arrIn,idx,entry);
+  arrayUpdate(arrIn,idx,entry);
 end arrayGetDeleteInLst;
 
 protected function arrayGetAppendLst "appends appLst to the indexed list<Integer> of the array"
@@ -1124,11 +1115,11 @@ protected function getReverseDoubles "author: Waurich TUD 2014-01
   output list<list<Integer>> foldLstOut;
 replaceable type ElementType subtypeof Any;
 algorithm
-  foldLstOut := matchcontinue(elem,elemLst,foldLstIn)
+  foldLstOut := matchcontinue foldLstIn
     local
       list<Integer> elemR;
       list<list<Integer>> foldLst;
-    case(_,_,_)
+    case _
       algorithm
         elemR := listReverse(elem);
         elemR := List.getMember(elemR,elemLst);
@@ -1149,15 +1140,15 @@ protected function getDoubles "author: Waurich TUD 2014-01
   output list<list<Integer>> lstOut;
 replaceable type ElementType subtypeof Any;
 algorithm
-  lstOut := match(elemLstIn,lstIn)
+  lstOut := match elemLstIn
     local
       list<Integer> elem;
       list<list<Integer>> lst, elemLst;
-    case({},_)
+    case {}
       algorithm
       then
         lstIn;
-    case(elem::elemLst,_)
+    case elem::elemLst
       algorithm
         if listMember(elem,elemLst) then
           lst := getDoubles(elemLst,elem::lstIn);
@@ -1253,8 +1244,8 @@ algorithm
   (eq, m_row) := match loopIn
     local
       Boolean algSign;
-      Integer eqIdx1, eqIdx2;
-      list<Integer> adjVars, adjVars1, adjVars2, restLoop, posVars, negVars;
+      Integer eqIdx2;
+      list<Integer> adjVars, adjVars1, adjVars2, restLoop, posVars, negVars, nonUnitVars;
       list<DAE.ComponentRef> adjCrefs;
       BackendDAE.Equation eq2, eq3, resolvedEq;
       BackendVarTransform.VariableReplacements replacements;
@@ -1268,13 +1259,20 @@ algorithm
       adjVars2 := arrayGet(m,eqIdx2);
       (adjVars, adjVars1, adjVars2) := List.intersection1OnTrue(adjVars1, adjVars2, intEq);
 
+      // Only shared variables with a +/-1 coefficient in BOTH equations can be cancelled by
+      // adding/subtracting the equations (the cancellation below replaces them with zero).
+      // A variable scaled by a non-unit factor (e.g. a state, or a zero-sequence current
+      // n*i0 = sum(i)) must NOT be cancelled this way, otherwise its coefficient would be
+      // silently dropped and the resolved equation would be wrong (#13292). Keep such vars.
+      (adjVars, nonUnitVars) := List.splitOnTrue(adjVars, function varIsUnitCoeff(varMap = varMap, daeVarsIn = daeVarsIn, eq1 = eq, eq2 = eq2));
+
       // split shared vars by sign
       (posVars, negVars) := List.splitOnTrue(adjVars, function varSign(varMap = varMap, daeVarsIn = daeVarsIn, eq1 = eq, eq2 = eq2));
       algSign := listLength(posVars) > listLength(negVars); // choose set with more canceling vars
       adjCrefs := list(crefFromIndex(idx, varMap, daeVarsIn) for idx in (if algSign then posVars else negVars));
 
-      // shared crefs are removed from adjacecy
-      m_row := List.flatten({adjVars1, adjVars2, (if algSign then negVars else posVars)});
+      // cancelled crefs are removed from adjacency; non-cancellable shared vars are kept
+      m_row := List.flatten({adjVars1, adjVars2, nonUnitVars, (if algSign then negVars else posVars)});
 
       // replace `cref` with zero to make the job easier for `simplify`
       replacements := BackendVarTransform.emptyReplacementsSized(listLength(adjCrefs));
@@ -1317,6 +1315,61 @@ algorithm
   algSign := CRefIsPosOnRHS(cref, eq1) <> CRefIsPosOnRHS(cref, eq2) "check the algebraic signs"; // XOR
 end varSign;
 
+protected function varIsUnitCoeff "author: #13292
+  true if the variable (given by its loop-local index) occurs with a +/-1 coefficient in
+  both equations and can therefore be cancelled by adding/subtracting the two equations."
+  input Integer index;
+  input array<Integer> varMap;
+  input BackendDAE.Variables daeVarsIn;
+  input BackendDAE.Equation eq1;
+  input BackendDAE.Equation eq2;
+  output Boolean isUnit;
+protected
+  DAE.ComponentRef cref = crefFromIndex(index, varMap, daeVarsIn);
+algorithm
+  isUnit := crefHasUnitCoeff(cref, eq1) and crefHasUnitCoeff(cref, eq2);
+end varIsUnitCoeff;
+
+protected function crefHasUnitCoeff "author: #13292
+  true unless the cref appears scaled by a constant other than +/-1 in the equation."
+  input DAE.ComponentRef cref;
+  input BackendDAE.Equation eq;
+  output Boolean isUnit;
+algorithm
+  isUnit := match eq
+    local
+      DAE.Exp e1, e2;
+    case BackendDAE.EQUATION(exp = e1, scalar = e2)
+      then crefUnitCoeffInExp(e1, cref) and crefUnitCoeffInExp(e2, cref);
+    else true;
+  end match;
+end crefHasUnitCoeff;
+
+protected function crefUnitCoeffInExp "author: #13292
+  false if cref appears multiplied by a non-(+/-1) constant in exp; true otherwise
+  (cref absent, or present with a +/-1 coefficient)."
+  input DAE.Exp exp;
+  input DAE.ComponentRef cref;
+  output Boolean isUnit;
+algorithm
+  isUnit := match exp
+    local
+      DAE.Exp e1, e2;
+      DAE.ComponentRef c;
+    case DAE.BINARY(exp1 = e1, operator = DAE.ADD(), exp2 = e2)
+      then crefUnitCoeffInExp(e1, cref) and crefUnitCoeffInExp(e2, cref);
+    case DAE.BINARY(exp1 = e1, operator = DAE.SUB(), exp2 = e2)
+      then crefUnitCoeffInExp(e1, cref) and crefUnitCoeffInExp(e2, cref);
+    case DAE.UNARY(exp = e1)
+      then crefUnitCoeffInExp(e1, cref);
+    case DAE.BINARY(exp1 = DAE.CREF(componentRef = c), operator = DAE.MUL(), exp2 = e2)
+      then not ComponentReferenceBasics.crefEqualNoStringCompare(cref, c) or Expression.isOne(e2) or Expression.isConstMinusOne(e2);
+    case DAE.BINARY(exp1 = e1, operator = DAE.MUL(), exp2 = DAE.CREF(componentRef = c))
+      then not ComponentReferenceBasics.crefEqualNoStringCompare(cref, c) or Expression.isOne(e1) or Expression.isConstMinusOne(e1);
+    else true;
+  end match;
+end crefUnitCoeffInExp;
+
 public function sortLoop "author:Waurich TUD 2014-01
   sorts the equations in a loop so that they are solved in a row."
   input list<Integer> loopIn;
@@ -1325,16 +1378,16 @@ public function sortLoop "author:Waurich TUD 2014-01
   input list<Integer> sortLoopIn;
   output list<Integer> sortLoopOut;
 algorithm
-  sortLoopOut := matchcontinue(loopIn,m,mT,sortLoopIn)
+  sortLoopOut := matchcontinue(loopIn, sortLoopIn)
     local
       Integer start, next;
       list<Integer> rest, vars, eqs;
       list<list<Integer>> varEqs;
-    case({},_,_,_)
+    case({}, _)
       algorithm
       then
         listReverse(sortLoopIn);
-    case(_,_,_,start::_)
+    case(_, start::_)
       algorithm
         vars := arrayGet(m,start);
         varEqs := List.map1(vars,Array.getIndexFirst,mT);
@@ -1357,12 +1410,12 @@ protected function closePathDirectly "author:Waurich TUD 2014-01
   input list<list<Integer>> pathLstIn;
   output list<Integer> pathOut;
 algorithm
-  pathOut := matchcontinue(pathIn,pathLstIn)
+  pathOut := matchcontinue pathLstIn
     local
       Boolean closed;
       Integer startNode,endNode;
-      list<Integer> path,restPath;
-    case(_,_)
+      list<Integer> path;
+    case _
       algorithm
         // the path is already closed
         startNode := listHead(pathIn);
@@ -1370,7 +1423,7 @@ algorithm
         true := intEq(startNode,endNode);
       then
         pathIn;
-    case(_,_)
+    case _
       algorithm
         // it is an open path
         startNode::_ := pathIn;
@@ -1397,13 +1450,13 @@ protected function findPathByEnds "author:Waurich TUD 2014-01
   input Integer endNodeIn;
   output list<Integer> pathOut;
 algorithm
-  pathOut := matchcontinue(pathLstIn,startNodeIn,endNodeIn)
+  pathOut := matchcontinue pathLstIn
     local
       Boolean b1, b2;
       Integer startNode,endNode;
       list<Integer> path;
       list<list<Integer>> pathLst;
-    case(path::pathLst,_,_)
+    case path::pathLst
       algorithm
         startNode := listHead(path);
         b1 := intEq(startNode,endNodeIn);
@@ -1412,7 +1465,7 @@ algorithm
         path := if not(b1 and b2) then findPathByEnds(pathLst,startNodeIn,endNodeIn) else path;
       then
         path;
-    case({},_,_)
+    case {}
       algorithm
       then
         {};
@@ -1494,12 +1547,12 @@ protected function getPathTillNextCrossEq "author:Waurich TUD 2013-12
   input list<list<Integer>> eqPathsIn;
   output list<list<Integer>> eqPathsOut;
 algorithm
-  eqPathsOut := matchcontinue(checkEqCrossNodes,mIn,mTIn,allEqCrossNodes,unfinPathsIn,eqPathsIn)
+  eqPathsOut := matchcontinue(checkEqCrossNodes, unfinPathsIn)
     local
       Integer crossEq, lastEq, prevEq;
       list<Integer> adjVars, nextEqs, endEqs, unfinEqs, restCrossNodes, pathStart;
       list<list<Integer>> paths, adjEqs, unfinPaths, restUnfinPaths;
-    case(crossEq::restCrossNodes,_,_,_,{},_)
+    case(crossEq::restCrossNodes, {})
       algorithm
         // check the next eqNode of the crossEq whether the paths is finished here or the path goes on to another crossEq
         adjVars := arrayGet(mIn,crossEq);
@@ -1515,7 +1568,7 @@ algorithm
         paths := getPathTillNextCrossEq(restCrossNodes,mIn,mTIn,allEqCrossNodes,unfinPaths,paths);
       then
         paths;
-    case(_,_,_,_,pathStart::restUnfinPaths,_)
+    case(_, pathStart::restUnfinPaths)
       algorithm
         lastEq := listHead(pathStart);
         prevEq := List.second(pathStart);
@@ -1533,7 +1586,7 @@ algorithm
         paths := getPathTillNextCrossEq(checkEqCrossNodes,mIn,mTIn,allEqCrossNodes,unfinPaths,paths);
       then
         paths;
-    case({},_,_,_,{},_)
+    case({}, {})
       algorithm
       then
         eqPathsIn;
@@ -1597,7 +1650,6 @@ protected function priorizeEqsWithVarCrosses2
   input list<Integer> varCrossLst;
   input array<list<Integer>> priorities;
 protected
-  Boolean b0,b1,b2;
   list<Integer> eqVars,crossVars;
 algorithm
   eqVars := arrayGet(mIn,eq);
@@ -1618,7 +1670,7 @@ protected function evaluateLoop
 protected
   Boolean r1,r2;
   Integer numInLoop,numOutLoop;
-  list<Integer> nonLoopEqs,loopEqs,eqCrossLst,chk={},dup={};
+  list<Integer> eqCrossLst,chk={},dup={};
   list<list<Integer>> eqVars;
   BackendDAE.AdjacencyMatrix m;
 algorithm
@@ -1646,8 +1698,7 @@ protected
   Boolean r1,r2;
   Integer n,numInLoop=0,numOutLoop=0;
   BackendDAE.AdjacencyMatrix m,map;
-  list<Integer> mapIndices,loopEqs,nonLoopEqs,chk={},dup={};
-  list<list<Integer>> eqVars;
+  list<Integer> mapIndices,chk={},dup={};
 algorithm
   if not intEq(Flags.getConfigInt(Flags.RESHUFFLE),3) then
 //print("loopIn "+stringDelimitList(List.map(loopIn,intString),",")+"\n");
@@ -1711,14 +1762,14 @@ protected function simplifyZeroAssignment
   input BackendDAE.Equation eIn;
   output BackendDAE.Equation eOut;
 algorithm
-  eOut := match(eIn)
+  eOut := match eIn
     local
       DAE.Exp e;
       DAE.ElementSource source;
       BackendDAE.EquationAttributes attr;
-  case(BackendDAE.EQUATION(exp = DAE.RCONST(0.0), scalar = DAE.BINARY(exp1 = DAE.RCONST(_), operator = DAE.MUL(), exp2 = e as DAE.CREF()), source=source, attr=attr))
+  case BackendDAE.EQUATION(exp = DAE.RCONST(0.0), scalar = DAE.BINARY(exp1 = DAE.RCONST(_), operator = DAE.MUL(), exp2 = e as DAE.CREF()), source=source, attr=attr)
     then BackendDAE.EQUATION(DAE.RCONST(0.0),e,source, attr);
-  case(BackendDAE.EQUATION(scalar = DAE.RCONST(0.0), exp = DAE.BINARY(exp1 = DAE.RCONST(_), operator = DAE.MUL(), exp2 = e as DAE.CREF()), source=source, attr=attr))
+  case BackendDAE.EQUATION(scalar = DAE.RCONST(0.0), exp = DAE.BINARY(exp1 = DAE.RCONST(_), operator = DAE.MUL(), exp2 = e as DAE.CREF()), source=source, attr=attr)
     then BackendDAE.EQUATION(DAE.RCONST(0.0),e,source, attr);
   else
     then eIn;
@@ -1733,12 +1784,12 @@ protected function CRefIsPosOnRHS "author:Waurich TUD 2013-12
   input BackendDAE.Equation eqIn;
   output Boolean isPos;
 algorithm
-  isPos := matchcontinue(crefIn, eqIn)
+  isPos := matchcontinue eqIn
     local
-      Boolean exists1, exists2 , sign1, sign2;
+      Boolean exists1, sign1, sign2;
       DAE.Exp e1, e2;
 
-  case(_, BackendDAE.EQUATION(exp=e1, scalar=e2)) algorithm
+  case BackendDAE.EQUATION(exp=e1, scalar=e2) algorithm
     (exists1, sign1) := expIsCref(e1, crefIn);
     (_, sign2) := expIsCref(e2, crefIn);
     sign1 := if exists1 then not sign1 else sign2;
@@ -1758,20 +1809,19 @@ protected function expIsCref "author: Waurich TUD 2013-12
   output Boolean isInExp;
   output Boolean algSign;
 algorithm
-  (isInExp,algSign) := match(expIn,crefIn)
+  (isInExp,algSign) := match expIn
   local
     Real r;
-    Boolean sameCref,sign, sign1, sign2, exists, exists1, exists2, isMinus;
+    Boolean sameCref,sign, sign1, sign2, exists, exists1, exists2;
     DAE.ComponentRef cref;
     DAE.Exp exp1, exp2;
-    DAE.Operator op;
-  case(DAE.CREF(componentRef=cref),_)
+  case DAE.CREF(componentRef=cref)
     algorithm
       // just a cref
       sameCref := ComponentReferenceBasics.crefEqualNoStringCompare(crefIn,cref);
     then
       (sameCref,true);
-  case(DAE.BINARY(exp1=exp1, operator = DAE.SUB(), exp2=exp2),_)
+  case DAE.BINARY(exp1=exp1, operator = DAE.SUB(), exp2=exp2)
     algorithm
       //exp1-exp2
       (exists1,sign1) := expIsCref(exp1,crefIn);
@@ -1782,7 +1832,7 @@ algorithm
       sign := if exists2 then sign2 else sign;
     then
       (exists,sign);
-  case(DAE.BINARY(exp1=exp1, operator = DAE.ADD(), exp2=exp2),_)
+  case DAE.BINARY(exp1=exp1, operator = DAE.ADD(), exp2=exp2)
     algorithm
       //exp1+exp2
       (exists1,sign1) := expIsCref(exp1,crefIn);
@@ -1792,33 +1842,33 @@ algorithm
       sign := if exists2 then sign2 else sign;
     then
       (exists,sign);
-  case(DAE.BINARY(exp1=exp1 as DAE.CREF(), operator = DAE.MUL(), exp2=DAE.RCONST(r)),_)
+  case DAE.BINARY(exp1=exp1 as DAE.CREF(), operator = DAE.MUL(), exp2=DAE.RCONST(r))
     algorithm
       //exp1*rconst
       (exists,_) := expIsCref(exp1,crefIn);
       sign := r > 0;
     then
       (exists,sign);
-  case(DAE.BINARY(exp1=exp1 as DAE.RCONST(r), operator = DAE.MUL(), exp2=DAE.CREF()),_)
+  case DAE.BINARY(exp1=exp1 as DAE.RCONST(r), operator = DAE.MUL(), exp2=DAE.CREF())
     algorithm
       //rconst*exp2
       (exists,_) := expIsCref(exp1,crefIn);
       sign := r > 0;
     then
       (exists,sign);
-  case(DAE.UNARY(operator=DAE.UMINUS(),exp=exp1),_)
+  case DAE.UNARY(operator=DAE.UMINUS(),exp=exp1)
     algorithm
       // -(exp)
       (exists,sign) := expIsCref(exp1,crefIn);
       sign := boolNot(sign);
     then
       (exists,sign);
-  case(DAE.RCONST(),_)
+  case DAE.RCONST()
     algorithm
       // constant
     then
       (false,false);
-  case(DAE.ICONST(),_)
+  case DAE.ICONST()
     algorithm
       // constant
     then
@@ -1875,10 +1925,8 @@ protected function colorNodePartitions "author:Waurich TUD 2013-12
   output Integer currNumberOut;
   output list<list<Integer>> partitionsOut;
 protected
-  Boolean hasChanged;
-  Integer eq, currNumber, next_index;
-  array<Integer> markNodes;
-  list<Integer> rest, vars, addEqs, eqs, part;
+  Integer eq, next_index;
+  list<Integer> rest, vars, eqs, part;
   list<list<Integer>> restPart, partitions;
 algorithm
   (currNumberOut,partitionsOut) := match checkNextIn
@@ -1978,10 +2026,9 @@ protected function gatherCrossNodes "author: Waurich TUD 2014-02
   input list<Integer> lstIn;
   output list<Integer> lstOut;
 protected
-  Boolean isCross, isNoCross;
+  Boolean isCross;
   Integer num;
-  list<Integer> row, nextNodes;
-  list<list<Integer>> adjNodes;
+  list<Integer> row;
 algorithm
   // the node has more than 2 edges, it might be a crossnode
   row := arrayGet(m,idx);
@@ -2000,10 +2047,8 @@ algorithm
     local
       Boolean b;
       BackendDAE.Variables vars;
-      DAE.Exp exp,exp1,exp2,exp11,exp12;
-      DAE.Operator op;
+      DAE.Exp exp,exp1,exp2;
       DAE.ComponentRef cref;
-      DAE.Type ty;
     case (DAE.CREF(),(true,vars))
       algorithm
         //x
@@ -2083,14 +2128,13 @@ protected function sortPathsAsChain "author: Waurich TUD 2014-01
   input list<list<Integer>> pathsIn;
   output list<list<Integer>> pathsOut;
 algorithm
-  pathsOut := matchcontinue(pathsIn)
+  pathsOut := matchcontinue pathsIn
     local
-      list<Integer> path;
       list<list<Integer>> pathLst;
-    case({})
+    case {}
       then
        {};
-    case(_)
+    case _
       algorithm
         pathLst := sortPathsAsChain1(pathsIn,0,0,{});
       then
@@ -2209,17 +2253,17 @@ protected function connect2PathsToLoops "author:Waurich TUD 2014-01
   output list<list<Integer>> pathsOut;
   output list<list<Integer>> restPathsOut;
 algorithm
-  (pathsOut,restPathsOut) := matchcontinue(pathsIn,loopsIn,restPathsIn)
+  (pathsOut,restPathsOut) := matchcontinue pathsIn
     local
       Boolean closedALoop;
       Integer startNode, endNode;
       list<Integer> path;
       list<list<Integer>> rest, endPaths, startPaths, newLoops, loops, restPaths;
-    case({},_,_)
+    case {}
       algorithm
         then
           ({},{});
-    case({path},_,_)
+    case {path}
       algorithm
         // checks if the single path closes itself
         startNode := listHead(path);
@@ -2229,7 +2273,7 @@ algorithm
         restPaths := if closedALoop then restPathsIn else (path::restPathsIn);
       then
         (loops,restPaths);
-    case(path::rest,_,_)
+    case path::rest
       algorithm
         // the loop closes itself
         startNode := listHead(path);
@@ -2239,7 +2283,7 @@ algorithm
         (loops,restPaths) := connect2PathsToLoops(rest,loops,restPathsIn);
       then
         (loops,restPaths);
-    case(path::rest,_,_)
+    case path::rest
       algorithm
         // check if there is another path that closes the Loop. if not: put the path to the restPaths
         startNode := listHead(path);
@@ -2306,8 +2350,6 @@ protected function reshuffling_post0 "author: waurich TUD 2014-09"
   output BackendDAE.EqSystem osyst;
 protected
   BackendDAE.StrongComponents comps;
-  BackendDAE.EqSystem syst;
-  Boolean b;
 algorithm
   BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)):=isyst;
   osyst := List.fold1(comps,reshuffling_post1,shared,isyst);
@@ -2319,13 +2361,13 @@ protected function reshuffling_post1
   input BackendDAE.EqSystem systIn;
   output BackendDAE.EqSystem systOut;
 algorithm
-  systOut := matchcontinue(compIn,shared,systIn)
+  systOut := matchcontinue compIn
     local
       list<Integer> vIdcs,eqIdcs;
       BackendDAE.EqSystem eqSys;
       BackendDAE.JacobianType jacType;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> ojac;
-    case ((BackendDAE.EQUATIONSYSTEM(eqns=eqIdcs, vars=vIdcs, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType as BackendDAE.JAC_LINEAR())),_,_)
+    case BackendDAE.EQUATIONSYSTEM(eqns=eqIdcs, vars=vIdcs, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType as BackendDAE.JAC_LINEAR())
       algorithm
         (eqSys,_) := reshuffling_post2(eqIdcs, vIdcs, systIn, shared,  ojac, jacType);
       then eqSys;
@@ -2346,13 +2388,12 @@ protected function reshuffling_post2 ""
 protected
   Integer size;
   list<list<Integer>> resEqs;
-  array<list<Integer>> mapEqnIncRow;
-  array<Integer> mapIncRowEqn,ass1, ass2, ass1Sys, ass2Sys;
+  array<Integer> ass1, ass2, ass1Sys, ass2Sys;
   list<tuple<Boolean,String>> varAtts,eqAtts;
-  BackendDAE.EquationArray eqs,replEqs,daeEqs;
+  BackendDAE.EquationArray eqs,daeEqs;
   BackendDAE.Variables vars, daeVars;
   BackendDAE.EqSystem subSys;
-  BackendDAE.AdjacencyMatrixEnhanced me, me2, meT;
+  BackendDAE.AdjacencyMatrixEnhanced me, meT;
   BackendDAE.AdjacencyMatrix m;
   AvlTreePathFunction.Tree funcs;
   list<BackendDAE.Equation> eqLst,eqsInLst;
@@ -2403,13 +2444,12 @@ protected function reshuffling_post3_selectShuffleEqs
   input BackendDAE.AdjacencyMatrixEnhanced meT;
   output list<list<Integer>> resolveEqs;
 algorithm
-  resolveEqs := matchcontinue(me,meT)
+  resolveEqs := matchcontinue meT
     local
-      Integer resEq1, resEq2, resVar;
       array<Boolean> bArr;
       list<Integer> suitableEqs;
       list<list<Integer>> eqPairs;
-    case(_,_)
+    case _
       algorithm
         bArr := Array.map1(me,chooseEquation,meT);
         (_,suitableEqs) := List.filter1OnTrueSync(arrayList(bArr),boolEq,true,List.intRange(arrayLength(me)));
@@ -2432,16 +2472,16 @@ protected function reshuffling_post4_resolveAndReplace
   input BackendDAE.AdjacencyMatrixEnhanced meT;
   output list<BackendDAE.Equation> unassEqsOut;
 algorithm
-  unassEqsOut := matchcontinue(resolveEqLst,unassEqsIn,unassVarsIn,me,meT)
+  unassEqsOut := matchcontinue resolveEqLst
     local
       Integer maxNum, replEqIdx;
       list<Integer> numOfAdjVars, resolveEqs;
       list<list<Integer>> rest;
       list<BackendDAE.Equation> unassEqs;
       BackendDAE.Equation resolvedEq;
-    case({},_,_,_,_)
+    case {}
       then unassEqsIn;
-    case(resolveEqs::rest,_,_,_,_)
+    case resolveEqs::rest
       algorithm
         resolvedEq := resolveEquations(NONE(),resolveEqs,me,meT,unassEqsIn,unassVarsIn);
             //BackendDump.dumpEquationList({resolvedEq},"resolvedEq");
@@ -2519,7 +2559,7 @@ protected
   Integer entry;
 algorithm
   entry := arrayGet(arr,idx);
-  _ := arrayUpdate(arr,idx,entry+1);
+  arrayUpdate(arr,idx,entry+1);
 end getDoublicates2;
 
 protected function isSolvable
@@ -2539,20 +2579,20 @@ public function resolveEquations
   output BackendDAE.Equation eqOut;
 protected
 algorithm
-  eqOut := matchcontinue(eq,loopIn,me,meT,eqsIn,varsIn)
+  eqOut := matchcontinue(eq, loopIn)
     local
-      Integer startEq,nextEq,sharedVar, min;
+      Integer startEq,nextEq,sharedVar;
       list<Integer> rest,vars1,vars2,numEqs;
       BackendDAE.Equation eq1,eq2;
       BackendDAE.Var var;
       BackendDAE.EquationAttributes attr;
       DAE.Exp lhs1, lhs2, rhs1, rhs2 ,varExp,eqExp;
       DAE.ElementSource source;
-    case(SOME(eq1),{},_,_,_,_)
+    case(SOME(eq1), {})
       algorithm
         // resolved the whole cycle
         then eq1;
-    case(NONE(),startEq::rest,_,_,_,_)
+    case(NONE(), startEq::rest)
       algorithm
         // start resolving the first 2 equations
         nextEq::rest := rest;
@@ -2575,8 +2615,8 @@ algorithm
         (eqExp,_) := ExpressionSolve.solve(lhs1,rhs1,varExp);
           //BackendDump.dumpEquationList({eq1},"solved Eq");
 
-        ((lhs2,_)) := Expression.replaceExp(lhs2,varExp,eqExp);
-        ((rhs2,_)) := Expression.replaceExp(rhs2,varExp,eqExp);
+        (lhs2,_) := Expression.replaceExp(lhs2,varExp,eqExp);
+        (rhs2,_) := Expression.replaceExp(rhs2,varExp,eqExp);
         (lhs2,_) := ExpressionSimplify.simplify(lhs2);
         (rhs2,_) := ExpressionSimplify.simplify(rhs2);
           eq2 := BackendDAE.EQUATION(lhs2,rhs2,source,attr);
@@ -2680,8 +2720,6 @@ algorithm
     local
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
-      BackendDAE.StrongComponents comps;
-      BackendDAE.StrongComponent comp1;
       list<BackendDAE.Equation> eqn_lst;
       list<BackendDAE.Var> var_lst;
       list<Integer> eindex,vindx;
@@ -2723,10 +2761,7 @@ algorithm
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
       list<DAE.Exp> beqs;
-      list<DAE.ElementSource> sources;
-      Integer linInfo;
       list<DAE.ComponentRef> names;
-      BackendDAE.Matching matching;
       AvlTreePathFunction.Tree funcs;
       BackendDAE.Shared shared;
       BackendDAE.EqSystem syst;
@@ -2775,14 +2810,9 @@ protected
   array<DAE.Exp> scaled_x = arrayCreate(n,DAE.RCONST(0.0));
   array<DAE.Exp> scaleA = arrayCreate(n,DAE.RCONST(0.0));
 
-  DAE.Exp a, x;
+  DAE.Exp a;
   Integer m, ii, jj, mm;
   list<DAE.Exp> x_lst = List.map(cr_x, Expression.crefExp);
-  DAE.ComponentRef cr;
-  list<DAE.ComponentRef> X = cr_x;
-  DAE.Exp detA, detAb;
-  BackendDAE.Var tmpvar;
-  String name;
   list<BackendDAE.Var> vars = var_lst;
   BackendDAE.Var var;
   BackendDAE.Equation eqn;
@@ -3034,14 +3064,8 @@ protected
   array<DAE.Exp> Q = arrayCreate(n*n,DAE.RCONST(0.0));
   array<DAE.Exp> v = arrayCreate(n,DAE.RCONST(0.0));
   array<DAE.Exp> u = arrayCreate(n,DAE.RCONST(0.0));
-  array<DAE.Exp> w = arrayCreate(n,DAE.RCONST(0.0));
-  array<DAE.Exp> e = arrayCreate(n,DAE.RCONST(0.0));
-  array<DAE.Exp> vv = arrayCreate(n,DAE.RCONST(0.0));
-  array<DAE.Exp> x,y,p;
-  DAE.Exp a, ex;
-  BackendDAE.Var tmpvar;
-  String name;
-  DAE.ComponentRef cr;
+  array<DAE.Exp> x,y;
+  DAE.Exp a;
   Integer kk = 1;
   Integer m = n-1;
   Integer nn;

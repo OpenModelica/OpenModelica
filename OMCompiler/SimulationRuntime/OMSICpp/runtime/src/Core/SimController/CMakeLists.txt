@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.5...4.3)
 
 project(${SimControllerName})
 include_directories (${OMCCAPI_INCLUDE_DIR})

@@ -48,12 +48,15 @@ public
 protected
   import Absyn;
   import Binding = NFBinding;
+  import Component = NFComponent;
+  import ComponentRef = NFComponentRef;
   import DAE;
   import Dump;
   import Error;
 
 public
   constant Binding EMPTY_BINDING = UNBOUND();
+  constant Integer NO_CONFIDENCE = 99999; // Value has no significance other than being large, and visible when debugging.
 
   type EachType = enumeration(
     NOT_EACH,
@@ -82,6 +85,7 @@ public
     list<Subscript> subs;
     EachType eachType;
     Source source;
+    Integer confidence;
     SourceInfo info;
   end RAW_BINDING;
 
@@ -91,6 +95,7 @@ public
     InstNode scope;
     EachType eachType;
     Source source;
+    Integer confidence;
     SourceInfo info;
   end UNTYPED_BINDING;
 
@@ -103,6 +108,7 @@ public
     Mutable<EvalState> evalState;
     Boolean isFlattened;
     Source source;
+    Integer confidence;
     SourceInfo info;
   end TYPED_BINDING;
 
@@ -110,6 +116,7 @@ public
     Expression bindingExp;
     Variability variability;
     Source source;
+    Integer confidence;
   end FLAT_BINDING;
 
   record CEVAL_BINDING
@@ -132,6 +139,7 @@ public
     input Boolean eachPrefix;
     input Boolean fromType;
     input InstNode scope;
+    input Integer instanceLevel;
     input SourceInfo info;
     output Binding binding;
   algorithm
@@ -146,7 +154,7 @@ public
           each_ty := if eachPrefix then EachType.EACH else EachType.NOT_EACH;
           source := if fromType then Source.TYPE else Source.BINDING;
         then
-          RAW_BINDING(exp, scope, {}, each_ty, source, info);
+          RAW_BINDING(exp, scope, {}, each_ty, source, instanceLevel, info);
 
       else EMPTY_BINDING;
     end match;
@@ -226,8 +234,6 @@ public
   function setTypedExp
     input Expression exp;
     input output Binding binding;
-  protected
-    Type ty1, ty2;
   algorithm
     () := match binding
       case TYPED_BINDING()
@@ -351,14 +357,14 @@ public
           var := Expression.variability(exp);
         then
           TYPED_BINDING(exp, ty, var, purity, fieldBinding.eachType, fieldBinding.evalState,
-                        fieldBinding.isFlattened, fieldBinding.source, fieldBinding.info);
+                        fieldBinding.isFlattened, fieldBinding.source, fieldBinding.confidence, fieldBinding.info);
 
       case FLAT_BINDING()
         algorithm
           exp := Expression.recordElement(field_name, fieldBinding.bindingExp);
           var := Expression.variability(exp);
         then
-          FLAT_BINDING(exp, var, fieldBinding.source);
+          FLAT_BINDING(exp, var, fieldBinding.source, fieldBinding.confidence);
 
       case CEVAL_BINDING()
         algorithm
@@ -488,6 +494,10 @@ public
       case INVALID_BINDING() then toFlatString(binding.binding, format, prefix);
       else "";
     end match;
+
+    if format.showConfidence then
+      string := string + " /* confidence = " + String(actualConfidence(binding)) + "*/";
+    end if;
   end toFlatString;
 
   function toDebugString
@@ -782,6 +792,7 @@ public
                         else Mutable.create(EvalState.NOT_EVALUATED),
           isFlattened = true,
           source      = Source.BINDING,
+          confidence  = NO_CONFIDENCE,
           info        = sourceInfo()
         );
 
@@ -797,6 +808,7 @@ public
                         else Mutable.create(EvalState.NOT_EVALUATED),
           isFlattened = true,
           source      = Source.BINDING,
+          confidence  = NO_CONFIDENCE,
           info        = sourceInfo()
         );
 
@@ -912,9 +924,10 @@ public
     input EachType eachType;
     input Source source;
     input SourceInfo info;
+    input Integer confidence = NO_CONFIDENCE;
     output Binding binding;
   algorithm
-    binding := UNTYPED_BINDING(exp, false, scope, eachType, source, info);
+    binding := UNTYPED_BINDING(exp, false, scope, eachType, source, confidence, info);
   end makeUntyped;
 
   function makeTyped
@@ -923,20 +936,22 @@ public
     input Source source;
     input SourceInfo info;
     input EvalState state = EvalState.NOT_EVALUATED;
+    input Integer confidence = NO_CONFIDENCE;
     output Binding binding;
   algorithm
     binding := TYPED_BINDING(exp, Expression.typeOf(exp),
       Expression.variability(exp), Expression.purity(exp),
-      eachType, Mutable.create(state), false, source, info);
+      eachType, Mutable.create(state), false, source, confidence, info);
   end makeTyped;
 
   function makeFlat
     input Expression exp;
     input Variability var;
     input Source source;
+    input Integer confidence = NO_CONFIDENCE;
     output Binding binding;
   algorithm
-    binding := FLAT_BINDING(exp, var, source);
+    binding := FLAT_BINDING(exp, var, source, confidence);
   end makeFlat;
 
   function isEvaluated
@@ -1005,6 +1020,62 @@ public
       else false;
     end match;
   end isClockOrSampleFunction;
+
+  function confidence
+    "Returns the confidence of a binding, i.e. on what level of the instance
+     tree it was set."
+    input Binding binding;
+    output Integer confidence;
+  algorithm
+    confidence := match binding
+      case RAW_BINDING() then binding.confidence;
+      case UNTYPED_BINDING() then binding.confidence;
+      case TYPED_BINDING() then binding.confidence;
+      case FLAT_BINDING() then binding.confidence;
+      else NO_CONFIDENCE;
+    end match;
+  end confidence;
+
+  function actualConfidence
+    "Returns the actual confidence for a binding, which if the binding consists
+     of a single parameter is the highest confidence (lowest number) of the
+     binding itself and the actual confidence of the parameter's binding, as
+     per 8.6.2. For any other kind of binding the actual confidence is just the
+     confidence stored in the binding."
+    input Binding binding;
+    output Integer conf = NO_CONFIDENCE;
+  protected
+    Binding b = binding;
+    Expression exp;
+    ComponentRef cref;
+    InstNode node;
+    Component comp;
+  algorithm
+    while hasExp(b) loop
+      conf := min(conf, confidence(b));
+      exp := getExp(b);
+      b := NFBinding.EMPTY_BINDING;
+
+      () := match exp
+        case Expression.CREF()
+          guard ComponentRef.isCref(exp.cref)
+          algorithm
+            node := InstNode.resolveInner(ComponentRef.node(exp.cref));
+
+            if InstNode.isComponent(node) then
+              comp := InstNode.component(node);
+
+              if Component.variability(comp) < Variability.DISCRETE then
+                b := Component.getBinding(comp);
+              end if;
+            end if;
+          then
+            ();
+
+        else ();
+      end match;
+    end while;
+  end actualConfidence;
 
 annotation(__OpenModelica_Interface="nf_frontend");
 end NFBinding;

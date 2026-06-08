@@ -178,6 +178,12 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_VARIABLE_FILTER */              "variableFilter",
   /* FLAG_W */                            "w",
   /* FLAG_PARMODNUMTHREADS */             "parmodNumThreads",
+  /* FLAG_PARMOD_SCHEDULER */             "parmodScheduler",
+  /* FLAG_PARMOD_CLUSTERING */            "parmodClustering",
+  /* FLAG_PARMOD_CLUSTERS_PER_LEVEL */    "parmodClustersPerLevel",
+  /* FLAG_PARMOD_DUMP_TASKGRAPH */        "parmodDumpTaskGraph",
+  /* FLAG_PARMOD_IMPORT_CLUSTERING */     "parmodImportClustering",
+  /* FLAG_PARMOD_DUMP_STAGES */           "parmodDumpStages",
 
   "FLAG_MAX"
 };
@@ -333,6 +339,12 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_VARIABLE_FILTER */              "sets variableFilter",
   /* FLAG_W */                            "shows all warnings even if a related log-stream is inactive",
   /* FLAG_PARMODNUMTHREADS */             "[int default: 0] value specifies the number of threads for simulation using parmodauto. If not specified (or is 0) it will use the systems max number of threads. Note that this option is ignored if the model is not compiled with --parmodauto",
+  /* FLAG_PARMOD_SCHEDULER */             "value selects the parmodauto scheduler: flow (default) or level",
+  /* FLAG_PARMOD_CLUSTERING */            "value selects the parmodauto clustering strategy: default, fixed_width_min_height or none",
+  /* FLAG_PARMOD_CLUSTERS_PER_LEVEL */    "[int] value sets the maximum number of clusters per level for the default clustering",
+  /* FLAG_PARMOD_DUMP_TASKGRAPH */        "value specifies a json file to which the parmodauto task graph and clustering are exported",
+  /* FLAG_PARMOD_IMPORT_CLUSTERING */     "value specifies a json file from which a parmodauto clustering is imported instead of computing one",
+  /* FLAG_PARMOD_DUMP_STAGES */           "value specifies a file name prefix to which the parmodauto task graph and clustering are exported before and after each clustering optimization",
 
   "FLAG_MAX"
 };
@@ -711,6 +723,18 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Shows all warnings even if a related log-stream is inactive.",
   /* FLAG_PARMODNUMTHREADS */
   "  Value specifies the number of threads for simulation using parmodauto. If not specified (or is 0) it will use the systems max number of threads. Note that this option is ignored if the model is not compiled with --parmodauto",
+  /* FLAG_PARMOD_SCHEDULER */
+  "  Selects the parmodauto scheduler: 'flow' (default) or 'level'. Switchable at run time without recompiling the simulator.",
+  /* FLAG_PARMOD_CLUSTERING */
+  "  Selects the parmodauto clustering strategy: 'default' (merge-based), 'fixed_width_min_height', or 'none'.",
+  /* FLAG_PARMOD_CLUSTERS_PER_LEVEL */
+  "  Sets the maximum number of clusters per level used by the default clustering.",
+  /* FLAG_PARMOD_DUMP_TASKGRAPH */
+  "  Exports the parmodauto task graph (tasks, dependencies) and the resulting clustering to the given json file, keyed by equation index.",
+  /* FLAG_PARMOD_IMPORT_CLUSTERING */
+  "  Imports a clustering (groups of equation indices) from the given json file instead of computing one. The simulation aborts if the clustering is invalid (forms a cycle or references unknown equations).",
+  /* FLAG_PARMOD_DUMP_STAGES */
+  "  Exports the parmodauto task graph and clustering before and after each clustering optimization to a series of json files named <prefix>.NN.<stage>.json, so the effect of each optimization can be inspected.",
 
 
   "FLAG_MAX"
@@ -867,6 +891,12 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_VARIABLE_FILTER */              FLAG_REPEAT_POLICY_COMBINE,
   /* FLAG_W */                            FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_PARMODNUMTHREADS */             FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_PARMOD_SCHEDULER */             FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_PARMOD_CLUSTERING */            FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_PARMOD_CLUSTERS_PER_LEVEL */    FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_PARMOD_DUMP_TASKGRAPH */        FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_PARMOD_IMPORT_CLUSTERING */     FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_PARMOD_DUMP_STAGES */           FLAG_REPEAT_POLICY_FORBID,
 };
 
 
@@ -1021,6 +1051,12 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_VARIABLE_FILTER */              FLAG_TYPE_OPTION,
   /* FLAG_W */                            FLAG_TYPE_FLAG,
   /* FLAG_PARMODNUMTHREADS */             FLAG_TYPE_OPTION,
+  /* FLAG_PARMOD_SCHEDULER */             FLAG_TYPE_OPTION,
+  /* FLAG_PARMOD_CLUSTERING */            FLAG_TYPE_OPTION,
+  /* FLAG_PARMOD_CLUSTERS_PER_LEVEL */    FLAG_TYPE_OPTION,
+  /* FLAG_PARMOD_DUMP_TASKGRAPH */        FLAG_TYPE_OPTION,
+  /* FLAG_PARMOD_IMPORT_CLUSTERING */     FLAG_TYPE_OPTION,
+  /* FLAG_PARMOD_DUMP_STAGES */           FLAG_TYPE_OPTION,
 };
 
 const char *GB_METHOD_NAME[RK_MAX] = {

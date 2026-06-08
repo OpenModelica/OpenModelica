@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.5...4.3)
 
 
 # Needs to be included before Core/Modelica othwise environment variables are not set.

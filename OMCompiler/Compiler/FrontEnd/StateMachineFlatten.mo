@@ -50,6 +50,7 @@ public import FCore;
 
 protected import List;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import Expression;
 protected import DAEUtil;
 protected import Util;
@@ -107,9 +108,7 @@ Author: BTH
   input DAE.DAElist inDAElist;
   output DAE.DAElist outDAElist;
 protected
-  list<DAE.Element> elementLst, elementLst1, flatSmLst, otherLst, elementLst2, elementLst3;
-  list<Transition> t;
-  DAE.Element compElem;
+  list<DAE.Element> elementLst, flatSmLst, otherLst, elementLst2, elementLst3;
   Integer nOfSubstitutions;
 
   // COMP
@@ -186,7 +185,6 @@ protected
   DAE.ComponentRef crefInitialState;
 
   FlatSmSemantics flatSmSemanticsBasics, flatSmSemanticsWithPropagation, flatSmSemantics;
-  list<Transition> transitions;
   list<DAE.Element> vars "SMS veriables";
   list<DAE.Element> knowns "SMS constants/parameters";
   list<DAE.Element> eqs "SMS equations";
@@ -282,7 +280,7 @@ Author: BTH
 protected
   Integer i;
   Boolean found;
-  DAE.Exp c2, c3, c4, conditionNew, substTickExp, substTimeExp;
+  DAE.Exp c2, c3, c4, substTickExp, substTimeExp;
   DAE.ComponentRef stateRef;
   Transition t2;
   list<Transition> tElab = {} "Elaborated transitions";
@@ -404,7 +402,6 @@ algorithm
   (outExp, outXSubstHit) := match (inExp, inXSubstHit)
     local
       DAE.Exp subsExp;
-      Boolean hit;
       String xInState, name;
     case (DAE.CALL(path=Absyn.IDENT(name)), (xInState, subsExp, _)) guard name == xInState
       then (subsExp, (xInState, subsExp, true));
@@ -485,7 +482,7 @@ protected
   list<DAE.Element> equations;
   DAE.ElementSource source;
 algorithm
-  outEqnsVars := match (inEqn)
+  outEqnsVars := match inEqn
     case DAE.EQUATION() then addStateActivationAndReset1(inEqn, inEnclosingSMComp, inEnclosingFlatSmSemantics, crToExpOpt, accEqnsVars);
     case DAE.WHEN_EQUATION(condition,equations,NONE(),source)
       algorithm
@@ -532,8 +529,8 @@ which is then handled specially in the back-end.
 protected
   list<DAE.ComponentRef> stateVarCrefs;
 
-  DAE.ComponentRef crefLHS, enclosingStateRef, substituteRef, activeResetRef, activeResetStatesRef, cref2;
-  Boolean found, is;
+  DAE.ComponentRef crefLHS, enclosingStateRef, cref2;
+  Boolean found;
   DAE.Type tyLHS;
   DAE.Element eqn, eqn1, eqn2, var2, varDecl;
   DAE.CallAttributes attr;
@@ -634,14 +631,12 @@ protected
   DAE.Type tyLHS;
   // EQUATION
   DAE.Exp exp;
-  DAE.Exp scalar, scalarNew;
-  DAE.ElementSource source;
   // WHEN_EQUATION
   list<DAE.Element> equations;
   Option<DAE.Element> elsewhen_;
 algorithm
-  res := match (eqn)
-    case DAE.EQUATION(exp, scalar, source)
+  res := match eqn
+    case DAE.EQUATION(exp, _, _)
       algorithm
         cref := DAEUtil.varCref(var);
         try
@@ -675,15 +670,13 @@ Return true if variable x appears as previous(x) in the RHS of a scalar equation
 protected
   DAE.ComponentRef cref;
   // EQUATION
-  DAE.Exp exp;
-  DAE.Exp scalar, scalarNew;
-  DAE.ElementSource source;
+  DAE.Exp scalar;
   // WHEN_EQUATION
   list<DAE.Element> equations;
   Option<DAE.Element> elsewhen_;
 algorithm
-  found := match (eqn)
-    case DAE.EQUATION(exp, scalar, source)
+  found := match eqn
+    case DAE.EQUATION(_, scalar, _)
       algorithm
         cref := DAEUtil.varCref(var);
         (_, (_, found)) := Expression.traverseExpTopDown(scalar, traversingFindPreviousCref, (cref, false));
@@ -735,14 +728,13 @@ Given LHS 'a.x' and its start value 'x_start', as well as its enclosing state co
   input HashTableCrToExpOption.HashTable crToExpOpt "Table mapping variable declaration in the enclosing state to start values";
   output DAE.Element outEqn;
 protected
-  DAE.Exp activeExp, activeResetExp, activeResetStatesExp, orExp, andExp, startValueExp, preExp;
+  DAE.Exp activeExp, activeResetExp, activeResetStatesExp, orExp, andExp, startValueExp;
   DAE.Element reinitElem;
   Option<DAE.Exp> startValueOpt;
   DAE.ComponentRef initStateRef, preRef;
   Integer i, nStates;
   array<DAE.Element> enclosingFlatSMComps;
   DAE.Type tArrayBool;
-  DAE.CallAttributes callAttributes;
 algorithm
   FLAT_SM_SEMANTICS(smComps=enclosingFlatSMComps) := inEnclosingFlatSmSemantics;
   DAE.SM_COMP(componentRef=initStateRef) := arrayGet(enclosingFlatSMComps, 1); // initial state
@@ -822,7 +814,7 @@ Return true if element is a VAR containing the cref, otherwise false"
   input DAE.ComponentRef inCref;
   output Boolean result;
 algorithm
-  result := match (inElement)
+  result := match inElement
     local
       DAE.ComponentRef cref;
     case DAE.VAR(componentRef=cref) guard ComponentReferenceBasics.crefEqual(cref, inCref) then true;
@@ -1006,8 +998,6 @@ algorithm
   (outExp, outCrefHit) := match (inExp, inCrefHit)
     local
       DAE.ComponentRef cr, cref, substituteRef;
-      Boolean hit;
-      DAE.CallAttributes attr;
       DAE.Type ty;
     case (DAE.CALL(Absyn.IDENT("previous"), {DAE.CREF(cr, ty)}, _),
       (cref, _)) guard ComponentReferenceBasics.crefEqual(cr, cref)
@@ -1035,8 +1025,6 @@ algorithm
     local
       DAE.ComponentRef cr, substituteRef;
       list<DAE.ComponentRef> crefs;
-      Boolean hit;
-      DAE.CallAttributes attr;
       DAE.Type ty;
     case (DAE.CALL(Absyn.IDENT("previous"), {DAE.CREF(cr, ty)}, _), (crefs, _))
       guard List.any(crefs, function ComponentReferenceBasics.crefEqual(inComponentRef1=cr))
@@ -1080,7 +1068,7 @@ protected
   DAE.ComponentRef preRef, initStateRef, initRef, resetRef, activeRef, stateRef, activePlotIndicatorRef;
   DAE.Element initVar, activePlotIndicatorVar, ticksInStateVar, timeEnteredStateVar, timeInStateVar;
   DAE.Element activePlotIndicatorEqn, ticksInStateEqn, timeEnteredStateEqn, timeInStateEqn;
-  DAE.Exp rhs, andExp, eqExp, activeResetStateRefExp, activeStateRefExp, activeResetRefExp;
+  DAE.Exp rhs, andExp, eqExp;
   DAE.Type tArrayBool, tArrayInteger;
 
   // FLAT_SM_SEMANTICS
@@ -1091,7 +1079,7 @@ protected
   list<DAE.Element> smvars "SMS veriables";
   list<DAE.Element> smknowns "SMS constants/parameters";
   list<DAE.Element> smeqs "SMS equations";
-  Option<DAE.ComponentRef> enclosingStateOption "Cref to enclosing state if any"; // FIXME needed?
+  // FIXME needed?
   list<DAE.Element> pvars = {} "Propagation related variables";
   list<DAE.Element> peqs = {} "Propagation equations";
 
@@ -1359,8 +1347,8 @@ protected
   list<DAE.Element> vars "SMS veriables", knowns "SMS constants/parameters";
   Integer i;
 
-  DAE.ComponentRef preRef, cref, nStatesRef, activeRef, resetRef, selectedStateRef, selectedResetRef, firedRef, activeStateRef, activeResetRef, nextStateRef, nextResetRef, stateMachineInFinalStateRef;
-  DAE.Element var, nStatesVar, activeVar, resetVar, selectedStateVar, selectedResetVar, firedVar, activeStateVar, activeResetVar, nextStateVar, nextResetVar, stateMachineInFinalStateVar;
+  DAE.ComponentRef preRef, nStatesRef, activeRef, resetRef, selectedStateRef, selectedResetRef, firedRef, activeStateRef, activeResetRef, nextStateRef, nextResetRef, stateMachineInFinalStateRef;
+  DAE.Element nStatesVar, activeVar, resetVar, selectedStateVar, selectedResetVar, firedVar, activeStateVar, activeResetVar, nextStateVar, nextResetVar, stateMachineInFinalStateVar;
 
   // Modeling arrays with size nStates
   Integer nStates;
@@ -1379,7 +1367,6 @@ protected
   // TRANSITION
   Integer from;
   Integer to;
-  DAE.Exp condition;
   Boolean immediate;
   Boolean reset;
   Boolean synchronize;
@@ -1858,7 +1845,7 @@ Check if element is a FLAT_SM.
   input DAE.Element inElement;
   output Boolean outResult;
 algorithm
-  outResult := match (inElement)
+  outResult := match inElement
     case DAE.FLAT_SM() then true;
     else false;
   end match;
@@ -1871,7 +1858,7 @@ Check if element is a SM_COMP.
   input DAE.Element inElement;
   output Boolean outResult;
 algorithm
-  outResult := match (inElement)
+  outResult := match inElement
     case DAE.SM_COMP() then true;
     else false;
   end match;
@@ -1884,7 +1871,7 @@ Return true if element is a transition, otherwise false"
   input  DAE.Element inElement;
   output Boolean result;
 algorithm
-  result := match (inElement)
+  result := match inElement
     case DAE.NORETCALL(exp=DAE.CALL(path=Absyn.IDENT("transition"))) then true;
     else false;
   end match;
@@ -1896,7 +1883,7 @@ Return true if element is an initialState, otherwise false"
   input  DAE.Element inElement;
   output Boolean result;
 algorithm
-  result := match (inElement)
+  result := match inElement
     case DAE.NORETCALL(exp=DAE.CALL(path=Absyn.IDENT("initialState"))) then true;
     else false;
   end match;
@@ -1908,7 +1895,7 @@ Return true if element is an EQUATION, otherwise false"
   input  DAE.Element inElement;
   output Boolean result;
 algorithm
-  result := match (inElement)
+  result := match inElement
     case DAE.EQUATION() then true;
     else false;
   end match;
@@ -1920,7 +1907,7 @@ Return true if element is an EQUATION or WHEN_EQUATION, otherwise false"
     input  DAE.Element inElement;
   output Boolean result;
 algorithm
-  result := match (inElement)
+  result := match inElement
     case DAE.EQUATION() then true;
     case DAE.WHEN_EQUATION() then true;
     else false;
@@ -1933,7 +1920,7 @@ Return true if element is an EQUATION with at least one pre(..) or previous(..) 
   input  DAE.Element inElement;
   output Boolean result;
 algorithm
-  result := match (inElement)
+  result := match inElement
     local
       DAE.Exp exp;
       DAE.Exp scalar;
@@ -1950,7 +1937,7 @@ Return true if element is an VAR, otherwise false"
   input  DAE.Element inElement;
   output Boolean result;
 algorithm
-  result := match (inElement)
+  result := match inElement
     case DAE.VAR() then true;
     else false;
   end match;
@@ -1964,7 +1951,7 @@ Return true if the componentRef of the second argument equals the componentRef o
   input DAE.ComponentRef inCref;
   output Boolean result;
 algorithm
-  result := match (inElement)
+  result := match inElement
     local
       DAE.ComponentRef cref;
     case DAE.SM_COMP(cref) guard ComponentReferenceBasics.crefEqual(cref, inCref) then true;
@@ -2000,7 +1987,6 @@ Wrap equations in when-clauses as long as Synchronous Features are not supported
   input list<DAE.Element> inElementLst;
   output list<DAE.Element> outElementLst;
 protected
-  Integer nOfSubstitutions;
   list<DAE.Element> eqnLst, otherLst;
   DAE.Element whenEq;
   DAE.Exp cond1, cond2, condition;
@@ -2043,7 +2029,6 @@ algorithm
   outExp := match inElem
     local
       DAE.Exp exp;
-      DAE.Exp scalar;
       DAE.ComponentRef cref;
       DAE.Ident firstIdent;
       DAE.Ident lastIdent;
@@ -2090,7 +2075,6 @@ algorithm
   (outExp,outHitCount) := match inExp
     local
       DAE.Exp expX;
-      DAE.CallAttributes attr;
     case DAE.CALL(Absyn.IDENT("sample"),
     { expX,
       DAE.CLKCONST(DAE.INFERRED_CLOCK())},

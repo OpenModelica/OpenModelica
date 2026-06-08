@@ -41,9 +41,10 @@
 * \date 2005-12-12
 */
 
-#ifndef COMMANDCOMPETION_H
-#define COMMANDCOMPETION_H
+#ifndef COMMANDCOMPLETION_H
+#define COMMANDCOMPLETION_H
 
+#include <memory>
 
 //QT Headers
 #include <QtCore/QHash>
@@ -72,25 +73,25 @@ namespace IAEX
 
   private:
     void initializeCommands();
-    void parseCommand(QDomNode node, CommandUnit *item) const;
+    void parseCommand(QDomNode node, CommandUnit &item) const;
     CommandCompletion( const QString filename );
 
-    static CommandCompletion *instance_;
-    QDomDocument *doc_;
+    static std::unique_ptr<CommandCompletion> instance_;
+    QDomDocument doc_;
 
-    int currentCommand_;
-    int currentField_;
-    int commandStartPos_;
-    int commandEndPos_;
+    int currentCommand_ = -1;
+    int currentField_ = -1;
+    int commandStartPos_ = 0;
+    int commandEndPos_ = 0;
 
     QList<QRegularExpression> keywords_;
 
-    QStringList *currentList_;
+    QStringList currentList_;
     QStringList commandList_;
     QStringList elementList_;
-    QHash<QString,CommandUnit*> *cmds_;
-    QHash<QString,CommandUnit*> commands_;
-    QHash<QString,CommandUnit*> elements_;
+    QHash<QString,CommandUnit> *cmds_ = nullptr;
+    QHash<QString,CommandUnit> commands_;
+    QHash<QString,CommandUnit> elements_;
   };
 }
 #endif

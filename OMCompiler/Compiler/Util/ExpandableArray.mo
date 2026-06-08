@@ -233,7 +233,6 @@ protected
   Integer numberOfElements = Mutable.access(exarray.numberOfElements);
   Integer lastUsedIndex = Mutable.access(exarray.lastUsedIndex);
   array<Option<T>> data = Mutable.access(exarray.data);
-  T dummy;
 algorithm
   if numberOfElements == 0 then
     listT := {};

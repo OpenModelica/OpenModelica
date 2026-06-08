@@ -97,14 +97,14 @@ public function id
   output Graph outGraph;
   output Ref outRef;
 algorithm
-  (outGraph, outRef) := matchcontinue(inGraph, inRef, inName, inOptions, inMsg)
+  (outGraph, outRef) := matchcontinue(inGraph, inOptions, inMsg)
     local
       Ref r;
       Parents p;
       Graph g;
 
     // implicit scope which has for iterators
-    case (g, _, _, _, _)
+    case (g, _, _)
       algorithm
         r := FNode.child(inRef, FNode.forNodeName);
         r := FNode.child(r, inName);
@@ -122,7 +122,7 @@ algorithm
         (g, r);*/
 
     // implicit scope? move upwards if allowed
-    case (g, _, _, OPTIONS(_, _, false), _)
+    case (g, OPTIONS(_, _, false), _)
       algorithm
         true := FNode.isRefImplicitScope(inRef);
         p := FNode.parents(FNode.fromRef(inRef));
@@ -133,7 +133,7 @@ algorithm
         (g, r);
 
     // local?
-    case (g, _, _, _, _)
+    case (g, _, _)
       algorithm
         false := FNode.isRefImplicitScope(inRef);
         r := FNode.child(inRef, inName);
@@ -141,7 +141,7 @@ algorithm
         (g, r);
 
     // lookup in imports
-    case (g, _, _, OPTIONS(false, _, _), _)
+    case (g, OPTIONS(false, _, _), _)
       algorithm
         false := FNode.isRefImplicitScope(inRef);
         (g, r) := imp(g, inRef, inName, inOptions, inMsg);
@@ -149,7 +149,7 @@ algorithm
         (g, r);
 
     // lookup in extends
-    case (g, _, _, OPTIONS(_, false, _), _)
+    case (g, OPTIONS(_, false, _), _)
       algorithm
         false := FNode.isRefImplicitScope(inRef);
         (g, r) := ext(g, inRef, inName, inOptions, inMsg);
@@ -157,7 +157,7 @@ algorithm
         (g, r);
 
     // encapsulated
-    case (g, _, _, OPTIONS(_, _, false), _)
+    case (g, OPTIONS(_, _, false), _)
       algorithm
         false := FNode.isRefImplicitScope(inRef);
         true := FNode.isEncapsulated(FNode.fromRef(inRef));
@@ -167,7 +167,7 @@ algorithm
         (g, r);
 
     // search parent
-    case (g, _, _, OPTIONS(_, _, false), _)
+    case (g, OPTIONS(_, _, false), _)
       algorithm
         false := FNode.isRefImplicitScope(inRef);
         false := FNode.isEncapsulated(FNode.fromRef(inRef));
@@ -180,14 +180,14 @@ algorithm
         (g, r);
 
     // top node reached
-    case (_, _, _, OPTIONS(_, _, false), _)
+    case (_, OPTIONS(_, _, false), _)
       algorithm
         false := FNode.hasParents(FNode.fromRef(inRef));
       then
         fail();
 
     // failure
-    case (_, _, _, _, SOME(_))
+    case (_, _, SOME(_))
       algorithm
         print("FLookup.id failed for: " + inName + " in: " + FNode.toPathStr(FNode.fromRef(inRef)) + "\n");
       then
@@ -207,31 +207,31 @@ public function search
   output Graph outGraph;
   output Ref outRef;
 algorithm
-  (outGraph, outRef) := matchcontinue(inGraph, inRefs, inName, inOptions, inMsg)
+  (outGraph, outRef) := matchcontinue(inGraph, inRefs, inMsg)
     local
       Ref r;
       Refs rest;
       Graph g;
 
     // not found
-    case (_, {}, _, _, _) then fail();
+    case (_, {}, _) then fail();
 
     // found
-    case (g, r::_, _, _, _)
+    case (g, r::_, _)
       algorithm
         (g, r) := id(g, r, inName, inOptions, inMsg);
       then
         (g, r);
 
     // search rest
-    case (g, _::rest, _, _, _)
+    case (g, _::rest, _)
       algorithm
         (g, r) := search(g, rest, inName, inOptions, inMsg);
       then
         (g, r);
 
     // failure
-    case (_, _, _, _, SOME(_))
+    case (_, _, SOME(_))
       algorithm
         print("FLookup.search failed for: " + inName + " in: " +
            FNode.toPathStr(FNode.fromRef(listHead(inRefs))) + "\n");
@@ -252,7 +252,7 @@ public function name
   output Graph outGraph;
   output Ref outRef;
 algorithm
-  (outGraph, outRef) := matchcontinue(inGraph, inRef, inPath, inOptions, inMsg)
+  (outGraph, outRef) := matchcontinue(inGraph, inPath, inMsg)
     local
       Ref r;
       Name i;
@@ -261,14 +261,14 @@ algorithm
       Graph g;
 
     // simple name
-    case (g, _, Absyn.IDENT(i), _, _)
+    case (g, Absyn.IDENT(i), _)
       algorithm
         (g, r) := id(g, inRef, i, inOptions, inMsg);
       then
         (g, r);
 
     // qualified name, could find the rest
-    case (g, _, Absyn.QUALIFIED(i, rest), _, _)
+    case (g, Absyn.QUALIFIED(i, rest), _)
       algorithm
         (g, r) := id(g, inRef, i, inOptions, inMsg);
         (g, r) := name(g, r, rest, inOptions, inMsg);
@@ -276,10 +276,10 @@ algorithm
         (g, r);
 
     // qualified name, could not find the rest, stop!
-    case (g, _, Absyn.QUALIFIED(i, rest), _, _)
+    case (g, Absyn.QUALIFIED(i, rest), _)
       algorithm
         (g, r) := id(g, inRef, i, inOptions, inMsg);
-        failure((_, _) := name(g, r, rest, inOptions, inMsg));
+        failure(name(g, r, rest, inOptions, inMsg));
         // add an assersion node that it should
         // be a name in here and return that
         s := "missing: " + AbsynUtil.pathString(rest) + " in scope: " + FNode.toPathStr(FNode.fromRef(r));
@@ -289,14 +289,14 @@ algorithm
         (g, r);
 
     // fully qual name
-    case (g, _, Absyn.FULLYQUALIFIED(rest), _, _)
+    case (g, Absyn.FULLYQUALIFIED(rest), _)
       algorithm
         r := FNode.top(inRef);
         (g, r) := name(g, r, rest, inOptions, inMsg);
       then
         (g, r);
 
-    case (_, _, _, _, SOME(_))
+    case (_, _, SOME(_))
       algorithm
         print("FLookup.name failed for: " + AbsynUtil.pathString(inPath) + " in: " + FNode.toPathStr(FNode.fromRef(inRef)) + "\n");
       then
@@ -316,15 +316,14 @@ public function ext
   output Graph outGraph;
   output Ref outRef;
 algorithm
-  (outGraph, outRef) := matchcontinue(inGraph, inRef, inName, inOptions, inMsg)
+  (outGraph, outRef) := matchcontinue inGraph
     local
       Ref r;
       Refs refs;
-      Parents p;
       Graph g;
 
     // for class extends search inside the base class first
-    case (g, _, _, _, _)
+    case g
       algorithm
         true := FNode.isClassExtends(FNode.fromRef(inRef));
         // get its ref node
@@ -339,7 +338,7 @@ algorithm
         (g, r);
 
     // for class extends: if not found in base class search in the parents of this node
-    case (g, _, _, _, _)
+    case g
       algorithm
         true := FNode.isClassExtends(FNode.fromRef(inRef));
         // get the original parent
@@ -350,7 +349,7 @@ algorithm
         (g, r);
 
     // get all extends of the node and search in them
-    case (g, _, _, _, _)
+    case g
       algorithm
         refs := FNode.extendsRefs(inRef);
         false := listEmpty(refs);
@@ -374,15 +373,14 @@ public function imp
   output Graph outGraph;
   output Ref outRef;
 algorithm
-  (outGraph, outRef) := matchcontinue(inGraph, inRef, inName, inOptions, inMsg)
+  (outGraph, outRef) := matchcontinue inGraph
     local
       Ref r;
-      Parents p;
       list<Import> qi, uqi;
       Graph g;
 
     // lookup in qual
-    case (g, _, _, _, _)
+    case g
       algorithm
         true := FNode.hasImports(FNode.fromRef(inRef));
         (qi,_) := FNode.imports(FNode.fromRef(inRef));
@@ -391,7 +389,7 @@ algorithm
         (g, r);
 
     // lookup in un-qual
-    case (g, _, _, _, _)
+    case g
       algorithm
         true := FNode.hasImports(FNode.fromRef(inRef));
         (_, uqi) := FNode.imports(FNode.fromRef(inRef));
@@ -413,7 +411,7 @@ protected function imp_qual
   output Graph outGraph;
   output Ref outRef;
 algorithm
-  (outGraph, outRef) := matchcontinue(inGraph, inRef, inName, inImports, inOptions, inMsg)
+  (outGraph, outRef) := matchcontinue(inGraph, inImports)
     local
       Name name;
       Absyn.Path path;
@@ -422,7 +420,7 @@ algorithm
       Graph g;
 
     // No match, search the rest of the list of imports.
-    case (g, _, _, Absyn.NAMED_IMPORT(name = name) :: rest_imps, _, _)
+    case (g, Absyn.NAMED_IMPORT(name = name) :: rest_imps)
       algorithm
         false := stringEqual(inName, name);
         (g, r) := imp_qual(g, inRef, inName, rest_imps, inOptions, inMsg);
@@ -430,7 +428,7 @@ algorithm
         (g, r);
 
     // Match, look up the fully qualified import path.
-    case (g, _, _, Absyn.NAMED_IMPORT(name = name, path = path) :: _, _, _)
+    case (g, Absyn.NAMED_IMPORT(name = name, path = path) :: _)
       algorithm
         true := stringEqual(inName, name);
         (g, r) := fq(g, path, inOptions, inMsg);
@@ -438,7 +436,7 @@ algorithm
         (g, r);
 
     // Partial match, return failure
-    case (_, _, _, Absyn.NAMED_IMPORT(name = name) :: _, _, _)
+    case (_, Absyn.NAMED_IMPORT(name = name) :: _)
       algorithm
         true := stringEqual(inName, name);
       then
@@ -460,9 +458,9 @@ public function imp_unqual
   output Graph outGraph;
   output Ref outRef;
 algorithm
-  (outGraph, outRef) := matchcontinue(inGraph, inRef, inName, inImports, inOptions, inMsg)
+  (outGraph, outRef) := matchcontinue(inGraph, inImports)
     local
-      Absyn.Path path, path2;
+      Absyn.Path path;
       list<Import> rest_imps;
       Ref r;
       Graph g;
@@ -470,7 +468,7 @@ algorithm
     // For each unqualified import we have to look up the package the import
     // points to, and then look among the public member of the package for the
     // name we are looking for.
-    case (g, _, _, Absyn.UNQUAL_IMPORT(path = path) :: _, _, _)
+    case (g, Absyn.UNQUAL_IMPORT(path = path) :: _)
       algorithm
         // Look up the import path.
         (g, r) := fq(g, path, inOptions, inMsg);
@@ -480,7 +478,7 @@ algorithm
         (g, r);
 
     // No match, continue with the rest of the imports.
-    case (g, _, _, _ :: rest_imps, _, _)
+    case (g, _ :: rest_imps)
       algorithm
         (g, r) := imp_unqual(g, inRef, inName, rest_imps, inOptions, inMsg);
       then
@@ -511,24 +509,23 @@ public function cr
   output Graph outGraph;
   output Ref outRef;
 algorithm
-  (outGraph, outRef) := matchcontinue(inGraph, inRef, inCref, inOptions, inMsg)
+  (outGraph, outRef) := matchcontinue(inGraph, inCref, inMsg)
     local
       Ref r;
       Name i;
       Absyn.ComponentRef rest;
-      list<Absyn.Subscript> ss;
       Graph g;
       String s;
 
     // simple name
-    case (g, _, Absyn.CREF_IDENT(i, _), _, _)
+    case (g, Absyn.CREF_IDENT(i, _), _)
       algorithm
         (g, r) := id(g, inRef, i, inOptions, inMsg);
       then
         (g, r);
 
     // qualified name, first is component
-    case (g, _, Absyn.CREF_QUAL(i, _, rest), _, _)
+    case (g, Absyn.CREF_QUAL(i, _, rest), _)
       algorithm
         (g, r) := id(g, inRef, i, inOptions, inMsg);
         // inRef is a component, lookup in type
@@ -543,7 +540,7 @@ algorithm
         (g, r);
 
     // qualified name
-    case (g, _, Absyn.CREF_QUAL(i, _, rest), _, _)
+    case (g, Absyn.CREF_QUAL(i, _, rest), _)
       algorithm
         // inRef is a class
         (g, r) := id(g, inRef, i, inOptions, inMsg);
@@ -553,7 +550,7 @@ algorithm
         (g, r);
 
     // qualified name
-    case (g, _, Absyn.CREF_QUAL(i, _, rest), _, _)
+    case (g, Absyn.CREF_QUAL(i, _, rest), _)
       algorithm
         // inRef is a class
         (g, r) := id(g, inRef, i, inOptions, inMsg);
@@ -568,14 +565,14 @@ algorithm
 
 
     // fully qual name
-    case (g, _, Absyn.CREF_FULLYQUALIFIED(rest), _, _)
+    case (g, Absyn.CREF_FULLYQUALIFIED(rest), _)
       algorithm
         r := FGraph.top(g);
         (g, r) := cr(g, r, rest, inOptions, inMsg);
       then
         (g, r);
 
-    case (_, _, _, _, SOME(_))
+    case (_, _, SOME(_))
       algorithm
         print("FLookup.cr failed for: " + AbsynUtil.crefString(inCref) + " in: " + FNode.toPathStr(FNode.fromRef(inRef)) + "\n");
       then

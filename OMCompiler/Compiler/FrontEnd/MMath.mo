@@ -81,8 +81,8 @@ protected function normalizeZero "if numerator is zero, set denominator to 1"
   input Rational r;
   output Rational outR;
 algorithm
-  outR := match(r)
-    case(RATIONAL(0,_)) then RATIONAL(0,1);
+  outR := match r
+    case RATIONAL(0,_) then RATIONAL(0,1);
     else r;
   end match;
 end normalizeZero;
@@ -91,9 +91,9 @@ public function rationalString "converts a rational to a string"
 input Rational r;
 output String str;
 algorithm
-  str := match(r)
+  str := match r
   local Integer n,d;
-    case(RATIONAL(n,d)) algorithm
+    case RATIONAL(n,d) algorithm
       str := intString(n)+"/"+intString(d);
     then str;
   end match;
@@ -168,8 +168,8 @@ public function intGcd "returns the greatest common divisor for two Integers"
   input Integer i2;
   output Integer i;
 algorithm
-  i := match(i1,i2)
-    case (_,0) then i1;
+  i := match i2
+    case 0 then i1;
     else intGcd(i2,intMod(i1,i2));
   end match;
 end intGcd;
@@ -178,7 +178,7 @@ end intGcd;
 
 public function testRational "test rational operators"
 algorithm
-  _ := matchcontinue()
+  () := matchcontinue()
 
     case() algorithm
       RATIONAL(7,6) := addRational(RATIONAL(1,2),RATIONAL(2,3));
@@ -200,5 +200,5 @@ algorithm
   end matchcontinue;
 end testRational;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="util");
 end MMath;

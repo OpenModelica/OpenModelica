@@ -44,5 +44,5 @@ function multiDownload
   external "C" success = om_curl_multi_download(urlFileList, maxParallel);
 end multiDownload;
 
-annotation(__OpenModelica_Interface="util");
+annotation(__OpenModelica_Interface="script_util");
 end Curl;

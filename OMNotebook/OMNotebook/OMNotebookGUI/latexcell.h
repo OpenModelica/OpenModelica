@@ -59,12 +59,20 @@ namespace IAEX
     virtual ~LatexCell();
     QString text();
     QString textHtml();
+    QTextDocument* document() override;
     virtual QString textOutput();
     virtual QString textOutputHtml();
     virtual QTextCursor textCursor();
     virtual QTextEdit* textEdit();
     virtual QTextEdit* textEditOutput();
     virtual void viewExpression(const bool){}
+    void cutText() override;
+    void copyText() override;
+    void pasteText() override;
+    bool findText(const QString &exp, QTextDocument::FindFlags options) override;
+
+    void clearSelection() override;
+    void moveCursor(QTextCursor::MoveOperation operation) override;
 
     virtual void addCellWidgets();
     virtual void removeCellWidgets();

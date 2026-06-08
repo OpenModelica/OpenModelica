@@ -104,17 +104,16 @@ public function visited
   input Ref inRef;
   output Boolean b;
 algorithm
-  b := matchcontinue(inVisited, inRef)
+  b := matchcontinue inVisited
     local
-      Seq seq;
       AvlTree a;
       Id id;
 
     // there
-    case (FCore.V(tree = a), _)
+    case FCore.V(tree = a)
       algorithm
-        _ := FNode.id(FNode.fromRef(inRef));
-        _ := avlTreeGet(a, FNode.id(FNode.fromRef(inRef)));
+        FNode.id(FNode.fromRef(inRef));
+        avlTreeGet(a, FNode.id(FNode.fromRef(inRef)));
       then
         true;
 
@@ -151,7 +150,7 @@ public function visit
   input Ref inRef;
   output Visited outVisited;
 algorithm
-  outVisited := matchcontinue(inVisited, inRef)
+  outVisited := matchcontinue inVisited
     local
       Seq s;
       Next n;
@@ -160,18 +159,18 @@ algorithm
       Id id;
 
     // already there, something's fishy!
-    case (_, _)
+    case _
       algorithm
-        _ := FNode.id(FNode.fromRef(inRef));
+        FNode.id(FNode.fromRef(inRef));
         v := avlTreeGet(tree(inVisited), FNode.id(FNode.fromRef(inRef)));
         print("Already visited: " + FNode.toStr(FNode.fromRef(inRef)) + " seq: " + intString(seq(v)) + "\n");
       then
         fail();
 
-    case (FCore.V(a, _), _)
+    case FCore.V(a, _)
       algorithm
         id := FNode.id(FNode.fromRef(inRef));
-        failure(_ := avlTreeGet(tree(inVisited), id));
+        failure(avlTreeGet(tree(inVisited), id));
         (FCore.V(next = n), s) := next(inVisited);
         a := avlTreeAdd(a, id, FCore.VN(inRef, s));
         outVisited := FCore.V(a, n);
@@ -204,10 +203,10 @@ public function valueStr "prints a Value to a string"
   input AvlValue v;
   output String str;
 algorithm
-  str := match(v)
+  str := match v
     local
       Integer seq;
-    case (FCore.VN(seq = seq)) then intString(seq);
+    case FCore.VN(seq = seq) then intString(seq);
   end match;
 end valueStr;
 
@@ -302,9 +301,9 @@ protected function createEmptyAvlIfNone "Help function to AvlTreeAdd2"
   input Option<AvlTree> t;
   output AvlTree outT;
 algorithm
-  outT := match (t)
-    case(NONE()) then FCore.VAVLTREENODE(NONE(),0,NONE(),NONE());
-    case(SOME(outT)) then outT;
+  outT := match t
+    case NONE() then FCore.VAVLTREENODE(NONE(),0,NONE(),NONE());
+    case SOME(outT) then outT;
   end match;
 end createEmptyAvlIfNone;
 
@@ -312,8 +311,8 @@ protected function nodeValue "return the node value"
   input AvlTree bt;
   output AvlValue v;
 algorithm
-  v := match (bt)
-    case(FCore.VAVLTREENODE(value=SOME(FCore.VAVLTREEVALUE(_,v)))) then v;
+  v := match bt
+    case FCore.VAVLTREENODE(value=SOME(FCore.VAVLTREEVALUE(_,v))) then v;
   end match;
 end nodeValue;
 
@@ -321,9 +320,9 @@ protected function balance "Balances a AvlTree"
   input AvlTree inBt;
   output AvlTree outBt;
 algorithm
-  outBt := match (inBt)
+  outBt := match inBt
     local Integer d; AvlTree bt;
-    case (bt)
+    case bt
       algorithm
         d := differenceInHeight(bt);
         bt := doBalance(d,bt);
@@ -373,10 +372,10 @@ protected function doBalance3 "help function to doBalance2"
   input AvlTree inBt;
   output AvlTree outBt;
 algorithm
-  outBt := matchcontinue(inBt)
+  outBt := matchcontinue inBt
     local
       AvlTree rr,bt;
-    case(bt)
+    case bt
       algorithm
         true := differenceInHeight(getOption(rightNode(bt))) > 0;
         rr := rotateRight(getOption(rightNode(bt)));
@@ -390,10 +389,10 @@ protected function doBalance4 "help function to doBalance2"
   input AvlTree inBt;
   output AvlTree outBt;
 algorithm
-  outBt := matchcontinue(inBt)
+  outBt := matchcontinue inBt
     local
       AvlTree rl,bt;
-    case (bt)
+    case bt
       algorithm
         true := differenceInHeight(getOption(leftNode(bt))) < 0;
         rl := rotateLeft(getOption(leftNode(bt)));
@@ -408,11 +407,11 @@ protected function setRight "set right treenode"
   input Option<AvlTree> right;
   output AvlTree outNode;
 algorithm
-  outNode := match (node,right)
+  outNode := match node
    local Option<AvlTreeValue> value;
-    Option<AvlTree> l,r;
+    Option<AvlTree> l;
     Integer height;
-    case(FCore.VAVLTREENODE(value,height,l,_),_) then FCore.VAVLTREENODE(value,height,l,right);
+    case FCore.VAVLTREENODE(value,height,l,_) then FCore.VAVLTREENODE(value,height,l,right);
   end match;
 end setRight;
 
@@ -421,11 +420,11 @@ protected function setLeft "set left treenode"
   input Option<AvlTree> left;
   output AvlTree outNode;
 algorithm
-  outNode := match (node,left)
+  outNode := match node
   local Option<AvlTreeValue> value;
-    Option<AvlTree> l,r;
+    Option<AvlTree> r;
     Integer height;
-    case(FCore.VAVLTREENODE(value,height,_,r),_) then FCore.VAVLTREENODE(value,height,left,r);
+    case FCore.VAVLTREENODE(value,height,_,r) then FCore.VAVLTREENODE(value,height,left,r);
   end match;
 end setLeft;
 
@@ -433,8 +432,8 @@ protected function leftNode "Retrieve the left subnode"
   input AvlTree node;
   output Option<AvlTree> subNode;
 algorithm
-  subNode := match(node)
-    case(FCore.VAVLTREENODE(left = subNode)) then subNode;
+  subNode := match node
+    case FCore.VAVLTREENODE(left = subNode) then subNode;
   end match;
 end leftNode;
 
@@ -442,8 +441,8 @@ protected function rightNode "Retrieve the right subnode"
   input AvlTree node;
   output Option<AvlTree> subNode;
 algorithm
-  subNode := match(node)
-    case(FCore.VAVLTREENODE(right = subNode)) then subNode;
+  subNode := match node
+    case FCore.VAVLTREENODE(right = subNode) then subNode;
   end match;
 end rightNode;
 
@@ -493,8 +492,8 @@ protected function getOption "Retrieve the value of an option"
   input Option<T> opt;
   output T val;
 algorithm
-  val := match(opt)
-    case(SOME(val)) then val;
+  val := match opt
+    case SOME(val) then val;
   end match;
 end getOption;
 
@@ -510,11 +509,11 @@ between left and right child"
   input AvlTree node;
   output Integer diff;
 algorithm
-  diff := match (node)
+  diff := match node
     local
       Integer lh,rh;
       Option<AvlTree> l,r;
-    case(FCore.VAVLTREENODE(left=l,right=r))
+    case FCore.VAVLTREENODE(left=l,right=r)
       algorithm
         lh := getHeight(l);
         rh := getHeight(r);
@@ -595,22 +594,20 @@ protected function printAvlTreeStr "
   output String outString;
 algorithm
   outString:=
-  match (inAvlTree)
+  match inAvlTree
     local
-      AvlKey rkey;
       String s2,s3,res;
       AvlValue rval;
       Option<AvlTree> l,r;
-      Integer h;
 
-    case (FCore.VAVLTREENODE(value = SOME(FCore.VAVLTREEVALUE(_,rval)),left = l,right = r))
+    case FCore.VAVLTREENODE(value = SOME(FCore.VAVLTREEVALUE(_,rval)),left = l,right = r)
       algorithm
         s2 := getOptionStr(l, printAvlTreeStr);
         s3 := getOptionStr(r, printAvlTreeStr);
         res := "\n" + valueStr(rval) + ",  " + (if stringEq(s2, "") then "" else (s2 + ", ")) + s3;
       then
         res;
-    case (FCore.VAVLTREENODE(value = NONE(),left = l,right = r))
+    case FCore.VAVLTREENODE(value = NONE(),left = l,right = r)
       algorithm
         s2 := getOptionStr(l, printAvlTreeStr);
         s3 := getOptionStr(r, printAvlTreeStr);
@@ -624,12 +621,12 @@ protected function computeHeight "compute the heigth of the AvlTree and store in
   input AvlTree bt;
   output AvlTree outBt;
 algorithm
-  outBt := match(bt)
+  outBt := match bt
     local
       Option<AvlTree> l,r;
       Option<AvlTreeValue> v;
       Integer hl,hr,height;
-    case(FCore.VAVLTREENODE(value=v as SOME(_),left=l,right=r))
+    case FCore.VAVLTREENODE(value=v as SOME(_),left=l,right=r)
       algorithm
         hl := getHeight(l);
         hr := getHeight(r);
@@ -642,9 +639,9 @@ protected function getHeight "Retrieve the height of a node"
   input Option<AvlTree> bt;
   output Integer height;
 algorithm
-  height := match (bt)
-    case(NONE()) then 0;
-    case(SOME(FCore.VAVLTREENODE(height = height))) then height;
+  height := match bt
+    case NONE() then 0;
+    case SOME(FCore.VAVLTREENODE(height = height)) then height;
   end match;
 end getHeight;
 
@@ -660,15 +657,15 @@ protected function printAvlTreeStrPP2
   input String inIndent;
   output String outString;
 algorithm
-  outString := match(inTree, inIndent)
+  outString := match inTree
     local
       AvlKey rkey;
       Option<AvlTree> l, r;
       String s1, s2, res, indent;
 
-    case (NONE(), _) then "";
+    case NONE() then "";
 
-    case (SOME(FCore.VAVLTREENODE(value = SOME(FCore.VAVLTREEVALUE(key = rkey)), left = l, right = r)), _)
+    case SOME(FCore.VAVLTREENODE(value = SOME(FCore.VAVLTREEVALUE(key = rkey)), left = l, right = r))
       algorithm
         indent := inIndent + "  ";
         s1 := printAvlTreeStrPP2(l, indent);
@@ -677,7 +674,7 @@ algorithm
       then
         res;
 
-    case (SOME(FCore.VAVLTREENODE(value = NONE(), left = l, right = r)), _)
+    case SOME(FCore.VAVLTREENODE(value = NONE(), left = l, right = r))
       algorithm
         indent := inIndent + "  ";
         s1 := printAvlTreeStrPP2(l, indent);
@@ -758,15 +755,15 @@ public function getAvlTreeValues
   input list<AvlTreeValue> acc;
   output list<AvlTreeValue> res;
 algorithm
-  res := match (tree,acc)
+  res := match tree
     local
       Option<AvlTreeValue> value;
       Option<AvlTree> left,right;
       list<Option<AvlTree>> rest;
-    case ({},_) then acc;
-    case (SOME(FCore.VAVLTREENODE(value=value,left=left,right=right))::rest,_)
+    case {} then acc;
+    case SOME(FCore.VAVLTREENODE(value=value,left=left,right=right))::rest
       then getAvlTreeValues(left::right::rest,List.consOption(value,acc));
-    case (NONE()::rest,_) then getAvlTreeValues(rest,acc);
+    case NONE()::rest then getAvlTreeValues(rest,acc);
   end match;
 end getAvlTreeValues;
 
@@ -774,7 +771,7 @@ public function getAvlValue
   input AvlTreeValue inValue;
   output AvlValue res;
 algorithm
-  res := match (inValue)
+  res := match inValue
     case FCore.VAVLTREEVALUE(value = res) then res;
   end match;
 end getAvlValue;

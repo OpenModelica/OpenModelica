@@ -108,7 +108,6 @@ import VerifyModel = NFVerifyModel;
 import SCodeUtil;
 import ElementSource;
 import InstSettings = NFInst.InstSettings;
-import Testsuite;
 import MetaModelica.Dangerous.listReverseInPlace;
 
 constant InstContext.Type ANNOTATION_CONTEXT = intBitOr(NFInstContext.RELAXED, NFInstContext.ANNOTATION);
@@ -147,20 +146,13 @@ function evaluateAnnotation_dispatch
   input Boolean addAnnotationName = false;
   output String outString = "";
 protected
-  InstNode top, cls, inst_cls, anncls, inst_anncls;
-  String name, clsName, annName, str;
-  FlatModel flat_model;
-  FunctionTree funcs;
+  InstNode top, inst_cls, anncls, inst_anncls;
+  String name, annName, str;
   SCode.Program program;
-  AvlTreePathFunction.Tree daeFuncs;
-  Absyn.Path fullClassPath;
   list<Absyn.ElementArg> el = {};
   list<String> stringLst = {};
   Absyn.Exp absynExp;
   Expression exp, save;
-  DAE.Exp dexp;
-  list<Absyn.ComponentItem> items;
-  Option<Absyn.ConstrainClass> cc;
   SourceInfo info;
   list<Absyn.ElementArg> mod, stripped_mod, graphics_mod;
   Absyn.EqMod eqmod;
@@ -218,7 +210,7 @@ algorithm
           smod := AbsynToSCode.translateMod(SOME(Absyn.CLASSMOD(stripped_mod, Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), NONE(), info);
           anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, ANNOTATION_CONTEXT, Absyn.dummyInfo, checkAccessViolations = false);
           inst_anncls := NFInst.expand(anncls, ANNOTATION_CONTEXT);
-          inst_anncls := NFInst.instClass(inst_anncls, Modifier.create(smod, annName, ModifierScope.CLASS(annName), inst_cls), NFAttributes.DEFAULT_ATTR, true, 0, inst_cls, ANNOTATION_CONTEXT);
+          inst_anncls := NFInst.instClass(inst_anncls, Modifier.create(smod, annName, ModifierScope.CLASS(annName), inst_cls, 0), NFAttributes.DEFAULT_ATTR, true, 0, inst_cls, ANNOTATION_CONTEXT);
           // Instantiate expressions (i.e. anything that can contains crefs, like
           // bindings, dimensions, etc). This is done as a separate step after
           // instantiation to make sure that lookup is able to find the correct nodes.
@@ -326,27 +318,12 @@ function evaluateAnnotations_dispatch
   input list<Absyn.Element> inElements;
   output list<String> outStringLst = {};
 protected
-  InstNode top, cls, inst_cls, anncls, inst_anncls;
-  String name, clsName, annName, str;
-  FlatModel flat_model;
-  FunctionTree funcs;
-  SCode.Program program;
-  AvlTreePathFunction.Tree daeFuncs;
-  Absyn.Path fullClassPath;
+  String str;
   list<list<Absyn.ElementArg>> elArgs = {}, el = {};
   list<String> stringLst = {};
-  Absyn.Exp absynExp;
-  Expression exp;
-  DAE.Exp dexp;
   list<Absyn.ComponentItem> items;
   Option<Absyn.ConstrainClass> cc;
-  SourceInfo info;
-  list<Absyn.ElementArg> mod, anns;
-  Absyn.EqMod eqmod;
-  SCode.Mod smod;
-  DAE.DAElist dae;
-  Type ty;
-  Variability var;
+  list<Absyn.ElementArg> anns;
   Option<Absyn.Comment> cmt;
 algorithm
   // handle the annotations
@@ -409,7 +386,7 @@ function mkFullyQual
   input Boolean failOnError = false;
   output Absyn.Path qualPath = pathToQualify;
 protected
-  InstNode top, expanded_cls, cls;
+  InstNode expanded_cls, cls;
   SCode.Program program;
   String name, id1, id2;
   Boolean b, s;
@@ -418,7 +395,7 @@ algorithm
   // do some quick checks
   // classPath is already fully qualified
   // check if the paths start with the same id and the second path is qualified
-  _ := match (classPath, pathToQualify)
+  () := match (classPath, pathToQualify)
     case (Absyn.QUALIFIED(id1, _), Absyn.QUALIFIED(id2, _)) guard id1 == id2
       algorithm
         return;
@@ -530,7 +507,6 @@ function mkTop
 protected
   SCode.Program scode_builtin, graphicProgramSCode;
   Absyn.Program placementProgram;
-  InstNode cls;
   list<tuple<Absyn.Program, tuple<SCode.Program, InstNode>>> cache;
   Boolean update = true;
 algorithm
@@ -614,25 +590,9 @@ function frontEndBack
   input Boolean scalarize = true;
   output DAE.DAElist dae;
 protected
-  InstNode top;
-  String clsName, annName, str;
   FlatModel flat_model;
   FunctionTree funcs;
-  SCode.Program scode_builtin, program, graphicProgramSCode;
-  SCode.Element scls, sAnnCls;
-  Absyn.Program placementProgram;
   AvlTreePathFunction.Tree daeFuncs;
-  Absyn.Path fullClassPath;
-  list<list<Absyn.ElementArg>> elArgs, el = {};
-  list<String> stringLst = {};
-  Absyn.Exp absynExp;
-  Expression exp;
-  DAE.Exp dexp;
-  list<Absyn.ComponentItem> items;
-  Option<Absyn.ConstrainClass> cc;
-  SourceInfo info;
-  list<Absyn.ElementArg> mod;
-  SCode.Mod smod;
 algorithm
   // Type the class.
   Typing.typeClass(inst_cls, NFInstContext.RELAXED);
@@ -719,11 +679,7 @@ function frontEndLookup_dispatch
   output String name;
   output InstNode expanded_cls;
 protected
-  SCode.Program scode_builtin, graphicProgramSCode;
-  Absyn.Program placementProgram;
   InstNode top, cls;
-  list<tuple<Absyn.Program, tuple<SCode.Program, InstNode>>> cache;
-  Boolean update = true;
 algorithm
   name := AbsynUtil.pathString(classPath);
 
@@ -851,48 +807,10 @@ function getModelInstance
   input Boolean prettyPrint;
   output Values.Value res;
 protected
-  InstNode top, cls_node;
   JSON json;
-  InstContext.Type context;
-  InstanceTree inst_tree;
-  InstSettings inst_settings;
-  String str;
-  Modifier mod;
 algorithm
   try
-    context := InstContext.set(NFInstContext.RELAXED, NFInstContext.CLASS);
-    context := InstContext.set(context, NFInstContext.INSTANCE_API);
-    inst_settings := InstSettings.SETTINGS(mergeExtendsSections = false, resizableArrays = false);
-
-    (_, top) := mkTop(SymbolTable.getAbsyn(), AbsynUtil.pathString(classPath));
-    mod := parseModifier(modifier, top);
-    cls_node := Inst.lookupRootClass(classPath, top, context);
-
-    if SCodeUtil.isFunction(InstNode.definition(cls_node)) then
-      context := InstContext.unset(context, NFInstContext.CLASS);
-      context := InstContext.set(context, NFInstContext.FUNCTION);
-    end if;
-
-    if AbsynUtil.pathFirstIdent(contextPath) <> "__NoContext" then
-      cls_node := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE(), SOME(contextPath)), cls_node);
-    end if;
-
-    cls_node := Inst.instantiateRootClass(cls_node, context, mod);
-    execStat("Inst.instantiateRootClass");
-    inst_tree := buildInstanceTree(cls_node);
-    execStat("NFApi.buildInstanceTree");
-    Inst.instExpressions(cls_node, context = context, settings = inst_settings);
-    Inst.updateImplicitVariability(cls_node, Flags.isSet(Flags.EVAL_PARAM), context);
-    execStat("Inst.instExpressions");
-
-    Typing.typeClassType(cls_node, NFBinding.EMPTY_BINDING, context, cls_node);
-    Typing.typeComponents(cls_node, context);
-    execStat("Typing.typeComponents");
-    Typing.typeBindings(cls_node, context);
-    execStat("Typing.typeBinding");
-
-    json := dumpJSONInstanceTree(inst_tree, cls_node);
-    execStat("NFApi.dumpJSONInstanceTree");
+    json := buildModelInstanceJSON(classPath, contextPath, modifier);
     res := Values.STRING(JSON.toString(json, prettyPrint));
     execStat("JSON.toString");
     Inst.clearCaches();
@@ -902,25 +820,45 @@ algorithm
   end try;
 end getModelInstance;
 
+function getModelInstanceReference
+  "Like getModelInstance, but instead of serializing the model instance to a
+   JSON string it stores the (boxed) JSON structure in memory and returns an
+   integer handle to it (see issue #15219). OMEdit, which links the compiler
+   in-process, can then read the structure directly via the C function
+   ModelInstanceReference_get, avoiding both JSON string generation here and
+   JSON string parsing in OMEdit. The handle must be freed with
+   releaseModelInstanceReference. A handle of 0 indicates failure."
+  input Absyn.Path classPath;
+  input Absyn.Path contextPath;
+  input String modifier;
+  output Values.Value res;
+protected
+  JSON json;
+  Integer handle;
+algorithm
+  try
+    json := buildModelInstanceJSON(classPath, contextPath, modifier);
+    json := JSON.toListForm(json);
+    execStat("NFApi.toListForm");
+    handle := storeModelInstanceReference(json);
+    res := Values.INTEGER(handle);
+    Inst.clearCaches();
+  else
+    Inst.clearCaches();
+    fail();
+  end try;
+end getModelInstanceReference;
+
 function getModelInstanceAnnotation
   input Absyn.Path classPath;
   input list<String> filter;
   input Boolean prettyPrint;
   output Values.Value res;
 protected
-  InstNode top, cls_node;
-  InstContext.Type context;
   JSON json;
 algorithm
   try
-    context := InstContext.set(NFInstContext.RELAXED, NFInstContext.CLASS);
-    context := InstContext.set(context, NFInstContext.INSTANCE_API);
-
-    (_, top) := mkTop(SymbolTable.getAbsyn(), AbsynUtil.pathString(classPath));
-    cls_node := Inst.lookupRootClass(classPath, top, context);
-    cls_node := InstNode.resolveInner(cls_node);
-
-    json := dumpJSONInstanceAnnotation(cls_node, filter);
+    json := buildModelInstanceAnnotationJSON(classPath, filter);
     res := Values.STRING(JSON.toString(json, prettyPrint));
     Inst.clearCaches();
   else
@@ -928,6 +866,121 @@ algorithm
     fail();
   end try;
 end getModelInstanceAnnotation;
+
+function getModelInstanceAnnotationReference
+  "Like getModelInstanceAnnotation, but returns an integer handle to an
+   in-memory JSON structure instead of a JSON string (see
+   getModelInstanceReference and issue #15219)."
+  input Absyn.Path classPath;
+  input list<String> filter;
+  output Values.Value res;
+protected
+  JSON json;
+  Integer handle;
+algorithm
+  try
+    json := buildModelInstanceAnnotationJSON(classPath, filter);
+    json := JSON.toListForm(json);
+    handle := storeModelInstanceReference(json);
+    res := Values.INTEGER(handle);
+    Inst.clearCaches();
+  else
+    Inst.clearCaches();
+    fail();
+  end try;
+end getModelInstanceAnnotationReference;
+
+function releaseModelInstanceReference
+  "Releases a handle previously returned by getModelInstanceReference or
+   getModelInstanceAnnotationReference. Returns true on success."
+  input Integer handle;
+  output Values.Value res;
+algorithm
+  res := Values.BOOL(releaseModelInstanceReferenceImpl(handle));
+end releaseModelInstanceReference;
+
+function buildModelInstanceJSON
+  "Instantiates the given model and builds the JSON structure describing the
+   model instance. Shared by getModelInstance and getModelInstanceReference."
+  input Absyn.Path classPath;
+  input Absyn.Path contextPath;
+  input String modifier;
+  output JSON json;
+protected
+  InstNode top, cls_node;
+  InstContext.Type context;
+  InstanceTree inst_tree;
+  InstSettings inst_settings;
+  Modifier mod;
+algorithm
+  context := InstContext.set(NFInstContext.RELAXED, NFInstContext.CLASS);
+  context := InstContext.set(context, NFInstContext.INSTANCE_API);
+  inst_settings := InstSettings.SETTINGS(mergeExtendsSections = false, resizableArrays = false);
+
+  (_, top) := mkTop(SymbolTable.getAbsyn(), AbsynUtil.pathString(classPath));
+  mod := parseModifier(modifier, top);
+  cls_node := Inst.lookupRootClass(classPath, top, context);
+
+  if SCodeUtil.isFunction(InstNode.definition(cls_node)) then
+    context := InstContext.unset(context, NFInstContext.CLASS);
+    context := InstContext.set(context, NFInstContext.FUNCTION);
+  end if;
+
+  if AbsynUtil.pathFirstIdent(contextPath) <> "__NoContext" then
+    cls_node := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE(), SOME(contextPath)), cls_node);
+  end if;
+
+  cls_node := Inst.instantiateRootClass(cls_node, context, mod);
+  execStat("Inst.instantiateRootClass");
+  inst_tree := buildInstanceTree(cls_node);
+  execStat("NFApi.buildInstanceTree");
+  Inst.instExpressions(cls_node, context = context, settings = inst_settings);
+  Inst.updateImplicitVariability(cls_node, Flags.isSet(Flags.EVAL_PARAM), context);
+  execStat("Inst.instExpressions");
+
+  Typing.typeClassType(cls_node, NFBinding.EMPTY_BINDING, context, cls_node);
+  Typing.typeComponents(cls_node, context);
+  execStat("Typing.typeComponents");
+  Typing.typeBindings(cls_node, context);
+  execStat("Typing.typeBinding");
+
+  json := dumpJSONInstanceTree(inst_tree, cls_node);
+  execStat("NFApi.dumpJSONInstanceTree");
+end buildModelInstanceJSON;
+
+function buildModelInstanceAnnotationJSON
+  "Instantiates the given model and builds the JSON structure describing its
+   annotation. Shared by getModelInstanceAnnotation and
+   getModelInstanceAnnotationReference."
+  input Absyn.Path classPath;
+  input list<String> filter;
+  output JSON json;
+protected
+  InstNode top, cls_node;
+  InstContext.Type context;
+algorithm
+  context := InstContext.set(NFInstContext.RELAXED, NFInstContext.CLASS);
+  context := InstContext.set(context, NFInstContext.INSTANCE_API);
+
+  (_, top) := mkTop(SymbolTable.getAbsyn(), AbsynUtil.pathString(classPath));
+  cls_node := Inst.lookupRootClass(classPath, top, context);
+  cls_node := InstNode.resolveInner(cls_node);
+
+  json := dumpJSONInstanceAnnotation(cls_node, filter);
+end buildModelInstanceAnnotationJSON;
+
+function storeModelInstanceReference
+  "Stores a boxed JSON value and returns a 1-based handle (0 on failure)."
+  input JSON json;
+  output Integer handle;
+  external "C" handle = ModelInstanceReference_store(json) annotation(Library = "omcruntime");
+end storeModelInstanceReference;
+
+function releaseModelInstanceReferenceImpl
+  input Integer handle;
+  output Boolean success;
+  external "C" success = ModelInstanceReference_release(handle) annotation(Library = "omcruntime");
+end releaseModelInstanceReferenceImpl;
 
 function parseModifier
   input String modifierValue;
@@ -949,7 +1002,7 @@ algorithm
     // instantiation will fail later).
     smod := AbsynToSCode.translateMod(SOME(amod),
       SCode.Final.NOT_FINAL(), SCode.Each.NOT_EACH(), NONE(), Absyn.dummyInfo);
-    outMod := Modifier.create(smod, "", NFModifier.ModifierScope.COMPONENT(""), scope);
+    outMod := Modifier.create(smod, "", NFModifier.ModifierScope.COMPONENT(""), scope, 0);
   else
     outMod := Modifier.NOMOD();
   end try;
@@ -1014,7 +1067,6 @@ protected
   Integer cls_index = 1, comp_index = 1, ext_index = 1;
   InstanceTree tree;
   list<Integer> local_comps;
-  Mutable<InstNode> node_ptr;
   InstNode node;
 algorithm
   ClassTree.INSTANTIATED_TREE(classes = clss, components = comps, exts = exts,
@@ -1083,7 +1135,6 @@ function buildInstanceTreeGeneratedInners
   output list<InstanceTree> outElements;
 protected
   array<Mutable<InstNode>> comps;
-  InstNode comp;
   list<InstanceTree> elems = {};
 algorithm
   ClassTree.INSTANTIATED_TREE(components = comps) := classTree;
@@ -1143,7 +1194,6 @@ protected
   list<InstanceTree> elems;
   Sections sections;
   Option<SCode.Comment> cmt;
-  JSON j;
   SCode.Element def;
 algorithm
   InstanceTree.CLASS(node = node, elements = elems) := tree;
@@ -1169,7 +1219,7 @@ algorithm
     json := dumpJSONEquations(sections, node, json);
   end if;
 
-  json := JSON.addPair("source", dumpJSONSourceInfo(InstNode.info(node)), json);
+  json := JSON.addPair("source", JSON.dumpJSONSourceInfo(InstNode.info(node)), json);
 end dumpJSONInstanceTree;
 
 function dumpJSONInstanceAnnotation
@@ -1307,7 +1357,6 @@ protected
   InstNode node;
   Class cls;
   SCode.Element cls_def, ext_def;
-  SCode.Mod mod;
 algorithm
   InstanceTree.CLASS(node = node) := ext;
   cls_def := InstNode.definition(node);
@@ -1351,16 +1400,12 @@ function dumpJSONReplaceableClass
   output JSON json = JSON.makeNull();
 protected
   SCode.Element elem;
-  SCode.ClassDef cdef;
-  InstNode node, derivedNode;
-  Absyn.Path path;
-  Option<list<Absyn.Subscript>> odims;
-  SCode.Comment cmt;
+  InstNode node;
 algorithm
   node := InstNode.getRedeclaredNode(cls);
   elem := InstNode.definition(node);
   json := dumpJSONSCodeClass(elem, scope, node, true, json);
-  json := JSON.addPair("source", dumpJSONSourceInfo(InstNode.info(node)), json);
+  json := JSON.addPair("source", JSON.dumpJSONSourceInfo(InstNode.info(node)), json);
 end dumpJSONReplaceableClass;
 
 function dumpJSONComponent
@@ -1373,9 +1418,6 @@ protected
   Component comp;
   SCode.Element elem;
   Boolean is_constant;
-  SCode.Comment cmt;
-  SCode.Annotation ann;
-  JSON j;
   Absyn.Path path;
 algorithm
   node := InstNode.resolveOuter(component);
@@ -1505,7 +1547,7 @@ protected
   InstNode node = InstNode.resolveInner(InstNode.classScope(enumNode));
   SCode.Element def;
   array<InstNode> comps;
-  JSON json_elems, json_ext;
+  JSON json_elems;
   list<InstanceTree> elems;
 algorithm
   def := InstNode.definition(node);
@@ -1524,7 +1566,7 @@ algorithm
   json_elems := dumpJSONEnumTypeLiterals(comps, InstNode.parent(node), json_elems);
   json := JSON.addPair("elements", json_elems, json);
 
-  json := JSON.addPair("source", dumpJSONSourceInfo(InstNode.info(node)), json);
+  json := JSON.addPair("source", JSON.dumpJSONSourceInfo(InstNode.info(node)), json);
 end dumpJSONEnumType;
 
 function dumpJSONEnumTypeLiterals
@@ -1621,7 +1663,7 @@ function dumpJSONDims
   input list<Dimension> typedDims;
   output JSON json = JSON.makeNull();
 protected
-  JSON ty_json, absyn_json;
+  JSON ty_json;
 algorithm
   json := JSON.addPairNotNull("absyn", dumpJSONAbsynDims(absynDims), json);
 
@@ -1703,11 +1745,10 @@ function dumpJSONClassPrefixes
   input InstNode scope;
   output JSON json;
 protected
-  SCode.Prefixes prefs;
   SCode.ClassDef cdef;
 algorithm
   json := match element
-    case SCode.CLASS(classDef = cdef, prefixes = prefs)
+    case SCode.CLASS(classDef = cdef, prefixes = _)
       algorithm
         json := match cdef
           case SCode.ClassDef.DERIVED() then dumpJSONAttributes(cdef.attributes, element.prefixes, scope);
@@ -1848,7 +1889,6 @@ protected
   String name;
   SCode.Mod mod;
   Absyn.Exp absyn_binding;
-  Expression binding_exp;
   JSON j;
 algorithm
   SCode.SubMod.NAMEMOD(ident = name, mod = mod) := subMod;
@@ -1944,24 +1984,7 @@ algorithm
   ErrorExt.delCheckpoint(getInstanceName());
 end dumpJSONAnnotationExp2;
 
-function dumpJSONSourceInfo
-  input SourceInfo info;
-  input Boolean dumpFilename = true;
-  output JSON json = JSON.makeNull();
-algorithm
-  if dumpFilename then
-    json := JSON.addPair("filename", JSON.makeString(Testsuite.friendly(info.fileName)), json);
-  end if;
 
-  json := JSON.addPair("lineStart", JSON.makeInteger(info.lineNumberStart), json);
-  json := JSON.addPair("columnStart", JSON.makeInteger(info.columnNumberStart), json);
-  json := JSON.addPair("lineEnd", JSON.makeInteger(info.lineNumberEnd), json);
-  json := JSON.addPair("columnEnd", JSON.makeInteger(info.columnNumberEnd), json);
-
-  if info.isReadOnly then
-    json := JSON.addPair("readonly", JSON.makeBoolean(true), json);
-  end if;
-end dumpJSONSourceInfo;
 
 function dumpJSONAbsynExpression
   input Absyn.Exp exp;
@@ -2394,8 +2417,6 @@ function dumpJSONSCodeClass
   input InstNode scope;
   input Boolean isRedeclare;
   input output JSON json = JSON.makeNull();
-protected
-  Option<list<Absyn.Subscript>> odims;
 algorithm
   () := match element
     case SCode.CLASS()
@@ -2510,7 +2531,6 @@ function dumpJSONChoicesAnnotation
 protected
   SCode.SubMod smod;
   list<SCode.SubMod> choices, others;
-  SCode.Mod choices_mod;
   JSON j;
 algorithm
   choices := list(m for m guard m.ident == "choice" in mods);
@@ -2567,7 +2587,6 @@ function updateMovedClassPaths
   input Absyn.Path clsPath "The fully qualified path of the class";
   input Absyn.Within destination "The destination package (or top scope)";
 protected
-  InstContext.Type context;
   InstNode top, cls_node;
   MoveEnv env;
   Absyn.Path dest_path;
@@ -3105,5 +3124,5 @@ algorithm
   FlagsUtil.set(Flags.DISABLE_SINGLE_FLOW_EQ, disable_single_flow_eq);
 end translateResidualsDAE;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="backend_main");
 end NFApi;

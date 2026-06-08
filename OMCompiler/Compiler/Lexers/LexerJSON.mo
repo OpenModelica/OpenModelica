@@ -68,75 +68,73 @@ function action
   output Integer bufferRet;
   output list<Token> errorTokens=inErrorTokens;
 protected
-  SourceInfo info;
-  String sToken;
 algorithm
   mm_startSt := startSt;
   // nameSpan := 255;
   bufferRet := 0;
-  (token) := match (act)
+  token := match act
     local
       Token tok;
-    case (1) // #line 25 "lexerJSON.l"
+    case 1 // #line 25 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.STRING,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (2) // #line 26 "lexerJSON.l"
+    case 2 // #line 26 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.STRING,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (3) // #line 27 "lexerJSON.l"
+    case 3 // #line 27 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.NUMBER,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (4) // #line 28 "lexerJSON.l"
+    case 4 // #line 28 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.NUMBER,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (5) // #line 29 "lexerJSON.l"
+    case 5 // #line 29 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.INTEGER,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (6) // #line 30 "lexerJSON.l"
+    case 6 // #line 30 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.TRUE,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (7) // #line 31 "lexerJSON.l"
+    case 7 // #line 31 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.FALSE,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (8) // #line 32 "lexerJSON.l"
+    case 8 // #line 32 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.NULL,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (9) // #line 33 "lexerJSON.l"
+    case 9 // #line 33 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.OBJECTBEGIN,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (10) // #line 34 "lexerJSON.l"
+    case 10 // #line 34 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.OBJECTEND,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (11) // #line 36 "lexerJSON.l"
+    case 11 // #line 36 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.ARRAYBEGIN,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (12) // #line 38 "lexerJSON.l"
+    case 12 // #line 38 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.ARRAYEND,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (13) // #line 40 "lexerJSON.l"
+    case 13 // #line 40 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.COMMA,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (14) // #line 41 "lexerJSON.l"
+    case 14 // #line 41 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.COLON,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (15) // #line 43 "lexerJSON.l"
+    case 15 // #line 43 "lexerJSON.l"
       algorithm
       then noToken;
-    case (16) // #line 45 "lexerJSON.l"
+    case 16 // #line 45 "lexerJSON.l"
       algorithm
         tok := TOKEN(fileNm,TokenId._NO_TOKEN,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
         errorTokens := tok :: errorTokens;
@@ -235,11 +233,8 @@ function lex "Scan starts the lexical analysis, load the tables and consume the 
   output list<Token> tokens "return list of tokens";
   output list<Token> errorTokens={};
 protected
-  Integer startSt,i,r,cTok,cTok2,currSt,pos,sPos,ePos,linenr,contentLen,numBacktrack,buffer,lineNrStart;
-  list<Integer> cProg,cProg2;
-  list<String> chars;
+  Integer startSt,i,cTok,currSt,pos,sPos,ePos,linenr,contentLen,numBacktrack,buffer,lineNrStart;
   list<Integer> states;
-  String s1,s2;
   import MetaModelica.Dangerous.listReverseInPlace;
   import stringGet = MetaModelica.Dangerous.stringGetNoBoundsChecking;
 algorithm
@@ -415,7 +410,6 @@ function findRule
   output Integer bkBuffer;
   output list<Integer> states;
 protected
-  array<Integer> mm_accept,mm_ec,mm_meta,mm_base,mm_def,mm_nxt,mm_chk,mm_acclist;
   Integer lp,lp1,stCmp,cp;
   Boolean st;
   import arrayGet = MetaModelica.Dangerous.arrayGetNoBoundsChecking; // Bounds checked with debug=true

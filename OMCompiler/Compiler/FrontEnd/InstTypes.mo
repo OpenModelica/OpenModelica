@@ -84,12 +84,12 @@ public function callingScopeStr
   input CallingScope inCallingScope;
   output String str;
 algorithm
-  str := match(inCallingScope)
-    case (TOP_CALL()) then "topCall";
-    case (INNER_CALL()) then "innerCall";
-    case (TYPE_CALL()) then "typeCall";
+  str := match inCallingScope
+    case TOP_CALL() then "topCall";
+    case INNER_CALL() then "innerCall";
+    case TYPE_CALL() then "typeCall";
   end match;
 end callingScopeStr;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_inst");
 end InstTypes;

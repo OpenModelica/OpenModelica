@@ -67,12 +67,19 @@ namespace IAEX
 
     QString text();
     QString textHtml();            // Added 2005-10-27 AF
+    QTextDocument* document() override;
     virtual QString textOutput();      // Added 2005-11-23 AF
     virtual QString textOutputHtml();    // Added 2005-11-23 AF
     virtual QTextCursor textCursor();    // Added 2005-10-27 AF
-    virtual QTextEdit* textEdit();      // Added 2006-01-05 AF
     virtual QTextEdit* textEditOutput();  // Added 2006-02-03 AF
     virtual void viewExpression(const bool){}
+    void cutText() override;
+    void copyText() override;
+    void pasteText() override;
+    bool findText(const QString &exp, QTextDocument::FindFlags options) override;
+
+    void clearSelection() override;
+    void moveCursor(QTextCursor::MoveOperation operation) override;
 
     virtual void addCellWidgets();
     virtual void removeCellWidgets();

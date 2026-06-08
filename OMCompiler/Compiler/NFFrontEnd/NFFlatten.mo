@@ -331,7 +331,6 @@ protected
   list<Equation> eql, ieql;
   list<Algorithm> alg, ialg;
   DAE.ElementSource src;
-  Option<SCode.Comment> cmt;
   FlattenSettings settings;
   DeletedVariables deleted_vars;
   Prefix prefix;
@@ -672,7 +671,6 @@ protected
   SCode.Comment cmt;
   SourceInfo info;
   Attributes comp_attr;
-  Visibility vis;
   Equation eq;
   list<tuple<String, Binding>> ty_attrs;
   Variability var;
@@ -886,10 +884,12 @@ protected
   Expression binding_exp;
   Variability var;
   Binding.Source bind_src;
+  Integer confidence;
 algorithm
   binding_exp := Binding.getTypedExp(binding);
   var := Binding.variability(binding);
   bind_src := NFBinding.Source.GENERATED;
+  confidence := Binding.confidence(binding);
 
   // Convert the expressions in the record expression into bindings.
   recordBindings := match binding_exp
@@ -899,12 +899,12 @@ algorithm
                // from an evaluated function call where it wasn't assigned a value.
                NFBinding.EMPTY_BINDING
              else
-               Binding.makeFlat(e, var, bind_src)
+               Binding.makeFlat(e, var, bind_src, confidence)
            for e in binding_exp.elements);
 
     case Expression.ARRAY()
       guard Type.isRecord(Type.arrayElementType(Expression.typeOf(binding_exp)))
-      then list(Binding.makeFlat(Expression.nthRecordElement(i, binding_exp), var, bind_src)
+      then list(Binding.makeFlat(Expression.nthRecordElement(i, binding_exp), var, bind_src, confidence)
                   for i in 1:arrayLength(comps));
 
     else
@@ -1136,7 +1136,6 @@ protected
   Sections sects;
   list<Equation> eq, ieq;
   list<Algorithm> alg, ialg;
-  ComponentRef indexed_prefix;
 algorithm
   // Skip the array if any dimension is zero.
   if List.any(dimensions, Dimension.isZero) then
@@ -1201,6 +1200,7 @@ protected
   Type binding_ty;
   list<tuple<InstNode, Expression>> iters;
   ComponentRef prefix_cr;
+  Integer confidence;
 algorithm
   if not Binding.isBound(binding) then
     return;
@@ -1223,7 +1223,7 @@ algorithm
     case Expression.SUBSCRIPTED_EXP()
       guard Subscript.isEqualList(exp.subscripts, subs)
       algorithm
-        binding := Binding.makeFlat(exp.exp, Binding.variability(binding), Binding.source(binding));
+        binding := Binding.makeFlat(exp.exp, Binding.variability(binding), Binding.source(binding), Binding.confidence(binding));
         return;
       then
         ();
@@ -1251,7 +1251,7 @@ algorithm
     exp := Expression.CALL(array_call);
   end if;
 
-  binding := Binding.makeFlat(exp, Binding.variability(binding), Binding.source(binding));
+  binding := Binding.makeFlat(exp, Binding.variability(binding), Binding.source(binding), Binding.confidence(binding));
 end vectorizeBinding;
 
 function fillVectorizedBinding
@@ -1261,7 +1261,6 @@ protected
   Expression bind_exp;
   Type bind_ty;
   Integer dim_diff;
-  list<Dimension> dims;
   list<Expression> dim_expl;
 algorithm
   () := match binding
@@ -1435,7 +1434,6 @@ public function makeIterators
   output list<Expression> ranges = {};
   output list<Subscript> subscripts = {};
 protected
-  Component iter_comp;
   InstNode prefix_node, iter;
   Expression range;
   Subscript sub;
@@ -1568,11 +1566,6 @@ public function flattenBinding
   input Prefix prefix;
   input Boolean isTypeAttribute = false;
 protected
-  list<Subscript> subs, accum_subs;
-  Integer binding_level;
-  Expression bind_exp;
-  list<InstNode> pars;
-  InstNode par;
   SourceInfo info;
 algorithm
   binding := match binding
@@ -1689,8 +1682,6 @@ function flattenCref
   input output ComponentRef cref;
   input Prefix prefix;
   input SourceInfo info;
-protected
-  Type ty, ty2;
 algorithm
   cref := Prefix.apply(prefix, cref);
 
@@ -2164,8 +2155,7 @@ function splitForLoop2
   output list<Equation> connects = {};
   output list<Equation> nonConnects = {};
 protected
-  list<Equation> conns, nconns, eql;
-  Expression cond;
+  list<Equation> conns, nconns;
 algorithm
   for eq in forBody loop
     () := match eq
@@ -2241,6 +2231,7 @@ algorithm
           range_iter := RangeIterator.fromExp(range);
         else
           Error.addSourceMessage(Error.UNROLL_FAILURE, {Statement.toString(stmt)}, info);
+          fail();
         end try;
 
         has_for := Statement.containsList(stmt.body, Statement.isFor);

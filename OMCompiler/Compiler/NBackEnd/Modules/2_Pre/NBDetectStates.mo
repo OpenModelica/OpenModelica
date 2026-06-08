@@ -290,7 +290,6 @@ protected
         Expression arg, returnExp;
         Pointer<Equation> aux_equation;
         Differentiate.DifferentiationArguments oDiffArgs;
-        Integer idx;
 
       case Expression.CALL(call = Call.TYPED_CALL(fn = Function.FUNCTION(path = Absyn.IDENT(name = "der")), arguments = {arg}))
         algorithm
@@ -404,7 +403,7 @@ protected
       case Expression.CALL(call = Call.TYPED_CALL(fn = Function.FUNCTION(path = Absyn.IDENT(name = "previous")), arguments = args))
       algorithm
         (new_exp, old_exp) := preFromArgs(args, acc_previous, scalarized, "previous");
-        _ := match old_exp
+        () := match old_exp
           case Expression.CREF() algorithm
             Pointer.update(acc_clocked_states, BVariable.getVarPointer(old_exp.cref, sourceInfo()) :: Pointer.access(acc_clocked_states));
           then ();
@@ -450,7 +449,7 @@ protected
     output Expression old_exp;
   protected
     ComponentRef state_cref, pre_cref;
-    Pointer<Variable> state_var, pre_var;
+    Pointer<Variable> state_var;
     Boolean negated;
   algorithm
     (state_var, old_exp, negated) := match args
@@ -548,7 +547,7 @@ protected
     for body_stmt in body.when_stmts loop
       () := match body_stmt
         local
-          ComponentRef state_cref, pre_cref;
+          ComponentRef state_cref;
           Pointer<Variable> state_var;
 
         case WhenStatement.ASSIGN(lhs = Expression.CREF(cref = state_cref)) algorithm
@@ -574,7 +573,7 @@ protected
     for eqn in body.then_eqns loop
       collectDiscreteStatesFromWhen(Pointer.access(eqn), acc_discrete_states, acc_previous, scalarized);
     end for;
-    if Util.isSome(body.else_if) then
+    if isSome(body.else_if) then
       collectDiscreteStatesFromWhenInIf(Util.getOption(body.else_if),  acc_discrete_states, acc_previous, scalarized);
     end if;
   end collectDiscreteStatesFromWhenInIf;
@@ -589,7 +588,7 @@ protected
     Option<Pointer<Variable>> pre = BVariable.getVarPre(var_ptr);
     Pointer<Variable> pre_var;
   algorithm
-    if Util.isSome(pre) then
+    if isSome(pre) then
       SOME(pre_var) := pre;
       pre_cref := BVariable.getVarName(pre_var);
       pre_cref := ComponentRef.copySubscripts(var_cref, pre_cref);
@@ -614,12 +613,12 @@ protected
     for body_stmt in body.when_stmts loop
       () := match body_stmt
         local
-          ComponentRef state_cref, pre_cref;
+          ComponentRef state_cref;
           Pointer<Variable> state_var, pre_var;
 
         case WhenStatement.ASSIGN(lhs = Expression.CREF(cref = state_cref)) algorithm
           state_var := BVariable.getVarPointer(state_cref, sourceInfo());
-          _ := match BVariable.getVarPre(state_var)
+          () := match BVariable.getVarPre(state_var)
             case SOME(pre_var) algorithm
               Pointer.update(acc_previous, pre_var :: Pointer.access(acc_previous));
             then ();
@@ -638,7 +637,7 @@ protected
   protected
     Expression lhs, rhs;
   algorithm
-    _ := match eqn
+    () := match eqn
       case Equation.SCALAR_EQUATION(lhs = lhs as Expression.CREF(), rhs = rhs as Expression.CREF()) algorithm
         updateStateOrder(lhs.cref, rhs.cref, state_order);
       then ();
@@ -664,9 +663,8 @@ protected
     input UnorderedMap<ComponentRef, ComponentRef> state_order;
   protected
     Pointer<Variable> state;
-    VariableKind lhs_k, rhs_k;
   algorithm
-    _ := match (BVariable.getVarKind(BVariable.getVarPointer(lhs, sourceInfo())), BVariable.getVarKind(BVariable.getVarPointer(rhs, sourceInfo())))
+    () := match (BVariable.getVarKind(BVariable.getVarPointer(lhs, sourceInfo())), BVariable.getVarKind(BVariable.getVarPointer(rhs, sourceInfo())))
       // a = der(b)
       case (_, VariableKind.STATE_DER(state = state)) algorithm
         UnorderedMap.add(BVariable.getVarName(state), ComponentRef.stripSubscriptsAll(lhs), state_order);
@@ -679,7 +677,7 @@ protected
     end match;
   end updateStateOrder;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBDetectStates;
 
 

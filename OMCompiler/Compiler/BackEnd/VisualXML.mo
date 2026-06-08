@@ -46,13 +46,16 @@ encapsulated package VisualXML
 protected
 
 import Absyn;
+import Error;
+import ExpressionBasics;
+import ProgramUtil;
 import AbsynUtil;
 import BackendDAE;
 import BackendDAEUtil;
 import BackendEquation;
 import BackendVariable;
-import CevalScript;
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import DAE;
 import DAEUtil;
 import ElementSource;
@@ -202,7 +205,6 @@ function getConstCrefBinding
   input BackendDAE.Variables vars;
   output DAE.Exp eOut;
 protected
-  String s;
   DAE.Exp e;
   BackendDAE.Var var;
 algorithm
@@ -282,7 +284,7 @@ function setBindingForProtectedVars1
 algorithm
   (varOut, tplOut) := matchcontinue (varIn, tplIn)
     local
-      Integer idx, eqIdx;
+      Integer idx;
       array<Integer> ass1;
       BackendDAE.EquationArray eqs;
       BackendDAE.Equation eq;
@@ -322,10 +324,8 @@ function fillVisualizationObjects
   output Absyn.Program programOut = programIn;
 protected
   DAE.ComponentRef cref;
-  String name, vis_name;
-  list<String> nameChars,prefix;
+  String vis_name;
   Visualization vis;
-  list<BackendDAE.Var> allVars;
 algorithm
   try
     //nameChars := stringListStringChar(nameIn);
@@ -468,9 +468,8 @@ function fillVisualizationObjects1
 algorithm
    tplOut := matchcontinue(varIn, tplIn)
     local
-      String compIdent;
       list<BackendDAE.Var> vars;
-      DAE.ComponentRef cref,crefIdent,cref1,ident;
+      DAE.ComponentRef cref,cref1,ident;
       Visualization vis, filled_vis;
 
     case (BackendDAE.VAR(varName=cref), (vars, vis as SHAPE(ident=ident)))
@@ -516,12 +515,11 @@ function getFullCADFilePath
   input Absyn.Program program;
   output String sOut = sIn;
 protected
-  String head,packName,file, path;
-  list<String> hierarchy, chars;
+  list<String> chars;
 algorithm
   chars := stringListStringChar(sIn);
   if listLength(chars) > 11 and stringEqual(stringDelimitList(List.firstN(chars,11),""),"modelica://") then
-    sOut := "file://"+CevalScript.getFullPathFromUri(program,sIn,true);
+    sOut := "file://"+ProgramUtil.getFullPathFromUri(program,sIn,true);
   end if;
 end getFullCADFilePath;
 
@@ -640,7 +638,6 @@ function fillVectorObject
 algorithm
   () := matchcontinue (cref, vis)
     local
-      Option<DAE.Exp> bind;
       DAE.Exp exp;
       Integer pos, pos1;
       list<DAE.Exp> T0;
@@ -714,7 +711,6 @@ function fillSurfaceObject
 algorithm
   () := matchcontinue (cref, vis)
     local
-      Option<DAE.Exp> bind;
       DAE.Exp exp;
       Integer pos, pos1;
       list<DAE.Exp> T0;
@@ -814,13 +810,13 @@ function printVisualization
   input Visualization vis;
   output String s;
 algorithm
-  s := match(vis)
+  s := match vis
     local
       DAE.ComponentRef ident;
       DAE.Exp length, width, height, extra, shapeType;
       array<DAE.Exp> color, r, widthDir, lengthDir;
       array<list<DAE.Exp>> T;
-  case(SHAPE(ident=ident, shapeType=shapeType, color=color, r=r, lengthDir=lengthDir, widthDir=widthDir, T=T, length=length, width=width, height=height, extra=extra))
+  case SHAPE(ident=ident, shapeType=shapeType, color=color, r=r, lengthDir=lengthDir, widthDir=widthDir, T=T, length=length, width=width, height=height, extra=extra)
   then ("SHAPE "+ComponentReferenceBasics.printComponentRefStr(ident)+" '"+ExpressionBasics.printExpStr(shapeType) + "'\n r{"+stringDelimitList(list(ExpressionDump.dumpExpStr(e, 0) for e in r),",")+"}" +
         "\nlD{"+stringDelimitList(List.mapArray(lengthDir, ExpressionBasics.printExpStr),",")+"}"+" wD{"+stringDelimitList(List.mapArray(widthDir, ExpressionBasics.printExpStr),",")+"}"+
         "\ncolor("+stringDelimitList(List.mapArray(color, ExpressionBasics.printExpStr),",")+")"+" w: "+ExpressionBasics.printExpStr(width)+" h: "+ExpressionBasics.printExpStr(height)+" l: "+ExpressionBasics.printExpStr(length) +
@@ -838,11 +834,9 @@ function isVisualizationVar
 algorithm
   isVisVar := matchcontinue var
     local
-      Boolean b;
       DAE.ElementSource source;
       String obj;
       list<Absyn.Path> paths;
-      list<String> paths_lst;
 
     case BackendDAE.VAR(source=source)
       algorithm
@@ -902,9 +896,7 @@ function hasVisPath
 algorithm
   (visPath, numOut) := matchcontinue pathsIn
     local
-      String name, shapeIdent;
-      Integer num;
-      Boolean b;
+      String name;
       Absyn.Path path;
       list<Absyn.Path> rest;
 

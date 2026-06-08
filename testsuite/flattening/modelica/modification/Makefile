@@ -32,6 +32,9 @@ BreakConnectInvalid1.mo \
 BreakConnectInvalid2.mo \
 BreakConnectInvalid2.mo \
 Bug3817.mos \
+Confidence1.mo \
+Confidence2.mo \
+Confidence3.mo \
 DisturbedResistance1.mo \
 DisturbedResistance3.mo \
 DisturbedResistance4.mo \

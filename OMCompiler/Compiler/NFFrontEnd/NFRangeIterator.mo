@@ -95,7 +95,6 @@ public
         Boolean bstart, bstop;
         Type ty;
         list<String> literals;
-        Absyn.Path path;
         list<Expression> values;
 
       case Expression.ARRAY() then ARRAY_RANGE(exp.elements, 1);
@@ -172,7 +171,6 @@ public
     iterator := match dim
       local
         Type ty;
-        list<Expression> expl;
 
       case Dimension.INTEGER() then INT_RANGE(1, dim.size);
 

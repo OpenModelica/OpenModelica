@@ -152,11 +152,11 @@ template fmuMakefile(String target, SimCode simCode, Text& extraFuncs, Text& ext
 
   <<
   <%CodegenCppHpcom.getAdditionalMakefileFlags(additionalCFlags_GCC, additionalCFlags_MSVC, additionalLinkerFlags_GCC, additionalLinkerFlags_MSVC)%>
-  <%CodegenFMUCpp.fmuMakefile(target, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, FMUVersion, additionalLinkerFlags_GCC, additionalLinkerFlags_MSVC, additionalCFlags_GCC, additionalCFlags_MSVC)%>
+  <%CodegenFMUCpp.fmuMakefile(target, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, FMUVersion, additionalLinkerFlags_GCC, additionalLinkerFlags_MSVC, additionalCFlags_GCC, additionalCFlags_MSVC, "")%>
   >>
 end fmuMakefile;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="codegen_cpp_ext");
 end CodegenFMUCppHpcom;
 
 // vim: filetype=susan sw=2 sts=2

@@ -426,6 +426,11 @@ namespace IAEX {
     return input_->toHtml();
   }
 
+  QTextDocument* LatexCell::document()
+  {
+    return input_->document();
+  }
+
   /*!
   * \brief Return the text inside the output part of the cell
   * as plain text
@@ -468,6 +473,25 @@ namespace IAEX {
     return input_;
   }
 
+  bool LatexCell::findText(const QString &exp, QTextDocument::FindFlags options)
+  {
+    return input_->find(exp, options);
+  }
+
+  void LatexCell::clearSelection()
+  {
+    auto cursor = input_->textCursor();
+    cursor.clearSelection();
+    input_->setTextCursor(cursor);
+  }
+
+  void LatexCell::moveCursor(QTextCursor::MoveOperation operation)
+  {
+    auto cursor = input_->textCursor();
+    cursor.movePosition(operation);
+    input_->setTextCursor(cursor);
+  }
+
   /*!
   * \brief Return the output texteditor
   * \return Texteditor for the output part of the LatexCell
@@ -475,6 +499,33 @@ namespace IAEX {
   QTextEdit* LatexCell::textEditOutput()
   {
     return output_;
+  }
+
+  void LatexCell::cutText()
+  {
+    if (output_->hasFocus() && isEvaluated()) {
+      output_->cut();
+    } else {
+      input_->cut();
+    }
+  }
+
+  void LatexCell::copyText()
+  {
+    if (output_->hasFocus() && isEvaluated()) {
+      output_->copy();
+    } else {
+      input_->copy();
+    }
+  }
+
+  void LatexCell::pasteText()
+  {
+    if (output_->hasFocus() && isEvaluated()) {
+      output_->paste();
+    } else {
+      input_->paste();
+    }
   }
 
   /*!

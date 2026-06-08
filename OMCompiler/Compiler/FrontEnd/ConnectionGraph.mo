@@ -126,7 +126,7 @@ public function handleOverconstrainedConnections
   output DaeEdges outConnected;
   output DaeEdges outBroken;
 algorithm
-  (outDAE, outConnected, outBroken) := matchcontinue(inGraph, modelNameQualified, inDAE)
+  (outDAE, outConnected, outBroken) := matchcontinue(inGraph, inDAE)
     local
       ConnectionGraph graph;
       list<DAE.Element> elts;
@@ -134,10 +134,10 @@ algorithm
       DaeEdges broken, connected;
 
     // empty graph gives you the same dae
-    case (GRAPH(_, {}, {}, {}, {}, {}), _, _) then (inDAE, {}, {});
+    case (GRAPH(_, {}, {}, {}, {}, {}), _) then (inDAE, {}, {});
 
     // handle the connection braking
-    case (graph, _, DAE.DAE(elts))
+    case (graph, DAE.DAE(elts))
       algorithm
 
         if Flags.isSet(Flags.CGRAPH) then
@@ -232,11 +232,10 @@ public function addUniqueRoots
   input DAE.Exp inMessage;
   output ConnectionGraph outGraph;
 algorithm
-  outGraph := match(inGraph, inRoots, inMessage)
+  outGraph := match(inGraph, inRoots)
     local
       Boolean updateGraph;
       DAE.ComponentRef root;
-      DAE.Exp roots;
       DefiniteRoots definiteRoots;
       PotentialRoots potentialRoots;
       UniqueRoots uniqueRoots;
@@ -249,8 +248,7 @@ algorithm
 
     // just one component reference
     case (GRAPH(updateGraph = updateGraph,definiteRoots = definiteRoots,potentialRoots = potentialRoots,uniqueRoots = uniqueRoots,
-                branches = branches,connections = connections),
-                DAE.CREF(root, _), _)
+                branches = branches,connections = connections), DAE.CREF(root, _))
       algorithm
         if Flags.isSet(Flags.CGRAPH) then
           Debug.traceln("- ConnectionGraph.addUniqueRoots(" + ComponentReferenceBasics.printComponentRefStr(root) + ", " + ExpressionBasics.printExpStr(inMessage) + ")");
@@ -259,14 +257,13 @@ algorithm
         GRAPH(updateGraph,definiteRoots,potentialRoots,(root,inMessage)::uniqueRoots,branches,connections);
 
     // array of component references, empty case
-    case (GRAPH(), DAE.ARRAY(_, _, {}), _)
+    case (GRAPH(), DAE.ARRAY(_, _, {}))
       then
         inGraph;
 
     // array of component references, something still there
     case (GRAPH(updateGraph = updateGraph,definiteRoots = definiteRoots,potentialRoots = potentialRoots,uniqueRoots = uniqueRoots,
-                branches = branches,connections = connections),
-                DAE.ARRAY(ty, scalar, DAE.CREF(root, _)::rest), _)
+                branches = branches,connections = connections), DAE.ARRAY(ty, scalar, DAE.CREF(root, _)::rest))
       algorithm
         if Flags.isSet(Flags.CGRAPH) then
           Debug.traceln("- ConnectionGraph.addUniqueRoots(" + ComponentReferenceBasics.printComponentRefStr(root) + ", " + ExpressionBasics.printExpStr(inMessage) + ")");
@@ -276,7 +273,7 @@ algorithm
       then
         graph;
 
-    case (_, _, _)
+    case (_, _)
       algorithm
         // TODO! FIXME! print some meaningful error message here that the input is not an array of roots or a cref
       then
@@ -348,6 +345,7 @@ end addConnection;
 
 protected import BaseHashTable;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import ConnectUtil;
 protected import Debug;
 protected import Flags;
@@ -464,13 +462,13 @@ algorithm
     // leave the connect(ref1,ref2)
     case(partition,(ref1,_,_))
       algorithm
-        failure(_ := canonical(partition,ref1)); // no parent
+        failure(canonical(partition,ref1)); // no parent
       then (partition, {inDaeEdge}, {});
 
     // leave the connect(ref1,ref2)
     case(partition,(_,ref2,_))
       algorithm
-        failure(_ := canonical(partition,ref2)); // no parent
+        failure(canonical(partition,ref2)); // no parent
       then (partition, {inDaeEdge}, {});
 
     // leave the connect(ref1,ref2)
@@ -672,7 +670,7 @@ protected function findResultGraph
   output DaeEdges outConnectedConnections;
   output DaeEdges outBrokenConnections;
 algorithm
-  (outRoots, outConnectedConnections, outBrokenConnections) := matchcontinue(inGraph, modelNameQualified)
+  (outRoots, outConnectedConnections, outBrokenConnections) := matchcontinue inGraph
     local
       DefiniteRoots definiteRoots, finalRoots;
       PotentialRoots potentialRoots, orderedPotentialRoots;
@@ -687,12 +685,12 @@ algorithm
       list<tuple<String,String>> userBrokenTplLst;
 
     // deal with empty connection graph
-    case (GRAPH(definiteRoots = {}, potentialRoots = {}, uniqueRoots = {}, branches = {}, connections = {}), _)
+    case GRAPH(definiteRoots = {}, potentialRoots = {}, uniqueRoots = {}, branches = {}, connections = {})
       then ({}, {}, {});
 
     // we have something in the connection graph
-    case (GRAPH(definiteRoots = definiteRoots, potentialRoots = potentialRoots, uniqueRoots = uniqueRoots,
-                   branches = branches, connections = connections), _)
+    case GRAPH(definiteRoots = definiteRoots, potentialRoots = potentialRoots, uniqueRoots = uniqueRoots,
+                   branches = branches, connections = connections)
       algorithm
         // reverse the conenction list to have them as in the model
         connections := listReverse(connections);
@@ -777,10 +775,10 @@ protected function printTupleStr
   input tuple<String,String> inTpl;
   output String out;
 algorithm
-  out := match(inTpl)
+  out := match inTpl
     local
       String c1,c2;
-    case ((c1,c2)) then c1 + " -- " + c2;
+    case (c1,c2) then c1 + " -- " + c2;
   end match;
 end printTupleStr;
 
@@ -788,7 +786,7 @@ protected function makeTuple
   input list<list<String>> inLstLst;
   output list<tuple<String,String>> outLst;
 algorithm
-  outLst := matchcontinue(inLstLst)
+  outLst := matchcontinue inLstLst
     local
       String c1,c2;
       list<list<String>> rest;
@@ -796,27 +794,27 @@ algorithm
       list<String> bad;
 
     // empty case
-    case ({}) then {};
+    case {} then {};
     // somthing case
-    case ({c1,c2}::rest)
+    case {c1,c2}::rest
       algorithm
         lst := makeTuple(rest);
       then
         (c1,c2)::lst;
     // ignore empty strings
-    case ({""}::rest)
+    case {""}::rest
       algorithm
         lst := makeTuple(rest);
       then
         lst;
     // ignore empty list
-    case ({}::rest)
+    case {}::rest
       algorithm
         lst := makeTuple(rest);
       then
         lst;
     // somthing case
-    case (bad::rest)
+    case bad::rest
       algorithm
         Debug.traceln("The following output from GraphViz OpenModelica assistant cannot be parsed:" +
             stringDelimitList(bad, ", ") +
@@ -831,12 +829,12 @@ protected function printPotentialRootTuple
   input PotentialRoot potentialRoot;
   output String outStr;
 algorithm
-  outStr := match(potentialRoot)
+  outStr := match potentialRoot
     local
       DAE.ComponentRef cr;
       Real priority;
       String str;
-    case ((cr, priority))
+    case (cr, priority)
       algorithm
         str := ComponentReferenceBasics.printComponentRefStr(cr) + "(" + realString(priority) + ")";
       then str;
@@ -851,16 +849,16 @@ protected function setRootDistance
   input HashTable.HashTable irooted;
   output HashTable.HashTable orooted;
 algorithm
-  orooted := matchcontinue(finalRoots,table,distance,nextLevel,irooted)
+  orooted := matchcontinue(finalRoots, nextLevel)
     local
       HashTable.HashTable rooted;
       list<DAE.ComponentRef> rest,next;
       DAE.ComponentRef cr;
-    case({},_,_,{},_) then irooted;
-    case({},_,_,_,_)
+    case({}, {}) then irooted;
+    case({}, _)
       then
         setRootDistance(nextLevel,table,distance+1,{},irooted);
-    case(cr::rest,_,_,_,_)
+    case(cr::rest, _)
       algorithm
         false := BaseHashTable.hasKey(cr, irooted);
         rooted := BaseHashTable.add((cr,distance),irooted);
@@ -872,7 +870,7 @@ algorithm
         next := listAppend(nextLevel,next);
       then
         setRootDistance(rest,table,distance,next,rooted);
-    case(cr::rest,_,_,_,_)
+    case(cr::rest, _)
       algorithm
         false := BaseHashTable.hasKey(cr, irooted);
         rooted := BaseHashTable.add((cr,distance),irooted);
@@ -888,7 +886,7 @@ algorithm
       then
         setRootDistance(rest,table,distance,nextLevel,irooted);
 */
-    case (_::rest,_,_,_,_)
+    case (_::rest, _)
       //equation
       //  print("- ConnectionGraph.setRootDistance: cannot found " + ComponentReferenceBasics.printComponentRefStr(cr) + "\n");
       then
@@ -926,12 +924,12 @@ protected function addConnectionRooted
   input HashTable3.HashTable itable;
   output HashTable3.HashTable otable;
 algorithm
-  otable := match(cref1,cref2,itable)
+  otable := match itable
     local
       HashTable3.HashTable table;
       list<DAE.ComponentRef> crefs;
 
-    case(_, _, _)
+    case _
       algorithm
           crefs := matchcontinue()
             case () then BaseHashTable.get(cref1,itable);
@@ -959,14 +957,14 @@ protected function evalConnectionsOperators
   input list<DAE.Element> inDae;
   output list<DAE.Element> outDae;
 algorithm
-  outDae := matchcontinue(inRoots,graph,inDae)
+  outDae := matchcontinue inDae
     local
       HashTable.HashTable rooted;
       HashTable3.HashTable table;
       Edges branches;
       DaeEdges connections;
 
-    case (_,_, {}) then {};
+    case {} then {};
 
     else
       algorithm
@@ -1102,10 +1100,10 @@ protected function getRooted
   input HashTable.HashTable rooted;
   output Boolean result;
 algorithm
-  result := matchcontinue(cref1,cref2,rooted)
+  result := matchcontinue rooted
     local
       Integer i1,i2;
-    case(_,_,_)
+    case _
       algorithm
         i1 := BaseHashTable.get(cref1,rooted);
         i2 := BaseHashTable.get(cref2,rooted);
@@ -1124,16 +1122,16 @@ protected function getEdge
   input Edges edges;
   output DAE.ComponentRef ocr;
 algorithm
-  ocr := matchcontinue(cr,edges)
+  ocr := matchcontinue edges
     local
       Edges rest;
       DAE.ComponentRef cref1,cref2;
-    case(_,(cref1,cref2)::_)
+    case (cref1,cref2)::_
       algorithm
         cref1 := getEdge1(cr,cref1,cref2);
       then
         cref1;
-    case(_,_::rest)
+    case _::rest
       then
         getEdge(cr,rest);
   end matchcontinue;
@@ -1146,8 +1144,8 @@ protected function getEdge1
   input DAE.ComponentRef cref2;
   output DAE.ComponentRef ocr;
 algorithm
-  ocr := matchcontinue(cr,cref1,cref2)
-    case(_,_,_)
+  ocr := matchcontinue cref2
+    case _
       algorithm
         true := ComponentReferenceBasics.crefEqualNoStringCompare(cr,cref1);
       then
@@ -1166,12 +1164,12 @@ protected function printConnectionStr
   input String ty;
   output String outStr;
 algorithm
-  outStr := match(connectTuple, ty)
+  outStr := match connectTuple
     local
       DAE.ComponentRef c1, c2;
       String str;
 
-    case ((c1, c2, _), _)
+    case (c1, c2, _)
       algorithm
         str := ty + "(" +
           ComponentReferenceBasics.printComponentRefStr(c1) +
@@ -1186,13 +1184,13 @@ protected function printEdges
 "Prints a list of edges to stdout."
   input Edges inEdges;
 algorithm
-  _ := match(inEdges)
+  () := match inEdges
     local
       DAE.ComponentRef c1, c2;
       Edges tail;
 
-    case ({}) then ();
-    case ((c1, c2) :: tail)
+    case {} then ();
+    case (c1, c2) :: tail
       algorithm
         print("    ");
         print(ComponentReferenceBasics.printComponentRefStr(c1));
@@ -1208,14 +1206,14 @@ protected function printDaeEdges
 "Prints a list of dae edges to stdout."
   input DaeEdges inEdges;
 algorithm
-  _ := match(inEdges)
+  () := match inEdges
     local
       DAE.ComponentRef c1, c2;
       DaeEdges tail;
 
-    case ({}) then ();
+    case {} then ();
 
-    case ((c1, c2, _) :: tail)
+    case (c1, c2, _) :: tail
       algorithm
         print("    ");
         print(ComponentReferenceBasics.printComponentRefStr(c1));
@@ -1231,12 +1229,12 @@ protected function printConnectionGraph
   "Prints the content of ConnectionGraph structure."
   input ConnectionGraph inGraph;
 algorithm
-  _ := match(inGraph)
+  () := match inGraph
     local
       DaeEdges connections;
       Edges branches;
 
-    case (GRAPH(connections = connections, branches = branches))
+    case GRAPH(connections = connections, branches = branches)
       algorithm
         print("Connections:\n");
         printDaeEdges(connections);
@@ -1251,10 +1249,10 @@ protected function getDefiniteRoots
   input ConnectionGraph inGraph;
   output DefiniteRoots outResult;
 algorithm
-  outResult := match(inGraph)
+  outResult := match inGraph
     local
       DefiniteRoots result;
-    case (GRAPH(definiteRoots = result)) then result;
+    case GRAPH(definiteRoots = result) then result;
   end match;
 end getDefiniteRoots;
 
@@ -1263,10 +1261,10 @@ protected function getUniqueRoots
   input ConnectionGraph inGraph;
   output UniqueRoots outResult;
 algorithm
-  outResult := match(inGraph)
+  outResult := match inGraph
     local
       UniqueRoots result;
-    case (GRAPH(uniqueRoots = result)) then result;
+    case GRAPH(uniqueRoots = result) then result;
   end match;
 end getUniqueRoots;
 
@@ -1275,9 +1273,9 @@ protected function getPotentialRoots
   input ConnectionGraph inGraph;
   output PotentialRoots outResult;
 algorithm
-  outResult := match(inGraph)
+  outResult := match inGraph
     local PotentialRoots result;
-    case (GRAPH(potentialRoots = result)) then result;
+    case GRAPH(potentialRoots = result) then result;
   end match;
 end getPotentialRoots;
 
@@ -1286,9 +1284,9 @@ protected function getBranches
   input ConnectionGraph inGraph;
   output Edges outResult;
 algorithm
-  outResult := match(inGraph)
+  outResult := match inGraph
     local Edges result;
-    case (GRAPH(branches = result)) then result;
+    case GRAPH(branches = result) then result;
   end match;
 end getBranches;
 
@@ -1297,9 +1295,9 @@ protected function getConnections
   input ConnectionGraph inGraph;
   output DaeEdges outResult;
 algorithm
-  outResult := match(inGraph)
+  outResult := match inGraph
     local DaeEdges result;
-    case (GRAPH(connections = result)) then result;
+    case GRAPH(connections = result) then result;
   end match;
 end getConnections;
 
@@ -1363,9 +1361,9 @@ protected function graphVizEdge
   input  Edge inEdge;
   output String out;
 algorithm
-  out := match(inEdge)
+  out := match inEdge
     local DAE.ComponentRef c1, c2; String strEdge;
-    case ((c1, c2))
+    case (c1, c2)
       algorithm
         strEdge := "\"" + ComponentReferenceBasics.printComponentRefStr(c1) + "\" -- \"" + ComponentReferenceBasics.printComponentRefStr(c2) + "\"" +
         " [color = blue, dir = \"none\", fontcolor=blue, label = \"branch\"];\n\t";
@@ -1378,13 +1376,13 @@ protected function graphVizDaeEdge
   input  DaeEdges inBrokenDaeEdges;
   output String out;
 algorithm
-  out := match(inDaeEdge, inBrokenDaeEdges)
+  out := match inDaeEdge
     local
       DAE.ComponentRef c1, c2;
       String sc1, sc2, strDaeEdge, label, labelFontSize, decorate, color, style, fontColor;
       Boolean isBroken;
 
-    case ((c1, c2, _), _)
+    case (c1, c2, _)
       algorithm
         isBroken := listMember(inDaeEdge, inBrokenDaeEdges);
         label := if isBroken then "[[broken connect]]" else "connect";
@@ -1414,9 +1412,9 @@ protected function graphVizDefiniteRoot
   input  DefiniteRoots inFinalRoots;
   output String out;
 algorithm
-  out := match(inDefiniteRoot, inFinalRoots)
+  out := match inDefiniteRoot
     local DAE.ComponentRef c; String strDefiniteRoot; Boolean isSelectedRoot;
-    case (c, _)
+    case c
       algorithm
         isSelectedRoot := listMember(c, inFinalRoots);
         strDefiniteRoot := "\"" + ComponentReferenceBasics.printComponentRefStr(c) + "\"" +
@@ -1432,9 +1430,9 @@ protected function graphVizPotentialRoot
   input  DefiniteRoots inFinalRoots;
   output String out;
 algorithm
-  out := match(inPotentialRoot, inFinalRoots)
+  out := match inPotentialRoot
     local DAE.ComponentRef c; Real priority; String strPotentialRoot; Boolean isSelectedRoot;
-    case ((c, priority), _)
+    case (c, priority)
       algorithm
         isSelectedRoot := listMember(c, inFinalRoots);
         strPotentialRoot := "\"" + ComponentReferenceBasics.printComponentRefStr(c) + "\"" +
@@ -1458,7 +1456,7 @@ protected function generateGraphViz
   input DaeEdges broken;
   output String brokenConnectsViaGraphViz;
 algorithm
-  brokenConnectsViaGraphViz := matchcontinue(modelNameQualified, definiteRoots, potentialRoots, uniqueRoots, branches, connections, finalRoots, broken)
+  brokenConnectsViaGraphViz := matchcontinue broken
     local
       String fileName, i, nrDR, nrPR, nrUR, nrBR, nrCO, nrFR, nrBC, timeStr,  infoNodeStr, brokenConnects;
       Real tStart, tEnd, t;
@@ -1466,13 +1464,13 @@ algorithm
       list<String> infoNode;
 
     // don't do anything if we don't have -d=cgraphGraphVizFile or -d=cgraphGraphVizShow
-    case(_, _, _, _, _, _, _, _)
+    case _
       algorithm
         false := boolOr(Flags.isSet(Flags.CGRAPH_GRAPHVIZ_FILE), Flags.isSet(Flags.CGRAPH_GRAPHVIZ_SHOW));
       then
         "";
 
-    case(_, _, _, _, _, _, _, _)
+    case _
       algorithm
         tStart := clock();
         i := "\t";
@@ -1568,13 +1566,13 @@ protected function showGraphViz
   input String modelNameQualified;
   output String brokenConnectsViaGraphViz;
 algorithm
-  brokenConnectsViaGraphViz := matchcontinue(fileNameGraphViz, modelNameQualified)
+  brokenConnectsViaGraphViz := matchcontinue modelNameQualified
     local
       String leftyCMD, fileNameTraceRemovedConnections, omhome, brokenConnects;
       Integer leftyExitStatus;
 
     // do not start graphviz if we don't have -d=cgraphGraphVizShow
-    case (_, _)
+    case _
       algorithm
         false := Flags.isSet(Flags.CGRAPH_GRAPHVIZ_SHOW);
       then
@@ -1617,17 +1615,17 @@ public function removeBrokenConnects
   input DaeEdges inBroken;
   output list<list<Connect.ConnectorElement>> outConnects "we return a list of lists of elements as a particular connection set might be broken into several!";
 algorithm
-  outConnects := match(inConnects, inConnected, inBroken)
+  outConnects := match inBroken
     local
       list<DAE.ComponentRef> toRemove, toKeep, intersect;
       list<Connect.ConnectorElement> cset;
       list<list<Connect.ConnectorElement>> csets;
 
     // if we have no broken then we don't care!
-    case (_, _, {}) then {inConnects};
+    case {} then {inConnects};
 
     // if we have nothing toRemove then we don't care!
-    case (_, _, _)
+    case _
       algorithm
         toRemove := filterFromSet(inConnects, inBroken, {}, "removed");
 
@@ -1685,7 +1683,7 @@ protected
   list<list<Connect.ConnectorElement>> csets;
   DaeEdge e;
   DAE.ComponentRef cr1, cr2;
-  Connect.ConnectorElement ce, ce1, ce2;
+  Connect.ConnectorElement ce;
 algorithm
   csets := {};
   for e in inConnected loop
@@ -1716,16 +1714,16 @@ protected function filterFromSet
   input String msg;
   output list<DAE.ComponentRef> filteredCrefs;
 algorithm
-  filteredCrefs := matchcontinue(inConnects, inFilter, inAcc)
+  filteredCrefs := matchcontinue inFilter
     local
       DAE.ComponentRef c1, c2;
       DaeEdges rest;
       list<DAE.ComponentRef> filtered;
 
-    case (_, {}, _) then List.unique(inAcc);
+    case {} then List.unique(inAcc);
 
     // both are there and append crefs to the filter list!
-    case (_, (c1, c2, _)::rest, _)
+    case (c1, c2, _)::rest
       algorithm
         true := ConnectUtil.isReferenceInConnects(inConnects, c1);
         true := ConnectUtil.isReferenceInConnects(inConnects, c2);
@@ -1737,7 +1735,7 @@ algorithm
         filtered;
 
     // some are not there, move forward ...
-    case (_, _::rest, _)
+    case _::rest
       algorithm
         filtered := filterFromSet(inConnects, rest, inAcc, msg);
       then
@@ -1774,12 +1772,12 @@ public function addBrokenEqualityConstraintEquations
   input DaeEdges inBroken;
   output DAE.DAElist outDAE;
 algorithm
-  outDAE := matchcontinue(inDAE, inBroken)
+  outDAE := matchcontinue inBroken
     local
       list<DAE.Element> equalityConstraintElements;
       DAE.DAElist dae;
 
-    case (_, {}) then inDAE;
+    case {} then inDAE;
 
     else
       algorithm

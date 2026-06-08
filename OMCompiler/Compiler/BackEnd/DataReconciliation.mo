@@ -40,6 +40,8 @@ encapsulated package DataReconciliation
 
 
 public import BackendDAE;
+import ProgramUtil;
+import Types;
 public import DAE;
 public import SymbolicJacobian;
 public import BackendDump;
@@ -50,6 +52,7 @@ import BackendDAEUtil;
 import BackendEquation;
 import BackendVariable;
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import Expression;
 import Error;
 import Flags;
@@ -60,11 +63,9 @@ import Matching;
 import Util;
 import System;
 import Settings;
-import SimCode;
 import SCode;
 import SymbolTable;
 import Absyn;
-import CevalScript;
 import StringUtil;
 
 protected type ExtAdjacencyMatrixRow = tuple<Integer,list<Integer>>;
@@ -79,24 +80,23 @@ public function newExtractionAlgorithm
   output BackendDAE.BackendDAE outDAE;
 protected
   BackendDAE.EqSystem currentSystem;
-  BackendDAE.EquationArray newOrderedEquationArray, outOtherEqns, outResidualEqns;
-  list<BackendDAE.Equation> newEqnsLst, setC_Eq, setS_Eq, residualEquations, complexEquationList, swappedEquationList;
+  BackendDAE.EquationArray outOtherEqns, outResidualEqns;
+  list<BackendDAE.Equation> setC_Eq, setS_Eq, residualEquations, complexEquationList, swappedEquationList;
   BackendDAE.AdjacencyMatrix adjacencyMatrix;
   array<list<Integer>> mapEqnIncRow;
   array<Integer> mapIncRowEqn, match1, match2;
   list<tuple<Integer,Integer>> solvedEqsAndVarsInfo;
   Integer varCount, eqCount;
-  list<Integer> ebltEqsLst, matchedEqsLst, approximatedEquations, constantEquations, tempSetC, setC, tempSetS, setS, boundaryConditionEquations, bindingEquations;
+  list<Integer> ebltEqsLst, matchedEqsLst, approximatedEquations, setC, tempSetS, setS, boundaryConditionEquations, bindingEquations;
   ExtAdjacencyMatrix sBltAdjacencyMatrix;
-  list<BackendDAE.Var> paramVars, setSVars, residualVars, unMeasuredVariables;
-  list<DAE.ComponentRef> cr_lst;
-  BackendDAE.Jacobian simCodeJacobian, simCodeJacobianH;
+  list<BackendDAE.Var> paramVars, residualVars, unMeasuredVariables;
+  BackendDAE.Jacobian simCodeJacobian;
   BackendDAE.Shared shared;
   String str, modelicaOutput, modelicaFileName, modelName, auxillaryConditionsFilename, auxillaryEquations, intermediateEquationsFilename, intermediateEquations, csvfileName;
   list<tuple<Integer, list<Integer>>> mappedEbltSetS;
   list<tuple<Integer, BackendDAE.Equation, list<Integer>>> setBFailedBoundaryConditionEquations;
 
-  list<Integer> allVarsList, knowns, unknowns, boundaryConditionVars, exactEquationVars, extractedVarsfromSetS, constantVars, knownVariablesWithEquationBinding, boundaryConditionTaggedEquationSolvedVars, unknownVarsInSetC, unMeasuredVariablesOfInterest;
+  list<Integer> allVarsList, knowns, boundaryConditionVars, exactEquationVars, extractedVarsfromSetS, boundaryConditionTaggedEquationSolvedVars, unMeasuredVariablesOfInterest;
   BackendDAE.Variables inputVars, outDiffVars, outOtherVars, outResidualVars;
   Integer procedureCount;
   list<tuple<String, String>> measurementcsvData;
@@ -376,17 +376,15 @@ protected function readMeasurementsFromCSV
 protected
   String content;
   list<String> tokens, lines;
-  SimCode.SimulationSettings simulationSettings;
   Absyn.Program p;
 algorithm
-  if isNone(shared.info.simSettingsOption) then
-    Error.addMessage(Error.INTERNAL_ERROR, {": SimulationSettings is NONE, expected SimulationSettings to be present in shared.info.simSettingsOption for reading measurements from csv file for data reconciliation initialization."});
+  if isNone(shared.info.simflags) then
+    Error.addMessage(Error.INTERNAL_ERROR, {": simflags is NONE, expected the simulation flags to be present in shared.info.simflags for reading measurements from csv file for data reconciliation initialization."});
     fail();
   end if;
 
-  simulationSettings := Util.getOption(shared.info.simSettingsOption);
   // extract the csv file path from simflags
-  csvFileName := extractSxPath(simulationSettings.simflags);
+  csvFileName := extractSxPath(Util.getOption(shared.info.simflags));
 
   if stringEmpty(csvFileName) then
     Error.addMessage(Error.INTERNAL_ERROR, {": No csv file provided or failed to read file with -sx flag in simflags."});
@@ -396,7 +394,7 @@ algorithm
   // resolve uri if the csv file path is provided as a uri (e.g) modelica:// or file://, otherwise get the absolute path for the csv file
   if (StringUtil.startsWith(csvFileName, "modelica://") or StringUtil.startsWith(csvFileName, "file://")) then
     p := SymbolTable.getAbsyn();
-    csvFileName := CevalScript.getFullPathFromUri(p, csvFileName, true);
+    csvFileName := ProgramUtil.getFullPathFromUri(p, csvFileName, true);
   end if;
 
   content := System.readFile(csvFileName);
@@ -427,9 +425,7 @@ protected
   list<BackendDAE.Var> varList;
   String varName, valueStr;
   Real value;
-  BackendDAE.Var var1;
   Boolean foundMeasurement;
-  list<DAE.Exp> startValueList = {DAE.RCONST(10.0), DAE.RCONST(600), DAE.RCONST(550.0), DAE.RCONST(70e5), DAE.RCONST(68e5), DAE.RCONST(500), DAE.RCONST(1.0), DAE.RCONST(1e9), DAE.RCONST(5)};
 algorithm
   varList := {};
   for var in BackendVariable.varList(inVariables) loop
@@ -499,25 +495,24 @@ public function extractBoundaryCondition
   output BackendDAE.BackendDAE outDAE;
 protected
   BackendDAE.EqSystem currentSystem;
-  BackendDAE.EquationArray newOrderedEquationArray, outOtherEqns, outResidualEqns, outBoundaryConditionEquations;
-  list<BackendDAE.Equation> newEqnsLst, setC_Eq, setS_Eq, residualEquations, complexEquationList, swappedEquationList, failedboundaryConditionEquations;
+  BackendDAE.EquationArray outOtherEqns, outBoundaryConditionEquations;
+  list<BackendDAE.Equation> setS_Eq, failedboundaryConditionEquations;
   BackendDAE.AdjacencyMatrix adjacencyMatrix;
   array<list<Integer>> mapEqnIncRow;
   array<Integer> mapIncRowEqn, match1, match2;
   list<tuple<Integer,Integer>> solvedEqsAndVarsInfo;
   Integer varCount, eqCount;
-  list<Integer> ebltEqsLst, matchedEqsLst, approximatedEquations, constantEquations, tempSetC, setC, tempSetS, setS, boundaryConditionEquations, bindingEquations, setSPrime;
+  list<Integer> ebltEqsLst, matchedEqsLst, approximatedEquations, tempSetS, setS, boundaryConditionEquations, bindingEquations, setSPrime;
   ExtAdjacencyMatrix sBltAdjacencyMatrix;
-  list<BackendDAE.Var> paramVars, setSVars, tempSetSVars, residualVars, residualVarsSetS, knownVars, failedboundaryConditionVars, extraVarsinSetSPrime, unMeasuredVariables;
-  list<DAE.ComponentRef> cr_lst;
+  list<BackendDAE.Var> paramVars, setSVars, knownVars, failedboundaryConditionVars, extraVarsinSetSPrime, unMeasuredVariables;
   BackendDAE.Jacobian simCodeJacobian;
   BackendDAE.Shared shared;
   String str, modelicaOutput, modelicaFileName, modelName, auxillaryConditionsFilename, auxillaryEquations, intermediateEquationsFilename, intermediateEquations, csvfileName;
   list<tuple<Integer, list<Integer>>> mappedEbltSetS;
   list<tuple<Integer, BackendDAE.Equation, list<Integer>>> setBFailedBoundaryConditionEquations;
 
-  list<Integer> allVarsList, knowns, unknowns, boundaryConditionVars, exactEquationVars, extractedVarsfromSetS, constantVars, knownVariablesWithEquationBinding, boundaryConditionTaggedEquationSolvedVars, unknownVarsInSetC, unMeasuredVariablesOfInterest;
-  BackendDAE.Variables inputVars, outDiffVars, outOtherVars, outResidualVars, outBoundaryConditionVars;
+  list<Integer> allVarsList, knowns, boundaryConditionVars, exactEquationVars, boundaryConditionTaggedEquationSolvedVars, unMeasuredVariablesOfInterest;
+  BackendDAE.Variables inputVars, outDiffVars, outOtherVars, outBoundaryConditionVars;
   Integer procedureCount;
   list<tuple<String, String>> measurementcsvData;
   Boolean debug = false, status = false;
@@ -764,24 +759,23 @@ public function stateEstimation
   output BackendDAE.BackendDAE outDAE;
 protected
   BackendDAE.EqSystem currentSystem;
-  BackendDAE.EquationArray newOrderedEquationArray, outOtherEqns, outOtherEqnsSetSPrime, outResidualEqns, outBoundaryConditionEquations;
-  list<BackendDAE.Equation> newEqnsLst, setC_Eq, setS_Eq, setSPrime_Eq, residualEquations, complexEquationList, swappedEquationList, failedboundaryConditionEquations, allDaeEqs;
+  BackendDAE.EquationArray outOtherEqns, outOtherEqnsSetSPrime, outResidualEqns, outBoundaryConditionEquations;
+  list<BackendDAE.Equation> setC_Eq, setS_Eq, setSPrime_Eq, residualEquations, failedboundaryConditionEquations, allDaeEqs;
   BackendDAE.AdjacencyMatrix adjacencyMatrix;
   array<list<Integer>> mapEqnIncRow;
   array<Integer> mapIncRowEqn, match1, match2;
   list<tuple<Integer,Integer>> solvedEqsAndVarsInfo;
   Integer varCount, eqCount;
-  list<Integer> ebltEqsLst, matchedEqsLst, approximatedEquations, constantEquations, tempSetC, setC, tempSetS, setS, setSPrime_, boundaryConditionEquations, bindingEquations, setSPrime, unMeasuredEqsLst;
+  list<Integer> ebltEqsLst, matchedEqsLst, approximatedEquations, setC, tempSetS, setS, boundaryConditionEquations, bindingEquations, setSPrime, unMeasuredEqsLst;
   ExtAdjacencyMatrix sBltAdjacencyMatrix;
-  list<BackendDAE.Var> paramVars, setSVars, setCVars, tempSetSVars, residualVars, residualVarsSetS, knownVars, failedboundaryConditionVars, extraVarsinSetSPrime, unMeasuredVariables;
-  list<DAE.ComponentRef> cr_lst;
+  list<BackendDAE.Var> paramVars, setSVars, residualVars, knownVars, failedboundaryConditionVars, extraVarsinSetSPrime, unMeasuredVariables;
   BackendDAE.Jacobian simCodeJacobian, simCodeJacobianH;
   BackendDAE.Shared shared;
   String str, modelicaOutput, modelicaFileName, modelName, auxillaryConditionsFilename, auxillaryEquations, intermediateEquationsFilename, intermediateEquations, csvfileName;
   list<tuple<Integer, list<Integer>>> mappedEbltSetS;
   list<tuple<Integer, BackendDAE.Equation, list<Integer>>> setBFailedBoundaryConditionEquations;
 
-  list<Integer> allVarsList, knowns, unknowns, unMeasuredVariablesOfInterest, failedboundaryConditionEquationIndex, boundaryConditionVars, exactEquationVars, extractedVarsfromSetS, constantVars, knownVariablesWithEquationBinding, boundaryConditionTaggedEquationSolvedVars, unknownVarsInSetC;
+  list<Integer> allVarsList, knowns, unMeasuredVariablesOfInterest, failedboundaryConditionEquationIndex, boundaryConditionVars, exactEquationVars, extractedVarsfromSetS, boundaryConditionTaggedEquationSolvedVars;
   BackendDAE.Variables inputVars, outDiffVars, outOtherVars, outResidualVars, outBoundaryConditionVars, outOtherVarsSetSPrime;
   Integer procedureCount, numRelatedBoundaryConditions;
   list<tuple<String, String>> measurementcsvData;
@@ -1182,7 +1176,6 @@ protected function dumpFailedBoundaryConditionEquationAndVars
 protected
   BackendDAE.Equation failedboundaryConditionEquation;
   Integer count, varIndex;
-  BackendDAE.Var var;
   list<BackendDAE.Var> varlist;
 algorithm
   if stateEstimation then
@@ -1220,7 +1213,7 @@ protected function prepareUnmeasuredVariablesEquations
   input output list<tuple<Integer, BackendDAE.Equation, list<Integer>>> setBFailedBoundaryConditionEquations = {};
   output list<Integer> failedboundaryConditionEquationIndex = {};
 protected
-  Integer varIndex, eqIndex;
+  Integer varIndex;
   list<Integer> intermediateVars;
   BackendDAE.Equation unmeasuredEq;
   list<tuple<Integer, BackendDAE.Equation, list<Integer>>> unMeasuredVariablesAndEquations;
@@ -1252,7 +1245,6 @@ protected function addUnmeasuredEquationtoBoundaryConditionEquationAndVars
 protected
   BackendDAE.Equation failedboundaryConditionEquation;
   Integer count, varIndex;
-  BackendDAE.Var var;
   list<BackendDAE.Var> varlist;
 algorithm
   print("\nStart of extraction procedure for boundary conditions\nSet of boundary conditions equations that failed the extraction of set S: ("+ intString(listLength(setBFailedBoundaryConditionEquations)) + ")\n" + UNDERLINE);
@@ -1464,13 +1456,10 @@ protected function ExtractSetSPrime
   output Boolean outStatus = false;
   //output list<tuple<Integer, Integer, list<Integer>>> setB;
 protected
-  list<Integer> intermediateVars, minimalSetS, visitedVars, intermediateVarsInBoundaryConditionEquation;
+  list<Integer> intermediateVars, minimalSetS, visitedVars;
   Boolean status;
-  Integer varnumber, eqnumber, boundaryConditionVarIndex;
-  BackendDAE.Var var;
-  DAE.Exp lhs, rhs;
+  Integer boundaryConditionVarIndex;
   BackendDAE.Equation eq;
-  list<BackendDAE.Equation> newEqnLst;
 algorithm
   print("\nExtract set-S' to compute the boundary conditions\nProcedure is applied on each equation in the failed boundary conditions\n" + UNDERLINE);
   finalSetS := {};
@@ -1547,10 +1536,9 @@ protected function extractNewMinimalSetS
   input Boolean debug;
   output Integer boundaryConditionVarIndex = -1;
 protected
-  Integer firstMatchedEquation, mappedEq, varIndex;
+  Integer mappedEq, varIndex;
   BackendDAE.Var var;
-  BackendDAE.Equation tmpEq;
-  list<Integer> rest, vars, intermediateVars, V_EQ, intermediateVarsInMatchedEquation;
+  list<Integer> rest, vars, intermediateVars, intermediateVarsInMatchedEquation;
 algorithm
   while not listEmpty(unknownsInSetC) loop
     varIndex :: rest := unknownsInSetC;
@@ -1599,15 +1587,15 @@ public function extractionAlgorithm
   output BackendDAE.BackendDAE outDAE;
 protected
   BackendDAE.EqSystem currentSystem;
-  BackendDAE.EquationArray newOrderedEquationArray, outOtherEqns, outResidualEqns;
+  BackendDAE.EquationArray outOtherEqns, outResidualEqns;
   list<BackendDAE.Equation> newEqnsLst, setC_Eq, setS_Eq, residualEquations;
-  BackendDAE.AdjacencyMatrix adjacencyMatrix, newAdjacencyMatrix;
+  BackendDAE.AdjacencyMatrix adjacencyMatrix;
   array<list<Integer>> mapEqnIncRow;
   array<Integer> mapIncRowEqn, match1, match2;
   list<tuple<Integer,Integer>> solvedEqsAndVarsInfo;
-  Integer varCount, eqCount, setEBLTRank, eqIndex;
-  list<Integer> matchedEqsLst, unMatchedEqsLst, unMatchedEqsLstCorrectIndex, approximatedEquations, constantEquations, tempSetC, setC, tempSetS, setS, boundaryConditionEquations;
-  list<list<Integer>> s_BLTBlocks, e_BLTBlocks, allBlocks, tmpAdjacencyMatrix;
+  Integer varCount, eqCount;
+  list<Integer> matchedEqsLst, unMatchedEqsLst, unMatchedEqsLstCorrectIndex, approximatedEquations, tempSetC, setC, tempSetS, setS, boundaryConditionEquations;
+  list<list<Integer>> s_BLTBlocks, e_BLTBlocks, allBlocks;
   list<list<String>> allBlocksStatusVarInfo;
   list<tuple<Integer, BackendDAE.Equation>> e_BLT_EquationsWithIndex;
   ExtAdjacencyMatrix eBltAdjacencyMatrix, sBltAdjacencyMatrix, setS_BLTAdjacencyMatrix;
@@ -1615,13 +1603,12 @@ protected
   list<tuple<list<Integer>, Integer>> e_BLTBlockRanks, s_BLTBlockRanks;
   list<tuple<list<Integer>, list<tuple<list<Integer>, Integer>>, list<tuple<list<String>, Integer>>>> s_BLTBlockTargetInfo;
   list<tuple<list<Integer>, list<tuple<list<Integer>, Integer>>, list<tuple<list<String>, Integer>>, list<Integer>, list<Integer>, list<Integer>>> predecessorBlockTargetInfo;
-  list<BackendDAE.Var> paramVars, setSVars, residualVars;
-  list<DAE.ComponentRef> cr_lst;
+  list<BackendDAE.Var> paramVars, residualVars;
   BackendDAE.Jacobian simCodeJacobian;
   BackendDAE.Shared shared;
   String str, modelicaOutput, modelicaFileName, modelName, auxillaryConditionsFilename, auxillaryEquations, intermediateEquationsFilename, intermediateEquations;
 
-  list<Integer> allVarsList, knowns, unknowns, boundaryConditionVars, exactEquationVars, extractedVarsfromSetS, constantVars, knownVariablesWithEquationBinding, boundaryConditionTaggedEquationSolvedVars, unknownVarsInSetC;
+  list<Integer> allVarsList, knowns, boundaryConditionVars, exactEquationVars, extractedVarsfromSetS, knownVariablesWithEquationBinding, boundaryConditionTaggedEquationSolvedVars, unknownVarsInSetC;
   BackendDAE.Variables inputVars, outDiffVars, outOtherVars, outResidualVars;
 
   Boolean debug = false;
@@ -2025,9 +2012,8 @@ protected function extractMinimalSetS
   input output list<Integer> minimalSetS = {};
   input Boolean debug;
 protected
-  Integer firstMatchedEquation, mappedEq;
+  Integer firstMatchedEquation;
   BackendDAE.Var var;
-  BackendDAE.Equation tmpEq;
   list<Integer> rest, vars, intermediateVars = {}, V_EQ;
 algorithm
   for varIndex in unknownsInSetC loop
@@ -2110,8 +2096,8 @@ protected function getVariableFirstOccurrenceInEquation
   input list<Integer> minimalSetS;
   output tuple<Integer, list<Integer>> matchedEquation = (0, {}) "default value 0 means equation does not exist";
 protected
-  list<Integer> ret, vars, matchedeq;
-  Integer eq, eqnum, varnum;
+  list<Integer> vars;
+  Integer eq;
 algorithm
   for i in m loop
     (eq, vars) := i;
@@ -2261,7 +2247,7 @@ protected function deleteEquationsFromEqSyst
   input output BackendDAE.EqSystem currentSystem;
   input list<Integer> eqIndex;
 protected
-  BackendDAE.EquationArray newEqArray, newOrderedEquationArray;
+  BackendDAE.EquationArray newOrderedEquationArray;
 algorithm
   currentSystem.orderedEqs := BackendEquation.deleteList(currentSystem.orderedEqs, eqIndex);
   //currentSystem.orderedEqs :=BackendEquation.addList(unMatchedEquations, BackendEquation.deleteList(currentSystem.orderedEqs, unMatchedEqsLst));
@@ -2447,7 +2433,7 @@ protected function dumpSetSVars
   input BackendDAE.Variables setSVars;
   input String heading;
 protected
-  Integer count = 1, varNumber;
+  Integer count = 1;
   BackendDAE.Var var;
 algorithm
   print("\n" + heading + " (" + intString(BackendVariable.varsSize(setSVars)) + ")\n" + "========================================" + "\n");
@@ -2905,16 +2891,16 @@ protected function isEquationTaggedApproximatedOrBoundaryCondition
   output Boolean approximatedEquations;
   output Boolean boundaryConditionEquations;
 algorithm
-  (approximatedEquations, boundaryConditionEquations) := match(eqn)
+  (approximatedEquations, boundaryConditionEquations) := match eqn
     local
       list<SCode.Comment> comment;
       Boolean isApproximatedEquation, isboundaryConditionEquations;
-    case(BackendDAE.EQUATION(source=DAE.SOURCE(comment=comment)))
+    case BackendDAE.EQUATION(source=DAE.SOURCE(comment=comment))
       algorithm
         (isApproximatedEquation, isboundaryConditionEquations) := isEquationTaggedApproximatedOrBoundaryConditionHelper(comment);
       then
         (isApproximatedEquation, isboundaryConditionEquations);
-    case(_) then (false, false);
+    case _ then (false, false);
   end match;
 end isEquationTaggedApproximatedOrBoundaryCondition;
 
@@ -2923,20 +2909,19 @@ protected function isEquationTaggedApproximatedOrBoundaryConditionHelper
   output Boolean approximatedEquations;
   output Boolean boundaryConditionEquations;
 algorithm
-  (approximatedEquations, boundaryConditionEquations) := matchcontinue(commentIn)
+  (approximatedEquations, boundaryConditionEquations) := matchcontinue commentIn
     local
-      SCode.Comment h;
       list<SCode.Comment> t;
       Boolean isApproximatedEquation, isboundaryConditionEquation;
       list<SCode.SubMod> subModLst;
-    case({}) then (false, false);
-    case(SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(SCode.MOD(subModLst=subModLst))))::t)
+    case {} then (false, false);
+    case SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(SCode.MOD(subModLst=subModLst))))::t
       algorithm
         isApproximatedEquation := List.any(subModLst, isEquationTaggedApproximated) or isEquationTaggedApproximatedOrBoundaryConditionHelper(t);
         isboundaryConditionEquation := List.any(subModLst, isEquationTaggedBoundaryCondition) or isEquationTaggedApproximatedOrBoundaryConditionHelper(t);
       then
         (isApproximatedEquation, isboundaryConditionEquation);
-    case(_::t)
+    case _::t
       algorithm
         (isApproximatedEquation, isboundaryConditionEquation) := isEquationTaggedApproximatedOrBoundaryConditionHelper(t);
       then
@@ -2949,8 +2934,8 @@ protected function isEquationTaggedApproximated
   input SCode.SubMod m;
   output Boolean approximatedEquations;
 algorithm
-  approximatedEquations := match(m)
-    case(SCode.NAMEMOD("__OpenModelica_ApproximatedEquation", SCode.MOD(binding = SOME(Absyn.BOOL(true))))) then true;
+  approximatedEquations := match m
+    case SCode.NAMEMOD("__OpenModelica_ApproximatedEquation", SCode.MOD(binding = SOME(Absyn.BOOL(true)))) then true;
     else false;
   end match;
 end isEquationTaggedApproximated;
@@ -2960,8 +2945,8 @@ protected function isEquationTaggedBoundaryCondition
   input SCode.SubMod m;
   output Boolean boundaryCondition;
 algorithm
-  boundaryCondition := match(m)
-    case(SCode.NAMEMOD("__OpenModelica_BoundaryCondition", SCode.MOD(binding = SOME(Absyn.BOOL(true))))) then true;
+  boundaryCondition := match m
+    case SCode.NAMEMOD("__OpenModelica_BoundaryCondition", SCode.MOD(binding = SOME(Absyn.BOOL(true)))) then true;
     else false;
   end match;
 end isEquationTaggedBoundaryCondition;
@@ -2971,8 +2956,8 @@ protected function isEquationTaggedConstant
   input SCode.SubMod m;
   output Boolean constantEquations;
 algorithm
-  constantEquations := match(m)
-    case(SCode.NAMEMOD("__OpenModelica_ExactConstantEquation", SCode.MOD(binding = SOME(Absyn.BOOL(true))))) then true;
+  constantEquations := match m
+    case SCode.NAMEMOD("__OpenModelica_ExactConstantEquation", SCode.MOD(binding = SOME(Absyn.BOOL(true)))) then true;
     else false;
   end match;
 end isEquationTaggedConstant;
@@ -3056,7 +3041,7 @@ public function findBlockTargetsHelper
 algorithm
   (outSBLT, outEBLT) := match(inlist1, inlist2, solvedvariables, mxt, actualblocks, debug)
    local
-     list<Integer> first, dependencyequation, targetblockslist;
+     list<Integer> first, dependencyequation;
      list<list<Integer>> rest, targetblocks, targetblocks1, originalblocks, eBLTList1, eBLTList2;
      list<list<String>> restitem;
      list<String> firstitem;
@@ -3108,7 +3093,7 @@ public function getDependencyequation
   output list<Integer> outSBLT;
   output list<Integer> outEBLT;
 protected
-  list<Integer> t={}, nonsq, e_BltList;
+  list<Integer> t={}, nonsq;
   Integer eqnumber, varnumber;
 algorithm
   for eqnumber in inlist loop
@@ -3133,8 +3118,8 @@ public function getdirectOccurrencesinEquation
   output list<Integer> outSBLT = {};
   output list<Integer> outEBLT = {};
 protected
-  list<Integer> ret,vars,matchedeq;
-  Integer eq,eqnum,varnum;
+  list<Integer> vars;
+  Integer eq;
 algorithm
   for i in m loop
     (eq, vars) := i;
@@ -3189,7 +3174,7 @@ public function sortBlocks
   input list<tuple<list<Integer>,Integer>> inlist2;
   output list<tuple<list<Integer>,Integer>> outlist={};
 protected
-  Integer e1, e2;
+  Integer e1;
   list<Integer> blocks;
 algorithm
   for i in sortedranklist loop
@@ -3257,13 +3242,11 @@ public function findPredecessorBlocks
   output list<tuple<list<Integer>, list<tuple<list<Integer>, Integer>>, list<tuple<list<String>, Integer>>, list<Integer>, list<Integer>, list<Integer>>> outblockinfo={};
 protected
   list<Integer> dependencyequation, constantEquations;
-  list<tuple<list<Integer>, Integer>> blockstoupdate, targetblocks, tmptargetblocks;
+  list<tuple<list<Integer>, Integer>> targetblocks, tmptargetblocks;
   list<tuple<list<String>,Integer>> targetblocksvar;
-  list<Integer> blockitem, blockitems1, blockitems2, foundblockranks;
-  list<String> blockvarlst, blockvarlst1, blockvarlst2;
-  Integer foundblock, count=1, foundblockrank, tmpcount;
-  Boolean visited, square, status, checkknowns, finalsquarestauts, exist, exist1, targetexist;
-  list<tuple<list<Integer>, list<String>, Boolean, Integer>> outlist1={};
+  list<Integer> blockitems1, foundblockranks;
+  Integer count=1, tmpcount;
+  Boolean exist, targetexist;
 algorithm
   //print("Targets of blocks without predecessors\n" + "=====================================\n");
   for blocks in blockinfo loop
@@ -3436,12 +3419,10 @@ protected function VerifyDataReconciliation
   input Integer unMeasuredVariablesOfInterest = 0;
 protected
   list<Integer> matchedeq, matchedknownssetc, matchedunknownssetc, matchedknownssets, matchedunknownssets;
-  list<Integer> tmpunknowns, tmpknowns, tmplist1, tmplist2, tmplist3, tmplist1sets, setstmp;
-  list<Integer> tmplistvar1, tmplistvar2, tmplistvar3, sets_eqs, sets_vars, extractedeqs;
-  Integer eqnumber, varnumber;
-  list<tuple<Integer,list<Integer>>> var_dependencytree, eq_dependencytree;
+  list<Integer> tmplist1, tmplist2, tmplist3, tmplist1sets;
+  list<Integer> tmplistvar1, tmplistvar2, tmplistvar3;
   String str, resstr, condition1, condition2, condition3, condition4, condition5, auxilliaryConditions, varsToReconcile;
-  list<BackendDAE.Var> var, convar;
+  list<BackendDAE.Var> var;
   Boolean rule2 = true;
   list<BackendDAE.Equation> condition1_eqs;
 algorithm
@@ -3584,9 +3565,9 @@ protected function generateCompileTimeHtmlReport
   input Integer numRelatedBoundaryConditions = 0;
   input Integer unMeasuredVariables = 0;
 protected
-  String data, condition1_msg, condition2_msg, condition4_msg;
+  String data, condition1_msg, condition4_msg;
   list<BackendDAE.Equation> condition1_eqs;
-  list<BackendDAE.Var> condition2_vars, condition4_vars;
+  list<BackendDAE.Var> condition4_vars;
 algorithm
     if boundaryCondition then
       data := "<html> \n <head> <h1> Boundary Condition Report</h1></head> \n <body> \n <h2> Overview: </h2> \n";
@@ -3753,42 +3734,40 @@ protected function dumpEquationString "Helper function to e.g. dump equations"
   input BackendDAE.Equation inEquation;
   output String outString;
 algorithm
-  outString := match (inEquation)
+  outString := match inEquation
     local
-      String s1, s2, s3, s4, res;
-      DAE.Exp e1, e2, e, cond, start, stop, iter;
+      String s1, s2, s3, res;
+      DAE.Exp e1, e2, e, start, stop, iter;
       list<DAE.Exp> expl;
       DAE.ComponentRef cr;
       BackendDAE.Equation eqn;
       BackendDAE.WhenEquation weqn;
-      BackendDAE.EquationAttributes attr;
       DAE.Algorithm alg;
       DAE.ElementSource source;
       list<list<BackendDAE.Equation>> eqnstrue;
       list<BackendDAE.Equation> eqnsfalse, eqns;
-      list<BackendDAE.WhenOperator> whenStmtLst;
-    case (BackendDAE.EQUATION(exp = e1, scalar = e2))
+    case BackendDAE.EQUATION(exp = e1, scalar = e2)
       algorithm
         s1 := ExpressionDump.printExp2Str(e1, "", NONE(), NONE());
         s2 := ExpressionDump.printExp2Str(e2, "", NONE(), NONE());
         res := stringAppendList({s1," = ",s2});
       then
         res;
-    case (BackendDAE.COMPLEX_EQUATION(left = e1, right = e2))
+    case BackendDAE.COMPLEX_EQUATION(left = e1, right = e2)
       algorithm
         s1 := ExpressionDump.printExp2Str(e1, "", NONE(), NONE());
         s2 := ExpressionDump.printExp2Str(e2, "", NONE(), NONE());
         res := stringAppendList({s1," = ",s2});
       then
         res;
-    case (BackendDAE.ARRAY_EQUATION(left = e1, right = e2))
+    case BackendDAE.ARRAY_EQUATION(left = e1, right = e2)
       algorithm
         s1 := ExpressionDump.printExp2Str(e1, "", NONE(), NONE());
         s2 := ExpressionDump.printExp2Str(e2, "", NONE(), NONE());
         res := stringAppendList({s1," = ",s2});
       then
         res;
-    case (BackendDAE.SOLVED_EQUATION(componentRef = cr, exp = e2))
+    case BackendDAE.SOLVED_EQUATION(componentRef = cr, exp = e2)
       algorithm
         s1 := ComponentReferenceBasics.printComponentRefStr(cr);
         s1 := System.stringReplace(s1, ".", "_");
@@ -3797,23 +3776,23 @@ algorithm
         res := stringAppendList({s1," = ",s2});
       then
         res;
-    case (BackendDAE.WHEN_EQUATION(whenEquation = weqn))
+    case BackendDAE.WHEN_EQUATION(whenEquation = weqn)
       algorithm
         res := BackendDump.whenEquationString(weqn, true);
       then
         res;
-    case (BackendDAE.RESIDUAL_EQUATION(exp = e))
+    case BackendDAE.RESIDUAL_EQUATION(exp = e)
       algorithm
         s1 := ExpressionDump.printExp2Str(e, "", NONE(), NONE());
         res := stringAppendList({s1, "= 0"});
       then
         res;
-    case (BackendDAE.ALGORITHM(alg = alg, source = source))
+    case BackendDAE.ALGORITHM(alg = alg, source = source)
       algorithm
         res := DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg, source)});
       then
         res;
-    case (BackendDAE.IF_EQUATION(conditions=e1::expl, eqnstrue=eqns::eqnstrue, eqnsfalse=eqnsfalse))
+    case BackendDAE.IF_EQUATION(conditions=e1::expl, eqnstrue=eqns::eqnstrue, eqnsfalse=eqnsfalse)
       algorithm
         s1 := ExpressionDump.printExp2Str(e1, "", NONE(), NONE());
         s2 := stringDelimitList(List.map(eqns, dumpEquationString),"\n  ");

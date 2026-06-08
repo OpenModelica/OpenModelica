@@ -109,6 +109,7 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/GlobalScriptUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/Interactive.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/InteractiveTypes.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Script/ProgramUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/StaticScript.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/SymbolTable.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/InteractiveUtil.mo
@@ -218,6 +219,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/BinaryTree.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/BinaryTreeInt.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/Causalize.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/Coloring.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/CommonSubExpression.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/DAEQuery.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/DAEMode.mo
@@ -441,6 +443,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCode.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCodeMain.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCodeUtil.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCodeUtilShared.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/ReduceDAE.mo
 
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/AbsynToJulia.mo

@@ -174,7 +174,6 @@ algorithm
       list<tuple<Tokens,BlockType>> blstack;
       String str;
       Text txt;
-      Integer nchars;
 
     //empty string means nothing
     //to ensure invariant being able to check emptiness only through the tokens (list) emtiness
@@ -392,25 +391,25 @@ protected function takeLineOrString
   output list<String> outRestChars;
   output Boolean outIsLine;
 algorithm
-  (outTillNewLineChars, outRestChars, outIsLine) := match (inChars)
+  (outTillNewLineChars, outRestChars, outIsLine) := match inChars
     local
       String  char;
       list<String> tnlchars, restchars, chars;
       Boolean isline;
 
-    case ({})
+    case {}
       then
         ({}, {}, false);
 
-    case ("\n" :: chars)
+    case "\n" :: chars
       then
         ({"\n"}, chars, true);
 
-    case ("\r\n" :: chars)
+    case "\r\n" :: chars
       then
         ({"\n"}, chars, true);
 
-    case (char :: chars)
+    case char :: chars
       algorithm
         (tnlchars, restchars, isline) := takeLineOrString(chars);
       then
@@ -424,19 +423,17 @@ public function softNewLine
   input Text inText;
   output Text outText;
 algorithm
-  outText := match (inText)
+  outText := match inText
     local
       Text txt;
       Tokens toks;
-      list<tuple<Tokens,BlockType>> blstack;
-      StringToken tok;
 
     //empty - nothing
-    case (txt as MEM_TEXT(tokens = {} ))
+    case txt as MEM_TEXT(tokens = {} )
       then
         txt;
 
-    case (txt as MEM_TEXT(tokens = toks))
+    case txt as MEM_TEXT(tokens = toks)
       algorithm
         //at start of line - nothing
         if not isAtStartOfLine(txt) then
@@ -485,25 +482,25 @@ protected function isAtStartOfLineTok
   input StringToken inTok;
   output Boolean b;
 algorithm
-  b := match (inTok)
+  b := match inTok
     local
       StringToken tok;
 
     //a new-line at the end
-    case ( ST_NEW_LINE() )
+    case ST_NEW_LINE()
       then true;
 
     //a new-line at the end
-    case ( ST_LINE() )
+    case ST_LINE()
       then true;
 
     //a new-line at the end
-    case ( ST_STRING_LIST(lastHasNewLine = true) )
+    case ST_STRING_LIST(lastHasNewLine = true)
       then true;
 
     //recursively in the last block
-    case ( ST_BLOCK(
-             tokens = (tok :: _) ))
+    case ST_BLOCK(
+             tokens = (tok :: _) )
       then isAtStartOfLineTok(tok);
 
 
@@ -518,12 +515,12 @@ public function newLine
   input Text inText;
   output Text outText;
 algorithm
-  outText := match (inText)
+  outText := match inText
     local
       Tokens toks;
       list<tuple<Tokens,BlockType>> blstack;
 
-    case (MEM_TEXT(tokens = toks,blocksStack = blstack))
+    case MEM_TEXT(tokens = toks,blocksStack = blstack)
       then MEM_TEXT(ST_NEW_LINE() :: toks, blstack);
 
     case FILE_TEXT()
@@ -542,7 +539,6 @@ algorithm
     local
       Tokens toks;
       list<tuple<Tokens,BlockType>> blstack;
-      BlockType blType;
       Integer nchars, aind, w;
       Boolean isstart;
 
@@ -562,7 +558,7 @@ algorithm
         aind := Mutable.access(txt.aind);
         isstart := Mutable.access(txt.isstart);
         Mutable.update(txt.blocksStack, BT_FILE_TEXT(inBlockType, nchars, aind, isstart, Mutable.create(textFileTell(txt)), Mutable.create(NONE()))::Mutable.access(txt.blocksStack));
-        _ := match inBlockType
+        () := match inBlockType
           case BT_INDENT(width = w)
           algorithm
             Mutable.update(txt.nchars, nchars+w);
@@ -611,17 +607,17 @@ algorithm
       Boolean oldisstart;
 
     //when nothing was put, just pop tokens from the stack and no block output
-    case (MEM_TEXT(
+    case MEM_TEXT(
             tokens = {},
             blocksStack = ( (stacktoks,_) :: blstack )
-            ))
+            )
       then
           MEM_TEXT( stacktoks, blstack);
 
-    case (MEM_TEXT(
+    case MEM_TEXT(
             tokens = toks,
             blocksStack = ( (stacktoks, blType) :: blstack)
-            ))
+            )
       then
         MEM_TEXT(
           ST_BLOCK(toks, blType) :: stacktoks,
@@ -631,7 +627,7 @@ algorithm
       algorithm
         blk::rest := Mutable.access(txt.blocksStack);
         Mutable.update(txt.blocksStack, rest);
-        _ := match blk.bt
+        () := match blk.bt
           case BT_INDENT()
             algorithm
               if Mutable.access(txt.isstart) then
@@ -671,7 +667,7 @@ algorithm
 
     //should not ever happen
     //- when compilation is correct, this is impossible (pushs and pops should be balanced)
-    case (_)
+    case _
       algorithm
         true := Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.popBlock failed - probably pushBlock and popBlock are not well balanced !\n");
       then
@@ -706,7 +702,7 @@ algorithm
           iopts as ITER_OPTIONS(
             startIndex0 = i0))
       algorithm
-        _ := match iopts
+        () := match iopts
           case ITER_OPTIONS(alignNum=0, wrapWidth=0) then ();
           else
             algorithm
@@ -736,17 +732,17 @@ algorithm
       BlockType blType;
 
     //nothing was iterated, pop only the stacked tokens
-    case (MEM_TEXT(
+    case MEM_TEXT(
             tokens = {},
             blocksStack = ( ({},_) :: (stacktoks,_) :: blstack )
-            ))
+            )
       then
           MEM_TEXT(stacktoks, blstack);
 
-    case (MEM_TEXT(
+    case MEM_TEXT(
             tokens = {},
             blocksStack = ( (itertoks,blType) :: (stacktoks,_) :: blstack )
-            ))
+            )
       then
           MEM_TEXT(
             ST_BLOCK(itertoks, blType) :: stacktoks,
@@ -759,7 +755,7 @@ algorithm
 
     //should not ever happen
     //- when compilation is correct, this is impossible (pushs and pops should be balanced)
-    case (_)
+    case _
       algorithm
         true := Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.popIter failed - probably pushIter and popIter are not well balanced or something was written between the last nextIter and popIter ?\n");
       then
@@ -785,21 +781,21 @@ algorithm
       Mutable<Option<StringToken>> septok;
 
     //empty iteration segment and 'empty' option is NONE(), so do nothing
-    case (txt as MEM_TEXT(
+    case txt as MEM_TEXT(
             tokens = {},
             blocksStack = (_, BT_ITER(options = ITER_OPTIONS(empty = NONE()) )) :: _
-            ))
+            )
       then
         txt;
 
     //empty iteration segment, but 'empty' option is specified, so put the value
-    case (MEM_TEXT(
+    case MEM_TEXT(
             tokens = {},
             blocksStack = (itertoks, bt as BT_ITER(
                                        options = ITER_OPTIONS(
                                                             empty = SOME(emptok)),
                                        index0 = i0)) :: blstack
-            ))
+            )
       algorithm
         Mutable.update(i0, Mutable.access(i0) + 1);
       then
@@ -810,10 +806,10 @@ algorithm
 
 
     //one token, put it as it is
-    case (MEM_TEXT(
+    case MEM_TEXT(
             tokens = {tok},
             blocksStack = (itertoks, bt as BT_ITER(index0 = i0)) :: blstack
-            ))
+            )
       algorithm
         Mutable.update(i0, Mutable.access(i0) + 1);
       then
@@ -823,10 +819,10 @@ algorithm
         );
 
     //more tokens, put them as a text block
-    case (MEM_TEXT(
+    case MEM_TEXT(
             tokens = toks /* as (_::_) */,
             blocksStack = (itertoks, bt as BT_ITER(index0 = i0)) :: blstack
-            ))
+            )
       algorithm
         Mutable.update(i0, Mutable.access(i0) + 1);
       then
@@ -837,7 +833,7 @@ algorithm
 
     case FILE_TEXT()
       algorithm
-        _ := match listGet(Mutable.access(txt.blocksStack),1)
+        () := match listGet(Mutable.access(txt.blocksStack),1)
         case BT_FILE_TEXT(bt=BT_ITER(options = iopts, index0=i0), tell=tell, septok=septok)
         algorithm
           // Either the iterator always increments, or the file position changed
@@ -885,13 +881,13 @@ public function getIteri_i0
   input Text inText;
   output Integer outI0;
 algorithm
-  outI0 := match (inText)
+  outI0 := match inText
     local
       Mutable<Integer> i0;
 
-    case (MEM_TEXT(
+    case MEM_TEXT(
             blocksStack = (_, BT_ITER(index0 = i0)) :: _
-            ))
+            )
       then
         Mutable.access(i0);
 
@@ -899,7 +895,7 @@ algorithm
       then match listGet(Mutable.access(inText.blocksStack),1) case BT_FILE_TEXT(bt=BT_ITER(index0=i0)) then Mutable.access(i0); end match;
 
     //should not ever happen
-    case (_ )
+    case _
       algorithm
         true := Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.getIter_i0 failed - getIter_i0 was called in a non-iteration context ? \n");
       then
@@ -912,12 +908,12 @@ This function renders a (memory-)text to string."
   input Text inText;
   output String outString;
 algorithm
-  outString := match (inText)
+  outString := match inText
     local
       Text txt;
       String str;
       Integer handle;
-    case (txt)
+    case txt
       algorithm
         handle := Print.saveAndClearBuf();
         textStringBuf(txt);
@@ -927,7 +923,7 @@ algorithm
         str;
 
     //should not ever happen
-    case (_ )
+    case _
       algorithm
         true := Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.textString failed.\n");
       then
@@ -939,29 +935,29 @@ public function textStringBuf "function: textStringBuf:
 This function renders a (memory-)text to (Print.)string buffer."
   input Text inText;
 algorithm
-  _ := match (inText)
+  () := match inText
     local
       Tokens toks;
 
-    case (MEM_TEXT(
+    case MEM_TEXT(
             tokens = toks,
             blocksStack = {}
-            ))
+            )
       algorithm
-        (_,_) := tokensString(listReverse(toks), 0, true, 0);
+        tokensString(listReverse(toks), 0, true, 0);
       then
         ();
 
-    case (MEM_TEXT(
+    case MEM_TEXT(
             blocksStack = _::_
-            ))
+            )
       algorithm
         true := Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.textString failed - a non-comlete text was given.\n");
       then
         fail();
 
     //should not ever happen
-    case (_ )
+    case _
       algorithm
         true := Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.textString failed.\n");
       then
@@ -1087,7 +1083,7 @@ algorithm
   if doHandleTok then
     handleTok(inText);
   end if;
-  _ := match inText
+  () := match inText
     case FILE_TEXT()
     algorithm
       nchars := Mutable.access(inText.nchars);
@@ -1462,29 +1458,15 @@ protected function iterSeparatorString
   input Boolean inAtStartOfLine;
   input Integer inAfterNewLineIndent;
 
-  output Integer outActualPositionOnLine;
-  output Boolean outAtStartOfLine;
+  output Integer outActualPositionOnLine = inActualPositionOnLine;
+  output Boolean outAtStartOfLine = inAtStartOfLine;
+protected
+  Integer aind = inAfterNewLineIndent;
 algorithm
-  (outActualPositionOnLine, outAtStartOfLine) := match (inTokens, inSeparator, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent)
-    local
-      Tokens toks;
-      StringToken tok, septok;
-      Integer pos, aind;
-      Boolean isstart;
-
-    case ({}, _, pos, isstart, _)
-      then
-        (pos, isstart);
-
-    case (tok :: toks, septok, pos, isstart, aind)
-      algorithm
-        (pos, isstart, aind) := tokString(septok, pos, isstart, aind);
-        (pos, isstart, aind) := tokString(tok, pos, isstart, aind);
-        (pos, isstart)
-         := iterSeparatorString(toks, septok, pos, isstart, aind);
-      then
-        (pos, isstart);
-  end match;
+  for tok in inTokens loop
+    (outActualPositionOnLine, outAtStartOfLine, aind) := tokString(inSeparator, outActualPositionOnLine, outAtStartOfLine, aind);
+    (outActualPositionOnLine, outAtStartOfLine, aind) := tokString(tok, outActualPositionOnLine, outAtStartOfLine, aind);
+  end for;
 end iterSeparatorString;
 
 
@@ -1543,65 +1525,28 @@ protected function iterAlignWrapString
 
   output Integer outActualPositionOnLine;
   output Boolean outAtStartOfLine;
+protected
+  Tokens toks = inTokens;
+  StringToken tok;
+  Integer idx = inActualIndex;
+  Integer pos = inActualPositionOnLine;
+  Boolean isstart = inAtStartOfLine;
+  Integer aind = inAfterNewLineIndent;
 algorithm
-  (outActualPositionOnLine, outAtStartOfLine)
-   := match (inTokens, inActualIndex, inAlignNum, inAlignSeparator, inWrapWidth, inWrapSeparator, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent)
-    local
-      Tokens toks;
-      StringToken tok,  asep, wsep;
-      Integer pos, aind, idx, anum, wwidth;
-      Boolean isstart;
-
-    case ({}, _,_,_,_,_, pos, isstart, _)
-      then
-        (pos, isstart);
-
-    //align and try wrap
-    case (tok :: toks, idx, anum, asep, wwidth, wsep, pos, isstart, aind)
-      guard
-        (idx > 0) and (intMod(idx,anum) == 0)
-      algorithm
-        (pos, isstart, aind) := tokString(asep, pos, isstart, aind);
-        (pos, isstart, aind) := tryWrapString(wwidth, wsep, pos, isstart, aind);
-        (pos, isstart, aind) := tokString(tok, pos, isstart, aind);
-        (pos, isstart)
-         := iterAlignWrapString(toks, idx + 1, anum, asep, wwidth, wsep,
-                pos, isstart, aind);
-      then
-        (pos, isstart);
-    //wrap
-    case (tok :: toks, idx, anum, asep, wwidth, wsep, pos, isstart, aind)
-      guard
-        //false = (idx > 0) and (intMod(idx,anum) == 0);
-        (wwidth > 0) and (pos >= wwidth) //check wwidth for the invariant that should be always true here
-      algorithm
-        (pos, isstart, aind) := tokString(wsep, pos, isstart, aind);
-        (pos, isstart, aind) := tokString(tok, pos, isstart, aind);
-        (pos, isstart)
-          := iterAlignWrapString(toks, idx + 1, anum, asep, wwidth, wsep,
-                pos, isstart, aind);
-      then
-        (pos, isstart);
-
-    //item only
-    case (tok :: toks, idx, anum, asep, wwidth, wsep, pos, isstart, aind)
-      algorithm
-        //false = (idx > 0) and (intMod(idx,anum) == 0);
-        //false = (wwidth > 0) and (pos >= wwidth); //check wwidth for the invariant that should be always true here
-        (pos, isstart, aind) := tokString(tok, pos, isstart, aind);
-        (pos, isstart)
-         := iterAlignWrapString(toks, idx + 1, anum, asep, wwidth, wsep,
-              pos, isstart, aind);
-      then
-        (pos, isstart);
-
-    //should not ever happen
-    else
-      algorithm
-        true := Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.iterAlignWrapString failed.\n");
-      then
-        fail();
-  end match;
+  while not listEmpty(toks) loop
+    tok::toks := toks;
+    if (idx > 0) and (intMod(idx,inAlignNum) == 0) then
+      //align and try wrap
+      (pos, isstart, aind) := tokString(inAlignSeparator, pos, isstart, aind);
+      (pos, isstart, aind) := tryWrapString(inWrapWidth, inWrapSeparator, pos, isstart, aind);
+    elseif (inWrapWidth > 0) and (pos >= inWrapWidth) then //check wwidth for the invariant that should be always true here
+      //wrap
+      (pos, isstart, aind) := tokString(inWrapSeparator, pos, isstart, aind);
+    end if;
+    (pos, isstart, aind) := tokString(tok, pos, isstart, aind);
+    idx := idx + 1;
+  end while;
+  (outActualPositionOnLine, outAtStartOfLine) := (pos, isstart);
 end iterAlignWrapString;
 
 
@@ -2002,16 +1947,16 @@ public function textStrTok
 algorithm
   outStringToken := match inText
     local
-      Tokens toks, txttoks;
+      Tokens txttoks;
 
-    case ( MEM_TEXT( tokens = {} ) )
+    case MEM_TEXT( tokens = {} )
       then
         ST_STRING("");
 
-    case ( MEM_TEXT(
+    case MEM_TEXT(
              tokens = txttoks,
              blocksStack = {}
-           ))
+           )
       then
         ST_BLOCK(txttoks, BT_TEXT());
 
@@ -2099,8 +2044,6 @@ public function tplCallWithFailError
     input ArgType1 inArgA;
     output Text out_txt;
   end Tpl_Fun;
-protected
-  ArgType1 arg;
 algorithm
   txt := tplCallHandleErrors(function inFun(inArgA=inArg), txt);
 end tplCallWithFailError;
@@ -2118,8 +2061,6 @@ public function tplCallWithFailError2
     output Text out_txt;
   end Tpl_Fun;
 protected
-  ArgType1 argA;
-  ArgType2 argB;
 algorithm
   txt := tplCallHandleErrors(function inFun(inArgA=inArgA, inArgB=inArgB), txt);
 end tplCallWithFailError2;
@@ -2288,7 +2229,7 @@ protected
   Integer nErr;
 algorithm
   nErr := Error.getNumErrorMessages();
-  _ := tplCallWithFailError3(inFun, inArg, inArg2, inArg3);
+  tplCallWithFailError3(inFun, inArg, inArg2, inArg3);
   failIfTrue(Error.getNumErrorMessages() > nErr);
 end tplNoret3;
 
@@ -2307,7 +2248,7 @@ protected
   Integer nErr;
 algorithm
   nErr := Error.getNumErrorMessages();
-  _ := tplCallWithFailError2(inFun, inArg, inArg2);
+  tplCallWithFailError2(inFun, inArg, inArg2);
   failIfTrue(Error.getNumErrorMessages() > nErr);
 end tplNoret2;
 
@@ -2324,7 +2265,7 @@ protected
   Integer nErr;
 algorithm
   nErr := Error.getNumErrorMessages();
-  _ := tplCallWithFailError(inFun, inArg);
+  tplCallWithFailError(inFun, inArg);
   failIfTrue(Error.getNumErrorMessages() > nErr);
 end tplNoret;
 
@@ -2335,7 +2276,7 @@ This function renders a (memory-)text to a file."
   input String inFileName;
 
 algorithm
-  _ := matchcontinue (inText, inFileName)
+  () := matchcontinue (inText, inFileName)
     local
       Text txt;
       String file;
@@ -2377,7 +2318,7 @@ public function textFileConvertLines "This function renders a (memory-)text to a
   input String inFileName;
 
 algorithm
-  _ := matchcontinue (inText, inFileName)
+  () := matchcontinue (inText, inFileName)
     local
       Text txt;
       String file;
@@ -2506,10 +2447,8 @@ protected function stringFile "Like ST_STRING or ST_LINE"
 protected
   File.File file = File.File(getTextOpaqueFile(inText));
   Integer nchars;
-  IterOptions iopts;
-  StringToken septok;
 algorithm
-  _ := match inText
+  () := match inText
   case FILE_TEXT()
   algorithm
     handleTok(inText);
@@ -2543,7 +2482,7 @@ protected
   File.File file = File.File(getTextOpaqueFile(inText));
   Integer nchars;
 algorithm
-  _ := match inText
+  () := match inText
   case FILE_TEXT()
   algorithm
     File.write(file, "\n");
@@ -2568,13 +2507,13 @@ protected
   StringToken septok;
   Mutable<Option<StringToken>> aseptok;
 algorithm
-  _ := match txt
+  () := match txt
   case FILE_TEXT()
   algorithm
-    _ := match Mutable.access(txt.blocksStack)
-      case (BT_FILE_TEXT(bt=BT_ITER(), septok=aseptok)::_)
+    () := match Mutable.access(txt.blocksStack)
+      case BT_FILE_TEXT(bt=BT_ITER(), septok=aseptok)::_
       algorithm
-        _ := match Mutable.access(aseptok)
+        () := match Mutable.access(aseptok)
         case SOME(septok)
         algorithm
           Mutable.update(aseptok,NONE());

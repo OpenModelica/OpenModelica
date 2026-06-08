@@ -37,12 +37,11 @@ else {
 contains(QWT_CONFIG, QwtFramework) {
 
     INCLUDEPATH *= $${QWT_INSTALL_LIBS}/qwt.framework/Headers
-    LIBS        *= -F$${QWT_INSTALL_LIBS}
 }
 else {
 
     INCLUDEPATH *= $${QWT_INSTALL_HEADERS}
-    LIBS        *= -L$${QWT_INSTALL_LIBS}
 }
 
-qwtAddLibrary(omqwt)
+# QMAKE_RPATHDIR *= $${QWT_INSTALL_LIBS}
+qwtAddLibrary($${QWT_INSTALL_LIBS}, omqwt)

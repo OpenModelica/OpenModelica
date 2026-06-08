@@ -58,6 +58,7 @@ import ComponentReferenceBasics;
 import DAEUtil;
 import ExpandableArray;
 import Expression;
+protected import ExpressionBasics;
 import ExpressionDump;
 import ExpressionSolve;
 import ExpressionSimplify;
@@ -127,14 +128,11 @@ protected
   BackendDAE.EquationArray orderedEqs, orderedEqs_new;
   BackendDAE.Variables orderedVars, globalKnownVars;
   list<BackendDAE.EqSystem> eqSystems = {};
-  list<BackendDAE.Var> varList;
   String daeTypeStr = BackendDump.printBackendDAEType2String(inDAE.shared.backendDAEType);
   Boolean isSimulationDAE = stringEq(daeTypeStr, "simulation");
 
   HashSet.HashSet globalKnownVarHT;
 
-  DAE.Exp cse, call;
-  list<Integer> dependencies;
 algorithm
   size := BackendDAEUtil.maxSizeOfEqSystems(inDAE.eqs) + 42;   //create data structures independent from the size of the EqSystem
   exarray := ExpandableArray.new(size, dummy_equation);
@@ -298,7 +296,7 @@ protected
 algorithm
   (HT, exarray, orderedEqs_new) := inTuple;
 
-  _ := match(inEq)
+  () := match inEq
     case BackendDAE.COMPLEX_EQUATION() algorithm
       if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
         BackendDump.dumpEquationList({inEq}, "wrapFunctionCalls_substitution (COMPLEX_EQUATION)");
@@ -488,14 +486,11 @@ protected function createCseEquations
   input output HashSet.HashSet globalKnownVarHT;
 protected
   DAE.Exp cse, call;
-  list<DAE.Exp> callArg;
   BackendDAE.Equation eq;
-  list<DAE.ComponentRef> crefList;
   DAE.ComponentRef cr;
   BackendDAE.Var var;
   list<BackendDAE.Var> varList, delVars;
   Boolean isGlobalKnown, eqRedundant, add;
-  list<Integer> var_indexes;
 algorithm
   if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
     print("globalKnownVars:\n" + UNDERLINE + "\n");
@@ -641,13 +636,13 @@ protected function addConstantCseVarsToGlobalKnownVarHT
   input DAE.Exp cse_crExp;
   input output HashSet.HashSet globalKnownVarHT;
 algorithm
-  _ :=  match(cse_crExp)
+  () :=  match cse_crExp
     local
       list<DAE.Exp> expLst;
       DAE.ComponentRef cr;
       list<DAE.ComponentRef> crefs;
 
-    case(DAE.TUPLE(PR = expLst))
+    case DAE.TUPLE(PR = expLst)
       algorithm
         for exp in expLst loop
           if Expression.isNotWild(exp) then
@@ -656,7 +651,7 @@ algorithm
         end for;
      then ();
 
-    case(DAE.CALL(expLst = expLst))
+    case DAE.CALL(expLst = expLst)
       algorithm
         for exp in expLst loop
           if Expression.isNotWild(exp) then
@@ -665,7 +660,7 @@ algorithm
         end for;
     then();
 
-    case(DAE.RECORD(exps = expLst))
+    case DAE.RECORD(exps = expLst)
       algorithm
         for exp in expLst loop
           if Expression.isNotWild(exp) then
@@ -694,7 +689,7 @@ algorithm
         end for;
      then ();
 
-    case(DAE.CREF(componentRef=cr))
+    case DAE.CREF(componentRef=cr)
       algorithm
         globalKnownVarHT := BaseHashSet.add(cr, globalKnownVarHT);
      then ();
@@ -721,17 +716,13 @@ protected
   DAE.Exp lhs, rhs;
   DAE.Exp cref, call;
   DAE.Exp exp;
-  list<DAE.Exp> expLst;
   DAE.Type ty;
   list<DAE.Type> types;
   CSE_Equation cseEquation;
-  Boolean allCrefsAreGlobal = true;
-  list<DAE.ComponentRef> crefList;
-  list<BackendDAE.Var> varList;
 algorithm
   (HT, exarray, cseIndex, index, functionTree) := inTuple;
 
-  _ := match(inEq)
+  () := match inEq
     case BackendDAE.COMPLEX_EQUATION(left=lhs, right=rhs) algorithm
       if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
         BackendDump.dumpEquationList({inEq}, "wrapFunctionCalls_analysis (COMPLEX_EQUATION)");
@@ -867,21 +858,18 @@ protected
   HashTableExpToIndex.HashTable HT;
   ExpandableArray<CSE_Equation> exarray;
   Integer cseIndex, index;
-  list<DAE.ComponentRef> crefList;
   DAE.Exp tsub;
 algorithm
   (HT, exarray, cseIndex, index, functionTree) := inTuple;
 
-  cont := match(inExp)
+  cont := match inExp
     local
       DAE.Exp cse_var, cse_var2, call, e, e2;
       DAE.Type ty;
       list<DAE.Type> types;
-      Integer length, ix, id;
-      list<DAE.Exp> expList={}, expLst;
+      Integer ix, id;
+      list<DAE.Exp> expList={};
       CSE_Equation cseEquation;
-      Boolean allCrefsAreGlobal = true;
-      DAE.ComponentRef cr;
 
     case DAE.IFEXP()
       algorithm
@@ -970,7 +958,7 @@ protected function isEquationRedundant
   input BackendDAE.Equation inEq;
   output Boolean outB "true if 'x=x', else false";
 algorithm
-  outB := match(inEq)
+  outB := match inEq
     local
       DAE.Exp exp1, exp2;
       list<DAE.Exp> lhs, rhs;
@@ -1028,7 +1016,7 @@ protected function isEquationRedundant_flatten
   output Boolean outB "true if 'x=x', else false";
   output Boolean isGlobalKnown = false;
 algorithm
-  outB := match(inEq)
+  outB := match inEq
     local
       DAE.Exp exp1, exp2;
       list<DAE.Exp> lhs, rhs;
@@ -1142,7 +1130,7 @@ protected function isCall
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match(inExp)
+  outBoolean := match inExp
     case DAE.CALL() then true;
     else false;
   end match;
@@ -1282,7 +1270,7 @@ protected function isWildCref
   input DAE.Exp inExp;
   output Boolean outB;
 algorithm
-  outB := match(inExp)
+  outB := match inExp
     case DAE.CREF(componentRef=DAE.WILD()) then true;
     else false;
   end match;
@@ -1302,7 +1290,7 @@ protected function isSkipCase "outline all skip cases
   input AvlTreePathFunction.Tree functionTree;
   output Boolean outB;
 algorithm
-  outB := match(inCall)
+  outB := match inCall
     local
       Absyn.Path path;
     case DAE.ASUB() then true;
@@ -1361,7 +1349,7 @@ protected function isSkipCase_advanced
   input DAE.Exp inCall;
   output Boolean outB;
 algorithm
-  outB := match(inCall)
+  outB := match inCall
     local
       Absyn.Path path;
     case DAE.CALL(path=Absyn.IDENT("acos")) then true;
@@ -1387,7 +1375,7 @@ protected function isCallRecordConstructor
   input AvlTreePathFunction.Tree funcsIn;
   output Boolean outIsCall;
 algorithm
-  outIsCall := matchcontinue(inExp)
+  outIsCall := matchcontinue inExp
     local
       Absyn.Path path;
       DAE.Function func;
@@ -1407,7 +1395,7 @@ protected function createReturnExp
   output DAE.Exp outExp;
   output Integer outIndex;
 algorithm
-  (outExp, outIndex) := match(inType)
+  (outExp, outIndex) := match inType
     local
       Integer i;
       String str;
@@ -1416,10 +1404,6 @@ algorithm
       DAE.Type ty;
       list<DAE.Type> typeLst;
       list<DAE.Exp> expLst;
-      list<DAE.ComponentRef> crefs;
-      Absyn.Path path;
-      list<DAE.Var> varLst;
-      list<String> varNames;
 
     case DAE.T_REAL() algorithm
       str := inPrefix + intString(inIndex);
@@ -1501,7 +1485,7 @@ protected function createVarsForExp_onlyCSECrefs
   input list<BackendDAE.Var> inAccumVarLst;
   output list<BackendDAE.Var> outVarLst;
 algorithm
-  (outVarLst) := match (inExp)
+  outVarLst := match inExp
     local
       DAE.ComponentRef cr, cr_;
       list<DAE.ComponentRef> crefs;
@@ -1577,7 +1561,7 @@ protected function createVarsForExp
   input list<BackendDAE.Var> inAccumVarLst = {};
   output list<BackendDAE.Var> outVarLst;
 algorithm
-  (outVarLst) := match (inExp)
+  outVarLst := match inExp
     local
       DAE.ComponentRef cr, cr_;
       list<DAE.ComponentRef> crefs;
@@ -1692,7 +1676,7 @@ protected function CSE1
   output BackendDAE.Shared outShared = inShared;
   output Integer outIndex;
 algorithm
-  (outSystem, outIndex) := matchcontinue(inSystem)
+  (outSystem, outIndex) := matchcontinue inSystem
     local
       BackendDAE.Variables orderedVars;
       BackendDAE.EquationArray orderedEqs;
@@ -1703,7 +1687,7 @@ algorithm
       HashTableExpToIndex.HashTable HT2, HT3;
       Integer index = inIndex;
 
-    case (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs)) algorithm
+    case syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs) algorithm
     //if Flags.isSet(Flags.DUMP_CSE) then
     //  BackendDump.dumpVariables(orderedVars, "########### Updated Variable List ###########");
     //  BackendDump.dumpEquationArray(orderedEqs, "########### Updated Equation List ###########");
@@ -1742,7 +1726,7 @@ protected function substituteCSE
   output BackendDAE.Equation outEq;
   output tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, HashTableExpToIndex.HashTable, list<BackendDAE.Equation>, list<BackendDAE.Var>> outTuple;
 algorithm
-  (outEq, outTuple) := match(inEq)
+  (outEq, outTuple) := match inEq
     local
       BackendDAE.Equation eq;
       tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, HashTableExpToIndex.HashTable, list<BackendDAE.Equation>, list<BackendDAE.Var>> tpl;
@@ -1780,18 +1764,14 @@ protected function substituteCSE_main
 algorithm
   (outExp, cont, outTuple) := matchcontinue(inExp, inTuple)
     local
-      DAE.Exp exp1, value;
-      Absyn.Path path;
-      DAE.CallAttributes attr;
+      DAE.Exp value;
       HashTableExpToExp.HashTable HT;
       HashTableExpToIndex.HashTable HT2;
       HashTableExpToIndex.HashTable HT3;
-      list<BackendDAE.Equation> eqLst, eqLst1;
-      list<BackendDAE.Var> varLst, varLst1;
+      list<BackendDAE.Equation> eqLst;
+      list<BackendDAE.Var> varLst;
       Integer counter;
       BackendDAE.Equation eq;
-      DAE.Exp expReplaced;
-      list<DAE.Exp> expLst;
       DAE.ElementSource source;
 
     case (DAE.BINARY(), ((HT, HT2, HT3, eqLst, varLst), source)) algorithm
@@ -1821,7 +1801,7 @@ protected function createStatistics
   output BackendDAE.Equation outEq;
   output tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, Integer> outTuple;
 algorithm
-  (outEq, outTuple) := match(inEq)
+  (outEq, outTuple) := match inEq
     local
       BackendDAE.Equation eq;
       tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, Integer> tpl;
@@ -1860,19 +1840,11 @@ algorithm
   (outExp, cont, outTuple) := matchcontinue(inExp, inTuple)
     local
       DAE.Exp exp1, exp2, value;
-      list<DAE.Exp> expLst;
       DAE.Operator op;
       Absyn.Path path;
       HashTableExpToExp.HashTable HT;
       HashTableExpToIndex.HashTable HT2;
-      list<BackendDAE.Equation> eqList;
-      list<BackendDAE.Var> varList;
       Integer i, counter;
-      String str;
-      DAE.ComponentRef cr;
-      BackendDAE.Var var;
-      BackendDAE.Equation eq;
-      DAE.Type tp;
 
     case (DAE.BINARY(exp1, op, exp2), (HT, HT2, i)) algorithm
       if checkOp(op) then
@@ -1923,7 +1895,7 @@ protected function isCommutative
   input DAE.Operator inOp;
   output Boolean outCommutative;
 algorithm
-  outCommutative := match(inOp)
+  outCommutative := match inOp
     case DAE.MUL() then true;
     case DAE.ADD() then true;
     else false;
@@ -1934,7 +1906,7 @@ protected function checkOp
   input DAE.Operator inOp;
   output Boolean outB;
 algorithm
-  outB := match(inOp)
+  outB := match inOp
     case DAE.ADD() then true;
     case DAE.SUB() then true;
     case DAE.MUL() then true;
@@ -1994,15 +1966,10 @@ algorithm
     AvlTreePathFunction.Tree functionTree;
     BackendDAE.Variables vars;
     BackendDAE.EquationArray eqs;
-    BackendDAE.Shared shared;
     BackendDAE.EqSystem syst;
     BackendDAE.AdjacencyMatrix m, mT;
-    list<Integer> eqIdcs;
     list<CommonSubExp> cseLst;
 
-    BackendDAE.Equation eqTest;
-    BackendDAE.Var var1,var2;
-    list<BackendDAE.Equation> eqLst;
     Boolean isInitial;
 
   case(BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs), BackendDAE.SHARED(functionTree=functionTree))
@@ -2034,17 +2001,15 @@ protected function commonSubExpressionFind
   input Boolean isInitial;
   output list<CommonSubExp> cseOut;
 protected
-  Integer numVars;
   list<Integer> eqIdcs, varIdcs,lengthLst, range;
   list<list<Integer>> partitions;
-  BackendDAE.Variables vars, linPathVars;
+  BackendDAE.Variables vars;
   BackendDAE.EquationArray eqs;
   BackendDAE.EqSystem eqSys;
   BackendDAE.AdjacencyMatrix m, mT;
   list<BackendDAE.Equation> eqLst;
   list<BackendDAE.Var> varLst;
   list<CommonSubExp> cseLst2, cseLst3, shortenPathsCSE;
-  list<tuple<Boolean, String>> varAtts, eqAtts;
   AvlSetInt.Tree varIdcsSet;
 algorithm
   try
@@ -2122,14 +2087,12 @@ author:Waurich TUD 2016-05"
 protected
   BackendDAE.AdjacencyMatrix m, mT;
   BackendDAE.EqSystem eqSys;
-  BackendDAE.Variables vars, pathVars;
-  list<BackendDAE.Var> varLst;
+  BackendDAE.Variables pathVars;
   list<BackendDAE.Equation> eqLst;
   BackendDAE.EquationArray eqs;
-  list<tuple<Boolean, String>> varAtts, eqAtts;
   Integer numVars, varIdx;
   array<Integer> pathVarIdxMap;
-  list<Integer> partition, varIdcs, adjEqs, pathVarIdcs;
+  list<Integer> partition, adjEqs, pathVarIdcs;
   list<CommonSubExp> cses;
 algorithm
   try
@@ -2191,14 +2154,14 @@ author:Waurich TUD 2014-11"
   input list<CommonSubExp> cseIn;
   output list<CommonSubExp> cseOut;
 algorithm
-  cseOut := matchcontinue(partition, m, mT, vars, eqs, eqMap, varMap, cseIn)
+  cseOut := matchcontinue partition
   local
     Integer sharedVarIdx, eqIdx1, eqIdx2, varIdx1, varIdx2;
     list<Integer> varIdcs1, varIdcs2, sharedVarIdcs, eqIdcs;
     BackendDAE.Equation eq1, eq2;
-    BackendDAE.Var sharedVar, var1, var2;
+    BackendDAE.Var var1, var2;
     DAE.Exp varExp1, varExp2, lhs, rhs1, rhs2;
-  case({eqIdx1, eqIdx2}, _, _, _, _, _, _, _)
+  case {eqIdx1, eqIdx2}
     algorithm
         //print("partition "+stringDelimitList(List.map(partition, intString), ", ")+"\n");
       // the partition consists of 2 equations
@@ -2210,7 +2173,7 @@ algorithm
       {varIdx2} := varIdcs2;
       {sharedVarIdx} := sharedVarIdcs;
       {eq1, eq2} := BackendEquation.getList(partition, eqs);
-      _ := BackendVariable.getVarAt(vars, sharedVarIdx);
+      BackendVariable.getVarAt(vars, sharedVarIdx);
       var1 := BackendVariable.getVarAt(vars, varIdx1);
       var2 := BackendVariable.getVarAt(vars, varIdx2);
 
@@ -2247,9 +2210,9 @@ author:Waurich TUD 2014-11"
   input list<CommonSubExp> cseIn;
   output list<CommonSubExp> cseOut;
 algorithm
-  cseOut := matchcontinue(partition, m, mT, vars, eqs, eqMap, varMap, cseIn)
+  cseOut := matchcontinue cseIn
   local
-    Integer sharedVarIdx, eqIdx1, eqIdx2, varIdx1, varIdx2;
+    Integer eqIdx1, eqIdx2, varIdx1, varIdx2;
     list<Integer> varIdcs1, varIdcs2, sharedVarIdcs, eqIdcs;
     list<Integer> loop1;
     list<list<Integer>> loops;
@@ -2258,7 +2221,7 @@ algorithm
     DAE.Exp varExp1, varExp2, lhs, rhs1, rhs2;
     array<Integer> varMapArr, eqMapArr;
     list<CommonSubExp> cseLst;
-  case(_, _, _, _, _, _, _, _)
+  case _
     algorithm
       //print("partition "+stringDelimitList(List.map(partition, intString), ", ")+"\n");
       // partition has only one loop
@@ -2320,10 +2283,10 @@ author:Waurich TUD 2014-11"
   input BackendDAE.EqSystem sysIn;
   output BackendDAE.EqSystem sysOut;
 algorithm
-  sysOut := match (tplsIn, m, mT, sysIn)
+  sysOut := match (tplsIn, sysIn)
     local
-      Integer sharedVar, eqIdx1, eqIdx2, varIdx1, varIdx2, varIdx_remain, varIdxAlias, eqIdxDel, eqIdxLeft, n;
-      list<Integer> eqIdcs, eqs1, eqs2, vars1, vars2, aliasVars;
+      Integer sharedVar, eqIdx1, eqIdx2, varIdx1, varIdx2, varIdx_remain, varIdxAlias, eqIdxDel, n;
+      list<Integer> eqIdcs, eqs1, eqs2, aliasVars;
       list<CommonSubExp> rest;
       BackendDAE.Var var1, var2, var_remain, var_alias;
       BackendVarTransform.VariableReplacements repl;
@@ -2333,15 +2296,13 @@ algorithm
       BackendDAE.EquationArray eqs;
       BackendDAE.EqSystem syst;
       DAE.Exp varExp_remain, varExp_alias, lhs1,rhs1,lhs2,rhs2,varExp,exp;
-      DAE.Type ty;
       DAE.ComponentRef cref;
       list<BackendDAE.Equation> eqLst;
-  case({}, _, _, syst as BackendDAE.EQSYSTEM())
+  case({}, syst as BackendDAE.EQSYSTEM())
     algorithm
     then (BackendDAEUtil.clearEqSyst(syst));
 
-  case ( ASSIGNMENT_CSE(eqIdcs={eqIdx1, eqIdx2}, aliasVars={varIdx1, varIdx2})::rest, _, _,
-         syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs))
+  case (ASSIGNMENT_CSE(eqIdcs={eqIdx1, eqIdx2}, aliasVars={varIdx1, varIdx2})::rest, syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs))
     algorithm
      // update the equations
      repl := BackendVarTransform.emptyReplacements();
@@ -2360,7 +2321,7 @@ algorithm
        if intLe(listLength(eqs2), listLength(eqs1)) then varIdxAlias := varIdx2; varIdx_remain := varIdx1; else varIdxAlias := varIdx1; varIdx_remain := varIdx2; end if;
      end if;
 
-     if intLe(listLength(eqs2), listLength(eqs1)) then eqIdxDel := eqIdx2; _ := eqIdx1; else eqIdxDel := eqIdx1; _ := eqIdx2; end if;
+     if intLe(listLength(eqs2), listLength(eqs1)) then eqIdxDel := eqIdx2; else eqIdxDel := eqIdx1; end if;
 
      var_remain := BackendVariable.getVarAt(vars, varIdx_remain);
      var_alias := BackendVariable.getVarAt(vars, varIdxAlias);
@@ -2380,12 +2341,11 @@ algorithm
      BackendEquation.setAtIndex(eqs,eqIdxDel,BackendDAE.EQUATION(varExp_remain,varExp_alias,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC));
     then commonSubExpressionUpdate(rest, m, mT, syst);
 
-case (SHORTCUT_CSE(eqIdcs={eqIdx1, eqIdx2}, sharedVar=sharedVar)::rest, _, _, syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs))
+case (SHORTCUT_CSE(eqIdcs={eqIdx1, eqIdx2}, sharedVar=sharedVar)::rest, syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs))
     algorithm
       {eq1, eq2} := BackendEquation.getList({eqIdx1, eqIdx2}, eqs);
       var := BackendVariable.getVarAt(vars, sharedVar);
       varExp := BackendVariable.varExp(var);
-      _ := Expression.typeof(varExp);
       BackendDAE.EQUATION(exp=lhs1, scalar=rhs1) := eq1;
       BackendDAE.EQUATION(exp=lhs2, scalar=rhs2) := eq2;
 
@@ -2413,7 +2373,7 @@ case (SHORTCUT_CSE(eqIdcs={eqIdx1, eqIdx2}, sharedVar=sharedVar)::rest, _, _, sy
       end if;
 
     then commonSubExpressionUpdate(rest, m, mT, syst);
- case (_::rest, _, _, _)
+ case (_::rest, _)
   then commonSubExpressionUpdate(rest, m, mT, sysIn);
   end match;
 end commonSubExpressionUpdate;
@@ -2424,20 +2384,20 @@ author:Waurich TUD 05-2016"
   input DAE.Exp exp;
   output Boolean isAlgOut;
 algorithm
-  isAlgOut := match(exp)
+  isAlgOut := match exp
   local
     Boolean b;
     DAE.Exp e1,e2;
-    case(DAE.RCONST())
+    case DAE.RCONST()
       then true;
-    case(DAE.CREF())
+    case DAE.CREF()
       then true;
-    case(DAE.BINARY(e1,_,e2))
+    case DAE.BINARY(e1,_,e2)
       algorithm
         b := hasAlgebraicOperationsOnly(e1);
         b := b and hasAlgebraicOperationsOnly(e2);
       then b;
-    case(DAE.UNARY(_,e1))
+    case DAE.UNARY(_,e1)
       algorithm
         b := hasAlgebraicOperationsOnly(e1);
       then b;
@@ -2480,19 +2440,19 @@ protected function getTopLevelFactors"Gets factors(crefs only) of the exp"
   input list<DAE.Exp> lstIn;
   output list<DAE.Exp> lstOut;
 algorithm
-  lstOut := matchcontinue(exp,lstIn)
+  lstOut := matchcontinue exp
     local
       DAE.Exp e1,e2;
       list<DAE.Exp> eLst;
-  case(DAE.BINARY(e1,DAE.MUL(_),e2),_)
+  case DAE.BINARY(e1,DAE.MUL(_),e2)
     algorithm
       eLst := getTopLevelFactors(e1,lstIn);
       eLst := getTopLevelFactors(e2,eLst);
    then eLst;
-  case(DAE.UNARY(_ ,e1 as DAE.CREF()),_)
+  case DAE.UNARY(_ ,e1 as DAE.CREF())
     algorithm
    then e1::lstIn;
-  case(e1 as DAE.CREF(),_)
+  case e1 as DAE.CREF()
     algorithm
    then e1::lstIn;
   else
@@ -2505,15 +2465,15 @@ author:Waurich TUD 2014-11"
   input CommonSubExp cse;
   output String s;
 algorithm
-  s := match(cse)
+  s := match cse
 local
   Integer sharedVar;
   list<Integer> eqIdcs;
   list<Integer> sharedVars;
   list<Integer> aliasVars;
-    case(ASSIGNMENT_CSE(eqIdcs=eqIdcs, sharedVars=sharedVars, aliasVars=aliasVars))
+    case ASSIGNMENT_CSE(eqIdcs=eqIdcs, sharedVars=sharedVars, aliasVars=aliasVars)
   then "ASSIGN_CSE: eqs{"+stringDelimitList(List.map(eqIdcs, intString), ", ")+"}"+"   sharedVars{"+stringDelimitList(List.map(sharedVars, intString), ", ")+"}"+"   aliasVars{"+stringDelimitList(List.map(aliasVars, intString), ", ")+"}";
-     case(SHORTCUT_CSE(eqIdcs, sharedVar))
+     case SHORTCUT_CSE(eqIdcs, sharedVar)
   then "SHORTCUT_CSE: eqs{"+stringDelimitList(List.map(eqIdcs, intString), ", ")+"}"+"   sharedVar{"+intString(sharedVar)+"}";
     end match;
 end printCSE;

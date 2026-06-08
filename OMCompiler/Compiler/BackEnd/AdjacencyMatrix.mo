@@ -116,7 +116,7 @@ protected function traverseAdjacencyMatrix2<T>
     output T outTpl;
   end FuncType;
 algorithm
-  (outM, outTypeA) := match (stop)
+  (outM, outTypeA) := match stop
     local
       BackendDAE.AdjacencyMatrix m1, m2;
       T extArg, extArg1, extArg2;
@@ -151,17 +151,17 @@ protected function traverseAdjacencyMatrixList<T>
     output T outTpl;
   end FuncType;
 algorithm
-  (outM, outTypeA) := matchcontinue (inLst)
+  (outM, outTypeA) := matchcontinue inLst
     local
       BackendDAE.AdjacencyMatrix m;
       T extArg, extArg1;
       list<Integer> rest, eqns, eqns1, alleqns;
       Integer pos;
 
-    case ({})
+    case {}
     then (inM, inTypeA);
 
-    case (pos::rest) algorithm
+    case pos::rest algorithm
       // do not leave the list
       true := intLt(pos, len+1);
       // do not more than necesary
@@ -172,7 +172,7 @@ algorithm
       (m, extArg1) := traverseAdjacencyMatrixList(alleqns, inM, func, len, maxpos, extArg);
     then (m, extArg1);
 
-    case (pos::rest) algorithm
+    case pos::rest algorithm
       // do not leave the list
       true := intLt(pos, len+1);
       (m, extArg) := traverseAdjacencyMatrixList(rest, inM, func, len, maxpos, inTypeA);
@@ -195,20 +195,20 @@ public function getOtherEqSysAdjacencyMatrix
   input BackendDAE.AdjacencyMatrix mnew;
   output BackendDAE.AdjacencyMatrix outMNew;
 algorithm
-  outMNew := match (m)
+  outMNew := match m
     local
       list<Integer> row;
 
-    case (_) guard intGt(index, size)
+    case _ guard intGt(index, size)
     then mnew;
 
-    case (_) guard intGt(skip[index], 0)
+    case _ guard intGt(skip[index], 0)
       algorithm
       row := list(r for r guard intGt(r,0) and intGt(rowskip[r], 0) in m[index]);
       arrayUpdate(mnew, index, row);
     then getOtherEqSysAdjacencyMatrix(m, size, index+1, skip, rowskip, mnew);
 
-    case (_) algorithm
+    case _ algorithm
       arrayUpdate(mnew,index,{});
     then getOtherEqSysAdjacencyMatrix(m, size, index+1, skip, rowskip, mnew);
   end match;
@@ -248,7 +248,7 @@ protected function transposeRow "author: PA
   input output BackendDAE.AdjacencyMatrixT mt;
   input output Integer indx;
 algorithm
-  (mt, indx) := match (row)
+  (mt, indx) := match row
     local
       Integer i, indx1, iabs;
       list<Integer> res, col;
@@ -272,7 +272,6 @@ public function absAdjacencyMatrix "author: PA
   input BackendDAE.AdjacencyMatrix m;
   output BackendDAE.AdjacencyMatrix res;
 protected
-  list<list<Integer>> lst, lst_1;
   Integer i = 1;
   Integer minn;
 algorithm

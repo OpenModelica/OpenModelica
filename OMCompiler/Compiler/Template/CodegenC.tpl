@@ -2184,15 +2184,32 @@ template functionInitSample(list<BackendDAE.TimeEvent> timeEvents, String modelN
       match timeEvent
         case SAMPLE_TIME_EVENT(__) then
           let &preExp = buffer ""
+          let &sub = buffer ""
+          let forHead = match iter
+            case SOME(iter_) then (iter_ |> it =>
+              forIterator(it, contextZeroCross, &preExp, &varDecls, &auxFunction, &sub)
+              ;separator="\n";empty)
+            else ""
+          let forBody = match iter
+            case SOME(iter_) then <<int tmp = <%(iter_ |> it =>
+              forIteratorBody(it, contextZeroCross, &preExp, &varDecls, &auxFunction, &sub)
+              ;separator = "")%>0<%(iter_ |> it => ")";separator = "")%>;>>
+            else ""
+          let forTail = match iter
+            case SOME(iter_) then (iter_ |> it => "}";separator="\n";empty)
+            else ""
           let e1 = daeExp(startExp, contextOther, &preExp, &varDecls, &auxFunction)
           let e2 = daeExp(intervalExp, contextOther, &preExp, &varDecls, &auxFunction)
           <<
+          <%forHead%>
           <%preExp%>
+          <%forBody%>
           /* sample <%index%> */
           data->modelData->samplesInfo[i].index = <%index%>;
           data->modelData->samplesInfo[i].start = <%e1%>;
           data->modelData->samplesInfo[i].interval = <%e2%> /* (max real for single time events) */;
           i++;
+          <%forTail%>
           >>
         else '')
   let res = <<
@@ -4412,20 +4429,21 @@ template functionXXX_system0_HPCOM_PThread_func(list<SimEqSystem> derivativEquat
   let assLock = function_HPCOM_assignLockByLockName(idx, "th_lock", "pthreads"); separator="\n"
   let relLock = function_HPCOM_releaseLockByLockName(idx, "th_lock1", "pthreads"); separator="\n"
   <<
-  void function<%name%>_system<%n%>_thread_<%idx%>(DATA *data, threadData_t *threadData)
+  void* function<%name%>_system<%n%>_thread_<%idx%>(void *arg)
   {
+    DATA *data = (DATA*) arg;
     MMC_TRY_TOP()
     while(1)
     {
       <%assLock%>
 
       if(finished)
-         return;
+         return NULL;
 
       <%taskEqs%>
       <%relLock%>
     }
-    MMC_CATCH_TOP(return;) /* No exit status?? */
+    MMC_CATCH_TOP(return NULL;) /* No exit status?? */
   }
   >>
 end functionXXX_system0_HPCOM_PThread_func;
@@ -4959,7 +4977,7 @@ end functionZeroCrossing;
 template descriptionString(Text &descStr, Option<list<SimIterator>> iter)
 ::=
   match iter
-    case SOME(iter_) then (List.intRange(BackendDAEUtil.getSimIteratorSize(iter_)) |> idx =>
+    case SOME(iter_) then (List.intRange(BackendDAE.getSimIteratorSize(iter_)) |> idx =>
       '"[<%idx%>] <%descStr%>';separator=",\n")
     else <<"<%descStr%>>>
 end descriptionString;
@@ -5159,11 +5177,10 @@ template relationsTpl(list<ZeroCrossing> relations, Context context, Text &varDe
   ;separator="\n";empty)
 end relationsTpl;
 
-
 template relationTpl(Integer index1, Exp relation, Option<list<SimIterator>> iter, Context context, Text &varDecls, Text &auxFunction)
  "Generates code for a zero crossing."
 ::=
-let &preExp = buffer ""
+  let &preExp = buffer ""
   let &sub = buffer ""
   let forHead = match iter
     case SOME(iter_) then (iter_ |> it =>
@@ -7650,7 +7667,8 @@ template genericCallHeaders(list<SimGenericCall> genericCalls, Context context)
   let sub_name = match context case JACOBIAN_CONTEXT() then "jac_" else ""
   (genericCalls |> call => match call
     case SINGLE_GENERIC_CALL()
-    case IF_GENERIC_CALL() then
+    case IF_GENERIC_CALL()
+    case WHEN_GENERIC_CALL() then
       let &sub = buffer ""
       let &preExp = buffer ""
       let &varDecls = buffer ""
@@ -7660,7 +7678,7 @@ template genericCallHeaders(list<SimGenericCall> genericCalls, Context context)
   separator="\n\n")
 end genericCallHeaders;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="codegen_c");
 end CodegenC;
 
 // vim: filetype=susan sw=2 sts=2

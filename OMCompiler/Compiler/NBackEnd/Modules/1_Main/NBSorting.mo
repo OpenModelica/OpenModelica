@@ -145,7 +145,7 @@ public
       // add each equation to a bucket if solved the same way
       for eqn_scal_idx in 1:arrayLength(eqn_to_var) loop
         mode_opt := UnorderedMap.get((eqn_scal_idx, eqn_to_var[eqn_scal_idx]), modes);
-        if Util.isSome(mode_opt) then
+        if isSome(mode_opt) then
           mode := Util.getOption(mode_opt);
           if Equation.isRecordOrTupleEquation(EquationPointers.getEqnAt(eqns, mapping.eqn_StA[eqn_scal_idx])) then
             // add the cref to the result, but remove it from the modes so all modes of a tuple equations are equal
@@ -171,7 +171,7 @@ public
       Option<Value> val_opt = UnorderedMap.get(mode, buckets);
       Value val;
     algorithm
-      if Util.isSome(val_opt) then
+      if isSome(val_opt) then
         SOME(val) := val_opt;
         val := Value.addEquation(val, eqn_scal_idx);
         UnorderedMap.add(mode, val, buckets);
@@ -190,7 +190,7 @@ public
       Option<Value> val_opt = UnorderedMap.get(mode, buckets);
       Value val;
     algorithm
-      if Util.isSome(val_opt) then
+      if isSome(val_opt) then
         SOME(val) := val_opt;
         val := Value.addCref(val, cref);
         val := Value.addEquation(val, eqn_scal_idx);
@@ -248,7 +248,6 @@ public
       comps := match adj
         local
           list<list<Integer>> comps_indices, phase2_indices;
-          Option<StrongComponent> comp_opt;
           Adjacency.Matrix phase2_adj;
           Matching phase2_matching;
           array<SuperNode> super_nodes;
@@ -519,7 +518,7 @@ public
           for bucket in buckets loop
             (mode, val) := bucket;
             var_lst := list(phase2_matching.eqn_to_var[idx] for idx in Value.getEquations(val));
-            _ := match val
+            () := match val
               case Value.SINGLE_VAL() algorithm mergeArrayNodes(super_nodes, val.cref_to_solve, var_lst, index, UnorderedMap.getSafe(mode.eqn_name, eqn_map, sourceInfo()), false); then ();
               case Value.MULTI_VAL()  algorithm mergeLoopNodes(super_nodes, var_lst, index, false); then ();
             end match;
@@ -540,7 +539,7 @@ public
           for bucket in buckets loop
             (mode, val) := bucket;
             eqn_lst := Value.getEquations(val);
-            _ := match val
+            () := match val
               case Value.SINGLE_VAL() algorithm mergeArrayNodes(super_nodes, val.cref_to_solve, eqn_lst, index, UnorderedMap.getSafe(mode.eqn_name, eqn_map, sourceInfo()), true); then ();
               case Value.MULTI_VAL()  algorithm mergeLoopNodes(super_nodes, eqn_lst, index, true); then ();
             end match;
@@ -754,5 +753,5 @@ protected
   end predecessors;
 
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NBSorting;

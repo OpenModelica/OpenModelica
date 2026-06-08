@@ -62,10 +62,11 @@ import Algorithm;
 import AvlSetString;
 import BaseHashTable;
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import DAE.Connect;
-import DAEUtil;
 import ElementSource;
 import Expression;
+import ExpressionDump;
 import Error;
 import ErrorExt;
 import Flags;
@@ -149,11 +150,11 @@ protected function checkInvalidPatternNamedArgs
   input SourceInfo info;
   output Util.Status outStatus;
 algorithm
-  outStatus := match (args,fieldNameList,status,info)
+  outStatus := match args
     local
       list<String> argsNames;
       String str1,str2;
-    case ({},_,_,_) then status;
+    case {} then status;
     else
       algorithm
         (argsNames,_) := AbsynUtil.getNamedFuncArgNamesAndValues(args);
@@ -226,7 +227,7 @@ protected function elabPattern2
   output FCore.Cache outCache;
   output DAE.Pattern pattern;
 algorithm
-  (outCache,pattern) := matchcontinue (inCache,env,inLhs,ty,info,numError)
+  (outCache,pattern) := matchcontinue (inCache, inLhs, ty)
     local
       list<Absyn.Exp> exps;
       list<DAE.Type> tys;
@@ -246,106 +247,105 @@ algorithm
       Absyn.Exp lhs;
       DAE.Attributes attr;
       DAE.Exp elabExp;
-      DAE.Properties prop;
       DAE.Const const;
       Values.Value val;
       SCode.Variability variability;
 
-    case (cache,_,Absyn.INTEGER(i),_,_,_)
+    case (cache, Absyn.INTEGER(i), _)
       algorithm
         et := validPatternType(ty,DAE.T_INTEGER_DEFAULT,inLhs,info);
       then (cache,DAE.PAT_CONSTANT(et,DAE.ICONST(i)));
 
-    case (cache,_,Absyn.REAL(str),_,_,_)
+    case (cache, Absyn.REAL(str), _)
       algorithm
         et := validPatternType(ty,DAE.T_REAL_DEFAULT,inLhs,info);
         r := stringReal(str);
       then (cache,DAE.PAT_CONSTANT(et,DAE.RCONST(r)));
 
-    case (cache,_,Absyn.UNARY(Absyn.UMINUS(),Absyn.INTEGER(i)),_,_,_)
+    case (cache, Absyn.UNARY(Absyn.UMINUS(),Absyn.INTEGER(i)), _)
       algorithm
         et := validPatternType(ty,DAE.T_INTEGER_DEFAULT,inLhs,info);
         i := -i;
       then (cache,DAE.PAT_CONSTANT(et,DAE.ICONST(i)));
 
-    case (cache,_,Absyn.UNARY(Absyn.UMINUS(),Absyn.REAL(str)),_,_,_)
+    case (cache, Absyn.UNARY(Absyn.UMINUS(),Absyn.REAL(str)), _)
       algorithm
         et := validPatternType(ty,DAE.T_REAL_DEFAULT,inLhs,info);
         r := stringReal(str);
         r := realNeg(r);
       then (cache,DAE.PAT_CONSTANT(et,DAE.RCONST(r)));
 
-    case (cache,_,Absyn.STRING(s),_,_,_)
+    case (cache, Absyn.STRING(s), _)
       algorithm
         et := validPatternType(ty,DAE.T_STRING_DEFAULT,inLhs,info);
         s := System.unescapedString(s);
       then (cache,DAE.PAT_CONSTANT(et,DAE.SCONST(s)));
 
-    case (cache,_,Absyn.BOOL(b),_,_,_)
+    case (cache, Absyn.BOOL(b), _)
       algorithm
         et := validPatternType(ty,DAE.T_BOOL_DEFAULT,inLhs,info);
       then (cache,DAE.PAT_CONSTANT(et,DAE.BCONST(b)));
 
-    case (cache,_,Absyn.ARRAY({}),_,_,_)
+    case (cache, Absyn.ARRAY({}), _)
       algorithm
         et := validPatternType(ty,DAE.T_METALIST_DEFAULT,inLhs,info);
       then (cache,DAE.PAT_CONSTANT(et,DAE.LIST({})));
 
-    case (cache,_,Absyn.ARRAY(exps as _::_),_,_,_)
+    case (cache, Absyn.ARRAY(exps as _::_), _)
       algorithm
         lhs := List.fold(listReverse(exps), AbsynUtil.makeCons, Absyn.ARRAY({}));
         (cache,pattern) := elabPattern(cache,env,lhs,ty,info);
       then (cache,pattern);
 
-    case (cache,_,Absyn.CALL(Absyn.CREF_IDENT("NONE",{}),Absyn.FUNCTIONARGS({},{})),_,_,_)
+    case (cache, Absyn.CALL(Absyn.CREF_IDENT("NONE",{}),Absyn.FUNCTIONARGS({},{})), _)
       algorithm
         validPatternType(ty,DAE.T_NONE_DEFAULT,inLhs,info);
       then (cache,DAE.PAT_CONSTANT(NONE(),DAE.META_OPTION(NONE())));
 
-    case (cache,_,Absyn.CALL(Absyn.CREF_IDENT("SOME",{}),Absyn.FUNCTIONARGS({exp},{})),DAE.T_METAOPTION(ty = ty2),_,_)
+    case (cache, Absyn.CALL(Absyn.CREF_IDENT("SOME",{}),Absyn.FUNCTIONARGS({exp},{})), DAE.T_METAOPTION(ty = ty2))
       algorithm
         (cache,pattern) := elabPattern(cache,env,exp,ty2,info);
       then (cache,DAE.PAT_SOME(pattern));
 
-    case (cache,_,Absyn.CONS(head,tail),tyTail as DAE.T_METALIST(ty = tyHead),_,_)
+    case (cache, Absyn.CONS(head,tail), tyTail as DAE.T_METALIST(ty = tyHead))
       algorithm
         tyHead := Types.boxIfUnboxedType(tyHead);
         (cache,patternHead) := elabPattern(cache,env,head,tyHead,info);
         (cache,patternTail) := elabPattern(cache,env,tail,tyTail,info);
       then (cache,DAE.PAT_CONS(patternHead,patternTail));
 
-    case (cache,_,Absyn.TUPLE({exp}),_,_,_)
+    case (cache, Absyn.TUPLE({exp}), _)
       algorithm
         (cache,pattern) := elabPattern2(cache,env,exp,ty,info,numError);
       then (cache,pattern);
 
-    case (cache,_,Absyn.TUPLE(exps),DAE.T_METATUPLE(types = tys),_,_)
+    case (cache, Absyn.TUPLE(exps), DAE.T_METATUPLE(types = tys))
       algorithm
         tys := List.map(tys, Types.boxIfUnboxedType);
         (cache,patterns) := elabPatternTuple(cache,env,exps,tys,info,inLhs);
       then (cache,DAE.PAT_META_TUPLE(patterns));
 
-    case (cache,_,Absyn.TUPLE(exps),DAE.T_TUPLE(types = tys),_,_)
+    case (cache, Absyn.TUPLE(exps), DAE.T_TUPLE(types = tys))
       algorithm
         (cache,patterns) := elabPatternTuple(cache,env,exps,tys,info,inLhs);
       then (cache,DAE.PAT_CALL_TUPLE(patterns));
 
-    case (cache,_,lhs as Absyn.CALL(fcr,fargs),DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(utPath)),_,_)
+    case (cache, lhs as Absyn.CALL(fcr,fargs), DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(utPath)))
       algorithm
         (cache,pattern) := elabPatternCall(cache,env,AbsynUtil.crefToPath(fcr),fargs,utPath,info,lhs);
       then (cache,pattern);
 
-    case (cache,_,lhs as Absyn.CALL(fcr,fargs),DAE.T_METAUNIONTYPE(path = utPath),_,_)
+    case (cache, lhs as Absyn.CALL(fcr,fargs), DAE.T_METAUNIONTYPE(path = utPath))
       algorithm
         (cache,pattern) := elabPatternCall(cache,env,AbsynUtil.crefToPath(fcr),fargs,utPath,info,lhs);
       then (cache,pattern);
 
-    case (cache,_,lhs as Absyn.CALL(fcr,fargs),DAE.T_METARECORD(utPath = utPath),_,_)
+    case (cache, lhs as Absyn.CALL(fcr,fargs), DAE.T_METARECORD(utPath = utPath))
       algorithm
         (cache,pattern) := elabPatternCall(cache,env,AbsynUtil.crefToPath(fcr),fargs,utPath,info,lhs);
       then (cache,pattern);
 
-    case (cache,_,Absyn.CREF(),ty1,_,_)
+    case (cache, Absyn.CREF(), ty1)
       guard
         Types.isBoxedType(ty1) or
         (match Types.unboxedType(ty1)
@@ -364,7 +364,7 @@ algorithm
         elabExp := ValuesUtil.valueExp(val);
       then (cache, DAE.PAT_CONSTANT(et, elabExp));
 
-    case (cache,_,Absyn.AS(id,exp),ty2,_,_)
+    case (cache, Absyn.AS(id,exp), ty2)
       algorithm
         (cache,DAE.TYPES_VAR(ty = ty1, attributes = attr),_,_,_,_) := Lookup.lookupIdent(cache,env,id);
         lhs := Absyn.CREF(Absyn.CREF_IDENT(id, {}));
@@ -374,7 +374,7 @@ algorithm
         pattern := if Types.isFunctionType(ty2) then DAE.PAT_AS_FUNC_PTR(id,pattern) else DAE.PAT_AS(id,et,attr,pattern);
       then (cache,pattern);
 
-    case (cache,_,Absyn.CREF(Absyn.CREF_IDENT(id,{})),ty2,_,_)
+    case (cache, Absyn.CREF(Absyn.CREF_IDENT(id,{})), ty2)
       algorithm
         (cache,DAE.TYPES_VAR(ty = ty1, attributes = attr as DAE.ATTR(variability=variability)),_,_,_,_) := Lookup.lookupIdent(cache,env,id);
         if SCodeUtil.isParameterOrConst(variability) then
@@ -386,33 +386,33 @@ algorithm
         pattern := if Types.isFunctionType(ty2) then DAE.PAT_AS_FUNC_PTR(id,DAE.PAT_WILD()) else DAE.PAT_AS(id,et,attr,DAE.PAT_WILD());
       then (cache,pattern);
 
-    case (cache,_,Absyn.AS(id,_),_,_,_)
+    case (cache, Absyn.AS(id,_), _)
       algorithm
-        failure((_,_,_,_,_,_) := Lookup.lookupIdent(cache,env,id));
+        failure(Lookup.lookupIdent(cache,env,id));
         Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR,{id,""},info);
       then fail();
 
-    case (cache,_,Absyn.CREF(Absyn.CREF_IDENT("NONE",{})),_,_,_)
+    case (cache, Absyn.CREF(Absyn.CREF_IDENT("NONE",{})), _)
       algorithm
-        failure((_,_,_,_,_,_) := Lookup.lookupIdent(cache,env,"NONE"));
+        failure(Lookup.lookupIdent(cache,env,"NONE"));
         Error.addSourceMessage(Error.META_NONE_CREF,{},info);
       then fail();
 
-    case (cache,_,Absyn.CREF(Absyn.CREF_IDENT(id,{})),_,_,_)
+    case (cache, Absyn.CREF(Absyn.CREF_IDENT(id,{})), _)
       algorithm
-        failure((_,_,_,_,_,_) := Lookup.lookupIdent(cache,env,id));
+        failure(Lookup.lookupIdent(cache,env,id));
         false := "NONE" == id;
         Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR,{id,""},info);
       then fail();
 
-    case (cache,_,Absyn.CREF(Absyn.WILD()),_,_,_) then (cache,DAE.PAT_WILD());
+    case (cache, Absyn.CREF(Absyn.WILD()), _) then (cache,DAE.PAT_WILD());
 
-    case (cache,_,Absyn.EXPRESSIONCOMMENT(),_,_,_)
+    case (cache, Absyn.EXPRESSIONCOMMENT(), _)
       algorithm
         (cache,pattern) := elabPattern2(cache,env,inLhs.exp,ty,info,numError);
       then (cache,pattern);
 
-    case (_,_,lhs,_,_,_)
+    case (_, lhs, _)
       algorithm
         true := numError == Error.getNumErrorMessages();
         str := Dump.printExpStr(lhs) + " of type " + TypesDump.unparseType(ty);
@@ -432,7 +432,7 @@ protected function elabPatternTuple
   output FCore.Cache outCache;
   output list<DAE.Pattern> patterns;
 algorithm
-  (outCache,patterns) := match (inCache,env,inExps,inTys,info,lhs)
+  (outCache,patterns) := match (inCache, inExps, inTys)
     local
       Absyn.Exp exp;
       String s;
@@ -442,9 +442,9 @@ algorithm
       list<Absyn.Exp> exps;
       list<DAE.Type> tys;
 
-    case (cache,_,{},{},_,_) then (cache,{});
+    case (cache, {}, {}) then (cache,{});
 
-    case (cache,_,exp::exps,ty::tys,_,_)
+    case (cache, exp::exps, ty::tys)
       algorithm
         (cache,pattern) := elabPattern(cache,env,exp,ty,info);
         (cache,patterns) := elabPatternTuple(cache,env,exps,tys,info,lhs);
@@ -470,10 +470,9 @@ protected function elabPatternCall
   output FCore.Cache outCache;
   output DAE.Pattern pattern;
 algorithm
-  (outCache,pattern) := matchcontinue (inCache,env,callPath,fargs,utPath,info,lhs)
+  (outCache,pattern) := matchcontinue (inCache, fargs, utPath)
     local
       String s;
-      DAE.Type t;
       Absyn.Path utPath1,utPath2,fqPath;
       Integer index,numPosArgs;
       list<Absyn.NamedArg> namedArgList,invalidArgs;
@@ -487,12 +486,12 @@ algorithm
       FCore.Cache cache;
       Boolean allWild;
 
-    case (_,_,_,Absyn.FUNCTIONARGS(_::_,_::_),_,_,_)
+    case (_, Absyn.FUNCTIONARGS(_::_,_::_), _)
       algorithm
         Error.addSourceMessage(Error.PATTERN_MIXED_POS_NAMED, {AbsynUtil.pathString(callPath)}, info);
       then fail();
 
-    case (cache,_,_,Absyn.FUNCTIONARGS(funcArgs,namedArgList),utPath2,_,_)
+    case (cache, Absyn.FUNCTIONARGS(funcArgs,namedArgList), utPath2)
       algorithm
         (cache,_,_) :=
           Lookup.lookupType(cache, env, callPath, NONE());
@@ -505,7 +504,7 @@ algorithm
 
         if Flags.isSet(Flags.PATTERNM_ALL_INFO) then
           for namedArg in namedArgList loop
-            _ := match namedArg
+            () := match namedArg
               case Absyn.NAMEDARG(argValue=Absyn.CREF(Absyn.WILD()))
                 algorithm
                   Error.addSourceMessage(Error.META_EMPTY_CALL_PATTERN, {namedArg.argName}, info);
@@ -541,7 +540,7 @@ algorithm
         (cache,patterns) := elabPatternTuple(cache,env,funcArgs2,fieldTypeList,info,lhs);
       then (cache,DAE.PAT_CALL(fqPath,index,patterns,fieldVarList,typeVars,knownSingleton));
 
-    case (cache,_,_,Absyn.FUNCTIONARGS(funcArgs,namedArgList),utPath2,_,_)
+    case (cache, Absyn.FUNCTIONARGS(funcArgs,namedArgList), utPath2)
       algorithm
         (cache,DAE.T_FUNCTION(funcResultType = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=fieldVarList), path = fqPath),_) :=
           Lookup.lookupType(cache, env, callPath, NONE());
@@ -564,9 +563,9 @@ algorithm
         namedPatterns := List.filterOnTrue(namedPatterns, filterEmptyPattern);
       then (cache,DAE.PAT_CALL_NAMED(fqPath,namedPatterns));
 
-    case (cache,_,_,_,_,_,_)
+    case (cache, _, _)
       algorithm
-        failure((_,_,_) := Lookup.lookupType(cache, env, callPath, NONE()));
+        failure(Lookup.lookupType(cache, env, callPath, NONE()));
         s := AbsynUtil.pathString(callPath);
         Error.addSourceMessage(Error.META_CONSTRUCTOR_NOT_RECORD, {s}, info);
       then fail();
@@ -580,11 +579,9 @@ protected function checkMissingArgs
   input Integer numNamedArgs;
   input SourceInfo info;
 algorithm
-  _ := match (path,numPosArgs,missingFieldNames,numNamedArgs,info)
+  () := match (missingFieldNames, numNamedArgs)
     local
-      String str;
-      list<String> strs;
-    case (_,_,{},0,_) then ();
+    case ({}, 0) then ();
 /* Language extension to not have to bind everything...
     case (_,_,strs,0,_)
       algorithm
@@ -611,8 +608,8 @@ protected function checkForAllWildCall "Converts a call REC(__) to REC(_,_,_,_)"
   output list<Absyn.Exp> outArgs;
   output list<Absyn.NamedArg> outNamed;
 algorithm
-  (outArgs,outNamed) := match (args,named,numFields)
-    case ({Absyn.CREF(Absyn.ALLWILD())},{},_)
+  (outArgs,outNamed) := match (args, named)
+    case ({Absyn.CREF(Absyn.ALLWILD())}, {})
       then ({},{});
     else (args,named);
   end match;
@@ -625,7 +622,7 @@ protected function validPatternType
   input SourceInfo info;
   output Option<DAE.Type> ty;
 algorithm
-  ty := matchcontinue (inTy1,inTy2,lhs,info)
+  ty := matchcontinue (inTy1, inTy2)
     local
       DAE.Type et;
       String s,s1,s2;
@@ -633,7 +630,7 @@ algorithm
       DAE.Exp crefExp;
       DAE.Type ty1, ty2;
 
-    case (DAE.T_METABOXED(ty = ty1),ty2,_,_)
+    case (DAE.T_METABOXED(ty = ty1), ty2)
       algorithm
         cr := ComponentReferenceBasics.makeCrefIdent("#DUMMY#",DAE.T_UNKNOWN_DEFAULT,{});
         crefExp := Expression.crefExp(cr);
@@ -641,14 +638,14 @@ algorithm
         et := Types.simplifyType(ty1);
       then SOME(et);
 
-    case (ty1,ty2,_,_)
+    case (ty1, ty2)
       algorithm
         cr := ComponentReferenceBasics.makeCrefIdent("#DUMMY#",DAE.T_UNKNOWN_DEFAULT,{});
         crefExp := Expression.crefExp(cr);
-        (_,_) := Types.matchType(crefExp,ty1,ty2,true);
+        Types.matchType(crefExp,ty1,ty2,true);
       then NONE();
 
-    case (ty1,ty2,_,_)
+    case (ty1, ty2)
       algorithm
         s := Dump.printExpStr(lhs);
         s1 := TypesDump.unparseType(ty1);
@@ -664,10 +661,10 @@ protected function validUniontype
   input SourceInfo info;
   input Absyn.Exp lhs;
 algorithm
-  _ := matchcontinue (path1,path2,info,lhs)
+  () := matchcontinue lhs
     local
       String s,s1,s2;
-    case (_,_,_,_)
+    case _
       algorithm
         true := AbsynUtil.pathEqual(path1,path2);
       then ();
@@ -680,63 +677,6 @@ algorithm
       then fail();
   end matchcontinue;
 end validUniontype;
-
-public function patternStr "Pattern to String unparsing"
-  input DAE.Pattern pattern;
-  output String str;
-algorithm
-  str := matchcontinue pattern
-    local
-      list<DAE.Pattern> pats;
-      list<String> fields,patsStr;
-      DAE.Exp exp;
-      DAE.Pattern pat,head,tail;
-      String id;
-      list<tuple<DAE.Pattern,String,DAE.Type>> namedpats;
-      Absyn.Path name;
-    case DAE.PAT_WILD() then "_";
-    case DAE.PAT_AS(id=id,pat=DAE.PAT_WILD()) then id;
-    case DAE.PAT_AS_FUNC_PTR(id,DAE.PAT_WILD()) then id;
-    case DAE.PAT_SOME(pat)
-      algorithm
-        str := patternStr(pat);
-      then "SOME(" + str + ")";
-    case DAE.PAT_META_TUPLE(pats)
-      algorithm
-        str := stringDelimitList(List.map(pats,patternStr),",");
-      then "(" + str + ")";
-
-    case DAE.PAT_CALL_TUPLE(pats)
-      algorithm
-        str := stringDelimitList(List.map(pats,patternStr),",");
-      then "(" + str + ")";
-
-    case DAE.PAT_CALL(name=name, patterns=pats)
-      algorithm
-        id := AbsynUtil.pathString(name);
-        str := stringDelimitList(List.map(pats,patternStr),",");
-      then stringAppendList({id,"(",str,")"});
-
-    case DAE.PAT_CALL_NAMED(name=name, patterns=namedpats)
-      algorithm
-        id := AbsynUtil.pathString(name);
-        fields := List.map(namedpats, Util.tuple32);
-        patsStr := List.map1r(List.mapMap(namedpats, Util.tuple31, patternStr), stringAppend, "=");
-        str := stringDelimitList(List.threadMap(fields, patsStr, stringAppend), ",");
-      then stringAppendList({id,"(",str,")"});
-
-    case DAE.PAT_CONS(head,tail) then patternStr(head) + "::" + patternStr(tail);
-
-    case DAE.PAT_CONSTANT(exp=exp) then ExpressionBasics.printExpStr(exp);
-    // case DAE.PAT_CONSTANT(SOME(et),exp) then "(" + TypesDump.unparseType(et) + ")" + ExpressionBasics.printExpStr(exp);
-    case DAE.PAT_AS(id=id,pat=pat) then id + " as " + patternStr(pat);
-    case DAE.PAT_AS_FUNC_PTR(id, pat) then id + " as " + patternStr(pat);
-    else
-      algorithm
-        Error.addMessage(Error.INTERNAL_ERROR, {"Patternm.patternStr not implemented correctly"});
-      then "*PATTERN*";
-  end matchcontinue;
-end patternStr;
 
 public function elabMatchExpression
   input FCore.Cache inCache;
@@ -752,7 +692,7 @@ public function elabMatchExpression
 protected
   Integer numError = Error.getNumErrorMessages();
 algorithm
-  (outCache,outExp,outProperties) := matchcontinue (inCache,inEnv,matchExp,impl,performVectorization,inPrefix,info,numError)
+  (outCache,outExp,outProperties) := matchcontinue (inCache, inEnv, matchExp, inPrefix)
     local
       Absyn.MatchType matchTy;
       Absyn.Exp inExp;
@@ -778,7 +718,7 @@ algorithm
       list<list<String>> inputAliases,inputAliasesAndCrefs;
       AvlSetString.Tree declsTree;
 
-    case (cache,env,Absyn.MATCHEXP(matchTy=matchTy,inputExp=inExp,localDecls=decls,cases=cases),_,_,pre,_,_)
+    case (cache, env, Absyn.MATCHEXP(matchTy=matchTy,inputExp=inExp,localDecls=decls,cases=cases), pre)
       algorithm
         // First do inputs
         inExps := convertExpToPatterns(inExp);
@@ -791,7 +731,13 @@ algorithm
         (cache,elabCases,resType) := elabMatchCases(cache,env,cases,tys,inputAliasesAndCrefs,declsTree,impl,performVectorization,pre,info);
         prop := DAE.PROP(resType,DAE.C_VAR());
         et := Types.simplifyType(resType);
-        (elabExps,inputAliases,elabCases) := filterUnusedPatterns(elabExps,inputAliases,elabCases) "filterUnusedPatterns() First time to speed up the other optimizations.";
+        checkMatchSingleInfallibleCase(matchTy, elabCases, info);
+        checkInfallibleNoBindingPatterns(elabCases, matchTy, info);
+        // If the whole match is a single infallible case (covered by
+        // MATCH_SINGLE_INFALLIBLE_CASE), don't also emit per-input "unused
+        // input" notifications for the same match — the agent would otherwise
+        // see two conflicting recommendations for the same code.
+        (elabExps,inputAliases,elabCases) := filterUnusedPatterns(elabExps,inputAliases,elabCases,info,not isSingleInfallibleMatch(matchTy, elabCases)) "filterUnusedPatterns() First time to speed up the other optimizations.";
         elabCases := caseDeadCodeElimination(matchTy, elabCases, {}, {}, false);
         // Do DCE before converting mc to m
         matchTy := optimizeContinueToMatch(matchTy,elabCases,info);
@@ -800,7 +746,7 @@ algorithm
         hashSize := Util.nextPrime(listLength(matchDecls));
         ht := getUsedLocalCrefs(Flags.isSet(Flags.PATTERNM_SKIP_FILTER_UNUSED_AS_BINDINGS),DAE.MATCHEXPRESSION(DAE.MATCHCONTINUE(),elabExps,inputAliases,matchDecls,elabCases,et),hashSize);
         (matchDecls,ht) := filterUnusedDecls(matchDecls,ht,{},HashTableStringToPath.emptyHashTableSized(hashSize));
-        (elabExps,inputAliases,elabCases) := filterUnusedPatterns(elabExps,inputAliases,elabCases) "filterUnusedPatterns() again to filter out the last parts.";
+        (elabExps,inputAliases,elabCases) := filterUnusedPatterns(elabExps,inputAliases,elabCases,info,false) "filterUnusedPatterns() again to filter out the last parts.";
         (elabMatchTy, elabCases) := optimizeMatchToSwitch(matchTy,elabCases,info);
         elabMatchTy := unboxSwitchType(elabMatchTy, elabExps);
         checkConstantMatchInputs(elabExps, info);
@@ -841,7 +787,7 @@ protected function optimizeMatchToSwitch
   output DAE.MatchType outType;
   output list<DAE.MatchCase> outCases;
 algorithm
-  (outType, outCases) := matchcontinue (matchTy,cases,info)
+  (outType, outCases) := matchcontinue matchTy
     local
       tuple<Integer,DAE.Type,Integer> tpl;
       list<list<DAE.Pattern>> patternMatrix;
@@ -849,8 +795,8 @@ algorithm
       Integer numNonEmptyColumns;
       String str;
       DAE.Type ty;
-    case (Absyn.MATCHCONTINUE(),_,_) then (DAE.MATCHCONTINUE(), cases);
-    case (_,_,_)
+    case Absyn.MATCHCONTINUE() then (DAE.MATCHCONTINUE(), cases);
+    case _
       algorithm
         true := listLength(cases) > 2;
         for c in cases loop
@@ -877,7 +823,7 @@ protected function optimizeSwitchedMatchCases
   input list<DAE.MatchCase> inCases;
   output list<DAE.MatchCase> outCases;
 algorithm
-  outCases := match(inMatchType)
+  outCases := match inMatchType
     local
       DAE.Pattern pat;
       list<DAE.Pattern> patl;
@@ -941,18 +887,18 @@ protected function findPatternToConvertToSwitch
   input SourceInfo info;
   output tuple<Integer,DAE.Type,Integer> tpl;
 algorithm
-  tpl := matchcontinue  (inPatternMatrix,index,numPatternsInMatrix,info)
+  tpl := matchcontinue  inPatternMatrix
     local
       list<DAE.Pattern> pats;
       DAE.Type ty;
       Integer extraarg;
       list<Option<list<DAE.Pattern>>> patternMatrix;
 
-    case (SOME(pats)::_,_,_,_)
+    case SOME(pats)::_
       algorithm
         (ty,extraarg) := findPatternToConvertToSwitch2(pats, {}, DAE.T_UNKNOWN_DEFAULT, true, numPatternsInMatrix);
       then ((index,ty,extraarg));
-    case (_::patternMatrix,_,_,_)
+    case _::patternMatrix
       then findPatternToConvertToSwitch(patternMatrix,index+1,numPatternsInMatrix,info);
   end matchcontinue;
 end findPatternToConvertToSwitch;
@@ -966,53 +912,53 @@ protected function findPatternToConvertToSwitch2
   output DAE.Type outTy;
   output Integer extraarg;
 algorithm
-  (outTy,extraarg) := match (ipats,ixs,ity,allSubPatternsMatch,numPatternsInMatrix)
+  (outTy,extraarg) := match (ipats, ity, allSubPatternsMatch, numPatternsInMatrix)
     local
       Integer ix;
       String str;
       list<DAE.Pattern> pats,subpats;
       DAE.Type ty;
 
-    case (DAE.PAT_CONSTANT(exp=DAE.SCONST(str))::pats,_,_,_,_)
+    case (DAE.PAT_CONSTANT(exp=DAE.SCONST(str))::pats, _, _, _)
       algorithm
         ix := stringHashDjb2Mod(str,65536);
         false := listMember(ix,ixs);
         (ty,extraarg) := findPatternToConvertToSwitch2(pats,ix::ixs,DAE.T_STRING_DEFAULT,allSubPatternsMatch,numPatternsInMatrix);
       then (ty,extraarg);
 
-    case (DAE.PAT_CALL(index=ix,patterns=subpats)::pats,_,_,_,_)
+    case (DAE.PAT_CALL(index=ix,patterns=subpats)::pats, _, _, _)
       algorithm
         false := listMember(ix,ixs);
         (ty,extraarg) := findPatternToConvertToSwitch2(pats,ix::ixs,DAE.T_METATYPE_DEFAULT,allSubPatternsMatch and allPatternsAlwaysMatch(subpats),numPatternsInMatrix);
       then (ty,extraarg);
 
-    case (DAE.PAT_CONSTANT(exp=DAE.ICONST(ix))::pats,_,_,_,_)
+    case (DAE.PAT_CONSTANT(exp=DAE.ICONST(ix))::pats, _, _, _)
       algorithm
         false := listMember(ix,ixs);
         (ty,extraarg) := findPatternToConvertToSwitch2(pats,ix::ixs,DAE.T_INTEGER_DEFAULT,allSubPatternsMatch,numPatternsInMatrix);
       then (ty,extraarg);
 
-    case (DAE.PAT_CONSTANT(exp=DAE.ENUM_LITERAL(index=ix))::pats,_,_,_,_)
+    case (DAE.PAT_CONSTANT(exp=DAE.ENUM_LITERAL(index=ix))::pats, _, _, _)
       guard not listMember(ix,ixs)
       then findPatternToConvertToSwitch2(pats,ix::ixs,DAE.T_ENUMERATION_DEFAULT,allSubPatternsMatch,numPatternsInMatrix);
 
-    case ({},_,DAE.T_STRING(),_,_)
+    case ({}, DAE.T_STRING(), _, _)
       algorithm
         true := listLength(ixs)>11; // hashing has a considerable overhead, only convert to switch if it is worth it
         ix := findMinMod(ixs,1);
       then (DAE.T_STRING_DEFAULT,ix);
 
-    case ({_},_,DAE.T_STRING(),_,1)
+    case ({_}, DAE.T_STRING(), _, 1)
       algorithm
         true := listLength(ixs)>11; // hashing has a considerable overhead, only convert to switch if it is worth it
         ix := findMinMod(ixs,1);
       then (DAE.T_STRING_DEFAULT,ix);
 
-    case ({},_,_,_,_) then (ity,0);
+    case ({}, _, _, _) then (ity,0);
 
     // Sadly, we cannot switch a default uniontype as the previous case in not guaranteed
     // to succeed matching if it matches for subpatterns.
-    case ({_},_,_,true,1) then (ity,0);
+    case ({_}, _, true, 1) then (ity,0);
   end match;
 end findPatternToConvertToSwitch2;
 
@@ -1042,19 +988,21 @@ protected function filterUnusedPatterns
   input list<DAE.Exp> inputs "We can only remove inputs that are free from side-effects";
   input list<list<String>> inAliases;
   input list<DAE.MatchCase> inCases;
+  input SourceInfo info;
+  input Boolean emitNotifications "If true and PATTERNM_ALL_INFO is set, notifications are emitted for removable inputs and pattern-as-only cases.";
   output list<DAE.Exp> outInputs;
   output list<list<String>> outAliases;
   output list<DAE.MatchCase> outCases;
 algorithm
-  (outInputs,outAliases,outCases) := matchcontinue (inputs,inAliases,inCases)
+  (outInputs,outAliases,outCases) := matchcontinue inCases
     local
       list<list<DAE.Pattern>> patternMatrix;
       list<DAE.MatchCase> cases;
 
-    case (_,_,cases)
+    case cases
       algorithm
         patternMatrix := List.transposeList(List.map(cases,getCasePatterns));
-        (true,outInputs,outAliases,patternMatrix) := filterUnusedPatterns2(inputs,inAliases,patternMatrix,false,{},{},{});
+        (true,outInputs,outAliases,patternMatrix) := filterUnusedPatterns2(inputs,inAliases,patternMatrix,false,info,emitNotifications,{},{},{});
         patternMatrix := List.transposeList(patternMatrix);
         cases := setCasePatternsCheckZero(cases,patternMatrix);
       then (outInputs,outAliases,cases);
@@ -1082,6 +1030,8 @@ protected function filterUnusedPatterns2
   input list<list<String>> inAliases;
   input list<list<DAE.Pattern>> inPatternMatrix;
   input Boolean change "Only rebuild the cases if something changed";
+  input SourceInfo info;
+  input Boolean emitNotifications;
   input list<DAE.Exp> inputsAcc;
   input list<list<String>> aliasesAcc;
   input list<list<DAE.Pattern>> patternMatrixAcc;
@@ -1090,7 +1040,7 @@ protected function filterUnusedPatterns2
   output list<list<String>> outAliases;
   output list<list<DAE.Pattern>> outPatternMatrix;
 algorithm
-  (outChange,outInputs,outAliases,outPatternMatrix) := matchcontinue (inInputs,inAliases,inPatternMatrix,change,inputsAcc,aliasesAcc,patternMatrixAcc)
+  (outChange,outInputs,outAliases,outPatternMatrix) := matchcontinue (inInputs, inAliases, inPatternMatrix, change)
     local
       DAE.Exp e;
       list<DAE.Pattern> pats;
@@ -1099,17 +1049,23 @@ algorithm
       list<String> alias;
       list<list<String>> aliases;
 
-    case ({},{},{},true,_,_,_)
+    case ({}, {}, {}, true)
       then (true,listReverse(inputsAcc),listReverse(aliasesAcc),listReverse(patternMatrixAcc));
-    case (e::inputs,_::aliases,pats::patternMatrix,_,_,_,_)
+    case (e::inputs, _::aliases, pats::patternMatrix, _)
       algorithm
         (_,true) := Expression.traverseExpBottomUp(e,Expression.hasNoSideEffects,true);
         true := allPatternsWild(pats);
-        (outChange,outInputs,outAliases,outPatternMatrix) := filterUnusedPatterns2(inputs,aliases,patternMatrix,true,inputsAcc,aliasesAcc,patternMatrixAcc);
+        if emitNotifications and Flags.isSet(Flags.PATTERNM_ALL_INFO) then
+          Error.addSourceMessage(Error.META_MATCH_UNUSED_INPUT, {ExpressionBasics.printExpStr(e)}, info);
+        end if;
+        (outChange,outInputs,outAliases,outPatternMatrix) := filterUnusedPatterns2(inputs,aliases,patternMatrix,true,info,emitNotifications,inputsAcc,aliasesAcc,patternMatrixAcc);
       then (outChange,outInputs,outAliases,outPatternMatrix);
-    case (e::inputs,alias::aliases,pats::patternMatrix,_,_,_,_)
+    case (e::inputs, alias::aliases, pats::patternMatrix, _)
       algorithm
-        (outChange,outInputs,outAliases,outPatternMatrix) := filterUnusedPatterns2(inputs,aliases,patternMatrix,change,e::inputsAcc,alias::aliasesAcc,pats::patternMatrixAcc);
+        if emitNotifications and Flags.isSet(Flags.PATTERNM_ALL_INFO) and Expression.isCref(e) and allPatternsAlwaysMatch(pats) and not allPatternsWild(pats) then
+          Error.addSourceMessage(Error.META_PATTERN_AS_ONLY, {ExpressionBasics.printExpStr(e), ExpressionBasics.printExpStr(e)}, info);
+        end if;
+        (outChange,outInputs,outAliases,outPatternMatrix) := filterUnusedPatterns2(inputs,aliases,patternMatrix,change,info,emitNotifications,e::inputsAcc,alias::aliasesAcc,pats::patternMatrixAcc);
       then (outChange,outInputs,outAliases,outPatternMatrix);
     else (false,{},{},{});
   end matchcontinue;
@@ -1121,16 +1077,16 @@ protected function getUsedLocalCrefs
   input Integer hashSize;
   output HashTableStringToPath.HashTable ht;
 algorithm
-  ht := match (skipFilterUnusedAsBindings,exp,hashSize)
+  ht := match (skipFilterUnusedAsBindings, exp)
     local
       list<DAE.MatchCase> cases;
-    case (true,_,_)
+    case (true, _)
       algorithm
         (_,ht) := Expression.traverseExpBottomUp(exp, addLocalCref, HashTableStringToPath.emptyHashTableSized(hashSize));
       then ht;
-    case (false,DAE.MATCHEXPRESSION(cases=cases),_)
+    case (false, DAE.MATCHEXPRESSION(cases=cases))
       algorithm
-        (_,ht) := traverseCases(cases, addLocalCref, HashTableStringToPath.emptyHashTableSized(hashSize));
+        (_,ht) := Expression.traverseCases(cases, addLocalCref, HashTableStringToPath.emptyHashTableSized(hashSize));
       then ht;
   end match;
 end getUsedLocalCrefs;
@@ -1140,7 +1096,7 @@ protected function filterUnusedAsBindings
   input HashTableStringToPath.HashTable ht;
   output list<DAE.MatchCase> outCases;
 algorithm
-  outCases := match (inCases,ht)
+  outCases := match inCases
     local
       list<DAE.Pattern> patterns;
       list<DAE.Element> localDecls;
@@ -1150,8 +1106,8 @@ algorithm
       SourceInfo resultInfo, info;
       list<DAE.MatchCase> cases;
 
-    case ({},_) then {};
-    case (DAE.CASE(patterns, guardPattern, localDecls, body, result, resultInfo, jump, info)::cases,_)
+    case {} then {};
+    case DAE.CASE(patterns, guardPattern, localDecls, body, result, resultInfo, jump, info)::cases
       algorithm
         (patterns,_) := traversePatternList(patterns, removePatternAsBinding, (ht,info));
         cases := filterUnusedAsBindings(cases,ht);
@@ -1170,13 +1126,12 @@ algorithm
       HashTableStringToPath.HashTable ht;
       String id;
       SourceInfo info;
-      tuple<HashTableStringToPath.HashTable,SourceInfo> tpl;
-    case ((DAE.PAT_AS(id=id,pat=pat),(ht,info)))
+    case (DAE.PAT_AS(id=id,pat=pat),(ht,info))
       algorithm
         true := BaseHashTable.hasKey(id, ht);
         Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_UNUSED_AS_BINDING, {id}, info);
       then pat;
-    case ((DAE.PAT_AS_FUNC_PTR(id=id,pat=pat),(ht,_)))
+    case (DAE.PAT_AS_FUNC_PTR(id=id,pat=pat),(ht,_))
       algorithm
         true := BaseHashTable.hasKey(id, ht);
       then pat;
@@ -1202,7 +1157,6 @@ algorithm
       String name;
       list<DAE.MatchCase> cases;
       DAE.Pattern pat;
-      list<DAE.Subscript> subs;
       DAE.ComponentRef cr;
     case (exp as DAE.CREF(componentRef=cr),ht)
       algorithm
@@ -1285,7 +1239,6 @@ variables."
 algorithm
   (outExp,outTpl) := matchcontinue (inExp,inTpl)
     local
-      DAE.Exp exp;
       AvlSetString.Tree localsTree,useTree;
       String name;
       DAE.Pattern pat;
@@ -1324,9 +1277,7 @@ algorithm
       String name;
       DAE.Pattern pat;
       SourceInfo info;
-      DAE.Type ty;
-      tuple<AvlSetString.Tree,AvlSetString.Tree,SourceInfo> extra;
-    case ((DAE.PAT_AS(id=name,pat=pat),(localsTree,useTree,info)))
+    case (DAE.PAT_AS(id=name,pat=pat),(localsTree,useTree,info))
       algorithm
         if AvlSetString.hasKey(localsTree,name) and not AvlSetString.hasKey(useTree,name) then
           Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_UNUSED_AS_BINDING,{name},info);
@@ -1334,7 +1285,7 @@ algorithm
           pat := inPat;
         end if;
       then pat;
-    case ((DAE.PAT_AS_FUNC_PTR(id=name,pat=pat),(localsTree,useTree,info)))
+    case (DAE.PAT_AS_FUNC_PTR(id=name,pat=pat),(localsTree,useTree,info))
       algorithm
         if AvlSetString.hasKey(localsTree,name) and not AvlSetString.hasKey(useTree,name) then
           Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_UNUSED_AS_BINDING,{name},info);
@@ -1364,7 +1315,6 @@ algorithm
       String name;
       list<DAE.MatchCase> cases;
       DAE.Pattern pat;
-      list<DAE.Subscript> subs;
       DAE.ComponentRef cr;
     case (exp as DAE.CREF(componentRef=cr),tree)
       algorithm
@@ -1391,16 +1341,16 @@ protected function useLocalCrefHelper
   input AvlSetString.Tree inTree;
   output AvlSetString.Tree tree;
 algorithm
-  tree := match (cr,inTree)
+  tree := match cr
     local
       String name;
       list<DAE.Subscript> subs;
       DAE.ComponentRef cr2;
-    case (DAE.CREF_IDENT(ident=name,subscriptLst=subs), _)
+    case DAE.CREF_IDENT(ident=name,subscriptLst=subs)
       algorithm
         tree := useLocalCrefSubs(subs,inTree);
       then AvlSetString.add(tree, name);
-    case (DAE.CREF_QUAL(ident=name,subscriptLst=subs,componentRef=cr2),_)
+    case DAE.CREF_QUAL(ident=name,subscriptLst=subs,componentRef=cr2)
       algorithm
         tree := useLocalCrefSubs(subs,inTree);
         tree := AvlSetString.add(tree, name);
@@ -1415,18 +1365,18 @@ protected function useLocalCrefSubs
   input AvlSetString.Tree inTree;
   output AvlSetString.Tree tree;
 algorithm
-  tree := match (isubs,inTree)
+  tree := match isubs
     local
       DAE.Exp exp;
       list<DAE.Subscript> subs;
 
-    case ({},_) then inTree;
-    case (DAE.SLICE(exp)::subs,_)
+    case {} then inTree;
+    case DAE.SLICE(exp)::subs
       algorithm
         (_,tree) := Expression.traverseExpBottomUp(exp, useLocalCref, inTree);
         tree := useLocalCrefSubs(subs,tree);
       then tree;
-    case (DAE.INDEX(exp)::subs,_)
+    case DAE.INDEX(exp)::subs
       algorithm
         (_,tree) := Expression.traverseExpBottomUp(exp, useLocalCref, inTree);
         tree := useLocalCrefSubs(subs,tree);
@@ -1456,13 +1406,13 @@ protected function useCasesLocalCref
   input AvlSetString.Tree inTree;
   output AvlSetString.Tree tree;
 algorithm
-  tree := match (icases,inTree)
+  tree := match icases
     local
       list<DAE.Pattern> pats;
       list<DAE.MatchCase> cases;
 
-    case ({},_) then inTree;
-    case (DAE.CASE(patterns=pats)::cases,_)
+    case {} then inTree;
+    case DAE.CASE(patterns=pats)::cases
       algorithm
         (_,tree) := traversePatternList(pats, usePatternAsBindings, inTree);
         tree := useCasesLocalCref(cases,tree);
@@ -1501,7 +1451,6 @@ algorithm
   outPat := match inPat
     local
       Absyn.Path name;
-      DAE.Pattern pat,pat2;
       list<tuple<DAE.Pattern, String, DAE.Type>> namedPatterns;
       list<DAE.Pattern> patterns;
     case DAE.PAT_CALL_NAMED(name, namedPatterns)
@@ -1571,7 +1520,6 @@ public function traversePattern<TypeA>
 algorithm
   (outPattern,extra) := match inPattern
     local
-      TypeA a;
       DAE.Pattern pat,pat1,pat2;
       list<DAE.Pattern> pats;
       list<String> fields;
@@ -1629,7 +1577,7 @@ algorithm
         pat := DAE.PAT_CONS(pat1,pat2);
         (pat,extra) := func(pat,extra);
       then (pat,extra);
-    case (pat as DAE.PAT_CONSTANT())
+    case pat as DAE.PAT_CONSTANT()
       algorithm
         (pat,extra) := func(pat,extra);
       then (pat,extra);
@@ -1639,13 +1587,13 @@ algorithm
         pat := DAE.PAT_SOME(pat1);
         (pat,extra) := func(pat,extra);
       then (pat,extra);
-    case (pat as DAE.PAT_WILD())
+    case pat as DAE.PAT_WILD()
       algorithm
         (pat,extra) := func(pat,extra);
       then (pat,extra);
     case pat
       algorithm
-        str := "Patternm.traversePattern failed: " + patternStr(pat);
+        str := "Patternm.traversePattern failed: " + ExpressionDump.patternStr(pat);
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end match;
@@ -1660,7 +1608,7 @@ protected function filterUnusedDecls
   output list<DAE.Element> outDecls;
   output HashTableStringToPath.HashTable outUnusedHt;
 algorithm
-  (outDecls,outUnusedHt) := matchcontinue (matchDecls,ht,iacc,iunusedHt)
+  (outDecls,outUnusedHt) := matchcontinue (matchDecls, iacc, iunusedHt)
     local
       DAE.Element el;
       list<DAE.Element> rest;
@@ -1669,15 +1617,15 @@ algorithm
       list<DAE.Element> acc;
       HashTableStringToPath.HashTable unusedHt;
 
-    case ({},_,acc,unusedHt) then (listReverse(acc),unusedHt);
-    case (DAE.VAR(componentRef=DAE.CREF_IDENT(ident=name), source=DAE.SOURCE(info=info))::rest,_,acc,unusedHt)
+    case ({}, acc, unusedHt) then (listReverse(acc),unusedHt);
+    case (DAE.VAR(componentRef=DAE.CREF_IDENT(ident=name), source=DAE.SOURCE(info=info))::rest, acc, unusedHt)
       algorithm
         false := BaseHashTable.hasKey(name, ht);
         unusedHt := BaseHashTable.add((name,Absyn.IDENT("")),unusedHt);
         Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_UNUSED_DECL, {name}, info);
         (acc,unusedHt) := filterUnusedDecls(rest,ht,acc,unusedHt);
       then (acc,unusedHt);
-    case (el::rest,_,acc,unusedHt)
+    case (el::rest, acc, unusedHt)
       algorithm
         (acc,unusedHt) := filterUnusedDecls(rest,ht,el::acc,unusedHt);
       then (acc,unusedHt);
@@ -1696,7 +1644,7 @@ protected function caseDeadCodeElimination
   input Boolean iter "If we remove some code, it may cascade. We should we loop more.";
   output list<DAE.MatchCase> outCases;
 algorithm
-  outCases := matchcontinue (matchType,cases,prevPatterns,iacc,iter)
+  outCases := matchcontinue (matchType, cases, iacc, iter)
     local
       list<DAE.MatchCase> rest;
       list<DAE.Pattern> pats;
@@ -1704,9 +1652,9 @@ algorithm
       SourceInfo info;
       list<DAE.MatchCase> acc;
 
-    case (_,{},_,acc,false) then listReverse(acc);
-    case (_,{},_,acc,true) then caseDeadCodeElimination(matchType,listReverse(acc),{},{},false);
-    case (_,DAE.CASE(body={},result=NONE(),info=info)::{},_,acc,_)
+    case (_, {}, acc, false) then listReverse(acc);
+    case (_, {}, acc, true) then caseDeadCodeElimination(matchType,listReverse(acc),{},{},false);
+    case (_, DAE.CASE(body={},result=NONE(),info=info)::{}, acc, _)
       algorithm
         Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO), Error.META_DEAD_CODE, {"Last pattern is empty"}, info);
       then caseDeadCodeElimination(matchType,listReverse(acc),{},{},false);
@@ -1718,13 +1666,13 @@ algorithm
         Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO), Error.META_DEAD_CODE, {"Shadowing case"}, oinfo);
       then caseDeadCodeElimination(matchType,rest,pats::prevPatterns,acc,true);
       */
-    case (Absyn.MATCHCONTINUE(),DAE.CASE(patterns=pats,body={},result=NONE(),info=info)::rest,_,acc,_)
+    case (Absyn.MATCHCONTINUE(), DAE.CASE(patterns=pats,body={},result=NONE(),info=info)::rest, acc, _)
       algorithm
         true := Flags.isSet(Flags.PATTERNM_DCE);
         Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO), Error.META_DEAD_CODE, {"Empty matchcontinue case"}, info);
         acc := caseDeadCodeElimination(matchType,rest,pats::prevPatterns,acc,true);
       then acc;
-    case (_,(case_ as DAE.CASE(patterns=pats))::rest,_,acc,_) then caseDeadCodeElimination(matchType,rest,pats::prevPatterns,case_::acc,iter);
+    case (_, (case_ as DAE.CASE(patterns=pats))::rest, acc, _) then caseDeadCodeElimination(matchType,rest,pats::prevPatterns,case_::acc,iter);
   end matchcontinue;
 end caseDeadCodeElimination;
 
@@ -1769,8 +1717,8 @@ protected function optimizeContinueJumps
   input list<DAE.MatchCase> cases;
   output list<DAE.MatchCase> outCases;
 algorithm
-  outCases := match (matchType,cases)
-    case (Absyn.MATCH(),_) then cases;
+  outCases := match matchType
+    case Absyn.MATCH() then cases;
     else optimizeContinueJumps2(cases);
   end match;
 end optimizeContinueJumps;
@@ -1799,18 +1747,18 @@ protected function optimizeContinueJump
   input Integer jump;
   output DAE.MatchCase outCase;
 algorithm
-  outCase := matchcontinue (case_,icases,jump)
+  outCase := matchcontinue (case_, icases)
     local
       DAE.MatchCase case1;
       list<DAE.Pattern> ps1,ps2;
       list<DAE.MatchCase> cases;
 
-    case (case1,{},_) then updateMatchCaseJump(case1,jump);
-    case (case1 as DAE.CASE(patterns=ps1),DAE.CASE(patterns=ps2)::cases,_)
+    case (case1, {}) then updateMatchCaseJump(case1,jump);
+    case (case1 as DAE.CASE(patterns=ps1), DAE.CASE(patterns=ps2)::cases)
       algorithm
         true := patternListsDoNotOverlap(ps1,ps2);
       then optimizeContinueJump(case1,cases,jump+1);
-    case (case1,_,_) then updateMatchCaseJump(case1,jump);
+    case (case1, _) then updateMatchCaseJump(case1,jump);
   end matchcontinue;
 end optimizeContinueJump;
 
@@ -1848,11 +1796,33 @@ protected function optimizeContinueToMatch
   input SourceInfo info;
   output Absyn.MatchType outMatchType;
 algorithm
-  outMatchType := match (matchType,cases,info)
-    case (Absyn.MATCH(),_,_) then Absyn.MATCH();
+  outMatchType := match matchType
+    case Absyn.MATCH() then Absyn.MATCH();
     else optimizeContinueToMatch2(cases,{},info);
   end match;
+  if Flags.isSet(Flags.PATTERNM_ALL_INFO) then
+    checkMatchContinueSingleCaseToTry(outMatchType, cases, info);
+  end if;
 end optimizeContinueToMatch;
+
+protected function checkMatchContinueSingleCaseToTry
+  "Emits a notification when a matchcontinue has exactly one real case and an
+  else case, suggesting that it be rewritten as a try/else."
+  input Absyn.MatchType matchType;
+  input list<DAE.MatchCase> cases;
+  input SourceInfo info;
+algorithm
+  () := match (matchType, cases)
+    local list<DAE.Pattern> firstPats, elsePats;
+    case (Absyn.MATCHCONTINUE(),
+          {DAE.CASE(patterns=firstPats), DAE.CASE(patterns=elsePats)})
+      guard not allPatternsWild(firstPats) and allPatternsWild(elsePats)
+      algorithm
+        Error.addSourceMessage(Error.MATCHCONTINUE_TO_TRY_OPTIMIZATION, {}, info);
+      then ();
+    else ();
+  end match;
+end checkMatchContinueSingleCaseToTry;
 
 protected function optimizeContinueToMatch2
   "If a matchcontinue expression has only one case, it is optimized to match instead.
@@ -1869,16 +1839,16 @@ protected function optimizeContinueToMatch2
   input SourceInfo info;
   output Absyn.MatchType outMatchType;
 algorithm
-  outMatchType := matchcontinue (icases,prevPatterns,info)
+  outMatchType := matchcontinue icases
     local
       list<DAE.Pattern> patterns;
       list<DAE.MatchCase> cases;
 
-    case ({},_,_)
+    case {}
       algorithm
         Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO), Error.MATCHCONTINUE_TO_MATCH_OPTIMIZATION, {}, info);
       then Absyn.MATCH();
-    case (DAE.CASE(patterns=patterns)::cases,_,_)
+    case DAE.CASE(patterns=patterns)::cases
       algorithm
         assertAllPatternListsDoNotOverlap(prevPatterns,patterns);
       then optimizeContinueToMatch2(cases,patterns::prevPatterns,info);
@@ -1899,13 +1869,13 @@ protected function assertAllPatternListsDoNotOverlap
   input list<list<DAE.Pattern>> ipss1;
   input list<DAE.Pattern> ps2;
 algorithm
-  _ := match (ipss1,ps2)
+  () := match ipss1
     local
       list<DAE.Pattern> ps1;
       list<list<DAE.Pattern>> pss1;
 
-    case ({},_) then ();
-    case (ps1::pss1,_)
+    case {} then ();
+    case ps1::pss1
       algorithm
         true := patternListsDoNotOverlap(ps1,ps2);
         assertAllPatternListsDoNotOverlap(pss1,ps2);
@@ -2187,7 +2157,7 @@ protected function elabPatternGuard
   output Option<DAE.Exp> outPatternGuard;
 algorithm
   (outCache,outPatternGuard) :=
-  matchcontinue (inCache,inEnv,patternGuard,impl,performVectorization,pre,inInfo)
+  matchcontinue (inCache, inEnv, patternGuard, inInfo)
     local
       Absyn.Exp exp;
       DAE.Exp elabExp;
@@ -2197,16 +2167,16 @@ algorithm
       SourceInfo info;
       String str;
 
-    case (cache,_,NONE(),_,_,_,_)
+    case (cache, _, NONE(), _)
       then (cache,NONE());
 
-    case (cache,env,SOME(exp),_,_,_,info)
+    case (cache, env, SOME(exp), info)
       algorithm
         (cache,elabExp,prop) := Static.elabExp(cache,env,exp,impl,performVectorization,pre,info);
         (elabExp,_) := Types.matchType(elabExp,Types.getPropType(prop),DAE.T_BOOL_DEFAULT,true);
       then (cache,SOME(elabExp));
 
-    case (cache,env,SOME(exp),_,_,_,info)
+    case (cache, env, SOME(exp), info)
       algorithm
         (_,_,prop) := Static.elabExp(cache,env,exp,impl,performVectorization,pre,info);
         str := TypesDump.unparseType(Types.getPropType(prop));
@@ -2269,16 +2239,16 @@ protected function fixCaseReturnTypes
   output list<DAE.MatchCase> outCases;
   output DAE.Type ty;
 algorithm
-  (outCases,ty) := matchcontinue (icases,iexps,itys,info)
+  (outCases,ty) := matchcontinue (icases, iexps, itys)
     local
       String str;
       list<DAE.MatchCase> cases;
       list<DAE.Exp> exps;
-      list<DAE.Type> tys,tysboxed;
+      list<DAE.Type> tys;
 
-    case (cases,{},{},_) then (cases,DAE.T_NORETCALL_DEFAULT);
+    case (cases, {}, {}) then (cases,DAE.T_NORETCALL_DEFAULT);
 
-    case (cases,exps,tys,_)
+    case (cases, exps, tys)
       algorithm
         ty := List.reduce(List.map(tys, Types.boxIfUnboxedType), Types.superType);
         ty := Types.superType(ty, ty);
@@ -2286,11 +2256,11 @@ algorithm
         ty := Types.makeRegularTupleFromMetaTupleOnTrue(Types.allTuple(tys),ty);
         ty := Types.getUniontypeIfMetarecordReplaceAllSubtypes(ty);
         (exps,_) := Types.matchTypes(exps, tys, ty, true);
-        cases := fixCaseReturnTypes2(cases,exps,info);
+        cases := Types.fixCaseReturnTypes2(cases,exps,info);
       then (cases,ty);
 
     // 2 different cases, one boxed and one unboxed to handle everything
-    case (cases,exps,tys,_)
+    case (cases, exps, tys)
       algorithm
         ty := List.reduce(tys, Types.superType);
         ty := Types.superType(ty, ty);
@@ -2298,7 +2268,7 @@ algorithm
         ty := Types.makeRegularTupleFromMetaTupleOnTrue(Types.allTuple(tys),ty);
         ty := Types.getUniontypeIfMetarecordReplaceAllSubtypes(ty);
         (exps,_) := Types.matchTypes(exps, tys, ty, true);
-        cases := fixCaseReturnTypes2(cases,exps,info);
+        cases := Types.fixCaseReturnTypes2(cases,exps,info);
       then (cases,ty);
 
     else
@@ -2310,45 +2280,6 @@ algorithm
 
   end matchcontinue;
 end fixCaseReturnTypes;
-
-public function fixCaseReturnTypes2
-  input list<DAE.MatchCase> inCases;
-  input list<DAE.Exp> inExps;
-  input SourceInfo inInfo;
-  output list<DAE.MatchCase> outCases;
-algorithm
-  outCases := matchcontinue (inCases,inExps,inInfo)
-    local
-      list<DAE.Pattern> patterns;
-      list<DAE.Element> decls;
-      list<DAE.Statement> body;
-      Option<DAE.Exp> patternGuard;
-      DAE.Exp exp;
-      DAE.MatchCase case_;
-      Integer jump;
-      SourceInfo resultInfo,info2;
-      list<DAE.MatchCase> cases;
-      list<DAE.Exp> exps;
-      SourceInfo info;
-
-    case ({},{},_) then {};
-
-    case (DAE.CASE(patterns,patternGuard,decls,body,SOME(_),resultInfo,jump,info2)::cases,exp::exps,info)
-      algorithm
-        cases := fixCaseReturnTypes2(cases,exps,info);
-      then DAE.CASE(patterns,patternGuard,decls,body,SOME(exp),resultInfo,jump,info2)::cases;
-
-    case ((case_ as DAE.CASE(result=NONE()))::cases,exps,info)
-      algorithm
-        cases := fixCaseReturnTypes2(cases,exps,info);
-      then case_::cases;
-
-    else
-      algorithm
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {"Patternm.fixCaseReturnTypes2 failed"}, inInfo);
-      then fail();
-  end matchcontinue;
-end fixCaseReturnTypes2;
 
 public function traverseConstantPatternsHelper<T>
   input DAE.Exp inExp;
@@ -2424,84 +2355,12 @@ algorithm
   end match;
 end traverseConstantPatternsHelper2;
 
-public function traverseCases
-  replaceable type A subtypeof Any;
-  input list<DAE.MatchCase> inCases;
-  input FuncExpType func;
-  input A inA;
-  output list<DAE.MatchCase> outCases;
-  output A oa;
-  partial function FuncExpType
-    input DAE.Exp inExp;
-    input A inTypeA;
-    output DAE.Exp outExp;
-    output A outA;
-  end FuncExpType;
-algorithm
-  (outCases,oa) := match (inCases,func,inA)
-    local
-      list<DAE.Pattern> patterns;
-      list<DAE.Element> decls;
-      list<DAE.Statement> body,body1;
-      Option<DAE.Exp> result,result1,patternGuard,patternGuard1;
-      Integer jump;
-      SourceInfo resultInfo,info;
-      list<DAE.MatchCase> cases,cases1;
-      A a;
-
-    case ({},_,a) then ({},a);
-    case (DAE.CASE(patterns,patternGuard,decls,body,result,resultInfo,jump,info)::cases,_,a)
-      algorithm
-        (body1,(_,a)) := DAEUtil.traverseDAEEquationsStmts(body,Expression.traverseSubexpressionsHelper,(func,a));
-        (patternGuard1,a) := Expression.traverseExpOpt(patternGuard,func,a);
-        (result1,a) := Expression.traverseExpOpt(result,func,a);
-        (cases1,a) := traverseCases(cases,func,a);
-        cases := if referenceEq(cases,cases1) and referenceEq(patternGuard,patternGuard1) and referenceEq(result,result1) and referenceEq(body,body1)
-          then inCases
-          else DAE.CASE(patterns,patternGuard1,decls,body1,result1,resultInfo,jump,info)::cases1;
-      then (cases,a);
-  end match;
-end traverseCases;
-
-public function traverseCasesTopDown<A>
-  input list<DAE.MatchCase> inCases;
-  input FuncExpType func;
-  input A inA;
-  output list<DAE.MatchCase> cases = {};
-  output A a = inA;
-  partial function FuncExpType
-    input DAE.Exp inExp;
-    input A inTypeA;
-    output DAE.Exp outExp;
-    output Boolean cont;
-    output A outA;
-  end FuncExpType;
-protected
-  list<DAE.Pattern> patterns;
-  list<DAE.Element> decls;
-  list<DAE.Statement> body,body1;
-  Option<DAE.Exp> result,result1,patternGuard,patternGuard1;
-  Integer jump;
-  SourceInfo resultInfo,info;
-  tuple<FuncExpType,A> tpl;
-algorithm
-  for c in inCases loop
-    DAE.CASE(patterns,patternGuard,decls,body,result,resultInfo,jump,info) := c;
-    tpl := (func,a);
-    (body1,(_,a)) := DAEUtil.traverseDAEEquationsStmts(body,Expression.traverseSubexpressionsTopDownHelper,tpl); // TODO: Enable with new tarball
-    (patternGuard1,a) := Expression.traverseExpOptTopDown(patternGuard,func,a);
-    (result1,a) := Expression.traverseExpOptTopDown(result,func,a);
-    cases := DAE.CASE(patterns,patternGuard1,decls,body1,result1,resultInfo,jump,info)::cases;
-  end for;
-  cases := listReverse(cases); // TODO: in-place reverse?
-end traverseCasesTopDown;
-
 protected function filterEmptyPattern
   input tuple<DAE.Pattern,String,DAE.Type> tpl;
   output Boolean outB;
 algorithm
   outB := match tpl
-    case ((DAE.PAT_WILD(),_,_)) then false;
+    case (DAE.PAT_WILD(),_,_) then false;
     else true;
   end match;
 end filterEmptyPattern;
@@ -2517,7 +2376,7 @@ protected function addLocalDecls
   output FCore.Cache outCache;
   output Option<tuple<FCore.Graph,DAE.DAElist,AvlSetString.Tree>> res;
 algorithm
-  (outCache,res) := matchcontinue (inCache,inEnv,els,scopeName,impl,info)
+  (outCache,res) := matchcontinue (inCache, inEnv, els)
     local
       list<Absyn.ElementItem> ld;
       list<SCode.Element> ld2,ld3,ld4;
@@ -2532,11 +2391,11 @@ algorithm
       AvlSetString.Tree declsTree;
       list<String> names;
 
-    case (cache,env,{},_,_,_)
+    case (cache, env, {})
       algorithm
         declsTree := AvlSetString.new();
       then (cache,SOME((env,DAE.emptyDae,declsTree)));
-    case (cache,env,ld,_,_,_)
+    case (cache, env, ld)
       algorithm
         env2 := FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), scopeName,NONE());
 
@@ -2545,7 +2404,7 @@ algorithm
 
         // Filter out the components (just to be sure)
         true := List.applyAndFold1(ld2, boolAnd, SCodeUtil.isComponentWithDirection, Absyn.BIDIR(), true);
-        ((cache,b)) := List.fold1(ld2, checkLocalShadowing, env, (cache,false));
+        (cache,b) := List.fold1(ld2, checkLocalShadowing, env, (cache,false));
         ld2 := if b then {} else ld2;
 
         // Transform the element list into a list of element,NOMOD
@@ -2566,15 +2425,15 @@ algorithm
         res := if b then NONE() else SOME((env2,dae1,declsTree));
       then (cache,res);
 
-    case (cache,_,ld,_,_,_)
+    case (cache, _, ld)
       algorithm
         ld2 := AbsynToSCode.translateEitemlist(ld, SCode.PROTECTED());
-        (ld2 as _::_) := List.filterOnTrue(ld2, SCodeUtil.isNotComponent);
+        ld2 as _::_ := List.filterOnTrue(ld2, SCodeUtil.isNotComponent);
         str := stringDelimitList(List.map1(ld2, SCodeDump.unparseElementStr, SCodeDump.defaultOptions),", ");
         Error.addSourceMessage(Error.META_INVALID_LOCAL_ELEMENT,{str},info);
       then (cache,NONE());
 
-    case (cache,_,ld,_,_,_)
+    case (cache, _, ld)
       algorithm
         // Tranform declarations such as Real x,y; to Real x; Real y;
         ld2 := AbsynToSCode.translateEitemlist(ld, SCode.PROTECTED());
@@ -2582,7 +2441,7 @@ algorithm
         // Filter out the components (just to be sure)
         ld3 := List.select1(ld2, SCodeUtil.isComponentWithDirection, Absyn.INPUT());
         ld4 := List.select1(ld2, SCodeUtil.isComponentWithDirection, Absyn.OUTPUT());
-        (ld2 as _::_) := listAppend(ld3,ld4); // I don't care that this is slow; it's just for error message generation
+        ld2 as _::_ := listAppend(ld3,ld4); // I don't care that this is slow; it's just for error message generation
         str := stringDelimitList(List.map1(ld2, SCodeDump.unparseElementStr, SCodeDump.defaultOptions),", ");
         Error.addSourceMessage(Error.META_INVALID_LOCAL_ELEMENT,{str},info);
       then (cache,NONE());
@@ -2624,22 +2483,6 @@ algorithm
   end if;
 end checkLocalShadowing;
 
-public function resultExps
-  input list<DAE.MatchCase> inCases;
-  output list<DAE.Exp> exps;
-algorithm
-  exps := match inCases
-    local
-      DAE.Exp exp; list<DAE.MatchCase> cases;
-    case {} then {};
-    case (DAE.CASE(result=SOME(exp))::cases)
-      algorithm
-        exps := resultExps(cases);
-      then exp::exps;
-    case (_::cases) then resultExps(cases);
-  end match;
-end resultExps;
-
 protected function allPatternsWild
   "Returns true if all patterns in the list are wildcards"
   input list<DAE.Pattern> ipats;
@@ -2668,6 +2511,170 @@ algorithm
   end match;
 end allPatternsAlwaysMatch;
 
+protected function isInfallibleNoBinding
+  "Returns true if the pattern is guaranteed to match without binding any
+  variable, but is not just PAT_WILD itself (so it could be replaced with _)."
+  input DAE.Pattern pat;
+  output Boolean b;
+algorithm
+  b := match pat
+    local list<DAE.Pattern> pats; list<tuple<DAE.Pattern,String,DAE.Type>> namedPats;
+    case DAE.PAT_META_TUPLE(patterns=pats) then List.all(pats, isInfallibleNoBindingOrWild);
+    case DAE.PAT_CALL_TUPLE(patterns=pats) then List.all(pats, isInfallibleNoBindingOrWild);
+    case DAE.PAT_CALL(knownSingleton=true, patterns=pats) then List.all(pats, isInfallibleNoBindingOrWild);
+    case DAE.PAT_CALL_NAMED(name=_, patterns=namedPats)
+      // PAT_CALL_NAMED has no knownSingleton flag, so only fire if there are no fields at all.
+      then listEmpty(namedPats);
+    else false;
+  end match;
+end isInfallibleNoBinding;
+
+protected function isInfallibleNoBindingOrWild
+  input DAE.Pattern pat;
+  output Boolean b;
+algorithm
+  b := match pat
+    case DAE.PAT_WILD() then true;
+    else isInfallibleNoBinding(pat);
+  end match;
+end isInfallibleNoBindingOrWild;
+
+protected function isInfalliblePattern
+  "Returns true if the pattern is guaranteed to match at runtime. Unlike
+  isInfallibleNoBinding, the pattern is allowed to bind variables (PAT_AS /
+  PAT_AS_FUNC_PTR), which is what makes it useful for the
+  match-single-infallible-case rewrite to a destructuring assignment."
+  input DAE.Pattern pat;
+  output Boolean b;
+algorithm
+  b := match pat
+    local
+      list<DAE.Pattern> pats;
+      list<tuple<DAE.Pattern,String,DAE.Type>> namedPats;
+      DAE.Pattern innerPat;
+    case DAE.PAT_WILD() then true;
+    case DAE.PAT_AS(pat=innerPat) then isInfalliblePattern(innerPat);
+    case DAE.PAT_AS_FUNC_PTR(pat=innerPat) then isInfalliblePattern(innerPat);
+    case DAE.PAT_META_TUPLE(patterns=pats) then List.all(pats, isInfalliblePattern);
+    case DAE.PAT_CALL_TUPLE(patterns=pats) then List.all(pats, isInfalliblePattern);
+    case DAE.PAT_CALL(knownSingleton=true, patterns=pats) then List.all(pats, isInfalliblePattern);
+    case DAE.PAT_CALL_NAMED(patterns=namedPats) then listEmpty(namedPats);
+    else false;
+  end match;
+end isInfalliblePattern;
+
+protected function isSingleInfallibleMatch
+  "True when a match (not matchcontinue) has exactly one case with no else and
+  every input's pattern in that case is infallible. Used both to emit the
+  MATCH_SINGLE_INFALLIBLE_CASE notification and to suppress weaker notifications
+  that the agent would otherwise see as duplicates."
+  input Absyn.MatchType matchType;
+  input list<DAE.MatchCase> cases;
+  output Boolean b;
+algorithm
+  b := match (matchType, cases)
+    local list<DAE.Pattern> pats;
+    case (Absyn.MATCH(), {DAE.CASE(patterns=pats)})
+      then List.all(pats, isInfalliblePattern);
+    else false;
+  end match;
+end isSingleInfallibleMatch;
+
+protected function checkMatchSingleInfallibleCase
+  "Emits a notification when isSingleInfallibleMatch holds. Such a match never
+  fails at runtime and is clearer as a destructuring assignment (or, if no
+  bindings, as a plain statement)."
+  input Absyn.MatchType matchType;
+  input list<DAE.MatchCase> cases;
+  input SourceInfo info;
+algorithm
+  if Flags.isSet(Flags.PATTERNM_ALL_INFO) and isSingleInfallibleMatch(matchType, cases) then
+    Error.addSourceMessage(Error.MATCH_SINGLE_INFALLIBLE_CASE, {}, info);
+  end if;
+end checkMatchSingleInfallibleCase;
+
+protected function checkInfallibleNoBindingPatterns
+  "Walks the patterns of each case looking for sub-patterns that are infallible
+  and bind no variables. Such patterns can be replaced by a wildcard. When the
+  whole match is a single infallible case (covered by the stronger
+  MATCH_SINGLE_INFALLIBLE_CASE notification), we skip per-pattern reporting for
+  that case so the user only sees the better recommendation."
+  input list<DAE.MatchCase> cases;
+  input Absyn.MatchType matchType;
+  input SourceInfo info;
+algorithm
+  if not Flags.isSet(Flags.PATTERNM_ALL_INFO) then
+    return;
+  end if;
+  if isSingleInfallibleMatch(matchType, cases) then
+    return;
+  end if;
+  for c in cases loop
+    () := match c
+      local list<DAE.Pattern> pats; SourceInfo cinfo;
+      case DAE.CASE(patterns=pats, info=cinfo)
+        algorithm
+          for p in pats loop
+            checkPatternInfallibleNoBinding(p, cinfo);
+          end for;
+        then ();
+    end match;
+  end for;
+end checkInfallibleNoBindingPatterns;
+
+protected function checkPatternInfallibleNoBinding
+  input DAE.Pattern pat;
+  input SourceInfo info;
+algorithm
+  () := match pat
+    local
+      list<DAE.Pattern> pats;
+      list<tuple<DAE.Pattern,String,DAE.Type>> namedPats;
+      DAE.Pattern innerPat;
+    case DAE.PAT_WILD() then ();
+    case _ guard isInfallibleNoBinding(pat)
+      algorithm
+        Error.addSourceMessage(Error.META_PATTERN_INFALLIBLE_NO_BINDING, {ExpressionDump.patternStr(pat)}, info);
+      then ();
+    case DAE.PAT_META_TUPLE(patterns=pats)
+      algorithm
+        for p in pats loop checkPatternInfallibleNoBinding(p, info); end for;
+      then ();
+    case DAE.PAT_CALL_TUPLE(patterns=pats)
+      algorithm
+        for p in pats loop checkPatternInfallibleNoBinding(p, info); end for;
+      then ();
+    case DAE.PAT_CALL(patterns=pats)
+      algorithm
+        for p in pats loop checkPatternInfallibleNoBinding(p, info); end for;
+      then ();
+    case DAE.PAT_CALL_NAMED(patterns=namedPats)
+      algorithm
+        for tpl in namedPats loop
+          checkPatternInfallibleNoBinding(Util.tuple31(tpl), info);
+        end for;
+      then ();
+    case DAE.PAT_CONS(head=innerPat)
+      algorithm
+        checkPatternInfallibleNoBinding(innerPat, info);
+        checkPatternInfallibleNoBinding(pat.tail, info);
+      then ();
+    case DAE.PAT_SOME(pat=innerPat)
+      algorithm
+        checkPatternInfallibleNoBinding(innerPat, info);
+      then ();
+    case DAE.PAT_AS(pat=innerPat)
+      algorithm
+        checkPatternInfallibleNoBinding(innerPat, info);
+      then ();
+    case DAE.PAT_AS_FUNC_PTR(pat=innerPat)
+      algorithm
+        checkPatternInfallibleNoBinding(innerPat, info);
+      then ();
+    else ();
+  end match;
+end checkPatternInfallibleNoBinding;
+
 protected function getCasePatterns
 "Accessor function for DAE.Case"
   input DAE.MatchCase case_;
@@ -2682,14 +2689,14 @@ protected function setCasePatterns
   input list<DAE.Pattern> pats;
   output DAE.MatchCase case2;
 algorithm
-  case2 := match (case1,pats)
+  case2 := match case1
     local
       list<DAE.Element> localDecls;
       list<DAE.Statement> body;
       Option<DAE.Exp> patternGuard,result;
       Integer jump;
       SourceInfo resultInfo,info;
-    case (DAE.CASE(_,patternGuard,localDecls,body,result,resultInfo,jump,info),_)
+    case DAE.CASE(_,patternGuard,localDecls,body,result,resultInfo,jump,info)
       then DAE.CASE(pats,patternGuard,localDecls,body,result,resultInfo,jump,info);
   end match;
 end setCasePatterns;
@@ -2736,7 +2743,6 @@ protected function patternComplexity
 algorithm
   i := match inPat
     local
-      DAE.Pattern p;
       DAE.Exp exp;
     case DAE.PAT_CONSTANT(exp=exp)
       algorithm
@@ -2793,9 +2799,8 @@ algorithm
   env := match (inPat,firstPattern)
     local
       Absyn.Path name,path;
-      String id,scope;
+      String id;
       DAE.Type ty;
-      DAE.Pattern pat;
       list<DAE.Var> fields;
       Integer index;
       Boolean knownSingleton;
@@ -2890,7 +2895,7 @@ protected function addAliasesToEnv
   input SourceInfo info;
   output FCore.Graph outEnv;
 algorithm
-  outEnv := match (inEnv,inTypes,inAliases,info)
+  outEnv := match (inEnv, inTypes, inAliases)
     local
       list<DAE.Type> tys;
       list<list<String>> aliases;
@@ -2899,9 +2904,9 @@ algorithm
       FCore.Graph env;
       DAE.Type ty;
       DAE.Attributes attr;
-    case (_,{},{},_) then inEnv;
-    case (_,_::tys,{}::aliases,_) then addAliasesToEnv(inEnv,tys,aliases,info);
-    case (env,ty::_,(id::rest)::aliases,_)
+    case (_, {}, {}) then inEnv;
+    case (_, _::tys, {}::aliases) then addAliasesToEnv(inEnv,tys,aliases,info);
+    case (env, ty::_, (id::rest)::aliases)
       algorithm
         attr := DAE.dummyAttrInput;
         env := FGraph.mkComponentNode(env, DAE.TYPES_VAR(id,attr,ty,DAE.UNBOUND(),false,NONE()), SCode.COMPONENT(id,SCode.defaultPrefixes,SCode.defaultVarAttr,Absyn.TPATH(Absyn.IDENT("$dummy"),NONE()),SCode.NOMOD(),SCode.noComment,NONE(),info), DAE.NOMOD(), FCore.VAR_DAE(), FGraph.empty());
@@ -2932,7 +2937,6 @@ algorithm
     local
       AvlSetString.Tree elseTree;
       list<DAE.Statement> body;
-      DAE.ComponentRef cr;
       DAE.Exp exp,lhs,cond,msg,level;
       list<DAE.Exp> exps;
       DAE.Else else_;
@@ -3046,14 +3050,14 @@ protected function elseFindDeadStore
   output DAE.Else outElse;
   output AvlSetString.Tree useTree;
 algorithm
-  (outElse,useTree) := match (inElse,localsTree,inUseTree)
+  (outElse,useTree) := match inElse
     local
       DAE.Exp exp;
       list<DAE.Statement> body;
       DAE.Else else_;
       AvlSetString.Tree elseTree;
-    case (DAE.NOELSE(),_,_) then (inElse,inUseTree);
-    case (DAE.ELSEIF(exp,body,else_),_,_)
+    case DAE.NOELSE() then (inElse,inUseTree);
+    case DAE.ELSEIF(exp,body,else_)
       algorithm
         (body,useTree) := statementListFindDeadStoreRemoveEmptyStatements(body,localsTree,inUseTree);
         (_,useTree) := Expression.traverseExpBottomUp(exp, useLocalCref, useTree);
@@ -3061,7 +3065,7 @@ algorithm
         useTree := AvlSetString.join(useTree,elseTree);
         else_ := DAE.ELSEIF(exp,body,else_);
       then (else_,useTree);
-    case (DAE.ELSE(body),_,_)
+    case DAE.ELSE(body)
       algorithm
         (body,useTree) := statementListFindDeadStoreRemoveEmptyStatements(body,localsTree,inUseTree);
         else_ := DAE.ELSE(body);
@@ -3087,7 +3091,6 @@ algorithm
     local
       list<DAE.Exp> exps;
       list<DAE.Type> tys,tys2;
-      list<Absyn.Path> source;
     case (DAE.META_TUPLE(exps),DAE.T_METATUPLE(types=tys))
       algorithm
         tys2 := List.map(tys, Types.unboxedType);

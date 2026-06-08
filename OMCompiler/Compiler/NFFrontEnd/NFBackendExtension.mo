@@ -73,14 +73,15 @@ protected
 public
   uniontype BackendInfo
     record BACKEND_INFO
-      VariableKind varKind                "Structural kind: state, algebraic...";
-      VariableAttributes attributes       "values on built-in attributes";
-      Annotations annotations             "values on annotations (vendor specific)";
-      Option<Pointer<Variable>> var_pre   "Pointer (var -> pre) or (pre -> var) if existent.";
-      Option<Pointer<Variable>> var_seed  "Pointer (var -> seed) or (seed -> var) if existent.";
-      Option<Pointer<Variable>> var_pder  "Pointer (var -> pder) or (pder -> var) if existent.";
-      Option<Pointer<Variable>> var_start "Pointer (var -> start) or (start -> var) if existent.";
-      Option<Pointer<Variable>> parent    "record parent if it is part of a record.";
+      VariableKind varKind                   "Structural kind: state, algebraic...";
+      VariableAttributes attributes          "values on built-in attributes";
+      Annotations annotations                "values on annotations (vendor specific)";
+      Option<Pointer<Variable>> var_pre      "Pointer (var -> pre) or (pre -> var) if existent.";
+      Option<Pointer<Variable>> var_seed     "Pointer (var -> seed) or (seed -> var) if existent.";
+      Option<Pointer<Variable>> var_pder_res "Pointer (var -> pder, result var in Jacobian) or (pder -> var) if existent.";
+      Option<Pointer<Variable>> var_pder_tmp "Pointer (var -> pder, tmp var in Jacobian) or (pder -> var) if existent.";
+      Option<Pointer<Variable>> var_start    "Pointer (var -> start) or (start -> var) if existent.";
+      Option<Pointer<Variable>> parent       "record parent if it is part of a record.";
     end BACKEND_INFO;
 
     function toString
@@ -144,8 +145,13 @@ public
     end setVarSeed;
 
     function setVarPDer extends setPartner;
+      input Boolean isTmp;
     algorithm
-      binfo.var_pder := var_ptr;
+      if isTmp then
+        binfo.var_pder_tmp := var_ptr;
+      else
+        binfo.var_pder_res := var_ptr;
+      end if;
     end setVarPDer;
 
     function setVarStart extends setPartner;
@@ -188,12 +194,12 @@ public
         case VariableKind.FRONTEND_DUMMY() then List.fill(binfo, length);
         else algorithm
           scalar_attributes := VariableAttributes.scalarize(binfo.attributes, length);
-        then list(BACKEND_INFO(binfo.varKind, attr, binfo.annotations, binfo.var_pre, binfo.var_seed, binfo.var_pder, binfo.var_start, binfo.parent) for attr in scalar_attributes);
+        then list(BACKEND_INFO(binfo.varKind, attr, binfo.annotations, binfo.var_pre, binfo.var_seed, binfo.var_pder_res, binfo.var_pder_tmp, binfo.var_start, binfo.parent) for attr in scalar_attributes);
       end match;
     end scalarize;
   end BackendInfo;
 
-  constant BackendInfo DUMMY_BACKEND_INFO = BackendInfo.BACKEND_INFO(VariableKind.FRONTEND_DUMMY(), EMPTY_VAR_ATTR_REAL, EMPTY_ANNOTATIONS, NONE(), NONE(), NONE(), NONE(), NONE());
+  constant BackendInfo DUMMY_BACKEND_INFO = BackendInfo.BACKEND_INFO(VariableKind.FRONTEND_DUMMY(), EMPTY_VAR_ATTR_REAL, EMPTY_ANNOTATIONS, NONE(), NONE(), NONE(), NONE(), NONE(), NONE());
 
   uniontype VariableKind
     record TIME end TIME;
@@ -462,8 +468,6 @@ public
       output VariableAttributes attributes;
     protected
       Boolean is_final;
-      Type elTy;
-      Boolean is_array = false;
       ComplexType complexTy;
     algorithm
       is_final := compAttrs.isFinal or
@@ -1328,7 +1332,7 @@ public
       Integer index;
     algorithm
       for var in children loop
-        _ := match UnorderedMap.get(ComponentRef.firstName(var.name), indexMap)
+        () := match UnorderedMap.get(ComponentRef.firstName(var.name), indexMap)
           case SOME(index) algorithm
             childrenAttr[index] := create(var.typeAttributes, var.ty, var.attributes, var.children, var.comment);
           then ();
@@ -1532,10 +1536,10 @@ public
         annotations.resizable := true;
       end if;
 
-      _ := match comment
+      () := match comment
         case SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(modification=mod as SCode.MOD()))) algorithm
           for submod in mod.subModLst loop
-            _ := match submod
+            () := match submod
               case SCode.NAMEMOD(ident = "HideResult", mod = SCode.MOD(binding = SOME(Absyn.BOOL(true)))) algorithm
                 annotations.hideResult := true;
               then ();

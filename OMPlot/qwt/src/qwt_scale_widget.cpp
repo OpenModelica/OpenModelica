@@ -208,13 +208,14 @@ void QwtScaleWidget::setTitle( const QwtText& title )
  */
 void QwtScaleWidget::setAlignment( QwtScaleDraw::Alignment alignment )
 {
-    if ( m_data->scaleDraw )
-        m_data->scaleDraw->setAlignment( alignment );
+    if ( m_data->scaleDraw == NULL )
+        return;
+
+    m_data->scaleDraw->setAlignment( alignment );
 
     if ( !testAttribute( Qt::WA_WState_OwnSizePolicy ) )
     {
-        QSizePolicy policy( QSizePolicy::MinimumExpanding,
-            QSizePolicy::Fixed );
+        QSizePolicy policy( QSizePolicy::MinimumExpanding, QSizePolicy::Fixed );
         if ( m_data->scaleDraw->orientation() == Qt::Vertical )
             policy.transpose();
 
@@ -976,6 +977,4 @@ const QwtColorMap* QwtScaleWidget::colorMap() const
     return m_data->colorBar.colorMap;
 }
 
-#if QWT_MOC_INCLUDE
 #include "moc_qwt_scale_widget.cpp"
-#endif

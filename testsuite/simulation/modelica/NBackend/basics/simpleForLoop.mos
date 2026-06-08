@@ -15,6 +15,8 @@ equation
 end simpleForLoop;
 "); getErrorString();
 
+// TODO: these reference results seem to be wrong!
+// x[100] at time = 1 => should be e, but it yields values a lot bigger
 simulate(simpleForLoop); getErrorString();
 
 val(x[1], 0.0);
@@ -40,14 +42,16 @@ val(der(x[100]), 1.0);
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: NSimJacobian.SimJacobian.create could not generate sparsity pattern.
+// "Warning: NSimJacobian.SimJacobian.createSparsityPattern: column cref not found in Jacobian local_idx_map: x[1]
+// 	Available keys: x, $DER.x
+// Warning: NSimJacobian.SimJacobian.create could not generate sparsity pattern of Jacobian [ODE].
 // "
 // 1.0
 // 1.0
 // 1.0
 // 0.01
-// 2.71844809873264
-// 1.0100501671343574
-// 2.71844809873264
-// 0.010100501671343574
+// 2.7183953285030427
+// 1.010050167087634
+// 2.7183953285030427
+// 0.01010050167087634
 // endResult

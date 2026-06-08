@@ -860,6 +860,9 @@ namespace FlatModelica
       void print(std::ostream &os) const override;
       QJsonValue serialize() const override;
 
+      std::string_view name() const { return _name; }
+      const Expression& value() const { return _value; }
+
     private:
       std::string _name;
       Expression _value;
@@ -2184,7 +2187,7 @@ namespace FlatModelica
 
   Expression NamedArg::eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const
   {
-    return _value.evaluate(var_eval, recursion_level);
+    return Expression{std::make_unique<NamedArg>(_name, _value.evaluate(var_eval, recursion_level))};
   }
 
   void NamedArg::print(std::ostream &os) const
@@ -2829,6 +2832,33 @@ namespace FlatModelica
   const Expression& Expression::arg(size_t index) const
   {
     return args()[index];
+  }
+
+  /*!
+   * \brief Expression::argName
+   * Returns the name of a named argument, or an empty string.
+   * \return The name of the named argument.
+   */
+  std::string_view Expression::argName() const
+  {
+    auto p = dynamic_cast<const NamedArg*>(_value.get());
+    return p ? p->name() : std::string_view{};
+  }
+
+  /*!
+   * \brief Expression::args
+   * Returns the value of a named argument, or throws an error.
+   * \return The value of the named argument.
+   */
+  const Expression& Expression::argValue() const
+  {
+    auto p = dynamic_cast<const NamedArg*>(_value.get());
+
+    if (!p) {
+      throw std::runtime_error("Expression::argValue: not a named argument");
+    }
+
+    return p->value();
   }
 
   /*!

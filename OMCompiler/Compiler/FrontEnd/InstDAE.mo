@@ -53,6 +53,7 @@ public import SCode;
 
 protected import ClassInfUtil;
 protected import ComponentReference;
+protected import ComponentReferenceBasics;
 protected import Config;
 protected import DAEUtil;
 protected import Debug;
@@ -97,9 +98,7 @@ public function daeDeclare
   input Boolean declareComplexVars "if true, declare variables for complex variables, e.g. record vars in functions";
   output DAE.DAElist outDae;
 algorithm
-  outDae := matchcontinue(inCache, inParentEnv, inClassEnv, inComponentRef, inState, inType, inAttributes,
-      visibility, inBinding, inInstDims, inStartValue, inVarAttr, inComment, io,
-      finalPrefix, source, declareComplexVars)
+  outDae := matchcontinue(inComponentRef, inState, inType, inAttributes, visibility, inBinding, inInstDims, inStartValue, inVarAttr, inComment)
     local
       DAE.ConnectorType ct1;
       DAE.DAElist dae;
@@ -121,10 +120,8 @@ algorithm
       DAE.VarDirection vd;
       DAE.VarVisibility vv;
 
-    case (_,_,_,vn,ci_state,ty,
-          SCode.ATTR(connectorType = ct, parallelism = prl, variability = var,
-            direction = dir),
-          vis,e,inst_dims,start,dae_var_attr,comment,_,_,_,_)
+    case (vn, ci_state, ty, SCode.ATTR(connectorType = ct, parallelism = prl, variability = var,
+            direction = dir), vis, e, inst_dims, start, dae_var_attr, comment)
       algorithm
         DAE.SOURCE(info,_,_,_,_,_,_) := source;
         ct1 := DAEUtil.toConnectorType(ct, ci_state);
@@ -156,20 +153,20 @@ protected function showDAE
   input ClassInf.State inState;
   input DAE.DAElist inDAE;
 algorithm
-  _ := matchcontinue(inCache, inParentEnv, inClassEnv, inState, inDAE)
+  () := matchcontinue inDAE
     local
       String str, sstr;
       DAE.Element comp;
       DAE.DAElist dae;
       list<DAE.Element> els;
 
-    case (_, _, _, _, _)
+    case _
       algorithm
         false := Flags.isSet(Flags.SHOW_DAE_GENERATION);
       then
         ();
 
-    case (_, _, _, _, _)
+    case _
       algorithm
         els := DAEUtil.daeElements(inDAE);
         sstr := ClassInfUtil.printStateStr(inState);
@@ -183,7 +180,7 @@ algorithm
       then
         ();
 
-    case (_, _, _, _, _)
+    case _
       algorithm
         str := if System.getPartialInstantiation() then " partial" else " full";
         print("DAE: " + ClassInfUtil.printStateStr(inState) + str + " - could not print\n");
@@ -213,11 +210,9 @@ protected function daeDeclare2
   input Boolean declareComplexVars;
   output DAE.DAElist outDAe;
 algorithm
-  outDAe := matchcontinue(inComponentRef, inType, inConnectorType, inVarKind,
-      inVarDirection, inParallelism, protection, inExpExpOption, inInstDims,
-      inStartValue, inAttr, inComment, io, source, declareComplexVars)
+  outDAe := matchcontinue(inComponentRef, inType, inConnectorType, inVarKind, inVarDirection, inParallelism, protection, inExpExpOption, inInstDims, inStartValue, inAttr, inComment, declareComplexVars)
     local
-      DAE.ComponentRef vn,c;
+      DAE.ComponentRef vn;
       DAE.ConnectorType ct;
       DAE.VarKind kind;
       DAE.VarDirection dir;
@@ -226,10 +221,7 @@ algorithm
       InstDims inst_dims;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
-      list<String> l;
       DAE.DAElist dae;
-      ClassInf.State ci;
-      Integer dim;
       String s;
       DAE.Type ty,tp;
       DAE.VarVisibility prot;
@@ -238,35 +230,35 @@ algorithm
       DAE.Type tty;
       SourceInfo info;
 
-    case (vn,DAE.T_INTEGER(),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
+    case (vn, DAE.T_INTEGER(), ct, kind, dir, daePrl, prot, e, inst_dims, _, dae_var_attr, comment, _)
       algorithm
         finst_dims := List.flatten(inst_dims);
       then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,DAE.T_INTEGER_DEFAULT,e,finst_dims,ct,source,dae_var_attr,comment,io,false)});
 
-    case (vn,DAE.T_REAL(),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
+    case (vn, DAE.T_REAL(), ct, kind, dir, daePrl, prot, e, inst_dims, _, dae_var_attr, comment, _)
       algorithm
         finst_dims := List.flatten(inst_dims);
       then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,DAE.T_REAL_DEFAULT,e,finst_dims,ct,source,dae_var_attr,comment,io,false)});
 
-    case (vn,DAE.T_BOOL(),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
+    case (vn, DAE.T_BOOL(), ct, kind, dir, daePrl, prot, e, inst_dims, _, dae_var_attr, comment, _)
       algorithm
         finst_dims := List.flatten(inst_dims);
       then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,DAE.T_BOOL_DEFAULT,e,finst_dims,ct,source,dae_var_attr,comment,io,false)});
     // BTH
-    case (vn,DAE.T_CLOCK(),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
+    case (vn, DAE.T_CLOCK(), ct, kind, dir, daePrl, prot, e, inst_dims, _, dae_var_attr, comment, _)
       algorithm
         finst_dims := List.flatten(inst_dims);
       then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,DAE.T_CLOCK_DEFAULT,e,finst_dims,ct,source,dae_var_attr,comment,io,false)});
 
-    case (vn,DAE.T_STRING(),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
+    case (vn, DAE.T_STRING(), ct, kind, dir, daePrl, prot, e, inst_dims, _, dae_var_attr, comment, _)
       algorithm
         finst_dims := List.flatten(inst_dims);
       then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,DAE.T_STRING_DEFAULT,e,finst_dims,ct,source,dae_var_attr,comment,io,false)});
 
-    case (_,DAE.T_ENUMERATION(index = SOME(_)),_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case (_, DAE.T_ENUMERATION(index = SOME(_)), _, _, _, _, _, _, _, _, _, _, _)
     then DAE.emptyDae;
 
-    case (vn,DAE.T_CODE(),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
+    case (vn, DAE.T_CODE(), ct, kind, dir, daePrl, prot, e, inst_dims, _, dae_var_attr, comment, _)
       algorithm
         finst_dims := List.flatten(inst_dims);
       then
@@ -275,33 +267,33 @@ algorithm
     // We should not declare each enumeration value of an enumeration when instantiating,
     // e.g Myenum my !=> constant EnumType my.enum1,... {DAE.VAR(vn, kind, dir, DAE.ENUM, e, inst_dims)}
     // instantiation of complex type extending from basic type
-    case (vn,ty as DAE.T_ENUMERATION(),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
+    case (vn, ty as DAE.T_ENUMERATION(), ct, kind, dir, daePrl, prot, e, inst_dims, _, dae_var_attr, comment, _)
       algorithm
         finst_dims := List.flatten(inst_dims);
       then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,ty,e,finst_dims,ct,source,dae_var_attr,comment,io,false)});
 
      // complex type that is ExternalObject
-    case (vn, ty as DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
+    case (vn, ty as DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)), ct, kind, dir, daePrl, prot, e, inst_dims, _, dae_var_attr, comment, _)
        algorithm
          finst_dims := List.flatten(inst_dims);
       then
       DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,ty,e,finst_dims,ct,source,dae_var_attr,comment,io,false)});
 
     // instantiation of complex type extending from basic type
-    case (vn,DAE.T_SUBTYPE_BASIC(complexType = tp),ct,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,_,_,_)
+    case (vn, DAE.T_SUBTYPE_BASIC(complexType = tp), ct, kind, dir, daePrl, prot, e, inst_dims, start, dae_var_attr, comment, _)
       algorithm
         (_,dae_var_attr) := InstBinding.instDaeVariableAttributes(FCore.emptyCache(),FGraph.empty(), DAE.NOMOD(), tp, {});
         dae := daeDeclare2(vn,tp,ct,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,io,source,declareComplexVars);
     then dae;
 
     // array that extends basic type
-    case (vn,DAE.T_ARRAY(dims = {DAE.DIM_INTEGER()},ty = tp),ct,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,_,_,_)
+    case (vn, DAE.T_ARRAY(dims = {DAE.DIM_INTEGER()},ty = tp), ct, kind, dir, daePrl, prot, e, inst_dims, start, dae_var_attr, comment, _)
       algorithm
         dae := daeDeclare2(vn, tp, ct, kind, dir, daePrl, prot,e, inst_dims, start, dae_var_attr,comment,io,source,declareComplexVars);
       then dae;
 
     // Arrays with unknown dimension are allowed if not expanded
-    case (vn,DAE.T_ARRAY(ty = tp),ct,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,_,_,_)
+    case (vn, DAE.T_ARRAY(ty = tp), ct, kind, dir, daePrl, prot, e, inst_dims, start, dae_var_attr, comment, _)
       algorithm
         false := Config.splitArrays();
         dae := daeDeclare2(vn, tp, ct, kind, dir, daePrl, prot,e, inst_dims, start, dae_var_attr,comment,io,source,declareComplexVars);
@@ -309,7 +301,7 @@ algorithm
         dae;
 
     // if arrays are expanded and dimension is unknown, report an error
-    case (vn,DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()}),_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case (vn, DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()}), _, _, _, _, _, _, _, _, _, _, _)
       algorithm
         true := Config.splitArrays();
         s := ComponentReferenceBasics.printComponentRefStr(vn);
@@ -319,14 +311,14 @@ algorithm
         fail();
 
     // Complex/Record components, only if declareComplexVars is true
-    case(vn,ty as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,true)
+    case(vn, ty as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)), ct, kind, dir, daePrl, prot, e, inst_dims, _, dae_var_attr, comment, true)
       algorithm
         finst_dims := List.flatten(inst_dims);
       then
         DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,ty,e,finst_dims,ct,source,dae_var_attr,comment,io,false)});
 
     // MetaModelica extensions
-    case (vn,tty as DAE.T_FUNCTION(),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
+    case (vn, tty as DAE.T_FUNCTION(), ct, kind, dir, daePrl, prot, e, inst_dims, _, dae_var_attr, comment, _)
       algorithm
         finst_dims := List.flatten(inst_dims);
         path := ComponentReference.crefToPath(vn);
@@ -335,7 +327,7 @@ algorithm
         DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,tty,e,finst_dims,ct,source,dae_var_attr,comment,io,false)});
 
     // MetaModelica extension
-    case (vn,ty,ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
+    case (vn, ty, ct, kind, dir, daePrl, prot, e, inst_dims, _, dae_var_attr, comment, _)
       algorithm
         true := Config.acceptMetaModelicaGrammar();
         true := Types.isBoxedType(ty);

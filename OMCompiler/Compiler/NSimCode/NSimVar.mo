@@ -218,7 +218,7 @@ public
     protected
       SimCode.SimCodeIndices simCodeIndices = Pointer.access(indices_ptr);
     algorithm
-      _ := match varType
+      () := match varType
 
         case VarType.SIMULATION algorithm
           Pointer.update(acc, create(var, simCodeIndices.uniqueIndex, simCodeIndices.realVarIndex) :: Pointer.access(acc));
@@ -264,7 +264,7 @@ public
       input Pointer<SimCode.SimCodeIndices> indices_ptr;
       input VarType varType = VarType.SIMULATION;
     algorithm
-      _ := match comp
+      () := match comp
         case StrongComponent.SINGLE_COMPONENT() guard(Equation.isResidual(comp.eqn)) algorithm
           traverseCreate(Pointer.access(Equation.getResidualVar(comp.eqn)), acc, indices_ptr, varType);
         then ();
@@ -456,7 +456,7 @@ public
       input SCode.Comment absynComment;
       output String commentStr;
     algorithm
-      commentStr := match (absynComment)
+      commentStr := match absynComment
         case SCode.COMMENT(comment = SOME(commentStr)) then commentStr;
         else "";
       end match;
@@ -508,7 +508,6 @@ public
         local
           Variable var;
           Option<DAE.ComponentRef> oldCrefOpt;
-          DAE.ComponentRef oldCref;
 
         case VariableKind.ALGEBRAIC()               then OldBackendDAE.VARIABLE();
         case VariableKind.STATE()
@@ -629,8 +628,7 @@ public
 
       alias := match SimplifyExp.simplify(exp)
         local
-          Expression e, e1, e2;
-          Real gain, offset;
+          Expression e;
           ComponentRef cref;
 
         // equality alias
@@ -1389,5 +1387,5 @@ public
     end convert;
   end ExtObjInfo;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="nbackend");
 end NSimVar;

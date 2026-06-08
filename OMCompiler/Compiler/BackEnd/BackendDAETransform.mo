@@ -55,6 +55,7 @@ protected
   import BackendEquation;
   import BackendVariable;
   import ComponentReference;
+  protected import ComponentReferenceBasics;
   import DAEUtil;
   import Debug;
   import ElementSource;
@@ -230,17 +231,16 @@ algorithm
     local
       Integer compelem, v;
       list<Integer> comp, varindxs;
-      array<Integer> ass1, ass2;
+      array<Integer> ass2;
       BackendDAE.AdjacencyMatrix m;
       BackendDAE.AdjacencyMatrixT mt;
-      BackendDAE.Variables vars, vars_1;
-      list<BackendDAE.Equation> eqn_lst, eqn_lst1, cont_eqn, disc_eqn;
-      list<BackendDAE.Var> var_lst, var_lst_1, cont_var, disc_var;
-      list<Integer> indxcont_var, indxdisc_var, indxcont_eqn, indxdisc_eqn;
-      BackendDAE.EquationArray eqns_1, eqns;
+      BackendDAE.Variables vars_1;
+      list<BackendDAE.Equation> eqn_lst, eqn_lst1;
+      list<BackendDAE.Var> var_lst, var_lst_1;
+      list<Integer> indxdisc_var;
+      BackendDAE.EquationArray eqns_1;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       BackendDAE.JacobianType jac_tp;
-      BackendDAE.StrongComponent sc;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       String msg;
@@ -359,7 +359,7 @@ protected function crefsAreArray "author:Waurich TUD 2015-03
   input list<DAE.Exp> crefLst;
   output Boolean isUnsolvable;
 algorithm
-  isUnsolvable := matchcontinue(eqIn)
+  isUnsolvable := matchcontinue eqIn
     local
       list<DAE.Exp> expLst;
 
@@ -526,15 +526,14 @@ public function getEquationAndSolvedVarIndxes "author: Frenkel TUD
   output list<Integer> outEquation;
   output list<Integer> outVar;
 algorithm
-  (outEquation, outVar) := matchcontinue(inComp)
+  (outEquation, outVar) := matchcontinue inComp
     local
       Integer v, e;
       list<Integer> elst, vlst, elst1, vlst1;
       list<list<Integer>> vLstLst;
-      BackendDAE.StrongComponent comp;
       BackendDAE.InnerEquations innerEquations;
 
-    case (BackendDAE.SINGLEEQUATION(eqn=e, var=v))
+    case BackendDAE.SINGLEEQUATION(eqn=e, var=v)
     then ({e}, {v});
 
     case BackendDAE.EQUATIONSYSTEM(eqns=elst, vars=vlst)
@@ -592,7 +591,7 @@ public function traverseBackendDAEExpsEqnWithSymbolicOperation
     output tuple<list<DAE.SymbolicOperation>, Type_a> outTpl;
   end FuncExpType;
 algorithm
-  (outEquation, outTypeA) := matchcontinue (inEquation)
+  (outEquation, outTypeA) := matchcontinue inEquation
     local
       DAE.Exp e1_1, e2_1, e1, e2, cond;
       DAE.Exp iter, start, stop;
@@ -699,7 +698,7 @@ protected function traverseBackendDAEExpsLstEqnWithSymbolicOperation
     output Type_a outA;
   end FuncExpType;
 algorithm
-  (outExps, outTypeA) := match (inExps)
+  (outExps, outTypeA) := match inExps
     local
       DAE.Exp exp;
       list<DAE.Exp> rest, exps;
@@ -730,7 +729,7 @@ public function traverseBackendDAEExpsEqnLstWithSymbolicOperation
     output tuple<list<DAE.SymbolicOperation>, Type_a> outTpl;
   end FuncExpType;
 algorithm
-  (outEqns, outTypeA) := match (inEqns)
+  (outEqns, outTypeA) := match inEqns
     local
       BackendDAE.Equation eqn;
       list<BackendDAE.Equation> rest, eqns;
@@ -761,13 +760,13 @@ protected function traverseBackendDAEExpsEqnLstLstWithSymbolicOperation
     output tuple<list<DAE.SymbolicOperation>, Type_a> outTpl;
   end FuncExpType;
 algorithm
-  (outEqns, outTypeA) := match (inEqns, func, inTypeA, iAcc)
+  (outEqns, outTypeA) := match inEqns
     local
       list<BackendDAE.Equation> eqn;
       list<list<BackendDAE.Equation>> rest, eqnslst;
       Type_a arg;
-    case({}, _, _, _) then (listReverse(iAcc), inTypeA);
-    case(eqn::rest, _, _, _)
+    case {} then (listReverse(iAcc), inTypeA);
+    case eqn::rest
       algorithm
         (eqn, arg) := traverseBackendDAEExpsEqnLstWithSymbolicOperation(eqn, func, inTypeA, {});
         (eqnslst, arg) := traverseBackendDAEExpsEqnLstLstWithSymbolicOperation(rest, func, arg, eqn::iAcc);
@@ -792,7 +791,7 @@ protected function traverseBackendDAEExpsWhenOperatorWithSymbolicOperation<ArgT>
   end FuncExpType;
 algorithm
   for rs in inStmtLst loop
-    rs := match(rs)
+    rs := match rs
       local
         DAE.ComponentRef cr;
         DAE.Exp lhs,cond, msg, level, exp;
@@ -887,7 +886,7 @@ algorithm
     case DAE.MATRIX(ty=ty as DAE.T_ARRAY(dims=dims)) then (dims,ty);
     case DAE.ARRAY(ty=ty as DAE.T_ARRAY(dims=dims)) then (dims,ty);
   end match;
-  _ := match Types.arrayElementType(ty)
+  () := match Types.arrayElementType(ty)
     // TODO: Figure out why the SimCode fails if we collapse arrays of records...
     case DAE.T_COMPLEX() then fail();
     else ();
@@ -897,7 +896,7 @@ algorithm
   len := product(i for i in ds);
   true := len > 0;
   //(DAE.CREF(componentRef=cr1)::exps) := Expression.flattenArrayExpToList(e); // TODO: Use a better routine? We now get all expressions even if no expression is a cref...
-  (exp1::exps) := Expression.flattenArrayExpToList(e);
+  exp1::exps := Expression.flattenArrayExpToList(e);
   DAE.CREF(componentRef=cr1) := exp1;
   // Check that the first element starts at index [1,...,1]
   subs := ComponentReference.crefLastSubs(cr1);

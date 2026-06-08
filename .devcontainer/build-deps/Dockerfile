@@ -1,4 +1,4 @@
-ARG BASE_IMAGE
+ARG BASE_IMAGE=docker.openmodelica.org/build-deps:v1.22.3
 FROM ${BASE_IMAGE}
 
 ENV SHELL=/bin/bash

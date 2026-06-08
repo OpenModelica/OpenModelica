@@ -113,7 +113,6 @@ public function emptyHashTableWork
   output HashTable hashTable;
 protected
   array<list<tuple<Key,Integer>>> arr;
-  list<Option<tuple<Key,Value>>> lst;
   array<Option<tuple<Key,Value>>> emptyarr;
 protected
   Integer szArr, szBucketFixed = intMax(szBucket, 1);
@@ -138,7 +137,6 @@ protected
   FuncHash hashFunc;
   FuncEq keyEqual;
   Key key, key2;
-  Value val;
   HashNode indices;
 algorithm
   (key, _) := entry;
@@ -168,9 +166,9 @@ author: PA.
 dump statistics on how many entries per hash value. Useful to see how hash function behaves"
   input HashTable hashTable;
 algorithm
- _ := match(hashTable)
+ () := match hashTable
  local HashVector hvec;
-   case((hvec,_,_,_)) algorithm
+   case (hvec,_,_,_) algorithm
       print("index list lengths:\n");
       print(stringDelimitList(list(intString(listLength(l)) for l in hvec),","));
       print("\n");
@@ -191,13 +189,12 @@ public function addNoUpdCheck
 algorithm
   outHashTable := match (entry, hashTable)
     local
-      Integer indx, newpos, n, bsize;
+      Integer indx, newpos, bsize;
       ValueArray varr;
       HashNode indexes;
       HashVector hashvec;
       tuple<Key,Value> v;
       Key key;
-      Value value;
       FuncsTuple fntpl;
       FuncHash hashFunc;
 
@@ -232,7 +229,7 @@ algorithm
   // Adding when not existing previously
   (key, _) := entry;
   (hashvec, varr, bsize, fntpl as (hashFunc, _, _, _)) := hashTable;
-  failure((_) := get(key, hashTable));
+  failure(get(key, hashTable));
   indx := intMod(hashFunc(key), bsize)+1;
   (varr, newpos) := valueArrayAdd(varr, entry);
   indexes := hashvec[indx];
@@ -392,7 +389,6 @@ protected
   FuncKeyString printKey;
   FuncValString printValue;
   Key k;
-  Value v;
 
   Integer n, size, i, j, szBucket;
   array<Option<HashEntry>> arr;
@@ -538,8 +534,8 @@ function valueArrayAdd
   output ValueArray outValueArray;
   output Integer newpos;
 protected
-  Integer n_1,n,size,expandsize,expandsize_1,newsize;
-  array<Option<HashEntry>> arr_1,arr,arr_2;
+  Integer n,size,expandsize,expandsize_1;
+  array<Option<HashEntry>> arr;
   Real rsize,rexpandsize;
 algorithm
   (n,size,arr) := valueArray;
@@ -563,12 +559,12 @@ function valueArraySet
   input HashEntry entry;
   output ValueArray outValueArray;
 algorithm
-  outValueArray := match (valueArray, pos, entry)
+  outValueArray := match valueArray
     local
       array<Option<HashEntry>> arr;
       Integer n, size;
 
-    case ((n, size, arr), _, _)
+    case (n, size, arr)
       algorithm
         true := pos <= size;
         arr := arrayUpdate(arr, pos, SOME(entry));
@@ -614,8 +610,6 @@ function valueArrayKeyIndexExists
 algorithm
   b := match (valueArray, pos)
     local
-      Key k;
-      Value v;
       Integer n;
       array<Option<HashEntry>> arr;
 
@@ -632,7 +626,7 @@ public function copy
   output HashTable outCopy;
 protected
   HashVector hv;
-  Integer bs, sz, vs, ve;
+  Integer bs, vs, ve;
   FuncsTuple ft;
   array<Option<HashEntry>> vae;
 algorithm
@@ -647,7 +641,7 @@ public function clear
   input output HashTable ht;
 protected
   HashVector hv;
-  Integer bs, sz, vs, ve, hash_idx;
+  Integer bs, vs, ve, hash_idx;
   FuncsTuple ft;
   FuncHash hashFunc;
   Key key;
@@ -655,7 +649,7 @@ protected
 algorithm
   (hv, (vs, ve, vae), bs, ft as (hashFunc,_,_,_)) := ht;
   for i in 1:vs loop
-    _ := match arrayGet(vae, i)
+    () := match arrayGet(vae, i)
       case SOME((key,_))
         algorithm
           hash_idx := intMod(hashFunc(key), bs) + 1;
@@ -673,7 +667,7 @@ public function clearAssumeNoDelete
   input HashTable ht;
 protected
   HashVector hv;
-  Integer bs, sz, vs, ve, hash_idx;
+  Integer bs, vs, ve, hash_idx;
   FuncsTuple ft;
   FuncHash hashFunc;
   Key key;
@@ -683,7 +677,7 @@ protected
 algorithm
   (hv, (vs, ve, vae), bs, ft as (hashFunc,_,_,_)) := ht;
   for i in 1:ve loop
-    _ := match arrayGet(vae, i)
+    () := match arrayGet(vae, i)
       case SOME((key,_))
         algorithm
           if not workaroundForBug then

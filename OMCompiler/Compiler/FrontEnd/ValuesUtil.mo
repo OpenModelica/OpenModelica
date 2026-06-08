@@ -105,10 +105,9 @@ public function valueExpType "creates a DAE.Type from a Value"
   input Values.Value inValue;
   output DAE.Type tp;
 algorithm
-  tp := matchcontinue(inValue)
+  tp := matchcontinue inValue
   local
     Absyn.Path path;
-    Integer indx;
     list<String> nameLst;
     DAE.Type eltTp;
     list<Values.Value> valLst;
@@ -117,20 +116,20 @@ algorithm
     list<Integer> int_dims;
     DAE.Dimensions dims;
 
-    case(Values.INTEGER(_)) then DAE.T_INTEGER_DEFAULT;
-    case(Values.REAL(_)) then DAE.T_REAL_DEFAULT;
-    case(Values.BOOL(_)) then DAE.T_BOOL_DEFAULT;
-    case(Values.STRING(_)) then DAE.T_STRING_DEFAULT;
-    case(Values.ENUM_LITERAL(name = path))
+    case Values.INTEGER(_) then DAE.T_INTEGER_DEFAULT;
+    case Values.REAL(_) then DAE.T_REAL_DEFAULT;
+    case Values.BOOL(_) then DAE.T_BOOL_DEFAULT;
+    case Values.STRING(_) then DAE.T_STRING_DEFAULT;
+    case Values.ENUM_LITERAL(name = path)
       algorithm
         path := AbsynUtil.pathPrefix(path);
       then DAE.T_ENUMERATION(NONE(),path,{},{},{});
-    case(Values.ARRAY(valLst,int_dims)) algorithm
+    case Values.ARRAY(valLst,int_dims) algorithm
       eltTp:=valueExpType(listHead(valLst));
       dims := List.map(int_dims, Expression.intDimension);
     then DAE.T_ARRAY(eltTp,dims);
 
-    case(Values.RECORD(path,valLst,nameLst,_)) algorithm
+    case Values.RECORD(path,valLst,nameLst,_) algorithm
       eltTps := List.map(valLst,valueExpType);
       varLst := List.threadMap(eltTps,nameLst,valueExpTypeExpVar);
     then DAE.T_COMPLEX(ClassInf.RECORD(path),varLst,NONE(), false);
@@ -155,7 +154,7 @@ public function isZero "Returns true if value is zero"
   input Values.Value inValue;
   output Boolean isZero;
 algorithm
-  isZero := match(inValue)
+  isZero := match inValue
     local
       Real rval;
       Integer ival;
@@ -170,8 +169,8 @@ public function isArray "Return true if Value is an array."
   input Values.Value inValue;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match (inValue)
-    case (Values.ARRAY()) then true;
+  outBoolean := match inValue
+    case Values.ARRAY() then true;
     else false;
   end match;
 end isArray;
@@ -180,8 +179,8 @@ public function isRecord "Return true if Value is an array."
   input Values.Value inValue;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match (inValue)
-    case (Values.RECORD()) then true;
+  outBoolean := match inValue
+    case Values.RECORD() then true;
     else false;
   end match;
 end isRecord;
@@ -616,7 +615,7 @@ public function expValue "Returns the value of constant expressions in DAE.Exp"
   input DAE.Exp inExp;
   output Values.Value outValue;
 algorithm
-  outValue := match (inExp)
+  outValue := match inExp
     local
       Integer i;
       Real r;
@@ -634,18 +633,16 @@ public function valueExp "Transforms a Value into an Exp"
   input Option<DAE.Exp> originalExp = NONE();
   output DAE.Exp outExp;
 algorithm
-  outExp := match (inValue)
+  outExp := match inValue
     local
-      Integer dim;
       list<DAE.Exp> explist;
       DAE.Type vt;
       DAE.Type t;
       DAE.Exp e;
       Values.Value v;
-      list<Values.Value> xs,xs2,vallist;
+      list<Values.Value> vallist;
       list<DAE.Type> typelist;
       list<Integer> int_dims;
-      DAE.Dimensions dims;
       Integer i;
       Real r;
       String s, scope, name, tyStr;
@@ -660,21 +657,21 @@ algorithm
       Values.Value valType;
       DAE.Type ety;
 
-    case (Values.INTEGER(integer = i)) then DAE.ICONST(i);
-    case (Values.REAL(real = r))       then DAE.RCONST(r);
-    case (Values.STRING(string = s))   then DAE.SCONST(s);
-    case (Values.BOOL(boolean = b))    then DAE.BCONST(b);
-    case (Values.ENUM_LITERAL(name = path, index = i)) then DAE.ENUM_LITERAL(path, i);
+    case Values.INTEGER(integer = i) then DAE.ICONST(i);
+    case Values.REAL(real = r)       then DAE.RCONST(r);
+    case Values.STRING(string = s)   then DAE.SCONST(s);
+    case Values.BOOL(boolean = b)    then DAE.BCONST(b);
+    case Values.ENUM_LITERAL(name = path, index = i) then DAE.ENUM_LITERAL(path, i);
 
-    case (Values.ARRAY(valueLst = vallist, dimLst = int_dims)) then valueExpArray(vallist,int_dims, originalExp);
+    case Values.ARRAY(valueLst = vallist, dimLst = int_dims) then valueExpArray(vallist,int_dims, originalExp);
 
-    case (Values.TUPLE(valueLst = vallist))
+    case Values.TUPLE(valueLst = vallist)
       algorithm
         explist := List.map(vallist, function valueExp(originalExp=NONE()));
       then
         DAE.TUPLE(explist);
 
-    case(Values.RECORD(path,vallist,namelst,-1))
+    case Values.RECORD(path,vallist,namelst,-1)
       algorithm
         expl := List.map(vallist,function valueExp(originalExp=NONE()));
         tpl := List.map(expl,Expression.typeof);
@@ -682,33 +679,33 @@ algorithm
         t := DAE.T_COMPLEX(ClassInf.RECORD(path),varlst,NONE(), false);
       then DAE.RECORD(path,expl,namelst,t);
 
-    case(Values.ENUM_LITERAL(name = path, index = ix))
+    case Values.ENUM_LITERAL(name = path, index = ix)
       then DAE.ENUM_LITERAL(path, ix);
 
-    case (Values.TUPLE(vallist))
+    case Values.TUPLE(vallist)
       algorithm
         explist := List.map(vallist, function valueExp(originalExp=NONE()));
       then DAE.TUPLE(explist);
 
     /* MetaModelica types */
-    case (Values.OPTION(SOME(v)))
+    case Values.OPTION(SOME(v))
       algorithm
         e := valueExp(v);
         (e,_) := Types.matchType(e, Types.typeOfValue(v), DAE.T_METABOXED_DEFAULT, true);
       then DAE.META_OPTION(SOME(e));
 
-    case (Values.OPTION(NONE())) then DAE.META_OPTION(NONE());
+    case Values.OPTION(NONE()) then DAE.META_OPTION(NONE());
 
-    case (Values.META_TUPLE(vallist))
+    case Values.META_TUPLE(vallist)
       algorithm
         explist := List.map(vallist, function valueExp(originalExp=NONE()));
         typelist := List.map(vallist, Types.typeOfValue);
         (explist,_) := Types.matchTypeTuple(explist, typelist, List.map(typelist, Types.boxIfUnboxedType), true);
       then DAE.META_TUPLE(explist);
 
-    case (Values.LIST({})) then DAE.LIST({});
+    case Values.LIST({}) then DAE.LIST({});
 
-    case (Values.LIST(vallist))
+    case Values.LIST(vallist)
       algorithm
         explist := List.map(vallist, function valueExp(originalExp=NONE()));
         typelist := List.map(vallist, Types.typeOfValue);
@@ -716,7 +713,7 @@ algorithm
         (explist,_) := Types.matchTypes(explist, typelist, vt, true);
       then DAE.LIST(explist);
 
-    case (Values.META_ARRAY(vallist))
+    case Values.META_ARRAY(vallist)
       algorithm
         explist := List.map(vallist, function valueExp(originalExp=NONE()));
         typelist := List.map(vallist, Types.typeOfValue);
@@ -725,7 +722,7 @@ algorithm
       then Expression.makeBuiltinCall("listArrayLiteral", {DAE.LIST(explist)}, DAE.T_METAARRAY(vt), false);
 
       /* MetaRecord */
-    case (Values.RECORD(path,vallist,namelst,ix))
+    case Values.RECORD(path,vallist,namelst,ix)
       algorithm
         true := ix >= 0;
         explist := List.map(vallist, function valueExp(originalExp=NONE()));
@@ -733,18 +730,18 @@ algorithm
         (explist,_) := Types.matchTypeTuple(explist, typelist, List.map(typelist, Types.boxIfUnboxedType), true);
       then DAE.METARECORDCALL(path,explist,namelst,ix,{});
 
-    case (Values.META_FAIL())
+    case Values.META_FAIL()
       then DAE.CALL(Absyn.IDENT("fail"),{},DAE.callAttrBuiltinOther);
 
-    case (Values.META_BOX(v))
+    case Values.META_BOX(v)
       algorithm
         e := valueExp(v);
       then DAE.BOX(e);
 
-    case (Values.CODE(A=code))
+    case Values.CODE(A=code)
       then DAE.CODE(code,DAE.T_UNKNOWN_DEFAULT);
 
-    case (Values.EMPTY(scope = scope, name = name, tyStr = tyStr, ty = valType))
+    case Values.EMPTY(scope = scope, name = name, tyStr = tyStr, ty = valType)
       algorithm
         if isSome(originalExp) then
           SOME(e) := originalExp;
@@ -755,10 +752,10 @@ algorithm
       then
         e;
 
-    case (Values.NORETCALL())
+    case Values.NORETCALL()
       then DAE.TUPLE({});
 
-    case (v)
+    case v
       algorithm
         s := "ValuesUtil.valueExp failed for " + ValuesDump.valString(v);
         Error.addMessage(Error.INTERNAL_ERROR, {s});
@@ -781,7 +778,7 @@ algorithm
       DAE.Dimensions dims;
       list<Integer> int_dims;
       DAE.Type t,vt;
-      Integer dim,i;
+      Integer dim;
       Boolean b;
       list<list<DAE.Exp>> mexpl;
     case ({},{},_) then DAE.ARRAY(DAE.T_UNKNOWN_DEFAULT,false,{});
@@ -869,25 +866,25 @@ public function valueReals "
   output list<Real> outReal;
 algorithm
   outReal:=
-  matchcontinue (inValue)
+  matchcontinue inValue
     local
       Real r;
       list<Values.Value> rest;
       list<Real> res;
       Integer i;
-    case ({}) then {};
-    case (Values.REAL(real = r)::rest)
+    case {} then {};
+    case Values.REAL(real = r)::rest
       algorithm
         res := valueReals(rest);
        then
          r::res;
-    case (Values.INTEGER(integer = i)::rest)
+    case Values.INTEGER(integer = i)::rest
       algorithm
         r := intReal(i);
         res := valueReals(rest);
       then
         r::res;
-    case (_::rest)
+    case _::rest
       algorithm
         res := valueReals(rest);
       then
@@ -931,7 +928,7 @@ public function matrixValueReals
   input Values.Value inValue;
   output list<list<Real>> outReals;
 algorithm
-  outReals := matchcontinue(inValue)
+  outReals := matchcontinue inValue
     local
       list<Values.Value> vals;
       list<Real> reals;
@@ -965,18 +962,18 @@ public function valueNeg "author: PA
   output Values.Value outValue;
 algorithm
   outValue:=
-  match (inValue)
+  match inValue
     local
       Real r_1,r;
       Integer i_1,i;
       list<Values.Value> vlst_1,vlst;
       list<Integer> dims;
-    case (Values.REAL(real = r))
+    case Values.REAL(real = r)
       algorithm
         r_1 := - r;
       then
         Values.REAL(r_1);
-    case (Values.INTEGER(integer = i))
+    case Values.INTEGER(integer = i)
       algorithm
         i_1 := -i;
       then
@@ -1036,14 +1033,14 @@ public function valueDivide
   input Values.Value value2;
   output Values.Value result;
 algorithm
-  result := match (value1, value2)
-    case (_, Values.INTEGER(integer = 0))
+  result := match value2
+    case Values.INTEGER(integer = 0)
       algorithm
         Error.addMessage(Error.DIVISION_BY_ZERO, {"0", intString(value2.integer)});
       then
         fail();
 
-    case (_, Values.REAL(real = 0.0))
+    case Values.REAL(real = 0.0)
       algorithm
         Error.addMessage(Error.DIVISION_BY_ZERO, {"0", realString(value2.real)});
       then
@@ -1215,7 +1212,7 @@ algorithm
   matchcontinue (inValueLst1,inValueLst2)
     local
       Integer i1,i2,res,v1,v2,dim;
-      list<Values.Value> v1lst,v2lst,vres,rest,vlst,col,mat_1,vals,mat,lst1,lst2;
+      list<Values.Value> v1lst,v2lst,vres,rest,vlst,col,mat_1,vals,mat;
       Values.Value sres,v;
       list<Integer> dims;
       Real r1,r2,rres;
@@ -1343,7 +1340,7 @@ algorithm
   match (inValueLst1,inValueLst2)
     local
       Values.Value res1;
-      list<Values.Value> res2,m1,v1lst,rest1,m2;
+      list<Values.Value> res2,v1lst,rest1,m2;
     case (((Values.ARRAY(valueLst = v1lst) :: rest1)),(m2 as (Values.ARRAY() :: _)))
       algorithm
         res1 := multScalarProduct(v1lst, m2);
@@ -1361,13 +1358,13 @@ protected function matrixStripFirstColumn "This function takes a Value list repr
   output Values.Value outValue;
   output list<Values.Value> outValueLst;
 algorithm
-  (outValue,outValueLst) := match (inValueLst)
+  (outValue,outValueLst) := match inValueLst
     local
       list<Values.Value> resl,resl2,vrest,rest;
       Values.Value v1;
       Integer i;
       Integer dim;
-    case ((Values.ARRAY(valueLst = (v1 :: vrest), dimLst = {dim}) :: rest))
+    case Values.ARRAY(valueLst = (v1 :: vrest), dimLst = {dim}) :: rest
       algorithm
         (Values.ARRAY(resl,{i}),resl2) := matrixStripFirstColumn(rest);
         i := i+1;
@@ -1375,7 +1372,7 @@ algorithm
       then
         (Values.ARRAY((v1 :: resl),{i}),(Values.ARRAY(vrest,{dim}) :: resl2));
 
-    case ({}) then (Values.ARRAY({},{0}),{});
+    case {} then (Values.ARRAY({},{0}),{});
   end match;
 end matrixStripFirstColumn;
 
@@ -1387,13 +1384,13 @@ public function intlistToValue "
   output Values.Value outValue;
 algorithm
   outValue:=
-  match (inIntegerLst)
+  match inIntegerLst
     local
       list<Values.Value> res;
       Integer i,len;
       list<Integer> lst;
-    case ({}) then Values.ARRAY({},{0});
-    case ((i :: lst))
+    case {} then Values.ARRAY({},{0});
+    case i :: lst
       algorithm
         Values.ARRAY(res,{len}) := intlistToValue(lst);
         len := len+1;
@@ -1409,9 +1406,9 @@ public function arrayValues "
   output list<Values.Value> outValueLst;
 algorithm
   outValueLst:=
-  match (inValue)
+  match inValue
     local list<Values.Value> v_lst;
-    case (Values.ARRAY(valueLst = v_lst)) then v_lst;
+    case Values.ARRAY(valueLst = v_lst) then v_lst;
   end match;
 end arrayValues;
 
@@ -1437,7 +1434,7 @@ algorithm
   outInteger:=
   match (inString1,inValue2,inStringLst3,inString4)
     local
-      String str,filename,timevar,message;
+      String str,filename,message;
       Values.Value t;
       list<Values.Value> rest;
       list<String> varnames;
@@ -1466,7 +1463,7 @@ protected function unparsePtolemyValues "Helper function to writePtolemyplotData
   input list<Values.Value> inValueLst;
   input list<String> inStringLst;
 algorithm
-  _ := match (inValue,inValueLst,inStringLst)
+  () := match (inValue,inValueLst,inStringLst)
     local
       String v1;
       Values.Value t,s1;
@@ -1496,7 +1493,7 @@ protected function unparsePtolemySet2 "Helper function to unparsePtolemySet"
   input Values.Value inValue1;
   input Values.Value inValue2;
 algorithm
-  _ := matchcontinue (inValue1,inValue2)
+  () := matchcontinue (inValue1,inValue2)
     local
       Values.Value v1,v2;
       list<Values.Value> v1s,v2s;
@@ -1528,18 +1525,18 @@ public function reverseMatrix "Reverses each line and each row of a matrix.
   input Values.Value inValue;
   output Values.Value outValue;
 algorithm
-  outValue := matchcontinue (inValue)
+  outValue := matchcontinue inValue
     local
       list<Values.Value> lst_1,lst_2,lst;
       Values.Value value;
       list<Integer> dims;
-    case (Values.ARRAY(valueLst = lst, dimLst = dims))
+    case Values.ARRAY(valueLst = lst, dimLst = dims)
       algorithm
         lst_1 := List.map(lst, reverseMatrix);
         lst_2 := listReverse(lst_1);
       then
         Values.ARRAY(lst_2,dims);
-    case (value) then value;
+    case value then value;
   end matchcontinue;
 end reverseMatrix;
 
@@ -1584,7 +1581,7 @@ public function valueInteger
   input Values.Value inValue;
   output Integer outInteger;
 algorithm
-  outInteger := match(inValue)
+  outInteger := match inValue
     local
       Integer i;
     case Values.INTEGER(integer = i) then i;
@@ -1599,7 +1596,7 @@ public function valueDimensions
   input Values.Value inValue;
   output list<Integer> outDimensions;
 algorithm
-  outDimensions := match(inValue)
+  outDimensions := match inValue
     local
       list<Integer> dims;
     case Values.ARRAY(dimLst = dims) then dims;
@@ -1782,5 +1779,5 @@ algorithm
   end match;
 end arraySize;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="frontend_base");
 end ValuesUtil;

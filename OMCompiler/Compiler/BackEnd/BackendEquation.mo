@@ -54,12 +54,14 @@ import BaseHashTable;
 import AvlSetInt;
 import ClassInf;
 import ComponentReference;
+protected import ComponentReferenceBasics;
 import DAEUtil;
 import Debug;
 import ElementSource;
 import Error;
 import ExpandableArray;
 import Expression;
+protected import ExpressionBasics;
 import ExpressionDump;
 import ExpressionSimplify;
 import ExpressionSolve;
@@ -341,16 +343,16 @@ public function setWhenElsePart
   input BackendDAE.WhenEquation inElseWhenEquation;
   output BackendDAE.WhenEquation outWhenEquation;
 algorithm
-  outWhenEquation := match(inWhenEquation)
+  outWhenEquation := match inWhenEquation
   local
     DAE.Exp cond;
     BackendDAE.WhenEquation elsewhenPart;
     list<BackendDAE.WhenOperator> whenStmtLst;
 
-    case (BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst = whenStmtLst, elsewhenPart=NONE()))
+    case BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst = whenStmtLst, elsewhenPart=NONE())
     then BackendDAE.WHEN_STMTS(cond, whenStmtLst, SOME(inElseWhenEquation));
 
-    case (BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst = whenStmtLst, elsewhenPart=SOME(elsewhenPart)))
+    case BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst = whenStmtLst, elsewhenPart=SOME(elsewhenPart))
     then BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst = whenStmtLst, elsewhenPart=SOME(setWhenElsePart(elsewhenPart, inElseWhenEquation)));
 
     else fail();
@@ -654,8 +656,6 @@ public function getCrefsFromEquations
   output list<DAE.ComponentRef> cr_lst;
 protected
   HashTable.HashTable ht;
-  BackendDAE.Variables vars;
-  BackendDAE.Variables knownVars;
 algorithm
   ht := HashTable.emptyHashTable();
   (_, _, ht) := traverseEquationArray(inEqns, findUnknownCrefs, (inVars, inKnVars, ht));
@@ -728,12 +728,12 @@ algorithm
     // known
     case (DAE.CREF(componentRef = cr), (vars, _, _))
       algorithm
-       (_, _) := BackendVariable.getVar(cr, vars);
+       BackendVariable.getVar(cr, vars);
       then (inExp, inTuple);
 
     case (DAE.CREF(componentRef = cr), (_, knvars, _))
       algorithm
-        (_, _) := BackendVariable.getVar(cr, knvars);
+        BackendVariable.getVar(cr, knvars);
       then (inExp, inTuple);
 
     // add it
@@ -941,25 +941,20 @@ public function traverseExpsOfEquation_WithStop<T> "author: Frenkel TUD 2010-11
     output T outA;
   end FuncExpType;
 algorithm
-  (outBoolean, outTypeA) := match (inEquation, func, inTypeA)
+  (outBoolean, outTypeA) := match inEquation
     local
-      DAE.Exp e1, e2, cond;
+      DAE.Exp e1, e2;
       list<DAE.Exp> expl;
       DAE.Type tp;
       DAE.ComponentRef cr;
       BackendDAE.WhenEquation we;
-      DAE.ElementSource source;
-      Integer size;
-      T ext_arg, ext_arg_1, ext_arg_2, ext_arg_3;
-      list<Integer> dimSize;
+      T ext_arg;
       DAE.Algorithm alg;
-      list<DAE.Statement> stmts;
       list<BackendDAE.Equation> eqns;
       list<list<BackendDAE.Equation>> eqnslst;
-      Boolean b, b1, b2, b3, b4;
-      BackendDAE.EquationAttributes eqAttr;
+      Boolean b;
 
-    case (BackendDAE.EQUATION(exp=e1, scalar=e2), _, _)
+    case BackendDAE.EQUATION(exp=e1, scalar=e2)
       algorithm
         (_, b, ext_arg) := func(e1, inTypeA);
         if b then
@@ -967,7 +962,7 @@ algorithm
         end if;
       then (b, ext_arg);
 
-    case (BackendDAE.ARRAY_EQUATION(left=e1, right=e2), _, _)
+    case BackendDAE.ARRAY_EQUATION(left=e1, right=e2)
       algorithm
         (_, b, ext_arg) := func(e1, inTypeA);
         if b then
@@ -975,7 +970,7 @@ algorithm
         end if;
       then (b, ext_arg);
 
-    case (BackendDAE.SOLVED_EQUATION(componentRef=cr, exp=e2), _, _)
+    case BackendDAE.SOLVED_EQUATION(componentRef=cr, exp=e2)
       algorithm
         tp := Expression.typeof(e2);
         e1 := Expression.makeCrefExp(cr, tp);
@@ -985,17 +980,17 @@ algorithm
         end if;
       then (b, ext_arg);
 
-    case (BackendDAE.RESIDUAL_EQUATION(exp=e1), _, _)
+    case BackendDAE.RESIDUAL_EQUATION(exp=e1)
       algorithm
         (_, b, ext_arg) := func(e1, inTypeA);
       then (b, ext_arg);
 
-    case (BackendDAE.WHEN_EQUATION(whenEquation= we), _, _)
+    case BackendDAE.WHEN_EQUATION(whenEquation= we)
       algorithm
         (b, ext_arg) := traverseExpsOfWhenEquation_WithStop(we, func, inTypeA);
     then (b, ext_arg);
 
-    case (BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS()), _, _)
+    case BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS())
       algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("not implemented error - BackendDAE.ALGORITHM - BackendEquation.traverseExpsOfEquation_WithStop\n");
@@ -1003,7 +998,7 @@ algorithm
       then fail();
 
     //(true, inTypeA);
-    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2), _, _)
+    case BackendDAE.COMPLEX_EQUATION(left=e1, right=e2)
       algorithm
         (_, b, ext_arg) := func(e1, inTypeA);
         if b then
@@ -1011,7 +1006,7 @@ algorithm
         end if;
       then (b, ext_arg);
 
-    case (BackendDAE.IF_EQUATION(conditions=expl, eqnstrue=eqnslst, eqnsfalse=eqns), _, _)
+    case BackendDAE.IF_EQUATION(conditions=expl, eqnstrue=eqnslst, eqnsfalse=eqns)
       algorithm
         (b, ext_arg) := traverseExpsOfExpList_WithStop(expl, func, inTypeA);
         if b then
@@ -1038,9 +1033,9 @@ protected function traverseExpsOfWhenEquation<T>
     input output T inoutTypeA;
   end FuncExpType;
 algorithm
-  (outWhenEquation, outTypeA) := match(inWhenEquation)
+  (outWhenEquation, outTypeA) := match inWhenEquation
   local
-    BackendDAE.WhenEquation we, elsewe;
+    BackendDAE.WhenEquation elsewe;
     Option<BackendDAE.WhenEquation> oelsewe;
     DAE.Exp cond;
     list<BackendDAE.WhenOperator> whenStmtLst;
@@ -1077,9 +1072,8 @@ protected function traverseExpsOfWhenOps<T>
     input output T inTypeA;
   end FuncExpType;
 algorithm
-  (outWhenOps, outTypeA) := match (inWhenOps)
+  (outWhenOps, outTypeA) := match inWhenOps
     local
-      DAE.Type tp;
       DAE.Exp e1, e2, level;
       DAE.ComponentRef cr, cr1;
       list<BackendDAE.WhenOperator> rest;
@@ -1087,14 +1081,13 @@ algorithm
       DAE.ElementSource source;
 
     case {} then (listReverse(inAccum),inTypeA);
-    case (BackendDAE.ASSIGN(left = e1, right = e2, source = source)::rest)
+    case BackendDAE.ASSIGN(left = e1, right = e2, source = source)::rest
       algorithm
-        _ := Expression.typeof(e2);
         (e1, extArg) := inFunc(e1, inTypeA);
         (e2, extArg) := inFunc(e2, extArg);
         (outWhenOps, extArg) := traverseExpsOfWhenOps(rest, inFunc, extArg,  BackendDAE.ASSIGN(e1, e2, source)::inAccum);
       then (outWhenOps, extArg);
-    case (BackendDAE.REINIT(stateVar = cr, value = e2,  source = source)::rest)
+    case BackendDAE.REINIT(stateVar = cr, value = e2,  source = source)::rest
       algorithm
         e1 := Expression.crefExp(cr);
         (e1, extArg) := inFunc(e1, inTypeA);
@@ -1106,18 +1099,18 @@ algorithm
         (e2, extArg) := inFunc(e2, extArg);
         (outWhenOps, extArg) := traverseExpsOfWhenOps(rest, inFunc, extArg,  BackendDAE.REINIT(cr1, e2, source)::inAccum);
     then (outWhenOps, extArg);
-    case (BackendDAE.ASSERT(condition = e1, message = e2, level = level,  source = source)::rest)
+    case BackendDAE.ASSERT(condition = e1, message = e2, level = level,  source = source)::rest
       algorithm
         (e1, extArg) := inFunc(e1, inTypeA);
         (e2, extArg) := inFunc(e2, extArg);
         (outWhenOps, extArg) := traverseExpsOfWhenOps(rest, inFunc, extArg,  BackendDAE.ASSERT(e1, e2, level, source)::inAccum);
     then (outWhenOps, extArg);
-    case (BackendDAE.TERMINATE(message = e1,  source = source)::rest)
+    case BackendDAE.TERMINATE(message = e1,  source = source)::rest
       algorithm
         (e1, extArg) := inFunc(e1, inTypeA);
         (outWhenOps, extArg) := traverseExpsOfWhenOps(rest, inFunc, extArg,  BackendDAE.TERMINATE(e1, source)::inAccum);
     then (outWhenOps, extArg);
-    case (BackendDAE.NORETCALL(exp = e1,  source = source)::rest)
+    case BackendDAE.NORETCALL(exp = e1,  source = source)::rest
       algorithm
         (e1, extArg) := inFunc(e1, inTypeA);
         (outWhenOps, extArg) := traverseExpsOfWhenOps(rest, inFunc, extArg,  BackendDAE.NORETCALL(e1, source)::inAccum);
@@ -1142,7 +1135,7 @@ protected function traverseExpsOfWhenEquation_WithStop<T>
     output T outTypeA;
   end FuncExpType;
 algorithm
-  (outCont, outTypeA) := match(inWhenEquation)
+  (outCont, outTypeA) := match inWhenEquation
   local
     BackendDAE.WhenEquation elsewe;
     Option<BackendDAE.WhenEquation> oelsewe;
@@ -1173,19 +1166,19 @@ public function statementEq
   input DAE.Statement iStmts;
   output BackendDAE.Equation oEq;
 algorithm
-  (oEq) := match(iStmts)
+  oEq := match iStmts
     local
       DAE.ComponentRef cr;
       DAE.Exp exp;
       list<DAE.Exp> explst;
 
-    case (DAE.STMT_ASSIGN(exp1 = DAE.CREF(componentRef = cr), exp = exp))
+    case DAE.STMT_ASSIGN(exp1 = DAE.CREF(componentRef = cr), exp = exp)
       then generateEquation(Expression.crefExp(cr), exp);
 
-    case (DAE.STMT_ASSIGN_ARR(lhs = DAE.CREF(componentRef = cr), exp = exp))
+    case DAE.STMT_ASSIGN_ARR(lhs = DAE.CREF(componentRef = cr), exp = exp)
       then generateEquation(Expression.crefExp(cr), exp);
 
-    case (DAE.STMT_TUPLE_ASSIGN(expExpLst = explst, exp = exp))
+    case DAE.STMT_TUPLE_ASSIGN(expExpLst = explst, exp = exp)
       then generateEquation(Expression.makeTuple(explst), exp);
 
   end match;
@@ -1199,7 +1192,7 @@ protected function traverseExpsOfWhenOps_WithStop<T>
   input T inTypeA;
   input Boolean inCont;
   output Boolean outCont;
-  output T outTypeA;
+  output T extArg = inTypeA;
 
   partial function FuncExpType
     input DAE.Exp inExp;
@@ -1209,22 +1202,19 @@ protected function traverseExpsOfWhenOps_WithStop<T>
     output T outTypeA;
   end FuncExpType;
 algorithm
-  (outCont, outTypeA) := match (inWhenOps)
+  (outCont, extArg) := match inWhenOps
     local
       DAE.Type tp;
-      DAE.Exp e1, e2, level;
-      DAE.ComponentRef cr, cr1;
+      DAE.Exp e1, e2;
+      DAE.ComponentRef cr;
       list<BackendDAE.WhenOperator> rest;
-      T extArg;
-      DAE.ElementSource source;
       Boolean b = false;
 
-    case {} then (inCont,inTypeA);
-    case (BackendDAE.ASSIGN(left = e1, right = e2)::rest)
+    case {} then (inCont,extArg);
+    case BackendDAE.ASSIGN(left = e1, right = e2)::rest
       algorithm
-        _ := Expression.typeof(e2);
         if inCont then
-         (_, b, extArg) := inFunc(e1, inTypeA);
+         (_, b, extArg) := inFunc(e1, extArg);
         end if;
         if b then
          (_, b, extArg) := inFunc(e2, extArg);
@@ -1232,12 +1222,12 @@ algorithm
         (b, extArg) := traverseExpsOfWhenOps_WithStop(rest, inFunc, extArg,  b);
       then (b, extArg);
 
-    case (BackendDAE.REINIT(stateVar = cr, value = e2)::rest)
+    case BackendDAE.REINIT(stateVar = cr, value = e2)::rest
       algorithm
         tp := Expression.typeof(e2);
         e1 := Expression.makeCrefExp(cr, tp);
         if inCont then
-         (_, b, extArg) := inFunc(e1, inTypeA);
+         (_, b, extArg) := inFunc(e1, extArg);
         end if;
         if b then
          (_, b, extArg) := inFunc(e2, extArg);
@@ -1245,10 +1235,10 @@ algorithm
         (b, extArg) := traverseExpsOfWhenOps_WithStop(rest, inFunc, extArg,  b);
       then (b, extArg);
 
-    case (BackendDAE.ASSERT(condition = e1, message = e2)::rest)
+    case BackendDAE.ASSERT(condition = e1, message = e2)::rest
       algorithm
         if inCont then
-         (_, b, extArg) := inFunc(e1, inTypeA);
+         (_, b, extArg) := inFunc(e1, extArg);
         end if;
         if b then
          (_, b, extArg) := inFunc(e2, extArg);
@@ -1256,18 +1246,18 @@ algorithm
         (b, extArg) := traverseExpsOfWhenOps_WithStop(rest, inFunc, extArg,  b);
       then (b, extArg);
 
-    case (BackendDAE.TERMINATE(message = e1)::rest)
+    case BackendDAE.TERMINATE(message = e1)::rest
       algorithm
         if inCont then
-         (_, b, extArg) := inFunc(e1, inTypeA);
+         (_, b, extArg) := inFunc(e1, extArg);
         end if;
         (b, extArg) := traverseExpsOfWhenOps_WithStop(rest, inFunc, extArg,  b);
       then (b, extArg);
 
-    case (BackendDAE.NORETCALL(exp = e1)::rest)
+    case BackendDAE.NORETCALL(exp = e1)::rest
       algorithm
         if inCont then
-         (_, b, extArg) := inFunc(e1, inTypeA);
+         (_, b, extArg) := inFunc(e1, extArg);
         end if;
         (b, extArg) := traverseExpsOfWhenOps_WithStop(rest, inFunc, extArg,  b);
       then (b, extArg);
@@ -1411,47 +1401,46 @@ public function equationToScalarResidualForm "author: Frenkel TUD 2012-06
   output list<BackendDAE.Equation> outEquations;
 algorithm
 
-  outEquations := match (inEquation)
+  outEquations := match inEquation
     local
       DAE.Exp e, e1, e2, exp, cond;
       DAE.ComponentRef cr;
       DAE.ElementSource source;
       BackendDAE.Equation backendEq;
       list<Integer> ds;
-      Integer size, i, branches;
+      Integer i, branches;
       list<DAE.Exp> explst, explst2, condExps;
       list<BackendDAE.Equation> eqns, eqnsfalse;
       list<list<BackendDAE.Equation>> eqnstrue;
       list<list<DAE.Subscript>> subslst;
-      Real r;
       BackendDAE.EquationAttributes attr;
       list<DAE.ComponentRef> crlst, crlst2;
       array<list<DAE.Exp>> expA;
 
-    case (BackendDAE.EQUATION(exp=DAE.TUPLE(explst), scalar=e2, source=source, attr=attr)) algorithm
-      ((_, eqns)) := List.fold3(explst,equationTupleToScalarResidualForm, e2, source, attr, (1, {}));
+    case BackendDAE.EQUATION(exp=DAE.TUPLE(explst), scalar=e2, source=source, attr=attr) algorithm
+      (_, eqns) := List.fold3(explst,equationTupleToScalarResidualForm, e2, source, attr, (1, {}));
     then eqns;
 
-    case (BackendDAE.EQUATION(exp= DAE.RCONST(real= 0.0), scalar=e2, source=source, attr=attr)) algorithm
+    case BackendDAE.EQUATION(exp= DAE.RCONST(real= 0.0), scalar=e2, source=source, attr=attr) algorithm
       (e, _) := ExpressionSimplify.simplify(e2);
       eqns :={BackendDAE.RESIDUAL_EQUATION(e, source, attr)};
     then eqns;
 
-    case (BackendDAE.EQUATION(exp=e1, scalar= DAE.RCONST(real=0.0), source=source, attr=attr)) algorithm
+    case BackendDAE.EQUATION(exp=e1, scalar= DAE.RCONST(real=0.0), source=source, attr=attr) algorithm
       (e, _) := ExpressionSimplify.simplify(e1);
       eqns :={BackendDAE.RESIDUAL_EQUATION(e, source, attr)};
     then eqns;
 
-    case (BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, attr=attr)) algorithm
+    case BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, attr=attr) algorithm
       exp := Expression.createResidualExp(e1, e2);
     then {BackendDAE.RESIDUAL_EQUATION(exp, source, attr)};
 
-    case (BackendDAE.SOLVED_EQUATION(componentRef=cr, exp=e2, source=source, attr=attr)) algorithm
+    case BackendDAE.SOLVED_EQUATION(componentRef=cr, exp=e2, source=source, attr=attr) algorithm
       e1 := Expression.crefExp(cr);
       exp := Expression.createResidualExp(e1, e2);
     then {BackendDAE.RESIDUAL_EQUATION(exp, source, attr)};
 
-    case (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2, source=source, attr=attr)) algorithm
+    case BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2, source=source, attr=attr) algorithm
       exp := Expression.createResidualExp(e1, e2);
       subslst := Expression.dimensionSizesSubscripts(ds);
       subslst := Expression.rangesToSubscripts(subslst);
@@ -1460,8 +1449,8 @@ algorithm
       eqns := List.map2(explst, generateRESIDUAL_EQUATION, source, attr);
     then eqns;
 
-    case (BackendDAE.COMPLEX_EQUATION(left=e1 as DAE.CALL(expLst=explst),
-          right=e2, source=source, attr=attr))
+    case BackendDAE.COMPLEX_EQUATION(left=e1 as DAE.CALL(expLst=explst),
+          right=e2, source=source, attr=attr)
     guard(Expression.isRecordCall(e1, funcTree) and Expression.isCref(e2))
     algorithm
       crlst := ComponentReference.expandCref(Expression.expCref(e2),true);
@@ -1470,8 +1459,8 @@ algorithm
       eqns := List.map2(explst, generateRESIDUAL_EQUATION, source, attr);
     then eqns;
 
-    case (BackendDAE.COMPLEX_EQUATION(right=e1 as DAE.CALL(expLst=explst),
-          left=e2, source=source, attr=attr))
+    case BackendDAE.COMPLEX_EQUATION(right=e1 as DAE.CALL(expLst=explst),
+          left=e2, source=source, attr=attr)
     guard(Expression.isRecordCall(e1, funcTree) and Expression.isCref(e2))
     algorithm
       crlst := ComponentReference.expandCref(Expression.expCref(e2),true);
@@ -1480,7 +1469,7 @@ algorithm
       eqns := List.map2(explst, generateRESIDUAL_EQUATION, source, attr);
     then eqns;
 
-    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, attr=attr))
+    case BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, attr=attr)
     guard(Expression.isCref(e1) and Expression.isCref(e2))
     algorithm
       crlst := ComponentReference.expandCref(Expression.expCref(e1),true);
@@ -1491,11 +1480,11 @@ algorithm
       eqns := List.map2(explst, generateRESIDUAL_EQUATION, source, attr);
     then eqns;
 
-    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, attr=attr)) algorithm
+    case BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, attr=attr) algorithm
       exp := Expression.createResidualExp(e1, e2);
     then {BackendDAE.RESIDUAL_EQUATION(exp, source, attr)};
 
-    case (BackendDAE.IF_EQUATION(conditions=condExps, eqnstrue=eqnstrue, eqnsfalse=eqnsfalse, source=source, attr=attr))
+    case BackendDAE.IF_EQUATION(conditions=condExps, eqnstrue=eqnstrue, eqnsfalse=eqnsfalse, source=source, attr=attr)
       algorithm
       branches := listLength(condExps);
       expA := arrayCreate(branches, {});
@@ -1531,13 +1520,13 @@ algorithm
       end for;
     then eqns;
 
-    case (backendEq as BackendDAE.RESIDUAL_EQUATION())
+    case backendEq as BackendDAE.RESIDUAL_EQUATION()
     then {backendEq};
 
-    case (backendEq as BackendDAE.ALGORITHM())
+    case backendEq as BackendDAE.ALGORITHM()
     then {backendEq};
 
-    case (backendEq as BackendDAE.WHEN_EQUATION())
+    case backendEq as BackendDAE.WHEN_EQUATION()
     then {backendEq};
 
     else
@@ -1559,7 +1548,7 @@ protected function equationTupleToScalarResidualForm "
   input tuple<Integer, list<BackendDAE.Equation>> inTpl;
   output tuple<Integer, list<BackendDAE.Equation>> outTpl;
 algorithm
-  outTpl := match (cr, exp, inSource, inEqAttr, inTpl)
+  outTpl := match (cr, inTpl)
     local
       Integer i;
       list<BackendDAE.Equation> eqs;
@@ -1567,25 +1556,25 @@ algorithm
       DAE.Exp e;
 
     // wild-card does not produce a residual
-    case (DAE.CREF(componentRef=DAE.WILD()), _, _, _, (i, eqs))
+    case (DAE.CREF(componentRef=DAE.WILD()), (i, eqs))
     then ((i+1, eqs));
 
     // 0-length arrays do not produce a residual
-    case (DAE.ARRAY(array={}), _, _, _, (i, eqs))
+    case (DAE.ARRAY(array={}), (i, eqs))
     then ((i+1, eqs));
 
     // a scalar real
-    case (DAE.CREF(ty=DAE.T_REAL()), _, _, _, (i, eqs)) algorithm
+    case (DAE.CREF(ty=DAE.T_REAL()), (i, eqs)) algorithm
       eqs := BackendDAE.RESIDUAL_EQUATION(DAE.TSUB(exp, i, DAE.T_REAL_DEFAULT), inSource, inEqAttr)::eqs;
     then ((i+1, eqs));
 
     // create a sum for arrays...
-    case (DAE.CREF(ty=DAE.T_ARRAY(ty=DAE.T_REAL())), _, _, _, (i, eqs)) algorithm
+    case (DAE.CREF(ty=DAE.T_ARRAY(ty=DAE.T_REAL())), (i, eqs)) algorithm
       e := Expression.makePureBuiltinCall("sum", {DAE.TSUB(exp, i, DAE.T_REAL_DEFAULT)}, DAE.T_REAL_DEFAULT);
       eqs := BackendDAE.RESIDUAL_EQUATION(e, inSource, inEqAttr)::eqs;
     then ((i+1, eqs));
 
-    case (_, _, _, _, (i, _)) algorithm
+    case (_, (i, _)) algorithm
       str := "BackendEquation.equationTupleToScalarResidualForm failed: " + intString(i) + ": " + ExpressionBasics.printExpStr(cr);
       Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, ElementSource.getElementSourceFileInfo(inSource));
     then fail();
@@ -1598,45 +1587,43 @@ public function equationToResidualForm "author: PA
   input BackendDAE.Equation inEquation;
   output BackendDAE.Equation outEquation;
 algorithm
-  outEquation := matchcontinue (inEquation)
+  outEquation := matchcontinue inEquation
     local
       DAE.Exp e, e1, e2, exp;
       DAE.ComponentRef cr;
       DAE.ElementSource source;
       BackendDAE.Equation backendEq;
       BackendDAE.EquationAttributes eqAttr;
-      list<list<BackendDAE.Equation>> eqnstrue;
-      list<BackendDAE.Equation> eqnsfalse;
 
-    case (BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, attr=eqAttr)) algorithm
+    case BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, attr=eqAttr) algorithm
       //ExpressionDump.dumpExpWithTitle("equationToResidualForm 1\n", e2);
       exp := Expression.createResidualExp(e1, e2);
       (e, _) := ExpressionSimplify.simplify(exp);
     then BackendDAE.RESIDUAL_EQUATION(e, source, eqAttr);
 
-    case (BackendDAE.SOLVED_EQUATION(componentRef=cr, exp=e2, source=source, attr=eqAttr)) algorithm
+    case BackendDAE.SOLVED_EQUATION(componentRef=cr, exp=e2, source=source, attr=eqAttr) algorithm
       e1 := Expression.crefExp(cr);
       exp := Expression.createResidualExp(e1, e2);
       (e, _) := ExpressionSimplify.simplify(exp);
     then BackendDAE.RESIDUAL_EQUATION(e, source, eqAttr);
 
-    case (BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source, attr=eqAttr)) algorithm
+    case BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source, attr=eqAttr) algorithm
       exp := Expression.createResidualExp(e1, e2);
       (e, _) := ExpressionSimplify.simplify(exp);
     then BackendDAE.RESIDUAL_EQUATION(e, source, eqAttr);
 
-    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, attr=eqAttr)) algorithm
+    case BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, attr=eqAttr) algorithm
       exp := Expression.createResidualExp(e1, e2);
       (e, _) := ExpressionSimplify.simplify(exp);
     then BackendDAE.RESIDUAL_EQUATION(e, source, eqAttr);
 
-    case (backendEq as BackendDAE.RESIDUAL_EQUATION())
+    case backendEq as BackendDAE.RESIDUAL_EQUATION()
     then backendEq;
 
-    case (backendEq as BackendDAE.ALGORITHM())
+    case backendEq as BackendDAE.ALGORITHM()
     then backendEq;
 
-    case (backendEq as BackendDAE.WHEN_EQUATION())
+    case backendEq as BackendDAE.WHEN_EQUATION()
     then backendEq;
 
     else
@@ -1686,14 +1673,12 @@ public function convertResidualsIntoSolvedEquations
   output Integer outVarIndex = inIndex;
 algorithm
   for eq in inResidualList loop
-    _ := match eq
+    () := match eq
       local
         DAE.Exp exp;
         DAE.ElementSource source "origin of equation";
         BackendDAE.EquationAttributes eqAttr;
-        String varName;
         DAE.ComponentRef componentRef;
-        DAE.Exp expVarName;
         BackendDAE.Equation currEquation;
         BackendDAE.Var currVariable;
 
@@ -1763,7 +1748,7 @@ public function equationSizeKeepAlgorithmAsOne
   input BackendDAE.Equation eq;
   output Integer osize;
 algorithm
-  osize := match(eq)
+  osize := match eq
   case BackendDAE.ALGORITHM(_)
     then 1;
   else
@@ -1836,8 +1821,8 @@ public function isInitialEqKind
   input BackendDAE.EquationKind inEqKind;
   output Boolean outBool;
 algorithm
-  outBool := match (inEqKind)
-    case (BackendDAE.INITIAL_EQUATION()) then true;
+  outBool := match inEqKind
+    case BackendDAE.INITIAL_EQUATION() then true;
     else false;
   end match;
 end isInitialEqKind;
@@ -1853,8 +1838,8 @@ public function isDynamicEqKind
   input BackendDAE.EquationKind inEqKind;
   output Boolean outBool;
 algorithm
-  outBool := match (inEqKind)
-    case (BackendDAE.DYNAMIC_EQUATION()) then true;
+  outBool := match inEqKind
+    case BackendDAE.DYNAMIC_EQUATION() then true;
     else false;
   end match;
 end isDynamicEqKind;
@@ -1870,8 +1855,8 @@ public function isBindingEqKind
   input BackendDAE.EquationKind inEqKind;
   output Boolean outBool;
 algorithm
-  outBool := match (inEqKind)
-    case (BackendDAE.BINDING_EQUATION()) then true;
+  outBool := match inEqKind
+    case BackendDAE.BINDING_EQUATION() then true;
     else false;
   end match;
 end isBindingEqKind;
@@ -1887,8 +1872,8 @@ public function isDiscreteEqKind
   input BackendDAE.EquationKind inEqKind;
   output Boolean outBool;
 algorithm
-  outBool := match (inEqKind)
-    case (BackendDAE.DISCRETE_EQUATION()) then true;
+  outBool := match inEqKind
+    case BackendDAE.DISCRETE_EQUATION() then true;
     else false;
   end match;
 end isDiscreteEqKind;
@@ -1904,8 +1889,8 @@ public function isAuxEqKind
   input BackendDAE.EquationKind inEqKind;
   output Boolean outBool;
 algorithm
-  outBool := match (inEqKind)
-    case (BackendDAE.AUX_EQUATION()) then true;
+  outBool := match inEqKind
+    case BackendDAE.AUX_EQUATION() then true;
     else false;
   end match;
 end isAuxEqKind;
@@ -2063,7 +2048,6 @@ algorithm
       Option<Integer> recordSize;
       DAE.Dimensions dims;
       list<Integer> ds;
-      Boolean b1, b2;
 
     // complex types to complex equations
     case () guard
@@ -2141,7 +2125,7 @@ public function setEquationAttributes
   input BackendDAE.EquationAttributes inAttr;
   output BackendDAE.Equation outEqn;
 algorithm
-  outEqn := match (inEqn, inAttr)
+  outEqn := match inEqn
     local
       DAE.ElementSource source;
       list<Integer> dimSize;
@@ -2157,31 +2141,31 @@ algorithm
       list<list<BackendDAE.Equation>> eqnstrue;
       list<BackendDAE.Equation> eqnsfalse;
 
-    case (BackendDAE.EQUATION(exp=lhs, scalar=rhs, source=source), _)
+    case BackendDAE.EQUATION(exp=lhs, scalar=rhs, source=source)
     then BackendDAE.EQUATION(lhs, rhs, source, inAttr);
 
-    case (BackendDAE.ARRAY_EQUATION(dimSize=dimSize, left=lhs, right=rhs, source=source, recordSize=recordSize), _)
+    case BackendDAE.ARRAY_EQUATION(dimSize=dimSize, left=lhs, right=rhs, source=source, recordSize=recordSize)
     then BackendDAE.ARRAY_EQUATION(dimSize, lhs, rhs, source, inAttr, recordSize);
 
-    case (BackendDAE.FOR_EQUATION(), _)
+    case BackendDAE.FOR_EQUATION()
     then BackendDAE.FOR_EQUATION(inEqn.iter, inEqn.start, inEqn.stop, inEqn.body, inEqn.source, inAttr);
 
-    case (BackendDAE.SOLVED_EQUATION(componentRef=componentRef, exp=rhs, source=source), _)
+    case BackendDAE.SOLVED_EQUATION(componentRef=componentRef, exp=rhs, source=source)
     then BackendDAE.SOLVED_EQUATION(componentRef, rhs, source, inAttr);
 
-    case (BackendDAE.RESIDUAL_EQUATION(exp=rhs, source=source), _)
+    case BackendDAE.RESIDUAL_EQUATION(exp=rhs, source=source)
     then BackendDAE.RESIDUAL_EQUATION(rhs, source, inAttr);
 
-    case (BackendDAE.ALGORITHM(size=size, alg=alg, source=source, expand=expand), _)
+    case BackendDAE.ALGORITHM(size=size, alg=alg, source=source, expand=expand)
     then BackendDAE.ALGORITHM(size, alg, source, expand, inAttr);
 
-    case (BackendDAE.WHEN_EQUATION(size=size, whenEquation=whenEquation, source=source), _)
+    case BackendDAE.WHEN_EQUATION(size=size, whenEquation=whenEquation, source=source)
     then BackendDAE.WHEN_EQUATION(size, whenEquation, source, inAttr);
 
-    case (BackendDAE.COMPLEX_EQUATION(size=size, left=lhs, right=rhs, source=source), _)
+    case BackendDAE.COMPLEX_EQUATION(size=size, left=lhs, right=rhs, source=source)
     then BackendDAE.COMPLEX_EQUATION(size, lhs, rhs, source, inAttr);
 
-    case (BackendDAE.IF_EQUATION(conditions=conditions, eqnstrue=eqnstrue, eqnsfalse=eqnsfalse, source=source), _)
+    case BackendDAE.IF_EQUATION(conditions=conditions, eqnstrue=eqnstrue, eqnsfalse=eqnsfalse, source=source)
     then BackendDAE.IF_EQUATION(conditions, eqnstrue, eqnsfalse, source, inAttr);
 
     else algorithm
@@ -2255,11 +2239,11 @@ public function generateSolvedEqnsfromOption "author: Frenkel TUD 2010-05"
   input BackendDAE.EquationAttributes inEqAttr;
   output list<BackendDAE.Equation> outEqn;
 algorithm
-  outEqn :=  match (inLhs, inRhs, inSource, inEqAttr)
+  outEqn :=  match inRhs
   local
     DAE.Exp rhs;
 
-    case (_, SOME(rhs), _, _)
+    case SOME(rhs)
     then {BackendDAE.SOLVED_EQUATION(inLhs, rhs, inSource, inEqAttr)};
 
     else {};
@@ -2277,14 +2261,14 @@ public function generateResidualFromRelation "author: vitalij"
   output list<BackendDAE.Equation> outEqn;
   output BackendDAE.Var vout;
 algorithm
-  (outEqn, vout) :=  match (conCrefName, iRhs)
+  (outEqn, vout) :=  match iRhs
     local
       DAE.Exp rhs, e1, e2 , expNull, lowBound;
       DAE.ComponentRef lhs, cr;
       BackendDAE.Var dummyVar, v;
       BackendDAE.Equation eqn;
 
-    case (_, DAE.RELATION(e1, DAE.LESS(_), e2, _, _)) algorithm
+    case DAE.RELATION(e1, DAE.LESS(_), e2, _, _) algorithm
       lhs := ComponentReferenceBasics.makeCrefIdent(conCrefName, DAE.T_REAL_DEFAULT, {});
       dummyVar := BackendDAE.VAR(lhs, conKind, DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false, false);
       rhs := Expression.expSub(e1,e2);
@@ -2294,7 +2278,7 @@ algorithm
       dummyVar := BackendVariable.setVarMinMax(dummyVar, SOME(lowBound), SOME(expNull));
     then ({BackendDAE.SOLVED_EQUATION(lhs, rhs, Source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)}, dummyVar);
 
-    case (_, DAE.RELATION(e1, DAE.LESSEQ(_), e2, _, _)) algorithm
+    case DAE.RELATION(e1, DAE.LESSEQ(_), e2, _, _) algorithm
       lhs := ComponentReferenceBasics.makeCrefIdent(conCrefName, DAE.T_REAL_DEFAULT, {});
       dummyVar := BackendDAE.VAR(lhs, conKind, DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false, false);
       rhs := Expression.expSub(e1,e2);
@@ -2304,7 +2288,7 @@ algorithm
       dummyVar := BackendVariable.setVarMinMax(dummyVar, SOME(lowBound), SOME(expNull));
     then ({BackendDAE.SOLVED_EQUATION(lhs, rhs, Source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)}, dummyVar);
 
-    case (_, DAE.RELATION(e1, DAE.GREATER(_), e2, _, _)) algorithm
+    case DAE.RELATION(e1, DAE.GREATER(_), e2, _, _) algorithm
       lhs := ComponentReferenceBasics.makeCrefIdent(conCrefName, DAE.T_REAL_DEFAULT, {});
       dummyVar := BackendDAE.VAR(lhs, conKind, DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false, false);
       rhs :=  Expression.expSub(e2,e1);
@@ -2314,7 +2298,7 @@ algorithm
       dummyVar := BackendVariable.setVarMinMax(dummyVar, SOME(lowBound), SOME(expNull));
     then ({BackendDAE.SOLVED_EQUATION(lhs, rhs, Source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)}, dummyVar);
 
-    case (_, DAE.RELATION(e1, DAE.GREATEREQ(_), e2, _, _)) algorithm
+    case DAE.RELATION(e1, DAE.GREATEREQ(_), e2, _, _) algorithm
       lhs := ComponentReferenceBasics.makeCrefIdent(conCrefName, DAE.T_REAL_DEFAULT, {});
       dummyVar := BackendDAE.VAR(lhs, conKind, DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false, false);
       rhs :=  Expression.expSub(e2,e1);
@@ -2324,7 +2308,7 @@ algorithm
       dummyVar := BackendVariable.setVarMinMax(dummyVar, SOME(lowBound), SOME(expNull));
     then ({BackendDAE.SOLVED_EQUATION(lhs, rhs, Source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)}, dummyVar);
 
-    case (_, DAE.RELATION(e1, DAE.EQUAL(_), e2, _, _)) algorithm
+    case DAE.RELATION(e1, DAE.EQUAL(_), e2, _, _) algorithm
       lhs := ComponentReferenceBasics.makeCrefIdent(conCrefName, DAE.T_REAL_DEFAULT, {});
       dummyVar := BackendDAE.VAR(lhs, conKind, DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false, false);
       rhs :=  Expression.expSub(e2,e1);
@@ -2333,7 +2317,7 @@ algorithm
       dummyVar := BackendVariable.setVarMinMax(dummyVar, SOME(expNull), SOME(expNull));
     then ({BackendDAE.SOLVED_EQUATION(lhs, rhs, Source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)}, dummyVar);
 
-    case(_,e1 as DAE.CREF(componentRef = cr)) algorithm
+    case e1 as DAE.CREF(componentRef = cr) algorithm
       try
         (v, _) := BackendVariable.getVarSingle(cr, inVars);
       else
@@ -2488,8 +2472,6 @@ algorithm
       DAE.Exp e1, e2;
       DAE.Exp res;
       DAE.ComponentRef cref, cr;
-      list<DAE.ComponentRef> crefLst;
-      BackendDAE.Equation eq;
       DAE.ElementSource source;
       BackendDAE.EquationAttributes eqAttr;
 
@@ -2597,25 +2579,25 @@ public function aliasEquation "author Frenkel TUD 2011-04
   input BackendDAE.Equation inEqn;
   output list<tuple<DAE.ComponentRef, DAE.ComponentRef, DAE.Exp, DAE.Exp, Boolean>> outTpls "(cr1, cr2, cr1=e2, cr2=e1, true if negated alias)";
 algorithm
-  outTpls := match (inEqn)
+  outTpls := match inEqn
     local
       DAE.Exp e, e1, e2;
       DAE.ComponentRef cr;
 
-    case (BackendDAE.EQUATION(exp=e1, scalar=e2))
+    case BackendDAE.EQUATION(exp=e1, scalar=e2)
     then aliasEquation1(e1, e2, {});
 
-    case (BackendDAE.ARRAY_EQUATION(left=e1, right=e2))
+    case BackendDAE.ARRAY_EQUATION(left=e1, right=e2)
     then aliasEquation1(e1, e2, {});
 
-    case (BackendDAE.SOLVED_EQUATION(componentRef=cr, exp=e2)) algorithm
+    case BackendDAE.SOLVED_EQUATION(componentRef=cr, exp=e2) algorithm
       e := Expression.crefExp(cr);
     then aliasEquation1(e, e2, {});
 
-    case (BackendDAE.RESIDUAL_EQUATION(exp=e1))
+    case BackendDAE.RESIDUAL_EQUATION(exp=e1)
     then aliasExpression(e1, {});
 
-    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2))
+    case BackendDAE.COMPLEX_EQUATION(left=e1, right=e2)
     then aliasEquation1(e1, e2, {});
   end match;
 end aliasEquation;
@@ -2627,7 +2609,7 @@ protected function aliasEquation1 "author Frenkel TUD 2011-04
   input list<tuple<DAE.ComponentRef, DAE.ComponentRef, DAE.Exp, DAE.Exp, Boolean>> inTpls "(cr1, cr2, cr1=e2, cr2=e1, true if negated alias)";
   output list<tuple<DAE.ComponentRef, DAE.ComponentRef, DAE.Exp, DAE.Exp, Boolean>> outTpls "(cr1, cr2, cr1=e2, cr2=e1, true if negated alias)";
 algorithm
-  outTpls := match (lhs, rhs, inTpls)
+  outTpls := match (lhs, rhs)
     local
       DAE.ComponentRef cr1, cr2;
       DAE.Exp e1, e2;
@@ -2638,47 +2620,47 @@ algorithm
       Absyn.Path patha, patha1, pathb, pathb1;
 
     // a = b;
-    case (DAE.CREF(componentRef = cr1), DAE.CREF(componentRef = cr2), _)
+    case (DAE.CREF(componentRef = cr1), DAE.CREF(componentRef = cr2))
     then (cr1, cr2, lhs, rhs, false)::inTpls;
 
     // a = -b;
-    case (DAE.CREF(componentRef = cr1), DAE.UNARY(op as DAE.UMINUS(_), DAE.CREF(componentRef = cr2)), _)
+    case (DAE.CREF(componentRef = cr1), DAE.UNARY(op as DAE.UMINUS(_), DAE.CREF(componentRef = cr2)))
     then (cr1, cr2, DAE.UNARY(op, lhs), rhs, true)::inTpls;
 
-    case (DAE.CREF(componentRef = cr1), DAE.UNARY(op as DAE.UMINUS_ARR(_), DAE.CREF(componentRef = cr2)), _)
+    case (DAE.CREF(componentRef = cr1), DAE.UNARY(op as DAE.UMINUS_ARR(_), DAE.CREF(componentRef = cr2)))
     then (cr1, cr2, DAE.UNARY(op, lhs), rhs, true)::inTpls;
 
     // -a = b;
-    case (DAE.UNARY(op as DAE.UMINUS(_), DAE.CREF(componentRef = cr1)), DAE.CREF(componentRef = cr2), _)
+    case (DAE.UNARY(op as DAE.UMINUS(_), DAE.CREF(componentRef = cr1)), DAE.CREF(componentRef = cr2))
     then (cr1, cr2, lhs, DAE.UNARY(op, rhs), true)::inTpls;
 
-    case (DAE.UNARY(op as DAE.UMINUS_ARR(_), DAE.CREF(componentRef = cr1)), DAE.CREF(componentRef = cr2), _)
+    case (DAE.UNARY(op as DAE.UMINUS_ARR(_), DAE.CREF(componentRef = cr1)), DAE.CREF(componentRef = cr2))
     then (cr1, cr2, lhs, DAE.UNARY(op, rhs), true)::inTpls;
 
     // -a = -b;
-    case (DAE.UNARY(DAE.UMINUS(_), e1 as DAE.CREF(componentRef = cr1)), DAE.UNARY(DAE.UMINUS(_), e2 as DAE.CREF(componentRef = cr2)), _)
+    case (DAE.UNARY(DAE.UMINUS(_), e1 as DAE.CREF(componentRef = cr1)), DAE.UNARY(DAE.UMINUS(_), e2 as DAE.CREF(componentRef = cr2)))
     then (cr1, cr2, e1, e2, false)::inTpls;
 
-    case (DAE.UNARY(DAE.UMINUS_ARR(_), e1 as DAE.CREF(componentRef = cr1)), DAE.UNARY(DAE.UMINUS_ARR(_), e2 as DAE.CREF(componentRef = cr2)), _)
+    case (DAE.UNARY(DAE.UMINUS_ARR(_), e1 as DAE.CREF(componentRef = cr1)), DAE.UNARY(DAE.UMINUS_ARR(_), e2 as DAE.CREF(componentRef = cr2)))
     then (cr1, cr2, e1, e2, false)::inTpls;
 
     // a = not b;
-    case (DAE.CREF(componentRef = cr1), DAE.LUNARY(op as DAE.NOT(_), DAE.CREF(componentRef = cr2)), _)
+    case (DAE.CREF(componentRef = cr1), DAE.LUNARY(op as DAE.NOT(_), DAE.CREF(componentRef = cr2)))
     then (cr1, cr2, DAE.LUNARY(op, lhs), rhs, true)::inTpls;
 
     // not a = b;
-    case (DAE.LUNARY(op as DAE.NOT(_), DAE.CREF(componentRef = cr1)), DAE.CREF(componentRef = cr2), _)
+    case (DAE.LUNARY(op as DAE.NOT(_), DAE.CREF(componentRef = cr1)), DAE.CREF(componentRef = cr2))
     then (cr1, cr2, lhs, DAE.LUNARY(op, rhs), true)::inTpls;
 
     // not a = not b;
-    case (DAE.LUNARY(DAE.NOT(_), e1 as DAE.CREF(componentRef = cr1)), DAE.LUNARY(DAE.NOT(_), e2 as DAE.CREF(componentRef = cr2)), _)
+    case (DAE.LUNARY(DAE.NOT(_), e1 as DAE.CREF(componentRef = cr1)), DAE.LUNARY(DAE.NOT(_), e2 as DAE.CREF(componentRef = cr2)))
     then (cr1, cr2, e1, e2, false)::inTpls;
 
     // {a1, a2, a3, ..} = {b1, b2, b3, ..};
-    case (DAE.ARRAY(array = elst1), DAE.ARRAY(array = elst2), _)
+    case (DAE.ARRAY(array = elst1), DAE.ARRAY(array = elst2))
     then List.threadFold(elst1, elst2, aliasEquation1, inTpls);
 
-    case (DAE.MATRIX(matrix = elstlst1), DAE.MATRIX(matrix = elstlst2), _)
+    case (DAE.MATRIX(matrix = elstlst1), DAE.MATRIX(matrix = elstlst2))
     then List.threadFold(elstlst1, elstlst2, aliasEquationLst, inTpls);
 
     // a = {b1, b2, b3, ..}
@@ -2726,18 +2708,17 @@ algorithm
     //case (DAE.LUNARY(DAE.NOT(_), DAE.ARRAY(array = elst1, ty=ty)), DAE.LUNARY(DAE.NOT(_), e2 as DAE.CREF(componentRef = cr2)), _)
 
     // a = Record(b1, b2, b3, ..)
-    case (DAE.CREF(componentRef = cr1), DAE.CALL(path=pathb, expLst=elst2, attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=varLst2, complexClassType=ClassInf.RECORD(pathb1)))), _)
+    case (DAE.CREF(componentRef = cr1), DAE.CALL(path=pathb, expLst=elst2, attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=varLst2, complexClassType=ClassInf.RECORD(pathb1)))))
       guard AbsynUtil.pathEqual(pathb, pathb1)
     then aliasRecord(cr1, varLst2, elst2, inTpls);
 
     // Record(a1, a2, a3, ..) = b
-    case (DAE.CALL(path=patha, expLst=elst1, attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=varLst1, complexClassType=ClassInf.RECORD(patha1)))), DAE.CREF(componentRef = cr2), _)
+    case (DAE.CALL(path=patha, expLst=elst1, attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=varLst1, complexClassType=ClassInf.RECORD(patha1)))), DAE.CREF(componentRef = cr2))
       guard AbsynUtil.pathEqual(patha, patha1)
     then aliasRecord(cr2, varLst1, elst1, inTpls);
 
     // Record(a1, a2, a3, ..) = Record(b1, b2, b3, ..)
-    case (DAE.CALL(path=patha, expLst=elst1, attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(patha1)))),
-      DAE.CALL(path=pathb, expLst=elst2, attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(pathb1)))), _)
+    case (DAE.CALL(path=patha, expLst=elst1, attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(patha1)))), DAE.CALL(path=pathb, expLst=elst2, attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(pathb1)))))
       guard  AbsynUtil.pathEqual(patha, patha1) and AbsynUtil.pathEqual(pathb, pathb1)
     then List.threadFold(elst1, elst2, aliasEquation1, inTpls);
 
@@ -2763,27 +2744,27 @@ protected function aliasEquation2 "author Frenkel TUD 2011-04
   input list<tuple<DAE.ComponentRef, DAE.ComponentRef, DAE.Exp, DAE.Exp, Boolean>> inTpls "(cr1, cr2, cr1=e2, cr2=e1, true if negated alias)";
   output list<tuple<DAE.ComponentRef, DAE.ComponentRef, DAE.Exp, DAE.Exp, Boolean>> outTpls "(cr1, cr2, cr1=e2, cr2=e1, true if negated alias)";
 algorithm
-  outTpls := match (lhs, rhs, inTpls)
+  outTpls := match (lhs, rhs)
     local
       list<DAE.Exp> elst1, elst2;
 
     // {a1+b1, a2+b2, a3+b3, ..} = 0;
-    case (DAE.ARRAY(array = elst1), _, _) guard
+    case (DAE.ARRAY(array = elst1), _) guard
       Expression.isZero(rhs)
     then List.fold(elst1, aliasExpression, inTpls);
 
     // 0 = {a1+b1, a2+b2, a3+b3, ..};
-    case (_, DAE.ARRAY(array = elst2), _) guard
+    case (_, DAE.ARRAY(array = elst2)) guard
       Expression.isZero(lhs)
     then List.fold(elst2, aliasExpression, inTpls);
 
     // lhs = 0
-    case (_, _, _) guard
+    case (_, _) guard
       Expression.isZero(rhs)
     then aliasExpression(lhs, inTpls);
 
     // 0 = rhs
-    case (_, _, _) guard
+    case (_, _) guard
       Expression.isZero(lhs)
     then aliasExpression(rhs, inTpls);
   end match;
@@ -2797,38 +2778,38 @@ protected function aliasRecord "author Frenkel TUD 2011-04
   input list<tuple<DAE.ComponentRef, DAE.ComponentRef, DAE.Exp, DAE.Exp, Boolean>> inTpls "(cr1, cr2, cr1=e2, cr2=e1, true if negated alias)";
   output list<tuple<DAE.ComponentRef, DAE.ComponentRef, DAE.Exp, DAE.Exp, Boolean>> outTpls "(cr1, cr2, cr1=e2, cr2=e1, true if negated alias)";
 algorithm
-  outTpls := match (cr, varLst, explst, inTpls)
+  outTpls := match (varLst, explst)
     local
       DAE.ComponentRef cr1, cr2;
       DAE.Exp e1, e2;
-      DAE.Type ty, ty1;
+      DAE.Type ty;
       DAE.Operator op;
       list<DAE.Exp> elst;
       list<DAE.Var> vlst;
       DAE.Ident ident;
 
-    case (_, {}, {}, _)
+    case ({}, {})
     then inTpls;
 
     // a = b
-    case (_, DAE.TYPES_VAR(name=ident, ty=ty)::vlst, (e2 as DAE.CREF(componentRef = cr2))::elst, _) algorithm
+    case (DAE.TYPES_VAR(name=ident, ty=ty)::vlst, (e2 as DAE.CREF(componentRef = cr2))::elst) algorithm
       cr1 := ComponentReference.crefPrependIdent(cr, ident, {}, ty);
       e1 := DAE.CREF(cr1, ty);
     then aliasRecord(cr, vlst, elst, (cr1, cr2, e1, e2, false)::inTpls);
 
     // a = -b
-    case (_, DAE.TYPES_VAR(name=ident, ty=ty)::vlst, (e2 as DAE.UNARY(op as DAE.UMINUS(_), DAE.CREF(componentRef = cr2)))::elst, _) algorithm
+    case (DAE.TYPES_VAR(name=ident, ty=ty)::vlst, (e2 as DAE.UNARY(op as DAE.UMINUS(_), DAE.CREF(componentRef = cr2)))::elst) algorithm
       cr1 := ComponentReference.crefPrependIdent(cr, ident, {}, ty);
       e1 := DAE.UNARY(op, DAE.CREF(cr1, ty));
     then aliasRecord(cr, vlst, elst, (cr1, cr2, e1, e2, true)::inTpls);
 
-    case (_, DAE.TYPES_VAR(name=ident, ty=ty)::vlst, (e2 as DAE.UNARY(op as DAE.UMINUS_ARR(_), DAE.CREF(componentRef = cr2)))::elst, _) algorithm
+    case (DAE.TYPES_VAR(name=ident, ty=ty)::vlst, (e2 as DAE.UNARY(op as DAE.UMINUS_ARR(_), DAE.CREF(componentRef = cr2)))::elst) algorithm
       cr1 := ComponentReference.crefPrependIdent(cr, ident, {}, ty);
       e1 := DAE.UNARY(op, DAE.CREF(cr1, ty));
     then aliasRecord(cr, vlst, elst, (cr1, cr2, e1, e2, true)::inTpls);
 
     // a = not b
-    case (_, DAE.TYPES_VAR(name=ident, ty=ty)::vlst, (e2 as DAE.LUNARY(op as DAE.NOT(_), DAE.CREF(componentRef = cr2)))::elst, _) algorithm
+    case (DAE.TYPES_VAR(name=ident, ty=ty)::vlst, (e2 as DAE.LUNARY(op as DAE.NOT(_), DAE.CREF(componentRef = cr2)))::elst) algorithm
       cr1 := ComponentReference.crefPrependIdent(cr, ident, {}, ty);
       e1 := DAE.LUNARY(op, DAE.CREF(cr1, ty));
     then aliasRecord(cr, vlst, elst, (cr1, cr2, e1, e2, true)::inTpls);
@@ -2844,38 +2825,38 @@ protected function aliasExpression "author Frenkel TUD 2011-11
   input list<tuple<DAE.ComponentRef, DAE.ComponentRef, DAE.Exp, DAE.Exp, Boolean>> inTpls "(cr1, cr2, cr1=e2, cr2=e1, true if negated alias)";
   output list<tuple<DAE.ComponentRef, DAE.ComponentRef, DAE.Exp, DAE.Exp, Boolean>> outTpls "(cr1, cr2, cr1=e2, cr2=e1, true if negated alias)";
 algorithm
-  outTpls := match (exp, inTpls)
+  outTpls := match exp
     local
       DAE.ComponentRef cr1, cr2;
       DAE.Exp e1, e2;
       DAE.Type ty;
 
     // a + b
-    case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1), DAE.ADD(ty=ty), e2 as DAE.CREF(componentRef = cr2)), _)
+    case DAE.BINARY(e1 as DAE.CREF(componentRef = cr1), DAE.ADD(ty=ty), e2 as DAE.CREF(componentRef = cr2))
     then (cr1, cr2, DAE.UNARY(DAE.UMINUS(ty), e1), DAE.UNARY(DAE.UMINUS(ty), e2), true)::inTpls;
 
-    case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1), DAE.ADD_ARR(ty=ty), e2 as DAE.CREF(componentRef = cr2)), _)
+    case DAE.BINARY(e1 as DAE.CREF(componentRef = cr1), DAE.ADD_ARR(ty=ty), e2 as DAE.CREF(componentRef = cr2))
     then (cr1, cr2, DAE.UNARY(DAE.UMINUS_ARR(ty), e1), DAE.UNARY(DAE.UMINUS_ARR(ty), e2), true)::inTpls;
 
     // a - b
-    case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1), DAE.SUB(), e2 as DAE.CREF(componentRef = cr2)), _)
+    case DAE.BINARY(e1 as DAE.CREF(componentRef = cr1), DAE.SUB(), e2 as DAE.CREF(componentRef = cr2))
     then (cr1, cr2, e1, e2, false)::inTpls;
 
-    case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1), DAE.SUB_ARR(), e2 as DAE.CREF(componentRef = cr2)), _)
+    case DAE.BINARY(e1 as DAE.CREF(componentRef = cr1), DAE.SUB_ARR(), e2 as DAE.CREF(componentRef = cr2))
     then (cr1, cr2, e1, e2, false)::inTpls;
 
     // -a + b
-    case (DAE.BINARY(DAE.UNARY(DAE.UMINUS(_), e1 as DAE.CREF(componentRef = cr1)), DAE.ADD(), e2 as DAE.CREF(componentRef = cr2)), _)
+    case DAE.BINARY(DAE.UNARY(DAE.UMINUS(_), e1 as DAE.CREF(componentRef = cr1)), DAE.ADD(), e2 as DAE.CREF(componentRef = cr2))
     then (cr1, cr2, e1, e2, false)::inTpls;
 
-    case (DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(_), e1 as DAE.CREF(componentRef = cr1)), DAE.ADD_ARR(), e2 as DAE.CREF(componentRef = cr2)), _)
+    case DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(_), e1 as DAE.CREF(componentRef = cr1)), DAE.ADD_ARR(), e2 as DAE.CREF(componentRef = cr2))
     then (cr1, cr2, e1, e2, false)::inTpls;
 
     // -a - b = 0
-    case (DAE.BINARY(e1 as DAE.UNARY(DAE.UMINUS(_), DAE.CREF(componentRef = cr1)), DAE.SUB(ty=ty), e2 as DAE.CREF(componentRef = cr2)), _)
+    case DAE.BINARY(e1 as DAE.UNARY(DAE.UMINUS(_), DAE.CREF(componentRef = cr1)), DAE.SUB(ty=ty), e2 as DAE.CREF(componentRef = cr2))
     then (cr1, cr2, e1, DAE.UNARY(DAE.UMINUS(ty), e2), true)::inTpls;
 
-    case (DAE.BINARY(e1 as DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF(componentRef = cr1)), DAE.SUB_ARR(ty=ty), e2 as DAE.CREF(componentRef = cr2)), _)
+    case DAE.BINARY(e1 as DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF(componentRef = cr1)), DAE.SUB_ARR(ty=ty), e2 as DAE.CREF(componentRef = cr2))
     then (cr1, cr2, e1, DAE.UNARY(DAE.UMINUS_ARR(ty), e2), true)::inTpls;
   end match;
 end aliasExpression;
@@ -2890,72 +2871,72 @@ public function derivativeEquation "author Frenkel TUD 2011-04
   output DAE.Exp de "der(cr)";
   output Boolean negate;
 algorithm
-  (cr, dcr, e, de, negate) := match (eqn)
+  (cr, dcr, e, de, negate) := match eqn
     local
       DAE.Exp ne, ne2;
 
     // a = der(b);
-    case (BackendDAE.EQUATION(exp=e as DAE.CREF(componentRef = dcr), scalar=de as  DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)})))
+    case BackendDAE.EQUATION(exp=e as DAE.CREF(componentRef = dcr), scalar=de as  DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)}))
     then (cr, dcr, e, de, false);
 
     // der(a) = b;
-    case (BackendDAE.EQUATION(exp=de as  DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)}), scalar=e as DAE.CREF(componentRef = dcr)))
+    case BackendDAE.EQUATION(exp=de as  DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)}), scalar=e as DAE.CREF(componentRef = dcr))
     then (cr, dcr, e, de, false);
 
     // a = -der(b);
-    case (BackendDAE.EQUATION(exp=e as DAE.CREF(componentRef = dcr), scalar=de as  DAE.UNARY(DAE.UMINUS(_), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)})))) algorithm
+    case BackendDAE.EQUATION(exp=e as DAE.CREF(componentRef = dcr), scalar=de as  DAE.UNARY(DAE.UMINUS(_), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)}))) algorithm
       ne := Expression.negate(e);
     then (cr, dcr, ne, de, true);
 
-    case (BackendDAE.EQUATION(exp=e as DAE.CREF(componentRef = dcr), scalar=de as  DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)})))) algorithm
+    case BackendDAE.EQUATION(exp=e as DAE.CREF(componentRef = dcr), scalar=de as  DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)}))) algorithm
       ne := Expression.negate(e);
     then (cr, dcr, ne, de, true);
 
     // -der(a) = b;
-    case (BackendDAE.EQUATION(exp=de as  DAE.UNARY(DAE.UMINUS(_), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)})), scalar=e as DAE.CREF(componentRef = dcr))) algorithm
+    case BackendDAE.EQUATION(exp=de as  DAE.UNARY(DAE.UMINUS(_), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)})), scalar=e as DAE.CREF(componentRef = dcr)) algorithm
       ne := Expression.negate(e);
     then (cr, dcr, ne, de, true);
 
-    case (BackendDAE.EQUATION(exp=de as  DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)})), scalar=e as DAE.CREF(componentRef = dcr))) algorithm
+    case BackendDAE.EQUATION(exp=de as  DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)})), scalar=e as DAE.CREF(componentRef = dcr)) algorithm
       ne := Expression.negate(e);
     then (cr, dcr, ne, de, true);
 
     // -a = der(b);
-    case (BackendDAE.EQUATION(exp=e as DAE.UNARY(DAE.UMINUS(_), DAE.CREF(componentRef = dcr)), scalar=de as  DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)}))) algorithm
+    case BackendDAE.EQUATION(exp=e as DAE.UNARY(DAE.UMINUS(_), DAE.CREF(componentRef = dcr)), scalar=de as  DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)})) algorithm
       ne := Expression.negate(de);
     then (cr, dcr, e, ne, true);
 
-    case (BackendDAE.EQUATION(exp=e as DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF(componentRef = dcr)), scalar=de as  DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)}))) algorithm
+    case BackendDAE.EQUATION(exp=e as DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF(componentRef = dcr)), scalar=de as  DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)})) algorithm
       ne := Expression.negate(de);
     then (cr, dcr, e, ne, true);
 
     // der(a) = -b;
-    case (BackendDAE.EQUATION(exp=de as  DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)}), scalar=e as DAE.UNARY(DAE.UMINUS(_), DAE.CREF(componentRef = dcr)))) algorithm
+    case BackendDAE.EQUATION(exp=de as  DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)}), scalar=e as DAE.UNARY(DAE.UMINUS(_), DAE.CREF(componentRef = dcr))) algorithm
       ne := Expression.negate(de);
     then (cr, dcr, e, ne, true);
 
-    case (BackendDAE.EQUATION(exp=de as  DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)}), scalar=e as DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF(componentRef = dcr)))) algorithm
+    case BackendDAE.EQUATION(exp=de as  DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)}), scalar=e as DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF(componentRef = dcr))) algorithm
       ne := Expression.negate(de);
     then (cr, dcr, e, ne, true);
 
     // -a = -der(b);
-    case (BackendDAE.EQUATION(exp=e as DAE.UNARY(DAE.UMINUS(_), DAE.CREF(componentRef = dcr)), scalar=de as  DAE.UNARY(DAE.UMINUS(_), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)})))) algorithm
+    case BackendDAE.EQUATION(exp=e as DAE.UNARY(DAE.UMINUS(_), DAE.CREF(componentRef = dcr)), scalar=de as  DAE.UNARY(DAE.UMINUS(_), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)}))) algorithm
       ne := Expression.negate(e);
       ne2 := Expression.negate(de);
     then (cr, dcr, ne, ne2, false);
 
-    case (BackendDAE.EQUATION(exp=e as DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF(componentRef = dcr)), scalar=de as  DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)})))) algorithm
+    case BackendDAE.EQUATION(exp=e as DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF(componentRef = dcr)), scalar=de as  DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)}))) algorithm
       ne := Expression.negate(e);
       ne2 := Expression.negate(de);
     then (cr, dcr, ne, ne2, false);
 
     // -der(a) = -b;
-    case (BackendDAE.EQUATION(exp=de as  DAE.UNARY(DAE.UMINUS(_), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)})), scalar=e as DAE.UNARY(DAE.UMINUS(_), DAE.CREF(componentRef = dcr)))) algorithm
+    case BackendDAE.EQUATION(exp=de as  DAE.UNARY(DAE.UMINUS(_), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)})), scalar=e as DAE.UNARY(DAE.UMINUS(_), DAE.CREF(componentRef = dcr))) algorithm
       ne := Expression.negate(e);
       ne2 := Expression.negate(de);
     then (cr, dcr, ne, ne2, false);
 
-    case (BackendDAE.EQUATION(exp=de as  DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)})), scalar=e as DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF(componentRef = dcr)))) algorithm
+    case BackendDAE.EQUATION(exp=de as  DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)})), scalar=e as DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF(componentRef = dcr))) algorithm
       ne := Expression.negate(e);
       ne2 := Expression.negate(de);
     then (cr, dcr, ne, ne2, false);
@@ -3038,7 +3019,7 @@ public function isWhenEquation
   input BackendDAE.Equation inEqn;
   output Boolean b;
 algorithm
-  b := match (inEqn)
+  b := match inEqn
     case BackendDAE.WHEN_EQUATION() then true;
     else false;
   end match;
@@ -3049,7 +3030,7 @@ public function isWhenEquationOrDiscreteAlgorithm
   input BackendDAE.Variables vars;
   output Boolean b;
 algorithm
-  b := matchcontinue(inEqn)
+  b := matchcontinue inEqn
     local
       Boolean b1;
       list<DAE.Statement> stmts;
@@ -3073,7 +3054,7 @@ public function isArrayEquation
   input BackendDAE.Equation inEqn;
   output Boolean b;
 algorithm
-  b := match (inEqn)
+  b := match inEqn
     case BackendDAE.ARRAY_EQUATION() then true;
     else false;
   end match;
@@ -3083,7 +3064,7 @@ public function isAlgorithm
   input BackendDAE.Equation inEqn;
   output Boolean b;
 algorithm
-  b := match (inEqn)
+  b := match inEqn
     case BackendDAE.ALGORITHM() then true;
     else false;
   end match;
@@ -3093,7 +3074,7 @@ public function isComplexEquation
   input BackendDAE.Equation inEqn;
   output Boolean b;
 algorithm
-  b := match (inEqn)
+  b := match inEqn
     case BackendDAE.COMPLEX_EQUATION() then true;
     else false;
   end match;
@@ -3103,7 +3084,7 @@ public function isEquation
   input BackendDAE.Equation inEqn;
   output Boolean b;
 algorithm
-  b := match (inEqn)
+  b := match inEqn
     case BackendDAE.EQUATION() then true;
     else false;
   end match;
@@ -3120,7 +3101,7 @@ public function markDifferentiated"sets differentiated=true in EquationAttribute
   input BackendDAE.Equation inEqn;
   output BackendDAE.Equation outEqn;
 algorithm
-  outEqn := match (inEqn)
+  outEqn := match inEqn
     local
       BackendDAE.Equation eqn;
 
@@ -3168,7 +3149,7 @@ public function isDifferentiated
   input BackendDAE.Equation inEqn;
   output Boolean diffed;
 algorithm
-  diffed := match (inEqn)
+  diffed := match inEqn
     local
       Boolean b;
       BackendDAE.Equation eqn;
@@ -3196,18 +3177,18 @@ author:Waurich TUD 2014-10"
   input BackendDAE.Equation eq;
   output DAE.Exp rhs;
 algorithm
-  rhs := match(eq)
+  rhs := match eq
     local
       DAE.Exp exp1;
-    case(BackendDAE.EQUATION(scalar = exp1))
+    case BackendDAE.EQUATION(scalar = exp1)
       then exp1;
-    case(BackendDAE.ARRAY_EQUATION(right = exp1))
+    case BackendDAE.ARRAY_EQUATION(right = exp1)
       then exp1;
-    case(BackendDAE.SOLVED_EQUATION(exp = exp1))
+    case BackendDAE.SOLVED_EQUATION(exp = exp1)
       then exp1;
-    case(BackendDAE.COMPLEX_EQUATION(right = exp1))
+    case BackendDAE.COMPLEX_EQUATION(right = exp1)
       then exp1;
-    case(BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_STMTS(condition=DAE.BCONST(bool=true),whenStmtLst={BackendDAE.ASSIGN(right=exp1)})))
+    case BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_STMTS(condition=DAE.BCONST(bool=true),whenStmtLst={BackendDAE.ASSIGN(right=exp1)}))
       then exp1;
     else
       //equation print("BackendEquation.getEquationRHS failed!\n!");
@@ -3220,19 +3201,19 @@ author:Waurich TUD 2014-10"
   input BackendDAE.Equation eq;
   output DAE.Exp lhs;
 algorithm
-  lhs := match(eq)
+  lhs := match eq
     local
       DAE.Exp exp1;
       DAE.ComponentRef cref;
-    case(BackendDAE.EQUATION(exp = exp1))
+    case BackendDAE.EQUATION(exp = exp1)
       then exp1;
-    case(BackendDAE.ARRAY_EQUATION(left = exp1))
+    case BackendDAE.ARRAY_EQUATION(left = exp1)
       then exp1;
-    case(BackendDAE.SOLVED_EQUATION(componentRef = cref))
+    case BackendDAE.SOLVED_EQUATION(componentRef = cref)
       then Expression.crefExp(cref);
-    case(BackendDAE.COMPLEX_EQUATION(left = exp1))
+    case BackendDAE.COMPLEX_EQUATION(left = exp1)
       then exp1;
-    case(BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_STMTS(condition=DAE.BCONST(bool=true),whenStmtLst={BackendDAE.ASSIGN(left=exp1)})))
+    case BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_STMTS(condition=DAE.BCONST(bool=true),whenStmtLst={BackendDAE.ASSIGN(left=exp1)}))
       then exp1;
     else
       //equation print("BackendEquation.getEquationLHS failed!\n");
@@ -3252,7 +3233,7 @@ public function scalarComplexEquations
   output list<BackendDAE.Equation> outEquations;
 algorithm
 
-  outEquations := match (inEquation)
+  outEquations := match inEquation
     local
       DAE.Exp e1, e2;
       DAE.ElementSource source;
@@ -3260,13 +3241,13 @@ algorithm
       list<BackendDAE.Equation> eqns;
       BackendDAE.EquationAttributes attr;
 
-    case (BackendDAE.COMPLEX_EQUATION(left=DAE.TUPLE(explst), right=DAE.TUPLE(explst2), source=source, attr=attr))
+    case BackendDAE.COMPLEX_EQUATION(left=DAE.TUPLE(explst), right=DAE.TUPLE(explst2), source=source, attr=attr)
     algorithm
       true := listLength(explst) == listLength(explst2);
       eqns := List.threadMap2(explst, explst2, generateEquation, source, attr);
     then eqns;
 
-    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, attr=attr))
+    case BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, attr=attr)
     guard ((Expression.isRecordCall(e1, funcTree) or Expression.isRecord(e1)) and
            (Expression.isRecordCall(e2, funcTree) or Expression.isRecord(e2))
           )

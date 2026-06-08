@@ -59,6 +59,7 @@ import Differentiate;
 import DumpGraphML;
 import ElementSource;
 import Error;
+import Ceval;
 import Expression;
 import Flags;
 import IndexReduction;
@@ -69,6 +70,7 @@ import UnorderedSet;
 import Util;
 import Sorting;
 import System;
+protected import ComponentReferenceBasics;
 
 // =============================================================================
 // just a matching algorithm
@@ -168,8 +170,6 @@ protected
   array<Boolean> eMark, vMark;
   array<Integer> eMarkIx, vMarkIx;
   Integer eMarkN=0, vMarkN=0;
-  BackendDAE.EquationArray eqns;
-  BackendDAE.Variables vars;
   list<Integer> mEqns;
 algorithm
   //BackendDAE.EQSYSTEM(m=SOME(m), matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2)) := outSys;
@@ -329,7 +329,7 @@ public function DFSLH
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
+  matchcontinue isyst
     local
       Integer nvars,neqns;
       array<Integer> vec1,vec2,emark,vmark;
@@ -339,7 +339,7 @@ algorithm
       BackendDAE.AdjacencyMatrix m;
       BackendDAE.AdjacencyMatrixT mt;
 
-    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_)
+    case BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt))
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -348,13 +348,13 @@ algorithm
         vmark := arrayCreate(nvars,-1);
         emark := arrayCreate(neqns,-1);
         (vec1,vec2) := getAssignment(clearMatching,nvars,neqns,isyst);
-        _ := cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,false);
+        cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,false);
         (vec1,vec2,syst,shared,arg) := DFSLH2(isyst,ishared,nvars,neqns,1,emark,vmark,vec1,vec2,inMatchingOptions,sssHandler,inArg);
         syst := BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec1,vec2,{}));
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_,_)
+    case _
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -408,25 +408,25 @@ protected function DFSLH2
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (outAssignments1,outAssignments2,osyst,oshared,outArg):=
-  matchcontinue (isyst,ishared,nv,nf,i,emark,vmark,ass1,ass2,match_opts,sssHandler,inArg)
+  matchcontinue (isyst, match_opts)
     local
       array<Integer> ass1_1,ass2_1,ass1_2,ass2_2,ass1_3,ass2_3,emark1,vmark1;
       BackendDAE.AdjacencyMatrix m;
       BackendDAE.AdjacencyMatrixT mt;
       Integer i_1,nv_1,nf_1;
       BackendDAE.EquationArray eqns;
-      list<Integer> eqn_lst,var_lst,meqns;
+      list<Integer> eqn_lst,meqns;
       BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-    case (syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_,_,_,_)
+    case (syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)), _)
       algorithm
         true := intGe(i,nv);
         (ass1_1,ass2_1) := pathFound(m, mt, i, i,emark, vmark, ass1, ass2) "eMark(i)=vMark(i)=false; eMark(i)=vMark(i)=false exit loop";
       then
         (ass1_1,ass2_1,syst,ishared,inArg);
 
-    case (syst as BackendDAE.EQSYSTEM(m=SOME(_),mT=SOME(_)),_,_,_,_,_,_,_,_,_,_,_)
+    case (syst as BackendDAE.EQSYSTEM(m=SOME(_),mT=SOME(_)), _)
       algorithm
         i_1 := i + 1;
         true := intGt(ass2[i],0);
@@ -434,7 +434,7 @@ algorithm
       then
         (ass1_2,ass2_2,syst,shared,arg);
 
-    case (syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_,_,_,_)
+    case (syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)), _)
       algorithm
         i_1 := i + 1;
         (ass1_1,ass2_1) := pathFound(m, mt, i, i,emark, vmark, ass1, ass2) "eMark(i)=vMark(i)=false";
@@ -442,7 +442,7 @@ algorithm
       then
         (ass1_2,ass2_2,syst,shared,arg);
 
-    case (_,_,_,_,_,_,_,_,_,(BackendDAE.INDEX_REDUCTION(),_),_,_)
+    case (_, (BackendDAE.INDEX_REDUCTION(),_))
       algorithm
         meqns := getMarked(nf,i,emark,{});
         (_,i_1,syst,shared,ass1_1,ass2_1,arg) := sssHandler({meqns},i,isyst,ishared,ass1,ass2,inArg)
@@ -475,7 +475,7 @@ algorithm
       then
         (ass1_3,ass2_3,syst,shared,arg1);
 
-    case (_,_,_,_,_,_,_,_,_,_,_,_)
+    case (_, _)
       algorithm
         eqn_lst := getMarked(nf,i,emark,{});
         singularSystemError({eqn_lst},i,isyst,ishared,ass1,ass2,inArg);
@@ -503,16 +503,16 @@ protected function pathFound "author: PA
   output array<Integer> outAssignments2;
 algorithm
   (outAssignments1,outAssignments2):=
-  matchcontinue (m,mt,i,imark,emark,vmark,ass1,ass2)
+  matchcontinue ass2
     local
       array<Integer> ass1_1,ass2_1;
-    case (_,_,_,_,_,_,_,_)
+    case _
       algorithm
         arrayUpdate(emark,i,imark) "Side effect";
         (ass1_1,ass2_1) := assignOneInEqn(m, mt, i, ass1, ass2);
       then
         (ass1_1,ass2_1);
-    case (_,_,_,_,_,_,_,_)
+    case _
       algorithm
         (ass1_1,ass2_1) := forallUnmarkedVarsInEqn(m, mt, i, imark, emark, vmark, ass1, ass2);
       then
@@ -554,19 +554,19 @@ protected function assignFirstUnassigned
   output array<Integer> outAssignments2;
 algorithm
   (outAssignments1,outAssignments2):=
-  matchcontinue (i,inIntegerLst2,ass1,ass2)
+  matchcontinue inIntegerLst2
     local
       array<Integer> ass1_1,ass2_1;
       Integer v;
       list<Integer> vs;
-    case (_,(v :: _),_,_)
+    case v :: _
       algorithm
         false := intGt(ass1[v],0);
         ass1_1 := arrayUpdate(ass1,v,i);
         ass2_1 := arrayUpdate(ass2,i,v);
       then
         (ass1_1,ass2_1);
-    case (_,(_ :: vs),_,_)
+    case _ :: vs
       algorithm
         (ass1_1,ass2_1) := assignFirstUnassigned(i, vs, ass1, ass2);
       then
@@ -639,12 +639,12 @@ protected function forallUnmarkedVarsInEqnBody
   output array<Integer> outAssignments2;
 algorithm
   (outAssignments1,outAssignments2):=
-  matchcontinue (m,mt,i,imark,emark,vmark,inIntegerLst4,ass1,ass2)
+  matchcontinue inIntegerLst4
     local
       Integer assarg,v;
       array<Integer> ass1_1,ass2_1,ass1_2,ass2_2;
-      list<Integer> vars,vs;
-    case (_,_,_,_,_,_,((v :: _)),_,_)
+      list<Integer> vs;
+    case v :: _
       algorithm
         arrayUpdate(vmark,v,imark);
         assarg := ass1[v];
@@ -653,7 +653,7 @@ algorithm
         ass2_2 := arrayUpdate(ass2_1,i,v);
       then
         (ass1_2,ass2_2);
-    case (_,_,_,_,_,_,((_ :: vs)),_,_)
+    case _ :: vs
       algorithm
         (ass1_1,ass2_1) := forallUnmarkedVarsInEqnBody(m, mt, i, imark, emark, vmark, vs, ass1, ass2);
       then
@@ -676,7 +676,7 @@ public function BFSB
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
+  matchcontinue isyst
     local
       Integer nvars,neqns;
       array<Integer> vec1,vec2;
@@ -687,7 +687,7 @@ algorithm
       BackendDAE.AdjacencyMatrix m;
       BackendDAE.AdjacencyMatrixT mt;
 
-    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_)
+    case BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt))
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -696,14 +696,14 @@ algorithm
         rowmarks := arrayCreate(nvars,-1);
         parentcolum := arrayCreate(nvars,-1);
         (vec1,vec2) := getAssignment(clearMatching,nvars,neqns,isyst);
-        _ := cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,false);
+        cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,false);
         (vec1,vec2,syst,shared,arg) := BFSB1(1,1,nvars,neqns,m,mt,rowmarks,parentcolum,vec1,vec2,isyst,ishared,inMatchingOptions, sssHandler, inArg);
         syst := BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
 
     // fail case if system is empty
-    case (_,_,_,_,_,_)
+    case _
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -750,7 +750,7 @@ protected function BFSB1
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (outAss1,outAss2,osyst,oshared,outArg):=
-  matchcontinue (i,rowmark,nv,ne,m,mT,rowmarks,parentcolum,ass1,ass2,isyst,ishared,inMatchingOptions,sssHandler,inArg)
+  matchcontinue inArg
     local
       list<Integer> visitedcolums;
       BackendDAE.AdjacencyMatrix m1,mt1;
@@ -760,13 +760,13 @@ algorithm
       BackendDAE.Shared shared;
       array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1,parentcolum1;
 
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case _
       algorithm
         true:=intGt(i,ne);
       then
         (ass1,ass2,isyst,ishared,inArg);
 
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case _
       algorithm
         // not assigned
         false := intGt(ass1[i],0);
@@ -780,7 +780,7 @@ algorithm
       then
         (ass1_2,ass2_2,syst,shared,arg);
 
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case _
       algorithm
         true := intGt(ass1[i],0);
         (ass1_1,ass2_1,syst,shared,arg) := BFSB1(i+1,rowmark,nv,ne,m,mT,rowmarks,parentcolum,ass1,ass2,isyst,ishared,inMatchingOptions,sssHandler,inArg);
@@ -816,16 +816,16 @@ protected function BFSBphase
                                          it could be used to prune the nodes, if a path is found the list is empty";
 algorithm
   outVisitedColums :=
-  match (queue,rowmark,i,nv,ne,m,mT,rowmarks,parentcolum,ass1,ass2,nextQueue,inVisitedColums)
+  match (queue, nextQueue)
     local
       list<Integer> rest,queue1,rows;
       Integer c;
       Boolean b;
-    case ({},_,_,_,_,_,_,_,_,_,_,{},_) then inVisitedColums;
-    case ({},_,_,_,_,_,_,_,_,_,_,_,_)
+    case ({}, {}) then inVisitedColums;
+    case ({}, _)
        then
          BFSBphase(nextQueue,rowmark,i,nv,ne,m,mT,rowmarks,parentcolum,ass1,ass2,{},inVisitedColums);
-    case (c::rest,_,_,_,_,_,_,_,_,_,_,_,_)
+    case (c::rest, _)
       algorithm
         // traverse all adiacent rows
         rows := List.select(m[c], Util.intPositive);
@@ -861,9 +861,9 @@ protected function BFSBphase1
   output list<Integer> outVisitedColums;
 algorithm
   outVisitedColums :=
-  match (inPathFound,queue,rowmark,i,nv,ne,m,mT,rowmarks,parentcolum,ass1,ass2,nextQueue,inVisitedColums)
-    case (true,_,_,_,_,_,_,_,_,_,_,_,_,_) then {};
-    case (false,_,_,_,_,_,_,_,_,_,_,_,_,_)
+  match inPathFound
+    case true then {};
+    case false
       then
         BFSBphase(queue,rowmark,i,nv,ne,m,mT,rowmarks,parentcolum,ass1,ass2,nextQueue,inVisitedColums);
     else
@@ -894,20 +894,20 @@ protected function BFSBtraverseRows
   output Boolean pathFound;
 algorithm
   (outEqnqueue,pathFound):=
-  matchcontinue (rows,queue,rowmark,i,c,nv,ne,m,mT,rowmarks,parentcolum,ass1,ass2)
+  matchcontinue rows
     local
       list<Integer> rest,queue1,queue2;
       Integer rc,r;
       Boolean b;
-      case ({},_,_,_,_,_,_,_,_,_,_,_,_) then (listReverse(queue),false);
-    case (r::_,_,_,_,_,_,_,_,_,_,_,_,_)
+      case {} then (listReverse(queue),false);
+    case r::_
       algorithm
         // row is unmatched -> augmenting path found
         true := intLt(ass2[r],0);
         BFSBreasign(i,c,parentcolum,r,ass1,ass2);
       then
         ({},true);
-    case (r::rest,_,_,_,_,_,_,_,_,_,_,_,_)
+    case r::rest
       algorithm
         // row is matched
         rc := ass2[r];
@@ -937,16 +937,16 @@ protected function BFSBreasign
   input array<Integer> ass1 "eqn := ass1[var]";
   input array<Integer> ass2 "var := ass2[eqn]";
 algorithm
-  _ := matchcontinue (i,c,parentcolum,l,ass1,ass2)
+  () := matchcontinue ass2
     local
       Integer r;
-    case (_,_,_,_,_,_)
+    case _
       algorithm
         true := intEq(i,c);
         arrayUpdate(ass1,c,l);
         arrayUpdate(ass2,l,c);
       then ();
-    case (_,_,_,_,_,_)
+    case _
       algorithm
         r := ass1[c];
         arrayUpdate(ass1,c,l);
@@ -976,9 +976,9 @@ protected function BFSBenque
   output list<Integer> outEqnqueue;
 algorithm
   outEqnqueue:=
-  match (queue,rowmark,c,rc,r,visited,rowmarks,parentcolum)
-    case (_,_,_,_,_,false,_,_) then queue;
-    case (_,_,_,_,_,true,_,_)
+  match visited
+    case false then queue;
+    case true
       algorithm
         // mark row
         arrayUpdate(rowmarks,r,rowmark);
@@ -1010,7 +1010,7 @@ public function DFSB
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
+  matchcontinue isyst
     local
       Integer nvars,neqns;
       BackendDAE.AdjacencyMatrix m;
@@ -1021,7 +1021,7 @@ algorithm
       BackendDAE.Shared shared;
       array<Integer> rowmarks;
 
-    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_)
+    case BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt))
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -1029,14 +1029,14 @@ algorithm
         true := intGt(neqns,0);
         rowmarks := arrayCreate(nvars,-1);
         (vec1,vec2) := getAssignment(clearMatching,nvars,neqns,isyst);
-        _ := cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,false);
+        cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,false);
         (vec1,vec2,syst,shared,arg) := DFSB1(1,1,nvars,neqns,m,mt,rowmarks,vec1,vec2,isyst,ishared,inMatchingOptions,sssHandler,inArg);
         syst := BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
 
     // fail case if system is empty
-    case (_,_,_,_,_,_)
+    case _
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -1082,7 +1082,7 @@ protected function DFSB1
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (outAss1,outAss2,osyst,oshared,outArg):=
-  matchcontinue (i,rowmark,nv,ne,m,mT,rowmarks,ass1,ass2,isyst,ishared,inMatchingOptions,sssHandler,inArg)
+  matchcontinue inArg
     local
       list<Integer> visitedcolums;
       BackendDAE.AdjacencyMatrix m1,mt1;
@@ -1091,12 +1091,12 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1;
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case _
       algorithm
         true:=intGt(i,ne);
       then
         (ass1,ass2,isyst,ishared,inArg);
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case _
       algorithm
         // not assigned
         false := intGt(ass1[i],0);
@@ -1110,7 +1110,7 @@ algorithm
       then
         (ass1_2,ass2_2,syst,shared,arg);
 
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case _
       algorithm
         true := intGt(ass1[i],0);
         (ass1_1,ass2_1,syst,shared,arg) := DFSB1(i+1,rowmark,nv,ne,m,mT,rowmarks,ass1,ass2,isyst,ishared,inMatchingOptions,sssHandler,inArg);
@@ -1144,11 +1144,11 @@ protected function DFSBphase
                                          it could be used to prune the nodes, if a path is found the list is empty";
 algorithm
   outVisitedColums :=
-  match (stack,i,c,nv,ne,m,mT,rowmarks,ass1,ass2,inVisitedColums)
+  match stack
     local
       list<Integer> rows;
-    case ({},_,_,_,_,_,_,_,_,_,_) then inVisitedColums;
-    case (_,_,_,_,_,_,_,_,_,_,_)
+    case {} then inVisitedColums;
+    case _
       algorithm
         // traverse all adiacent rows
         rows := List.select(m[c], Util.intPositive);
@@ -1180,19 +1180,19 @@ protected function DFSBtraverseRows
   output list<Integer> outVisitedColums;
 algorithm
   outVisitedColums:=
-  matchcontinue (rows,stack,i,nv,ne,m,mT,rowmarks,ass1,ass2,inVisitedColums)
+  matchcontinue rows
     local
       list<Integer> rest,visitedColums;
       Integer rc,r;
-    case ({},_,_,_,_,_,_,_,_,_,_) then inVisitedColums;
-    case (r::_,_,_,_,_,_,_,_,_,_,_)
+    case {} then inVisitedColums;
+    case r::_
       algorithm
         // row is unmatched -> augmenting path found
         true := intLt(ass2[r],0);
         DFSBreasign(stack,r,ass1,ass2);
       then
         {};
-    case (r::rest,_,_,_,_,_,_,_,_,_,_)
+    case r::rest
       algorithm
         // row is matched
         rc := ass2[r];
@@ -1202,7 +1202,7 @@ algorithm
         visitedColums := DFSBphase(rc::stack,i,rc,nv,ne,m,mT,rowmarks,ass1,ass2,rc::inVisitedColums);
       then
         DFSBtraverseRows1(rest,stack,i,nv,ne,m,mT,rowmarks,ass1,ass2,visitedColums);
-    case (_::rest,_,_,_,_,_,_,_,_,_,_)
+    case _::rest
       then
         DFSBtraverseRows(rest,stack,i,nv,ne,m,mT,rowmarks,ass1,ass2,inVisitedColums);
     else
@@ -1231,8 +1231,8 @@ protected function DFSBtraverseRows1
   output list<Integer> outVisitedColums;
 algorithm
   outVisitedColums:=
-  match (rows,stack,i,nv,ne,m,mT,rowmarks,ass1,ass2,inVisitedColums)
-    case (_,_,_,_,_,_,_,_,_,_,{}) then inVisitedColums;
+  match inVisitedColums
+    case {} then inVisitedColums;
     else DFSBtraverseRows(rows,stack,i,nv,ne,m,mT,rowmarks,ass1,ass2,inVisitedColums);
   end match;
 end DFSBtraverseRows1;
@@ -1247,12 +1247,12 @@ protected function DFSBreasign
   input array<Integer> ass1 "eqn := ass1[var]";
   input array<Integer> ass2 "var := ass2[eqn]";
 algorithm
-  _ := match (stack,r,ass1,ass2)
+  () := match stack
     local
       Integer c,rc;
       list<Integer> rest;
-    case ({},_,_,_) then ();
-    case (c::rest,_,_,_)
+    case {} then ();
+    case c::rest
       algorithm
         rc := ass1[c];
         arrayUpdate(ass1,c,r);
@@ -1276,7 +1276,7 @@ public function MC21A
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
+  matchcontinue isyst
     local
       Integer nvars,neqns;
       BackendDAE.AdjacencyMatrix m;
@@ -1287,7 +1287,7 @@ algorithm
       BackendDAE.Shared shared;
       array<Integer> rowmarks,lookahead;
 
-    case (syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_)
+    case syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt))
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -1296,13 +1296,13 @@ algorithm
         rowmarks := arrayCreate(nvars,-1);
         lookahead := arrayCreate(neqns,0);
         (vec1,vec2) := getAssignment(clearMatching,nvars,neqns,isyst);
-        _ := cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,false);
+        cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,false);
         (vec1,vec2,syst,shared,arg) := MC21A1(1,1,nvars,neqns,m,mt,rowmarks,lookahead,vec1,vec2,isyst,ishared,inMatchingOptions,sssHandler,inArg);
         syst := BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_,_)
+    case _
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -1348,7 +1348,7 @@ protected function MC21A1
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (outAss1,outAss2,osyst,oshared,outArg):=
-  matchcontinue (i,rowmark,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,isyst,ishared,inMatchingOptions,sssHandler,inArg)
+  matchcontinue inArg
     local
       list<Integer> visitedcolums,changedEqns;
       BackendDAE.AdjacencyMatrix m1,mt1;
@@ -1358,12 +1358,12 @@ algorithm
       BackendDAE.Shared shared;
       array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1,lookahead1;
 
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case _
       algorithm
         true:=intGt(i,ne);
       then
         (ass1,ass2,isyst,ishared,inArg);
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case _
       algorithm
         // not assigned
         false := intGt(ass1[i],0);
@@ -1375,7 +1375,7 @@ algorithm
         (ass1_2,ass2_2,syst,shared,arg) := MC21A1(i_1,rowmark+1,nv_1,ne_1,m1,mt1,rowmarks1,lookahead1,ass1_1,ass2_1,syst,shared,inMatchingOptions,sssHandler,arg);
       then
         (ass1_2,ass2_2,syst,shared,arg);
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case _
       algorithm
         true := intGt(ass1[i],0);
         (ass1_1,ass2_1,syst,shared,arg) := MC21A1(i+1,rowmark,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,isyst,ishared,inMatchingOptions,sssHandler,inArg);
@@ -1402,12 +1402,12 @@ protected function MC21A1fixArrays
   output array<Integer> outlookahead;
 algorithm
   (outrowmarks,outlookahead):=
-  match (meqns,nv,ne,rowmarks,lookahead,changedEqns)
+  match meqns
     local
       Integer memsize;
       array<Integer> rowmarks1,lookahead1;
-    case ({},_,_,_,_,_) then (rowmarks,lookahead);
-    case (_::_,_,_,_,_,_)
+    case {} then (rowmarks,lookahead);
+    case _::_
       algorithm
         memsize := arrayLength(rowmarks);
         rowmarks1 := assignmentsArrayExpand(rowmarks,nv,memsize,-1);
@@ -1428,13 +1428,13 @@ protected function MC21A1fixArray
   input list<Integer> meqns "Marked Equations for Index Reduction";
   input array<Integer> arr;
 algorithm
-  _ :=
-  match (meqns,arr)
+  () :=
+  match meqns
     local
       Integer e;
       list<Integer> rest;
-    case ({},_) then ();
-    case (e::rest,_)
+    case {} then ();
+    case e::rest
       algorithm
         arrayUpdate(arr,e,0);
         MC21A1fixArray(rest,arr);
@@ -1467,12 +1467,12 @@ protected function MC21Aphase
                                          it could be used to prune the nodes, if a path is found the list is empty";
 algorithm
   outVisitedColums :=
-  match (stack,i,c,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,inVisitedColums)
+  match stack
     local
       list<Integer> rows;
       Boolean b;
-    case ({},_,_,_,_,_,_,_,_,_,_,_) then inVisitedColums;
-    case (_,_,_,_,_,_,_,_,_,_,_,_)
+    case {} then inVisitedColums;
+    case _
       algorithm
         // traverse all adiacent rows
         rows := List.select(m[c], Util.intPositive);
@@ -1507,8 +1507,8 @@ protected function MC21Achecklookahead
   output list<Integer> outVisitedColums;
 algorithm
   outVisitedColums:=
-  match (dolookahaed,rows,stack,i,c,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,inVisitedColums)
-    case (true,_,_,_,_,_,_,_,_,_,_,_,_,_)
+  match dolookahaed
+    case true
       then
         MC21AtraverseRowsUnmatched(rows,rows,stack,i,c,listLength(rows),nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,inVisitedColums);
     else
@@ -1537,23 +1537,23 @@ protected function MC21AtraverseRowsUnmatched
   output list<Integer> outVisitedColums;
 algorithm
   outVisitedColums:=
-  matchcontinue (rows,rows1,stack,i,c,l,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,inVisitedColums)
+  matchcontinue rows
     local
       list<Integer> rest;
       Integer r;
-    case ({},_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case {}
       algorithm
         arrayUpdate(lookahead,c,l);
        then
          MC21AtraverseRows(rows1,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,inVisitedColums);
-    case (r::_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case r::_
       algorithm
         // row is unmatched -> augmenting path found
         true := intLt(ass2[r],0);
         DFSBreasign(stack,r,ass1,ass2);
       then
         {};
-    case (_::rest,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case _::rest
       then
         MC21AtraverseRowsUnmatched(rest,rows1,stack,i,c,l,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,inVisitedColums);
   end matchcontinue;
@@ -1577,12 +1577,12 @@ protected function MC21AtraverseRows
   output list<Integer> outVisitedColums;
 algorithm
   outVisitedColums:=
-  matchcontinue (rows,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,inVisitedColums)
+  matchcontinue rows
     local
       list<Integer> rest,visitedColums;
       Integer rc,r;
-    case ({},_,_,_,_,_,_,_,_,_,_,_) then inVisitedColums;
-    case (r::rest,_,_,_,_,_,_,_,_,_,_,_)
+    case {} then inVisitedColums;
+    case r::rest
       algorithm
         // row is matched
         rc := ass2[r];
@@ -1592,7 +1592,7 @@ algorithm
         visitedColums := MC21Aphase(rc::stack,i,rc,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,rc::inVisitedColums);
       then
         MC21AtraverseRows1(rest,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,visitedColums);
-    case (_::rest,_,_,_,_,_,_,_,_,_,_,_)
+    case _::rest
       then
         MC21AtraverseRows(rest,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,inVisitedColums);
     else
@@ -1621,8 +1621,8 @@ protected function MC21AtraverseRows1
   output list<Integer> outVisitedColums;
 algorithm
   outVisitedColums:=
-  match (rows,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,inVisitedColums)
-    case (_,_,_,_,_,_,_,_,_,_,_,{}) then inVisitedColums;
+  match inVisitedColums
+    case {} then inVisitedColums;
     else MC21AtraverseRows(rows,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,inVisitedColums);
   end match;
 end MC21AtraverseRows1;
@@ -1642,7 +1642,7 @@ public function PF
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
+  matchcontinue isyst
     local
       Integer nvars,neqns;
       BackendDAE.AdjacencyMatrix m;
@@ -1653,7 +1653,7 @@ algorithm
       BackendDAE.Shared shared;
       array<Integer> rowmarks,lookahead;
       list<Integer> unmatched;
-    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_)
+    case BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt))
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -1668,7 +1668,7 @@ algorithm
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_,_)
+    case _
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -1712,7 +1712,7 @@ protected function PF1
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (outAss1,outAss2,osyst,oshared,outArg):=
-  match (i,unmatched,rowmarks,lookahead,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
+  match (unmatched, isyst)
     local
       BackendDAE.AdjacencyMatrix m,mt;
       Integer nv_1,ne_1,i_1;
@@ -1722,10 +1722,10 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1,lookahead1;
-    case (_,{},_,_,_,_,_,_,_,_,_,_,_)
+    case ({}, _)
       then
         (ass1,ass2,isyst,ishared,inArg);
-    case (_,_,_,_,BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_)
+    case (_, BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)))
       algorithm
         (i_1,unmatched1) := PFaugmentmatching(i,unmatched,nv,ne,m,mt,rowmarks,lookahead,ass1,ass2,listLength(unmatched),{});
         meqns := getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2,inArg);
@@ -1765,7 +1765,7 @@ protected function PF2
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (outunmatched,outrowmarks,outlookahead,nvars,neqns,outAss1,outAss2,osyst,oshared,outArg):=
-  match (meqns,unmatched,changedEqns,rowmarks,lookahead,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
+  match (meqns, inMatchingOptions)
     local
       Integer nv_1,ne_1;
       list<Integer> unmatched1;
@@ -1774,10 +1774,10 @@ algorithm
       BackendDAE.Shared shared;
       array<Integer> ass1_1,ass2_1,rowmarks1,lookahead1;
 
-    case ({},_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case ({}, _)
       then
         (unmatched,rowmarks,lookahead,nv,ne,ass1,ass2,isyst,ishared,inArg);
-    case (_,_,_,_,_,_,_,_,_,_,_,(BackendDAE.INDEX_REDUCTION(),_),_,_)
+    case (_, (BackendDAE.INDEX_REDUCTION(),_))
       algorithm
         (unmatched1,_,syst,shared,ass2_1,ass1_1,arg) := sssHandler(meqns,0,isyst,ishared,ass2,ass1,inArg);
         ne_1 := BackendDAEUtil.systemSize(syst);
@@ -1789,7 +1789,7 @@ algorithm
         MC21A1fixArray(unmatched1,lookahead1);
       then
         (unmatched1,rowmarks1,lookahead1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg);
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case (_, _)
       algorithm
         singularSystemError(meqns,0,isyst,ishared,ass1,ass2,inArg);
       then
@@ -1817,30 +1817,30 @@ protected function PFaugmentmatching
   output list<Integer> outUnmatched;
 algorithm
   (outI,outUnmatched):=
-  matchcontinue (i,U,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,previousUnmatched,unMatched)
+  matchcontinue U
     local
       list<Integer> rest,unmatched;
       Integer c,i_1;
       Boolean b;
-    case (_,{},_,_,_,_,_,_,_,_,_,_)
+    case {}
       algorithm
         // no augmenting path is found in pass
         true:=intEq(previousUnmatched,listLength(unMatched));
       then
         (i,unMatched);
-    case (_,{},_,_,_,_,_,_,_,_,_,_)
+    case {}
       algorithm
        // augmenting path is found in pass, next round
        (i_1,unmatched) := PFaugmentmatching(i+1,unMatched,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,listLength(unMatched),{});
       then
         (i_1,unmatched);
-    case (_,c::rest,_,_,_,_,_,_,_,_,_,_)
+    case c::rest
       algorithm
         true := intGt(ass1[c],-1);
         (i_1,unmatched) := PFaugmentmatching(i,rest,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,previousUnmatched,unMatched);
       then
         (i_1,unmatched);
-    case (_,c::rest,_,_,_,_,_,_,_,_,_,_)
+    case c::rest
       algorithm
         b := PFphase({c},i,c,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2);
         unmatched := List.consOnTrue(not b, c, unMatched);
@@ -1872,12 +1872,12 @@ protected function PFphase
   output Boolean matched;
 algorithm
   matched :=
-  match (stack,i,c,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2)
+  match stack
     local
       list<Integer> rows;
       Boolean b;
-    case ({},_,_,_,_,_,_,_,_,_,_) then false;
-    case (_,_,_,_,_,_,_,_,_,_,_)
+    case {} then false;
+    case _
       algorithm
         // traverse all adiacent rows
         rows := List.select(m[c], Util.intPositive);
@@ -1912,8 +1912,8 @@ protected function PFchecklookahead
   output Boolean matched;
 algorithm
   matched:=
-  match (dolookahaed,rows,stack,i,c,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2)
-    case (true,_,_,_,_,_,_,_,_,_,_,_,_)
+  match dolookahaed
+    case true
       then
         PFtraverseRowsUnmatched(rows,rows,stack,i,c,listLength(rows),nv,ne,m,mT,rowmarks,lookahead,ass1,ass2);
     else
@@ -1941,23 +1941,23 @@ protected function PFtraverseRowsUnmatched
   output Boolean matched;
 algorithm
   matched:=
-  matchcontinue (rows,rows1,stack,i,c,l,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2)
+  matchcontinue rows
     local
       list<Integer> rest;
       Integer r;
-    case ({},_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case {}
       algorithm
         arrayUpdate(lookahead,c,l);
        then
          PFtraverseRows(rows1,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2);
-    case (r::_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case r::_
       algorithm
         // row is unmatched -> augmenting path found
         true := intLt(ass2[r],0);
         DFSBreasign(stack,r,ass1,ass2);
       then
         true;
-    case (_::rest,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case _::rest
       then
         PFtraverseRowsUnmatched(rest,rows1,stack,i,c,l,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2);
   end matchcontinue;
@@ -1980,13 +1980,13 @@ protected function PFtraverseRows
   output Boolean matched;
 algorithm
   matched:=
-  matchcontinue (rows,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2)
+  matchcontinue rows
     local
       list<Integer> rest;
       Integer rc,r;
       Boolean b;
-    case ({},_,_,_,_,_,_,_,_,_,_) then false;
-    case (r::rest,_,_,_,_,_,_,_,_,_,_)
+    case {} then false;
+    case r::rest
       algorithm
         // row is matched
         rc := ass2[r];
@@ -1996,7 +1996,7 @@ algorithm
         b := PFphase(rc::stack,i,rc,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2);
       then
         PFtraverseRows1(rest,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,b);
-    case (_::rest,_,_,_,_,_,_,_,_,_,_)
+    case _::rest
       then
         PFtraverseRows(rest,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2);
     else
@@ -2025,8 +2025,8 @@ protected function PFtraverseRows1
   output Boolean matched;
 algorithm
   matched:=
-  match (rows,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,inMatched)
-    case (_,_,_,_,_,_,_,_,_,_,_,true) then inMatched;
+  match inMatched
+    case true then inMatched;
     else PFtraverseRows(rows,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2);
   end match;
 end PFtraverseRows1;
@@ -2045,9 +2045,9 @@ public function PFPlus
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
+  matchcontinue isyst
     local
-      Integer nvars,neqns,i;
+      Integer nvars,neqns;
       BackendDAE.AdjacencyMatrix m;
       BackendDAE.AdjacencyMatrixT mt;
       array<Integer> vec1,vec2;
@@ -2056,7 +2056,7 @@ algorithm
       BackendDAE.Shared shared;
       array<Integer> rowmarks,lookahead;
       list<Integer> unmatched;
-    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_)
+    case BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt))
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -2071,7 +2071,7 @@ algorithm
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_,_)
+    case _
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -2116,7 +2116,7 @@ protected function PFPlus1
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (outI,outAss1,outAss2,osyst,oshared,outArg):=
-  match (i,unmatched,rowmarks,lookahead,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
+  match (unmatched, isyst)
     local
       BackendDAE.AdjacencyMatrix m,mt;
       Integer nv_1,ne_1,i_1;
@@ -2126,10 +2126,10 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1,lookahead1;
-    case (_,{},_,_,_,_,_,_,_,_,_,_,_)
+    case ({}, _)
       then
         (i,ass1,ass2,isyst,ishared,inArg);
-    case (_,_,_,_,syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_)
+    case (_, syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)))
       algorithm
         (i_1,unmatched1) := PFPlusaugmentmatching(i,unmatched,nv,ne,m,mt,rowmarks,lookahead,ass1,ass2,listLength(unmatched),{},false);
         meqns := getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2,inArg);
@@ -2161,30 +2161,30 @@ protected function PFPlusaugmentmatching
   output list<Integer> outUnMatched;
 algorithm
   (outI,outUnMatched) :=
-  matchcontinue (i,U,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,previousUnmatched,unMatched,reverseRows)
+  matchcontinue U
     local
       list<Integer> rest,unmatched;
       Integer c,i_1;
       Boolean b;
-    case (_,{},_,_,_,_,_,_,_,_,_,_,_)
+    case {}
       algorithm
         // no augmenting path is found in pass
         true:=intEq(previousUnmatched,listLength(unMatched));
       then
         (i,unMatched);
-    case (_,{},_,_,_,_,_,_,_,_,_,_,_)
+    case {}
       algorithm
        // augmenting path is found in pass, next round
        (i_1,unmatched) := PFPlusaugmentmatching(i+1,unMatched,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,listLength(unMatched),{},reverseRows);
       then
         (i_1,unmatched);
-    case (_,c::rest,_,_,_,_,_,_,_,_,_,_,_)
+    case c::rest
       algorithm
         true := intGt(ass1[c],-1);
         (i_1,unmatched) := PFPlusaugmentmatching(i,rest,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,previousUnmatched,unMatched,reverseRows);
       then
         (i_1,unmatched);
-    case (_,c::rest,_,_,_,_,_,_,_,_,_,_,_)
+    case c::rest
       algorithm
         b := PFPlusphase({c},i,c,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows);
         unmatched := List.consOnTrue(not b, c, unMatched);
@@ -2217,19 +2217,19 @@ protected function PFPlusphase
   output Boolean matched;
 algorithm
   matched :=
-  match (stack,i,c,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows)
+  match (stack, reverseRows)
     local
       list<Integer> rows;
       Boolean b;
-    case ({},_,_,_,_,_,_,_,_,_,_,_) then false;
-    case (_,_,_,_,_,_,_,_,_,_,_,false)
+    case ({}, _) then false;
+    case (_, false)
       algorithm
         // traverse all adiacent rows
         rows := List.select(m[c], Util.intPositive);
         b := intLt(lookahead[c],listLength(rows));
      then
         PFPluschecklookahead(b,rows,stack,i,c,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows);
-    case (_,_,_,_,_,_,_,_,_,_,_,true)
+    case (_, true)
       algorithm
         // traverse all adiacent rows
         rows := List.select(m[c], Util.intPositive);
@@ -2265,8 +2265,8 @@ protected function PFPluschecklookahead
   output Boolean matched;
 algorithm
   matched:=
-  match (dolookahaed,rows,stack,i,c,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows)
-    case (true,_,_,_,_,_,_,_,_,_,_,_,_,_)
+  match dolookahaed
+    case true
       then
         PFPlustraverseRowsUnmatched(rows,rows,stack,i,c,listLength(rows),nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows);
     else
@@ -2295,23 +2295,23 @@ protected function PFPlustraverseRowsUnmatched
   output Boolean matched;
 algorithm
   matched:=
-  matchcontinue (rows,rows1,stack,i,c,l,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows)
+  matchcontinue rows
     local
       list<Integer> rest;
       Integer r;
-    case ({},_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case {}
       algorithm
         arrayUpdate(lookahead,c,l);
        then
          PFPlustraverseRows(rows1,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows);
-    case (r::_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case r::_
       algorithm
         // row is unmatched -> augmenting path found
         true := intLt(ass2[r],0);
         DFSBreasign(stack,r,ass1,ass2);
       then
         true;
-    case (_::rest,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case _::rest
       then
         PFPlustraverseRowsUnmatched(rest,rows1,stack,i,c,l,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows);
   end matchcontinue;
@@ -2335,13 +2335,13 @@ protected function PFPlustraverseRows
   output Boolean matched;
 algorithm
   matched:=
-  matchcontinue (rows,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows)
+  matchcontinue rows
     local
       list<Integer> rest;
       Integer rc,r;
       Boolean b;
-    case ({},_,_,_,_,_,_,_,_,_,_,_) then false;
-    case (r::rest,_,_,_,_,_,_,_,_,_,_,_)
+    case {} then false;
+    case r::rest
       algorithm
         // row is matched
         rc := ass2[r];
@@ -2351,7 +2351,7 @@ algorithm
         b := PFPlusphase(rc::stack,i,rc,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows);
       then
         PFPlustraverseRows1(rest,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,b,reverseRows);
-    case (_::rest,_,_,_,_,_,_,_,_,_,_,_)
+    case _::rest
       then
         PFPlustraverseRows(rest,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows);
     else
@@ -2381,8 +2381,8 @@ protected function PFPlustraverseRows1
   output Boolean matched;
 algorithm
   matched:=
-  match (rows,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,inMatched,reverseRows)
-    case (_,_,_,_,_,_,_,_,_,_,_,true,_) then inMatched;
+  match inMatched
+    case true then inMatched;
     else PFPlustraverseRows(rows,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows);
   end match;
 end PFPlustraverseRows1;
@@ -2401,7 +2401,7 @@ public function HK
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
+  matchcontinue isyst
     local
       Integer nvars,neqns;
       BackendDAE.AdjacencyMatrix m;
@@ -2412,7 +2412,7 @@ algorithm
       BackendDAE.Shared shared;
       array<Integer> rowmarks,level,collummarks;
       list<Integer> unmatched;
-    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_)
+    case BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt))
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -2428,7 +2428,7 @@ algorithm
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_,_)
+    case _
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -2473,7 +2473,7 @@ protected function HK1
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (outAss1,outAss2,osyst,oshared,outArg):=
-  match (i,unmatched,rowmarks,collummarks,level,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
+  match (unmatched, isyst)
     local
       BackendDAE.AdjacencyMatrix m,mt;
       Integer nv_1,ne_1,i_1;
@@ -2483,10 +2483,10 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1,collummarks1,level1;
-    case (_,{},_,_,_,_,_,_,_,_,_,_,_,_)
+    case ({}, _)
       then
         (ass1,ass2,isyst,ishared,inArg);
-    case (_,_,_,_,_,syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_)
+    case (_, syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)))
       algorithm
         (i_1,unmatched1) := HKphase(i,unmatched,nv,ne,m,mt,rowmarks,collummarks,level,ass1,ass2,listLength(unmatched),{});
         meqns := getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2,inArg);
@@ -2528,7 +2528,7 @@ protected function HK2
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (outunmatched,outrowmarks,outcollummarks,outlevel,nvars,neqns,outAss1,outAss2,osyst,oshared,outArg):=
-  match (meqns,unmatched,changedEqns,rowmarks,collummarks,level,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
+  match (meqns, inMatchingOptions)
     local
       Integer nv_1,ne_1;
       list<Integer> unmatched1;
@@ -2537,10 +2537,10 @@ algorithm
       BackendDAE.Shared shared;
       array<Integer> ass1_1,ass2_1,rowmarks1,collummarks1,level1;
 
-    case ({},_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case ({}, _)
       then
         (unmatched,rowmarks,collummarks,level,nv,ne,ass1,ass2,isyst,ishared,inArg);
-    case (_,_,_,_,_,_,_,_,_,_,_,_,(BackendDAE.INDEX_REDUCTION(),_),_,_)
+    case (_, (BackendDAE.INDEX_REDUCTION(),_))
       algorithm
         (unmatched1,_,syst,shared,ass2_1,ass1_1,arg) := sssHandler(meqns,0,isyst,ishared,ass2,ass1,inArg);
         ne_1 := BackendDAEUtil.systemSize(syst);
@@ -2552,7 +2552,7 @@ algorithm
         level1 := assignmentsArrayExpand(level,ne_1,arrayLength(level),-1);
       then
         (unmatched1,rowmarks1,collummarks1,level1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg);
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case (_, _)
       algorithm
         singularSystemError(meqns,0,isyst,ishared,ass1,ass2,inArg);
       then
@@ -2581,29 +2581,29 @@ protected function HKphase
   output list<Integer> outunMatched;
 algorithm
   (outI,outunMatched):=
-  matchcontinue (i,U,nv,ne,m,mT,rowmarks,collummarks,level,ass1,ass2,previousUnmatched,unMatched)
+  matchcontinue U
     local
       list<Integer> unmatched;
       list<tuple<Integer,Integer>> rows;
       Integer i_1;
-    case (_,{},_,_,_,_,_,_,_,_,_,_,_)
+    case {}
       algorithm
         // no augmenting path is found in phase
         true:=intEq(previousUnmatched,listLength(unMatched));
       then
         (i,unMatched);
-    case (_,{},_,_,_,_,_,_,_,_,_,_,_)
+    case {}
       algorithm
         // augmenting path is found in phase, next round
         (i_1,unmatched) := HKphase(i+1,unMatched,nv,ne,m,mT,rowmarks,collummarks,level,ass1,ass2,listLength(unMatched),{});
       then
         (i_1,unmatched);
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case _
       algorithm
         // BFS phase to get the level information
         rows := HKBFS(U,nv,ne,m,mT,rowmarks,i,level,NONE(),ass1,ass2,{});
         // DFS to match
-        _ := HKDFS(rows,i,nv,ne,m,mT,collummarks,level,ass1,ass2,{});
+        HKDFS(rows,i,nv,ne,m,mT,collummarks,level,ass1,ass2,{});
         // remove matched collums from U
         unmatched := HKgetUnmatched(U,ass1,{});
         (i_1,unmatched) := HKphase(i,{},nv,ne,m,mT,rowmarks,collummarks,level,ass1,ass2,previousUnmatched,unmatched);
@@ -2624,17 +2624,17 @@ protected function HKgetUnmatched
   output list<Integer> outUnmatched;
 algorithm
   outUnmatched:=
-  matchcontinue (U,ass1,inUnmatched)
+  matchcontinue U
     local
       list<Integer> rest;
       Integer c;
-    case ({},_,_) then inUnmatched;
-    case (c::rest,_,_)
+    case {} then inUnmatched;
+    case c::rest
       algorithm
         true := intGt(ass1[c],0);
       then
         HKgetUnmatched(rest,ass1,inUnmatched);
-    case (c::rest,_,_)
+    case c::rest
       then
         HKgetUnmatched(rest,ass1,c::inUnmatched);
   end matchcontinue;
@@ -2659,14 +2659,14 @@ protected function HKBFS
   output list<tuple<Integer,Integer>> outRows "unmatched rows found by BFS";
 algorithm
   outRows:=
-  match (colums,nv,ne,m,mT,rowmarks,i,level,lowestL,ass1,ass2,inRows)
+  match colums
     local
       list<Integer> rest;
       list<tuple<Integer,Integer>> rows;
       Integer c;
       Option<Integer> ll;
-    case ({},_,_,_,_,_,_,_,_,_,_,_) then inRows;
-    case (c::rest,_,_,_,_,_,_,_,_,_,_,_)
+    case {} then inRows;
+    case c::rest
       algorithm
         (rows,ll) := HKBFSBphase({c},i,0,lowestL,nv,ne,m,mT,rowmarks,level,ass1,ass2,inRows,{});
       then
@@ -2700,27 +2700,27 @@ protected function HKBFSBphase
   output Option<Integer> outlowestL;
 algorithm
   (outRows,outlowestL) :=
-  match (queue,i,l,lowestL,nv,ne,m,mT,rowmarks,level,ass1,ass2,inRows,queue1)
+  match (queue, lowestL, queue1)
     local
       list<Integer> rest,queue2,cr;
       list<tuple<Integer,Integer>> rows;
       Integer c,lowl,l_1;
       Boolean b;
       Option<Integer> ll;
-    case ({},_,_,_,_,_,_,_,_,_,_,_,_,{}) then (inRows,lowestL);
-    case ({},_,_,SOME(lowl),_,_,_,_,_,_,_,_,_,_)
+    case ({}, _, {}) then (inRows,lowestL);
+    case ({}, SOME(lowl), _)
       algorithm
         l_1 := l+1;
         b := intGt(l_1,lowl);
         (rows,ll) := HKBFSBphase1(b,queue1,i,l_1,lowestL,nv,ne,m,mT,rowmarks,level,ass1,ass2,inRows,{});
       then
         (rows,ll);
-    case ({},_,_,NONE(),_,_,_,_,_,_,_,_,_,_)
+    case ({}, NONE(), _)
       algorithm
         (rows,ll) := HKBFSBphase(queue1,i,l+1,lowestL,nv,ne,m,mT,rowmarks,level,ass1,ass2,inRows,{});
       then
         (rows,ll);
-    case (c::rest,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case (c::rest, _, _)
       algorithm
         // traverse all adiacent rows
         cr := List.select(m[c], Util.intPositive);
@@ -2762,12 +2762,12 @@ protected function HKBFSBphase1
   output Option<Integer> outlowestL;
 algorithm
   (outRows,outlowestL) :=
-  match (inUnMaRowFound,queue,i,l,lowestL,nv,ne,m,mT,rowmarks,level,ass1,ass2,inRows,queue1)
+  match inUnMaRowFound
     local
       Option<Integer> ll;
       list<tuple<Integer,Integer>> rows;
-    case (true,_,_,_,_,_,_,_,_,_,_,_,_,_,_) then (inRows,SOME(l));
-    case (false,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case true then (inRows,SOME(l));
+    case false
       algorithm
         (rows,ll) := HKBFSBphase(queue,i,l,lowestL,nv,ne,m,mT,rowmarks,level,ass1,ass2,inRows,queue1);
       then
@@ -2800,21 +2800,21 @@ protected function HKBFStraverseRows
   output Boolean unmarowFound;
 algorithm
   (outEqnqueue,outRows,unmarowFound):=
-  matchcontinue (rows,queue,i,l,m,mT,rowmarks,level,ass1,ass2,inRows,inunmarowFound)
+  matchcontinue rows
     local
       list<Integer> rest,queue1;
       list<tuple<Integer,Integer>> rowstpl;
       Integer rc,r;
       Boolean b;
-    case ({},_,_,_,_,_,_,_,_,_,_,_) then (listReverse(queue),inRows,inunmarowFound);
-    case (r::rest,_,_,_,_,_,_,_,_,_,_,_)
+    case {} then (listReverse(queue),inRows,inunmarowFound);
+    case r::rest
       algorithm
         // row is visited
         false := intLt(rowmarks[r],i);
         (queue1,rowstpl,b) := HKBFStraverseRows(rest,queue,i,l,m,mT,rowmarks,level,ass1,ass2,inRows,inunmarowFound);
       then
         (queue1,rowstpl,b);
-    case (r::rest,_,_,_,_,_,_,_,_,_,_,_)
+    case r::rest
       algorithm
         // row is unmatched
         true := intLt(ass2[r],0);
@@ -2822,7 +2822,7 @@ algorithm
         (queue1,rowstpl,b) := HKBFStraverseRows(rest,queue,i,l,m,mT,rowmarks,level,ass1,ass2,(r,l)::inRows,true);
       then
         (queue1,rowstpl,b);
-    case (r::rest,_,_,_,_,_,_,_,_,_,_,_)
+    case r::rest
       algorithm
         // row is matched
         rc := ass2[r];
@@ -2857,14 +2857,14 @@ protected function HKDFS
   output list<Integer> outUnmatchedRows;
 algorithm
   outUnmatchedRows:=
-  match (unmatchedRows,i,nv,ne,m,mT,collummarks,level,ass1,ass2,inUnmatchedRows)
+  match unmatchedRows
     local
        list<tuple<Integer,Integer>> rest;
        list<Integer> ur;
        Integer r,l;
        Boolean b;
-    case ({},_,_,_,_,_,_,_,_,_,_) then inUnmatchedRows;
-    case ((r,l)::rest,_,_,_,_,_,_,_,_,_,_)
+    case {} then inUnmatchedRows;
+    case (r,l)::rest
       algorithm
         // search augmenting paths
         b := HKDFSphase({r},i,r,l,nv,ne,m,mT,collummarks,level,ass1,ass2,false);
@@ -2899,11 +2899,11 @@ protected function HKDFSphase
   output Boolean matched;
 algorithm
   matched :=
-  match (stack,i,r,l,nv,ne,m,mT,collummarks,level,ass1,ass2,inMatched)
+  match stack
     local
       list<Integer> collums;
-    case ({},_,_,_,_,_,_,_,_,_,_,_,_) then inMatched;
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case {} then inMatched;
+    case _
       algorithm
         // traverse all adiacent rows
         collums := List.select(mT[r], Util.intPositive);
@@ -2936,19 +2936,19 @@ protected function HKDFStraverseCollums
   output Boolean matched;
 algorithm
   matched:=
-  matchcontinue (collums,stack,i,l,nv,ne,m,mT,collummarks,level,ass1,ass2,inMatched)
+  matchcontinue collums
     local
       list<Integer> rest;
       Integer r,c;
       Boolean b;
-    case ({},_,_,_,_,_,_,_,_,_,_,_,_) then inMatched;
-    case (c::rest,_,_,_,_,_,_,_,_,_,_,_,_)
+    case {} then inMatched;
+    case c::rest
       algorithm
         // collum is not in graph
         false := intEq(level[c],l);
       then
         HKDFStraverseCollums(rest,stack,i,l,nv,ne,m,mT,collummarks,level,ass1,ass2,inMatched);
-    case (c::_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case c::_
       algorithm
         // collum is in graph
         true := intEq(level[c],l);
@@ -2959,7 +2959,7 @@ algorithm
         HKDFSreasign(stack,c,ass1,ass2);
       then
         true;
-    case (c::rest,_,_,_,_,_,_,_,_,_,_,_,_)
+    case c::rest
       algorithm
         // collum is in graph
         true := intEq(level[c],l);
@@ -2972,7 +2972,7 @@ algorithm
         b := HKDFSphase(r::stack,i,r,l-1,nv,ne,m,mT,collummarks,level,ass1,ass2,inMatched);
       then
         HKDFStraverseCollums1(b,rest,stack,i,l,nv,ne,m,mT,collummarks,level,ass1,ass2);
-    case (c::rest,_,_,_,_,_,_,_,_,_,_,_,_)
+    case c::rest
       algorithm
         // collum is in graph
         true := intEq(level[c],l);
@@ -3007,8 +3007,8 @@ protected function HKDFStraverseCollums1
   output Boolean matched;
 algorithm
   matched:=
-  match (inMatched,rows,stack,i,l,nv,ne,m,mT,collummarks,level,ass1,ass2)
-    case (true,_,_,_,_,_,_,_,_,_,_,_,_) then inMatched;
+  match inMatched
+    case true then inMatched;
     else HKDFStraverseCollums(rows,stack,i,l,nv,ne,m,mT,collummarks,level,ass1,ass2,inMatched);
   end match;
 end HKDFStraverseCollums1;
@@ -3023,12 +3023,12 @@ protected function HKDFSreasign
   input array<Integer> ass1 "eqn := ass1[var]";
   input array<Integer> ass2 "var := ass2[eqn]";
 algorithm
-  _ := match (stack,c,ass1,ass2)
+  () := match stack
     local
       Integer r,cr;
       list<Integer> rest;
-    case ({},_,_,_) then ();
-    case (r::rest,_,_,_)
+    case {} then ();
+    case r::rest
       algorithm
         cr := ass2[r];
         arrayUpdate(ass1,c,r);
@@ -3053,7 +3053,7 @@ public function HKDW
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
+  matchcontinue isyst
     local
       Integer nvars,neqns;
       BackendDAE.AdjacencyMatrix m;
@@ -3064,7 +3064,7 @@ algorithm
       BackendDAE.Shared shared;
       array<Integer> rowmarks,level,collummarks;
       list<Integer> unmatched;
-    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_)
+    case BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt))
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -3080,7 +3080,7 @@ algorithm
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_,_)
+    case _
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -3125,7 +3125,7 @@ protected function HKDW1
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (outAss1,outAss2,osyst,oshared,outArg):=
-  match (i,unmatched,rowmarks,collummarks,level,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
+  match (unmatched, isyst)
     local
       BackendDAE.AdjacencyMatrix m,mt;
       Integer nv_1,ne_1,i_1;
@@ -3135,10 +3135,10 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1,collummarks1,level1;
-    case (_,{},_,_,_,_,_,_,_,_,_,_,_,_)
+    case ({}, _)
       then
         (ass1,ass2,isyst,ishared,inArg);
-    case (_,_,_,_,_,syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_)
+    case (_, syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)))
       algorithm
         (i_1,unmatched1) := HKDWphase(i,unmatched,nv,ne,m,mt,rowmarks,collummarks,level,ass1,ass2,listLength(unmatched),{});
         meqns := getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2,inArg);
@@ -3170,25 +3170,25 @@ protected function HKDWphase
   output list<Integer> outunMatched;
 algorithm
   (outI,outunMatched):=
-  matchcontinue (i,U,nv,ne,m,mT,rowmarks,collummarks,level,ass1,ass2,previousUnmatched,unMatched)
+  matchcontinue U
     local
       list<Integer> unmatched;
       list<tuple<Integer,Integer>> rows;
       list<Integer> ur;
       Integer i_1;
-    case (_,{},_,_,_,_,_,_,_,_,_,_,_)
+    case {}
       algorithm
         // no augmenting path is found in phase
         true:=intEq(previousUnmatched,listLength(unMatched));
       then
         (i,unMatched);
-    case (_,{},_,_,_,_,_,_,_,_,_,_,_)
+    case {}
       algorithm
        // augmenting path is found in phase, next round
         (i_1,unmatched) := HKphase(i+1,unMatched,nv,ne,m,mT,rowmarks,collummarks,level,ass1,ass2,listLength(unMatched),{});
       then
         (i_1,unmatched);
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case _
       algorithm
         // BFS phase to get the level information
         rows := HKBFS(U,nv,ne,m,mT,rowmarks,i,level,NONE(),ass1,ass2,{});
@@ -3222,16 +3222,16 @@ protected function HKDWDFS
   input array<Integer> ass1 "ass[eqnindx]=varindx";
   input array<Integer> ass2 "ass[varindx]=eqnindx";
 algorithm
-  _:=
-  match (unmatchedRows,i,nv,ne,m,mT,collummarks,ass1,ass2)
+  ():=
+  match unmatchedRows
     local
        list<Integer> rest;
        Integer r;
-    case ({},_,_,_,_,_,_,_,_) then ();
-    case (r::rest,_,_,_,_,_,_,_,_)
+    case {} then ();
+    case r::rest
       algorithm
         // search augmenting paths
-        _ := HKDWDFSphase({r},i,r,nv,ne,m,mT,collummarks,ass1,ass2,false);
+        HKDWDFSphase({r},i,r,nv,ne,m,mT,collummarks,ass1,ass2,false);
         HKDWDFS(rest,i,nv,ne,m,mT,collummarks,ass1,ass2);
       then
         ();
@@ -3261,11 +3261,11 @@ protected function HKDWDFSphase
   output Boolean matched;
 algorithm
   matched :=
-  match (stack,i,r,nv,ne,m,mT,collummarks,ass1,ass2,inMatched)
+  match stack
     local
       list<Integer> collums;
-    case ({},_,_,_,_,_,_,_,_,_,_) then inMatched;
-    case (_,_,_,_,_,_,_,_,_,_,_)
+    case {} then inMatched;
+    case _
       algorithm
         // traverse all adiacent rows
         collums := List.select(mT[r], Util.intPositive);
@@ -3296,13 +3296,13 @@ protected function HKDWDFStraverseCollums
   output Boolean matched;
 algorithm
   matched:=
-  matchcontinue (collums,stack,i,nv,ne,m,mT,collummarks,ass1,ass2,inMatched)
+  matchcontinue collums
     local
       list<Integer> rest;
       Integer r,c;
       Boolean b;
-    case ({},_,_,_,_,_,_,_,_,_,_) then inMatched;
-    case (c::_,_,_,_,_,_,_,_,_,_,_)
+    case {} then inMatched;
+    case c::_
       algorithm
         // collum is unvisited
         true := intLt(collummarks[c],i);
@@ -3311,7 +3311,7 @@ algorithm
         HKDFSreasign(stack,c,ass1,ass2);
       then
         true;
-    case (c::rest,_,_,_,_,_,_,_,_,_,_)
+    case c::rest
       algorithm
         // collum is unvisited
         true := intLt(collummarks[c],i);
@@ -3322,7 +3322,7 @@ algorithm
         b := HKDWDFSphase(r::stack,i,r,nv,ne,m,mT,collummarks,ass1,ass2,inMatched);
       then
         HKDWDFStraverseCollums1(b,rest,stack,i,nv,ne,m,mT,collummarks,ass1,ass2);
-    case (c::rest,_,_,_,_,_,_,_,_,_,_)
+    case c::rest
       algorithm
         // collum is visited
         false := intLt(collummarks[c],i);
@@ -3353,8 +3353,8 @@ protected function HKDWDFStraverseCollums1
   output Boolean matched;
 algorithm
   matched:=
-  match (inMatched,rows,stack,i,nv,ne,m,mT,collummarks,ass1,ass2)
-    case (true,_,_,_,_,_,_,_,_,_,_) then inMatched;
+  match inMatched
+    case true then inMatched;
     else HKDWDFStraverseCollums(rows,stack,i,nv,ne,m,mT,collummarks,ass1,ass2,inMatched);
   end match;
 end HKDWDFStraverseCollums1;
@@ -3374,7 +3374,7 @@ public function ABMP
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
+  matchcontinue isyst
     local
       Integer nvars,neqns;
       BackendDAE.AdjacencyMatrix m;
@@ -3385,7 +3385,7 @@ algorithm
       BackendDAE.Shared shared;
       array<Integer> rowmarks,level,collummarks,rlevel,colptrs;
       list<Integer> unmatched;
-    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_)
+    case BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt))
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -3403,7 +3403,7 @@ algorithm
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_,_)
+    case _
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -3450,7 +3450,7 @@ protected function ABMP1
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (outAss1,outAss2,osyst,oshared,outArg):=
-  match (i,unmatched,rowmarks,collummarks,level,rlevel,colptrs,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
+  match (unmatched, isyst)
     local
       BackendDAE.AdjacencyMatrix m,mt;
       Integer nv_1,ne_1,i_1,lim;
@@ -3460,10 +3460,10 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1,collummarks1,level1,rlevel1;
-    case (_,{},_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case ({}, _)
       then
         (ass1,ass2,isyst,ishared,inArg);
-    case (_,_,_,_,_,_,_,BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_)
+    case (_, BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)))
       algorithm
         lim := integer(0.1 * sqrt(arrayLength(ass1)));
         unmatched1 := ABMPphase(unmatched,i,nv,ne,m,mt,rowmarks,rlevel,colptrs,lim,ass1,ass2);
@@ -3509,7 +3509,7 @@ protected function ABMP2
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (outunmatched,outrowmarks,outcollummarks,outlevel,outrlevel,nvars,neqns,outAss1,outAss2,osyst,oshared,outArg):=
-  match (meqns,unmatched,changedEqns,rowmarks,collummarks,level,rlevel,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
+  match (meqns, inMatchingOptions)
     local
       Integer nv_1,ne_1;
       list<Integer> unmatched1;
@@ -3518,10 +3518,10 @@ algorithm
       BackendDAE.Shared shared;
       array<Integer> ass1_1,ass2_1,rowmarks1,collummarks1,level1,rlevel1;
 
-    case ({},_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case ({}, _)
       then
         (unmatched,rowmarks,collummarks,level,rlevel,nv,ne,ass1,ass2,isyst,ishared,inArg);
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,(BackendDAE.INDEX_REDUCTION(),_),_,_)
+    case (_, (BackendDAE.INDEX_REDUCTION(),_))
       algorithm
         (unmatched1,_,syst,shared,ass2_1,ass1_1,arg) := sssHandler(meqns,0,isyst,ishared,ass2,ass1,inArg);
         ne_1 := BackendDAEUtil.systemSize(syst);
@@ -3534,7 +3534,7 @@ algorithm
         level1 := assignmentsArrayExpand(level,ne_1,arrayLength(level),-1);
       then
         (unmatched1,rowmarks1,collummarks1,level1,rlevel1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg);
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case (_, _)
       algorithm
         singularSystemError(meqns,0,isyst,ishared,ass2,ass1,inArg);
       then
@@ -3562,11 +3562,11 @@ protected function ABMPphase
   output list<Integer> unMatched;
 algorithm
   unMatched:=
-  match (U,i,nv,ne,m,mT,rowmarks,level,colptrs,lim,ass1,ass2)
+  match U
     local
       list<Integer> ur;
-    case ({},_,_,_,_,_,_,_,_,_,_,_) then {};
-    case (_,_,_,_,_,_,_,_,_,_,_,_)
+    case {} then {};
+    case _
       algorithm
         // BFS to assign levels
         ur := ABMPBFSphase(U,i,0,lim,listLength(U),nv,ne,m,mT,rowmarks,level,ass1,ass2,{},{});
@@ -3601,12 +3601,12 @@ protected function ABMPphase1
   output list<Integer> unMatched;
 algorithm
   unMatched:=
-  match (U,unmatchedRows,i,nv,ne,m,mT,rowmarks,level,colptrs,lim,ass1,ass2)
+  match unmatchedRows
     local
       list<Integer> unmatched;
       Integer L,r;
-    case (_,{},_,_,_,_,_,_,_,_,_,_,_) then U;
-    case (_,r::_,_,_,_,_,_,_,_,_,_,_,_)
+    case {} then U;
+    case r::_
       algorithm
         L := level[r];
         ABMPDFS(unmatchedRows,0,L,nv,ne,m,mT,level,colptrs,ass1,ass2,{});
@@ -3643,14 +3643,14 @@ protected function ABMPphase2
   output list<Integer> unMatched;
 algorithm
   unMatched:=
-  matchcontinue (U,i,L,nv,ne,m,mT,rowmarks,level,colptrs,lim,ass1,ass2)
-    case ({},_,_,_,_,_,_,_,_,_,_,_,_) then U;
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_)
+  matchcontinue U
+    case {} then U;
+    case _
       algorithm
         true := intGt(50*L,listLength(U));
       then
        U;
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case _
       // next round width updated level
       then
        ABMPphase(U,i,nv,ne,m,mT,rowmarks,level,colptrs,lim,ass1,ass2);
@@ -3683,19 +3683,19 @@ protected function ABMPBFSphase
   output list<Integer> outunMatched;
 algorithm
   outunMatched :=
-  match (queue,i,L,lim,lim1,nv,ne,m,mT,rowmarks,level,ass1,ass2,nextqueue,unMatched)
+  match (queue, nextqueue)
     local
       list<Integer> rest,rows,queue1,unmatched;
       Integer c,l;
       Boolean b;
-    case ({},_,_,_,_,_,_,_,_,_,_,_,_,{},_) then unMatched;
-    case ({},_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case ({}, {}) then unMatched;
+    case ({}, _)
       algorithm
         l := L+2;
         b := intGt(l,lim) or intGt(50*l,lim1);
       then
         ABMPBFSphase1(b,nextqueue,i,l,lim,lim1,nv,ne,m,mT,rowmarks,level,ass1,ass2,{},unMatched);
-    case (c::rest,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case (c::rest, _)
       algorithm
         // traverse all adiacent rows
         rows := List.select(m[c], Util.intPositive);
@@ -3732,9 +3732,9 @@ protected function ABMPBFSphase1
   output list<Integer> outunMatched;
 algorithm
   outunMatched :=
-  match (inStop,queue,i,L,lim,lim1,nv,ne,m,mT,rowmarks,level,ass1,ass2,nextqueue,unMatched)
-    case (true,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_) then unMatched;
-    case (false,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+  match inStop
+    case true then unMatched;
+    case false
       then
         ABMPBFSphase(queue,i,L,lim,lim1,nv,ne,m,mT,rowmarks,level,ass1,ass2,nextqueue,unMatched);
     else
@@ -3765,12 +3765,12 @@ protected function ABMPBFStraverseRows
   output list<Integer> outUnmatched;
 algorithm
   (outEqnqueue,outUnmatched):=
-  matchcontinue (rows,i,L,nv,ne,m,mT,rowmarks,level,ass1,ass2,queue,unMatched)
+  matchcontinue rows
     local
       list<Integer> rest,queue1,unmatched;
       Integer rc,r;
-    case ({},_,_,_,_,_,_,_,_,_,_,_,_) then (listReverse(queue),unMatched);
-    case (r::rest,_,_,_,_,_,_,_,_,_,_,_,_)
+    case {} then (listReverse(queue),unMatched);
+    case r::rest
       algorithm
         // row is unvisited
         false := intEq(rowmarks[r],i);
@@ -3781,7 +3781,7 @@ algorithm
         (queue1,unmatched) := ABMPBFStraverseRows(rest,i,L,nv,ne,m,mT,rowmarks,level,ass1,ass2,queue,r::unMatched);
       then
         (queue1,unmatched);
-    case (r::rest,_,_,_,_,_,_,_,_,_,_,_,_)
+    case r::rest
       algorithm
         // row is unvisited
         false := intEq(rowmarks[r],i);
@@ -3792,7 +3792,7 @@ algorithm
         (queue1,unmatched) := ABMPBFStraverseRows(rest,i,L,nv,ne,m,mT,rowmarks,level,ass1,ass2,rc::queue,unMatched);
       then
         (queue1,unmatched);
-    case (r::rest,_,_,_,_,_,_,_,_,_,_,_,_)
+    case r::rest
       algorithm
         // row is visited
         true := intEq(rowmarks[r],i);
@@ -3823,18 +3823,18 @@ protected function ABMPDFS
   input array<Integer> ass2 "ass[varindx]=eqnindx";
   input list<Integer> unMatched;
 algorithm
-  _:=
-  matchcontinue (unmatchedRows,i,L,nv,ne,m,mT,level,colptrs,ass1,ass2,unMatched)
+  ():=
+  matchcontinue unmatchedRows
     local
        list<Integer> rest,unmatched;
        Integer r,i_1;
        Boolean b;
-    case ({},_,_,_,_,_,_,_,_,_,_,_) then ();
-    case (_,_,_,_,_,_,_,_,_,_,_,_)
+    case {} then ();
+    case _
       algorithm
         false := intLt(i,ne);
       then ();
-    case (r::rest,_,_,_,_,_,_,_,_,_,_,_)
+    case r::rest
       algorithm
         // search augmenting paths
         arrayUpdate(colptrs,r,0);
@@ -3869,52 +3869,52 @@ protected function ABMPDFS1
   input array<Integer> ass1 "ass[eqnindx]=varindx";
   input array<Integer> ass2 "ass[varindx]=eqnindx";
 algorithm
-  _:=
-  matchcontinue (inMatched,r,unmatchedRows,unMatched,i,L,nv,ne,m,mT,level,colptrs,ass1,ass2)
+  ():=
+  matchcontinue (inMatched, unmatchedRows, unMatched)
     local
        list<Integer> unmatched;
        Integer r1,r2,l;
-    case (_,_,{},_,_,_,_,_,_,_,_,_,_,_) then ();
-    case (true,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case (_, {}, _) then ();
+    case (true, _, _)
       algorithm
         true := intGt(50*L,listLength(unmatchedRows)+listLength(unMatched));
       then ();
-    case (true,_,_,{},_,_,_,_,_,_,_,_,_,_)
+    case (true, _, {})
       algorithm
         false := intGt(50*L,listLength(unmatchedRows)+listLength(unMatched));
         ABMPDFS(unmatchedRows,i,L,nv,ne,m,mT,level,colptrs,ass1,ass2,{});
       then ();
-    case (true,_,r1::_,r2::{},_,_,_,_,_,_,_,_,_,_)
+    case (true, r1::_, r2::{})
       algorithm
         false := intGt(50*L,listLength(unmatchedRows)+listLength(unMatched));
         false := intEq(L,level[r1]);
         l := level[r2];
         ABMPDFS(r2::unmatchedRows,i,l,nv,ne,m,mT,level,colptrs,ass1,ass2,{});
       then ();
-    case (true,_,r1::_,_,_,_,_,_,_,_,_,_,_,_)
+    case (true, r1::_, _)
       algorithm
         false := intGt(50*L,listLength(unmatchedRows)+listLength(unMatched));
         false := intEq(L,level[r1]);
-        (r2::unmatched) := listReverse(unMatched);
+        r2::unmatched := listReverse(unMatched);
         l := level[r2];
         unmatched := listAppend(unmatched,r2::unmatchedRows) annotation(__OpenModelica_DisableListAppendWarning=true);
         ABMPDFS(unmatchedRows,i,l,nv,ne,m,mT,level,colptrs,ass1,ass2,{});
       then ();
-    case (_,_,r1::_,{},_,_,_,_,_,_,_,_,_,_)
+    case (_, r1::_, {})
       algorithm
         false := intEq(L,level[r1]);
         l := level[r];
         ABMPDFS(unmatchedRows,i,l,nv,ne,m,mT,level,colptrs,ass1,ass2,{});
       then ();
-    case (_,_,r1::_,_,_,_,_,_,_,_,_,_,_,_)
+    case (_, r1::_, _)
       algorithm
         false := intEq(L,level[r1]);
-        (r2::unmatched) := listReverse(unMatched);
+        r2::unmatched := listReverse(unMatched);
         l := level[r2];
         unmatched := listAppend(r2::unmatched,unmatchedRows);
         ABMPDFS(unmatched,i,l,nv,ne,m,mT,level,colptrs,ass1,ass2,{});
       then ();
-    case (_,_,r1::_,_,_,_,_,_,_,_,_,_,_,_)
+    case (_, r1::_, _)
       algorithm
         true := intEq(L,level[r1]);
         ABMPDFS(unmatchedRows,i,L,nv,ne,m,mT,level,colptrs,ass1,ass2,unMatched);
@@ -3945,13 +3945,13 @@ protected function ABMPDFSphase
   output Boolean matched;
 algorithm
   (outI,matched) :=
-  match (stack,i,r,nv,ne,m,mT,level,colptrs,ass1,ass2)
+  match stack
     local
       list<Integer> collums;
       Integer desL,i_1;
       Boolean b;
-    case ({},_,_,_,_,_,_,_,_,_,_) then (i,false);
-    case (_,_,_,_,_,_,_,_,_,_,_)
+    case {} then (i,false);
+    case _
       algorithm
         // traverse all adiacent rows
         collums := List.select(mT[r], Util.intPositive);
@@ -3989,18 +3989,18 @@ protected function ABMPDFStraverseCollums
   output Boolean matched;
 algorithm
   (outI,matched):=
-  matchcontinue (collums,counter,stack,r,i,desL,nv,ne,m,mT,level,colptrs,ass1,ass2)
+  matchcontinue collums
     local
       list<Integer> rest;
       Integer rc,c,i_1;
       Boolean b;
-    case ({},_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case {}
       algorithm
         arrayUpdate(level,r,level[r]+2);
         arrayUpdate(colptrs,r,0);
       then
         (i+1,false);
-    case (c::_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case c::_
       algorithm
         // collum is unmatched
         true := intLt(ass1[c],0);
@@ -4008,7 +4008,7 @@ algorithm
         HKDFSreasign(stack,c,ass1,ass2);
       then
         (i,true);
-    case (c::rest,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case c::rest
       algorithm
         // collum is unvisited
         true := intEq(level[c],desL);
@@ -4020,7 +4020,7 @@ algorithm
         (i_1,b) := ABMPDFStraverseCollums1(b,counter+1,rest,stack,r,i_1,desL,nv,ne,m,mT,level,colptrs,ass1,ass2);
       then
         (i_1,b);
-    case (_::rest,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case _::rest
       algorithm
         (i_1,b) := ABMPDFStraverseCollums(rest,counter+1,stack,r,i,desL,nv,ne,m,mT,level,colptrs,ass1,ass2);
       then
@@ -4055,11 +4055,11 @@ protected function ABMPDFStraverseCollums1
   output Boolean matched;
 algorithm
  (outI,matched):=
-  match (inMatched,counter,rows,stack,r,i,desL,nv,ne,m,mT,level,colptrs,ass1,ass2)
+  match (inMatched, i)
     local
       Integer i_1;
       Boolean b;
-    case (true,_,_,_,_,i_1,_,_,_,_,_,_,_,_,_)
+    case (true, i_1)
        then (i_1,true);
     else
       algorithm
@@ -4084,7 +4084,7 @@ public function PR_FIFO_FAIR
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
+  matchcontinue isyst
     local
       Integer nvars,neqns;
       BackendDAE.AdjacencyMatrix m;
@@ -4096,7 +4096,7 @@ algorithm
       array<Integer> l_label,r_label;
       list<Integer> unmatched;
 
-    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_)
+    case BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt))
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -4111,7 +4111,7 @@ algorithm
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_,_)
+    case _
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -4154,7 +4154,7 @@ protected function PR_FIFO_FAIR1
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (outAss1,outAss2,osyst,oshared,outArg):=
-  matchcontinue (unmatched,l_label,r_label,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
+  matchcontinue (unmatched, isyst, inArg)
     local
       BackendDAE.AdjacencyMatrix m,mt;
       Integer nv_1,ne_1;
@@ -4168,10 +4168,10 @@ algorithm
       BackendDAE.Shared shared;
       array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,l_label1,r_label1;
       array<Integer> mapIncRowEqn;
-    case ({},_,_,_,_,_,_,_,_,_,_,_)
+    case ({}, _, _)
       then
         (ass1,ass2,isyst,ishared,inArg);
-    case (_,_,_,syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_)
+    case (_, syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)), _)
       algorithm
         PR_Global_Relabel(l_label,r_label,nv,ne,m,mt,ass1,ass2);
         PR_FIFO_FAIRphase(0,unmatched,nv+ne,-1,nv,ne,m,mt,l_label,r_label,ass1,ass2,{});
@@ -4181,7 +4181,7 @@ algorithm
         (ass1_2,ass2_2,syst,shared,arg1) := PR_FIFO_FAIR1(unmatched1,l_label1,r_label1,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
         (ass1_2,ass2_2,syst,shared,arg1);
-    case (_,_,_,_,_,_,_,_,_,_,_,(_,_,_,mapIncRowEqn,_))
+    case (_, _, (_,_,_,mapIncRowEqn,_))
       algorithm
         // get from scalar eqns indexes the indexes in the equation array
         unmatched1 := List.map1r(unmatched,arrayGet,mapIncRowEqn);
@@ -4226,7 +4226,7 @@ protected function PR_FIFO_FAIR2
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (outunmatched,outl_label,outr_label,nvars,neqns,outAss1,outAss2,osyst,oshared,outArg):=
-  match (meqns,unmatched,changedEqns,l_label,r_label,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
+  match (meqns, inMatchingOptions)
     local
       Integer nv_1,ne_1;
       list<Integer> unmatched1;
@@ -4235,10 +4235,10 @@ algorithm
       BackendDAE.Shared shared;
       array<Integer> ass1_1,ass2_1,l_label1,r_label1;
 
-    case ({},_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case ({}, _)
       then
         (unmatched,l_label,r_label,nv,ne,ass1,ass2,isyst,ishared,inArg);
-    case (_,_,_,_,_,_,_,_,_,_,_,(BackendDAE.INDEX_REDUCTION(),_),_,_)
+    case (_, (BackendDAE.INDEX_REDUCTION(),_))
       algorithm
         (unmatched1,_,syst,shared,ass2_1,ass1_1,arg) := sssHandler(meqns,0,isyst,ishared,ass2,ass1,inArg);
         ne_1 := BackendDAEUtil.systemSize(syst);
@@ -4249,7 +4249,7 @@ algorithm
         r_label1 := assignmentsArrayExpand(r_label,nv_1,arrayLength(r_label),-1);
       then
         (unmatched1,l_label1,r_label1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg);
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case (_, _)
       algorithm
         singularSystemError(meqns,0,isyst,ishared,ass1,ass2,inArg);
       then
@@ -4287,8 +4287,8 @@ protected function PR_Global_Relabel_init_l_label
   input Integer max;
   input array<Integer> l_label;
 algorithm
-  _ := matchcontinue(i,ne,max,l_label)
-    case(_,_,_,_)
+  () := matchcontinue l_label
+    case _
       algorithm
         true := intGt(i,ne);
       then
@@ -4313,13 +4313,13 @@ protected function PR_Global_Relabel_init_r_label
   input list<Integer> inQueue;
   output list<Integer> outQueue;
 algorithm
-  outQueue := matchcontinue(i,nv,max,r_label,ass2,inQueue)
-    case(_,_,_,_,_,_)
+  outQueue := matchcontinue inQueue
+    case _
       algorithm
         true := intGt(i,nv);
       then
         listReverse(inQueue);
-    case(_,_,_,_,_,_)
+    case _
       algorithm
         false := intGt(i,nv);
         false := intGt(ass2[i],0);
@@ -4350,17 +4350,17 @@ protected function PR_Global_Relabel1
   input array<Integer> ass2 "var := ass2[eqn]";
   input list<Integer> nextqueue;
 algorithm
-  _ := matchcontinue(queue,l_label,r_label,max,nv,ne,m,mT,ass1,ass2,nextqueue)
+  () := matchcontinue(queue, nextqueue)
     local
       list<Integer> rest,collums,queue1;
       Integer r;
-    case({},_,_,_,_,_,_,_,_,_,{}) then ();
-    case({},_,_,_,_,_,_,_,_,_,_)
+    case({}, {}) then ();
+    case({}, _)
       algorithm
         PR_Global_Relabel1(listReverse(nextqueue),l_label,r_label,max,nv,ne,m,mT,ass1,ass2,{});
       then
         ();
-    case(r::rest,_,_,_,_,_,_,_,_,_,_)
+    case(r::rest, _)
       algorithm
         collums := List.select(mT[r], Util.intPositive);
         queue1 := PR_Global_Relabel_traverseCollums(collums,max,r,l_label,r_label,nv,ne,m,mT,ass1,ass2,nextqueue);
@@ -4388,12 +4388,12 @@ protected function PR_Global_Relabel_traverseCollums
   output list<Integer> outQueue;
 algorithm
   outQueue:=
-  matchcontinue (collums,max,r,l_label,r_label,nv,ne,m,mT,ass1,ass2,nextqueue)
+  matchcontinue collums
     local
       list<Integer> rest;
       Integer rc,c;
-    case ({},_,_,_,_,_,_,_,_,_,_,_) then nextqueue;
-    case (c::rest,_,_,_,_,_,_,_,_,_,_,_)
+    case {} then nextqueue;
+    case c::rest
       algorithm
         true := intEq(l_label[c],max);
         arrayUpdate(l_label,c,r_label[r]+1);
@@ -4403,7 +4403,7 @@ algorithm
         arrayUpdate(r_label,rc,l_label[c]+1);
       then
         PR_Global_Relabel_traverseCollums(rest,max,r,l_label,r_label,nv,ne,m,mT,ass1,ass2,rc::nextqueue);
-    case (_::rest,_,_,_,_,_,_,_,_,_,_,_)
+    case _::rest
       then
         PR_Global_Relabel_traverseCollums(rest,max,r,l_label,r_label,nv,ne,m,mT,ass1,ass2,nextqueue);
     else
@@ -4432,22 +4432,22 @@ protected function PR_FIFO_FAIRphase
   input array<Integer> ass2 "var := ass2[eqn]";
   input list<Integer> nextqueue;
 algorithm
-  _ := matchcontinue(relabels,U,max,min_vertex,nv,ne,m,mT,l_label,r_label,ass1,ass2,nextqueue)
+  () := matchcontinue(U, nextqueue)
     local
       list<Integer> rest,queue;
       Integer c,min_label,rlcount,minvertex;
-    case(_,{},_,_,_,_,_,_,_,_,_,_,{}) then ();
-    case(_,{},_,_,_,_,_,_,_,_,_,_,_)
+    case({}, {}) then ();
+    case({}, _)
       algorithm
         PR_FIFO_FAIRphase(relabels,nextqueue,max,min_vertex,nv,ne,m,mT,l_label,r_label,ass1,ass2,{});
       then ();
-    case(_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case(_, _)
       algorithm
         true := intEq(relabels,max);
         PR_Global_Relabel(l_label,r_label,nv,ne,m,mT,ass1,ass2);
         PR_FIFO_FAIRphase(0,U,max,min_vertex,nv,ne,m,mT,l_label,r_label,ass1,ass2,nextqueue);
       then ();
-    case(_,c::rest,_,_,_,_,_,_,_,_,_,_,_)
+    case(c::rest, _)
       algorithm
         (rlcount,min_label,minvertex) := PR_FIFO_FAIRphase1(intLt(l_label[c],max),relabels+1,c,min_vertex,max,max,nv,ne,m,mT,l_label,r_label,ass1,ass2);
         queue := PR_FIFO_FAIRrelabel(c,minvertex,min_label,max,nv,ne,m,mT,l_label,r_label,ass1,ass2,nextqueue);
@@ -4478,10 +4478,10 @@ protected function PR_FIFO_FAIRphase1
   output Integer outMinVertex;
 algorithm
   (outRelabels,outMinLabels,outMinVertex) :=
-  match(b,relabels,max_vertex,min_vertec,min_label,max,nv,ne,m,mT,l_label,r_label,ass1,ass2)
+  match b
     local
       Integer rel,minlab,minvert,tmp;
-    case(true,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case true
       algorithm
         tmp := intMod(l_label[max_vertex],4);
         (rel,minlab,minvert) := PR_FIFO_FAIRphase2(intEq(tmp,1),relabels,max_vertex,min_vertec,min_label,max,nv,ne,m,mT,l_label,r_label,ass1,ass2);
@@ -4515,11 +4515,11 @@ protected function PR_FIFO_FAIRphase2
   output Integer outMinVertex;
 algorithm
   (outRelabels,outMinLabels,outMinVertex) :=
-  match(b,relabels,max_vertex,min_vertec,min_label,max,nv,ne,m,mT,l_label,r_label,ass1,ass2)
+  match b
     local
       list<Integer> rows;
       Integer rel,minlab,minvert;
-    case(true,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case true
       algorithm
         rows := List.select(m[max_vertex], Util.intPositive);
         (rel,minlab,minvert) := PR_FIFO_FAIRphase_traverseRows(rows,relabels,max_vertex,min_vertec,min_label,max,nv,ne,m,mT,l_label,r_label,ass1,ass2);
@@ -4557,12 +4557,12 @@ protected function PR_FIFO_FAIRphase_traverseRows
   output Integer outMinVertex;
 algorithm
   (outRelabels,outMinLabels,outMinVertex) :=
-  matchcontinue(rows,relabels,max_vertex,min_vertex,min_label,max,nv,ne,m,mT,l_label,r_label,ass1,ass2)
+  matchcontinue rows
     local
       list<Integer> rest;
       Integer r,minlabel,minvertex,rel;
-    case ({},_,_,_,_,_,_,_,_,_,_,_,_,_) then (relabels,min_label,min_vertex);
-    case (r::_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case {} then (relabels,min_label,min_vertex);
+    case r::_
       algorithm
         true := intLt(r_label[r],min_label);
         minlabel := r_label[r];
@@ -4570,7 +4570,7 @@ algorithm
         true := intEq(r_label[minvertex],l_label[max_vertex]-1);
       then
         (relabels-1,minlabel,minvertex);
-    case (r::rest,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case r::rest
       algorithm
         true := intLt(r_label[r],min_label);
         minlabel := r_label[r];
@@ -4579,7 +4579,7 @@ algorithm
         (rel,minlabel,minvertex) := PR_FIFO_FAIRphase_traverseRows(rest,relabels,max_vertex,minvertex,minlabel,max,nv,ne,m,mT,l_label,r_label,ass1,ass2);
       then
         (rel,minlabel,minvertex);
-    case (_::rest,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case _::rest
       algorithm
         (rel,minlabel,minvertex) := PR_FIFO_FAIRphase_traverseRows(rest,relabels,max_vertex,min_vertex,min_label,max,nv,ne,m,mT,l_label,r_label,ass1,ass2);
       then
@@ -4610,10 +4610,10 @@ protected function PR_FIFO_FAIRrelabel
   input list<Integer> inQueue;
   output list<Integer> outQueue;
 algorithm
-  outQueue := matchcontinue (max_vertex,min_vertex,min_label,max,nv,ne,m,mT,l_label,r_label,ass1,ass2,inQueue)
+  outQueue := matchcontinue inQueue
     local
       Integer next_vertex;
-    case(_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case _
       algorithm
         true := intLt(min_label,max);
         true := intLt(ass2[min_vertex],0);
@@ -4622,7 +4622,7 @@ algorithm
         arrayUpdate(r_label,min_vertex,min_label+2);
       then
         inQueue;
-    case(_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case _
       algorithm
         true := intLt(min_label,max);
         false := intLt(ass2[min_vertex],0);
@@ -4673,10 +4673,10 @@ protected function cheapmatchingalgorithm1
   input Boolean intRangeUsed;
   output list<Integer> outUnMatched;
 algorithm
-  outUnMatched := match(algorithmid,nv,ne,m,mT,ass1,ass2,intRangeUsed)
-    case(1,_,_,_,_,_,_,_) then cheapmatching(1,nv,ne,m,mT,ass1,ass2,{});
-    case(3,_,_,_,_,_,_,_) then ks_rand_cheapmatching(nv,ne,m,mT,ass1,ass2);
-    case(_,_,_,_,_,_,_,true) then getUnassigned(ne, ass1, {});
+  outUnMatched := match(algorithmid, intRangeUsed)
+    case(1, _) then cheapmatching(1,nv,ne,m,mT,ass1,ass2,{});
+    case(3, _) then ks_rand_cheapmatching(nv,ne,m,mT,ass1,ass2);
+    case(_, true) then getUnassigned(ne, ass1, {});
     else {};
   end match;
 end cheapmatchingalgorithm1;
@@ -4695,22 +4695,22 @@ protected function cheapmatching
   output list<Integer> outUnMatched;
 algorithm
   outUnMatched:=
-  matchcontinue (i,nv,ne,m,mT,ass1,ass2,inUnMatched)
+  matchcontinue inUnMatched
     local
       list<Integer> rows;
-    case (_,_,_,_,_,_,_,_)
+    case _
       algorithm
         true:=intGt(i,ne);
       then
         inUnMatched;
-    case (_,_,_,_,_,_,_,_)
+    case _
       algorithm
         // search cheap matching
         rows := List.select(m[i], Util.intPositive);
         cheapmatching1(rows,i,ass1,ass2);
       then
         cheapmatching(i+1,nv,ne,m,mT,ass1,ass2,inUnMatched);
-    case (_,_,_,_,_,_,_,_)
+    case _
         // unmatched add to list
       then
         cheapmatching(i+1,nv,ne,m,mT,ass1,ass2,i::inUnMatched);
@@ -4730,12 +4730,12 @@ protected function cheapmatching1
   input array<Integer> ass1 "eqn := ass1[var]";
   input array<Integer> ass2 "var := ass2[eqn]";
 algorithm
-  _:=
-  matchcontinue (rows,c,ass1,ass2)
+  ():=
+  matchcontinue rows
     local
       list<Integer> rest;
       Integer r;
-    case (r::_,_,_,_)
+    case r::_
       algorithm
         // row is unmatched -> return
         true := intLt(ass2[r],0);
@@ -4743,7 +4743,7 @@ algorithm
         arrayUpdate(ass2,r,c);
       then
         ();
-    case (_::rest,_,_,_)
+    case _::rest
       algorithm
         cheapmatching1(rest,c,ass1,ass2);
       then
@@ -4790,17 +4790,17 @@ protected function ks_rand_cheapmatching1
   input array<Integer> ass1 "eqn := ass1[var]";
   input array<Integer> ass2 "var := ass2[eqn]";
 algorithm
-  _ := matchcontinue (i,ne,onecolums,onerows,col_degrees,row_degrees,randarr,m,mT,ass1,ass2)
+  () := matchcontinue ass2
     local
       list<Integer> onecolums1,onerows1;
       Integer c;
       Boolean b;
-      case (_,_,_,_,_,_,_,_,_,_,_)
+      case _
         algorithm
           false := intLe(i,ne);
         then
           ();
-      case (_,_,_,_,_,_,_,_,_,_,_)
+      case _
         algorithm
           ks_rand_match(onerows,onecolums,row_degrees,col_degrees,mT,m,ass2,ass1);
           c := randarr[i];
@@ -4827,11 +4827,11 @@ protected function ks_rand_cheapmatching2
   output list<Integer> onecolums;
   output list<Integer> onerows;
 algorithm
-  (onecolums,onerows) := match (b,c,col_degrees,row_degrees,randarr,m,mT,ass1,ass2)
+  (onecolums,onerows) := match b
     local
       list<Integer> clst,rlst,lst;
       Integer e_id,r;
-    case (true,_,_,_,_,_,_,_,_)
+    case true
       algorithm
         e_id := realInt(realMod(System.realRand(),intReal(col_degrees[c])));
         lst := List.select(m[c], Util.intPositive);
@@ -4859,12 +4859,12 @@ protected function ks_rand_cheapmatching3
   output list<Integer> outonerows;
   output Integer outR;
 algorithm
-  (outonerows,outR) := matchcontinue(e_id,rows,row_degrees,c,ass1,ass2,onerows,inR)
+  (outonerows,outR) := matchcontinue rows
     local
         list<Integer> rest,stack,statck1;
         Integer r,r_1;
-      case (_,{},_,_,_,_,_,_) then (onerows,inR);
-      case (_,r::rest,_,_,_,_,_,_)
+      case {} then (onerows,inR);
+      case r::rest
         algorithm
           true := intLt(ass2[r],0);
           true := intEq(e_id,0);
@@ -4873,7 +4873,7 @@ algorithm
           stack := ks_rand_match_degree(rest,row_degrees,ass2,onerows);
         then
           (stack,r);
-      case (_,r::rest,_,_,_,_,_,_)
+      case r::rest
         algorithm
            true := intLt(ass2[r],0);
           arrayUpdate(row_degrees,r,row_degrees[r]-1);
@@ -4881,7 +4881,7 @@ algorithm
          (statck1,r_1) := ks_rand_cheapmatching3(e_id-1,rest,row_degrees,c,ass1,ass2,stack,r);
         then
           (statck1,r_1);
-      case (_,r::rest,_,_,_,_,_,_)
+      case r::rest
         algorithm
          (statck1,r_1) := ks_rand_cheapmatching3(e_id-1,rest,row_degrees,c,ass1,ass2,onerows,r);
         then
@@ -4899,24 +4899,24 @@ protected function ks_rand_cheapmatching4
   input list<Integer> inStack;
   output list<Integer> outStack;
 algorithm
-  outStack := matchcontinue(cols,count,col_degrees,ass1,inStack)
+  outStack := matchcontinue cols
     local
         list<Integer> rest,stack;
         Integer c;
-      case ({},_,_,_,_) then inStack;
-      case (_,_,_,_,_)
+      case {} then inStack;
+      case _
         algorithm
           false := intGt(count,0);
         then
           inStack;
-      case (c::rest,_,_,_,_)
+      case c::rest
         algorithm
           true := intLt(ass1[c],0);
           arrayUpdate(col_degrees,c,col_degrees[c]-1);
           stack := List.consOnTrue(intEq(col_degrees[c],1),c,inStack);
         then
           ks_rand_cheapmatching4(rest,count-1,col_degrees,ass1,stack);
-      case (_::rest,_,_,_,_)
+      case _::rest
         then
          ks_rand_cheapmatching4(rest,count,col_degrees,ass1,inStack);
     end matchcontinue;
@@ -4932,11 +4932,11 @@ protected function getOneRows
  input list<Integer> inOneRows;
  output list<Integer> outOneRows;
 algorithm
- outOneRows := match(n,m,degrees,inOneRows)
+ outOneRows := match n
     local
       list<Integer> lst,onerows;
       Integer l;
-    case(0,_,_,_) then listReverse(inOneRows);
+    case 0 then listReverse(inOneRows);
     else
       algorithm
         lst := List.select(m[n], Util.intPositive);
@@ -4955,10 +4955,10 @@ protected function setrandArray
  input Integer n;
  input array<Integer> randarr;
 algorithm
- _ := match(n,randarr)
+ () := match n
     local
       Integer z,tmp;
-    case(0,_) then ();
+    case 0 then ();
     else
       algorithm
         z := realInt(realMod(System.realRand(),intReal(n)))+1;
@@ -4983,12 +4983,12 @@ protected function ks_rand_match
   input array<Integer> ass1 "eqn := ass1[var]";
   input array<Integer> ass2 "var := ass2[eqn]";
 algorithm
-  _ := matchcontinue (stack1,stack2,degrees1,degrees2,m1,m2,ass1,ass2)
+  () := matchcontinue (stack1, stack2)
     local
       Integer e;
       list<Integer> rest,lst,stack;
-    case ({},{},_,_,_,_,_,_) then ();
-    case (e::rest,{},_,_,_,_,_,_)
+    case ({}, {}) then ();
+    case (e::rest, {})
       algorithm
         true := intEq(degrees1[e],1);
         true := intLt(ass1[e],0);
@@ -4997,12 +4997,12 @@ algorithm
         ks_rand_match(stack,{},degrees1,degrees2,m1,m2,ass1,ass2);
       then
         ();
-    case (_::rest,{},_,_,_,_,_,_)
+    case (_::rest, {})
       algorithm
         ks_rand_match(rest,{},degrees1,degrees2,m1,m2,ass1,ass2);
       then
         ();
-    case ({},e::rest,_,_,_,_,_,_)
+    case ({}, e::rest)
       algorithm
         true := intEq(degrees2[e],1);
         true := intLt(ass2[e],0);
@@ -5011,12 +5011,12 @@ algorithm
         ks_rand_match(stack,{},degrees2,degrees1,m2,m1,ass2,ass1);
       then
         ();
-    case ({},_::rest,_,_,_,_,_,_)
+    case ({}, _::rest)
       algorithm
         ks_rand_match(rest,{},degrees2,degrees1,m2,m1,ass2,ass1);
       then
         ();
-    case (e::rest,_,_,_,_,_,_,_)
+    case (e::rest, _)
       algorithm
         true := intEq(degrees1[e],1);
         true := intLt(ass1[e],0);
@@ -5025,7 +5025,7 @@ algorithm
         ks_rand_match(stack2,stack,degrees2,degrees1,m2,m1,ass2,ass1);
       then
         ();
-    case (_::rest,_,_,_,_,_,_,_)
+    case (_::rest, _)
       algorithm
         ks_rand_match(stack2,rest,degrees2,degrees1,m2,m1,ass2,ass1);
       then
@@ -5046,12 +5046,12 @@ protected function ks_rand_match1
   input array<Integer> ass2 "var := ass2[eqn]";
   output list<Integer> outStack;
 algorithm
-  outStack := matchcontinue(i,entries,stack,degrees1,degrees2,adjacency,ass1,ass2)
+  outStack := matchcontinue entries
     local
         list<Integer> rest,lst;
         Integer e;
-      case (_,{},_,_,_,_,_,_) then stack;
-      case (_,e::_,_,_,_,_,_,_)
+      case {} then stack;
+      case e::_
         algorithm
           true := intLt(ass2[e],0);
           lst := List.select(adjacency[e], Util.intPositive);
@@ -5059,7 +5059,7 @@ algorithm
           arrayUpdate(ass2,e,i);
         then
           ks_rand_match_degree(lst,degrees1,ass1,stack);
-      case (_,_::rest,_,_,_,_,_,_)
+      case _::rest
         then
           ks_rand_match1(i,rest,stack,degrees1,degrees2,adjacency,ass1,ass2);
     end matchcontinue;
@@ -5074,19 +5074,19 @@ protected function ks_rand_match_degree
   input list<Integer> inStack;
   output list<Integer> outStack;
 algorithm
-  outStack := matchcontinue(entries,degrees,ass,inStack)
+  outStack := matchcontinue entries
     local
         list<Integer> rest,stack;
         Integer e;
-      case ({},_,_,_) then inStack;
-      case (e::rest,_,_,_)
+      case {} then inStack;
+      case e::rest
         algorithm
           true := intLt(ass[e],0);
           arrayUpdate(degrees,e,degrees[e]-1);
           stack := List.consOnTrue(intEq(degrees[e],1),e,inStack);
         then
           ks_rand_match_degree(rest,degrees,ass,stack);
-      case (_::rest,_,_,_)
+      case _::rest
         then
          ks_rand_match_degree(rest,degrees,ass,inStack);
     end matchcontinue;
@@ -5111,14 +5111,14 @@ public function DFSBExternal
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
+  matchcontinue inArg
     local
       Integer nvars,neqns;
       array<Integer> vec1,vec2;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-    case (_,_,_,_,_,_)
+    case _
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -5131,7 +5131,7 @@ algorithm
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_,_)
+    case _
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -5165,14 +5165,14 @@ public function BFSBExternal
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
+  matchcontinue inArg
     local
       Integer nvars,neqns;
       array<Integer> vec1,vec2;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-    case (_,_,_,_,_,_)
+    case _
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -5185,7 +5185,7 @@ algorithm
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_,_)
+    case _
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -5219,14 +5219,14 @@ public function MC21AExternal
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
+  matchcontinue inArg
     local
       Integer nvars,neqns;
       array<Integer> vec1,vec2;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-    case (_,_,_,_,_,_)
+    case _
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -5239,7 +5239,7 @@ algorithm
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_,_)
+    case _
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -5273,14 +5273,14 @@ public function PFExternal
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
+  matchcontinue inArg
     local
       Integer nvars,neqns;
       array<Integer> vec1,vec2;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-    case (_,_,_,_,_,_)
+    case _
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -5293,7 +5293,7 @@ algorithm
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_,_)
+    case _
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -5331,13 +5331,13 @@ algorithm
   neqns := BackendDAEUtil.systemSize(isyst);
   nvars := BackendVariable.daenumVariables(isyst);
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
+  matchcontinue inArg
     local
       array<Integer> vec1,vec2;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-    case (_,_,_,_,_,_) guard intGt(nvars,0) and intGt(neqns,0)
+    case _ guard intGt(nvars,0) and intGt(neqns,0)
       algorithm
         (vec1,vec2) := getAssignment(clearMatching,nvars,neqns,isyst);
         true := if not clearMatching then BackendDAEEXT.setAssignment(neqns, nvars, vec1, vec2) else true;
@@ -5346,7 +5346,7 @@ algorithm
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_,_) guard not intGt(nvars,0) and not intGt(neqns,0)
+    case _ guard not intGt(nvars,0) and not intGt(neqns,0)
       algorithm
         vec1 := listArray({});
         vec2 := listArray({});
@@ -5376,14 +5376,14 @@ public function HKExternal
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
+  matchcontinue inArg
     local
       Integer nvars,neqns;
       array<Integer> vec1,vec2;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-    case (_,_,_,_,_,_)
+    case _
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -5396,7 +5396,7 @@ algorithm
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_,_)
+    case _
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -5430,14 +5430,14 @@ public function HKDWExternal
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
+  matchcontinue inArg
     local
       Integer nvars,neqns;
       array<Integer> vec1,vec2;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-    case (_,_,_,_,_,_)
+    case _
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -5450,7 +5450,7 @@ algorithm
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_,_)
+    case _
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -5484,14 +5484,14 @@ public function ABMPExternal
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
+  matchcontinue inArg
     local
       Integer nvars,neqns;
       array<Integer> vec1,vec2;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-    case (_,_,_,_,_,_)
+    case _
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -5504,7 +5504,7 @@ algorithm
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_,_)
+    case _
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -5538,14 +5538,14 @@ public function PR_FIFO_FAIRExternal
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (osyst,oshared,outArg) :=
-  matchcontinue (isyst,ishared,clearMatching,inMatchingOptions,sssHandler,inArg)
+  matchcontinue inArg
     local
       Integer nvars,neqns;
       array<Integer> vec1,vec2;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-    case (_,_,_,_,_,_)
+    case _
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -5558,7 +5558,7 @@ algorithm
       then
         (syst,shared,arg);
     // fail case if system is empty
-    case (_,_,_,_,_,_)
+    case _
       algorithm
         neqns := BackendDAEUtil.systemSize(isyst);
         nvars := BackendVariable.daenumVariables(isyst);
@@ -5605,16 +5605,14 @@ algorithm
   (outAss1,outAss2,osyst,oshared,outArg):=
   match (meqns,internalCall,isyst,inMatchingOptions)
     local
-      BackendDAE.EquationArray eqs;
       BackendDAE.AdjacencyMatrix m,mt, m1,m1t;
-      Integer nv_1,ne_1,memsize, i;
-      list<Integer> unmatched_eqs, unmatched_vars, meqs_short;
-      list<list<Integer>> meqns1, meqns1_0, comps;
+      Integer nv_1,ne_1,memsize;
+      list<Integer> unmatched_eqs;
+      list<list<Integer>> meqns1, comps;
       BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       array<Integer> ass1_1,ass1_2,ass1_3,ass2_1,ass2_2,ass2_3;
-      array<list<Integer>> eqnIndexArray;
       Boolean changed = false;
     case ({},true,_,_)
       then
@@ -5796,9 +5794,9 @@ algorithm
           // Only check if the equation actually contains the cref
           if Expression.expHasCref(residualExp, cr) then
             // Check if the equation can be differentiated by the artificial state
-            (residualExp,_,_) := Inline.forceInlineExp(residualExp,(SOME(shared.functionTree),{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource);
-            (residualExp) := Expression.replaceDerOpInExp(residualExp);
-            _ := Differentiate.differentiateExpSolve(residualExp, cr, SOME(shared.functionTree));
+            (residualExp,_,_) := Inline.forceInlineExp(residualExp,(SOME(shared.functionTree),{DAE.NORM_INLINE(),DAE.DEFAULT_INLINE()}),DAE.emptyElementSource,Ceval.cevalSimpleWithFunctionTreeReturnExp);
+            residualExp := Expression.replaceDerOpInExp(residualExp);
+            Differentiate.differentiateExpSolve(residualExp, cr, SOME(shared.functionTree));
             // Check if the equation contains smooth(0, cr)
             false := Expression.expHasCrefInSmoothZero(residualExp, cr);
           end if;
@@ -6044,13 +6042,13 @@ public function getMarked
   input list<Integer> iMarked;
   output list<Integer> oMarked;
 algorithm
-  oMarked := match(ne,mark,markArr,iMarked)
+  oMarked := match ne
     local
       list<Integer> marked;
-    case (0,_,_,_)
+    case 0
       then
         iMarked;
-    case (_,_,_,_)
+    case _
       algorithm
         marked := List.consOnTrue(intEq(markArr[ne],mark), ne, iMarked);
       then
@@ -6066,13 +6064,13 @@ public function getUnassigned "author: Frenkel TUD 2012-05
   input list<Integer> inUnassigned;
   output list<Integer> outUnassigned;
 algorithm
-  outUnassigned := match(ne,ass,inUnassigned)
+  outUnassigned := match ne
     local
       list<Integer> unassigned;
-    case (0,_,_)
+    case 0
       then
         inUnassigned;
-    case (_,_,_)
+    case _
       algorithm
         unassigned := List.consOnTrue(intLt(ass[ne],1), ne, inUnassigned);
       then
@@ -6087,9 +6085,8 @@ public function anyUnassigned
   input array<Integer> ass;
   output Boolean b;
 algorithm
-  b := match(ne)
+  b := match ne
     local
-      list<Integer> unassigned;
     case 0
       then false;
     case _ guard(intLt(ass[ne],1))
@@ -6121,13 +6118,13 @@ public function getAssigned
   input list<Integer> inAssigned;
   output list<Integer> outAssigned;
 algorithm
-  outAssigned := match(ne,ass,inAssigned)
+  outAssigned := match ne
     local
       list<Integer> assigned;
-    case (0,_,_)
+    case 0
       then
         inAssigned;
-    case (_,_,_)
+    case _
       algorithm
         assigned := List.consOnTrue(intGt(ass[ne],0), ne, inAssigned);
       then
@@ -6148,14 +6145,14 @@ public function getEqnsforIndexReduction
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output list<list<Integer>> eqns;
 algorithm
-  eqns := match(U,neqns,m,mT,ass1,ass2,inArg)
+  eqns := match(U, inArg)
     local
       Integer lengthU;
       array<Integer> colummarks;
       array<list<Integer>> mapEqnIncRow,subsets;
       array<Integer> mapIncRowEqn;
-    case({},_,_,_,_,_,_) then {};
-    case(_,_,_,_,_,_,(_,_,mapEqnIncRow,mapIncRowEqn,_))
+    case({}, _) then {};
+    case(_, (_,_,mapEqnIncRow,mapIncRowEqn,_))
       algorithm
         colummarks := arrayCreate(neqns,-1);
         lengthU := listLength(U);
@@ -6174,11 +6171,11 @@ protected function removeEmptySubsets
   input list<list<Integer>> iAcc;
   output list<list<Integer>> oAcc;
 algorithm
-  oAcc := match(index,length,subsets,iAcc)
+  oAcc := match iAcc
     local
       list<Integer> eqns;
       list<list<Integer>> acc;
-    case (_,_,_,_)
+    case _
       guard intLe(index,length)
       algorithm
         eqns := subsets[index];
@@ -6194,8 +6191,8 @@ protected function appendNonEmpty
   input list<list<Integer>> iAcc;
   output list<list<Integer>> oAcc;
 algorithm
-  oAcc := match(eqns,iAcc)
-    case ({},_) then iAcc;
+  oAcc := match eqns
+    case {} then iAcc;
     else eqns::iAcc;
   end match;
 end appendNonEmpty;
@@ -6215,26 +6212,26 @@ protected function getEqnsforIndexReduction1
   input array<list<Integer>> inSubsets;
   output array<list<Integer>> outSubsets;
 algorithm
-  outSubsets:= match (U,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets)
+  outSubsets:= match U
     local
       list<Integer> rest,eqns;
       Integer e,e1;
-    case ({},_,_,_,_,_,_,_,_,_) then inSubsets;
-    case (e::rest,_,_,_,_,_,_,_,_,_)
+    case {} then inSubsets;
+    case e::rest
       guard not intGt(colummarks[e],0)
       algorithm
         // row is not visited
         // if it is a multi dim equation take all scalare equations
         e1 := mapIncRowEqn[e];
         eqns := mapEqnIncRow[e1];
-        _ := List.fold1r(eqns,arrayUpdate,mark,colummarks);
+        List.fold1r(eqns,arrayUpdate,mark,colummarks);
         //  print("Seach for unassigned Eqns " + stringDelimitList(List.map(eqns,intString),", ") + "\n");
         eqns := getEqnsforIndexReductionphase(eqns,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets,eqns);
         //  print("Found Eqns " + stringDelimitList(List.map(eqns,intString),", ") + "\n");
         Array.appendToElement(mark,eqns,inSubsets);
       then
         getEqnsforIndexReduction1(rest,m,mT,mark+1,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets);
-    case (_::rest,_,_,_,_,_,_,_,_,_)
+    case _::rest
       then
         getEqnsforIndexReduction1(rest,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets);
   end match;
@@ -6256,12 +6253,12 @@ protected function getEqnsforIndexReductionphase
   output list<Integer> outEqns;
 algorithm
   outEqns :=
-  match (elst,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets,inEqns)
+  match elst
     local
       Integer e;
       list<Integer> rows,rest,eqns;
-    case ({},_,_,_,_,_,_,_,_,_,_) then inEqns;
-    case (e::rest,_,_,_,_,_,_,_,_,_,_)
+    case {} then inEqns;
+    case e::rest
       algorithm
         // traverse all adiacent rows
         rows := List.select(m[e], Util.intPositive);
@@ -6292,16 +6289,15 @@ protected function getEqnsforIndexReductiontraverseRows
   output list<Integer> outEqns;
 algorithm
   outEqns:=
-  match (rows,nextColums,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets,inEqns)
+  match (rows, nextColums)
     local
       list<Integer> rest,queue,nextqueue,eqns;
-      Integer rc,r,e,mrc;
-      Boolean b;
-    case ({},{},_,_,_,_,_,_,_,_,_,_) then inEqns;
-    case ({},_,_,_,_,_,_,_,_,_,_,_)
+      Integer rc,r,e;
+    case ({}, {}) then inEqns;
+    case ({}, _)
       then
         getEqnsforIndexReductionphase(nextColums,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets,inEqns);
-    case (r::rest,_,_,_,_,_,_,_,_,_,_,_)
+    case (r::rest, _)
       algorithm
         // row is matched
         // print("check Row " + intString(r) + "\n");
@@ -6316,7 +6312,7 @@ algorithm
             // if it is a multi dim equation take all scalare equations
             e := mapIncRowEqn[rc];
             eqns := mapEqnIncRow[e];
-            _ := List.fold1r(eqns,arrayUpdate,mark,colummarks);
+            List.fold1r(eqns,arrayUpdate,mark,colummarks);
             //  print("add to nextQueue and Queue " + stringDelimitList(List.map(eqns,intString),", ") + "\n");
             nextqueue := listAppend(nextColums,eqns);
             queue := listAppend(inEqns,eqns);
@@ -6370,7 +6366,7 @@ protected function reduceIndexifNecessary
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (outchangedEqns,continueEqn,osyst,oshared,nvars,neqns,outAss1,outAss2,outArg):=
-  match (meqns,actualEqn,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
+  match (meqns, inMatchingOptions)
     local
       Integer nv_1,ne_1,i_1;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
@@ -6379,10 +6375,10 @@ algorithm
       array<Integer> ass1_1,ass1_2,ass2_1,ass2_2;
       list<Integer> changedEqns;
 
-    case ({},_,_,_,_,_,_,_,_,_,_)
+    case ({}, _)
       then
         ({},actualEqn+1,isyst,ishared,nv,ne,ass1,ass2,inArg);
-    case (_::_,_,_,_,_,_,_,_,(BackendDAE.INDEX_REDUCTION(),_),_,_)
+    case (_::_, (BackendDAE.INDEX_REDUCTION(),_))
       algorithm
         (changedEqns,i_1,syst,shared,ass2_1,ass1_1,arg) := sssHandler({meqns},actualEqn,isyst,ishared,ass2,ass1,inArg);
         ne_1 := BackendDAEUtil.systemSize(syst);
@@ -6391,7 +6387,7 @@ algorithm
         ass2_2 := assignmentsArrayExpand(ass2_1,nv_1,arrayLength(ass2_1),-1);
       then
         (changedEqns,i_1,syst,shared,nv_1,ne_1,ass1_2,ass2_2,arg);
-    case (_,_,_,_,_,_,_,_,_,_,_)
+    case (_, _)
       algorithm
         singularSystemError({meqns},actualEqn,isyst,ishared,ass1,ass2,inArg);
       then
@@ -6408,13 +6404,13 @@ protected function assignmentsArrayExpand
  input Integer default;
  output array<Integer> outAss;
 algorithm
-  outAss := matchcontinue(ass,needed,memsize,default)
-    case (_,_,_,_)
+  outAss := matchcontinue default
+    case _
       algorithm
         true := intGt(memsize,needed);
       then
         ass;
-    case (_,_,_,_)
+    case _
       algorithm
         false := intGt(memsize,needed);
       then
@@ -6436,13 +6432,13 @@ protected function assignmentsArrayBooleanExpand
  input Boolean default;
  output array<Boolean> outAss;
 algorithm
-  outAss := matchcontinue(ass,needed,memsize,default)
-    case (_,_,_,_)
+  outAss := matchcontinue default
+    case _
       algorithm
         true := intGt(memsize,needed);
       then
         ass;
-    case (_,_,_,_)
+    case _
       algorithm
         false := intGt(memsize,needed);
       then
@@ -6466,16 +6462,16 @@ protected function checkAssignment
   input list<Integer> inUnassigned;
   output list<Integer> outUnassigned;
 algorithm
-  outUnassigned := matchcontinue(indx,ne,ass1,ass2,inUnassigned)
+  outUnassigned := matchcontinue inUnassigned
     local
-      Integer r,c;
+      Integer r;
       list<Integer> unassigned;
-    case (_,_,_,_,_)
+    case _
       algorithm
         true := intGt(indx,ne);
       then
         inUnassigned;
-    case (_,_,_,_,_)
+    case _
       algorithm
         r := ass1[indx];
         unassigned := List.consOnTrue(intLt(r,0), indx, inUnassigned);
@@ -6492,8 +6488,8 @@ protected function getAssignment
   output array<Integer> ass1 "ass[eqnindx]=varindx";
   output array<Integer> ass2 "ass[varindx]=eqnindx";
 algorithm
-  (ass1,ass2) := matchcontinue(clearMatching,nVars,nEqns,iSyst)
-    case(false,_,_,BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2)))
+  (ass1,ass2) := matchcontinue(clearMatching, iSyst)
+    case(false, BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2)))
       algorithm
         true := intGe(nVars,arrayLength(ass1));
         true := intGe(nEqns,arrayLength(ass2));
@@ -6524,7 +6520,6 @@ protected
   Integer nv,ne,cheapID;
   array<list<Integer>> m;
   array<Integer> vec1,vec2;
-  list<Integer> unassigned,meqns;
   list<tuple<String,BackendDAEFunc.matchingAlgorithmFunc>> matchingAlgorithms;
   list<tuple<String,Integer>> extmatchingAlgorithms;
   BackendDAE.EqSystem syst;
@@ -6582,16 +6577,16 @@ public function testMatchingAlgorithms1
   input BackendDAE.Shared ishared;
   input BackendDAE.MatchingOptions inMatchingOptions;
 algorithm
-  _ :=
-  matchcontinue (matchingAlgorithms,isyst,ishared,inMatchingOptions)
+  () :=
+  matchcontinue matchingAlgorithms
       local
         list<tuple<String,BackendDAEFunc.matchingAlgorithmFunc>> rest;
         String str;
         BackendDAEFunc.matchingAlgorithmFunc matchingAlgorithm;
         Real t;
-    case ({},_,_,_)
+    case {}
       then ();
-    case ((str,matchingAlgorithm)::rest,_,_,_)
+    case (str,matchingAlgorithm)::rest
       algorithm
         System.realtimeTick(ClockIndexes.RT_PROFILER0);
         testMatchingAlgorithm(10,matchingAlgorithm,isyst,ishared,inMatchingOptions);
@@ -6600,7 +6595,7 @@ algorithm
         testMatchingAlgorithms1(rest,isyst,ishared,inMatchingOptions);
       then
         ();
-    case ((str,_)::rest,_,_,_)
+    case (str,_)::rest
       algorithm
         print(str + "failed!\n");
         testMatchingAlgorithms1(rest,isyst,ishared,inMatchingOptions);
@@ -6618,16 +6613,16 @@ protected function testMatchingAlgorithm
   input BackendDAE.Shared ishared;
   input BackendDAE.MatchingOptions inMatchingOptions;
 algorithm
-  _ :=
-  matchcontinue (index,matchingAlgorithm,isyst,ishared,inMatchingOptions)
+  () :=
+  matchcontinue index
     local
       BackendDAE.StructurallySingularSystemHandlerArg arg;
-    case (0,_,_,_,_)
+    case 0
       then ();
     else
       algorithm
         arg := IndexReduction.getStructurallySingularSystemHandlerArg(isyst,ishared,listArray({}),listArray({}));
-        (_,_,_) := matchingAlgorithm(isyst,ishared,true,inMatchingOptions,IndexReduction.pantelidesIndexReduction,arg);
+        matchingAlgorithm(isyst,ishared,true,inMatchingOptions,IndexReduction.pantelidesIndexReduction,arg);
         testMatchingAlgorithm(index-1,matchingAlgorithm,isyst,ishared,inMatchingOptions);
       then
         ();
@@ -6668,9 +6663,9 @@ public function testExternMatchingAlgorithm
   input Integer nv;
   input Integer ne;
 algorithm
-  _ :=
-  matchcontinue (index,matchingAlgorithm,cheapId,nv,ne)
-    case (0,_,_,_,_)
+  () :=
+  matchcontinue index
+    case 0
       then ();
     else
       algorithm
@@ -6736,11 +6731,11 @@ protected function randSortSystem1
     output Type_a outTypeA;
   end setFunc;
 algorithm
-  outTypeA := match(index,offset,randarr,oldTypeA,newTypeA,get,set)
+  outTypeA := match index
     local
       Type_b tb;
       Type_a ta;
-    case (0,_,_,_,_,_,_)
+    case 0
       then newTypeA;
     else
       algorithm
@@ -6767,7 +6762,6 @@ protected
   DAE.ElementSource source;
   SourceInfo info;
   array<Integer> mapIncRowEqn;
-  BackendDAE.EqSystem syst;
 algorithm
   (_,_,_,mapIncRowEqn,_) := inArg;
   n := BackendDAEUtil.systemSize(isyst);
@@ -6819,7 +6813,7 @@ algorithm
   else
     true := n <= arrayLength(arrIx);
     for i in 1:n loop
-      Dangerous.arrayUpdate(arr, Dangerous.arrayGetNoBoundsChecking(arrIx, i), false);
+      arrayUpdate(arr, Dangerous.arrayGetNoBoundsChecking(arrIx, i), false);
     end for;
   end if;
   if debug then

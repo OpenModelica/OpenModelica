@@ -94,8 +94,8 @@ public function walk
     output tuple<Graph, Ref, Extra> outData;
   end Walker;
 algorithm
-  (outGraph, outExtra) := match(inGraph, inWalker, inExtra, inOptions)
-    case (_, _, _, _)
+  (outGraph, outExtra) := match inOptions
+    case _
       algorithm
       then
         (inGraph, inExtra);

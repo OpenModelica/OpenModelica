@@ -46,6 +46,7 @@ import Error;
 import MetaModelica.Dangerous.listReverseInPlace;
 import Util;
 import Print;
+import Testsuite;
 
 public
 
@@ -210,6 +211,65 @@ function addPairNotNull
 algorithm
   outObj := if isNull(value) then obj else addPair(key, value, obj);
 end addPairNotNull;
+
+function toListForm
+  "Returns a JSON value where all OBJECT (hash-map backed) and ARRAY (vector
+   backed) nodes have been converted, recursively, into the list-based
+   LIST_OBJECT and LIST nodes. The result consists only of plain MetaModelica
+   lists, tuples and scalars, which can be traversed from C/C++ (e.g. from
+   OMEdit, see issue #15219) without knowing the internal layout of UnorderedMap
+   and Vector."
+  input JSON value;
+  output JSON outValue;
+algorithm
+  outValue := match value
+    local
+      list<tuple<String, JSON>> pairs;
+      list<JSON> elems;
+      String key;
+      JSON v;
+
+    case OBJECT()
+      algorithm
+        pairs := {};
+        for i in 1:UnorderedMap.size(value.values) loop
+          pairs := (UnorderedMap.keyAt(value.values, i),
+                    toListForm(UnorderedMap.valueAt(value.values, i))) :: pairs;
+        end for;
+      then
+        LIST_OBJECT(listReverse(pairs));
+
+    case LIST_OBJECT()
+      algorithm
+        pairs := {};
+        for p in value.values loop
+          (key, v) := p;
+          pairs := (key, toListForm(v)) :: pairs;
+        end for;
+      then
+        LIST_OBJECT(listReverse(pairs));
+
+    case ARRAY()
+      algorithm
+        elems := {};
+        for i in Vector.size(value.values):-1:1 loop
+          elems := toListForm(Vector.getNoBounds(value.values, i)) :: elems;
+        end for;
+      then
+        LIST(elems);
+
+    case LIST()
+      algorithm
+        elems := {};
+        for e in listReverse(value.values) loop
+          elems := toListForm(e) :: elems;
+        end for;
+      then
+        LIST(elems);
+
+    else value;
+  end match;
+end toListForm;
 
 function toString
   input JSON value;
@@ -743,8 +803,6 @@ end parse_value;
 function parse_string
   extends partialParser;
 protected
-  list<JSON> values = {};
-  Boolean cont;
   String content;
 algorithm
   not_eof(tokens);
@@ -764,8 +822,6 @@ end parse_string;
 function parse_integer
   extends partialParser;
 protected
-  list<JSON> values = {};
-  Boolean cont;
   String content;
 algorithm
   not_eof(tokens);
@@ -780,8 +836,6 @@ end parse_integer;
 function parse_number
   extends partialParser;
 protected
-  list<JSON> values = {};
-  Boolean cont;
   String content;
 algorithm
   not_eof(tokens);
@@ -926,6 +980,25 @@ algorithm
   Error.addSourceMessage(Error.COMPILER_ERROR, {"JSON expected "+expected+", got token "+String(tok.id)+": " + tokenContent(tok)}, tokenSourceInfo(tok));
   fail();
 end errorExpected;
+
+public function dumpJSONSourceInfo
+  input SourceInfo info;
+  input Boolean dumpFilename = true;
+  output JSON json = JSON.makeNull();
+algorithm
+  if dumpFilename then
+    json := JSON.addPair("filename", JSON.makeString(Testsuite.friendly(info.fileName)), json);
+  end if;
+
+  json := JSON.addPair("lineStart", JSON.makeInteger(info.lineNumberStart), json);
+  json := JSON.addPair("columnStart", JSON.makeInteger(info.columnNumberStart), json);
+  json := JSON.addPair("lineEnd", JSON.makeInteger(info.lineNumberEnd), json);
+  json := JSON.addPair("columnEnd", JSON.makeInteger(info.columnNumberEnd), json);
+
+  if info.isReadOnly then
+    json := JSON.addPair("readonly", JSON.makeBoolean(true), json);
+  end if;
+end dumpJSONSourceInfo;
 
 annotation(__OpenModelica_Interface="util");
 end JSON;

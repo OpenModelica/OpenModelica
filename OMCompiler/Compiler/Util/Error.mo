@@ -1254,6 +1254,16 @@ public constant ErrorTypes.Message CONVERSION_MISSING_NONE_FROM_VERSION = ErrorT
   Gettext.gettext("Conversion-annotation is missing version for noneFromVersion: %s."));
 public constant ErrorTypes.Message UNPATCHED_MODELICA_SERVICES = ErrorTypes.MESSAGE(5049, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
   Gettext.gettext("This version of ModelicaServices does not appear to be patched for use with OpenModelica, consider using a version distributed by OpenModelica instead to avoid compatibility issues."));
+public constant ErrorTypes.Message META_MATCH_UNUSED_INPUT = ErrorTypes.MESSAGE(5050, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),
+  Gettext.gettext("Match input %s is not used by any case and could be removed."));
+public constant ErrorTypes.Message META_PATTERN_INFALLIBLE_NO_BINDING = ErrorTypes.MESSAGE(5051, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),
+  Gettext.gettext("Pattern %s is infallible and binds no variables; it could be replaced with a wildcard."));
+public constant ErrorTypes.Message META_PATTERN_AS_ONLY = ErrorTypes.MESSAGE(5052, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),
+  Gettext.gettext("Pattern only renames the match input %s; the match expression could be rewritten without this input and the body could use %s directly."));
+public constant ErrorTypes.Message MATCHCONTINUE_TO_TRY_OPTIMIZATION = ErrorTypes.MESSAGE(5053, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),
+  Gettext.gettext("This matchcontinue has a single case and an else and could be rewritten as a try/else."));
+public constant ErrorTypes.Message MATCH_SINGLE_INFALLIBLE_CASE = ErrorTypes.MESSAGE(5054, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),
+  Gettext.gettext("This match expression has a single case with an infallible pattern; it could be rewritten as a destructuring assignment of the input(s)."));
 
 public constant ErrorTypes.Message COMPILER_ERROR = ErrorTypes.MESSAGE(5999, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.notrans("%s"));
@@ -1346,7 +1356,7 @@ protected
   array<prefixToStr> afunc;
 algorithm
   tpl := getGlobalRoot(Global.currentInstVar);
-  _ := match tpl
+  () := match tpl
     case NONE() algorithm setGlobalRoot(Global.currentInstVar, SOME((arrayCreate(1,component),arrayCreate(1,info),arrayCreate(1,func)))); then ();
     case SOME((astr,ainfo,afunc))
       algorithm
@@ -1427,7 +1437,7 @@ public function addSourceMessage "
   input ErrorTypes.MessageTokens inMessageTokens;
   input SourceInfo inInfo;
 algorithm
-  _ := match (inErrorMsg,inMessageTokens,inInfo)
+  () := match (inErrorMsg,inMessageTokens,inInfo)
     local
       ErrorTypes.MessageType msg_type;
       ErrorTypes.Severity severity;
@@ -1492,20 +1502,20 @@ public function addMultiSourceMessage
   input ErrorTypes.MessageTokens inMessageTokens;
   input list<SourceInfo> inInfo;
 algorithm
-  _ := match(inErrorMsg, inMessageTokens, inInfo)
+  () := match inInfo
     local
       SourceInfo info;
       list<SourceInfo> rest_info;
 
     // Only one info left, print out the message.
-    case (_, _, {info})
+    case {info}
       algorithm
         addSourceMessage(inErrorMsg, inMessageTokens, info);
       then
         ();
 
     // Multiple infos left, print a trace with the first info.
-    case (_, _, info :: rest_info)
+    case info :: rest_info
       algorithm
         if not listMember(info, rest_info) then
           addSourceMessage(ERROR_FROM_HERE, {}, info);
@@ -1515,7 +1525,7 @@ algorithm
         ();
 
     // No infos given, print a sourceless error.
-    case (_, _, {})
+    case {}
       algorithm
         addMessage(inErrorMsg, inMessageTokens);
       then
@@ -1533,18 +1543,18 @@ public function addMessageOrSourceMessage
   input ErrorTypes.MessageTokens inMessageTokens;
   input Option<SourceInfo> inInfoOpt;
 algorithm
-  _ := match (inErrorMsg, inMessageTokens, inInfoOpt)
+  () := match inInfoOpt
     local
       SourceInfo info;
 
     // we DON'T have an info, add message
-    case (_, _, NONE())
+    case NONE()
       algorithm
         addMessage(inErrorMsg, inMessageTokens);
       then ();
 
     // we have an info, add source message
-    case (_, _, SOME(info))
+    case SOME(info)
       algorithm
         addSourceMessage(inErrorMsg, inMessageTokens, info);
       then ();
@@ -1599,8 +1609,8 @@ public function printMessagesStrLstType " Returns all messages as a list of stri
   input ErrorTypes.MessageType inMessageType;
   output list<String> outStringLst;
 algorithm
-  outStringLst := match (inMessageType)
-    case (_) then {"Not impl. yet"};
+  outStringLst := match inMessageType
+    case _ then {"Not impl. yet"};
   end match;
 end printMessagesStrLstType;
 
@@ -1609,8 +1619,8 @@ public function printMessagesStrLstSeverity "Returns all messages as a list of s
   input ErrorTypes.Severity inSeverity;
   output list<String> outStringLst;
 algorithm
-  outStringLst := match (inSeverity)
-    case (_) then {"Not impl. yet"};
+  outStringLst := match inSeverity
+    case _ then {"Not impl. yet"};
   end match;
 end printMessagesStrLstSeverity;
 
@@ -1667,13 +1677,13 @@ public function messageTypeStr "
   input ErrorTypes.MessageType inMessageType;
   output String outString;
 algorithm
-  outString := match(inMessageType)
-    case (ErrorTypes.SYNTAX()) then "SYNTAX";
-    case (ErrorTypes.GRAMMAR()) then "GRAMMAR";
-    case (ErrorTypes.TRANSLATION()) then "TRANSLATION";
-    case (ErrorTypes.SYMBOLIC()) then "SYMBOLIC";
-    case (ErrorTypes.SIMULATION()) then "SIMULATION";
-    case (ErrorTypes.SCRIPTING()) then "SCRIPTING";
+  outString := match inMessageType
+    case ErrorTypes.SYNTAX() then "SYNTAX";
+    case ErrorTypes.GRAMMAR() then "GRAMMAR";
+    case ErrorTypes.TRANSLATION() then "TRANSLATION";
+    case ErrorTypes.SYMBOLIC() then "SYMBOLIC";
+    case ErrorTypes.SIMULATION() then "SIMULATION";
+    case ErrorTypes.SCRIPTING() then "SCRIPTING";
   end match;
 end messageTypeStr;
 
@@ -1682,11 +1692,11 @@ public function severityStr "
   input ErrorTypes.Severity inSeverity;
   output String outString;
 algorithm
-  outString := match(inSeverity)
-    case (ErrorTypes.INTERNAL()) then "Internal error";
-    case (ErrorTypes.ERROR()) then "Error";
-    case (ErrorTypes.WARNING()) then "Warning";
-    case (ErrorTypes.NOTIFICATION()) then "Notification";
+  outString := match inSeverity
+    case ErrorTypes.INTERNAL() then "Internal error";
+    case ErrorTypes.ERROR() then "Error";
+    case ErrorTypes.WARNING() then "Warning";
+    case ErrorTypes.NOTIFICATION() then "Notification";
   end match;
 end severityStr;
 
@@ -1696,12 +1706,12 @@ public function infoStr "
   input SourceInfo info;
   output String str;
 algorithm
-  str := match(info)
+  str := match info
     local
       String filename, info_str;
       Integer line_start, line_end, col_start, col_end;
-    case (SOURCEINFO(fileName = filename, lineNumberStart = line_start,
-        columnNumberStart = col_start, lineNumberEnd = line_end, columnNumberEnd = col_end))
+    case SOURCEINFO(fileName = filename, lineNumberStart = line_start,
+        columnNumberStart = col_start, lineNumberEnd = line_end, columnNumberEnd = col_end)
         algorithm
           info_str := "[" + Testsuite.friendly(filename) + ":" +
                      intString(line_start) + ":" + intString(col_start) + "-" +
@@ -1717,8 +1727,8 @@ public function assertion "
   input String message;
   input SourceInfo info;
 algorithm
-  _ := match (b,message,info)
-    case (true, _, _) then ();
+  () := match b
+    case true then ();
     else algorithm
       addSourceMessage(INTERNAL_ERROR, {message}, info);
     then fail();
@@ -1734,8 +1744,8 @@ public function assertionOrAddSourceMessage "
   input ErrorTypes.MessageTokens inMessageTokens;
   input SourceInfo inInfo;
 algorithm
-  _ := match (inCond, inErrorMsg, inMessageTokens, inInfo)
-    case (true, _, _, _) then ();
+  () := match inCond
+    case true then ();
     else algorithm
       addSourceMessage(inErrorMsg, inMessageTokens, inInfo);
       failOnErrorMsg(inErrorMsg);
@@ -1746,7 +1756,7 @@ end assertionOrAddSourceMessage;
 protected function failOnErrorMsg
   input ErrorTypes.Message inMessage;
 algorithm
-  _ := match(inMessage)
+  () := match inMessage
     case ErrorTypes.MESSAGE(severity=ErrorTypes.ERROR()) then fail();
     else ();
   end match;
