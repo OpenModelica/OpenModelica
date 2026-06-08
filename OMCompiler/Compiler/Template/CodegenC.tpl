@@ -4429,20 +4429,21 @@ template functionXXX_system0_HPCOM_PThread_func(list<SimEqSystem> derivativEquat
   let assLock = function_HPCOM_assignLockByLockName(idx, "th_lock", "pthreads"); separator="\n"
   let relLock = function_HPCOM_releaseLockByLockName(idx, "th_lock1", "pthreads"); separator="\n"
   <<
-  void function<%name%>_system<%n%>_thread_<%idx%>(DATA *data, threadData_t *threadData)
+  void* function<%name%>_system<%n%>_thread_<%idx%>(void *arg)
   {
+    DATA *data = (DATA*) arg;
     MMC_TRY_TOP()
     while(1)
     {
       <%assLock%>
 
       if(finished)
-         return;
+         return NULL;
 
       <%taskEqs%>
       <%relLock%>
     }
-    MMC_CATCH_TOP(return;) /* No exit status?? */
+    MMC_CATCH_TOP(return NULL;) /* No exit status?? */
   }
   >>
 end functionXXX_system0_HPCOM_PThread_func;
