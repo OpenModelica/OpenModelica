@@ -2976,9 +2976,9 @@ algorithm
     case DAE.CREF(cr, ty)::rest algorithm
       slst := List.map(dims, intString);
       if (FMI.isFMIVersion20() or FMI.isFMIVersion30()) then
-        var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(name), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), slst, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false);
+        var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(name), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), slst, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false);
       else
-        var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(name), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), slst, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false);
+        var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(name), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), slst, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false);
       end if;
       tempvars := createTempVarsforCrefs(rest, {var});
     then List.append_reverse(tempvars, itempvars);
@@ -3016,9 +3016,9 @@ algorithm
       inst_dims := ComponentReferenceBasics.crefDims(cr);
       numArrayElement := List.map(inst_dims, ExpressionBasics.dimensionString);
       if (FMI.isFMIVersion20() or FMI.isFMIVersion30()) then
-        var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, arrayCref, SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false);
+        var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, arrayCref, SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false);
       else
-        var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, arrayCref, SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false);
+        var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, arrayCref, SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false);
       end if;
     then createTempVarsforCrefs(rest, var::itempvars);
   end match;
@@ -3064,9 +3064,9 @@ algorithm
         numArrayElement := List.map(ComponentReferenceBasics.crefDims(cr), ExpressionBasics.dimensionString);
         ty := ComponentReference.crefTypeFull(cr);
         if (FMI.isFMIVersion20() or FMI.isFMIVersion30()) then
-          var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(arraycref), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false);
+          var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(arraycref), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false);
         else
-          var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(arraycref), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false);
+          var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(arraycref), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false);
         end if;
 
         /* The rest don't need to be marked i.e. we have 'NONE()'. Just create simvars. */
@@ -3074,9 +3074,9 @@ algorithm
         for cr in crlst loop
           ty := ComponentReference.crefTypeFull(cr);
           if (FMI.isFMIVersion20() or FMI.isFMIVersion30()) then
-            var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false);
+            var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false);
           else
-            var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false);
+            var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), numArrayElement, false, true, SOME(true), false, NONE(), false, NONE(), NONE(), NONE(), SOME(cr), false, false);
           end if;
           ttmpvars := var::ttmpvars;
         end for;
@@ -5410,12 +5410,12 @@ algorithm
     outSimVar := SimCodeVar.SIMVAR(inName, inVarKind, "", "", "", -1 /* use -1 to get an error in simulation if something failed */,
         NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT,
         false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource,
-        SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, false, NONE(), false, NONE(), false, NONE(), NONE(), NONE(), SOME(inName), false);
+        SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, false, NONE(), false, NONE(), false, NONE(), NONE(), NONE(), SOME(inName), false, false);
   else
     outSimVar := SimCodeVar.SIMVAR(inName, inVarKind, "", "", "", -1 /* use -1 to get an error in simulation if something failed */,
         NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT,
         false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource,
-        SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), {}, false, false, NONE(), false, NONE(), false, NONE(), NONE(), NONE(), SOME(inName), false);
+        SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), {}, false, false, NONE(), false, NONE(), false, NONE(), NONE(), NONE(), SOME(inName), false, false);
   end if;
 end makeTmpRealSimCodeVar;
 
@@ -10005,7 +10005,8 @@ algorithm
         end if;
       then
         SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
-        NONE(), NONE(), initVal, NONE(), isFixed, type_, isDiscrete, arrayCref, aliasvar, source, SOME(caus), NONE(), NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, encrypted, NONE(), dlowVar.initNonlinear, NONE(), SOME(variability), SOME(initial_), NONE(), relativeQuantity);
+        NONE(), NONE(), initVal, NONE(), isFixed, type_, isDiscrete, arrayCref, aliasvar, source, SOME(caus), NONE(), NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, encrypted, NONE(), dlowVar.initNonlinear, NONE(), SOME(variability), SOME(initial_), NONE(), relativeQuantity,
+        match dlowVar.connectorType case DAE.FLOW() then true; else false; end match);
 
     case ((BackendDAE.VAR(varName = cr,
       varKind = kind as BackendDAE.PARAM(),
@@ -10043,7 +10044,8 @@ algorithm
         end if;
       then
         SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
-        minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, SOME(caus), NONE(), NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, encrypted, NONE(), dlowVar.initNonlinear, NONE(), SOME(variability), SOME(initial_), SOME(cr), relativeQuantity);
+        minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, SOME(caus), NONE(), NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, encrypted, NONE(), dlowVar.initNonlinear, NONE(), SOME(variability), SOME(initial_), SOME(cr), relativeQuantity,
+        match dlowVar.connectorType case DAE.FLOW() then true; else false; end match);
 
     // Start value of states may be changeable
     case ((BackendDAE.VAR(varName = cr,
@@ -10090,7 +10092,8 @@ algorithm
         end if;
       then
         SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
-        minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, SOME(caus), NONE(), NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, encrypted, NONE(), dlowVar.initNonlinear, NONE(), SOME(variability), SOME(initial_), SOME(cr), relativeQuantity);
+        minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, SOME(caus), NONE(), NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, encrypted, NONE(), dlowVar.initNonlinear, NONE(), SOME(variability), SOME(initial_), SOME(cr), relativeQuantity,
+        match dlowVar.connectorType case DAE.FLOW() then true; else false; end match);
 
     case ((BackendDAE.VAR(varName = cr,
       varKind = kind,
@@ -10137,7 +10140,8 @@ algorithm
         end if;
       then
         SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
-          minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, SOME(caus), NONE(), NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, encrypted, NONE(), dlowVar.initNonlinear, NONE(), SOME(variability), SOME(initial_), SOME(cr), relativeQuantity);
+          minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, SOME(caus), NONE(), NONE(), numArrayElement, isValueChangeable, isProtected, hideResult, encrypted, NONE(), dlowVar.initNonlinear, NONE(), SOME(variability), SOME(initial_), SOME(cr), relativeQuantity,
+          match dlowVar.connectorType case DAE.FLOW() then true; else false; end match);
   end match;
 end dlowvarToSimvar;
 
@@ -15183,7 +15187,7 @@ algorithm
   else
     // print("cref2simvar: " + ComponentReferenceBasics.printComponentRefStr(inCref) + " not found!\n");
     badcref := ComponentReferenceBasics.makeCrefIdent("ERROR_cref2simvar_failed " + ComponentReferenceBasics.printComponentRefStr(inCref), DAE.T_REAL_DEFAULT, {});
-    outSimVar := SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, true, NONE(), false, NONE(), false, NONE(), NONE(), NONE(), SOME(badcref), false);
+    outSimVar := SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, true, NONE(), false, NONE(), false, NONE(), NONE(), NONE(), SOME(badcref), false, false);
   end try;
 end cref2simvar;
 
@@ -15234,7 +15238,7 @@ algorithm
   else
     //print("cref2simvar: " + ComponentReferenceBasics.printComponentRefStr(inCref) + " not found!\n");
     badcref := ComponentReferenceBasics.makeCrefIdent("ERROR_simVarFromHT_failed " + ComponentReferenceBasics.printComponentRefStr(inCref), DAE.T_REAL_DEFAULT, {});
-    sv := SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, true, NONE(), false, NONE(), false, NONE(), NONE(), NONE(), SOME(badcref), false);
+    sv := SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, true, NONE(), false, NONE(), false, NONE(), NONE(), NONE(), SOME(badcref), false, false);
   end try;
   outSimVar := sv;
 end simVarFromHT;
@@ -15268,7 +15272,7 @@ algorithm
     case (_,_)
       algorithm
         badcref := ComponentReferenceBasics.makeCrefIdent("ERROR_localCref2SimVar_failed " + ComponentReferenceBasics.printComponentRefStr(inCref), DAE.T_REAL_DEFAULT, {});
-        then SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, true, NONE(), false, NONE(), false, NONE(), NONE(), NONE(), SOME(badcref), false);
+        then SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, true, NONE(), false, NONE(), false, NONE(), NONE(), NONE(), SOME(badcref), false, false);
   end matchcontinue;
 end localCref2SimVar;
 
@@ -15543,11 +15547,11 @@ public function getFMI3Terminals
 protected
   SimCodeVar.SimVars vars;
   list<SimCodeVar.SimVar> allVars;
-  list<tuple<String, Boolean, SimCode.FmiTerminalMember>> flat = {};
+  list<tuple<String, String, Boolean, SimCode.FmiTerminalMember>> flat = {};
   list<String> names = {};
   list<String> memberNames;
-  Option<tuple<String, Boolean, SimCode.FmiTerminalMember>> om;
-  String tname, tname2;
+  Option<tuple<String, String, Boolean, SimCode.FmiTerminalMember>> om;
+  String tname, tname2, tkind, tkind2;
   Boolean texp, texp2;
   SimCode.FmiTerminalMember mem;
   list<SimCode.FmiTerminalMember> mems;
@@ -15574,7 +15578,7 @@ algorithm
   flat := listReverse(flat);
   // distinct terminal names in first-seen order
   for t in flat loop
-    (tname, _, _) := t;
+    (tname, _, _, _) := t;
     if not listMember(tname, names) then
       names := tname :: names;
     end if;
@@ -15587,15 +15591,17 @@ algorithm
     mems := {};
     memberNames := {};
     texp := false;
+    tkind := "";
     for t in flat loop
-      (tname2, texp2, mem) := t;
+      (tname2, tkind2, texp2, mem) := t;
       if stringEq(tname2, nm) and not listMember(mem.memberName, memberNames) then
         mems := mem :: mems;
         memberNames := mem.memberName :: memberNames;
         texp := texp2;
+        tkind := tkind2;
       end if;
     end for;
-    terminals := SimCode.FMI_TERMINAL(nm, texp, listReverse(mems)) :: terminals;
+    terminals := SimCode.FMI_TERMINAL(nm, tkind, texp, listReverse(mems)) :: terminals;
   end for;
   // Append the simple signal ports: top-level scalar input/output variables. A
   // signal connector (e.g. Modelica.Blocks.Interfaces.RealInput/RealOutput, the
@@ -15611,8 +15617,11 @@ end getFMI3Terminals;
 
 protected function simplePortTerminals
   "One single-member terminal per top-level scalar input/output variable (the FMU
-   signal ports), the variableKind taken from the input/output partition. Skips
-   variables that are already part of a structured connector terminal (`taken`)."
+   signal ports). These come from a signal connector (e.g. RealInput/RealOutput)
+   that collapsed to a plain input/output Real, so the member is a `signal`
+   variableKind (a non-flow value intended to be equal across a connection); the
+   connector type was lost in the flat model, so terminalKind is left empty. Skips
+   variables already part of a structured connector terminal (`taken`)."
   input SimCodeVar.SimVars vars;
   input list<String> taken;
   output list<SimCode.FmiTerminal> terminals = {};
@@ -15623,7 +15632,7 @@ algorithm
     terminals := matchcontinue v
       local
         DAE.ComponentRef cr;
-        String nm, kind;
+        String nm;
       // a top-level scalar interface variable: cref is a bare identifier
       case _ guard isSome(v.exportVar)
         algorithm
@@ -15633,8 +15642,7 @@ algorithm
             fail();
           end if;
           seen := nm :: seen;
-          kind := terminalVariableKind(v.causality);
-        then SimCode.FMI_TERMINAL(nm, false, {SimCode.FMI_TERMINAL_MEMBER(cr, nm, kind)}) :: terminals;
+        then SimCode.FMI_TERMINAL(nm, "", false, {SimCode.FMI_TERMINAL_MEMBER(cr, nm, "signal")}) :: terminals;
       else terminals;
     end matchcontinue;
   end for;
@@ -15643,49 +15651,60 @@ end simplePortTerminals;
 
 protected function connectorMemberOf
   "If the variable stems from a connector, return its terminal (connector instance)
-   name, the connector's isExpandable flag and the terminal member descriptor."
+   name, the connector type path (terminalKind), the isExpandable flag and the
+   terminal member descriptor. variableKind is the FMI 3.0 connection-semantics
+   kind: `inflow` for a flow member (Kirchhoff's law), `signal` otherwise (values
+   intended to be equal across a connection) - NOT the variable causality, which
+   is already in modelDescription.xml."
   input SimCodeVar.SimVar var;
-  output Option<tuple<String, Boolean, SimCode.FmiTerminalMember>> result;
+  output Option<tuple<String, String, Boolean, SimCode.FmiTerminalMember>> result;
 algorithm
   result := matchcontinue var
     local
       DAE.ComponentRef cref;
-      String tname, member, kind;
+      String tname, member, tkind, kind;
       Boolean isExp;
     case _ guard isSome(var.exportVar)
       algorithm
         cref := Util.getOption(var.exportVar);
-        (tname, member, isExp) := crefConnectorSplit(cref);
-        kind := terminalVariableKind(var.causality);
-      then SOME((tname, isExp, SimCode.FMI_TERMINAL_MEMBER(cref, member, kind)));
+        (tname, member, isExp, tkind) := crefConnectorSplit(cref);
+        // flow connector member -> Kirchhoff (inflow); otherwise a `signal` whose
+        // values are intended to be equal across a connection. The flow flag comes
+        // from the BackendDAE connectorType captured in the SimVar (the connector
+        // type stored in the cref keeps only the type path, not member attributes).
+        kind := if var.isConnectorFlow then "inflow" else "signal";
+      then SOME((tname, tkind, isExp, SimCode.FMI_TERMINAL_MEMBER(cref, member, kind)));
     else NONE();
   end matchcontinue;
 end connectorMemberOf;
 
 protected function crefConnectorSplit
   "Split a cref at its outermost connector-typed qualifier: returns the connector
-   instance name (terminal), the remaining member path and the connector's
-   isExpandable flag. Fails if no qualifier has a connector type."
+   instance name (terminal), the remaining member path, the connector's
+   isExpandable flag and the connector type path (for terminalKind). Fails if no
+   qualifier has a connector type."
   input DAE.ComponentRef cref;
   output String terminalName;
   output String memberName;
   output Boolean isExpandable;
+  output String terminalKind;
 algorithm
-  (terminalName, memberName, isExpandable) := match cref
+  (terminalName, memberName, isExpandable, terminalKind) := match cref
     local
       DAE.ComponentRef rest;
       DAE.Type ity;
-      String id, innerT, innerM;
+      String id, innerT, innerM, innerK;
       Boolean isExp;
     // the outermost qualifier is itself a connector: bus.a -> terminal bus, member a
     case DAE.CREF_QUAL(ident = id, identType = ity, componentRef = rest)
       guard Types.isConnector(ity)
-      then (id, ComponentReference.crefStr(rest), connectorIsExpandable(ity));
+      then (id, ComponentReference.crefStr(rest), connectorIsExpandable(ity),
+            connectorTypePath(ity));
     // a non-connector qualifier wrapping a connector deeper in: comp.bus.a
     case DAE.CREF_QUAL(ident = id, componentRef = rest)
       algorithm
-        (innerT, innerM, isExp) := crefConnectorSplit(rest);
-      then (id + "." + innerT, innerM, isExp);
+        (innerT, innerM, isExp, innerK) := crefConnectorSplit(rest);
+      then (id + "." + innerT, innerM, isExp, innerK);
   end match;
 end crefConnectorSplit;
 
@@ -15701,20 +15720,19 @@ algorithm
   end match;
 end connectorIsExpandable;
 
-protected function terminalVariableKind
-  "Map a SimVar causality to the FMI 3.0 terminal member variableKind."
-  input Option<SimCodeVar.Causality> causality;
-  output String kind;
+protected function connectorTypePath
+  "The connector type path (e.g. Modelica....Flange_a) used as the FMI 3.0
+   terminalKind. Empty string if the path is not available."
+  input DAE.Type ty;
+  output String path;
 algorithm
-  kind := match causality
-    case SOME(SimCodeVar.INPUT()) then "input";
-    case SOME(SimCodeVar.OUTPUT()) then "output";
-    case SOME(SimCodeVar.PARAMETER()) then "parameter";
-    case SOME(SimCodeVar.CALCULATED_PARAMETER()) then "calculatedParameter";
-    case SOME(SimCodeVar.LOCAL()) then "local";
-    else "local";
+  path := match ty
+    local Absyn.Path p;
+    case DAE.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(path = p)) then AbsynUtil.pathString(p);
+    case DAE.T_SUBTYPE_BASIC(complexClassType = ClassInf.CONNECTOR(path = p)) then AbsynUtil.pathString(p);
+    else "";
   end match;
-end terminalVariableKind;
+end connectorTypePath;
 
 public function getFMI3Clocks
   "Collect the FMI 3.0 output clocks from the model's clocked partitions: each

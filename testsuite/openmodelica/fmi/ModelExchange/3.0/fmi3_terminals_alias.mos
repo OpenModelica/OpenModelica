@@ -48,13 +48,13 @@ system("for v in flange_a.tau flange_a.phi flange_b.tau flange_b.phi; do unzip -
 // "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 // <fmiTerminalsAndIcons fmiVersion=\"3.0\">
 //   <Terminals>
-//     <Terminal name=\"flange_a\" matchingRule=\"bus\">
-//       <TerminalMemberVariable variableName=\"flange_a.tau\" memberName=\"tau\" variableKind=\"local\"/>
-//       <TerminalMemberVariable variableName=\"flange_a.phi\" memberName=\"phi\" variableKind=\"local\"/>
+//     <Terminal name=\"flange_a\" matchingRule=\"plug\" terminalKind=\"Flange\">
+//       <TerminalMemberVariable variableName=\"flange_a.tau\" memberName=\"tau\" variableKind=\"inflow\"/>
+//       <TerminalMemberVariable variableName=\"flange_a.phi\" memberName=\"phi\" variableKind=\"signal\"/>
 //     </Terminal>
-//     <Terminal name=\"flange_b\" matchingRule=\"bus\">
-//       <TerminalMemberVariable variableName=\"flange_b.tau\" memberName=\"tau\" variableKind=\"local\"/>
-//       <TerminalMemberVariable variableName=\"flange_b.phi\" memberName=\"phi\" variableKind=\"local\"/>
+//     <Terminal name=\"flange_b\" matchingRule=\"plug\" terminalKind=\"Flange\">
+//       <TerminalMemberVariable variableName=\"flange_b.tau\" memberName=\"tau\" variableKind=\"inflow\"/>
+//       <TerminalMemberVariable variableName=\"flange_b.phi\" memberName=\"phi\" variableKind=\"signal\"/>
 //     </Terminal>
 //   </Terminals>
 // </fmiTerminalsAndIcons>"

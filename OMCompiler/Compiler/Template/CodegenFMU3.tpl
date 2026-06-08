@@ -179,13 +179,18 @@ template fmiTerminalsAndIcons(list<FmiTerminal> terminals)
 end fmiTerminalsAndIcons;
 
 template Terminal3(FmiTerminal terminal)
- "Generates one <Terminal>. matchingRule=\"bus\" means the members are matched by
-  name when two terminals are connected, the natural rule for Modelica connectors."
+ "Generates one <Terminal>. Members are matched by name (memberName) when two
+  terminals are connected: matchingRule=\"plug\" for an ordinary, fully-defined
+  Modelica connector (all members must match), \"bus\" for an expandable connector
+  (partial matching allowed). terminalKind, when known, carries the connector type
+  path so importers can check type compatibility."
 ::=
 match terminal
 case FMI_TERMINAL(__) then
+  let rule = if isExpandable then "bus" else "plug"
+  let kindAttr = if stringEq(terminalKind, "") then "" else ' terminalKind="<%Util.escapeModelicaStringToXmlString(terminalKind)%>"'
   <<
-  <Terminal name="<%Util.escapeModelicaStringToXmlString(name)%>" matchingRule="bus">
+  <Terminal name="<%Util.escapeModelicaStringToXmlString(name)%>" matchingRule="<%rule%>"<%kindAttr%>>
     <%members |> m => TerminalMember3(m) ;separator="\n"%>
   </Terminal>
   >>

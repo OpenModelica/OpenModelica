@@ -763,8 +763,9 @@ end FmiModelStructure;
 /* FMI 3.0 Terminals (terminalsAndIcons.xml) */
 public uniontype FmiTerminal
   record FMI_TERMINAL
-    String name             "connector instance name, e.g. bus (also the matchingRule)";
-    Boolean isExpandable    "true for expandable connectors";
+    String name             "connector instance name, e.g. bus";
+    String terminalKind     "the connector type path (e.g. Modelica....Flange_a), \"\" if unknown";
+    Boolean isExpandable    "true for expandable connectors (matchingRule=bus, else plug)";
     list<FmiTerminalMember> members;
   end FMI_TERMINAL;
 end FmiTerminal;

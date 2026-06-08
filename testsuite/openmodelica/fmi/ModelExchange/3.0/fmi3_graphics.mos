@@ -9,8 +9,8 @@
 // OMGraphics runtime library, which consumes the in-memory model-instance
 // reference of issue #15219 for the *graphical* side only). Each placed signal
 // port (here input u / output y, which collapse to plain input/output Real in
-// the flat model) becomes a <Terminal> whose input/output direction comes from
-// the flat model (SimVar causality, no JSON/modelDescription) and gets a
+// the flat model) becomes a single-member <Terminal> with variableKind="signal"
+// and gets a
 // <TerminalGraphicalRepresentation> (placement box + iconBaseName) plus its
 // rendered port icon terminalsAndIcons/<iconBaseName>. All icon files live in
 // terminalsAndIcons/ and a PNG is always written (FMI 3.0 resolves iconBaseName
@@ -66,10 +66,10 @@ system("unzip -cqq GfxPorts.fmu terminalsAndIcons/terminalsAndIcons.xml | grep -
 // ""
 // <GraphicalRepresentation
 // <Terminal name="u"
-// variableKind="input"
+// variableKind="signal"
 // iconBaseName="RealInputI.png"
 // <Terminal name="y"
-// variableKind="output"
+// variableKind="signal"
 // iconBaseName="RealOutputI.png"
 // 0
 // ""

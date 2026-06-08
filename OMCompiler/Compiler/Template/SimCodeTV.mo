@@ -351,6 +351,7 @@ package SimCodeVar
       Option<Initial> initial_ "FMI-2.0 initial attribute";
       Option<DAE.ComponentRef> exportVar "variables will only be exported to the modelDescription.xml if this attribute is SOME(cref)";
       Boolean relativeQuantity           "annotation(absoluteValue=false) If false, then the variable defines a relativeQuantity=true else relativeQuantity=false";
+      Boolean isConnectorFlow            "true if the variable is a flow connector member (FMI 3.0 terminal variableKind inflow/outflow)";
     end SIMVAR;
   end SimVar;
 
@@ -1039,6 +1040,7 @@ package SimCode
   uniontype FmiTerminal
     record FMI_TERMINAL
       String name;
+      String terminalKind;
       Boolean isExpandable;
       list<FmiTerminalMember> members;
     end FMI_TERMINAL;

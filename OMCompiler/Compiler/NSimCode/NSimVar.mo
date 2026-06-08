@@ -347,7 +347,8 @@ public
         variability         = SOME(convertVariability(simVar.varKind)),
         initial_            = convertInitial(convertVariability(simVar.varKind), Util.applyOption(simVar.causality, convertCausality)),
         exportVar           = Util.applyOption(simVar.exportVar, ComponentRef.toDAE),
-        relativeQuantity    = false);
+        relativeQuantity    = false,
+        isConnectorFlow     = false);  // TODO: new backend does not yet track the flow connectorType (FMI 3.0 terminal inflow/outflow)
     end convert;
 
     function convertCausality

@@ -6,6 +6,9 @@
 // FMI 3.0 Terminals: variables that stem from a connector (detected from the
 // flat-model component type, i.e. a connector-typed cref qualifier) are grouped
 // into one Terminal per connector instance in terminalsAndIcons/terminalsAndIcons.xml.
+// matchingRule is "plug" for an ordinary connector, terminalKind carries the
+// connector type path, and variableKind is the connection-semantics kind
+// ("signal" for an equality value, "inflow"/"outflow" for a flow variable).
 
 loadString("
 connector InBus
@@ -37,12 +40,12 @@ readFile("Ctrl_term.xml"); getErrorString();
 // "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 // <fmiTerminalsAndIcons fmiVersion=\"3.0\">
 //   <Terminals>
-//     <Terminal name=\"bus\" matchingRule=\"bus\">
-//       <TerminalMemberVariable variableName=\"bus.a\" memberName=\"a\" variableKind=\"input\"/>
-//       <TerminalMemberVariable variableName=\"bus.b\" memberName=\"b\" variableKind=\"input\"/>
+//     <Terminal name=\"bus\" matchingRule=\"plug\" terminalKind=\"InBus\">
+//       <TerminalMemberVariable variableName=\"bus.a\" memberName=\"a\" variableKind=\"signal\"/>
+//       <TerminalMemberVariable variableName=\"bus.b\" memberName=\"b\" variableKind=\"signal\"/>
 //     </Terminal>
-//     <Terminal name=\"y\" matchingRule=\"bus\">
-//       <TerminalMemberVariable variableName=\"y\" memberName=\"y\" variableKind=\"output\"/>
+//     <Terminal name=\"y\" matchingRule=\"plug\">
+//       <TerminalMemberVariable variableName=\"y\" memberName=\"y\" variableKind=\"signal\"/>
 //     </Terminal>
 //   </Terminals>
 // </fmiTerminalsAndIcons>"
