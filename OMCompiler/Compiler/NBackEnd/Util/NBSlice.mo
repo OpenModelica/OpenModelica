@@ -507,7 +507,7 @@ public
     for dep in dependencies loop
       func := function updateDependenciesInteger(mode = mode, mode_to_var = mode_to_var, indices = indices);
       // var_arr_idx not needed for this
-      fillDependencyArray(dep, body_size, frames, mapping, map, func, 0, true);
+      fillDependencyArray(dep, body_size, eqn_size, frames, mapping, map, func, 0, true);
       // increase mode index
       mode := mode + 1;
     end for;
@@ -584,10 +584,10 @@ public
     for dep in dependencies loop
       if UnorderedMap.contains(dep, var_rep.map) then
         (final_dep, var_arr_idx) := getVarArrIdx(dep, var_rep_mapping, var_rep.map);
-        fillDependencyArray(final_dep, body_size, frames, var_rep_mapping, var_rep.map, func_var, var_arr_idx, false);
+        fillDependencyArray(final_dep, body_size, eqn_size, frames, var_rep_mapping, var_rep.map, func_var, var_arr_idx, false);
       elseif UnorderedMap.contains(dep, eqn_rep.map) then
         (final_dep, var_arr_idx) := getVarArrIdx(dep, eqn_rep_mapping, eqn_rep.map);
-        fillDependencyArray(final_dep, body_size, frames, eqn_rep_mapping, eqn_rep.map, func_eqn, var_arr_idx, false);
+        fillDependencyArray(final_dep, body_size, eqn_size, frames, eqn_rep_mapping, eqn_rep.map, func_eqn, var_arr_idx, false);
       end if;
     end for;
 
@@ -603,6 +603,7 @@ public
     This dependency might be an array cref, part of a reduction or contain slices."
     input ComponentRef dep;
     input Integer body_size;
+    input Integer eqn_size;
     input list<tuple<ComponentRef, Expression, Option<Iterator>>> frames;
     input Mapping mapping;
     input UnorderedMap<ComponentRef, Integer> map;
@@ -661,7 +662,7 @@ public
           // we now know that there is a dependency of equation (eqn_idx) to variable (var_idx)
           // call the function that adds this specific variable to the correct structure
           if var_idx > 0 then
-            eqn_idx := func(eqn_idx, var_idx, var_arr_idx);
+            eqn_idx := mod(func(eqn_idx, var_idx, var_arr_idx), eqn_size) + 1;
           end if;
         end for;
       end for;
