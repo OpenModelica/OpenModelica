@@ -329,9 +329,8 @@ int GC_asprintf(const char **strp, const char *fmt, ...) {
 
 modelica_string stringAppend(modelica_string s1, modelica_string s2)
 {
-  unsigned len1 = 0, len2 = 0, nbytes = 0, header = 0, nwords = 0;
+  unsigned len1 = 0, len2 = 0, nbytes = 0;
   void *res = NULL;
-  struct mmc_string *p = NULL;
   MMC_CHECK_STRING(s1);
   MMC_CHECK_STRING(s2);
 
