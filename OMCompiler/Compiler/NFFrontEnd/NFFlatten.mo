@@ -2515,6 +2515,13 @@ algorithm
     flatModel := evaluateConnectionOperators(flatModel, csets, csets_array, vars, ctable, flow_alias_repl_opt);
   end if;
 
+  // FMI 3.0 flange causalization: expose unconnected acausal connectors as a
+  // causal FMU boundary (flow -> input, potential -> output) so the FMU can be
+  // reconnected into a physical circuit (issue #15686).
+  if Flags.getConfigBool(Flags.BUILDING_FMU) and stringEq(Flags.getConfigString(Flags.FMI_VERSION), "3.0") then
+    flatModel := causalizeAcausalConnectors(flatModel);
+  end if;
+
   execStat(getInstanceName());
 end resolveConnections;
 
@@ -2567,6 +2574,78 @@ algorithm
     end if;
   end for;
 end generateTopLevelIOs;
+
+function causalizeAcausalConnectors
+  "FMI 3.0 flange causalization (issue #15686). Turn the model's unconnected
+   acausal (physical) connectors into a causal FMU boundary so the exported FMU can
+   be reconnected into a Modelica physical circuit. An unconnected flow variable
+   normally gets a `flow = 0` equation; instead expose the flow as an input and the
+   connector's potential variable(s) as outputs (the convention Dymola uses for
+   FMI terminal export) and drop the zero-flow equation. The backend then
+   causalizes the model in the natural 'component driven by its boundary flows'
+   form. Only triggered for FMI 3.0 export."
+  input output FlatModel flatModel;
+protected
+  list<ComponentRef> flowCrefs;
+  list<ComponentRef> unconnectedFlows = {};
+  list<ComponentRef> boundaryConnectors = {};
+  list<Equation> kept = {};
+  Boolean isZeroFlowEq;
+  ComponentRef fc;
+algorithm
+  // crefs of all flow connector members (to tell a generated zero-flow equation
+  // apart from a genuine `x = 0` model equation)
+  flowCrefs := list(v.name for v guard Variable.isFlow(v) in flatModel.variables);
+  if listEmpty(flowCrefs) then return; end if;
+
+  // collect and drop the `flow = 0` equations of unconnected flows
+  for eq in flatModel.equations loop
+    isZeroFlowEq := false;
+    () := match eq
+      local Real rv;
+      case Equation.EQUALITY(lhs = Expression.CREF(cref = fc), rhs = Expression.REAL(value = rv))
+        guard rv == 0.0 and List.isMemberOnTrue(fc, flowCrefs, ComponentRef.isEqual)
+        algorithm
+          unconnectedFlows := fc :: unconnectedFlows;
+          boundaryConnectors := ComponentRef.rest(fc) :: boundaryConnectors;
+          isZeroFlowEq := true;
+        then ();
+      else ();
+    end match;
+    if not isZeroFlowEq then
+      kept := eq :: kept;
+    end if;
+  end for;
+
+  if listEmpty(unconnectedFlows) then
+    return;
+  end if;
+
+  flatModel.equations := listReverseInPlace(kept);
+  flatModel.variables := list(causalizeAcausalVar(v, unconnectedFlows, boundaryConnectors)
+                              for v in flatModel.variables);
+end causalizeAcausalConnectors;
+
+function causalizeAcausalVar
+  "Reclassify a boundary connector member: an unconnected flow becomes an input,
+   a potential of such a connector becomes an output."
+  input output Variable var;
+  input list<ComponentRef> unconnectedFlows;
+  input list<ComponentRef> boundaryConnectors;
+protected
+  Attributes attr;
+algorithm
+  if Variable.isFlow(var) and List.isMemberOnTrue(var.name, unconnectedFlows, ComponentRef.isEqual) then
+    attr := var.attributes;
+    attr.direction := Direction.INPUT;
+    var.attributes := attr;
+  elseif Variable.isPotential(var) and
+         List.isMemberOnTrue(ComponentRef.rest(var.name), boundaryConnectors, ComponentRef.isEqual) then
+    attr := var.attributes;
+    attr.direction := Direction.OUTPUT;
+    var.attributes := attr;
+  end if;
+end causalizeAcausalVar;
 
 function evaluateConnectionOperators
   input output FlatModel flatModel;
