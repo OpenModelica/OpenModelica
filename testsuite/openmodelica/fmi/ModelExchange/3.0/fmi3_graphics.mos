@@ -4,14 +4,18 @@
 // teardown_command: rm -rf GfxPorts.fmu GfxPorts.fmutmp/
 //
 // FMI 3.0 graphical user annotations. The model Icon is rendered to
-// icons/<modelIdentifier>.svg and an FMI 3.0 <GraphicalRepresentation> is added
-// to terminalsAndIcons.xml (Qt-free, by the OMGraphics runtime library, which
-// consumes the in-memory model-instance reference of issue #15219 for the
-// *graphical* side only). Each placed signal port (here input u / output y, which
-// collapse to plain input/output Real in the flat model) becomes a <Terminal>
-// whose input/output direction comes from the flat model (SimVar causality, no
-// JSON/modelDescription) and gets a <TerminalGraphicalRepresentation> (placement
-// box + iconBaseName) plus its rendered port icon icons/<iconBaseName>.svg.
+// terminalsAndIcons/icon.png (+ icon.svg companion) and an FMI 3.0
+// <GraphicalRepresentation> is added to terminalsAndIcons.xml (Qt-free, by the
+// OMGraphics runtime library, which consumes the in-memory model-instance
+// reference of issue #15219 for the *graphical* side only). Each placed signal
+// port (here input u / output y, which collapse to plain input/output Real in
+// the flat model) becomes a <Terminal> whose input/output direction comes from
+// the flat model (SimVar causality, no JSON/modelDescription) and gets a
+// <TerminalGraphicalRepresentation> (placement box + iconBaseName) plus its
+// rendered port icon terminalsAndIcons/<iconBaseName>. All icon files live in
+// terminalsAndIcons/ and a PNG is always written (FMI 3.0 resolves iconBaseName
+// relative to terminalsAndIcons/terminalsAndIcons.xml and requires a PNG; the
+// SVG is an optional companion).
 
 loadString("
 connector RealInputI = input Real annotation(Icon(graphics={Polygon(points={{-100,100},{100,0},{-100,-100}}, fillColor={0,0,127}, fillPattern=FillPattern.Solid, lineColor={0,0,127})}));
@@ -31,14 +35,17 @@ end GfxPorts;
 buildModelFMU(GfxPorts, version="3.0", fmuType="me"); getErrorString();
 
 // model icon SVG: the rectangle and the model-name text
-system("unzip -cqq GfxPorts.fmu icons/GfxPorts.svg | grep -oE \"<rect|>GfxPorts<\""); getErrorString();
+system("unzip -cqq GfxPorts.fmu terminalsAndIcons/icon.svg | grep -oE \"<rect|>GfxPorts<\""); getErrorString();
 
-// the rendered icons present in the FMU: model + one per port connector type
-system("unzip -l GfxPorts.fmu | grep -oE \"icons/[A-Za-z]+\\.svg\" | sort"); getErrorString();
+// the rendered icon files present in the FMU: model icon + one per port connector
+// type, each as a mandatory PNG plus an optional SVG companion (all under
+// terminalsAndIcons/)
+system("unzip -l GfxPorts.fmu | grep -oE \"terminalsAndIcons/[A-Za-z]+\\.(png|svg)\" | sort"); getErrorString();
 
 // terminals: direction from the flat model (SimVar causality), graphics (placement
-// box + iconBaseName) from the model instance, in FMI 3.0 schema order
-system("unzip -cqq GfxPorts.fmu terminalsAndIcons/terminalsAndIcons.xml | grep -oE \"<GraphicalRepresentation|<Terminal name=.[a-z]+.|variableKind=.[a-z]+.|iconBaseName=.[A-Za-z]+.\""); getErrorString();
+// box + iconBaseName) from the model instance, in FMI 3.0 schema order. The
+// iconBaseName carries the .png extension and resolves to a file in terminalsAndIcons/.
+system("unzip -cqq GfxPorts.fmu terminalsAndIcons/terminalsAndIcons.xml | grep -oE \"<GraphicalRepresentation|<Terminal name=.[a-z]+.|variableKind=.[a-z]+.|iconBaseName=.[A-Za-z]+.png.\""); getErrorString();
 
 // Result:
 // true
@@ -49,18 +56,21 @@ system("unzip -cqq GfxPorts.fmu terminalsAndIcons/terminalsAndIcons.xml | grep -
 // >GfxPorts<
 // 0
 // ""
-// icons/GfxPorts.svg
-// icons/RealInputI.svg
-// icons/RealOutputI.svg
+// terminalsAndIcons/RealInputI.png
+// terminalsAndIcons/RealInputI.svg
+// terminalsAndIcons/RealOutputI.png
+// terminalsAndIcons/RealOutputI.svg
+// terminalsAndIcons/icon.png
+// terminalsAndIcons/icon.svg
 // 0
 // ""
 // <GraphicalRepresentation
 // <Terminal name="u"
 // variableKind="input"
-// iconBaseName="RealInputI"
+// iconBaseName="RealInputI.png"
 // <Terminal name="y"
 // variableKind="output"
-// iconBaseName="RealOutputI"
+// iconBaseName="RealOutputI.png"
 // 0
 // ""
 // endResult

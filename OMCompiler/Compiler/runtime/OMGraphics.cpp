@@ -25,6 +25,10 @@
 #include <sstream>
 #include <cmath>
 #include <algorithm>
+#include <cstdint>
+#include <cstring>
+#include <vector>
+#include <zlib.h>
 
 namespace OMGraphics {
 
@@ -309,6 +313,330 @@ std::string renderIconSVG(const Icon &icon, const SvgOptions &opts)
   svg << "  </g>\n";
   svg << "</svg>\n";
   return svg.str();
+}
+
+/* ------------------------------------------------------------------------- *
+ * PNG rasteriser
+ *
+ * A small, dependency-light (zlib only) rasteriser that draws the icon shapes
+ * into an RGBA pixel buffer and encodes it as a PNG. The FMI 3.0 standard
+ * (section "Terminal Graphical Representation" and the FMU layout in section
+ * "Distribution of FMUs") requires the icon image files referenced from
+ * terminalsAndIcons.xml to be PNGs; an SVG is only an optional companion.
+ *
+ * Anti-aliasing is done by supersampling: the scene is drawn at SS x the target
+ * resolution and box-downsampled. Filled shapes are drawn opaque over a
+ * transparent background, so coverage at the edges comes out of the downsample.
+ * ------------------------------------------------------------------------- */
+namespace {
+
+const int OMG_SS = 3;          /* supersampling factor (per axis) */
+const int OMG_MAX_DIM = 512;   /* clamp for the final image size (px) */
+
+/* RGBA8 raster, row-major, 4 bytes/pixel, transparent (0,0,0,0) background. */
+struct Raster {
+  int w = 0, h = 0;
+  std::vector<unsigned char> px;
+  Raster(int W, int H) : w(W), h(H), px((size_t) W * H * 4, 0) {}
+  /* set a pixel opaque to (r,g,b) (src-over with full alpha == replace) */
+  inline void set(int x, int y, int r, int g, int b) {
+    if (x < 0 || y < 0 || x >= w || y >= h) return;
+    unsigned char *p = &px[((size_t) y * w + x) * 4];
+    p[0] = (unsigned char) r; p[1] = (unsigned char) g; p[2] = (unsigned char) b; p[3] = 255;
+  }
+};
+
+/* A vertex in device (pixel, supersampled) space. */
+struct DPoint { double x, y; };
+
+/* Affine map from icon coordinates to supersampled device pixels (y flipped). */
+struct DeviceMap {
+  double vbX, vbY, vbW, vbH;
+  double sw, sh; /* supersampled image size */
+  DPoint map(double x, double y) const {
+    DPoint d;
+    d.x = (x - vbX) / vbW * sw;
+    d.y = ((vbY + vbH) - y) / vbH * sh; /* flip y (Modelica y up -> image y down) */
+    return d;
+  }
+};
+
+/* Apply a shape's local transform (rotate about origin, then translate by
+   origin) to a point in shape-local icon coordinates -> icon coordinates,
+   mirroring the SVG "translate(origin) rotate(rotation)" group. */
+Point applyShapeTransform(const Shape &s, const Point &p)
+{
+  double a = s.rotation * OMG_PI / 180.0;
+  double ca = std::cos(a), sa = std::sin(a);
+  Point r;
+  r.x = s.origin.x + (ca * p.x - sa * p.y);
+  r.y = s.origin.y + (sa * p.x + ca * p.y);
+  return r;
+}
+
+/* Fill a polygon (device-space vertices) with a solid colour using an even-odd
+   scanline rule. Vertices are already in supersampled pixel space. */
+void fillPolygon(Raster &r, const std::vector<DPoint> &pts, const Color &c)
+{
+  if (pts.size() < 3) return;
+  double ymin = pts[0].y, ymax = pts[0].y;
+  for (const DPoint &p : pts) { ymin = std::min(ymin, p.y); ymax = std::max(ymax, p.y); }
+  int y0 = std::max(0, (int) std::floor(ymin));
+  int y1 = std::min(r.h - 1, (int) std::ceil(ymax));
+  std::vector<double> xs;
+  for (int y = y0; y <= y1; ++y) {
+    double yc = y + 0.5;
+    xs.clear();
+    size_t n = pts.size();
+    for (size_t i = 0; i < n; ++i) {
+      const DPoint &a = pts[i], &b = pts[(i + 1) % n];
+      double ay = a.y, by = b.y;
+      if ((ay <= yc && by > yc) || (by <= yc && ay > yc)) {
+        double t = (yc - ay) / (by - ay);
+        xs.push_back(a.x + t * (b.x - a.x));
+      }
+    }
+    if (xs.size() < 2) continue;
+    std::sort(xs.begin(), xs.end());
+    for (size_t i = 0; i + 1 < xs.size(); i += 2) {
+      int xa = std::max(0, (int) std::ceil(xs[i] - 0.5));
+      int xb = std::min(r.w - 1, (int) std::floor(xs[i + 1] - 0.5));
+      for (int x = xa; x <= xb; ++x) r.set(x, y, c.r < 0 ? 0 : c.r, c.g < 0 ? 0 : c.g, c.b < 0 ? 0 : c.b);
+    }
+  }
+}
+
+/* Draw a filled disk (used for round line caps/joins). */
+void fillDisk(Raster &r, double cx, double cy, double rad, const Color &c)
+{
+  if (rad <= 0.0) return;
+  int x0 = std::max(0, (int) std::floor(cx - rad));
+  int x1 = std::min(r.w - 1, (int) std::ceil(cx + rad));
+  int y0 = std::max(0, (int) std::floor(cy - rad));
+  int y1 = std::min(r.h - 1, (int) std::ceil(cy + rad));
+  double r2 = rad * rad;
+  for (int y = y0; y <= y1; ++y)
+    for (int x = x0; x <= x1; ++x) {
+      double dx = x + 0.5 - cx, dy = y + 0.5 - cy;
+      if (dx * dx + dy * dy <= r2) r.set(x, y, c.r < 0 ? 0 : c.r, c.g < 0 ? 0 : c.g, c.b < 0 ? 0 : c.b);
+    }
+}
+
+/* Stroke a polyline (device space) with a given pixel width by filling a quad
+   per segment plus a disk at every vertex for round joins/caps. */
+void strokePolyline(Raster &r, const std::vector<DPoint> &pts, bool closed,
+                    const Color &c, double widthPx)
+{
+  double hw = std::max(widthPx, 1.0) / 2.0;
+  size_t n = pts.size();
+  if (n < 2) { if (n == 1) fillDisk(r, pts[0].x, pts[0].y, hw, c); return; }
+  size_t segs = closed ? n : n - 1;
+  for (size_t i = 0; i < segs; ++i) {
+    const DPoint &a = pts[i], &b = pts[(i + 1) % n];
+    double dx = b.x - a.x, dy = b.y - a.y;
+    double len = std::sqrt(dx * dx + dy * dy);
+    if (len < 1e-9) continue;
+    double nx = -dy / len * hw, ny = dx / len * hw;
+    std::vector<DPoint> quad = {
+      {a.x + nx, a.y + ny}, {b.x + nx, b.y + ny}, {b.x - nx, b.y - ny}, {a.x - nx, a.y - ny}
+    };
+    fillPolygon(r, quad, c);
+  }
+  for (size_t i = 0; i < n; ++i) fillDisk(r, pts[i].x, pts[i].y, hw, c);
+}
+
+/* Turn an ellipse shape into a closed (or pie/chord) outline of icon-space
+   points, honouring start/end angle. */
+std::vector<Point> ellipsePoints(const Shape &s)
+{
+  double cx = (s.extent.p1.x + s.extent.p2.x) / 2.0;
+  double cy = (s.extent.p1.y + s.extent.p2.y) / 2.0;
+  double rx = std::fabs(s.extent.p2.x - s.extent.p1.x) / 2.0;
+  double ry = std::fabs(s.extent.p2.y - s.extent.p1.y) / 2.0;
+  bool full = (std::fabs(s.endAngle - s.startAngle) >= 359.999) ||
+              (s.startAngle == 0.0 && s.endAngle == 0.0);
+  double a0 = s.startAngle * OMG_PI / 180.0;
+  double a1 = (full ? 360.0 : s.endAngle) * OMG_PI / 180.0;
+  if (full) { a0 = 0.0; a1 = 2.0 * OMG_PI; }
+  const int N = 64;
+  std::vector<Point> pts;
+  if (!full) pts.push_back({cx, cy}); /* pie centre for arcs */
+  for (int i = 0; i <= N; ++i) {
+    double a = a0 + (a1 - a0) * i / (double) N;
+    pts.push_back({cx + rx * std::cos(a), cy + ry * std::sin(a)});
+  }
+  return pts;
+}
+
+/* Map a vector of icon-space points (after the shape transform) to device. */
+std::vector<DPoint> toDevice(const DeviceMap &m, const Shape &s, const std::vector<Point> &in)
+{
+  std::vector<DPoint> out;
+  out.reserve(in.size());
+  for (const Point &p : in) {
+    Point w = applyShapeTransform(s, p);
+    out.push_back(m.map(w.x, w.y));
+  }
+  return out;
+}
+
+void rasterShape(Raster &r, const DeviceMap &m, const Shape &s, double ssScale)
+{
+  if (!s.visible) return;
+  /* device-space stroke width: Modelica thickness in coord units * pixels/unit */
+  double pxPerUnit = m.sw / m.vbW;
+  switch (s.kind) {
+    case ShapeKind::Rectangle: {
+      double x0 = std::min(s.extent.p1.x, s.extent.p2.x), x1 = std::max(s.extent.p1.x, s.extent.p2.x);
+      double y0 = std::min(s.extent.p1.y, s.extent.p2.y), y1 = std::max(s.extent.p1.y, s.extent.p2.y);
+      std::vector<Point> corners = {{x0, y0}, {x1, y0}, {x1, y1}, {x0, y1}};
+      std::vector<DPoint> dev = toDevice(m, s, corners);
+      if (s.fillPattern != FillPattern::None) fillPolygon(r, dev, s.fillColor);
+      if (s.linePattern != LinePattern::None)
+        strokePolyline(r, dev, true, s.lineColor, strokeWidth(s.lineThickness) * pxPerUnit);
+      break;
+    }
+    case ShapeKind::Polygon: {
+      std::vector<DPoint> dev = toDevice(m, s, s.points);
+      if (s.fillPattern != FillPattern::None) fillPolygon(r, dev, s.fillColor);
+      if (s.linePattern != LinePattern::None)
+        strokePolyline(r, dev, true, s.lineColor, strokeWidth(s.lineThickness) * pxPerUnit);
+      break;
+    }
+    case ShapeKind::Ellipse: {
+      std::vector<Point> pts = ellipsePoints(s);
+      std::vector<DPoint> dev = toDevice(m, s, pts);
+      if (s.fillPattern != FillPattern::None) fillPolygon(r, dev, s.fillColor);
+      if (s.linePattern != LinePattern::None)
+        strokePolyline(r, dev, true, s.lineColor, strokeWidth(s.lineThickness) * pxPerUnit);
+      break;
+    }
+    case ShapeKind::Line: {
+      std::vector<DPoint> dev = toDevice(m, s, s.points);
+      if (s.linePattern != LinePattern::None)
+        strokePolyline(r, dev, false, s.color, strokeWidth(s.thickness) * pxPerUnit);
+      break;
+    }
+    case ShapeKind::Text:
+    case ShapeKind::Bitmap:
+      /* not rasterised (no font / image decoder in this Qt-free path) */
+      break;
+  }
+  (void) ssScale;
+}
+
+/* Box-downsample the supersampled raster to the final resolution, averaging
+   RGBA over each SS x SS block so edges become anti-aliased and partially
+   transparent. */
+Raster downsample(const Raster &hi, int factor)
+{
+  Raster lo(hi.w / factor, hi.h / factor);
+  for (int y = 0; y < lo.h; ++y)
+    for (int x = 0; x < lo.w; ++x) {
+      long sr = 0, sg = 0, sb = 0, sa = 0;
+      for (int dy = 0; dy < factor; ++dy)
+        for (int dx = 0; dx < factor; ++dx) {
+          const unsigned char *p = &hi.px[((size_t)(y * factor + dy) * hi.w + (x * factor + dx)) * 4];
+          /* premultiply so transparent texels don't bleed black into edges */
+          sr += (long) p[0] * p[3]; sg += (long) p[1] * p[3]; sb += (long) p[2] * p[3];
+          sa += p[3];
+        }
+      unsigned char *o = &lo.px[((size_t) y * lo.w + x) * 4];
+      if (sa > 0) { o[0] = (unsigned char)(sr / sa); o[1] = (unsigned char)(sg / sa); o[2] = (unsigned char)(sb / sa); }
+      o[3] = (unsigned char)(sa / (factor * factor));
+    }
+  return lo;
+}
+
+/* Append a big-endian uint32. */
+void putU32(std::string &s, uint32_t v)
+{
+  s.push_back((char)((v >> 24) & 0xFF)); s.push_back((char)((v >> 16) & 0xFF));
+  s.push_back((char)((v >> 8) & 0xFF));  s.push_back((char)(v & 0xFF));
+}
+
+/* Append a PNG chunk (type + data + CRC over type+data). */
+void putChunk(std::string &out, const char tag[4], const std::string &data)
+{
+  putU32(out, (uint32_t) data.size());
+  size_t start = out.size();
+  out.append(tag, 4);
+  out.append(data);
+  uLong crc = crc32(0L, Z_NULL, 0);
+  crc = crc32(crc, (const Bytef *)(out.data() + start), (uInt)(4 + data.size()));
+  putU32(out, (uint32_t) crc);
+}
+
+/* Encode an RGBA8 raster as a PNG byte string (color type 6, filter 0 per row). */
+std::string encodePNG(const Raster &img)
+{
+  std::string ihdr;
+  putU32(ihdr, (uint32_t) img.w); putU32(ihdr, (uint32_t) img.h);
+  ihdr.push_back(8);   /* bit depth */
+  ihdr.push_back(6);   /* color type RGBA */
+  ihdr.push_back(0);   /* compression */
+  ihdr.push_back(0);   /* filter */
+  ihdr.push_back(0);   /* interlace */
+
+  std::string raw;
+  raw.reserve((size_t) img.h * (img.w * 4 + 1));
+  for (int y = 0; y < img.h; ++y) {
+    raw.push_back(0); /* filter type: none */
+    raw.append((const char *) &img.px[(size_t) y * img.w * 4], (size_t) img.w * 4);
+  }
+
+  uLongf bound = compressBound((uLong) raw.size());
+  std::vector<unsigned char> comp(bound);
+  if (compress2(comp.data(), &bound, (const Bytef *) raw.data(), (uLong) raw.size(), Z_BEST_COMPRESSION) != Z_OK)
+    return std::string();
+  std::string idat((const char *) comp.data(), bound);
+
+  std::string out;
+  const unsigned char sig[8] = {0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A};
+  out.append((const char *) sig, 8);
+  putChunk(out, "IHDR", ihdr);
+  putChunk(out, "IDAT", idat);
+  putChunk(out, "IEND", std::string());
+  return out;
+}
+
+} // namespace
+
+std::string renderIconPNG(const Icon &icon, const SvgOptions &opts)
+{
+  if (icon.graphics.empty()) return std::string();
+  const Extent &e = icon.coordinateSystem.extent;
+  double xmin = std::min(e.p1.x, e.p2.x), xmax = std::max(e.p1.x, e.p2.x);
+  double ymin = std::min(e.p1.y, e.p2.y), ymax = std::max(e.p1.y, e.p2.y);
+  double w = xmax - xmin, h = ymax - ymin;
+  if (w <= 0.0) w = 200.0;
+  if (h <= 0.0) h = 200.0;
+
+  /* match the SVG viewBox padding so the full outline of boundary shapes fits */
+  double maxStroke = 0.0;
+  for (const Shape &s : icon.graphics) {
+    double tw = (s.kind == ShapeKind::Line) ? s.thickness : s.lineThickness;
+    double sw = strokeWidth(tw);
+    if (sw > maxStroke) maxStroke = sw;
+  }
+  double margin = std::max(maxStroke, 0.005 * std::max(w, h));
+  double vbW = w + 2.0 * margin, vbH = h + 2.0 * margin;
+  double vbX = xmin - margin, vbY = ymin - margin;
+
+  /* final image size: ~1 px per coordinate unit, clamped, aspect preserved */
+  double scale = 1.0;
+  double maxc = std::max(vbW, vbH);
+  if (maxc * scale > OMG_MAX_DIM) scale = OMG_MAX_DIM / maxc;
+  int outW = std::max(1, (int) std::lround(vbW * scale));
+  int outH = std::max(1, (int) std::lround(vbH * scale));
+
+  Raster hi(outW * OMG_SS, outH * OMG_SS);
+  DeviceMap m{vbX, vbY, vbW, vbH, (double) hi.w, (double) hi.h};
+  for (const Shape &s : icon.graphics) rasterShape(hi, m, s, (double) OMG_SS);
+
+  Raster lo = downsample(hi, OMG_SS);
+  (void) opts;
+  return encodePNG(lo);
 }
 
 /* ------------------------------------------------------------------------- *

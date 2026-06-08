@@ -4352,10 +4352,13 @@ end callTranslateModelFMU;
 protected function generateFMI3GraphicalRepresentation
   "FMI 3.0 graphical user annotations (issue #15686 task 9). Using the in-memory
    model instance (issue #15219) for the *graphical* side only, this renders the
-   model Icon to icons/<modelIdentifier>.svg, adds an FMI 3.0
+   model Icon to terminalsAndIcons/icon.png (+ icon.svg), adds an FMI 3.0
    <GraphicalRepresentation> to terminalsAndIcons.xml, and for every placed
-   connector component renders its port icon to icons/<iconBaseName>.svg and adds
-   a <TerminalGraphicalRepresentation> (placement box + iconBaseName). The set of
+   connector component renders its port icon to terminalsAndIcons/<iconBaseName>.png
+   (+ .svg) and adds a <TerminalGraphicalRepresentation> (placement box +
+   iconBaseName). All icon files live in terminalsAndIcons/ because FMI 3.0
+   resolves iconBaseName relative to terminalsAndIcons/terminalsAndIcons.xml and
+   requires a PNG (the SVG is an optional companion). The set of
    ports and their input/output direction are NOT taken from the model instance:
    structured connectors already have a <Terminal> from SimCode (we only add the
    graphics), and a simple signal port gets a terminal whose variableKind is the
@@ -4365,8 +4368,8 @@ protected function generateFMI3GraphicalRepresentation
   input String fmutmp;
   input String modelIdentifier;
 protected
-  Integer handle, nConn, i;
-  String svg, grepr, modelName, iconsDir, taiDir, taiFile, content;
+  Integer handle, nConn, i, pngOk;
+  String svg, grepr, modelName, taiDir, taiFile, content;
   String info, cname, ibase, sx1, sy1, sx2, sy2, csvg, tgr;
   list<String> parts;
 algorithm
@@ -4376,7 +4379,9 @@ algorithm
     Values.INTEGER(handle) := NFApi.getModelInstanceReference(className, className, "");
     if handle > 0 then
       modelName := AbsynUtil.pathLastIdent(className);
-      iconsDir := fmutmp + "/icons/";
+      // FMI 3.0 (section "Distribution of FMUs"): icon image files referenced
+      // from terminalsAndIcons.xml live in the terminalsAndIcons/ directory, and
+      // iconBaseName is resolved relative to terminalsAndIcons/terminalsAndIcons.xml.
       taiDir := fmutmp + "/terminalsAndIcons/";
       taiFile := taiDir + "terminalsAndIcons.xml";
 
@@ -4384,10 +4389,15 @@ algorithm
       grepr := OMGraphics_graphicalRepresentationXMLFromHandle(handle, 0.5);
       nConn := OMGraphics_placedConnectorCount(handle);
 
-      // model icon -> icons/<modelIdentifier>.svg
+      // model icon -> terminalsAndIcons/icon.png (mandatory) + icon.svg (optional
+      // companion). The fixed name "icon" is the FMI 3.0 convention for the FMU
+      // icon "without terminals".
       if svg <> "" then
-        Util.createDirectoryTree(iconsDir);
-        System.writeFile(iconsDir + modelIdentifier + ".svg", svg);
+        Util.createDirectoryTree(taiDir);
+        pngOk := OMGraphics_writeIconPNGFromHandle(handle, modelName, taiDir + "icon.png");
+        if pngOk == 1 then
+          System.writeFile(taiDir + "icon.svg", svg);
+        end if;
       end if;
 
       if grepr <> "" or nConn > 0 then
@@ -4415,16 +4425,20 @@ algorithm
             sy2 := listGet(parts, 6);
 
             if System.stringFind(content, "<Terminal name=\"" + cname + "\"") >= 0 then
-              // the connector's own port icon -> icons/<iconBaseName>.svg
-              csvg := OMGraphics_placedConnectorIconSVG(handle, i);
-              if csvg <> "" then
-                Util.createDirectoryTree(iconsDir);
-                System.writeFile(iconsDir + ibase + ".svg", csvg);
+              // the connector's own port icon -> terminalsAndIcons/<ibase>.png
+              // (mandatory) + <ibase>.svg (optional). iconBaseName is mandatory on
+              // TerminalGraphicalRepresentation, so only emit the element when the
+              // PNG was actually written (a dangling iconBaseName is invalid).
+              pngOk := OMGraphics_writePlacedConnectorIconPNG(handle, i, taiDir + ibase + ".png");
+              if pngOk == 1 then
+                csvg := OMGraphics_placedConnectorIconSVG(handle, i);
+                if csvg <> "" then
+                  System.writeFile(taiDir + ibase + ".svg", csvg);
+                end if;
+                tgr := "      <TerminalGraphicalRepresentation x1=\"" + sx1 + "\" y1=\"" + sy1 +
+                       "\" x2=\"" + sx2 + "\" y2=\"" + sy2 + "\" iconBaseName=\"" + ibase + ".png\"/>\n";
+                content := insertBeforeTerminalClose(content, cname, tgr);
               end if;
-
-              tgr := "      <TerminalGraphicalRepresentation x1=\"" + sx1 + "\" y1=\"" + sy1 +
-                     "\" x2=\"" + sx2 + "\" y2=\"" + sy2 + "\" iconBaseName=\"" + ibase + "\"/>\n";
-              content := insertBeforeTerminalClose(content, cname, tgr);
             end if;
           end if;
         end for;
@@ -4536,6 +4550,27 @@ protected function OMGraphics_placedConnectorIconSVG
   output String svg;
   external "C" svg = OMGraphics_placedConnectorIconSVG(handle, index) annotation(Library = "omcruntime");
 end OMGraphics_placedConnectorIconSVG;
+
+protected function OMGraphics_writeIconPNGFromHandle
+  "Rasterise the model Icon to a PNG and write it to `path` (FMI 3.0 requires a
+   PNG icon file). Returns 1 on success, 0 otherwise. PNG bytes are binary, so
+   the C side writes the file rather than returning it as a String."
+  input Integer handle;
+  input String modelName;
+  input String path;
+  output Integer ok;
+  external "C" ok = OMGraphics_writeIconPNGFromHandle(handle, modelName, path) annotation(Library = "omcruntime");
+end OMGraphics_writeIconPNGFromHandle;
+
+protected function OMGraphics_writePlacedConnectorIconPNG
+  "Rasterise placed connector `index`'s port icon to a PNG and write it to
+   `path`. Returns 1 on success, 0 otherwise."
+  input Integer handle;
+  input Integer index;
+  input String path;
+  output Integer ok;
+  external "C" ok = OMGraphics_writePlacedConnectorIconPNG(handle, index, path) annotation(Library = "omcruntime");
+end OMGraphics_writePlacedConnectorIconPNG;
 
 protected function buildModelFMU
   input FCore.Cache inCache;

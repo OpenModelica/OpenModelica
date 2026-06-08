@@ -137,6 +137,16 @@ struct SvgOptions {
    (y up) is mapped to SVG (y down) via the root group transform. */
 std::string renderIconSVG(const Icon &icon, const SvgOptions &opts = SvgOptions());
 
+/* Rasterise an icon to a PNG image (RGBA, transparent background) and return the
+   encoded PNG file as a binary byte string. The FMI 3.0 standard requires a PNG
+   for icons referenced from terminalsAndIcons.xml (the SVG is only an optional
+   companion). Filled shapes (Rectangle, Polygon, Ellipse) and Lines are
+   rendered with supersampled anti-aliasing; Text and Bitmap shapes are skipped.
+   Returns the empty string if there is nothing to draw. Because the result is
+   binary (it contains NUL bytes) it must be written to disk with a length-aware
+   writer, not through a NUL-terminated C string. */
+std::string renderIconPNG(const Icon &icon, const SvgOptions &opts = SvgOptions());
+
 /* ------------------------------------------------------------------------- *
  * Generic JSON value.
  *

@@ -42,6 +42,7 @@
 #include <vector>
 #include <sstream>
 #include <algorithm>
+#include <fstream>
 
 /* From ModelInstanceReference_omc.c (issue #15219 handle registry). */
 extern "C" void* ModelInstanceReference_get(int handle);
@@ -203,6 +204,18 @@ std::string numStr(double v)
   return os.str();
 }
 
+/* Write binary data to `path`. Returns true on success. Used for PNG output:
+   PNG bytes contain NUL, so they cannot travel as a MetaModelica String (which
+   is NUL-terminated) — the C++ side writes the file directly. */
+bool writeBinaryFile(const char *path, const std::string &data)
+{
+  if (!path || data.empty()) return false;
+  std::ofstream f(path, std::ios::out | std::ios::binary | std::ios::trunc);
+  if (!f) return false;
+  f.write(data.data(), (std::streamsize) data.size());
+  return (bool) f;
+}
+
 } // namespace
 
 extern "C" {
@@ -267,6 +280,29 @@ const char* OMGraphics_placedConnectorIconSVG(int handle, int index)
   OMGraphics::Icon icon = OMGraphics::iconFromJson(*cs[index].icon);
   if (icon.graphics.empty()) return gcString("");
   return gcString(OMGraphics::renderIconSVG(icon));
+}
+
+/* Rasterise the model Icon referenced by `handle` to a PNG and write it to
+ * `path` (FMI 3.0 requires PNG icon files). Returns 1 on success, 0 otherwise.
+ * The PNG is binary so it is written here rather than returned as a String. */
+int OMGraphics_writeIconPNGFromHandle(int handle, const char *modelName, const char *path)
+{
+  OMGraphics::Icon icon = iconFromHandle(handle);
+  if (icon.graphics.empty()) return 0;
+  OMGraphics::SvgOptions opts;
+  if (modelName) opts.nameText = modelName;
+  return writeBinaryFile(path, OMGraphics::renderIconPNG(icon, opts)) ? 1 : 0;
+}
+
+/* Rasterise placed connector `index`'s port icon to a PNG and write it to
+ * `path`. Returns 1 on success, 0 otherwise. */
+int OMGraphics_writePlacedConnectorIconPNG(int handle, int index, const char *path)
+{
+  std::vector<PlacedConnector> cs = collectPlacedConnectors(rootForHandle(handle));
+  if (index < 0 || index >= (int) cs.size() || !cs[index].icon) return 0;
+  OMGraphics::Icon icon = OMGraphics::iconFromJson(*cs[index].icon);
+  if (icon.graphics.empty()) return 0;
+  return writeBinaryFile(path, OMGraphics::renderIconPNG(icon)) ? 1 : 0;
 }
 
 } // extern "C"
