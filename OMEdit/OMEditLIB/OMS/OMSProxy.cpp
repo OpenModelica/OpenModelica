@@ -376,76 +376,8 @@ void OMSProxy::logResponse(QString command, oms_status_enu_t status, QElapsedTim
 }
 
 
-/*!
- * \brief OMSProxy::getFMUKindString
- * Returns the oms_fmi_kind_enu_t as string.
- * \param kind
- * \return
- */
-QString OMSProxy::getFMUKindString(oms_fmi_kind_enu_t kind)
-{
-  switch (kind) {
-    case oms_fmi_kind_me:
-      return "ME";
-    case oms_fmi_kind_cs:
-      return "CS";
-    case oms_fmi_kind_me_and_cs:
-      return "ME & CS";
-    case oms_fmi_kind_unknown:
-    default:
-      // should never be reached
-      return "";
-  }
-}
 
-/*!
- * \brief OMSProxy::getSignalTypeString
- * Returns the oms_signal_type_integer as string.
- * \param type
- * \return
- */
-QString OMSProxy::getSignalTypeString(oms_signal_type_enu_t type)
-{
-  switch (type) {
-    case oms_signal_type_real:
-      return "Real";
-    case oms_signal_type_integer:
-      return "Integer";
-    case oms_signal_type_boolean:
-      return "Boolean";
-    case oms_signal_type_string:
-      return "String";
-    case oms_signal_type_enum:
-      return "Enum";
-    case oms_signal_type_bus:
-      return "Bus";
-    default:
-      // should never be reached
-      return "";
-  }
-}
 
-/*!
- * \brief OMSProxy::getCausalityString
- * Returns the oms_causality_enu_t as string.
- * \param causality
- * \return
- */
-QString OMSProxy::getCausalityString(oms_causality_enu_t causality)
-{
-  switch (causality) {
-    case oms_causality_input:
-      return "Input";
-    case oms_causality_output:
-      return "Output";
-    case oms_causality_parameter:
-      return "Parameter";
-    case oms_causality_undefined:
-    default:
-      // should never be reached
-      return "";
-  }
-}
 
 /*!
  * \brief OMSProxy::statusToBool
@@ -544,8 +476,8 @@ bool OMSProxy::addConnection(QString crefA, QString crefB, bool suppressUnitConv
   QStringList startConnector = crefA.split(".");
   QStringList endConnector = crefB.split(".");
 
-  startConnector.removeFirst(); // remove "test"
-  endConnector.removeFirst();  // remove "arun"
+  startConnector.removeFirst();
+  endConnector.removeFirst();
 
   QJsonObject obj, args;
   obj["method"] = "addConnection";
@@ -570,17 +502,6 @@ bool OMSProxy::addConnection(QString crefA, QString crefB, bool suppressUnitConv
  * \param type
  * \return
  */
-bool OMSProxy::addConnector(QString cref, oms_causality_enu_t causality, oms_signal_type_enu_t type)
-{
-  QString command = "oms_addConnector";
-  QStringList args;
-  args << "\"" + cref + "\"" << QString::number(causality) << QString::number(type);
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_addConnector(cref.toUtf8().constData(), causality, type);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
 bool OMSProxy::addConnector(QString cref, OMSModel::Causality causality, OMSModel::SignalType type)
 {
   QStringList parts = cref.split(".");
@@ -714,15 +635,23 @@ bool OMSProxy::addSystem(QString cref)
  */
 bool OMSProxy::deleteConnection(QString crefA, QString crefB)
 {
-  QString command = "oms_deleteConnection";
-  QStringList args;
-  args << "\"" + crefA + "\"" << "\"" + crefB + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_deleteConnection(crefA.toUtf8().constData(), crefB.toUtf8().constData());
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
+  QStringList startConnector = crefA.split(".");
+  QStringList endConnector = crefB.split(".");
 
+  startConnector.removeFirst();
+  endConnector.removeFirst();
+
+  QJsonObject obj, args;
+  obj["method"] = "deleteConnection";
+  obj["model"]  = crefA.split('.').first();
+
+  args["crefA"] = QJsonArray::fromStringList(startConnector);
+  args["crefB"] = QJsonArray::fromStringList(endConnector);
+  obj["args"] = args;
+
+  QJsonObject reply;
+  return sendZmqCommand(obj, reply);
+}
 
 /*!
  * \brief OMSProxy::getBoolean
@@ -749,25 +678,13 @@ bool OMSProxy::getBoolean(QString cref, bool &value)
   return true;
 }
 
-
 /*!
- * \brief OMSProxy::getConnections
- * Get the model connections
+ * \brief OMSProxy::getElementsJson
+ * Gets the ssp elements
  * \param cref
- * \param pConnections
+ * \param elements
  * \return
  */
-bool OMSProxy::getConnections(QString cref, oms_connection_t*** pConnections)
-{
-  QString command = "oms_getConnections";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getConnections(cref.toUtf8().constData(), pConnections);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
 
 bool OMSProxy::getElementsJson(QString cref, QJsonArray &elements)
 {
@@ -825,25 +742,6 @@ bool OMSProxy::setFixedStepSize(QString cref, double stepSize)
 
   QJsonObject reply;
   return sendZmqCommand(obj, reply);
-}
-
-
-/*!
- * \brief OMSProxy::getFMUInfo
- * Gets the FMU info.
- * \param cref
- * \param pFmuInfo
- * \return
- */
-bool OMSProxy::getFMUInfo(QString cref, const oms_fmu_info_t** pFmuInfo)
-{
-  QString command = "oms_getFMUInfo";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getFMUInfo(cref.toUtf8().constData(), pFmuInfo);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
 }
 
 /*!
@@ -1233,13 +1131,15 @@ bool OMSProxy::rename(const QString &cref, const QString &newCref)
  */
 bool OMSProxy::omsDelete(QString cref)
 {
-  QString command = "oms_delete";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_delete(cref.toUtf8().constData());
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
+  QStringList parts = cref.split('.');
+  QJsonObject obj, args;
+  obj["method"] = "delete";
+  obj["model"]  = parts.first();
+  parts.removeFirst();
+  args["cref"] = QJsonArray::fromStringList(parts);
+  obj["args"] = args;
+  QJsonObject reply;
+  return sendZmqCommand(obj, reply);
 }
 
 /*!
@@ -1307,17 +1207,6 @@ bool OMSProxy::setCommandLineOption(QString cmd)
  * \param pGeometry
  * \return
  */
-bool OMSProxy::setConnectionGeometry(QString crefA, QString crefB, const ssd_connection_geometry_t *pGeometry)
-{
-  QString command = "oms_setConnectionGeometry";
-  QStringList args;
-  args << "\"" + crefA + "\"" << "\"" + crefB + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setConnectionGeometry(crefA.toUtf8().constData(), crefB.toUtf8().constData(), pGeometry);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
 bool OMSProxy::setConnectionGeometry(QString crefA, QString crefB, const OMSModel::ConnectionGeometry &geometry)
 {
   QStringList conA = crefA.split(".");
@@ -1364,25 +1253,14 @@ bool OMSProxy::setConnectionGeometry(QString crefA, QString crefB, const OMSMode
  * \param pGeometry
  * \return
  */
-bool OMSProxy::setConnectorGeometry(QString cref, const ssd_connector_geometry_t* pGeometry)
-{
-  QString command = "oms_setConnectorGeometry";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setConnectorGeometry(cref.toUtf8().constData(), pGeometry);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-bool OMSProxy::setConnectorGeometry(QString cref, const OMSModel::ConnectorGeometry &geometry)
+bool OMSProxy::setConnectorGeometry(QString cref, const OMSModel::ConnectorGeometry &pGeometry)
 {
   QStringList parts = cref.split(".");
   parts.removeFirst(); // remove model name, e.g. "test"
 
   QJsonObject geometryObject;
-  geometryObject["x"] = geometry.getX();
-  geometryObject["y"] = geometry.getY();
+  geometryObject["x"] = pGeometry.getX();
+  geometryObject["y"] = pGeometry.getY();
 
   QJsonObject args;
   args["cref"] = QJsonArray::fromStringList(parts);
@@ -1404,32 +1282,21 @@ bool OMSProxy::setConnectorGeometry(QString cref, const OMSModel::ConnectorGeome
  * \param pGeometry
  * \return
  */
-bool OMSProxy::setElementGeometry(QString cref, const ssd_element_geometry_t* pGeometry)
-{
-  QString command = "oms_setElementGeometry";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setElementGeometry(cref.toUtf8().constData(), pGeometry);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-bool OMSProxy::setElementGeometry(QString cref, const OMSModel::ElementGeometry &geometry)
+bool OMSProxy::setElementGeometry(QString cref, const OMSModel::ElementGeometry &pGeometry)
 {
   QStringList parts = cref.split(".");
   parts.removeFirst();
 
   QJsonObject geometryObject;
-  geometryObject["x1"] = geometry.getX1();
-  geometryObject["y1"] = geometry.getY1();
-  geometryObject["x2"] = geometry.getX2();
-  geometryObject["y2"] = geometry.getY2();
-  geometryObject["rotation"] = geometry.getRotation();
-  geometryObject["iconSource"] = geometry.getIconSource();
-  geometryObject["iconRotation"] = geometry.getIconRotation();
-  geometryObject["iconFlip"] = geometry.getIconFlip();
-  geometryObject["iconFixedAspectRatio"] = geometry.getIconFixedAspectRatio();
+  geometryObject["x1"] = pGeometry.getX1();
+  geometryObject["y1"] = pGeometry.getY1();
+  geometryObject["x2"] = pGeometry.getX2();
+  geometryObject["y2"] = pGeometry.getY2();
+  geometryObject["rotation"] = pGeometry.getRotation();
+  geometryObject["iconSource"] = pGeometry.getIconSource();
+  geometryObject["iconRotation"] = pGeometry.getIconRotation();
+  geometryObject["iconFlip"] = pGeometry.getIconFlip();
+  geometryObject["iconFixedAspectRatio"] = pGeometry.getIconFixedAspectRatio();
 
   QJsonObject args;
   args["cref"] = QJsonArray::fromStringList(parts);
