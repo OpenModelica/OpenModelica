@@ -858,25 +858,6 @@ bool OMSProxy::setSolver(const QString &cref, const QString &solverName)
 }
 
 /*!
- * \brief OMSProxy::getExperiment
- * Fetches experiment settings (startTime, stopTime, resultFile, bufferSize) from the Python SSP model.
- */
-// bool OMSProxy::getExperiment(const QString &cref, double *pStartTime, double *pStopTime, QString *pResultFile, int *pBufferSize)
-// {
-//   QJsonObject obj;
-//   obj["method"] = "getExperiment";
-//   obj["model"]  = cref.split('.').first();
-//   QJsonObject reply;
-//   if (!sendZmqCommand(obj, reply))
-//     return false;
-//   *pStartTime  = reply["startTime"].toDouble(0.0);
-//   *pStopTime   = reply["stopTime"].toDouble(1.0);
-//   *pResultFile = reply["resultFile"].toString("model_res.mat");
-//   *pBufferSize = reply["bufferSize"].toInt(0);
-//   return true;
-// }
-
-/*!
  * \brief OMSProxy::getStartTime
  * Get the start time from the model.
  * \param cref
