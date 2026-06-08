@@ -44,8 +44,8 @@ public
     Integer d "denominator";
   end RATIONAL;
 
-  // constant Rational ZERO = RATIONAL(0, 1);
-  // constant Rational ONE = RATIONAL(1, 1);
+  constant Rational ZERO = RATIONAL(0, 1);
+  constant Rational ONE = RATIONAL(1, 1);
 
   function isEqual
     input Rational r1;
