@@ -15545,6 +15545,7 @@ protected
   list<SimCodeVar.SimVar> allVars;
   list<tuple<String, Boolean, SimCode.FmiTerminalMember>> flat = {};
   list<String> names = {};
+  list<String> memberNames;
   Option<tuple<String, Boolean, SimCode.FmiTerminalMember>> om;
   String tname, tname2;
   Boolean texp, texp2;
@@ -15552,11 +15553,18 @@ protected
   list<SimCode.FmiTerminalMember> mems;
 algorithm
   vars := simCode.modelInfo.vars;
-  // gather the variables that also end up in modelDescription.xml (no alias vars,
-  // their canonical member is already covered by the real variable)
+  // Gather the variables that also end up in modelDescription.xml. The alias var
+  // lists are included on purpose: a connector member can itself be an alias
+  // (e.g. flange_a.phi == flange_b.phi == the state phi). Such a member is a real
+  // <Terminal> member and is emitted in modelDescription.xml (CodegenFMU3 writes
+  // the alias var lists into ModelVariables), so its canonical variable (`phi`) is
+  // NOT the connector member and dropping the alias would lose the member entirely.
+  // connectorMemberOf filters to connector members, so non-connector aliases are
+  // ignored. Real vars come first so the canonical member ordering is preserved.
   allVars := List.flatten({vars.stateVars, vars.derivativeVars, vars.algVars,
     vars.discreteAlgVars, vars.paramVars, vars.intAlgVars, vars.intParamVars,
-    vars.boolAlgVars, vars.boolParamVars, vars.stringAlgVars, vars.stringParamVars});
+    vars.boolAlgVars, vars.boolParamVars, vars.stringAlgVars, vars.stringParamVars,
+    vars.aliasVars, vars.intAliasVars, vars.boolAliasVars, vars.stringAliasVars});
   for v in allVars loop
     om := connectorMemberOf(v);
     if isSome(om) then
@@ -15572,14 +15580,18 @@ algorithm
     end if;
   end for;
   names := listReverse(names);
-  // one terminal per connector instance, members in first-seen order
+  // one terminal per connector instance, members in first-seen order. memberName
+  // must be unique per terminal (FMI 3.0), so skip a member whose name was already
+  // added (e.g. a real var and an alias mapping to the same connector member).
   for nm in names loop
     mems := {};
+    memberNames := {};
     texp := false;
     for t in flat loop
       (tname2, texp2, mem) := t;
-      if stringEq(tname2, nm) then
+      if stringEq(tname2, nm) and not listMember(mem.memberName, memberNames) then
         mems := mem :: mems;
+        memberNames := mem.memberName :: memberNames;
         texp := texp2;
       end if;
     end for;
