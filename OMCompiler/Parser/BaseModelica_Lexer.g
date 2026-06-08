@@ -395,18 +395,22 @@ SESCAPE : esc='\\' ('\'' | '"' | '\\' | '?' | 'a' | 'b' | 'f' | 'n' | 'r' | 't' 
   {
     char chars[2] = {LA(1),'\0'};
     const char *str = chars;
-    int len = strlen((char*)$text->chars);
+    /* End the span at the real position of the offending byte (LA(1), the
+       current lexer position) rather than tokenStart + strlen, which produced
+       a nonsensical column on the string's first line when the string spans
+       several lines. GETCHARPOSITIONINLINE() is the 0-based column of LA(1);
+       +2 makes it the 1-based column just past it. */
     if (((chars[0] & 0xE0) == 0xC0) || ((chars[0] & 0xF0) == 0xE0) || ((chars[0] & 0xF8) == 0xF0) ) {
       c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, "Lexer treating \\ as \\\\, since the next byte is the start of a UTF-8 character and thus not a valid Modelica escape sequence.",
-          &str, 0, $line, $pos+1, $line, $pos+len+1,
+          &str, 0, $line, $pos+1, GETLINE(), GETCHARPOSITIONINLINE()+2,
           ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
     } else if ((chars[0] & 0x80)) {
       c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, "Lexer treating \\ as \\\\, since the next byte is an invalid UTF-8 character and thus not a valid Modelica escape sequence.",
-          &str, 0, $line, $pos+1, $line, $pos+len+1,
+          &str, 0, $line, $pos+1, GETLINE(), GETCHARPOSITIONINLINE()+2,
           ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
     } else {
       c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, "Lexer treating \\ as \\\\, since \\\%s is not a valid Modelica escape sequence.",
-          &str, 1, $line, $pos+1, $line, $pos+len+1,
+          &str, 1, $line, $pos+1, GETLINE(), GETCHARPOSITIONINLINE()+2,
           ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
     }
   });
