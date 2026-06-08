@@ -707,7 +707,7 @@ void printSparseJacobianLocal(JACOBIAN* jacobian, const char* name)
   /* Variables */
   unsigned int row, col, i;
   infoStreamPrint(OMC_LOG_STDOUT, 0, "Sparse structure of %s [size: %zux%zu]", name, jacobian->sizeRows, jacobian->sizeCols);
-  infoStreamPrint(OMC_LOG_STDOUT, 0, "%u non-zero elements", jacobian->sparsePattern->numberOfNonZeros);
+  infoStreamPrint(OMC_LOG_STDOUT, 0, "%u non-zero elements", jacobian->sparsePattern->nnz);
   infoStreamPrint(OMC_LOG_STDOUT, 0, "Values of the transposed matrix (rows: states)");
 
   printf("\n");
