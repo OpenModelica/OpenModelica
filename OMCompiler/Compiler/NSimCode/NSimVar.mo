@@ -116,6 +116,7 @@ public
       Option<Variability> variability "FMI-2.0 variabilty attribute";
       Option<Initial> initial_ "FMI-2.0 initial attribute";
       Option<ComponentRef> exportVar "variables will only be exported to the modelDescription.xml if this attribute is SOME(cref) and this cref is only used in ModelDescription.xml for FMI-2.0 export";
+      Boolean isConnectorFlow "true if the variable is a flow connector member (FMI 3.0 terminal variableKind inflow/outflow)";
     end SIMVAR;
 
     function toString
@@ -202,7 +203,8 @@ public
             matrixName          = NONE(),
             variability         = NONE(),
             initial_            = NONE(),
-            exportVar           = SOME(var.name)
+            exportVar           = SOME(var.name),
+            isConnectorFlow     = Variable.isFlow(var)
           );
         then result;
 
@@ -348,7 +350,7 @@ public
         initial_            = convertInitial(convertVariability(simVar.varKind), Util.applyOption(simVar.causality, convertCausality)),
         exportVar           = Util.applyOption(simVar.exportVar, ComponentRef.toDAE),
         relativeQuantity    = false,
-        isConnectorFlow     = false);  // TODO: new backend does not yet track the flow connectorType (FMI 3.0 terminal inflow/outflow)
+        isConnectorFlow     = simVar.isConnectorFlow);
     end convert;
 
     function convertCausality
