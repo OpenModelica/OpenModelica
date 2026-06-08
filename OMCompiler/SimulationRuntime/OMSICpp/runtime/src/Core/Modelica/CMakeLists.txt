@@ -118,7 +118,7 @@ if(WIN32)
     endif()
     string(REPLACE "\\" "/" MSYSTEM_PREFIX_ESCAPED "$ENV{MSYSTEM_PREFIX}")
     set(Boost_LIBS_ "$(OMHOME)/bin")
-    set(Boost_INCLUDE_ "$(MSYSTEM_PREFIX_ESCAPED)/include/")
+    set(Boost_INCLUDE_ "${MSYSTEM_PREFIX_ESCAPED}/include/")
   endif()
 
   set(SUNDIALS_LIBS_ "$(OMHOME)/bin")
