@@ -94,16 +94,11 @@ private slots:
 public:
   static OMSProxy* instance() {return mpInstance;}
 
-  static QString getFMUKindString(oms_fmi_kind_enu_t kind);
-  static QString getSignalTypeString(oms_signal_type_enu_t type);
-  static QString getCausalityString(oms_causality_enu_t causality);
-
   bool statusToBool(oms_status_enu_t status);
   void emitLogGUIMessage(MessageItem messageItem) {emit logGUIMessage(messageItem);}
   bool sendZmqCommand(const QJsonObject &obj, QJsonObject &reply);
 
   bool addConnection(QString crefA, QString crefB, bool suppressUnitConversion = false);
-  bool addConnector(QString cref, oms_causality_enu_t causality, oms_signal_type_enu_t type);
   bool addConnector(QString cref, OMSModel::Causality causality, OMSModel::SignalType type);
   bool addSubModel(QString cref, QString fmuPath);
   bool replaceSubModel(QString cref, QString fmuPath, bool dryCount, int* count);
@@ -111,10 +106,8 @@ public:
   bool addSystem(QString cref);
   bool deleteConnection(QString crefA, QString crefB);
   bool getBoolean(QString signal, bool &value);
-  bool getConnections(QString cref, oms_connection_t ***pConnections);
   bool getElementsJson(QString cref, QJsonArray &elements);
   bool getFixedStepSize(QString cref, double& stepSize);
-  bool getFMUInfo(QString cref, const oms_fmu_info_t** pFmuInfo);
   bool getInteger(QString signal, int &value);
   bool getModelState(const QString &cref, oms_modelState_enu_t* modelState);
   bool getReal(QString cref, double &value);
@@ -137,11 +130,8 @@ public:
   bool saveModel(QString cref, QString filename);
   bool setBoolean(QString signal, bool value);
   bool setCommandLineOption(QString cmd);
-  bool setConnectionGeometry(QString crefA, QString crefB, const ssd_connection_geometry_t *pGeometry);
   bool setConnectionGeometry(QString crefA, QString crefB, const OMSModel::ConnectionGeometry &geometry);
-  bool setConnectorGeometry(QString cref, const ssd_connector_geometry_t* pGeometry);
   bool setConnectorGeometry(QString cref, const OMSModel::ConnectorGeometry &geometry);
-  bool setElementGeometry(QString cref, const ssd_element_geometry_t* pGeometry);
   bool setElementGeometry(QString cref, const OMSModel::ElementGeometry &geometry);
   bool setFixedStepSize(QString cref, double stepSize);
   void setLogFile(QString filename);
