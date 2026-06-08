@@ -1406,6 +1406,17 @@ package SimCodeUtil
     output list<SimCode.FmiTerminal> terminals;
   end getFMI3Terminals;
 
+  function isFMI3NestableAlias
+    input SimCodeVar.SimVar simVar;
+    output Boolean nestable;
+  end isFMI3NestableAlias;
+
+  function getFMI3VariableAliases
+    input SimCode.SimCode simCode;
+    input DAE.ComponentRef canonical;
+    output list<SimCodeVar.SimVar> aliases;
+  end getFMI3VariableAliases;
+
   function getFMI3Clocks
     input SimCode.SimCode simCode;
     output list<SimCode.FmiClock> clocks;

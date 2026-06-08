@@ -424,7 +424,11 @@ case SIMVAR(name = name, exportVar = exportVar, type_ = T_ARRAY(ty = arrayElemen
       '<String <%VariableCommonAttributes3(simVar, simCode)%>><%Dimensions3(simVar)%></String>'
     else '<!-- UNKNOWN_ARRAY_TYPE <%crefStr(name)%> -->'
 case SIMVAR(__) then
-  if stringEq(crefStr(name),"$dummy") then
+  if SimCodeUtil.isFMI3NestableAlias(simVar) then
+  // emitted as an <Alias> child of its canonical variable (shares its
+  // valueReference), not as a separate ModelVariables entry
+  ''
+  else if stringEq(crefStr(name),"$dummy") then
   <<>>
   else if stringEq(crefStr(name),"der($dummy)") then
   <<>>
@@ -433,17 +437,48 @@ case SIMVAR(__) then
   else
   match type_
     case T_REAL(__) then
-      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, stateVars)%><%StartString2(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%NominalString2(simVar)%><%UnitString2(simVar)%><%relativeQuantity(simVar)%>/>'
+      '<Float64 <%VariableCommonAttributes3(simVar, simCode)%><%DerivativeAttribute3(simVar, simCode, stateVars)%><%StartString2(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%NominalString2(simVar)%><%UnitString2(simVar)%><%relativeQuantity(simVar)%><%CloseWithAliases3("Float64", simVar, simCode)%>'
     case T_INTEGER(__) then
-      '<Int32 <%VariableCommonAttributes3(simVar, simCode)%><%StartString2(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%>/>'
+      '<Int32 <%VariableCommonAttributes3(simVar, simCode)%><%StartString2(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%CloseWithAliases3("Int32", simVar, simCode)%>'
     case T_BOOL(__) then
-      '<Boolean <%VariableCommonAttributes3(simVar, simCode)%><%StartString2(simVar)%>/>'
+      '<Boolean <%VariableCommonAttributes3(simVar, simCode)%><%StartString2(simVar)%><%CloseWithAliases3("Boolean", simVar, simCode)%>'
     case T_STRING(__) then
-      '<String <%VariableCommonAttributes3(simVar, simCode)%>><%StringStartChild3(simVar)%></String>'
+      '<String <%VariableCommonAttributes3(simVar, simCode)%>><%StringStartChild3(simVar)%><%AliasElements3(simVar, simCode)%></String>'
     case T_ENUMERATION(path=path) then
-      '<Enumeration <%VariableCommonAttributes3(simVar, simCode)%>declaredType="<%AbsynUtil.pathString(path, ".", false)%>"<%StartString2(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%>/>'
+      '<Enumeration <%VariableCommonAttributes3(simVar, simCode)%>declaredType="<%AbsynUtil.pathString(path, ".", false)%>"<%StartString2(simVar)%><%MinString2(simVar)%><%MaxString2(simVar)%><%CloseWithAliases3("Enumeration", simVar, simCode)%>'
     else '<!-- UNKNOWN_TYPE <%crefStr(name)%> -->'
 end Variable3;
+
+template CloseWithAliases3(String tag, SimVar simVar, SimCode simCode)
+ "Close a typed FMI 3.0 variable element: self-closing when it has no FMI 3.0
+  <Alias> members, otherwise an open/close pair wrapping the <Alias> children."
+::=
+  let kids = AliasElements3(simVar, simCode)
+  if stringEq(kids, "") then '/>'
+  else '><%\n%><%kids%><%\n%>  </<%tag%>>'
+end CloseWithAliases3;
+
+template AliasElements3(SimVar simVar, SimCode simCode)
+ "Emit the FMI 3.0 <Alias> child elements of a canonical variable: one per
+  positive local alias that shares this variable's valueReference."
+::=
+match simVar
+case SIMVAR(__) then
+  match SimCodeUtil.getFMI3VariableAliases(simCode, name)
+  case {} then ''
+  case aliases then (aliases |> a => AliasElement3(a) ;separator="\n")
+end AliasElements3;
+
+template AliasElement3(SimVar aliasVar)
+ "One FMI 3.0 <Alias> element. The name is formatted exactly like a variable name
+  in modelDescription.xml; the alias shares the parent variable's valueReference."
+::=
+match aliasVar
+case SIMVAR(__) then
+  let nm = Util.escapeModelicaStringToXmlString(System.stringReplace(crefStrNoUnderscore(Util.getOption(exportVar)),"$", "_D_"))
+  let desc = if comment then ' description="<%Util.escapeModelicaStringToXmlString(comment)%>"'
+  '    <Alias name="<%nm%>"<%desc%>/>'
+end AliasElement3;
 
 template Clock3(FmiClock clock, String FMUType)
  "Generates an FMI 3.0 <Clock> variable for a model clock. For Scheduled

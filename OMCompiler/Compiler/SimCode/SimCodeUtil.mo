@@ -15535,6 +15535,57 @@ algorithm
     SimCode.FMIINITIALUNKNOWNS({}, {}, {})));
 end createMinimalFMIModelStructure;
 
+public function isFMI3NestableAlias
+  "True if a SimVar can be represented as an FMI 3.0 <Alias> child element of its
+   canonical variable (sharing the canonical valueReference) instead of a separate
+   ModelVariables entry. Only positive (non-negated) scalar aliases with no
+   causality of their own (local) qualify: an <Alias> element carries no factor and
+   no causality, so negated aliases and input/output/parameter aliases must stay
+   as full variables."
+  input SimCodeVar.SimVar simVar;
+  output Boolean nestable;
+algorithm
+  nestable := match simVar
+    case SimCodeVar.SIMVAR(aliasvar = SimCodeVar.ALIAS())
+      guard isSome(simVar.exportVar)
+            and not Types.isArray(simVar.type_)
+            and (match simVar.causality
+                   case NONE() then true;
+                   case SOME(SimCodeVar.LOCAL()) then true;
+                   case SOME(SimCodeVar.NONECAUS()) then true;
+                   else false;
+                 end match)
+      then true;
+    else false;
+  end match;
+end isFMI3NestableAlias;
+
+public function getFMI3VariableAliases
+  "Return the SimVars that are FMI 3.0 <Alias> members of the variable `canonical`:
+   the nestable (see isFMI3NestableAlias) positive aliases whose alias target is
+   `canonical`. FMI 3.0 represents these as <Alias> child elements sharing the
+   canonical variable's valueReference, rather than as separate variables."
+  input SimCode.SimCode simCode;
+  input DAE.ComponentRef canonical;
+  output list<SimCodeVar.SimVar> aliases = {};
+protected
+  SimCodeVar.SimVars vars = simCode.modelInfo.vars;
+  list<SimCodeVar.SimVar> all;
+algorithm
+  all := List.flatten({vars.aliasVars, vars.intAliasVars, vars.boolAliasVars, vars.stringAliasVars});
+  for v in all loop
+    if isFMI3NestableAlias(v) then
+      _ := match v.aliasvar
+        local DAE.ComponentRef cr;
+        case SimCodeVar.ALIAS(varName = cr) guard ComponentReferenceBasics.crefEqualNoStringCompare(cr, canonical)
+          algorithm aliases := v :: aliases; then ();
+        else ();
+      end match;
+    end if;
+  end for;
+  aliases := listReverse(aliases);
+end getFMI3VariableAliases;
+
 public function getFMI3Terminals
   "Collect the FMI 3.0 terminals from the exported SimVars. The flat-model type of
    each variable tells us whether it stems from a connector: a variable whose cref
