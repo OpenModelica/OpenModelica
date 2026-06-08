@@ -1,4 +1,3 @@
-
 omc_add_subdirectory(runtime)
 omc_add_subdirectory(boot)
 omc_add_subdirectory(FrontEndCpp)
@@ -127,11 +126,7 @@ add_custom_command(
     COMMENT "Generating ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPI.mo using ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPI.mos"
 )
 
-
-
-
-
-include(${CMAKE_CURRENT_SOURCE_DIR}/.cmake/template_compilation.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/.cmake/template_compilation.cmake) # Needs CMake 1.18 or newer
 include(${CMAKE_CURRENT_SOURCE_DIR}/.cmake/meta_modelica_source_list.cmake)
 
 foreach(OMC_MM_SOURCE ${OMC_MM_ALWAYS_SOURCES})

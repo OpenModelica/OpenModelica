@@ -1,5 +1,5 @@
 
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.18)
 
 option(OM_WITH_VCPKG "Use vcpkg to manage dependencies." OFF)
 if(OM_WITH_VCPKG)
