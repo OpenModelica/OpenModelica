@@ -68,7 +68,8 @@ protected
   // Util
   import MetaModelica.Dangerous;
   import DoubleEnded;
-  import NBBackendUtil.Rational;
+  import Rational;
+  import NBBackendUtil;
   import UnorderedMap;
   import UnorderedSet;
 
@@ -203,8 +204,8 @@ public
     algorithm
       oldClock := match clock
         case SUB_CLOCK() then OldBackendDAE.SUBCLOCK(
-          factor  = Rational.convert(clock.factor),
-          shift   = Rational.convert(clock.shift),
+          factor  = NBBackendUtil.convertRational(clock.factor),
+          shift   = NBBackendUtil.convertRational(clock.shift),
           solver  = clock.solver);
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for non-sub clock: " + toString(clock)});
@@ -287,37 +288,37 @@ public
             // subclock: subset sampling
             case ("subSample", {e, Expression.INTEGER(i1)}) algorithm
               (subClock, baseClock) := fromExp(e);
-              subClock := updateSubClock(subClock, SUB_CLOCK(Rational.RATIONAL(i1, 1), Rational.RATIONAL(0, 1), NONE()));
+              subClock := updateSubClock(subClock, SUB_CLOCK(Rational.RATIONAL(i1, 1), Rational.ZERO, NONE()));
             then (baseClock, subClock);
 
             // subclock: super sampling
             case ("superSample", {e, Expression.INTEGER(i1)}) algorithm
               (subClock, baseClock) := fromExp(e);
-              subClock := updateSubClock(subClock, SUB_CLOCK(Rational.RATIONAL(1, i1), Rational.RATIONAL(0, 1), NONE()));
+              subClock := updateSubClock(subClock, SUB_CLOCK(Rational.RATIONAL(1, i1), Rational.ZERO, NONE()));
             then (baseClock, subClock);
 
             // subclock: shift sampling (default 3rd argument = 1)
             case ("shiftSample", {e, Expression.INTEGER(i1)}) algorithm
               (subClock, baseClock) := fromExp(e);
-              subClock := updateSubClock(subClock, SUB_CLOCK(Rational.RATIONAL(1, 1), Rational.RATIONAL(i1, 1), NONE()));
+              subClock := updateSubClock(subClock, SUB_CLOCK(Rational.ONE, Rational.RATIONAL(i1, 1), NONE()));
             then (baseClock, subClock);
 
             // subclock: shift sampling
             case ("shiftSample", {e, Expression.INTEGER(i1), Expression.INTEGER(i2)}) algorithm
               (subClock, baseClock) := fromExp(e);
-              subClock := updateSubClock(subClock, SUB_CLOCK(Rational.RATIONAL(1, 1), Rational.RATIONAL(i1, i2), NONE()));
+              subClock := updateSubClock(subClock, SUB_CLOCK(Rational.ONE, Rational.RATIONAL(i1, i2), NONE()));
             then (baseClock, subClock);
 
             // subclock: back sampling (default 3rd argument = 1)
             case ("backSample", {e, Expression.INTEGER(i1)}) algorithm
               (subClock, baseClock) := fromExp(e);
-              subClock := updateSubClock(subClock, SUB_CLOCK(Rational.RATIONAL(1, 1), Rational.RATIONAL(-i1, 1), NONE()));
+              subClock := updateSubClock(subClock, SUB_CLOCK(Rational.ONE, Rational.RATIONAL(-i1, 1), NONE()));
             then (baseClock, subClock);
 
             // subclock: back sampling
             case ("backSample", {e, Expression.INTEGER(i1), Expression.INTEGER(i2)}) algorithm
               (subClock, baseClock) := fromExp(e);
-              subClock := updateSubClock(subClock, SUB_CLOCK(Rational.RATIONAL(1, 1), Rational.RATIONAL(-i1, i2), NONE()));
+              subClock := updateSubClock(subClock, SUB_CLOCK(Rational.ONE, Rational.RATIONAL(-i1, i2), NONE()));
             then (baseClock, subClock);
 
             else algorithm
@@ -340,8 +341,8 @@ public
     algorithm
       dest := match (dest, src)
         case (SUB_CLOCK(), SUB_CLOCK()) algorithm
-          dest.shift  := Rational.add(dest.shift, Rational.multiply(src.shift, dest.factor));
-          dest.factor := Rational.multiply(dest.factor, src.factor);
+          dest.shift  := Rational.add(dest.shift, Rational.mul(src.shift, dest.factor));
+          dest.factor := Rational.mul(dest.factor, src.factor);
         then dest;
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + toString(dest) + " and " + toString(src) + " because of incorrect clock types."});
@@ -351,7 +352,7 @@ public
   end BClock;
 
   constant BClock DEFAULT_BASE_CLOCK = BASE_CLOCK(ClockKind.REAL_CLOCK(Expression.REAL(1.0)));
-  constant BClock DEFAULT_SUB_CLOCK = SUB_CLOCK(Rational.RATIONAL(1, 1), Rational.RATIONAL(0, 1), NONE());
+  constant BClock DEFAULT_SUB_CLOCK = SUB_CLOCK(Rational.ONE, Rational.ZERO, NONE());
   type CrefLst = list<ComponentRef>;
 
   uniontype ClockedInfo
