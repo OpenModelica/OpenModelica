@@ -154,7 +154,6 @@ MessageWidget::MessageWidget(QWidget *pParent)
   mpMessagesTextBrowser = new QTextBrowser;
   mpMessagesTextBrowser->setOpenLinks(false);
   mpMessagesTextBrowser->setOpenExternalLinks(false);
-  mpMessagesTextBrowser->setFrameStyle(QFrame::NoFrame);
   mpMessagesTextBrowser->setContextMenuPolicy(Qt::CustomContextMenu);
   connect(mpMessagesTextBrowser, SIGNAL(anchorClicked(QUrl)), SLOT(openErrorMessageClass(QUrl)));
   connect(mpMessagesTextBrowser, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
