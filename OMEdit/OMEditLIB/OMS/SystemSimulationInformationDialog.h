@@ -95,6 +95,7 @@ private:
   QTableWidget *mpSolversTable;
   QPushButton  *mpAddSolverButton;
   QPushButton  *mpRemoveSolverButton;
+  QPushButton  *mpEditSolverButton;
   // Component assignments: Component | Solver combo
   QTableWidget *mpAssignmentsTable;
 private slots:
