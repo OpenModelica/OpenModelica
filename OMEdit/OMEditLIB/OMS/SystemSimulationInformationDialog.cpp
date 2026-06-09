@@ -274,7 +274,7 @@ QStringList SystemSimulationInformationWidget::solverSettingsKeys(const QString 
  * model-level defaults.  For an existing solver pass its name so the server can
  * return its persisted values.
  */
-QJsonObject SystemSimulationInformationWidget::fetchSolverParams(const QString &method, const QString &solverName)
+QJsonObject SystemSimulationInformationWidget::fetchDefaultSolverSettings(const QString &solverName)
 {
   const QString cref = mpModelWidget->getLibraryTreeItem()->getNameStructure();
   QJsonObject solverSettings;
@@ -302,7 +302,7 @@ void SystemSimulationInformationWidget::addSolver()
   const QString defaultMethod = "oms-ma";
   const QString newName = QString("solver%1").arg(mpSolversTable->rowCount() + 1);
   // Fetch model-level defaults and add the row directly — user can Edit afterwards
-  QJsonObject defaultSolverSettings = fetchSolverParams(defaultMethod);
+  QJsonObject defaultSolverSettings = fetchDefaultSolverSettings(defaultMethod);
   addSolverRow(newName, defaultMethod, defaultSolverSettings);
   populateSolverCombos();
 }
@@ -342,8 +342,16 @@ void SystemSimulationInformationWidget::editSolverParameters()
 
   const QString solverName = pNameItem->text();
   const QString solverMethod = pMethodCombo->currentData().toString();
-  // Use the stored params for editing — they reflect what the user last set
+  // Use the stored params for editing — they reflect what the user last set.
   QJsonObject solverSettings = pNameItem->data(Qt::UserRole).toJsonObject();
+  // Fill in any keys required by the current method that are missing (e.g. when
+  // the user switched from a fixed-step to a variable-step solver in the table
+  // before opening Edit — the stored params won't have initialStepSize etc.).
+  const QJsonObject defaults = fetchDefaultSolverSettings(solverName);
+  for (auto it = defaults.constBegin(); it != defaults.constEnd(); ++it) {
+    if (!solverSettings.contains(it.key()) || solverSettings[it.key()].toString().isEmpty())
+      solverSettings[it.key()] = it.value();
+  }
 
   SolverSettingsDialog pSolverSettingsDialog(solverName, solverMethod, solverSettings, this);
   if (pSolverSettingsDialog.exec() == QDialog::Accepted) {
