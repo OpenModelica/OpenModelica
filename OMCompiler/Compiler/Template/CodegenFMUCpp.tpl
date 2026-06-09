@@ -911,7 +911,9 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   endif
   ifneq ("<%extraAnnotations%>","")
   <%\t%><%mkdir%> -p extra/org.openmodelica
+  ifneq ("$(wildcard <%fileNamePrefix%>_modelInstance.json)","")
   <%\t%>jq --arg regex "<%extraAnnotations%>" -f "$(OMHOME)/share/omc/scripts/filter-annotations.jq" <%fileNamePrefix%>_modelInstance.json > extra/org.openmodelica/modelAnnotations.json
+  endif
   ifeq ($(ZIP_FMU),ON)
   <%\t%>zip -ur "<%fmuTargetName%>.fmu" extra
   endif
