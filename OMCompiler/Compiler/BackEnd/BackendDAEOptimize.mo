@@ -3851,20 +3851,25 @@ protected function expandDerExp "
 protected
   Boolean failed = false;
 algorithm
-  (exp,vars) := matchcontinue exp
+  () := match exp
     local
-      DAE.Exp e1, e2;
       DAE.ComponentRef cr;
       String str;
-      list<BackendDAE.Var> varlst;
-      BackendDAE.Var v;
-      BackendDAE.Shared shared;
     case DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=cr)})})
       algorithm
         str := ComponentReference.crefStr(cr);
         str := stringAppendList({"The model includes derivatives of order > 1 for: ", str, ". That is not supported. Adding 'Real d", str, " = der(", str, ");' *might* result in a solvable model"});
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
+    else ();
+  end match;
+  (exp,vars) := matchcontinue exp
+    local
+      DAE.Exp e1, e2;
+      DAE.ComponentRef cr;
+      list<BackendDAE.Var> varlst;
+      BackendDAE.Var v;
+      BackendDAE.Shared shared;
     // case for arrays
     case e1 as DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(ty = DAE.T_ARRAY())})
       algorithm
@@ -3884,18 +3889,15 @@ algorithm
           (vars, e1) := updateStatesVar(vars, v, e1);
         else
           failed := true;
-          fail();
         end try;
       then (e1, vars);
     case e1 as DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=cr)})
       algorithm
-        false := failed;
         (varlst, _) := BackendVariable.getVar(cr, vars);
         vars := updateStatesVars(vars, varlst, false);
       then (e1, vars);
     case DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={e1})
       algorithm
-        false := failed;
         (e2, shared) := Differentiate.differentiateExpTime(e1, vars, Mutable.access(inShared));
         false := Expression.isZero(e2);
         Mutable.update(inShared, shared);
