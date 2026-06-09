@@ -4456,11 +4456,6 @@ algorithm
   dir := fmutmp+"/sources/";
 
   if Config.simCodeTarget() == "Cpp" then
-    // dump modelInstance.json so the FMU makefile can filter out the
-    // requested extra annotations (see flag --fmiExtraAnnotations)
-    if Flags.getConfigString(Flags.FMI_EXTRA_ANNOTATIONS) <> "" then
-      System.writeFile(filenameprefix + "_modelInstance.json", ValuesUtil.extractValueString(NFApi.getModelInstance(className, className, "", true)));
-    end if;
     System.removeDirectory("binaries");
     for platform in platforms loop
       if platform == "dynamic" or platform == "static" then
