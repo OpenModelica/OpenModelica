@@ -1098,13 +1098,18 @@ bool OMSProxy::newModel(QString cref, QString systemName)
  */
 bool OMSProxy::rename(const QString &cref, const QString &newCref)
 {
-  QString command = "oms_rename";
-  QStringList args;
-  args << "\"" + cref + "\"" << "\"" + newCref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_rename(cref.toUtf8().constData(), newCref.toUtf8().constData());
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
+  QStringList parts = cref.split('.');
+  const QString modelName = parts.first();
+  parts.removeFirst();
+  QJsonObject obj, argsObj;
+  obj["method"] = "rename";
+  obj["model"]  = modelName;
+  argsObj["cref"]    = QJsonArray::fromStringList(parts);
+  argsObj["newName"] = newCref;
+  obj["args"] = argsObj;
+
+  QJsonObject reply;
+  return sendZmqCommand(obj, reply);
 }
 
 /*!
