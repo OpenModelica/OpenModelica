@@ -1940,21 +1940,38 @@ void LibraryTreeModel::reLoadOMSimulatorModel(const QString &modelName, const QS
   LibraryTreeItem *pNewModelLibraryTreeItem = createLibraryTreeItem(modelName, modelName, filePath, false, mpRootLibraryTreeItem);
   pNewModelLibraryTreeItem->setModelWidget(pModelModelWidget);
   pModelModelWidget->setLibraryTreeItem(pNewModelLibraryTreeItem);
-  pModelModelWidget->reDrawModelWidget();
-  pNewModelLibraryTreeItem->setClassText(snapShot);
-  // if the top level model and edited model are not the same
+  // Pre-assign the edited ModelWidget to the new LibraryTreeItem before reDrawModelWidget.
+  // drawOMSModelDiagramElements checks getModelWidget() before creating a new one; pre-assigning
+  // prevents an unassigned duplicate ModelWidget that would later crash when its old LibraryTreeItem is freed.
   LibraryTreeItem *pNewEditedLibraryTreeItem = 0;
   if (!sameModelAndEditedCref) {
     pNewEditedLibraryTreeItem = findLibraryTreeItem(newEditedCref.isEmpty() ? editedCref : newEditedCref);
     if (pNewEditedLibraryTreeItem && pEditedModelWidget) {
+      // Found: wire the existing widget to the new LibraryTreeItem so reDrawModelWidget won't create a duplicate.
       pNewEditedLibraryTreeItem->setModelWidget(pEditedModelWidget);
       pEditedModelWidget->setLibraryTreeItem(pNewEditedLibraryTreeItem);
-      pEditedModelWidget->setWindowTitle(QString("%1*").arg(pNewEditedLibraryTreeItem->getName()));
-      pEditedModelWidget->reDrawModelWidget();
-      QString contents;
-      if (OMSProxy::instance()->exportSnapshot(pNewEditedLibraryTreeItem->getNameStructure(), contents)) {
-        pNewEditedLibraryTreeItem->setClassText(contents);
+    } else if (pEditedModelWidget) {
+      // Not found: the element was renamed or removed. Clear the dangling mpLibraryTreeItem pointer
+      // and close the widget now to prevent it from crashing when the old LTI is freed by deleteLater.
+      pEditedModelWidget->setLibraryTreeItem(0);
+      QMdiSubWindow *pMdiSubWindow = MainWindow::instance()->getModelWidgetContainer()->getMdiSubWindow(pEditedModelWidget);
+      if (pMdiSubWindow) {
+        pMdiSubWindow->close();
+        pMdiSubWindow->deleteLater();
       }
+      pEditedModelWidget->deleteLater();
+      pEditedModelWidget = 0;
+    }
+  }
+  pModelModelWidget->reDrawModelWidget();
+  pNewModelLibraryTreeItem->setClassText(snapShot);
+  // Finish setting up the edited ModelWidget: update title, redraw content, export snapshot.
+  if (!sameModelAndEditedCref && pNewEditedLibraryTreeItem && pEditedModelWidget) {
+    pEditedModelWidget->setWindowTitle(QString("%1*").arg(pNewEditedLibraryTreeItem->getName()));
+    pEditedModelWidget->reDrawModelWidget();
+    QString contents;
+    if (OMSProxy::instance()->exportSnapshot(pNewEditedLibraryTreeItem->getNameStructure(), contents)) {
+      pNewEditedLibraryTreeItem->setClassText(contents);
     }
   }
 }

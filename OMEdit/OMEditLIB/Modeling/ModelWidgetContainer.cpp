@@ -6535,16 +6535,29 @@ void ModelWidget::updateChildClasses(LibraryTreeItem *pLibraryTreeItem)
  */
 bool ModelWidget::omsimulatorEditorTextChanged()
 {
-  QString newCref;
+  QString newCref, newRootCref;
   if (mpLibraryTreeItem->isTopLevel()) {
-    if (OMSProxy::instance()->importSnapshot(mpLibraryTreeItem->getNameStructure(), mpEditor->getPlainTextEdit()->toPlainText(), &newCref)) {
+    // TODO: model rename via text editor (newCref != mpLibraryTreeItem->getNameStructure()) is not yet
+    // supported — exportSnapshot and reLoadOMSimulatorModel both need the old→new name threading.
+    if (OMSProxy::instance()->importSnapshot(mpLibraryTreeItem->getNameStructure(), mpEditor->getPlainTextEdit()->toPlainText(), newCref, newRootCref)) {
       createOMSimulatorUndoCommand("Text edited", true, false, mpLibraryTreeItem->getNameStructure(), newCref);
       return true;
     }
   } else {
     LibraryTreeItem *pModelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(mpLibraryTreeItem);
-    if (pModelLibraryTreeItem && OMSProxy::instance()->importSnapshot(pModelLibraryTreeItem->getNameStructure(), mpEditor->getPlainTextEdit()->toPlainText(), &newCref)) {
-      QString newEditedCref = QString("%1.%2").arg(mpLibraryTreeItem->parent()->getNameStructure(), newCref);
+    if (pModelLibraryTreeItem && OMSProxy::instance()->importSnapshot(pModelLibraryTreeItem->getNameStructure(), mpEditor->getPlainTextEdit()->toPlainText(), newCref, newRootCref)) {
+      // newCref     = new model name  (e.g. "test")
+      // newRootCref = new root-system name from Python (e.g. "Root1" if renamed)
+      // For a direct child of the model (root system), newRootCref is authoritative.
+      // For deeper nesting fall back to the old relative suffix; the safety fallback in
+      // reLoadOMSimulatorModel will handle the widget correctly even if the name changed.
+      QString newEditedCref;
+      if (mpLibraryTreeItem->parent() == pModelLibraryTreeItem && !newRootCref.isEmpty()) {
+        newEditedCref = newCref + "." + newRootCref;
+      } else {
+        const QString editedSuffix = mpLibraryTreeItem->getNameStructure().mid(pModelLibraryTreeItem->getNameStructure().length() + 1);
+        newEditedCref = newCref + (editedSuffix.isEmpty() ? "" : "." + editedSuffix);
+      }
       createOMSimulatorUndoCommand("Text edited", true, false, mpLibraryTreeItem->getNameStructure(), newEditedCref);
       return true;
     }
