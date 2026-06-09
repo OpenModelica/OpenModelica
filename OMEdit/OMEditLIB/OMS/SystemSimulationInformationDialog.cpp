@@ -144,19 +144,23 @@ SystemSimulationInformationWidget::SystemSimulationInformationWidget(ModelWidget
   mpModelWidget = pModelWidget;
 
   // --- Solver configurations table: Name | Method | Parameters ---
-  mpSolversTable = new QTableWidget(0, 3, this);
-  mpSolversTable->setHorizontalHeaderLabels({tr("Name"), tr("Method"), tr("Solver Settings")});
+  mpSolversTable = new QTableWidget(0, 2, this);
+  mpSolversTable->setHorizontalHeaderLabels({tr("Name"), tr("Method")});
   mpSolversTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
   mpSolversTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+  mpSolversTable->setSelectionMode(QAbstractItemView::SingleSelection);
 
   mpAddSolverButton    = new QPushButton(tr("Add"));
   mpRemoveSolverButton = new QPushButton(tr("Remove"));
+  mpEditSolverButton   = new QPushButton(tr("Edit"));
   connect(mpAddSolverButton,    &QPushButton::clicked, this, &SystemSimulationInformationWidget::addSolver);
   connect(mpRemoveSolverButton, &QPushButton::clicked, this, &SystemSimulationInformationWidget::removeSolver);
+  connect(mpEditSolverButton,   &QPushButton::clicked, this, &SystemSimulationInformationWidget::editSolverParameters);
 
   QHBoxLayout *pSolverButtonsLayout = new QHBoxLayout;
   pSolverButtonsLayout->addWidget(mpAddSolverButton);
   pSolverButtonsLayout->addWidget(mpRemoveSolverButton);
+  pSolverButtonsLayout->addWidget(mpEditSolverButton);
   pSolverButtonsLayout->addStretch();
 
   QGroupBox *pSolversGroup = new QGroupBox(tr("Solver Configurations"));
@@ -323,22 +327,11 @@ void SystemSimulationInformationWidget::addSolverRow(const QString &name, const 
     pMethodCombo->setCurrentIndex(index);
   }
   mpSolversTable->setCellWidget(row, 1, pMethodCombo);
-
-  QPushButton *pEditButton = new QPushButton(tr("Edit"));
-  mpSolversTable->setCellWidget(row, 2, pEditButton);
-  connect(pEditButton, &QPushButton::clicked, this, &SystemSimulationInformationWidget::editSolverParameters);
 }
 
 void SystemSimulationInformationWidget::editSolverParameters()
 {
-  QObject *pSender = sender();
-  int row = -1;
-  for (int i = 0; i < mpSolversTable->rowCount(); ++i) {
-    if (mpSolversTable->cellWidget(i, 2) == pSender) {
-      row = i;
-      break;
-    }
-  }
+  const int row = mpSolversTable->currentRow();
   if (row < 0)
     return;
 
