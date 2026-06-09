@@ -1,20 +1,21 @@
-// name: Alias
-// keywords: NewBackend
+// name: AliasCyclic4
+// keywords: NewBackend, Alias, ASSC
 // status: correct
+// function: Testing Bareiss algorithm.
 
 loadString("
-  model AliasCyclic
+  model AliasCyclic4
     Integer a, b, c;       // constant simple
   equation
-    a = b + 1;
-    a = -b - 1;
-    b = c;
-  end AliasCyclic;
+    -a = c + 10000;
+    -5001*b - c = -10000;
+    -2*b = 2*c;
+  end AliasCyclic4;
 "); getErrorString();
 
 setCommandLineOptions("--newBackend -d=dumprepl");
-simulate(AliasCyclic); getErrorString();
-diffSimulationResults("AliasCyclic_res.mat", "ReferenceFiles/AliasCyclic_res.mat", "AliasCyclic_diff.csv", 1e-8);
+simulate(AliasCyclic4); getErrorString();
+diffSimulationResults("AliasCyclic4_res.mat", "ReferenceFiles/AliasCyclic4_res.mat", "AliasCyclic4_diff.csv", 1e-8);
 
 // Result:
 // true
@@ -28,15 +29,15 @@ diffSimulationResults("AliasCyclic_res.mat", "ReferenceFiles/AliasCyclic_res.mat
 // **************
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
-// 	[SCAL] (1) b = c ($RES_SIM_0)
-// 	[SCAL] (1) a = -(1 + b) ($RES_SIM_1)
-// 	[SCAL] (1) a = 1 + b ($RES_SIM_2)
+// 	[SCAL] (1) -2 * b = 2 * c ($RES_SIM_0)
+// 	[SCAL] (1) -(5001 * b + c) = -10000 ($RES_SIM_1)
+// 	[SCAL] (1) -a = 10000 + c ($RES_SIM_2)
 //
 // [dumprepl] Constant Replacements:
 // ***********************************
-// 	b	 ==> 	-1
-// 	c	 ==> 	-1
-// 	a	 ==> 	0
+// 	c	 ==> 	-2
+// 	b	 ==> 	2.0
+// 	a	 ==> 	-9998
 // [dumprepl] Trivial Alias Replacements:
 // ****************************************
 // [dumprepl] Nontrivial Alias Replacements:
@@ -56,8 +57,8 @@ diffSimulationResults("AliasCyclic_res.mat", "ReferenceFiles/AliasCyclic_res.mat
 // *******************************************
 //
 // record SimulationResult
-//     resultFile = "AliasCyclic_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'AliasCyclic', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     resultFile = "AliasCyclic4_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'AliasCyclic4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

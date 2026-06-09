@@ -10,6 +10,12 @@ Alias_test5.mos \
 ArrayAlias1.mos \
 ArrayAlias2.mos \
 Alias_pre.mos \
+AliasCyclic1.mos \
+AliasCyclic2.mos \
+AliasCyclic3.mos \
+AliasCyclic4.mos \
+AliasCyclic5.mos \
+AliasCyclic6.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
