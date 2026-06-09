@@ -225,31 +225,32 @@ list(JOIN SOURCE_FMU_NLS_FILES_LIST_QUOTED ",\n                                 
 
 
 # CMinPack files for NLS
-set(3RD_CMINPACK_FMU_FILES ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/enorm_.c
-                           ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/hybrj_.c
-                           ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/dpmpar_.c
-                           ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/qrfac_.c
-                           ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/qform_.c
-                           ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/dogleg_.c
-                           ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/r1updt_.c
-                           ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/r1mpyq_.c)
+if (NOT OM_USE_SYSTEM_CMINPACK)
+  set(3RD_CMINPACK_FMU_FILES ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/enorm_.c
+                             ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/hybrj_.c
+                             ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/dpmpar_.c
+                             ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/qrfac_.c
+                             ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/qform_.c
+                             ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/dogleg_.c
+                             ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/r1updt_.c
+                             ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/r1mpyq_.c)
 
-set(3RD_CMINPACK_HEADERS  ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/cminpack.h
-                          ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/minpack.h
-                          ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/minpackP.h)
+  set(3RD_CMINPACK_HEADERS  ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/cminpack.h
+                            ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/minpack.h
+                            ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/minpackP.h)
 
-install(FILES ${3RD_CMINPACK_HEADERS}
-              ${3RD_CMINPACK_FMU_FILES}
-        DESTINATION ${SOURCE_FMU_SOURCES_DIR}/external_solvers
-        COMPONENT fmu
-)
+  install(FILES ${3RD_CMINPACK_HEADERS}
+                ${3RD_CMINPACK_FMU_FILES}
+          DESTINATION ${SOURCE_FMU_SOURCES_DIR}/external_solvers
+          COMPONENT fmu
+  )
 
-foreach(source_file_full_path ${3RD_CMINPACK_FMU_FILES})
-  get_filename_component(source_file ${source_file_full_path} NAME)
-  list(APPEND SOURCE_FMU_CMINPACK_FILES_LIST_QUOTED "\"external_solvers/${source_file}\"")
-endforeach()
-list(JOIN SOURCE_FMU_CMINPACK_FILES_LIST_QUOTED ",\n                                            " SOURCE_FMU_CMINPACK_FILES)
-
+  foreach(source_file_full_path ${3RD_CMINPACK_FMU_FILES})
+    get_filename_component(source_file ${source_file_full_path} NAME)
+    list(APPEND SOURCE_FMU_CMINPACK_FILES_LIST_QUOTED "\"external_solvers/${source_file}\"")
+  endforeach()
+  list(JOIN SOURCE_FMU_CMINPACK_FILES_LIST_QUOTED ",\n                                            " SOURCE_FMU_CMINPACK_FILES)
+endif ()
 
 ######################################################################################################################
 ## Linear system files
