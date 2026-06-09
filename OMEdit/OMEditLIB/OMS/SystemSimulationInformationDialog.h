@@ -87,7 +87,7 @@ private:
   void addSolverRow(const QString &name, const QString &method, const QJsonObject &params);
   void populateComponentAssignments(LibraryTreeItem *pLibraryTreeItem, const QJsonArray &solvers, const QJsonObject &assignments);
   void populateSolverCombos();
-  QJsonObject fetchSolverParams(const QString &method, const QString &solverName = QString());
+  QJsonObject fetchDefaultSolverSettings(const QString &solverName);
   ModelWidget * mpModelWidget;
   int mCurrentSolverRow = -1;
 

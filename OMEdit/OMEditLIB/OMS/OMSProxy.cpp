@@ -1054,7 +1054,6 @@ bool OMSProxy::loadModel(QString filename, QString& pModelName)
  */
 bool OMSProxy::importSnapshot(QString cref, QString snapshot, QString& pNewCref, QString& pNewRootCref)
 {
-  qDebug() << "importFromSnapshot";
   QJsonObject obj, args;
   obj["method"] = "importSnapshot";
   obj["model"]  = cref.split('.').first();
