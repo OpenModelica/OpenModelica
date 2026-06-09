@@ -1068,8 +1068,6 @@ bool OMSProxy::importSnapshot(QString cref, QString snapshot, QString& pNewCref,
   pNewCref = newModelName.isEmpty() ? cref : newModelName;
   // pNewRootCref receives the root system name — used by text-editor callers to build newEditedCref.
   pNewRootCref = reply["rootCref"].toString();
-  qDebug() << "importFromSnapshot_completed";
-
   return true;
 }
 
