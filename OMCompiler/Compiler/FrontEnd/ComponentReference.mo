@@ -1253,10 +1253,19 @@ algorithm
 end crefPrefixAux;
 
 public function crefRemovePrePrefix
+  "Strips a leading $PRE or $START qualifier from a cref. Used by the code
+   generation templates before looking up a SimVar (cref2simvar) to obtain
+   index/nominal/min/max info: $PRE.x and $START.x are not SimVars of their
+   own, they share the storage of x, so they must resolve to x's SimVar.
+   Without stripping $START the lookup fails and emits the -2
+   ERROR_simVarFromHT_failed sentinel, which crashes at runtime when used as
+   a scalar index (ticket #15433, nested initialization nonlinear systems
+   iterating over $START.<var>)."
   input output DAE.ComponentRef cref;
 algorithm
   cref := match cref
     case DAE.CREF_QUAL(ident=DAE.preNamePrefix) then cref.componentRef;
+    case DAE.CREF_QUAL(ident=DAE.startNamePrefix) then cref.componentRef;
     else cref;
   end match;
 end crefRemovePrePrefix;

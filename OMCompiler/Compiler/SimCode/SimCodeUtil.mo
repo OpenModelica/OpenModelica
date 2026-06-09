@@ -1237,6 +1237,11 @@ Adds algebraic loops from list of SimEqSystem into ModelInfo
 and SimEqSystem equation algebraic system index."
   input output list<SimCode.SimEqSystem> eqns;
   input output SimCode.ModelInfo modelInfo;
+  input Boolean addNLSToModelInfo = true "If false, nonlinear systems found here are indexed but not added to
+    modelInfo.nonLinearSystems. Used when recursing into the inner equations of a nonlinear system, because the
+    code generation templates already emit those nested nonlinear systems from within their parent (see
+    generateNonLinearResidualFunction / generateNonLinearSystemData in CodegenC.tpl). Adding them here as well
+    leads to duplicate residualFunc/initializeStaticDataNLS/... definitions and a C compiler error (#15433).";
   output list<SimCode.JacobianMatrix> symJacs = {};
 protected
   list<SimCode.SimEqSystem> resEqns = {};
@@ -1263,7 +1268,12 @@ algorithm
           optNlSyst := SOME(altNlSyst);
         end if;
         system := SimCode.SES_NONLINEAR(nlSyst, optNlSyst, eqAttr);
-        modelInfo.nonLinearSystems := system::modelInfo.nonLinearSystems;
+        // Only add top-level nonlinear systems to modelInfo. Nested ones (inner equations of another
+        // nonlinear system) are emitted by the templates from within their parent, so adding them here
+        // too would generate duplicate C functions (ticket #15433).
+        if addNLSToModelInfo then
+          modelInfo.nonLinearSystems := system::modelInfo.nonLinearSystems;
+        end if;
       then system;
 
       // linear case
@@ -1321,7 +1331,10 @@ algorithm
   end if;
 
   // proceed inSyst.eqs
-  (eqs, modelInfo, tmpSymJacs) := addAlgebraicLoopsModelInfo(inSyst.eqs, modelInfo);
+  // Index the inner (nested) systems, but do NOT add nested nonlinear systems to modelInfo.nonLinearSystems:
+  // the templates emit them from within this parent nonlinear system (ticket #15433). Nested linear systems
+  // are still added because the linear templates do not recurse into inner equations.
+  (eqs, modelInfo, tmpSymJacs) := addAlgebraicLoopsModelInfo(inSyst.eqs, modelInfo, addNLSToModelInfo = false);
   inSyst.eqs := eqs;
   allSymJacs := listAppend(tmpSymJacs, allSymJacs);
 
@@ -1364,6 +1377,8 @@ algorithm
   end if;
 
   // proceed inSyst.eqs
+  // Keep addNLSToModelInfo = true (default) here: the linear templates do not recurse into inner equations,
+  // so any nonlinear system nested inside this linear system must stay in modelInfo.nonLinearSystems.
   (eqs, modelInfo, tmpSymJacs) := addAlgebraicLoopsModelInfo(inSyst.residual, modelInfo);
   inSyst.residual := eqs;
   allSymJacs := listAppend(tmpSymJacs, allSymJacs);
