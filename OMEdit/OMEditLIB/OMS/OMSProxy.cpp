@@ -1052,20 +1052,25 @@ bool OMSProxy::loadModel(QString filename, QString& pModelName)
  * \param pNewCref
  * \return
  */
-bool OMSProxy::importSnapshot(QString cref, QString snapshot, QString* pNewCref)
+bool OMSProxy::importSnapshot(QString cref, QString snapshot, QString& pNewCref, QString& pNewRootCref)
 {
-  QString command = "oms_importSnapshot";
-  QStringList args;
-  args << "\"" + cref + "\"" << "\"" + snapshot + "\"";
-  LOG_COMMAND(command, args);
-  char* new_cref = NULL;
-  oms_status_enu_t status = oms_importSnapshot(cref.toUtf8().constData(), snapshot.toUtf8().constData(), &new_cref);
-  if (new_cref)
-    *pNewCref = QString(new_cref);
-  else
-    *pNewCref = cref;
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
+  qDebug() << "importFromSnapshot";
+  QJsonObject obj, args;
+  obj["method"] = "importSnapshot";
+  obj["model"]  = cref.split('.').first();
+  args["snapshot"] = snapshot;
+  obj["args"] = args;
+  QJsonObject reply;
+  if (!sendZmqCommand(obj, reply))
+    return false;
+  // pNewCref receives the (possibly renamed) model name — used by redoInternal to keep mModelName correct.
+  QString newModelName = reply["modelName"].toString();
+  pNewCref = newModelName.isEmpty() ? cref : newModelName;
+  // pNewRootCref receives the root system name — used by text-editor callers to build newEditedCref.
+  pNewRootCref = reply["rootCref"].toString();
+  qDebug() << "importFromSnapshot_completed";
+
+  return true;
 }
 
 /*!
