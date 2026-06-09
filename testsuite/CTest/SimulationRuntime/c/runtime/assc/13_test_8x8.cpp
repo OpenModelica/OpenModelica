@@ -52,7 +52,7 @@ int start[] = {
     0, 0, 0, 0, 0, 0, 0, 328
   };
 
-  int mapping_ref[] = {0,1,2,3,4,6,5,7};
+  int mapping_ref[] = {0,1,2,3,5,6,4,7};
 
   LIST** result = ASSC_fromDense(reference, nv_, ne_);
 

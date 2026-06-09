@@ -39,6 +39,7 @@ encapsulated package NBASSC
  description: This file contains the functions which will perform analytical to structural singularity conversion.
 "
 public import DAE;
+public import ExpressionBasics;
 public import ExpressionDump;
 public import ExpressionSimplify;
 
@@ -47,6 +48,7 @@ protected
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import NFFlatten.FunctionTreeImpl;
+  import NFFunction.Function;
   import Operator = NFOperator;
   import SimplifyExp = NFSimplifyExp;
   import Type = NFType;
@@ -317,23 +319,23 @@ public
         if Flags.isSet(Flags.DUMP_ASSC) then
           print("Step-by-step construction of the zero row:\n");
         end if;
-        eq_str :=  "("+intString(listGet(traceback,1))+"): " + Expression.toString(Equation.getLHS(Pointer.access(listGet(eqns,1)))) + " = " + Expression.toString(Equation.getRHS(Pointer.access(listGet(eqns,1)))) + "\n";
+        eq_str :=  "("+intString(listGet(traceback,1))+"): " + Expression.toString(Util.getOption(Equation.getLHS(Pointer.access(listGet(eqns,1))))) + " = " + Expression.toString(Util.getOption(Equation.getRHS(Pointer.access(listGet(eqns,1))))) + "\n";
         for eq in 2:listLength(traceback) loop
           exp_dae_elem := DAE.CREF(DAE.CREF_IDENT("("+intString(listGet(traceback,eq))+")", DAE.T_REAL_DEFAULT, {}), DAE.T_REAL_DEFAULT);
           exp_dae := DAE.BINARY(DAE.BINARY(DAE.ICONST(listGet(factors_pivot, eq-1)), DAE.MUL(DAE.T_REAL_DEFAULT), exp_dae_elem),
                                 DAE.SUB(DAE.T_REAL_DEFAULT),
                                 DAE.BINARY(DAE.ICONST(listGet(factors_update, eq-1)), DAE.MUL(DAE.T_REAL_DEFAULT), exp_dae));
           if Flags.isSet(Flags.DUMP_ASSC) then
-            print(ExpressionDump.printExpStr(exp_dae)+"\n");
+            print(ExpressionBasics.printExpStr(exp_dae)+"\n");
           end if;
-          eq_str :=  eq_str + "("+intString(listGet(traceback,eq))+"): " + Expression.toString(Equation.getLHS(Pointer.access(listGet(eqns,eq)))) + " = " + Expression.toString(Equation.getRHS(Pointer.access(listGet(eqns,eq)))) + "\n";
+          eq_str :=  eq_str + "("+intString(listGet(traceback,eq))+"): " + Expression.toString(Util.getOption(Equation.getLHS(Pointer.access(listGet(eqns,eq))))) + " = " + Expression.toString(Util.getOption(Equation.getRHS(Pointer.access(listGet(eqns,eq))))) + "\n";
         end for;
         // all calculations with corresponding equations in one string
         (exp_dae, _) := ExpressionSimplify.simplify(exp_dae);
         if Flags.isSet(Flags.DUMP_ASSC) then
-            print("after simplify "+ExpressionDump.printExpStr(exp_dae)+"\n");
+            print("after simplify "+ExpressionBasics.printExpStr(exp_dae)+"\n");
         end if;
-        str_all := str_all + "The zero row in ("+ intString(num_eqns-count) +") was produced by the following calculation: " + ExpressionDump.printExpStr(exp_dae) + " with \n" + eq_str + "\n";
+        str_all := str_all + "The zero row in ("+ intString(num_eqns-count) +") was produced by the following calculation: " + ExpressionBasics.printExpStr(exp_dae) + " with \n" + eq_str + "\n";
         count := count + 1;
       end for;
       if Flags.isSet(Flags.DUMP_ASSC) then
@@ -369,7 +371,7 @@ public
         if Flags.isSet(Flags.DUMP_ASSC) then
           print("new_eq: "+Equation.toString(Pointer.access(new_eq))+"\n");
         end if;
-        (solved_eq,_,status, _) := Solve.solveBody(Pointer.access(new_eq), listGet(vars,i), FunctionTreeImpl.EMPTY());
+        (solved_eq,status, _) := Solve.solveBody(Pointer.access(new_eq), listGet(vars,i), UnorderedMap.new<Function>(AbsynUtil.pathHash, AbsynUtil.pathEqual));
         if Flags.isSet(Flags.DUMP_ASSC) then
           print("solved_eq: "+Equation.toString(solved_eq)+"\n");
         end if;
