@@ -237,7 +237,7 @@ protected
           // -----------------------------------
           //            1. 2. 3.
           // -----------------------------------
-          (replacements, newEquations) := aliasCausalize(varData.unknowns, eqData.simulation, kind, "Simulation");
+          (replacements, newEquations) := aliasCausalize(varData.unknowns, eqData.simulation, kind, eqData.uniqueIndex, "Simulation");
           (replacements, auxEquations) := checkReplacements(replacements, eqData);
 
           // -----------------------------------
@@ -435,7 +435,7 @@ protected
           // -----------------------------------
           //            1. 2. 3.
           // -----------------------------------
-          (replacements, newEquations) := aliasCausalize(varData.clocks, eqData.clocked, kind, "Clocked");
+          (replacements, newEquations) := aliasCausalize(varData.clocks, eqData.clocked, kind, eqData.uniqueIndex, "Clocked");
           (replacements, auxEquations) := checkReplacements(replacements, eqData);
 
           // -----------------------------------
@@ -468,6 +468,7 @@ protected
     input VariablePointers variables;
     input EquationPointers equations;
     input Partition.Kind kind;
+    input Pointer<Integer> index;
     input String context;
     output UnorderedMap<ComponentRef, Expression> replacements;
     output EquationPointers newEquations;
@@ -503,7 +504,7 @@ protected
     // --------------------------------------------------------------------------------------------------------
     replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual, size);
     for set in sets loop
-      replacements := createReplacementRules(set, replacements, kind);
+      replacements := createReplacementRules(set, index, replacements, kind);
     end for;
 
   end aliasCausalize;
@@ -842,6 +843,7 @@ protected
   function createReplacementRules
     "Creates replacement rules from a simple set by causalizing it and replacing the expressions in order"
     input AliasSet set;
+    input Pointer<Integer> index;
     input output UnorderedMap<ComponentRef, Expression> replacements;
     input Partition.Kind kind;
   algorithm
@@ -856,6 +858,7 @@ protected
         VariablePointers vars;
         list<Pointer<Variable>> var_lst;
         EquationPointers eqs;
+        list<Pointer<Equation>> eqns;
         list<StrongComponent> comps;
         AttributeCollector collector;
         Pointer<Pointer<Variable>> var_to_keep = Pointer.create(Pointer.create(NBVariable.DUMMY_VARIABLE));
@@ -878,32 +881,14 @@ protected
       then replacements;
 
       case NONE() guard(listLength(set.simple_variables) == listLength(set.simple_equations)) algorithm
-        //vars := VariablePointers.fromList(list(BVariable.getVarPointer(cr, sourceInfo()) for cr in set.simple_variables), true);
-        //eqs := EquationPointers.fromList(set.simple_equations);
-        ASSC.main(set.simple_equations, set.simple_variables);
-
-        replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
-        // for loop creating -> replacements for each var
-
-        // initialize lhs vector with zeros
-        lhs := arrayCreate(listLength(set.simple_equations),0.0);
-        // each cref corresponds to one integer
-        lst_enum := List.intRange(listLength(set.simple_variables));
-        int_to_cref := UnorderedMap.fromLists(set.simple_variables, lst_enum, ComponentRef.hash, ComponentRef.isEqual);
-        // residual exp of simple_equations
-        idx_i := 1;
-        for eq_ptr in set.simple_equations loop
-          res := Equation.getResidualExp(Pointer.access(eq_ptr));
-          // update lhs
-          expr := Expression.map(res, function Replacements.applySimpleExp(replacements = replacements));
-          //print("expr1 "+Expression.toString(expr)+"\n" );
-          if not Expression.containsCrefSet(expr, UnorderedSet.fromList(set.simple_variables, ComponentRef.hash, ComponentRef.isEqual)) then
-            expr := Expression.negate(SimplifyExp.simplify(expr));
-            //print("expr23 "+Expression.toString(expr)+"\n" );
-            //lhs[idx_i] := Expression.realValue(expr);
-            arrayUpdate(lhs, idx_i, Expression.realValue(expr));
-          end if;
-        end for;
+        vars := VariablePointers.fromList(list(BVariable.getVarPointer(cr, sourceInfo()) for cr in set.simple_variables), true);
+        // solve the equation system by performing analytical-to-structural singularity conversion
+        eqns := ASSC.main(set.simple_equations, set.simple_variables, index);
+        eqs := EquationPointers.fromList(eqns);
+        // causalize the system
+        (_, comps) := Causalize.simple(vars, eqs);
+        // create replacements from strong components
+        Replacements.simple(comps, replacements);
       then replacements;
 
       else algorithm
@@ -924,8 +909,8 @@ protected
         end if;
         for var in var_lst loop
           rhs := UnorderedMap.getSafe(BVariable.getVarName(var), replacements, sourceInfo());
-          eq := Equation.makeAssignment(BVariable.toExpression(var), rhs, Pointer.create(0), NBEquation.TMP_STR, Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false));
-          (solved_eq,_, _) := Solve.solveBody(Pointer.access(eq), BVariable.getVarName(Pointer.access(var_to_keep)));
+          eq := Equation.makeAssignment(BVariable.toExpression(var), rhs, index, NBEquation.TMP_STR, Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false));
+          (solved_eq,_,status, _) := Solve.solveBody(Pointer.access(eq), BVariable.getVarName(Pointer.access(var_to_keep)), FunctionTreeImpl.EMPTY());
           collector := AttributeCollector.fixValues(collector, BVariable.getVarName(var), solved_eq);
         end for;
         if Flags.isSet(Flags.DEBUG_ALIAS) then

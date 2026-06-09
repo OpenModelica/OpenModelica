@@ -1,21 +1,22 @@
-// name: Alias
-// keywords: NewBackend
+// name: AliasCyclic2
+// keywords: NewBackend, Alias, ASSC
 // status: correct
+// function: Testing Bareiss algorithm.
 
 loadString("
   model AliasCyclic2
     Integer a, b, c, d;       // constant simple
   equation
-    1 = a + b;
+    2 = 2*a + 2*b;
     0 = b + c;
     -1 = c + d;
     0 = d + a;
   end AliasCyclic2;
 "); getErrorString();
 
-setCommandLineOptions("--newBackend -d=dumprepl");
+setCommandLineOptions("--newBackend -d=dumprepl,dumpASSC");
 simulate(AliasCyclic2); getErrorString();
-
+diffSimulationResults("AliasCyclic2_res.mat", "ReferenceFiles/AliasCyclic2_res.mat", "AliasCyclic2_diff.csv", 1e-8);
 
 // Result:
 // true
@@ -29,49 +30,79 @@ simulate(AliasCyclic2); getErrorString();
 // **************
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
-// 	[SCAL] (1) z = $FUN_1 ($RES_SIM_0)
-// 	[SCAL] (1) x = z ($RES_SIM_3)
+// 	[SCAL] (1) 0 = d + a ($RES_SIM_0)
+// 	[SCAL] (1) -1 = c + d ($RES_SIM_1)
+// 	[SCAL] (1) 0 = b + c ($RES_SIM_2)
+// 	[SCAL] (1) 2 = 2 * a + 2 * b ($RES_SIM_3)
 //
-// Alias Set 2:
-// **************
-// 	Constant/Parameter Binding: [SCAL] (1) c = 3.0 ($RES_SIM_2)
-// 	### Set Equations:
-// 	[SCAL] (1) y = time + c ($RES_SIM_1)
-// 	[SCAL] (1) b = c ($RES_SIM_4)
-// 	[SCAL] (1) a = b ($RES_SIM_5)
+// Variable-to-column mapping:
+// (d, 1)
+// (c, 2)
+// (b, 3)
+// (a, 4)
+// Sparse matrix before applying the Bareiss algorithm:
+// Sparse Matrix:
+// ================
+// 0: (0: 1) (3: 1)
+// 1: (0: 1) (1: 1)
+// 2: (1: 1) (2: 1)
+// 3: (2: 2) (3: 2)
+// Sparse matrix after applying the Bareiss algorithm:
+// Sparse Matrix:
+// ================
+// 0: (0: 1) (3: 1)
+// 1: (1: 1) (3: -1)
+// 2: (2: 1) (3: 1)
+// 3:
 //
-// [dumprepl] Constant Replacements:
-// ***********************************
-// 	c	 ==> 	3.0
-// 	b	 ==> 	3.0
-// 	a	 ==> 	3.0
-// [dumprepl] Trivial Alias Replacements:
-// ****************************************
-// 	z	 ==> 	x
-// 	$FUN_1	 ==> 	x
-// [dumprepl] Nontrivial Alias Replacements:
-// *******************************************
-// 	y	 ==> 	3.0 + time
+// List indices:
+// {0, 3}
+// {1, 3}
+// {2, 3}
+// {}
 //
-// ==================================
-//   [dumprepl] Clocked Alias Sets:
-// ==================================
+// List values:{1, 1}
+// {1, -1}
+// {1, 1}
+// {}
 //
-// <No Clocked Alias Sets>
+// Number of operations: 3
+// All operations:
+// [0, 0, 0]
+// [0, 1, 2]
+// [1, 1, 1]
+// [1, 2, 3]
+// [1, 1, 2]
 //
-// [dumprepl] Constant Replacements:
-// ***********************************
-// [dumprepl] Trivial Alias Replacements:
-// ****************************************
-// [dumprepl] Nontrivial Alias Replacements:
-// *******************************************
+// lhs array: [0, -1, 0, 2]
+// current op_mode: 0
+// case 0, updated lhs_array: [0, -1, 0, 2]
+// current op_mode: 0
+// case 0, updated lhs_array: [0, -1, 1, 2]
+// current op_mode: 0
+// case 0, updated lhs_array: [0, -1, 1, 0]
+// final lhs_array: [0, -1, 1, 0]
 //
+// Number of zero rows: 1
+// Involved equations: {0, 1, 2, 3}
+// Factors pivot: {1, 1, 1}
+// Factors update: {1, 1, 2}
+// Step-by-step construction of the zero row:
+// 1 * (1) - 1 * (0)
+// 1 * (2) - 1 * (1 * (1) - 1 * (0))
+// 1 * (3) - 2 * (1 * (2) - 1 * (1 * (1) - 1 * (0)))
+// after simplify (3) + (-2.0) * ((2) + (0) - (1))
 // record SimulationResult
-//     resultFile = "Alias_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Alias', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-// "
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'AliasCyclic2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Failed to build model: AliasCyclic2"
 // end SimulationResult;
-// ""
+// "Error: Internal error NBASSC.main failed because sparse matrix is singular.
+// The zero row in (3) was produced by the following calculation: (3) + (-2.0) * ((2) + (0) - (1)) with
+// (0): 0 = d + a
+// (1): -1 = c + d
+// (2): 0 = b + c
+// (3): 2 = 2 * a + 2 * b
+// "
+// (false, {})
 // endResult
