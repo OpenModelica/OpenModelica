@@ -91,6 +91,7 @@ import Flags;
 import FlatModel = NFFlatModel;
 import NFFunction;
 import NFFlatten.{FunctionTree, FunctionTreeImpl};
+import NFApi;
 import FMI;
 import GCExt;
 import HashTable;
@@ -1078,6 +1079,11 @@ algorithm
           Tpl.tplNoret3(CodegenFMUCppHpcom.translateModel, simCode, FMUVersion, FMUType);
         else
           Tpl.tplNoret(function CodegenFMUCpp.translateModel(in_a_FMUVersion=FMUVersion, in_a_FMUType=FMUType, in_a_sourceFiles={}), simCode);
+          // dump modelInstance.json so the FMU makefile can filter out the
+          // requested extra annotations (see flag --fmiExtraAnnotations)
+          if Flags.getConfigString(Flags.FMI_EXTRA_ANNOTATIONS) <> "" then
+            System.writeFile(simCode.fileNamePrefix + "_modelInstance.json", ValuesUtil.extractValueString(NFApi.getModelInstance(simCode.modelInfo.name, simCode.modelInfo.name, "", true)));
+          end if;
         end if;
       then ();
     else
