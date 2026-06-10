@@ -158,7 +158,7 @@ struct ExchangeJacobian {
     sparsity(exists ? CscToCoo::from_csc(reinterpret_cast<int*>(jacobian->sparsePattern->leadindex),
                                          reinterpret_cast<int*>(jacobian->sparsePattern->index),
                                          static_cast<int>(jacobian->sizeCols),
-                                         static_cast<int>(jacobian->sparsePattern->numberOfNonZeros),
+                                         static_cast<int>(jacobian->sparsePattern->nnz),
                                          move_to_first_row,
                                          nnz_offset)
                     : CscToCoo()),

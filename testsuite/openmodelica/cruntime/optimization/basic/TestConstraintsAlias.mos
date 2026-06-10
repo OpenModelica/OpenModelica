@@ -30,7 +30,7 @@ optimization emissionOpt(objectiveIntegrand = emissions)
 constraint
   y1 <= 1;
   y1 >= 0;
-end emissionsOpt;
+end emissionOpt;
 
 ");
 getErrorString();

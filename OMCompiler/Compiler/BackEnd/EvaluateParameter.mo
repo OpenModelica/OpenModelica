@@ -778,40 +778,21 @@ protected function traverseParameterSorted
   input BackendVarTransform.VariableReplacements repl;
   input BackendVarTransform.VariableReplacements replEvaluate;
   input Boolean isInitial;
-  output BackendDAE.Variables oKnVars;
-  output BackendVarTransform.VariableReplacements oRepl;
-  output BackendVarTransform.VariableReplacements oReplEvaluate;
-  output FCore.Cache oCache;
-  output Integer oMark;
+  output BackendDAE.Variables oKnVars = inGlobalKnownVars;
+  output BackendVarTransform.VariableReplacements oRepl = repl;
+  output BackendVarTransform.VariableReplacements oReplEvaluate = replEvaluate;
+  output FCore.Cache oCache = iCache;
+  output Integer oMark = iMark;
+protected
+  BackendDAE.Var v;
 algorithm
-  (oKnVars,oRepl,oReplEvaluate,oCache,oMark) := match inComps
-    local
-      BackendDAE.Variables globalKnownVars;
-      BackendDAE.Var v;
-      BackendVarTransform.VariableReplacements repl1,evrepl;
-      Integer i,mark;
-      list<list<Integer>> rest;
-      FCore.Cache cache;
-      list<Integer> ilst;
-
-    case {}
-    then (inGlobalKnownVars,repl,replEvaluate,iCache,iMark);
-
-    case {i}::rest algorithm
-      v := BackendVariable.getVarAt(inGlobalKnownVars,i);
-      (v,globalKnownVars,cache,mark,repl1) := evaluateFixedAttribute(v,true,inGlobalKnownVars,m,inIEqns,iCache,graph,iMark,markarr,isInitial,repl);
-      (globalKnownVars,repl1,evrepl) := evaluateParameterBindings(v,i,globalKnownVars,cache,graph,repl1,replEvaluate);
-      (globalKnownVars,repl1,evrepl,cache,mark) := traverseParameterSorted(rest,globalKnownVars,m,inIEqns,cache,graph,mark,markarr,repl1,evrepl,isInitial);
-    then (globalKnownVars,repl1,evrepl,cache,mark);
-
-    case ilst::rest algorithm
-      // vlst = List.map1r(ilst,BackendVariable.getVarAt,inGlobalKnownVars);
-      // str = stringDelimitList(List.map(vlst,BackendDump.varString),"\n");
-      // print(stringAppendList({"EvaluateParameter.traverseParameterSorted faild because of strong connected Block in Parameters!\n",str,"\n"}));
-      (globalKnownVars,repl1,evrepl,cache,mark) := traverseParameterSorted(List.map(ilst,List.create),inGlobalKnownVars,m,inIEqns,iCache,graph,iMark,markarr,repl,replEvaluate,isInitial);
-      (globalKnownVars,repl1,evrepl,cache,mark) := traverseParameterSorted(rest,globalKnownVars,m,inIEqns,cache,graph,mark,markarr,repl1,evrepl,isInitial);
-    then (globalKnownVars,repl1,evrepl,cache,mark);
-  end match;
+  for ilst in inComps loop
+    for i in ilst loop
+      v := BackendVariable.getVarAt(oKnVars,i);
+      (v,oKnVars,oCache,oMark,oRepl) := evaluateFixedAttribute(v,true,oKnVars,m,inIEqns,oCache,graph,oMark,markarr,isInitial,oRepl);
+      (oKnVars,oRepl,oReplEvaluate) := evaluateParameterBindings(v,i,oKnVars,oCache,graph,oRepl,oReplEvaluate);
+    end for;
+  end for;
 end traverseParameterSorted;
 
 

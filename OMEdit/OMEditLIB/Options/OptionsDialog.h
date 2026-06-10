@@ -295,6 +295,7 @@ public:
   ComboBox* getActivateAccessAnnotationsComboBox() {return mpActivateAccessAnnotationsComboBox;}
   QCheckBox* getCreateBackupFileCheckbox() {return mpCreateBackupFileCheckbox;}
   QCheckBox* getDisplayNFAPIErrorsWarningsCheckBox() {return mpDisplayNFAPIErrorsWarningsCheckBox;}
+  QCheckBox* getEnableInstanceApiNoJsonCheckBox() {return mpEnableInstanceApiNoJsonCheckBox;}
   SpinBox* getLibraryIconSizeSpinBox() {return mpLibraryIconSizeSpinBox;}
   SpinBox* getLibraryIconTextLengthSpinBox() {return mpLibraryIconTextLengthSpinBox;}
   void setShowProtectedClasses(bool value) {mpShowProtectedClasses->setChecked(value);}
@@ -332,6 +333,7 @@ private:
   ComboBox *mpActivateAccessAnnotationsComboBox;
   QCheckBox *mpCreateBackupFileCheckbox;
   QCheckBox *mpDisplayNFAPIErrorsWarningsCheckBox;
+  QCheckBox *mpEnableInstanceApiNoJsonCheckBox;
   QCheckBox *mpEnableCRMLSupportCheckBox;
   QGroupBox *mpLibraryBrowserGroupBox;
   Label *mpLibraryIconSizeLabel;

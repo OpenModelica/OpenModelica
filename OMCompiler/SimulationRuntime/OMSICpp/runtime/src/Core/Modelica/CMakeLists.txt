@@ -220,9 +220,15 @@ endif()
 
 set(LAPACK_LIBRARIES_ "")
 foreach(lib ${LAPACK_LIBRARIES})
-  get_filename_component(libNew "${lib}" NAME_WE)
-  string(REGEX REPLACE "^lib" "" libNew ${libNew})
-  set(LAPACK_LIBRARIES_ "${LAPACK_LIBRARIES_} ${LINKER_LIB_PREFIX}${libNew}")
+  # FindLAPACK/FindBLAS may return raw linker flags (e.g. "-lm;-ldl") mixed in
+  # with library paths; pass those through instead of prefixing another "-l".
+  if("${lib}" MATCHES "^-")
+    set(LAPACK_LIBRARIES_ "${LAPACK_LIBRARIES_} ${lib}")
+  else()
+    get_filename_component(libNew "${lib}" NAME_WE)
+    string(REGEX REPLACE "^lib" "" libNew ${libNew})
+    set(LAPACK_LIBRARIES_ "${LAPACK_LIBRARIES_} ${LINKER_LIB_PREFIX}${libNew}")
+  endif()
 endforeach(lib ${LAPACK_LIBRARIES})
 
 set(INTEL_TBB_LIBS "")

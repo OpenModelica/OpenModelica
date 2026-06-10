@@ -212,6 +212,65 @@ algorithm
   outObj := if isNull(value) then obj else addPair(key, value, obj);
 end addPairNotNull;
 
+function toListForm
+  "Returns a JSON value where all OBJECT (hash-map backed) and ARRAY (vector
+   backed) nodes have been converted, recursively, into the list-based
+   LIST_OBJECT and LIST nodes. The result consists only of plain MetaModelica
+   lists, tuples and scalars, which can be traversed from C/C++ (e.g. from
+   OMEdit, see issue #15219) without knowing the internal layout of UnorderedMap
+   and Vector."
+  input JSON value;
+  output JSON outValue;
+algorithm
+  outValue := match value
+    local
+      list<tuple<String, JSON>> pairs;
+      list<JSON> elems;
+      String key;
+      JSON v;
+
+    case OBJECT()
+      algorithm
+        pairs := {};
+        for i in 1:UnorderedMap.size(value.values) loop
+          pairs := (UnorderedMap.keyAt(value.values, i),
+                    toListForm(UnorderedMap.valueAt(value.values, i))) :: pairs;
+        end for;
+      then
+        LIST_OBJECT(listReverse(pairs));
+
+    case LIST_OBJECT()
+      algorithm
+        pairs := {};
+        for p in value.values loop
+          (key, v) := p;
+          pairs := (key, toListForm(v)) :: pairs;
+        end for;
+      then
+        LIST_OBJECT(listReverse(pairs));
+
+    case ARRAY()
+      algorithm
+        elems := {};
+        for i in Vector.size(value.values):-1:1 loop
+          elems := toListForm(Vector.getNoBounds(value.values, i)) :: elems;
+        end for;
+      then
+        LIST(elems);
+
+    case LIST()
+      algorithm
+        elems := {};
+        for e in listReverse(value.values) loop
+          elems := toListForm(e) :: elems;
+        end for;
+      then
+        LIST(elems);
+
+    else value;
+  end match;
+end toListForm;
+
 function toString
   input JSON value;
   input Boolean prettyPrint = false;

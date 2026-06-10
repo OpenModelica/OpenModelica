@@ -721,35 +721,79 @@ protected
     input list<Option<Iterator>> maps;
     output list<tuple<ComponentRef, Expression, Option<Iterator>>> frames;
   protected
-    UnorderedMap<ComponentRef, Expression> frame_map = UnorderedMap.fromLists<Expression>(names, ranges, ComponentRef.hash, ComponentRef.isEqual);
-    UnorderedMap<ComponentRef, Expression> new_map = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+    type FrameTuple = tuple<Expression, Option<Iterator>>;
+    UnorderedMap<ComponentRef, FrameTuple> frame_map  = UnorderedMap.new<FrameTuple>(ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedMap<ComponentRef, FrameTuple> new_map    = UnorderedMap.new<FrameTuple>(ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedMap<ComponentRef, ComponentRef> sub_map  = UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
 
     function collectFrames
       input output Expression exp;
-      input UnorderedMap<ComponentRef, Expression> frame_map;
-      input UnorderedMap<ComponentRef, Expression> new_map;
+      input UnorderedMap<ComponentRef, FrameTuple> frame_map;
+      input UnorderedMap<ComponentRef, FrameTuple> new_map;
+      input UnorderedMap<ComponentRef, ComponentRef> sub_map;
     algorithm
       () := match exp
         local
-          Option<Expression> range;
+          FrameTuple frame_tpl;
+          ComponentRef parent;
+
+        // check if the cref is an iterator
         case Expression.CREF() algorithm
-          range := UnorderedMap.get(exp.cref, frame_map);
-          if isSome(range) then
-            UnorderedMap.add(exp.cref, Util.getOption(range), new_map);
-          end if;
+          () := match UnorderedMap.get(exp.cref, frame_map)
+            case SOME(frame_tpl) algorithm
+              // add to new map
+              UnorderedMap.add(exp.cref, frame_tpl, new_map);
+            then ();
+
+            // if not, check if it has a parent in the sub_map
+            else algorithm
+              () := match UnorderedMap.get(exp.cref, sub_map)
+                // check if the parent is an iterator (should always be)
+                case SOME(parent) algorithm
+                  () := match UnorderedMap.get(parent, frame_map)
+                    case SOME(frame_tpl) algorithm
+                      // add parent to new map
+                      UnorderedMap.add(parent, frame_tpl, new_map);
+                    then ();
+                    else ();
+                  end match;
+                then ();
+                else ();
+              end match;
+            then ();
+          end match;
         then ();
         else ();
       end match;
     end collectFrames;
 
-    list<ComponentRef> n;
-    list<Expression> r;
-    list<Option<Iterator>> m;
+    ComponentRef name;
+    Expression range;
+    Option<Iterator> map;
+    list<ComponentRef> n = names, local_n;
+    list<Expression> r = ranges;
+    list<Option<Iterator>> m = maps;
   algorithm
-    Expression.map(exp, function collectFrames(frame_map = frame_map, new_map = new_map));
+    // iterate over all iterators
+    while not listEmpty(n) loop
+      // getting the name, range and map
+      name  :: n := n;
+      range :: r := r;
+      map   :: m := m;
+      // add the name range and map to the frame_map
+      UnorderedMap.add(name, (range, map), frame_map);
+      // if there is a sub map add it to the sub_map... mapper
+      if isSome(map) then
+        (local_n, _, _) := Iterator.getFrames(Util.getOption(map));
+        for cref in local_n loop
+          UnorderedMap.add(cref, name, sub_map);
+        end for;
+      end if;
+    end while;
+
+    Expression.map(exp, function collectFrames(frame_map = frame_map, new_map = new_map, sub_map = sub_map));
     n := UnorderedMap.keyList(new_map);
-    r := UnorderedMap.valueList(new_map);
-    m := List.fill(NONE(), listLength(n));
+    (r, m) := List.unzip(UnorderedMap.valueList(new_map));
     frames := List.zip3(n, r, m);
   end filterFrames;
 

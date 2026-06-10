@@ -1458,29 +1458,15 @@ protected function iterSeparatorString
   input Boolean inAtStartOfLine;
   input Integer inAfterNewLineIndent;
 
-  output Integer outActualPositionOnLine;
-  output Boolean outAtStartOfLine;
+  output Integer outActualPositionOnLine = inActualPositionOnLine;
+  output Boolean outAtStartOfLine = inAtStartOfLine;
+protected
+  Integer aind = inAfterNewLineIndent;
 algorithm
-  (outActualPositionOnLine, outAtStartOfLine) := match (inTokens, inSeparator, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent)
-    local
-      Tokens toks;
-      StringToken tok, septok;
-      Integer pos, aind;
-      Boolean isstart;
-
-    case ({}, _, pos, isstart, _)
-      then
-        (pos, isstart);
-
-    case (tok :: toks, septok, pos, isstart, aind)
-      algorithm
-        (pos, isstart, aind) := tokString(septok, pos, isstart, aind);
-        (pos, isstart, aind) := tokString(tok, pos, isstart, aind);
-        (pos, isstart)
-         := iterSeparatorString(toks, septok, pos, isstart, aind);
-      then
-        (pos, isstart);
-  end match;
+  for tok in inTokens loop
+    (outActualPositionOnLine, outAtStartOfLine, aind) := tokString(inSeparator, outActualPositionOnLine, outAtStartOfLine, aind);
+    (outActualPositionOnLine, outAtStartOfLine, aind) := tokString(tok, outActualPositionOnLine, outAtStartOfLine, aind);
+  end for;
 end iterSeparatorString;
 
 
@@ -1539,65 +1525,28 @@ protected function iterAlignWrapString
 
   output Integer outActualPositionOnLine;
   output Boolean outAtStartOfLine;
+protected
+  Tokens toks = inTokens;
+  StringToken tok;
+  Integer idx = inActualIndex;
+  Integer pos = inActualPositionOnLine;
+  Boolean isstart = inAtStartOfLine;
+  Integer aind = inAfterNewLineIndent;
 algorithm
-  (outActualPositionOnLine, outAtStartOfLine)
-   := match (inTokens, inActualIndex, inAlignNum, inAlignSeparator, inWrapWidth, inWrapSeparator, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent)
-    local
-      Tokens toks;
-      StringToken tok,  asep, wsep;
-      Integer pos, aind, idx, anum, wwidth;
-      Boolean isstart;
-
-    case ({}, _,_,_,_,_, pos, isstart, _)
-      then
-        (pos, isstart);
-
-    //align and try wrap
-    case (tok :: toks, idx, anum, asep, wwidth, wsep, pos, isstart, aind)
-      guard
-        (idx > 0) and (intMod(idx,anum) == 0)
-      algorithm
-        (pos, isstart, aind) := tokString(asep, pos, isstart, aind);
-        (pos, isstart, aind) := tryWrapString(wwidth, wsep, pos, isstart, aind);
-        (pos, isstart, aind) := tokString(tok, pos, isstart, aind);
-        (pos, isstart)
-         := iterAlignWrapString(toks, idx + 1, anum, asep, wwidth, wsep,
-                pos, isstart, aind);
-      then
-        (pos, isstart);
-    //wrap
-    case (tok :: toks, idx, anum, asep, wwidth, wsep, pos, isstart, aind)
-      guard
-        //false = (idx > 0) and (intMod(idx,anum) == 0);
-        (wwidth > 0) and (pos >= wwidth) //check wwidth for the invariant that should be always true here
-      algorithm
-        (pos, isstart, aind) := tokString(wsep, pos, isstart, aind);
-        (pos, isstart, aind) := tokString(tok, pos, isstart, aind);
-        (pos, isstart)
-          := iterAlignWrapString(toks, idx + 1, anum, asep, wwidth, wsep,
-                pos, isstart, aind);
-      then
-        (pos, isstart);
-
-    //item only
-    case (tok :: toks, idx, anum, asep, wwidth, wsep, pos, isstart, aind)
-      algorithm
-        //false = (idx > 0) and (intMod(idx,anum) == 0);
-        //false = (wwidth > 0) and (pos >= wwidth); //check wwidth for the invariant that should be always true here
-        (pos, isstart, aind) := tokString(tok, pos, isstart, aind);
-        (pos, isstart)
-         := iterAlignWrapString(toks, idx + 1, anum, asep, wwidth, wsep,
-              pos, isstart, aind);
-      then
-        (pos, isstart);
-
-    //should not ever happen
-    else
-      algorithm
-        true := Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.iterAlignWrapString failed.\n");
-      then
-        fail();
-  end match;
+  while not listEmpty(toks) loop
+    tok::toks := toks;
+    if (idx > 0) and (intMod(idx,inAlignNum) == 0) then
+      //align and try wrap
+      (pos, isstart, aind) := tokString(inAlignSeparator, pos, isstart, aind);
+      (pos, isstart, aind) := tryWrapString(inWrapWidth, inWrapSeparator, pos, isstart, aind);
+    elseif (inWrapWidth > 0) and (pos >= inWrapWidth) then //check wwidth for the invariant that should be always true here
+      //wrap
+      (pos, isstart, aind) := tokString(inWrapSeparator, pos, isstart, aind);
+    end if;
+    (pos, isstart, aind) := tokString(tok, pos, isstart, aind);
+    idx := idx + 1;
+  end while;
+  (outActualPositionOnLine, outAtStartOfLine) := (pos, isstart);
 end iterAlignWrapString;
 
 

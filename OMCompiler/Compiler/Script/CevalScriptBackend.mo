@@ -3181,6 +3181,15 @@ algorithm
     case ("getModelInstanceAnnotation", {Values.CODE(Absyn.C_TYPENAME(classpath)), v as Values.ARRAY(), Values.BOOL(b)})
       then NFApi.getModelInstanceAnnotation(classpath, ValuesUtil.arrayValueStrings(v), b);
 
+    case ("getModelInstanceReference", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(str)})
+      then NFApi.getModelInstanceReference(classpath, path, str);
+
+    case ("getModelInstanceAnnotationReference", {Values.CODE(Absyn.C_TYPENAME(classpath)), v as Values.ARRAY()})
+      then NFApi.getModelInstanceAnnotationReference(classpath, ValuesUtil.arrayValueStrings(v));
+
+    case ("releaseModelInstanceReference", {Values.INTEGER(i)})
+      then NFApi.releaseModelInstanceReference(i);
+
     case ("modifierToJSON", {Values.STRING(str), Values.BOOL(b)})
       then NFApi.modifierToJSON(str, b);
 
@@ -4456,11 +4465,6 @@ algorithm
   dir := fmutmp+"/sources/";
 
   if Config.simCodeTarget() == "Cpp" then
-    // dump modelInstance.json so the FMU makefile can filter out the
-    // requested extra annotations (see flag --fmiExtraAnnotations)
-    if Flags.getConfigString(Flags.FMI_EXTRA_ANNOTATIONS) <> "" then
-      System.writeFile(filenameprefix + "_modelInstance.json", ValuesUtil.extractValueString(NFApi.getModelInstance(className, className, "", true)));
-    end if;
     System.removeDirectory("binaries");
     for platform in platforms loop
       if platform == "dynamic" or platform == "static" then

@@ -68,11 +68,13 @@ public function checkModel "This function perform a model check. Count Variables
 protected
   list<DAE.Element> eqns, lst;
   HashSet.HashSet hs;
+  Boolean debug_dump = Flags.isSet(Flags.DUMP_CHECK_MODEL);
+  CountVarEqnFoldArg arg;
 algorithm
   ExecStat.execStat("CheckModel - start counting");
   DAE.DAE(lst) := inDAELst;
   hs := HashSet.emptyHashSet();
-  (varSize, eqnSize, eqns, hs) := List.fold(lst, countVarEqnSize, (0, 0, {}, hs));
+  (varSize, eqnSize, eqns, hs) := countVarEqnSizeList(lst, (0, 0, {}, hs), debug_dump);
   simpleEqnSize := countSimpleEqnSize(eqns, 0, hs);
   ExecStat.execStat("CheckModel - end counting");
 end checkModel;
@@ -80,9 +82,20 @@ end checkModel;
 protected type CountVarEqnFoldArg =
   tuple<Integer/*varSize*/, Integer/*eqnSize*/, list<DAE.Element>/*eqns*/, HashSet.HashSet/*vars*/>;
 
+protected function countVarEqnSizeList
+  input list<DAE.Element> elements;
+  input output CountVarEqnFoldArg arg;
+  input Boolean debugDump;
+algorithm
+  for e in elements loop
+    arg := countVarEqnSize(e, arg, debugDump);
+  end for;
+end countVarEqnSizeList;
+
 protected function countVarEqnSize
   input DAE.Element element;
   input CountVarEqnFoldArg inArg;
+  input Boolean debugDump;
   output CountVarEqnFoldArg outArg;
 algorithm
   outArg := match element
@@ -96,6 +109,7 @@ algorithm
       DAE.Algorithm alg;
       list<DAE.ComponentRef> crlst;
       DAE.Type tp;
+      DAE.Element elem;
 
     // external Objects
     case DAE.EXTOBJECTCLASS()
@@ -119,13 +133,17 @@ algorithm
         (varSize, eqnSize, eqns, hs) := inArg;
         size := Expression.sizeOf(element.ty);
         varSize := varSize + size;
+        dumpVar(cr, size, debugDump);
 
         if DAEUtil.isInput(element) and DAEUtil.isPublicVar(element) then
           eqnSize := eqnSize + size;
+          dumpEqn(element, size, debugDump);
         else
           if isSome(element.binding) then
             eqnSize := eqnSize + size;
-            eqns := DAE.EQUATION(Expression.crefExp(element.componentRef), Util.getOption(element.binding), element.source) :: eqns;
+            elem := DAE.EQUATION(Expression.crefExp(element.componentRef), Util.getOption(element.binding), element.source);
+            dumpEqn(elem, size, debugDump);
+            eqns := elem :: eqns;
           end if;
 
           hs := BaseHashSet.add(cr, hs);
@@ -138,6 +156,7 @@ algorithm
       algorithm
         (varSize, eqnSize, eqns, hs) := inArg;
         size := Expression.sizeOf(Expression.typeof(e));
+        dumpEqn(element, size, debugDump);
       then (varSize, eqnSize+size, element::eqns, hs);
 
     // initial equations
@@ -150,6 +169,7 @@ algorithm
         (varSize, eqnSize, eqns, hs) := inArg;
         tp := ComponentReference.crefTypeConsiderSubs(cr);
         size := Expression.sizeOf(tp);
+        dumpEqn(element, size, debugDump);
       then (varSize, eqnSize+size, element::eqns, hs);
 
     // a solved equation
@@ -158,6 +178,7 @@ algorithm
         (varSize, eqnSize, eqns, hs) := inArg;
         tp := ComponentReference.crefTypeConsiderSubs(cr);
         size := Expression.sizeOf(tp);
+        dumpEqn(element, size, debugDump);
       then (varSize, eqnSize+size, element::eqns, hs);
 
     // complex equations
@@ -165,6 +186,7 @@ algorithm
       algorithm
         (varSize, eqnSize, eqns, hs) := inArg;
         size := Expression.sizeOf(Expression.typeof(e));
+        dumpEqn(element, size, debugDump);
       then (varSize, eqnSize+size, element::eqns, hs);
 
     // complex initial equations
@@ -176,6 +198,7 @@ algorithm
       algorithm
         (varSize, eqnSize, eqns, hs) := inArg;
         size := Expression.sizeOf(Expression.typeof(element.exp));
+        dumpEqn(element, size, debugDump);
       then (varSize, eqnSize+size, element::eqns, hs);
 
     // initial array equations
@@ -186,22 +209,25 @@ algorithm
     case DAE.WHEN_EQUATION(equations = daeElts)
       algorithm
         (varSize, eqnSize, eqns, hs) := inArg;
-        (_, size, _, _) := List.fold(daeElts, countVarEqnSize, (0, 0, {}, hs));
+        (_, size, _, _) := countVarEqnSizeList(daeElts, (0, 0, {}, hs), false);
+        dumpEqn(element, size, debugDump);
       then (varSize, eqnSize+size, eqns, hs);
 
     case DAE.INITIAL_FOR_EQUATION()
       algorithm
         (varSize, eqnSize, eqns, hs) := inArg;
-        (_, size, _, _) := List.fold(element.equations, countVarEqnSize, (0, 0, {}, hs));
+        (_, size, _, _) := countVarEqnSizeList(element.equations, (0, 0, {}, hs), false);
         size := size * Expression.sizeOf(Expression.typeof(element.range));
+        dumpEqn(element, size, debugDump);
       then
         (varSize, eqnSize+size, eqns, hs);
 
     case DAE.FOR_EQUATION()
       algorithm
         (varSize, eqnSize, eqns, hs) := inArg;
-        (_, size, _, _) := List.fold(element.equations, countVarEqnSize, (0, 0, {}, hs));
+        (_, size, _, _) := countVarEqnSizeList(element.equations, (0, 0, {}, hs), false);
         size := size * Expression.sizeOf(Expression.typeof(element.range));
+        dumpEqn(element, size, debugDump);
       then
         (varSize, eqnSize+size, eqns, hs);
 
@@ -213,7 +239,8 @@ algorithm
     case DAE.IF_EQUATION(equations2 = daeElts::_)
       algorithm
         (varSize, eqnSize, eqns, hs) := inArg;
-        (_, size, _, _) := List.fold(daeElts, countVarEqnSize, (0, 0, {}, hs));
+        (_, size, _, _) := countVarEqnSizeList(daeElts, (0, 0, {}, hs), false);
+        dumpEqn(element, size, debugDump);
       then (varSize, eqnSize+size, eqns, hs);
 
     // initial if equation with condition false and no else
@@ -230,6 +257,7 @@ algorithm
         (varSize, eqnSize, eqns, hs) := inArg;
         crlst := checkAndGetAlgorithmOutputs(alg, source, DAE.EXPAND());
         size := listLength(crlst);
+        dumpEqn(element, size, debugDump);
       then
         (varSize, eqnSize+size, eqns, hs);
 
@@ -239,7 +267,7 @@ algorithm
 
     // flat class / COMP
     case DAE.COMP(dAElist = daeElts)
-      then List.fold(daeElts, countVarEqnSize, inArg);
+      then countVarEqnSizeList(daeElts, inArg, debugDump);
 
     // reinit
     case DAE.REINIT()
@@ -272,11 +300,11 @@ algorithm
 
     // flat state machine section
     case DAE.FLAT_SM(dAElist = daeElts)
-      then List.fold(daeElts, countVarEqnSize, inArg);
+      then countVarEqnSizeList(daeElts, inArg, debugDump);
 
     // a state/mode component in a state machine
     case DAE.SM_COMP(dAElist = daeElts)
-      then List.fold(daeElts, countVarEqnSize, inArg);
+      then countVarEqnSizeList(daeElts, inArg, debugDump);
 
     else
       algorithm
@@ -287,6 +315,26 @@ algorithm
         fail();
   end match;
 end countVarEqnSize;
+
+protected function dumpVar
+  input DAE.ComponentRef cref;
+  input Integer size;
+  input Boolean dump;
+algorithm
+  if dump then
+    print("[var: " + String(size) + "] " + ComponentReferenceBasics.printComponentRefStr(cref) + "\n");
+  end if;
+end dumpVar;
+
+protected function dumpEqn
+  input DAE.Element eqn;
+  input Integer size;
+  input Boolean dump;
+algorithm
+  if dump then
+    print("[eqn: " + String(size) + "] " + DAEDump.dumpEquationStr(eqn));
+  end if;
+end dumpEqn;
 
 public function checkAndGetAlgorithmOutputs
 "mahge:

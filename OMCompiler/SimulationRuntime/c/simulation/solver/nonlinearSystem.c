@@ -478,7 +478,7 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
 #if !defined(OMC_MINIMAL_RUNTIME)
   if (nonlinsys->isPatternAvailable && !(data->simulationInfo->nlsMethod == NLS_KINSOL || data->simulationInfo->nlsMethod == NLS_KINSOL_B))
   {
-    nnz = nonlinsys->sparsePattern->numberOfNonZeros;
+    nnz = nonlinsys->sparsePattern->nnz;
 
     if (nnz/(double)(size*size) < nonlinearSparseSolverMaxDensity) {
       nonlinsys->nlsMethod = NLS_KINSOL;

@@ -282,6 +282,7 @@ public:
   bool convertPackageToLibrary(const QString &packageToConvert, const QString &library, const QString &libraryVersion);
   QList<QString> getAvailablePackageConversionsFrom(const QString &pkg, const QString &version);
   QJsonObject getModelInstance(const QString &className, const QString &context = QString(""), const QString &modifier = QString(""), bool prettyPrint = false, bool icon = false);
+  static QJsonValue jsonValueFromMM(void *value);
   QJsonObject modifierToJSON(const QString &modifier, bool prettyPrint = false);
   int storeAST();
   bool restoreAST(int id);

@@ -5732,6 +5732,35 @@ annotation(
    preferredView="text");
 end getModelInstanceAnnotation;
 
+function getModelInstanceReference
+  "Like getModelInstance, but returns an integer handle to an in-memory model
+   instance structure instead of a JSON string (see issue #15219). The handle is
+   intended to be read directly by an in-process client such as OMEdit and must
+   be released with releaseModelInstanceReference. Returns 0 on failure."
+  input TypeName className;
+  input TypeName context = $TypeName(__NoContext);
+  input String modifier = "";
+  output Integer handle;
+external "builtin";
+end getModelInstanceReference;
+
+function getModelInstanceAnnotationReference
+  "Like getModelInstanceAnnotation, but returns an integer handle to an
+   in-memory structure instead of a JSON string (see getModelInstanceReference)."
+  input TypeName className;
+  input String[:] filter = fill("", 0);
+  output Integer handle;
+external "builtin";
+end getModelInstanceAnnotationReference;
+
+function releaseModelInstanceReference
+  "Releases a handle returned by getModelInstanceReference or
+   getModelInstanceAnnotationReference. Returns true on success."
+  input Integer handle;
+  output Boolean success;
+external "builtin";
+end releaseModelInstanceReference;
+
 function modifierToJSON
   "Parses a modifier given as a string and dumps it as JSON."
   input String modifier;

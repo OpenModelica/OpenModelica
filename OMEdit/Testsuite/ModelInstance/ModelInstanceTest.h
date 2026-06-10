@@ -78,6 +78,13 @@ private slots:
    */
   void isInput();
   void isInput_data();
+  /*!
+   * \brief referencePathEquivalence
+   * Tests that getModelInstance returns an identical QJsonObject via the
+   * getModelInstanceReference path (--NAPINoJson, issue #15219) as via the
+   * legacy JSON-string + QJsonDocument::fromJson path.
+   */
+  void referencePathEquivalence();
   void cleanupTestCase();
 };
 

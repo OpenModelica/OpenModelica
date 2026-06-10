@@ -42,6 +42,7 @@
 #include "MainWindow.h"
 #include "Modeling/LibraryTreeWidget.h"
 #include "Modeling/Model.h"
+#include "OMC/OMCProxy.h"
 
 OMEDITTEST_MAIN(ModelInstanceTest)
 
@@ -184,6 +185,40 @@ void ModelInstanceTest::isInput_data()
       << "RestrictedVariabilityParamDialog.InputByRedeclare"
       << "X"
       << true;
+}
+
+void ModelInstanceTest::referencePathEquivalence()
+{
+  MainWindow *pMainWindow = MainWindow::instance();
+  OMCProxy *pOMCProxy = pMainWindow->getOMCProxy();
+  const bool savedFlag = pMainWindow->isNewApiNoJson();
+
+  QStringList classes;
+  classes << "P.M"
+          << "RestrictedVariabilityParamDialog.Volume"
+          << "RestrictedVariabilityParamDialog.RestrictByRedeclare";
+
+  for (const QString &className : classes) {
+    // Diagram/model path (icon = false).
+    pMainWindow->setNewApiNoJson(false);
+    const QJsonObject jsonObject = pOMCProxy->getModelInstance(className, "", "", false, false);
+    pMainWindow->setNewApiNoJson(true);
+    const QJsonObject referenceObject = pOMCProxy->getModelInstance(className, "", "", false, false);
+    if (jsonObject != referenceObject) {
+      QFAIL(QString("Model instance for %1 differs between the JSON path and the reference path.").arg(className).toStdString().c_str());
+    }
+
+    // Annotation/icon path (icon = true).
+    pMainWindow->setNewApiNoJson(false);
+    const QJsonObject jsonIcon = pOMCProxy->getModelInstance(className, "", "", false, true);
+    pMainWindow->setNewApiNoJson(true);
+    const QJsonObject referenceIcon = pOMCProxy->getModelInstance(className, "", "", false, true);
+    if (jsonIcon != referenceIcon) {
+      QFAIL(QString("Annotation instance for %1 differs between the JSON path and the reference path.").arg(className).toStdString().c_str());
+    }
+  }
+
+  pMainWindow->setNewApiNoJson(savedFlag);
 }
 
 void ModelInstanceTest::cleanupTestCase()
