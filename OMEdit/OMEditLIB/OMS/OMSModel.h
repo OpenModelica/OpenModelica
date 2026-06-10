@@ -27,10 +27,10 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 /*
  * @author Arunkumar Palanisamy <arunkumar.palanisamy@liu.se>
  */
-
 
 
 #ifndef OMSMODEL_H
