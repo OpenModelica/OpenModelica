@@ -117,6 +117,7 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Traceability/TraceabilityGraphViewWidget.cpp
                       Traceability/TraceabilityInformationURI.cpp
                       OMS/OMSProxy.cpp
+                      OMS/OMSModel.cpp
                       OMS/ModelDialog.cpp
                       OMS/ElementPropertiesDialog.cpp
                       OMS/SystemSimulationInformationDialog.cpp
@@ -252,6 +253,7 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       Traceability/TraceabilityGraphViewWidget.h
                       Traceability/TraceabilityInformationURI.h
                       OMS/OMSProxy.h
+                      OMS/OMSModel.h
                       OMS/ModelDialog.h
                       OMS/ElementPropertiesDialog.h
                       OMS/SystemSimulationInformationDialog.h
