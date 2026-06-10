@@ -90,9 +90,14 @@ import ExpressionDumpTpl.*;
 end symbolName;
 
 template replaceDotAndUnderscore(String str)
- "Replace _ with __ and dot in identifiers with _"
+ "Replace _ with __ and dot in identifiers with _.
+  For quoted identifiers (those starting with a single quote) the dots are
+  part of the name itself (e.g. 'Modelica.Media.X') and must be sanitized by
+  unquoteIdentifier (-> _2E), not treated as path separators (-> _5F_5F).
+  Otherwise the generated name diverges from the record type name built by
+  AbsynUtil.pathStringUnquoteReplaceDot and the C code fails to compile. See #13009."
 ::=
-  let str_dots = System.stringReplace(str,".", "_")
+  let str_dots = if stringEq(System.substring(str,1,1), "'") then str else System.stringReplace(str,".", "_")
   let str_underscores = System.stringReplace(str_dots, "_", "__")
   System.unquoteIdentifier(str_underscores)
 end replaceDotAndUnderscore;
