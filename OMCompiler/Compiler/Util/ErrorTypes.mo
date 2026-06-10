@@ -40,7 +40,6 @@ encapsulated package ErrorTypes
   description: Types used by the error handling
 "
 
-import Gettext;
 
 uniontype Severity "severity of message"
   record INTERNAL "Error because of a failure in the tool" end INTERNAL;
@@ -78,7 +77,7 @@ uniontype Message
     ErrorID id;
     MessageType ty;
     Severity severity;
-    Gettext.TranslatableContent message;
+    String message;
   end MESSAGE;
 end Message;
 
@@ -94,5 +93,5 @@ type MessageTokens = list<String>   "\"Tokens\" to insert into message at
             - %s for string
             - %n for string number n" ;
 
-annotation(__OpenModelica_Interface="util");
+annotation(__OpenModelica_Interface="error");
 end ErrorTypes;

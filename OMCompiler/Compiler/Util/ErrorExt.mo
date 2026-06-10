@@ -205,5 +205,5 @@ function initAssertionFunctions "Makes assert() and other runtime assertions pri
   external "C" Error_initAssertionFunctions() annotation(Library = "omcruntime");
 end initAssertionFunctions;
 
-annotation(__OpenModelica_Interface="util");
+annotation(__OpenModelica_Interface="error");
 end ErrorExt;

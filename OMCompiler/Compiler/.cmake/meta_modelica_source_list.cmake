@@ -164,7 +164,6 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Flags.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/FlagsUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/GCExt.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Util/Gettext.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Graph.mo
   # Remember: Only files needed for compiling MetaModelica
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashSet.mo
