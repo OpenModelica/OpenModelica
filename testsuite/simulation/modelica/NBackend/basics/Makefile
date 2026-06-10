@@ -4,6 +4,7 @@ TESTFILES = \
 emptyModel.mos \
 helloWorld.mos \
 evaluateFalse.mos \
+parameterIndex.mos \
 parameterSystem.mos \
 simpleNonlinearLoop.mos \
 implicitEquation.mos \
