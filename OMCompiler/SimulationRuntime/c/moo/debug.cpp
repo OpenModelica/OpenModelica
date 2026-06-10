@@ -78,8 +78,7 @@ void print_jacobian_sparsity(const JACOBIAN* jac, bool print_pattern, const char
         infoStreamPrint(OMC_LOG_MOO, 0, "Name: %s", name);
     }
     infoStreamPrint(OMC_LOG_MOO, 0, "Jacobian: %u rows x %u cols", nRows, nCols);
-    infoStreamPrint(OMC_LOG_MOO, 0, "numberOfNonZeros: %u", sp->numberOfNonZeros);
-    infoStreamPrint(OMC_LOG_MOO, 0, "sizeofIndex:      %u", sp->sizeofIndex);
+    infoStreamPrint(OMC_LOG_MOO, 0, "numberOfNonZeros: %u", sp->nnz);
     infoStreamPrint(OMC_LOG_MOO, 0, "maxColors:        %u", sp->maxColors);
 
     // leadindex
@@ -96,7 +95,7 @@ void print_jacobian_sparsity(const JACOBIAN* jac, bool print_pattern, const char
     {
         std::ostringstream oss;
         oss << "index:     ";
-        for (unsigned int i = 0; i < sp->sizeofIndex; ++i) {
+        for (unsigned int i = 0; i < sp->nnz; ++i) {
             oss << (sp->index ? sp->index[i] : 0) << " ";
         }
         infoStreamPrint(OMC_LOG_MOO, 0, "%s", oss.str().c_str());

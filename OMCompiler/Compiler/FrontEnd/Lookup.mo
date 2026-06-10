@@ -387,26 +387,14 @@ starts to traverse."
   input list<Absyn.Path> inUniontypePaths;
   input HashTableStringToPath.HashTable inHt;
   input list<DAE.Type> inAcc;
-  output FCore.Cache outCache;
-  output HashTableStringToPath.HashTable outHt;
-  output list<DAE.Type> outMetarecordTypes;
+  output FCore.Cache outCache = inCache;
+  output HashTableStringToPath.HashTable outHt = inHt;
+  output list<DAE.Type> outMetarecordTypes = inAcc;
 algorithm
-  (outCache,outHt,outMetarecordTypes) := match (inCache, inEnv, inUniontypePaths, inHt, inAcc)
-    local
-      FCore.Cache cache;
-      FCore.Graph env;
-      Absyn.Path first;
-      list<Absyn.Path>  rest;
-      HashTableStringToPath.HashTable ht;
-      list<DAE.Type> acc;
-
-    case (cache, _, {}, ht, acc) then (cache, ht, acc);
-    case (cache, env, first::rest, ht, acc)
-      algorithm
-        (cache,ht,acc) := lookupMetarecordsRecursive3(cache, env, first, AbsynUtil.pathString(first), ht, acc);
-        (cache,ht,acc) := lookupMetarecordsRecursive2(cache, env, rest, ht, acc);
-      then (cache, ht, acc);
-  end match;
+  for first in inUniontypePaths loop
+    (outCache, outHt, outMetarecordTypes) :=
+      lookupMetarecordsRecursive3(outCache, inEnv, first, AbsynUtil.pathString(first), outHt, outMetarecordTypes);
+  end for;
 end lookupMetarecordsRecursive2;
 
 protected function lookupMetarecordsRecursive3

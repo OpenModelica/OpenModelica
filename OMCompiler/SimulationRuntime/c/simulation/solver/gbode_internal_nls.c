@@ -218,15 +218,14 @@ static SPARSE_PATTERN* buildSparsePatternWithDiagonal(const SPARSE_PATTERN *base
   }
 
   int missing_diags = size - diag_cnt;
-  int total_nnz = base_pat->numberOfNonZeros + missing_diags;
+  int total_nnz = base_pat->nnz + missing_diags;
 
   // accumulate pattern = struct(I + J), where J is base_pat
   if (blueprint != NULL)
   {
     // if we have a blueprint, then simply override the entries of the blueprint, we sure that it is allocated with sufficient size though!
     acc_pat = blueprint;
-    acc_pat->numberOfNonZeros = total_nnz;
-    acc_pat->sizeofIndex = total_nnz;
+    acc_pat->nnz = total_nnz;
     acc_pat->maxColors = size;
   }
   else
@@ -268,8 +267,7 @@ static SPARSE_PATTERN* buildSparsePatternWithDiagonal(const SPARSE_PATTERN *base
     acc_pat->leadindex[col + 1] = acc_nz;
   }
 
-  acc_pat->numberOfNonZeros = acc_nz;
-  acc_pat->sizeofIndex = acc_nz;
+  acc_pat->nnz = acc_nz;
 
   return acc_pat;
 }
@@ -510,14 +508,14 @@ static int jacobian_DIRK_assemble(DATA *data,
                                   double *jac_buf_ode,
                                   double *jac_buf_nls)
 {
-  memset(jac_buf_nls, 0, nls->nlsPattern->numberOfNonZeros * sizeof(double));
+  memset(jac_buf_nls, 0, nls->nlsPattern->nnz * sizeof(double));
 
   DATA_GBODEF *gbfData = gbData->gbfData;
 
   const double fac = (nls->multirate ? gbfData->stepSize * gbfData->tableau->A[gbfData->act_stage * gbfData->tableau->nStages + gbfData->act_stage]
                                      : gbData->stepSize * gbData->tableau->A[gbData->act_stage * gbData->tableau->nStages + gbData->act_stage]);
 
-  for (int nz = 0; nz < ode_jac_sp->numberOfNonZeros; nz++)
+  for (int nz = 0; nz < ode_jac_sp->nnz; nz++)
   {
     int idx = nls->ode_to_nls[nz];
     jac_buf_nls[idx] = fac * jac_buf_ode[nz];
@@ -554,12 +552,12 @@ static int jacobian_real_assemble(DATA *data,
                                   double *jac_buf_ode,
                                   double *jac_buf_nls)
 {
-  memset(jac_buf_nls, 0, nls->nlsPattern->numberOfNonZeros * sizeof(double));
+  memset(jac_buf_nls, 0, nls->nlsPattern->nnz * sizeof(double));
 
   const double inv_step = 1.0 / (nls->multirate ? gbData->gbfData->stepSize : gbData->stepSize);
   const double weight = inv_step * gamma;
 
-  for (int nz = 0; nz < ode_jac_sp->numberOfNonZeros; nz++)
+  for (int nz = 0; nz < ode_jac_sp->nnz; nz++)
   {
     int idx = nls->ode_to_nls[nz];
     jac_buf_nls[idx] = -jac_buf_ode[nz];
@@ -599,13 +597,13 @@ static int jacobian_cmplx_assemble(DATA *data,
                                    double *jac_buf_ode,
                                    double *jac_buf_nls)
 {
-  memset(jac_buf_nls, 0, 2 * nls->nlsPattern->numberOfNonZeros * sizeof(double));
+  memset(jac_buf_nls, 0, 2 * nls->nlsPattern->nnz * sizeof(double));
 
   const double inv_step = 1.0 / (nls->multirate ? gbData->gbfData->stepSize : gbData->stepSize);
   const double weight_real = inv_step * alpha;
   const double weight_imag = inv_step * beta;
 
-  for (int nz = 0; nz < ode_jac_sp->numberOfNonZeros; nz++)
+  for (int nz = 0; nz < ode_jac_sp->nnz; nz++)
   {
     int idx = nls->ode_to_nls[nz];
     jac_buf_nls[2 * idx] = -jac_buf_ode[nz];
@@ -1441,8 +1439,8 @@ void *gbInternalNlsAllocate(int size,
 
   nls->nls_user_data = userData;
   nls->size = jacobian_ODE->sizeRows;
-  nls->jacobian_callback = (double *) malloc(jacobian_ODE->sparsePattern->numberOfNonZeros * sizeof(double));
-  nls->ode_to_nls = (int *) malloc(jacobian_ODE->sparsePattern->numberOfNonZeros * sizeof(int));
+  nls->jacobian_callback = (double *) malloc(jacobian_ODE->sparsePattern->nnz * sizeof(double));
+  nls->ode_to_nls = (int *) malloc(jacobian_ODE->sparsePattern->nnz * sizeof(int));
   nls->nls_diag_indices = (int *) malloc(jacobian_ODE->sizeRows * sizeof(int));
 
   nls->tabl = tabl;
@@ -1453,7 +1451,7 @@ void *gbInternalNlsAllocate(int size,
   if (nls->multirate)
   {
     // overestimate the nnz for the buffer sizes and allocate enough memory for the pattern I + J
-    nls_nnz_estimate = jacobian_ODE->sparsePattern->numberOfNonZeros + jacobian_ODE->sizeRows;
+    nls_nnz_estimate = jacobian_ODE->sparsePattern->nnz + jacobian_ODE->sizeRows;
 
     nls->nlsPattern = allocSparsePattern(jacobian_ODE->sizeRows, nls_nnz_estimate, jacobian_ODE->sizeRows);
     nls->ownsNlsPattern = TRUE;
@@ -1487,7 +1485,7 @@ void *gbInternalNlsAllocate(int size,
     nls->ownsODEPatternMR = FALSE;
 
     // set exact value
-    nls_nnz_estimate = nls->nlsPattern->numberOfNonZeros;
+    nls_nnz_estimate = nls->nlsPattern->nnz;
   }
 
   nls->scal = (double *) malloc(jacobian_ODE->sizeRows * sizeof(double));
@@ -1812,8 +1810,7 @@ static void reduceFullToFastPattern(const SPARSE_PATTERN *full,
     out->leadindex[small_col + 1] = nnz;
   }
 
-  out->numberOfNonZeros = nnz;
-  out->sizeofIndex      = nnz;
+  out->nnz = nnz;
 }
 
 static void createGreedyColoring(SPARSE_PATTERN *pattern,

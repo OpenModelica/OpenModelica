@@ -980,27 +980,16 @@ protected function selectSecondaryParameters
   input BackendDAE.Variables inParameters;
   input BackendDAE.AdjacencyMatrix inM;
   input array<Integer> inSecondaryParams;
-  output array<Integer> outSecondaryParams;
+  output array<Integer> outSecondaryParams = inSecondaryParams;
+protected
+  BackendDAE.Var param;
 algorithm
-  outSecondaryParams := match inOrdering
-    local
-      Integer i;
-      array<Integer> secondaryParams;
-      list<Integer> rest;
-      BackendDAE.Var param;
-
-    case {}
-    then inSecondaryParams;
-
+  for i in inOrdering loop
+    param := BackendVariable.getVarAt(inParameters, i);
     // fixed=false
-    case i::rest algorithm
-      param := BackendVariable.getVarAt(inParameters, i);
-      secondaryParams := if (if BackendVariable.isVarAlg(param) then false else not BackendVariable.varFixed(param)) or 1 == inSecondaryParams[i]
-                        then List.fold(inM[i], markIndex, inSecondaryParams) else inSecondaryParams;
-      secondaryParams := selectSecondaryParameters(rest, inParameters, inM, secondaryParams);
-    then secondaryParams;
-
-  end match;
+    outSecondaryParams := if (if BackendVariable.isVarAlg(param) then false else not BackendVariable.varFixed(param)) or 1 == outSecondaryParams[i]
+                      then List.fold(inM[i], markIndex, outSecondaryParams) else outSecondaryParams;
+  end for;
 end selectSecondaryParameters;
 
 public function flattenParamComp

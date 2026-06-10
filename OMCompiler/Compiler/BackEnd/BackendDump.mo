@@ -84,6 +84,7 @@ import Initialization;
 import IOStream;
 import List;
 import Matching;
+import MMath;
 import System;
 import Util;
 import ZeroCrossings;
@@ -1235,12 +1236,6 @@ protected
   Integer isyst = 1;
   Boolean firstComp = true; // used to print header only if there is actually an algebraic loop
 algorithm
-    _ := match outDAE.shared
-            case BackendDAE.SHARED(backendDAEType=BackendDAE.SIMULATION()) then print("SIMULATION\n");
-            case BackendDAE.SHARED(backendDAEType=BackendDAE.INITIALSYSTEM()) then print("INITIALSYSTEM\n");
-            else print("UNKNOWN\n");
-            end match;
-
    for syst in inDAE.eqs loop
      firstComp := true;
      BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns, matching=BackendDAE.MATCHING(comps=comps)) := syst;

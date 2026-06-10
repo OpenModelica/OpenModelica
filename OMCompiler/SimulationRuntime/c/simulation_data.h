@@ -154,12 +154,11 @@ typedef enum
 typedef struct SPARSE_PATTERN
 {
   /* Primary CSC/CSR representation */
+  unsigned int nnz;               /* Number of non-zero elements in matrix, length of array index */
   unsigned int* leadindex;        /* Array with column/row indices, size nCols+1/nRows+1 */
   unsigned int* index;            /* Array with number of non-zeros indices */
-  unsigned int sizeofIndex;       /* Length of array index, equal to numberOfNonZeros */
   unsigned int* colorCols;        /* Color coding of columns/rows. First color is `1`, second is `2`, ...
                                    * Length of array is nCols/nRows */
-  unsigned int numberOfNonZeros;  /* Number of non-zero elements in matrix */
   unsigned int maxColors;         /* Number of colors */
 } SPARSE_PATTERN;
 

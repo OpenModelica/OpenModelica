@@ -40,6 +40,7 @@ set(OMC_RUNTIIME_SOURCES
     Error_omc.cpp
     Dynload_omc.cpp
     Print_omc.c
+    ModelInstanceReference_omc.c
     ErrorMessage.cpp
     System_omc.c
     Lapack_omc.cpp

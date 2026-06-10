@@ -807,47 +807,10 @@ function getModelInstance
   input Boolean prettyPrint;
   output Values.Value res;
 protected
-  InstNode top, cls_node;
   JSON json;
-  InstContext.Type context;
-  InstanceTree inst_tree;
-  InstSettings inst_settings;
-  Modifier mod;
 algorithm
   try
-    context := InstContext.set(NFInstContext.RELAXED, NFInstContext.CLASS);
-    context := InstContext.set(context, NFInstContext.INSTANCE_API);
-    inst_settings := InstSettings.SETTINGS(mergeExtendsSections = false, resizableArrays = false);
-
-    (_, top) := mkTop(SymbolTable.getAbsyn(), AbsynUtil.pathString(classPath));
-    mod := parseModifier(modifier, top);
-    cls_node := Inst.lookupRootClass(classPath, top, context);
-
-    if SCodeUtil.isFunction(InstNode.definition(cls_node)) then
-      context := InstContext.unset(context, NFInstContext.CLASS);
-      context := InstContext.set(context, NFInstContext.FUNCTION);
-    end if;
-
-    if AbsynUtil.pathFirstIdent(contextPath) <> "__NoContext" then
-      cls_node := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE(), SOME(contextPath)), cls_node);
-    end if;
-
-    cls_node := Inst.instantiateRootClass(cls_node, context, mod);
-    execStat("Inst.instantiateRootClass");
-    inst_tree := buildInstanceTree(cls_node);
-    execStat("NFApi.buildInstanceTree");
-    Inst.instExpressions(cls_node, context = context, settings = inst_settings);
-    Inst.updateImplicitVariability(cls_node, Flags.isSet(Flags.EVAL_PARAM), context);
-    execStat("Inst.instExpressions");
-
-    Typing.typeClassType(cls_node, NFBinding.EMPTY_BINDING, context, cls_node);
-    Typing.typeComponents(cls_node, context);
-    execStat("Typing.typeComponents");
-    Typing.typeBindings(cls_node, context);
-    execStat("Typing.typeBinding");
-
-    json := dumpJSONInstanceTree(inst_tree, cls_node);
-    execStat("NFApi.dumpJSONInstanceTree");
+    json := buildModelInstanceJSON(classPath, contextPath, modifier);
     res := Values.STRING(JSON.toString(json, prettyPrint));
     execStat("JSON.toString");
     Inst.clearCaches();
@@ -857,25 +820,45 @@ algorithm
   end try;
 end getModelInstance;
 
+function getModelInstanceReference
+  "Like getModelInstance, but instead of serializing the model instance to a
+   JSON string it stores the (boxed) JSON structure in memory and returns an
+   integer handle to it (see issue #15219). OMEdit, which links the compiler
+   in-process, can then read the structure directly via the C function
+   ModelInstanceReference_get, avoiding both JSON string generation here and
+   JSON string parsing in OMEdit. The handle must be freed with
+   releaseModelInstanceReference. A handle of 0 indicates failure."
+  input Absyn.Path classPath;
+  input Absyn.Path contextPath;
+  input String modifier;
+  output Values.Value res;
+protected
+  JSON json;
+  Integer handle;
+algorithm
+  try
+    json := buildModelInstanceJSON(classPath, contextPath, modifier);
+    json := JSON.toListForm(json);
+    execStat("NFApi.toListForm");
+    handle := storeModelInstanceReference(json);
+    res := Values.INTEGER(handle);
+    Inst.clearCaches();
+  else
+    Inst.clearCaches();
+    fail();
+  end try;
+end getModelInstanceReference;
+
 function getModelInstanceAnnotation
   input Absyn.Path classPath;
   input list<String> filter;
   input Boolean prettyPrint;
   output Values.Value res;
 protected
-  InstNode top, cls_node;
-  InstContext.Type context;
   JSON json;
 algorithm
   try
-    context := InstContext.set(NFInstContext.RELAXED, NFInstContext.CLASS);
-    context := InstContext.set(context, NFInstContext.INSTANCE_API);
-
-    (_, top) := mkTop(SymbolTable.getAbsyn(), AbsynUtil.pathString(classPath));
-    cls_node := Inst.lookupRootClass(classPath, top, context);
-    cls_node := InstNode.resolveInner(cls_node);
-
-    json := dumpJSONInstanceAnnotation(cls_node, filter);
+    json := buildModelInstanceAnnotationJSON(classPath, filter);
     res := Values.STRING(JSON.toString(json, prettyPrint));
     Inst.clearCaches();
   else
@@ -883,6 +866,121 @@ algorithm
     fail();
   end try;
 end getModelInstanceAnnotation;
+
+function getModelInstanceAnnotationReference
+  "Like getModelInstanceAnnotation, but returns an integer handle to an
+   in-memory JSON structure instead of a JSON string (see
+   getModelInstanceReference and issue #15219)."
+  input Absyn.Path classPath;
+  input list<String> filter;
+  output Values.Value res;
+protected
+  JSON json;
+  Integer handle;
+algorithm
+  try
+    json := buildModelInstanceAnnotationJSON(classPath, filter);
+    json := JSON.toListForm(json);
+    handle := storeModelInstanceReference(json);
+    res := Values.INTEGER(handle);
+    Inst.clearCaches();
+  else
+    Inst.clearCaches();
+    fail();
+  end try;
+end getModelInstanceAnnotationReference;
+
+function releaseModelInstanceReference
+  "Releases a handle previously returned by getModelInstanceReference or
+   getModelInstanceAnnotationReference. Returns true on success."
+  input Integer handle;
+  output Values.Value res;
+algorithm
+  res := Values.BOOL(releaseModelInstanceReferenceImpl(handle));
+end releaseModelInstanceReference;
+
+function buildModelInstanceJSON
+  "Instantiates the given model and builds the JSON structure describing the
+   model instance. Shared by getModelInstance and getModelInstanceReference."
+  input Absyn.Path classPath;
+  input Absyn.Path contextPath;
+  input String modifier;
+  output JSON json;
+protected
+  InstNode top, cls_node;
+  InstContext.Type context;
+  InstanceTree inst_tree;
+  InstSettings inst_settings;
+  Modifier mod;
+algorithm
+  context := InstContext.set(NFInstContext.RELAXED, NFInstContext.CLASS);
+  context := InstContext.set(context, NFInstContext.INSTANCE_API);
+  inst_settings := InstSettings.SETTINGS(mergeExtendsSections = false, resizableArrays = false);
+
+  (_, top) := mkTop(SymbolTable.getAbsyn(), AbsynUtil.pathString(classPath));
+  mod := parseModifier(modifier, top);
+  cls_node := Inst.lookupRootClass(classPath, top, context);
+
+  if SCodeUtil.isFunction(InstNode.definition(cls_node)) then
+    context := InstContext.unset(context, NFInstContext.CLASS);
+    context := InstContext.set(context, NFInstContext.FUNCTION);
+  end if;
+
+  if AbsynUtil.pathFirstIdent(contextPath) <> "__NoContext" then
+    cls_node := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE(), SOME(contextPath)), cls_node);
+  end if;
+
+  cls_node := Inst.instantiateRootClass(cls_node, context, mod);
+  execStat("Inst.instantiateRootClass");
+  inst_tree := buildInstanceTree(cls_node);
+  execStat("NFApi.buildInstanceTree");
+  Inst.instExpressions(cls_node, context = context, settings = inst_settings);
+  Inst.updateImplicitVariability(cls_node, Flags.isSet(Flags.EVAL_PARAM), context);
+  execStat("Inst.instExpressions");
+
+  Typing.typeClassType(cls_node, NFBinding.EMPTY_BINDING, context, cls_node);
+  Typing.typeComponents(cls_node, context);
+  execStat("Typing.typeComponents");
+  Typing.typeBindings(cls_node, context);
+  execStat("Typing.typeBinding");
+
+  json := dumpJSONInstanceTree(inst_tree, cls_node);
+  execStat("NFApi.dumpJSONInstanceTree");
+end buildModelInstanceJSON;
+
+function buildModelInstanceAnnotationJSON
+  "Instantiates the given model and builds the JSON structure describing its
+   annotation. Shared by getModelInstanceAnnotation and
+   getModelInstanceAnnotationReference."
+  input Absyn.Path classPath;
+  input list<String> filter;
+  output JSON json;
+protected
+  InstNode top, cls_node;
+  InstContext.Type context;
+algorithm
+  context := InstContext.set(NFInstContext.RELAXED, NFInstContext.CLASS);
+  context := InstContext.set(context, NFInstContext.INSTANCE_API);
+
+  (_, top) := mkTop(SymbolTable.getAbsyn(), AbsynUtil.pathString(classPath));
+  cls_node := Inst.lookupRootClass(classPath, top, context);
+  cls_node := InstNode.resolveInner(cls_node);
+
+  json := dumpJSONInstanceAnnotation(cls_node, filter);
+end buildModelInstanceAnnotationJSON;
+
+function storeModelInstanceReference
+  "Stores a boxed JSON value and returns a 1-based handle (0 on failure)."
+  input JSON json;
+  output Integer handle;
+  external "C" handle = ModelInstanceReference_store(json) annotation(Library = "omcruntime");
+end storeModelInstanceReference;
+
+function releaseModelInstanceReferenceImpl
+  input Integer handle;
+  output Boolean success;
+  external "C" success = ModelInstanceReference_release(handle) annotation(Library = "omcruntime");
+end releaseModelInstanceReferenceImpl;
 
 function parseModifier
   input String modifierValue;

@@ -70,6 +70,7 @@ import List;
 import Matching;
 import MetaModelica.Dangerous;
 import Mutable;
+import UnorderedSet;
 import Util;
 import Sorting;
 import System;
@@ -4624,6 +4625,7 @@ protected
   String modelName;
   list<list<Integer>> powerSet={};
   list<tuple<array<Integer>,array<Integer>,list<Integer>>> matchingList;
+  UnorderedSet<array<Integer>> visited;
 algorithm
   linear := BackendDAEUtil.getLinearfromJacType(jacType);
   BackendDAE.SHARED(backendDAEType=DAEtype, info=BackendDAE.EXTRA_INFO(fileNamePrefix=modelName)) := ishared;
@@ -4733,8 +4735,11 @@ algorithm
       // end if;
 
 
-      // Find all possible matchings for this set of tearing variables
-      matchingList := totalMatching(ass1,ass2,order,causEq,mLoop,mtLoop,me,mapEqnIncRow,mapIncRowEqn,{});
+      // Find all possible matchings for this set of tearing variables.
+      // The visited set memoizes already explored assignment states so that
+      // states reachable via several causalization orders are only expanded once.
+      visited := UnorderedSet.new(Array.hashIntArray, Array.isEqual);
+      matchingList := totalMatching(ass1,ass2,order,causEq,mLoop,mtLoop,me,mapEqnIncRow,mapIncRowEqn,visited,{});
       if Flags.isSet(Flags.TOTAL_TEARING_DUMPVERBOSE) then
         dumpMatchingList(matchingList);
       end if;
@@ -4791,6 +4796,7 @@ author: ptaeuber FHB 2016"
   input BackendDAE.AdjacencyMatrixEnhanced me;
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
+  input UnorderedSet<array<Integer>> visited "already explored assignment states (ass1)";
   input list<tuple<array<Integer>,array<Integer>,list<Integer>>> matchingListIn;
   output list<tuple<array<Integer>,array<Integer>,list<Integer>>> matchingListOut=matchingListIn;
 protected
@@ -4801,24 +4807,34 @@ protected
   Boolean solvable;
 algorithm
   for e in causEqIn loop
-    // 1. Deep copies to avoid side effects
-    ass1Copy := arrayCopy(ass1);
-    ass2Copy := arrayCopy(ass2);
-    mCopy := arrayCopy(m);
-    mtCopy := arrayCopy(mt);
-
-    (solvable, e_exp, vars) := eqnSolvableCheck(e, mapEqnIncRow, ass1Copy, mCopy, me);
+    // 1. Check solvability (read-only, no copies needed yet)
+    (solvable, e_exp, vars) := eqnSolvableCheck(e, mapEqnIncRow, ass1, m, me);
     if not solvable then
       continue;
     else
-      // 2. Match e_exp with corresponding variable(s), i.e.: update ass1, ass2, m, order
+      // 2. Deep copies to avoid side effects: makeAssignment mutates the arrays
+      //    in place, but each sibling branch of the DFS needs the unmodified state
+      ass1Copy := arrayCopy(ass1);
+      ass2Copy := arrayCopy(ass2);
+      mCopy := arrayCopy(m);
+      mtCopy := arrayCopy(mt);
+
+      // 3. Match e_exp with corresponding variable(s), i.e.: update ass1, ass2, m, order
       makeAssignment(e_exp,vars,ass1Copy,ass2Copy,mCopy,mtCopy);
       order := e::orderIn;
 
-      // 3. Determine new possible causEq
+      // The new state (and thereby its whole subtree) is fully determined by the
+      // assignments in ass1: skip it if it was already reached via a different
+      // causalization order
+      if UnorderedSet.contains(ass1Copy, visited) then
+        continue;
+      end if;
+      UnorderedSet.addNew(ass1Copy, visited);
+
+      // 4. Determine new possible causEq
       causEq := traverseCollectiveEqnsforAssignable(ass2Copy,mCopy,mapEqnIncRow);
 
-      // 4. Dump
+      // 5. Dump
       // if Flags.isSet(Flags.TOTAL_TEARING_DUMPVERBOSE) then
         // print("\nNew ass1: " + stringDelimitList(List.mapArray(ass1Copy, intString),",")+"\n");
           // print("New ass2: " + stringDelimitList(List.mapArray(ass2Copy, intString),",") + "\n");
@@ -4828,40 +4844,21 @@ algorithm
           // print("New order: " + stringDelimitList(List.map(order,intString),",") + "\n\n\n\n");
       // end if;
 
-      // 5. Decide what to do
+      // 6. Decide what to do
       if listEmpty(causEq) then
         // full matching found?
         unassigned := getUnassigned(ass1Copy);
         if listEmpty(unassigned) then
-          // save current full matching
-          if isNewMatching(matchingListOut,ass1Copy) then
-            matchingListOut := (ass1Copy,ass2Copy,listReverse(order)) :: matchingListOut;
-          end if;
+          // save current full matching (it is new since the state was not visited before)
+          matchingListOut := (ass1Copy,ass2Copy,listReverse(order)) :: matchingListOut;
         end if;
       else
         // Continue with matching
-        matchingListOut := totalMatching(ass1Copy,ass2Copy,order,causEq,mCopy,mtCopy,me,mapEqnIncRow,mapIncRowEqn,matchingListOut);
+        matchingListOut := totalMatching(ass1Copy,ass2Copy,order,causEq,mCopy,mtCopy,me,mapEqnIncRow,mapIncRowEqn,visited,matchingListOut);
       end if;
     end if;
   end for;
 end totalMatching;
-
-
-protected function isNewMatching
-  input list<tuple<array<Integer>,array<Integer>,list<Integer>>> matchingList;
-  input array<Integer> ass1In;
-  output Boolean b=true;
-protected
-  array<Integer> ass1;
-algorithm
-  for matching in matchingList loop
-    (ass1,_,_) := matching;
-    if Array.isEqual(ass1In,ass1) then
-      b:=false;
-      break;
-    end if;
-  end for;
-end isNewMatching;
 
 
 protected function createTearingSets

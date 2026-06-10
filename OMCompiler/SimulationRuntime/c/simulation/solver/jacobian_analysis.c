@@ -224,7 +224,7 @@ static void svd_general_matrix_print_info(DATA *data, NONLINEAR_SYSTEM_DATA *nls
     infoStreamPrint(OMC_LOG_NLS_SVD, 0, "NLS eq index = " OMC_INT_FORMAT, nls_data->equationIndex);
     infoStreamPrint(OMC_LOG_NLS_SVD, 0, "Columns      = " OMC_INT_FORMAT, nls_data->size);
     infoStreamPrint(OMC_LOG_NLS_SVD, 0, "Rows         = " OMC_INT_FORMAT, nls_data->size);
-    infoStreamPrint(OMC_LOG_NLS_SVD, 0, "NNZ          = %u", nls_data->sparsePattern->numberOfNonZeros);
+    infoStreamPrint(OMC_LOG_NLS_SVD, 0, "NNZ          = %u", nls_data->sparsePattern->nnz);
     infoStreamPrint(OMC_LOG_NLS_SVD, 0, "Curr Time    = %-11.5e", data->localData[0]->timeValue);
     messageClose(OMC_LOG_NLS_SVD);
 }
@@ -1018,7 +1018,7 @@ void nlsJacobianRowColSums(DATA *data, NONLINEAR_SYSTEM_DATA *nlsData, SUNMatrix
   infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "NLS eq index = " OMC_INT_FORMAT, nlsData->equationIndex);
   infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "Columns      = %d", size);
   infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "Rows         = %d", size);
-  infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "NNZ          = %u", nlsData->sparsePattern->numberOfNonZeros);
+  infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "NNZ          = %u", nlsData->sparsePattern->nnz);
   infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "Curr Time    = %-11.5e", data->localData[0]->timeValue);
   messageClose(OMC_LOG_NLS_JAC_SUMS);
 
