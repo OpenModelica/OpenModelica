@@ -46,7 +46,6 @@ protected
 import Dump;
 import Error;
 import SCodeUtil;
-import System;
 import Class = NFClass;
 import Component = NFComponent;
 import Inst = NFInst;

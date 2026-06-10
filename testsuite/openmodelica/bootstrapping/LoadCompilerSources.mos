@@ -237,7 +237,6 @@ if true then /* Suppress output */
     prefixPath + "Util/FlagsUtil.mo",
     prefixPath + "Util/FMI.mo",
     prefixPath + "Util/FMIExt.mo",
-    prefixPath + "Util/Gettext.mo",
     prefixPath + "Util/Graph.mo",
     prefixPath + "Util/GraphML.mo",
     prefixPath + "Util/HashSet.mo",
