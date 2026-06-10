@@ -24,8 +24,6 @@ loadFile(pathPrefix + "Util/ErrorTypes.mo");
 getErrorString();
 loadFile(pathPrefix + "Util/Flags.mo");
 getErrorString();
-loadFile(pathPrefix + "Util/Gettext.mo");
-getErrorString();
 loadFile(pathPrefix + "Util/Mutable.mo");
 getErrorString();
 loadFile(pathPrefix + "Util/Print.mo");
@@ -55,8 +53,6 @@ getErrorString();
 // Result:
 // true
 // true
-// true
-// ""
 // true
 // ""
 // true

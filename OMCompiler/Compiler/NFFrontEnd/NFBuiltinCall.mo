@@ -2229,7 +2229,7 @@ protected
       else
         algorithm
           Error.addSourceMessage(Error.FUNCTION_ARGUMENT_MUST_BE,
-            {"pure", Gettext.translateContent(Error.FUNCTION_CALL_EXPRESSION)}, info);
+            {"pure", Error.FUNCTION_CALL_EXPRESSION}, info);
         then
           fail();
     end match;

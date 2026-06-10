@@ -2942,7 +2942,7 @@ algorithm
       else (false,"");
     end match;
     if existNonLin then
-      msg := System.gettext("For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\")");
+      msg := "For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\")";
       Error.addMessage(Error.INITIALIZATION_ITERATION_VARIABLES, {name, msg});
     end if;
   end if;

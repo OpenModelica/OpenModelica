@@ -940,9 +940,9 @@ algorithm
       String name;
       Absyn.Path path;
 
-    case COMPONENT(name = name) then System.gettext("component ") + name;
-    case EXTENDS(path = path) then System.gettext("extends ") + AbsynUtil.pathString(path);
-    case DERIVED(path = path) then System.gettext("inherited class ") + AbsynUtil.pathString(path);
+    case COMPONENT(name = name) then "component " + name;
+    case EXTENDS(path = path) then "extends " + AbsynUtil.pathString(path);
+    case DERIVED(path = path) then "inherited class " + AbsynUtil.pathString(path);
 
   end match;
 end printModScope;

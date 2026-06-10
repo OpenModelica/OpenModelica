@@ -5847,8 +5847,8 @@ algorithm
             "----------------------------------------------------------------\n\n");
     end if;
 
-    msg := System.gettext(BackendDump.varListStringShort(undiffable_artificial,"They will be treated as if they had stateSelect=StateSelect.default") +
-    "Please use -d=bltdump for more information.\n");
+    msg := BackendDump.varListStringShort(undiffable_artificial,"They will be treated as if they had stateSelect=StateSelect.default") +
+    "Please use -d=bltdump for more information.\n";
     Error.addMessage(Error.STATE_STATESELECT_PREFER_REVERT, {msg});
   end if;
 end sanityCheckArtificialStates;

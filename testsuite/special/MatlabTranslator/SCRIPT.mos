@@ -25,7 +25,6 @@ files := {
   "../../../OMCompiler/Compiler/Global/Global.mo",
   "../../../OMCompiler/Compiler/Util/Config.mo",
   "../../../OMCompiler/Compiler/Util/Debug.mo",
-  "../../../OMCompiler/Compiler/Util/Gettext.mo",
   "../../../OMCompiler/Compiler/Util/List.mo",
   "../../../OMCompiler/Compiler/Util/Settings.mo",
   "../../../OMCompiler/Compiler/Util/Testsuite.mo",
