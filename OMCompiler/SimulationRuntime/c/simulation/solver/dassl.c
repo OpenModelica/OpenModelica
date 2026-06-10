@@ -1132,7 +1132,7 @@ int jacA_symBiColored(double *t, double *y, double *yprime, double *delta,
   const SPARSE_PATTERN* sp = jac->sparsePattern;
   const unsigned int nRows = jac->sizeRows;
   const unsigned int nCols = jac->sizeCols;
-  const unsigned int nnz = sp->numberOfNonZeros;
+  const unsigned int nnz = sp->nnz;
   unsigned int col, nz;
 
   double* sparse_buf = (double*) malloc(nnz * sizeof(double));

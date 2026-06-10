@@ -300,7 +300,7 @@ void initBidirectionalRecovery(JACOBIAN* fwd)
   const SPARSE_PATTERN* adjsp = adj->sparsePattern;
   const unsigned int nCols = fwd->sizeCols;
   const unsigned int nRows = fwd->sizeRows;
-  const unsigned int nnz = fwdsp->numberOfNonZeros;
+  const unsigned int nnz = fwdsp->nnz;
   unsigned int j, i, nz, k, j2, i2;
 
   fwd->recoverMask = (unsigned char*) calloc(nnz, sizeof(unsigned char));
