@@ -306,8 +306,8 @@ public
      with the new keys."
     input UnorderedSet<T> set;
     input MapFn fn;
-    input OutHash hash;
-    input OutKeyEq keyEq;
+    input OutHash hashFn;
+    input OutKeyEq eqFn;
     output UnorderedSet<OT> outSet;
 
     partial function MapFn
@@ -325,7 +325,7 @@ public
       output Boolean equal;
     end OutKeyEq;
   algorithm
-    outSet := new<OT>(hash, keyEq, Util.nextPrime(Mutable.access(set.size)));
+    outSet := new<OT>(hashFn, eqFn, Util.nextPrime(Mutable.access(set.size)));
     for b in Mutable.access(set.buckets) loop
       for k in b loop
         add(fn(k), outSet);
@@ -334,56 +334,23 @@ public
   end map;
 */
 
-  function map
-    "Replaces all keys in the given set with the results of the given function
-     when applied to all keys. Equivalent to a rehash."
+  function selfMap
+    "Applies a self-mapping function to all keys in the given set and returns a new set
+     with the new keys of same type as input set."
     input UnorderedSet<T> set;
     input MapFn fn;
+    output UnorderedSet<T> outSet = new<T>(set.hashFn, set.eqFn);
 
     partial function MapFn
       input output T key;
     end MapFn;
-  protected
-    Hash hashfn = set.hashFn;
-    KeyEq eqfn = set.eqFn;
-    Integer bucket_count, hash, size = 0;
-    array<list<T>> new_buckets;
-    T newKey;
-    list<T> bucket;
-    Boolean duplicate;
   algorithm
-    // Make a new bucket array.
-    bucket_count := Util.nextPrime(Mutable.access(set.size));
-    new_buckets := arrayCreate(bucket_count, {});
-
     for b in Mutable.access(set.buckets) loop
       for k in b loop
-        // Apply the function to the key
-        newKey := fn(k);
-        hash := intMod(hashfn(newKey), bucket_count);
-        bucket := arrayGet(new_buckets, hash + 1);
-
-        // check if we have a duplicate
-        duplicate := false;
-        for nk in bucket loop
-          if eqfn(nk, newKey) then
-            duplicate := true;
-            break;
-          end if;
-        end for;
-
-        // Add the result to the new bucket if it is not already there.
-        if not duplicate then
-          arrayUpdate(new_buckets, hash + 1, newKey :: bucket);
-          size := size + 1;
-        end if;
+        add(fn(k), outSet);
       end for;
     end for;
-
-    // Replace the old bucket array with the new one and update the size of the set.
-    Mutable.update(set.buckets, new_buckets);
-    Mutable.update(set.size, size);
-  end map;
+  end selfMap;
 
   function apply
     "Applies function fn to all elements in set.
