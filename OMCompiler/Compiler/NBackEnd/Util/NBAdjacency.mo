@@ -2101,15 +2101,13 @@ public
     input UnorderedMap<ComponentRef, Integer> map "unknowns map to check for relevance";
     input UnorderedMap<ComponentRef, Dependency> dep_map;
     input UnorderedMap<ComponentRef, Solvability> sol_map;
-    output UnorderedSet<ComponentRef> set;
+    output UnorderedSet<ComponentRef> set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);;
   protected
     Pointer<Variable> var;
     list<ComponentRef> crefs;
     Integer sk = 1;
     list<Subscript> subs;
   algorithm
-    set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
-
     if UnorderedMap.contains(cref, map) then
       if not UnorderedMap.contains(cref, dep_map) then
         UnorderedMap.add(cref, Dependency.create(ComponentRef.getSubscriptedType(cref), depth), dep_map);
