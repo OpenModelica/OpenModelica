@@ -1056,17 +1056,6 @@ algorithm
           System.writeFile(fmu_tmp_sources_dir + "fmi-export/fmu2_model_interface.c", modelDefinesHeaderStr);
         end if;
 
-        Tpl.closeFile(Tpl.tplCallWithFailErrorNoArg(
-          function CodegenFMU.fmuMakefile(
-            a_target=Config.simulationCodeTarget(),
-            a_simCode=simCode,
-            a_FMUVersion=FMUVersion,
-            a_sourceFiles=model_all_gen_files,
-            a_runtimeObjectFiles=list(System.stringReplace(f,".c",".o") for f in shared_source_files),
-            a_dgesvObjectFiles=list(System.stringReplace(f,".c",".o") for f in dgesv_sources),
-            a_cminpackObjectFiles=list(System.stringReplace(f,".c",".o") for f in cminpack_sources),
-            a_sundialsObjectFiles=list(System.stringReplace(f,".c",".o") for f in simrt_c_sundials_sources)),
-          txt=Tpl.redirectToFile(Tpl.emptyTxt, fmutmp+"/sources/Makefile.in")));
         Tpl.closeFile(Tpl.tplCallWithFailError(
           CodegenFMU.settingsfile,
           simCode,
