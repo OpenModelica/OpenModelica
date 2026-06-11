@@ -334,7 +334,7 @@ public
   end map;
 */
 
-  function mapSameType
+  function selfMap
     "Applies a function to all keys in the given set and returns a new set
      with the new keys of same type as input set."
     input UnorderedSet<T> set;
@@ -350,7 +350,7 @@ public
         add(fn(k), outSet);
       end for;
     end for;
-  end mapSameType;
+  end selfMap;
 
   function all
     "Returns true if the given function returns true for all elements in the set,
