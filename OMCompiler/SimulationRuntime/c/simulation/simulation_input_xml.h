@@ -45,6 +45,7 @@ void read_input_xml(MODEL_DATA* modelData,
                     SIMULATION_INFO* simulationData,
                     threadData_t* threadData);
 void parseVariableStr(char* variableStr);
+int isQuantityOverridden(const char *name);
 
 #ifdef __cplusplus
 }
