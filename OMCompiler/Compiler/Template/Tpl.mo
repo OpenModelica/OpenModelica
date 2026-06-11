@@ -2540,5 +2540,5 @@ algorithm
   StackOverflow.triggerStackOverflow();
 end fakeStackOverflow;
 
-annotation(__OpenModelica_Interface="susan");
+annotation(__OpenModelica_Interface="tpl");
 end Tpl;
