@@ -97,7 +97,7 @@ public
         EquationPointers.map(equations, function findOptimalResizableValues(parameters = parameters, min_parameters = min_parameters, optimal_values = optimal_values, c2pi = c2pi, c2pe = c2pe));
 
         // initialize the optimal values for parameters with their min or max attribute (or 0 if none available)
-        UnorderedSet.map(parameters, function setInitialValues(min_parameters = min_parameters, optimal_values = optimal_values));
+        parameters := UnorderedSet.mapSameType(parameters, function setInitialValues(min_parameters = min_parameters, optimal_values = optimal_values));
 
         if debug then
           print(optimalValuesToString(optimal_values, StringUtil.headline_2("[debug] Initial Resizable Parameter Values:") + "\n"));
@@ -432,7 +432,7 @@ protected
     Subscript.mapExp(sub, function collectOccurencesSubscriptExp(occs = occs, acc = acc));
     if not UnorderedSet.isEmpty(acc) then
       subExp := Subscript.toExp(sub);
-      UnorderedSet.map(acc, function addOccurence(subExp = subExp, occs = occs));
+      acc := UnorderedSet.mapSameType(acc, function addOccurence(subExp = subExp, occs = occs));
     end if;
   end collectOccurencesSubscript;
 
@@ -502,7 +502,7 @@ protected
 
           // differentiate the target by all contained parameters to determine initial values
           args := DifferentiationArguments.simpleCref(cref);
-          UnorderedSet.map(local_parameters, function getInitialValues(target = target, args = args, min_parameters = min_parameters, optimal_values = optimal_values));
+          local_parameters := UnorderedSet.mapSameType(local_parameters, function getInitialValues(target = target, args = args, min_parameters = min_parameters, optimal_values = optimal_values));
 
           getRangeConstraint(range.start, range.step, range.stop, local_parameters, c2pi, "equation");
         then ();

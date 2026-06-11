@@ -1272,8 +1272,8 @@ protected
       end if;
     end addSubDependencies;
   algorithm
-    UnorderedSet.map(dependencies, function ComponentRef.mapExp(func = Expression.replaceResizableParameter));
-    UnorderedSet.map(dependencies, function ComponentRef.simplifySubscripts(trim = false));
+    dependencies := UnorderedSet.mapSameType(dependencies, function ComponentRef.mapExp(func = Expression.replaceResizableParameter));
+    dependencies := UnorderedSet.mapSameType(dependencies, function ComponentRef.simplifySubscripts(trim = false));
     // replace non derivative dependencies with their previous dependencies
     // (be careful with algebraic loops. this here assumes that cyclic dependencies have already been resolved)
     dependencies := match jacType
