@@ -140,8 +140,8 @@ public:
   void setLoggingLevel(int logLevel);
   bool setInteger(QString signal, int value);
   bool setReal(QString cref, double value);
-  bool setResultFile(QString cref, QString filename, int bufferSize);
-  bool getResultFile(QString cref, char **pFilename, int *pBufferSize);
+  bool setResultFile(QString cref, QString fileName, int bufferSize);
+  bool getResultFile(QString cref, QString& fileName, int& bufferSize);
   // setSolver(const QString&, const QString&) declared above with getSolverSettings
   bool setStartTime(QString cref, double startTime);
   bool setStopTime(QString cref, double stopTime);

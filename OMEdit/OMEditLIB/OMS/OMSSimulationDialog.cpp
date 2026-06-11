@@ -156,14 +156,21 @@ int OMSSimulationDialog::exec(const QString &modelCref, LibraryTreeItem *pLibrar
     }
   }
 
-  // Populate General tab
-  double startTime = 0.0;
+  // start time
+  double startTime;
   OMSProxy::instance()->getStartTime(mModelCref, startTime);
   mpStartTimeTextBox->setText(QString::number(startTime));
-
-  double stopTime = 1.0;
+  // stop time
+  double stopTime;
   OMSProxy::instance()->getStopTime(mModelCref, stopTime);
   mpStopTimeTextBox->setText(QString::number(stopTime));
+  // result file
+  QString fileName;
+  int bufferSize;
+  OMSProxy::instance()->getResultFile(mModelCref, fileName, bufferSize);
+  mpResultFileTextBox->setText(fileName);
+  // result file buffer size
+  mpResultFileBufferSizeSpinBox->setValue(bufferSize);
   mpOkButton->setEnabled(!mpLibraryTreeItem->isSystemLibrary());
 
   return QDialog::exec();

@@ -240,9 +240,9 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
   mpArchivedSimulationItem = new ArchivedSimulationItem(mCref, mStartTime, mStopTime, this);
   ArchivedSimulationsWidget::instance()->getArchivedSimulationsTreeWidget()->addTopLevelItem(mpArchivedSimulationItem);
   // save the last modified datetime of result file.
-  char *resultFileName = (char*)"";
+  QString resultFileName;
   int bufferSize;
-  OMSProxy::instance()->getResultFile(mCref, &resultFileName, &bufferSize);
+  OMSProxy::instance()->getResultFile(mCref, resultFileName, bufferSize);
   mResultFilePath = QString("%1/%2").arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory(), QString(resultFileName));
   // save the current datetime as last modified datetime for result file.
   mResultFileLastModifiedDateTime = QDateTime::currentDateTime();
