@@ -9,6 +9,7 @@ TESTFILES = \
 	overrideLiteralStartFromFile_alg.mos \
 	overrideParamStartFromFile_alg.mos \
 	overrideParamStartFromFile_param.mos \
+	overrideParamWithIif.mos \
 
 
 # test that currently fail. Move up when fixed.
