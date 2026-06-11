@@ -1848,8 +1848,8 @@ public
         // filter inputs for solvable (not occuring only in conditions)
         inputs := collectDependenciesAlgorithmInputs(eqn.alg.statements, eqn.alg.inputs);
         // collect all crefs expanding potential records
-        inputs  := List.flatten(list(collectDependenciesCref(c, 0, map, dep_map, sol_map) for c in inputs));
-        outputs := List.flatten(list(collectDependenciesCref(c, 0, map, dep_map, sol_map) for c in eqn.alg.outputs));
+        inputs  := List.flatten(list(UnorderedSet.toList(collectDependenciesCref(c, 0, map, dep_map, sol_map)) for c in inputs));
+        outputs := List.flatten(list(UnorderedSet.toList(collectDependenciesCref(c, 0, map, dep_map, sol_map)) for c in eqn.alg.outputs));
         // create dependencies for inputs and outputs
         Dependency.addListFull(inputs, 0, dep_map, rep_set);
         Dependency.addListFull(outputs, 0, dep_map, rep_set);
@@ -1903,7 +1903,7 @@ public
         Boolean isTuple;
 
       // add a cref dependency
-      case Expression.CREF() then UnorderedSet.fromList(collectDependenciesCref(exp.cref, depth, map, dep_map, sol_map), ComponentRef.hash, ComponentRef.isEqual);
+      case Expression.CREF() then collectDependenciesCref(exp.cref, depth, map, dep_map, sol_map);
 
       // add skips for arrays
       case Expression.ARRAY(literal = false) algorithm
@@ -2101,18 +2101,21 @@ public
     input UnorderedMap<ComponentRef, Integer> map "unknowns map to check for relevance";
     input UnorderedMap<ComponentRef, Dependency> dep_map;
     input UnorderedMap<ComponentRef, Solvability> sol_map;
-    output list<ComponentRef> crefs;
+    output UnorderedSet<ComponentRef> set;
   protected
     Pointer<Variable> var;
+    list<ComponentRef> crefs;
     Integer sk = 1;
     list<Subscript> subs;
   algorithm
+    set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+
     if UnorderedMap.contains(cref, map) then
       if not UnorderedMap.contains(cref, dep_map) then
         UnorderedMap.add(cref, Dependency.create(ComponentRef.getSubscriptedType(cref), depth), dep_map);
       end if;
       Solvability.update(cref, Solvability.EXPLICIT_LINEAR(NONE(), NONE()), sol_map);
-      crefs := {cref};
+      UnorderedSet.add(cref, set);
     else
       var := BVariable.getVarPointer(cref, sourceInfo());
       if BVariable.isRecord(var) then
@@ -2122,13 +2125,12 @@ public
         // add original subscripts
         crefs := list(ComponentRef.mergeSubscripts(subs, child) for child in crefs);
         // collect dependencies
-        crefs := List.flatten(list(collectDependenciesCref(child, depth + 1, map, dep_map, sol_map) for child in crefs));
+        crefs := List.flatten(list(UnorderedSet.toList(collectDependenciesCref(child, depth + 1, map, dep_map, sol_map)) for child in crefs));
         for cref in crefs loop
+          UnorderedSet.add(cref, set);
           Dependency.skip(cref, depth + 1, sk, dep_map);
           sk := sk + 1;
         end for;
-      else
-        crefs := {};
       end if;
     end if;
   end collectDependenciesCref;

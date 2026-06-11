@@ -334,15 +334,15 @@ public
   end map;
 */
 
-  function apply
+  function map
     "Replaces all keys in the given set with the results of the given function
      when applied to all keys. Equivalent to a rehash."
     input UnorderedSet<T> set;
-    input ApplyFn fn;
+    input MapFn fn;
 
-    partial function ApplyFn
+    partial function MapFn
       input output T key;
-    end ApplyFn;
+    end MapFn;
   protected
     Hash hashfn = set.hashFn;
     KeyEq eqfn = set.eqFn;
@@ -383,7 +383,7 @@ public
     // Replace the old bucket array with the new one and update the size of the set.
     Mutable.update(set.buckets, new_buckets);
     Mutable.update(set.size, size);
-  end apply;
+  end map;
 
   function all
     "Returns true if the given function returns true for all elements in the set,
