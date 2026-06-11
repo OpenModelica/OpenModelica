@@ -193,7 +193,7 @@ public
     output SBSet target = SBSet.copy(domain);
   algorithm
     if not isIdentity(map) then
-      UnorderedSet.apply(target.asets, function applyAtomicSet(map = map));
+      UnorderedSet.map(target.asets, function applyAtomicSet(map = map));
     end if;
   end apply;
 
