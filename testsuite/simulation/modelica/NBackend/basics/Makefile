@@ -1,21 +1,24 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+arrayCascade.mos \
+arrayReadElements.mos \
+detectStates.mos \
 emptyModel.mos \
-helloWorld.mos \
+enumeration.mos \
 evaluateFalse.mos \
+for_if_if.mos \
+helloWorld.mos \
+implicitEquation.mos \
+minArr.mos \
 parameterIndex.mos \
 parameterSystem.mos \
-simpleNonlinearLoop.mos \
-implicitEquation.mos \
-underdetermined_init.mos \
 partitioning.mos \
-variability.mos \
-enumeration.mos \
 simpleForLoop.mos \
+simpleNonlinearLoop.mos \
 solveSingleEquation.mos \
-detectStates.mos \
-for_if_if.mos \
+underdetermined_init.mos \
+variability.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

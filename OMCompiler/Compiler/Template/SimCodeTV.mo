@@ -4173,6 +4173,7 @@ package Flags
   constant ConfigFlag MAX_SIZE_LINEARIZATION;
   constant ConfigFlag NEW_BACKEND;
   constant ConfigFlag FMI_EXTRA_ANNOTATIONS;
+  constant ConfigFlag SIM_CODE_SCALARIZE;
 
   function isSet
     input DebugFlag inFlag;
