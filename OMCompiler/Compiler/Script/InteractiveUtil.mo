@@ -109,7 +109,7 @@ public function getExtendsElementspecInClass
   output list<Absyn.ElementSpec> outAbsynElementSpecLst;
 algorithm
   outAbsynElementSpecLst:=
-  matchcontinue inClass
+  match inClass
     local
       list<Absyn.ElementSpec> ext;
       list<Absyn.ClassPart> parts;
@@ -134,7 +134,7 @@ algorithm
         // Note: the array dimensions of DERIVED are lost. They must be
         // queried by another api-function
     else {};
-  end matchcontinue;
+  end match;
 end getExtendsElementspecInClass;
 
 protected function getExtendsElementspecInClassparts
@@ -143,7 +143,7 @@ protected function getExtendsElementspecInClassparts
   output list<Absyn.ElementSpec> outAbsynElementSpecLst;
 algorithm
   outAbsynElementSpecLst:=
-  matchcontinue inAbsynClassPartLst
+  match inAbsynClassPartLst
     local
       list<Absyn.ElementSpec> lst1,lst2,res;
       list<Absyn.ElementItem> elts;
@@ -173,7 +173,7 @@ algorithm
       then
         res;
 
-  end matchcontinue;
+  end match;
 end getExtendsElementspecInClassparts;
 
 protected function getExtendsElementspecInElementitems

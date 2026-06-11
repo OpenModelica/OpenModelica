@@ -2122,7 +2122,7 @@ protected function elabResultExp
   output Option<DAE.Type> resType;
 algorithm
   (outCache,outBody,resExp,resultInfo,resType) :=
-  matchcontinue (inCache,inEnv,inBody,AbsynUtil.stripCommentExpressions(exp))
+  match (inCache,inEnv,inBody,AbsynUtil.stripCommentExpressions(exp))
     local
       DAE.Exp elabExp;
       DAE.Properties prop;
@@ -2142,7 +2142,7 @@ algorithm
         (elabExp,ty) := makeTupleFromMetaTuple(elabExp,ty);
         (body,elabExp,info) := elabResultExp2(not Flags.isSet(Flags.PATTERNM_MOVE_LAST_EXP),body,elabExp,inInfo);
       then (cache,body,SOME(elabExp),info,SOME(ty));
-  end matchcontinue;
+  end match;
 end elabResultExp;
 
 protected function elabPatternGuard

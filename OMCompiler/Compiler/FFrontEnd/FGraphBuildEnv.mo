@@ -1026,7 +1026,7 @@ protected function analyseCref
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := matchcontinue(inCref, inGraph)
+  outGraph := match(inCref, inGraph)
     local
       Graph g;
 
@@ -1038,7 +1038,7 @@ algorithm
       then
         g;
 
-  end matchcontinue;
+  end match;
 end analyseCref;
 
 protected function analyseExpTraverserExit

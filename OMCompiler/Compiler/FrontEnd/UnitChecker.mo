@@ -399,7 +399,7 @@ public function hasUnknown
   input UnitAbsyn.SpecUnit su;
   output Boolean res;
 algorithm
-  res := matchcontinue su
+  res := match su
     case UnitAbsyn.SPECUNIT({},_) then false;
     case UnitAbsyn.SPECUNIT(_,_) then true;
     else
@@ -407,7 +407,7 @@ algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("UnitChecker::hasUnknown() failed\n");
       then fail();
-  end matchcontinue;
+  end match;
 end hasUnknown;
 
 public function unitHasUnknown

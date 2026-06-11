@@ -2735,7 +2735,7 @@ protected function expType "gets the type of an expression"
   input DAE.Exp eIn;
   output DAE.Type tOut;
 algorithm
-  tOut := matchcontinue eIn
+  tOut := match eIn
     local
       DAE.Type t;
     case DAE.CREF(ty=t)
@@ -2746,7 +2746,7 @@ algorithm
       print("expType failed for: "+ExpressionBasics.printExpStr(eIn)+"\n");
       then
         fail();
-  end matchcontinue;
+  end match;
 end expType;
 
 protected function getScalarsForComplexVar "gets the list<ComponentRef> for the scalar values of complex vars and multidimensional vars (at least real) .

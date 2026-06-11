@@ -580,7 +580,7 @@ public function printSubscriptsStr "Prettyprint a Subscript list to a string."
   input list<Absyn.Subscript> inAbsynSubscriptLst;
   output String outString;
 algorithm
-  outString := matchcontinue inAbsynSubscriptLst
+  outString := match inAbsynSubscriptLst
     local
       String s,s_1,s_2;
       list<Absyn.Subscript> l;
@@ -594,7 +594,7 @@ algorithm
         s_2 := stringAppend(s_1, "]");
       then
         s_2;
-  end matchcontinue;
+  end match;
 end printSubscriptsStr;
 
 public function printFunctionArgsStr "

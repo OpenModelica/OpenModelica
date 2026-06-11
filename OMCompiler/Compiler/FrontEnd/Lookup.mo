@@ -1353,7 +1353,7 @@ if variable is not constant."
   input DAE.Type tp;
   input DAE.ComponentRef cref;
 algorithm
-  () := matchcontinue attr
+  () := match attr
     local
       String s1,s2;
 
@@ -1378,7 +1378,7 @@ algorithm
         true := Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Lookup.checkPackageVariableConstant failed: " + s1 + " in " + s2);
       then fail();
-  end matchcontinue;
+  end match;
 end checkPackageVariableConstant;
 
 public function lookupVarInternal "Helper function to lookupVar. Searches the frames for variables."
@@ -2533,10 +2533,10 @@ protected function selectModifier
   input DAE.Mod inModNoID;
   output DAE.Mod outMod;
 algorithm
-  outMod := matchcontinue inModID
+  outMod := match inModID
     case DAE.NOMOD() then inModNoID;
     else inModID;
-  end matchcontinue;
+  end match;
 end selectModifier;
 
 protected function buildRecordConstructorElts

@@ -286,7 +286,7 @@ public function replaceSubscriptInCrefExp"exp-traverse-function to replace the f
   output DAE.Exp expOut;
   output list<DAE.Subscript> subsOut;
 algorithm
-  (expOut,subsOut) := matchcontinue expIn
+  (expOut,subsOut) := match expIn
     local
       DAE.ComponentRef cref;
       DAE.Type ty;
@@ -296,7 +296,7 @@ algorithm
     then (DAE.CREF(cref,ty),subsIn);
   else
     then(expIn,subsIn);
-  end matchcontinue;
+  end match;
 end replaceSubscriptInCrefExp;
 
 
@@ -1002,7 +1002,7 @@ protected function crefPartlyEqual
   input DAE.ComponentRef cref1;
   output Boolean partlyEq;
 algorithm
-  partlyEq := matchcontinue(cref0,cref1)
+  partlyEq := match(cref0,cref1)
     local
       Boolean b;
       DAE.ComponentRef cref01, cref11;
@@ -1020,7 +1020,7 @@ algorithm
       then cref0.ident ==cref1.ident;
   else
     then false;
-  end matchcontinue;
+  end match;
 end crefPartlyEqual;
 
 public function reduceLoopExpressions "strip the higher indexes in accumulated iterations"
@@ -1109,7 +1109,7 @@ public function replaceFirstSubsInCref"replaces the first occuring subscript in 
   input list<DAE.Subscript> subs;
   output DAE.ComponentRef crefOut;
 algorithm
-  crefOut := matchcontinue crefIn
+  crefOut := match crefIn
     local
       DAE.Ident ident;
       DAE.Type identType;
@@ -1126,7 +1126,7 @@ algorithm
     then DAE.CREF_IDENT(ident, identType, subscriptLst);
   else
     then crefIn;
-  end matchcontinue;
+  end match;
 end replaceFirstSubsInCref;
 
 annotation(__OpenModelica_Interface="backend");

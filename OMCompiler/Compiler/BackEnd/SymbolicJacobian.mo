@@ -3105,7 +3105,7 @@ protected function hasEqnNonDiffParts
   output Boolean cont;
   output tuple<list<DAE.Exp>, Boolean, Boolean> outTpl;
 algorithm
-  (outExp, cont, outTpl) := matchcontinue(inExp, inTpl)
+  (outExp, cont, outTpl) := match(inExp, inTpl)
   local
     list<DAE.Exp> expLst;
     Boolean b, insideCall;
@@ -3129,7 +3129,7 @@ algorithm
 */
 
     case (outExp, (_, b, _)) then (outExp, b, inTpl);
-  end matchcontinue;
+  end match;
 end hasEqnNonDiffParts;
 
 protected function isRecordInvoled
