@@ -2146,6 +2146,9 @@ public
       end if;
       Solvability.update(cref, Solvability.EXPLICIT_LINEAR(NONE(), NONE()), sol_map);
       UnorderedSet.add(cref, set);
+      // i do not understand this, but a model in the testsuite (modelica/NBackend/index_reduction/aux_state.mos) does not run without this
+      // converts a set to a list and back to a set. the model in question only has one-element sets here
+      set := UnorderedSet.fromList(UnorderedSet.toList(set), ComponentRef.hash, ComponentRef.isEqual);
     else
       var := BVariable.getVarPointer(cref, sourceInfo());
       if BVariable.isRecord(var) then
