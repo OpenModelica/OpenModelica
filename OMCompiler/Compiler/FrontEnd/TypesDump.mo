@@ -604,7 +604,7 @@ public function printParamsStr "Prints function arguments to a string."
   input list<DAE.FuncArg> inFuncArgLst;
   output String str;
 algorithm
-  str := matchcontinue inFuncArgLst
+  str := match inFuncArgLst
     local
       String n;
       DAE.Type t;
@@ -624,7 +624,7 @@ algorithm
         str := stringAppendList({n," :: ",s1, " * ",s2});
       then
        str;
-  end matchcontinue;
+  end match;
 end printParamsStr;
 
 public function unparseVarAttr "
@@ -680,12 +680,12 @@ public function connectorTypeStr
   input DAE.ConnectorType ct;
   output String str;
 algorithm
-  str := matchcontinue ct
+  str := match ct
     local    case DAE.POTENTIAL() then "";
     case DAE.FLOW() then "flow ";
     case DAE.STREAM(_) then "stream ";
     else "";
-  end matchcontinue;
+  end match;
 end connectorTypeStr;
 
 protected function unparseParam "Prints a function argument to a string."

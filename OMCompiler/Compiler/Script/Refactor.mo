@@ -333,7 +333,7 @@ protected function refactorGraphAnnInAlgItem"Helper function to refactorGraphAnn
   input Interactive.GraphicEnvCache inClassEnv;
   output Absyn.AlgorithmItem outItem;
 algorithm
-  outItem := matchcontinue inItem
+  outItem := match inItem
     local
       Absyn.Algorithm alg;
       Option<String> com;
@@ -349,7 +349,7 @@ algorithm
 
     else inItem;
 
-  end matchcontinue;
+  end match;
 
 end refactorGraphAnnInAlgItem;
 

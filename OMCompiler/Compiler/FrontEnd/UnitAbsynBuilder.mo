@@ -70,7 +70,7 @@ in the scopes of the classLst for each variable"
  protected
  list<Absyn.Path> paths; list<SCode.Element> du;
 algorithm
-   () := matchcontinue dae
+   () := match dae
    local
      list<DAE.Element> elts;
    case _ algorithm
@@ -87,7 +87,7 @@ algorithm
        du := List.unionList(List.map1(paths,retrieveUnitsFromEnv,(cache,env)));
        registerUnitWeightDefineunits(du);
    then ();
-   end matchcontinue;
+   end match;
 end registerUnitWeights;
 
 protected function retrieveUnitsFromEnv "help function to registerUnitWeights"
@@ -116,7 +116,7 @@ end retrieveUnitsFromEnv;
 protected function registerUnitWeightDefineunits "help function to registerUnitWeightForClass"
   input list<SCode.Element> du;
 algorithm
-   () := matchcontinue du
+   () := match du
      /* No defineunits found, for backward compatibility, use default implementation:
      SI system ,with lower cost on Hz and Bq */
      case {} algorithm
@@ -151,14 +151,14 @@ algorithm
        SCode.DEFINEUNIT("kat",SCode.PUBLIC(),SOME("s-1.mol"),NONE(), SCodeUtil.dummyInfo)
        });   then ();
      else algorithm registerUnitWeightDefineunits2(du); then ();
-  end matchcontinue;
+  end match;
 end registerUnitWeightDefineunits;
 
 
 protected function registerUnitWeightDefineunits2 "help function to registerUnitWeightDefineunits"
   input list<SCode.Element> idu;
 algorithm
-   () := matchcontinue idu
+   () := match idu
      local String n; Real w; list<SCode.Element> du;
      case SCode.DEFINEUNIT(name=n,weight = SOME(w))::du algorithm
        UnitParserExt.registerWeight(n,w);
@@ -172,7 +172,7 @@ algorithm
      then ();
      case {} then ();
 
-  end matchcontinue;
+  end match;
 end registerUnitWeightDefineunits2;
 
 public function registerUnits "traverses the Absyn.Program and registers all defineunits.
@@ -181,7 +181,7 @@ are referenced in the model are picked up
 "
   input Absyn.Program prg;
 algorithm
-  () := matchcontinue prg
+  () := match prg
     case _
       algorithm
         // phi: very old unit checking
@@ -195,7 +195,7 @@ algorithm
       algorithm
         false := Flags.getConfigBool(Flags.UNIT_CHECKING);
       then ();
-  end matchcontinue;
+  end match;
 end registerUnits;
 
 protected function registerUnitInClass " help function to registerUnits"
@@ -554,7 +554,7 @@ protected function printBaseUnitsStr "help function to printUnit"
   input list<MMath.Rational> lst;
   output String str;
 algorithm
-  str := matchcontinue lst
+  str := match lst
   local Integer i1,i2,i3,i4;
     case MMath.RATIONAL(i1,i2)::MMath.RATIONAL(i3,i4)::_ algorithm
     str := "m^("+intString(i1)+"/"+intString(i2)+")"
@@ -562,7 +562,7 @@ algorithm
     then str;
     case {} then "";
     else "printBaseUnitsStr failed len:" + intString(listLength(lst)) + "\n";
-  end matchcontinue;
+  end match;
 end printBaseUnitsStr;
 
 protected function printTypeParameterStr "help function to printUnit"

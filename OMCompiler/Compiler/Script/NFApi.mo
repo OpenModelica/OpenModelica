@@ -328,7 +328,7 @@ protected
 algorithm
   // handle the annotations
   for i in inElements loop
-   elArgs := matchcontinue i
+   elArgs := match i
       case Absyn.ELEMENT(specification = Absyn.COMPONENTS(components = items), constrainClass = cc)
         algorithm
           el := AbsynUtil.getAnnotationsFromItems(items, AbsynUtil.getAnnotationsFromConstraintClass(cc));
@@ -358,7 +358,7 @@ algorithm
 
 
       else elArgs;
-    end matchcontinue;
+    end match;
   end for;
 
   for l in elArgs loop
@@ -764,10 +764,10 @@ algorithm
 
   cls := InstNode.getClass(cls_node);
 
-  exts := matchcontinue cls
+  exts := match cls
     case Class.EXPANDED_DERIVED() then listArray({cls.baseClass});
     else ClassTree.getExtends(Class.classTree(cls));
-  end matchcontinue;
+  end match;
 
   if index < 1 or index > arrayLength(exts) then
     result := ValuesMake.makeBoolean(false);

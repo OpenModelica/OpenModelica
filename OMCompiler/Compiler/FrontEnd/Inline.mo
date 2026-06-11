@@ -429,7 +429,7 @@ public function inlineAlgorithm
   output DAE.Algorithm outAlgorithm;
   output Boolean inlined;
 algorithm
-  (outAlgorithm,inlined) := matchcontinue(inAlgorithm,inElementList)
+  (outAlgorithm,inlined) := match(inAlgorithm,inElementList)
     local
       list<DAE.Statement> stmts,stmts_1;
       Functiontuple fns;
@@ -444,7 +444,7 @@ algorithm
         Debug.trace("Inline.inlineAlgorithm failed\n");
       then
         fail();
-  end matchcontinue;
+  end match;
 end inlineAlgorithm;
 
 public function inlineStatements
@@ -1247,7 +1247,7 @@ Author: Frenkel TUD, 2010-05"
   input Functiontuple fns;
   output Boolean outb;
 algorithm
-  outb := matchcontinue(inIT,fns)
+  outb := match(inIT,fns)
     local
       DAE.InlineType it;
       list<DAE.InlineType> itlst;
@@ -1257,7 +1257,7 @@ algorithm
        b := listMember(it,itlst);
       then b;
     else false;
-  end matchcontinue;
+  end match;
 end checkInlineType;
 
 // TODO: mahge: This needs to be rewritten completely.

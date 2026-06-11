@@ -108,7 +108,7 @@ public function makeArray "
   output Values.Value outValue;
 algorithm
   outValue:=
-  matchcontinue inValueLst
+  match inValueLst
     local
       Integer i1;
       list<Integer> il;
@@ -121,7 +121,7 @@ algorithm
       algorithm
         i1 := listLength(vlst);
       then Values.ARRAY(vlst,{i1});
-  end matchcontinue;
+  end match;
 end makeArray;
 
 function makeEmptyArray

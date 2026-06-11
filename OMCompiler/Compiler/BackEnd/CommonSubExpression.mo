@@ -2440,7 +2440,7 @@ protected function getTopLevelFactors"Gets factors(crefs only) of the exp"
   input list<DAE.Exp> lstIn;
   output list<DAE.Exp> lstOut;
 algorithm
-  lstOut := matchcontinue exp
+  lstOut := match exp
     local
       DAE.Exp e1,e2;
       list<DAE.Exp> eLst;
@@ -2457,7 +2457,7 @@ algorithm
    then e1::lstIn;
   else
     then lstIn;
-  end matchcontinue;
+  end match;
 end getTopLevelFactors;
 
 protected function printCSE"prints a CSE tuple string.

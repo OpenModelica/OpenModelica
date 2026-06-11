@@ -1430,7 +1430,7 @@ protected function printGraph
   input list<tuple<Element, list<Element>>> cycles;
   type Element = tuple<SCode.Element, DAE.Mod>;
 algorithm
-  () := matchcontinue g
+  () := match g
     // nothing for empty graph
     case {} then ();
     // show me something!
@@ -1440,7 +1440,7 @@ algorithm
         print("Element order:\n\t" + stringDelimitList(List.map(order, elementName), "\n\t") + "\n");
         print("Cycles:\n" + Graph.printGraph(cycles, elementName) + "\n");
       then ();
-  end matchcontinue;
+  end match;
 end printGraph;
 
 protected function getDepsFromExps
@@ -6959,7 +6959,7 @@ protected function mergeClassComments
   input SCode.Comment comment2;
   output SCode.Comment outComment;
 algorithm
-  outComment := matchcontinue(comment1, comment2)
+  outComment := match(comment1, comment2)
     local
       Option<SCode.Annotation> ann1,ann2,ann;
       Option<String> str1,str2,str;
@@ -6975,7 +6975,7 @@ algorithm
         str := if isSome(str1) then str1 else str2;
         ann := if isSome(ann1) then ann1 else ann2;
       then SCode.COMMENT(ann,str);
-  end matchcontinue;
+  end match;
 end mergeClassComments;
 
 public function makeNonExpSubscript

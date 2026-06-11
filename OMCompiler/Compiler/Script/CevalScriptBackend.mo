@@ -6669,7 +6669,7 @@ protected function getAlgorithmsInClassParts
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<Absyn.ClassPart> outList;
 algorithm
-  outList := matchcontinue inAbsynClassPartLst
+  outList := match inAbsynClassPartLst
     local
       list<Absyn.ClassPart> algsList;
       list<Absyn.ClassPart> xs;
@@ -6685,7 +6685,7 @@ algorithm
       then
         algsList;
     case {} then {};
-  end matchcontinue;
+  end match;
 end getAlgorithmsInClassParts;
 
 protected function getNthAlgorithm
@@ -6745,7 +6745,7 @@ protected function getInitialAlgorithmsInClassParts
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<Absyn.ClassPart> outList;
 algorithm
-  outList := matchcontinue inAbsynClassPartLst
+  outList := match inAbsynClassPartLst
     local
       list<Absyn.ClassPart> algsList;
       list<Absyn.ClassPart> xs;
@@ -6761,7 +6761,7 @@ algorithm
       then
         algsList;
     case {} then {};
-  end matchcontinue;
+  end match;
 end getInitialAlgorithmsInClassParts;
 
 protected function getNthInitialAlgorithm
@@ -6821,7 +6821,7 @@ protected function getAlgorithmItemsCountInClassParts
  input list<Absyn.ClassPart> inAbsynClassPartLst;
   output Integer outInteger;
 algorithm
-  outInteger := matchcontinue inAbsynClassPartLst
+  outInteger := match inAbsynClassPartLst
     local
       list<Absyn.AlgorithmItem> algs;
       list<Absyn.ClassPart> xs;
@@ -6838,7 +6838,7 @@ algorithm
       then
         res;
     case {} then 0;
-  end matchcontinue;
+  end match;
 end getAlgorithmItemsCountInClassParts;
 
 protected function getAlgorithmItemsCountInAlgorithmItems
@@ -6846,7 +6846,7 @@ protected function getAlgorithmItemsCountInAlgorithmItems
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
   output Integer outInteger;
 algorithm
-  outInteger := matchcontinue inAbsynAlgorithmItemLst
+  outInteger := match inAbsynAlgorithmItemLst
     local
       list<Absyn.AlgorithmItem> xs;
       Integer c1, res;
@@ -6861,7 +6861,7 @@ algorithm
       then
         res;
     case {} then 0;
-  end matchcontinue;
+  end match;
 end getAlgorithmItemsCountInAlgorithmItems;
 
 protected function getNthAlgorithmItem
@@ -6974,7 +6974,7 @@ protected function getInitialAlgorithmItemsCountInClassParts
  input list<Absyn.ClassPart> inAbsynClassPartLst;
   output Integer outInteger;
 algorithm
-  outInteger := matchcontinue inAbsynClassPartLst
+  outInteger := match inAbsynClassPartLst
     local
       list<Absyn.AlgorithmItem> algs;
       list<Absyn.ClassPart> xs;
@@ -6991,7 +6991,7 @@ algorithm
       then
         res;
     case {} then 0;
-  end matchcontinue;
+  end match;
 end getInitialAlgorithmItemsCountInClassParts;
 
 protected function getNthInitialAlgorithmItem
@@ -7080,7 +7080,7 @@ protected function getEquationsInClassParts
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<Absyn.ClassPart> outList;
 algorithm
-  outList := matchcontinue inAbsynClassPartLst
+  outList := match inAbsynClassPartLst
     local
       list<Absyn.ClassPart> eqsList;
       list<Absyn.ClassPart> xs;
@@ -7096,7 +7096,7 @@ algorithm
       then
         eqsList;
     case {} then {};
-  end matchcontinue;
+  end match;
 end getEquationsInClassParts;
 
 protected function getNthEquation
@@ -7156,7 +7156,7 @@ protected function getInitialEquationsInClassParts
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<Absyn.ClassPart> outList;
 algorithm
-  outList := matchcontinue inAbsynClassPartLst
+  outList := match inAbsynClassPartLst
     local
       list<Absyn.ClassPart> eqsList;
       list<Absyn.ClassPart> xs;
@@ -7172,7 +7172,7 @@ algorithm
       then
         eqsList;
     case {} then {};
-  end matchcontinue;
+  end match;
 end getInitialEquationsInClassParts;
 
 protected function getNthInitialEquation
@@ -7232,7 +7232,7 @@ protected function getEquationItemsCountInClassParts
  input list<Absyn.ClassPart> inAbsynClassPartLst;
   output Integer outInteger;
 algorithm
-  outInteger := matchcontinue inAbsynClassPartLst
+  outInteger := match inAbsynClassPartLst
     local
       list<Absyn.EquationItem> eqs;
       list<Absyn.ClassPart> xs;
@@ -7249,7 +7249,7 @@ algorithm
       then
         res;
     case {} then 0;
-  end matchcontinue;
+  end match;
 end getEquationItemsCountInClassParts;
 
 protected function getEquationItemsCountInEquationItems
@@ -7257,7 +7257,7 @@ protected function getEquationItemsCountInEquationItems
   input list<Absyn.EquationItem> inAbsynEquationItemLst;
   output Integer outInteger;
 algorithm
-  outInteger := matchcontinue inAbsynEquationItemLst
+  outInteger := match inAbsynEquationItemLst
     local
       list<Absyn.EquationItem> xs;
       Integer c1, res;
@@ -7272,7 +7272,7 @@ algorithm
       then
         res;
     case {} then 0;
-  end matchcontinue;
+  end match;
 end getEquationItemsCountInEquationItems;
 
 protected function getNthEquationItem
@@ -7393,7 +7393,7 @@ protected function getInitialEquationItemsCountInClassParts
  input list<Absyn.ClassPart> inAbsynClassPartLst;
   output Integer outInteger;
 algorithm
-  outInteger := matchcontinue inAbsynClassPartLst
+  outInteger := match inAbsynClassPartLst
     local
       list<Absyn.EquationItem> eqs;
       list<Absyn.ClassPart> xs;
@@ -7410,7 +7410,7 @@ algorithm
       then
         res;
     case {} then 0;
-  end matchcontinue;
+  end match;
 end getInitialEquationItemsCountInClassParts;
 
 protected function getNthInitialEquationItem
@@ -7572,7 +7572,7 @@ protected function unparseGroupImport
   input list<Absyn.GroupImport> inAbsynGroupImportLst;
   output list<String> outList;
 algorithm
-  outList := matchcontinue inAbsynGroupImportLst
+  outList := match inAbsynGroupImportLst
   local
     list<Absyn.GroupImport> rest;
     list<String> lst;
@@ -7588,7 +7588,7 @@ algorithm
         lst := unparseGroupImport(rest);
       then
         lst;
-  end matchcontinue;
+  end match;
 end unparseGroupImport;
 
 public function isShortDefinition

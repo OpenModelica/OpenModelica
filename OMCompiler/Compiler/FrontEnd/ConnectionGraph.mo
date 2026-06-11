@@ -670,7 +670,7 @@ protected function findResultGraph
   output DaeEdges outConnectedConnections;
   output DaeEdges outBrokenConnections;
 algorithm
-  (outRoots, outConnectedConnections, outBrokenConnections) := matchcontinue inGraph
+  (outRoots, outConnectedConnections, outBrokenConnections) := match inGraph
     local
       DefiniteRoots definiteRoots, finalRoots;
       PotentialRoots potentialRoots, orderedPotentialRoots;
@@ -742,7 +742,7 @@ algorithm
       then
         (finalRoots, connected, broken);
 
-  end matchcontinue;
+  end match;
 end findResultGraph;
 
 protected function orderConnectsGuidedByUser
@@ -957,7 +957,7 @@ protected function evalConnectionsOperators
   input list<DAE.Element> inDae;
   output list<DAE.Element> outDae;
 algorithm
-  outDae := matchcontinue inDae
+  outDae := match inDae
     local
       HashTable.HashTable rooted;
       HashTable3.HashTable table;
@@ -984,7 +984,7 @@ algorithm
         (outDae, _) := DAEUtil.traverseDAEElementList(inDae, evalConnectionsOperatorsHelper, (rooted,inRoots,graph));
       then outDae;
 
-  end matchcontinue;
+  end match;
 end evalConnectionsOperators;
 
 protected function evalConnectionsOperatorsHelper
@@ -1772,7 +1772,7 @@ public function addBrokenEqualityConstraintEquations
   input DaeEdges inBroken;
   output DAE.DAElist outDAE;
 algorithm
-  outDAE := matchcontinue inBroken
+  outDAE := match inBroken
     local
       list<DAE.Element> equalityConstraintElements;
       DAE.DAElist dae;
@@ -1786,7 +1786,7 @@ algorithm
       then
         dae;
 
-  end matchcontinue;
+  end match;
 end addBrokenEqualityConstraintEquations;
 
 annotation(__OpenModelica_Interface="frontend");
