@@ -97,7 +97,7 @@ template replaceDotAndUnderscore(String str)
   Otherwise the generated name diverges from the record type name built by
   AbsynUtil.pathStringUnquoteReplaceDot and the C code fails to compile. See #13009."
 ::=
-  let str_dots = if stringEq(System.substring(str,1,1), "'") then str else System.stringReplace(str,".", "_")
+  let str_dots = if stringEq(substring(str,1,1), "'") then str else System.stringReplace(str,".", "_")
   let str_underscores = System.stringReplace(str_dots, "_", "__")
   System.unquoteIdentifier(str_underscores)
 end replaceDotAndUnderscore;
