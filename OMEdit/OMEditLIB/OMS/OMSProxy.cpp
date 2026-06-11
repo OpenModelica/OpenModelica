@@ -1336,13 +1336,16 @@ void OMSProxy::setLoggingCallback()
  */
 bool OMSProxy::setLoggingInterval(QString cref, double loggingInterval)
 {
-  QString command = "oms_setLoggingInterval";
-  QStringList args;
-  args << "\"" + cref + "\"" << QString::number(loggingInterval);
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setLoggingInterval(cref.toUtf8().constData(), loggingInterval);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
+  QStringList parts = cref.split('.');
+  QJsonObject obj, args;
+  obj["method"] = "setLoggingInterval";
+  obj["model"]  = parts.first();
+  parts.removeFirst();
+  args["cref"]  = QJsonArray::fromStringList(parts);
+  args["loggingInterval"] = QString::number(loggingInterval);
+  obj["args"]   = args;
+  QJsonObject reply;
+  return sendZmqCommand(obj, reply);
 }
 
 /*!
@@ -1410,27 +1413,33 @@ bool OMSProxy::setReal(QString cref, double value)
  * \param bufferSize
  * \return
  */
-bool OMSProxy::setResultFile(QString cref, QString filename, int bufferSize)
+bool OMSProxy::setResultFile(QString cref, QString fileName, int bufferSize)
 {
   QJsonObject obj, args;
   obj["method"] = "setResultFile";
   obj["model"]  = cref.split('.').first();
-  args["file"]       = filename;
+  args["fileName"]  = fileName;
   args["bufferSize"] = bufferSize;
   obj["args"] = args;
   QJsonObject reply;
   return sendZmqCommand(obj, reply);
 }
 
-bool OMSProxy::getResultFile(QString cref, char **pFilename, int *pBufferSize)
+bool OMSProxy::getResultFile(QString cref, QString& fileName, int& bufferSize)
 {
-  QString command = "oms_getResultFile";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getResultFile(cref.toUtf8().constData(), pFilename, pBufferSize);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
+  QJsonObject obj, args;
+  obj["method"] = "getResultFile";
+  obj["model"]  = cref.split('.').first();
+  args["fileName"]  = fileName;
+  args["bufferSize"] = bufferSize;
+  obj["args"] = args;
+  QJsonObject reply;
+  if (!sendZmqCommand(obj, reply))
+    return false;
+  fileName = reply["fileName"].toString();
+  bufferSize = reply["bufferSize"].toInt();
+  return true;
+
 }
 
 /*!
