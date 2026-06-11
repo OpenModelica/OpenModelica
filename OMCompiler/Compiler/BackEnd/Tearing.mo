@@ -54,6 +54,8 @@ import BackendDAEUtil;
 import BackendDump;
 import BackendEquation;
 import BackendVariable;
+import ComponentReference;
+import ComponentReferenceBasics;
 import Config;
 import DoubleEnded;
 import DumpGraphML;
@@ -2002,7 +2004,9 @@ protected
   Option<BackendDAE.TearingSet> casualTearingSet;
   list<BackendDAE.Equation> eqn_lst;
   list<BackendDAE.Var> var_lst;
-  Boolean linear,b,noDynamicStateSelection,dynamicTearing;
+  Boolean linear,b,noDynamicStateSelection,dynamicTearing,forceDegree1,hasStartCycle;
+  DAE.ComponentRef cref;
+  list<DAE.ComponentRef> startBaseCrefs, valueCrefs;
   String s,modelName;
   constant Boolean debug = false;
 algorithm
@@ -2011,6 +2015,15 @@ algorithm
   noDynamicStateSelection := listEmpty(stateSets);
   BackendDAE.SHARED(backendDAEType=DAEtype, info=BackendDAE.EXTRA_INFO(fileNamePrefix=modelName)) := ishared;
   DAEtypeStr := BackendDump.printBackendDAEType2String(DAEtype);
+
+  // ticket #15433: the variable-driven degree-1 forced assignment (getNextDegree1Var) is only
+  // needed - and only safe - for the initialization system, where a $START.x variable is
+  // structurally linked to the state's equations but solvable in exactly one of them. Enabling it
+  // for the simulation system reorders the Tarjan causalization for components that already
+  // causalize correctly, changing tearing results. Restrict it to the initialization DAE; the
+  // forcing is then further restricted, below, to the components that actually exhibit the defect
+  // (a $START.x->x cycle).
+  forceDegree1 := BackendDAEUtil.isInitializationDAE(ishared);
 
   // check if dynamic tearing is enabled for linear/nonlinear system
   dynamicTearing := match (Config.dynamicTearing(),linear,noDynamicStateSelection,DAEtypeStr,Flags.getConfigBool(Flags.DYNAMIC_TEARING_FOR_INITIALIZATION),Config.simCodeTarget())
@@ -2062,6 +2075,47 @@ algorithm
   // Determine unsolvable vars to consider solvability
   unsolvables := getUnsolvableVars(size,meT);
 
+  // ticket #15433: detect the degenerate "$START.x depends on x" cycle inside this strong
+  // component and only then keep the degree-1 forced assignment enabled. The component is cyclic
+  // when it contains BOTH a $START.x variable and its base value variable x: since a strong
+  // component is an algebraic loop, the two are mutually reachable, i.e. x's start attribute
+  // transitively depends on x itself (e.g. a fixed=false state whose start binds to a parameter
+  // computed from the state - the cable models in #15433). Exactly this cycle produces the matching
+  // defect that orphans $START.x and yields a structurally singular torn init system; the degree-1
+  // forcing repairs it. For every OTHER component (no such cycle) the forcing is switched OFF so the
+  // plain Cellier result - which is already correct there - is preserved (this is what keeps models
+  // like Tearing16/Algorithm2 unchanged). A modeler warning is emitted, naming the self-dependent
+  // variable (with subscripts), because a start value that depends on its own variable is an
+  // ill-posed initialization; the transformational debugger can be used to inspect the full chain.
+  hasStartCycle := false;
+  if forceDegree1 then
+    startBaseCrefs := {};
+    valueCrefs := {};
+    for i in 1:size loop
+      cref := BackendVariable.varCref(BackendVariable.getVarAt(vars, i));
+      if ComponentReference.isStartCref(cref) then
+        startBaseCrefs := ComponentReference.popCref(cref) :: startBaseCrefs;
+      else
+        valueCrefs := cref :: valueCrefs;
+      end if;
+    end for;
+    // a $START.x whose base value variable x is also in this component closes the cycle
+    for baseCref in startBaseCrefs loop
+      if List.isMemberOnTrue(baseCref, valueCrefs, ComponentReferenceBasics.crefEqual) then
+        hasStartCycle := true;
+        Error.addCompilerWarning("Initialization start-value cycle: the start attribute of '" +
+          ComponentReferenceBasics.printComponentRefStr(baseCref) +
+          "' transitively depends on the variable itself, so its start value (only an initial guess) " +
+          "cannot be evaluated before the variable is known. This is sometimes an intentional pattern " +
+          "(a guess refined during initialization) but is often a modeling mistake; if unintended, give '" +
+          ComponentReferenceBasics.printComponentRefStr(baseCref) + "' a start value that does not depend " +
+          "on itself. Use the transformational debugger to inspect the dependency chain.");
+      end if;
+    end for;
+  end if;
+  // forcing activates only for initialization components that exhibit the cycle
+  forceDegree1 := forceDegree1 and hasStartCycle;
+
   // Determine a weight for the nonlinearity of each equation
   eqnNonlinPoints := arrayCreate(size, -1);
   getEquationNonlinearityPoints(eqnNonlinPoints, me, size);
@@ -2104,7 +2158,7 @@ algorithm
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n" + BORDER + "\nBEGINNING of CellierTearing2\n\n");
   end if;
-  (OutTVars, order) := CellierTearing2(false,m,mt,me,meT,ass1,ass2,unsolvables,{},discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
+  (OutTVars, order) := CellierTearing2(false,m,mt,me,meT,ass1,ass2,unsolvables,{},discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints,forceDegree1);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nEND of CellierTearing2\n" + BORDER + "\n\n");
   end if;
@@ -2191,7 +2245,7 @@ algorithm
     if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
       print("\n" + BORDER + "\nBEGINNING of CellierTearing2\n\n");
     end if;
-    (OutTVars, order) := CellierTearing2(false,m,mt,me,meT,ass1,ass2,unsolvables,{},discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
+    (OutTVars, order) := CellierTearing2(false,m,mt,me,meT,ass1,ass2,unsolvables,{},discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints,forceDegree1);
     if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
       print("\nEND of CellierTearing2\n" + BORDER + "\n\n");
     end if;
@@ -2461,6 +2515,7 @@ protected function CellierTearing2 " function to call tearing heuristic and matc
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
   input array<Integer> eqnNonlinPoints;
+  input Boolean forceDegree1 "ticket #15433: enable variable-driven degree-1 forced assignment (set by CellierTearing only for initialization components that have a $START.x->x cycle)";
   output list<Integer> OutTVars;
   output list<Integer> orderOut;
 protected
@@ -2513,7 +2568,7 @@ algorithm
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\n" + BORDER + "\nBEGINNING of TarjanMatching\n\n");
       end if;
-      (order,causal) := TarjanMatching(mIn,mtIn,meIn,ass1In,ass2In,orderIn,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
+      (order,causal) := TarjanMatching(mIn,mtIn,meIn,meTIn,ass1In,ass2In,orderIn,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints,forceDegree1);
       if debug then execStat("Tearing.CellierTearing2 - 1.2"); end if;
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nEND of TarjanMatching\n" + BORDER + "\n\n");
@@ -2535,7 +2590,7 @@ algorithm
       if debug then execStat("Tearing.CellierTearing2 - 1 done"); end if;
 
       // repeat until system is causal
-      (tvars, order) := CellierTearing2(causal,mIn,mtIn,meIn,meTIn,ass1In,ass2In,unsolvables,tvars,discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
+      (tvars, order) := CellierTearing2(causal,mIn,mtIn,meIn,meTIn,ass1In,ass2In,unsolvables,tvars,discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints,forceDegree1);
 
    then
      (tvars,order);
@@ -2575,7 +2630,7 @@ algorithm
       tvars := listAppend(tvars,tvarsIn) annotation(__OpenModelica_DisableListAppendWarning=true);
 
       // assign vars to eqs until complete or partially causalisation(and restart algorithm)
-      (order,causal) := TarjanMatching(mIn,mtIn,meIn,ass1In,ass2In,orderIn,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
+      (order,causal) := TarjanMatching(mIn,mtIn,meIn,meTIn,ass1In,ass2In,orderIn,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints,forceDegree1);
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nEND of TarjanMatching\n" + BORDER + "\n\n");
         print("\n" + BORDER + "\n* TARJAN RESULTS:\n* ass1: " + stringDelimitList(List.mapArray(ass1In, intString),",")+"\n");
@@ -2594,7 +2649,7 @@ algorithm
       if debug then execStat("Tearing.CellierTearing2 - 2"); end if;
 
       // repeat until system is causal
-      (tvars, order) := CellierTearing2(causal,mIn,mtIn,meIn,meTIn,ass1In,ass2In,unsolvables,tvars,discreteVars,{},tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
+      (tvars, order) := CellierTearing2(causal,mIn,mtIn,meIn,meTIn,ass1In,ass2In,unsolvables,tvars,discreteVars,{},tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints,forceDegree1);
 
    then
      (tvars, order);
@@ -3641,11 +3696,13 @@ protected function TarjanMatching "Modified matching algorithm according to Tarj
   input BackendDAE.AdjacencyMatrix mIn;
   input BackendDAE.AdjacencyMatrixT mtIn;
   input BackendDAE.AdjacencyMatrixEnhanced meIn;
+  input BackendDAE.AdjacencyMatrixTEnhanced meTIn;
   input array<Integer> ass1In,ass2In;
   input list<Integer> orderIn;
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
   input array<Integer> eqnNonlinPoints;
+  input Boolean forceDegree1 "ticket #15433: enable variable-driven degree-1 forced assignment (set by CellierTearing only for initialization components that have a $START.x->x cycle)";
   output list<Integer> orderOut;
   output Boolean causal;
 protected
@@ -3658,7 +3715,7 @@ algorithm
     if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
       print("\nTarjanAssignment:\n");
     end if;
-    (order,assignable) := TarjanAssignment(mIn,mtIn,meIn,ass1In,ass2In,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
+    (order,assignable) := TarjanAssignment(mIn,mtIn,meIn,meTIn,ass1In,ass2In,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints,forceDegree1);
   end while;
   if debug then execStat("Tearing.TarjanMatching iters done"); end if;
 
@@ -3685,35 +3742,56 @@ author: ptaeuber FHB 2013-2015"
   input BackendDAE.AdjacencyMatrix mIn;
   input BackendDAE.AdjacencyMatrixT mtIn;
   input BackendDAE.AdjacencyMatrixEnhanced meIn;
+  input BackendDAE.AdjacencyMatrixTEnhanced meTIn;
   input array<Integer> ass1In,ass2In;
   input list<Integer> orderIn;
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
   input array<Integer> eqnNonlinPoints;
+  input Boolean forceDegree1 "ticket #15433: enable variable-driven degree-1 forced assignment (set by CellierTearing only for initialization components that have a $START.x->x cycle)";
   output list<Integer> orderOut = orderIn;
   output Boolean assignable = false;
 protected
   Integer eq_coll;
   list<Integer> assEq_coll, eqns = {}, vars = {};
 algorithm
-  // find equations with one variable
-  assEq_coll := traverseCollectiveEqnsforAssignable(ass2In,mIn,mapEqnIncRow);
-
-  if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-     print("New assEq_coll: "+stringDelimitList(List.map(assEq_coll,intString),",")+"\n");
+  // ticket #15433: variable-driven forced assignment of degree-1 variables. The defect this repairs
+  // is a $START.x variable solvable in exactly one still-unassigned equation (its defining initial
+  // equation) but structurally incident to more than one (it is linked to the state's equations); it
+  // must be matched to its defining equation, otherwise the equation-driven pass below (which matches
+  // on structural incidence) lets a higher-degree variable steal that equation, orphaning the
+  // $START.x variable and producing a structurally singular torn system. forceDegree1 already gates
+  // this to exactly the initialization components that exhibit the $START.x->x cycle (see
+  // CellierTearing), so it runs only where the defect can occur.
+  if forceDegree1 then
+    try
+      (eq_coll,eqns,vars) := getNextDegree1Var(mtIn,meTIn,ass1In,ass2In,mapEqnIncRow,mapIncRowEqn);
+      orderOut := eq_coll::orderOut;
+      assignable := true;
+    else
+    end try;
   end if;
 
-  // NOTE: For tearing of strong components with the same number of equations and variables and with a late choice of the
-  //       residual equation it is not possible to match starting from the variables, so this case is not considered.
-  //       For other tearing structures this case has to be added.
+  if not assignable then
+    // find equations with one variable
+    assEq_coll := traverseCollectiveEqnsforAssignable(ass2In,mIn,mapEqnIncRow);
 
-  // Get the next solvable equation from the equation queue
-  try
-    (eq_coll,eqns,vars) := getNextSolvableEqn(assEq_coll,mIn,meIn,ass1In,ass2In,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
-    orderOut := eq_coll::orderOut;
-    assignable := true;
-  else
-  end try;
+    if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+       print("New assEq_coll: "+stringDelimitList(List.map(assEq_coll,intString),",")+"\n");
+    end if;
+
+    // NOTE: For tearing of strong components with the same number of equations and variables and with a late choice of the
+    //       residual equation it is not possible to match starting from the variables, so this case is not considered.
+    //       For other tearing structures this case has to be added.
+
+    // Get the next solvable equation from the equation queue
+    try
+      (eq_coll,eqns,vars) := getNextSolvableEqn(assEq_coll,mIn,meIn,ass1In,ass2In,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
+      orderOut := eq_coll::orderOut;
+      assignable := true;
+    else
+    end try;
+  end if;
 
   // Make the assignment if possible
   if assignable then
@@ -3724,6 +3802,70 @@ algorithm
     print("order: "+stringDelimitList(List.map(listReverse(orderOut),intString),",")+"\n\n");
   end if;
 end TarjanAssignment;
+
+
+protected function getNextDegree1Var
+ "ticket #15433: finds an unassigned variable that is SOLVABLE in exactly one still-unassigned
+  scalar equation while being STRUCTURALLY incident to more than one, and returns the assignment
+  for it. This is exactly the case the equation-driven pass mishandles: it matches on the plain
+  structural adjacency mtIn, where such a variable looks high-degree (during initialization a
+  $START.x variable is structurally linked to the state's equations), so a higher-degree variable
+  can steal its only solvable equation and orphan it, producing a structurally singular torn
+  system. The solvability is read from the enhanced transposed adjacency meTIn (entries
+  (eqn, solvability, _); unsolvable entries are ignored via BackendDAEUtil.isSolvable). The caller
+  (TarjanAssignment) only invokes this when forceDegree1 is set, which CellierTearing restricts to
+  initialization components that have a $START.x->x cycle (a variable whose start attribute
+  transitively depends on the variable itself) - the only place this matching defect occurs. The
+  search is restricted to variables whose structural degree exceeds their solvable degree, so an
+  ordinary degree-1 variable handled correctly by the equation-driven pass is never reordered here.
+  Only scalar equations are forced, to stay on the safe side of array/collective equations. Fails if
+  there is no such variable."
+  input BackendDAE.AdjacencyMatrixT mtIn;
+  input BackendDAE.AdjacencyMatrixTEnhanced meTIn;
+  input array<Integer> ass1;
+  input array<Integer> ass2;
+  input array<list<Integer>> mapEqnIncRow;
+  input array<Integer> mapIncRowEqn;
+  output Integer eqCollOut;
+  output list<Integer> eqnsOut;
+  output list<Integer> varsOut;
+protected
+  Integer e, eqColl, cnt, theEqn;
+  BackendDAE.Solvability s;
+algorithm
+  for v in 1:arrayLength(meTIn) loop
+    // only consider unassigned variables that the structural pass sees as high-degree (degree > 1);
+    // a variable structurally incident to a single remaining equation is matched there correctly by
+    // the equation-driven pass and must not be reordered here. ticket #15433: only a structurally-
+    // divergent var (struct degree > 1 but solvable degree == 1 below) - the matching defect the
+    // equation-driven pass mishandles - is forced.
+    if arrayGet(ass1, v) == -1 and listLength(arrayGet(mtIn, v)) > 1 then
+      // count the still-unassigned equations this variable can actually be solved in
+      cnt := 0;
+      theEqn := -1;
+      for entry in meTIn[v] loop
+        (e, s, _) := entry;
+        if arrayGet(ass2, e) == -1 and BackendDAEUtil.isSolvable(s) then
+          cnt := cnt + 1;
+          theEqn := e;
+          if cnt > 1 then break; end if;
+        end if;
+      end for;
+      if cnt == 1 then
+        eqColl := mapIncRowEqn[theEqn];
+        // only force scalar equations; the degree-1 variable v must claim theEqn before a
+        // higher-degree variable does.
+        if listLength(mapEqnIncRow[eqColl]) == 1 then
+          eqCollOut := eqColl;
+          eqnsOut := {theEqn};
+          varsOut := {v};
+          return;
+        end if;
+      end if;
+    end if;
+  end for;
+  fail();
+end getNextDegree1Var;
 
 
 protected function traverseSingleEqnsforAssignable

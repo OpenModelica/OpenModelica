@@ -41,6 +41,7 @@ homotopy4_solver.mos \
 homotopy5.mos \
 homotopy6.mos \
 homotopy7.mos \
+initStartTearingDegree1.mos \
 initial_equation.mos \
 parameters.mos \
 parameterWithoutBinding.mos \
