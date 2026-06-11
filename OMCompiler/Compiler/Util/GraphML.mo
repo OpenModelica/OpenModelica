@@ -637,5 +637,5 @@ algorithm
   print("node: "+id+" desc: "+Util.getOption(optDesc)+"\n\tatts: "+atts+"\n");
 end printNode;
 
-annotation(__OpenModelica_Interface="susan");
+annotation(__OpenModelica_Interface="codegen_graphml");
 end GraphML;

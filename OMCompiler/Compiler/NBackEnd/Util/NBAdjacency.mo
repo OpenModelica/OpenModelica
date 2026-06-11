@@ -1848,8 +1848,8 @@ public
         // filter inputs for solvable (not occuring only in conditions)
         inputs := collectDependenciesAlgorithmInputs(eqn.alg.statements, eqn.alg.inputs);
         // collect all crefs expanding potential records
-        inputs  := List.flatten(list(UnorderedSet.toList(collectDependenciesCref(c, 0, map, dep_map, sol_map)) for c in inputs));
-        outputs := List.flatten(list(UnorderedSet.toList(collectDependenciesCref(c, 0, map, dep_map, sol_map)) for c in eqn.alg.outputs));
+        inputs  := List.flatten(list(UnorderedSet.toList(collectDependenciesCref(c, 0, kind, map, dep_map, sol_map, rep_set)) for c in inputs));
+        outputs := List.flatten(list(UnorderedSet.toList(collectDependenciesCref(c, 0, kind, map, dep_map, sol_map, rep_set)) for c in eqn.alg.outputs));
         // create dependencies for inputs and outputs
         Dependency.addListFull(inputs, 0, dep_map, rep_set);
         Dependency.addListFull(outputs, 0, dep_map, rep_set);
@@ -1903,7 +1903,7 @@ public
         Boolean isTuple;
 
       // add a cref dependency
-      case Expression.CREF() then collectDependenciesCref(exp.cref, depth, map, dep_map, sol_map);
+      case Expression.CREF() then collectDependenciesCref(exp.cref, depth, kind, map, dep_map, sol_map, rep_set);
 
       // add skips for arrays
       case Expression.ARRAY(literal = false) algorithm
@@ -1928,7 +1928,8 @@ public
 
       // reduce the dependency and remove skips for these
       case Expression.SUBSCRIPTED_EXP() algorithm
-        set := collectDependencies(exp.exp, depth, kind, map, dep_map, sol_map, rep_set);
+        set := collectDependenciesSubs(exp.subscripts, depth, kind, map, dep_map, sol_map, rep_set);
+        set := UnorderedSet.union(set, collectDependencies(exp.exp, depth, kind, map, dep_map, sol_map, rep_set));
         Dependency.updateList(UnorderedSet.toList(set), listLength(exp.subscripts), true, dep_map);
         Dependency.removeSkipsList(UnorderedSet.toList(set), dep_map);
       then set;
@@ -2095,19 +2096,50 @@ public
     end match;
   end collectDependencies;
 
-  function collectDependenciesCref
-    input ComponentRef cref;
+  function collectDependenciesSubs
+    input list<Subscript> subs;
     input Integer depth;
+    input Partition.Kind kind;
     input UnorderedMap<ComponentRef, Integer> map "unknowns map to check for relevance";
     input UnorderedMap<ComponentRef, Dependency> dep_map;
     input UnorderedMap<ComponentRef, Solvability> sol_map;
+    input UnorderedSet<ComponentRef> rep_set;
     output UnorderedSet<ComponentRef> set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+  algorithm
+    for sub in subs loop
+      try
+        set := UnorderedSet.union(set, collectDependencies(Subscript.toExp(sub), depth, kind, map, dep_map, sol_map, rep_set));
+      else
+        // no expression, no problem
+      end try;
+    end for;
+
+    // mark as unsolvable
+    UnorderedSet.apply(set, function Solvability.update(sol = Solvability.UNSOLVABLE(), map = sol_map));
+  end collectDependenciesSubs;
+
+  function collectDependenciesCref
+    input ComponentRef cref;
+    input Integer depth;
+    input Partition.Kind kind;
+    input UnorderedMap<ComponentRef, Integer> map "unknowns map to check for relevance";
+    input UnorderedMap<ComponentRef, Dependency> dep_map;
+    input UnorderedMap<ComponentRef, Solvability> sol_map;
+    input UnorderedSet<ComponentRef> rep_set;
+    input Boolean doSubscripts = true;
+    output UnorderedSet<ComponentRef> set;
   protected
     Pointer<Variable> var;
     list<ComponentRef> crefs;
     Integer sk = 1;
-    list<Subscript> subs;
+    list<Subscript> subs = ComponentRef.subscriptsAllFlat(cref);
   algorithm
+    if doSubscripts then
+      set := collectDependenciesSubs(subs, depth, kind, map, dep_map, sol_map, rep_set);
+    else
+      set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    end if;
+
     if UnorderedMap.contains(cref, map) then
       if not UnorderedMap.contains(cref, dep_map) then
         UnorderedMap.add(cref, Dependency.create(ComponentRef.getSubscriptedType(cref), depth), dep_map);
@@ -2117,13 +2149,12 @@ public
     else
       var := BVariable.getVarPointer(cref, sourceInfo());
       if BVariable.isRecord(var) then
-        subs := ComponentRef.subscriptsAllFlat(cref);
         // get all Record children
         crefs := list(BVariable.getVarName(child) for child in BVariable.getRecordChildren(var));
         // add original subscripts
         crefs := list(ComponentRef.mergeSubscripts(subs, child) for child in crefs);
         // collect dependencies
-        crefs := List.flatten(list(UnorderedSet.toList(collectDependenciesCref(child, depth + 1, map, dep_map, sol_map)) for child in crefs));
+        crefs := List.flatten(list(UnorderedSet.toList(collectDependenciesCref(child, depth + 1, kind, map, dep_map, sol_map, rep_set, false)) for child in crefs));
         for cref in crefs loop
           UnorderedSet.add(cref, set);
           Dependency.skip(cref, depth + 1, sk, dep_map);

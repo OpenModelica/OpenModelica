@@ -335,7 +335,7 @@ public
 */
 
   function selfMap
-    "Applies a function to all keys in the given set and returns a new set
+    "Applies a self-mapping function to all keys in the given set and returns a new set
      with the new keys of same type as input set."
     input UnorderedSet<T> set;
     input MapFn fn;
@@ -351,6 +351,23 @@ public
       end for;
     end for;
   end selfMap;
+
+  function apply
+    "Applies function fn to all elements in set.
+     fn is expected to have side effects."
+    input UnorderedSet<T> set;
+    input ApplyFn fn;
+
+    partial function ApplyFn
+      input T key;
+    end ApplyFn;
+  algorithm
+    for b in Mutable.access(set.buckets) loop
+      for k in b loop
+        fn(k);
+      end for;
+    end for;
+  end apply;
 
   function all
     "Returns true if the given function returns true for all elements in the set,
