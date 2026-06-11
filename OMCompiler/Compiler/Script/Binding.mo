@@ -1509,5 +1509,5 @@ output Absyn.Exp val;
    end matchcontinue;
 end getValueR;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_tools");
 end Binding;

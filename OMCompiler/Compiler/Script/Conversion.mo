@@ -2819,5 +2819,5 @@ protected
     end match;
   end addComponentTypesToEnv2;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="backend_tools");
 end Conversion;

@@ -1248,5 +1248,5 @@ protected
     outMatches := listReverse(MetaModelica.Dangerous.listReverseInPlace(l) for l in outMatches);
   end groupMatches;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="backend_tools");
 end ReverseLookup;

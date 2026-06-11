@@ -487,5 +487,5 @@ algorithm
   end match;
 end bintreeToListOpt;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_tools");
 end BinaryTreeInt;
