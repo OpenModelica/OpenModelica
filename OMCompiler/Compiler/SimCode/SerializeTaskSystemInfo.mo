@@ -945,5 +945,5 @@ algorithm
   File.write(file,"{}");
 end serializeSource;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_tools");
 end SerializeTaskSystemInfo;

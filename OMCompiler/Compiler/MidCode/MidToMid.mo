@@ -216,6 +216,6 @@ algorithm
   end match;
 end isPopJmp;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_tools");
 
 end MidToMid;

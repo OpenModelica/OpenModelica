@@ -897,5 +897,5 @@ algorithm
   s := ExpressionDump.printExp2Str(e, "'", NONE(),NONE());
 end printExpStr;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_tools");
 end DAEQuery;

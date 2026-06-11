@@ -3545,5 +3545,5 @@ end Follow;
 
 constant Boolean debug = false;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_tools");
 end SimpleModelicaParser;

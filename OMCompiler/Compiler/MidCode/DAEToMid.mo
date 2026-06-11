@@ -1619,6 +1619,6 @@ algorithm
   end match;
 end patternToMidCode2;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_tools");
 
 end DAEToMid;

@@ -4516,5 +4516,5 @@ algorithm
   end match;
 end dumpAliasSets3;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_tools");
 end Uncertainties;
