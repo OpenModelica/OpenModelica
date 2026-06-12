@@ -218,6 +218,10 @@ int main(int argc, char *argv[])
   QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
   QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 #endif
+#ifdef Q_OS_WIN
+  // Set this before creating QApplication. Avoids web engine switch to Direct3DSurface. See issue #15822.
+  qputenv("QSG_RHI_BACKEND", "opengl");
+#endif // #ifdef Q_OS_WIN
   OMEditApplication a(argc, argv, threadData);
 // Do not use the signal handler OR exception filter if user is building a debug version.
 // Perhaps the user wants to use gdb.
