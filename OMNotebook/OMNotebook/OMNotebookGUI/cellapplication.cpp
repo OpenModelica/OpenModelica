@@ -54,11 +54,9 @@
 
 #include "../../../OMCompiler/Compiler/runtime/settingsimpl.h"
 
-// ---------------------------------------------------------------------------
 // Qt headers required for the new screen‑geometry code
-// ---------------------------------------------------------------------------
 #include <QGuiApplication>   // QGuiApplication::primaryScreen()
-#include <QScreen>           // QScreen
+#include <QScreen>
 #include <QApplication>
 #include <QMessageBox>
 #include <QLibraryInfo>
@@ -68,11 +66,12 @@
 
 namespace IAEX
 {
-  //=====================================================================
-  //  MyApp – a tiny subclass of QApplication that forwards
-  //          QFileOpenEvent to CellApplication.
-  //=====================================================================
-  class MyApp : public QApplication {
+  /*!
+   * \class MyApp
+   *
+   * \brief Subclass of QApplication that forwards QFileOpenEvent to CellApplication.
+   */
+ class MyApp : public QApplication {
   private:
       CellApplication *ca = nullptr;
   public:
@@ -92,9 +91,36 @@ namespace IAEX
       }
   };
 
-  //=====================================================================
-  //  CellApplication implementation
-  //=====================================================================
+  /*!
+   * \class CellApplication
+   * \author Ingemar Axelsson and Anders Fernström
+   * \date 2006-04-10 (update)
+   *
+   * \brief Implements the application interface. This class is the
+   * main controller of the program.
+   *
+   * This class has the responsibility to open new windows, open new
+   * documents and handle commands. Commands are sent to a
+   * commandCenter object where they are executed and stored (they
+   * should be stored).
+   *
+   * 2005-10-25 AF, Added a check to see if OMC is running, if not -
+   * try to start OMC.
+   * 2005-12-16 AF, Added code that create an instance of
+   * CommandCompletion, so all commands are loaded from the beginning.
+   * 2005-12-17 AF, Added code that create instance of stylesheet, so
+   * the styles are loaded from the beginning.
+   * 2006-01-09 AF, added a new highlight thread with the
+   * 'openmodelicahighlighter' as the highlighter that should be used.
+   * 2006-02-09 AF, code for starting omc have been moved to the
+   * omc interactive environment.
+   * 2006-02-13 AF, create temp dir
+   * 2006-02-27 AF, use environment variable to find DrModelica
+   * 2006-03-24 AF, first look for DrModelica.onb, and then for
+   * DrModelica.nb
+   * 2006-04-10 AF, use environment variable to find xml files
+   * 2006-04-10 AF, Open file that is sent to main
+   */
   CellApplication::CellApplication(int &argc, char *argv[], threadData_t *threadData)
       : QObject()
   {
@@ -108,9 +134,7 @@ namespace IAEX
           std::exit(1);
       }
 
-      // -----------------------------------------------------------------
       //  Load translations (Qt and application specific)
-      // -----------------------------------------------------------------
       QString locale = QLocale::system().name();
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
@@ -128,28 +152,24 @@ namespace IAEX
       if (translator.load("OMNotebook_" + locale, translationDirectory))
           app_->installTranslator(&translator);
 
-      // -----------------------------------------------------------------
       //  Main window (purely a placeholder – real windows are opened later)
-      // -----------------------------------------------------------------
       mainWindow = new QMainWindow();
 
+      // when last window closed, the application should quit also
       QObject::connect(app_, &QApplication::lastWindowClosed,
                        app_, &QApplication::quit);
 
-      // -----------------------------------------------------------------
-      //  Command centre
-      // -----------------------------------------------------------------
+      // Create a commandCenter
       cmdCenter_ = new CellCommandCenter(this);
 
-      // -----------------------------------------------------------------
-      //  Misc. initialisation
-      // -----------------------------------------------------------------
       setlocale(LC_NUMERIC, "C");               // force C‑style doubles
 
-      // -----------------------------------------------------------------
       //  Initialise the OMC interactive environment
-      // -----------------------------------------------------------------
+      /* Don't move this line
+       * Is important for threadData initialization
+       */
       OmcInteractiveEnvironment *env = OmcInteractiveEnvironment::getInstance(threadData);
+      // Avoid cluttering the whole disk with omc temp-files
       env->evalExpression("setCommandLineOptions(\"+d=shortOutput\")");
       QString tmpDir = OmcInteractiveEnvironment::TmpPath();
 
@@ -166,9 +186,7 @@ namespace IAEX
           std::exit(1);
       }
 
-      // -----------------------------------------------------------------
       //  Load stylesheet.xml
-      // -----------------------------------------------------------------
       QString openmodelica = QString::fromLatin1(installationDirectoryPath);
       try {
           QString stylesheetfile = openmodelica;
@@ -181,9 +199,7 @@ namespace IAEX
           std::exit(-1);
       }
 
-      // -----------------------------------------------------------------
       //  Load commands.xml (command completion)
-      // -----------------------------------------------------------------
       try {
           QString commandfile = openmodelica;
           if (!commandfile.endsWith('/') && !commandfile.endsWith('\\'))
@@ -197,9 +213,7 @@ namespace IAEX
           std::exit(-1);
       }
 
-      // -----------------------------------------------------------------
       //  Either convert DrModelica (if the flag is on) or open the file(s)
-      // -----------------------------------------------------------------
       if (RUN_DRMODELICA_CONVERTION) {
           convertDrModelica();
       } else {
@@ -215,9 +229,9 @@ namespace IAEX
                   open(QString());
               }
           } else {
-              // ---------------------------------------------------------
               //  No command line argument → show splash → open default file
-              // ---------------------------------------------------------
+              // use environment variable to find DrModelica
+              // First try to find DrModelica.onb, then .nb
               QIcon icon(":/Resources/OMNotebook_icon.svg");
               QSplashScreen splash(icon.pixmap(300, 400));
               splash.show();
@@ -245,11 +259,26 @@ namespace IAEX
       }
   }
 
-  //=====================================================================
-  //  Destructor – clean temporary files
-  //=====================================================================
-  CellApplication::~CellApplication()
+  /*!
+   * \author Anders Fernström and Ingemar Axelsson
+   * \date 2006-05-03 (update)
+   *
+   * \brief Class destructor
+   *
+   * 2005-11-24 AF, Added code that quited OMC, if it was still running.
+   * 2005-12-19 AF, Added code that stopped the highlighter thread,
+   * if it is running
+   * 2006-01-16 AF, Go Through remove list and remove all temporary
+   * files.
+   * 2006-02-09 AF, moved code for quiting omc to notebook windows
+   * closeEvent handler
+   * 2006-02-13 AF, remove temp dir
+   * 2006-05-03 AF, delete notebook socket
+   */  CellApplication::~CellApplication()
   {
+      // 2006-02-09 AF, moved code for quiting omc to the notebook windows
+
+      // 2006-01-16 AF, remove temporary files
       QDir dir;
       for (const QString &file : std::as_const(removeList_)) {
           if (!dir.remove(file)) {
@@ -259,26 +288,66 @@ namespace IAEX
       }
   }
 
-  // -----------------------------------------------------------------
-  //  Simple accessor / mutator helpers (unchanged)
-  // -----------------------------------------------------------------
+
+  //  Simple accessor / mutator helpers
+
   CommandCenter *CellApplication::commandCenter()               { return cmdCenter_; }
+
   void           CellApplication::setCommandCenter(CommandCenter *c)
   {
       cmdCenter_ = c;
       cmdCenter_->setApplication(this);
   }
 
+  /*!
+   * \author Anders Fernström and Ingemar Axelsson
+   * \date 2006-01-12 (update)
+   *
+   * 2006-01-12 AF, added so any images in the cell are copied.
+   * 2006-02-13 AF, removed code for copy image
+   *
+   * \todo Create a pasteboard class as a Singleton that should be
+   * used instead of having a singleton inside the application class.
+   * Other things to do is to use the systemwide pasteboard instead.
+   * (Ingemar Axelsson)
+   */
   void CellApplication::addToPasteboard(Cell *c) { pasteboard_.push_back(c); }
+
+  /*!
+   * \author Ingemar Axelsson
+   *
+   * This is used to clear the pasteboard. This is an ugly solution.
+   */
   void CellApplication::clearPasteboard()       { pasteboard_.clear(); }
+
+  /*!
+   * \author Ingemar Axelsson
+   *
+   * \brief returns a std::vector with all content of the pasteboard.
+   */
   std::vector<Cell*> CellApplication::pasteboard() { return pasteboard_; }
   int CellApplication::exec()                  { return app_->exec(); }
   void CellApplication::add(Document *d)       { documents_.push_back(d); }
   void CellApplication::add(DocumentView *d)   { views_.push_back(d); }
 
-  //=====================================================================
-  //  Open a document – *the only place that used QDesktopWidget*
-  //=====================================================================
+  /*!
+   * \author Ingemar Axelsson and Anders Fernström
+   * \date 2006-05-03 (update)
+   *
+   * \brief Open an file, and display the content of the file
+   *
+   * 2005-09-22 AF, added the filename to the NotebookWindow() call
+   * 2005-10-11 AF, Porting, added resize call, so all cells get the
+   * correct size. Ugly way!
+   * 2005-11-30 AF, added code to launch the visitor that applies
+   * hide() and show() to groupcells.
+   * 2005-12-01 AF, added a try-catch statment around the function
+   * 2006-01-17 AF, added code that set the change variable in a
+   * document to false.
+   * 2006-01-31 AF, open windows minimized, then show normal when
+   * all operations are done on the window.
+   * 2006-05-03 AF, during open, stop highlighter
+   */
   void CellApplication::open(const QString filename, int readmode, int isDrModelica)
   {
       try {
@@ -290,8 +359,21 @@ namespace IAEX
           DocumentView *v = new NotebookWindow(d, filename, isDrModelica);
           add(v);
 
+      // 2006-01-31 AF, Open window minimized instead of normal
+
+      //v->showMinimized();
+
+      // 2005-10-11 AF, Porting, added resize so all cells get the
+      // correct size. Ugly way!
+
+      //v->resize( 810, 610 ); //not working with Qt 4.3
+
+      // 2006-01-17 AF, when the document have been opened, set the
+      // changed variable to false.
           // 3. Initialise the view – size, position, etc.
           v->document()->setChanged(false);
+
+      // 2006-01-31 AF, show window again
           v->show();
           v->raise();               // macOS
           v->activateWindow();      // Windows
@@ -300,10 +382,8 @@ namespace IAEX
           for (DocumentView *dv : documentViewList())
               static_cast<NotebookWindow*>(dv)->updateWindowMenu();
 
-          // -----------------------------------------------------------------
           //  Position the window at the top‑left corner and resize it to the
           //  full screen size – using Qt‑6‑compatible API.
-          // -----------------------------------------------------------------
           v->move(0, 0);
 
           // Qt 5 and Qt 6 both provide a QScreen via QGuiApplication.
@@ -327,19 +407,36 @@ namespace IAEX
       }
   }
 
-  // -----------------------------------------------------------------
-  //  Remaining helper functions (unchanged)
-  // -----------------------------------------------------------------
+  /*!
+  * \author Anders Fernström
+  * \date 2006-01-16
+  *
+  * \brief Add filename to a list of temporary files that should
+  * be deleted when the application quits.
+  */
   void CellApplication::removeTempFiles(QString filename)
   {
       removeList_.append(filename);
   }
 
+  /*!
+  * \author Anders Fernström
+  * \date 2006-01-27
+  *
+  * \brief returns list of all current document views
+  */
   std::vector<DocumentView *> CellApplication::documentViewList()
   {
       return views_;
   }
 
+  /*!
+  * \author Anders Fernström
+  * \date 2006-01-27
+  *
+  * \brief remove document view from internal list, also remove
+  * document
+  */
   void CellApplication::removeDocumentView(DocumentView *view)
   {
       // erase from document list
@@ -357,9 +454,21 @@ namespace IAEX
           static_cast<NotebookWindow*>(dv)->updateWindowMenu();
   }
 
-  //=====================================================================
   //  DrModelica conversion (unchanged – never called)
-  //=====================================================================
+  /*!
+  * \author Anders Fernström
+  * \date 2006-03-21
+  *
+  * \brief convert DrModelica documentation into OMNotebook format
+  * (.onb).
+  *
+  * NOT A WORKING FUNCTION
+  * -Temporary function
+  * -The function is not called anywhere.
+  * -The function asume that DrModelia is located in 'C:\OpenModelica132\DrModelicaConv'
+  * -Save documents to 'C:\OpenModelica132\DrModelicaConv'
+  * -remove all .nb file
+  */
   void CellApplication::convertDrModelica()
   {
       std::cout << "CONVERTING DRMODELICA\n---------------------\n\n";
@@ -379,6 +488,7 @@ namespace IAEX
           QDir fileDir(dir.absolutePath() + "/" + dirList.at(i));
           fileDir.setSorting(QDir::Name);
           fileDir.setFilter(QDir::Files);
+          //fileDir.setNameFilters( QStringList(".nb") );
           QStringList fileList = fileDir.entryList();
 
           for (int j = 0; j < fileList.size(); ++j) {
