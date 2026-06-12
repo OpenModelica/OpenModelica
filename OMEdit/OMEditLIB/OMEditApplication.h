@@ -41,7 +41,7 @@
 #define OMEDITAPPLICATION_H
 
 extern "C" {
-#include "meta/meta_modelica.h"
+#include "meta/meta_modelica_data.h"
 }
 
 #include <QApplication>
