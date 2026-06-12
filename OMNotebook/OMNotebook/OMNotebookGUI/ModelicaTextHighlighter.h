@@ -39,9 +39,7 @@
 #ifndef MODELICATEXTHIGHLIGHTER_H
 #define MODELICATEXTHIGHLIGHTER_H
 
-// ---------------------------------------------------------------------------
 // Qt headers
-// ---------------------------------------------------------------------------
 #include <QtCore/QString>
 #include <QtCore/QRegularExpression>
 #include <QtGui/QSyntaxHighlighter>
@@ -85,9 +83,7 @@ private:
 
     QVector<HighlightingRule> mHighlightingRules;
 
-    // -----------------------------------------------------------------------
     //  Text formats (re‑used by many rules)
-    // -----------------------------------------------------------------------
     QTextCharFormat mTextFormat;
     QTextCharFormat mKeywordFormat;
     QTextCharFormat mTypeFormat;

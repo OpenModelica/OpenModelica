@@ -52,32 +52,26 @@
 namespace IAEX
 {
 
-/* -------------------------------------------------------------------------- *
- *  ModelicaTextHighlighter implementation
- * -------------------------------------------------------------------------- */
+//  ModelicaTextHighlighter implementation
 ModelicaTextHighlighter::ModelicaTextHighlighter(QTextDocument *pTextDocument)
     : QSyntaxHighlighter(pTextDocument)
 {
     initializeSettings();
 }
 
-/* -------------------------------------------------------------------------- *
- *  Highlighting rule container – stores a QRegularExpression
- * -------------------------------------------------------------------------- */
+//  Highlighting rule container – stores a QRegularExpression
 struct HighlightingRule
 {
     QRegularExpression mPattern;
     QTextCharFormat   mFormat;
 };
 
-/* -------------------------------------------------------------------------- *
- *  Initialise default colours and regular‑expression based rules
- * -------------------------------------------------------------------------- */
+//  Initialise default colours and regular‑expression based rules
 void ModelicaTextHighlighter::initializeSettings()
 {
     mHighlightingRules.clear();
 
-    // colour definitions ----------------------------------------------------
+    // colour definitions
     mTextFormat.setForeground(QColor(0, 0, 0));          // black
     mKeywordFormat.setForeground(QColor(180, 0, 0));    // dark red
     mTypeFormat.setForeground(QColor(255, 10, 10));     // red
@@ -104,9 +98,7 @@ void ModelicaTextHighlighter::initializeSettings()
     rule.mFormat  = mFunctionFormat;
     mHighlightingRules.append(rule);
 
-    // ----------------------------------------------------------------------
     // keywords
-    // ----------------------------------------------------------------------
     const QStringList keywordPatterns = {
         R"(\balgorithm\b)", R"(\band\b)",            R"(\bannotation\b)",
         R"(\bassert\b)",    R"(\bblock\b)",          R"(\bbreak\b)",
@@ -137,9 +129,7 @@ void ModelicaTextHighlighter::initializeSettings()
         mHighlightingRules.append(rule);
     }
 
-    // ----------------------------------------------------------------------
     // Modelica types
-    // ----------------------------------------------------------------------
     const QStringList typePatterns = {
         R"(\bString\b)", R"(\bInteger\b)", R"(\bBoolean\b)", R"(\bReal\b)"
     };
@@ -151,9 +141,12 @@ void ModelicaTextHighlighter::initializeSettings()
     }
 }
 
-/* -------------------------------------------------------------------------- *
- *  Multiline handling (comments, strings)
- * -------------------------------------------------------------------------- */
+  /*!
+   * \brief ModelicaTextHighlighter::highlightMultiLine
+   * Highlights the multilines text.
+   * Quoted text or multiline comments.
+   * \param text
+   */
 void ModelicaTextHighlighter::highlightMultiLine(const QString &text)
 {
     /* Hand‑written recogniser beats the crap known as QRegEx ;) */
@@ -215,9 +208,7 @@ void ModelicaTextHighlighter::highlightMultiLine(const QString &text)
     }
 }
 
-/* -------------------------------------------------------------------------- *
- *  Highlight a single text block
- * -------------------------------------------------------------------------- */
+//  Highlight a single text block
 void ModelicaTextHighlighter::highlightBlock(const QString &text)
 {
     // default state & base formatting

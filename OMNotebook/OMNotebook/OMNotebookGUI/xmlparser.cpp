@@ -146,6 +146,30 @@ namespace IAEX
 
     if(ba.indexOf("<InputCell") != -1)
     {
+      /*
+      QSettings s(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omnotebook");
+      bool alwaysConvert = s.value("AlwaysConvert", true).toBool();
+      QMessageBox m;
+      int i;
+      if(!alwaysConvert)
+      {
+        m.setWindowTitle("OMNotebook");
+        m.setText("Do you want to convert this file to the current document version?");
+        m.setIcon(QMessageBox::Question);
+        m.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+        QPushButton* always = m.addButton("Always convert old documents", QMessageBox::YesRole );
+
+        i = m.exec();
+
+        if(m.clickedButton() == always)
+        {
+          s.setValue("AlwaysConvert", true);
+          alwaysConvert = true;
+        }
+      }
+
+      if(alwaysConvert || i == QMessageBox::Yes)
+      */
       // convert old InputCell XML to the new GraphCell format
       ba = ba.replace("<InputCell", "<GraphCell").
                 replace("/InputCell>", "/GraphCell>").

@@ -43,12 +43,10 @@
 #define NOTEBOOK_WINDOW_H
 
 
-//STD Headers
+// STD Headers
 #include <map>
 
-// ---------------------------------------------------------------------------
 // Qt headers
-// ---------------------------------------------------------------------------
 #include <QtCore/QHash>
 
 #include <QAction>
@@ -59,9 +57,7 @@
 #include <QWidget>
 #include <QLabel>
 
-// ---------------------------------------------------------------------------
 // IAEX headers
-// ---------------------------------------------------------------------------
 #include "application.h"
 #include "document.h"
 #include "documentview.h"

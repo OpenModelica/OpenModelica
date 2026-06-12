@@ -36,15 +36,11 @@
 #ifndef GRAPHCELL_H_
 #define GRAPHCELL_H_
 
-/*======================================================================
- * Qt headers
- *====================================================================*/
+// Qt headers
 #include <QtGlobal>
 #include <QtWidgets>
 
-/*======================================================================
- * IAEX headers
- *====================================================================*/
+// IAEX headers
 #include "cell.h"
 #include "inputcelldelegate.h"
 #include "document.h"
@@ -55,20 +51,14 @@ class IndentationState;
 
 namespace IAEX {
 
-/*======================================================================
- * Enumerations
- *====================================================================*/
+// Enumerations
 enum graphCellStates { Finished, Eval, Error, Modified };
 
-/*======================================================================
- * Forward declarations
- *====================================================================*/
+// Forward declarations
 class MyTextEdit2;
 class MyTextEdit2a;
 
-/*======================================================================
- * GraphCell – the notebook cell that holds Modelica source code
- *====================================================================*/
+// GraphCell – the notebook cell that holds Modelica source code
 class GraphCell : public Cell
 {
     Q_OBJECT
@@ -237,9 +227,7 @@ private:
     bool inCommand = false;
 };
 
-/*======================================================================
- * MyTextEdit2a – a QPlainTextEdit with line numbers and extra features
- *====================================================================*/
+// MyTextEdit2a – a QPlainTextEdit with line numbers and extra features
 class MyTextEdit2a : public QPlainTextEdit
 {
     Q_OBJECT
@@ -294,9 +282,7 @@ private:
     int indentationLevel(const QString &, bool = true);
 };
 
-/*======================================================================
- * MyAction – thin wrapper that forwards a QAction click to a URL signal
- *====================================================================*/
+// MyAction – thin wrapper that forwards a QAction click to a URL signal
 class MyAction : public QAction
 {
     Q_OBJECT

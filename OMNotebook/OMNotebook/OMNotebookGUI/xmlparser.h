@@ -48,17 +48,13 @@
 #ifndef XMLPARSER_H
 #define XMLPARSER_H
 
-// ---------------------------------------------------------------------------
 // Qt headers
-// ---------------------------------------------------------------------------
 #include <QtCore/QString>
 #include <QDomDocument>
 #include <QDomElement>
 #include <QDomNode>
 
-// ---------------------------------------------------------------------------
 // IAEX headers
-// ---------------------------------------------------------------------------
 #include "nbparser.h"
 #include "document.h"
 #include "factory.h"
@@ -81,15 +77,11 @@ namespace IAEX
     Cell *parse() override;
 
   private:
-    // -----------------------------------------------------------------------
     //  Read‑mode specific helpers
-    // -----------------------------------------------------------------------
     Cell *parseNormal( QDomDocument &domdoc );
     Cell *parseOld   ( QDomDocument &domdoc );
 
-    // -----------------------------------------------------------------------
     //  Normal‑mode traversal helpers
-    // -----------------------------------------------------------------------
     void traverseCells      ( Cell *parent, QDomNode &node );
     void traverseGroupCell  ( Cell *parent, QDomElement &element );
     void traverseTextCell   ( Cell *parent, QDomElement &element );
@@ -99,14 +91,10 @@ namespace IAEX
 
     void addImage( Cell *parent, QDomElement &element );
 
-    // -----------------------------------------------------------------------
     //  Old‑format traversal helper
-    // -----------------------------------------------------------------------
     void xmltraverse( Cell *parent, QDomNode &node );
 
-    // -----------------------------------------------------------------------
     //  Member variables
-    // -----------------------------------------------------------------------
     QString   filename_;
     Factory  *factory_;
     Document *doc_;
