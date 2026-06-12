@@ -48,7 +48,7 @@ val(w, 0.0);
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: Initialization start-value cycle: the start attribute of 'x' transitively depends on the variable itself, so its start value (only an initial guess) cannot be evaluated before the variable is known. This is sometimes an intentional pattern (a guess refined during initialization) but is often a modeling mistake; if unintended, give 'x' a start value that does not depend on itself. Use the transformational debugger to inspect the dependency chain.
+// "Warning: Initialization start-value cycle: the start attribute of 'x' depends, directly or transitively, on the variable itself. The start attribute defines the initial value of 'x' and therefore cannot be computed from it, so this start value cannot be used to initialize the variable (see Modelica Specification section 4.9.6). This is possibly a modeling error; if unintended, give 'x' a start value that does not depend on itself. Use the transformational debugger to inspect the dependency chain.
 // "
 // 1.0
 // 2.0
