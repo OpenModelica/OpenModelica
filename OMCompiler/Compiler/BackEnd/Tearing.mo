@@ -2006,7 +2006,8 @@ protected
   list<BackendDAE.Var> var_lst;
   Boolean linear,b,noDynamicStateSelection,dynamicTearing,forceDegree1,hasStartCycle;
   DAE.ComponentRef cref;
-  list<DAE.ComponentRef> startBaseCrefs, valueCrefs;
+  list<DAE.ComponentRef> startBaseCrefs, valueCrefs, cyclicBaseCrefs;
+  BackendDAE.AdjacencyMatrixTEnhanced meTFull;
   String s,modelName;
   constant Boolean debug = false;
 algorithm
@@ -2088,6 +2089,7 @@ algorithm
   // variable (with subscripts), because a start value that depends on its own variable is an
   // ill-posed initialization; the transformational debugger can be used to inspect the full chain.
   hasStartCycle := false;
+  cyclicBaseCrefs := {};
   if forceDegree1 then
     startBaseCrefs := {};
     valueCrefs := {};
@@ -2103,18 +2105,33 @@ algorithm
     for baseCref in startBaseCrefs loop
       if List.isMemberOnTrue(baseCref, valueCrefs, ComponentReferenceBasics.crefEqual) then
         hasStartCycle := true;
-        Error.addCompilerWarning("Initialization start-value cycle: the start attribute of '" +
-          ComponentReferenceBasics.printComponentRefStr(baseCref) +
-          "' transitively depends on the variable itself, so its start value (only an initial guess) " +
-          "cannot be evaluated before the variable is known. This is sometimes an intentional pattern " +
-          "(a guess refined during initialization) but is often a modeling mistake; if unintended, give '" +
-          ComponentReferenceBasics.printComponentRefStr(baseCref) + "' a start value that does not depend " +
-          "on itself. Use the transformational debugger to inspect the dependency chain.");
+        cyclicBaseCrefs := baseCref :: cyclicBaseCrefs;
       end if;
     end for;
   end if;
-  // forcing activates only for initialization components that exhibit the cycle
-  forceDegree1 := forceDegree1 and hasStartCycle;
+  // ticket #15433: a $START.x->x cycle is always an ill-posed start value (MLS 4.9.6 - the start
+  // attribute of x cannot be computed from x). Always warn, regardless of whether the degree-1
+  // forcing below is needed to keep initialization solvable, and let the modeler decide whether the
+  // dependency is intended: even when initialization still succeeds, the start value (a guess) is
+  // never actually used to initialize the variable.
+  for baseCref in cyclicBaseCrefs loop
+    Error.addCompilerWarning("Initialization start-value cycle: the start attribute of '" +
+      ComponentReferenceBasics.printComponentRefStr(baseCref) +
+      "' depends, directly or transitively, on the variable itself. The start attribute defines the " +
+      "initial value of '" + ComponentReferenceBasics.printComponentRefStr(baseCref) + "' and therefore " +
+      "cannot be computed from it, so this start value cannot be used to initialize the variable (see " +
+      "Modelica Specification section 4.9.6). This is possibly a modeling error; if unintended, give '" +
+      ComponentReferenceBasics.printComponentRefStr(baseCref) + "' a start value that does not depend on " +
+      "itself. Use the transformational debugger to inspect the dependency chain.");
+  end for;
+  // ticket #15433: a $START.x->x cycle is NECESSARY but NOT SUFFICIENT to need the degree-1
+  // forcing. Such a cycle is always an ill-posed start value (the start attribute of x cannot be
+  // computed from x), but many initialization components with one (e.g. the lag/limiter blocks in
+  // the OpenIPSL PSSE controllers) still tear and initialize correctly, because $START.x keeps its
+  // own defining equation; forcing them only reorders a healthy system and breaks it. So we do NOT
+  // decide here. We first run the plain Cellier pass below and only re-run it with forcing if that
+  // plain pass actually orphans a $START.x variable, leaving a structurally singular torn set - the
+  // cable defect. 'forceDegree1' stays the init-DAE eligibility flag, passed as 'false' to pass one.
 
   // Determine a weight for the nonlinearity of each equation
   eqnNonlinPoints := arrayCreate(size, -1);
@@ -2158,9 +2175,41 @@ algorithm
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n" + BORDER + "\nBEGINNING of CellierTearing2\n\n");
   end if;
-  (OutTVars, order) := CellierTearing2(false,m,mt,me,meT,ass1,ass2,unsolvables,{},discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints,forceDegree1);
+  // ticket #15433: keep an unmutated copy of the enhanced transposed adjacency (variable ->
+  // (equation, solvability)); CellierTearing2 consumes the adjacency matrices while matching, but
+  // the structural-singularity test below needs the original incidence/solvability of every
+  // variable. Only the initialization DAE can take the forcing path, so for the simulation DAE skip
+  // the copy entirely (meTFull is then never read).
+  meTFull := if forceDegree1 then arrayCopy(meT) else meT;
+  // First pass: plain Cellier tearing, never forced.
+  (OutTVars, order) := CellierTearing2(false,m,mt,me,meT,ass1,ass2,unsolvables,{},discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints,false);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nEND of CellierTearing2\n" + BORDER + "\n\n");
+  end if;
+
+  // ticket #15433: only the cable's defect needs the degree-1 forcing. The equation-driven Cellier
+  // pass matches on plain structural incidence, so a variable that is structurally incident to
+  // several equations but solvable in only one (the cable's $START.x, solvable only in its defining
+  // equation $START.x = sp) can be matched to an equation where it cannot be solved - a structurally
+  // singular assignment that makes initialization fail. If this initialization component has a
+  // $START.x->x cycle AND the plain matching contains such an unsolvable assignment, redo the
+  // tearing with the variable-driven degree-1 forcing, which matches $START.x to its defining
+  // equation and removes the singularity. A component whose plain matching is fully solvable - i.e.
+  // one that already initializes correctly, like the OpenIPSL PSSE controllers - is left untouched.
+  if forceDegree1 and hasStartCycle and tornMatchingIsStructurallySingular(ass2, meTFull, size, vars) then
+    // CellierTearing2 consumed the adjacency matrices, so rebuild them before the forced re-run.
+    subsyst := BackendDAEUtil.createEqSystem(vars, eqns);
+    (subsyst,m,mt,_,_) := BackendDAEUtil.getAdjacencyMatrixScalar(subsyst, BackendDAE.NORMAL(),NONE(), BackendDAEUtil.isInitializationDAE(ishared));
+    m := Array.map(m,deleteNegativeEntries);
+    mt := Array.map(mt,deleteNegativeEntries);
+    (me,meT,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subsyst,ishared,false);
+    unsolvables := getUnsolvableVars(size,meT);
+    eqnNonlinPoints := arrayCreate(size, -1);
+    getEquationNonlinearityPoints(eqnNonlinPoints, me, size);
+    ass1 := arrayCreate(size,-1);
+    ass2 := arrayCreate(size,-1);
+    order := {};
+    (OutTVars, order) := CellierTearing2(false,m,mt,me,meT,ass1,ass2,unsolvables,{},discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints,true);
   end if;
 
   // check if tearing makes sense
@@ -2245,7 +2294,9 @@ algorithm
     if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
       print("\n" + BORDER + "\nBEGINNING of CellierTearing2\n\n");
     end if;
-    (OutTVars, order) := CellierTearing2(false,m,mt,me,meT,ass1,ass2,unsolvables,{},discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints,forceDegree1);
+    // ticket #15433: the degree-1 forcing is only applied to the strict set (above) when its plain
+    // pass is singular; never force the casual/dynamic set.
+    (OutTVars, order) := CellierTearing2(false,m,mt,me,meT,ass1,ass2,unsolvables,{},discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints,false);
     if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
       print("\nEND of CellierTearing2\n" + BORDER + "\n\n");
     end if;
@@ -3866,6 +3917,83 @@ algorithm
   end for;
   fail();
 end getNextDegree1Var;
+
+protected function tornMatchingIsStructurallySingular
+ "ticket #15433: returns true when the plain Cellier matching left a variable that is solvable in
+  EXACTLY ONE equation (per the enhanced solvability adjacency) matched to some OTHER variable, so
+  that degree-1 variable is orphaned and can be solved nowhere - a structural singularity. This is
+  the cable's $START.x defect: its single defining equation $START.x = sp is stolen by the high-
+  degree r_start, leaving $START.x to be paired with a pin equation it does not occur in. The
+  degree-1 forcing repairs exactly this (it gives every degree-1-solvable variable its unique
+  equation), so this test is symmetric with the forcing: it fires precisely when forcing would
+  change the matching. A healthy matching - e.g. the OpenIPSL PSSE controllers, which initialize
+  correctly without forcing - gives every degree-1-solvable variable its unique solvable equation
+  and returns false, so those components are left on the plain (master) result.
+  ass2[e] is the variable matched to scalar equation e - the SAME index space as the enhanced
+  matrix equation indices and as getNextDegree1Var's ass2 use. The value of ass2[e] discriminates
+  the two start-cycle classes: a POSITIVE variable index means equation e is solved for THAT other
+  variable, so a degree-1 variable whose only solvable equation is taken this way is genuinely
+  orphaned (the cable's $START.x defect -> singular); a value of -2 means e became a RESIDUAL
+  (getNextSolvableEqn marks unsolvable/residual rows with -2), in which case the degree-1 variable is
+  simply the iteration variable of a residual it actually occurs in - the normal, non-singular
+  nonlinear tearing of the OpenIPSL PSSE controllers, which initialize correctly without forcing.
+  meTFull is the UNMUTATED enhanced transposed adjacency (variable -> list of (equation, solvability,
+  _))."
+  input array<Integer> ass2;
+  input BackendDAE.AdjacencyMatrixTEnhanced meTFull;
+  input Integer size;
+  input BackendDAE.Variables vars;
+  output Boolean singular = false;
+protected
+  Integer ev, cnt, theEqn, owner;
+  BackendDAE.Solvability s;
+  DAE.ComponentRef cref;
+algorithm
+  for v in 1:size loop
+    cref := BackendVariable.varCref(BackendVariable.getVarAt(vars, v));
+    // restrict to the start-value-cycle singularity: only a $START.x variable orphaned this way is
+    // the cable defect. A non-$START value variable whose unique solvable equation is taken by
+    // another variable (e.g. AC8B's rotatingExciterWithDemagnetizationVarLim.feedback.y) instead
+    // becomes the iteration variable of a residual it DOES occur in - non-singular, and forcing it
+    // only reorders a healthy system and breaks initialization.
+    if ComponentReference.isStartCref(cref) then
+      // count the equations $START.x can actually be solved in (enhanced solvability), recording the
+      // unique one when there is exactly one
+      cnt := 0;
+      theEqn := -1;
+      for entry in arrayGet(meTFull, v) loop
+        (ev, s, _) := entry;
+        if BackendDAEUtil.isSolvable(s) then
+          cnt := cnt + 1;
+          theEqn := ev;
+          if cnt > 1 then break; end if;
+        end if;
+      end for;
+      // $START.x is solvable in exactly ONE equation (its defining equation $START.x = sp). The
+      // variable that equation got matched to (ass2[theEqn]) decides whether the matching is sound:
+      //   owner == v   -> $START.x kept its own defining equation: correctly matched, healthy
+      //                   (the OpenIPSL PSSE controllers - they initialize without forcing).
+      //   owner == -2  -> that equation became a residual and $START.x iterates it (it occurs there
+      //                   solvably): non-singular, healthy.
+      //   owner > 0, <> v -> a DIFFERENT real variable (e.g. the cable's high-degree r_start) stole
+      //                   the only equation $START.x could be solved in: $START.x is orphaned.
+      //   owner == -1  -> the equation is left unmatched and $START.x is orphaned (the inlined-
+      //                   parameter case of the minimal reproducer InitStartTearingDegree1).
+      // In the two orphaned cases $START.x can be solved nowhere and ends up paired with a residual it
+      // does not occur in -> zero Jacobian column -> structurally singular. The degree-1 forcing
+      // repairs exactly this by giving $START.x its defining equation back.
+      if cnt == 1 then
+        owner := arrayGet(ass2, theEqn);
+        if owner <> v and owner <> -2 then
+          // $START.x is orphaned -> the matching is structurally singular; one such variable is
+          // enough to require the degree-1 forcing for this component
+          singular := true;
+          return;
+        end if;
+      end if;
+    end if;
+  end for;
+end tornMatchingIsStructurallySingular;
 
 
 protected function traverseSingleEqnsforAssignable
