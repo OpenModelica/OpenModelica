@@ -451,7 +451,7 @@ namespace IAEX
 
       // refresh all window menus
       for (DocumentView *dv : documentViewList())
-          static_cast<NotebookWindow*>(dv)->updateWindowMenu();
+        dv->updateWindowMenu();
   }
 
   //  DrModelica conversion (unchanged – never called)

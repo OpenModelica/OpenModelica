@@ -85,13 +85,8 @@ namespace IAEX
       textFormat_.setFontPointSize( 12 );
 
       textFormat_.setForeground( QBrush( QColor(0,0,0) ));
-
-      // defalut visibliity
-      visible_ = true;
-
-      // defalut chapter level
-      chapterLevel_ = 0;
     }
+
     virtual ~CellStyle(){}
 
     QString name(){ return name_; }
@@ -111,11 +106,10 @@ namespace IAEX
   private:
     QString name_;
     QTextCharFormat textFormat_;
-        QTextFrameFormat frameFormat_;
-    int alignment_;
-
-    bool visible_;
-    int chapterLevel_;
+    QTextFrameFormat frameFormat_;
+    int alignment_ = Qt::AlignLeft;
+    bool visible_ = true;
+    int chapterLevel_ = 0;
   };
 }
 

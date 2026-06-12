@@ -52,6 +52,14 @@
 namespace IAEX
 {
 
+enum BlockState
+{
+  DefaultState,
+  SingleLineComment,
+  MultiLineComment,
+  QuotedString
+};
+
 //  ModelicaTextHighlighter implementation
 ModelicaTextHighlighter::ModelicaTextHighlighter(QTextDocument *pTextDocument)
     : QSyntaxHighlighter(pTextDocument)
@@ -151,31 +159,31 @@ void ModelicaTextHighlighter::highlightMultiLine(const QString &text)
 {
     /* Hand‑written recogniser beats the crap known as QRegEx ;) */
     int index = 0, startIndex = 0;
-    int blockState = previousBlockState();
+    BlockState blockState = static_cast<BlockState>(previousBlockState());
 
     while (index < text.length()) {
         switch (blockState) {
-        case 1: // inside a single‑line comment
+        case BlockState::SingleLineComment:
             if (text[index] == '/' && index + 1 < text.length() && text[index + 1] == '/') {
-                ++index;               // stay in the comment state
-                blockState = 1;
+                ++index;
+                blockState = BlockState::SingleLineComment; // stay in the comment state
             }
             break;
 
-        case 2: // inside a multi‑line comment
+        case BlockState::MultiLineComment:
             if (text[index] == '*' && index + 1 < text.length() && text[index + 1] == '/') {
                 ++index;
                 setFormat(startIndex, index - startIndex + 1, mMultiLineCommentFormat);
-                blockState = 0;
+                blockState = BlockState::DefaultState;
             }
             break;
 
-        case 3: // inside a quoted string
+        case BlockState::QuotedString:
             if (text[index] == '\\') {
                 ++index;               // escape sequence – skip next char
             } else if (text[index] == '"') {
                 setFormat(startIndex, index - startIndex + 1, mQuotationFormat);
-                blockState = 0;
+                blockState = BlockState::DefaultState;
             }
             break;
 
@@ -183,13 +191,13 @@ void ModelicaTextHighlighter::highlightMultiLine(const QString &text)
             if (text[index] == '/' && index + 1 < text.length() && text[index + 1] == '/') {
                 startIndex = index++;
                 setFormat(startIndex, text.length() - startIndex, mSingleLineCommentFormat);
-                blockState = 1;
+                blockState = BlockState::SingleLineComment;
             } else if (text[index] == '/' && index + 1 < text.length() && text[index + 1] == '*') {
                 startIndex = index++;
-                blockState = 2;
+                blockState = BlockState::MultiLineComment;
             } else if (text[index] == '"') {
                 startIndex = index;
-                blockState = 3;
+                blockState = BlockState::QuotedString;
             }
             break;
         }
@@ -197,13 +205,13 @@ void ModelicaTextHighlighter::highlightMultiLine(const QString &text)
     }
 
     switch (blockState) {
-    case 2:
+      case BlockState::MultiLineComment:
         setFormat(startIndex, text.length() - startIndex, mMultiLineCommentFormat);
-        setCurrentBlockState(2);
+        setCurrentBlockState(BlockState::MultiLineComment);
         break;
-    case 3:
+      case BlockState::QuotedString:
         setFormat(startIndex, text.length() - startIndex, mQuotationFormat);
-        setCurrentBlockState(3);
+        setCurrentBlockState(BlockState::QuotedString);
         break;
     }
 }
