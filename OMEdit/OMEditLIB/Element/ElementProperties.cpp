@@ -51,6 +51,11 @@
 #include <QStringList>
 #include <QStringBuilder>
 
+/* Minimum width for the parameter value field (text box and combobox).
+ * Ensures that the value is visible by default without having to enlarge the dialog. See issue #15808.
+ */
+static int DefaultMinimumWidthForValue = 100;
+
 /*!
  * \class FinalEachToolButton
  * \brief Creates a toolbutton with drop menu for final and each modifiers.
@@ -715,6 +720,7 @@ void Parameter::createValueWidget()
     case Parameter::Normal:
     default:
       mpValueTextBox = new QLineEdit;
+      mpValueTextBox->setMinimumWidth(DefaultMinimumWidthForValue);
       mpValueTextBox->installEventFilter(this);
       connect(mpValueTextBox, &QLineEdit::textEdited, this, &Parameter::valueTextBoxChanged);
       break;
@@ -728,6 +734,7 @@ void Parameter::createValueWidget()
 void Parameter::createValueComboBox()
 {
   mpValueComboBox = new ComboBox;
+  mpValueComboBox->setMinimumWidth(DefaultMinimumWidthForValue);
   mpValueComboBox->setEditable(true);
   mpValueComboBox->setInsertPolicy(QComboBox::NoInsert);
   mpValueComboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
