@@ -57,15 +57,15 @@ namespace IAEX
   public:
     LatexCell(Document *doc, QWidget *parent=0);
     virtual ~LatexCell();
-    QString text();
-    QString textHtml();
+    QString text() override;
+    QString textHtml() override;
     QTextDocument* document() override;
     virtual QString textOutput();
     virtual QString textOutputHtml();
-    virtual QTextCursor textCursor();
-    virtual QTextEdit* textEdit();
+    virtual QTextCursor textCursor() override;
+    virtual QTextEdit* textEdit() override;
     virtual QTextEdit* textEditOutput();
-    virtual void viewExpression(const bool){}
+    void viewExpression(const bool) override;
     void cutText() override;
     void copyText() override;
     void pasteText() override;
@@ -74,11 +74,11 @@ namespace IAEX
     void clearSelection() override;
     void moveCursor(QTextCursor::MoveOperation operation) override;
 
-    virtual void addCellWidgets();
-    virtual void removeCellWidgets();
-    virtual void accept(Visitor &v);
+    virtual void addCellWidgets() override;
+    virtual void removeCellWidgets() override;
+    virtual void accept(Visitor &v) override;
     virtual bool isClosed();
-    virtual bool isEditable();
+    virtual bool isEditable() override;
     virtual bool isEvaluated();
 
   signals:
@@ -95,26 +95,26 @@ namespace IAEX
     void clickEvent();
     void clickEventOutput();
     void contentChanged();
-    void setText(QString text);
-    void setTextHtml(QString html);
+    void setText(QString text) override;
+    void setTextHtml(QString html) override;
     virtual void setTextOutput(QString output);
     virtual void setTextOutputHtml(QString html);
-    void setStyle(const QString &stylename);
-    void setStyle(CellStyle style);
+    void setStyle(const QString &stylename) override;
+    void setStyle(CellStyle style) override;
     void setChapterCounter(QString number);
     QString ChapterCounter();
     QString ChapterCounterHtml();
-    void setReadOnly(const bool readonly);
+    void setReadOnly(const bool readonly) override;
     void setEvaluated(const bool evaluated);
-    void setClosed(const bool closed, bool update = true);
-    virtual void setFocus(const bool focus);
+    void setClosed(const bool closed, bool update = true) override;
+    virtual void setFocus(const bool focus) override;
     virtual void setFocusOutput(const bool focus);
     void setExpr(QString);
     void setState(int state);
 
   protected:
-    void resizeEvent(QResizeEvent *event);
-    void mouseDoubleClickEvent(QMouseEvent *);
+    void resizeEvent(QResizeEvent *event) override;
+    void mouseDoubleClickEvent(QMouseEvent *) override;
     void clear();
 
   private slots:

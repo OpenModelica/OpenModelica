@@ -34,7 +34,6 @@
  */
 
 #include "indent.h"
-#include <QRegExp>
 #include <QRegularExpression>
 #include <QMessageBox>
 #include <QDebug>

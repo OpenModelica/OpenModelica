@@ -36,8 +36,7 @@
 // REMADE LARGE PART OF THIS CLASS 2005-11-30 /AF
 
 /*!
-* \file xmlparser
-.cpp
+* \file xmlparser.cpp
 * \author Anders Fernstrom (and Ingemar Axelsson)
 * \date 2005-11-30
 *
@@ -47,20 +46,21 @@
 */
 
 
-//STD Headers
+// STD Headers
 #include <iostream>
 #include <exception>
 #include <stdexcept>
 #include <string>
 #include <typeinfo>
 
-//QT Headers
+// Qt Headers
 #include <QtGlobal>
 #include <QtWidgets>
 #include <QDomNode>
+#include <QtCore/QRegularExpression>
 #define fromAscii fromLatin1
 
-//IAEX Headers
+// IAEX Headers
 #include "xmlparser.h"
 #include "factory.h"
 #include "inputcell.h"
@@ -101,9 +101,9 @@ namespace IAEX
   XMLParser::XMLParser( const QString filename, Factory *factory,
     Document *document, int readmode )
     : filename_( filename ),
-    factory_( factory ),
-    doc_( document ),
-    readmode_( readmode )
+      factory_( factory ),
+      doc_( document ),
+      readmode_( readmode )
   {
   }
 
@@ -133,8 +133,6 @@ namespace IAEX
     }
 
     QByteArray ba = file.readAll();
-
-
 
     if(filename_.endsWith(".onbz", Qt::CaseInsensitive))
     {
@@ -172,10 +170,10 @@ namespace IAEX
 
       if(alwaysConvert || i == QMessageBox::Yes)
       */
+      // convert old InputCell XML to the new GraphCell format
       ba = ba.replace("<InputCell", "<GraphCell").
-        replace("/InputCell>", "/GraphCell>").
-        replace("style=\"Input\"", "style=\"Graph\"");
-
+                replace("/InputCell>", "/GraphCell>").
+                replace("style=\"Input\"", "style=\"Graph\"");
     }
 
     if(!domdoc.setContent(ba))
@@ -248,15 +246,6 @@ namespace IAEX
     {
       throw e;
     }
-
-/* Do not throw an error if empty notebook is opened
-    // check if root cell is empty
-    if( !rootcell->hasChilds() )
-    {
-      std::string msg = "File " + filename_.toStdString() + " is empty";
-      throw std::runtime_error( msg.c_str() );
-    }
-*/
 
     return rootcell;
   }
@@ -406,7 +395,6 @@ namespace IAEX
     // create textcell with the saved style
     Cell *textcell = factory_->createCell( style, parent );
 
-
     // go through all children in text cell/element
     QDomNode node = element.firstChild();
     while( !node.isNull() )
@@ -416,48 +404,53 @@ namespace IAEX
       {
         if( e.tagName() == XML_TEXT )
         {
-
           // adrpo --> add URL conversion because Qt 4.4.2 doesn't accept \ in the URL!
           QString text = e.text();
+
           // replace all href="...\..." with href=".../..."
           QString pattern("(href[^=]*=[^\"]*\"[^\"\\\\]*)\\\\([^\"]*\")");
 #if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
           QRegularExpression rx(pattern, QRegularExpression::CaseInsensitiveOption);
 #else
-          QRegExp rx(pattern);
-          rx.setCaseSensitivity(Qt::CaseInsensitive);
-          rx.setMinimal(true);
-          rx.setPatternSyntax(QRegExp::RegExp);
+          QRegularExpression rx(pattern);
+rx.setPatternOptions(QRegularExpression::CaseInsensitiveOption | QRegularExpression::InvertedGreedinessOption);
+
 #endif
           if (!rx.isValid())
           {
             fprintf(stderr, "Invalid QRegExp(%s)\n", rx.pattern().toStdString().c_str());
           }
 #if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
-  QRegularExpressionMatch match = rx.match(text);
-  while (match.hasMatch())
-  {
-    text = text.replace(rx, match.captured(1) + QString::fromAscii("/") + match.captured(2));
-    match = rx.match(text);
-  }
-  textcell->setTextHtml(text);
-#else
-          int done = rx.indexIn(text);
-          if (done > -1)
+          QRegularExpressionMatch match = rx.match(text);
+          while (match.hasMatch())
           {
-            while (done > -1)
-            {
-              // int numX = rx.numCaptures(); QString s1 = rx.cap(1),s2 = rx.cap(2);
-              // std::cout << numX << " " << s1.toStdString() << "-" << s2.toStdString() << std::endl;
-              text = text.replace(rx, rx.cap(1) + QString::fromAscii("/") + rx.cap(2));
-              done = rx.indexIn(text);
-            }
-            textcell->setTextHtml( text );
-            // fprintf(stderr, "str->%s %d\n", text.toStdString().c_str());
+            text = text.replace(rx, match.captured(1) + QString::fromAscii("/") + match.captured(2));
+            match = rx.match(text);
           }
-          else // we haven't found any "\"
+
+          textcell->setTextHtml(text);
+#else
+          QRegularExpressionMatch match = rx.match(text);
+          if (match.hasMatch())
           {
-            textcell->setTextHtml( text );
+              while (match.hasMatch())
+              {
+                  // int numX = match.lastCapturedIndex(); 
+                  // QString s1 = match.captured(1);
+                  // QString s2 = match.captured(2);
+                  
+                  // Ersetzt das erste Vorkommen des Treffers im Text
+                  text.replace(match.capturedStart(0), match.capturedLength(0), 
+                              match.captured(1) + QStringLiteral("/") + match.captured(2));
+                  
+                  // Suche erneut im modifizierten Text
+                  match = rx.match(text);
+              }
+              textcell->setTextHtml(text);
+          }
+          else // Keine Treffer gefunden
+          {
+              textcell->setTextHtml(text);
           }
 #endif
         }
@@ -565,8 +558,6 @@ namespace IAEX
 
   void XMLParser::traverseGraphCell( Cell *parent, QDomElement &element )
   {
-
-
     // Get the style value
     QString style = element.attribute( XML_STYLE, "Graph" );
     // create inputcell with the saved style
@@ -574,7 +565,6 @@ namespace IAEX
 
     graphcell->setStyle(QString("Input"));
     //    graphcell->setStyle(style);
-
 
     // go through all children in input cell/element
     QString text;
@@ -726,68 +716,56 @@ namespace IAEX
 
   void XMLParser::traverseLatexCell( Cell *parent, QDomElement &element )
   {
+    // Get the style value
+    QString style = element.attribute( XML_STYLE, "Latex" );
+    // create latexcell with the saved style
+    Cell *latexcell = factory_->createCell( style, parent );
 
-      // Get the style value
-      QString style = element.attribute( XML_STYLE, "Latex" );
-      // create latexcell with the saved style
-      Cell *latexcell = factory_->createCell( style, parent );
-
-      // go through all children in input cell/element
-      QString text;
-      QDomNode node = element.firstChild();
-      while( !node.isNull() )
+    // go through all children in input cell/element
+    QString text;
+    QDomNode node = element.firstChild();
+    while( !node.isNull() )
+    {
+      QDomElement e = node.toElement();
+      if( !e.isNull() )
       {
-        QDomElement e = node.toElement();
-        if( !e.isNull() )
+        if( e.tagName() == XML_INPUTPART )
         {
-          if( e.tagName() == XML_INPUTPART )
-          {
-            text = e.text();
-            LatexCell *gCell = dynamic_cast<LatexCell*>(latexcell);
-            gCell->setTextHtml(text);
-          }
-          else if( e.tagName() == XML_OUTPUTPART )
-          {
-            LatexCell *iCell = dynamic_cast<LatexCell*>(latexcell);
-            iCell->setTextOutput(e.text());
-          }
-          else if( e.tagName() == XML_IMAGE )
-          {
-            addImage( latexcell, e );
-          }
-          else if( e.tagName() == XML_RULE )
-          {
-            latexcell->addRule(
-              new Rule( e.attribute( XML_NAME, "" ), e.text() ));
-          }
-          else
-          {
-            std::string msg = "Unknown tagname " + e.tagName().toStdString() + ", in Latex cell";
-            throw std::runtime_error( msg.c_str() );
-          }
+          text = e.text();
+          LatexCell *gCell = dynamic_cast<LatexCell*>(latexcell);
+          gCell->setTextHtml(text);
         }
-
-        node = node.nextSibling();
+        else if( e.tagName() == XML_OUTPUTPART )
+        {
+          LatexCell *iCell = dynamic_cast<LatexCell*>(latexcell);
+          iCell->setTextOutput(e.text());
+        }
+        else if( e.tagName() == XML_IMAGE )
+        {
+          addImage( latexcell, e );
+        }
+        else if( e.tagName() == XML_RULE )
+        {
+          latexcell->addRule(
+            new Rule( e.attribute( XML_NAME, "" ), e.text() ));
+        }
+        else
+        {
+          std::string msg = "Unknown tagname " + e.tagName().toStdString() + ", in Latex cell";
+          throw std::runtime_error( msg.c_str() );
+        }
       }
 
-      // set style, before set text, so all rules are applied to the style
+      node = node.nextSibling();
+    }
 
-      //    graphcell->setStyle(QString("Graph"));
+    // set style, before set text, so all rules are applied to the style
 
-      //    graphcell->setText( text ); //fjass
+    //    graphcell->setStyle(QString("Graph"));
 
-      /* LatexCell *gCell = dynamic_cast<LatexCell*>(latexcell);
+    //    graphcell->setText( text ); //fjass
 
-      QString closed = element.attribute( XML_CLOSED, XML_FALSE );
-      if( closed == XML_TRUE )
-        gCell->setClosed( true,true );
-      else if( closed == XML_FALSE )
-        gCell->setClosed( false,true );
-      else
-        throw std::runtime_error( "Unknown closed value in latexcell" ); */
-
-      parent->addChild(latexcell);
-
+    parent->addChild(latexcell);
   }
 
 
@@ -814,7 +792,6 @@ namespace IAEX
     QString imagename = element.attribute( XML_NAME, "" );
     if( imagename.isEmpty() || imagename.isNull() )
       throw std::runtime_error( "No name in image tag" );
-
 
     // Get saved image data
     QByteArray imagedata = QByteArray::fromBase64( element.text().toLatin1() );
@@ -860,16 +837,7 @@ namespace IAEX
         QString html = latexcell->textHtml();
         html.replace(imagename,newname);
         latexcell->setTextHtml(html);
-        /*
-        QString html = latexcell->textOutputHtml();
-        html.replace( imagename, newname );
-
-        latexcell->setTextOutputHtml( html );
-        latexcell->output_->textCursor().insertImage(newname);
-        latexcell->output_->show();
-        latexcell->latexButton->show(); */
       }
-
       else
       {
         std::string msg = "Unknown typeid of parent cell";
@@ -938,9 +906,6 @@ namespace IAEX
       }
       node = node.nextSibling();
     }
-
-
   }
 
-
-};
+}; // namespace IAEX

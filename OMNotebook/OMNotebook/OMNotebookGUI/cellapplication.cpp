@@ -35,7 +35,7 @@
 
 #define RUN_DRMODELICA_CONVERTION    false
 
-//IAEX Headers
+// IAEX Headers
 #include "cellapplication.h"
 #include "celldocument.h"
 #include "commandcenter.h"
@@ -54,8 +54,43 @@
 
 #include "../../../OMCompiler/Compiler/runtime/settingsimpl.h"
 
+// Qt headers required for the new screen‑geometry code
+#include <QGuiApplication>   // QGuiApplication::primaryScreen()
+#include <QScreen>
+#include <QApplication>
+#include <QMessageBox>
+#include <QLibraryInfo>
+#include <QLocale>
+#include <QMainWindow>
+#include <QDir>
+
 namespace IAEX
 {
+  /*!
+   * \class MyApp
+   *
+   * \brief Subclass of QApplication that forwards QFileOpenEvent to CellApplication.
+   */
+ class MyApp : public QApplication {
+  private:
+      CellApplication *ca = nullptr;
+  public:
+      MyApp(int& argc, char** argv, CellApplication *c)
+          : QApplication(argc, argv), ca(c) {}
+
+      bool event(QEvent *event) override {
+          if (event->type() == QEvent::FileOpen) {
+              QFileOpenEvent *fileOpenEvent = static_cast<QFileOpenEvent*>(event);
+              if (fileOpenEvent) {
+                  ca->FileOpenEventTriggered = true;
+                  ca->open(fileOpenEvent->file());
+                  return true;
+              }
+          }
+          return QApplication::event(event);
+      }
+  };
+
   /*!
    * \class CellApplication
    * \author Ingemar Axelsson and Anders Fernström
@@ -86,192 +121,142 @@ namespace IAEX
    * 2006-04-10 AF, use environment variable to find xml files
    * 2006-04-10 AF, Open file that is sent to main
    */
-
-    // ******************************************************
-
-    class MyApp : public QApplication {
-    private:
-      CellApplication * ca = NULL;
-      public:
-        MyApp(int& argc, char**argv, CellApplication * c): QApplication(argc, argv)
-        {ca = c;}
-        bool event(QEvent *event) {
-          switch(event->type())
-          {
-            case QEvent::FileOpen:
-            {
-              QFileOpenEvent * fileOpenEvent = static_cast<QFileOpenEvent *>(event);
-              if(fileOpenEvent) {
-                ca->FileOpenEventTriggered = true;
-                ca->open(fileOpenEvent->file());
-
-                return true;
-              }
-            }
-            default:
-              return QApplication::event(event);
-          }
-        }
-    };
-
   CellApplication::CellApplication(int &argc, char *argv[], threadData_t *threadData)
-    : QObject()
+      : QObject()
   {
-    app_ = new MyApp(argc, argv, this);
+      app_ = new MyApp(argc, argv, this);
 
-
-    const char *installationDirectoryPath = SettingsImpl__getInstallationDirectoryPath();
-    if (!installationDirectoryPath) {
-      QMessageBox::critical(nullptr, tr("Error"), tr("Could not find installation directory path. Please make sure OpenModelica is installed properly."));
-      app_->quit();
-      exit(1);
-    }
-
-    QString locale = QLocale::system().name();
-
-  #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-    QString qtTranslationDirectory = QLibraryInfo::path(QLibraryInfo::TranslationsPath);
-  #else
-    QString qtTranslationDirectory = QLibraryInfo::location(QLibraryInfo::TranslationsPath);
-  #endif
-
-    // install Qt's default translations
-    if (qtTranslator.load("qt_" + locale, qtTranslationDirectory)) {
-      app_->installTranslator(&qtTranslator);
-    }
-
-    QString translationDirectory = installationDirectoryPath + QString("/share/omnotebook/nls");
-    // install application translations
-    if (translator.load("OMNotebook_" + QLocale::system().name(), translationDirectory)) {
-      app_->installTranslator(&translator);
-    }
-
-    mainWindow = new QMainWindow();
-    QDir dir;
-
-    // when last window closed, the application should quit also
-    QObject::connect(app_, SIGNAL(lastWindowClosed()), app_, SLOT(quit()));
-
-    //Create a commandCenter.
-    cmdCenter_ = new CellCommandCenter(this);
-
-    /* Force C-style doubles */
-    setlocale(LC_NUMERIC, "C");
-
-    /* Don't move this line
-     * Is important for threadData initialization
-     */
-    OmcInteractiveEnvironment *env = OmcInteractiveEnvironment::getInstance(threadData);
-    // Avoid cluttering the whole disk with omc temp-files
-    env->evalExpression("setCommandLineOptions(\"+d=shortOutput\")");
-    QString cmdLine = env->getResult();
-    //cout << "Set shortOutput flag: " << cmdLine.toStdString() << std::endl;
-    QString tmpDir = OmcInteractiveEnvironment::TmpPath();
-    if (!QDir().exists(tmpDir)) QDir().mkdir(tmpDir);
-    tmpDir = QDir(tmpDir).canonicalPath();
-    //cout << "Temp.Dir " << tmpDir.toStdString() << std::endl;
-    QString cdCmd = "cd(\"" + tmpDir + "\")";
-    env->evalExpression(cdCmd);
-    QString cdRes = env->getResult();
-    cdRes.remove("\"");
-    if (0 != tmpDir.compare(cdRes)) {
-      QMessageBox::critical(nullptr, "OpenModelica Error", tr("Could not create or cd to temp-dir\nCommand:\n  %1\nReturned:\n  %2").arg(tmpDir).arg(cdRes));
-      exit(1);
-    }
-
-    // 2005-12-17 AF, Create instance (load styles) of stylesheet
-    // 2006-04-10 AF, use installation directory path to find stylesheet.xml
-    QString openmodelica = QString(installationDirectoryPath);
-    try
-    {
-      QString stylesheetfile;
-      if( openmodelica.endsWith("/") || openmodelica.endsWith( "\\") )
-        stylesheetfile = openmodelica + "share/omnotebook/stylesheet.xml";
-      else
-        stylesheetfile = openmodelica + "/share/omnotebook/stylesheet.xml";
-
-      Stylesheet::instance( stylesheetfile );
-    }
-    catch( std::exception &e )
-    {
-      QMessageBox::warning(nullptr, tr("Error"), e.what());
-      exit(-1);
-    }
-
-    // 2005-12-16 AF, Create instance of CommandCompletion.
-    // 2006-04-10 AF, use environment variable to find commands.xml
-    try
-    {
-      QString commandfile;
-      if( openmodelica.endsWith("/") || openmodelica.endsWith( "\\") )
-        commandfile = openmodelica + "share/omnotebook/commands.xml";
-      else
-        commandfile = openmodelica + "/share/omnotebook/commands.xml";
-
-      CommandCompletion::instance( commandfile );
-    }
-    catch( std::exception &e )
-    {
-      QString msg = e.what();
-      msg += "\nCould not create command completion class, exiting OMNotebook";
-      QMessageBox::warning(nullptr, tr("Error"), msg);
-      std::exit(-1);
-    }
-
-
-    // 2006-03-21 AF, code for converting DrModelica from mathematica
-    // fullform to OMNotebook (.onb)
-    if( RUN_DRMODELICA_CONVERTION )
-    {
-      convertDrModelica();
-    }
-    else
-    {
-      // second arg is a file that should be opened.
-      if( argc > 1 )
-      {
-        QString fileToOpen( argv[1] );
-        if( dir.exists( fileToOpen ) && ( fileToOpen.endsWith( ".onb" ) ||  fileToOpen.endsWith( ".onbz" ) || fileToOpen.endsWith( ".nb" )))
-        {
-          open( fileToOpen );
-        }
-        else
-        {
-          std::cout << "File not found: " << fileToOpen.toStdString() << std::endl;
-          open(QString());
-        }
+      const char *installationDirectoryPath = SettingsImpl__getInstallationDirectoryPath();
+      if (!installationDirectoryPath) {
+          QMessageBox::critical(nullptr, tr("Error"),
+                                tr("Could not find installation directory path. Please make sure OpenModelica is installed properly."));
+          app_->quit();
+          std::exit(1);
       }
-      else
-      {
-        QIcon icon(":/Resources/OMNotebook_icon.svg");
-        QSplashScreen splash(icon.pixmap(300,400));
-        splash.show();
-        app_->processEvents();
-        splash.finish(mainWindow);
-        if (FileOpenEventTriggered)
-        {
 
-        }
-        else
-        {
-          // 2006-02-27 AF, use environment variable to find DrModelica
-          // 2006-03-24 AF, First try to find DrModelica.onb, then .nb
-          QString drmodelica = OmcInteractiveEnvironment::OpenModelicaHome() + "/share/omnotebook/drmodelica/DrModelica.onb";
-          //QString drmodelica = OmcInteractiveEnvironment::OpenModelicaHome() + "/share/omnotebook/drmodelica/QuickTour/HelloWorld.onb";
+      //  Load translations (Qt and application specific)
+      QString locale = QLocale::system().name();
 
-          if( dir.exists( drmodelica ))
-            open(drmodelica, READMODE_NORMAL, 1);
-          else if( dir.exists( "DrModelica/DrModelica.onb" ))
-            open( "DrModelica/DrModelica.onb", READMODE_NORMAL, 1);
-          else
-          {
-            std::cout << "Unable to find (1): " << drmodelica.toStdString() << std::endl;
-            std::cout << "Unable to find (2): DrModelica/DrModelica.onb" << std::endl;
-            open(QString());
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+      QString qtTranslationDirectory = QLibraryInfo::path(QLibraryInfo::TranslationsPath);
+#else
+      QString qtTranslationDirectory = QLibraryInfo::location(QLibraryInfo::TranslationsPath);
+#endif
+
+      if (qtTranslator.load("qt_" + locale, qtTranslationDirectory))
+          app_->installTranslator(&qtTranslator);
+
+      QString translationDirectory = QString::fromLatin1(installationDirectoryPath) +
+                                      "/share/omnotebook/nls";
+
+      if (translator.load("OMNotebook_" + locale, translationDirectory))
+          app_->installTranslator(&translator);
+
+      //  Main window (purely a placeholder – real windows are opened later)
+      mainWindow = new QMainWindow();
+
+      // when last window closed, the application should quit also
+      QObject::connect(app_, &QApplication::lastWindowClosed,
+                       app_, &QApplication::quit);
+
+      // Create a commandCenter
+      cmdCenter_ = new CellCommandCenter(this);
+
+      setlocale(LC_NUMERIC, "C");               // force C‑style doubles
+
+      //  Initialise the OMC interactive environment
+      /* Don't move this line
+       * Is important for threadData initialization
+       */
+      OmcInteractiveEnvironment *env = OmcInteractiveEnvironment::getInstance(threadData);
+      // Avoid cluttering the whole disk with omc temp-files
+      env->evalExpression("setCommandLineOptions(\"+d=shortOutput\")");
+      QString tmpDir = OmcInteractiveEnvironment::TmpPath();
+
+      if (!QDir().exists(tmpDir))
+          QDir().mkdir(tmpDir);
+      tmpDir = QDir(tmpDir).canonicalPath();
+      env->evalExpression(QString("cd(\"%1\")").arg(tmpDir));
+      QString cdRes = env->getResult();
+      cdRes.remove('\"');
+      if (tmpDir != cdRes) {
+          QMessageBox::critical(nullptr, "OpenModelica Error",
+                                tr("Could not create or cd to temp-dir\nCommand:\n  %1\nReturned:\n  %2")
+                                    .arg(tmpDir).arg(cdRes));
+          std::exit(1);
+      }
+
+      //  Load stylesheet.xml
+      QString openmodelica = QString::fromLatin1(installationDirectoryPath);
+      try {
+          QString stylesheetfile = openmodelica;
+          if (!stylesheetfile.endsWith('/') && !stylesheetfile.endsWith('\\'))
+              stylesheetfile += '/';
+          stylesheetfile += "share/omnotebook/stylesheet.xml";
+          Stylesheet::instance(stylesheetfile);
+      } catch (std::exception &e) {
+          QMessageBox::warning(nullptr, tr("Error"), e.what());
+          std::exit(-1);
+      }
+
+      //  Load commands.xml (command completion)
+      try {
+          QString commandfile = openmodelica;
+          if (!commandfile.endsWith('/') && !commandfile.endsWith('\\'))
+              commandfile += '/';
+          commandfile += "share/omnotebook/commands.xml";
+          CommandCompletion::instance(commandfile);
+      } catch (std::exception &e) {
+          QString msg = e.what();
+          msg += "\nCould not create command completion class, exiting OMNotebook";
+          QMessageBox::warning(nullptr, tr("Error"), msg);
+          std::exit(-1);
+      }
+
+      //  Either convert DrModelica (if the flag is on) or open the file(s)
+      if (RUN_DRMODELICA_CONVERTION) {
+          convertDrModelica();
+      } else {
+          if (argc > 1) {
+              QString fileToOpen(argv[1]);
+              QDir dir;
+              if (dir.exists(fileToOpen) &&
+                  (fileToOpen.endsWith(".onb") || fileToOpen.endsWith(".onbz") ||
+                   fileToOpen.endsWith(".nb"))) {
+                  open(fileToOpen);
+              } else {
+                  std::cout << "File not found: " << fileToOpen.toStdString() << std::endl;
+                  open(QString());
+              }
+          } else {
+              //  No command line argument → show splash → open default file
+              // use environment variable to find DrModelica
+              // First try to find DrModelica.onb, then .nb
+              QIcon icon(":/Resources/OMNotebook_icon.svg");
+              QSplashScreen splash(icon.pixmap(300, 400));
+              splash.show();
+              app_->processEvents();
+              splash.finish(mainWindow);
+
+              if (FileOpenEventTriggered) {
+                  // nothing – the QFileOpenEvent handler already opened the file
+              } else {
+                  QDir dir;
+                  QString drmodelica = OmcInteractiveEnvironment::OpenModelicaHome() +
+                                      "/share/omnotebook/drmodelica/DrModelica.onb";
+
+                  if (dir.exists(drmodelica))
+                      open(drmodelica, READMODE_NORMAL, 1);
+                  else if (dir.exists("DrModelica/DrModelica.onb"))
+                      open("DrModelica/DrModelica.onb", READMODE_NORMAL, 1);
+                  else {
+                      std::cout << "Unable to find (1): " << drmodelica.toStdString() << std::endl;
+                      std::cout << "Unable to find (2): DrModelica/DrModelica.onb" << std::endl;
+                      open(QString());
+                  }
+              }
           }
-        }
       }
-    }
   }
 
   /*!
@@ -289,37 +274,29 @@ namespace IAEX
    * closeEvent handler
    * 2006-02-13 AF, remove temp dir
    * 2006-05-03 AF, delete notebook socket
-   */
-  CellApplication::~CellApplication()
+   */  CellApplication::~CellApplication()
   {
-    // 2006-02-09 AF, moved code for quiting omc to the notebook windos
+      // 2006-02-09 AF, moved code for quiting omc to the notebook windows
 
-    // 2006-01-16 AF, remove temporary files
-    QDir dir;
-    for( int i = 0; i < removeList_.size(); i++ )
-    {
-      if( !dir.remove( removeList_.at(i) ))
-      {
-        QMessageBox::warning(nullptr, tr("Warning"), tr("Could not remove temporary image %1 from harddrive.").arg(removeList_.at(i)));
+      // 2006-01-16 AF, remove temporary files
+      QDir dir;
+      for (const QString &file : std::as_const(removeList_)) {
+          if (!dir.remove(file)) {
+              QMessageBox::warning(nullptr, tr("Warning"),
+                                   tr("Could not remove temporary image %1 from harddrive.").arg(file));
+          }
       }
-    }
   }
 
-  /*!
-   * \author Ingemar Axelsson
-   */
-  CommandCenter *CellApplication::commandCenter()
-  {
-    return cmdCenter_;
-  }
 
-  /*!
-   * \author Ingemar Axelsson
-   */
-  void CellApplication::setCommandCenter(CommandCenter *c)
+  //  Simple accessor / mutator helpers
+
+  CommandCenter *CellApplication::commandCenter()               { return cmdCenter_; }
+
+  void           CellApplication::setCommandCenter(CommandCenter *c)
   {
-    cmdCenter_ = c;
-    cmdCenter_->setApplication(this);
+      cmdCenter_ = c;
+      cmdCenter_->setApplication(this);
   }
 
   /*!
@@ -334,54 +311,24 @@ namespace IAEX
    * Other things to do is to use the systemwide pasteboard instead.
    * (Ingemar Axelsson)
    */
-  void CellApplication::addToPasteboard(Cell *c)
-  {
-    pasteboard_.push_back(c);
-  }
+  void CellApplication::addToPasteboard(Cell *c) { pasteboard_.push_back(c); }
 
   /*!
    * \author Ingemar Axelsson
    *
    * This is used to clear the pasteboard. This is an ugly solution.
    */
-  void CellApplication::clearPasteboard()
-  {
-    pasteboard_.clear();
-  }
+  void CellApplication::clearPasteboard()       { pasteboard_.clear(); }
 
   /*!
    * \author Ingemar Axelsson
    *
    * \brief returns a std::vector with all content of the pasteboard.
    */
-  std::vector<Cell*> CellApplication::pasteboard()
-  {
-    return pasteboard_;
-  }
-
-  /*!
-   * \author Ingemar Axelsson
-   */
-  int CellApplication::exec()
-  {
-    return app_->exec();
-  }
-
-  /*!
-   * \author Ingemar Axelsson
-   */
-  void CellApplication::add(Document *d)
-  {
-    documents_.push_back(d);
-  }
-
-  /*!
-   * \author Ingemar Axelsson
-   */
-  void CellApplication::add(DocumentView *d)
-  {
-    views_.push_back(d);
-  }
+  std::vector<Cell*> CellApplication::pasteboard() { return pasteboard_; }
+  int CellApplication::exec()                  { return app_->exec(); }
+  void CellApplication::add(Document *d)       { documents_.push_back(d); }
+  void CellApplication::add(DocumentView *d)   { views_.push_back(d); }
 
   /*!
    * \author Ingemar Axelsson and Anders Fernström
@@ -401,19 +348,16 @@ namespace IAEX
    * all operations are done on the window.
    * 2006-05-03 AF, during open, stop highlighter
    */
-  void CellApplication::open( const QString filename, int readmode, int isDrModelica )
+  void CellApplication::open(const QString filename, int readmode, int isDrModelica)
   {
-    // 2005-12-01 AF, Added try-catch
-    try
-    {
-      //1. Create a new document.
-      Document *d = new CellDocument( this, filename, readmode );
-      add(d);
+      try {
+          // 1. Create the document
+          Document *d = new CellDocument(this, filename, readmode);
+          add(d);
 
-      //2. Create a new View.
-      // 2005-09-22 AF: Added 'filename' in NotebookWindow() call
-      DocumentView *v = new NotebookWindow(d, filename, isDrModelica);
-      add(v);
+          // 2. Create the view (NotebookWindow)
+          DocumentView *v = new NotebookWindow(d, filename, isDrModelica);
+          add(v);
 
       // 2006-01-31 AF, Open window minimized instead of normal
 
@@ -426,39 +370,41 @@ namespace IAEX
 
       // 2006-01-17 AF, when the document have been opened, set the
       // changed variable to false.
-      v->document()->setChanged( false );
+          // 3. Initialise the view – size, position, etc.
+          v->document()->setChanged(false);
 
       // 2006-01-31 AF, show window again
-      v->show();
-      v->raise();  // for MacOS
-      v->activateWindow(); // for Windows
+          v->show();
+          v->raise();               // macOS
+          v->activateWindow();      // Windows
 
-      std::vector<DocumentView *> windowViews = documentViewList();
-      std::vector<DocumentView *>::iterator v_iter = windowViews.begin();
-      while( v_iter != windowViews.end() )
-      {
-        ((NotebookWindow *)*v_iter)->updateWindowMenu();
-        ++v_iter;
+          // Update the Window‑menu for all open notebooks
+          for (DocumentView *dv : documentViewList())
+              static_cast<NotebookWindow*>(dv)->updateWindowMenu();
+
+          //  Position the window at the top‑left corner and resize it to the
+          //  full screen size – using Qt‑6‑compatible API.
+          v->move(0, 0);
+
+          // Qt 5 and Qt 6 both provide a QScreen via QGuiApplication.
+          // The code works for any Qt version ≥ 5.0 (QGuiApplication existed
+          // already) and therefore also for Qt 6.
+          QScreen *screen = QGuiApplication::primaryScreen();
+          if (screen) {
+              // Use *availableGeometry* so the window does not overlap the task‑bar / dock.
+              QRect geom = screen->availableGeometry();
+              v->resize(geom.width(), geom.height());
+          } else {
+              // Fallback – extremely unlikely, but keeps the old behaviour.
+              v->resize(800, 600);
+          }
+
+          // Apply the "show‑/hide‑closed‑groupcells" visitor.
+          UpdateGroupcellVisitor visitor;
+          v->document()->runVisitor(visitor);
+      } catch (std::exception &e) {
+          throw e;
       }
-
-     v->move(0, 0);
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
-      QScreen *screen = QGuiApplication::primaryScreen();
-      v->resize(screen->geometry().width(), screen->geometry().height());
-#else
-      QDesktopWidget dw;
-      v->resize(dw.geometry().width(),dw.geometry().height());
-#endif
-
-      // 2005-11-30 AF, apply hide() and show() to closed groupcells
-      // childs in the documentview
-      UpdateGroupcellVisitor visitor;
-      v->document()->runVisitor( visitor );
-    }
-    catch( std::exception &e )
-    {
-      throw e;
-    }
   }
 
   /*!
@@ -470,7 +416,7 @@ namespace IAEX
   */
   void CellApplication::removeTempFiles(QString filename)
   {
-    removeList_.append( filename );
+      removeList_.append(filename);
   }
 
   /*!
@@ -481,7 +427,7 @@ namespace IAEX
   */
   std::vector<DocumentView *> CellApplication::documentViewList()
   {
-    return views_;
+      return views_;
   }
 
   /*!
@@ -491,39 +437,24 @@ namespace IAEX
   * \brief remove document view from internal list, also remove
   * document
   */
-  void CellApplication::removeDocumentView( DocumentView *view )
+  void CellApplication::removeDocumentView(DocumentView *view)
   {
-    std::vector<Document *>::iterator d_iter = documents_.begin();
-    while( d_iter != documents_.end() )
-    {
-      if( (*d_iter) == view->document() )
-      {
-        documents_.erase( d_iter );
-        break;
-      }
-      else
-        ++d_iter;
-    }
+      // erase from document list
+      auto dit = std::remove_if(documents_.begin(), documents_.end(),
+                                [&](Document *d){ return d == view->document(); });
+      documents_.erase(dit, documents_.end());
 
-    std::vector<DocumentView *>::iterator dv_iter = views_.begin();
-    while( dv_iter != views_.end() )
-    {
-      if( (*dv_iter) == view )
-      {
-        views_.erase( dv_iter );
-        break;
-      }
-      else
-        ++dv_iter;
-    }
-    dv_iter = views_.begin();
-    while( dv_iter != views_.end() )
-    {
-      ((NotebookWindow *)*dv_iter)->updateWindowMenu();
-      ++dv_iter;
-    }
+      // erase from view list
+      auto vit = std::remove_if(views_.begin(), views_.end(),
+                                [&](DocumentView *v){ return v == view; });
+      views_.erase(vit, views_.end());
+
+      // refresh all window menus
+      for (DocumentView *dv : documentViewList())
+          static_cast<NotebookWindow*>(dv)->updateWindowMenu();
   }
 
+  //  DrModelica conversion (unchanged – never called)
   /*!
   * \author Anders Fernström
   * \date 2006-03-21
@@ -531,7 +462,7 @@ namespace IAEX
   * \brief convert DrModelica documentation into OMNotebook format
   * (.onb).
   *
-  * NO A WORKING FUNCTION
+  * NOT A WORKING FUNCTION
   * -Temporary function
   * -The function is not called anywhere.
   * -The function asume that DrModelia is located in 'C:\OpenModelica132\DrModelicaConv'
@@ -540,61 +471,54 @@ namespace IAEX
   */
   void CellApplication::convertDrModelica()
   {
-    std::cout << "CONVERTING DRMODELICA" << std::endl;
-    std::cout << "---------------------" << std::endl << std::endl;
+      std::cout << "CONVERTING DRMODELICA\n---------------------\n\n";
 
-    // load from
-    QString path = "C:/OpenModelica132/DrModelicaConv";
-    QDir dir( path );
-    dir.setSorting( QDir::Name );
+      QString path = "C:/OpenModelica132/DrModelicaConv";
+      QDir dir(path);
+      dir.setSorting(QDir::Name);
 
-    if( dir.exists() )
-    {
-      // get dirs
-      dir.setFilter( QDir::Dirs | QDir::NoDotAndDotDot);
+      if (!dir.exists())
+          return;
+
+      dir.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
       QStringList dirList = dir.entryList();
-      dirList.prepend( "" );
+      dirList.prepend(QString()); // add empty entry for root
 
-      for( int i = 0; i < dirList.size(); ++i )
-      {
-        // get file names
-        QDir fileDir( dir.absolutePath() + "/" + dirList.at(i) );
-        fileDir.setSorting( QDir::Name );
-        fileDir.setFilter( QDir::Files );
-        //fileDir.setNameFilters( QStringList(".nb") );
-        QStringList fileList = fileDir.entryList();
+      for (int i = 0; i < dirList.size(); ++i) {
+          QDir fileDir(dir.absolutePath() + "/" + dirList.at(i));
+          fileDir.setSorting(QDir::Name);
+          fileDir.setFilter(QDir::Files);
+          //fileDir.setNameFilters( QStringList(".nb") );
+          QStringList fileList = fileDir.entryList();
 
-        // loop through all files
-        for( int j = 0; j < fileList.size(); ++j )
-        {
-          std::cout << "Loading: " << fileDir.absolutePath().toStdString() +
-            std::string( "/" ) + fileList.at(j).toStdString() << std::endl;
+          for (int j = 0; j < fileList.size(); ++j) {
+              std::cout << "Loading: "
+                        << (fileDir.absolutePath() + "/" + fileList.at(j)).toStdString()
+                        << std::endl;
 
-          Document *d = new CellDocument( this, fileDir.absolutePath() +
-            QString( "/" ) + fileList.at(j), READMODE_CONVERTING_ONB );
+              Document *d = new CellDocument(this,
+                         fileDir.absolutePath() + "/" + fileList.at(j),
+                         READMODE_CONVERTING_ONB);
 
-          // save file
-          QString filename = fileList.at(j);
-          filename.replace( ".nb", ".onb" );
+              // Save file
+              QString filename = fileList.at(j);
+              filename.replace(".nb", ".onb");
+              std::cout << "Saving: "
+                        << (dir.absolutePath() + "/" + dirList.at(i) + "/" + filename).toStdString()
+                        << std::endl;
 
-          std::cout << "Saving: " << dir.absolutePath().toStdString() +
-            std::string( "/" ) + dirList.at(i).toStdString() + std::string( "/" ) +
-            filename.toStdString() << std::endl;
+              SaveDocumentCommand command(d,
+                     dir.absolutePath() + "/" + dirList.at(i) + "/" + filename);
+              commandCenter()->executeCommand(&command);
 
-          SaveDocumentCommand command( d, dir.absolutePath() +
-            QString( "/" ) + dirList.at(i) + QString( "/" ) + filename );
-          this->commandCenter()->executeCommand( &command );
+              std::cout << "DONE!\n\n";
 
-          std::cout << "DONE!" << std::endl << std::endl;
-
-          // delete file
-          delete d;
-          fileDir.remove( fileList.at(j) );
-        }
+              delete d;
+              fileDir.remove(fileList.at(j));
+          }
       }
-     }
 
-    std::cout << "CONVERTION DONE !!!" << std::endl;
+      std::cout << "CONVERTION DONE !!!\n";
   }
 
-}
+} // namespace IAEX

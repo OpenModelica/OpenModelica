@@ -52,7 +52,7 @@
 
 namespace IAEX
 {
-  // Added 2006-02-07 AF
+
   class TextCursorCutText : public Command
   {
   public:
@@ -62,7 +62,6 @@ namespace IAEX
     void execute();
   };
 
-  // Added 2006-02-07 AF
   class TextCursorCopyText : public Command
   {
   public:
@@ -73,7 +72,6 @@ namespace IAEX
   };
 
 
-  // Added 2006-02-07 AF
   class TextCursorPasteText : public Command
   {
   public:

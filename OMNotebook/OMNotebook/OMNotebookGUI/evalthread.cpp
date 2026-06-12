@@ -50,7 +50,7 @@ EvalThread::~EvalThread()
 {
 }
 
-QMutex evalMutex; // adrpo 2009-01-19
+QMutex evalMutex;
 
 void EvalThread::run()
 {

@@ -41,13 +41,13 @@
 #ifndef PURETEXTVISITOR_H
 #define PURETEXTVISITOR_H
 
-//IAEX Headers
+// Qt headers
+#include <QFile>
+#include <QTextStream>
+
+// IAEX headers
 #include "visitor.h"
 #include "document.h"
-
-//Forward declaration
-class QFile;
-class QTextStream;
 
 
 namespace IAEX
