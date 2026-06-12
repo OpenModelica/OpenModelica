@@ -35,6 +35,7 @@
 #include "../../../openmodelica.h"
 #include "../../../openmodelica_func.h"
 #include "../../../simulation/options.h"
+#include "../../simulation_input_xml.h"
 #include "../../arrayIndex.h"
 #include "../model_help.h"
 #if !defined(OMC_MINIMAL_RUNTIME)
@@ -581,6 +582,10 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
         throwStreamPrint(NULL, "Support for array variables not yet implemented!");
         // TODO: Implement reading of array variables with omc_matlab4_read_vars_val (?)
       }
+      if (isQuantityOverridden(mData->realVarsData[i].info.name)) {
+        infoStreamPrint(OMC_LOG_INIT_V, 0, "| skip import of real variable %s: overridden on command line", mData->realVarsData[i].info.name);
+        continue;
+      }
       pVar = omc_matlab4_find_var(&reader, mData->realVarsData[i].info.name);
 
       if(!pVar) {
@@ -602,6 +607,10 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
 
     infoStreamPrint(OMC_LOG_INIT, 0, "import integer variables");
     for(i=0; i<mData->nVariablesInteger; ++i) {
+      if (isQuantityOverridden(mData->integerVarsData[i].info.name)) {
+        infoStreamPrint(OMC_LOG_INIT_V, 0, "| skip import of integer variable %s: overridden on command line", mData->integerVarsData[i].info.name);
+        continue;
+      }
       pVar = omc_matlab4_find_var(&reader, mData->integerVarsData[i].info.name);
 
       if(!pVar) {
@@ -623,6 +632,10 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
 
     infoStreamPrint(OMC_LOG_INIT, 0, "import boolean variables");
     for(i=0; i<mData->nVariablesBoolean; ++i) {
+      if (isQuantityOverridden(mData->booleanVarsData[i].info.name)) {
+        infoStreamPrint(OMC_LOG_INIT_V, 0, "| skip import of boolean variable %s: overridden on command line", mData->booleanVarsData[i].info.name);
+        continue;
+      }
       pVar = omc_matlab4_find_var(&reader, mData->booleanVarsData[i].info.name);
 
       if(!pVar) {
@@ -649,6 +662,11 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
         // TODO: Implement reading of array parameters
       }
 
+      if (isQuantityOverridden(mData->realParameterData[i].info.name)) {
+        infoStreamPrint(OMC_LOG_INIT_V, 0, "| skip import of real parameter %s: overridden on command line", mData->realParameterData[i].info.name);
+        continue;
+      }
+
       pVar = omc_matlab4_find_var(&reader, mData->realParameterData[i].info.name);
 
       if(!pVar) {
@@ -670,6 +688,10 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
     infoStreamPrint(OMC_LOG_INIT, 0, "import integer parameters");
     for(i=0; i<mData->nParametersInteger; ++i)
     {
+      if (isQuantityOverridden(mData->integerParameterData[i].info.name)) {
+        infoStreamPrint(OMC_LOG_INIT_V, 0, "| skip import of integer parameter %s: overridden on command line", mData->integerParameterData[i].info.name);
+        continue;
+      }
       pVar = omc_matlab4_find_var(&reader, mData->integerParameterData[i].info.name);
 
       if (!pVar) {
@@ -690,6 +712,10 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
 
     infoStreamPrint(OMC_LOG_INIT, 0, "import boolean parameters");
     for(i=0; i<mData->nParametersBoolean; ++i) {
+      if (isQuantityOverridden(mData->booleanParameterData[i].info.name)) {
+        infoStreamPrint(OMC_LOG_INIT_V, 0, "| skip import of boolean parameter %s: overridden on command line", mData->booleanParameterData[i].info.name);
+        continue;
+      }
       pVar = omc_matlab4_find_var(&reader, mData->booleanParameterData[i].info.name);
 
       if(!pVar) {

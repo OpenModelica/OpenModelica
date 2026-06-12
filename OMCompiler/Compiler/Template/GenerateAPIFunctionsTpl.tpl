@@ -483,7 +483,7 @@ template getQtInterfaceFunc(String name, list<DAE.FuncArg> args, DAE.Type res, S
   >>
 end getQtInterfaceFunc;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_tools");
 end GenerateAPIFunctionsTpl;
 
 // vim: filetype=susan sw=2 sts=2

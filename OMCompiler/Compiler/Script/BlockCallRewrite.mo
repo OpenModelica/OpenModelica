@@ -890,7 +890,7 @@ protected function matchParamNamedArg
   output list<Absyn.ElementArg> newModif "modifiers to add to component";
   output Boolean found;
 algorithm
-  (newModif, found) := matchcontinue comps
+  (newModif, found) := match comps
     local
       list<Absyn.ComponentItem>  r_comps;
       Absyn.Ident cName;
@@ -908,7 +908,7 @@ algorithm
       then
         matchParamNamedArg(argName, argValue, r_comps, oldModif);
 
-  end matchcontinue;
+  end match;
 end matchParamNamedArg;
 
 

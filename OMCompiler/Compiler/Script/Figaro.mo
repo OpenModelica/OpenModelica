@@ -809,14 +809,14 @@ protected function scanDeclaration "Scans a declaration."
   input list<String> inStringList "string sequence to scan";
   output list<String> outStringList "string sequence to continue scanning";
 algorithm
-  outStringList := matchcontinue inStringList
+  outStringList := match inStringList
     local
       list<String> rest;
     case "?" :: ">" :: rest
       then rest;
     case _ :: rest
       then scanDeclaration(rest);
-  end matchcontinue;
+  end match;
 end scanDeclaration;
 
 protected function scanTagName "Scans a tag name."
@@ -825,7 +825,7 @@ protected function scanTagName "Scans a tag name."
   output list<String> outStringList "string sequence to continue scanning";
   output String outTagName;
 algorithm
-  (outStringList, outTagName) := matchcontinue inStringList
+  (outStringList, outTagName) := match inStringList
     local
       String first;
       list<String> rest;
@@ -833,7 +833,7 @@ algorithm
       then (rest, inTagName);
     case first :: rest
       then scanTagName(rest, inTagName + first);
-  end matchcontinue;
+  end match;
 end scanTagName;
 
 protected function scanText "Greedy. Scans text until some kind of tag begins."
@@ -842,7 +842,7 @@ protected function scanText "Greedy. Scans text until some kind of tag begins."
   output list<String> outStringList "string sequence to continue scanning";
   output String outText;
 algorithm
-  (outStringList, outText) := matchcontinue inStringList
+  (outStringList, outText) := match inStringList
     local
       String first;
       list<String> rest;
@@ -852,7 +852,7 @@ algorithm
       then (inStringList, inText);
     case first :: rest
       then scanText(rest, inText + first);
-  end matchcontinue;
+  end match;
 end scanText;
 
 /* These functions walk over the token sequence from the lexer and throw away tokens that will not

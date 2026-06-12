@@ -1232,7 +1232,7 @@ public function lookupRef
   input Scope inScope;
   output Ref outRef;
 algorithm
-  outRef := matchcontinue inScope
+  outRef := match inScope
     local
       Scope s;
       Ref r;
@@ -1248,7 +1248,7 @@ algorithm
         r := lookupRef_dispatch(inRef, s);
       then
         r;
-  end matchcontinue;
+  end match;
 end lookupRef;
 
 public function lookupRef_dispatch

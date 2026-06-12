@@ -857,7 +857,7 @@ protected function getStartAttribute "returns the start attribute of a variable"
    input Option<DAE.VariableAttributes> inVariableAttributesOption;
    output Option<DAE.Exp> out;
 algorithm
-out:=matchcontinue inVariableAttributesOption
+out:=match inVariableAttributesOption
    local
      Option<DAE.Exp> e;
     case SOME(DAE.VAR_ATTR_REAL(start=e))
@@ -870,8 +870,8 @@ out:=matchcontinue inVariableAttributesOption
       then e;
     case _
       then NONE();
-   end matchcontinue;
+   end match;
 end getStartAttribute;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_tools");
 end MathematicaDump;

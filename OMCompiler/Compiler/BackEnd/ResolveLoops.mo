@@ -1378,7 +1378,7 @@ public function sortLoop "author:Waurich TUD 2014-01
   input list<Integer> sortLoopIn;
   output list<Integer> sortLoopOut;
 algorithm
-  sortLoopOut := matchcontinue(loopIn, sortLoopIn)
+  sortLoopOut := match(loopIn, sortLoopIn)
     local
       Integer start, next;
       list<Integer> rest, vars, eqs;
@@ -1401,7 +1401,7 @@ algorithm
         end if;
         rest := List.deleteMemberOnTrue(next,loopIn,intEq);
       then sortLoop(rest,m,mT,next::sortLoopIn);
-  end matchcontinue;
+  end match;
 end sortLoop;
 
 protected function closePathDirectly "author:Waurich TUD 2014-01

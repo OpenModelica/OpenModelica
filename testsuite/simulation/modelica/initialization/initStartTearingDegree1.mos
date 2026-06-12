@@ -1,0 +1,56 @@
+// name: initStartTearingDegree1
+// keywords: initialization, tearing, start
+// status: correct
+// teardown_command: rm -rf InitStartTearingDegree1* _InitStartTearingDegree1* output.log
+//
+// Regression test for ticket #15433.
+//
+// During initialization the start-value variable $START.x of the fixed=false
+// state x is solvable in exactly one equation (its defining equation
+// $START.x = sp) but is structurally incident to more than one, because sp is
+// solvable in several equations. Cellier tearing could let the higher-degree
+// variable sp steal that defining equation and orphan $START.x, pairing it with
+// an unrelated residual -> a structurally singular initialization system that
+// fails to solve ("Solving non-linear system N failed at time=0"). When an
+// initialization component contains such a $START.x->x cycle, Cellier tearing
+// force-matches $START.x to its defining equation, so initialization succeeds.
+// Because the start attribute of x transitively depends on x itself, a compiler
+// warning about the ill-posed start-value cycle is also expected.
+//
+
+loadString("
+model InitStartTearingDegree1
+  parameter Real sp(fixed = false);
+  Real x(start = sp, fixed = false);
+  Real w;
+equation
+  der(x) = w;
+  w = sin(time) - x;
+initial equation
+  x = 1.0;
+  sp = 1.0 + x*x;
+end InitStartTearingDegree1;
+"); getErrorString();
+
+simulate(InitStartTearingDegree1, stopTime=1.0); getErrorString();
+
+val(x, 0.0);
+val(sp, 0.0);
+val(w, 0.0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "InitStartTearingDegree1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'InitStartTearingDegree1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: Initialization start-value cycle: the start attribute of 'x' transitively depends on the variable itself, so its start value (only an initial guess) cannot be evaluated before the variable is known. This is sometimes an intentional pattern (a guess refined during initialization) but is often a modeling mistake; if unintended, give 'x' a start value that does not depend on itself. Use the transformational debugger to inspect the dependency chain.
+// "
+// 1.0
+// 2.0
+// -1.0
+// endResult

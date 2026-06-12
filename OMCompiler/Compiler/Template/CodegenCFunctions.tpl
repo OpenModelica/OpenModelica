@@ -5514,15 +5514,28 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
     slicedArray
 
   case ecr as CREF(componentRef=cr, ty=ty) then
-    if crefIsScalarWithAllConstSubs(cr) then
-      // let cast = typeCastContextInt(context, ty)
-      let &sub = buffer ""
-      '<%contextCref(cr, context, &preExp, &varDecls, &auxFunction, &sub)%>'
-    else if crefIsScalarWithVariableSubs(cr) then
+    if crefIsScalarWithVariableSubs(cr) then
       let &sub = buffer '<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &auxFunction)%>'
       let nosubname = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
       // let cast = typeCastContextInt(context, ty)
       '<%nosubname%>'
+    else if boolAnd(boolAnd(Flags.getConfigBool(Flags.NEW_BACKEND), boolNot(Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE))), boolNot(isStartCref(cr))) then
+      // Without sim code scalarization array elements like arr[2] are not
+      // standalone simvars and have to be addressed relative to the first
+      // element of the array using a flattened index. $START crefs address the
+      // (array valued) start attribute and keep the regular handling.
+      match crefSubs(crefArrayGetFirstCref(cr))
+      case {} then
+        let &sub = buffer ""
+        '<%contextCref(cr, context, &preExp, &varDecls, &auxFunction, &sub)%>'
+      else
+        let &sub = buffer '<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &auxFunction)%>'
+        let nosubname = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
+        '<%nosubname%>'
+    else if crefIsScalarWithAllConstSubs(cr) then
+      // let cast = typeCastContextInt(context, ty)
+      let &sub = buffer ""
+      '<%contextCref(cr, context, &preExp, &varDecls, &auxFunction, &sub)%>'
     else
       error(sourceInfo(),'daeExpCrefRhsSimContext: UNHANDLED CREF: <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
 end daeExpCrefRhsSimContext;

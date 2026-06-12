@@ -4950,7 +4950,7 @@ protected function setThreadIdxInTask "
   input Integer threadIdx;
   output HpcOmSimCode.Task taskOut;
 algorithm
-  taskOut := matchcontinue taskIn
+  taskOut := match taskIn
     local
     Integer weighting, index;
     Real calcTime, timeFinished;
@@ -4959,7 +4959,7 @@ algorithm
   then HpcOmSimCode.CALCTASK(weighting,index,calcTime,timeFinished,threadIdx,eqIdc);
   else
     then taskIn;
-  end matchcontinue;
+  end match;
 end setThreadIdxInTask;
 
 protected function tasksEqual "author: marcusw

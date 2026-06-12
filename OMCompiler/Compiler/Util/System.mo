@@ -1167,19 +1167,6 @@ protected function intRandom0
   external "C"  ret = rand() annotation(Include = "#include <stdlib.h>");
 end intRandom0;
 
-public function gettextInit
-  "Choose a locale for subsequent gettext calls. Prints warnings on failures."
-  input String locale = "" "Empty string choses automatically from the environment";
-  external "C" SystemImpl__gettextInit(locale) annotation(Library = {"omcruntime"});
-end gettextInit;
-
-public function gettext
-  "Translate a string from msgid to msgstr using the language of the chosen locale"
-  input String msgid;
-  output String msgstr;
-  external "C" msgstr = SystemImpl__gettext(msgid) annotation(Library = {"omcruntime"});
-end gettext;
-
 public function anyStringCode
   "Takes any boxed input"
   input Any any;

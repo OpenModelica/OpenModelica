@@ -7992,7 +7992,7 @@ bool ModelWidgetContainer::eventFilter(QObject *object, QEvent *event)
     if (pAction->shortcut() != QKeySequence("Ctrl+q")) {
       shouldValidateText = true;
     }
-  } else if (event->type() == QEvent::ContextMenu && object->parent() && qobject_cast<LibraryTreeView*>(object->parent())) {
+  } else if (event->type() == QEvent::MouseButtonPress && object->parent() && qobject_cast<LibraryTreeView*>(object->parent())) {
     shouldValidateText = true;
   } else if ((event->type() == QEvent::MouseButtonPress && qobject_cast<QMenuBar*>(object)) ||
              (event->type() == QEvent::MouseButtonPress && qobject_cast<QToolButton*>(object)) ||

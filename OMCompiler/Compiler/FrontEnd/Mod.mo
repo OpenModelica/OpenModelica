@@ -940,9 +940,9 @@ algorithm
       String name;
       Absyn.Path path;
 
-    case COMPONENT(name = name) then System.gettext("component ") + name;
-    case EXTENDS(path = path) then System.gettext("extends ") + AbsynUtil.pathString(path);
-    case DERIVED(path = path) then System.gettext("inherited class ") + AbsynUtil.pathString(path);
+    case COMPONENT(name = name) then "component " + name;
+    case EXTENDS(path = path) then "extends " + AbsynUtil.pathString(path);
+    case DERIVED(path = path) then "inherited class " + AbsynUtil.pathString(path);
 
   end match;
 end printModScope;
@@ -1094,7 +1094,7 @@ protected function mergeModifiers
   input SCode.Mod inSMod;
   output DAE.Mod outMod;
 algorithm
-  outMod := matchcontinue inSMod
+  outMod := match inSMod
     local
       DAE.Mod m;
       list<SCode.SubMod> sl;
@@ -1109,7 +1109,7 @@ algorithm
 
     else inMod;
 
-  end matchcontinue;
+  end match;
 end mergeModifiers;
 
 protected function mergeSubMods
@@ -2862,7 +2862,7 @@ public function addEachOneLevel
   input DAE.Mod inMod;
   output DAE.Mod outMod;
 algorithm
-  outMod := matchcontinue inMod
+  outMod := match inMod
     local
       SCode.Final finalPrefix;
       SCode.Element el;
@@ -2887,7 +2887,7 @@ algorithm
       then
         fail();
 
-  end matchcontinue;
+  end match;
 end addEachOneLevel;
 
 public function addEachToSubsIfNeeded

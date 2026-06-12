@@ -633,7 +633,7 @@ protected function applyModifiers
   input Boolean newName;
   output list<Absyn.ElementItem> out_elems;
   algorithm
-  out_elems := matchcontinue exp
+  out_elems := match exp
    local
      list<tuple<Absyn.Exp, String>> rest;
     list<Absyn.ComponentItem> cnew;
@@ -647,7 +647,7 @@ protected function applyModifiers
         then enew::applyModifiers(comps, rest, instance_name, counter+1, finalPrefix,redeclareKeywords ,innerOuter, info , constrainClass, attributes,tSpec, newName);
     case _::rest
         then applyModifiers(comps, rest, instance_name, counter, finalPrefix,redeclareKeywords ,innerOuter, info , constrainClass, attributes,tSpec, newName);
-   end matchcontinue;
+   end match;
 end applyModifiers;
 
 protected function applyModifier
@@ -853,7 +853,7 @@ protected function applyTemplate
   input list<tuple<Absyn.Exp, String>>  in_es;
   output list<tuple<Absyn.Exp, String>>  out_es;
   algorithm
-  out_es := matchcontinue comps
+  out_es := match comps
    local
      list<Absyn.ComponentItem> clist;
      list<tuple<list<Absyn.ComponentItem>, String>>  rest;
@@ -868,7 +868,7 @@ protected function applyTemplate
     case _::rest
        algorithm
         then applyTemplate(exp, rest, in_es);
-   end matchcontinue;
+   end match;
 end applyTemplate;
 
 protected function applyTemplate2
@@ -878,7 +878,7 @@ protected function applyTemplate2
   input String pathInClass;
   output list<tuple<Absyn.Exp, String>>  out_es;
   algorithm
-  out_es := matchcontinue comps
+  out_es := match comps
    local
      list<Absyn.ComponentItem> rest;
      Absyn.Ident name, newName;
@@ -893,7 +893,7 @@ protected function applyTemplate2
     case _::rest
        algorithm
         then applyTemplate2(exp, rest, in_es, pathInClass);
-   end matchcontinue;
+   end match;
 end applyTemplate2;
 
 protected function parseExpression
@@ -957,7 +957,7 @@ protected function updateCRF
   input Absyn.Ident name;
   output Absyn.ComponentRef out_componentRef;
   algorithm
-  out_componentRef := matchcontinue componentRef
+  out_componentRef := match componentRef
   local
      Absyn.ComponentRef cRef, new_cRef;
      list<Absyn.Subscript> subscripts;
@@ -971,7 +971,7 @@ protected function updateCRF
        then Absyn.CREF_QUAL(id, subscripts, new_cRef);
   case Absyn.CREF_IDENT("getPath", subscripts) then Absyn.CREF_IDENT(name, subscripts);
   case _ then    componentRef;
-  end matchcontinue;
+  end match;
 end updateCRF;
 
 protected function getAllProviderInstances
@@ -1030,7 +1030,7 @@ input list<tuple<list<Absyn.ComponentItem>, String>> in_components;
 input String pathInClass;
 output list<tuple<list<Absyn.ComponentItem>, String>> out_components;
 algorithm
-  out_components:= matchcontinue components
+  out_components:= match components
    local
     list<Absyn.ComponentItem> rest;
      Absyn.Ident name ;
@@ -1044,7 +1044,7 @@ algorithm
         then parseComponents(className, template, e_items, env, rest, tmp, pathInClass);
     case _::rest
         then parseComponents(className, template, e_items, env, rest, in_components, pathInClass);
-   end matchcontinue;
+   end match;
 end parseComponents;
 
 
@@ -1509,5 +1509,5 @@ output Absyn.Exp val;
    end matchcontinue;
 end getValueR;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_tools");
 end Binding;

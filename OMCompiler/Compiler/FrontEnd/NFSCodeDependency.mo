@@ -347,7 +347,7 @@ protected function analyseItemIfRedeclares
   input Item inItem;
   input Env inEnv;
 algorithm
-  () := matchcontinue inRepls
+  () := match inRepls
     local
       Env env;
     // no replacements happened on the environemnt! do nothing
@@ -358,7 +358,7 @@ algorithm
         //i = NFSCodeEnv.setItemEnv(inItem, {cls_frm});
         analyseItemNoStopOnUsed(inItem, env);
       then ();
-  end matchcontinue;
+  end match;
 end analyseItemIfRedeclares;
 
 protected function analyseItemNoStopOnUsed

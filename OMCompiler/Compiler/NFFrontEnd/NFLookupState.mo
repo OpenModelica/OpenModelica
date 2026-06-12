@@ -46,7 +46,6 @@ protected
 import Dump;
 import Error;
 import SCodeUtil;
-import System;
 import Class = NFClass;
 import Component = NFComponent;
 import Inst = NFInst;
@@ -388,15 +387,15 @@ uniontype LookupState
   algorithm
     str := match state
       case BEGIN() then "<begin>";
-      case COMP() then System.gettext("component");
-      case CLASS_COMP() then System.gettext("component");
-      case COMP_CLASS() then System.gettext("class");
-      case COMP_FUNC() then System.gettext("function");
-      case PACKAGE() then System.gettext("package");
-      case CLASS() then System.gettext("class");
-      case FUNC() then System.gettext("function");
-      case PREDEF_COMP() then System.gettext("component");
-      case PREDEF_CLASS() then System.gettext("class");
+      case COMP() then "component";
+      case CLASS_COMP() then "component";
+      case COMP_CLASS() then "class";
+      case COMP_FUNC() then "function";
+      case PACKAGE() then "package";
+      case CLASS() then "class";
+      case FUNC() then "function";
+      case PREDEF_COMP() then "component";
+      case PREDEF_CLASS() then "class";
     end match;
   end lookupStateString;
 

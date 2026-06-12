@@ -11106,7 +11106,7 @@ public function countDynamicExternalFunctions
   input list<SimCodeFunction.Function> inFncLst;
   output Integer outDynLoadFuncs;
 algorithm
-  outDynLoadFuncs:= matchcontinue inFncLst
+  outDynLoadFuncs:= match inFncLst
   local
      list<SimCodeFunction.Function> rest;
      Integer i;
@@ -11123,7 +11123,7 @@ algorithm
       i := countDynamicExternalFunctions(rest);
     then
       i;
-end matchcontinue;
+end match;
 end countDynamicExternalFunctions;
 
 protected function getFilesFromSimVar

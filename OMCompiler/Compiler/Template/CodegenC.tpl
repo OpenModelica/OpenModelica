@@ -1643,7 +1643,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     %>
     data->modelData->runTestsuite = <%if Testsuite.isRunning() then "1" else "0"%>;
     data->modelData->nStatesArray = <%varInfo.numStateVars%>;
-    data->modelData->nDiscreteReal = <%varInfo.numDiscreteReal%>;
+    data->modelData->nDiscreteRealArray = <%varInfo.numDiscreteReal%>;
     data->modelData->nVariablesRealArray = <%nVariablesReal(varInfo)%>;
     data->modelData->nVariablesIntegerArray = <%varInfo.numIntAlgVars%>;
     data->modelData->nVariablesBooleanArray = <%varInfo.numBoolAlgVars%>;
@@ -6497,14 +6497,42 @@ case SES_SIMPLE_ASSIGN_CONSTRAINTS(__) then
                     <%name%>,
                     (<%crefType(popCref(cref))%>) <%cref(popCref(cref), &sub)%>);
     >>
+  let lhs = equationSimpleAssignLhs(cref, context, &preExp, &varDecls, &auxFunction, &sub)
   <<
   <%modelicaLine(eqInfo(eq))%>
   <%preExp%>
-  <%contextCref(cref, context, &preExp, &varDecls, auxFunction, &sub)%> = <%expPart%>;
+  <%lhs%> = <%expPart%>;
   <%postExp%>
   <%endModelicaLine()%>
   >>
 end equationSimpleAssign;
+
+template equationSimpleAssignLhs(ComponentRef cref, Context context,
+                                 Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
+ "Generates the left hand side cref of a simple assignment.
+  When sim code scalarization is disabled (new backend), array elements like
+  arr[2] are not standalone simvars. They have to be addressed relative to the
+  first element of the array using a flattened index, the same way the right
+  hand side and variable subscripts are handled in daeExpCref*SimContext."
+::=
+  match context
+  case FUNCTION_CONTEXT(__)
+  case JACOBIAN_CONTEXT(__)
+  case OMSI_CONTEXT(__) then
+    contextCref(cref, context, &preExp, &varDecls, &auxFunction, &sub)
+  else
+    // Note: $START crefs address the (array valued) start attribute and must
+    // not be flattened here, they keep the regular handling.
+    if boolAnd(boolAnd(Flags.getConfigBool(Flags.NEW_BACKEND), boolNot(Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE))), boolNot(isStartCref(cref))) then
+      match crefSubs(crefArrayGetFirstCref(cref))
+      case {} then
+        contextCref(cref, context, &preExp, &varDecls, &auxFunction, &sub)
+      else
+        let &idxSub = buffer '<%indexSubs(crefDims(cref), crefSubs(crefArrayGetFirstCref(cref)), context, &preExp, &varDecls, &auxFunction)%>'
+        contextCref(crefStripSubs(cref), context, &preExp, &varDecls, &auxFunction, &idxSub)
+    else
+      contextCref(cref, context, &preExp, &varDecls, &auxFunction, &sub)
+end equationSimpleAssignLhs;
 
 template equationForLoop(SimEqSystem eq, Context context, Text &varDecls, Text &auxFunction)
  "Generates an equation that is a for-loop."

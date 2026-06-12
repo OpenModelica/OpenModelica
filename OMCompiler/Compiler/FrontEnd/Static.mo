@@ -10236,7 +10236,7 @@ protected function lookupFunctionsInEnvNoError
   output FCore.Cache outCache;
   output list<DAE.Type> outTypesTypeLst;
 algorithm
-  (outCache, outTypesTypeLst) := matchcontinue inInfo
+  (outCache, outTypesTypeLst) := match inInfo
 
     case _
       algorithm
@@ -10253,7 +10253,7 @@ algorithm
         ErrorExt.rollBack("Static.lookupFunctionsInEnvNoError");
       then
         fail();
-  end matchcontinue;
+  end match;
 end lookupFunctionsInEnvNoError;
 
 
@@ -10316,7 +10316,7 @@ public function fixEnumerationType
   input DAE.Type inType;
   output DAE.Type outType;
 algorithm
-  outType := matchcontinue inType
+  outType := match inType
     local
       Absyn.Path p;
       list<String> n;
@@ -10326,7 +10326,7 @@ algorithm
       then DAE.T_ENUMERATION(NONE(), p, n, v, al);
 
     else inType;
-  end matchcontinue;
+  end match;
 end fixEnumerationType;
 
 public function applySubscriptsVariability
@@ -10376,7 +10376,7 @@ protected function fillCrefSubscripts
   input DAE.Type inType;
   output DAE.ComponentRef outComponentRef;
 algorithm
-  outComponentRef := matchcontinue (inComponentRef,inType/*,slicedExp*/)
+  outComponentRef := match (inComponentRef,inType/*,slicedExp*/)
     local
       DAE.ComponentRef e,cref_1,cref;
       DAE.Type t;
@@ -10400,7 +10400,7 @@ algorithm
         cref_1 := fillCrefSubscripts(cref, t);
       then
         ComponentReferenceBasics.makeCrefQual(id,ty2,subs,cref_1);
-  end matchcontinue;
+  end match;
 end fillCrefSubscripts;
 
 protected function stripPrefixType

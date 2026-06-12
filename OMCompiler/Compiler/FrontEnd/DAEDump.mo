@@ -134,12 +134,12 @@ protected function funcGreaterThan "sorting function for two DAE.Element that ar
   input DAE.Function func2;
   output Boolean res;
 algorithm
-  res := matchcontinue func2
+  res := match func2
     case _ algorithm
       res := stringCompare(functionNameStr(func1),functionNameStr(func2)) > 0;
     then res;
     else true;
-  end matchcontinue;
+  end match;
 end funcGreaterThan;
 
 public function dumpOperatorString "
@@ -1823,7 +1823,7 @@ protected function indent "
   input Integer inInteger;
 algorithm
   ():=
-  matchcontinue inInteger
+  match inInteger
     local Integer i_1,i;
     case 0 then ();
     case i
@@ -1833,7 +1833,7 @@ algorithm
         indent(i_1);
       then
         ();
-  end matchcontinue;
+  end match;
 end indent;
 
 protected function indentStr "
@@ -1843,7 +1843,7 @@ protected function indentStr "
   output String outString;
 algorithm
   outString:=
-  matchcontinue inInteger
+  match inInteger
     local
       Integer i_1,i;
       String s1,str;
@@ -1855,7 +1855,7 @@ algorithm
         str := stringAppend(" ", s1);
       then
         str;
-  end matchcontinue;
+  end match;
 end indentStr;
 
 public function dumpDebug "
@@ -2244,7 +2244,7 @@ protected function buildGrVars "Helper function to build_graphviz.
   input list<DAE.Element> inElementLst;
   output list<Graphviz.Node> outGraphvizNodeLst;
 algorithm
-  outGraphvizNodeLst := matchcontinue inElementLst
+  outGraphvizNodeLst := match inElementLst
     local
       list<String> strlist;
       list<DAE.Element> vars;
@@ -2254,7 +2254,7 @@ algorithm
         (strlist,_) := buildGrStrlist(vars, buildGrVarStr, 10);
       then
         {Graphviz.LNODE("VARS",strlist,{Graphviz.box},{})};
-  end matchcontinue;
+  end match;
 end buildGrVars;
 
 public function buildGrStrlist "Helper function to build_graphviz.
@@ -2327,7 +2327,7 @@ protected function printExpStrSpecial "
   output String outString;
 algorithm
   outString:=
-  matchcontinue inExp
+  match inExp
     local
       String s_1,s_2,s,str;
       DAE.Exp exp;
@@ -2342,7 +2342,7 @@ algorithm
         str := ExpressionBasics.printExpStr(exp);
       then
         str;
-  end matchcontinue;
+  end match;
 end printExpStrSpecial;
 
 protected function buildGrElement "
@@ -2457,7 +2457,7 @@ public function unparseDimensions
   input Boolean printTypeDimension "use true here when printing components in functions as these are not vectorized! Otherwise, use false";
   output String dimsStr;
 algorithm
-  dimsStr := matchcontinue(dims, printTypeDimension)
+  dimsStr := match(dims, printTypeDimension)
     local
       String str;
 
@@ -2472,7 +2472,7 @@ algorithm
        str := "[" + stringDelimitList(List.map(dims, ExpressionBasics.dimensionString), ", ") + "]";
      then
        str;
-  end matchcontinue;
+  end match;
 end unparseDimensions;
 
 public function dumpStr "This function prints the DAE to a string."
@@ -3654,7 +3654,7 @@ public function cmtListToString
   input list<SCode.Comment> inCmtLst;
   output String outStr;
 algorithm
-  outStr := matchcontinue inCmtLst
+  outStr := match inCmtLst
     local
       SCode.Comment c;
       list<SCode.Comment> rest;
@@ -3677,7 +3677,7 @@ algorithm
 
     else "";
 
-  end matchcontinue;
+  end match;
 end cmtListToString;
 
 public function clockKindString

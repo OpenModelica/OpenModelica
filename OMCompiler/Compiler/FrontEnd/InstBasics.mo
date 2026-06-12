@@ -51,7 +51,7 @@ public function commentIsInlineFunc
   input SCode.Comment cmt;
   output DAE.InlineType outInlineType;
 algorithm
-  outInlineType := matchcontinue cmt
+  outInlineType := match cmt
     local
       list<SCode.SubMod> smlst;
 
@@ -59,7 +59,7 @@ algorithm
       then isInlineFunc2(smlst);
 
     else DAE.DEFAULT_INLINE();
-  end matchcontinue;
+  end match;
 end commentIsInlineFunc;
 
 protected function isInlineFunc2

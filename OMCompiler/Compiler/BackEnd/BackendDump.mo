@@ -2060,7 +2060,7 @@ public function printCallFunction2StrDIVISION
     output String outString;
   end strongComponentStringRefStrFunc;
 algorithm
-  outString := matchcontinue inExp
+  outString := match inExp
     local
       String s,s_1,s_2,fs,argstr;
       Absyn.Path fcn;
@@ -2092,7 +2092,7 @@ algorithm
         s_2 := stringAppend(s_1, ")");
       then
         s_2;
-  end matchcontinue;
+  end match;
 end printCallFunction2StrDIVISION;
 
 // protected function printVarsStatistics "author: PA

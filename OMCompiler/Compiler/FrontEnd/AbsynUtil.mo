@@ -5754,14 +5754,14 @@ protected function eltsHasLocalClass
   input list<Absyn.ElementItem> inElts;
   output Boolean res;
 algorithm
-  res := matchcontinue inElts
+  res := match inElts
     local
       list<Absyn.ElementItem> elts;
 
     case Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF())) :: _ then true;
     case _ :: elts then eltsHasLocalClass(elts);
     else false;
-  end matchcontinue;
+  end match;
 end eltsHasLocalClass;
 
 protected function traverseInnerClass<Arg>

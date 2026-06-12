@@ -757,7 +757,7 @@ protected function traverseExpVisitorWrapper "help function to replaceFinalVarTr
   output DAE.Exp exp;
   output BackendVarTransform.VariableReplacements repl;
 algorithm
-  (exp,repl) := matchcontinue(inExp,inRepl)
+  (exp,repl) := match(inExp,inRepl)
     local
 
     case (exp as DAE.CREF(_,_),repl) algorithm
@@ -765,7 +765,7 @@ algorithm
     then (exp,repl);
 
     else (inExp,inRepl);
-  end matchcontinue;
+  end match;
 end traverseExpVisitorWrapper;
 
 

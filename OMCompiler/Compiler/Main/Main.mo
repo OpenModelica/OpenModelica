@@ -489,7 +489,7 @@ algorithm
         if System.regularFileExists(f) then
           print("Error processing file: ");
         else
-          print(System.gettext("File does not exist: "));
+          print("File does not exist: ");
         end if;
 
         print(f); print("\n"); System.fflush();
@@ -702,7 +702,6 @@ algorithm
   ErrorExt.initAssertionFunctions();
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
   args_1 := FlagsUtil.new(args);
-  System.gettextInit(if Testsuite.isRunning() then "C" else Flags.getConfigString(Flags.LOCALE_FLAG));
   setDefaultCC();
   SymbolTable.reset();
   BackendInterfaceImplementation.initializeBackendInterface();

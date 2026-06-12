@@ -163,7 +163,7 @@ public function buildCrefExpFromAsub
   input list<DAE.Exp> subs;
   output DAE.Exp cRefOut;
 algorithm
-  cRefOut := matchcontinue(cref, subs)
+  cRefOut := match(cref, subs)
     local
       DAE.Exp crefExp;
       DAE.Type ty;
@@ -178,7 +178,7 @@ algorithm
         crefExp := Expression.makeCrefExp(crNew, ty);
       then
         crefExp;
-  end matchcontinue;
+  end match;
 end buildCrefExpFromAsub;
 
 public function buildCrefExpFromSubs
@@ -188,7 +188,7 @@ public function buildCrefExpFromSubs
   input list<DAE.Subscript> subs;
   output DAE.Exp cRefOut;
 algorithm
-  cRefOut := matchcontinue(cref, subs)
+  cRefOut := match(cref, subs)
     local
       DAE.Exp crefExp;
       DAE.Type ty;
@@ -201,7 +201,7 @@ algorithm
         crefExp := Expression.makeCrefExp(crNew, ty);
       then
         crefExp;
-  end matchcontinue;
+  end match;
 end buildCrefExpFromSubs;
 
 public function incrementInt
@@ -2009,7 +2009,7 @@ protected
 algorithm
   installationDir := Settings.getInstallationDirectoryPath();
 
-  () := matchcontinue(uri,path,inLibs)
+  () := match(uri,path,inLibs)
     local
   case(_, _,{"-lWinmm"}) guard Autoconf.os=="Windows_NT"
     algorithm
@@ -2032,7 +2032,7 @@ algorithm
       end if;
 
     then ();
-  end matchcontinue;
+  end match;
 end getLinkerLibraryPaths;
 
 protected function generateExtFunctionLibraryDirectoryFlags
@@ -2736,7 +2736,7 @@ function twodigit
   output String outS;
 algorithm
   outS :=
-  matchcontinue i
+  match i
     local String s;
     case _ guard i < 10
       algorithm
@@ -2745,7 +2745,7 @@ algorithm
       then
         s;
     else intString(i);
-  end matchcontinue;
+  end match;
 end twodigit;
 
 public function generateSubPalceholders

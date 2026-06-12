@@ -335,5 +335,5 @@ function mMKeywordToJLKeyword
 end mMKeywordToJLKeyword;
 
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_tools");
 end MMToJuliaUtil;

@@ -2332,8 +2332,8 @@ algorithm
       end for;
 
       if not listEmpty(neverVars) then
-        msg := System.gettext(BackendDump.varListStringShort(neverVars,"") +
-        "They could not be forced to be statically selected as dummys, this could lead to errors during simulation, please use -d=bltdump for more information.\n");
+        msg := BackendDump.varListStringShort(neverVars,"") +
+        "They could not be forced to be statically selected as dummys, this could lead to errors during simulation, please use -d=bltdump for more information.\n";
         Error.addMessage(Error.STATE_STATESELECT_NEVER_FORCED, {msg});
       end if;
     end if;

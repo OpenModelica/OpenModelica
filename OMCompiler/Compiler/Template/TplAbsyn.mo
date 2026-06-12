@@ -4474,7 +4474,7 @@ public function checkTextType
   input SourceInfo inInfo;
   output TypeSignature outType;
 algorithm
-  outType := matchcontinue (inType, inUnresolvedMsg)
+  outType := match (inType, inUnresolvedMsg)
     local
       String msg;
       TypeSignature ts;
@@ -4493,7 +4493,7 @@ algorithm
       then
         UNRESOLVED_TYPE(msg);
 
-  end matchcontinue;
+  end match;
 end checkTextType;
 
 
@@ -4504,7 +4504,7 @@ public function makeMMExpFromTemplateConstant
   output MMExp outMMExp;
   output TypeSignature outConstType;
 algorithm
-  (outMMExp, outConstType) := matchcontinue (inTplDef, inTemplIdent)
+  (outMMExp, outConstType) := match (inTplDef, inTemplIdent)
     local
       Ident ident;
       TypeSignature idtype, lt;
@@ -4538,7 +4538,7 @@ algorithm
         true := Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!makeMMExpFromTemplateConstant failed\n");
       then
         fail();
-  end matchcontinue;
+  end match;
 end makeMMExpFromTemplateConstant;
 
 public function prepareMatchArgument
@@ -4548,7 +4548,7 @@ public function prepareMatchArgument
   output Ident outIdent;
   output MatchingExp outMExp;
 algorithm
-  (outIdent, outMExp) := matchcontinue inMExp
+  (outIdent, outMExp) := match inMExp
     local
       MatchingExp mexp;
       Ident ident;
@@ -4570,7 +4570,7 @@ algorithm
     //no need to addToLocals because it is already in the locals
     else (inMatchArgName, BIND_AS_MATCH(inMatchArgName, inMExp) );
 
-  end matchcontinue;
+  end match;
 end prepareMatchArgument;
 
 
