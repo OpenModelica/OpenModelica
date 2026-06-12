@@ -328,8 +328,8 @@ public
   // necessary as wrapping value type for UnorderedMap
   type CrefLst = list<ComponentRef>;
 
-  type SparsityPatternCol = tuple<ComponentRef, list<ComponentRef>> "partial_vars, {seed_vars}";
-  type SparsityPatternRow = SparsityPatternCol                      "seed_vars, {partial_vars}";
+  type SparsityPatternCol = tuple<ComponentRef, list<ComponentRef>> "seed_var, {partial_vars}";
+  type SparsityPatternRow = SparsityPatternCol                      "partial_var, {seed_vars}";
 
   uniontype SparsityPattern
     record SPARSITY_PATTERN
@@ -415,11 +415,46 @@ public
       s := "Adjacency map (" + intString(listLength(keys)) + " keys):\n" + stringDelimitList(lines, "\n");
     end adjacencyMapToString;
 
+    function resolveDependency
+      input ComponentRef cref;
+      input UnorderedMap<ComponentRef, list<ComponentRef>> map;
+      input UnorderedSet<ComponentRef> seedSet;
+      input UnorderedSet<ComponentRef> visited;
+      output list<ComponentRef> dependencies = {};
+    algorithm
+      if UnorderedSet.contains(cref, seedSet) then
+        dependencies := {cref};
+      elseif UnorderedMap.contains(cref, map) and not UnorderedSet.contains(cref, visited) then
+        UnorderedSet.add(cref, visited);
+        for dep in UnorderedMap.getOrFail(cref, map) loop
+          dependencies := listAppend(resolveDependency(dep, map, seedSet, visited), dependencies);
+        end for;
+        dependencies := List.sort(UnorderedSet.unique_list(dependencies, ComponentRef.hash, ComponentRef.isEqual), ComponentRef.isGreater);
+      end if;
+    end resolveDependency;
+
+    function resolveRowDependencies
+      input ComponentRef row;
+      input UnorderedMap<ComponentRef, list<ComponentRef>> map;
+      input UnorderedSet<ComponentRef> seedSet;
+      output list<ComponentRef> dependencies = {};
+    protected
+      UnorderedSet<ComponentRef> visited = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    algorithm
+      if UnorderedMap.contains(row, map) then
+        for dep in UnorderedMap.getOrFail(row, map) loop
+          dependencies := listAppend(resolveDependency(dep, map, seedSet, visited), dependencies);
+        end for;
+        dependencies := List.sort(UnorderedSet.unique_list(dependencies, ComponentRef.hash, ComponentRef.isEqual), ComponentRef.isGreater);
+      end if;
+    end resolveRowDependencies;
+
     function create
       input VariablePointers seedCandidates;
       input VariablePointers partialCandidates;
       input Option<array<StrongComponent>> strongComponents "Strong Components";
       input JacobianType jacType;
+      input Boolean staticAsContinuous;
       output SparsityPattern sparsityPattern;
       output SparsityColoring sparsityColoring;
     protected
@@ -429,10 +464,11 @@ public
         local
           Mapping seed_mapping, partial_mapping;
           array<StrongComponent> comps;
-          list<ComponentRef> seed_vars, seed_vars_array, partial_vars, partial_vars_array, tmp, row_vars = {}, col_vars = {};
-          UnorderedSet<ComponentRef> set;
+          list<ComponentRef> seed_vars, seed_vars_array, partial_vars, partial_vars_array, jac_row_vars, row_deps, tmp, row_vars = {}, col_vars = {};
+          UnorderedSet<ComponentRef> set, seed_set;
           list<SparsityPatternCol> cols = {};
           list<SparsityPatternRow> rows = {};
+          ComponentRef row_cref;
           Integer nnz = 0;
 
         case SOME(comps) guard(arrayEmpty(comps)) algorithm
@@ -446,6 +482,7 @@ public
           // get all relevant crefs
           partial_vars        := VariablePointers.getScalarVarNames(partialCandidates, false);
           seed_vars           := VariablePointers.getScalarVarNames(seedCandidates, false);
+          jac_row_vars        := getSparsityRowCrefs(partialCandidates, jacType, staticAsContinuous);
           // unscalarized seed vars are currently needed for sparsity pattern
           seed_vars_array     := VariablePointers.getVarNames(seedCandidates);
           partial_vars_array  := VariablePointers.getVarNames(partialCandidates);
@@ -453,6 +490,7 @@ public
           // create a sufficient big unordered map
           map := UnorderedMap.new<CrefLst>(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(listLength(seed_vars) + listLength(partial_vars)));
           set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(listLength(seed_vars_array)));
+          seed_set := UnorderedSet.fromList(seed_vars, ComponentRef.hash, ComponentRef.isEqual);
 
           // save all seed_vars and partial_vars to know later on if a cref should be added
           for cref in seed_vars loop UnorderedMap.add(cref, {}, map); end for;
@@ -468,31 +506,28 @@ public
           end for;
 
           // create row-wise sparsity pattern
-          for cref in listReverse(partial_vars) loop
-            // only create rows for derivatives
-            if jacType == JacobianType.NLS or isRowInJacobian(cref, jacType) then
-              if UnorderedMap.contains(cref, map) then
-                tmp := UnorderedSet.unique_list(UnorderedMap.getOrFail(cref, map), ComponentRef.hash, ComponentRef.isEqual);
-                rows := (cref, tmp) :: rows;
-                row_vars := cref :: row_vars;
-
-                for dep in tmp loop
-                  // also add inverse dependency (indep var) --> (res/tmp) :: rest
-                  UnorderedMap.add(dep, cref :: UnorderedMap.getSafe(dep, map, sourceInfo()), map);
-                end for;
-              end if;
+          for cref in listReverse(jac_row_vars) loop
+            // only create rows for actual Jacobian result variables / rows
+            if UnorderedMap.contains(cref, map) then
+              tmp := resolveRowDependencies(cref, map, seed_set);
+              rows := (cref, tmp) :: rows;
+              row_vars := cref :: row_vars;
             end if;
           end for;
 
           // create column-wise sparsity pattern
           for cref in listReverse(seed_vars) loop
-            // TODO: check this condition for Optimization
-            if (jacType == JacobianType.NLS or BVariable.checkCref(cref, BVariable.isState, sourceInfo())
-                or (jacType == JacobianType.OPT_LFG or jacType == JacobianType.OPT_MRF or jacType == JacobianType.OPT_R0)) then
-              tmp := UnorderedSet.unique_list(UnorderedMap.getSafe(cref, map, sourceInfo()), ComponentRef.hash, ComponentRef.isEqual);
-              cols := (cref, tmp) :: cols;
-              col_vars := cref :: col_vars;
-            end if;
+            // transpose the resolved row dependencies
+            tmp := {};
+            for row in rows loop
+              (row_cref, row_deps) := row;
+              if List.contains(row_deps, cref, ComponentRef.isEqual) then
+                tmp := row_cref :: tmp;
+              end if;
+            end for;
+            tmp := List.sort(UnorderedSet.unique_list(tmp, ComponentRef.hash, ComponentRef.isEqual), ComponentRef.isGreater);
+            cols := (cref, tmp) :: cols;
+            col_vars := cref :: col_vars;
           end for;
 
           // find number of nonzero elements
@@ -608,12 +643,7 @@ public
     algorithm
       // create index -> cref arrays
       seeds := listArray(sparsityPattern.seed_vars);
-
-      if jacType == JacobianType.NLS then
-        partials := listArray(sparsityPattern.partial_vars);
-      else
-        partials := listArray(list(cref for cref guard(isRowInJacobian(cref, jacType)) in sparsityPattern.partial_vars));
-      end if;
+      partials := listArray(sparsityPattern.partial_vars);
 
       // create cref -> index maps
       sizeCols := arrayLength(seeds);
@@ -850,19 +880,6 @@ public
 
 protected
   // ToDo: all the DAEMode stuff is probably incorrect!
-
-  function isRowInJacobian
-    "Checks if a cref of the partial derivatives, is an actual row in the sparsity pattern (ODE and OPT-Jacobians). If this is false, its an inner variable."
-    input ComponentRef cref;
-    input JacobianType jacType;
-    output Boolean b;
-  algorithm
-    b := BVariable.checkCref(cref, BVariable.isResidual, sourceInfo())
-           or (BVariable.checkCref(cref, BVariable.isStateDerivative, sourceInfo()) and jacType <> JacobianType.OPT_MRF and jacType <> JacobianType.OPT_R0)
-           or (jacType == JacobianType.OPT_LFG and BVariable.checkCref(cref, BVariable.isLfgFunction, sourceInfo()))
-           or (jacType == JacobianType.OPT_MRF and BVariable.checkCref(cref, BVariable.isMrfFunction, sourceInfo()))
-           or (jacType == JacobianType.OPT_R0 and BVariable.checkCref(cref, BVariable.isInitialConstraint, sourceInfo()));
-  end isRowInJacobian;
 
   // TODO: refactor with map
   function getOptimizableVars
@@ -1170,7 +1187,8 @@ protected
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because full adjacency matrix to create sparsity pattern is missing."});
       fail();
     end if;
-    (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType);
+
+    (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType, staticAsContinuous);
 
     jacobian := SOME(Jacobian.JACOBIAN(
       name              = name,
@@ -1762,7 +1780,7 @@ protected
       seedVars      = VariablePointers.fromList(seed_vars)
     );
 
-    (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType);
+    (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType, staticAsContinuous);
 
     if Flags.isSet(Flags.DEBUG_ADJOINT) then
       print("Adjoint sparsity pattern and coloring:\n");
@@ -1804,7 +1822,7 @@ protected
       seedVars      = seedCandidates
     );
 
-    (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType);
+    (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType, staticAsContinuous);
 
     jacobian := SOME(Jacobian.JACOBIAN(
       name              = name,
@@ -1842,6 +1860,21 @@ protected
       then fail();
     end match;
   end getTmpFilterFunction;
+
+  function getSparsityRowCrefs
+    "Returns the actual jacobian row crefs from the partial candidates"
+    input VariablePointers partialCandidates;
+    input JacobianType jacType;
+    input Boolean staticAsContinuous;
+    output list<ComponentRef> row_crefs;
+  protected
+    list<Pointer<Variable>> row_vars;
+    BVariable.checkVar func = getTmpFilterFunction(jacType);
+  algorithm
+    (row_vars, _) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
+    row_vars := list(var for var guard(BVariable.isContinuous(var, staticAsContinuous)) in row_vars);
+    row_crefs := VariablePointers.getScalarVarNames(VariablePointers.fromList(row_vars, partialCandidates.scalarized), false);
+  end getSparsityRowCrefs;
 
   function makeVarTraverse
     input Pointer<Variable> var_ptr;
