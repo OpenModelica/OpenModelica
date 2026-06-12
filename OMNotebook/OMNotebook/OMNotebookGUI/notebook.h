@@ -80,8 +80,8 @@ public:
                  QWidget *parent=0);
   virtual ~NotebookWindow();
 
-  virtual void update();
-  virtual Document* document();
+  virtual void update() override;
+  virtual Document* document() override;
   CellApplication *application();
 
 public slots:
@@ -99,7 +99,7 @@ public slots:
   void updateBorderMenu();
   void updateMarginMenu();
   void updatePaddingMenu();
-  void updateWindowMenu();
+  void updateWindowMenu() override;
   void updateWindowTitle();
   void updateChapterCounters();
   void setStatusMessage( QString msg );

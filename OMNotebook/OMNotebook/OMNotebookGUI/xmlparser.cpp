@@ -58,7 +58,6 @@
 #include <QtWidgets>
 #include <QDomNode>
 #include <QtCore/QRegularExpression>
-#define fromAscii fromLatin1
 
 // IAEX Headers
 #include "xmlparser.h"
@@ -413,46 +412,15 @@ namespace IAEX
           QRegularExpression rx(pattern, QRegularExpression::CaseInsensitiveOption);
 #else
           QRegularExpression rx(pattern);
-rx.setPatternOptions(QRegularExpression::CaseInsensitiveOption | QRegularExpression::InvertedGreedinessOption);
-
+          rx.setPatternOptions(QRegularExpression::CaseInsensitiveOption | QRegularExpression::InvertedGreedinessOption);
 #endif
           if (!rx.isValid())
           {
-            fprintf(stderr, "Invalid QRegExp(%s)\n", rx.pattern().toStdString().c_str());
-          }
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
-          QRegularExpressionMatch match = rx.match(text);
-          while (match.hasMatch())
-          {
-            text = text.replace(rx, match.captured(1) + QString::fromAscii("/") + match.captured(2));
-            match = rx.match(text);
+            fprintf(stderr, "Invalid QRegularExpression(%s)\n", rx.pattern().toStdString().c_str());
           }
 
+          text.replace(rx, QStringLiteral("\1/\2"));
           textcell->setTextHtml(text);
-#else
-          QRegularExpressionMatch match = rx.match(text);
-          if (match.hasMatch())
-          {
-              while (match.hasMatch())
-              {
-                  // int numX = match.lastCapturedIndex(); 
-                  // QString s1 = match.captured(1);
-                  // QString s2 = match.captured(2);
-                  
-                  // Ersetzt das erste Vorkommen des Treffers im Text
-                  text.replace(match.capturedStart(0), match.capturedLength(0), 
-                              match.captured(1) + QStringLiteral("/") + match.captured(2));
-                  
-                  // Suche erneut im modifizierten Text
-                  match = rx.match(text);
-              }
-              textcell->setTextHtml(text);
-          }
-          else // Keine Treffer gefunden
-          {
-              textcell->setTextHtml(text);
-          }
-#endif
         }
         else if( e.tagName() == XML_RULE )
         {
