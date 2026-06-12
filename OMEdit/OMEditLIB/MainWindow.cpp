@@ -84,6 +84,7 @@
 #include "FMI/FMUExportOutputWidget.h"
 #include "PlotCurve.h"
 #include <QtSvg/QSvgGenerator>
+#include <QOpenGLWidget>
 #include <QNetworkProxyFactory>
 
 namespace ToolBars {
@@ -110,6 +111,12 @@ namespace ToolBars {
 MainWindow::MainWindow(QWidget *parent)
   : QMainWindow(parent), mExitApplicationStatus(false)
 {
+  /* TRICK: Forces the top-level window surface to initialize
+   * as QSurface::OpenGLSurface immediately, preventing later recreation flicker.
+   * See issue #15830.
+   */
+  QOpenGLWidget *dummyGL = new QOpenGLWidget(this);
+  dummyGL->hide();
   // Make sure we honor the system's proxy settings
   QNetworkProxyFactory::setUseSystemConfiguration(true);
   // Default system font
