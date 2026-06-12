@@ -104,7 +104,8 @@ ViewerWidget::ViewerWidget(QWidget* parent, Qt::WindowFlags flags)
   camera->setGraphicsContext(mpGraphicsWindow.get());
   camera->setClearColor(osg::Vec4(0.95, 0.95, 0.95, 1.0));
   camera->setViewport(new osg::Viewport(0, 0, width(), height()));
-  camera->setProjectionMatrixAsPerspective(30.0f, static_cast<double>(width()/2) / static_cast<double>(height()/2), 1.0f, 10000.0f);
+  double aspect = height() > 0 ? static_cast<double>(width()) / static_cast<double>(height()) : 1.0;
+  camera->setProjectionMatrixAsPerspective(30.0f, aspect, 1.0f, 10000.0f);
   mpSceneView->addEventHandler(new osgViewer::StatsHandler());
   // reverse the mouse wheel zooming
   osgGA::MultiTouchTrackballManipulator *pMultiTouchTrackballManipulator = new osgGA::MultiTouchTrackballManipulator();
@@ -114,7 +115,6 @@ ViewerWidget::ViewerWidget(QWidget* parent, Qt::WindowFlags flags)
   mpViewer->setThreadingModel(osgViewer::CompositeViewer::SingleThreaded);
   // disable the default setting of viewer.done() by pressing Escape.
   mpViewer->setKeyEventSetsDone(0);
-  mpViewer->realize();
   // This ensures that the widget will receive keyboard events. This focus
   // policy is not set by default. The default, Qt::NoFocus, will result in
   // keyboard events that are ignored.
@@ -127,13 +127,12 @@ ViewerWidget::ViewerWidget(QWidget* parent, Qt::WindowFlags flags)
 }
 
 /*!
- * \brief ViewerWidget::paintEvent
- * Reimplementation of QOpenGLWidget::paintEvent().
- * \sa ViewerWidget::paintGL()
+ * \brief ViewerWidget::initializeGL
+ * Reimplementation of QOpenGLWidget::initializeGL()
  */
-void ViewerWidget::paintEvent(QPaintEvent* /* paintEvent */)
+void ViewerWidget::initializeGL()
 {
-  paintGL();
+  mpViewer->realize();
 }
 
 /*!
@@ -149,9 +148,13 @@ void ViewerWidget::paintEvent(QPaintEvent* /* paintEvent */)
  */
 void ViewerWidget::paintGL()
 {
-  mpFrameMutex->lock();
-  frame();
-  mpFrameMutex->unlock();
+  if (!context()) {
+    qDebug() << "No OpenGL context";
+    return;
+  }
+
+  OpenThreads::ScopedLock<OpenThreads::Mutex> lock(*mpFrameMutex);
+  mpViewer->frame();
   MessagesWidget::instance()->showPendingMessages();
 }
 
