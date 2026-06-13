@@ -71,6 +71,7 @@ import BackendVariable;
 import Binding;
 import BlockCallRewrite;
 import CevalScript;
+import CodegenWasmJit;
 import CheckModel;
 import ClassInf;
 import ClockIndexes;
@@ -1469,7 +1470,13 @@ algorithm
            System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
            SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
 
-           resI := System.systemCallRestrictedEnv(sim_call, logFile);
+           // The wasm-jit target runs the JIT-compiled model in-process and
+           // writes the result file directly, instead of spawning an executable.
+           if Config.simCodeTarget() == "wasm-jit" then
+             resI := CodegenWasmJit.runSimulation(executable, result_file, simflags);
+           else
+             resI := System.systemCallRestrictedEnv(sim_call, logFile);
+           end if;
 
            timeSimulation := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
 
@@ -6009,7 +6016,17 @@ algorithm
         end if;
         if success then
           try
-            CevalScript.compileModel(filenameprefix, libsAndLibDirs);
+            // The wasm-jit target produced the model WebAssembly module during
+            // translateModel and runs it in-process at simulate time, so there
+            // is no C executable to compile/link here. Instead, force the JIT
+            // compile of the model's wasm modules now so its cost is attributed
+            // to timeCompile (this clock) rather than leaking into
+            // timeSimulation at runSimulation.
+            if Config.simCodeTarget() <> "wasm-jit" then
+              CevalScript.compileModel(filenameprefix, libsAndLibDirs);
+            else
+              CodegenWasmJit.finishCompile(filenameprefix);
+            end if;
           else
             success := false;
           end try;
