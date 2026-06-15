@@ -22,18 +22,17 @@ instantiateModel(TestAliasStream.Test1); getErrorString();
 //     parameter Real 'tank.A' = 0.001;
 //     Real 'tank.y'(fixed = true, start = 1.0);
 //     Real 'tank.T'(fixed = true, start = 20.0);
-//     Real 'tank.port.w';
-//     Real 'pump.outlet.w' = 'tank.port.w' \"Alias variable\";
-//     Real 'pump.w' = 'tank.port.w' \"Alias variable\";
+//     Real 'pump.w' = sin(time);
+//     Real 'tank.port.w' = 'pump.w' \"Alias variable\";
+//     Real 'pump.outlet.w' = -'pump.w' \"Alias variable\";
 //   equation
 //     'pump.outlet.p' = 'tank.port.p';
 //     'pump.outlet.h' = 4200.0 * 'pump.T';
-//     'pump.P' = if 'tank.port.w' > 0.0 then 'tank.port.w' * ('pump.outlet.p' - 1e5) / 1000.0 else 0.0;
-//     1000.0 * 'tank.A' * der('tank.y') = 'tank.port.w';
-//     1000.0 * 'tank.A' * 4200.0 * der('tank.y' * 'tank.T') = smooth(0, 'tank.port.w' * (if 'tank.port.w' > 0.0 then 'pump.outlet.h' else 'tank.port.h'));
+//     'pump.P' = if 'pump.w' > 0.0 then 'pump.w' * ('pump.outlet.p' - 1e5) / 1000.0 else 0.0;
+//     1000.0 * 'tank.A' * der('tank.y') = 'pump.w';
+//     1000.0 * 'tank.A' * 4200.0 * der('tank.y' * 'tank.T') = 'pump.w' * (if 'pump.w' > 0.0 then 'pump.outlet.h' else 'tank.port.h');
 //     'tank.port.h' = 4200.0 * 'tank.T';
 //     'tank.port.p' = 1e5 + 9810.0 * 'tank.y';
-//     'tank.port.w' = sin(time);
 //   end 'Test1';
 // end 'Test1';
 // "
