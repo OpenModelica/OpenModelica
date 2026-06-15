@@ -248,33 +248,36 @@ OMSProxy::~OMSProxy()
 
 void OMSProxy::startGuiServer()
 {
-  // TODO FIX the path like SSP simulation
-  QString pythonExe = "C:/ProgramData/anaconda3/python.exe"; // full path if needed
-  QString script = "C:/OPENMODELICAGIT/OpenModelica/OMSimulator/src/OMSimulatorServer/OMSimulatorGuiServer.py";
-
   mpGuiProcess = new QProcess(this);
-
   // connect signals
   connect(mpGuiProcess, &QProcess::started, this, &OMSProxy::guiProcessStarted);
   connect(mpGuiProcess, &QProcess::errorOccurred, this, &OMSProxy::guiProcessError);
   connect(mpGuiProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &OMSProxy::guiProcessFinished);
-
   connect(mpGuiProcess, &QProcess::readyReadStandardOutput, this, &OMSProxy::readGuiServerStandardOutput);
   connect(mpGuiProcess, &QProcess::readyReadStandardError, this, &OMSProxy::readGuiServerStandardError);
-  QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-  env.insert("PYTHONPATH", "C:/ProgramData/anaconda3/python.exe");
-  mpGuiProcess->setProcessEnvironment(env);
   QString endpoint = mpGuiRequestSocket->endPoint();
-  QStringList args;
-  args << script << "--endpoint-rep" << endpoint;
-  mpGuiProcess->start(pythonExe, args);
+  QStringList args(QString("%1/share/OMSimulator/scripts/OMSimulatorGuiServer.py").arg(Helper::OpenModelicaHome));
+  args << "--endpoint-rep" << endpoint;
+  // start the executable
+  QString process;
+#if defined(_WIN32)
+  process = QString("python");
+  QProcessEnvironment processEnvironment = QProcessEnvironment::systemEnvironment();
+  QString OMHOME = QString(Helper::OpenModelicaHome);
+  processEnvironment.insert("PYTHONPATH",  OMHOME + "/bin;" + OMHOME + "/lib/omc;" + processEnvironment.value("PYTHONPATH"));
+  processEnvironment.insert("PATH",  OMHOME + "/bin;" + OMHOME + "/lib;" + processEnvironment.value("PATH"));
+  mpGuiProcess->setProcessEnvironment(processEnvironment);
+#else
+  process = QString("%1/bin/OMSimulatorPython3").arg(Helper::OpenModelicaHome);
+#endif
+  mpGuiProcess->start(process, args);
 }
 
 void OMSProxy::guiProcessStarted()
 {
   mServerReady = true;
   MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-    tr("OMSimulator Python server started at %1.").arg(mpGuiRequestSocket->endPoint()),
+    tr("OMSimulator Python GUI server started at %1.").arg(mpGuiRequestSocket->endPoint()),
     Helper::scriptingKind, Helper::notificationLevel));
 }
 
@@ -314,7 +317,6 @@ void OMSProxy::readGuiServerStandardOutput()
 {
   QString output = QString::fromUtf8(mpGuiProcess->readAllStandardOutput()).trimmed();
   if (!output.isEmpty()) {
-    qDebug().noquote() << output;
     emit logGUIMessage(MessageItem(MessageItem::Modelica, output, Helper::scriptingKind, Helper::notificationLevel));
   }
 }
@@ -323,7 +325,6 @@ void OMSProxy::readGuiServerStandardError()
 {
   QString error = QString::fromUtf8(mpGuiProcess->readAllStandardError()).trimmed();
   if (!error.isEmpty()) {
-    qDebug().noquote() << error;
     emit logGUIMessage(MessageItem(MessageItem::Modelica, error, Helper::scriptingKind, Helper::errorLevel));
   }
 }
@@ -374,10 +375,6 @@ void OMSProxy::logResponse(QString command, oms_status_enu_t status, QElapsedTim
 
   MainWindow::instance()->printStandardOutAndErrorFilesMessages();
 }
-
-
-
-
 
 /*!
  * \brief OMSProxy::statusToBool
