@@ -222,6 +222,9 @@ int main(int argc, char *argv[])
   // Set this before creating QApplication. Avoids web engine switch to Direct3DSurface. See issue #15822.
   qputenv("QSG_RHI_BACKEND", "opengl");
 #endif // #ifdef Q_OS_WIN
+#ifdef Q_OS_LINUX
+  qputenv("EGL_LOG_LEVEL", "fatal");
+#endif // #ifdef Q_OS_LINUX
   OMEditApplication a(argc, argv, threadData);
 // Do not use the signal handler OR exception filter if user is building a debug version.
 // Perhaps the user wants to use gdb.
