@@ -45,12 +45,24 @@
 
 namespace OMSModel
 {
+  /*!
+   * \class ConnectorGeometry
+   * \brief Stores the 2-D position of a connector on its parent element icon (x, y in [0,1]).
+   * \brief Populates geometry from a JSON object.
+   * \param jsonObject - JSON object containing "x" and "y" fields.
+   */
   void ConnectorGeometry::deserialize(const QJsonObject &jsonObject)
   {
     x = jsonObject.value("x").toDouble(0.5);
     y = jsonObject.value("y").toDouble(0.5);
   }
 
+  /*!
+   * \class ElementGeometry
+   * \brief Stores the bounding box, rotation, and icon source of a system or component element.
+   * \brief Populates geometry from a JSON object.
+   * \param jsonObject - JSON object from the getElements reply geometry field.
+   */
   void ElementGeometry::deserialize(const QJsonObject &jsonObject)
   {
     x1 = jsonObject.value("x1").toDouble(-10.0);
@@ -64,6 +76,12 @@ namespace OMSModel
     iconFixedAspectRatio = jsonObject.value("iconFixedAspectRatio").toBool(false);
   }
 
+  /*!
+   * \class Connector
+   * \brief Represents a single connector (port) on an element with its causality, type, and geometry.
+   * \brief Populates connector fields from a JSON object.
+   * \param jsonObject - JSON object from the connectors array in a getElements reply.
+   */
   void Connector::deserialize(const QJsonObject &jsonObject)
   {
     mName = jsonObject.value("name").toString();
@@ -75,6 +93,11 @@ namespace OMSModel
     }
   }
 
+  /*!
+   * \brief Converts a causality string (e.g. "input") to the Causality enum value.
+   * \param value - the string to convert.
+   * \return the matching Causality enum value, or oms_causality_undefined if unrecognised.
+   */
   Causality Connector::causalityFromString(const QString &value)
   {
     const QString v = value.toLower();
@@ -92,6 +115,11 @@ namespace OMSModel
     return Causality::oms_causality_undefined;
   }
 
+  /*!
+   * \brief Converts a signal type string (e.g. "Real") to the SignalType enum value.
+   * \param value - the string to convert.
+   * \return the matching SignalType enum value.
+   */
   SignalType Connector::signalTypeFromString(const QString &value)
   {
     const QString v = value.toLower();
@@ -109,6 +137,10 @@ namespace OMSModel
     return SignalType::oms_signal_type_real;
   }
 
+  /*!
+   * \brief Returns the causality as a human-readable string.
+   * \return causality string (e.g. "Input", "Output", "Parameter").
+   */
   QString Connector::getCausalityString() const
   {
     switch (mCausality) {
@@ -128,6 +160,10 @@ namespace OMSModel
     }
   }
 
+  /*!
+   * \brief Returns the signal type as a human-readable string.
+   * \return signal type string (e.g. "Real", "Integer", "Boolean").
+   */
   QString Connector::getSignalTypeString() const
   {
     switch (mSignalType) {
@@ -146,6 +182,11 @@ namespace OMSModel
       }
   }
 
+  /*!
+   * \brief Converts a Causality enum value to its string representation.
+   * \param causality - the enum value to convert.
+   * \return the string representation (e.g. "Input", "Output").
+   */
   QString Connector::causalityToString(Causality causality)
   {
     switch (causality) {
@@ -165,6 +206,11 @@ namespace OMSModel
     }
   }
 
+  /*!
+   * \brief Converts a SignalType enum value to its string representation.
+   * \param signalType - the enum value to convert.
+   * \return the string representation (e.g. "Real", "Integer").
+   */
   QString Connector::signalTypeToString(SignalType signalType)
   {
     switch (signalType) {
@@ -183,6 +229,12 @@ namespace OMSModel
     }
   }
 
+  /*!
+   * \class ConnectionGeometry
+   * \brief Stores the polyline waypoints of a connection line as parallel X and Y vectors.
+   * \brief Populates waypoints from a JSON object.
+   * \param jsonObject - JSON object containing "pointsX" and "pointsY" arrays.
+   */
   void ConnectionGeometry::deserialize(const QJsonObject &jsonObject)
   {
     mPointsX.clear();
@@ -200,6 +252,12 @@ namespace OMSModel
     }
   }
 
+  /*!
+   * \class Connection
+   * \brief Represents a signal connection between two connectors in an OMSimulator system.
+   * \brief Populates connection fields from a JSON object.
+   * \param jsonObject - JSON object containing "conA", "conB", and "geometry".
+   */
   void Connection::deserialize(const QJsonObject &jsonObject)
   {
     mConA = jsonObject.value("conA").toString();
@@ -210,6 +268,14 @@ namespace OMSModel
     }
   }
 
+  /*!
+   * \class FMUInfo
+   * \brief Holds static metadata about an FMU read from its modelDescription.xml.
+   * Deserialized from the "fmuInfo" field of a component element returned by
+   * the getElements ZMQ command.
+   * \brief Populates FMUInfo fields from a JSON object.
+   * \param jsonObject - the "fmuInfo" JSON object from the getElements reply.
+   */
   void FMUInfo::deserialize(const QJsonObject &jsonObject)
   {
     mDescription = jsonObject.value("description").toString();
@@ -233,6 +299,14 @@ namespace OMSModel
     mMaxOutputDerivativeOrder = jsonObject.value("maxOutputDerivativeOrder").toInt();
   }
 
+
+  /*!
+   * \class Element
+   * \brief Represents a node in the OMSimulator model tree — either a System or a Component (FMU).
+   * Elements are deserialized recursively: a System element may contain child elements
+   * (sub-systems or components), connectors, and connections.
+   * \brief Recursively deletes all child elements, connectors, and connections.
+   */
   Element::~Element()
   {
     qDeleteAll(mElements);
@@ -240,6 +314,10 @@ namespace OMSModel
     qDeleteAll(mConnections);
   }
 
+  /*!
+   * \brief Populates this element and its children recursively from a JSON object.
+   * \param jsonObject - one element node from the getElements reply.
+   */
   void Element::deserialize(const QJsonObject &jsonObject)
   {
     mName = jsonObject.value("name").toString();
@@ -288,26 +366,48 @@ namespace OMSModel
     }
   }
 
+  /*!
+   * \brief Returns true if this element represents a System.
+   * \return true if the element type is "system".
+   */
   bool Element::isSystem() const
   {
     return mType == "system";
   }
 
+  /*!
+   * \brief Returns true if this element represents a Component (FMU instance).
+   * \return true if the element type is "component".
+   */
   bool Element::isComponent() const
   {
     return mType == "component";
   }
 
+  /*!
+   * \class Model
+   * \brief Top-level container that holds the deserialized OMSimulator model tree.
+   * Constructed from the JSON array returned by the getElements ZMQ command and
+   * owns the root Element objects for the lifetime of the loaded model.
+   * \brief Constructs a Model from the raw elements JSON array.
+   * \param elementsJson - the "elements" array from the getElements ZMQ reply.
+   */
   Model::Model(const QJsonArray &elementsJson)
       : mElementsJson(elementsJson)
   {
   }
 
+  /*!
+   * \brief Recursively deletes all root elements.
+   */
   Model::~Model()
   {
     qDeleteAll(mRootElements);
   }
 
+  /*!
+   * \brief Deserializes the stored JSON into root Element objects.
+   */
   void Model::deserialize()
   {
     qDeleteAll(mRootElements);
@@ -324,6 +424,11 @@ namespace OMSModel
     }
   }
 
+  /*!
+   * \brief Recursively prints an element tree node to stdout for debugging.
+   * \param element - the element to print.
+   * \param indent  - current indentation depth.
+   */
   void Model::printElement(const OMSModel::Element *element, int indent)
   {
     QString pad(indent, ' ');
@@ -346,6 +451,9 @@ namespace OMSModel
     }
   }
 
+  /*!
+   * \brief Prints the full model tree to stdout for debugging.
+   */
   void Model::debugPrint()
   {
     for (const OMSModel::Element *root : getRootElements()) {
