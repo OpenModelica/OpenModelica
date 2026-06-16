@@ -138,31 +138,6 @@ bool GuiRequestSocket::sendCommand(const QJsonObject &command, QJsonObject &repl
 }
 
 
-/*!
- * \brief loggingCallback
- * Callback function to handle the OMSimulator logging.
- * \param type
- * \param message
- */
-void loggingCallback(oms_message_type_enu_t type, const char *message)
-{
-  QString level = Helper::notificationLevel;
-  switch (type) {
-    case oms_message_warning:
-      level = Helper::notificationLevel;
-      break;
-    case oms_message_error:
-      level = Helper::errorLevel;
-      break;
-    case oms_message_info:
-    case oms_message_debug:
-    case oms_message_trace:
-    default:
-      level = Helper::notificationLevel;
-      break;
-  }
-  emit OMSProxy::instance()->emitLogGUIMessage(MessageItem(MessageItem::Modelica, QString(message), Helper::scriptingKind, level));
-}
 
 /*!
  * \class OMSProxy
@@ -186,7 +161,6 @@ void OMSProxy::create()
  */
 void OMSProxy::destroy()
 {
-  oms_setLoggingCallback(0);
   mpInstance->deleteLater();
   mpInstance = 0;
 }
@@ -206,9 +180,6 @@ OMSProxy::OMSProxy()
   mTotalOMSCallsTime = 0.0;
   // OMSimulator global settings
   //setCommandLineOption("--suppressPath=true");
-  setLogFile(QString(Utilities::tempDirectory() + "/omslog.txt"));
-  setTempDirectory(Utilities::tempDirectory());
-  setLoggingCallback();
   qRegisterMetaType<MessageItem>("MessageItem");
   connect(this, SIGNAL(logGUIMessage(MessageItem)), MessagesWidget::instance(), SLOT(addGUIMessage(MessageItem)));
   mpGuiRequestSocket = new GuiRequestSocket();
@@ -335,70 +306,29 @@ void OMSProxy::readGuiServerStandardError()
  */
 void OMSProxy::logCommand(QString command)
 {
-  // write the log to communication log file
   if (mpCommunicationLogFile) {
     fputs(QString("%1 %2\n").arg(command, QTime::currentTime().toString("hh:mm:ss:zzz")).toUtf8().constData(), mpCommunicationLogFile);
   }
 }
 
-/*!
- * \brief OMSProxy::logResponse
- * Writes the response to the omscommunication.log file.
- * \param response - the response to write
- * \param status - execution status of the command
- * \param responseTime - the response end time
- */
-void OMSProxy::logResponse(QString command, oms_status_enu_t status, QElapsedTimer *responseTime)
+void OMSProxy::logResponse(QString method, QString status, QElapsedTimer *responseTime)
 {
-  double elapsed = (double)responseTime->elapsed() / 1000.0;
-  QString firstLine("");
-  for (int i = 0; i < command.length(); i++) {
-    if (command[i] != '\n') {
-      firstLine.append(command[i]);
-    } else {
-      break;
-    }
-  }
-
-  // write the log to communication log file
   if (mpCommunicationLogFile) {
+    double elapsed = responseTime->elapsed() / 1000.0;
     mTotalOMSCallsTime += elapsed;
-    fputs(QString("%1 %2\n").arg(status).arg(QTime::currentTime().toString("hh:mm:ss:zzz")).toUtf8().constData(), mpCommunicationLogFile);
-    fputs(QString("#s#; %1; %2; \'%3\'\n\n").arg(QString::number(elapsed, 'f', 6)).arg(QString::number(mTotalOMSCallsTime, 'f', 6)).arg(firstLine).toUtf8().constData(),  mpCommunicationLogFile);
-  }
-
-  // flush the logs if --Debug=true
-  if (MainWindow::instance()->isDebug()) {
-    fflush(NULL);
-  }
-
-  MainWindow::instance()->printStandardOutAndErrorFilesMessages();
-}
-
-/*!
- * \brief OMSProxy::statusToBool
- * Converts the oms_status_enu_t to bool.
- * \param status
- * \return
- */
-bool OMSProxy::statusToBool(oms_status_enu_t status)
-{
-  switch (status) {
-    case oms_status_ok:
-    case oms_status_warning:
-    case oms_status_pending:
-      return true;
-    default:
-      return false;
+    fputs(QString("%1 %2\n").arg(status, QTime::currentTime().toString("hh:mm:ss:zzz")).toUtf8().constData(), mpCommunicationLogFile);
+    fputs(QString("#s#; %1; %2; '%3'\n\n")
+      .arg(QString::number(elapsed, 'f', 6),
+           QString::number(mTotalOMSCallsTime, 'f', 6),
+           method).toUtf8().constData(), mpCommunicationLogFile);
   }
 }
 
 /*!
  * \brief OMSProxy::sendZmqCommand
  * Centralized helper for all ZMQ JSON commands: logs the command and reply to the
- * communication log file (same format as the old oms_* calls), checks for errors,
- * and posts a message to the GUI message widget on failure.
- * Returns true only when the Python server replies with status "ok".
+ * communication log file, checks for errors, and posts a message to the GUI
+ * message widget on failure. Returns true only when the server replies with status "ok".
  */
 bool OMSProxy::sendZmqCommand(const QJsonObject &obj, QJsonObject &reply)
 {
@@ -415,25 +345,11 @@ bool OMSProxy::sendZmqCommand(const QJsonObject &obj, QJsonObject &reply)
   QElapsedTimer commandTime;
   commandTime.start();
 
-  if (mpCommunicationLogFile) {
-    QString entry = QString("zmq(%1) %2\n")
-      .arg(QJsonDocument(obj).toJson(QJsonDocument::Compact),
-           QTime::currentTime().toString("hh:mm:ss:zzz"));
-    fputs(entry.toUtf8().constData(), mpCommunicationLogFile);
-  }
+  logCommand(QString("zmq(%1)").arg(QString(QJsonDocument(obj).toJson(QJsonDocument::Compact))));
 
   bool ok = mpGuiRequestSocket->sendCommand(obj, reply);
-  double elapsed = commandTime.elapsed() / 1000.0;
-
-  if (mpCommunicationLogFile) {
-    mTotalOMSCallsTime += elapsed;
-    QString status = ok ? reply["status"].toString() : "timeout";
-    fputs(QString("%1 %2\n").arg(status, QTime::currentTime().toString("hh:mm:ss:zzz")).toUtf8().constData(), mpCommunicationLogFile);
-    fputs(QString("#s#; %1; %2; '%3'\n\n")
-      .arg(QString::number(elapsed, 'f', 6),
-           QString::number(mTotalOMSCallsTime, 'f', 6),
-           method).toUtf8().constData(), mpCommunicationLogFile);
-  }
+  QString status = ok ? reply["status"].toString() : "timeout";
+  logResponse(method, status, &commandTime);
 
   if (MainWindow::instance()->isDebug())
     fflush(NULL);
@@ -445,7 +361,7 @@ bool OMSProxy::sendZmqCommand(const QJsonObject &obj, QJsonObject &reply)
     return false;
   }
 
-  QString status = reply["status"].toString();
+  status = reply["status"].toString();
   if (status == "failed") {
     QString error = reply["error"].toString();
     QString msg = error.isEmpty()
@@ -553,16 +469,16 @@ bool OMSProxy::addSubModel(QString cref, QString fmuPath)
  * \param count
  * \return
  */
-bool OMSProxy::replaceSubModel(QString cref, QString fmuPath, bool dryCount, int *count)
-{
-  QString command = "oms_replaceSubModel";
-  QStringList args;
-  args << "\"" + cref + "\"" << fmuPath << QString::number(dryCount);
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_replaceSubModel(cref.toUtf8().constData(), fmuPath.toUtf8().constData(), dryCount, count);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
+// bool OMSProxy::replaceSubModel(QString cref, QString fmuPath, bool dryCount, int *count)
+// {
+//   QString command = "oms_replaceSubModel";
+//   QStringList args;
+//   args << "\"" + cref + "\"" << fmuPath << QString::number(dryCount);
+//   LOG_COMMAND(command, args);
+//   oms_status_enu_t status = oms_replaceSubModel(cref.toUtf8().constData(), fmuPath.toUtf8().constData(), dryCount, count);
+//   logResponse(command, status, &commandTime);
+//   return statusToBool(status);
+// }
 
 /*!
  * \brief OMSProxy::createElementGeometryUsingPosition
@@ -752,24 +668,6 @@ bool OMSProxy::getInteger(QString cref, int &value)
 }
 
 /*!
- * \brief OMSProxy::getModelState
- * Gets the model state.
- * \param cref
- * \param modelState
- * \return
- */
-bool OMSProxy::getModelState(const QString &cref, oms_modelState_enu_t *modelState)
-{
-  QString command = "oms_getModelState";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getModelState(cref.toUtf8().constData(), modelState);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
  * \brief OMSProxy::getReal
  * Gets the real variable value.
  * \param cref
@@ -886,15 +784,16 @@ bool OMSProxy::getStopTime(QString cref, double& stopTime)
  */
 bool OMSProxy::getSubModelPath(QString cref, QString* pPath)
 {
-  QString command = "oms_getSubModelPath";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  char* path = NULL;
-  oms_status_enu_t status = oms_getSubModelPath(cref.toUtf8().constData(), &path);
-  *pPath = QString(path);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
+  QJsonObject obj, args;
+  obj["method"] = "getSubModelPath";
+  obj["model"]  = cref.split('.').first();
+  args["cref"]  = cref;
+  obj["args"]   = args;
+  QJsonObject reply;
+  if (!sendZmqCommand(obj, reply))
+    return false;
+  *pPath = reply["path"].toString();
+  return true;
 }
 
 
@@ -942,40 +841,6 @@ bool OMSProxy::getVariableStepSize(QString cref, QString solverName, double& ini
   maximumStepSize = reply["maximumStepSize"].toString().toDouble();
 
   return true;
-}
-
-/*!
- * \brief OMSProxy::instantiate
- * Instantiates the model and enter the instantiated state.
- * \param cref
- * \return
- */
-bool OMSProxy::instantiate(QString cref)
-{
-  QString command = "oms_instantiate";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_instantiate(cref.toUtf8().constData());
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::initialize
- * Initializes a model.
- * \param cref
- * \return
- */
-bool OMSProxy::initialize(QString cref)
-{
-  QString command = "oms_initialize";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_initialize(cref.toUtf8().constData());
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
 }
 
 /*!
@@ -1151,24 +1016,6 @@ bool OMSProxy::setBoolean(QString cref, bool value)
   return sendZmqCommand(obj, reply);
 }
 
-
-/*!
- * \brief OMSProxy::setCommandLineOption
- * Sets the command line option.
- * \param cmd
- * \return
- */
-bool OMSProxy::setCommandLineOption(QString cmd)
-{
-  QString command = "oms_setCommandLineOption";
-  QStringList args;
-  args << cmd;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setCommandLineOption(cmd.toUtf8().constData());
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
 /*!
  * \brief OMSProxy::setConnectionGeometry
  * Sets the connection geometry.
@@ -1280,34 +1127,6 @@ bool OMSProxy::setElementGeometry(QString cref, const OMSModel::ElementGeometry 
 }
 
 /*!
- * \brief OMSProxy::setLogFile
- * Sets the log file.
- * \param filename
- */
-void OMSProxy::setLogFile(QString filename)
-{
-  QString command = "oms_setLogFile";
-  QStringList args;
-  args << "\"" + filename + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setLogFile(filename.toUtf8().constData());
-  logResponse(command, status, &commandTime);
-}
-
-/*!
- * \brief OMSProxy::setLoggingCallback
- * Sets the logging callback.
- */
-void OMSProxy::setLoggingCallback()
-{
-  QString command = "oms_setLoggingCallback";
-  QStringList args;
-  LOG_COMMAND(command, args);
-  oms_setLoggingCallback(loggingCallback);
-  logResponse(command, oms_status_ok, &commandTime);
-}
-
-/*!
  * \brief OMSProxy::setLoggingInterval
  * Sets the logging interval.
  * \param cref
@@ -1326,21 +1145,6 @@ bool OMSProxy::setLoggingInterval(QString cref, double loggingInterval)
   obj["args"]   = args;
   QJsonObject reply;
   return sendZmqCommand(obj, reply);
-}
-
-/*!
- * \brief OMSProxy::setDebugLogging
- * Sets the logging level.
- * \param logLevel
- */
-void OMSProxy::setLoggingLevel(int logLevel)
-{
-  QString command = "oms_setLoggingLevel";
-  QStringList args;
-  args << QString::number(logLevel);
-  LOG_COMMAND(command, args);
-  oms_setLoggingLevel(logLevel);
-  logResponse(command, oms_status_ok, &commandTime);
 }
 
 /*!
@@ -1470,21 +1274,6 @@ bool OMSProxy::setStopTime(QString cref, double stopTime)
 }
 
 /*!
- * \brief OMSProxy::setTempDirectory
- * Sets the temp directory.
- * \param path
- */
-void OMSProxy::setTempDirectory(QString path)
-{
-  QString command = "oms_setTempDirectory";
-  QStringList args;
-  args << "\"" + path + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setTempDirectory(path.toUtf8().constData());
-  logResponse(command, status, &commandTime);
-}
-
-/*!
  * \brief OMSProxy::setTolerance
  * Sets the tolerance.
  * \param cref
@@ -1526,34 +1315,17 @@ bool OMSProxy::setVariableStepSize(QString cref, double initialStepSize, double 
   return sendZmqCommand(obj, reply);
 }
 
-/*!
- * \brief OMSProxy::setWorkingDirectory
- * Sets the working directory.
- * \param path
- */
-void OMSProxy::setWorkingDirectory(QString path)
-{
-  QString command = "oms_setWorkingDirectory";
-  QStringList args;
-  args << "\"" + path + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setWorkingDirectory(path.toUtf8().constData());
-  logResponse(command, status, &commandTime);
-}
-
-/*!
- * \brief OMSProxy::terminate
- * Terminates the model.
- * \param cref
- * \return
- */
-bool OMSProxy::terminate(QString cref)
-{
-  QString command = "oms_terminate";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_terminate(cref.toUtf8().constData());
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
+// /*!
+//  * \brief OMSProxy::setWorkingDirectory
+//  * Sets the working directory.
+//  * \param path
+//  */
+// void OMSProxy::setWorkingDirectory(QString path)
+// {
+//   QJsonObject obj, args;
+//   obj["method"] = "setWorkingDirectory";
+//   args["path"] = path;
+//   obj["args"] = args;
+//   QJsonObject reply;
+//   sendZmqCommand(obj, reply);
+// }

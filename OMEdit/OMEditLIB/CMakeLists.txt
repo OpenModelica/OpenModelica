@@ -334,7 +334,6 @@ if(OM_ENABLE_ENCRYPTION)
 endif()
 
 target_link_libraries(OMEditLib PUBLIC omedit::config)
-target_link_libraries(OMEditLib PUBLIC OMSimulatorLib)
 target_link_libraries(OMEditLib PUBLIC OMParser)
 target_link_libraries(OMEditLib PUBLIC omedit::debugger::parser)
 target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::Xml)

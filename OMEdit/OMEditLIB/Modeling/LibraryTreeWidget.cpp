@@ -4248,10 +4248,8 @@ void LibraryWidget::openOMSModelFile(QFileInfo fileInfo, bool showProgress)
     MainWindow::instance()->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileInfo.absoluteFilePath()));
   }
   // load the model in OMSimulator
-  OMSProxy::instance()->setWorkingDirectory(fileInfo.absoluteDir().absolutePath());
   QString modelName;
   bool success = OMSProxy::instance()->loadModel(fileInfo.absoluteFilePath(), modelName);
-  OMSProxy::instance()->setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
   if (success) {
     // check if the file is already loaded.
     for (int i = 0; i < mpLibraryTreeModel->getRootLibraryTreeItem()->childrenSize(); ++i) {

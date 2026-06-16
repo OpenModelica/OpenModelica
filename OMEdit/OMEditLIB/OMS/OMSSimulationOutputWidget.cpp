@@ -297,6 +297,12 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
     OMSimulatorPage *pOMSimulatorPage = OptionsDialog::instance()->getOMSimulatorPage();
     int logLevel = pOMSimulatorPage->getLoggingLevelComboBox()->itemData(pOMSimulatorPage->getLoggingLevelComboBox()->currentIndex()).toInt();
     args << QString("--logLevel=%1").arg(logLevel);
+    args << QString("--temp=%1").arg(Utilities::tempDirectory());
+    args << QString("--log-file=%1").arg(Utilities::tempDirectory() + "/omslog.txt");
+    QString workingDir = OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory();
+    if (!workingDir.isEmpty()) {
+      args << QString("--working-directory=%1").arg(workingDir);
+    }
     QStringList options = StringHandler::splitStringWithSpaces(pOMSimulatorPage->getCommandLineOptionsTextBox()->text(), false);
     if (!options.isEmpty()) {
       args << QString("--option");
