@@ -38,7 +38,6 @@
 
 // QT Headers
 #include <QtGlobal>
-#include <QtWidgets>
 #include <QPrinter>
 #include <QPrintDialog>
 #include <QTextCodec>
@@ -82,15 +81,15 @@ namespace IAEX
     void add(DocumentView *view);
 
     void open(const QString filename, int readmode = READMODE_NORMAL, int isDrModelica=0);
-    void removeTempFiles(QString filename);      // Added 2006-01-16 AF
-    std::vector<DocumentView *> documentViewList();    // Added 2006-01-27 AF
-    void removeDocumentView( DocumentView *view );  // Added 2006-01-27 AF
+    void removeTempFiles(QString filename);
+    std::vector<DocumentView *> documentViewList();
+    void removeDocumentView( DocumentView *view );
     QApplication* getApplication() { return app_; }
     QWidget* getMainWindow() { return mainWindow; }
     bool FileOpenEventTriggered = false;  // for startup only
 
   private:
-    void convertDrModelica();            // Added 2006-03-21 AF
+    void convertDrModelica();
     QTranslator translator;
     QTranslator qtTranslator;
 
@@ -101,7 +100,7 @@ namespace IAEX
     std::vector<DocumentView *> views_;
     CommandCenter *cmdCenter_;
     std::vector<Cell *> pasteboard_;
-    QStringList removeList_;    // Added 2006-01-16 AF
+    QStringList removeList_;
   };
 }
 

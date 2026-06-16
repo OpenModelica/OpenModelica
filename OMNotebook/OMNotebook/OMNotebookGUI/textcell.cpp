@@ -53,7 +53,6 @@
 //QT Headers
 #include <QtGlobal>
 #include <QtWidgets>
-#include <QRegExp>
 
 
 //IAEX Headers

@@ -84,6 +84,7 @@ if(MINGW)
         --no-system-d3d-compiler
         --no-quick-import
         --libdir \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}\"
+        --translationdir \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/share/qt6/translations\"
         \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/OMPlot.exe\"
       RESULT_VARIABLE WINDEPLOYQT_RESULT
       OUTPUT_VARIABLE WINDEPLOYQT_OUTPUT

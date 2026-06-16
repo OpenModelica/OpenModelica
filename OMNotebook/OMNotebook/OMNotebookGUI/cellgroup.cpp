@@ -546,5 +546,11 @@ namespace IAEX{
     adjustHeight();
   }
 
+  void CellGroup::viewExpression(const bool flag) {
+  }
+
+  QString CellGroup::text() {
+    return QString();
+  }
 
 }

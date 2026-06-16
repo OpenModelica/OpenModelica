@@ -800,7 +800,16 @@ algorithm
   if isSome(ty) then
     // If the type is known, take the dimension directly from it.
     (dim, error) := nthDimensionBoundsChecked(Util.getOption(ty), dim_index);
-    oe := NONE();
+
+    if Dimension.isUnknown(dim) then
+      // Fall back to typing the expression if the dimension we got from the
+      // type is unknown, which can happen when the type of the binding isn't
+      // fully typed yet due to cyclic dependencies.
+      (dim, oe, error) := typeExpDim(exp, dim_index,
+        InstContext.set(context, NFInstContext.DIMENSION), info);
+    else
+      oe := NONE();
+    end if;
   else
     // If the type is unknown, try to type the expression only as much as is
     // needed to get the dimension we're looking for.

@@ -81,8 +81,6 @@ void dumpQtPaths()
     qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::BinariesPath)));
   fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::PluginsPath) =\n\t%s\n",
     qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::PluginsPath)));
-  fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::PluginsPath) =\n\t%s\n",
-    qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::PluginsPath)));
   fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::QmlImportsPath) =\n\t%s\n",
     qPrintable(QT_LIBRRY_INFO_PATH_OR_LOCATION(QT_LIBRRY_INFO_QMLIP)));
   fprintf(stdout, "QLibraryInfo::location|path(QLibraryInfo::ArchDataPath) =\n\t%s\n",
@@ -128,7 +126,8 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   // We install those under <install>/bin/... instead, so override the
   // search paths here before any QtWebEngine subprocess is launched.
   qputenv("QTWEBENGINE_RESOURCES_PATH",  QByteArray(installationDirectoryPath) + "/bin/resources");
-  qputenv("QTWEBENGINE_LOCALES_PATH",  QByteArray(installationDirectoryPath) + "/bin/translations/qtwebengine_locales");
+  QString localesPath = QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::TranslationsPath) + "/qtwebengine_locales";
+  qputenv("QTWEBENGINE_LOCALES_PATH", localesPath.toUtf8());
 #endif // #ifdef Q_OS_WIN
 
 /* We need a better handling of ligth and dark themes.
@@ -155,7 +154,7 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   QString qtTranslatorLoadError, translatorLoadError;
   QMap<QString, QLocale> languagesMap = Utilities::supportedLanguages();
   for (auto i = languagesMap.cbegin(), end = languagesMap.cend(); i != end; ++i) {
-    if (i.value() == settingsLocale) {
+    if (i.value().name() == locale) {
       QString qtTranslationsLocation = QT_LIBRRY_INFO_PATH_OR_LOCATION(QLibraryInfo::TranslationsPath);
       // install Qt's default translations
       if (mQtTranslator.load("qt_" + locale, qtTranslationsLocation)) {

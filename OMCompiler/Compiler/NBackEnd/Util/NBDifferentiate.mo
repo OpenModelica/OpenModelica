@@ -2440,7 +2440,7 @@ public
         Function dummy_func;
         CachedData cachedData;
         String der_func_name;
-        list<InstNode> inputs, locals, outputs, local_outputs;
+        list<InstNode> inputs, locals, outputs, local_outputs, uninitialized;
         list<Slot> slots;
 
       case der_func as Function.FUNCTION(node = node as InstNode.CLASS_NODE(cls = cls)) algorithm
@@ -2523,12 +2523,22 @@ public
               else funcDiffArgs;
             end match;
 
-            node.cls                    := Pointer.create(new_cls);
+            // update the class pointer in place; the fake node created above for
+            // recursive differentiation shares it and reaches codegen via the cache
+            Pointer.update(node.cls, new_cls);
             der_func.derivatives        := {};
             der_func.derivedInputs      := {};
             der_func.interfaceDiffInfo  := SOME(diffInfo);
             cachedData                  := CachedData.FUNCTION({der_func}, true, false);
             der_func.node               := InstNode.newFuncCache(node, cachedData);
+
+            // check the generated body for use-before-assign and initialize
+            // variables not provably assigned (the frontend check is skipped here)
+            uninitialized := Function.checkUseBeforeAssignGenerated(der_func);
+            if not listEmpty(uninitialized) then
+              new_cls.sections := Function.initializeUninitialized(new_cls.sections, uninitialized, AbsynUtil.pathString(der_func.path));
+              Pointer.update(node.cls, new_cls);
+            end if;
 
             // save the function tree
             diffArguments.funcMap := funcDiffArgs.funcMap;
