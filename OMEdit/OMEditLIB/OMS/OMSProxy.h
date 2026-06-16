@@ -40,7 +40,6 @@
 #ifndef OMSPROXY_H
 #define OMSPROXY_H
 
-#include "OMSimulator/OMSimulator.h"
 #include "Modeling/MessagesWidget.h"
 #include "OMS/OMSModel.h"
 #include <QObject>
@@ -79,7 +78,7 @@ private:
   double mTotalOMSCallsTime;
 
   void logCommand(QString command);
-  void logResponse(QString command, oms_status_enu_t status, QElapsedTimer *responseTime);
+  void logResponse(QString method, QString status, QElapsedTimer *responseTime);
 
   GuiRequestSocket* mpGuiRequestSocket;
   QProcess* mpGuiProcess;
@@ -94,14 +93,13 @@ private slots:
 public:
   static OMSProxy* instance() {return mpInstance;}
 
-  bool statusToBool(oms_status_enu_t status);
   void emitLogGUIMessage(MessageItem messageItem) {emit logGUIMessage(messageItem);}
   bool sendZmqCommand(const QJsonObject &obj, QJsonObject &reply);
 
   bool addConnection(QString crefA, QString crefB, bool suppressUnitConversion = false);
   bool addConnector(QString cref, OMSModel::Causality causality, OMSModel::SignalType type);
   bool addSubModel(QString cref, QString fmuPath);
-  bool replaceSubModel(QString cref, QString fmuPath, bool dryCount, int* count);
+  //bool replaceSubModel(QString cref, QString fmuPath, bool dryCount, int* count);
   void createElementGeometryUsingPosition(const QString &cref, QPointF position);
   bool addSystem(QString cref);
   bool deleteConnection(QString crefA, QString crefB);
@@ -109,7 +107,6 @@ public:
   bool getElementsJson(QString cref, QJsonArray &elements);
   bool getFixedStepSize(QString cref, double& stepSize);
   bool getInteger(QString signal, int &value);
-  bool getModelState(const QString &cref, oms_modelState_enu_t* modelState);
   bool getReal(QString cref, double &value);
   bool getSolverSettings(const QString &cref, QJsonObject &settings);
   bool setSolverSettings(const QString &cref, const QJsonObject &settings);
@@ -119,8 +116,6 @@ public:
   bool getSubModelPath(QString cref, QString* pPath);
   bool getTolerance(QString cref, double& relativeTolerance);
   bool getVariableStepSize(QString cref, QString solverName, double& initialStepSize, double& minimumStepSize, double& maximumStepSize);
-  bool instantiate(QString cref);
-  bool initialize(QString cref);
   bool exportSnapshot(QString cref, QString &pContents);
   bool loadModel(QString filename, QString &pModelName);
   bool importSnapshot(QString cref, QString snapshot, QString& pNewCref, QString& pNewRootCref);
@@ -129,15 +124,11 @@ public:
   bool omsDelete(QString cref);
   bool saveModel(QString cref, QString filename);
   bool setBoolean(QString signal, bool value);
-  bool setCommandLineOption(QString cmd);
   bool setConnectionGeometry(QString crefA, QString crefB, const OMSModel::ConnectionGeometry &geometry);
   bool setConnectorGeometry(QString cref, const OMSModel::ConnectorGeometry &geometry);
   bool setElementGeometry(QString cref, const OMSModel::ElementGeometry &geometry);
   bool setFixedStepSize(QString cref, double stepSize);
-  void setLogFile(QString filename);
-  void setLoggingCallback();
   bool setLoggingInterval(QString cref, double loggingInterval);
-  void setLoggingLevel(int logLevel);
   bool setInteger(QString signal, int value);
   bool setReal(QString cref, double value);
   bool setResultFile(QString cref, QString fileName, int bufferSize);
@@ -145,11 +136,8 @@ public:
   // setSolver(const QString&, const QString&) declared above with getSolverSettings
   bool setStartTime(QString cref, double startTime);
   bool setStopTime(QString cref, double stopTime);
-  void setTempDirectory(QString path);
   bool setTolerance(QString cref, double relativeTolerance);
   bool setVariableStepSize(QString cref, double initialStepSize, double minimumStepSize, double maximumStepSize);
-  void setWorkingDirectory(QString path);
-  bool terminate(QString cref);
 signals:
   void logGUIMessage(MessageItem messageItem);
 };

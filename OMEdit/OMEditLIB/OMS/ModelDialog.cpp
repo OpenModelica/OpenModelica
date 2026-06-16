@@ -537,13 +537,13 @@ void ReplaceSubModelDialog::replaceSubModel()
   bool failed = false;
   int warningCount;
 
-  if (OMSProxy::instance()->replaceSubModel(nameStructure, fileInfo.absoluteFilePath(), dryRun, &warningCount)) {
-    mpGraphicsView->getModelWidget()->createOMSimulatorUndoCommand(QString("replace submodel %1").arg(nameStructure));
-    mpGraphicsView->getModelWidget()->updateModelText();
-    accept();
-  }  else {
-    failed = true;
-  }
+  // if (OMSProxy::instance()->replaceSubModel(nameStructure, fileInfo.absoluteFilePath(), dryRun, &warningCount)) {
+  //   mpGraphicsView->getModelWidget()->createOMSimulatorUndoCommand(QString("replace submodel %1").arg(nameStructure));
+  //   mpGraphicsView->getModelWidget()->updateModelText();
+  //   accept();
+  // }  else {
+  //   failed = true;
+  // }
 
   // TODO remove the dryRun combo box check and always make the first run dryRun = true and warn users in case warnings exist
 
