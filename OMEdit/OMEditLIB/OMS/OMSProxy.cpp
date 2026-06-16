@@ -162,7 +162,6 @@ void loggingCallback(oms_message_type_enu_t type, const char *message)
       break;
   }
   emit OMSProxy::instance()->emitLogGUIMessage(MessageItem(MessageItem::Modelica, QString(message), Helper::scriptingKind, level));
-  //  qDebug() << "loggingCallback" << type << message;
 }
 
 /*!
@@ -485,8 +484,6 @@ bool OMSProxy::addConnection(QString crefA, QString crefB, bool suppressUnitConv
   args["suppressUnitConversion"] = suppressUnitConversion;
   obj["args"] = args;
 
-  //qDebug() <<"addConnection json : " << QJsonDocument(obj).toJson(QJsonDocument::Compact);
-
   QJsonObject reply;
   return sendZmqCommand(obj, reply);
 }
@@ -523,7 +520,6 @@ bool OMSProxy::addConnector(QString cref, OMSModel::Causality causality, OMSMode
   QJsonObject reply;
   return sendZmqCommand(obj, reply);
 }
-
 
 /*!
  * \brief OMSProxy::addSubModel
@@ -587,17 +583,6 @@ void OMSProxy::createElementGeometryUsingPosition(const QString &cref, QPointF p
   elementGeometry.setY2(y + 10.0);
   elementGeometry.setRotation(0.0);
   setElementGeometry(cref, elementGeometry);
-  //ssd_element_geometry_t elementGeometry;
-  // elementGeometry.x1 = x - 10.0;
-  // elementGeometry.y1 = y - 10.0;
-  // elementGeometry.x2 = x + 10.0;
-  // elementGeometry.y2 = y + 10.0;
-  // elementGeometry.rotation = 0.0;
-  // elementGeometry.iconSource = NULL;
-  // elementGeometry.iconRotation = 0.0;
-  // elementGeometry.iconFlip = false;
-  // elementGeometry.iconFixedAspectRatio = false;
-  // setElementGeometry(cref, &elementGeometry);
 }
 
 /*!
@@ -1202,8 +1187,6 @@ bool OMSProxy::setConnectionGeometry(QString crefA, QString crefB, const OMSMode
 
   QJsonArray pointsX;
   QJsonArray pointsY;
-
-  //const OMSModel::ConnectionGeometry &connectionGeometry = geometry;
 
   for (double x : geometry.getPointsX()) {
     pointsX.append(x);
