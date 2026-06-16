@@ -78,6 +78,7 @@ import CodegenOMSIC;
 import CodegenOMSI_common;
 import CodegenXML;
 import CodegenJS;
+import CodegenWasmJit;
 import Config;
 import DAEMode;
 import DAEUtil;
@@ -700,6 +701,10 @@ algorithm
 
     case "XML" algorithm
       Tpl.tplNoret(CodegenXML.translateModel, simCode);
+    then ();
+
+    case "wasm-jit" algorithm
+      CodegenWasmJit.translateModel(simCode);
     then ();
 
     case "None"

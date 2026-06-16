@@ -118,6 +118,7 @@ set(OMC_MM_ALWAYS_SOURCES
 # "Template";
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/AbsynDumpTpl.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCFunctions.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenWasmJit.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/DAEDumpTpl.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/ExpressionDumpTpl.mo
@@ -470,6 +471,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenJS.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenMidToC.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenUtilSimulation.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenWasmJitFunctions.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenXML.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/GraphvizDump.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/GraphMLDumpTpl.mo
