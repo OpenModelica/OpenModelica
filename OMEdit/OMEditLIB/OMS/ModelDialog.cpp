@@ -41,6 +41,7 @@
 #include <Modeling/LibraryTreeWidget.h>
 #include <Modeling/ModelWidgetContainer.h>
 #include <Modeling/Commands.h>
+#include <OMS/OMSModel.h>
 
 #include <QGridLayout>
 #include <QMessageBox>
@@ -60,26 +61,12 @@ SystemWidget::SystemWidget(LibraryTreeItem *pLibraryTreeItem, QWidget *pParent)
   // name
   mpNameLabel = new Label(Helper::name);
   mpNameTextBox = new QLineEdit;
-  // type
-  // mpTypeLabel = new Label(Helper::type);
-  // mpTypeComboBox = new QComboBox;
-  // if (!pLibraryTreeItem || pLibraryTreeItem->isTopLevel()) {
-  //   mpTypeComboBox->addItem(Helper::systemWC, oms_system_wc);
-  //   mpTypeComboBox->addItem(Helper::systemSC, oms_system_sc);
-  //   mpTypeComboBox->setCurrentIndex(1);
-  // } else if (pLibraryTreeItem->isSystemElement()) {
-  //   if (pLibraryTreeItem->isWCSystem()) {
-  //     mpTypeComboBox->addItem(Helper::systemSC, oms_system_sc);
-  //   }
-  // }
   // layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
   pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
   pMainLayout->addWidget(mpNameLabel, 0, 0);
   pMainLayout->addWidget(mpNameTextBox, 0, 1);
-  //pMainLayout->addWidget(mpTypeLabel, 1, 0);
-  //pMainLayout->addWidget(mpTypeComboBox, 1, 1);
   setLayout(pMainLayout);
 }
 
@@ -669,18 +656,18 @@ AddConnectorDialog::AddConnectorDialog(GraphicsView *pGraphicsView)
   // causality
   mpCausalityLabel = new Label("Causality:");
   mpCausalityComboBox = new QComboBox;
-  mpCausalityComboBox->addItem("Input", oms_causality_input);
-  mpCausalityComboBox->addItem("Output", oms_causality_output);
-  mpCausalityComboBox->addItem("Parameter", oms_causality_parameter);
+  mpCausalityComboBox->addItem("Input", static_cast<int>(OMSModel::Causality::oms_causality_input));
+  mpCausalityComboBox->addItem("Output", static_cast<int>(OMSModel::Causality::oms_causality_output));
+  mpCausalityComboBox->addItem("Parameter", static_cast<int>(OMSModel::Causality::oms_causality_parameter));
 
   // type
   mpTypeLabel = new Label(Helper::type);
   mpTypeComboBox = new QComboBox;
-  mpTypeComboBox->addItem("Real", oms_signal_type_real);
-  mpTypeComboBox->addItem("Integer", oms_signal_type_integer);
-  mpTypeComboBox->addItem("Boolean", oms_signal_type_boolean);
-  mpTypeComboBox->addItem("String", oms_signal_type_string);
-  mpTypeComboBox->addItem("Bus", oms_signal_type_bus);
+  mpTypeComboBox->addItem("Real", static_cast<int>(OMSModel::SignalType::oms_signal_type_real));
+  mpTypeComboBox->addItem("Integer", static_cast<int>(OMSModel::SignalType::oms_signal_type_integer));
+  mpTypeComboBox->addItem("Boolean", static_cast<int>(OMSModel::SignalType::oms_signal_type_boolean));
+  mpTypeComboBox->addItem("String", static_cast<int>(OMSModel::SignalType::oms_signal_type_string));
+
   // buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);

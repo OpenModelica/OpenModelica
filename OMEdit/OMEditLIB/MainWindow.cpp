@@ -5314,7 +5314,7 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
 #else
           "without",
 #endif
-          oms_getVersion(),
+          OMSProxy::instance() ? OMSProxy::instance()->getVersion() : QString("OMSimulator"),
           Helper::OpenModelicaHome,
           QStringLiteral(QT_VERSION_STR),
           QString::fromLatin1(qVersion()));
