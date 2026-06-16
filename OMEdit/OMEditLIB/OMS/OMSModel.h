@@ -41,8 +41,6 @@
 #ifndef OMSMODEL_H
 #define OMSMODEL_H
 
-#include "OMSimulator/OMSimulator.h"
-
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QString>
@@ -75,6 +73,11 @@ namespace OMSModel
     CoSimulation,
     ModelExchangeAndCoSimulation,
     Unknown
+  };
+
+  enum class ConnectionType
+  {
+    oms_connection_single
   };
 
   class FMUInfo
@@ -217,8 +220,8 @@ namespace OMSModel
     bool isParameter() const {return mCausality == Causality::oms_causality_parameter;}
   private:
     QString mName;
-    Causality mCausality;
-    SignalType mSignalType;
+    Causality mCausality = Causality::oms_causality_undefined;
+    SignalType mSignalType = SignalType::oms_signal_type_real;
     ConnectorGeometry mGeometry;
   };
 

@@ -68,7 +68,7 @@ LineAnnotation::LineAnnotation(QString annotation, GraphicsView *pGraphicsView)
   setZf("");
   setZfr("");
   setAlpha("");
-  setOMSConnectionType(oms_connection_single);
+  setOMSConnectionType(OMSModel::ConnectionType::oms_connection_single);
   setActiveState(false);
   // set the default values
   GraphicItem::setDefaults();
@@ -102,7 +102,7 @@ LineAnnotation::LineAnnotation(ModelInstance::Line *pLine, bool inherited, Graph
   setZf("");
   setZfr("");
   setAlpha("");
-  setOMSConnectionType(oms_connection_single);
+  setOMSConnectionType(OMSModel::ConnectionType::oms_connection_single);
   setActiveState(false);
   // set the default values
   GraphicItem::setDefaults();
@@ -135,7 +135,7 @@ LineAnnotation::LineAnnotation(ModelInstance::Line *pLine, Element *pParent)
   setZf("");
   setZfr("");
   setAlpha("");
-  setOMSConnectionType(oms_connection_single);
+  setOMSConnectionType(OMSModel::ConnectionType::oms_connection_single);
   setActiveState(false);
   // set the default values
   GraphicItem::setDefaults();
@@ -166,7 +166,7 @@ LineAnnotation::LineAnnotation(LineAnnotation::LineType lineType, Element *pStar
   setReset(true);
   setSynchronize(false);
   setPriority(1);
-  setOMSConnectionType(oms_connection_single);
+  setOMSConnectionType(OMSModel::ConnectionType::oms_connection_single);
   setActiveState(false);
   if (mLineType == LineAnnotation::ConnectionType) {
     setZValue(3000);
@@ -225,7 +225,7 @@ LineAnnotation::LineAnnotation(QString annotation, Element *pStartComponent, Ele
   setZf("");
   setZfr("");
   setAlpha("");
-  setOMSConnectionType(oms_connection_single);
+  setOMSConnectionType(OMSModel::ConnectionType::oms_connection_single);
   setActiveState(false);
   parseShapeAnnotation(annotation);
   /* make the points relative to origin */
@@ -269,7 +269,7 @@ LineAnnotation::LineAnnotation(ModelInstance::Connection *pConnection, Element *
   setZf("");
   setZfr("");
   setAlpha("");
-  setOMSConnectionType(oms_connection_single);
+  setOMSConnectionType(OMSModel::ConnectionType::oms_connection_single);
   setActiveState(false);
   parseShapeAnnotation();
   /* make the points relative to origin */
@@ -312,7 +312,7 @@ LineAnnotation::LineAnnotation(QString annotation, QString text, Element *pStart
   setZf("");
   setZfr("");
   setAlpha("");
-  setOMSConnectionType(oms_connection_single);
+  setOMSConnectionType(OMSModel::ConnectionType::oms_connection_single);
   setActiveState(false);
   parseShapeAnnotation(annotation);
   /* make the points relative to origin */
@@ -356,7 +356,7 @@ LineAnnotation::LineAnnotation(ModelInstance::Transition *pTransition, Element *
   setZf("");
   setZfr("");
   setAlpha("");
-  setOMSConnectionType(oms_connection_single);
+  setOMSConnectionType(OMSModel::ConnectionType::oms_connection_single);
   setActiveState(false);
   parseShapeAnnotation();
   /* make the points relative to origin */
@@ -404,7 +404,7 @@ LineAnnotation::LineAnnotation(QString annotation, Element *pComponent, Graphics
   setZf("");
   setZfr("");
   setAlpha("");
-  setOMSConnectionType(oms_connection_single);
+  setOMSConnectionType(OMSModel::ConnectionType::oms_connection_single);
   setActiveState(false);
   parseShapeAnnotation(annotation);
   /* make the points relative to origin */
@@ -448,7 +448,7 @@ LineAnnotation::LineAnnotation(ModelInstance::InitialState *pInitialState, Eleme
   setZf("");
   setZfr("");
   setAlpha("");
-  setOMSConnectionType(oms_connection_single);
+  setOMSConnectionType(OMSModel::ConnectionType::oms_connection_single);
   setActiveState(false);
   parseShapeAnnotation();
   /* make the points relative to origin */
@@ -484,7 +484,7 @@ LineAnnotation::LineAnnotation(Element *pParent)
   setZf("");
   setZfr("");
   setAlpha("");
-  setOMSConnectionType(oms_connection_single);
+  setOMSConnectionType(OMSModel::ConnectionType::oms_connection_single);
   setActiveState(false);
   // set the default values
   GraphicItem::setDefaults();
@@ -525,7 +525,7 @@ LineAnnotation::LineAnnotation(GraphicsView *pGraphicsView)
   setZf("");
   setZfr("");
   setAlpha("");
-  setOMSConnectionType(oms_connection_single);
+  setOMSConnectionType(OMSModel::ConnectionType::oms_connection_single);
   setActiveState(false);
   // set the default values
   GraphicItem::setDefaults();
