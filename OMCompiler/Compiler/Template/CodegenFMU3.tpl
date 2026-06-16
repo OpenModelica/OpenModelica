@@ -351,25 +351,25 @@ match modelInfo
 case MODELINFO(vars=SIMVARS(stateVars=stateVars)) then
   <<
   <ModelVariables>
-  <%TimeVariable3(simCode)%>
-  <%vars.stateVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-  <%vars.derivativeVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-  <%vars.algVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-  <%vars.discreteAlgVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-  <%vars.paramVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-  <%vars.aliasVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-  <%vars.intAlgVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-  <%vars.intParamVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-  <%vars.intAliasVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-  <%vars.boolAlgVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-  <%vars.boolParamVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-  <%vars.boolAliasVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-  <%vars.stringAlgVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-  <%vars.stringParamVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-  <%vars.stringAliasVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-  <%vars.extObjVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
-  <%SimCodeUtil.getFMI3Clocks(simCode) |> clk => Clock3(clk, FMUType) ;separator="\n"%>
-  <%EventIndicatorVariables3(simCode)%>
+    <%TimeVariable3(simCode)%>
+    <%vars.stateVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
+    <%vars.derivativeVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
+    <%vars.algVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
+    <%vars.discreteAlgVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
+    <%vars.paramVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
+    <%vars.aliasVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
+    <%vars.intAlgVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
+    <%vars.intParamVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
+    <%vars.intAliasVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
+    <%vars.boolAlgVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
+    <%vars.boolParamVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
+    <%vars.boolAliasVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
+    <%vars.stringAlgVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
+    <%vars.stringParamVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
+    <%vars.stringAliasVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
+    <%vars.extObjVars |> var => Variable3(var, simCode, stateVars) ;separator="\n"%>
+    <%SimCodeUtil.getFMI3Clocks(simCode) |> clk => Clock3(clk, FMUType) ;separator="\n"%>
+    <%EventIndicatorVariables3(simCode)%>
   </ModelVariables>
   >>
 end fmiModelVariables3;

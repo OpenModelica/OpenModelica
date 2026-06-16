@@ -47,10 +47,10 @@ system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" M_md.xml"); getErro
 // 0
 // ""
 //   <ModelVariables>
-//   <Float64 name="time" valueReference="3" causality="independent" variability="continuous" description="Simulation time"/>
-//   <Float64 name="x" valueReference="0" initial="exact"  start="1.0"/>
-//   <Float64 name="der(x)" valueReference="1"  derivative="0"/>
-//   <Binary name="eo" valueReference="2" causality="local" variability="fixed"/>
+//     <Float64 name="time" valueReference="3" causality="independent" variability="continuous" description="Simulation time"/>
+//     <Float64 name="x" valueReference="0" initial="exact"  start="1.0"/>
+//     <Float64 name="der(x)" valueReference="1"  derivative="0"/>
+//     <Binary name="eo" valueReference="2" causality="local" variability="fixed"/>
 //   </ModelVariables>
 // 0
 // ""

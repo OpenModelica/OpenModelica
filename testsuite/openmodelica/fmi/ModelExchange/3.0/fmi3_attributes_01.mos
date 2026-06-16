@@ -1,7 +1,7 @@
 // name: fmi3_attributes_01.mos
 // keywords: FMI 3.0 export
 // status: correct
-// teardown_command: rm -rf fmi3_attributes_01.fmu fmi3_attributes_01.xml fmi3_attributes_01_tmp.xml fmi3_attributes_01.fmutmp/
+// teardown_command: rm -rf fmi3_attributes_01.fmu fmi3_attributes_01.xml fmi3_attributes_01_tmp.xml fmi3_attributes_01.fmutmp/ fmi3_attributes_01_res.mat fmi3_attributes_01_fmpy.csv fmi3_attributes_01_diff.*.csv fmi3_attributes_01_info.json
 
 setCommandLineOptions("-d=newInst"); getErrorString();
 
@@ -26,6 +26,13 @@ readFile("fmi3_attributes_01.xml"); getErrorString();
 system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" fmi3_attributes_01_tmp.xml > fmi3_attributes_01.xml"); getErrorString();
 readFile("fmi3_attributes_01.xml"); getErrorString();
 
+// Validate the exported FMU with an independent FMI importer: simulate the
+// model in OpenModelica, simulate the FMU with FMPy, and check that the FMU
+// reproduces OpenModelica's own (non-FMU) simulation results.
+simulate(fmi3_attributes_01, stopTime=1.0); getErrorString();
+system("python3 ../../simulate_fmu_fmpy.py fmi3_attributes_01.fmu fmi3_attributes_01_fmpy.csv 1.0 x y"); getErrorString();
+diffSimulationResults("fmi3_attributes_01_fmpy.csv", "fmi3_attributes_01_res.mat", "fmi3_attributes_01_diff", vars={"x","y"}); getErrorString();
+
 // Result:
 // true
 // ""
@@ -39,11 +46,11 @@ readFile("fmi3_attributes_01.xml"); getErrorString();
 // 0
 // ""
 // "  <ModelVariables>
-//   <Float64 name=\"time\" valueReference=\"5\" causality=\"independent\" variability=\"continuous\" description=\"Simulation time\"/>
-//   <Float64 name=\"x\" valueReference=\"0\" initial=\"exact\"  start=\"1.0\"/>
-//   <Float64 name=\"der(x)\" valueReference=\"1\"  derivative=\"0\"/>
-//   <Float64 name=\"y\" valueReference=\"2\" causality=\"output\" />
-//   <Float64 name=\"a\" valueReference=\"3\" causality=\"parameter\" variability=\"fixed\"  start=\"2.0\"/>
+//     <Float64 name=\"time\" valueReference=\"5\" causality=\"independent\" variability=\"continuous\" description=\"Simulation time\"/>
+//     <Float64 name=\"x\" valueReference=\"0\" initial=\"exact\"  start=\"1.0\"/>
+//     <Float64 name=\"der(x)\" valueReference=\"1\"  derivative=\"0\"/>
+//     <Float64 name=\"y\" valueReference=\"2\" causality=\"output\" />
+//     <Float64 name=\"a\" valueReference=\"3\" causality=\"parameter\" variability=\"fixed\"  start=\"2.0\"/>
 //   </ModelVariables>
 // "
 // ""
@@ -56,5 +63,18 @@ readFile("fmi3_attributes_01.xml"); getErrorString();
 //     <InitialUnknown valueReference=\"2\" dependencies=\"0 3\" dependenciesKind=\"dependent dependent\"/>
 //   </ModelStructure>
 // "
+// ""
+// record SimulationResult
+//     resultFile = "fmi3_attributes_01_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'fmi3_attributes_01', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// 0
+// ""
+// (true, {})
 // ""
 // endResult

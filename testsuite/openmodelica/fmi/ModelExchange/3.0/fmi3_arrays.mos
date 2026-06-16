@@ -44,10 +44,10 @@ readFile("fmi3_arrays.xml"); getErrorString();
 // 0
 // ""
 // "  <ModelVariables>
-//   <Float64 name=\"time\" valueReference=\"7\" causality=\"independent\" variability=\"continuous\" description=\"Simulation time\"/>
-//   <Float64 name=\"x\" valueReference=\"0\" ><Dimension start=\"3\"/></Float64>
-//   <Float64 name=\"der(x)\" valueReference=\"3\"  derivative=\"0\"><Dimension start=\"3\"/></Float64>
-//   <Float64 name=\"a\" valueReference=\"6\" causality=\"parameter\" variability=\"fixed\"  start=\"2.0\"/>
+//     <Float64 name=\"time\" valueReference=\"7\" causality=\"independent\" variability=\"continuous\" description=\"Simulation time\"/>
+//     <Float64 name=\"x\" valueReference=\"0\" ><Dimension start=\"3\"/></Float64>
+//     <Float64 name=\"der(x)\" valueReference=\"3\"  derivative=\"0\"><Dimension start=\"3\"/></Float64>
+//     <Float64 name=\"a\" valueReference=\"6\" causality=\"parameter\" variability=\"fixed\"  start=\"2.0\"/>
 //   </ModelVariables>
 // "
 // ""

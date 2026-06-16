@@ -41,15 +41,15 @@ readFile("fmi3_types.xml"); getErrorString();
 // 0
 // ""
 // "  <ModelVariables>
-//   <Float64 name=\"time\" valueReference=\"10\" causality=\"independent\" variability=\"continuous\" description=\"Simulation time\"/>
-//   <Float64 name=\"x\" valueReference=\"0\" initial=\"exact\"  start=\"3.0\"/>
-//   <Float64 name=\"der(x)\" valueReference=\"1\"  derivative=\"0\"/>
-//   <Float64 name=\"ro\" valueReference=\"2\" causality=\"output\" />
-//   <Float64 name=\"rp\" valueReference=\"3\" causality=\"parameter\" variability=\"fixed\"  start=\"1.5\"/>
-//   <Int32 name=\"ic\" valueReference=\"5\" variability=\"discrete\" initial=\"exact\"  start=\"4\"/>
-//   <Int32 name=\"ip\" valueReference=\"6\" causality=\"parameter\" variability=\"fixed\"  start=\"7\"/>
-//   <Boolean name=\"bp\" valueReference=\"8\" causality=\"parameter\" variability=\"fixed\"  start=\"true\"/>
-//   <String name=\"sp\" valueReference=\"9\" causality=\"parameter\" variability=\"fixed\" ><Start value=\"hello\"/></String>
+//     <Float64 name=\"time\" valueReference=\"10\" causality=\"independent\" variability=\"continuous\" description=\"Simulation time\"/>
+//     <Float64 name=\"x\" valueReference=\"0\" initial=\"exact\"  start=\"3.0\"/>
+//     <Float64 name=\"der(x)\" valueReference=\"1\"  derivative=\"0\"/>
+//     <Float64 name=\"ro\" valueReference=\"2\" causality=\"output\" />
+//     <Float64 name=\"rp\" valueReference=\"3\" causality=\"parameter\" variability=\"fixed\"  start=\"1.5\"/>
+//     <Int32 name=\"ic\" valueReference=\"5\" variability=\"discrete\" initial=\"exact\"  start=\"4\"/>
+//     <Int32 name=\"ip\" valueReference=\"6\" causality=\"parameter\" variability=\"fixed\"  start=\"7\"/>
+//     <Boolean name=\"bp\" valueReference=\"8\" causality=\"parameter\" variability=\"fixed\"  start=\"true\"/>
+//     <String name=\"sp\" valueReference=\"9\" causality=\"parameter\" variability=\"fixed\" ><Start value=\"hello\"/></String>
 //   </ModelVariables>
 // "
 // ""
