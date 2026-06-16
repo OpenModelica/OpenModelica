@@ -1059,8 +1059,7 @@ protected
     output Integer nColColors       "number of column colors used";
     output array<Integer> rowColors "row colors (1-based; 0 = not row-colored)";
     output Integer nRowColors       "number of row colors used";
-    external "C" ColPackBicoloring_starBicolor(nRows, nCols, rowPtr, colIdx, colColors, nColColors, rowColors, nRowColors)
-      annotation(Library = "omcruntime");
+    external "C" ColPackBicoloring_starBicolor(nRows, nCols, rowPtr, colIdx, colColors, nColColors, rowColors, nRowColors) annotation(Library = "omcruntime");
   end colpackStarBicoloring;
 
   function isRowInJacobian
