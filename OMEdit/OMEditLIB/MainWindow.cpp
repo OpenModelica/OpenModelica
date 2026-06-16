@@ -210,8 +210,6 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   SplashScreen::instance()->showMessage(tr("Reading Settings"), Qt::AlignRight, Qt::white);
   // Get the number of processors.
   mNumberOfProcessors = mpOMCProxy->numProcessors();
-  // create an object of OMSProxy
-  OMSProxy::create();
   // Create an object of OptionsDialog
   mpLibrariesMenu = 0;
   OptionsDialog::create();
@@ -2085,6 +2083,10 @@ void MainWindow::createNewMOSFile()
  */
 void MainWindow::createNewSSPModel()
 {
+  //create an object of OMSProxy when user first creates a SSP Model
+  if (!OMSProxy::instance())
+    OMSProxy::create();
+
   CreateModelDialog *pCreateModelDialog = new CreateModelDialog(this);
   pCreateModelDialog->exec();
 }

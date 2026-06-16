@@ -1932,8 +1932,6 @@ void LibraryTreeModel::reLoadOMSimulatorModel(const QString &modelName, const QS
   if (!sameModelAndEditedCref && pEditedLibraryTreeItem) {
     pEditedLibraryTreeItem->setModelWidget(0);
   }
-  // Get the position of LibraryTreeItem in the Library Browser.
-  const int row = pModelLibraryTreeItem->row();
   // unload the LibraryTreeItems and close the ModelWidgets
   unloadOMSModel(pModelLibraryTreeItem, false, false);
   // create a new tree hirerchy of the model and redraw it on the same ModelWidget
@@ -4247,6 +4245,9 @@ void LibraryWidget::openOMSModelFile(QFileInfo fileInfo, bool showProgress)
   if (showProgress) {
     MainWindow::instance()->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileInfo.absoluteFilePath()));
   }
+  // create OMSProxy on first SSP file open if not already created
+  if (!OMSProxy::instance())
+    OMSProxy::create();
   // load the model in OMSimulator
   QString modelName;
   bool success = OMSProxy::instance()->loadModel(fileInfo.absoluteFilePath(), modelName);

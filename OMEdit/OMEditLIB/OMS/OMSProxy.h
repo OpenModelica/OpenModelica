@@ -64,8 +64,9 @@ class OMSProxy : public QObject
 {
   Q_OBJECT
 private:
-  // the only class that is allowed to create and destroy
+  // the only classes that are allowed to create and destroy
   friend class MainWindow;
+  friend class LibraryWidget;
 
   static void create();
   static void destroy();
