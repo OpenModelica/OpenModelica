@@ -4261,22 +4261,16 @@ protected function translateModelFMU
 protected
   Flags.Flag flags;
 algorithm
-  if isProtectedContentAccess(className) then
-    // if AST contains encrypted class show nothing
-    cache := inCache;
-    outValue := Values.STRING("");
-  else
-    flags := loadCommandLineOptionsFromModel(className);
+  flags := loadCommandLineOptionsFromModel(className);
 
-    try
-      (success, cache, outValue) := callTranslateModelFMU(inCache,inEnv,className,FMUVersion,inFMUType,inFileNamePrefix,addDummy,platforms,inSimSettings);
-      // reset to the original flags
-      FlagsUtil.saveFlags(flags);
-    else
-      FlagsUtil.saveFlags(flags);
-      fail();
-    end try;
-  end if;
+  try
+    (success, cache, outValue) := callTranslateModelFMU(inCache,inEnv,className,FMUVersion,inFMUType,inFileNamePrefix,addDummy,platforms,inSimSettings);
+    // reset to the original flags
+    FlagsUtil.saveFlags(flags);
+  else
+    FlagsUtil.saveFlags(flags);
+    fail();
+  end try;
 end translateModelFMU;
 
 protected function callTranslateModelFMU
