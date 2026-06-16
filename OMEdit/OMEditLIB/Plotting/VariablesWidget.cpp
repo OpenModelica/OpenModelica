@@ -1653,23 +1653,29 @@ void VariablesWidget::updateVariablesTreeHelper(QMdiSubWindow *pSubWindow)
         pVariablesTreeItem = mpVariablesTreeModel->findVariablesTreeItem(variable, mpVariablesTreeModel->getRootVariablesTreeItem());
         if (pVariablesTreeItem) {
           mpVariablesTreeModel->setData(mpVariablesTreeModel->variablesTreeItemIndex(pVariablesTreeItem), Qt::Checked, Qt::CheckStateRole);
+          updateDisplayUnitAndValue(pPlotCurve->getYUnitPrefix(), pPlotCurve->getYDisplayUnit(), pVariablesTreeItem);
         }
       } else if (pPlotWindow->isPlotParametric() || pPlotWindow->isPlotArrayParametric()) {
         // check the xvariable
         QString xVariable = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->getXVariable());
         pVariablesTreeItem = mpVariablesTreeModel->findVariablesTreeItem(xVariable, mpVariablesTreeModel->getRootVariablesTreeItem());
-        if (pVariablesTreeItem)
+        if (pVariablesTreeItem) {
           mpVariablesTreeModel->setData(mpVariablesTreeModel->variablesTreeItemIndex(pVariablesTreeItem), Qt::Checked, Qt::CheckStateRole);
+          updateDisplayUnitAndValue(pPlotCurve->getXUnitPrefix(), pPlotCurve->getXDisplayUnit(), pVariablesTreeItem);
+        }
         // check the y variable
         QString yVariable = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->getYVariable());
         pVariablesTreeItem = mpVariablesTreeModel->findVariablesTreeItem(yVariable, mpVariablesTreeModel->getRootVariablesTreeItem());
-        if (pVariablesTreeItem)
+        if (pVariablesTreeItem) {
           mpVariablesTreeModel->setData(mpVariablesTreeModel->variablesTreeItemIndex(pVariablesTreeItem), Qt::Checked, Qt::CheckStateRole);
+          updateDisplayUnitAndValue(pPlotCurve->getYUnitPrefix(), pPlotCurve->getYDisplayUnit(), pVariablesTreeItem);
+        }
       } else if (pPlotWindow->isPlotInteractive()) {
         QString variable = pPlotCurve->getNameStructure();
         pVariablesTreeItem = mpVariablesTreeModel->findVariablesTreeItem(variable, mpVariablesTreeModel->getRootVariablesTreeItem());
         if (pVariablesTreeItem) {
           mpVariablesTreeModel->setData(mpVariablesTreeModel->variablesTreeItemIndex(pVariablesTreeItem), Qt::Checked, Qt::CheckStateRole);
+          updateDisplayUnitAndValue(pPlotCurve->getYUnitPrefix(), pPlotCurve->getYDisplayUnit(), pVariablesTreeItem);
         }
         // if a simulation was left running, make a replot
         pPlotWindow->updatePlot();

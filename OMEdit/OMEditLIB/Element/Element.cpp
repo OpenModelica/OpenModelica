@@ -831,16 +831,14 @@ int Element::getArrayIndexAsNumber(bool *ok) const
  */
 bool Element::isConnectorSizing()
 {
-  if (isArray()) {
-    if (mpModelComponent) {
-      // connectorSizing is only done on the single dimensional array.
-      QString parameter = mpModelComponent->getDimensions().getAbsynDimensions().at(0);
-      bool ok;
-      parameter.toInt(&ok);
-      // if the array index is not a number then look for parameter
-      if (!ok) {
-        return isParameterConnectorSizing(parameter);
-      }
+  if (mpModelComponent) {
+    // connectorSizing is only done on the single dimensional array.
+    QString parameter = mpModelComponent->getDimensions().getAbsynDimensions().isEmpty() ? "" : mpModelComponent->getDimensions().getAbsynDimensions().at(0);
+    bool ok;
+    parameter.toInt(&ok);
+    // if the array index is not a number then look for parameter
+    if (!ok) {
+      return isParameterConnectorSizing(parameter);
     }
   }
   return false;
