@@ -2233,6 +2233,14 @@ QString LibraryTreeModel::getUniqueTopLevelItemName(QString name, int number)
   return newItemName;
 }
 
+/*!
+ * \brief LibraryTreeModel::createLibraryTreeItemFromOMSModelElement
+ * Creates a LibraryTreeItem from an OMSModel::Element and attaches it to the given parent item.
+ * The created item inherits the parent file information and saved state.
+ * \param pElement - The OMS model element used to create the tree item.
+ * \param pParent - The parent LibraryTreeItem under which the new item will be added.
+ * \return A pointer to the created LibraryTreeItem, or nullptr if the input is invalid.
+ */
 LibraryTreeItem* LibraryTreeModel::createLibraryTreeItemFromOMSModelElement(OMSModel::Element *pElement, LibraryTreeItem *pParent)
 {
   if (!pElement || !pParent) {
@@ -2260,6 +2268,14 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItemFromOMSModelElement(OMSM
   return pLibraryTreeItem;
 }
 
+/*!
+ * \brief LibraryTreeModel::createLibraryTreeItemFromOMSModelConnector
+ * Creates a LibraryTreeItem from an OMSModel::Connector and attaches it to the given parent item.
+ * The created item inherits the parent file information and saved state.
+ * \param pConnector - The OMS model connector used to create the tree item.
+ * \param pParent - The parent LibraryTreeItem under which the connector item will be added.
+ * \return A pointer to the created LibraryTreeItem, or nullptr if the input is invalid.
+ */
 LibraryTreeItem* LibraryTreeModel::createLibraryTreeItemFromOMSModelConnector(OMSModel::Connector *pConnector, LibraryTreeItem *pParent)
 {
   if (!pConnector || !pParent) {
@@ -2287,6 +2303,15 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItemFromOMSModelConnector(OM
   return pLibraryTreeItem;
 }
 
+/*!
+ * \brief LibraryTreeModel::createLibraryTreeItemsFromOMSModel
+ * Recursively creates LibraryTreeItems for OMS model elements and their connectors.
+ * For each OMSModel::Element, a corresponding LibraryTreeItem is created under the
+ * specified parent item. All connectors of the element are also added as child items,
+ * and the function is recursively called for nested elements.
+ * \param elements - A vector containing OMS model elements to be added to the tree.
+ * \param pParent - The parent LibraryTreeItem under which the items will be created.
+ */
 void LibraryTreeModel::createLibraryTreeItemsFromOMSModel(const QVector<OMSModel::Element*> &elements, LibraryTreeItem *pParent)
 {
   for (OMSModel::Element *pElement : elements) {
@@ -2597,7 +2622,18 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItemImpl(LibraryTreeItem::Li
 //   return pLibraryTreeItem;
 // }
 
-
+/*!
+ * \brief LibraryTreeModel::createOMSLibraryTreeItemImpl
+ * Creates the OMS LibraryTreeItem\n
+ * \param name
+ * \param nameStructure
+ * \param path
+ * \param isSaved
+ * \param pParentLibraryTreeItem
+ * \param pOMSElement
+ * \param pOMSConnector
+ * \return
+ */
 LibraryTreeItem* LibraryTreeModel::createOMSLibraryTreeItemImpl(QString name, QString nameStructure, QString path, bool isSaved,
                                                                 LibraryTreeItem *pParentLibraryTreeItem, OMSModel::Element* pOMSElement, OMSModel::Connector *pOMSConnector)
 

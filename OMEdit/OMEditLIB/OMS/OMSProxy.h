@@ -96,6 +96,7 @@ public:
 
   void emitLogGUIMessage(MessageItem messageItem) {emit logGUIMessage(messageItem);}
   bool sendZmqCommand(const QJsonObject &obj, QJsonObject &reply);
+  QString getVersion();
 
   bool addConnection(QString crefA, QString crefB, bool suppressUnitConversion = false);
   bool addConnector(QString cref, OMSModel::Causality causality, OMSModel::SignalType type);

@@ -375,6 +375,20 @@ bool OMSProxy::sendZmqCommand(const QJsonObject &obj, QJsonObject &reply)
 
 
 /*!
+ * \brief OMSProxy::getVersion
+ * Returns the OMSimulator version string from the Python server.
+ * \return version string (e.g. "OMSimulator v3.0.0").
+ */
+QString OMSProxy::getVersion()
+{
+  QJsonObject obj, reply;
+  obj["method"] = "getVersion";
+  if (!sendZmqCommand(obj, reply))
+    return QString("OMSimulator");
+  return reply["version"].toString();
+}
+
+/*!
  * \brief OMSProxy::addConnection
  * Adds the connection
  * \param crefA

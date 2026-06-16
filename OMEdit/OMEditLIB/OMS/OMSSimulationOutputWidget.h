@@ -42,7 +42,6 @@
 
 #include "Util/Utilities.h"
 #include "Util/StringHandler.h"
-#include "OMSimulator/OMSimulator.h"
 
 #include <QWidget>
 #include <QProgressBar>
