@@ -137,8 +137,6 @@ bool GuiRequestSocket::sendCommand(const QJsonObject &command, QJsonObject &repl
   return true;
 }
 
-
-
 /*!
  * \class OMSProxy
  * \brief Interface for call OMSimulator API.
@@ -161,8 +159,10 @@ void OMSProxy::create()
  */
 void OMSProxy::destroy()
 {
-  mpInstance->deleteLater();
-  mpInstance = 0;
+  if (mpInstance) {
+    delete mpInstance;
+    mpInstance = 0;
+  }
 }
 
 /*!
@@ -178,8 +178,6 @@ OMSProxy::OMSProxy()
   mpCommunicationLogFile = fopen(communicationLogFilePath.toUtf8().constData(), "w");
 #endif
   mTotalOMSCallsTime = 0.0;
-  // OMSimulator global settings
-  //setCommandLineOption("--suppressPath=true");
   qRegisterMetaType<MessageItem>("MessageItem");
   connect(this, SIGNAL(logGUIMessage(MessageItem)), MessagesWidget::instance(), SLOT(addGUIMessage(MessageItem)));
   mpGuiRequestSocket = new GuiRequestSocket();
