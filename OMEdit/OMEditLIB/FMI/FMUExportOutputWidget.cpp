@@ -41,7 +41,11 @@
 #include "Editors/CEditor.h"
 #include "Editors/TextEditor.h"
 #include "Git/CommitChangesDialog.h"
+#ifdef OMC_RUST_ABI
+#include "omc_rust_embedding.h" // Rust omc port: box-based mmc_mk_scon + stringHashDjb2 (no MMC runtime)
+#else
 #include "meta/meta_modelica_builtin.h"
+#endif
 #include <QApplication>
 #include <QObject>
 #include <QHeaderView>
