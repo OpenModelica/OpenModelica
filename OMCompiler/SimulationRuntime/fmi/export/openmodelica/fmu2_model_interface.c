@@ -1359,33 +1359,32 @@ fmi2Status fmi2GetFMUstate(fmi2Component c, fmi2FMUstate* FMUstate)
   internal_state->realParameter = (modelica_real*)functions->allocateMemory(fmudata->modelData->nParametersReal, sizeof(modelica_real));
   for (int i = 0; i < fmudata->modelData->nParametersReal; ++i)
   {
-    modelica_real *start = (modelica_real *) &fmudata->modelData->realParameterData[i].attribute.start.data;
-    internal_state->realParameter[i] = start[0];
-    // infoStreamPrint(LOG_STDOUT, 0, "Copy Real parameter %s = %g", fmudata->modelData->realParameterData[i].info.name, internal_state->realParameters[i]);
+    internal_state->realParameter[i] = fmudata->simulationInfo->realParameter[i];
+    // infoStreamPrint(OMC_LOG_STDOUT, 0, "Copy Real parameter %s = %g", fmudata->modelData->realParameterData[i].info.name, internal_state->realParameter[i]);
   }
 
   // copy Integer parameter variables
   internal_state->integerParameter = (modelica_integer*)functions->allocateMemory(fmudata->modelData->nParametersInteger, sizeof(modelica_integer));
   for (int i = 0; i < fmudata->modelData->nParametersInteger; ++i)
   {
-    internal_state->integerParameter[i] = fmudata->modelData->integerParameterData[i].attribute.start;
-    // infoStreamPrint(LOG_STDOUT, 0, "Copy Integer parameter %s = %ld", fmudata->modelData->integerParameterData[i].info.name, internal_state->integerParameters[i]);
+    internal_state->integerParameter[i] = fmudata->simulationInfo->integerParameter[i];
+    // infoStreamPrint(OMC_LOG_STDOUT, 0, "Copy Integer parameter %s = %ld", fmudata->modelData->integerParameterData[i].info.name, (long)internal_state->integerParameter[i]);
   }
 
   // copy Boolean parameter variables
   internal_state->booleanParameter = (modelica_boolean*)functions->allocateMemory(fmudata->modelData->nParametersBoolean, sizeof(modelica_boolean));
   for (int i = 0; i < fmudata->modelData->nParametersBoolean; ++i)
   {
-    internal_state->booleanParameter[i] = fmudata->modelData->booleanParameterData[i].attribute.start;
-    //infoStreamPrint(LOG_STDOUT, 0, "copy Boolean parameter %s = %s", fmudata->modelData->booleanParameterData[i].info.name, internal_state->booleanParameters[i] ? "true" : "false");
+    internal_state->booleanParameter[i] = fmudata->simulationInfo->booleanParameter[i];
+    // infoStreamPrint(OMC_LOG_STDOUT, 0, "Copy Boolean parameter %s = %s", fmudata->modelData->booleanParameterData[i].info.name, internal_state->booleanParameter[i] ? "true" : "false");
   }
 
   // copy String parameter variables
   internal_state->stringParameter = (modelica_string*) omc_alloc_interface.malloc_uncollectable(fmudata->modelData->nParametersString * sizeof(modelica_string));
   for (int i = 0; i < fmudata->modelData->nParametersString; ++i)
   {
-    internal_state->stringParameter[i] = fmudata->modelData->stringParameterData[i].attribute.start;
-    //infoStreamPrint(LOG_STDOUT, 0, "copy String parameter %s = %s", fmudata->modelData->stringParameterData[i].info.name, MMC_STRINGDATA(internal_state->stringParameters[i]));
+    internal_state->stringParameter[i] = fmudata->simulationInfo->stringParameter[i];
+    // infoStreamPrint(OMC_LOG_STDOUT, 0, "Copy String parameter %s = %s", fmudata->modelData->stringParameterData[i].info.name, MMC_STRINGDATA(internal_state->stringParameter[i]));
   }
 
   //infoRingBuffer( fmudata->simulationData);
