@@ -136,7 +136,7 @@ case SIMCODE(__) then
   let modelIdentifier = modelNamePrefix(simCode)
   <<
   <?xml version="1.0" encoding="UTF-8"?>
-  <fmiBuildDescription fmiVersion="3.0">
+  <fmiBuildDescription fmiVersion="3.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/modelica/fmi-standard/v3.0.2/schema/fmi3BuildDescription.xsd">
     <BuildConfiguration modelIdentifier="<%modelIdentifier%>">
       <SourceFileSet language="C">
         <%sourceFiles |> file => '<SourceFile name="<%file%>"/>' ;separator="\n        "%>
@@ -170,7 +170,7 @@ template fmiTerminalsAndIcons(list<FmiTerminal> terminals)
 ::=
   <<
   <?xml version="1.0" encoding="UTF-8"?>
-  <fmiTerminalsAndIcons fmiVersion="3.0">
+  <fmiTerminalsAndIcons fmiVersion="3.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/modelica/fmi-standard/v3.0.2/schema/fmi3TerminalsAndIcons.xsd">
     <Terminals>
       <%terminals |> t => Terminal3(t) ;separator="\n"%>
     </Terminals>
@@ -234,6 +234,8 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = SIMVARS(s
   generationTool="<%Util.escapeModelicaStringToXmlString(generationTool)%>"
   generationDateAndTime="<%Util.escapeModelicaStringToXmlString(generationDateAndTime)%>"
   variableNamingConvention="<%variableNamingConvention%>"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/modelica/fmi-standard/main/schema/fmi3ModelDescription.xsd"
   >>
 end fmiModelDescriptionAttributes;
 
