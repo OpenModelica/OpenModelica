@@ -1,7 +1,7 @@
 // name: fmi3_terminals.mos
 // keywords: FMI 3.0 export terminals connector
 // status: correct
-// teardown_command: rm -rf Ctrl.fmu Ctrl.fmutmp/ Ctrl_term.xml
+// teardown_command: rm -rf Ctrl.fmu Ctrl.fmutmp/ Ctrl_term.xml Ctrl.log Ctrl_info.json index.html
 //
 // FMI 3.0 Terminals: variables that stem from a connector (detected from the
 // flat-model component type, i.e. a connector-typed cref qualifier) are grouped

@@ -1,7 +1,7 @@
 // name: fmi3_graphics.mos
 // keywords: FMI 3.0 export graphics icon annotations terminals ports
 // status: correct
-// teardown_command: rm -rf GfxPorts.fmu GfxPorts.fmutmp/
+// teardown_command: rm -rf GfxPorts.fmu GfxPorts.fmutmp/ GfxPorts.log GfxPorts_info.json index.html
 //
 // FMI 3.0 graphical user annotations. The model Icon is rendered to
 // terminalsAndIcons/icon.png (+ icon.svg companion) and an FMI 3.0

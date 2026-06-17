@@ -1,7 +1,7 @@
 // name: fmi3_terminals_alias.mos
 // keywords: FMI 3.0 export terminals connector flange causalization
 // status: correct
-// teardown_command: rm -rf Inertia2.fmu Inertia2.fmutmp/ Inertia2_term.xml
+// teardown_command: rm -rf Inertia2.fmu Inertia2.fmutmp/ Inertia2_term.xml Inertia2.log Inertia2_info.json index.html
 //
 // FMI 3.0 flange causalization (issue #15686). A model with unconnected acausal
 // (physical) connectors is exported with a causal FMU boundary: the flow variable

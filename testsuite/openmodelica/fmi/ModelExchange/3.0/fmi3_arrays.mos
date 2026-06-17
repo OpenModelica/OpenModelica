@@ -1,7 +1,7 @@
 // name: fmi3_arrays.mos
 // keywords: FMI 3.0 export array
 // status: correct
-// teardown_command: rm -rf fmi3_arrays.fmu fmi3_arrays.xml fmi3_arrays_tmp.xml fmi3_arrays.fmutmp/
+// teardown_command: rm -rf fmi3_arrays.fmu fmi3_arrays.xml fmi3_arrays_tmp.xml fmi3_arrays.fmutmp/ fmi3_arrays.log fmi3_arrays_info.json index.html
 //
 // Native FMI 3.0 array variables exported with the new backend
 // (--newBackend --simCodeScalarize=false): one typed element with one value

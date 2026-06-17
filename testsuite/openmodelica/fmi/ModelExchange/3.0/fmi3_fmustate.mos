@@ -1,7 +1,7 @@
 // name: fmi3_fmustate.mos
 // keywords: FMI 3.0 export FMUState serialization
 // status: correct
-// teardown_command: rm -rf Mst.fmu Mst.fmutmp/ Mst_md.xml
+// teardown_command: rm -rf Mst.fmu Mst.fmutmp/ Mst_md.xml Mst.log Mst_info.json index.html
 //
 // FMI 3.0 FMU state: the runtime implements fmi3GetFMUState / fmi3SetFMUState /
 // fmi3FreeFMUState and fmi3SerializedFMUStateSize / fmi3SerializeFMUState /

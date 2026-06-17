@@ -1,7 +1,7 @@
 // name: fmi3_binary_extobj.mos
 // keywords: FMI 3.0 export ExternalObject Binary
 // status: correct
-// teardown_command: rm -rf M.fmu M.fmutmp/ M_md.xml
+// teardown_command: rm -rf M.fmu M.fmutmp/ M_md.xml M.log M_info.json index.html
 //
 // A Modelica ExternalObject is an opaque handle (void*). It is exported to FMI 3.0
 // as a <Binary> variable whose value is the raw handle bytes (fmi3GetBinary /

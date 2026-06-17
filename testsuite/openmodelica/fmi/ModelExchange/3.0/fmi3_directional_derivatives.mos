@@ -1,7 +1,7 @@
 // name: fmi3_directional_derivatives.mos
 // keywords: FMI 3.0 export directional derivatives jacobian
 // status: correct
-// teardown_command: rm -rf Mdd.fmu Mdd.fmutmp/ Mdd_md.xml
+// teardown_command: rm -rf Mdd.fmu Mdd.fmutmp/ Mdd_md.xml Mdd.log Mdd_info.json index.html
 //
 // FMI 3.0 directional derivatives. With -d=-disableDirectionalDerivatives the
 // FMIDER Jacobian is generated, the ModelExchange element advertises

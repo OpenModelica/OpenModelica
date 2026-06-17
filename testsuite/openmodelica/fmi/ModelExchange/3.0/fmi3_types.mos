@@ -1,7 +1,7 @@
 // name: fmi3_types.mos
 // keywords: FMI 3.0 export typed variables
 // status: correct
-// teardown_command: rm -rf fmi3_types.fmu fmi3_types.xml fmi3_types_tmp.xml fmi3_types.fmutmp/
+// teardown_command: rm -rf fmi3_types.fmu fmi3_types.xml fmi3_types_tmp.xml fmi3_types.fmutmp/ fmi3_types.log fmi3_types_info.json index.html
 
 setCommandLineOptions("-d=newInst"); getErrorString();
 

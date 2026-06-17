@@ -619,6 +619,9 @@ fmi_cs_30.log: omc-diff
 fmi_cs_st.log: omc-diff
 	$(MAKE) -C openmodelica/fmi/CoSimulationStandAlone -f Makefile test > $@
 	@echo $@ done
+fmi_se_30.log: omc-diff
+	$(MAKE) -C openmodelica/fmi/ScheduledExecution/3.0 -f Makefile test > $@
+	@echo $@ done
 flatteningPlanarMechanics.log: omc-diff
 	$(MAKE) -C flattening/libraries/3rdParty/PlanarMechanics -f Makefile test > $@
 	@echo $@ done

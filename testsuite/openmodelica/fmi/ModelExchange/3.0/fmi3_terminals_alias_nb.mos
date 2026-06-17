@@ -1,7 +1,7 @@
 // name: fmi3_terminals_alias_nb.mos
 // keywords: FMI 3.0 export terminals connector flange newBackend
 // status: correct
-// teardown_command: rm -rf Inertia2.fmu Inertia2.fmutmp/ Inertia2_term.xml
+// teardown_command: rm -rf Inertia2.fmu Inertia2.fmutmp/ Inertia2_term.xml Inertia2.log Inertia2_info.json index.html
 //
 // New-backend (--newBackend) counterpart of fmi3_terminals_alias.mos. The FMI 3.0
 // terminals, variableKind (inflow for the flow member, signal for the potential),
