@@ -91,7 +91,6 @@ buildModel(tornNLSJacobianRows); getErrorString();
 // Row Color (2)
 //   - Row:    {$RES_SIM_2}
 //
-// Number of Nonlinear Loops: 2
 // {"tornNLSJacobianRows", "tornNLSJacobianRows_init.xml"}
 // ""
 // endResult

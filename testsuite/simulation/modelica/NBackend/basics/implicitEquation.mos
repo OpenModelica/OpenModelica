@@ -16,7 +16,6 @@ simulate(implicitEquation); getErrorString();
 // true
 // ""
 // true
-// Number of Nonlinear Loops: 1
 // ##################################
 //
 //     SimCode (implicitEquation)

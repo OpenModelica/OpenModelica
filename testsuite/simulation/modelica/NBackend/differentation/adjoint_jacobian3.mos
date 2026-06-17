@@ -21,7 +21,6 @@ buildModel(scalarAdjointJacobian3); getErrorString();
 // ""
 // true
 // ""
-// Number of Nonlinear Loops: 1
 // ########################################
 //
 //     SimCode (scalarAdjointJacobian3)

@@ -20,7 +20,6 @@ buildModel(algebraicLoop); getErrorString();
 // ""
 // true
 // ""
-// Number of Nonlinear Loops: 1
 // ###############################
 //
 //     SimCode (algebraicLoop)
