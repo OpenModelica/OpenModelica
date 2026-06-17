@@ -26,7 +26,7 @@ readFile("fmi3_cs_01.xml"); getErrorString();
 // model in OpenModelica, co-simulate the FMU with FMPy, and check that the FMU
 // reproduces OpenModelica's own (non-FMU) simulation results.
 simulate(fmi3_cs_01, stopTime=1.0); getErrorString();
-system("python3 ../../simulate_fmu_fmpy.py fmi3_cs_01.fmu fmi3_cs_01_fmpy.csv 1.0 x y"); getErrorString();
+system("python3 ../../../simulate_fmu_fmpy.py fmi3_cs_01.fmu fmi3_cs_01_fmpy.csv 1.0 x y"); getErrorString();
 diffSimulationResults("fmi3_cs_01_fmpy.csv", "fmi3_cs_01_res.mat", "fmi3_cs_01_diff", vars={"x","y"}); getErrorString();
 
 // Result:

@@ -38,7 +38,7 @@ readFile("Ctrl_term.xml"); getErrorString();
 // 0
 // ""
 // "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-// <fmiTerminalsAndIcons fmiVersion=\"3.0\">
+// <fmiTerminalsAndIcons fmiVersion=\"3.0\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation=\"https://raw.githubusercontent.com/modelica/fmi-standard/v3.0.2/schema/fmi3TerminalsAndIcons.xsd\">
 //   <Terminals>
 //     <Terminal name=\"bus\" matchingRule=\"plug\" terminalKind=\"InBus\">
 //       <TerminalMemberVariable variableName=\"bus.a\" memberName=\"a\" variableKind=\"signal\"/>

@@ -56,7 +56,7 @@ system("for v in flange_a.tau flange_a.phi flange_b.tau flange_b.phi; do unzip -
 // 0
 // ""
 // "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-// <fmiTerminalsAndIcons fmiVersion=\"3.0\">
+// <fmiTerminalsAndIcons fmiVersion=\"3.0\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation=\"https://raw.githubusercontent.com/modelica/fmi-standard/v3.0.2/schema/fmi3TerminalsAndIcons.xsd\">
 //   <Terminals>
 //     <Terminal name=\"flange_b\" matchingRule=\"plug\" terminalKind=\"Flange\">
 //       <TerminalMemberVariable variableName=\"flange_b.tau\" memberName=\"tau\" variableKind=\"inflow\"/>

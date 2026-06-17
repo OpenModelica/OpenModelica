@@ -39,7 +39,9 @@ readFile("modelDescription.tmp.xml"); getErrorString();
 //   modelName=\"testCppFMI3\"
 //   description=\"\"
 //   version=\"\"
-//   variableNamingConvention=\"structured\">
+//   variableNamingConvention=\"structured\"
+//   xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"
+//   xsi:noNamespaceSchemaLocation=\"https://raw.githubusercontent.com/modelica/fmi-standard/main/schema/fmi3ModelDescription.xsd\">
 //   <ModelExchange
 //     modelIdentifier=\"testCppFMI3\"
 //     needsExecutionTool=\"false\"

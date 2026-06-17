@@ -27,9 +27,9 @@ system("grep -c '<SourceFile name=\"Mbd.c\"/>' Mbd_bd.xml"); getErrorString();
 // "
 // 0
 // ""
-// <fmiBuildDescription fmiVersion="3.0">
+// <fmiBuildDescription fmiVersion="3.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/modelica/fmi-standard/v3.0.2/schema/fmi3BuildDescription.xsd">
 // <BuildConfiguration modelIdentifier="Mbd">
-// <SourceFileSet language="C">
+// <SourceFileSet language="C17">
 // <PreprocessorDefinition name="FMI2_OVERRIDE_FUNCTION_PREFIX"/>
 // <PreprocessorDefinition name="FMI3_OVERRIDE_FUNCTION_PREFIX"/>
 // <IncludeDirectory name="."/>
