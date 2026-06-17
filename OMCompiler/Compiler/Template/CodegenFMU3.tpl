@@ -138,8 +138,8 @@ case SIMCODE(__) then
   <?xml version="1.0" encoding="UTF-8"?>
   <fmiBuildDescription fmiVersion="3.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/modelica/fmi-standard/v3.0.2/schema/fmi3BuildDescription.xsd">
     <BuildConfiguration modelIdentifier="<%modelIdentifier%>">
-      <SourceFileSet language="C">
-        <%sourceFiles |> file => '<SourceFile name="<%file%>"/>' ;separator="\n        "%>
+      <SourceFileSet language="C17">
+        <%sourceFiles |> file => '<SourceFile name="<%file%>"/>' ;separator="\n"%>
         <PreprocessorDefinition name="FMI2_OVERRIDE_FUNCTION_PREFIX"/>
         <PreprocessorDefinition name="FMI3_OVERRIDE_FUNCTION_PREFIX"/>
         <IncludeDirectory name="."/>
