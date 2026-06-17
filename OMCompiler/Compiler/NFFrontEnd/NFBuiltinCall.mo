@@ -141,6 +141,7 @@ public
       case "min" then typeMinMaxCall("min", call, next_context, info);
       case "ndims" then typeNdimsCall(call, next_context, info);
       case "noEvent" then typeNoEventCall(call, next_context, info);
+      case "nthRoot" then typeNthRootCall(call, next_context, info);
       case "ones" then typeZerosOnesCall("ones", call, next_context, info);
       case "potentialRoot" then typePotentialRootCall(call, next_context, info);
       case "pre" then typePreCall(call, next_context, info);
@@ -1826,6 +1827,35 @@ protected
     {fn} := Function.typeRefCache(fn_ref);
     callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, purity, ty));
   end typeNoEventCall;
+
+  function typeNthRootCall
+    input Call call;
+    input InstContext.Type context;
+    input SourceInfo info;
+    output Expression callExp;
+    output Type ty;
+    output Variability var;
+    output Purity purity;
+  protected
+    Expression v, n;
+    Call c;
+  algorithm
+    c := Call.typeMatchNormalCall(call, context, info);
+    Call.TYPED_CALL(arguments = {v, n}, ty = ty, var = var, purity = purity) := c;
+    callExp := Expression.CALL(c);
+
+    if Expression.isNonPositive(n) then
+      Error.addSourceMessage(Error.NON_POSITIVE_NTH_ROOT,
+        {Expression.toString(v), Expression.toString(n)}, info);
+      fail();
+    end if;
+
+    if Expression.isEven(n) and Expression.isNegative(v) then
+      Error.addSourceMessage(Error.NEGATIVE_NTH_ROOT,
+        {Expression.toString(v), Expression.toString(n)}, info);
+      fail();
+    end if;
+  end typeNthRootCall;
 
   function typeGetInstanceName
     input Call call;

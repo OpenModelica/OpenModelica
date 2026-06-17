@@ -1,0 +1,38 @@
+// name:     NthRoot1
+// status: correct
+// teardown_command: rm -rf NthRoot1_* NthRoot1.log NthRoot1.libs NthRoot1 NthRoot1.exe NthRoot1.cpp NthRoot1.makefile output.log
+//
+//
+
+loadString("
+  model NthRoot1
+    Real x = 4;
+    Real y, z, w;
+  equation
+    y = nthRoot(x, 2);
+    z = nthRoot(x, 3);
+    w = nthRoot(-4, 3);
+  end NthRoot1;
+");
+getErrorString();
+simulate(NthRoot1, stopTime=1);
+getErrorString();
+{val(y,0.5)};
+{val(z,0.5)};
+{val(w,0.5)};
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "NthRoot1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'NthRoot1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {2.0}
+// {1.5874010519681994}
+// {-1.5874010519681994}
+// endResult
