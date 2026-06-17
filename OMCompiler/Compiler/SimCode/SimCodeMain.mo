@@ -1020,9 +1020,14 @@ algorithm
         System.writeFile(fmu_tmp_sources_dir + "CMakeLists.txt", cmakelistsStr);
 
         // Set model define include in fmu2_model_interface.c
-        modelDefinesHeaderStr := System.readFile(fmu_tmp_sources_dir + "fmi-export/fmu2_model_interface.c");
-        modelDefinesHeaderStr := System.stringReplace(modelDefinesHeaderStr, "fmu2_dummy_model_defines.h", "../" + simCode.fileNamePrefix + "_FMU.h");
-        System.writeFile(fmu_tmp_sources_dir + "fmi-export/fmu2_model_interface.c", modelDefinesHeaderStr);
+        // Only for FMI 2.0+. FMI 1.0 includes fmu1_model_interface.c.inc directly into
+        // the generated <model>_FMU.c (which already has the model defines), so there is
+        // no standalone fmu2_model_interface.c to patch. See issue #15838.
+        if FMUVersion <> "1.0" then
+          modelDefinesHeaderStr := System.readFile(fmu_tmp_sources_dir + "fmi-export/fmu2_model_interface.c");
+          modelDefinesHeaderStr := System.stringReplace(modelDefinesHeaderStr, "fmu2_dummy_model_defines.h", "../" + simCode.fileNamePrefix + "_FMU.h");
+          System.writeFile(fmu_tmp_sources_dir + "fmi-export/fmu2_model_interface.c", modelDefinesHeaderStr);
+        end if;
 
         Tpl.closeFile(Tpl.tplCallWithFailErrorNoArg(
           function CodegenFMU.fmuMakefile(
