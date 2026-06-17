@@ -3002,14 +3002,6 @@ algorithm
   end match;
 end removeThreadDataFunction;
 
-
-
-
-
-
-
-
-
 protected function unZipEncryptedPackageAndCheckFile
   input String inWorkdir;
   input String filename;
