@@ -1925,6 +1925,8 @@ uniontype Function
           case "ndims" then true;
           // Can take any expression as argument.
           case "noEvent" then true;
+          // Needs extra error checking
+          case "nthRoot" then true;
           // can have variable number of arguments
           case "ones" then true;
           case "potentialRoot" then true;

@@ -918,6 +918,10 @@ public constant ErrorTypes.Message INVALID_DELETED_COMPONENT_CONTEXT = ErrorType
   "'%s' refers to a component with a false condition.");
 public constant ErrorTypes.Message UNROLL_FAILURE = ErrorTypes.MESSAGE(421, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "For loop could not be unrolled:\n%s");
+public constant ErrorTypes.Message NON_POSITIVE_NTH_ROOT = ErrorTypes.MESSAGE(422, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  "Invalid operation nthRoot(v = %s, n = %s), n must be a positive integer.");
+public constant ErrorTypes.Message NEGATIVE_NTH_ROOT = ErrorTypes.MESSAGE(423, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  "Invalid operation nthRoot(v = %s, n = %s), v must be non-negative when n is even.");
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   "The initial conditions are not fully specified. %s.");

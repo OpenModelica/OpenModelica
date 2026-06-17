@@ -4855,6 +4855,18 @@ public
     end match;
   end isNonNegative;
 
+  function isEven
+    input Expression exp;
+    output Boolean even;
+  algorithm
+    even := match exp
+      case INTEGER() then intMod(exp.value, 2) == 0;
+      case REAL() then realMod(exp.value, 2.0) == 0.0;
+      case CAST() then isEven(exp.exp);
+      else false;
+    end match;
+  end isEven;
+
   function isGreaterOrEqual
     input Expression lhs;
     input Expression rhs;

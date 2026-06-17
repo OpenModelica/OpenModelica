@@ -1031,6 +1031,7 @@ algorithm
     case "ceil" then cevalBuiltinCeil;
     case "abs" then cevalBuiltinAbs;
     case "sqrt" then cevalBuiltinSqrt;
+    case "nthRoot" then cevalBuiltinNthRoot;
     case "div" then cevalBuiltinDiv;
     case "sin" then cevalBuiltinSin;
     case "cos" then cevalBuiltinCos;
@@ -2814,6 +2815,40 @@ algorithm
 
   end match;
 end cevalBuiltinSqrt;
+
+protected function cevalBuiltinNthRoot
+  "Evaluates the builtin nthRoot operator."
+  input output FCore.Cache cache;
+  input FCore.Graph env;
+  input list<DAE.Exp> args;
+  input Boolean impl;
+  input Absyn.Msg msg;
+  input Integer numIter;
+        output Values.Value outValue;
+protected
+  DAE.Exp v_exp, n_exp;
+  Real v;
+  Integer n;
+  SourceInfo info;
+algorithm
+  {v_exp, n_exp} := args;
+  (cache, Values.REAL(v))    := ceval(cache, env, v_exp, impl, msg, numIter + 1);
+  (cache, Values.INTEGER(n)) := ceval(cache, env, n_exp, impl, msg, numIter + 1);
+
+  if n <= 0 then
+    Absyn.MSG(info = info) := msg;
+    Error.addSourceMessage(Error.NON_POSITIVE_NTH_ROOT, {String(v), String(n)}, info);
+    fail();
+  end if;
+
+  if intMod(n, 2) == 0 and v < 0 then
+    Absyn.MSG(info = info) := msg;
+    Error.addSourceMessage(Error.NEGATIVE_NTH_ROOT, {String(v), String(n)}, info);
+    fail();
+  end if;
+
+  outValue := Values.REAL(v ^ (1/n));
+end cevalBuiltinNthRoot;
 
 protected function cevalBuiltinSin "author: LP
   Evaluates the builtin sin function."

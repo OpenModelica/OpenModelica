@@ -1,0 +1,30 @@
+// name:     NthRoot3
+// status: correct
+// teardown_command: rm -rf NthRoot3_* NthRoot3.log NthRoot3.libs NthRoot3 NthRoot3.exe NthRoot3.cpp NthRoot3.makefile output.log
+//
+//
+
+loadString("
+  model NthRoot3
+    Integer n = -2;
+    Real y = nthRoot(4, n);
+  end NthRoot3;
+");
+getErrorString();
+simulate(NthRoot3, stopTime=1);
+getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'NthRoot3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation execution failed for model: NthRoot3
+// LOG_ASSERT        | warning | The following assertion has been violated at time 0.000000
+// LOG_ASSERT        | debug   | Model error: Second argument of nthRoot(4.0, -2) must be > 0, got -2
+// LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
+// "
+// end SimulationResult;
+// ""
+// endResult
