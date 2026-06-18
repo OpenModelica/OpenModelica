@@ -1,0 +1,51 @@
+// name:     FMI1MEcvodeFlag
+// keywords: fmu export fmi 1.0 model exchange cvode fmiFlags
+// status: correct
+// teardown_command: rm -rf binaries sources modelDescription.xml *.fmu *_FMU.* *.fmutmp *.libs *.lib *.so *.dll *_res.mat *_info.json ExpDecayCvode* ExpDecayCvode_cmake.txt
+// cflags: -d=-newInst
+//
+// Regression test for #15838: exporting an FMI 1.0 Model-Exchange FMU with the
+// in-FMU CVODE integrator requested (--fmiFlags=s:cvode) used to break the FMU
+// build, because the sundials sources (cvode_solver.c/sundials_error.c) were
+// copied in and cvode_solver.h includes the FMI 2.0 header
+// fmi-export/fmu2_model_interface.h, which does not exist in an FMI 1.0 export.
+//
+// CVODE-in-FMU is a Co-Simulation feature and OpenModelica only exports FMI 1.0
+// as Model Exchange, so the 's:cvode' flag must be ignored (with a warning) and
+// the FMU must still compile.
+//
+
+setCommandLineOptions("--fmiFlags=s:cvode"); getErrorString();
+
+loadString("
+model ExpDecayCvode
+  Real x(start=1);
+equation
+  der(x) = -x;
+end ExpDecayCvode;
+"); getErrorString();
+
+// Export must succeed (FMU compiles) and emit a warning that s:cvode is ignored.
+buildModelFMU(ExpDecayCvode, version="1.0", fmuType="me"); getErrorString();
+
+// The generated FMU CMake project must keep NEED_CVODE OFF, so the sundials
+// sources are not compiled into the FMI 1.0 FMU.
+system("unzip -p ExpDecayCvode.fmu sources/CMakeLists.txt | grep -A1 'set(NEED_CVODE' > ExpDecayCvode_cmake.txt"); getErrorString();
+readFile("ExpDecayCvode_cmake.txt"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "ExpDecayCvode.fmu"
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Warning: OpenModelica exports FMI 1.0 as Model Exchange only (Co-Simulation export requires FMI 2.0). A model-exchange FMU is integrated by the importer, so the in-FMU CVODE integrator does not apply. The 's:cvode' simulation flag is ignored for this FMI 1.0 export.
+// "
+// 0
+// ""
+// "set(NEED_CVODE
+//     OFF
+// "
+// ""
+// endResult

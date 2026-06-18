@@ -2,6 +2,8 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 FMI1MEfmpy.mos \
+FMI1MEcvodeFlag.mos \
+FMI1MEInputOutput.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
