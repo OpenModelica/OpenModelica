@@ -161,6 +161,7 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID, fmiCall
     comp->functions = functions;
     comp->loggingOn = loggingOn;
     comp->state = modelInstantiated;
+    comp->_need_update = 1;
     comp->instanceName = functions.allocateMemory(1 + strlen(instanceName), sizeof(char));
     comp->GUID = functions.allocateMemory(1 + strlen(GUID), sizeof(char));
     /* Cannot use functions.allocateMemory since the pointer might not be stored on the stack of the parent */
@@ -285,6 +286,7 @@ fmiStatus fmiSetReal(fmiComponent c, const fmiValueReference vr[], size_t nvr, c
     if (setReal(comp, vr[i],value[i]) != fmiOK) // to be implemented by the includer of this file
       return fmiError;
   }
+  comp->_need_update = 1;
 
   return fmiOK;
 }
@@ -309,6 +311,7 @@ fmiStatus fmiSetInteger(fmiComponent c, const fmiValueReference vr[], size_t nvr
     if (setInteger(comp, vr[i],value[i]) != fmiOK) // to be implemented by the includer of this file
       return fmiError;
   }
+  comp->_need_update = 1;
 
   return fmiOK;
 }
@@ -333,6 +336,7 @@ fmiStatus fmiSetBoolean(fmiComponent c, const fmiValueReference vr[], size_t nvr
     if (setBoolean(comp, vr[i],value[i]) != fmiOK) // to be implemented by the includer of this file
       return fmiError;
   }
+  comp->_need_update = 1;
 
   return fmiOK;
 }
@@ -357,6 +361,7 @@ fmiStatus fmiSetString(fmiComponent c, const fmiValueReference vr[], size_t nvr,
     if (setString(comp, vr[i],value[i]) != fmiOK) // to be implemented by the includer of this file
       return fmiError;
   }
+  comp->_need_update = 1;
   return fmiOK;
 }
 
@@ -368,6 +373,7 @@ fmiStatus fmiSetTime(fmiComponent c, fmiReal t)
   if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
       "fmiSetTime: time=%.16g", t);
   comp->fmuData->localData[0]->timeValue = t;
+  comp->_need_update = 1;
   return fmiOK;
 }
 
@@ -391,12 +397,45 @@ fmiStatus fmiSetContinuousStates(fmiComponent c, const fmiReal x[], size_t nx)
     }
   }
 #endif
+  comp->_need_update = 1;
   return fmiOK;
 }
 
 // ---------------------------------------------------------------------------
 // FMI functions: get variable values from the FMU
 // ---------------------------------------------------------------------------
+
+/* Re-evaluate the model if an input (or time/state) changed since the last evaluation, so that
+   fmiGet* returns up-to-date direct-feedthrough outputs. Mirrors updateIfNeeded() in
+   fmu2_model_interface.c. Before initialization the start values stand, so we only evaluate once
+   the model is initialized. See #15838. */
+static fmiStatus updateIfNeeded(ModelInstance* comp, const char* func)
+{
+  threadData_t *threadData = comp->threadData;
+  if (!comp->_need_update)
+    return fmiOK;
+  if (comp->state != modelInitialized) {
+    /* nothing has been computed yet; fmiInitialize will do the first evaluation */
+    return fmiOK;
+  }
+
+  /* try */
+  MMC_TRY_INTERNAL(simulationJumpBuffer)
+
+    comp->fmuData->callback->functionODE(comp->fmuData, threadData);
+    comp->fmuData->callback->functionAlgebraics(comp->fmuData, threadData);
+    comp->fmuData->callback->output_function(comp->fmuData, threadData);
+    comp->fmuData->callback->function_storeDelayed(comp->fmuData, threadData);
+    storePreValues(comp->fmuData);
+    comp->_need_update = 0;
+    return fmiOK;
+
+  /* catch */
+  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+
+    comp->functions.logger(comp, comp->instanceName, fmiError, "error", "%s: terminated by an assertion.", func);
+    return fmiError;
+}
 
 fmiStatus fmiGetReal(fmiComponent c, const fmiValueReference vr[], size_t nvr, fmiReal value[])
 {
@@ -407,6 +446,8 @@ fmiStatus fmiGetReal(fmiComponent c, const fmiValueReference vr[], size_t nvr, f
   if (nvr>0 && nullPointer(comp, "fmiGetReal", "vr[]", vr))
     return fmiError;
   if (nvr>0 && nullPointer(comp, "fmiGetReal", "value[]", value))
+    return fmiError;
+  if (updateIfNeeded(comp, "fmiGetReal") != fmiOK)
     return fmiError;
 #if NUMBER_OF_REALS>0
   for (i=0; i<nvr; i++) {
@@ -432,6 +473,8 @@ fmiStatus fmiGetInteger(fmiComponent c, const fmiValueReference vr[], size_t nvr
     return fmiError;
   if (nvr>0 && nullPointer(comp, "fmiGetInteger", "value[]", value))
     return fmiError;
+  if (updateIfNeeded(comp, "fmiGetInteger") != fmiOK)
+    return fmiError;
 #if NUMBER_OF_INTEGERS>0
   for (i=0; i<nvr; i++) {
     if (vrOutOfRange(comp, "fmiGetInteger", vr[i], NUMBER_OF_INTEGERS))
@@ -456,6 +499,8 @@ fmiStatus fmiGetBoolean(fmiComponent c, const fmiValueReference vr[], size_t nvr
     return fmiError;
   if (nvr>0 && nullPointer(comp, "fmiGetBoolean", "value[]", value))
     return fmiError;
+  if (updateIfNeeded(comp, "fmiGetBoolean") != fmiOK)
+    return fmiError;
 #if NUMBER_OF_BOOLEANS>0
   for (i=0; i<nvr; i++) {
     if (vrOutOfRange(comp, "fmiGetBoolean", vr[i], NUMBER_OF_BOOLEANS))
@@ -479,6 +524,8 @@ fmiStatus fmiGetString(fmiComponent c, const fmiValueReference vr[], size_t nvr,
   if (nvr>0 && nullPointer(comp, "fmiGetString", "vr[]", vr))
     return fmiError;
   if (nvr>0 && nullPointer(comp, "fmiGetString", "value[]", value))
+    return fmiError;
+  if (updateIfNeeded(comp, "fmiGetString") != fmiOK)
     return fmiError;
 #if NUMBER_OF_STRINGS>0
   for (i=0; i<nvr; i++) {
@@ -569,6 +616,8 @@ fmiStatus fmiGetDerivatives(fmiComponent c, fmiReal derivatives[], size_t nx)
   MMC_TRY_INTERNAL(simulationJumpBuffer)
 
     comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
+    /* the continuous system has just been evaluated; a following fmiGetReal need not redo it */
+    comp->_need_update = 0;
   #if (NUMBER_OF_STATES>0)
     for (i=0; i<nx; i++) {
       fmiValueReference vr = vrStatesDerivatives[i];
@@ -671,6 +720,9 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
 
     /* due to an event overwrite old values */
     overwriteOldSimulationData(comp->fmuData);
+
+    /* the model has just been evaluated by initialization() above */
+    comp->_need_update = 0;
 
     eventInfo->iterationConverged = fmiTrue;
     eventInfo->stateValueReferencesChanged = fmiFalse;
@@ -797,6 +849,9 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
     /* due to an event overwrite old values */
     overwriteOldSimulationData(comp->fmuData);
 
+    /* the model has just been re-evaluated during the event update */
+    comp->_need_update = 0;
+
     if (comp->loggingOn)
       comp->functions.logger(c, comp->instanceName, fmiOK, "log", "fmiEventUpdate: intermediateResults = %d", intermediateResults);
 
@@ -859,6 +914,8 @@ fmiStatus fmiCompletedIntegratorStep(fmiComponent c, fmiBoolean* callEventUpdate
      *       in the whole ringbuffer
      */
     overwriteOldSimulationData(comp->fmuData);
+    /* the model has just been re-evaluated for the completed step */
+    comp->_need_update = 0;
     return fmiOK;
   /* catch */
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
