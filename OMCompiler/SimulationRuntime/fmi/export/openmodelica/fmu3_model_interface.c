@@ -3223,7 +3223,6 @@ FMU3_UNSUPPORTED_GETSET(fmi3GetUInt8,  fmi3UInt8)
 FMU3_UNSUPPORTED_GETSET(fmi3GetInt16,  fmi3Int16)
 FMU3_UNSUPPORTED_GETSET(fmi3GetUInt16, fmi3UInt16)
 FMU3_UNSUPPORTED_GETSET(fmi3GetUInt32, fmi3UInt32)
-FMU3_UNSUPPORTED_GETSET(fmi3GetInt64,  fmi3Int64)
 FMU3_UNSUPPORTED_GETSET(fmi3GetUInt64, fmi3UInt64)
 FMU3_UNSUPPORTED_SET(fmi3SetFloat32, fmi3Float32)
 FMU3_UNSUPPORTED_SET(fmi3SetInt8,   fmi3Int8)
@@ -3231,8 +3230,49 @@ FMU3_UNSUPPORTED_SET(fmi3SetUInt8,  fmi3UInt8)
 FMU3_UNSUPPORTED_SET(fmi3SetInt16,  fmi3Int16)
 FMU3_UNSUPPORTED_SET(fmi3SetUInt16, fmi3UInt16)
 FMU3_UNSUPPORTED_SET(fmi3SetUInt32, fmi3UInt32)
-FMU3_UNSUPPORTED_SET(fmi3SetInt64,  fmi3Int64)
 FMU3_UNSUPPORTED_SET(fmi3SetUInt64, fmi3UInt64)
+
+/* Modelica enumeration variables are exported as FMI 3.0 <Enumeration>, which
+ * are accessed through fmi3Get/SetInt64. OpenModelica stores enumerations in the
+ * same integer storage as Int32 variables, so their value references live in the
+ * integer block and map through FMI3_INTEGER_VR_OFFSET / omcGet/SetInteger, just
+ * like fmi3GetInt32/fmi3SetInt32. */
+fmi3Status fmi3GetInt64(fmi3Instance instance, const fmi3ValueReference valueReferences[],
+    size_t nValueReferences, fmi3Int64 values[], size_t nValues)
+{
+  ModelInstance* c = fmu3InnerComp(instance);
+  size_t i, j, k = 0;
+  if (!c) return fmi3Error;
+  for (i = 0; i < nValueReferences; i++) {
+    size_t cnt = (nValueReferences == 1) ? nValues : 1;
+    for (j = 0; j < cnt; j++, k++) {
+      fmi3ValueReference lvr = (fmi3ValueReference)((valueReferences[i] + j) - FMI3_INTEGER_VR_OFFSET);
+      fmi3Int32 value;
+      fmi3Status s = omcGetInteger(c, &lvr, 1, &value);
+      if (s > fmi3Warning) return (fmi3Status)s;
+      values[k] = (fmi3Int64)value;
+    }
+  }
+  return fmi3OK;
+}
+
+fmi3Status fmi3SetInt64(fmi3Instance instance, const fmi3ValueReference valueReferences[],
+    size_t nValueReferences, const fmi3Int64 values[], size_t nValues)
+{
+  ModelInstance* c = fmu3InnerComp(instance);
+  size_t i, j, k = 0;
+  if (!c) return fmi3Error;
+  for (i = 0; i < nValueReferences; i++) {
+    size_t cnt = (nValueReferences == 1) ? nValues : 1;
+    for (j = 0; j < cnt; j++, k++) {
+      fmi3ValueReference lvr = (fmi3ValueReference)((valueReferences[i] + j) - FMI3_INTEGER_VR_OFFSET);
+      fmi3Int32 value = (fmi3Int32)values[k];
+      fmi3Status s = omcSetInteger(c, &lvr, 1, &value);
+      if (s > fmi3Warning) return (fmi3Status)s;
+    }
+  }
+  return fmi3OK;
+}
 
 /* A Modelica ExternalObject is an opaque handle (void*) constructed by its
  * constructor and stored in fmuData->simulationInfo->extObjs. It is exported as
