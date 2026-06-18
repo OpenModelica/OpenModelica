@@ -48,13 +48,13 @@ simulate(implicitEquation); getErrorString();
 // Event Partition
 // -----------------
 //
-// ==========================================================
-//   SimCode Jacobian INI_NLS_JAC_1(idx = 0, partition = 0)
-// ==========================================================
+// ============================================================
+//   SimCode Jacobian INI_NLS_JAC_1_0(idx = 0, partition = 0)
+// ============================================================
 //
 // SeedVars (size = 1)
 // *********************
-//   (0)[SEED] (1) Real $SEED_INI_NLS_JAC_1.x
+//   (0)[SEED] (1) Real $SEED_INI_NLS_JAC_1_0.x
 //
 // TmpVars (size = 0)
 // ********************
@@ -64,7 +64,7 @@ simulate(implicitEquation); getErrorString();
 //
 // Column Equations (size = 1)
 // -----------------------------
-//   (2) $pDER_INI_NLS_JAC_1.$RES_SIM_0 := -(($SEED_INI_NLS_JAC_1.x + 3.0 * x ^ 2.0 * $SEED_INI_NLS_JAC_1.x) - 2.0 * x * $SEED_INI_NLS_JAC_1.x)
+//   (2) $pDER_INI_NLS_JAC_1_0.$RES_SIM_0 := -(($SEED_INI_NLS_JAC_1_0.x + 3.0 * x ^ 2.0 * $SEED_INI_NLS_JAC_1_0.x) - 2.0 * x * $SEED_INI_NLS_JAC_1_0.x)
 //
 // Sparsity Pattern Cols
 // ***********************
@@ -164,7 +164,7 @@ simulate(implicitEquation); getErrorString();
 // crefs: x
 // 	1: $FUN_1 - (x + x ^ 3.0 - x ^ 2.0) (RESIDUAL)
 // 	Jacobian idx: 0
-// 	2: $pDER_INI_NLS_JAC_1.$RES_SIM_0=-($SEED_INI_NLS_JAC_1.x + 3.0 * x ^ 2.0 * $SEED_INI_NLS_JAC_1.x - 2.0 * x * $SEED_INI_NLS_JAC_1.x) [Real]
+// 	2: $pDER_INI_NLS_JAC_1_0.$RES_SIM_0=-($SEED_INI_NLS_JAC_1_0.x + 3.0 * x ^ 2.0 * $SEED_INI_NLS_JAC_1_0.x - 2.0 * x * $SEED_INI_NLS_JAC_1_0.x) [Real]
 //
 //
 // ========================================
@@ -206,12 +206,12 @@ simulate(implicitEquation); getErrorString();
 //
 // jacobianEquations:
 // ========================================
-// 7: $pDER_INI_NLS_JAC_1.$RES_SIM_0=-($SEED_INI_NLS_JAC_1.x + 3.0 * x ^ 2.0 * $SEED_INI_NLS_JAC_1.x - 2.0 * x * $SEED_INI_NLS_JAC_1.x) [Real]
+// 7: $pDER_INI_NLS_JAC_1_0.$RES_SIM_0=-($SEED_INI_NLS_JAC_1_0.x + 3.0 * x ^ 2.0 * $SEED_INI_NLS_JAC_1_0.x - 2.0 * x * $SEED_INI_NLS_JAC_1_0.x) [Real]
 //
 // jacobianMatrices:
 // ========================================
 // 	Jacobian idx: 0
-// 	2: $pDER_INI_NLS_JAC_1.$RES_SIM_0=-($SEED_INI_NLS_JAC_1.x + 3.0 * x ^ 2.0 * $SEED_INI_NLS_JAC_1.x - 2.0 * x * $SEED_INI_NLS_JAC_1.x) [Real]
+// 	2: $pDER_INI_NLS_JAC_1_0.$RES_SIM_0=-($SEED_INI_NLS_JAC_1_0.x + 3.0 * x ^ 2.0 * $SEED_INI_NLS_JAC_1_0.x - 2.0 * x * $SEED_INI_NLS_JAC_1_0.x) [Real]
 //
 // 	Jacobian idx: 1
 //

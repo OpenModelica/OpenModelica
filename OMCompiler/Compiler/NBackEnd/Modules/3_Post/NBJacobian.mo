@@ -1090,6 +1090,19 @@ protected
     JacobianType jacType;
   algorithm
     (comp, updated) := match comp
+      case StrongComponent.ALGEBRAIC_LOOP(strict = strict) guard(not canRepresentLoopJacobian(strict)) algorithm
+        // TODO: this is simply a fallback as e.g. slices currently can not be handled correctly, see doc of canRepresentLoopJacobian()
+        strict.jac := NONE();
+        if comp.linear then
+          comp.linear := false;
+        end if;
+        comp.strict := strict;
+
+        if Flags.isSet(Flags.JAC_DUMP) then
+          print(StrongComponent.toString(comp) + "\n");
+        end if;
+      then (comp, true);
+
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
         // create residual components
         residual_comps := list(StrongComponent.fromSolvedEquationSlice(eqn) for eqn in strict.residual_eqns);
@@ -1120,6 +1133,43 @@ protected
       else (comp, false);
     end match;
   end compJacobian;
+
+  function canRepresentLoopJacobian
+    "Returns false for torn loops with partial array slices.
+     TODO: Analytic loop Jacobians cannot yet represent sliced array unknowns correctly (@kabdelhak I have seen a similar comment from you
+     somewhere else here also). Example: generated for-loop code may need a seed array seed(T), but a loop that solves only T[2] ... T[6] must create
+     Jacobian columns only for T[2] ... T[6], not for all of T.
+     => Do not create analytic LS/NLS Jacobians for those cases until this mapping is working for slices."
+    input Tearing tearing;
+    output Boolean b = true;
+  protected
+    StrongComponent comp;
+    Tearing strict;
+  algorithm
+    for slice in tearing.iteration_vars loop
+      if not Slice.isFull(slice) and BVariable.size(Slice.getT(slice), true) > 1 then
+        b := false;
+        return;
+      end if;
+    end for;
+
+    for slice in tearing.residual_eqns loop
+      if not Slice.isFull(slice) and Equation.size(Slice.getT(slice), true) > 1 then
+        b := false;
+        return;
+      end if;
+    end for;
+
+    for i in 1:arrayLength(tearing.innerEquations) loop
+      comp := tearing.innerEquations[i];
+      b := match comp
+        case StrongComponent.ALGEBRAIC_LOOP() then canRepresentLoopJacobian(comp.strict);
+        case StrongComponent.ALIAS(original = StrongComponent.ALGEBRAIC_LOOP(strict = strict)) then canRepresentLoopJacobian(strict);
+        else true;
+      end match;
+      if not b then return; end if;
+    end for;
+  end canRepresentLoopJacobian;
 
   function jacobianSymbolic extends Module.jacobianInterface;
   protected
@@ -1241,6 +1291,10 @@ protected
     Integer idx;
   algorithm
     comp := match comp
+      case StrongComponent.ALGEBRAIC_LOOP(strict = strict) guard(comp.linear and not isSome(strict.jac) and not canRepresentLoopJacobian(strict)) algorithm
+        comp.linear := false;
+      then comp;
+
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) guard(comp.linear and not isSome(strict.jac)) algorithm
         residual_comps := list(StrongComponent.SINGLE_COMPONENT(Equation.getResidualVar(Slice.getT(eqn)), Slice.getT(eqn), NBSolve.Status.EXPLICIT) for eqn in strict.residual_eqns);
         seed_candidates := listReverse(Tearing.getIterationVars(strict));
