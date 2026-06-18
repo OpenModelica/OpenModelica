@@ -7,7 +7,7 @@
 // Modelica Standard Library
 //
 
-loadModel(Modelica, {"3.2.3"});
+loadModel(Modelica, {"4.1.0"});
 simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum,stopTime=3.0);
 getErrorString();
 
@@ -46,19 +46,21 @@ val(revolute2_phi, 3);
 // true
 // record SimulationResult
 //     resultFile = "Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // ""
 // 0.0
-// -2.915113487709522
-// -0.03693230502575465
-// -2.315832532768317
+// -2.915613964905178
+// -0.036080235981619156
+// -2.317956412885281
 // 0.0
-// -0.5164246964069449
-// -0.9041244442894454
-// -1.736500374427386
-// "SimCode: The model Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum has been translated to FMU"
+// -0.5151898042458495
+// -0.9038989636681983
+// -1.7364060344181733
+// "DoublePendulum.fmu"
 // ""
 // "DoublePendulum_me_FMU.mo"
 // ""
@@ -68,16 +70,18 @@ val(revolute2_phi, 3);
 // ""
 // record SimulationResult
 //     resultFile = "DoublePendulum_me_FMU_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DoublePendulum_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'DoublePendulum_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // ""
 // 0.0
-// -2.915113487709145
-// -0.03693230502957622
-// -2.315832532793247
+// -2.9156139651894457
+// -0.036080235772675356
+// -2.317956411903933
 // 0.0
-// -0.516424696407867
-// -0.904124444176797
-// -1.736500372024582
+// -0.5151898035373383
+// -0.9038989633684034
+// -1.7364060289164354
 // endResult

@@ -67,7 +67,7 @@ val(y, 0.0);
 // Result:
 // true
 // ""
-// "initializationTestsFMI.initial_equation1.fmu"
+// "initial_equation1.fmu"
 // ""
 // "initial_equation1_me_FMU.mo"
 // ""
@@ -77,7 +77,7 @@ val(y, 0.0);
 // ""
 // record SimulationResult
 //     resultFile = "initial_equation1_me_FMU_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initial_equation1_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initial_equation1_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -85,7 +85,7 @@ val(y, 0.0);
 // ""
 // 5.0
 // 5.0
-// "initializationTestsFMI.initial_equation2.fmu"
+// "initial_equation2.fmu"
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // "initial_equation2_me_FMU.mo"
@@ -94,7 +94,7 @@ val(y, 0.0);
 // ""
 // record SimulationResult
 //     resultFile = "initial_equation2_me_FMU_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initial_equation2_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initial_equation2_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -102,7 +102,7 @@ val(y, 0.0);
 // ""
 // 5.0
 // 5.0
-// "initializationTestsFMI.initial_equation3.fmu"
+// "initial_equation3.fmu"
 // ""
 // "initial_equation3_me_FMU.mo"
 // ""
@@ -110,7 +110,7 @@ val(y, 0.0);
 // ""
 // record SimulationResult
 //     resultFile = "initial_equation3_me_FMU_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initial_equation3_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initial_equation3_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
