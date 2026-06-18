@@ -1,7 +1,7 @@
 // name:     FMI1MEfmpy
 // keywords: fmu export fmi 1.0 model exchange fmpy
 // status: correct
-// teardown_command: rm -rf binaries sources modelDescription.xml *.fmu *_FMU.* *.fmutmp *.libs *.lib *.so *.dll *_res.mat *_fmpy.csv *_diff.*.csv *_info.json ExpDecay* SampleCount* Oscillator* StateEvent*
+// teardown_command: rm -rf binaries sources modelDescription.xml *.fmu *_FMU.* *.fmutmp *.libs *.lib *.so *.dll *_res.mat *_fmpy.csv *_diff.*.csv *_info.json ExpDecay* SampleCount* Oscillator* StateEvent* DirectFeedthrough*
 // cflags: -d=-newInst
 //
 // Exports a few FMI 1.0 Model-Exchange FMUs and validates them with an
@@ -48,6 +48,12 @@ equation
   y = sin(time);
   b = x > 0.5;
 end StateEvent;
+
+model DirectFeedthrough
+  Real y;
+equation
+  y = 2*time;
+end DirectFeedthrough;
 "); getErrorString();
 
 // ExpDecay: a single continuous state.
@@ -73,6 +79,15 @@ buildModelFMU(StateEvent, version="1.0", fmuType="me"); getErrorString();
 simulate(StateEvent, stopTime=2.0); getErrorString();
 system("python3 ../../simulate_fmu_fmpy.py StateEvent.fmu StateEvent_fmpy.csv 2.0 x y"); getErrorString();
 diffSimulationResults("StateEvent_fmpy.csv", "StateEvent_res.mat", "StateEvent_diff", vars={"x","y"}); getErrorString();
+
+// DirectFeedthrough: a stateless algebraic output y = 2*time. With no continuous states an FMI 1.0
+// ME importer never calls fmiGetDerivatives, so the output is only correct if fmiGetReal
+// re-evaluates the model after fmiSetTime (the _need_update mechanism). Without it FMPy would read
+// y = 0 for all time. See #15838.
+buildModelFMU(DirectFeedthrough, version="1.0", fmuType="me"); getErrorString();
+simulate(DirectFeedthrough, stopTime=1.0); getErrorString();
+system("python3 ../../simulate_fmu_fmpy.py DirectFeedthrough.fmu DirectFeedthrough_fmpy.csv 1.0 y"); getErrorString();
+diffSimulationResults("DirectFeedthrough_fmpy.csv", "DirectFeedthrough_res.mat", "DirectFeedthrough_diff", vars={"y"}); getErrorString();
 // Result:
 // true
 // ""
@@ -136,6 +151,20 @@ diffSimulationResults("StateEvent_fmpy.csv", "StateEvent_res.mat", "StateEvent_d
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
+// 0
+// ""
+// (true, {})
+// ""
+// "DirectFeedthrough.fmu"
+// ""
+// record SimulationResult
+//     resultFile = "DirectFeedthrough_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'DirectFeedthrough', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
 // 0
 // ""
 // (true, {})
