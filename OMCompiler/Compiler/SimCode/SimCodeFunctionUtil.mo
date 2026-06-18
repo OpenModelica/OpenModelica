@@ -2290,7 +2290,7 @@ algorithm
       then ({str},{});
 
     case Absyn.STRING("fmilib")
-      then (if Autoconf.os=="Windows_NT" then {"-lfmilib_shared","-lshlwapi"} else {"-lfmilib"},{});
+      then (if Autoconf.os=="Windows_NT" then {"-lfmilib","-lshlwapi"} else {"-lfmilib"},{});
 
     case Absyn.STRING(str)
       algorithm
