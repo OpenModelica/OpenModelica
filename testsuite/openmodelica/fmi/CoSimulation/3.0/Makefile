@@ -1,7 +1,8 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
-fmi3_cs_01.mos
+fmi3_cs_01.mos \
+fmi3_msl_clocked_drive.mos
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
