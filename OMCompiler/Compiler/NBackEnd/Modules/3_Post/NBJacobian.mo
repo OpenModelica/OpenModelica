@@ -62,8 +62,10 @@ protected
   import SimplifyExp = NFSimplifyExp;
   import Type = NFType;
   import Variable = NFVariable;
+  import NFInstNode.InstNode;
 
   // Backend imports
+  import NFBackendExtension.BackendInfo;
   import Adjacency = NBAdjacency;
   import NBAdjacency.Mapping;
   import BEquation = NBEquation;
@@ -303,6 +305,9 @@ public
       case "bidirectional" then jacobianSymbolic;
       case "numeric"  then jacobianNumeric;
       case "none"     then jacobianNone;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown jacobian type: " + Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN)});
+      then fail();
     end match;
   end getModule;
 
@@ -566,6 +571,9 @@ public
       body := match sparsityColoring
         case SPARSITY_COLORING() then toStringUnidirectional(sparsityColoring);
         case SPARSITY_BICOLORING() then toStringBidirectional(sparsityColoring);
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown sparsity coloring type."});
+        then fail();
       end match;
       str := str + body;
     end toString;
@@ -574,13 +582,9 @@ public
       input SparsityColoring sparsityColoring;
       output String str = "";
     protected
-      array<SparsityColoringCol> cols;
-      array<SparsityColoringRow> rows;
+      array<SparsityColoringCol> cols = getCols(sparsityColoring);
+      array<SparsityColoringRow> rows = getRows(sparsityColoring);
     algorithm
-      (cols, rows) := match sparsityColoring
-        case SPARSITY_COLORING() then (sparsityColoring.cols, sparsityColoring.rows);
-        case SPARSITY_BICOLORING() then (sparsityColoring.cols, sparsityColoring.rows);
-      end match;
       if arrayLength(cols) == 0 then
         str := str + "\n<empty sparsity pattern>\n";
       end if;
@@ -598,14 +602,12 @@ public
       input SparsityColoring sparsityColoring;
       output String str = "";
     protected
-      array<SparsityColoringCol> cols;
-      array<SparsityColoringRow> rows;
+      array<SparsityColoringCol> cols = getCols(sparsityColoring);
+      array<SparsityColoringRow> rows = getRows(sparsityColoring);
       Integer nColColors, nRowColors;
     algorithm
-      (cols, rows, nColColors, nRowColors) := match sparsityColoring
-        case SPARSITY_BICOLORING() then (sparsityColoring.cols, sparsityColoring.rows, sparsityColoring.nColColors, sparsityColoring.nRowColors);
-        case SPARSITY_COLORING() then (sparsityColoring.cols, sparsityColoring.rows, arrayLength(sparsityColoring.cols), arrayLength(sparsityColoring.rows));
-      end match;
+      nColColors := arrayLength(cols);
+      nRowColors := arrayLength(rows);
       str := str + "\n[Bidirectional] Column colors: " + intString(nColColors)
         + ", Row colors: " + intString(nRowColors) + "\n";
       for i in 1:arrayLength(cols) loop
@@ -992,6 +994,9 @@ public
       cols := match coloring
         case SPARSITY_COLORING() then coloring.cols;
         case SPARSITY_BICOLORING() then coloring.cols;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because unknown sparsity coloring type was given."});
+          then fail();
       end match;
     end getCols;
 
@@ -1002,6 +1007,9 @@ public
       rows := match coloring
         case SPARSITY_COLORING() then coloring.rows;
         case SPARSITY_BICOLORING() then coloring.rows;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because unknown sparsity coloring type was given."});
+          then fail();
       end match;
     end getRows;
 
@@ -1454,7 +1462,7 @@ protected
     input UnorderedMap<ComponentRef,ComponentRef> diff_map;
     input UnorderedMap<Path, Function> funcMapIn;
     input Boolean scalarized;
-    input UnorderedMap<ComponentRef, list<tuple<ComponentRef, Expression>>> adjoint_map_in;
+    input UnorderedMap<ComponentRef, AdjointTermList> adjoint_map_in;
     output Differentiate.DifferentiationArguments diffArguments;
   algorithm
     // Prepare args to collect adjoints into the incoming map
@@ -1537,17 +1545,14 @@ protected
 
   function makeAdjointComponent
     input ComponentRef lhsKey;
-    input UnorderedMap<ComponentRef, list<tuple<ComponentRef, Expression>>> adjoint_map;
+    input UnorderedMap<ComponentRef, AdjointTermList> adjoint_map;
     input String contextName;
     input Integer eqIndex;
     output NBStrongComponent diffed_comp;
   protected
-    list<tuple<ComponentRef, Expression>> taggedTerms;
+    AdjointTermList taggedTerms;
     list<Expression> terms;
     Expression rhsExpr;
-    Pointer<NBEquation.Equation> eqPtr;
-    NBEquation.Equation eq;
-    Pointer<Variable> lhsVarPtr;
   algorithm
     taggedTerms := UnorderedMap.getOrFail(lhsKey, adjoint_map);
     terms := list(Util.tuple22(t) for t in taggedTerms);
@@ -1559,7 +1564,7 @@ protected
   function addEntryToLPAMap
     input Pointer<Variable> vptr;
     input UnorderedMap<ComponentRef, ComponentRef> diff_map;
-    input UnorderedMap<ComponentRef, list<tuple<ComponentRef, Expression>>> loop_product_adjoint_map;
+    input UnorderedMap<ComponentRef, AdjointTermList> loop_product_adjoint_map;
   protected
     Option<ComponentRef> mappedSeed;
   algorithm
@@ -1638,6 +1643,7 @@ protected
     end match;
   end isSupportedAdjointStrongComponent;
 
+  type AdjointTermList = list<tuple<ComponentRef, Expression>>;
   function generateAdjointComponent
     "Generate adjoint strong component(s) for a single primal strong component.
      Uses a fresh adjoint_map per component and returns the resulting adjoint
@@ -1655,15 +1661,12 @@ protected
     output list<Pointer<Variable>> newTmpVars = {};
   protected
     StrongComponent c_noalias;
-    type AdjointTermList = list<tuple<ComponentRef, Expression>>;
-    UnorderedMap<ComponentRef, list<tuple<ComponentRef, Expression>>> fresh_adjoint_map;
+    UnorderedMap<ComponentRef, AdjointTermList> fresh_adjoint_map;
     Differentiate.DifferentiationArguments diffArgs;
     Equation eq;
     list<Statement> adjStmts;
     Pointer<Equation> eqPtr;
     list<Slice<VariablePointer>> adjVarSlices;
-    Pointer<Variable> vPtr;
-    ComponentRef baseCref;
     // SSA helper: accumulator for pDer vars created for SSA temporaries
     Pointer<list<Pointer<Variable>>> ssaPDerVarsPtr = Pointer.create({});
   algorithm
@@ -1671,11 +1674,6 @@ protected
 
     () := match c_noalias
       local
-        // shared
-        list<VariablePointer> compVars;
-        ComponentRef lhsCref, seedCref;
-        Option<ComponentRef> o_seedCref;
-
         // ALGEBRAIC_LOOP locals
         Tearing tearing;
         list<VariablePointer> itVarPtrs;
@@ -1686,10 +1684,10 @@ protected
         Pointer<Variable> lhsVarPtr;
         ComponentRef newC;
         UnorderedMap<ComponentRef, ComponentRef> diff_map_y, diff_map_x, diff_map_union;
-        UnorderedMap<ComponentRef, list<tuple<ComponentRef, Expression>>> loop_product_adjoint_map;
+        UnorderedMap<ComponentRef, AdjointTermList> loop_product_adjoint_map;
         list<Pointer<Variable>> seedPtrListX;
         list<Pointer<Equation>> linResEqnPtrs;
-        list<tuple<ComponentRef, Expression>> terms_j, terms_x;
+        AdjointTermList terms_j, terms_x;
         Expression lhs_j, rhs_j, rhs_x;
         Pointer<Equation> resid_j;
         Option<ComponentRef> o_ySeedCref, o_pDerX;
@@ -1713,11 +1711,12 @@ protected
 
       // ===================== ALGEBRAIC_LOOP =====================
       case StrongComponent.ALGEBRAIC_LOOP(strict = tearing) algorithm
-        // Collect iteration vars and residuals
+        // Collect iteration vars and residual equations and turn into residual expressions
         itVarPtrs := Tearing.getIterationVars(tearing);
         residuals := list(Equation.getResidualExp(Pointer.access(e)) for e in Tearing.getResidualEqns(tearing));
 
         // Create scalar lambda_i temporaries
+        // Is it possible to create it as a vector?
         lambdaPtrs := {};
         lambdaCrefs := {};
         for iIdx in 1:listLength(residuals) loop
@@ -1757,6 +1756,7 @@ protected
             scalarized,
             loop_product_adjoint_map
           );
+          // Update loop_product_adjoint_map with new adjoint terms collected from this residual
           loop_product_adjoint_map := Util.getOption(diffArgs.adjoint_map);
           iRes := iRes + 1;
         end for;
@@ -1790,11 +1790,6 @@ protected
           if isSome(o_pDerX) then
             pDerX := Util.getOption(o_pDerX);
             terms_x := UnorderedMap.getOrDefault(pDerX, loop_product_adjoint_map, {});
-            // if not listEmpty(terms_x) then
-            //   print("Terms x for pDerX=" + ComponentRef.toString(pDerX) + ": [" + stringDelimitList(list("(" + ComponentRef.toString(Util.tuple21(t)) + ", " + Expression.toString(Util.tuple22(t)) + ")" for t in terms_x), ", ") + "]\n");
-            // else
-            //   print("No terms x for pDerX=" + ComponentRef.toString(pDerX) + "\n");
-            // end if;
             if not listEmpty(terms_x) then
               rhs_x := Expression.negate(buildAdjointRhs(pDerX, list(Util.tuple22(t) for t in terms_x)));
               vty := ComponentRef.getComponentType(pDerX);
@@ -1865,7 +1860,7 @@ protected
       case StrongComponent.MULTI_COMPONENT() algorithm
         eq := match Pointer.access(Slice.getT(c_noalias.eqn))
           case Equation.ALGORITHM() algorithm
-            (ssaAlg, replacements, newVars) := Differentiate.algorithmToSSA(c_noalias);
+            (ssaAlg, replacements, newVars) := algorithmToSSA(c_noalias);
             print("SSA algorithm for adjoint of component " + StrongComponent.toString(c_noalias) + ":\n" + StrongComponent.toString(ssaAlg) + "\n");
 
             // ── Register SSA variables in diff_map ──
@@ -1886,7 +1881,7 @@ protected
             else Pointer.access(Slice.getT(c_noalias.eqn));
           end match;
           else algorithm
-          then Pointer.access(Slice.getT(c_noalias.eqn));
+            then Pointer.access(Slice.getT(c_noalias.eqn));
           end match;
 
         // Build fresh adjoint_map
@@ -1906,12 +1901,12 @@ protected
 
         (diffArgs, adjStmts) := Differentiate.differentiateEquationAdjoint(eq, diffArgs);
 
+        // TODO: Check if it works as intended and make a test case
         // ── Prepend seed-initialization statements for the final SSA variable of each
         //    multi-assigned original variable ──
         // The last SSA rename (x_N) represents the final value of x after the algorithm.
         // Before the adjoint reverse sweep we must:
         //   1. seed  pDer.x_N := pDer.x   (transfer the incoming gradient for x)
-        //   2. reset pDer.x   := 0         (so it only picks up gradient from RHS reads of x)
         // We iterate replacements in REVERSE line order so the FIRST entry we see for
         // each base variable IS its final SSA rename.  A local seen-set avoids re-seeding
         // non-final renames.
@@ -1926,15 +1921,6 @@ protected
                 pDerOrigCref := UnorderedMap.getOrFail(origCref, diff_map);
                 pDerSsaCref  := UnorderedMap.getOrFail(finalSsaCref, diff_map);
                 vty := ComponentRef.getSubscriptedType(pDerSsaCref, true);
-                // Prepend in reverse execution order (each :: inserts at HEAD of list).
-                // Desired execution order: (1) pDer.x_N := pDer.x  then  (2) pDer.x := 0
-                // So prepend (2) first so (1) ends up at HEAD and executes first.
-                // pDer.x := 0  —  reset so it only accumulates from RHS reads of x
-                // adjStmts := Statement.ASSIGNMENT(
-                //   Expression.fromCref(pDerOrigCref),
-                //   Expression.makeZero(vty),
-                //   vty, DAE.emptyElementSource) :: adjStmts;
-                // pDer.x_N := pDer.x  —  seed the final SSA bar from the incoming x-bar
                 adjStmts := Statement.ASSIGNMENT(
                   Expression.fromCref(pDerSsaCref),
                   Expression.fromCref(pDerOrigCref),
@@ -1994,14 +1980,12 @@ protected
     input String contextName;
     output list<StrongComponent> adjointComps = {};
   protected
-    type AdjointTermList = list<tuple<ComponentRef, Expression>>;
-    UnorderedMap<ComponentRef, list<tuple<ComponentRef, Expression>>> fresh_adjoint_map;
+    UnorderedMap<ComponentRef, AdjointTermList> fresh_adjoint_map;
     Differentiate.DifferentiationArguments diffArgs;
     list<Statement> adjStmts;
     Pointer<Equation> eqPtr;
     list<Slice<VariablePointer>> adjVarSlices;
-    Pointer<Variable> vPtr;
-    ComponentRef baseCref, adjVarCref;
+    ComponentRef adjVarCref;
   algorithm
     // Build fresh adjoint_map and diff arguments
     fresh_adjoint_map := UnorderedMap.new<AdjointTermList>(ComponentRef.hash, ComponentRef.isEqual, 16);
@@ -2220,7 +2204,7 @@ protected
     all_vars      := unknown_vars;  // add other vars later on
 
     seed_vars     := Pointer.access(seed_vars_ptr);
-    aux_vars      := seed_vars;     // add other auxiliaries later on
+    aux_vars      := seed_vars;     // add other auxiliaries later on. TODO: Need to add the SSA vars and the lambda vars from algebraic loops as auxiliaries?
     alias_vars    := {};
     depend_vars   := {};
 
@@ -2418,6 +2402,190 @@ protected
       status   = NBSolve.Status.IMPLICIT
     );
   end makeLinearAlgebraicLoop;
+
+
+  function makeSSAVar
+    "Creates a fresh SSA variable named 'baseName_idx' that copies all
+     attributes from the variable referenced by baseCref.
+     The new variable and its component reference are linked cyclically
+     via the InstNode VAR_NODE pointer (same pattern as BVariable.makeAuxVar)."
+    input  ComponentRef baseCref "original base cref (no subscripts)";
+    input  Integer idx           "SSA subscript index (1 for x_1, 2 for x_2, ...)";
+    output Pointer<Variable> ssaVarPtr;
+    output ComponentRef ssaCref;
+  protected
+    Pointer<Variable> origVarPtr;
+    Variable origVar;
+    InstNode newNode;
+    Type ty;
+  algorithm
+    origVarPtr := BVariable.getVarPointer(baseCref, sourceInfo());
+    origVar    := Pointer.access(origVarPtr);
+    ty         := ComponentRef.getSubscriptedType(baseCref, false);
+
+    // Build a fresh VAR_NODE with the SSA name; the variable pointer is
+    // initially a dummy and becomes cyclic via makeVarPtrCyclic below.
+    newNode := InstNode.VAR_NODE(
+      ComponentRef.firstName(baseCref) + "_" + intString(idx),
+      Pointer.create(NBVariable.DUMMY_VARIABLE));
+    ssaCref := ComponentRef.CREF(newNode, {}, ty,
+      NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
+
+    // Clear any inherited partner pointers (pDer, seed) so that a fresh pDer
+    // variable is created for this SSA temporary rather than reusing the
+    // original variable's existing partner.
+    origVar.backendinfo := BackendInfo.BACKEND_INFO(
+      origVar.backendinfo.varKind,
+      origVar.backendinfo.attributes,
+      origVar.backendinfo.annotations,
+      origVar.backendinfo.var_pre,
+      NONE() /* var_seed */,
+      NONE() /* var_pder_res */,
+      NONE() /* var_pder_tmp */,
+      origVar.backendinfo.var_start,
+      origVar.backendinfo.parent
+    );
+
+    // Establish the cyclic Variable <-> InstNode pointer link
+    (ssaVarPtr, ssaCref) := BVariable.makeVarPtrCyclic(origVar, ssaCref);
+  end makeSSAVar;
+
+  function algorithmToSSA
+    "Transforms a MULTI_COMPONENT algorithm strong component into SSA
+     (Static Single Assignment) form.
+
+     Variables assigned more than once receive fresh indexed names,
+     e.g. x -> x_1, x_2, ...  RHS reads are updated to use the latest
+     SSA name of each written variable.
+     Only ASSIGNMENT statements are expected in the algorithm body.
+
+     Each entry (orig_cref, (ssa_cref, line_index)) in `replacements`
+     records that orig_cref was renamed to ssa_cref at the statement
+     with 1-based index line_index within the original algorithm."
+    input  StrongComponent comp;
+    output StrongComponent ssaComp;
+    output list<tuple<ComponentRef, tuple<ComponentRef, Integer>>> replacements
+      "original_var -> (ssa_var, line_of_replacement)";
+    output list<Pointer<Variable>> newVars
+      "newly created SSA variable pointers; caller must register them in the variable system";
+  protected
+    Equation eqn;
+    Algorithm alg;
+    Statement stmt;
+    ComponentRef lhsCref, baseCref, ssaCref;
+    Integer cnt, idx, lineIdx;
+    Pointer<Variable> ssaVarPtr;
+    Expression lhsExp, rhsExp;
+    // Phase 1: how many times is each base cref assigned?
+    UnorderedMap<ComponentRef, Integer> assignCount =
+      UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+    // Phase 2: current per-variable SSA counter
+    UnorderedMap<ComponentRef, Integer> ssaIdx =
+      UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+    // Phase 2: current active SSA expression for each multi-assigned cref
+    UnorderedMap<ComponentRef, Expression> activeRepl =
+      UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+    list<Statement> ssaStmts = {};
+    list<tuple<ComponentRef, tuple<ComponentRef, Integer>>> replAcc = {};
+    list<Pointer<Variable>> newVarsAcc = {};
+    Pointer<Equation> ssaEqnPtr;
+  algorithm
+    (ssaComp, replacements, newVars) := match comp
+
+      case StrongComponent.MULTI_COMPONENT() algorithm
+        eqn := Pointer.access(Slice.getT(comp.eqn));
+        Equation.ALGORITHM(alg = alg) := eqn;
+
+        // ── Phase 1: count how many times each base cref appears on the LHS ──
+        for origStmt in alg.statements loop
+          () := match origStmt
+            case Statement.ASSIGNMENT() algorithm
+              lhsCref := match origStmt.lhs
+                case Expression.CREF(cref = lhsCref) then lhsCref;
+                else ComponentRef.EMPTY();
+              end match;
+              if not ComponentRef.isEmpty(lhsCref) then
+                baseCref := ComponentRef.stripSubscriptsAll(lhsCref);
+                cnt := UnorderedMap.getOrDefault(baseCref, assignCount, 0);
+                UnorderedMap.add(baseCref, cnt + 1, assignCount);
+              end if;
+            then ();
+            else ();
+          end match;
+        end for;
+
+        // ── Phase 2: rename multi-assigned variables; substitute RHS reads ──
+        lineIdx := 1;
+        for origStmt in alg.statements loop
+          stmt := match origStmt
+            case Statement.ASSIGNMENT() algorithm
+              // Substitute every RHS read with its current SSA name
+              rhsExp := Expression.map(origStmt.rhs,
+                function Replacements.applySimpleExp(replacements = activeRepl));
+
+              // Check whether the LHS variable needs SSA renaming
+              lhsExp  := origStmt.lhs;
+              lhsCref := match origStmt.lhs
+                case Expression.CREF(cref = lhsCref) then lhsCref;
+                else ComponentRef.EMPTY();
+              end match;
+
+              if not ComponentRef.isEmpty(lhsCref) then
+                baseCref := ComponentRef.stripSubscriptsAll(lhsCref);
+                if UnorderedMap.getOrDefault(baseCref, assignCount, 1) > 1 then
+                  // Increment the SSA index and create a fresh variable
+                  idx := UnorderedMap.getOrDefault(baseCref, ssaIdx, 0) + 1;
+                  UnorderedMap.add(baseCref, idx, ssaIdx);
+                  (ssaVarPtr, ssaCref) := makeSSAVar(baseCref, idx);
+                  newVarsAcc := ssaVarPtr :: newVarsAcc;
+
+                  // Re-attach original subscripts to the new SSA cref
+                  ssaCref := ComponentRef.copySubscripts(lhsCref, ssaCref);
+
+                  // Update active replacement map (keyed by unsubscripted base cref)
+                  UnorderedMap.add(baseCref,
+                    Expression.fromCref(ComponentRef.stripSubscriptsAll(ssaCref)),
+                    activeRepl);
+
+                  // Record: original base cref -> (ssa base cref, 1-based line index)
+                  replAcc := (baseCref,
+                    (ComponentRef.stripSubscriptsAll(ssaCref), lineIdx)) :: replAcc;
+
+                  // Replace the LHS with the SSA cref expression
+                  lhsExp := Expression.fromCref(ssaCref);
+                end if;
+              end if;
+            then Statement.ASSIGNMENT(lhsExp, rhsExp, origStmt.ty, origStmt.source);
+
+            else origStmt;
+          end match;
+
+          ssaStmts := stmt :: ssaStmts;
+          lineIdx   := lineIdx + 1;
+        end for;
+
+        // Build a fresh equation pointer with the SSA statement list so the
+        // original primal equation is left untouched. Is that intended? SSA variables are appended to the component's var list so
+        // that code generation can declare them as local temporaries.
+        alg.statements := listReverse(ssaStmts);
+        eqn := match eqn
+          case Equation.ALGORITHM() algorithm eqn.alg := alg; then eqn;
+          else eqn;
+        end match;
+        ssaEqnPtr := Pointer.create(eqn);
+      then (StrongComponent.MULTI_COMPONENT(
+              vars   = listAppend(comp.vars, list(Slice.SLICE(v, {}) for v in listReverse(newVarsAcc))),
+              eqn    = Slice.SLICE(ssaEqnPtr, {}),
+              status = comp.status
+            ), listReverse(replAcc), listReverse(newVarsAcc));
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {getInstanceName() + " expects a MULTI_COMPONENT with an ALGORITHM equation."});
+      then fail();
+
+    end match;
+  end algorithmToSSA;
 
   annotation(__OpenModelica_Interface="nbackend");
 end NBJacobian;
