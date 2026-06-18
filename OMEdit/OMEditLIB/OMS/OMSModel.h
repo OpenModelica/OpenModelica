@@ -238,9 +238,11 @@ namespace OMSModel
     const QVector<Connection*>& getConnections() const {return mConnections;}
     bool isSystem() const;
     bool isComponent() const;
+    bool isComponentTable() const;
     void setGeometry(const ElementGeometry &geometry) {mGeometry = geometry;}
     bool hasFMUInfo() const {return mHasFMUInfo;}
     const FMUInfo& getFMUInfo() const {return mFMUInfo;}
+    const QString& getFilePath() const {return mFilePath;}
   private:
     QString mName;
     QString mType;
@@ -250,6 +252,7 @@ namespace OMSModel
     QVector<Connection*> mConnections;
     bool mHasFMUInfo = false;
     FMUInfo mFMUInfo;
+    QString mFilePath;
   };
 
   class Model

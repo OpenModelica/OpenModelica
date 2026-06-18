@@ -343,6 +343,8 @@ namespace OMSModel
       mHasFMUInfo = true;
     }
 
+    mFilePath = jsonObject.value("filePath").toString();
+
     const QJsonArray connections = jsonObject.value("connections").toArray();
     for (const QJsonValue &connectionValue : connections) {
       if (!connectionValue.isObject()) {
@@ -382,6 +384,15 @@ namespace OMSModel
   bool Element::isComponent() const
   {
     return mType == "component";
+  }
+
+  /*!
+   * \brief Returns true if this element represents a ComponentTable.
+   * \return true if the element type is "componenttable" (stored lowercase after deserialization).
+   */
+  bool Element::isComponentTable() const
+  {
+    return mType == "componenttable";
   }
 
   /*!

@@ -2571,57 +2571,6 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItemImpl(LibraryTreeItem::Li
   return pLibraryTreeItem;
 }
 
-
-/*!
- * \brief LibraryTreeModel::createOMSLibraryTreeItemImpl
- * Creates the OMS LibraryTreeItem\n
- * \param name
- * \param nameStructure
- * \param path
- * \param isSaved
- * \param pParentLibraryTreeItem
- * \param pOMSElement
- * \param pOMSConnector
- * \param pOMSBusConnector
- * \param pOMSTLMBusConnector
- * \return
- */
-// LibraryTreeItem* LibraryTreeModel::createOMSLibraryTreeItemImpl(QString name, QString nameStructure, QString path, bool isSaved,
-//                                                                 LibraryTreeItem *pParentLibraryTreeItem, oms_element_t *pOMSElement,
-//                                                                 oms_connector_t *pOMSConnector, oms_busconnector_t *pOMSBusConnector)
-// {
-//   LibraryTreeItem *pLibraryTreeItem = new LibraryTreeItem(LibraryTreeItem::OMS, name, nameStructure, path, isSaved, pParentLibraryTreeItem->isInternal(), pParentLibraryTreeItem);
-//   pLibraryTreeItem->setOMSElement(pOMSElement);
-//   qDebug() << "set OMS element:" << pLibraryTreeItem->isSystemElement() << "=>" << pLibraryTreeItem->isComponentElement();
-//   if (pLibraryTreeItem->isSystemElement()) {
-//     oms_system_enu_t systemType;
-//     if (OMSProxy::instance()->getSystemType(pLibraryTreeItem->getNameStructure(), &systemType)) {
-//       pLibraryTreeItem->setSystemType(systemType);
-//     }
-//   }
-//   pLibraryTreeItem->setOMSConnector(pOMSConnector);
-//   pLibraryTreeItem->setOMSBusConnector(pOMSBusConnector);
-//   if (pParentLibraryTreeItem && pLibraryTreeItem->isComponentElement()) {
-//     oms_component_enu_t componentType;
-//     if (OMSProxy::instance()->getComponentType(pLibraryTreeItem->getNameStructure(), &componentType)) {
-//       pLibraryTreeItem->setComponentType(componentType);
-//     }
-//     if (pLibraryTreeItem->isFMUComponent()) {
-//       const oms_fmu_info_t *pFMUInfo;
-//       if (OMSProxy::instance()->getFMUInfo(pLibraryTreeItem->getNameStructure(), &pFMUInfo)) {
-//         pLibraryTreeItem->setFMUInfo(pFMUInfo);
-//         pLibraryTreeItem->setSubModelPath(QString(pFMUInfo->path));
-//       }
-//     } else if (pLibraryTreeItem->isTableComponent()) {
-//       QString path;
-//       if (OMSProxy::instance()->getSubModelPath(pLibraryTreeItem->getNameStructure(), &path)) {
-//         pLibraryTreeItem->setSubModelPath(path);
-//       }
-//     }
-//   }
-//   return pLibraryTreeItem;
-// }
-
 /*!
  * \brief LibraryTreeModel::createOMSLibraryTreeItemImpl
  * Creates the OMS LibraryTreeItem\n
@@ -2644,21 +2593,15 @@ LibraryTreeItem* LibraryTreeModel::createOMSLibraryTreeItemImpl(QString name, QS
   if (pOMSConnector)
     pLibraryTreeItem->setOMSModelConnector(pOMSConnector);
 
-
-  if (pOMSElement) {
-    QString type = pOMSElement->getType();
-  }
-
   if (pLibraryTreeItem && pLibraryTreeItem->isComponentElement()) {
-    //pLibraryTreeItem->setComponentType(oms_component_fmu);
     if (pLibraryTreeItem && pLibraryTreeItem->getOMSModelElement()->hasFMUInfo()) {
       const OMSModel::FMUInfo &pFMUInfo = pLibraryTreeItem->getOMSModelElement()->getFMUInfo();
       pLibraryTreeItem->setFMUInfo(pFMUInfo);
       pLibraryTreeItem->setSubModelPath(pFMUInfo.getPath());
     }
-    //TODO set component table
+  } else if (pLibraryTreeItem && pLibraryTreeItem->isTableComponent()) {
+    pLibraryTreeItem->setSubModelPath(pLibraryTreeItem->getOMSModelElement()->getFilePath());
   }
-
   return pLibraryTreeItem;
 }
 

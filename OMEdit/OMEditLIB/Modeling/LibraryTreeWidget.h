@@ -148,7 +148,7 @@ public:
   bool isSystemElement() const {return (mpOMSModelElement && mpOMSModelElement->isSystem());}
   bool isComponentElement() const {return (mpOMSModelElement && mpOMSModelElement->isComponent());}
   bool isFMUComponent() const {return (mpOMSModelElement && mpOMSModelElement->isComponent() && mpOMSModelElement->hasFMUInfo());}
-  bool isTableComponent() const {return isFMUComponent();} // TODO: distinguish table components properly
+  bool isTableComponent() const {return (mpOMSModelElement && mpOMSModelElement->isComponentTable());}
 
   void setOMSModel(OMSModel::Model *pOMSModel) {mpOMSModel = pOMSModel;}
   void setOMSModelElement(OMSModel::Element *pElement) {mpOMSModelElement = pElement;}

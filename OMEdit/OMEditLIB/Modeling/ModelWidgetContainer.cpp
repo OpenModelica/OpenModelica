@@ -5651,7 +5651,7 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     connect(&mUpdateModelTimer, SIGNAL(timeout()), SLOT(updateModel()));
   } else if (mpLibraryTreeItem->isSSP()) {
     // icon graphics framework
-    if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
+    if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement() || mpLibraryTreeItem->isTableComponent()) {
       mpIconGraphicsScene = new GraphicsScene(StringHandler::Icon, this);
       mpIconGraphicsView = new GraphicsView(StringHandler::Icon, this);
       mpIconGraphicsView->setScene(mpIconGraphicsScene);
@@ -7156,7 +7156,7 @@ void ModelWidget::drawOMSModelIconElements()
 {
   if (mpLibraryTreeItem->isTopLevel()) {
     return;
-  } else if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
+  } else if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement() || mpLibraryTreeItem->isTableComponent()) {
     drawOMSModelElement();
     // draw connectors
     for (int i = 0 ; i < mpLibraryTreeItem->childrenSize() ; i++) {
@@ -7233,7 +7233,7 @@ void ModelWidget::drawOMSModelDiagramElements()
             .arg(x2).arg(y2)
             .arg(elementGeometry.getRotation());
 
-        if (pChildLibraryTreeItem->isSystemElement() || pChildLibraryTreeItem->isComponentElement()) {
+        if (pChildLibraryTreeItem->isSystemElement() || pChildLibraryTreeItem->isComponentElement() || pChildLibraryTreeItem->isTableComponent()) {
           drawOMSElement(pChildLibraryTreeItem, annotation);
         }
       }

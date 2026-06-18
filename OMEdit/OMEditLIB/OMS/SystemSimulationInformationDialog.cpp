@@ -143,7 +143,7 @@ SystemSimulationInformationWidget::SystemSimulationInformationWidget(ModelWidget
 {
   mpModelWidget = pModelWidget;
 
-  // --- Solver configurations table: Name | Method | Parameters ---
+  // --- Solver configurations table: Name | Method |
   mpSolversTable = new QTableWidget(0, 2, this);
   mpSolversTable->setHorizontalHeaderLabels({tr("Name"), tr("Method")});
   mpSolversTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
@@ -217,7 +217,7 @@ void SystemSimulationInformationWidget::populateComponentAssignments(LibraryTree
     return;
   }
 
-  if (pLibraryTreeItem->isComponentElement()) {
+  if (pLibraryTreeItem->isComponentElement() || pLibraryTreeItem->isTableComponent()) {
     const QString displayName = pLibraryTreeItem->getName();
     int row = mpAssignmentsTable->rowCount();
     mpAssignmentsTable->insertRow(row);

@@ -48,6 +48,7 @@
 #include <QJsonArray>
 
 #include <QApplication>
+#include <QFileInfo>
 #include <QTime>
 
 #define LOG_COMMAND(command,args) \
@@ -465,7 +466,8 @@ bool OMSProxy::addSubModel(QString cref, QString fmuPath)
   obj["model"]  = cref.split('.').first();
   args["cref"] = QJsonArray::fromStringList(parts);
   args["source"] = fmuPath;
-  args["new_name"] = "resources/" + parts.last() + ".fmu";
+  QString suffix = QFileInfo(fmuPath).suffix();
+  args["new_name"] = "resources/" + parts.last() + "." + suffix;
   obj["args"] = args;
 
   QJsonObject reply;
