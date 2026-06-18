@@ -15514,26 +15514,63 @@ algorithm
 end getValueReferenceMapping;
 
 public function createMinimalFMIModelStructure
-  "Build a minimal FMI ModelStructure (continuous state derivatives and outputs,
-   without dependency information) directly from the SimVars. Used by the new
-   backend FMU export, which does not have the old BackendDAE that
-   createFMIModelStructure needs. Without at least the ContinuousStateDerivative
-   entries an FMI 3.0 Model Exchange master cannot drive the integration."
+  "Build a minimal FMI ModelStructure (continuous state derivatives, outputs and
+   initial unknowns, without dependency information) directly from the SimVars.
+   Used by the new backend FMU export, which does not have the old BackendDAE
+   that createFMIModelStructure needs. Without at least the
+   ContinuousStateDerivative entries an FMI 3.0 Model Exchange master cannot
+   drive the integration; the InitialUnknowns are mandatory in FMI 2.0 and 3.0."
   input SimCode.ModelInfo modelInfo;
   output Option<SimCode.FmiModelStructure> outStructure;
 protected
-  list<SimCode.FmiUnknown> derivs, outs;
+  list<SimCode.FmiUnknown> derivs, outs, initialUnknowns;
+  list<SimCodeVar.SimVar> iu;
 algorithm
   derivs := list(SimCode.FMIUNKNOWN(getVariableFMIIndex(v), {}, {}) for v in modelInfo.vars.derivativeVars);
   outs   := list(SimCode.FMIUNKNOWN(getVariableFMIIndex(v), {}, {}) for v in modelInfo.vars.outputVars);
+
+  // InitialUnknowns according to the FMI specification, but without dependency
+  // information (the new backend FMU export does not compute the FMIDER
+  // Jacobian here). Omitting the dependencies is valid; the importer then
+  // assumes a dependency on all knowns. The list consists of:
+  //  1. outputs with initial = approx or calculated
+  //  2. calculatedParameters
+  //  3. continuous-time states with initial = approx or calculated
+  //  4. state derivatives with initial = approx or calculated
+  iu := {};
+  iu := List.filterCons(modelInfo.vars.outputVars, isInitialApproxOrCalculatedSimVar, iu);
+  iu := List.filterCons(getAllParamSimVars(modelInfo), isCausalityCalculatedParameterSimVar, iu);
+  // A continuous state with a fixed start value has initial = exact (a known),
+  // so it is not an initial unknown. The fixed attribute is used instead of
+  // initial_ because the non-scalarized array backend does not populate
+  // initial_ for states (see FmiInitialAttribute3 in CodegenFMU3.tpl).
+  iu := List.filterCons(modelInfo.vars.stateVars, isStateInitialUnknownSimVar, iu);
+  iu := List.filterCons(modelInfo.vars.derivativeVars, isInitialApproxOrCalculatedSimVar, iu);
+  iu := Dangerous.listReverseInPlace(iu);
+  initialUnknowns := list(SimCode.FMIUNKNOWN(getVariableFMIIndex(v), {}, {}) for v in iu);
+
   outStructure := SOME(SimCode.FMIMODELSTRUCTURE(
     SimCode.FMIOUTPUTS(outs),
     SimCode.FMIDERIVATIVES(derivs),
     NONE(),
     NONE(),
     SimCode.FMIDISCRETESTATES({}),
-    SimCode.FMIINITIALUNKNOWNS({}, {}, {})));
+    SimCode.FMIINITIALUNKNOWNS(initialUnknowns, {}, {})));
 end createMinimalFMIModelStructure;
+
+protected function isStateInitialUnknownSimVar
+  "A continuous-time state is an FMI initial unknown unless its start value is
+   fixed: a fixed start makes the state initial = exact (a known), an unfixed
+   start makes it initial = approx (an unknown). This mirrors the initial
+   attribute emitted for states by the FMI templates."
+  input SimCodeVar.SimVar simVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match simVar
+    case SimCodeVar.SIMVAR(varKind = BackendDAE.STATE()) then not simVar.isFixed;
+    else isInitialApproxOrCalculatedSimVar(simVar);
+  end match;
+end isStateInitialUnknownSimVar;
 
 public function isFMI3NestableAlias
   "True if a SimVar can be represented as an FMI 3.0 <Alias> child element of its

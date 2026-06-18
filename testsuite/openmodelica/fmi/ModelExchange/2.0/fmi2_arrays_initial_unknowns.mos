@@ -1,0 +1,62 @@
+// name: fmi2_arrays_initial_unknowns.mos
+// keywords: FMI 2.0 export array InitialUnknowns NewBackend
+// status: correct
+// teardown_command: rm -rf fmi2_arrays_initial_unknowns.fmu fmi2_arrays_initial_unknowns.xml fmi2_arrays_initial_unknowns_tmp.xml fmi2_arrays_initial_unknowns.fmutmp/ fmi2_arrays_initial_unknowns.log fmi2_arrays_initial_unknowns_info.json index.html
+//
+// FMI 2.0 requires the <InitialUnknowns> element of <ModelStructure> to list
+// all variables that are unknowns during initialization. Regression test for
+// the new backend (non-scalarized) FMU export, which previously emitted an
+// empty <InitialUnknowns>. The fixed-start state x is initial="exact" (a known)
+// and must be excluded; the output y and the state derivative der(x) are
+// calculated and must be listed.
+
+setCommandLineOptions("--newBackend --simCodeScalarize=false"); getErrorString();
+
+loadString("
+model fmi2_arrays_initial_unknowns
+  Real x[3](start = {1.0, 2.0, 3.0}, each fixed = true);
+  output Real y;
+  parameter Real a = 2.0;
+equation
+  der(x) = -a*x;
+  y = sum(x);
+end fmi2_arrays_initial_unknowns;
+"); getErrorString();
+
+buildModelFMU(fmi2_arrays_initial_unknowns, version="2.0", fmuType="me"); getErrorString();
+
+// unzip to console, quiet, extra quiet
+system("unzip -cqq fmi2_arrays_initial_unknowns.fmu modelDescription.xml > fmi2_arrays_initial_unknowns_tmp.xml"); getErrorString();
+system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" fmi2_arrays_initial_unknowns_tmp.xml > fmi2_arrays_initial_unknowns.xml"); getErrorString();
+readFile("fmi2_arrays_initial_unknowns.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "fmi2_arrays_initial_unknowns.fmu"
+// "Warning: NSimJacobian.SimJacobian.createSparsityPattern: column cref not found in Jacobian local_idx_map: x[1]
+// 	Available keys: x, $DER.x
+// Warning: NSimJacobian.SimJacobian.create could not generate sparsity pattern of Jacobian [ODE].
+// "
+// 0
+// ""
+// 0
+// ""
+// "  <ModelStructure>
+//     <Outputs>
+//       <Unknown index=\"2\" dependencies=\"\" dependenciesKind=\"\" />
+//     </Outputs>
+//     <Derivatives>
+//       <Unknown index=\"1\" dependencies=\"\" dependenciesKind=\"\" />
+//     </Derivatives>
+//     <InitialUnknowns>
+//       <Unknown index=\"2\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"0\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"1\" dependencies=\"\" dependenciesKind=\"\" />
+//     </InitialUnknowns>
+//   </ModelStructure>
+// "
+// ""
+// endResult
