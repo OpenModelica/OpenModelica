@@ -418,35 +418,36 @@ public
     function resolveDependency
       input ComponentRef cref;
       input UnorderedMap<ComponentRef, list<ComponentRef>> map;
-      input UnorderedSet<ComponentRef> seedSet;
+      input UnorderedSet<ComponentRef> seed_set;
       input UnorderedSet<ComponentRef> visited;
-      output list<ComponentRef> dependencies = {};
+      input UnorderedSet<ComponentRef> dep_set "collect seed dependencies here";
+    protected
+      list<ComponentRef> tmp_lst = {}; // HACK: the compiler needs help with the type
     algorithm
-      if UnorderedSet.contains(cref, seedSet) then
-        dependencies := {cref};
-      elseif UnorderedMap.contains(cref, map) and not UnorderedSet.contains(cref, visited) then
-        UnorderedSet.add(cref, visited);
-        for dep in UnorderedMap.getOrFail(cref, map) loop
-          dependencies := listAppend(resolveDependency(dep, map, seedSet, visited), dependencies);
-        end for;
-        dependencies := List.sort(UnorderedSet.unique_list(dependencies, ComponentRef.hash, ComponentRef.isEqual), ComponentRef.isGreater);
+      if UnorderedSet.add(cref, visited) then
+        if UnorderedSet.contains(cref, seed_set) then
+          UnorderedSet.add(cref, dep_set);
+        else
+          for dep in UnorderedMap.getOrDefault(cref, map, tmp_lst) loop
+            resolveDependency(dep, map, seed_set, visited, dep_set);
+          end for;
+        end if;
       end if;
     end resolveDependency;
 
     function resolveRowDependencies
       input ComponentRef row;
       input UnorderedMap<ComponentRef, list<ComponentRef>> map;
-      input UnorderedSet<ComponentRef> seedSet;
-      output list<ComponentRef> dependencies = {};
+      input UnorderedSet<ComponentRef> seed_set;
+      output list<ComponentRef> dependencies;
     protected
-      UnorderedSet<ComponentRef> visited = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+      UnorderedSet<ComponentRef> dep_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+      list<ComponentRef> tmp_lst = {}; // HACK: the compiler needs help with the type
     algorithm
-      if UnorderedMap.contains(row, map) then
-        for dep in UnorderedMap.getOrFail(row, map) loop
-          dependencies := listAppend(resolveDependency(dep, map, seedSet, visited), dependencies);
-        end for;
-        dependencies := List.sort(UnorderedSet.unique_list(dependencies, ComponentRef.hash, ComponentRef.isEqual), ComponentRef.isGreater);
-      end if;
+      for dep in UnorderedMap.getOrDefault(row, map, tmp_lst) loop
+        resolveDependency(dep, map, seed_set, UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual), dep_set);
+      end for;
+      dependencies := List.sort(UnorderedSet.toList(dep_set), ComponentRef.isGreater);
     end resolveRowDependencies;
 
     function create
@@ -509,8 +510,7 @@ public
           for cref in listReverse(jac_row_vars) loop
             // only create rows for actual Jacobian result variables / rows
             if UnorderedMap.contains(cref, map) then
-              tmp := resolveRowDependencies(cref, map, seed_set);
-              rows := (cref, tmp) :: rows;
+              rows := (cref, resolveRowDependencies(cref, map, seed_set)) :: rows;
               row_vars := cref :: row_vars;
             end if;
           end for;
