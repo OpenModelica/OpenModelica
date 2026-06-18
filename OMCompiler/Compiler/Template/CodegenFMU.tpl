@@ -390,12 +390,14 @@ case SIMCODE(__) then
   >>
   %>
 
-  <%if isFMIVersion20(FMUVersion) then "" else
+  <%if isFMIVersion10(FMUVersion) then
   <<
   // FMI 1.0 inlines the model interface implementation here, after the forward declarations
   // above (setStartValues, setDefaultStartValues, getReal, ...) that it calls. See #15838.
   #include "fmi-export/fmu1_model_interface.c.inc"
-  >>%>
+  >>
+  else ""
+  %>
 
   #ifdef __cplusplus
   }
