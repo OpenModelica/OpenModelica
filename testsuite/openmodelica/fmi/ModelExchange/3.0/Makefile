@@ -2,6 +2,8 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 fmi3_arrays.mos \
+fmi3_arrays_approx.mos \
+fmi3_arrays_start_vector.mos \
 fmi3_attributes_01.mos \
 fmi3_binary_extobj.mos \
 fmi3_builddescription.mos \

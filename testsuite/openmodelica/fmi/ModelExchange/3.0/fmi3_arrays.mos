@@ -6,13 +6,14 @@
 // Native FMI 3.0 array variables exported with the new backend
 // (--newBackend --simCodeScalarize=false): one typed element with one value
 // reference and <Dimension> children; the array occupies a contiguous block of
-// scalar value references.
+// scalar value references. The continuous-time state x has a fixed start value
+// (each fixed = true), so it is exported with initial="exact" and its start.
 
 setCommandLineOptions("--newBackend --simCodeScalarize=false"); getErrorString();
 
 loadString("
 model fmi3_arrays
-  Real x[3](each start = 1.0);
+  Real x[3](each start = 1.0, each fixed = true);
   parameter Real a = 2.0;
 equation
   der(x) = -a*x;
@@ -45,7 +46,7 @@ readFile("fmi3_arrays.xml"); getErrorString();
 // ""
 // "  <ModelVariables>
 //     <Float64 name=\"time\" valueReference=\"7\" causality=\"independent\" variability=\"continuous\" description=\"Simulation time\"/>
-//     <Float64 name=\"x\" valueReference=\"0\" ><Dimension start=\"3\"/></Float64>
+//     <Float64 name=\"x\" valueReference=\"0\" initial=\"exact\"  start=\"1.0 1.0 1.0\"><Dimension start=\"3\"/></Float64>
 //     <Float64 name=\"der(x)\" valueReference=\"3\"  derivative=\"0\"><Dimension start=\"3\"/></Float64>
 //     <Float64 name=\"a\" valueReference=\"6\" causality=\"parameter\" variability=\"fixed\"  start=\"2.0\"/>
 //   </ModelVariables>
@@ -55,6 +56,7 @@ readFile("fmi3_arrays.xml"); getErrorString();
 // ""
 // "  <ModelStructure>
 //     <ContinuousStateDerivative valueReference=\"3\"/>
+//     <InitialUnknown valueReference=\"3\"/>
 //   </ModelStructure>
 // "
 // ""

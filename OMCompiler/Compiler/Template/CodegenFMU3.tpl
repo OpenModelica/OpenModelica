@@ -507,6 +507,7 @@ template ArrayStartString3(SimVar simVar)
 ::=
 match simVar
 case SIMVAR(aliasvar = SimCodeVar.ALIAS(__)) then ''
+case SIMVAR(varKind = STATE(__)) then arrayStartAttr(simVar)
 case SIMVAR(initial_ = SOME(SimCodeVar.EXACT())) then arrayStartAttr(simVar)
 case SIMVAR(initial_ = SOME(SimCodeVar.APPROX())) then arrayStartAttr(simVar)
 case SIMVAR(causality = SOME(SimCodeVar.INPUT())) then arrayStartAttr(simVar)
@@ -528,6 +529,19 @@ case SIMVAR(numArrayElement = dims) then
   (dims |> d => '<Dimension start="<%d%>"/>' ;separator="")
 end Dimensions3;
 
+template FmiInitialAttribute3(SimVar simVar)
+ "Generates the FMI 3.0 initial attribute. Continuous-time states are special:
+  the non-scalarized array backend does not populate their initial_ field, so we
+  derive it from the variable's fixed attribute here. A fixed start is an exact
+  initial value (initial=\"exact\"), an unfixed start is a guess (initial=\"approx\").
+  All other variables fall back to the generic SimCode-derived attribute."
+::=
+match simVar
+case SIMVAR(varKind = STATE(__), isFixed = true) then "exact"
+case SIMVAR(varKind = STATE(__)) then "approx"
+else getFmiInitialAttributeStr(simVar)
+end FmiInitialAttribute3;
+
 template VariableCommonAttributes3(SimVar simVar, SimCode simCode)
  "Generates the common attributes (name, valueReference, description, causality,
   variability, initial) shared by all FMI 3.0 typed variable elements. Note the
@@ -540,7 +554,7 @@ case SIMVAR(__) then
   let description = if comment then 'description="<%Util.escapeModelicaStringToXmlString(comment)%>" '
   let variability_ = getVariability2(variability)
   let caus = getCausality2(causality)
-  let initial = getFmiInitialAttributeStr(simVar)
+  let initial = FmiInitialAttribute3(simVar)
   <<
   name="<%name%>" valueReference="<%valueReference%>" <%description%><%if boolNot(stringEq(caus, "")) then 'causality="'+caus+'" '%><%if boolNot(stringEq(variability_, "")) then 'variability="'+variability_+'" '%><%if boolNot(stringEq(initial, "")) then 'initial="'+initial+'" '%>
   >>
