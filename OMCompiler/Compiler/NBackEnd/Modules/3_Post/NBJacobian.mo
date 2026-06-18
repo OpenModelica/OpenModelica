@@ -1092,7 +1092,7 @@ protected
     (comp, updated) := match comp
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
         // create residual components
-        residual_comps        := list(StrongComponent.fromSolvedEquationSlice(eqn) for eqn in strict.residual_eqns);
+        residual_comps := list(StrongComponent.fromSolvedEquationSlice(eqn) for eqn in strict.residual_eqns);
 
         // create seed and partial candidates
         seed_candidates := listReverse(list(Slice.getT(var) for var in strict.iteration_vars));
@@ -1108,7 +1108,7 @@ protected
           comps              = Array.appendList(strict.innerEquations, residual_comps),
           full               = full,
           funcMap            = funcMap,
-          name               = Partition.Partition.kindToString(kind) + "_" + jacobianTypeName(jacType) + "_JAC_" + intString(comp.idx),
+          name               = Partition.Partition.kindToString(kind) + "_" + jacobianTypeName(jacType) + "_JAC_" + intString(comp.idx) + "_" + intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq)),
           jacType            = jacType,
           staticAsContinuous = staticAsContinuous);
         comp.strict := strict;
