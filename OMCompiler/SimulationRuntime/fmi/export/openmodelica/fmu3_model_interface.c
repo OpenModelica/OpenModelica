@@ -687,11 +687,6 @@ ModelInstance* omcInstantiate(fmi3String instanceName, OMC_FmuType fmuType, fmi3
   comp->fmuData->callback->read_simulation_info(comp->fmuData->simulationInfo);
   allocModelDataVars(comp->fmuData->modelData, FALSE, comp->threadData);
   scalarAllocArrayAttributes(comp->fmuData->modelData);
-  /* read_input_fmu sets the variable info, the array dimensions and the
-     attribute values. It must run before calculateAllScalarLength /
-     computeVarIndices (in initializeDataStruc) so that non-scalarized array
-     variables size their scalar value vectors correctly. */
-  comp->fmuData->callback->read_input_fmu(comp->fmuData->modelData);
   calculateAllScalarLength(comp->fmuData->modelData);
 
   /* setup model data with default start data */
@@ -700,6 +695,13 @@ ModelInstance* omcInstantiate(fmi3String instanceName, OMC_FmuType fmuType, fmi3
 
   setAllParamsToStart(comp->fmuData->simulationInfo, comp->fmuData->modelData);
   setAllVarsToStart(comp->fmuData->localData[0], comp->fmuData->simulationInfo, comp->fmuData->modelData);
+  /* read_input_fmu sets the per-variable info and attribute values (parameter
+     start values etc.). It must run AFTER initializeDataStruc/computeVarIndices
+     has built the variable->global-array index maps, otherwise the start values
+     it writes never reach simulationInfo->realParameter[realParamsIndex[...]]
+     and parameters stay 0 (issue #15686). This mirrors fmu2_model_interface.c /
+     fmu1_model_interface.c.inc (#15838). */
+  comp->fmuData->callback->read_input_fmu(comp->fmuData->modelData);
 
 
 #if !defined(OMC_MINIMAL_METADATA)
