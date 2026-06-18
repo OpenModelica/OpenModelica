@@ -2601,13 +2601,20 @@ algorithm
   flowCrefs := list(v.name for v guard Variable.isFlow(v) in flatModel.variables);
   if listEmpty(flowCrefs) then return; end if;
 
-  // collect and drop the `flow = 0` equations of unconnected flows
+  // collect and drop the `flow = 0` equations of unconnected flows.
+  // Only the exported model's OWN top-level connectors form the FMU boundary, so
+  // restrict to flows whose connector is a direct child of the model root
+  // (ComponentRef.rest(fc) is simple, e.g. flange_a.tau -> flange_a). Internal
+  // unconnected sub-connector flows (e.g. cylinder.fixed.flange.f) legitimately
+  // keep their `flow = 0` equation; causalizing them would drop equations the
+  // model needs and leave it under-determined (issue #15686).
   for eq in flatModel.equations loop
     isZeroFlowEq := false;
     () := match eq
       local Real rv;
       case Equation.EQUALITY(lhs = Expression.CREF(cref = fc), rhs = Expression.REAL(value = rv))
         guard rv == 0.0 and List.isMemberOnTrue(fc, flowCrefs, ComponentRef.isEqual)
+              and ComponentRef.isSimple(ComponentRef.rest(fc))
         algorithm
           unconnectedFlows := fc :: unconnectedFlows;
           boundaryConnectors := ComponentRef.rest(fc) :: boundaryConnectors;
