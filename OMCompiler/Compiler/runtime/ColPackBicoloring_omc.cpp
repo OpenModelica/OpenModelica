@@ -81,7 +81,7 @@ extern "C" {
 /**
  * @brief Star bicoloring of a bipartite graph via ColPack.
  *
- * The Jacobian J is m x n (m rows, n columns). The bipartite graph has
+ * The Jacobian J is m x n (m rows, n columns, often m == n). The bipartite graph has
  * row-vertices on the left (rows/equations) and column-vertices on the right
  * (columns/variables). An edge (i, j) exists iff J[i][j] != 0.
  *

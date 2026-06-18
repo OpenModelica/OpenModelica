@@ -404,26 +404,6 @@ public
       sparsityColoring := SparsityColoring.lazy(sparsityPattern);
     end lazy;
 
-    // Pretty-print the bipartite adjacency map used during sparsity detection:
-    // map[cref] -> list of neighbor crefs on the opposite side.
-    function adjacencyMapToString
-      input UnorderedMap<ComponentRef, list<ComponentRef>> map;
-      output String s;
-    protected
-      list<ComponentRef> keys;
-      ComponentRef k;
-      list<ComponentRef> neighs;
-      list<String> lines = {};
-    algorithm
-      keys := UnorderedMap.keyList(map);
-      for k in keys loop
-        neighs := UnorderedMap.getOrFail(k, map);
-        lines := ("  " + ComponentRef.toString(k) + " -> " + ComponentRef.listToString(neighs)) :: lines;
-      end for;
-      lines := listReverse(lines);
-      s := "Adjacency map (" + intString(listLength(keys)) + " keys):\n" + stringDelimitList(lines, "\n");
-    end adjacencyMapToString;
-
     function create
       input VariablePointers seedCandidates;
       input VariablePointers partialCandidates;
@@ -750,19 +730,10 @@ public
     algorithm
       // create index -> cref arrays
       seeds := listArray(sparsityPattern.seed_vars);
-      if jacType == JacobianType.NLS then
-        partials := listArray(sparsityPattern.partial_vars);
-      else
-        partials := listArray(list(cref for cref guard(isRowInJacobian(cref, jacType)) in sparsityPattern.partial_vars));
-      end if;
+      // this assumes ODE Jacobian
+      partials := listArray(list(cref for cref guard(isRowInJacobian(cref, jacType)) in sparsityPattern.partial_vars));
       sizeCols := arrayLength(seeds);
       sizeRows := arrayLength(partials);
-
-      // handle empty case
-      if sizeCols == 0 or sizeRows == 0 then
-        sparsityColoring := SPARSITY_BICOLORING(listArray({}), listArray({}), 0, 0);
-        return;
-      end if;
 
       // build cref -> 1-based index maps
       seed_indices := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(sizeCols));
@@ -774,7 +745,7 @@ public
         UnorderedMap.add(partials[i], i, partial_indices);
       end for;
 
-      // build per-row adjacency: rowAdj[i] = list of 0-based column indices
+      // build per-row adjacency: rowAdj[i] = list of 0-based (for C) column indices
       rowAdj := arrayCreate(sizeRows, {});
       nnz := 0;
       for tpl in sparsityPattern.row_wise_pattern loop
