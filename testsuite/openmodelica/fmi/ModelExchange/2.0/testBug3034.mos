@@ -19,6 +19,9 @@ loadModel(Modelica, {"3.2.3"});
 buildModelFMU(test_Bug3034, version="2.0");
 getErrorString();
 importFMU("test_Bug3034.fmu");
+getErrorString();
+setCommandLineOptions("--allowNonStandardModelica=reinitInAlgorithms");
+getErrorString();
 loadFile("test_Bug3034_me_FMU.mo");
 getErrorString();
 simulate(test_Bug3034_me_FMU);
@@ -34,6 +37,9 @@ getErrorString();
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // "test_Bug3034_me_FMU.mo"
+// ""
+// true
+// ""
 // true
 // ""
 // record SimulationResult

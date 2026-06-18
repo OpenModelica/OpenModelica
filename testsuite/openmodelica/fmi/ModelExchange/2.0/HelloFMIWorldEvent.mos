@@ -17,6 +17,9 @@ end HelloFMI20WorldEvent;
 buildModelFMU(HelloFMI20WorldEvent, version="2.0");
 getErrorString();
 importFMU("HelloFMI20WorldEvent.fmu");
+getErrorString();
+setCommandLineOptions("--allowNonStandardModelica=reinitInAlgorithms");
+getErrorString();
 loadFile("HelloFMI20WorldEvent_me_FMU.mo");
 getErrorString();
 simulate(HelloFMI20WorldEvent_me_FMU, stepSize=0.4);
@@ -29,6 +32,9 @@ val(x,1);
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // "HelloFMI20WorldEvent_me_FMU.mo"
+// ""
+// true
+// ""
 // true
 // ""
 // record SimulationResult

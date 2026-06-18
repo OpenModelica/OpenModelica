@@ -45,29 +45,29 @@ testModelicaStandardTables.mos \
 TestSourceCodeFMU.mos \
 ticket5670.mos \
 ticket6262.mos \
-
-# test that currently fail. Move up when fixed.
-# Run make testfailing
-FAILINGTESTFILES= \
-Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.mos \
-testExperimentalFMU.mos \
-
-FAILING_FMI_IMPORT = \
-BooleanNetwork1.mos \
-BouncingBall.mos \
 EnumerationTest.mos \
-FMIExercise.mos \
 HelloFMIWorld.mos \
 HelloFMIWorldEvent.mos \
 IntegerNetwork1.mos \
 Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.mos \
-Modelica.Blocks.Sources.BooleanPulse.mos \
+Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.mos \
 Modelica.Electrical.Analog.Examples.ChuaCircuit.mos \
 testAssert.mos \
 testBug3034.mos \
 testChangeParam.mos \
 testInitialEquationsFMI.mos \
 ZeroStates.mos \
+
+# test that currently fail. Move up when fixed.
+# Run make testfailing
+FAILINGTESTFILES= \
+testExperimentalFMU.mos \
+
+FAILING_FMI_IMPORT = \
+BooleanNetwork1.mos \
+BouncingBall.mos \
+FMIExercise.mos \
+Modelica.Blocks.Sources.BooleanPulse.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
