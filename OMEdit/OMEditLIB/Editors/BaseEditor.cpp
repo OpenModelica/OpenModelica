@@ -3003,8 +3003,13 @@ InfoBar::InfoBar(QWidget *pParent)
   : QFrame(pParent)
 {
   QPalette pal = palette();
-  pal.setColor(QPalette::Window, QColor(255, 255, 225));
-  pal.setColor(QPalette::WindowText, Qt::black);
+  if (qApp->property("omeditDarkMode").toBool()) {
+    pal.setColor(QPalette::Window, QColor(31, 41, 55));
+    pal.setColor(QPalette::WindowText, QColor(232, 234, 237));
+  } else {
+    pal.setColor(QPalette::Window, QColor(255, 255, 225));
+    pal.setColor(QPalette::WindowText, Qt::black);
+  }
   setPalette(pal);
   setFrameStyle(QFrame::StyledPanel);
   setAutoFillBackground(true);
@@ -3046,8 +3051,13 @@ ReloadAsModelicaInfoBar::ReloadAsModelicaInfoBar(BaseEditor *pBaseEditor)
   : QFrame(pBaseEditor)
 {
   QPalette pal = palette();
-  pal.setColor(QPalette::Window, QColor(255, 255, 225));
-  pal.setColor(QPalette::WindowText, Qt::black);
+  if (qApp->property("omeditDarkMode").toBool()) {
+    pal.setColor(QPalette::Window, QColor(31, 41, 55));
+    pal.setColor(QPalette::WindowText, QColor(232, 234, 237));
+  } else {
+    pal.setColor(QPalette::Window, QColor(255, 255, 225));
+    pal.setColor(QPalette::WindowText, Qt::black);
+  }
   setPalette(pal);
   setFrameStyle(QFrame::StyledPanel);
   setAutoFillBackground(true);
