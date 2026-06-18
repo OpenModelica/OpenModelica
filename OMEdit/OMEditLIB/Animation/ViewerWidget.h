@@ -48,13 +48,9 @@
 
 #include <OpenThreads/Mutex>
 
-#include <iostream>
-
 #include <QMenu>
 
 #include "AbstractAnimationWindow.h"
-#include "AnimationUtil.h"
-#include "Util/Helper.h"
 
 /*!
  * \note We need to create two files with same class name since Qt meta object compiler doesn't handle ifdef.
@@ -90,7 +86,7 @@ public:
   void pickVisualizer(int x, int y);
   void frame();
 protected:
-  virtual void paintEvent(QPaintEvent *paintEvent) override;
+  virtual void initializeGL() override;
   virtual void paintGL() override;
   virtual void resizeGL(int width, int height) override;
   virtual void keyPressEvent(QKeyEvent *event) override;

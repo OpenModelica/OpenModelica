@@ -208,6 +208,21 @@ public
     end match;
   end isTopLevel;
 
+  function isFlow
+    input ComponentRef cref;
+    output Boolean isFlow;
+  protected
+    Component comp;
+  algorithm
+    isFlow := match cref
+      case CREF()
+        guard InstNode.isComponent(cref.node)
+        then Component.isFlow(InstNode.component(InstNode.resolveInner(cref.node)));
+
+      else false;
+    end match;
+  end isFlow;
+
   function isCref
     input ComponentRef cref;
     output Boolean isCref;

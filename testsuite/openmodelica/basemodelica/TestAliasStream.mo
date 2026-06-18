@@ -127,7 +127,7 @@ package TestAliasStream
   end Test8;
 
   model Test9
-    Pump pump1(w(min = 0) = max(1 - time, 0));
+    Pump pump1(w(min = 0) = max(1 - time, 0.1));
     Pump pump2(w = sin(time));
     Tank tank;
   equation

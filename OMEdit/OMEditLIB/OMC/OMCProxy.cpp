@@ -48,7 +48,15 @@
 #include "Options/OptionsDialog.h"
 #include "Modeling/MessagesWidget.h"
 #include "util/simulation_options.h"
+#ifdef OMC_RUST_ABI
+// Rust omc port in-process: the self-contained MMC-replacement (mmc_mk_*,
+// MMC_STRINGDATA, the MMC_TRY no-op control flow, the full threadData_t with the
+// callback fields, printStacktraceMessages) plus the JSON walker, with no OMC
+// MMC runtime / Boehm GC. omc_error.h would otherwise pull in the real MMC ABI.
+#include "omc_rust_embedding.h"
+#else
 #include "util/omc_error.h"
+#endif
 #include "FlatModelica/Expression.h"
 
 extern "C" {
@@ -3443,11 +3451,63 @@ extern "C" int ModelInstanceReference_release(int handle);
  * QString::fromUtf8 that array binds Qt's QByteArrayView overload using the *declared* size
  * (1 byte), truncating every string to its first character. The explicit (const char*) cast
  * forces array-to-pointer decay so the strlen-based fromUtf8(const char*) overload is used. */
+#ifndef OMC_RUST_ABI
 static QString stringFromMM(void *mmString)
 {
   return QString::fromUtf8((const char*) MMC_STRINGDATA(mmString));
 }
+#endif
 
+#ifdef OMC_RUST_ABI
+// Rust omc port: the boxed value is the port's own JSON tree, walked through the
+// typed omc_json_* C ABI (openmodelica_backend_main::ModelInstanceReference)
+// rather than MMC record/cons-cell macros. Node kinds match the MMC version's
+// JSON.* constructors; the value reaches here normalised to list form
+// (LIST_OBJECT/LIST), so only those aggregates appear.
+QJsonValue OMCProxy::jsonValueFromMM(void *value)
+{
+  switch (omc_json_kind(value)) {
+    case OMC_JSON_LIST_OBJECT: {
+      QJsonObject object;
+      OmcJsonIter *it = omc_json_iter_new(value);
+      for (; !omc_json_iter_at_end(it); omc_json_iter_advance(it)) {
+        size_t keyLen = 0;
+        const char *key = omc_json_iter_key(it, &keyLen);
+        object.insert(QString::fromUtf8(key, (int) keyLen),
+                      jsonValueFromMM(const_cast<void*>(omc_json_iter_value(it))));
+      }
+      omc_json_iter_free(it);
+      return object;
+    }
+    case OMC_JSON_LIST: {
+      QJsonArray array;
+      OmcJsonIter *it = omc_json_iter_new(value);
+      for (; !omc_json_iter_at_end(it); omc_json_iter_advance(it)) {
+        array.append(jsonValueFromMM(const_cast<void*>(omc_json_iter_value(it))));
+      }
+      omc_json_iter_free(it);
+      return array;
+    }
+    case OMC_JSON_STRING: {
+      size_t len = 0;
+      const char *s = omc_json_string(value, &len);
+      return QJsonValue(QString::fromUtf8(s, (int) len));
+    }
+    case OMC_JSON_INTEGER:
+      // qint64 (not double) so the value is integer-typed, matching QJsonDocument::fromJson.
+      return QJsonValue((qint64) omc_json_integer(value));
+    case OMC_JSON_NUMBER:
+      return QJsonValue(omc_json_number(value));
+    case OMC_JSON_TRUE:
+      return QJsonValue(true);
+    case OMC_JSON_FALSE:
+      return QJsonValue(false);
+    default:
+      // OMC_JSON_NULL, and defensively OBJECT/ARRAY which should never reach here after normalisation.
+      return QJsonValue(QJsonValue::Null);
+  }
+}
+#else
 QJsonValue OMCProxy::jsonValueFromMM(void *value)
 {
   // A boxed uniontype record stores its record_description in slot 0 and its fields in slots 1..n.
@@ -3487,6 +3547,7 @@ QJsonValue OMCProxy::jsonValueFromMM(void *value)
   // JSON.NULL, and defensively JSON.OBJECT/JSON.ARRAY which should never reach here after normalisation.
   return QJsonValue(QJsonValue::Null);
 }
+#endif
 
 /*!
  * \brief OMCProxy::getModelInstance

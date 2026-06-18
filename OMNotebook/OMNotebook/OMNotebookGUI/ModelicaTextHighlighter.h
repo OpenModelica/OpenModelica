@@ -39,31 +39,51 @@
 #ifndef MODELICATEXTHIGHLIGHTER_H
 #define MODELICATEXTHIGHLIGHTER_H
 
-//QT Headers
+// Qt headers
 #include <QtCore/QString>
-#include <QRegExp>
+#include <QtCore/QRegularExpression>
+#include <QtGui/QSyntaxHighlighter>
 #include <QtGui/QTextCharFormat>
-#include <QSyntaxHighlighter>
+#include <QtGui/QTextDocument>
+#include <QtCore/QVector>
 
 namespace IAEX
 {
-  class ModelicaTextHighlighter : public QSyntaxHighlighter
-  {
+
+/**
+ * @class ModelicaTextHighlighter
+ * @brief Syntax highlighter for the Modelica language.
+ *
+ * The implementation uses QRegularExpression (Qt 5/6).
+ */
+class ModelicaTextHighlighter : public QSyntaxHighlighter
+{
     Q_OBJECT
-  public:
-    ModelicaTextHighlighter(QTextDocument *pTextDocument);
-    virtual ~ModelicaTextHighlighter() = default;
+public:
+    explicit ModelicaTextHighlighter(QTextDocument *pTextDocument);
+    ~ModelicaTextHighlighter() override = default;
+
+    /** Initialise the colour/format tables and the regex rules. */
     void initializeSettings();
+
+    /** Highlight multi‑line comments / quoted strings. */
     void highlightMultiLine(const QString &text);
-  protected:
-    virtual void highlightBlock(const QString &text);
-  private:
+
+protected:
+    /** Reimplemented from QSyntaxHighlighter – now marked `override`. */
+    void highlightBlock(const QString &text) override;
+
+private:
+    /** Container for a single “pattern → format” rule. */
     struct HighlightingRule
     {
-      QRegExp mPattern;
-      QTextCharFormat mFormat;
+        QRegularExpression   mPattern;
+        QTextCharFormat      mFormat;
     };
+
     QVector<HighlightingRule> mHighlightingRules;
+
+    //  Text formats (re‑used by many rules)
     QTextCharFormat mTextFormat;
     QTextCharFormat mKeywordFormat;
     QTextCharFormat mTypeFormat;
@@ -72,8 +92,8 @@ namespace IAEX
     QTextCharFormat mSingleLineCommentFormat;
     QTextCharFormat mMultiLineCommentFormat;
     QTextCharFormat mNumberFormat;
-  };
+};
 
-}
+} // namespace IAEX
 
 #endif // MODELICATEXTHIGHLIGHTER_H

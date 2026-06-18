@@ -428,7 +428,10 @@ void printMultiDimArrayIndex(DIMENSION_INFO *dimension_info,
 {
   if (dimension_info == NULL || dimension_info->numberOfDimensions == 0)
   {
-    snprintf(buffer, buffer_size - 1, "");
+    if (buffer_size > 0)
+    {
+      buffer[0] = '\0';
+    }
     return;
   }
 

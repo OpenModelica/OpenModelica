@@ -1176,4 +1176,7 @@ void LatexCell::setState(int state_)
       next()->accept(v);
   }
 
+  void LatexCell::viewExpression(const bool flag) {
+  }
+
 }

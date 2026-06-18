@@ -41,12 +41,12 @@
 #ifndef UPDATELINKVISITOR_H
 #define UPDATELINKVISITOR_H
 
-//IAEX Headers
+// Qt headers
+#include <QDir>
+
+// IAEX headers
 #include "visitor.h"
 #include "document.h"
-
-// forward declaration
-class QDir;
 
 
 namespace IAEX

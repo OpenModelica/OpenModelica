@@ -332,8 +332,9 @@ public function getWhenEquationExpr "Get the left and right hand parts from an e
 algorithm
   try
     BackendDAE.WHEN_STMTS(whenStmtLst={BackendDAE.ASSIGN(left=DAE.CREF(componentRef = outComponentRef), right=outExp)}) := inWhenEquation;
-else
+  else
     Error.addInternalError("BackendEquation.getWhenEquationExpr failed\n", sourceInfo());
+    fail();
   end try;
 end getWhenEquationExpr;
 

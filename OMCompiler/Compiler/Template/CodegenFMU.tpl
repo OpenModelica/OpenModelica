@@ -299,8 +299,13 @@ case SIMCODE(__) then
     >>
   else
     <<
+    // fmu1_model_interface.h pulls in fmiModelFunctions.h (the FMI 1.0 types) and defines the
+    // ModelInstance struct used by the declarations below and by fmu1_model_interface.c.inc.
+    // The FMI 2.0 fmi2Functions.h header is not needed for FMI 1.0. The implementation
+    // (fmu1_model_interface.c.inc) is inlined further down, after the forward declarations
+    // that it calls (setStartValues, getReal, ...). See #15838.
+    #include "fmi-export/fmu1_model_interface.h"
     #define fmu1_model_interface_setupDataStruc <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>
-    #include "fmi-export/fmu1_model_interface.c.inc"
     >>
   %>
 
@@ -311,11 +316,7 @@ case SIMCODE(__) then
   #include "fmi-export/fmu2_model_interface.h"
   #include "fmi-export/fmu_read_flags.h"
   >>
-  else
-  <<
-  #include "fmi2Functions.h"
-  #include "fmi-export/fmu1_model_interface.h"
-  >>%>
+  %>
 
   void setStartValues(ModelInstance *comp);
   void setDefaultStartValues(ModelInstance *comp);
@@ -351,6 +352,13 @@ case SIMCODE(__) then
   fmiStatus setExternalFunction(ModelInstance* c, const fmiValueReference vr, const void* value);
   >>
   %>
+
+  <%if isFMIVersion20(FMUVersion) then "" else
+  <<
+  // FMI 1.0 inlines the model interface implementation here, after the forward declarations
+  // above (setStartValues, setDefaultStartValues, getReal, ...) that it calls. See #15838.
+  #include "fmi-export/fmu1_model_interface.c.inc"
+  >>%>
 
   #ifdef __cplusplus
   }

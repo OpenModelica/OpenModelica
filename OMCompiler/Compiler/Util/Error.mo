@@ -918,6 +918,10 @@ public constant ErrorTypes.Message INVALID_DELETED_COMPONENT_CONTEXT = ErrorType
   "'%s' refers to a component with a false condition.");
 public constant ErrorTypes.Message UNROLL_FAILURE = ErrorTypes.MESSAGE(421, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "For loop could not be unrolled:\n%s");
+public constant ErrorTypes.Message NON_POSITIVE_NTH_ROOT = ErrorTypes.MESSAGE(422, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  "Invalid operation nthRoot(v = %s, n = %s), n must be a positive integer.");
+public constant ErrorTypes.Message NEGATIVE_NTH_ROOT = ErrorTypes.MESSAGE(423, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  "Invalid operation nthRoot(v = %s, n = %s), v must be non-negative when n is even.");
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   "The initial conditions are not fully specified. %s.");
@@ -1156,6 +1160,12 @@ public constant ErrorTypes.Message HIDE_RESULT_NOT_EVALUATED = ErrorTypes.MESSAG
   "Ignoring the hideResult annotation on '%s' which could not be evaluated, probably due to missing annotation(Evaluate=true).");
 public constant ErrorTypes.Message MISPLACED_EXTERNAL_ANNOTATION = ErrorTypes.MESSAGE(620, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   "External function annotation should occur on the external-clause, not on the function.");
+public constant ErrorTypes.Message GENERATED_FUNCTION_USE_BEFORE_ASSIGN = ErrorTypes.MESSAGE(621, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  "Variable %s is used before it is assigned a value in the generated function %s. Using an uninitialized variable is an error; this indicates an error in the symbolic differentiation, please report it.");
+public constant ErrorTypes.Message GENERATED_FUNCTION_UNASSIGNED_OUTPUT = ErrorTypes.MESSAGE(622, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  "Output %s of the generated function %s is never assigned a value. Using an uninitialized variable is an error; this indicates an error in the symbolic differentiation, please report it.");
+public constant ErrorTypes.Message GENERATED_FUNCTION_DEFAULT_INIT = ErrorTypes.MESSAGE(623, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
+  "Variable %s of the generated function %s will be initialized to %s because it could not be proven that it is always assigned before it is used.");
 
 public constant ErrorTypes.Message MATCH_SHADOWING = ErrorTypes.MESSAGE(5001, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   "Local variable '%s' shadows another variable.");

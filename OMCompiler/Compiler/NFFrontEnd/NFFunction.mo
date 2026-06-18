@@ -1925,6 +1925,8 @@ uniontype Function
           case "ndims" then true;
           // Can take any expression as argument.
           case "noEvent" then true;
+          // Needs extra error checking
+          case "nthRoot" then true;
           // can have variable number of arguments
           case "ones" then true;
           case "potentialRoot" then true;
@@ -3022,6 +3024,7 @@ protected
   function checkUseBeforeAssign2
     input Vector<InstNode> unassigned;
     input list<Statement> statements;
+    input Option<String> generatedName = NONE() "name of the generated function if checking generated code, where use before assign is an error";
   protected
     SourceInfo info;
   algorithm
@@ -3031,39 +3034,39 @@ protected
       () := match stmt
         case Statement.ASSIGNMENT()
           algorithm
-            checkUseBeforeAssignExp(unassigned, stmt.rhs, info);
-            markAssignedOutput(unassigned, stmt.lhs);
+            checkUseBeforeAssignExp(unassigned, stmt.rhs, info, generatedName);
+            markAssignedOutput(unassigned, stmt.lhs, isSome(generatedName));
           then
             ();
 
         case Statement.FOR()
           algorithm
             if isSome(stmt.range) then
-              checkUseBeforeAssignExp(unassigned, Util.getOption(stmt.range), info);
+              checkUseBeforeAssignExp(unassigned, Util.getOption(stmt.range), info, generatedName);
             end if;
 
-            checkUseBeforeAssign2(unassigned, stmt.body);
+            checkUseBeforeAssign2(unassigned, stmt.body, generatedName);
           then
             ();
 
         case Statement.IF()
           algorithm
-            checkUseBeforeAssignIf(unassigned, stmt.branches, info);
+            checkUseBeforeAssignIf(unassigned, stmt.branches, info, generatedName);
           then
             ();
 
         case Statement.ASSERT()
           algorithm
-            checkUseBeforeAssignExp(unassigned, stmt.condition, info);
-            checkUseBeforeAssignExp(unassigned, stmt.message, info);
-            checkUseBeforeAssignExp(unassigned, stmt.level, info);
+            checkUseBeforeAssignExp(unassigned, stmt.condition, info, generatedName);
+            checkUseBeforeAssignExp(unassigned, stmt.message, info, generatedName);
+            checkUseBeforeAssignExp(unassigned, stmt.level, info, generatedName);
           then
             ();
 
         case Statement.WHILE()
           algorithm
-            checkUseBeforeAssignExp(unassigned, stmt.condition, info);
-            checkUseBeforeAssign2(unassigned, stmt.body);
+            checkUseBeforeAssignExp(unassigned, stmt.condition, info, generatedName);
+            checkUseBeforeAssign2(unassigned, stmt.body, generatedName);
           then
             ();
 
@@ -3075,6 +3078,9 @@ protected
   function markAssignedOutput
     input Vector<InstNode> unassigned;
     input Expression assignedExp;
+    input Boolean byName = false "compare nodes by name instead of by reference,
+      needed for generated functions where the crefs in the body do not share
+      nodes with the interface (names are unique within a function scope)";
   protected
     InstNode node;
     Integer index;
@@ -3084,7 +3090,12 @@ protected
         guard ComponentRef.isCref(assignedExp.cref)
         algorithm
           node := ComponentRef.node(ComponentRef.last(assignedExp.cref));
-          (_, index) := Vector.find(unassigned, function InstNode.refEqual(node1 = node));
+
+          if byName then
+            (_, index) := Vector.find(unassigned, function InstNode.nameEqual(node1 = node));
+          else
+            (_, index) := Vector.find(unassigned, function InstNode.refEqual(node1 = node));
+          end if;
 
           if index > 0 then
             Vector.remove(unassigned, index);
@@ -3095,7 +3106,7 @@ protected
       case Expression.TUPLE()
         algorithm
           for e in assignedExp.elements loop
-            markAssignedOutput(unassigned, e);
+            markAssignedOutput(unassigned, e, byName);
           end for;
         then
           ();
@@ -3108,13 +3119,14 @@ protected
     input Vector<InstNode> unassigned;
     input list<tuple<Expression, list<Statement>>> branches;
     input SourceInfo info;
+    input Option<String> generatedName = NONE();
   protected
     Vector<InstNode> unassigned_branch;
     list<InstNode> assigned = {};
     Integer index;
   algorithm
     for b in branches loop
-      checkUseBeforeAssignExp(unassigned, Util.tuple21(b), info);
+      checkUseBeforeAssignExp(unassigned, Util.tuple21(b), info, generatedName);
     end for;
 
     // Check each branch separately, then assume that any variables that were
@@ -3122,7 +3134,7 @@ protected
     // the if-statement to avoid false positives.
     for b in branches loop
       unassigned_branch := Vector.copy(unassigned);
-      checkUseBeforeAssign2(unassigned_branch, Util.tuple22(b));
+      checkUseBeforeAssign2(unassigned_branch, Util.tuple22(b), generatedName);
 
       if Vector.size(unassigned) <> Vector.size(unassigned_branch) then
         assigned := listAppend(
@@ -3148,29 +3160,53 @@ protected
     input Vector<InstNode> unassigned;
     input Expression exp;
     input SourceInfo info;
+    input Option<String> generatedName = NONE();
   algorithm
     Expression.apply(exp,
-      function checkUseBeforeAssignExp_traverse(unassigned = unassigned, info = info));
+      function checkUseBeforeAssignExp_traverse(unassigned = unassigned, info = info, generatedName = generatedName));
   end checkUseBeforeAssignExp;
 
   function checkUseBeforeAssignExp_traverse
     input Vector<InstNode> unassigned;
     input Expression exp;
     input SourceInfo info;
+    input Option<String> generatedName;
   protected
     Integer index;
     InstNode node;
+    String fn_name;
   algorithm
     () := match exp
       case Expression.CREF()
         guard ComponentRef.isCref(exp.cref)
         algorithm
           node := ComponentRef.node(ComponentRef.last(exp.cref));
-          (_, index) := Vector.find(unassigned, function InstNode.refEqual(node1 = node));
+
+          if isSome(generatedName) then
+            (_, index) := Vector.find(unassigned, function InstNode.nameEqual(node1 = node));
+          else
+            (_, index) := Vector.find(unassigned, function InstNode.refEqual(node1 = node));
+          end if;
 
           if index > 0 then
             Vector.remove(unassigned, index);
-            Error.addSourceMessage(Error.WARNING_DEF_USE, {InstNode.name(node)}, info);
+
+            () := match generatedName
+              case SOME(fn_name)
+                algorithm
+                  // in generated functions a use before assign is provably an
+                  // error per the specification, and also a compiler bug
+                  Error.addSourceMessage(Error.GENERATED_FUNCTION_USE_BEFORE_ASSIGN,
+                    {InstNode.name(node), fn_name}, info);
+                then
+                  ();
+
+              else
+                algorithm
+                  Error.addSourceMessage(Error.WARNING_DEF_USE, {InstNode.name(node)}, info);
+                then
+                  ();
+            end match;
           end if;
         then
           ();
@@ -3178,6 +3214,148 @@ protected
       else ();
     end match;
   end checkUseBeforeAssignExp_traverse;
+
+  function checkUseBeforeAssignGenerated
+    "Use before assign check for compiler-generated functions (e.g. symbolic
+     derivatives), which never pass through typeFunctionBody. Provably
+     unassigned uses and outputs are reported as errors; variables not provably
+     assigned on every path are returned for the caller to initialize."
+    input Function fn;
+    output list<InstNode> uninitialized = {} "scalar variables not proven to always be assigned";
+  protected
+    Vector<InstNode> unassigned, not_proven;
+    list<Statement> body;
+    String fn_name;
+    Integer index;
+  algorithm
+    if isExternal(fn) or isBuiltin(fn) then
+      return;
+    end if;
+
+    body := getBody(fn);
+
+    if listEmpty(body) then
+      return;
+    end if;
+
+    fn_name := AbsynUtil.pathString(name(fn));
+    unassigned := Vector.new<InstNode>();
+    addUnassignedComponents(unassigned, fn.outputs);
+    addUnassignedComponents(unassigned, fn.locals);
+    not_proven := Vector.copy(unassigned);
+
+    // optimistic pass: leaves variables assigned on no path
+    checkUseBeforeAssign2(unassigned, body, SOME(fn_name));
+    // pessimistic pass: leaves variables not assigned on every path
+    markProvenAssigned(not_proven, body);
+
+    for var in Vector.toList(unassigned) loop
+      if InstNode.isOutput(var) then
+        Error.addSourceMessage(Error.GENERATED_FUNCTION_UNASSIGNED_OUTPUT,
+          {InstNode.name(var), fn_name}, InstNode.info(var));
+      end if;
+    end for;
+
+    // assigned on some but not all paths: caller must initialize them
+    for var in Vector.toList(not_proven) loop
+      (_, index) := Vector.find(unassigned, function InstNode.nameEqual(node1 = var));
+
+      if index <= 0 then
+        uninitialized := var :: uninitialized;
+      end if;
+    end for;
+  end checkUseBeforeAssignGenerated;
+
+  function initializeUninitialized
+    "Prepends '<var> := 0' statements for generated-function variables that
+     could not be proven to be assigned before use, with a warning."
+    input output Sections sections;
+    input list<InstNode> variables;
+    input String fn_name;
+  protected
+    list<Statement> inits = {};
+    Type ty;
+    Expression zero;
+    Algorithm alg;
+    list<Algorithm> rest;
+  algorithm
+    () := match sections
+      case Sections.SECTIONS(algorithms = alg :: rest) algorithm
+        for var in listReverse(variables) loop
+          ty := InstNode.getType(var);
+          zero := match ty
+            case Type.STRING() then Expression.STRING("");
+            else Expression.makeZero(ty);
+          end match;
+          Error.addSourceMessage(Error.GENERATED_FUNCTION_DEFAULT_INIT,
+            {InstNode.name(var), fn_name, Expression.toString(zero)}, InstNode.info(var));
+          inits := Statement.ASSIGNMENT(Expression.fromCref(ComponentRef.fromNode(var, ty)), zero, ty, alg.source) :: inits;
+        end for;
+        alg.statements := listAppend(inits, alg.statements);
+        sections.algorithms := alg :: rest;
+      then ();
+      else ();
+    end match;
+  end initializeUninitialized;
+
+  function markProvenAssigned
+    "pessimistic assignment analysis: removes variables from the vector only
+     if they are provably assigned on every possible execution path. For and
+     while loops may execute zero times, so assignments in them prove nothing."
+    input Vector<InstNode> unassigned;
+    input list<Statement> statements;
+  algorithm
+    for stmt in statements loop
+      () := match stmt
+        case Statement.ASSIGNMENT()
+          algorithm
+            markAssignedOutput(unassigned, stmt.lhs, true);
+          then
+            ();
+
+        case Statement.IF()
+          algorithm
+            markProvenAssignedIf(unassigned, stmt.branches);
+          then
+            ();
+
+        else ();
+      end match;
+    end for;
+  end markProvenAssigned;
+
+  function markProvenAssignedIf
+    "removes variables that are assigned in every branch of an if-statement,
+     which requires an else branch for the branches to cover all paths"
+    input Vector<InstNode> unassigned;
+    input list<tuple<Expression, list<Statement>>> branches;
+  protected
+    Boolean has_else = false;
+    Vector<InstNode> unassigned_branch;
+    list<InstNode> still_unassigned = {};
+    Integer index;
+  algorithm
+    for b in branches loop
+      // only an else branch (condition is literally true) at the end makes
+      // the branches cover every execution path
+      has_else := Expression.isTrue(Util.tuple21(b));
+      unassigned_branch := Vector.copy(unassigned);
+      markProvenAssigned(unassigned_branch, Util.tuple22(b));
+      still_unassigned := listAppend(Vector.toList(unassigned_branch), still_unassigned);
+    end for;
+
+    if has_else then
+      for node in Vector.toList(unassigned) loop
+        if not List.isMemberOnTrue(node, still_unassigned, InstNode.nameEqual) then
+          (_, index) := Vector.find(unassigned, function InstNode.nameEqual(node1 = node));
+
+          if index > 0 then
+            Vector.remove(unassigned, index);
+          end if;
+        end if;
+      end for;
+    end if;
+  end markProvenAssignedIf;
 
   function instPartialDerivedVars
     input SCode.ClassDef classDef;
