@@ -1324,7 +1324,7 @@ void Element::drawModelicaElement()
  */
 void Element::drawOMSElement()
 {
-  if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
+  if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement() || mpLibraryTreeItem->isTableComponent()) {
     if (!mpLibraryTreeItem->getModelWidget()) {
       MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
     }
@@ -1757,7 +1757,7 @@ void Element::updatePlacementAnnotation()
   // Add component annotation.
   LibraryTreeItem *pLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
   if (pLibraryTreeItem->isSSP()) {
-    if (mpLibraryTreeItem && (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement())) {
+    if (mpLibraryTreeItem && (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement() || mpLibraryTreeItem->isTableComponent())) {
       OMSModel::ElementGeometry elementGeometry = mpLibraryTreeItem->getOMSModelElement()->getGeometry();
       ExtentAnnotation extent = mTransformation.getExtent();
       QPointF extent1 = extent.at(0);
@@ -2249,7 +2249,7 @@ void Element::openClass()
 void Element::showElementPropertiesDialog()
 {
   if (mpLibraryTreeItem && mpLibraryTreeItem->isSSP()
-      && (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement())) {
+      && (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement() || mpLibraryTreeItem->isTableComponent())) {
     ElementPropertiesDialog *pElementPropertiesDialog = new ElementPropertiesDialog(this, MainWindow::instance());
     pElementPropertiesDialog->exec();
   }
