@@ -480,7 +480,7 @@ public
       // empty variable name implies equation without return value
       (eqn, status) := (eqn, Status.EXPLICIT);
     else
-      (var_cref, status) := getVarSlice(var.name, var.name, eqn);
+      (var_cref, status) := getVarSlice(var.name, SOME(var.name), eqn);
       var_cref := if status < Status.UNSOLVABLE then var_cref else var.name;
       (eqn, status, implicit_index, _) := solveEquation(eqn, var_cref, funcMap, kind, implicit_index, slicing_map, varData, eqData);
     end if;
@@ -567,7 +567,7 @@ public
         record_crefs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
         for var_slice in var_slices loop
           var_cref := BVariable.getVarName(Slice.getT(var_slice));
-          (var_cref, status) := getVarSlice(var_cref, var_cref, eqn);
+          (var_cref, status) := getVarSlice(var_cref, SOME(var_cref), eqn);
           UnorderedSet.add(var_cref, record_crefs);
           if status == Status.UNSOLVABLE then break; end if;
         end for;
@@ -645,7 +645,7 @@ public
     fixed_cref := ComponentRef.stripSubscriptsAll(cref);
     ty := ComponentRef.getSubscriptedType(fixed_cref, true);
     if Type.isArray(ty) and Type.sizeOf(ty) == 1 then
-      fixed_cref := getVarSlice(fixed_cref, cref, eqn);
+      fixed_cref := getVarSlice(fixed_cref, SOME(cref), eqn);
     else
       fixed_cref := cref;
     end if;
@@ -1558,21 +1558,31 @@ protected
 
   function getVarSlice
     input output ComponentRef var_cref;
-    input ComponentRef reference;
+    input Option<ComponentRef> reference;
     input Equation eqn;
     output Status solve_status;
   protected
     list<ComponentRef> slices_lst;
     Option<Pointer<Variable>> record_parent;
+    function checkReference
+      input ComponentRef var_cref;
+      input Option<ComponentRef> reference_opt;
+      output Boolean fit;
+    algorithm
+      fit := match reference_opt
+        local
+          ComponentRef reference;
+        case SOME(reference) then Type.sizeOf(ComponentRef.getSubscriptedType(var_cref), true) == Type.sizeOf(ComponentRef.getSubscriptedType(reference), true);
+        else true;
+      end match;
+    end checkReference;
   algorithm
     slices_lst := Equation.collectCrefs(eqn, function Slice.getSliceCandidates(name = var_cref));
 
-    if listEmpty(slices_lst) then
-      solve_status := Status.UNSOLVABLE;
-    elseif List.hasOneElement(slices_lst) then
+    if List.hasOneElement(slices_lst) then
       var_cref := listHead(slices_lst);
       // only accept the cref if it has the same size as the one we are trying to solve for
-      if Type.sizeOf(ComponentRef.getSubscriptedType(var_cref), true) == Type.sizeOf(ComponentRef.getSubscriptedType(reference), true) then
+      if checkReference(var_cref, reference) then
         solve_status := Status.UNPROCESSED;
       else
         solve_status := Status.IMPLICIT;
@@ -1581,7 +1591,10 @@ protected
       // check if the record parents occur (todo: vice versa?)
       record_parent := BVariable.getParent(BVariable.getVarPointer(var_cref, sourceInfo()));
       if isSome(record_parent) then
-        (var_cref, solve_status) := getVarSlice(BVariable.getVarName(Util.getOption(record_parent)), reference, eqn);
+        // do not pass reference for record elements
+        (var_cref, solve_status) := getVarSlice(BVariable.getVarName(Util.getOption(record_parent)), NONE(), eqn);
+      elseif listEmpty(slices_lst) then
+        solve_status := Status.UNSOLVABLE;
       else
         // todo: choose best slice of list if more than one.
         solve_status := Status.IMPLICIT;
@@ -1605,7 +1618,7 @@ protected
     ComponentRef var_cref;
   algorithm
     eqn := Pointer.access(Slice.getT(eqn_slice));
-    (var_cref, solve_status) := getVarSlice(BVariable.getVarName(Slice.getT(var_slice)), cref, eqn);
+    (var_cref, solve_status) := getVarSlice(BVariable.getVarName(Slice.getT(var_slice)), SOME(cref), eqn);
 
     if solve_status < Status.IMPLICIT then
       (eqn, solve_status, implicit_index, _) := solveEquation(eqn, var_cref, funcMap, kind, implicit_index, slicing_map, varData, eqData);
