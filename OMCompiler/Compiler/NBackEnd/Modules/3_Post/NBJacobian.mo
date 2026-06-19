@@ -1757,8 +1757,6 @@ protected
         seedPtrListX := listAppend(BVariable.VariablePointers.toList(seedCandidates), tmpVarCandidates);
         seedPtrListX := list(vp for vp guard(not UnorderedMap.contains(BVariable.getVarName(vp), diff_map_y)) in seedPtrListX);
         diff_map_x := populateDiffMap(seedPtrListX, diff_map);
-        print("Diff map y (iteration vars): " + diffMapToString(diff_map_y));
-        print("Diff map x (seed candidates): " + diffMapToString(diff_map_x));
         diff_map_union := UnorderedMap.merge(diff_map_y, diff_map_x, sourceInfo());
 
         // Pre-populate loop_product_adjoint_map
