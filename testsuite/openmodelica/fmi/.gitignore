@@ -1,0 +1,6 @@
+# Stray helper-script links created by the partest sandbox in subdirectories.
+# A test that runs "python3 ../../simulate_fmu_fmpy.py ..." gets a deterministic
+# symlink to the real (tracked) script left next to it; see
+# testsuite/partest/runtest.pl:make_external_link(). The real script at the root
+# of this directory is tracked and unaffected by these patterns.
+**/simulate_fmu_fmpy.py

@@ -20,11 +20,6 @@ my $test_baseline = 0;
 my $isWSL = (defined $ENV{'WSLENV'} && rindex(Cwd::abs_path(),"/mnt/",0)==0);
 my $osname = $^O;
 
-# Links created outside the sandbox (e.g. for helper scripts a test invokes via
-# a path that points above its own directory). These are removed again when we
-# leave the sandbox so they don't pollute the testsuite tree.
-my @external_links;
-
 for(@ARGV){
   if(/--no-colour/) {
     $no_colour = 1;
@@ -77,8 +72,16 @@ sub make_link {
 # test one directory level deeper, so the same path now resolves one level too
 # high. We recreate the file at exactly the path the test uses (relative to the
 # sandbox) and point it at the real file with an absolute target, so it resolves
-# correctly regardless of how many '../' the path contains. The link is recorded
-# so exit_sandbox() can remove it again.
+# correctly regardless of how many '../' the path contains.
+#
+# The link lands OUTSIDE the sandbox, in a directory shared by every test below
+# it (e.g. ModelExchange/1.0 and ModelExchange/3.0 tests both map ../../foo.py
+# to ModelExchange/foo.py). partest runs those tests concurrently, so the link
+# must NOT be owned/removed by any single test: if test A removed it on exit
+# while test B were still running, B's "python3 ../../foo.py" would fail. We
+# therefore create it idempotently and leave it in place. The target is an
+# absolute path to a committed file, so a leftover link is deterministic and
+# harmless; the stray names are git-ignored (see the .gitignore next to foo.py).
 sub make_external_link {
   my $rel = shift; # path as written in the test, relative to the test directory
 
@@ -86,15 +89,16 @@ sub make_external_link {
   # "../$rel" as seen from here.
   my $src = "../" . $rel;
   return unless -e $src;
-  return if -e $rel; # already in place, nothing to do
+  return if -l $rel or -e $rel; # already in place (or a valid leftover link)
 
   my $abs = Cwd::abs_path($src);
+  # Creation may race a concurrent sibling test; an EEXIST failure just means
+  # the other test won the race and the link is already there, which is fine.
   if ($isWSL or ($osname eq 'MSWin32')) {
     link($abs, $rel);
   } else {
     symlink($abs, $rel);
   }
-  push @external_links, $rel;
 }
 
 # Creates a symbolic link to a file, but only if the file exists.
@@ -228,10 +232,10 @@ sub enter_sandbox {
 # Exit the sandbox by going up one directory level and delete the temporary
 # directory.
 sub exit_sandbox {
-  # Remove any links created outside the sandbox while we can still resolve
-  # them relative to the sandbox directory (before we chdir away).
-  unlink($_) for @external_links;
-  @external_links = ();
+  # Note: links created outside the sandbox by make_external_link() are
+  # intentionally left in place. They are shared by sibling tests that may run
+  # concurrently, so removing them here would break a still-running sibling.
+  # They point at committed files and are git-ignored.
 
   chdir("..");
 
