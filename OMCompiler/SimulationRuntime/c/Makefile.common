@@ -22,9 +22,9 @@ RYUDIR=$(top_builddir)/3rdParty/ryu/ryu/
 IPOPTDIR := $(top_builddir)/3rdParty/moo-0.1.0/third-party/Ipopt.cmake/Ipopt/sources/src
 IPOPT_HEADERS := Interfaces Common Linalg Apps Algorithm
 IPOPT_INCLUDES := $(addprefix -I$(IPOPTDIR)/,$(IPOPT_HEADERS))
-COLPACKDIR := $(top_builddir)/3rdParty/ColPack
-COLPACK_HEADERS := inc src/Utilities src/GeneralGraphColoring src/BipartiteGraphBicoloring src/BipartiteGraphPartialColoring src/Recovery src/SMPGC
-COLPACK_INCLUDES := $(addprefix -I$(COLPACKDIR)/,$(COLPACK_HEADERS))
+COLPACKDIR = $(top_builddir)/3rdParty/ColPack
+COLPACK_HEADERS = inc src/Utilities src/GeneralGraphColoring src/BipartiteGraphBicoloring src/BipartiteGraphPartialColoring src/Recovery src/SMPGC
+COLPACK_INCLUDES = $(addprefix -I$(COLPACKDIR)/,$(COLPACK_HEADERS))
 
 CPPFLAGS = -I$(OMC_CONFIG_INC) -I$(top_builddir)/Compiler/runtime -I$(top_builddir)/3rdParty/gc/include -I$(RYUDIR) -I$(top_builddir)/3rdParty/FMIL/install/include/ -I$(top_builddir)/3rdParty/primme-3.2.3/include $(COLPACK_INCLUDES) -I$(top_builddir)/3rdParty/lis-1.4.12/include/ -I$(builddir_inc)/sundials/ -I$(builddir_inc)/c/suitesparse/ $(CONFIG_CPPFLAGS) -DGC_REDIRECT_TO_LOCAL -DLINK_SUNDIALS_STATIC -DWIN32_LEAN_AND_MEAN
 
