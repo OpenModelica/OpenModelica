@@ -69,7 +69,7 @@ extern "C" {
 #undef FALSE
 #endif
 
-#include <ColPack/ColPackHeaders.h>
+#include <ColPackHeaders.h>
 
 #include <vector>
 #include <cstring>
