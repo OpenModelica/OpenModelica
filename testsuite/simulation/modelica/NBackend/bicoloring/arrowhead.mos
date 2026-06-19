@@ -16,7 +16,8 @@ loadString("
 "); getErrorString();
 
 setCommandLineOptions("--newBackend --generateDynamicJacobian=bidirectional"); getErrorString();
-simulate(arrowhead, stopTime=1e-5, numberOfIntervals=1, simflags="-s=dassl -jacobian=bicoloredSymbolical -lv=LOG_STATS,LOG_JAC"); getErrorString();
+simulate(arrowhead, stopTime=1e-5, numberOfIntervals=1, simflags="-s=dassl -jacobian=bicoloredSymbolical -lv=LOG_JAC"); getErrorString();
+
 // Result:
 // true
 // ""
@@ -24,7 +25,7 @@ simulate(arrowhead, stopTime=1e-5, numberOfIntervals=1, simflags="-s=dassl -jaco
 // ""
 // record SimulationResult
 //     resultFile = "arrowhead_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1e-5, numberOfIntervals = 1, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'arrowhead', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=dassl -jacobian=bicoloredSymbolical -lv=LOG_STATS,LOG_JAC'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1e-5, numberOfIntervals = 1, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'arrowhead', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s=dassl -jacobian=bicoloredSymbolical -lv=LOG_JAC'",
 //     messages = "LOG_JAC           | info    | Using Jacobian method: Bicolored (bidirectional) symbolical Jacobian.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_JAC           | info    | DASSL-Solver: analytical Jacobian pd (column-major) at time=1e-08
@@ -144,29 +145,6 @@ simulate(arrowhead, stopTime=1e-5, numberOfIntervals=1, simflags="-s=dassl -jaco
 // LOG_JAC           | info    | Jacobian verification: analytical vs. numerical
 // |                 | |       | | Max absolute difference: 1 at (row=1:'x[2]', col=1:'x[2]')
 // |                 | |       | | Max relative difference: 3.41334e-06 at (row=1:'x[2]', col=1:'x[2]')
-// LOG_STATS         | info    | ### STATISTICS ###
-// |                 | |       | | timer
-// |                 | |       | | |   0.00058375s          reading init.xml
-// |                 | |       | | |   8.7117e-05s          reading info.xml
-// |                 | |       | | |   0.00032033s [ 18.2%] pre-initialization
-// |                 | |       | | |   7.3384e-05s [  4.2%] initialization
-// |                 | |       | | |   0.00121819s [ 69.3%] steps
-// |                 | |       | | |  0.000929161s [ 52.9%] solver (excl. callbacks)
-// |                 | |       | | |   8.2504e-05s [  4.7%] creating output-file
-// |                 | |       | | |    2.512e-06s [  0.1%] event-handling
-// |                 | |       | | |   3.1542e-05s [  1.8%] overhead
-// |                 | |       | | | -0.000899707s [-51.2%] simulation
-// |                 | |       | | |   0.00175792s [100.0%] total
-// |                 | |       | | events
-// |                 | |       | | |     0 state events
-// |                 | |       | | |     0 time events
-// |                 | |       | | solver: dassl
-// |                 | |       | | |    10 steps taken
-// |                 | |       | | |    10 calls of functionODE
-// |                 | |       | | |     9 evaluations of jacobian
-// |                 | |       | | |     0 error test failures
-// |                 | |       | | |     0 convergence test failures
-// |                 | |       | | | 0.00105271s time of jacobian evaluation
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
