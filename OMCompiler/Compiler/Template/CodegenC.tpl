@@ -7552,8 +7552,18 @@ template genericCallLhsRhs(DAE.Exp lhs, DAE.Exp rhs, Context context, Text &preE
 ::= match lhs
     case CREF(componentRef=cr, ty = T_ARRAY()) then
       let rhs_ = daeExp(rhs, context, &preExp, &varDecls, &auxFunction)
+      let start_ = if isStartCref(cr) then genericCallLhsRhs(makeCrefExp(popCref(cr), crefTypeFull(cr)), lhs, context, &preExp, &varDecls, &auxFunction) else ""
       <<
       <%algStmtAssignArrWithRhsExpStr(lhs, rhs_, context, &preExp, &varDecls, &auxFunction)%>
+      <%start_%>
+      >>
+    case CREF(componentRef=cr) then
+      let lhs_ = daeExp(lhs, context, &preExp, &varDecls, &auxFunction)
+      let rhs_ = daeExp(rhs, context, &preExp, &varDecls, &auxFunction)
+      let start_ = if isStartCref(cr) then genericCallLhsRhs(makeCrefExp(popCref(cr), crefTypeFull(cr)), lhs, context, &preExp, &varDecls, &auxFunction) else ""
+      <<
+      <%lhs_%> = <%rhs_%>;
+      <%start_%>
       >>
     else
       let lhs_ = daeExp(lhs, context, &preExp, &varDecls, &auxFunction)
