@@ -1470,7 +1470,6 @@ public
     output Integer stop;
   algorithm
     (start, step, stop) := match range
-      local
       case RANGE() algorithm
         try
           start := getInteger(range.start, resize);
