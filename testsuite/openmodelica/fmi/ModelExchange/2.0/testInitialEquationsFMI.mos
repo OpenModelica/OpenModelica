@@ -1,7 +1,7 @@
 // name:     testInitialEquationsFMI
 // keywords: initialization, start values, initial equation, fmi
 // status:   correct
-// teardown_command: rm -rf initializationTestsFMI.initial_equation* initializationTestsFMI_initial_equation* output.log
+// teardown_command: rm -rf initializationTestsFMI.initial_equation* initial_equation* output.log
 // cflags: -d=-newInst
 //
 //  test start values and initial equations
@@ -43,38 +43,41 @@ end initializationTestsFMI;
 "); getErrorString();
 
 buildModelFMU(initializationTestsFMI.initial_equation1, version="2.0"); getErrorString();
-importFMU("initializationTestsFMI.initial_equation1.fmu"); getErrorString();
-loadFile("initializationTestsFMI_initial_equation1_me_FMU.mo"); getErrorString();
-simulate(initializationTestsFMI_initial_equation1_me_FMU, stopTime=0.0); getErrorString();
+importFMU("initial_equation1.fmu"); getErrorString();
+setCommandLineOptions("--allowNonStandardModelica=reinitInAlgorithms"); getErrorString();
+loadFile("initial_equation1_me_FMU.mo"); getErrorString();
+simulate(initial_equation1_me_FMU, stopTime=0.0); getErrorString();
 val(x, 0.0);
 val(y, 0.0);
 
 buildModelFMU(initializationTestsFMI.initial_equation2, version="2.0"); getErrorString();
-importFMU("initializationTestsFMI.initial_equation2.fmu"); getErrorString();
-loadFile("initializationTestsFMI_initial_equation2_me_FMU.mo"); getErrorString();
-simulate(initializationTestsFMI_initial_equation2_me_FMU, stopTime=0.0); getErrorString();
+importFMU("initial_equation2.fmu"); getErrorString();
+loadFile("initial_equation2_me_FMU.mo"); getErrorString();
+simulate(initial_equation2_me_FMU, stopTime=0.0); getErrorString();
 val(x, 0.0);
 val(y, 0.0);
 
 buildModelFMU(initializationTestsFMI.initial_equation3, version="2.0"); getErrorString();
-importFMU("initializationTestsFMI.initial_equation3.fmu"); getErrorString();
-loadFile("initializationTestsFMI_initial_equation3_me_FMU.mo"); getErrorString();
-simulate(initializationTestsFMI_initial_equation3_me_FMU, stopTime=0.0); getErrorString();
+importFMU("initial_equation3.fmu"); getErrorString();
+loadFile("initial_equation3_me_FMU.mo"); getErrorString();
+simulate(initial_equation3_me_FMU, stopTime=0.0); getErrorString();
 val(x, 0.0);
 val(y, 0.0);
 
 // Result:
 // true
 // ""
-// "initializationTestsFMI.initial_equation1.fmu"
+// "initial_equation1.fmu"
 // ""
-// "initializationTestsFMI_initial_equation1_me_FMU.mo"
+// "initial_equation1_me_FMU.mo"
+// ""
+// true
 // ""
 // true
 // ""
 // record SimulationResult
-//     resultFile = "initializationTestsFMI_initial_equation1_me_FMU_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTestsFMI_initial_equation1_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     resultFile = "initial_equation1_me_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initial_equation1_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -82,16 +85,16 @@ val(y, 0.0);
 // ""
 // 5.0
 // 5.0
-// "initializationTestsFMI.initial_equation2.fmu"
+// "initial_equation2.fmu"
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
-// "initializationTestsFMI_initial_equation2_me_FMU.mo"
+// "initial_equation2_me_FMU.mo"
 // ""
 // true
 // ""
 // record SimulationResult
-//     resultFile = "initializationTestsFMI_initial_equation2_me_FMU_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTestsFMI_initial_equation2_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     resultFile = "initial_equation2_me_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initial_equation2_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -99,15 +102,15 @@ val(y, 0.0);
 // ""
 // 5.0
 // 5.0
-// "initializationTestsFMI.initial_equation3.fmu"
+// "initial_equation3.fmu"
 // ""
-// "initializationTestsFMI_initial_equation3_me_FMU.mo"
+// "initial_equation3_me_FMU.mo"
 // ""
 // true
 // ""
 // record SimulationResult
-//     resultFile = "initializationTestsFMI_initial_equation3_me_FMU_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTestsFMI_initial_equation3_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     resultFile = "initial_equation3_me_FMU_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initial_equation3_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

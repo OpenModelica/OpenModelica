@@ -56,7 +56,8 @@ win32 {
 INCLUDEPATH += ../ \
   ../OMEditLIB \
   ../OMEditLIB/CrashReport \
-  $$OPENMODELICAHOME/include/omc/c
+  $$OPENMODELICAHOME/include/omc/c \
+  $$OPENMODELICAHOME/include/omc/scripting-API
 
 SOURCES += main.cpp
 

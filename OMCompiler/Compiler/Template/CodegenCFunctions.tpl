@@ -6511,6 +6511,22 @@ let &sub = buffer ""
           >>
        'sqrt(<%tmp%>)')
 
+  case CALL(path=IDENT(name="nthRoot"), expLst={e1, e2}, attr=attr as CALL_ATTR(__)) then
+    let v = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
+    let n = daeExp(e2, context, &preExp, &varDecls, &auxFunction)
+    let vtmp = tempDecl(expTypeFromExpModelica(e1), &varDecls)
+    let ntmp = tempDecl(expTypeFromExpModelica(e2), &varDecls)
+    let vstr = ExpressionDumpTpl.dumpExp(e1,"\"")
+    let nstr = ExpressionDumpTpl.dumpExp(e2,"\"")
+    let &preExp +=
+      <<
+      <%vtmp%> = <%v%>;
+      <%ntmp%> = <%n%>;
+      <%assertCommonVar('<%ntmp%> > 0.0', '"Model error: Second argument of nthRoot(<%Util.escapeModelicaStringToCString(vstr)%>, <%Util.escapeModelicaStringToCString(nstr)%>) must be > 0, got %d", <%ntmp%>', context, &varDecls, dummyInfo)%>
+      <%assertCommonVar('modelica_integer_mod(<%ntmp%>, 2) != 0 || <%vtmp%> >= 0.0', '"Model error: First argument of nthRoot(<%Util.escapeModelicaStringToCString(vstr)%>, <%Util.escapeModelicaStringToCString(nstr)%>) must be >= 0 if the second is even, got %g", <%vtmp%>', context, &varDecls, dummyInfo)%>
+      >>
+    'pow(<%vtmp%>, 1.0/<%ntmp%>)'
+
   case CALL(path=IDENT(name="log"), expLst={e1}, attr=attr as CALL_ATTR(__)) then
     let argStr = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
     let tmp = tempDecl(expTypeFromExpModelica(e1),&varDecls)

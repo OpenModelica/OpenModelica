@@ -1,0 +1,54 @@
+// name: numericJacobianRows
+// keywords: NewBackend, differentiation, jacobian
+// status: correct
+
+loadString("
+model numericJacobianRows
+  Real x(start=1, fixed=true, stateSelect=StateSelect.always);
+  Real a(stateSelect=StateSelect.never);
+equation
+  a = 2*x;
+  der(x) = a;
+end numericJacobianRows;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --generateDynamicJacobian=numeric -d=dumpSparsePattern"); getErrorString();
+
+buildModel(numericJacobianRows); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// =============================
+//   Sparsity Pattern (nnz: 1)
+// =============================
+//
+// ### Seeds (col vars) ###
+// --------------------------
+// {x}
+//
+// ### Partials (row vars) ###
+// -----------------------------
+// {$DER.x}
+//
+// ### Columns ###
+// -----------------
+// (x)	 affects:	{$DER.x}
+//
+// ##### Rows #####
+// ------------------
+// ($DER.x)	 depends on:	{x}
+//
+// =====================
+//   Sparsity Coloring
+// =====================
+// Column Color (1)
+//   - Column: {x}
+// Row Color (1)
+//   - Row:    {$DER.x}
+//
+// {"numericJacobianRows", "numericJacobianRows_init.xml"}
+// ""
+// endResult

@@ -678,6 +678,78 @@ public
     end match;
   end isReduction;
 
+  function isPositive
+    "True if the return value of the function is known to be > 0, otherwise false."
+    input Call call;
+    output Boolean positive;
+  algorithm
+    positive := match call
+      case TYPED_CALL()
+        then match functionNameFirst(call)
+          case "abs" then Expression.isNonZero(listHead(call.arguments));
+          case "max" then List.any(call.arguments, Expression.isPositive);
+          case "min" then List.all(call.arguments, Expression.isPositive);
+          else false;
+        end match;
+
+      else false;
+    end match;
+  end isPositive;
+
+  function isNegative
+    "True if the return value of the function is known to be < 0, otherwise false."
+    input Call call;
+    output Boolean negative;
+  algorithm
+    negative := match call
+      case TYPED_CALL()
+        then match functionNameFirst(call)
+          case "abs" then false;
+          case "min" then List.any(call.arguments, Expression.isNegative);
+          case "max" then List.all(call.arguments, Expression.isNegative);
+          else false;
+        end match;
+
+      else false;
+    end match;
+  end isNegative;
+
+  function isNonPositive
+    "True if the return value of the function is known to be <= 0, otherwise false."
+    input Call call;
+    output Boolean nonPositive;
+  algorithm
+    nonPositive := match call
+      case TYPED_CALL()
+        then match functionNameFirst(call)
+          case "abs" then Expression.isZero(listHead(call.arguments));
+          case "max" then List.all(call.arguments, Expression.isNonPositive);
+          case "min" then List.any(call.arguments, Expression.isNonPositive);
+          else false;
+        end match;
+
+      else false;
+    end match;
+  end isNonPositive;
+
+  function isNonNegative
+    "True if the return value of the function is known to be >= 0, otherwise false."
+    input Call call;
+    output Boolean nonNegative;
+  algorithm
+    nonNegative := match call
+      case TYPED_CALL()
+        then match functionNameFirst(call)
+          case "abs" then true;
+          case "max" then List.any(call.arguments, Expression.isNonNegative);
+          case "min" then List.all(call.arguments, Expression.isNonNegative);
+          else false;
+        end match;
+
+      else false;
+    end match;
+  end isNonNegative;
+
   function inlineType
     input NFCall call;
     output DAE.InlineType inlineTy;

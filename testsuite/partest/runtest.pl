@@ -20,6 +20,11 @@ my $test_baseline = 0;
 my $isWSL = (defined $ENV{'WSLENV'} && rindex(Cwd::abs_path(),"/mnt/",0)==0);
 my $osname = $^O;
 
+# Links created outside the sandbox (e.g. for helper scripts a test invokes via
+# a path that points above its own directory). These are removed again when we
+# leave the sandbox so they don't pollute the testsuite tree.
+my @external_links;
+
 for(@ARGV){
   if(/--no-colour/) {
     $no_colour = 1;
@@ -64,6 +69,32 @@ sub make_link {
     elsif (/(.*)/)                    { symlink_if_exists("../" . $1, $1); }
     else                              { symlink_if_exists("../" . $file, $file); }
   }
+}
+
+# Links a helper script (or any file) that a test invokes through a path which
+# may point above the test's own directory, e.g. system("python3 ../../foo.py").
+# The test was written relative to its own directory, but the sandbox runs the
+# test one directory level deeper, so the same path now resolves one level too
+# high. We recreate the file at exactly the path the test uses (relative to the
+# sandbox) and point it at the real file with an absolute target, so it resolves
+# correctly regardless of how many '../' the path contains. The link is recorded
+# so exit_sandbox() can remove it again.
+sub make_external_link {
+  my $rel = shift; # path as written in the test, relative to the test directory
+
+  # The sandbox is one level below the test directory, so the real file is at
+  # "../$rel" as seen from here.
+  my $src = "../" . $rel;
+  return unless -e $src;
+  return if -e $rel; # already in place, nothing to do
+
+  my $abs = Cwd::abs_path($src);
+  if ($isWSL or ($osname eq 'MSWin32')) {
+    link($abs, $rel);
+  } else {
+    symlink($abs, $rel);
+  }
+  push @external_links, $rel;
 }
 
 # Creates a symbolic link to a file, but only if the file exists.
@@ -165,6 +196,7 @@ sub enter_sandbox {
     elsif (/loadFile.*\(\"(.*)\"\)/)   { make_link($1); }
     elsif (/runScript.*\(\"(.*)\"\)/)  { make_link($1); }
     elsif (/importFMU.*\(\"(.*)\"\)/)  { make_link($1); }
+    elsif (/system\(\"\s*python[0-9]*\s+(\S+\.py)/) { make_external_link($1); }
     elsif (/system\(\"(gcc|g\+\+).*\s(\w*\.\w*)\s(\w*\.\w*)/) {
       my $header = lib_to_header($2);
       make_link($header);
@@ -196,6 +228,11 @@ sub enter_sandbox {
 # Exit the sandbox by going up one directory level and delete the temporary
 # directory.
 sub exit_sandbox {
+  # Remove any links created outside the sandbox while we can still resolve
+  # them relative to the sandbox directory (before we chdir away).
+  unlink($_) for @external_links;
+  @external_links = ();
+
   chdir("..");
 
   # Hack to get RunScript working.

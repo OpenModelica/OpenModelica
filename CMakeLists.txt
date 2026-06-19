@@ -61,6 +61,10 @@ mark_as_advanced(OM_MACOS_APP_BUNDLE)
 
 omc_option(OM_ENABLE_ENCRYPTION "Enable and build the OpenModelica Encryption support module. " OFF)
 
+## OMOptim is the legacy optimization GUI. It is disabled by default; enable it
+## with -DOM_OMOPTIM_ENABLE=ON (requires OM_ENABLE_GUI_CLIENTS). See issue #14506.
+omc_option(OM_OMOPTIM_ENABLE "Enable and build the (legacy) OMOptim optimization GUI." OFF)
+
 ## Use ccache to speedup compilation! It is important to use ccache if you can.
 ## You get almost no op compilations (for unmodified files) at the cost of some memory.
 ## This is usefull, for example, in cases where you change branches often or need to clean
@@ -192,6 +196,10 @@ if(OM_ENABLE_GUI_CLIENTS)
   omc_add_subdirectory(OMSimulator)
   omc_add_subdirectory(OMEdit)
   omc_add_subdirectory(OMSens_Qt)
+
+  if(OM_OMOPTIM_ENABLE)
+    omc_add_subdirectory(OMOptim)
+  endif()
 endif()
 
 omc_add_subdirectory(libraries)

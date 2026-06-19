@@ -47,9 +47,16 @@
 #define GC_THREADS
 #endif
 
+#ifdef OMC_RUST_ABI
+// Drive the Rust omc port (libOpenModelicaCompiler.so) in-process: a
+// self-contained replacement for the MMC value/runtime ABI (no Boehm GC). See
+// omc_rust_embedding.h; provides MMC_INIT/MMC_TRY_TOP/threadData.
+#include "omc_rust_embedding.h"
+#else
 extern "C" {
 #include "meta/meta_modelica_data.h"
 }
+#endif
 
 #ifdef Q_OS_WIN
 #include <windows.h>

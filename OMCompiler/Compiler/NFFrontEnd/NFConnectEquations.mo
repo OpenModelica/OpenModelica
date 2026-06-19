@@ -558,9 +558,9 @@ function streamSumEquationExp
   output Expression sumExp;
 protected
   Expression outside_sum1, outside_sum2, inside_sum1, inside_sum2;
-  Boolean needs_positive_max;
+  list<Boolean> outside_non_negative, inside_non_negative;
 algorithm
-  needs_positive_max := setRequiresPositiveMax(outsideElements, insideElements, variables, replacements);
+  (outside_non_negative, inside_non_negative) := setRequiresPositiveMax(outsideElements, insideElements, variables, replacements);
 
   sumExp := match (listEmpty(outsideElements), listEmpty(insideElements))
     case (true, true) then fallback;
@@ -568,26 +568,26 @@ algorithm
     case (true, false)
       algorithm
         // No outside components.
-        inside_sum1 := sumMap(insideElements, sumInside1, flowThreshold, needs_positive_max, variables);
-        inside_sum2 := sumMap(insideElements, sumInside2, flowThreshold, needs_positive_max, variables);
+        inside_sum1 := sumMap(insideElements, sumInside1, flowThreshold, inside_non_negative, variables);
+        inside_sum2 := sumMap(insideElements, sumInside2, flowThreshold, inside_non_negative, variables);
         sumExp := Expression.BINARY(inside_sum1, Operator.makeDiv(Type.REAL()), inside_sum2);
       then makeInStreamDivCall(sumExp, fallback);
 
     case (false, true)
       algorithm
         // No inside components.
-        outside_sum1 := sumMap(outsideElements, sumOutside1, flowThreshold, needs_positive_max, variables);
-        outside_sum2 := sumMap(outsideElements, sumOutside2, flowThreshold, needs_positive_max, variables);
+        outside_sum1 := sumMap(outsideElements, sumOutside1, flowThreshold, outside_non_negative, variables);
+        outside_sum2 := sumMap(outsideElements, sumOutside2, flowThreshold, outside_non_negative, variables);
         sumExp := Expression.BINARY(outside_sum1, Operator.makeDiv(Type.REAL()), outside_sum2);
       then makeInStreamDivCall(sumExp, fallback);
 
     case (false, false)
       algorithm
         // Both outside and inside components.
-        outside_sum1 := sumMap(outsideElements, sumOutside1, flowThreshold, needs_positive_max, variables);
-        outside_sum2 := sumMap(outsideElements, sumOutside2, flowThreshold, needs_positive_max, variables);
-        inside_sum1 := sumMap(insideElements, sumInside1, flowThreshold, needs_positive_max, variables);
-        inside_sum2 := sumMap(insideElements, sumInside2, flowThreshold, needs_positive_max, variables);
+        outside_sum1 := sumMap(outsideElements, sumOutside1, flowThreshold, outside_non_negative, variables);
+        outside_sum2 := sumMap(outsideElements, sumOutside2, flowThreshold, outside_non_negative, variables);
+        inside_sum1 := sumMap(insideElements, sumInside1, flowThreshold, inside_non_negative, variables);
+        inside_sum2 := sumMap(insideElements, sumInside2, flowThreshold, inside_non_negative, variables);
         sumExp := Expression.BINARY(
           Expression.BINARY(outside_sum1, Operator.makeAdd(Type.REAL()), inside_sum1),
           Operator.makeDiv(Type.REAL()),
@@ -597,44 +597,42 @@ algorithm
 end streamSumEquationExp;
 
 function setRequiresPositiveMax
-  "If a connection set has inside (outside) connectors with flow variables that
-   have max <= 0 (min >= 0) or are set to a constant value that is < 0 (> 0),
-   the corresponding positiveMax(<expr>, <tol>) expressions can be replaced by
-   <expr> if at least one of the flow variables of the connection set has
-   max < 0 (min > 0), or it set to a constant value that is < 0 (> 0)."
+  "Returns whether the flow variable for each outside/inside connector needs to
+   be wrapped in positiveMax or not when generating stream connector equations.
+   An inside (outside) flow variable does not need to be wrapped in positiveMax
+   if it has max <= 0 (min >= 0) or is set to a constant value < 0 (> 0), and
+   at least one flow variable in the set has max < 0 (min > 0) or is set to a
+   constant value that is < 0 (> 0)."
   input list<Connector> outsideElements;
   input list<Connector> insideElements;
   input UnorderedMap<ComponentRef, Variable> variables;
   input Option<StreamFlowAlias.Replacements> replacements;
-  output Boolean needsPositiveMax = true;
+  output list<Boolean> outsidePositiveMax = {};
+  output list<Boolean> insidePositiveMax = {};
 protected
-  Boolean positive_flow, non_negative_flow;
+  Boolean positive_flow, non_negative_flow, any_positive_flow = false;
 algorithm
   for c in outsideElements loop
     (positive_flow, non_negative_flow) := hasFlowOutside(c, variables, replacements);
-
-    if not non_negative_flow then
-      needsPositiveMax := true;
-      break;
-    end if;
-
-    if positive_flow then
-      needsPositiveMax := false;
-    end if;
+    any_positive_flow := any_positive_flow or positive_flow;
+    outsidePositiveMax := not non_negative_flow :: outsidePositiveMax;
   end for;
 
   for c in insideElements loop
     (positive_flow, non_negative_flow) := hasFlowInside(c, variables, replacements);
-
-    if not non_negative_flow then
-      needsPositiveMax := true;
-      break;
-    end if;
-
-    if positive_flow then
-      needsPositiveMax := false;
-    end if;
+    any_positive_flow := any_positive_flow or positive_flow;
+    insidePositiveMax := not non_negative_flow :: insidePositiveMax;
   end for;
+
+  if any_positive_flow then
+    // Return the lists if at least one connector has positive flow.
+    outsidePositiveMax := listReverseInPlace(outsidePositiveMax);
+    insidePositiveMax := listReverseInPlace(insidePositiveMax);
+  else
+    // Otherwise, every connector needs to be wrapped in positiveMax.
+    outsidePositiveMax := list(true for c in outsideElements);
+    insidePositiveMax := list(true for c in insideElements);
+  end if;
 end setRequiresPositiveMax;
 
 function hasFlowOutside
@@ -658,6 +656,8 @@ algorithm
 end hasFlowInside;
 
 function hasFlow
+  "Returns whether the flow variable of an inside (outside) connector has
+   positive and/or non-negative flow."
   input Connector conn;
   input Boolean isInside;
   input UnorderedMap<ComponentRef, Variable> variables;
@@ -683,18 +683,22 @@ algorithm
     exp := evaluateAttribute(Util.getOption(oexp));
 
     if is_inside then
-      positiveFlow := Expression.isNegative(exp);        // max < 0
-      nonNegativeFlow := Expression.isNonPositive(exp);  // max <= 0
+      positiveFlow := Expression.isNegative(exp);        // positive flow     if max < 0
+      nonNegativeFlow := Expression.isNonPositive(exp);  // non-negative flow if max <= 0
     else
-      positiveFlow := Expression.isPositive(exp);        // min > 0
-      nonNegativeFlow := Expression.isNonNegative(exp);  // min >= 0
+      positiveFlow := Expression.isPositive(exp);        // positive flow     if min > 0
+      nonNegativeFlow := Expression.isNonNegative(exp);  // non-negative flow if min >= 0
     end if;
-  else
+  end if;
+
+  // Check the binding too if the min/max is inconclusive.
+  if not positiveFlow then
     oexp := Binding.getExpOpt(v.binding);
-    // binding < 0 if inside, > 0 if outside.
+    // Positive flow if binding < 0 if inside, > 0 if outside.
     positiveFlow := Util.applyOptionOrDefault(oexp,
       if is_inside then Expression.isNegative else Expression.isPositive, false);
-    nonNegativeFlow := positiveFlow;
+    // Non-negative flow if either the binding or min/max indicates it.
+    nonNegativeFlow := nonNegativeFlow or positiveFlow;
   end if;
 end hasFlow;
 
@@ -704,7 +708,7 @@ function sumMap
   input list<Connector> elements;
   input FuncType func;
   input Expression flowThreshold;
-  input Boolean needsPositiveMax;
+  input list<Boolean> needsPositiveMax;
   input UnorderedMap<ComponentRef, Variable> variables;
   output Expression exp;
 
@@ -715,10 +719,15 @@ function sumMap
     input UnorderedMap<ComponentRef, Variable> variables;
     output Expression exp;
   end FuncType;
+protected
+  Boolean needs_positive_max;
+  list<Boolean> needs_positive_max_rest;
 algorithm
-  exp := func(listHead(elements), flowThreshold, needsPositiveMax, variables);
+  needs_positive_max :: needs_positive_max_rest := needsPositiveMax;
+  exp := func(listHead(elements), flowThreshold, needs_positive_max, variables);
   for e in listRest(elements) loop
-    exp := Expression.BINARY(func(e, flowThreshold, needsPositiveMax, variables), Operator.makeAdd(Type.REAL()), exp);
+    needs_positive_max :: needs_positive_max_rest := needs_positive_max_rest;
+    exp := Expression.BINARY(func(e, flowThreshold, needs_positive_max, variables), Operator.makeAdd(Type.REAL()), exp);
   end for;
 end sumMap;
 

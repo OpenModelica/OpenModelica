@@ -114,13 +114,14 @@ public
      case nothing is done. Might trigger a rehash."
     input T key;
     input UnorderedSet<T> set;
+    output Boolean added;
   protected
     Integer hash;
     Option<T> okey;
   algorithm
     (okey, hash) := find(key, set);
-
-    if isNone(okey) then
+    added := isNone(okey);
+    if added then
       addKey(key, hash, set);
     end if;
   end add;
