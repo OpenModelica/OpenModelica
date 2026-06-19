@@ -9,6 +9,8 @@ diff_subs.mos \
 arrayDiff.mos \
 arrayScalar.mos \
 algebraicLoop.mos \
+numericJacobianRows.mos \
+tornNLSJacobianRows.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
