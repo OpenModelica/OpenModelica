@@ -29,7 +29,7 @@ setCommandLineOptions("--allowNonStandardModelica=reinitInAlgorithms");
 getErrorString();
 loadFile("DoublePendulum_me_FMU.mo");
 getErrorString();
-simulate(DoublePendulum_me_FMU,stopTime=3.0);
+simulate(DoublePendulum_me_FMU,stopTime=3.0,simflags="-mei=50");
 getErrorString();
 
 val(revolute1_phi, 0);
@@ -70,18 +70,19 @@ val(revolute2_phi, 3);
 // ""
 // record SimulationResult
 //     resultFile = "DoublePendulum_me_FMU_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'DoublePendulum_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     simulationOptions = "startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'DoublePendulum_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-mei=50'",
+//     messages = "LOG_STDOUT        | info    | Maximum number of event iterations changed to 50
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
 // 0.0
-// -2.9156139651894457
-// -0.036080235772675356
-// -2.317956411903933
+// -2.9156139651967043
+// -0.036080235744109804
+// -2.317956412875898
 // 0.0
-// -0.5151898035373383
-// -0.9038989633684034
-// -1.7364060289164354
+// -0.5151898035258814
+// -0.9038989635359058
+// -1.7364060327747979
 // endResult
