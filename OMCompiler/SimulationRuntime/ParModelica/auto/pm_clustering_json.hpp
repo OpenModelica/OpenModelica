@@ -191,7 +191,7 @@ inline std::string stage_snapshot_path(const std::string& prefix, int stage, con
       <prefix>.02.<second optimization>.json
       ...
 
-    Each file uses the same schema as the single-shot -parmodDumpTaskGraph export
+    Each file uses the same schema as the single-shot -parmodExportTaskGraph export
     (name, num_threads, tasks, dependencies, clusters) plus the "stage" index and
     "stage_name", so the external tools (and the python/Julia visualizers) can read
     a snapshot exactly like a normal export. */
