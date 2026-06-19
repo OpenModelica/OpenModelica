@@ -24,13 +24,15 @@ equation
 end test_ChangeParam;
 ");
 getErrorString();
-loadModel(Modelica, {"3.2.3"});
+loadModel(Modelica, {"4.1.0"});
 
 
 buildModelFMU(test_ChangeParam, version="2.0");
 getErrorString();
 importFMU("test_ChangeParam.fmu");
-
+getErrorString();
+setCommandLineOptions("--allowNonStandardModelica=reinitInAlgorithms");
+getErrorString();
 loadFile("test_ChangeParam_me_FMU.mo");
 getErrorString();
 
@@ -53,22 +55,25 @@ getErrorString();
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // "test_ChangeParam_me_FMU.mo"
+// ""
+// true
+// ""
 // true
 // ""
 // record SimulationResult
 //     resultFile = "test_ChangeParam_me_FMU_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'test_ChangeParam_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'test_ChangeParam_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// 7.3890899286445
+// 7.389089928644395
 // 2.0
-// 6.3890899286445
+// 6.389089928644395
 // ""
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // 0
-// {{1.0,1.0,1.0,0.1353363211838032,0.1353363211838032},{-2.0,-2.0,-2.0,-2.0,-2.0},{-11.0,-11.0,-11.0,-10.1353363211838,-10.1353363211838}}
+// {{1.0, 1.0, 1.0, 0.13533632118380395, 0.13533632118380395}, {-2.0, -2.0, -2.0, -2.0, -2.0}, {-11.0, -11.0, -11.0, -10.135336321183804, -10.135336321183804}}
 // ""
 // endResult

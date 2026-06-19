@@ -40,9 +40,13 @@
 #ifndef OMEDITAPPLICATION_H
 #define OMEDITAPPLICATION_H
 
+#ifdef OMC_RUST_ABI
+#include "omc_rust_embedding.h" // Rust omc port: self-contained threadData_t (no MMC runtime)
+#else
 extern "C" {
 #include "meta/meta_modelica_data.h"
 }
+#endif
 
 #include <QApplication>
 #include <QTranslator>

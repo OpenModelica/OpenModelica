@@ -38,6 +38,11 @@ LIBSIMULATION=libSimulationRuntimeC.dll
 LIBRUNTIME=libOpenModelicaRuntimeC.dll
 LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.a
 CMINPACK_NO_DLL=-DCMINPACK_NO_DLL
+# Consume fmilib as a static library (libfmilib.a) rather than the import library of
+# fmilib_shared.dll. Because fmilib_shared is also built, fmilib.h otherwise declares the
+# FMI functions as __declspec(dllimport), making the FMI runtime objects reference
+# __imp_fmi2_* symbols that the static libfmilib.a does not provide (link fails with -lfmilib).
+FMILIB_STATIC_LIB_ONLY=-DFMILIB_STATIC_LIB_ONLY
 
 ifeq ($(OMC_MINIMAL_RUNTIME),)
 OBJ_EXT=.o

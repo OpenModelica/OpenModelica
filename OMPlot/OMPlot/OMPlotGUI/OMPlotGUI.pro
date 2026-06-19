@@ -73,6 +73,10 @@ win32 {
 } else {
   include(OMPlotGUI.config)
   LIBS += -lOMPlot
+  # The standalone exe has no host to resolve libOMPlot's reader symbols, so it
+  # keeps the C runtime even under rust_omc (it is a separate process; this does
+  # not affect OMEdit, which provides the readers from libOpenModelicaCompiler).
+  rust_omc: LIBS += -lOpenModelicaRuntimeC
 }
 
 INCLUDEPATH += .

@@ -4809,6 +4809,7 @@ public
       case CAST() then isPositive(exp.exp);
       case UNARY() then isNegative(exp.exp);
       case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "min"), isPositive, false);
+      case CALL() then Call.isPositive(exp.call);
       else false;
     end match;
   end isPositive;
@@ -4823,6 +4824,7 @@ public
       case CAST() then isNegative(exp.exp);
       case UNARY() then isPositive(exp.exp);
       case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "max"), isNegative, false);
+      case CALL() then Call.isNegative(exp.call);
       else false;
     end match;
   end isNegative;
@@ -4837,13 +4839,14 @@ public
       case CAST() then isNonPositive(exp.exp);
       case UNARY() then isNonNegative(exp.exp);
       case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "max"), isNonPositive, false);
+      case CALL() then Call.isNonPositive(exp.call);
       else false;
     end match;
   end isNonPositive;
 
   function isNonNegative
     input Expression exp;
-    output Boolean res "true if exp is known to be <= 0, otherwise false";
+    output Boolean res "true if exp is known to be >= 0, otherwise false";
   algorithm
     res := match exp
       case INTEGER() then exp.value >= 0;
@@ -4851,9 +4854,22 @@ public
       case CAST() then isNonNegative(exp.exp);
       case UNARY() then isNonPositive(exp.exp);
       case CREF() then Util.applyOptionOrDefault(ComponentRef.lookupVarAttr(exp.cref, "min"), isNonNegative, false);
+      case CALL() then Call.isNonNegative(exp.call);
       else false;
     end match;
   end isNonNegative;
+
+  function isEven
+    input Expression exp;
+    output Boolean even;
+  algorithm
+    even := match exp
+      case INTEGER() then intMod(exp.value, 2) == 0;
+      case REAL() then realMod(exp.value, 2.0) == 0.0;
+      case CAST() then isEven(exp.exp);
+      else false;
+    end match;
+  end isEven;
 
   function isGreaterOrEqual
     input Expression lhs;

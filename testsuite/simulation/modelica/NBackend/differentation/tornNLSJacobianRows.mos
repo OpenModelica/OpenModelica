@@ -1,0 +1,96 @@
+// name: tornNLSJacobianRows
+// keywords: NewBackend, differentiation, jacobian, tearing
+// status: correct
+
+loadString("
+model tornNLSJacobianRows
+  Real x(start=1) annotation(__OpenModelica_tearingSelect = TearingSelect.always);
+  Real y(start=1) annotation(__OpenModelica_tearingSelect = TearingSelect.always);
+  Real z annotation(__OpenModelica_tearingSelect = TearingSelect.never);
+equation
+  z = x + y;
+  0 = z + x*x - 3;
+  0 = z + y*y - 3;
+end tornNLSJacobianRows;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --generateDynamicJacobian=symbolic --tearingMethod=guruTearing -d=dumpSparsePattern"); getErrorString();
+
+buildModel(tornNLSJacobianRows); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// =============================
+//   Sparsity Pattern (nnz: 4)
+// =============================
+//
+// ### Seeds (col vars) ###
+// --------------------------
+// {y, x}
+//
+// ### Partials (row vars) ###
+// -----------------------------
+// {$RES_SIM_0, $RES_SIM_1}
+//
+// ### Columns ###
+// -----------------
+// (y)	 affects:	{$RES_SIM_0,$RES_SIM_1}
+// (x)	 affects:	{$RES_SIM_0,$RES_SIM_1}
+//
+// ##### Rows #####
+// ------------------
+// ($RES_SIM_0)	 depends on:	{x,y}
+// ($RES_SIM_1)	 depends on:	{x,y}
+//
+// =====================
+//   Sparsity Coloring
+// =====================
+// Column Color (1)
+//   - Column: {y}
+// Column Color (2)
+//   - Column: {x}
+// Row Color (1)
+//   - Row:    {$RES_SIM_0}
+// Row Color (2)
+//   - Row:    {$RES_SIM_1}
+//
+// =============================
+//   Sparsity Pattern (nnz: 4)
+// =============================
+//
+// ### Seeds (col vars) ###
+// --------------------------
+// {y, x}
+//
+// ### Partials (row vars) ###
+// -----------------------------
+// {$RES_SIM_2, $RES_SIM_1}
+//
+// ### Columns ###
+// -----------------
+// (y)	 affects:	{$RES_SIM_1,$RES_SIM_2}
+// (x)	 affects:	{$RES_SIM_1,$RES_SIM_2}
+//
+// ##### Rows #####
+// ------------------
+// ($RES_SIM_2)	 depends on:	{x,y}
+// ($RES_SIM_1)	 depends on:	{x,y}
+//
+// =====================
+//   Sparsity Coloring
+// =====================
+// Column Color (1)
+//   - Column: {y}
+// Column Color (2)
+//   - Column: {x}
+// Row Color (1)
+//   - Row:    {$RES_SIM_2}
+// Row Color (2)
+//   - Row:    {$RES_SIM_1}
+//
+// {"tornNLSJacobianRows", "tornNLSJacobianRows_init.xml"}
+// ""
+// endResult

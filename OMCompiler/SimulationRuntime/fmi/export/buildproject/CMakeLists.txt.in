@@ -90,6 +90,13 @@ if (NOT ${NEED_CVODE})
                                        ${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/cvode_solver.c)
 endif()
 file(GLOB FMU_GENERATED_MODEL_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.c)
+# <Model>_info.c is not a standalone translation unit; it is a bare string literal that gets
+# #included into <Model>_init_fmu.c (used by FMI 1.0). Remove it from the compiled sources so
+# it is not built on its own. See https://github.com/OpenModelica/OpenModelica/issues/15838
+file(GLOB FMU_GENERATED_INCLUDE_ONLY_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*_info.c)
+if(FMU_GENERATED_INCLUDE_ONLY_SOURCES)
+  list(REMOVE_ITEM FMU_GENERATED_MODEL_SOURCES ${FMU_GENERATED_INCLUDE_ONLY_SOURCES})
+endif()
 
 # Set install prefix to FMU target system short and architecture
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
