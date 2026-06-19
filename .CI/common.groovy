@@ -202,7 +202,7 @@ void sanityCheck(String installDir, Boolean buildCpp) {
       echo cd \${MSYS_WORKSPACE}
       echo echo Unset OPENMODELICALIBRARY to make sure the default is used
       echo unset OPENMODELICALIBRARY
-      echo echo Testing some models from testsuite, ffi, meta
+      echo echo Testing some models from testsuite, ffi, meta, fmi
       echo cd testsuite/flattening/libraries/biochem
       echo ../../../rtest --return-with-error-code EnzMM.mos
       echo cd \${MSYS_WORKSPACE}
@@ -212,6 +212,10 @@ void sanityCheck(String installDir, Boolean buildCpp) {
       echo cd \${MSYS_WORKSPACE}
       echo cd testsuite/metamodelica/meta
       echo ../../rtest --return-with-error-code AlgPatternm.mos
+      echo echo FMI export+import roundtrip, guards Windows -lfmilib linking against libfmilib.dll
+      echo cd \${MSYS_WORKSPACE}
+      echo cd testsuite/openmodelica/fmi/ModelExchange/2.0
+      echo ../../../../rtest --return-with-error-code HelloFMIWorld.mos
       ) > miniTestsuite.sh
 
       set MSYSTEM=UCRT64
