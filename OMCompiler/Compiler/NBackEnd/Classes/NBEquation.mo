@@ -1285,7 +1285,7 @@ public
       eqn := Pointer.access(eqn_ptr);
       size_lst := match eqn
         case SCALAR_EQUATION() then {1};
-        case ARRAY_EQUATION()  then {Type.sizeOf(eqn.ty, resize)}; //needs to be updated to represent the dimensions
+        case ARRAY_EQUATION()  then list(Dimension.size(dim, resize) for dim in Type.arrayDims(eqn.ty));
         case RECORD_EQUATION() then {Type.sizeOf(eqn.ty, resize)};
         case ALGORITHM()       then {eqn.size};
         case IF_EQUATION()     then {eqn.size};
