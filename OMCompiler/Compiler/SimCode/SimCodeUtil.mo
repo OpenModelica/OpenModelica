@@ -13872,6 +13872,30 @@ else
     discreteStates := list(SimCode.FMIUNKNOWN(getVariableFMIIndex(v), {}, {})
                            for v in getScalarVars(clockedStates));
 
+    // Compute the InitialUnknowns even though the symbolic Jacobian (and thus
+    // the dependency information) is missing. Omitting the dependencies is valid
+    // according to the FMI specification; the importer then assumes a dependency
+    // on all knowns. The InitialUnknowns are mandatory in FMI 2.0 and 3.0. The
+    // list consists of (per the FMI spec):
+    //  1. outputs with initial = approx or calculated
+    //  2. calculatedParameters
+    //  3. continuous-time states with initial = approx or calculated
+    //  4. state derivatives with initial = approx or calculated
+    varsA := List.filterOnTrue(inModelInfo.vars.algVars, isOutputSimVar);
+    varsB := List.filterOnTrue(inModelInfo.vars.intAlgVars, isOutputSimVar);
+    varsC := List.filterOnTrue(inModelInfo.vars.boolAlgVars, isOutputSimVar);
+    varsD := List.filterOnTrue(inModelInfo.vars.stringAlgVars, isOutputSimVar);
+    allOutputVars := getScalarVars(listAppend(listAppend(varsA, varsB), listAppend(varsC, varsD)));
+    tmpInitialUnknowns := {};
+    tmpInitialUnknowns := List.filterCons(allOutputVars, isInitialApproxOrCalculatedSimVar, tmpInitialUnknowns);
+    tmpInitialUnknowns := List.filterCons(getScalarVars(getAllParamSimVars(inModelInfo)), isCausalityCalculatedParameterSimVar, tmpInitialUnknowns);
+    // A continuous state with a fixed start value has initial = exact (a known),
+    // so it is not an initial unknown; an unfixed start makes it initial = approx.
+    tmpInitialUnknowns := List.filterCons(getScalarVars(inModelInfo.vars.stateVars), isStateInitialUnknownSimVar, tmpInitialUnknowns);
+    tmpInitialUnknowns := List.filterCons(getScalarVars(inModelInfo.vars.derivativeVars), isInitialApproxOrCalculatedSimVar, tmpInitialUnknowns);
+    tmpInitialUnknowns := Dangerous.listReverseInPlace(tmpInitialUnknowns);
+    allInitialUnknowns := list(SimCode.FMIUNKNOWN(getVariableFMIIndex(v), {}, {}) for v in tmpInitialUnknowns);
+
     contPartSimDer := NONE();
     initPartSimDer := NONE();
     outFmiModelStructure :=
@@ -13882,7 +13906,7 @@ else
           contPartSimDer,
           initPartSimDer,
           SimCode.FMIDISCRETESTATES(discreteStates),
-          SimCode.FMIINITIALUNKNOWNS({}, {}, {})));
+          SimCode.FMIINITIALUNKNOWNS(allInitialUnknowns, {}, {})));
   else
     Error.addInternalError("SimCodeUtil.createFMIModelStructure failed", sourceInfo());
     fail();
@@ -13913,6 +13937,20 @@ algorithm
     else false;
   end match;
 end isInitialApproxOrCalculatedSimVar;
+
+protected function isStateInitialUnknownSimVar
+  "A continuous-time state is an FMI initial unknown unless its start value is
+   fixed: a fixed start makes the state initial = exact (a known), an unfixed
+   start makes it initial = approx (an unknown). This mirrors the initial
+   attribute emitted for states by the FMI templates."
+  input SimCodeVar.SimVar simVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match simVar
+    case SimCodeVar.SIMVAR(varKind = BackendDAE.STATE()) then not simVar.isFixed;
+    else isInitialApproxOrCalculatedSimVar(simVar);
+  end match;
+end isStateInitialUnknownSimVar;
 
 protected function isInitialApproxOrCalculated
   "return true if the initial attribute is CALCULATED or APPROX else false"
