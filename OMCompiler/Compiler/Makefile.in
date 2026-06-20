@@ -29,7 +29,7 @@ CORBAHOME = @CORBAHOME@
 
 PROG = omc
 
-SCRIPT_FILES = openmodelica.lefty default_profiling.xsl replace-startValue.sh replace-startValue.xsl simcodedump.xsl ngspicetoModelica.py filter-annotations.jq
+SCRIPT_FILES = openmodelica.lefty default_profiling.xsl replace-startValue.sh replace-startValue.xsl simcodedump.xsl ngspicetoModelica.py combine_components.py filter-annotations.jq
 
 SUBDIRS	= FrontEndCpp runtime Script
 
