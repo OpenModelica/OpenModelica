@@ -2107,6 +2107,9 @@ int main(int argc, char **argv)
         fprintf(stderr, "[driver] IDACalcIC failed (%d); activating homotopy ramp and retrying\\n", flag);
         g_homotopy_ramp_active = 1;
         combined_set_lambda(0.0);
+        /* cap the step so the lambda 0->1 transition is resolved gradually
+           regardless of the output step count; lifted once past the ramp. */
+        if (g_homotopy_tramp > 0.0) IDASetMaxStep(ida, g_homotopy_tramp / 50.0);
         IDAReInit(ida, t0, yy, yp);
         flag = IDACalcIC(ida, IDA_YA_YDP_INIT, (h > 0.0) ? t0 + h : t0 + 1.0);
       }}
@@ -2134,6 +2137,12 @@ int main(int argc, char **argv)
           break;
         }}
         STORE_ROW(tret, yv);
+        /* once past the ramp window, lift the step cap and pin lambda=1 */
+        if (g_homotopy_ramp_active && g_homotopy_tramp > 0.0 && tret >= t0 + g_homotopy_tramp) {{
+          IDASetMaxStep(ida, 0.0);
+          combined_set_lambda(1.0);
+          g_homotopy_ramp_active = 0;
+        }}
         if ((step % 10) == 0 || step == nsteps)
           fprintf(stderr, "  t=%-12g step %d/%d\\n", tret, step, nsteps);
       }}

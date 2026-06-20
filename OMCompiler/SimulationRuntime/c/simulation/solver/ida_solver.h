@@ -121,6 +121,8 @@ typedef struct IDA_SOLVER
   int homotopyRampActive;   /* set when the initial DAE Jacobian was singular and a
                                homotopy lambda ramp (0->1 over t_ramp) is used to get
                                past a degenerate start point; 0 = inactive (lambda=1) */
+  double homotopyTramp;     /* ramp window length [s]; lambda goes 0->1 over
+                               [startTime, startTime+homotopyTramp]. <=0 when unused */
 } IDA_SOLVER;
 
 /* initialize main ida Data */

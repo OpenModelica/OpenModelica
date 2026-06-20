@@ -144,6 +144,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   /* Initialize constants */
   idaData->setInitialSolution = FALSE;
   idaData->homotopyRampActive = 0;
+  idaData->homotopyTramp = -1.0;
 
   /* Instantiate IDA solver object */
   idaData->ida_mem = IDACreate();
@@ -752,6 +753,21 @@ int ida_event_update(DATA* data, threadData_t *threadData)
  * @param solverInfo  Main ODE/DAE solver info.
  * @return int        Return 0 on success or IDA flag on failure.
  */
+/* Activate the daeMode homotopy ramp after a singular initial DAE Jacobian was
+   detected (IDA_LSETUP_FAIL). Sets the ramp window and caps the integrator step
+   so the lambda 0->1 transition is resolved gradually regardless of the
+   requested output interval count; the cap is lifted again in ida_solver_step
+   once the ramp is complete. */
+static void idaActivateHomotopyRamp(IDA_SOLVER *idaData, DATA *data)
+{
+  const char *e = getenv("OMC_DAE_HOMOTOPY_TRAMP");
+  idaData->homotopyTramp = (e != NULL) ? atof(e)
+      : 0.1 * (data->simulationInfo->stopTime - data->simulationInfo->startTime);
+  idaData->homotopyRampActive = 1;
+  if (idaData->homotopyTramp > 0.0)
+    IDASetMaxStep(idaData->ida_mem, idaData->homotopyTramp / 50.0);
+}
+
 int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
   double tout = 0;
@@ -772,7 +788,16 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   MODEL_DATA *mData = (MODEL_DATA*) data->modelData;
 
   /* DAE-mode homotopy ramp: lambda is set smoothly as a function of time in the
-     residual callback (residualFunctionIDA), see there. */
+     residual callback (residualFunctionIDA). Once the ramp window has elapsed,
+     lift the step-size cap that was applied while ramping and pin lambda to 1
+     (the actual model) for the rest of the integration. */
+  if (idaData->homotopyRampActive && idaData->homotopyTramp > 0.0 &&
+      solverInfo->currentTime >= data->simulationInfo->startTime + idaData->homotopyTramp)
+  {
+    IDASetMaxStep(idaData->ida_mem, 0.0);   /* 0 = no limit */
+    data->simulationInfo->lambda = 1.0;
+    idaData->homotopyRampActive = 0;
+  }
 
 
   /* alloc all work arrays */
@@ -950,7 +975,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
          point. */
       if (idaData->daeMode && data->simulationInfo->homotopySteps > 0 && !idaData->homotopyRampActive)
       {
-        idaData->homotopyRampActive = 1;
+        idaActivateHomotopyRamp(idaData, data);
         warningStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## singular DAE Jacobian at t = %.15g; activating homotopy ramp", solverInfo->currentTime);
       }
       flag = IDAReInit(idaData->ida_mem,
@@ -979,7 +1004,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
       {
         if (idaData->daeMode && data->simulationInfo->homotopySteps > 0 && !idaData->homotopyRampActive)
         {
-          idaData->homotopyRampActive = 1;
+          idaActivateHomotopyRamp(idaData, data);
           warningStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## singular DAE Jacobian at t = %.15g; activating homotopy ramp", solverInfo->currentTime);
         }
         flag = IDAReInit(idaData->ida_mem,
@@ -1150,12 +1175,7 @@ static int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector r
      activated only on failure, so models that integrate normally are unaffected.
      t_ramp defaults to 10% of the simulation interval (tunable via env var). */
   if (idaData->daeMode && idaData->homotopyRampActive && data->simulationInfo->homotopySteps > 0) {
-    static double tRamp = -1.0;
-    if (tRamp < 0.0) {
-      const char *e = getenv("OMC_DAE_HOMOTOPY_TRAMP");
-      tRamp = (e != NULL) ? atof(e)
-            : 0.1 * (data->simulationInfo->stopTime - data->simulationInfo->startTime);
-    }
+    double tRamp = idaData->homotopyTramp;
     data->simulationInfo->lambda = (tRamp > 0.0 && time < data->simulationInfo->startTime + tRamp)
                                  ? ((time - data->simulationInfo->startTime) / tRamp) : 1.0;
   }
