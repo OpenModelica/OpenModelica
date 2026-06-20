@@ -239,6 +239,10 @@ class ComponentInfo:
     assigned_vars: Set[int] = field(default_factory=set)
     # realVars indices that are states or state derivatives (integrator-owned).
     state_vars: Set[int] = field(default_factory=set)
+    # realVars indices referenced by a real (non-$fdummy) DAE residual; the
+    # component owns these even if a $fdummy exposes them at a connector (the
+    # bidirectional / flow-reversal case). Not free inStream slots.
+    real_residual_vars: Set[int] = field(default_factory=set)
 
     # DAE-mode sparse pattern (dResiduals/dUnknowns), CSC.
     # col_rows[j] = sorted list of residual rows that depend on unknown column j.
@@ -394,7 +398,7 @@ def _parse_sparse_pattern(text: str, n_res: int) -> List[List[int]]:
 
 def parse_dae_file(path: str, prefix: str) -> Tuple[
         List[FdummyResidual], Dict[str, int], Dict[str, int],
-        int, List[int], int, List[List[int]], Set[int], Set[int]]:
+        int, List[int], int, List[List[int]], Set[int], Set[int], Set[int]]:
     """Parse xxx_16dae.c for fdummy residuals, var/param index maps, residual
     count, algebraic variable indices, nAlgebraicDAEVars, the DAE-mode sparse
     pattern (per-column residual-row lists) and the set of realVars indices the
@@ -427,6 +431,15 @@ def parse_dae_file(path: str, prefix: str) -> Tuple[
         param_to_idx.setdefault(name, idx)
 
     fdummy_residuals: List[FdummyResidual] = []
+    # realVars indices referenced by a *real* (non-$fdummy) DAE residual. Such a
+    # variable is computed by the component's own equation system, so it is NOT a
+    # free inStream slot even when a $fdummy also exposes it at a connector. This
+    # is exactly the bidirectional (flow-reversal) case: the reverse-stream
+    # equations port_a.h_outflow = inStream(port_b.h_outflow) etc. are real
+    # residuals that own the outflow connector vars; overwriting them with the
+    # neighbour value (as for a true free slot) leaves the residual as a vacuous
+    # 0=0 row and makes the combined DAE Jacobian structurally singular.
+    real_residual_vars: Set[int] = set()
     func_starts = list(_RE_EQFUNC_START.finditer(text))
     for i, fs in enumerate(func_starts):
         func_num   = int(fs.group(2))
@@ -436,6 +449,8 @@ def parse_dae_file(path: str, prefix: str) -> Tuple[
 
         m = _RE_FDUMMY_CALL.search(body)
         if not m:
+            if 'daeModeData->residualVars[' in body:   # a real residual eqFunction
+                real_residual_vars.update(int(v.group(1)) for v in _RE_VARIDX.finditer(body))
             continue
 
         res_idx    = int(m.group(1))
@@ -451,7 +466,8 @@ def parse_dae_file(path: str, prefix: str) -> Tuple[
         ))
 
     return (fdummy_residuals, var_to_idx, param_to_idx,
-            n_res, alg_indexes, n_alg, col_rows, assigned_vars, state_vars)
+            n_res, alg_indexes, n_alg, col_rows, assigned_vars, state_vars,
+            real_residual_vars)
 
 
 def parse_connections(path: str) -> List[Tuple[str, str, str, str]]:
@@ -472,7 +488,8 @@ def load_component(prefix: str, directory: str) -> ComponentInfo:
     if os.path.exists(dae_c):
         (comp.fdummy_residuals, comp.var_to_idx, comp.param_to_idx,
          comp.n_residuals, comp.alg_indexes, comp.n_alg, comp.col_rows,
-         comp.assigned_vars, comp.state_vars) = parse_dae_file(dae_c, prefix)
+         comp.assigned_vars, comp.state_vars,
+         comp.real_residual_vars) = parse_dae_file(dae_c, prefix)
 
     return comp
 
@@ -1426,11 +1443,16 @@ def _stream_binding(comp: ComponentInfo, connector: str,
             negated = expr.lstrip().startswith('(-')
             if m and 'realParameter' not in expr and not negated:
                 idx = int(m.group(1))
-                # A free inStream slot must not be a computed output, a state, or
-                # a state derivative — those are owned by the component/integrator
-                # and overwriting them would corrupt the model.
+                # A free inStream slot must not be a computed output, a state, a
+                # state derivative, or a variable owned by a real (non-$fdummy)
+                # residual — those are computed by the component/integrator and
+                # overwriting them corrupts the model. The last case is the
+                # bidirectional (flow-reversal) component: its reverse-stream
+                # equations own the outflow connector vars, so they must stay
+                # free DAE unknowns instead of being clobbered into a 0=0 row.
                 writable = (idx not in comp.assigned_vars
-                            and idx not in comp.state_vars)
+                            and idx not in comp.state_vars
+                            and idx not in comp.real_residual_vars)
                 return StreamBinding(expr, idx, writable)
             return StreamBinding(expr, None, False)   # constant / param / negated
     return None
