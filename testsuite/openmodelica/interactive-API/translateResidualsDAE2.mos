@@ -1,0 +1,35 @@
+// name: translateResidualsDAE2
+// keywords: separate compilation stream connector flow reversal
+// status: correct
+// cflags: -d=newInst
+//
+// A component that models both stream directions (i.e. allows flow reversal)
+// must be separately compilable. translateResidualsDAE keeps inStream() of an
+// unconnected stream connector deferred instead of collapsing it to the
+// connector itself, which would otherwise produce a redundant equation pair
+// (c1 = c2; c2 = c1) and make index reduction fail. See #15876.
+//
+
+setCommandLineOptions("-d=newInst"); getErrorString();
+loadString("connector FluidPort
+  flow Real m_flow; Real p; stream Real h_outflow;
+end FluidPort;
+model TwoPortStream \"component modelling both stream directions (flow reversal)\"
+  FluidPort port_a, port_b; Real dp;
+equation
+  port_a.m_flow + port_b.m_flow = 0;
+  dp = port_a.p - port_b.p;
+  dp = port_a.m_flow;
+  port_a.h_outflow = inStream(port_b.h_outflow);
+  port_b.h_outflow = inStream(port_a.h_outflow);
+end TwoPortStream;"); getErrorString();
+translateResidualsDAE(TwoPortStream); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// endResult
