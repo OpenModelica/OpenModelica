@@ -433,6 +433,26 @@ algorithm
       then
         (cache,Expression.makePureBuiltinCall("simulate",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()));
 
+    case (cache, env, Absyn.CREF_IDENT(name = "translateAcausalDAE"), {Absyn.CREF()}, args, _, _)
+      algorithm
+        (cache, simulationArgs) := getSimulationArguments(cache, env, inExps, args, inImplInst, inPrefix, "translateAcausalDAE", info, NONE());
+      then
+        (cache,Expression.makePureBuiltinCall("translateAcausalDAE",simulationArgs,DAE.T_BOOL_DEFAULT),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()));
+
+    case (cache, env, Absyn.CREF_IDENT(name = "buildAcausalDAE"), {Absyn.CREF()}, args, _, _)
+      algorithm
+        (cache, simulationArgs) := getSimulationArguments(cache, env, inExps, args, inImplInst, inPrefix, "buildAcausalDAE", info, NONE());
+      then
+        (cache,Expression.makePureBuiltinCall("buildAcausalDAE",simulationArgs,DAE.T_UNKNOWN_DEFAULT),
+         DAE.PROP(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(2)}),DAE.C_VAR()));
+
+    case (cache, env, Absyn.CREF_IDENT(name = "simulateAcausalDAE"), {Absyn.CREF()}, args, _, _)
+      algorithm
+        (cache, simulationArgs) := getSimulationArguments(cache, env, inExps, args, inImplInst, inPrefix, "simulateAcausalDAE", info, NONE());
+        recordtype := CevalScriptBackend.getSimulationResultType();
+      then
+        (cache,Expression.makePureBuiltinCall("simulateAcausalDAE",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()));
+
     case (cache, env, Absyn.CREF_IDENT(name = "simulation"), {Absyn.CREF()}, args, _, _) /* Fill in rest of defaults here */
       algorithm
         (cache, simulationArgs) := getSimulationArguments(cache, env, inExps, args, inImplInst, inPrefix, "simulation", info, NONE());

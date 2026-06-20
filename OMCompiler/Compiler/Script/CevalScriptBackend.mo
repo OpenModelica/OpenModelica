@@ -1420,6 +1420,21 @@ algorithm
       then
         ValuesMake.makeArray(if b then {Values.STRING(executable),Values.STRING(initfilename)} else {Values.STRING(""),Values.STRING("")});
 
+    case ("translateAcausalDAE", vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
+      algorithm
+        (outCache, simValue) := runAcausalDAE(outCache, inEnv, vals, msg, 0);
+      then simValue;
+
+    case ("buildAcausalDAE", vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
+      algorithm
+        (outCache, simValue) := runAcausalDAE(outCache, inEnv, vals, msg, 1);
+      then simValue;
+
+    case ("simulateAcausalDAE", vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
+      algorithm
+        (outCache, simValue) := runAcausalDAE(outCache, inEnv, vals, msg, 2);
+      then simValue;
+
     case ("simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
       algorithm
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
@@ -6080,6 +6095,213 @@ algorithm
 
   end match;
 end formatSimulationFlagString;
+
+protected function runAcausalDAE
+  "Orchestrates the acausal-DAE flow for a flowsheet whose top-level components
+   are acausal DAE blocks:
+     1. getModelInstance(flowsheet)                     -> instance JSON
+     2. combine_components.py prepare                   -> Top_<c> wrappers,
+                                                           _connect_<model>.txt,
+                                                           component manifest
+     3. translateResidualsDAE(Top_<c>) per component    -> per-component DAE C
+     4. combine_components.py combine                   -> combined C + makefile
+     5. (mode>=1) make                                  -> simulation executable
+     6. (mode==2) run executable + collect SimulationResult
+   mode: 0 = translate only, 1 = build (no run), 2 = simulate (build + run).
+   Returns Boolean (mode 0), String[2] {exe,init} (mode 1) or a SimulationResult
+   record (mode 2)."
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input list<Values.Value> vals;
+  input Absyn.Msg msg;
+  input Integer mode;
+  output FCore.Cache outCache = inCache;
+  output Values.Value outValue;
+protected
+  Absyn.Path className;
+  String cname, prefix, workdir, scriptPath, instFile, outPrefix, cmd, names,
+         exe, logFile, resultFile, instJson, omhome, wrappersFile, prepLog, combLog, outFmt;
+  list<String> prefixes;
+  Integer rc;
+  Boolean ok, buildOk;
+  Real timeTotal, timeSim = 0.0;
+algorithm
+  System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
+  Values.CODE(Absyn.C_TYPENAME(className)) := listHead(vals);
+  cname := AbsynUtil.pathString(className);
+  omhome := System.stringReplace(Settings.getInstallationDirectoryPath(), "\"", "");
+  scriptPath := omhome + "/share/omc/scripts/combine_components.py";
+
+  // working directory: cwd if writable, otherwise a temp directory (issue: the
+  // directory where omc was started may be read-only).
+  workdir := acausalWorkingDir(cname);
+
+  // 1. dump the model instance (resolves through extends, gives components,
+  //    modifiers incl. redeclares, and the top-level connections).
+  Values.STRING(instJson) := NFApi.getModelInstance(className, Absyn.IDENT("__NoContext"), "", false);
+  instFile := workdir + "/" + cname + "_instance.json";
+  System.writeFile(instFile, instJson);
+
+  // 2. prepare: synthesize per-component wrapper models + connection list.
+  prepLog := workdir + "/_acausal_prepare.log";
+  cmd := "python3 \"" + scriptPath + "\" prepare --instance \"" + instFile +
+         "\" --dir \"" + workdir + "\" --model " + cname;
+  rc := System.systemCall(cmd, prepLog);
+  if rc <> 0 then
+    outValue := acausalFail(mode, "simulateAcausalDAE: prepare step failed:\n" + System.readFile(prepLog));
+    return;
+  end if;
+
+  // 3. load wrappers and generate per-component DAE residual code, reusing
+  //    already-generated code for components whose wrapper signature (type +
+  //    modifications + copied decls) and omc version are unchanged (point 6).
+  wrappersFile := workdir + "/_acausal_wrappers.mo";
+  SymbolTable.setAbsyn(CevalScript.loadFile(wrappersFile, "UTF-8", SymbolTable.getAbsyn(), true, false, false, true));
+  prefixes := {};
+  rc := System.cd(workdir);
+  for entry in acausalReadManifest(workdir + "/_acausal_components.txt") loop
+    (prefix, ok) := acausalGenComponent(entry);
+    if not ok then
+      outValue := acausalFail(mode, "simulateAcausalDAE: translateResidualsDAE failed for component " + prefix);
+      return;
+    end if;
+    prefixes := prefix :: prefixes;
+  end for;
+  prefixes := listReverse(prefixes);
+
+  // 4. stitch the components together with the connection equations.
+  names := stringDelimitList(prefixes, ",");
+  outPrefix := "combined";
+  combLog := workdir + "/_acausal_combine.log";
+  cmd := "python3 \"" + scriptPath + "\" combine --dir \"" + workdir + "\" --comps " +
+         names + " --conn _connect_" + cname + ".txt --out " + outPrefix;
+  rc := System.systemCall(cmd, combLog);
+  if rc <> 0 then
+    outValue := acausalFail(mode, "simulateAcausalDAE: combine step failed:\n" + System.readFile(combLog));
+    return;
+  end if;
+
+  if mode == 0 then
+    outValue := ValuesMake.makeBoolean(true);
+    return;
+  end if;
+
+  // 5. build the combined model.
+  logFile := workdir + "/" + outPrefix + ".log";
+  cmd := Autoconf.make + " -f " + outPrefix + ".makefile OPENMODELICAHOME=\"" + omhome + "\"";
+  buildOk := System.systemCall(cmd, logFile) == 0;
+  exe := workdir + "/" + outPrefix;
+
+  if mode == 1 then
+    outValue := ValuesMake.makeArray({ValuesMake.makeString(if buildOk then exe else ""), ValuesMake.makeString("")});
+    return;
+  end if;
+
+  // 6. run the combined executable and return a SimulationResult like simulate().
+  //    The driver writes both combined_res.mat and combined_res.csv; point the
+  //    result at the one matching outputFormat (vals[9]), defaulting to mat.
+  outFmt := match listGet(vals, 9) case Values.STRING("csv") then "csv"; else "mat"; end match;
+  resultFile := workdir + "/" + outPrefix + "_res." + outFmt;
+  if buildOk then
+    rc := System.systemCallRestrictedEnv("\"" + exe + "\"", logFile);
+  else
+    rc := 1;
+  end if;
+  timeTotal := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
+  (outCache, outValue) := createSimulationResultFromcallModelExecutable(
+    buildOk, rc, timeTotal, timeSim, {}, inCache, className, vals, resultFile, logFile);
+end runAcausalDAE;
+
+protected function acausalFail
+  "Builds the mode-appropriate failure value for runAcausalDAE and records the
+   message so it shows up in getErrorString()."
+  input Integer mode;
+  input String message;
+  output Values.Value v;
+algorithm
+  Error.addInternalError(message, sourceInfo());
+  v := match mode
+    case 0 then ValuesMake.makeBoolean(false);
+    case 1 then ValuesMake.makeArray({ValuesMake.makeString(""), ValuesMake.makeString("")});
+    else createSimulationResultFailure(message, "");
+  end match;
+end acausalFail;
+
+protected function acausalWorkingDir
+  "Returns the current directory if it is writable, otherwise a temp directory."
+  input String cname;
+  output String dir;
+protected
+  String cwd, probe, tmp;
+algorithm
+  cwd := System.pwd();
+  probe := cwd + "/." + cname + "_acausal_probe";
+  try
+    System.writeFile(probe, "");
+    true := System.regularFileExists(probe);
+    System.removeFile(probe);
+    dir := cwd;
+  else
+    tmp := Settings.getTempDirectoryPath() + "/acausalDAE_" + cname;
+    if not System.directoryExists(tmp) then
+      System.createDirectory(tmp);
+    end if;
+    dir := tmp;
+  end try;
+end acausalWorkingDir;
+
+protected function acausalReadManifest
+  "Reads the component manifest ('<name>\\t<signature>' per line) into a list of
+   (name, signature) tuples."
+  input String file;
+  output list<tuple<String, String>> comps = {};
+protected
+  list<String> toks;
+algorithm
+  for line in System.strtok(System.readFile(file), "\n") loop
+    toks := System.strtok(System.trimWhitespace(line), "\t");
+    comps := match toks
+      case {} then comps;
+      case {_} then (listGet(toks, 1), "") :: comps;
+      else (listGet(toks, 1), listGet(toks, 2)) :: comps;
+    end match;
+  end for;
+  comps := listReverse(comps);
+end acausalReadManifest;
+
+protected function acausalGenComponent
+  "Generates the DAE residual code for one component, reusing the previously
+   generated code if a cache sidecar with a matching signature + omc version
+   exists (point 6: avoid re-running translateResidualsDAE for unchanged
+   components). Returns (componentName, success)."
+  input tuple<String, String> entry;
+  output String prefix;
+  output Boolean success;
+protected
+  String sig, cacheFile, daeFile, cacheContent;
+  Boolean ok;
+algorithm
+  (prefix, sig) := entry;
+  cacheFile := prefix + "_acausal_cache.json";
+  daeFile := prefix + "_16dae.c";
+  cacheContent := "{\"component\": \"" + prefix + "\", \"signature\": \"" + sig +
+                  "\", \"omcVersion\": \"" + Settings.getVersionNr() + "\"}";
+
+  // reuse if the per-component code and a matching cache sidecar are present
+  if sig <> "" and System.regularFileExists(cacheFile) and System.regularFileExists(daeFile)
+     and System.trimWhitespace(System.readFile(cacheFile)) == cacheContent then
+    success := true;
+    return;
+  end if;
+
+  // translateResidualsDAE swallows backend errors and returns true regardless,
+  // so verify it actually produced the DAE residual file before trusting it.
+  ok := NFApi.translateResidualsDAE(Absyn.IDENT("Top_" + prefix), prefix);
+  success := ok and System.regularFileExists(daeFile);
+  if success and sig <> "" then
+    System.writeFile(cacheFile, cacheContent);
+  end if;
+end acausalGenComponent;
 
 protected function createSimulationResultFromcallModelExecutable
 "This function calls the compiled simulation executable."
