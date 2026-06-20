@@ -116,6 +116,11 @@ typedef struct IDA_SOLVER
   JACOBIAN* jacColumns;
 #endif
   int allocatedParMem; /* indicated if parallel memory was allocated, 0=false, 1=true*/
+
+  /* ### daeMode homotopy ramp ### */
+  int homotopyRampActive;   /* set when the initial DAE Jacobian was singular and a
+                               homotopy lambda ramp (0->1 over t_ramp) is used to get
+                               past a degenerate start point; 0 = inactive (lambda=1) */
 } IDA_SOLVER;
 
 /* initialize main ida Data */
