@@ -690,7 +690,7 @@ public
       Option<StateEvent> sev_opt;
       StateEvent sev;
       Pointer<Variable> aux_var;
-      ComponentRef aux_cref;
+      ComponentRef aux_cref = ComponentRef.EMPTY();
       Pointer<Boolean> clocked = Pointer.create(false);
     algorithm
       // collect possible sample events from exp

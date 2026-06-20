@@ -747,13 +747,13 @@ public function simplifyConstraints
 protected
   list<BackendDAE.EqSystem> systlst, new_systlst = {};
   BackendDAE.Shared shared;
-  BackendDAE.Equation eqn_;
+  BackendDAE.Equation eqn_ = BackendDAE.DUMMY_EQUATION();
   BackendDAE.Var var_, var_con;
   BackendDAE.StrongComponents comps;
   Integer eindex,vindx;
   DAE.ComponentRef cr;
   list<BackendDAE.Var> var_lst, var_lst_opt, var_lst1;
-  DAE.Exp e1, e2, e, c;
+  DAE.Exp e1, e2 = DAE.ICONST(0), e, c;
   BackendDAE.Variables vars, globalKnownVars;
   BackendDAE.EquationArray eqns;
   AvlTreePathFunction.Tree funcs;

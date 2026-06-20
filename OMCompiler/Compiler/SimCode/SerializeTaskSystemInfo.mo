@@ -92,7 +92,8 @@ algorithm
     // file.close();
     success := true;
   else
-    Error.addInternalError("SerializeTaskSystemInfo.serializeParModWork failed", sourceInfo());
+    fileName := "SerializeTaskSystemInfo.serializeParModWork failed";
+    Error.addInternalError(fileName, sourceInfo());
     success := false;
   end try;
 end serializeParModWork;

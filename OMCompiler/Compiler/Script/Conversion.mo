@@ -620,7 +620,7 @@ protected
     "Looks up a node in the conversion rules structure."
     input Absyn.Path path;
     input ConversionRules rules;
-    output Option<ConversionRules> outNode;
+    output Option<ConversionRules> outNode = NONE();
   protected
     ConversionRules node = rules;
   algorithm

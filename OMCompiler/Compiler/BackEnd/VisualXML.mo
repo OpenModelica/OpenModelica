@@ -226,6 +226,7 @@ algorithm
     end matchcontinue;
   else
     Error.addInternalError("VisualXMl.getConstCrefBinding failed for "+ComponentReference.crefStr(cr)+"\n", sourceInfo());
+    fail();
   end try;
 end getConstCrefBinding;
 

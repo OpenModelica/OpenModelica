@@ -6060,7 +6060,7 @@ public function mergeAlgorithmSections
 protected
   list<DAE.Element> els, newEls = {}, dAElist;
   list<DAE.Statement> istmts = {}, stmts = {}, s;
-  DAE.ElementSource source, src;
+  DAE.ElementSource source = DAE.emptyElementSource, src;
   DAE.Ident ident;
   Option<SCode.Comment> comment;
 algorithm

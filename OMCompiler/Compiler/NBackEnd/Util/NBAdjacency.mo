@@ -849,7 +849,7 @@ public
         local
           DifferentiationArguments diffArgs = DifferentiationArguments.default(NBDifferentiate.DifferentiationType.SIMPLE, funcMap);
           Pointer<Equation> eqn_ptr;
-          Expression residual, exp;
+          Expression residual = Expression.EMPTY(Type.REAL()), exp;
           Solve.Status status;
           Solvability sol;
           UnorderedSet<ComponentRef> linear_set, param_set, var_set;
@@ -2200,7 +2200,7 @@ public
     input UnorderedMap<ComponentRef, Dependency> dep_map;
     input UnorderedMap<ComponentRef, Solvability> sol_map;
     input UnorderedSet<ComponentRef> rep_set;
-    output UnorderedSet<ComponentRef> set;
+    output UnorderedSet<ComponentRef> set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
   protected
     list<UnorderedSet<ComponentRef>> sets1 = {};
     UnorderedSet<ComponentRef> set1, set2, diff;

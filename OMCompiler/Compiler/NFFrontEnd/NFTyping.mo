@@ -1660,7 +1660,7 @@ function typeSubscriptedExp2
   input InstContext.Type context;
   input SourceInfo info;
   output Expression outExp;
-  output Type ty;
+  output Type ty = Type.UNKNOWN();
   output Variability variability;
   output Purity purity;
 protected

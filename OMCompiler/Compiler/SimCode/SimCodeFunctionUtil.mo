@@ -658,8 +658,9 @@ algorithm
         b := stringEq(fname, name);
         if not b then
           (fn, includes, includeDirs, libs,libPaths) := elaborateFunction(program, fel, includes, includeDirs, libs,libPaths, recDeclsMap);
+          accfns := fn :: accfns;
         end if;
-        (fns, includes, includeDirs, libs,libPaths) := elaborateFunctions2(program, rest, List.consOnTrue(not b, fn, accfns), includes, includeDirs, libs,libPaths, recDeclsMap);
+        (fns, includes, includeDirs, libs,libPaths) := elaborateFunctions2(program, rest, accfns, includes, includeDirs, libs,libPaths, recDeclsMap);
       then
         (fns, includes, includeDirs, libs,libPaths);
 
@@ -670,8 +671,9 @@ algorithm
         b := listMember(name, SCodeUtil.knownExternalCFunctions) and stringEq(fname, name);
         if not b then
           (fn, includes, includeDirs, libs,libPaths) := elaborateFunction(program, fel, includes, includeDirs, libs,libPaths, recDeclsMap);
+          accfns := fn :: accfns;
         end if;
-        (fns, includes, includeDirs, libs,libPaths) := elaborateFunctions2(program, rest, List.consOnTrue(not b, fn, accfns), includes, includeDirs, libs,libPaths, recDeclsMap);
+        (fns, includes, includeDirs, libs,libPaths) := elaborateFunctions2(program, rest, accfns, includes, includeDirs, libs,libPaths, recDeclsMap);
       then
         (fns, includes, includeDirs, libs,libPaths);
 

@@ -3243,6 +3243,7 @@ algorithm
   else
     true := Flags.isSet(Flags.FAILTRACE);
     Debug.traceln("- Differentiate.lowerVarsElementVars failed.");
+    fail();
   end try;
 end lowerVarsElementVars;
 

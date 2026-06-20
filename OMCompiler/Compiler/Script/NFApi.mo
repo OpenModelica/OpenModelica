@@ -508,23 +508,18 @@ protected
   SCode.Program scode_builtin, graphicProgramSCode;
   Absyn.Program placementProgram;
   list<tuple<Absyn.Program, tuple<SCode.Program, InstNode>>> cache;
-  Boolean update = true;
+  Boolean reuse;
 algorithm
   cache := getGlobalRoot(Global.instNFNodeCacheIndex);
-  if not listEmpty(cache) then
-    // if absyn is the same, all fine, reuse
-    if referenceEq(absynProgram, Util.tuple21(listHead(cache))) then
-      (program, top) := Util.tuple22(listHead(cache));
-      InstNode.clearGeneratedInners(top);
-      update := false;
-    else
-      update := true;
-      cache := {};
-      setGlobalRoot(Global.instNFNodeCacheIndex, cache);
+  // if absyn is the same, all fine, reuse
+  reuse := if listEmpty(cache) then false else referenceEq(absynProgram, Util.tuple21(listHead(cache)));
+  if reuse then
+    (program, top) := Util.tuple22(listHead(cache));
+    InstNode.clearGeneratedInners(top);
+  else
+    if not listEmpty(cache) then
+      setGlobalRoot(Global.instNFNodeCacheIndex, {});
     end if;
-  end if;
-
-  if update then
     (_, scode_builtin) := FBuiltin.getInitialFunctions();
     program := AbsynToSCode.translateAbsyn2SCode(absynProgram);
     program := listAppend(scode_builtin, program);
@@ -540,8 +535,7 @@ algorithm
       execStat("NFApi.mkTop("+ name +")");
     end if;
 
-    cache := {(absynProgram, (program, top))};
-    setGlobalRoot(Global.instNFNodeCacheIndex, cache);
+    setGlobalRoot(Global.instNFNodeCacheIndex, {(absynProgram, (program, top))});
   end if;
 end mkTop;
 

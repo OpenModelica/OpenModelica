@@ -340,7 +340,7 @@ protected
   Expression lhs_exp, rhs_exp, exp;
   Type ty, elem_ty;
   list<InstNode> iterators = {};
-  list<Expression> ranges;
+  list<Expression> ranges = {};
   list<Subscript> subs;
 algorithm
   source := ElementSource.mergeSources(lhsSource, rhsSource);

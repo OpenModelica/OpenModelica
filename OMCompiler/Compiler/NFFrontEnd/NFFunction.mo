@@ -1145,13 +1145,13 @@ uniontype Function
     Slot s;
     String arg_name;
   algorithm
+    SOME(arg_name) := arg.name;
+
     // Try to find a slot and fill it with the argument expression.
     // Positional arguments fill the slots from the start of the array, so
     // searching backwards will generally be a bit more efficient.
     for i in arrayLength(slots):-1:1 loop
       s := slots[i];
-
-      SOME(arg_name) := arg.name;
 
       if Slot.name(s) == arg_name then
         if not Slot.named(s) then

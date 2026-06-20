@@ -312,7 +312,7 @@ protected
   Integer numRelatedBoundaryConditions;
   String fullPathPrefix, fileNamePrefixHash, iterationVarsStr;
 
-  SimCode.OMSIFunction omsiInitEquations, omsiSimEquations;
+  SimCode.OMSIFunction omsiInitEquations = SimCode.emptyOMSIFunction, omsiSimEquations;
   Option<SimCode.OMSIData> omsiOptData;
   SimCode.SimulationSettings theSettings;
 
@@ -683,7 +683,8 @@ algorithm
     // Generates c code for setC-results which calculates c(x,y) for dataReconciliation
     if isSome(shared.dataReconciliationData) then
         tmpSimVars := modelInfo.vars;
-        //BackendDAE.DATA_RECON(dataReconJac,setcVars) := Util.getOption(shared.dataReconciliationData);
+        BackendDAE.DATA_RECON(setcVars=setcVars, datareconinputs=datareconinputvars, setBVars=setBVars, relatedBoundaryConditions=numRelatedBoundaryConditions) := Util.getOption(shared.dataReconciliationData);
+        emptyVars := BackendVariable.emptyVars();
        (tmpsetcVars, _) :=  BackendVariable.traverseBackendDAEVars(setcVars, traversingdlowvarToSimvar, ({}, emptyVars));
         tmpsetcVars := rewriteIndex(tmpsetcVars, 0);
         tmpSimVars.dataReconSetcVars := tmpsetcVars;
@@ -2397,13 +2398,8 @@ algorithm
         varexp := Expression.crefExp(cr);
         varexp := if BackendVariable.isStateVar(v) then Expression.expDer(varexp) else varexp;
         BackendDAE.SHARED(functionTree = funcs) := shared;
-        b := true;
         try
           (exp_, asserts, solveEqns, solveCr) := ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs), SOME(iuniqueEqIndex), true, BackendDAEUtil.isSimulationDAE(shared));
-        else
-          b := false;
-        end try;
-        if b then
           solveEqns := listReverse(solveEqns);
           solveCr := listReverse(solveCr);
           cr := if BackendVariable.isStateVar(v) then ComponentReference.crefPrefixDer(cr) else cr;
@@ -2424,7 +2420,7 @@ algorithm
           (_, homotopySupport) := BackendEquation.traverseExpsOfEquation(eqn, BackendDAEUtil.containsHomotopyCall, false);
           eqSystlst := {SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, {cr}, 0, 1, NONE(), homotopySupport, false, false, partitionKindToClockIndex(partitionKind)), NONE(), eqAttr)};
           uniqueEqIndex := uniqueEqIndex+1;
-        end if;
+        end try;
       then (eqSystlst, uniqueEqIndex,tempvars);
 
     // Algorithm for single variable.
@@ -9400,7 +9396,7 @@ end subPartitionString;
 
 public function dumpSimCodeDAEmodeDataString
   input Option<SimCode.DaeModeData> inDaeModedata;
-  output String str;
+  output String str = "";
 algorithm
   () := match inDaeModedata
   local
@@ -9826,6 +9822,7 @@ algorithm
     outHT := List.fold(vars.realOptimizeFinalConstraintsVars, HashTableCrefSimVar.addSimVarToHashTable, outHT);
   else
     Error.addInternalError("function createCrefToSimVarHT failed", sourceInfo());
+    fail();
   end try;
 end createCrefToSimVarHT;
 
@@ -12145,14 +12142,14 @@ protected function getVarIndexInfosByMapping "author: marcusw
   input Boolean iColumnMajor; //true if the subscripts should be evaluated in column major
   input String iIndexForUndefinedReferences;
   output list<String> oVarIndexList; //if the variable is part of an array, all array indices are returned in this list (the list contains one element if the variable is a scalar)
-  output String oConcreteVarIndex; //the scalar index of the variable (this value is always part of oVarIndexList)
+  output String oConcreteVarIndex = ""; //the scalar index of the variable (this value is always part of oVarIndexList)
 protected
   DAE.ComponentRef varName = iVarName;
   Integer arrayIdx, idx, arraySize, concreteVarIndex;
   array<Integer> varIndices;
   list<String> tmpVarIndexListNew = {};
   list<DAE.Subscript> arraySubscripts;
-  list<Integer> arrayDimensions, arrayDimensionsReverse;
+  list<Integer> arrayDimensions, arrayDimensionsReverse = {};
   Boolean toColumnMajor;
   Boolean isContiguous;
 algorithm

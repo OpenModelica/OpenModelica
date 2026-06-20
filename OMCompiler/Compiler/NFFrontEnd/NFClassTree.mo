@@ -1679,7 +1679,7 @@ public
        partial class tree."
       input LookupTree.Entry entry;
       input ClassTree classTree;
-      output InstNode node;
+      output InstNode node = InstNode.EMPTY_NODE();
     algorithm
       node := match entry
         local

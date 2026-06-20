@@ -486,7 +486,7 @@ public
 
   function variability
     input NFCall call;
-    output Variability var;
+    output Variability var = Variability.CONTINUOUS;
   algorithm
     var := match call
       local
@@ -505,6 +505,8 @@ public
               case "cardinality" then Variability.PARAMETER;
               else algorithm var_set := false; then Variability.CONTINUOUS;
             end match;
+          else
+            var_set := false;
           end if;
 
           if not var_set then

@@ -135,7 +135,7 @@ public
 
   function isDiscrete
     input Statement stmt;
-    output Boolean b;
+    output Boolean b = false;
   algorithm
     b := match stmt
       case ASSIGNMENT()           then Type.isDiscrete(stmt.ty);
