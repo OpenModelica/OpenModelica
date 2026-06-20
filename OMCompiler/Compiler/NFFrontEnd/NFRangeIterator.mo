@@ -186,7 +186,7 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown dim", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown dim", sourceInfo());
         then
           fail();
 
@@ -228,7 +228,7 @@ public
 
       case INVALID_RANGE()
         algorithm
-          Error.assertion(false, getInstanceName() + " got invalid range " +
+          Error.terminate(getInstanceName() + " got invalid range " +
             Expression.toString(iterator.exp), sourceInfo());
         then
           fail();
@@ -247,7 +247,7 @@ public
       case ARRAY_RANGE() then iterator.index <= arrayLength(iterator.values);
       case INVALID_RANGE()
         algorithm
-          Error.assertion(false, getInstanceName() + " got invalid range " +
+          Error.terminate(getInstanceName() + " got invalid range " +
             Expression.toString(iterator.exp), sourceInfo());
         then
           fail();

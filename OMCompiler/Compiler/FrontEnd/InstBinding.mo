@@ -801,7 +801,7 @@ algorithm
     // Assemble the binding for the record.
     ety := Types.simplifyType(Types.arrayElementType(inRecordType));
     exp := DAE.CALL(inRecordName, listReverse(accum_exps),
-      DAE.CALL_ATTR(ety, false, false, false, false, DAE.NORM_INLINE(), DAE.NO_TAIL()));
+      DAE.CALL_ATTR(ety, false, false, false, false, DAE.NORM_INLINE(), DAE.NO_TAIL(), DAE.NoReturn.RETURNS));
     val := Values.RECORD(inRecordName, listReverse(accum_vals), listReverse(accum_names), -1);
     (exp, val) := InstUtil.liftRecordBinding(inRecordType, exp, val);
     outBinding := DAE.EQBOUND(exp, SOME(val), DAE.C_CONST(), DAE.BINDING_FROM_RECORD_SUBMODS());

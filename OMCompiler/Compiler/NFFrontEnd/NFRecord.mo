@@ -252,7 +252,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got non-instantiated function", sourceInfo());
+        Error.terminate(getInstanceName() + " got non-instantiated function", sourceInfo());
       then
         fail();
 

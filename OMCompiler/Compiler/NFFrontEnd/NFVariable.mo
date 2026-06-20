@@ -190,7 +190,7 @@ public
         // list of binding expression until they match.
         if expl_len < crefs_len then
           if intMod(crefs_len, expl_len) <> 0 then
-            Error.assertion(false, getInstanceName() + " failed to expand " +
+            Error.terminate(getInstanceName() + " failed to expand " +
               ComponentRef.toString(var.name), sourceInfo());
           end if;
 

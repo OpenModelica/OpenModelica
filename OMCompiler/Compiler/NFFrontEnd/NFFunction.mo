@@ -1611,7 +1611,7 @@ uniontype Function
       case ComponentRef.CREF() then typeNodeCache(functionRef.node, context);
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got invalid function call reference", sourceInfo());
+          Error.terminate(getInstanceName() + " got invalid function call reference", sourceInfo());
         then
           fail();
     end match;
@@ -2413,7 +2413,7 @@ protected
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got non-instantiated function " + AbsynUtil.pathString(InstNode.scopePath(node)), sourceInfo());
+          Error.terminate(getInstanceName() + " got non-instantiated function " + AbsynUtil.pathString(InstNode.scopePath(node)), sourceInfo());
         then
           fail();
     end match;
@@ -2510,7 +2510,7 @@ protected
 
       slot := SLOT(component, SlotType.GENERIC, default, NONE(), index, SlotEvalStatus.NOT_EVALUATED);
     else
-      Error.assertion(false, getInstanceName() + " got invalid component", sourceInfo());
+      Error.terminate(getInstanceName() + " got invalid component", sourceInfo());
     end try;
   end makeSlot;
 
@@ -2597,7 +2597,7 @@ protected
           has_unbox_args := hasUnboxArgsAnnotation(cmt);
         then
           DAE.FUNCTION_ATTRIBUTES(inline_ty, generateEvents, purity, is_partial,
-            DAE.FUNCTION_BUILTIN(SOME(name), has_unbox_args), DAE.FP_NON_PARALLEL());
+            DAE.FUNCTION_BUILTIN(SOME(name), has_unbox_args), DAE.FP_NON_PARALLEL(), DAE.NoReturn.RETURNS);
 
       // Parallel function: there are some builtin functions.
       case SCode.FunctionRestriction.FR_PARALLEL_FUNCTION()
@@ -2610,7 +2610,7 @@ protected
           has_unbox_args := hasUnboxArgsAnnotation(cmt);
         then
           DAE.FUNCTION_ATTRIBUTES(inline_ty, generateEvents, purity, is_partial,
-            DAE.FUNCTION_BUILTIN(SOME(name), has_unbox_args), DAE.FP_PARALLEL_FUNCTION());
+            DAE.FUNCTION_BUILTIN(SOME(name), has_unbox_args), DAE.FP_PARALLEL_FUNCTION(), DAE.NoReturn.RETURNS);
 
       // Parallel function: non-builtin.
       case SCode.FunctionRestriction.FR_PARALLEL_FUNCTION()
@@ -2619,12 +2619,12 @@ protected
           generateEvents := InstBasics.commentGenerateEvents(cmt);
         then
           DAE.FUNCTION_ATTRIBUTES(inline_ty, generateEvents, purity, is_partial,
-            getBuiltinPtr(cmt), DAE.FP_PARALLEL_FUNCTION());
+            getBuiltinPtr(cmt), DAE.FP_PARALLEL_FUNCTION(), DAE.NoReturn.RETURNS);
 
       // Kernel functions: never builtin and never inlined.
       case SCode.FunctionRestriction.FR_KERNEL_FUNCTION()
         then DAE.FUNCTION_ATTRIBUTES(DAE.NO_INLINE(), false, purity, is_partial,
-          DAE.FUNCTION_NOT_BUILTIN(), DAE.FP_KERNEL_FUNCTION());
+          DAE.FUNCTION_NOT_BUILTIN(), DAE.FP_KERNEL_FUNCTION(), DAE.NoReturn.RETURNS);
 
       // Normal function.
       else
@@ -2641,7 +2641,7 @@ protected
             purity := DAE.Purity.PURE;
           end if;
         then
-          DAE.FUNCTION_ATTRIBUTES(inline_ty, generateEvents, purity, is_partial, getBuiltinPtr(cmt), DAE.FP_NON_PARALLEL());
+          DAE.FUNCTION_ATTRIBUTES(inline_ty, generateEvents, purity, is_partial, getBuiltinPtr(cmt), DAE.FP_NON_PARALLEL(), DAE.NoReturn.RETURNS);
 
     end matchcontinue;
   end makeAttributes;
@@ -2751,17 +2751,17 @@ protected
       case Sections.EMPTY() then {};
       case Sections.EXTERNAL()
         algorithm
-          Error.assertion(false, getInstanceName() + " got function with external section (not algorithm section)", sourceInfo());
+          Error.terminate(getInstanceName() + " got function with external section (not algorithm section)", sourceInfo());
         then fail();
 
       case Sections.SECTIONS()
         algorithm
-          Error.assertion(false, getInstanceName() + " got function with multiple algorithm sections", sourceInfo());
+          Error.terminate(getInstanceName() + " got function with multiple algorithm sections", sourceInfo());
         then fail();
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown sections", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown sections", sourceInfo());
         then fail();
 
     end match;

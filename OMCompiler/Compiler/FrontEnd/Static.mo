@@ -5821,7 +5821,7 @@ algorithm
       then
         (cache,
         DAE.CALL(Absyn.QUALIFIED("Connections", Absyn.IDENT("uniqueRootIndices")), {exp1, exp2, exp3},
-                 DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL())),
+                 DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL(),DAE.NoReturn.RETURNS)),
         DAE.PROP(ty, DAE.C_VAR()));
 
     case (cache, env, {aexp1,aexp2,_}, {}, pre)
@@ -5834,7 +5834,7 @@ algorithm
       then
         (cache,
         DAE.CALL(Absyn.QUALIFIED("Connections", Absyn.IDENT("uniqueRootIndices")), {exp1, exp2, exp3},
-                 DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL())),
+                 DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL(),DAE.NoReturn.RETURNS)),
         DAE.PROP(ty, DAE.C_VAR()));
 
     case (cache, env, {aexp1,aexp2}, {Absyn.NAMEDARG("message", _)}, pre)
@@ -5847,7 +5847,7 @@ algorithm
       then
         (cache,
         DAE.CALL(Absyn.QUALIFIED("Connections", Absyn.IDENT("uniqueRootIndices")), {exp1, exp2, exp3},
-                 DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL())),
+                 DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL(),DAE.NoReturn.RETURNS)),
         DAE.PROP(ty, DAE.C_VAR()));
 
   end match;
@@ -7047,7 +7047,7 @@ algorithm
 
         tp := complexTypeFromSlots(newslots2,ClassInf.UNKNOWN(Absyn.IDENT("")));
       then
-        (cache,SOME((DAE.CALL(fn,args_2,DAE.CALL_ATTR(tp,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL())),DAE.PROP(DAE.T_UNKNOWN_DEFAULT,DAE.C_CONST()))));
+        (cache,SOME((DAE.CALL(fn,args_2,DAE.CALL_ATTR(tp,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL(),DAE.NoReturn.RETURNS)),DAE.PROP(DAE.T_UNKNOWN_DEFAULT,DAE.C_CONST()))));
 
     // Record constructors, user defined or implicit, try the hard stuff first
     case (cache,env,fn,args,nargs,impl,pre)
@@ -7073,7 +7073,7 @@ algorithm
         tyconst := elabConsts(outtype, const);
         prop := getProperties(outtype, tyconst);
 
-        callExp := DAE.CALL(path,args_2,DAE.CALL_ATTR(outtype,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+        callExp := DAE.CALL(path,args_2,DAE.CALL_ATTR(outtype,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL(),DAE.NoReturn.RETURNS));
 
         (call_exp,prop_1) := vectorizeCall(callExp, vect_dims, newslots2, prop, info);
         expProps := SOME((call_exp,prop_1));
@@ -7261,6 +7261,7 @@ protected
   DAE.FunctionBuiltin isBuiltin;
   DAE.FunctionParallelism funcParal;
   Boolean tuple_,builtin,isImpure;
+  DAE.NoReturn noReturn;
   DAE.InlineType inlineType;
   Absyn.Path fn_1;
   DAE.Properties prop,prop_1;
@@ -7283,7 +7284,8 @@ algorithm
    functype as DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(purity=purity,
                                                                          inline=inlineType,
                                                                          isFunctionPointer=isFunctionPointer,
-                                                                         functionParallelism=funcParal)),
+                                                                         functionParallelism=funcParal,
+                                                                         noReturn=noReturn)),
    vect_dims,
    slots) := elabTypes(inCache, inEnv, args, nargs, typeVars, typelist, onlyOneFunction, true/* Check types*/, impl,pre,info)
    "The constness of a function depends on the inputs. If all inputs are constant the call itself is constant.";
@@ -7307,7 +7309,7 @@ algorithm
   (args_2, slots2) := addDefaultArgs(slots, info);
   // DO NOT CHECK IF ALL SLOTS ARE FILLED!
   true := List.fold(slots2, slotAnd, true);
-  callExp := DAE.CALL(fn_1,args_2,DAE.CALL_ATTR(tp,tuple_,builtin,isImpure or purity == DAE.Purity.OM_IMPURE,isFunctionPointer,inlineType,DAE.NO_TAIL()));
+  callExp := DAE.CALL(fn_1,args_2,DAE.CALL_ATTR(tp,tuple_,builtin,isImpure or purity == DAE.Purity.OM_IMPURE,isFunctionPointer,inlineType,DAE.NO_TAIL(),noReturn));
   // ExpressionDump.dumpExpWithTitle("function elabCallArgs3: ", callExp);
 
   // create a replacement for input variables -> their binding

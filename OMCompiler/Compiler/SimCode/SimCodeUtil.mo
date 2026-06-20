@@ -3391,7 +3391,7 @@ algorithm
         end for;
         outSimEqn := listReverse(outSimEqn);
       else
-        Error.assertion(false, getInstanceName() + " failed because expression "
+        Error.terminate(getInstanceName() + " failed because expression "
           + ExpressionBasics.printExpStr(right) + " could not be scalarized.", sourceInfo());
       end try;
     then (outSimEqn, ouniqueEqIndex);

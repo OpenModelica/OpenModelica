@@ -704,7 +704,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown class:\n" + SCodeDump.unparseElementStr(def), sourceInfo());
+        Error.terminate(getInstanceName() + " got unknown class:\n" + SCodeDump.unparseElementStr(def), sourceInfo());
       then
         fail();
 
@@ -1277,7 +1277,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown class.", sourceInfo());
+        Error.terminate(getInstanceName() + " got unknown class.", sourceInfo());
       then
         ();
 
@@ -1780,7 +1780,7 @@ algorithm
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown classes", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown classes", sourceInfo());
         then
           fail();
     end match;
@@ -1794,7 +1794,7 @@ algorithm
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown classes", sourceInfo());
+          Error.terminate(getInstanceName() + " got unknown classes", sourceInfo());
         then
           fail();
     end match;
@@ -2237,7 +2237,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown components", sourceInfo());
+        Error.terminate(getInstanceName() + " got unknown components", sourceInfo());
       then
         fail();
 
@@ -2574,7 +2574,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got invalid class", sourceInfo());
+        Error.terminate(getInstanceName() + " got invalid class", sourceInfo());
       then
         fail();
 
@@ -2739,7 +2739,7 @@ algorithm
     else
       algorithm
         if not InstContext.inRelaxed(context) then
-          Error.assertion(false, getInstanceName() + " got invalid component", sourceInfo());
+          Error.terminate(getInstanceName() + " got invalid component", sourceInfo());
           fail();
         end if;
       then
@@ -2926,7 +2926,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown expression: " + Dump.printExpStr(absynExp), sourceInfo());
+        Error.terminate(getInstanceName() + " got unknown expression: " + Dump.printExpStr(absynExp), sourceInfo());
       then
         fail();
 
@@ -2964,7 +2964,7 @@ algorithm
                    instCrefTypename(cref, cref.node, info);
           else
             algorithm
-              Error.assertion(false, getInstanceName() + " got invalid instance node", sourceInfo());
+              Error.terminate(getInstanceName() + " got invalid instance node", sourceInfo());
             then
               fail();
         end match;
@@ -3038,7 +3038,7 @@ algorithm
     case Type.ENUMERATION() then Type.ARRAY(ty, {Dimension.ENUM(ty)});
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown class node " +
+        Error.terminate(getInstanceName() + " got unknown class node " +
          InstNode.name(node), sourceInfo());
       then
         fail();
@@ -3459,7 +3459,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown equation", sourceInfo());
+        Error.terminate(getInstanceName() + " got unknown equation", sourceInfo());
       then
         fail();
 
@@ -3676,7 +3676,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown statement", sourceInfo());
+        Error.terminate(getInstanceName() + " got unknown statement", sourceInfo());
       then
         fail();
 

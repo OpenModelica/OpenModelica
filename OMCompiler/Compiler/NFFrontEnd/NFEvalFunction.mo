@@ -501,7 +501,7 @@ algorithm
           outExp := Expression.applySubscripts(ComponentRef.getSubscripts(cr), outExp);
         end for;
       else
-        Error.assertion(false, getInstanceName() + " could not find replacement for " +
+        Error.terminate(getInstanceName() + " could not find replacement for " +
           ComponentRef.toString(cref), sourceInfo());
       end try;
     end if;
@@ -750,13 +750,13 @@ algorithm
     case Statement.BREAK()      then FlowControl.BREAK;
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " failed on " + anyString(stmt) + "\n", sourceInfo());
+        Error.terminate(getInstanceName() + " failed on " + anyString(stmt) + "\n", sourceInfo());
       then
         fail();
 
   end match;
   //else
-  //   Error.assertion(false, getInstanceName() + " failed to evaluate statement " + Statement.toString(stmt) + "\n", sourceInfo());
+  //   Error.terminate(getInstanceName() + " failed to evaluate statement " + Statement.toString(stmt) + "\n", sourceInfo());
   //   fail();
   //end try;
 end evaluateStatement;
@@ -813,7 +813,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " failed on " +
+        Error.terminate(getInstanceName() + " failed on " +
           Expression.toString(variable) + " := " + Expression.toString(value), sourceInfo());
       then
         fail();
@@ -899,7 +899,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + ": unimplemented case for " +
+        Error.terminate(getInstanceName() + ": unimplemented case for " +
           Expression.toString(arrayExp) +
           Subscript.toStringList(subscripts) + " = " +
           Expression.toString(value), sourceInfo());
@@ -1066,7 +1066,7 @@ algorithm
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " failed to evaluate assert(false, " +
+          Error.terminate(getInstanceName() + " failed to evaluate assert(false, " +
             Expression.toString(msg) + ", " + Expression.toString(lvl) + ")", sourceInfo());
         then
           fail();
@@ -1555,7 +1555,7 @@ algorithm
     exp := Expression.makeRecord(InstNode.fullPath(cls_node),
       InstNode.getType(cls_node), listReverseInPlace(expl));
   else
-    Error.assertion(false, getInstanceName() +
+    Error.terminate(getInstanceName() +
       " failed to find return value for output " + InstNode.name(outputNode), sourceInfo());
   end if;
 end getExternalOutputResult;
