@@ -1846,6 +1846,20 @@ static int is_state[COMBINED_N];
    NOT abort the run: we catch them on the simulation jump buffer (where
    throwStreamPrint longjmps) and return a RECOVERABLE error (+1) so IDA retries
    with a smaller step. */
+/* Homotopy lambda ramp for the combined system (mirrors OM's ida_solver.c):
+   activated on IDACalcIC failure, i.e. a degenerate initial operating point of a
+   homotopy()-regularized characteristic (e.g. a pump at zero flow). Each
+   component residual uses its OWN data->simulationInfo->lambda via the homotopy()
+   macro, so set them all. Ramp lambda 0->1 over [t0, t0+t_ramp], then lambda=1. */
+static int    g_homotopy_ramp_active = 0;
+static double g_homotopy_tramp = 0.0;
+static void combined_set_lambda(double lam)
+{{
+  int b;
+  for (b = 0; b < combined_n_components; ++b)
+    g_all[b]->simulationInfo->lambda = lam;
+}}
+
 static int combined_resfn(realtype t, N_Vector yy, N_Vector yp,
                           N_Vector rr, void *user_data)
 {{
@@ -1857,6 +1871,12 @@ static int combined_resfn(realtype t, N_Vector yy, N_Vector yp,
   int b, saveStage = threadData->currentErrorStage;
   for (b = 0; b < combined_n_components; ++b)
     g_all[b]->localData[0]->timeValue = t;
+  if (g_homotopy_ramp_active) {{
+    double tr0 = g_all[0]->simulationInfo->startTime;
+    double lam = (g_homotopy_tramp > 0.0 && t < tr0 + g_homotopy_tramp)
+               ? ((t - tr0) / g_homotopy_tramp) : 1.0;
+    combined_set_lambda(lam);
+  }}
   combined_set_unknowns(y);
   combined_set_derivatives(yd);
   /* route model asserts (range checks etc.) to the simulation jump buffer so a
@@ -2052,8 +2072,22 @@ int main(int argc, char **argv)
          stall on this stiff fluid network, so disable it. */
       IDASetLineSearchOffIC(ida, SUNTRUE);
       IDASetMaxNumItersIC(ida, 100);
+      /* homotopy parameter: 1 = actual model (normal); ramp window defaults to
+         10% of the simulation interval (env override OMC_DAE_HOMOTOPY_TRAMP). */
+      combined_set_lambda(1.0);
+      {{ const char *e = getenv("OMC_DAE_HOMOTOPY_TRAMP");
+         g_homotopy_tramp = e ? atof(e) : 0.1 * (t1 - t0); }}
       fprintf(stderr, "[driver] calling IDACalcIC\\n");
       flag = IDACalcIC(ida, IDA_YA_YDP_INIT, (h > 0.0) ? t0 + h : t0 + 1.0);
+      if (flag < 0) {{
+        /* degenerate initial point: activate the homotopy ramp (the simplified
+           branch is non-singular) and retry; integration then ramps lambda->1. */
+        fprintf(stderr, "[driver] IDACalcIC failed (%d); activating homotopy ramp and retrying\\n", flag);
+        g_homotopy_ramp_active = 1;
+        combined_set_lambda(0.0);
+        IDAReInit(ida, t0, yy, yp);
+        flag = IDACalcIC(ida, IDA_YA_YDP_INIT, (h > 0.0) ? t0 + h : t0 + 1.0);
+      }}
       fprintf(stderr, "[driver] IDACalcIC returned %d\\n", flag);
       if (flag < 0)
         fprintf(stderr, "IDACalcIC warning/fail: %d (continuing)\\n", flag);
