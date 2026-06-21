@@ -52,7 +52,17 @@
 #include <QHeaderView>
 #include <QMessageBox>
 
-
+/*!
+ * \class SolverSettingsDialog
+ * \brief Displays a dialog for editing solver-specific settings.
+ */
+/*!
+ * \brief SolverSettingsDialog::SolverSettingsDialog
+ * \param solverName
+ * \param method
+ * \param solverSettings
+ * \param pParent
+ */
 SolverSettingsDialog::SolverSettingsDialog(const QString &solverName, const QString &method, const QJsonObject &solverSettings, QWidget *pParent)
   : QDialog(pParent), mMethod(method)
 {
@@ -116,6 +126,11 @@ SolverSettingsDialog::SolverSettingsDialog(const QString &solverName, const QStr
   setLayout(pMainLayout);
 }
 
+/*!
+ * \brief SolverSettingsDialog::getSolverSettings
+ * Returns the solver settings entered by the user.
+ * \return Solver settings as a JSON object.
+ */
 QJsonObject SolverSettingsDialog::getSolverSettings() const
 {
   const QMap<QString, QLineEdit*> keyToWidget = {
@@ -134,16 +149,20 @@ QJsonObject SolverSettingsDialog::getSolverSettings() const
   return solverSettings;
 }
 
-// ---------------------------------------------------------------------------
-// SystemSimulationInformationWidget
-// ---------------------------------------------------------------------------
-
+/*!
+ * \class SystemSimulationInformationWidget
+ * \brief Displays solver configurations and component solver assignments for an OMSimulator system.
+ */
+/*!
+ * \brief SystemSimulationInformationWidget::SystemSimulationInformationWidget
+ * \param pModelWidget
+ */
 SystemSimulationInformationWidget::SystemSimulationInformationWidget(ModelWidget *pModelWidget)
   : QWidget(pModelWidget)
 {
   mpModelWidget = pModelWidget;
 
-  // --- Solver configurations table: Name | Method |
+  //Solver configurations table: Name | Method |
   mpSolversTable = new QTableWidget(0, 2, this);
   mpSolversTable->setHorizontalHeaderLabels({tr("Name"), tr("Method")});
   mpSolversTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
@@ -169,7 +188,7 @@ SystemSimulationInformationWidget::SystemSimulationInformationWidget(ModelWidget
   pSolversGroupLayout->addLayout(pSolverButtonsLayout);
   pSolversGroup->setLayout(pSolversGroupLayout);
 
-  // --- Component assignments table: Component | Solver ---
+  // Component assignments table: Component | Solver ---
   mpAssignmentsTable = new QTableWidget(0, 2, this);
   mpAssignmentsTable->setHorizontalHeaderLabels({tr("Component"), tr("Solver")});
   mpAssignmentsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
@@ -211,6 +230,13 @@ SystemSimulationInformationWidget::SystemSimulationInformationWidget(ModelWidget
   setLayout(pMainLayout);
 }
 
+/*!
+ * \brief SystemSimulationInformationWidget::populateComponentAssignments
+ * Populates component-to-solver assignments recursively.
+ * \param pLibraryTreeItem
+ * \param solvers
+ * \param assignments
+ */
 void SystemSimulationInformationWidget::populateComponentAssignments(LibraryTreeItem *pLibraryTreeItem, const QJsonArray &solvers, const QJsonObject &assignments)
 {
   if (!pLibraryTreeItem || !pLibraryTreeItem->getOMSModelElement()) {
@@ -248,31 +274,53 @@ void SystemSimulationInformationWidget::populateComponentAssignments(LibraryTree
   }
 }
 
+/*!
+ * \brief SystemSimulationInformationWidget::isVariableStepSizeSolver
+ * Checks if the solver method uses variable step-size settings.
+ * \param method
+ * \return true if the solver method is variable step-size.
+ */
 bool SystemSimulationInformationWidget::isVariableStepSizeSolver(const QString &method)
 {
   return method == "oms-mav" || method == "oms-mav-2" || method == "cvode";
 }
 
+/*!
+ * \brief SystemSimulationInformationWidget::variableStepSizeSolverKeys
+ * Returns setting keys used by variable step-size solvers.
+ * \return List of setting keys.
+ */
 QStringList SystemSimulationInformationWidget::variableStepSizeSolverKeys()
 {
   return {"initialStepSize", "minimumStepSize", "maximumStepSize", "relativeTolerance"};
 }
 
+/*!
+ * \brief SystemSimulationInformationWidget::fixedStepSizeSolverKeys
+ * Returns setting keys used by fixed step-size solvers.
+ * \return List of setting keys.
+ */
 QStringList SystemSimulationInformationWidget::fixedStepSizeSolverKeys()
 {
   return {"fixedStepSize", "relativeTolerance"};
 }
 
+/*!
+ * \brief SystemSimulationInformationWidget::solverSettingsKeys
+ * Returns the setting keys expected by the selected solver method.
+ * \param method
+ * \return List of setting keys.
+ */
 QStringList SystemSimulationInformationWidget::solverSettingsKeys(const QString &method)
 {
   return isVariableStepSizeSolver(method) ? variableStepSizeSolverKeys() : fixedStepSizeSolverKeys();
 }
 
 /*!
- * Fetch step-size and tolerance defaults for a solver from the Python server.
- * For a new (unnamed) solver pass an empty solverName — the server returns the
- * model-level defaults.  For an existing solver pass its name so the server can
- * return its persisted values.
+ * \brief SystemSimulationInformationWidget::fetchDefaultSolverSettings
+ * Fetches step-size and tolerance defaults for a solver from the OMSimulator server.
+ * \param solverName
+ * \return Default solver settings as a JSON object.
  */
 QJsonObject SystemSimulationInformationWidget::fetchDefaultSolverSettings(const QString &solverName)
 {
@@ -297,6 +345,10 @@ QJsonObject SystemSimulationInformationWidget::fetchDefaultSolverSettings(const 
   return solverSettings;
 }
 
+/*!
+ * \brief SystemSimulationInformationWidget::addSolver
+ * Adds a new solver configuration row.
+ */
 void SystemSimulationInformationWidget::addSolver()
 {
   const QString defaultMethod = "oms-ma";
@@ -307,6 +359,13 @@ void SystemSimulationInformationWidget::addSolver()
   populateSolverCombos();
 }
 
+/*!
+ * \brief SystemSimulationInformationWidget::addSolverRow
+ * Adds a solver configuration row using the given name, method and settings.
+ * \param name
+ * \param method
+ * \param params
+ */
 void SystemSimulationInformationWidget::addSolverRow(const QString &name, const QString &method, const QJsonObject &params)
 {
   const int row = mpSolversTable->rowCount();
@@ -329,6 +388,10 @@ void SystemSimulationInformationWidget::addSolverRow(const QString &name, const 
   mpSolversTable->setCellWidget(row, 1, pMethodCombo);
 }
 
+/*!
+ * \brief SystemSimulationInformationWidget::editSolverParameters
+ * Opens the solver settings dialog for the selected solver row.
+ */
 void SystemSimulationInformationWidget::editSolverParameters()
 {
   const int row = mpSolversTable->currentRow();
@@ -359,6 +422,10 @@ void SystemSimulationInformationWidget::editSolverParameters()
   }
 }
 
+/*!
+ * \brief SystemSimulationInformationWidget::removeSolver
+ * Removes the selected solver configuration row.
+ */
 void SystemSimulationInformationWidget::removeSolver()
 {
   const int row = mpSolversTable->currentRow();
@@ -368,6 +435,10 @@ void SystemSimulationInformationWidget::removeSolver()
   populateSolverCombos();
 }
 
+/*!
+ * \brief SystemSimulationInformationWidget::populateSolverCombos
+ * Updates component assignment combo boxes with the current solver names.
+ */
 void SystemSimulationInformationWidget::populateSolverCombos()
 {
   // Collect current solver names from the table
@@ -394,8 +465,12 @@ void SystemSimulationInformationWidget::populateSolverCombos()
   }
 }
 
-// ---------------------------------------------------------------------------
-
+/*!
+ * \brief SystemSimulationInformationWidget::setSystemSimulationInformation
+ * Saves solver configurations and component assignments.
+ * \param pushOnStack
+ * \return true on success.
+ */
 bool SystemSimulationInformationWidget::setSystemSimulationInformation(bool pushOnStack)
 {
   // Validate — every solver row must have a non-empty name
@@ -453,13 +528,13 @@ bool SystemSimulationInformationWidget::setSystemSimulationInformation(bool push
   return true;
 }
 
-// ---------------------------------------------------------------------------
-// SystemSimulationInformationDialog
-// ---------------------------------------------------------------------------
-
 /*!
  * \class SystemSimulationInformationDialog
  * \brief A dialog for system simulation information.
+ */
+/*!
+ * \brief SystemSimulationInformationDialog::SystemSimulationInformationDialog
+ * \param pModelWidget
  */
 SystemSimulationInformationDialog::SystemSimulationInformationDialog(ModelWidget *pModelWidget)
   : QDialog(pModelWidget)
@@ -494,6 +569,10 @@ SystemSimulationInformationDialog::SystemSimulationInformationDialog(ModelWidget
   setLayout(pMainLayout);
 }
 
+/*!
+ * \brief SystemSimulationInformationDialog::setSystemSimulationInformation
+ * Saves system simulation information and closes the dialog on success.
+ */
 void SystemSimulationInformationDialog::setSystemSimulationInformation()
 {
   if (mpSystemSimulationInformationWidget->setSystemSimulationInformation(true)) {

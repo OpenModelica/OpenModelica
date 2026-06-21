@@ -50,7 +50,9 @@ class GuiRequestSocket : public QObject
 public:
   GuiRequestSocket();
   ~GuiRequestSocket();
+  /*! Returns the local endpoint bound by the request socket. */
   QString endPoint() const { return mEndPoint; }
+  /*! Returns true if the request socket was bound successfully. */
   bool isConnected() const { return mSocketConnected; }
   bool sendCommand(const QJsonObject &obj, QJsonObject &reply);
 private:

@@ -57,6 +57,14 @@
   command = QString("%1(%2)").arg(command, args.join(",")); \
   logCommand(command);
 
+/*!
+ * \class GuiRequestSocket
+ * \brief Handles synchronous JSON requests between OMEdit and the OMSimulator Python GUI server.
+ */
+/*!
+ * \brief GuiRequestSocket::GuiRequestSocket
+ * Creates and binds a ZMQ request socket on a local TCP endpoint.
+ */
 GuiRequestSocket::GuiRequestSocket()
 {
   mpContext = zmq_ctx_new();
@@ -89,12 +97,23 @@ GuiRequestSocket::GuiRequestSocket()
   }
 }
 
+/*!
+ * \brief GuiRequestSocket::~GuiRequestSocket
+ * Closes the ZMQ socket and destroys the ZMQ context.
+ */
 GuiRequestSocket::~GuiRequestSocket()
 {
   zmq_close(mpSocket);
   zmq_ctx_destroy(mpContext);
 }
 
+/*!
+ * \brief GuiRequestSocket::sendCommand
+ * Sends a JSON command to the OMSimulator Python GUI server and waits for a JSON reply.
+ * \param command
+ * \param reply
+ * \return true if the command was sent and a valid JSON object reply was received.
+ */
 bool GuiRequestSocket::sendCommand(const QJsonObject &command, QJsonObject &reply)
 {
   if (!mSocketConnected)
@@ -185,6 +204,10 @@ OMSProxy::OMSProxy()
   startGuiServer();
 }
 
+/*!
+ * \brief OMSProxy::~OMSProxy
+ * Shuts down the OMSimulator Python GUI server and releases OMSProxy resources.
+ */
 OMSProxy::~OMSProxy()
 {
   // send graceful shutdown so Python can clean up before we close the socket
@@ -215,6 +238,10 @@ OMSProxy::~OMSProxy()
   }
 }
 
+/*!
+ * \brief OMSProxy::startGuiServer
+ * Starts the OMSimulator Python GUI server process and passes it the ZMQ endpoint.
+ */
 void OMSProxy::startGuiServer()
 {
   mpGuiProcess = new QProcess(this);
@@ -242,6 +269,10 @@ void OMSProxy::startGuiServer()
   mpGuiProcess->start(process, args);
 }
 
+/*!
+ * \brief OMSProxy::guiProcessStarted
+ * Handles successful startup of the OMSimulator Python GUI server process.
+ */
 void OMSProxy::guiProcessStarted()
 {
   mServerReady = true;
@@ -250,6 +281,11 @@ void OMSProxy::guiProcessStarted()
     Helper::scriptingKind, Helper::notificationLevel));
 }
 
+/*!
+ * \brief OMSProxy::guiProcessError
+ * Handles process errors reported by the OMSimulator Python GUI server.
+ * \param error
+ */
 void OMSProxy::guiProcessError(QProcess::ProcessError error)
 {
   mServerReady = false;
@@ -272,6 +308,12 @@ void OMSProxy::guiProcessError(QProcess::ProcessError error)
     Helper::scriptingKind, Helper::errorLevel));
 }
 
+/*!
+ * \brief OMSProxy::guiProcessFinished
+ * Handles termination of the OMSimulator Python GUI server process.
+ * \param exitCode
+ * \param exitStatus
+ */
 void OMSProxy::guiProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
   mServerReady = false;
@@ -282,6 +324,10 @@ void OMSProxy::guiProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
   }
 }
 
+/*!
+ * \brief OMSProxy::readGuiServerStandardOutput
+ * Reads standard output from the OMSimulator Python GUI server and forwards it to the message widget.
+ */
 void OMSProxy::readGuiServerStandardOutput()
 {
   QString output = QString::fromUtf8(mpGuiProcess->readAllStandardOutput()).trimmed();
@@ -290,6 +336,10 @@ void OMSProxy::readGuiServerStandardOutput()
   }
 }
 
+/*!
+ * \brief OMSProxy::readGuiServerStandardError
+ * Reads standard error from the OMSimulator Python GUI server and forwards it to the message widget.
+ */
 void OMSProxy::readGuiServerStandardError()
 {
   QString error = QString::fromUtf8(mpGuiProcess->readAllStandardError()).trimmed();
@@ -310,6 +360,13 @@ void OMSProxy::logCommand(QString command)
   }
 }
 
+/*!
+ * \brief OMSProxy::logResponse
+ * Writes the command response status and timing information to the OMSimulator communication log.
+ * \param method
+ * \param status
+ * \param responseTime
+ */
 void OMSProxy::logResponse(QString method, QString status, QElapsedTimer *responseTime)
 {
   if (mpCommunicationLogFile) {
@@ -373,7 +430,6 @@ bool OMSProxy::sendZmqCommand(const QJsonObject &obj, QJsonObject &reply)
 
   return true;
 }
-
 
 /*!
  * \brief OMSProxy::getVersion
@@ -1328,18 +1384,3 @@ bool OMSProxy::setVariableStepSize(QString cref, double initialStepSize, double 
   QJsonObject reply;
   return sendZmqCommand(obj, reply);
 }
-
-// /*!
-//  * \brief OMSProxy::setWorkingDirectory
-//  * Sets the working directory.
-//  * \param path
-//  */
-// void OMSProxy::setWorkingDirectory(QString path)
-// {
-//   QJsonObject obj, args;
-//   obj["method"] = "setWorkingDirectory";
-//   args["path"] = path;
-//   obj["args"] = args;
-//   QJsonObject reply;
-//   sendZmqCommand(obj, reply);
-// }
