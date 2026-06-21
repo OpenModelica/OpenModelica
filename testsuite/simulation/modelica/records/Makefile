@@ -12,6 +12,7 @@ TestComplexSum1.mos \
 TestComplexSum2.mos \
 Ticket5134.mos \
 Ticket12135.mos \
+Ticket12135_inline.mos \
 Ticket13009.mos \
 Ticket14485.mos \
 
