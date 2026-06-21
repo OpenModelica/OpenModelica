@@ -4,8 +4,8 @@ package MatchCase11
     input Integer i;
     output Integer b;
   algorithm
-    b := match (i)
-      case (1) then fail();
+    b := match i
+      case 1 then fail();
     end match;
   end func;
 

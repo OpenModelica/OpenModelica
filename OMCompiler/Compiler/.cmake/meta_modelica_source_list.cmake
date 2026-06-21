@@ -287,6 +287,12 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/MidCode/DAEToMid.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/MidCode/MidToMid.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/MidCode/HashTableMidVar.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/MidCode/MidCodeUtil.mo
+
+    # "LLVM JIT" — stubs by default; real implementations live under LLVM/
+    # and are wired in by Stage 2 of the LLVM revive work (see PR #11766 successor).
+    ${CMAKE_CURRENT_SOURCE_DIR}/Stubs/EXT_LLVM.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Stubs/MidToLLVM.mo
 
     # "NBackend Classes";
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Classes/NBackendDAE.mo
@@ -469,6 +475,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCppHpcomOMSI.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenJS.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenMidToC.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Template/MidCodeDump.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenUtilSimulation.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenXML.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/GraphvizDump.mo

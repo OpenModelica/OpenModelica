@@ -564,6 +564,15 @@ constant DebugFlag FLOW_ALIAS_ELIMINATION = DEBUG_FLAG(198, "flowAliasEliminatio
   "Enables simple alias elimination of flow variables in stream connectors.");
 constant DebugFlag DUMP_CHECK_MODEL = DEBUG_FLAG(199, "dumpCheckModel", false,
   "Dumps the variables and equations found by checkModel.");
+/* LLVM JIT flags (added on the LLVM revive branch) */
+constant DebugFlag JIT_EVAL_FUNC = DEBUG_FLAG(200, "jit_eval_func", false,
+  "Turns on/off JIT compilation of MetaModelica functions via the LLVM backend.");
+constant DebugFlag JIT_DUMP_IR = DEBUG_FLAG(201, "jit_dump_ir", false,
+  "Dumps LLVM-IR before JIT execution.");
+constant DebugFlag JIT_NO_OPT = DEBUG_FLAG(202, "jit_no_opt", false,
+  "Generates LLVM-IR without optimization passes.");
+constant DebugFlag DUMP_MIDCODE = DEBUG_FLAG(203, "dumpMidCode", false,
+  "Dumps MidCode after generation in a human-readable format.");
 
 public
 // CONFIGURATION FLAGS

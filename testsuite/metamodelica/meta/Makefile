@@ -1,5 +1,8 @@
 # BuiltinReal.mos fails when using Cevalfunc.mo! the values are OK, the display is different!
-TEST = ../../rtest -v
+TEST = ../../rtest
+
+#Run with TEST_LLVM to try the JIT
+TEST_LLVM = ../../rtest -v
 
 TESTFILES = \
 AlgPatternm.mos \
@@ -140,6 +143,7 @@ UniontypeConst1.mos \
 UniontypeConst2.mos \
 UniontypeConst3.mos \
 UniontypeNestedSingelton.mos
+
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=
@@ -157,12 +161,17 @@ CLEAN = `ls | grep -w -v -f deps.tmp`
 
 .PHONY : test clean getdeps failingtest
 
-test:
+test:   test_llvm
 	@echo
 	@echo Running tests...
 	@echo
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
 	@$(TEST) $(TESTFILES)
+
+test_llvm:
+	@echo
+	@echo Running LLVM tests...
+	$(MAKE) -C llvm Makefile test
 
 # Cleans all files that are not listed as dependencies
 clean :

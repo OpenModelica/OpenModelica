@@ -81,19 +81,21 @@ import ComponentReference;
 import Config;
 import Corba;
 import DAEUtil;
+import DAEToMid;
 import Debug;
 import Dump;
 import DynLoad;
 import Error;
+import EXT_LLVM;
 import ErrorExt;
 import ExecStat.{execStat,execStatReset};
 import Expression;
 import FBuiltin;
 import FGraph;
-import Flags;
-import FlagsUtil;
 import FNode;
 import GCExt;
+import Flags;
+import FlagsUtil;
 import GenerateAPIFunctionsTpl;
 import Global;
 import Graph;
@@ -104,6 +106,8 @@ import InstFunction;
 import InteractiveUtil;
 import List;
 import Lookup;
+import MidCode;
+import MidToLLVM;
 import Mod;
 import PackageManagement;
 import Parser;
@@ -115,8 +119,6 @@ import SemanticVersion;
 import Settings;
 import SimCodeFunction;
 import SimCodeFunctionUtil;
-import DAEToMid;
-import MidCode;
 import StackOverflow;
 import Static;
 import StringUtil;
@@ -2275,21 +2277,67 @@ function cevalCallFunctionEvaluateOrGenerate2
 algorithm
   (outCache,outValue) := matchcontinue (inCache, inEnv, inExp, inValuesValueLst, inMsg)
     local
-      Values.Value newval;
-      FCore.Graph env;
-      Absyn.Path funcpath;
-      Boolean  print_debug;
-      list<Values.Value> vallst;
       Absyn.Msg msg;
-      FCore.Cache cache;
+      Absyn.Path funcpath;
       Absyn.Program p;
-      Integer libHandle, funcHandle;
-      String funcstr,fileName;
-      SourceInfo        info;
       Absyn.Within      w;
-      SCode.Element sc;
+      Boolean  print_debug;
+      Boolean ppref, fpref, epref;
+      DAE.Exp e;
+      DAE.Function daeMainFunction;
       DAE.Function func;
+      DAE.Type ty;
+      FCore.Cache cache;
+      FCore.Graph env;
+      Integer libHandle, funcHandle;
+      SourceInfo        info;
+      SCode.Element sc;
+      // Locals for the LLVM JIT path (Flags.JIT_EVAL_FUNC).
+      MidCode.Program midCodeProgram;
+      SimCodeFunction.Function simMainFunction;
+      String name;
+      Values.Value newval;
+      list<DAE.Exp> literals;
+      list<DAE.Function> daeElements;
+      list<DAE.Type> metarecordTypes;
+      list<SimCodeFunction.Function> simfns;
+      list<SimCodeFunction.RecordDeclaration> recordDecls;
+      list<String> includeDirs;
+      list<String> includes;
+      list<String> libPaths;
+      list<String> libs;
+      list<Values.Value> vallst;
+      String funcstr,f,fileName;
+    case (cache, env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(builtin = false)), vallst, msg)
+      guard Flags.isSet(Flags.JIT_EVAL_FUNC)
+      algorithm
+        failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
+        /* Start measuring JIT compile time. */
+        execStatReset();
+        p := SymbolTable.getAbsyn();
+        name := generateFunctionName(funcpath);
+        (cache, daeMainFunction, daeElements, metarecordTypes) := collectDependencies(cache, env, funcpath);
+        /* Translate DAE to SimCode */
+        (daeElements, literals) := SimCodeFunctionUtil.findLiterals(daeMainFunction::daeElements);
+        (simMainFunction::simfns, recordDecls, includes, includeDirs, libs, libPaths) := SimCodeFunctionUtil.elaborateFunctions(p, daeElements, metarecordTypes, literals, {});
+        /* Generate MidCode IR */
+        _ := DAEToMid.DAEFunctionsToMid({});
+        midCodeProgram := DAEToMid.daeProgramToMid(name, simMainFunction::simfns, recordDecls);
+        /* Set up the neccessary data structures in the LLVM context.*/
+        EXT_LLVM.initGen(name);
+        /*Generate LLVM IR in memory*/
+        MidToLLVM.genProgram(midCodeProgram);
+        /* JIT compile. Return a newval. */
 
+        /*JIT compile. Return a newval.*/
+        newval := match midCodeProgram.functions
+          local MidCode.Function H; List<MidCode.Function> T = {};
+    case H::T then MidToLLVM.JIT(H,vallst);
+          else algorithm
+            Error.addInternalError("Error occured when attempting JIT evaluation", sourceInfo());
+          then fail();
+        end match;
+       then (cache,newval);
     // try function interpretation
     case (cache, env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(builtin = false)), vallst, msg)
       algorithm
@@ -2906,7 +2954,7 @@ algorithm
         if Config.simCodeTarget() == "MidC" then
           Tpl.tplString(CodegenCFunctions.translateFunctionHeaderFiles, fnCode);
           midfuncs := DAEToMid.DAEFunctionsToMid(mainFunction::fns);
-          midCode := Tpl.tplCallWithFailError(CodegenMidToC.genProgram, MidCode.PROGRAM(name, midfuncs));
+          midCode := Tpl.tplCallWithFailError(CodegenMidToC.genProgram, MidCode.PROGRAM(name, midfuncs, {}));
           Tpl.textFileConvertLines(midCode, name + ".c");
         else
           Tpl.tplString(CodegenCFunctions.translateFunctions, fnCode);
@@ -2927,7 +2975,7 @@ algorithm
         if Config.simCodeTarget() == "MidC" then
           Tpl.tplString(CodegenCFunctions.translateFunctionHeaderFiles, fnCode);
           midfuncs := DAEToMid.DAEFunctionsToMid(fns);
-          midCode := Tpl.tplCallWithFailError(CodegenMidToC.genProgram, MidCode.PROGRAM(name, midfuncs));
+          midCode := Tpl.tplCallWithFailError(CodegenMidToC.genProgram, MidCode.PROGRAM(name, midfuncs, {}));
           Tpl.textFileConvertLines(midCode, name + ".c");
         else
           Tpl.tplString(CodegenCFunctions.translateFunctions, fnCode);

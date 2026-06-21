@@ -115,6 +115,8 @@ algorithm
     list<DAE.Var> varLst;
     list<Integer> int_dims;
     DAE.Dimensions dims;
+    Integer indx;
+    Values.Value tmpval;
 
     case Values.INTEGER(_) then DAE.T_INTEGER_DEFAULT;
     case Values.REAL(_) then DAE.T_REAL_DEFAULT;
@@ -133,6 +135,30 @@ algorithm
       eltTps := List.map(valLst,valueExpType);
       varLst := List.threadMap(eltTps,nameLst,valueExpTypeExpVar);
     then DAE.T_COMPLEX(ClassInf.RECORD(path),varLst,NONE(), false);
+
+    // MetaModelica types — needed by the LLVM JIT, which queries the type
+    // of runtime Values when assembling closures for JITed MetaModelica
+    // functions. TODO: meta_record vs record discrimination is still
+    // approximate. See PR OpenModelica/OpenModelica#11766.
+    case Values.RECORD(path,valLst,nameLst,indx) algorithm
+      eltTps := List.map(valLst,valueExpType);
+    then DAE.T_METARECORD(path, path, eltTps, indx, {}, false);
+    case Values.LIST(valLst) algorithm
+      eltTp := if not listEmpty(valLst) then valueExpType(listHead(valLst)) else DAE.T_METALIST_DEFAULT;
+    then DAE.T_METALIST(eltTp);
+    case Values.META_TUPLE(valLst) algorithm
+      eltTps := List.map(valLst, valueExpType);
+    then DAE.T_METATUPLE(eltTps);
+    case Values.META_ARRAY(valLst) algorithm
+      eltTp := valueExpType(listHead(valLst));
+    then DAE.T_METAARRAY(eltTp);
+    case Values.META_BOX()
+      then DAE.T_METABOXED(valueExpType(inValue.value));
+    case Values.OPTION(NONE())
+      then DAE.T_NONE_DEFAULT;
+    case Values.OPTION(SOME(tmpval)) algorithm
+      eltTp := valueExpType(tmpval);
+    then DAE.T_METAOPTION(eltTp);
 
     case _
       algorithm

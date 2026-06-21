@@ -2174,7 +2174,6 @@ algorithm
         p := stripLast(p);
       then
         Absyn.FULLYQUALIFIED(p);
-
   end match;
 end stripLast;
 

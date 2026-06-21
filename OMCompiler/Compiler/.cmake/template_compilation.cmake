@@ -246,6 +246,11 @@ omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenMidTo
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeTV.mo
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/MidCodeTV.mo)
 
+# Human-readable dump of the MidCode IR, used by MidCodeUtil and the
+# --dumpMidCode debug flag added on the LLVM revive branch.
+omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/MidCodeDump.tpl
+                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/MidCodeTV.mo)
+
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/GraphvizDump.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeTV.mo
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeBackendTV.mo)

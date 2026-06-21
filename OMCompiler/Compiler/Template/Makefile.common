@@ -6,7 +6,8 @@ CodegenFMU.mo CodegenFMU1.mo CodegenFMU2.mo CodegenCppCommon.mo CodegenCpp.mo Co
 CodegenOMSI_common.mo CodegenOMSIC.mo CodegenOMSICpp.mo CodegenOMSIC_Equations.mo CodegenFMUCppHpcom.mo CodegenCppInit.mo \
 CodegenMidToC.mo GraphvizDump.mo GraphMLDumpTpl.mo NFInstDumpTpl.mo SimCodeDump.mo \
 CodegenXML.mo CodegenJS.mo VisualXMLTpl.mo \
-CodegenCppHpcomOMSI.mo CodegenCppOMSI.mo CodegenFMUCppHpcomOMSI.mo CodegenFMUCppOMSI.mo
+CodegenCppHpcomOMSI.mo CodegenCppOMSI.mo CodegenFMUCppHpcomOMSI.mo CodegenFMUCppOMSI.mo MidCodeDump.mo 
+
 UNUSED=../boot/find-unused-import.sh
 
 
@@ -208,6 +209,11 @@ AbsynToJulia.mo : AbsynToJulia.tpl AbsynToJuliaTV.mo
 
 AbsynJLDumpTpl.mo : AbsynJLDumpTpl.tpl AbsynDumpTV.mo
 	@echo " ** AbsynJLDump template compilation ** "
+	$(OMC) $< > $@.log || (cat $@.log && false)
+	@echo " " && ($(UNUSED) "$@" || true)
+
+MidCodeDump.mo : MidCodeDump.tpl MidCodeTV.mo
+	@echo " ** MidCodeDump template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " " && ($(UNUSED) "$@" || true)
 

@@ -38,6 +38,8 @@ defaultMakefileTarget=Makefile
 OMCRUNTIMEAR1=../runtime/libomcruntime-boot$(SHREXT)
 OMCRUNTIMEAR2=$(OMHOME)/$(LIB_OMC)/libomcruntime$(SHREXT)
 
+#For LLVM
+HAVE_LLVM=@HAVE_LLVM@
 
 default: all
 
