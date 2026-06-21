@@ -37,6 +37,44 @@ double mmc_unbox_real_no_inline(modelica_metatype v)
   return mmc_prim_get_real(v);
 }
 
+/* MetaModelica's `integer(Real)` builtin lowers to a DAE.CALL whose
+ * Absyn path is the literal name "integer" — see
+ * Compiler/LLVM/MidToLLVM.mo identBuiltinCall fallthrough. The JIT
+ * therefore tries to resolve a host symbol called `integer`. The
+ * runtime wrapper for the boxed call lives at boxptr_realInt; for the
+ * unboxed (raw double -> i64) JIT call site we provide this thin
+ * truncation shim. C's narrowing cast matches Modelica's "truncate
+ * toward zero" semantics for `integer()`. The C-level name `integer`
+ * is already typedef'd somewhere in the include chain, so define the
+ * function with an alternate identifier and expose it under the
+ * exact JIT-expected name via a linker asm() alias. */
+modelica_integer omc_jit_real_to_integer(double r) asm("integer");
+modelica_integer omc_jit_real_to_integer(double r)
+{
+  return (modelica_integer) r;
+}
+
+/* String comparison/equality shims for the JIT. The MetaModelica
+ * frontend lowers `stringCompare(s1,s2)` and `stringEqual(s1,s2)` to
+ * DAE.CALLs with the literal names "stringCompare" and "stringEqual".
+ * In the C runtime the underlying functions live as mmc_stringCompare
+ * and as the `stringEqual` macro on top of it (modelica_string.h).
+ * The macro can't be linked to from the JIT, so provide proper
+ * function-symbol equivalents under the JIT-expected names. */
+extern modelica_integer mmc_stringCompare(const void *str1, const void *str2);
+
+modelica_integer omc_jit_stringCompare(const void *s1, const void *s2) asm("stringCompare");
+modelica_integer omc_jit_stringCompare(const void *s1, const void *s2)
+{
+  return mmc_stringCompare(s1, s2);
+}
+
+modelica_boolean omc_jit_stringEqual(const void *s1, const void *s2) asm("stringEqual");
+modelica_boolean omc_jit_stringEqual(const void *s1, const void *s2)
+{
+  return mmc_stringCompare(s1, s2) == 0;
+}
+
 modelica_integer mmc_unbox_integer_no_inline(modelica_metatype v)
 {
   return MMC_UNTAGFIXNUM(v);
