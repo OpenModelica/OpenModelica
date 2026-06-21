@@ -148,14 +148,62 @@ def decode_omc_ident(ident: str) -> str:
 # Connector-variable classification (FluidPort / HeatPort / Signal)
 # ---------------------------------------------------------------------------
 
-FLOW_VARS      = {'m_flow', 'Q_flow'}
-POTENTIAL_VARS = {'p', 'T'}
+# Flow / potential connector variables across the Modelica Standard Library
+# physical domains. The connection-equation classifier matches a connector field
+# name against these sets (flow -> conservation sum=0, potential -> equality).
+# Scalar one-pin-pair domains are covered here; genuinely multi-variable or
+# complex connectors (MultiBody Frame, QuasiStationary/FundamentalWave Complex)
+# need structural handling beyond name matching.
+FLOW_VARS = {
+    'm_flow', 'Q_flow',          # fluid mass flow, thermal/heat-port heat flow
+    'i',                         # electrical current (Analog Pin)
+    'tau',                       # rotational torque (Rotational Flange)
+    'f',                         # translational force (Translational Flange)
+    'Phi',                       # magnetic flux (Magnetic MagneticPort)
+    'n_flow', 'C_flow',          # chemical molar flow / extra property flow
+    'h_flow',                    # rare enthalpy-flow form
+}
+POTENTIAL_VARS = {
+    'p', 'T',                    # fluid pressure, thermal/heat-port temperature
+    'v',                         # electrical voltage (Analog Pin)
+    'phi',                       # rotational angle (Rotational Flange)
+    's',                         # translational position (Translational Flange)
+    'V_m',                       # magnetic potential (Magnetic MagneticPort)
+    'u',                         # chemical/electrochemical potential (some libs)
+}
 STREAM_VARS_RE = re.compile(r'^(h_outflow|Xi_outflow|C_outflow)')
 
 
+# Model-driven connector-variable kinds, keyed by variable name, extracted from
+# getModelInstance() (the Modelica flow/stream qualifiers). Populated by
+# load_connector_kinds(); takes precedence over the name heuristics below so the
+# classifier is domain-agnostic (electrical/mechanical/magnetic/... all work).
+_CONNECTOR_KINDS: Dict[str, str] = {}
+
+
+def load_connector_kinds(directory: str) -> None:
+    """Load field-name -> kind (flow/stream/potential) written by the prepare step
+    from getModelInstance(). Best-effort: absence falls back to name heuristics."""
+    _CONNECTOR_KINDS.clear()
+    path = os.path.join(directory, '_acausal_connector_kinds.txt')
+    if not os.path.exists(path):
+        return
+    for line in open(path, encoding='utf-8', errors='replace'):
+        parts = line.rstrip('\n').split('\t')
+        if len(parts) == 2 and parts[1]:
+            _CONNECTOR_KINDS[parts[0]] = parts[1]
+
+
 def classify_connector_variable(field_name: str) -> str:
-    """Return 'flow', 'potential', 'stream', or 'signal'."""
+    """Return 'flow', 'potential', 'stream', or 'signal'.
+
+    Prefers the model-derived kind (from getModelInstance's flow/stream
+    qualifiers, domain-agnostic); falls back to name heuristics when the map is
+    unavailable (e.g. a component built outside the prepare step)."""
     base = field_name.split('[')[0]          # strip array index
+    kind = _CONNECTOR_KINDS.get(base)
+    if kind in ('flow', 'stream', 'potential'):
+        return kind
     if base in FLOW_VARS:
         return 'flow'
     if base in POTENTIAL_VARS:
@@ -223,6 +271,12 @@ class FdummyResidual:
 class ComponentInfo:
     prefix:    str
     directory: str
+
+    # Parameter-independent signature of the generated base C (residual code,
+    # structure). Two instances of the same class differing only in non-structural
+    # parameter VALUES (which live in the per-instance init XML, not the C) share
+    # the same type_signature, so their base C is compiled only once and reused.
+    type_signature: str = ""
 
     alg_indexes: List[int] = field(default_factory=list)
     n_residuals: int = 0
@@ -477,6 +531,73 @@ def parse_connections(path: str) -> List[Tuple[str, str, str, str]]:
             for m in _RE_CONNECT.finditer(text)]
 
 
+def compute_type_signature(directory: str, prefix: str) -> str:
+    """Parameter-independent signature of a component's generated base C.
+
+    Hashes the per-component base C files (model equations + structure) with the
+    component's prefix tokenised out, so that two instances of the same class that
+    differ only in non-structural parameter VALUES — which OMC keeps as runtime
+    parameters in the init XML, not inlined into the C — hash to the SAME value
+    and can share one compiled base object. Structural differences (different
+    equations, sizes, Evaluate=true parameters) change the C and so the hash."""
+    import hashlib, re as _re
+    # files that make up the reusable base (NOT the per-instance init XML, and NOT
+    # the topology-dependent connected_*.c)
+    suffixes = ('_16dae.c', '_functions.h', '_functions.c',
+                '_06inz.c', '_08bnd.c', '_model.h')
+    # match the prefix as a maximal identifier token, allowing '_' on either side
+    # (so r1_eqFunction, g_r1_data and Top_r1 all normalise) but NOT alphanumerics
+    # (so a prefix like 'res' never matches inside 'residualVars')
+    tok = _re.compile(r'(?<![A-Za-z0-9])' + _re.escape(prefix) + r'(?![A-Za-z0-9])')
+    h = hashlib.sha1()
+    for suf in suffixes:
+        path = os.path.join(directory, prefix + suf)
+        if not os.path.exists(path):
+            continue
+        text = open(path, encoding='utf-8', errors='replace').read()
+        # tokenise the prefix out (function names <pfx>_eqFunction_N, etc.) so
+        # only structural/equation content remains
+        text = tok.sub('\x00TYPE\x00', text)
+        h.update(suf.encode('utf-8'))
+        h.update(b'\x01')
+        h.update(text.encode('utf-8', errors='replace'))
+        h.update(b'\x02')
+    return h.hexdigest()
+
+
+def _read_init_guid(directory: str, prefix: str) -> str:
+    """Extract the model GUID from <prefix>_init.xml (needed when an instance
+    reuses another instance's compiled setup but reads its own init XML, since
+    read_input_xml verifies the GUID)."""
+    path = os.path.join(directory, f'{prefix}_init.xml')
+    if not os.path.exists(path):
+        return ""
+    m = re.search(r'guid\s*=\s*"([^"]*)"',
+                  open(path, encoding='utf-8', errors='replace').read())
+    return m.group(1) if m else ""
+
+
+def group_by_type(prefixes, comps):
+    """Group instances by type_signature for reuse. Returns (repr_of, type_reprs):
+    repr_of[p] = the representative prefix whose compiled base C instance p reuses
+    (the first instance of that type); type_reprs = ordered representatives (one
+    compiled base object set per type). Components without a signature are their
+    own representative."""
+    repr_of: Dict[str, str] = {}
+    sig_to_repr: Dict[str, str] = {}
+    type_reprs: List[str] = []
+    for p in prefixes:
+        sig = comps[p].type_signature
+        if sig and sig in sig_to_repr:
+            repr_of[p] = sig_to_repr[sig]
+        else:
+            if sig:
+                sig_to_repr[sig] = p
+            repr_of[p] = p
+            type_reprs.append(p)
+    return repr_of, type_reprs
+
+
 def load_component(prefix: str, directory: str) -> ComponentInfo:
     comp = ComponentInfo(prefix=prefix, directory=directory)
 
@@ -491,6 +612,7 @@ def load_component(prefix: str, directory: str) -> ComponentInfo:
          comp.assigned_vars, comp.state_vars,
          comp.real_residual_vars) = parse_dae_file(dae_c, prefix)
 
+    comp.type_signature = compute_type_signature(directory, prefix)
     return comp
 
 
@@ -776,6 +898,309 @@ def _member_field_expr(member, fieldname, current_prefix, comps) -> Optional[str
     if member[0] == current_prefix:
         return expr
     return expr.replace('data->', f'g_{member[0]}_data->')
+
+
+# ---------------------------------------------------------------------------
+# Runtime connection table (Approach A: reuse a component's C across N instances)
+# ---------------------------------------------------------------------------
+#
+# Instead of baking the connection equations into a per-instance copy of the
+# component C (connected_<p>_16dae.c), we extract them as DATA so the driver can
+# apply them at runtime from a shared base object. Each connector field resolves
+# to a plain (component, realVars-index, sign) reference (verified: $fdummy args
+# are realVars[realVarsIndex[i]], optionally negated), so every connection
+# equation is expressible as such references:
+#   flow conservation : residual = sum_k sign_k * member_k.flow
+#   potential equality: residual = my.pot - owner.pot
+#   open (unconnected) : residual = my.flow            (= 0)
+#   inStream          : my.<stream> reads neighbour.<stream> (combined_instream)
+
+_RE_PARAMIDX = re.compile(r'realParamsIndex\[(\d+)\]')
+
+
+def _ref_from_expr(comp_prefix, expr):
+    """(comp, idx, negated, is_param) from a connector-field C expression that is
+    a plain realVars / realParameter reference, else None."""
+    neg = expr.lstrip().startswith('(-')
+    mv = _RE_VARIDX.search(expr)
+    if mv and 'realParameter' not in expr:
+        return (comp_prefix, int(mv.group(1)), neg, False)
+    mp = _RE_PARAMIDX.search(expr)
+    if mp:
+        return (comp_prefix, int(mp.group(1)), neg, True)
+    return None
+
+
+def _member_field_ref(member, fieldname, comps):
+    """Resolve member.fieldname to (comp_prefix, idx, negated, is_param), or None.
+    Mirrors _member_field_expr: first the connector's $fdummy binding, then a
+    by-name lookup in the component's realVars / realParameter index maps."""
+    if fieldname is None:
+        return None
+    comp = comps.get(member[0])
+    if comp is None:
+        return None
+    fr, fdef = _representative_residual(comp)
+    if fdef is not None:
+        for i, p in enumerate(fdef.params):
+            if p.connector == member[1] and p.field == fieldname and i < len(fr.arg_exprs):
+                ref = _ref_from_expr(member[0], fr.arg_exprs[i])
+                if ref is not None:
+                    return ref
+                break
+    # by-name fallback (field not exposed via $fdummy)
+    name = f'{member[1]}.{fieldname}'
+    idx = comp.var_to_idx.get(name)
+    if idx is not None:
+        return (member[0], idx, False, False)
+    pidx = comp.param_to_idx.get(name)
+    if pidx is not None:
+        return (member[0], pidx, False, True)
+    return None
+
+
+@dataclass
+class ConnEntry:
+    """One connection equation to overwrite at runtime: component `comp`'s
+    residual slot `residx` gets the equation of `kind` from `terms`."""
+    comp:    str
+    residx:  int
+    kind:    str                                    # 'flow' | 'pot' | 'open'
+    terms:   List[Tuple[str, int, bool, bool]]      # (comp, idx, negated, is_param)
+
+
+@dataclass
+class InStreamRef:
+    """A deferred inStream(my.field) in component `comp`'s base C that reads the
+    neighbour's outflow at runtime."""
+    comp:        str
+    my_varidx:   int                          # the connector var index in the call
+    nb_comp:     str
+    nb_idx:      int
+    nb_is_param: bool
+
+
+def build_connection_table(comps, specs, edges):
+    """Return (entries, instream_refs): the runtime connection equations and the
+    deferred-inStream neighbour map, replacing connected_*.c codegen."""
+    entries: List[ConnEntry] = []
+    for pfx, comp in comps.items():
+        if not comp.fdummy_residuals:
+            continue
+        cr_map      = connector_residual_map(comp)
+        res_to_conn = {fr.eq_func_num: conn for conn, fr in cr_map.items()}
+        for fr in comp.fdummy_residuals:
+            connector = res_to_conn.get(fr.eq_func_num)
+            spec      = specs.get((pfx, connector)) if connector else None
+            if spec is None or not spec.connected:
+                ref = (_member_field_ref((pfx, connector), spec.flow_field, comps)
+                       if (spec and connector) else None)
+                entries.append(ConnEntry(pfx, fr.residual_idx, 'open',
+                                         [ref] if ref else []))
+                continue
+            if spec.kind == 'flow':
+                terms = [_member_field_ref(m, spec.flow_field, comps)
+                         for m in spec.members]
+                entries.append(ConnEntry(pfx, fr.residual_idx, 'flow',
+                                         [t for t in terms if t]))
+            else:  # potential equality: my.pot - owner.pot
+                my    = _member_field_ref((pfx, connector), spec.pot_field, comps)
+                owner = _member_field_ref(spec.owner, spec.pot_field, comps)
+                entries.append(ConnEntry(pfx, fr.residual_idx, 'pot',
+                                         [t for t in (my, owner) if t]))
+
+    # deferred inStream(my.streamfield) -> neighbour outflow, scanned from base C
+    instream_refs: List[InStreamRef] = []
+    seen: Set[Tuple[str, int]] = set()
+    for pfx, comp in comps.items():
+        dae_c = os.path.join(comp.directory, f'{pfx}_16dae.c')
+        if not os.path.exists(dae_c):
+            continue
+        text = open(dae_c).read()
+        for m in _RE_INSTREAM_CALL.finditer(text):
+            inner = m.group(1)
+            vm = _RE_VAR_COMMENT.search(inner)
+            im = _RE_VARIDX.search(inner)
+            if not vm or not im:
+                continue
+            full = vm.group(1)
+            dot  = full.find('.')
+            if dot < 0:
+                continue
+            conn, field = full[:dot], full[dot + 1:]
+            my_varidx = int(im.group(1))
+            if (pfx, my_varidx) in seen:
+                continue
+            nb = _neighbor_of(edges, pfx, conn)
+            if nb is None:
+                continue
+            nb_ref = _member_field_ref(nb, field, comps)
+            if nb_ref is None:
+                continue
+            seen.add((pfx, my_varidx))
+            instream_refs.append(InStreamRef(pfx, my_varidx, nb_ref[0],
+                                             nb_ref[1], nb_ref[3]))
+    return entries, instream_refs
+
+
+def generate_connections_c(prefixes, entries, instream_refs) -> str:
+    """Emit combined_connections.c: the connection equations and the deferred
+    inStream neighbour map as runtime data + the applicator/lookup functions.
+    Component references are by index into conn_data[] (block order == prefixes),
+    so the same code serves any number of instances (used by P3 reuse)."""
+    idx_of = {p: i for i, p in enumerate(prefixes)}
+    KIND = {'flow': 0, 'pot': 1, 'open': 2}
+
+    # flatten terms
+    term_rows: List[str] = []
+    entry_rows: List[str] = []
+    for e in entries:
+        toff = len(term_rows)
+        for (c, vi, neg, isp) in e.terms:
+            if c not in idx_of:
+                continue
+            term_rows.append(f'  {{ {idx_of[c]}, {vi}, {1 if neg else 0}, '
+                             f'{1 if isp else 0} }},  /* {c}.{"p" if isp else "v"}{vi} */')
+        nterms = len(term_rows) - toff
+        entry_rows.append(f'  {{ {idx_of[e.comp]}, {e.residx}, {KIND[e.kind]}, '
+                          f'{toff}, {nterms} }},  /* {e.comp}.res[{e.residx}] {e.kind} */')
+
+    is_rows: List[str] = []
+    for r in instream_refs:
+        if r.comp not in idx_of or r.nb_comp not in idx_of:
+            continue
+        is_rows.append(f'  {{ {idx_of[r.comp]}, {r.my_varidx}, {idx_of[r.nb_comp]}, '
+                       f'{r.nb_idx}, {1 if r.nb_is_param else 0} }},'
+                       f'  /* {r.comp}.v{r.my_varidx} <- {r.nb_comp}.'
+                       f'{"p" if r.nb_is_param else "v"}{r.nb_idx} */')
+
+    data_ptrs = ', '.join(f'&g_{p}_data' for p in prefixes)
+    L: List[str] = [
+        '/*',
+        ' * combined_connections.c',
+        ' * Runtime connection coupling for the combined DAE system.',
+        ' * AUTO-GENERATED by combine_components.py',
+        ' *',
+        ' * The connection equations and the deferred-inStream neighbour map are',
+        ' * data, not code, so a component\'s base C is reused across instances:',
+        ' * only conn_data[] (the per-instance DATA pointers) varies.',
+        ' */',
+        '#include "combined_setup.h"',
+        '#include "simulation/solver/dae_mode.h"',
+        '',
+        '#define CONN_FLOW 0',
+        '#define CONN_POT  1',
+        '#define CONN_OPEN 2',
+        '',
+        'typedef struct { int comp; int idx; int neg; int is_param; } ConnTerm;',
+        'typedef struct { int comp; int residx; int kind; int toff; int nterms; } ConnEntry;',
+        'typedef struct { int comp; int my_varidx; int nb_comp; int nb_idx; int nb_is_param; } InStreamRow;',
+        '',
+        f'/* per-component (block-order) DATA handles */',
+        f'static DATA **conn_data[{len(prefixes)}] = {{ {data_ptrs} }};',
+        '',
+        'static const ConnTerm conn_terms[] = {',
+        *(term_rows or ['  { 0, 0, 0, 0 }']),
+        '};',
+        'static const ConnEntry conn_entries[] = {',
+        *(entry_rows or ['  { 0, 0, CONN_OPEN, 0, 0 }']),
+        '};',
+        f'static const int n_conn_entries = {len(entry_rows)};',
+        '',
+        'static const InStreamRow instream_tab[] = {',
+        *(is_rows or ['  { -1, -1, -1, -1, 0 }']),
+        '};',
+        f'static const int n_instream = {len(is_rows)};',
+        '',
+        'static double conn_term_value(const ConnTerm *t)',
+        '{',
+        '  DATA *d = *conn_data[t->comp];',
+        '  double v = t->is_param',
+        '    ? d->simulationInfo->realParameter[d->simulationInfo->realParamsIndex[t->idx]]',
+        '    : d->localData[0]->realVars[d->simulationInfo->realVarsIndex[t->idx]];',
+        '  return t->neg ? -v : v;',
+        '}',
+        '',
+        'void combined_apply_connections(void)',
+        '{',
+        '  int e, k;',
+        '  for (e = 0; e < n_conn_entries; ++e) {',
+        '    const ConnEntry *ce = &conn_entries[e];',
+        '    DATA *td = *conn_data[ce->comp];',
+        '    double r = 0.0;',
+        '    if (ce->kind == CONN_FLOW) {',
+        '      for (k = 0; k < ce->nterms; ++k) r += conn_term_value(&conn_terms[ce->toff + k]);',
+        '    } else if (ce->kind == CONN_POT) {',
+        '      r = conn_term_value(&conn_terms[ce->toff]);',
+        '      if (ce->nterms > 1) r -= conn_term_value(&conn_terms[ce->toff + 1]);',
+        '    } else { /* CONN_OPEN: flow = 0 */',
+        '      r = (ce->nterms > 0) ? conn_term_value(&conn_terms[ce->toff]) : 0.0;',
+        '    }',
+        '    td->simulationInfo->daeModeData->residualVars[ce->residx] = r;',
+        '  }',
+        '}',
+        '',
+        'double combined_instream(DATA *data, int my_varidx)',
+        '{',
+        f'  int i, ci = -1;',
+        f'  for (i = 0; i < {len(prefixes)}; ++i) if (*conn_data[i] == data) {{ ci = i; break; }}',
+        '  if (ci >= 0) {',
+        '    for (i = 0; i < n_instream; ++i) {',
+        '      if (instream_tab[i].comp == ci && instream_tab[i].my_varidx == my_varidx) {',
+        '        DATA *nd = *conn_data[instream_tab[i].nb_comp];',
+        '        return instream_tab[i].nb_is_param',
+        '          ? nd->simulationInfo->realParameter[nd->simulationInfo->realParamsIndex[instream_tab[i].nb_idx]]',
+        '          : nd->localData[0]->realVars[nd->simulationInfo->realVarsIndex[instream_tab[i].nb_idx]];',
+        '      }',
+        '    }',
+        '  }',
+        '  /* fallback: identity (unconnected) */',
+        '  return data->localData[0]->realVars[data->simulationInfo->realVarsIndex[my_varidx]];',
+        '}',
+        '',
+    ]
+    return '\n'.join(L)
+
+
+def generate_reusable_dae(comp: ComponentInfo) -> str:
+    """Generate connected_<pfx>_16dae.c as the component's *base* DAE C with only
+    two changes: deferred inStream((var)) calls become combined_instream(data,idx)
+    runtime lookups, and combined_setup.h is included. The $fdummy connector
+    residuals are LEFT as placeholders — they are overwritten at runtime by
+    combined_apply_connections(). Unlike generate_connected_dae this bakes in no
+    topology, so the very same C is reusable across instances of the type."""
+    prefix = comp.prefix
+    text = open(os.path.join(comp.directory, f'{prefix}_16dae.c')).read()
+    anchor = '#include "simulation/solver/dae_mode.h"'
+    if 'combined_setup.h' not in text and anchor in text:
+        text = text.replace(anchor, anchor + '\n#include "combined_setup.h"', 1)
+
+    def repl(m):
+        inner = m.group(1)
+        im = _RE_VARIDX.search(inner)
+        if not im:
+            return m.group(0)
+        return f'combined_instream(data, {int(im.group(1))})'
+
+    text = _RE_INSTREAM_CALL.sub(repl, text)
+
+    # The light-init/bound files (06inz/08bnd) of this component still contain
+    # inStream(<const>) calls for unconnected stream connectors that collapse to
+    # their argument. Provide the scalar identity so each component library links
+    # (-Wl,-Bsymbolic binds those objects to this definition); the residual-file
+    # inStream() above is the runtime combined_instream(), a different symbol.
+    instream_def = ('/* identity for inStream() left in non-residual files of this '
+                    'component\n   (unconnected stream connector -> inStream(c)=c) */\n'
+                    'double inStream(double __x);\n'
+                    'double inStream(double __x) { return __x; }\n')
+    header = (f'/* AUTO-GENERATED by combine_components.py — DO NOT EDIT.\n'
+              f' * Reusable base DAE C for {prefix}: deferred inStream() calls are\n'
+              f' * rewritten to runtime combined_instream() lookups; the $fdummy\n'
+              f' * connector residuals are left as placeholders and overwritten at\n'
+              f' * runtime by combined_apply_connections(). No topology is baked in,\n'
+              f' * so this same C is reused across instances of the type.\n'
+              f' */\n')
+    return header + instream_def + text
 
 
 # ---------------------------------------------------------------------------
@@ -1349,9 +1774,12 @@ def generate_jacobian_c(gj: GlobalJacobian, comps) -> str:
         '  }',
         '}',
         '',
-        '/* Evaluate the stacked residual F (size COMBINED_N).  Applies the',
-        '   stream/signal connection couplings, then each component\'s own DAE',
-        '   residual function (which now contains the connection equations). */',
+        '/* Evaluate the stacked residual F (size COMBINED_N): (1) each component\'s',
+        '   own base DAE residuals (connector slots are $fdummy placeholders here),',
+        '   (2) overwrite the connector slots with the connection equations from the',
+        '   runtime table, (3) gather into F. The connection coupling is applied',
+        '   from data (combined_apply_connections), so the component C carries no',
+        '   topology and is reusable across instances. */',
         'int combined_eval_residual(threadData_t *threadData, int evalMode, double *F)',
         '{',
         '  int b, r;',
@@ -1366,6 +1794,13 @@ def generate_jacobian_c(gj: GlobalJacobian, comps) -> str:
         '    threadData->localRoots[LOCAL_ROOT_SIMULATION_DATA] = d;',
         '    dae = d->simulationInfo->daeModeData;',
         '    dae->evaluateDAEResiduals(d, threadData, evalMode);',
+        '  }',
+        '  combined_apply_connections();',
+        '  for (b = 0; b < combined_n_components; ++b) {',
+        '    DATA *d = *comp_data[b];',
+        '    DAEMODE_DATA *dae;',
+        '    if (comp_nres[b] == 0) continue;',
+        '    dae = d->simulationInfo->daeModeData;',
         '    for (r = 0; r < dae->nResidualVars; ++r)',
         '      F[combined_block_offset[b] + r] = dae->residualVars[r];',
         '  }',
@@ -1629,6 +2064,15 @@ def generate_setup_header(comp_prefixes) -> str:
         '/* Copy signal output->input values */',
         'extern void combined_applySignalConnections(void);',
         '',
+        '/* Overwrite the connector residual slots with the connection equations',
+        '   (flow conservation / potential equality / open) after the base DAE',
+        '   residual evaluation. Runtime form of the connection coupling. */',
+        'extern void combined_apply_connections(void);',
+        '',
+        '/* Resolve a deferred inStream(connectorVar) to the connected neighbour\'s',
+        '   outflow at runtime (called from the components\' base DAE code). */',
+        'extern double combined_instream(DATA *data, int my_varidx);',
+        '',
         '#ifdef __cplusplus',
         '}',
         '#endif',
@@ -1743,14 +2187,22 @@ def generate_driver_c(prefixes, comps, gj) -> str:
     transient solve of the stacked DAE using a dense finite-difference Newton
     over combined_eval_residual, and writes the trajectory as CSV."""
     n = len(prefixes)
+    # component reuse: instances of the same type share ONE compiled base (the
+    # representative's setupDataStruc + functions); each instance still has its
+    # own DATA and reads its own init XML (params/start), so only the parameter
+    # differences are per-instance.
+    repr_of, type_reprs = group_by_type(prefixes, comps)
+    guids = {p: _read_init_guid(comps[p].directory, p) for p in prefixes}
     externs = '\n'.join(
-        f'extern void {p}_setupDataStruc(DATA*, threadData_t*);' for p in prefixes)
+        f'extern void {r}_setupDataStruc(DATA*, threadData_t*);' for r in type_reprs)
     storage = '\n'.join(
         f'static DATA data_{p}; static MODEL_DATA md_{p}; static SIMULATION_INFO si_{p};'
         for p in prefixes)
     names = ', '.join(f'"{p}"' for p in prefixes)
     init_calls = '\n'.join(
-        f'    init_component(&data_{p}, &md_{p}, &si_{p}, {p}_setupDataStruc, threadData);'
+        f'    init_component(&data_{p}, &md_{p}, &si_{p}, {repr_of[p]}_setupDataStruc, '
+        f'"{p}", "{guids[p]}", threadData);'
+        f'{"" if repr_of[p]==p else "  /* reuses "+repr_of[p]+" */"}'
         for p in prefixes)
     assign = '\n'.join(
         f'    g_{p}_data = &data_{p}; g_all[{i}] = &data_{p};'
@@ -1813,11 +2265,17 @@ static const char *g_labels[COMBINED_N] = {{ {labels_c} }};
 
 static void init_component(DATA *d, MODEL_DATA *md, SIMULATION_INFO *si,
                            void (*setup)(DATA*, threadData_t*),
+                           const char *prefix, const char *guid,
                            threadData_t *threadData)
 {{
   d->modelData = md;
   d->simulationInfo = si;
   setup(d, threadData);
+  /* Component reuse: `setup` may belong to another instance of the same type.
+     Redirect this instance to its OWN init XML (<prefix>_init.xml) and GUID so
+     read_input_xml loads this instance's parameter/start values. */
+  d->modelData->modelFilePrefix = prefix;
+  if (guid && guid[0]) d->modelData->modelGUID = guid;
   read_input_xml(d->modelData, d->simulationInfo, threadData);
   initializeDataStruc(d, threadData);
   /* solver method selection (normally parsed from command-line flags) */
@@ -2216,13 +2674,18 @@ def generate_makefile(comp_prefixes, output_prefix, directory, comps) -> str:
         inc  = '-I$(OMHOME)/include/omc/c -I.'
         libs = '-L$(OMLIBDIR) -Wl,-rpath,$(OMLIBDIR) -lSimulationRuntimeC -lomcgc -lm -ldl'
 
-    overridden = [p for p in comp_prefixes if comps[p].fdummy_residuals]
+    # Component reuse: compile ONE base library per type (the representative
+    # instance); other instances of that type link against it and only supply
+    # their own init XML at runtime. So everything below iterates type_reprs, not
+    # every instance.
+    repr_of, type_reprs = group_by_type(comp_prefixes, comps)
+    overridden = [p for p in type_reprs if comps[p].fdummy_residuals]
 
-    # full per-component object sets (needed by the driver's initialization path)
+    # per-type object sets (one compiled base per representative)
     comp_objs: Dict[str, List[str]] = {
-        p: _component_c_objects(directory, p, p in overridden) for p in comp_prefixes}
-    comp_libs = [f'lib{p}.so' for p in comp_prefixes]
-    glue_objs = ['combined_glue.o', 'combined_jacobian.o']
+        p: _component_c_objects(directory, p, p in overridden) for p in type_reprs}
+    comp_libs = [f'lib{p}.so' for p in type_reprs]
+    glue_objs = ['combined_glue.o', 'combined_jacobian.o', 'combined_connections.o']
 
     lines = [
         f'# Makefile for combined system: {output_prefix}',
@@ -2258,17 +2721,17 @@ def generate_makefile(comp_prefixes, output_prefix, directory, comps) -> str:
         'SOFLAGS := -shared -Wl,-Bsymbolic -Wl,--allow-multiple-definition',
         '',
     ]
-    # per-component define + object-list variables
-    for pfx in comp_prefixes:
+    # per-type define + object-list variables
+    for pfx in type_reprs:
         lines.append(f'{pfx}_DEFS := {_component_defines(directory, pfx)}')
     lines.append('')
-    for pfx in comp_prefixes:
+    for pfx in type_reprs:
         lines.append(f'{pfx}_OBJS := ' + ' '.join(comp_objs[pfx]))
     lines.append('')
 
     comp_libs_str = ' '.join(comp_libs)
     all_objs_str  = ' \\\n    '.join(
-        [o for p in comp_prefixes for o in comp_objs[p]] + glue_objs)
+        [o for p in type_reprs for o in comp_objs[p]] + glue_objs)
 
     lines += [
         f'COMP_LIBS := {comp_libs_str}',
@@ -2282,15 +2745,15 @@ def generate_makefile(comp_prefixes, output_prefix, directory, comps) -> str:
         f'all: {output_prefix} {output_prefix}.so',
         '',
         '# --- the standalone driver: link against the per-component libraries ---',
-        f'{output_prefix}: combined_main.o combined_glue.o combined_jacobian.o $(COMP_LIBS)',
-        f'\t$(CC) -o $@ combined_main.o combined_glue.o combined_jacobian.o \\',
-        f'\t    -L. -Wl,-rpath,$(CURDIR) {" ".join("-l"+p for p in comp_prefixes)} \\',
+        f'{output_prefix}: combined_main.o combined_glue.o combined_jacobian.o combined_connections.o $(COMP_LIBS)',
+        f'\t$(CC) -o $@ combined_main.o combined_glue.o combined_jacobian.o combined_connections.o \\',
+        f'\t    -L. -Wl,-rpath,$(CURDIR) {" ".join("-l"+p for p in type_reprs)} \\',
         f'\t    -L$(OMLIBDIR) $(IDALIBS) \\',
         f'\t    $(LIBS)',
         '',
     ]
-    # per-component shared library rules
-    for pfx in comp_prefixes:
+    # per-type shared library rules (one base library per component type)
+    for pfx in type_reprs:
         lines.append(f'lib{pfx}.so: $({pfx}_OBJS)')
         lines.append(f'\t$(CC) $(SOFLAGS) -o $@ $^ $(LIBS)')
         lines.append('')
@@ -2305,9 +2768,9 @@ def generate_makefile(comp_prefixes, output_prefix, directory, comps) -> str:
         '',
     ]
 
-    # per-component compile rules: the main file drops its main() via
+    # per-type compile rules: the main file drops its main() via
     # -DOMC_DLL_MAIN_DEFINE; the numbered files use a pattern rule.
-    for pfx in comp_prefixes:
+    for pfx in type_reprs:
         lines.append(f'{pfx}.o: {pfx}.c')
         lines.append(f'\t$(CC) $(CFLAGS) $({pfx}_DEFS) -DOMC_DLL_MAIN_DEFINE -c -o $@ $<')
         lines.append(f'{pfx}_%.o: {pfx}_%.c')
@@ -2321,6 +2784,9 @@ def generate_makefile(comp_prefixes, output_prefix, directory, comps) -> str:
 
     lines += [
         'combined_glue.o: combined_glue.c combined_setup.h',
+        '\t$(CC) $(CFLAGS) -c -o $@ $<',
+        '',
+        'combined_connections.o: combined_connections.c combined_setup.h',
         '\t$(CC) $(CFLAGS) -c -o $@ $<',
         '',
         'combined_jacobian.o: combined_jacobian.c combined_jacobian.h combined_setup.h',
@@ -2477,6 +2943,38 @@ def _mi_collect(node, comps, copies, conns, classmap):
             conns.append((_mi_cref_to_str(c['lhs']), _mi_cref_to_str(c['rhs'])))
 
 
+def _mi_connector_kinds(node, kinds):
+    """Collect {connector-variable-name: 'flow'|'stream'|'potential'} from every
+    connector class definition in a getModelInstance() tree, using the Modelica
+    flow/stream qualifiers (prefixes.connector). Model-driven and domain-agnostic
+    — no reliance on variable naming conventions."""
+    if isinstance(node, dict):
+        restr = node.get('restriction')
+        if isinstance(restr, str) and restr.endswith('connector'):
+            for el in node.get('elements', []):
+                if not isinstance(el, dict):
+                    continue
+                nm = el.get('name')
+                if not nm:
+                    continue
+                pref = el.get('prefixes') if isinstance(el.get('prefixes'), dict) else {}
+                conn = pref.get('connector')
+                kind = conn if conn in ('flow', 'stream') else 'potential'
+                # flow/stream qualifiers are authoritative; never let a later
+                # 'potential' (default) override an established flow/stream.
+                if kinds.get(nm) not in ('flow', 'stream'):
+                    kinds[nm] = kind
+        t = node.get('type')
+        if isinstance(t, dict):
+            _mi_connector_kinds(t, kinds)
+        for k, v in node.items():
+            if k != 'type':
+                _mi_connector_kinds(v, kinds)
+    elif isinstance(node, list):
+        for x in node:
+            _mi_connector_kinds(x, kinds)
+
+
 def cmd_prepare(argv):
     ap = argparse.ArgumentParser(prog='combine_components.py prepare')
     ap.add_argument('--instance', required=True,
@@ -2524,6 +3022,15 @@ def cmd_prepare(argv):
     open(mpath, 'w').write(''.join(f'{name}\t{sigs[name]}\n' for name, _, _ in comps))
     print(f'  {mpath}')
 
+    # model-driven connector-variable kinds (flow/stream/potential) from the
+    # getModelInstance flow/stream qualifiers, consumed by the generate phase so
+    # the connection classifier is domain-agnostic (no variable-name heuristics).
+    kinds = {}
+    _mi_connector_kinds(inst, kinds)
+    kpath = os.path.join(directory, '_acausal_connector_kinds.txt')
+    open(kpath, 'w').write(''.join(f'{n}\t{k}\n' for n, k in sorted(kinds.items())))
+    print(f'  {kpath}  ({len(kinds)} connector vars)')
+
     print(f'prepare: {len(comps)} components '
           f'[{", ".join(n for n, _, _ in comps)}], '
           f'{len(conns)} connections, {len(copies)} copied decls')
@@ -2559,6 +3066,13 @@ def main():
                  os.path.join(directory, args.conn)
     out_prefix = args.out
     out_dir    = directory
+
+    # model-driven connector kinds (flow/stream/potential) from getModelInstance,
+    # written by the prepare step; makes the connection classifier domain-agnostic
+    load_connector_kinds(directory)
+    if _CONNECTOR_KINDS:
+        print(f'Connector kinds (from getModelInstance): '
+              f'{", ".join(f"{k}={v}" for k, v in sorted(_CONNECTOR_KINDS.items()))}')
 
     print(f'Loading {len(prefixes)} components from {directory}')
     comps: Dict[str, ComponentInfo] = {}
@@ -2607,12 +3121,22 @@ def main():
     open(path, 'w').write(glue_c)
     print(f'  {path}')
 
+    # runtime connection coupling (Approach A): a data-driven applicator that
+    # overwrites the connector residual slots after the base eval, replacing the
+    # per-instance connected_*.c codegen. The component C stays topology-free.
+    conn_entries, instream_refs = build_connection_table(comps, specs, edges)
+    path = os.path.join(out_dir, 'combined_connections.c')
+    open(path, 'w').write(generate_connections_c(prefixes, conn_entries, instream_refs))
+    print(f'  {path}')
+
     for pfx in prefixes:
         comp = comps[pfx]
         if not comp.fdummy_residuals:
             print(f'  {pfx}: no fdummy residuals, skipping connected DAE generation')
             continue
-        code = generate_connected_dae(comp, specs, comps, edges)
+        # base DAE C with only inStream()->combined_instream() rewritten; the
+        # connection equations live in combined_connections.c, not here.
+        code = generate_reusable_dae(comp)
         path = os.path.join(out_dir, f'connected_{pfx}_16dae.c')
         open(path, 'w').write(code)
         print(f'  {path}')
