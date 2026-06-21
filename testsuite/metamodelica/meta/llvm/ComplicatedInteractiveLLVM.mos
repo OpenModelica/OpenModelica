@@ -17,25 +17,25 @@ res4 := ComplicatedInteractive.listOfTuple((2,3.5));
 // Result:
 // true
 // record ComplicatedInteractive.LI2.RecordWithComplicatedTypes
-//     rcf = (1.0,{})
+//     rcf = (1.0, {})
 // end ComplicatedInteractive.LI2.RecordWithComplicatedTypes;
 // record ComplicatedInteractive.LI2.RecordWithComplicatedTypes
-//     rcf = (1.0,{(1.0,SOME({}))})
+//     rcf = (1.0, {(1.0, SOME({}))})
 // end ComplicatedInteractive.LI2.RecordWithComplicatedTypes;
 // record ComplicatedInteractive.LI2.RecordWithComplicatedTypes
-//     rcf = (1.0,{(1.0,NONE()),(1.0,SOME({1,2,3}))})
+//     rcf = (1.0, {(1.0, NONE()), (1.0, SOME({1, 2, 3}))})
 // end ComplicatedInteractive.LI2.RecordWithComplicatedTypes;
 // record ComplicatedInteractive.LI2.RecordWithComplicatedTypes
-//     rcf = (1.0,{(1.0,NONE()),(1.0,SOME({1,2,3}))})
+//     rcf = (1.0, {(1.0, NONE()), (1.0, SOME({1, 2, 3}))})
 // end ComplicatedInteractive.LI2.RecordWithComplicatedTypes;
-// (4,record ComplicatedInteractive.LI2.RecordWithComplicatedTypes
-//     rcf = (1.0,{(7.5,NONE())})
+// (4, record ComplicatedInteractive.LI2.RecordWithComplicatedTypes
+//     rcf = (1.0, {(7.5, NONE())})
 // end ComplicatedInteractive.LI2.RecordWithComplicatedTypes;)
-// (4,record ComplicatedInteractive.LI2.RecordWithComplicatedTypes
-//     rcf = (1.0,{(7.5,SOME({}))})
+// (4, record ComplicatedInteractive.LI2.RecordWithComplicatedTypes
+//     rcf = (1.0, {(7.5, SOME({}))})
 // end ComplicatedInteractive.LI2.RecordWithComplicatedTypes;)
-// (4,record ComplicatedInteractive.LI2.RecordWithComplicatedTypes
-//     rcf = (1.0,{(7.5,SOME({1,2,3}))})
+// (4, record ComplicatedInteractive.LI2.RecordWithComplicatedTypes
+//     rcf = (1.0, {(7.5, SOME({1, 2, 3}))})
 // end ComplicatedInteractive.LI2.RecordWithComplicatedTypes;)
-// {(2,3.5),(2,3.5),(2,3.5),(1,7.5),(2,3.5),(2,3.5)}
+// {(2, 3.5), (2, 3.5), (2, 3.5), (1, 7.5), (2, 3.5), (2, 3.5)}
 // endResult

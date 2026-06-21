@@ -1427,7 +1427,10 @@ algorithm
     case (Absyn.IDENT(name="arrayGet"), _) then "arrayGet_jit";
     case (Absyn.IDENT(name="arrayUpdate"), _) then "arrayUpdate_jit";
     case (Absyn.IDENT(name="in_range_integer"), _) then "in_range_integer_jit";
-    case (Absyn.IDENT(name="print"), _) then "puts";
+    case (Absyn.IDENT(name="print"), _)
+    algorithm
+      EXT_LLVM.genCallArg(THREAD_DATA);
+      then "boxptr_print";
     case (Ppath as Absyn.IDENT(__), _) then Ppath.name;
     else  algorithm Error.addInternalError("Called unsupported builtin function\n", sourceInfo()); then fail();
   end match;
