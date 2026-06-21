@@ -1427,6 +1427,7 @@ algorithm
     case (Absyn.IDENT(name="arrayGet"), _) then "arrayGet_jit";
     case (Absyn.IDENT(name="arrayUpdate"), _) then "arrayUpdate_jit";
     case (Absyn.IDENT(name="in_range_integer"), _) then "in_range_integer_jit";
+    case (Absyn.IDENT(name="listDelete"), _) then "listDelete_jit";
     case (Absyn.IDENT(name="print"), _)
     algorithm
       EXT_LLVM.genCallArg(THREAD_DATA);

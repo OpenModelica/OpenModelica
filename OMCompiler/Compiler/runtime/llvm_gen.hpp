@@ -121,7 +121,22 @@ extern "C"
     const bool &switchNeedsDefaultBB() {return switchIsIncomplete;}
 
     int createSwitch(llvm::Value *cond, const modelica_integer numCases, llvm::IRBuilder<> &builder) {
-      switchInst = builder.CreateSwitch(cond,nullptr,numCases);
+      // LLVM verifier (post LLVM 15 / opaque-pointer era) rejects a
+      // switch with a null default destination, which ORC v2 hits when
+      // SimpleCompiler runs the verifier as part of its codegen
+      // pipeline — manifesting as a segfault in FPPassManager rather
+      // than a clean diagnostic. Wire up a synthetic "default-trap"
+      // basic block so the switch is always structurally valid; if
+      // the surrounding lowering later overwrites the default via
+      // setDefaultBBForSwiInst (the normal matchcontinue path), the
+      // trap block becomes dead and gets optimised away.
+      llvm::Function *F = builder.GetInsertBlock()->getParent();
+      llvm::BasicBlock *trapBB = llvm::BasicBlock::Create(F->getContext(),
+                                                         "switch.default.trap",
+                                                         F);
+      llvm::IRBuilder<> trapBuilder(trapBB);
+      trapBuilder.CreateUnreachable();
+      switchInst = builder.CreateSwitch(cond, trapBB, numCases);
       switchIsIncomplete = true;
       return 0;
     }
