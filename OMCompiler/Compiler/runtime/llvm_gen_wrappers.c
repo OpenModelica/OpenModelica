@@ -75,6 +75,18 @@ modelica_boolean omc_jit_stringEqual(const void *s1, const void *s2)
   return mmc_stringCompare(s1, s2) == 0;
 }
 
+/* mmc_mk_box is `static inline` in meta_modelica.h and therefore has
+ * no exported symbol the JIT can resolve. The branch already provided
+ * a non-inline implementation as mmc_mk_box_jit further down in this
+ * file; alias it under the bare name the JIT looks up. */
+
+/* arrayCreate / arrayLength / in_range_integer already had _jit
+ * delegating wrappers in this file (lines 453, 1104, 1123 — added on
+ * the original branch). Re-expose those wrapper functions under the
+ * bare names the JIT looks up via asm() rename further down; defining
+ * a second copy here would conflict with the out-of-line instantiation
+ * GCC sometimes emits for the static inlines they call. */
+
 modelica_integer mmc_unbox_integer_no_inline(modelica_metatype v)
 {
   return MMC_UNTAGFIXNUM(v);

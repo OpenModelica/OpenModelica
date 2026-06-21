@@ -1059,7 +1059,7 @@ algorithm
         /*Add the record description*/
         EXT_LLVM.genCallArgAddr(record_desc);
         List.map_0(elementArgs,EXT_LLVM.genCallArg);
-        EXT_LLVM.genCall(name="mmc_mk_box",functionTy=MODELICA_METATYPE,dest=genVarName(dest),assignment=true,isVariadic=true);
+        EXT_LLVM.genCall(name="mmc_mk_box_jit",functionTy=MODELICA_METATYPE,dest=genVarName(dest),assignment=true,isVariadic=true);
       then();
     case DAE.T_METAARRAY(__)
       algorithm
@@ -1081,7 +1081,7 @@ algorithm
         EXT_LLVM.genCallArgConstInt(metaTypeSlots);
         EXT_LLVM.genCallArgConstInt(metaTypeCtor);
         List.map_0(elementArgs,EXT_LLVM.genCallArg);
-        EXT_LLVM.genCall(name="mmc_mk_box",functionTy=MODELICA_METATYPE,dest=genVarName(dest),assignment=true,isVariadic=true);
+        EXT_LLVM.genCall(name="mmc_mk_box_jit",functionTy=MODELICA_METATYPE,dest=genVarName(dest),assignment=true,isVariadic=true);
       then();
   end match;
 end genLiteralMetatype;
@@ -1413,6 +1413,18 @@ algorithm
       EXT_LLVM.genCallArg(THREAD_DATA);
       then "nobox_stringReal";
     case (Absyn.IDENT(name="stringLength"), _) then "stringLength_jit";
+    // Route additional builtins to the non-inline _jit shims in
+    // OMCompiler/Compiler/runtime/llvm_gen_wrappers.c. The bare names
+    // live as static-inline-only definitions in SimulationRuntime
+    // headers and so are not resolvable by the JIT's dynamic symbol
+    // lookup. The _jit variants delegate to the inline versions but
+    // export a non-inline symbol the ORC v2 LLJIT can find.
+    case (Absyn.IDENT(name="arrayLength"), _) then "arrayLength_jit";
+    case (Absyn.IDENT(name="arrayCreate"), _) then "arrayCreate_jit";
+    case (Absyn.IDENT(name="arrayGet"), _) then "arrayGet_jit";
+    case (Absyn.IDENT(name="arrayUpdate"), _) then "arrayUpdate_jit";
+    case (Absyn.IDENT(name="in_range_integer"), _) then "in_range_integer_jit";
+    case (Absyn.IDENT(name="print"), _) then "puts";
     case (Ppath as Absyn.IDENT(__), _) then Ppath.name;
     else  algorithm Error.addInternalError("Called unsupported builtin function\n", sourceInfo()); then fail();
   end match;
