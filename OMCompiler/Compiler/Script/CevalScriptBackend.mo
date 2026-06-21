@@ -6120,7 +6120,8 @@ protected function runAcausalDAE
 protected
   Absyn.Path className;
   String cname, prefix, workdir, scriptPath, instFile, outPrefix, cmd, names,
-         exe, logFile, resultFile, instJson, omhome, wrappersFile, prepLog, combLog, outFmt;
+         exe, logFile, resultFile, instJson, omhome, wrappersFile, prepLog, combLog, outFmt,
+         flatFile, flatStr;
   list<String> prefixes;
   Integer rc;
   Boolean ok, buildOk;
@@ -6141,6 +6142,31 @@ algorithm
   Values.STRING(instJson) := NFApi.getModelInstance(className, Absyn.IDENT("__NoContext"), "", false);
   instFile := workdir + "/" + cname + "_instance.json";
   System.writeFile(instFile, instJson);
+
+  // 1b. dump the RESOLVED flat model of the original top-level model. The new
+  //     frontend has already run resolveConnections, so this flat model carries
+  //     OMC's authoritative connection resolution: potential equalities, flow/KCL
+  //     sums with the correct inside/outside signs, stream equations, and broken
+  //     overconstrained loops. The combine reads connect() semantics from here
+  //     rather than reconstructing them from the raw edges. This flattening is
+  //     for metadata only -- the components are still compiled separately.
+  //     getModelInstance (step 1) populates NFInst's global mutable caches and
+  //     leaves them in an instance-API state; a subsequent full instantiation
+  //     fails unless we wipe them first (runFrontEndWorkNF only clears on its own
+  //     failure). So clear the NF caches, then flatten with dumpFlat=true to get
+  //     the flat-Modelica string directly.
+  flatFile := workdir + "/" + cname + "_flat.mo";
+  try
+    NFInst.clearCaches();
+    (outCache, _, _, flatStr) := runFrontEnd(outCache, inEnv, className, false, true);
+    if not stringEmpty(flatStr) then
+      System.writeFile(flatFile, flatStr);
+    end if;
+  else
+    // Non-fatal: the resolved flat model is auxiliary connection metadata; the
+    // combine falls back to the instance-JSON connections if it is absent.
+    flatStr := "";
+  end try;
 
   // 2. prepare: synthesize per-component wrapper models + connection list.
   prepLog := workdir + "/_acausal_prepare.log";
