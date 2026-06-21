@@ -2,6 +2,9 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 TestDaeModeNB.mos \
+TestDaeModeNBAlgLoop.mos \
+TestDaeModeNBDerState.mos \
+TestDaeModeNBMultiPartition.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

@@ -1271,6 +1271,21 @@ protected
         end for;
       end if;
     end addSubDependencies;
+
+    function addDerToState
+      "daeMode: a residual dependency on der(x) belongs to the state x -- its jacobian
+       column carries the cj*dF/dx' contribution. Replace each state derivative with its
+       state so residuals referencing only der(x) (e.g. der(x)=sin(time)) still get an
+       entry in x's column; all other dependencies are kept as is."
+      input ComponentRef dep;
+      input output UnorderedSet<ComponentRef> set;
+    algorithm
+      if BVariable.checkCref(dep, BVariable.isStateDerivative, sourceInfo()) then
+        UnorderedSet.add(BVariable.getVarName(Util.getOption(BVariable.getVarState(BVariable.getVarPointer(dep, sourceInfo())))), set);
+      else
+        UnorderedSet.add(dep, set);
+      end if;
+    end addDerToState;
   algorithm
     dependencies := UnorderedSet.selfMap(dependencies, function ComponentRef.mapExp(func = Expression.replaceResizableParameter));
     dependencies := UnorderedSet.selfMap(dependencies, function ComponentRef.simplifySubscripts(trim = false));
@@ -1286,6 +1301,9 @@ protected
         then UnorderedSet.fold(dependencies, function addSubDependencies(map = map, checkFn = BVariable.isStateOrOptimizable), UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
       case NBJacobian.JacobianType.OPT_R0
         then UnorderedSet.fold(dependencies, function addSubDependencies(map = map, checkFn = BVariable.isStateOrOptimizable), UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
+      // daeMode: attribute der(x) dependencies to the state x (cj*dF/dx' term)
+      case NBJacobian.JacobianType.DAE
+        then UnorderedSet.fold(dependencies, addDerToState, UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
       else dependencies;
     end match;
   end prepareDependencies;
