@@ -1466,7 +1466,13 @@ int createCStrArray(const char *name, const modelica_integer fields) {
       llvm::ArrayType::get(getLLVMType(MODELICA_METATYPE), fields),
       /*The string arrays*/ gepArray);
   DBG("constArray created setting alignment\n");
-  gvarStrArray->setAlignment(llvm::Align(fields * 8));
+  // The original branch used (fields * 8) as the alignment value, but
+  // LLVM 16's llvm::Align asserts the argument is a power of two —
+  // for fields=3 this aborts the JIT with an Alignment-is-not-a-
+  // power-of-2 trap. The actual intent is pointer alignment for a
+  // global array of metatype pointers, which is 8 regardless of
+  // length. Stage 5 follow-up.
+  gvarStrArray->setAlignment(llvm::Align(8));
   gvarStrArray->setInitializer(constArray);
   /* Save the global variabel in our global variable map*/
   program->globalConstants[name] = gvarStrArray;
