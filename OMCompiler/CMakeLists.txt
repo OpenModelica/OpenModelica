@@ -38,6 +38,13 @@ omc_option(OM_OMC_USE_CORBA "Should use corba." OFF)
 
 omc_option(OM_OMC_USE_LAPACK "Should we use lapack." ON)
 
+# LLVM JIT path for MetaModelica function evaluation (PR #11766 revive).
+# Default OFF: build links against stubs and the JIT_EVAL_FUNC debug flag
+# silently no-ops at runtime. When ON, find a host LLVM (16 or 18) and
+# wire up the real Compiler/LLVM/* MetaModelica sources plus the
+# Compiler/runtime/llvm_gen.cpp backend.
+omc_option(OM_OMC_ENABLE_LLVM_JIT "Enable the LLVM JIT path for MetaModelica functions (experimental, revive of PR #11766)." OFF)
+
 
 # Remove -DNDEBUG from release build command lines. The reason is that -DNDEBUG completely
 # removes assert(...) statements. We have some assert statements with side effects. Of course,

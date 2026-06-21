@@ -289,10 +289,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/MidCode/HashTableMidVar.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/MidCode/MidCodeUtil.mo
 
-    # "LLVM JIT" — stubs by default; real implementations live under LLVM/
-    # and are wired in by Stage 2 of the LLVM revive work (see PR #11766 successor).
-    ${CMAKE_CURRENT_SOURCE_DIR}/Stubs/EXT_LLVM.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Stubs/MidToLLVM.mo
+
 
     # "NBackend Classes";
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Classes/NBackendDAE.mo
@@ -526,3 +523,21 @@ set(OMC_MM_BACKEND_SOURCES
 
     ${CMAKE_CURRENT_SOURCE_DIR}/../SimulationRuntime/c/RuntimeSources.mo
 )
+
+# LLVM JIT MetaModelica sources — picked at configure time. Default OFF
+# uses the Stubs/ versions added in Stage 1 of the LLVM revive (see
+# PR #11766 successor); they satisfy the imports added on the branch
+# but execute as no-ops at runtime. ON uses the real LLVM/ modules
+# which drive Compiler/runtime/llvm_gen.cpp.
+if(OM_OMC_ENABLE_LLVM_JIT)
+  list(APPEND OMC_MM_BACKEND_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/LLVM/MidToLLVMUtil.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/LLVM/EXT_LLVM.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/LLVM/MidToLLVM.mo
+  )
+else()
+  list(APPEND OMC_MM_BACKEND_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/Stubs/EXT_LLVM.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Stubs/MidToLLVM.mo
+  )
+endif()

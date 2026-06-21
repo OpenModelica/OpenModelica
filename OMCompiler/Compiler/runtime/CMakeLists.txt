@@ -60,6 +60,15 @@ set(OMC_RUNTIIME_SOURCES
     systemimplmisc.cpp
     ffi_omc.cpp)
 
+# Pick the LLVM JIT backend: real implementation when OM_OMC_ENABLE_LLVM_JIT
+# is ON, otherwise the no-op stubs. The stubs match the symbol list expected
+# by Compiler/LLVM/EXT_LLVM.mo so the MetaModelica side links either way.
+if(OM_OMC_ENABLE_LLVM_JIT)
+  list(APPEND OMC_RUNTIIME_SOURCES llvm_gen.cpp)
+else()
+  list(APPEND OMC_RUNTIIME_SOURCES ext_llvm_stubs.cpp)
+endif()
+
 
 # ######################################################################################################################
 # Library: omcruntime
@@ -80,6 +89,51 @@ target_link_libraries(omcruntime PUBLIC omc::3rd::zlib)
 
 if(OM_OMC_USE_LAPACK)
   target_link_libraries(omcruntime PUBLIC ${LAPACK_LIBRARIES})
+endif()
+
+# LLVM JIT (revive of PR #11766). Prefer LLVM 18 then 16. The JIT backend
+# uses Core, MCJIT, Orc (legacy ORCv1 in the branch — Stage 3 will port to
+# ORCv2), TransformUtils, IPO and the native target. Component names are
+# resolved via llvm_map_components_to_libnames.
+if(OM_OMC_ENABLE_LLVM_JIT)
+  # LLVM 16's LLVMSupport export references zstd::libzstd_shared as a link
+  # dependency. Some Debian/Ubuntu images ship libzstd.so without the CMake
+  # config that defines that target — declare a thin imported shim here so
+  # find_package(LLVM) does not abort. Harmless when zstd's own CMake
+  # config defines the target first.
+  if(NOT TARGET zstd::libzstd_shared)
+    find_library(OMC_ZSTD_LIB
+                 NAMES zstd libzstd libzstd.so.1
+                 PATHS /usr/lib/x86_64-linux-gnu /usr/lib /lib/x86_64-linux-gnu)
+    if(NOT OMC_ZSTD_LIB)
+      # Fall back to the SONAME — Debian/Ubuntu without -dev have no libzstd.so symlink.
+      find_file(OMC_ZSTD_SO
+                NAMES libzstd.so.1
+                PATHS /usr/lib/x86_64-linux-gnu /usr/lib /lib/x86_64-linux-gnu)
+      set(OMC_ZSTD_LIB ${OMC_ZSTD_SO})
+    endif()
+    if(OMC_ZSTD_LIB)
+      message(STATUS "Defining zstd::libzstd_shared shim for LLVM at ${OMC_ZSTD_LIB}.")
+      add_library(zstd::libzstd_shared SHARED IMPORTED)
+      set_target_properties(zstd::libzstd_shared PROPERTIES IMPORTED_LOCATION ${OMC_ZSTD_LIB})
+    endif()
+  endif()
+
+  find_package(LLVM 18 CONFIG QUIET)
+  if(NOT LLVM_FOUND)
+    find_package(LLVM 16 CONFIG REQUIRED)
+  endif()
+  message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION} for OMC JIT (headers at ${LLVM_INCLUDE_DIRS}).")
+
+  llvm_map_components_to_libnames(LLVM_JIT_LIBS
+    core orcjit mcjit executionengine
+    transformutils ipo support irreader
+    native nativecodegen)
+
+  target_include_directories(omcruntime PUBLIC ${LLVM_INCLUDE_DIRS})
+  target_compile_definitions(omcruntime PUBLIC ${LLVM_DEFINITIONS_LIST})
+  target_compile_definitions(omcruntime PUBLIC OMC_HAVE_LLVM_JIT)
+  target_link_libraries(omcruntime PUBLIC ${LLVM_JIT_LIBS})
 endif()
 
 target_include_directories(omcruntime PUBLIC ${Intl_INCLUDE_DIRS})
