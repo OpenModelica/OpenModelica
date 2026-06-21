@@ -38,8 +38,6 @@
 
 #ifndef _LLVM_GEN_H
 #define _LLVM_GEN_H
-/*Modelica headers */
-#include "ext_llvm.hpp"
 /*C++ STL headers */
 #include <algorithm>
 #include <cassert>
@@ -52,7 +50,10 @@
 #include <string>
 #include <vector>
 #include <functional>
-/* LLVM headers*/
+/* LLVM headers — must come BEFORE the OMC meta_modelica_builtin.h headers
+ * (pulled in via ext_llvm.hpp). The OMC headers define short macros like
+ * `isPresent`, `equality`, `valueConstructor` that collide with member
+ * functions and template parameters in modern llvm/Support/Casting.h. */
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/IRBuilder.h"
@@ -70,6 +71,9 @@
 #include "OMC_JIT.hpp"
 /* We need to fetch stuff from dynlibs */
 #include "llvm/Support/DynamicLibrary.h"
+/*Modelica headers — intentionally last so the macro pollution does not
+ * leak into LLVM headers above. */
+#include "ext_llvm.hpp"
 
 extern "C"
 {
@@ -154,7 +158,7 @@ extern "C"
 
     explicit Function(std::unique_ptr<FunctionPrototype> prototype_) :
       prototype{std::move(prototype_)}
-    {imValMngr = llvm::make_unique<IntermediateValMngr>();}
+    {imValMngr = std::make_unique<IntermediateValMngr>();}
 
     llvm::Function *getLLVMFunc() {return prototype->function;}
     llvm::FunctionType *getPrototypeFunctionType() {return prototype->function_type;}
@@ -193,13 +197,14 @@ extern "C"
     //TODO: Can be extended to configure the different optimisations on setup.
     Program(const std::string &name) :  builder{context}
     {
-      module = llvm::make_unique<llvm::Module>("module",context);
-      functionPassMngr = llvm::make_unique<llvm::legacy::FunctionPassManager>(module.get());
+      module = std::make_unique<llvm::Module>("module",context);
+      functionPassMngr = std::make_unique<llvm::legacy::FunctionPassManager>(module.get());
       functionPassMngr->add(llvm::createPromoteMemoryToRegisterPass()); //SSA conversion
       functionPassMngr->add(llvm::createCFGSimplificationPass()); //Dead code elimination
       functionPassMngr->add(llvm::createSROAPass());
       functionPassMngr->add(llvm::createLoopSimplifyCFGPass());
-      functionPassMngr->add(llvm::createConstantPropagationPass());
+      // createConstantPropagationPass was removed upstream in LLVM 12.
+      // The constant-folding it used to do is now part of InstCombine.
       functionPassMngr->add(llvm::createNewGVNPass());//Global value numbering
       functionPassMngr->add(llvm::createReassociatePass());
       functionPassMngr->add(llvm::createPartiallyInlineLibCallsPass()); //Inline standard calls
@@ -223,7 +228,7 @@ extern "C"
       ipoPassMngr.add(llvm::createArgumentPromotionPass());
       ipoPassMngr.add(llvm::createInstructionCombiningPass());
       ipoPassMngr.add(llvm::createCFGSimplificationPass());
-      jit = llvm::make_unique<llvm::orc::OMC_JIT>();
+      jit = std::make_unique<llvm::orc::OMC_JIT>();
     }
 
     void nameArgument(const char *name) {
