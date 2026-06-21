@@ -56,11 +56,17 @@ extern "C"
     Variable *rightVariable = program->currentFunc->symTab[rhs].get();
     Variable *destVariable = program->currentFunc->symTab[dest].get();
     DBG("Creating load instructions\n");
-    l = leftVariable->getAllocaInst();
-    r = rightVariable->getAllocaInst();
+    llvm::AllocaInst *lAi = leftVariable->getAllocaInst();
+    llvm::AllocaInst *rAi = rightVariable->getAllocaInst();
     d = destVariable->getAllocaInst();
-    l = program->builder.CreateLoad(l, leftVariable->isVolatile(), lhs);
-    r = program->builder.CreateLoad(r, rightVariable->isVolatile(), rhs);
+    // LLVM 16+ opaque-pointer CreateLoad: the pointee type must be
+    // passed explicitly. For an AllocaInst the allocated type is the
+    // canonical source. Same pattern below in createLoadInst and the
+    // castXTypeToYType template.
+    l = program->builder.CreateLoad(lAi->getAllocatedType(), lAi,
+                                    leftVariable->isVolatile(), lhs);
+    r = program->builder.CreateLoad(rAi->getAllocatedType(), rAi,
+                                    rightVariable->isVolatile(), rhs);
   }
 
   llvm::Type *getLLVMType(const uint8_t type,const char* structName="")
@@ -70,7 +76,7 @@ extern "C"
     case MODELICA_BOOLEAN: return llvm::Type::getInt1Ty(program->context);
     case MODELICA_REAL: return llvm::Type::getDoubleTy(program->context);
     case MODELICA_METATYPE: return llvm::Type::getInt8PtrTy(program->context);
-    case MODELICA_TUPLE: return program->module->getTypeByName(structName);
+    case MODELICA_TUPLE: return llvm::StructType::getTypeByName(program->context, structName);
     case MODELICA_VOID: return llvm::Type::getVoidTy(program->context);
     case MODELICA_INTEGER_PTR: return llvm::Type::getIntNPtrTy(program->context,NBITS_MODELICA_INTEGER);
     case MODELICA_BOOLEAN_PTR: return llvm::Type::getInt1PtrTy(program->context);
@@ -136,7 +142,7 @@ extern "C"
     }
     DBG("Type is OK trying to allocate and set alignment:");
     llvm::AllocaInst *ai {program->builder.CreateAlloca(type, 0, name)};
-    ai->setAlignment(getAlignment(type));
+    ai->setAlignment(llvm::Align(getAlignment(type)));
     return ai;
   }
 
@@ -145,8 +151,10 @@ extern "C"
     DBG("Create load instruction with dest:%s\n line %d of file \"%s\".\n",dest,__LINE__, __FILE__);
     Variable *destVar {program->currentFunc->symTab[dest].get()};
     llvm::AllocaInst* ai = destVar->getAllocaInst();
-    llvm::LoadInst *li = program->builder.CreateLoad(ai, destVar->isVolatile(), ai->getName());
-    li->setAlignment(ai->getAlignment());
+    llvm::LoadInst *li = program->builder.CreateLoad(ai->getAllocatedType(), ai,
+                                                    destVar->isVolatile(),
+                                                    ai->getName());
+    li->setAlignment(ai->getAlign());
     DBG("Load instruction created\n");
     return li;
   }
@@ -162,7 +170,7 @@ extern "C"
       return;
     }
     llvm::StoreInst *si {program->builder.CreateStore(val,ai,variable->isVolatile())};
-    si->setAlignment(ai->getAlignment());
+    si->setAlignment(ai->getAlign());
   }
 
 } //End extern C;
@@ -189,8 +197,9 @@ extern "C++"
   {
     DBG("CallingXTypeToYType\n");
     Variable *variable {program->currentFunc->symTab[src].get()};
-    llvm::Value *s {variable->getAllocaInst()};
-    s = program->builder.CreateLoad(s,s->getName());
+    llvm::AllocaInst *sAi = variable->getAllocaInst();
+    llvm::Value *s = program->builder.CreateLoad(sAi->getAllocatedType(), sAi,
+                                                 sAi->getName());
     DBG("Invoking builder instruction\n");
     llvm::Value *res { irBuilderFunc(s,ty) };
     createStoreInst(res,dest);

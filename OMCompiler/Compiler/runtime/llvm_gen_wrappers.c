@@ -130,7 +130,7 @@ modelica_metatype mmc_arrcon_to_value_wrapper(modelica_metatype arr, const int t
 }
 
   //  generate_array(enum type_desc_e type, int curdim, int ndims,_index_t *dim_size, void **data)
-  //EX call: generate_array(TYPE_DESC_REAL, 1, desc->data.real_array.ndims, desc->data.real_array.dim_size, &ptr);
+  //EX call: generate_array(TYPE_DESC_REAL, 1, desc->data.r_array.ndims, desc->data.r_array.dim_size, &ptr);
 //The varlst will be constructed in memory before it is passed to this function.
 modelica_metatype mmc_mtcon_to_value(modelica_metatype varlst)
 {
@@ -564,8 +564,8 @@ static int parse_array(type_description *desc, modelica_metatype arrdata, modeli
   dim_size = (_index_t*) malloc(sizeof(_index_t) * dims);
   switch (desc->type) {
   case TYPE_DESC_REAL_ARRAY:
-    desc->data.real_array.ndims = dims;
-    desc->data.real_array.dim_size = dim_size;
+    desc->data.r_array.ndims = dims;
+    desc->data.r_array.dim_size = dim_size;
     break;
   case TYPE_DESC_INT_ARRAY:
     desc->data.int_array.ndims = dims;
@@ -576,8 +576,8 @@ static int parse_array(type_description *desc, modelica_metatype arrdata, modeli
     desc->data.bool_array.dim_size = dim_size;
     break;
   case TYPE_DESC_STRING_ARRAY:
-    desc->data.string_array.ndims = dims;
-    desc->data.string_array.dim_size = dim_size;
+    desc->data.str_array.ndims = dims;
+    desc->data.str_array.dim_size = dim_size;
     break;
   default:
     assert(0);
@@ -587,8 +587,8 @@ static int parse_array(type_description *desc, modelica_metatype arrdata, modeli
     return -1;
   switch (desc->type) {
   case TYPE_DESC_REAL_ARRAY:
-    alloc_real_array_data(&(desc->data.real_array));
-    data = desc->data.real_array.data;
+    alloc_real_array_data(&(desc->data.r_array));
+    data = desc->data.r_array.data;
     return get_array_data(1, dims, dim_size, arrdata, TYPE_DESC_REAL, &data);
   case TYPE_DESC_INT_ARRAY:
     alloc_integer_array_data(&(desc->data.int_array));
@@ -599,8 +599,8 @@ static int parse_array(type_description *desc, modelica_metatype arrdata, modeli
     data = desc->data.bool_array.data;
     return get_array_data(1, dims, dim_size, arrdata, TYPE_DESC_BOOL, &data);
   case TYPE_DESC_STRING_ARRAY:
-    alloc_string_array_data(&(desc->data.string_array));
-    data = desc->data.string_array.data;
+    alloc_string_array_data(&(desc->data.str_array));
+    data = desc->data.str_array.data;
     return get_array_data(1, dims, dim_size, arrdata, TYPE_DESC_STRING, &data);
   default:
     break;
@@ -718,10 +718,10 @@ modelica_metatype type_desc_to_value(type_description *desc)
                                    varlst, namelst, mmc_mk_icon(-1));
   };
   case TYPE_DESC_REAL_ARRAY: {
-    modelica_metatype ptr = (modelica_real *) desc->data.real_array.data
-      + base_array_nr_of_elements(desc->data.real_array) - 1;
-    return generate_array(TYPE_DESC_REAL, 1, desc->data.real_array.ndims,
-                          desc->data.real_array.dim_size, &ptr);
+    modelica_metatype ptr = (modelica_real *) desc->data.r_array.data
+      + base_array_nr_of_elements(desc->data.r_array) - 1;
+    return generate_array(TYPE_DESC_REAL, 1, desc->data.r_array.ndims,
+                          desc->data.r_array.dim_size, &ptr);
   };
   case TYPE_DESC_INT_ARRAY: {
     modelica_metatype ptr = (modelica_integer *) desc->data.int_array.data
@@ -736,10 +736,10 @@ modelica_metatype type_desc_to_value(type_description *desc)
                           desc->data.bool_array.dim_size, &ptr);
   };
   case TYPE_DESC_STRING_ARRAY: {
-    modelica_metatype ptr = (modelica_string *) desc->data.string_array.data
-      + base_array_nr_of_elements(desc->data.string_array) - 1;
-    return generate_array(TYPE_DESC_STRING, 1, desc->data.string_array.ndims,
-                          desc->data.string_array.dim_size, &ptr);
+    modelica_metatype ptr = (modelica_string *) desc->data.str_array.data
+      + base_array_nr_of_elements(desc->data.str_array) - 1;
+    return generate_array(TYPE_DESC_STRING, 1, desc->data.str_array.ndims,
+                          desc->data.str_array.dim_size, &ptr);
   };
   case TYPE_DESC_MMC: {
     void* t = 0;//TODO!:

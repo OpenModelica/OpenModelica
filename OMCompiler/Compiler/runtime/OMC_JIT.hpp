@@ -129,13 +129,12 @@ namespace llvm {
           consumeError(Sym.takeError());
           return JITSymbol(nullptr);
         }
-        // ORC v2's lookup returns Expected<ExecutorSymbolDef> in LLVM 16+.
-        // Earlier in the 16 series .getAddress() still produced a
-        // JITTargetAddress; current 16 dot releases (and 17+) return an
-        // ExecutorAddr whose raw integer address is exposed via
-        // .getValue(). Reach through both shapes here.
-        auto Addr = Sym->getAddress();
-        return JITSymbol(static_cast<uint64_t>(Addr.getValue()),
+        // ORC v2's LLJIT::lookup returns Expected<ExecutorAddr> in
+        // LLVM 16. Older shapes returned Expected<ExecutorSymbolDef>
+        // (requiring .getAddress()) or Expected<JITEvaluatedSymbol>;
+        // this branch targets the LLVM 16 shape directly. ExecutorAddr's
+        // raw integer is exposed by .getValue().
+        return JITSymbol(static_cast<uint64_t>(Sym->getValue()),
                          JITSymbolFlags::Exported);
       }
 

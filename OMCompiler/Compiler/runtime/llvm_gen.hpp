@@ -120,7 +120,7 @@ extern "C"
     llvm::SwitchInst *getSwiInst() {return switchInst;}
     const bool &switchNeedsDefaultBB() {return switchIsIncomplete;}
 
-    int createSwitch(llvm::Value *cond, const modelica_integer numCases,llvm::IRBuilder<> builder) {
+    int createSwitch(llvm::Value *cond, const modelica_integer numCases, llvm::IRBuilder<> &builder) {
       switchInst = builder.CreateSwitch(cond,nullptr,numCases);
       switchIsIncomplete = true;
       return 0;
@@ -167,7 +167,7 @@ extern "C"
 
     void setPrototypeFunctionType(llvm::FunctionType *ft) { prototype->function_type = ft;}
     void setLLVMFunction(llvm::Function *f) { prototype->function = f; }
-    const std::string getName() {return prototype->function->getName();};
+    std::string getName() {return prototype->function->getName().str();};
   };
 
   struct Program {
@@ -199,35 +199,15 @@ extern "C"
     {
       module = std::make_unique<llvm::Module>("module",context);
       functionPassMngr = std::make_unique<llvm::legacy::FunctionPassManager>(module.get());
-      functionPassMngr->add(llvm::createPromoteMemoryToRegisterPass()); //SSA conversion
-      functionPassMngr->add(llvm::createCFGSimplificationPass()); //Dead code elimination
-      functionPassMngr->add(llvm::createSROAPass());
-      functionPassMngr->add(llvm::createLoopSimplifyCFGPass());
-      // createConstantPropagationPass was removed upstream in LLVM 12.
-      // The constant-folding it used to do is now part of InstCombine.
-      functionPassMngr->add(llvm::createNewGVNPass());//Global value numbering
-      functionPassMngr->add(llvm::createReassociatePass());
-      functionPassMngr->add(llvm::createPartiallyInlineLibCallsPass()); //Inline standard calls
-      functionPassMngr->add(llvm::createDeadCodeEliminationPass());
-      functionPassMngr->add(llvm::createCFGSimplificationPass()); //Cleanup
-      functionPassMngr->add(llvm::createInstructionCombiningPass());
-      functionPassMngr->add(llvm::createFlattenCFGPass()); //Flatten the control flow graph.
-      /*Loops*/
-      functionPassMngr->add(llvm::createLoopIdiomPass());
-      functionPassMngr->add(llvm::createSimpleLoopUnrollPass());
-      functionPassMngr->add(llvm::createCFGSimplificationPass());
+      // The entire optimisation pipeline was registered against the
+      // legacy pass manager. Most of those passes (PromoteMemoryToRegister,
+      // SROA, NewGVN, InstCombine, FlattenCFG, ArgumentPromotion etc.)
+      // moved to the new pass manager on the way to LLVM 16 and either
+      // dropped their llvm:: factory function or stopped being
+      // convertible to the legacy `Pass *`. Disable the registrations
+      // here so the JIT can be brought up unoptimised; a follow-up
+      // commit will migrate the pipeline to the new PassBuilder API.
       functionPassMngr->doInitialization();
-      /*   Interprocedual optimisations:
-       *   We only do inlining for now to keep the JIT snappy
-       *   TODO: Move to JIT Module?
-       *
-      */
-      ipoPassMngr.add(llvm::createReversePostOrderFunctionAttrsPass());
-      /* Disable inlining */
-      //      ipoPassMngr.add(llvm::createFunctionInliningPass());
-      ipoPassMngr.add(llvm::createArgumentPromotionPass());
-      ipoPassMngr.add(llvm::createInstructionCombiningPass());
-      ipoPassMngr.add(llvm::createCFGSimplificationPass());
       jit = std::make_unique<llvm::orc::OMC_JIT>();
     }
 

@@ -48,9 +48,9 @@ extern "C" {
 #endif
 modelica_metatype createRealArray1D(const modelica_integer siz);
 modelica_metatype real_set_jit(real_array *a, size_t i, modelica_real r);
-modelica_real real_get_jit(const real_array_t *a,size_t i);
-void mul_real_array_jit(const real_array_t *a,const real_array_t *b,real_array_t** dest);
-void add_real_array_jit(const real_array_t * a, const real_array_t * b, real_array_t** dest);
+modelica_real real_get_jit(const real_array *a,size_t i);
+void mul_real_array_jit(const real_array *a,const real_array *b,real_array** dest);
+void add_real_array_jit(const real_array * a, const real_array * b, real_array** dest);
 #ifdef __cplusplus
 }
 #endif

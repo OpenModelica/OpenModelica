@@ -20,7 +20,15 @@ function functionsAreJitted
   input list<Absyn.Path> funcNames;
   output Boolean b;
 algorithm
-  b := Util.boolAndList(List.map(funcNames,funcIsJitCompiled));
+  // Util.boolAndList was removed from master. Replace with an
+  // open-coded short-circuiting AND so the semantics match.
+  b := true;
+  for fName in funcNames loop
+    if not funcIsJitCompiled(fName) then
+      b := false;
+      return;
+    end if;
+  end for;
 end functionsAreJitted;
 
 function funcIsJitCompiled
@@ -49,5 +57,5 @@ algorithm
   midVar := MidCode.VAR("_tmp_" + intString(System.tmpTickIndex(46)), ValuesUtil.valueExpType(val), false);
 end valueToMidVar;
 
-annotation(__OpenModelica_Interface="backendInterface");
+annotation(__OpenModelica_Interface="backend");
 end MidToLLVMUtil;

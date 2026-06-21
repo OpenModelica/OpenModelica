@@ -364,7 +364,7 @@ function genmmcToValueCalls
   input list<MidCode.Var> valuePTRVars;
 algorithm
   if not listEmpty(valuePTRVars) then
-    genmmcToValueCall(listHead(mmcVars),genVarName(List.first(valuePTRVars)));
+    genmmcToValueCall(listHead(mmcVars),genVarName(listHead(valuePTRVars)));
     genmmcToValueCalls(listRest(mmcVars),listRest(valuePTRVars));
   end if;
 end genmmcToValueCalls;
@@ -722,7 +722,9 @@ algorithm
       algorithm
         EXT_LLVM.genCallArgAddr(genVarName(stmt.array));
         EXT_LLVM.genCallArg(genVarName(stmt.dimSize));
-        List.mapMap_0(stmt.sizeOfDims,genVarName,EXT_LLVM.genCallArg);
+        for sd in stmt.sizeOfDims loop
+          EXT_LLVM.genCallArg(genVarName(sd));
+        end for;
         EXT_LLVM.genCall(name=stmt.func,functionTy=MODELICA_VOID,dest="",assignment=false,isVariadic=true);
       then();
     end match;
@@ -845,8 +847,13 @@ algorithm
             case MidCode.OUT_WILD() :: _ algorithm (dest,assignment) := ("",false); then ();
             case {} algorithm (dest,assignment) := ("",false); then ();
           end match;
-          //Load the rest of the arguments
-          List.mapMap_0(pInputs,genVarName,EXT_LLVM.genCallArg);
+          //Load the rest of the arguments. List.mapMap_0 was removed
+          //upstream; the loop below preserves the original effect: apply
+          //genVarName to each input and pass the result to genCallArg,
+          //discarding the call's return value.
+          for pIn in pInputs loop
+            EXT_LLVM.genCallArg(genVarName(pIn));
+          end for;
           EXT_LLVM.genCall(functionName,functionTy,dest,assignment,isVariadic=false /*No variadic functions in Modelica.*/);
           /* Write to the return values from the struct */
           if listLength(pOutputs) > 1 then
@@ -1486,5 +1493,5 @@ algorithm
   EXT_LLVM.genCall(functionName,functionTy,dest=genVarName(unboxedVar),assignment=true);
 end unboxAndAssign;
 
-annotation(__OpenModelica_Interface="backendInterface");
+annotation(__OpenModelica_Interface="backend");
 end MidToLLVM;

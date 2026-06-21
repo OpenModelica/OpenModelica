@@ -216,10 +216,11 @@ int createBranch(const char *conditionVar, const modelica_integer onTrue,
   llvm::Function *f{
       program->module->getFunction(program->currentFunc->getName())};
   Variable *condVariable{program->currentFunc->symTab[conditionVar].get()};
-  llvm::Value *cond{condVariable->getAllocaInst()};
-
-  cond = program->builder.CreateLoad(cond, condVariable->isVolatile(),
-                                     cond->getName());
+  llvm::AllocaInst *condAi = condVariable->getAllocaInst();
+  llvm::Value *cond = program->builder.CreateLoad(condAi->getAllocatedType(),
+                                                  condAi,
+                                                  condVariable->isVolatile(),
+                                                  condAi->getName());
 
   llvm::BasicBlock *onTrueBB;
   llvm::BasicBlock *onFalseBB;
@@ -337,8 +338,8 @@ int createFunctionBody(const char *name) {
   for (auto &a : f->args()) {
     llvm::AllocaInst *ai{createAllocaInst(a.getName(), a.getType())};
     llvm::StoreInst *si{program->builder.CreateStore(&a, ai)};
-    si->setAlignment(ai->getAlignment());
-    program->currentFunc->symTab[a.getName()] =
+    si->setAlignment(ai->getAlign());
+    program->currentFunc->symTab[a.getName().str()] =
         std::make_unique<Variable>(ai, false);
   }
 
@@ -470,10 +471,10 @@ int createLongJmp() {
                                program->module.get());
     /*Set attributes so that LLVM does not optimise away the function during opt
      * phase.*/
-    llvm::Attribute attr{
-        llvm::Attribute::get(program->context, "noinline", "true")};
-    std::vector<llvm::Attribute> attrs{attr};
-    f->addAttributes(0, llvm::AttributeSet::get(program->context, attrs));
+    // LLVM 14+ replaced Function::addAttributes(idx, AttributeSet)
+    // with addFnAttr / addAttributeAtIndex; the equivalent for a
+    // single string attribute is addFnAttr directly.
+    f->addFnAttr(llvm::Attribute::get(program->context, "noinline", "true"));
   }
 
   program->builder.CreateCall(f, program->currentFunc->callArgs);
@@ -495,7 +496,7 @@ int createLongJmp() {
 int allocaInt(const char *name, const bool isVolatile) {
   llvm::AllocaInst *alloci{
       createAllocaInst(name, llvm::Type::getIntNTy(program->context, NBITS_MODELICA_INTEGER))};
-  program->currentFunc->symTab[alloci->getName()] =
+  program->currentFunc->symTab[alloci->getName().str()] =
       std::make_unique<Variable>(alloci, isVolatile);
   return 0;
 }
@@ -503,7 +504,7 @@ int allocaInt(const char *name, const bool isVolatile) {
 int allocaBoolean(const char *name, const bool isVolatile) {
   llvm::AllocaInst *alloci{
       createAllocaInst(name, llvm::Type::getIntNTy(program->context, 1))};
-  program->currentFunc->symTab[alloci->getName()] =
+  program->currentFunc->symTab[alloci->getName().str()] =
       std::make_unique<Variable>(alloci, isVolatile);
   return 0;
 }
@@ -511,7 +512,7 @@ int allocaBoolean(const char *name, const bool isVolatile) {
 /*Allocates a modelica real, a double in LLVM IR*/
 int allocaDouble(const char *name, const bool isVolatile) {
   llvm::AllocaInst *alloci{createAllocaInst(name, getLLVMType(MODELICA_REAL))};
-  program->currentFunc->symTab[alloci->getName()] =
+  program->currentFunc->symTab[alloci->getName().str()] =
       std::make_unique<Variable>(alloci, isVolatile);
   return 0;
 }
@@ -523,7 +524,7 @@ int allocaDouble(const char *name, const bool isVolatile) {
 int allocaInt8PtrTy(const char *name) {
   llvm::AllocaInst *alloci{
       createAllocaInst(name, getLLVMType(MODELICA_METATYPE))};
-  program->currentFunc->symTab[alloci->getName()] =
+  program->currentFunc->symTab[alloci->getName().str()] =
       std::make_unique<Variable>(alloci, false);
   return 0;
 }
@@ -532,7 +533,7 @@ int allocaInt8PtrTy(const char *name) {
 int allocaInt8PtrPtrTy(const char *name) {
   llvm::AllocaInst *alloci{
       createAllocaInst(name, getLLVMType(MODELICA_METATYPE_PTR))};
-  program->currentFunc->symTab[alloci->getName()] =
+  program->currentFunc->symTab[alloci->getName().str()] =
       std::make_unique<Variable>(alloci, false);
   return 0;
 }
@@ -543,7 +544,8 @@ int createStoreVarInst(const char *src, const char *dest) {
   Variable *srcVariable{program->currentFunc->symTab[src].get()};
   llvm::AllocaInst *s{srcVariable->getAllocaInst()};
   llvm::Value *lv{
-      program->builder.CreateLoad(s, srcVariable->isVolatile(), s->getName())};
+      program->builder.CreateLoad(s->getAllocatedType(), s,
+                                  srcVariable->isVolatile(), s->getName())};
   createStoreInst(lv, dest);
   return 0;
 }
@@ -560,10 +562,14 @@ int createStoreToPtr(const char *src, const char *dest) {
   Variable *srcVariable{program->currentFunc->symTab[src].get()};
   Variable *destVariable{program->currentFunc->symTab[dest].get()};
 
-  llvm::Value *s{srcVariable->getAllocaInst()};
-  llvm::Value *d{destVariable->getAllocaInst()};
-  s = program->builder.CreateLoad(s, srcVariable->isVolatile(), s->getName());
-  d = program->builder.CreateLoad(d, destVariable->isVolatile(), d->getName());
+  llvm::AllocaInst *sAi = srcVariable->getAllocaInst();
+  llvm::AllocaInst *dAi = destVariable->getAllocaInst();
+  llvm::Value *s = program->builder.CreateLoad(sAi->getAllocatedType(), sAi,
+                                               srcVariable->isVolatile(),
+                                               sAi->getName());
+  llvm::Value *d = program->builder.CreateLoad(dAi->getAllocatedType(), dAi,
+                                               destVariable->isVolatile(),
+                                               dAi->getName());
   program->builder.CreateStore(s, d, srcVariable->isVolatile() ||
                                          destVariable->isVolatile());
   return 0;
@@ -633,9 +639,11 @@ int storeThreadData_t(void *threadData, const char *threadDataID) {
 int createReturn(const char *retVar) {
   DBG("Calling create return with retVariable: %s \n", retVar);
   Variable *returnVariable{program->currentFunc->symTab[retVar].get()};
-  llvm::Value *ret = returnVariable->getAllocaInst();
-  ret = program->builder.CreateLoad(ret, returnVariable->isVolatile(),
-                                    ret->getName());
+  llvm::AllocaInst *retAi = returnVariable->getAllocaInst();
+  llvm::Value *ret = program->builder.CreateLoad(retAi->getAllocatedType(),
+                                                 retAi,
+                                                 returnVariable->isVolatile(),
+                                                 retAi->getName());
   program->builder.CreateRet(ret);
   return 0;
 }
@@ -658,8 +666,10 @@ int createReturnZero() {
 int createIUminus(const char *src, const char *dest) {
   DBG("Creating i64 Uminus\n");
   Variable *srcVariable{program->currentFunc->symTab[src].get()};
-  llvm::Value *s{srcVariable->getAllocaInst()};
-  s = program->builder.CreateLoad(s, srcVariable->isVolatile(), s->getName());
+  llvm::AllocaInst *sAi = srcVariable->getAllocaInst();
+  llvm::Value *s = program->builder.CreateLoad(sAi->getAllocatedType(), sAi,
+                                               srcVariable->isVolatile(),
+                                               sAi->getName());
   s = program->builder.CreateNeg(s, "negI64temp");
   createStoreInst(s, dest);
   return 0;
@@ -668,8 +678,10 @@ int createIUminus(const char *src, const char *dest) {
 int createDUminus(const char *src, const char *dest) {
   DBG("Creating DUminus\n");
   Variable *srcVariable{program->currentFunc->symTab[src].get()};
-  llvm::Value *s{srcVariable->getAllocaInst()};
-  s = program->builder.CreateLoad(s, srcVariable->isVolatile(), s->getName());
+  llvm::AllocaInst *sAi = srcVariable->getAllocaInst();
+  llvm::Value *s = program->builder.CreateLoad(sAi->getAllocatedType(), sAi,
+                                               srcVariable->isVolatile(),
+                                               sAi->getName());
   s = program->builder.CreateFNeg(s, "negDtemp");
   createStoreInst(s, dest);
   return 0;
@@ -678,8 +690,10 @@ int createDUminus(const char *src, const char *dest) {
 int createNot(const char *src, const char *dest) {
   DBG("Creating  NOT\n");
   Variable *srcVariable{program->currentFunc->symTab[src].get()};
-  llvm::Value *s{srcVariable->getAllocaInst()};
-  s = program->builder.CreateLoad(s, srcVariable->isVolatile(), s->getName());
+  llvm::AllocaInst *sAi = srcVariable->getAllocaInst();
+  llvm::Value *s = program->builder.CreateLoad(sAi->getAllocatedType(), sAi,
+                                               srcVariable->isVolatile(),
+                                               sAi->getName());
   s = program->builder.CreateNot(s, "notTmp");
   createStoreInst(s, dest);
   return 0;
@@ -1096,11 +1110,13 @@ int createMmcCons(
     /*Load the carElement*/
     Variable *carElementVariable{
         program->currentFunc->symTab[carElement].get()};
-    llvm::Value *ce = carElementVariable->getAllocaInst();
+    llvm::AllocaInst *ceAi = carElementVariable->getAllocaInst();
+    llvm::Value *ce = ceAi;
     /*Load instruction to set the alignment*/
     llvm::LoadInst *ceL = program->builder.CreateLoad(
-        ce, carElementVariable->isVolatile(), ce->getName());
-    ceL->setAlignment(8);
+        ceAi->getAllocatedType(), ceAi,
+        carElementVariable->isVolatile(), ceAi->getName());
+    ceL->setAlignment(llvm::Align(8));
     ce = ceL;
     std::vector<llvm::Value *> args{ce};
     std::vector<llvm::Type *> argTys{ce->getType()};
@@ -1120,10 +1136,12 @@ int createMmcCons(
   }
   /*The other case when we have a cdr.*/
   Variable *carElementVariable{program->currentFunc->symTab[carElement].get()};
-  llvm::Value *ce{carElementVariable->getAllocaInst()};
+  llvm::AllocaInst *ceAi = carElementVariable->getAllocaInst();
+  llvm::Value *ce = ceAi;
   llvm::LoadInst *ceL{program->builder.CreateLoad(
-      ce, carElementVariable->isVolatile(), ce->getName())};
-  ceL->setAlignment(8);
+      ceAi->getAllocatedType(), ceAi,
+      carElementVariable->isVolatile(), ceAi->getName())};
+  ceL->setAlignment(llvm::Align(8));
   ce = ceL;
   std::vector<llvm::Value *> args{ce, cdr};
   std::vector<llvm::Type *> argTys{ce->getType(), cdr->getType()};
@@ -1163,7 +1181,7 @@ int createStructSignature(const char *sName) {
   }
 
   /*Check if the struct already exists */
-  llvm::StructType *structTy = program->module->getTypeByName(sName);
+  llvm::StructType *structTy = llvm::StructType::getTypeByName(program->context, sName);
 
   if (!structTy) {
     structTy = llvm::StructType::create(program->context, sName);
@@ -1182,7 +1200,7 @@ int createStructSignature(const char *sName) {
 */
 int createStruct(const char *structName) {
   DBG("Calling Create struct with structName: %s \n", structName);
-  llvm::StructType *sType{program->module->getTypeByName(structName)};
+  llvm::StructType *sType{llvm::StructType::getTypeByName(program->context, structName)};
   if (!sType) {
     fprintf(stderr, "Attempted to create struct without signature for: %s \n", structName);
     MMC_THROW();
@@ -1229,8 +1247,9 @@ int createGlobalStructConstant(const char *structTypeName, const char *name) {
     /*TODO: Add if stmt here to check if we are dealing with an aggregate glb
      * var or not (only works for aggregates)*/
     const std::vector<llvm::Constant *> indices{idx0, idx0};
-    auto ty = llvmC->getType()
-                  ->getElementType(); /* We must get the encapsulated type*/
+    // Opaque pointers: pointee type of a GlobalVariable is recovered
+    // via getValueType() (PointerType::getElementType was removed).
+    auto ty = llvmC->getValueType();
     llvm::Constant *gep =
         llvm::ConstantExpr::getGetElementPtr(ty, llvmC, indices);
     gepField.push_back(gep);
@@ -1238,14 +1257,14 @@ int createGlobalStructConstant(const char *structTypeName, const char *name) {
 
   DBG("Creating gvArStruct\n");
   llvm::GlobalVariable *gvarStruct = new llvm::GlobalVariable(
-      *program->module.get(), program->module->getTypeByName(structTypeName),
+      *program->module.get(), llvm::StructType::getTypeByName(program->context, structTypeName),
       false,
       llvm::GlobalValue::ExternalLinkage, // TODO: See over this.
       0, name);
   DBG("gvarStructCreated\n");
   // TODO: Figure out alignment. (Problems?)
   llvm::Constant *constStruct = llvm::ConstantStruct::get(
-      program->module->getTypeByName(structTypeName), gepField);
+      llvm::StructType::getTypeByName(program->context, structTypeName), gepField);
   gvarStruct->setInitializer(constStruct);
   program->globalConstants[name] = gvarStruct;
   program->globalStructField.clear();
@@ -1259,7 +1278,12 @@ int createStoreDoubleToPtr(double src, const char *dest, const uint8_t idx0) {
   llvm::Value *sV{
       llvm::ConstantFP::get(llvm::Type::getDoubleTy(program->context), src)};
   llvm::Value *dV{createLoadInst(dest)};
-  llvm::Value *gep{program->builder.CreateInBoundsGEP(dV, vIdx0, "gepTmp")};
+  // Opaque-pointer GEP requires the source pointee type. The
+  // surrounding code treats the pointer as a metatype array
+  // (i8*); use i8 as the element type and rely on the bitcast
+  // below to recover the actual value type.
+  llvm::Value *gep{program->builder.CreateInBoundsGEP(
+      llvm::Type::getInt8Ty(program->context), dV, vIdx0, "gepTmp")};
   // All these functions of similar type can look the same, just add the right
   // bitcast in a later refactor.
   gep = program->builder.CreateBitCast(
@@ -1275,7 +1299,8 @@ int createStoreDVarToPtr(const char *src, const char *dest,
   llvm::Value *dV{createLoadInst(dest)};
   llvm::Value *vIdx0{llvm::ConstantInt::get(
       llvm::Type::getInt32Ty(program->context), idx0, false)};
-  llvm::Value *gep{program->builder.CreateInBoundsGEP(dV, vIdx0, "geptmp")};
+  llvm::Value *gep{program->builder.CreateInBoundsGEP(
+      llvm::Type::getInt8Ty(program->context), dV, vIdx0, "geptmp")};
   gep = program->builder.CreateBitCast(
       gep, llvm::Type::getDoublePtrTy(program->context));
   program->builder.CreateStore(sV, gep);
@@ -1290,11 +1315,12 @@ int createGetDoubleFromPtr(const char *src, const char *dest,
   llvm::Value *vIdx0{llvm::ConstantInt::get(
       llvm::Type::getInt32Ty(program->context), idx0, false)};
   llvm::Value *sV = createLoadInst(src);
-  llvm::Value *gep{program->builder.CreateInBoundsGEP(sV, vIdx0, "geptmp")};
+  llvm::Value *gep{program->builder.CreateInBoundsGEP(llvm::Type::getInt8Ty(program->context), sV, vIdx0, "geptmp")};
   gep = program->builder.CreateBitCast(
       gep, llvm::Type::getDoublePtrTy(program->context));
-  llvm::LoadInst *li = program->builder.CreateLoad(gep);
-  li->setAlignment(8);
+  llvm::LoadInst *li = program->builder.CreateLoad(
+      llvm::Type::getDoubleTy(program->context), gep);
+  li->setAlignment(llvm::Align(8));
   program->builder.CreateStore(li, dV, doubleVariable->isVolatile());
   return 0;
 }
@@ -1306,7 +1332,7 @@ int createStoreToStruct(const char *varName, const char *structName,
   DBG("Calling createStoreToStruct varName:%s to struct:%s", varName,
       structName);
   Variable *structVariable{program->currentFunc->symTab[structName].get()};
-  llvm::Value *sv{structVariable->getAllocaInst()};
+  llvm::AllocaInst *sv{structVariable->getAllocaInst()};
 
   if (!sv) {
     fprintf(stderr, "Error no struct named:%s\n", structName);
@@ -1324,7 +1350,7 @@ int createStoreToStruct(const char *varName, const char *structName,
   llvm::Value *retVar{retVariable->getAllocaInst()};
   retVar = createLoadInst(varName);
   llvm::Value *structElem{
-      program->builder.CreateInBoundsGEP(sv, indexVec, "gepTmp")};
+      program->builder.CreateInBoundsGEP(sv->getAllocatedType(), sv, indexVec, "gepTmp")};
   program->builder.CreateStore(retVar, structElem, retVariable->isVolatile());
 
   return 0;
@@ -1351,13 +1377,19 @@ int createStoreFromStruct(const char *varName, const char *structName,
   llvm::Value *vIdx1{llvm::ConstantInt::get(
       llvm::Type::getInt32Ty(program->context), idx1, false)};
   std::vector<llvm::Value *> indexVec{vIdx0, vIdx1};
-  // Create GEP instruction.
+  // Create GEP instruction. Opaque-pointer LLVM (16+) requires the
+  // source struct type as the first argument.
+  llvm::Type *svElTy = sv->getAllocatedType();
   llvm::Value *structElem{
-      program->builder.CreateInBoundsGEP(sv, indexVec, "gepTmp")};
+      program->builder.CreateInBoundsGEP(svElTy, sv, indexVec, "gepTmp")};
   // TODO: Can probably be added to the allignment function in utils.
+  // Element loaded back from the struct: use the matching member type.
+  llvm::Type *elemTy = svElTy->isStructTy()
+      ? svElTy->getStructElementType(idx1)
+      : svElTy;
   llvm::LoadInst *structElemL =
-      program->builder.CreateLoad(structElem, structElem->getName());
-  structElemL->setAlignment(sv->getAlignment());
+      program->builder.CreateLoad(elemTy, structElem, structElem->getName());
+  structElemL->setAlignment(sv->getAlign());
   structElem = structElemL;
   /*Create the variable we store the value from the struct to.*/
   Variable *variable{program->currentFunc->symTab[varName].get()};
@@ -1378,7 +1410,7 @@ int createGVarCStr(const char *origName) {
       true, llvm::GlobalValue::PrivateLinkage, 0);
   auto cs =
       llvm::ConstantDataArray::getString(program->context, origName, true);
-  gStr->setAlignment(1);
+  gStr->setAlignment(llvm::Align(1));
   gStr->setInitializer(cs);
   /*TODO: Gvar to the global variables map (Observe that this might lead to
    * scope problem if a variable would have the same name as a string with gbl_
@@ -1409,8 +1441,7 @@ int createCStrArray(const char *name, const modelica_integer fields) {
                                  1) //+ 1 to include CString terminator.
         ,
         true, llvm::GlobalValue::PrivateLinkage, 0);
-    gStr->setAlignment(
-        1); // These are C style strings (char*), not Modelica strings.
+    gStr->setAlignment(llvm::MaybeAlign(1)); // These are C style strings (char*), not Modelica strings.
     llvm::Constant *strCData =
         llvm::ConstantDataArray::getString(program->context, s, true);
     gStr->setInitializer(strCData); // Initialize the Gvar.
@@ -1435,7 +1466,7 @@ int createCStrArray(const char *name, const modelica_integer fields) {
       llvm::ArrayType::get(getLLVMType(MODELICA_METATYPE), fields),
       /*The string arrays*/ gepArray);
   DBG("constArray created setting alignment\n");
-  gvarStrArray->setAlignment(fields * 8);
+  gvarStrArray->setAlignment(llvm::Align(fields * 8));
   gvarStrArray->setInitializer(constArray);
   /* Save the global variabel in our global variable map*/
   program->globalConstants[name] = gvarStrArray;

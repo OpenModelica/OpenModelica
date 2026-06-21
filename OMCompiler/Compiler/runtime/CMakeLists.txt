@@ -64,7 +64,9 @@ set(OMC_RUNTIIME_SOURCES
 # is ON, otherwise the no-op stubs. The stubs match the symbol list expected
 # by Compiler/LLVM/EXT_LLVM.mo so the MetaModelica side links either way.
 if(OM_OMC_ENABLE_LLVM_JIT)
-  list(APPEND OMC_RUNTIIME_SOURCES llvm_gen.cpp)
+  # llvm_gen_wrappers.c defines run_jit_internal which llvm_gen.cpp
+  # forward-declares and the JIT path calls at runtime.
+  list(APPEND OMC_RUNTIIME_SOURCES llvm_gen.cpp llvm_gen_wrappers.c)
 else()
   list(APPEND OMC_RUNTIIME_SOURCES ext_llvm_stubs.cpp)
 endif()

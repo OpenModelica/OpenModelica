@@ -49,12 +49,12 @@
 extern "C" {
 #endif
 
-modelica_integer integer_get_jit(const integer_array_t *a, size_t i);
+modelica_integer integer_get_jit(const integer_array *a, size_t i);
 modelica_metatype createIntegerArray1D(const modelica_integer siz);
 modelica_metatype integerArrayUpdate_jit(modelica_metatype arr,modelica_integer i,modelica_metatype val);
 modelica_metatype integer_set_jit(integer_array *a, size_t i, modelica_integer r);
-void add_integer_array_jit(const integer_array_t *a, const integer_array_t *b,integer_array_t **dest);
-void simple_alloc_1d_integer_array_jit(integer_array_t* dest, int n);
+void add_integer_array_jit(const integer_array *a, const integer_array *b,integer_array **dest);
+void simple_alloc_1d_integer_array_jit(integer_array* dest, int n);
 
 #ifdef __cplusplus
 }

@@ -39,7 +39,11 @@
 #include "meta_modelica_data.h"
 #define ADD_METARECORD_DEFINITIONS static
 #define UNBOX_OFFSET 1
-#include "OpenModelicaBootstrappingHeader.h"
+#ifdef OMC_BOOTSTRAPPING
+  #include "../boot/tarball-include/OpenModelicaBootstrappingHeader.h"
+#else
+  #include "../OpenModelicaBootstrappingHeader.h"
+#endif
 
 #include "errorext.h"
 #include "integer_array_jit.h"

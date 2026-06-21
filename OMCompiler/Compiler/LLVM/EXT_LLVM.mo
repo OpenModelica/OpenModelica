@@ -280,7 +280,7 @@ end genModelicaIntToModelicaMeta;
 function genModelicaMetaToModelicaInt
   input String src;
   input String dest;
-  external "C" createMetaToInt(src,dest); annotation(Library = "omcruntime");
+  external "C" createMetaToInt(src,dest) annotation(Library = "omcruntime");
 end genModelicaMetaToModelicaInt;
 
 function genModelicaRealToModelicaBoolean
@@ -718,5 +718,5 @@ function funcIsJitCompiled
   external "C" isJitCompiled = fIsJitCompiled(fName) annotation(Library="omcruntime");
 end funcIsJitCompiled;
 
-annotation(__OpenModelica_Interface="backendInterface");
+annotation(__OpenModelica_Interface="backend");
 end EXT_LLVM;
