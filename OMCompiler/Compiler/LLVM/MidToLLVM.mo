@@ -1348,9 +1348,12 @@ function genVarName
   end match;
 end genVarName;
 
-constant list<String> BUILT_IN_OPERATORS = {"max", "min", "mod"};
-constant list<String> INT_FUNCTIONS = {"iMax", "iMin", "iMod"};
-constant list<String> REAL_FUNCTIONS = {"fmax", "fmin", "fmod"};
+constant list<String> BUILT_IN_OPERATORS = {"max", "min", "mod", "div"};
+constant list<String> INT_FUNCTIONS = {"iMax", "iMin", "iMod", "iDiv"};
+// `div` for Real maps to libc's fmod-family member `fdiv`-like absent —
+// keep listed for symmetry; Real division through this path is rare and
+// the canonical Real `/` op is lowered to fdiv earlier in MidCode.
+constant list<String> REAL_FUNCTIONS = {"fmax", "fmin", "fmod", "fdiv"};
 
 function identBuiltinCall
   "Returns the identifier for a builtin call.

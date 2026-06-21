@@ -75,6 +75,20 @@ modelica_boolean omc_jit_stringEqual(const void *s1, const void *s2)
   return mmc_stringCompare(s1, s2) == 0;
 }
 
+/* Modelica's integer division. The MidToLLVM lowering folded onto the
+ * spec name `div`, but that collides with libc's `div(int,int)` which
+ * returns a `div_t` struct packed as a 64-bit blob (low 32 bits =
+ * quotient, high 32 bits = remainder). The JIT's DynamicLibrarySearch
+ * generator finds the libc symbol first and the bit pattern leaks
+ * into the result as e.g. -17/3 -> -4294967301 instead of -5. The
+ * fix is to route Modelica's div through a dedicated iDiv runtime
+ * function (analogous to the iMod/iMax/iMin mappings already in
+ * identBuiltinCall). Truncate toward zero per the Modelica spec. */
+modelica_integer iDiv(modelica_integer x, modelica_integer y)
+{
+  return x / y;
+}
+
 /* mmc_mk_box is `static inline` in meta_modelica.h and therefore has
  * no exported symbol the JIT can resolve. The branch already provided
  * a non-inline implementation as mmc_mk_box_jit further down in this
