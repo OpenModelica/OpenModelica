@@ -779,13 +779,21 @@ class ConnEq:
     connected:  bool                      # False for a lone (unconnected) port
 
 
-def build_node_specs(comps, connections) -> Dict[Tuple[str, str], ConnEq]:
+def build_node_specs(comps, connections, flat: 'Optional[FlatConn]' = None
+                     ) -> Dict[Tuple[str, str], ConnEq]:
     """Group fluid connectors into nodes and assign one equation per connector.
 
     At each node exactly one connector provides flow conservation (sum of flows
     = 0); the others provide potential equality (this.potential = owner.potential).
     The flow owner is the connector whose flow variable is the component's own
     algebraic unknown, which keeps that component's residual well posed.
+
+    The node partition comes from OMC's resolved flat model (`flat`) when given --
+    its flow-conservation sums enumerate each node authoritatively (handling
+    stream / expandable / overconstrained connectors) -- otherwise it is
+    reconstructed by union-find over the raw connect() edges. The owner / field
+    assignment below is identical either way (it depends on per-component DAE
+    structure, not on how the partition was obtained).
     """
     parent: Dict[Tuple[str, str], Tuple[str, str]] = {}
 
@@ -809,12 +817,22 @@ def build_node_specs(comps, connections) -> Dict[Tuple[str, str], ConnEq]:
             members_all.append(key)
 
     connected_keys: Set[Tuple[str, str]] = set()
-    for ca, pna, cb, pnb in connections:
-        ka, kb = (ca, pna), (cb, pnb)
-        if ka in parent and kb in parent:
-            union(ka, kb)
-            connected_keys.add(ka)
-            connected_keys.add(kb)
+    if flat is not None:
+        # Authoritative node partition from the resolved flat model.
+        for node in flat.nodes:
+            present = [m for m in node if m in parent]
+            for m in present[1:]:
+                union(present[0], m)
+            if len(present) >= 2:
+                connected_keys.update(present)
+    else:
+        # Fallback: reconstruct the partition from the raw connect() edges.
+        for ca, pna, cb, pnb in connections:
+            ka, kb = (ca, pna), (cb, pnb)
+            if ka in parent and kb in parent:
+                union(ka, kb)
+                connected_keys.add(ka)
+                connected_keys.add(kb)
 
     groups: Dict[Tuple[str, str], List[Tuple[str, str]]] = {}
     for key in members_all:
@@ -869,6 +887,201 @@ def build_node_specs(comps, connections) -> Dict[Tuple[str, str], ConnEq]:
                                   minfo.pot_field  if minfo else pot_field,
                                   is_conn)
     return specs
+
+
+# ---------------------------------------------------------------------------
+# Flat-model connection reader
+# ---------------------------------------------------------------------------
+# Read OMC's AUTHORITATIVE resolved connections from <model>_flat.mo (dumped by
+# CevalScriptBackend.runAcausalDAE step 1b) instead of reconstructing them from
+# raw edges + name heuristics. The flat model has already run the new frontend's
+# resolveConnections, so connect() semantics are fully resolved as equations:
+#   potential equality : 'a.conn.pot' = 'b.conn.pot'           (across coupling)
+#   flow conservation  : 'a.conn.flo' + 'b.conn.flo' + ... = 0 (KCL, signed)
+#   reference          : 'g.conn.pot' = 0.0                    (e.g. ground)
+# Connector kind (flow vs potential) is inferred from the equation STRUCTURE, so
+# this needs neither getModelInstance nor the _acausal_connector_kinds.txt file.
+# Equations confined to a single component are that component's own (already in
+# its residual C) and are ignored; only cross-component equations are couplings.
+
+def _flat_equation_section(text: str) -> str:
+    """Body of the (single) 'equation' section of a flat model."""
+    m = re.search(r'^\s*equation\s*$', text, re.M)
+    if not m:
+        return ''
+    body = text[m.end():]
+    e = re.search(r'^\s*(end\b|initial\b|algorithm\b)', body, re.M)
+    return body[:e.start()] if e else body
+
+
+def _flat_terms(expr: str) -> List[Tuple[str, int]]:
+    """Signed quoted-cref terms of a sum/difference expression: [(cref, +/-1)]."""
+    e = expr.replace(' ', '').replace('(-', '-').replace('(', '').replace(')', '')
+    if e and e[0] not in '+-':
+        e = '+' + e
+    return [(m.group(2), 1 if m.group(1) == '+' else -1)
+            for m in re.finditer(r"([+\-])'([^']+)'", e)]
+
+
+def _flat_split_cref(cref: str, comps) -> Optional[Tuple[str, str, str]]:
+    """'comp.conn.field' -> (comp, conn, field) if comp is a known component and
+    conn one of its acausal connectors, else None."""
+    parts = cref.split('.')
+    if len(parts) < 3 or parts[0] not in comps:
+        return None
+    if parts[1] not in _connector_order(comps[parts[0]]):
+        return None
+    return (parts[0], parts[1], '.'.join(parts[2:]))
+
+
+def _flat_conn_terms(side: str, comps) -> List[Tuple[str, str, str, int]]:
+    """Connector terms (comp, conn, field, sign) on one side of an equation."""
+    out = []
+    for cref, sign in _flat_terms(side):
+        sc = _flat_split_cref(cref, comps)
+        if sc:
+            out.append((sc[0], sc[1], sc[2], sign))
+    return out
+
+
+@dataclass
+class FlatConn:
+    """Resolved connection structure read from <model>_flat.mo."""
+    nodes:         List[List[Tuple[str, str]]]              # node = group of (comp,conn) sharing a potential
+    flow_sums:     List[List[Tuple[str, str, str, int]]]    # per KCL eq: [(comp,conn,field,sign)]
+    references:    List[Tuple[Tuple[str, str], str]]        # ((comp,conn), field) pinned to a constant
+    pot_equalities: List[Tuple[Tuple[str, str], Tuple[str, str], str]]  # (a, b, field) intra-node
+    stream_pairs:  List[Tuple[Tuple[str, str], Tuple[str, str], str]]   # (a, b, field) inter-node transport
+
+
+def parse_flat_connections(path: str, comps) -> FlatConn:
+    """Parse OMC's resolved connections from a flat model.
+
+    The node partition is built from FLOW conservation alone (each cross-component
+    `sum(+/- flow) = 0` equation lists exactly its node's members), which is
+    unambiguous. Two-cref `a.f = b.f` equalities are then classified by whether
+    their endpoints fall in the same flow node (potential/across coupling) or in
+    different nodes (stream/transport coupling, which must NOT merge nodes). This
+    is fully structural -- no connector-kind names or getModelInstance needed.
+    """
+    body = _flat_equation_section(open(path).read())
+
+    parent: Dict[Tuple[str, str], Tuple[str, str]] = {}
+
+    def find(x):
+        parent.setdefault(x, x)
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    def union(a, b):
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[rb] = ra
+
+    flow_sums: List[List[Tuple[str, str, str, int]]] = []
+    equalities: List[Tuple[Tuple[str, str], Tuple[str, str], str]] = []
+    single_const: List[Tuple[Tuple[str, str], str]] = []
+
+    # Pass 1: node partition from flow conservation; collect equalities + refs.
+    for stmt in body.split(';'):
+        stmt = stmt.strip()
+        if not stmt or '=' not in stmt:
+            continue
+        lhs, rhs = stmt.split('=', 1)
+        lc = _flat_conn_terms(lhs, comps)
+        rc = _flat_conn_terms(rhs, comps)
+        allc = lc + rc
+        if not allc:
+            continue
+        comps_in = {c for (c, _, _, _) in allc}
+        lhs_const = "'" not in lhs
+        rhs_const = "'" not in rhs
+
+        # flow conservation across components: sum(+/- flows) = const(0). Each
+        # such equation enumerates one node's connector members.
+        if len(comps_in) >= 2 and (rhs_const or lhs_const):
+            members = lc if rhs_const else rc
+            if len(members) >= 2:
+                flow_sums.append(members)
+                keys = [(c, conn) for (c, conn, _, _) in members]
+                for k in keys[1:]:
+                    union(keys[0], k)
+                continue
+
+        # cross-component two-cref equality 'a.f' = 'b.f' (potential OR stream):
+        # defer classification to pass 2 (needs the completed flow partition).
+        if len(allc) == 2 and len(lc) == 1 and len(rc) == 1 and len(comps_in) >= 2 \
+                and lc[0][2] == rc[0][2]:
+            equalities.append(((lc[0][0], lc[0][1]), (rc[0][0], rc[0][1]), lc[0][2]))
+            continue
+
+        # single connector pinned to a constant (e.g. ground v=0, or open flow=0).
+        if len(allc) == 1 and (rhs_const or lhs_const):
+            c, conn, f, _ = allc[0]
+            single_const.append(((c, conn), f))
+
+    # Pass 2: classify equalities by intra-node (potential) vs inter-node (stream).
+    pot_equalities: List[Tuple[Tuple[str, str], Tuple[str, str], str]] = []
+    stream_pairs: List[Tuple[Tuple[str, str], Tuple[str, str], str]] = []
+    pot_fields: Set[str] = set()
+    for (a, b, f) in equalities:
+        if a in parent and b in parent and find(a) == find(b):
+            pot_equalities.append((a, b, f))
+            pot_fields.add(f)
+        else:
+            stream_pairs.append((a, b, f))
+
+    # A pinned single connector is a potential reference (ground) if its field is
+    # an across/potential field; an unconnected flow pinned to 0 is not.
+    references = [(cc, f) for (cc, f) in single_const if f in pot_fields]
+
+    keys: Set[Tuple[str, str]] = set(parent.keys())
+    for (cc, _) in references:
+        keys.add(cc)
+        find(cc)
+    groups: Dict[Tuple[str, str], List[Tuple[str, str]]] = {}
+    for k in keys:
+        groups.setdefault(find(k), []).append(k)
+    nodes = [sorted(v) for v in groups.values()]
+    return FlatConn(nodes, flow_sums, references, pot_equalities, stream_pairs)
+
+
+def diagnose_flat_connections(fc: 'FlatConn', specs, label: str = 'flat model') -> None:
+    """Cross-check the resolved flat-model connections (`fc`) against the node
+    specs. Reports node matches/mismatches plus the references (pinned potentials)
+    and stream couplings the edge reconstruction does not track."""
+    flat_nodes = {frozenset(n) for n in fc.nodes if len(n) >= 2}
+
+    spec_nodes: Set[frozenset] = set()
+    seen: Set[int] = set()
+    for eq in specs.values():
+        if id(eq.members) in seen:
+            continue
+        seen.add(id(eq.members))
+        if eq.connected and len(eq.members) >= 2:
+            spec_nodes.add(frozenset(eq.members))
+
+    def fmt(node):
+        return '{' + ', '.join(f'{c}.{k}' for c, k in sorted(node)) + '}'
+
+    print(f'\nFlat-model connection cross-check ({label}):')
+    match = flat_nodes & spec_nodes
+    only_flat = flat_nodes - spec_nodes
+    only_spec = spec_nodes - flat_nodes
+    print(f'  multi-connector nodes: {len(match)} match, '
+          f'{len(only_flat)} only-in-flat, {len(only_spec)} only-in-specs')
+    for n in sorted(only_flat, key=sorted):
+        print(f'    only-in-flat:  {fmt(n)}')
+    for n in sorted(only_spec, key=sorted):
+        print(f'    only-in-specs: {fmt(n)}')
+    print(f'  flow-conservation (KCL) eqs: {len(fc.flow_sums)}, '
+          f'potential equalities: {len(fc.pot_equalities)}, '
+          f'stream/transport couplings: {len(fc.stream_pairs)}')
+    if fc.references:
+        print('  references (pinned potentials; not tracked by edge reconstruction): '
+              + ', '.join(f'{c}.{k}.{f}' for (c, k), f in fc.references))
 
 
 def _member_field_expr(member, fieldname, current_prefix, comps) -> Optional[str]:
@@ -1595,6 +1808,110 @@ def build_global_jacobian(prefixes: List[str],
                           col_label, coupling)
 
 
+@dataclass
+class AliasCollapse:
+    """Collapse connected potentials into one representative variable per node.
+
+    The combine keeps each connector's own potential as a separate global unknown
+    plus a potential-equality residual (my.pot - owner.pot = 0). For a conservative
+    network with closed loops this un-collapsed structure is rank-deficient / over-
+    determined at the initial-conditions solve (RCReuse: IDACalcIC -4). Collapsing
+    removes each alias potential VARIABLE and, in balance, its potential-equality
+    RESIDUAL slot, scattering the representative's value to the alias before each
+    evaluation. This is exactly OMC's backend alias elimination, reducing the
+    global system to a consistent index-1 form.
+
+    A pinned reference (e.g. ground p.v = 0) needs no special handling: that
+    equation is the component's own residual (kept), and since the pinned pin's
+    potential is the representative (or scattered from it), the residual pins the
+    node potential to the constant automatically.
+    """
+    n_full:    int                 # COMBINED_N before collapse
+    keep_var:  List[int]           # reduced col -> full global var index
+    keep_res:  List[int]           # reduced row -> full global residual index
+    rep_of:    Dict[int, int]      # alias full var index -> representative full var index
+    pin_const: Dict[int, float]    # alias full var index -> constant value (folded reference)
+    drop_var:  Set[int]            # removed alias potential variables
+    drop_res:  Set[int]            # removed potential-equality residual slots
+    notes:     List[str]           # human-readable record of each collapse
+
+
+def build_alias_collapse(prefixes, comps, specs,
+                         gj: GlobalJacobian) -> AliasCollapse:
+    """Compute the potential alias-collapse from the (flat-authoritative) node
+    specs: per node, the flow owner's potential is the representative and every
+    other member's potential becomes an alias of it."""
+    base, n = gj.base, gj.n
+    rep_of: Dict[int, int] = {}
+    pin_const: Dict[int, float] = {}
+    drop_var: Set[int] = set()
+    drop_res: Set[int] = set()
+    notes: List[str] = []
+
+    def pot_global(member):
+        comp = comps.get(member[0])
+        if comp is None:
+            return None
+        info = connector_info(comp, member[1])
+        if info is None or info.pot_idx is None:
+            return None              # potential is a boundary parameter / folded constant
+        col = comp.realvar_to_col(info.pot_idx)
+        return None if col is None else base[member[0]] + col
+
+    def const_value(member):
+        """The folded-constant potential value if the connector's potential is a
+        plain numeric literal (e.g. ground v=0), else None. A *parameter* potential
+        (Example2 boundary pressures: realParameter[...]) is NOT a literal, so such
+        nodes are left uncollapsed -- preserving the working open-flow path."""
+        info = connector_info(comps[member[0]], member[1])
+        if info is None or info.pot_expr is None:
+            return None
+        try:
+            return float(info.pot_expr.strip())
+        except ValueError:
+            return None
+
+    seen: Set[int] = set()
+    for spec in specs.values():
+        if not spec.connected or id(spec.members) in seen:
+            continue
+        seen.add(id(spec.members))
+        owner = spec.owner
+        rep = pot_global(owner)
+        ref_const = const_value(owner) if rep is None else None
+        node_str = ', '.join(f'{c}.{k}' for c, k in spec.members)
+        if rep is None and ref_const is None:
+            notes.append(f'node {{{node_str}}}: owner potential is a parameter '
+                         f'(not a literal) -> potentials not collapsed')
+            continue
+        for m in spec.members:
+            if m == owner or specs.get(m, spec).kind != 'potential':
+                continue
+            alias = pot_global(m)
+            if alias is None or alias == rep or alias in drop_var:
+                continue
+            fr = connector_residual_map(comps[m[0]]).get(m[1])
+            if fr is None:
+                continue
+            res_slot = base[m[0]] + fr.residual_idx
+            drop_var.add(alias)
+            drop_res.add(res_slot)
+            pf = connector_info(comps[m[0]], m[1]).pot_field
+            if rep is not None:
+                rep_of[alias] = rep
+                notes.append(f'{m[0]}.{m[1]}.{pf} (var {alias}) -> alias of '
+                             f'{owner[0]}.{owner[1]} (var {rep}); drop pot-eq slot {res_slot}')
+            else:
+                pin_const[alias] = ref_const
+                notes.append(f'{m[0]}.{m[1]}.{pf} (var {alias}) -> pinned to reference '
+                             f'{ref_const} (from {owner[0]}.{owner[1]}); drop pot-eq slot {res_slot}')
+
+    keep_var = [i for i in range(n) if i not in drop_var]
+    keep_res = [i for i in range(n) if i not in drop_res]
+    return AliasCollapse(n, keep_var, keep_res, rep_of, pin_const,
+                         drop_var, drop_res, notes)
+
+
 def generate_jacobian_header(gj: GlobalJacobian, comps) -> str:
     nnz = sum(len(r) for r in gj.col_rows)
     lines = [
@@ -2180,13 +2497,34 @@ def _clean_label(lbl: str) -> str:
     return f'{pfx}.__{kind}{rv}'
 
 
-def generate_driver_c(prefixes, comps, gj) -> str:
+def generate_driver_c(prefixes, comps, gj, ac: 'AliasCollapse') -> str:
     """Emit combined_main.c: initialises every component's DATA structure the
     same way OM's own main does (setupDataStruc -> read_input_xml ->
     initializeDataStruc -> initialization), then runs an implicit-Euler
     transient solve of the stacked DAE using a dense finite-difference Newton
-    over combined_eval_residual, and writes the trajectory as CSV."""
+    over combined_eval_residual, and writes the trajectory as CSV.
+
+    `ac` is the alias-collapse: IDA solves the REDUCED system (size len(keep_var))
+    -- the residual callback expands a reduced vector to the full COMBINED_N
+    layout (scattering representatives, pinning references), evaluates the full
+    residual, and compresses it back to the kept rows. When nothing is collapsed
+    (ac.keep_var == range(COMBINED_N)) the maps are the identity and the reduced
+    path is behaviourally identical to the full one."""
     n = len(prefixes)
+    # alias-collapse reduction maps (reduced<->full index maps + scatter data)
+    nred = len(ac.keep_var)
+    keep_var_c = ', '.join(str(i) for i in ac.keep_var)
+    keep_res_c = ', '.join(str(i) for i in ac.keep_res)
+    alias_pairs = sorted(ac.rep_of.items())
+    pin_pairs   = sorted(ac.pin_const.items())
+    n_alias = len(alias_pairs)
+    n_pin   = len(pin_pairs)
+    alias_var_c = ', '.join(str(a) for a, _ in alias_pairs) or '0'
+    alias_rep_c = ', '.join(str(r) for _, r in alias_pairs) or '0'
+    pin_var_c   = ', '.join(str(a) for a, _ in pin_pairs) or '0'
+    pin_val_c   = ', '.join(repr(float(v)) for _, v in pin_pairs) or '0.0'
+    a_sz = max(n_alias, 1)
+    p_sz = max(n_pin, 1)
     # component reuse: instances of the same type share ONE compiled base (the
     # representative's setupDataStruc + functions); each instance still has its
     # own DATA and reads its own init XML (params/start), so only the parameter
@@ -2316,6 +2654,103 @@ static void init_component(DATA *d, MODEL_DATA *md, SIMULATION_INFO *si,
 /* which global unknowns are differential states (need a der()) */
 static int is_state[COMBINED_N];
 
+/* ---- alias-collapse reduction layer -------------------------------------
+   IDA solves the REDUCED system of size COMBINED_NRED. Connected potentials
+   were collapsed to one representative per node (and folded references pinned
+   to a constant), removing alias potential variables + their potential-equality
+   residual slots. The maps below translate between the reduced solver vector
+   and the full COMBINED_N component layout. When nothing is collapsed these are
+   the identity (COMBINED_NRED == COMBINED_N), so the path is a no-op. */
+#define COMBINED_NRED {nred}
+static const int    g_keep_var[COMBINED_NRED] = {{ {keep_var_c} }}; /* reduced col -> full var */
+static const int    g_keep_res[COMBINED_NRED] = {{ {keep_res_c} }}; /* reduced row -> full res */
+#define N_ALIAS {n_alias}
+#define N_PIN   {n_pin}
+static const int    g_alias_var[{a_sz}] = {{ {alias_var_c} }};   /* alias full var */
+static const int    g_alias_rep[{a_sz}] = {{ {alias_rep_c} }};   /* its representative full var */
+static const int    g_pin_var[{p_sz}]   = {{ {pin_var_c} }};     /* const-pinned full var */
+static const double g_pin_val[{p_sz}]   = {{ {pin_val_c} }};     /* the folded reference value */
+
+/* reduced vector -> full layout: copy kept DOFs, scatter representatives to
+   their aliases, set pinned references. `is_deriv` zeroes the pins (a constant
+   has zero time-derivative) and otherwise behaves identically (aliases copy the
+   representative's value or derivative). */
+static void combined_expand(const double *ured, double *ufull, int is_deriv)
+{{
+  int k, i;
+  for (k = 0; k < COMBINED_NRED; ++k) ufull[g_keep_var[k]] = ured[k];
+  for (i = 0; i < N_ALIAS; ++i)       ufull[g_alias_var[i]] = ufull[g_alias_rep[i]];
+  for (i = 0; i < N_PIN; ++i)         ufull[g_pin_var[i]]   = is_deriv ? 0.0 : g_pin_val[i];
+}}
+
+/* full residual -> reduced: keep only the rows that survived the collapse. */
+static void combined_compress(const double *ffull, double *fred)
+{{
+  int k;
+  for (k = 0; k < COMBINED_NRED; ++k) fred[k] = ffull[g_keep_res[k]];
+}}
+
+/* reduced residual at (y, y'), for the rank/consistency probe. */
+static void combined_reduced_residual(threadData_t *td, double t,
+                                      const double *ured, const double *upred,
+                                      double *fred)
+{{
+  static double yf[COMBINED_N], ypf[COMBINED_N], rf[COMBINED_N];
+  int b;
+  for (b = 0; b < combined_n_components; ++b) g_all[b]->localData[0]->timeValue = t;
+  combined_expand(ured, yf, 0);
+  combined_expand(upred, ypf, 1);
+  combined_set_unknowns(yf);
+  combined_set_derivatives(ypf);
+  combined_eval_residual(td, EVAL_ALL, rf);
+  combined_compress(rf, fred);
+}}
+
+/* Least-squares (min-norm) Newton IC solve for the singular-but-consistent
+   YA_YDP system of a conservative network with closed loops. After alias-
+   collapse the reduced IC system is CONSISTENT but its Jacobian is rank-deficient
+   (the redundant loop KCL leaves loop currents undetermined), so plain Newton
+   (IDACalcIC) fails. An SVD min-norm step (LAPACK dgelss) converges to the unique
+   physical solution. Differential STATES are held fixed (their y); the unknowns
+   are the algebraic y components and the state derivatives y'. Returns 1 on
+   convergence (yv/ypv then hold a consistent initial condition). */
+extern void dgelss_(const int*, const int*, const int*, double*, const int*,
+                    double*, const int*, double*, const double*, int*,
+                    double*, const int*, int*);
+
+static int combined_ic_lsq(threadData_t *td, double t, double *yv, double *ypv)
+{{
+  enum {{ LW = 8*COMBINED_NRED*COMBINED_NRED + 64 }};
+  int NN = COMBINED_NRED, it, ii, jj, rank, info;
+  int M = NN, Nn = NN, nrhs = 1, lda = NN, ldb = NN, lwork = LW;
+  static double A[COMBINED_NRED*COMBINED_NRED];
+  static double F0[COMBINED_NRED], Fp[COMBINED_NRED], b[COMBINED_NRED], S[COMBINED_NRED];
+  static double work[LW];
+  double eps = 1e-7, rcond = 1e-10, nrm = 0.0;
+  for (it = 0; it < 50; ++it) {{
+    combined_reduced_residual(td, t, yv, ypv, F0);
+    nrm = 0.0; for (ii = 0; ii < NN; ++ii) nrm += F0[ii]*F0[ii];
+    nrm = sqrt(nrm);
+    if (nrm < 1e-9) return 1;
+    /* YA_YDP Jacobian, column-major: state column perturbs y', algebraic y */
+    for (jj = 0; jj < NN; ++jj) {{
+      int st = is_state[g_keep_var[jj]];
+      double *slot = st ? &ypv[jj] : &yv[jj];
+      double s = *slot; *slot += eps;
+      combined_reduced_residual(td, t, yv, ypv, Fp); *slot = s;
+      for (ii = 0; ii < NN; ++ii) A[ii + jj*NN] = (Fp[ii] - F0[ii]) / eps;
+    }}
+    for (ii = 0; ii < NN; ++ii) b[ii] = -F0[ii];
+    dgelss_(&M, &Nn, &nrhs, A, &lda, b, &ldb, S, &rcond, &rank, work, &lwork, &info);
+    if (info != 0) return 0;
+    for (ii = 0; ii < NN; ++ii)
+      if (is_state[g_keep_var[ii]]) ypv[ii] += b[ii]; else yv[ii] += b[ii];
+  }}
+  combined_reduced_residual(td, t, yv, ypv, F0);
+  nrm = 0.0; for (ii = 0; ii < NN; ++ii) nrm += F0[ii]*F0[ii];
+  return sqrt(nrm) < 1e-9;
+}}
+
 /* IDA residual callback: rr = F(t, y, y').  user_data carries threadData.
    combined_set_derivatives reads only the state slots of yp (per block), and
    combined_eval_residual applies the connection couplings then each
@@ -2344,9 +2779,10 @@ static int combined_resfn(realtype t, N_Vector yy, N_Vector yp,
                           N_Vector rr, void *user_data)
 {{
   threadData_t *threadData = (threadData_t*) user_data;
-  double *y  = N_VGetArrayPointer(yy);
-  double *yd = N_VGetArrayPointer(yp);
-  double *r  = N_VGetArrayPointer(rr);
+  double *yred = N_VGetArrayPointer(yy);   /* reduced solver vectors (COMBINED_NRED) */
+  double *ypred = N_VGetArrayPointer(yp);
+  double *rred = N_VGetArrayPointer(rr);
+  static double yfull[COMBINED_N], ypfull[COMBINED_N], rfull[COMBINED_N];
   volatile int ok = 0;
   int b, saveStage = threadData->currentErrorStage;
   for (b = 0; b < combined_n_components; ++b)
@@ -2357,13 +2793,18 @@ static int combined_resfn(realtype t, N_Vector yy, N_Vector yp,
                ? ((t - tr0) / g_homotopy_tramp) : 1.0;
     combined_set_lambda(lam);
   }}
-  combined_set_unknowns(y);
-  combined_set_derivatives(yd);
+  /* expand the reduced unknowns to the full component layout, evaluate the full
+     stacked residual, then compress back to the kept rows. */
+  combined_expand(yred, yfull, 0);
+  combined_expand(ypred, ypfull, 1);
+  combined_set_unknowns(yfull);
+  combined_set_derivatives(ypfull);
   /* route model asserts (range checks etc.) to the simulation jump buffer so a
      bad Newton iterate becomes a recoverable error instead of aborting. */
   threadData->currentErrorStage = ERROR_INTEGRATOR;
   MMC_TRY_INTERNAL(simulationJumpBuffer)
-    combined_eval_residual(threadData, EVAL_ALL, r);
+    combined_eval_residual(threadData, EVAL_ALL, rfull);
+    combined_compress(rfull, rred);
     ok = 1;
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
   threadData->currentErrorStage = saveStage;
@@ -2497,7 +2938,7 @@ int main(int argc, char **argv)
             (int) NCOMP, (int) COMBINED_N, t0, t1, nsteps);
 
     {{
-      sunindextype N = COMBINED_N;
+      sunindextype N = COMBINED_NRED;
       N_Vector yy  = N_VNew_Serial(N);
       N_Vector yp  = N_VNew_Serial(N);
       N_Vector id  = N_VNew_Serial(N);
@@ -2510,7 +2951,10 @@ int main(int argc, char **argv)
       SUNLinearSolver LS;
       int flag;
 
-      combined_get_unknowns(yv);          /* initial guess from start values */
+      {{ static double yfull0[COMBINED_N]; int kk;
+         combined_get_unknowns(yfull0);   /* full start values, then compress */
+         for (kk = 0; kk < COMBINED_NRED; ++kk) yv[kk] = yfull0[g_keep_var[kk]];
+      }}
       N_VConst(0.0, yp);
 
       /* The fan/mover pressure curve is singular at zero flow (zero speed): at
@@ -2521,12 +2965,12 @@ int main(int argc, char **argv)
          zero-valued differential state to a nonzero seed; disabled by default. */
       if (argc > 2) {{
         double seed = atof(argv[2]);
-        for (i = 0; i < COMBINED_N; ++i)
-          if (is_state[i] && fabs(yv[i]) < 1e-300) yv[i] = seed;
+        for (i = 0; i < COMBINED_NRED; ++i)
+          if (is_state[g_keep_var[i]] && fabs(yv[i]) < 1e-300) yv[i] = seed;
       }}
 
-      for (i = 0; i < COMBINED_N; ++i) {{
-        idv[i] = is_state[i] ? 1.0 : 0.0;
+      for (i = 0; i < COMBINED_NRED; ++i) {{
+        idv[i] = is_state[g_keep_var[i]] ? 1.0 : 0.0;
         /* per-variable absolute tolerance scaled to the magnitude of the
            unknown (pressures ~1e5, flows ~1e-2): a single scalar atol cannot
            serve both, and an over-tight atol makes the corrector never
@@ -2559,6 +3003,19 @@ int main(int argc, char **argv)
          g_homotopy_tramp = e ? atof(e) : 0.1 * (t1 - t0); }}
       fprintf(stderr, "[driver] calling IDACalcIC\\n");
       flag = IDACalcIC(ida, IDA_YA_YDP_INIT, (h > 0.0) ? t0 + h : t0 + 1.0);
+      if (flag < 0 && COMBINED_NRED < COMBINED_N) {{
+        /* conservative network with closed loops: after alias-collapse the IC
+           system is consistent but its Jacobian is singular (redundant loop KCL),
+           so plain Newton fails. Solve it by SVD min-norm Newton instead. */
+        fprintf(stderr, "[driver] IDACalcIC failed (%d); trying least-squares IC solve\\n", flag);
+        if (combined_ic_lsq(threadData, t0, yv, N_VGetArrayPointer(yp))) {{
+          fprintf(stderr, "[driver] least-squares IC solve converged\\n");
+          IDAReInit(ida, t0, yy, yp);
+          flag = 0;
+        }} else {{
+          fprintf(stderr, "[driver] least-squares IC solve did not converge\\n");
+        }}
+      }}
       if (flag < 0) {{
         /* degenerate initial point: activate the homotopy ramp (the simplified
            branch is non-singular) and retry; integration then ramps lambda->1. */
@@ -2579,9 +3036,11 @@ int main(int argc, char **argv)
       /* trajectory buffer for the .mat result: column-major (N+1) x (nsteps+1) */
       double *resbuf = (double*) malloc(sizeof(double) * (size_t)(COMBINED_N + 1) * (nsteps + 1));
       int nemit = 0;
-      #define STORE_ROW(tt, yarr) do {{ \\
-        int _k; double *_c = resbuf + (size_t) nemit * (COMBINED_N + 1); \\
-        _c[0] = (tt); for (_k = 0; _k < COMBINED_N; ++_k) _c[_k+1] = (yarr)[_k]; \\
+      #define STORE_ROW(tt, yarr_red) do {{ \\
+        static double _yf[COMBINED_N]; int _k; \\
+        double *_c = resbuf + (size_t) nemit * (COMBINED_N + 1); \\
+        combined_expand((yarr_red), _yf, 0);  /* reduced -> full for output */ \\
+        _c[0] = (tt); for (_k = 0; _k < COMBINED_N; ++_k) _c[_k+1] = _yf[_k]; \\
         ++nemit; }} while (0)
 
       STORE_ROW(t0, yv);
@@ -3090,7 +3549,30 @@ def main():
         print(f'  connect({ca}.{pa}, {cb}.{pb})')
 
     edges = build_edges(raw_connections, comps)
-    specs = build_node_specs(comps, raw_connections)
+
+    # OMC's authoritative resolved connections from the flat model dumped by
+    # runAcausalDAE step 1b, if present. It drives the node partition in
+    # build_node_specs (handling stream / expandable / overconstrained connectors
+    # that the raw-edge reconstruction guesses at) and supplies the pinned
+    # references (e.g. ground v=0) the edges do not carry.
+    flat_mo = next((os.path.join(directory, f) for f in sorted(os.listdir(directory))
+                    if f.endswith('_flat.mo')), None)
+    flat: Optional[FlatConn] = None
+    if flat_mo:
+        try:
+            flat = parse_flat_connections(flat_mo, comps)
+            print(f'Using resolved connections from {os.path.basename(flat_mo)}')
+        except Exception as e:
+            print(f'  (flat-model parse failed, using raw-edge reconstruction: {e})')
+            flat = None
+
+    specs = build_node_specs(comps, raw_connections, flat)
+
+    if flat is not None:
+        try:
+            diagnose_flat_connections(flat, specs, os.path.basename(flat_mo))
+        except Exception as e:
+            print(f'  (flat-model cross-check skipped: {e})')
 
     print('\nConnector equation assignment:')
     # group specs back into nodes for display
@@ -3143,6 +3625,18 @@ def main():
 
     # combined_jacobian.h / .c
     gj = build_global_jacobian(prefixes, comps, specs)
+
+    # alias-collapse: connected potentials -> one representative per node (folded
+    # references pinned to their constant). The driver solves the reduced system.
+    ac = build_alias_collapse(prefixes, comps, specs, gj)
+    if ac.drop_var:
+        print(f'\nAlias-collapse: {gj.n} -> {len(ac.keep_var)} unknowns '
+              f'({len(ac.rep_of)} potential aliases + {len(ac.pin_const)} reference pins):')
+        for nt in ac.notes:
+            print(f'  {nt}')
+    else:
+        print('\nAlias-collapse: none (no conservative-loop potentials to collapse)')
+
     path = os.path.join(out_dir, 'combined_jacobian.h')
     open(path, 'w').write(generate_jacobian_header(gj, comps))
     print(f'  {path}')
@@ -3152,7 +3646,7 @@ def main():
 
     # combined_main.c (standalone transient driver)
     path = os.path.join(out_dir, 'combined_main.c')
-    open(path, 'w').write(generate_driver_c(prefixes, comps, gj))
+    open(path, 'w').write(generate_driver_c(prefixes, comps, gj, ac))
     print(f'  {path}')
 
     path = os.path.join(out_dir, f'{out_prefix}.makefile')
