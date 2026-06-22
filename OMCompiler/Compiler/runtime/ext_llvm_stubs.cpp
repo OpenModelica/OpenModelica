@@ -99,5 +99,5 @@ extern "C"
 
   /* Model simulation via LLVM JIT (see llvm_gen.cpp for the real impl). */
   const char *omc_getLLVMToolsDir() { return ""; }
-  int omc_runModelViaJIT(const char *, const char *, const char *) {LLVM_STUB(); return 1;}
+  int omc_runModelViaJIT(const char *, const char *, const char *, const char *) {LLVM_STUB(); return 1;}
 }

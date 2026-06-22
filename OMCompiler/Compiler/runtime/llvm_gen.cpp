@@ -35,6 +35,11 @@
 #include "llvm_gen_modelica_constants.h"
 #include "llvm_gen_util.hpp"
 
+/* For redirecting the in-process model's stdout/stderr to its log file
+ * (the native executable path does the same via shell redirection). */
+#include <fcntl.h>
+#include <unistd.h>
+
 /* The program currently being generated. */
 extern std::unique_ptr<Program> program;
 
@@ -92,7 +97,7 @@ const char *omc_getLLVMToolsDir() {
 }
 
 int omc_runModelViaJIT(const char *bitcodePath, const char *runtimeLib,
-                       const char *modelName) {
+                       const char *modelName, const char *logFile) {
   llvm::InitializeNativeTarget();
   llvm::InitializeNativeTargetAsmPrinter();
 
@@ -154,7 +159,35 @@ int omc_runModelViaJIT(const char *bitcodePath, const char *runtimeLib,
   snprintf(arg0, sizeof(arg0), "%s",
            (modelName && modelName[0]) ? modelName : "model");
   char *margv[] = {arg0, nullptr};
-  return modelMain(1, margv);
+
+  /* Redirect the model's stdout/stderr to its log file for the duration of the
+   * run, mirroring the native executable (whose entire stdout is captured to
+   * <model>.log). The caller reads that log to build the SimulationResult.
+   * Uses raw fds at the OS boundary; the original descriptors are restored
+   * afterwards so omc's own output is unaffected. */
+  int savedOut = -1, savedErr = -1;
+  if (logFile && logFile[0]) {
+    fflush(nullptr);
+    savedOut = dup(STDOUT_FILENO);
+    savedErr = dup(STDERR_FILENO);
+    int logFd = open(logFile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (logFd >= 0) {
+      dup2(logFd, STDOUT_FILENO);
+      dup2(logFd, STDERR_FILENO);
+      close(logFd);
+    }
+  }
+
+  int rc = modelMain(1, margv);
+
+  if (savedOut >= 0) {
+    fflush(nullptr);
+    dup2(savedOut, STDOUT_FILENO);
+    dup2(savedErr, STDERR_FILENO);
+    close(savedOut);
+    close(savedErr);
+  }
+  return rc;
 }
 
 int jitCompile() {

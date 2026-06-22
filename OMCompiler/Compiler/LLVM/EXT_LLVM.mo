@@ -718,5 +718,27 @@ function funcIsJitCompiled
   external "C" isJitCompiled = fIsJitCompiled(fName) annotation(Library="omcruntime");
 end funcIsJitCompiled;
 
+/* Model simulation via LLVM JIT (see -d=jitSimulate). */
+
+function getLLVMToolsDir
+  "Absolute path of the LLVM tools directory omc was configured against
+   (clang, llvm-link). Empty string if omc was built without LLVM JIT."
+  output String dir;
+  external "C" dir = omc_getLLVMToolsDir() annotation(Library="omcruntime");
+end getLLVMToolsDir;
+
+function runModelViaJIT
+  "JIT-compile a model's pre-linked LLVM bitcode with ORC and run its main()
+   in-process, resolving the simulation runtime from runtimeLib. The model's
+   stdout/stderr are captured to logFile (as the native executable would).
+   Returns the model's exit status (0 == success)."
+  input String bitcodePath;
+  input String runtimeLib;
+  input String modelName;
+  input String logFile;
+  output Integer status;
+  external "C" status = omc_runModelViaJIT(bitcodePath, runtimeLib, modelName, logFile) annotation(Library="omcruntime");
+end runModelViaJIT;
+
 annotation(__OpenModelica_Interface="backend");
 end EXT_LLVM;

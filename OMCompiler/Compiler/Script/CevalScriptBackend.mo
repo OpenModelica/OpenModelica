@@ -72,6 +72,7 @@ import Binding;
 import BlockCallRewrite;
 import CevalScript;
 import CodegenWasmJit;
+import EXT_LLVM;
 import CheckModel;
 import ClassInf;
 import ClockIndexes;
@@ -1472,7 +1473,11 @@ algorithm
 
            // The wasm-jit target runs the JIT-compiled model in-process and
            // writes the result file directly, instead of spawning an executable.
-           if Config.simCodeTarget() == "wasm-jit" then
+           if Flags.isSet(Flags.JIT_SIMULATE) then
+             // -d=jitSimulate: JIT-compile the model's bitcode with LLVM (ORC)
+             // and run it in-process instead of spawning a native executable.
+             resI := runModelViaLLVMJIT(exeDir, executable, logFile);
+           elseif Config.simCodeTarget() == "wasm-jit" then
              resI := CodegenWasmJit.runSimulation(executable, result_file, simflags);
            else
              resI := System.systemCallRestrictedEnv(sim_call, logFile);
@@ -5924,6 +5929,66 @@ algorithm
   outExtDecl.annotation_ := moveAnnotationOptInfo(outExtDecl.annotation_, dstPath);
 end moveExternalDeclInfo;
 
+protected function compileModelToBitcode
+  "The -d=jitSimulate counterpart of CevalScript.compileModel: lower the model's
+   generated C (CodegenC output, in the current working directory) to a single
+   linked LLVM bitcode module <prefix>.bc, using the clang/llvm-link that omc
+   was configured against. The compile is driven by a generated shell script so
+   the makefile's (already fully expanded) CPPFLAGS are reused verbatim via
+   `eval`, independent of the configured CC."
+  input String prefix;
+protected
+  String toolsDir, script, scriptFile;
+  Integer rc;
+algorithm
+  toolsDir := EXT_LLVM.getLLVMToolsDir();
+  if stringEmpty(toolsDir) then
+    Error.addMessage(Error.INTERNAL_ERROR, {"-d=jitSimulate: this omc was built without LLVM JIT support."});
+    fail();
+  end if;
+  scriptFile := prefix + "_jitcompile.sh";
+  script := stringAppendList({
+    "#!/bin/bash\n",
+    "set -e\n",
+    // CPPFLAGS in the generated makefile is fully expanded (include dirs + -D
+    // defines); reuse it. `eval` re-tokenizes so the makefile's quoting around
+    // the -I paths is honoured.
+    "CPPFLAGS=$(grep '^CPPFLAGS=' ", prefix, ".makefile | cut -d= -f2-)\n",
+    "for f in ", prefix, "*.c; do\n",
+    "  eval \"", toolsDir, "/clang\" -O0 -fPIC -DOM_HAVE_PTHREADS -emit-llvm -c $CPPFLAGS \"$f\" -o \"${f%.c}.bc\"\n",
+    "done\n",
+    "\"", toolsDir, "/llvm-link\" ", prefix, "*.bc -o ", prefix, ".bc\n"
+  });
+  System.writeFile(scriptFile, script);
+  rc := System.systemCall("/bin/bash " + scriptFile, prefix + "_jitcompile.log");
+  if rc <> 0 then
+    Error.addMessage(Error.INTERNAL_ERROR, {"-d=jitSimulate: failed to lower model to LLVM bitcode (see " + prefix + "_jitcompile.log)."});
+    fail();
+  end if;
+end compileModelToBitcode;
+
+protected function runModelViaLLVMJIT
+  "The -d=jitSimulate counterpart of spawning the model executable: JIT-compile
+   the model's linked bitcode (<prefix>.bc) with LLVM ORC and run it in-process.
+   Runs from exeDir so the model resolves its init xml / result file relative to
+   the working directory exactly as the native executable would."
+  input String exeDir;
+  input String modelName;
+  input String logFile;
+  output Integer status;
+protected
+  String oldDir, runtimeLib;
+algorithm
+  oldDir := System.pwd();
+  if not stringEmpty(exeDir) then
+    System.cd(exeDir);
+  end if;
+  runtimeLib := Settings.getInstallationDirectoryPath() + "/lib/" + Autoconf.triple
+                + "/omc/libSimulationRuntimeC" + Autoconf.dllExt;
+  status := EXT_LLVM.runModelViaJIT(modelName + ".bc", runtimeLib, modelName, logFile);
+  System.cd(oldDir);
+end runModelViaLLVMJIT;
+
 protected function buildModel "translates and builds the model by running compiler script on the generated makefile"
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
@@ -6016,7 +6081,12 @@ algorithm
             // compile of the model's wasm modules now so its cost is attributed
             // to timeCompile (this clock) rather than leaking into
             // timeSimulation at runSimulation.
-            if Config.simCodeTarget() <> "wasm-jit" then
+            if Flags.isSet(Flags.JIT_SIMULATE) then
+              // -d=jitSimulate: lower the generated C to a single linked LLVM
+              // bitcode module now (attributing the cost to timeCompile); the
+              // simulate step JIT-runs it in-process instead of an executable.
+              compileModelToBitcode(filenameprefix);
+            elseif Config.simCodeTarget() <> "wasm-jit" then
               CevalScript.compileModel(filenameprefix, libsAndLibDirs);
             else
               CodegenWasmJit.finishCompile(filenameprefix);

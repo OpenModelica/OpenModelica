@@ -264,7 +264,8 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.JIT_EVAL_FUNC,
   Flags.JIT_DUMP_IR,
   Flags.JIT_NO_OPT,
-  Flags.DUMP_MIDCODE
+  Flags.DUMP_MIDCODE,
+  Flags.JIT_SIMULATE
 };
 
 protected

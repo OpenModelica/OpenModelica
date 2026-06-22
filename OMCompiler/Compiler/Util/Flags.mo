@@ -575,6 +575,8 @@ constant DebugFlag JIT_NO_OPT = DEBUG_FLAG(203, "jit_no_opt", false,
   "Generates LLVM-IR without optimization passes.");
 constant DebugFlag DUMP_MIDCODE = DEBUG_FLAG(204, "dumpMidCode", false,
   "Dumps MidCode after generation in a human-readable format.");
+constant DebugFlag JIT_SIMULATE = DEBUG_FLAG(205, "jitSimulate", false,
+  "Simulate models by JIT-compiling the generated C via LLVM (ORC) and running it in-process, instead of building and running a native executable.");
 
 public
 // CONFIGURATION FLAGS
