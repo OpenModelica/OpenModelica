@@ -5976,10 +5976,18 @@ algorithm
     // defines); reuse it. `eval` re-tokenizes so the makefile's quoting around
     // the -I paths is honoured.
     "CPPFLAGS=$(grep '^CPPFLAGS=' ", prefix, ".makefile | cut -d= -f2-)\n",
-    "for f in ", prefix, "*.c; do\n",
+    // Match only this model's files: <prefix>.c plus <prefix>_*.c segments.
+    // The bare <prefix>*.c glob would also pull in sibling models that share
+    // a name prefix (e.g. HelloWorld*.c matches HelloWorldSim_*.c too),
+    // producing duplicate-symbol failures at llvm-link.
+    "shopt -s nullglob\n",
+    "BCS=()\n",
+    "for f in ", prefix, ".c ", prefix, "_*.c; do\n",
     "  eval \"", toolsDir, "/clang\" -O0 -fPIC -DOM_HAVE_PTHREADS -emit-llvm -c $CPPFLAGS \"$f\" -o \"${f%.c}.bc\"\n",
+    "  BCS+=(\"${f%.c}.bc\")\n",
     "done\n",
-    "\"", toolsDir, "/llvm-link\" ", prefix, "*.bc -o ", prefix, ".bc\n"
+    "\"", toolsDir, "/llvm-link\" \"${BCS[@]}\" -o ", prefix, "_linked.bc\n",
+    "mv ", prefix, "_linked.bc ", prefix, ".bc\n"
   });
   System.writeFile(scriptFile, script);
   rc := System.systemCall("/bin/bash " + scriptFile, prefix + "_jitcompile.log");
