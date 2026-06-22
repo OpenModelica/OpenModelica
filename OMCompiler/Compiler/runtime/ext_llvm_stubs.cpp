@@ -96,4 +96,8 @@ extern "C"
   int storeLiteralReal (const double,const char *){LLVM_STUB(); return 0;}
 
   int storeLiteralIntForPtrTy(const uint64_t addr,const char *dest){LLVM_STUB(); return 0;}
+
+  /* Model simulation via LLVM JIT (see llvm_gen.cpp for the real impl). */
+  const char *omc_getLLVMToolsDir() { return ""; }
+  int omc_runModelViaJIT(const char *, const char *, const char *) {LLVM_STUB(); return 1;}
 }

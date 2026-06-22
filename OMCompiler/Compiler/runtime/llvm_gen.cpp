@@ -56,6 +56,107 @@ void dumpIR() {
   program->module->print(llvm::errs(), nullptr);
 }
 
+/* ------------------------------------------------------------------------ *
+ * Model simulation via LLVM JIT.
+ *
+ * Counterpart of the function JIT (top_level_expression) above, but for a
+ * whole simulation model. The model's regular C code (CodegenC output) is
+ * compiled to LLVM bitcode and linked into a single module ahead of time
+ * (clang -emit-llvm + llvm-link); this entry loads that bitcode, JIT-compiles
+ * it with ORC v2 LLJIT and runs its main() in-process — the same main() the
+ * compiled executable would run, which wires up the DATA struct and calls
+ * _main_SimulationRuntime, writing the .mat result file.
+ *
+ * The generated model only *references* the simulation runtime (solver,
+ * result writer, ...); those symbols live in libSimulationRuntimeC, which omc
+ * does not itself link. `runtimeLib` is therefore loaded into the process so
+ * the JIT can resolve the model's external references against it.
+ *
+ * Uses a private LLJIT instance (not the `program` one used for function
+ * evaluation) so model simulation is independent of any in-flight function
+ * JIT state. Returns the model main()'s exit code (0 == success), or a
+ * non-zero status on a JIT setup failure. No C++ exceptions are used; LLVM's
+ * Error/Expected values are consumed explicitly.
+ * ------------------------------------------------------------------------ */
+/* Absolute path of the LLVM tools directory omc was configured against
+ * (clang, llvm-link, ...). Baked in at configure time via OMC_LLVM_TOOLS_DIR.
+ * The MetaModelica side uses this to invoke the *matching* clang/llvm-link
+ * when lowering a model's C to bitcode, independent of the configured CC
+ * (which may be gcc and unable to emit LLVM bitcode). Empty if unknown. */
+const char *omc_getLLVMToolsDir() {
+#ifdef OMC_LLVM_TOOLS_DIR
+  return OMC_LLVM_TOOLS_DIR;
+#else
+  return "";
+#endif
+}
+
+int omc_runModelViaJIT(const char *bitcodePath, const char *runtimeLib,
+                       const char *modelName) {
+  llvm::InitializeNativeTarget();
+  llvm::InitializeNativeTargetAsmPrinter();
+
+  /* Make the simulation runtime resolvable to the JIT before linking the
+   * model's external references against the running process. */
+  std::string loadErr;
+  if (runtimeLib && runtimeLib[0] &&
+      llvm::sys::DynamicLibrary::LoadLibraryPermanently(runtimeLib, &loadErr)) {
+    fprintf(stderr, "[llvm-jit] cannot load simulation runtime '%s': %s\n",
+            runtimeLib, loadErr.c_str());
+    return 1;
+  }
+  llvm::sys::DynamicLibrary::LoadLibraryPermanently(nullptr);
+
+  auto ctx = std::make_unique<llvm::LLVMContext>();
+  llvm::SMDiagnostic diag;
+  std::unique_ptr<llvm::Module> mod = llvm::parseIRFile(bitcodePath, diag, *ctx);
+  if (!mod) {
+    diag.print("[llvm-jit]", llvm::errs());
+    return 1;
+  }
+
+  auto jitOrErr = llvm::orc::LLJITBuilder().create();
+  if (!jitOrErr) {
+    llvm::logAllUnhandledErrors(jitOrErr.takeError(), llvm::errs(),
+                                "[llvm-jit] LLJIT create: ");
+    return 1;
+  }
+  std::unique_ptr<llvm::orc::LLJIT> jit = std::move(*jitOrErr);
+
+  auto gen = llvm::orc::DynamicLibrarySearchGenerator::GetForCurrentProcess(
+      jit->getDataLayout().getGlobalPrefix());
+  if (!gen) {
+    llvm::logAllUnhandledErrors(gen.takeError(), llvm::errs(),
+                                "[llvm-jit] symbol generator: ");
+    return 1;
+  }
+  jit->getMainJITDylib().addGenerator(std::move(*gen));
+
+  if (auto err = jit->addIRModule(
+          llvm::orc::ThreadSafeModule(std::move(mod), std::move(ctx)))) {
+    llvm::logAllUnhandledErrors(std::move(err), llvm::errs(),
+                                "[llvm-jit] addIRModule: ");
+    return 1;
+  }
+
+  auto mainSym = jit->lookup("main");
+  if (!mainSym) {
+    llvm::logAllUnhandledErrors(mainSym.takeError(), llvm::errs(),
+                                "[llvm-jit] lookup main: ");
+    return 1;
+  }
+  using MainFn = int (*)(int, char **);
+  MainFn modelMain = mainSym->toPtr<MainFn>();
+
+  /* The model derives its init-xml / result-file names from the compiled-in
+   * model prefix rather than argv, so argv[0] is all that is required. */
+  char arg0[1024];
+  snprintf(arg0, sizeof(arg0), "%s",
+           (modelName && modelName[0]) ? modelName : "model");
+  char *margv[] = {arg0, nullptr};
+  return modelMain(1, margv);
+}
+
 int jitCompile() {
   /* Make sure that the LLVM IR is well-formed before execution.*/
   verifyFunctionDumpIROnError();

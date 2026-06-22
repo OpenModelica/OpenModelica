@@ -147,6 +147,9 @@ if(OM_OMC_ENABLE_LLVM_JIT)
   target_include_directories(omcruntime PUBLIC ${LLVM_INCLUDE_DIRS})
   target_compile_definitions(omcruntime PUBLIC ${LLVM_DEFINITIONS_LIST})
   target_compile_definitions(omcruntime PUBLIC OMC_HAVE_LLVM_JIT)
+  # Path to the matching clang/llvm-link, used to lower a model's C to bitcode
+  # for the `llvm` simCodeTarget regardless of the configured CC.
+  target_compile_definitions(omcruntime PRIVATE OMC_LLVM_TOOLS_DIR="${LLVM_TOOLS_BINARY_DIR}")
   target_link_libraries(omcruntime PUBLIC ${LLVM_JIT_LIBS})
 endif()
 
