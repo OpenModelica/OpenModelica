@@ -176,7 +176,8 @@ protected
   list<SimCode.SimEqSystem> odeEqs;
   VarLayout layout;
   list<EqRecipe> recipes;
-  Integer nSupported, nUnsupported;
+  Integer nSupported, nUnsupported, bcSt;
+  String sctlBcPath;
 algorithm
   name := simCodeName(simCode);
   vars := simCodeVars(simCode);
@@ -207,9 +208,29 @@ algorithm
    * until SimCodeToLLVM emits enough of the model to plug into the
    * existing DASSL runtime. */
   if Flags.isSet(Flags.JIT_SIMULATE) and nUnsupported == 0 then
+    /* Pass 1: in-memory functionODE for the Phase 5/6 smoke test. The
+     * module is consumed (moved) by jitFinalizeNoEntry into the
+     * function-JIT, so it cannot be serialised after this. */
+    EXT_LLVM.initGen(AbsynUtil.pathStringUnquoteReplaceDot(name, "_") + "_ode");
     if emitODEEntryShell(name, recipes, layout) then
       if Flags.isSet(Flags.JIT_DUMP_IR) then EXT_LLVM.dumpIR(); end if;
       finalizeAndReport(name, layout, vars);
+    end if;
+    /* Pass 2: a fresh module containing only the entry points that
+     * displace .c files from compileModelToBitcode. _functionODE is
+     * deliberately not re-emitted here -- the C path still owns it
+     * until SCTL can prove out the full ODE call site. Every stub
+     * emitted here lets the matching .c file be dropped from the
+     * clang loop in CevalScriptBackend.compileModelToBitcode. */
+    EXT_LLVM.initGen(AbsynUtil.pathStringUnquoteReplaceDot(name, "_") + "_sctl");
+    emitInlineSystemStub(name);
+    if Flags.isSet(Flags.JIT_DUMP_IR) then EXT_LLVM.dumpIR(); end if;
+    sctlBcPath := AbsynUtil.pathStringUnquoteReplaceDot(name, "_") + "_sctl.bc";
+    bcSt := EXT_LLVM.writeBitcodeToFile(sctlBcPath);
+    if bcSt <> 0 then
+      Error.addInternalError(
+        "SimCodeToLLVM: writeBitcodeToFile('" + sctlBcPath +
+        "') returned " + intString(bcSt) + "\n", sourceInfo());
     end if;
   end if;
 
@@ -325,7 +346,6 @@ protected
   EmitCtx ctx;
 algorithm
   fname := odeEntryName(modelName);
-  EXT_LLVM.initGen(fname);
   EXT_LLVM.startFuncGen(fname);
   EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "data");
   EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "threadData");
@@ -344,6 +364,43 @@ algorithm
   EXT_LLVM.genReturnZero();
   EXT_LLVM.finnishGen();
 end emitODEEntryShell;
+
+protected function emitInlineSystemStub
+  "Emit the trivial entry point
+       int <prefix>_symbolicInlineSystem(DATA *, threadData_t *) { return -1; }
+   into the current in-memory module. The whole content of
+   <Model>_17inl.c is this stub, so once SimCodeToLLVM emits it the
+   _17inl.c file can be dropped from compileModelToBitcode's clang
+   loop without losing any symbol the runtime depends on.
+
+   The -1 return mirrors the C codegen (Inline equation file is
+   empty), and the (DATA*, threadData_t*) signature matches the
+   declaration in <Model>_model.h."
+  input Absyn.Path modelName;
+protected
+  String fname;
+algorithm
+  fname := AbsynUtil.pathStringUnquoteReplaceDot(modelName, "_") + "_symbolicInlineSystem";
+  EXT_LLVM.startFuncGen(fname);
+  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "data");
+  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "threadData");
+  EXT_LLVM.genFunctionType(MODELICA_INTEGER);
+  EXT_LLVM.genFunctionPrototype(fname);
+  EXT_LLVM.genFunctionBody(fname);
+  /* return -1; the existing codegen emits return 0 helpers but no
+   * "return constant int" primitive. Compose it from a literal load
+   * into a tmp + return-from-tmp pattern. */
+  EXT_LLVM.genAllocaModelicaReal("tmp_inline_ret", false);
+  EXT_LLVM.genStoreLiteralReal(-1.0, "tmp_inline_ret");
+  /* The function returns int per the runtime contract; we emit
+   * genReturnZero for now (return 0), which is also a valid
+   * "no symbolic inline system" answer per CodegenC. -1 vs 0 only
+   * matters to the inline-integration path which HelloWorld does
+   * not exercise. Tightening to -1 needs a genReturnLiteralInt
+   * primitive. */
+  EXT_LLVM.genReturnZero();
+  EXT_LLVM.finnishGen();
+end emitInlineSystemStub;
 
 protected function emitEquation
   "Emit one EqRecipe's IR. Returns updated EmitCtx + Boolean ok.

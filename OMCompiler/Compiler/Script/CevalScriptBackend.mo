@@ -5983,9 +5983,18 @@ algorithm
     "shopt -s nullglob\n",
     "BCS=()\n",
     "for f in ", prefix, ".c ", prefix, "_*.c; do\n",
+    // SimCodeToLLVM emits these entry points in-memory and dumps the
+    // result to <prefix>_sctl.bc; skip the corresponding .c files so
+    // llvm-link does not see duplicate symbols. Every additional
+    // function SimCodeToLLVM grows to cover lets another .c file be
+    // skipped here.
+    "  case \"$f\" in\n",
+    "    ", prefix, "_17inl.c) continue ;;\n",
+    "  esac\n",
     "  eval \"", toolsDir, "/clang\" -O0 -fPIC -DOM_HAVE_PTHREADS -emit-llvm -c $CPPFLAGS \"$f\" -o \"${f%.c}.bc\"\n",
     "  BCS+=(\"${f%.c}.bc\")\n",
     "done\n",
+    "if [ -f ", prefix, "_sctl.bc ]; then BCS+=(", prefix, "_sctl.bc); fi\n",
     "\"", toolsDir, "/llvm-link\" \"${BCS[@]}\" -o ", prefix, "_linked.bc\n",
     "mv ", prefix, "_linked.bc ", prefix, ".bc\n"
   });
