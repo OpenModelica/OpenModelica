@@ -1,47 +1,48 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
-simple_for.mos\
-simple_nested_for.mos\
-irregular_for.mos\
-diagonal_slice_for.mos\
-simple_der_for.mos\
-slice_for.mos\
-for_exp.mos\
-for_list.mos\
-for_if.mos\
-Resizable_HeatTransfer_equations.mos\
-testVectorizedSolarSystem.mos\
-testVectorizedPowerSystem.mos\
-exemplary.mos\
-MultiDimensionalArrays1.mos\
-MultiDimensionalArrays2.mos\
-MultiDimensionalArrays3.mos\
-MultiDimensionalArrays4.mos\
-subscripted_expression.mos\
-matrix_vector_product.mos\
-scalar_product.mos\
-EnumIndex.mos\
-BenchmarksForResizeableArrays.ArrayEquations.CascadedFirstOrder1.mos\
-BenchmarksForResizeableArrays.ArrayEquations.CascadedFirstOrder2.mos\
-BenchmarksForResizeableArrays.ArrayEquations.CascadedFirstOrder3.mos\
-BenchmarksForResizeableArrays.ArrayEquations.CascadedFirstOrder4.mos\
-BenchmarksForResizeableArrays.ArrayEquations.WaterHammer.mos\
-BenchmarksForResizeableArrays.ArrayEquationsWithIndexReduction.SlidingMass3D.mos\
-BenchmarksForResizeableArrays.ForLoops.CascadedFirstOrder.mos\
-BenchmarksForResizeableArrays.ForLoops.CocurrentHeatExchanger.mos\
-BenchmarksForResizeableArrays.ComponentArrays.FiltersInSeries.mos\
-BenchmarksForResizeableArrays.ComponentArrays.TransmissionLine.mos\
-BenchmarksForResizeableArrays.ErrorsIfArraysNotExpanded.LinearSystemOfEquations.mos\
-BenchmarksForResizeableArrays.ErrorsIfArraysNotExpanded.WrongNumberOfArrayEquations.mos\
-BenchmarksForResizeableArrays.ErrorsIfArraysNotExpanded.MixedAlgebraicAndStatesArray.mos\
-BenchmarksForResizeableArrays.ErrorsIfArraysNotExpandedCorrected.FailedConsistencyCheckCorrected.mos\
-BenchmarksForResizeableArrays.Resizable.CascadedFirstOrder1_Resizable.mos\
-BenchmarksForResizeableArrays.Resizable.CascadedFirstOrder2_Resizable.mos\
-BenchmarksForResizeableArrays.Resizable.CascadedFirstOrder3_Resizable.mos\
-BenchmarksForResizeableArrays.Resizable.CascadedFirstOrder4_Resizable.mos\
-BenchmarksForResizeableArrays.Resizable.CascadedFirstOrder_Resizable.mos\
-BenchmarksForResizeableArrays.Resizable.FiltersInSeries_Resizable.mos\
+array_start_vector.mos \
+BenchmarksForResizeableArrays.ArrayEquations.CascadedFirstOrder1.mos \
+BenchmarksForResizeableArrays.ArrayEquations.CascadedFirstOrder2.mos \
+BenchmarksForResizeableArrays.ArrayEquations.CascadedFirstOrder3.mos \
+BenchmarksForResizeableArrays.ArrayEquations.CascadedFirstOrder4.mos \
+BenchmarksForResizeableArrays.ArrayEquations.WaterHammer.mos \
+BenchmarksForResizeableArrays.ArrayEquationsWithIndexReduction.SlidingMass3D.mos \
+BenchmarksForResizeableArrays.ComponentArrays.FiltersInSeries.mos \
+BenchmarksForResizeableArrays.ComponentArrays.TransmissionLine.mos \
+BenchmarksForResizeableArrays.ErrorsIfArraysNotExpanded.LinearSystemOfEquations.mos \
+BenchmarksForResizeableArrays.ErrorsIfArraysNotExpanded.MixedAlgebraicAndStatesArray.mos \
+BenchmarksForResizeableArrays.ErrorsIfArraysNotExpanded.WrongNumberOfArrayEquations.mos \
+BenchmarksForResizeableArrays.ErrorsIfArraysNotExpandedCorrected.FailedConsistencyCheckCorrected.mos \
+BenchmarksForResizeableArrays.ForLoops.CascadedFirstOrder.mos \
+BenchmarksForResizeableArrays.ForLoops.CocurrentHeatExchanger.mos \
+BenchmarksForResizeableArrays.Resizable.CascadedFirstOrder_Resizable.mos \
+BenchmarksForResizeableArrays.Resizable.CascadedFirstOrder1_Resizable.mos \
+BenchmarksForResizeableArrays.Resizable.CascadedFirstOrder2_Resizable.mos \
+BenchmarksForResizeableArrays.Resizable.CascadedFirstOrder3_Resizable.mos \
+BenchmarksForResizeableArrays.Resizable.CascadedFirstOrder4_Resizable.mos \
+BenchmarksForResizeableArrays.Resizable.FiltersInSeries_Resizable.mos \
+diagonal_slice_for.mos \
+EnumIndex.mos \
+exemplary.mos \
+for_exp.mos \
+for_if.mos \
+for_list.mos \
+irregular_for.mos \
+matrix_vector_product.mos \
+MultiDimensionalArrays1.mos \
+MultiDimensionalArrays2.mos \
+MultiDimensionalArrays3.mos \
+MultiDimensionalArrays4.mos \
+Resizable_HeatTransfer_equations.mos \
+scalar_product.mos \
+simple_der_for.mos \
+simple_for.mos \
+simple_nested_for.mos \
+slice_for.mos \
+subscripted_expression.mos \
+testVectorizedPowerSystem.mos \
+testVectorizedSolarSystem.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
