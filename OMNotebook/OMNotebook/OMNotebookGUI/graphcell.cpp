@@ -202,13 +202,6 @@ namespace IAEX {
     }
   }
 
-  MyTextEdit2a::~MyTextEdit2a()
-  {
-    for(QMap<int, IndentationState*>::iterator i = indentationStates.begin(); i != indentationStates.end(); ++i) {
-      delete i.value();
-    }
-  }
-
   void MyTextEdit2a::mousePressEvent(QMouseEvent *event)
   {
     inCommand = false;
@@ -437,19 +430,10 @@ namespace IAEX {
           k = b.userState();
         }
         Indent i(tmp);
-        if(indentationStates.contains(k))
+        auto s = indentationStates.find(k);
+        if (s != indentationStates.end())
         {
-          IndentationState* s = indentationStates[k];
-          i.ism.level = s->level;
-          i.ism.equation = s->equation;
-          i.ism.equationSection = s->equationSection;
-          i.ism.lMod = s->lMod;
-          i.ism.loopBlock = s->loopBlock;
-          i.ism.nextMod = s->nextMod;
-          i.ism.skipNext = s->skipNext;
-          i.ism.state = s->state;
-          i.current = s->current;
-          i.next = s->next;
+          i.setState(*s);
         }
 
         i.indentedText();
@@ -519,10 +503,9 @@ namespace IAEX {
   {
     if( source->hasText() )
     {
-      QMimeData *newSource = new QMimeData();
-      newSource->setText( source->text() );
-      QPlainTextEdit::insertFromMimeData( newSource );
-      delete newSource;
+      QMimeData newSource;
+      newSource.setText( source->text() );
+      QPlainTextEdit::insertFromMimeData( &newSource );
     }
     else
       QPlainTextEdit::insertFromMimeData( source );
@@ -642,18 +625,17 @@ namespace IAEX {
   * \author Anders Fernström
   * \date 2006-01-23
   *
-  * \brief If the mimedata that should be insertet contain text,
+  * \brief If the mimedata that should be inserted contains text,
   * create a new mimedata object that only contains text, otherwise
-  * text format is insertet also - don't want that for GraphCells.
+  * text format is inserted also - don't want that for GraphCells.
   */
   void MyTextEdit2::insertFromMimeData(const QMimeData *source)
   {
     if( source->hasText() )
     {
-      QMimeData *newSource = new QMimeData();
-      newSource->setText( source->text() );
-      QTextBrowser::insertFromMimeData( newSource );
-      delete newSource;
+      QMimeData newSource;
+      newSource.setText( source->text() );
+      QTextBrowser::insertFromMimeData( &newSource );
     }
     else
       QTextBrowser::insertFromMimeData( source );
@@ -723,22 +705,6 @@ namespace IAEX {
 
     connect(output_, SIGNAL(anchorClicked(const QUrl&)), input_, SLOT(goToPos(const QUrl&)));
     connect(this, SIGNAL(plotVariables(QStringList)), this, SLOT(plotVariablesSlot(QStringList)));
-
-    imageFile=0;
-  }
-
-  /*!
-  * \author Ingemar Axelsson and Anders Fernström
-  *
-  * \brief The class destructor
-  */
-  GraphCell::~GraphCell()
-  {
-    delete mpPlotWindow;
-    delete input_;
-    delete output_;
-    if(imageFile)
-      delete imageFile;
   }
 
   /*!
@@ -1566,9 +1532,9 @@ namespace IAEX {
   *
   */
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
-  QRecursiveMutex* guard = new QRecursiveMutex();
+  QRecursiveMutex guard;
 #else // QT_VERSION_CHECK
-  QMutex* guard = new QMutex(QMutex::Recursive);
+  QMutex guard(QMutex::Recursive);
 #endif // QT_VERSION_CHECK
 
   void GraphCell::eval()
@@ -1612,7 +1578,7 @@ namespace IAEX {
       }
 
       {
-        guard->lock();
+        guard.lock();
         // adrpo:FIXME! WRONG! TODO! this is wrong!
         //       the commands should be sent to OMC in the same sequence
         //       they appear in the notebook, otherwise a simulate command
@@ -1639,7 +1605,7 @@ namespace IAEX {
     int errorLevel= delegate->getErrorLevel();
 
     //delete sender();
-    guard->unlock();
+    guard.unlock();
 
     if( res.isEmpty() && (error.isEmpty() || error.size() == 0) ) {
       res = "[done]";

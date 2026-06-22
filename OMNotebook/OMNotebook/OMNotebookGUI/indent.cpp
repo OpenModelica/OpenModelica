@@ -38,20 +38,6 @@
 #include <QMessageBox>
 #include <QDebug>
 
-IndentationState::~IndentationState() {
-}
-
-Indent::ISM::ISM() {
-  level = 0;
-  state = 0;
-  skipNext = false;
-  lMod = false;
-  nextMod = 0;
-}
-
-Indent::ISM::~ISM() {
-}
-
 void Indent::ISM::newToken(QString s, QString s2) {
   if(skipNext) {
     skipNext = false;
@@ -208,12 +194,23 @@ Indent::Indent(QString s, bool aggressive_) {
   lineModifiers = 0;
 }
 
-Indent::~Indent() {
-}
-
 void Indent::setText(QString s) {
   ts.reset();
   ts << s;
+}
+
+void Indent::setState(const IndentationState &state)
+{
+  ism.level = state.level;
+  ism.state = state.state;
+  ism.nextMod = state.nextMod;
+  ism.equation = state.equation;
+  ism.equationSection = state.equationSection;
+  ism.loopBlock = state.loopBlock;
+  ism.skipNext = state.skipNext;
+  ism.lMod = state.lMod;
+  current = state.current;
+  next = state.next;
 }
 
 int Indent::level() {
@@ -224,7 +221,7 @@ bool Indent::lMod() {
   return lmod;
 }
 
-QString Indent::indentedText(QMap<int, IndentationState*>* states) {
+QString Indent::indentedText(QMap<int, IndentationState>* states) {
   buffer1 = buffer1.replace(QRegularExpression("(==|:=|<=|>=|<>|=|<|>)"), " \\1 ");
   buffer1 = buffer1.replace('\n', " <newLine> ") + " <newLine> " + " <newLine> ";
   buffer1 = buffer1.replace("//", " //");
@@ -309,7 +306,7 @@ QString Indent::indentedText(QMap<int, IndentationState*>* states) {
         if(states->find(N) != states->end()) {
           states->remove(N);
         }
-        (*states)[N] = new IndentationState(ism.state, ism.level, ism.nextMod, current, next, ism.skipNext, ism.lMod, ism.equation, ism.equationSection, ism.loopBlock);
+        states->insert(N, IndentationState{ism.state, ism.level, ism.nextMod, current, next, ism.skipNext, ism.lMod, ism.equation, ism.equationSection, ism.loopBlock});
       }
     } else {
       tmp +=  current.trimmed() +  QString(current.size()?1:0, ' ') ;
