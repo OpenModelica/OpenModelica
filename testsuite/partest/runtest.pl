@@ -89,15 +89,24 @@ sub make_external_link {
   # "../$rel" as seen from here.
   my $src = "../" . $rel;
   return unless -e $src;
-  return if -l $rel or -e $rel; # already in place (or a valid leftover link)
+  if (-l $rel && !-e $rel) {
+    unlink($rel); # stale/broken leftover link (dangling target); recreate below
+  }
+  return if -l $rel or -e $rel; # already in place (valid leftover link)
 
   my $abs = Cwd::abs_path($src);
   # Creation may race a concurrent sibling test; an EEXIST failure just means
   # the other test won the race and the link is already there, which is fine.
+  my $ok;
   if ($isWSL or ($osname eq 'MSWin32')) {
-    link($abs, $rel);
+    $ok = link($abs, $rel);
   } else {
-    symlink($abs, $rel);
+    $ok = symlink($abs, $rel);
+  }
+  # Ignore the race outcome (link already present), but surface real failures
+  # (permissions/path) instead of letting them turn into confusing later errors.
+  if (!$ok && !(-l $rel or -e $rel)) {
+    die "make_external_link failed for '$rel' -> '$abs': $!";
   }
 }
 

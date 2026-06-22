@@ -21,7 +21,7 @@ end Mclk;
 buildModelFMU(Mclk, version="3.0", fmuType="me"); getErrorString();
 
 // the clock element (value reference stripped, it depends on the variable count)
-system("unzip -cqq Mclk.fmu modelDescription.xml | grep -oE \"<Clock[^>]*/>\" | sed \"s/valueReference=\\\"[0-9]*\\\" //\""); getErrorString();
+system("unzip -cqq Mclk.fmu modelDescription.xml | grep -oE \"<Clock[^>]*/>\" | sed -E \"s/[[:space:]]valueReference=\\\"[0-9]+\\\"//g\""); getErrorString();
 
 // Result:
 // true

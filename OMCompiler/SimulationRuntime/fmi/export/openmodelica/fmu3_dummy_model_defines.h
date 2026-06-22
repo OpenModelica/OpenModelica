@@ -30,7 +30,10 @@
 
 #define MODEL_GUID "DUMMY-GUID"
 
-#define NUMBER_OF_REALS 1
+/* Two reals: the state at index 0 and its derivative at index 1 (see
+ * STATESDERIVATIVES below), so the dummy defines are internally consistent
+ * when fmu3_model_interface.c is compiled against this placeholder. */
+#define NUMBER_OF_REALS 2
 #define NUMBER_OF_STATES 1
 #define NUMBER_OF_INTEGERS 1
 #define NUMBER_OF_BOOLEANS 1

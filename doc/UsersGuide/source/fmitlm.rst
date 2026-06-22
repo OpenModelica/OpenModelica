@@ -185,8 +185,8 @@ If there are some errors while creating the FMU, they will be shown in the comma
 window and logged in this log file as well.
 
 By default an FMU that can be used for both Model Exchange and Co-Simulation is generated.
-We support FMI 1.0 & FMI 2.0.4 for Model Exchange FMUs and FMI 2.0.4 for Co-Simulation
-FMUs.
+We support FMI 1.0 (deprecated) and FMI 2.0 for Model Exchange and Co-Simulation FMUs,
+with experimental support for FMI 3.0 (see the version table above).
 
 For the Co-Simulation FMU two integrator methods are available:
 
