@@ -89,6 +89,14 @@ extern "C"
    * success, non-zero if the module is not present or the file cannot be
    * opened/written. */
   int writeBitcodeToFile(const char *path);
+
+  /* Serialise the current in-memory module to bitcode in a *process-global
+   * byte buffer*, taking ownership of the bytes. omc_runModelViaJIT picks
+   * them up via parseBitcode and addIRModule before processing its file
+   * argument, so the SCTL-emitted module rides into the LLJIT without ever
+   * touching disk. This is the in-memory replacement for the .sctl.bc disk
+   * hop used during the transition. Returns 0 on success. */
+  int stashCurrentModuleAsBitcode();
   /*Forward decls*/
   struct Function;
   struct Program;

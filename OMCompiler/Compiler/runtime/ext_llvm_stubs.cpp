@@ -136,4 +136,5 @@ extern "C"
   const char *omc_getLLVMToolsDir() { return ""; }
   int omc_runModelViaJIT(const char *, const char *, const char *, const char *) {LLVM_STUB(); return 1;}
   int writeBitcodeToFile(const char *) {LLVM_STUB(); return 1;}
+  int stashCurrentModuleAsBitcode() {LLVM_STUB(); return 1;}
 }

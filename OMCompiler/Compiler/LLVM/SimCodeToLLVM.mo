@@ -225,12 +225,20 @@ algorithm
     EXT_LLVM.initGen(AbsynUtil.pathStringUnquoteReplaceDot(name, "_") + "_sctl");
     emitInlineSystemStub(name);
     if Flags.isSet(Flags.JIT_DUMP_IR) then EXT_LLVM.dumpIR(); end if;
-    sctlBcPath := AbsynUtil.pathStringUnquoteReplaceDot(name, "_") + "_sctl.bc";
-    bcSt := EXT_LLVM.writeBitcodeToFile(sctlBcPath);
+    /* Hand the in-memory module to omc_runModelViaJIT through a
+     * process-global byte buffer (no disk hop). compileModelToBitcode
+     * is still responsible for clang'ing the .c files we have not
+     * yet displaced, but SCTL's own bitcode no longer touches disk. */
+    bcSt := EXT_LLVM.stashCurrentModuleAsBitcode();
     if bcSt <> 0 then
       Error.addInternalError(
-        "SimCodeToLLVM: writeBitcodeToFile('" + sctlBcPath +
-        "') returned " + intString(bcSt) + "\n", sourceInfo());
+        "SimCodeToLLVM: stashCurrentModuleAsBitcode returned " +
+        intString(bcSt) + "\n", sourceInfo());
+    end if;
+    /* Optional debug dump alongside, gated on jit_dump_ir. */
+    if Flags.isSet(Flags.JIT_DUMP_IR) then
+      sctlBcPath := AbsynUtil.pathStringUnquoteReplaceDot(name, "_") + "_sctl.bc";
+      bcSt := EXT_LLVM.writeBitcodeToFile(sctlBcPath);
     end if;
   end if;
 

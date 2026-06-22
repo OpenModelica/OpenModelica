@@ -750,6 +750,17 @@ function writeBitcodeToFile
   external "C" status = writeBitcodeToFile(path) annotation(Library = "omcruntime");
 end writeBitcodeToFile;
 
+function stashCurrentModuleAsBitcode
+  "Move the current in-memory module's bitcode bytes into a
+   process-global buffer that omc_runModelViaJIT consumes via
+   parseBitcode + addIRModule before processing its file argument.
+   This is the in-memory replacement for the <prefix>_sctl.bc disk
+   hop used during the SimCodeToLLVM transition. Returns 0 on
+   success."
+  output Integer status;
+  external "C" status = stashCurrentModuleAsBitcode() annotation(Library = "omcruntime");
+end stashCurrentModuleAsBitcode;
+
 function funcIsJitCompiled
   input String fName;
   output Boolean isJitCompiled;

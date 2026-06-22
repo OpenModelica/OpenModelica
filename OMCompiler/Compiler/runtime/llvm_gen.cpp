@@ -39,9 +39,13 @@
 #include "llvm_gen_modelica_constants.h"
 #include "llvm_gen_util.hpp"
 
+#include <llvm/Bitcode/BitcodeReader.h>
 #include <llvm/Bitcode/BitcodeWriter.h>
 #include <llvm/Support/FileSystem.h>
+#include <llvm/Support/MemoryBuffer.h>
 #include <llvm/Support/raw_ostream.h>
+
+#include <vector>
 
 /* For redirecting the in-process model's stdout/stderr to its log file
  * (the native executable path does the same via shell redirection). */
@@ -89,6 +93,26 @@ int writeBitcodeToFile(const char *path) {
   }
   llvm::WriteBitcodeToFile(*program->module, out);
   out.flush();
+  return 0;
+}
+
+/* Process-global bitcode buffer stashed by SimCodeToLLVM. Consumed (cleared)
+ * by omc_runModelViaJIT so each model run starts from a clean slate. The
+ * buffer is the in-memory replacement for the transient <prefix>_sctl.bc
+ * disk file. */
+static std::vector<char> g_sctlBitcodeBytes;
+
+int stashCurrentModuleAsBitcode() {
+  if (!program || !program->module) {
+    fprintf(stderr, "stashCurrentModuleAsBitcode: no module to serialise\n");
+    return 1;
+  }
+  llvm::SmallVector<char, 0> buf;
+  {
+    llvm::raw_svector_ostream out(buf);
+    llvm::WriteBitcodeToFile(*program->module, out);
+  }
+  g_sctlBitcodeBytes.assign(buf.begin(), buf.end());
   return 0;
 }
 
@@ -173,6 +197,33 @@ int omc_runModelViaJIT(const char *bitcodePath, const char *runtimeLib,
     llvm::logAllUnhandledErrors(std::move(err), llvm::errs(),
                                 "[llvm-jit] addIRModule: ");
     return 1;
+  }
+
+  /* Pull in SimCodeToLLVM's in-memory bitcode (stashed via
+   * stashCurrentModuleAsBitcode) without going through disk. Each
+   * function SCTL emits here lets the matching <Model>_*.c be dropped
+   * from compileModelToBitcode. The buffer is consumed exactly once
+   * per run. */
+  if (!g_sctlBitcodeBytes.empty()) {
+    auto sctlCtx = std::make_unique<llvm::LLVMContext>();
+    auto sctlBuf = llvm::MemoryBuffer::getMemBufferCopy(
+        llvm::StringRef(g_sctlBitcodeBytes.data(), g_sctlBitcodeBytes.size()),
+        "sctl-in-memory");
+    auto sctlModOrErr = llvm::parseBitcodeFile(sctlBuf->getMemBufferRef(), *sctlCtx);
+    if (!sctlModOrErr) {
+      llvm::logAllUnhandledErrors(sctlModOrErr.takeError(), llvm::errs(),
+                                  "[llvm-jit] parse SCTL bitcode: ");
+      g_sctlBitcodeBytes.clear();
+      return 1;
+    }
+    if (auto err = jit->addIRModule(
+            llvm::orc::ThreadSafeModule(std::move(*sctlModOrErr), std::move(sctlCtx)))) {
+      llvm::logAllUnhandledErrors(std::move(err), llvm::errs(),
+                                  "[llvm-jit] addIRModule SCTL: ");
+      g_sctlBitcodeBytes.clear();
+      return 1;
+    }
+    g_sctlBitcodeBytes.clear();
   }
 
   auto mainSym = jit->lookup("main");

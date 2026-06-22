@@ -5995,7 +5995,8 @@ algorithm
     "  eval \"", toolsDir, "/clang\" -O0 -fPIC -DOM_HAVE_PTHREADS -emit-llvm -c $CPPFLAGS \"$f\" -o \"${f%.c}.bc\"\n",
     "  BCS+=(\"${f%.c}.bc\")\n",
     "done\n",
-    "if [ -f ", prefix, "_sctl.bc ]; then BCS+=(", prefix, "_sctl.bc); fi\n",
+    // SimCodeToLLVM's bitcode arrives in-memory via stashCurrentModuleAsBitcode;
+    // omc_runModelViaJIT adds it to the LLJIT before this <prefix>.bc.
     "\"", toolsDir, "/llvm-link\" \"${BCS[@]}\" -o ", prefix, "_linked.bc\n",
     "mv ", prefix, "_linked.bc ", prefix, ".bc\n"
   });
