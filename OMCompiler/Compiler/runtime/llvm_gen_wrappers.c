@@ -1259,6 +1259,25 @@ double omc_jit_get_time(DATA *data)
   return data->localData[0]->timeValue;
 }
 
+/* Stamp a JACOBIAN struct as JACOBIAN_NOT_AVAILABLE so DASSL knows
+ * to fall back to numerical differencing. CodegenC populates the
+ * availability field in <Model>_initialAnalyticJacobianX; SCTL has
+ * no analytic-Jacobian emission yet, so the equivalent stub calls
+ * this helper and returns. Without it the field stays
+ * JACOBIAN_UNKNOWN (0) and DASSL reports "Jacobian availability
+ * status is unknown" and aborts. */
+void omc_jit_jacobian_set_unavailable(void *jacobian)
+{
+  if (jacobian) {
+    /* JACOBIAN struct's first field is availability (an enum, stored
+     * as int). Writing 1 = JACOBIAN_NOT_AVAILABLE per
+     * simulation_data.h. Done as a direct memory write rather than
+     * a struct field access so SCTL does not need to know the layout
+     * beyond "availability sits at offset 0". */
+    *(int*)jacobian = 1; /* JACOBIAN_NOT_AVAILABLE */
+  }
+}
+
 /* Read the start-attribute of a real variable as recorded in
  * modelData. Mirrors the C codegen
  *   ((modelica_real*)((data->modelData->realVarsData[slot])

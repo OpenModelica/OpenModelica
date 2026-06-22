@@ -198,6 +198,17 @@ end EqRecipe;
 public uniontype EntryBody
   record EB_STUB end EB_STUB;
   record EB_NULL_PTR end EB_NULL_PTR;
+  record EB_RETURN_MINUS_ONE
+    "Emit a body that returns -1. Used for entries the runtime checks
+     for negative-as-unavailable."
+  end EB_RETURN_MINUS_ONE;
+  record EB_JAC_UNAVAILABLE
+    "Body for _initialAnalyticJacobian<X>(DATA*, threadData_t*, JACOBIAN*):
+     calls omc_jit_jacobian_set_unavailable(jacobian) (which writes
+     JACOBIAN_NOT_AVAILABLE into the struct's first field) and returns
+     1. Lets DASSL distinguish 'genuinely no analytic Jacobian' from
+     the default JACOBIAN_UNKNOWN that triggers an abort."
+  end EB_JAC_UNAVAILABLE;
   record EB_TODO
     "Entry currently left to clang from <Model>_NN<tag>.c."
     String reason;
@@ -305,10 +316,48 @@ algorithm
     RUNTIME_ENTRY("_functionInitialEquations",        MI, {MM, MM}, EB_TODO("emitInitialEquationsBlock handles it"), "_06inz.c"),
     RUNTIME_ENTRY("_functionRemovedInitialEquations", MI, {MM, MM}, EB_TODO("emitInitialEquationsBlock handles it"), "_06inz.c"),
 
-    /* -- _01exo.c -- external object destructors. CodegenC frees
-                     data->simulationInfo->extObjs; SCTL needs an
-                     omc_jit_* runtime accessor to chase the struct. */
-    RUNTIME_ENTRY("_callExternalObjectDestructors", MV, {MM, MM}, EB_TODO("needs runtime accessor for data->simulationInfo->extObjs"), "_01exo.c")
+    /* -- _01exo.c -- external object destructors. CodegenC emits
+                     `if (extObjs) { free(extObjs); extObjs = 0; }`;
+                     for models with no ExternalObject declarations
+                     (HelloWorld / UserFn / ChuaCircuit / ...) extObjs
+                     is NULL and the call is a no-op. The stub matches
+                     that behaviour. Models that use ExternalObject
+                     will need an omc_jit_destroy_extobjs(DATA*)
+                     accessor before this can keep its EB_STUB tag. */
+    RUNTIME_ENTRY("_callExternalObjectDestructors", MV, {MM, MM}, EB_STUB(), "_01exo.c"),
+
+    /* -- _12jac.c -- analytic Jacobian columns and the seven
+                      block initialisers (A..H + ADJ). The columns
+                      and *_DAG entries are no-ops the solver only
+                      invokes when an analytic Jacobian is available;
+                      stubs are safe there. The *_initialAnalyticJacobianX
+                      entries must call back into the runtime to set
+                      jacobian->availability = JACOBIAN_NOT_AVAILABLE
+                      so DASSL knows to fall back to numerical
+                      differencing rather than abort on
+                      JACOBIAN_UNKNOWN. */
+    RUNTIME_ENTRY("_functionJacA_column",        MI, {MM, MM, MM, MM}, EB_STUB(),            "_12jac.c"),
+    RUNTIME_ENTRY("_functionJacA_constantEqns",  MI, {MM, MM, MM, MM}, EB_STUB(),            "_12jac.c"),
+    RUNTIME_ENTRY("_JacA_DAG",                   MV, {MM, MM, MM},     EB_STUB(),            "_12jac.c"),
+    RUNTIME_ENTRY("_functionJacB_column",        MI, {MM, MM, MM, MM}, EB_STUB(),            "_12jac.c"),
+    RUNTIME_ENTRY("_JacB_DAG",                   MV, {MM, MM, MM},     EB_STUB(),            "_12jac.c"),
+    RUNTIME_ENTRY("_functionJacC_column",        MI, {MM, MM, MM, MM}, EB_STUB(),            "_12jac.c"),
+    RUNTIME_ENTRY("_JacC_DAG",                   MV, {MM, MM, MM},     EB_STUB(),            "_12jac.c"),
+    RUNTIME_ENTRY("_functionJacD_column",        MI, {MM, MM, MM, MM}, EB_STUB(),            "_12jac.c"),
+    RUNTIME_ENTRY("_JacD_DAG",                   MV, {MM, MM, MM},     EB_STUB(),            "_12jac.c"),
+    RUNTIME_ENTRY("_functionJacF_column",        MI, {MM, MM, MM, MM}, EB_STUB(),            "_12jac.c"),
+    RUNTIME_ENTRY("_JacF_DAG",                   MV, {MM, MM, MM},     EB_STUB(),            "_12jac.c"),
+    RUNTIME_ENTRY("_functionJacH_column",        MI, {MM, MM, MM, MM}, EB_STUB(),            "_12jac.c"),
+    RUNTIME_ENTRY("_JacH_DAG",                   MV, {MM, MM, MM},     EB_STUB(),            "_12jac.c"),
+    RUNTIME_ENTRY("_functionJacADJ_column",      MI, {MM, MM, MM, MM}, EB_STUB(),            "_12jac.c"),
+    RUNTIME_ENTRY("_JacADJ_DAG",                 MV, {MM, MM, MM},     EB_STUB(),            "_12jac.c"),
+    RUNTIME_ENTRY("_initialAnalyticJacobianA",   MI, {MM, MM, MM},     EB_JAC_UNAVAILABLE(), "_12jac.c"),
+    RUNTIME_ENTRY("_initialAnalyticJacobianB",   MI, {MM, MM, MM},     EB_JAC_UNAVAILABLE(), "_12jac.c"),
+    RUNTIME_ENTRY("_initialAnalyticJacobianC",   MI, {MM, MM, MM},     EB_JAC_UNAVAILABLE(), "_12jac.c"),
+    RUNTIME_ENTRY("_initialAnalyticJacobianD",   MI, {MM, MM, MM},     EB_JAC_UNAVAILABLE(), "_12jac.c"),
+    RUNTIME_ENTRY("_initialAnalyticJacobianF",   MI, {MM, MM, MM},     EB_JAC_UNAVAILABLE(), "_12jac.c"),
+    RUNTIME_ENTRY("_initialAnalyticJacobianH",   MI, {MM, MM, MM},     EB_JAC_UNAVAILABLE(), "_12jac.c"),
+    RUNTIME_ENTRY("_initialAnalyticJacobianADJ", MI, {MM, MM, MM},     EB_JAC_UNAVAILABLE(), "_12jac.c")
 
   /* Entries still owned entirely by <Model>.c and <Model>_12jac.c are
      not in the catalog yet; they need real codegen
@@ -866,12 +915,13 @@ end emitDisplacingStubs;
 
 protected function emitRuntimeEntry
   "Emit one RuntimeEntry from the catalog into the active in-memory
-   module. EB_STUB and EB_NULL_PTR both lower through emitStub (which
-   emits `ret <zero of retTy>`; the zero of an opaque pointer is null,
-   so EB_NULL_PTR shares the same code path -- it exists in the
-   catalog as a separate tag only for human readability). EB_TODO
-   entries are skipped here -- the matching .c file stays in
-   compileModelToBitcode's clang loop."
+   module. EB_STUB and EB_NULL_PTR both lower through emitStub (zero
+   of an opaque pointer is null). EB_RETURN_MINUS_ONE lowers through
+   emitStubMinusOne for entries whose return value the runtime checks
+   as a sentinel (e.g. <Model>_initialAnalyticJacobianA returning -1
+   to mean 'no analytic Jacobian, fall back to numerical
+   differencing'). EB_TODO entries are skipped here -- the matching
+   .c file stays in compileModelToBitcode's clang loop."
   input String prefix;
   input RuntimeEntry entry;
 algorithm
@@ -882,9 +932,65 @@ algorithm
     case EB_NULL_PTR() algorithm
       emitStub(prefix + entry.nameSuffix, entry.retTy, entry.argTys);
       then ();
+    case EB_RETURN_MINUS_ONE() algorithm
+      emitStubMinusOne(prefix + entry.nameSuffix, entry.argTys);
+      then ();
+    case EB_JAC_UNAVAILABLE() algorithm
+      emitJacobianUnavailable(prefix + entry.nameSuffix);
+      then ();
     case EB_TODO() then ();
   end match;
 end emitRuntimeEntry;
+
+protected function emitJacobianUnavailable
+  "Emit  int <fname>(DATA*, threadData_t*, JACOBIAN *jacobian) {
+            omc_jit_jacobian_set_unavailable(jacobian);
+            return 1;
+         }
+   The third argument is positional -- IR name 'jacobian' so the
+   genCallArg below picks the same alloca."
+  input String fname;
+protected
+  constant String RETVAR = "tmp_ret_one";
+algorithm
+  EXT_LLVM.startFuncGen(fname);
+  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "data");
+  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "threadData");
+  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "jacobian");
+  EXT_LLVM.genFunctionType(MODELICA_INTEGER);
+  EXT_LLVM.genFunctionPrototype(fname);
+  EXT_LLVM.genFunctionBody(fname);
+  EXT_LLVM.genCallArg("jacobian");
+  EXT_LLVM.genCall("omc_jit_jacobian_set_unavailable", MODELICA_VOID, "", false);
+  EXT_LLVM.genAllocaModelicaInt(RETVAR, false);
+  EXT_LLVM.genStoreLiteralInt(1, RETVAR);
+  EXT_LLVM.genReturn(RETVAR);
+  EXT_LLVM.finnishGen();
+end emitJacobianUnavailable;
+
+protected function emitStubMinusOne
+  "Emit  int <fname>(<argTys...>) { return -1; }  into the active
+   module. Sentinel for runtime-checked unavailable-analytic-Jacobian
+   et al."
+  input String fname;
+  input list<Integer> argTys;
+protected
+  Integer i = 0;
+  constant String RETVAR = "tmp_ret_neg1";
+algorithm
+  EXT_LLVM.startFuncGen(fname);
+  for ty in argTys loop
+    EXT_LLVM.genFunctionArg(ty, "a" + intString(i));
+    i := i + 1;
+  end for;
+  EXT_LLVM.genFunctionType(MODELICA_INTEGER);
+  EXT_LLVM.genFunctionPrototype(fname);
+  EXT_LLVM.genFunctionBody(fname);
+  EXT_LLVM.genAllocaModelicaInt(RETVAR, false);
+  EXT_LLVM.genStoreLiteralInt(-1, RETVAR);
+  EXT_LLVM.genReturn(RETVAR);
+  EXT_LLVM.finnishGen();
+end emitStubMinusOne;
 
 protected function emitEquation
   "Emit one EqRecipe's IR. Returns updated EmitCtx + Boolean ok.
