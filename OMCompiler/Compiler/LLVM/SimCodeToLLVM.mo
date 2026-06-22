@@ -537,10 +537,65 @@ algorithm
           ok := false;
         end if;
       then (outCtx, dst, ok);
+    case DAE.CALL(path=Absyn.IDENT(name=tmp), expLst={sub})
+      guard isLibmUnaryReal(tmp)
+      algorithm
+        (ctx1, dst1, ok1) := emitExp(sub, ctx);
+        if ok1 then
+          (ctx2, dst) := emitCallUnaryReal(tmp, dst1, ctx1);
+          ok := true;
+        else
+          ctx2 := ctx1;
+          dst := "<libm-arg-failed>";
+          ok := false;
+        end if;
+      then (ctx2, dst, ok);
     else
       then (ctx, "<unsupported-exp>", false);
   end match;
 end emitExp;
+
+protected function isLibmUnaryReal
+  "Recognise libm-style single-argument Real -> Real functions whose
+   names are resolvable in the host process. The names match libm
+   symbols exactly so DynamicLibrarySearchGenerator::GetForCurrentProcess
+   resolves the call against libm at JIT lookup time."
+  input String name;
+  output Boolean b;
+algorithm
+  b := match name
+    case "sin"  then true;
+    case "cos"  then true;
+    case "tan"  then true;
+    case "asin" then true;
+    case "acos" then true;
+    case "atan" then true;
+    case "sinh" then true;
+    case "cosh" then true;
+    case "tanh" then true;
+    case "exp"  then true;
+    case "log"  then true;
+    case "log10" then true;
+    case "sqrt" then true;
+    case "fabs" then true;
+    case "abs"  then true;
+    else false;
+  end match;
+end isLibmUnaryReal;
+
+protected function emitCallUnaryReal
+  "Emit  %dst = call double @<fn>(double <src>)  into the active body."
+  input String fn;
+  input String src;
+  input EmitCtx ctx;
+  output EmitCtx outCtx;
+  output String dst;
+algorithm
+  (outCtx, dst) := freshTmp(ctx);
+  EXT_LLVM.genAllocaModelicaReal(dst, false);
+  EXT_LLVM.genCallArg(src);
+  EXT_LLVM.genCall(fn, MODELICA_REAL, dst, true);
+end emitCallUnaryReal;
 
 protected function emitCrefRead
   "Resolve a cref via the layout, then emit a realVars load. The
