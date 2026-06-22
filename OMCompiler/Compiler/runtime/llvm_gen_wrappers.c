@@ -1259,6 +1259,19 @@ double omc_jit_get_time(DATA *data)
   return data->localData[0]->timeValue;
 }
 
+/* Read the start-attribute of a real variable as recorded in
+ * modelData. Mirrors the C codegen
+ *   ((modelica_real*)((data->modelData->realVarsData[slot])
+ *       .attribute.start.data))[0]
+ * used by every <Model>_eqFunction_N initial-equation body of the
+ * form "x = $START.x". SCTL emits a call to this helper when it
+ * encounters a $START.<varname> cref. */
+double omc_jit_get_realvar_start(DATA *data, int64_t slot)
+{
+  return ((modelica_real *)
+          ((data->modelData->realVarsData[slot]).attribute.start.data))[0];
+}
+
 /* Phase 6: invoke a JIT-compiled <Model>_functionODE against a
  * minimally-fabricated DATA*. The realVars buffer follows the same
  * absolute-slot layout that SimCodeToLLVM uses:

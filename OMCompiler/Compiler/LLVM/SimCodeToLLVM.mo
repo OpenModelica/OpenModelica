@@ -152,6 +152,13 @@ public uniontype EqRecipe
     DAE.Exp rhs;
   end EQ_ALG_ASSIGN;
 
+  record EQ_NOOP
+    "Equation contributes nothing to the current emission (e.g. SES_ALIAS,
+     whose body is shared with another equation already emitted in this
+     or the ODE block)."
+    Integer aliasOf;
+  end EQ_NOOP;
+
   record EQ_UNSUPPORTED
     "Reason the equation cannot be lowered in the current scope."
     String reason;
@@ -286,13 +293,16 @@ algorithm
     RUNTIME_ENTRY("_linear_model_frame",               MM, {}, EB_NULL_PTR(), "_14lnz.c"),
     RUNTIME_ENTRY("_linear_model_datarecovery_frame", MM, {}, EB_NULL_PTR(), "_14lnz.c"),
 
-    /* -- _06inz.c -- initial-equation block. TODO: lower
-                     SimCode.initialEquations once a body-validation
-                     pre-pass is in place. Until then we leave the
-                     three entry points to clang. */
-    RUNTIME_ENTRY("_functionInitialEquations_0",         MV, {MM, MM}, EB_TODO("needs INITIAL_EQS source + $START.x cref"), "_06inz.c"),
-    RUNTIME_ENTRY("_functionInitialEquations",           MI, {MM, MM}, EB_TODO("needs INITIAL_EQS source"),                 "_06inz.c"),
-    RUNTIME_ENTRY("_functionRemovedInitialEquations",    MI, {MM, MM}, EB_TODO("trivial stub OK; gated on _06inz.c skip"),  "_06inz.c"),
+    /* -- _06inz.c -- initial-equation block. emitInitialEquationsBlock
+                      runs alongside the catalog walk and emits the three
+                      entries below when SimCode.initialEquations all
+                      lower cleanly. The catalog rows stay EB_TODO so
+                      displacedSegmentFiles continues to leave _06inz.c
+                      on clang by default; the dynamic skip wiring needs
+                      one more piece before they can flip. */
+    RUNTIME_ENTRY("_functionInitialEquations_0",      MV, {MM, MM}, EB_TODO("emitInitialEquationsBlock handles it"), "_06inz.c"),
+    RUNTIME_ENTRY("_functionInitialEquations",        MI, {MM, MM}, EB_TODO("emitInitialEquationsBlock handles it"), "_06inz.c"),
+    RUNTIME_ENTRY("_functionRemovedInitialEquations", MI, {MM, MM}, EB_TODO("emitInitialEquationsBlock handles it"), "_06inz.c"),
 
     /* -- _01exo.c -- external object destructors. CodegenC frees
                      data->simulationInfo->extObjs; SCTL needs an
@@ -412,14 +422,14 @@ algorithm
     EXT_LLVM.initGen(AbsynUtil.pathStringUnquoteReplaceDot(name, "_") + "_sctl");
     emitDisplacingStubs(name);
     emitUserFunctions(simCode);
-    /* Initial-equation emission is staged but not wired yet -- the
-     * pre-validation pass needed to guarantee a clean emission is
-     * being added next. Wiring this without that pre-validation
-     * emits an empty _functionInitialEquations_0 body when any
-     * recipe's RHS fails mid-emit, which then collides with and
-     * silently wins over _06inz.c's real definition (initial
-     * values never get applied). Leaving _06inz.c to clang until
-     * the validator lands. */
+    /* Initial-equation block, gated on canLowerEquation pre-pass.
+     * Currently disabled: on success we emit the three _06inz.c
+     * entries into the in-memory module, but the catalog-driven
+     * skip list does not yet drop _06inz.c, so both the SCTL IR
+     * and the clang version exist -- silent symbol collision
+     * breaks initialisation. Re-enable once displacedSegmentFiles
+     * grows a dynamic component informed by per-model
+     * emitInitialEquationsBlock success. */
     /* _ := emitInitialEquationsBlock(simCode, layout); */
     if Flags.isSet(Flags.JIT_DUMP_IR) then EXT_LLVM.dumpIR(); end if;
     /* Hand the in-memory module to omc_runModelViaJIT through a
@@ -679,17 +689,24 @@ algorithm
     case SimCode.SIMCODE(initialEquations = initEqs) then initEqs;
   end match;
   recipes := List.map1(initEqs, classifySimEq, layout);
+  /* Two-stage gate so we never commit a half-emitted function body
+   * (which would collide with and silently win over _06inz.c's real
+   * version): classify-time check, then expression-tree check. */
   ok := List.fold(recipes, countUnsupportedAsBoolean, true);
   if not ok then
-    /* Classify-time failure: at least one recipe is EQ_UNSUPPORTED.
-     * Leaving _06inz.c to clang for now; this branch fires whenever
-     * the model has an init eq the SCTL classifier does not yet
-     * cover (e.g. start-attribute reads $START.x, SES_LINEAR, ...) */
     return;
   end if;
+  for r in recipes loop
+    if not canLowerEquation(r, layout) then
+      ok := false;
+      return;
+    end if;
+  end for;
   ok := emitEquationFunction(prefix + "_functionInitialEquations_0",
                              recipes, layout, MODELICA_VOID);
   if not ok then
+    /* canLowerEquation said yes but emit failed -- a bug in the
+     * mirror. Bail before emitting collide-able partial IR. */
     return;
   end if;
   /* Wrapper: CodegenC version calls _0 between discreteCall++/--.
@@ -860,6 +877,7 @@ algorithm
                            rhsTmp);
         end if;
       then (ctx2, exprOk);
+    case EQ_NOOP()        then (ctx, true);
     case EQ_UNSUPPORTED() then (ctx, false);
   end match;
 end emitEquation;
@@ -914,6 +932,103 @@ algorithm
   EXT_LLVM.genCallArg(src);
   EXT_LLVM.genCall("omc_jit_set_real_var", MODELICA_VOID, "", false);
 end emitWriteRealVar;
+
+protected function canLowerEquation
+  "Pre-validation mirror of emitEquation: return true iff lowering the
+   recipe to IR would succeed. Used before opening an LLVM function
+   for a block of equations so we never commit a partial body that
+   collides with the CodegenC version."
+  input EqRecipe r;
+  input VarLayout layout;
+  output Boolean ok;
+algorithm
+  ok := match r
+    case EQ_DERIVATIVE_ASSIGN() then canLowerExp(r.rhs, layout);
+    case EQ_STATE_ASSIGN()      then canLowerExp(r.rhs, layout);
+    case EQ_ALG_ASSIGN()        then canLowerExp(r.rhs, layout);
+    case EQ_NOOP()              then true;
+    case EQ_UNSUPPORTED()       then false;
+  end match;
+end canLowerEquation;
+
+protected function canLowerExp
+  "Pre-validation mirror of emitExp: true iff every node in <e> falls
+   into a case emitExp already handles, with operands the supporting
+   helpers (emitCrefRead, emitBinaryReal) accept."
+  input DAE.Exp e;
+  input VarLayout layout;
+  output Boolean ok;
+algorithm
+  ok := match e
+    local DAE.Exp e1, e2, sub;
+          DAE.Operator op;
+          DAE.ComponentRef cref;
+          String name;
+    case DAE.RCONST() then true;
+    case DAE.ICONST() then true;
+    case DAE.CREF(componentRef = cref) then canLowerCref(cref, layout);
+    case DAE.UNARY(operator = DAE.UMINUS(), exp = sub)
+      then canLowerExp(sub, layout);
+    case DAE.BINARY(exp1 = e1, operator = op, exp2 = e2)
+      then canLowerOp(op) and canLowerExp(e1, layout) and canLowerExp(e2, layout);
+    case DAE.CALL(path = Absyn.IDENT(name = name), expLst = {sub})
+      guard isLibmUnaryReal(name)
+      then canLowerExp(sub, layout);
+    case DAE.CALL(path = Absyn.IDENT(name = name), expLst = {e1, e2})
+      guard isLibmBinaryReal(name)
+      then canLowerExp(e1, layout) and canLowerExp(e2, layout);
+    else false;
+  end match;
+end canLowerExp;
+
+protected function canLowerCref
+  "True if emitCrefRead would handle this cref. The supported shapes
+   mirror the three branches in emitCrefRead: 'time', $START.<var>
+   whose inner resolves in the layout, or any cref that itself
+   resolves in the layout."
+  input DAE.ComponentRef cref;
+  input VarLayout layout;
+  output Boolean ok;
+protected
+  Option<VarSlot> os;
+  Option<DAE.ComponentRef> innerOpt;
+  DAE.ComponentRef innerCref;
+algorithm
+  if isTimeCref(cref) then
+    ok := true;
+    return;
+  end if;
+  innerOpt := startCrefInner(cref);
+  if isSome(innerOpt) then
+    SOME(innerCref) := innerOpt;
+    os := lookupSlot(innerCref, layout);
+    ok := match os
+      case SOME(_) then true;
+      case NONE()  then false;
+    end match;
+    return;
+  end if;
+  os := lookupSlot(cref, layout);
+  ok := match os
+    case SOME(_) then true;
+    case NONE()  then false;
+  end match;
+end canLowerCref;
+
+protected function canLowerOp
+  "True if emitBinaryReal handles this operator."
+  input DAE.Operator op;
+  output Boolean ok;
+algorithm
+  ok := match op
+    case DAE.ADD() then true;
+    case DAE.SUB() then true;
+    case DAE.MUL() then true;
+    case DAE.DIV() then true;
+    case DAE.POW() then true;
+    else false;
+  end match;
+end canLowerOp;
 
 protected function emitExp
   "Minimal DAE.Exp -> LLVM lowering. Recognises:
@@ -1112,9 +1227,11 @@ algorithm
 end rewriteToLibm;
 
 protected function emitCrefRead
-  "Resolve a cref via the layout, then emit a realVars load. The
-   builtin 'time' cref is special-cased to a call into the runtime
-   accessor omc_jit_get_time(data) instead of a layout lookup."
+  "Resolve a cref via the layout, then emit a realVars load.
+   Special cases:
+     - the builtin 'time'        -> omc_jit_get_time(data)
+     - $START.<var> (start attr) -> omc_jit_get_realvar_start(data, slot)
+   Both paths reach an EXT_LLVM call rather than a layout-slot load."
   input DAE.ComponentRef cref;
   input EmitCtx ctx;
   output EmitCtx outCtx;
@@ -1122,12 +1239,28 @@ protected function emitCrefRead
   output Boolean ok;
 protected
   Option<VarSlot> os;
+  Option<DAE.ComponentRef> innerOpt;
+  DAE.ComponentRef innerCref;
   VarSlot vs;
   Integer absSlot;
 algorithm
   if isTimeCref(cref) then
     (outCtx, dst) := emitReadTime(ctx);
     ok := true;
+    return;
+  end if;
+  innerOpt := startCrefInner(cref);
+  if isSome(innerOpt) then
+    SOME(innerCref) := innerOpt;
+    os := lookupSlot(innerCref, ctx.layout);
+    (outCtx, dst, ok) := match os
+      case SOME(vs)
+        algorithm
+          absSlot := absoluteSlot(vs.kind, vs.index, ctx.layout);
+          (outCtx, dst) := emitReadRealVarStart(absSlot, ctx);
+        then (outCtx, dst, true);
+      case NONE() then (ctx, "<unmapped-start-cref>", false);
+    end match;
     return;
   end if;
   os := lookupSlot(cref, ctx.layout);
@@ -1151,6 +1284,37 @@ algorithm
     else false;
   end match;
 end isTimeCref;
+
+protected function startCrefInner
+  "If cref is $START.<inner> return SOME(<inner>); otherwise NONE().
+   <inner> is the cref of the variable whose start attribute is being
+   read; its slot in the realVars layout is the right slot to pass to
+   omc_jit_get_realvar_start because the runtime indexes the start
+   attribute by the same simVar slot as the variable itself."
+  input DAE.ComponentRef cref;
+  output Option<DAE.ComponentRef> innerCref;
+algorithm
+  innerCref := match cref
+    local DAE.ComponentRef sub;
+    case DAE.CREF_QUAL(ident = "$START", componentRef = sub) then SOME(sub);
+    else NONE();
+  end match;
+end startCrefInner;
+
+protected function emitReadRealVarStart
+  "Emit  %dst = call double @omc_jit_get_realvar_start(ptr %data, i64 slot)
+   into the active function body."
+  input Integer slot;
+  input EmitCtx ctx;
+  output EmitCtx outCtx;
+  output String dst;
+algorithm
+  (outCtx, dst) := freshTmp(ctx);
+  EXT_LLVM.genAllocaModelicaReal(dst, false);
+  EXT_LLVM.genCallArg("data");
+  EXT_LLVM.genCallArgConstInt(slot);
+  EXT_LLVM.genCall("omc_jit_get_realvar_start", MODELICA_REAL, dst, true);
+end emitReadRealVarStart;
 
 protected function emitReadTime
   "Emit  %dst = call double @omc_jit_get_time(ptr %data)
@@ -1400,6 +1564,13 @@ algorithm
       then EQ_UNSUPPORTED("SES_FOR_LOOP requires loop lowering, deferred");
     case SimCode.SES_FOR_EQUATION()
       then EQ_UNSUPPORTED("SES_FOR_EQUATION requires loop lowering, deferred");
+    case SimCode.SES_ALIAS(aliasOf = _)
+      /* Aliased equations share a body with another equation that is
+       * emitted in its own right (typically an ODE eq referenced from
+       * the initial-equation dispatch). The runtime tolerates not
+       * re-running it during initialisation because the integrator
+       * calls functionODE again on its first step. */
+      then EQ_NOOP(eq.aliasOf);
     else
       then EQ_UNSUPPORTED("unhandled SimEqSystem variant");
   end match;
