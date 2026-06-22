@@ -424,6 +424,13 @@ algorithm
                  <prefix>_function_initSpatialDistribution */
   emitTrivialDataReturnZero(prefix + "_function_storeSpatialDistribution");
   emitTrivialDataReturnZero(prefix + "_function_initSpatialDistribution");
+  /* _16dae.c -- <prefix>_initializeDAEmodeData(DATA*, DAEMODE_DATA*)
+     The C codegen returns -1 ("no DAE residuals"); SCTL emits return 0
+     here which the DASSL/ODE path tolerates because data->dae* fields
+     are zero-initialised by the runtime when the function is not used.
+     The (DAEMODE_DATA*) second argument is opaque-ptr to LLVM, so the
+     (DATA*, threadData_t*) -> int signature SCTL emits is ABI-compatible. */
+  emitTrivialDataReturnZero(prefix + "_initializeDAEmodeData");
 end emitDisplacingStubs;
 
 protected function emitEquation

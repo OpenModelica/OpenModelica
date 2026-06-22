@@ -5997,6 +5997,7 @@ algorithm
     "    ", prefix, "_10asr.c) continue ;;\n",
     "    ", prefix, "_07dly.c) continue ;;\n",
     "    ", prefix, "_18spd.c) continue ;;\n",
+    "    ", prefix, "_16dae.c) continue ;;\n",
     "  esac\n",
     "  eval \"", toolsDir, "/clang\" -O0 -fPIC -DOM_HAVE_PTHREADS -emit-llvm -c $CPPFLAGS \"$f\" -o \"${f%.c}.bc\"\n",
     "  BCS+=(\"${f%.c}.bc\")\n",
