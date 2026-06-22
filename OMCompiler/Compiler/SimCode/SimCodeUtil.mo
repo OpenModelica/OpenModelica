@@ -10341,7 +10341,7 @@ protected function updateStartValue
   input SimCodeVar.Initial initial_;
   input SimCodeVar.Causality causality;
 algorithm
-  // update start value for FMI-2.0 only
+  // update start value for FMI 2.0 and 3.0
   if Flags.getConfigBool(Flags.BUILDING_FMU) and (FMI.isFMIVersion20() or FMI.isFMIVersion30()) then
     startValue := match startValue
       case SOME(_) guard isInitialExactOrApprox(initial_) then startValue;
@@ -14464,10 +14464,11 @@ protected function getFMIArrayStartValues
   output list<String> vals;
 algorithm
   vals := match e
-    local DAE.Exp first; list<DAE.Exp> arr; Real r; Integer i; Boolean b;
+    local DAE.Exp first; list<DAE.Exp> arr; Real r; Integer i; Boolean b; String s;
     case DAE.RCONST(r) then {realString(r)};
     case DAE.ICONST(i) then {intString(i)};
     case DAE.BCONST(b) then {if b then "true" else "false"};
+    case DAE.SCONST(s) then {s};
     case DAE.ARRAY(array = arr) then List.flatten(list(getFMIArrayStartValues(el) for el in arr));
     case DAE.REDUCTION(expr = first) then getFMIArrayStartValues(first);
     else {};
