@@ -142,6 +142,7 @@ if(OM_OMC_ENABLE_LLVM_JIT)
   llvm_map_components_to_libnames(LLVM_JIT_LIBS
     core orcjit mcjit executionengine
     transformutils ipo support irreader
+    bitwriter
     native nativecodegen)
 
   target_include_directories(omcruntime PUBLIC ${LLVM_INCLUDE_DIRS})

@@ -39,6 +39,10 @@
 #include "llvm_gen_modelica_constants.h"
 #include "llvm_gen_util.hpp"
 
+#include <llvm/Bitcode/BitcodeWriter.h>
+#include <llvm/Support/FileSystem.h>
+#include <llvm/Support/raw_ostream.h>
+
 /* For redirecting the in-process model's stdout/stderr to its log file
  * (the native executable path does the same via shell redirection). */
 #include <fcntl.h>
@@ -63,6 +67,29 @@ void dumpIR() {
     return;
   }
   program->module->print(llvm::errs(), nullptr);
+}
+
+/* Write the current in-memory LLVM module to <path> as bitcode. The
+ * counterpart of dumpIR() but in machine-readable form; used while
+ * SimCodeToLLVM is being grown so its in-memory module can be merged
+ * with the C-derived bitcode by llvm-link, and so a user can inspect
+ * the IR with llvm-dis. Returns 0 on success. */
+int writeBitcodeToFile(const char *path) {
+  if (!path || !path[0]) return 1;
+  if (!program || !program->module) {
+    fprintf(stderr, "writeBitcodeToFile: no module to serialise\n");
+    return 2;
+  }
+  std::error_code ec;
+  llvm::raw_fd_ostream out(path, ec, llvm::sys::fs::OF_None);
+  if (ec) {
+    fprintf(stderr, "writeBitcodeToFile: cannot open '%s': %s\n",
+            path, ec.message().c_str());
+    return 3;
+  }
+  llvm::WriteBitcodeToFile(*program->module, out);
+  out.flush();
+  return 0;
 }
 
 /* ------------------------------------------------------------------------ *

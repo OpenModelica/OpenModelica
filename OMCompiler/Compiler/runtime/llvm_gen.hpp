@@ -83,6 +83,12 @@ extern "C"
 {
 
   void dumpIR();
+  /* Serialise the in-memory module to <path> as LLVM bitcode. Used while
+   * SimCodeToLLVM is still being grown so the partial in-memory module can
+   * be inspected or merged with clang-emitted bitcodes. Returns 0 on
+   * success, non-zero if the module is not present or the file cannot be
+   * opened/written. */
+  int writeBitcodeToFile(const char *path);
   /*Forward decls*/
   struct Function;
   struct Program;

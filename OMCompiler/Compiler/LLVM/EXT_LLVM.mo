@@ -99,63 +99,6 @@ function jitInvokeFunctionODE
     annotation(Library = "omcruntime");
 end jitInvokeFunctionODE;
 
-function jitDriveForwardEuler
-  "In-memory forward-Euler simulation. Looks up fName in the JIT,
-   seeds realVars[0..nStates-1] from startVals, then marches from
-   t0 to tEnd in steps of h, writing time/state/derivative columns
-   to csvPath. Returns 0 on success, non-zero otherwise."
-  input String fName;
-  input Integer nStates;
-  input Integer nAlgs;
-  input Integer nParams;
-  input list<Real> startVals;
-  input Real t0;
-  input Real tEnd;
-  input Real h;
-  input String csvPath;
-  output Integer status;
-  external "C" status = jitDriveForwardEuler_mm(fName, nStates, nAlgs, nParams,
-                                                startVals, t0, tEnd, h, csvPath)
-    annotation(Library = "omcruntime");
-end jitDriveForwardEuler;
-
-function jitDriveRK4
-  "Classical fourth-order Runge-Kutta driver. Same contract as
-   jitDriveForwardEuler; takes h steps and writes states per step to
-   csvPath."
-  input String fName;
-  input Integer nStates;
-  input Integer nAlgs;
-  input Integer nParams;
-  input list<Real> startVals;
-  input Real t0;
-  input Real tEnd;
-  input Real h;
-  input String csvPath;
-  output Integer status;
-  external "C" status = jitDriveRK4_mm(fName, nStates, nAlgs, nParams,
-                                       startVals, t0, tEnd, h, csvPath)
-    annotation(Library = "omcruntime");
-end jitDriveRK4;
-
-function jitDriveImplicitEuler
-  "Implicit Euler driver. Each step solves F(y) = y - y_n - h*f(t_{n+1},y) = 0
-   via Newton with a finite-difference Jacobian and Gauss-Jordan linear
-   solve. Suitable for small stiff demos; not a production solver."
-  input String fName;
-  input Integer nStates;
-  input Integer nAlgs;
-  input Integer nParams;
-  input list<Real> startVals;
-  input Real t0;
-  input Real tEnd;
-  input Real h;
-  input String csvPath;
-  output Integer status;
-  external "C" status = jitDriveImplicitEuler_mm(fName, nStates, nAlgs, nParams,
-                                                  startVals, t0, tEnd, h, csvPath)
-    annotation(Library = "omcruntime");
-end jitDriveImplicitEuler;
 
 /*End of calls steering function generation*/
 
@@ -796,6 +739,16 @@ function dumpIR
   "Dumps generated LLVM IR to the terminal window"
   external "C" dumpIR() annotation(Library = "omcruntime");
 end dumpIR;
+
+function writeBitcodeToFile
+  "Serialise the current in-memory LLVM module to <path> as bitcode.
+   Used while SimCodeToLLVM is growing so the partial in-memory module
+   can be inspected (llvm-dis) and, in this transition window, merged
+   with clang-emitted bitcode by llvm-link. Returns 0 on success."
+  input String path;
+  output Integer status;
+  external "C" status = writeBitcodeToFile(path) annotation(Library = "omcruntime");
+end writeBitcodeToFile;
 
 function funcIsJitCompiled
   input String fName;

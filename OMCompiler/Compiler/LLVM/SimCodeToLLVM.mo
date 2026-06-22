@@ -291,33 +291,6 @@ algorithm
     sourceInfo());
 end finalizeAndReport;
 
-protected function stateStartValues
-  "Extract Real start values from SimVars.stateVars. Reads SIMVAR.initialValue
-   when it is SOME(RCONST/ICONST); defaults to 0.0 otherwise. The output is
-   ordered by stateVars list order, which matches absolute slot order [0..nStates-1]."
-  input SimCodeVar.SimVars vars;
-  output list<Real> starts;
-algorithm
-  starts := match vars
-    case SimCodeVar.SIMVARS()
-      then list(simVarStartReal(sv) for sv in vars.stateVars);
-  end match;
-end stateStartValues;
-
-protected function simVarStartReal
-  input SimCodeVar.SimVar sv;
-  output Real r;
-protected
-  Integer i;
-algorithm
-  r := match sv
-    local Real x;
-    case SimCodeVar.SIMVAR(initialValue = SOME(DAE.RCONST(real = x))) then x;
-    case SimCodeVar.SIMVAR(initialValue = SOME(DAE.ICONST(integer = i))) then intReal(i);
-    else 0.0;
-  end match;
-end simVarStartReal;
-
 protected function realVarsString
   input list<Real> rs;
   output String s;
