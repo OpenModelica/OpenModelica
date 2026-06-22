@@ -6160,6 +6160,7 @@ algorithm
     // handle normal models
     case ()
       algorithm
+        ExecStat.execStatReset();
         flags := loadCommandLineOptionsFromModel(className);
 
         try
