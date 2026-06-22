@@ -550,6 +550,20 @@ algorithm
           ok := false;
         end if;
       then (ctx2, dst, ok);
+    case DAE.CALL(path=Absyn.IDENT(name=tmp), expLst={e1, e2})
+      guard isLibmBinaryReal(tmp)
+      algorithm
+        (ctx1, dst1, ok1) := emitExp(e1, ctx);
+        (ctx2, dst2, ok2) := emitExp(e2, ctx1);
+        if ok1 and ok2 then
+          (outCtx, dst) := emitCallBinaryReal(tmp, dst1, dst2, ctx2);
+          ok := true;
+        else
+          outCtx := ctx2;
+          dst := "<libm2-arg-failed>";
+          ok := false;
+        end if;
+      then (outCtx, dst, ok);
     else
       then (ctx, "<unsupported-exp>", false);
   end match;
@@ -594,8 +608,59 @@ algorithm
   (outCtx, dst) := freshTmp(ctx);
   EXT_LLVM.genAllocaModelicaReal(dst, false);
   EXT_LLVM.genCallArg(src);
-  EXT_LLVM.genCall(fn, MODELICA_REAL, dst, true);
+  EXT_LLVM.genCall(rewriteToLibm(fn), MODELICA_REAL, dst, true);
 end emitCallUnaryReal;
+
+protected function isLibmBinaryReal
+  "Two-arg libm-style Real -> Real functions. Symbols resolve against
+   the host libm via DynamicLibrarySearchGenerator at JIT lookup."
+  input String name;
+  output Boolean b;
+algorithm
+  b := match name
+    case "pow"   then true;
+    case "atan2" then true;
+    case "hypot" then true;
+    case "fmod"  then true;
+    case "fmin"  then true;
+    case "fmax"  then true;
+    /* Modelica spelling */
+    case "min"   then true;
+    case "max"   then true;
+    else false;
+  end match;
+end isLibmBinaryReal;
+
+protected function emitCallBinaryReal
+  "Emit  %dst = call double @<fn>(double <a>, double <b>)."
+  input String fn;
+  input String a;
+  input String b;
+  input EmitCtx ctx;
+  output EmitCtx outCtx;
+  output String dst;
+algorithm
+  (outCtx, dst) := freshTmp(ctx);
+  EXT_LLVM.genAllocaModelicaReal(dst, false);
+  EXT_LLVM.genCallArg(a);
+  EXT_LLVM.genCallArg(b);
+  EXT_LLVM.genCall(rewriteToLibm(fn), MODELICA_REAL, dst, true);
+end emitCallBinaryReal;
+
+protected function rewriteToLibm
+  "Map Modelica spellings to libm symbol names so the JIT resolves
+   them via the host process search generator. For functions whose
+   Modelica name already matches libm, the input is returned as-is."
+  input String name;
+  output String libm;
+algorithm
+  libm := match name
+    case "min" then "fmin";
+    case "max" then "fmax";
+    case "abs" then "fabs";
+    else name;
+  end match;
+end rewriteToLibm;
 
 protected function emitCrefRead
   "Resolve a cref via the layout, then emit a realVars load. The
@@ -668,6 +733,12 @@ algorithm
       algorithm EXT_LLVM.genRMul(dst, lhs, rhs); then true;
     case DAE.DIV()
       algorithm EXT_LLVM.genRDiv(dst, lhs, rhs); then true;
+    case DAE.POW()
+      algorithm
+        EXT_LLVM.genCallArg(lhs);
+        EXT_LLVM.genCallArg(rhs);
+        EXT_LLVM.genCall("pow", MODELICA_REAL, dst, true);
+      then true;
     else false;
   end match;
 end emitBinaryReal;
