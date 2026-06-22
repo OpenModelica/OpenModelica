@@ -560,12 +560,14 @@ if true then /* Suppress output */
     {
       "../LLVM/MidToLLVMUtil.mo",
       "../LLVM/EXT_LLVM.mo",
-      "../LLVM/MidToLLVM.mo"
+      "../LLVM/MidToLLVM.mo",
+      "../LLVM/SimCodeToLLVM.mo"
     }
   else
     {
       "../Stubs/EXT_LLVM.mo",
-      "../Stubs/MidToLLVM.mo"
+      "../Stubs/MidToLLVM.mo",
+      "../Stubs/SimCodeToLLVM.mo"
     }
   ;
   files := cat(1, alwaysfiles, backendfiles, llvmfiles);

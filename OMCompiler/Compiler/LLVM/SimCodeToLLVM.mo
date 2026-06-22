@@ -392,6 +392,25 @@ algorithm
   EXT_LLVM.finnishGen();
 end emitTrivialDataReturnZero;
 
+protected function emitTrivialIntPtrPtrVoid
+  "Emit  void <fname>(int, ptr, ptr) { }  into the current in-memory
+   module. The (int, ptr, ptr) signature is widened to (i64, ptr, ptr)
+   in IR (no MODELICA_INT32); on x86-64 the unused i64-vs-i32 arg slot
+   uses the same register so the ABI mismatch is harmless when the
+   body discards the argument."
+  input String fname;
+algorithm
+  EXT_LLVM.startFuncGen(fname);
+  EXT_LLVM.genFunctionArg(MODELICA_INTEGER, "n");
+  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "a");
+  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "b");
+  EXT_LLVM.genFunctionType(MODELICA_VOID);
+  EXT_LLVM.genFunctionPrototype(fname);
+  EXT_LLVM.genFunctionBody(fname);
+  EXT_LLVM.genReturnVoid();
+  EXT_LLVM.finnishGen();
+end emitTrivialIntPtrPtrVoid;
+
 protected function emitInlineSystemStub
   "<Model>_symbolicInlineSystem -- whole content of <Model>_17inl.c."
   input Absyn.Path modelName;
@@ -431,6 +450,11 @@ algorithm
      The (DAEMODE_DATA*) second argument is opaque-ptr to LLVM, so the
      (DATA*, threadData_t*) -> int signature SCTL emits is ABI-compatible. */
   emitTrivialDataReturnZero(prefix + "_initializeDAEmodeData");
+  /* _04set.c -- <prefix>_initializeStateSets(int, STATE_SET_DATA*, DATA*)
+     Empty body in CodegenC. The (int, ptr, ptr) signature widens int -> i64;
+     on x86-64 both register layouts read from edi/rdi, so the unused
+     first arg is ABI-compatible. */
+  emitTrivialIntPtrPtrVoid(prefix + "_initializeStateSets");
 end emitDisplacingStubs;
 
 protected function emitEquation
