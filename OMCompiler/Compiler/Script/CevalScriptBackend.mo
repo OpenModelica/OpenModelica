@@ -1484,6 +1484,7 @@ algorithm
            result_file := "";
            resI := 1;
            timeSimulation := 0.0;
+           logFile := "";
          end if;
 
         timeTotal := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
@@ -1648,6 +1649,7 @@ algorithm
           result_file := "";
           timeSimulation := 0.0;
           resI := 1;
+          logFile := "";
         end if;
         timeTotal := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
         (outCache,simValue) := createSimulationResultFromcallModelExecutable(b,resI,timeTotal,timeSimulation,resultValues,outCache,className,vals,result_file,logFile);
@@ -1699,6 +1701,7 @@ algorithm
           result_file := "";
           timeSimulation := 0.0;
           resI := 1;
+          logFile := "";
         end if;
         timeTotal := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
         (outCache,simValue) := createSimulationResultFromcallModelExecutable(b,resI,timeTotal,timeSimulation,resultValues,outCache,className,vals,result_file,logFile);
@@ -1956,6 +1959,7 @@ algorithm
           s1 := getTotalModel(classpath, b1, b2, b3);
         else
           Error.addMessage(Error.SAVE_ENCRYPTED_CLASS_ERROR, {});
+          s1 := "";
         end if;
       then
         Values.STRING(s1);
@@ -3640,6 +3644,7 @@ algorithm
     SymbolTable.setAbsyn(p);
     // Always update the SCode structure; otherwise the cache plays tricks on us
     SymbolTable.clearSCode();
+    success := true;
   end try;
 end loadProgram;
 
@@ -3725,7 +3730,7 @@ public function runFrontEndWorkNF
   output String flatString;
 protected
   SCode.Program builtin_p, scode_p, annotation_p;
-  Boolean nf_api, inst_failed;
+  Boolean nf_api;
   Absyn.Path cls_name = className;
   Obfuscate.Mapping obfuscate_map;
   String obfuscate_mode;
@@ -3754,21 +3759,17 @@ algorithm
   // make sure we don't run the default instantiateModel using -d=nfAPI
   // only the stuff going via NFApi.mo should have this flag activated
   nf_api := FlagsUtil.set(Flags.NF_API, false);
-  inst_failed := false;
 
   try
     (flatModel, functions, flatString) :=
       NFInst.instClassInProgram(cls_name, scode_p, annotation_p, relaxedFrontend, dumpFlat);
   else
-    inst_failed := true;
     NFInst.clearCaches();
+    FlagsUtil.set(Flags.NF_API, nf_api);
+    fail();
   end try;
 
   FlagsUtil.set(Flags.NF_API, nf_api);
-
-  if inst_failed then
-    fail();
-  end if;
 end runFrontEndWorkNF;
 
 public function translateModel
@@ -4255,7 +4256,7 @@ protected function translateModelFMU
   input Boolean addDummy "if true, add a dummy state";
   input list<String> platforms = {"static"};
   input Option<SimCode.SimulationSettings> inSimSettings = NONE();
-  output Boolean success;
+  output Boolean success = false;
   output FCore.Cache cache;
   output Values.Value outValue;
 protected
@@ -4543,7 +4544,7 @@ protected function buildEncryptedPackage
   input Absyn.Path className "path for the model";
   input Boolean encrypt;
   input Absyn.Program inProgram;
-  output Boolean success;
+  output Boolean success = false;
 protected
   Absyn.Class cls;
   String fileName, logFile, omhome, pd, ext, packageTool, packageToolArgs, command;
@@ -4568,8 +4569,8 @@ algorithm
         command := stringAppendList({"\"",packageTool,"\""," ",packageToolArgs});
       else
         Error.addMessage(Error.ENCRYPTION_NOT_SUPPORTED, {packageTool});
-        success := false;
         runCommand := false;
+        command := "";
       end if;
     else
       molName := AbsynUtil.pathString(className) + ".mol";
@@ -4603,7 +4604,6 @@ algorithm
     end if;
   else
     Error.addMessage(Error.FILE_NOT_FOUND_ERROR, {fileName});
-    success := false;
   end if;
 end buildEncryptedPackage;
 
@@ -5181,7 +5181,7 @@ algorithm
   // Insert the class again if it was moved within this class part. Otherwise it needs
   // to be moved into another class part, which is handled by moveClassInClassParts.
   if outRemainingOffset == 0 then
-    elements := e :: elements;
+    elements := Util.getOption(outClass) :: elements;
   end if;
 
   outElements := List.append_reverse(acc, elements);
@@ -7747,7 +7747,7 @@ protected function getTotalModel
   input Boolean stripComments;
   input Boolean obfuscate;
   output String result;
-  output String obfuscate_map;
+  output String obfuscate_map = "";
 protected
   SCode.Program scodeP;
   String str,str1,str2,str3;
@@ -8330,7 +8330,7 @@ protected function addInitialStateWithAnnotation
   input Absyn.Annotation inAnnotation;
   input Absyn.Program inProgram;
   output Boolean b;
-  output Absyn.Program outProgram;
+  output Absyn.Program outProgram = inProgram;
 protected
   Absyn.Path package_;
   Absyn.Class cdef, newcdef;

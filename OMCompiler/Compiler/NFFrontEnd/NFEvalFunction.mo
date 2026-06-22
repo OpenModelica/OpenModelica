@@ -1264,7 +1264,7 @@ function loadLibraryFunction
   input Option<SCode.Annotation> extAnnotation;
   input Boolean debug;
   input SourceInfo info;
-  output Integer fnHandle;
+  output Integer fnHandle = -1;
 protected
   Integer lib_handle;
   SCode.Annotation ann;

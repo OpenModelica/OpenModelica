@@ -4251,7 +4251,7 @@ protected
   BackendDAE.EquationArray eqns;
   BackendDAE.Variables vars;
   Integer n, size, idx = 1, m, j;
-  BackendDAE.Equation eqn, eqn1;
+  BackendDAE.Equation eqn = BackendDAE.DUMMY_EQUATION(), eqn1;
   DAE.Exp left, right, e1, e2, e, e3;
   list<DAE.Exp> left_lst, right_lst;
   list<Integer> indRemove;

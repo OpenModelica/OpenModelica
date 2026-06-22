@@ -313,6 +313,7 @@ algorithm
         end match;
       else
         printUnresolvableTypeError(Expression.BINARY(exp1, op, exp2), {type1, type2}, info, showErrors);
+        fail();
       end if;
     end try;
   elseif listLength(exactMatches) == 1 then
@@ -373,8 +374,8 @@ function checkConditionalBinaryOperator
   output Expression outExp;
   output Type outType;
 protected
-  Type tty1, fty1, tty2, fty2, ty1, ty2;
-  Expression e1, e2;
+  Type tty1, fty1, tty2, fty2, ty1 = Type.UNKNOWN(), ty2 = Type.UNKNOWN();
+  Expression e1 = exp1, e2 = exp2;
   Boolean valid1, valid2;
   NFType.Branch branch;
 algorithm
@@ -412,6 +413,7 @@ algorithm
     outExp := e2;
   else
     printUnresolvableTypeError(exp1, {type1, type2}, info);
+    fail();
   end if;
 
   outExp := Expression.setType(outType, outExp);
@@ -470,6 +472,7 @@ algorithm
 
     case (Expression.ARRAY(elements = arr1), Expression.ARRAY(elements = arr2))
       algorithm
+        ty := Type.UNKNOWN();
         if arrayEmpty(arr1) then
           // If the arrays are empty, match against the element types to get the expected return type.
           ty1 := Type.arrayElementType(type1);
@@ -614,6 +617,7 @@ algorithm
             exp1, type1, var1, op, Expression.EMPTY(type2), ty, var2, candidates, context, info, showErrors = false);
         else
           printUnresolvableTypeError(Expression.BINARY(exp1, op, exp2), {type1, exp2.ty}, info);
+          fail();
         end try;
 
         outType := Type.setArrayElementType(exp2.ty, outType);
@@ -685,6 +689,7 @@ algorithm
             Expression.EMPTY(type1), ty, var1, op, exp2, type2, var2, candidates, context, info, showErrors = false);
         else
           printUnresolvableTypeError(Expression.BINARY(exp1, op, exp2), {type1, exp1.ty}, info);
+          fail();
         end try;
 
         outType := Type.setArrayElementType(exp1.ty, outType);
@@ -728,6 +733,7 @@ algorithm
     (outExp, outType) := checkOverloadedBinaryArrayScalar(exp1, type1, var1, op, exp2, type2, var2, candidates, context, info);
   else
     printUnresolvableTypeError(Expression.BINARY(exp1, op, exp2), {type1, type2}, info);
+    fail();
   end if;
 end checkOverloadedBinaryArrayDiv;
 
@@ -783,7 +789,7 @@ protected
   Expression e1, e2;
   list<Expression> expl;
   array<Expression> expl1, expl2;
-  Type ty, ty1, ty2;
+  Type ty = Type.UNKNOWN(), ty1, ty2;
   Boolean is_array1, is_array2;
 algorithm
   is_array1 := Type.isArray(type1);

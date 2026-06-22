@@ -1648,7 +1648,7 @@ algorithm
     local
       ComponentRef lhs, rhs;
       list<Equation> eql = {};
-      Boolean isThere;
+      Boolean isThere = false;
       String str;
       DAE.ElementSource source;
 

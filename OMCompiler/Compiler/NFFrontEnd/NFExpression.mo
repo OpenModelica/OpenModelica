@@ -5595,7 +5595,7 @@ public
     input Boolean isArray;
     input Integer dims;
     input list<Type> types;
-    output Expression outExp;
+    output Expression outExp = exp;
   algorithm
     outExp := match (exp, types)
       local

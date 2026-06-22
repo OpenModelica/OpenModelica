@@ -726,7 +726,7 @@ public
   algorithm
     (subscripts, cref) := match cref
       local
-        ComponentRef rest_cref;
+        ComponentRef rest_cref = EMPTY();
         list<Subscript> cref_subs;
 
       case CREF(subscripts = cref_subs)

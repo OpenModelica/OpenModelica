@@ -148,7 +148,7 @@ public
     "this function detects if an equation is resizable"
     input Equation eqn;
     input ComponentRef cref_to_solve;
-    output UnorderedMap<ComponentRef, EvalOrder> order;
+    output UnorderedMap<ComponentRef, EvalOrder> order = UnorderedMap.new<EvalOrder>(ComponentRef.hash, ComponentRef.isEqual);
   protected
     Pointer<Variable> var_ptr = BVariable.getVarPointer(cref_to_solve, sourceInfo());
     UnorderedSet<ComponentRef> var_occurences = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
@@ -851,6 +851,7 @@ protected
     // traversing constraints
     for tpl in UnorderedMap.toList(c2p) loop
       (constraint, crefs) := tpl;
+      failed := false;
       () := match checkConstraint(constraint, optimal_values)
         // this constraint is not violated
         case SOME(value) guard(func(value)) algorithm

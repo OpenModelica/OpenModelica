@@ -2036,7 +2036,7 @@ function isJacobianResultVar
       Integer length, scal_start;
       String index;
       Boolean useMapping = isSome(mapping_opt);
-      array<tuple<Integer,Integer>> mapping;
+      array<tuple<Integer,Integer>> mapping = listArray({});
     algorithm
       if useMapping then
         length := 15;

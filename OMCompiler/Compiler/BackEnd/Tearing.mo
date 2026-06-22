@@ -172,7 +172,7 @@ protected function callTearingMethod
   output Boolean outRunMatching;
 protected
   constant Boolean debug = false;
-  list<Integer> userTVars, userResiduals;
+  list<Integer> userTVars = {}, userResiduals = {};
   TearingMethod tearingMethod = inTearingMethod;
 algorithm
 
@@ -4094,9 +4094,9 @@ protected function getNextSolvableEqn " finds equation that can be matched with 
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
   input array<Integer> eqnNonlinPoints;
-  output Integer eqOut;
-  output list<Integer> eqnsOut;
-  output list<Integer> varsOut;
+  output Integer eqOut = 0;
+  output list<Integer> eqnsOut = {};
+  output list<Integer> varsOut = {};
 protected
   Boolean solvable = false;
   list<Integer> eqns = assEq_coll;
