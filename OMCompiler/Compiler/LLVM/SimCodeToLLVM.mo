@@ -543,7 +543,9 @@ algorithm
 end emitExp;
 
 protected function emitCrefRead
-  "Resolve a cref via the layout, then emit a realVars load."
+  "Resolve a cref via the layout, then emit a realVars load. The
+   builtin 'time' cref is special-cased to a call into the runtime
+   accessor omc_jit_get_time(data) instead of a layout lookup."
   input DAE.ComponentRef cref;
   input EmitCtx ctx;
   output EmitCtx outCtx;
@@ -554,6 +556,11 @@ protected
   VarSlot vs;
   Integer absSlot;
 algorithm
+  if isTimeCref(cref) then
+    (outCtx, dst) := emitReadTime(ctx);
+    ok := true;
+    return;
+  end if;
   os := lookupSlot(cref, ctx.layout);
   (outCtx, dst, ok) := match os
     case SOME(vs)
@@ -564,6 +571,30 @@ algorithm
     case NONE() then (ctx, "<unmapped-cref>", false);
   end match;
 end emitCrefRead;
+
+protected function isTimeCref
+  "True iff cref is the builtin scalar 'time'."
+  input DAE.ComponentRef cref;
+  output Boolean b;
+algorithm
+  b := match cref
+    case DAE.CREF_IDENT(ident = "time") then true;
+    else false;
+  end match;
+end isTimeCref;
+
+protected function emitReadTime
+  "Emit  %dst = call double @omc_jit_get_time(ptr %data)
+   into the active function body."
+  input EmitCtx ctx;
+  output EmitCtx outCtx;
+  output String dst;
+algorithm
+  (outCtx, dst) := freshTmp(ctx);
+  EXT_LLVM.genAllocaModelicaReal(dst, false);
+  EXT_LLVM.genCallArg("data");
+  EXT_LLVM.genCall("omc_jit_get_time", MODELICA_REAL, dst, true);
+end emitReadTime;
 
 protected function emitBinaryReal
   "Dispatch a real-arithmetic binop to the EXT_LLVM primitive."
