@@ -36,7 +36,7 @@ omc_check_function_exists_and_define(ctime_r)
 
 # Libraries
 ##################################################################################################
-set(OMC_RUNTIIME_SOURCES
+set(OMC_RUNTIME_SOURCES
     Error_omc.cpp
     Dynload_omc.cpp
     Print_omc.c
@@ -61,7 +61,7 @@ set(OMC_RUNTIIME_SOURCES
     ffi_omc.cpp)
 
 if(OM_OMC_ENABLE_COLPACK)
-  list(APPEND OMC_RUNTIIME_SOURCES ColPackBicoloring_omc.cpp)
+  list(APPEND OMC_RUNTIME_SOURCES ColPackBicoloring_omc.cpp)
 endif()
 
 
@@ -70,7 +70,7 @@ endif()
 add_library(omcruntime STATIC)
 add_library(omc::compiler::runtime ALIAS omcruntime)
 
-target_sources(omcruntime PRIVATE ${OMC_RUNTIIME_SOURCES})
+target_sources(omcruntime PRIVATE ${OMC_RUNTIME_SOURCES})
 
 target_link_libraries(omcruntime PUBLIC omc::config)
 target_link_libraries(omcruntime PUBLIC CURL::libcurl)
