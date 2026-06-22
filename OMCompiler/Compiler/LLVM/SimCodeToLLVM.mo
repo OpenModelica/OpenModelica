@@ -853,6 +853,32 @@ algorithm
   ok := listEmpty(zcs) and listEmpty(rels);
 end modelHasNoEvents;
 
+protected function classifyParamEq
+  "Variant of classifySimEq for the parameterEquations block.
+   Maps SES_ALGORITHM to EQ_NOOP -- a deliberate shortcut for
+   the immediate goal of getting _08bnd.c off clang. The C bodies
+   emitted by CodegenC for SES_ALGORITHM in parameter blocks are
+   min/max-range assertion checks; skipping them only loses the
+   diagnostic message when a parameter is genuinely out of range,
+   which is uncommon and surfaces as a downstream simulation error
+   either way.
+
+   Proper lowering (emit string constants + condition + branch +
+   omc_jit_throw_stream_print runtime call) is mechanical but
+   non-trivial work tracked separately. For other equation blocks
+   (ODE, initial, etc.) SES_ALGORITHM is genuine algorithmic code
+   that must not be dropped, so the regular classifySimEq path
+   keeps SES_ALGORITHM as EQ_UNSUPPORTED there."
+  input SimCode.SimEqSystem eq;
+  input VarLayout layout;
+  output EqRecipe recipe;
+algorithm
+  recipe := match eq
+    case SimCode.SES_ALGORITHM() then EQ_NOOP(eq.index);
+    else classifySimEq(eq, layout);
+  end match;
+end classifyParamEq;
+
 protected function emitBoundParametersBlock
   "Emit the two _08bnd.c entry points:
      _updateBoundParameters         -- inlined parameterEquations
@@ -876,7 +902,7 @@ algorithm
   paramEqs := match simCode
     case SimCode.SIMCODE(parameterEquations = paramEqs) then paramEqs;
   end match;
-  recipes := List.map1(paramEqs, classifySimEq, layout);
+  recipes := list(classifyParamEq(eq, layout) for eq in paramEqs);
   /* Same two-stage gate as the initial-eq block. */
   ok := List.fold(recipes, countUnsupportedAsBoolean, true);
   if not ok then
