@@ -2429,7 +2429,7 @@ public:
        "<b>%3</b><br />"
        "<b>Connected to %4</b><br /><br />"
        "Copyright <b>Open Source Modelica Consortium (OSMC)</b>.<br />"
-       "Distributed under OSMC-PL and GPL, see <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>.<br /><br />"
+       "Distributed under OSMC-PL and AGPL3, see <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>.<br /><br />"
        "Initially developed by <b>Ingemar Axelsson</b>, <b>Anders Fernstr&ouml;m</b> and <b>Henrik Eriksson</b> as part of their final theses.<br>"
        "<br /><br /><b>Contributors:</b>"
        "<ul>"

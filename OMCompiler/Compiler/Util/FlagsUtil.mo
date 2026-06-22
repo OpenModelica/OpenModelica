@@ -1515,7 +1515,7 @@ algorithm
   Print.clearBuf();
   Print.printBuf("OpenModelica Compiler "); Print.printBuf(Settings.getVersionNr()); Print.printBuf("\n");
   Print.printBuf("Copyright © 2019 Open Source Modelica Consortium (OSMC)\n");
-  Print.printBuf("Distributed under OMSC-PL and GPL, see www.openmodelica.org\n\n");
+  Print.printBuf("Distributed under OSMC-PL and AGPL3, see www.openmodelica.org\n\n");
   //Print.printBuf("Please check the System Guide for full information about flags.\n");
   Print.printBuf("Usage: omc [Options] (Model.mo | Script.mos) [Libraries | .mo-files]\n* Libraries: Fully qualified names of libraries to load before processing Model or Script.\n             The libraries should be separated by spaces: Lib1 Lib2 ... LibN.\n");
   Print.printBuf("\n* Options:\n");

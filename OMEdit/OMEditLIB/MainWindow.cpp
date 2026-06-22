@@ -5086,7 +5086,7 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
      "Compiled with <b>Qt %7</b>, running with <b>Qt %8</b>.<br /><br />"
      "Installation path <b>%6</b><br /><br />"
      "Copyright <b>Open Source Modelica Consortium (OSMC)</b>.<br />"
-     "Distributed under OSMC-PL and GPL, see <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>."
+     "Distributed under OSMC-PL and AGPL3, see <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>."
 #if defined(WITHOUT_OSG)
      "<br /><em>Compiled without 3D animation support</em>."
 #endif
