@@ -4,6 +4,9 @@
 #[cfg(not(target_arch = "wasm32"))]
 fn main() -> eframe::Result {
     let options = eframe::NativeOptions {
+        // wgpu backend (matches the web build) so the Help -> WebGPU test can
+        // composite a wgpu scene inside egui.
+        renderer: eframe::Renderer::Wgpu,
         viewport: egui::ViewportBuilder::default()
             .with_inner_size([800.0, 600.0])
             .with_min_inner_size([400.0, 300.0])

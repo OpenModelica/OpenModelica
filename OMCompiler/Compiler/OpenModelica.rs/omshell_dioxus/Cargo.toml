@@ -26,6 +26,14 @@ omshell_omc = { path = "../omshell_omc" }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 gloo-timers = { version = "0.3", features = ["futures"] }
+# Help -> WebGPU test: on web the GUI grabs its <canvas> from the DOM and renders
+# the shared demo on a wgpu surface. (Native dioxus is a webview, which cannot
+# host a wgpu surface, so this is wasm-only — see main.rs.)
+omshell_wgpu = { path = "../omshell_wgpu" }
+wgpu = "29"
+wasm-bindgen = "=0.2.125"
+wasm-bindgen-futures = "0.4"
+web-sys = { version = "0.3.102", features = ["Window", "Document", "Element", "HtmlCanvasElement", "Performance"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = { version = "1", features = ["time"] }

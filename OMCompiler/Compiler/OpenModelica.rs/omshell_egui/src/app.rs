@@ -1,3 +1,4 @@
+use eframe::egui_wgpu::{self, wgpu};
 use egui::{Color32, FontFamily, FontId, Key, Modifiers, RichText, TextStyle};
 use omshell_core::{SegKind, Shell};
 
@@ -6,17 +7,26 @@ pub struct App {
     font_size: f32,
     want_focus: bool,
     about_open: bool,
+    webgpu_open: bool,
 }
 
 impl App {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         let ctx = cc.egui_ctx.clone();
         let shell = Shell::with_backend(omshell_omc::backend(), move || ctx.request_repaint());
+        // Build the shared WebGPU demo into the egui_wgpu renderer's resource map
+        // so the Help -> WebGPU test's paint callback can fetch it. eframe is
+        // built with the wgpu backend (main.rs / WebOptions), so this is present.
+        if let Some(rs) = cc.wgpu_render_state.as_ref() {
+            let demo = omshell_wgpu::Demo::new(&rs.device, rs.target_format);
+            rs.renderer.write().callback_resources.insert(demo);
+        }
         Self {
             shell,
             font_size: 13.0,
             want_focus: true,
             about_open: false,
+            webgpu_open: false,
         }
     }
 
@@ -55,6 +65,9 @@ impl App {
             ui.menu_button("Help", |ui| {
                 if ui.button("About OMShell").clicked() {
                     self.about_open = true;
+                }
+                if ui.button("WebGPU test").clicked() {
+                    self.webgpu_open = true;
                 }
             });
         });
@@ -173,12 +186,88 @@ impl eframe::App for App {
                 });
         }
 
+        if self.webgpu_open {
+            self.webgpu_window(&ctx);
+        }
+
         egui::Panel::top("menu_bar").show_inside(ui, |ui| self.menu_bar(ui));
         egui::Panel::bottom("input").show_inside(ui, |ui| self.input_line(ui));
         egui::CentralPanel::default().show_inside(ui, |ui| self.scrollback_view(ui));
 
         if self.shell.busy {
             ctx.request_repaint();
+        }
+    }
+}
+
+impl App {
+    fn webgpu_window(&mut self, ctx: &egui::Context) {
+        let mut open = self.webgpu_open;
+        egui::Window::new("WebGPU test")
+            .open(&mut open)
+            .default_size([460.0, 360.0])
+            .show(ctx, |ui| {
+                ui.label(
+                    RichText::new(
+                        "A wgpu scene composited inside egui — the same renderer on native and web.",
+                    )
+                    .weak(),
+                );
+                let time = ui.input(|i| i.time) as f32;
+                let ppp = ctx.pixels_per_point();
+                egui::Frame::canvas(ui.style()).show(ui, |ui| {
+                    let (rect, _) = ui.allocate_exact_size(
+                        egui::vec2(ui.available_width(), 280.0),
+                        egui::Sense::hover(),
+                    );
+                    let px = rect.size() * ppp;
+                    ui.painter().add(egui_wgpu::Callback::new_paint_callback(
+                        rect,
+                        DemoCallback {
+                            time,
+                            width: px.x,
+                            height: px.y,
+                        },
+                    ));
+                });
+            });
+        self.webgpu_open = open;
+        // Drive the animation while the window is open.
+        ctx.request_repaint();
+    }
+}
+
+/// Per-frame parameters handed to the shared [`omshell_wgpu::Demo`] (stored in
+/// the egui_wgpu renderer's resource map) through an egui paint callback.
+struct DemoCallback {
+    time: f32,
+    width: f32,
+    height: f32,
+}
+
+impl egui_wgpu::CallbackTrait for DemoCallback {
+    fn prepare(
+        &self,
+        _device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        _screen: &egui_wgpu::ScreenDescriptor,
+        _encoder: &mut wgpu::CommandEncoder,
+        resources: &mut egui_wgpu::CallbackResources,
+    ) -> Vec<wgpu::CommandBuffer> {
+        if let Some(demo) = resources.get::<omshell_wgpu::Demo>() {
+            demo.prepare(queue, self.time, self.width, self.height);
+        }
+        Vec::new()
+    }
+
+    fn paint(
+        &self,
+        _info: egui::PaintCallbackInfo,
+        render_pass: &mut wgpu::RenderPass<'static>,
+        resources: &egui_wgpu::CallbackResources,
+    ) {
+        if let Some(demo) = resources.get::<omshell_wgpu::Demo>() {
+            demo.draw(render_pass);
         }
     }
 }
