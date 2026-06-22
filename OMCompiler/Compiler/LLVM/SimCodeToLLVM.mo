@@ -154,6 +154,14 @@ public uniontype EqRecipe
     DAE.Exp rhs;
   end EQ_ALG_ASSIGN;
 
+  record EQ_PARAM_ASSIGN
+    "realParameter[idx] := exp (a parameter equation). Indexes into
+     data->simulationInfo->realParameter[] rather than the realVars
+     buffer."
+    Integer slotIndex;
+    DAE.Exp rhs;
+  end EQ_PARAM_ASSIGN;
+
   record EQ_NOOP
     "Equation contributes nothing to the current emission (e.g. SES_ALIAS,
      whose body is shared with another equation already emitted in this
@@ -511,7 +519,7 @@ algorithm
     /* Bound-parameters block: emits the _08bnd.c entries when the
      * model has no parameter equations (HelloWorld). Records
      * _08bnd.c into the dynamic skip list on success. */
-    emitBoundParametersBlock(simCode);
+    emitBoundParametersBlock(simCode, layout);
     /* Event block: emits the _05evt.c entries when the model has no
      * zero crossings AND no relations (HelloWorld). Records
      * _05evt.c into the dynamic skip list on success. */
@@ -838,31 +846,46 @@ algorithm
 end modelHasNoEvents;
 
 protected function emitBoundParametersBlock
-  "Emit the two _08bnd.c entry points (_updateBoundParameters and
-   _updateBoundVariableAttributes) when SimCode.parameterEquations
-   is empty -- HelloWorld-class models. Records _08bnd.c into the
-   dynamic skip list on success.
+  "Emit the two _08bnd.c entry points:
+     _updateBoundParameters         -- inlined parameterEquations
+     _updateBoundVariableAttributes -- stub
+   when every recipe in SimCode.parameterEquations lowers cleanly
+   (Real-parameter targets with supported RHS). HelloWorld
+   trivially qualifies (empty paramEqs). ChuaCircuit has boolean
+   parameter assignments that classifySimEq does not recognise; the
+   gate fails there and _08bnd.c stays on clang.
 
-   For models with non-empty parameter equations (ChuaCircuit:
-   Ra/Rb/L/C1/C2 etc.) the parameter values are non-trivial and
-   we leave the file to clang until SCTL gains real lowering of
-   parameter equations (which need a new omc_jit_set_*_param
-   accessor family that writes data->simulationInfo->*Parameter[])."
+   Records _08bnd.c into the dynamic skip list on success."
   input SimCode.SimCode simCode;
+  input VarLayout layout;
 protected
   list<SimCode.SimEqSystem> paramEqs;
+  list<EqRecipe> recipes;
   String prefix;
   Absyn.Path name;
+  Boolean ok;
 algorithm
   paramEqs := match simCode
     case SimCode.SIMCODE(parameterEquations = paramEqs) then paramEqs;
   end match;
-  if not listEmpty(paramEqs) then
+  recipes := List.map1(paramEqs, classifySimEq, layout);
+  /* Same two-stage gate as the initial-eq block. */
+  ok := List.fold(recipes, countUnsupportedAsBoolean, true);
+  if not ok then
     return;
   end if;
+  for r in recipes loop
+    if not canLowerEquation(r, layout) then
+      return;
+    end if;
+  end for;
   name := simCodeName(simCode);
   prefix := AbsynUtil.pathStringUnquoteReplaceDot(name, "_");
-  emitRuntimeIntStub(prefix + "_updateBoundParameters");
+  ok := emitEquationFunction(prefix + "_updateBoundParameters",
+                             recipes, layout, MODELICA_INTEGER);
+  if not ok then
+    return;
+  end if;
   emitRuntimeIntStub(prefix + "_updateBoundVariableAttributes");
   recordDisplacedSegment("_08bnd.c");
 end emitBoundParametersBlock;
@@ -984,6 +1007,8 @@ algorithm
     case EQ_DERIVATIVE_ASSIGN() then "DERIV(" + intString(r.slotIndex) + ")";
     case EQ_STATE_ASSIGN()      then "STATE(" + intString(r.slotIndex) + ")";
     case EQ_ALG_ASSIGN()        then "ALG(" + intString(r.slotIndex) + ")";
+    case EQ_PARAM_ASSIGN()      then "PARAM(" + intString(r.slotIndex) + ")";
+    case EQ_NOOP()              then "NOOP";
     case EQ_UNSUPPORTED(reason = why) then "UNSUPPORTED(" + why + ")";
   end match;
 end recipeKindString;
@@ -1179,6 +1204,13 @@ algorithm
                            rhsTmp);
         end if;
       then (ctx2, exprOk);
+    case EQ_PARAM_ASSIGN(slotIndex=slot, rhs=rhs)
+      algorithm
+        (ctx2, rhsTmp, exprOk) := emitExp(rhs, ctx);
+        if exprOk then
+          emitWriteRealParam(slot, rhsTmp);
+        end if;
+      then (ctx2, exprOk);
     case EQ_NOOP()        then (ctx, true);
     case EQ_UNSUPPORTED() then (ctx, false);
   end match;
@@ -1235,6 +1267,19 @@ algorithm
   EXT_LLVM.genCall("omc_jit_set_real_var", MODELICA_VOID, "", false);
 end emitWriteRealVar;
 
+protected function emitWriteRealParam
+  "Emit  call void @omc_jit_set_real_param(ptr %data, i64 slot, double %src)
+   into the active function body. Writes into the parameter array
+   data->simulationInfo->realParameter[] rather than realVars."
+  input Integer slot;
+  input String src;
+algorithm
+  EXT_LLVM.genCallArg("data");
+  EXT_LLVM.genCallArgConstInt(slot);
+  EXT_LLVM.genCallArg(src);
+  EXT_LLVM.genCall("omc_jit_set_real_param", MODELICA_VOID, "", false);
+end emitWriteRealParam;
+
 protected function canLowerEquation
   "Pre-validation mirror of emitEquation: return true iff lowering the
    recipe to IR would succeed. Used before opening an LLVM function
@@ -1248,6 +1293,7 @@ algorithm
     case EQ_DERIVATIVE_ASSIGN() then canLowerExp(r.rhs, layout);
     case EQ_STATE_ASSIGN()      then canLowerExp(r.rhs, layout);
     case EQ_ALG_ASSIGN()        then canLowerExp(r.rhs, layout);
+    case EQ_PARAM_ASSIGN()      then canLowerExp(r.rhs, layout);
     case EQ_NOOP()              then true;
     case EQ_UNSUPPORTED()       then false;
   end match;
@@ -1840,8 +1886,8 @@ algorithm
           then EQ_STATE_ASSIGN(s.index, rhs);
         case SOME(s as VAR_SLOT(kind=VK_ALG()))
           then EQ_ALG_ASSIGN(s.index, rhs);
-        case SOME(VAR_SLOT(kind=VK_PARAM()))
-          then EQ_UNSUPPORTED("simple-assign to parameter not allowed");
+        case SOME(s as VAR_SLOT(kind=VK_PARAM()))
+          then EQ_PARAM_ASSIGN(s.index, rhs);
         else
           then EQ_UNSUPPORTED("cref not found in layout: "
                               + ComponentReferenceBasics.printComponentRefStr(cref));

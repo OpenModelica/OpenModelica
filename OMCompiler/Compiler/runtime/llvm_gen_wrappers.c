@@ -1254,6 +1254,15 @@ void omc_jit_set_real_var(DATA *data, int64_t slot, double value)
   data->localData[0]->realVars[slot] = value;
 }
 
+/* Write a real parameter. The runtime keeps parameters in
+ * data->simulationInfo->realParameter, indexed directly by the
+ * SimVar slot (no second indirection through realParamIndex --
+ * SCTL uses the same flat layout as the simulation runtime). */
+void omc_jit_set_real_param(DATA *data, int64_t slot, double value)
+{
+  data->simulationInfo->realParameter[slot] = value;
+}
+
 double omc_jit_get_time(DATA *data)
 {
   return data->localData[0]->timeValue;
