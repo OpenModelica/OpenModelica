@@ -177,6 +177,15 @@ public uniontype EqRecipe
     Integer aliasOf;
   end EQ_NOOP;
 
+  record EQ_ALG_CALL
+    "Algorithm body lowered as a synthetic Modelica function. The
+     statements are wrapped as SimCodeFunction.FUNCTION and routed
+     through DAEToMid + MidToLLVM (the same pipeline emitUserFunctions
+     uses). emitEquation emits a call to the mangled symbol name."
+    String synthName "the mangled `omc_<...>` symbol";
+    SimCodeFunction.Function synthFn "the synthetic function carrying the statements";
+  end EQ_ALG_CALL;
+
   record EQ_UNSUPPORTED
     "Reason the equation cannot be lowered in the current scope."
     String reason;
@@ -854,76 +863,43 @@ algorithm
 end modelHasNoEvents;
 
 protected function classifyParamEq
-  "Variant of classifySimEq for the parameterEquations block. The
-   most common SES_ALGORITHM shape there is a min/max-range assert
-   (an STMT_ASSIGN to a boolean tmp, followed by STMT_ASSERT of the
-   tmp, sometimes wrapped in STMT_IF + STMT_NORETCALL for the
-   throwStreamPrint call). classifyAlgorithmStatements walks the
-   list and yields EQ_NOOP iff every statement is one SCTL can
-   identify as a pure-diagnostic shape -- the simulation does not
-   depend on the side effects (a warning message for out-of-range
-   parameters).
+  "Variant of classifySimEq for the parameterEquations block. For
+   SES_ALGORITHM the statements are routed through a synthetic
+   SimCodeFunction.FUNCTION + DAEToMid + MidToLLVM (the same pipeline
+   emitUserFunctions uses for Modelica user functions); the recipe is
+   EQ_ALG_CALL(synthName, synthFn). emitBoundParametersBlock collects
+   the synthFns and routes them via emitSyntheticFunctions so their
+   bodies land in the same in-memory module.
 
-   For other equation blocks (ODE, initial, etc.) SES_ALGORITHM is
-   genuine algorithmic code that must not be silently dropped; the
-   regular classifySimEq path keeps it EQ_UNSUPPORTED there."
+   For other equation blocks (ODE, initial, etc.) the regular
+   classifySimEq path is used so SES_ALGORITHM stays UNSUPPORTED
+   until the same plumbing is wired there."
   input SimCode.SimEqSystem eq;
   input VarLayout layout;
+  input Absyn.Path modelName;
   output EqRecipe recipe;
 algorithm
   recipe := match eq
     local list<DAE.Statement> stmts;
-    case SimCode.SES_ALGORITHM(statements = stmts)
-      then classifyAlgorithmStatements(stmts, eq.index);
+          String synthName;
+          SimCodeFunction.Function synthFn;
+    /* The synthetic-function pipeline (buildSyntheticAlgFunction +
+     * extractAlgorithmLocals + emitSyntheticFunctions + EQ_ALG_CALL)
+     * is wired and HelloWorld passes through it unchanged (it has no
+     * SES_ALGORITHM in its parameter equations). For ChuaCircuit the
+     * pipeline lowers the synthetic body but MidToLLVM rejects the
+     * resulting IR -- "LLVM syntax error" before any synth function
+     * is even emitted. The MidToLLVM coverage of STMT_ASSERT /
+     * STMT_NORETCALL is the next debug step; until that lands
+     * SES_ALGORITHM stays UNSUPPORTED so we never hand the runtime
+     * a malformed bitcode. The wiring stays in place so once
+     * MidToLLVM works the only required change is removing this
+     * EQ_UNSUPPORTED case. */
+    case SimCode.SES_ALGORITHM()
+      then EQ_UNSUPPORTED("SES_ALGORITHM pending MidToLLVM statement coverage");
     else classifySimEq(eq, layout);
   end match;
 end classifyParamEq;
-
-protected function classifyAlgorithmStatements
-  "Walk a DAE.Statement list and decide whether SCTL can lower it.
-   Returns EQ_NOOP iff every statement is one of the parameter-
-   assert shapes isParamAssertShape recognises (STMT_ASSIGN to a
-   local boolean tmp, STMT_ASSERT, STMT_NORETCALL for runtime
-   diagnostic calls, STMT_IF wrapping any of the above). Anything
-   else -- STMT_FOR, STMT_WHILE, an STMT_ASSIGN to a state cref --
-   forces EQ_UNSUPPORTED and the .c file stays on clang."
-  input list<DAE.Statement> stmts;
-  input Integer eqIndex;
-  output EqRecipe recipe;
-algorithm
-  recipe := if List.all(stmts, isParamAssertShape)
-            then EQ_NOOP(eqIndex)
-            else EQ_UNSUPPORTED("algorithm contains a non-assert statement");
-end classifyAlgorithmStatements;
-
-protected function isParamAssertShape
-  "True iff stmt is a shape SCTL recognises as a parameter-range
-   assert and can therefore safely skip:
-     STMT_ASSIGN   -- assignment of a comparison result to a local tmp
-     STMT_ASSERT   -- the assert itself
-     STMT_NORETCALL-- throwStreamPrint / similar diagnostic call
-     STMT_IF       -- the if(!tmp) branch around the throw call;
-                      recursively checked
-   All four are pure-diagnostic at parameter-equation time; dropping
-   them only loses an out-of-range warning. STMT_FOR / STMT_WHILE /
-   STMT_REINIT / etc. are not in the whitelist."
-  input DAE.Statement stmt;
-  output Boolean b;
-algorithm
-  b := match stmt
-    local list<DAE.Statement> tBranch, fBranch;
-          list<tuple<DAE.Exp, list<DAE.Statement>>> elseIf;
-    case DAE.STMT_ASSIGN()    then true;
-    case DAE.STMT_ASSERT()    then true;
-    case DAE.STMT_NORETCALL() then true;
-    case DAE.STMT_IF(statementLst = tBranch, else_ = DAE.NOELSE())
-      then List.all(tBranch, isParamAssertShape);
-    case DAE.STMT_IF(statementLst = tBranch, else_ = DAE.ELSE(fBranch))
-      then List.all(tBranch, isParamAssertShape)
-       and List.all(fBranch, isParamAssertShape);
-    else false;
-  end match;
-end isParamAssertShape;
 
 protected function emitBoundParametersBlock
   "Emit the two _08bnd.c entry points:
@@ -948,7 +924,8 @@ algorithm
   paramEqs := match simCode
     case SimCode.SIMCODE(parameterEquations = paramEqs) then paramEqs;
   end match;
-  recipes := list(classifyParamEq(eq, layout) for eq in paramEqs);
+  name := simCodeName(simCode);
+  recipes := list(classifyParamEq(eq, layout, name) for eq in paramEqs);
   /* Same two-stage gate as the initial-eq block. */
   ok := List.fold(recipes, countUnsupportedAsBoolean, true);
   if not ok then
@@ -959,8 +936,13 @@ algorithm
       return;
     end if;
   end for;
-  name := simCodeName(simCode);
   prefix := AbsynUtil.pathStringUnquoteReplaceDot(name, "_");
+  /* Emit any synthetic SimCodeFunction.Function the classifier built
+   * (one per SES_ALGORITHM) before the call sites reference them.
+   * The synthetics ride the same DAEToMid + MidToLLVM pipeline as
+   * user functions; the calls SCTL emits next resolve to them at
+   * JIT link time. */
+  emitSyntheticFunctions(collectAlgSynths(recipes), name);
   ok := emitEquationFunction(prefix + "_updateBoundParameters",
                              recipes, layout, MODELICA_INTEGER);
   if not ok then
@@ -969,6 +951,20 @@ algorithm
   emitRuntimeIntStub(prefix + "_updateBoundVariableAttributes");
   recordDisplacedSegment("_08bnd.c");
 end emitBoundParametersBlock;
+
+protected function collectAlgSynths
+  "Pull the SimCodeFunction.Function out of every EQ_ALG_CALL recipe."
+  input list<EqRecipe> recipes;
+  output list<SimCodeFunction.Function> synths = {};
+algorithm
+  for r in recipes loop
+    () := match r
+      case EQ_ALG_CALL() algorithm synths := r.synthFn :: synths; then ();
+      else ();
+    end match;
+  end for;
+  synths := listReverse(synths);
+end collectAlgSynths;
 
 protected function isSimpleNonStiffODE
   "True iff the model has no events, no parameter equations, and no
@@ -1090,6 +1086,7 @@ algorithm
     case EQ_PARAM_ASSIGN()      then "PARAM(" + intString(r.slotIndex) + ")";
     case EQ_BOOL_PARAM_ASSIGN() then "BPARM(" + intString(r.slotIndex) + ")";
     case EQ_NOOP()              then "NOOP";
+    case EQ_ALG_CALL()          then "ALG_CALL(" + r.synthName + ")";
     case EQ_UNSUPPORTED(reason = why) then "UNSUPPORTED(" + why + ")";
   end match;
 end recipeKindString;
@@ -1115,6 +1112,142 @@ algorithm
   EXT_LLVM.genReturnZero();
   EXT_LLVM.finnishGen();
 end emitInitialEquationsWrapper;
+
+protected function buildSyntheticAlgFunction
+  "Package the statements of a SES_ALGORITHM as a synthetic
+   SimCodeFunction.FUNCTION suitable for DAEToMid + MidToLLVM
+   consumption. The resulting function takes no args, returns
+   nothing, and carries the algorithm body as-is.
+
+   StmtsToMid requires every cref the body writes to to be declared
+   as a local; extractAlgorithmLocals walks the statements to
+   collect them.
+
+   The mangled symbol name returned matches what
+   MidToLLVM.genFunction produces: \"omc_\" plus the path
+   underscore-joined."
+  input Absyn.Path modelName;
+  input Integer eqIdx;
+  input list<DAE.Statement> stmts;
+  output SimCodeFunction.Function fn;
+  output String mangledName;
+protected
+  Absyn.Path synthPath;
+  list<SimCodeFunction.Variable> locals;
+algorithm
+  synthPath := AbsynUtil.suffixPath(modelName, "synthAlg_" + intString(eqIdx));
+  locals := extractAlgorithmLocals(stmts);
+  fn := SimCodeFunction.FUNCTION(
+    synthPath,
+    {} /* outVars        */,
+    {} /* funcArgs       */,
+    locals,
+    stmts,
+    SCode.PUBLIC(),
+    sourceInfo());
+  mangledName := "omc_" + AbsynUtil.pathStringUnquoteReplaceDot(synthPath, "_");
+end buildSyntheticAlgFunction;
+
+protected function extractAlgorithmLocals
+  "Walk a DAE.Statement list and collect distinct STMT_ASSIGN LHS
+   crefs (with their declared types) as SimCodeFunction.Variable
+   entries. Recursively descends through STMT_IF / STMT_FOR /
+   STMT_WHILE branches. Deduplication is keyed on the
+   cref's print-string so the same tmp referenced from multiple
+   branches lands once.
+
+   The returned list is in insertion order (first occurrence first)
+   so MidCode's variable-numbering is stable."
+  input list<DAE.Statement> stmts;
+  output list<SimCodeFunction.Variable> vars = {};
+protected
+  list<String> seen = {};
+algorithm
+  for s in stmts loop
+    (vars, seen) := collectAssignLhs(s, vars, seen);
+  end for;
+  vars := listReverse(vars);
+end extractAlgorithmLocals;
+
+protected function collectAssignLhs
+  "One step of extractAlgorithmLocals. Recursive on the compound
+   statement shapes (STMT_IF / STMT_FOR / STMT_WHILE)."
+  input DAE.Statement stmt;
+  input list<SimCodeFunction.Variable> varsIn;
+  input list<String> seenIn;
+  output list<SimCodeFunction.Variable> varsOut = varsIn;
+  output list<String> seenOut = seenIn;
+algorithm
+  () := match stmt
+    local DAE.Type ty;
+          DAE.Exp lhs;
+          DAE.ComponentRef cref;
+          String key;
+          list<DAE.Statement> tBranch, fBranch, body;
+          list<tuple<DAE.Exp, list<DAE.Statement>>> elseIfs;
+          tuple<DAE.Exp, list<DAE.Statement>> ei;
+    case DAE.STMT_ASSIGN(type_ = ty, exp1 = DAE.CREF(componentRef = cref))
+      algorithm
+        key := ComponentReferenceBasics.printComponentRefStr(cref);
+        if not listMember(key, seenOut) then
+          varsOut := SimCodeFunction.VARIABLE(cref, ty, NONE(), {},
+                                              DAE.NON_PARALLEL(),
+                                              DAE.VARIABLE(), false) :: varsOut;
+          seenOut := key :: seenOut;
+        end if;
+        then ();
+    case DAE.STMT_IF(statementLst = tBranch, else_ = DAE.NOELSE())
+      algorithm
+        for s in tBranch loop
+          (varsOut, seenOut) := collectAssignLhs(s, varsOut, seenOut);
+        end for;
+        then ();
+    case DAE.STMT_IF(statementLst = tBranch, else_ = DAE.ELSEIF(statementLst = body))
+      algorithm
+        for s in tBranch loop (varsOut, seenOut) := collectAssignLhs(s, varsOut, seenOut); end for;
+        for s in body    loop (varsOut, seenOut) := collectAssignLhs(s, varsOut, seenOut); end for;
+        then ();
+    case DAE.STMT_IF(statementLst = tBranch, else_ = DAE.ELSE(fBranch))
+      algorithm
+        for s in tBranch loop (varsOut, seenOut) := collectAssignLhs(s, varsOut, seenOut); end for;
+        for s in fBranch loop (varsOut, seenOut) := collectAssignLhs(s, varsOut, seenOut); end for;
+        then ();
+    case DAE.STMT_FOR(statementLst = body)
+      algorithm
+        for s in body loop (varsOut, seenOut) := collectAssignLhs(s, varsOut, seenOut); end for;
+        then ();
+    case DAE.STMT_WHILE(statementLst = body)
+      algorithm
+        for s in body loop (varsOut, seenOut) := collectAssignLhs(s, varsOut, seenOut); end for;
+        then ();
+    /* STMT_ASSERT / STMT_NORETCALL / STMT_TERMINATE etc.: no LHS to
+     * collect. */
+    else ();
+  end match;
+end collectAssignLhs;
+
+protected function emitSyntheticFunctions
+  "Run a list of synthetic SimCodeFunction.Functions through
+   DAEToMid + MidToLLVM.genProgram so their bodies land in the
+   currently-active in-memory module. Called once per block that
+   produced synthetics (param-eq block, init-eq block, etc.).
+
+   No-op when the list is empty. Records are not built here -- the
+   synthetics are produced from algorithm bodies and do not
+   construct new record types."
+  input list<SimCodeFunction.Function> synths;
+  input Absyn.Path modelName;
+protected
+  String moduleName;
+  MidCode.Program midProgram;
+algorithm
+  if listEmpty(synths) then
+    return;
+  end if;
+  moduleName := AbsynUtil.pathStringUnquoteReplaceDot(modelName, "_") + "_synth";
+  midProgram := DAEToMid.daeProgramToMid(moduleName, synths, {});
+  MidToLLVM.genProgram(midProgram);
+end emitSyntheticFunctions;
 
 protected function emitUserFunctions
   "Lower the model's user-defined Modelica functions to LLVM IR in
@@ -1300,9 +1433,20 @@ algorithm
         end if;
       then (ctx2, exprOk);
     case EQ_NOOP()        then (ctx, true);
+    case EQ_ALG_CALL()    algorithm emitAlgCall(r.synthName); then (ctx, true);
     case EQ_UNSUPPORTED() then (ctx, false);
   end match;
 end emitEquation;
+
+protected function emitAlgCall
+  "Emit  call void @<synthName>(ptr %threadData)  into the active
+   function body. The synthName already has the omc_ prefix and the
+   underscore-mangled path, matching MidToLLVM.genFunction's naming."
+  input String synthName;
+algorithm
+  EXT_LLVM.genCallArg("threadData");
+  EXT_LLVM.genCall(synthName, MODELICA_VOID, "", false);
+end emitAlgCall;
 
 protected function absoluteSlot
   "Translate a (kind, sub-index) into the absolute realVars[] slot
@@ -1415,6 +1559,7 @@ algorithm
     case EQ_PARAM_ASSIGN()      then canLowerExp(r.rhs, layout);
     case EQ_BOOL_PARAM_ASSIGN() then canLowerExp(r.rhs, layout);
     case EQ_NOOP()              then true;
+    case EQ_ALG_CALL()          then true;
     case EQ_UNSUPPORTED()       then false;
   end match;
 end canLowerEquation;
