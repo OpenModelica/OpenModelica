@@ -99,6 +99,26 @@ function jitInvokeFunctionODE
     annotation(Library = "omcruntime");
 end jitInvokeFunctionODE;
 
+function jitDriveForwardEuler
+  "In-memory forward-Euler simulation. Looks up fName in the JIT,
+   seeds realVars[0..nStates-1] from startVals, then marches from
+   t0 to tEnd in steps of h, writing time/state/derivative columns
+   to csvPath. Returns 0 on success, non-zero otherwise."
+  input String fName;
+  input Integer nStates;
+  input Integer nAlgs;
+  input Integer nParams;
+  input list<Real> startVals;
+  input Real t0;
+  input Real tEnd;
+  input Real h;
+  input String csvPath;
+  output Integer status;
+  external "C" status = jitDriveForwardEuler_mm(fName, nStates, nAlgs, nParams,
+                                                startVals, t0, tEnd, h, csvPath)
+    annotation(Library = "omcruntime");
+end jitDriveForwardEuler;
+
 /*End of calls steering function generation*/
 
 /* Calls related to functions */

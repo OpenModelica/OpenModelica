@@ -1344,6 +1344,103 @@ modelica_metatype jitInvokeFunctionODE_mm(const char *fName,
   return outLst;
 }
 
+/* Forward-Euler driver: looks up <fName> in the JIT, fabricates a
+ * minimal DATA/SIMULATION_DATA pair around a realVars buffer, and
+ * marches it from t0 to tEnd in steps of h, writing a CSV with
+ * columns "time, x0, x1, ..., der0, der1, ...". The state slots
+ * are seeded from startVals (length nStates). Derivative slots and
+ * algebraic/parameter slots are zeroed. Returns 0 on success. */
+int omc_jit_drive_forward_euler(const char *fName,
+                                int nStates, int nAlgs, int nParams,
+                                const double *startVals,
+                                double t0, double tEnd, double h,
+                                const char *csvPath)
+{
+  void *addr = NULL;
+  int st = jitLookupAddress(fName, &addr);
+  if (st != 0) return st;
+  if (nStates < 0 || nAlgs < 0 || nParams < 0) return 5;
+  if (!(h > 0.0)) return 6;
+  size_t total = (size_t)(2 * nStates + nAlgs + nParams);
+  double *realVars = (double*)calloc(total > 0 ? total : 1, sizeof(double));
+  if (!realVars) return 7;
+  for (int i = 0; i < nStates; ++i) realVars[i] = startVals ? startVals[i] : 0.0;
+
+  SIMULATION_DATA sd;
+  memset(&sd, 0, sizeof(sd));
+  sd.timeValue = t0;
+  sd.realVars = realVars;
+  SIMULATION_DATA *sdp = &sd;
+  DATA data;
+  memset(&data, 0, sizeof(data));
+  data.localData = &sdp;
+
+  FILE *fp = csvPath ? fopen(csvPath, "w") : NULL;
+  if (fp) {
+    fputs("time", fp);
+    for (int i = 0; i < nStates; ++i) fprintf(fp, ",x%d", i);
+    for (int i = 0; i < nStates; ++i) fprintf(fp, ",der%d", i);
+    fputc('\n', fp);
+  }
+
+  typedef int64_t (*ode_fn_t)(void*, void*);
+  ode_fn_t fn = (ode_fn_t)addr;
+
+  double t = t0;
+  while (t <= tEnd + 0.5 * h) {
+    sd.timeValue = t;
+    (void)fn(&data, NULL);
+    if (fp) {
+      fprintf(fp, "%.10g", t);
+      for (int i = 0; i < nStates; ++i) fprintf(fp, ",%.10g", realVars[i]);
+      for (int i = 0; i < nStates; ++i) fprintf(fp, ",%.10g", realVars[nStates + i]);
+      fputc('\n', fp);
+    }
+    for (int i = 0; i < nStates; ++i) realVars[i] += h * realVars[nStates + i];
+    t += h;
+  }
+
+  if (fp) fclose(fp);
+  free(realVars);
+  return 0;
+}
+
+/* MMC bridge for EXT_LLVM.jitDriveForwardEuler. */
+modelica_integer jitDriveForwardEuler_mm(const char *fName,
+                                          modelica_integer nStates,
+                                          modelica_integer nAlgs,
+                                          modelica_integer nParams,
+                                          modelica_metatype startVals,
+                                          modelica_real t0,
+                                          modelica_real tEnd,
+                                          modelica_real h,
+                                          const char *csvPath)
+{
+  modelica_metatype tmp;
+  size_t i, count;
+  double *starts;
+  int st;
+
+  count = 0;
+  tmp = startVals;
+  while (MMC_GETHDR(tmp) != MMC_NILHDR) { count++; tmp = MMC_CDR(tmp); }
+  if ((modelica_integer)count != nStates) return 100;
+
+  starts = (double*)calloc(nStates > 0 ? (size_t)nStates : 1, sizeof(double));
+  if (!starts) return 101;
+  i = 0;
+  tmp = startVals;
+  while (MMC_GETHDR(tmp) != MMC_NILHDR) {
+    starts[i++] = mmc_unbox_real(MMC_CAR(tmp));
+    tmp = MMC_CDR(tmp);
+  }
+
+  st = omc_jit_drive_forward_euler(fName, (int)nStates, (int)nAlgs, (int)nParams,
+                                   starts, t0, tEnd, h, csvPath);
+  free(starts);
+  return (modelica_integer)st;
+}
+
 #ifdef __cplusplus
 }
 #endif

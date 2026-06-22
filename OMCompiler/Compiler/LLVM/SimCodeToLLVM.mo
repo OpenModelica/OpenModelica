@@ -201,7 +201,7 @@ algorithm
   if Flags.isSet(Flags.JIT_DUMP_IR) and nUnsupported == 0 then
     if emitODEEntryShell(name, recipes, layout) then
       EXT_LLVM.dumpIR();
-      finalizeAndReport(name, layout);
+      finalizeAndReport(name, layout, vars);
     end if;
   end if;
 
@@ -248,19 +248,22 @@ algorithm
 end freshTmp;
 
 protected function finalizeAndReport
-  "Phase 5/6: materialize the current module into LLJIT, look up
-   <Model>_functionODE, and (Phase 6) invoke it against a fabricated
-   realVars buffer to confirm the JIT side-effect. Reports via
+  "Phase 5/6/7: materialize the current module into LLJIT, look up
+   <Model>_functionODE, invoke it once for a self-test (Phase 6), then
+   march a forward-Euler driver against it from t=0..1 (Phase 7) and
+   write a CSV next to omc's working directory. Reports via
    Error.addInternalError so the diagnostic surfaces with the rest of
    the genSim trace."
   input Absyn.Path name;
   input VarLayout layout;
+  input SimCodeVar.SimVars vars;
 protected
-  String odeSym;
-  Integer st;
-  list<Real> rvIn, rvOut;
+  String odeSym, csvPath, modelStr;
+  Integer st, drv;
+  list<Real> rvIn, rvOut, startVals;
 algorithm
-  odeSym := AbsynUtil.pathStringUnquoteReplaceDot(name, "_") + "_functionODE";
+  modelStr := AbsynUtil.pathStringUnquoteReplaceDot(name, "_");
+  odeSym := modelStr + "_functionODE";
   st := EXT_LLVM.jitFinalizeNoEntry(odeSym);
   if st <> 0 then
     Error.addInternalError(
@@ -274,7 +277,44 @@ algorithm
     "SimCodeToLLVM Phase 6: jitInvokeFunctionODE('" + odeSym +
     "') with realVars=1.0 returned " + realVarsString(rvOut) + "\n",
     sourceInfo());
+
+  startVals := stateStartValues(vars);
+  csvPath := modelStr + "_jit.csv";
+  drv := EXT_LLVM.jitDriveForwardEuler(odeSym, layout.nStates, layout.nAlgs, layout.nParams,
+                                       startVals, 0.0, 1.0, 0.01, csvPath);
+  Error.addInternalError(
+    "SimCodeToLLVM Phase 7: jitDriveForwardEuler('" + odeSym + "') t=[0,1] h=0.01" +
+    " startVals=" + realVarsString(startVals) +
+    " -> csv='" + csvPath + "' status=" + intString(drv) + "\n",
+    sourceInfo());
 end finalizeAndReport;
+
+protected function stateStartValues
+  "Extract Real start values from SimVars.stateVars. Reads SIMVAR.initialValue
+   when it is SOME(RCONST/ICONST); defaults to 0.0 otherwise. The output is
+   ordered by stateVars list order, which matches absolute slot order [0..nStates-1]."
+  input SimCodeVar.SimVars vars;
+  output list<Real> starts;
+algorithm
+  starts := match vars
+    case SimCodeVar.SIMVARS()
+      then list(simVarStartReal(sv) for sv in vars.stateVars);
+  end match;
+end stateStartValues;
+
+protected function simVarStartReal
+  input SimCodeVar.SimVar sv;
+  output Real r;
+protected
+  Integer i;
+algorithm
+  r := match sv
+    local Real x;
+    case SimCodeVar.SIMVAR(initialValue = SOME(DAE.RCONST(real = x))) then x;
+    case SimCodeVar.SIMVAR(initialValue = SOME(DAE.ICONST(integer = i))) then intReal(i);
+    else 0.0;
+  end match;
+end simVarStartReal;
 
 protected function realVarsString
   input list<Real> rs;
