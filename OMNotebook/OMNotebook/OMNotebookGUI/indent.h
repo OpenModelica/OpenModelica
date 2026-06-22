@@ -39,13 +39,13 @@
 #include <QTextStream>
 #include <QMap>
 
-class IndentationState {
-public:
-  IndentationState(int state_, int level_, int nextMod_, QString current_, QString next_, bool skipNext_, bool lMod_, bool equation_, bool equationSection_, bool loopBlock_):
-    state(state_), level(level_), nextMod(nextMod_), current(current_), next(next_), skipNext(skipNext_), lMod(lMod_), equation(equation_), equationSection(equationSection_), loopBlock(loopBlock_) {
-    }
-
-    ~IndentationState();
+struct IndentationState {
+  IndentationState(int state, int level, int nextMod, QString current, QString next, bool skipNext,
+                   bool lMod, bool equation, bool equationSection, bool loopBlock)
+    : level(level), state(state), nextMod(nextMod), current(current), next(next), skipNext(skipNext),
+      lMod(lMod), equation(equation), equationSection(equationSection), loopBlock(loopBlock)
+  {
+  }
 
   int level, state, nextMod;
   QString current, next;
@@ -54,11 +54,11 @@ public:
 
 class Indent {
 public:
-  Indent(QString t = QString(), bool a = false);
-  ~Indent();
+  Indent(QString s = QString(), bool aggressive = false);
 
-  QString indentedText(QMap<int, IndentationState*>* states = 0);
+  QString indentedText(QMap<int, IndentationState>* states = 0);
   void setText(QString);
+  void setState(const IndentationState &state);
   int level();
   bool lMod();
 
@@ -69,20 +69,22 @@ private:
   bool aggressive, lmod;
   QString buffer1, buffer2;
 
-  class ISM {
-  public:
-    ISM();
-    ~ISM();
-
+  struct ISM {
+    ISM() = default;
     void newToken(QString, QString);
-    int level, lineModifiers, state, nextMod;
-    bool equation, equationSection, loopBlock;
-    bool skipNext;
-    bool lMod;
-    int oldState;
+
+    int level = 0;
+    int lineModifiers = 0;
+    int state = 0;
+    int nextMod = 0;
+    bool equation = false;
+    bool equationSection = false;
+    bool loopBlock = false;
+    bool skipNext = false;
+    bool lMod = false;
+    int oldState = 0;
   };
 
-public:
   ISM ism;
   QString current, next;
 };
