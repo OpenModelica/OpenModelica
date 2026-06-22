@@ -5999,6 +5999,17 @@ algorithm
     "    ", prefix, "_18spd.c) continue ;;\n",
     "    ", prefix, "_16dae.c) continue ;;\n",
     "    ", prefix, "_04set.c) continue ;;\n",
+    // The next three segments are produced by CodegenC as pure
+    // includes-and-comments for models without nonlinear systems,
+    // linear systems, mixed systems, or linearization. Their bitcode
+    // only carries TU-local 'static inline' helpers (arrayLength,
+    // boxptr_arrayUpdate*) that other TUs already define; skipping
+    // them is dead-code-elimination on the source side. If a feature
+    // is added that emits into one of these files this list must be
+    // re-evaluated.
+    "    ", prefix, "_02nls.c) continue ;;\n",
+    "    ", prefix, "_03lsy.c) continue ;;\n",
+    "    ", prefix, "_11mix.c) continue ;;\n",
     "  esac\n",
     "  eval \"", toolsDir, "/clang\" -O0 -fPIC -DOM_HAVE_PTHREADS -emit-llvm -c $CPPFLAGS \"$f\" -o \"${f%.c}.bc\"\n",
     "  BCS+=(\"${f%.c}.bc\")\n",
