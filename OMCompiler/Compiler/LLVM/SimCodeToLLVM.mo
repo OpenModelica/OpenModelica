@@ -108,6 +108,7 @@ public uniontype VarKind
   record VK_DERIVATIVE end VK_DERIVATIVE;
   record VK_ALG        end VK_ALG;
   record VK_PARAM      end VK_PARAM;
+  record VK_BOOL_PARAM end VK_BOOL_PARAM;
 end VarKind;
 
 public uniontype VarSlot
@@ -161,6 +162,13 @@ public uniontype EqRecipe
     Integer slotIndex;
     DAE.Exp rhs;
   end EQ_PARAM_ASSIGN;
+
+  record EQ_BOOL_PARAM_ASSIGN
+    "booleanParameter[idx] := exp. The RHS is treated as a Real (0.0
+     for false, 1.0 for true) and the bool accessor casts it back."
+    Integer slotIndex;
+    DAE.Exp rhs;
+  end EQ_BOOL_PARAM_ASSIGN;
 
   record EQ_NOOP
     "Equation contributes nothing to the current emission (e.g. SES_ALIAS,
@@ -1008,6 +1016,7 @@ algorithm
     case EQ_STATE_ASSIGN()      then "STATE(" + intString(r.slotIndex) + ")";
     case EQ_ALG_ASSIGN()        then "ALG(" + intString(r.slotIndex) + ")";
     case EQ_PARAM_ASSIGN()      then "PARAM(" + intString(r.slotIndex) + ")";
+    case EQ_BOOL_PARAM_ASSIGN() then "BPARM(" + intString(r.slotIndex) + ")";
     case EQ_NOOP()              then "NOOP";
     case EQ_UNSUPPORTED(reason = why) then "UNSUPPORTED(" + why + ")";
   end match;
@@ -1211,6 +1220,13 @@ algorithm
           emitWriteRealParam(slot, rhsTmp);
         end if;
       then (ctx2, exprOk);
+    case EQ_BOOL_PARAM_ASSIGN(slotIndex=slot, rhs=rhs)
+      algorithm
+        (ctx2, rhsTmp, exprOk) := emitExp(rhs, ctx);
+        if exprOk then
+          emitWriteBoolParam(slot, rhsTmp);
+        end if;
+      then (ctx2, exprOk);
     case EQ_NOOP()        then (ctx, true);
     case EQ_UNSUPPORTED() then (ctx, false);
   end match;
@@ -1236,6 +1252,7 @@ algorithm
     case VK_DERIVATIVE() then subIndex;
     case VK_ALG()        then subIndex;
     case VK_PARAM()      then subIndex;
+    case VK_BOOL_PARAM() then subIndex;
   end match;
 end absoluteSlot;
 
@@ -1280,6 +1297,20 @@ algorithm
   EXT_LLVM.genCall("omc_jit_set_real_param", MODELICA_VOID, "", false);
 end emitWriteRealParam;
 
+protected function emitWriteBoolParam
+  "Emit  call void @omc_jit_set_bool_param(ptr %data, i64 slot, double %src)
+   into the active function body. The boolean RHS arrives as a Real
+   (0.0 or 1.0) via emitExp's DAE.BCONST arm; the runtime accessor
+   casts it back to int when writing booleanParameter[]."
+  input Integer slot;
+  input String src;
+algorithm
+  EXT_LLVM.genCallArg("data");
+  EXT_LLVM.genCallArgConstInt(slot);
+  EXT_LLVM.genCallArg(src);
+  EXT_LLVM.genCall("omc_jit_set_bool_param", MODELICA_VOID, "", false);
+end emitWriteBoolParam;
+
 protected function canLowerEquation
   "Pre-validation mirror of emitEquation: return true iff lowering the
    recipe to IR would succeed. Used before opening an LLVM function
@@ -1294,6 +1325,7 @@ algorithm
     case EQ_STATE_ASSIGN()      then canLowerExp(r.rhs, layout);
     case EQ_ALG_ASSIGN()        then canLowerExp(r.rhs, layout);
     case EQ_PARAM_ASSIGN()      then canLowerExp(r.rhs, layout);
+    case EQ_BOOL_PARAM_ASSIGN() then canLowerExp(r.rhs, layout);
     case EQ_NOOP()              then true;
     case EQ_UNSUPPORTED()       then false;
   end match;
@@ -1314,6 +1346,7 @@ algorithm
           String name;
     case DAE.RCONST() then true;
     case DAE.ICONST() then true;
+    case DAE.BCONST() then true;
     case DAE.CREF(componentRef = cref) then canLowerCref(cref, layout);
     case DAE.UNARY(operator = DAE.UMINUS(), exp = sub)
       then canLowerExp(sub, layout);
@@ -1397,6 +1430,7 @@ algorithm
     local
       Real r;
       Integer i;
+      Boolean b;
       DAE.ComponentRef cref;
       DAE.Exp e1, e2, sub;
       DAE.Operator op;
@@ -1417,6 +1451,12 @@ algorithm
         (ctx1, tmp) := freshTmp(ctx);
         EXT_LLVM.genAllocaModelicaReal(tmp, false);
         EXT_LLVM.genStoreLiteralReal(intReal(i), tmp);
+      then (ctx1, tmp, true);
+    case DAE.BCONST(bool=b)
+      algorithm
+        (ctx1, tmp) := freshTmp(ctx);
+        EXT_LLVM.genAllocaModelicaReal(tmp, false);
+        EXT_LLVM.genStoreLiteralReal(if b then 1.0 else 0.0, tmp);
       then (ctx1, tmp, true);
     case DAE.CREF(componentRef=cref)
       algorithm
@@ -1759,28 +1799,30 @@ end flattenOdeEquations;
  * ====================================================================== */
 
 protected function buildVarLayout
-  "Walk the four SIMVARS buckets we currently care about and
-   accumulate the cref -> slot entries. SimVar.index is already
-   1-based-per-kind in master; we keep that as-is and the IR
-   layer will subtract 1 when generating GEP offsets."
+  "Walk the SIMVARS buckets we currently care about and accumulate
+   the cref -> slot entries. SimVar.index is already 1-based-per-kind
+   in master; we keep that as-is and the IR layer will subtract 1
+   when generating GEP offsets."
   input SimCodeVar.SimVars vars;
   output VarLayout layout;
 protected
-  list<SimCodeVar.SimVar> stateVars, derivativeVars, algVars, paramVars;
+  list<SimCodeVar.SimVar> stateVars, derivativeVars, algVars, paramVars, boolParamVars;
   list<tuple<DAE.ComponentRef, VarSlot>> entries = {};
 algorithm
-  (stateVars, derivativeVars, algVars, paramVars) := match vars
+  (stateVars, derivativeVars, algVars, paramVars, boolParamVars) := match vars
     case SimCodeVar.SIMVARS(stateVars=stateVars,
                             derivativeVars=derivativeVars,
                             algVars=algVars,
-                            paramVars=paramVars)
-      then (stateVars, derivativeVars, algVars, paramVars);
+                            paramVars=paramVars,
+                            boolParamVars=boolParamVars)
+      then (stateVars, derivativeVars, algVars, paramVars, boolParamVars);
   end match;
 
   for v in stateVars      loop entries := addEntry(v, VK_STATE(),      entries); end for;
   for v in derivativeVars loop entries := addEntry(v, VK_DERIVATIVE(), entries); end for;
   for v in algVars        loop entries := addEntry(v, VK_ALG(),        entries); end for;
   for v in paramVars      loop entries := addEntry(v, VK_PARAM(),      entries); end for;
+  for v in boolParamVars  loop entries := addEntry(v, VK_BOOL_PARAM(), entries); end for;
 
   layout := VAR_LAYOUT(entries,
                       listLength(stateVars),
@@ -1808,6 +1850,7 @@ algorithm
       case VK_DERIVATIVE() then "DERIV";
       case VK_ALG()        then "ALG";
       case VK_PARAM()      then "PARAM";
+      case VK_BOOL_PARAM() then "BPARM";
     end match;
     Error.addInternalError("  " + ComponentReferenceBasics.printComponentRefStr(cr) +
       " -> " + kindStr + "(simVarIndex=" + intString(s.index) + ")\n", sourceInfo());
@@ -1888,6 +1931,8 @@ algorithm
           then EQ_ALG_ASSIGN(s.index, rhs);
         case SOME(s as VAR_SLOT(kind=VK_PARAM()))
           then EQ_PARAM_ASSIGN(s.index, rhs);
+        case SOME(s as VAR_SLOT(kind=VK_BOOL_PARAM()))
+          then EQ_BOOL_PARAM_ASSIGN(s.index, rhs);
         else
           then EQ_UNSUPPORTED("cref not found in layout: "
                               + ComponentReferenceBasics.printComponentRefStr(cref));

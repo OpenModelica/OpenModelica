@@ -1263,6 +1263,14 @@ void omc_jit_set_real_param(DATA *data, int64_t slot, double value)
   data->simulationInfo->realParameter[slot] = value;
 }
 
+/* Boolean parameter writer. SCTL feeds the RHS as a double (0.0 or
+ * 1.0 from DAE.BCONST) so this accessor casts back to the runtime's
+ * modelica_boolean (an int) when writing booleanParameter[]. */
+void omc_jit_set_bool_param(DATA *data, int64_t slot, double value)
+{
+  data->simulationInfo->booleanParameter[slot] = (value != 0.0);
+}
+
 double omc_jit_get_time(DATA *data)
 {
   return data->localData[0]->timeValue;
