@@ -263,9 +263,15 @@ algorithm
                      arg sits in the same register on x86-64. */
     RUNTIME_ENTRY("_initializeStateSets", MV, {MI, MM, MM}, EB_STUB(), "_04set.c"),
 
-    /* -- _08bnd.c ------------------------------------------------- */
-    RUNTIME_ENTRY("_updateBoundParameters",         MI, {MM, MM}, EB_STUB(), "_08bnd.c"),
-    RUNTIME_ENTRY("_updateBoundVariableAttributes", MI, {MM, MM}, EB_STUB(), "_08bnd.c"),
+    /* -- _08bnd.c -- bound-parameter / bound-attribute updates. Empty
+                      in CodegenC for HelloWorld but populates
+                      data->simulationInfo->realParameter[] for models
+                      with parameter equations (ChuaCircuit:
+                      Ra/Rb/L/C1/C2). Stubbing leaves parameters at 0
+                      and simulation diverges. Leaving _08bnd.c to
+                      clang until real parameter-equation lowering
+                      lands. */
+    RUNTIME_ENTRY("_bnd_handled_by_clang", MV, {}, EB_TODO("parameter equations need real body for ChuaCircuit"), "_08bnd.c"),
 
     /* -- _09alg.c -- ODE-only models have no continuous-time alg.
                      CodegenC body increments a stat counter and calls
@@ -290,15 +296,15 @@ algorithm
     RUNTIME_ENTRY("_setInputData",                       MI, {MM, MI},                           EB_STUB(), "_13opt.c"),
     RUNTIME_ENTRY("_getTimeGrid",                        MI, {MM, MM, MM},                       EB_STUB(), "_13opt.c"),
 
-    /* -- _05evt.c -- event handling. ZeroCrossings* are int-returning;
-                     *Description return const char* (emitted as null
-                     pointer; runtime checks for non-null). */
-    RUNTIME_ENTRY("_function_initSample",              MV, {MM, MM},          EB_STUB(),     "_05evt.c"),
-    RUNTIME_ENTRY("_function_ZeroCrossingsEquations",  MI, {MM, MM},          EB_STUB(),     "_05evt.c"),
-    RUNTIME_ENTRY("_function_ZeroCrossings",           MI, {MM, MM, MM},      EB_STUB(),     "_05evt.c"),
-    RUNTIME_ENTRY("_function_updateRelations",         MI, {MM, MM, MI},      EB_STUB(),     "_05evt.c"),
-    RUNTIME_ENTRY("_zeroCrossingDescription",          MM, {MI, MM},          EB_NULL_PTR(), "_05evt.c"),
-    RUNTIME_ENTRY("_relationDescription",              MM, {MI},              EB_NULL_PTR(), "_05evt.c"),
+    /* -- _05evt.c -- event handling. Trivially-stub'd entries work for
+                      models with no zero crossings (HelloWorld, UserFn).
+                      For models with piecewise nonlinearities
+                      (ChuaCircuit, hybrid systems) _function_ZeroCrossings
+                      must populate the gout buffer; the stubs cause
+                      DASKR's bisection logic to misfire and abort with
+                      "R IS ILL-DEFINED". Leaving _05evt.c to clang until
+                      the bodies are lowered. */
+    RUNTIME_ENTRY("_evt_handled_by_clang", MV, {}, EB_TODO("zero-crossings need real body for hybrid models"), "_05evt.c"),
 
     /* -- _14lnz.c -- linearization frame strings. Returned only from
                      -d=linearization paths; null suffices for ODE. */
@@ -326,38 +332,15 @@ algorithm
                      accessor before this can keep its EB_STUB tag. */
     RUNTIME_ENTRY("_callExternalObjectDestructors", MV, {MM, MM}, EB_STUB(), "_01exo.c"),
 
-    /* -- _12jac.c -- analytic Jacobian columns and the seven
-                      block initialisers (A..H + ADJ). The columns
-                      and *_DAG entries are no-ops the solver only
-                      invokes when an analytic Jacobian is available;
-                      stubs are safe there. The *_initialAnalyticJacobianX
-                      entries must call back into the runtime to set
-                      jacobian->availability = JACOBIAN_NOT_AVAILABLE
-                      so DASSL knows to fall back to numerical
-                      differencing rather than abort on
-                      JACOBIAN_UNKNOWN. */
-    RUNTIME_ENTRY("_functionJacA_column",        MI, {MM, MM, MM, MM}, EB_STUB(),            "_12jac.c"),
-    RUNTIME_ENTRY("_functionJacA_constantEqns",  MI, {MM, MM, MM, MM}, EB_STUB(),            "_12jac.c"),
-    RUNTIME_ENTRY("_JacA_DAG",                   MV, {MM, MM, MM},     EB_STUB(),            "_12jac.c"),
-    RUNTIME_ENTRY("_functionJacB_column",        MI, {MM, MM, MM, MM}, EB_STUB(),            "_12jac.c"),
-    RUNTIME_ENTRY("_JacB_DAG",                   MV, {MM, MM, MM},     EB_STUB(),            "_12jac.c"),
-    RUNTIME_ENTRY("_functionJacC_column",        MI, {MM, MM, MM, MM}, EB_STUB(),            "_12jac.c"),
-    RUNTIME_ENTRY("_JacC_DAG",                   MV, {MM, MM, MM},     EB_STUB(),            "_12jac.c"),
-    RUNTIME_ENTRY("_functionJacD_column",        MI, {MM, MM, MM, MM}, EB_STUB(),            "_12jac.c"),
-    RUNTIME_ENTRY("_JacD_DAG",                   MV, {MM, MM, MM},     EB_STUB(),            "_12jac.c"),
-    RUNTIME_ENTRY("_functionJacF_column",        MI, {MM, MM, MM, MM}, EB_STUB(),            "_12jac.c"),
-    RUNTIME_ENTRY("_JacF_DAG",                   MV, {MM, MM, MM},     EB_STUB(),            "_12jac.c"),
-    RUNTIME_ENTRY("_functionJacH_column",        MI, {MM, MM, MM, MM}, EB_STUB(),            "_12jac.c"),
-    RUNTIME_ENTRY("_JacH_DAG",                   MV, {MM, MM, MM},     EB_STUB(),            "_12jac.c"),
-    RUNTIME_ENTRY("_functionJacADJ_column",      MI, {MM, MM, MM, MM}, EB_STUB(),            "_12jac.c"),
-    RUNTIME_ENTRY("_JacADJ_DAG",                 MV, {MM, MM, MM},     EB_STUB(),            "_12jac.c"),
-    RUNTIME_ENTRY("_initialAnalyticJacobianA",   MI, {MM, MM, MM},     EB_JAC_UNAVAILABLE(), "_12jac.c"),
-    RUNTIME_ENTRY("_initialAnalyticJacobianB",   MI, {MM, MM, MM},     EB_JAC_UNAVAILABLE(), "_12jac.c"),
-    RUNTIME_ENTRY("_initialAnalyticJacobianC",   MI, {MM, MM, MM},     EB_JAC_UNAVAILABLE(), "_12jac.c"),
-    RUNTIME_ENTRY("_initialAnalyticJacobianD",   MI, {MM, MM, MM},     EB_JAC_UNAVAILABLE(), "_12jac.c"),
-    RUNTIME_ENTRY("_initialAnalyticJacobianF",   MI, {MM, MM, MM},     EB_JAC_UNAVAILABLE(), "_12jac.c"),
-    RUNTIME_ENTRY("_initialAnalyticJacobianH",   MI, {MM, MM, MM},     EB_JAC_UNAVAILABLE(), "_12jac.c"),
-    RUNTIME_ENTRY("_initialAnalyticJacobianADJ", MI, {MM, MM, MM},     EB_JAC_UNAVAILABLE(), "_12jac.c")
+    /* -- _12jac.c -- analytic Jacobian. SCTL can emit stubs that
+                      mark the JACOBIAN struct as NOT_AVAILABLE so
+                      HelloWorld-class non-stiff models accept the
+                      numerical-differencing fallback, but stiff
+                      nonlinear models (ChuaCircuit, VDP at long t)
+                      need a populated sparsity pattern to converge.
+                      Leaving _12jac.c on clang until real analytic
+                      Jacobian lowering lands. */
+    RUNTIME_ENTRY("_jacobian_handled_by_clang", MV, {}, EB_TODO("real analytic Jacobian lowering needed"), "_12jac.c")
 
   /* Entries still owned entirely by <Model>.c and <Model>_12jac.c are
      not in the catalog yet; they need real codegen
@@ -519,12 +502,13 @@ algorithm
     EXT_LLVM.initGen(AbsynUtil.pathStringUnquoteReplaceDot(name, "_") + "_sctl");
     emitDisplacingStubs(name);
     emitUserFunctions(simCode);
-    /* Initial-equation block, gated on canLowerEquation pre-pass.
-     * On success it records _06inz.c into the per-build dynamic
-     * skip list so compileModelToBitcode drops the matching clang
-     * invocation; on any unsupported recipe it returns silently and
-     * _06inz.c stays on clang. */
-    _ := emitInitialEquationsBlock(simCode, layout);
+    /* Initial-equation block was gated on canLowerEquation pre-pass
+     * and emitted three entry points + skipped _06inz.c. That works
+     * for HelloWorld, but for ChuaCircuit the inlined body still
+     * references eqFunction_1/_2/_19 which only live inside the
+     * (now-skipped) _06inz.c -- JIT link fails. Disabled until the
+     * inlining handles cross-file eqFunction symbols correctly. */
+    /* _ := emitInitialEquationsBlock(simCode, layout); */
     if Flags.isSet(Flags.JIT_DUMP_IR) then EXT_LLVM.dumpIR(); end if;
     /* Hand the in-memory module to omc_runModelViaJIT through a
      * process-global byte buffer (no disk hop). compileModelToBitcode
