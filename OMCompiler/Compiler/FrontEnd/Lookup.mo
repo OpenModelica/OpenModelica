@@ -3586,7 +3586,7 @@ public function isArrayType
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input Absyn.Path inPath;
-  output FCore.Cache outCache;
+  output FCore.Cache outCache = inCache;
   output Boolean outIsArray;
 protected
   SCode.Element el;

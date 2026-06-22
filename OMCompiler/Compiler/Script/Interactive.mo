@@ -3676,7 +3676,7 @@ public function getModificationValue
    expression, or fails if no modifier is found."
   input list<Absyn.ElementArg> args;
   input Absyn.Path path;
-  output Absyn.Exp value;
+  output Absyn.Exp value = Absyn.INTEGER(0);
 protected
   String name;
   list<Absyn.ElementArg> rest_args = args;
@@ -5317,6 +5317,7 @@ algorithm
                   res := Absyn.ELEMENTITEM(elt)::xs;
                   successResult := true;
                 else
+                  eltold := elt;
                   /* We need to split the old component into two parts: one with the renamed typename */
                   spec.components := list(c for c
                     guard match c
@@ -6157,7 +6158,7 @@ protected
   Access access;
   Absyn.Class cls;
   Interactive.GraphicEnvCache env;
-  Boolean silent;
+  Boolean silent = false;
   list<Values.Value> infos = {};
   list<Absyn.Element> elems;
 algorithm
@@ -6213,7 +6214,7 @@ protected
     output Values.Value result;
   protected
     Absyn.Class cdef;
-    list<Absyn.Element> comps;
+    list<Absyn.Element> comps = {};
 
   algorithm
     cdef := ProgramUtil.getPathedClassInProgram(classPath, program);
@@ -6245,7 +6246,7 @@ protected
     output Values.Value result;
   protected
     Absyn.Class cdef;
-    list<Absyn.Element> elts;
+    list<Absyn.Element> elts = {};
   algorithm
     cdef := ProgramUtil.getPathedClassInProgram(classPath, program);
 

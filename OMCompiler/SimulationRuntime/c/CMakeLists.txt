@@ -148,11 +148,6 @@ elseif(MSVC)
   set_target_properties(SimulationRuntimeC PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 endif(MINGW)
 
-if(OM_OMC_ENABLE_PRIMME)
-  target_compile_definitions(SimulationRuntimeC PRIVATE OMC_HAVE_PRIMME)
-  target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::primme)
-endif()
-
 if(OM_OMC_ENABLE_COLPACK)
   target_compile_definitions(SimulationRuntimeC PRIVATE OMC_HAVE_COLPACK)
   target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::colpack)

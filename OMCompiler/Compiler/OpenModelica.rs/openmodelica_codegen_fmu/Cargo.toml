@@ -1,0 +1,24 @@
+[package]
+name = "openmodelica_codegen_fmu"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+openmodelica_tpl.workspace = true
+metamodelica.workspace=true
+openmodelica_ast.workspace=true
+openmodelica_backend.workspace=true
+openmodelica_backend_types.workspace=true
+openmodelica_simcode_util.workspace=true
+openmodelica_simcode_types.workspace=true
+openmodelica_frontend_base.workspace=true
+openmodelica_frontend_dump.workspace=true
+openmodelica_frontend_types.workspace=true
+openmodelica_util.workspace=true
+openmodelica_util_datatypes_basic.workspace=true
+openmodelica_codegen.workspace=true
+anyhow.workspace=true
+const-str.workspace=true
+arcstr.workspace=true
+loop_unwrap.workspace=true
+match_deref.workspace=true

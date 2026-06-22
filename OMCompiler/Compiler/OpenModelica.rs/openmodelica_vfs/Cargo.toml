@@ -1,0 +1,11 @@
+[package]
+name = "openmodelica_vfs"
+version = "0.1.0"
+edition = "2024"
+
+# In-memory virtual filesystem for the wasm build (wasm32 has no OS filesystem).
+# Holds the embedded builtin Modelica/MetaModelica sources plus any files the JS
+# host or the running compiler write at runtime. No dependency on the rest of the
+# workspace so the lowest-level crates (openmodelica_ast, openmodelica_util) can
+# route their file I/O through it.
+[dependencies]

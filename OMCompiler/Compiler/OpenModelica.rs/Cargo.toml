@@ -1,0 +1,119 @@
+cargo-features = ["codegen-backend"]
+[profile.dev]
+codegen-backend = "cranelift"
+opt-level = 0
+debug = false
+# MetaModelica `Integer` is the C runtime's `modelica_integer` (a `long`):
+# its arithmetic wraps on overflow and OMC relies on that (DJB2-style hashes,
+# tick counters, bit twiddling). Rust's debug builds otherwise *panic* on
+# overflow, which diverges from both the C runtime and our own release build
+# (where checks are off by default). Disable the checks so debug == release ==
+# MetaModelica wrapping semantics.
+overflow-checks = false
+
+[workspace]
+resolver = "3"
+members = ["mmtorust", "openmodelica", "openmodelica_util", "metamodelica", "metamodelica_derive", "openmodelica_frontend", "openmodelica_frontend_base", "openmodelica_backend", "openmodelica_backend_tools", "openmodelica_backend_types", "openmodelica_simcode_types", "openmodelica_backend_util", "openmodelica_nbackend", "openmodelica_susan", "openmodelica_tpl", "openmodelica_codegen_graphml", "openmodelica_nf_frontend", "openmodelica_util_datatypes_basic", "openmodelica_ast", "openmodelica_error", "openmodelica_frontend_types", "openmodelica_frontend_dump", "openmodelica_ast_collections", "openmodelica_dump_extra", "openmodelica_frontend_inst", "openmodelica_script_util", "openmodelica_program_util", "openmodelica_simcode_util", "openmodelica_codegen_cfunctions", "openmodelica_codegen_c", "openmodelica_codegen_fmu", "openmodelica_codegen_fmu_c", "openmodelica_codegen_fmu_omsi", "openmodelica_codegen_xml", "openmodelica_codegen", "openmodelica_codegen_cpp_common", "openmodelica_codegen_cpp_omsi", "openmodelica_codegen_cpp_ext", "openmodelica_codegen_cpp_omsi_ext", "openmodelica_codegen_cpp", "openmodelica_codegen_wasm_jit", "openmodelica_backend_main", "openmodelica_scripting_qt", "libopenmodelica_compiler", "daskr", "openmodelica_vfs", "openmodelica_scripting_api_gen"]
+[workspace.dependencies]
+anyhow = "1.0.102"
+arcstr = "1.2.0"
+list_comprehension_macro = "0.1.1"
+const-str = "1.1.0"
+encoding_rs = "0.8.35"
+rayon = "1"
+winnow = "0.7"
+loop_unwrap = "0.2.0"
+match_deref = "0.1.2"
+ordered-float = "5.3.0"
+num-traits = "0.2.19"
+libc = "0.2"
+# Dynamic foreign-function calls for FFI.callFunction (port of
+# Compiler/runtime/ffi_omc.cpp). Builds the bundled libffi C sources via cc,
+# so no system libffi is needed; works on Linux and mingw alike.
+libffi = "5"
+# Build-time C/C++ compilation for the FFI exception-catch shim (FFI.rs).
+cc = "1"
+# Links the system libcurl (the same library om_curl.c uses). On Windows the
+# bundled `static-curl` feature will be needed; add it when the Windows build
+# is set up (see Curl.rs).
+curl = "0.4"
+# Read-only XML DOM for the `*_prof.xml` profiling files written by the
+# simulation runtime (HpcOmBenchmarkExt.rs, replacing the expat parser of
+# runtime/HpcOmBenchmarkExt.cpp).
+roxmltree = "0.21"
+# JSON reader for the `*_prof.json` profiling files (HpcOmBenchmarkExt.rs,
+# replacing the cJSON parser of runtime/HpcOmBenchmarkExt.cpp).
+serde_json = "1"
+# Safe bindings to the system ZeroMQ, used by the hand-written ZeroMQ.rs (the
+# `--interactive=zmq` server socket). Optional, behind the `zeromq` feature of
+# openmodelica_util. zmq-sys locates libzmq via the LIBZMQ_*_DIR env vars set
+# in .cargo/config.toml (this image has no libzmq.pc).
+zmq = "0.10"
+# WebAssembly JIT backend for the `wasm-jit` simCodeTarget
+# (openmodelica_codegen_wasm_jit): wasm-encoder emits the module, wasmer
+# JIT-compiles and runs it in-process, replacing the C->.so->dlopen path of
+# -d=gen. wasmer (not wasmtime) is used because its `js` backend can later JIT
+# *inside* a browser-wasm build of omc, which wasmtime cannot; here we select
+# the native `sys`/cranelift backend. wasmer errors are wrapped with
+# anyhow::anyhow! via the `wt` helper (their Debug formatting), since the
+# crate's many engine error types do not share one anyhow-convertible type.
+wasm-encoder = "0.252"
+# Engine backends for the wasm-jit target, selected by feature/target in
+# openmodelica_codegen_wasm_jit: wasmtime (native default, fastest cranelift),
+# or wasmer — whose `js` backend is the only one that can JIT inside a
+# browser-wasm build of omc, and which can also be selected natively
+# (`--features engine-wasmer`) to benchmark against wasmtime.
+wasmtime = { version = "45", default-features = false, features = ["std", "cranelift", "runtime", "parallel-compilation"] }
+wasmer = { version = "7.1", default-features = false, features = ["std", "wat"] }
+openmodelica_codegen_wasm_jit = {path = "openmodelica_codegen_wasm_jit"}
+# Cycle-collecting garbage collector for reference cycles closed through
+# mutable cells (Mutable/Pointer). Only the `unsync` half is used: MetaModelica
+# payloads are deliberately not Send (Rc-based arrays, non-Send callbacks), so
+# cycle-capable values never cross threads. See metamodelica::gc.
+metamodelica = {path = "metamodelica"}
+openmodelica_ast = {path = "openmodelica_ast"}
+openmodelica_error = {path = "openmodelica_error"}
+openmodelica_frontend = {path = "openmodelica_frontend"}
+openmodelica_frontend_base = {path = "openmodelica_frontend_base"}
+openmodelica_frontend_types = {path = "openmodelica_frontend_types"}
+openmodelica_frontend_dump = {path = "openmodelica_frontend_dump"}
+openmodelica_nf_frontend = {path = "openmodelica_nf_frontend"}
+openmodelica_util = {path = "openmodelica_util"}
+openmodelica_vfs = {path = "openmodelica_vfs"}
+openmodelica_backend = {path = "openmodelica_backend"}
+openmodelica_backend_tools = {path = "openmodelica_backend_tools"}
+openmodelica_backend_types = {path = "openmodelica_backend_types"}
+openmodelica_simcode_types = {path = "openmodelica_simcode_types"}
+openmodelica_simcode_util = {path = "openmodelica_simcode_util"}
+openmodelica_backend_util = {path = "openmodelica_backend_util"}
+openmodelica_nbackend = {path = "openmodelica_nbackend"}
+openmodelica_susan = {path = "openmodelica_susan"}
+openmodelica_tpl = {path = "openmodelica_tpl"}
+openmodelica_codegen_graphml = {path = "openmodelica_codegen_graphml"}
+openmodelica_util_datatypes_basic = {path = "openmodelica_util_datatypes_basic"}
+openmodelica_ast_collections = {path = "openmodelica_ast_collections"}
+openmodelica_dump_extra = {path = "openmodelica_dump_extra"}
+openmodelica_frontend_inst = {path = "openmodelica_frontend_inst"}
+openmodelica_script_util = {path = "openmodelica_script_util"}
+openmodelica_program_util = {path = "openmodelica_program_util"}
+openmodelica_codegen = {path = "openmodelica_codegen"}
+openmodelica_codegen_cfunctions = {path = "openmodelica_codegen_cfunctions"}
+openmodelica_codegen_c = {path = "openmodelica_codegen_c"}
+openmodelica_codegen_fmu = {path = "openmodelica_codegen_fmu"}
+openmodelica_codegen_fmu_c = {path = "openmodelica_codegen_fmu_c"}
+openmodelica_codegen_fmu_omsi = {path = "openmodelica_codegen_fmu_omsi"}
+openmodelica_codegen_xml = {path = "openmodelica_codegen_xml"}
+openmodelica_codegen_cpp = {path = "openmodelica_codegen_cpp"}
+openmodelica_codegen_cpp_common = {path = "openmodelica_codegen_cpp_common"}
+openmodelica_codegen_cpp_omsi = {path = "openmodelica_codegen_cpp_omsi"}
+openmodelica_codegen_cpp_ext = {path = "openmodelica_codegen_cpp_ext"}
+openmodelica_codegen_cpp_omsi_ext = {path = "openmodelica_codegen_cpp_omsi_ext"}
+# default-features = false: the consumers (the `openmodelica` binary and
+# `libopenmodelica_compiler`) select the code-generation targets via their own
+# forwarding features, so they must not pull backend_main's full default set.
+openmodelica_backend_main = {path = "openmodelica_backend_main", default-features = false}
+openmodelica_scripting_qt = {path = "openmodelica_scripting_qt"}
+
+#[profile.release]
+#debug = true
+#strip = false

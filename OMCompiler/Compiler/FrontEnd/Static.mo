@@ -2879,6 +2879,7 @@ algorithm
   else
     true := Flags.isSet(Flags.FAILTRACE);
     Debug.traceln("- Static.elabMatrixCatTwoExp failed");
+    fail();
   end try;
 end elabMatrixCatTwoExp;
 
@@ -2988,6 +2989,7 @@ algorithm
   else
     true := Flags.isSet(Flags.FAILTRACE);
     Debug.traceln("- Static.promoteExp failed");
+    fail();
   end try;
 end promoteExp;
 
@@ -8382,13 +8384,13 @@ protected function elabTypes
   input Boolean inImplicit;
   input DAE.Prefix inPrefix;
   input SourceInfo inInfo;
-  output FCore.Cache outCache;
-  output list<DAE.Exp> outArgs;
-  output list<DAE.Const> outConsts;
-  output DAE.Type outResultType;
-  output DAE.Type outFunctionType;
-  output DAE.Dimensions outDimensions;
-  output list<Slot> outSlots;
+  output FCore.Cache outCache = inCache;
+  output list<DAE.Exp> outArgs = {};
+  output list<DAE.Const> outConsts = {};
+  output DAE.Type outResultType = DAE.T_UNKNOWN_DEFAULT;
+  output DAE.Type outFunctionType = DAE.T_UNKNOWN_DEFAULT;
+  output DAE.Dimensions outDimensions = {};
+  output list<Slot> outSlots = {};
 protected
   list<DAE.FuncArg> params;
   DAE.Type res_ty, func_ty;

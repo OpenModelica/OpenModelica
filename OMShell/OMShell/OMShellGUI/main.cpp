@@ -51,9 +51,11 @@
 #define GC_THREADS
 #endif
 
+#ifndef OMC_RUST_ABI
 extern "C" {
 #include "meta/meta_modelica.h"
 }
+#endif
 
 #define CONSUME_CHAR(value, res, len, i) \
     if (value[i] == '\\' && i + 1 < len) { \

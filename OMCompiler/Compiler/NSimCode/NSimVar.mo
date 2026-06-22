@@ -390,7 +390,7 @@ public
             start := varAttr.start;
             nominal := varAttr.nominal;
             // FIXME parameters have default fixed = true
-            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.booleanValue, false);
+            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.isAllTrue, false);
             isDiscrete := match varKind
               case VariableKind.DISCRETE()        then true;
               case VariableKind.DISCRETE_STATE()  then true;
@@ -408,7 +408,7 @@ public
             min := varAttr.min;
             max := varAttr.max;
             start := varAttr.start;
-            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.booleanValue, false);
+            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.isAllTrue, false);
             isDiscrete := true;
             isProtected := Util.getOptionOrDefault(varAttr.isProtected, false);
         then ();
@@ -416,7 +416,7 @@ public
         case BackendInfo.BACKEND_INFO(varKind = varKind, attributes = varAttr as VariableAttributes.VAR_ATTR_BOOL())
           algorithm
             start := varAttr.start;
-            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.booleanValue, false);
+            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.isAllTrue, false);
             isDiscrete := true;
             isProtected := Util.getOptionOrDefault(varAttr.isProtected, false);
         then ();
@@ -430,7 +430,7 @@ public
         case BackendInfo.BACKEND_INFO(varKind = varKind, attributes = varAttr as VariableAttributes.VAR_ATTR_STRING())
           algorithm
             start := varAttr.start;
-            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.booleanValue, false);
+            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.isAllTrue, false);
             isDiscrete := true;
             isProtected := Util.getOptionOrDefault(varAttr.isProtected, false);
         then ();
@@ -440,7 +440,7 @@ public
             min := varAttr.min;
             max := varAttr.max;
             start := varAttr.start;
-            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.booleanValue, false);
+            isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.isAllTrue, false);
             isDiscrete := true;
             isProtected := Util.getOptionOrDefault(varAttr.isProtected, false);
         then ();

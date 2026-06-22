@@ -1,0 +1,14 @@
+[package]
+name = "openmodelica_dump_extra"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+metamodelica.workspace = true
+openmodelica_ast.workspace = true
+openmodelica_frontend_dump.workspace = true
+anyhow.workspace = true
+const-str.workspace=true
+arcstr.workspace=true
+loop_unwrap.workspace=true
+match_deref.workspace=true

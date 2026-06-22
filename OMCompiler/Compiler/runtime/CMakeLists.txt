@@ -171,57 +171,15 @@ target_include_directories(omcbackendruntime PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 # the generated output files. For now just mimic the old compilation.
 
 
-set(SHREXT ${CMAKE_SHARED_LIBRARY_SUFFIX})
-string(TOLOWER ${CMAKE_SYSTEM_NAME} OMC_TARGET_SYSTEM_NAME)
-omc_add_to_report(OMC_TARGET_SYSTEM_NAME)
-set(OPENMODELICA_SPEC_PLATFORM ${CMAKE_SYSTEM_PROCESSOR}-${OMC_TARGET_SYSTEM_NAME})
-
-if(${CMAKE_SIZEOF_VOID_P} EQUAL 8)
-  set(OMC_TARGET_ARCH_IS_64 "true")
-  set(MODELICA_SPEC_PLATFORM "${OMC_TARGET_SYSTEM_NAME}64")
-else()
-  set(OMC_TARGET_ARCH_IS_64 "false")
-  set(MODELICA_SPEC_PLATFORM "${OMC_TARGET_SYSTEM_NAME}32")
-endif()
-
-set(host_short ${CMAKE_LIBRARY_ARCHITECTURE})
-
-get_filename_component(RUNTIMECC ${CMAKE_C_COMPILER} NAME)
-get_filename_component(CC ${CMAKE_C_COMPILER} NAME)
-get_filename_component(CXX ${CMAKE_CXX_COMPILER} NAME)
-
-find_package(OpenMP)
-if(OpenMP_FOUND)
-  set(OMPCFLAGS "-fopenmp")
-endif()
-
-if(LAPACK_FOUND)
-  set(HAVE_LAPACK "#define HAVE_LAPACK")
-  if(OMC_HAVE_LAPACK_DEPRECATED)
-    set(HAVE_LAPACK_DEPRECATED "#define HAVE_LAPACK_DEPRECATED")
-  endif()
-endif()
-
-
-if(OpenMP_FOUND)
-  set(CONFIG_WITH_OPENMP 1)
-else()
-  set(CONFIG_WITH_OPENMP 0)
-endif()
-
-set(OMC_HAVE_IPOPT "/* OMC_HAVE_IPOPT Not needed for CMake build. Availability and use of ipopt is handled by the CMakefiles.*/")
-
-set(WITH_SUITESPARSE "#define WITH_SUITESPARSE")
-set(WITH_HWLOC 0)
-set(WITH_UUID "#define WITH_LIBUUID 1")
-
-
-set(USE_GRAPH 0)
-
-set(RUNTIMECFLAGS "-fPIC -DOM_HAVE_PTHREADS")
+# omc_config.unix.h generation lives in a standalone module so the Rust build
+# can run it too (Compiler/CMakeLists.txt includes it before its early return;
+# the simulation runtime needs the header but the Rust path skips this file).
+# Sets the platform/compiler vars and writes omc_config.unix.h into the build
+# tree; the feature vars set elsewhere in this file (above) are still in scope
+# for the configure_file inside it.
+include(${CMAKE_CURRENT_SOURCE_DIR}/omc_config_unix.cmake)
 
 configure_file(${OMCompiler_SOURCE_DIR}/revision.h.in ${OMCompiler_SOURCE_DIR}/revision.h)
-configure_file(${OMCompiler_SOURCE_DIR}/omc_config.unix.h.in ${OMCompiler_SOURCE_DIR}/omc_config.unix.h)
 
 
 # Generate Autoconf.mo here since we have some of the variables already defined for omc_config.unix.h above.
@@ -257,39 +215,18 @@ string(REPLACE ";" " " LAPACK_LIBRARIES_SPACE "${LAPACK_LIBRARIES}")
 
 if(MINGW)
   set(CONFIG_OS "Windows_NT")
-
-  set(RT_LDFLAGS_GENERATED_CODE " -lOpenModelicaRuntimeC -lomcgc -lopenblas -lm -lpthread")
-  set(RT_LDFLAGS_GENERATED_CODE_SIM " -lSimulationRuntimeC -lOpenModelicaRuntimeC -lomcgc -lopenblas -lm -lpthread -lgfortran -lstdc++ ")
-  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU " -lopenblas -lm -lpthread ")
-  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC "-Wl,-Bstatic -lSimulationRuntimeFMI -Wl,-Bdynamic -lopenblas -lm -lpthread -lgfortran -lstdc++ ")
-
 elseif(MSVC)
   set(CONFIG_OS "Windows_NT")
-
-  set(RT_LDFLAGS_GENERATED_CODE " -lOpenModelicaRuntimeC -lomcgc -lopenblas -lm -lpthread")
-  set(RT_LDFLAGS_GENERATED_CODE_SIM " -lSimulationRuntimeC -lOpenModelicaRuntimeC -lomcgc -lopenblas -lm -lpthread -lgfortran -lstdc++ ")
-  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU " -lopenblas -lm -lpthread ")
-  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC "-Wl,-Bstatic -lSimulationRuntimeFMI -Wl,-Bdynamic -lopenblas -lm -lpthread -lgfortran -lstdc++ ")
-
 elseif(APPLE)
   set(CONFIG_OS "OSX")
-
-  set(RT_LDFLAGS_GENERATED_CODE " -lOpenModelicaRuntimeC -lomcgc -llapack -lblas -lm")
-  set(RT_LDFLAGS_GENERATED_CODE_SIM " -lSimulationRuntimeC -lOpenModelicaRuntimeC -lomcgc -llapack -lblas -lm")
-  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU " -llapack -lblas -lm")
-  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC "-lSimulationRuntimeFMI -llapack -lblas -lm")
-
 elseif(UNIX AND NOT APPLE)
   set(CONFIG_OS ${OMC_TARGET_SYSTEM_NAME})
-
-  set(RT_LDFLAGS_GENERATED_CODE " -lOpenModelicaRuntimeC -lomcgc -llapack -lblas -lm -lpthread -rdynamic")
-  set(RT_LDFLAGS_GENERATED_CODE_SIM " -lSimulationRuntimeC -lOpenModelicaRuntimeC -lomcgc -lzlib -llapack -lblas -lm -ldl -lpthread -lgfortran -lstdc++ -rdynamic ")
-  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU " -llapack -lblas -lm -lpthread -rdynamic ")
-  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC "-Wl,-Bstatic -lSimulationRuntimeFMI -Wl,-Bdynamic -llapack -lblas -lm -ldl -lpthread -lgfortran -lstdc++ -rdynamic ")
-
 else()
    message(FATAL_ERROR "Unknow system for OpenModelica simulation code generation and compilation. OpenModelica does not know how to compile and simulate simulation code on this configuration.")
 endif()
+
+# RT_LDFLAGS_GENERATED_CODE* (the link flags for generated simulation/FMU code).
+include(${CMAKE_CURRENT_SOURCE_DIR}/rt_ldflags_generated_code.cmake)
 
 # Libraries linked into generated simulation code when --parmodauto is enabled (ParModelica auto + oneTBB).
 # OMC_PARMODELICA_TBB_LINK_NAME is resolved to oneTBB's default library name in OMCompiler/3rdParty/CMakeLists.txt.

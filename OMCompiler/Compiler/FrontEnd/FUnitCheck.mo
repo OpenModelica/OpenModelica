@@ -371,7 +371,7 @@ protected function foldEquation2 "help-function"
   input output HashTableStringToUnit.HashTable htS2U;
   input output HashTableUnitToString.HashTable htU2S;
   input list<Functionargs> args;
-        output list<list<tuple<DAE.Exp, Unit.Unit>>> inconsistentUnits;
+        output list<list<tuple<DAE.Exp, Unit.Unit>>> inconsistentUnits = {};
 algorithm
   inconsistentUnits := match eq
     local

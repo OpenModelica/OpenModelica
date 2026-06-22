@@ -1071,7 +1071,7 @@ protected
   Integer labelFin, labelMux, labelInit, labelFail, labelFin2, labelOut, caseLabel;
   list<Integer> caseLabels;
   MidCode.Var muxState, one, midvar,midvar2;
-  MidCode.VarBufPtr muxOldBuf;
+  MidCode.VarBufPtr muxOldBuf = MidCode.VARBUFPTR("");
   MidCode.VarBuf muxNewBuf;
   MidCode.OutVar outvar;
   Boolean matchContinue;

@@ -135,7 +135,7 @@ protected
   list<tuple<String, Binding>> ty_attr;
   SCode.Comment cmt;
   SourceInfo info;
-  ExpressionIterator binding_iter;
+  ExpressionIterator binding_iter = ExpressionIterator.NONE_ITERATOR();
   list<ComponentRef> crefs;
   Expression exp;
   list<AttributeIterator> ty_attr_iters;

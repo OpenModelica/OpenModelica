@@ -59,7 +59,7 @@ public
     input InstContext.Type context;
     input SourceInfo info;
   protected
-    ComponentRef ctor_ref;
+    ComponentRef ctor_ref = ComponentRef.EMPTY();
     Absyn.Path ctor_path;
     Boolean ctor_overloaded;
     InstNode ctor_node;
@@ -140,7 +140,7 @@ public
     output list<Function> functions;
   protected
     InstNode node;
-    ComponentRef fn_ref;
+    ComponentRef fn_ref = ComponentRef.EMPTY();
     Boolean is_defined;
   algorithm
     functions := match Type.arrayElementType(ty)

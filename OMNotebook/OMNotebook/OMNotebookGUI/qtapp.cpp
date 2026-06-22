@@ -62,9 +62,13 @@
 #define GC_THREADS
 #endif
 
+#ifdef OMC_RUST_ABI
+#include "omc_rust_embedding.h"
+#else
 extern "C" {
 #include "meta/meta_modelica.h"
 }
+#endif
 
 #include <locale.h>
 

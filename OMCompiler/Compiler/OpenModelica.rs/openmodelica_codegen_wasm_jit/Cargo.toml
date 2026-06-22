@@ -1,0 +1,49 @@
+[package]
+name = "openmodelica_codegen_wasm_jit"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+web-time = "1"
+openmodelica_vfs.workspace = true
+metamodelica.workspace = true
+openmodelica_ast.workspace = true
+openmodelica_simcode_types.workspace = true
+openmodelica_frontend_types.workspace = true
+openmodelica_frontend_dump.workspace = true
+openmodelica_util.workspace = true
+anyhow.workspace = true
+arcstr.workspace = true
+ordered-float.workspace = true
+wasm-encoder.workspace = true
+# Native DAE solver for the wasm-jit DASSL driver; only used when the engine is
+# built in (the `jit` feature).
+daskr = { path = "../daskr", optional = true }
+
+[features]
+# The in-process wasm JIT engine (function eval for `-d=gen`, and the wasm-jit
+# simulation target). Default on. Built without it, the crate still *emits* wasm
+# modules but cannot execute them (the entry points report the engine absent),
+# and neither wasmtime nor wasmer is pulled in.
+default = ["jit"]
+# `jit` pulls the native default engine (wasmtime); on wasm32 the wasmtime dep
+# is target-absent and wasmer-js is used instead (requires `engine-wasmer`).
+jit = ["dep:daskr", "dep:wasmtime"]
+# Select wasmer instead of the default wasmtime: natively for benchmarking
+# (wasmer then wins over wasmtime), and mandatorily on wasm32 (its `js` backend
+# is the only engine that builds for wasm).
+engine-wasmer = ["jit", "dep:wasmer"]
+
+# wasmtime is native-only (no wasm32 build); the wasm target ignores
+# engine-wasmtime and always uses wasmer-js.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+wasmtime = { workspace = true, optional = true }
+wasmer = { workspace = true, features = ["sys", "cranelift"], optional = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+# `wasm-types-polyfill` is required: the JS `WebAssembly` API does not expose a
+# function's parameter/result types, so without the polyfill every exported
+# function reports an empty `[]->[]` signature and `get_typed_function` fails
+# with `ExportError::IncompatibleType`. It ships in wasmer's `js-default` but not
+# bare `js`, so request it explicitly.
+wasmer = { workspace = true, features = ["js", "wasm-types-polyfill"], optional = true }

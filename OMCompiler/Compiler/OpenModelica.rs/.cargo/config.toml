@@ -1,0 +1,7 @@
+# The wasm32 browser build pulls `getrandom` (via charton → ahash) for seeding
+# hash maps. getrandom 0.3 has no default backend on wasm32-unknown-unknown: the
+# JS-backed one must be selected with this cfg *and* the `wasm_js` feature (see
+# libopenmodelica_compiler's wasm dependencies). Scoped to the wasm target, so
+# native builds are unaffected.
+[target.wasm32-unknown-unknown]
+rustflags = ['--cfg', 'getrandom_backend="wasm_js"']

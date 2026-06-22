@@ -55,6 +55,19 @@ omc_add_to_report(CMAKE_LIBRARY_ARCHITECTURE)
 ## OPTIONS #################################################################################################
 omc_option(OM_ENABLE_GUI_CLIENTS "Enable, build, and install the qt based GUI clients." ON)
 
+# Web (wasm) target: build *only* the browser/Node WebAssembly bundle of omc. It
+# is a Rust-omc build (OM_OMC_ENABLE_RUST) compiled for wasm32-unknown-unknown,
+# so every native client and C library is unused. We therefore force Rust mode on
+# and the GUI clients off, and skip the native runtime / 3rdParty / libraries /
+# testsuite subdirectories, leaving `make all` to build just the wasm bundle (see
+# OMCompiler/Compiler/.cmake/rust_omc.cmake, omc_rust_setup_wasm). Mode/profile is
+# chosen with RUST_OMC_WASM_MODE.
+omc_option(OM_OMC_WASM "Build only the WebAssembly (browser/Node) omc bundle." OFF)
+if(OM_OMC_WASM)
+  set(OM_OMC_ENABLE_RUST ON CACHE BOOL "Build the Rust (mmtorust) omc port instead of the bootstrapped C omc." FORCE)
+  set(OM_ENABLE_GUI_CLIENTS OFF CACHE BOOL "Enable, build, and install the qt based GUI clients." FORCE)
+endif()
+
 ## On Conda-forge this should be disabled
 omc_option(OM_MACOS_APP_BUNDLE "Build GUI clients as application bundles on macOS" ON)
 mark_as_advanced(OM_MACOS_APP_BUNDLE)
@@ -202,8 +215,12 @@ if(OM_ENABLE_GUI_CLIENTS)
   endif()
 endif()
 
-omc_add_subdirectory(libraries)
-omc_add_subdirectory(testsuite)
+# The Modelica libraries and the testsuite are not part of the wasm/web bundle;
+# skip them so `make all` builds only the wasm target in that mode.
+if(NOT OM_OMC_WASM)
+  omc_add_subdirectory(libraries)
+  omc_add_subdirectory(testsuite)
+endif()
 
 ## Packaging ##########################################################################################
 # Configure the file OpenModelicaCPackOptions.in.cmake to pick up full paths based on the current location.

@@ -1,0 +1,84 @@
+// susanSources.txt — the subset of compilerSources.txt needed to build the
+// `susan` binary (the Susan template compiler, openmodelica_susan/src/main.rs).
+//
+// It is the closure of MetaModelica files that route (via their
+// __OpenModelica_Interface annotation) into the susan binary's crate
+// dependency tree: openmodelica_susan + openmodelica_tpl + openmodelica_util +
+// openmodelica_util_datatypes_basic + openmodelica_error (metamodelica and
+// openmodelica_vfs are hand-written, no .mo). `mmtorust --sources susanSources.txt`
+// (or `mmtorust susan`) transpiles only these, so the build can produce the
+// Susan binary without first transpiling the whole compiler.
+//
+// Keep in sync with those crates: if a module is added to one of them, add its
+// .mo here. Paths are relative to this directory (.. == OMCompiler/Compiler).
+
+../FrontEnd/MMath.mo
+../Global/Global.mo
+../Lexers/LexerJSON.mo
+../NFFrontEnd/NFLookupTree.mo
+../Parsers/JSON.mo
+../Template/Tpl.mo
+../Template/TplAbsyn.mo
+../Template/TplCodegen.mo
+../Template/TplMain.mo
+../Template/TplParser.mo
+../Util/Array.mo
+../Util/Autoconf.mo
+../Util/AvlSetString.mo
+../Util/AvlTreeString.mo
+../Util/AvlTreeStringString.mo
+../Util/BaseAvlSet.mo
+../Util/BaseAvlTree.mo
+../Util/BaseHashSet.mo
+../Util/BaseHashTable.mo
+../Util/ClockIndexes.mo
+../Util/Config.mo
+../Util/Corba.mo
+../Util/Debug.mo
+../Util/DiffAlgorithm.mo
+../Util/DisjointSets.mo
+../Util/DoubleEnded.mo
+../Util/Error.mo
+../Util/ErrorExt.mo
+../Util/ErrorTypes.mo
+../Util/ExecStat.mo
+../Util/ExpandableArray.mo
+../Util/FMI.mo
+../Util/FMIExt.mo
+../Util/File.mo
+../Util/Flags.mo
+../Util/FlagsUtil.mo
+../Util/GCExt.mo
+../Util/Graph.mo
+../Util/HashSetString.mo
+../Util/IOStream.mo
+../Util/IOStreamExt.mo
+../Util/Lapack.mo
+../Util/List.mo
+../Util/Mutable.mo
+../Util/OMSimulatorExt.mo
+../Util/Pointer.mo
+../Util/Print.mo
+../Util/Rational.mo
+../Util/SBAtomicSet.mo
+../Util/SBFunctions.mo
+../Util/SBGraph.mo
+../Util/SBInterval.mo
+../Util/SBLinearMap.mo
+../Util/SBMultiInterval.mo
+../Util/SBPWAtomicLinearMap.mo
+../Util/SBPWLinearMap.mo
+../Util/SBSet.mo
+../Util/SemanticVersion.mo
+../Util/Settings.mo
+../Util/Socket.mo
+../Util/StackOverflow.mo
+../Util/StringUtil.mo
+../Util/System.mo
+../Util/TaskGraphResults.mo
+../Util/Testsuite.mo
+../Util/UnorderedMap.mo
+../Util/UnorderedSet.mo
+../Util/Util.mo
+../Util/Vector.mo
+../Util/ZeroMQ.mo

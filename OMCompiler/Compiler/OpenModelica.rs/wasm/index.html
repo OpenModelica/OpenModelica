@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OpenModelica (wasm) — interactive</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+         background: #1e1e1e; color: #d4d4d4; display: flex; flex-direction: column; height: 100vh; }
+  header { padding: 8px 12px; background: #252526; border-bottom: 1px solid #333; flex: 0 0 auto; }
+  header b { color: #4ec9b0; }
+  #log { flex: 1 1 auto; overflow-y: auto; padding: 12px; white-space: pre-wrap; word-break: break-word; }
+  .cmd { color: #569cd6; }
+  .cmd::before { content: ">>> "; color: #608b4e; }
+  .reply { color: #d4d4d4; }
+  .err { color: #f48771; }
+  .meta { color: #808080; font-style: italic; }
+  .plot { background: #fff; border-radius: 4px; padding: 8px; margin: 8px 0; max-width: 100%; overflow: auto; }
+  .plot svg { display: block; max-width: 100%; height: auto; }
+  header { display: flex; align-items: center; gap: 12px; }
+  header .title { color: #4ec9b0; font-weight: 700; }
+  header .hint { color: #808080; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  header code { color: #ce9178; }
+  button { background: #0e639c; color: #fff; border: 0; border-radius: 3px; padding: 5px 12px; font: inherit; cursor: pointer; }
+  button:hover:not(:disabled) { background: #1177bb; }
+  button:disabled { background: #3a3a3a; color: #777; cursor: default; }
+  form { display: flex; flex: 0 0 auto; border-top: 1px solid #333; background: #252526; }
+  #prompt { color: #608b4e; padding: 8px 4px 8px 12px; }
+  #input { flex: 1; background: transparent; border: 0; color: #d4d4d4; font: inherit; padding: 8px 12px 8px 4px; outline: none; }
+</style>
+</head>
+<body>
+<header>
+  <span class="title">OpenModelica</span>
+  <span class="hint">interactive command (e.g. <code>checkModel(M)</code>); fetch a library with
+    <code>installPackage(Modelica)</code>, then
+    <code>simulate(Modelica.Electrical.Analog.Examples.ChuaCircuit, stopTime=100)</code>. stdout/stderr → devtools console.</span>
+</header>
+<div id="log"></div>
+<form id="form" autocomplete="off">
+  <span id="prompt">&gt;&gt;&gt;</span>
+  <input id="input" name="input" placeholder="initialising…" disabled spellcheck="false" />
+</form>
+
+<script type="module">
+import init, { omc_set_env, omc_init, omc_eval } from './pkg-web/OpenModelicaCompiler.js';
+
+const log = document.getElementById('log');
+const input = document.getElementById('input');
+const form = document.getElementById('form');
+
+function line(text, cls) {
+  const div = document.createElement('div');
+  div.className = cls;
+  div.textContent = text;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+(async () => {
+  line('Loading wasm module…', 'meta');
+  await init();                                   // fetch + instantiate the wasm
+  omc_set_env('OPENMODELICAHOME', '/usr');         // builtins resolve by basename
+  if (!omc_init()) {
+    line('omc_init() failed — see the devtools console.', 'err');
+    return;
+  }
+  line('Ready. ' + omc_eval('getVersion()'), 'meta');
+  input.disabled = false;
+  input.placeholder = '';
+  input.focus();
+})().catch((e) => line('Startup error: ' + e, 'err'));
+
+form.addEventListener('submit', (ev) => {
+  ev.preventDefault();
+  const cmd = input.value.trim();
+  if (!cmd) return;
+  input.value = '';
+  line(cmd, 'cmd');
+  if (cmd === 'quit()' || cmd === 'exit') { input.disabled = true; line('session closed', 'meta'); return; }
+  let reply;
+  try { reply = omc_eval(cmd); } catch (e) { line('' + e, 'err'); return; }
+  line(reply, reply.startsWith('Error:') ? 'err' : 'reply');
+});
+</script>
+</body>
+</html>

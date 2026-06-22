@@ -432,6 +432,7 @@ algorithm
     outBinding := instBinding(inMod, varLst, expected_type, inIndices, inName, useConstValue);
   else
     Error.addMessage(Error.TYPE_ERROR, {inName, "enumeration type"});
+    fail();
   end try;
 end instEnumerationBinding;
 

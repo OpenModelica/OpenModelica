@@ -5307,15 +5307,16 @@ public function traverseExpList<ArgT> "Calls traverseExpBottomUp for each elemen
   end FuncExpType;
 protected
   DAE.Exp e1;
-  Boolean allEq=true;
   DoubleEnded.MutableList<DAE.Exp> delst;
+  list<DAE.Exp> rest = inExpl;
   Integer nEq=0;
 algorithm
-  for e in inExpl loop
-    (e1, ext_arg) := traverseExpBottomUp(e, rel, ext_arg);
-    // Preserve reference equality without any allocation if nothing changed
-    if (if allEq then not referenceEq(e, e1) else false) then
-      allEq:=false;
+  // Preserve reference equality without any allocation if nothing changed.
+  expl := inExpl;
+  while not listEmpty(rest) loop
+    (e1, ext_arg) := traverseExpBottomUp(listHead(rest), rel, ext_arg);
+    if not referenceEq(listHead(rest), e1) then
+      // First change: switch to building a new list with a DoubleEnded list.
       delst := DoubleEnded.empty(e1);
       for elt in inExpl loop
         if nEq < 1 then
@@ -5324,14 +5325,17 @@ algorithm
         DoubleEnded.push_back(delst, elt);
         nEq := nEq-1;
       end for;
-    end if;
-    if allEq then
-      nEq := nEq + 1;
-    else
       DoubleEnded.push_back(delst, e1);
+      for e in listRest(rest) loop
+        (e1, ext_arg) := traverseExpBottomUp(e, rel, ext_arg);
+        DoubleEnded.push_back(delst, e1);
+      end for;
+      expl := DoubleEnded.toListAndClear(delst);
+      return;
     end if;
-  end for;
-  expl := if allEq then inExpl else DoubleEnded.toListAndClear(delst);
+    nEq := nEq + 1;
+    rest := listRest(rest);
+  end while;
 end traverseExpList;
 
 public function traverseExpTopDown
@@ -6789,15 +6793,16 @@ public function traverseExpListBidir<ArgT>
   end FuncType;
 protected
   DAE.Exp e1;
-  Boolean allEq=true;
   DoubleEnded.MutableList<DAE.Exp> delst;
+  list<DAE.Exp> rest = inExpl;
   Integer nEq=0;
 algorithm
-  for e in inExpl loop
-    (e1, outArg) := traverseExpBidir(e, inEnterFunc, inExitFunc, outArg);
-    // Preserve reference equality without any allocation if nothing changed
-    if (if allEq then not referenceEq(e, e1) else false) then
-      allEq:=false;
+  // Preserve reference equality without any allocation if nothing changed.
+  outExpl := inExpl;
+  while not listEmpty(rest) loop
+    (e1, outArg) := traverseExpBidir(listHead(rest), inEnterFunc, inExitFunc, outArg);
+    if not referenceEq(listHead(rest), e1) then
+      // First change: switch to building a new list with a DoubleEnded list.
       delst := DoubleEnded.empty(e1);
       for elt in inExpl loop
         if nEq < 1 then
@@ -6806,14 +6811,17 @@ algorithm
         DoubleEnded.push_back(delst, elt);
         nEq := nEq-1;
       end for;
-    end if;
-    if allEq then
-      nEq := nEq + 1;
-    else
       DoubleEnded.push_back(delst, e1);
+      for e in listRest(rest) loop
+        (e1, outArg) := traverseExpBidir(e, inEnterFunc, inExitFunc, outArg);
+        DoubleEnded.push_back(delst, e1);
+      end for;
+      outExpl := DoubleEnded.toListAndClear(delst);
+      return;
     end if;
-  end for;
-  outExpl := if allEq then inExpl else DoubleEnded.toListAndClear(delst);
+    nEq := nEq + 1;
+    rest := listRest(rest);
+  end while;
 end traverseExpListBidir;
 
 public function traverseExpBidir<ArgT>
@@ -7393,12 +7401,15 @@ public function traverseExpTopDownSubs
   replaceable type Argument subtypeof Any;
 protected
   DAE.Exp exp;
-  DAE.Subscript nsub;
-  Boolean allEq=true;
+  DAE.Subscript sub, nsub;
   DoubleEnded.MutableList<DAE.Subscript> delst;
+  list<DAE.Subscript> rest = inSubscript;
   Integer nEq=0;
 algorithm
-  for sub in inSubscript loop
+  // Preserve reference equality without any allocation if nothing changed.
+  outSubscript := inSubscript;
+  while not listEmpty(rest) loop
+    sub := listHead(rest);
     nsub := match sub
       case DAE.WHOLEDIM() then sub;
       case DAE.SLICE()
@@ -7414,9 +7425,8 @@ algorithm
           (exp,arg) := traverseExpTopDown(sub.exp, rel, arg);
         then if referenceEq(sub.exp, exp) then sub else DAE.WHOLE_NONEXP(exp);
     end match;
-    // Preserve reference equality without any allocation if nothing changed
-    if (if allEq then not referenceEq(nsub, sub) else false) then
-      allEq:=false;
+    if not referenceEq(nsub, sub) then
+      // First change: switch to building a new list with a DoubleEnded list.
       delst := DoubleEnded.empty(nsub);
       for elt in inSubscript loop
         if nEq < 1 then
@@ -7425,14 +7435,32 @@ algorithm
         DoubleEnded.push_back(delst, elt);
         nEq := nEq-1;
       end for;
-    end if;
-    if allEq then
-      nEq := nEq + 1;
-    else
       DoubleEnded.push_back(delst, nsub);
+      for sub2 in listRest(rest) loop
+        sub := sub2;
+        nsub := match sub
+          case DAE.WHOLEDIM() then sub;
+          case DAE.SLICE()
+            algorithm
+              (exp,arg) := traverseExpTopDown(sub.exp, rel, arg);
+            then if referenceEq(sub.exp, exp) then sub else DAE.SLICE(exp);
+          case DAE.INDEX()
+            algorithm
+              (exp,arg) := traverseExpTopDown(sub.exp, rel, arg);
+            then if referenceEq(sub.exp, exp) then sub else DAE.INDEX(exp);
+          case DAE.WHOLE_NONEXP()
+            algorithm
+              (exp,arg) := traverseExpTopDown(sub.exp, rel, arg);
+            then if referenceEq(sub.exp, exp) then sub else DAE.WHOLE_NONEXP(exp);
+        end match;
+        DoubleEnded.push_back(delst, nsub);
+      end for;
+      outSubscript := DoubleEnded.toListAndClear(delst);
+      return;
     end if;
-  end for;
-  outSubscript := if allEq then inSubscript else DoubleEnded.toListAndClear(delst);
+    nEq := nEq + 1;
+    rest := listRest(rest);
+  end while;
 end traverseExpTopDownSubs;
 
 /***************************************************/

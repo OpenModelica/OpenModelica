@@ -46,7 +46,9 @@
 #ifndef WIN32
 #include "omc_config.h"
 #endif
+#ifndef OMC_RUST_ABI
 #include "gc.h"
+#endif
 
 extern "C" {
 int omc_Main_handleCommand(void *threadData, void *imsg, void **omsg);

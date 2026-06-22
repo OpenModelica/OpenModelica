@@ -864,6 +864,7 @@ algorithm
           "]\n with following arguments: " + stringDelimitList(list(Expression.toString(e) for e in const_args), ", ") +
           "\n and following inverse arguments: " + stringDelimitList(list(Expression.toString(e) for e in inv_const_args), ", "),
           sourceInfo());
+        fail();
       end if;
 
       // remove expressions that are in both arguments and inv_arguments
@@ -1507,6 +1508,7 @@ algorithm
     value := Expression.realValue(Ceval.evalExp(exp));
   else
     Error.addInternalError(getInstanceName() + " expression is not known to be a constant number: " + Expression.toString(exp), sourceInfo());
+    fail();
   end try;
 end getConstantValue;
 

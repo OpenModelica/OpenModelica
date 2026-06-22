@@ -741,7 +741,7 @@ if test "$DARWIN" = "1"; then
   RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL -liconv"
   # All libraries are dynamically linked; we don't need anything else
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $LD_LAPACK -lm"
-  RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC $LD_LAPACK -lm -lomcgc -lryu"
+  RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC -lOpenModelicaRuntimeC $LD_LAPACK -lm -lomcgc"
   RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU="$LDFLAGS $LD_LAPACK -lryu -lm$LD_NOUNDEFINED"
   RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC=" -lSimulationRuntimeFMI $RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU"
   RT_LDFLAGS_SHARED=
@@ -774,7 +774,7 @@ elif echo "$host" | grep -iq "mingw"; then
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS -lomcgc -lryu -lexpat -Wl,-Bstatic -lpthread -Wl,-Bdynamic -static-libgcc -lm"
   RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL"
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $RT_LDFLAGS"
-  RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC -lcdaskr $RT_LDFLAGS_SIM"
+  RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC -lOpenModelicaRuntimeC -lcdaskr $RT_LDFLAGS_SIM"
   RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU="$LDFLAGS $LD_LAPACK -lryu -lm $LD_NOUNDEFINED"
   RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC=" -Wl,-Bstatic -lSimulationRuntimeFMI $LDFLAGS $LD_LAPACK -Wl,-Bdynamic -lryu -lm $LD_NOUNDEFINED"
   LINK="cp -frl"
@@ -810,7 +810,7 @@ else
   RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL"
   # All libraries are dynamically linked; we don't need anything else
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $LD_LAPACK -lm -lomcgc -lryu -lpthread -rdynamic" # Some of our tests refer to the testsuite itself
-  RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC $LD_LAPACK -lm -lomcgc -lryu -lpthread -rdynamic$LD_NOUNDEFINED"
+  RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC -lOpenModelicaRuntimeC $LD_LAPACK -lm -lomcgc -lpthread -rdynamic$LD_NOUNDEFINED"
   RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU="$LDFLAGS $LD_LAPACK -lm -lpthread -lryu -rdynamic $LD_NOUNDEFINED"
   RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC=" -Wl,-Bstatic -lSimulationRuntimeFMI $LDFLAGS $LD_LAPACK -Wl,-Bdynamic -lryu -lm -lpthread -rdynamic $LD_NOUNDEFINED"
   LINK="cp -frl"

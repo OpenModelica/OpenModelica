@@ -1,0 +1,28 @@
+[package]
+name = "openmodelica_nf_frontend"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+openmodelica_error.workspace = true
+anyhow.workspace=true
+metamodelica.workspace=true
+openmodelica_frontend_types.workspace=true
+openmodelica_frontend_dump.workspace=true
+openmodelica_util.workspace=true
+openmodelica_util_datatypes_basic.workspace=true
+openmodelica_ast.workspace=true
+# openmodelica_frontend.workspace=true # Should not be needed - in OM, NF is compiled without it
+const-str.workspace=true
+arcstr.workspace=true
+loop_unwrap.workspace=true
+match_deref.workspace=true
+libc.workspace=true
+
+# libffi drives FFI.callFunction (external "C" evaluation via dlopen+libffi),
+# which is native-only; wasm uses the FFI_wasm.rs stub and the wasm JIT instead.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+libffi.workspace=true
+
+[build-dependencies]
+cc.workspace=true

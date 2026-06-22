@@ -1,0 +1,55 @@
+[package]
+name = "openmodelica_util"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+openmodelica_vfs.workspace = true
+anyhow.workspace=true
+metamodelica.workspace=true
+openmodelica_error.workspace=true
+const-str.workspace=true
+encoding_rs.workspace=true
+loop_unwrap.workspace=true
+openmodelica_util_datatypes_basic.workspace=true
+arcstr.workspace=true
+match_deref.workspace=true
+libc.workspace=true
+# GraphML reader in the hand-written TaskGraphResults.rs; also the
+# modelDescription.xml parser in the hand-written FMIExt.rs.
+roxmltree.workspace=true
+# FMU extraction in the hand-written FMIExt.rs.
+zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
+# Safe ZeroMQ bindings for the hand-written ZeroMQ.rs. Optional: the `zeromq`
+# feature (on by default) gates the interactive `--interactive=zmq` server.
+# Native-only: libzmq has no wasm target, so the dep is absent there and the
+# `zeromq` feature must not be enabled for wasm builds (ZeroMQ.rs then uses its
+# feature-off fallback that reports the interactive ZMQ mode unavailable).
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+zmq = { workspace = true, optional = true }
+
+# On wasm there is no system LAPACK to FFI into; Lapack_wasm.rs implements the
+# LAPACK builtins over nalgebra's pure-Rust decompositions (LU/SVD/QR/eigen).
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+nalgebra = { version = "0.33", default-features = false, features = ["std"] }
+# No POSIX libc regcomp/regexec on wasm; System::regex is reimplemented over the
+# pure-Rust `regex` crate (POSIX ERE maps directly; BRE is translated first).
+regex = "1"
+# Drop-in Instant/SystemTime over the JS clock (`performance.now`/`Date.now`);
+# std::time::*::now() panics on wasm32-unknown-unknown. See System.rs.
+web-time = "1"
+
+[features]
+# `zeromq` is NOT a default feature: it pulls native libzmq (no wasm target),
+# and a default feature cannot be turned off per-target. The native interactive
+# server enables it via openmodelica_backend_main (its only consumer); wasm
+# builds leave it off and ZeroMQ.rs uses its feature-off fallback.
+default = []
+# Enable the ZeroMQ interactive-server bindings (ZeroMQ.rs). When disabled, the
+# ZeroMQ.initialize call reports failure and the interactive ZMQ mode is
+# unavailable, but the build needs neither the zmq crate nor libzmq.
+zeromq = ["dep:zmq"]
+
+[build-dependencies]
+# Compiles src/runtime_error_shim.c (va_list error interception shim).
+cc.workspace=true

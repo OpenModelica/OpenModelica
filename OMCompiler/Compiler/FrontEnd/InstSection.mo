@@ -2781,7 +2781,7 @@ protected function instWhenEqBranch
   input Boolean inUnrollLoops;
   input ConnectionGraph.ConnectionGraph inGraph;
   input SourceInfo info;
-  output FCore.Cache outCache;
+  output FCore.Cache outCache = inCache;
   output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
   output DAE.Exp outCondition;

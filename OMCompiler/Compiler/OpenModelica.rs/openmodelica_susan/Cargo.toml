@@ -1,0 +1,26 @@
+[package]
+name = "openmodelica_susan"
+version = "0.1.0"
+edition = "2024"
+
+# The `susan` binary: the Susan template compiler as a standalone tool. It turns
+# a `*.tpl` template into the `*.mo` MetaModelica file (what `omc <file>.tpl`
+# did), so the build can compile templates without a C omc. Library + binary
+# coexist: the binary is a thin `main()` wrapper over `TplMain::main`.
+[[bin]]
+name = "susan"
+path = "src/main.rs"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+metamodelica.workspace = true
+openmodelica_util.workspace = true
+openmodelica_util_datatypes_basic.workspace=true
+openmodelica_tpl.workspace = true
+const-str.workspace=true
+arcstr.workspace=true
+anyhow.workspace=true
+loop_unwrap.workspace=true
+match_deref.workspace=true

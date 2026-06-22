@@ -2461,6 +2461,7 @@ algorithm
     true := Flags.isSet(Flags.FAILTRACE);
     Debug.traceln("- ConnectUtil.evaluateInStream failed for " +
       ComponentReference.crefStr(streamCref) + "\n");
+    fail();
   end try;
 end evaluateInStream;
 
