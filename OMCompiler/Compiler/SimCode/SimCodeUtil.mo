@@ -15565,20 +15565,6 @@ algorithm
     SimCode.FMIINITIALUNKNOWNS(initialUnknowns, {}, {})));
 end createMinimalFMIModelStructure;
 
-protected function isStateInitialUnknownSimVar
-  "A continuous-time state is an FMI initial unknown unless its start value is
-   fixed: a fixed start makes the state initial = exact (a known), an unfixed
-   start makes it initial = approx (an unknown). This mirrors the initial
-   attribute emitted for states by the FMI templates."
-  input SimCodeVar.SimVar simVar;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := match simVar
-    case SimCodeVar.SIMVAR(varKind = BackendDAE.STATE()) then not simVar.isFixed;
-    else isInitialApproxOrCalculatedSimVar(simVar);
-  end match;
-end isStateInitialUnknownSimVar;
-
 public function isFMI3NestableAlias
   "True if a SimVar can be represented as an FMI 3.0 <Alias> child element of its
    canonical variable (sharing the canonical valueReference) instead of a separate
