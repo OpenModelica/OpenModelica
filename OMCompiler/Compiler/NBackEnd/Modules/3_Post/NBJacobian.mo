@@ -1881,7 +1881,9 @@ protected
         eq := match Pointer.access(Slice.getT(c_noalias.eqn))
           case Equation.ALGORITHM() algorithm
             (ssaAlg, replacements, newVars) := algorithmToSSA(c_noalias);
-            print("SSA algorithm for adjoint of component " + StrongComponent.toString(c_noalias) + ":\n" + StrongComponent.toString(ssaAlg) + "\n");
+            if Flags.isSet(Flags.DEBUG_ADJOINT) then
+              print("SSA algorithm for adjoint of component " + StrongComponent.toString(c_noalias) + ":\n" + StrongComponent.toString(ssaAlg) + "\n");
+            end if;
 
             // ── Register SSA variables in diff_map ──
             // For each new SSA variable, create a pDer companion and add the mapping
@@ -2079,37 +2081,6 @@ protected
       end match;
     end for;
   end collectAdjointVarSlices;
-
-  function collectForStatementVars
-    "Recursively collect variable pointers from FOR statement bodies."
-    input Statement forStmt;
-    input output list<Slice<VariablePointer>> varSlices;
-  protected
-    Pointer<Variable> vPtr;
-    ComponentRef baseCref;
-  algorithm
-    () := match forStmt
-      case Statement.FOR() algorithm
-        for s in forStmt.body loop
-          () := match s
-            case Statement.ASSIGNMENT(lhs = Expression.CREF()) algorithm
-              baseCref := ComponentRef.stripSubscriptsAll(Expression.toCref(s.lhs));
-              try
-                vPtr := BVariable.getVarPointer(baseCref, sourceInfo());
-                varSlices := Slice.SLICE(vPtr, {}) :: varSlices;
-              else
-              end try;
-            then ();
-            case Statement.FOR() algorithm
-              varSlices := collectForStatementVars(s, varSlices);
-            then ();
-            else ();
-          end match;
-        end for;
-      then ();
-      else ();
-    end match;
-  end collectForStatementVars;
 
   function jacobianSymbolicAdjoint extends Module.jacobianInterface;
   protected

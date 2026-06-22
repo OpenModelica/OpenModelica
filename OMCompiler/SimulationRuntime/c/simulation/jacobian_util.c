@@ -305,7 +305,7 @@ void initBidirectionalRecovery(JACOBIAN* fwd)
 
   fwd->recoverMask = (unsigned char*) calloc(nnz, sizeof(unsigned char));
   adj->recoverMask = (unsigned char*) calloc(nnz, sizeof(unsigned char));
-  adj->csrToCscMap = (unsigned int*) malloc(nnz * sizeof(unsigned int));
+  adj->csrToCscMap = (unsigned int*) calloc(nnz, sizeof(unsigned int));
 
   /* Forward recoverMask: entry (i,j) is column-recoverable if j is the ONLY
    * column with its column color among all columns having a nonzero in row i. */

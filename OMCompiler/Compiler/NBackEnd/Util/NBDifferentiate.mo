@@ -662,24 +662,14 @@ public
 
       // ===================== FOR_EQUATION =====================
       case Equation.FOR_EQUATION() algorithm
-        // TODO: I dont think splitting the iterator is neccessary. Remove
-        splitEq := NBEquation.Equation.splitIterators(eq);
-        // splitIterators returns uniontype Equation; destructure before field access.
-
-        Equation.FOR_EQUATION(iter = splitIter, body = splitBody, source = splitSource) := splitEq;
-        allStmts := {};
-        for bodyEqn in splitBody loop
+        stmts := {};
+        for bodyEqn in eq.body loop
           (diffArguments, bodyStmts) := differentiateEquationAdjoint(bodyEqn, diffArguments);
-          // // Prepend (LIFO order within the for body)
-          // for s in bodyStmts loop
-          //   allStmts := s :: allStmts;
-          // end for;
+          stmts := listAppend(bodyStmts, stmts);
         end for;
-        //allStmts := listReverse(allStmts);
 
-        // Wrap in nested FOR statements with reversed iterator ranges
-        stmts := allStmts;
-        revIter := reverseEquationIterator(splitIter);
+        // Wrap in nested FOR statement with reversed iterator range
+        revIter := reverseEquationIterator(eq.iter);
         (iterNames, iterRanges, iterMaps) := NBEquation.Iterator.getFrames(revIter);
         for tpl in listReverse(List.zip(iterNames, iterRanges)) loop
           (iterName, iterRange) := tpl;
@@ -2823,9 +2813,6 @@ public
       case SOME(diffInfo) then UnorderedSet.copy(diffInfo);
       else UnorderedSet.new(Statement.hash, Statement.isEqual);
     end match;
-
-    // Reverse sweep through algorithm statements when collecting adjoints.
-    stmts := if Util.isSome(diffArguments.adjoint_map) then listReverse(alg.statements) else alg.statements;
 
     // differentiate the statements
     (statements, diffArguments) := List.mapFold(alg.statements, function differentiateStatement(diffInfo = diffInfo), diffArguments);
