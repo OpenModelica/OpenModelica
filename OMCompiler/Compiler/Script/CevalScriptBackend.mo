@@ -132,6 +132,7 @@ import SCodeUtil;
 import SemanticVersion;
 import Settings;
 import SimCodeMain;
+import SimCodeToLLVM;
 import SimCodeFunction;
 import SimCodeFunctionUtil;
 import StateMachineFlatten;
@@ -1420,6 +1421,27 @@ algorithm
         (b,outCache,_,executable,_,_,initfilename,_,_,_) := buildModel(outCache,inEnv, vals, msg);
       then
         ValuesMake.makeArray(if b then {Values.STRING(executable),Values.STRING(initfilename)} else {Values.STRING(""),Values.STRING("")});
+
+    /* JIT-first simulate path (LLVM JIT revive). Engaged when the
+     * user passes +d=jit_eval_func -- the same gate that the
+     * function-eval JIT uses. Currently a placeholder: the hook
+     * builds a SimCode-shaped value (or fails) and hands it to
+     * SimCodeToLLVM.genSim. Phase 1 of the SimCode JIT lands the
+     * traversal skeleton in SimCodeToLLVM.mo; genSim returns false
+     * unconditionally there, so this case fail()s and the matchcontinue
+     * falls through to the legacy buildModel-based simulate case below.
+     * Phase 3+ will replace the False stub with real SimCode-to-LLVM
+     * lowering and an in-memory simulation driver. */
+    case ("simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
+      guard Flags.isSet(Flags.JIT_EVAL_FUNC)
+      algorithm
+        /* TODO Phase 3: extract SimCode from translateModel without
+         * triggering its C-file emission and hand it to
+         * SimCodeToLLVM.genSim. Until then this case is structurally
+         * present so the matchcontinue ordering is correct but it
+         * always fail()s to fall through to the legacy buildModel
+         * path. */
+      then fail();
 
     case ("simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
       algorithm

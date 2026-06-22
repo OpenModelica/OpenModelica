@@ -8,6 +8,16 @@ FAILINGTESTFILES = $(ROOT_DIR)/MatchCase8.mos
 # Tests for LLVM
 TESTFILES = \
 AlgorithmsLLVM.mos \
+BoolUnboxRegression.mos \
+MixedTypesRegression.mos \
+TCOLargeRegression.mos \
+MutualRecursionRegression.mos \
+NestedPatternRegression.mos \
+NegativeArithRegression.mos \
+StringChainRegression.mos \
+RecordRoundtripRegression.mos \
+OptionArgRegression.mos \
+HelloWorldSimLLVM.mos \
 BuiltinArrayLLVM.mos \
 BuiltinIntegerLLVM.mos\
 BuiltinRealLLVM.mos\
