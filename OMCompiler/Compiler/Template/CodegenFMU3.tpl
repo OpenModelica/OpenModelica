@@ -424,6 +424,8 @@ case SIMVAR(name = name, exportVar = exportVar, type_ = T_ARRAY(ty = arrayElemen
       '<Boolean <%VariableCommonAttributes3(simVar, simCode)%><%ArrayStartString3(simVar)%>><%Dimensions3(simVar)%></Boolean>'
     case T_STRING(__) then
       '<String <%VariableCommonAttributes3(simVar, simCode)%>><%Dimensions3(simVar)%></String>'
+    case T_ENUMERATION(path = path) then
+      '<Enumeration <%VariableCommonAttributes3(simVar, simCode)%>declaredType="<%AbsynUtil.pathString(path, ".", false)%>"<%ArrayStartString3(simVar)%>><%Dimensions3(simVar)%></Enumeration>'
     else '<!-- UNKNOWN_ARRAY_TYPE <%crefStr(name)%> -->'
 case SIMVAR(__) then
   if SimCodeUtil.isFMI3NestableAlias(simVar) then

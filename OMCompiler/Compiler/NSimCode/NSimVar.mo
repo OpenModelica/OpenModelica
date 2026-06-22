@@ -891,11 +891,6 @@ public
           ({algVars}, simCodeIndices)                                                                     := createSimVarLists(varData.algebraics, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
           ({inputVars}, simCodeIndices)                                                                   := createSimVarLists(varData.top_level_inputs, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
           ({nonTrivialAlias}, simCodeIndices)                                                             := createSimVarLists(varData.nonTrivialAlias, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
-          // The new backend has no separate top-level-output partition; outputs are
-          // algebraic (or state) variables flagged OUTPUT by parseBinding. Collect
-          // them for the FMI inputVars/outputVars interface (used e.g. by the FMI
-          // 3.0 terminal export). The variables stay in their original lists too.
-          outputVars := List.filterOnTrue(listAppend(algVars, stateVars), SimVar.isOutputSimVar);
           ({discreteAlgVars, intAlgVars, boolAlgVars, stringAlgVars, enumAlgVars}, simCodeIndices)        := createSimVarLists(varData.discretes, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
           ({discreteAlgVars2, intAlgVars2, boolAlgVars2, stringAlgVars2, enumAlgVars2}, simCodeIndices)   := createSimVarLists(varData.discrete_states, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
           ({discreteAlgVars3, intAlgVars3, boolAlgVars3, stringAlgVars3, enumAlgVars3}, simCodeIndices)   := createSimVarLists(varData.clocked_states, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
@@ -904,6 +899,19 @@ public
           ({paramVarsR, intParamVarsR, boolParamVarsR, stringParamVarsR, enumParamVarsR}, simCodeIndices) := createSimVarLists(varData.resizables, simCodeIndices, SplitType.TYPE, VarType.PARAMETER);
           ({constVars, intConstVars, boolConstVars, stringConstVars, enumConstVars}, simCodeIndices)      := createSimVarLists(varData.constants, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
           ({residualVars}, simCodeIndices)                                                                := createSimVarLists(residual_vars, simCodeIndices, SplitType.NONE, VarType.RESIDUAL);
+          // The new backend has no separate top-level-output partition; outputs are
+          // algebraic/state/discrete variables flagged OUTPUT by parseBinding. Collect
+          // them across ALL base types (real, integer, boolean, string, enum) for the
+          // FMI inputVars/outputVars interface (used e.g. by the FMI 3.0 terminal
+          // export and ModelStructure). The variables stay in their original lists too.
+          outputVars := List.filterOnTrue(
+            List.flatten({stateVars, algVars,
+                          discreteAlgVars, discreteAlgVars2, discreteAlgVars3,
+                          intAlgVars, intAlgVars2, intAlgVars3,
+                          boolAlgVars, boolAlgVars2, boolAlgVars3,
+                          stringAlgVars, stringAlgVars2, stringAlgVars3,
+                          enumAlgVars, enumAlgVars2, enumAlgVars3}),
+            SimVar.isOutputSimVar);
         then ();
         case BVariable.VAR_DATA_JAC() then ();
         case BVariable.VAR_DATA_HES() then ();
