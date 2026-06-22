@@ -1169,7 +1169,7 @@ void Element::updateElementTransformations(const Transformation &oldTransformati
  */
 void Element::handleOMSElementDoubleClick()
 {
-  if (mpLibraryTreeItem && (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement())) {
+  if (mpLibraryTreeItem && (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement() || mpLibraryTreeItem->getOMSModelConnector())) {
     showElementPropertiesDialog();
   }
 }
@@ -2249,7 +2249,8 @@ void Element::openClass()
 void Element::showElementPropertiesDialog()
 {
   if (mpLibraryTreeItem && mpLibraryTreeItem->isSSP()
-      && (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement() || mpLibraryTreeItem->isTableComponent())) {
+      && (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement() || mpLibraryTreeItem->isTableComponent()
+          || mpLibraryTreeItem->getOMSModelConnector())) {
     ElementPropertiesDialog *pElementPropertiesDialog = new ElementPropertiesDialog(this, MainWindow::instance());
     pElementPropertiesDialog->exec();
   }
