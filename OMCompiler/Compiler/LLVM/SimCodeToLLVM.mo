@@ -502,13 +502,16 @@ algorithm
     EXT_LLVM.initGen(AbsynUtil.pathStringUnquoteReplaceDot(name, "_") + "_sctl");
     emitDisplacingStubs(name);
     emitUserFunctions(simCode);
-    /* Initial-equation block was gated on canLowerEquation pre-pass
-     * and emitted three entry points + skipped _06inz.c. That works
-     * for HelloWorld, but for ChuaCircuit the inlined body still
-     * references eqFunction_1/_2/_19 which only live inside the
-     * (now-skipped) _06inz.c -- JIT link fails. Disabled until the
-     * inlining handles cross-file eqFunction symbols correctly. */
+    /* Initial-equation block: same dynamic-skip pattern but currently
+     * disabled because the inlined body references cross-file
+     * eqFunction symbols that get pulled in by the still-clang'd
+     * _05evt.c. Re-enables once per-equation function emission
+     * lands. */
     /* _ := emitInitialEquationsBlock(simCode, layout); */
+    /* Bound-parameters block: emits the _08bnd.c entries when the
+     * model has no parameter equations (HelloWorld). Records
+     * _08bnd.c into the dynamic skip list on success. */
+    emitBoundParametersBlock(simCode);
     if Flags.isSet(Flags.JIT_DUMP_IR) then EXT_LLVM.dumpIR(); end if;
     /* Hand the in-memory module to omc_runModelViaJIT through a
      * process-global byte buffer (no disk hop). compileModelToBitcode
@@ -798,6 +801,36 @@ algorithm
    * glue to skip clang on the matching .c file. */
   recordDisplacedSegment("_06inz.c");
 end emitInitialEquationsBlock;
+
+protected function emitBoundParametersBlock
+  "Emit the two _08bnd.c entry points (_updateBoundParameters and
+   _updateBoundVariableAttributes) when SimCode.parameterEquations
+   is empty -- HelloWorld-class models. Records _08bnd.c into the
+   dynamic skip list on success.
+
+   For models with non-empty parameter equations (ChuaCircuit:
+   Ra/Rb/L/C1/C2 etc.) the parameter values are non-trivial and
+   we leave the file to clang until SCTL gains real lowering of
+   parameter equations (which need a new omc_jit_set_*_param
+   accessor family that writes data->simulationInfo->*Parameter[])."
+  input SimCode.SimCode simCode;
+protected
+  list<SimCode.SimEqSystem> paramEqs;
+  String prefix;
+  Absyn.Path name;
+algorithm
+  paramEqs := match simCode
+    case SimCode.SIMCODE(parameterEquations = paramEqs) then paramEqs;
+  end match;
+  if not listEmpty(paramEqs) then
+    return;
+  end if;
+  name := simCodeName(simCode);
+  prefix := AbsynUtil.pathStringUnquoteReplaceDot(name, "_");
+  emitRuntimeIntStub(prefix + "_updateBoundParameters");
+  emitRuntimeIntStub(prefix + "_updateBoundVariableAttributes");
+  recordDisplacedSegment("_08bnd.c");
+end emitBoundParametersBlock;
 
 protected function countUnsupportedAsBoolean
   "List.fold seed: stays true while every recipe is supported."
