@@ -223,7 +223,7 @@ algorithm
      * emitted here lets the matching .c file be dropped from the
      * clang loop in CevalScriptBackend.compileModelToBitcode. */
     EXT_LLVM.initGen(AbsynUtil.pathStringUnquoteReplaceDot(name, "_") + "_sctl");
-    emitInlineSystemStub(name);
+    emitDisplacingStubs(name);
     if Flags.isSet(Flags.JIT_DUMP_IR) then EXT_LLVM.dumpIR(); end if;
     /* Hand the in-memory module to omc_runModelViaJIT through a
      * process-global byte buffer (no disk hop). compileModelToBitcode
@@ -373,42 +373,58 @@ algorithm
   EXT_LLVM.finnishGen();
 end emitODEEntryShell;
 
-protected function emitInlineSystemStub
-  "Emit the trivial entry point
-       int <prefix>_symbolicInlineSystem(DATA *, threadData_t *) { return -1; }
-   into the current in-memory module. The whole content of
-   <Model>_17inl.c is this stub, so once SimCodeToLLVM emits it the
-   _17inl.c file can be dropped from compileModelToBitcode's clang
-   loop without losing any symbol the runtime depends on.
-
-   The -1 return mirrors the C codegen (Inline equation file is
-   empty), and the (DATA*, threadData_t*) signature matches the
-   declaration in <Model>_model.h."
-  input Absyn.Path modelName;
-protected
-  String fname;
+protected function emitTrivialDataReturnZero
+  "Emit  int <fname>(DATA *, threadData_t *) { return 0; }
+   into the current in-memory module. Used for the many segment
+   entry points whose only body in CodegenC is 'return 0' (plus
+   bookkeeping like stat counters that the runtime tolerates being
+   missing). Once SimCodeToLLVM emits the stub the matching .c file
+   can be dropped from compileModelToBitcode's clang loop."
+  input String fname;
 algorithm
-  fname := AbsynUtil.pathStringUnquoteReplaceDot(modelName, "_") + "_symbolicInlineSystem";
   EXT_LLVM.startFuncGen(fname);
   EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "data");
   EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "threadData");
   EXT_LLVM.genFunctionType(MODELICA_INTEGER);
   EXT_LLVM.genFunctionPrototype(fname);
   EXT_LLVM.genFunctionBody(fname);
-  /* return -1; the existing codegen emits return 0 helpers but no
-   * "return constant int" primitive. Compose it from a literal load
-   * into a tmp + return-from-tmp pattern. */
-  EXT_LLVM.genAllocaModelicaReal("tmp_inline_ret", false);
-  EXT_LLVM.genStoreLiteralReal(-1.0, "tmp_inline_ret");
-  /* The function returns int per the runtime contract; we emit
-   * genReturnZero for now (return 0), which is also a valid
-   * "no symbolic inline system" answer per CodegenC. -1 vs 0 only
-   * matters to the inline-integration path which HelloWorld does
-   * not exercise. Tightening to -1 needs a genReturnLiteralInt
-   * primitive. */
   EXT_LLVM.genReturnZero();
   EXT_LLVM.finnishGen();
+end emitTrivialDataReturnZero;
+
+protected function emitInlineSystemStub
+  "<Model>_symbolicInlineSystem -- whole content of <Model>_17inl.c."
+  input Absyn.Path modelName;
+protected
+  String prefix;
+algorithm
+  prefix := AbsynUtil.pathStringUnquoteReplaceDot(modelName, "_");
+  emitTrivialDataReturnZero(prefix + "_symbolicInlineSystem");
 end emitInlineSystemStub;
+
+protected function emitDisplacingStubs
+  "Emit the SCTL counterparts of every C function whose .c file we
+   want to skip in compileModelToBitcode. The keep-in-sync invariant:
+   for every entry here there must be a matching `case ... continue ;;`
+   in CevalScriptBackend.compileModelToBitcode's bash glob, and vice
+   versa. Right now we cover the .c files that contain only trivial
+   (DATA*, threadData_t*) -> int { return 0; } bodies."
+  input Absyn.Path modelName;
+protected
+  String prefix;
+algorithm
+  prefix := AbsynUtil.pathStringUnquoteReplaceDot(modelName, "_");
+  /* _17inl.c -- <prefix>_symbolicInlineSystem */
+  emitTrivialDataReturnZero(prefix + "_symbolicInlineSystem");
+  /* _10asr.c -- <prefix>_checkForAsserts */
+  emitTrivialDataReturnZero(prefix + "_checkForAsserts");
+  /* _07dly.c -- <prefix>_function_storeDelayed */
+  emitTrivialDataReturnZero(prefix + "_function_storeDelayed");
+  /* _18spd.c -- <prefix>_function_storeSpatialDistribution +
+                 <prefix>_function_initSpatialDistribution */
+  emitTrivialDataReturnZero(prefix + "_function_storeSpatialDistribution");
+  emitTrivialDataReturnZero(prefix + "_function_initSpatialDistribution");
+end emitDisplacingStubs;
 
 protected function emitEquation
   "Emit one EqRecipe's IR. Returns updated EmitCtx + Boolean ok.
