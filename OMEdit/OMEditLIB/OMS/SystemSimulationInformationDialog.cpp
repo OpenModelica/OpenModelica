@@ -282,7 +282,7 @@ void SystemSimulationInformationWidget::populateComponentAssignments(LibraryTree
  */
 bool SystemSimulationInformationWidget::isVariableStepSizeSolver(const QString &method)
 {
-  return method == "oms-mav" || method == "oms-mav-2" || method == "cvode";
+  return method == "oms_mav" || method == "oms_mav2" || method == "cvode";
 }
 
 /*!
