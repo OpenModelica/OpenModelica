@@ -109,6 +109,7 @@ import SerializeModelInfo;
 import SerializeSparsityPattern;
 import SimCodeUtil;
 import SimCodeFunctionUtil;
+import SimCodeToLLVM;
 import StateMachineFlatten;
 import SimCodeUtilShared;
 import SimCodeVar;
@@ -311,9 +312,22 @@ algorithm
   end if;
 
   System.realtimeTick(ClockIndexes.RT_CLOCK_TEMPLATES);
-  callTargetTemplates(simCode, Config.simCodeTarget());
-  timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
-  ExecStat.execStat("Templates");
+  /* SimCode JIT hook (LLVM JIT revive). When +d=jit_eval_func is set
+   * hand the freshly-built SimCode to SimCodeToLLVM.genSim before the
+   * legacy C-codegen path. genSim returns true if it has produced an
+   * in-memory module + driven the simulation; in that case we skip
+   * the template-based C-file emission entirely. On false (which is
+   * the current Phase-1 behaviour, and also the runtime answer for
+   * any model that uses constructs the SimCode JIT does not yet
+   * cover) the templates run as before. */
+  if Flags.isSet(Flags.JIT_EVAL_FUNC) and SimCodeToLLVM.genSim(simCode) then
+    timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
+    ExecStat.execStat("SimCode JIT");
+  else
+    callTargetTemplates(simCode, Config.simCodeTarget());
+    timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
+    ExecStat.execStat("Templates");
+  end if;
   return;
   else
   setGlobalRoot(Global.stackoverFlowIndex, NONE());
