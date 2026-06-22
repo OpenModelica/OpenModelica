@@ -5989,6 +5989,7 @@ algorithm
     // function SimCodeToLLVM grows to cover lets another .c file be
     // skipped here.
     "  case \"$f\" in\n",
+    // SCTL emits this entry point in-memory; skip clang on the matching .c.
     "    ", prefix, "_17inl.c) continue ;;\n",
     "  esac\n",
     "  eval \"", toolsDir, "/clang\" -O0 -fPIC -DOM_HAVE_PTHREADS -emit-llvm -c $CPPFLAGS \"$f\" -o \"${f%.c}.bc\"\n",
