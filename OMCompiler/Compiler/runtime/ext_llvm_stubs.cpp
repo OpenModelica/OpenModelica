@@ -137,4 +137,5 @@ extern "C"
   int omc_runModelViaJIT(const char *, const char *, const char *, const char *) {LLVM_STUB(); return 1;}
   int writeBitcodeToFile(const char *) {LLVM_STUB(); return 1;}
   int stashCurrentModuleAsBitcode() {LLVM_STUB(); return 1;}
+  int createReturnNullPtr() {LLVM_STUB(); return 0;}
 }

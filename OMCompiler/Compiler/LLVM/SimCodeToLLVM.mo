@@ -746,6 +746,12 @@ algorithm
   EXT_LLVM.genFunctionType(retTy);
   EXT_LLVM.genFunctionPrototype(fname);
   EXT_LLVM.genFunctionBody(fname);
+  /* MODELICA_VOID picks ret void so the function is well-formed.
+   * Every other retTy keeps the historic genReturnZero (ret i64 0);
+   * callers that need a different return-value semantic (null
+   * pointer, -1, populated struct, ...) emit a dedicated body
+   * through their own helper (emitStubNullPtr, emitStubMinusOne,
+   * emitJacobianUnavailable, ...). */
   if retTy == MODELICA_VOID then
     EXT_LLVM.genReturnVoid();
   else
@@ -753,6 +759,30 @@ algorithm
   end if;
   EXT_LLVM.finnishGen();
 end emitStub;
+
+protected function emitStubNullPtr
+  "Emit  <retTy> <fname>(<argTys...>) { return null; }  into the
+   active module. Used for the EB_NULL_PTR catalog entries -- the
+   runtime checks for non-null before reading the result so a null
+   sentinel is the right semantic, not the wrong-type i64 0 that
+   genReturnZero would emit."
+  input String fname;
+  input Integer retTy;
+  input list<Integer> argTys = {};
+protected
+  Integer i = 0;
+algorithm
+  EXT_LLVM.startFuncGen(fname);
+  for ty in argTys loop
+    EXT_LLVM.genFunctionArg(ty, "a" + intString(i));
+    i := i + 1;
+  end for;
+  EXT_LLVM.genFunctionType(retTy);
+  EXT_LLVM.genFunctionPrototype(fname);
+  EXT_LLVM.genFunctionBody(fname);
+  EXT_LLVM.genReturnNullPtr();
+  EXT_LLVM.finnishGen();
+end emitStubNullPtr;
 
 protected function emitRuntimeIntStub
   "Convenience: (DATA *, threadData_t *) -> int { return 0; }
@@ -883,20 +913,8 @@ algorithm
     local list<DAE.Statement> stmts;
           String synthName;
           SimCodeFunction.Function synthFn;
-    /* The synthetic-function pipeline (buildSyntheticAlgFunction +
-     * extractAlgorithmLocals + emitSyntheticFunctions + EQ_ALG_CALL)
-     * is wired and HelloWorld passes through it unchanged (it has no
-     * SES_ALGORITHM in its parameter equations). For ChuaCircuit the
-     * pipeline lowers the synthetic body but MidToLLVM rejects the
-     * resulting IR -- "LLVM syntax error" before any synth function
-     * is even emitted. The MidToLLVM coverage of STMT_ASSERT /
-     * STMT_NORETCALL is the next debug step; until that lands
-     * SES_ALGORITHM stays UNSUPPORTED so we never hand the runtime
-     * a malformed bitcode. The wiring stays in place so once
-     * MidToLLVM works the only required change is removing this
-     * EQ_UNSUPPORTED case. */
     case SimCode.SES_ALGORITHM()
-      then EQ_UNSUPPORTED("SES_ALGORITHM pending MidToLLVM statement coverage");
+      then EQ_UNSUPPORTED("SES_ALGORITHM probe: classifier off, only genReturnNullPtr fix active");
     else classifySimEq(eq, layout);
   end match;
 end classifyParamEq;
@@ -1317,7 +1335,7 @@ algorithm
       emitStub(prefix + entry.nameSuffix, entry.retTy, entry.argTys);
       then ();
     case EB_NULL_PTR() algorithm
-      emitStub(prefix + entry.nameSuffix, entry.retTy, entry.argTys);
+      emitStubNullPtr(prefix + entry.nameSuffix, entry.retTy, entry.argTys);
       then ();
     case EB_RETURN_MINUS_ONE() algorithm
       emitStubMinusOne(prefix + entry.nameSuffix, entry.argTys);

@@ -235,6 +235,14 @@ function genReturnZero
   external "C" createReturnZero() annotation(Library = "omcruntime");
 end genReturnZero;
 
+function genReturnNullPtr
+  "Emit `ret ptr null` for a function whose declared return type is a
+   pointer (the pointer counterpart of genReturnZero). The pointer
+   type is inferred from the current function so the IR matches the
+   declared signature."
+  external "C" createReturnNullPtr() annotation(Library = "omcruntime");
+end genReturnNullPtr;
+
 function genReturnVoid
   "Creates a simple void instruction."
   external "C" createReturnVoid() annotation(Library="omcruntime");

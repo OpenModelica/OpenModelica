@@ -920,6 +920,28 @@ int createReturnZero() {
   return 0;
 }
 
+/* Emit `ret ptr null` for a function whose declared return type is
+ * a pointer. Counterpart to createReturnZero / createReturnVoid for
+ * SCTL's EB_NULL_PTR catalog entries (_linear_model_frame,
+ * _relationDescription, ...). Inferring the pointer type from the
+ * current function avoids the i64-vs-ptr mismatch the LLVM verifier
+ * rejects when both kinds of return show up in the same module. */
+int createReturnNullPtr() {
+  DBG("Calling createReturnNullPtr\n");
+  llvm::Type *retTy = program->builder.GetInsertBlock()
+                          ->getParent()->getReturnType();
+  if (!retTy->isPointerTy()) {
+    fprintf(stderr,
+            "createReturnNullPtr: current function's return type is not "
+            "a pointer; falling back to createReturnZero.\n");
+    return createReturnZero();
+  }
+  llvm::Value *retVal = llvm::ConstantPointerNull::get(
+      llvm::cast<llvm::PointerType>(retTy));
+  program->builder.CreateRet(retVal);
+  return 0;
+}
+
 /*Unary operators */
 int createIUminus(const char *src, const char *dest) {
   DBG("Creating i64 Uminus\n");
