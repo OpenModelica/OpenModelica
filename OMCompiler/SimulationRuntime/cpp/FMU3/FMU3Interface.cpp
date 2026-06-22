@@ -654,7 +654,7 @@ fmi3Status fmi3GetNumberOfContinuousStates(fmi3Instance instance, size_t* nConti
 // The Cpp FMU export is Model Exchange only (Co-Simulation is downgraded to ME
 // by the scripting front-end), so these are exported but not functional.
 // ---------------------------------------------------------------------------
-fmi3Status fmi3EnterStepMode(fmi3Instance instance) { (void)instance; return fmi3OK; }
+fmi3Status fmi3EnterStepMode(fmi3Instance instance) { (void)instance; return fmi3Error; }
 
 fmi3Status fmi3GetOutputDerivatives(fmi3Instance instance, const fmi3ValueReference valueReferences[],
     size_t nValueReferences, const fmi3Int32 orders[], fmi3Float64 values[], size_t nValues)
