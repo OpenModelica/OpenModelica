@@ -75,13 +75,17 @@ extern "C"
     case MODELICA_INTEGER: return llvm::Type::getIntNTy(program->context,NBITS_MODELICA_INTEGER);
     case MODELICA_BOOLEAN: return llvm::Type::getInt1Ty(program->context);
     case MODELICA_REAL: return llvm::Type::getDoubleTy(program->context);
-    case MODELICA_METATYPE: return llvm::Type::getInt8PtrTy(program->context);
+    // LLVM 17+ removed the typed-pointer helpers (getInt8PtrTy, getDoublePtrTy,
+    // ...). Under opaque pointers every pointer is the same `ptr` regardless of
+    // pointee, so all of these collapse to a single unqualified opaque pointer.
+    // Element types are supplied explicitly at the load/store/GEP sites.
+    case MODELICA_METATYPE: return llvm::PointerType::getUnqual(program->context);
     case MODELICA_TUPLE: return llvm::StructType::getTypeByName(program->context, structName);
     case MODELICA_VOID: return llvm::Type::getVoidTy(program->context);
-    case MODELICA_INTEGER_PTR: return llvm::Type::getIntNPtrTy(program->context,NBITS_MODELICA_INTEGER);
-    case MODELICA_BOOLEAN_PTR: return llvm::Type::getInt1PtrTy(program->context);
-    case MODELICA_REAL_PTR: return llvm::Type::getDoublePtrTy(program->context);
-    case MODELICA_METATYPE_PTR: return llvm::PointerType::get(llvm::Type::getInt8PtrTy(program->context), 0);
+    case MODELICA_INTEGER_PTR: return llvm::PointerType::getUnqual(program->context);
+    case MODELICA_BOOLEAN_PTR: return llvm::PointerType::getUnqual(program->context);
+    case MODELICA_REAL_PTR: return llvm::PointerType::getUnqual(program->context);
+    case MODELICA_METATYPE_PTR: return llvm::PointerType::getUnqual(program->context);
     default: fprintf(stderr,"Attempted to deduce unknown type:%u\n",type); return nullptr;
     }
   }

@@ -1058,9 +1058,10 @@ algorithm
   algorithm
     labelNext := GenBlockId();
     assert(listLength(outvars) == 1, "MidCode: Length of output is assumed to be 1 for builtin calls of type noEvent");
-    for exp1 in expLst loop
-      var1 := rValueToVar(ExpToMid(exp1, state), state);
-    end for;
+    // noEvent() takes exactly one argument; take it directly so var1 is
+    // unconditionally defined (the old for-loop left var1 undefined on the
+    // empty-list path, which the def-use analysis correctly rejects).
+    var1 := rValueToVar(ExpToMid(listHead(expLst), state), state);
     var2 := MidCodeUtil.outVarToVar(listHead(outvars));
     stateAddStmt(MidCode.ASSIGN(var2, MidCode.VARIABLE(var1)), state);
     stateTerminate(labelNext,

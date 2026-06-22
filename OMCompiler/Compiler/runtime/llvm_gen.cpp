@@ -619,7 +619,7 @@ int storeLiteralIntForPtrTy(const std::uintptr_t addr, const char *dest) {
       llvm::Type::getIntNTy(program->context, sizeOfPtrInBits), addr,
       /*Not signed.*/ false)};
   llvm::Value *pval{program->builder.CreateIntToPtr(
-      ival, llvm::Type::getInt8PtrTy(program->context), "pointerTMP")};
+      ival, llvm::PointerType::getUnqual(program->context), "pointerTMP")};
   // program->builder.CreateStore(pval,program->currentFunc->symTab[dest]);
   createStoreInst(pval, dest);
   return 0;
@@ -757,7 +757,7 @@ int createIntToMeta(const char *src, const char *dest) {
   DBG("createIntToMeta %s %s", src, dest);
   auto f{std::bind(&llvm::IRBuilder<>::CreateIntToPtr, &program->builder, _1,
                    _2, "intToMetaTmp")};
-  return castXTypeToYType(src, dest, llvm::Type::getInt8PtrTy(program->context),
+  return castXTypeToYType(src, dest, llvm::PointerType::getUnqual(program->context),
                           f);
   ;
 }
@@ -1287,7 +1287,7 @@ int createStoreDoubleToPtr(double src, const char *dest, const uint8_t idx0) {
   // All these functions of similar type can look the same, just add the right
   // bitcast in a later refactor.
   gep = program->builder.CreateBitCast(
-      gep, llvm::Type::getDoublePtrTy(program->context));
+      gep, llvm::PointerType::getUnqual(program->context));
   program->builder.CreateStore(sV, gep);
   return 0;
 }
@@ -1302,7 +1302,7 @@ int createStoreDVarToPtr(const char *src, const char *dest,
   llvm::Value *gep{program->builder.CreateInBoundsGEP(
       llvm::Type::getInt8Ty(program->context), dV, vIdx0, "geptmp")};
   gep = program->builder.CreateBitCast(
-      gep, llvm::Type::getDoublePtrTy(program->context));
+      gep, llvm::PointerType::getUnqual(program->context));
   program->builder.CreateStore(sV, gep);
   return 0;
 }
@@ -1317,7 +1317,7 @@ int createGetDoubleFromPtr(const char *src, const char *dest,
   llvm::Value *sV = createLoadInst(src);
   llvm::Value *gep{program->builder.CreateInBoundsGEP(llvm::Type::getInt8Ty(program->context), sV, vIdx0, "geptmp")};
   gep = program->builder.CreateBitCast(
-      gep, llvm::Type::getDoublePtrTy(program->context));
+      gep, llvm::PointerType::getUnqual(program->context));
   llvm::LoadInst *li = program->builder.CreateLoad(
       llvm::Type::getDoubleTy(program->context), gep);
   li->setAlignment(llvm::Align(8));

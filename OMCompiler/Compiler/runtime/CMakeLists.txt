@@ -121,9 +121,21 @@ if(OM_OMC_ENABLE_LLVM_JIT)
     endif()
   endif()
 
+  # Prefer LLVM 18 then 16, but fall back to whatever LLVM the system ships.
+  # NB: a bare major request (e.g. "18") is rejected by Debian/Ubuntu's
+  # LLVMConfigVersion.cmake, which insists on a matching major.minor — so the
+  # versioned probes below only succeed on distros that relax that check. The
+  # unversioned fallback is what actually finds LLVM on Debian-family systems.
+  # The ORC v2 LLJIT surface used by OMC_JIT.hpp is stable across 16/17/18.
   find_package(LLVM 18 CONFIG QUIET)
   if(NOT LLVM_FOUND)
-    find_package(LLVM 16 CONFIG REQUIRED)
+    find_package(LLVM 16 CONFIG QUIET)
+  endif()
+  if(NOT LLVM_FOUND)
+    find_package(LLVM CONFIG REQUIRED)
+  endif()
+  if(LLVM_PACKAGE_VERSION VERSION_LESS 16)
+    message(FATAL_ERROR "OMC LLVM JIT needs LLVM >= 16 (ORC v2 LLJIT); found ${LLVM_PACKAGE_VERSION}.")
   endif()
   message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION} for OMC JIT (headers at ${LLVM_INCLUDE_DIRS}).")
 
