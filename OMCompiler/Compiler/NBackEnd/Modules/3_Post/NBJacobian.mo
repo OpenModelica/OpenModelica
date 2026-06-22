@@ -1717,8 +1717,8 @@ protected
         StrongComponent loopComp;
 
         StrongComponent ssaAlg;
-        list<tuple<ComponentRef, tuple<ComponentRef, Integer>>> replacements;
-        list<Pointer<Variable>> newVars;
+        list<tuple<ComponentRef, tuple<ComponentRef, Integer>>> replacements = {};
+        list<Pointer<Variable>> newVars = {};
         // SSA seed-init locals (used in MULTI_COMPONENT adjoint)
         UnorderedSet<ComponentRef> seenCrefs;
         ComponentRef origCref, finalSsaCref, pDerOrigCref, pDerSsaCref;
