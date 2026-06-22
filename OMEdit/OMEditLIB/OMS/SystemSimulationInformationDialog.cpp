@@ -376,9 +376,9 @@ void SystemSimulationInformationWidget::addSolverRow(const QString &name, const 
   mpSolversTable->setItem(row, 0, pNameItem);
 
   QComboBox *pMethodCombo = new QComboBox;
-  pMethodCombo->addItem("oms-ma", "oms-ma");
-  pMethodCombo->addItem("oms-mav", "oms-mav");
-  pMethodCombo->addItem("oms-mav-2", "oms-mav-2");
+  pMethodCombo->addItem("oms-ma", "oms_ma");
+  pMethodCombo->addItem("oms-mav", "oms_mav");
+  pMethodCombo->addItem("oms-mav-2", "oms_mav2");
   pMethodCombo->addItem("euler", "euler");
   pMethodCombo->addItem("cvode", "cvode");
   int index = pMethodCombo->findData(method);
@@ -491,7 +491,7 @@ bool SystemSimulationInformationWidget::setSystemSimulationInformation(bool push
       continue;
     QJsonObject solver;
     solver["name"] = pNameItem->text().trimmed();
-    solver["method"] = pMethodCombo ? pMethodCombo->currentData().toString() : "oms-ma";
+    solver["method"] = pMethodCombo ? pMethodCombo->currentData().toString() : "oms_ma";
     // Append only the relevant step-size fields for the chosen method
     const QJsonObject solverSettings = pNameItem->data(Qt::UserRole).toJsonObject();
     for (const QString &key : solverSettingsKeys(solver["method"].toString())) {
