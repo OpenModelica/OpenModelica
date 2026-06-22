@@ -75,6 +75,9 @@ encapsulated package SimCodeToLLVM
 "
 public
 import EXT_LLVM;
+import DAEToMid;
+import MidCode;
+import MidToLLVM;
 import SimCode;
 
 protected
@@ -224,6 +227,7 @@ algorithm
      * clang loop in CevalScriptBackend.compileModelToBitcode. */
     EXT_LLVM.initGen(AbsynUtil.pathStringUnquoteReplaceDot(name, "_") + "_sctl");
     emitDisplacingStubs(name);
+    emitUserFunctions(simCode);
     if Flags.isSet(Flags.JIT_DUMP_IR) then EXT_LLVM.dumpIR(); end if;
     /* Hand the in-memory module to omc_runModelViaJIT through a
      * process-global byte buffer (no disk hop). compileModelToBitcode
@@ -428,6 +432,37 @@ protected function emitRuntimeVoidStub
 algorithm
   emitStub(fname, MODELICA_VOID, {MODELICA_METATYPE, MODELICA_METATYPE});
 end emitRuntimeVoidStub;
+
+protected function emitUserFunctions
+  "Lower the model's user-defined Modelica functions to LLVM IR in
+   the current in-memory module by re-using the existing function-JIT
+   pipeline DAEToMid -> MidToLLVM.genProgram. The same pipeline drives
+   the top-level function JIT under -d=jit_eval_func, so SCTL does not
+   re-implement function-body lowering.
+
+   When the SIMCODE contains no user functions and no record
+   declarations there is nothing to do. The CodegenC counterpart of
+   this work lives in <Model>_functions.c (and <Model>_records.c)."
+  input SimCode.SimCode simCode;
+protected
+  list<SimCodeFunction.Function> simFuncs;
+  list<SimCodeFunction.RecordDeclaration> recordDecls;
+  Absyn.Path modelName;
+  String moduleName;
+  MidCode.Program midProgram;
+algorithm
+  (simFuncs, recordDecls, modelName) := match simCode
+    case SimCode.SIMCODE(modelInfo = SimCode.MODELINFO(name = modelName, functions = simFuncs),
+                         recordDecls = recordDecls)
+      then (simFuncs, recordDecls, modelName);
+  end match;
+  if listEmpty(simFuncs) and listEmpty(recordDecls) then
+    return;
+  end if;
+  moduleName := AbsynUtil.pathStringUnquoteReplaceDot(modelName, "_") + "_userfuncs";
+  midProgram := DAEToMid.daeProgramToMid(moduleName, simFuncs, recordDecls);
+  MidToLLVM.genProgram(midProgram);
+end emitUserFunctions;
 
 protected function emitDisplacingStubs
   "Emit the SCTL counterparts of every C function whose .c file we
