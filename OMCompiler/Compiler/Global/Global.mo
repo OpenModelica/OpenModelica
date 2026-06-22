@@ -77,6 +77,13 @@ constant Integer packageIndexCacheIndex = 29;
 constant Integer sharedLibraryCacheIndex = 30;
 constant Integer backendInterface = 31;
 constant Integer backendCevalInterface = 32;
+// SimCodeToLLVM: per-build list<String> of <Model>_*.c segment files
+// that SimCodeToLLVM successfully emitted in-memory beyond what the
+// static runtimeEntryCatalog declares (e.g. _06inz.c when initial
+// equations all lower cleanly). compileModelToBitcode reads it via
+// SimCodeToLLVM.displacedSegmentFiles() and skips the matching clang
+// invocations. Reset to {} at the start of every genSim call.
+constant Integer simCodeToLLVMDynamicSkips = 33;
 
 // indexes in System.tick
 // ----------------------

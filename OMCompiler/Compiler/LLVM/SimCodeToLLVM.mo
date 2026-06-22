@@ -87,6 +87,7 @@ import ComponentReferenceBasics;
 import DAE;
 import Error;
 import Flags;
+import Global;
 import List;
 import SimCodeVar;
 import SimCodeFunction;
@@ -321,30 +322,73 @@ end runtimeEntryCatalog;
  * ====================================================================== */
 
 public function displacedSegmentFiles
-  "Distinct list of CodegenC segment .c files SCTL fully covers, derived
-   from the runtimeEntryCatalog. CevalScriptBackend.compileModelToBitcode
-   uses this list to drive the clang skip cases; the catalog is then
-   the single source of truth for both the IR emission and the
-   skip list."
+  "Distinct list of CodegenC segment .c files SCTL fully covers.
+   Combines the static set declared in runtimeEntryCatalog (entries
+   whose body is not EB_TODO) with the dynamic set recorded during
+   genSim via recordDisplacedSegment (e.g. _06inz.c when initial
+   equations all lower cleanly for this specific model)."
   output list<String> files = {};
 protected
   Boolean seen;
+  list<String> dyn;
 algorithm
   for e in runtimeEntryCatalog() loop
     if not isTodoBody(e.body) then
-      seen := false;
-      for f in files loop
-        if f == e.segmentFile then
-          seen := true;
-        end if;
-      end for;
-      if not seen then
-        files := e.segmentFile :: files;
-      end if;
+      files := uniqueAppend(files, e.segmentFile);
     end if;
   end for;
-  files := listReverse(files);
+  dyn := getDynamicSkips();
+  for f in dyn loop
+    files := uniqueAppend(files, f);
+  end for;
 end displacedSegmentFiles;
+
+protected function uniqueAppend
+  "Append seg to files iff files does not already contain seg.
+   Preserves order."
+  input list<String> filesIn;
+  input String seg;
+  output list<String> filesOut = filesIn;
+protected
+  Boolean seen = false;
+algorithm
+  for f in filesIn loop
+    if f == seg then
+      seen := true;
+    end if;
+  end for;
+  if not seen then
+    filesOut := listAppend(filesIn, {seg});
+  end if;
+end uniqueAppend;
+
+protected function getDynamicSkips
+  "Current value of the per-build dynamic skip list. The slot is
+   seeded by resetDynamicSkips at the start of every genSim, so by
+   the time displacedSegmentFiles reads it the cell holds an
+   already-initialised list<String>."
+  output list<String> skips;
+algorithm
+  skips := getGlobalRoot(Global.simCodeToLLVMDynamicSkips);
+end getDynamicSkips;
+
+protected function resetDynamicSkips
+  "Clear the per-build skip list. Called at the start of every genSim."
+algorithm
+  setGlobalRoot(Global.simCodeToLLVMDynamicSkips, {});
+end resetDynamicSkips;
+
+protected function recordDisplacedSegment
+  "Record that <segmentFile> (e.g. \"_06inz.c\") was successfully
+   emitted by SCTL for this model. compileModelToBitcode will pick
+   the addition up via displacedSegmentFiles."
+  input String segmentFile;
+protected
+  list<String> cur;
+algorithm
+  cur := getDynamicSkips();
+  setGlobalRoot(Global.simCodeToLLVMDynamicSkips, uniqueAppend(cur, segmentFile));
+end recordDisplacedSegment;
 
 protected function isTodoBody
   input EntryBody b;
@@ -376,6 +420,10 @@ protected
   Integer nSupported, nUnsupported, bcSt;
   String sctlBcPath;
 algorithm
+  /* Per-build state: clear the dynamic skip list before we start
+   * emitting. Each successful emitInitialEquationsBlock /
+   * emit<Segment> call records its segmentFile back into this list. */
+  resetDynamicSkips();
   name := simCodeName(simCode);
   vars := simCodeVars(simCode);
   odeEqs := flattenOdeEquations(simCode);
@@ -423,14 +471,11 @@ algorithm
     emitDisplacingStubs(name);
     emitUserFunctions(simCode);
     /* Initial-equation block, gated on canLowerEquation pre-pass.
-     * Currently disabled: on success we emit the three _06inz.c
-     * entries into the in-memory module, but the catalog-driven
-     * skip list does not yet drop _06inz.c, so both the SCTL IR
-     * and the clang version exist -- silent symbol collision
-     * breaks initialisation. Re-enable once displacedSegmentFiles
-     * grows a dynamic component informed by per-model
-     * emitInitialEquationsBlock success. */
-    /* _ := emitInitialEquationsBlock(simCode, layout); */
+     * On success it records _06inz.c into the per-build dynamic
+     * skip list so compileModelToBitcode drops the matching clang
+     * invocation; on any unsupported recipe it returns silently and
+     * _06inz.c stays on clang. */
+    _ := emitInitialEquationsBlock(simCode, layout);
     if Flags.isSet(Flags.JIT_DUMP_IR) then EXT_LLVM.dumpIR(); end if;
     /* Hand the in-memory module to omc_runModelViaJIT through a
      * process-global byte buffer (no disk hop). compileModelToBitcode
@@ -716,6 +761,9 @@ algorithm
                               prefix + "_functionInitialEquations_0");
   /* No removed initial equations for the supported models so far. */
   emitRuntimeIntStub(prefix + "_functionRemovedInitialEquations");
+  /* All three _06inz.c entries are now SCTL-supplied; tell the bash
+   * glue to skip clang on the matching .c file. */
+  recordDisplacedSegment("_06inz.c");
 end emitInitialEquationsBlock;
 
 protected function countUnsupportedAsBoolean
