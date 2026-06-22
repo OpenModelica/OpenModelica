@@ -704,7 +704,7 @@ public
               (attr_binding, attr_exp) := evalAliasAttribute(attr_binding);
 
               if negated then
-                maxValues := attr_exp :: maxValues;
+                maxValues := Expression.negate(attr_exp) :: maxValues;
               else
                 minValues := attr_exp :: minValues;
               end if;
@@ -716,7 +716,7 @@ public
               (attr_binding, attr_exp) := evalAliasAttribute(attr_binding);
 
               if negated then
-                minValues := attr_exp :: minValues;
+                minValues := Expression.negate(attr_exp) :: minValues;
               else
                 maxValues := attr_exp :: maxValues;
               end if;
@@ -730,8 +730,8 @@ public
       accum_attrs := attr :: accum_attrs;
     end for;
 
-    attrs := listReverseInPlace(attrs);
-    var.typeAttributes := attrs;
+    accum_attrs := listReverseInPlace(accum_attrs);
+    var.typeAttributes := accum_attrs;
     alias.variable := SOME(var);
   end evalAliasAttributes;
 
