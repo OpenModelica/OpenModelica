@@ -187,6 +187,16 @@ public uniontype EqRecipe
     SimCodeFunction.Function synthFn "the synthetic function carrying the statements";
   end EQ_ALG_CALL;
 
+  record EQ_PARAM_RANGE_ASSERT
+    "Inline range-check assert on a Real parameter, as emitted by
+     CodegenC for the (min=) / (max=) attribute checks. Lowered to
+     a single call to omc_jit_assert_real_ge or _le with
+     (DATA*, slot, bound)."
+    Integer slotIndex "absolute realParameter[] slot";
+    Boolean isGreaterEq "true for `>= bound`, false for `<= bound`";
+    Real bound "the literal RCONST the parameter is compared against";
+  end EQ_PARAM_RANGE_ASSERT;
+
   record EQ_UNSUPPORTED
     "Reason the equation cannot be lowered in the current scope."
     String reason;
@@ -893,6 +903,52 @@ algorithm
   ok := listEmpty(zcs) and listEmpty(rels);
 end modelHasNoEvents;
 
+protected function classifyAlgorithmStatements
+  "Recognise the specific SES_ALGORITHM shapes SCTL can lower inline.
+   Currently:
+     [STMT_ASSERT(DAE.RELATION(CREF(p), GREATEREQ, RCONST(b)), ...)]
+       => EQ_PARAM_RANGE_ASSERT(slot, true,  b)
+     [STMT_ASSERT(DAE.RELATION(CREF(p), LESSEQ,    RCONST(b)), ...)]
+       => EQ_PARAM_RANGE_ASSERT(slot, false, b)
+   when p resolves to a VK_PARAM slot in the layout.
+
+   Anything else (more than one statement, a different relation, a
+   non-cref LHS, ...) stays EQ_UNSUPPORTED so the .c file falls back
+   to clang."
+  input list<DAE.Statement> stmts;
+  input Integer eqIndex;
+  input VarLayout layout;
+  output EqRecipe recipe;
+algorithm
+  recipe := match stmts
+    local DAE.Exp cond;
+          DAE.ComponentRef paramCref;
+          DAE.Operator op;
+          Real bound;
+          Option<VarSlot> os;
+          VarSlot vs;
+          Integer slot;
+    case {DAE.STMT_ASSERT(cond = DAE.RELATION(
+            exp1 = DAE.CREF(componentRef = paramCref),
+            operator = op,
+            exp2 = DAE.RCONST(real = bound)))}
+      algorithm
+        os := lookupSlot(paramCref, layout);
+      then match os
+        case SOME(vs as VAR_SLOT(kind = VK_PARAM()))
+          algorithm
+            slot := absoluteSlot(vs.kind, vs.index, layout);
+          then match op
+            case DAE.GREATEREQ() then EQ_PARAM_RANGE_ASSERT(slot, true,  bound);
+            case DAE.LESSEQ()    then EQ_PARAM_RANGE_ASSERT(slot, false, bound);
+            else EQ_UNSUPPORTED("STMT_ASSERT relation operator not recognised");
+          end match;
+        else EQ_UNSUPPORTED("STMT_ASSERT cref does not resolve to a Real parameter");
+      end match;
+    else EQ_UNSUPPORTED("algorithm not in the recognised parameter-range assert shape");
+  end match;
+end classifyAlgorithmStatements;
+
 protected function classifyParamEq
   "Variant of classifySimEq for the parameterEquations block. For
    SES_ALGORITHM the statements are routed through a synthetic
@@ -936,29 +992,8 @@ algorithm
      *       (synthFn, synthName) := buildSyntheticAlgFunction(modelName, eq.index, stmts);
      *     then EQ_ALG_CALL(synthName, synthFn);
      */
-    /* Deeper finding from the MinAssert single-stmt probe: the assert
-     * body references the model parameter cref (x). My synthetic
-     * SimCodeFunction.FUNCTION wraps it as a stand-alone Modelica
-     * function and DAEToMid.crefToMidVar has no way to resolve a
-     * cref that is neither an input, an output, nor a declared local
-     * of the synthetic. The throw comes from there, not from any
-     * statement / DAE.Exp coverage gap.
-     *
-     * Routing this properly needs one of:
-     *  - pass the model's DATA* + all referenced model crefs as
-     *    synthetic-function inputs, rewriting the body's crefs to
-     *    read from those parameters before calling out;
-     *  - or stop trying to compile assert bodies as functions and
-     *    instead lower the STMT_ASSERT directly inline at the SCTL
-     *    side via the existing omc_jit_get_real_param accessor + a
-     *    new omc_jit_assert_warning runtime helper (proper STMT_ASSERT
-     *    IR: read cond exp, branch, runtime call on false).
-     *
-     * The second is much smaller and matches what jit_eval_func
-     * does for top-level expressions. Until that lands SES_ALGORITHM
-     * stays UNSUPPORTED. */
-    case SimCode.SES_ALGORITHM()
-      then EQ_UNSUPPORTED("SES_ALGORITHM cref resolution -- needs SCTL inline emit");
+    case SimCode.SES_ALGORITHM(statements = stmts)
+      then classifyAlgorithmStatements(stmts, eq.index, layout);
     else classifySimEq(eq, layout);
   end match;
 end classifyParamEq;
@@ -1149,6 +1184,9 @@ algorithm
     case EQ_BOOL_PARAM_ASSIGN() then "BPARM(" + intString(r.slotIndex) + ")";
     case EQ_NOOP()              then "NOOP";
     case EQ_ALG_CALL()          then "ALG_CALL(" + r.synthName + ")";
+    case EQ_PARAM_RANGE_ASSERT() then "PARAM_RANGE_ASSERT(slot=" + intString(r.slotIndex) +
+                                       (if r.isGreaterEq then ", >=, " else ", <=, ") +
+                                       realString(r.bound) + ")";
     case EQ_UNSUPPORTED(reason = why) then "UNSUPPORTED(" + why + ")";
   end match;
 end recipeKindString;
@@ -1491,9 +1529,36 @@ algorithm
       then (ctx2, exprOk);
     case EQ_NOOP()        then (ctx, true);
     case EQ_ALG_CALL()    algorithm emitAlgCall(r.synthName); then (ctx, true);
+    case EQ_PARAM_RANGE_ASSERT()
+      algorithm emitParamRangeAssert(r.slotIndex, r.isGreaterEq, r.bound);
+      then (ctx, true);
     case EQ_UNSUPPORTED() then (ctx, false);
   end match;
 end emitEquation;
+
+protected function emitParamRangeAssert
+  "Emit  call void @omc_jit_assert_real_<ge|le>(ptr %data, i64 slot, double bound)
+   into the active function body. The helper compares
+   data->simulationInfo->realParameter[slot] against bound and emits
+   a warning on violation; in-range values are silent."
+  input Integer slot;
+  input Boolean isGreaterEq;
+  input Real bound;
+protected
+  String boundTmp;
+algorithm
+  /* Use a fresh tmp name so each emission is unique within the
+   * function. The name is local to the current basic block. */
+  boundTmp := "assertBoundTmp" + intString(slot);
+  EXT_LLVM.genAllocaModelicaReal(boundTmp, false);
+  EXT_LLVM.genStoreLiteralReal(bound, boundTmp);
+  EXT_LLVM.genCallArg("data");
+  EXT_LLVM.genCallArgConstInt(slot);
+  EXT_LLVM.genCallArg(boundTmp);
+  EXT_LLVM.genCall(if isGreaterEq then "omc_jit_assert_real_ge"
+                                   else "omc_jit_assert_real_le",
+                   MODELICA_VOID, "", false);
+end emitParamRangeAssert;
 
 protected function emitAlgCall
   "Emit  call void @<synthName>(ptr %threadData)  into the active
@@ -1617,6 +1682,7 @@ algorithm
     case EQ_BOOL_PARAM_ASSIGN() then canLowerExp(r.rhs, layout);
     case EQ_NOOP()              then true;
     case EQ_ALG_CALL()          then true;
+    case EQ_PARAM_RANGE_ASSERT() then true;
     case EQ_UNSUPPORTED()       then false;
   end match;
 end canLowerEquation;

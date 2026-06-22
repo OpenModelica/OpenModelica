@@ -1290,6 +1290,44 @@ double omc_jit_get_time(DATA *data)
   return data->localData[0]->timeValue;
 }
 
+/* Range-check assert helpers. SCTL emits a direct call to one of
+ * these when a SES_ALGORITHM body in parameterEquations matches a
+ * simple `assert(<param> <op> <bound>, ...)` shape -- the same
+ * pattern CodegenC emits for Real-parameter min/max checks. The
+ * runtime emits a warning when the check fails; in-range values
+ * are silent. The parameter name is recovered from the
+ * VAR_INFO carried in modelData->realParameterData[slot]; the SCTL
+ * emit site only needs (DATA*, slot, bound). */
+static void omc_jit_assert_warn(DATA *data, int64_t slot, double value,
+                                const char *cmp, double bound)
+{
+  const char *name = "<unknown>";
+  if (data && data->modelData && data->modelData->realParameterData) {
+    name = data->modelData->realParameterData[slot].info.name;
+    if (!name) name = "<unknown>";
+  }
+  fprintf(stderr, "Warning: Variable %s violates range constraint "
+                  "(%s %s %g), has value %g\n",
+                  name, name, cmp, bound, value);
+  fflush(stderr);
+}
+
+void omc_jit_assert_real_ge(DATA *data, int64_t slot, double bound)
+{
+  double value = data->simulationInfo->realParameter[slot];
+  if (value < bound) {
+    omc_jit_assert_warn(data, slot, value, ">=", bound);
+  }
+}
+
+void omc_jit_assert_real_le(DATA *data, int64_t slot, double bound)
+{
+  double value = data->simulationInfo->realParameter[slot];
+  if (value > bound) {
+    omc_jit_assert_warn(data, slot, value, "<=", bound);
+  }
+}
+
 /* Stamp a JACOBIAN struct as JACOBIAN_NOT_AVAILABLE so DASSL knows
  * to fall back to numerical differencing. CodegenC populates the
  * availability field in <Model>_initialAnalyticJacobianX; SCTL has
