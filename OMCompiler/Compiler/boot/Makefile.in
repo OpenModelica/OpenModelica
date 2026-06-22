@@ -30,7 +30,11 @@ CORBALIBS=@CORBALIBS@
 ULIMIT_CMD=true
 SHREXT=@DLLEXT@
 OMC=@OMC@
-OMC_EXTRA_FLAGS=
+# Compile the compiler against itself with the def-use static analysis enabled so
+# that conditionally-assigned variables are caught at build time. -d= is additive and
+# survives the setCommandLineOptions("-d=rml") in CompileFile.mos. Bootstrap stages that
+# run an older compiler (which does not know the flag) override this to empty.
+OMC_EXTRA_FLAGS=-d=checkDefUse
 RPATH=@RPATH@
 STATIC=@BOOTSTRAP_STATIC@
 BOOTSTRAP_OMC=@OMBUILDDIR@/bin/omc

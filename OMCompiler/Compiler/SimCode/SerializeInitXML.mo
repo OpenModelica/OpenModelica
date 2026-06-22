@@ -620,5 +620,5 @@ algorithm
   end match;
 end expString;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_tools");
 end SerializeInitXML;

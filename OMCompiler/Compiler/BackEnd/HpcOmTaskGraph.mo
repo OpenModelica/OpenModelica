@@ -879,12 +879,12 @@ protected function isWhenEquation "author: Waurich TUD 2013-06
   input BackendDAE.StrongComponent inComp;
   output Boolean isWhenEq;
 algorithm
-  isWhenEq := matchcontinue inComp
+  isWhenEq := match inComp
   local    case BackendDAE.SINGLEWHENEQUATION()
     then
       true;
   else false;
-  end matchcontinue;
+  end match;
 end isWhenEquation;
 
 protected function fillRequiredSccs
@@ -3218,7 +3218,7 @@ protected
   list<list<Integer>> critPath, critPathWoC;
   Real costPath, costPathWoC;
 algorithm
-  oString := matchcontinue(iCriticalPaths,iCriticalPathsWoC)
+  oString := match(iCriticalPaths,iCriticalPathsWoC)
   case(({},_),_)
     algorithm
     then
@@ -3231,7 +3231,7 @@ algorithm
       tmpString := tmpString + dumpCriticalPathInfo1(critPathWoC,1);
   then
     tmpString;
-  end matchcontinue;
+  end match;
 end dumpCriticalPathInfo;
 
 protected function dumpCriticalPathInfo1 "author: marcusw
@@ -3248,7 +3248,7 @@ protected function printCriticalPathInfo "author: Waurich TUD 2013-07
   input list<list<Integer>> criticalPathsIn;
   input Real cpCosts;
 algorithm
-  () := matchcontinue criticalPathsIn
+  () := match criticalPathsIn
   case {}
     algorithm
     then
@@ -3262,7 +3262,7 @@ algorithm
     printCriticalPathInfo1(criticalPathsIn,1);
   then
     ();
-  end matchcontinue;
+  end match;
 end printCriticalPathInfo;
 
 protected function printCriticalPathInfo1 "author: Waurich TUD 2013-07
@@ -4537,7 +4537,7 @@ public function calculateCosts "author: Waurich TUD 2014-12
   input BackendDAE.CompInfo compInfo;
   output tuple<Integer,Real> exeCost;
 algorithm
-  exeCost := matchcontinue compInfo
+  exeCost := match compInfo
     local
       Integer numAdds,numMul,numDiv,numOth,numTrig,numRel,numLog,numFuncs, costs, ops,ops1, offset,size;
       Real allOpCosts,tornCosts,otherCosts,dens;
@@ -4578,7 +4578,7 @@ algorithm
         algorithm
           print("calculate costs failed!\n");
         then (-1,-1.0);
-  end matchcontinue;
+  end match;
 end calculateCosts;
 
 public function copyCosts "author: marcusw

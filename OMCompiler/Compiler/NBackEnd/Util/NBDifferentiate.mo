@@ -1241,7 +1241,7 @@ public
     exp := match exp
       local
         Integer i;
-        Expression ret, ret1, ret2, arg1, arg2, arg3, diffArg1, diffArg2, diffArg3, current_grad, cond1, cond2, cond, zero1, zero2, grad_x, grad_y, old_grad;
+        Expression ret, ret1, ret2, arg1, arg2, arg3, diffArg1, diffArg2, diffArg3, current_grad = diffArguments.current_grad, cond1, cond2, cond, zero1, zero2, grad_x, grad_y, old_grad;
         list<Expression> rest, diffRest;
         Type ty;
         DifferentiationType diffType;
@@ -2085,7 +2085,7 @@ public
         Function dummy_func;
         CachedData cachedData;
         String der_func_name;
-        list<InstNode> inputs, locals, outputs, local_outputs;
+        list<InstNode> inputs, locals, outputs, local_outputs, uninitialized;
         list<Slot> slots;
 
       case der_func as Function.FUNCTION(node = node as InstNode.CLASS_NODE(cls = cls)) algorithm
@@ -2168,12 +2168,22 @@ public
               else funcDiffArgs;
             end match;
 
-            node.cls                    := Pointer.create(new_cls);
+            // update the class pointer in place; the fake node created above for
+            // recursive differentiation shares it and reaches codegen via the cache
+            Pointer.update(node.cls, new_cls);
             der_func.derivatives        := {};
             der_func.derivedInputs      := {};
             der_func.interfaceDiffInfo  := SOME(diffInfo);
             cachedData                  := CachedData.FUNCTION({der_func}, true, false);
             der_func.node               := InstNode.newFuncCache(node, cachedData);
+
+            // check the generated body for use-before-assign and initialize
+            // variables not provably assigned (the frontend check is skipped here)
+            uninitialized := Function.checkUseBeforeAssignGenerated(der_func);
+            if not listEmpty(uninitialized) then
+              new_cls.sections := Function.initializeUninitialized(new_cls.sections, uninitialized, AbsynUtil.pathString(der_func.path));
+              Pointer.update(node.cls, new_cls);
+            end if;
 
             // save the function tree
             diffArguments.funcMap := funcDiffArgs.funcMap;
@@ -2550,7 +2560,7 @@ public
         Expression exp1, exp2, diffExp1, diffExp2, e1, e2, e3, res;
         Operator operator, addOp, mulOp, powOp, divOp;
         Operator.SizeClassification sizeClass, powSizeClass;
-        Expression current_grad;
+        Expression current_grad = diffArguments.current_grad;
         // Local reverse grads (to assign before recursing)
         Expression grad_exp1, grad_exp2, denom2, numUF;
         Boolean isVec1, isVec2, isMat1, isMat2;
@@ -2864,9 +2874,9 @@ public
         list<Expression> diff_arguments, diff_inv_arguments;
         Operator operator, addOp, powOp, mulEWOp;
         Operator.SizeClassification sizeClass, powSizeClass;
-        Expression current_grad, upstream, e_over_f, e_over_g, numProd, denomProd;
+        Expression current_grad = diffArguments.current_grad, upstream, e_over_f, e_over_g, numProd, denomProd;
         List<Expression> arg_rest;
-        Boolean hasArray, hasArrayNum;
+        Boolean hasArray = false, hasArrayNum;
         Expression local_grad, localUpF, localUpG;
         Integer i;
         Type powTy;
@@ -3099,9 +3109,9 @@ public
     input output DifferentiationArguments diffArguments;
     input Operator operator;
   protected
-    Expression diff_arg, current_grad, localUp, restProd;
-    Array<List<Expression>> diff_lists;
-    List<Expression> arg_products, restArgs;
+    Expression diff_arg, current_grad = diffArguments.current_grad, localUp, restProd;
+    Array<List<Expression>> diff_lists = listArray({});
+    List<Expression> arg_products = {}, restArgs;
     Integer idx = 1;
     Boolean isReverse = isSome(diffArguments.adjoint_map);
     Operator mulEWOp = Operator.fromClassification(

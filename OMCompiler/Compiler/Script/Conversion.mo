@@ -412,7 +412,7 @@ protected
     input SourceInfo info;
     input output ConversionRules rules;
   algorithm
-    Error.assertion(false, getInstanceName() + ": not implemented", info);
+    Error.terminate(getInstanceName() + ": not implemented", info);
   end parseConvertClassIf;
 
   function parseConvertElement
@@ -620,7 +620,7 @@ protected
     "Looks up a node in the conversion rules structure."
     input Absyn.Path path;
     input ConversionRules rules;
-    output Option<ConversionRules> outNode;
+    output Option<ConversionRules> outNode = NONE();
   protected
     ConversionRules node = rules;
   algorithm
@@ -2819,5 +2819,5 @@ protected
     end match;
   end addComponentTypesToEnv2;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="backend_tools");
 end Conversion;

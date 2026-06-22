@@ -564,14 +564,16 @@ constant DebugFlag FLOW_ALIAS_ELIMINATION = DEBUG_FLAG(198, "flowAliasEliminatio
   "Enables simple alias elimination of flow variables in stream connectors.");
 constant DebugFlag DUMP_CHECK_MODEL = DEBUG_FLAG(199, "dumpCheckModel", false,
   "Dumps the variables and equations found by checkModel.");
+constant DebugFlag CHECK_DEF_USE = DEBUG_FLAG(200, "checkDefUse", false,
+  "Warns about variables in functions that cannot statically be proven to be defined (given a value) before they are used, e.g. variables only assigned on some control flow paths. Per the Modelica specification using an uninitialized variable is an error.");
 /* LLVM JIT flags (added on the LLVM revive branch) */
-constant DebugFlag JIT_EVAL_FUNC = DEBUG_FLAG(200, "jit_eval_func", false,
+constant DebugFlag JIT_EVAL_FUNC = DEBUG_FLAG(201, "jit_eval_func", false,
   "Turns on/off JIT compilation of MetaModelica functions via the LLVM backend.");
-constant DebugFlag JIT_DUMP_IR = DEBUG_FLAG(201, "jit_dump_ir", false,
+constant DebugFlag JIT_DUMP_IR = DEBUG_FLAG(202, "jit_dump_ir", false,
   "Dumps LLVM-IR before JIT execution.");
-constant DebugFlag JIT_NO_OPT = DEBUG_FLAG(202, "jit_no_opt", false,
+constant DebugFlag JIT_NO_OPT = DEBUG_FLAG(203, "jit_no_opt", false,
   "Generates LLVM-IR without optimization passes.");
-constant DebugFlag DUMP_MIDCODE = DEBUG_FLAG(203, "dumpMidCode", false,
+constant DebugFlag DUMP_MIDCODE = DEBUG_FLAG(204, "dumpMidCode", false,
   "Dumps MidCode after generation in a human-readable format.");
 
 public
@@ -773,7 +775,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
   "Sets the post optimization modules to use in the back end. See --help=optmodules for more info.");
 constant ConfigFlag SIMCODE_TARGET = CONFIG_FLAG(17, "simCodeTarget",
   NONE(), EXTERNAL(), STRING_FLAG("C"),
-  SOME(STRING_OPTION({"None", "C", "Cpp","omsicpp", "ExperimentalEmbeddedC", "JavaScript", "omsic", "XML", "MidC"})),
+  SOME(STRING_OPTION({"None", "C", "Cpp","omsicpp", "ExperimentalEmbeddedC", "JavaScript", "omsic", "XML", "MidC", "wasm-jit"})),
   "Sets the target language for the code generation.");
 constant ConfigFlag ORDER_CONNECTIONS = CONFIG_FLAG(18, "orderConnections",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),

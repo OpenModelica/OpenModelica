@@ -715,7 +715,7 @@ public function makeParFor "This function creates a DAE.STMT_PARFOR construct, c
   input DAE.ElementSource source;
   output DAE.Statement outStatement;
 algorithm
-  outStatement := matchcontinue (inIdent, inExp, inProperties, inStatementLst)
+  outStatement := match (inIdent, inExp, inProperties, inStatementLst)
     local
       Boolean isArray;
       String i, e_str, t_str;
@@ -737,7 +737,7 @@ algorithm
         Error.addSourceMessage(Error.FOR_EXPRESSION_TYPE_ERROR, {e_str, t_str}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
-  end matchcontinue;
+  end match;
 end makeParFor;
 
 public function makeWhile "This function creates a DAE.STMT_WHILE construct, checking that the types
@@ -749,7 +749,7 @@ public function makeWhile "This function creates a DAE.STMT_WHILE construct, che
   output DAE.Statement outStatement;
 algorithm
   outStatement:=
-  matchcontinue (inExp, inProperties, inStatementLst)
+  match (inExp, inProperties, inStatementLst)
     local
       DAE.Exp e;
       list<DAE.Statement> stmts;
@@ -763,7 +763,7 @@ algorithm
         Error.addSourceMessage(Error.WHILE_CONDITION_TYPE_ERROR, {e_str, t_str}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
-  end matchcontinue;
+  end match;
 end makeWhile;
 
 public function makeWhenA "This function creates a DAE.STMT_WHEN algorithm construct,
@@ -776,7 +776,7 @@ public function makeWhenA "This function creates a DAE.STMT_WHEN algorithm const
   output DAE.Statement outStatement;
 algorithm
   outStatement:=
-  matchcontinue (inExp, inProperties, inStatementLst, elseWhenStmt)
+  match (inExp, inProperties, inStatementLst, elseWhenStmt)
     local
       DAE.Exp e;
       list<DAE.Statement> stmts;
@@ -792,7 +792,7 @@ algorithm
         Error.addSourceMessage(Error.WHEN_CONDITION_TYPE_ERROR, {e_str, t_str}, ElementSource.getElementSourceFileInfo(source));
       then
         fail();
-  end matchcontinue;
+  end match;
 end makeWhenA;
 
 public function makeReinit " creates a reinit statement in an algorithm
@@ -837,7 +837,7 @@ public function makeAssert "Creates an assert statement from two expressions.
   input DAE.ElementSource source;
   output list<DAE.Statement> outStatement;
 algorithm
-  outStatement := matchcontinue (cond, inProperties3, inProperties4, inProperties5)
+  outStatement := match (cond, inProperties3, inProperties4, inProperties5)
     local
       SourceInfo info;
       DAE.Type t1, t2, t3;
@@ -860,7 +860,7 @@ algorithm
         strTy := TypesDump.unparseType(t3);
         Error.assertionOrAddSourceMessage(Types.isString(t3), Error.EXP_TYPE_MISMATCH, {strExp, "AssertionLevel", strTy}, info);
       then fail();
-  end matchcontinue;
+  end match;
 end makeAssert;
 
 public function makeTerminate "

@@ -209,6 +209,12 @@ typedef hash_string_long omc_CommandLineOverridesUses;
 // function to handle command line settings override
 void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override, const char *overrideFile);
 
+/* Persistent map of all quantities given via -override/-overrideFile.
+ * Kept alive after doOverride() so that other parts of the runtime (e.g.
+ * importStartValues() for -iif) can tell which quantities the user explicitly
+ * overrode and must therefore not be clobbered by imported values. See #15807. */
+static omc_CommandLineOverrides *gCommandLineOverrides = NULL;
+
 static const double REAL_MIN = -DBL_MAX;
 static const double REAL_MAX = DBL_MAX;
 static const double INTEGER_MIN = (double)MODELICA_INT_MIN;
@@ -956,7 +962,6 @@ void read_model_description_sizes(omc_ModelDescription *md, MODEL_DATA *modelDat
   numRealAlgVars = read_value_long(findHashStringString(md, "numberOfRealAlgebraicVariables"), 0);
   modelData->nVariablesRealArray = 2*modelData->nStatesArray + numRealAlgVars;
   modelData->nAliasRealArray = read_value_long(findHashStringString(md, "numberOfRealAlgebraicAliasVariables"), 0);
-  // TODO: How to get data->modelData->nDiscreteReal or its array version?
   modelData->nParametersRealArray = read_value_long(findHashStringString(md, "numberOfRealParameters"), 0);
 
   modelData->nParametersIntegerArray = read_value_long(findHashStringString(md, "numberOfIntegerParameters"), 0);
@@ -1463,6 +1468,10 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
       free(overrideStr2);
     }
 
+    /* remember the overridden quantities so importStartValues() (-iif) does not
+     * clobber values the user explicitly set via -override/-overrideFile (#15807) */
+    gCommandLineOverrides = mOverrides;
+
     // override all found!
     for(i=0; i<modelData->nStatesArray; i++) {
       singleOverride(mOverrides, &mOverridesUses, mi->rSta, i, 0);
@@ -1520,6 +1529,20 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
   } else {
     infoStreamPrint(OMC_LOG_SOLVER, 0, "NO override given on the command line.");
   }
+}
+
+/**
+ * @brief Check whether a quantity was overridden on the command line.
+ *
+ * Used to make sure that values explicitly set via -override/-overrideFile are
+ * not clobbered when importing start values from a file given with -iif (#15807).
+ *
+ * @param name   Fully qualified name of the variable or parameter.
+ * @return int   1 if the quantity was given via -override/-overrideFile, 0 otherwise.
+ */
+int isQuantityOverridden(const char *name)
+{
+  return (gCommandLineOverrides != NULL) && (findHashStringStringNull(gCommandLineOverrides, name) != NULL);
 }
 
 void parseVariableStr(char* variableStr)

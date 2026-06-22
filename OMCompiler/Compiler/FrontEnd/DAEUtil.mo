@@ -230,7 +230,7 @@ public function getDerivativePaths " collects all paths representing derivative 
   input list<DAE.FunctionDefinition> inFuncDefs;
   output list<Absyn.Path> paths;
 algorithm
-  paths := matchcontinue inFuncDefs
+  paths := match inFuncDefs
     local
       list<Absyn.Path> pLst1,pLst2;
       Absyn.Path p1,p2;
@@ -253,7 +253,7 @@ algorithm
         paths;
 
     case _::funcDefs then getDerivativePaths(funcDefs);
-  end matchcontinue;
+  end match;
 end getDerivativePaths;
 
 public function addEquationBoundString "
@@ -2895,7 +2895,7 @@ public function getStatement
   output list<DAE.Statement> outStatements;
 algorithm
   outStatements:=
-  matchcontinue inElement
+  match inElement
     local
       list<DAE.Statement> stmts;
     case DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = stmts))
@@ -2907,7 +2907,7 @@ algorithm
         Debug.trace("- Differentiatte.getStatement failed\n");
       then
         fail();
-  end matchcontinue;
+  end match;
 end getStatement;
 
 public function getTupleSize "gets the size of a DAE.TUPLE"
@@ -4748,7 +4748,7 @@ public function joinDaeLst "joins a list of daes by using joinDaes"
   input list<DAE.DAElist> idaeLst;
   output DAE.DAElist outDae;
 algorithm
-  outDae := matchcontinue idaeLst
+  outDae := match idaeLst
     local
       DAE.DAElist dae,dae1;
       list<DAE.DAElist> daeLst;
@@ -4758,7 +4758,7 @@ algorithm
         dae1 := joinDaeLst(daeLst);
         dae := joinDaes(dae,dae1);
       then dae;
-  end matchcontinue;
+  end match;
 end joinDaeLst;
 
 public function splitElements
@@ -6060,7 +6060,7 @@ public function mergeAlgorithmSections
 protected
   list<DAE.Element> els, newEls = {}, dAElist;
   list<DAE.Statement> istmts = {}, stmts = {}, s;
-  DAE.ElementSource source, src;
+  DAE.ElementSource source = DAE.emptyElementSource, src;
   DAE.Ident ident;
   Option<SCode.Comment> comment;
 algorithm
@@ -6690,7 +6690,7 @@ protected
 algorithm
   DAE.CREF(componentRef = cref) := crefExp;
   DAE.CREF(componentRef = baseCref) := baseExp;
-  safe := matchcontinue (cref, baseCref)
+  safe := match (cref, baseCref)
     // Wholesale c -- always disqualify if any field already written.
     case (DAE.CREF_IDENT(ident = headIdent), DAE.CREF_IDENT(ident = baseIdent))
       then not (stringEq(headIdent, baseIdent) and not listEmpty(writtenFields));
@@ -6703,7 +6703,7 @@ algorithm
     case (DAE.CREF_QUAL(ident = headIdent), DAE.CREF_IDENT(ident = baseIdent))
       then not (stringEq(headIdent, baseIdent) and not listEmpty(writtenFields));
     else true;
-  end matchcontinue;
+  end match;
 end optMRFACheckCrefRead;
 annotation(__OpenModelica_Interface="frontend_base");
 end DAEUtil;

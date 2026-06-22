@@ -2094,6 +2094,7 @@ algorithm
     case "min" then evalBuiltinMin(args, fn);
     case "mod" then evalBuiltinMod(args, target);
     case "noEvent" then listHead(args); // No events during ceval, just return the argument.
+    case "nthRoot" then evalBuiltinNthRoot(args, target);
     case "ones" then evalBuiltinOnes(args);
     case "pre" then listHead(args);
     case "product" then evalBuiltinProduct(listHead(args));
@@ -2732,6 +2733,42 @@ algorithm
   end match;
 end evalBuiltinMod;
 
+function evalBuiltinNthRoot
+  input list<Expression> args;
+  input EvalTarget target;
+  output Expression result;
+protected
+  Real v;
+  Integer n;
+algorithm
+  result := match args
+    case {Expression.REAL(v), Expression.INTEGER(n)}
+      algorithm
+        // n must be positive.
+        if n <= 0 and EvalTarget.hasInfo(target) then
+          Error.addSourceMessage(Error.NON_POSITIVE_NTH_ROOT,
+            {String(v), String(n)}, EvalTarget.getInfo(target));
+          fail();
+        end if;
+
+        // If n is even, then v must be non-negative.
+        if intMod(n, 2) == 0 and v < 0 and EvalTarget.hasInfo(target) then
+          Error.addSourceMessage(Error.NEGATIVE_NTH_ROOT,
+            {String(v), String(n)}, EvalTarget.getInfo(target));
+          fail();
+        end if;
+      then
+        Expression.REAL(v ^ (1/n));
+
+    else
+      algorithm
+        printWrongArgsError(getInstanceName(), args, sourceInfo());
+      then
+        fail();
+
+  end match;
+end evalBuiltinNthRoot;
+
 function evalBuiltinOnes
   input list<Expression> args;
   output Expression result;
@@ -3347,7 +3384,7 @@ algorithm
     case "max" then (evalBuiltinMax2, Expression.makeMinValue(ty));
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown reduction function " +
+        Error.terminate(getInstanceName() + " got unknown reduction function " +
           AbsynUtil.pathString(Function.name(fn)), sourceInfo());
       then
         fail();
@@ -3431,7 +3468,7 @@ algorithm
     result := Expression.mapSplitExpressions(e,
       function Expression.nthRecordElement(index = index));
   else
-    Error.assertion(false, getInstanceName() + " could not evaluate " +
+    Error.terminate(getInstanceName() + " could not evaluate " +
       Expression.toString(exp), sourceInfo());
   end try;
 end evalRecordElement;

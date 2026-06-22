@@ -372,7 +372,7 @@ algorithm
       Boolean b1,b2, changed1;
       BackendDAE.Equation eq;
       BackendDAE.EquationAttributes attr;
-      DAE.Exp exp1,exp2,lhsExp,rhsExp;
+      DAE.Exp exp1,exp2,lhsExp = DAE.ICONST(0),rhsExp = DAE.ICONST(0);
       DAE.ElementSource source;
       AvlTreePathFunction.Tree funcs;
       list<BackendDAE.Equation> addEqs1, addEqs2;
@@ -1547,7 +1547,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " failed", sourceInfo());
+        Error.terminate(getInstanceName() + " failed", sourceInfo());
       then
         fail();
 
@@ -2234,7 +2234,7 @@ protected
   list<DAE.ComponentRef> outputs;
   list<DAE.Exp> lhsExps;
   list<list<DAE.Exp>> lhsExpLst;
-  list<DAE.Statement> stmts,stmtsIn;
+  list<DAE.Statement> stmts = {},stmtsIn;
 algorithm
   DAE.STMT_FOR(iter=iter, range=range, statementLst=stmtsIn) :=  stmtIn;
   try
@@ -2735,7 +2735,7 @@ protected function expType "gets the type of an expression"
   input DAE.Exp eIn;
   output DAE.Type tOut;
 algorithm
-  tOut := matchcontinue eIn
+  tOut := match eIn
     local
       DAE.Type t;
     case DAE.CREF(ty=t)
@@ -2746,7 +2746,7 @@ algorithm
       print("expType failed for: "+ExpressionBasics.printExpStr(eIn)+"\n");
       then
         fail();
-  end matchcontinue;
+  end match;
 end expType;
 
 protected function getScalarsForComplexVar "gets the list<ComponentRef> for the scalar values of complex vars and multidimensional vars (at least real) .

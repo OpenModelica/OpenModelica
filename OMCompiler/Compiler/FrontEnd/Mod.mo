@@ -1094,7 +1094,7 @@ protected function mergeModifiers
   input SCode.Mod inSMod;
   output DAE.Mod outMod;
 algorithm
-  outMod := matchcontinue inSMod
+  outMod := match inSMod
     local
       DAE.Mod m;
       list<SCode.SubMod> sl;
@@ -1109,7 +1109,7 @@ algorithm
 
     else inMod;
 
-  end matchcontinue;
+  end match;
 end mergeModifiers;
 
 protected function mergeSubMods
@@ -2862,7 +2862,7 @@ public function addEachOneLevel
   input DAE.Mod inMod;
   output DAE.Mod outMod;
 algorithm
-  outMod := matchcontinue inMod
+  outMod := match inMod
     local
       SCode.Final finalPrefix;
       SCode.Element el;
@@ -2887,7 +2887,7 @@ algorithm
       then
         fail();
 
-  end matchcontinue;
+  end match;
 end addEachOneLevel;
 
 public function addEachToSubsIfNeeded

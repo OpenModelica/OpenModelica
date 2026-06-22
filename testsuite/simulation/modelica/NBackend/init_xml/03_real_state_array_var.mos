@@ -26,7 +26,9 @@ initFileContent := readFile("StateArrayVariable_init.tmp.xml");
 // true
 // ""
 // {"StateArrayVariable", "StateArrayVariable_init.xml"}
-// "Warning: NSimJacobian.SimJacobian.create could not generate sparsity pattern.
+// "Warning: NSimJacobian.SimJacobian.createSparsityPattern: column cref not found in Jacobian local_idx_map: x[1]
+// 	Available keys: x, $DER.x
+// Warning: NSimJacobian.SimJacobian.create could not generate sparsity pattern of Jacobian [ODE].
 // "
 // 0
 // "  <ArrayVariable

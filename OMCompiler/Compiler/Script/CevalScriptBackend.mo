@@ -71,6 +71,7 @@ import BackendVariable;
 import Binding;
 import BlockCallRewrite;
 import CevalScript;
+import CodegenWasmJit;
 import CheckModel;
 import ClassInf;
 import ClockIndexes;
@@ -1053,7 +1054,7 @@ algorithm
           // Debugging code. Make sure the scanner works before debugging the diff.
           System.writeFile("string.before", s1);
           System.writeFile("string.after", stringAppendList(list(tokenContent(t) for t in tokens1)));
-          Error.assertion(false, "Lexed string does not match the original. See files string.before and string.after", sourceInfo());
+          Error.terminate("Lexed string does not match the original. See files string.before and string.after", sourceInfo());
           fail();
         end if;
 
@@ -1065,7 +1066,7 @@ algorithm
           // Debugging code. Make sure the parser works before debugging the diff.
           System.writeFile("string.before", s1);
           System.writeFile("string.after", SimpleModelicaParser.parseTreeStr(parseTree1));
-          Error.assertion(false, "Parsed string does not match the original. See files string.before and string.after", sourceInfo());
+          Error.terminate("Parsed string does not match the original. See files string.before and string.after", sourceInfo());
           fail();
         end if;
 
@@ -1082,7 +1083,7 @@ algorithm
           // Debugging code. Make sure the parser works before debugging the diff.
           System.writeFile("string.before", s2);
           System.writeFile("string.after", SimpleModelicaParser.parseTreeStr(parseTree2));
-          Error.assertion(false, "Parsed string does not match the original. See files string.before and string.after", sourceInfo());
+          Error.terminate("Parsed string does not match the original. See files string.before and string.after", sourceInfo());
           fail();
         end if;
 
@@ -1469,7 +1470,13 @@ algorithm
            System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
            SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
 
-           resI := System.systemCallRestrictedEnv(sim_call, logFile);
+           // The wasm-jit target runs the JIT-compiled model in-process and
+           // writes the result file directly, instead of spawning an executable.
+           if Config.simCodeTarget() == "wasm-jit" then
+             resI := CodegenWasmJit.runSimulation(executable, result_file, simflags);
+           else
+             resI := System.systemCallRestrictedEnv(sim_call, logFile);
+           end if;
 
            timeSimulation := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
 
@@ -1477,6 +1484,7 @@ algorithm
            result_file := "";
            resI := 1;
            timeSimulation := 0.0;
+           logFile := "";
          end if;
 
         timeTotal := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
@@ -1641,6 +1649,7 @@ algorithm
           result_file := "";
           timeSimulation := 0.0;
           resI := 1;
+          logFile := "";
         end if;
         timeTotal := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
         (outCache,simValue) := createSimulationResultFromcallModelExecutable(b,resI,timeTotal,timeSimulation,resultValues,outCache,className,vals,result_file,logFile);
@@ -1692,6 +1701,7 @@ algorithm
           result_file := "";
           timeSimulation := 0.0;
           resI := 1;
+          logFile := "";
         end if;
         timeTotal := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
         (outCache,simValue) := createSimulationResultFromcallModelExecutable(b,resI,timeTotal,timeSimulation,resultValues,outCache,className,vals,result_file,logFile);
@@ -1949,6 +1959,7 @@ algorithm
           s1 := getTotalModel(classpath, b1, b2, b3);
         else
           Error.addMessage(Error.SAVE_ENCRYPTED_CLASS_ERROR, {});
+          s1 := "";
         end if;
       then
         Values.STRING(s1);
@@ -3633,6 +3644,7 @@ algorithm
     SymbolTable.setAbsyn(p);
     // Always update the SCode structure; otherwise the cache plays tricks on us
     SymbolTable.clearSCode();
+    success := true;
   end try;
 end loadProgram;
 
@@ -3718,7 +3730,7 @@ public function runFrontEndWorkNF
   output String flatString;
 protected
   SCode.Program builtin_p, scode_p, annotation_p;
-  Boolean nf_api, inst_failed;
+  Boolean nf_api;
   Absyn.Path cls_name = className;
   Obfuscate.Mapping obfuscate_map;
   String obfuscate_mode;
@@ -3747,21 +3759,17 @@ algorithm
   // make sure we don't run the default instantiateModel using -d=nfAPI
   // only the stuff going via NFApi.mo should have this flag activated
   nf_api := FlagsUtil.set(Flags.NF_API, false);
-  inst_failed := false;
 
   try
     (flatModel, functions, flatString) :=
       NFInst.instClassInProgram(cls_name, scode_p, annotation_p, relaxedFrontend, dumpFlat);
   else
-    inst_failed := true;
     NFInst.clearCaches();
+    FlagsUtil.set(Flags.NF_API, nf_api);
+    fail();
   end try;
 
   FlagsUtil.set(Flags.NF_API, nf_api);
-
-  if inst_failed then
-    fail();
-  end if;
 end runFrontEndWorkNF;
 
 public function translateModel
@@ -4248,28 +4256,22 @@ protected function translateModelFMU
   input Boolean addDummy "if true, add a dummy state";
   input list<String> platforms = {"static"};
   input Option<SimCode.SimulationSettings> inSimSettings = NONE();
-  output Boolean success;
+  output Boolean success = false;
   output FCore.Cache cache;
   output Values.Value outValue;
 protected
   Flags.Flag flags;
 algorithm
-  if isProtectedContentAccess(className) then
-    // if AST contains encrypted class show nothing
-    cache := inCache;
-    outValue := Values.STRING("");
-  else
-    flags := loadCommandLineOptionsFromModel(className);
+  flags := loadCommandLineOptionsFromModel(className);
 
-    try
-      (success, cache, outValue) := callTranslateModelFMU(inCache,inEnv,className,FMUVersion,inFMUType,inFileNamePrefix,addDummy,platforms,inSimSettings);
-      // reset to the original flags
-      FlagsUtil.saveFlags(flags);
-    else
-      FlagsUtil.saveFlags(flags);
-      fail();
-    end try;
-  end if;
+  try
+    (success, cache, outValue) := callTranslateModelFMU(inCache,inEnv,className,FMUVersion,inFMUType,inFileNamePrefix,addDummy,platforms,inSimSettings);
+    // reset to the original flags
+    FlagsUtil.saveFlags(flags);
+  else
+    FlagsUtil.saveFlags(flags);
+    fail();
+  end try;
 end translateModelFMU;
 
 protected function callTranslateModelFMU
@@ -4542,7 +4544,7 @@ protected function buildEncryptedPackage
   input Absyn.Path className "path for the model";
   input Boolean encrypt;
   input Absyn.Program inProgram;
-  output Boolean success;
+  output Boolean success = false;
 protected
   Absyn.Class cls;
   String fileName, logFile, omhome, pd, ext, packageTool, packageToolArgs, command;
@@ -4567,8 +4569,8 @@ algorithm
         command := stringAppendList({"\"",packageTool,"\""," ",packageToolArgs});
       else
         Error.addMessage(Error.ENCRYPTION_NOT_SUPPORTED, {packageTool});
-        success := false;
         runCommand := false;
+        command := "";
       end if;
     else
       molName := AbsynUtil.pathString(className) + ".mol";
@@ -4602,7 +4604,6 @@ algorithm
     end if;
   else
     Error.addMessage(Error.FILE_NOT_FOUND_ERROR, {fileName});
-    success := false;
   end if;
 end buildEncryptedPackage;
 
@@ -5180,7 +5181,7 @@ algorithm
   // Insert the class again if it was moved within this class part. Otherwise it needs
   // to be moved into another class part, which is handled by moveClassInClassParts.
   if outRemainingOffset == 0 then
-    elements := e :: elements;
+    elements := Util.getOption(outClass) :: elements;
   end if;
 
   outElements := List.append_reverse(acc, elements);
@@ -6009,7 +6010,17 @@ algorithm
         end if;
         if success then
           try
-            CevalScript.compileModel(filenameprefix, libsAndLibDirs);
+            // The wasm-jit target produced the model WebAssembly module during
+            // translateModel and runs it in-process at simulate time, so there
+            // is no C executable to compile/link here. Instead, force the JIT
+            // compile of the model's wasm modules now so its cost is attributed
+            // to timeCompile (this clock) rather than leaking into
+            // timeSimulation at runSimulation.
+            if Config.simCodeTarget() <> "wasm-jit" then
+              CevalScript.compileModel(filenameprefix, libsAndLibDirs);
+            else
+              CodegenWasmJit.finishCompile(filenameprefix);
+            end if;
           else
             success := false;
           end try;
@@ -6149,6 +6160,7 @@ algorithm
     // handle normal models
     case ()
       algorithm
+        ExecStat.execStatReset();
         flags := loadCommandLineOptionsFromModel(className);
 
         try
@@ -6669,7 +6681,7 @@ protected function getAlgorithmsInClassParts
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<Absyn.ClassPart> outList;
 algorithm
-  outList := matchcontinue inAbsynClassPartLst
+  outList := match inAbsynClassPartLst
     local
       list<Absyn.ClassPart> algsList;
       list<Absyn.ClassPart> xs;
@@ -6685,7 +6697,7 @@ algorithm
       then
         algsList;
     case {} then {};
-  end matchcontinue;
+  end match;
 end getAlgorithmsInClassParts;
 
 protected function getNthAlgorithm
@@ -6745,7 +6757,7 @@ protected function getInitialAlgorithmsInClassParts
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<Absyn.ClassPart> outList;
 algorithm
-  outList := matchcontinue inAbsynClassPartLst
+  outList := match inAbsynClassPartLst
     local
       list<Absyn.ClassPart> algsList;
       list<Absyn.ClassPart> xs;
@@ -6761,7 +6773,7 @@ algorithm
       then
         algsList;
     case {} then {};
-  end matchcontinue;
+  end match;
 end getInitialAlgorithmsInClassParts;
 
 protected function getNthInitialAlgorithm
@@ -6821,7 +6833,7 @@ protected function getAlgorithmItemsCountInClassParts
  input list<Absyn.ClassPart> inAbsynClassPartLst;
   output Integer outInteger;
 algorithm
-  outInteger := matchcontinue inAbsynClassPartLst
+  outInteger := match inAbsynClassPartLst
     local
       list<Absyn.AlgorithmItem> algs;
       list<Absyn.ClassPart> xs;
@@ -6838,7 +6850,7 @@ algorithm
       then
         res;
     case {} then 0;
-  end matchcontinue;
+  end match;
 end getAlgorithmItemsCountInClassParts;
 
 protected function getAlgorithmItemsCountInAlgorithmItems
@@ -6846,7 +6858,7 @@ protected function getAlgorithmItemsCountInAlgorithmItems
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
   output Integer outInteger;
 algorithm
-  outInteger := matchcontinue inAbsynAlgorithmItemLst
+  outInteger := match inAbsynAlgorithmItemLst
     local
       list<Absyn.AlgorithmItem> xs;
       Integer c1, res;
@@ -6861,7 +6873,7 @@ algorithm
       then
         res;
     case {} then 0;
-  end matchcontinue;
+  end match;
 end getAlgorithmItemsCountInAlgorithmItems;
 
 protected function getNthAlgorithmItem
@@ -6974,7 +6986,7 @@ protected function getInitialAlgorithmItemsCountInClassParts
  input list<Absyn.ClassPart> inAbsynClassPartLst;
   output Integer outInteger;
 algorithm
-  outInteger := matchcontinue inAbsynClassPartLst
+  outInteger := match inAbsynClassPartLst
     local
       list<Absyn.AlgorithmItem> algs;
       list<Absyn.ClassPart> xs;
@@ -6991,7 +7003,7 @@ algorithm
       then
         res;
     case {} then 0;
-  end matchcontinue;
+  end match;
 end getInitialAlgorithmItemsCountInClassParts;
 
 protected function getNthInitialAlgorithmItem
@@ -7080,7 +7092,7 @@ protected function getEquationsInClassParts
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<Absyn.ClassPart> outList;
 algorithm
-  outList := matchcontinue inAbsynClassPartLst
+  outList := match inAbsynClassPartLst
     local
       list<Absyn.ClassPart> eqsList;
       list<Absyn.ClassPart> xs;
@@ -7096,7 +7108,7 @@ algorithm
       then
         eqsList;
     case {} then {};
-  end matchcontinue;
+  end match;
 end getEquationsInClassParts;
 
 protected function getNthEquation
@@ -7156,7 +7168,7 @@ protected function getInitialEquationsInClassParts
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<Absyn.ClassPart> outList;
 algorithm
-  outList := matchcontinue inAbsynClassPartLst
+  outList := match inAbsynClassPartLst
     local
       list<Absyn.ClassPart> eqsList;
       list<Absyn.ClassPart> xs;
@@ -7172,7 +7184,7 @@ algorithm
       then
         eqsList;
     case {} then {};
-  end matchcontinue;
+  end match;
 end getInitialEquationsInClassParts;
 
 protected function getNthInitialEquation
@@ -7232,7 +7244,7 @@ protected function getEquationItemsCountInClassParts
  input list<Absyn.ClassPart> inAbsynClassPartLst;
   output Integer outInteger;
 algorithm
-  outInteger := matchcontinue inAbsynClassPartLst
+  outInteger := match inAbsynClassPartLst
     local
       list<Absyn.EquationItem> eqs;
       list<Absyn.ClassPart> xs;
@@ -7249,7 +7261,7 @@ algorithm
       then
         res;
     case {} then 0;
-  end matchcontinue;
+  end match;
 end getEquationItemsCountInClassParts;
 
 protected function getEquationItemsCountInEquationItems
@@ -7257,7 +7269,7 @@ protected function getEquationItemsCountInEquationItems
   input list<Absyn.EquationItem> inAbsynEquationItemLst;
   output Integer outInteger;
 algorithm
-  outInteger := matchcontinue inAbsynEquationItemLst
+  outInteger := match inAbsynEquationItemLst
     local
       list<Absyn.EquationItem> xs;
       Integer c1, res;
@@ -7272,7 +7284,7 @@ algorithm
       then
         res;
     case {} then 0;
-  end matchcontinue;
+  end match;
 end getEquationItemsCountInEquationItems;
 
 protected function getNthEquationItem
@@ -7393,7 +7405,7 @@ protected function getInitialEquationItemsCountInClassParts
  input list<Absyn.ClassPart> inAbsynClassPartLst;
   output Integer outInteger;
 algorithm
-  outInteger := matchcontinue inAbsynClassPartLst
+  outInteger := match inAbsynClassPartLst
     local
       list<Absyn.EquationItem> eqs;
       list<Absyn.ClassPart> xs;
@@ -7410,7 +7422,7 @@ algorithm
       then
         res;
     case {} then 0;
-  end matchcontinue;
+  end match;
 end getInitialEquationItemsCountInClassParts;
 
 protected function getNthInitialEquationItem
@@ -7572,7 +7584,7 @@ protected function unparseGroupImport
   input list<Absyn.GroupImport> inAbsynGroupImportLst;
   output list<String> outList;
 algorithm
-  outList := matchcontinue inAbsynGroupImportLst
+  outList := match inAbsynGroupImportLst
   local
     list<Absyn.GroupImport> rest;
     list<String> lst;
@@ -7588,7 +7600,7 @@ algorithm
         lst := unparseGroupImport(rest);
       then
         lst;
-  end matchcontinue;
+  end match;
 end unparseGroupImport;
 
 public function isShortDefinition
@@ -7736,7 +7748,7 @@ protected function getTotalModel
   input Boolean stripComments;
   input Boolean obfuscate;
   output String result;
-  output String obfuscate_map;
+  output String obfuscate_map = "";
 protected
   SCode.Program scodeP;
   String str,str1,str2,str3;
@@ -8319,7 +8331,7 @@ protected function addInitialStateWithAnnotation
   input Absyn.Annotation inAnnotation;
   input Absyn.Program inProgram;
   output Boolean b;
-  output Absyn.Program outProgram;
+  output Absyn.Program outProgram = inProgram;
 protected
   Absyn.Path package_;
   Absyn.Class cdef, newcdef;

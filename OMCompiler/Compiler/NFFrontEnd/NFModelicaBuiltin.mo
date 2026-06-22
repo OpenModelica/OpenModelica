@@ -130,6 +130,16 @@ annotation(__OpenModelica_builtin=true, Documentation(info="<html>
 </html>"));
 end sqrt;
 
+function nthRoot
+  input Real v;
+  input Integer n;
+  output Real y;
+external "builtin";
+annotation(__OpenModelica_builtin=true, Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operator.'nthRoot()'\">nthRoot()</a>
+</html>"));
+end nthRoot;
+
 function sign "Sign of real or integer number"
   input Real v;
   output Integer _sign;

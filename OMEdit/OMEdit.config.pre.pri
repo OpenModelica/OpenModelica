@@ -47,6 +47,23 @@ CONFIG += warn_on
 
 DEFINES += OM_HAVE_PTHREADS
 
+# Build OMEdit against the Rust omc port (libOpenModelicaCompiler.so) in-process.
+# Enable by either setting OMEDIT_RUST_OMC=1 in the environment, or passing
+# qmake CONFIG+=rust_omc. The env var is preferred: a recursive build regenerates
+# the subproject Makefiles with a plain `qmake` (no CONFIG+= propagation), but the
+# env var is read on every qmake run.
+# This switches the OMC interface from the MMC value/runtime ABI to the port's
+# self-contained replacement (omc_rust_embedding.h, installed alongside the
+# scripting-API headers); see OMC/OMCProxy.cpp. The Rust .so must be installed as
+# libOpenModelicaCompiler.so (the same name/path the C build links).
+OMEDIT_RUST_OMC_ENV = $$(OMEDIT_RUST_OMC)
+equals(OMEDIT_RUST_OMC_ENV, 1) {
+  CONFIG += rust_omc
+}
+rust_omc {
+  DEFINES += OMC_RUST_ABI
+}
+
 win32 {
   _cxx = $$(CXX)
   contains(_cxx, clang++) {

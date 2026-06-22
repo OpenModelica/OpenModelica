@@ -213,6 +213,7 @@ public
       outputs_lst := UnorderedSet.toList(outputs_set);
     else
       Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
+      fail();
     end try;
   end getInputsOutputs;
 

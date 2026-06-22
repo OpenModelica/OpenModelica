@@ -10,7 +10,7 @@
 //   (default)                                        plain --parmodauto
 //   -parmodScheduler=level                           select the level scheduler
 //   -parmodClustering=fixed_width_min_height         select a clustering strategy
-//   -parmodDumpTaskGraph / -parmodImportClustering   JSON task-graph export + import
+//   -parmodExportTaskGraph / -parmodImportClustering   JSON task-graph export + import
 //   -parmodDumpStages                                per-optimization before/after snapshots
 // Every run must still match the reference result.
 //
@@ -42,8 +42,8 @@ resClustering := simulate(Modelica.Electrical.Analog.Examples.CauerLowPassSC, si
 (clusteringOk, clusteringDiffVars) := OpenModelica.Scripting.diffSimulationResults(actualFile=resFile, expectedFile=expectedRes,
                   diffPrefix="Modelica.Electrical.Analog.Examples.CauerLowPassSC_parmodClustering_diff", vars=varsToCompare);
 
-// --- json export (-parmodDumpTaskGraph) + import (-parmodImportClustering) --
-resExport := simulate(Modelica.Electrical.Analog.Examples.CauerLowPassSC, simflags="-parmodDumpTaskGraph=taskgraph.json");
+// --- json export (-parmodExportTaskGraph) + import (-parmodImportClustering) --
+resExport := simulate(Modelica.Electrical.Analog.Examples.CauerLowPassSC, simflags="-parmodExportTaskGraph=taskgraph.json");
 graphJson := readFile("taskgraph.json");
 // The exported json carries the fine-grained task graph and the clustering.
 hasGraph := regexBool(graphJson, "\"tasks\"") and regexBool(graphJson, "\"dependencies\"") and regexBool(graphJson, "\"clusters\"");

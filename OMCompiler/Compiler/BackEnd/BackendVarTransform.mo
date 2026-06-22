@@ -470,7 +470,7 @@ protected function makeTransitive2 "
   output DAE.Exp outDst;
 algorithm
   (outRepl,outSrc,outDst):=
-  matchcontinue inFuncTypeExpExpToBooleanOption
+  match inFuncTypeExpExpToBooleanOption
     local
       DAE.Exp dst_1;
       // for rule a->b1+..+bn, replace all b1 to bn's in the expression;
@@ -481,7 +481,7 @@ algorithm
         (repl,src,dst_1);
         // replace Exp failed, keep old rule.
     case _ then (repl,src,dst);  /* dst has no own replacement, return */
-  end matchcontinue;
+  end match;
 end makeTransitive2;
 
 protected function addExtendReplacement
@@ -2374,7 +2374,7 @@ protected function replaceTimeEvents
   output BackendDAE.TimeEvent teOut;
 
 algorithm
-  teOut := matchcontinue teIn
+  teOut := match teIn
     local
       Integer index;
       DAE.Exp startExp, intervalExp;
@@ -2385,7 +2385,7 @@ algorithm
     then BackendDAE.SAMPLE_TIME_EVENT(index, startExp, intervalExp, teIn.iter);
   else
     then teIn;
-  end matchcontinue;
+  end match;
 end replaceTimeEvents;
 
 protected function replaceZeroCrossing"replaces the exp in the BackendDAE.ZeroCrossing"
@@ -2395,7 +2395,7 @@ protected function replaceZeroCrossing"replaces the exp in the BackendDAE.ZeroCr
   output BackendDAE.ZeroCrossing zcOut;
 
 algorithm
-  zcOut := matchcontinue zcIn
+  zcOut := match zcIn
     local
       DAE.Exp relation_;
   case BackendDAE.ZERO_CROSSING(relation_ = relation_)
@@ -2404,7 +2404,7 @@ algorithm
     then BackendDAE.ZERO_CROSSING(zcIn.index, relation_, zcIn.occurEquLst, zcIn.iter);
   else
     then zcIn;
-  end matchcontinue;
+  end match;
 end replaceZeroCrossing;
 
 

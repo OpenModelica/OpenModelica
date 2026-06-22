@@ -1049,7 +1049,7 @@ public function mergeElements
    input  list<Absyn.ElementItem> inEls2;
    output list<Absyn.ElementItem> outEls;
   algorithm
-    outEls := matchcontinue(inEls1, inEls2)
+    outEls := match(inEls1, inEls2)
     local
       list<Absyn.ElementItem> rest, merged;
       Absyn.ElementItem e2;
@@ -1060,7 +1060,7 @@ public function mergeElements
           merged := mergeElement(inEls1, e2);
           merged := mergeElements(merged, rest);
         then merged;
-    end matchcontinue;
+    end match;
 end mergeElements;
 public function excludeElementsFromFile
 "exclude all elements which are part of the given file"

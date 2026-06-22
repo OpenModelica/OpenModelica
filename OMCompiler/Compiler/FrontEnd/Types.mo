@@ -112,7 +112,7 @@ end isDiscreteType;
 public function propsAnd "Function for merging a list of properties, currently only working on DAE.PROP() and not TUPLE_DAE.PROP()."
   input list<DAE.Properties> inProps;
   output DAE.Properties outProp;
-algorithm outProp := matchcontinue inProps
+algorithm outProp := match inProps
   local
     Properties prop;
     Const c,c2;
@@ -127,7 +127,7 @@ algorithm outProp := matchcontinue inProps
       true := equivtypes(ty,ty2);
     then
       DAE.PROP(ty,c);
-end matchcontinue;
+end match;
 end propsAnd;
 
 public function makePropsNotConst
@@ -871,7 +871,7 @@ public function numberOfDimensions "Return the number of dimensions of a Type."
   input DAE.Type inType;
   output Integer outInteger;
 algorithm
-  outInteger := matchcontinue inType
+  outInteger := match inType
     local
       Integer n;
       Type t;
@@ -888,7 +888,7 @@ algorithm
         n := numberOfDimensions(t);
       then n;
     else 0;
-  end matchcontinue;
+  end match;
 end numberOfDimensions;
 
 public function dimensionsKnown
@@ -1792,7 +1792,7 @@ public function makeArray "This function makes an array type given a Type and an
   input Absyn.ArrayDim inArrayDim;
   output DAE.Type outType;
 algorithm
-  outType := matchcontinue (inType,inArrayDim)
+  outType := match (inType,inArrayDim)
     local
       Type t;
       Integer len;
@@ -1803,7 +1803,7 @@ algorithm
         len := listLength(l);
       then
         DAE.T_ARRAY(t,{DAE.DIM_INTEGER(len)});
-  end matchcontinue;
+  end match;
 end makeArray;
 
 public function makeArraySubscripts " This function makes an array type given a Type and a list of DAE.Subscript"
@@ -2079,6 +2079,27 @@ algorithm
   //rettype := makeElementReturnType(inOutputElementLst);
   outType := DAE.T_FUNCTION(newfargs,rettype,functionAttributes,tysrc);
 end extendsFunctionTypeArgs;
+
+public function setFunctionNoReturn
+  "Marks a function type as never returning normally, so that callers can treat
+   calls to it as terminating."
+  input output DAE.Type ty;
+algorithm
+  ty := match ty
+    local
+      list<DAE.FuncArg> fargs;
+      DAE.Type rettype;
+      Absyn.Path p;
+      DAE.InlineType inl;
+      Boolean ge, fp;
+      DAE.Purity pu;
+      DAE.FunctionBuiltin bi;
+      DAE.FunctionParallelism par;
+    case DAE.T_FUNCTION(fargs, rettype, DAE.FUNCTION_ATTRIBUTES(inl,ge,pu,fp,bi,par,_), p)
+      then DAE.T_FUNCTION(fargs, rettype, DAE.FUNCTION_ATTRIBUTES(inl,ge,pu,fp,bi,par,DAE.NoReturn.NORETURN), p);
+    else ty;
+  end match;
+end setFunctionNoReturn;
 
 protected function makeElementReturnType "
   Create a return type from a list of Element output variables.
@@ -3907,7 +3928,7 @@ algorithm
         (e_1,_) := matchType(e,t1,t2,printFailtrace);
         t := simplifyType(t2);
       then
-        (DAE.CALL(Absyn.IDENT("mmc_unbox_record"),{e_1},DAE.CALL_ATTR(t,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL())),t2);
+        (DAE.CALL(Absyn.IDENT("mmc_unbox_record"),{e_1},DAE.CALL_ATTR(t,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL(),DAE.NoReturn.RETURNS)),t2);
 
   end matchcontinue;
 end typeConvert;
@@ -3919,7 +3940,7 @@ type."
  input DAE.Dimension dim;
  output DAE.Exp res;
 algorithm
-  res := matchcontinue ie
+  res := match ie
     local DAE.Type ty,ty1; DAE.Exp e;
     case DAE.CAST(ty,e)
       algorithm
@@ -3927,7 +3948,7 @@ algorithm
       then DAE.CAST(ty1,e);
 
     case e then e;
-  end matchcontinue;
+  end match;
 end liftExpType;
 
 public function typeConvertArray
@@ -6991,7 +7012,7 @@ algorithm
   isT := isTuple(ty);
   isB := isBuiltin(attr.isBuiltin);
   isImpure := attr.purity == DAE.Purity.IMPURE;
-  callAttr := DAE.CALL_ATTR(ty,isT,isB,isImpure,false,attr.inline,DAE.NO_TAIL());
+  callAttr := DAE.CALL_ATTR(ty,isT,isB,isImpure,false,attr.inline,DAE.NO_TAIL(),DAE.NoReturn.RETURNS);
 end makeCallAttr;
 
 public function builtinName

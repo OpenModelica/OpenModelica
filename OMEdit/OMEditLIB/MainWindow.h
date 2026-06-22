@@ -42,9 +42,13 @@
 
 #undef smooth
 
+#ifdef OMC_RUST_ABI
+#include "omc_rust_embedding.h" // Rust omc port: self-contained threadData_t (no MMC runtime)
+#else
 extern "C" {
 #include "meta/meta_modelica.h"
 }
+#endif
 
 #include "Util/StringHandler.h"
 

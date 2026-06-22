@@ -504,7 +504,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got non-instantiated component " + Prefix.toString(prefix) + "\n", sourceInfo());
+        Error.terminate(getInstanceName() + " got non-instantiated component " + Prefix.toString(prefix) + "\n", sourceInfo());
       then
         ();
 
@@ -567,7 +567,7 @@ algorithm
 
           else
             algorithm
-              Error.assertion(false, getInstanceName() + " got unknown component", sourceInfo());
+              Error.terminate(getInstanceName() + " got unknown component", sourceInfo());
             then
               fail();
         end match;
@@ -583,7 +583,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown component", sourceInfo());
+        Error.terminate(getInstanceName() + " got unknown component", sourceInfo());
       then
         fail();
 
@@ -909,7 +909,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got non-record binding " +
+        Error.terminate(getInstanceName() + " got non-record binding " +
           Expression.toString(binding_exp), sourceInfo());
       then
         fail();
@@ -1597,7 +1597,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got untyped binding.", sourceInfo());
+        Error.terminate(getInstanceName() + " got untyped binding.", sourceInfo());
       then
         fail();
 
@@ -2431,7 +2431,7 @@ function resolveConnections
   input FlattenSettings settings;
 protected
   Connections conns;
-  list<Equation> conn_eql, ec_eql, tlio_eql;
+  list<Equation> conn_eql, stream_eql, ec_eql, tlio_eql;
   list<Variable> tlio_vars;
   ConnectionSets.Sets csets;
   array<list<Connector>> csets_array;
@@ -2441,6 +2441,8 @@ protected
   UnorderedMap<ComponentRef, Variable> vars;
   UnorderedSet<ComponentRef> connectedLocalIOs;
   Integer exposeLocalIOs;
+  StreamFlowAlias.Replacements flow_alias_repl;
+  Option<StreamFlowAlias.Replacements> flow_alias_repl_opt = NONE();
 algorithm
   vars := UnorderedMap.new<Variable>(ComponentRef.hash, ComponentRef.isEqual,
     listLength(flatModel.variables));
@@ -2491,8 +2493,13 @@ algorithm
   // add the equations to the flat model
   flatModel.equations := listAppend(conn_eql, flatModel.equations);
 
+  // do flow alias elimination if it's enabled
   if not listEmpty(unhandled_stream_sets) then
-    flatModel := StreamFlowAlias.eliminateAliases(flatModel);
+    (flatModel, flow_alias_repl) := StreamFlowAlias.eliminateAliases(flatModel, vars);
+    conn_eql := ConnectEquations.generateStreamEquationsList(unhandled_stream_sets, vars, flow_alias_repl);
+    conn_eql := StreamFlowAlias.applyReplacementsInEql(flow_alias_repl, conn_eql);
+    flatModel.equations := listAppend(conn_eql, flatModel.equations);
+    flow_alias_repl_opt := SOME(flow_alias_repl);
   end if;
 
   // add top-level IOs for unconnected local IOs
@@ -2505,7 +2512,7 @@ algorithm
 
   // Evaluate any connection operators if they're used.
   if  System.getHasStreamConnectors() or System.getUsesCardinality() then
-    flatModel := evaluateConnectionOperators(flatModel, csets, csets_array, vars, ctable);
+    flatModel := evaluateConnectionOperators(flatModel, csets, csets_array, vars, ctable, flow_alias_repl_opt);
   end if;
 
   execStat(getInstanceName());
@@ -2567,10 +2574,11 @@ function evaluateConnectionOperators
   input array<list<Connector>> setsArray;
   input UnorderedMap<ComponentRef, Variable> variables;
   input CardinalityTable.Table ctable;
+  input Option<StreamFlowAlias.Replacements> replacements;
 algorithm
-  flatModel.variables := list(evaluateBindingConnOp(c, sets, setsArray, variables, ctable) for c in flatModel.variables);
-  flatModel.equations := evaluateEquationsConnOp(flatModel.equations, sets, setsArray, variables, ctable);
-  flatModel.initialEquations := evaluateEquationsConnOp(flatModel.initialEquations, sets, setsArray, variables, ctable);
+  flatModel.variables := list(evaluateBindingConnOp(c, sets, setsArray, variables, ctable, replacements) for c in flatModel.variables);
+  flatModel.equations := evaluateEquationsConnOp(flatModel.equations, sets, setsArray, variables, ctable, replacements);
+  flatModel.initialEquations := evaluateEquationsConnOp(flatModel.initialEquations, sets, setsArray, variables, ctable, replacements);
   // TODO: Implement evaluation for algorithm sections.
 end evaluateConnectionOperators;
 
@@ -2580,6 +2588,7 @@ function evaluateBindingConnOp
   input array<list<Connector>> setsArray;
   input UnorderedMap<ComponentRef, Variable> variables;
   input CardinalityTable.Table ctable;
+  input Option<StreamFlowAlias.Replacements> replacements;
 protected
   Expression exp, eval_exp;
 algorithm
@@ -2588,7 +2597,7 @@ algorithm
       guard Binding.hasExp(var.binding)
       algorithm
         exp := Binding.getExp(var.binding);
-        eval_exp := ConnectEquations.evaluateOperators(exp, sets, setsArray, variables, ctable);
+        eval_exp := ConnectEquations.evaluateOperators(exp, sets, setsArray, variables, ctable, replacements);
 
         if not referenceEq(exp, eval_exp) then
           var.binding := Binding.setExp(eval_exp, var.binding);
@@ -2606,8 +2615,9 @@ function evaluateEquationsConnOp
   input array<list<Connector>> setsArray;
   input UnorderedMap<ComponentRef, Variable> variables;
   input CardinalityTable.Table ctable;
+  input Option<StreamFlowAlias.Replacements> replacements;
 algorithm
-  equations := list(evaluateEquationConnOp(eq, sets, setsArray, variables, ctable) for eq in equations);
+  equations := list(evaluateEquationConnOp(eq, sets, setsArray, variables, ctable, replacements) for eq in equations);
 end evaluateEquationsConnOp;
 
 function evaluateEquationConnOp
@@ -2616,10 +2626,11 @@ function evaluateEquationConnOp
   input array<list<Connector>> setsArray;
   input UnorderedMap<ComponentRef, Variable> variables;
   input CardinalityTable.Table ctable;
+  input Option<StreamFlowAlias.Replacements> replacements;
 algorithm
   eq := Equation.mapExp(eq,
     function ConnectEquations.evaluateOperators(sets = sets, setsArray = setsArray,
-      variables = variables, ctable = ctable));
+      variables = variables, ctable = ctable, replacements = replacements));
 
   () := match eq
     case Equation.IF()

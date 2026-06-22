@@ -892,7 +892,7 @@ public function valueReals "
   output list<Real> outReal;
 algorithm
   outReal:=
-  matchcontinue inValue
+  match inValue
     local
       Real r;
       list<Values.Value> rest;
@@ -915,7 +915,7 @@ algorithm
         res := valueReals(rest);
       then
         res;
-  end matchcontinue;
+  end match;
 end valueReals;
 
 public function valueString

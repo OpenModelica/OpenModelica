@@ -227,6 +227,13 @@ package builtin
     output Integer ch;
   end stringGet;
 
+  function substring
+    input String str;
+    input Integer start;
+    input Integer stop;
+    output String out;
+  end substring;
+
   function listHead
     replaceable type TypeVar subtypeof Any;
     input list<TypeVar> lst;
@@ -1883,12 +1890,6 @@ package BackendDAE
 end BackendDAE;
 
 package System
-  function substring
-    input String inString;
-    input Integer start;
-    input Integer stop;
-    output String outString;
-  end substring;
 
   function stringFind
     input String str;
@@ -4032,6 +4033,12 @@ package Expression
     input Boolean allow_arrays;
     output Boolean b;
   end isSimpleLiteralValue;
+
+  function makeCrefExp
+    input DAE.ComponentRef inCref;
+    input DAE.Type inExpType;
+    output DAE.Exp outExp;
+  end makeCrefExp;
 end Expression;
 
 package ExpressionDump
@@ -4173,6 +4180,7 @@ package Flags
   constant ConfigFlag MAX_SIZE_LINEARIZATION;
   constant ConfigFlag NEW_BACKEND;
   constant ConfigFlag FMI_EXTRA_ANNOTATIONS;
+  constant ConfigFlag SIM_CODE_SCALARIZE;
 
   function isSet
     input DebugFlag inFlag;

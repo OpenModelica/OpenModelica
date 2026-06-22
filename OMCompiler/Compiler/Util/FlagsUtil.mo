@@ -260,6 +260,7 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.DEBUG_ADJOINT,
   Flags.FLOW_ALIAS_ELIMINATION,
   Flags.DUMP_CHECK_MODEL,
+  Flags.CHECK_DEF_USE,
   Flags.JIT_EVAL_FUNC,
   Flags.JIT_DUMP_IR,
   Flags.JIT_NO_OPT,

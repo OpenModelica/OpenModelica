@@ -226,6 +226,7 @@ algorithm
     end matchcontinue;
   else
     Error.addInternalError("VisualXMl.getConstCrefBinding failed for "+ComponentReference.crefStr(cr)+"\n", sourceInfo());
+    fail();
   end try;
 end getConstCrefBinding;
 
@@ -832,7 +833,7 @@ function isVisualizationVar
   input BackendDAE.Var var;
   output Boolean isVisVar;
 algorithm
-  isVisVar := matchcontinue var
+  isVisVar := match var
     local
       DAE.ElementSource source;
       String obj;
@@ -848,7 +849,7 @@ algorithm
         Util.stringNotEqual(obj, "");
 
     else false;
-  end matchcontinue;
+  end match;
 end isVisualizationVar;
 
 function isVisualizationVarFold
@@ -894,7 +895,7 @@ function hasVisPath
   output String visPath;
   output Integer numOut;
 algorithm
-  (visPath, numOut) := matchcontinue pathsIn
+  (visPath, numOut) := match pathsIn
     local
       String name;
       Absyn.Path path;
@@ -919,7 +920,7 @@ algorithm
         (name, numIn);
 
     case _::rest then hasVisPath(rest,numIn+1);
-  end matchcontinue;
+  end match;
 end hasVisPath;
 
 function dumpVis

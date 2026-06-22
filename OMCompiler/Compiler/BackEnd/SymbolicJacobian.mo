@@ -2074,8 +2074,8 @@ protected function generateGenericJacobian "author: wbraun"
   input Boolean daeMode = false;
   output Option<BackendDAE.SymbolicJacobian> outJacobian;
   output AvlTreePathFunction.Tree outFunctionTree;
-  output BackendDAE.SparsePattern outSparsePattern;
-  output BackendDAE.SparseColoring outSparseColoring;
+  output BackendDAE.SparsePattern outSparsePattern = BackendDAE.emptySparsePattern;
+  output BackendDAE.SparseColoring outSparseColoring = {};
   output BackendDAE.NonlinearPattern nonlinearPattern;
 protected
   BackendDAE.SymbolicJacobian symbolicJacobian;
@@ -2196,7 +2196,7 @@ algorithm
       BackendDAE.BackendDAE backendDAE, backendDAE2;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-      Boolean b;
+      Boolean b = false;
       list<String> strPostOptModules;
 
       case (BackendDAE.DAE(syst::{}, shared), {}, _)
@@ -3105,7 +3105,7 @@ protected function hasEqnNonDiffParts
   output Boolean cont;
   output tuple<list<DAE.Exp>, Boolean, Boolean> outTpl;
 algorithm
-  (outExp, cont, outTpl) := matchcontinue(inExp, inTpl)
+  (outExp, cont, outTpl) := match(inExp, inTpl)
   local
     list<DAE.Exp> expLst;
     Boolean b, insideCall;
@@ -3129,7 +3129,7 @@ algorithm
 */
 
     case (outExp, (_, b, _)) then (outExp, b, inTpl);
-  end matchcontinue;
+  end match;
 end hasEqnNonDiffParts;
 
 protected function isRecordInvoled
@@ -4561,7 +4561,7 @@ uniontype LinearJacobian
         then ();
 
         else algorithm
-          Error.assertion(false, getInstanceName() + " key does not have an element in pivot row.", sourceInfo());
+          Error.terminate(getInstanceName() + " key does not have an element in pivot row.", sourceInfo());
         then ();
        end match;
     end for;

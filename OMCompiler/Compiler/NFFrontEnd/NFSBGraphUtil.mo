@@ -79,7 +79,7 @@ public
 
       for dim in dims loop
         if not Dimension.isKnown(dim) then
-          Error.assertion(false, getInstanceName() + ": unknown dimension " + Dimension.toString(dim),
+          Error.terminate(getInstanceName() + ": unknown dimension " + Dimension.toString(dim),
                                  sourceInfo());
         end if;
 
@@ -195,7 +195,7 @@ public
       case Expression.RANGE() then intervalFromRange(e);
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown expression " +
+          Error.terminate(getInstanceName() + " got unknown expression " +
                                  Expression.toString(e), sourceInfo());
         then
           fail();
@@ -236,13 +236,13 @@ public
         case Op.MUL then SBInterval.new(llo * rlo, llo * step, lhi * rhi);
         else
           algorithm
-            Error.assertion(false, getInstanceName() +
+            Error.terminate(getInstanceName() +
               " got unknown operator " + Operator.symbol(op), sourceInfo());
           then
             fail();
       end match;
     else
-      Error.assertion(false, getInstanceName() + " got unknown expression " +
+      Error.terminate(getInstanceName() + " got unknown expression " +
         Expression.toString(Expression.BINARY(lhs, op, rhs)) + "\n", sourceInfo());
     end if;
   end intervalFromBinaryExp;
@@ -304,7 +304,7 @@ public
 
     if SBMultiInterval.ndim(mi1) <> SBMultiInterval.ndim(mi2) and
        mi1_sz <> 1 and mi2_sz <> 1 then
-      Error.assertion(false, getInstanceName() + " got incompatible connect", sourceInfo());
+      Error.terminate(getInstanceName() + " got incompatible connect", sourceInfo());
     end if;
 
     sz := arrayLength(ints1);
@@ -320,7 +320,7 @@ public
       sz2 := SBInterval.size(ints2[i]);
 
       if sz1 <> sz2 and sz1 <> 1 and sz2 <> 1 then
-        Error.assertion(false, getInstanceName() + " got incompatible connect", sourceInfo());
+        Error.terminate(getInstanceName() + " got incompatible connect", sourceInfo());
       end if;
 
       count := max(sz1, sz2);

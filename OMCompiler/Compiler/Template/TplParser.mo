@@ -319,7 +319,7 @@ public function mergeErrors
   input LineInfo inLineInfoToAddErrorsFrom;
   output LineInfo outLineInfo;
 algorithm
-  outLineInfo := matchcontinue (inLineInfo, inLineInfoToAddErrorsFrom)
+  outLineInfo := match (inLineInfo, inLineInfoToAddErrorsFrom)
     local
       list<String>  solchars, errLst, errLstToAdd;
       String fname;
@@ -342,7 +342,7 @@ algorithm
         Debug.trace("- !!! TplParser.mergeErrors failed.\n");
       then fail();
 
-  end matchcontinue;
+  end match;
 end mergeErrors;
 
 
@@ -4129,7 +4129,7 @@ public function makeStrTokFromRevStrList
   input list<String> inRevStrList;
   output Tpl.StringToken outStringToken;
 algorithm
-  outStringToken := matchcontinue inRevStrList
+  outStringToken := match inRevStrList
     local
       list<String> strList;
       String str;
@@ -4160,7 +4160,7 @@ algorithm
         Debug.trace("Parse invalid operation error - TplParser.makeStrTokFromRevStrList failed (an empty string list passed?) .\n");
       then fail();
 
-  end matchcontinue;
+  end match;
 end makeStrTokFromRevStrList;
 
 /*
@@ -4634,7 +4634,7 @@ public function makeTemplateFromExpList
   output TplAbsyn.ExpressionBase outExpressionBase;
 algorithm
   outExpressionBase
-  := matchcontinue (inExpressionList, inLeftQuote,inRightQuote)
+  := match (inExpressionList, inLeftQuote,inRightQuote)
     local
       String lquote, rquote;
       TplAbsyn.ExpressionBase expB;
@@ -4652,7 +4652,7 @@ algorithm
        expLst := listReverse(expLst);
      then TplAbsyn.TEMPLATE(expLst, lquote, rquote);
 
-  end matchcontinue;
+  end match;
 end makeTemplateFromExpList;
 
 

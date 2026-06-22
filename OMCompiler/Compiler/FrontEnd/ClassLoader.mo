@@ -222,7 +222,7 @@ algorithm
       Option<Absyn.Class> cl;
       list<String> filenames;
       LoadFileStrategy strategy;
-      Boolean lveStarted;
+      Boolean lveStarted = false;
       Option<Integer> lveInstance;
 
     case false

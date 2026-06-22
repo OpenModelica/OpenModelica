@@ -274,7 +274,7 @@ function convertIfToAssignment
 protected
   list<tuple<Expression, list<Statement>>> branches;
   Expression cond, if_exp, output_exp, lhs, rhs;
-  Type ty;
+  Type ty = Type.UNKNOWN();
   list<Statement> body;
   Statement s;
   DAE.ElementSource source;

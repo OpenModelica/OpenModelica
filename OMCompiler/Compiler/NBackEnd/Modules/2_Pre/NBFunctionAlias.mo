@@ -285,10 +285,10 @@ protected
     UnorderedMap<Call_Id, Call_Aux> map = UnorderedMap.new<Call_Aux>(Call_Id.hash, Call_Id.isEqual);
     VariablePointers variables = VarData.getVariables(varData);
     UnorderedSet<VariablePointer> set = UnorderedSet.new(BVariable.hash, BVariable.equalName) "new iterators";
-    UnorderedMap<BClock, ComponentRef> clock_map, infer_map;
+    UnorderedMap<BClock, ComponentRef> clock_map = UnorderedMap.new<ComponentRef>(BClock.hash, BClock.isEqual), infer_map = UnorderedMap.new<ComponentRef>(BClock.hash, BClock.isEqual);
     Pointer<Integer> aux_index = Pointer.create(1);
-    list<Pointer<Variable>> new_vars_disc = {}, new_vars_cont = {}, new_vars_init = {}, new_vars_recd = {}, new_vars_clck, new_vars_infr;
-    list<Pointer<Equation>> new_eqns_disc = {}, new_eqns_cont = {}, new_eqns_init = {}, new_eqns_clck, new_eqns_infr;
+    list<Pointer<Variable>> new_vars_disc = {}, new_vars_cont = {}, new_vars_init = {}, new_vars_recd = {}, new_vars_clck = {}, new_vars_infr = {};
+    list<Pointer<Equation>> new_eqns_disc = {}, new_eqns_cont = {}, new_eqns_init = {}, new_eqns_clck = {}, new_eqns_infr = {};
     list<tuple<Call_Id, Call_Aux>> debug_lst_sim = {}, debug_lst_ini;
   algorithm
     () := match (eqData, varData)

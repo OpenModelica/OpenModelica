@@ -78,6 +78,7 @@ import CodegenOMSIC;
 import CodegenOMSI_common;
 import CodegenXML;
 import CodegenJS;
+import CodegenWasmJit;
 import Config;
 import DAEMode;
 import DAEUtil;
@@ -702,6 +703,10 @@ algorithm
       Tpl.tplNoret(CodegenXML.translateModel, simCode);
     then ();
 
+    case "wasm-jit" algorithm
+      CodegenWasmJit.translateModel(simCode);
+    then ();
+
     case "None"
     then ();
 
@@ -876,8 +881,23 @@ algorithm
         copyFiles(RuntimeSources.cminpack_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
         cminpack_sources := RuntimeSources.cminpack_sources;
 
-        // Check if the sundials files are needed
-        if SimCodeUtil.cvodeFmiFlagIsSet(simCode.fmiSimulationFlags) then
+        // Check if the sundials files are needed.
+        // The in-FMU CVODE integrator (s:cvode) is a Co-Simulation feature: cvode_solver_fmi_step()
+        // drives the fmi2 ModelInstance / fmi2DoStep API and cvode_solver.h includes
+        // fmu2_model_interface.h. OpenModelica only exports FMI 1.0 as Model Exchange (CS export
+        // requires FMI 2.0, see FMI.canExportFMU); a model-exchange FMU is integrated by the
+        // importer, and the FMI 1.0 export only ships fmu1_model_interface.h, so copying the
+        // sundials sources there breaks compilation (fatal error:
+        // 'fmi-export/fmu2_model_interface.h' file not found). See issue #15838.
+        if FMUVersion == "1.0" then
+          // The in-FMU CVODE integrator does not apply to a model-exchange FMU; warn that the
+          // 's:cvode' flag is ignored and do not pull in the sundials sources (they would not
+          // compile for FMI 1.0).
+          if SimCodeUtil.cvodeFmiFlagIsSet(simCode.fmiSimulationFlags) then
+            Error.addCompilerWarning("OpenModelica exports FMI 1.0 as Model Exchange only (Co-Simulation export requires FMI 2.0). A model-exchange FMU is integrated by the importer, so the in-FMU CVODE integrator does not apply. The 's:cvode' simulation flag is ignored for this FMI 1.0 export.");
+          end if;
+          simrt_c_sundials_sources := {};
+        elseif SimCodeUtil.cvodeFmiFlagIsSet(simCode.fmiSimulationFlags) then
           // The sundials headers are in the include directory.
           copyFiles(RuntimeSources.sundials_headers, source=install_include_omc_dir, destination=fmu_tmp_sources_dir);
           copyFiles(RuntimeSources.simrt_c_sundials_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
@@ -1011,7 +1031,14 @@ algorithm
 
         // Add external libraries and includes
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMI_INTERFACE_HEADER_FILES_DIRECTORY@", "\"" + Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi" + "\"");
-        (needCvode, cvodeDirectory) := SimCodeUtil.getCmakeSundialsLinkCode(simCode.fmiSimulationFlags);
+        // FMI 1.0 (Model Exchange only) never links CVODE into the FMU (see note above where the
+        // sundials sources are skipped for FMI 1.0); keep NEED_CVODE=OFF so cvode_solver.c and
+        // sundials_error.c are not compiled. See issue #15838.
+        if FMUVersion == "1.0" then
+          (needCvode, cvodeDirectory) := ("OFF", "\"\"");
+        else
+          (needCvode, cvodeDirectory) := SimCodeUtil.getCmakeSundialsLinkCode(simCode.fmiSimulationFlags);
+        end if;
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@NEED_CVODE@", needCvode);
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@CVODE_DIRECTORY@", cvodeDirectory);
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_ADDITIONAL_LIBS@", SimCodeUtil.getCmakeLinkLibrariesCode(simCode.makefileParams.libs));
@@ -1020,9 +1047,14 @@ algorithm
         System.writeFile(fmu_tmp_sources_dir + "CMakeLists.txt", cmakelistsStr);
 
         // Set model define include in fmu2_model_interface.c
-        modelDefinesHeaderStr := System.readFile(fmu_tmp_sources_dir + "fmi-export/fmu2_model_interface.c");
-        modelDefinesHeaderStr := System.stringReplace(modelDefinesHeaderStr, "fmu2_dummy_model_defines.h", "../" + simCode.fileNamePrefix + "_FMU.h");
-        System.writeFile(fmu_tmp_sources_dir + "fmi-export/fmu2_model_interface.c", modelDefinesHeaderStr);
+        // Only for FMI 2.0+. FMI 1.0 includes fmu1_model_interface.c.inc directly into
+        // the generated <model>_FMU.c (which already has the model defines), so there is
+        // no standalone fmu2_model_interface.c to patch. See issue #15838.
+        if FMUVersion <> "1.0" then
+          modelDefinesHeaderStr := System.readFile(fmu_tmp_sources_dir + "fmi-export/fmu2_model_interface.c");
+          modelDefinesHeaderStr := System.stringReplace(modelDefinesHeaderStr, "fmu2_dummy_model_defines.h", "../" + simCode.fileNamePrefix + "_FMU.h");
+          System.writeFile(fmu_tmp_sources_dir + "fmi-export/fmu2_model_interface.c", modelDefinesHeaderStr);
+        end if;
 
         Tpl.closeFile(Tpl.tplCallWithFailErrorNoArg(
           function CodegenFMU.fmuMakefile(
@@ -1380,9 +1412,9 @@ algorithm
         ExecStat.execStat("Serialize dlow");
       end if;
 
-      isFMI2 := match kind
-        case TranslateModelKind.FMU(fmuType) then FMI.isFMIVersion20();
-        else false;
+      (isFMI2,fmuType) := match kind
+        case TranslateModelKind.FMU(fmuType) then (FMI.isFMIVersion20(),fmuType);
+        else (false,"");
       end match;
       // FMI 2.0: enable postOptModule to create alias variables for output states
       strPreOptModules := if (isFMI2) then SOME("introduceOutputAliases"::BackendDAEUtil.getPreOptModulesString()) else NONE();

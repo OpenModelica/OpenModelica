@@ -33,252 +33,265 @@
  *
  */
 
-#ifndef GraphCell_H_
-#define GraphCell_H_
+#ifndef GRAPHCELL_H_
+#define GRAPHCELL_H_
 
-
-//QT Headers
+// Qt headers
 #include <QtGlobal>
 #include <QtWidgets>
 
-//IAEX Headers
+// IAEX headers
 #include "cell.h"
+#include "indent.h"
 #include "inputcelldelegate.h"
 #include "document.h"
-//#include <QToolBar>
 #include "PlotWindow.h"
 #include "ModelicaTextHighlighter.h"
 
-class IndentationState;
+namespace IAEX {
 
-namespace IAEX
+// Enumerations
+enum graphCellStates { Finished, Eval, Error, Modified };
+
+// Forward declarations
+class MyTextEdit2;
+class MyTextEdit2a;
+
+// GraphCell – the notebook cell that holds Modelica source code
+class GraphCell : public Cell
 {
-  enum graphCellStates {Finished, Eval, Error, Modified};
-
-  class MyTextEdit2;
-  class MyTextEdit2a;
-  class GraphCell : public Cell
-  {
     Q_OBJECT
+public:
+    explicit GraphCell(Document *doc, QWidget *parent = nullptr);
 
-  public:
-    GraphCell(Document *doc, QWidget *parent=0);  // Changed 2005-11-23 AF
-    virtual ~GraphCell();
+    /* ----- Cell‑interface (override virtuals from Cell) ----- */
+    QString          text()               override;
+    QString          textHtml()           override;
+    QTextDocument*   document()           override;
+    QTextCursor      textCursor()         override;
+    void             cutText()            override;
+    void             copyText()           override;
+    void             pasteText()          override;
+    bool             findText(const QString& exp,
+                              QTextDocument::FindFlags options) override;
+    void             clearSelection()     override;
+    void             moveCursor(QTextCursor::MoveOperation operation) override;
+    void             addCellWidgets()    override;
+    void             removeCellWidgets() override;
+    void             accept(Visitor &v)  override;
+    bool             isClosed();                 // not virtual in Cell
+    bool             isEditable() override;      // not virtual in Cell
+    bool             isEvaluated();              // not virtual in Cell
 
-    QString text();
-    QString textHtml();            // Added 2005-10-27 AF
-    QTextDocument* document() override;
-    virtual QString textOutput();      // Added 2005-11-23 AF
-    virtual QString textOutputHtml();    // Added 2005-11-23 AF
-    virtual QTextCursor textCursor();    // Added 2005-10-27 AF
-    virtual QTextEdit* textEditOutput();  // Added 2006-02-03 AF
-    virtual void viewExpression(const bool){}
-    void cutText() override;
-    void copyText() override;
-    void pasteText() override;
-    bool findText(const QString &exp, QTextDocument::FindFlags options) override;
+    /* ----- GraphCell‑specific members (non‑virtual) ----- */
+    QString          textOutput();                    // plain‑text output
+    QString          textOutputHtml();                // html output
+    QTextEdit*       textEditOutput();                // raw pointer to output editor
+    void             viewExpression(bool) override;
 
-    void clearSelection() override;
-    void moveCursor(QTextCursor::MoveOperation operation) override;
+    void             setDelegate(InputCellDelegate *d);
+    void             setText(QString text) override;
+    void             setTextHtml(QString html) override;
+    void             setTextOutput(QString output);
+    void             setTextOutputHtml(QString html);
+    void             setStyle(const QString &stylename) override; // old interface (kept for compatibility)
+    void             setStyle(CellStyle style) override;   // preferred interface
+    void             setChapterCounter(QString number);
+    QString          ChapterCounter();
+    QString          ChapterCounterHtml();
+    void             setReadOnly(bool readonly) override;
+    void             setEvaluated(bool evaluated);
+    void             setClosed(bool closed, bool update = true) override;
+    void             setFocus(bool focus)          override;
+    void             setFocusOutput(bool focus);
+    void             setExpr(QString expr);
+    void             delegateFinished(InputCellDelegate *delegate);
 
-    virtual void addCellWidgets();
-    virtual void removeCellWidgets();
+public slots:
+    void             plotVariablesSlot(QStringList lst);
+    void             eval();
+    void             command();
+    void             nextCommand();
+    void             nextField();
+    void             clickEvent();
+    void             clickEventOutput();
+    void             contentChanged();
+    void             addToHighlighter();
+    void             setState(int state);
 
-//    void setDelegate(GraphCellDelegate *d);
-    void setDelegate(InputCellDelegate *d);
-    virtual void accept(Visitor &v);
-    virtual bool isClosed();              // Added 2006-01-17 AF
-    virtual bool isEditable();
-    virtual bool isEvaluated();              // Added 2005-11-23 AF
+signals:
+    void             plotVariables(QStringList lst);
+    void             textChanged();
+    void             textChanged(bool);
+    void             clickedOutput(Cell *);
+    void             forwardAction(int);
+    void             updatePos(int, int);
+    void             newState(QString);
+    void             setStatusMenu(QList<QAction*>);
 
-    static void PlotCallbackFunction(void *p, int externalWindow, const char* filename, const char* title, const char* grid,
-                                     const char* plotType, const char* logX, const char* logY, const char* xLabel, const char* yLabel,
-                                     const char* xRange1, const char* xRange2, const char* yRange1, const char* yRange2, const char* curveWidth,
-                                     const char* curveStyle, const char* legendPosition, const char* footer, const char* autoScale,
-                                     const char* variables);
+protected:
+    void             resizeEvent(QResizeEvent *event) override;
+    void             mouseDoubleClickEvent(QMouseEvent *) override;
+    void             clear();
+    bool             hasDelegate();
+    InputCellDelegate* getDelegate();
 
-  signals:
-    void plotVariables(QStringList lst);
-    void textChanged();
-    void textChanged( bool );
-    void clickedOutput( Cell* );          // Added 2006-02-03 AF
-    void forwardAction( int );            // Added 2006-04-27 AF
-    void updatePos(int, int);
-    void newState(QString);
-    void setStatusMenu(QList<QAction*>);
-
-  public slots:
-    void plotVariablesSlot(QStringList lst);
-    void eval();
-    void command();                  // Added 2005-12-15 AF
-    void nextCommand();                // Added 2005-12-15 AF
-    void nextField();                // Added 2005-12-15 AF
-    void clickEvent();
-    void clickEventOutput();            // Added 2006-02-03 AF
-    void contentChanged();
-    void setText(QString text);
-    void setTextHtml(QString html);          // Added 2005-11-01 AF
-    virtual void setTextOutput(QString output);    // Added 2005-11-23 AF
-    virtual void setTextOutputHtml(QString html);  // Added 2005-11-23 AF
-    void setStyle(const QString &stylename);    // Changed 2005-10-28 AF
-    void setStyle(CellStyle style);          // Changed 2005-10-27 AF
-    void setChapterCounter(QString number);      // Added 2006-03-02 AF
-    QString ChapterCounter();            // Added 2006-03-02 AF
-    QString ChapterCounterHtml();          // Added 2006-03-03 AF
-    void setReadOnly(const bool readonly);      // Added 2005-11-01 AF
-    void setEvaluated(const bool evaluated);    // Added 2006-01-16 AF
-    void setClosed(const bool closed, bool update = true); //Changed 2006-08-24
-    virtual void setFocus(const bool focus);
-    virtual void setFocusOutput(const bool focus);  // Added 2006-02-03 AF
-    void setExpr(QString);
-
-    void delegateFinished(InputCellDelegate *delegate);
-    void setState(int state);
-
-  protected:
-    void resizeEvent(QResizeEvent *event);    //AF
-    void mouseDoubleClickEvent(QMouseEvent *);
-    void clear();
-
-    bool hasDelegate();
-    InputCellDelegate *getDelegate();
-
-  private slots:
-    void addToHighlighter();              // Added 2005-12-29 AF
-
-  private:
+private:
+    /* ----- UI creation helpers ----- */
     void createGraphCell();
     void createOutputCell();
     void createPlotWindow();
-
     void createChapterCounter();
-    void setOutputStyle();                // Added 2006-04-21 AF
+    void setOutputStyle();
 
-  private:
-    bool evaluated_;
-    bool closed_;
-    static int numEvals_;
-    int oldHeight_;                    // Added 2006-04-10 AF
+    /* ----- Data members ----- */
+    bool                     evaluated_   = false;
+    bool                     closed_      = true;
+    static int               numEvals_;
+    int                      oldHeight_   = 0;
 
-  public:
-    MyTextEdit2a* input_;
-    ModelicaTextHighlighter *mpModelicaTextHighlighter;
-    QTextBrowser *output_;
-  private:
-    QTextBrowser *chaptercounter_;
-    InputCellDelegate *delegate_;
-    QGridLayout *layout_;
-    Document *document_;
+public:   // widgets – left public for historic reasons (kept unchanged)
+    MyTextEdit2a*            input_                = nullptr;
+    ModelicaTextHighlighter* mpModelicaTextHighlighter = nullptr;
+    QTextBrowser*            output_               = nullptr;
 
-  public:
-    OMPlot::PlotWindow *mpPlotWindow;
-    QPushButton* variableButton;
-    QTemporaryFile* imageFile;
-  };
+private:
+    QTextBrowser*            chaptercounter_ = nullptr;
+    InputCellDelegate*       delegate_       = nullptr;
+    QGridLayout*             layout_         = nullptr;
+    Document*                document_       = nullptr;
 
+public:
+    OMPlot::PlotWindow*      mpPlotWindow    = nullptr;
+    QPushButton*             variableButton  = nullptr;
 
-  //***************************************************
-  // 2005-12-13 AF, changed from QTextEdit to QTextBrowser (browser better when working with images)
-  class MyTextEdit2 : public QTextBrowser
-  {
+    /* ----- Plot callback (static) ----- */
+    static void PlotCallbackFunction(void *p,
+                                     int externalWindow,
+                                     const char *filename,
+                                     const char *title,
+                                     const char *grid,
+                                     const char *plotType,
+                                     const char *logX,
+                                     const char *logY,
+                                     const char *xLabel,
+                                     const char *yLabel,
+                                     const char *xRange1,
+                                     const char *xRange2,
+                                     const char *yRange1,
+                                     const char *yRange2,
+                                     const char *curveWidth,
+                                     const char *curveStyle,
+                                     const char *legendPosition,
+                                     const char *footer,
+                                     const char *autoScale,
+                                     const char *variables);
+};
+
+/*======================================================================
+ * MyTextEdit2 – a QTextBrowser used for the *output* part of a cell
+ *====================================================================*/
+class MyTextEdit2 : public QTextBrowser
+{
     Q_OBJECT
+public:
+    explicit MyTextEdit2(QWidget *parent = nullptr);
+    ~MyTextEdit2() override;
 
-  public:
-    MyTextEdit2(QWidget *parent=0);
-    virtual ~MyTextEdit2();
+    int state = 0;
 
-    int state;
-
-  public slots:
+public slots:
     void updatePosition();
     void setModified();
     void setAutoIndent(bool);
 
-  signals:
-    void clickOnCell();          // Added 2005-11-01 AF
-    void wheelMove( QWheelEvent* );    // Added 2005-11-28 AF
-    void eval();            // Added 2005-12-15 AF
-    void forwardAction( int );      // Added 2006-04-27 AF
+signals:
+    void clickOnCell();
+    void wheelMove(QWheelEvent *);
+    void eval();
+    void forwardAction(int);
     void updatePos(int, int);
     void setState(int);
 
-  protected:
-    void mousePressEvent(QMouseEvent *event);      // Added 2005-11-01 AF
-    void wheelEvent(QWheelEvent *event);        // Added 2005-11-28 AF
-    void keyPressEvent(QKeyEvent *event );        // Added 2005-12-15 AF
-    void insertFromMimeData(const QMimeData *source);  // Added 2006-01-23 AF
-    void focusInEvent(QFocusEvent* event);
+protected:
+    void mousePressEvent(QMouseEvent *event) override;
+    void wheelEvent(QWheelEvent *event) override;
+    void keyPressEvent(QKeyEvent *event) override;
+    void insertFromMimeData(const QMimeData *source) override;
+    void focusInEvent(QFocusEvent *event) override;
 
-  private:
-    bool inCommand;            // Added 2005-12-15 AF
+private:
+    bool inCommand = false;
+};
 
-  };
-  //***************************************************
-  class MyTextEdit2a : public QPlainTextEdit
-  {
+// MyTextEdit2a – a QPlainTextEdit with line numbers and extra features
+class MyTextEdit2a : public QPlainTextEdit
+{
     Q_OBJECT
+public:
+    explicit MyTextEdit2a(QWidget *parent = nullptr);
 
-  public:
-    MyTextEdit2a(QWidget *parent=0);
-    virtual ~MyTextEdit2a();
     void lineNumberAreaPaintEvent(QPaintEvent *event);
-    int lineNumberAreaWidth();
+    int  lineNumberAreaWidth();
 
-    int state;
+    int state = 0;
 
-  public slots:
-    void goToPos(const QUrl&);
+public slots:
+    void goToPos(const QUrl &);
     void updatePosition();
     void setModified();
     void indentText();
     bool lessIndented(QString);
     void setAutoIndent(bool);
 
-  private slots:
+private slots:
     void updateLineNumberAreaWidth(int newBlockCount);
     void highlightCurrentLine(bool highlight = true);
     void updateLineNumberArea(const QRect &, int);
 
-  signals:
-    void clickOnCell();          // Added 2005-11-01 AF
-    void wheelMove( QWheelEvent* );    // Added 2005-11-28 AF
-    void command();            // Added 2005-12-15 AF
-    void nextCommand();          // Added 2005-12-15 AF
-    void nextField();          // Added 2005-12-15 AF
-    void eval();            // Added 2005-12-15 AF
-    void forwardAction( int );      // Added 2006-04-27 AF
+signals:
+    void clickOnCell();
+    void wheelMove(QWheelEvent *);
+    void command();
+    void nextCommand();
+    void nextField();
+    void eval();
+    void forwardAction(int);
     void updatePos(int, int);
     void setState(int);
 
-  protected:
-    void mousePressEvent(QMouseEvent *event) override;      // Added 2005-11-01 AF
-    void wheelEvent(QWheelEvent *event) override;        // Added 2005-11-28 AF
-    void keyPressEvent(QKeyEvent *event ) override;        // Added 2005-12-15 AF
-    void insertFromMimeData(const QMimeData *source) override;  // Added 2006-01-23 AF
-    void focusInEvent(QFocusEvent* event) override;
-    void focusOutEvent(QFocusEvent* event) override;
+protected:
+    void mousePressEvent(QMouseEvent *event) override;
+    void wheelEvent(QWheelEvent *event) override;
+    void keyPressEvent(QKeyEvent *event) override;
+    void insertFromMimeData(const QMimeData *source) override;
+    void focusInEvent(QFocusEvent *event) override;
+    void focusOutEvent(QFocusEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
 
-  private:
-    bool inCommand;            // Added 2005-12-15 AF
-    int indentationLevel(QString, bool b=true);
-    bool autoIndent;
-    QMap<int, IndentationState*> indentationStates;
-    QWidget *lineNumberArea;
+private:
+    bool                     inCommand      = false;
+    bool                     autoIndent     = true;
+    QMap<int, IndentationState> indentationStates;
+    QWidget*                 lineNumberArea = nullptr;
 
-  };
+    int indentationLevel(const QString &, bool = true);
+};
 
-  class MyAction: public QAction
-  {
+// MyAction – thin wrapper that forwards a QAction click to a URL signal
+class MyAction : public QAction
+{
     Q_OBJECT
-  public:
-    MyAction(const QString& text, QObject* parent);
-  public slots:
+public:
+    explicit MyAction(const QString &text, QObject *parent = nullptr);
+
+public slots:
     void triggered2();
-  signals:
-    void urlClicked(const QUrl& u);
 
-  };
+signals:
+    void urlClicked(const QUrl &u);
+};
 
-}
-#endif
+} // namespace IAEX
+
+#endif // GRAPHCELL_H_

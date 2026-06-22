@@ -156,5 +156,5 @@ protected
   ");
   end serializeColor;
 
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_tools");
 end SerializeSparsityPattern;

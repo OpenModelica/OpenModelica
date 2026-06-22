@@ -752,5 +752,5 @@ public
     end match;
   end saveClassDef;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="backend_tools");
 end TotalModelDebug;

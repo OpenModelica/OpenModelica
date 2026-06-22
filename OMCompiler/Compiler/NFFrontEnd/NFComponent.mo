@@ -235,9 +235,12 @@ public
   function getType
     input Component component;
     output Type ty;
+  protected
+    Type t;
   algorithm
     ty := match component
-      case COMPONENT(ty = Type.UNTYPED()) then InstNode.getType(component.classInst);
+      case COMPONENT(ty = t as Type.UNTYPED())
+        then Type.liftArrayLeftList(InstNode.getType(component.classInst), arrayList(t.dimensions));
       case COMPONENT() then component.ty;
       case ITERATOR() then component.ty;
       case TYPE_ATTRIBUTE() then component.ty;

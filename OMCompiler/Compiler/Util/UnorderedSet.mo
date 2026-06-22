@@ -114,13 +114,14 @@ public
      case nothing is done. Might trigger a rehash."
     input T key;
     input UnorderedSet<T> set;
+    output Boolean added;
   protected
     Integer hash;
     Option<T> okey;
   algorithm
     (okey, hash) := find(key, set);
-
-    if isNone(okey) then
+    added := isNone(okey);
+    if added then
       addKey(key, hash, set);
     end if;
   end add;
@@ -220,10 +221,10 @@ public
     output T val;
   algorithm
     for b in Mutable.access(set.buckets) loop
-      for k in b loop
-        val := k;
+      if not listEmpty(b) then
+        val := listHead(b);
         return;
-      end for;
+      end if;
     end for;
 
     fail();
@@ -306,8 +307,8 @@ public
      with the new keys."
     input UnorderedSet<T> set;
     input MapFn fn;
-    input OutHash hash;
-    input OutKeyEq keyEq;
+    input OutHash hashFn;
+    input OutKeyEq eqFn;
     output UnorderedSet<OT> outSet;
 
     partial function MapFn
@@ -325,7 +326,7 @@ public
       output Boolean equal;
     end OutKeyEq;
   algorithm
-    outSet := new<OT>(hash, keyEq, Util.nextPrime(Mutable.access(set.size)));
+    outSet := new<OT>(hashFn, eqFn, Util.nextPrime(Mutable.access(set.size)));
     for b in Mutable.access(set.buckets) loop
       for k in b loop
         add(fn(k), outSet);
@@ -334,55 +335,39 @@ public
   end map;
 */
 
+  function selfMap
+    "Applies a self-mapping function to all keys in the given set and returns a new set
+     with the new keys of same type as input set."
+    input UnorderedSet<T> set;
+    input MapFn fn;
+    output UnorderedSet<T> outSet = new<T>(set.hashFn, set.eqFn);
+
+    partial function MapFn
+      input output T key;
+    end MapFn;
+  algorithm
+    for b in Mutable.access(set.buckets) loop
+      for k in b loop
+        add(fn(k), outSet);
+      end for;
+    end for;
+  end selfMap;
+
   function apply
-    "Replaces all keys in the given set with the results of the given function
-     when applied to all keys. Equivalent to a rehash."
+    "Applies function fn to all elements in set.
+     fn is expected to have side effects."
     input UnorderedSet<T> set;
     input ApplyFn fn;
 
     partial function ApplyFn
-      input output T key;
+      input T key;
     end ApplyFn;
-  protected
-    Hash hashfn = set.hashFn;
-    KeyEq eqfn = set.eqFn;
-    Integer bucket_count, hash, size = 0;
-    array<list<T>> new_buckets;
-    T newKey;
-    list<T> bucket;
-    Boolean duplicate;
   algorithm
-    // Make a new bucket array.
-    bucket_count := Util.nextPrime(Mutable.access(set.size));
-    new_buckets := arrayCreate(bucket_count, {});
-
     for b in Mutable.access(set.buckets) loop
       for k in b loop
-        // Apply the function to the key
-        newKey := fn(k);
-        hash := intMod(hashfn(newKey), bucket_count);
-        bucket := arrayGet(new_buckets, hash + 1);
-
-        // check if we have a duplicate
-        duplicate := false;
-        for nk in bucket loop
-          if eqfn(nk, newKey) then
-            duplicate := true;
-            break;
-          end if;
-        end for;
-
-        // Add the result to the new bucket if it is not already there.
-        if not duplicate then
-          arrayUpdate(new_buckets, hash + 1, newKey :: bucket);
-          size := size + 1;
-        end if;
+        fn(k);
       end for;
     end for;
-
-    // Replace the old bucket array with the new one and update the size of the set.
-    Mutable.update(set.buckets, new_buckets);
-    Mutable.update(set.size, size);
   end apply;
 
   function all
@@ -605,20 +590,29 @@ public
     input UnorderedSet<T> set2;
     output UnorderedSet<T> set;
   protected
-    array<list<T>> buckets;
+    Integer sz1, sz2, small_sz;
+    UnorderedSet<T> small_set;
   algorithm
-    if Mutable.access(set1.size) > Mutable.access(set2.size) then
+    sz1 := Mutable.access(set1.size);
+    sz2 := Mutable.access(set2.size);
+
+    if sz1 > sz2 then
       set := set1;
-      buckets := Mutable.access(set2.buckets);
+      small_set := set2;
+      small_sz := sz2;
     else
       set := set2;
-      buckets := Mutable.access(set1.buckets);
+      small_set := set1;
+      small_sz := sz1;
     end if;
-    for b in buckets loop
-      for k in b loop
-        add(k, set);
+
+    if small_sz > 0 then
+      for b in Mutable.access(small_set.buckets) loop
+        for k in b loop
+          add(k, set);
+        end for;
       end for;
-    end for;
+    end if;
   end union;
 
   function union_list
@@ -648,6 +642,10 @@ public
     input output UnorderedSet<T> set1;
     input UnorderedSet<T> set2;
   algorithm
+    if isEmpty(set2) then
+      return;
+    end if;
+
     for b in Mutable.access(set2.buckets) loop
       for k in b loop
         add(k, set1);
@@ -671,13 +669,17 @@ public
       set_small := set1;
       set_big   := set2;
     end if;
-    for b in Mutable.access(set_small.buckets) loop
-      for k in b loop
-        if contains(k, set_big) then
-          acc := k :: acc;
-        end if;
+
+    if not isEmpty(set_small) then
+      for b in Mutable.access(set_small.buckets) loop
+        for k in b loop
+          if contains(k, set_big) then
+            acc := k :: acc;
+          end if;
+        end for;
       end for;
-    end for;
+    end if;
+
     set := fromList(acc, set1.hashFn, set1.eqFn);
   end intersection;
 
@@ -771,13 +773,16 @@ public
   protected
     list<T> acc = {};
   algorithm
-    for b in Mutable.access(set1.buckets) loop
-      for k in b loop
-        if not contains(k, set2) then
-          acc := k :: acc;
-        end if;
+    if not isEmpty(set1) then
+      for b in Mutable.access(set1.buckets) loop
+        for k in b loop
+          if not contains(k, set2) then
+            acc := k :: acc;
+          end if;
+        end for;
       end for;
-    end for;
+    end if;
+
     set := fromList(acc, set1.hashFn, set1.eqFn);
   end difference;
 
@@ -789,20 +794,26 @@ public
   protected
     list<T> acc = {};
   algorithm
-    for b in Mutable.access(set1.buckets) loop
-      for k in b loop
-        if not contains(k, set2) then
-          acc := k :: acc;
-        end if;
+    if not isEmpty(set1) then
+      for b in Mutable.access(set1.buckets) loop
+        for k in b loop
+          if not contains(k, set2) then
+            acc := k :: acc;
+          end if;
+        end for;
       end for;
-    end for;
-    for b in Mutable.access(set2.buckets) loop
-      for k in b loop
-        if not contains(k, set1) then
-          acc := k :: acc;
-        end if;
+    end if;
+
+    if not isEmpty(set2) then
+      for b in Mutable.access(set2.buckets) loop
+        for k in b loop
+          if not contains(k, set1) then
+            acc := k :: acc;
+          end if;
+        end for;
       end for;
-    end for;
+    end if;
+
     set := fromList(acc, set1.hashFn, set1.eqFn);
   end sym_difference;
 
@@ -820,14 +831,17 @@ public
       set_small := set1;
       set_big   := set2;
     end if;
-    for buckets in Mutable.access(set_small.buckets) loop
-      for k in buckets loop
-        if contains(k, set_big) then
-          b := false;
-          return;
-        end if;
+
+    if not isEmpty(set_small) then
+      for buckets in Mutable.access(set_small.buckets) loop
+        for k in buckets loop
+          if contains(k, set_big) then
+            b := false;
+            return;
+          end if;
+        end for;
       end for;
-    end for;
+    end if;
   end isDisjoint;
 
 protected

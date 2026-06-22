@@ -2246,7 +2246,7 @@ protected function extractComponentsFromClass
   output InteractiveTypes.Components outComponents;
 algorithm
   outComponents:=
-  matchcontinue (inClass,inPath,inComponents,inEnv)
+  match (inClass,inPath,inComponents,inEnv)
     local
       InteractiveTypes.Components comps_1,comps;
       Absyn.ClassDef classdef;
@@ -2262,7 +2262,7 @@ algorithm
         print("-extract_components_from_class failed\n");
       then
         fail();
-  end matchcontinue;
+  end match;
 end extractComponentsFromClass;
 
 protected function extractComponentsFromClassdef
@@ -3676,7 +3676,7 @@ public function getModificationValue
    expression, or fails if no modifier is found."
   input list<Absyn.ElementArg> args;
   input Absyn.Path path;
-  output Absyn.Exp value;
+  output Absyn.Exp value = Absyn.INTEGER(0);
 protected
   String name;
   list<Absyn.ElementArg> rest_args = args;
@@ -4096,7 +4096,7 @@ protected
   Boolean c;
 algorithm
   for item in items loop
-    (outItems, changed) := matchcontinue item
+    (outItems, changed) := match item
       case Absyn.ElementItem.ELEMENTITEM(element = elem as Absyn.Element.ELEMENT())
         algorithm
           (spec, c) := renameClassInElementSpec(elem.specification, oldName, newName, env);
@@ -4106,7 +4106,7 @@ algorithm
           (item :: outItems, changed or c);
 
       else (item :: outItems, changed);
-    end matchcontinue;
+    end match;
   end for;
 
   outItems := Dangerous.listReverseInPlace(outItems);
@@ -5317,6 +5317,7 @@ algorithm
                   res := Absyn.ELEMENTITEM(elt)::xs;
                   successResult := true;
                 else
+                  eltold := elt;
                   /* We need to split the old component into two parts: one with the renamed typename */
                   spec.components := list(c for c
                     guard match c
@@ -6157,7 +6158,7 @@ protected
   Access access;
   Absyn.Class cls;
   Interactive.GraphicEnvCache env;
-  Boolean silent;
+  Boolean silent = false;
   list<Values.Value> infos = {};
   list<Absyn.Element> elems;
 algorithm
@@ -6213,7 +6214,7 @@ protected
     output Values.Value result;
   protected
     Absyn.Class cdef;
-    list<Absyn.Element> comps;
+    list<Absyn.Element> comps = {};
 
   algorithm
     cdef := ProgramUtil.getPathedClassInProgram(classPath, program);
@@ -6245,7 +6246,7 @@ protected
     output Values.Value result;
   protected
     Absyn.Class cdef;
-    list<Absyn.Element> elts;
+    list<Absyn.Element> elts = {};
   algorithm
     cdef := ProgramUtil.getPathedClassInProgram(classPath, program);
 
@@ -7734,7 +7735,7 @@ protected function getPackagesInParts
   output list<String> outStringLst;
 algorithm
   outStringLst:=
-  matchcontinue inAbsynClassPartLst
+  match inAbsynClassPartLst
     local
       list<String> l1,l2,res;
       list<Absyn.ElementItem> elts;
@@ -7764,7 +7765,7 @@ algorithm
       then
         res;
 
-  end matchcontinue;
+  end match;
 end getPackagesInParts;
 
 protected function getPackagesInElts
@@ -7773,7 +7774,7 @@ protected function getPackagesInElts
   output list<String> outStringLst;
 algorithm
   outStringLst:=
-  matchcontinue inAbsynElementItemLst
+  match inAbsynElementItemLst
     local
       list<String> res;
       String id;
@@ -7789,7 +7790,7 @@ algorithm
         res := getPackagesInElts(rest);
       then
         res;
-  end matchcontinue;
+  end match;
 end getPackagesInElts;
 
 public function getClassnamesInPath
@@ -8528,7 +8529,7 @@ protected function getConnectionsInClassparts
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<Absyn.EquationItem> outList;
 algorithm
-  outList := matchcontinue inAbsynClassPartLst
+  outList := match inAbsynClassPartLst
     local
       list<Absyn.EquationItem> eqlist1, eqlist2;
       list<Absyn.ClassPart> xs;
@@ -8548,7 +8549,7 @@ algorithm
 
     case {} then {};
 
-  end matchcontinue;
+  end match;
 end getConnectionsInClassparts;
 
 protected function getConnectionsInEquations
@@ -9935,7 +9936,7 @@ protected function getDefinitionComponents
   input list<Absyn.ComponentItem> components;
   output list<String> res;
 algorithm
-  res := matchcontinue components
+  res := match components
   local
     list<Absyn.ComponentItem> rest;
     String ident;
@@ -9950,7 +9951,7 @@ algorithm
       res := getDefinitionComponents(typeStr,dirStr,numDim,rest);
     then ident :: res;
     case rest then getDefinitionComponents(typeStr,dirStr,numDim,rest);
-  end matchcontinue;
+  end match;
 end getDefinitionComponents;
 
 protected function getDefinitionTypeVars

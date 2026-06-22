@@ -2,7 +2,16 @@ QMAKE_CC  = @CC@
 QMAKE_CXX = @CXX@
 QMAKE_LINK = @CXX@
 
-LIBS += -L @OMBUILDDIR@/lib/@host_short@/omc -lomqwt -lOpenModelicaRuntimeC @RPATH_QMAKE@
+# Build libOMPlot against the Rust omc port: drop the OpenModelica C runtime so
+# libOMPlot.so does not NEED it (its result-reader symbols then resolve from the
+# host's libOpenModelicaCompiler, e.g. OMEdit). Enabled by OMEDIT_RUST_OMC=1.
+# The standalone OMPlot exe re-adds it (see OMPlotGUI.pro) since it has no host.
+OMPLOT_RUST_ENV = $$(OMEDIT_RUST_OMC)
+equals(OMPLOT_RUST_ENV, 1): CONFIG += rust_omc
+OMPLOT_OMC_RUNTIME = -lOpenModelicaRuntimeC
+rust_omc: OMPLOT_OMC_RUNTIME =
+
+LIBS += -L @OMBUILDDIR@/lib/@host_short@/omc -lomqwt $$OMPLOT_OMC_RUNTIME @RPATH_QMAKE@
 INCLUDEPATH += @OPENMODELICAHOME@/include/omplot/qwt @OPENMODELICAHOME@/include/omc/c
 
 QMAKE_CFLAGS = @CFLAGS@ @CPPFLAGS@

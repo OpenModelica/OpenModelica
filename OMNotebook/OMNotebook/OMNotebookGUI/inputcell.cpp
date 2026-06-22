@@ -1353,4 +1353,7 @@ namespace IAEX
       next()->accept(v);
   }
 
+  void InputCell::viewExpression(const bool flag) {
+  }
+
 }

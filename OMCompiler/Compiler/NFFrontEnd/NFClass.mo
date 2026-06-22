@@ -440,7 +440,7 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
           ();
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got non-modifiable class", sourceInfo());
+          Error.terminate(getInstanceName() + " got non-modifiable class", sourceInfo());
         then
           fail();
     end match;
@@ -473,7 +473,7 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
           ();
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got non-modifiable class", sourceInfo());
+          Error.terminate(getInstanceName() + " got non-modifiable class", sourceInfo());
         then
           fail();
     end match;

@@ -450,7 +450,7 @@ protected
   DAE.ComponentRef cref;
   DAE.ComponentRef rec_cref;
   ArrayBindingList arrayBindingExpList;
-  list<Integer> subscriptLst;
+  list<Integer> subscriptLst = {};
   DAE.Exp binding;
   DAE.Exp scalarBinding;
   list<DAE.Exp> expLst;
@@ -1572,7 +1572,7 @@ protected function setMinMaxFromEnumeration
   input Option<DAE.VariableAttributes> inVarAttr;
   output Option<DAE.VariableAttributes> outVarAttr;
 algorithm
-  outVarAttr := matchcontinue inType
+  outVarAttr := match inType
     local
       Option<DAE.Exp> min, max;
       list<String> names;
@@ -1583,7 +1583,7 @@ algorithm
       then
         setMinMaxFromEnumeration1(min, max, inVarAttr, path, names);
     else inVarAttr;
-  end matchcontinue;
+  end match;
 end setMinMaxFromEnumeration;
 
 protected function setMinMaxFromEnumeration1
@@ -1724,7 +1724,7 @@ protected function lowerType
   input  DAE.Type inType;
   output BackendDAE.Type outType;
 algorithm
-  outType := matchcontinue inType
+  outType := match inType
     local
     case DAE.T_REAL() then DAE.T_REAL_DEFAULT;
     case DAE.T_INTEGER() then DAE.T_INTEGER_DEFAULT;
@@ -1737,7 +1737,7 @@ algorithm
     case DAE.T_ARRAY() then inType;
     case DAE.T_FUNCTION() then inType;
     else algorithm print("lowerType: " + TypesDump.printTypeStr(inType) + " failed\n"); then fail();
-  end matchcontinue;
+  end match;
 end lowerType;
 
 protected function lowerExtObjVar

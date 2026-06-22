@@ -1497,7 +1497,7 @@ protected function genStringNTime
   input Integer inInteger;
   output String outString;
 algorithm
-  outString := matchcontinue (inString,inInteger)
+  outString := match (inString,inInteger)
     local
       String str,new_str,res_str;
       Integer new_level,level;
@@ -1511,7 +1511,7 @@ algorithm
         res_str := stringAppend(str, new_str);
       then
         res_str;
-  end matchcontinue;
+  end match;
 end genStringNTime;
 
 public function dumpExp
@@ -1536,7 +1536,7 @@ public function printArraySizes "Function: printArraySizes"
   input list<Option <Integer>> inLst;
   output String out;
 algorithm
-  out := matchcontinue inLst
+  out := match inLst
     local
       Integer x;
       list<Option<Integer>> lst;
@@ -1555,7 +1555,7 @@ algorithm
       algorithm
         s := printArraySizes(lst);
       then s;
-  end matchcontinue;
+  end match;
 end printArraySizes;
 
 public function typeOfString

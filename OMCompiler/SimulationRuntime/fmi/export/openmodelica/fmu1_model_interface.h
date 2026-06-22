@@ -55,6 +55,11 @@ typedef struct {
   fmiBoolean loggingOn;
   fmiEventInfo eventInfo;
   ModelState state;
+  /* Set by the fmiSetReal/Integer/Boolean/String, fmiSetTime and fmiSetContinuousStates functions
+     and cleared once the model has been re-evaluated, so that fmiGetReal/Integer/Boolean/String
+     recompute direct-feedthrough outputs after an input changed (mirrors fmu2_model_interface.c).
+     Without it a stateless algebraic model such as y = 2*u never updates its output. See #15838. */
+  fmiBoolean _need_update;
   DATA* fmuData;
   threadData_t *threadData;
 } ModelInstance;

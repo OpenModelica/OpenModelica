@@ -2060,7 +2060,7 @@ public function printCallFunction2StrDIVISION
     output String outString;
   end strongComponentStringRefStrFunc;
 algorithm
-  outString := matchcontinue inExp
+  outString := match inExp
     local
       String s,s_1,s_2,fs,argstr;
       Absyn.Path fcn;
@@ -2092,7 +2092,7 @@ algorithm
         s_2 := stringAppend(s_1, ")");
       then
         s_2;
-  end matchcontinue;
+  end match;
 end printCallFunction2StrDIVISION;
 
 // protected function printVarsStatistics "author: PA
@@ -3144,29 +3144,15 @@ algorithm
 end dumpMatching;
 
 protected function dumpMatching2 "author: PA
-  Helper function to dumpMatching."
+  Helper function to dumpMatching. Uses a loop rather than recursion to avoid a stack overflow on
+  large models (the matching array has one entry per scalar variable)."
   input array<Integer> v;
   input Integer i;
   input Integer len;
 algorithm
-  () := matchcontinue len
-    local
-      Integer eqn;
-      String s,s2;
-    case _
-      algorithm
-        true := intLe(i,len);
-        s := intString(i);
-        eqn := v[i];
-        s2 := intString(eqn);
-        print("var " + s + " is solved in eqn " + s2 + "\n");
-        dumpMatching2(v, i+1, len);
-      then
-        ();
-    else
-      then
-        ();
-  end matchcontinue;
+  for j in i:len loop
+    print("var " + intString(j) + " is solved in eqn " + intString(v[j]) + "\n");
+  end for;
 end dumpMatching2;
 
 public function dumpMatchingVars "Prints matching information on stdout."

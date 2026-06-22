@@ -1029,5 +1029,5 @@ encapsulated package Obfuscate
     res := ety == ElementType.FUNCTION or ety == ElementType.TYPE_AND_FUNCTION;
   end isBuiltinCall;
 
-  annotation(__OpenModelica_Interface="backend");
+  annotation(__OpenModelica_Interface="backend_tools");
 end Obfuscate;

@@ -572,7 +572,7 @@ public
     input Pointer<Integer> uniqueIndex;
     input UnorderedSet<ComponentRef> slice_set;
     output list<StrongComponent> new_residuals;
-    output DAEType dae_type;
+    output DAEType dae_type = DAEType.RESIDUAL;
   protected
     Pointer<Equation> eqn;
     ComponentRef eqn_name;
@@ -1272,8 +1272,8 @@ protected
       end if;
     end addSubDependencies;
   algorithm
-    UnorderedSet.apply(dependencies, function ComponentRef.mapExp(func = Expression.replaceResizableParameter));
-    UnorderedSet.apply(dependencies, function ComponentRef.simplifySubscripts(trim = false));
+    dependencies := UnorderedSet.selfMap(dependencies, function ComponentRef.mapExp(func = Expression.replaceResizableParameter));
+    dependencies := UnorderedSet.selfMap(dependencies, function ComponentRef.simplifySubscripts(trim = false));
     // replace non derivative dependencies with their previous dependencies
     // (be careful with algebraic loops. this here assumes that cyclic dependencies have already been resolved)
     dependencies := match jacType

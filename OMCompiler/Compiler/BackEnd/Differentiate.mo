@@ -1074,7 +1074,7 @@ algorithm
       algorithm
         expl := List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
         (expl_1, outFunctionTree) := List.map3Fold(expl, function differentiateExp(maxIter=maxIter), inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
-        res := DAE.CALL(path,expl_1,DAE.CALL_ATTR(tp,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+        res := DAE.CALL(path,expl_1,DAE.CALL_ATTR(tp,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL(),DAE.NoReturn.RETURNS));
       then
         (res, outFunctionTree);
 
@@ -1164,7 +1164,7 @@ algorithm
       algorithm
         //({BackendDAE.VAR(varKind = BackendDAE.STATE(index=_))},_) = BackendVariable.getVar(cr, timevars);
         BackendVariable.getVarSingle(cr, timevars);
-        res := DAE.CALL(Absyn.IDENT("der"),{e},DAE.CALL_ATTR(tp,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+        res := DAE.CALL(Absyn.IDENT("der"),{e},DAE.CALL_ATTR(tp,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL(),DAE.NoReturn.RETURNS));
       then
         (res, inFunctionTree);
 
@@ -2203,7 +2203,7 @@ algorithm
         (dexpl, outFunctionTree) := List.map3Fold(expl1, function differentiateExp(maxIter=maxIter), inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         expl1 := listAppend(expl,dexpl);
       then
-        (DAE.CALL(dpath,expl1,DAE.CALL_ATTR(ty,b,c,isImpure,false,dinl,tc)),outFunctionTree);
+        (DAE.CALL(dpath,expl1,DAE.CALL_ATTR(ty,b,c,isImpure,false,dinl,tc,DAE.NoReturn.RETURNS)),outFunctionTree);
 
     case (DAE.CALL(path=path,expLst=expl), BackendDAE.DIFFERENTIATION_TIME())
       algorithm
@@ -2345,7 +2345,7 @@ algorithm
           print("Diffed ExpList: \n");
           print(stringDelimitList(List.map(dexpl, ExpressionBasics.printExpStr), ", ") + "\n");
         end if;
-        e := DAE.CALL(dpath,expl1,DAE.CALL_ATTR(ty,b,c,isImpure,false,dinl,tc));
+        e := DAE.CALL(dpath,expl1,DAE.CALL_ATTR(ty,b,c,isImpure,false,dinl,tc,DAE.NoReturn.RETURNS));
         e := createPartialArguments(ty, dexpl, dexplZero, expl, e);
       then
         (e,functions);
@@ -2434,10 +2434,10 @@ algorithm
         // try to create zero expression to fill up the arguments, if it fails use the total differentiation
         (dexplZero, functions, success) := tryZeroDiff(expl1, functions, maxIter);
         if success then
-          e := DAE.CALL(dpath,dexpl,DAE.CALL_ATTR(dtp,b,false,isImpure,false,DAE.NO_INLINE(),tc));
+          e := DAE.CALL(dpath,dexpl,DAE.CALL_ATTR(dtp,b,false,isImpure,false,DAE.NO_INLINE(),tc,DAE.NoReturn.RETURNS));
           exp := createPartialArguments(ty, dexpl, dexplZero, expl, e);
         else
-          exp := DAE.CALL(dpath,listAppend(expl,dexpl),DAE.CALL_ATTR(dtp,b,false,isImpure,false,DAE.NO_INLINE(),tc));
+          exp := DAE.CALL(dpath,listAppend(expl,dexpl),DAE.CALL_ATTR(dtp,b,false,isImpure,false,DAE.NO_INLINE(),tc,DAE.NoReturn.RETURNS));
         end if;
 
         if Flags.isSet(Flags.DEBUG_DIFFERENTIATION_VERBOSE) then
@@ -3243,6 +3243,7 @@ algorithm
   else
     true := Flags.isSet(Flags.FAILTRACE);
     Debug.traceln("- Differentiate.lowerVarsElementVars failed.");
+    fail();
   end try;
 end lowerVarsElementVars;
 

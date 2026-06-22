@@ -949,7 +949,7 @@ protected function operatorMatches
   input DAE.Operator op2;
   output Boolean b;
 algorithm
-  b := matchcontinue(op1, op2)
+  b := match(op1, op2)
     local
 
     case (DAE.UMINUS_ARR(),DAE.UMINUS()) then true;
@@ -972,7 +972,7 @@ algorithm
     // all other forward to Expression.operatorEqual
     else Expression.operatorEqual(op1, op2);
 
-  end matchcontinue;
+  end match;
 end operatorMatches;
 
 public function loadRules

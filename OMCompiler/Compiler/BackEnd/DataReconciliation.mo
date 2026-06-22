@@ -84,19 +84,19 @@ protected
   list<BackendDAE.Equation> setC_Eq, setS_Eq, residualEquations, complexEquationList, swappedEquationList;
   BackendDAE.AdjacencyMatrix adjacencyMatrix;
   array<list<Integer>> mapEqnIncRow;
-  array<Integer> mapIncRowEqn, match1, match2;
-  list<tuple<Integer,Integer>> solvedEqsAndVarsInfo;
+  array<Integer> mapIncRowEqn = listArray({}), match1, match2;
+  list<tuple<Integer,Integer>> solvedEqsAndVarsInfo = {};
   Integer varCount, eqCount;
-  list<Integer> ebltEqsLst, matchedEqsLst, approximatedEquations, setC, tempSetS, setS, boundaryConditionEquations, bindingEquations;
-  ExtAdjacencyMatrix sBltAdjacencyMatrix;
+  list<Integer> ebltEqsLst = {}, matchedEqsLst, approximatedEquations = {}, setC, tempSetS = {}, setS, boundaryConditionEquations, bindingEquations = {};
+  ExtAdjacencyMatrix sBltAdjacencyMatrix = {};
   list<BackendDAE.Var> paramVars, residualVars, unMeasuredVariables;
   BackendDAE.Jacobian simCodeJacobian;
   BackendDAE.Shared shared;
   String str, modelicaOutput, modelicaFileName, modelName, auxillaryConditionsFilename, auxillaryEquations, intermediateEquationsFilename, intermediateEquations, csvfileName;
-  list<tuple<Integer, list<Integer>>> mappedEbltSetS;
+  list<tuple<Integer, list<Integer>>> mappedEbltSetS = {};
   list<tuple<Integer, BackendDAE.Equation, list<Integer>>> setBFailedBoundaryConditionEquations;
 
-  list<Integer> allVarsList, knowns, boundaryConditionVars, exactEquationVars, extractedVarsfromSetS, boundaryConditionTaggedEquationSolvedVars, unMeasuredVariablesOfInterest;
+  list<Integer> allVarsList, knowns = {}, boundaryConditionVars = {}, exactEquationVars = {}, extractedVarsfromSetS, boundaryConditionTaggedEquationSolvedVars, unMeasuredVariablesOfInterest = {};
   BackendDAE.Variables inputVars, outDiffVars, outOtherVars, outResidualVars;
   Integer procedureCount;
   list<tuple<String, String>> measurementcsvData;
@@ -499,11 +499,11 @@ protected
   list<BackendDAE.Equation> setS_Eq, failedboundaryConditionEquations;
   BackendDAE.AdjacencyMatrix adjacencyMatrix;
   array<list<Integer>> mapEqnIncRow;
-  array<Integer> mapIncRowEqn, match1, match2;
-  list<tuple<Integer,Integer>> solvedEqsAndVarsInfo;
+  array<Integer> mapIncRowEqn = listArray({}), match1, match2;
+  list<tuple<Integer,Integer>> solvedEqsAndVarsInfo = {};
   Integer varCount, eqCount;
-  list<Integer> ebltEqsLst, matchedEqsLst, approximatedEquations, tempSetS, setS, boundaryConditionEquations, bindingEquations, setSPrime;
-  ExtAdjacencyMatrix sBltAdjacencyMatrix;
+  list<Integer> ebltEqsLst = {}, matchedEqsLst, approximatedEquations = {}, tempSetS, setS, boundaryConditionEquations, bindingEquations = {}, setSPrime;
+  ExtAdjacencyMatrix sBltAdjacencyMatrix = {};
   list<BackendDAE.Var> paramVars, setSVars, knownVars, failedboundaryConditionVars, extraVarsinSetSPrime, unMeasuredVariables;
   BackendDAE.Jacobian simCodeJacobian;
   BackendDAE.Shared shared;
@@ -511,7 +511,7 @@ protected
   list<tuple<Integer, list<Integer>>> mappedEbltSetS;
   list<tuple<Integer, BackendDAE.Equation, list<Integer>>> setBFailedBoundaryConditionEquations;
 
-  list<Integer> allVarsList, knowns, boundaryConditionVars, exactEquationVars, boundaryConditionTaggedEquationSolvedVars, unMeasuredVariablesOfInterest;
+  list<Integer> allVarsList, knowns = {}, boundaryConditionVars = {}, exactEquationVars, boundaryConditionTaggedEquationSolvedVars, unMeasuredVariablesOfInterest = {};
   BackendDAE.Variables inputVars, outDiffVars, outOtherVars, outBoundaryConditionVars;
   Integer procedureCount;
   list<tuple<String, String>> measurementcsvData;
@@ -763,11 +763,11 @@ protected
   list<BackendDAE.Equation> setC_Eq, setS_Eq, setSPrime_Eq, residualEquations, failedboundaryConditionEquations, allDaeEqs;
   BackendDAE.AdjacencyMatrix adjacencyMatrix;
   array<list<Integer>> mapEqnIncRow;
-  array<Integer> mapIncRowEqn, match1, match2;
-  list<tuple<Integer,Integer>> solvedEqsAndVarsInfo;
+  array<Integer> mapIncRowEqn = listArray({}), match1, match2;
+  list<tuple<Integer,Integer>> solvedEqsAndVarsInfo = {};
   Integer varCount, eqCount;
-  list<Integer> ebltEqsLst, matchedEqsLst, approximatedEquations, setC, tempSetS, setS, boundaryConditionEquations, bindingEquations, setSPrime, unMeasuredEqsLst;
-  ExtAdjacencyMatrix sBltAdjacencyMatrix;
+  list<Integer> ebltEqsLst = {}, matchedEqsLst, approximatedEquations = {}, setC, tempSetS = {}, setS, boundaryConditionEquations, bindingEquations = {}, setSPrime, unMeasuredEqsLst;
+  ExtAdjacencyMatrix sBltAdjacencyMatrix = {};
   list<BackendDAE.Var> paramVars, setSVars, residualVars, knownVars, failedboundaryConditionVars, extraVarsinSetSPrime, unMeasuredVariables;
   BackendDAE.Jacobian simCodeJacobian, simCodeJacobianH;
   BackendDAE.Shared shared;
@@ -775,7 +775,7 @@ protected
   list<tuple<Integer, list<Integer>>> mappedEbltSetS;
   list<tuple<Integer, BackendDAE.Equation, list<Integer>>> setBFailedBoundaryConditionEquations;
 
-  list<Integer> allVarsList, knowns, unMeasuredVariablesOfInterest, failedboundaryConditionEquationIndex, boundaryConditionVars, exactEquationVars, extractedVarsfromSetS, boundaryConditionTaggedEquationSolvedVars;
+  list<Integer> allVarsList, knowns = {}, unMeasuredVariablesOfInterest = {}, failedboundaryConditionEquationIndex, boundaryConditionVars = {}, exactEquationVars = {}, extractedVarsfromSetS, boundaryConditionTaggedEquationSolvedVars;
   BackendDAE.Variables inputVars, outDiffVars, outOtherVars, outResidualVars, outBoundaryConditionVars, outOtherVarsSetSPrime;
   Integer procedureCount, numRelatedBoundaryConditions;
   list<tuple<String, String>> measurementcsvData;
@@ -2358,9 +2358,10 @@ algorithm
     (index, eq) := eqs;
     if intEq(eBLTIndex, index) then
       outEquations := eq;
-      break;
+      return;
     end if;
   end for;
+  fail();
 end getEquationsFromEBLT;
 
 protected function getAbsoluteIndexHelper
@@ -2774,6 +2775,7 @@ algorithm
       return;
     end if;
   end for;
+  fail();
 end getSolvedVariableNumber;
 
 public function getSolvedEquationNumber
@@ -2790,6 +2792,7 @@ algorithm
       return;
     end if;
   end for;
+  fail();
 end getSolvedEquationNumber;
 
 public function getSolvedEquationAndVarsInfo
@@ -3091,7 +3094,7 @@ public function getDependencyequation
   input list<tuple<Integer,Integer>> solvedvariables;
   input ExtAdjacencyMatrix m;
   output list<Integer> outSBLT;
-  output list<Integer> outEBLT;
+  output list<Integer> outEBLT = {};
 protected
   list<Integer> t={}, nonsq;
   Integer eqnumber, varnumber;

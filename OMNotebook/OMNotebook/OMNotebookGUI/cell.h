@@ -51,6 +51,14 @@
 // QT Headers
 #include <QtGlobal>
 #include <QtWidgets>
+#include <QGridLayout>
+#include <QLabel>
+#include <QMouseEvent>
+#include <QResizeEvent>
+#include <QTextCharFormat>
+#include <QTextCursor>
+#include <QTextEdit>
+#include <QUrl>
 
 
 //IAEX Headers
@@ -58,16 +66,6 @@
 #include "rule.h"
 #include "treeview.h"
 #include "visitor.h"
-
-// forward declaration
-class QGridLayout;
-class QLabel;
-class QMouseEvent;
-class QResizeEvent;
-class QTextCharFormat;
-class QTextCursor;
-class QTextEdit;
-class QUrl;
 
 
 using namespace IAEX;
@@ -81,7 +79,7 @@ namespace IAEX
   public:
     typedef std::vector<Rule *> rules_t;
 
-    Cell(QWidget *parent=0);            // Changed 2005-10-27 AF
+    Cell(QWidget *parent=0);
     Cell(Cell &c);
     virtual ~Cell();
 
@@ -111,10 +109,10 @@ namespace IAEX
 
     //TextCell interface.
     virtual QString text() = 0;
-    virtual QString textHtml(){return QString();}  // Added 2005-10-27 AF
+    virtual QString textHtml(){return QString();}
     virtual QTextDocument* document() { return nullptr; }
-    virtual QTextCursor textCursor();          // Added 2005-10-27 AF
-    virtual QTextEdit* textEdit(){return 0;}      // Added 2005-10-27 AF
+    virtual QTextCursor textCursor();
+    virtual QTextEdit* textEdit(){return 0;}
     virtual void viewExpression(const bool){}
     virtual void cutText() {}
     virtual void copyText() {}
@@ -128,7 +126,7 @@ namespace IAEX
     virtual void addChild(Cell *){}
     virtual void removeChild(Cell *){}
     virtual bool isClosed() const{ return false;}
-    virtual void setClosed(const bool closed, bool update = true){}  // Changed 2006-08-24
+    virtual void setClosed(const bool closed, bool update = true){}
 
     virtual void addCellWidget(Cell *newCell); //Protected?
 
@@ -142,13 +140,13 @@ namespace IAEX
     //Flags
     const bool isSelected() const;
     const bool isTreeViewVisible() const;
-    virtual bool isEditable() = 0;        // Added 2005-10-27 AF
-    const bool isViewExpression() const;    // Added 2005-11-02 AF
+    virtual bool isEditable() = 0;
+    const bool isViewExpression() const;
 
     //Properties
     const QColor backgroundColor() const;
-    virtual CellStyle *style();          // Changed 2005-10-27 AF
-    QString cellTag();              // Added 2006-01-16 AF
+    virtual CellStyle *style();
+    QString cellTag();
     virtual rules_t rules() const;
     QWidget *mainWidget();
     TreeView *treeView();
@@ -159,27 +157,27 @@ namespace IAEX
   public slots:
     virtual void addRule(Rule *r);
     virtual void setText(QString text){}
-    virtual void setText(QString text, QTextCharFormat format){}      // Added 2005-10-27 AF
-    virtual void setTextHtml(QString html){}                // Added 2005-10-27 AF
-    virtual void setStyle(const QString &stylename);            // Changed 2005-10-28 AF
-    virtual void setStyle(CellStyle style);                  // Changed 2005-10-27 AF
-    void setCellTag(QString tagname);                    // Added 2006-01-16 AF
+    virtual void setText(QString text, QTextCharFormat format){}
+    virtual void setTextHtml(QString html){}
+    virtual void setStyle(const QString &stylename);
+    virtual void setStyle(CellStyle style);
+    void setCellTag(QString tagname);
     virtual void setReadOnly(const bool){}
     virtual void setFocus(const bool focus) = 0;
-    virtual void applyLinksToText(){}                    // Added 2005-11-09 AF
+    virtual void applyLinksToText(){}
 
     virtual void setBackgroundColor(const QColor color);
     virtual void setSelected(const bool selected);
     virtual void setHeight(const int height);
     void hideTreeView(const bool hidden);
 
-    void wheelEvent(QWheelEvent * event);      //tmp
+    void wheelEvent(QWheelEvent * event) override;      //tmp
 
   protected slots:
     void setLabel(QLabel *label);
     void setTreeWidget(TreeView *newTreeWidget);
     void setMainWidget(QWidget *newWidget);
-    void addChapterCounter(QWidget *counter);    // Added 2006-02-03 AF
+    void addChapterCounter(QWidget *counter);
 
   signals:
     void clicked(Cell*);
@@ -197,18 +195,18 @@ namespace IAEX
 
   protected:
     //Events
-    void resizeEvent(QResizeEvent *event);
-    void mouseReleaseEvent(QMouseEvent *event);
-    void mouseMoveEvent(QMouseEvent *event);
+    void resizeEvent(QResizeEvent *event) override;
+    void mouseReleaseEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
 
-    void applyRulesToStyle();            // Added 2005-10-27 AF
+    void applyRulesToStyle();
 
     // variables
-    bool viewexpression_;              // Added 2005-11-02 AF
-    CellStyle style_;                // Changed 2005-10-27 AF
+    bool viewexpression_;
+    CellStyle style_;
 
   private:
-    QString celltag_;                // Added 2005-11-03 AF
+    QString celltag_;
     QGridLayout *mainlayout_;
     TreeView *treeView_;
     QWidget *mainWidget_;
@@ -225,8 +223,6 @@ namespace IAEX
     Cell *last_;
     Cell *previous_;
     Cell *child_;
-
-    int references_;
   };
 }
 #endif

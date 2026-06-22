@@ -290,7 +290,7 @@ public
         then Vector.size(il.U_vertices);
 
         else algorithm
-          Error.assertion(false, getInstanceName() + " failed for wrong SetType: " + setTypeString(ST) + "\nAllowed: F,U", sourceInfo());
+          Error.terminate(getInstanceName() + " failed for wrong SetType: " + setTypeString(ST) + "\nAllowed: F,U", sourceInfo());
         then fail();
       end match;
     end addVertex;
@@ -311,7 +311,7 @@ public
         case SetType.F algorithm (_, index) := Vector.find(il.F_vertices, predFn); then index;
         case SetType.U algorithm (_, index) := Vector.find(il.U_vertices, predFn); then index;
         else algorithm
-          Error.assertion(false, getInstanceName() + " failed for wrong SetType: " + setTypeString(ST) + "\nAllowed: F,U", sourceInfo());
+          Error.terminate(getInstanceName() + " failed for wrong SetType: " + setTypeString(ST) + "\nAllowed: F,U", sourceInfo());
         then fail();
       end match;
       od := if index > 0 then SOME(index) else NONE();
@@ -327,7 +327,7 @@ public
         case SetType.F  then Vector.get(il.F_vertices, d);
         case SetType.U  then Vector.get(il.U_vertices, d);
         else algorithm
-          Error.assertion(false, getInstanceName() + " failed for wrong SetType: " + setTypeString(ST) + "\nAllowed: F,U", sourceInfo());
+          Error.terminate(getInstanceName() + " failed for wrong SetType: " + setTypeString(ST) + "\nAllowed: F,U", sourceInfo());
         then fail();
       end match;
     end getVertex;
@@ -413,7 +413,7 @@ public
         case SetType.F then Vector.size(il.F_vertices);
         case SetType.U then Vector.size(il.U_vertices);
         else algorithm
-          Error.assertion(false, getInstanceName() + " failed for wrong SetType: " + setTypeString(ST) + "\nAllowed: V,F,U", sourceInfo());
+          Error.terminate(getInstanceName() + " failed for wrong SetType: " + setTypeString(ST) + "\nAllowed: V,F,U", sourceInfo());
         then fail();
       end match;
     end vertexCount;
@@ -433,7 +433,7 @@ public
         case SetType.F then Vector.toList(il.F_vertices);
         case SetType.U then Vector.toList(il.U_vertices);
         else algorithm
-          Error.assertion(false, getInstanceName() + " failed for wrong SetType: " + setTypeString(ST) + "\nAllowed: V,F,U", sourceInfo());
+          Error.terminate(getInstanceName() + " failed for wrong SetType: " + setTypeString(ST) + "\nAllowed: V,F,U", sourceInfo());
         then fail();
       end match;
     end vertices;

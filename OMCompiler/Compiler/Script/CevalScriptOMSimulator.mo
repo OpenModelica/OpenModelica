@@ -516,5 +516,5 @@ algorithm
         Values.STRING(version);
   end match;
 end ceval;
-annotation(__OpenModelica_Interface="backend");
+annotation(__OpenModelica_Interface="backend_tools");
 end CevalScriptOMSimulator;

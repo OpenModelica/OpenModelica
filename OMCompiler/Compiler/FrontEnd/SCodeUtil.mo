@@ -249,7 +249,7 @@ function countParts
   input SCode.Element inClass;
   output Integer outInteger;
 algorithm
-  outInteger := matchcontinue inClass
+  outInteger := match inClass
     local
       Integer res;
       list<SCode.Element> elts;
@@ -269,7 +269,7 @@ algorithm
 
     else 0;
 
-  end matchcontinue;
+  end match;
 end countParts;
 
 function componentNames
@@ -4145,7 +4145,7 @@ public function mergeModifiers
   input SCode.Mod inOldMod;
   output SCode.Mod outMod;
 algorithm
-  outMod := matchcontinue(inNewMod, inOldMod)
+  outMod := match(inNewMod, inOldMod)
     local
       SCode.Final f1, f2;
       SCode.Each e1, e2;
@@ -4176,7 +4176,7 @@ algorithm
 
     else inNewMod;
 
-  end matchcontinue;
+  end match;
 end mergeModifiers;
 
 protected function mergeSubMods
