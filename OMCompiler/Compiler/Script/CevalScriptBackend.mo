@@ -4378,6 +4378,9 @@ algorithm
     // (placement + connector-type icons). Graphics only.
     Values.INTEGER(handle) := NFApi.getModelInstanceReference(className, className, "");
     if handle > 0 then
+      // Inner try so the model-instance handle is released on EVERY exit path
+      // (a failure in the graphics work below must not leak the reference).
+      try
       modelName := AbsynUtil.pathLastIdent(className);
       // FMI 3.0 (section "Distribution of FMUs"): icon image files referenced
       // from terminalsAndIcons.xml live in the terminalsAndIcons/ directory, and
@@ -4397,7 +4400,13 @@ algorithm
         pngOk := OMGraphics_writeIconPNGFromHandle(handle, modelName, taiDir + "icon.png");
         if pngOk == 1 then
           System.writeFile(taiDir + "icon.svg", svg);
+        else
+          // icon.png is mandatory for the <Icon> in <GraphicalRepresentation>;
+          // drop the block rather than reference a file we failed to write.
+          grepr := "";
         end if;
+      else
+        grepr := "";
       end if;
 
       if grepr <> "" or nConn > 0 then
@@ -4450,6 +4459,12 @@ algorithm
 
         System.writeFile(taiFile, content);
       end if;
+      else
+        // release the handle on the failure path, then re-raise so the outer
+        // try treats it as "no graphics" (best-effort)
+        Values.BOOL(_) := NFApi.releaseModelInstanceReference(handle);
+        fail();
+      end try;
 
       Values.BOOL(_) := NFApi.releaseModelInstanceReference(handle);
     end if;
@@ -4465,8 +4480,14 @@ protected function spliceGraphicalRepresentation
   input String graphicalRepresentation;
   output String result;
 algorithm
+  // FMI 3.0 schema requires GraphicalRepresentation before Terminals. Insert it
+  // before the <Terminals> open tag, tolerating any indentation (don't depend on
+  // a two-space prefix); fall back to before the closing root tag when there is
+  // no Terminals element.
   if System.stringFind(content, "  <Terminals>") >= 0 then
     result := System.stringReplace(content, "  <Terminals>", graphicalRepresentation + "  <Terminals>");
+  elseif System.stringFind(content, "<Terminals>") >= 0 then
+    result := System.stringReplace(content, "<Terminals>", graphicalRepresentation + "<Terminals>");
   else
     result := System.stringReplace(content, "</fmiTerminalsAndIcons>", graphicalRepresentation + "</fmiTerminalsAndIcons>");
   end if;

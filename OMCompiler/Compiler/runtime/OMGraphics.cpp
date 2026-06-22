@@ -188,17 +188,32 @@ void emitEllipse(std::ostringstream &svg, const Shape &s)
         << "\" ry=\"" << num(ry) << "\" style=\"" << fillStyle(s.fillColor, s.fillPattern)
         << strokeStyle(s.lineColor, s.linePattern, s.lineThickness) << "\"/>\n";
   } else {
-    /* elliptical arc */
+    /* partial ellipse: honour the closure (None = open arc, Chord = straight
+       line between the arc endpoints, Radial = pie wedge through the centre) */
     double a0 = s.startAngle * OMG_PI / 180.0;
     double a1 = s.endAngle * OMG_PI / 180.0;
     double x0 = cx + rx * std::cos(a0), y0 = cy + ry * std::sin(a0);
     double x1 = cx + rx * std::cos(a1), y1 = cy + ry * std::sin(a1);
     int large = (std::fabs(s.endAngle - s.startAngle) > 180.0) ? 1 : 0;
-    svg << "    <path d=\"M " << num(cx) << " " << num(cy)
-        << " L " << num(x0) << " " << num(y0)
-        << " A " << num(rx) << " " << num(ry) << " 0 " << large << " 1 " << num(x1) << " " << num(y1)
-        << " Z\" style=\"" << fillStyle(s.fillColor, s.fillPattern)
-        << strokeStyle(s.lineColor, s.linePattern, s.lineThickness) << "\"/>\n";
+    if (s.closure == EllipseClosure::None) {
+      /* open arc: stroke only, no fill, no closing segment */
+      svg << "    <path d=\"M " << num(x0) << " " << num(y0)
+          << " A " << num(rx) << " " << num(ry) << " 0 " << large << " 1 " << num(x1) << " " << num(y1)
+          << "\" style=\"fill:none;" << strokeStyle(s.lineColor, s.linePattern, s.lineThickness) << "\"/>\n";
+    } else if (s.closure == EllipseClosure::Chord) {
+      /* chord: arc closed by a straight line between its endpoints */
+      svg << "    <path d=\"M " << num(x0) << " " << num(y0)
+          << " A " << num(rx) << " " << num(ry) << " 0 " << large << " 1 " << num(x1) << " " << num(y1)
+          << " Z\" style=\"" << fillStyle(s.fillColor, s.fillPattern)
+          << strokeStyle(s.lineColor, s.linePattern, s.lineThickness) << "\"/>\n";
+    } else {
+      /* radial (pie): centre -> arc start -> arc -> close back to centre */
+      svg << "    <path d=\"M " << num(cx) << " " << num(cy)
+          << " L " << num(x0) << " " << num(y0)
+          << " A " << num(rx) << " " << num(ry) << " 0 " << large << " 1 " << num(x1) << " " << num(y1)
+          << " Z\" style=\"" << fillStyle(s.fillColor, s.fillPattern)
+          << strokeStyle(s.lineColor, s.linePattern, s.lineThickness) << "\"/>\n";
+    }
   }
 }
 
@@ -460,7 +475,8 @@ std::vector<Point> ellipsePoints(const Shape &s)
   if (full) { a0 = 0.0; a1 = 2.0 * OMG_PI; }
   const int N = 64;
   std::vector<Point> pts;
-  if (!full) pts.push_back({cx, cy}); /* pie centre for arcs */
+  if (!full && s.closure == EllipseClosure::Radial)
+    pts.push_back({cx, cy}); /* pie centre only for a radial (wedge) arc */
   for (int i = 0; i <= N; ++i) {
     double a = a0 + (a1 - a0) * i / (double) N;
     pts.push_back({cx + rx * std::cos(a), cy + ry * std::sin(a)});
@@ -506,9 +522,14 @@ void rasterShape(Raster &r, const DeviceMap &m, const Shape &s, double ssScale)
     case ShapeKind::Ellipse: {
       std::vector<Point> pts = ellipsePoints(s);
       std::vector<DPoint> dev = toDevice(m, s, pts);
-      if (s.fillPattern != FillPattern::None) fillPolygon(r, dev, s.fillColor);
+      // A full ellipse is always closed/filled; for a partial ellipse the
+      // closure decides: None = open stroked arc (no fill), Chord/Radial = closed.
+      bool full = (std::fabs(s.endAngle - s.startAngle) >= 359.999) ||
+                  (s.startAngle == 0.0 && s.endAngle == 0.0);
+      bool closed = full || (s.closure != EllipseClosure::None);
+      if (closed && s.fillPattern != FillPattern::None) fillPolygon(r, dev, s.fillColor);
       if (s.linePattern != LinePattern::None)
-        strokePolyline(r, dev, true, s.lineColor, strokeWidth(s.lineThickness) * pxPerUnit);
+        strokePolyline(r, dev, closed, s.lineColor, strokeWidth(s.lineThickness) * pxPerUnit);
       break;
     }
     case ShapeKind::Line: {
