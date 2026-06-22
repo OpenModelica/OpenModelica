@@ -83,6 +83,7 @@ import SimCode;
 protected
 import Absyn;
 import AbsynUtil;
+import BackendDAE;
 import ComponentReferenceBasics;
 import DAE;
 import Error;
@@ -502,16 +503,19 @@ algorithm
     EXT_LLVM.initGen(AbsynUtil.pathStringUnquoteReplaceDot(name, "_") + "_sctl");
     emitDisplacingStubs(name);
     emitUserFunctions(simCode);
-    /* Initial-equation block: same dynamic-skip pattern but currently
-     * disabled because the inlined body references cross-file
-     * eqFunction symbols that get pulled in by the still-clang'd
-     * _05evt.c. Re-enables once per-equation function emission
-     * lands. */
-    /* _ := emitInitialEquationsBlock(simCode, layout); */
+    /* Initial-equation block: dynamic-skip pattern. When all init
+     * eqs lower cleanly AND _05evt.c is also being displaced (so the
+     * still-clang'd files do not extern-call eqFunction_N), emit
+     * the three _06inz.c entries inlined. */
+    _ := emitInitialEquationsBlock(simCode, layout);
     /* Bound-parameters block: emits the _08bnd.c entries when the
      * model has no parameter equations (HelloWorld). Records
      * _08bnd.c into the dynamic skip list on success. */
     emitBoundParametersBlock(simCode);
+    /* Event block: emits the _05evt.c entries when the model has no
+     * zero crossings AND no relations (HelloWorld). Records
+     * _05evt.c into the dynamic skip list on success. */
+    emitEventBlock(simCode);
     if Flags.isSet(Flags.JIT_DUMP_IR) then EXT_LLVM.dumpIR(); end if;
     /* Hand the in-memory module to omc_runModelViaJIT through a
      * process-global byte buffer (no disk hop). compileModelToBitcode
@@ -764,6 +768,16 @@ protected
   String prefix;
   Absyn.Path name;
 algorithm
+  /* Inlined init-eq bodies reference eqFunction_N symbols by index.
+   * Other CodegenC files (_05evt.c at least) call eqFunction_N via
+   * extern declarations; if those files are still being clang'd
+   * the symbols are unresolved at JIT link time. The cleanest
+   * dependency rule: only emit when _05evt.c is also displaced,
+   * which means the model has no zero crossings AND no relations. */
+  if not modelHasNoEvents(simCode) then
+    ok := false;
+    return;
+  end if;
   name := simCodeName(simCode);
   prefix := AbsynUtil.pathStringUnquoteReplaceDot(name, "_");
   initEqs := match simCode
@@ -802,6 +816,24 @@ algorithm
   recordDisplacedSegment("_06inz.c");
 end emitInitialEquationsBlock;
 
+protected function modelHasNoEvents
+  "True iff the model has no zero crossings and no relations -- the
+   same condition emitEventBlock uses to displace _05evt.c. Hoisted
+   into its own predicate so other blocks can share the gate (the
+   inlined init-eq body references eqFunction_N symbols that the
+   still-clang'd _05evt.c calls externally, so _06inz.c can only be
+   safely displaced when _05evt.c is too)."
+  input SimCode.SimCode simCode;
+  output Boolean ok;
+protected
+  list<BackendDAE.ZeroCrossing> zcs, rels;
+algorithm
+  (zcs, rels) := match simCode
+    case SimCode.SIMCODE(zeroCrossings = zcs, relations = rels) then (zcs, rels);
+  end match;
+  ok := listEmpty(zcs) and listEmpty(rels);
+end modelHasNoEvents;
+
 protected function emitBoundParametersBlock
   "Emit the two _08bnd.c entry points (_updateBoundParameters and
    _updateBoundVariableAttributes) when SimCode.parameterEquations
@@ -831,6 +863,34 @@ algorithm
   emitRuntimeIntStub(prefix + "_updateBoundVariableAttributes");
   recordDisplacedSegment("_08bnd.c");
 end emitBoundParametersBlock;
+
+protected function emitEventBlock
+  "Emit the _05evt.c entry points (_function_initSample,
+   _function_ZeroCrossingsEquations, _function_ZeroCrossings,
+   _function_updateRelations, _zeroCrossingDescription,
+   _relationDescription) as stubs and record _05evt.c into the
+   dynamic skip list. Gated on modelHasNoEvents -- a model without
+   events tolerates zero-returning stubs (the gout buffer is never
+   read). For models with zero crossings (ChuaCircuit) the stub
+   path causes DASKR to abort with 'R IS ILL-DEFINED'."
+  input SimCode.SimCode simCode;
+protected
+  String prefix;
+  Absyn.Path name;
+algorithm
+  if not modelHasNoEvents(simCode) then
+    return;
+  end if;
+  name := simCodeName(simCode);
+  prefix := AbsynUtil.pathStringUnquoteReplaceDot(name, "_");
+  emitRuntimeVoidStub(prefix + "_function_initSample");
+  emitRuntimeIntStub(prefix + "_function_ZeroCrossingsEquations");
+  emitStub(prefix + "_function_ZeroCrossings",  MODELICA_INTEGER, {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE});
+  emitStub(prefix + "_function_updateRelations", MODELICA_INTEGER, {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_INTEGER});
+  emitStub(prefix + "_zeroCrossingDescription",  MODELICA_METATYPE, {MODELICA_INTEGER, MODELICA_METATYPE});
+  emitStub(prefix + "_relationDescription",      MODELICA_METATYPE, {MODELICA_INTEGER});
+  recordDisplacedSegment("_05evt.c");
+end emitEventBlock;
 
 protected function countUnsupportedAsBoolean
   "List.fold seed: stays true while every recipe is supported."
