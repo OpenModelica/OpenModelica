@@ -373,99 +373,28 @@ algorithm
   EXT_LLVM.finnishGen();
 end emitODEEntryShell;
 
-protected function emitTrivialDataReturnZero
-  "Emit  int <fname>(DATA *, threadData_t *) { return 0; }
-   into the current in-memory module. Used for the many segment
-   entry points whose only body in CodegenC is 'return 0' (plus
-   bookkeeping like stat counters that the runtime tolerates being
-   missing). Once SimCodeToLLVM emits the stub the matching .c file
-   can be dropped from compileModelToBitcode's clang loop."
-  input String fname;
-algorithm
-  EXT_LLVM.startFuncGen(fname);
-  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "data");
-  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "threadData");
-  EXT_LLVM.genFunctionType(MODELICA_INTEGER);
-  EXT_LLVM.genFunctionPrototype(fname);
-  EXT_LLVM.genFunctionBody(fname);
-  EXT_LLVM.genReturnZero();
-  EXT_LLVM.finnishGen();
-end emitTrivialDataReturnZero;
+/* ====================================================================== *
+ *  Stub emitter                                                           *
+ *                                                                         *
+ *  emitStub is the single workhorse for "I want an LLVM IR function with  *
+ *  signature (argTys) -> retTy whose body is 'return zero of retTy'".     *
+ *  The arguments are named a0, a1, ... and never read; the body shape is  *
+ *  fixed.                                                                 *
+ *                                                                         *
+ *  The convenience wrappers below name the two signatures that occur most *
+ *  often in CodegenC's generated entry points, so emitDisplacingStubs     *
+ *  reads as a flat directory of "<segment .c file>: <names it owns>"      *
+ *  instead of a list of bare type tuples.                                 *
+ * ====================================================================== */
 
-protected function emitTrivialIntPtrPtrVoid
-  "Emit  void <fname>(int, ptr, ptr) { }  into the current in-memory
-   module. The (int, ptr, ptr) signature is widened to (i64, ptr, ptr)
-   in IR (no MODELICA_INT32); on x86-64 the unused i64-vs-i32 arg slot
-   uses the same register so the ABI mismatch is harmless when the
-   body discards the argument."
-  input String fname;
-algorithm
-  EXT_LLVM.startFuncGen(fname);
-  EXT_LLVM.genFunctionArg(MODELICA_INTEGER, "n");
-  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "a");
-  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "b");
-  EXT_LLVM.genFunctionType(MODELICA_VOID);
-  EXT_LLVM.genFunctionPrototype(fname);
-  EXT_LLVM.genFunctionBody(fname);
-  EXT_LLVM.genReturnVoid();
-  EXT_LLVM.finnishGen();
-end emitTrivialIntPtrPtrVoid;
-
-protected function emitTrivialDataVoid
-  "Emit  void <fname>(DATA *, threadData_t *) { }  -- the void
-   counterpart of emitTrivialDataReturnZero."
-  input String fname;
-algorithm
-  EXT_LLVM.startFuncGen(fname);
-  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "data");
-  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "threadData");
-  EXT_LLVM.genFunctionType(MODELICA_VOID);
-  EXT_LLVM.genFunctionPrototype(fname);
-  EXT_LLVM.genFunctionBody(fname);
-  EXT_LLVM.genReturnVoid();
-  EXT_LLVM.finnishGen();
-end emitTrivialDataVoid;
-
-protected function emitTrivialDataIntVoid
-  "Emit  void <fname>(DATA *, threadData_t *, long base_idx) { } "
-  input String fname;
-algorithm
-  EXT_LLVM.startFuncGen(fname);
-  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "data");
-  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "threadData");
-  EXT_LLVM.genFunctionArg(MODELICA_INTEGER, "base_idx");
-  EXT_LLVM.genFunctionType(MODELICA_VOID);
-  EXT_LLVM.genFunctionPrototype(fname);
-  EXT_LLVM.genFunctionBody(fname);
-  EXT_LLVM.genReturnVoid();
-  EXT_LLVM.finnishGen();
-end emitTrivialDataIntVoid;
-
-protected function emitTrivialDataIntIntReturnZero
-  "Emit  int <fname>(DATA *, threadData_t *, long, long) { return 0; }"
-  input String fname;
-algorithm
-  EXT_LLVM.startFuncGen(fname);
-  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "data");
-  EXT_LLVM.genFunctionArg(MODELICA_METATYPE, "threadData");
-  EXT_LLVM.genFunctionArg(MODELICA_INTEGER, "base_idx");
-  EXT_LLVM.genFunctionArg(MODELICA_INTEGER, "sub_idx");
-  EXT_LLVM.genFunctionType(MODELICA_INTEGER);
-  EXT_LLVM.genFunctionPrototype(fname);
-  EXT_LLVM.genFunctionBody(fname);
-  EXT_LLVM.genReturnZero();
-  EXT_LLVM.finnishGen();
-end emitTrivialDataIntIntReturnZero;
-
-protected function emitTrivialStub
-  "Generic helper: emit  <retTy> <fname>(<argTys...>) { return 0; }
-   (or return void if retTy = MODELICA_VOID) into the in-memory
-   module. Arguments are named a0, a1, ... -- the body never uses
-   them. Useful for displacing CodegenC entry points whose only
-   semantic content is 'we are not used in this run, return success'."
+protected function emitStub
+  "Emit  <retTy> <fname>(<argTys...>) { return <zero of retTy>; }
+   into the current in-memory module. retTy = MODELICA_VOID yields a
+   plain `ret void`; any other retTy yields `ret <zero>` matching the
+   declared return type."
   input String fname;
   input Integer retTy;
-  input list<Integer> argTys;
+  input list<Integer> argTys = {};
 protected
   Integer i = 0;
 algorithm
@@ -483,93 +412,145 @@ algorithm
     EXT_LLVM.genReturnZero();
   end if;
   EXT_LLVM.finnishGen();
-end emitTrivialStub;
+end emitStub;
 
-protected function emitInlineSystemStub
-  "<Model>_symbolicInlineSystem -- whole content of <Model>_17inl.c."
-  input Absyn.Path modelName;
-protected
-  String prefix;
+protected function emitRuntimeIntStub
+  "Convenience: (DATA *, threadData_t *) -> int { return 0; }
+   The shape of most runtime callbacks the generated model exports."
+  input String fname;
 algorithm
-  prefix := AbsynUtil.pathStringUnquoteReplaceDot(modelName, "_");
-  emitTrivialDataReturnZero(prefix + "_symbolicInlineSystem");
-end emitInlineSystemStub;
+  emitStub(fname, MODELICA_INTEGER, {MODELICA_METATYPE, MODELICA_METATYPE});
+end emitRuntimeIntStub;
+
+protected function emitRuntimeVoidStub
+  "Convenience: (DATA *, threadData_t *) -> void."
+  input String fname;
+algorithm
+  emitStub(fname, MODELICA_VOID, {MODELICA_METATYPE, MODELICA_METATYPE});
+end emitRuntimeVoidStub;
 
 protected function emitDisplacingStubs
   "Emit the SCTL counterparts of every C function whose .c file we
-   want to skip in compileModelToBitcode. The keep-in-sync invariant:
-   for every entry here there must be a matching `case ... continue ;;`
-   in CevalScriptBackend.compileModelToBitcode's bash glob, and vice
-   versa. Right now we cover the .c files that contain only trivial
-   (DATA*, threadData_t*) -> int { return 0; } bodies."
+   want to skip in compileModelToBitcode. Each block below corresponds
+   to one CodegenC segment file; the comment names that file and the
+   entry points it owns. The keep-in-sync invariant: every name here
+   has a matching `case <prefix>_<NN><tag>.c) continue ;;` in
+   CevalScriptBackend.compileModelToBitcode's bash glob, and vice
+   versa."
   input Absyn.Path modelName;
 protected
   String prefix;
 algorithm
   prefix := AbsynUtil.pathStringUnquoteReplaceDot(modelName, "_");
-  /* _17inl.c -- <prefix>_symbolicInlineSystem */
-  emitTrivialDataReturnZero(prefix + "_symbolicInlineSystem");
-  /* _10asr.c -- <prefix>_checkForAsserts */
-  emitTrivialDataReturnZero(prefix + "_checkForAsserts");
-  /* _07dly.c -- <prefix>_function_storeDelayed */
-  emitTrivialDataReturnZero(prefix + "_function_storeDelayed");
-  /* _18spd.c -- <prefix>_function_storeSpatialDistribution +
-                 <prefix>_function_initSpatialDistribution */
-  emitTrivialDataReturnZero(prefix + "_function_storeSpatialDistribution");
-  emitTrivialDataReturnZero(prefix + "_function_initSpatialDistribution");
-  /* _16dae.c -- <prefix>_initializeDAEmodeData(DATA*, DAEMODE_DATA*)
-     The C codegen returns -1 ("no DAE residuals"); SCTL emits return 0
-     here which the DASSL/ODE path tolerates because data->dae* fields
-     are zero-initialised by the runtime when the function is not used.
-     The (DAEMODE_DATA*) second argument is opaque-ptr to LLVM, so the
-     (DATA*, threadData_t*) -> int signature SCTL emits is ABI-compatible. */
-  emitTrivialDataReturnZero(prefix + "_initializeDAEmodeData");
-  /* _04set.c -- <prefix>_initializeStateSets(int, STATE_SET_DATA*, DATA*)
-     Empty body in CodegenC. The (int, ptr, ptr) signature widens int -> i64;
-     on x86-64 both register layouts read from edi/rdi, so the unused
-     first arg is ABI-compatible. */
-  emitTrivialIntPtrPtrVoid(prefix + "_initializeStateSets");
-  /* _08bnd.c -- updateBoundParameters is a trivial return-0 in CodegenC.
-     updateBoundVariableAttributes calls infoStreamPrint for OMC_LOG_INIT;
-     dropping the logging is harmless when that log scope is not enabled. */
-  emitTrivialDataReturnZero(prefix + "_updateBoundParameters");
-  emitTrivialDataReturnZero(prefix + "_updateBoundVariableAttributes");
-  /* _09alg.c -- functionAlgebraics in CodegenC increments a stat counter
-     and calls _function_savePreSynchronous. Dropping both is safe when
-     the model has no continuous-time algebraic systems (HelloWorld
-     does not). */
-  emitTrivialDataReturnZero(prefix + "_functionAlgebraics");
-  /* _15syn.c -- all four entries are empty bodies for non-synchronous
-     models. Different signatures need different helpers. */
-  emitTrivialDataVoid(prefix + "_function_savePreSynchronous");
-  emitTrivialDataVoid(prefix + "_function_initSynchronous");
-  emitTrivialDataIntVoid(prefix + "_function_updateSynchronous");
-  emitTrivialDataIntIntReturnZero(prefix + "_function_equationsSynchronous");
-  /* _13opt.c -- optimization stubs. CodegenC throws a "not compiled with
-     -g=Optimica" message and returns 0; SCTL just returns 0 (the runtime
-     never calls these for ODE-only models, but they sit in the function
-     pointer table populated by setupDataStruc so the symbols must exist
-     at link time). */
-  emitTrivialStub(prefix + "_mayer",
-                  MODELICA_INTEGER,
-                  {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE});
-  emitTrivialStub(prefix + "_lagrange",
-                  MODELICA_INTEGER,
-                  {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE});
-  emitTrivialStub(prefix + "_getInputVarIndicesInOptimization",
-                  MODELICA_INTEGER,
-                  {MODELICA_METATYPE, MODELICA_METATYPE});
-  emitTrivialStub(prefix + "_pickUpBoundsForInputsInOptimization",
-                  MODELICA_INTEGER,
-                  {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE,
-                   MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE,
-                   MODELICA_METATYPE, MODELICA_METATYPE});
-  emitTrivialStub(prefix + "_setInputData",
-                  MODELICA_INTEGER,
-                  {MODELICA_METATYPE, MODELICA_INTEGER});
-  emitTrivialStub(prefix + "_getTimeGrid",
-                  MODELICA_INTEGER,
-                  {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE});
+
+  /* _17inl.c  -- the entire file is one return-0 stub. */
+  emitRuntimeIntStub(prefix + "_symbolicInlineSystem");
+
+  /* _10asr.c  -- asserts after a step; HelloWorld has none. */
+  emitRuntimeIntStub(prefix + "_checkForAsserts");
+
+  /* _07dly.c  -- delay() storage; HelloWorld has no delays. */
+  emitRuntimeIntStub(prefix + "_function_storeDelayed");
+
+  /* _18spd.c  -- spatialDistribution() storage / init. */
+  emitRuntimeIntStub(prefix + "_function_storeSpatialDistribution");
+  emitRuntimeIntStub(prefix + "_function_initSpatialDistribution");
+
+  /* _16dae.c  -- DAE-residual setup. CodegenC returns -1 ("no DAE
+     residuals"); SCTL returns 0 instead. The DAE-mode path is unused
+     by DASSL/ODE so the difference is harmless. The DAEMODE_DATA*
+     second argument is opaque-ptr to LLVM, matching threadData_t* in
+     the IR signature. */
+  emitRuntimeIntStub(prefix + "_initializeDAEmodeData");
+
+  /* _04set.c  -- initial state-set setup. Empty body in CodegenC.
+     Signature is (int nStateSets, STATE_SET_DATA*, DATA*); the int
+     widens to i64 in IR which is ABI-compatible on x86-64 since the
+     argument is discarded. */
+  emitStub(prefix + "_initializeStateSets",
+           MODELICA_VOID,
+           {MODELICA_INTEGER, MODELICA_METATYPE, MODELICA_METATYPE});
+
+  /* _08bnd.c  -- bound-parameter / bound-attribute updates. The C
+     code only emits infoStreamPrint logging in OMC_LOG_INIT; dropping
+     it is harmless when that log scope is not enabled. */
+  emitRuntimeIntStub(prefix + "_updateBoundParameters");
+  emitRuntimeIntStub(prefix + "_updateBoundVariableAttributes");
+
+  /* _09alg.c  -- continuous-time algebraic step. CodegenC increments
+     a stat counter and calls _function_savePreSynchronous; both are
+     safe to drop when the model has no algebraic systems. */
+  emitRuntimeIntStub(prefix + "_functionAlgebraics");
+
+  /* _15syn.c  -- synchronous-language support. All four functions
+     have empty bodies in CodegenC for non-synchronous models. */
+  emitRuntimeVoidStub(prefix + "_function_savePreSynchronous");
+  emitRuntimeVoidStub(prefix + "_function_initSynchronous");
+  emitStub(prefix + "_function_updateSynchronous",
+           MODELICA_VOID,
+           {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_INTEGER});
+  emitStub(prefix + "_function_equationsSynchronous",
+           MODELICA_INTEGER,
+           {MODELICA_METATYPE, MODELICA_METATYPE,
+            MODELICA_INTEGER, MODELICA_INTEGER});
+
+  /* _13opt.c  -- optimization (Optimica) stubs. CodegenC throws a
+     "not compiled with -g=Optimica" message and returns 0; SCTL just
+     returns 0. These sit in the function-pointer table populated by
+     setupDataStruc so the symbols must exist at link time, but for
+     ODE-only simulation they are never called through. */
+  emitStub(prefix + "_mayer",
+           MODELICA_INTEGER,
+           {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE});
+  emitStub(prefix + "_lagrange",
+           MODELICA_INTEGER,
+           {MODELICA_METATYPE, MODELICA_METATYPE,
+            MODELICA_METATYPE, MODELICA_METATYPE});
+  emitStub(prefix + "_getInputVarIndicesInOptimization",
+           MODELICA_INTEGER,
+           {MODELICA_METATYPE, MODELICA_METATYPE});
+  emitStub(prefix + "_pickUpBoundsForInputsInOptimization",
+           MODELICA_INTEGER,
+           {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE,
+            MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE,
+            MODELICA_METATYPE, MODELICA_METATYPE});
+  emitStub(prefix + "_setInputData",
+           MODELICA_INTEGER,
+           {MODELICA_METATYPE, MODELICA_INTEGER});
+  emitStub(prefix + "_getTimeGrid",
+           MODELICA_INTEGER,
+           {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE});
+
+  /* _05evt.c  -- event handling. ZeroCrossings and updateRelations
+     return int (return 0); zeroCrossingDescription and
+     relationDescription return const char*. For HelloWorld (no zero
+     crossings) the descriptions are only invoked from log scopes,
+     so returning a null pointer is acceptable -- the runtime checks
+     for non-null before reading. */
+  emitRuntimeVoidStub(prefix + "_function_initSample");
+  emitRuntimeIntStub(prefix + "_function_ZeroCrossingsEquations");
+  emitStub(prefix + "_function_ZeroCrossings",
+           MODELICA_INTEGER,
+           {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE});
+  emitStub(prefix + "_function_updateRelations",
+           MODELICA_INTEGER,
+           {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_INTEGER});
+  emitStub(prefix + "_zeroCrossingDescription",
+           MODELICA_METATYPE,
+           {MODELICA_INTEGER, MODELICA_METATYPE});
+  emitStub(prefix + "_relationDescription",
+           MODELICA_METATYPE,
+           {MODELICA_INTEGER});
+
+  /* _14lnz.c  -- linearization frame strings. Returned only by
+     -d=linearization / -d=stateSelection diagnostic paths; null
+     suffices for the ODE simulation path. */
+  emitStub(prefix + "_linear_model_frame",
+           MODELICA_METATYPE,
+           {});
+  emitStub(prefix + "_linear_model_datarecovery_frame",
+           MODELICA_METATYPE,
+           {});
 end emitDisplacingStubs;
 
 protected function emitEquation

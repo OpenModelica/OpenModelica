@@ -6014,6 +6014,8 @@ algorithm
     "    ", prefix, "_09alg.c) continue ;;\n",
     "    ", prefix, "_15syn.c) continue ;;\n",
     "    ", prefix, "_13opt.c) continue ;;\n",
+    "    ", prefix, "_05evt.c) continue ;;\n",
+    "    ", prefix, "_14lnz.c) continue ;;\n",
     "  esac\n",
     "  eval \"", toolsDir, "/clang\" -O0 -fPIC -DOM_HAVE_PTHREADS -emit-llvm -c $CPPFLAGS \"$f\" -o \"${f%.c}.bc\"\n",
     "  BCS+=(\"${f%.c}.bc\")\n",
