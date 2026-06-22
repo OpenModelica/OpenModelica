@@ -516,6 +516,9 @@ algorithm
      * zero crossings AND no relations (HelloWorld). Records
      * _05evt.c into the dynamic skip list on success. */
     emitEventBlock(simCode);
+    /* Jacobian block: emits the 22 _12jac.c entries for non-stiff
+     * simple ODE models (no events, no parameter equations). */
+    emitJacobianBlock(simCode);
     if Flags.isSet(Flags.JIT_DUMP_IR) then EXT_LLVM.dumpIR(); end if;
     /* Hand the in-memory module to omc_runModelViaJIT through a
      * process-global byte buffer (no disk hop). compileModelToBitcode
@@ -863,6 +866,74 @@ algorithm
   emitRuntimeIntStub(prefix + "_updateBoundVariableAttributes");
   recordDisplacedSegment("_08bnd.c");
 end emitBoundParametersBlock;
+
+protected function isSimpleNonStiffODE
+  "True iff the model has no events, no parameter equations, and no
+   nonlinear-system equations. Proxy for 'DASKR will be happy with a
+   numerical-Jacobian fallback'. HelloWorld qualifies, ChuaCircuit
+   does not."
+  input SimCode.SimCode simCode;
+  output Boolean ok;
+protected
+  list<SimCode.SimEqSystem> paramEqs;
+algorithm
+  if not modelHasNoEvents(simCode) then
+    ok := false;
+    return;
+  end if;
+  paramEqs := match simCode
+    case SimCode.SIMCODE(parameterEquations = paramEqs) then paramEqs;
+  end match;
+  ok := listEmpty(paramEqs);
+end isSimpleNonStiffODE;
+
+protected function emitJacobianBlock
+  "Emit the 22 _12jac.c entries when isSimpleNonStiffODE(simCode).
+   The 15 column-emit / DAG / const helpers are pure stubs (only
+   called when an analytic Jacobian is available, which we are not
+   providing). The 7 _initialAnalyticJacobianX entries call back
+   into the runtime to stamp jacobian->availability =
+   JACOBIAN_NOT_AVAILABLE so DASKR falls back to numerical
+   differencing rather than aborting on JACOBIAN_UNKNOWN."
+  input SimCode.SimCode simCode;
+protected
+  String prefix;
+  Absyn.Path name;
+algorithm
+  if not isSimpleNonStiffODE(simCode) then
+    return;
+  end if;
+  name := simCodeName(simCode);
+  prefix := AbsynUtil.pathStringUnquoteReplaceDot(name, "_");
+  /* column / DAG / const helpers -- never called when no analytic
+   * Jacobian is exposed */
+  emitStub(prefix + "_functionJacA_column",       MODELICA_INTEGER, {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE});
+  emitStub(prefix + "_functionJacA_constantEqns", MODELICA_INTEGER, {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE});
+  emitStub(prefix + "_JacA_DAG",                  MODELICA_VOID,    {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE});
+  emitStub(prefix + "_functionJacB_column",       MODELICA_INTEGER, {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE});
+  emitStub(prefix + "_JacB_DAG",                  MODELICA_VOID,    {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE});
+  emitStub(prefix + "_functionJacC_column",       MODELICA_INTEGER, {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE});
+  emitStub(prefix + "_JacC_DAG",                  MODELICA_VOID,    {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE});
+  emitStub(prefix + "_functionJacD_column",       MODELICA_INTEGER, {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE});
+  emitStub(prefix + "_JacD_DAG",                  MODELICA_VOID,    {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE});
+  emitStub(prefix + "_functionJacF_column",       MODELICA_INTEGER, {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE});
+  emitStub(prefix + "_JacF_DAG",                  MODELICA_VOID,    {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE});
+  emitStub(prefix + "_functionJacH_column",       MODELICA_INTEGER, {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE});
+  emitStub(prefix + "_JacH_DAG",                  MODELICA_VOID,    {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE});
+  emitStub(prefix + "_functionJacADJ_column",     MODELICA_INTEGER, {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE});
+  emitStub(prefix + "_JacADJ_DAG",                MODELICA_VOID,    {MODELICA_METATYPE, MODELICA_METATYPE, MODELICA_METATYPE});
+  /* The seven initialAnalyticJacobianX entries set the JACOBIAN
+   * struct's availability field to JACOBIAN_NOT_AVAILABLE so DASKR
+   * knows to fall back to numerical differencing. */
+  emitJacobianUnavailable(prefix + "_initialAnalyticJacobianA");
+  emitJacobianUnavailable(prefix + "_initialAnalyticJacobianB");
+  emitJacobianUnavailable(prefix + "_initialAnalyticJacobianC");
+  emitJacobianUnavailable(prefix + "_initialAnalyticJacobianD");
+  emitJacobianUnavailable(prefix + "_initialAnalyticJacobianF");
+  emitJacobianUnavailable(prefix + "_initialAnalyticJacobianH");
+  emitJacobianUnavailable(prefix + "_initialAnalyticJacobianADJ");
+  recordDisplacedSegment("_12jac.c");
+end emitJacobianBlock;
 
 protected function emitEventBlock
   "Emit the _05evt.c entry points (_function_initSample,
